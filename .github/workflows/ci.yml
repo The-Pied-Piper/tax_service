@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    # Same commands as local development, inside the same dev image.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build dev image
+        run: ./dev.sh build
+
+      - name: Check generated code, lint, typecheck, test, check migrations
+        run: ./dev.sh check
+
+      - name: Tear down
+        if: always()
+        run: ./dev.sh down
+
+  image:
+    # Only meaningful once `./dev.sh init` has produced app/; the template repo skips it.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build production image
+        if: hashFiles('app/main.py') != ''
+        run: docker build --target prod --tag "${GITHUB_REPOSITORY##*/}:${GITHUB_SHA::7}" .
