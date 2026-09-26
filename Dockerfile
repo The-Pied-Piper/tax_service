@@ -11,8 +11,19 @@ ADD --chmod=644 https://cli.github.com/packages/githubcli-archive-keyring.gpg /e
 RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
         > /etc/apt/sources.list.d/github-cli.list \
     && apt-get update \
-    && apt-get install -y --no-install-recommends git gh \
+    && apt-get install -y --no-install-recommends git gh openssh-client \
     && rm -rf /var/lib/apt/lists/*
+# Pin GitHub's SSH host keys system-wide (HOME=/tmp, so ~/.ssh/known_hosts
+# wouldn't survive a rebuild). Taken from the TLS-authenticated meta API rather
+# than ssh-keyscan, so there's no trust-on-first-use.
+RUN python -c "import json,urllib.request; \
+keys=json.load(urllib.request.urlopen('https://api.github.com/meta'))['ssh_keys']; \
+open('/etc/ssh/ssh_known_hosts','w').write(''.join(f'github.com {k}\n' for k in keys))"
+# compose.yaml runs as the host's UID:GID; ssh looks up the home dir via
+# getpwuid() and refuses to run ("No user exists for uid") without an entry.
+ARG UID=1000 GID=1000
+RUN (getent group "$GID" || groupadd -g "$GID" dev) \
+    && useradd -o -u "$UID" -g "$GID" -d /tmp -M -s /bin/bash dev
 COPY requirements-dev.txt ./
 COPY tools/service_gen/requirements.txt tools/service_gen/
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements-dev.txt
