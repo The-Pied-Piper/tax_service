@@ -1,120 +1,101 @@
-# service-template
+# tax_service
 
-A GitHub template for spec-first Python services: OpenAPI 3 contract in, a
-hexagonal-architecture Connexion 3 (ASGI) service out — with the code generator
-vendored into the repo so you never leave your service to regenerate.
+Widget Service — spec-first, hexagonal architecture, Connexion 3 (ASGI). Created from
+[service-template](https://github.com/The-Pied-Piper/service-template); the generator lives
+in `tools/service_gen/` and is driven by `openapi/openapi.yml`.
 
-```
-HTTP -> Connexion -> generated handler -> request adapter -> port -> service -> domain
-                     (validates DTOs,     (DTO <-> domain)   (Protocol) (yours)
-                      picks status)
-```
+## Run
 
-Everything runs in Docker (app + Postgres via compose, plain `pip` inside the
-image). No local Python, virtualenv or package manager needed.
-
-## Create a service
-
-1. **Use this template** on GitHub (or clone and re-init), then clone your new repo.
-2. Replace `openapi/openapi.yml` with your contract. Every operation needs an
-   `operationId` and a tag; bodies should `$ref` schemas under `components/schemas`.
-3. One-time scaffold, then run:
-
-   ```sh
-   ./dev.sh init        # writes app/, tests/, README.md from the spec
-   ./dev.sh up          # postgres + app with hot reload on :8080
-   ```
-
-   Swagger UI is at `http://localhost:8080/<base-path>/ui` (`./dev.sh docs` opens it).
-   Every endpoint answers `501 Not Implemented` until you fill in the matching
-   method in `app/application/services/<tag>_service.py`.
-4. Commit. The generated `README.md` documents the service layout and day-to-day
-   workflow (`./dev.sh help` lists every command). Copy `.env.example` to `.env`
-   to change host ports or log level.
-
-The example `openapi/openapi.yml` shipped here is a small Widget service so the
-template runs out of the box; `./dev.sh init` on a fresh checkout is a working demo.
-
-## Evolve a service
-
-Edit `openapi/openapi.yml`, then:
+Everything runs in Docker via `./dev.sh`; no local Python needed.
 
 ```sh
-./dev.sh sync
+./dev.sh up            # app on http://localhost:8080/api/v1/ui + postgres on :5432
+./dev.sh docs          # open Swagger UI
+./dev.sh migrate       # apply Alembic migrations
+./dev.sh test          # pytest
+./dev.sh check         # what CI runs: generated-code drift, ruff + spec lint, mypy, pytest, migrations
+./dev.sh fresh         # wipe the database volume and start over
+./dev.sh shell         # bash inside the app container
+./dev.sh psql          # psql into the dev database
+./dev.sh help          # everything else
 ```
 
-`sync` rewrites `app/generated/` (Pydantic models + handlers) and creates
-adapter/port/service stubs for any new tag. It never touches files you own; if a
-new tag appeared it tells you to wire the adapter into `app/main.py`.
+`./dev.sh up` hot-reloads on source changes (the repo is bind-mounted into the
+container). Dependencies are plain `pip` from `requirements.txt` (runtime) and
+`requirements-dev.txt` (tooling); after changing them run `./dev.sh build`.
 
-## Ownership
+Settings are read from the environment with the `APP_` prefix (see
+`app/settings.py`); `compose.yaml` sets `APP_DATABASE_URL` for the dev database.
+Copy `.env.example` to `.env` to change host ports or the log level.
 
-| Path | Owner | On `sync` | On `upgrade` |
-| --- | --- | --- | --- |
-| `app/generated/**` | generator | overwritten | overwritten (via sync) |
-| `app/adapters/inbound/*_adapter.py`, `app/application/ports/*`, `app/application/services/*` | you (scaffolded once) | created if missing | untouched |
-| `app/main.py`, `app/settings.py`, `app/domain/**`, `app/adapters/outbound/**`, `tests/**`, `README.md` | you (written by `init`) | untouched | untouched |
-| `Dockerfile`, `compose.yaml`, `requirements*.txt`, `pyproject.toml`, `alembic.ini`, `migrations/` | you (shipped plain) | untouched | untouched |
-| `dev.sh`, `scripts/`, `tools/service_gen/`, `.github/workflows/ci.yml` | template | untouched | **replaced** |
+## Layout
 
-## CI
+```
+openapi/openapi.yml            the contract; edit this first
+app/
+  main.py                      composition root: wires engine -> services -> adapters -> app
+  settings.py
+  generated/                   OWNED BY service-gen, never edit
+    models.py                  Pydantic DTOs for every schema
+    handlers/                  one class per tag; validate -> adapter -> serialise
+  adapters/
+    inbound/<tag>_adapter.py   DTO -> domain object -> port; domain result -> DTO
+    outbound/db/               async SQLAlchemy engine, `Base`, ORM models, repositories, DatabaseProbe
+  application/
+    ports/<tag>_port.py        Protocol the inbound adapter calls
+    ports/health.py            ReadinessProbe protocol + NotReadyError (-> 503)
+    services/<tag>_service.py  business logic (implements the port)
+  domain/                      entities, value objects, errors
+migrations/                    Alembic (async); versions/ is autogenerated
+tests/
+requirements.txt               runtime deps; requirements-dev.txt adds test/lint tooling
+Dockerfile                     `dev` target (tools, bind mount) and `prod` target (slim)
+compose.yaml                   app + postgres:16
+dev.sh, scripts/               dev.sh dispatches to scripts/<command>.sh
+tools/service_gen/             the code generator (template-owned; see Upgrading)
+.github/workflows/ci.yml       GitHub Actions: ./dev.sh check + prod image build (template-owned)
+```
 
-Every service gets `.github/workflows/ci.yml` out of the box. On pushes to `main`
-and on pull requests it runs `./dev.sh build && ./dev.sh check` — the same dev
-image and commands as locally — and builds the production image once `app/`
-exists. `check` is, in order:
+Request flow: `Connexion -> generated handler -> request adapter -> port -> service -> domain`.
 
-| Step | Fails when |
-| --- | --- |
-| `check-generated` | `app/generated/` doesn't match what `sync` produces from the spec |
-| `lint` | ruff check / format, or `openapi/openapi.yml` is not valid OpenAPI 3 |
-| `typecheck` | mypy `--strict` |
-| `test` | pytest (against the compose Postgres) |
-| `check-migrations` | `alembic upgrade head` fails, or ORM models drifted from the migrations |
+## Adding or changing an endpoint
 
-It is template-owned, so put service-specific jobs (deploy, publish) in
-separate workflow files.
+1. Edit `openapi/openapi.yml` (every operation needs an `operationId` and a tag).
+2. `./dev.sh sync` — regenerates `app/generated/`, creates stubs for new
+   tags/operations, and never touches files you already own.
+3. If a new tag appeared, add its adapter to `build_adapters()` in `app/main.py`.
+4. Implement the service method (unimplemented ones return HTTP 501).
 
-## Upgrading a service to a newer template
+## Persistence
+
+1. Add an ORM model subclassing `Base` under `app/adapters/outbound/db/` and
+   import it in `db/__init__.py` so Alembic sees it.
+2. `./dev.sh revision "add widgets table"` then `./dev.sh migrate`.
+3. Write a repository that takes the session factory, expose it via an outbound
+   port (`application/ports/`), and hand it to the service in `build_adapters()`.
+
+Raise `DomainError` subclasses from `app/domain/errors.py` for business
+failures; `main.py` maps them to RFC 7807 problem responses.
+
+## Health checks
+
+A tag whose operations are all named like liveness/readiness probes (`livez`,
+`healthz`, `readyz`, `ready`, ... with or without a `get` prefix) gets a working
+service instead of 501 stubs: liveness always returns `{"status": "ok"}`;
+readiness runs every `ReadinessProbe` from `build_adapters()` in `main.py` and
+answers 503 on the first failure. `DatabaseProbe` (`SELECT 1`) is wired by
+default; add a probe per external dependency.
+
+## Upgrading the template
+
+`scripts/`, `tools/service_gen/`, `dev.sh` and `.github/workflows/ci.yml` are owned
+by the template. To pull a newer version (see `TEMPLATE_VERSION` for the current one):
 
 ```sh
 ./dev.sh upgrade            # latest main
-./dev.sh upgrade v0.3.0     # a tag or branch
+./dev.sh upgrade v0.2.0     # a tag or branch
 ```
 
-Replaces the template-owned paths from this repo, records the version in
-`TEMPLATE_VERSION`, rebuilds the dev image and runs `sync`. Review the result as
-one PR: generator diff + regenerated code + any manual edits the release notes ask
-for. Set `TEMPLATE_REPO` to point at a fork or local clone.
-
-## Layout of this repo (= an un-initialised service)
-
-```
-openapi/openapi.yml      example contract; a service replaces this
-Dockerfile               dev target (tooling, bind mount) and prod target (slim)
-compose.yaml             app + postgres:16 (.env.example lists the knobs)
-requirements.txt         runtime deps        requirements-dev.txt  tooling + generator deps
-pyproject.toml           ruff / mypy / pytest config only
-alembic.ini, migrations/ async Alembic wired to app.settings
-dev.sh                   dispatcher: ./dev.sh <cmd> -> scripts/<cmd>.sh
-scripts/                 one command per file; line 2 is its help text
-tools/service_gen/       the generator: cli.py, spec.py, render.py, templates/, tests/
-.github/workflows/ci.yml lint + typecheck + test in Docker; prod image build
-TEMPLATE_VERSION         what a service was last upgraded to
-```
-
-The service package is always `app/` and settings use the `APP_` env prefix, so
-Dockerfile, compose and Alembic are plain files rather than templates.
-
-## Developing the template
-
-```sh
-./dev.sh test tools/service_gen/tests    # generator tests (init + sync + a full request flow)
-./dev.sh lint && ./dev.sh typecheck
-./dev.sh init && ./dev.sh up             # try the result; `git clean -fd app tests && git checkout README.md` to reset
-```
-
-Templates live in `tools/service_gen/templates/`: `project/` is written once by
-`init`, `generated/` is rewritten by every `sync`, `stubs/` are created only when
-missing. When you tag a release, update `TEMPLATE_VERSION` and note any manual
-steps services need in the release notes.
+This replaces those paths, records the version, and runs `sync`. Review the
+resulting diff as one PR; the release notes list any manual edits required in
+files you own.
