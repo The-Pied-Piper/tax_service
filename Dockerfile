@@ -6,6 +6,13 @@ COPY requirements.txt ./
 
 # --- dev: runtime + tooling + generator deps; source is bind-mounted by compose --
 FROM base AS dev
+# gh comes from GitHub's own apt repo; Debian's package lags well behind.
+ADD --chmod=644 https://cli.github.com/packages/githubcli-archive-keyring.gpg /etc/apt/keyrings/githubcli-archive-keyring.gpg
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+        > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends git gh \
+    && rm -rf /var/lib/apt/lists/*
 COPY requirements-dev.txt ./
 COPY tools/service_gen/requirements.txt tools/service_gen/
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements-dev.txt
