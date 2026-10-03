@@ -22,3 +22,7 @@ class ValidationError(DomainError):
 
 class InvalidManifestError(DomainError):
     """A jurisdiction manifest is malformed or breaks a manifest rule (design.md §4)."""
+
+
+class InvalidRoundingRuleError(DomainError):
+    """A rounding rule's parameters are invalid (design.md §3, Rounding)."""
