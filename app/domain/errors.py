@@ -22,3 +22,7 @@ class ValidationError(DomainError):
 
 class InvalidManifestError(DomainError):
     """A jurisdiction manifest is malformed or breaks a manifest rule (design.md §4)."""
+
+
+class InvalidJurisdictionCodeError(ValidationError):
+    """A jurisdiction code is not in ISO 3166 form (e.g. `CA` or `CA-ON`)."""
