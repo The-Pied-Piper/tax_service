@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from app.domain.jurisdiction_code import JurisdictionCode
+
 
 @dataclass(frozen=True, slots=True)
 class CapabilitySelection:
@@ -24,7 +26,7 @@ class Manifest:
     `capabilities` keeps the authored order, which is advisory only.
     """
 
-    jurisdiction: str
+    jurisdiction: JurisdictionCode
     version: int
     valid_from_tax_year: int
     capabilities: tuple[CapabilitySelection, ...]

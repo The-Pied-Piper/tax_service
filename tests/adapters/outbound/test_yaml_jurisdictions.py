@@ -10,7 +10,10 @@ import pytest
 from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
 from app.domain.errors import InvalidManifestError, NotFoundError
 from app.domain.jurisdiction import Jurisdiction
+from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Manifest
+
+CA_ON = JurisdictionCode("CA-ON")
 
 CA_ON_V1 = """\
 jurisdiction: CA-ON
@@ -34,13 +37,13 @@ def write(directory: Path, name: str, content: str) -> Path:
 def test_parses_manifest_into_domain_objects(tmp_path: Path) -> None:
     write(tmp_path, "ca-on-v1.yaml", CA_ON_V1)
 
-    result = YamlJurisdictionSource(tmp_path).get_jurisdiction("CA-ON")
+    result = YamlJurisdictionSource(tmp_path).get_jurisdiction(CA_ON)
 
     assert result == Jurisdiction(
-        code="CA-ON",
+        code=CA_ON,
         manifests=(
             Manifest(
-                jurisdiction="CA-ON",
+                jurisdiction=CA_ON,
                 version=1,
                 valid_from_tax_year=2025,
                 capabilities=(
@@ -67,7 +70,7 @@ def test_preserves_authored_capability_order(tmp_path: Path) -> None:
         """,
     )
 
-    (manifest,) = YamlJurisdictionSource(tmp_path).get_jurisdiction("CA-ON").manifests
+    (manifest,) = YamlJurisdictionSource(tmp_path).get_jurisdiction(CA_ON).manifests
 
     assert [c.name for c in manifest.capabilities] == ["c", "a", "b"]
 
@@ -86,7 +89,7 @@ def test_allows_same_capability_with_different_params_families(tmp_path: Path) -
         """,
     )
 
-    (manifest,) = YamlJurisdictionSource(tmp_path).get_jurisdiction("CA-ON").manifests
+    (manifest,) = YamlJurisdictionSource(tmp_path).get_jurisdiction(CA_ON).manifests
 
     assert [c.params_family for c in manifest.capabilities] == ["ca/brackets", "ca-on/brackets"]
 
@@ -97,23 +100,23 @@ def test_groups_every_manifest_version_of_the_jurisdiction(tmp_path: Path) -> No
     write(tmp_path, "ca-bc/v1.yaml", CA_ON_V1.replace("CA-ON", "CA-BC"))
     write(tmp_path, "README.md", "not a manifest")
 
-    result = YamlJurisdictionSource(tmp_path).get_jurisdiction("CA-ON")
+    result = YamlJurisdictionSource(tmp_path).get_jurisdiction(CA_ON)
 
-    assert result.code == "CA-ON"
+    assert result.code == CA_ON
     assert sorted(m.version for m in result.manifests) == [1, 2]
-    assert {m.jurisdiction for m in result.manifests} == {"CA-ON"}
+    assert {m.jurisdiction for m in result.manifests} == {CA_ON}
 
 
 def test_unknown_jurisdiction_is_not_found(tmp_path: Path) -> None:
     write(tmp_path, "ca-on-v1.yaml", CA_ON_V1)
 
     with pytest.raises(NotFoundError, match="CA-BC"):
-        YamlJurisdictionSource(tmp_path).get_jurisdiction("CA-BC")
+        YamlJurisdictionSource(tmp_path).get_jurisdiction(JurisdictionCode("CA-BC"))
 
 
 def test_missing_directory_is_rejected(tmp_path: Path) -> None:
     with pytest.raises(InvalidManifestError, match="directory not found"):
-        YamlJurisdictionSource(tmp_path / "nope").get_jurisdiction("CA-ON")
+        YamlJurisdictionSource(tmp_path / "nope").get_jurisdiction(CA_ON)
 
 
 def test_one_bad_file_fails_the_whole_load(tmp_path: Path) -> None:
@@ -121,7 +124,7 @@ def test_one_bad_file_fails_the_whole_load(tmp_path: Path) -> None:
     write(tmp_path, "bad.yaml", CA_ON_V1 + "extra: 1\n")
 
     with pytest.raises(InvalidManifestError, match="bad.yaml"):
-        YamlJurisdictionSource(tmp_path).get_jurisdiction("CA-ON")
+        YamlJurisdictionSource(tmp_path).get_jurisdiction(CA_ON)
 
 
 @pytest.mark.parametrize(
@@ -186,6 +189,11 @@ def test_one_bad_file_fails_the_whole_load(tmp_path: Path) -> None:
             id="jurisdiction-int",
         ),
         pytest.param(
+            CA_ON_V1.replace("jurisdiction: CA-ON", "jurisdiction: ca-on"),
+            "jurisdiction: invalid jurisdiction code 'ca-on'",
+            id="jurisdiction-malformed-code",
+        ),
+        pytest.param(
             "jurisdiction: CA-ON\nversion: 1\nvalid_from_tax_year: 2025\ncapabilities: x\n",
             "capabilities must be a list",
             id="capabilities-not-list",
@@ -206,6 +214,6 @@ def test_rejects_malformed_manifest(tmp_path: Path, content: str, message: str) 
     write(tmp_path, "ca-on-v1.yaml", content)
 
     with pytest.raises(InvalidManifestError, match=message) as excinfo:
-        YamlJurisdictionSource(tmp_path).get_jurisdiction("CA-ON")
+        YamlJurisdictionSource(tmp_path).get_jurisdiction(CA_ON)
 
     assert "ca-on-v1.yaml" in str(excinfo.value)
