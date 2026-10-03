@@ -42,7 +42,7 @@ class YamlJurisdictionSource:
     def __init__(self, directory: Path) -> None:
         self._directory = directory
 
-    def jurisdiction(self, code: str) -> Jurisdiction:
+    def get_jurisdiction(self, code: str) -> Jurisdiction:
         manifests = tuple(m for m in self.load_all() if m.jurisdiction == code)
         if not manifests:
             raise NotFoundError(f"no manifests for jurisdiction {code!r} in {self._directory}")

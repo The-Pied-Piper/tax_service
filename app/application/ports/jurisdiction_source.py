@@ -8,7 +8,7 @@ from app.domain.jurisdiction import Jurisdiction
 
 
 class JurisdictionSource(Protocol):
-    def jurisdiction(self, code: str) -> Jurisdiction:
+    def get_jurisdiction(self, code: str) -> Jurisdiction:
         """The jurisdiction with every manifest stored for it.
 
         Raise NotFoundError if none are stored, InvalidManifestError if any cannot be read.
