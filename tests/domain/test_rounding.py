@@ -6,12 +6,15 @@ decides *how*. The default is no rounding, and only exact decimals are accepted.
 
 from __future__ import annotations
 
+import copy
+from dataclasses import FrozenInstanceError
 from decimal import Decimal
 
 import pytest
 
+from app.domain import rounding as rounding_module
 from app.domain.errors import DomainError, InvalidRoundingRuleError
-from app.domain.rounding import NO_ROUNDING, NoRounding, RoundingMode, RoundingRule, RoundTo
+from app.domain.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 
 D = Decimal
 CENT = D("0.01")
@@ -35,7 +38,26 @@ def test_no_rounding_returns_amount_unchanged(amount: str) -> None:
 def test_both_rule_kinds_are_rounding_rules() -> None:
     assert isinstance(NO_ROUNDING, RoundingRule)
     assert isinstance(rule(RoundingMode.HALF_UP), RoundingRule)
-    assert NoRounding() == NO_ROUNDING
+
+
+def test_no_rounding_is_only_exposed_as_the_constant() -> None:
+    assert not hasattr(rounding_module, "NoRounding")
+
+
+@pytest.mark.parametrize("copier", [copy.copy, copy.deepcopy])
+def test_copies_of_no_rounding_still_equal_the_constant(copier: object) -> None:
+    # Copying or serialising creates a new instance; value equality keeps it the same rule.
+    duplicate = copier(NO_ROUNDING)  # type: ignore[operator]
+
+    assert duplicate == NO_ROUNDING
+    assert hash(duplicate) == hash(NO_ROUNDING)
+
+
+@pytest.mark.parametrize("rounding", [NO_ROUNDING, RoundTo(CENT, RoundingMode.HALF_UP)])
+@pytest.mark.parametrize("attribute", ["increment", "extra"])
+def test_rules_are_immutable(rounding: RoundingRule, attribute: str) -> None:
+    with pytest.raises(FrozenInstanceError):
+        setattr(rounding, attribute, 1)
 
 
 # --- modes ---------------------------------------------------------------------

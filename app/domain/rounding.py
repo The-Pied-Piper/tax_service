@@ -52,9 +52,13 @@ class RoundingRule(ABC):
             raise ValueError(f"amount must be finite, got {amount}")
 
 
-@dataclass(frozen=True, slots=True)
-class NoRounding(RoundingRule):
-    """The default rule: amounts stay exact."""
+@dataclass(frozen=True)
+class _NoRounding(RoundingRule):
+    """The default rule: amounts stay exact. Use `NO_ROUNDING`, never this class.
+
+    A dataclass for value equality: a copy of `NO_ROUNDING` (e.g. after
+    serialisation) is still equal to it.
+    """
 
     def apply(self, amount: Decimal) -> Decimal:
         self._check_amount(amount)
@@ -64,10 +68,10 @@ class NoRounding(RoundingRule):
         return "no rounding"
 
 
-NO_ROUNDING = NoRounding()
+NO_ROUNDING: RoundingRule = _NoRounding()
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class RoundTo(RoundingRule):
     """Round to a multiple of `increment` using `mode`.
 
