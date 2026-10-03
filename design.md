@@ -89,10 +89,12 @@ capability:
 
 Rounding is a parameter, never a jurisdiction constant in code.
 
-- One central rounding type (precision + mode) is the only way amounts
-  are rounded. **Default is no rounding**: exact decimal arithmetic,
-  never floats. An assumed default (e.g. half-up to the cent) would be
-  a silent prior, the same failure class as implicit carry-forward.
+- One central rounding type (increment + mode) is the only way amounts
+  are rounded. The increment is the step rounded to (e.g. 0.01, 1,
+  0.05), which covers decimal-place precision and more. **Default is no
+  rounding**: exact decimal arithmetic, never floats. An assumed default
+  (e.g. half-up to the cent) would be a silent prior, the same failure
+  class as implicit carry-forward.
 - A capability's rounding rule lives in its parameter dataset, resolved
   per (family, tax_year) like any other parameter. Rounding can
   therefore differ between capabilities in one jurisdiction and between

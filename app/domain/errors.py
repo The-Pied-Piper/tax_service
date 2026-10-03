@@ -24,5 +24,9 @@ class InvalidManifestError(DomainError):
     """A jurisdiction manifest is malformed or breaks a manifest rule (design.md §4)."""
 
 
+class InvalidRoundingRuleError(DomainError):
+    """A rounding rule's parameters are invalid (design.md §3, Rounding)."""
+
+
 class InvalidJurisdictionCodeError(ValidationError):
     """A jurisdiction code is not in ISO 3166 form (e.g. `CA` or `CA-ON`)."""
