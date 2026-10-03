@@ -9,6 +9,7 @@ from __future__ import annotations
 import copy
 from dataclasses import FrozenInstanceError
 from decimal import Decimal
+from fractions import Fraction
 
 import pytest
 
@@ -97,6 +98,45 @@ def test_rounds_to_a_cent_by_mode(mode: RoundingMode, amount: str, expected: str
 @pytest.mark.parametrize("mode", list(RoundingMode))
 def test_amount_already_on_the_increment_is_unchanged(mode: RoundingMode) -> None:
     assert rule(mode).apply(D("-42.17")) == D("-42.17")
+
+
+# --- mode resolution ------------------------------------------------------------
+
+F = Fraction
+
+
+@pytest.mark.parametrize(
+    ("mode", "value", "expected"),
+    [
+        (RoundingMode.HALF_UP, F(5, 2), 3),
+        (RoundingMode.HALF_UP, F(-5, 2), -3),
+        (RoundingMode.HALF_UP, F(12, 5), 2),
+        (RoundingMode.HALF_UP, F(13, 5), 3),
+        (RoundingMode.HALF_EVEN, F(5, 2), 2),
+        (RoundingMode.HALF_EVEN, F(7, 2), 4),
+        (RoundingMode.HALF_EVEN, F(-5, 2), -2),
+        (RoundingMode.HALF_EVEN, F(-7, 2), -4),
+        (RoundingMode.HALF_EVEN, F(13, 5), 3),
+        (RoundingMode.DOWN, F(29, 10), 2),
+        (RoundingMode.DOWN, F(-29, 10), -2),
+        (RoundingMode.UP, F(21, 10), 3),
+        (RoundingMode.UP, F(-21, 10), -3),
+        (RoundingMode.FLOOR, F(29, 10), 2),
+        (RoundingMode.FLOOR, F(-21, 10), -3),
+        (RoundingMode.CEILING, F(21, 10), 3),
+        (RoundingMode.CEILING, F(-29, 10), -2),
+    ],
+)
+def test_mode_resolves_a_fraction_to_an_integer(
+    mode: RoundingMode, value: Fraction, expected: int
+) -> None:
+    assert mode.to_integer(value) == expected
+
+
+@pytest.mark.parametrize("mode", list(RoundingMode))
+@pytest.mark.parametrize("value", [F(0), F(4), F(-4)])
+def test_mode_leaves_integers_unchanged(mode: RoundingMode, value: Fraction) -> None:
+    assert mode.to_integer(value) == value
 
 
 # --- increments ----------------------------------------------------------------

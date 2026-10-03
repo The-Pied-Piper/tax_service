@@ -36,6 +36,28 @@ class RoundingMode(Enum):
     FLOOR = "floor"  # toward negative infinity
     CEILING = "ceiling"  # toward positive infinity
 
+    def to_integer(self, value: Fraction) -> int:
+        """Resolve an exact value to a whole number according to this mode."""
+        lower, upper = math.floor(value), math.ceil(value)
+        if lower == upper:
+            return lower
+        toward_zero, away_from_zero = (lower, upper) if value > 0 else (upper, lower)
+        match self:
+            case RoundingMode.DOWN:
+                return toward_zero
+            case RoundingMode.UP:
+                return away_from_zero
+            case RoundingMode.FLOOR:
+                return lower
+            case RoundingMode.CEILING:
+                return upper
+        distance = value - lower
+        if distance != _HALF:
+            return lower if distance < _HALF else upper
+        if self is RoundingMode.HALF_UP:
+            return away_from_zero
+        return lower if lower % 2 == 0 else upper
+
 
 class RoundingRule(ABC):
     """How a capability rounds an amount. Capabilities depend on this type."""
@@ -93,30 +115,8 @@ class RoundTo(RoundingRule):
 
     def apply(self, amount: Decimal) -> Decimal:
         self._check_amount(amount)
-        steps = _round_to_integer(Fraction(amount) / Fraction(self.increment), self.mode)
+        steps = self.mode.to_integer(Fraction(amount) / Fraction(self.increment))
         return steps * self.increment
 
     def __str__(self) -> str:
         return f"{self.mode.value.replace('_', '-')} to {self.increment}"
-
-
-def _round_to_integer(value: Fraction, mode: RoundingMode) -> int:
-    lower, upper = math.floor(value), math.ceil(value)
-    if lower == upper:
-        return lower
-    toward_zero, away_from_zero = (lower, upper) if value > 0 else (upper, lower)
-    match mode:
-        case RoundingMode.DOWN:
-            return toward_zero
-        case RoundingMode.UP:
-            return away_from_zero
-        case RoundingMode.FLOOR:
-            return lower
-        case RoundingMode.CEILING:
-            return upper
-    distance = value - lower
-    if distance != _HALF:
-        return lower if distance < _HALF else upper
-    if mode is RoundingMode.HALF_UP:
-        return away_from_zero
-    return lower if lower % 2 == 0 else upper
