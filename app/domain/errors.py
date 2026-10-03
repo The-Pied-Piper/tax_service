@@ -18,3 +18,7 @@ class ConflictError(DomainError):
 
 class ValidationError(DomainError):
     pass
+
+
+class InvalidManifestError(DomainError):
+    """A jurisdiction manifest is malformed or breaks a manifest rule (design.md §4)."""
