@@ -17,8 +17,13 @@ import yaml
 from yaml.constructor import ConstructorError
 from yaml.nodes import MappingNode
 
-from app.domain.errors import InvalidManifestError, NotFoundError
+from app.domain.errors import (
+    InvalidJurisdictionCodeError,
+    InvalidManifestError,
+    NotFoundError,
+)
 from app.domain.jurisdiction import Jurisdiction
+from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Manifest
 
 _MANIFEST_KEYS = frozenset({"jurisdiction", "version", "valid_from_tax_year", "capabilities"})
@@ -42,10 +47,10 @@ class YamlJurisdictionSource:
     def __init__(self, directory: Path) -> None:
         self._directory = directory
 
-    def get_jurisdiction(self, code: str) -> Jurisdiction:
+    def get_jurisdiction(self, code: JurisdictionCode) -> Jurisdiction:
         manifests = tuple(m for m in self.load_all() if m.jurisdiction == code)
         if not manifests:
-            raise NotFoundError(f"no manifests for jurisdiction {code!r} in {self._directory}")
+            raise NotFoundError(f"no manifests for jurisdiction {code} in {self._directory}")
         return Jurisdiction(code=code, manifests=manifests)
 
     def load_all(self) -> list[Manifest]:
@@ -72,7 +77,7 @@ def _to_manifest(document: object) -> Manifest:
     if not isinstance(entries, list):
         raise InvalidManifestError("capabilities must be a list")
     return Manifest(
-        jurisdiction=_str(doc["jurisdiction"], "jurisdiction"),
+        jurisdiction=_code(doc["jurisdiction"], "jurisdiction"),
         version=_int(doc["version"], "version"),
         valid_from_tax_year=_int(doc["valid_from_tax_year"], "valid_from_tax_year"),
         capabilities=tuple(
@@ -105,6 +110,13 @@ def _str(value: object, where: str) -> str:
     if not isinstance(value, str):
         raise InvalidManifestError(f"{where} must be a string, got {type(value).__name__}")
     return value
+
+
+def _code(value: object, where: str) -> JurisdictionCode:
+    try:
+        return JurisdictionCode(_str(value, where))
+    except InvalidJurisdictionCodeError as exc:
+        raise InvalidManifestError(f"{where}: {exc}") from exc
 
 
 def _int(value: object, where: str) -> int:
