@@ -1,101 +1,113 @@
 # tax_service
 
-Widget Service — spec-first, hexagonal architecture, Connexion 3 (ASGI). Created from
-[service-template](https://github.com/The-Pied-Piper/service-template); the generator lives
-in `tools/service_gen/` and is driven by `openapi/openapi.yml`.
+A tax computation service for Canadian personal income tax, starting with Ontario. The
+engine composes tested, typed capabilities according to a per-jurisdiction manifest,
+with rates and thresholds held as versioned data. Every result can be reproduced and
+explained line by line.
 
-## Run
+**Status:** early development. The engine design is in [`design.md`](design.md). It is
+still a draft, and its open items (§9) are blocking and owned by people, not agents. The
+HTTP API is not designed yet. `openapi/openapi.yml` still holds the template's example
+Widgets endpoints, which will be replaced.
 
-Everything runs in Docker via `./dev.sh`; no local Python needed.
+## Conventions
+
+These apply to everyone working on the repo, people and coding agents alike.
+
+- **Design source.** `design.md` is the reference for the tax engine.
+- **Test-driven development.** Write a failing unit test first, run it and watch it
+  fail, then write the code that makes it pass.
+- **Unit tests are required** for all code. The only deferred tests are the pinned CRA
+  reference returns (`design.md` §7.1). They wait for hand-pinned return data, and
+  agents never write or modify them.
+- **The tax engine lives in `app/domain/`.** Its behavior belongs on the domain objects
+  themselves. Application services stay thin: they load data and hand it to the domain.
+- **Adapter direction means who starts the call**, not which way data flows.
+  `adapters/inbound/` holds driving adapters, which call the application.
+  `adapters/outbound/` holds driven adapters, which the application calls, including
+  ones that only read data.
+
+## Architecture
+
+The service is hexagonal and spec-first, built on Connexion 3 (ASGI). A request flows
+`Connexion -> generated handler -> inbound adapter -> port -> service -> domain`.
+
+```
+openapi/openapi.yml       the HTTP contract; edit this first
+app/
+  main.py                 composition root: the only place that wires concrete classes
+  settings.py             configuration from APP_* environment variables
+  domain/                 the tax engine: entities, value objects, errors
+  application/
+    ports/                Protocols the adapters call or implement
+    services/             thin orchestration over the domain
+  adapters/
+    inbound/              HTTP request adapters: DTO -> domain -> DTO
+    outbound/             driven adapters: database, files
+  generated/              written by the generator from the spec; never edit
+migrations/               Alembic (async)
+tests/
+design.md                 tax engine design
+```
+
+Raise `DomainError` subclasses from `app/domain/errors.py` for business failures.
+`main.py` maps them to RFC 7807 problem responses.
+
+## Development
+
+Everything runs in Docker through `./dev.sh`, so no local Python is needed. The dev
+container in `.devcontainer/` uses the same compose setup.
 
 ```sh
-./dev.sh up            # app on http://localhost:8080/api/v1/ui + postgres on :5432
-./dev.sh docs          # open Swagger UI
-./dev.sh migrate       # apply Alembic migrations
+./dev.sh up            # app on http://localhost:8080/api/v1/ui, postgres on :5432
 ./dev.sh test          # pytest
-./dev.sh check         # what CI runs: generated-code drift, ruff + spec lint, mypy, pytest, migrations
-./dev.sh fresh         # wipe the database volume and start over
+./dev.sh check         # what CI runs: generated-code drift, lint, mypy, pytest, migrations
+./dev.sh fmt           # ruff format and autofix
 ./dev.sh shell         # bash inside the app container
 ./dev.sh psql          # psql into the dev database
-./dev.sh help          # everything else
+./dev.sh fresh         # wipe the database volume and start over
+./dev.sh help          # every command
 ```
 
-`./dev.sh up` hot-reloads on source changes (the repo is bind-mounted into the
-container). Dependencies are plain `pip` from `requirements.txt` (runtime) and
-`requirements-dev.txt` (tooling); after changing them run `./dev.sh build`.
+`./dev.sh up` hot-reloads on source changes. Runtime dependencies are in
+`requirements.txt` and tooling in `requirements-dev.txt`; run `./dev.sh build` after
+changing either. Settings come from the environment with the `APP_` prefix. Copy
+`.env.example` to `.env` to change host ports or the log level.
 
-Settings are read from the environment with the `APP_` prefix (see
-`app/settings.py`); `compose.yaml` sets `APP_DATABASE_URL` for the dev database.
-Copy `.env.example` to `.env` to change host ports or the log level.
+### Endpoints
 
-## Layout
+1. Edit `openapi/openapi.yml`. Every operation needs an `operationId` and a tag.
+2. Run `./dev.sh sync`. It regenerates `app/generated/` and creates stubs for new tags
+   and operations, without touching files that already exist.
+3. For a new tag, add its adapter to `build_adapters()` in `app/main.py`.
+4. Implement the service method. Unimplemented ones answer HTTP 501.
 
-```
-openapi/openapi.yml            the contract; edit this first
-app/
-  main.py                      composition root: wires engine -> services -> adapters -> app
-  settings.py
-  generated/                   OWNED BY service-gen, never edit
-    models.py                  Pydantic DTOs for every schema
-    handlers/                  one class per tag; validate -> adapter -> serialise
-  adapters/
-    inbound/<tag>_adapter.py   DTO -> domain object -> port; domain result -> DTO
-    outbound/db/               async SQLAlchemy engine, `Base`, ORM models, repositories, DatabaseProbe
-  application/
-    ports/<tag>_port.py        Protocol the inbound adapter calls
-    ports/health.py            ReadinessProbe protocol + NotReadyError (-> 503)
-    services/<tag>_service.py  business logic (implements the port)
-  domain/                      entities, value objects, errors
-migrations/                    Alembic (async); versions/ is autogenerated
-tests/
-requirements.txt               runtime deps; requirements-dev.txt adds test/lint tooling
-Dockerfile                     `dev` target (tools, bind mount) and `prod` target (slim)
-compose.yaml                   app + postgres:16
-dev.sh, scripts/               dev.sh dispatches to scripts/<command>.sh
-tools/service_gen/             the code generator (template-owned; see Upgrading)
-.github/workflows/ci.yml       GitHub Actions: ./dev.sh check + prod image build (template-owned)
-```
+### Persistence
 
-Request flow: `Connexion -> generated handler -> request adapter -> port -> service -> domain`.
+1. Add an ORM model subclassing `Base` under `app/adapters/outbound/db/` and import it
+   in that package's `__init__.py` so Alembic sees it.
+2. Run `./dev.sh revision "describe the change"`, then `./dev.sh migrate`.
+3. Write a repository that takes the session factory, put an outbound port in front of
+   it, and pass it to the service in `build_adapters()`.
 
-## Adding or changing an endpoint
+### Health checks
 
-1. Edit `openapi/openapi.yml` (every operation needs an `operationId` and a tag).
-2. `./dev.sh sync` — regenerates `app/generated/`, creates stubs for new
-   tags/operations, and never touches files you already own.
-3. If a new tag appeared, add its adapter to `build_adapters()` in `app/main.py`.
-4. Implement the service method (unimplemented ones return HTTP 501).
+`/status/livez` always answers ok. `/status/readyz` runs every `ReadinessProbe` passed
+in `build_adapters()` and answers 503 on the first failure. The database probe is wired
+by default. Add one probe per external dependency.
 
-## Persistence
+## Service template
 
-1. Add an ORM model subclassing `Base` under `app/adapters/outbound/db/` and
-   import it in `db/__init__.py` so Alembic sees it.
-2. `./dev.sh revision "add widgets table"` then `./dev.sh migrate`.
-3. Write a repository that takes the session factory, expose it via an outbound
-   port (`application/ports/`), and hand it to the service in `build_adapters()`.
-
-Raise `DomainError` subclasses from `app/domain/errors.py` for business
-failures; `main.py` maps them to RFC 7807 problem responses.
-
-## Health checks
-
-A tag whose operations are all named like liveness/readiness probes (`livez`,
-`healthz`, `readyz`, `ready`, ... with or without a `get` prefix) gets a working
-service instead of 501 stubs: liveness always returns `{"status": "ok"}`;
-readiness runs every `ReadinessProbe` from `build_adapters()` in `main.py` and
-answers 503 on the first failure. `DatabaseProbe` (`SELECT 1`) is wired by
-default; add a probe per external dependency.
-
-## Upgrading the template
-
-`scripts/`, `tools/service_gen/`, `dev.sh` and `.github/workflows/ci.yml` are owned
-by the template. To pull a newer version (see `TEMPLATE_VERSION` for the current one):
+This repo was created from
+[service-template](https://github.com/The-Pied-Piper/service-template). The template
+owns `dev.sh`, `scripts/`, `tools/service_gen/` and `.github/workflows/ci.yml`. Don't
+edit those here; change them in the template and pull the update:
 
 ```sh
 ./dev.sh upgrade            # latest main
 ./dev.sh upgrade v0.2.0     # a tag or branch
 ```
 
-This replaces those paths, records the version, and runs `sync`. Review the
-resulting diff as one PR; the release notes list any manual edits required in
-files you own.
+The upgrade replaces those paths, records the version in `TEMPLATE_VERSION` and runs
+`sync`. Review the result as one pull request. Everything else, this README included,
+belongs to this project.
