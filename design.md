@@ -1,8 +1,13 @@
 # Tax Engine — Capability Composition Design
 
 Status: DRAFT — architecture settled; tax-law claims in §2/§6 are UNVERIFIED
-assertions and must be validated against CRA sources before implementation
-hardens around them (see §9).
+assertions and must be validated against the jurisdiction's official sources
+before implementation hardens around them.
+
+Examples come from the pilot jurisdiction, Canada / Ontario (§7). They
+illustrate the design; they are not the engine's vocabulary. Generic code,
+names and tests must not reuse them (e.g. `net_income`, `rrsp_deduction`)
+unless the jurisdiction's own law does.
 
 ---
 
@@ -29,8 +34,8 @@ dependencies. Two kinds:
 Named intermediates with an external referent. Every artifact needs an
 external justification — a line in the law/worksheet it mirrors, or a
 specific consumer contract it satisfies — and "it made the design cleaner"
-is neither. Canadian personal-tax spine (UNVERIFIED — confirm line
-semantics against T1):
+is neither. Example, from the Canadian pilot (UNVERIFIED — confirm line
+semantics against the T1 return):
 
 - `total_income`
 - `net_income`            (T1 line 23600 — feeds clawbacks, credit phase-outs)
@@ -53,7 +58,9 @@ Key facts driving this (UNVERIFIED, verify all):
 ### Fold contributions
 Commutative deltas accumulating into a spine artifact (RRSP, union dues,
 child care → `net_income`). Sibling contributions are unordered **and must
-not matter** — enforced by permutation tests (§7).
+not matter**. Enforced by permutation tests: run sibling contributions in
+every order and require identical output. This catches a capability
+declared as a fold contribution whose result actually depends on order.
 
 ## 3. Capability contract
 
@@ -77,6 +84,24 @@ capability:
 - Reuse across jurisdictions = a capability keyed to an artifact is
   indifferent to that artifact's provenance (brackets consume
   `taxable_income` whether 12 contributions built it or 2).
+
+### Rounding
+
+Rounding is a parameter, never a jurisdiction constant in code.
+
+- One central rounding type (precision + mode) is the only way amounts
+  are rounded. **Default is no rounding**: exact decimal arithmetic,
+  never floats. An assumed default (e.g. half-up to the cent) would be
+  a silent prior, the same failure class as implicit carry-forward.
+- A capability's rounding rule lives in its parameter dataset, resolved
+  per (family, tax_year) like any other parameter. Rounding can
+  therefore differ between capabilities in one jurisdiction and between
+  tax years, and the provenance fingerprint (§6) covers it.
+- Each capability defines *where* it rounds (e.g. per bracket slice vs.
+  once at the end); the parameter defines *how*. Given a rule, the
+  capability must apply it; given none, it does not round.
+- No global rounding step. Rounded values appear as rounded in the
+  trace.
 
 ## 4. Manifest (per jurisdiction)
 
@@ -190,47 +215,26 @@ is never trusted.
   investigation. (Retroactivity requirement — accounting-firm audit
   question.)
 - Trace: each capability emits a labeled breakdown; orchestrator
-  concatenates in execution order. Target readability: CRA worksheet,
-  line-by-line, each line attributable to one capability + parameter set.
+  concatenates in execution order. Target readability: the tax
+  authority's own worksheet (e.g. CRA's), line-by-line, each line
+  attributable to one capability + parameter set.
   **This trace is the AI-interface safety property: engine computes and
   explains; AI only narrates. Non-negotiable.**
 
-## 7. Testing gates
+## 7. Scope (first milestone)
 
-1. **CRA pinned reference returns — the gate for all agent-generated code.**
-   Hand-pinned by a human from CRA/Ontario published worked examples
-   (agents implement against tests they cannot author or modify —
-   otherwise the generate-and-grade loop closes).
-   Minimum set (5): must include one case tripping both Ontario surtax
-   tiers + BPA phase-out (top bracket); one with RRSP + child-care
-   deductions; one with capital gains; one self-employed; one pension/age
-   credits. To-the-cent assertions.
-2. **Fold permutation tests**: permute sibling contribution order; output
-   must be identical. Catches mislabeled folds (non-commutative capability
-   declared as contribution).
-3. Rounding convention: reconcile per-bracket vs. end-quantization against
-   CRA's actual method; align `invariants.md` §5 with the calculator
-   (currently inconsistent: calculator rounds per slice, doc says defer).
+Generality earns its existence on repetition, not anticipation. The rule
+of three is a guideline, not a rule: by default, generalize once a third
+case needs the same thing. Generalize earlier when reuse is clearly
+foreseeable, e.g. a mechanism Canadian provinces share with each other or
+with the federal level.
 
-## 8. Scope constraints (first milestone)
-
-Rule of three — generality earns existence on repetition, not anticipation:
-- Artifact catalog: **Canadian spine only**, authored by a human (agents
-  will coin US-shaped names — `agi`, `standard_deduction` — same prior-
-  leakage vector as the original US-shaping incident).
-- Capabilities: only those needed for the 5 pinned returns.
-- One manifest: CA-ON, `valid_from_tax_year: 2025`; one parameter dataset
-  per family for tax year 2025.
-- No multi-jurisdiction tooling, no manifest editors, no speculative
-  primitives until a second jurisdiction demands them.
-
-Milestone definition of done: **all 5 pinned CRA returns reproduce to the
-cent through the loader-resolved graph.** Not "compiles," not "green on
-self-authored tests."
-
-## 9. Open items (blocking, human-owned)
-
-- [ ] Verify every UNVERIFIED claim in §2/§6 against CRA/T1/Ontario sources.
-- [ ] Locate + transcribe the 5 reference returns (hand-pinned values).
-- [ ] Decide rounding convention against CRA worksheet arithmetic (§7.3).
-- [ ] Author artifact catalog (spine names + statutory referents).
+- **One jurisdiction:** the CA-ON manifest with `valid_from_tax_year: 2025`,
+  and one parameter dataset per family for tax year 2025.
+- **Artifact catalog for that jurisdiction only.** Every name must map to
+  that jurisdiction's own law or return (§2). Names borrowed from other
+  tax systems (e.g. US `agi`, `standard_deduction`) bring foreign
+  structure into the engine.
+- **Capabilities:** only those the CA-ON 2025 computation needs.
+- **No multi-jurisdiction tooling,** no manifest editors and no speculative
+  primitives without repetition or clearly foreseeable reuse.

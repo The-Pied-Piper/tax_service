@@ -1,13 +1,12 @@
 # tax_service
 
-A tax computation service for Canadian personal income tax, starting with Ontario. The
-engine composes tested, typed capabilities according to a per-jurisdiction manifest,
-with rates and thresholds held as versioned data. Every result can be reproduced and
-explained line by line.
+A jurisdiction-agnostic personal income tax computation service. Canada is the pilot,
+with Ontario as the first jurisdiction. The engine composes tested, typed capabilities
+according to a per-jurisdiction manifest, with rates and thresholds held as versioned
+data. Every result can be reproduced and explained line by line.
 
-**Status:** early development. The engine design is in [`design.md`](design.md). It is
-still a draft, and its open items (§9) are blocking and owned by people, not agents. The
-HTTP API is not designed yet. `openapi/openapi.yml` still holds the template's example
+**Status:** early development. The engine design is in [`design.md`](design.md) and is
+still a draft. The HTTP API is not designed yet. `openapi/openapi.yml` still holds the template's example
 Widgets endpoints, which will be replaced.
 
 ## Conventions
@@ -17,9 +16,7 @@ These apply to everyone working on the repo, people and coding agents alike.
 - **Design source.** `design.md` is the reference for the tax engine.
 - **Test-driven development.** Write a failing unit test first, run it and watch it
   fail, then write the code that makes it pass.
-- **Unit tests are required** for all code. The only deferred tests are the pinned CRA
-  reference returns (`design.md` §7.1). They wait for hand-pinned return data, and
-  agents never write or modify them.
+- **Unit tests are required** for all code.
 - **The tax engine lives in `app/domain/`.** Its behavior belongs on the domain objects
   themselves. Application services stay thin: they load data and hand it to the domain.
 - **Adapter direction means who starts the call**, not which way data flows.
