@@ -44,29 +44,45 @@ class YamlNode:
     """
 
     def __init__(self, value: object, where: str, *, is_root: bool = False) -> None:
+        """Wrap `value`, found at location `where` in its document.
+
+        Normally created by `load`, `root`, `field` or `items` rather than directly.
+        """
         self._value = value
         self._where = where
         self._is_root = is_root
 
     @classmethod
     def root(cls, value: object, label: str) -> YamlNode:
+        """Wrap an already-parsed document as its root node, named `label` in errors.
+
+        Fields of the root are named on their own ("version"), not "label.version".
+        """
         return cls(value, label, is_root=True)
 
     @classmethod
     def load(cls, path: Path, label: str) -> YamlNode:
-        """Parse `path` strictly; raises OSError or yaml.YAMLError."""
+        """Read and parse the YAML file at `path` and return its root node, named `label`.
+
+        Duplicate keys are rejected; raises OSError or yaml.YAMLError on failure.
+        """
         return cls.root(yaml.load(path.read_text(encoding="utf-8"), Loader=_StrictLoader), label)
 
     @property
     def value(self) -> object:
+        """The raw parsed value, unchecked: a dict, list, str, int, bool, None, etc."""
         return self._value
 
     @property
     def where(self) -> str:
+        """This node's location in the document, e.g. "brackets[0].rate", for error messages."""
         return self._where
 
     def require_mapping(self, keys: frozenset[str]) -> YamlNode:
-        """This node, checked to be a mapping with exactly `keys`."""
+        """Check this node is a mapping whose keys are exactly `keys`, and return it.
+
+        Raises YamlShapeError naming any unknown or missing keys.
+        """
         mapping = self._mapping()
         unknown = set(mapping) - keys
         if unknown:
@@ -77,6 +93,10 @@ class YamlNode:
         return self
 
     def field(self, key: str) -> YamlNode:
+        """The value under `key` in this mapping, as a node located at "where.key".
+
+        Raises YamlShapeError if this node is not a mapping or has no such key.
+        """
         mapping = self._mapping()
         if key not in mapping:
             raise YamlShapeError(f"{self._where}: missing key {key!r}")
@@ -84,23 +104,39 @@ class YamlNode:
         return YamlNode(mapping[key], where)
 
     def items(self) -> list[YamlNode]:
+        """The elements of this list, as nodes located at "where[0]", "where[1]", ...
+
+        Raises YamlShapeError if this node is not a list.
+        """
         if not isinstance(self._value, list):
             raise YamlShapeError(f"{self._where} must be a list")
         return [YamlNode(item, f"{self._where}[{i}]") for i, item in enumerate(self._value)]
 
     def require_string(self) -> str:
+        """This node's value, which must be a string.
+
+        Raises YamlShapeError otherwise, naming the type found.
+        """
         if not isinstance(self._value, str):
             raise YamlShapeError(f"{self._where} must be a string, got {self._type_name()}")
         return self._value
 
     def require_integer(self) -> int:
+        """This node's value, which must be an integer; booleans are rejected.
+
+        Raises YamlShapeError otherwise, naming the type found.
+        """
         # bool is an int subclass; `version: yes` must not become 1.
         if not isinstance(self._value, int) or isinstance(self._value, bool):
             raise YamlShapeError(f"{self._where} must be an integer, got {self._type_name()}")
         return self._value
 
     def parse_decimal(self) -> Decimal:
-        """A decimal written as a YAML string, so it never passes through float."""
+        """This node's value as an exact Decimal, parsed from a YAML string such as "0.145".
+
+        Numbers must be quoted so YAML never turns them into floats; non-strings,
+        malformed text, NaN and infinities raise YamlShapeError.
+        """
         text = self.require_string()
         try:
             result = Decimal(text)
