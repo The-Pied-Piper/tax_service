@@ -104,3 +104,8 @@ by the template. To pull a newer version (see `TEMPLATE_VERSION` for the current
 This replaces those paths, records the version, and runs `sync`. Review the
 resulting diff as one PR; the release notes list any manual edits required in
 files you own.
+
+The template is fetched from the address in `TEMPLATE_REPO` (written by
+`./dev.sh init`; set the `TEMPLATE_REPO` environment variable to override it).
+Without that file, it is the template at the same host and scheme as this
+repo's `origin`.

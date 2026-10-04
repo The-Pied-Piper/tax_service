@@ -29,3 +29,32 @@ run_nodb() {
 }
 # The generator, from the copy vendored in this repo.
 gen() { run_nodb python -m tools.service_gen.cli "$@"; }
+
+# The template this service was created from (scripts/init.sh records it, and
+# scripts/upgrade.sh fetches from it).
+TEMPLATE_PATH="The-Pied-Piper/service-template.git"
+
+# The template at the same host and scheme (SSH or HTTPS) as this repo's own
+# origin, so access that works for the service works for the template.
+template_repo_from_origin() {
+    local origin rest
+    origin="$(git remote get-url origin 2>/dev/null)" || origin=""
+    case "$origin" in
+        git@*:*) echo "${origin%%:*}:$TEMPLATE_PATH" ;;
+        ssh://*) rest="${origin#ssh://}"; echo "ssh://${rest%%/*}/$TEMPLATE_PATH" ;;
+        https://*) rest="${origin#https://}"; echo "https://${rest%%/*}/$TEMPLATE_PATH" ;;
+        *) echo "https://github.com/$TEMPLATE_PATH" ;;
+    esac
+}
+
+# Where to fetch the template: $TEMPLATE_REPO if set, else the address recorded
+# in the TEMPLATE_REPO file, else the origin-based address.
+template_repo() {
+    if [[ -n "${TEMPLATE_REPO:-}" ]]; then
+        echo "$TEMPLATE_REPO"
+    elif [[ -s TEMPLATE_REPO ]]; then
+        head -n 1 TEMPLATE_REPO
+    else
+        template_repo_from_origin
+    fi
+}
