@@ -14,7 +14,8 @@ import pytest
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.errors import DomainError, InvalidParameterDataError, NotFoundError
 from app.domain.parameters.brackets import Bracket, BracketSchedule
-from app.domain.parameters.datasets import BracketParameters
+from app.domain.parameters.credit import Credit
+from app.domain.parameters.datasets import BracketParameters, CreditParameters
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 
 D = Decimal
@@ -157,5 +158,69 @@ def test_rejects_malformed_dataset(tmp_path: Path, content: str, message: str) -
 
     with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
         YamlParameterSource(tmp_path).get_brackets("ex/brackets", 2025)
+
+    assert "2025.yaml" in str(excinfo.value)
+
+
+CREDIT_2025 = """\
+family: ex/personal_credit
+tax_year: 2025
+sources:
+  - https://example.org/credits-2025
+rounding: none
+amount: "1000"
+rate: "0.125"
+"""
+
+
+def test_parses_a_credit_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/personal_credit/2025.yaml", CREDIT_2025)
+
+    result = YamlParameterSource(tmp_path).get_credit("ex/personal_credit", 2025)
+
+    assert result == CreditParameters(
+        family="ex/personal_credit",
+        tax_year=2025,
+        credit=Credit(amount=D("1000"), rate=D("0.125")),
+        rounding=NO_ROUNDING,
+        sources=("https://example.org/credits-2025",),
+    )
+
+
+def test_absent_credit_year_is_not_found(tmp_path: Path) -> None:
+    with pytest.raises(NotFoundError, match="ex/personal_credit.*2025"):
+        YamlParameterSource(tmp_path).get_credit("ex/personal_credit", 2025)
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        pytest.param(
+            CREDIT_2025.replace('rate: "0.125"', 'rate: "1.5"'),
+            "rate must be between 0 and 1",
+            id="rate-out-of-range",
+        ),
+        pytest.param(
+            CREDIT_2025.replace('amount: "1000"', "amount: 1000"),
+            "amount must be a string, got int",
+            id="amount-as-yaml-number",
+        ),
+        pytest.param(
+            CREDIT_2025.replace('amount: "1000"\n', ""),
+            r"missing keys \['amount'\]",
+            id="amount-missing",
+        ),
+        pytest.param(
+            CREDIT_2025 + "brackets: []\n",
+            r"unknown keys \['brackets'\]",
+            id="bracket-key-in-credit",
+        ),
+    ],
+)
+def test_rejects_malformed_credit_dataset(tmp_path: Path, content: str, message: str) -> None:
+    write(tmp_path, "ex/personal_credit/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
+        YamlParameterSource(tmp_path).get_credit("ex/personal_credit", 2025)
 
     assert "2025.yaml" in str(excinfo.value)
