@@ -1,0 +1,15 @@
+# Ontario resident, personal income tax: federal and Ontario together.
+# Selection and parameter families only (design.md §4): the order is derived
+# from the capabilities' contracts in code, never from this list.
+jurisdiction: CA-ON
+version: 1
+valid_from_tax_year: 2025
+capabilities:
+  - name: progressive_tax
+    params_family: ca/brackets
+  - name: progressive_tax
+    params_family: ca-on/brackets
+  - name: non_refundable_credit
+    params_family: ca/basic_personal_amount
+  - name: non_refundable_credit
+    params_family: ca-on/basic_personal_amount
