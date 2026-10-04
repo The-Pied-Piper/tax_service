@@ -1,5 +1,7 @@
 """Strict YAML reading shared by the YAML adapters.
 
+`YamlNode` wraps a parsed value with its location in the document, so every
+check names exactly where it failed ("brackets[0].rate is not a decimal").
 Unknown, missing and duplicate keys and wrongly typed values are rejected,
 never coerced or ignored. Shape problems raise YamlShapeError; each adapter
 re-raises them as its own domain error with the file named.
@@ -34,49 +36,84 @@ class _StrictLoader(yaml.SafeLoader):
         return super().construct_mapping(node, deep=deep)
 
 
-def load(path: Path) -> object:
-    """Parse `path`; raises OSError or yaml.YAMLError."""
-    return yaml.load(path.read_text(encoding="utf-8"), Loader=_StrictLoader)
+class YamlNode:
+    """A parsed YAML value and where it sits in its document.
 
+    The root is labelled (e.g. "manifest") for its own errors; locations below
+    it start fresh, so a top-level field is "version", not "manifest.version".
+    """
 
-def mapping(value: object, where: str, keys: frozenset[str]) -> dict[str, object]:
-    if not isinstance(value, dict):
-        raise YamlShapeError(f"{where} must be a mapping")
-    unknown = set(value) - keys
-    if unknown:
-        raise YamlShapeError(f"{where}: unknown keys {sorted(map(str, unknown))}")
-    missing = keys - set(value)
-    if missing:
-        raise YamlShapeError(f"{where}: missing keys {sorted(missing)}")
-    return value
+    def __init__(self, value: object, where: str, *, is_root: bool = False) -> None:
+        self._value = value
+        self._where = where
+        self._is_root = is_root
 
+    @classmethod
+    def root(cls, value: object, label: str) -> YamlNode:
+        return cls(value, label, is_root=True)
 
-def string(value: object, where: str) -> str:
-    if not isinstance(value, str):
-        raise YamlShapeError(f"{where} must be a string, got {type(value).__name__}")
-    return value
+    @classmethod
+    def load(cls, path: Path, label: str) -> YamlNode:
+        """Parse `path` strictly; raises OSError or yaml.YAMLError."""
+        return cls.root(yaml.load(path.read_text(encoding="utf-8"), Loader=_StrictLoader), label)
 
+    @property
+    def value(self) -> object:
+        return self._value
 
-def integer(value: object, where: str) -> int:
-    # bool is an int subclass; `version: yes` must not become 1.
-    if not isinstance(value, int) or isinstance(value, bool):
-        raise YamlShapeError(f"{where} must be an integer, got {type(value).__name__}")
-    return value
+    @property
+    def where(self) -> str:
+        return self._where
 
+    def require_mapping(self, keys: frozenset[str]) -> YamlNode:
+        """This node, checked to be a mapping with exactly `keys`."""
+        mapping = self._mapping()
+        unknown = set(mapping) - keys
+        if unknown:
+            raise YamlShapeError(f"{self._where}: unknown keys {sorted(map(str, unknown))}")
+        missing = keys - set(mapping)
+        if missing:
+            raise YamlShapeError(f"{self._where}: missing keys {sorted(missing)}")
+        return self
 
-def decimal(value: object, where: str) -> Decimal:
-    """A decimal written as a YAML string, so YAML never turns it into a float."""
-    text = string(value, where)
-    try:
-        result = Decimal(text)
-    except InvalidOperation:
-        raise YamlShapeError(f"{where} is not a decimal: {text!r}") from None
-    if not result.is_finite():
-        raise YamlShapeError(f"{where} is not a decimal: {text!r}")
-    return result
+    def field(self, key: str) -> YamlNode:
+        mapping = self._mapping()
+        if key not in mapping:
+            raise YamlShapeError(f"{self._where}: missing key {key!r}")
+        where = key if self._is_root else f"{self._where}.{key}"
+        return YamlNode(mapping[key], where)
 
+    def items(self) -> list[YamlNode]:
+        if not isinstance(self._value, list):
+            raise YamlShapeError(f"{self._where} must be a list")
+        return [YamlNode(item, f"{self._where}[{i}]") for i, item in enumerate(self._value)]
 
-def sequence(value: object, where: str) -> list[object]:
-    if not isinstance(value, list):
-        raise YamlShapeError(f"{where} must be a list")
-    return value
+    def require_string(self) -> str:
+        if not isinstance(self._value, str):
+            raise YamlShapeError(f"{self._where} must be a string, got {self._type_name()}")
+        return self._value
+
+    def require_integer(self) -> int:
+        # bool is an int subclass; `version: yes` must not become 1.
+        if not isinstance(self._value, int) or isinstance(self._value, bool):
+            raise YamlShapeError(f"{self._where} must be an integer, got {self._type_name()}")
+        return self._value
+
+    def parse_decimal(self) -> Decimal:
+        """A decimal written as a YAML string, so it never passes through float."""
+        text = self.require_string()
+        try:
+            result = Decimal(text)
+        except InvalidOperation:
+            raise YamlShapeError(f"{self._where} is not a decimal: {text!r}") from None
+        if not result.is_finite():
+            raise YamlShapeError(f"{self._where} is not a decimal: {text!r}")
+        return result
+
+    def _mapping(self) -> dict[object, object]:
+        if not isinstance(self._value, dict):
+            raise YamlShapeError(f"{self._where} must be a mapping")
+        return self._value
+
+    def _type_name(self) -> str:
+        return type(self._value).__name__

@@ -13,8 +13,7 @@ from pathlib import Path
 
 import yaml
 
-from app.adapters.outbound import yaml_support as y
-from app.adapters.outbound.yaml_support import YamlShapeError
+from app.adapters.outbound.yaml_support import YamlNode, YamlShapeError
 from app.domain.errors import (
     InvalidJurisdictionCodeError,
     InvalidManifestError,
@@ -44,41 +43,40 @@ class YamlJurisdictionSource:
         paths = sorted(p for pattern in ("*.yaml", "*.yml") for p in self._directory.rglob(pattern))
         return [self.load(path) for path in paths]
 
-    @staticmethod
-    def load(path: Path) -> Manifest:
+    @classmethod
+    def load(cls, path: Path) -> Manifest:
         try:
-            document = y.load(path)
+            document = YamlNode.load(path, "manifest")
         except (OSError, yaml.YAMLError) as exc:
             raise InvalidManifestError(f"{path}: {exc}") from exc
         try:
-            return _to_manifest(document)
+            return cls._manifest(document)
         except (InvalidManifestError, YamlShapeError) as exc:
             raise InvalidManifestError(f"{path}: {exc}") from exc
 
+    @classmethod
+    def _manifest(cls, document: YamlNode) -> Manifest:
+        doc = document.require_mapping(_MANIFEST_KEYS)
+        return Manifest(
+            jurisdiction=cls._code(doc.field("jurisdiction")),
+            version=doc.field("version").require_integer(),
+            valid_from_tax_year=doc.field("valid_from_tax_year").require_integer(),
+            capabilities=tuple(
+                cls._selection(entry) for entry in doc.field("capabilities").items()
+            ),
+        )
 
-def _to_manifest(document: object) -> Manifest:
-    doc = y.mapping(document, "manifest", _MANIFEST_KEYS)
-    entries = y.sequence(doc["capabilities"], "capabilities")
-    return Manifest(
-        jurisdiction=_code(doc["jurisdiction"], "jurisdiction"),
-        version=y.integer(doc["version"], "version"),
-        valid_from_tax_year=y.integer(doc["valid_from_tax_year"], "valid_from_tax_year"),
-        capabilities=tuple(
-            _to_selection(entry, f"capabilities[{i}]") for i, entry in enumerate(entries)
-        ),
-    )
+    @staticmethod
+    def _selection(entry: YamlNode) -> CapabilitySelection:
+        fields = entry.require_mapping(_CAPABILITY_KEYS)
+        return CapabilitySelection(
+            name=fields.field("name").require_string(),
+            params_family=fields.field("params_family").require_string(),
+        )
 
-
-def _to_selection(entry: object, where: str) -> CapabilitySelection:
-    fields = y.mapping(entry, where, _CAPABILITY_KEYS)
-    return CapabilitySelection(
-        name=y.string(fields["name"], f"{where}.name"),
-        params_family=y.string(fields["params_family"], f"{where}.params_family"),
-    )
-
-
-def _code(value: object, where: str) -> JurisdictionCode:
-    try:
-        return JurisdictionCode(y.string(value, where))
-    except InvalidJurisdictionCodeError as exc:
-        raise InvalidManifestError(f"{where}: {exc}") from exc
+    @staticmethod
+    def _code(node: YamlNode) -> JurisdictionCode:
+        try:
+            return JurisdictionCode(node.require_string())
+        except InvalidJurisdictionCodeError as exc:
+            raise InvalidManifestError(f"{node.where}: {exc}") from exc
