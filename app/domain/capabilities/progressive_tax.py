@@ -11,9 +11,9 @@ from collections.abc import Mapping
 from decimal import Decimal
 
 from app.domain.artifact import Artifact
-from app.domain.brackets import BracketSchedule
 from app.domain.capability import Capability, CapabilityResult, TraceLine
-from app.domain.rounding import RoundingRule
+from app.domain.parameters.brackets import BracketSchedule
+from app.domain.parameters.rounding import RoundingRule
 
 
 class ProgressiveTax(Capability):

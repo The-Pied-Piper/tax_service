@@ -15,7 +15,7 @@ import pytest
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.artifact import Artifact
 from app.domain.capabilities.progressive_tax import ProgressiveTax
-from app.domain.rounding import NO_ROUNDING, RoundingMode, RoundTo
+from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 
 D = Decimal
 PARAMETERS = Path(__file__).resolve().parents[3] / "data" / "parameters"

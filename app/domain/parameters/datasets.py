@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from app.domain.brackets import BracketSchedule
-from app.domain.rounding import RoundingRule
+from app.domain.parameters.brackets import BracketSchedule
+from app.domain.parameters.rounding import RoundingRule
 
 
 @dataclass(frozen=True)

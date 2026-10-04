@@ -15,10 +15,10 @@ import yaml
 
 from app.adapters.outbound import yaml_support as y
 from app.adapters.outbound.yaml_support import YamlShapeError
-from app.domain.brackets import Bracket, BracketSchedule
 from app.domain.errors import DomainError, InvalidParameterDataError, NotFoundError
-from app.domain.parameters import BracketParameters
-from app.domain.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
+from app.domain.parameters.brackets import Bracket, BracketSchedule
+from app.domain.parameters.datasets import BracketParameters
+from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 
 _FAMILY = re.compile(r"[a-z0-9]+([_-][a-z0-9]+)*(/[a-z0-9]+([_-][a-z0-9]+)*)+")
 _ENVELOPE_KEYS = frozenset({"family", "tax_year", "sources", "rounding"})

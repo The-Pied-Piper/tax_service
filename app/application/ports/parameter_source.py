@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from app.domain.parameters import BracketParameters
+from app.domain.parameters.datasets import BracketParameters
 
 
 class ParameterSource(Protocol):

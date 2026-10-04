@@ -9,8 +9,8 @@ from decimal import Decimal
 
 import pytest
 
-from app.domain.brackets import Bracket, BracketSchedule, BracketSlice
 from app.domain.errors import DomainError, InvalidBracketScheduleError
+from app.domain.parameters.brackets import Bracket, BracketSchedule, BracketSlice
 
 D = Decimal
 

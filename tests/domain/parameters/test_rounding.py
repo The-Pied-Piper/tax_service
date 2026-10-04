@@ -13,9 +13,9 @@ from fractions import Fraction
 
 import pytest
 
-from app.domain import rounding as rounding_module
 from app.domain.errors import DomainError, InvalidRoundingRuleError
-from app.domain.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
+from app.domain.parameters import rounding as rounding_module
+from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 
 D = Decimal
 CENT = D("0.01")

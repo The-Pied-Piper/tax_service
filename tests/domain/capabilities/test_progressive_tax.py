@@ -7,10 +7,10 @@ from decimal import Decimal
 import pytest
 
 from app.domain.artifact import Artifact
-from app.domain.brackets import Bracket, BracketSchedule
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capability import TraceLine
-from app.domain.rounding import NO_ROUNDING, RoundingMode, RoundTo
+from app.domain.parameters.brackets import Bracket, BracketSchedule
+from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 
 D = Decimal
 BASE, TAX = Artifact("taxable_base"), Artifact("basic_tax")
