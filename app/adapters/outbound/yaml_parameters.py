@@ -1,67 +1,78 @@
 """Reads parameter datasets from YAML files. Implements ParameterSource.
 
 A dataset for family `ca-on/brackets` and tax year 2025 lives at
-`<directory>/ca-on/brackets/2025.yaml` and must declare the same family and
-year inside. An absent file is NotFoundError: a year is never carried forward.
-Decimals are written as YAML strings ("0.145") so they never pass through float.
+`<directory>/ca-on/brackets/2025.yaml`. Every file has the same envelope
+(family, tax_year, kind, sources, rounding) plus keys specific to its kind,
+which that kind's parser reads. The file must declare the family, year and kind
+that were asked for. An absent file is NotFoundError: a year is never carried
+forward. Decimals are YAML strings ("0.145") so they never pass through float.
 """
 
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 import yaml
 
+from app.adapters.outbound.parameter_parsers import DEFAULT_PARSERS, ParameterParser
 from app.adapters.outbound.yaml_support import YamlNode, YamlShapeError
 from app.domain.errors import DomainError, InvalidParameterDataError, NotFoundError
-from app.domain.parameters.brackets import Bracket, BracketSchedule
-from app.domain.parameters.credit import Credit
-from app.domain.parameters.datasets import BracketParameters, CreditParameters
+from app.domain.parameters.datasets import ParameterDataset
+from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 
 _FAMILY = re.compile(r"[a-z0-9]+([_-][a-z0-9]+)*(/[a-z0-9]+([_-][a-z0-9]+)*)+")
-_ENVELOPE_KEYS = frozenset({"family", "tax_year", "sources", "rounding"})
-_BRACKET_KEYS = frozenset({"from", "rate"})
+_ENVELOPE_KEYS = frozenset({"family", "tax_year", "kind", "sources", "rounding"})
 _ROUNDING_KEYS = frozenset({"increment", "mode"})
 
 
 class YamlParameterSource:
-    def __init__(self, directory: Path) -> None:
+    def __init__(
+        self, directory: Path, parsers: Sequence[ParameterParser[Any]] = DEFAULT_PARSERS
+    ) -> None:
         self._directory = directory
+        self._parsers: dict[str, ParameterParser[Any]] = {}
+        for parser in parsers:
+            if parser.kind.name in self._parsers:
+                raise ValueError(f"two parsers for parameter kind {parser.kind.name!r}")
+            self._parsers[parser.kind.name] = parser
 
-    def get_brackets(self, family: str, tax_year: int) -> BracketParameters:
-        path, doc = self._load(family, tax_year, frozenset({"brackets"}))
+    def get[T](self, family: str, tax_year: int, kind: ParameterKind[T]) -> ParameterDataset[T]:
+        """Read `<directory>/<family>/<tax_year>.yaml` and parse it with the parser for `kind`.
+
+        The file must declare the same family, year and kind; see ParameterSource.get for errors.
+        """
+        parser = self._parsers.get(kind.name)
+        if parser is None or parser.kind != kind:
+            raise LookupError(f"no parser for parameter kind {kind.name!r}")
+        path = self._path(family, tax_year)
         try:
-            return BracketParameters(
+            document = YamlNode.load(path, "dataset")
+            declared_kind = document.field("kind").require_string()
+        except (OSError, yaml.YAMLError, YamlShapeError) as exc:
+            raise InvalidParameterDataError(f"{path}: {exc}") from exc
+        if declared_kind != kind.name:
+            raise InvalidParameterDataError(
+                f"{path}: kind {declared_kind!r} does not match the requested {kind.name!r}"
+            )
+        try:
+            doc = document.require_mapping(_ENVELOPE_KEYS | parser.body_keys)
+            self._check_identity(doc, family, tax_year)
+            return ParameterDataset(
                 family=family,
                 tax_year=tax_year,
-                schedule=BracketSchedule(
-                    tuple(self._bracket(entry) for entry in doc.field("brackets").items())
-                ),
+                kind=kind,
+                values=parser.parse(doc),
                 rounding=self._rounding(doc.field("rounding")),
                 sources=self._sources(doc.field("sources")),
             )
         except (YamlShapeError, DomainError) as exc:
             raise InvalidParameterDataError(f"{path}: {exc}") from exc
 
-    def get_credit(self, family: str, tax_year: int) -> CreditParameters:
-        path, doc = self._load(family, tax_year, frozenset({"amount", "rate"}))
-        try:
-            return CreditParameters(
-                family=family,
-                tax_year=tax_year,
-                credit=Credit(
-                    amount=doc.field("amount").parse_decimal(),
-                    rate=doc.field("rate").parse_decimal(),
-                ),
-                rounding=self._rounding(doc.field("rounding")),
-                sources=self._sources(doc.field("sources")),
-            )
-        except (YamlShapeError, DomainError) as exc:
-            raise InvalidParameterDataError(f"{path}: {exc}") from exc
-
-    def _load(self, family: str, tax_year: int, body_keys: frozenset[str]) -> tuple[Path, YamlNode]:
+    def _path(self, family: str, tax_year: int) -> Path:
         if not _FAMILY.fullmatch(family):
             raise ValueError(f"invalid parameter family {family!r}: expected e.g. 'ca-on/brackets'")
         path = self._directory / family / f"{tax_year}.yaml"
@@ -70,29 +81,16 @@ class YamlParameterSource:
                 f"no {family} dataset for tax year {tax_year} (expected {path}); "
                 "an absent year is never carried forward"
             )
-        try:
-            doc = YamlNode.load(path, "dataset").require_mapping(_ENVELOPE_KEYS | body_keys)
-            declared_family = doc.field("family").require_string()
-            declared_year = doc.field("tax_year").require_integer()
-        except (OSError, yaml.YAMLError, YamlShapeError) as exc:
-            raise InvalidParameterDataError(f"{path}: {exc}") from exc
-        if declared_family != family:
-            raise InvalidParameterDataError(
-                f"{path}: family {declared_family!r} does not match {family!r}"
-            )
-        if declared_year != tax_year:
-            raise InvalidParameterDataError(
-                f"{path}: tax_year {declared_year} does not match {tax_year}"
-            )
-        return path, doc
+        return path
 
     @staticmethod
-    def _bracket(entry: YamlNode) -> Bracket:
-        fields = entry.require_mapping(_BRACKET_KEYS)
-        return Bracket(
-            lower=fields.field("from").parse_decimal(),
-            rate=fields.field("rate").parse_decimal(),
-        )
+    def _check_identity(doc: YamlNode, family: str, tax_year: int) -> None:
+        declared_family = doc.field("family").require_string()
+        if declared_family != family:
+            raise YamlShapeError(f"family {declared_family!r} does not match {family!r}")
+        declared_year = doc.field("tax_year").require_integer()
+        if declared_year != tax_year:
+            raise YamlShapeError(f"tax_year {declared_year} does not match {tax_year}")
 
     @staticmethod
     def _rounding(node: YamlNode) -> RoundingRule:

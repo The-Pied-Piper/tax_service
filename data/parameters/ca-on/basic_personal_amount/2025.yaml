@@ -5,6 +5,7 @@
 # CRA states no rounding rule for amount × rate, so none is assumed.
 family: ca-on/basic_personal_amount
 tax_year: 2025
+kind: credit
 sources:
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.pdf
   - https://www.canada.ca/en/revenue-agency/services/forms-publications/payroll/payroll-deductions-t4127-payroll-deductions-formulas/t4127-jul-121st-edition-effective-july-1-2025/t4127-jul-payroll-deductions-formulas.html

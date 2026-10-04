@@ -9,6 +9,7 @@ import pytest
 from app.domain.artifact import Artifact
 from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
 from app.domain.capability import TraceLine
+from app.domain.parameters.credit import CREDIT as CREDIT_KIND
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 
@@ -70,3 +71,7 @@ def test_rejects_negative_tax() -> None:
 def test_tax_and_output_must_differ() -> None:
     with pytest.raises(ValueError, match="must differ"):
         NonRefundableCredit(TAX, TAX, CREDIT, NO_ROUNDING)
+
+
+def test_declares_the_parameter_kind_it_needs() -> None:
+    assert NonRefundableCredit.PARAMETERS is CREDIT_KIND

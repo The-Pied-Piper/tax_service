@@ -12,14 +12,18 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from decimal import Decimal
+from typing import ClassVar
 
 from app.domain.artifact import Artifact
 from app.domain.capability import Capability, CapabilityResult, TraceLine
-from app.domain.parameters.credit import Credit
+from app.domain.parameters.credit import CREDIT, Credit
+from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import RoundingRule
 
 
 class NonRefundableCredit(Capability):
+    PARAMETERS: ClassVar[ParameterKind[Credit]] = CREDIT
+
     def __init__(
         self, tax: Artifact, output: Artifact, credit: Credit, rounding: RoundingRule
     ) -> None:

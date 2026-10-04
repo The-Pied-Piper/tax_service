@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from app.domain.errors import InvalidBracketScheduleError
+from app.domain.parameters.kind import ParameterKind
 
 
 @dataclass(frozen=True)
@@ -90,3 +91,6 @@ class BracketSchedule:
     def tax_on(self, amount: Decimal) -> Decimal:
         """Exact tax on `amount`: each slice taxed at its bracket's rate."""
         return sum((s.tax for s in self.slices(amount)), Decimal(0))
+
+
+BRACKETS: ParameterKind[BracketSchedule] = ParameterKind("brackets", BracketSchedule)

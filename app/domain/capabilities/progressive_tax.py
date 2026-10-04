@@ -9,14 +9,18 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from decimal import Decimal
+from typing import ClassVar
 
 from app.domain.artifact import Artifact
 from app.domain.capability import Capability, CapabilityResult, TraceLine
-from app.domain.parameters.brackets import BracketSchedule
+from app.domain.parameters.brackets import BRACKETS, BracketSchedule
+from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import RoundingRule
 
 
 class ProgressiveTax(Capability):
+    PARAMETERS: ClassVar[ParameterKind[BracketSchedule]] = BRACKETS
+
     def __init__(
         self,
         base: Artifact,
