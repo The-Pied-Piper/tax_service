@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.domain.parameters.brackets import BracketSchedule
+from app.domain.parameters.credit import Credit
 from app.domain.parameters.rounding import RoundingRule
 
 
@@ -17,5 +18,14 @@ class BracketParameters:
     family: str
     tax_year: int
     schedule: BracketSchedule
+    rounding: RoundingRule
+    sources: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class CreditParameters:
+    family: str
+    tax_year: int
+    credit: Credit
     rounding: RoundingRule
     sources: tuple[str, ...]

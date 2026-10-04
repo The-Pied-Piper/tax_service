@@ -17,7 +17,8 @@ from app.adapters.outbound import yaml_support as y
 from app.adapters.outbound.yaml_support import YamlShapeError
 from app.domain.errors import DomainError, InvalidParameterDataError, NotFoundError
 from app.domain.parameters.brackets import Bracket, BracketSchedule
-from app.domain.parameters.datasets import BracketParameters
+from app.domain.parameters.credit import Credit
+from app.domain.parameters.datasets import BracketParameters, CreditParameters
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 
 _FAMILY = re.compile(r"[a-z0-9]+([_-][a-z0-9]+)*(/[a-z0-9]+([_-][a-z0-9]+)*)+")
@@ -41,6 +42,22 @@ class YamlParameterSource:
                 family=family,
                 tax_year=tax_year,
                 schedule=schedule,
+                rounding=self._rounding(doc["rounding"]),
+                sources=self._sources(doc["sources"]),
+            )
+        except (YamlShapeError, DomainError) as exc:
+            raise InvalidParameterDataError(f"{path}: {exc}") from exc
+
+    def get_credit(self, family: str, tax_year: int) -> CreditParameters:
+        path, doc = self._load(family, tax_year, frozenset({"amount", "rate"}))
+        try:
+            return CreditParameters(
+                family=family,
+                tax_year=tax_year,
+                credit=Credit(
+                    amount=y.decimal(doc["amount"], "amount"),
+                    rate=y.decimal(doc["rate"], "rate"),
+                ),
                 rounding=self._rounding(doc["rounding"]),
                 sources=self._sources(doc["sources"]),
             )

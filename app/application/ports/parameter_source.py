@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from app.domain.parameters.datasets import BracketParameters
+from app.domain.parameters.datasets import BracketParameters, CreditParameters
 
 
 class ParameterSource(Protocol):
@@ -14,4 +14,8 @@ class ParameterSource(Protocol):
         Raise NotFoundError if that year has no dataset (no carry-forward), and
         InvalidParameterDataError if the dataset cannot be read.
         """
+        ...
+
+    def get_credit(self, family: str, tax_year: int) -> CreditParameters:
+        """The credit dataset for `family` in `tax_year`; same errors as get_brackets."""
         ...

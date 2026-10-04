@@ -46,3 +46,7 @@ class InvalidBracketScheduleError(DomainError):
 
 class InvalidParameterDataError(DomainError):
     """A parameter dataset is malformed or does not match where it was found."""
+
+
+class InvalidCreditError(DomainError):
+    """A credit's amount or rate is invalid."""
