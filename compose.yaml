@@ -14,6 +14,8 @@ services:
         required: false
     environment:
       HOME: /tmp
+      # Tells ./dev.sh it is already inside the app container: run commands directly.
+      IN_APP_CONTAINER: "1"
       APP_LOG_LEVEL: ${APP_LOG_LEVEL:-DEBUG}
       APP_DATABASE_URL: postgresql+asyncpg://app:app@db:5432/app
     volumes:

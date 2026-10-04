@@ -27,8 +27,14 @@ done
 printf '%s %s %s\n' "$ref" "$sha" "$(date -u +%Y-%m-%d)" > TEMPLATE_VERSION
 echo ">> now at $(cat TEMPLATE_VERSION)"
 
-echo ">> rebuilding dev image and re-syncing generated code"
-compose build app
+if in_app_container; then
+    echo ">> inside the app container: skipping the image rebuild"
+    echo "   (run ./dev.sh build from the host if requirements changed)"
+else
+    echo ">> rebuilding dev image"
+    compose build app
+fi
+echo ">> re-syncing generated code"
 gen sync
 echo
 echo "Review with: git status && git diff"

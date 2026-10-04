@@ -20,6 +20,11 @@ Everything runs in Docker via `./dev.sh`; no local Python needed.
 ./dev.sh help          # everything else
 ```
 
+`./dev.sh` works from the host and from inside the app container (e.g. a VS Code
+dev container). Inside, `compose.yaml` sets `IN_APP_CONTAINER=1` and commands run
+directly; from the host they run in a one-off app container. Commands that manage
+containers (`up`, `down`, `build`, `logs`, `fresh`, `psql`, `init`) run from the host.
+
 `./dev.sh up` hot-reloads on source changes (the repo is bind-mounted into the
 container). Dependencies are plain `pip` from `requirements.txt` (runtime) and
 `requirements-dev.txt` (tooling); after changing them run `./dev.sh build`.
