@@ -52,8 +52,7 @@ Raise `DomainError` subclasses from `app/domain/errors.py` for business failures
 
 ## Development
 
-Everything runs in Docker through `./dev.sh`, so no local Python is needed. The dev
-container in `.devcontainer/` uses the same compose setup.
+Everything runs in Docker through `./dev.sh`, so no local Python is needed.
 
 ```sh
 ./dev.sh up            # app on http://localhost:8080/api/v1/ui, postgres on :5432
