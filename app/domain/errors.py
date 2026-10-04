@@ -30,3 +30,19 @@ class InvalidRoundingRuleError(DomainError):
 
 class InvalidJurisdictionCodeError(ValidationError):
     """A jurisdiction code is not in ISO 3166 form (e.g. `CA` or `CA-ON`)."""
+
+
+class MissingArtifactError(DomainError):
+    """A capability ran without an artifact its contract consumes."""
+
+
+class CapabilityContractError(DomainError):
+    """A capability's outputs do not match the artifacts its contract produces."""
+
+
+class InvalidBracketScheduleError(DomainError):
+    """A bracket schedule's thresholds or rates are invalid."""
+
+
+class InvalidParameterDataError(DomainError):
+    """A parameter dataset is malformed or does not match where it was found."""
