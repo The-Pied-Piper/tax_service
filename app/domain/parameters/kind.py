@@ -1,0 +1,26 @@
+"""Parameter kinds: a name for a kind of parameter and the type of its values.
+
+Each parameter type declares its kind next to itself (e.g. BRACKETS beside
+BracketSchedule), and each capability declares the kind it needs. Data files
+state their kind, so readers can check what they found against what was asked.
+Adding a kind changes nothing that already exists.
+"""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+
+_SNAKE_CASE = re.compile(r"[a-z][a-z0-9]*(_[a-z0-9]+)*")
+
+
+@dataclass(frozen=True)
+class ParameterKind[T]:
+    name: str
+    value_type: type[T]
+
+    def __post_init__(self) -> None:
+        if not _SNAKE_CASE.fullmatch(self.name):
+            raise ValueError(f"invalid parameter kind name {self.name!r}: expected snake_case")
+        if not isinstance(self.value_type, type):
+            raise TypeError(f"value_type must be a type, got {self.value_type!r}")

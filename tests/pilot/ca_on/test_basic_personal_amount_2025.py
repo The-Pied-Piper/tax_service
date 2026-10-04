@@ -16,7 +16,7 @@ import pytest
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.artifact import Artifact
 from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
-from app.domain.parameters.credit import Credit
+from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.rounding import NO_ROUNDING
 
 D = Decimal
@@ -32,9 +32,9 @@ TAX, AFTER = Artifact("basic_tax"), Artifact("tax_after_credits")
     ],
 )
 def test_2025_amounts_and_rates(family: str, amount: str, rate: str) -> None:
-    data = SOURCE.get_credit(family, 2025)
+    data = SOURCE.get(family, 2025, CREDIT)
 
-    assert data.credit == Credit(amount=D(amount), rate=D(rate))
+    assert data.values == Credit(amount=D(amount), rate=D(rate))
     assert data.rounding == NO_ROUNDING  # CRA states no rounding rule for amount × rate
     assert data.sources
 
@@ -51,8 +51,8 @@ def test_2025_amounts_and_rates(family: str, amount: str, rate: str) -> None:
     ],
 )
 def test_applies_to_basic_tax(family: str, basic_tax: str, after: str) -> None:
-    data = SOURCE.get_credit(family, 2025)
+    data = SOURCE.get(family, 2025, CREDIT)
 
-    result = NonRefundableCredit(TAX, AFTER, data.credit, data.rounding).run({TAX: D(basic_tax)})
+    result = NonRefundableCredit(TAX, AFTER, data.values, data.rounding).run({TAX: D(basic_tax)})
 
     assert result.outputs[AFTER] == D(after)

@@ -1,4 +1,4 @@
-"""Parameter datasets: a family's values for one tax year (design.md §4).
+"""Parameter datasets: one family's values of one kind for one tax year (design.md §4).
 
 Every covered tax year needs its own dataset; an absent year is never carried
 forward. `sources` records where the values came from.
@@ -8,24 +8,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from app.domain.parameters.brackets import BracketSchedule
-from app.domain.parameters.credit import Credit
+from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import RoundingRule
 
 
 @dataclass(frozen=True)
-class BracketParameters:
+class ParameterDataset[T]:
     family: str
     tax_year: int
-    schedule: BracketSchedule
+    kind: ParameterKind[T]
+    values: T
     rounding: RoundingRule
     sources: tuple[str, ...]
 
-
-@dataclass(frozen=True)
-class CreditParameters:
-    family: str
-    tax_year: int
-    credit: Credit
-    rounding: RoundingRule
-    sources: tuple[str, ...]
+    def __post_init__(self) -> None:
+        if not isinstance(self.values, self.kind.value_type):
+            raise TypeError(
+                f"{self.kind.name} dataset values must be a {self.kind.value_type.__name__}, "
+                f"got {type(self.values).__name__}"
+            )

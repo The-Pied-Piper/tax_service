@@ -1,21 +1,22 @@
-"""Outbound port: where parameter datasets come from."""
+"""Outbound port: where parameter datasets come from.
+
+One method serves every kind of parameter: the caller passes the kind it needs
+and gets back a dataset typed for it. New kinds never change this port.
+"""
 
 from __future__ import annotations
 
 from typing import Protocol
 
-from app.domain.parameters.datasets import BracketParameters, CreditParameters
+from app.domain.parameters.datasets import ParameterDataset
+from app.domain.parameters.kind import ParameterKind
 
 
 class ParameterSource(Protocol):
-    def get_brackets(self, family: str, tax_year: int) -> BracketParameters:
-        """The bracket dataset for `family` in `tax_year`.
+    def get[T](self, family: str, tax_year: int, kind: ParameterKind[T]) -> ParameterDataset[T]:
+        """The dataset of `kind` for `family` in `tax_year`.
 
         Raise NotFoundError if that year has no dataset (no carry-forward), and
-        InvalidParameterDataError if the dataset cannot be read.
+        InvalidParameterDataError if the dataset cannot be read or is another kind.
         """
-        ...
-
-    def get_credit(self, family: str, tax_year: int) -> CreditParameters:
-        """The credit dataset for `family` in `tax_year`; same errors as get_brackets."""
         ...

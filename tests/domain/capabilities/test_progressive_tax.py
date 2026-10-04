@@ -9,7 +9,7 @@ import pytest
 from app.domain.artifact import Artifact
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capability import TraceLine
-from app.domain.parameters.brackets import Bracket, BracketSchedule
+from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 
 D = Decimal
@@ -81,3 +81,7 @@ def test_rejects_negative_base() -> None:
 def test_base_and_output_must_differ() -> None:
     with pytest.raises(ValueError, match="must differ"):
         ProgressiveTax(BASE, BASE, SCHEDULE, NO_ROUNDING)
+
+
+def test_declares_the_parameter_kind_it_needs() -> None:
+    assert ProgressiveTax.PARAMETERS is BRACKETS

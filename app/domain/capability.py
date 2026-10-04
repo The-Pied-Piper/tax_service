@@ -11,9 +11,11 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import Decimal
+from typing import Any, ClassVar
 
 from app.domain.artifact import Artifact
 from app.domain.errors import CapabilityContractError, MissingArtifactError
+from app.domain.parameters.kind import ParameterKind
 
 
 @dataclass(frozen=True)
@@ -31,6 +33,9 @@ class CapabilityResult:
 
 
 class Capability(ABC):
+    PARAMETERS: ClassVar[ParameterKind[Any]]
+    """The kind of parameter dataset this capability is built from."""
+
     @property
     @abstractmethod
     def consumes(self) -> frozenset[Artifact]: ...

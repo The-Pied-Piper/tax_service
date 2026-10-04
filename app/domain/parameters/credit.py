@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from app.domain.errors import InvalidCreditError
+from app.domain.parameters.kind import ParameterKind
 
 
 @dataclass(frozen=True)
@@ -36,3 +37,6 @@ class Credit:
     def describe(self) -> str:
         percent = format((self.rate * 100).normalize(), "f")
         return f"{percent}% of {self.amount}"
+
+
+CREDIT: ParameterKind[Credit] = ParameterKind("credit", Credit)

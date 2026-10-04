@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from pathlib import Path
 
 from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
+from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
+from app.domain.capabilities.progressive_tax import ProgressiveTax
+from app.domain.capability import Capability
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection
 
@@ -33,11 +35,13 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
 def test_every_selection_has_a_dataset_for_its_first_tax_year() -> None:
     (manifest,) = YamlJurisdictionSource(DATA / "manifests").get_jurisdiction(CA_ON).manifests
     parameters = YamlParameterSource(DATA / "parameters")
-    readers: dict[str, Callable[[str, int], object]] = {
-        "progressive_tax": parameters.get_brackets,
-        "non_refundable_credit": parameters.get_credit,
+    # Stand-in for the capability registry: manifest name -> capability class.
+    capabilities: dict[str, type[Capability]] = {
+        "progressive_tax": ProgressiveTax,
+        "non_refundable_credit": NonRefundableCredit,
     }
 
     for selection in manifest.capabilities:
-        read = readers[selection.name]  # KeyError: a capability with no known dataset type
-        read(selection.params_family, manifest.valid_from_tax_year)  # raises if absent
+        kind = capabilities[selection.name].PARAMETERS  # each capability declares its kind
+        dataset = parameters.get(selection.params_family, manifest.valid_from_tax_year, kind)
+        assert dataset.kind is kind

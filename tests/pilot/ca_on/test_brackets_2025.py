@@ -15,6 +15,7 @@ import pytest
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.artifact import Artifact
 from app.domain.capabilities.progressive_tax import ProgressiveTax
+from app.domain.parameters.brackets import BRACKETS
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 
 D = Decimal
@@ -37,9 +38,9 @@ ONTARIO_FIXED_TAX = {  # 2025 ON428 Part A, line 3 threshold -> line 7 fixed tax
 
 
 def test_federal_2025_brackets() -> None:
-    data = SOURCE.get_brackets("ca/brackets", 2025)
+    data = SOURCE.get("ca/brackets", 2025, BRACKETS)
 
-    assert [(b.lower, b.rate) for b in data.schedule.brackets] == [
+    assert [(b.lower, b.rate) for b in data.values.brackets] == [
         (D("0"), D("0.145")),
         (D("57375"), D("0.205")),
         (D("114750"), D("0.26")),
@@ -51,9 +52,9 @@ def test_federal_2025_brackets() -> None:
 
 
 def test_ontario_2025_brackets() -> None:
-    data = SOURCE.get_brackets("ca-on/brackets", 2025)
+    data = SOURCE.get("ca-on/brackets", 2025, BRACKETS)
 
-    assert [(b.lower, b.rate) for b in data.schedule.brackets] == [
+    assert [(b.lower, b.rate) for b in data.values.brackets] == [
         (D("0"), D("0.0505")),
         (D("52886"), D("0.0915")),
         (D("105775"), D("0.1116")),
@@ -72,7 +73,7 @@ def test_ontario_2025_brackets() -> None:
 def test_reproduces_the_fixed_tax_printed_on_the_form(
     family: str, threshold: str, fixed_tax: str
 ) -> None:
-    schedule = SOURCE.get_brackets(family, 2025).schedule
+    schedule = SOURCE.get(family, 2025, BRACKETS).values
 
     assert TO_CENT.apply(schedule.tax_on(D(threshold))) == D(fixed_tax)
 
@@ -85,9 +86,9 @@ def test_reproduces_the_fixed_tax_printed_on_the_form(
     ],
 )
 def test_matches_cra_worked_examples(taxable_income: str, federal_basic_tax: str) -> None:
-    data = SOURCE.get_brackets("ca/brackets", 2025)
+    data = SOURCE.get("ca/brackets", 2025, BRACKETS)
     base, tax = Artifact("taxable_income"), Artifact("federal_basic_tax")
 
-    result = ProgressiveTax(base, tax, data.schedule, data.rounding).run({base: D(taxable_income)})
+    result = ProgressiveTax(base, tax, data.values, data.rounding).run({base: D(taxable_income)})
 
     assert result.outputs[tax] == D(federal_basic_tax)
