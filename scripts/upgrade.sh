@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Pull template-owned files (dev.sh, scripts/, tools/service_gen/, CI workflow) from service-template [REF], then sync.
+# Pull template-owned files (dev.sh, scripts/, tools/service_gen/, CI workflow) from the template [REF], then sync.
 source "$(dirname "$0")/_lib.sh"
 
-TEMPLATE_REPO="${TEMPLATE_REPO:-https://github.com/The-Pied-Piper/service-template.git}"
+repo="$(template_repo)"
 ref="${1:-main}"
 owned=(dev.sh scripts tools/service_gen .github/workflows/ci.yml)
 
@@ -12,11 +12,11 @@ if [[ -n "$(git status --porcelain -- "${owned[@]}")" ]]; then
 fi
 
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-echo ">> fetching $TEMPLATE_REPO @ $ref"
-git clone -q --depth 1 --branch "$ref" "$TEMPLATE_REPO" "$tmp"
+echo ">> fetching $repo @ $ref"
+git clone -q --depth 1 --branch "$ref" "$repo" "$tmp"
 sha="$(git -C "$tmp" rev-parse --short HEAD)"
 for path in "${owned[@]}"; do
-    [[ -e "$tmp/$path" ]] || { echo "$TEMPLATE_REPO@$ref has no $path; aborting" >&2; exit 1; }
+    [[ -e "$tmp/$path" ]] || { echo "$repo@$ref has no $path; aborting" >&2; exit 1; }
 done
 
 for path in "${owned[@]}"; do
