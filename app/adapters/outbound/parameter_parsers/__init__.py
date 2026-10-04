@@ -16,6 +16,11 @@ from app.domain.parameters.kind import ParameterKind
 
 
 class ParameterParser[T](Protocol):
+    """Reads the kind-specific part of a YAML dataset file into that kind's values.
+
+    YamlParameterSource holds one parser per kind and picks it by the kind requested.
+    """
+
     @property
     def kind(self) -> ParameterKind[T]:
         """The parameter kind this parser reads; a dataset file declares it as `kind:`."""

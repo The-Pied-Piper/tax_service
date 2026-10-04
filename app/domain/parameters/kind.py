@@ -16,6 +16,11 @@ _SNAKE_CASE = re.compile(r"[a-z][a-z0-9]*(_[a-z0-9]+)*")
 
 @dataclass(frozen=True)
 class ParameterKind[T]:
+    """A kind of parameter, such as brackets or a credit, and the type its values have.
+
+    Capabilities declare the kind they need, and data files name it in `kind:`.
+    """
+
     name: str
     value_type: type[T]
 

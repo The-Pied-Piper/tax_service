@@ -9,6 +9,8 @@ _BRACKET_KEYS = frozenset({"from", "rate"})
 
 
 class BracketsParser:
+    """Parser for `brackets` datasets: a list of thresholds and rates."""
+
     kind = BRACKETS
     body_keys = frozenset({"brackets"})
 

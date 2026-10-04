@@ -7,6 +7,8 @@ from app.domain.parameters.credit import CREDIT, Credit
 
 
 class CreditParser:
+    """Parser for `credit` datasets: an amount and the rate that turns it into tax relief."""
+
     kind = CREDIT
     body_keys = frozenset({"amount", "rate"})
 

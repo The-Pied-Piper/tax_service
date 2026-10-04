@@ -14,6 +14,11 @@ from app.domain.parameters.rounding import RoundingRule
 
 @dataclass(frozen=True)
 class ParameterDataset[T]:
+    """One family's parameter values of one kind for one tax year, with rounding and sources.
+
+    Refuses values that are not of its kind's type.
+    """
+
     family: str
     tax_year: int
     kind: ParameterKind[T]
