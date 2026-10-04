@@ -41,6 +41,10 @@ class YamlParameterSource:
             self._parsers[parser.kind.name] = parser
 
     def get[T](self, family: str, tax_year: int, kind: ParameterKind[T]) -> ParameterDataset[T]:
+        """Read `<directory>/<family>/<tax_year>.yaml` and parse it with the parser for `kind`.
+
+        The file must declare the same family, year and kind; see ParameterSource.get for errors.
+        """
         parser = self._parsers.get(kind.name)
         if parser is None or parser.kind != kind:
             raise LookupError(f"no parser for parameter kind {kind.name!r}")

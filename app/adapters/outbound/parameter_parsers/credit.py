@@ -11,6 +11,7 @@ class CreditParser:
     body_keys = frozenset({"amount", "rate"})
 
     def parse(self, document: YamlNode) -> Credit:
+        """Build a Credit from the dataset's `amount` and `rate` (both quoted decimals)."""
         return Credit(
             amount=document.field("amount").parse_decimal(),
             rate=document.field("rate").parse_decimal(),

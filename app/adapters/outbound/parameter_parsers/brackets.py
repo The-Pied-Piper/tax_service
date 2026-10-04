@@ -13,6 +13,7 @@ class BracketsParser:
     body_keys = frozenset({"brackets"})
 
     def parse(self, document: YamlNode) -> BracketSchedule:
+        """Build a BracketSchedule from the dataset's `brackets` list of {from, rate} entries."""
         return BracketSchedule(
             tuple(self._bracket(entry) for entry in document.field("brackets").items())
         )

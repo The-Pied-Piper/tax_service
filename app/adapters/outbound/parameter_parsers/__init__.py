@@ -17,14 +17,21 @@ from app.domain.parameters.kind import ParameterKind
 
 class ParameterParser[T](Protocol):
     @property
-    def kind(self) -> ParameterKind[T]: ...
+    def kind(self) -> ParameterKind[T]:
+        """The parameter kind this parser reads; a dataset file declares it as `kind:`."""
+        ...
 
     @property
     def body_keys(self) -> frozenset[str]:
         """The keys this kind adds to a dataset file, beyond the shared ones."""
         ...
 
-    def parse(self, document: YamlNode) -> T: ...
+    def parse(self, document: YamlNode) -> T:
+        """Build this kind's values from the dataset's kind-specific keys.
+
+        Raises YamlShapeError or a DomainError if they are malformed or invalid.
+        """
+        ...
 
 
 DEFAULT_PARSERS: tuple[ParameterParser[Any], ...] = (BracketsParser(), CreditParser())
