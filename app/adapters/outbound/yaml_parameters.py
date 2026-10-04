@@ -13,8 +13,7 @@ from pathlib import Path
 
 import yaml
 
-from app.adapters.outbound import yaml_support as y
-from app.adapters.outbound.yaml_support import YamlShapeError
+from app.adapters.outbound.yaml_support import YamlNode, YamlShapeError
 from app.domain.errors import DomainError, InvalidParameterDataError, NotFoundError
 from app.domain.parameters.brackets import Bracket, BracketSchedule
 from app.domain.parameters.credit import Credit
@@ -34,16 +33,14 @@ class YamlParameterSource:
     def get_brackets(self, family: str, tax_year: int) -> BracketParameters:
         path, doc = self._load(family, tax_year, frozenset({"brackets"}))
         try:
-            entries = y.sequence(doc["brackets"], "brackets")
-            schedule = BracketSchedule(
-                tuple(self._bracket(entry, f"brackets[{i}]") for i, entry in enumerate(entries))
-            )
             return BracketParameters(
                 family=family,
                 tax_year=tax_year,
-                schedule=schedule,
-                rounding=self._rounding(doc["rounding"]),
-                sources=self._sources(doc["sources"]),
+                schedule=BracketSchedule(
+                    tuple(self._bracket(entry) for entry in doc.field("brackets").items())
+                ),
+                rounding=self._rounding(doc.field("rounding")),
+                sources=self._sources(doc.field("sources")),
             )
         except (YamlShapeError, DomainError) as exc:
             raise InvalidParameterDataError(f"{path}: {exc}") from exc
@@ -55,18 +52,16 @@ class YamlParameterSource:
                 family=family,
                 tax_year=tax_year,
                 credit=Credit(
-                    amount=y.decimal(doc["amount"], "amount"),
-                    rate=y.decimal(doc["rate"], "rate"),
+                    amount=doc.field("amount").parse_decimal(),
+                    rate=doc.field("rate").parse_decimal(),
                 ),
-                rounding=self._rounding(doc["rounding"]),
-                sources=self._sources(doc["sources"]),
+                rounding=self._rounding(doc.field("rounding")),
+                sources=self._sources(doc.field("sources")),
             )
         except (YamlShapeError, DomainError) as exc:
             raise InvalidParameterDataError(f"{path}: {exc}") from exc
 
-    def _load(
-        self, family: str, tax_year: int, body_keys: frozenset[str]
-    ) -> tuple[Path, dict[str, object]]:
+    def _load(self, family: str, tax_year: int, body_keys: frozenset[str]) -> tuple[Path, YamlNode]:
         if not _FAMILY.fullmatch(family):
             raise ValueError(f"invalid parameter family {family!r}: expected e.g. 'ca-on/brackets'")
         path = self._directory / family / f"{tax_year}.yaml"
@@ -76,9 +71,9 @@ class YamlParameterSource:
                 "an absent year is never carried forward"
             )
         try:
-            doc = y.mapping(y.load(path), "dataset", _ENVELOPE_KEYS | body_keys)
-            declared_family = y.string(doc["family"], "family")
-            declared_year = y.integer(doc["tax_year"], "tax_year")
+            doc = YamlNode.load(path, "dataset").require_mapping(_ENVELOPE_KEYS | body_keys)
+            declared_family = doc.field("family").require_string()
+            declared_year = doc.field("tax_year").require_integer()
         except (OSError, yaml.YAMLError, YamlShapeError) as exc:
             raise InvalidParameterDataError(f"{path}: {exc}") from exc
         if declared_family != family:
@@ -92,32 +87,29 @@ class YamlParameterSource:
         return path, doc
 
     @staticmethod
-    def _bracket(entry: object, where: str) -> Bracket:
-        fields = y.mapping(entry, where, _BRACKET_KEYS)
+    def _bracket(entry: YamlNode) -> Bracket:
+        fields = entry.require_mapping(_BRACKET_KEYS)
         return Bracket(
-            lower=y.decimal(fields["from"], f"{where}.from"),
-            rate=y.decimal(fields["rate"], f"{where}.rate"),
+            lower=fields.field("from").parse_decimal(),
+            rate=fields.field("rate").parse_decimal(),
         )
 
     @staticmethod
-    def _rounding(value: object) -> RoundingRule:
-        if value == "none":
+    def _rounding(node: YamlNode) -> RoundingRule:
+        if node.value == "none":
             return NO_ROUNDING
-        if not isinstance(value, dict):
+        if not isinstance(node.value, dict):
             raise YamlShapeError("rounding must be 'none' or a mapping of increment and mode")
-        fields = y.mapping(value, "rounding", _ROUNDING_KEYS)
-        mode_name = y.string(fields["mode"], "rounding.mode")
+        fields = node.require_mapping(_ROUNDING_KEYS)
+        mode_name = fields.field("mode").require_string()
         modes = {mode.value: mode for mode in RoundingMode}
         if mode_name not in modes:
             raise YamlShapeError(f"rounding.mode {mode_name!r} is not one of {sorted(modes)}")
-        return RoundTo(
-            increment=y.decimal(fields["increment"], "rounding.increment"),
-            mode=modes[mode_name],
-        )
+        return RoundTo(increment=fields.field("increment").parse_decimal(), mode=modes[mode_name])
 
     @staticmethod
-    def _sources(value: object) -> tuple[str, ...]:
-        entries = y.sequence(value, "sources")
+    def _sources(node: YamlNode) -> tuple[str, ...]:
+        entries = node.items()
         if not entries:
             raise YamlShapeError("sources must list at least one source")
-        return tuple(y.string(entry, f"sources[{i}]") for i, entry in enumerate(entries))
+        return tuple(entry.require_string() for entry in entries)
