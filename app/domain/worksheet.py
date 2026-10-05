@@ -34,10 +34,6 @@ class Worksheet:
             raise MissingArtifactError(f"no value for {artifact.name!r}")
         return self._values[artifact]
 
-    def view_for(self, capability: Capability) -> WorksheetView:
-        """A read-only view limited to the artifacts `capability` consumes."""
-        return WorksheetView(self, capability)
-
     def apply(self, capability: Capability) -> None:
         """Compute `capability` from this worksheet and record its outputs.
 
@@ -47,7 +43,7 @@ class Worksheet:
         missing = capability.consumes - self._values.keys()
         if missing:
             raise MissingArtifactError(f"{name} needs {self._names(missing)}")
-        result = capability.compute(self.view_for(capability))
+        result = capability.compute({a: self._values[a] for a in capability.consumes})
         produced = frozenset(result.outputs)
         if produced != capability.produces:
             raise CapabilityContractError(
@@ -74,19 +70,3 @@ class Worksheet:
                 raise TypeError(
                     f"artifact {artifact.name!r} must be a Decimal, got {type(value).__name__}"
                 )
-
-
-class WorksheetView:
-    """What a capability may read while computing: only the artifacts it consumes."""
-
-    def __init__(self, worksheet: Worksheet, capability: Capability) -> None:
-        self._worksheet = worksheet
-        self._capability = capability
-
-    def get(self, artifact: Artifact) -> Decimal:
-        """The value of `artifact`, which the capability must consume."""
-        if artifact not in self._capability.consumes:
-            raise CapabilityContractError(
-                f"{type(self._capability).__name__} does not consume {artifact.name!r}"
-            )
-        return self._worksheet.get(artifact)

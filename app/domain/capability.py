@@ -12,13 +12,10 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import Any, ClassVar
 
 from app.domain.artifact import Artifact
 from app.domain.parameters.kind import ParameterKind
-
-if TYPE_CHECKING:
-    from app.domain.worksheet import WorksheetView
 
 
 @dataclass(frozen=True)
@@ -48,7 +45,7 @@ class Capability(ABC):
     def produces(self) -> frozenset[Artifact]: ...
 
     @abstractmethod
-    def compute(self, worksheet: WorksheetView) -> CapabilityResult:
+    def compute(self, inputs: Mapping[Artifact, Decimal]) -> CapabilityResult:
         """Compute this capability's outputs from the artifacts it consumes.
 
         Only `Worksheet.apply` calls this in a real computation, checking the contract.

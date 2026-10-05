@@ -7,6 +7,7 @@ Rounding happens once, on the total, using the rule it is given.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from decimal import Decimal
 from typing import ClassVar
 
@@ -15,7 +16,6 @@ from app.domain.capability import Capability, CapabilityResult, TraceLine
 from app.domain.parameters.brackets import BRACKETS, BracketSchedule
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import RoundingRule
-from app.domain.worksheet import WorksheetView
 
 
 class ProgressiveTax(Capability):
@@ -43,8 +43,8 @@ class ProgressiveTax(Capability):
     def produces(self) -> frozenset[Artifact]:
         return frozenset({self._output})
 
-    def compute(self, worksheet: WorksheetView) -> CapabilityResult:
-        base = worksheet.get(self._base)
+    def compute(self, inputs: Mapping[Artifact, Decimal]) -> CapabilityResult:
+        base = inputs[self._base]
         slices = self._schedule.slices(base)
         tax = self._rounding.apply(sum((s.tax for s in slices), Decimal(0)))
         trace = tuple(TraceLine(s.describe(), s.tax) for s in slices) + (
