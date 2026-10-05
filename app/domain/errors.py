@@ -33,11 +33,11 @@ class InvalidJurisdictionCodeError(ValidationError):
 
 
 class MissingArtifactError(DomainError):
-    """A worksheet has no value for an artifact that was asked for."""
+    """No value was given for an artifact that was asked for."""
 
 
 class DuplicateArtifactError(DomainError):
-    """A worksheet was asked to record a value for an artifact that already has one."""
+    """An artifact was given more than one value."""
 
 
 class CapabilityContractError(DomainError):

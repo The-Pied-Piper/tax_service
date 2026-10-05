@@ -6,60 +6,77 @@ from decimal import Decimal
 
 import pytest
 
-from app.domain.artifact import Artifact
+from app.domain.artifact import Amount
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capability import TraceLine
 from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
-from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
+from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 
 D = Decimal
-BASE, TAX = Artifact("taxable_base"), Artifact("basic_tax")
+
+
+class TaxableBase(Amount):
+    """Made-up artifact for these tests."""
+
+
+class BasicTax(Amount):
+    """Made-up artifact for these tests."""
+
+
+class OtherBase(Amount):
+    """Made-up artifact for these tests."""
+
+
+class OtherTax(Amount):
+    """Made-up artifact for these tests."""
+
+
 SCHEDULE = BracketSchedule(
     (Bracket(D(0), D("0.10")), Bracket(D(100), D("0.20")), Bracket(D(300), D("0.30")))
 )
 
 
-def test_declares_its_contract() -> None:
-    capability = ProgressiveTax(BASE, TAX, SCHEDULE, NO_ROUNDING)
+def capability(rounding: RoundingRule = NO_ROUNDING) -> ProgressiveTax[TaxableBase, BasicTax]:
+    return ProgressiveTax(TaxableBase, BasicTax, SCHEDULE, rounding)
 
-    assert capability.consumes == frozenset({BASE})
-    assert capability.produces == frozenset({TAX})
+
+def test_declares_its_contract() -> None:
+    assert capability().consumes == frozenset({TaxableBase})
+    assert capability().produces == frozenset({BasicTax})
 
 
 def test_produces_tax_on_the_base() -> None:
-    result = ProgressiveTax(BASE, TAX, SCHEDULE, NO_ROUNDING).compute({BASE: D(250)})
+    result = capability().compute((TaxableBase(D(250)),))
 
-    assert result.outputs == {TAX: D("40.0")}
+    assert result.outputs == (BasicTax(D("40.0")),)
 
 
 def test_the_same_capability_serves_different_wiring() -> None:
-    other_base, other_tax = Artifact("other_base"), Artifact("other_tax")
+    wired = ProgressiveTax(OtherBase, OtherTax, SCHEDULE, NO_ROUNDING)
 
-    capability = ProgressiveTax(other_base, other_tax, SCHEDULE, NO_ROUNDING)
+    result = wired.compute((OtherBase(D(50)),))
 
-    result = capability.compute({other_base: D(50)})
-
-    assert result.outputs == {other_tax: D("5.0")}
+    assert result.outputs == (OtherTax(D("5.0")),)
 
 
 def test_rounds_once_at_the_end_with_the_given_rule() -> None:
     cent = RoundTo(D("0.01"), RoundingMode.HALF_UP)
     # 10% of 100 + 20% of 0.025 = 10.005 -> 10.01; per-slice rounding would give 10.00 + 0.01.
-    result = ProgressiveTax(BASE, TAX, SCHEDULE, cent).compute({BASE: D("100.025")})
+    result = capability(cent).compute((TaxableBase(D("100.025")),))
 
-    assert result.outputs == {TAX: D("10.01")}
+    assert result.outputs == (BasicTax(D("10.01")),)
 
 
 def test_without_a_rule_the_tax_stays_exact() -> None:
-    result = ProgressiveTax(BASE, TAX, SCHEDULE, NO_ROUNDING).compute({BASE: D("100.025")})
+    result = capability().compute((TaxableBase(D("100.025")),))
 
-    assert result.outputs == {TAX: D("10.0050")}
+    assert result.outputs == (BasicTax(D("10.0050")),)
 
 
 def test_traces_each_slice_and_the_total() -> None:
     cent = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
-    trace = ProgressiveTax(BASE, TAX, SCHEDULE, cent).compute({BASE: D(250)}).trace
+    trace = capability(cent).compute((TaxableBase(D(250)),)).trace
 
     assert trace == (
         TraceLine("10% on 100 (0 to 100)", D("10.0")),
@@ -69,7 +86,7 @@ def test_traces_each_slice_and_the_total() -> None:
 
 
 def test_trace_describes_the_open_top_slice() -> None:
-    trace = ProgressiveTax(BASE, TAX, SCHEDULE, NO_ROUNDING).compute({BASE: D(400)}).trace
+    trace = capability().compute((TaxableBase(D(400)),)).trace
 
     assert trace[-2] == TraceLine("30% on 100 (over 300)", D("30.0"))
     assert trace[-1] == TraceLine("basic_tax on taxable_base 400 (no rounding)", D("80.0"))
@@ -77,12 +94,12 @@ def test_trace_describes_the_open_top_slice() -> None:
 
 def test_rejects_negative_base() -> None:
     with pytest.raises(ValueError, match="must not be negative"):
-        ProgressiveTax(BASE, TAX, SCHEDULE, NO_ROUNDING).compute({BASE: D(-1)})
+        capability().compute((TaxableBase(D(-1)),))
 
 
 def test_base_and_output_must_differ() -> None:
     with pytest.raises(ValueError, match="must differ"):
-        ProgressiveTax(BASE, BASE, SCHEDULE, NO_ROUNDING)
+        ProgressiveTax(TaxableBase, TaxableBase, SCHEDULE, NO_ROUNDING)
 
 
 def test_declares_the_parameter_kind_it_needs() -> None:

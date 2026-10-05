@@ -13,10 +13,10 @@ from pathlib import Path
 import pytest
 
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
-from app.domain.artifact import Artifact
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.parameters.brackets import BRACKETS
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
+from tests.pilot.ca_on.catalog import FederalBasicTax, TaxableIncome
 
 D = Decimal
 PARAMETERS = Path(__file__).resolve().parents[3] / "data" / "parameters"
@@ -87,10 +87,8 @@ def test_reproduces_the_fixed_tax_printed_on_the_form(
 )
 def test_matches_cra_worked_examples(taxable_income: str, federal_basic_tax: str) -> None:
     data = SOURCE.get("ca/brackets", 2025, BRACKETS)
-    base, tax = Artifact("taxable_income"), Artifact("federal_basic_tax")
+    capability = ProgressiveTax(TaxableIncome, FederalBasicTax, data.values, data.rounding)
 
-    capability = ProgressiveTax(base, tax, data.values, data.rounding)
+    result = capability.compute((TaxableIncome(D(taxable_income)),))
 
-    result = capability.compute({base: D(taxable_income)})
-
-    assert result.outputs[tax] == D(federal_basic_tax)
+    assert result.outputs == (FederalBasicTax(D(federal_basic_tax)),)
