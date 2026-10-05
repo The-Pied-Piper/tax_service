@@ -7,7 +7,6 @@ Rounding happens once, on the total, using the rule it is given.
 
 from __future__ import annotations
 
-from decimal import Decimal
 from typing import ClassVar
 
 from app.domain.artifact import Amount, Artifact
@@ -43,7 +42,7 @@ class ProgressiveTax[In: Amount, Out: Amount](Capability):
     def compute(self, inputs: tuple[Artifact, ...]) -> CapabilityResult:
         base = self._input(inputs, self._base).value
         slices = self._schedule.slices(base)
-        tax = self._rounding.apply(sum((s.tax for s in slices), Decimal(0)))
+        tax = self._rounding.apply(self._schedule.tax_on(base))
         trace = tuple(TraceLine(s.describe(), s.tax) for s in slices) + (
             TraceLine(
                 f"{self._output.label()} on {self._base.label()} {base} ({self._rounding})", tax
