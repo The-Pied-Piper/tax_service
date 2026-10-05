@@ -27,8 +27,6 @@ class ProgressiveTax[In: Amount, Out: Amount](Capability):
         schedule: BracketSchedule,
         rounding: RoundingRule,
     ) -> None:
-        if base is output:
-            raise ValueError(f"base and output must differ, got {base.label()} for both")
         self._base = base
         self._output = output
         self._schedule = schedule

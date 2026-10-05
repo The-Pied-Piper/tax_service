@@ -97,10 +97,5 @@ def test_rejects_negative_base() -> None:
         capability().compute((TaxableBase(D(-1)),))
 
 
-def test_base_and_output_must_differ() -> None:
-    with pytest.raises(ValueError, match="must differ"):
-        ProgressiveTax(TaxableBase, TaxableBase, SCHEDULE, NO_ROUNDING)
-
-
 def test_declares_the_parameter_kind_it_needs() -> None:
     assert ProgressiveTax.PARAMETERS is BRACKETS

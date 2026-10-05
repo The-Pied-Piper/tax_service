@@ -79,10 +79,5 @@ def test_rejects_negative_tax() -> None:
         capability().compute((BasicTax(D("-1")),))
 
 
-def test_tax_and_output_must_differ() -> None:
-    with pytest.raises(ValueError, match="must differ"):
-        NonRefundableCredit(BasicTax, BasicTax, CREDIT, NO_ROUNDING)
-
-
 def test_declares_the_parameter_kind_it_needs() -> None:
     assert NonRefundableCredit.PARAMETERS is CREDIT_KIND

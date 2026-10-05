@@ -25,8 +25,6 @@ class NonRefundableCredit[In: Amount, Out: Amount](Capability):
     def __init__(
         self, tax: type[In], output: type[Out], credit: Credit, rounding: RoundingRule
     ) -> None:
-        if tax is output:
-            raise ValueError(f"tax and output must differ, got {tax.label()} for both")
         self._tax = tax
         self._output = output
         self._credit = credit
