@@ -1,8 +1,9 @@
 """The capability contract (design.md §3).
 
 A capability is pure mechanism. It declares, in code, the artifacts it consumes
-and produces; `run` holds it to that declaration. The vocabulary is consume /
-produce only: there is no "modify". Fold contributions come later.
+and produces; the worksheet holds it to that declaration when applying it. The
+vocabulary is consume / produce only: there is no "modify". Fold contributions
+come later.
 """
 
 from __future__ import annotations
@@ -14,7 +15,6 @@ from decimal import Decimal
 from typing import Any, ClassVar
 
 from app.domain.artifact import Artifact
-from app.domain.errors import CapabilityContractError, MissingArtifactError
 from app.domain.parameters.kind import ParameterKind
 
 
@@ -44,30 +44,9 @@ class Capability(ABC):
     @abstractmethod
     def produces(self) -> frozenset[Artifact]: ...
 
-    def run(self, inputs: Mapping[Artifact, Decimal]) -> CapabilityResult:
-        """Compute this capability's outputs from the artifacts it consumes."""
-        missing = self.consumes - inputs.keys()
-        if missing:
-            raise MissingArtifactError(f"{type(self).__name__} needs {self._names(missing)}")
-        consumed = {artifact: inputs[artifact] for artifact in self.consumes}
-        for artifact, value in consumed.items():
-            if not isinstance(value, Decimal):
-                raise TypeError(
-                    f"artifact {artifact.name!r} must be a Decimal, got {type(value).__name__}"
-                )
-        result = self._compute(consumed)
-        produced = frozenset(result.outputs)
-        if produced != self.produces:
-            raise CapabilityContractError(
-                f"{type(self).__name__} declares {self._names(self.produces)} "
-                f"but produced {self._names(produced)}"
-            )
-        return result
-
     @abstractmethod
-    def _compute(self, inputs: Mapping[Artifact, Decimal]) -> CapabilityResult:
-        """The mechanism itself; receives exactly the consumed artifacts."""
+    def compute(self, inputs: Mapping[Artifact, Decimal]) -> CapabilityResult:
+        """Compute this capability's outputs from the artifacts it consumes.
 
-    @staticmethod
-    def _names(artifacts: frozenset[Artifact]) -> str:
-        return ", ".join(repr(a.name) for a in sorted(artifacts, key=lambda a: a.name))
+        Only `Worksheet.apply` calls this in a real computation, checking the contract.
+        """

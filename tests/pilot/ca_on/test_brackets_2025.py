@@ -89,6 +89,8 @@ def test_matches_cra_worked_examples(taxable_income: str, federal_basic_tax: str
     data = SOURCE.get("ca/brackets", 2025, BRACKETS)
     base, tax = Artifact("taxable_income"), Artifact("federal_basic_tax")
 
-    result = ProgressiveTax(base, tax, data.values, data.rounding).run({base: D(taxable_income)})
+    capability = ProgressiveTax(base, tax, data.values, data.rounding)
+
+    result = capability.compute({base: D(taxable_income)})
 
     assert result.outputs[tax] == D(federal_basic_tax)

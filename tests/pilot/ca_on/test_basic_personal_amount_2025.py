@@ -53,6 +53,8 @@ def test_2025_amounts_and_rates(family: str, amount: str, rate: str) -> None:
 def test_applies_to_basic_tax(family: str, basic_tax: str, after: str) -> None:
     data = SOURCE.get(family, 2025, CREDIT)
 
-    result = NonRefundableCredit(TAX, AFTER, data.values, data.rounding).run({TAX: D(basic_tax)})
+    capability = NonRefundableCredit(TAX, AFTER, data.values, data.rounding)
+
+    result = capability.compute({TAX: D(basic_tax)})
 
     assert result.outputs[AFTER] == D(after)

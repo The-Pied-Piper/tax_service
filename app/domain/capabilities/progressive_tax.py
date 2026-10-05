@@ -43,7 +43,7 @@ class ProgressiveTax(Capability):
     def produces(self) -> frozenset[Artifact]:
         return frozenset({self._output})
 
-    def _compute(self, inputs: Mapping[Artifact, Decimal]) -> CapabilityResult:
+    def compute(self, inputs: Mapping[Artifact, Decimal]) -> CapabilityResult:
         base = inputs[self._base]
         slices = self._schedule.slices(base)
         tax = self._rounding.apply(sum((s.tax for s in slices), Decimal(0)))

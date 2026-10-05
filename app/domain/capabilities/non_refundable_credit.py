@@ -42,7 +42,7 @@ class NonRefundableCredit(Capability):
     def produces(self) -> frozenset[Artifact]:
         return frozenset({self._output})
 
-    def _compute(self, inputs: Mapping[Artifact, Decimal]) -> CapabilityResult:
+    def compute(self, inputs: Mapping[Artifact, Decimal]) -> CapabilityResult:
         tax = inputs[self._tax]
         if tax < 0:
             raise ValueError(f"{self._tax} must not be negative, got {tax}")
