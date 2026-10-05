@@ -10,8 +10,6 @@ amounts folded into a total first, with the rate applied once.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from decimal import Decimal
 from typing import ClassVar
 
 from app.domain.artifact import Artifact
@@ -19,6 +17,7 @@ from app.domain.capability import Capability, CapabilityResult, TraceLine
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import RoundingRule
+from app.domain.worksheet import WorksheetView
 
 
 class NonRefundableCredit(Capability):
@@ -42,8 +41,8 @@ class NonRefundableCredit(Capability):
     def produces(self) -> frozenset[Artifact]:
         return frozenset({self._output})
 
-    def _compute(self, inputs: Mapping[Artifact, Decimal]) -> CapabilityResult:
-        tax = inputs[self._tax]
+    def compute(self, worksheet: WorksheetView) -> CapabilityResult:
+        tax = worksheet.get(self._tax)
         if tax < 0:
             raise ValueError(f"{self._tax} must not be negative, got {tax}")
         credit = self._rounding.apply(self._credit.value)

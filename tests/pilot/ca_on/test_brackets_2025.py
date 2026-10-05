@@ -15,8 +15,10 @@ import pytest
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.artifact import Artifact
 from app.domain.capabilities.progressive_tax import ProgressiveTax
+from app.domain.capability import CapabilityResult
 from app.domain.parameters.brackets import BRACKETS
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
+from app.domain.worksheet import Worksheet
 
 D = Decimal
 PARAMETERS = Path(__file__).resolve().parents[3] / "data" / "parameters"
@@ -35,6 +37,10 @@ ONTARIO_FIXED_TAX = {  # 2025 ON428 Part A, line 3 threshold -> line 7 fixed tax
     "150000": "12445.60",
     "220000": "20957.60",
 }
+
+
+def compute(capability: ProgressiveTax, values: dict[Artifact, Decimal]) -> CapabilityResult:
+    return capability.compute(Worksheet(values).view_for(capability))
 
 
 def test_federal_2025_brackets() -> None:
@@ -89,6 +95,8 @@ def test_matches_cra_worked_examples(taxable_income: str, federal_basic_tax: str
     data = SOURCE.get("ca/brackets", 2025, BRACKETS)
     base, tax = Artifact("taxable_income"), Artifact("federal_basic_tax")
 
-    result = ProgressiveTax(base, tax, data.values, data.rounding).run({base: D(taxable_income)})
+    capability = ProgressiveTax(base, tax, data.values, data.rounding)
+
+    result = compute(capability, {base: D(taxable_income)})
 
     assert result.outputs[tax] == D(federal_basic_tax)
