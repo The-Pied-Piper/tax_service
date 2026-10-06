@@ -9,12 +9,12 @@ come later.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any, ClassVar
 
 from app.domain.artifact import Artifact
+from app.domain.errors import CapabilityContractError, DuplicateArtifactError, MissingArtifactError
 from app.domain.parameters.kind import ParameterKind
 
 
@@ -28,7 +28,7 @@ class TraceLine:
 
 @dataclass(frozen=True)
 class CapabilityResult:
-    outputs: Mapping[Artifact, Decimal]
+    outputs: tuple[Artifact, ...]
     trace: tuple[TraceLine, ...]
 
 
@@ -38,15 +38,27 @@ class Capability(ABC):
 
     @property
     @abstractmethod
-    def consumes(self) -> frozenset[Artifact]: ...
+    def consumes(self) -> frozenset[type[Artifact]]: ...
 
     @property
     @abstractmethod
-    def produces(self) -> frozenset[Artifact]: ...
+    def produces(self) -> frozenset[type[Artifact]]: ...
 
     @abstractmethod
-    def compute(self, inputs: Mapping[Artifact, Decimal]) -> CapabilityResult:
+    def compute(self, inputs: tuple[Artifact, ...]) -> CapabilityResult:
         """Compute this capability's outputs from the artifacts it consumes.
 
         Only `Worksheet.apply` calls this in a real computation, checking the contract.
         """
+
+    def _input[A: Artifact](self, inputs: tuple[Artifact, ...], artifact: type[A]) -> A:
+        """The one value of `artifact` in `inputs`; `artifact` must be one this consumes."""
+        name = type(self).__name__
+        if artifact not in self.consumes:
+            raise CapabilityContractError(f"{name} does not consume {artifact.label()!r}")
+        found = [value for value in inputs if type(value) is artifact]
+        if not found:
+            raise MissingArtifactError(f"{name} needs {artifact.label()!r}")
+        if len(found) > 1:
+            raise DuplicateArtifactError(f"{name} got {len(found)} values for {artifact.label()!r}")
+        return found[0]

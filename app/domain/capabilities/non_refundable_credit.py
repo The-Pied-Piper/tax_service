@@ -10,49 +10,47 @@ amounts folded into a total first, with the rate applied once.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from decimal import Decimal
 from typing import ClassVar
 
-from app.domain.artifact import Artifact
+from app.domain.artifact import Amount, Artifact
 from app.domain.capability import Capability, CapabilityResult, TraceLine
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import RoundingRule
 
 
-class NonRefundableCredit(Capability):
+class NonRefundableCredit[In: Amount, Out: Amount](Capability):
     PARAMETERS: ClassVar[ParameterKind[Credit]] = CREDIT
 
     def __init__(
-        self, tax: Artifact, output: Artifact, credit: Credit, rounding: RoundingRule
+        self, tax: type[In], output: type[Out], credit: Credit, rounding: RoundingRule
     ) -> None:
-        if tax == output:
-            raise ValueError(f"tax and output must differ, got {tax} for both")
         self._tax = tax
         self._output = output
         self._credit = credit
         self._rounding = rounding
 
     @property
-    def consumes(self) -> frozenset[Artifact]:
+    def consumes(self) -> frozenset[type[Artifact]]:
         return frozenset({self._tax})
 
     @property
-    def produces(self) -> frozenset[Artifact]:
+    def produces(self) -> frozenset[type[Artifact]]:
         return frozenset({self._output})
 
-    def compute(self, inputs: Mapping[Artifact, Decimal]) -> CapabilityResult:
-        tax = inputs[self._tax]
+    def compute(self, inputs: tuple[Artifact, ...]) -> CapabilityResult:
+        tax = self._input(inputs, self._tax).value
         if tax < 0:
-            raise ValueError(f"{self._tax} must not be negative, got {tax}")
+            raise ValueError(f"{self._tax.label()} must not be negative, got {tax}")
         credit = self._rounding.apply(self._credit.value)
         applied = min(credit, tax)
         after = tax - applied
         trace: tuple[TraceLine, ...] = (
             TraceLine(f"credit: {self._credit.describe()} ({self._rounding})", credit),
-            TraceLine(f"{self._output}: {self._tax} {tax} less credit, not below 0", after),
+            TraceLine(
+                f"{self._output.label()}: {self._tax.label()} {tax} less credit, not below 0", after
+            ),
         )
         if credit > applied:
             trace += (TraceLine("unused credit, not refunded", credit - applied),)
-        return CapabilityResult(outputs={self._output: after}, trace=trace)
+        return CapabilityResult(outputs=(self._output(after),), trace=trace)

@@ -7,47 +7,45 @@ Rounding happens once, on the total, using the rule it is given.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from decimal import Decimal
 from typing import ClassVar
 
-from app.domain.artifact import Artifact
+from app.domain.artifact import Amount, Artifact
 from app.domain.capability import Capability, CapabilityResult, TraceLine
 from app.domain.parameters.brackets import BRACKETS, BracketSchedule
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import RoundingRule
 
 
-class ProgressiveTax(Capability):
+class ProgressiveTax[In: Amount, Out: Amount](Capability):
     PARAMETERS: ClassVar[ParameterKind[BracketSchedule]] = BRACKETS
 
     def __init__(
         self,
-        base: Artifact,
-        output: Artifact,
+        base: type[In],
+        output: type[Out],
         schedule: BracketSchedule,
         rounding: RoundingRule,
     ) -> None:
-        if base == output:
-            raise ValueError(f"base and output must differ, got {base} for both")
         self._base = base
         self._output = output
         self._schedule = schedule
         self._rounding = rounding
 
     @property
-    def consumes(self) -> frozenset[Artifact]:
+    def consumes(self) -> frozenset[type[Artifact]]:
         return frozenset({self._base})
 
     @property
-    def produces(self) -> frozenset[Artifact]:
+    def produces(self) -> frozenset[type[Artifact]]:
         return frozenset({self._output})
 
-    def compute(self, inputs: Mapping[Artifact, Decimal]) -> CapabilityResult:
-        base = inputs[self._base]
+    def compute(self, inputs: tuple[Artifact, ...]) -> CapabilityResult:
+        base = self._input(inputs, self._base).value
         slices = self._schedule.slices(base)
-        tax = self._rounding.apply(sum((s.tax for s in slices), Decimal(0)))
+        tax = self._rounding.apply(self._schedule.tax_on(base))
         trace = tuple(TraceLine(s.describe(), s.tax) for s in slices) + (
-            TraceLine(f"{self._output} on {self._base} {base} ({self._rounding})", tax),
+            TraceLine(
+                f"{self._output.label()} on {self._base.label()} {base} ({self._rounding})", tax
+            ),
         )
-        return CapabilityResult(outputs={self._output: tax}, trace=trace)
+        return CapabilityResult(outputs=(self._output(tax),), trace=trace)
