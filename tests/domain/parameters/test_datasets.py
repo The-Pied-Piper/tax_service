@@ -22,7 +22,8 @@ def test_holds_values_of_its_kind() -> None:
 
 def test_rejects_values_of_another_type() -> None:
     with pytest.raises(TypeError, match="credit dataset values must be a Credit, got Decimal"):
-        ParameterDataset(
+        # The wrong value type is deliberate: it exercises the run-time check mypy would block.
+        ParameterDataset(  # type: ignore[misc]
             "ex/credit",
             2025,
             CREDIT,

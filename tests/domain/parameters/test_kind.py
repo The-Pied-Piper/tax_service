@@ -25,3 +25,13 @@ def test_rejects_names_that_are_not_snake_case(name: str) -> None:
 def test_value_type_must_be_a_type() -> None:
     with pytest.raises(TypeError, match="value_type must be a type"):
         ParameterKind("x", "Decimal")  # type: ignore[arg-type]
+
+
+def test_kind_is_invariant_in_its_value_type() -> None:
+    # Covariance would let mypy widen T and accept a parser whose values do not match its kind.
+    (value_type,) = vars(ParameterKind)["__parameters__"]
+    assert not (
+        value_type.__covariant__
+        or value_type.__contravariant__
+        or getattr(value_type, "__infer_variance__", False)
+    )

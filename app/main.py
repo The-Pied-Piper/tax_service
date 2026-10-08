@@ -19,6 +19,7 @@ from connexion.resolver import Resolver
 from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+import app.registrations  # noqa: F401  (imported so every registering decorator runs)
 from app.adapters.inbound.status_adapter import StatusRequestAdapter
 from app.adapters.inbound.widgets_adapter import WidgetsRequestAdapter
 from app.adapters.outbound.db import DatabaseProbe, create_engine

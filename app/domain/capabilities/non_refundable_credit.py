@@ -13,12 +13,13 @@ from __future__ import annotations
 from typing import ClassVar
 
 from app.domain.artifact import Amount, Artifact
-from app.domain.capability import Capability, CapabilityResult, TraceLine
+from app.domain.capability import Capability, CapabilityResult, TraceLine, capability
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import RoundingRule
 
 
+@capability(identifier="non_refundable_credit")
 class NonRefundableCredit[In: Amount, Out: Amount](Capability):
     PARAMETERS: ClassVar[ParameterKind[Credit]] = CREDIT
 

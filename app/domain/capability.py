@@ -9,6 +9,7 @@ come later.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any, ClassVar
@@ -16,6 +17,7 @@ from typing import Any, ClassVar
 from app.domain.artifact import Artifact
 from app.domain.errors import CapabilityContractError, DuplicateArtifactError, MissingArtifactError
 from app.domain.parameters.kind import ParameterKind
+from app.domain.registry import NamespacedRegistry
 
 
 @dataclass(frozen=True)
@@ -62,3 +64,20 @@ class Capability(ABC):
         if len(found) > 1:
             raise DuplicateArtifactError(f"{name} got {len(found)} values for {artifact.label()!r}")
         return found[0]
+
+
+class CapabilityRegistry(NamespacedRegistry[type[Capability]]):
+    """The capability classes packages contribute, by full identifier (`core/progressive_tax`)."""
+
+    def register_class[C: Capability](self, local_id: str, cls: type[C]) -> type[C]:
+        """Register `cls` under `local_id` in its package's namespace and return it unchanged."""
+        self.register(local_id, cls)
+        return cls
+
+
+def capability[C: Capability](*, identifier: str) -> Callable[[type[C]], type[C]]:
+    """Class decorator registering a capability in the shared CapabilityRegistry under `identifier`.
+
+    `identifier` is the local id; the namespace comes from the package declaring `NAMESPACE`.
+    """
+    return lambda cls: CapabilityRegistry.shared().register_class(identifier, cls)

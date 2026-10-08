@@ -11,13 +11,11 @@ forward. Decimals are YAML strings ("0.145") so they never pass through float.
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
 from pathlib import Path
-from typing import Any
 
 import yaml
 
-from app.adapters.outbound.parameter_parsers import DEFAULT_PARSERS, ParameterParser
+from app.adapters.outbound.parameter_parsers.registry import ParameterParserRegistry
 from app.adapters.outbound.yaml_support import YamlNode, YamlShapeError
 from app.domain.errors import DomainError, InvalidParameterDataError, NotFoundError
 from app.domain.parameters.datasets import ParameterDataset
@@ -30,24 +28,20 @@ _ROUNDING_KEYS = frozenset({"increment", "mode"})
 
 
 class YamlParameterSource:
-    def __init__(
-        self, directory: Path, parsers: Sequence[ParameterParser[Any]] = DEFAULT_PARSERS
-    ) -> None:
+    def __init__(self, directory: Path, parsers: ParameterParserRegistry | None = None) -> None:
+        """Read datasets under `directory`, parsing each with its kind's parser from `parsers`.
+
+        Without `parsers`, the shared ParameterParserRegistry is used.
+        """
         self._directory = directory
-        self._parsers: dict[str, ParameterParser[Any]] = {}
-        for parser in parsers:
-            if parser.kind.name in self._parsers:
-                raise ValueError(f"two parsers for parameter kind {parser.kind.name!r}")
-            self._parsers[parser.kind.name] = parser
+        self._parsers = parsers if parsers is not None else ParameterParserRegistry.shared()
 
     def get[T](self, family: str, tax_year: int, kind: ParameterKind[T]) -> ParameterDataset[T]:
         """Read `<directory>/<family>/<tax_year>.yaml` and parse it with the parser for `kind`.
 
         The file must declare the same family, year and kind; see ParameterSource.get for errors.
         """
-        parser = self._parsers.get(kind.name)
-        if parser is None or parser.kind != kind:
-            raise LookupError(f"no parser for parameter kind {kind.name!r}")
+        parser = self._parsers.get(kind)
         path = self._path(family, tax_year)
         try:
             document = YamlNode.load(path, "dataset")
