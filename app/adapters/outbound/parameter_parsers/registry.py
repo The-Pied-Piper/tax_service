@@ -37,13 +37,9 @@ class ParserClass[T, P](Protocol):
 class ParameterParserRegistry(Registry[object]):
     """Holds one parser per parameter kind; lookups by `ParameterKind[T]` give `ParameterParser[T]`.
 
-    Its string keys are kind names (not namespaced yet); use the typed entry points below.
+    Its string keys are kind names (not namespaced yet); register parsers with `register_class`
+    or `@parameter_parser`.
     """
-
-    def register_parser[T](self, parser: ParameterParser[T]) -> ParameterParser[T]:
-        """Register `parser` under its kind's name and return it; one parser per kind."""
-        self.register(parser.kind.name, parser)
-        return parser
 
     def for_kind[T](self, kind: ParameterKind[T]) -> ParameterParser[T]:
         """The parser registered for exactly `kind` (same name and value type)."""
@@ -56,9 +52,9 @@ class ParameterParserRegistry(Registry[object]):
         return cast(ParameterParser[T], found)
 
     def register_class[T, P: ParameterParser[Any]](self, cls: ParserClass[T, P]) -> type[P]:
-        """Register an instance of the parser class `cls` and return the class unchanged."""
+        """Register an instance of `cls` under its kind's name and return the class unchanged."""
         parser = cls()
-        self.register_parser(parser)
+        self.register(parser.kind.name, parser)
         # `cls` is typed as the ParserClass protocol, not as a class; `type(parser)` is the
         # same class at run time and gives mypy `type[P]`, with no cast.
         return type(parser)

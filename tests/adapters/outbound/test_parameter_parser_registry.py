@@ -63,34 +63,31 @@ def test_parameter_parser_registry_is_a_registry() -> None:
     assert issubclass(ParameterParserRegistry, Registry)
 
 
-def test_register_parser_returns_the_parser_itself() -> None:
-    parser = FlatRateParser()
+def test_register_class_returns_the_class_unchanged() -> None:
+    registered = ParameterParserRegistry().register_class(FlatRateParser)
 
-    registered = ParameterParserRegistry().register_parser(parser)
+    assert_type(registered, type[FlatRateParser])
 
-    assert_type(registered, ParameterParser[Decimal])
-
-    assert registered is parser
+    assert registered is FlatRateParser
 
 
 def test_for_kind_returns_the_parser_registered_for_the_kind() -> None:
     registry = ParameterParserRegistry()
-    brackets = BracketsParser()
-    registry.register_parser(brackets)
-    registry.register_parser(CreditParser())
+    registry.register_class(BracketsParser)
+    registry.register_class(CreditParser)
 
     found = registry.for_kind(BRACKETS)
 
     assert_type(found, ParameterParser[BracketSchedule])
-    assert found is brackets
+    assert isinstance(found, BracketsParser)
     assert found.kind is BRACKETS
 
 
 def test_for_kind_is_typed_by_the_kind() -> None:
     registry = ParameterParserRegistry()
-    registry.register_parser(BracketsParser())
-    registry.register_parser(CreditParser())
-    registry.register_parser(FlatRateParser())
+    registry.register_class(BracketsParser)
+    registry.register_class(CreditParser)
+    registry.register_class(FlatRateParser)
 
     schedule = registry.for_kind(BRACKETS).parse(
         YamlNode.root({"brackets": [{"from": "0", "rate": "0.1"}]}, "dataset")
@@ -111,26 +108,25 @@ def test_for_kind_is_typed_by_the_kind() -> None:
 
 def test_parsers_are_keyed_by_their_kind_name() -> None:
     registry = ParameterParserRegistry()
-    parser = FlatRateParser()
-    registry.register_parser(parser)
+    registry.register_class(FlatRateParser)
 
-    assert registry.get("flat_rate") is parser  # the inherited string-keyed lookup
+    assert isinstance(registry.get("flat_rate"), FlatRateParser)  # the inherited lookup
 
 
 def test_registering_two_parsers_for_one_kind_fails() -> None:
     registry = ParameterParserRegistry()
-    first = FlatRateParser()
-    registry.register_parser(first)
+    registry.register_class(FlatRateParser)
+    first = registry.for_kind(FLAT_RATE)
 
     with pytest.raises(DuplicateRegistrationError, match="'flat_rate'"):
-        registry.register_parser(OtherFlatRateParser())
+        registry.register_class(FlatRateParser)
 
     assert registry.for_kind(FLAT_RATE) is first  # never silently overridden
 
 
 def test_getting_a_kind_without_a_parser_fails() -> None:
     registry = ParameterParserRegistry()
-    registry.register_parser(BracketsParser())
+    registry.register_class(BracketsParser)
 
     with pytest.raises(UnknownRegistrationError, match="'flat_rate'"):
         registry.for_kind(FLAT_RATE)
@@ -138,7 +134,7 @@ def test_getting_a_kind_without_a_parser_fails() -> None:
 
 def test_a_kind_with_a_registered_name_but_another_value_type_is_unknown() -> None:
     registry = ParameterParserRegistry()
-    registry.register_parser(BracketsParser())
+    registry.register_class(BracketsParser)
     impostor = ParameterKind("brackets", Decimal)
 
     with pytest.raises(UnknownRegistrationError, match="'brackets'"):
@@ -146,7 +142,7 @@ def test_a_kind_with_a_registered_name_but_another_value_type_is_unknown() -> No
 
 
 def test_a_non_parser_stored_under_a_kind_name_is_unknown() -> None:
-    # The inherited string-keyed `register` bypasses `register_parser`; `for_kind` must not
+    # The inherited string-keyed `register` bypasses `register_class`; `for_kind` must not
     # trust what it finds there.
     registry = ParameterParserRegistry()
     registry.register("brackets", 42)
