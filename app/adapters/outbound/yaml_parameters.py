@@ -41,7 +41,7 @@ class YamlParameterSource:
 
         The file must declare the same family, year and kind; see ParameterSource.get for errors.
         """
-        parser = self._parsers.get(kind)
+        parser = self._parsers.for_kind(kind)
         path = self._path(family, tax_year)
         try:
             document = YamlNode.load(path, "dataset")

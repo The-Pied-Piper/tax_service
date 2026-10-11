@@ -1,8 +1,9 @@
-"""Unit tests for Registry and NamespacedRegistry: namespaced registration and typed lookup.
+"""Unit tests for Registry (a plain string-keyed store) and Namespace (namespaced identifiers).
 
-A registration gives only a local id; the namespace comes from the nearest package above
-the registered object's module that declares `NAMESPACE`. Names are made up; the made-up
-packages live in `registration_fixtures`.
+A package declares its namespace once, as `NAMESPACE` in its `__init__.py`; `Namespace.of` finds
+the nearest package above an object's module that declares one, and `identifier` builds
+`<namespace>/<local id>`. Names are made up; the made-up packages live in
+`registration_fixtures`.
 """
 
 from __future__ import annotations
@@ -10,6 +11,7 @@ from __future__ import annotations
 import importlib
 import sys
 from collections.abc import Iterator
+from types import SimpleNamespace
 
 import pytest
 
@@ -19,23 +21,20 @@ from app.domain.errors import (
     InvalidRegistrationError,
     UnknownRegistrationError,
 )
-from app.domain.registry import NamespacedRegistry, Registry
+from app.domain.registry import Namespace, Registry
 from tests.domain.registration_fixtures.bad_namespace.oddities import Oddity
+from tests.domain.registration_fixtures.nonstring_namespace import oddities as nonstring
 from tests.domain.registration_fixtures.with_namespace.gadgets import Gadget, Sprocket
 from tests.domain.registration_fixtures.with_namespace.inner import gadgets as inner
 from tests.domain.registration_fixtures.with_namespace.plain.widgets import Widget
 from tests.domain.registration_fixtures.without_namespace.orphans import Orphan
 
 
-def make_registry() -> NamespacedRegistry[type[object]]:
-    return NamespacedRegistry[type[object]]()
+def make_registry() -> Registry[type[object]]:
+    return Registry[type[object]]()
 
 
-# --- registering and looking up -----------------------------------------------------------
-
-
-def test_register_returns_the_full_namespaced_identifier() -> None:
-    assert make_registry().register("gadget", Gadget) == "ex/gadget"
+# --- registering and looking up by plain string keys ---------------------------------------
 
 
 def test_get_returns_the_exact_registered_object() -> None:
@@ -43,26 +42,27 @@ def test_get_returns_the_exact_registered_object() -> None:
     registry.register("gadget", Gadget)
     registry.register("sprocket", Sprocket)
 
-    found: type[object] = registry.get("ex/gadget")
+    found: type[object] = registry.get("gadget")
 
     assert found is Gadget
-    assert registry.get("ex/sprocket") is Sprocket
+    assert registry.get("sprocket") is Sprocket
 
 
-def test_get_needs_the_full_identifier_not_the_local_id() -> None:
+def test_keys_are_used_as_given() -> None:
     registry = make_registry()
-    registry.register("gadget", Gadget)
+    registry.register("ex/gadget", Gadget)
 
+    assert registry.get("ex/gadget") is Gadget
     with pytest.raises(UnknownRegistrationError, match="'gadget'"):
         registry.get("gadget")
 
 
-def test_get_of_an_unknown_identifier_fails() -> None:
+def test_get_of_an_unknown_key_fails() -> None:
     registry = make_registry()
     registry.register("gadget", Gadget)
 
-    with pytest.raises(UnknownRegistrationError, match="'ex/missing'"):
-        registry.get("ex/missing")
+    with pytest.raises(UnknownRegistrationError, match="'missing'"):
+        registry.get("missing")
 
 
 def test_registries_do_not_share_registrations() -> None:
@@ -70,57 +70,66 @@ def test_registries_do_not_share_registrations() -> None:
     first.register("gadget", Gadget)
 
     with pytest.raises(UnknownRegistrationError):
-        make_registry().get("ex/gadget")
+        make_registry().get("gadget")
 
 
 # --- uniqueness ---------------------------------------------------------------------------
 
 
-def test_registering_an_identifier_twice_fails() -> None:
+def test_registering_a_key_twice_fails() -> None:
     registry = make_registry()
     registry.register("gadget", Gadget)
 
-    with pytest.raises(DuplicateRegistrationError, match="'ex/gadget'"):
+    with pytest.raises(DuplicateRegistrationError, match="'gadget'"):
         registry.register("gadget", Sprocket)
 
-    assert registry.get("ex/gadget") is Gadget  # never silently overridden
+    assert registry.get("gadget") is Gadget  # never silently overridden
 
 
-def test_registering_the_same_object_twice_under_one_identifier_fails() -> None:
+def test_registering_the_same_object_twice_under_one_key_fails() -> None:
     registry = make_registry()
     registry.register("gadget", Gadget)
 
-    with pytest.raises(DuplicateRegistrationError, match="'ex/gadget'"):
+    with pytest.raises(DuplicateRegistrationError, match="'gadget'"):
         registry.register("gadget", Gadget)
-
-
-def test_the_same_local_id_in_different_namespaces_is_allowed() -> None:
-    registry = make_registry()
-
-    assert registry.register("gadget", Gadget) == "ex/gadget"
-    assert registry.register("gadget", inner.Gadget) == "ex-inner/gadget"
-    assert registry.get("ex/gadget") is Gadget
-    assert registry.get("ex-inner/gadget") is inner.Gadget
 
 
 # --- namespaces ---------------------------------------------------------------------------
 
 
+def test_namespace_of_an_object_is_the_one_its_package_declares() -> None:
+    assert Namespace.of(Gadget) == Namespace("ex")
+    assert Namespace.of(Gadget).name == "ex"
+
+
+def test_identifier_is_the_namespace_and_the_local_id() -> None:
+    assert Namespace.of(Gadget).identifier("gadget") == "ex/gadget"
+
+
 def test_namespace_is_inherited_from_an_enclosing_package() -> None:
     # `plain` declares no NAMESPACE; its parent package declares "ex".
-    assert make_registry().register("widget", Widget) == "ex/widget"
+    assert Namespace.of(Widget).identifier("widget") == "ex/widget"
 
 
 def test_nearest_package_declaring_a_namespace_wins() -> None:
     # `inner` declares "ex-inner" below a package declaring "ex".
-    assert make_registry().register("gadget", inner.Gadget) == "ex-inner/gadget"
+    assert Namespace.of(inner.Gadget).identifier("gadget") == "ex-inner/gadget"
 
 
-def test_registering_from_a_module_without_a_namespace_fails_naming_the_module() -> None:
+def test_the_same_local_id_in_different_namespaces_gives_distinct_identifiers() -> None:
+    registry = make_registry()
+    registry.register(Namespace.of(Gadget).identifier("gadget"), Gadget)
+    registry.register(Namespace.of(inner.Gadget).identifier("gadget"), inner.Gadget)
+
+    assert registry.get("ex/gadget") is Gadget
+    assert registry.get("ex-inner/gadget") is inner.Gadget
+
+
+def test_an_object_from_a_module_without_a_namespace_fails_naming_the_module() -> None:
     module = "tests.domain.registration_fixtures.without_namespace.orphans"
 
     with pytest.raises(InvalidRegistrationError, match="NAMESPACE") as excinfo:
-        make_registry().register("orphan", Orphan)
+        Namespace.of(Orphan)
 
     assert module in str(excinfo.value)
 
@@ -164,9 +173,31 @@ def test_registering_from_the_init_of_a_package_inheriting_its_namespace_fails()
     assert REEXPORTING in str(excinfo.value)
 
 
-def test_a_malformed_namespace_is_rejected() -> None:
+def test_a_malformed_declared_namespace_is_rejected() -> None:
     with pytest.raises(InvalidRegistrationError, match="'Ex_Bad'"):
-        make_registry().register("oddity", Oddity)
+        Namespace.of(Oddity)
+
+
+def test_a_declared_namespace_that_is_not_a_string_is_rejected() -> None:
+    with pytest.raises(InvalidRegistrationError, match="NAMESPACE 1"):
+        Namespace.of(nonstring.Oddity)
+
+
+def test_an_object_without_a_module_name_is_rejected() -> None:
+    # An object whose `__module__` is not a string gives no package to walk up from.
+    with pytest.raises(InvalidRegistrationError, match="which module"):
+        Namespace.of(SimpleNamespace(__module__=1))
+
+
+@pytest.mark.parametrize("name", ["", "Ex", "ex_bad", "ex--bad", "-ex", "ex-", "ex/bad", "e x"])
+def test_a_malformed_namespace_name_is_rejected(name: str) -> None:
+    with pytest.raises(InvalidRegistrationError, match="lowercase"):
+        Namespace(name)
+
+
+@pytest.mark.parametrize("name", ["core", "ca", "ca-on", "ex2", "a-b-c"])
+def test_well_formed_namespace_names_are_accepted(name: str) -> None:
+    assert Namespace(name).identifier("gadget") == f"{name}/gadget"
 
 
 @pytest.mark.parametrize(
@@ -184,15 +215,13 @@ def test_a_malformed_namespace_is_rejected() -> None:
     ],
 )
 def test_a_local_id_that_is_not_snake_case_is_rejected(local_id: str) -> None:
-    registry = make_registry()
-
     with pytest.raises(InvalidRegistrationError, match="snake_case"):
-        registry.register(local_id, Gadget)
+        Namespace("ex").identifier(local_id)
 
 
 @pytest.mark.parametrize("local_id", ["gadget", "gadget_2", "big_gadget", "g"])
 def test_snake_case_local_ids_are_accepted(local_id: str) -> None:
-    assert make_registry().register(local_id, Gadget) == f"ex/{local_id}"
+    assert Namespace("ex").identifier(local_id) == f"ex/{local_id}"
 
 
 # --- one shared instance per registry subclass ---------------------------------------------
@@ -222,12 +251,15 @@ def test_a_plain_registry_can_be_constructed_directly() -> None:
     assert isinstance(Registry[type[object]](), Registry)
 
 
-def test_a_namespaced_registry_is_a_registry() -> None:
-    assert issubclass(NamespacedRegistry, Registry)
-
-
 def test_a_directly_constructed_registry_is_not_the_shared_one() -> None:
     assert ExampleRegistry() is not ExampleRegistry.shared()
+
+
+def test_a_subclass_registers_and_gets_through_the_inherited_methods() -> None:
+    registry = ExampleRegistry()
+    registry.register("gadget", Gadget)
+
+    assert registry.get("gadget") is Gadget
 
 
 # --- errors -------------------------------------------------------------------------------

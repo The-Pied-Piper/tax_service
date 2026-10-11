@@ -14,8 +14,12 @@ import pytest
 from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capability import Capability, CapabilityRegistry, capability
-from app.domain.errors import DuplicateRegistrationError, UnknownRegistrationError
-from app.domain.registry import Registry
+from app.domain.errors import (
+    DuplicateRegistrationError,
+    InvalidRegistrationError,
+    UnknownRegistrationError,
+)
+from app.domain.registry import Namespace, Registry
 from tests.domain.registration_fixtures.with_namespace.gadgets import GadgetLevy
 
 
@@ -45,6 +49,46 @@ def test_a_directly_constructed_registry_is_separate_and_empty() -> None:
     assert registry is not CapabilityRegistry.shared()
     with pytest.raises(UnknownRegistrationError):
         registry.get("core/progressive_tax")
+
+
+def test_register_class_returns_the_class_unchanged() -> None:
+    registered = CapabilityRegistry().register_class("gadget_levy", GadgetLevy)
+
+    assert_type(registered, type[GadgetLevy])
+
+    assert registered is GadgetLevy
+
+
+def test_register_class_registers_under_the_namespaced_identifier() -> None:
+    registry = CapabilityRegistry()
+    registry.register_class("gadget_levy", GadgetLevy)
+
+    found = registry.get("ex/gadget_levy")
+
+    assert_type(found, type[Capability])
+    assert found is GadgetLevy
+    assert Namespace.of(GadgetLevy).identifier("gadget_levy") == "ex/gadget_levy"
+
+
+def test_register_class_needs_the_full_identifier_to_look_up() -> None:
+    registry = CapabilityRegistry()
+    registry.register_class("gadget_levy", GadgetLevy)
+
+    with pytest.raises(UnknownRegistrationError, match="'gadget_levy'"):
+        registry.get("gadget_levy")
+
+
+def test_register_class_twice_under_one_identifier_fails() -> None:
+    registry = CapabilityRegistry()
+    registry.register_class("gadget_levy", GadgetLevy)
+
+    with pytest.raises(DuplicateRegistrationError, match="'ex/gadget_levy'"):
+        registry.register_class("gadget_levy", GadgetLevy)
+
+
+def test_register_class_rejects_a_local_id_that_is_not_snake_case() -> None:
+    with pytest.raises(InvalidRegistrationError, match="snake_case"):
+        CapabilityRegistry().register_class("GadgetLevy", GadgetLevy)
 
 
 # --- the decorator --------------------------------------------------------------------------

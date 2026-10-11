@@ -1,10 +1,10 @@
 """A made-up module that registers on import, in a registry of its own."""
 
-from app.domain.registry import NamespacedRegistry
+from app.domain.registry import Namespace, Registry
 
 
 class Thing:
     """A made-up thing to register."""
 
 
-NamespacedRegistry[type[object]]().register("thing", Thing)
+Registry[type[object]]().register(Namespace.of(Thing).identifier("thing"), Thing)

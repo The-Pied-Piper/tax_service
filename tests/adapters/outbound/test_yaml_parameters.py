@@ -60,8 +60,8 @@ rate: "0.125"
 def built_in_parsers() -> ParameterParserRegistry:
     """A fresh registry holding the built-in parsers, never the shared one."""
     registry = ParameterParserRegistry()
-    registry.register(BracketsParser())
-    registry.register(CreditParser())
+    registry.register_parser(BracketsParser())
+    registry.register_parser(CreditParser())
     return registry
 
 
@@ -143,7 +143,7 @@ def test_new_kinds_need_only_a_registered_parser(tmp_path: Path) -> None:
         'sources: [https://example.org]\nrounding: none\nrate: "0.2"\n',
     )
     parsers = built_in_parsers()
-    parsers.register(FlatRateParser())
+    parsers.register_parser(FlatRateParser())
 
     values: Decimal = (
         YamlParameterSource(tmp_path, parsers=parsers).get("ex/flat", 2025, FLAT_RATE).values
@@ -162,7 +162,7 @@ def test_requesting_a_kind_without_a_parser_fails(tmp_path: Path) -> None:
 def test_parsers_are_read_from_the_injected_registry(tmp_path: Path) -> None:
     write(tmp_path, "ex/brackets/2025.yaml", BRACKETS_2025)
     parsers = ParameterParserRegistry()
-    parsers.register(CreditParser())
+    parsers.register_parser(CreditParser())
 
     with pytest.raises(UnknownRegistrationError, match="'brackets'"):
         YamlParameterSource(tmp_path, parsers=parsers).get("ex/brackets", 2025, BRACKETS)

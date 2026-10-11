@@ -37,29 +37,28 @@ class ParserClass[T, P](Protocol):
 class ParameterParserRegistry(Registry[object]):
     """Holds one parser per parameter kind; lookups by `ParameterKind[T]` give `ParameterParser[T]`.
 
-    Unlike other registries it is keyed by kind name rather than by a namespaced identifier.
+    Its string keys are kind names (not namespaced yet); use the typed entry points below.
     """
 
-    def register[T](self, parser: ParameterParser[T]) -> ParameterParser[T]:
+    def register_parser[T](self, parser: ParameterParser[T]) -> ParameterParser[T]:
         """Register `parser` under its kind's name and return it; one parser per kind."""
-        self._add(parser.kind.name, parser)
+        self.register(parser.kind.name, parser)
         return parser
 
-    def get[T](self, kind: ParameterKind[T]) -> ParameterParser[T]:
+    def for_kind[T](self, kind: ParameterKind[T]) -> ParameterParser[T]:
         """The parser registered for exactly `kind` (same name and value type)."""
-        # Safe: `register` stores every parser under its own kind's name, and the check below
-        # confirms that kind is `kind` itself, value type included.
-        parser = cast(ParameterParser[T], self._find(kind.name))
-        if parser.kind != kind:
+        found = self.get(kind.name)
+        if getattr(found, "kind", None) != kind:
             raise UnknownRegistrationError(
                 f"no parser for parameter kind {kind.name!r} with values of {kind.value_type!r}"
             )
-        return parser
+        # Safe: the found object's kind equals `kind`, value type included.
+        return cast(ParameterParser[T], found)
 
     def register_class[T, P: ParameterParser[Any]](self, cls: ParserClass[T, P]) -> type[P]:
         """Register an instance of the parser class `cls` and return the class unchanged."""
         parser = cls()
-        self.register(parser)
+        self.register_parser(parser)
         # `cls` is typed as the ParserClass protocol, not as a class; `type(parser)` is the
         # same class at run time and gives mypy `type[P]`, with no cast.
         return type(parser)

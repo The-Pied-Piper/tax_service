@@ -17,7 +17,7 @@ from typing import Any, ClassVar
 from app.domain.artifact import Artifact
 from app.domain.errors import CapabilityContractError, DuplicateArtifactError, MissingArtifactError
 from app.domain.parameters.kind import ParameterKind
-from app.domain.registry import NamespacedRegistry
+from app.domain.registry import Namespace, Registry
 
 
 @dataclass(frozen=True)
@@ -66,12 +66,16 @@ class Capability(ABC):
         return found[0]
 
 
-class CapabilityRegistry(NamespacedRegistry[type[Capability]]):
-    """The capability classes packages contribute, by full identifier (`core/progressive_tax`)."""
+class CapabilityRegistry(Registry[type[Capability]]):
+    """The capability classes packages contribute, by full identifier (`core/progressive_tax`).
+
+    Register through `register_class` or `@capability`; the inherited `register` takes the key
+    as given and skips namespace validation.
+    """
 
     def register_class[C: Capability](self, local_id: str, cls: type[C]) -> type[C]:
         """Register `cls` under `local_id` in its package's namespace and return it unchanged."""
-        self.register(local_id, cls)
+        self.register(Namespace.of(cls).identifier(local_id), cls)
         return cls
 
 

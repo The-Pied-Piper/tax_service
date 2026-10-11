@@ -1,7 +1,7 @@
 """Unit tests for ParameterParserRegistry and `@parameter_parser`.
 
 Parsers are keyed by their kind's plain name (`brackets`, `credit`), not namespaced yet.
-Lookups are typed: `get(kind)` for a `ParameterKind[T]` gives a `ParameterParser[T]`; the
+Lookups are typed: `for_kind(kind)` for a `ParameterKind[T]` gives a `ParameterParser[T]`; the
 `assert_type` checks below make `mypy .` fail if a lookup returned `Any` or another type.
 Made-up kinds and parsers are never registered in the shared registry: the decorator test
 points `ParameterParserRegistry.shared` at a fresh registry with monkeypatch.
@@ -63,40 +63,42 @@ def test_parameter_parser_registry_is_a_registry() -> None:
     assert issubclass(ParameterParserRegistry, Registry)
 
 
-def test_register_returns_the_parser_itself() -> None:
+def test_register_parser_returns_the_parser_itself() -> None:
     parser = FlatRateParser()
 
-    registered = ParameterParserRegistry().register(parser)
+    registered = ParameterParserRegistry().register_parser(parser)
 
     assert_type(registered, ParameterParser[Decimal])
 
     assert registered is parser
 
 
-def test_get_returns_the_parser_registered_for_the_kind() -> None:
+def test_for_kind_returns_the_parser_registered_for_the_kind() -> None:
     registry = ParameterParserRegistry()
     brackets = BracketsParser()
-    registry.register(brackets)
-    registry.register(CreditParser())
+    registry.register_parser(brackets)
+    registry.register_parser(CreditParser())
 
-    found = registry.get(BRACKETS)
+    found = registry.for_kind(BRACKETS)
 
     assert_type(found, ParameterParser[BracketSchedule])
     assert found is brackets
     assert found.kind is BRACKETS
 
 
-def test_get_is_typed_by_the_kind() -> None:
+def test_for_kind_is_typed_by_the_kind() -> None:
     registry = ParameterParserRegistry()
-    registry.register(BracketsParser())
-    registry.register(CreditParser())
-    registry.register(FlatRateParser())
+    registry.register_parser(BracketsParser())
+    registry.register_parser(CreditParser())
+    registry.register_parser(FlatRateParser())
 
-    schedule = registry.get(BRACKETS).parse(
+    schedule = registry.for_kind(BRACKETS).parse(
         YamlNode.root({"brackets": [{"from": "0", "rate": "0.1"}]}, "dataset")
     )
-    credit = registry.get(CREDIT).parse(YamlNode.root({"amount": "100", "rate": "0.5"}, "dataset"))
-    rate = registry.get(FLAT_RATE).parse(YamlNode.root({"rate": "0.2"}, "dataset"))
+    credit = registry.for_kind(CREDIT).parse(
+        YamlNode.root({"amount": "100", "rate": "0.5"}, "dataset")
+    )
+    rate = registry.for_kind(FLAT_RATE).parse(YamlNode.root({"rate": "0.2"}, "dataset"))
 
     assert_type(schedule, BracketSchedule)
     assert_type(credit, Credit)
@@ -107,32 +109,50 @@ def test_get_is_typed_by_the_kind() -> None:
     assert rate == D("0.2")
 
 
+def test_parsers_are_keyed_by_their_kind_name() -> None:
+    registry = ParameterParserRegistry()
+    parser = FlatRateParser()
+    registry.register_parser(parser)
+
+    assert registry.get("flat_rate") is parser  # the inherited string-keyed lookup
+
+
 def test_registering_two_parsers_for_one_kind_fails() -> None:
     registry = ParameterParserRegistry()
     first = FlatRateParser()
-    registry.register(first)
+    registry.register_parser(first)
 
     with pytest.raises(DuplicateRegistrationError, match="'flat_rate'"):
-        registry.register(OtherFlatRateParser())
+        registry.register_parser(OtherFlatRateParser())
 
-    assert registry.get(FLAT_RATE) is first  # never silently overridden
+    assert registry.for_kind(FLAT_RATE) is first  # never silently overridden
 
 
 def test_getting_a_kind_without_a_parser_fails() -> None:
     registry = ParameterParserRegistry()
-    registry.register(BracketsParser())
+    registry.register_parser(BracketsParser())
 
     with pytest.raises(UnknownRegistrationError, match="'flat_rate'"):
-        registry.get(FLAT_RATE)
+        registry.for_kind(FLAT_RATE)
 
 
 def test_a_kind_with_a_registered_name_but_another_value_type_is_unknown() -> None:
     registry = ParameterParserRegistry()
-    registry.register(BracketsParser())
+    registry.register_parser(BracketsParser())
     impostor = ParameterKind("brackets", Decimal)
 
     with pytest.raises(UnknownRegistrationError, match="'brackets'"):
-        registry.get(impostor)
+        registry.for_kind(impostor)
+
+
+def test_a_non_parser_stored_under_a_kind_name_is_unknown() -> None:
+    # The inherited string-keyed `register` bypasses `register_parser`; `for_kind` must not
+    # trust what it finds there.
+    registry = ParameterParserRegistry()
+    registry.register("brackets", 42)
+
+    with pytest.raises(UnknownRegistrationError, match="'brackets'"):
+        registry.for_kind(BRACKETS)
 
 
 # --- the shared registry ----------------------------------------------------------------------
@@ -148,7 +168,7 @@ def test_a_directly_constructed_registry_is_separate_and_empty() -> None:
 
     assert registry is not ParameterParserRegistry.shared()
     with pytest.raises(UnknownRegistrationError):
-        registry.get(BRACKETS)
+        registry.for_kind(BRACKETS)
 
 
 def test_shared_parser_registry_is_not_the_shared_capability_registry() -> None:
@@ -161,7 +181,7 @@ def test_shared_parser_registry_is_not_the_shared_capability_registry() -> None:
 def test_decorator_registers_an_instance_under_its_kind(fresh: ParameterParserRegistry) -> None:
     parameter_parser(FlatRateParser)
 
-    found = fresh.get(FLAT_RATE)
+    found = fresh.for_kind(FLAT_RATE)
 
     assert_type(found, ParameterParser[Decimal])
     assert isinstance(found, FlatRateParser)
@@ -189,7 +209,7 @@ def test_decorating_a_second_parser_for_one_kind_fails(fresh: ParameterParserReg
 def test_built_in_parsers_are_registered_in_the_shared_registry(
     kind: ParameterKind[object], parser_class: type[object]
 ) -> None:
-    parser = ParameterParserRegistry.shared().get(kind)
+    parser = ParameterParserRegistry.shared().for_kind(kind)
 
     assert isinstance(parser, parser_class)
     assert parser.kind is kind

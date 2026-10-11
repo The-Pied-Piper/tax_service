@@ -1,9 +1,10 @@
 """Registries: where packages register the pieces they contribute (capabilities, parsers, ...).
 
-The core never lists contributed pieces. A package declares its namespace once, as
-`NAMESPACE = "..."` in its `__init__.py`, and registers each piece under a local id; the full
-identifier is `<namespace>/<local id>`. The registry never discovers or imports anything: a
-registration happens when the registering module is imported. A registration made while a
+The core never lists contributed pieces. `Registry` is a plain store keyed by strings; subclasses
+add typed entry points under their own names. `Namespace` builds namespaced identifiers: a
+package declares its namespace once, as `NAMESPACE = "..."` in its `__init__.py`, and each piece
+is identified as `<namespace>/<local id>`. Nothing here discovers or imports anything: a
+registration happens when the registering module is imported. Resolving the namespace while a
 package without `NAMESPACE` is still being imported fails: declare `NAMESPACE` at the top of its
 `__init__.py` (repeat the parent's to inherit it), or do not import registering modules from
 that `__init__.py`.
@@ -13,6 +14,7 @@ from __future__ import annotations
 
 import re
 import sys
+from dataclasses import dataclass
 from typing import ClassVar, Self
 
 from app.domain.errors import (
@@ -26,7 +28,7 @@ _LOCAL_ID = re.compile(r"[a-z][a-z0-9]*(_[a-z0-9]+)*")
 
 
 class Registry[T]:
-    """A store of items of one kind under unique keys; subclasses decide how items are keyed.
+    """A store of items of one kind under unique string keys.
 
     Construct one directly for a private registry, or use `shared()` for the application-wide one.
     """
@@ -45,40 +47,47 @@ class Registry[T]:
             Registry._shared[cls] = instance
         return instance
 
-    def _add(self, key: str, item: T) -> None:
+    def register(self, key: str, item: T) -> None:
+        """Store `item` under `key`; a key already taken is an error, never an override."""
         if key in self._items:
             raise DuplicateRegistrationError(f"{key!r} is already registered")
         self._items[key] = item
 
-    def _find(self, key: str) -> T:
+    def get(self, key: str) -> T:
+        """The item registered under `key`."""
         try:
             return self._items[key]
         except KeyError:
             raise UnknownRegistrationError(f"nothing is registered as {key!r}") from None
 
 
-class NamespacedRegistry[T](Registry[T]):
-    """A registry keyed by namespaced identifiers such as `core/progressive_tax`.
+@dataclass(frozen=True)
+class Namespace:
+    """A package's namespace, such as `core` or `ca-on`: lowercase letters, digits, single hyphens.
 
-    The namespace is the one declared by the nearest package above the registered item's module.
+    It prefixes local ids to give full identifiers such as `core/progressive_tax`.
     """
 
-    def register(self, local_id: str, item: T) -> str:
-        """Register `item` under `<namespace>/<local_id>` and return that full identifier."""
+    name: str
+
+    def __post_init__(self) -> None:
+        if not _NAMESPACE.fullmatch(self.name):
+            raise InvalidRegistrationError(
+                f"invalid namespace {self.name!r}: expected lowercase letters and digits with "
+                "single hyphens, e.g. 'ca-on'"
+            )
+
+    def identifier(self, local_id: str) -> str:
+        """The full identifier `<namespace>/<local_id>`; `local_id` must be snake_case."""
         if not _LOCAL_ID.fullmatch(local_id):
             raise InvalidRegistrationError(
                 f"invalid local id {local_id!r}: expected snake_case, e.g. 'progressive_tax'"
             )
-        identifier = f"{self._namespace_of(item)}/{local_id}"
-        self._add(identifier, item)
-        return identifier
+        return f"{self.name}/{local_id}"
 
-    def get(self, identifier: str) -> T:
-        """The item registered under the full identifier `identifier`."""
-        return self._find(identifier)
-
-    @staticmethod
-    def _namespace_of(item: object) -> str:
+    @classmethod
+    def of(cls, item: object) -> Namespace:
+        """The namespace declared by the nearest package above the module `item` comes from."""
         module = getattr(item, "__module__", None)
         if not isinstance(module, str):
             raise InvalidRegistrationError(f"cannot tell which module {item!r} comes from")
@@ -86,21 +95,25 @@ class NamespacedRegistry[T](Registry[T]):
         for end in range(len(parts), 0, -1):
             name = ".".join(parts[:end])
             package = sys.modules.get(name)
-            is_package = package is not None and hasattr(package, "__path__")
-            namespace = getattr(package, "NAMESPACE", None) if is_package else None
-            if namespace is None and is_package and NamespacedRegistry._initializing(package):
-                raise InvalidRegistrationError(
-                    f"package {name} is still being imported and has no NAMESPACE: declare "
-                    "NAMESPACE at the top of its __init__.py (repeat the parent's to inherit it), "
-                    "or do not import registering modules from that __init__.py"
-                )
-            if namespace is not None:
-                if not isinstance(namespace, str) or not _NAMESPACE.fullmatch(namespace):
+            if package is None or not hasattr(package, "__path__"):
+                continue
+            declared = getattr(package, "NAMESPACE", None)
+            if declared is None:
+                if cls._initializing(package):
                     raise InvalidRegistrationError(
-                        f"invalid NAMESPACE {namespace!r} in {name}: expected lowercase letters "
-                        "and digits with single hyphens, e.g. 'ca-on'"
+                        f"package {name} is still being imported and has no NAMESPACE: declare "
+                        "NAMESPACE at the top of its __init__.py (repeat the parent's to inherit "
+                        "it), or do not import registering modules from that __init__.py"
                     )
-                return namespace
+                continue
+            if not isinstance(declared, str):
+                raise InvalidRegistrationError(
+                    f"invalid NAMESPACE {declared!r} in {name}: expected a string"
+                )
+            try:
+                return cls(declared)
+            except InvalidRegistrationError as exc:
+                raise InvalidRegistrationError(f"{name}: {exc}") from None
         raise InvalidRegistrationError(
             f"no package above {module} declares a NAMESPACE; "
             "declare one as NAMESPACE = '...' in the package's __init__.py"
