@@ -54,3 +54,15 @@ class InvalidParameterDataError(DomainError):
 
 class InvalidCreditError(DomainError):
     """A credit's amount or rate is invalid."""
+
+
+class DuplicateRegistrationError(DomainError):
+    """Something was registered under an identifier that is already taken."""
+
+
+class UnknownRegistrationError(DomainError):
+    """Nothing is registered under the identifier that was looked up."""
+
+
+class InvalidRegistrationError(DomainError):
+    """A registration's identifier or namespace is malformed, or no namespace is declared."""

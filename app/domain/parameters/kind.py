@@ -10,12 +10,17 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Generic, TypeVar
+
+# Invariant on purpose. PEP 695 syntax would infer covariance from `value_type: type[T]`, and
+# mypy would then widen T to accept, say, a brackets parser whose `parse` returns a Credit.
+T = TypeVar("T")
 
 _SNAKE_CASE = re.compile(r"[a-z][a-z0-9]*(_[a-z0-9]+)*")
 
 
 @dataclass(frozen=True)
-class ParameterKind[T]:
+class ParameterKind(Generic[T]):  # noqa: UP046  (invariant T, see above)
     """A kind of parameter, such as brackets or a credit, and the type its values have.
 
     Capabilities declare the kind they need, and data files name it in `kind:`.

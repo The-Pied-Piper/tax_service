@@ -115,9 +115,9 @@ version: 2                  # increments on structural change only
 valid_from_tax_year: 2023   # inclusive; open-ended until a successor
                             # manifest closes it (contiguity invariant)
 capabilities:
-  - name: rrsp_deduction
+  - name: ca/rrsp_deduction         # <namespace>/<local id>
     params_family: ca/rrsp          # loader resolves (family, tax_year)
-  - name: progressive_brackets
+  - name: core/progressive_tax
     params_family: ca-on/brackets   # -> that year's dataset or attestation;
                                     #    absent year = loud failure,
                                     #    no implicit carry-forward

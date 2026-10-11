@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from app.adapters.outbound.parameter_parsers.registry import parameter_parser
 from app.adapters.outbound.yaml_support import YamlNode
 from app.domain.parameters.credit import CREDIT, Credit
 
 
+@parameter_parser
 class CreditParser:
     """Parser for `credit` datasets: an amount and the rate that turns it into tax relief."""
 

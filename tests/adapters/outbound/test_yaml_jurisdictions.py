@@ -20,9 +20,9 @@ jurisdiction: CA-ON
 version: 1
 valid_from_tax_year: 2025
 capabilities:
-  - name: rrsp_deduction
+  - name: ex/rrsp_deduction
     params_family: ca/rrsp
-  - name: progressive_tax
+  - name: ex/progressive_tax
     params_family: ca-on/brackets
 """
 
@@ -47,8 +47,8 @@ def test_parses_manifest_into_domain_objects(tmp_path: Path) -> None:
                 version=1,
                 valid_from_tax_year=2025,
                 capabilities=(
-                    CapabilitySelection(name="rrsp_deduction", params_family="ca/rrsp"),
-                    CapabilitySelection(name="progressive_tax", params_family="ca-on/brackets"),
+                    CapabilitySelection(name="ex/rrsp_deduction", params_family="ca/rrsp"),
+                    CapabilitySelection(name="ex/progressive_tax", params_family="ca-on/brackets"),
                 ),
             ),
         ),
@@ -64,15 +64,15 @@ def test_preserves_authored_capability_order(tmp_path: Path) -> None:
         version: 1
         valid_from_tax_year: 2025
         capabilities:
-          - {name: c, params_family: f}
-          - {name: a, params_family: f}
-          - {name: b, params_family: f}
+          - {name: ex/c, params_family: f}
+          - {name: ex/a, params_family: f}
+          - {name: ex/b, params_family: f}
         """,
     )
 
     (manifest,) = YamlJurisdictionSource(tmp_path).get_jurisdiction(CA_ON).manifests
 
-    assert [c.name for c in manifest.capabilities] == ["c", "a", "b"]
+    assert [c.name for c in manifest.capabilities] == ["ex/c", "ex/a", "ex/b"]
 
 
 def test_allows_same_capability_with_different_params_families(tmp_path: Path) -> None:
@@ -84,8 +84,8 @@ def test_allows_same_capability_with_different_params_families(tmp_path: Path) -
         version: 1
         valid_from_tax_year: 2025
         capabilities:
-          - {name: progressive_tax, params_family: ca/brackets}
-          - {name: progressive_tax, params_family: ca-on/brackets}
+          - {name: ex/progressive_tax, params_family: ca/brackets}
+          - {name: ex/progressive_tax, params_family: ca-on/brackets}
         """,
     )
 
@@ -150,7 +150,7 @@ def test_one_bad_file_fails_the_whole_load(tmp_path: Path) -> None:
         pytest.param(
             CA_ON_V1.replace(
                 "    params_family: ca/rrsp\n",
-                "    params_family: ca/rrsp\n    after: progressive_tax\n",
+                "    params_family: ca/rrsp\n    after: ex/progressive_tax\n",
             ),
             r"capabilities\[0\]: unknown keys \['after'\]",
             id="unknown-capability-key",
@@ -204,7 +204,7 @@ def test_one_bad_file_fails_the_whole_load(tmp_path: Path) -> None:
             id="capability-not-mapping",
         ),
         pytest.param(
-            CA_ON_V1.replace("name: rrsp_deduction", "name: 7"),
+            CA_ON_V1.replace("name: ex/rrsp_deduction", "name: 7"),
             r"capabilities\[0\].name must be a string, got int",
             id="capability-name-int",
         ),
