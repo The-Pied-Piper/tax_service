@@ -12,9 +12,9 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
-from app.domain.artifact import Artifact
+from app.domain.artifact import Artifact, Value
 from app.domain.errors import CapabilityContractError, DuplicateArtifactError, MissingArtifactError
 from app.domain.parameters.kind import ParameterKind
 from app.domain.registry import Namespace, Registry
@@ -30,7 +30,9 @@ class TraceLine:
 
 @dataclass(frozen=True)
 class CapabilityResult:
-    outputs: tuple[Artifact, ...]
+    """What a capability computed: one value per artifact it produces, and how."""
+
+    outputs: tuple[Value[Any], ...]
     trace: tuple[TraceLine, ...]
 
 
@@ -40,30 +42,31 @@ class Capability(ABC):
 
     @property
     @abstractmethod
-    def consumes(self) -> frozenset[type[Artifact]]: ...
+    def consumes(self) -> frozenset[Artifact[Any]]: ...
 
     @property
     @abstractmethod
-    def produces(self) -> frozenset[type[Artifact]]: ...
+    def produces(self) -> frozenset[Artifact[Any]]: ...
 
     @abstractmethod
-    def compute(self, inputs: tuple[Artifact, ...]) -> CapabilityResult:
-        """Compute this capability's outputs from the artifacts it consumes.
+    def compute(self, inputs: tuple[Value[Any], ...]) -> CapabilityResult:
+        """Compute this capability's outputs from the values of the artifacts it consumes.
 
         Only `Worksheet.apply` calls this in a real computation, checking the contract.
         """
 
-    def _input[A: Artifact](self, inputs: tuple[Artifact, ...], artifact: type[A]) -> A:
+    def _input[V](self, inputs: tuple[Value[Any], ...], artifact: Artifact[V]) -> Value[V]:
         """The one value of `artifact` in `inputs`; `artifact` must be one this consumes."""
         name = type(self).__name__
         if artifact not in self.consumes:
-            raise CapabilityContractError(f"{name} does not consume {artifact.label()!r}")
-        found = [value for value in inputs if type(value) is artifact]
+            raise CapabilityContractError(f"{name} does not consume {artifact.label!r}")
+        found = [value for value in inputs if value.artifact == artifact]
         if not found:
-            raise MissingArtifactError(f"{name} needs {artifact.label()!r}")
+            raise MissingArtifactError(f"{name} needs {artifact.label!r}")
         if len(found) > 1:
-            raise DuplicateArtifactError(f"{name} got {len(found)} values for {artifact.label()!r}")
-        return found[0]
+            raise DuplicateArtifactError(f"{name} got {len(found)} values for {artifact.label!r}")
+        # Safe: the value's artifact equals `artifact`, and a Value is checked against its type.
+        return cast(Value[V], found[0])
 
 
 class CapabilityRegistry(Registry[type[Capability]]):

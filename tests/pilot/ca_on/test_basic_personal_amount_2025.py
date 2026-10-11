@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
-from app.domain.artifact import Amount
+from app.domain.artifact import Artifact, Value
 from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.rounding import NO_ROUNDING
@@ -23,12 +23,10 @@ D = Decimal
 SOURCE = YamlParameterSource(Path(__file__).resolve().parents[3] / "data" / "parameters")
 
 
-class BasicTax(Amount):
-    """Federal or Ontario basic tax, whichever the credit under test applies to."""
-
-
-class TaxAfterCredits(Amount):
-    """That basic tax less the credit."""
+# Made up for this test and not registered: whichever basic tax the credit applies to, and
+# that tax less the credit.
+BASIC_TAX = Artifact("ex/basic_tax", Decimal)
+TAX_AFTER_CREDITS = Artifact("ex/tax_after_credits", Decimal)
 
 
 @pytest.mark.parametrize(
@@ -60,8 +58,8 @@ def test_2025_amounts_and_rates(family: str, amount: str, rate: str) -> None:
 def test_applies_to_basic_tax(family: str, basic_tax: str, after: str) -> None:
     data = SOURCE.get(family, 2025, CREDIT)
 
-    capability = NonRefundableCredit(BasicTax, TaxAfterCredits, data.values, data.rounding)
+    capability = NonRefundableCredit(BASIC_TAX, TAX_AFTER_CREDITS, data.values, data.rounding)
 
-    result = capability.compute((BasicTax(D(basic_tax)),))
+    result = capability.compute((Value(BASIC_TAX, D(basic_tax)),))
 
-    assert result.outputs == (TaxAfterCredits(D(after)),)
+    assert result.outputs == (Value(TAX_AFTER_CREDITS, D(after)),)

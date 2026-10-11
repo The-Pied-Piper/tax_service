@@ -12,6 +12,7 @@ import importlib
 import sys
 from collections.abc import Iterator
 from types import SimpleNamespace
+from typing import assert_type
 
 import pytest
 
@@ -92,6 +93,19 @@ def test_registering_the_same_object_twice_under_one_key_fails() -> None:
 
     with pytest.raises(DuplicateRegistrationError, match="'gadget'"):
         registry.register("gadget", Gadget)
+
+
+def test_identifiers_lists_every_registered_key() -> None:
+    registry = Registry[int]()
+    assert registry.identifiers() == frozenset()
+
+    registry.register("one", 1)
+    registry.register("two", 2)
+
+    identifiers = registry.identifiers()
+    assert_type(identifiers, frozenset[str])
+    assert isinstance(identifiers, frozenset)
+    assert identifiers == frozenset({"one", "two"})
 
 
 # --- namespaces ---------------------------------------------------------------------------
