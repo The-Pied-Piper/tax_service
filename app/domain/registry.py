@@ -64,6 +64,10 @@ class Registry[T]:
         """Every key registered so far."""
         return frozenset(self._items)
 
+    def identifier_of(self, item: T) -> str | None:
+        """The key `item` itself is registered under (matched by identity), else `None`."""
+        return next((key for key, found in self._items.items() if found is item), None)
+
 
 @dataclass(frozen=True)
 class Namespace:

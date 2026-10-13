@@ -108,6 +108,34 @@ def test_identifiers_lists_every_registered_key() -> None:
     assert identifiers == frozenset({"one", "two"})
 
 
+def test_identifier_of_is_the_key_an_item_is_registered_under() -> None:
+    registry = make_registry()
+    registry.register("gadget", Gadget)
+    registry.register("sprocket", Sprocket)
+
+    found = registry.identifier_of(Sprocket)
+
+    assert_type(found, str | None)
+    assert found == "sprocket"
+    assert registry.identifier_of(Gadget) == "gadget"
+
+
+def test_identifier_of_an_unregistered_item_is_none() -> None:
+    registry = make_registry()
+    registry.register("gadget", Gadget)
+
+    assert registry.identifier_of(Sprocket) is None
+
+
+def test_identifier_of_matches_by_identity_not_equality() -> None:
+    registry = Registry[list[int]]()
+    registered = [1]
+    registry.register("one", registered)
+
+    assert registry.identifier_of([1]) is None
+    assert registry.identifier_of(registered) == "one"
+
+
 # --- namespaces ---------------------------------------------------------------------------
 
 
