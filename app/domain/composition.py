@@ -51,23 +51,7 @@ class Composition:
         The starting artifacts must be exactly one of each declared input kind.
         """
         worksheet = Worksheet(*artifacts)
-        given = frozenset(artifact.kind for artifact in artifacts)
-        extra = given - self._inputs
-        if extra:
-            verb = "is not an input" if len(extra) == 1 else "are not inputs"
-            message = f"{self._labels(extra)} {verb} of this composition"
-            for kind in sorted(extra, key=self._sort_key):
-                expected = self._same_identifier(kind, self._inputs)
-                if expected:
-                    message += (
-                        f"; {kind.label!r} was given as {kind.value_type.__name__} but the input "
-                        f"takes {expected}"
-                    )
-            raise InvalidCompositionError(message)
-        missing = self._inputs - given
-        if missing:
-            noun = "input" if len(missing) == 1 else "inputs"
-            raise InvalidCompositionError(f"missing {noun} {self._labels(missing)}")
+        self._check_starting_kinds(frozenset(artifact.kind for artifact in artifacts))
         for capability in self._order:
             worksheet.apply(capability)
         return worksheet
@@ -129,6 +113,30 @@ class Composition:
                 f"{type(self._producers[kind]).__name__}, consumed by nothing and not declared "
                 "an output"
             )
+
+    def _check_starting_kinds(self, given: frozenset[ArtifactKind[Any]]) -> None:
+        extra = given - self._inputs
+        if extra:
+            verb = "is not an input" if len(extra) == 1 else "are not inputs"
+            raise InvalidCompositionError(
+                f"{self._labels(extra)} {verb} of this composition{self._value_type_hints(extra)}"
+            )
+        missing = self._inputs - given
+        if missing:
+            noun = "input" if len(missing) == 1 else "inputs"
+            raise InvalidCompositionError(f"missing {noun} {self._labels(missing)}")
+
+    def _value_type_hints(self, extra: frozenset[ArtifactKind[Any]]) -> str:
+        """A hint for each extra kind that has an input's identifier but another value type."""
+        hints = ""
+        for kind in sorted(extra, key=self._sort_key):
+            expected = self._same_identifier(kind, self._inputs)
+            if expected:
+                hints += (
+                    f"; {kind.label!r} was given as {kind.value_type.__name__} but the input "
+                    f"takes {expected}"
+                )
+        return hints
 
     def _derive_order(self) -> tuple[Capability, ...]:
         # `pending` stays in tie-break-key order, so the first ready capability is the one to run.
