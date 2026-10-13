@@ -116,12 +116,12 @@ valid_from_tax_year: 2023   # inclusive; open-ended until a successor
                             # manifest closes it (contiguity invariant)
 capabilities:
   - name: ca/rrsp_deduction         # <namespace>/<local id>
-    params_family: ca/rrsp          # loader resolves (family, tax_year)
+    params_family: ca/rrsp          # resolution looks up (family, tax_year)
   - name: core/progressive_tax
     params_family: ca-on/brackets   # -> that year's dataset or attestation;
                                     #    absent year = loud failure,
                                     #    no implicit carry-forward
-  # list order advisory; loader derives true order from code-declared
+  # list order advisory; composition derives true order from code-declared
   # contracts and rejects unsatisfiable selections
 ```
 
@@ -175,10 +175,10 @@ Rules:
 - History is immutable: corrections close a version early and issue a
   successor; never edit in place.
 - Retroactive amendments appear as multiple manifests covering the same tax
-  year; the loader rejects any (jurisdiction, tax_year, computation_date)
+  year; resolution rejects any (jurisdiction, tax_year, computation_date)
   that resolves to more than one.
 
-## 5. Loader (most safety-critical component)
+## 5. Composition (most safety-critical component)
 
 Validates at **registration time**, fails loudly. Rejects:
 
@@ -193,9 +193,13 @@ Validates at **registration time**, fails loudly. Rejects:
    point for §4's no-carry-forward rule: no values and no attestation ⇒
    resolution fails.
 
-Loader derives execution order (topological sort). Manifest list order is
-checked against derived order and warnings/errors surfaced — asserted order
-is never trusted.
+Rules 5–7 involve manifests and parameter data, which the composition never
+sees; they are enforced at resolution (the application service), not by the
+composition.
+
+The composition derives execution order (topological sort). Manifest list
+order is checked against derived order and warnings/errors surfaced — asserted
+order is never trusted.
 
 ## 6. Provenance
 

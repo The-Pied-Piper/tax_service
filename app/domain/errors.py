@@ -66,3 +66,7 @@ class UnknownRegistrationError(DomainError):
 
 class InvalidRegistrationError(DomainError):
     """A registration's identifier or namespace is malformed, or no namespace is declared."""
+
+
+class InvalidCompositionError(DomainError):
+    """Capabilities are wired together badly, or a computation got the wrong starting values."""
