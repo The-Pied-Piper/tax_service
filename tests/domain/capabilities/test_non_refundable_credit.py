@@ -6,7 +6,7 @@ from decimal import Decimal
 
 import pytest
 
-from app.domain.artifact import Artifact, Value
+from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
 from app.domain.capability import TraceLine
 from app.domain.parameters.credit import CREDIT as CREDIT_KIND
@@ -16,8 +16,8 @@ from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRu
 D = Decimal
 
 
-BASIC_TAX = Artifact("ex/basic_tax", Decimal)
-TAX_AFTER_CREDIT = Artifact("ex/tax_after_credit", Decimal)
+BASIC_TAX = ArtifactKind("ex/basic_tax", Decimal)
+TAX_AFTER_CREDIT = ArtifactKind("ex/tax_after_credit", Decimal)
 
 
 CREDIT = Credit(amount=D("1000"), rate=D("0.125"))  # worth 125
@@ -35,20 +35,20 @@ def test_declares_its_contract() -> None:
 
 
 def test_subtracts_the_credit_from_tax() -> None:
-    assert capability().compute((Value(BASIC_TAX, D("500")),)).outputs == (
-        Value(TAX_AFTER_CREDIT, D("375.000")),
+    assert capability().compute((Artifact(BASIC_TAX, D("500")),)).outputs == (
+        Artifact(TAX_AFTER_CREDIT, D("375.000")),
     )
 
 
 def test_never_reduces_tax_below_zero() -> None:
-    assert capability().compute((Value(BASIC_TAX, D("100")),)).outputs == (
-        Value(TAX_AFTER_CREDIT, D("0")),
+    assert capability().compute((Artifact(BASIC_TAX, D("100")),)).outputs == (
+        Artifact(TAX_AFTER_CREDIT, D("0")),
     )
 
 
 def test_zero_tax_stays_zero() -> None:
-    assert capability().compute((Value(BASIC_TAX, D("0")),)).outputs == (
-        Value(TAX_AFTER_CREDIT, D("0")),
+    assert capability().compute((Artifact(BASIC_TAX, D("0")),)).outputs == (
+        Artifact(TAX_AFTER_CREDIT, D("0")),
     )
 
 
@@ -56,13 +56,13 @@ def test_rounds_the_credit_with_the_given_rule() -> None:
     credit = Credit(amount=D("1000.05"), rate=D("0.1"))  # 100.005
     cent = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
-    result = capability(credit, cent).compute((Value(BASIC_TAX, D("500")),))
+    result = capability(credit, cent).compute((Artifact(BASIC_TAX, D("500")),))
 
-    assert result.outputs == (Value(TAX_AFTER_CREDIT, D("399.99")),)
+    assert result.outputs == (Artifact(TAX_AFTER_CREDIT, D("399.99")),)
 
 
 def test_traces_the_credit_and_the_result() -> None:
-    trace = capability().compute((Value(BASIC_TAX, D("500")),)).trace
+    trace = capability().compute((Artifact(BASIC_TAX, D("500")),)).trace
 
     assert trace == (
         TraceLine("credit: 12.5% of 1000 (no rounding)", D("125.000")),
@@ -71,14 +71,14 @@ def test_traces_the_credit_and_the_result() -> None:
 
 
 def test_traces_the_unused_part_when_the_credit_exceeds_tax() -> None:
-    trace = capability().compute((Value(BASIC_TAX, D("100")),)).trace
+    trace = capability().compute((Artifact(BASIC_TAX, D("100")),)).trace
 
     assert trace[-1] == TraceLine("unused credit, not refunded", D("25.000"))
 
 
 def test_rejects_negative_tax() -> None:
     with pytest.raises(ValueError, match="basic_tax must not be negative"):
-        capability().compute((Value(BASIC_TAX, D("-1")),))
+        capability().compute((Artifact(BASIC_TAX, D("-1")),))
 
 
 def test_declares_the_parameter_kind_it_needs() -> None:
@@ -90,21 +90,21 @@ def test_is_not_generic_over_artifacts() -> None:
     assert not getattr(NonRefundableCredit, "__parameters__", ())
 
 
-def test_mypy_rejects_wiring_an_artifact_of_another_value_type() -> None:
-    count = Artifact("ex/count", int)
-    # An Artifact[int] is not Money; the ignore fails under mypy (warn_unused_ignores) if wiring
-    # an artifact of another value type is ever accepted.
+def test_mypy_rejects_wiring_an_artifact_kind_of_another_value_type() -> None:
+    count = ArtifactKind("ex/count", int)
+    # An ArtifactKind[int] is not Money; the ignore fails under mypy (warn_unused_ignores) if
+    # wiring an artifact kind of another value type is ever accepted.
     NonRefundableCredit(count, TAX_AFTER_CREDIT, CREDIT, NO_ROUNDING)  # type: ignore[arg-type]
 
 
 class Cents(Decimal):
-    """A made-up Decimal subtype, to probe Artifact's variance."""
+    """A made-up Decimal subtype, to probe ArtifactKind's variance."""
 
 
-CENTS = Artifact("ex/cents", Cents)  # bound to a name: built inline it would infer Decimal
+CENTS = ArtifactKind("ex/cents", Cents)  # bound to a name: built inline it would infer Decimal
 
 
-def test_mypy_rejects_wiring_an_artifact_of_a_value_subtype() -> None:
-    # `Artifact` is invariant, so an Artifact[Cents] is not Money; if `Artifact` ever became
-    # covariant this ignore would be unused and mypy (strict) would fail.
+def test_mypy_rejects_wiring_an_artifact_kind_of_a_value_subtype() -> None:
+    # `ArtifactKind` is invariant, so an ArtifactKind[Cents] is not Money; if `ArtifactKind` ever
+    # became covariant this ignore would be unused and mypy (strict) would fail.
     NonRefundableCredit(CENTS, TAX_AFTER_CREDIT, CREDIT, NO_ROUNDING)  # type: ignore[arg-type]

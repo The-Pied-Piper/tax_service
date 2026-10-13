@@ -1,7 +1,7 @@
-"""The worksheet: every value of one computation.
+"""The worksheet: every artifact of one computation.
 
-It starts with the computation's starting values and records each capability's
-outputs as the capability is applied, holding it to its contract (design.md §3).
+It starts with the computation's starting artifacts and records each capability's
+output artifacts as the capability is applied, holding it to its contract (design.md §3).
 It never decides what runs next; ordering belongs to the composition (§5).
 """
 
@@ -10,77 +10,77 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any, cast
 
-from app.domain.artifact import Artifact, Value
+from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capability import Capability, TraceLine
 from app.domain.errors import CapabilityContractError, DuplicateArtifactError, MissingArtifactError
 
 
 class Worksheet:
-    """The values of one computation, who produced each, and the trace of how."""
+    """The artifacts of one computation by kind, who produced each, and the trace of how."""
 
-    def __init__(self, *values: Value[Any]) -> None:
-        self._check_values(values)
-        self._values: dict[Artifact[Any], Value[Any]] = {}
-        self._producers: dict[Artifact[Any], Capability] = {}
+    def __init__(self, *artifacts: Artifact[Any]) -> None:
+        self._check_artifacts(artifacts)
+        self._artifacts: dict[ArtifactKind[Any], Artifact[Any]] = {}
+        self._producers: dict[ArtifactKind[Any], Capability] = {}
         self._trace: list[TraceLine] = []
-        for value in values:
-            if value.artifact in self._values:
-                raise DuplicateArtifactError(f"two starting values for {value.artifact.label!r}")
-            self._values[value.artifact] = value
+        for artifact in artifacts:
+            if artifact.kind in self._artifacts:
+                raise DuplicateArtifactError(f"two starting values for {artifact.kind.label!r}")
+            self._artifacts[artifact.kind] = artifact
 
     @property
     def trace(self) -> tuple[TraceLine, ...]:
         """Every applied capability's trace lines, in the order they were applied."""
         return tuple(self._trace)
 
-    def get[V](self, artifact: Artifact[V]) -> Value[V]:
-        """The value recorded for `artifact`."""
-        if artifact not in self._values:
-            raise MissingArtifactError(f"no value for {artifact.label!r}")
-        return cast(Value[V], self._values[artifact])  # each value is keyed by its own artifact
+    def get[V](self, kind: ArtifactKind[V]) -> Artifact[V]:
+        """The artifact recorded for `kind`."""
+        if kind not in self._artifacts:
+            raise MissingArtifactError(f"no value for {kind.label!r}")
+        return cast(Artifact[V], self._artifacts[kind])  # each artifact is keyed by its own kind
 
-    def producer_of(self, artifact: Artifact[Any]) -> Capability | None:
-        """The capability that produced `artifact`'s value; `None` for a starting value."""
-        if artifact not in self._values:
-            raise MissingArtifactError(f"no value for {artifact.label!r}")
-        return self._producers.get(artifact)
+    def producer_of(self, kind: ArtifactKind[Any]) -> Capability | None:
+        """The capability that produced the artifact of `kind`; `None` for a starting artifact."""
+        if kind not in self._artifacts:
+            raise MissingArtifactError(f"no value for {kind.label!r}")
+        return self._producers.get(kind)
 
     def apply(self, capability: Capability) -> None:
-        """Compute `capability` from this worksheet and record its outputs.
+        """Compute `capability` from this worksheet and record its output artifacts.
 
         Nothing is recorded unless the capability keeps its contract.
         """
         name = type(capability).__name__
-        missing = capability.consumes - self._values.keys()
+        missing = capability.consumes - self._artifacts.keys()
         if missing:
             raise MissingArtifactError(f"{name} needs {self._labels(missing)}")
-        result = capability.compute(tuple(self._values[a] for a in capability.consumes))
-        self._check_values(result.outputs)
-        produced = [value.artifact for value in result.outputs]
+        result = capability.compute(tuple(self._artifacts[k] for k in capability.consumes))
+        self._check_artifacts(result.outputs)
+        produced = [artifact.kind for artifact in result.outputs]
         if frozenset(produced) != capability.produces:
             raise CapabilityContractError(
                 f"{name} declares {self._labels(capability.produces)} "
                 f"but produced {self._labels(set(produced))}"
             )
-        repeated = {a for a in produced if produced.count(a) > 1}
+        repeated = {k for k in produced if produced.count(k) > 1}
         if repeated:
             raise DuplicateArtifactError(f"{name} produced {self._labels(repeated)} more than once")
-        recorded = capability.produces & self._values.keys()
+        recorded = capability.produces & self._artifacts.keys()
         if recorded:
             raise DuplicateArtifactError(
                 f"{name} produced {self._labels(recorded)}, already recorded"
             )
-        for value in result.outputs:
-            self._values[value.artifact] = value
-            self._producers[value.artifact] = capability
+        for artifact in result.outputs:
+            self._artifacts[artifact.kind] = artifact
+            self._producers[artifact.kind] = capability
         self._trace.extend(result.trace)
 
     @staticmethod
-    def _labels(artifacts: Iterable[Artifact[Any]]) -> str:
-        return ", ".join(repr(label) for label in sorted(a.label for a in artifacts))
+    def _labels(kinds: Iterable[ArtifactKind[Any]]) -> str:
+        return ", ".join(repr(label) for label in sorted(k.label for k in kinds))
 
     @staticmethod
-    def _check_values(values: Iterable[object]) -> None:
-        for value in values:
-            if not isinstance(value, Value):
-                raise TypeError(f"a value must be a Value, got {type(value).__name__}")
+    def _check_artifacts(artifacts: Iterable[object]) -> None:
+        for artifact in artifacts:
+            if not isinstance(artifact, Artifact):
+                raise TypeError(f"a value must be an Artifact, got {type(artifact).__name__}")

@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
-from app.domain.artifact import Value
+from app.domain.artifact import Artifact
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.parameters.brackets import BRACKETS
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
@@ -90,6 +90,6 @@ def test_matches_cra_worked_examples(taxable_income: str, federal_basic_tax: str
     data = SOURCE.get("ca/brackets", 2025, BRACKETS)
     capability = ProgressiveTax(TAXABLE_INCOME, FEDERAL_BASIC_TAX, data.values, data.rounding)
 
-    result = capability.compute((Value(TAXABLE_INCOME, D(taxable_income)),))
+    result = capability.compute((Artifact(TAXABLE_INCOME, D(taxable_income)),))
 
-    assert result.outputs == (Value(FEDERAL_BASIC_TAX, D(federal_basic_tax)),)
+    assert result.outputs == (Artifact(FEDERAL_BASIC_TAX, D(federal_basic_tax)),)

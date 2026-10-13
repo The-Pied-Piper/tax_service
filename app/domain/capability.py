@@ -1,6 +1,6 @@
 """The capability contract (design.md §3).
 
-A capability is pure mechanism. It declares, in code, the artifacts it consumes
+A capability is pure mechanism. It declares, in code, the artifact kinds it consumes
 and produces; the worksheet holds it to that declaration when applying it. The
 vocabulary is consume / produce only: there is no "modify". Fold contributions
 come later.
@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any, ClassVar, cast
 
-from app.domain.artifact import Artifact, Value
+from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.errors import CapabilityContractError, DuplicateArtifactError, MissingArtifactError
 from app.domain.parameters.kind import ParameterKind
 from app.domain.registry import Namespace, Registry
@@ -30,9 +30,9 @@ class TraceLine:
 
 @dataclass(frozen=True)
 class CapabilityResult:
-    """What a capability computed: one value per artifact it produces, and how."""
+    """What a capability computed: one artifact per kind it produces, and how."""
 
-    outputs: tuple[Value[Any], ...]
+    outputs: tuple[Artifact[Any], ...]
     trace: tuple[TraceLine, ...]
 
 
@@ -42,31 +42,31 @@ class Capability(ABC):
 
     @property
     @abstractmethod
-    def consumes(self) -> frozenset[Artifact[Any]]: ...
+    def consumes(self) -> frozenset[ArtifactKind[Any]]: ...
 
     @property
     @abstractmethod
-    def produces(self) -> frozenset[Artifact[Any]]: ...
+    def produces(self) -> frozenset[ArtifactKind[Any]]: ...
 
     @abstractmethod
-    def compute(self, inputs: tuple[Value[Any], ...]) -> CapabilityResult:
-        """Compute this capability's outputs from the values of the artifacts it consumes.
+    def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+        """Compute this capability's output artifacts from the artifacts of the kinds it consumes.
 
         Only `Worksheet.apply` calls this in a real computation, checking the contract.
         """
 
-    def _input[V](self, inputs: tuple[Value[Any], ...], artifact: Artifact[V]) -> Value[V]:
-        """The one value of `artifact` in `inputs`; `artifact` must be one this consumes."""
+    def _input[V](self, inputs: tuple[Artifact[Any], ...], kind: ArtifactKind[V]) -> Artifact[V]:
+        """The one artifact of `kind` in `inputs`; `kind` must be one this consumes."""
         name = type(self).__name__
-        if artifact not in self.consumes:
-            raise CapabilityContractError(f"{name} does not consume {artifact.label!r}")
-        found = [value for value in inputs if value.artifact == artifact]
+        if kind not in self.consumes:
+            raise CapabilityContractError(f"{name} does not consume {kind.label!r}")
+        found = [artifact for artifact in inputs if artifact.kind == kind]
         if not found:
-            raise MissingArtifactError(f"{name} needs {artifact.label!r}")
+            raise MissingArtifactError(f"{name} needs {kind.label!r}")
         if len(found) > 1:
-            raise DuplicateArtifactError(f"{name} got {len(found)} values for {artifact.label!r}")
-        # Safe: the value's artifact equals `artifact`, and a Value is checked against its type.
-        return cast(Value[V], found[0])
+            raise DuplicateArtifactError(f"{name} got {len(found)} values for {kind.label!r}")
+        # Safe: the artifact's kind equals `kind`, and an Artifact is checked against its kind.
+        return cast(Artifact[V], found[0])
 
 
 class CapabilityRegistry(Registry[type[Capability]]):

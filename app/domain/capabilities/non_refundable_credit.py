@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
-from app.domain.artifact import Artifact, Money, Value
+from app.domain.artifact import Artifact, ArtifactKind, Money
 from app.domain.capability import Capability, CapabilityResult, TraceLine, capability
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.kind import ParameterKind
@@ -30,14 +30,14 @@ class NonRefundableCredit(Capability):
         self._rounding = rounding
 
     @property
-    def consumes(self) -> frozenset[Artifact[Any]]:
+    def consumes(self) -> frozenset[ArtifactKind[Any]]:
         return frozenset({self._tax})
 
     @property
-    def produces(self) -> frozenset[Artifact[Any]]:
+    def produces(self) -> frozenset[ArtifactKind[Any]]:
         return frozenset({self._output})
 
-    def compute(self, inputs: tuple[Value[Any], ...]) -> CapabilityResult:
+    def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
         tax = self._input(inputs, self._tax).value
         if tax < 0:
             raise ValueError(f"{self._tax.label} must not be negative, got {tax}")
@@ -52,4 +52,4 @@ class NonRefundableCredit(Capability):
         )
         if credit > applied:
             trace += (TraceLine("unused credit, not refunded", credit - applied),)
-        return CapabilityResult(outputs=(Value(self._output, after),), trace=trace)
+        return CapabilityResult(outputs=(Artifact(self._output, after),), trace=trace)

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
-from app.domain.artifact import Artifact, Money, Value
+from app.domain.artifact import Artifact, ArtifactKind, Money
 from app.domain.capability import Capability, CapabilityResult, TraceLine, capability
 from app.domain.parameters.brackets import BRACKETS, BracketSchedule
 from app.domain.parameters.kind import ParameterKind
@@ -33,18 +33,18 @@ class ProgressiveTax(Capability):
         self._rounding = rounding
 
     @property
-    def consumes(self) -> frozenset[Artifact[Any]]:
+    def consumes(self) -> frozenset[ArtifactKind[Any]]:
         return frozenset({self._base})
 
     @property
-    def produces(self) -> frozenset[Artifact[Any]]:
+    def produces(self) -> frozenset[ArtifactKind[Any]]:
         return frozenset({self._output})
 
-    def compute(self, inputs: tuple[Value[Any], ...]) -> CapabilityResult:
+    def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
         base = self._input(inputs, self._base).value
         slices = self._schedule.slices(base)
         tax = self._rounding.apply(self._schedule.tax_on(base))
         trace = tuple(TraceLine(s.describe(), s.tax) for s in slices) + (
             TraceLine(f"{self._output.label} on {self._base.label} {base} ({self._rounding})", tax),
         )
-        return CapabilityResult(outputs=(Value(self._output, tax),), trace=trace)
+        return CapabilityResult(outputs=(Artifact(self._output, tax),), trace=trace)
