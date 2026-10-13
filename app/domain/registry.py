@@ -60,6 +60,10 @@ class Registry[T]:
         except KeyError:
             raise UnknownRegistrationError(f"nothing is registered as {key!r}") from None
 
+    def identifiers(self) -> frozenset[str]:
+        """Every key registered so far."""
+        return frozenset(self._items)
+
 
 @dataclass(frozen=True)
 class Namespace:

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from app.domain.artifact import Artifact
+from typing import Any
+
+from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capability import Capability, CapabilityResult
 
 
@@ -18,12 +20,12 @@ class GadgetLevy(Capability):
     """A made-up capability; deliberately not decorated, so importing it registers nothing."""
 
     @property
-    def consumes(self) -> frozenset[type[Artifact]]:
+    def consumes(self) -> frozenset[ArtifactKind[Any]]:
         return frozenset()
 
     @property
-    def produces(self) -> frozenset[type[Artifact]]:
+    def produces(self) -> frozenset[ArtifactKind[Any]]:
         return frozenset()
 
-    def compute(self, inputs: tuple[Artifact, ...]) -> CapabilityResult:
+    def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
         return CapabilityResult(outputs=(), trace=())

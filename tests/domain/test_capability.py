@@ -3,60 +3,69 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import Any, assert_type
 
 import pytest
 
-from app.domain.artifact import Amount, Artifact
+from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capability import Capability, CapabilityResult
 from app.domain.errors import CapabilityContractError, DuplicateArtifactError, MissingArtifactError
 
-
-class In(Amount):
-    """Made-up artifact for these tests."""
-
-
-class Other(Amount):
-    """Made-up artifact for these tests."""
-
-
-class Out(Amount):
-    """Made-up artifact for these tests."""
+D = Decimal
+IN = ArtifactKind("ex/in", Decimal)
+OTHER = ArtifactKind("ex/other", Decimal)
+OUT = ArtifactKind("ex/out", Decimal)
 
 
 class Reader(Capability):
-    """Consumes `In` and `Other`; `read` returns what `_input` finds for an artifact."""
+    """Consumes `IN` and `OTHER`; `read` returns what `_input` finds for a kind."""
 
     @property
-    def consumes(self) -> frozenset[type[Artifact]]:
-        return frozenset({In, Other})
+    def consumes(self) -> frozenset[ArtifactKind[Any]]:
+        return frozenset({IN, OTHER})
 
     @property
-    def produces(self) -> frozenset[type[Artifact]]:
-        return frozenset({Out})
+    def produces(self) -> frozenset[ArtifactKind[Any]]:
+        return frozenset({OUT})
 
-    def compute(self, inputs: tuple[Artifact, ...]) -> CapabilityResult:
-        return CapabilityResult(outputs=(Out(self._input(inputs, In).value),), trace=())
+    def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+        return CapabilityResult(outputs=(Artifact(OUT, self._input(inputs, IN).value),), trace=())
 
-    def read[A: Artifact](self, inputs: tuple[Artifact, ...], artifact: type[A]) -> A:
-        return self._input(inputs, artifact)
+    def read[V](self, inputs: tuple[Artifact[Any], ...], kind: ArtifactKind[V]) -> Artifact[V]:
+        return self._input(inputs, kind)
 
 
-def test_input_finds_the_instance_of_the_artifact() -> None:
-    inputs = (Other(Decimal(2)), In(Decimal(1)))
+def test_input_finds_the_artifact_of_the_kind() -> None:
+    inputs = (Artifact(OTHER, D(2)), Artifact(IN, D(1)))
 
-    assert Reader().read(inputs, In) == In(Decimal(1))
+    found = Reader().read(inputs, IN)
+
+    assert_type(found, Artifact[Decimal])
+    assert found == Artifact(IN, D(1))
+
+
+def test_input_matches_by_kind_equality_not_identity() -> None:
+    inputs = (Artifact(ArtifactKind("ex/in", Decimal), D(1)),)
+
+    assert Reader().read(inputs, IN) == Artifact(IN, D(1))
 
 
 def test_input_rejects_a_missing_artifact() -> None:
     with pytest.raises(MissingArtifactError, match="Reader needs 'in'"):
-        Reader().read((Other(Decimal(2)),), In)
+        Reader().read((Artifact(OTHER, D(2)),), IN)
 
 
-def test_input_rejects_two_values_for_one_artifact() -> None:
+def test_input_rejects_two_artifacts_of_one_kind() -> None:
     with pytest.raises(DuplicateArtifactError, match="Reader got 2 values for 'in'"):
-        Reader().read((In(Decimal(1)), In(Decimal(2))), In)
+        Reader().read((Artifact(IN, D(1)), Artifact(IN, D(2))), IN)
 
 
-def test_input_refuses_an_artifact_the_capability_does_not_consume() -> None:
+def test_input_refuses_a_kind_the_capability_does_not_consume() -> None:
     with pytest.raises(CapabilityContractError, match="Reader does not consume 'out'"):
-        Reader().read((Out(Decimal(1)),), Out)
+        Reader().read((Artifact(OUT, D(1)),), OUT)
+
+
+def test_compute_returns_artifacts() -> None:
+    result = Reader().compute((Artifact(IN, D(3)), Artifact(OTHER, D(4))))
+
+    assert result.outputs == (Artifact(OUT, D(3)),)
