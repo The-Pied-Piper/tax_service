@@ -1,7 +1,9 @@
 """Reads jurisdictions from YAML manifest files. Implements JurisdictionSource.
 
-Every `*.yaml` / `*.yml` file under the directory (recursively) is one manifest;
-a jurisdiction is every manifest whose `jurisdiction` field names it.
+The source takes a mapping of namespace -> jurisdiction package directory. A jurisdiction's
+namespace is its code lower-cased (`EX-ON` -> `ex-on`), and every `*.yaml` / `*.yml` file under
+`<roots[ex-on]>/manifests/` (recursively) is one of its manifests; a manifest there naming
+another jurisdiction is rejected.
 Parsing is strict because a manifest must stay selection plus parameters
 (design.md §4): unknown keys, duplicate keys and wrongly typed values are
 rejected with the offending file named, never coerced or ignored.
@@ -9,6 +11,7 @@ rejected with the offending file named, never coerced or ignored.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 
 import yaml
@@ -22,26 +25,52 @@ from app.domain.errors import (
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.registry import Namespace
 
 _MANIFEST_KEYS = frozenset({"jurisdiction", "version", "valid_from_tax_year", "capabilities"})
 _CAPABILITY_KEYS = frozenset({"name", "params_family"})
 
 
 class YamlJurisdictionSource:
-    def __init__(self, directory: Path) -> None:
-        self._directory = directory
+    """Jurisdictions read from the `manifests/` directory of each jurisdiction package."""
+
+    def __init__(self, roots: Mapping[Namespace, Path]) -> None:
+        """Read manifests under each namespace's package directory in `roots`."""
+        self._roots = dict(roots)
 
     def get_jurisdiction(self, code: JurisdictionCode) -> Jurisdiction:
-        manifests = tuple(m for m in self.load_all() if m.jurisdiction == code)
+        """The jurisdiction with every manifest in its package; see JurisdictionSource."""
+        manifests = tuple(self._load_all(code))
         if not manifests:
-            raise NotFoundError(f"no manifests for jurisdiction {code} in {self._directory}")
+            raise NotFoundError(f"no manifests for jurisdiction {code} in {self._manifests(code)}")
         return Jurisdiction(code=code, manifests=manifests)
 
-    def load_all(self) -> list[Manifest]:
-        if not self._directory.is_dir():
-            raise InvalidManifestError(f"manifest directory not found: {self._directory}")
-        paths = sorted(p for pattern in ("*.yaml", "*.yml") for p in self._directory.rglob(pattern))
-        return [self.load(path) for path in paths]
+    def _load_all(self, code: JurisdictionCode) -> list[Manifest]:
+        manifests = self._manifests(code)
+        if not manifests.parent.is_dir():
+            raise InvalidManifestError(f"package directory not found: {manifests.parent}")
+        if not manifests.is_dir():
+            return []
+        paths = sorted(p for pattern in ("*.yaml", "*.yml") for p in manifests.rglob(pattern))
+        return [self._load_for(code, path) for path in paths]
+
+    def _manifests(self, code: JurisdictionCode) -> Path:
+        namespace = code.namespace
+        if namespace not in self._roots:
+            raise NotFoundError(
+                f"no jurisdiction {code}: no jurisdiction package declares namespace "
+                f"{namespace.name!r}"
+            )
+        return self._roots[namespace] / "manifests"
+
+    @classmethod
+    def _load_for(cls, code: JurisdictionCode, path: Path) -> Manifest:
+        manifest = cls.load(path)
+        if manifest.jurisdiction != code:
+            raise InvalidManifestError(
+                f"{path}: manifest is for {manifest.jurisdiction}, but its package is {code}'s"
+            )
+        return manifest
 
     @classmethod
     def load(cls, path: Path) -> Manifest:

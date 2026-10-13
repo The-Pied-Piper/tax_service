@@ -2,21 +2,19 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
-import app.registrations  # noqa: F401  (fills the shared registries, as the app does)
+import app.registrations  # fills the shared registries and lists the packages, as the app does
 from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.capability import CapabilityRegistry
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection
 
-DATA = Path(__file__).resolve().parents[3] / "data"
+ROOTS = app.registrations.JURISDICTIONS.roots()
 CA_ON = JurisdictionCode("CA-ON")
 
 
 def test_ca_on_has_one_manifest_from_2025() -> None:
-    (manifest,) = YamlJurisdictionSource(DATA / "manifests").get_jurisdiction(CA_ON).manifests
+    (manifest,) = YamlJurisdictionSource(ROOTS).get_jurisdiction(CA_ON).manifests
 
     assert manifest.jurisdiction == CA_ON
     assert manifest.version == 1
@@ -34,8 +32,8 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
 
 
 def test_every_selection_has_a_dataset_for_its_first_tax_year() -> None:
-    (manifest,) = YamlJurisdictionSource(DATA / "manifests").get_jurisdiction(CA_ON).manifests
-    parameters = YamlParameterSource(DATA / "parameters")
+    (manifest,) = YamlJurisdictionSource(ROOTS).get_jurisdiction(CA_ON).manifests
+    parameters = YamlParameterSource(ROOTS)
     capabilities = CapabilityRegistry.shared()
 
     for selection in manifest.capabilities:

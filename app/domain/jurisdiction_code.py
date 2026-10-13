@@ -12,6 +12,7 @@ import re
 from dataclasses import dataclass
 
 from app.domain.errors import InvalidJurisdictionCodeError
+from app.domain.registry import Namespace
 
 _ISO_3166 = re.compile(r"[A-Z]{2}(-[A-Z0-9]{1,3})?")
 
@@ -28,6 +29,11 @@ class JurisdictionCode:
                 f"invalid jurisdiction code {self.value!r}: expected ISO 3166 form, "
                 "e.g. 'CA' or 'CA-ON'"
             )
+
+    @property
+    def namespace(self) -> Namespace:
+        """The namespace of its jurisdiction package: the code lower-cased, `EX-ON` -> `ex-on`."""
+        return Namespace(self.value.lower())
 
     def __str__(self) -> str:
         return self.value

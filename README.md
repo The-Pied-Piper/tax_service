@@ -19,6 +19,9 @@ These apply to everyone working on the repo, people and coding agents alike.
 - **Unit tests are required** for all code.
 - **The tax engine lives in `app/domain/`.** Its behavior belongs on the domain objects
   themselves. Application services stay thin: they load data and hand it to the domain.
+- **Real jurisdiction names stay in their jurisdiction's package.** Real names and data
+  appear only in `app/jurisdictions/<x>/` and `tests/jurisdictions/<x>/`. Generic code and
+  tests use made-up names and values.
 - **Adapter direction means who starts the call**, not which way data flows.
   `adapters/inbound/` holds driving adapters, which call the application.
   `adapters/outbound/` holds driven adapters, which the application calls, including
@@ -41,11 +44,29 @@ app/
   adapters/
     inbound/              HTTP request adapters: DTO -> domain -> DTO
     outbound/             driven adapters: database, files
+  jurisdictions/          one package per jurisdiction: catalog, manifests, parameter data
+  registrations.py        explicit list of registering modules and jurisdiction packages
   generated/              written by the generator from the spec; never edit
 migrations/               Alembic (async)
 tests/
 design.md                 tax engine design
 ```
+
+### Adding a jurisdiction
+
+Copy `app/jurisdictions/ca_on/` to `app/jurisdictions/<x>/`, named from the jurisdiction
+code (`CA-QC` -> `ca_qc`), and change:
+
+- `__init__.py`: `NAMESPACE = "<code lower-cased>"`, e.g. `"ca-qc"`.
+- `catalog.py`: an `ArtifactCatalog` for that namespace declaring the jurisdiction's
+  artifact kinds.
+- `manifests/`: the manifest(s) selecting capabilities and their parameter families.
+- `parameters/`: one dataset per family and tax year, at `parameters/<family>/<year>.yaml`
+  for family `<namespace>/<family>`.
+
+Then register it with two lines in `app/registrations.py`: import
+`app.jurisdictions.<x>.catalog`, and add `app.jurisdictions.<x>` to `JURISDICTIONS`. Its tests go
+under `tests/jurisdictions/<x>/`.
 
 Raise `DomainError` subclasses from `app/domain/errors.py` for business failures.
 `main.py` maps them to RFC 7807 problem responses.
