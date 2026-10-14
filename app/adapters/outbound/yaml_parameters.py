@@ -1,7 +1,9 @@
 """Reads parameter datasets from YAML files. Implements ParameterSource.
 
-A dataset for family `ca-on/brackets` and tax year 2025 lives at
-`<directory>/ca-on/brackets/2025.yaml`. Every file has the same envelope
+The source takes a mapping of namespace -> jurisdiction package directory. A dataset for
+family `ex-on/brackets` and tax year 2025 lives at `<roots[ex-on]>/parameters/brackets/2025.yaml`:
+the family's first segment is its namespace, and the rest (which may nest) is its path under
+`parameters/`. Every file has the same envelope
 (family, tax_year, kind, sources, rounding) plus keys specific to its kind,
 which that kind's parser reads. The file must declare the family, year and kind
 that were asked for. An absent file is NotFoundError: a year is never carried
@@ -11,6 +13,7 @@ forward. Decimals are YAML strings ("0.145") so they never pass through float.
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from pathlib import Path
 
 import yaml
@@ -21,23 +24,26 @@ from app.domain.errors import DomainError, InvalidParameterDataError, NotFoundEr
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
+from app.domain.registry import Namespace
 
-_FAMILY = re.compile(r"[a-z0-9]+([_-][a-z0-9]+)*(/[a-z0-9]+([_-][a-z0-9]+)*)+")
+_FAMILY = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*(/[a-z0-9]+([_-][a-z0-9]+)*)+")
 _ENVELOPE_KEYS = frozenset({"family", "tax_year", "kind", "sources", "rounding"})
 _ROUNDING_KEYS = frozenset({"increment", "mode"})
 
 
 class YamlParameterSource:
-    def __init__(self, directory: Path, parsers: ParameterParserRegistry | None = None) -> None:
-        """Read datasets under `directory`, parsing each with its kind's parser from `parsers`.
+    """Parameter datasets read from the `parameters/` directory of each jurisdiction package."""
 
-        Without `parsers`, the shared ParameterParserRegistry is used.
-        """
-        self._directory = directory
+    def __init__(
+        self, roots: Mapping[Namespace, Path], parsers: ParameterParserRegistry | None = None
+    ) -> None:
+        """Read datasets under each namespace's package directory in `roots`, parsing each with
+        its kind's parser from `parsers` (by default the shared ParameterParserRegistry)."""
+        self._roots = dict(roots)
         self._parsers = parsers if parsers is not None else ParameterParserRegistry.shared()
 
     def get[T](self, family: str, tax_year: int, kind: ParameterKind[T]) -> ParameterDataset[T]:
-        """Read `<directory>/<family>/<tax_year>.yaml` and parse it with the parser for `kind`.
+        """Read `<root>/parameters/<family rest>/<tax_year>.yaml`; parse it with `kind`'s parser.
 
         The file must declare the same family, year and kind; see ParameterSource.get for errors.
         """
@@ -68,8 +74,15 @@ class YamlParameterSource:
 
     def _path(self, family: str, tax_year: int) -> Path:
         if not _FAMILY.fullmatch(family):
-            raise ValueError(f"invalid parameter family {family!r}: expected e.g. 'ca-on/brackets'")
-        path = self._directory / family / f"{tax_year}.yaml"
+            raise ValueError(f"invalid parameter family {family!r}: expected e.g. 'ex-on/brackets'")
+        namespace_name, rest = family.split("/", 1)
+        namespace = Namespace(namespace_name)
+        if namespace not in self._roots:
+            raise NotFoundError(
+                f"no {family} dataset: no jurisdiction package declares "
+                f"namespace {namespace.name!r}"
+            )
+        path = self._roots[namespace] / "parameters" / rest / f"{tax_year}.yaml"
         if not path.is_file():
             raise NotFoundError(
                 f"no {family} dataset for tax year {tax_year} (expected {path}); "

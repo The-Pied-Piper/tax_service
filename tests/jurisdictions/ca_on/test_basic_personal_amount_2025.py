@@ -9,10 +9,10 @@ at higher net incomes is not modelled yet. Sources are listed in each dataset.
 from __future__ import annotations
 
 from decimal import Decimal
-from pathlib import Path
 
 import pytest
 
+import app.registrations
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
@@ -20,7 +20,7 @@ from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.rounding import NO_ROUNDING
 
 D = Decimal
-SOURCE = YamlParameterSource(Path(__file__).resolve().parents[3] / "data" / "parameters")
+SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
 
 
 # Made up for this test and not registered: whichever basic tax the credit applies to, and

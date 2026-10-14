@@ -6,6 +6,7 @@ import pytest
 
 from app.domain.errors import InvalidJurisdictionCodeError, ValidationError
 from app.domain.jurisdiction_code import JurisdictionCode
+from app.domain.registry import Namespace
 
 
 @pytest.mark.parametrize(
@@ -68,3 +69,10 @@ def test_codes_are_equal_by_value_and_hashable() -> None:
 
 def test_is_not_equal_to_a_plain_string() -> None:
     assert JurisdictionCode("CA-ON") != "CA-ON"  # type: ignore[comparison-overlap]
+
+
+@pytest.mark.parametrize(
+    ("value", "namespace"), [("EX-ON", "ex-on"), ("EX", "ex"), ("EX-75", "ex-75")]
+)
+def test_its_namespace_is_the_code_lower_cased(value: str, namespace: str) -> None:
+    assert JurisdictionCode(value).namespace == Namespace(namespace)

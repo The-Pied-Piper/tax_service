@@ -1,6 +1,8 @@
 """Unit tests for YamlParameterSource: parameter dataset files -> ParameterDataset.
 
-Datasets live at <directory>/<family>/<tax_year>.yaml and declare their kind.
+The source takes a mapping of namespace -> package directory. Family `ex/brackets` for 2025 lives
+at `roots[Namespace("ex")] / "parameters" / "brackets" / "2025.yaml"`; the namespace is the part of
+the family before the first `/`. Datasets declare their kind.
 Each kind is parsed by the parser registered for it, so new kinds need no change here.
 Tests inject their own ParameterParserRegistry; by default the source reads the shared one.
 Values are made up.
@@ -8,6 +10,7 @@ Values are made up.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from decimal import Decimal
 from pathlib import Path
 from textwrap import dedent
@@ -30,6 +33,7 @@ from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
+from app.domain.registry import Namespace
 
 D = Decimal
 
@@ -65,8 +69,16 @@ def built_in_parsers() -> ParameterParserRegistry:
     return registry
 
 
+EX = Namespace("ex")
+
+
+def roots(directory: Path) -> Mapping[Namespace, Path]:
+    """One made-up package, namespace `ex`, whose directory is `<directory>/ex`."""
+    return {EX: directory / "ex"}
+
+
 def source(directory: Path) -> YamlParameterSource:
-    return YamlParameterSource(directory, parsers=built_in_parsers())
+    return YamlParameterSource(roots(directory), parsers=built_in_parsers())
 
 
 def write(directory: Path, relative: str, content: str) -> None:
@@ -79,7 +91,7 @@ def write(directory: Path, relative: str, content: str) -> None:
 
 
 def test_reads_a_bracket_dataset(tmp_path: Path) -> None:
-    write(tmp_path, "ex/brackets/2025.yaml", BRACKETS_2025)
+    write(tmp_path, "ex/parameters/brackets/2025.yaml", BRACKETS_2025)
 
     result = source(tmp_path).get("ex/brackets", 2025, BRACKETS)
 
@@ -94,7 +106,7 @@ def test_reads_a_bracket_dataset(tmp_path: Path) -> None:
 
 
 def test_reads_a_credit_dataset(tmp_path: Path) -> None:
-    write(tmp_path, "ex/personal_credit/2025.yaml", CREDIT_2025)
+    write(tmp_path, "ex/parameters/personal_credit/2025.yaml", CREDIT_2025)
 
     result = source(tmp_path).get("ex/personal_credit", 2025, CREDIT)
 
@@ -111,7 +123,7 @@ def test_reads_a_credit_dataset(tmp_path: Path) -> None:
 def test_reads_a_rounding_rule(tmp_path: Path) -> None:
     write(
         tmp_path,
-        "ex/brackets/2025.yaml",
+        "ex/parameters/brackets/2025.yaml",
         BRACKETS_2025.replace("rounding: none", 'rounding: {increment: "0.01", mode: half_up}'),
     )
 
@@ -138,7 +150,7 @@ class FlatRateParser:
 def test_new_kinds_need_only_a_registered_parser(tmp_path: Path) -> None:
     write(
         tmp_path,
-        "ex/flat/2025.yaml",
+        "ex/parameters/flat/2025.yaml",
         "family: ex/flat\ntax_year: 2025\nkind: flat_rate\n"
         'sources: [https://example.org]\nrounding: none\nrate: "0.2"\n',
     )
@@ -146,33 +158,33 @@ def test_new_kinds_need_only_a_registered_parser(tmp_path: Path) -> None:
     parsers.register_class(FlatRateParser)
 
     values: Decimal = (
-        YamlParameterSource(tmp_path, parsers=parsers).get("ex/flat", 2025, FLAT_RATE).values
+        YamlParameterSource(roots(tmp_path), parsers=parsers).get("ex/flat", 2025, FLAT_RATE).values
     )
 
     assert values == D("0.2")
 
 
 def test_requesting_a_kind_without_a_parser_fails(tmp_path: Path) -> None:
-    write(tmp_path, "ex/brackets/2025.yaml", BRACKETS_2025)
+    write(tmp_path, "ex/parameters/brackets/2025.yaml", BRACKETS_2025)
 
     with pytest.raises(UnknownRegistrationError, match="'flat_rate'"):
         source(tmp_path).get("ex/brackets", 2025, FLAT_RATE)
 
 
 def test_parsers_are_read_from_the_injected_registry(tmp_path: Path) -> None:
-    write(tmp_path, "ex/brackets/2025.yaml", BRACKETS_2025)
+    write(tmp_path, "ex/parameters/brackets/2025.yaml", BRACKETS_2025)
     parsers = ParameterParserRegistry()
     parsers.register_class(CreditParser)
 
     with pytest.raises(UnknownRegistrationError, match="'brackets'"):
-        YamlParameterSource(tmp_path, parsers=parsers).get("ex/brackets", 2025, BRACKETS)
+        YamlParameterSource(roots(tmp_path), parsers=parsers).get("ex/brackets", 2025, BRACKETS)
 
 
 def test_by_default_parsers_come_from_the_shared_registry(tmp_path: Path) -> None:
     # The built-in parsers registered themselves in the shared registry when imported.
-    write(tmp_path, "ex/brackets/2025.yaml", BRACKETS_2025)
+    write(tmp_path, "ex/parameters/brackets/2025.yaml", BRACKETS_2025)
 
-    result = YamlParameterSource(tmp_path).get("ex/brackets", 2025, BRACKETS)
+    result = YamlParameterSource(roots(tmp_path)).get("ex/brackets", 2025, BRACKETS)
 
     assert result.values == BracketSchedule(
         (Bracket(D("0"), D("0.10")), Bracket(D("100"), D("0.20")))
@@ -183,7 +195,7 @@ def test_by_default_parsers_come_from_the_shared_registry(tmp_path: Path) -> Non
 
 
 def test_absent_year_is_not_found_and_never_carried_forward(tmp_path: Path) -> None:
-    write(tmp_path, "ex/brackets/2025.yaml", BRACKETS_2025)
+    write(tmp_path, "ex/parameters/brackets/2025.yaml", BRACKETS_2025)
 
     with pytest.raises(NotFoundError, match="ex/brackets.*2026"):
         source(tmp_path).get("ex/brackets", 2026, BRACKETS)
@@ -194,7 +206,53 @@ def test_absent_family_is_not_found(tmp_path: Path) -> None:
         source(tmp_path).get("ex/other", 2025, BRACKETS)
 
 
-@pytest.mark.parametrize("family", ["", "EX/brackets", "../brackets", "ex/../x", "/ex/b", "ex/"])
+def test_each_namespace_resolves_under_its_own_directory(tmp_path: Path) -> None:
+    # Directory names need not match namespaces: the mapping decides.
+    write(tmp_path, "pkg_one/parameters/brackets/2025.yaml", BRACKETS_2025)
+    write(
+        tmp_path,
+        "pkg_two/parameters/brackets/2025.yaml",
+        BRACKETS_2025.replace("family: ex/brackets", "family: ex-two/brackets").replace(
+            '"0.10"', '"0.15"'
+        ),
+    )
+    two_roots = {EX: tmp_path / "pkg_one", Namespace("ex-two"): tmp_path / "pkg_two"}
+    parameters = YamlParameterSource(two_roots, parsers=built_in_parsers())
+
+    one = parameters.get("ex/brackets", 2025, BRACKETS)
+    two = parameters.get("ex-two/brackets", 2025, BRACKETS)
+
+    assert one.values.brackets[0].rate == D("0.10")
+    assert two.values.brackets[0].rate == D("0.15")
+
+
+def test_family_may_nest_below_the_namespace(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/credits/personal/2025.yaml",
+        CREDIT_2025.replace("family: ex/personal_credit", "family: ex/credits/personal"),
+    )
+
+    result = source(tmp_path).get("ex/credits/personal", 2025, CREDIT)
+
+    assert result.family == "ex/credits/personal"
+
+
+def test_files_outside_parameters_are_not_read(tmp_path: Path) -> None:
+    write(tmp_path, "ex/brackets/2025.yaml", BRACKETS_2025)
+
+    with pytest.raises(NotFoundError, match="ex/brackets"):
+        source(tmp_path).get("ex/brackets", 2025, BRACKETS)
+
+
+def test_unknown_namespace_is_not_found_and_named(tmp_path: Path) -> None:
+    with pytest.raises(NotFoundError, match="namespace 'zz'"):
+        source(tmp_path).get("zz/brackets", 2025, BRACKETS)
+
+
+@pytest.mark.parametrize(
+    "family", ["", "EX/brackets", "../brackets", "ex/../x", "/ex/b", "ex/", "ex_on/brackets"]
+)
 def test_rejects_malformed_family(tmp_path: Path, family: str) -> None:
     with pytest.raises(ValueError, match="parameter family"):
         source(tmp_path).get(family, 2025, BRACKETS)
@@ -283,7 +341,7 @@ def test_invalid_data_is_a_domain_error() -> None:
     ],
 )
 def test_rejects_malformed_bracket_dataset(tmp_path: Path, content: str, message: str) -> None:
-    write(tmp_path, "ex/brackets/2025.yaml", content)
+    write(tmp_path, "ex/parameters/brackets/2025.yaml", content)
 
     with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
         source(tmp_path).get("ex/brackets", 2025, BRACKETS)
@@ -312,7 +370,7 @@ def test_rejects_malformed_bracket_dataset(tmp_path: Path, content: str, message
     ],
 )
 def test_rejects_malformed_credit_dataset(tmp_path: Path, content: str, message: str) -> None:
-    write(tmp_path, "ex/personal_credit/2025.yaml", content)
+    write(tmp_path, "ex/parameters/personal_credit/2025.yaml", content)
 
     with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
         source(tmp_path).get("ex/personal_credit", 2025, CREDIT)

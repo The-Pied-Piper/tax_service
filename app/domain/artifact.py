@@ -2,7 +2,7 @@
 
 Ordering in the engine is expressed through artifacts, never through direct
 capability-to-capability dependencies (design.md §2). An `ArtifactKind[V]` names a kind of
-artifact by a namespaced identifier such as `ca/taxable_income` and states the type of its
+artifact by a namespaced identifier such as `ex/taxable_income` and states the type of its
 values; an `Artifact[V]` is one value of a kind, produced in one computation. Each package
 declares its kinds through one `ArtifactCatalog`, which registers them; names come from the
 jurisdiction's own law or return, never from another system's.
@@ -70,7 +70,7 @@ class Artifact[T]:
 
 
 class ArtifactRegistry(Registry[object]):
-    """The registry of artifact kinds packages declare, by full identifier (`ca/taxable_income`).
+    """The registry of artifact kinds packages declare, by full identifier (`ex/taxable_income`).
 
     Register through an `ArtifactCatalog`. Items are stored as `object` because `ArtifactKind` is
     invariant: an `ArtifactKind[Decimal]` is not an `ArtifactKind[object]`.

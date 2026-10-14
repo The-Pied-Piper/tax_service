@@ -8,20 +8,19 @@ which CRA shows rounded to the cent.
 from __future__ import annotations
 
 from decimal import Decimal
-from pathlib import Path
 
 import pytest
 
+import app.registrations
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.artifact import Artifact
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.parameters.brackets import BRACKETS
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
-from tests.pilot.ca_on.catalog import FEDERAL_BASIC_TAX, TAXABLE_INCOME
+from app.jurisdictions.ca.catalog import FEDERAL_BASIC_TAX, TAXABLE_INCOME
 
 D = Decimal
-PARAMETERS = Path(__file__).resolve().parents[3] / "data" / "parameters"
-SOURCE = YamlParameterSource(PARAMETERS)
+SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
 TO_CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 FEDERAL_FIXED_TAX = {  # 2025 T1, line 71 threshold -> line 75 fixed tax

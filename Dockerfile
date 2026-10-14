@@ -36,7 +36,6 @@ RUN useradd --system --no-create-home --shell /usr/sbin/nologin app
 COPY openapi ./openapi
 COPY alembic.ini ./
 COPY migrations ./migrations
-COPY data ./data
 COPY app ./app
 USER app
 EXPOSE 8080
