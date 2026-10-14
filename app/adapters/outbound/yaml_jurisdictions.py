@@ -4,7 +4,10 @@ The source takes a mapping of namespace -> jurisdiction package directory. A jur
 namespace is its code lower-cased (`EX-ON` -> `ex-on`), and every `*.yaml` / `*.yml` file under
 `<roots[ex-on]>/manifests/` (recursively) is one of its manifests; a manifest there naming
 another jurisdiction is rejected.
-Parsing is strict because a manifest must stay selection plus parameters
+Each selection names a capability and fills its slots: `params` (slot -> family, optional),
+`consumes` (slot -> artifact identifier, optional) and `produces` (slot -> artifact identifier,
+required, at least one). Slot names are not checked against capability classes here.
+Parsing is strict because a manifest must stay selection plus slot bindings
 (design.md §4): unknown keys, duplicate keys and wrongly typed values are
 rejected with the offending file named, never coerced or ignored.
 """
@@ -28,7 +31,8 @@ from app.domain.manifest import CapabilitySelection, Manifest
 from app.domain.registry import Namespace
 
 _MANIFEST_KEYS = frozenset({"jurisdiction", "version", "valid_from_tax_year", "capabilities"})
-_CAPABILITY_KEYS = frozenset({"name", "params_family"})
+_CAPABILITY_KEYS = frozenset({"name", "produces"})
+_OPTIONAL_CAPABILITY_KEYS = frozenset({"params", "consumes"})
 
 
 class YamlJurisdictionSource:
@@ -95,13 +99,26 @@ class YamlJurisdictionSource:
             ),
         )
 
-    @staticmethod
-    def _selection(entry: YamlNode) -> CapabilitySelection:
-        fields = entry.require_mapping(_CAPABILITY_KEYS)
+    @classmethod
+    def _selection(cls, entry: YamlNode) -> CapabilitySelection:
+        fields = entry.require_mapping(_CAPABILITY_KEYS, optional=_OPTIONAL_CAPABILITY_KEYS)
         return CapabilitySelection(
             name=fields.field("name").require_string(),
-            params_family=fields.field("params_family").require_string(),
+            params=cls._bindings(fields.optional_field("params")),
+            consumes=cls._bindings(fields.optional_field("consumes")),
+            produces=cls._produced(fields.field("produces")),
         )
+
+    @classmethod
+    def _produced(cls, node: YamlNode) -> dict[str, str]:
+        bindings = cls._bindings(node)
+        if not bindings:
+            raise YamlShapeError(f"{node.where} must name at least one slot")
+        return bindings
+
+    @staticmethod
+    def _bindings(node: YamlNode | None) -> dict[str, str]:
+        return {} if node is None else node.string_mapping()
 
     @staticmethod
     def _code(node: YamlNode) -> JurisdictionCode:

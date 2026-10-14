@@ -11,10 +11,12 @@ from decimal import Decimal
 
 import app.jurisdictions.ca
 import app.registrations  # noqa: F401  (fills the shared registries, as the app does)
-from app.domain.artifact import ArtifactRegistry
+from app.domain.artifact import ArtifactKind, ArtifactRegistry
 from app.jurisdictions.ca.catalog import FEDERAL_BASIC_TAX, TAXABLE_INCOME
 
-REGISTERED = frozenset({"ca/taxable_income", "ca/federal_basic_tax"})
+REGISTERED = frozenset(
+    {"ca/taxable_income", "ca/federal_basic_tax", "ca/federal_tax_after_credits"}
+)
 
 
 def test_registered_identifiers_snapshot() -> None:
@@ -38,3 +40,12 @@ def test_catalog_kinds_are_in_the_package_namespace() -> None:
 def test_catalog_kinds_are_money() -> None:
     assert TAXABLE_INCOME.value_type is Decimal
     assert FEDERAL_BASIC_TAX.value_type is Decimal
+
+
+def test_every_registered_kind_is_money() -> None:
+    registry = ArtifactRegistry.shared()
+
+    for identifier in REGISTERED:
+        kind = registry.get(identifier)
+        assert isinstance(kind, ArtifactKind)
+        assert kind.value_type is Decimal, identifier

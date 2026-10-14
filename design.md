@@ -66,9 +66,10 @@ declared as a fold contribution whose result actually depends on order.
 
 ```
 capability:
-  consumes:      [artifact, ...]   # spine reads
-  produces:      [artifact, ...]   # spine writes (new named artifact)
-  contributes_to: artifact         # fold delta (commutative)
+  parameters:    {slot: parameter kind, ...}  # datasets it is built from
+  consumes:      {slot: value type, ...}      # spine reads
+  produces:      {slot: value type, ...}      # spine writes (new named artifact)
+  contributes_to: artifact                    # fold delta (commutative)
 ```
 
 - Vocabulary is exactly: **consume / produce / contribute_to**.
@@ -76,9 +77,14 @@ capability:
   is a consumer producing a new spine artifact, not a modifier.
 - Ordering rule: for each artifact, **all contributions complete before any
   consumer runs**.
-- Contracts are declared **in code**, next to the implementation that makes
-  them true. The manifest never declares edges (see §4 — single source of
-  dependency truth).
+- Contract **shapes** are declared **in code**, next to the implementation
+  that makes them true: each capability names its slots — parameter slots,
+  each with a parameter kind, and artifact slots for what it consumes and
+  produces, each with a value type. A capability may have zero, one or
+  several parameter slots. The manifest chooses which parameter families
+  and which artifacts fill those slots (§4); it never declares edges or
+  order. The order is derived from what each selection consumes and
+  produces (§5 — single source of dependency truth).
 - Capabilities are pure mechanism: no jurisdiction constants in code, ever.
   (Prior incident: engine silently US-shaped by agent priors. Same vector.)
 - Reuse across jurisdictions = a capability keyed to an artifact is
@@ -95,8 +101,9 @@ Rounding is a parameter, never a jurisdiction constant in code.
   rounding**: exact decimal arithmetic, never floats. An assumed default
   (e.g. half-up to the cent) would be a silent prior, the same failure
   class as implicit carry-forward.
-- A capability's rounding rule lives in its parameter dataset, resolved
-  per (family, tax_year) like any other parameter. Rounding can
+- A capability's rounding rule lives in its parameter datasets, resolved
+  per (family, tax_year) like any other parameter. A capability with
+  several parameter slots decides which slot's rule it applies where. Rounding can
   therefore differ between capabilities in one jurisdiction and between
   tax years, and the provenance fingerprint (§6) covers it.
 - Each capability defines *where* it rounds (e.g. per bracket slice vs.
@@ -107,7 +114,10 @@ Rounding is a parameter, never a jurisdiction constant in code.
 
 ## 4. Manifest (per jurisdiction)
 
-YAML. **Selection + parameters only — topology is derived, never authored.**
+YAML. **Selection + slot bindings only — topology is derived, never authored.**
+Each selection names a capability and fills the slots its code declares (§3):
+parameter slots with parameter families, artifact slots with artifact
+identifiers.
 
 ```yaml
 jurisdiction: CA-ON
@@ -115,18 +125,32 @@ version: 2                  # increments on structural change only
 valid_from_tax_year: 2023   # inclusive; open-ended until a successor
                             # manifest closes it (contiguity invariant)
 capabilities:
-  - name: ca/rrsp_deduction         # <namespace>/<local id>
-    params_family: ca/rrsp          # resolution looks up (family, tax_year)
-  - name: core/progressive_tax
-    params_family: ca-on/brackets   # -> that year's dataset or attestation;
-                                    #    absent year = loud failure,
-                                    #    no implicit carry-forward
-  # list order advisory; composition derives true order from code-declared
-  # contracts and rejects unsatisfiable selections
+  - name: core/progressive_tax          # <namespace>/<local id>
+    params:                             # parameter slot -> family; resolution
+      schedule: ca-on/brackets          #   looks up (family, tax_year) -> that
+                                        #   year's dataset or attestation;
+                                        #   absent year = loud failure,
+                                        #   no implicit carry-forward
+    consumes:                           # artifact slot -> artifact identifier
+      base: ca/taxable_income
+    produces:
+      output: ca-on/ontario_basic_tax
+  - name: core/non_refundable_credit
+    params:
+      amount: ca-on/basic_personal_amount
+      rate: ca-on/credit_rate           # one rate, stated once, in its own dataset
+    consumes:
+      tax: ca-on/ontario_basic_tax
+    produces:
+      output: ca-on/ontario_tax_after_credits
+  # `params` may be omitted when a capability has no parameter slots,
+  # `consumes` when it consumes nothing; `produces` is required.
+  # list order advisory; composition derives true order from what each
+  # selection consumes and produces, and rejects unsatisfiable selections
 ```
 
 Rules:
-- No edges, no conditionals, no expressions in YAML — the moment an `if`
+- No edges, no ordering, no conditionals, no expressions in YAML — the moment an `if`
   appears, the manifest is becoming an untyped programming language
   (the failure mode the zero-code rejection was meant to kill).
   Conditionality lives inside capabilities (a capability may contribute zero).
@@ -153,8 +177,8 @@ Rules:
 - Tax year is a query input, not a manifest field. Resolution:
   (jurisdiction, tax_year, computation_date) → the one manifest whose
   validity range covers the tax year, with computation_date disambiguating
-  retroactive successors → each parameter family resolved against that
-  tax year.
+  retroactive successors → each parameter slot's family resolved against
+  that tax year.
 - The tax year is the atomic unit of computation and resolution. Mid-year
   legal changes land through one of three channels — never through
   sub-annual resolution:

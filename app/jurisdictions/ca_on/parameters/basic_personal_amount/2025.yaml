@@ -1,7 +1,6 @@
-# Ontario basic personal amount, 2025 tax year (Form ON428 line 58040), with the
-# Ontario non-refundable tax credit rate (ON428 line 45). Not income-tested.
-# The rate is applied to the sum of all credit amounts on the form; with this as
-# the only credit, amount × rate is equivalent.
+# Ontario basic personal amount, 2025 tax year (Form ON428 line 58040). Not
+# income-tested. The credit rate that turns it into tax relief is its own
+# dataset, ca-on/credit_rate.
 # CRA states no rounding rule for amount × rate, so none is assumed.
 family: ca-on/basic_personal_amount
 tax_year: 2025
@@ -11,4 +10,3 @@ sources:
   - https://www.canada.ca/en/revenue-agency/services/forms-publications/payroll/payroll-deductions-t4127-payroll-deductions-formulas/t4127-jul-121st-edition-effective-july-1-2025/t4127-jul-payroll-deductions-formulas.html
 rounding: none
 amount: "12747"
-rate: "0.0505"

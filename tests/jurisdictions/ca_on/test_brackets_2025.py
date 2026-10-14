@@ -86,8 +86,8 @@ def test_reproduces_the_fixed_tax_printed_on_the_form(
     ],
 )
 def test_matches_cra_worked_examples(taxable_income: str, federal_basic_tax: str) -> None:
-    data = SOURCE.get("ca/brackets", 2025, BRACKETS)
-    capability = ProgressiveTax(TAXABLE_INCOME, FEDERAL_BASIC_TAX, data.values, data.rounding)
+    schedule = SOURCE.get("ca/brackets", 2025, BRACKETS)
+    capability = ProgressiveTax(TAXABLE_INCOME, FEDERAL_BASIC_TAX, schedule)
 
     result = capability.compute((Artifact(TAXABLE_INCOME, D(taxable_income)),))
 

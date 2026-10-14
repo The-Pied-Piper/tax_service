@@ -13,7 +13,7 @@ from app.domain.parameters.rounding import NO_ROUNDING
 
 
 def test_holds_values_of_its_kind() -> None:
-    credit = Credit(amount=Decimal(1), rate=Decimal("0.1"))
+    credit = Credit(amount=Decimal(1))
 
     dataset = ParameterDataset("ex/credit", 2025, CREDIT, credit, NO_ROUNDING, ("src",))
 

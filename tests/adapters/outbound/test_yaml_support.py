@@ -56,6 +56,60 @@ def test_require_mapping_rejects(value: object, message: str) -> None:
         node(value).require_mapping(frozenset({"a"}))
 
 
+def test_require_mapping_accepts_optional_keys_present_or_absent() -> None:
+    keys, optional = frozenset({"a"}), frozenset({"b"})
+
+    assert node({"a": 1, "b": 2}).require_mapping(keys, optional=optional).field("b").value == 2
+    assert node({"a": 1}).require_mapping(keys, optional=optional).optional_field("b") is None
+
+
+@pytest.mark.parametrize(
+    ("value", "message"),
+    [
+        ({"a": 1, "x": 2}, r"document: unknown keys \['x'\]"),
+        ({"b": 2}, r"document: missing keys \['a'\]"),
+    ],
+)
+def test_require_mapping_with_optional_keys_rejects(value: object, message: str) -> None:
+    with pytest.raises(YamlShapeError, match=message):
+        node(value).require_mapping(frozenset({"a"}), optional=frozenset({"b"}))
+
+
+def test_optional_field_is_the_value_under_a_present_key() -> None:
+    found = node({"params": {"a": "x"}}).optional_field("params")
+
+    assert found is not None
+    assert found.where == "params"
+    assert found.value == {"a": "x"}
+
+
+def test_optional_field_requires_a_mapping() -> None:
+    with pytest.raises(YamlShapeError, match="^document must be a mapping"):
+        node([1]).optional_field("a")
+
+
+def test_string_mapping_reads_strings_to_strings() -> None:
+    assert node({"m": {"a": "x", "b": "y"}}).field("m").string_mapping() == {"a": "x", "b": "y"}
+    assert node({"m": {}}).field("m").string_mapping() == {}
+
+
+@pytest.mark.parametrize(
+    ("value", "message"),
+    [
+        ({"a": 7}, r"^m\.a must be a string, got int"),
+        ({"a": None}, r"^m\.a must be a string, got NoneType"),
+        ({7: "x"}, r"^m: key 7 must be a string, got int"),
+        ({"": "x"}, r"^m: keys must not be empty"),
+        ({"a": ""}, r"^m\.a must not be empty"),
+        (["x"], "^m must be a mapping"),
+        (None, "^m must be a mapping"),
+    ],
+)
+def test_string_mapping_rejects(value: object, message: str) -> None:
+    with pytest.raises(YamlShapeError, match=message):
+        node({"m": value}).field("m").string_mapping()
+
+
 def test_top_level_fields_are_named_without_the_root_label() -> None:
     with pytest.raises(YamlShapeError, match="^version must be an integer"):
         node({"version": "1"}).field("version").require_integer()

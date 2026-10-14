@@ -3,6 +3,10 @@
 The source takes a mapping of namespace -> package directory. A jurisdiction's namespace is its
 code lower-cased (`EX-ON` -> `ex-on`, `EX` -> `ex`), and its manifests are every `*.yaml` /
 `*.yml` file under `roots[Namespace("ex-on")] / "manifests"`, recursively. Names are made up.
+
+Each selection names a capability and fills its slots: `params` (slot -> family, optional),
+`consumes` (slot -> artifact identifier, optional) and `produces` (slot -> artifact identifier,
+required). Slot names are not checked against capability classes here.
 """
 
 from __future__ import annotations
@@ -10,6 +14,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from pathlib import Path
 from textwrap import dedent
+from types import MappingProxyType
 
 import pytest
 
@@ -28,9 +33,20 @@ version: 1
 valid_from_tax_year: 2025
 capabilities:
   - name: ex/savings_deduction
-    params_family: ex/savings
+    params:
+      cap: ex/savings_cap
+      rate: ex/savings_rate
+    consumes:
+      income: ex/gross_income
+    produces:
+      output: ex/savings_deduction
   - name: ex/progressive_tax
-    params_family: ex-on/brackets
+    params:
+      schedule: ex-on/brackets
+    consumes:
+      base: ex/taxable_base
+    produces:
+      output: ex-on/levy
 """
 
 
@@ -63,8 +79,18 @@ def test_parses_manifest_into_domain_objects(tmp_path: Path) -> None:
                 version=1,
                 valid_from_tax_year=2025,
                 capabilities=(
-                    CapabilitySelection(name="ex/savings_deduction", params_family="ex/savings"),
-                    CapabilitySelection(name="ex/progressive_tax", params_family="ex-on/brackets"),
+                    CapabilitySelection(
+                        name="ex/savings_deduction",
+                        params={"cap": "ex/savings_cap", "rate": "ex/savings_rate"},
+                        consumes={"income": "ex/gross_income"},
+                        produces={"output": "ex/savings_deduction"},
+                    ),
+                    CapabilitySelection(
+                        name="ex/progressive_tax",
+                        params={"schedule": "ex-on/brackets"},
+                        consumes={"base": "ex/taxable_base"},
+                        produces={"output": "ex-on/levy"},
+                    ),
                 ),
             ),
         ),
@@ -80,9 +106,9 @@ def test_preserves_authored_capability_order(tmp_path: Path) -> None:
         version: 1
         valid_from_tax_year: 2025
         capabilities:
-          - {name: ex/c, params_family: f}
-          - {name: ex/a, params_family: f}
-          - {name: ex/b, params_family: f}
+          - {name: ex/c, produces: {output: ex/c}}
+          - {name: ex/a, produces: {output: ex/a}}
+          - {name: ex/b, produces: {output: ex/b}}
         """,
     )
 
@@ -91,7 +117,7 @@ def test_preserves_authored_capability_order(tmp_path: Path) -> None:
     assert [c.name for c in manifest.capabilities] == ["ex/c", "ex/a", "ex/b"]
 
 
-def test_allows_same_capability_with_different_params_families(tmp_path: Path) -> None:
+def test_allows_same_capability_with_different_bindings(tmp_path: Path) -> None:
     write(
         tmp_path,
         "ex-on/manifests/m.yaml",
@@ -100,14 +126,61 @@ def test_allows_same_capability_with_different_params_families(tmp_path: Path) -
         version: 1
         valid_from_tax_year: 2025
         capabilities:
-          - {name: ex/progressive_tax, params_family: ex/brackets}
-          - {name: ex/progressive_tax, params_family: ex-on/brackets}
+          - name: ex/progressive_tax
+            params: {schedule: ex/brackets}
+            consumes: {base: ex/taxable_base}
+            produces: {output: ex/levy}
+          - name: ex/progressive_tax
+            params: {schedule: ex-on/brackets}
+            consumes: {base: ex/taxable_base}
+            produces: {output: ex-on/levy}
         """,
     )
 
     (manifest,) = source(tmp_path).get_jurisdiction(EX_ON).manifests
 
-    assert [c.params_family for c in manifest.capabilities] == ["ex/brackets", "ex-on/brackets"]
+    assert [c.params for c in manifest.capabilities] == [
+        {"schedule": "ex/brackets"},
+        {"schedule": "ex-on/brackets"},
+    ]
+    assert [c.produces for c in manifest.capabilities] == [
+        {"output": "ex/levy"},
+        {"output": "ex-on/levy"},
+    ]
+
+
+def test_params_and_consumes_may_be_omitted(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex-on/manifests/m.yaml",
+        """\
+        jurisdiction: EX-ON
+        version: 1
+        valid_from_tax_year: 2025
+        capabilities:
+          - name: ex/flat_grant
+            produces:
+              output: ex/grant
+        """,
+    )
+
+    (manifest,) = source(tmp_path).get_jurisdiction(EX_ON).manifests
+
+    assert manifest.capabilities == (
+        CapabilitySelection(
+            name="ex/flat_grant", params={}, consumes={}, produces={"output": "ex/grant"}
+        ),
+    )
+
+
+def test_slot_bindings_are_read_only(tmp_path: Path) -> None:
+    write(tmp_path, "ex-on/manifests/v1.yaml", EX_ON_V1)
+
+    (manifest,) = source(tmp_path).get_jurisdiction(EX_ON).manifests
+
+    for selection in manifest.capabilities:
+        for bindings in (selection.params, selection.consumes, selection.produces):
+            assert isinstance(bindings, MappingProxyType)
 
 
 def test_groups_every_manifest_version_of_the_jurisdiction(tmp_path: Path) -> None:
@@ -199,28 +272,134 @@ def test_one_bad_file_fails_the_whole_load(tmp_path: Path) -> None:
         ),
         pytest.param(
             EX_ON_V1.replace(
-                "    params_family: ex/savings\n",
-                "    params_family: ex/savings\n    params_family: ex/other\n",
+                "  - name: ex/savings_deduction\n",
+                "  - name: ex/savings_deduction\n    name: ex/other\n",
             ),
-            "duplicate key 'params_family'",
+            "duplicate key 'name'",
             id="duplicate-capability-key",
+        ),
+        pytest.param(
+            EX_ON_V1.replace(
+                "      cap: ex/savings_cap\n", "      cap: ex/savings_cap\n      cap: ex/other\n"
+            ),
+            "duplicate key 'cap'",
+            id="duplicate-parameter-slot",
+        ),
+        pytest.param(
+            EX_ON_V1.replace(
+                "      base: ex/taxable_base\n",
+                "      base: ex/taxable_base\n      base: ex/other\n",
+            ),
+            "duplicate key 'base'",
+            id="duplicate-consumed-slot",
+        ),
+        pytest.param(
+            EX_ON_V1.replace(
+                "      output: ex/savings_deduction\n",
+                "      output: ex/savings_deduction\n      output: ex/other\n",
+            ),
+            "duplicate key 'output'",
+            id="duplicate-produced-slot",
         ),
         pytest.param(EX_ON_V1 + "edges: []\n", r"unknown keys \['edges'\]", id="unknown-key"),
         pytest.param(
             EX_ON_V1.replace(
-                "    params_family: ex/savings\n",
-                "    params_family: ex/savings\n    after: ex/progressive_tax\n",
+                "  - name: ex/savings_deduction\n",
+                "  - name: ex/savings_deduction\n    after: ex/progressive_tax\n",
             ),
             r"capabilities\[0\]: unknown keys \['after'\]",
             id="unknown-capability-key",
         ),
         pytest.param(
+            EX_ON_V1.replace(
+                "  - name: ex/savings_deduction\n",
+                "  - name: ex/savings_deduction\n    params_family: ex/savings\n",
+            ),
+            r"capabilities\[0\]: unknown keys \['params_family'\]",
+            id="params-family-no-longer-accepted",
+        ),
+        pytest.param(
             EX_ON_V1.replace("version: 1\n", ""), r"missing keys \['version'\]", id="missing-key"
         ),
         pytest.param(
-            EX_ON_V1.replace("    params_family: ex/savings\n", ""),
-            r"capabilities\[0\]: missing keys \['params_family'\]",
-            id="missing-capability-key",
+            EX_ON_V1.replace("  - name: ex/savings_deduction\n", "  -\n"),
+            r"capabilities\[0\]: missing keys? \[?'name'",
+            id="missing-capability-name",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("    produces:\n      output: ex/savings_deduction\n", ""),
+            r"capabilities\[0\]: missing keys? \[?'produces'",
+            id="missing-produces",
+        ),
+        pytest.param(
+            EX_ON_V1.replace(
+                "    produces:\n      output: ex/savings_deduction\n", "    produces: {}\n"
+            ),
+            r"capabilities\[0\]\.produces must name at least one slot",
+            id="produces-empty",
+        ),
+        pytest.param(
+            EX_ON_V1.replace(
+                "      output: ex/savings_deduction", '      "": ex/savings_deduction'
+            ),
+            r"capabilities\[0\]\.produces: keys must not be empty",
+            id="produced-slot-empty",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("      output: ex/savings_deduction", '      output: ""'),
+            r"capabilities\[0\]\.produces\.output must not be empty",
+            id="produced-identifier-empty",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("      cap: ex/savings_cap", "      cap: 7"),
+            r"capabilities\[0\]\.params\.cap must be a string, got int",
+            id="parameter-family-int",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("      income: ex/gross_income", "      income: [ex/gross_income]"),
+            r"capabilities\[0\]\.consumes\.income must be a string, got list",
+            id="consumed-identifier-list",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("      output: ex/savings_deduction", "      output: null"),
+            r"capabilities\[0\]\.produces\.output must be a string, got NoneType",
+            id="produced-identifier-null",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("      cap: ex/savings_cap", "      7: ex/savings_cap"),
+            r"capabilities\[0\]\.params.*7.*must be a string",
+            id="slot-name-int",
+        ),
+        pytest.param(
+            EX_ON_V1.replace(
+                "    params:\n      cap: ex/savings_cap\n      rate: ex/savings_rate\n",
+                "    params: [ex/savings_cap]\n",
+            ),
+            r"capabilities\[0\]\.params must be a mapping",
+            id="params-list",
+        ),
+        pytest.param(
+            EX_ON_V1.replace(
+                "    params:\n      cap: ex/savings_cap\n      rate: ex/savings_rate\n",
+                "    params:\n",
+            ),
+            r"capabilities\[0\]\.params must be a mapping",
+            id="params-null",
+        ),
+        pytest.param(
+            EX_ON_V1.replace(
+                "    consumes:\n      income: ex/gross_income\n", "    consumes: ex/gross_income\n"
+            ),
+            r"capabilities\[0\]\.consumes must be a mapping",
+            id="consumes-string",
+        ),
+        pytest.param(
+            EX_ON_V1.replace(
+                "    produces:\n      output: ex/savings_deduction\n",
+                "    produces: ex/savings_deduction\n",
+            ),
+            r"capabilities\[0\]\.produces must be a mapping",
+            id="produces-string",
         ),
         pytest.param(
             EX_ON_V1.replace("version: 1", "version: '1'"),

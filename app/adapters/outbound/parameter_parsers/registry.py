@@ -1,8 +1,8 @@
 """ParameterParserRegistry: the parameter parsers packages contribute, by parameter kind.
 
 A parser registers itself with `@parameter_parser`; YamlParameterSource looks parsers up by
-the kind it was asked for. Parsers are keyed by their kind's name (`brackets`, `credit`), which
-is not namespaced yet.
+the kind it was asked for. Parsers are keyed by their kind's name (`brackets`, `credit`,
+`rate`), which is not namespaced yet.
 """
 
 from __future__ import annotations

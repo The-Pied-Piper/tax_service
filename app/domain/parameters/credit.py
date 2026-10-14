@@ -1,7 +1,7 @@
 """Credits: an amount that, multiplied by a rate, reduces tax.
 
-The amount and rate are parameter data, resolved per (family, tax_year); the
-code holds no jurisdiction's figures.
+The amount is parameter data, resolved per (family, tax_year); the rate is its own parameter
+(`rate` kind), so each fact has one home. The code holds no jurisdiction's figures.
 """
 
 from __future__ import annotations
@@ -15,27 +15,25 @@ from app.domain.parameters.kind import ParameterKind
 
 @dataclass(frozen=True)
 class Credit:
+    """A credit amount; a rate, given separately, turns it into tax relief."""
+
     amount: Decimal
-    rate: Decimal
 
     def __post_init__(self) -> None:
-        for name, value in (("amount", self.amount), ("rate", self.rate)):
-            if not isinstance(value, Decimal):
-                raise TypeError(f"credit {name} must be a Decimal, got {type(value).__name__}")
-            if not value.is_finite():
-                raise InvalidCreditError(f"credit {name} must be finite, got {value}")
+        if not isinstance(self.amount, Decimal):
+            raise TypeError(f"credit amount must be a Decimal, got {type(self.amount).__name__}")
+        if not self.amount.is_finite():
+            raise InvalidCreditError(f"credit amount must be finite, got {self.amount}")
         if self.amount < 0:
             raise InvalidCreditError(f"credit amount must not be negative, got {self.amount}")
-        if not 0 <= self.rate <= 1:
-            raise InvalidCreditError(f"credit rate must be between 0 and 1, got {self.rate}")
 
-    @property
-    def value(self) -> Decimal:
-        """The exact reduction in tax: amount × rate."""
-        return self.amount * self.rate
+    def at(self, rate: Decimal) -> Decimal:
+        """The exact reduction in tax at `rate`: amount × rate."""
+        return self.amount * rate
 
-    def describe(self) -> str:
-        percent = format((self.rate * 100).normalize(), "f")
+    def describe_at(self, rate: Decimal) -> str:
+        """How the reduction at `rate` is worked out, e.g. "12.5% of 1000"."""
+        percent = format((rate * 100).normalize(), "f")
         return f"{percent}% of {self.amount}"
 
 

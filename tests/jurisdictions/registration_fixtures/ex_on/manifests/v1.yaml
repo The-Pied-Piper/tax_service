@@ -4,4 +4,9 @@ version: 1
 valid_from_tax_year: 2025
 capabilities:
   - name: core/progressive_tax
-    params_family: ex-on/brackets
+    params:
+      schedule: ex-on/brackets
+    consumes:
+      base: ex-on/levy_base
+    produces:
+      output: ex-on/levy

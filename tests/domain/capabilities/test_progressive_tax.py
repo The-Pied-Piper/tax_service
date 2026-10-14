@@ -1,8 +1,15 @@
-"""Unit tests for the ProgressiveTax capability, with made-up brackets."""
+"""Unit tests for the ProgressiveTax capability, with made-up brackets.
+
+Its slots: parameter `schedule` (a brackets dataset, whose rounding rule it applies to the total),
+consumed `base` and produced `output`.
+"""
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from decimal import Decimal
+from types import MappingProxyType
+from typing import Any, assert_type, cast
 
 import pytest
 
@@ -10,6 +17,9 @@ from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capability import TraceLine
 from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
+from app.domain.parameters.credit import CREDIT, Credit
+from app.domain.parameters.datasets import ParameterDataset
+from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 
 D = Decimal
@@ -26,8 +36,14 @@ SCHEDULE = BracketSchedule(
 )
 
 
+def schedule(rounding: RoundingRule = NO_ROUNDING) -> ParameterDataset[BracketSchedule]:
+    return ParameterDataset(
+        "ex/brackets", 2025, BRACKETS, SCHEDULE, rounding, ("https://example.org/rates",)
+    )
+
+
 def capability(rounding: RoundingRule = NO_ROUNDING) -> ProgressiveTax:
-    return ProgressiveTax(TAXABLE_BASE, BASIC_TAX, SCHEDULE, rounding)
+    return ProgressiveTax(TAXABLE_BASE, BASIC_TAX, schedule(rounding))
 
 
 def test_declares_its_contract() -> None:
@@ -42,14 +58,14 @@ def test_produces_tax_on_the_base() -> None:
 
 
 def test_the_same_capability_serves_different_wiring() -> None:
-    wired = ProgressiveTax(OTHER_BASE, OTHER_TAX, SCHEDULE, NO_ROUNDING)
+    wired = ProgressiveTax(OTHER_BASE, OTHER_TAX, schedule())
 
     result = wired.compute((Artifact(OTHER_BASE, D(50)),))
 
     assert result.outputs == (Artifact(OTHER_TAX, D("5.0")),)
 
 
-def test_rounds_once_at_the_end_with_the_given_rule() -> None:
+def test_rounds_once_at_the_end_with_the_schedules_rule() -> None:
     cent = RoundTo(D("0.01"), RoundingMode.HALF_UP)
     # 10% of 100 + 20% of 0.025 = 10.005 -> 10.01; per-slice rounding would give 10.00 + 0.01.
     result = capability(cent).compute((Artifact(TAXABLE_BASE, D("100.025")),))
@@ -87,8 +103,41 @@ def test_rejects_negative_base() -> None:
         capability().compute((Artifact(TAXABLE_BASE, D(-1)),))
 
 
-def test_declares_the_parameter_kind_it_needs() -> None:
-    assert ProgressiveTax.PARAMETERS is BRACKETS
+def test_declares_its_slots() -> None:
+    assert ProgressiveTax.PARAMETERS == {"schedule": BRACKETS}
+    assert ProgressiveTax.PARAMETERS["schedule"] is BRACKETS
+    assert ProgressiveTax.CONSUMES == {"base": Decimal}
+    assert ProgressiveTax.PRODUCES == {"output": Decimal}
+
+
+def test_its_slots_are_read_only() -> None:
+    for slots in (ProgressiveTax.PARAMETERS, ProgressiveTax.CONSUMES, ProgressiveTax.PRODUCES):
+        assert isinstance(slots, MappingProxyType)
+
+
+def test_its_slots_are_typed_as_read_only_mappings() -> None:
+    assert_type(ProgressiveTax.PARAMETERS, Mapping[str, ParameterKind[Any]])
+    assert_type(ProgressiveTax.CONSUMES, Mapping[str, type])
+    assert_type(ProgressiveTax.PRODUCES, Mapping[str, type])
+
+
+def test_its_slots_cannot_be_changed() -> None:
+    for slots in (ProgressiveTax.PARAMETERS, ProgressiveTax.CONSUMES, ProgressiveTax.PRODUCES):
+        with pytest.raises(TypeError):
+            cast(Any, slots)["extra"] = Decimal
+
+
+def test_is_built_from_its_slot_names_as_keywords() -> None:
+    wired = ProgressiveTax(base=TAXABLE_BASE, output=BASIC_TAX, schedule=schedule())
+
+    result = wired.compute((Artifact(TAXABLE_BASE, D(250)),))
+
+    assert result.outputs == (Artifact(BASIC_TAX, D("40.0")),)
+
+
+def test_takes_no_separate_rounding_argument() -> None:
+    with pytest.raises(TypeError):
+        ProgressiveTax(TAXABLE_BASE, BASIC_TAX, schedule(), NO_ROUNDING)  # type: ignore[call-arg]
 
 
 def test_is_not_generic_over_artifacts() -> None:
@@ -100,7 +149,7 @@ def test_mypy_rejects_wiring_an_artifact_kind_of_another_value_type() -> None:
     count = ArtifactKind("ex/count", int)
     # An ArtifactKind[int] is not Money; the ignore fails under mypy (warn_unused_ignores) if
     # wiring an artifact kind of another value type is ever accepted.
-    ProgressiveTax(count, BASIC_TAX, SCHEDULE, NO_ROUNDING)  # type: ignore[arg-type]
+    ProgressiveTax(count, BASIC_TAX, schedule())  # type: ignore[arg-type]
 
 
 class Cents(Decimal):
@@ -113,4 +162,23 @@ CENTS = ArtifactKind("ex/cents", Cents)  # bound to a name: built inline it woul
 def test_mypy_rejects_wiring_an_artifact_kind_of_a_value_subtype() -> None:
     # `ArtifactKind` is invariant, so an ArtifactKind[Cents] is not Money; if `ArtifactKind` ever
     # became covariant this ignore would be unused and mypy (strict) would fail.
-    ProgressiveTax(CENTS, BASIC_TAX, SCHEDULE, NO_ROUNDING)  # type: ignore[arg-type]
+    ProgressiveTax(CENTS, BASIC_TAX, schedule())  # type: ignore[arg-type]
+
+
+def test_mypy_rejects_a_dataset_of_another_kind_for_the_schedule() -> None:
+    credit = ParameterDataset("ex/credit", 2025, CREDIT, Credit(D(1)), NO_ROUNDING, ("src",))
+
+    def wire() -> None:  # type-checked, never run
+        # A credit dataset is not a ParameterDataset[BracketSchedule]; the ignore fails under
+        # mypy (warn_unused_ignores) if it is ever accepted.
+        ProgressiveTax(TAXABLE_BASE, BASIC_TAX, credit)  # type: ignore[arg-type]
+
+    assert callable(wire)
+
+
+def test_mypy_rejects_a_bare_schedule_without_its_dataset() -> None:
+    def wire() -> None:  # type-checked, never run
+        # Parameter slots take the dataset, which carries the rounding rule; never bare values.
+        ProgressiveTax(TAXABLE_BASE, BASIC_TAX, SCHEDULE)  # type: ignore[arg-type]
+
+    assert callable(wire)
