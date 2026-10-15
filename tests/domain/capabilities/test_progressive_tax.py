@@ -116,7 +116,7 @@ def test_its_slots_are_read_only() -> None:
 
 
 def test_its_slots_are_typed_as_read_only_mappings() -> None:
-    assert_type(ProgressiveTax.PARAMETERS, Mapping[str, ParameterKind[Any]])
+    assert_type(ProgressiveTax.PARAMETERS, Mapping[str, ParameterKind[BracketSchedule]])
     assert_type(ProgressiveTax.CONSUMES, Mapping[str, type])
     assert_type(ProgressiveTax.PRODUCES, Mapping[str, type])
 

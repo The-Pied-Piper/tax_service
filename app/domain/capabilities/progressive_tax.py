@@ -22,7 +22,7 @@ from app.domain.parameters.kind import ParameterKind
 class ProgressiveTax(Capability):
     """Produces `output`: tax on the consumed `base` from the `schedule` dataset's brackets."""
 
-    PARAMETERS: ClassVar[Mapping[str, ParameterKind[Any]]] = {"schedule": BRACKETS}
+    PARAMETERS: ClassVar[Mapping[str, ParameterKind[BracketSchedule]]] = {"schedule": BRACKETS}
     CONSUMES: ClassVar[Mapping[str, type]] = {"base": Decimal}
     PRODUCES: ClassVar[Mapping[str, type]] = {"output": Decimal}
 
