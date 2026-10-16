@@ -30,7 +30,7 @@ C = ArtifactKind("ex/c", Decimal)
 class Double(Capability):
     """Produces `out` = 2 × `inp`; `extra`, `skip` and `peek` let a test break the contract.
 
-    Its slots are `inp` and `out`; the test hooks are not slots.
+    Its slots are `inp` and `out`, passed to the base; the test hooks are not slots.
     """
 
     CONSUMES = {"inp": Decimal}
@@ -44,16 +44,9 @@ class Double(Capability):
         skip: bool = False,
         peek: Money | None = None,
     ) -> None:
+        super().__init__(inp=inp, out=out)
         self._inp, self._out, self._extra, self._skip, self._peek = inp, out, extra, skip, peek
         self.received: tuple[Artifact[Any], ...] = ()
-
-    @property
-    def consumes(self) -> frozenset[ArtifactKind[Any]]:
-        return frozenset({self._inp})
-
-    @property
-    def produces(self) -> frozenset[ArtifactKind[Any]]:
-        return frozenset({self._out})
 
     def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
         self.received = inputs

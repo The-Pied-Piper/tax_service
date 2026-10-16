@@ -15,7 +15,7 @@ from collections.abc import Mapping
 from decimal import Decimal
 from typing import Any, ClassVar
 
-from app.domain.artifact import Artifact, ArtifactKind, Money
+from app.domain.artifact import Artifact, Money
 from app.domain.capability import Capability, CapabilityResult, TraceLine, capability
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
@@ -39,18 +39,11 @@ class NonRefundableCredit(Capability):
         rate: ParameterDataset[Rate],
     ) -> None:
         """Wire the capability: the kinds it consumes and produces, its amount and rate datasets."""
+        super().__init__(tax=tax, output=output)
         self._tax = tax
         self._output = output
         self._amount = amount
         self._rate = rate
-
-    @property
-    def consumes(self) -> frozenset[ArtifactKind[Any]]:
-        return frozenset({self._tax})
-
-    @property
-    def produces(self) -> frozenset[ArtifactKind[Any]]:
-        return frozenset({self._output})
 
     def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
         tax = self._input(inputs, self._tax).value

@@ -16,6 +16,7 @@ import pytest
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capability import TraceLine
+from app.domain.errors import InvalidCapabilityError
 from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
@@ -49,6 +50,20 @@ def capability(rounding: RoundingRule = NO_ROUNDING) -> ProgressiveTax:
 def test_declares_its_contract() -> None:
     assert capability().consumes == frozenset({TAXABLE_BASE})
     assert capability().produces == frozenset({BASIC_TAX})
+
+
+def test_leaves_its_contract_to_the_base() -> None:
+    assert "consumes" not in vars(ProgressiveTax)
+    assert "produces" not in vars(ProgressiveTax)
+
+
+def test_rejects_one_kind_as_both_base_and_output() -> None:
+    with pytest.raises(InvalidCapabilityError, match="ProgressiveTax") as raised:
+        ProgressiveTax(TAXABLE_BASE, TAXABLE_BASE, schedule())
+
+    message = str(raised.value)
+    assert "'base'" in message
+    assert "'output'" in message
 
 
 def test_produces_tax_on_the_base() -> None:
@@ -148,8 +163,10 @@ def test_is_not_generic_over_artifacts() -> None:
 def test_mypy_rejects_wiring_an_artifact_kind_of_another_value_type() -> None:
     count = ArtifactKind("ex/count", int)
     # An ArtifactKind[int] is not Money; the ignore fails under mypy (warn_unused_ignores) if
-    # wiring an artifact kind of another value type is ever accepted.
-    ProgressiveTax(count, BASIC_TAX, schedule())  # type: ignore[arg-type]
+    # wiring an artifact kind of another value type is ever accepted. At run time, building it
+    # fails too.
+    with pytest.raises(InvalidCapabilityError, match="ProgressiveTax.*'base'"):
+        ProgressiveTax(count, BASIC_TAX, schedule())  # type: ignore[arg-type]
 
 
 class Cents(Decimal):
@@ -161,8 +178,10 @@ CENTS = ArtifactKind("ex/cents", Cents)  # bound to a name: built inline it woul
 
 def test_mypy_rejects_wiring_an_artifact_kind_of_a_value_subtype() -> None:
     # `ArtifactKind` is invariant, so an ArtifactKind[Cents] is not Money; if `ArtifactKind` ever
-    # became covariant this ignore would be unused and mypy (strict) would fail.
-    ProgressiveTax(CENTS, BASIC_TAX, schedule())  # type: ignore[arg-type]
+    # became covariant this ignore would be unused and mypy (strict) would fail. At run time,
+    # building it fails too: the value type must match the slot's exactly.
+    with pytest.raises(InvalidCapabilityError, match="ProgressiveTax.*'base'"):
+        ProgressiveTax(CENTS, BASIC_TAX, schedule())  # type: ignore[arg-type]
 
 
 def test_mypy_rejects_a_dataset_of_another_kind_for_the_schedule() -> None:
