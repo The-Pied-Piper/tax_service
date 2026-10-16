@@ -78,3 +78,11 @@ class InvalidCompositionError(DomainError):
 
 class InvalidCapabilityError(DomainError):
     """A capability class declares slots its constructor cannot be built from (design.md §3)."""
+
+
+class InvalidSelectionError(DomainError):
+    """A manifest selection does not fill its capability's slots as declared (design.md §4)."""
+
+
+class AmbiguousManifestError(DomainError):
+    """More than one manifest applies to a tax year (design.md §4; §5 rule 6)."""

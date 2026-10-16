@@ -1,8 +1,10 @@
-"""Unit tests for CapabilitySelection: one capability chosen by a manifest, with its slots filled.
+"""Unit tests for CapabilitySelection and Manifest.
 
-`params` maps parameter slots to families; `consumes` and `produces` map artifact slots to artifact
-identifiers. All are kept as strings (the registries resolve them later) in read-only mappings.
-Names are made up.
+A selection is one capability chosen by a manifest, with its slots filled: `params` maps parameter
+slots to families; `consumes` and `produces` map artifact slots to artifact identifiers. All are
+kept as strings (the registries resolve them later) in read-only mappings. A manifest declares the
+computation's `inputs` and `outputs` as frozensets of artifact identifiers: each non-empty, and
+no identifier in both. Names are made up.
 """
 
 from __future__ import annotations
@@ -13,7 +15,9 @@ from typing import Any, cast
 
 import pytest
 
-from app.domain.manifest import CapabilitySelection
+from app.domain.errors import InvalidManifestError
+from app.domain.jurisdiction_code import JurisdictionCode
+from app.domain.manifest import CapabilitySelection, Manifest
 
 
 def selection() -> CapabilitySelection:
@@ -85,3 +89,60 @@ def test_a_selection_may_bind_no_parameters_and_consume_nothing() -> None:
 def test_equal_selections_hash_alike() -> None:
     assert hash(selection()) == hash(selection())
     assert len({selection(), selection()}) == 1
+
+
+def manifest(
+    inputs: frozenset[str] = frozenset({"ex/taxable_base"}),
+    outputs: frozenset[str] = frozenset({"ex/levy"}),
+) -> Manifest:
+    return Manifest(
+        jurisdiction=JurisdictionCode("EX-ON"),
+        version=1,
+        valid_from_tax_year=2025,
+        capabilities=(selection(),),
+        inputs=inputs,
+        outputs=outputs,
+    )
+
+
+def test_manifest_holds_its_inputs_and_outputs() -> None:
+    found = manifest(
+        inputs=frozenset({"ex/taxable_base", "ex/gross_income"}),
+        outputs=frozenset({"ex/levy"}),
+    )
+
+    assert found.inputs == frozenset({"ex/taxable_base", "ex/gross_income"})
+    assert found.outputs == frozenset({"ex/levy"})
+
+
+def test_manifest_fields_in_order() -> None:
+    assert [field.name for field in dataclasses.fields(Manifest)] == [
+        "jurisdiction",
+        "version",
+        "valid_from_tax_year",
+        "capabilities",
+        "inputs",
+        "outputs",
+    ]
+
+
+def test_equal_manifests_are_equal_and_hash_alike() -> None:
+    assert manifest() == manifest()
+    assert hash(manifest()) == hash(manifest())
+    assert manifest() != manifest(outputs=frozenset({"ex/other"}))
+
+
+@pytest.mark.parametrize("field", ["inputs", "outputs"])
+def test_manifest_rejects_empty_inputs_or_outputs(field: str) -> None:
+    empty: dict[str, frozenset[str]] = {field: frozenset()}
+
+    with pytest.raises(InvalidManifestError, match=f"{field} must name at least one artifact"):
+        manifest(**empty)
+
+
+def test_manifest_rejects_an_identifier_that_is_both_input_and_output() -> None:
+    with pytest.raises(InvalidManifestError, match="'ex/levy' is both an input and an output"):
+        manifest(
+            inputs=frozenset({"ex/taxable_base", "ex/levy"}),
+            outputs=frozenset({"ex/levy"}),
+        )

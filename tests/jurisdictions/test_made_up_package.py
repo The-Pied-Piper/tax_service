@@ -34,6 +34,8 @@ def test_the_package_directory_is_its_root() -> None:
 def test_its_manifest_is_read_from_the_package() -> None:
     (manifest,) = YamlJurisdictionSource(PACKAGES.roots()).get_jurisdiction(EX_ON).manifests
 
+    assert manifest.inputs == frozenset({"ex-on/levy_base"})
+    assert manifest.outputs == frozenset({"ex-on/levy"})
     assert manifest.capabilities == (
         CapabilitySelection(
             name="core/progressive_tax",

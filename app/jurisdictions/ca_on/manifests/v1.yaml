@@ -2,9 +2,15 @@
 # Each selection names a capability and fills its slots (design.md §4): parameter
 # slots with families, artifact slots with artifact identifiers. The order is
 # derived from the capabilities' contracts in code, never from this list.
+# `inputs` are the artifacts a computation starts from; `outputs` are what it returns.
 jurisdiction: CA-ON
 version: 1
 valid_from_tax_year: 2025
+inputs:
+  - ca/taxable_income
+outputs:
+  - ca/federal_tax_after_credits
+  - ca-on/ontario_tax_after_credits
 capabilities:
   - name: core/progressive_tax
     params:
