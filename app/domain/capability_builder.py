@@ -44,10 +44,28 @@ class CapabilityBuilder:
         """
         who = self._describe(selection)
         self._check_sections(selection, cls, who)
+        arguments = {
+            **self._parameter_arguments(selection, cls, datasets, who),
+            **self._artifact_arguments(selection, cls, kinds, who),
+        }
+        # `type[Capability]` cannot describe a subclass's constructor, so it is called through
+        # `Callable[..., Capability]`: a deliberate, documented loosening at the manifest
+        # boundary. Slot names were checked against `__init__` when the class was defined,
+        # dataset kinds by `_parameter_arguments`, and kinds' value types are checked by
+        # `Capability.__init__`.
+        constructor: Callable[..., Capability] = cls
+        return constructor(**arguments)
+
+    def _parameter_arguments(
+        self,
+        selection: CapabilitySelection,
+        cls: type[Capability],
+        datasets: Mapping[str, ParameterDataset[Any]],
+        who: str,
+    ) -> dict[str, ParameterDataset[Any]]:
+        """Each parameter slot's dataset, checked to be the family and kind the slot takes."""
         self._check_no_extra(datasets, cls.PARAMETERS, "dataset", "a parameter slot", cls, who)
-        artifact_slots = {**cls.CONSUMES, **cls.PRODUCES}
-        self._check_no_extra(kinds, artifact_slots, "kind", "an artifact slot", cls, who)
-        arguments: dict[str, object] = {}
+        arguments: dict[str, ParameterDataset[Any]] = {}
         for slot, kind in cls.PARAMETERS.items():
             if slot not in datasets:
                 raise InvalidSelectionError(
@@ -65,7 +83,20 @@ class CapabilityBuilder:
                     f"got {dataset.family!r} of kind {dataset.kind.name!r}"
                 )
             arguments[slot] = dataset
+        return arguments
+
+    def _artifact_arguments(
+        self,
+        selection: CapabilitySelection,
+        cls: type[Capability],
+        kinds: Mapping[str, ArtifactKind[Any]],
+        who: str,
+    ) -> dict[str, ArtifactKind[Any]]:
+        """Each artifact slot's kind, checked to be the identifier the selection names for it."""
+        artifact_slots = {**cls.CONSUMES, **cls.PRODUCES}
+        self._check_no_extra(kinds, artifact_slots, "kind", "an artifact slot", cls, who)
         named = {**selection.consumes, **selection.produces}
+        arguments: dict[str, ArtifactKind[Any]] = {}
         for slot in artifact_slots:
             if slot not in kinds:
                 raise InvalidSelectionError(f"{who}: artifact slot {slot!r} has no resolved kind")
@@ -75,12 +106,7 @@ class CapabilityBuilder:
                     f"but was resolved to {kinds[slot].identifier!r}"
                 )
             arguments[slot] = kinds[slot]
-        # `type[Capability]` cannot describe a subclass's constructor, so it is called through
-        # `Callable[..., Capability]`: a deliberate, documented loosening at the manifest
-        # boundary. Slot names were checked against `__init__` when the class was defined,
-        # dataset kinds above, and kinds' value types are checked by `Capability.__init__`.
-        constructor: Callable[..., Capability] = cls
-        return constructor(**arguments)
+        return arguments
 
     @staticmethod
     def _describe(selection: CapabilitySelection) -> str:
