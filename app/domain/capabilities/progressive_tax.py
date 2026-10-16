@@ -11,7 +11,7 @@ from collections.abc import Mapping
 from decimal import Decimal
 from typing import Any, ClassVar
 
-from app.domain.artifact import Artifact, ArtifactKind, Money
+from app.domain.artifact import Artifact, Money
 from app.domain.capability import Capability, CapabilityResult, TraceLine, capability
 from app.domain.parameters.brackets import BRACKETS, BracketSchedule
 from app.domain.parameters.datasets import ParameterDataset
@@ -30,17 +30,10 @@ class ProgressiveTax(Capability):
         self, base: Money, output: Money, schedule: ParameterDataset[BracketSchedule]
     ) -> None:
         """Wire the capability: the kinds it consumes and produces, and its schedule dataset."""
+        super().__init__(base=base, output=output)
         self._base = base
         self._output = output
         self._schedule = schedule
-
-    @property
-    def consumes(self) -> frozenset[ArtifactKind[Any]]:
-        return frozenset({self._base})
-
-    @property
-    def produces(self) -> frozenset[ArtifactKind[Any]]:
-        return frozenset({self._output})
 
     def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
         base = self._input(inputs, self._base).value

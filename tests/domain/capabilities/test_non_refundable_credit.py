@@ -17,6 +17,7 @@ import pytest
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
 from app.domain.capability import TraceLine
+from app.domain.errors import InvalidCapabilityError
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
@@ -56,6 +57,20 @@ def capability(
 def test_declares_its_contract() -> None:
     assert capability().consumes == frozenset({BASIC_TAX})
     assert capability().produces == frozenset({TAX_AFTER_CREDIT})
+
+
+def test_leaves_its_contract_to_the_base() -> None:
+    assert "consumes" not in vars(NonRefundableCredit)
+    assert "produces" not in vars(NonRefundableCredit)
+
+
+def test_rejects_one_kind_as_both_tax_and_output() -> None:
+    with pytest.raises(InvalidCapabilityError, match="NonRefundableCredit") as raised:
+        NonRefundableCredit(BASIC_TAX, BASIC_TAX, amount(), rate())
+
+    message = str(raised.value)
+    assert "'tax'" in message
+    assert "'output'" in message
 
 
 def test_subtracts_the_credit_from_tax() -> None:
@@ -180,8 +195,10 @@ def test_is_not_generic_over_artifacts() -> None:
 def test_mypy_rejects_wiring_an_artifact_kind_of_another_value_type() -> None:
     count = ArtifactKind("ex/count", int)
     # An ArtifactKind[int] is not Money; the ignore fails under mypy (warn_unused_ignores) if
-    # wiring an artifact kind of another value type is ever accepted.
-    NonRefundableCredit(count, TAX_AFTER_CREDIT, amount(), rate())  # type: ignore[arg-type]
+    # wiring an artifact kind of another value type is ever accepted. At run time, building it
+    # fails too.
+    with pytest.raises(InvalidCapabilityError, match="NonRefundableCredit.*'tax'"):
+        NonRefundableCredit(count, TAX_AFTER_CREDIT, amount(), rate())  # type: ignore[arg-type]
 
 
 class Cents(Decimal):
@@ -193,8 +210,10 @@ CENTS = ArtifactKind("ex/cents", Cents)  # bound to a name: built inline it woul
 
 def test_mypy_rejects_wiring_an_artifact_kind_of_a_value_subtype() -> None:
     # `ArtifactKind` is invariant, so an ArtifactKind[Cents] is not Money; if `ArtifactKind` ever
-    # became covariant this ignore would be unused and mypy (strict) would fail.
-    NonRefundableCredit(CENTS, TAX_AFTER_CREDIT, amount(), rate())  # type: ignore[arg-type]
+    # became covariant this ignore would be unused and mypy (strict) would fail. At run time,
+    # building it fails too: the value type must match the slot's exactly.
+    with pytest.raises(InvalidCapabilityError, match="NonRefundableCredit.*'tax'"):
+        NonRefundableCredit(CENTS, TAX_AFTER_CREDIT, amount(), rate())  # type: ignore[arg-type]
 
 
 def test_mypy_rejects_swapping_the_amount_and_rate_datasets() -> None:

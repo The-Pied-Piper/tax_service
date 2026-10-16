@@ -3,19 +3,19 @@
 A composition is built from capabilities and the kinds a computation takes and returns. It
 rejects bad wiring when built, derives a deterministic execution order from the capabilities'
 contracts, and computes by applying each capability, in that order, to a fresh worksheet.
-Generic tests use made-up kinds and the small `Link` capability below.
+Generic tests use made-up kinds and the small summing capabilities below (`Link`, `Join`, ...),
+each declaring its artifact slots.
 """
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 from decimal import Decimal
 from itertools import permutations
 from typing import Any, assert_type, cast
 
 import pytest
 
-from app.domain.artifact import Artifact, ArtifactKind
+from app.domain.artifact import Artifact, ArtifactKind, Money
 from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capability import Capability, CapabilityRegistry, CapabilityResult, TraceLine
@@ -23,6 +23,7 @@ from app.domain.composition import Composition
 from app.domain.errors import (
     DomainError,
     DuplicateArtifactError,
+    InvalidCapabilityError,
     InvalidCompositionError,
 )
 from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
@@ -41,40 +42,99 @@ F = ArtifactKind("ex/f", Decimal)
 ZERO = D(0)
 
 
-class Link(Capability):
-    """Consumes `consumes`, and produces each kind of `produces` as the sum of its inputs + `add`.
+class Summing(Capability):
+    """Produces each kind it produces as the sum of what it consumes + `add`; declares no slots.
 
-    Its one trace line is labelled `tag`, so tests can see the order capabilities ran in. It takes
-    any number of kinds, so it declares no slots.
+    Its one trace line is labelled `tag`, so tests can see the order capabilities ran in. Each
+    subclass declares its artifact slots and passes their kinds to `super().__init__`.
     """
 
     def __init__(
-        self,
-        consumes: Iterable[ArtifactKind[Any]],
-        produces: Iterable[ArtifactKind[Any]],
-        add: Decimal = ZERO,
-        tag: str = "link",
+        self, *, add: Decimal = ZERO, tag: str = "link", **slots: ArtifactKind[Any]
     ) -> None:
-        self._consumes = frozenset(consumes)
-        self._produces = frozenset(produces)
+        super().__init__(**slots)
         self._add = add
         self.tag = tag
 
-    @property
-    def consumes(self) -> frozenset[ArtifactKind[Any]]:
-        return self._consumes
-
-    @property
-    def produces(self) -> frozenset[ArtifactKind[Any]]:
-        return self._produces
-
     def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
-        total = sum((self._input(inputs, kind).value for kind in self._consumes), ZERO) + self._add
-        outputs = tuple(Artifact(kind, total) for kind in self._produces)
+        total = sum((self._input(inputs, kind).value for kind in self.consumes), ZERO) + self._add
+        outputs = tuple(Artifact(kind, total) for kind in self.produces)
         return CapabilityResult(outputs=outputs, trace=(TraceLine(self.tag, total),))
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.tag})"
+
+
+class Link(Summing):
+    """Consumes `source` and produces `target` = `source` + `add`."""
+
+    CONSUMES = {"source": Decimal}
+    PRODUCES = {"target": Decimal}
+
+    def __init__(
+        self,
+        source: Money,
+        target: Money,
+        add: Decimal = ZERO,
+        tag: str = "link",
+    ) -> None:
+        super().__init__(source=source, target=target, add=add, tag=tag)
+
+
+class IntLink(Summing):
+    """Consumes a `Decimal` `source` and produces an `int` `target`.
+
+    Its class is named `Link`, so a tie with a `Link` falls through to the kinds they produce.
+    """
+
+    CONSUMES = {"source": Decimal}
+    PRODUCES = {"target": int}
+
+    def __init__(
+        self,
+        source: Money,
+        target: ArtifactKind[int],
+        add: Decimal = ZERO,
+        tag: str = "link",
+    ) -> None:
+        super().__init__(source=source, target=target, add=add, tag=tag)
+
+
+IntLink.__name__ = "Link"
+
+
+class Join(Summing):
+    """Consumes `first` and `second` and produces `target` = `first` + `second` + `add`."""
+
+    CONSUMES = {"first": Decimal, "second": Decimal}
+    PRODUCES = {"target": Decimal}
+
+    def __init__(
+        self,
+        first: Money,
+        second: Money,
+        target: Money,
+        add: Decimal = ZERO,
+        tag: str = "join",
+    ) -> None:
+        super().__init__(first=first, second=second, target=target, add=add, tag=tag)
+
+
+class Sink(Summing):
+    """Consumes `source` and produces nothing: it can be built, but no composition accepts it."""
+
+    CONSUMES = {"source": Decimal}
+
+    def __init__(self, source: Money, tag: str = "sink") -> None:
+        super().__init__(source=source, tag=tag)
+
+
+class LeftJoin(Join):
+    """A `Join` whose class name sorts before `RightJoin`'s."""
+
+
+class RightJoin(Join):
+    """A `Join` whose class name sorts after `LeftJoin`'s."""
 
 
 class Left(Link):
@@ -101,7 +161,7 @@ def kinds(*members: ArtifactKind[Any]) -> frozenset[ArtifactKind[Any]]:
 
 
 def test_a_well_wired_composition_builds() -> None:
-    first, second = Link([A], [B]), Link([B], [C])
+    first, second = Link(A, B), Link(B, C)
 
     composition = Composition([first, second], inputs=kinds(A), outputs=kinds(C))
 
@@ -109,7 +169,7 @@ def test_a_well_wired_composition_builds() -> None:
 
 
 def test_accepts_any_iterable_of_capabilities() -> None:
-    first, second = Link([A], [B]), Link([B], [C])
+    first, second = Link(A, B), Link(B, C)
 
     composition = Composition(iter([second, first]), inputs=kinds(A), outputs=kinds(C))
 
@@ -117,8 +177,8 @@ def test_accepts_any_iterable_of_capabilities() -> None:
 
 
 def test_wires_by_kind_equality_not_identity() -> None:
-    first = Link([A], [ArtifactKind("ex/b", Decimal)])
-    second = Link([ArtifactKind("ex/b", Decimal)], [C])
+    first = Link(A, ArtifactKind("ex/b", Decimal))
+    second = Link(ArtifactKind("ex/b", Decimal), C)
 
     composition = Composition([second, first], inputs=kinds(A), outputs=kinds(C))
 
@@ -127,13 +187,13 @@ def test_wires_by_kind_equality_not_identity() -> None:
 
 def test_rejects_a_consumed_kind_nothing_produces() -> None:
     with pytest.raises(InvalidCompositionError, match="no producer for 'b'"):
-        Composition([Link([A, B], [C])], inputs=kinds(A), outputs=kinds(C))
+        Composition([Join(A, B, C)], inputs=kinds(A), outputs=kinds(C))
 
 
 def test_rejects_a_consumed_kind_produced_only_with_another_value_type() -> None:
     b_as_int = ArtifactKind("ex/b", int)
-    producer = Link([A], [b_as_int])
-    consumer = Link([B], [C])
+    producer = IntLink(A, b_as_int)
+    consumer = Link(B, C)
 
     with pytest.raises(InvalidCompositionError, match="no producer for 'b'") as raised:
         Composition([producer, consumer], inputs=kinds(A), outputs=kinds(b_as_int, C))
@@ -144,9 +204,9 @@ def test_rejects_a_consumed_kind_produced_only_with_another_value_type() -> None
 
 
 def test_rejects_a_cycle_and_names_its_kinds() -> None:
-    to_b = Link([A, C], [B])
-    to_c = Link([B], [C])
-    to_e = Link([B], [E])
+    to_b = Join(A, C, B)
+    to_c = Link(B, C)
+    to_e = Link(B, E)
 
     with pytest.raises(InvalidCompositionError, match="cycle") as raised:
         Composition([to_b, to_c, to_e], inputs=kinds(A), outputs=kinds(E))
@@ -158,27 +218,35 @@ def test_rejects_a_cycle_and_names_its_kinds() -> None:
     assert "'e'" not in message  # strictly downstream of the cycle
 
 
-def test_rejects_a_capability_that_consumes_what_it_produces() -> None:
-    with pytest.raises(InvalidCompositionError, match="cycle.*'b'"):
-        Composition([Link([A, B], [B])], inputs=kinds(A), outputs=kinds(B))
+def test_a_capability_that_consumes_what_it_produces_cannot_be_built() -> None:
+    # The self-cycle never reaches the composition: the capability itself refuses the wiring.
+    with pytest.raises(InvalidCapabilityError, match="Join"):
+        Join(A, B, B)
+
+
+def test_rejects_a_cycle_of_two_capabilities() -> None:
+    to_b, to_c = Join(A, C, B), Link(B, C)
+
+    with pytest.raises(InvalidCompositionError, match="cycle involving 'b', 'c'"):
+        Composition([to_b, to_c], inputs=kinds(A), outputs=kinds(C))
 
 
 def test_rejects_an_orphan_output() -> None:
     with pytest.raises(InvalidCompositionError, match="orphan") as raised:
-        Composition([Link([A], [B]), Link([A], [C])], inputs=kinds(A), outputs=kinds(B))
+        Composition([Link(A, B), Link(A, C)], inputs=kinds(A), outputs=kinds(B))
 
     assert "'c'" in str(raised.value)
 
 
 def test_rejects_a_declared_output_nothing_produces() -> None:
     with pytest.raises(InvalidCompositionError, match="output 'c'"):
-        Composition([Link([A], [B])], inputs=kinds(A), outputs=kinds(B, C))
+        Composition([Link(A, B)], inputs=kinds(A), outputs=kinds(B, C))
 
 
 def test_rejects_two_capabilities_producing_one_kind() -> None:
     with pytest.raises(InvalidCompositionError, match="more than one") as raised:
         Composition(
-            [Link([A], [B], tag="one"), Link([A], [B], tag="two")],
+            [Link(A, B, tag="one"), Link(A, B, tag="two")],
             inputs=kinds(A),
             outputs=kinds(B),
         )
@@ -188,23 +256,23 @@ def test_rejects_two_capabilities_producing_one_kind() -> None:
 
 def test_rejects_a_declared_input_a_capability_also_produces() -> None:
     with pytest.raises(InvalidCompositionError, match="input 'b'") as raised:
-        Composition([Link([A], [B])], inputs=kinds(A, B), outputs=kinds(B))
+        Composition([Link(A, B)], inputs=kinds(A, B), outputs=kinds(B))
 
     assert "produce" in str(raised.value)
 
 
 def test_rejects_a_declared_input_nothing_consumes() -> None:
     with pytest.raises(InvalidCompositionError, match="input 'c' is consumed by nothing"):
-        Composition([Link([A], [B])], inputs=kinds(A, C), outputs=kinds(B))
+        Composition([Link(A, B)], inputs=kinds(A, C), outputs=kinds(B))
 
 
 def test_rejects_a_capability_that_produces_nothing() -> None:
-    with pytest.raises(InvalidCompositionError, match="Link produces nothing"):
-        Composition([Link([A], [B]), Link([A], [])], inputs=kinds(A), outputs=kinds(B))
+    with pytest.raises(InvalidCompositionError, match="Sink produces nothing"):
+        Composition([Link(A, B), Sink(A)], inputs=kinds(A), outputs=kinds(B))
 
 
 def test_naming_duplicate_producers_does_not_depend_on_the_order_given() -> None:
-    left, right = Left([A], [B]), Right([A], [B])
+    left, right = Left(A, B), Right(A, B)
     messages = set()
 
     for given in ([left, right], [right, left]):
@@ -216,7 +284,7 @@ def test_naming_duplicate_producers_does_not_depend_on_the_order_given() -> None
 
 
 def test_naming_an_unsatisfied_consume_does_not_depend_on_the_order_given() -> None:
-    needs_e, needs_f = Left([A, E], [B]), Right([A, F], [C])
+    needs_e, needs_f = LeftJoin(A, E, B), RightJoin(A, F, C)
     messages = set()
 
     for given in ([needs_e, needs_f], [needs_f, needs_e]):
@@ -236,10 +304,10 @@ def test_invalid_composition_is_a_domain_error() -> None:
 
 def test_order_is_derived_from_contracts_whatever_order_capabilities_are_given_in() -> None:
     chain: tuple[Capability, ...] = (
-        Link([A], [B], tag="1"),
-        Link([B], [C], tag="2"),
-        Link([C], [E], tag="3"),
-        Link([E], [F], tag="4"),
+        Link(A, B, tag="1"),
+        Link(B, C, tag="2"),
+        Link(C, E, tag="3"),
+        Link(E, F, tag="4"),
     )
 
     for given in permutations(chain):
@@ -249,7 +317,7 @@ def test_order_is_derived_from_contracts_whatever_order_capabilities_are_given_i
 
 
 def test_order_of_a_diamond_is_the_same_for_every_input_order() -> None:
-    left, right, join = Left([A], [B]), Right([A], [C]), Link([B, C], [E])
+    left, right, join = Left(A, B), Right(A, C), Join(B, C, E)
 
     for given in permutations((left, right, join)):
         composition = Composition(given, inputs=kinds(A), outputs=kinds(E))
@@ -258,7 +326,7 @@ def test_order_of_a_diamond_is_the_same_for_every_input_order() -> None:
 
 
 def test_ties_are_broken_by_class_name_when_unregistered() -> None:
-    apple, zebra = Apple([A], [C]), Zebra([A], [B])
+    apple, zebra = Apple(A, C), Zebra(A, B)
 
     for given in ([apple, zebra], [zebra, apple]):
         composition = Composition(given, inputs=kinds(A), outputs=kinds(B, C))
@@ -271,7 +339,7 @@ def test_ties_are_broken_by_registered_identifier(monkeypatch: pytest.MonkeyPatc
     registry.register("ex/first", Zebra)
     registry.register("ex/second", Apple)
     monkeypatch.setattr(CapabilityRegistry, "shared", classmethod(lambda cls: registry))
-    apple, zebra = Apple([A], [C]), Zebra([A], [B])
+    apple, zebra = Apple(A, C), Zebra(A, B)
 
     for given in ([apple, zebra], [zebra, apple]):
         composition = Composition(given, inputs=kinds(A), outputs=kinds(B, C))
@@ -280,7 +348,7 @@ def test_ties_are_broken_by_registered_identifier(monkeypatch: pytest.MonkeyPatc
 
 
 def test_ties_between_instances_of_one_class_are_broken_by_what_they_produce() -> None:
-    to_c, to_b = Link([A], [C]), Link([A], [B])
+    to_c, to_b = Link(A, C), Link(A, B)
 
     for given in ([to_c, to_b], [to_b, to_c]):
         composition = Composition(given, inputs=kinds(A), outputs=kinds(B, C))
@@ -290,7 +358,7 @@ def test_ties_between_instances_of_one_class_are_broken_by_what_they_produce() -
 
 def test_ties_between_kinds_sharing_an_identifier_are_broken_by_value_type() -> None:
     b_as_int = ArtifactKind("ex/b", int)
-    to_decimal, to_int = Link([A], [B]), Link([A], [b_as_int])
+    to_decimal, to_int = Link(A, B), IntLink(A, b_as_int)
 
     for given in ([to_decimal, to_int], [to_int, to_decimal]):
         composition = Composition(given, inputs=kinds(A), outputs=kinds(B, b_as_int))
@@ -299,7 +367,7 @@ def test_ties_between_kinds_sharing_an_identifier_are_broken_by_value_type() -> 
 
 
 def test_order_is_a_read_only_tuple() -> None:
-    composition = Composition([Link([A], [B])], inputs=kinds(A), outputs=kinds(B))
+    composition = Composition([Link(A, B)], inputs=kinds(A), outputs=kinds(B))
 
     assert_type(composition.order, tuple[Capability, ...])
     assert isinstance(composition.order, tuple)
@@ -311,7 +379,7 @@ def test_order_is_a_read_only_tuple() -> None:
 
 
 def chain_composition() -> tuple[Composition, Link, Link]:
-    first, second = Link([A], [B], D(1), "first"), Link([B], [C], D(10), "second")
+    first, second = Link(A, B, D(1), "first"), Link(B, C, D(10), "second")
     return Composition([second, first], inputs=kinds(A), outputs=kinds(C)), first, second
 
 
@@ -330,8 +398,8 @@ def test_compute_runs_the_capabilities_in_order_and_returns_the_worksheet() -> N
 
 
 def test_compute_follows_a_diamond() -> None:
-    left, right = Left([A], [B], D(1), "left"), Right([A], [C], D(2), "right")
-    join = Link([B, C], [E], tag="join")
+    left, right = Left(A, B, D(1), "left"), Right(A, C, D(2), "right")
+    join = Join(B, C, E, tag="join")
     composition = Composition([join, right, left], inputs=kinds(A), outputs=kinds(E))
 
     worksheet = composition.compute(Artifact(A, D(5)))
@@ -353,7 +421,7 @@ def test_each_compute_gets_a_fresh_worksheet() -> None:
 
 
 def test_compute_takes_several_inputs() -> None:
-    composition = Composition([Link([A, B], [C])], inputs=kinds(A, B), outputs=kinds(C))
+    composition = Composition([Join(A, B, C)], inputs=kinds(A, B), outputs=kinds(C))
 
     worksheet = composition.compute(Artifact(B, D(4)), Artifact(A, D(3)))
 
@@ -361,7 +429,7 @@ def test_compute_takes_several_inputs() -> None:
 
 
 def test_compute_rejects_a_missing_input() -> None:
-    composition = Composition([Link([A, B], [C])], inputs=kinds(A, B), outputs=kinds(C))
+    composition = Composition([Join(A, B, C)], inputs=kinds(A, B), outputs=kinds(C))
 
     with pytest.raises(InvalidCompositionError, match="'b'"):
         composition.compute(Artifact(A, D(3)))

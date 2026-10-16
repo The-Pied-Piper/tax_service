@@ -58,7 +58,9 @@ class Capability(ABC):
     Subclasses may assign plain dicts to the slot mappings; each is exposed read-only, and every
     slot is checked against the constructor when the subclass is defined. The constructor must be
     written in the class body (a dataclass-generated `__init__` is not there yet when the check
-    runs), and each slot must be a named keyword parameter of it: `**kwargs` does not count.
+    runs), and each slot must be a named keyword parameter of it: `**kwargs` does not count. The
+    constructor passes its artifact slots, by name, to `super().__init__`, which checks them and
+    derives `consumes` and `produces`; parameter datasets stay on the subclass.
     """
 
     PARAMETERS: ClassVar[Mapping[str, ParameterKind[Any]]] = MappingProxyType({})
@@ -129,13 +131,60 @@ class Capability(ABC):
                 f"{name}: {mapping} slot {slot!r} must be a type, got {filler!r}"
             )
 
-    @property
-    @abstractmethod
-    def consumes(self) -> frozenset[ArtifactKind[Any]]: ...
+    def __init__(self, **slots: ArtifactKind[Any]) -> None:
+        """Wire the artifact slots declared in `CONSUMES` / `PRODUCES` with the kinds given by name.
+
+        Raises InvalidCapabilityError naming the class and the slot if one is missing, unknown,
+        not filled with a kind of exactly its value type, or filled with a kind another slot has.
+        """
+        name = type(self).__name__
+        declared = {**self.CONSUMES, **self.PRODUCES}
+        for slot in slots:
+            if slot not in declared:
+                hint = " (it is a parameter slot)" if slot in self.PARAMETERS else ""
+                raise InvalidCapabilityError(f"{name}: {slot!r} is not an artifact slot{hint}")
+        filled_by: dict[ArtifactKind[Any], str] = {}
+        for slot, value_type in declared.items():
+            if slot not in slots:
+                raise InvalidCapabilityError(f"{name}: artifact slot {slot!r} is not given")
+            kind: object = slots[slot]
+            if not isinstance(kind, ArtifactKind):
+                raise InvalidCapabilityError(
+                    f"{name}: artifact slot {slot!r} must be an ArtifactKind, got {kind!r}"
+                )
+            if kind.value_type is not value_type:
+                raise InvalidCapabilityError(
+                    f"{name}: artifact slot {slot!r} takes a kind of {value_type.__name__}, "
+                    f"got {kind.identifier!r} of {kind.value_type.__name__}"
+                )
+            if kind in filled_by:
+                raise InvalidCapabilityError(
+                    f"{name}: artifact slots {filled_by[kind]!r} and {slot!r} are both given "
+                    f"{kind.identifier!r}"
+                )
+            filled_by[kind] = slot
+        self._consumes = frozenset(slots[slot] for slot in self.CONSUMES)
+        self._produces = frozenset(slots[slot] for slot in self.PRODUCES)
 
     @property
-    @abstractmethod
-    def produces(self) -> frozenset[ArtifactKind[Any]]: ...
+    def consumes(self) -> frozenset[ArtifactKind[Any]]:
+        """The artifact kinds this capability was built to consume."""
+        return self._wired("_consumes")
+
+    @property
+    def produces(self) -> frozenset[ArtifactKind[Any]]:
+        """The artifact kinds this capability was built to produce."""
+        return self._wired("_produces")
+
+    def _wired(self, attribute: str) -> frozenset[ArtifactKind[Any]]:
+        """The kinds stored under `attribute` by `Capability.__init__`, which must have run."""
+        try:
+            kinds: frozenset[ArtifactKind[Any]] = getattr(self, attribute)
+        except AttributeError:
+            raise InvalidCapabilityError(
+                f"{type(self).__name__}: __init__ must pass its artifact slots to super().__init__"
+            ) from None
+        return kinds
 
     @abstractmethod
     def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
