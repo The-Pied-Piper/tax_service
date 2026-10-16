@@ -18,4 +18,15 @@ TAXABLE_INCOME = CATALOG.declare("taxable_income", Decimal)
 """Taxable income, T1 line 26000: the base the federal and Ontario brackets apply to."""
 
 FEDERAL_BASIC_TAX = CATALOG.declare("federal_basic_tax", Decimal)
-"""Federal tax on taxable income from the bracket schedule, before non-refundable credits."""
+"""Federal tax on taxable income from the bracket schedule, before non-refundable credits.
+
+Its T1 line reference is still to be confirmed: design.md §2 marks federal line semantics
+UNVERIFIED.
+"""
+
+FEDERAL_TAX_AFTER_CREDITS = CATALOG.declare("federal_tax_after_credits", Decimal)
+"""Federal basic tax less federal non-refundable tax credits, not below zero.
+
+Its T1 line reference is still to be confirmed: design.md §2 marks federal line semantics
+UNVERIFIED.
+"""

@@ -60,7 +60,8 @@ code (`CA-QC` -> `ca_qc`), and change:
 - `__init__.py`: `NAMESPACE = "<code lower-cased>"`, e.g. `"ca-qc"`.
 - `catalog.py`: an `ArtifactCatalog` for that namespace declaring the jurisdiction's
   artifact kinds.
-- `manifests/`: the manifest(s) selecting capabilities and their parameter families.
+- `manifests/`: the manifest(s) selecting capabilities and filling their slots: parameter
+  slots with parameter families, artifact slots with artifact identifiers.
 - `parameters/`: one dataset per family and tax year, at `parameters/<family>/<year>.yaml`
   for family `<namespace>/<family>`.
 

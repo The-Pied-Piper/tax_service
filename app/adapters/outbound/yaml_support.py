@@ -78,13 +78,15 @@ class YamlNode:
         """This node's location in the document, e.g. "brackets[0].rate", for error messages."""
         return self._where
 
-    def require_mapping(self, keys: frozenset[str]) -> YamlNode:
-        """Check this node is a mapping whose keys are exactly `keys`, and return it.
+    def require_mapping(
+        self, keys: frozenset[str], *, optional: frozenset[str] = frozenset()
+    ) -> YamlNode:
+        """Check this node is a mapping with all of `keys` and any of `optional`, and return it.
 
         Raises YamlShapeError naming any unknown or missing keys.
         """
         mapping = self._mapping()
-        unknown = set(mapping) - keys
+        unknown = set(mapping) - keys - optional
         if unknown:
             raise YamlShapeError(f"{self._where}: unknown keys {sorted(map(str, unknown))}")
         missing = keys - set(mapping)
@@ -102,6 +104,32 @@ class YamlNode:
             raise YamlShapeError(f"{self._where}: missing key {key!r}")
         where = key if self._is_root else f"{self._where}.{key}"
         return YamlNode(mapping[key], where)
+
+    def optional_field(self, key: str) -> YamlNode | None:
+        """The value under `key` in this mapping as a node, or None if the key is absent.
+
+        Raises YamlShapeError if this node is not a mapping.
+        """
+        return self.field(key) if key in self._mapping() else None
+
+    def string_mapping(self) -> dict[str, str]:
+        """This node's value, which must be a mapping of non-empty strings to non-empty strings.
+
+        Returns a new dict; raises YamlShapeError naming the first key or value that is not one.
+        """
+        result: dict[str, str] = {}
+        for key in self._mapping():
+            if not isinstance(key, str):
+                raise YamlShapeError(
+                    f"{self._where}: key {key!r} must be a string, got {type(key).__name__}"
+                )
+            if not key:
+                raise YamlShapeError(f"{self._where}: keys must not be empty")
+            value = self.field(key)
+            result[key] = value.require_string()
+            if not result[key]:
+                raise YamlShapeError(f"{value.where} must not be empty")
+        return result
 
     def items(self) -> list[YamlNode]:
         """The elements of this list, as nodes located at "where[0]", "where[1]", ...

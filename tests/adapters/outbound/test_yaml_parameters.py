@@ -19,12 +19,15 @@ import pytest
 
 from app.adapters.outbound.parameter_parsers.brackets import BracketsParser
 from app.adapters.outbound.parameter_parsers.credit import CreditParser
+from app.adapters.outbound.parameter_parsers.rate import RateParser
 from app.adapters.outbound.parameter_parsers.registry import ParameterParserRegistry
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.adapters.outbound.yaml_support import YamlNode
 from app.domain.errors import (
     DomainError,
+    InvalidCreditError,
     InvalidParameterDataError,
+    InvalidRateError,
     NotFoundError,
     UnknownRegistrationError,
 )
@@ -32,6 +35,7 @@ from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
+from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.domain.registry import Namespace
 
@@ -57,6 +61,15 @@ sources:
   - https://example.org/credits-2025
 rounding: none
 amount: "1000"
+"""
+
+RATE_2025 = """\
+family: ex/credit_rate
+tax_year: 2025
+kind: rate
+sources:
+  - https://example.org/credit-rate-2025
+rounding: none
 rate: "0.125"
 """
 
@@ -66,6 +79,7 @@ def built_in_parsers() -> ParameterParserRegistry:
     registry = ParameterParserRegistry()
     registry.register_class(BracketsParser)
     registry.register_class(CreditParser)
+    registry.register_class(RateParser)
     return registry
 
 
@@ -114,10 +128,36 @@ def test_reads_a_credit_dataset(tmp_path: Path) -> None:
         family="ex/personal_credit",
         tax_year=2025,
         kind=CREDIT,
-        values=Credit(amount=D("1000"), rate=D("0.125")),
+        values=Credit(amount=D("1000")),
         rounding=NO_ROUNDING,
         sources=("https://example.org/credits-2025",),
     )
+
+
+def test_reads_a_rate_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/credit_rate/2025.yaml", RATE_2025)
+
+    result = source(tmp_path).get("ex/credit_rate", 2025, RATE)
+
+    assert result == ParameterDataset(
+        family="ex/credit_rate",
+        tax_year=2025,
+        kind=RATE,
+        values=Rate(D("0.125")),
+        rounding=NO_ROUNDING,
+        sources=("https://example.org/credit-rate-2025",),
+    )
+
+
+@pytest.mark.parametrize("rate", ["0", "1", "0.0505"])
+def test_reads_rates_from_zero_to_one_inclusive(tmp_path: Path, rate: str) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/credit_rate/2025.yaml",
+        RATE_2025.replace('rate: "0.125"', f'rate: "{rate}"'),
+    )
+
+    assert source(tmp_path).get("ex/credit_rate", 2025, RATE).values == Rate(D(rate))
 
 
 def test_reads_a_rounding_rule(tmp_path: Path) -> None:
@@ -353,9 +393,14 @@ def test_rejects_malformed_bracket_dataset(tmp_path: Path, content: str, message
     ("content", "message"),
     [
         pytest.param(
-            CREDIT_2025.replace('rate: "0.125"', 'rate: "1.5"'),
-            "rate must be between 0 and 1",
-            id="rate-out-of-range",
+            CREDIT_2025.replace('amount: "1000"', 'amount: "-1"'),
+            "amount must not be negative",
+            id="amount-negative",
+        ),
+        pytest.param(
+            CREDIT_2025 + 'rate: "0.125"\n',
+            r"unknown keys \['rate'\]",
+            id="rate-is-not-a-credit-key",
         ),
         pytest.param(
             CREDIT_2025.replace('amount: "1000"', "amount: 1000"),
@@ -376,3 +421,78 @@ def test_rejects_malformed_credit_dataset(tmp_path: Path, content: str, message:
         source(tmp_path).get("ex/personal_credit", 2025, CREDIT)
 
     assert "2025.yaml" in str(excinfo.value)
+
+
+def test_an_invalid_credit_amount_is_reported_as_a_credit_error(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/personal_credit/2025.yaml",
+        CREDIT_2025.replace('amount: "1000"', 'amount: "-1"'),
+    )
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/personal_credit", 2025, CREDIT)
+
+    assert isinstance(excinfo.value.__cause__, InvalidCreditError)
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        pytest.param(
+            RATE_2025.replace('rate: "0.125"', 'rate: "1.5"'),
+            "rate must be between 0 and 1",
+            id="rate-above-one",
+        ),
+        pytest.param(
+            RATE_2025.replace('rate: "0.125"', 'rate: "-0.1"'),
+            "rate must be between 0 and 1",
+            id="rate-negative",
+        ),
+        pytest.param(
+            RATE_2025.replace('rate: "0.125"', "rate: 0.125"),
+            "rate must be a string, got float",
+            id="rate-as-yaml-number",
+        ),
+        pytest.param(
+            RATE_2025.replace('rate: "0.125"', 'rate: "Infinity"'),
+            "rate is not a decimal",
+            id="rate-infinite",
+        ),
+        pytest.param(
+            RATE_2025.replace('rate: "0.125"\n', ""),
+            r"missing keys \['rate'\]",
+            id="rate-missing",
+        ),
+        pytest.param(
+            RATE_2025 + 'amount: "1000"\n',
+            r"unknown keys \['amount'\]",
+            id="amount-is-not-a-rate-key",
+        ),
+        pytest.param(
+            RATE_2025.replace("kind: rate", "kind: credit"),
+            "kind 'credit' does not match the requested 'rate'",
+            id="kind-mismatch",
+        ),
+    ],
+)
+def test_rejects_malformed_rate_dataset(tmp_path: Path, content: str, message: str) -> None:
+    write(tmp_path, "ex/parameters/credit_rate/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
+        source(tmp_path).get("ex/credit_rate", 2025, RATE)
+
+    assert "2025.yaml" in str(excinfo.value)
+
+
+def test_a_rate_out_of_range_is_reported_as_a_rate_error(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/credit_rate/2025.yaml",
+        RATE_2025.replace('rate: "0.125"', 'rate: "1.5"'),
+    )
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/credit_rate", 2025, RATE)
+
+    assert isinstance(excinfo.value.__cause__, InvalidRateError)

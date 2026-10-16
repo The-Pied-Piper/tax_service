@@ -53,7 +53,11 @@ class InvalidParameterDataError(DomainError):
 
 
 class InvalidCreditError(DomainError):
-    """A credit's amount or rate is invalid."""
+    """A credit amount is invalid."""
+
+
+class InvalidRateError(DomainError):
+    """A rate is not finite or is outside 0..1."""
 
 
 class DuplicateRegistrationError(DomainError):
@@ -70,3 +74,7 @@ class InvalidRegistrationError(DomainError):
 
 class InvalidCompositionError(DomainError):
     """Capabilities are wired together badly, or a computation got the wrong starting values."""
+
+
+class InvalidCapabilityError(DomainError):
+    """A capability class declares slots its constructor cannot be built from (design.md §3)."""

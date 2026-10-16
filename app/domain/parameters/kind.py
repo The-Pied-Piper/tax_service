@@ -1,7 +1,8 @@
 """Parameter kinds: a name for a kind of parameter and the type of its values.
 
 Each parameter type declares its kind next to itself (e.g. BRACKETS beside
-BracketSchedule), and each capability declares the kind it needs. Data files
+BracketSchedule), and each capability declares a kind for each of its parameter
+slots (e.g. `schedule: BRACKETS`). Data files
 state their kind, so readers can check what they found against what was asked.
 Adding a kind changes nothing that already exists.
 """
@@ -23,7 +24,7 @@ _SNAKE_CASE = re.compile(r"[a-z][a-z0-9]*(_[a-z0-9]+)*")
 class ParameterKind(Generic[T]):  # noqa: UP046  (invariant T, see above)
     """A kind of parameter, such as brackets or a credit, and the type its values have.
 
-    Capabilities declare the kind they need, and data files name it in `kind:`.
+    Capabilities declare one per parameter slot, and data files name it in `kind:`.
     """
 
     name: str

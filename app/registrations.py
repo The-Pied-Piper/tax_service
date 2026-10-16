@@ -9,6 +9,7 @@ parameter data. Adding a jurisdiction `<x>` takes two lines in this module: impo
 
 import app.adapters.outbound.parameter_parsers.brackets  # noqa: F401  (registers on import)
 import app.adapters.outbound.parameter_parsers.credit  # noqa: F401  (registers on import)
+import app.adapters.outbound.parameter_parsers.rate  # noqa: F401  (registers on import)
 import app.domain.capabilities.non_refundable_credit  # noqa: F401  (registers on import)
 import app.domain.capabilities.progressive_tax  # noqa: F401  (registers on import)
 import app.jurisdictions.ca.catalog  # noqa: F401  (registers on import)

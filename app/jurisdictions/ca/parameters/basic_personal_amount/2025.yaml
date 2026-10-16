@@ -1,9 +1,8 @@
-# Federal basic personal amount, 2025 tax year (T1 line 30000), with the federal
-# non-refundable tax credit rate (T1 line 114). $16,129 applies when net income
-# (line 23600) is $177,882 or less; the reduction above that, down to $14,538 at
-# $253,414, is not modelled yet (Federal Worksheet 5000-D1, line 30000).
-# The rate is applied to the sum of all credit amounts on the return; with this
-# as the only credit, amount × rate is equivalent.
+# Federal basic personal amount, 2025 tax year (T1 line 30000). $16,129 applies
+# when net income (line 23600) is $177,882 or less; the reduction above that,
+# down to $14,538 at $253,414, is not modelled yet (Federal Worksheet 5000-D1,
+# line 30000). The credit rate that turns it into tax relief is its own dataset,
+# ca/credit_rate.
 # CRA states no rounding rule for amount × rate, so none is assumed.
 family: ca/basic_personal_amount
 tax_year: 2025
@@ -14,4 +13,3 @@ sources:
   - https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/tax-return/completing-a-tax-return/whats-new.html
 rounding: none
 amount: "16129"
-rate: "0.145"

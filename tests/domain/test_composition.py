@@ -25,8 +25,10 @@ from app.domain.errors import (
     DuplicateArtifactError,
     InvalidCompositionError,
 )
-from app.domain.parameters.brackets import Bracket, BracketSchedule
-from app.domain.parameters.credit import Credit
+from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
+from app.domain.parameters.credit import CREDIT, Credit
+from app.domain.parameters.datasets import ParameterDataset
+from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import NO_ROUNDING
 from app.domain.worksheet import Worksheet
 
@@ -42,7 +44,8 @@ ZERO = D(0)
 class Link(Capability):
     """Consumes `consumes`, and produces each kind of `produces` as the sum of its inputs + `add`.
 
-    Its one trace line is labelled `tag`, so tests can see the order capabilities ran in.
+    Its one trace line is labelled `tag`, so tests can see the order capabilities ran in. It takes
+    any number of kinds, so it declares no slots.
     """
 
     def __init__(
@@ -409,15 +412,24 @@ TAXABLE_BASE = ArtifactKind("ex/taxable_base", Decimal)
 BASIC_TAX = ArtifactKind("ex/basic_tax", Decimal)
 TAX_AFTER_CREDIT = ArtifactKind("ex/tax_after_credit", Decimal)
 
-SCHEDULE = BracketSchedule(
-    (Bracket(D(0), D("0.10")), Bracket(D(100), D("0.20")), Bracket(D(300), D("0.30")))
+SOURCES = ("https://example.org/2025",)
+SCHEDULE = ParameterDataset(
+    "ex/brackets",
+    2025,
+    BRACKETS,
+    BracketSchedule(
+        (Bracket(D(0), D("0.10")), Bracket(D(100), D("0.20")), Bracket(D(300), D("0.30")))
+    ),
+    NO_ROUNDING,
+    SOURCES,
 )
-CREDIT = Credit(amount=D(400), rate=D("0.15"))  # worth 60
+CREDIT_AMOUNT = ParameterDataset("ex/credit", 2025, CREDIT, Credit(D(400)), NO_ROUNDING, SOURCES)
+CREDIT_RATE = ParameterDataset("ex/credit_rate", 2025, RATE, Rate(D("0.15")), NO_ROUNDING, SOURCES)
 
 
 def test_end_to_end_two_real_capabilities_given_in_the_wrong_order() -> None:
-    tax = ProgressiveTax(TAXABLE_BASE, BASIC_TAX, SCHEDULE, NO_ROUNDING)
-    credit = NonRefundableCredit(BASIC_TAX, TAX_AFTER_CREDIT, CREDIT, NO_ROUNDING)
+    tax = ProgressiveTax(TAXABLE_BASE, BASIC_TAX, SCHEDULE)
+    credit = NonRefundableCredit(BASIC_TAX, TAX_AFTER_CREDIT, CREDIT_AMOUNT, CREDIT_RATE)  # 60
     composition = Composition(
         [credit, tax], inputs=kinds(TAXABLE_BASE), outputs=kinds(TAX_AFTER_CREDIT)
     )

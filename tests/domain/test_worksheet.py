@@ -28,7 +28,13 @@ C = ArtifactKind("ex/c", Decimal)
 
 
 class Double(Capability):
-    """Produces `out` = 2 × `inp`; `extra`, `skip` and `peek` let a test break the contract."""
+    """Produces `out` = 2 × `inp`; `extra`, `skip` and `peek` let a test break the contract.
+
+    Its slots are `inp` and `out`; the test hooks are not slots.
+    """
+
+    CONSUMES = {"inp": Decimal}
+    PRODUCES = {"out": Decimal}
 
     def __init__(
         self,

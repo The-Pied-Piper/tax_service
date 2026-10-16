@@ -17,3 +17,4 @@ def test_holds_its_manifest_and_parameter_data() -> None:
     assert (directory / "manifests" / "v1.yaml").is_file()
     assert (directory / "parameters" / "brackets" / "2025.yaml").is_file()
     assert (directory / "parameters" / "basic_personal_amount" / "2025.yaml").is_file()
+    assert (directory / "parameters" / "credit_rate" / "2025.yaml").is_file()

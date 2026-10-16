@@ -16,3 +16,4 @@ def test_holds_its_parameter_data() -> None:
 
     assert (parameters / "brackets" / "2025.yaml").is_file()
     assert (parameters / "basic_personal_amount" / "2025.yaml").is_file()
+    assert (parameters / "credit_rate" / "2025.yaml").is_file()
