@@ -21,7 +21,6 @@ from tests.jurisdictions.ca_on.worked_return import WorkedReturn, WorkedReturnEr
 
 D = Decimal
 RETURNS = Path(__file__).parent / "returns"
-RETURN_A = RETURNS / "2025_return_a.yaml"
 SECTIONS = {
     "jurisdiction": "jurisdiction: CA-ON\n",
     "tax_year": "tax_year: 2025\n",
@@ -50,12 +49,13 @@ def with_section(section: str, text: str) -> str:
     return "".join(text if key == section else body for key, body in SECTIONS.items())
 
 
-def test_loads_return_a(artifacts: ArtifactRegistry) -> None:
-    # Only what never changes as later tickets add lines to the file; the figures themselves
-    # are checked by the per-file test, never pinned here.
-    worked = WorkedReturn.load(RETURN_A, artifacts)
+@pytest.mark.parametrize("path", WorkedReturn.discover(RETURNS), ids=lambda path: path.stem)
+def test_loads_every_real_return(path: Path, artifacts: ArtifactRegistry) -> None:
+    # Only what holds for every file in `returns/`; the figures themselves are checked by the
+    # per-file computation test, never pinned here.
+    worked = WorkedReturn.load(path, artifacts)
 
-    assert worked.path == RETURN_A
+    assert worked.path == path
     assert worked.jurisdiction == JurisdictionCode("CA-ON")
     assert worked.tax_year == 2025
     assert worked.inputs and worked.expected and worked.sources
@@ -170,15 +170,15 @@ def test_a_file_that_is_not_yaml_names_the_file(
         WorkedReturn.load(path, artifacts)
 
 
-def test_requires_every_declared_output(artifacts: ArtifactRegistry) -> None:
-    worked = WorkedReturn.load(RETURN_A, artifacts)
+def test_requires_every_declared_output(tmp_path: Path, artifacts: ArtifactRegistry) -> None:
+    worked = WorkedReturn.load(write(tmp_path, VALID, "valid.yaml"), artifacts)
 
-    worked.require_outputs(frozenset({"ca/federal_tax_after_credits"}))
+    worked.require_outputs(frozenset({"ca/federal_basic_tax"}))
     with pytest.raises(
         WorkedReturnError,
-        match=r"2025_return_a\.yaml: expected: missing declared outputs \['ca-on/other'\]",
+        match=r"valid\.yaml: expected: missing declared outputs \['ca-on/other'\]",
     ):
-        worked.require_outputs(frozenset({"ca/federal_tax_after_credits", "ca-on/other"}))
+        worked.require_outputs(frozenset({"ca/federal_basic_tax", "ca-on/other"}))
 
 
 def test_discovers_every_yaml_file_in_name_order(tmp_path: Path) -> None:

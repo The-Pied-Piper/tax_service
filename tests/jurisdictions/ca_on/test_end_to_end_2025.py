@@ -2,7 +2,7 @@
 
 The service is the one the composition root builds (`build_tax_computation`): the real YAML
 sources over the jurisdiction packages and the shared registries. The example's amounts (taxable
-income 115000 through each tax after credits) are Return A, `returns/2025_return_a.yaml`, checked
+income 115000 through each tax after credits) are checked from the files under `returns/`
 by `test_worked_returns.py`; this module pins which capability produces each line, the order,
 and the trace that explains them.
 """

@@ -43,14 +43,9 @@ def test_worked_return(path: Path) -> None:
     check(path)
 
 
-def test_return_a_is_a_worked_return() -> None:
-    assert RETURNS / "2025_return_a.yaml" in WorkedReturn.discover(RETURNS)
-
-
-def test_a_new_file_is_a_new_worked_return_without_a_test_change(tmp_path: Path) -> None:
-    (tmp_path / "2025_return_a.yaml").write_text((RETURNS / "2025_return_a.yaml").read_text())
-    (tmp_path / "2025_low_income.yaml").write_text(
-        """\
+# A made-up low-income return for the tests of the mechanism itself; the real returns are
+# only ever read from `returns/`, so nothing here names one of them.
+LOW_INCOME = """\
 jurisdiction: CA-ON
 tax_year: 2025
 description: Taxable income of 10000; each credit exceeds its tax, leaving zero.
@@ -64,19 +59,28 @@ expected:
   ca-on/ontario_basic_tax: "505"
   ca-on/ontario_tax_after_credits: "0"
 """
+
+
+def test_the_returns_directory_holds_at_least_one_return() -> None:
+    assert WorkedReturn.discover(RETURNS)
+
+
+def test_a_new_file_is_a_new_worked_return_without_a_test_change(tmp_path: Path) -> None:
+    (tmp_path / "2025_low_income.yaml").write_text(LOW_INCOME)
+    (tmp_path / "2025_low_income_cents.yaml").write_text(
+        LOW_INCOME.replace('"10000"', '"10000.00"')
     )
 
     found = WorkedReturn.discover(tmp_path)
 
-    assert [path.stem for path in found] == ["2025_low_income", "2025_return_a"]
+    assert [path.stem for path in found] == ["2025_low_income", "2025_low_income_cents"]
     for path in found:
         check(path)
 
 
 def test_a_wrong_expected_amount_fails_naming_the_file_and_line(tmp_path: Path) -> None:
-    text = (RETURNS / "2025_return_a.yaml").read_text().replace('"8539.5965"', '"8539.59"')
     path = tmp_path / "wrong.yaml"
-    path.write_text(text)
+    path.write_text(LOW_INCOME.replace('"505"', '"505.01"'))
 
     with pytest.raises(AssertionError, match=r"wrong\.yaml: ca-on/ontario_basic_tax"):
         check(path)
@@ -85,9 +89,8 @@ def test_a_wrong_expected_amount_fails_naming_the_file_and_line(tmp_path: Path) 
 def test_a_file_missing_a_declared_output_fails_naming_the_file_and_output(
     tmp_path: Path,
 ) -> None:
-    text = (RETURNS / "2025_return_a.yaml").read_text()
     path = tmp_path / "partial.yaml"
-    path.write_text(text.replace('  ca-on/ontario_tax_after_credits: "7895.873"\n', ""))
+    path.write_text(LOW_INCOME.replace('  ca-on/ontario_tax_after_credits: "0"\n', ""))
 
     with pytest.raises(WorkedReturnError, match=r"partial\.yaml.*ca-on/ontario_tax_after_credits"):
         check(path)
