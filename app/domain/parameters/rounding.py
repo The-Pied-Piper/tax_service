@@ -87,6 +87,7 @@ class _NoRounding(RoundingRule):
         return amount
 
     def __str__(self) -> str:
+        """A developer repr; trace text is rendered by adapters, not by this method."""
         return "no rounding"
 
 
@@ -119,4 +120,5 @@ class RoundTo(RoundingRule):
         return steps * self.increment
 
     def __str__(self) -> str:
+        """A developer repr; trace text is rendered by adapters, not by this method."""
         return f"{self.mode.value.replace('_', '-')} to {self.increment}"

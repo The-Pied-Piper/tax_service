@@ -20,7 +20,7 @@ from app.application.ports.jurisdiction_source import JurisdictionSource
 from app.application.ports.parameter_source import ParameterSource
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry, Money
-from app.domain.capability import Capability, CapabilityRegistry, CapabilityResult, TraceLine
+from app.domain.capability import Capability, CapabilityRegistry, CapabilityResult
 from app.domain.composition import Composition
 from app.domain.errors import (
     InvalidCompositionError,
@@ -36,6 +36,7 @@ from app.domain.manifest import CapabilitySelection, Manifest
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import NO_ROUNDING
+from app.domain.trace import TraceLine
 from app.domain.worksheet import Worksheet
 
 D = Decimal
@@ -65,6 +66,18 @@ RESULT = ArtifactKind("ex-on/result", Decimal)
 EXTRA = ArtifactKind("ex/extra", Decimal)
 
 
+@dataclass(frozen=True)
+class StepLine(TraceLine):
+    """A made-up trace line: which step ran and the value it produced."""
+
+    step: str
+    value: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        return self.value
+
+
 class Scale(Capability):
     """Produces `target` = `source` × the `factor` dataset's value."""
 
@@ -79,7 +92,7 @@ class Scale(Capability):
     def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
         value = self._input(inputs, self._source).value * self._factor.values.value
         return CapabilityResult(
-            outputs=(Artifact(self._target, value),), trace=(TraceLine("scaled", value),)
+            outputs=(Artifact(self._target, value),), trace=(StepLine("scaled", value),)
         )
 
 
@@ -97,7 +110,7 @@ class Shift(Capability):
     def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
         value = self._input(inputs, self._source).value + self._offset.values.value
         return CapabilityResult(
-            outputs=(Artifact(self._target, value),), trace=(TraceLine("shifted", value),)
+            outputs=(Artifact(self._target, value),), trace=(StepLine("shifted", value),)
         )
 
 
@@ -227,7 +240,7 @@ def test_computes_a_manifest_end_to_end() -> None:
     assert isinstance(worksheet.producer_of(SCALED), Scale)
     assert isinstance(worksheet.producer_of(RESULT), Shift)
     assert worksheet.producer_of(BASE) is None
-    assert [line.description for line in worksheet.trace] == ["scaled", "shifted"]
+    assert worksheet.trace == (StepLine("scaled", D("15")), StepLine("shifted", D("16")))
 
 
 def test_composes_the_manifests_selections_in_contract_order() -> None:

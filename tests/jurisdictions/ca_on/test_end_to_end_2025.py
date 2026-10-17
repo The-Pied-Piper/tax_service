@@ -12,11 +12,13 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import assert_type
 
+from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.artifact import Artifact
 from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.jurisdiction_code import JurisdictionCode
+from app.domain.trace import CreditAppliedLine, RoundedTotalLine
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     FEDERAL_BASIC_TAX,
@@ -61,22 +63,50 @@ def test_each_amount_is_produced_by_its_capability() -> None:
 
 def test_the_trace_explains_the_computation() -> None:
     worksheet = compute("115000")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
 
-    def position(label: str, amount: str) -> int:
-        """The index of the one trace line starting with `label` that carries `amount`."""
+    def position(expected: str, amount: str) -> int:
+        """The index of the one rendered line reading `expected` whose line has `amount`."""
         (found,) = [
             i
-            for i, line in enumerate(worksheet.trace)
-            if line.description.startswith(label) and line.amount == D(amount)
+            for i, (text, line) in enumerate(zip(rendered, worksheet.trace, strict=True))
+            if text == expected and line.amount == D(amount)
         ]
         return found
 
-    federal_basic = position("federal_basic_tax", "20146.25")
-    federal_after = position("federal_tax_after_credits", "17807.545")
-    ontario_basic = position("ontario_basic_tax", "8539.5965")
-    ontario_after = position("ontario_tax_after_credits", "7895.873")
+    federal_basic = position("federal_basic_tax on taxable_income 115000 (no rounding)", "20146.25")
+    federal_after = position(
+        "federal_tax_after_credits: federal_basic_tax 20146.250 less credit, not below 0",
+        "17807.545",
+    )
+    ontario_basic = position(
+        "ontario_basic_tax on taxable_income 115000 (no rounding)", "8539.5965"
+    )
+    ontario_after = position(
+        "ontario_tax_after_credits: ontario_basic_tax 8539.5965 less credit, not below 0",
+        "7895.873",
+    )
     assert federal_basic < federal_after
     assert ontario_basic < ontario_after
+
+
+def test_the_trace_records_each_total_as_a_structured_line() -> None:
+    trace = compute("115000").trace
+
+    totals = {line.output: line for line in trace if isinstance(line, RoundedTotalLine)}
+    applied = {line.output: line for line in trace if isinstance(line, CreditAppliedLine)}
+
+    assert totals[FEDERAL_BASIC_TAX].base == TAXABLE_INCOME
+    assert totals[FEDERAL_BASIC_TAX].base_amount == D("115000")
+    assert totals[FEDERAL_BASIC_TAX].amount == D("20146.25")
+    assert totals[ONTARIO_BASIC_TAX].base == TAXABLE_INCOME
+    assert totals[ONTARIO_BASIC_TAX].amount == D("8539.5965")
+    assert applied[FEDERAL_TAX_AFTER_CREDITS].tax == FEDERAL_BASIC_TAX
+    assert applied[FEDERAL_TAX_AFTER_CREDITS].tax_amount == D("20146.25")
+    assert applied[FEDERAL_TAX_AFTER_CREDITS].amount == D("17807.545")
+    assert applied[ONTARIO_TAX_AFTER_CREDITS].tax == ONTARIO_BASIC_TAX
+    assert applied[ONTARIO_TAX_AFTER_CREDITS].tax_amount == D("8539.5965")
+    assert applied[ONTARIO_TAX_AFTER_CREDITS].amount == D("7895.873")
 
 
 def test_each_progressive_tax_runs_before_its_credit() -> None:

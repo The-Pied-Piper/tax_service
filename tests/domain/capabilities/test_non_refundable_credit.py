@@ -8,6 +8,7 @@ dataset), consumed `tax` and produced `output`. The credit is amount × rate, ro
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import fields
 from decimal import Decimal
 from types import MappingProxyType
 from typing import Any, assert_type, cast
@@ -16,13 +17,13 @@ import pytest
 
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
-from app.domain.capability import TraceLine
 from app.domain.errors import InvalidCapabilityError
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
+from app.domain.trace import CreditAppliedLine, CreditLine, UnusedCreditLine
 
 D = Decimal
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
@@ -111,8 +112,15 @@ def test_traces_the_credit_and_the_result() -> None:
     trace = capability().compute((Artifact(BASIC_TAX, D("500")),)).trace
 
     assert trace == (
-        TraceLine("credit: 12.5% of 1000 (no rounding)", D("125.000")),
-        TraceLine("tax_after_credit: basic_tax 500 less credit, not below 0", D("375.000")),
+        CreditLine(
+            basis=Credit(D("1000")),
+            rate=Rate(D("0.125")),
+            rounding=NO_ROUNDING,
+            credit=D("125.000"),
+        ),
+        CreditAppliedLine(
+            output=TAX_AFTER_CREDIT, tax=BASIC_TAX, tax_amount=D("500"), after=D("375.000")
+        ),
     )
 
 
@@ -123,13 +131,46 @@ def test_traces_the_amount_datasets_rounding_rule() -> None:
         .trace
     )
 
-    assert trace[0] == TraceLine("credit: 10% of 1000.05 (half-up to 0.01)", D("100.01"))
+    assert trace[0] == CreditLine(Credit(D("1000.05")), Rate(D("0.1")), CENT, D("100.01"))
+
+
+def test_traces_the_amount_datasets_rule_not_the_rate_datasets() -> None:
+    trace = (
+        capability(amount("1000.05"), rate("0.1", CENT))
+        .compute((Artifact(BASIC_TAX, D("500")),))
+        .trace
+    )
+
+    assert trace[0] == CreditLine(Credit(D("1000.05")), Rate(D("0.1")), NO_ROUNDING, D("100.005"))
 
 
 def test_traces_the_unused_part_when_the_credit_exceeds_tax() -> None:
     trace = capability().compute((Artifact(BASIC_TAX, D("100")),)).trace
 
-    assert trace[-1] == TraceLine("unused credit, not refunded", D("25.000"))
+    assert trace == (
+        CreditLine(Credit(D("1000")), Rate(D("0.125")), NO_ROUNDING, D("125.000")),
+        CreditAppliedLine(TAX_AFTER_CREDIT, BASIC_TAX, D("100"), D("0")),
+        UnusedCreditLine(unused=D("25.000")),
+    )
+
+
+def test_traces_no_unused_part_when_the_credit_fits() -> None:
+    trace = capability().compute((Artifact(BASIC_TAX, D("125")),)).trace
+
+    assert not any(isinstance(line, UnusedCreditLine) for line in trace)
+
+
+def test_trace_amounts_of_the_result_lines() -> None:
+    trace = capability().compute((Artifact(BASIC_TAX, D("100")),)).trace
+
+    assert [line.amount for line in trace[1:]] == [D("0"), D("25.000")]
+
+
+def test_trace_holds_no_text() -> None:
+    trace = capability().compute((Artifact(BASIC_TAX, D("100")),)).trace
+
+    for line in trace:
+        assert not any(isinstance(getattr(line, f.name), str) for f in fields(line))
 
 
 def test_rejects_negative_tax() -> None:

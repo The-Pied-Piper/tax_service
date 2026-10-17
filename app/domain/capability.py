@@ -14,7 +14,6 @@ import re
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from decimal import Decimal
 from types import MappingProxyType
 from typing import Any, ClassVar, cast
 
@@ -27,14 +26,7 @@ from app.domain.errors import (
 )
 from app.domain.parameters.kind import ParameterKind
 from app.domain.registry import Namespace, Registry
-
-
-@dataclass(frozen=True)
-class TraceLine:
-    """One labelled line of a capability's explanation of its result."""
-
-    description: str
-    amount: Decimal
+from app.domain.trace import TraceLine
 
 
 @dataclass(frozen=True)

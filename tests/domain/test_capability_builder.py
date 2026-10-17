@@ -17,13 +17,14 @@ from typing import Any, ClassVar, assert_type
 import pytest
 
 from app.domain.artifact import Artifact, ArtifactKind, Money
-from app.domain.capability import Capability, CapabilityResult, TraceLine
+from app.domain.capability import Capability, CapabilityResult
 from app.domain.capability_builder import CapabilityBuilder
 from app.domain.errors import DomainError, InvalidCapabilityError, InvalidSelectionError
 from app.domain.manifest import CapabilitySelection
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import NO_ROUNDING
+from app.domain.trace import TraceLine
 
 D = Decimal
 
@@ -49,6 +50,17 @@ SOURCE = ArtifactKind("ex/source", Decimal)
 TARGET = ArtifactKind("ex/target", Decimal)
 
 
+@dataclass(frozen=True)
+class ScaledLine(TraceLine):
+    """A made-up trace line: the scaled value."""
+
+    scaled: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        return self.scaled
+
+
 class Scale(Capability):
     """Produces `target` = `source` × the `factor` dataset's value."""
 
@@ -64,9 +76,7 @@ class Scale(Capability):
 
     def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
         value = self._input(inputs, self.source).value * self.factor.values.value
-        return CapabilityResult(
-            outputs=(Artifact(self.target, value),), trace=(TraceLine("scaled", value),)
-        )
+        return CapabilityResult(outputs=(Artifact(self.target, value),), trace=(ScaledLine(value),))
 
 
 FACTOR_DATA = ParameterDataset(

@@ -226,7 +226,7 @@ def test_rules_are_equal_by_value_and_hashable() -> None:
         (RoundTo(D("0.05"), RoundingMode.HALF_EVEN), "half-even to 0.05"),
     ],
 )
-def test_describes_itself_for_the_trace(rounding: RoundingRule, text: str) -> None:
+def test_str_is_a_readable_repr(rounding: RoundingRule, text: str) -> None:
     assert str(rounding) == text
 
 

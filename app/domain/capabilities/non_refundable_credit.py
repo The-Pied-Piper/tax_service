@@ -16,11 +16,12 @@ from decimal import Decimal
 from typing import Any, ClassVar
 
 from app.domain.artifact import Artifact, Money
-from app.domain.capability import Capability, CapabilityResult, TraceLine, capability
+from app.domain.capability import Capability, CapabilityResult, capability
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
+from app.domain.trace import CreditAppliedLine, CreditLine, TraceLine, UnusedCreditLine
 
 
 @capability(identifier="non_refundable_credit")
@@ -49,16 +50,14 @@ class NonRefundableCredit(Capability):
         tax = self._input(inputs, self._tax).value
         if tax < 0:
             raise ValueError(f"{self._tax.label} must not be negative, got {tax}")
-        amount, rate, rounding = self._amount.values, self._rate.values.value, self._amount.rounding
-        credit = rounding.apply(amount.at(rate))
+        amount, rate, rounding = self._amount.values, self._rate.values, self._amount.rounding
+        credit = rounding.apply(amount.at(rate.value))
         applied = min(credit, tax)
         after = tax - applied
         trace: tuple[TraceLine, ...] = (
-            TraceLine(f"credit: {amount.describe_at(rate)} ({rounding})", credit),
-            TraceLine(
-                f"{self._output.label}: {self._tax.label} {tax} less credit, not below 0", after
-            ),
+            CreditLine(amount, rate, rounding, credit),
+            CreditAppliedLine(self._output, self._tax, tax, after),
         )
         if credit > applied:
-            trace += (TraceLine("unused credit, not refunded", credit - applied),)
+            trace += (UnusedCreditLine(credit - applied),)
         return CapabilityResult(outputs=(Artifact(self._output, after),), trace=trace)
