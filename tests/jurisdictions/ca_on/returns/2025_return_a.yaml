@@ -1,8 +1,8 @@
 # Return A: a 2025 Ontario resident, computed from employment income and a capital gain
-# to total income, less an RRSP deduction and union dues to net income, and from taxable
-# income through the tax after the basic personal amount credits. Not yet computed, so not
-# in this file: the CPP enhanced contributions deduction, the deductions between net income
-# and taxable income (taxable income is still an input), the social benefits repayment,
+# to total income, less an RRSP deduction and union dues to net income, less the (empty)
+# deductions from net income to taxable income, and through the tax after the basic
+# personal amount credits. Not yet computed, so not in this file: the CPP enhanced
+# contributions deduction, any deduction from net income, the social benefits repayment,
 # capital losses, the other non-refundable credits, the Ontario surtax, tax reduction and
 # health premium, and the balance owing.
 # Amounts are quoted decimal strings, never floats. Every output the CA-ON manifest
@@ -16,11 +16,11 @@ description: >-
   gains (line 12700) of $10,000 and total income (line 15000) of $120,000. The deductions
   from total income modelled so far are an RRSP deduction (line 20800) of $3,000 and union
   dues (line 21200) of $2,000: total deductions (line 23300) of $5,000 and net income
-  (line 23600) of $115,000. Taxable income (T1 line 26000) is given as $115,000, Maria's
-  figure in CRA's worked example, because it is not yet derived from net income; the two
-  are equal because the return has no deductions between net income and taxable income.
-  There are no non-refundable credits other than the federal and Ontario basic personal
-  amounts. No amounts are rounded.
+  (line 23600) of $115,000. There are no deductions from net income (lines 24400 to 25600),
+  so their total (line 25700) is $0 and taxable income (line 26000), derived as net income
+  less that total, is $115,000, Maria's figure in CRA's worked example. There are no
+  non-refundable credits other than the federal and Ontario basic personal amounts. No
+  amounts are rounded.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -42,6 +42,13 @@ sources:
     deductions modelled so far, so total deductions are 3,000 + 2,000 = 5,000; line 55
     (line 23500, social benefits repayment) is not modelled, so net income is total income
     less total deductions, not below zero: 120,000 - 5,000 = 115,000.
+  - >-
+    CRA, the 2025 T1 return (form 5000-R): line 57 "Enter the amount from line 56 of the
+    previous page" (net income); line 68 (line 25700) "Add lines 58 to 67" (the deductions
+    from net income, lines 58 to 67, lines 24400 to 25600); line 69 "Line 57 minus line 68
+    (if negative, enter "0") Taxable income" (line 26000, as Step 5 refers to it). There are
+    no deductions from net income on this return, so line 68 is 0 and taxable income is net
+    income less it, not below zero: 115,000 - 0 = 115,000.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.pdf
   - >-
@@ -61,12 +68,13 @@ inputs:
   ca/capital_gain: "20000"
   ca/rrsp_deduction: "3000"
   ca/union_dues: "2000"
-  ca/taxable_income: "115000"
 expected:
   ca/taxable_capital_gains: "10000"
   ca/total_income: "120000"
   ca/deductions_from_total_income: "5000"
   ca/net_income: "115000"
+  ca/deductions_from_net_income: "0"
+  ca/taxable_income: "115000"
   ca/federal_basic_tax: "20146.25"
   ca/federal_tax_after_credits: "17807.545"
   ca-on/ontario_basic_tax: "8539.5965"

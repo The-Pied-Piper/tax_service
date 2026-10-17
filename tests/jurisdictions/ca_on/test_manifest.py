@@ -19,6 +19,7 @@ from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Manifest
 from app.jurisdictions.ca.catalog import (
     CAPITAL_GAIN,
+    DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
@@ -53,16 +54,10 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert found.version == 1
     assert found.valid_from_tax_year == 2025
     assert found.inputs == frozenset(
-        {
-            "ca/employment_income",
-            "ca/capital_gain",
-            "ca/rrsp_deduction",
-            "ca/union_dues",
-            "ca/taxable_income",
-        }
+        {"ca/employment_income", "ca/capital_gain", "ca/rrsp_deduction", "ca/union_dues"}
     )
     assert found.outputs == frozenset(
-        {"ca/net_income", "ca/federal_tax_after_credits", "ca-on/ontario_tax_after_credits"}
+        {"ca/federal_tax_after_credits", "ca-on/ontario_tax_after_credits"}
     )
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == {
@@ -91,6 +86,18 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/net_income"},
         ),
         CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ()},
+            produces={"output": "ca/deductions_from_net_income"},
+        ),
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca/net_income", "less": "ca/deductions_from_net_income"},
+            produces={"output": "ca/taxable_income"},
+        ),
+        CapabilitySelection(
             name="core/progressive_tax",
             params={"schedule": "ca/brackets"},
             consumes={"base": "ca/taxable_income"},
@@ -115,7 +122,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca-on/ontario_tax_after_credits"},
         ),
     }
-    assert len(found.capabilities) == 8
+    assert len(found.capabilities) == 10
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -125,7 +132,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 8
+    assert len(composition.order) == 10
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -142,6 +149,12 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             SubtractNotBelowZero,
             frozenset({TOTAL_INCOME, DEDUCTIONS_FROM_TOTAL_INCOME}),
             frozenset({NET_INCOME}),
+        ),
+        (Sum, frozenset(), frozenset({DEDUCTIONS_FROM_NET_INCOME})),
+        (
+            SubtractNotBelowZero,
+            frozenset({NET_INCOME, DEDUCTIONS_FROM_NET_INCOME}),
+            frozenset({TAXABLE_INCOME}),
         ),
         (ProgressiveTax, frozenset({TAXABLE_INCOME}), frozenset({FEDERAL_BASIC_TAX})),
         (ProgressiveTax, frozenset({TAXABLE_INCOME}), frozenset({ONTARIO_BASIC_TAX})),

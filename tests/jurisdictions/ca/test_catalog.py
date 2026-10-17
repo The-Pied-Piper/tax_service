@@ -18,6 +18,7 @@ from app.domain.artifact import ArtifactCatalog, ArtifactKind, ArtifactRegistry
 from app.jurisdictions.ca.catalog import (
     CAPITAL_GAIN,
     CATALOG,
+    DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
@@ -40,6 +41,7 @@ REGISTERED = frozenset(
         "ca/union_dues",
         "ca/deductions_from_total_income",
         "ca/net_income",
+        "ca/deductions_from_net_income",
         "ca/taxable_income",
         "ca/federal_basic_tax",
         "ca/federal_tax_after_credits",
@@ -77,6 +79,7 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/union_dues") is UNION_DUES
     assert registry.get("ca/deductions_from_total_income") is DEDUCTIONS_FROM_TOTAL_INCOME
     assert registry.get("ca/net_income") is NET_INCOME
+    assert registry.get("ca/deductions_from_net_income") is DEDUCTIONS_FROM_NET_INCOME
 
 
 def test_catalog_kinds_are_in_the_package_namespace() -> None:
@@ -96,6 +99,7 @@ def test_catalog_kinds_are_money() -> None:
         UNION_DUES,
         DEDUCTIONS_FROM_TOTAL_INCOME,
         NET_INCOME,
+        DEDUCTIONS_FROM_NET_INCOME,
     ):
         assert kind.value_type is Decimal, kind.identifier
 

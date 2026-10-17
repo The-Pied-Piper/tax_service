@@ -6,16 +6,12 @@
 jurisdiction: CA-ON
 version: 1
 valid_from_tax_year: 2025
-# Taxable income is an input because it is not yet derived from net income; net income is an
-# output because nothing consumes it yet.
 inputs:
   - ca/employment_income
   - ca/capital_gain
   - ca/rrsp_deduction
   - ca/union_dues
-  - ca/taxable_income
 outputs:
-  - ca/net_income
   - ca/federal_tax_after_credits
   - ca-on/ontario_tax_after_credits
 capabilities:
@@ -46,6 +42,17 @@ capabilities:
       less: ca/deductions_from_total_income
     produces:
       output: ca/net_income
+  - name: core/sum
+    consumes:
+      parts: []
+    produces:
+      output: ca/deductions_from_net_income
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/net_income
+      less: ca/deductions_from_net_income
+    produces:
+      output: ca/taxable_income
   - name: core/progressive_tax
     params:
       schedule: ca/brackets
