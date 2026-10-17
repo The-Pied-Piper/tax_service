@@ -17,6 +17,7 @@ from app.domain.trace import (
     RateAppliedLine,
     RoundedTotalLine,
     SubtractedLine,
+    SubtractedNotBelowZeroLine,
     SumLine,
     TraceLine,
     UnusedCreditLine,
@@ -53,6 +54,18 @@ class EnglishTraceRenderer:
                 return (
                     f"{output.label}: {self._percent(rate.value)}% of {base.label} {amount} "
                     f"({self._rounding(rule)})"
+                )
+            case SubtractedNotBelowZeroLine(
+                output=output,
+                minuend=minuend,
+                minuend_amount=minuend_amount,
+                subtrahend=subtrahend,
+                subtrahend_amount=subtrahend_amount,
+                result=result,
+            ):
+                return (
+                    f"{output.label}: {minuend.label} {minuend_amount} "
+                    f"less {subtrahend.label} {subtrahend_amount}, not below 0 = {result}"
                 )
             case SubtractedLine(
                 output=output,

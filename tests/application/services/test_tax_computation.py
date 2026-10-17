@@ -891,3 +891,68 @@ def test_core_subtract_runs_after_what_it_consumes_is_produced() -> None:
 
     assert type(composition.order[-1]) is subtract_class()
     assert composition.order[-1].consumes == frozenset({SCALED, BASE})
+
+
+# --- core/subtract_not_below_zero: amount less another, floored at zero, by a made-up manifest -
+#
+# Like `Subtract` above, `SubtractNotBelowZero` is imported inside a cached factory so its absence
+# fails only the tests that use it, and is registered in a private registry under its shared
+# identifier, `core/subtract_not_below_zero`.
+
+
+@cache
+def subtract_not_below_zero_class() -> Any:
+    from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
+
+    return SubtractNotBelowZero
+
+
+def subtract_not_below_zero_service(amount: str, less: str) -> TaxComputationService:
+    """`ex/scale` (base × 3) and `core/subtract_not_below_zero` producing `ex-on/result`."""
+    subtract = CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={"amount": amount, "less": less},
+        produces={"output": "ex-on/result"},
+    )
+    capabilities = capability_registry()
+    capabilities.register("core/subtract_not_below_zero", subtract_not_below_zero_class())
+    return service(manifest(subtract, SCALE), capabilities=capabilities)  # out of order on purpose
+
+
+def test_computes_core_subtract_not_below_zero_end_to_end() -> None:
+    from app.domain.trace import SubtractedNotBelowZeroLine
+
+    worksheet = subtract_not_below_zero_service("ex/scaled", "ex/base").compute(
+        EX_ON, 2025, Artifact(BASE, D("5.01"))
+    )
+
+    # scaled = 5.01 × 3 = 15.03; result = 15.03 − 5.01 = 10.02, above zero so unchanged.
+    assert worksheet.get(RESULT).value == D("10.02")
+    assert isinstance(worksheet.producer_of(RESULT), subtract_not_below_zero_class())
+    assert worksheet.trace[-1] == SubtractedNotBelowZeroLine(
+        RESULT, SCALED, D("15.03"), BASE, D("5.01"), D("10.02")
+    )
+    assert [type(line) for line in worksheet.trace].count(SubtractedNotBelowZeroLine) == 1
+
+
+def test_core_subtract_not_below_zero_floors_a_negative_difference_end_to_end() -> None:
+    from app.domain.trace import SubtractedNotBelowZeroLine
+
+    worksheet = subtract_not_below_zero_service("ex/base", "ex/scaled").compute(
+        EX_ON, 2025, Artifact(BASE, D("5.01"))
+    )
+
+    # 5.01 − 15.03 = −10.02, floored: result = 0.
+    assert worksheet.get(RESULT).value == D("0")
+    assert worksheet.trace[-1] == SubtractedNotBelowZeroLine(
+        RESULT, BASE, D("5.01"), SCALED, D("15.03"), D("0")
+    )
+    assert [type(line) for line in worksheet.trace].count(SubtractedNotBelowZeroLine) == 1
+
+
+def test_core_subtract_not_below_zero_runs_after_what_it_consumes_is_produced() -> None:
+    composition = subtract_not_below_zero_service("ex/scaled", "ex/base").compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is subtract_not_below_zero_class()
+    assert composition.order[-1].consumes == frozenset({SCALED, BASE})

@@ -151,3 +151,25 @@ class SubtractedLine(TraceLine):
     def amount(self) -> Decimal:
         """The difference."""
         return self.result
+
+
+@dataclass(frozen=True)
+class SubtractedNotBelowZeroLine(TraceLine):
+    """`output` = `minuend` (worth `minuend_amount`) less `subtrahend` (worth `subtrahend_amount`),
+    not below zero: `result` is the exact difference, or 0 when that would not be above zero.
+
+    Its own class, not a `SubtractedLine`: the floor is a different fact, and a renderer or a
+    check matching plain subtractions must not catch floored ones.
+    """
+
+    output: Money
+    minuend: Money
+    minuend_amount: Decimal
+    subtrahend: Money
+    subtrahend_amount: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The floored result."""
+        return self.result
