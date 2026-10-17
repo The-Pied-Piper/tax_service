@@ -11,8 +11,9 @@ from collections.abc import Iterable
 from typing import Any, cast
 
 from app.domain.artifact import Artifact, ArtifactKind
-from app.domain.capability import Capability, TraceLine
+from app.domain.capability import Capability
 from app.domain.errors import CapabilityContractError, DuplicateArtifactError, MissingArtifactError
+from app.domain.trace import TraceLine
 
 
 class Worksheet:

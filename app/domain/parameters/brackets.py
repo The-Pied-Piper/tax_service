@@ -47,11 +47,6 @@ class BracketSlice:
     taxed: Decimal
     tax: Decimal
 
-    def describe(self) -> str:
-        percent = format((self.rate * 100).normalize(), "f")
-        span = f"over {self.lower}" if self.upper is None else f"{self.lower} to {self.upper}"
-        return f"{percent}% on {self.taxed} ({span})"
-
 
 @dataclass(frozen=True)
 class BracketSchedule:

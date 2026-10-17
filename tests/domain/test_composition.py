@@ -9,6 +9,7 @@ each declaring its artifact slots.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from decimal import Decimal
 from itertools import permutations
 from typing import Any, assert_type, cast
@@ -18,7 +19,7 @@ import pytest
 from app.domain.artifact import Artifact, ArtifactKind, Money
 from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
 from app.domain.capabilities.progressive_tax import ProgressiveTax
-from app.domain.capability import Capability, CapabilityRegistry, CapabilityResult, TraceLine
+from app.domain.capability import Capability, CapabilityRegistry, CapabilityResult
 from app.domain.composition import Composition
 from app.domain.errors import (
     DomainError,
@@ -31,6 +32,7 @@ from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import NO_ROUNDING
+from app.domain.trace import RoundedTotalLine, TraceLine
 from app.domain.worksheet import Worksheet
 
 D = Decimal
@@ -40,6 +42,18 @@ C = ArtifactKind("ex/c", Decimal)
 E = ArtifactKind("ex/e", Decimal)
 F = ArtifactKind("ex/f", Decimal)
 ZERO = D(0)
+
+
+@dataclass(frozen=True)
+class TaggedLine(TraceLine):
+    """A made-up trace line: a capability's tag and the total it produced."""
+
+    tag: str
+    total: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        return self.total
 
 
 class Summing(Capability):
@@ -59,7 +73,7 @@ class Summing(Capability):
     def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
         total = sum((self._input(inputs, kind).value for kind in self.consumes), ZERO) + self._add
         outputs = tuple(Artifact(kind, total) for kind in self.produces)
-        return CapabilityResult(outputs=outputs, trace=(TraceLine(self.tag, total),))
+        return CapabilityResult(outputs=outputs, trace=(TaggedLine(self.tag, total),))
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.tag})"
@@ -394,7 +408,7 @@ def test_compute_runs_the_capabilities_in_order_and_returns_the_worksheet() -> N
     assert worksheet.producer_of(A) is None
     assert worksheet.producer_of(B) is first
     assert worksheet.producer_of(C) is second
-    assert worksheet.trace == (TraceLine("first", D(3)), TraceLine("second", D(13)))
+    assert worksheet.trace == (TaggedLine("first", D(3)), TaggedLine("second", D(13)))
 
 
 def test_compute_follows_a_diamond() -> None:
@@ -405,7 +419,11 @@ def test_compute_follows_a_diamond() -> None:
     worksheet = composition.compute(Artifact(A, D(5)))
 
     assert worksheet.get(E) == Artifact(E, D(13))
-    assert [line.description for line in worksheet.trace] == ["left", "right", "join"]
+    assert worksheet.trace == (
+        TaggedLine("left", D(6)),
+        TaggedLine("right", D(7)),
+        TaggedLine("join", D(13)),
+    )
 
 
 def test_each_compute_gets_a_fresh_worksheet() -> None:
@@ -511,3 +529,4 @@ def test_end_to_end_two_real_capabilities_given_in_the_wrong_order() -> None:
     assert worksheet.producer_of(TAX_AFTER_CREDIT) is credit
     assert worksheet.trace[-1].amount == D(50)
     assert worksheet.trace[3].amount == D(110)
+    assert isinstance(worksheet.trace[3], RoundedTotalLine)

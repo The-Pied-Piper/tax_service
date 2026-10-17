@@ -6,25 +6,38 @@ inputs must be present, outputs must match `produces`, and no artifact is overwr
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any, assert_type, cast
 
 import pytest
 
 from app.domain.artifact import Artifact, ArtifactKind, Money
-from app.domain.capability import Capability, CapabilityResult, TraceLine
+from app.domain.capability import Capability, CapabilityResult
 from app.domain.errors import (
     CapabilityContractError,
     DomainError,
     DuplicateArtifactError,
     MissingArtifactError,
 )
+from app.domain.trace import TraceLine
 from app.domain.worksheet import Worksheet
 
 D = Decimal
 A = ArtifactKind("ex/a", Decimal)
 B = ArtifactKind("ex/b", Decimal)
 C = ArtifactKind("ex/c", Decimal)
+
+
+@dataclass(frozen=True)
+class DoubledLine(TraceLine):
+    """A made-up trace line: the doubled value."""
+
+    doubled: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        return self.doubled
 
 
 class Double(Capability):
@@ -56,7 +69,7 @@ class Double(Capability):
         outputs: tuple[Artifact[Any], ...] = () if self._skip else (Artifact(self._out, value),)
         if self._extra is not None:
             outputs += (Artifact(self._extra, value),)
-        return CapabilityResult(outputs=outputs, trace=(TraceLine("doubled", value),))
+        return CapabilityResult(outputs=outputs, trace=(DoubledLine(value),))
 
 
 def test_holds_its_starting_artifacts() -> None:
@@ -123,7 +136,7 @@ def test_apply_collects_the_trace_in_order() -> None:
     worksheet.apply(Double(A, B))
     worksheet.apply(Double(B, C))
 
-    assert worksheet.trace == (TraceLine("doubled", D(2)), TraceLine("doubled", D(4)))
+    assert worksheet.trace == (DoubledLine(D(2)), DoubledLine(D(4)))
 
 
 def test_a_new_worksheet_has_no_trace() -> None:

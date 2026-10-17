@@ -31,10 +31,5 @@ class Credit:
         """The exact reduction in tax at `rate`: amount × rate."""
         return self.amount * rate
 
-    def describe_at(self, rate: Decimal) -> str:
-        """How the reduction at `rate` is worked out, e.g. "12.5% of 1000"."""
-        percent = format((rate * 100).normalize(), "f")
-        return f"{percent}% of {self.amount}"
-
 
 CREDIT: ParameterKind[Credit] = ParameterKind("credit", Credit)

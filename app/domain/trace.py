@@ -1,0 +1,104 @@
+"""The structured trace: what each capability did, recorded as facts.
+
+A trace line holds the domain objects and amounts involved (`ArtifactKind`, `Rate`, `Credit`,
+`RoundingRule`), never text; its `amount` is the figure the line is about. Rendering lines as
+human-readable text lives outside the domain, in the adapters.
+"""
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from decimal import Decimal
+
+from app.domain.artifact import Money
+from app.domain.parameters.credit import Credit
+from app.domain.parameters.rate import Rate
+from app.domain.parameters.rounding import RoundingRule
+
+
+@dataclass(frozen=True)
+class TraceLine(ABC):
+    """One fact in a capability's explanation of its result; subclasses are frozen dataclasses.
+
+    A dataclass itself (with no fields) so every line supports `dataclasses.fields`.
+    """
+
+    @property
+    @abstractmethod
+    def amount(self) -> Decimal:
+        """The figure this line is about."""
+
+
+@dataclass(frozen=True)
+class BracketSliceLine(TraceLine):
+    """The part of a base from `lower` to `upper` taxed at `rate`; `upper` is `None` at the top."""
+
+    lower: Decimal
+    upper: Decimal | None
+    rate: Decimal
+    taxed: Decimal
+    tax: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The tax on this slice."""
+        return self.tax
+
+
+@dataclass(frozen=True)
+class RoundedTotalLine(TraceLine):
+    """The total produced as `output` on `base` (worth `base_amount`), rounded with `rounding`."""
+
+    output: Money
+    base: Money
+    base_amount: Decimal
+    rounding: RoundingRule
+    total: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The rounded total."""
+        return self.total
+
+
+@dataclass(frozen=True)
+class CreditLine(TraceLine):
+    """A credit worked out as `basis` × `rate`, rounded with `rounding`."""
+
+    basis: Credit
+    rate: Rate
+    rounding: RoundingRule
+    credit: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The rounded credit."""
+        return self.credit
+
+
+@dataclass(frozen=True)
+class CreditAppliedLine(TraceLine):
+    """A credit taken off `tax` (worth `tax_amount`), not below zero, producing `output`."""
+
+    output: Money
+    tax: Money
+    tax_amount: Decimal
+    after: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The tax left after the credit."""
+        return self.after
+
+
+@dataclass(frozen=True)
+class UnusedCreditLine(TraceLine):
+    """The part of a non-refundable credit that exceeded the tax and was lost."""
+
+    unused: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The unused part of the credit."""
+        return self.unused

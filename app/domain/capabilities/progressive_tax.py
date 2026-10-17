@@ -12,10 +12,11 @@ from decimal import Decimal
 from typing import Any, ClassVar
 
 from app.domain.artifact import Artifact, Money
-from app.domain.capability import Capability, CapabilityResult, TraceLine, capability
+from app.domain.capability import Capability, CapabilityResult, capability
 from app.domain.parameters.brackets import BRACKETS, BracketSchedule
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
+from app.domain.trace import BracketSliceLine, RoundedTotalLine, TraceLine
 
 
 @capability(identifier="progressive_tax")
@@ -40,7 +41,7 @@ class ProgressiveTax(Capability):
         schedule, rounding = self._schedule.values, self._schedule.rounding
         slices = schedule.slices(base)
         tax = rounding.apply(schedule.tax_on(base))
-        trace = tuple(TraceLine(s.describe(), s.tax) for s in slices) + (
-            TraceLine(f"{self._output.label} on {self._base.label} {base} ({rounding})", tax),
-        )
+        trace: tuple[TraceLine, ...] = tuple(
+            BracketSliceLine(s.lower, s.upper, s.rate, s.taxed, s.tax) for s in slices
+        ) + (RoundedTotalLine(self._output, self._base, base, rounding, tax),)
         return CapabilityResult(outputs=(Artifact(self._output, tax),), trace=trace)

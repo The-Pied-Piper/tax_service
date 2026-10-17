@@ -42,7 +42,7 @@ app/
     ports/                Protocols the adapters call or implement
     services/             thin orchestration over the domain
   adapters/
-    inbound/              HTTP request adapters: DTO -> domain -> DTO
+    inbound/              HTTP request adapters (DTO -> domain -> DTO), trace renderers
     outbound/             driven adapters: database, files
   jurisdictions/          one package per jurisdiction: catalog, manifests, parameter data
   registrations.py        explicit list of registering modules and jurisdiction packages

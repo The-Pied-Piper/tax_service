@@ -7,6 +7,7 @@ consumed `base` and produced `output`.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import fields
 from decimal import Decimal
 from types import MappingProxyType
 from typing import Any, assert_type, cast
@@ -15,13 +16,13 @@ import pytest
 
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capabilities.progressive_tax import ProgressiveTax
-from app.domain.capability import TraceLine
 from app.domain.errors import InvalidCapabilityError
 from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
+from app.domain.trace import BracketSliceLine, RoundedTotalLine
 
 D = Decimal
 
@@ -100,17 +101,47 @@ def test_traces_each_slice_and_the_total() -> None:
     trace = capability(cent).compute((Artifact(TAXABLE_BASE, D(250)),)).trace
 
     assert trace == (
-        TraceLine("10% on 100 (0 to 100)", D("10.0")),
-        TraceLine("20% on 150 (100 to 300)", D("30.0")),
-        TraceLine("basic_tax on taxable_base 250 (half-up to 0.01)", D("40.00")),
+        BracketSliceLine(D(0), D(100), D("0.10"), D(100), D("10.0")),
+        BracketSliceLine(D(100), D(300), D("0.20"), D(150), D("30.0")),
+        RoundedTotalLine(
+            output=BASIC_TAX,
+            base=TAXABLE_BASE,
+            base_amount=D(250),
+            rounding=cent,
+            total=D("40.00"),
+        ),
     )
 
 
-def test_trace_describes_the_open_top_slice() -> None:
+def test_trace_records_the_open_top_slice() -> None:
     trace = capability().compute((Artifact(TAXABLE_BASE, D(400)),)).trace
 
-    assert trace[-2] == TraceLine("30% on 100 (over 300)", D("30.0"))
-    assert trace[-1] == TraceLine("basic_tax on taxable_base 400 (no rounding)", D("80.0"))
+    assert trace[-2] == BracketSliceLine(D(300), None, D("0.30"), D(100), D("30.0"))
+    assert trace[-1] == RoundedTotalLine(BASIC_TAX, TAXABLE_BASE, D(400), NO_ROUNDING, D("80.0"))
+
+
+def test_trace_records_the_wired_kinds() -> None:
+    wired = ProgressiveTax(OTHER_BASE, OTHER_TAX, schedule())
+
+    trace = wired.compute((Artifact(OTHER_BASE, D(50)),)).trace
+
+    assert trace == (
+        BracketSliceLine(D(0), D(100), D("0.10"), D(50), D("5.0")),
+        RoundedTotalLine(OTHER_TAX, OTHER_BASE, D(50), NO_ROUNDING, D("5.0")),
+    )
+
+
+def test_trace_amounts_are_the_slice_taxes_and_the_total() -> None:
+    trace = capability().compute((Artifact(TAXABLE_BASE, D(400)),)).trace
+
+    assert [line.amount for line in trace] == [D("10.0"), D("40.0"), D("30.0"), D("80.0")]
+
+
+def test_trace_holds_no_text() -> None:
+    trace = capability().compute((Artifact(TAXABLE_BASE, D(400)),)).trace
+
+    for line in trace:
+        assert not any(isinstance(getattr(line, f.name), str) for f in fields(line))
 
 
 def test_rejects_negative_base() -> None:
