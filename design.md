@@ -81,6 +81,13 @@ capability:
   and which artifacts fill those slots (§4); it never declares edges or
   order. The order is derived from what each selection consumes and
   produces (§5 — single source of dependency truth).
+- A slot holds one kind when the input has a role of its own that the
+  mechanism treats differently (`base`, `tax`, the two sides of a
+  subtraction). A slot holds a list when every input plays the same role
+  and the jurisdiction decides how many there are (the parts of a sum): the
+  only names left for them would be positional. A list is not "optional"
+  (every slot is filled, a list possibly with nothing) and not "mixed roles"
+  (a base plus any number of adjustments is one single slot and one list).
 - Capabilities are pure mechanism: no jurisdiction constants in code, ever.
   (Prior incident: engine silently US-shaped by agent priors. Same vector.)
 - Reuse across jurisdictions = a capability keyed to an artifact is
