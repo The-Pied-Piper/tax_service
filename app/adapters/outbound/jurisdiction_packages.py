@@ -1,16 +1,19 @@
-"""Finds where each jurisdiction package keeps its data: namespace -> package directory.
+"""The jurisdiction packages: where each keeps its data, and registering their catalogs.
 
 A jurisdiction package declares only `NAMESPACE = "..."` in its `__init__.py`; its directory is
-the one holding that file, with `manifests/` and `parameters/` inside. The YAML sources read
-under these directories.
+the one holding that file, with `catalog.py`, `manifests/` and `parameters/` inside. The YAML
+sources read under these directories; `register` imports each `catalog` module and registers its
+`CATALOG` into an artifact registry, when the composition root asks.
 """
 
 from __future__ import annotations
 
+import importlib
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from types import MappingProxyType, ModuleType
 
+from app.domain.artifact import ArtifactCatalog, ArtifactRegistry
 from app.domain.errors import DuplicateRegistrationError, InvalidRegistrationError
 from app.domain.registry import Namespace
 
@@ -24,6 +27,7 @@ class JurisdictionPackages:
     def __init__(self, packages: Iterable[ModuleType]) -> None:
         roots: dict[Namespace, Path] = {}
         owners: dict[Namespace, str] = {}
+        names: dict[str, Namespace] = {}
         for package in packages:
             namespace = self._namespace(package)
             if namespace in owners:
@@ -33,11 +37,51 @@ class JurisdictionPackages:
                 )
             owners[namespace] = package.__name__
             roots[namespace] = self._directory(package)
+            names[package.__name__] = namespace
         self._roots: Mapping[Namespace, Path] = MappingProxyType(roots)
+        self._namespaces: Mapping[str, Namespace] = MappingProxyType(names)
 
     def roots(self) -> Mapping[Namespace, Path]:
         """Each package's namespace mapped to its package directory."""
         return self._roots
+
+    def register(self, registry: ArtifactRegistry | None = None) -> None:
+        """Register every package's catalog, its `catalog` module's `CATALOG`, into `registry`.
+
+        `None` means the shared ArtifactRegistry. Registering again is idempotent. Every catalog
+        is looked up first, so a package without a catalog in its own namespace registers
+        nothing; an identifier clashing with one already in `registry` is an error, which can
+        leave the catalogs registered before it in place.
+        """
+        target = ArtifactRegistry.shared() if registry is None else registry
+        catalogs = [self._catalog(name, namespace) for name, namespace in self._namespaces.items()]
+        for catalog in catalogs:
+            target.register_catalog(catalog)
+
+    @staticmethod
+    def _catalog(package: str, namespace: Namespace) -> ArtifactCatalog:
+        module_name = f"{package}.catalog"
+        try:
+            module = importlib.import_module(module_name)
+        except ModuleNotFoundError as exc:
+            if exc.name != module_name:
+                raise
+            raise InvalidRegistrationError(
+                f"jurisdiction package {package} has no catalog module: declare its artifact "
+                "kinds in catalog.py as CATALOG = ArtifactCatalog(...)"
+            ) from None
+        catalog = getattr(module, "CATALOG", None)
+        if not isinstance(catalog, ArtifactCatalog):
+            raise InvalidRegistrationError(
+                f"jurisdiction package {package} must declare CATALOG as an ArtifactCatalog in "
+                f"its catalog.py, got {catalog!r}"
+            )
+        if catalog.namespace != namespace:
+            raise InvalidRegistrationError(
+                f"jurisdiction package {package} declares NAMESPACE {namespace.name!r} but its "
+                f"CATALOG is in namespace {catalog.namespace.name!r}"
+            )
+        return catalog
 
     @staticmethod
     def _namespace(package: ModuleType) -> Namespace:

@@ -7,7 +7,7 @@ and each artifact identifier to a registered kind of the slot's value type.
 
 from __future__ import annotations
 
-import app.registrations  # fills the shared registries and lists the packages, as the app does
+import app.registrations  # lists the packages; build_tax_computation registers their catalogs
 from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.capabilities.non_refundable_credit import NonRefundableCredit

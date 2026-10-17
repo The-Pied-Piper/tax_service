@@ -1,19 +1,19 @@
-"""The packages whose decorators must run so the shared registries hold their pieces.
+"""The packages the composition root wires together, listed explicitly.
 
-Registration happens when a module is imported, and registries never import anything
-themselves; the composition root imports this module. An explicit list for now.
-`JURISDICTIONS` lists the jurisdiction packages, whose directories hold their manifests and
-parameter data. Adding a jurisdiction `<x>` takes two lines in this module: import
-`app.jurisdictions.<x>.catalog` and add `app.jurisdictions.<x>` to `JURISDICTIONS`.
+`CORE_PACKAGES` names the core packages whose decorators fill the shared capability and parameter
+parser registries: each one's `__init__.py` imports its modules, so importing this module runs
+them. `JURISDICTIONS` lists the jurisdiction packages; importing one registers nothing, and
+`JURISDICTIONS.register()`, called by the composition root at startup, registers their artifact
+catalogs. Adding a jurisdiction `<x>` is importing `app.jurisdictions.<x>` and adding it to
+`JURISDICTIONS`.
 """
 
-import app.adapters.outbound.parameter_parsers.brackets  # noqa: F401  (registers on import)
-import app.adapters.outbound.parameter_parsers.credit  # noqa: F401  (registers on import)
-import app.adapters.outbound.parameter_parsers.rate  # noqa: F401  (registers on import)
-import app.domain.capabilities.non_refundable_credit  # noqa: F401  (registers on import)
-import app.domain.capabilities.progressive_tax  # noqa: F401  (registers on import)
-import app.jurisdictions.ca.catalog  # noqa: F401  (registers on import)
-import app.jurisdictions.ca_on.catalog  # noqa: F401  (registers on import)
+import app.adapters.outbound.parameter_parsers
+import app.domain.capabilities
+import app.jurisdictions.ca
+import app.jurisdictions.ca_on
 from app.adapters.outbound.jurisdiction_packages import JurisdictionPackages
+
+CORE_PACKAGES = (app.domain.capabilities, app.adapters.outbound.parameter_parsers)
 
 JURISDICTIONS = JurisdictionPackages((app.jurisdictions.ca, app.jurisdictions.ca_on))
