@@ -39,9 +39,13 @@ amount claimed, a starting amount.
 The contribution limit is not modelled, so the claimed amount is an input.
 """
 
+UNION_DUES = CATALOG.declare("union_dues", Decimal)
+"""Union dues, T1 line 21200 "Annual union, professional, or like dues (receipts and box 44 of all
+T4 slips)": the amount claimed, a starting amount."""
+
 DEDUCTIONS_FROM_TOTAL_INCOME = CATALOG.declare("deductions_from_total_income", Decimal)
 """Total deductions, T1 line 23300 "Add lines 35 to 52": the sum of the deductions from total
-income, here the RRSP deduction."""
+income, here the RRSP deduction and union dues."""
 
 NET_INCOME = CATALOG.declare("net_income", Decimal)
 """Net income, T1 line 23600 "Line 54 minus line 55 (if negative, enter "0") Net income": total

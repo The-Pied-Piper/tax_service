@@ -1,25 +1,26 @@
 # Return A: a 2025 Ontario resident, computed from employment income and a capital gain
-# to total income, less an RRSP deduction to net income, and from taxable income through
-# the tax after the basic personal amount credits. Not yet computed, so not in this file:
-# the other deductions from total income (union dues), the deductions between net income
+# to total income, less an RRSP deduction and union dues to net income, and from taxable
+# income through the tax after the basic personal amount credits. Not yet computed, so not
+# in this file: the CPP enhanced contributions deduction, the deductions between net income
 # and taxable income (taxable income is still an input), the social benefits repayment,
 # capital losses, the other non-refundable credits, the Ontario surtax, tax reduction and
-# health premium, and the balance owing. Amounts are quoted decimal strings, never floats.
-# Every output the CA-ON manifest declares must appear under `expected`; intermediate lines
-# may be listed and are then checked too.
+# health premium, and the balance owing.
+# Amounts are quoted decimal strings, never floats. Every output the CA-ON manifest
+# declares must appear under `expected`; intermediate lines may be listed and are then
+# checked too.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
   An Ontario resident with 2025 employment income (T1 line 10100) of $110,000 and one
   capital gain of $20,000 (Schedule 3 line 21), of which 50% is taxable: taxable capital
-  gains (line 12700) of $10,000 and total income (line 15000) of $120,000. An RRSP
-  deduction (line 20800) of $3,000 is the only deduction from total income computed so far:
-  total deductions (line 23300) of $3,000 and net income (line 23600) of $117,000. The
-  return also has union dues of $2,000, not yet deducted, which will bring net income to
-  $115,000. Taxable income (T1 line 26000) is given as $115,000, Maria's figure in CRA's
-  worked example, because it is not yet derived from net income; there are no
-  non-refundable credits other than the federal and Ontario basic personal amounts. No
-  amounts are rounded.
+  gains (line 12700) of $10,000 and total income (line 15000) of $120,000. The deductions
+  from total income modelled so far are an RRSP deduction (line 20800) of $3,000 and union
+  dues (line 21200) of $2,000: total deductions (line 23300) of $5,000 and net income
+  (line 23600) of $115,000. Taxable income (T1 line 26000) is given as $115,000, Maria's
+  figure in CRA's worked example, because it is not yet derived from net income; the two
+  are equal because the return has no deductions between net income and taxable income.
+  There are no non-refundable credits other than the federal and Ontario basic personal
+  amounts. No amounts are rounded.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -33,13 +34,14 @@ sources:
     (line 12700), the only income lines on this return: 110,000 + 10,000 = 120,000.
   - >-
     CRA, the 2025 T1 return (form 5000-R): line 36 (line 20800) "RRSP deduction (complete
-    Schedule 7 and attach receipts)"; line 53 (line 23300) "Add lines 35 to 52" (total
-    deductions); line 54 (line 23400) "Line 34 minus line 53 (if negative, show in
-    brackets) Net income before adjustments"; line 56 (line 23600) "Line 54 minus line 55
-    (if negative, enter "0") Net income". The RRSP deduction is the only deduction modelled
-    so far, so total deductions are 3,000; line 55 (line 23500, social benefits repayment)
-    is not modelled, so net income is total income less total deductions, not below zero:
-    120,000 - 3,000 = 117,000.
+    Schedule 7 and attach receipts)"; line 39 (line 21200) "Annual union, professional, or
+    like dues (receipts and box 44 of all T4 slips)"; line 53 (line 23300) "Add lines 35 to
+    52" (total deductions); line 54 (line 23400) "Line 34 minus line 53 (if negative, show
+    in brackets) Net income before adjustments"; line 56 (line 23600) "Line 54 minus line 55
+    (if negative, enter "0") Net income". The RRSP deduction and union dues are the only
+    deductions modelled so far, so total deductions are 3,000 + 2,000 = 5,000; line 55
+    (line 23500, social benefits repayment) is not modelled, so net income is total income
+    less total deductions, not below zero: 120,000 - 5,000 = 115,000.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.pdf
   - >-
@@ -58,12 +60,13 @@ inputs:
   ca/employment_income: "110000"
   ca/capital_gain: "20000"
   ca/rrsp_deduction: "3000"
+  ca/union_dues: "2000"
   ca/taxable_income: "115000"
 expected:
   ca/taxable_capital_gains: "10000"
   ca/total_income: "120000"
-  ca/deductions_from_total_income: "3000"
-  ca/net_income: "117000"
+  ca/deductions_from_total_income: "5000"
+  ca/net_income: "115000"
   ca/federal_basic_tax: "20146.25"
   ca/federal_tax_after_credits: "17807.545"
   ca-on/ontario_basic_tax: "8539.5965"

@@ -3,9 +3,9 @@
 The service is the one the composition root builds (`build_tax_computation`): the real YAML
 sources over the jurisdiction packages and the shared registries. Return A's amounts (employment
 income 110000 and a capital gain of 20000 to total income 120000, less an RRSP deduction of 3000
-to net income 117000; taxable income 115000 through each tax after credits) are checked from the
-files under `returns/` by `test_worked_returns.py`; this module pins which capability produces
-each line, the order, and the trace that explains them.
+and union dues of 2000 to net income 115000; taxable income 115000 through each tax after credits)
+are checked from the files under `returns/` by `test_worked_returns.py`; this module pins which
+capability produces each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
@@ -42,6 +42,7 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
     TOTAL_INCOME,
+    UNION_DUES,
 )
 from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX, ONTARIO_TAX_AFTER_CREDITS
 from app.main import build_tax_computation
@@ -55,7 +56,11 @@ def service() -> TaxComputationService:
 
 
 def compute(
-    employment_income: str, capital_gain: str, rrsp_deduction: str, taxable_income: str
+    employment_income: str,
+    capital_gain: str,
+    rrsp_deduction: str,
+    union_dues: str,
+    taxable_income: str,
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -63,13 +68,14 @@ def compute(
         Artifact(EMPLOYMENT_INCOME, D(employment_income)),
         Artifact(CAPITAL_GAIN, D(capital_gain)),
         Artifact(RRSP_DEDUCTION, D(rrsp_deduction)),
+        Artifact(UNION_DUES, D(union_dues)),
         Artifact(TAXABLE_INCOME, D(taxable_income)),
     )
 
 
 def return_a() -> Worksheet:
     """Return A's inputs, as in `returns/2025_return_a.yaml`."""
-    return compute("110000", "20000", "3000", "115000")
+    return compute("110000", "20000", "3000", "2000", "115000")
 
 
 def test_each_amount_is_produced_by_its_capability() -> None:
@@ -78,6 +84,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(EMPLOYMENT_INCOME) is None
     assert worksheet.producer_of(CAPITAL_GAIN) is None
     assert worksheet.producer_of(RRSP_DEDUCTION) is None
+    assert worksheet.producer_of(UNION_DUES) is None
     assert worksheet.producer_of(TAXABLE_INCOME) is None
     assert isinstance(worksheet.producer_of(TAXABLE_CAPITAL_GAINS), ApplyRate)
     assert isinstance(worksheet.producer_of(TOTAL_INCOME), Sum)
@@ -113,11 +120,13 @@ def test_the_trace_explains_the_computation() -> None:
         "total_income: employment_income 110000 + taxable_capital_gains 10000.0 = 120000.0",
         "120000",
     )
-    deductions = position("deductions_from_total_income: rrsp_deduction 3000 = 3000", "3000")
+    deductions = position(
+        "deductions_from_total_income: rrsp_deduction 3000 + union_dues 2000 = 5000", "5000"
+    )
     net = position(
-        "net_income: total_income 120000.0 less deductions_from_total_income 3000, "
-        "not below 0 = 117000.0",
-        "117000",
+        "net_income: total_income 120000.0 less deductions_from_total_income 5000, "
+        "not below 0 = 115000.0",
+        "115000",
     )
     federal_basic = position("federal_basic_tax on taxable_income 115000 (no rounding)", "20146.25")
     federal_after = position(
@@ -158,7 +167,9 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("120000"),
         ),
         DEDUCTIONS_FROM_TOTAL_INCOME: SumLine(
-            DEDUCTIONS_FROM_TOTAL_INCOME, ((RRSP_DEDUCTION, D("3000")),), D("3000")
+            DEDUCTIONS_FROM_TOTAL_INCOME,
+            ((RRSP_DEDUCTION, D("3000")), (UNION_DUES, D("2000"))),
+            D("5000"),
         ),
     }
     assert floored == {
@@ -167,8 +178,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             minuend=TOTAL_INCOME,
             minuend_amount=D("120000"),
             subtrahend=DEDUCTIONS_FROM_TOTAL_INCOME,
-            subtrahend_amount=D("3000"),
-            result=D("117000"),
+            subtrahend_amount=D("5000"),
+            result=D("115000"),
         )
     }
 
@@ -197,7 +208,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
 
 
 def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
-    worksheet = compute("10000", "0", "0", "10000")
+    worksheet = compute("10000", "0", "0", "0", "10000")
 
     assert worksheet.get(TOTAL_INCOME).value == D("10000")
     assert worksheet.get(NET_INCOME).value == D("10000")

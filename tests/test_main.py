@@ -41,6 +41,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/taxable_capital_gains",
         "ca/total_income",
         "ca/rrsp_deduction",
+        "ca/union_dues",
         "ca/deductions_from_total_income",
         "ca/net_income",
         "ca/taxable_income",
