@@ -1,8 +1,9 @@
 """Unit tests for CapabilityBuilder: one capability built from a manifest selection.
 
 The builder is given the selection, the capability class, the resolved datasets (parameter slot ->
-dataset) and the resolved kinds (artifact slot -> kind). It checks the selection fills exactly the
-class's slots, each in its own section, with datasets of the slots' kinds, then calls the
+dataset) and an `ArtifactRegistry`. It checks the selection fills exactly the class's slots, each
+in its own section, with datasets of the slots' kinds, resolves each artifact slot's identifier (or,
+for a list slot, identifiers in manifest order) to kinds through the registry, then calls the
 constructor by keyword. Value types of kinds are the constructor's check. Names are made up.
 """
 
@@ -13,14 +14,20 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import Decimal
 from functools import cache
-from typing import Any, ClassVar, assert_type, cast
+from typing import Any, ClassVar, assert_type
 
 import pytest
 
-from app.domain.artifact import Artifact, ArtifactKind, Money
+from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry, Money
 from app.domain.capability import Capability, CapabilityResult
 from app.domain.capability_builder import CapabilityBuilder
-from app.domain.errors import DomainError, InvalidCapabilityError, InvalidSelectionError
+from app.domain.errors import (
+    DomainError,
+    InvalidCapabilityError,
+    InvalidRegistrationError,
+    InvalidSelectionError,
+    UnknownRegistrationError,
+)
 from app.domain.manifest import CapabilitySelection
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
@@ -49,6 +56,8 @@ OFFSET = ParameterKind("offset", Offset)
 
 SOURCE = ArtifactKind("ex/source", Decimal)
 TARGET = ArtifactKind("ex/target", Decimal)
+EXTRA = ArtifactKind("ex/extra", Decimal)
+FACTOR_KIND = ArtifactKind("ex/factor", Decimal)
 
 
 @dataclass(frozen=True)
@@ -115,20 +124,32 @@ def datasets(**overrides: ParameterDataset[Any]) -> dict[str, ParameterDataset[A
     return {"factor": FACTOR_DATA, **overrides}
 
 
-def kinds(**overrides: ArtifactKind[Any]) -> dict[str, ArtifactKind[Any]]:
-    return {"source": SOURCE, "target": TARGET, **overrides}
+def registry(replacing: Mapping[str, object] | None = None) -> ArtifactRegistry:
+    """A private registry of every made-up kind of this module.
+
+    `replacing` registers its items under their identifiers instead of this module's kinds.
+    """
+    registered: dict[str, object] = {
+        kind.identifier: kind
+        for kind in (SOURCE, TARGET, EXTRA, FACTOR_KIND, PART_A, PART_B, PART_C, TOTAL)
+    }
+    registered.update(replacing or {})
+    artifacts = ArtifactRegistry()
+    for identifier, item in registered.items():
+        artifacts.register(identifier, item)
+    return artifacts
 
 
 def build(
     chosen: CapabilitySelection,
     given_datasets: Mapping[str, ParameterDataset[Any]] | None = None,
-    given_kinds: Mapping[str, ArtifactKind[Any]] | None = None,
+    artifacts: ArtifactRegistry | None = None,
 ) -> Capability:
     return CapabilityBuilder().build(
         chosen,
         Scale,
         datasets() if given_datasets is None else given_datasets,
-        kinds() if given_kinds is None else given_kinds,
+        registry() if artifacts is None else artifacts,
     )
 
 
@@ -138,14 +159,52 @@ def assert_names(excinfo: pytest.ExceptionInfo[InvalidSelectionError], slot: str
     assert repr(slot) in message, message
 
 
-def test_builds_an_instance_of_the_class_wired_with_the_given_kinds() -> None:
-    built = CapabilityBuilder().build(selection(), Scale, datasets(), kinds())
+def test_builds_an_instance_of_the_class_wired_with_the_registered_kinds() -> None:
+    built = CapabilityBuilder().build(selection(), Scale, datasets(), artifacts=registry())
 
     assert_type(built, Capability)
     assert isinstance(built, Scale)
+    assert built.source is SOURCE
+    assert built.target is TARGET
     assert built.consumes == frozenset({SOURCE})
     assert built.produces == frozenset({TARGET})
     assert built.factor is FACTOR_DATA
+
+
+def test_resolves_kinds_through_the_registry_it_is_given() -> None:
+    own_source = ArtifactKind("ex/source", Decimal)  # equal to SOURCE, but another object
+    own_target = ArtifactKind("ex/target", Decimal)
+    artifacts = registry(replacing={"ex/source": own_source, "ex/target": own_target})
+
+    built = build(selection(), artifacts=artifacts)
+
+    assert isinstance(built, Scale)
+    assert built.source is own_source
+    assert built.target is own_target
+    assert "ex/source" not in ArtifactRegistry.shared().identifiers()
+
+
+@pytest.mark.parametrize(
+    ("consumes", "produces"),
+    [
+        pytest.param({"source": "ex/nowhere"}, {"target": "ex/target"}, id="consumed"),
+        pytest.param({"source": "ex/source"}, {"target": "ex/nowhere"}, id="produced"),
+    ],
+)
+def test_an_unknown_identifier_is_the_registrys_unknown_registration(
+    consumes: dict[str, str], produces: dict[str, str]
+) -> None:
+    with pytest.raises(UnknownRegistrationError, match=re.escape("'ex/nowhere'")):
+        build(selection(consumes=consumes, produces=produces))
+
+
+def test_an_identifier_registered_as_something_other_than_a_kind_is_an_invalid_registration() -> (
+    None
+):
+    artifacts = registry(replacing={"ex/stray": object()})
+
+    with pytest.raises(InvalidRegistrationError, match="'ex/stray'.*not as an artifact kind"):
+        build(selection(consumes={"source": "ex/stray"}), artifacts=artifacts)
 
 
 def test_the_built_capability_computes_with_its_dataset() -> None:
@@ -191,20 +250,14 @@ def test_rejects_a_dataset_of_another_kind_than_the_slots() -> None:
 
 def test_rejects_a_consumes_key_that_is_not_a_consumed_slot() -> None:
     with pytest.raises(InvalidSelectionError) as excinfo:
-        build(
-            selection(consumes={"source": "ex/source", "extra": "ex/extra"}),
-            given_kinds=kinds(extra=ArtifactKind("ex/extra", Decimal)),
-        )
+        build(selection(consumes={"source": "ex/source", "extra": "ex/extra"}))
 
     assert_names(excinfo, "extra")
 
 
 def test_rejects_a_produces_key_that_is_not_a_produced_slot() -> None:
     with pytest.raises(InvalidSelectionError) as excinfo:
-        build(
-            selection(produces={"target": "ex/target", "extra": "ex/extra"}),
-            given_kinds=kinds(extra=ArtifactKind("ex/extra", Decimal)),
-        )
+        build(selection(produces={"target": "ex/target", "extra": "ex/extra"}))
 
     assert_names(excinfo, "extra")
 
@@ -225,10 +278,7 @@ def test_rejects_a_consumed_slot_given_under_produces() -> None:
 
 def test_rejects_a_parameter_slot_given_as_an_artifact_slot() -> None:
     with pytest.raises(InvalidSelectionError) as excinfo:
-        build(
-            selection(consumes={"source": "ex/source", "factor": "ex/factor"}),
-            given_kinds=kinds(factor=ArtifactKind("ex/factor", Decimal)),
-        )
+        build(selection(consumes={"source": "ex/source", "factor": "ex/factor"}))
 
     assert_names(excinfo, "factor")
 
@@ -256,21 +306,11 @@ def test_rejects_a_parameter_slot_without_a_resolved_dataset() -> None:
     assert_names(excinfo, "factor")
 
 
-@pytest.mark.parametrize("slot", ["source", "target"])
-def test_rejects_an_artifact_slot_without_a_resolved_kind(slot: str) -> None:
-    resolved = {k: v for k, v in kinds().items() if k != slot}
-
-    with pytest.raises(InvalidSelectionError) as excinfo:
-        build(selection(), given_kinds=resolved)
-
-    assert_names(excinfo, slot)
-
-
 def test_a_kind_of_the_wrong_value_type_is_the_constructors_error() -> None:
     wrong = ArtifactKind("ex/target", int)
 
     with pytest.raises(InvalidCapabilityError, match=re.escape("'target'")):
-        build(selection(), given_kinds=kinds(target=wrong))
+        build(selection(), artifacts=registry(replacing={"ex/target": wrong}))
 
 
 def test_a_class_without_parameter_slots_builds_from_an_empty_params() -> None:
@@ -291,7 +331,7 @@ def test_a_class_without_parameter_slots_builds_from_an_empty_params() -> None:
         produces={"target": "ex/target"},
     )
 
-    built = CapabilityBuilder().build(chosen, Copy, {}, kinds())
+    built = CapabilityBuilder().build(chosen, Copy, {}, registry())
 
     assert isinstance(built, Copy)
     assert built.produces == frozenset({TARGET})
@@ -319,26 +359,11 @@ def test_rejects_a_dataset_of_another_family_than_the_selection_names() -> None:
     assert "ex/other_factor" in str(excinfo.value)
 
 
-def test_rejects_a_kind_of_another_identifier_than_the_selection_names() -> None:
-    with pytest.raises(InvalidSelectionError) as excinfo:
-        build(selection(), given_kinds=kinds(source=ArtifactKind("ex/elsewhere", Decimal)))
-
-    assert_names(excinfo, "source")
-    assert "ex/elsewhere" in str(excinfo.value)
-
-
 def test_rejects_a_resolved_dataset_for_a_key_that_is_not_a_parameter_slot() -> None:
     with pytest.raises(InvalidSelectionError) as excinfo:
         build(selection(), given_datasets=datasets(bonus=FACTOR_DATA))
 
     assert_names(excinfo, "bonus")
-
-
-def test_rejects_a_resolved_kind_for_a_key_that_is_not_an_artifact_slot() -> None:
-    with pytest.raises(InvalidSelectionError) as excinfo:
-        build(selection(), given_kinds=kinds(extra=ArtifactKind("ex/extra", Decimal)))
-
-    assert_names(excinfo, "extra")
 
 
 # --- list slots: a consumed slot filled with a list of identifiers ------------------------------
@@ -396,9 +421,11 @@ def listing(consumes: Mapping[str, Any], name: str = "ex/total_up") -> Capabilit
 
 
 def build_list(
-    cls: type[Capability], consumes: Mapping[str, Any], resolved: Mapping[str, Any]
+    cls: type[Capability], consumes: Mapping[str, Any], artifacts: ArtifactRegistry | None = None
 ) -> Any:
-    return CapabilityBuilder().build(listing(consumes), cls, {}, {**resolved, "total": TOTAL})
+    return CapabilityBuilder().build(
+        listing(consumes), cls, {}, registry() if artifacts is None else artifacts
+    )
 
 
 def assert_names_listing(excinfo: pytest.ExceptionInfo[InvalidSelectionError], slot: str) -> None:
@@ -410,11 +437,7 @@ def assert_names_listing(excinfo: pytest.ExceptionInfo[InvalidSelectionError], s
 def test_builds_a_list_slot_with_the_kinds_in_manifest_order() -> None:
     total = total_class()
 
-    built = build_list(
-        total,
-        {"parts": ("ex/part_c", "ex/part_a", "ex/part_b")},
-        {"parts": (PART_C, PART_A, PART_B)},
-    )
+    built = build_list(total, {"parts": ("ex/part_c", "ex/part_a", "ex/part_b")})
 
     assert isinstance(built, total)
     assert built.parts == (PART_C, PART_A, PART_B)
@@ -422,12 +445,21 @@ def test_builds_a_list_slot_with_the_kinds_in_manifest_order() -> None:
     assert built.produces == frozenset({TOTAL})
 
 
+def test_a_list_slots_kinds_are_the_registered_objects() -> None:
+    own_a = ArtifactKind("ex/part_a", Decimal)  # equal to PART_A, but another object
+    own_b = ArtifactKind("ex/part_b", Decimal)
+    artifacts = registry(replacing={"ex/part_a": own_a, "ex/part_b": own_b})
+
+    built = build_list(total_class(), {"parts": ("ex/part_b", "ex/part_a")}, artifacts)
+
+    assert type(built.parts) is tuple
+    assert len(built.parts) == 2
+    assert built.parts[0] is own_b
+    assert built.parts[1] is own_a
+
+
 def test_the_built_list_capability_computes_from_every_part() -> None:
-    built = build_list(
-        total_class(),
-        {"parts": ("ex/part_a", "ex/part_b", "ex/part_c")},
-        {"parts": (PART_A, PART_B, PART_C)},
-    )
+    built = build_list(total_class(), {"parts": ("ex/part_a", "ex/part_b", "ex/part_c")})
 
     inputs = (Artifact(PART_A, D("1")), Artifact(PART_B, D("2")), Artifact(PART_C, D("4")))
 
@@ -435,7 +467,7 @@ def test_the_built_list_capability_computes_from_every_part() -> None:
 
 
 def test_builds_a_list_slot_filled_with_no_identifiers() -> None:
-    built = build_list(total_class(), {"parts": ()}, {"parts": ()})
+    built = build_list(total_class(), {"parts": ()})
 
     assert built.parts == ()
     assert built.consumes == frozenset()
@@ -444,22 +476,30 @@ def test_builds_a_list_slot_filled_with_no_identifiers() -> None:
 def test_builds_single_and_list_slots_together() -> None:
     adjusted = adjusted_class()
 
-    built = build_list(
-        adjusted,
-        {"base": "ex/source", "parts": ("ex/part_a", "ex/part_b")},
-        {"base": SOURCE, "parts": (PART_A, PART_B)},
-    )
+    built = build_list(adjusted, {"base": "ex/source", "parts": ("ex/part_a", "ex/part_b")})
 
     assert built.base is SOURCE
     assert built.parts == (PART_A, PART_B)
     assert built.consumes == frozenset({SOURCE, PART_A, PART_B})
 
 
+def test_an_unknown_identifier_in_a_list_is_the_registrys_unknown_registration() -> None:
+    with pytest.raises(UnknownRegistrationError, match=re.escape("'ex/nowhere'")):
+        build_list(total_class(), {"parts": ("ex/part_a", "ex/nowhere", "ex/part_b")})
+
+
+def test_an_identifier_in_a_list_registered_as_something_other_than_a_kind_is_invalid() -> None:
+    artifacts = registry(replacing={"ex/stray": object()})
+
+    with pytest.raises(InvalidRegistrationError, match="'ex/stray'.*not as an artifact kind"):
+        build_list(total_class(), {"parts": ("ex/part_a", "ex/stray")}, artifacts)
+
+
 def test_rejects_a_single_identifier_for_a_list_slot() -> None:
     total = total_class()
 
     with pytest.raises(InvalidSelectionError) as excinfo:
-        build_list(total, {"parts": "ex/part_a"}, {"parts": PART_A})
+        build_list(total, {"parts": "ex/part_a"})
 
     assert_names_listing(excinfo, "parts")
     assert "list" in str(excinfo.value)
@@ -469,11 +509,7 @@ def test_rejects_a_list_of_identifiers_for_a_single_slot() -> None:
     adjusted = adjusted_class()
 
     with pytest.raises(InvalidSelectionError) as excinfo:
-        build_list(
-            adjusted,
-            {"base": ("ex/source",), "parts": ("ex/part_a",)},
-            {"base": (SOURCE,), "parts": (PART_A,)},
-        )
+        build_list(adjusted, {"base": ("ex/source",), "parts": ("ex/part_a",)})
 
     assert_names_listing(excinfo, "base")
     assert "list" in str(excinfo.value)
@@ -488,7 +524,7 @@ def test_rejects_a_list_for_a_slot_of_a_class_without_list_slots() -> None:
     )
 
     with pytest.raises(InvalidSelectionError) as excinfo:
-        build(chosen, given_kinds=kinds(source=cast(Any, (SOURCE,))))
+        build(chosen)
 
     assert_names(excinfo, "source")
 
@@ -497,62 +533,10 @@ def test_rejects_an_identifier_listed_twice() -> None:
     total = total_class()
 
     with pytest.raises(InvalidSelectionError) as excinfo:
-        build_list(
-            total,
-            {"parts": ("ex/part_a", "ex/part_b", "ex/part_a")},
-            {"parts": (PART_A, PART_B, PART_A)},
-        )
+        build_list(total, {"parts": ("ex/part_a", "ex/part_b", "ex/part_a")})
 
     assert_names_listing(excinfo, "parts")
     assert "ex/part_a" in str(excinfo.value)
-
-
-def test_rejects_a_listed_kind_of_another_identifier_than_the_selection_names() -> None:
-    total = total_class()
-    elsewhere = ArtifactKind("ex/elsewhere", Decimal)
-
-    with pytest.raises(InvalidSelectionError) as excinfo:
-        build_list(total, {"parts": ("ex/part_a", "ex/part_b")}, {"parts": (PART_A, elsewhere)})
-
-    assert_names_listing(excinfo, "parts")
-    assert "ex/elsewhere" in str(excinfo.value)
-
-
-def test_rejects_listed_kinds_resolved_out_of_manifest_order() -> None:
-    total = total_class()
-
-    with pytest.raises(InvalidSelectionError) as excinfo:
-        build_list(total, {"parts": ("ex/part_a", "ex/part_b")}, {"parts": (PART_B, PART_A)})
-
-    assert_names_listing(excinfo, "parts")
-
-
-@pytest.mark.parametrize(
-    "resolved",
-    [
-        pytest.param((PART_A,), id="fewer"),
-        pytest.param((PART_A, PART_B, PART_C), id="more"),
-        pytest.param(PART_A, id="single-kind"),
-    ],
-)
-def test_rejects_a_list_slot_resolved_to_other_than_one_kind_per_identifier(
-    resolved: object,
-) -> None:
-    total = total_class()
-
-    with pytest.raises(InvalidSelectionError) as excinfo:
-        build_list(total, {"parts": ("ex/part_a", "ex/part_b")}, {"parts": resolved})
-
-    assert_names_listing(excinfo, "parts")
-
-
-def test_rejects_a_list_slot_without_a_resolved_kind() -> None:
-    total = total_class()
-
-    with pytest.raises(InvalidSelectionError) as excinfo:
-        build_list(total, {"parts": ("ex/part_a",)}, {})
-
-    assert_names_listing(excinfo, "parts")
 
 
 def test_a_listed_kind_of_the_wrong_value_type_is_the_constructors_error() -> None:
@@ -560,4 +544,8 @@ def test_a_listed_kind_of_the_wrong_value_type_is_the_constructors_error() -> No
     wrong = ArtifactKind("ex/part_b", int)
 
     with pytest.raises(InvalidCapabilityError, match=re.escape("'parts'")):
-        build_list(total, {"parts": ("ex/part_a", "ex/part_b")}, {"parts": (PART_A, wrong)})
+        build_list(
+            total,
+            {"parts": ("ex/part_a", "ex/part_b")},
+            registry(replacing={"ex/part_b": wrong}),
+        )
