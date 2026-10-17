@@ -306,11 +306,38 @@ def test_rejects_a_parameter_slot_without_a_resolved_dataset() -> None:
     assert_names(excinfo, "factor")
 
 
-def test_a_kind_of_the_wrong_value_type_is_the_constructors_error() -> None:
+def assert_names_the_constructors_rejection(
+    excinfo: pytest.ExceptionInfo[InvalidSelectionError], prefix: str, class_name: str
+) -> InvalidCapabilityError:
+    """The rejection names the selection, carries the constructor's message and chains it."""
+    error = excinfo.value
+    cause = error.__cause__
+    assert isinstance(cause, InvalidCapabilityError), repr(cause)
+    message = str(error)
+    assert message.startswith(prefix), message
+    assert str(cause) in message, message
+    assert class_name in message, message
+    return cause
+
+
+def test_a_kind_of_the_wrong_value_type_is_rejected_naming_the_selection() -> None:
     wrong = ArtifactKind("ex/target", int)
 
-    with pytest.raises(InvalidCapabilityError, match=re.escape("'target'")):
+    with pytest.raises(InvalidSelectionError) as excinfo:
         build(selection(), artifacts=registry(replacing={"ex/target": wrong}))
+
+    cause = assert_names_the_constructors_rejection(
+        excinfo, "ex/scale (produces ex/target)", "Scale"
+    )
+    assert_names(excinfo, "target")
+    assert "'target'" in str(cause)
+
+
+def test_the_constructor_called_directly_still_raises_invalid_capability() -> None:
+    wrong: Any = ArtifactKind("ex/target", int)  # past mypy, to reach the runtime check
+
+    with pytest.raises(InvalidCapabilityError, match=re.escape("Scale: artifact slot 'target'")):
+        Scale(source=SOURCE, target=wrong, factor=FACTOR_DATA)
 
 
 def test_a_class_without_parameter_slots_builds_from_an_empty_params() -> None:
@@ -539,13 +566,49 @@ def test_rejects_an_identifier_listed_twice() -> None:
     assert "ex/part_a" in str(excinfo.value)
 
 
-def test_a_listed_kind_of_the_wrong_value_type_is_the_constructors_error() -> None:
+def test_a_listed_kind_of_the_wrong_value_type_is_rejected_naming_the_selection() -> None:
     total = total_class()
     wrong = ArtifactKind("ex/part_b", int)
 
-    with pytest.raises(InvalidCapabilityError, match=re.escape("'parts'")):
+    with pytest.raises(InvalidSelectionError) as excinfo:
         build_list(
             total,
             {"parts": ("ex/part_a", "ex/part_b")},
             registry(replacing={"ex/part_b": wrong}),
         )
+
+    assert_names_the_constructors_rejection(excinfo, "ex/total_up (produces ex/total)", "Total")
+    assert_names_listing(excinfo, "parts")
+    assert "'ex/part_b'" in str(excinfo.value)
+
+
+def test_a_listed_kind_that_is_also_the_produced_kind_is_rejected_naming_the_selection() -> None:
+    with pytest.raises(InvalidSelectionError) as excinfo:
+        build_list(total_class(), {"parts": ("ex/part_a", "ex/total")})
+
+    assert_names_the_constructors_rejection(excinfo, "ex/total_up (produces ex/total)", "Total")
+    message = str(excinfo.value)
+    assert "'parts'" in message, message
+    assert "'total'" in message, message
+
+
+def test_a_constructor_rejection_names_which_of_two_selections_of_one_class_failed() -> None:
+    total = total_class()
+    good = CapabilitySelection(
+        name="ex/total_up",
+        params={},
+        consumes={"parts": ("ex/part_a",)},
+        produces={"total": "ex/total"},
+    )
+    bad = CapabilitySelection(
+        name="ex/total_up",
+        params={},
+        consumes={"parts": ("ex/part_b", "ex/source")},
+        produces={"total": "ex/source"},
+    )
+
+    CapabilityBuilder().build(good, total, {}, registry())
+    with pytest.raises(InvalidSelectionError) as excinfo:
+        CapabilityBuilder().build(bad, total, {}, registry())
+
+    assert_names_the_constructors_rejection(excinfo, "ex/total_up (produces ex/source)", "Total")

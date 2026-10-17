@@ -683,12 +683,40 @@ def test_rejects_a_list_slot_the_constructor_does_not_take() -> None:
                 self.part = part
 
 
-def test_rejects_a_list_slot_in_produces() -> None:
+@pytest.mark.parametrize(
+    "declared",
+    [
+        pytest.param(list[Any], id="list-of-any"),
+        pytest.param(list, id="bare-list"),
+    ],
+)
+def test_rejects_a_list_slot_no_kind_can_fill(declared: object) -> None:
+    def init(self: Capability, parts: object) -> None:
+        pass
+
+    with pytest.raises(InvalidCapabilityError, match="Bad.*CONSUMES slot 'parts'"):
+        type("Bad", (Bare,), {"CONSUMES": {"parts": declared}, "__init__": init})
+
+
+@pytest.mark.parametrize(
+    "declared",
+    [pytest.param(list[Decimal], id="list-of-decimal"), pytest.param(list, id="bare-list")],
+)
+def test_rejects_a_list_slot_in_produces(declared: object) -> None:
     def init(self: Capability, totals: object) -> None:
         pass
 
     with pytest.raises(InvalidCapabilityError, match="Bad.*PRODUCES slot 'totals'"):
-        type("Bad", (Bare,), {"PRODUCES": {"totals": list[Decimal]}, "__init__": init})
+        type("Bad", (Bare,), {"PRODUCES": {"totals": declared}, "__init__": init})
+
+
+@pytest.mark.parametrize("mapping", ["CONSUMES", "PRODUCES"])
+def test_rejects_a_single_slot_of_any_which_no_kind_can_fill(mapping: str) -> None:
+    def init(self: Capability, amount: object) -> None:
+        pass
+
+    with pytest.raises(InvalidCapabilityError, match=f"Bad.*{mapping} slot 'amount'"):
+        type("Bad", (Bare,), {mapping: {"amount": Any}, "__init__": init})
 
 
 def test_a_list_slot_is_given_a_tuple_of_kinds_and_consumes_every_one() -> None:
