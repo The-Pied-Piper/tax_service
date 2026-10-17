@@ -2,9 +2,11 @@
 
 A capability is pure mechanism. Its class declares, in code, named slots: parameter slots
 (`PARAMETERS`, slot -> parameter kind) and artifact slots (`CONSUMES` / `PRODUCES`, slot -> value
-type), each a keyword parameter of its constructor; a manifest fills them. An instance consumes
-and produces the artifact kinds it was built with, and the worksheet holds it to that. The
-vocabulary is consume / produce only: there is no "modify". Fold contributions come later.
+type), each a keyword parameter of its constructor; a manifest fills them. A consumed slot may
+take a list of kinds of one value type (declared as `list[Decimal]`), so a capability's number of
+inputs can be left to the manifest. An instance consumes and produces the artifact kinds it was
+built with, and the worksheet holds it to that. The vocabulary is consume / produce only: there
+is no "modify".
 """
 
 from __future__ import annotations
@@ -15,7 +17,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Any, ClassVar, cast
+from typing import Any, ClassVar, cast, get_args, get_origin
 
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.errors import (
@@ -59,7 +61,9 @@ class Capability(ABC):
     """Parameter slots: slot name -> the kind of dataset the constructor takes under that name."""
 
     CONSUMES: ClassVar[Mapping[str, type]] = MappingProxyType({})
-    """Consumed artifact slots: slot name -> the value type of the artifact kind it takes."""
+    """Consumed artifact slots: slot name -> the value type of the artifact kind it takes, or
+    `list[<value type>]` for a list slot, which takes a tuple of kinds of that value type (a type
+    to the type checker, a `GenericAlias` at runtime)."""
 
     PRODUCES: ClassVar[Mapping[str, type]] = MappingProxyType({})
     """Produced artifact slots: slot name -> the value type of the artifact kind it takes."""
@@ -118,16 +122,40 @@ class Capability(ABC):
                 raise InvalidCapabilityError(
                     f"{name}: PARAMETERS slot {slot!r} must map to a ParameterKind, got {filler!r}"
                 )
+        elif mapping == "CONSUMES" and get_origin(filler) is list:
+            if cls._element_type(filler) is None:
+                raise InvalidCapabilityError(
+                    f"{name}: CONSUMES slot {slot!r} must be a list of one type, got {filler!r}"
+                )
         elif not isinstance(filler, type):
+            hint = " (only a consumed slot may take a list)" if get_origin(filler) is list else ""
             raise InvalidCapabilityError(
-                f"{name}: {mapping} slot {slot!r} must be a type, got {filler!r}"
+                f"{name}: {mapping} slot {slot!r} must be a type, got {filler!r}{hint}"
             )
 
-    def __init__(self, **slots: ArtifactKind[Any]) -> None:
+    @staticmethod
+    def _element_type(declared: object) -> type | None:
+        """The value type of each kind in a list slot declared as `list[<type>]`, else None."""
+        if get_origin(declared) is not list:
+            return None
+        arguments = get_args(declared)
+        if len(arguments) != 1 or not isinstance(arguments[0], type):
+            return None
+        element: type = arguments[0]
+        return element
+
+    @classmethod
+    def is_list_slot(cls, slot: str) -> bool:
+        """Whether `slot` is a consumed slot taking a list of kinds rather than one kind."""
+        return slot in cls.CONSUMES and cls._element_type(cls.CONSUMES[slot]) is not None
+
+    def __init__(self, **slots: ArtifactKind[Any] | tuple[ArtifactKind[Any], ...]) -> None:
         """Wire the artifact slots declared in `CONSUMES` / `PRODUCES` with the kinds given by name.
 
+        A list slot takes a tuple of kinds (possibly empty); every other slot takes one kind.
         Raises InvalidCapabilityError naming the class and the slot if one is missing, unknown,
-        not filled with a kind of exactly its value type, or filled with a kind another slot has.
+        not filled as declared with kinds of exactly its value type, or filled with a kind
+        another slot, or another place in the same list, has.
         """
         name = type(self).__name__
         declared = {**self.CONSUMES, **self.PRODUCES}
@@ -136,27 +164,61 @@ class Capability(ABC):
                 hint = " (it is a parameter slot)" if slot in self.PARAMETERS else ""
                 raise InvalidCapabilityError(f"{name}: {slot!r} is not an artifact slot{hint}")
         filled_by: dict[ArtifactKind[Any], str] = {}
+        wired: dict[str, tuple[ArtifactKind[Any], ...]] = {}
         for slot, value_type in declared.items():
             if slot not in slots:
                 raise InvalidCapabilityError(f"{name}: artifact slot {slot!r} is not given")
-            kind: object = slots[slot]
-            if not isinstance(kind, ArtifactKind):
+            wired[slot] = self._slot_kinds(slot, value_type, slots[slot])
+            for kind in wired[slot]:
+                if kind in filled_by:
+                    raise InvalidCapabilityError(
+                        f"{name}: artifact slots {filled_by[kind]!r} and {slot!r} are both given "
+                        f"{kind.identifier!r}"
+                    )
+                filled_by[kind] = slot
+        self._consumes = frozenset(kind for slot in self.CONSUMES for kind in wired[slot])
+        self._produces = frozenset(kind for slot in self.PRODUCES for kind in wired[slot])
+
+    def _slot_kinds(
+        self, slot: str, declared: type, given: object
+    ) -> tuple[ArtifactKind[Any], ...]:
+        """The kinds `given` for `slot`, declared as `declared`: a tuple of distinct kinds for a
+        list slot, else one kind. Each kind must have exactly the slot's value type.
+        """
+        name = type(self).__name__
+        element_type = self._element_type(declared)
+        if element_type is None:
+            if isinstance(given, tuple):
                 raise InvalidCapabilityError(
-                    f"{name}: artifact slot {slot!r} must be an ArtifactKind, got {kind!r}"
+                    f"{name}: artifact slot {slot!r} takes one ArtifactKind, not a tuple: {given!r}"
                 )
-            if kind.value_type is not value_type:
+            return (self._checked_kind(slot, declared, given),)
+        if not isinstance(given, tuple):
+            raise InvalidCapabilityError(
+                f"{name}: list slot {slot!r} takes a tuple of ArtifactKinds of "
+                f"{element_type.__name__}, got {given!r}"
+            )
+        kinds = tuple(self._checked_kind(slot, element_type, element) for element in given)
+        for position, kind in enumerate(kinds):
+            if kind in kinds[:position]:
                 raise InvalidCapabilityError(
-                    f"{name}: artifact slot {slot!r} takes a kind of {value_type.__name__}, "
-                    f"got {kind.identifier!r} of {kind.value_type.__name__}"
+                    f"{name}: list slot {slot!r} lists {kind.identifier!r} more than once"
                 )
-            if kind in filled_by:
-                raise InvalidCapabilityError(
-                    f"{name}: artifact slots {filled_by[kind]!r} and {slot!r} are both given "
-                    f"{kind.identifier!r}"
-                )
-            filled_by[kind] = slot
-        self._consumes = frozenset(slots[slot] for slot in self.CONSUMES)
-        self._produces = frozenset(slots[slot] for slot in self.PRODUCES)
+        return kinds
+
+    def _checked_kind(self, slot: str, value_type: type, given: object) -> ArtifactKind[Any]:
+        """`given`, which must be an ArtifactKind of exactly `value_type`, for `slot`."""
+        name = type(self).__name__
+        if not isinstance(given, ArtifactKind):
+            raise InvalidCapabilityError(
+                f"{name}: artifact slot {slot!r} must be given ArtifactKinds, got {given!r}"
+            )
+        if given.value_type is not value_type:
+            raise InvalidCapabilityError(
+                f"{name}: artifact slot {slot!r} takes a kind of {value_type.__name__}, "
+                f"got {given.identifier!r} of {given.value_type.__name__}"
+            )
+        return given
 
     @property
     def consumes(self) -> frozenset[ArtifactKind[Any]]:

@@ -5,8 +5,9 @@ code lower-cased (`EX-ON` -> `ex-on`, `EX` -> `ex`), and its manifests are every
 `*.yml` file under `roots[Namespace("ex-on")] / "manifests"`, recursively. Names are made up.
 
 Each selection names a capability and fills its slots: `params` (slot -> family, optional),
-`consumes` (slot -> artifact identifier, optional) and `produces` (slot -> artifact identifier,
-required). Slot names are not checked against capability classes here. The top-level `inputs` and
+`consumes` (slot -> artifact identifier, or a list of them kept in order as a tuple, optional)
+and `produces` (slot -> artifact identifier, required). Slot names, and whether a slot takes one
+identifier or a list, are not checked against capability classes here. The top-level `inputs` and
 `outputs` list the computation's artifact identifiers: both required, non-empty lists of non-empty
 strings without duplicates, and no identifier in both.
 """
@@ -198,6 +199,47 @@ def test_params_and_consumes_may_be_omitted(tmp_path: Path) -> None:
     )
 
 
+def test_a_consumed_slot_may_list_identifiers(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex-on/manifests/m.yaml",
+        HEADER
+        + """\
+capabilities:
+  - name: ex/total_up
+    consumes:
+      base: ex/x
+      parts:
+        - ex/c
+        - ex/a
+        - ex/b
+      others: [ex/d]
+      none: []
+    produces:
+      total: ex/y
+""",
+    )
+
+    (manifest,) = source(tmp_path).get_jurisdiction(EX_ON).manifests
+
+    assert manifest.capabilities == (
+        CapabilitySelection(
+            name="ex/total_up",
+            params={},
+            consumes={
+                "base": "ex/x",
+                "parts": ("ex/c", "ex/a", "ex/b"),
+                "others": ("ex/d",),
+                "none": (),
+            },
+            produces={"total": "ex/y"},
+        ),
+    )
+    (selection,) = manifest.capabilities
+    assert isinstance(selection.consumes["base"], str)
+    assert isinstance(selection.consumes["parts"], tuple)
+
+
 def test_slot_bindings_are_read_only(tmp_path: Path) -> None:
     write(tmp_path, "ex-on/manifests/v1.yaml", EX_ON_V1)
 
@@ -381,9 +423,38 @@ def test_one_bad_file_fails_the_whole_load(tmp_path: Path) -> None:
             id="parameter-family-int",
         ),
         pytest.param(
-            EX_ON_V1.replace("      income: ex/gross_income", "      income: [ex/gross_income]"),
-            r"capabilities\[0\]\.consumes\.income must be a string, got list",
-            id="consumed-identifier-list",
+            EX_ON_V1.replace("      income: ex/gross_income", "      income: [ex/gross_income, 7]"),
+            r"capabilities\[0\]\.consumes\.income\[1\] must be a string, got int",
+            id="consumed-list-element-int",
+        ),
+        pytest.param(
+            EX_ON_V1.replace(
+                "      income: ex/gross_income", '      income: [ex/gross_income, ""]'
+            ),
+            r"capabilities\[0\]\.consumes\.income\[1\] must not be empty",
+            id="consumed-list-element-empty",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("      income: ex/gross_income", "      income: [[ex/gross_income]]"),
+            r"capabilities\[0\]\.consumes\.income\[0\] must be a string, got list",
+            id="consumed-list-element-list",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("      income: ex/gross_income", "      income: {a: ex/gross_income}"),
+            r"capabilities\[0\]\.consumes\.income must be a string.*got dict",
+            id="consumed-identifier-mapping",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("      cap: ex/savings_cap", "      cap: [ex/savings_cap]"),
+            r"capabilities\[0\]\.params\.cap must be a string, got list",
+            id="parameter-family-list",
+        ),
+        pytest.param(
+            EX_ON_V1.replace(
+                "      output: ex/savings_deduction", "      output: [ex/savings_deduction]"
+            ),
+            r"capabilities\[0\]\.produces\.output must be a string, got list",
+            id="produced-identifier-list",
         ),
         pytest.param(
             EX_ON_V1.replace("      output: ex/savings_deduction", "      output: null"),

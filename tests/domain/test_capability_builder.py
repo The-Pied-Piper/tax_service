@@ -12,7 +12,8 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, ClassVar, assert_type
+from functools import cache
+from typing import Any, ClassVar, assert_type, cast
 
 import pytest
 
@@ -338,3 +339,225 @@ def test_rejects_a_resolved_kind_for_a_key_that_is_not_an_artifact_slot() -> Non
         build(selection(), given_kinds=kinds(extra=ArtifactKind("ex/extra", Decimal)))
 
     assert_names(excinfo, "extra")
+
+
+# --- list slots: a consumed slot filled with a list of identifiers ------------------------------
+#
+# The list-slot classes are defined inside cached factories, so a class definition the base
+# rejects fails the tests that use it rather than the collection of this whole module.
+
+PART_A = ArtifactKind("ex/part_a", Decimal)
+PART_B = ArtifactKind("ex/part_b", Decimal)
+PART_C = ArtifactKind("ex/part_c", Decimal)
+TOTAL = ArtifactKind("ex/total", Decimal)
+
+
+@cache
+def total_class() -> Any:
+    class Total(Capability):
+        """Produces `total` = the sum of its `parts`; keeps the parts in the order it was given."""
+
+        CONSUMES = {"parts": list[Decimal]}
+        PRODUCES = {"total": Decimal}
+
+        def __init__(self, *, parts: tuple[Money, ...], total: Money) -> None:
+            super().__init__(parts=parts, total=total)
+            self.parts, self.total = parts, total
+
+        def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+            value = sum((self._input(inputs, kind).value for kind in self.parts), D(0))
+            return CapabilityResult(outputs=(Artifact(self.total, value),), trace=())
+
+    return Total
+
+
+@cache
+def adjusted_class() -> Any:
+    class Adjusted(Capability):
+        """Consumes a single `base` and a list of `parts`; produces `total`."""
+
+        CONSUMES = {"base": Decimal, "parts": list[Decimal]}
+        PRODUCES = {"total": Decimal}
+
+        def __init__(self, *, base: Money, parts: tuple[Money, ...], total: Money) -> None:
+            super().__init__(base=base, parts=parts, total=total)
+            self.base, self.parts = base, parts
+
+        def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+            raise NotImplementedError
+
+    return Adjusted
+
+
+def listing(consumes: Mapping[str, Any], name: str = "ex/total_up") -> CapabilitySelection:
+    return CapabilitySelection(
+        name=name, params={}, consumes=consumes, produces={"total": "ex/total"}
+    )
+
+
+def build_list(
+    cls: type[Capability], consumes: Mapping[str, Any], resolved: Mapping[str, Any]
+) -> Any:
+    return CapabilityBuilder().build(listing(consumes), cls, {}, {**resolved, "total": TOTAL})
+
+
+def assert_names_listing(excinfo: pytest.ExceptionInfo[InvalidSelectionError], slot: str) -> None:
+    message = str(excinfo.value)
+    assert "ex/total_up (produces ex/total)" in message, message
+    assert repr(slot) in message, message
+
+
+def test_builds_a_list_slot_with_the_kinds_in_manifest_order() -> None:
+    total = total_class()
+
+    built = build_list(
+        total,
+        {"parts": ("ex/part_c", "ex/part_a", "ex/part_b")},
+        {"parts": (PART_C, PART_A, PART_B)},
+    )
+
+    assert isinstance(built, total)
+    assert built.parts == (PART_C, PART_A, PART_B)
+    assert built.consumes == frozenset({PART_A, PART_B, PART_C})
+    assert built.produces == frozenset({TOTAL})
+
+
+def test_the_built_list_capability_computes_from_every_part() -> None:
+    built = build_list(
+        total_class(),
+        {"parts": ("ex/part_a", "ex/part_b", "ex/part_c")},
+        {"parts": (PART_A, PART_B, PART_C)},
+    )
+
+    inputs = (Artifact(PART_A, D("1")), Artifact(PART_B, D("2")), Artifact(PART_C, D("4")))
+
+    assert built.compute(inputs).outputs == (Artifact(TOTAL, D("7")),)
+
+
+def test_builds_a_list_slot_filled_with_no_identifiers() -> None:
+    built = build_list(total_class(), {"parts": ()}, {"parts": ()})
+
+    assert built.parts == ()
+    assert built.consumes == frozenset()
+
+
+def test_builds_single_and_list_slots_together() -> None:
+    adjusted = adjusted_class()
+
+    built = build_list(
+        adjusted,
+        {"base": "ex/source", "parts": ("ex/part_a", "ex/part_b")},
+        {"base": SOURCE, "parts": (PART_A, PART_B)},
+    )
+
+    assert built.base is SOURCE
+    assert built.parts == (PART_A, PART_B)
+    assert built.consumes == frozenset({SOURCE, PART_A, PART_B})
+
+
+def test_rejects_a_single_identifier_for_a_list_slot() -> None:
+    total = total_class()
+
+    with pytest.raises(InvalidSelectionError) as excinfo:
+        build_list(total, {"parts": "ex/part_a"}, {"parts": PART_A})
+
+    assert_names_listing(excinfo, "parts")
+    assert "list" in str(excinfo.value)
+
+
+def test_rejects_a_list_of_identifiers_for_a_single_slot() -> None:
+    adjusted = adjusted_class()
+
+    with pytest.raises(InvalidSelectionError) as excinfo:
+        build_list(
+            adjusted,
+            {"base": ("ex/source",), "parts": ("ex/part_a",)},
+            {"base": (SOURCE,), "parts": (PART_A,)},
+        )
+
+    assert_names_listing(excinfo, "base")
+    assert "list" in str(excinfo.value)
+
+
+def test_rejects_a_list_for_a_slot_of_a_class_without_list_slots() -> None:
+    chosen = CapabilitySelection(
+        name="ex/scale",
+        params={"factor": "ex/factor"},
+        consumes={"source": ("ex/source",)},
+        produces={"target": "ex/target"},
+    )
+
+    with pytest.raises(InvalidSelectionError) as excinfo:
+        build(chosen, given_kinds=kinds(source=cast(Any, (SOURCE,))))
+
+    assert_names(excinfo, "source")
+
+
+def test_rejects_an_identifier_listed_twice() -> None:
+    total = total_class()
+
+    with pytest.raises(InvalidSelectionError) as excinfo:
+        build_list(
+            total,
+            {"parts": ("ex/part_a", "ex/part_b", "ex/part_a")},
+            {"parts": (PART_A, PART_B, PART_A)},
+        )
+
+    assert_names_listing(excinfo, "parts")
+    assert "ex/part_a" in str(excinfo.value)
+
+
+def test_rejects_a_listed_kind_of_another_identifier_than_the_selection_names() -> None:
+    total = total_class()
+    elsewhere = ArtifactKind("ex/elsewhere", Decimal)
+
+    with pytest.raises(InvalidSelectionError) as excinfo:
+        build_list(total, {"parts": ("ex/part_a", "ex/part_b")}, {"parts": (PART_A, elsewhere)})
+
+    assert_names_listing(excinfo, "parts")
+    assert "ex/elsewhere" in str(excinfo.value)
+
+
+def test_rejects_listed_kinds_resolved_out_of_manifest_order() -> None:
+    total = total_class()
+
+    with pytest.raises(InvalidSelectionError) as excinfo:
+        build_list(total, {"parts": ("ex/part_a", "ex/part_b")}, {"parts": (PART_B, PART_A)})
+
+    assert_names_listing(excinfo, "parts")
+
+
+@pytest.mark.parametrize(
+    "resolved",
+    [
+        pytest.param((PART_A,), id="fewer"),
+        pytest.param((PART_A, PART_B, PART_C), id="more"),
+        pytest.param(PART_A, id="single-kind"),
+    ],
+)
+def test_rejects_a_list_slot_resolved_to_other_than_one_kind_per_identifier(
+    resolved: object,
+) -> None:
+    total = total_class()
+
+    with pytest.raises(InvalidSelectionError) as excinfo:
+        build_list(total, {"parts": ("ex/part_a", "ex/part_b")}, {"parts": resolved})
+
+    assert_names_listing(excinfo, "parts")
+
+
+def test_rejects_a_list_slot_without_a_resolved_kind() -> None:
+    total = total_class()
+
+    with pytest.raises(InvalidSelectionError) as excinfo:
+        build_list(total, {"parts": ("ex/part_a",)}, {})
+
+    assert_names_listing(excinfo, "parts")
+
+
+def test_a_listed_kind_of_the_wrong_value_type_is_the_constructors_error() -> None:
+    total = total_class()
+    wrong = ArtifactKind("ex/part_b", int)
+
+    with pytest.raises(InvalidCapabilityError, match=re.escape("'parts'")):
+        build_list(total, {"parts": ("ex/part_a", "ex/part_b")}, {"parts": (PART_A, wrong)})

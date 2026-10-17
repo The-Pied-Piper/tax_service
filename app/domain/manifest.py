@@ -20,17 +20,24 @@ class CapabilitySelection:
     """One capability chosen by a manifest, with its slots filled by identifier.
 
     `params` maps parameter slots to families; `consumes` and `produces` map artifact slots to
-    artifact identifiers. Each is kept as a read-only copy of what it was given.
+    artifact identifiers, and a consumed slot may instead map to a list of identifiers, kept in
+    order as a tuple. Each is kept as a read-only copy of what it was given.
     """
 
     name: str
     params: Mapping[str, str]
-    consumes: Mapping[str, str]
+    consumes: Mapping[str, str | tuple[str, ...]]
     produces: Mapping[str, str]
 
     def __post_init__(self) -> None:
-        for field in ("params", "consumes", "produces"):
+        for field in ("params", "produces"):
             object.__setattr__(self, field, MappingProxyType(dict(getattr(self, field))))
+        # A list of identifiers becomes a tuple, so the selection stays frozen and hashable.
+        consumes = {
+            slot: named if isinstance(named, str) else tuple(named)
+            for slot, named in self.consumes.items()
+        }
+        object.__setattr__(self, "consumes", MappingProxyType(consumes))
 
     def __hash__(self) -> int:
         """Hash by value, like the frozen dataclass it is; the read-only mappings are unhashable."""

@@ -146,3 +146,47 @@ def test_manifest_rejects_an_identifier_that_is_both_input_and_output() -> None:
             inputs=frozenset({"ex/taxable_base", "ex/levy"}),
             outputs=frozenset({"ex/levy"}),
         )
+
+
+# --- list slots: a consumed slot filled with a list of identifiers ------------------------------
+
+
+def listing(parts: Any) -> CapabilitySelection:
+    return CapabilitySelection(
+        name="ex/total_up",
+        params={},
+        consumes={"base": "ex/taxable_base", "parts": parts},
+        produces={"total": "ex/total"},
+    )
+
+
+def test_a_consumed_slot_may_hold_a_list_of_identifiers_kept_as_a_tuple() -> None:
+    chosen = listing(["ex/a", "ex/b", "ex/c"])
+
+    assert chosen.consumes == {"base": "ex/taxable_base", "parts": ("ex/a", "ex/b", "ex/c")}
+    assert isinstance(chosen.consumes["parts"], tuple)
+    assert isinstance(chosen.consumes["base"], str)
+
+
+def test_a_list_of_identifiers_keeps_its_order() -> None:
+    assert listing(["ex/c", "ex/a", "ex/b"]).consumes["parts"] == ("ex/c", "ex/a", "ex/b")
+
+
+def test_a_list_of_identifiers_may_be_empty() -> None:
+    assert listing([]).consumes["parts"] == ()
+
+
+def test_a_list_of_identifiers_is_copied_from_what_it_was_given() -> None:
+    parts = ["ex/a", "ex/b"]
+    chosen = listing(parts)
+
+    parts.append("ex/c")
+
+    assert chosen.consumes["parts"] == ("ex/a", "ex/b")
+
+
+def test_selections_with_list_slots_compare_and_hash_by_value() -> None:
+    assert listing(["ex/a", "ex/b"]) == listing(("ex/a", "ex/b"))
+    assert listing(["ex/a", "ex/b"]) != listing(["ex/b", "ex/a"])
+    assert hash(listing(["ex/a", "ex/b"])) == hash(listing(("ex/a", "ex/b")))
+    assert len({listing(["ex/a", "ex/b"]), listing(("ex/a", "ex/b"))}) == 1

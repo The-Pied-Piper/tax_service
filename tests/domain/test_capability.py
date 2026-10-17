@@ -19,6 +19,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable, Mapping
 from decimal import Decimal
+from functools import cache
 from types import MappingProxyType
 from typing import Any, assert_type, cast
 
@@ -607,3 +608,211 @@ def test_kinds_sharing_an_identifier_but_not_a_value_type_may_fill_two_slots() -
 
 def test_invalid_capability_is_a_domain_error() -> None:
     assert issubclass(InvalidCapabilityError, DomainError)
+
+
+# --- list slots: a consumed slot that takes a list of kinds of one value type ------------------
+#
+# The list-slot classes are defined inside cached factories, so a class definition the base
+# rejects fails the tests that use it rather than the collection of this whole module.
+
+PART_A = ArtifactKind("ex/part_a", Decimal)
+PART_B = ArtifactKind("ex/part_b", Decimal)
+PART_C = ArtifactKind("ex/part_c", Decimal)
+
+
+@cache
+def total_class() -> Any:
+    class Total(Capability):
+        """Produces `total` = the sum of its `parts`, each read with `_input`, in their order."""
+
+        CONSUMES = {"parts": list[Decimal]}
+        PRODUCES = {"total": Decimal}
+
+        def __init__(self, parts: tuple[Money, ...], total: Money) -> None:
+            super().__init__(parts=parts, total=total)
+            self.parts, self.total = parts, total
+
+        def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+            value = sum((self._input(inputs, kind).value for kind in self.parts), D(0))
+            return CapabilityResult(outputs=(Artifact(self.total, value),), trace=())
+
+        def read[V](self, inputs: tuple[Artifact[Any], ...], kind: ArtifactKind[V]) -> Artifact[V]:
+            return self._input(inputs, kind)
+
+    return Total
+
+
+@cache
+def adjusted_class() -> Any:
+    class Adjusted(Capability):
+        """Consumes a single `base` and a list of `parts`; produces `total`."""
+
+        CONSUMES = {"base": Decimal, "parts": list[Decimal]}
+        PRODUCES = {"total": Decimal}
+
+        def __init__(self, base: Money, parts: tuple[Money, ...], total: Money) -> None:
+            super().__init__(base=base, parts=parts, total=total)
+
+        def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+            return CapabilityResult(outputs=(), trace=())
+
+    return Adjusted
+
+
+def test_a_list_slot_is_declared_in_consumes_with_a_list_value_type() -> None:
+    total = total_class()
+
+    assert total.CONSUMES == {"parts": list[Decimal]}
+    assert total.PRODUCES == {"total": Decimal}
+    assert isinstance(total.CONSUMES, MappingProxyType)
+
+
+def test_single_and_list_consumed_slots_may_be_declared_together() -> None:
+    adjusted = adjusted_class()
+
+    assert adjusted.CONSUMES == {"base": Decimal, "parts": list[Decimal]}
+
+
+def test_rejects_a_list_slot_the_constructor_does_not_take() -> None:
+    with pytest.raises(InvalidCapabilityError, match="Typo.*'parts' is not a keyword parameter"):
+
+        class Typo(Bare):
+            CONSUMES = {"parts": list[Decimal]}
+
+            def __init__(self, part: tuple[Money, ...]) -> None:
+                self.part = part
+
+
+def test_rejects_a_list_slot_in_produces() -> None:
+    def init(self: Capability, totals: object) -> None:
+        pass
+
+    with pytest.raises(InvalidCapabilityError, match="Bad.*PRODUCES slot 'totals'"):
+        type("Bad", (Bare,), {"PRODUCES": {"totals": list[Decimal]}, "__init__": init})
+
+
+def test_a_list_slot_is_given_a_tuple_of_kinds_and_consumes_every_one() -> None:
+    total = total_class()((PART_A, PART_B, PART_C), OUT)
+
+    assert total.consumes == frozenset({PART_A, PART_B, PART_C})
+    assert total.produces == frozenset({OUT})
+
+
+def test_consumes_holds_the_single_slots_kind_and_every_listed_kind() -> None:
+    adjusted = adjusted_class()(IN, (PART_A, PART_B), OUT)
+
+    assert adjusted.consumes == frozenset({IN, PART_A, PART_B})
+    assert adjusted.produces == frozenset({OUT})
+
+
+def test_a_list_slot_may_be_given_no_kinds() -> None:
+    total = total_class()((), OUT)
+
+    assert total.consumes == frozenset()
+    assert total.compute(()).outputs == (Artifact(OUT, D(0)),)
+
+
+def test_a_list_slot_may_be_given_one_kind() -> None:
+    total = total_class()((PART_A,), OUT)
+
+    assert total.consumes == frozenset({PART_A})
+
+
+def test_input_reads_each_listed_part() -> None:
+    total = total_class()((PART_A, PART_B, PART_C), OUT)
+    inputs = (Artifact(PART_C, D(3)), Artifact(PART_A, D(1)), Artifact(PART_B, D(2)))
+
+    assert total.read(inputs, PART_A) == Artifact(PART_A, D(1))
+    assert total.read(inputs, PART_B) == Artifact(PART_B, D(2))
+    assert total.read(inputs, PART_C) == Artifact(PART_C, D(3))
+    assert total.compute(inputs).outputs == (Artifact(OUT, D(6)),)
+
+
+def test_input_refuses_a_kind_not_listed() -> None:
+    total = total_class()((PART_A, PART_B), OUT)
+
+    with pytest.raises(CapabilityContractError, match="Total does not consume 'part_c'"):
+        total.read((Artifact(PART_C, D(1)),), PART_C)
+
+
+@pytest.mark.parametrize(
+    "filler",
+    [
+        pytest.param([PART_A, PART_B], id="list"),
+        pytest.param(PART_A, id="single-kind"),
+        pytest.param("ex/part_a", id="identifier"),
+        pytest.param(None, id="none"),
+    ],
+)
+def test_rejects_a_list_slot_given_something_other_than_a_tuple(filler: object) -> None:
+    total = total_class()
+
+    with pytest.raises(InvalidCapabilityError, match="Total.*'parts'"):
+        total(filler, OUT)
+
+
+@pytest.mark.parametrize("element", ["ex/part_b", D(1), None])
+def test_rejects_a_listed_element_that_is_not_an_artifact_kind(element: object) -> None:
+    total = total_class()
+
+    with pytest.raises(InvalidCapabilityError, match="Total.*'parts'"):
+        total((PART_A, element), OUT)
+
+
+def test_rejects_a_listed_kind_of_another_value_type() -> None:
+    total = total_class()
+
+    with pytest.raises(InvalidCapabilityError, match="Total.*'parts'") as raised:
+        total((PART_A, ArtifactKind("ex/count", int)), OUT)
+
+    message = str(raised.value)
+    assert "'ex/count'" in message
+    assert "int" in message
+    assert "Decimal" in message
+
+
+def test_rejects_a_listed_kind_of_a_value_subtype() -> None:
+    total = total_class()
+
+    with pytest.raises(InvalidCapabilityError, match="Total.*'parts'") as raised:
+        total((PART_A, ArtifactKind("ex/cents", Cents)), OUT)
+
+    assert "Cents" in str(raised.value)
+
+
+def test_rejects_a_kind_listed_twice() -> None:
+    total = total_class()
+
+    with pytest.raises(InvalidCapabilityError, match="Total.*'parts'") as raised:
+        total((PART_A, PART_B, PART_A), OUT)
+
+    assert "'ex/part_a'" in str(raised.value)
+
+
+def test_rejects_a_listed_kind_equal_to_the_one_it_produces() -> None:
+    total = total_class()
+
+    with pytest.raises(InvalidCapabilityError, match="Total") as raised:
+        total((PART_A, OUT), OUT)
+
+    message = str(raised.value)
+    assert "'parts'" in message
+    assert "'total'" in message
+
+
+def test_rejects_a_listed_kind_that_also_fills_a_single_slot() -> None:
+    adjusted = adjusted_class()
+
+    with pytest.raises(InvalidCapabilityError, match="Adjusted") as raised:
+        adjusted(PART_A, (PART_B, PART_A), OUT)
+
+    message = str(raised.value)
+    assert "'base'" in message
+    assert "'parts'" in message
+
+
+def test_rejects_a_single_slot_given_a_tuple_of_kinds() -> None:
+    adjusted = adjusted_class()
+
+    with pytest.raises(InvalidCapabilityError, match="Adjusted.*'base'"):
+        adjusted((IN,), (PART_A,), OUT)

@@ -117,7 +117,14 @@ class YamlNode:
 
         Returns a new dict; raises YamlShapeError naming the first key or value that is not one.
         """
-        result: dict[str, str] = {}
+        return {key: value.require_non_empty_string() for key, value in self.fields()}
+
+    def fields(self) -> list[tuple[str, YamlNode]]:
+        """This mapping's keys, which must be non-empty strings, each with its value as a node.
+
+        Raises YamlShapeError if this node is not a mapping or naming the first bad key.
+        """
+        result: list[tuple[str, YamlNode]] = []
         for key in self._mapping():
             if not isinstance(key, str):
                 raise YamlShapeError(
@@ -125,11 +132,12 @@ class YamlNode:
                 )
             if not key:
                 raise YamlShapeError(f"{self._where}: keys must not be empty")
-            value = self.field(key)
-            result[key] = value.require_string()
-            if not result[key]:
-                raise YamlShapeError(f"{value.where} must not be empty")
+            result.append((key, self.field(key)))
         return result
+
+    def is_list(self) -> bool:
+        """Whether this node's value is a list."""
+        return isinstance(self._value, list)
 
     def items(self) -> list[YamlNode]:
         """The elements of this list, as nodes located at "where[0]", "where[1]", ...
@@ -148,6 +156,16 @@ class YamlNode:
         if not isinstance(self._value, str):
             raise YamlShapeError(f"{self._where} must be a string, got {self._type_name()}")
         return self._value
+
+    def require_non_empty_string(self) -> str:
+        """This node's value, which must be a non-empty string.
+
+        Raises YamlShapeError otherwise.
+        """
+        text = self.require_string()
+        if not text:
+            raise YamlShapeError(f"{self._where} must not be empty")
+        return text
 
     def require_integer(self) -> int:
         """This node's value, which must be an integer; booleans are rejected.

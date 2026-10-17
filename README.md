@@ -61,8 +61,9 @@ code (`CA-QC` -> `ca_qc`), and change:
 - `catalog.py`: `CATALOG`, an `ArtifactCatalog` for that namespace declaring the jurisdiction's
   artifact kinds. Declaring only records a kind; importing the package registers nothing.
 - `manifests/`: the manifest(s) selecting capabilities and filling their slots: parameter
-  slots with parameter families, artifact slots with artifact identifiers. Each manifest also
-  requires `inputs:` and `outputs:`, the artifact identifiers a computation starts from and returns.
+  slots with parameter families, artifact slots with artifact identifiers (a consumed list slot
+  takes a YAML list of them, in order). Each manifest also requires `inputs:` and `outputs:`,
+  the artifact identifiers a computation starts from and returns.
 - `parameters/`: one dataset per family and tax year, at `parameters/<family>/<year>.yaml`
   for family `<namespace>/<family>`.
 

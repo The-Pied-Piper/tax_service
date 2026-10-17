@@ -28,11 +28,9 @@ open-ended. Consequences:
 ## 2. Artifact model
 
 Ordering is expressed through **artifacts**, not capability-to-capability
-dependencies. Two kinds:
-
-### Spine artifacts
-Named intermediates with an external referent. Every artifact needs an
-external justification — a line in the law/worksheet it mirrors, or a
+dependencies. An artifact is a named intermediate with an external referent,
+produced by exactly one capability and consumed by any number. Every artifact
+needs an external justification — a line in the law/worksheet it mirrors, or a
 specific consumer contract it satisfies — and "it made the design cleaner"
 is neither. Example, from the Canadian pilot (UNVERIFIED — confirm line
 semantics against the T1 return):
@@ -55,28 +53,26 @@ Key facts driving this (UNVERIFIED, verify all):
 - Cross-phase consumption is routine (age amount consumes `net_income`;
   dividend tax credit keyed to grossed-up amount added on the income side).
 
-### Fold contributions
-Commutative deltas accumulating into a spine artifact (RRSP, union dues,
-child care → `net_income`). Sibling contributions are unordered **and must
-not matter**. Enforced by permutation tests: run sibling contributions in
-every order and require identical output. This catches a capability
-declared as a fold contribution whose result actually depends on order.
+### Totals
+A total (total income, total deductions → `net_income`) is an artifact like
+any other, produced by one generic sum capability (`core/sum`) over a **list
+slot**: a consume slot that takes several kinds of one value type. The
+manifest lists which lines make up the total, in the order the trace shows
+them; the engine knows only that it is adding amounts.
 
 ## 3. Capability contract
 
 ```
 capability:
   parameters:    {slot: parameter kind, ...}  # datasets it is built from
-  consumes:      {slot: value type, ...}      # spine reads
-  produces:      {slot: value type, ...}      # spine writes (new named artifact)
-  contributes_to: artifact                    # fold delta (commutative)
+  consumes:      {slot: value type, ...}      # reads; list[value type] = a list slot
+  produces:      {slot: value type, ...}      # writes (new named artifact)
 ```
 
-- Vocabulary is exactly: **consume / produce / contribute_to**.
+- Vocabulary is exactly: **consume / produce**.
   **"modify" does not exist.** A capability needing to see another's change
-  is a consumer producing a new spine artifact, not a modifier.
-- Ordering rule: for each artifact, **all contributions complete before any
-  consumer runs**.
+  is a consumer producing a new artifact, not a modifier.
+- Ordering rule: an artifact's **one producer runs before any consumer**.
 - Contract **shapes** are declared **in code**, next to the implementation
   that makes them true: each capability names its slots — parameter slots,
   each with a parameter kind, and artifact slots for what it consumes and
@@ -85,11 +81,18 @@ capability:
   and which artifacts fill those slots (§4); it never declares edges or
   order. The order is derived from what each selection consumes and
   produces (§5 — single source of dependency truth).
+- A slot holds one kind when the input has a role of its own that the
+  mechanism treats differently (`base`, `tax`, the two sides of a
+  subtraction). A slot holds a list when every input plays the same role
+  and the jurisdiction decides how many there are (the parts of a sum): the
+  only names left for them would be positional. A list is not "optional"
+  (every slot is filled, a list possibly with nothing) and not "mixed roles"
+  (a base plus any number of adjustments is one single slot and one list).
 - Capabilities are pure mechanism: no jurisdiction constants in code, ever.
   (Prior incident: engine silently US-shaped by agent priors. Same vector.)
 - Reuse across jurisdictions = a capability keyed to an artifact is
   indifferent to that artifact's provenance (brackets consume
-  `taxable_income` whether 12 contributions built it or 2).
+  `taxable_income` whether 12 parts built it or 2).
 
 ### Rounding
 
@@ -153,7 +156,7 @@ Rules:
 - No edges, no ordering, no conditionals, no expressions in YAML — the moment an `if`
   appears, the manifest is becoming an untyped programming language
   (the failure mode the zero-code rejection was meant to kill).
-  Conditionality lives inside capabilities (a capability may contribute zero).
+  Conditionality lives inside capabilities (a capability may produce zero).
 - Two version axes, independent:
   - **Manifests** version on structural change only (capability added or
     removed, composition changed). Each declares `valid_from_tax_year`
