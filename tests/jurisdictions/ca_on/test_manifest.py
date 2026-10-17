@@ -28,6 +28,7 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
     TOTAL_INCOME,
+    UNION_DUES,
 )
 from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX, ONTARIO_TAX_AFTER_CREDITS
 from app.main import build_tax_computation
@@ -52,7 +53,13 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert found.version == 1
     assert found.valid_from_tax_year == 2025
     assert found.inputs == frozenset(
-        {"ca/employment_income", "ca/capital_gain", "ca/rrsp_deduction", "ca/taxable_income"}
+        {
+            "ca/employment_income",
+            "ca/capital_gain",
+            "ca/rrsp_deduction",
+            "ca/union_dues",
+            "ca/taxable_income",
+        }
     )
     assert found.outputs == frozenset(
         {"ca/net_income", "ca/federal_tax_after_credits", "ca-on/ontario_tax_after_credits"}
@@ -74,7 +81,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
         CapabilitySelection(
             name="core/sum",
             params={},
-            consumes={"parts": ("ca/rrsp_deduction",)},
+            consumes={"parts": ("ca/rrsp_deduction", "ca/union_dues")},
             produces={"output": "ca/deductions_from_total_income"},
         ),
         CapabilitySelection(
@@ -126,7 +133,11 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({EMPLOYMENT_INCOME, TAXABLE_CAPITAL_GAINS}),
             frozenset({TOTAL_INCOME}),
         ),
-        (Sum, frozenset({RRSP_DEDUCTION}), frozenset({DEDUCTIONS_FROM_TOTAL_INCOME})),
+        (
+            Sum,
+            frozenset({RRSP_DEDUCTION, UNION_DUES}),
+            frozenset({DEDUCTIONS_FROM_TOTAL_INCOME}),
+        ),
         (
             SubtractNotBelowZero,
             frozenset({TOTAL_INCOME, DEDUCTIONS_FROM_TOTAL_INCOME}),

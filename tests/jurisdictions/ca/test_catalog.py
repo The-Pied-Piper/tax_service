@@ -26,6 +26,7 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
     TOTAL_INCOME,
+    UNION_DUES,
 )
 from app.registrations import JURISDICTIONS
 
@@ -36,6 +37,7 @@ REGISTERED = frozenset(
         "ca/taxable_capital_gains",
         "ca/total_income",
         "ca/rrsp_deduction",
+        "ca/union_dues",
         "ca/deductions_from_total_income",
         "ca/net_income",
         "ca/taxable_income",
@@ -72,6 +74,7 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/taxable_capital_gains") is TAXABLE_CAPITAL_GAINS
     assert registry.get("ca/total_income") is TOTAL_INCOME
     assert registry.get("ca/rrsp_deduction") is RRSP_DEDUCTION
+    assert registry.get("ca/union_dues") is UNION_DUES
     assert registry.get("ca/deductions_from_total_income") is DEDUCTIONS_FROM_TOTAL_INCOME
     assert registry.get("ca/net_income") is NET_INCOME
 
@@ -90,6 +93,7 @@ def test_catalog_kinds_are_money() -> None:
         TAXABLE_CAPITAL_GAINS,
         TOTAL_INCOME,
         RRSP_DEDUCTION,
+        UNION_DUES,
         DEDUCTIONS_FROM_TOTAL_INCOME,
         NET_INCOME,
     ):

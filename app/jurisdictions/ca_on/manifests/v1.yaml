@@ -12,6 +12,7 @@ inputs:
   - ca/employment_income
   - ca/capital_gain
   - ca/rrsp_deduction
+  - ca/union_dues
   - ca/taxable_income
 outputs:
   - ca/net_income
@@ -36,6 +37,7 @@ capabilities:
     consumes:
       parts:
         - ca/rrsp_deduction
+        - ca/union_dues
     produces:
       output: ca/deductions_from_total_income
   - name: core/subtract_not_below_zero

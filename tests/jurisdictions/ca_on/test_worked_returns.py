@@ -49,14 +49,15 @@ LOW_INCOME = """\
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
-  Employment income, net income and taxable income of 10000, no capital gain and no RRSP
-  deduction; each credit exceeds its tax, leaving zero.
+  Employment income, net income and taxable income of 10000, no capital gain, no RRSP
+  deduction and no union dues; each credit exceeds its tax, leaving zero.
 sources:
   - T1, Schedule 3 and ON428 arithmetic on the 2025 figures.
 inputs:
   ca/employment_income: "10000"
   ca/capital_gain: "0"
   ca/rrsp_deduction: "0"
+  ca/union_dues: "0"
   ca/taxable_income: "10000"
 expected:
   ca/taxable_capital_gains: "0"
