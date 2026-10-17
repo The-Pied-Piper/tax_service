@@ -19,15 +19,20 @@ from connexion.resolver import Resolver
 from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-import app.registrations  # noqa: F401  (imported so every registering decorator runs)
 from app.adapters.inbound.status_adapter import StatusRequestAdapter
 from app.adapters.inbound.widgets_adapter import WidgetsRequestAdapter
 from app.adapters.outbound.db import DatabaseProbe, create_engine
+from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
+from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.application.ports.health import NotReadyError
 from app.application.services.status_service import StatusService
+from app.application.services.tax_computation import TaxComputationService
 from app.application.services.widgets_service import WidgetsService
+from app.domain.artifact import ArtifactRegistry
+from app.domain.capability import CapabilityRegistry
 from app.domain.errors import ConflictError, DomainError, NotFoundError, ValidationError
 from app.generated.handlers import Adapters, build_operations
+from app.registrations import JURISDICTIONS  # importing it runs every registering decorator
 from app.settings import Settings
 
 SPEC_PATH = Path(__file__).resolve().parent.parent / "openapi" / "openapi.yml"
@@ -51,6 +56,20 @@ def build_adapters(settings: Settings, engine: AsyncEngine) -> Adapters:
     return Adapters(
         status=StatusRequestAdapter(StatusService(probes)),
         widgets=WidgetsRequestAdapter(WidgetsService()),
+    )
+
+
+def build_tax_computation() -> TaxComputationService:
+    """The tax computation over the jurisdiction packages' files and the shared registries.
+
+    No HTTP route uses it yet; the sources read files only when a computation asks.
+    """
+    roots = JURISDICTIONS.roots()
+    return TaxComputationService(
+        YamlJurisdictionSource(roots),
+        YamlParameterSource(roots),
+        CapabilityRegistry.shared(),
+        ArtifactRegistry.shared(),
     )
 
 

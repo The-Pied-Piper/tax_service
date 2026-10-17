@@ -1,0 +1,462 @@
+"""Unit tests for TaxComputationService: a jurisdiction's manifest built into a composition, run.
+
+The service does the I/O only: it reads the jurisdiction, takes the manifest for the tax year,
+resolves each selection's class, datasets and kinds from the ports and registries it was given,
+has `CapabilityBuilder` build each capability, and builds the `Composition`. Resolution errors
+propagate unchanged. The ports are small in-memory fakes and the registries private ones; every
+code, capability, kind and dataset is made up.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+from dataclasses import dataclass
+from decimal import Decimal
+from typing import Any, ClassVar, assert_type
+
+import pytest
+
+from app.application.ports.jurisdiction_source import JurisdictionSource
+from app.application.ports.parameter_source import ParameterSource
+from app.application.services.tax_computation import TaxComputationService
+from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry, Money
+from app.domain.capability import Capability, CapabilityRegistry, CapabilityResult, TraceLine
+from app.domain.composition import Composition
+from app.domain.errors import (
+    InvalidCompositionError,
+    InvalidParameterDataError,
+    InvalidRegistrationError,
+    InvalidSelectionError,
+    NotFoundError,
+    UnknownRegistrationError,
+)
+from app.domain.jurisdiction import Jurisdiction
+from app.domain.jurisdiction_code import JurisdictionCode
+from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.parameters.datasets import ParameterDataset
+from app.domain.parameters.kind import ParameterKind
+from app.domain.parameters.rounding import NO_ROUNDING
+from app.domain.worksheet import Worksheet
+
+D = Decimal
+EX_ON = JurisdictionCode("EX-ON")
+
+
+@dataclass(frozen=True)
+class Factor:
+    """A made-up parameter: a multiplier."""
+
+    value: Decimal
+
+
+@dataclass(frozen=True)
+class Offset:
+    """A made-up parameter: an amount added."""
+
+    value: Decimal
+
+
+FACTOR = ParameterKind("factor", Factor)
+OFFSET = ParameterKind("offset", Offset)
+
+BASE = ArtifactKind("ex/base", Decimal)
+SCALED = ArtifactKind("ex/scaled", Decimal)
+RESULT = ArtifactKind("ex-on/result", Decimal)
+EXTRA = ArtifactKind("ex/extra", Decimal)
+
+
+class Scale(Capability):
+    """Produces `target` = `source` × the `factor` dataset's value."""
+
+    PARAMETERS: ClassVar[Mapping[str, ParameterKind[Any]]] = {"factor": FACTOR}
+    CONSUMES: ClassVar[Mapping[str, type]] = {"source": Decimal}
+    PRODUCES: ClassVar[Mapping[str, type]] = {"target": Decimal}
+
+    def __init__(self, source: Money, target: Money, factor: ParameterDataset[Factor]) -> None:
+        super().__init__(source=source, target=target)
+        self._source, self._target, self._factor = source, target, factor
+
+    def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+        value = self._input(inputs, self._source).value * self._factor.values.value
+        return CapabilityResult(
+            outputs=(Artifact(self._target, value),), trace=(TraceLine("scaled", value),)
+        )
+
+
+class Shift(Capability):
+    """Produces `target` = `source` + the `offset` dataset's value."""
+
+    PARAMETERS: ClassVar[Mapping[str, ParameterKind[Any]]] = {"offset": OFFSET}
+    CONSUMES: ClassVar[Mapping[str, type]] = {"source": Decimal}
+    PRODUCES: ClassVar[Mapping[str, type]] = {"target": Decimal}
+
+    def __init__(self, source: Money, target: Money, offset: ParameterDataset[Offset]) -> None:
+        super().__init__(source=source, target=target)
+        self._source, self._target, self._offset = source, target, offset
+
+    def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+        value = self._input(inputs, self._source).value + self._offset.values.value
+        return CapabilityResult(
+            outputs=(Artifact(self._target, value),), trace=(TraceLine("shifted", value),)
+        )
+
+
+class FakeJurisdictions:
+    """An in-memory JurisdictionSource holding the given jurisdictions."""
+
+    def __init__(self, *jurisdictions: Jurisdiction) -> None:
+        self._by_code = {jurisdiction.code: jurisdiction for jurisdiction in jurisdictions}
+
+    def get_jurisdiction(self, code: JurisdictionCode) -> Jurisdiction:
+        if code not in self._by_code:
+            raise NotFoundError(f"no jurisdiction {code}")
+        return self._by_code[code]
+
+
+class FakeParameters:
+    """An in-memory ParameterSource holding datasets by (family, tax year); records each request.
+
+    Like the port's contract asks, a dataset of another kind than the one asked for is an error.
+    """
+
+    def __init__(self, *datasets: ParameterDataset[Any]) -> None:
+        self._by_key = {(dataset.family, dataset.tax_year): dataset for dataset in datasets}
+        self.requests: list[tuple[str, int, ParameterKind[Any]]] = []
+
+    def get[T](self, family: str, tax_year: int, kind: ParameterKind[T]) -> ParameterDataset[T]:
+        self.requests.append((family, tax_year, kind))
+        if (family, tax_year) not in self._by_key:
+            raise NotFoundError(f"no {family} dataset for tax year {tax_year}")
+        found: ParameterDataset[Any] = self._by_key[(family, tax_year)]
+        if found.kind != kind:
+            raise InvalidParameterDataError(
+                f"{family} for tax year {tax_year} is a {found.kind.name} dataset, not {kind.name}"
+            )
+        return found
+
+
+def dataset[T](
+    family: str, kind: ParameterKind[T], values: T, tax_year: int = 2025
+) -> ParameterDataset[T]:
+    return ParameterDataset(
+        family=family,
+        tax_year=tax_year,
+        kind=kind,
+        values=values,
+        rounding=NO_ROUNDING,
+        sources=(f"https://example.org/{family}",),
+    )
+
+
+def factor_data(tax_year: int = 2025) -> ParameterDataset[Factor]:
+    return dataset("ex/factor", FACTOR, Factor(D("3")), tax_year)
+
+
+def offset_data(tax_year: int = 2025) -> ParameterDataset[Offset]:
+    return dataset("ex-on/offset", OFFSET, Offset(D("1")), tax_year)
+
+
+SCALE = CapabilitySelection(
+    name="ex/scale",
+    params={"factor": "ex/factor"},
+    consumes={"source": "ex/base"},
+    produces={"target": "ex/scaled"},
+)
+SHIFT = CapabilitySelection(
+    name="ex/shift",
+    params={"offset": "ex-on/offset"},
+    consumes={"source": "ex/scaled"},
+    produces={"target": "ex-on/result"},
+)
+
+
+def manifest(
+    *selections: CapabilitySelection,
+    inputs: frozenset[str] = frozenset({"ex/base"}),
+    outputs: frozenset[str] = frozenset({"ex-on/result"}),
+    version: int = 1,
+    valid_from_tax_year: int = 2025,
+) -> Manifest:
+    return Manifest(
+        jurisdiction=EX_ON,
+        version=version,
+        valid_from_tax_year=valid_from_tax_year,
+        capabilities=selections or (SHIFT, SCALE),  # authored out of order on purpose
+        inputs=inputs,
+        outputs=outputs,
+    )
+
+
+def capability_registry() -> CapabilityRegistry:
+    registry = CapabilityRegistry()
+    registry.register("ex/scale", Scale)
+    registry.register("ex/shift", Shift)
+    return registry
+
+
+def artifact_registry() -> ArtifactRegistry:
+    registry = ArtifactRegistry()
+    for kind in (BASE, SCALED, RESULT, EXTRA):
+        registry.register(kind.identifier, kind)
+    return registry
+
+
+def service(
+    *manifests: Manifest,
+    parameters: ParameterSource | None = None,
+    capabilities: CapabilityRegistry | None = None,
+    artifacts: ArtifactRegistry | None = None,
+) -> TaxComputationService:
+    jurisdictions: JurisdictionSource = FakeJurisdictions(
+        Jurisdiction(code=EX_ON, manifests=manifests or (manifest(),))
+    )
+    return TaxComputationService(
+        jurisdictions,
+        parameters if parameters is not None else FakeParameters(factor_data(), offset_data()),
+        capabilities if capabilities is not None else capability_registry(),
+        artifacts if artifacts is not None else artifact_registry(),
+    )
+
+
+def test_computes_a_manifest_end_to_end() -> None:
+    worksheet = service().compute(EX_ON, 2025, Artifact(BASE, D("5")))
+
+    assert_type(worksheet, Worksheet)
+    assert worksheet.get(SCALED).value == D("15")
+    assert worksheet.get(RESULT).value == D("16")
+    assert isinstance(worksheet.producer_of(SCALED), Scale)
+    assert isinstance(worksheet.producer_of(RESULT), Shift)
+    assert worksheet.producer_of(BASE) is None
+    assert [line.description for line in worksheet.trace] == ["scaled", "shifted"]
+
+
+def test_composes_the_manifests_selections_in_contract_order() -> None:
+    composition = service().compose(EX_ON, 2025)
+
+    assert_type(composition, Composition)
+    assert [type(capability) for capability in composition.order] == [Scale, Shift]
+    scale, shift = composition.order
+    assert scale.consumes == frozenset({BASE}) and scale.produces == frozenset({SCALED})
+    assert shift.consumes == frozenset({SCALED}) and shift.produces == frozenset({RESULT})
+
+
+def test_compose_is_deterministic() -> None:
+    computation = service()
+
+    first = computation.compose(EX_ON, 2025).order
+    second = computation.compose(EX_ON, 2025).order
+
+    def shape(order: tuple[Capability, ...]) -> list[tuple[type, frozenset[Any], frozenset[Any]]]:
+        return [(type(c), c.consumes, c.produces) for c in order]
+
+    assert shape(first) == shape(second)
+
+
+def test_the_composition_takes_and_returns_the_manifests_inputs_and_outputs() -> None:
+    composition = service().compose(EX_ON, 2025)
+
+    with pytest.raises(InvalidCompositionError, match="missing input 'base'"):
+        composition.compute()
+    with pytest.raises(InvalidCompositionError, match="'scaled' is not an input"):
+        composition.compute(Artifact(BASE, D("5")), Artifact(SCALED, D("1")))
+
+
+def test_uses_the_manifest_for_the_tax_year_and_that_years_datasets() -> None:
+    later = manifest(SCALE, outputs=frozenset({"ex/scaled"}), version=2, valid_from_tax_year=2027)
+    parameters = FakeParameters(factor_data(2026), offset_data(2026), factor_data(2027))
+
+    computation = service(manifest(), later, parameters=parameters)
+
+    assert [type(c) for c in computation.compose(EX_ON, 2026).order] == [Scale, Shift]
+    assert [type(c) for c in computation.compose(EX_ON, 2027).order] == [Scale]
+    assert ("ex/factor", 2026, FACTOR) in parameters.requests
+    assert ("ex-on/offset", 2026, OFFSET) in parameters.requests
+    assert all(year != 2025 for _family, year, _kind in parameters.requests)
+
+
+def test_asks_for_each_dataset_with_its_slots_kind() -> None:
+    parameters = FakeParameters(factor_data(), offset_data())
+
+    service(parameters=parameters).compose(EX_ON, 2025)
+
+    assert sorted(parameters.requests, key=lambda request: request[0]) == [
+        ("ex-on/offset", 2025, OFFSET),
+        ("ex/factor", 2025, FACTOR),
+    ]
+
+
+def test_resolves_through_the_registries_it_was_given_not_the_shared_ones() -> None:
+    assert "ex/scale" not in CapabilityRegistry.shared().identifiers()
+    assert "ex/base" not in ArtifactRegistry.shared().identifiers()
+
+    assert len(service().compose(EX_ON, 2025).order) == 2
+
+
+def test_an_unknown_jurisdiction_is_not_found() -> None:
+    with pytest.raises(NotFoundError, match="EX-ZZ"):
+        service().compose(JurisdictionCode("EX-ZZ"), 2025)
+
+
+def test_a_tax_year_before_every_manifest_is_not_found() -> None:
+    with pytest.raises(NotFoundError, match="2024"):
+        service().compose(EX_ON, 2024)
+
+
+def test_an_unknown_capability_name_is_an_unknown_registration() -> None:
+    unknown = CapabilitySelection(
+        name="ex/nowhere",
+        params={},
+        consumes={"source": "ex/base"},
+        produces={"target": "ex/scaled"},
+    )
+
+    with pytest.raises(UnknownRegistrationError, match="'ex/nowhere'"):
+        service(manifest(unknown, SHIFT)).compose(EX_ON, 2025)
+
+
+@pytest.mark.parametrize(
+    "selections",
+    [
+        pytest.param(
+            (
+                CapabilitySelection(
+                    name="ex/scale",
+                    params={"factor": "ex/factor"},
+                    consumes={"source": "ex/nowhere"},
+                    produces={"target": "ex/scaled"},
+                ),
+                SHIFT,
+            ),
+            id="consumed",
+        ),
+        pytest.param(
+            (
+                SCALE,
+                CapabilitySelection(
+                    name="ex/shift",
+                    params={"offset": "ex-on/offset"},
+                    consumes={"source": "ex/scaled"},
+                    produces={"target": "ex/nowhere"},
+                ),
+            ),
+            id="produced",
+        ),
+    ],
+)
+def test_an_unknown_artifact_identifier_in_a_selection_is_an_unknown_registration(
+    selections: tuple[CapabilitySelection, ...],
+) -> None:
+    with pytest.raises(UnknownRegistrationError, match="'ex/nowhere'"):
+        service(manifest(*selections)).compose(EX_ON, 2025)
+
+
+@pytest.mark.parametrize(
+    ("inputs", "outputs"),
+    [
+        pytest.param(frozenset({"ex/nowhere"}), frozenset({"ex-on/result"}), id="input"),
+        pytest.param(frozenset({"ex/base"}), frozenset({"ex/nowhere"}), id="output"),
+    ],
+)
+def test_an_unknown_input_or_output_identifier_is_an_unknown_registration(
+    inputs: frozenset[str], outputs: frozenset[str]
+) -> None:
+    with pytest.raises(UnknownRegistrationError, match="'ex/nowhere'"):
+        service(manifest(inputs=inputs, outputs=outputs)).compose(EX_ON, 2025)
+
+
+def test_a_missing_dataset_is_not_found() -> None:
+    parameters = FakeParameters(factor_data())
+
+    with pytest.raises(NotFoundError, match="ex-on/offset"):
+        service(parameters=parameters).compose(EX_ON, 2025)
+
+
+def test_a_dataset_of_the_wrong_kind_is_the_parameter_sources_error() -> None:
+    wrong = dataset("ex/factor", OFFSET, Offset(D("3")))
+    parameters = FakeParameters(wrong, offset_data())
+
+    with pytest.raises(InvalidParameterDataError, match="ex/factor"):
+        service(parameters=parameters).compose(EX_ON, 2025)
+
+
+@pytest.mark.parametrize(
+    ("params", "slot"),
+    [
+        pytest.param({"factor": "ex/factor", "bonus": "ex/bonus"}, "bonus", id="undeclared-key"),
+        pytest.param({"factor": "ex/factor", "source": "ex/base"}, "source", id="artifact-slot"),
+    ],
+)
+def test_a_params_key_that_is_not_a_parameter_slot_is_an_invalid_selection(
+    params: dict[str, str], slot: str
+) -> None:
+    misfilled = CapabilitySelection(
+        name="ex/scale",
+        params=params,
+        consumes={"source": "ex/base"},
+        produces={"target": "ex/scaled"},
+    )
+    parameters = FakeParameters(factor_data(), offset_data())
+
+    with pytest.raises(InvalidSelectionError, match=repr(slot)):
+        service(manifest(misfilled, SHIFT), parameters=parameters).compose(EX_ON, 2025)
+    assert all(family != params[slot] for family, _year, _kind in parameters.requests)
+
+
+def test_a_selection_filling_the_wrong_slots_is_an_invalid_selection() -> None:
+    misfilled = CapabilitySelection(
+        name="ex/scale",
+        params={"factor": "ex/factor"},
+        consumes={"input": "ex/base"},
+        produces={"target": "ex/scaled"},
+    )
+
+    with pytest.raises(InvalidSelectionError, match="'input'"):
+        service(manifest(misfilled, SHIFT)).compose(EX_ON, 2025)
+
+
+@pytest.mark.parametrize(
+    ("inputs", "outputs", "message"),
+    [
+        pytest.param(
+            frozenset({"ex/base", "ex/scaled"}),
+            frozenset({"ex-on/result"}),
+            "input 'scaled' is also produced by Scale",
+            id="input-also-produced",
+        ),
+        pytest.param(
+            frozenset({"ex/base"}),
+            frozenset({"ex/scaled"}),
+            "orphan output 'result'",
+            id="undeclared-output",
+        ),
+        pytest.param(
+            frozenset({"ex/base", "ex/extra"}),
+            frozenset({"ex-on/result"}),
+            "input 'extra' is consumed by nothing",
+            id="unused-input",
+        ),
+        pytest.param(
+            frozenset({"ex/base"}),
+            frozenset({"ex-on/result", "ex/extra"}),
+            "declared output 'extra' is produced by nothing",
+            id="unproduced-output",
+        ),
+    ],
+)
+def test_inputs_or_outputs_the_composition_rejects_are_an_invalid_composition(
+    inputs: frozenset[str], outputs: frozenset[str], message: str
+) -> None:
+    with pytest.raises(InvalidCompositionError, match=message):
+        service(manifest(inputs=inputs, outputs=outputs)).compose(EX_ON, 2025)
+
+
+def test_an_identifier_registered_as_something_other_than_a_kind_is_an_invalid_registration() -> (
+    None
+):
+    artifacts = artifact_registry()
+    artifacts.register("ex/stray", object())
+
+    with pytest.raises(InvalidRegistrationError, match="'ex/stray'.*not as an artifact kind"):
+        service(
+            manifest(outputs=frozenset({"ex-on/result", "ex/stray"})), artifacts=artifacts
+        ).compose(EX_ON, 2025)

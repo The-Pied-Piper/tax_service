@@ -6,7 +6,9 @@ code lower-cased (`EX-ON` -> `ex-on`, `EX` -> `ex`), and its manifests are every
 
 Each selection names a capability and fills its slots: `params` (slot -> family, optional),
 `consumes` (slot -> artifact identifier, optional) and `produces` (slot -> artifact identifier,
-required). Slot names are not checked against capability classes here.
+required). Slot names are not checked against capability classes here. The top-level `inputs` and
+`outputs` list the computation's artifact identifiers: both required, non-empty lists of non-empty
+strings without duplicates, and no identifier in both.
 """
 
 from __future__ import annotations
@@ -31,6 +33,12 @@ EX_ON_V1 = """\
 jurisdiction: EX-ON
 version: 1
 valid_from_tax_year: 2025
+inputs:
+  - ex/gross_income
+  - ex/taxable_base
+outputs:
+  - ex/savings_deduction
+  - ex-on/levy
 capabilities:
   - name: ex/savings_deduction
     params:
@@ -47,6 +55,15 @@ capabilities:
       base: ex/taxable_base
     produces:
       output: ex-on/levy
+"""
+
+
+HEADER = """\
+jurisdiction: EX-ON
+version: 1
+valid_from_tax_year: 2025
+inputs: [ex/x]
+outputs: [ex/y]
 """
 
 
@@ -78,6 +95,8 @@ def test_parses_manifest_into_domain_objects(tmp_path: Path) -> None:
                 jurisdiction=EX_ON,
                 version=1,
                 valid_from_tax_year=2025,
+                inputs=frozenset({"ex/gross_income", "ex/taxable_base"}),
+                outputs=frozenset({"ex/savings_deduction", "ex-on/levy"}),
                 capabilities=(
                     CapabilitySelection(
                         name="ex/savings_deduction",
@@ -105,6 +124,8 @@ def test_preserves_authored_capability_order(tmp_path: Path) -> None:
         jurisdiction: EX-ON
         version: 1
         valid_from_tax_year: 2025
+        inputs: [ex/x]
+        outputs: [ex/y]
         capabilities:
           - {name: ex/c, produces: {output: ex/c}}
           - {name: ex/a, produces: {output: ex/a}}
@@ -125,6 +146,8 @@ def test_allows_same_capability_with_different_bindings(tmp_path: Path) -> None:
         jurisdiction: EX-ON
         version: 1
         valid_from_tax_year: 2025
+        inputs: [ex/x]
+        outputs: [ex/y]
         capabilities:
           - name: ex/progressive_tax
             params: {schedule: ex/brackets}
@@ -157,6 +180,8 @@ def test_params_and_consumes_may_be_omitted(tmp_path: Path) -> None:
         jurisdiction: EX-ON
         version: 1
         valid_from_tax_year: 2025
+        inputs: [ex/x]
+        outputs: [ex/y]
         capabilities:
           - name: ex/flat_grant
             produces:
@@ -432,12 +457,12 @@ def test_one_bad_file_fails_the_whole_load(tmp_path: Path) -> None:
             id="jurisdiction-malformed-code",
         ),
         pytest.param(
-            "jurisdiction: EX-ON\nversion: 1\nvalid_from_tax_year: 2025\ncapabilities: x\n",
+            HEADER + "capabilities: x\n",
             "capabilities must be a list",
             id="capabilities-not-list",
         ),
         pytest.param(
-            "jurisdiction: EX-ON\nversion: 1\nvalid_from_tax_year: 2025\ncapabilities: [x]\n",
+            HEADER + "capabilities: [x]\n",
             r"capabilities\[0\] must be a mapping",
             id="capability-not-mapping",
         ),
@@ -445,6 +470,72 @@ def test_one_bad_file_fails_the_whole_load(tmp_path: Path) -> None:
             EX_ON_V1.replace("name: ex/savings_deduction", "name: 7"),
             r"capabilities\[0\].name must be a string, got int",
             id="capability-name-int",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("inputs:\n  - ex/gross_income\n  - ex/taxable_base\n", ""),
+            r"missing keys \['inputs'\]",
+            id="missing-inputs",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("outputs:\n  - ex/savings_deduction\n  - ex-on/levy\n", ""),
+            r"missing keys \['outputs'\]",
+            id="missing-outputs",
+        ),
+        pytest.param(
+            EX_ON_V1.replace(
+                "inputs:\n  - ex/gross_income\n  - ex/taxable_base\n", "inputs: ex/gross_income\n"
+            ),
+            "inputs must be a list",
+            id="inputs-not-list",
+        ),
+        pytest.param(
+            EX_ON_V1.replace(
+                "outputs:\n  - ex/savings_deduction\n  - ex-on/levy\n", "outputs: {a: ex/levy}\n"
+            ),
+            "outputs must be a list",
+            id="outputs-not-list",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("inputs:\n  - ex/gross_income\n  - ex/taxable_base\n", "inputs: []\n"),
+            "inputs must name at least one artifact",
+            id="inputs-empty",
+        ),
+        pytest.param(
+            EX_ON_V1.replace(
+                "outputs:\n  - ex/savings_deduction\n  - ex-on/levy\n", "outputs: []\n"
+            ),
+            "outputs must name at least one artifact",
+            id="outputs-empty",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("inputs:\n  - ex/gross_income\n", "inputs:\n  - 7\n"),
+            r"inputs\[0\] must be a string, got int",
+            id="input-int",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("  - ex-on/levy\n", "  - null\n"),
+            r"outputs\[1\] must be a string, got NoneType",
+            id="output-null",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("inputs:\n  - ex/gross_income\n", 'inputs:\n  - ""\n'),
+            r"inputs\[0\] must not be empty",
+            id="input-empty-string",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("  - ex/taxable_base\n", "  - ex/gross_income\n"),
+            r"inputs\[1\]: 'ex/gross_income' is listed more than once",
+            id="input-duplicate",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("  - ex-on/levy\n", "  - ex/savings_deduction\n"),
+            r"outputs\[1\]: 'ex/savings_deduction' is listed more than once",
+            id="output-duplicate",
+        ),
+        pytest.param(
+            EX_ON_V1.replace("  - ex-on/levy\n", "  - ex/taxable_base\n"),
+            "'ex/taxable_base' is both an input and an output",
+            id="input-also-output",
         ),
     ],
 )

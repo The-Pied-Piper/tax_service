@@ -2,7 +2,7 @@
 
 A manifest selects capabilities and fills their slots (design.md §4): parameter slots with
 families, artifact slots with artifact identifiers. The slots themselves are declared in code.
-Plain attributes for now; behavior comes later.
+A manifest also declares the computation's inputs and outputs by artifact identifier.
 """
 
 from __future__ import annotations
@@ -11,6 +11,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
 
+from app.domain.errors import InvalidManifestError
 from app.domain.jurisdiction_code import JurisdictionCode
 
 
@@ -41,10 +42,22 @@ class CapabilitySelection:
 class Manifest:
     """One structural version of a jurisdiction's composition.
 
-    `capabilities` keeps the authored order, which is advisory only.
+    `capabilities` keeps the authored order, which is advisory only. `inputs` and `outputs` are
+    the identifiers of the artifacts a computation starts from and returns: each non-empty, and
+    no identifier in both.
     """
 
     jurisdiction: JurisdictionCode
     version: int
     valid_from_tax_year: int
     capabilities: tuple[CapabilitySelection, ...]
+    inputs: frozenset[str]
+    outputs: frozenset[str]
+
+    def __post_init__(self) -> None:
+        for field in ("inputs", "outputs"):
+            if not getattr(self, field):
+                raise InvalidManifestError(f"{field} must name at least one artifact")
+        both = self.inputs & self.outputs
+        if both:
+            raise InvalidManifestError(f"{min(both)!r} is both an input and an output")

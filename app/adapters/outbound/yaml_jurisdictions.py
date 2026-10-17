@@ -7,6 +7,8 @@ another jurisdiction is rejected.
 Each selection names a capability and fills its slots: `params` (slot -> family, optional),
 `consumes` (slot -> artifact identifier, optional) and `produces` (slot -> artifact identifier,
 required, at least one). Slot names are not checked against capability classes here.
+The top-level `inputs` and `outputs` list the computation's artifact identifiers: both required,
+non-empty lists of non-empty strings without duplicates, and no identifier in both.
 Parsing is strict because a manifest must stay selection plus slot bindings
 (design.md §4): unknown keys, duplicate keys and wrongly typed values are
 rejected with the offending file named, never coerced or ignored.
@@ -30,7 +32,9 @@ from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Manifest
 from app.domain.registry import Namespace
 
-_MANIFEST_KEYS = frozenset({"jurisdiction", "version", "valid_from_tax_year", "capabilities"})
+_MANIFEST_KEYS = frozenset(
+    {"jurisdiction", "version", "valid_from_tax_year", "inputs", "outputs", "capabilities"}
+)
 _CAPABILITY_KEYS = frozenset({"name", "produces"})
 _OPTIONAL_CAPABILITY_KEYS = frozenset({"params", "consumes"})
 
@@ -97,7 +101,22 @@ class YamlJurisdictionSource:
             capabilities=tuple(
                 cls._selection(entry) for entry in doc.field("capabilities").items()
             ),
+            inputs=cls._identifiers(doc.field("inputs")),
+            outputs=cls._identifiers(doc.field("outputs")),
         )
+
+    @staticmethod
+    def _identifiers(node: YamlNode) -> frozenset[str]:
+        """A list of non-empty identifiers, none repeated; an empty list is Manifest's check."""
+        identifiers: set[str] = set()
+        for item in node.items():
+            identifier = item.require_string()
+            if not identifier:
+                raise YamlShapeError(f"{item.where} must not be empty")
+            if identifier in identifiers:
+                raise YamlShapeError(f"{item.where}: {identifier!r} is listed more than once")
+            identifiers.add(identifier)
+        return frozenset(identifiers)
 
     @classmethod
     def _selection(cls, entry: YamlNode) -> CapabilitySelection:
