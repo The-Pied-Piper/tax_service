@@ -49,8 +49,9 @@ LOW_INCOME = """\
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
-  Employment income, net income and taxable income of 10000, no capital gain, no RRSP
-  deduction and no union dues; each credit exceeds its tax, leaving zero.
+  Employment income of 10000, no capital gain, no RRSP deduction, no union dues and no
+  deductions from net income, so net income and taxable income of 10000; each credit
+  exceeds its tax, leaving zero.
 sources:
   - T1, Schedule 3 and ON428 arithmetic on the 2025 figures.
 inputs:
@@ -58,12 +59,13 @@ inputs:
   ca/capital_gain: "0"
   ca/rrsp_deduction: "0"
   ca/union_dues: "0"
-  ca/taxable_income: "10000"
 expected:
   ca/taxable_capital_gains: "0"
   ca/total_income: "10000"
   ca/deductions_from_total_income: "0"
   ca/net_income: "10000"
+  ca/deductions_from_net_income: "0"
+  ca/taxable_income: "10000"
   ca/federal_basic_tax: "1450"
   ca/federal_tax_after_credits: "0"
   ca-on/ontario_basic_tax: "505"

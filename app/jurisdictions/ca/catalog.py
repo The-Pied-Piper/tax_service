@@ -55,8 +55,21 @@ Line 54 (23400) is "Line 34 minus line 53 (if negative, show in brackets) Net in
 adjustments"; line 55 (23500, social benefits repayment) is not modelled.
 """
 
+DEDUCTIONS_FROM_NET_INCOME = CATALOG.declare("deductions_from_net_income", Decimal)
+"""Deductions from net income, T1 line 25700 "Add lines 58 to 67": the sum of the deductions
+from net income, lines 58 to 67 (lines 24400 to 25600).
+
+None of those deductions is modelled yet, so the sum has no parts.
+"""
+
 TAXABLE_INCOME = CATALOG.declare("taxable_income", Decimal)
-"""Taxable income, T1 line 26000: the base the federal and Ontario brackets apply to."""
+"""Taxable income, T1 line 69 "Line 57 minus line 68 (if negative, enter "0") Taxable income"
+(line 26000, as Step 5 refers to it): net income less the deductions from net income, not below
+zero; the base the federal and Ontario brackets apply to.
+
+Line 57 is "Enter the amount from line 56 of the previous page" (net income); line 68 (25700) is
+"Add lines 58 to 67".
+"""
 
 FEDERAL_BASIC_TAX = CATALOG.declare("federal_basic_tax", Decimal)
 """Federal tax on taxable income from the bracket schedule, before non-refundable credits.

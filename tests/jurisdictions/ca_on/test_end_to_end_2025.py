@@ -3,9 +3,10 @@
 The service is the one the composition root builds (`build_tax_computation`): the real YAML
 sources over the jurisdiction packages and the shared registries. Return A's amounts (employment
 income 110000 and a capital gain of 20000 to total income 120000, less an RRSP deduction of 3000
-and union dues of 2000 to net income 115000; taxable income 115000 through each tax after credits)
-are checked from the files under `returns/` by `test_worked_returns.py`; this module pins which
-capability produces each line, the order, and the trace that explains them.
+and union dues of 2000 to net income 115000, less no deductions from net income to taxable income
+115000, through each tax after credits) are checked from the files under `returns/` by
+`test_worked_returns.py`; this module pins which capability produces each line, the order, and
+the trace that explains them.
 """
 
 from __future__ import annotations
@@ -33,6 +34,7 @@ from app.domain.trace import (
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     CAPITAL_GAIN,
+    DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
@@ -56,11 +58,7 @@ def service() -> TaxComputationService:
 
 
 def compute(
-    employment_income: str,
-    capital_gain: str,
-    rrsp_deduction: str,
-    union_dues: str,
-    taxable_income: str,
+    employment_income: str, capital_gain: str, rrsp_deduction: str, union_dues: str
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -69,13 +67,12 @@ def compute(
         Artifact(CAPITAL_GAIN, D(capital_gain)),
         Artifact(RRSP_DEDUCTION, D(rrsp_deduction)),
         Artifact(UNION_DUES, D(union_dues)),
-        Artifact(TAXABLE_INCOME, D(taxable_income)),
     )
 
 
 def return_a() -> Worksheet:
     """Return A's inputs, as in `returns/2025_return_a.yaml`."""
-    return compute("110000", "20000", "3000", "2000", "115000")
+    return compute("110000", "20000", "3000", "2000")
 
 
 def test_each_amount_is_produced_by_its_capability() -> None:
@@ -85,12 +82,20 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(CAPITAL_GAIN) is None
     assert worksheet.producer_of(RRSP_DEDUCTION) is None
     assert worksheet.producer_of(UNION_DUES) is None
-    assert worksheet.producer_of(TAXABLE_INCOME) is None
     assert isinstance(worksheet.producer_of(TAXABLE_CAPITAL_GAINS), ApplyRate)
     assert isinstance(worksheet.producer_of(TOTAL_INCOME), Sum)
     assert isinstance(worksheet.producer_of(DEDUCTIONS_FROM_TOTAL_INCOME), Sum)
     assert isinstance(worksheet.producer_of(NET_INCOME), SubtractNotBelowZero)
     assert worksheet.producer_of(TOTAL_INCOME) is not worksheet.producer_of(
+        DEDUCTIONS_FROM_TOTAL_INCOME
+    )
+    assert isinstance(worksheet.producer_of(DEDUCTIONS_FROM_NET_INCOME), Sum)
+    assert isinstance(worksheet.producer_of(TAXABLE_INCOME), SubtractNotBelowZero)
+    assert worksheet.producer_of(TAXABLE_INCOME) is not worksheet.producer_of(NET_INCOME)
+    assert worksheet.producer_of(DEDUCTIONS_FROM_NET_INCOME) is not worksheet.producer_of(
+        TOTAL_INCOME
+    )
+    assert worksheet.producer_of(DEDUCTIONS_FROM_NET_INCOME) is not worksheet.producer_of(
         DEDUCTIONS_FROM_TOTAL_INCOME
     )
     assert isinstance(worksheet.producer_of(FEDERAL_BASIC_TAX), ProgressiveTax)
@@ -128,21 +133,32 @@ def test_the_trace_explains_the_computation() -> None:
         "not below 0 = 115000.0",
         "115000",
     )
-    federal_basic = position("federal_basic_tax on taxable_income 115000 (no rounding)", "20146.25")
+    net_deductions = position("deductions_from_net_income: no parts = 0", "0")
+    taxable = position(
+        "taxable_income: net_income 115000.0 less deductions_from_net_income 0, "
+        "not below 0 = 115000.0",
+        "115000",
+    )
+    federal_basic = position(
+        "federal_basic_tax on taxable_income 115000.0 (no rounding)", "20146.25"
+    )
     federal_after = position(
         "federal_tax_after_credits: federal_basic_tax 20146.250 less credit, not below 0",
         "17807.545",
     )
     ontario_basic = position(
-        "ontario_basic_tax on taxable_income 115000 (no rounding)", "8539.5965"
+        "ontario_basic_tax on taxable_income 115000.0 (no rounding)", "8539.5965"
     )
     ontario_after = position(
-        "ontario_tax_after_credits: ontario_basic_tax 8539.5965 less credit, not below 0",
+        "ontario_tax_after_credits: ontario_basic_tax 8539.59650 less credit, not below 0",
         "7895.873",
     )
     assert taxable_gains < total < net
     assert deductions < net
-    assert federal_basic < federal_after
+    assert net < taxable
+    assert net_deductions < taxable
+    assert taxable < federal_basic < federal_after
+    assert taxable < ontario_basic
     assert ontario_basic < ontario_after
 
 
@@ -171,6 +187,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ((RRSP_DEDUCTION, D("3000")), (UNION_DUES, D("2000"))),
             D("5000"),
         ),
+        DEDUCTIONS_FROM_NET_INCOME: SumLine(DEDUCTIONS_FROM_NET_INCOME, (), D("0")),
     }
     assert floored == {
         NET_INCOME: SubtractedNotBelowZeroLine(
@@ -180,7 +197,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=DEDUCTIONS_FROM_TOTAL_INCOME,
             subtrahend_amount=D("5000"),
             result=D("115000"),
-        )
+        ),
+        TAXABLE_INCOME: SubtractedNotBelowZeroLine(
+            output=TAXABLE_INCOME,
+            minuend=NET_INCOME,
+            minuend_amount=D("115000"),
+            subtrahend=DEDUCTIONS_FROM_NET_INCOME,
+            subtrahend_amount=D("0"),
+            result=D("115000"),
+        ),
     }
 
     assert totals[FEDERAL_BASIC_TAX].base == TAXABLE_INCOME
@@ -199,19 +224,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 8
+    assert len(order) == 10
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
+    assert position[NET_INCOME] < position[TAXABLE_INCOME]
+    assert position[DEDUCTIONS_FROM_NET_INCOME] < position[TAXABLE_INCOME]
+    assert position[TAXABLE_INCOME] < position[FEDERAL_BASIC_TAX]
+    assert position[TAXABLE_INCOME] < position[ONTARIO_BASIC_TAX]
     assert position[FEDERAL_BASIC_TAX] < position[FEDERAL_TAX_AFTER_CREDITS]
     assert position[ONTARIO_BASIC_TAX] < position[ONTARIO_TAX_AFTER_CREDITS]
 
 
 def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
-    worksheet = compute("10000", "0", "0", "0", "10000")
+    worksheet = compute("10000", "0", "0", "0")
 
     assert worksheet.get(TOTAL_INCOME).value == D("10000")
     assert worksheet.get(NET_INCOME).value == D("10000")
+    assert worksheet.get(TAXABLE_INCOME).value == D("10000")
     assert worksheet.get(FEDERAL_BASIC_TAX).value == D("1450")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("0")
     assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("0")
