@@ -28,11 +28,9 @@ open-ended. Consequences:
 ## 2. Artifact model
 
 Ordering is expressed through **artifacts**, not capability-to-capability
-dependencies.
-
-### Spine artifacts
-Named intermediates with an external referent. Every artifact needs an
-external justification — a line in the law/worksheet it mirrors, or a
+dependencies. An artifact is a named intermediate with an external referent,
+produced by exactly one capability and consumed by any number. Every artifact
+needs an external justification — a line in the law/worksheet it mirrors, or a
 specific consumer contract it satisfies — and "it made the design cleaner"
 is neither. Example, from the Canadian pilot (UNVERIFIED — confirm line
 semantics against the T1 return):
@@ -55,30 +53,26 @@ Key facts driving this (UNVERIFIED, verify all):
 - Cross-phase consumption is routine (age amount consumes `net_income`;
   dividend tax credit keyed to grossed-up amount added on the income side).
 
-### Open-ended totals
-A total over a jurisdiction-chosen list of lines (total income, total
-deductions → `net_income`) is one capability with a **list slot**: a consume
-slot that takes a list of kinds of one value type, filled in the manifest
-with a list of identifiers. A generic sum capability (`core/sum`) adds them. The
-parts keep manifest order, which is the order they appear in the trace, and
-it cannot affect the result: the addition happens inside one capability, and
-every part still has exactly one producer.
+### Totals
+A total (total income, total deductions → `net_income`) is an artifact like
+any other, produced by one generic sum capability (`core/sum`) over a **list
+slot**: a consume slot that takes several kinds of one value type. The
+manifest lists which lines make up the total, in the order the trace shows
+them; the engine knows only that it is adding amounts.
 
 ## 3. Capability contract
 
 ```
 capability:
   parameters:    {slot: parameter kind, ...}  # datasets it is built from
-  consumes:      {slot: value type, ...}      # spine reads
-                 {slot: list[value type]}     # list slot: several kinds, in order
-  produces:      {slot: value type, ...}      # spine writes (new named artifact)
+  consumes:      {slot: value type, ...}      # reads; list[value type] = a list slot
+  produces:      {slot: value type, ...}      # writes (new named artifact)
 ```
 
 - Vocabulary is exactly: **consume / produce**.
   **"modify" does not exist.** A capability needing to see another's change
-  is a consumer producing a new spine artifact, not a modifier.
-- Ordering rule: every produced artifact has **exactly one producer, which runs
-  before any consumer**; a list slot waits for every kind it lists.
+  is a consumer producing a new artifact, not a modifier.
+- Ordering rule: an artifact's **one producer runs before any consumer**.
 - Contract **shapes** are declared **in code**, next to the implementation
   that makes them true: each capability names its slots — parameter slots,
   each with a parameter kind, and artifact slots for what it consumes and
@@ -155,7 +149,7 @@ Rules:
 - No edges, no ordering, no conditionals, no expressions in YAML — the moment an `if`
   appears, the manifest is becoming an untyped programming language
   (the failure mode the zero-code rejection was meant to kill).
-  Conditionality lives inside capabilities (a capability may contribute zero).
+  Conditionality lives inside capabilities (a capability may produce zero).
 - Two version axes, independent:
   - **Manifests** version on structural change only (capability added or
     removed, composition changed). Each declares `valid_from_tax_year`

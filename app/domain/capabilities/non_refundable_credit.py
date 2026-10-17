@@ -6,7 +6,7 @@ amount × rate, rounded with the `amount` dataset's rule before it is applied; t
 
 With one credit, applying amount × rate per credit equals what a return form
 does: sum all credit amounts, then apply the rate once. More credits will need
-amounts folded into a total first, with the rate applied once.
+amounts summed into a total first, with the rate applied once.
 """
 
 from __future__ import annotations
