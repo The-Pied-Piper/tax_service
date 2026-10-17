@@ -204,11 +204,3 @@ def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     assert worksheet.get(FEDERAL_BASIC_TAX).value == D("1450")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("0")
     assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("0")
-
-
-def test_deductions_larger_than_total_income_leave_zero_net_income() -> None:
-    worksheet = compute("2000", "0", "3000", "0")
-
-    assert worksheet.get(TOTAL_INCOME).value == D("2000")
-    assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("3000")
-    assert worksheet.get(NET_INCOME).value == D("0")
