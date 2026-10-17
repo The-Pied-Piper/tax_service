@@ -63,7 +63,8 @@ class Capability(ABC):
     CONSUMES: ClassVar[Mapping[str, type]] = MappingProxyType({})
     """Consumed artifact slots: slot name -> the value type of the artifact kind it takes, or
     `list[<value type>]` for a list slot, which takes a tuple of kinds of that value type (a type
-    to the type checker, a `GenericAlias` at runtime)."""
+    to the type checker, a `GenericAlias` at runtime). The value type is concrete: `Any`,
+    `list[Any]` and a bare `list` are rejected, since no kind could fill them."""
 
     PRODUCES: ClassVar[Mapping[str, type]] = MappingProxyType({})
     """Produced artifact slots: slot name -> the value type of the artifact kind it takes."""
@@ -122,24 +123,32 @@ class Capability(ABC):
                 raise InvalidCapabilityError(
                     f"{name}: PARAMETERS slot {slot!r} must map to a ParameterKind, got {filler!r}"
                 )
-        elif mapping == "CONSUMES" and get_origin(filler) is list:
+        elif mapping == "CONSUMES" and (filler is list or get_origin(filler) is list):
+            # A bare `list` names no element type, and no kind has value type `Any`.
             if cls._element_type(filler) is None:
                 raise InvalidCapabilityError(
-                    f"{name}: CONSUMES slot {slot!r} must be a list of one type, got {filler!r}"
+                    f"{name}: CONSUMES slot {slot!r} must be a list of one concrete type, "
+                    f"got {filler!r}"
                 )
-        elif not isinstance(filler, type):
-            hint = " (only a consumed slot may take a list)" if get_origin(filler) is list else ""
+        elif not isinstance(filler, type) or filler is list or filler is Any:
+            # Kinds are matched by their value type's identity, so a slot of `Any` could never be
+            # filled; `Any` counts as a type at runtime.
+            is_list = filler is list or get_origin(filler) is list
+            hint = " (only a consumed slot may take a list)" if is_list else ""
             raise InvalidCapabilityError(
                 f"{name}: {mapping} slot {slot!r} must be a type, got {filler!r}{hint}"
             )
 
     @staticmethod
     def _element_type(declared: object) -> type | None:
-        """The value type of each kind in a list slot declared as `list[<type>]`, else None."""
+        """The value type of each kind in a list slot declared as `list[<type>]`, else None.
+
+        None for `list[Any]` too: no kind has value type `Any`.
+        """
         if get_origin(declared) is not list:
             return None
         arguments = get_args(declared)
-        if len(arguments) != 1 or not isinstance(arguments[0], type):
+        if len(arguments) != 1 or not isinstance(arguments[0], type) or arguments[0] is Any:
             return None
         element: type = arguments[0]
         return element

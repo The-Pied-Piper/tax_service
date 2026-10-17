@@ -5,7 +5,8 @@ is given; datasets are resolved by the caller. It checks the selection fills exa
 capability class declares, each in its own section, and that each resolved dataset is the family
 the selection names and of the slot's kind; a list slot takes a list of distinct identifiers and
 is resolved to their kinds in the same order. Then it calls the constructor by keyword.
-Value types of kinds are the constructor's check; the builder never calls ports.
+Value types of kinds are the constructor's check; the builder re-raises the constructor's
+rejection naming the selection, and never calls ports.
 """
 
 from __future__ import annotations
@@ -15,7 +16,7 @@ from typing import Any
 
 from app.domain.artifact import ArtifactKind, ArtifactRegistry
 from app.domain.capability import Capability
-from app.domain.errors import InvalidSelectionError
+from app.domain.errors import InvalidCapabilityError, InvalidSelectionError
 from app.domain.manifest import CapabilitySelection
 from app.domain.parameters.datasets import ParameterDataset
 
@@ -43,7 +44,9 @@ class CapabilityBuilder:
         Raises InvalidSelectionError naming the selection and slot if the selection does not fill
         exactly `cls`'s slots, fills a list slot with other than a list of distinct identifiers or
         another slot with a list, or a resolved dataset is missing, extra, or not what the
-        selection names. Lookup errors from `artifacts.kind` propagate unchanged.
+        selection names; the constructor's InvalidCapabilityError (a kind of the wrong value type,
+        or one kind filling two slots) is re-raised as InvalidSelectionError naming the selection,
+        chained to it. Lookup errors from `artifacts.kind` propagate unchanged.
         """
         who = self._describe(selection)
         self._check_sections(selection, cls, who)
@@ -57,7 +60,10 @@ class CapabilityBuilder:
         # dataset kinds by `_parameter_arguments`, and kinds' value types are checked by
         # `Capability.__init__`.
         constructor: Callable[..., Capability] = cls
-        return constructor(**arguments)
+        try:
+            return constructor(**arguments)
+        except InvalidCapabilityError as error:
+            raise InvalidSelectionError(f"{who}: {error}") from error
 
     def _parameter_arguments(
         self,
