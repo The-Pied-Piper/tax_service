@@ -64,11 +64,19 @@ class TaxComputationService:
             if slot in cls.PARAMETERS
         }
         kinds = {
-            slot: self._kind(identifier)
+            slot: self._kinds(named)
             for bindings in (selection.consumes, selection.produces)
-            for slot, identifier in bindings.items()
+            for slot, named in bindings.items()
         }
         return self._builder.build(selection, cls, datasets, kinds)
+
+    def _kinds(
+        self, named: str | tuple[str, ...]
+    ) -> ArtifactKind[Any] | tuple[ArtifactKind[Any], ...]:
+        """The kind registered as `named`, or for a list slot each one's kind, in order."""
+        if isinstance(named, str):
+            return self._kind(named)
+        return tuple(self._kind(identifier) for identifier in named)
 
     def _kind(self, identifier: str) -> ArtifactKind[Any]:
         """The kind registered as `identifier`; the registry stores kinds as `object`."""

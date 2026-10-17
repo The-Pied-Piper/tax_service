@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import Decimal
+from functools import cache
 from typing import Any, ClassVar, assert_type
 
 import pytest
@@ -473,3 +474,171 @@ def test_an_identifier_registered_as_something_other_than_a_kind_is_an_invalid_r
         service(
             manifest(outputs=frozenset({"ex-on/result", "ex/stray"})), artifacts=artifacts
         ).compose(EX_ON, 2025)
+
+
+# --- list slots: a consumed slot filled with a list of identifiers ------------------------------
+#
+# The list-slot class is defined inside a cached factory, so a class definition the base rejects
+# fails the tests that use it rather than the collection of this whole module.
+
+PART_ONE = ArtifactKind("ex/part_one", Decimal)
+PART_TWO = ArtifactKind("ex/part_two", Decimal)
+PART_THREE = ArtifactKind("ex/part_three", Decimal)
+
+
+@dataclass(frozen=True)
+class PartsLine(TraceLine):
+    """A made-up trace line: the identifiers of the parts added, in order, and their total."""
+
+    parts: tuple[str, ...]
+    total: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        return self.total
+
+
+@cache
+def total_class() -> Any:
+    class Total(Capability):
+        """Produces `total` = the sum of its `parts`, each read with `_input`, in their order."""
+
+        CONSUMES = {"parts": list[Decimal]}
+        PRODUCES = {"total": Decimal}
+
+        def __init__(self, parts: tuple[Money, ...], total: Money) -> None:
+            super().__init__(parts=parts, total=total)
+            self.parts, self.total = parts, total
+
+        def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+            values = [self._input(inputs, kind).value for kind in self.parts]
+            value = sum(values, D(0))
+            line = PartsLine(tuple(kind.identifier for kind in self.parts), value)
+            return CapabilityResult(outputs=(Artifact(self.total, value),), trace=(line,))
+
+    return Total
+
+
+def list_slot_manifest(parts: Any, *producers: CapabilitySelection) -> Manifest:
+    """Three made-up producers of parts and a Total over `parts` producing `ex-on/result`."""
+    to_one = CapabilitySelection(
+        name="ex/scale",
+        params={"factor": "ex/factor"},
+        consumes={"source": "ex/base"},
+        produces={"target": "ex/part_one"},
+    )
+    to_two = CapabilitySelection(
+        name="ex/shift",
+        params={"offset": "ex-on/offset"},
+        consumes={"source": "ex/base"},
+        produces={"target": "ex/part_two"},
+    )
+    to_three = CapabilitySelection(  # chained after to_one, so the total waits for a chain
+        name="ex/shift",
+        params={"offset": "ex-on/offset"},
+        consumes={"source": "ex/part_one"},
+        produces={"target": "ex/part_three"},
+    )
+    total = CapabilitySelection(
+        name="ex/total_up",
+        params={},
+        consumes={"parts": parts},
+        produces={"total": "ex-on/result"},
+    )
+    return manifest(total, *(producers or (to_three, to_two, to_one)))
+
+
+def list_slot_service(*manifests: Manifest) -> TaxComputationService:
+    capabilities = capability_registry()
+    capabilities.register("ex/total_up", total_class())
+    artifacts = artifact_registry()
+    for kind in (PART_ONE, PART_TWO, PART_THREE):
+        artifacts.register(kind.identifier, kind)
+    return service(*manifests, capabilities=capabilities, artifacts=artifacts)
+
+
+def test_a_list_slot_receives_its_kinds_in_manifest_order() -> None:
+    parts = ("ex/part_two", "ex/part_three", "ex/part_one")
+    total_cls = total_class()
+
+    composition = list_slot_service(list_slot_manifest(parts)).compose(EX_ON, 2025)
+
+    total = composition.order[-1]
+    assert isinstance(total, total_cls)
+    assert total.parts == (PART_TWO, PART_THREE, PART_ONE)
+    assert total.consumes == frozenset({PART_ONE, PART_TWO, PART_THREE})
+    assert total.produces == frozenset({RESULT})
+
+
+def test_the_list_slot_capability_runs_after_all_three_producers() -> None:
+    parts = ("ex/part_two", "ex/part_three", "ex/part_one")
+
+    composition = list_slot_service(list_slot_manifest(parts)).compose(EX_ON, 2025)
+
+    assert [type(capability) for capability in composition.order] == [
+        Scale,
+        Shift,
+        Shift,
+        total_class(),
+    ]
+
+
+def test_computes_a_list_slot_end_to_end() -> None:
+    parts = ("ex/part_two", "ex/part_three", "ex/part_one")
+
+    worksheet = list_slot_service(list_slot_manifest(parts)).compute(
+        EX_ON, 2025, Artifact(BASE, D("5"))
+    )
+
+    # part_one = 5 × 3 = 15; part_two = 5 + 1 = 6; part_three = 15 + 1 = 16.
+    assert worksheet.get(PART_ONE).value == D("15")
+    assert worksheet.get(PART_TWO).value == D("6")
+    assert worksheet.get(PART_THREE).value == D("16")
+    assert worksheet.get(RESULT).value == D("37")
+    assert isinstance(worksheet.producer_of(RESULT), total_class())
+    assert worksheet.trace[-1] == PartsLine(parts, D("37"))
+
+
+def test_an_unknown_identifier_in_a_list_is_an_unknown_registration() -> None:
+    parts = ("ex/part_two", "ex/nowhere", "ex/part_one")
+
+    with pytest.raises(UnknownRegistrationError, match="'ex/nowhere'"):
+        list_slot_service(list_slot_manifest(parts)).compose(EX_ON, 2025)
+
+
+def test_a_listed_kind_nothing_produces_is_an_invalid_composition() -> None:
+    parts = ("ex/part_two", "ex/extra", "ex/part_one")
+
+    with pytest.raises(InvalidCompositionError, match="no producer for 'extra'"):
+        list_slot_service(list_slot_manifest(parts)).compose(EX_ON, 2025)
+
+
+def test_a_kind_listed_twice_is_an_invalid_selection() -> None:
+    parts = ("ex/part_two", "ex/part_three", "ex/part_one", "ex/part_two")
+
+    with pytest.raises(InvalidSelectionError, match="'parts'"):
+        list_slot_service(list_slot_manifest(parts)).compose(EX_ON, 2025)
+
+
+def test_a_single_identifier_for_a_list_slot_is_an_invalid_selection() -> None:
+    to_one = CapabilitySelection(
+        name="ex/scale",
+        params={"factor": "ex/factor"},
+        consumes={"source": "ex/base"},
+        produces={"target": "ex/part_one"},
+    )
+
+    with pytest.raises(InvalidSelectionError, match="'parts'"):
+        list_slot_service(list_slot_manifest("ex/part_one", to_one)).compose(EX_ON, 2025)
+
+
+def test_a_list_for_a_single_slot_is_an_invalid_selection() -> None:
+    to_one = CapabilitySelection(
+        name="ex/scale",
+        params={"factor": "ex/factor"},
+        consumes={"source": ("ex/base",)},
+        produces={"target": "ex/part_one"},
+    )
+
+    with pytest.raises(InvalidSelectionError, match="'source'"):
+        list_slot_service(list_slot_manifest(("ex/part_one",), to_one)).compose(EX_ON, 2025)

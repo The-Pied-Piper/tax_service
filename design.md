@@ -28,7 +28,7 @@ open-ended. Consequences:
 ## 2. Artifact model
 
 Ordering is expressed through **artifacts**, not capability-to-capability
-dependencies. Two kinds:
+dependencies.
 
 ### Spine artifacts
 Named intermediates with an external referent. Every artifact needs an
@@ -55,12 +55,14 @@ Key facts driving this (UNVERIFIED, verify all):
 - Cross-phase consumption is routine (age amount consumes `net_income`;
   dividend tax credit keyed to grossed-up amount added on the income side).
 
-### Fold contributions
-Commutative deltas accumulating into a spine artifact (RRSP, union dues,
-child care → `net_income`). Sibling contributions are unordered **and must
-not matter**. Enforced by permutation tests: run sibling contributions in
-every order and require identical output. This catches a capability
-declared as a fold contribution whose result actually depends on order.
+### Open-ended totals
+A total over a jurisdiction-chosen list of lines (total income, total
+deductions → `net_income`) is one capability with a **list slot**: a consume
+slot that takes a list of kinds of one value type, filled in the manifest
+with a list of identifiers. A generic sum capability (`core/sum`) adds them. The
+parts keep manifest order, which is the order they appear in the trace, and
+it cannot affect the result: the addition happens inside one capability, and
+every part still has exactly one producer.
 
 ## 3. Capability contract
 
@@ -68,15 +70,15 @@ declared as a fold contribution whose result actually depends on order.
 capability:
   parameters:    {slot: parameter kind, ...}  # datasets it is built from
   consumes:      {slot: value type, ...}      # spine reads
+                 {slot: list[value type]}     # list slot: several kinds, in order
   produces:      {slot: value type, ...}      # spine writes (new named artifact)
-  contributes_to: artifact                    # fold delta (commutative)
 ```
 
-- Vocabulary is exactly: **consume / produce / contribute_to**.
+- Vocabulary is exactly: **consume / produce**.
   **"modify" does not exist.** A capability needing to see another's change
   is a consumer producing a new spine artifact, not a modifier.
-- Ordering rule: for each artifact, **all contributions complete before any
-  consumer runs**.
+- Ordering rule: every produced artifact has **exactly one producer, which runs
+  before any consumer**; a list slot waits for every kind it lists.
 - Contract **shapes** are declared **in code**, next to the implementation
   that makes them true: each capability names its slots — parameter slots,
   each with a parameter kind, and artifact slots for what it consumes and
@@ -89,7 +91,7 @@ capability:
   (Prior incident: engine silently US-shaped by agent priors. Same vector.)
 - Reuse across jurisdictions = a capability keyed to an artifact is
   indifferent to that artifact's provenance (brackets consume
-  `taxable_income` whether 12 contributions built it or 2).
+  `taxable_income` whether 12 parts built it or 2).
 
 ### Rounding
 

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
+from functools import cache
 from itertools import permutations
 from typing import Any, assert_type, cast
 
@@ -64,7 +65,11 @@ class Summing(Capability):
     """
 
     def __init__(
-        self, *, add: Decimal = ZERO, tag: str = "link", **slots: ArtifactKind[Any]
+        self,
+        *,
+        add: Decimal = ZERO,
+        tag: str = "link",
+        **slots: ArtifactKind[Any] | tuple[ArtifactKind[Any], ...],
     ) -> None:
         super().__init__(**slots)
         self._add = add
@@ -530,3 +535,118 @@ def test_end_to_end_two_real_capabilities_given_in_the_wrong_order() -> None:
     assert worksheet.trace[-1].amount == D(50)
     assert worksheet.trace[3].amount == D(110)
     assert isinstance(worksheet.trace[3], RoundedTotalLine)
+
+
+# --- list slots: one edge per listed kind ---------------------------------------------------------
+#
+# The list-slot class is defined inside a cached factory, so a class definition the base rejects
+# fails the tests that use it rather than the collection of this whole module.
+
+
+@cache
+def total_class() -> Any:
+    class Total(Summing):
+        """Consumes a list of `parts` and produces `target` = their sum + `add`."""
+
+        CONSUMES = {"parts": list[Decimal]}
+        PRODUCES = {"target": Decimal}
+
+        def __init__(
+            self,
+            parts: tuple[Money, ...],
+            target: Money,
+            add: Decimal = ZERO,
+            tag: str = "total",
+        ) -> None:
+            super().__init__(parts=parts, target=target, add=add, tag=tag)
+
+    return Total
+
+
+def test_a_list_slot_runs_after_every_producer_of_its_parts() -> None:
+    to_b, to_c, to_e = Link(A, B, D(1), "b"), Link(A, C, D(2), "c"), Link(A, E, D(3), "e")
+    total = total_class()((E, B, C), F)
+
+    for given in permutations((total, to_b, to_c, to_e)):
+        composition = Composition(given, inputs=kinds(A), outputs=kinds(F))
+
+        assert composition.order == (to_b, to_c, to_e, total)
+
+
+def test_a_list_slot_after_a_chain_runs_after_its_last_link() -> None:
+    to_b, to_c = Link(A, B, tag="b"), Link(B, C, tag="c")
+    total = total_class()((A, C), E)
+
+    for given in permutations((total, to_c, to_b)):
+        composition = Composition(given, inputs=kinds(A), outputs=kinds(E))
+
+        assert composition.order == (to_b, to_c, total)
+
+
+def test_compute_sums_every_listed_part() -> None:
+    to_b, to_c, to_e = Link(A, B, D(1), "b"), Link(A, C, D(2), "c"), Link(A, E, D(3), "e")
+    total = total_class()((E, B, C), F)
+    composition = Composition([total, to_e, to_c, to_b], inputs=kinds(A), outputs=kinds(F))
+
+    worksheet = composition.compute(Artifact(A, D(1)))
+
+    # (1 + 1) + (1 + 2) + (1 + 3) = 9
+    assert worksheet.get(F) == Artifact(F, D(9))
+    assert worksheet.producer_of(F) is total
+    assert worksheet.trace[-1] == TaggedLine("total", D(9))
+
+
+def test_a_listed_part_may_be_an_input() -> None:
+    to_b = Link(A, B, D(1), "b")
+    total = total_class()((A, B), C)
+    composition = Composition([total, to_b], inputs=kinds(A), outputs=kinds(C))
+
+    worksheet = composition.compute(Artifact(A, D(2)))
+
+    assert composition.order == (to_b, total)
+    assert worksheet.get(C) == Artifact(C, D(5))
+
+
+def test_a_list_slot_with_no_parts_runs_and_produces_zero() -> None:
+    to_b = Link(A, B, tag="b")
+    empty = total_class()((), C)
+    composition = Composition([empty, to_b], inputs=kinds(A), outputs=kinds(B, C))
+
+    worksheet = composition.compute(Artifact(A, D(2)))
+
+    assert worksheet.get(C) == Artifact(C, ZERO)
+
+
+def test_rejects_a_listed_kind_nothing_produces() -> None:
+    total = total_class()((B, E), F)
+
+    with pytest.raises(InvalidCompositionError, match="no producer for 'e', consumed by Total"):
+        Composition([Link(A, B), total], inputs=kinds(A), outputs=kinds(F))
+
+
+def test_rejects_a_cycle_through_a_listed_kind() -> None:
+    total = total_class()((A, C), B)
+
+    with pytest.raises(InvalidCompositionError, match="cycle involving 'b', 'c'"):
+        Composition([total, Link(B, C)], inputs=kinds(A), outputs=kinds(C))
+
+
+def test_a_listed_kind_counts_as_consumed() -> None:
+    # Neither an unused input nor an orphan output: each listed kind is consumed.
+    to_b = Link(A, B, tag="b")
+    total = total_class()((A, B, C), E)
+
+    composition = Composition([to_b, total], inputs=kinds(A, C), outputs=kinds(E))
+
+    assert composition.order == (to_b, total)
+
+
+def test_ties_between_list_slot_capabilities_are_broken_by_what_they_produce() -> None:
+    to_b, to_c = Link(A, B, tag="b"), Link(A, C, tag="c")
+    total = total_class()
+    to_f, to_e = total((B, C), F, tag="f"), total((C, B), E, tag="e")
+
+    for given in permutations((to_f, to_c, to_e, to_b)):
+        composition = Composition(given, inputs=kinds(A), outputs=kinds(E, F))
+
+        assert composition.order == (to_b, to_c, to_e, to_f)

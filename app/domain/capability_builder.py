@@ -3,7 +3,8 @@
 The selection fills slots by identifier; whoever calls the builder resolves those identifiers to
 datasets and artifact kinds. The builder checks the selection fills exactly the slots the
 capability class declares, each in its own section, and that what was resolved for each slot is
-what the selection names, with datasets of the slots' kinds; then it calls the constructor by
+what the selection names, with datasets of the slots' kinds; a list slot takes a list of distinct
+identifiers and is resolved to their kinds in the same order. Then it calls the constructor by
 keyword. Value types of kinds are the constructor's check; the builder never calls ports.
 """
 
@@ -34,13 +35,15 @@ class CapabilityBuilder:
         selection: CapabilitySelection,
         cls: type[Capability],
         datasets: Mapping[str, ParameterDataset[Any]],
-        kinds: Mapping[str, ArtifactKind[Any]],
+        kinds: Mapping[str, ArtifactKind[Any] | tuple[ArtifactKind[Any], ...]],
     ) -> Capability:
         """A `cls` built from the resolved `datasets` and `kinds`, each keyed by slot.
 
+        A list slot is resolved to a tuple of kinds, one per identifier in the order named.
         Raises InvalidSelectionError naming the selection and slot if the selection does not fill
-        exactly `cls`'s slots, or what was resolved for a slot is missing, extra, or not what the
-        selection names.
+        exactly `cls`'s slots, fills a list slot with other than a list of distinct identifiers or
+        another slot with a list, or what was resolved for a slot is missing, extra, or not what
+        the selection names.
         """
         who = self._describe(selection)
         self._check_sections(selection, cls, who)
@@ -89,24 +92,75 @@ class CapabilityBuilder:
         self,
         selection: CapabilitySelection,
         cls: type[Capability],
-        kinds: Mapping[str, ArtifactKind[Any]],
+        kinds: Mapping[str, ArtifactKind[Any] | tuple[ArtifactKind[Any], ...]],
         who: str,
-    ) -> dict[str, ArtifactKind[Any]]:
-        """Each artifact slot's kind, checked to be the identifier the selection names for it."""
+    ) -> dict[str, ArtifactKind[Any] | tuple[ArtifactKind[Any], ...]]:
+        """Each artifact slot's kind or kinds, checked to be the identifiers the selection names."""
         artifact_slots = {**cls.CONSUMES, **cls.PRODUCES}
         self._check_no_extra(kinds, artifact_slots, "kind", "an artifact slot", cls, who)
         named = {**selection.consumes, **selection.produces}
-        arguments: dict[str, ArtifactKind[Any]] = {}
+        arguments: dict[str, ArtifactKind[Any] | tuple[ArtifactKind[Any], ...]] = {}
         for slot in artifact_slots:
             if slot not in kinds:
                 raise InvalidSelectionError(f"{who}: artifact slot {slot!r} has no resolved kind")
-            if kinds[slot].identifier != named[slot]:
-                raise InvalidSelectionError(
-                    f"{who}: artifact slot {slot!r} names {named[slot]!r}, "
-                    f"but was resolved to {kinds[slot].identifier!r}"
-                )
-            arguments[slot] = kinds[slot]
+            if cls.is_list_slot(slot):
+                arguments[slot] = self._listed_kinds(slot, named[slot], kinds[slot], who)
+            else:
+                arguments[slot] = self._single_kind(slot, named[slot], kinds[slot], who)
         return arguments
+
+    @staticmethod
+    def _single_kind(
+        slot: str,
+        named: str | tuple[str, ...],
+        resolved: ArtifactKind[Any] | tuple[ArtifactKind[Any], ...],
+        who: str,
+    ) -> ArtifactKind[Any]:
+        """The one kind resolved for a single slot, which must be the identifier named for it."""
+        if not isinstance(named, str):
+            raise InvalidSelectionError(
+                f"{who}: artifact slot {slot!r} takes one identifier, but is given a list {named!r}"
+            )
+        if isinstance(resolved, tuple):
+            raise InvalidSelectionError(
+                f"{who}: artifact slot {slot!r} takes one kind, but was resolved to a list"
+            )
+        if resolved.identifier != named:
+            raise InvalidSelectionError(
+                f"{who}: artifact slot {slot!r} names {named!r}, "
+                f"but was resolved to {resolved.identifier!r}"
+            )
+        return resolved
+
+    @staticmethod
+    def _listed_kinds(
+        slot: str,
+        named: str | tuple[str, ...],
+        resolved: ArtifactKind[Any] | tuple[ArtifactKind[Any], ...],
+        who: str,
+    ) -> tuple[ArtifactKind[Any], ...]:
+        """The kinds resolved for a list slot: one per distinct identifier named, in that order."""
+        if isinstance(named, str):
+            raise InvalidSelectionError(
+                f"{who}: list slot {slot!r} takes a list of identifiers, but is given {named!r}"
+            )
+        for position, identifier in enumerate(named):
+            if identifier in named[:position]:
+                raise InvalidSelectionError(
+                    f"{who}: list slot {slot!r} lists {identifier!r} more than once"
+                )
+        if not isinstance(resolved, tuple):
+            raise InvalidSelectionError(
+                f"{who}: list slot {slot!r} takes a list of kinds, but was resolved to one kind "
+                f"{resolved.identifier!r}"
+            )
+        identifiers = tuple(kind.identifier for kind in resolved)
+        if identifiers != named:
+            raise InvalidSelectionError(
+                f"{who}: list slot {slot!r} names {list(named)!r}, "
+                f"but was resolved to {list(identifiers)!r}"
+            )
+        return resolved
 
     @staticmethod
     def _describe(selection: CapabilitySelection) -> str:

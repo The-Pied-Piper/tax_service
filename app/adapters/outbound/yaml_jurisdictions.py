@@ -5,8 +5,9 @@ namespace is its code lower-cased (`EX-ON` -> `ex-on`), and every `*.yaml` / `*.
 `<roots[ex-on]>/manifests/` (recursively) is one of its manifests; a manifest there naming
 another jurisdiction is rejected.
 Each selection names a capability and fills its slots: `params` (slot -> family, optional),
-`consumes` (slot -> artifact identifier, optional) and `produces` (slot -> artifact identifier,
-required, at least one). Slot names are not checked against capability classes here.
+`consumes` (slot -> artifact identifier, or a list of them kept in order as a tuple, optional)
+and `produces` (slot -> artifact identifier, required, at least one). Slot names, and whether a
+slot takes one identifier or a list, are not checked against capability classes here.
 The top-level `inputs` and `outputs` list the computation's artifact identifiers: both required,
 non-empty lists of non-empty strings without duplicates, and no identifier in both.
 Parsing is strict because a manifest must stay selection plus slot bindings
@@ -124,7 +125,7 @@ class YamlJurisdictionSource:
         return CapabilitySelection(
             name=fields.field("name").require_string(),
             params=cls._bindings(fields.optional_field("params")),
-            consumes=cls._bindings(fields.optional_field("consumes")),
+            consumes=cls._consumed(fields.optional_field("consumes")),
             produces=cls._produced(fields.field("produces")),
         )
 
@@ -138,6 +139,25 @@ class YamlJurisdictionSource:
     @staticmethod
     def _bindings(node: YamlNode | None) -> dict[str, str]:
         return {} if node is None else node.string_mapping()
+
+    @classmethod
+    def _consumed(cls, node: YamlNode | None) -> dict[str, str | tuple[str, ...]]:
+        """Consumed slots, each bound to one identifier or to a list of them, in order."""
+        if node is None:
+            return {}
+        return {slot: cls._identifier_or_list(value) for slot, value in node.fields()}
+
+    @staticmethod
+    def _identifier_or_list(node: YamlNode) -> str | tuple[str, ...]:
+        """A non-empty identifier, or a list of them as a tuple; repeats are the builder's check."""
+        if node.is_list():
+            return tuple(item.require_non_empty_string() for item in node.items())
+        if not isinstance(node.value, str):
+            raise YamlShapeError(
+                f"{node.where} must be a string or a list of strings, "
+                f"got {type(node.value).__name__}"
+            )
+        return node.require_non_empty_string()
 
     @staticmethod
     def _code(node: YamlNode) -> JurisdictionCode:
