@@ -48,12 +48,18 @@ def test_worked_return(path: Path) -> None:
 LOW_INCOME = """\
 jurisdiction: CA-ON
 tax_year: 2025
-description: Taxable income of 10000; each credit exceeds its tax, leaving zero.
+description: >-
+  Employment income and taxable income of 10000 and no capital gain; each credit exceeds
+  its tax, leaving zero.
 sources:
-  - T1 and ON428 arithmetic on the 2025 figures.
+  - T1, Schedule 3 and ON428 arithmetic on the 2025 figures.
 inputs:
+  ca/employment_income: "10000"
+  ca/capital_gain: "0"
   ca/taxable_income: "10000"
 expected:
+  ca/taxable_capital_gains: "0"
+  ca/total_income: "10000"
   ca/federal_basic_tax: "1450"
   ca/federal_tax_after_credits: "0"
   ca-on/ontario_basic_tax: "505"

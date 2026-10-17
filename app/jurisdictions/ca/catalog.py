@@ -14,6 +14,24 @@ from app.jurisdictions.ca import NAMESPACE
 
 CATALOG = ArtifactCatalog(Namespace(NAMESPACE))
 
+EMPLOYMENT_INCOME = CATALOG.declare("employment_income", Decimal)
+"""Employment income, T1 line 10100: a starting amount that total income sums directly."""
+
+CAPITAL_GAIN = CATALOG.declare("capital_gain", Decimal)
+"""The claimed capital gain before inclusion, mirroring Schedule 3 line 21 (total capital gains
+or losses).
+
+Losses, and netting gains against them, are not modelled yet.
+"""
+
+TAXABLE_CAPITAL_GAINS = CATALOG.declare("taxable_capital_gains", Decimal)
+"""Taxable capital gains, T1 line 12700: the capital gain times the inclusion rate (Schedule 3
+lines 23 to 26)."""
+
+TOTAL_INCOME = CATALOG.declare("total_income", Decimal)
+"""Total income, T1 line 15000: the sum of the income lines, here employment income and taxable
+capital gains."""
+
 TAXABLE_INCOME = CATALOG.declare("taxable_income", Decimal)
 """Taxable income, T1 line 26000: the base the federal and Ontario brackets apply to."""
 

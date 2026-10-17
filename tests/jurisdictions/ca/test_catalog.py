@@ -15,11 +15,27 @@ import pytest
 import app.jurisdictions.ca
 import app.jurisdictions.ca.catalog
 from app.domain.artifact import ArtifactCatalog, ArtifactKind, ArtifactRegistry
-from app.jurisdictions.ca.catalog import CATALOG, FEDERAL_BASIC_TAX, TAXABLE_INCOME
+from app.jurisdictions.ca.catalog import (
+    CAPITAL_GAIN,
+    CATALOG,
+    EMPLOYMENT_INCOME,
+    FEDERAL_BASIC_TAX,
+    TAXABLE_CAPITAL_GAINS,
+    TAXABLE_INCOME,
+    TOTAL_INCOME,
+)
 from app.registrations import JURISDICTIONS
 
 REGISTERED = frozenset(
-    {"ca/taxable_income", "ca/federal_basic_tax", "ca/federal_tax_after_credits"}
+    {
+        "ca/employment_income",
+        "ca/capital_gain",
+        "ca/taxable_capital_gains",
+        "ca/total_income",
+        "ca/taxable_income",
+        "ca/federal_basic_tax",
+        "ca/federal_tax_after_credits",
+    }
 )
 
 
@@ -45,6 +61,10 @@ def test_the_package_exposes_its_catalog() -> None:
 def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
     assert registry.get("ca/taxable_income") is TAXABLE_INCOME
     assert registry.get("ca/federal_basic_tax") is FEDERAL_BASIC_TAX
+    assert registry.get("ca/employment_income") is EMPLOYMENT_INCOME
+    assert registry.get("ca/capital_gain") is CAPITAL_GAIN
+    assert registry.get("ca/taxable_capital_gains") is TAXABLE_CAPITAL_GAINS
+    assert registry.get("ca/total_income") is TOTAL_INCOME
 
 
 def test_catalog_kinds_are_in_the_package_namespace() -> None:
@@ -55,6 +75,8 @@ def test_catalog_kinds_are_in_the_package_namespace() -> None:
 def test_catalog_kinds_are_money() -> None:
     assert TAXABLE_INCOME.value_type is Decimal
     assert FEDERAL_BASIC_TAX.value_type is Decimal
+    for kind in (EMPLOYMENT_INCOME, CAPITAL_GAIN, TAXABLE_CAPITAL_GAINS, TOTAL_INCOME):
+        assert kind.value_type is Decimal, kind.identifier
 
 
 def test_every_registered_kind_is_money(registry: ArtifactRegistry) -> None:
