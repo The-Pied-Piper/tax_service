@@ -22,6 +22,7 @@ from app.domain.trace import (
     CreditLine,
     RateAppliedLine,
     RoundedTotalLine,
+    SubtractedLine,
     SumLine,
     TraceLine,
     UnusedCreditLine,
@@ -36,6 +37,9 @@ PART_ONE = ArtifactKind("ex/part_one", Decimal)
 PART_TWO = ArtifactKind("ex/part_two", Decimal)
 TOTAL = ArtifactKind("ex/total", Decimal)
 RATED = ArtifactKind("ex/rated", Decimal)
+GROSS = ArtifactKind("ex/gross", Decimal)
+REDUCTION = ArtifactKind("ex/reduction", Decimal)
+NET = ArtifactKind("ex/net", Decimal)
 
 
 def slice_line() -> BracketSliceLine:
@@ -66,6 +70,10 @@ def rate_applied_line() -> RateAppliedLine:
     return RateAppliedLine(RATED, BASE, D("200.01"), Rate(D("0.5")), CENT, D("100.01"))
 
 
+def subtracted_line() -> SubtractedLine:
+    return SubtractedLine(NET, GROSS, D("100.25"), REDUCTION, D(40), D("60.25"))
+
+
 ALL_LINES = [
     slice_line,
     total_line,
@@ -74,6 +82,7 @@ ALL_LINES = [
     unused_line,
     sum_line,
     rate_applied_line,
+    subtracted_line,
 ]
 
 
@@ -243,6 +252,51 @@ def test_rate_applied_lines_differ_by_rounding() -> None:
 
 def test_rate_applied_lines_are_hashable() -> None:
     assert hash(rate_applied_line()) == hash(rate_applied_line())
+
+
+def test_subtracted_line_fields_in_order() -> None:
+    line = subtracted_line()
+
+    assert line == SubtractedLine(
+        output=NET,
+        minuend=GROSS,
+        minuend_amount=D("100.25"),
+        subtrahend=REDUCTION,
+        subtrahend_amount=D(40),
+        result=D("60.25"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "minuend",
+        "minuend_amount",
+        "subtrahend",
+        "subtrahend_amount",
+        "result",
+    ]
+    assert line.output is NET
+    assert line.minuend is GROSS
+    assert line.minuend_amount == D("100.25")
+    assert line.subtrahend is REDUCTION
+    assert line.subtrahend_amount == D(40)
+    assert line.result == D("60.25")
+    assert line.amount == D("60.25")
+
+
+def test_subtracted_line_may_hold_a_negative_result() -> None:
+    line = SubtractedLine(NET, GROSS, D(10), REDUCTION, D("25.5"), D("-15.5"))
+
+    assert line.result == D("-15.5")
+    assert line.amount == D("-15.5")
+
+
+def test_subtracted_lines_differ_by_which_kind_is_taken_off() -> None:
+    assert subtracted_line() != SubtractedLine(
+        NET, REDUCTION, D("100.25"), GROSS, D(40), D("60.25")
+    )
+
+
+def test_subtracted_lines_are_hashable() -> None:
+    assert hash(subtracted_line()) == hash(subtracted_line())
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:

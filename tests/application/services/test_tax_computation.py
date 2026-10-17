@@ -827,3 +827,67 @@ def test_core_apply_rate_asks_for_its_dataset_as_a_rate() -> None:
     built.compose(EX_ON, 2025)
 
     assert ("ex/portion_rate", 2025, RATE) in parameters.requests
+
+
+# --- core/subtract: amount less another artifact, wired by a made-up manifest -----------------
+#
+# `Subtract` is imported inside a cached factory, like `Sum` above, so its absence fails only the
+# tests that use it. It is registered in a private registry under its shared identifier,
+# `core/subtract`, and takes one of the manifest's inputs and one produced artifact.
+
+
+@cache
+def subtract_class() -> Any:
+    from app.domain.capabilities.subtract import Subtract
+
+    return Subtract
+
+
+def subtract_service(amount: str, less: str) -> TaxComputationService:
+    """`ex/scale` (base × 3) and `core/subtract` producing `ex-on/result` = amount − less."""
+    subtract = CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={"amount": amount, "less": less},
+        produces={"output": "ex-on/result"},
+    )
+    capabilities = capability_registry()
+    capabilities.register("core/subtract", subtract_class())
+    return service(manifest(subtract, SCALE), capabilities=capabilities)  # out of order on purpose
+
+
+def test_computes_core_subtract_end_to_end() -> None:
+    from app.domain.trace import SubtractedLine
+
+    worksheet = subtract_service("ex/scaled", "ex/base").compute(
+        EX_ON, 2025, Artifact(BASE, D("5.01"))
+    )
+
+    # scaled = 5.01 × 3 = 15.03; result = 15.03 − 5.01 = 10.02.
+    assert worksheet.get(RESULT).value == D("10.02")
+    assert isinstance(worksheet.producer_of(RESULT), subtract_class())
+    assert worksheet.trace[-1] == SubtractedLine(
+        RESULT, SCALED, D("15.03"), BASE, D("5.01"), D("10.02")
+    )
+    assert [type(line) for line in worksheet.trace].count(SubtractedLine) == 1
+
+
+def test_core_subtract_produces_a_negative_result_end_to_end() -> None:
+    from app.domain.trace import SubtractedLine
+
+    worksheet = subtract_service("ex/base", "ex/scaled").compute(
+        EX_ON, 2025, Artifact(BASE, D("5.01"))
+    )
+
+    # result = 5.01 − 15.03 = −10.02, not floored at zero.
+    assert worksheet.get(RESULT).value == D("-10.02")
+    assert worksheet.trace[-1] == SubtractedLine(
+        RESULT, BASE, D("5.01"), SCALED, D("15.03"), D("-10.02")
+    )
+
+
+def test_core_subtract_runs_after_what_it_consumes_is_produced() -> None:
+    composition = subtract_service("ex/scaled", "ex/base").compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is subtract_class()
+    assert composition.order[-1].consumes == frozenset({SCALED, BASE})

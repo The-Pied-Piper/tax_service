@@ -23,6 +23,7 @@ from app.domain.trace import (
     CreditLine,
     RateAppliedLine,
     RoundedTotalLine,
+    SubtractedLine,
     SumLine,
     TraceLine,
     UnusedCreditLine,
@@ -40,6 +41,8 @@ PART_THREE = ArtifactKind("ex/part_three", Decimal)
 TOTAL = ArtifactKind("ex/total", Decimal)
 GROSS_AMOUNT = ArtifactKind("ex/gross_amount", Decimal)
 RATED_AMOUNT = ArtifactKind("ex/rated_amount", Decimal)
+REDUCTION = ArtifactKind("ex/reduction", Decimal)
+NET_AMOUNT = ArtifactKind("ex/net_amount", Decimal)
 
 
 def render(line: TraceLine) -> str:
@@ -197,6 +200,27 @@ def test_renders_the_applied_rate_as_a_plain_percentage(rate: str, percent: str)
     assert render(line) == f"rated_amount: {percent}% of gross_amount 40 (no rounding)"
 
 
+# --- subtractions ---------------------------------------------------------------
+
+
+def test_renders_a_subtraction() -> None:
+    line = SubtractedLine(NET_AMOUNT, GROSS_AMOUNT, D("100.25"), REDUCTION, D("40"), D("60.25"))
+
+    assert render(line) == "net_amount: gross_amount 100.25 less reduction 40 = 60.25"
+
+
+def test_renders_a_subtraction_with_a_negative_result() -> None:
+    line = SubtractedLine(NET_AMOUNT, GROSS_AMOUNT, D("10"), REDUCTION, D("25.5"), D("-15.5"))
+
+    assert render(line) == "net_amount: gross_amount 10 less reduction 25.5 = -15.5"
+
+
+def test_renders_a_subtraction_to_zero() -> None:
+    line = SubtractedLine(NET_AMOUNT, GROSS_AMOUNT, D("40.50"), REDUCTION, D("40.50"), D("0.00"))
+
+    assert render(line) == "net_amount: gross_amount 40.50 less reduction 40.50 = 0.00"
+
+
 # --- whole traces and unknown lines ----------------------------------------------
 
 
@@ -209,6 +233,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         UnusedCreditLine(D("115.000")),
         SumLine(TOTAL, ((PART_ONE, D("1")), (PART_TWO, D("2"))), D("3")),
         RateAppliedLine(RATED_AMOUNT, TOTAL, D("3"), Rate(D("0.5")), NO_ROUNDING, D("1.5")),
+        SubtractedLine(NET_AMOUNT, TOTAL, D("3"), RATED_AMOUNT, D("1.5"), D("1.5")),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -219,6 +244,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         "unused credit, not refunded",
         "total: part_one 1 + part_two 2 = 3",
         "rated_amount: 50% of total 3 (no rounding)",
+        "net_amount: total 3 less rated_amount 1.5 = 1.5",
     )
 
 
