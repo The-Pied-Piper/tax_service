@@ -102,3 +102,17 @@ class UnusedCreditLine(TraceLine):
     def amount(self) -> Decimal:
         """The unused part of the credit."""
         return self.unused
+
+
+@dataclass(frozen=True)
+class SumLine(TraceLine):
+    """The `total` produced as `output` by adding `parts`, each a kind and its value, in order."""
+
+    output: Money
+    parts: tuple[tuple[Money, Decimal], ...]
+    total: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The total of the parts."""
+        return self.total
