@@ -12,7 +12,16 @@ from app.domain.capabilities import (  # noqa: E402
     non_refundable_credit,
     progressive_tax,
     subtract,
+    subtract_not_below_zero,
     sum,
 )
 
-__all__ = ["NAMESPACE", "apply_rate", "non_refundable_credit", "progressive_tax", "subtract", "sum"]
+__all__ = [
+    "NAMESPACE",
+    "apply_rate",
+    "non_refundable_credit",
+    "progressive_tax",
+    "subtract",
+    "subtract_not_below_zero",
+    "sum",
+]

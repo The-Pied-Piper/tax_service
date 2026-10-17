@@ -23,6 +23,7 @@ from app.domain.trace import (
     RateAppliedLine,
     RoundedTotalLine,
     SubtractedLine,
+    SubtractedNotBelowZeroLine,
     SumLine,
     TraceLine,
     UnusedCreditLine,
@@ -74,6 +75,10 @@ def subtracted_line() -> SubtractedLine:
     return SubtractedLine(NET, GROSS, D("100.25"), REDUCTION, D(40), D("60.25"))
 
 
+def subtracted_not_below_zero_line() -> SubtractedNotBelowZeroLine:
+    return SubtractedNotBelowZeroLine(NET, GROSS, D(10), REDUCTION, D("25.5"), D(0))
+
+
 ALL_LINES = [
     slice_line,
     total_line,
@@ -83,6 +88,7 @@ ALL_LINES = [
     sum_line,
     rate_applied_line,
     subtracted_line,
+    subtracted_not_below_zero_line,
 ]
 
 
@@ -297,6 +303,58 @@ def test_subtracted_lines_differ_by_which_kind_is_taken_off() -> None:
 
 def test_subtracted_lines_are_hashable() -> None:
     assert hash(subtracted_line()) == hash(subtracted_line())
+
+
+def test_subtracted_not_below_zero_line_fields_in_order() -> None:
+    line = subtracted_not_below_zero_line()
+
+    assert line == SubtractedNotBelowZeroLine(
+        output=NET,
+        minuend=GROSS,
+        minuend_amount=D(10),
+        subtrahend=REDUCTION,
+        subtrahend_amount=D("25.5"),
+        result=D(0),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "minuend",
+        "minuend_amount",
+        "subtrahend",
+        "subtrahend_amount",
+        "result",
+    ]
+    assert line.output is NET
+    assert line.minuend is GROSS
+    assert line.minuend_amount == D(10)
+    assert line.subtrahend is REDUCTION
+    assert line.subtrahend_amount == D("25.5")
+    assert line.result == D(0)
+    assert line.amount == D(0)
+
+
+def test_subtracted_not_below_zero_line_may_hold_a_positive_result() -> None:
+    line = SubtractedNotBelowZeroLine(NET, GROSS, D("100.25"), REDUCTION, D(40), D("60.25"))
+
+    assert line.result == D("60.25")
+    assert line.amount == D("60.25")
+
+
+def test_subtracted_not_below_zero_lines_differ_by_which_kind_is_taken_off() -> None:
+    assert subtracted_not_below_zero_line() != SubtractedNotBelowZeroLine(
+        NET, REDUCTION, D(10), GROSS, D("25.5"), D(0)
+    )
+
+
+def test_subtracted_not_below_zero_lines_are_hashable() -> None:
+    assert hash(subtracted_not_below_zero_line()) == hash(subtracted_not_below_zero_line())
+
+
+def test_a_floored_subtraction_is_not_a_plain_subtracted_line() -> None:
+    # The class says the floor applied, so the same fields in the two classes are not equal.
+    floored = SubtractedNotBelowZeroLine(NET, GROSS, D("100.25"), REDUCTION, D(40), D("60.25"))
+
+    assert cast(Any, floored) != subtracted_line()
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:
