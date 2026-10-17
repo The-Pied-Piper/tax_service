@@ -16,6 +16,7 @@ from app.domain.trace import (
     CreditLine,
     RateAppliedLine,
     RoundedTotalLine,
+    SubtractedLine,
     SumLine,
     TraceLine,
     UnusedCreditLine,
@@ -52,6 +53,18 @@ class EnglishTraceRenderer:
                 return (
                     f"{output.label}: {self._percent(rate.value)}% of {base.label} {amount} "
                     f"({self._rounding(rule)})"
+                )
+            case SubtractedLine(
+                output=output,
+                minuend=minuend,
+                minuend_amount=minuend_amount,
+                subtrahend=subtrahend,
+                subtrahend_amount=subtrahend_amount,
+                result=result,
+            ):
+                return (
+                    f"{output.label}: {minuend.label} {minuend_amount} "
+                    f"less {subtrahend.label} {subtrahend_amount} = {result}"
                 )
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 

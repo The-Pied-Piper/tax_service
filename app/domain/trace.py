@@ -133,3 +133,21 @@ class RateAppliedLine(TraceLine):
     def amount(self) -> Decimal:
         """The rounded product."""
         return self.result
+
+
+@dataclass(frozen=True)
+class SubtractedLine(TraceLine):
+    """`output` = `minuend` (worth `minuend_amount`) less `subtrahend` (worth `subtrahend_amount`),
+    exact; `result` may be negative."""
+
+    output: Money
+    minuend: Money
+    minuend_amount: Decimal
+    subtrahend: Money
+    subtrahend_amount: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The difference."""
+        return self.result
