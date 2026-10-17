@@ -14,6 +14,7 @@ from app.domain.trace import (
     BracketSliceLine,
     CreditAppliedLine,
     CreditLine,
+    RateAppliedLine,
     RoundedTotalLine,
     SumLine,
     TraceLine,
@@ -45,6 +46,13 @@ class EnglishTraceRenderer:
             case SumLine(output=output, parts=parts, total=total):
                 terms = " + ".join(f"{kind.label} {amount}" for kind, amount in parts)
                 return f"{output.label}: {terms or 'no parts'} = {total}"
+            case RateAppliedLine(
+                output=output, base=base, base_amount=amount, rate=rate, rounding=rule
+            ):
+                return (
+                    f"{output.label}: {self._percent(rate.value)}% of {base.label} {amount} "
+                    f"({self._rounding(rule)})"
+                )
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 
     def render_all(self, trace: Iterable[TraceLine]) -> tuple[str, ...]:

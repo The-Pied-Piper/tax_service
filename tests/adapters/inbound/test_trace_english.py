@@ -21,6 +21,7 @@ from app.domain.trace import (
     BracketSliceLine,
     CreditAppliedLine,
     CreditLine,
+    RateAppliedLine,
     RoundedTotalLine,
     SumLine,
     TraceLine,
@@ -37,6 +38,8 @@ PART_ONE = ArtifactKind("ex/part_one", Decimal)
 PART_TWO = ArtifactKind("ex/part_two", Decimal)
 PART_THREE = ArtifactKind("ex/part_three", Decimal)
 TOTAL = ArtifactKind("ex/total", Decimal)
+GROSS_AMOUNT = ArtifactKind("ex/gross_amount", Decimal)
+RATED_AMOUNT = ArtifactKind("ex/rated_amount", Decimal)
 
 
 def render(line: TraceLine) -> str:
@@ -168,6 +171,32 @@ def test_renders_a_sum_of_no_parts() -> None:
     assert render(SumLine(TOTAL, (), D(0))) == "total: no parts = 0"
 
 
+# --- rates applied --------------------------------------------------------------
+
+
+def test_renders_a_rate_applied_without_rounding() -> None:
+    line = RateAppliedLine(
+        RATED_AMOUNT, GROSS_AMOUNT, D("1000.05"), Rate(D("0.125")), NO_ROUNDING, D("125.00625")
+    )
+
+    assert render(line) == "rated_amount: 12.5% of gross_amount 1000.05 (no rounding)"
+
+
+def test_renders_a_rounded_rate_applied() -> None:
+    line = RateAppliedLine(
+        RATED_AMOUNT, GROSS_AMOUNT, D("200.01"), Rate(D("0.5")), CENT, D("100.01")
+    )
+
+    assert render(line) == "rated_amount: 50% of gross_amount 200.01 (half-up to 0.01)"
+
+
+@pytest.mark.parametrize(("rate", "percent"), [("0", "0"), ("1", "100"), ("0.0505", "5.05")])
+def test_renders_the_applied_rate_as_a_plain_percentage(rate: str, percent: str) -> None:
+    line = RateAppliedLine(RATED_AMOUNT, GROSS_AMOUNT, D("40"), Rate(D(rate)), NO_ROUNDING, D(0))
+
+    assert render(line) == f"rated_amount: {percent}% of gross_amount 40 (no rounding)"
+
+
 # --- whole traces and unknown lines ----------------------------------------------
 
 
@@ -179,6 +208,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         CreditAppliedLine(TAX_AFTER_CREDIT, BASIC_TAX, D("10.0"), D("0")),
         UnusedCreditLine(D("115.000")),
         SumLine(TOTAL, ((PART_ONE, D("1")), (PART_TWO, D("2"))), D("3")),
+        RateAppliedLine(RATED_AMOUNT, TOTAL, D("3"), Rate(D("0.5")), NO_ROUNDING, D("1.5")),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -188,6 +218,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         "tax_after_credit: basic_tax 10.0 less credit, not below 0",
         "unused credit, not refunded",
         "total: part_one 1 + part_two 2 = 3",
+        "rated_amount: 50% of total 3 (no rounding)",
     )
 
 

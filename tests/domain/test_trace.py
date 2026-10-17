@@ -20,6 +20,7 @@ from app.domain.trace import (
     BracketSliceLine,
     CreditAppliedLine,
     CreditLine,
+    RateAppliedLine,
     RoundedTotalLine,
     SumLine,
     TraceLine,
@@ -34,6 +35,7 @@ AFTER = ArtifactKind("ex/after", Decimal)
 PART_ONE = ArtifactKind("ex/part_one", Decimal)
 PART_TWO = ArtifactKind("ex/part_two", Decimal)
 TOTAL = ArtifactKind("ex/total", Decimal)
+RATED = ArtifactKind("ex/rated", Decimal)
 
 
 def slice_line() -> BracketSliceLine:
@@ -60,7 +62,19 @@ def sum_line() -> SumLine:
     return SumLine(TOTAL, ((PART_ONE, D("1.25")), (PART_TWO, D(2))), D("3.25"))
 
 
-ALL_LINES = [slice_line, total_line, credit_line, applied_line, unused_line, sum_line]
+def rate_applied_line() -> RateAppliedLine:
+    return RateAppliedLine(RATED, BASE, D("200.01"), Rate(D("0.5")), CENT, D("100.01"))
+
+
+ALL_LINES = [
+    slice_line,
+    total_line,
+    credit_line,
+    applied_line,
+    unused_line,
+    sum_line,
+    rate_applied_line,
+]
 
 
 def test_the_base_line_cannot_be_built() -> None:
@@ -191,6 +205,44 @@ def test_sum_lines_differ_by_the_order_of_their_parts() -> None:
 
 def test_sum_lines_are_hashable() -> None:
     assert hash(sum_line()) == hash(sum_line())
+
+
+def test_rate_applied_line_fields_in_order() -> None:
+    line = rate_applied_line()
+
+    assert line == RateAppliedLine(
+        output=RATED,
+        base=BASE,
+        base_amount=D("200.01"),
+        rate=Rate(D("0.5")),
+        rounding=CENT,
+        result=D("100.01"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "base",
+        "base_amount",
+        "rate",
+        "rounding",
+        "result",
+    ]
+    assert line.output is RATED
+    assert line.base is BASE
+    assert line.base_amount == D("200.01")
+    assert line.rate == Rate(D("0.5"))
+    assert line.rounding == CENT
+    assert line.result == D("100.01")
+    assert line.amount == D("100.01")
+
+
+def test_rate_applied_lines_differ_by_rounding() -> None:
+    assert rate_applied_line() != RateAppliedLine(
+        RATED, BASE, D("200.01"), Rate(D("0.5")), NO_ROUNDING, D("100.01")
+    )
+
+
+def test_rate_applied_lines_are_hashable() -> None:
+    assert hash(rate_applied_line()) == hash(rate_applied_line())
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:
