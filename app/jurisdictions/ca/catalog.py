@@ -32,6 +32,22 @@ TOTAL_INCOME = CATALOG.declare("total_income", Decimal)
 """Total income, T1 line 15000: the sum of the income lines, here employment income and taxable
 capital gains."""
 
+RRSP_DEDUCTION = CATALOG.declare("rrsp_deduction", Decimal)
+"""The RRSP deduction claimed, T1 line 20800 "RRSP deduction (complete Schedule 7 and attach
+receipts)"; the contribution limit is not modelled, so the claimed amount is an input."""
+
+DEDUCTIONS_FROM_TOTAL_INCOME = CATALOG.declare("deductions_from_total_income", Decimal)
+"""Total deductions, T1 line 23300 "Add lines 35 to 52": the sum of the deductions from total
+income, here the RRSP deduction."""
+
+NET_INCOME = CATALOG.declare("net_income", Decimal)
+"""Net income, T1 line 23600 "Line 54 minus line 55 (if negative, enter "0") Net income".
+
+Line 54 (23400) is "Line 34 minus line 53 (if negative, show in brackets) Net income before
+adjustments"; line 55 (23500, social benefits repayment) is not modelled, so net income is total
+income less total deductions, not below zero.
+"""
+
 TAXABLE_INCOME = CATALOG.declare("taxable_income", Decimal)
 """Taxable income, T1 line 26000: the base the federal and Ontario brackets apply to."""
 
