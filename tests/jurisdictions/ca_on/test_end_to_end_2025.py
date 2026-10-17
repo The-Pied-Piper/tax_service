@@ -1,16 +1,15 @@
 """CA-ON 2025, end to end: CRA's worked example computed from the manifest through the service.
 
 The service is the one the composition root builds (`build_tax_computation`): the real YAML
-sources over the jurisdiction packages and the shared registries. Taxable income of 115000
-gives federal basic tax 20146.25, 17807.545 after the basic personal amount credit; Ontario
-basic tax 8539.5965, 7895.873 after its credit. No rounding is configured for these lines, so
-amounts stay exact.
+sources over the jurisdiction packages and the shared registries. The example's amounts (taxable
+income 115000 through each tax after credits) are Return A, `returns/2025_return_a.yaml`, checked
+by `test_worked_returns.py`; this module pins which capability produces each line, the order,
+and the trace that explains them.
 """
 
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import assert_type
 
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.application.services.tax_computation import TaxComputationService
@@ -38,16 +37,6 @@ def service() -> TaxComputationService:
 
 def compute(taxable_income: str) -> Worksheet:
     return service().compute(CA_ON, 2025, Artifact(TAXABLE_INCOME, D(taxable_income)))
-
-
-def test_cra_worked_example_115000() -> None:
-    worksheet = compute("115000")
-
-    assert_type(worksheet, Worksheet)
-    assert worksheet.get(FEDERAL_BASIC_TAX).value == D("20146.25")
-    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("17807.545")
-    assert worksheet.get(ONTARIO_BASIC_TAX).value == D("8539.5965")
-    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("7895.873")
 
 
 def test_each_amount_is_produced_by_its_capability() -> None:
