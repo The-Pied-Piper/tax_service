@@ -22,6 +22,7 @@ from app.domain.trace import (
     CreditAppliedLine,
     CreditLine,
     RoundedTotalLine,
+    SumLine,
     TraceLine,
     UnusedCreditLine,
 )
@@ -32,6 +33,10 @@ CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 TAXABLE_BASE = ArtifactKind("ex/taxable_base", Decimal)
 BASIC_TAX = ArtifactKind("ex/basic_tax", Decimal)
 TAX_AFTER_CREDIT = ArtifactKind("ex/tax_after_credit", Decimal)
+PART_ONE = ArtifactKind("ex/part_one", Decimal)
+PART_TWO = ArtifactKind("ex/part_two", Decimal)
+PART_THREE = ArtifactKind("ex/part_three", Decimal)
+TOTAL = ArtifactKind("ex/total", Decimal)
 
 
 def render(line: TraceLine) -> str:
@@ -134,6 +139,35 @@ def test_renders_the_unused_credit() -> None:
     assert render(UnusedCreditLine(D("25.000"))) == "unused credit, not refunded"
 
 
+# --- sums ------------------------------------------------------------------------
+
+
+def test_renders_a_sum_of_three_parts() -> None:
+    line = SumLine(
+        TOTAL,
+        ((PART_ONE, D("100.25")), (PART_TWO, D("40")), (PART_THREE, D("9.75"))),
+        D("150.00"),
+    )
+
+    assert render(line) == "total: part_one 100.25 + part_two 40 + part_three 9.75 = 150.00"
+
+
+def test_renders_the_parts_in_the_order_of_the_line() -> None:
+    line = SumLine(TOTAL, ((PART_THREE, D("9.75")), (PART_ONE, D("100.25"))), D("110.00"))
+
+    assert render(line) == "total: part_three 9.75 + part_one 100.25 = 110.00"
+
+
+def test_renders_a_sum_of_one_part() -> None:
+    line = SumLine(TOTAL, ((PART_TWO, D("40.5")),), D("40.5"))
+
+    assert render(line) == "total: part_two 40.5 = 40.5"
+
+
+def test_renders_a_sum_of_no_parts() -> None:
+    assert render(SumLine(TOTAL, (), D(0))) == "total: no parts = 0"
+
+
 # --- whole traces and unknown lines ----------------------------------------------
 
 
@@ -144,6 +178,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         CreditLine(Credit(D("1000")), Rate(D("0.125")), NO_ROUNDING, D("125.000")),
         CreditAppliedLine(TAX_AFTER_CREDIT, BASIC_TAX, D("10.0"), D("0")),
         UnusedCreditLine(D("115.000")),
+        SumLine(TOTAL, ((PART_ONE, D("1")), (PART_TWO, D("2"))), D("3")),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -152,6 +187,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         "credit: 12.5% of 1000 (no rounding)",
         "tax_after_credit: basic_tax 10.0 less credit, not below 0",
         "unused credit, not refunded",
+        "total: part_one 1 + part_two 2 = 3",
     )
 
 

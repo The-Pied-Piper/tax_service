@@ -15,6 +15,7 @@ from app.domain.trace import (
     CreditAppliedLine,
     CreditLine,
     RoundedTotalLine,
+    SumLine,
     TraceLine,
     UnusedCreditLine,
 )
@@ -41,6 +42,9 @@ class EnglishTraceRenderer:
                 return f"{output.label}: {tax.label} {amount} less credit, not below 0"
             case UnusedCreditLine():
                 return "unused credit, not refunded"
+            case SumLine(output=output, parts=parts, total=total):
+                terms = " + ".join(f"{kind.label} {amount}" for kind, amount in parts)
+                return f"{output.label}: {terms or 'no parts'} = {total}"
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 
     def render_all(self, trace: Iterable[TraceLine]) -> tuple[str, ...]:

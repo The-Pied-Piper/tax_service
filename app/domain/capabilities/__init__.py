@@ -7,6 +7,10 @@ imports every one of them, so importing the package fills the shared CapabilityR
 
 NAMESPACE = "core"
 
-from app.domain.capabilities import non_refundable_credit, progressive_tax  # noqa: E402
+from app.domain.capabilities import (  # noqa: E402
+    non_refundable_credit,
+    progressive_tax,
+    sum,
+)
 
-__all__ = ["NAMESPACE", "non_refundable_credit", "progressive_tax"]
+__all__ = ["NAMESPACE", "non_refundable_credit", "progressive_tax", "sum"]

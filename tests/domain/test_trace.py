@@ -21,6 +21,7 @@ from app.domain.trace import (
     CreditAppliedLine,
     CreditLine,
     RoundedTotalLine,
+    SumLine,
     TraceLine,
     UnusedCreditLine,
 )
@@ -30,6 +31,9 @@ CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 BASE = ArtifactKind("ex/base", Decimal)
 TAX = ArtifactKind("ex/tax", Decimal)
 AFTER = ArtifactKind("ex/after", Decimal)
+PART_ONE = ArtifactKind("ex/part_one", Decimal)
+PART_TWO = ArtifactKind("ex/part_two", Decimal)
+TOTAL = ArtifactKind("ex/total", Decimal)
 
 
 def slice_line() -> BracketSliceLine:
@@ -52,7 +56,11 @@ def unused_line() -> UnusedCreditLine:
     return UnusedCreditLine(D("25.000"))
 
 
-ALL_LINES = [slice_line, total_line, credit_line, applied_line, unused_line]
+def sum_line() -> SumLine:
+    return SumLine(TOTAL, ((PART_ONE, D("1.25")), (PART_TWO, D(2))), D("3.25"))
+
+
+ALL_LINES = [slice_line, total_line, credit_line, applied_line, unused_line, sum_line]
 
 
 def test_the_base_line_cannot_be_built() -> None:
@@ -155,6 +163,34 @@ def test_unused_credit_line_holds_the_unused_part() -> None:
     assert line == UnusedCreditLine(unused=D("25.000"))
     assert line.unused == D("25.000")
     assert line.amount == D("25.000")
+
+
+def test_sum_line_fields_in_order() -> None:
+    line = sum_line()
+
+    assert line == SumLine(
+        output=TOTAL, parts=((PART_ONE, D("1.25")), (PART_TWO, D(2))), total=D("3.25")
+    )
+    assert [f.name for f in fields(line)] == ["output", "parts", "total"]
+    assert line.output is TOTAL
+    assert line.parts == ((PART_ONE, D("1.25")), (PART_TWO, D(2)))
+    assert line.total == D("3.25")
+    assert line.amount == D("3.25")
+
+
+def test_sum_line_may_have_no_parts() -> None:
+    line = SumLine(TOTAL, (), D(0))
+
+    assert line.parts == ()
+    assert line.amount == D(0)
+
+
+def test_sum_lines_differ_by_the_order_of_their_parts() -> None:
+    assert sum_line() != SumLine(TOTAL, ((PART_TWO, D(2)), (PART_ONE, D("1.25"))), D("3.25"))
+
+
+def test_sum_lines_are_hashable() -> None:
+    assert hash(sum_line()) == hash(sum_line())
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:

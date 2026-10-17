@@ -659,3 +659,80 @@ def test_a_list_for_a_single_slot_is_an_invalid_selection() -> None:
 
     with pytest.raises(InvalidSelectionError, match="'source'"):
         list_slot_service(list_slot_manifest(("ex/part_one",), to_one)).compose(EX_ON, 2025)
+
+
+# --- core/sum: the generic sum over a list slot, wired by a made-up manifest -------------------
+#
+# `Sum` is imported inside a cached factory, so its absence fails the tests that use it rather
+# than the collection of this whole module. It is registered in a private registry under its
+# shared identifier, `core/sum`.
+
+
+@cache
+def sum_class() -> Any:
+    from app.domain.capabilities.sum import Sum
+
+    return Sum
+
+
+def sum_manifest(parts: tuple[str, ...]) -> Manifest:
+    """The three made-up producers of parts and `core/sum` over `parts` producing `ex-on/result`."""
+    to_one = CapabilitySelection(
+        name="ex/scale",
+        params={"factor": "ex/factor"},
+        consumes={"source": "ex/base"},
+        produces={"target": "ex/part_one"},
+    )
+    to_two = CapabilitySelection(
+        name="ex/shift",
+        params={"offset": "ex-on/offset"},
+        consumes={"source": "ex/base"},
+        produces={"target": "ex/part_two"},
+    )
+    to_three = CapabilitySelection(
+        name="ex/shift",
+        params={"offset": "ex-on/offset"},
+        consumes={"source": "ex/part_one"},
+        produces={"target": "ex/part_three"},
+    )
+    total = CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": parts},
+        produces={"output": "ex-on/result"},
+    )
+    return manifest(total, to_three, to_two, to_one)
+
+
+def sum_service(*manifests: Manifest) -> TaxComputationService:
+    capabilities = capability_registry()
+    capabilities.register("core/sum", sum_class())
+    artifacts = artifact_registry()
+    for kind in (PART_ONE, PART_TWO, PART_THREE):
+        artifacts.register(kind.identifier, kind)
+    return service(*manifests, capabilities=capabilities, artifacts=artifacts)
+
+
+def test_computes_core_sum_end_to_end() -> None:
+    from app.domain.trace import SumLine
+
+    parts = ("ex/part_two", "ex/part_three", "ex/part_one")
+
+    worksheet = sum_service(sum_manifest(parts)).compute(EX_ON, 2025, Artifact(BASE, D("5")))
+
+    # part_one = 5 × 3 = 15; part_two = 5 + 1 = 6; part_three = 15 + 1 = 16.
+    assert worksheet.get(RESULT).value == D("37")
+    assert isinstance(worksheet.producer_of(RESULT), sum_class())
+    assert worksheet.trace[-1] == SumLine(
+        RESULT, ((PART_TWO, D("6")), (PART_THREE, D("16")), (PART_ONE, D("15"))), D("37")
+    )
+    assert [type(line) for line in worksheet.trace].count(SumLine) == 1
+
+
+def test_core_sum_runs_after_all_its_parts() -> None:
+    parts = ("ex/part_two", "ex/part_three", "ex/part_one")
+
+    composition = sum_service(sum_manifest(parts)).compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is sum_class()
+    assert composition.order[-1].consumes == frozenset({PART_ONE, PART_TWO, PART_THREE})
