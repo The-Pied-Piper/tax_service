@@ -1,5 +1,5 @@
-"""The made-up package's artifact catalog. Importing it registers its kinds in the shared registry,
-so tests import it only while that registry is replaced by a fresh one."""
+"""The made-up package's artifact catalog. Importing it registers nothing: tests register it
+explicitly, into a private registry, through `JurisdictionPackages.register`."""
 
 from __future__ import annotations
 

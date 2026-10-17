@@ -14,7 +14,7 @@ from typing import assert_type
 
 import pytest
 
-import app.registrations  # noqa: F401  (fills the shared registries, as the app does)
+import app.registrations  # noqa: F401  (fills the capability and parser registries)
 from app.adapters.outbound.parameter_parsers import ParameterParser
 from app.adapters.outbound.parameter_parsers.brackets import BracketsParser
 from app.adapters.outbound.parameter_parsers.credit import CreditParser

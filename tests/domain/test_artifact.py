@@ -1,9 +1,10 @@
 """Unit tests for artifact kinds and artifacts (design.md §2).
 
 An `ArtifactKind[V]` names a kind of artifact by a namespaced identifier and states the type of
-its values; an `Artifact[V]` is one value of a kind in one computation. `ArtifactCatalog` is the
-only way a kind gets registered. Names are made up; the catalog tests point
-`ArtifactRegistry.shared` at a fresh registry with monkeypatch, so the shared registry stays clean.
+its values; an `Artifact[V]` is one value of a kind in one computation. `ArtifactCatalog` only
+records the kinds a package declares; `ArtifactRegistry.register_catalog` registers them. Names are
+made up; the catalog tests point `ArtifactRegistry.shared` at a fresh registry with monkeypatch,
+so the shared registry stays clean and declaring can be seen to register nothing.
 """
 
 from __future__ import annotations
@@ -178,46 +179,171 @@ def test_catalog_declares_the_namespaced_kind(fresh: ArtifactRegistry) -> None:
     assert kind == ArtifactKind("ex/taxable_base", Decimal)
 
 
-def test_catalog_registers_the_kind_under_its_identifier(fresh: ArtifactRegistry) -> None:
-    kind = ArtifactCatalog(Namespace("ex")).declare("taxable_base", Decimal)
-
-    assert fresh.get("ex/taxable_base") == kind
-    assert fresh.identifiers() == {"ex/taxable_base"}
-
-
-def test_identifiers_lists_every_registered_identifier(fresh: ArtifactRegistry) -> None:
+def test_declaring_registers_nothing(fresh: ArtifactRegistry) -> None:
     catalog = ArtifactCatalog(Namespace("ex"))
     catalog.declare("taxable_base", Decimal)
     catalog.declare("person_count", int)
 
-    identifiers = fresh.identifiers()
+    assert fresh.identifiers() == frozenset()
+    with pytest.raises(UnknownRegistrationError):
+        fresh.get("ex/taxable_base")
 
-    assert_type(identifiers, frozenset[str])
-    assert identifiers == frozenset({"ex/taxable_base", "ex/person_count"})
+
+def test_catalog_kinds_are_the_declared_kinds_in_declaration_order(fresh: ArtifactRegistry) -> None:
+    catalog = ArtifactCatalog(Namespace("ex"))
+    base = catalog.declare("taxable_base", Decimal)
+    count = catalog.declare("person_count", int)
+    tax = catalog.declare("basic_tax", Decimal)
+
+    kinds = catalog.kinds
+
+    assert_type(kinds, tuple[ArtifactKind[Any], ...])
+    assert isinstance(kinds, tuple)
+    assert len(kinds) == 3
+    assert kinds[0] is base
+    assert kinds[1] is count
+    assert kinds[2] is tax
 
 
-def test_catalog_rejects_a_duplicate_identifier(fresh: ArtifactRegistry) -> None:
-    ArtifactCatalog(Namespace("ex")).declare("taxable_base", Decimal)
+def test_a_catalog_has_its_namespace() -> None:
+    assert ArtifactCatalog(Namespace("ex-on")).namespace == Namespace("ex-on")
+
+
+def test_a_new_catalog_has_no_kinds(fresh: ArtifactRegistry) -> None:
+    assert ArtifactCatalog(Namespace("ex")).kinds == ()
+
+
+def test_catalog_rejects_a_duplicate_local_id_at_declare(fresh: ArtifactRegistry) -> None:
+    catalog = ArtifactCatalog(Namespace("ex"))
+    first = catalog.declare("taxable_base", Decimal)
 
     with pytest.raises(DuplicateRegistrationError, match="'ex/taxable_base'"):
-        ArtifactCatalog(Namespace("ex")).declare("taxable_base", int)
+        catalog.declare("taxable_base", int)
+
+    assert catalog.kinds == (first,)
+    assert fresh.identifiers() == frozenset()
 
 
-def test_the_same_local_id_may_appear_in_different_namespaces(fresh: ArtifactRegistry) -> None:
-    ArtifactCatalog(Namespace("ex")).declare("basic_tax", Decimal)
-    ArtifactCatalog(Namespace("ex-sub")).declare("basic_tax", Decimal)
+def test_separate_catalogs_may_declare_the_same_identifier_until_registered(
+    fresh: ArtifactRegistry,
+) -> None:
+    first = ArtifactCatalog(Namespace("ex")).declare("taxable_base", Decimal)
+    second = ArtifactCatalog(Namespace("ex")).declare("taxable_base", int)
 
-    assert fresh.identifiers() == {"ex/basic_tax", "ex-sub/basic_tax"}
+    assert first.identifier == second.identifier == "ex/taxable_base"
 
 
 @pytest.mark.parametrize("local_id", ["", "TaxableBase", "taxable-base", "ex/taxable_base"])
 def test_catalog_rejects_a_local_id_that_is_not_snake_case(
     fresh: ArtifactRegistry, local_id: str
 ) -> None:
+    catalog = ArtifactCatalog(Namespace("ex"))
+
     with pytest.raises(InvalidRegistrationError, match="invalid local id"):
-        ArtifactCatalog(Namespace("ex")).declare(local_id, Decimal)
+        catalog.declare(local_id, Decimal)
+
+    assert catalog.kinds == ()
+    assert fresh.identifiers() == frozenset()
+
+
+# --- ArtifactRegistry.register_catalog ------------------------------------------------------
+
+
+def test_register_catalog_registers_every_declared_kind_under_its_identifier(
+    fresh: ArtifactRegistry,
+) -> None:
+    catalog = ArtifactCatalog(Namespace("ex"))
+    base = catalog.declare("taxable_base", Decimal)
+    count = catalog.declare("person_count", int)
+    registry = ArtifactRegistry()
+
+    registry.register_catalog(catalog)
+
+    assert registry.get("ex/taxable_base") is base
+    assert registry.get("ex/person_count") is count
+
+
+def test_identifiers_lists_every_registered_identifier(fresh: ArtifactRegistry) -> None:
+    catalog = ArtifactCatalog(Namespace("ex"))
+    catalog.declare("taxable_base", Decimal)
+    catalog.declare("person_count", int)
+    registry = ArtifactRegistry()
+    registry.register_catalog(catalog)
+
+    identifiers = registry.identifiers()
+
+    assert_type(identifiers, frozenset[str])
+    assert identifiers == frozenset({"ex/taxable_base", "ex/person_count"})
+
+
+def test_register_catalog_registers_into_that_registry_only(fresh: ArtifactRegistry) -> None:
+    catalog = ArtifactCatalog(Namespace("ex"))
+    catalog.declare("taxable_base", Decimal)
+
+    ArtifactRegistry().register_catalog(catalog)
 
     assert fresh.identifiers() == frozenset()
+
+
+def test_registering_an_empty_catalog_registers_nothing(fresh: ArtifactRegistry) -> None:
+    registry = ArtifactRegistry()
+
+    registry.register_catalog(ArtifactCatalog(Namespace("ex")))
+
+    assert registry.identifiers() == frozenset()
+
+
+def test_registering_the_same_catalog_twice_is_idempotent(fresh: ArtifactRegistry) -> None:
+    catalog = ArtifactCatalog(Namespace("ex"))
+    base = catalog.declare("taxable_base", Decimal)
+    registry = ArtifactRegistry()
+    registry.register_catalog(catalog)
+
+    registry.register_catalog(catalog)
+
+    assert registry.identifiers() == {"ex/taxable_base"}
+    assert registry.get("ex/taxable_base") is base
+
+
+def test_a_different_catalog_with_a_clashing_identifier_is_rejected(
+    fresh: ArtifactRegistry,
+) -> None:
+    first = ArtifactCatalog(Namespace("ex"))
+    base = first.declare("taxable_base", Decimal)
+    second = ArtifactCatalog(Namespace("ex"))
+    second.declare("taxable_base", Decimal)
+    registry = ArtifactRegistry()
+    registry.register_catalog(first)
+
+    with pytest.raises(DuplicateRegistrationError, match="'ex/taxable_base'"):
+        registry.register_catalog(second)
+
+    assert registry.get("ex/taxable_base") is base
+
+
+def test_a_catalog_clashing_with_a_directly_registered_kind_is_rejected(
+    fresh: ArtifactRegistry,
+) -> None:
+    catalog = ArtifactCatalog(Namespace("ex"))
+    catalog.declare("taxable_base", Decimal)
+    registry = ArtifactRegistry()
+    registry.register("ex/taxable_base", ArtifactKind("ex/taxable_base", Decimal))
+
+    with pytest.raises(DuplicateRegistrationError, match="'ex/taxable_base'"):
+        registry.register_catalog(catalog)
+
+
+def test_the_same_local_id_may_appear_in_different_namespaces(fresh: ArtifactRegistry) -> None:
+    first = ArtifactCatalog(Namespace("ex"))
+    first.declare("basic_tax", Decimal)
+    second = ArtifactCatalog(Namespace("ex-sub"))
+    second.declare("basic_tax", Decimal)
+    registry = ArtifactRegistry()
+
+    registry.register_catalog(first)
+    registry.register_catalog(second)
+
+    assert registry.identifiers() == {"ex/basic_tax", "ex-sub/basic_tax"}
 
 
 def test_a_directly_built_artifact_kind_is_not_registered(fresh: ArtifactRegistry) -> None:

@@ -3,24 +3,22 @@ parameters, read through the real sources. Names and values are made up."""
 
 from __future__ import annotations
 
-import importlib
-import sys
 from decimal import Decimal
 from pathlib import Path
 
-import pytest
-
-import app.registrations  # noqa: F401  (fills the shared registries, as the app does)
 from app.adapters.outbound.jurisdiction_packages import JurisdictionPackages
 from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
-from app.domain.artifact import ArtifactRegistry
+from app.domain.artifact import ArtifactCatalog, ArtifactRegistry
 from app.domain.capability import CapabilityRegistry
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection
 from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
 from app.domain.registry import Namespace
+from app.registrations import CORE_PACKAGES
 from tests.jurisdictions.registration_fixtures import ex_on
+from tests.jurisdictions.registration_fixtures.ex_on import catalog
+from tests.jurisdictions.registration_fixtures.ex_on.catalog import CATALOG, LEVY, LEVY_BASE
 
 D = Decimal
 EX_ON = JurisdictionCode("EX-ON")
@@ -58,6 +56,7 @@ def test_every_parameter_slot_has_a_dataset() -> None:
     (manifest,) = YamlJurisdictionSource(PACKAGES.roots()).get_jurisdiction(EX_ON).manifests
     parameters = YamlParameterSource(PACKAGES.roots())
 
+    assert CORE_PACKAGES  # importing them filled the capability and parser registries
     for selection in manifest.capabilities:
         slots = CapabilityRegistry.shared().get(selection.name).PARAMETERS
         assert set(selection.params) == set(slots)
@@ -74,14 +73,17 @@ def test_every_artifact_slot_names_a_kind_of_its_catalog() -> None:
         assert set(selection.consumes.values()) | set(selection.produces.values()) <= declared
 
 
-def test_its_catalog_registers_kinds_in_its_namespace(monkeypatch: pytest.MonkeyPatch) -> None:
-    # A fresh registry and a fresh import, so the shared registry never sees made-up kinds.
-    registry = ArtifactRegistry()
-    monkeypatch.setattr(ArtifactRegistry, "shared", classmethod(lambda cls: registry))
-    name = "tests.jurisdictions.registration_fixtures.ex_on.catalog"
-    monkeypatch.delitem(sys.modules, name, raising=False)
+def test_it_exposes_its_catalog() -> None:
+    assert isinstance(catalog.CATALOG, ArtifactCatalog)
+    assert catalog.CATALOG is CATALOG
+    assert CATALOG.kinds == (LEVY_BASE, LEVY)
 
-    catalog = importlib.import_module(name)
+
+def test_its_catalog_registers_explicitly_in_its_namespace() -> None:
+    registry = ArtifactRegistry()
+
+    PACKAGES.register(registry)
 
     assert registry.identifiers() == {"ex-on/levy_base", "ex-on/levy"}
-    assert registry.get("ex-on/levy") is catalog.LEVY
+    assert registry.get("ex-on/levy_base") is LEVY_BASE
+    assert registry.get("ex-on/levy") is LEVY

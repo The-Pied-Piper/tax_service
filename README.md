@@ -45,7 +45,7 @@ app/
     inbound/              HTTP request adapters (DTO -> domain -> DTO), trace renderers
     outbound/             driven adapters: database, files
   jurisdictions/          one package per jurisdiction: catalog, manifests, parameter data
-  registrations.py        explicit list of registering modules and jurisdiction packages
+  registrations.py        explicit lists of core packages and jurisdiction packages
   generated/              written by the generator from the spec; never edit
 migrations/               Alembic (async)
 tests/
@@ -58,17 +58,18 @@ Copy `app/jurisdictions/ca_on/` to `app/jurisdictions/<x>/`, named from the juri
 code (`CA-QC` -> `ca_qc`), and change:
 
 - `__init__.py`: `NAMESPACE = "<code lower-cased>"`, e.g. `"ca-qc"`.
-- `catalog.py`: an `ArtifactCatalog` for that namespace declaring the jurisdiction's
-  artifact kinds.
+- `catalog.py`: `CATALOG`, an `ArtifactCatalog` for that namespace declaring the jurisdiction's
+  artifact kinds. Declaring only records a kind; importing the package registers nothing.
 - `manifests/`: the manifest(s) selecting capabilities and filling their slots: parameter
   slots with parameter families, artifact slots with artifact identifiers. Each manifest also
   requires `inputs:` and `outputs:`, the artifact identifiers a computation starts from and returns.
 - `parameters/`: one dataset per family and tax year, at `parameters/<family>/<year>.yaml`
   for family `<namespace>/<family>`.
 
-Then register it with two lines in `app/registrations.py`: import
-`app.jurisdictions.<x>.catalog`, and add `app.jurisdictions.<x>` to `JURISDICTIONS`. Its tests go
-under `tests/jurisdictions/<x>/`.
+Then list it in `app/registrations.py`: import `app.jurisdictions.<x>` and add it to
+`JURISDICTIONS`. Catalogs register at startup: the composition root calls
+`JURISDICTIONS.register()`, which imports each listed package's `catalog` module and registers its
+`CATALOG` in the shared artifact registry. Its tests go under `tests/jurisdictions/<x>/`.
 
 Raise `DomainError` subclasses from `app/domain/errors.py` for business failures.
 `main.py` maps them to RFC 7807 problem responses.

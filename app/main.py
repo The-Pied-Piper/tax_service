@@ -1,7 +1,9 @@
 """Composition root: builds services, wires them into request adapters, and creates the ASGI app.
 
 This is the only place that knows about concrete implementations. Swap outbound
-adapters (databases, clients) here, never inside the domain or application layers.
+adapters (databases, clients) here, never inside the domain or application layers. It also
+registers the jurisdiction catalogs, explicitly: `build_tax_computation()` and app startup both
+call `JURISDICTIONS.register()`, which is idempotent.
 """
 
 from __future__ import annotations
@@ -32,7 +34,7 @@ from app.domain.artifact import ArtifactRegistry
 from app.domain.capability import CapabilityRegistry
 from app.domain.errors import ConflictError, DomainError, NotFoundError, ValidationError
 from app.generated.handlers import Adapters, build_operations
-from app.registrations import JURISDICTIONS  # importing it runs every registering decorator
+from app.registrations import JURISDICTIONS
 from app.settings import Settings
 
 SPEC_PATH = Path(__file__).resolve().parent.parent / "openapi" / "openapi.yml"
@@ -62,8 +64,10 @@ def build_adapters(settings: Settings, engine: AsyncEngine) -> Adapters:
 def build_tax_computation() -> TaxComputationService:
     """The tax computation over the jurisdiction packages' files and the shared registries.
 
+    It first registers the jurisdiction catalogs into the shared artifact registry (idempotent).
     No HTTP route uses it yet; the sources read files only when a computation asks.
     """
+    JURISDICTIONS.register()
     roots = JURISDICTIONS.roots()
     return TaxComputationService(
         YamlJurisdictionSource(roots),
@@ -74,12 +78,14 @@ def build_tax_computation() -> TaxComputationService:
 
 
 def create_app(settings: Settings | None = None) -> AsyncApp:
+    """The ASGI app; at startup it registers the jurisdiction catalogs (idempotent)."""
     settings = settings or Settings()
     logging.basicConfig(level=settings.log_level)
     engine = create_engine(settings)
 
     @asynccontextmanager
     async def lifespan(_: Any) -> AsyncIterator[None]:
+        JURISDICTIONS.register()
         yield
         await engine.dispose()
 
