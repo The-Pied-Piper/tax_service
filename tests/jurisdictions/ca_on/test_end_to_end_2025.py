@@ -1,10 +1,11 @@
 """CA-ON 2025, end to end: CRA's worked example computed from the manifest through the service.
 
 The service is the one the composition root builds (`build_tax_computation`): the real YAML
-sources over the jurisdiction packages and the shared registries. The example's amounts (taxable
-income 115000 through each tax after credits) are checked from the files under `returns/`
-by `test_worked_returns.py`; this module pins which capability produces each line, the order,
-and the trace that explains them.
+sources over the jurisdiction packages and the shared registries. Return A's amounts (employment
+income 110000 and a capital gain of 20000 to total income 120000; taxable income 115000 through
+each tax after credits) are checked from the files under `returns/` by `test_worked_returns.py`;
+this module pins which capability produces each line, the order, and the trace that explains
+them.
 """
 
 from __future__ import annotations
@@ -14,15 +15,23 @@ from decimal import Decimal
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.artifact import Artifact
+from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
 from app.domain.capabilities.progressive_tax import ProgressiveTax
+from app.domain.capabilities.sum import Sum
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.trace import CreditAppliedLine, RoundedTotalLine
+from app.domain.parameters.rate import Rate
+from app.domain.parameters.rounding import NO_ROUNDING
+from app.domain.trace import CreditAppliedLine, RateAppliedLine, RoundedTotalLine, SumLine
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
+    CAPITAL_GAIN,
+    EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
+    TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
+    TOTAL_INCOME,
 )
 from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX, ONTARIO_TAX_AFTER_CREDITS
 from app.main import build_tax_computation
@@ -35,14 +44,29 @@ def service() -> TaxComputationService:
     return build_tax_computation()
 
 
-def compute(taxable_income: str) -> Worksheet:
-    return service().compute(CA_ON, 2025, Artifact(TAXABLE_INCOME, D(taxable_income)))
+def compute(employment_income: str, capital_gain: str, taxable_income: str) -> Worksheet:
+    return service().compute(
+        CA_ON,
+        2025,
+        Artifact(EMPLOYMENT_INCOME, D(employment_income)),
+        Artifact(CAPITAL_GAIN, D(capital_gain)),
+        Artifact(TAXABLE_INCOME, D(taxable_income)),
+    )
+
+
+def return_a() -> Worksheet:
+    """Return A's inputs, as in `returns/2025_return_a.yaml`."""
+    return compute("110000", "20000", "115000")
 
 
 def test_each_amount_is_produced_by_its_capability() -> None:
-    worksheet = compute("115000")
+    worksheet = return_a()
 
+    assert worksheet.producer_of(EMPLOYMENT_INCOME) is None
+    assert worksheet.producer_of(CAPITAL_GAIN) is None
     assert worksheet.producer_of(TAXABLE_INCOME) is None
+    assert isinstance(worksheet.producer_of(TAXABLE_CAPITAL_GAINS), ApplyRate)
+    assert isinstance(worksheet.producer_of(TOTAL_INCOME), Sum)
     assert isinstance(worksheet.producer_of(FEDERAL_BASIC_TAX), ProgressiveTax)
     assert isinstance(worksheet.producer_of(ONTARIO_BASIC_TAX), ProgressiveTax)
     assert isinstance(worksheet.producer_of(FEDERAL_TAX_AFTER_CREDITS), NonRefundableCredit)
@@ -51,7 +75,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
 
 
 def test_the_trace_explains_the_computation() -> None:
-    worksheet = compute("115000")
+    worksheet = return_a()
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
 
     def position(expected: str, amount: str) -> int:
@@ -63,6 +87,13 @@ def test_the_trace_explains_the_computation() -> None:
         ]
         return found
 
+    taxable_gains = position(
+        "taxable_capital_gains: 50% of capital_gain 20000 (no rounding)", "10000"
+    )
+    total = position(
+        "total_income: employment_income 110000 + taxable_capital_gains 10000.0 = 120000.0",
+        "120000",
+    )
     federal_basic = position("federal_basic_tax on taxable_income 115000 (no rounding)", "20146.25")
     federal_after = position(
         "federal_tax_after_credits: federal_basic_tax 20146.250 less credit, not below 0",
@@ -75,15 +106,31 @@ def test_the_trace_explains_the_computation() -> None:
         "ontario_tax_after_credits: ontario_basic_tax 8539.5965 less credit, not below 0",
         "7895.873",
     )
+    assert taxable_gains < total
     assert federal_basic < federal_after
     assert ontario_basic < ontario_after
 
 
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
-    trace = compute("115000").trace
+    trace = return_a().trace
 
+    rated = {line.output: line for line in trace if isinstance(line, RateAppliedLine)}
+    sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     totals = {line.output: line for line in trace if isinstance(line, RoundedTotalLine)}
     applied = {line.output: line for line in trace if isinstance(line, CreditAppliedLine)}
+
+    assert rated == {
+        TAXABLE_CAPITAL_GAINS: RateAppliedLine(
+            TAXABLE_CAPITAL_GAINS, CAPITAL_GAIN, D("20000"), Rate(D("0.5")), NO_ROUNDING, D("10000")
+        )
+    }
+    assert sums == {
+        TOTAL_INCOME: SumLine(
+            TOTAL_INCOME,
+            ((EMPLOYMENT_INCOME, D("110000")), (TAXABLE_CAPITAL_GAINS, D("10000"))),
+            D("120000"),
+        )
+    }
 
     assert totals[FEDERAL_BASIC_TAX].base == TAXABLE_INCOME
     assert totals[FEDERAL_BASIC_TAX].base_amount == D("115000")
@@ -98,18 +145,20 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert applied[ONTARIO_TAX_AFTER_CREDITS].amount == D("7895.873")
 
 
-def test_each_progressive_tax_runs_before_its_credit() -> None:
+def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 4
+    assert len(order) == 6
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
+    assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME]
     assert position[FEDERAL_BASIC_TAX] < position[FEDERAL_TAX_AFTER_CREDITS]
     assert position[ONTARIO_BASIC_TAX] < position[ONTARIO_TAX_AFTER_CREDITS]
 
 
 def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
-    worksheet = compute("10000")
+    worksheet = compute("10000", "0", "10000")
 
+    assert worksheet.get(TOTAL_INCOME).value == D("10000")
     assert worksheet.get(FEDERAL_BASIC_TAX).value == D("1450")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("0")
     assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("0")
