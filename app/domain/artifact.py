@@ -91,6 +91,24 @@ class ArtifactRegistry(Registry[object]):
         for kind in pending:
             self.register(kind.identifier, kind)
 
+    def kind(self, identifier: str) -> ArtifactKind[Any]:
+        """The artifact kind registered as `identifier`.
+
+        An unknown identifier is the registry's UnknownRegistrationError; an entry that is not an
+        `ArtifactKind`, or a kind registered under another identifier than its own, is an
+        InvalidRegistrationError naming the identifier.
+        """
+        item = self.get(identifier)
+        if not isinstance(item, ArtifactKind):
+            raise InvalidRegistrationError(
+                f"{identifier!r} is registered as {item!r}, not as an artifact kind"
+            )
+        if item.identifier != identifier:
+            raise InvalidRegistrationError(
+                f"{identifier!r} is registered as the kind {item.identifier!r}, not as itself"
+            )
+        return item
+
 
 class ArtifactCatalog:
     """One package's artifact kinds: builds each kind in the package's namespace and records it.

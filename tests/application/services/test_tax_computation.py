@@ -1,8 +1,9 @@
 """Unit tests for TaxComputationService: a jurisdiction's manifest built into a composition, run.
 
 The service does the I/O only: it reads the jurisdiction, takes the manifest for the tax year,
-resolves each selection's class, datasets and kinds from the ports and registries it was given,
-has `CapabilityBuilder` build each capability, and builds the `Composition`. Resolution errors
+resolves each selection's class and datasets from the ports and registries it was given, has
+`CapabilityBuilder` build each capability from them and the artifact registry (the builder resolves
+artifact kinds), and builds the `Composition`. Resolution errors
 propagate unchanged. The ports are small in-memory fakes and the registries private ones; every
 code, capability, kind and dataset is made up.
 """
@@ -474,6 +475,22 @@ def test_an_identifier_registered_as_something_other_than_a_kind_is_an_invalid_r
         service(
             manifest(outputs=frozenset({"ex-on/result", "ex/stray"})), artifacts=artifacts
         ).compose(EX_ON, 2025)
+
+
+def test_an_identifier_in_a_selection_registered_as_something_other_than_a_kind_is_invalid() -> (
+    None
+):
+    artifacts = artifact_registry()
+    artifacts.register("ex/stray", object())
+    stray = CapabilitySelection(
+        name="ex/scale",
+        params={"factor": "ex/factor"},
+        consumes={"source": "ex/stray"},
+        produces={"target": "ex/scaled"},
+    )
+
+    with pytest.raises(InvalidRegistrationError, match="'ex/stray'.*not as an artifact kind"):
+        service(manifest(stray, SHIFT), artifacts=artifacts).compose(EX_ON, 2025)
 
 
 # --- list slots: a consumed slot filled with a list of identifiers ------------------------------
