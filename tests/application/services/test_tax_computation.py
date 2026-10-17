@@ -736,3 +736,94 @@ def test_core_sum_runs_after_all_its_parts() -> None:
 
     assert type(composition.order[-1]) is sum_class()
     assert composition.order[-1].consumes == frozenset({PART_ONE, PART_TWO, PART_THREE})
+
+
+# --- core/apply_rate: base × a rate dataset's rate, wired by a made-up manifest ----------------
+#
+# `ApplyRate` is imported inside a cached factory, like `Sum` above, so its absence fails only
+# the tests that use it. It is registered in a private registry under its shared identifier,
+# `core/apply_rate`, and reads a made-up `rate` dataset that rounds half-up to the cent.
+
+
+@cache
+def apply_rate_class() -> Any:
+    from app.domain.capabilities.apply_rate import ApplyRate
+
+    return ApplyRate
+
+
+def portion_rate_data(tax_year: int = 2025) -> ParameterDataset[Any]:
+    from app.domain.parameters.rate import RATE, Rate
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+
+    return ParameterDataset(
+        family="ex/portion_rate",
+        tax_year=tax_year,
+        kind=RATE,
+        values=Rate(D("0.5")),
+        rounding=RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        sources=("https://example.org/ex/portion_rate",),
+    )
+
+
+APPLY_RATE = CapabilitySelection(
+    name="core/apply_rate",
+    params={"rate": "ex/portion_rate"},
+    consumes={"base": "ex/scaled"},
+    produces={"output": "ex-on/result"},
+)
+
+
+def apply_rate_service() -> tuple[TaxComputationService, FakeParameters]:
+    capabilities = capability_registry()
+    capabilities.register("core/apply_rate", apply_rate_class())
+    parameters = FakeParameters(factor_data(), offset_data(), portion_rate_data())
+    built = service(
+        manifest(APPLY_RATE, SCALE),  # authored out of order on purpose
+        parameters=parameters,
+        capabilities=capabilities,
+    )
+    return built, parameters
+
+
+def test_computes_core_apply_rate_end_to_end() -> None:
+    from app.domain.parameters.rate import Rate
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.trace import RateAppliedLine
+
+    built, _parameters = apply_rate_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5.01")))
+
+    # scaled = 5.01 × 3 = 15.03; result = 15.03 × 0.5 = 7.515, rounded half-up to 7.52.
+    assert worksheet.get(SCALED).value == D("15.03")
+    assert worksheet.get(RESULT).value == D("7.52")
+    assert isinstance(worksheet.producer_of(RESULT), apply_rate_class())
+    assert worksheet.trace[-1] == RateAppliedLine(
+        RESULT,
+        SCALED,
+        D("15.03"),
+        Rate(D("0.5")),
+        RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        D("7.52"),
+    )
+    assert [type(line) for line in worksheet.trace].count(RateAppliedLine) == 1
+
+
+def test_core_apply_rate_runs_after_its_base_is_produced() -> None:
+    built, _parameters = apply_rate_service()
+
+    composition = built.compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is apply_rate_class()
+    assert composition.order[-1].consumes == frozenset({SCALED})
+
+
+def test_core_apply_rate_asks_for_its_dataset_as_a_rate() -> None:
+    from app.domain.parameters.rate import RATE
+
+    built, parameters = apply_rate_service()
+
+    built.compose(EX_ON, 2025)
+
+    assert ("ex/portion_rate", 2025, RATE) in parameters.requests

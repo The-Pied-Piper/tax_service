@@ -116,3 +116,20 @@ class SumLine(TraceLine):
     def amount(self) -> Decimal:
         """The total of the parts."""
         return self.total
+
+
+@dataclass(frozen=True)
+class RateAppliedLine(TraceLine):
+    """The `result` produced as `output` by `base` (worth `base_amount`) × `rate`, rounded."""
+
+    output: Money
+    base: Money
+    base_amount: Decimal
+    rate: Rate
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The rounded product."""
+        return self.result
