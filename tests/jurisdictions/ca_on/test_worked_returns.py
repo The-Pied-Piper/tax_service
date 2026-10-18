@@ -67,7 +67,10 @@ description: >-
   employment amount). Each form's non-refundable tax credits are its total times its rate
   (14.5% of 18085.75 = 2622.43375; 5.05% of 13232.75 = 668.253875); each exceeds its tax,
   leaving zero. An Ontario tax of zero is below the first surtax threshold, so the surtax is
-  zero and the Ontario tax with surtax is zero.
+  zero and the Ontario tax with surtax is zero. With no dependent children and no dependants,
+  the Ontario tax reduction amounts are the basic reduction of 294.00, and the reduction is
+  twice them less the tax of zero: 588.00, which leaves an Ontario tax after the reduction of
+  zero, not a refund.
 sources:
   - >-
     T1, Federal Worksheet, Schedule 3, Schedule 7, Schedule 8, ON428 and EI table arithmetic on
@@ -79,6 +82,8 @@ inputs:
   ca/rrsp_contributions: "0"
   ca/rrsp_deduction_limit: "1800"
   ca/union_dues: "0"
+  ca-on/dependent_children: 0
+  ca-on/dependants: 0
 expected:
   ca/taxable_capital_gains: "0"
   ca/total_income: "10000"
@@ -106,6 +111,12 @@ expected:
   ca-on/ontario_tax_after_credits: "0"
   ca-on/ontario_surtax: "0"
   ca-on/ontario_tax_with_surtax: "0"
+  ca-on/tax_reduction_basic: "294.00"
+  ca-on/tax_reduction_for_children: "0"
+  ca-on/tax_reduction_for_dependants: "0"
+  ca-on/tax_reduction_amounts: "294.00"
+  ca-on/ontario_tax_reduction: "588.00"
+  ca-on/ontario_tax_after_reduction: "0"
 """
 
 
@@ -138,7 +149,9 @@ def test_a_file_missing_a_declared_output_fails_naming_the_file_and_output(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "partial.yaml"
-    path.write_text(LOW_INCOME.replace('  ca-on/ontario_tax_with_surtax: "0"\n', ""))
+    path.write_text(LOW_INCOME.replace('  ca-on/ontario_tax_after_reduction: "0"\n', ""))
 
-    with pytest.raises(WorkedReturnError, match=r"partial\.yaml.*ca-on/ontario_tax_with_surtax"):
+    with pytest.raises(
+        WorkedReturnError, match=r"partial\.yaml.*ca-on/ontario_tax_after_reduction"
+    ):
         check(path)

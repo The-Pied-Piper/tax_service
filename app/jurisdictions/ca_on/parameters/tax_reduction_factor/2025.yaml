@@ -1,0 +1,12 @@
+# Ontario tax reduction factor, 2025 tax year (Form ON428, form 5006-C): line 78
+# "Amount from line 77 above multiplied by 2", then line 80 "Line 78 minus line 79
+# (if negative, enter "0") Ontario tax reduction". It is a factor, not a rate, since
+# a rate is at most 1.
+# The form states no rounding on lines 78 and 80, so none is assumed.
+family: ca-on/tax_reduction_factor
+tax_year: 2025
+kind: factor
+sources:
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
+rounding: none
+value: "2"

@@ -31,12 +31,23 @@ SECTIONS = {
     "expected": 'expected:\n  ca/federal_basic_tax: "20146.25"\n',
 }
 VALID = "".join(SECTIONS.values())
+# Made up for the count tests and not registered with the application: a non-negative count.
+COUNT = ArtifactKind("ex/count", int, non_negative=True)
 
 
 @pytest.fixture
 def artifacts() -> ArtifactRegistry:
     JURISDICTIONS.register()
     return ArtifactRegistry.shared()
+
+
+@pytest.fixture
+def counts() -> ArtifactRegistry:
+    """A registry of the made-up count and the federal basic tax `VALID` expects."""
+    artifacts = ArtifactRegistry()
+    artifacts.register(COUNT.identifier, COUNT)
+    artifacts.register(FEDERAL_BASIC_TAX.identifier, FEDERAL_BASIC_TAX)
+    return artifacts
 
 
 def write(tmp_path: Path, text: str, name: str = "bad.yaml") -> Path:
@@ -159,6 +170,87 @@ def test_an_identifier_that_is_not_an_amount_names_the_file_and_key(tmp_path: Pa
     path = write(tmp_path, with_section("inputs", 'inputs:\n  ex/flag: "1"\n'))
 
     with pytest.raises(WorkedReturnError, match=r"bad\.yaml: inputs\.ex/flag: .*not an amount"):
+        WorkedReturn.load(path, artifacts)
+
+
+def test_an_int_kind_takes_a_plain_integer(tmp_path: Path, counts: ArtifactRegistry) -> None:
+    path = write(tmp_path, with_section("inputs", "inputs:\n  ex/count: 3\n"), "ok.yaml")
+
+    worked = WorkedReturn.load(path, counts)
+
+    assert worked.inputs == (Artifact(COUNT, 3),)
+    assert type(worked.inputs[0].value) is int
+
+
+def test_an_int_kind_takes_zero(tmp_path: Path, counts: ArtifactRegistry) -> None:
+    path = write(tmp_path, with_section("inputs", "inputs:\n  ex/count: 0\n"), "ok.yaml")
+
+    assert WorkedReturn.load(path, counts).inputs == (Artifact(COUNT, 0),)
+
+
+@pytest.mark.parametrize(
+    ("count", "got"),
+    [
+        # A bool is an int in Python, so YAML's booleans must be refused by name.
+        ("true", "bool"),
+        ("false", "bool"),
+        ("yes", "bool"),
+        # Quoted, a count would be read as text; a float is not a count.
+        ('"3"', "str"),
+        ("3.0", "float"),
+    ],
+)
+def test_an_int_kind_refuses_anything_but_a_plain_integer(
+    tmp_path: Path, counts: ArtifactRegistry, count: str, got: str
+) -> None:
+    path = write(tmp_path, with_section("inputs", f"inputs:\n  ex/count: {count}\n"))
+
+    with pytest.raises(
+        WorkedReturnError, match=rf"bad\.yaml: inputs\.ex/count must be an integer, got {got}"
+    ):
+        WorkedReturn.load(path, counts)
+
+
+def test_a_negative_count_fails_at_load_naming_the_kind(
+    tmp_path: Path, counts: ArtifactRegistry
+) -> None:
+    path = write(tmp_path, with_section("inputs", "inputs:\n  ex/count: -1\n"))
+
+    with pytest.raises(NegativeArtifactError, match=r"ex/count.*-1"):
+        WorkedReturn.load(path, counts)
+
+
+def test_a_count_under_expected_names_the_file_and_key(
+    tmp_path: Path, counts: ArtifactRegistry
+) -> None:
+    # Counts are what a return starts from, never a line it expects.
+    text = with_section("inputs", "inputs:\n  ex/count: 3\n")
+    path = write(tmp_path, text.replace('  ca/federal_basic_tax: "20146.25"\n', "  ex/count: 3\n"))
+
+    with pytest.raises(WorkedReturnError, match=r"bad\.yaml: expected\.ex/count: .*not an amount"):
+        WorkedReturn.load(path, counts)
+
+
+def test_loads_the_ontario_counts_as_integers(tmp_path: Path, artifacts: ArtifactRegistry) -> None:
+    text = with_section("inputs", "inputs:\n  ca-on/dependent_children: 2\n  ca-on/dependants: 1\n")
+
+    worked = WorkedReturn.load(write(tmp_path, text, "ok.yaml"), artifacts)
+
+    assert worked.inputs == (
+        Artifact(artifacts.kind("ca-on/dependent_children"), 2),
+        Artifact(artifacts.kind("ca-on/dependants"), 1),
+    )
+
+
+def test_an_ontario_count_given_as_a_boolean_names_the_file_and_key(
+    tmp_path: Path, artifacts: ArtifactRegistry
+) -> None:
+    path = write(tmp_path, with_section("inputs", "inputs:\n  ca-on/dependants: true\n"))
+
+    with pytest.raises(
+        WorkedReturnError,
+        match=r"bad\.yaml: inputs\.ca-on/dependants must be an integer, got bool",
+    ):
         WorkedReturn.load(path, artifacts)
 
 

@@ -14,10 +14,13 @@ federal, the Federal Worksheet's taper on net income, here at or below the 17788
 reduced; 12747 Ontario) plus the base CPP contributions and the EI premiums, and federally the
 Canada employment amount of 1471 (the lesser of employment income and 1471), through each total of
 credit amounts and each form's non-refundable tax credits (T1 line 35000, ON428 line 61500) to each
-tax after credits, and the Ontario surtax on the Ontario tax after credits (ON428 lines 66 to 68) to
-the Ontario tax with surtax of line 69) are checked from the files under `returns/` by
-`test_worked_returns.py`, as are Returns C, D and E; this module pins which capability produces
-each line, the order, and the trace that explains them.
+tax after credits, the Ontario surtax on the Ontario tax after credits (ON428 lines 66 to 68) to
+the Ontario tax with surtax of line 69, and with no dependent children and no dependants the
+Ontario tax reduction amounts of 294.00 (lines 74 to 77), twice them less the tax with surtax (line
+73), not below zero, the Ontario tax reduction of 0 (line 80), to the Ontario tax after the
+reduction (line 81)) are checked from the files under `returns/` by `test_worked_returns.py`, as
+are Returns C, D and E; this module pins which capability produces each line, the order, and the
+trace that explains them.
 """
 
 from __future__ import annotations
@@ -32,6 +35,8 @@ from app.domain.capabilities.capped_amount import CappedAmount
 from app.domain.capabilities.contribution_tier import TieredContribution
 from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.lesser_of import LesserOf
+from app.domain.capabilities.multiple_over import MultipleOver
+from app.domain.capabilities.per_unit_amount import PerUnitAmount
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
@@ -41,6 +46,7 @@ from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.parameters.amount import Amount
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
+from app.domain.parameters.factor import Factor
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.domain.parameters.taper import Taper
@@ -49,6 +55,8 @@ from app.domain.trace import (
     ContributionTierLine,
     CreditAmountLine,
     LesserOfLine,
+    MultipleOverLine,
+    PerUnitAmountLine,
     RateAppliedLine,
     RoundedTotalLine,
     SubtractedNotBelowZeroLine,
@@ -86,10 +94,18 @@ from app.jurisdictions.ca.catalog import (
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
+    DEPENDANTS,
+    DEPENDENT_CHILDREN,
     ONTARIO_BASIC_TAX,
     ONTARIO_SURTAX,
     ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_AFTER_REDUCTION,
+    ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
+    TAX_REDUCTION_AMOUNTS,
+    TAX_REDUCTION_BASIC,
+    TAX_REDUCTION_FOR_CHILDREN,
+    TAX_REDUCTION_FOR_DEPENDANTS,
 )
 from app.main import build_tax_computation
 
@@ -112,6 +128,9 @@ def compute(
     rrsp_contributions: str,
     rrsp_deduction_limit: str,
     union_dues: str,
+    *,
+    dependent_children: int = 0,
+    dependants: int = 0,
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -122,6 +141,8 @@ def compute(
         Artifact(RRSP_CONTRIBUTIONS, D(rrsp_contributions)),
         Artifact(RRSP_DEDUCTION_LIMIT, D(rrsp_deduction_limit)),
         Artifact(UNION_DUES, D(union_dues)),
+        Artifact(DEPENDENT_CHILDREN, dependent_children),
+        Artifact(DEPENDANTS, dependants),
     )
 
 
@@ -139,6 +160,8 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(RRSP_CONTRIBUTIONS) is None
     assert worksheet.producer_of(RRSP_DEDUCTION_LIMIT) is None
     assert worksheet.producer_of(UNION_DUES) is None
+    assert worksheet.producer_of(DEPENDENT_CHILDREN) is None
+    assert worksheet.producer_of(DEPENDANTS) is None
     assert isinstance(worksheet.producer_of(RRSP_CONTRIBUTIONS_AVAILABLE), Sum)
     assert isinstance(worksheet.producer_of(RRSP_DEDUCTION), LesserOf)
     assert isinstance(worksheet.producer_of(CPP_BASE_CONTRIBUTIONS), TieredContribution)
@@ -204,6 +227,21 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(ONTARIO_SURTAX), TieredSurcharge)
     assert isinstance(worksheet.producer_of(ONTARIO_TAX_WITH_SURTAX), Sum)
     assert worksheet.producer_of(ONTARIO_TAX_WITH_SURTAX) is not worksheet.producer_of(TOTAL_INCOME)
+    assert isinstance(worksheet.producer_of(TAX_REDUCTION_BASIC), CreditAmount)
+    assert worksheet.producer_of(TAX_REDUCTION_BASIC) is not worksheet.producer_of(
+        ontario.BASIC_PERSONAL_AMOUNT
+    )
+    assert isinstance(worksheet.producer_of(TAX_REDUCTION_FOR_CHILDREN), PerUnitAmount)
+    assert isinstance(worksheet.producer_of(TAX_REDUCTION_FOR_DEPENDANTS), PerUnitAmount)
+    assert worksheet.producer_of(TAX_REDUCTION_FOR_CHILDREN) is not worksheet.producer_of(
+        TAX_REDUCTION_FOR_DEPENDANTS
+    )
+    assert isinstance(worksheet.producer_of(TAX_REDUCTION_AMOUNTS), Sum)
+    assert isinstance(worksheet.producer_of(ONTARIO_TAX_REDUCTION), MultipleOver)
+    assert isinstance(worksheet.producer_of(ONTARIO_TAX_AFTER_REDUCTION), SubtractNotBelowZero)
+    assert worksheet.producer_of(ONTARIO_TAX_AFTER_REDUCTION) is not worksheet.producer_of(
+        ONTARIO_TAX_AFTER_CREDITS
+    )
 
 
 def test_the_trace_explains_the_computation() -> None:
@@ -332,6 +370,33 @@ def test_the_trace_explains_the_computation() -> None:
         "+ ontario_surtax 523.7872376 = 8195.7644476",
         "8195.7644476",
     )
+    reduction_basic = position(
+        "tax_reduction_basic: credit amount 294 (no rounding)",
+        "294.00",
+    )
+    reduction_children = position(
+        "tax_reduction_for_children: 544 for each of 0 dependent_children = 0 (no rounding)",
+        "0",
+    )
+    reduction_dependants = position(
+        "tax_reduction_for_dependants: 544 for each of 0 dependants = 0 (no rounding)",
+        "0",
+    )
+    reduction_amounts = position(
+        "tax_reduction_amounts: tax_reduction_basic 294 + tax_reduction_for_children 0 "
+        "+ tax_reduction_for_dependants 0 = 294",
+        "294.00",
+    )
+    reduction = position(
+        "ontario_tax_reduction: 2 × tax_reduction_amounts 294 "
+        "over ontario_tax_with_surtax 8195.7644476, not below 0 (no rounding)",
+        "0",
+    )
+    after_reduction = position(
+        "ontario_tax_after_reduction: ontario_tax_with_surtax 8195.7644476 "
+        "less ontario_tax_reduction 0, not below 0 = 8195.7644476",
+        "8195.7644476",
+    )
     assert taxable_gains < total < net
     assert cpp_first < cpp_enhanced < deductions < net
     assert rrsp_available < rrsp < deductions
@@ -349,6 +414,11 @@ def test_the_trace_explains_the_computation() -> None:
     assert employment_amount < federal_amounts
     assert ontario_amount < ontario_amounts < ontario_credit < ontario_after
     assert ontario_after < surtax_first < surtax_second < with_surtax
+    assert reduction_basic < reduction_amounts
+    assert reduction_children < reduction_amounts
+    assert reduction_dependants < reduction_amounts
+    assert with_surtax < reduction < after_reduction
+    assert reduction_amounts < reduction
 
 
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
@@ -364,6 +434,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     tiers = {line.output: line for line in trace if isinstance(line, ContributionTierLine)}
     lesser = {line.output: line for line in trace if isinstance(line, LesserOfLine)}
     surcharged = [line for line in trace if isinstance(line, SurchargeTierLine)]
+    per_unit = {line.output: line for line in trace if isinstance(line, PerUnitAmountLine)}
+    multiples = {line.output: line for line in trace if isinstance(line, MultipleOverLine)}
 
     # The rate is applied once, to each form's total of credit amounts (T1 line 33800, ON428
     # line 58840), giving its non-refundable tax credits (T1 line 35000, ON428 line 61500).
@@ -447,6 +519,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ((ONTARIO_TAX_AFTER_CREDITS, D("7671.97721")), (ONTARIO_SURTAX, D("523.7872376"))),
             D("8195.7644476"),
         ),
+        # ON428 line 77 "Add lines 74 to 76.", in line order.
+        TAX_REDUCTION_AMOUNTS: SumLine(
+            TAX_REDUCTION_AMOUNTS,
+            (
+                (TAX_REDUCTION_BASIC, D("294.00")),
+                (TAX_REDUCTION_FOR_CHILDREN, D("0")),
+                (TAX_REDUCTION_FOR_DEPENDANTS, D("0")),
+            ),
+            D("294.00"),
+        ),
     }
     # T1 line 30000 and the Federal Worksheet (5000-D1): net income of 115000 is at or below
     # the 177882 threshold, so the reduction (line 9) is 0 and the amount is the base plus the
@@ -464,11 +546,50 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             result=D("16129.00"),
         )
     }
-    # ON428 line 58040 has no reduction: the Ontario amount is the dataset's credit amount.
+    # ON428 line 58040 has no reduction: the Ontario amount is the dataset's credit amount. ON428
+    # line 74 "Basic reduction 294.00" is claimed whole too.
     assert amounts == {
         ontario.BASIC_PERSONAL_AMOUNT: CreditAmountLine(
             ontario.BASIC_PERSONAL_AMOUNT, Credit(amount=D("12747")), NO_ROUNDING, D("12747")
         ),
+        TAX_REDUCTION_BASIC: CreditAmountLine(
+            TAX_REDUCTION_BASIC, Credit(amount=D("294.00")), NO_ROUNDING, D("294.00")
+        ),
+    }
+    # ON428 line 75 (line 60969) "Number of dependent children multiplied by $544" and line 76
+    # (line 60970) "Number of dependants multiplied by $544": Return A has neither.
+    assert per_unit == {
+        TAX_REDUCTION_FOR_CHILDREN: PerUnitAmountLine(
+            output=TAX_REDUCTION_FOR_CHILDREN,
+            count_kind=DEPENDENT_CHILDREN,
+            count=0,
+            per_unit=Amount(D("544")),
+            rounding=NO_ROUNDING,
+            result=D("0"),
+        ),
+        TAX_REDUCTION_FOR_DEPENDANTS: PerUnitAmountLine(
+            output=TAX_REDUCTION_FOR_DEPENDANTS,
+            count_kind=DEPENDANTS,
+            count=0,
+            per_unit=Amount(D("544")),
+            rounding=NO_ROUNDING,
+            result=D("0"),
+        ),
+    }
+    # ON428 line 78 "Amount from line 77 above multiplied by 2", line 79 "Amount from line 73
+    # above" and line 80 "Line 78 minus line 79 (if negative, enter "0") Ontario tax reduction":
+    # 588.00 is below the tax with surtax of 8195.7644476, so the reduction is 0.
+    assert multiples == {
+        ONTARIO_TAX_REDUCTION: MultipleOverLine(
+            output=ONTARIO_TAX_REDUCTION,
+            base=TAX_REDUCTION_AMOUNTS,
+            base_amount=D("294.00"),
+            factor=Factor(D("2")),
+            less=ONTARIO_TAX_WITH_SURTAX,
+            less_amount=D("8195.7644476"),
+            rounding=NO_ROUNDING,
+            result=D("0"),
+        )
     }
     # T1 line 92 (line 31260) "Enter whichever is less: $1,471 or line 1 plus line 2.":
     # employment income of 110000 is above the cap, so the amount is the cap.
@@ -591,6 +712,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("867.61929"),
             result=D("7671.97721"),
         ),
+        # ON428 line 81 "Line 73 minus line 80 (if negative, enter "0")".
+        ONTARIO_TAX_AFTER_REDUCTION: SubtractedNotBelowZeroLine(
+            output=ONTARIO_TAX_AFTER_REDUCTION,
+            minuend=ONTARIO_TAX_WITH_SURTAX,
+            minuend_amount=D("8195.7644476"),
+            subtrahend=ONTARIO_TAX_REDUCTION,
+            subtrahend_amount=D("0"),
+            result=D("8195.7644476"),
+        ),
     }
 
     assert totals[FEDERAL_BASIC_TAX].base == TAXABLE_INCOME
@@ -603,7 +733,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 26
+    assert len(order) == 32
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
@@ -637,6 +767,15 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         position[ONTARIO_TAX_AFTER_CREDITS]
         < position[ONTARIO_SURTAX]
         < position[ONTARIO_TAX_WITH_SURTAX]
+    )
+    assert position[TAX_REDUCTION_BASIC] < position[TAX_REDUCTION_AMOUNTS]
+    assert position[TAX_REDUCTION_FOR_CHILDREN] < position[TAX_REDUCTION_AMOUNTS]
+    assert position[TAX_REDUCTION_FOR_DEPENDANTS] < position[TAX_REDUCTION_AMOUNTS]
+    assert position[TAX_REDUCTION_AMOUNTS] < position[ONTARIO_TAX_REDUCTION]
+    assert (
+        position[ONTARIO_TAX_WITH_SURTAX]
+        < position[ONTARIO_TAX_REDUCTION]
+        < position[ONTARIO_TAX_AFTER_REDUCTION]
     )
 
 
@@ -672,6 +811,47 @@ def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     # A zero Ontario tax is below the first surtax threshold: no surtax.
     assert worksheet.get(ONTARIO_SURTAX).value == D("0")
     assert worksheet.get(ONTARIO_TAX_WITH_SURTAX).value == D("0")
+    # ON428 line 80: twice the basic reduction of 294.00, less a tax of zero, is 588.00, all of
+    # it unused; line 81 leaves zero, not a refund.
+    assert worksheet.get(TAX_REDUCTION_AMOUNTS).value == D("294.00")
+    assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("588.00")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("0")
+
+
+def test_the_tax_reduction_lowers_a_tax_below_twice_the_reduction_amounts() -> None:
+    # Employment income of 24000, with no capital gain, no RRSP contributions and no union dues:
+    # base CPP contributions 4.95% x (24000 - 3500) = 1014.75, first additional 1% x 20500 =
+    # 205.00, EI premiums 1.64% x 24000 = 393.60; net and taxable income 23795.00; Ontario basic
+    # tax 5.05% x 23795.00 = 1201.6475 less the Ontario credits 5.05% x (12747 + 1014.75 +
+    # 393.60 = 14155.35) = 714.845175 is 486.802325, below the first surtax threshold, so the
+    # Ontario tax with surtax (ON428 line 73) is 486.802325. With no dependent children and no
+    # dependants, line 78 is 2 x 294.00 = 588.00, and line 80 is 588.00 - 486.802325 =
+    # 101.197675; line 81 is 486.802325 - 101.197675 = 385.604650.
+    worksheet = compute("24000", "0", "0", "0", "4320", "0")
+
+    assert worksheet.get(ONTARIO_TAX_WITH_SURTAX).value == D("486.802325")
+    assert worksheet.get(TAX_REDUCTION_AMOUNTS).value == D("294.00")
+    assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("101.197675")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("385.604650")
+
+
+def test_dependent_children_and_dependants_raise_the_tax_reduction() -> None:
+    # Return A's amounts with five dependent children (ON428 line 75, line 60969) and three
+    # dependants (line 76, line 60970): line 75 is 5 x 544 = 2720, line 76 is 3 x 544 = 1632,
+    # line 77 is 294.00 + 2720 + 1632 = 4646.00 and line 78 is 9292.00; line 80 is 9292.00 -
+    # 8195.7644476 = 1096.2355524, and line 81 is 8195.7644476 - 1096.2355524 = 7099.5288952.
+    worksheet = compute(
+        "110000", "20000", "0", "1926", "19800", "2000", dependent_children=5, dependants=3
+    )
+
+    assert worksheet.get(DEPENDENT_CHILDREN).value == 5
+    assert worksheet.get(DEPENDANTS).value == 3
+    assert worksheet.get(TAX_REDUCTION_FOR_CHILDREN).value == D("2720")
+    assert worksheet.get(TAX_REDUCTION_FOR_DEPENDANTS).value == D("1632")
+    assert worksheet.get(TAX_REDUCTION_AMOUNTS).value == D("4646.00")
+    assert worksheet.get(ONTARIO_TAX_WITH_SURTAX).value == D("8195.7644476")
+    assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("1096.2355524")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("7099.5288952")
 
 
 def test_contributions_above_the_deduction_limit_deduct_the_limit() -> None:

@@ -15,6 +15,8 @@ from app.domain.capabilities.capped_amount import CappedAmount
 from app.domain.capabilities.contribution_tier import TieredContribution
 from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.lesser_of import LesserOf
+from app.domain.capabilities.multiple_over import MultipleOver
+from app.domain.capabilities.per_unit_amount import PerUnitAmount
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
@@ -51,10 +53,18 @@ from app.jurisdictions.ca.catalog import (
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
+    DEPENDANTS,
+    DEPENDENT_CHILDREN,
     ONTARIO_BASIC_TAX,
     ONTARIO_SURTAX,
     ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_AFTER_REDUCTION,
+    ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
+    TAX_REDUCTION_AMOUNTS,
+    TAX_REDUCTION_BASIC,
+    TAX_REDUCTION_FOR_CHILDREN,
+    TAX_REDUCTION_FOR_DEPENDANTS,
 )
 from app.main import build_tax_computation
 
@@ -85,10 +95,12 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/rrsp_contributions",
             "ca/rrsp_deduction_limit",
             "ca/union_dues",
+            "ca-on/dependent_children",
+            "ca-on/dependants",
         }
     )
     assert found.outputs == frozenset(
-        {"ca/federal_tax_after_credits", "ca-on/ontario_tax_with_surtax"}
+        {"ca/federal_tax_after_credits", "ca-on/ontario_tax_after_reduction"}
     )
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == {
@@ -314,8 +326,66 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"parts": ("ca-on/ontario_tax_after_credits", "ca-on/ontario_surtax")},
             produces={"output": "ca-on/ontario_tax_with_surtax"},
         ),
+        # ON428 line 74 "Basic reduction 294.00": the dataset becomes an artifact of the same
+        # name, the first part of line 77.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca-on/tax_reduction_basic"},
+            consumes={},
+            produces={"output": "ca-on/tax_reduction_basic"},
+        ),
+        # ON428 line 75 (line 60969) "Number of dependent children multiplied by $544" and line
+        # 76 (line 60970) "Number of dependants multiplied by $544".
+        CapabilitySelection(
+            name="core/per_unit_amount",
+            params={"amount": "ca-on/tax_reduction_per_dependant"},
+            consumes={"count": "ca-on/dependent_children"},
+            produces={"output": "ca-on/tax_reduction_for_children"},
+        ),
+        CapabilitySelection(
+            name="core/per_unit_amount",
+            params={"amount": "ca-on/tax_reduction_per_dependant"},
+            consumes={"count": "ca-on/dependants"},
+            produces={"output": "ca-on/tax_reduction_for_dependants"},
+        ),
+        # ON428 line 77 "Add lines 74 to 76.", in line order.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca-on/tax_reduction_basic",
+                    "ca-on/tax_reduction_for_children",
+                    "ca-on/tax_reduction_for_dependants",
+                )
+            },
+            produces={"output": "ca-on/tax_reduction_amounts"},
+        ),
+        # ON428 line 78 "Amount from line 77 above multiplied by 2", line 79 "Amount from line 73
+        # above" and line 80 "Line 78 minus line 79 (if negative, enter "0") Ontario tax
+        # reduction": line 73 is the Ontario tax with surtax while neither the dividend tax
+        # credit (line 70) nor the minimum tax (line 72) is modelled.
+        CapabilitySelection(
+            name="core/multiple_over",
+            params={"factor": "ca-on/tax_reduction_factor"},
+            consumes={
+                "amount": "ca-on/tax_reduction_amounts",
+                "less": "ca-on/ontario_tax_with_surtax",
+            },
+            produces={"output": "ca-on/ontario_tax_reduction"},
+        ),
+        # ON428 line 81 "Line 73 minus line 80 (if negative, enter "0")".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/ontario_tax_with_surtax",
+                "less": "ca-on/ontario_tax_reduction",
+            },
+            produces={"output": "ca-on/ontario_tax_after_reduction"},
+        ),
     }
-    assert len(found.capabilities) == 26
+    assert len(found.capabilities) == 32
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -325,7 +395,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 26
+    assert len(composition.order) == 32
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -427,5 +497,25 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             Sum,
             frozenset({ONTARIO_TAX_AFTER_CREDITS, ONTARIO_SURTAX}),
             frozenset({ONTARIO_TAX_WITH_SURTAX}),
+        ),
+        (CreditAmount, frozenset(), frozenset({TAX_REDUCTION_BASIC})),
+        (PerUnitAmount, frozenset({DEPENDENT_CHILDREN}), frozenset({TAX_REDUCTION_FOR_CHILDREN})),
+        (PerUnitAmount, frozenset({DEPENDANTS}), frozenset({TAX_REDUCTION_FOR_DEPENDANTS})),
+        (
+            Sum,
+            frozenset(
+                {TAX_REDUCTION_BASIC, TAX_REDUCTION_FOR_CHILDREN, TAX_REDUCTION_FOR_DEPENDANTS}
+            ),
+            frozenset({TAX_REDUCTION_AMOUNTS}),
+        ),
+        (
+            MultipleOver,
+            frozenset({TAX_REDUCTION_AMOUNTS, ONTARIO_TAX_WITH_SURTAX}),
+            frozenset({ONTARIO_TAX_REDUCTION}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({ONTARIO_TAX_WITH_SURTAX, ONTARIO_TAX_REDUCTION}),
+            frozenset({ONTARIO_TAX_AFTER_REDUCTION}),
         ),
     }

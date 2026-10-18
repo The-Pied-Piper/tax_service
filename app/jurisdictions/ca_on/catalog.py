@@ -1,7 +1,8 @@
 """The Ontario artifact catalog: Ontario's own kinds, named from Form ON428 (§2, §7).
 
-Only the kinds in use are declared, each non-negative, as no ON428 line here can be negative;
-federal kinds come from `app.jurisdictions.ca.catalog`. Identifiers are stable:
+Only the kinds in use are declared, each non-negative, as no ON428 line here can be negative:
+amounts are Decimal, the counts of dependent children and dependants int. Federal kinds come
+from `app.jurisdictions.ca.catalog`. Identifiers are stable:
 `tests/jurisdictions/ca_on/test_catalog.py` snapshots them.
 """
 
@@ -52,3 +53,49 @@ ONTARIO_TAX_WITH_SURTAX = CATALOG.declare("ontario_tax_with_surtax", Decimal, no
 """Ontario tax with surtax, 2025 ON428 line 69 "Line 62 plus line 68": the Ontario tax after
 credits (line 62, which carries line 53 while neither the tax on split income nor the minimum tax
 carryover is modelled) plus the Ontario surtax."""
+
+TAX_REDUCTION_BASIC = CATALOG.declare("tax_reduction_basic", Decimal, non_negative=True)
+"""Basic reduction, ON428 line 74 "Basic reduction 294.00": the amount claimed, the first part of
+the Ontario tax reduction amounts."""
+
+DEPENDENT_CHILDREN = CATALOG.declare("dependent_children", int, non_negative=True)
+"""Number of dependent children, ON428 line 75 (line 60969) "Number of dependent children
+multiplied by $544", the children "born in 2007 or later": a starting count."""
+
+TAX_REDUCTION_FOR_CHILDREN = CATALOG.declare(
+    "tax_reduction_for_children", Decimal, non_negative=True
+)
+"""Reduction for dependent children, ON428 line 75 (line 60969) "Number of dependent children
+multiplied by $544"."""
+
+DEPENDANTS = CATALOG.declare("dependants", int, non_negative=True)
+"""Number of dependants, ON428 line 76 (line 60970) "Number of dependants multiplied by $544", the
+dependants "with a mental or physical impairment": a starting count."""
+
+TAX_REDUCTION_FOR_DEPENDANTS = CATALOG.declare(
+    "tax_reduction_for_dependants", Decimal, non_negative=True
+)
+"""Reduction for dependants, ON428 line 76 (line 60970) "Number of dependants multiplied by
+$544"."""
+
+TAX_REDUCTION_AMOUNTS = CATALOG.declare("tax_reduction_amounts", Decimal, non_negative=True)
+"""Ontario tax reduction amounts, ON428 line 77 "Add lines 74 to 76.": the basic reduction plus
+the reductions for dependent children and for dependants."""
+
+ONTARIO_TAX_REDUCTION = CATALOG.declare("ontario_tax_reduction", Decimal, non_negative=True)
+"""Ontario tax reduction, ON428 line 80 "Line 78 minus line 79 (if negative, enter "0") Ontario
+tax reduction": line 78 "Amount from line 77 above multiplied by 2", less line 79 "Amount from
+line 73 above".
+
+Line 73 is "Line 71 plus line 72" and line 71 "Line 69 minus line 70 (if negative, enter "0")".
+Neither the dividend tax credit (line 70) nor the minimum tax (line 72) is modelled, so line 73 is
+the Ontario tax with surtax itself. The conditions under which the form enters "0" on line 80, and
+the rule that only the spouse or common-law partner with the higher net income claims lines 75
+and 76, are not modelled.
+"""
+
+ONTARIO_TAX_AFTER_REDUCTION = CATALOG.declare(
+    "ontario_tax_after_reduction", Decimal, non_negative=True
+)
+"""Ontario tax after the Ontario tax reduction, ON428 line 81 "Line 73 minus line 80 (if negative,
+enter "0")": the Ontario tax with surtax (line 73) less the Ontario tax reduction."""
