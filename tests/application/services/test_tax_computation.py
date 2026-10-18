@@ -2038,3 +2038,80 @@ def test_computes_core_per_unit_amount_into_core_multiple_over_with_no_units() -
 
     # part_one = 0; 2 × 0 − 300 is below zero: 0.
     assert worksheet.get(RESULT).value == D("0")
+
+
+# --- core/at_most: an amount that may not exceed a bound, wired by a made-up manifest ----------
+#
+# Like `Subtract` above, `AtMost` is imported inside a cached factory so its absence fails only
+# the tests that use it, and is registered in a private registry under its shared identifier,
+# `core/at_most`. Its amount is one of the manifest's inputs, as a claim a filer gives, and its
+# bound is a produced artifact.
+
+
+@cache
+def at_most_class() -> Any:
+    from app.domain.capabilities.at_most import AtMost
+
+    return AtMost
+
+
+def at_most_service() -> TaxComputationService:
+    """`ex/scale` (base × 3) and `core/at_most` producing `ex-on/result` = extra, at most scaled."""
+    at_most = CapabilitySelection(
+        name="core/at_most",
+        params={},
+        consumes={"amount": "ex/extra", "bound": "ex/scaled"},
+        produces={"output": "ex-on/result"},
+    )
+    capabilities = capability_registry()
+    capabilities.register("core/at_most", at_most_class())
+    return service(  # authored out of order on purpose
+        manifest(at_most, SCALE, inputs=frozenset({"ex/base", "ex/extra"})),
+        capabilities=capabilities,
+    )
+
+
+def test_computes_core_at_most_below_the_bound_end_to_end() -> None:
+    from app.domain.trace import AtMostLine
+
+    worksheet = at_most_service().compute(
+        EX_ON, 2025, Artifact(BASE, D("5")), Artifact(EXTRA, D("10.50"))
+    )
+
+    # scaled = 5 × 3 = 15; extra 10.50 is at most 15, so result = 10.50, unchanged.
+    assert worksheet.get(RESULT).value == D("10.50")
+    assert str(worksheet.get(RESULT).value) == "10.50"
+    assert isinstance(worksheet.producer_of(RESULT), at_most_class())
+    assert worksheet.trace[-1] == AtMostLine(RESULT, EXTRA, D("10.50"), SCALED, D("15"))
+    assert [type(line) for line in worksheet.trace].count(AtMostLine) == 1
+
+
+def test_computes_core_at_most_equal_to_the_bound_end_to_end() -> None:
+    from app.domain.trace import AtMostLine
+
+    worksheet = at_most_service().compute(
+        EX_ON, 2025, Artifact(BASE, D("5")), Artifact(EXTRA, D("15"))
+    )
+
+    # scaled = 15 and extra = 15: at most the bound, so result = 15.
+    assert worksheet.get(RESULT).value == D("15")
+    assert worksheet.trace[-1] == AtMostLine(RESULT, EXTRA, D("15"), SCALED, D("15"))
+
+
+def test_core_at_most_above_the_bound_raises_naming_both_kinds_end_to_end() -> None:
+    from app.domain.errors import InputAboveBoundError
+
+    built = at_most_service()
+
+    # scaled = 15; extra 15.01 is above it: an input error, not a capped result.
+    with pytest.raises(InputAboveBoundError) as raised:
+        built.compute(EX_ON, 2025, Artifact(BASE, D("5")), Artifact(EXTRA, D("15.01")))
+
+    assert str(raised.value) == "ex/extra 15.01 is above ex/scaled 15"
+
+
+def test_core_at_most_runs_after_what_it_consumes_is_produced() -> None:
+    composition = at_most_service().compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is at_most_class()
+    assert composition.order[-1].consumes == frozenset({EXTRA, SCALED})

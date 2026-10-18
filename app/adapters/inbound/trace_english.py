@@ -11,6 +11,7 @@ from decimal import Decimal
 
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingRule, RoundTo
 from app.domain.trace import (
+    AtMostLine,
     BracketSliceLine,
     CappedAmountLine,
     ContributionTierLine,
@@ -167,6 +168,17 @@ class EnglishTraceRenderer:
                     f"{output.label}: {self._money(factor.value)} × {base.label} "
                     f"{self._money(amount)} over {less.label} {self._money(less_amount)}, "
                     f"not below 0 ({self._rounding(rule)})"
+                )
+            case AtMostLine(
+                output=output,
+                amount_kind=amount_kind,
+                amount_value=amount,
+                bound=bound,
+                bound_value=bound_value,
+            ):
+                return (
+                    f"{output.label}: {amount_kind.label} {self._money(amount)}, "
+                    f"at most {bound.label} {self._money(bound_value)}"
                 )
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 

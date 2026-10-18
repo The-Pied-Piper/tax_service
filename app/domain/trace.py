@@ -296,3 +296,24 @@ class MultipleOverLine(TraceLine):
     def amount(self) -> Decimal:
         """The floored, rounded result."""
         return self.result
+
+
+@dataclass(frozen=True)
+class AtMostLine(TraceLine):
+    """`output` = `amount_kind` (worth `amount_value`), unchanged, being at most `bound` (worth
+    `bound_value`).
+
+    Its own class, not a `LesserOfLine` or `CappedAmountLine`: the amount is not capped, it is
+    checked; an amount above its bound is an error, and no line is recorded for it.
+    """
+
+    output: Money
+    amount_kind: Money
+    amount_value: Decimal
+    bound: Money
+    bound_value: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The amount, as produced."""
+        return self.amount_value

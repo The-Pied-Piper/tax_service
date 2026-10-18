@@ -44,6 +44,10 @@ class NegativeArtifactError(DomainError):
     """An artifact of a kind declared non-negative was given a value below zero."""
 
 
+class InputAboveBoundError(DomainError):
+    """An amount was given above the bound it may not exceed."""
+
+
 class CapabilityContractError(DomainError):
     """A capability's outputs do not match the artifacts its contract produces."""
 
