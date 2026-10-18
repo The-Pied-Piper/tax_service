@@ -23,6 +23,7 @@ from app.adapters.outbound.parameter_parsers.contribution_tier import Contributi
 from app.adapters.outbound.parameter_parsers.credit import CreditParser
 from app.adapters.outbound.parameter_parsers.rate import RateParser
 from app.adapters.outbound.parameter_parsers.registry import ParameterParserRegistry
+from app.adapters.outbound.parameter_parsers.surcharge_tiers import SurchargeTiersParser
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.adapters.outbound.yaml_support import YamlNode
 from app.domain.errors import (
@@ -32,6 +33,7 @@ from app.domain.errors import (
     InvalidCreditError,
     InvalidParameterDataError,
     InvalidRateError,
+    InvalidSurchargeTiersError,
     NotFoundError,
     UnknownRegistrationError,
 )
@@ -43,6 +45,11 @@ from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
+from app.domain.parameters.surcharge_tiers import (
+    SURCHARGE_TIERS,
+    SurchargeTier,
+    SurchargeTiers,
+)
 from app.domain.registry import Namespace
 
 D = Decimal
@@ -102,6 +109,18 @@ upper: "50000"
 maximum: "2350"
 """
 
+SURCHARGE_TIERS_2025 = """\
+family: ex/surcharge_tiers
+tax_year: 2025
+kind: surcharge_tiers
+sources:
+  - https://example.org/surcharge-2025
+rounding: none
+tiers:
+  - {threshold: "100", rate: "0.10"}
+  - {threshold: "300.50", rate: "0.25"}
+"""
+
 
 def built_in_parsers() -> ParameterParserRegistry:
     """A fresh registry holding the built-in parsers, never the shared one."""
@@ -111,6 +130,7 @@ def built_in_parsers() -> ParameterParserRegistry:
     registry.register_class(RateParser)
     registry.register_class(AmountParser)
     registry.register_class(ContributionTierParser)
+    registry.register_class(SurchargeTiersParser)
     return registry
 
 
@@ -310,6 +330,71 @@ def test_by_default_the_contribution_tier_parser_comes_from_the_shared_registry(
     )
 
     assert result.values == ContributionTier(Rate(D("0.05")), D("3000"), D("50000"), D("2350"))
+
+
+def test_reads_a_surcharge_tiers_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/surcharge_tiers/2025.yaml", SURCHARGE_TIERS_2025)
+
+    result = source(tmp_path).get("ex/surcharge_tiers", 2025, SURCHARGE_TIERS)
+
+    assert result == ParameterDataset(
+        family="ex/surcharge_tiers",
+        tax_year=2025,
+        kind=SURCHARGE_TIERS,
+        values=SurchargeTiers(
+            (
+                SurchargeTier(D("100"), Rate(D("0.10"))),
+                SurchargeTier(D("300.50"), Rate(D("0.25"))),
+            )
+        ),
+        rounding=NO_ROUNDING,
+        sources=("https://example.org/surcharge-2025",),
+    )
+
+
+def test_reads_surcharge_tiers_exactly(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/surcharge_tiers/2025.yaml", SURCHARGE_TIERS_2025)
+
+    tiers = source(tmp_path).get("ex/surcharge_tiers", 2025, SURCHARGE_TIERS).values.tiers
+
+    assert [str(tier.threshold) for tier in tiers] == ["100", "300.50"]  # exact, scale kept
+    assert [str(tier.rate.value) for tier in tiers] == ["0.10", "0.25"]
+
+
+def test_reads_a_single_surcharge_tier(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/surcharge_tiers/2025.yaml",
+        SURCHARGE_TIERS_2025.replace('  - {threshold: "300.50", rate: "0.25"}\n', ""),
+    )
+
+    result = source(tmp_path).get("ex/surcharge_tiers", 2025, SURCHARGE_TIERS)
+
+    assert result.values == SurchargeTiers((SurchargeTier(D("100"), Rate(D("0.10"))),))
+
+
+def test_reads_a_surcharge_tiers_rounding_rule(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/surcharge_tiers/2025.yaml",
+        SURCHARGE_TIERS_2025.replace(
+            "rounding: none", 'rounding: {increment: "0.01", mode: half_up}'
+        ),
+    )
+
+    result = source(tmp_path).get("ex/surcharge_tiers", 2025, SURCHARGE_TIERS)
+
+    assert result.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
+
+
+def test_by_default_the_surcharge_tiers_parser_comes_from_the_shared_registry(
+    tmp_path: Path,
+) -> None:
+    write(tmp_path, "ex/parameters/surcharge_tiers/2025.yaml", SURCHARGE_TIERS_2025)
+
+    result = YamlParameterSource(roots(tmp_path)).get("ex/surcharge_tiers", 2025, SURCHARGE_TIERS)
+
+    assert result.values.tiers[0] == SurchargeTier(D("100"), Rate(D("0.10")))
 
 
 def test_reads_a_rounding_rule(tmp_path: Path) -> None:
@@ -919,3 +1004,142 @@ def test_a_contribution_tier_dataset_is_not_a_rate_dataset(tmp_path: Path) -> No
 
     with pytest.raises(InvalidParameterDataError, match="kind 'contribution_tier' does not match"):
         source(tmp_path).get("ex/contribution_tier", 2025, RATE)
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace(
+                '  - {threshold: "100", rate: "0.10"}\n  - {threshold: "300.50", rate: "0.25"}\n',
+                "  []\n",
+            ),
+            "at least one tier",
+            id="no-tiers",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace('{threshold: "300.50"', '{threshold: "100"'),
+            "strictly increasing",
+            id="thresholds-equal",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace('{threshold: "300.50"', '{threshold: "50"'),
+            "strictly increasing",
+            id="thresholds-descending",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace('{threshold: "100"', '{threshold: "-1"'),
+            r"tiers\[0\].*threshold must not be negative",
+            id="threshold-negative",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace('rate: "0.25"', 'rate: "1.5"'),
+            r"tiers\[1\].*rate must be between 0 and 1",
+            id="rate-above-one",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace('rate: "0.25"', 'rate: "-0.1"'),
+            r"tiers\[1\].*rate must be between 0 and 1",
+            id="rate-negative",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace('rate: "0.25"', "rate: 0.25"),
+            r"tiers\[1\].rate must be a string, got float",
+            id="rate-as-yaml-number",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace('{threshold: "300.50"', "{threshold: 300"),
+            r"tiers\[1\].threshold must be a string, got int",
+            id="threshold-as-yaml-number",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace('{threshold: "100"', '{threshold: "lots"'),
+            r"tiers\[0\].threshold is not a decimal: 'lots'",
+            id="threshold-not-decimal",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace('rate: "0.10"', 'rate: "Infinity"'),
+            r"tiers\[0\].rate is not a decimal",
+            id="rate-infinite",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace('{threshold: "100", rate: "0.10"}', '{rate: "0.10"}'),
+            r"tiers\[0\]: missing keys \['threshold'\]",
+            id="threshold-missing",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace('rate: "0.25"}', 'rate: "0.25", from: "0"}'),
+            r"tiers\[1\]: unknown keys \['from'\]",
+            id="unknown-tier-key",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace('  - {threshold: "100", rate: "0.10"}', '  - "100"'),
+            r"tiers\[0\] must be a mapping",
+            id="tier-not-a-mapping",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace(
+                '  - {threshold: "100", rate: "0.10"}\n  - {threshold: "300.50", rate: "0.25"}\n',
+                '  {threshold: "100", rate: "0.10"}\n',
+            ),
+            "tiers must be a list",
+            id="tiers-not-a-list",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace("tiers:", "brackets:"),
+            r"unknown keys \['brackets'\]",
+            id="brackets-are-not-tiers",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025 + 'rate: "0.125"\n',
+            r"unknown keys \['rate'\]",
+            id="rate-is-not-a-surcharge-tiers-key",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace("kind: surcharge_tiers", "kind: brackets"),
+            "kind 'brackets' does not match the requested 'surcharge_tiers'",
+            id="kind-mismatch",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace("rounding: none\n", ""),
+            r"missing keys \['rounding'\]",
+            id="rounding-missing",
+        ),
+        pytest.param(
+            SURCHARGE_TIERS_2025.replace(
+                "sources:\n  - https://example.org/surcharge-2025", "sources: []"
+            ),
+            "sources must list at least one",
+            id="sources-empty",
+        ),
+    ],
+)
+def test_rejects_malformed_surcharge_tiers_dataset(
+    tmp_path: Path, content: str, message: str
+) -> None:
+    write(tmp_path, "ex/parameters/surcharge_tiers/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
+        source(tmp_path).get("ex/surcharge_tiers", 2025, SURCHARGE_TIERS)
+
+    assert "2025.yaml" in str(excinfo.value)
+
+
+def test_invalid_tiers_are_reported_as_a_surcharge_tiers_error(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/surcharge_tiers/2025.yaml",
+        SURCHARGE_TIERS_2025.replace('{threshold: "300.50"', '{threshold: "50"'),
+    )
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/surcharge_tiers", 2025, SURCHARGE_TIERS)
+
+    assert isinstance(excinfo.value.__cause__, InvalidSurchargeTiersError)
+
+
+def test_a_surcharge_tiers_dataset_is_not_a_bracket_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/surcharge_tiers/2025.yaml", SURCHARGE_TIERS_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'surcharge_tiers' does not match"):
+        source(tmp_path).get("ex/surcharge_tiers", 2025, BRACKETS)

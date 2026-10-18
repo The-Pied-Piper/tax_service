@@ -1574,3 +1574,121 @@ def test_core_non_refundable_credit_without_amounts_is_an_invalid_selection() ->
 
     with pytest.raises(InvalidSelectionError, match="'amounts'"):
         built.compose(EX_ON, 2025)
+
+
+# --- core/tiered_surcharge: tiered rates on the base over thresholds, by a made-up manifest ---
+#
+# Like `Sum` above, `TieredSurcharge` is imported inside a cached factory so its absence fails only
+# the tests that use it, and is registered in a private registry under its shared identifier,
+# `core/tiered_surcharge`. It reads a made-up `surcharge_tiers` dataset, 20% over 10 and 50% over
+# 12, whose rule rounds each part half-up to the cent.
+
+
+@cache
+def tiered_surcharge_class() -> Any:
+    from app.domain.capabilities.tiered_surcharge import TieredSurcharge
+
+    return TieredSurcharge
+
+
+def surcharge_tiers_data(tax_year: int = 2025) -> ParameterDataset[Any]:
+    from app.domain.parameters.rate import Rate
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.parameters.surcharge_tiers import (
+        SURCHARGE_TIERS,
+        SurchargeTier,
+        SurchargeTiers,
+    )
+
+    return ParameterDataset(
+        family="ex/surcharge_tiers",
+        tax_year=tax_year,
+        kind=SURCHARGE_TIERS,
+        values=SurchargeTiers(
+            (SurchargeTier(D("10"), Rate(D("0.2"))), SurchargeTier(D("12"), Rate(D("0.5"))))
+        ),
+        rounding=RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        sources=("https://example.org/ex/surcharge_tiers",),
+    )
+
+
+TIERED_SURCHARGE = CapabilitySelection(
+    name="core/tiered_surcharge",
+    params={"tiers": "ex/surcharge_tiers"},
+    consumes={"base": "ex/scaled"},
+    produces={"output": "ex-on/result"},
+)
+
+
+def tiered_surcharge_service() -> tuple[TaxComputationService, FakeParameters]:
+    capabilities = capability_registry()
+    capabilities.register("core/tiered_surcharge", tiered_surcharge_class())
+    parameters = FakeParameters(factor_data(), offset_data(), surcharge_tiers_data())
+    built = service(
+        manifest(TIERED_SURCHARGE, SCALE),  # authored out of order on purpose
+        parameters=parameters,
+        capabilities=capabilities,
+    )
+    return built, parameters
+
+
+def test_computes_core_tiered_surcharge_above_all_thresholds_end_to_end() -> None:
+    from app.domain.parameters.rate import Rate
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.trace import SurchargeTierLine
+
+    built, _parameters = tiered_surcharge_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5.005")))
+
+    # scaled = 5.005 × 3 = 15.015; 20% of 5.015 = 1.003 -> 1.00, 50% of 3.015 = 1.5075 -> 1.51.
+    cent = RoundTo(D("0.01"), RoundingMode.HALF_UP)
+    assert worksheet.get(SCALED).value == D("15.015")
+    assert worksheet.get(RESULT).value == D("2.51")
+    assert isinstance(worksheet.producer_of(RESULT), tiered_surcharge_class())
+    assert worksheet.trace[-2:] == (
+        SurchargeTierLine(RESULT, SCALED, D("15.015"), D("10"), Rate(D("0.2")), cent, D("1.00")),
+        SurchargeTierLine(RESULT, SCALED, D("15.015"), D("12"), Rate(D("0.5")), cent, D("1.51")),
+    )
+    assert [type(line) for line in worksheet.trace].count(SurchargeTierLine) == 2
+
+
+def test_computes_core_tiered_surcharge_between_the_thresholds_end_to_end() -> None:
+    from app.domain.trace import SurchargeTierLine
+
+    built, _parameters = tiered_surcharge_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("3.5")))
+
+    # scaled = 10.5; 20% of 0.5 = 0.10, nothing over 12.
+    assert worksheet.get(RESULT).value == D("0.10")
+    lines = [line for line in worksheet.trace if isinstance(line, SurchargeTierLine)]
+    assert [line.part for line in lines] == [D("0.10"), D("0")]
+
+
+def test_computes_core_tiered_surcharge_below_the_first_threshold_end_to_end() -> None:
+    built, _parameters = tiered_surcharge_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("3")))
+
+    # scaled = 9, below both thresholds: no surcharge.
+    assert worksheet.get(RESULT).value == D("0")
+
+
+def test_core_tiered_surcharge_runs_after_its_base_is_produced() -> None:
+    built, _parameters = tiered_surcharge_service()
+
+    composition = built.compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is tiered_surcharge_class()
+    assert composition.order[-1].consumes == frozenset({SCALED})
+
+
+def test_core_tiered_surcharge_asks_for_its_dataset_as_surcharge_tiers() -> None:
+    from app.domain.parameters.surcharge_tiers import SURCHARGE_TIERS
+
+    built, parameters = tiered_surcharge_service()
+
+    built.compose(EX_ON, 2025)
+
+    assert ("ex/surcharge_tiers", 2025, SURCHARGE_TIERS) in parameters.requests
