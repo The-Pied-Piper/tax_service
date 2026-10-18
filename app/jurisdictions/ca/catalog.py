@@ -64,18 +64,41 @@ RRSP_DEDUCTION_LIMIT = CATALOG.declare("rrsp_deduction_limit", Decimal, non_nega
 """RRSP deduction limit, Schedule 7 line 11 "Enter your RRSP deduction limit for 2025 as shown on
 your latest notice of assessment or reassessment, or Form T1028 for 2025.": a starting amount."""
 
+RRSP_DEDUCTION_MAXIMUM = CATALOG.declare("rrsp_deduction_maximum", Decimal, non_negative=True)
+"""RRSP deduction maximum, Schedule 7 line 17 "Enter whichever is less: amount from line 13 or line
+16.": the lesser of the contributions available to deduct and the deduction limit, the most that
+may be deducted.
+
+Line 13 is "Line 11 minus line 12"; line 16 "Line 14 minus line 15". With lines 12 and 15 at 0,
+line 13 is the limit and line 16 the contributions available to deduct. Not triggered by the
+returns modelled: employer PRPP contributions (line 12) and transfers (line 15).
+"""
+
+RRSP_AMOUNT_DEDUCTED = CATALOG.declare("rrsp_amount_deducted", Decimal, non_negative=True)
+"""RRSP amount deducted, Schedule 7 line 18 "Enter your RRSP, PRPP, or SPP contributions you are
+deducting for 2025 (cannot be more than the amount on line 17).": the amount the filer chooses to
+deduct, a starting amount, refused when above line 17."""
+
 RRSP_DEDUCTION = CATALOG.declare("rrsp_deduction", Decimal, non_negative=True)
 """RRSP deduction, Schedule 7 line 20 "Enter whichever is less: amount from line 10 or line 19.
-Enter this amount on line 20800 of your return. RRSP deduction": the lesser of the contributions
-available to deduct and the deduction limit, the T1 line 20800 deduction from total income.
+Enter this amount on line 20800 of your return. RRSP deduction": the amount deducted, at most the
+deduction maximum, the T1 line 20800 deduction from total income.
 
-Line 10 is "Line 6 minus line 9 Contributions available to deduct"; line 17 "Enter whichever is
-less: amount from line 13 or line 16."; line 18 "Enter your RRSP, PRPP, or SPP contributions you
-are deducting for 2025 (cannot be more than the amount on line 17)."; line 19 "Line 15 plus line
-18". With lines 12 and 15 at 0 and line 18 the full line 17, line 19 is the lesser of the
-contributions available to deduct and the limit. Not triggered by the returns modelled: HBP and
-LLP repayments (lines 7 to 9), employer PRPP contributions (line 12), transfers (line 15) and
-deducting less than line 17 (line 18).
+Line 19 is "Line 15 plus line 18". With line 15 at 0, line 19 is line 18, at most line 17 and so
+at most line 10, and line 20 is line 18 itself. Not triggered by the returns modelled: transfers
+(line 15).
+"""
+
+UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD = CATALOG.declare(
+    "unused_rrsp_contributions_carried_forward", Decimal, non_negative=True
+)
+"""Unused RRSP contributions carried forward, Schedule 7 line 23 "Line 21 minus line 22 Your unused
+contributions available to carry forward to a future year": the contributions available to deduct
+less the RRSP deduction, a product of the return for the next year's line 1.
+
+Line 21 is "Enter your contributions available to deduct from line 10 of the previous page."; line
+22 "Enter your RRSP deduction from line 20 of the previous page.". Never negative, as line 20 is
+at most line 10.
 """
 
 UNION_DUES = CATALOG.declare("union_dues", Decimal, non_negative=True)

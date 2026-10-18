@@ -35,10 +35,12 @@ from app.jurisdictions.ca.catalog import (
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     REFUND_OR_BALANCE_OWING,
+    RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
     RRSP_CONTRIBUTIONS_AVAILABLE,
     RRSP_DEDUCTION,
     RRSP_DEDUCTION_LIMIT,
+    RRSP_DEDUCTION_MAXIMUM,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
     TOTAL_CREDITS,
@@ -46,6 +48,7 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_PAYABLE,
     UNION_DUES,
     UNUSED_RRSP_CONTRIBUTIONS,
+    UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
 )
 from app.registrations import JURISDICTIONS
 
@@ -59,7 +62,10 @@ REGISTERED = frozenset(
         "ca/rrsp_contributions",
         "ca/rrsp_contributions_available",
         "ca/rrsp_deduction_limit",
+        "ca/rrsp_deduction_maximum",
+        "ca/rrsp_amount_deducted",
         "ca/rrsp_deduction",
+        "ca/unused_rrsp_contributions_carried_forward",
         "ca/union_dues",
         "ca/cpp_first_additional_contributions",
         "ca/cpp_second_additional_contributions",
@@ -118,7 +124,13 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/rrsp_contributions") is RRSP_CONTRIBUTIONS
     assert registry.get("ca/rrsp_contributions_available") is RRSP_CONTRIBUTIONS_AVAILABLE
     assert registry.get("ca/rrsp_deduction_limit") is RRSP_DEDUCTION_LIMIT
+    assert registry.get("ca/rrsp_deduction_maximum") is RRSP_DEDUCTION_MAXIMUM
+    assert registry.get("ca/rrsp_amount_deducted") is RRSP_AMOUNT_DEDUCTED
     assert registry.get("ca/rrsp_deduction") is RRSP_DEDUCTION
+    assert (
+        registry.get("ca/unused_rrsp_contributions_carried_forward")
+        is UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD
+    )
     assert registry.get("ca/union_dues") is UNION_DUES
     assert registry.get("ca/cpp_enhanced_contributions") is CPP_ENHANCED_CONTRIBUTIONS
     assert (
@@ -161,7 +173,10 @@ def test_catalog_kinds_are_money() -> None:
         RRSP_CONTRIBUTIONS,
         RRSP_CONTRIBUTIONS_AVAILABLE,
         RRSP_DEDUCTION_LIMIT,
+        RRSP_DEDUCTION_MAXIMUM,
+        RRSP_AMOUNT_DEDUCTED,
         RRSP_DEDUCTION,
+        UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
         UNION_DUES,
         CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
         CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
@@ -212,6 +227,12 @@ def test_the_refund_or_balance_owing_is_signed(registry: ArtifactRegistry) -> No
 def test_the_income_tax_deducted_is_non_negative() -> None:
     # T1 line 150 (line 43700) "Total income tax deducted (amounts from all Canadian slips)".
     assert INCOME_TAX_DEDUCTED.non_negative is True
+
+
+def test_the_rrsp_amount_deducted_is_non_negative() -> None:
+    # Schedule 7 line 18 "Enter your RRSP, PRPP, or SPP contributions you are deducting for 2025
+    # (cannot be more than the amount on line 17).": an amount the filer states.
+    assert RRSP_AMOUNT_DEDUCTED.non_negative is True
 
 
 def test_capital_gain_is_non_negative_while_losses_are_not_modelled() -> None:

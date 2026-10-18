@@ -11,6 +11,7 @@ import app.registrations  # lists the packages; build_tax_computation registers 
 from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.capabilities.apply_rate import ApplyRate
+from app.domain.capabilities.at_most import AtMost
 from app.domain.capabilities.capped_amount import CappedAmount
 from app.domain.capabilities.contribution_tier import TieredContribution
 from app.domain.capabilities.credit_amount import CreditAmount
@@ -45,10 +46,12 @@ from app.jurisdictions.ca.catalog import (
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     REFUND_OR_BALANCE_OWING,
+    RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
     RRSP_CONTRIBUTIONS_AVAILABLE,
     RRSP_DEDUCTION,
     RRSP_DEDUCTION_LIMIT,
+    RRSP_DEDUCTION_MAXIMUM,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
     TOTAL_CREDITS,
@@ -56,6 +59,7 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_PAYABLE,
     UNION_DUES,
     UNUSED_RRSP_CONTRIBUTIONS,
+    UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
@@ -102,14 +106,18 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/unused_rrsp_contributions",
             "ca/rrsp_contributions",
             "ca/rrsp_deduction_limit",
+            "ca/rrsp_amount_deducted",
             "ca/union_dues",
             "ca-on/dependent_children",
             "ca-on/dependants",
             "ca/income_tax_deducted",
         }
     )
-    # T1 line 167: the refund or balance owing is the one line the computation returns.
-    assert found.outputs == frozenset({"ca/refund_or_balance_owing"})
+    # T1 line 167, the refund or balance owing, and Schedule 7 line 23, what the return produces
+    # for the next year's line 1: the two lines the computation returns.
+    assert found.outputs == frozenset(
+        {"ca/refund_or_balance_owing", "ca/unused_rrsp_contributions_carried_forward"}
+    )
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == {
         CapabilitySelection(
@@ -179,18 +187,37 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"parts": ("ca/unused_rrsp_contributions", "ca/rrsp_contributions")},
             produces={"output": "ca/rrsp_contributions_available"},
         ),
-        # Schedule 7 line 20 "Enter whichever is less: amount from line 10 or line 19. Enter this
-        # amount on line 20800 of your return.": with no employer PRPP contributions (line 12)
-        # and no transfers (line 15), line 13 is the limit and line 16 the contributions
-        # available to deduct; line 17 is the lesser of lines 13 and 16, deducted in full on
-        # line 18, so line 19 is line 17, and line 20 is the lesser of the contributions
-        # available to deduct and the limit. In line 20's order: the contributions available to
-        # deduct (line 10), then the limit, which bounds line 19.
+        # Schedule 7 line 17 "Enter whichever is less: amount from line 13 or line 16.": with no
+        # employer PRPP contributions (line 12) and no transfers (line 15), line 13 is the limit
+        # and line 16 the contributions available to deduct. The parts keep line 20's order (line
+        # 10, then the limit).
         CapabilitySelection(
             name="core/lesser_of",
             params={},
             consumes={"amounts": ("ca/rrsp_contributions_available", "ca/rrsp_deduction_limit")},
+            produces={"output": "ca/rrsp_deduction_maximum"},
+        ),
+        # Schedule 7 line 18 "Enter your RRSP, PRPP, or SPP contributions you are deducting for
+        # 2025 (cannot be more than the amount on line 17).", line 19 "Line 15 plus line 18" and
+        # line 20 "Enter whichever is less: amount from line 10 or line 19. Enter this amount on
+        # line 20800 of your return. RRSP deduction": with no transfers (line 15), line 19 is
+        # line 18, at most line 17 and so at most line 10, and line 20 is line 18 itself. A
+        # claim above line 17 is refused, not capped.
+        CapabilitySelection(
+            name="core/at_most",
+            params={},
+            consumes={"amount": "ca/rrsp_amount_deducted", "bound": "ca/rrsp_deduction_maximum"},
             produces={"output": "ca/rrsp_deduction"},
+        ),
+        # Schedule 7 line 23 "Line 21 minus line 22 Your unused contributions available to carry
+        # forward to a future year": line 21 "Enter your contributions available to deduct from
+        # line 10 of the previous page." less line 22 "Enter your RRSP deduction from line 20 of
+        # the previous page."; never negative, as line 20 is at most line 10.
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={"amount": "ca/rrsp_contributions_available", "less": "ca/rrsp_deduction"},
+            produces={"output": "ca/unused_rrsp_contributions_carried_forward"},
         ),
         # T1 line 23300: the deductions in the form's line order (20800, 21200, 22215).
         CapabilitySelection(
@@ -450,7 +477,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 38
+    assert len(found.capabilities) == 40
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -460,7 +487,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 38
+    assert len(composition.order) == 40
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -497,7 +524,17 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (
             LesserOf,
             frozenset({RRSP_CONTRIBUTIONS_AVAILABLE, RRSP_DEDUCTION_LIMIT}),
+            frozenset({RRSP_DEDUCTION_MAXIMUM}),
+        ),
+        (
+            AtMost,
+            frozenset({RRSP_AMOUNT_DEDUCTED, RRSP_DEDUCTION_MAXIMUM}),
             frozenset({RRSP_DEDUCTION}),
+        ),
+        (
+            Subtract,
+            frozenset({RRSP_CONTRIBUTIONS_AVAILABLE, RRSP_DEDUCTION}),
+            frozenset({UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD}),
         ),
         (
             Sum,

@@ -12,12 +12,14 @@ inputs:
   - ca/unused_rrsp_contributions
   - ca/rrsp_contributions
   - ca/rrsp_deduction_limit
+  - ca/rrsp_amount_deducted
   - ca/union_dues
   - ca-on/dependent_children
   - ca-on/dependants
   - ca/income_tax_deducted
 outputs:
   - ca/refund_or_balance_owing
+  - ca/unused_rrsp_contributions_carried_forward
 capabilities:
   - name: core/apply_rate
     params:
@@ -89,20 +91,39 @@ capabilities:
         - ca/rrsp_contributions
     produces:
       output: ca/rrsp_contributions_available
-  # Schedule 7 line 20 "Enter whichever is less: amount from line 10 or line 19. Enter
-  # this amount on line 20800 of your return.": with no employer PRPP contributions
-  # (line 12) and no transfers (line 15), line 13 is the limit and line 16 the
-  # contributions available to deduct; line 17 is the lesser of lines 13 and 16, deducted
-  # in full on line 18, so line 19 is line 17, and line 20 is the lesser of the
-  # contributions available to deduct and the limit. In line 20's order: the contributions
-  # available to deduct (line 10), then the limit, which bounds line 19.
+  # Schedule 7 line 17 "Enter whichever is less: amount from line 13 or line 16.": with
+  # no employer PRPP contributions (line 12) and no transfers (line 15), line 13 is the
+  # limit and line 16 the contributions available to deduct. The parts keep line 20's
+  # order (line 10, then the limit).
   - name: core/lesser_of
     consumes:
       amounts:
         - ca/rrsp_contributions_available
         - ca/rrsp_deduction_limit
     produces:
+      output: ca/rrsp_deduction_maximum
+  # Schedule 7 line 18 "Enter your RRSP, PRPP, or SPP contributions you are deducting for
+  # 2025 (cannot be more than the amount on line 17).", line 19 "Line 15 plus line 18"
+  # and line 20 "Enter whichever is less: amount from line 10 or line 19. Enter this
+  # amount on line 20800 of your return. RRSP deduction": with no transfers (line 15),
+  # line 19 is line 18, at most line 17 and so at most line 10, and line 20 is line 18
+  # itself. A claim above line 17 is refused, not capped.
+  - name: core/at_most
+    consumes:
+      amount: ca/rrsp_amount_deducted
+      bound: ca/rrsp_deduction_maximum
+    produces:
       output: ca/rrsp_deduction
+  # Schedule 7 line 23 "Line 21 minus line 22 Your unused contributions available to
+  # carry forward to a future year": line 21 "Enter your contributions available to
+  # deduct from line 10 of the previous page." less line 22 "Enter your RRSP deduction
+  # from line 20 of the previous page."; never negative, as line 20 is at most line 10.
+  - name: core/subtract
+    consumes:
+      amount: ca/rrsp_contributions_available
+      less: ca/rrsp_deduction
+    produces:
+      output: ca/unused_rrsp_contributions_carried_forward
   - name: core/sum
     consumes:
       parts:

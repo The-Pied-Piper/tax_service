@@ -27,7 +27,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 38
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 40
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -44,7 +44,10 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/rrsp_contributions",
         "ca/rrsp_contributions_available",
         "ca/rrsp_deduction_limit",
+        "ca/rrsp_deduction_maximum",
+        "ca/rrsp_amount_deducted",
         "ca/rrsp_deduction",
+        "ca/unused_rrsp_contributions_carried_forward",
         "ca/union_dues",
         "ca/cpp_first_additional_contributions",
         "ca/cpp_second_additional_contributions",
@@ -106,13 +109,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 38
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 40
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 38
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 40
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

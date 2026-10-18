@@ -55,9 +55,11 @@ description: >-
   additional 1% x 6500 = 65.00, no second additional below the 71300 ceiling, so enhanced
   contributions of 65.00. The EI premiums are computed from employment income: 1.64% x 10000
   = 164.00. The contributions available to deduct (Schedule 7 line 10) are the unused
-  contributions (line 1) of 0 plus the contributions (line 4) of 0: 0. The RRSP deduction is
-  the lesser of them and the deduction limit (line 11) of 1800, a chosen limit: 0, so the
-  enhanced contributions are the only deduction from total income. Net income and taxable
+  contributions (line 1) of 0 plus the contributions (line 4) of 0: 0. The most that may be
+  deducted (line 17) is the lesser of them and the deduction limit (line 11) of 1800, a
+  chosen limit: 0. The amount deducted (line 18) is that 0, so the RRSP deduction (line 20)
+  is 0, the unused contributions carried forward (line 23) are 0 - 0 = 0, and the enhanced
+  contributions are the only deduction from total income. Net income and taxable
   income are 9935.00. The Canada employment amount is the lesser of 1471 and the employment
   income of 10000: 1471. The federal basic personal amount is computed from net income by the
   Federal Worksheet: 9935.00 is at or below its 177882 threshold, so it is the base amount
@@ -85,6 +87,7 @@ inputs:
   ca/unused_rrsp_contributions: "0"
   ca/rrsp_contributions: "0"
   ca/rrsp_deduction_limit: "1800"
+  ca/rrsp_amount_deducted: "0"
   ca/union_dues: "0"
   ca-on/dependent_children: 0
   ca-on/dependants: 0
@@ -98,7 +101,9 @@ expected:
   ca/cpp_enhanced_contributions: "65.00"
   ca/ei_premiums: "164.00"
   ca/rrsp_contributions_available: "0"
+  ca/rrsp_deduction_maximum: "0"
   ca/rrsp_deduction: "0"
+  ca/unused_rrsp_contributions_carried_forward: "0"
   ca/deductions_from_total_income: "65.00"
   ca/net_income: "9935.00"
   ca/deductions_from_net_income: "0"
