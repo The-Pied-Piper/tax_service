@@ -16,6 +16,7 @@ from app.domain.trace import (
     CreditAmountLine,
     CreditAppliedLine,
     CreditLine,
+    LesserOfLine,
     RateAppliedLine,
     RoundedTotalLine,
     SubtractedLine,
@@ -90,6 +91,9 @@ class EnglishTraceRenderer:
                     f"{output.label}: lesser of {base.label} {amount} and {cap.value} "
                     f"({self._rounding(rule)})"
                 )
+            case LesserOfLine(output=output, parts=parts, result=result):
+                terms = " and ".join(f"{kind.label} {amount}" for kind, amount in parts)
+                return f"{output.label}: lesser of {terms} = {result}"
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 
     def render_all(self, trace: Iterable[TraceLine]) -> tuple[str, ...]:

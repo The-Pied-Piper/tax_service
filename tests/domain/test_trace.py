@@ -23,6 +23,7 @@ from app.domain.trace import (
     CreditAmountLine,
     CreditAppliedLine,
     CreditLine,
+    LesserOfLine,
     RateAppliedLine,
     RoundedTotalLine,
     SubtractedLine,
@@ -47,6 +48,7 @@ NET = ArtifactKind("ex/net", Decimal)
 PERSONAL = ArtifactKind("ex/personal_amount", Decimal)
 CAPPED = ArtifactKind("ex/capped", Decimal)
 CREDIT_AMOUNTS = ArtifactKind("ex/credit_amounts", Decimal)
+LESSER = ArtifactKind("ex/lesser", Decimal)
 
 
 def slice_line() -> BracketSliceLine:
@@ -93,6 +95,10 @@ def capped_amount_line() -> CappedAmountLine:
     return CappedAmountLine(CAPPED, GROSS, D("1500.25"), Amount(D(1000)), CENT, D("1000.00"))
 
 
+def lesser_of_line() -> LesserOfLine:
+    return LesserOfLine(LESSER, ((PART_ONE, D("100.25")), (PART_TWO, D(40))), D(40))
+
+
 ALL_LINES = [
     slice_line,
     total_line,
@@ -105,6 +111,7 @@ ALL_LINES = [
     subtracted_not_below_zero_line,
     credit_amount_line,
     capped_amount_line,
+    lesser_of_line,
 ]
 
 
@@ -500,6 +507,50 @@ def test_capped_amount_lines_differ_by_rounding() -> None:
 
 def test_capped_amount_lines_are_hashable() -> None:
     assert hash(capped_amount_line()) == hash(capped_amount_line())
+
+
+def test_lesser_of_line_fields_in_order() -> None:
+    line = lesser_of_line()
+
+    assert line == LesserOfLine(
+        output=LESSER, parts=((PART_ONE, D("100.25")), (PART_TWO, D(40))), result=D(40)
+    )
+    assert [f.name for f in fields(line)] == ["output", "parts", "result"]
+    assert line.output is LESSER
+    assert line.parts == ((PART_ONE, D("100.25")), (PART_TWO, D(40)))
+    assert line.result == D(40)
+    assert line.amount == D(40)
+
+
+def test_lesser_of_line_may_have_one_part() -> None:
+    line = LesserOfLine(LESSER, ((PART_ONE, D("1.25")),), D("1.25"))
+
+    assert line.parts == ((PART_ONE, D("1.25")),)
+    assert line.amount == D("1.25")
+
+
+def test_lesser_of_lines_differ_by_the_order_of_their_parts() -> None:
+    assert lesser_of_line() != LesserOfLine(
+        LESSER, ((PART_TWO, D(40)), (PART_ONE, D("100.25"))), D(40)
+    )
+
+
+def test_lesser_of_lines_differ_by_result() -> None:
+    assert lesser_of_line() != LesserOfLine(
+        LESSER, ((PART_ONE, D("100.25")), (PART_TWO, D(40))), D("100.25")
+    )
+
+
+def test_lesser_of_lines_are_hashable() -> None:
+    assert hash(lesser_of_line()) == hash(lesser_of_line())
+
+
+def test_a_lesser_of_line_is_not_a_sum_line_nor_a_capped_amount_line() -> None:
+    assert not isinstance(lesser_of_line(), SumLine)
+    assert not isinstance(lesser_of_line(), CappedAmountLine)
+    assert cast(Any, lesser_of_line()) != SumLine(
+        LESSER, ((PART_ONE, D("100.25")), (PART_TWO, D(40))), D(40)
+    )
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:
