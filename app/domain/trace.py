@@ -361,3 +361,24 @@ class TimesCountLine(TraceLine):
     def amount(self) -> Decimal:
         """The exact product."""
         return self.result
+
+
+@dataclass(frozen=True)
+class ChosenByCountLine(TraceLine):
+    """`chosen_kind` (worth `chosen_value`) produced as `output`, chosen as `count_kind` is
+    `count`: the first candidate for a count of 0, the second for any other count.
+
+    Its own class, not a `TimesCountLine`: the count chooses between two artifacts and scales
+    nothing, so the line names the candidate that was chosen; the one not chosen is not recorded.
+    """
+
+    output: Money
+    count_kind: ArtifactKind[int]
+    count: int
+    chosen_kind: Money
+    chosen_value: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The chosen value, unchanged."""
+        return self.chosen_value

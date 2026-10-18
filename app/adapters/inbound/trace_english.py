@@ -14,6 +14,7 @@ from app.domain.trace import (
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
+    ChosenByCountLine,
     ContributionTierLine,
     CreditAmountLine,
     FractionAppliedLine,
@@ -200,6 +201,17 @@ class EnglishTraceRenderer:
                 return (
                     f"{output.label}: {amount_kind.label} {self._money(amount)} for each of "
                     f"{count} {count_kind.label} = {self._money(result)}"
+                )
+            case ChosenByCountLine(
+                output=output,
+                count_kind=count_kind,
+                count=count,
+                chosen_kind=chosen_kind,
+                chosen_value=chosen,
+            ):
+                return (
+                    f"{output.label}: {chosen_kind.label} {self._money(chosen)}, "
+                    f"chosen as {count_kind.label} is {count}"
                 )
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 
