@@ -53,15 +53,15 @@ description: >-
   deductions from net income. The CPP contributions are computed from employment income by
   Schedule 8's tiers: base contributions 4.95% x (10000 - 3500) = 321.75, first additional
   1% x 6500 = 65.00, no second additional below the 71300 ceiling, so enhanced contributions
-  of 65.00 (the only deduction from total income). EI follows the EI table's arithmetic:
-  premiums 1.64% x 10000 = 164.00. Net income and taxable income are 9935.00. The Canada
-  employment amount is the lesser of 1471 and the employment income of 10000: 1471. The
-  federal total of credit amounts is its basic personal amount plus 321.75, 164.00 and 1471;
-  the Ontario total is its basic personal amount plus 321.75 and 164.00 (ON428 has no Canada
-  employment amount). Each form's non-refundable tax credits are its total times its rate
-  (14.5% of 18085.75 = 2622.43375; 5.05% of 13232.75 = 668.253875); each exceeds its tax,
-  leaving zero. An Ontario tax of zero is below the first surtax threshold, so the surtax is
-  zero and the Ontario tax with surtax is zero.
+  of 65.00 (the only deduction from total income). The EI premiums are computed from
+  employment income: 1.64% x 10000 = 164.00. Net income and taxable income are 9935.00. The
+  Canada employment amount is the lesser of 1471 and the employment income of 10000: 1471.
+  The federal total of credit amounts is its basic personal amount plus 321.75, 164.00 and
+  1471; the Ontario total is its basic personal amount plus 321.75 and 164.00 (ON428 has no
+  Canada employment amount). Each form's non-refundable tax credits are its total times its
+  rate (14.5% of 18085.75 = 2622.43375; 5.05% of 13232.75 = 668.253875); each exceeds its
+  tax, leaving zero. An Ontario tax of zero is below the first surtax threshold, so the
+  surtax is zero and the Ontario tax with surtax is zero.
 sources:
   - T1, Schedule 3, Schedule 8, ON428 and EI table arithmetic on the 2025 figures.
 inputs:
@@ -69,7 +69,6 @@ inputs:
   ca/capital_gain: "0"
   ca/rrsp_deduction: "0"
   ca/union_dues: "0"
-  ca/ei_premiums: "164.00"
 expected:
   ca/taxable_capital_gains: "0"
   ca/total_income: "10000"
@@ -77,6 +76,7 @@ expected:
   ca/cpp_first_additional_contributions: "65.00"
   ca/cpp_second_additional_contributions: "0"
   ca/cpp_enhanced_contributions: "65.00"
+  ca/ei_premiums: "164.00"
   ca/deductions_from_total_income: "65.00"
   ca/net_income: "9935.00"
   ca/deductions_from_net_income: "0"

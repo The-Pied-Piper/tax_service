@@ -4,16 +4,16 @@ The service is the one the composition root builds (`build_tax_computation`): th
 sources over the jurisdiction packages and the shared registries. Return A's amounts (employment
 income 110000 and a capital gain of 20000 to total income 120000; the CPP contributions computed
 from employment income by Schedule 8's tiers, each at its maximum: base 3356.10, first additional
-678.00 and second additional 396.00, the enhanced contributions 1074.00; less an RRSP deduction of
-1926, union dues of 2000 and those enhanced contributions to net income 115000, less no
-deductions from net income to taxable income 115000, and from each basic personal amount (16129
-federal, 12747 Ontario) plus the base CPP contributions and the EI premiums of 1077.48, and
-federally the Canada employment amount of 1471 (the lesser of employment income and 1471),
-through each total of credit amounts and each form's non-refundable tax credits (T1 line
-35000, ON428 line 61500) to each tax after credits, and the Ontario surtax on the Ontario tax
-after credits (ON428 lines 66 to 68) to the Ontario tax with surtax of line 69) are checked from
-the files under `returns/` by `test_worked_returns.py`, as are Returns C and D; this module pins
-which capability produces each line, the order, and the trace that explains them.
+678.00 and second additional 396.00, the enhanced contributions 1074.00; the EI premiums computed
+from employment income, at the maximum 1077.48; less an RRSP deduction of 1926, union dues of 2000
+and the enhanced contributions to net income 115000, less no deductions from net income to taxable
+income 115000, and from each basic personal amount (16129 federal, 12747 Ontario) plus the base CPP
+contributions and the EI premiums, and federally the Canada employment amount of 1471 (the lesser of
+employment income and 1471), through each total of credit amounts and each form's non-refundable tax
+credits (T1 line 35000, ON428 line 61500) to each tax after credits, and the Ontario surtax on the
+Ontario tax after credits (ON428 lines 66 to 68) to the Ontario tax with surtax of line 69) are
+checked from the files under `returns/` by `test_worked_returns.py`, as are Returns C and D; this
+module pins which capability produces each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
@@ -82,7 +82,8 @@ from app.main import build_tax_computation
 
 D = Decimal
 CA_ON = JurisdictionCode("CA-ON")
-# Schedule 8 Part 3a lines 25 and 28: "(in dollars and cents)".
+# Schedule 8 Part 3a lines 25 and 28: "(in dollars and cents)"; the EI premiums are in dollars and
+# cents too.
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
@@ -95,7 +96,6 @@ def compute(
     capital_gain: str,
     rrsp_deduction: str,
     union_dues: str,
-    ei_premiums: str,
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -104,13 +104,12 @@ def compute(
         Artifact(CAPITAL_GAIN, D(capital_gain)),
         Artifact(RRSP_DEDUCTION, D(rrsp_deduction)),
         Artifact(UNION_DUES, D(union_dues)),
-        Artifact(EI_PREMIUMS, D(ei_premiums)),
     )
 
 
 def return_a() -> Worksheet:
     """Return A's inputs, as in `returns/2025_return_a.yaml`."""
-    return compute("110000", "20000", "1926", "2000", "1077.48")
+    return compute("110000", "20000", "1926", "2000")
 
 
 def test_each_amount_is_produced_by_its_capability() -> None:
@@ -120,7 +119,6 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(CAPITAL_GAIN) is None
     assert worksheet.producer_of(RRSP_DEDUCTION) is None
     assert worksheet.producer_of(UNION_DUES) is None
-    assert worksheet.producer_of(EI_PREMIUMS) is None
     assert isinstance(worksheet.producer_of(CPP_BASE_CONTRIBUTIONS), TieredContribution)
     assert isinstance(worksheet.producer_of(CPP_FIRST_ADDITIONAL_CONTRIBUTIONS), TieredContribution)
     assert isinstance(
@@ -135,6 +133,8 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         )
     }
     assert len(tiers) == 3
+    assert isinstance(worksheet.producer_of(EI_PREMIUMS), TieredContribution)
+    assert worksheet.producer_of(EI_PREMIUMS) not in tiers
     assert isinstance(worksheet.producer_of(CPP_ENHANCED_CONTRIBUTIONS), Sum)
     assert isinstance(worksheet.producer_of(TAXABLE_CAPITAL_GAINS), ApplyRate)
     assert isinstance(worksheet.producer_of(TOTAL_INCOME), Sum)
@@ -224,6 +224,11 @@ def test_the_trace_explains_the_computation() -> None:
         "+ cpp_second_additional_contributions 396 = 1074",
         "1074.00",
     )
+    ei = position(
+        "ei_premiums: 1.64% of employment_income between 0 and 65700 (65700), "
+        "at most 1077.48 (half-up to 0.01)",
+        "1077.48",
+    )
     deductions = position(
         "deductions_from_total_income: rrsp_deduction 1926 + union_dues 2000 "
         "+ cpp_enhanced_contributions 1074 = 5000",
@@ -296,6 +301,8 @@ def test_the_trace_explains_the_computation() -> None:
     assert cpp_second < cpp_enhanced
     assert cpp_base < federal_amounts
     assert cpp_base < ontario_amounts
+    assert ei < federal_amounts
+    assert ei < ontario_amounts
     assert net < taxable
     assert net_deductions < taxable
     assert taxable < federal_basic < federal_after
@@ -416,7 +423,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     # Schedule 8 Part 3 lines 11, 12 and 22: employment income of 110000 is above both
-    # ceilings, so each band is full and each contribution is its maximum.
+    # ceilings, so each band is full and each contribution is its maximum. T1 line 31200: it
+    # is above the $65,700 maximum insurable earnings, so the EI premiums are their maximum.
     assert tiers == {
         CPP_BASE_CONTRIBUTIONS: ContributionTierLine(
             CPP_BASE_CONTRIBUTIONS,
@@ -444,6 +452,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CENT,
             D("9900"),
             D("396.00"),
+        ),
+        EI_PREMIUMS: ContributionTierLine(
+            EI_PREMIUMS,
+            EMPLOYMENT_INCOME,
+            D("110000"),
+            ContributionTier(Rate(D("0.0164")), D("0"), D("65700"), D("1077.48")),
+            CENT,
+            D("65700"),
+            D("1077.48"),
         ),
     }
     # ON428 line 66 "(Line 65 minus $5,710) multiplied by 20% (if negative, enter "0")" and line
@@ -516,7 +533,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 23
+    assert len(order) == 24
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
@@ -525,6 +542,8 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[CPP_ENHANCED_CONTRIBUTIONS] < position[DEDUCTIONS_FROM_TOTAL_INCOME]
     assert position[CPP_BASE_CONTRIBUTIONS] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert position[CPP_BASE_CONTRIBUTIONS] < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
+    assert position[EI_PREMIUMS] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    assert position[EI_PREMIUMS] < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert position[NET_INCOME] < position[TAXABLE_INCOME]
     assert position[DEDUCTIONS_FROM_NET_INCOME] < position[TAXABLE_INCOME]
     assert position[TAXABLE_INCOME] < position[FEDERAL_BASIC_TAX]
@@ -551,15 +570,16 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
 def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     # Employment income of 10000, with the CPP contributions computed by Schedule 8's tiers:
     # base 4.95% x (10000 - 3500) = 321.75, first additional 1% x 6500 = 65.00, no second
-    # additional, so enhanced 65.00; EI from the EI table's arithmetic, 1.64% x 10000 = 164.00;
-    # the Canada employment amount is the lesser of 10000 and 1471.
-    worksheet = compute("10000", "0", "0", "0", "164.00")
+    # additional, so enhanced 65.00; the EI premiums computed from employment income, 1.64% x
+    # 10000 = 164.00; the Canada employment amount is the lesser of 10000 and 1471.
+    worksheet = compute("10000", "0", "0", "0")
 
     assert worksheet.get(TOTAL_INCOME).value == D("10000")
     assert worksheet.get(CPP_BASE_CONTRIBUTIONS).value == D("321.75")
     assert worksheet.get(CPP_FIRST_ADDITIONAL_CONTRIBUTIONS).value == D("65.00")
     assert worksheet.get(CPP_SECOND_ADDITIONAL_CONTRIBUTIONS).value == D("0")
     assert worksheet.get(CPP_ENHANCED_CONTRIBUTIONS).value == D("65.00")
+    assert worksheet.get(EI_PREMIUMS).value == D("164.00")
     assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("65.00")
     assert worksheet.get(NET_INCOME).value == D("9935.00")
     assert worksheet.get(TAXABLE_INCOME).value == D("9935.00")

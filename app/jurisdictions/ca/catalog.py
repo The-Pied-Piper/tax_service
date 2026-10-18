@@ -152,10 +152,12 @@ differing from box 14, and the slips' deducted contributions differing from the 
 
 EI_PREMIUMS = CATALOG.declare("ei_premiums", Decimal, non_negative=True)
 """EI premiums, T1 line 31200 "through employment (boxes 18 and 55 of all T4 slips) (maximum
-$1,077.48)": the amount claimed, a starting amount and a part of the total of the credit amounts
-on the T1 and, as ON428 line 21 (line 58300) "Amount from line 31200 of your return", on ON428.
+$1,077.48)": the rate on employment income up to the maximum insurable earnings, a part of the
+total of the credit amounts on the T1 and, as ON428 line 21 (line 58300) "Amount from line 31200
+of your return", on ON428.
 
-The premiums are not computed from insurable earnings, so the claimed amount is an input.
+Employment income is taken as the insurable earnings: boxes 18 and 55 of the slip are not
+modelled. Not triggered by the returns modelled: the EI overpayment (T1 line 45000).
 """
 
 CANADA_EMPLOYMENT_AMOUNT = CATALOG.declare("canada_employment_amount", Decimal, non_negative=True)

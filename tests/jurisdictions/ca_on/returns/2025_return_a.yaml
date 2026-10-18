@@ -1,7 +1,8 @@
 # Return A: a 2025 Ontario resident, computed from employment income and a capital gain to
 # total income; from employment income, by Schedule 8's three contribution tiers, to the
 # base, first additional and second additional CPP contributions, the last two together the
-# enhanced CPP contributions; less an RRSP deduction, union dues and the enhanced CPP
+# enhanced CPP contributions; from employment income, up to the EI maximum insurable
+# earnings, to the EI premiums; less an RRSP deduction, union dues and the enhanced CPP
 # contributions to net income, less the (empty) deductions from net income to taxable
 # income, and through each form's total of non-refundable credit amounts (its basic personal
 # amount, the base CPP contributions and the EI premiums, and on the T1 alone the Canada
@@ -21,7 +22,8 @@ description: >-
   capital gain of $20,000 (Schedule 3 line 21), of which 50% is taxable: taxable capital
   gains (line 12700) of $10,000 and total income (line 15000) of $120,000. The CPP
   contributions are computed from employment income, which Schedule 8 line 1 reads as the
-  pensionable earnings when T4 box 26 is blank. Employment income is above both CPP earnings
+  pensionable earnings when T4 box 26 is blank. The EI premiums are computed from employment
+  income, taken as the insurable earnings. Employment income is above both CPP earnings
   ceilings and the EI maximum insurable earnings, so the CPP contributions and EI premiums
   are the printed 2025 maximums: base CPP contributions (Schedule 8 line 11, T1 line 30800,
   ON428 line 58240) of $3,356.10, enhanced CPP contributions (line 22215) of $1,074.00
@@ -45,8 +47,8 @@ description: >-
   61500) of $867.61929, each taken off its form's basic tax, not below zero. The Ontario
   surtax (ON428 line 68) is 20% of the Ontario tax after credits over $5,710 plus 36% of it
   over $7,307: $392.395442 + $131.3917956 = $523.7872376, for an Ontario tax with surtax
-  (ON428 line 69) of $8,195.7644476. The CPP contributions are rounded to the cent, which
-  changes none of them; no other amounts are rounded.
+  (ON428 line 69) of $8,195.7644476. The CPP contributions and EI premiums are rounded to
+  the cent, which changes none of them; no other amounts are rounded.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -118,9 +120,13 @@ sources:
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s8/5000-s8-25e.txt
   - >-
     CRA, "EI premium rates and maximums", 2025 federal row: maximum annual insurable
-    earnings $65,700; rate 1.64%; maximum annual employee premium $1,077.48. Employment
-    income of 110,000 is above $65,700, so the premiums are 1.64% x 65,700 = 1,077.48, the
-    T1's printed maximum on line 31200.
+    earnings $65,700; rate 1.64%; maximum annual employee premium $1,077.48. The premiums
+    are computed from employment income, taken as the insurable earnings: 1.64% of
+    employment income up to the $65,700 maximum insurable earnings, with no exemption, at
+    most $1,077.48, rounded half-up to the cent. Employment income of 110,000 is above
+    $65,700, so the premiums are 1.64% x 65,700 = 1,077.48, the T1's printed maximum on line
+    31200. Not triggered by this return, so not modelled: insurable earnings (T4 boxes 18
+    and 55) that differ from employment income, and the EI overpayment (T1 line 45000).
   - https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/payroll/payroll-deductions-contributions/employment-insurance-ei/ei-premium-rates-maximums.html
   - >-
     CRA, the 2025 T1 return (form 5000-R): line 36 (line 20800) "RRSP deduction (complete
@@ -211,7 +217,6 @@ inputs:
   ca/capital_gain: "20000"
   ca/rrsp_deduction: "1926"
   ca/union_dues: "2000"
-  ca/ei_premiums: "1077.48"
 expected:
   ca/taxable_capital_gains: "10000"
   ca/total_income: "120000"
@@ -219,6 +224,7 @@ expected:
   ca/cpp_first_additional_contributions: "678.00"
   ca/cpp_second_additional_contributions: "396.00"
   ca/cpp_enhanced_contributions: "1074.00"
+  ca/ei_premiums: "1077.48"
   ca/deductions_from_total_income: "5000"
   ca/net_income: "115000"
   ca/deductions_from_net_income: "0"

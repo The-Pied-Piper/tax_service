@@ -162,14 +162,14 @@ def test_an_identifier_that_is_not_an_amount_names_the_file_and_key(tmp_path: Pa
         WorkedReturn.load(path, artifacts)
 
 
-def test_return_a_with_negative_ei_premiums_fails_at_load_naming_the_kind(
+def test_return_a_with_negative_union_dues_fails_at_load_naming_the_kind(
     tmp_path: Path, artifacts: ArtifactRegistry
 ) -> None:
     text = (RETURNS / "2025_return_a.yaml").read_text()
-    assert 'ca/ei_premiums: "1077.48"' in text
-    path = write(tmp_path, text.replace('ca/ei_premiums: "1077.48"', 'ca/ei_premiums: "-40000"'))
+    assert 'ca/union_dues: "2000"' in text
+    path = write(tmp_path, text.replace('ca/union_dues: "2000"', 'ca/union_dues: "-40000"'))
 
-    with pytest.raises(NegativeArtifactError, match=r"ca/ei_premiums.*-40000"):
+    with pytest.raises(NegativeArtifactError, match=r"ca/union_dues.*-40000"):
         WorkedReturn.load(path, artifacts)
 
 
