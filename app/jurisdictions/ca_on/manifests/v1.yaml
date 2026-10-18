@@ -16,6 +16,9 @@ inputs:
   - ca/union_dues
   - ca-on/dependent_children
   - ca-on/dependants
+  - ca/eligible_dependants
+  - ca/dependant_net_income
+  - ca/infirm_children
   - ca/income_tax_deducted
 outputs:
   - ca/refund_or_balance_owing
@@ -190,14 +193,77 @@ capabilities:
       base: ca/employment_income
     produces:
       output: ca/canada_employment_amount
-  # Each form's total of credit amounts is its basic personal amount, the base CPP
-  # contributions and the EI premiums, in the forms' line order; the T1's also holds the
-  # Canada employment amount. ON428 lines 58240 and 58300 are "Amount from line 30800 /
-  # 31200 of your return", so the Ontario sum reads the federal kinds.
+  # Schedule 5, "Line 30400 - Amount for an eligible dependant": line 1 "Basic personal
+  # amount from line 30000 of your return", line 3 "Line 1 plus line 2" with line 2 (an
+  # infirm eligible dependant 18 or older) not triggered, line 4 (51106) "Dependant's net
+  # income from line 23600 of their return" and line 5 "Line 3 minus line 4 (if
+  # negative, enter "0") Enter this amount on line 30400 of your return.".
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/basic_personal_amount
+      less: ca/dependant_net_income
+    produces:
+      output: ca/eligible_dependant_amount_before_count
+  # T1 line 80 (line 30400) "Amount for an eligible dependant (complete Schedule 5)":
+  # line 5 for each eligible dependant claimed, at most one ("Each household is allowed
+  # only one claim for this amount").
+  - name: core/times_count
+    consumes:
+      amount: ca/eligible_dependant_amount_before_count
+      count: ca/eligible_dependants
+    produces:
+      output: ca/eligible_dependant_amount
+  # T1 line 83 (line 30500) "Canada caregiver amount for infirm children under 18 years
+  # of age (see Schedule 5) Number of children you are claiming this amount for Line
+  # 30499" "multiplied by $2,687".
+  - name: core/per_unit_amount
+    params:
+      amount: ca/infirm_child_amount
+    consumes:
+      count: ca/infirm_children
+    produces:
+      output: ca/infirm_children_amount
+  # ON428 line 14 "Base amount 11,905.00": the dataset becomes an artifact of the same
+  # name.
+  - name: core/credit_amount
+    params:
+      amount: ca-on/eligible_dependant_base
+    produces:
+      output: ca-on/eligible_dependant_base
+  # ON428 line 15 "Your eligible dependant's net income from line 23600 of their
+  # return", the federal Schedule 5 line 4 figure, and line 16 (line 58160) "Line 14
+  # minus line 15 (if negative, enter "0") (maximum $10,823)", before its maximum, then
+  # at most it.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca-on/eligible_dependant_base
+      less: ca/dependant_net_income
+    produces:
+      output: ca-on/eligible_dependant_amount_before_maximum
+  - name: core/capped_amount
+    params:
+      cap: ca-on/eligible_dependant_maximum
+    consumes:
+      base: ca-on/eligible_dependant_amount_before_maximum
+    produces:
+      output: ca-on/eligible_dependant_amount_before_count
+  # Line 58160 for each eligible dependant claimed, the T1 line 30400 count.
+  - name: core/times_count
+    consumes:
+      amount: ca-on/eligible_dependant_amount_before_count
+      count: ca/eligible_dependants
+    produces:
+      output: ca-on/eligible_dependant_amount
+  # T1 line 33500 (lines 30000, 30400, 30500, 30800, 31200, 31260) and ON428 line 58800
+  # (lines 58040, 58160, 58240, 58300), in the forms' line order. ON428 lines 58240 and
+  # 58300 are "Amount from line 30800 / 31200 of your return", so the Ontario sum reads
+  # the federal kinds; it has no Canada employment amount.
   - name: core/sum
     consumes:
       parts:
         - ca/basic_personal_amount
+        - ca/eligible_dependant_amount
+        - ca/infirm_children_amount
         - ca/cpp_base_contributions
         - ca/ei_premiums
         - ca/canada_employment_amount
@@ -207,6 +273,7 @@ capabilities:
     consumes:
       parts:
         - ca-on/basic_personal_amount
+        - ca-on/eligible_dependant_amount
         - ca/cpp_base_contributions
         - ca/ei_premiums
     produces:

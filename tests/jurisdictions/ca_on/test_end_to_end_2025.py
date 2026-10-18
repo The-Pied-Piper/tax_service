@@ -13,26 +13,29 @@ contributions carried forward of 0 (line 23), the contributions available less t
 that RRSP deduction, union dues of 2000 and the enhanced contributions to net income 115000, less no
 deductions from net income to taxable income 115000, and from each basic personal amount (16129
 federal, the Federal Worksheet's taper on net income, here at or below the 177882 threshold so not
-reduced; 12747 Ontario) plus the base CPP contributions and the EI premiums, and federally the
-Canada employment amount of 1471 (the lesser of employment income and 1471), through each total of
-credit amounts and each form's non-refundable tax credits (T1 line 35000, ON428 line 61500) to each
-tax after credits, the Ontario surtax on the Ontario tax after credits (ON428 lines 66 to 68) to the
-Ontario tax with surtax of line 69, and with no dependent children and no dependants the Ontario tax
-reduction amounts of 294.00 (lines 74 to 77), twice them less the tax with surtax (line 73), not
-below zero, the Ontario tax reduction of 0 (line 80), to the Ontario tax after the reduction (line
-81); Schedule ON428-A's LIFT credit, 5.05% of employment income, 5555, at most 875 (lines 5 and 14),
-less 5% of net income over 32500, 4125 (line 19), not below zero, 0 (line 20, ON428 line 85), taken
-off the Ontario tax after the reduction, not below zero (line 86); and the Ontario health premium on
-taxable income by the chart of line 89, 750, added to it to the Ontario tax of line 90; and on the
-T1, the federal tax after credits carried to the net federal tax (line 42000), added to the Ontario
-tax (line 42800) to the total payable (line 43500); Schedule 6's Canada workers benefit, from the
-working income of 110000 (line 5, employment income), 27% of it over 3000 at most 1633 (line 22),
-less 15% of the adjusted family net income (line 15, net income) of 115000 over 26855, 13221.75
-(line 27), not below zero, 0 (line 28, T1 line 45300); less the total credits (line 48200), here
-the chosen income tax deducted of 25000 (line 43700) plus that benefit, to the refund or balance
-owing (line 167), 897.1508076, positive so a balance owing) are checked from the files under
-`returns/` by `test_worked_returns.py`, as are Returns B, C, D and E; this module pins which
-capability produces each line, the order, and the trace that explains them.
+reduced; 12747 Ontario) plus each amount for an eligible dependant (T1 line 30400, Schedule 5 line
+5, the federal basic personal amount less the dependant's net income of 0; ON428 line 58160, the
+11905.00 base less it, at most 10823), claimed for 0 eligible dependants and so 0, the base CPP
+contributions and the EI premiums, and federally the amount for infirm children of 0 x 2687 (line
+30500) and the Canada employment amount of 1471 (the lesser of employment income and 1471), through
+each total of credit amounts and each form's non-refundable tax credits (T1 line 35000, ON428 line
+61500) to each tax after credits, the Ontario surtax on the Ontario tax after credits (ON428 lines
+66 to 68) to the Ontario tax with surtax of line 69, and with no dependent children and no
+dependants the Ontario tax reduction amounts of 294.00 (lines 74 to 77), twice them less the tax
+with surtax (line 73), not below zero, the Ontario tax reduction of 0 (line 80), to the Ontario tax
+after the reduction (line 81); Schedule ON428-A's LIFT credit, 5.05% of employment income, 5555, at
+most 875 (lines 5 and 14), less 5% of net income over 32500, 4125 (line 19), not below zero, 0 (line
+20, ON428 line 85), taken off the Ontario tax after the reduction, not below zero (line 86); and the
+Ontario health premium on taxable income by the chart of line 89, 750, added to it to the Ontario
+tax of line 90; and on the T1, the federal tax after credits carried to the net federal tax (line
+42000), added to the Ontario tax (line 42800) to the total payable (line 43500); Schedule 6's Canada
+workers benefit, from the working income of 110000 (line 5, employment income), 27% of it over 3000
+at most 1633 (line 22), less 15% of the adjusted family net income (line 15, net income) of 115000
+over 26855, 13221.75 (line 27), not below zero, 0 (line 28, T1 line 45300); less the total credits
+(line 48200), here the chosen income tax deducted of 25000 (line 43700) plus that benefit, to the
+refund or balance owing (line 167), 897.1508076, positive so a balance owing) are checked from the
+files under `returns/` by `test_worked_returns.py`, as are Returns B, C, D, E and F; this module
+pins which capability produces each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
@@ -58,6 +61,7 @@ from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.tapered_amount import TaperedAmount
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
+from app.domain.capabilities.times_count import TimesCount
 from app.domain.errors import InputAboveBoundError
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.parameters.amount import Amount
@@ -83,6 +87,7 @@ from app.domain.trace import (
     SumLine,
     SurchargeTierLine,
     TaperedAmountLine,
+    TimesCountLine,
 )
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
@@ -99,11 +104,17 @@ from app.jurisdictions.ca.catalog import (
     CWB_REDUCTION,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
+    DEPENDANT_NET_INCOME,
     EI_PREMIUMS,
+    ELIGIBLE_DEPENDANT_AMOUNT,
+    ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
+    ELIGIBLE_DEPENDANTS,
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
     INCOME_TAX_DEDUCTED,
+    INFIRM_CHILDREN,
+    INFIRM_CHILDREN_AMOUNT,
     NET_FEDERAL_TAX,
     NET_INCOME,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
@@ -129,6 +140,8 @@ from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
     DEPENDANTS,
     DEPENDENT_CHILDREN,
+    ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
+    ELIGIBLE_DEPENDANT_BASE,
     LIFT_CREDIT,
     LIFT_CREDIT_BEFORE_MAXIMUM,
     LIFT_MAXIMUM_CREDIT,
@@ -172,6 +185,9 @@ def compute(
     *,
     dependent_children: int = 0,
     dependants: int = 0,
+    eligible_dependants: int = 0,
+    dependant_net_income: str = "0",
+    infirm_children: int = 0,
     income_tax_deducted: str = "0",
 ) -> Worksheet:
     return service().compute(
@@ -186,6 +202,9 @@ def compute(
         Artifact(UNION_DUES, D(union_dues)),
         Artifact(DEPENDENT_CHILDREN, dependent_children),
         Artifact(DEPENDANTS, dependants),
+        Artifact(ELIGIBLE_DEPENDANTS, eligible_dependants),
+        Artifact(DEPENDANT_NET_INCOME, D(dependant_net_income)),
+        Artifact(INFIRM_CHILDREN, infirm_children),
         Artifact(INCOME_TAX_DEDUCTED, D(income_tax_deducted)),
     )
 
@@ -209,6 +228,9 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(UNION_DUES) is None
     assert worksheet.producer_of(DEPENDENT_CHILDREN) is None
     assert worksheet.producer_of(DEPENDANTS) is None
+    assert worksheet.producer_of(ELIGIBLE_DEPENDANTS) is None
+    assert worksheet.producer_of(DEPENDANT_NET_INCOME) is None
+    assert worksheet.producer_of(INFIRM_CHILDREN) is None
     assert worksheet.producer_of(INCOME_TAX_DEDUCTED) is None
     assert isinstance(worksheet.producer_of(RRSP_CONTRIBUTIONS_AVAILABLE), Sum)
     assert isinstance(worksheet.producer_of(RRSP_DEDUCTION_MAXIMUM), LesserOf)
@@ -260,6 +282,32 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         ontario.BASIC_PERSONAL_AMOUNT
     )
     assert isinstance(worksheet.producer_of(CANADA_EMPLOYMENT_AMOUNT), CappedAmount)
+    # Schedule 5 line 5 and T1 line 30400; T1 line 30500; ON428 lines 14 to 16 (line 58160).
+    assert isinstance(
+        worksheet.producer_of(ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT), SubtractNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(ELIGIBLE_DEPENDANT_AMOUNT), TimesCount)
+    assert isinstance(worksheet.producer_of(INFIRM_CHILDREN_AMOUNT), PerUnitAmount)
+    assert worksheet.producer_of(INFIRM_CHILDREN_AMOUNT) is not worksheet.producer_of(
+        TAX_REDUCTION_FOR_CHILDREN
+    )
+    assert isinstance(worksheet.producer_of(ELIGIBLE_DEPENDANT_BASE), CreditAmount)
+    assert worksheet.producer_of(ELIGIBLE_DEPENDANT_BASE) is not worksheet.producer_of(
+        ontario.BASIC_PERSONAL_AMOUNT
+    )
+    assert isinstance(
+        worksheet.producer_of(ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM), SubtractNotBelowZero
+    )
+    assert worksheet.producer_of(ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM) is not (
+        worksheet.producer_of(ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT)
+    )
+    assert isinstance(
+        worksheet.producer_of(ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT), CappedAmount
+    )
+    assert isinstance(worksheet.producer_of(ontario.ELIGIBLE_DEPENDANT_AMOUNT), TimesCount)
+    assert worksheet.producer_of(ontario.ELIGIBLE_DEPENDANT_AMOUNT) is not (
+        worksheet.producer_of(ELIGIBLE_DEPENDANT_AMOUNT)
+    )
     assert isinstance(worksheet.producer_of(NON_REFUNDABLE_CREDIT_AMOUNTS), Sum)
     assert isinstance(worksheet.producer_of(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS), Sum)
     assert worksheet.producer_of(NON_REFUNDABLE_CREDIT_AMOUNTS) is not worksheet.producer_of(
@@ -438,8 +486,23 @@ def test_the_trace_explains_the_computation() -> None:
         "canada_employment_amount: lesser of employment_income 110000 and 1471 (no rounding)",
         "1471",
     )
+    # Schedule 5 line 5, then T1 line 30400 for 0 eligible dependants; line 30500.
+    federal_dependant = position(
+        "eligible_dependant_amount_before_count: basic_personal_amount 16129 "
+        "less dependant_net_income 0, not below 0 = 16129",
+        "16129",
+    )
+    federal_dependant_claimed = position(
+        "eligible_dependant_amount: eligible_dependant_amount_before_count 16129 "
+        "for each of 0 eligible_dependants = 0",
+        "0",
+    )
+    infirm_children = position(
+        "infirm_children_amount: 2687 for each of 0 infirm_children = 0 (no rounding)", "0"
+    )
     federal_amounts = position(
         "non_refundable_credit_amounts: basic_personal_amount 16129 "
+        "+ eligible_dependant_amount 0 + infirm_children_amount 0 "
         "+ cpp_base_contributions 3356.1 + ei_premiums 1077.48 "
         "+ canada_employment_amount 1471 = 22033.58",
         "22033.58",
@@ -458,8 +521,26 @@ def test_the_trace_explains_the_computation() -> None:
     ontario_column = position("11.16% on 9225 over 105775 plus 7510.09", "8539.60")
     ontario_basic = position("ontario_basic_tax on taxable_income 115000 (no rounding)", "8539.60")
     ontario_amount = position("basic_personal_amount: credit amount 12747 (no rounding)", "12747")
+    # ON428 lines 14 to 16 (line 58160), for 0 eligible dependants.
+    ontario_base = position("eligible_dependant_base: credit amount 11905 (no rounding)", "11905")
+    ontario_before_maximum = position(
+        "eligible_dependant_amount_before_maximum: eligible_dependant_base 11905 "
+        "less dependant_net_income 0, not below 0 = 11905",
+        "11905",
+    )
+    ontario_dependant = position(
+        "eligible_dependant_amount_before_count: lesser of "
+        "eligible_dependant_amount_before_maximum 11905 and 10823 (no rounding)",
+        "10823",
+    )
+    ontario_dependant_claimed = position(
+        "eligible_dependant_amount: eligible_dependant_amount_before_count 10823 "
+        "for each of 0 eligible_dependants = 0",
+        "0",
+    )
     ontario_amounts = position(
         "non_refundable_credit_amounts: basic_personal_amount 12747 "
+        "+ eligible_dependant_amount 0 "
         "+ cpp_base_contributions 3356.1 + ei_premiums 1077.48 = 17180.58",
         "17180.58",
     )
@@ -604,6 +685,10 @@ def test_the_trace_explains_the_computation() -> None:
     assert ontario_basic < ontario_after
     assert net < federal_amount < federal_amounts < federal_credit < federal_after
     assert employment_amount < federal_amounts
+    assert federal_amount < federal_dependant < federal_dependant_claimed < federal_amounts
+    assert infirm_children < federal_amounts
+    assert ontario_base < ontario_before_maximum < ontario_dependant
+    assert ontario_dependant < ontario_dependant_claimed < ontario_amounts
     assert ontario_amount < ontario_amounts < ontario_credit < ontario_after
     assert ontario_after < surtax_first < surtax_second < with_surtax
     assert reduction_basic < reduction_amounts
@@ -664,6 +749,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     ]
     per_unit = {line.output: line for line in trace if isinstance(line, PerUnitAmountLine)}
     multiples = {line.output: line for line in trace if isinstance(line, MultipleOverLine)}
+    times = {line.output: line for line in trace if isinstance(line, TimesCountLine)}
 
     # The rate is applied once, to each form's total of credit amounts (T1 line 33800, ON428
     # line 58840), giving its non-refundable tax credits (T1 line 35000, ON428 line 61500).
@@ -735,6 +821,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             NON_REFUNDABLE_CREDIT_AMOUNTS,
             (
                 (BASIC_PERSONAL_AMOUNT, D("16129")),
+                (ELIGIBLE_DEPENDANT_AMOUNT, D("0")),
+                (INFIRM_CHILDREN_AMOUNT, D("0")),
                 (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
                 (EI_PREMIUMS, D("1077.48")),
                 (CANADA_EMPLOYMENT_AMOUNT, D("1471")),
@@ -747,6 +835,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ontario.NON_REFUNDABLE_CREDIT_AMOUNTS,
             (
                 (ontario.BASIC_PERSONAL_AMOUNT, D("12747")),
+                (ontario.ELIGIBLE_DEPENDANT_AMOUNT, D("0")),
                 (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
                 (EI_PREMIUMS, D("1077.48")),
             ),
@@ -855,6 +944,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         TAX_REDUCTION_BASIC: CreditAmountLine(
             TAX_REDUCTION_BASIC, Credit(amount=D("294.00")), NO_ROUNDING, D("294.00")
         ),
+        # ON428 line 14 "Base amount 11,905.00".
+        ELIGIBLE_DEPENDANT_BASE: CreditAmountLine(
+            ELIGIBLE_DEPENDANT_BASE, Credit(amount=D("11905.00")), NO_ROUNDING, D("11905.00")
+        ),
     }
     # ON428 line 75 (line 60969) "Number of dependent children multiplied by $544" and line 76
     # (line 60970) "Number of dependants multiplied by $544": Return A has neither.
@@ -873,6 +966,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
             per_unit=Amount(D("544")),
             rounding=NO_ROUNDING,
+            result=D("0"),
+        ),
+        # T1 line 30500 "Number of children you are claiming this amount for Line 30499"
+        # "multiplied by $2,687": Return A has no infirm child.
+        INFIRM_CHILDREN_AMOUNT: PerUnitAmountLine(
+            output=INFIRM_CHILDREN_AMOUNT,
+            count_kind=INFIRM_CHILDREN,
+            count=0,
+            per_unit=Amount(D("2687")),
+            rounding=NO_ROUNDING,
+            result=D("0"),
+        ),
+    }
+    # T1 line 30400 and ON428 line 58160: Schedule 5 line 5 and ON428 line 16, each claimed for
+    # the 0 eligible dependants of Return A, a plain 0.
+    assert times == {
+        ELIGIBLE_DEPENDANT_AMOUNT: TimesCountLine(
+            output=ELIGIBLE_DEPENDANT_AMOUNT,
+            amount_kind=ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
+            amount_value=D("16129.00"),
+            count_kind=ELIGIBLE_DEPENDANTS,
+            count=0,
+            result=D("0"),
+        ),
+        ontario.ELIGIBLE_DEPENDANT_AMOUNT: TimesCountLine(
+            output=ontario.ELIGIBLE_DEPENDANT_AMOUNT,
+            amount_kind=ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
+            amount_value=D("10823"),
+            count_kind=ELIGIBLE_DEPENDANTS,
+            count=0,
             result=D("0"),
         ),
     }
@@ -911,6 +1034,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Amount(D("875")),
             NO_ROUNDING,
             D("875"),
+        ),
+        # ON428 line 16's "(maximum $10,823)": 11905.00 is above it.
+        ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT: CappedAmountLine(
+            ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
+            ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
+            D("11905.00"),
+            Amount(D("10823")),
+            NO_ROUNDING,
+            D("10823"),
         ),
     }
     # Schedule 7 line 17 "Enter whichever is less: amount from line 13 or line 16.": the
@@ -1132,6 +1264,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("867.61929"),
             result=D("7671.98071"),
         ),
+        # Schedule 5 line 5 "Line 3 minus line 4 (if negative, enter "0")": line 3 is line 1,
+        # the basic personal amount, as line 2 is not triggered; line 4 the dependant's net
+        # income, entered as 0.
+        ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT: SubtractedNotBelowZeroLine(
+            output=ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
+            minuend=BASIC_PERSONAL_AMOUNT,
+            minuend_amount=D("16129.00"),
+            subtrahend=DEPENDANT_NET_INCOME,
+            subtrahend_amount=D("0"),
+            result=D("16129.00"),
+        ),
+        # ON428 line 16 "Line 14 minus line 15 (if negative, enter "0")", before its maximum.
+        ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM: SubtractedNotBelowZeroLine(
+            output=ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
+            minuend=ELIGIBLE_DEPENDANT_BASE,
+            minuend_amount=D("11905.00"),
+            subtrahend=DEPENDANT_NET_INCOME,
+            subtrahend_amount=D("0"),
+            result=D("11905.00"),
+        ),
         # ON428 line 81 "Line 73 minus line 80 (if negative, enter "0")".
         ONTARIO_TAX_AFTER_REDUCTION: SubtractedNotBelowZeroLine(
             output=ONTARIO_TAX_AFTER_REDUCTION,
@@ -1202,7 +1354,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 50
+    assert len(order) == 57
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
@@ -1226,6 +1378,20 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[NET_INCOME] < position[BASIC_PERSONAL_AMOUNT]
     assert position[BASIC_PERSONAL_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert position[CANADA_EMPLOYMENT_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    assert (
+        position[BASIC_PERSONAL_AMOUNT]
+        < position[ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT]
+        < position[ELIGIBLE_DEPENDANT_AMOUNT]
+        < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    )
+    assert position[INFIRM_CHILDREN_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    assert (
+        position[ELIGIBLE_DEPENDANT_BASE]
+        < position[ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM]
+        < position[ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT]
+        < position[ontario.ELIGIBLE_DEPENDANT_AMOUNT]
+        < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
+    )
     assert position[NON_REFUNDABLE_CREDIT_AMOUNTS] < position[NON_REFUNDABLE_TAX_CREDITS]
     assert position[NON_REFUNDABLE_TAX_CREDITS] < position[FEDERAL_TAX_AFTER_CREDITS]
     assert position[ontario.BASIC_PERSONAL_AMOUNT] < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
@@ -1579,4 +1745,180 @@ def test_a_claim_above_the_maximum_is_refused_naming_both_kinds() -> None:
 
     assert str(raised.value) == (
         "ca/rrsp_amount_deducted 3000 is above ca/rrsp_deduction_maximum 1926"
+    )
+
+
+def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and_10823() -> None:
+    # Return F: employment income of 60000, one dependent child who is an eligible dependant with
+    # no net income. Schedule 5 line 5 is its line 30000 of 16129.00 less 0, claimed for 1
+    # eligible dependant: line 30400 is 16129.00. ON428 line 16 is 11905.00 less 0, at most
+    # 10823: line 58160 is 10823. Line 33500 is 16129 + 16129.00 + 0 + 2796.75 + 984.00 + 1471 =
+    # 37509.75, and line 35000 37509.75 x 14.5% = 5438.91375, so the federal tax after credits
+    # is 8741.68 - 5438.91375 = 3302.76625. ON428 line 58800 is 12747 + 10823 + 2796.75 + 984.00
+    # = 27350.75, and line 61500 27350.75 x 5.05% = 1381.212875, so the Ontario tax after
+    # credits is 3269.9735 - 1381.212875 = 1888.760625. The child is a dependent child for the
+    # Ontario tax reduction: 294.00 + 544 = 838.00, twice it 1676.00, below 1888.760625, so no
+    # reduction. With the health premium of 600 the Ontario tax is 2488.760625, the total
+    # payable 3302.76625 + 2488.760625 = 5791.526875, and line 167 5791.526875 - 8000 =
+    # -2208.473125, a refund.
+    worksheet = compute(
+        "60000",
+        "0",
+        "0",
+        "0",
+        "10800",
+        "0",
+        "0",
+        dependent_children=1,
+        eligible_dependants=1,
+        income_tax_deducted="8000",
+    )
+
+    assert worksheet.get(NET_INCOME).value == D("59435.00")
+    assert worksheet.get(BASIC_PERSONAL_AMOUNT).value == D("16129.00")
+    assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT).value == D("16129.00")
+    assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT).value == D("16129.00")
+    assert worksheet.get(INFIRM_CHILDREN_AMOUNT).value == D("0")
+    assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("37509.75")
+    assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("5438.91375")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("3302.76625")
+    assert worksheet.get(ELIGIBLE_DEPENDANT_BASE).value == D("11905.00")
+    assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM).value == D("11905.00")
+    assert worksheet.get(ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT).value == D("10823")
+    assert worksheet.get(ontario.ELIGIBLE_DEPENDANT_AMOUNT).value == D("10823")
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("27350.75")
+    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("1381.212875")
+    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1888.760625")
+    assert worksheet.get(TAX_REDUCTION_AMOUNTS).value == D("838.00")
+    assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("0")
+    assert worksheet.get(ONTARIO_TAX).value == D("2488.760625")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("5791.526875")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-2208.473125")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "eligible_dependant_amount: eligible_dependant_amount_before_count 16129 "
+        "for each of 1 eligible_dependants = 16129"
+    ) in rendered
+    assert (
+        "eligible_dependant_amount: eligible_dependant_amount_before_count 10823 "
+        "for each of 1 eligible_dependants = 10823"
+    ) in rendered
+    assert (
+        "non_refundable_credit_amounts: basic_personal_amount 16129 "
+        "+ eligible_dependant_amount 16129 + infirm_children_amount 0 "
+        "+ cpp_base_contributions 2796.75 + ei_premiums 984 "
+        "+ canada_employment_amount 1471 = 37509.75"
+    ) in rendered
+    assert (
+        "non_refundable_credit_amounts: basic_personal_amount 12747 "
+        "+ eligible_dependant_amount 10823 "
+        "+ cpp_base_contributions 2796.75 + ei_premiums 984 = 27350.75"
+    ) in rendered
+
+
+def test_the_dependants_net_income_comes_off_both_amounts() -> None:
+    # Return F's amounts with a dependant's net income of 1500 (Schedule 5 line 4, ON428 line
+    # 15): line 5 is 16129.00 - 1500 = 14629.00, and ON428 line 16 is 11905.00 - 1500 =
+    # 10405.00, below the $10,823 maximum, so kept. Line 33500 is 16129 + 14629.00 + 0 +
+    # 2796.75 + 984.00 + 1471 = 36009.75; ON428 line 58800 is 12747 + 10405.00 + 2796.75 +
+    # 984.00 = 26932.75.
+    worksheet = compute(
+        "60000",
+        "0",
+        "0",
+        "0",
+        "10800",
+        "0",
+        "0",
+        dependent_children=1,
+        eligible_dependants=1,
+        dependant_net_income="1500",
+        income_tax_deducted="8000",
+    )
+
+    assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT).value == D("14629.00")
+    assert worksheet.get(ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT).value == D("10405.00")
+    assert worksheet.get(ontario.ELIGIBLE_DEPENDANT_AMOUNT).value == D("10405.00")
+    assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("36009.75")
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("26932.75")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "eligible_dependant_amount_before_count: basic_personal_amount 16129 "
+        "less dependant_net_income 1500, not below 0 = 14629"
+    ) in rendered
+    assert (
+        "eligible_dependant_amount_before_count: lesser of "
+        "eligible_dependant_amount_before_maximum 10405 and 10823 (no rounding)"
+    ) in rendered
+
+
+def test_a_dependant_with_more_income_than_the_amounts_adds_nothing() -> None:
+    # Schedule 5 line 5 and ON428 line 16 "(if negative, enter "0")": a dependant's net income
+    # of 20000 is above both 16129.00 and 11905.00, so each amount is 0 and the totals are those
+    # without a dependant: 16129 + 0 + 0 + 2796.75 + 984.00 + 1471 = 21380.75 and 12747 + 0 +
+    # 2796.75 + 984.00 = 16527.75.
+    worksheet = compute(
+        "60000",
+        "0",
+        "0",
+        "0",
+        "10800",
+        "0",
+        "0",
+        dependent_children=1,
+        eligible_dependants=1,
+        dependant_net_income="20000",
+        income_tax_deducted="8000",
+    )
+
+    assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT).value == D("0")
+    assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT).value == D("0")
+    assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM).value == D("0")
+    assert worksheet.get(ontario.ELIGIBLE_DEPENDANT_AMOUNT).value == D("0")
+    assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("21380.75")
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("16527.75")
+
+
+def test_no_eligible_dependant_claims_nothing_whatever_the_dependants_income() -> None:
+    # Return F's amounts with no eligible dependant claimed for but a dependant's net income of
+    # 1500 entered: Schedule 5 line 5 is still 14629.00, but line 30400 claims it for 0
+    # eligible dependants, so it is 0, and so is line 58160.
+    worksheet = compute(
+        "60000",
+        "0",
+        "0",
+        "0",
+        "10800",
+        "0",
+        "0",
+        dependent_children=1,
+        dependant_net_income="1500",
+        income_tax_deducted="8000",
+    )
+
+    assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT).value == D("14629.00")
+    assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT).value == D("0")
+    assert worksheet.get(ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT).value == D("10405.00")
+    assert worksheet.get(ontario.ELIGIBLE_DEPENDANT_AMOUNT).value == D("0")
+    assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("21380.75")
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("16527.75")
+
+
+def test_infirm_children_add_2687_each_to_the_federal_amounts_only() -> None:
+    # Return A's amounts with two infirm children (T1 line 30499): line 30500 is 2 x 2687 =
+    # 5374, so line 33500 is 22033.58 + 5374 = 27407.58, line 35000 27407.58 x 14.5% =
+    # 3974.0991, and the federal tax after credits 20146.25 - 3974.0991 = 16172.1509. ON428 has
+    # no such line here (its caregiver amount, line 58185, is not triggered), so its total is
+    # unchanged at 17180.58.
+    worksheet = compute("110000", "20000", "0", "1926", "19800", "1926", "2000", infirm_children=2)
+
+    assert worksheet.get(INFIRM_CHILDREN).value == 2
+    assert worksheet.get(INFIRM_CHILDREN_AMOUNT).value == D("5374")
+    assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("27407.58")
+    assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("3974.0991")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("16172.1509")
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("17180.58")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert "infirm_children_amount: 2687 for each of 2 infirm_children = 5374 (no rounding)" in (
+        rendered
     )

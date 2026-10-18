@@ -20,6 +20,10 @@ from app.jurisdictions.ca_on.catalog import (
     CATALOG,
     DEPENDANTS,
     DEPENDENT_CHILDREN,
+    ELIGIBLE_DEPENDANT_AMOUNT,
+    ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
+    ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
+    ELIGIBLE_DEPENDANT_BASE,
     LIFT_CREDIT,
     LIFT_CREDIT_BEFORE_MAXIMUM,
     LIFT_MAXIMUM_CREDIT,
@@ -46,6 +50,10 @@ REGISTERED = frozenset(
     {
         "ca-on/ontario_basic_tax",
         "ca-on/basic_personal_amount",
+        "ca-on/eligible_dependant_base",
+        "ca-on/eligible_dependant_amount_before_maximum",
+        "ca-on/eligible_dependant_amount_before_count",
+        "ca-on/eligible_dependant_amount",
         "ca-on/non_refundable_credit_amounts",
         "ca-on/non_refundable_tax_credits",
         "ca-on/ontario_tax_after_credits",
@@ -96,6 +104,16 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/ontario_basic_tax") is ONTARIO_BASIC_TAX
     assert registry.get("ca-on/ontario_tax_after_credits") is ONTARIO_TAX_AFTER_CREDITS
     assert registry.get("ca-on/basic_personal_amount") is BASIC_PERSONAL_AMOUNT
+    assert registry.get("ca-on/eligible_dependant_base") is ELIGIBLE_DEPENDANT_BASE
+    assert (
+        registry.get("ca-on/eligible_dependant_amount_before_maximum")
+        is ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM
+    )
+    assert (
+        registry.get("ca-on/eligible_dependant_amount_before_count")
+        is ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT
+    )
+    assert registry.get("ca-on/eligible_dependant_amount") is ELIGIBLE_DEPENDANT_AMOUNT
     assert registry.get("ca-on/non_refundable_credit_amounts") is NON_REFUNDABLE_CREDIT_AMOUNTS
     assert registry.get("ca-on/non_refundable_tax_credits") is NON_REFUNDABLE_TAX_CREDITS
     assert registry.get("ca-on/ontario_surtax") is ONTARIO_SURTAX

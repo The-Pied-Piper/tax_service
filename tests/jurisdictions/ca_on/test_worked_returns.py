@@ -63,10 +63,14 @@ description: >-
   income are 9935.00. The Canada employment amount is the lesser of 1471 and the employment
   income of 10000: 1471. The federal basic personal amount is computed from net income by the
   Federal Worksheet: 9935.00 is at or below its 177882 threshold, so it is the base amount
-  14538 plus the whole supplement amount 1591, 16129, rounded half-up to the cent. The federal
-  total of credit amounts is its basic personal amount plus 321.75, 164.00 and 1471; the
-  Ontario total is its basic personal amount plus 321.75 and 164.00 (ON428 has no Canada
-  employment amount). Each form's non-refundable tax credits are its total times its rate
+  14538 plus the whole supplement amount 1591, 16129, rounded half-up to the cent. With no
+  eligible dependant and no infirm child, the amount for an eligible dependant (16129 less a
+  dependant's net income of 0 federally, 11905.00 less it at most 10823 for Ontario) is
+  claimed for 0 eligible dependants and the amount for infirm children is 0 x 2687: each 0.
+  The federal total of credit amounts is its basic personal amount plus those two zeros,
+  321.75, 164.00 and 1471; the Ontario total is its basic personal amount plus its zero,
+  321.75 and 164.00 (ON428 has no Canada employment amount). Each form's non-refundable tax
+  credits are its total times its rate
   (14.5% of 18085.75 = 2622.43375; 5.05% of 13232.75 = 668.253875); each exceeds its tax,
   leaving zero. An Ontario tax of zero is below the first surtax threshold, so the surtax is
   zero and the Ontario tax with surtax is zero. With no dependent children and no dependants,
@@ -85,8 +89,8 @@ description: >-
   and the refund or balance owing is 0 less 2133: -2133, a refund.
 sources:
   - >-
-    T1, Federal Worksheet, Schedule 3, Schedule 6, Schedule 7, Schedule 8, ON428, Schedule
-    ON428-A and EI table arithmetic on the 2025 figures.
+    T1, Federal Worksheet, Schedule 3, Schedule 5, Schedule 6, Schedule 7, Schedule 8, ON428,
+    Schedule ON428-A and EI table arithmetic on the 2025 figures.
 inputs:
   ca/employment_income: "10000"
   ca/capital_gain: "0"
@@ -97,6 +101,9 @@ inputs:
   ca/union_dues: "0"
   ca-on/dependent_children: "0"
   ca-on/dependants: "0"
+  ca/eligible_dependants: "0"
+  ca/dependant_net_income: "0"
+  ca/infirm_children: "0"
   ca/income_tax_deducted: "500"
 expected:
   ca/taxable_capital_gains: "0"
@@ -116,12 +123,19 @@ expected:
   ca/taxable_income: "9935.00"
   ca/federal_basic_tax: "1440.575"
   ca/basic_personal_amount: "16129"
+  ca/eligible_dependant_amount_before_count: "16129"
+  ca/eligible_dependant_amount: "0"
+  ca/infirm_children_amount: "0"
   ca/canada_employment_amount: "1471"
   ca/non_refundable_credit_amounts: "18085.75"
   ca/non_refundable_tax_credits: "2622.43375"
   ca/federal_tax_after_credits: "0"
   ca-on/ontario_basic_tax: "501.7175"
   ca-on/basic_personal_amount: "12747"
+  ca-on/eligible_dependant_base: "11905.00"
+  ca-on/eligible_dependant_amount_before_maximum: "11905.00"
+  ca-on/eligible_dependant_amount_before_count: "10823"
+  ca-on/eligible_dependant_amount: "0"
   ca-on/non_refundable_credit_amounts: "13232.75"
   ca-on/non_refundable_tax_credits: "668.253875"
   ca-on/ontario_tax_after_credits: "0"

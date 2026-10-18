@@ -18,31 +18,39 @@
 # less the RRSP deduction to the unused contributions carried forward (line 23); less the
 # enhanced CPP contributions to net income, less the (empty) deductions from net income to
 # taxable income; from net income, by the Federal Worksheet, to the federal basic personal
-# amount; and through each form's total of non-refundable credit amounts (its basic personal
-# amount, the base CPP contributions and the EI premiums, and on the T1 alone the Canada
-# employment amount), credited once at the form's credit rate to the form's non-refundable
-# tax credits (T1 line 35000, ON428 line 61500), taken off its basic tax, not below zero, to
-# the tax after credits, and on ON428 the surtax on the Ontario tax after credits, added to
-# it to the Ontario tax with surtax; and, with no dependent children or dependants, the
-# Ontario tax reduction amounts (the basic reduction alone), twice them less the Ontario tax
-# with surtax, not below zero, to the Ontario tax reduction, taken off the Ontario tax with
-# surtax, not below zero, to the Ontario tax after the reduction; from employment income, by
-# Schedule ON428-A, 5.05% of it at most $875, less 5% of net income over $32,500, not below
-# zero, to the LIFT credit (ON428 line 85), taken off the Ontario tax after the reduction,
-# not below zero, to the Ontario tax after the LIFT credit (line 86); and from taxable
-# income, by the health premium chart's tiers, each capped at the next plateau, to the
-# Ontario health premium, added to the Ontario tax after the LIFT credit to the Ontario tax;
-# from employment income, by Schedule 6, 27% of the working income over $3,000 at most
-# $1,633, less 15% of the adjusted family net income, here net income, over $26,855, not
-# below zero, to the Canada workers benefit (T1 line 45300); and on the T1, the federal tax
-# after credits, carried to the net federal tax, plus the Ontario tax to the total payable,
-# less the total credits, here the chosen income tax deducted plus the Canada workers
-# benefit, to the refund or balance owing, negative for a refund and positive for a balance
-# owing. There is no capital gain, unused or new RRSP contribution or union dues. Not yet
-# computed, so not in this file: any deduction from net income, the social benefits
-# repayment and capital losses. Lines 82 (the provincial foreign tax credit) and 87 (the
-# community food program donation tax credit for farmers) are not triggered by this return,
-# nor are Schedule 6's disability supplement (Step 3) and advance payments (Step 4); the
+# amount; from it less the dependant's net income, not below zero, for each eligible
+# dependant, to the amount for an eligible dependant (T1 line 30400), and from the ON428
+# base less the dependant's net income, not below zero, at most its maximum, for each
+# eligible dependant, to the Ontario amount (ON428 line 58160); from the number of infirm
+# children, $2,687 for each, to the amount for infirm children (line 30500), here, with no
+# eligible dependant and no infirm child, all three zero; and through each form's total of
+# non-refundable credit amounts (its basic personal amount, its amount for an eligible
+# dependant, the base CPP contributions and the EI premiums, and on the T1 alone the amount
+# for infirm children and the Canada employment amount), credited once at the form's credit
+# rate to the form's non-refundable tax credits (T1 line 35000, ON428 line 61500), taken off
+# its basic tax, not below zero, to the tax after credits, and on ON428 the surtax on the
+# Ontario tax after credits, added to it to the Ontario tax with surtax; and, with no
+# dependent children or dependants, the Ontario tax reduction amounts (the basic reduction
+# alone), twice them less the Ontario tax with surtax, not below zero, to the Ontario tax
+# reduction, taken off the Ontario tax with surtax, not below zero, to the Ontario tax after
+# the reduction; from employment income, by Schedule ON428-A, 5.05% of it at most $875, less
+# 5% of net income over $32,500, not below zero, to the LIFT credit (ON428 line 85), taken
+# off the Ontario tax after the reduction, not below zero, to the Ontario tax after the LIFT
+# credit (line 86); and from taxable income, by the health premium chart's tiers, each
+# capped at the next plateau, to the Ontario health premium, added to the Ontario tax after
+# the LIFT credit to the Ontario tax; from employment income, by Schedule 6, 27% of the
+# working income over $3,000 at most $1,633, less 15% of the adjusted family net income,
+# here net income, over $26,855, not below zero, to the Canada workers benefit (T1 line
+# 45300); and on the T1, the federal tax after credits, carried to the net federal tax, plus
+# the Ontario tax to the total payable, less the total credits, here the chosen income tax
+# deducted plus the Canada workers benefit, to the refund or balance owing, negative for a
+# refund and positive for a balance owing. There is no capital gain, unused or new RRSP
+# contribution or union dues. Not yet computed, so not in this file: child care expenses (T1
+# line 21400, Form T778), any deduction from net income, the social benefits repayment and
+# capital losses. Lines 82 (the provincial foreign tax credit) and 87 (the community food
+# program donation tax credit for farmers) are not triggered by this return, nor are
+# Schedule 5 line 2, T1 lines 30425 and 30450, the Ontario caregiver amount (ON428 line
+# 58185), and Schedule 6's disability supplement (Step 3) and advance payments (Step 4); the
 # Schedule 6 amounts for a filer with no eligible spouse and no eligible dependant apply.
 # Amounts are quoted decimal strings, never floats; counts are quoted digit strings. Every
 # output the CA-ON manifest declares must appear under `expected`; intermediate lines may be
@@ -76,18 +84,22 @@ description: >-
   ON428 line 58040 $12,747), the base CPP contributions and the EI premiums, and on the T1
   alone the Canada employment amount (line 31260) of $1,471, the lesser of $1,471 and
   employment income (ON428 has no such line): line 33500 of $19,403.75 and ON428 line 58800
-  of $14,550.75. The rate is applied once to each total: 14.5% federally (line 33800) and
-  5.05% for Ontario (ON428 line 58840). Each product is its form's non-refundable tax
-  credits: the total federal non-refundable tax credits (line 35000) of $2,813.54375 and the
-  Ontario non-refundable tax credits (ON428 line 61500) of $734.812875, each taken off its
-  form's basic tax, not below zero. The Ontario surtax (ON428 line 68) is 20% of the Ontario
-  tax after credits over $5,710 plus 36% of it over $7,307: $0, as the Ontario tax after
-  credits is below $5,710, so the Ontario tax with surtax (ON428 line 69) is that same
-  $766.804625. With no dependent children and no dependants (ON428 lines 75 and 76), the
-  Ontario tax reduction amounts (line 77) are the basic reduction of $294.00 (line 74);
-  twice them, $588.00 (line 78), less the Ontario tax with surtax (line 79, from line 73) is
-  negative, so the Ontario tax reduction (line 80) is $0 and the Ontario tax after the
-  reduction (line 81) is that same $766.804625. The LIFT credit (ON428 line 85, Schedule
+  of $14,550.75. Each total includes $0 for an eligible dependant (line 30400, ON428 line
+  58160) and, on the T1, $0 for infirm children (line 30500), as there is no eligible
+  dependant and no infirm child; Schedule 5 and ON428 lines 14 to 16 are computed as for one
+  eligible dependant with no net income, 16,129 federally and 11,905.00 at most $10,823 for
+  Ontario, and claimed for none. The rate is applied once to each total: 14.5% federally
+  (line 33800) and 5.05% for Ontario (ON428 line 58840). Each product is its form's
+  non-refundable tax credits: the total federal non-refundable tax credits (line 35000) of
+  $2,813.54375 and the Ontario non-refundable tax credits (ON428 line 61500) of $734.812875,
+  each taken off its form's basic tax, not below zero. The Ontario surtax (ON428 line 68) is
+  20% of the Ontario tax after credits over $5,710 plus 36% of it over $7,307: $0, as the
+  Ontario tax after credits is below $5,710, so the Ontario tax with surtax (ON428 line 69)
+  is that same $766.804625. With no dependent children and no dependants (ON428 lines 75 and
+  76), the Ontario tax reduction amounts (line 77) are the basic reduction of $294.00 (line
+  74); twice them, $588.00 (line 78), less the Ontario tax with surtax (line 79, from line
+  73) is negative, so the Ontario tax reduction (line 80) is $0 and the Ontario tax after
+  the reduction (line 81) is that same $766.804625. The LIFT credit (ON428 line 85, Schedule
   ON428-A) is 5.05% of employment income, $1,515, at most $875, less 5% of net income over
   $32,500, nothing, as net income is below it: $875, more than the Ontario tax after the
   reduction, so the Ontario tax after it (ON428 line 86) is $0. The Ontario health premium
@@ -267,10 +279,12 @@ sources:
     2 "Supplement amount 1,591.00"), which T4127's rounding to the cent leaves unchanged.
     There is no other employment income on this return, so line 1 plus line 2 is 30,000 + 0
     = 30,000 and line 31260 is 1,471, the lesser of 1,471 and 30,000, with no rounding
-    stated. With the base CPP contributions, the EI premiums and the Canada employment
-    amount, the credit amounts modelled, line 33500 is 16,129 + 1,311.75 + 492.00 + 1,471 =
-    19,403.75, and line 33800 is 19,403.75 x 14.5% = 2,813.54375, with no rounding stated.
-    Lines 116 and 117 are not modelled, so line 35000 is that same 2,813.54375.
+    stated. With the amount for an eligible dependant (line 30400) and the amount for infirm
+    children (line 30500), each 0 on this return as the Schedule 5 entry derives, the base
+    CPP contributions, the EI premiums and the Canada employment amount, the credit amounts
+    modelled, line 33500 is 16,129 + 0 + 0 + 1,311.75 + 492.00 + 1,471 = 19,403.75, and line
+    33800 is 19,403.75 x 14.5% = 2,813.54375, with no rounding stated. Lines 116 and 117 are
+    not modelled, so line 35000 is that same 2,813.54375.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-d1/5000-d1-25e.txt
   - https://www.canada.ca/en/revenue-agency/services/forms-publications/payroll/payroll-deductions-t4127-payroll-deductions-formulas/t4127-jan-120th-edition-effective-january-1-2025/t4127-jan-payroll-deductions-formulas-computer-programs.html
@@ -280,10 +294,45 @@ sources:
     58300) "Amount from line 31200 of your return"; line 44 (line 58800) "Line 35 plus line
     43"; line 45 "Ontario non-refundable tax credit rate 5.05%"; line 46 (line 58840) "Line
     44 multiplied by the percentage from line 45"; line 50 (line 61500) "Line 46 plus line
-    49 Enter this amount on line 52. Ontario non-refundable tax credits". With the federal
-    base CPP contributions and EI premiums, line 58800 is 12,747 + 1,311.75 + 492.00 =
-    14,550.75, and line 58840 is 14,550.75 x 5.05% = 734.812875, with no rounding stated;
-    line 49 is not modelled, so line 61500 is that same 734.812875.
+    49 Enter this amount on line 52. Ontario non-refundable tax credits". With the amount
+    for an eligible dependant (line 58160), 0 on this return as the Schedule 5 entry
+    derives, and the federal base CPP contributions and EI premiums, line 58800 is 12,747 +
+    0 + 1,311.75 + 492.00 = 14,550.75, and line 58840 is 14,550.75 x 5.05% = 734.812875,
+    with no rounding stated; line 49 is not modelled, so line 61500 is that same 734.812875.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
+  - >-
+    CRA, the 2025 T1 return (form 5000-R): line 80 (line 30400) "Amount for an eligible
+    dependant (complete Schedule 5)"; line 81 (line 30425) "Canada caregiver amount for
+    spouse or common-law partner, or eligible dependant age 18 or older (complete Schedule
+    5)"; line 82 (line 30450) "Canada caregiver amount for other infirm dependants age 18 or
+    older (complete Schedule 5)"; line 83 (line 30500) "Canada caregiver amount for infirm
+    children under 18 years of age (see Schedule 5) Number of children you are claiming this
+    amount for Line 30499" "multiplied by $2,687". CRA, the 2025 Schedule 5 (form 5000-S5),
+    "Line 30400 - Amount for an eligible dependant": "Claim this amount if, at any time in
+    the year, you supported an eligible dependant and their net income from line 23600 of
+    their return (or the amount that it would be if they filed a return) was less than your
+    basic personal amount (plus $2,687 if the eligible dependant was dependent on you
+    because of a mental or physical infirmity)."; "Each household is allowed only one claim
+    for this amount"; line 1 "Basic personal amount from line 30000 of your return"; line 2
+    "If you are eligible for the Canada caregiver amount for your dependant (other than your
+    infirm child under 18 years of age), enter $2,687"; line 3 "Line 1 plus line 2"; line 4
+    (51106) "Dependant's net income from line 23600 of their return"; line 5 "Line 3 minus
+    line 4 (if negative, enter "0") Enter this amount on line 30400 of your return." CRA,
+    the 2025 ON428 (form 5006-C): line 14 "Base amount 11,905.00"; line 15 "Your eligible
+    dependant's net income from line 23600 of their return"; line 16 (line 58160) "Line 14
+    minus line 15 (if negative, enter "0") (maximum $10,823)". The taxpayer has no spouse or
+    common-law partner and no dependants, so the number of eligible dependants claimed for
+    (line 30400, at most one per household) is 0, the dependant's net income (Schedule 5
+    line 4, ON428 line 15) is entered as 0 and the number of infirm children (line 30499) is
+    0. Schedule 5 is computed as for one eligible dependant and claimed for none: line 1 is
+    16,129, the basic personal amount of line 30000; line 2 is not triggered, so line 3 is
+    16,129 + 0 = 16,129; line 5 is 16,129 - 0 = 16,129, claimed for 0 eligible dependants,
+    so line 30400 is 0. Line 30500 is 0 x 2,687 = 0. On ON428, line 16 is 11,905.00 - 0 =
+    11,905.00, at most 10,823: 10,823, claimed for 0 eligible dependants, so line 58160 is
+    0. No rounding is stated on any of these lines. Not triggered by this return: Schedule 5
+    line 2, lines 30425 and 30450, and the Ontario caregiver amount (ON428 line 58185).
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s5/5000-s5-25e.txt
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
     The federal brackets are those of the 2025 T1 return (form 5000-R), Step 5, Part A
@@ -495,6 +544,9 @@ inputs:
   ca/union_dues: "0"
   ca-on/dependent_children: "0"
   ca-on/dependants: "0"
+  ca/eligible_dependants: "0"
+  ca/dependant_net_income: "0"
+  ca/infirm_children: "0"
   ca/income_tax_deducted: "3000"
 expected:
   ca/taxable_capital_gains: "0"
@@ -514,12 +566,19 @@ expected:
   ca/taxable_income: "29735.00"
   ca/federal_basic_tax: "4311.575"
   ca/basic_personal_amount: "16129.00"
+  ca/eligible_dependant_amount_before_count: "16129.00"
+  ca/eligible_dependant_amount: "0"
+  ca/infirm_children_amount: "0"
   ca/canada_employment_amount: "1471"
   ca/non_refundable_credit_amounts: "19403.75"
   ca/non_refundable_tax_credits: "2813.54375"
   ca/federal_tax_after_credits: "1498.03125"
   ca-on/ontario_basic_tax: "1501.6175"
   ca-on/basic_personal_amount: "12747"
+  ca-on/eligible_dependant_base: "11905.00"
+  ca-on/eligible_dependant_amount_before_maximum: "11905.00"
+  ca-on/eligible_dependant_amount_before_count: "10823"
+  ca-on/eligible_dependant_amount: "0"
   ca-on/non_refundable_credit_amounts: "14550.75"
   ca-on/non_refundable_tax_credits: "734.812875"
   ca-on/ontario_tax_after_credits: "766.804625"

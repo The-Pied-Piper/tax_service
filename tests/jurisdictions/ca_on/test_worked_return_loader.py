@@ -285,6 +285,22 @@ def test_loads_the_ontario_counts_as_integers(tmp_path: Path, artifacts: Artifac
     assert all(type(artifact.value) is int for artifact in worked.inputs)
 
 
+def test_loads_the_federal_counts_as_integers(tmp_path: Path, artifacts: ArtifactRegistry) -> None:
+    # T1 line 30400 (Schedule 5) and line 30499: the eligible dependants claimed for and the
+    # infirm children, counts read like the Ontario ones.
+    text = with_section(
+        "inputs", 'inputs:\n  ca/eligible_dependants: "1"\n  ca/infirm_children: "2"\n'
+    )
+
+    worked = WorkedReturn.load(write(tmp_path, text, "ok.yaml"), artifacts)
+
+    assert worked.inputs == (
+        Artifact(artifacts.kind("ca/eligible_dependants"), 1),
+        Artifact(artifacts.kind("ca/infirm_children"), 2),
+    )
+    assert all(type(artifact.value) is int for artifact in worked.inputs)
+
+
 @pytest.mark.parametrize(("count", "got"), [("0", "int"), ("true", "bool")])
 def test_an_unquoted_ontario_count_names_the_file_and_key(
     tmp_path: Path, artifacts: ArtifactRegistry, count: str, got: str

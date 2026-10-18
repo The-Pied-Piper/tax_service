@@ -1,0 +1,13 @@
+# Canada caregiver amount per infirm child, 2025 tax year (T1-2025, form 5000-R): line
+# 83 (line 30500) "Canada caregiver amount for infirm children under 18 years of age
+# (see Schedule 5) Number of children you are claiming this amount for Line 30499"
+# "multiplied by $2,687". It is a per-unit amount, one part of the total of the credit
+# amounts (line 33500), which the credit rate is applied to once.
+# The form states no rounding on line 30500, so none is assumed.
+family: ca/infirm_child_amount
+tax_year: 2025
+kind: amount
+sources:
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
+rounding: none
+amount: "2687"

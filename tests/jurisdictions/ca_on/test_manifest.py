@@ -24,6 +24,7 @@ from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.tapered_amount import TaperedAmount
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
+from app.domain.capabilities.times_count import TimesCount
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Manifest
 from app.jurisdictions.ca.catalog import (
@@ -40,11 +41,17 @@ from app.jurisdictions.ca.catalog import (
     CWB_REDUCTION,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
+    DEPENDANT_NET_INCOME,
     EI_PREMIUMS,
+    ELIGIBLE_DEPENDANT_AMOUNT,
+    ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
+    ELIGIBLE_DEPENDANTS,
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
     INCOME_TAX_DEDUCTED,
+    INFIRM_CHILDREN,
+    INFIRM_CHILDREN_AMOUNT,
     NET_FEDERAL_TAX,
     NET_INCOME,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
@@ -70,6 +77,8 @@ from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
     DEPENDANTS,
     DEPENDENT_CHILDREN,
+    ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
+    ELIGIBLE_DEPENDANT_BASE,
     LIFT_CREDIT,
     LIFT_CREDIT_BEFORE_MAXIMUM,
     LIFT_MAXIMUM_CREDIT,
@@ -120,6 +129,9 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/union_dues",
             "ca-on/dependent_children",
             "ca-on/dependants",
+            "ca/eligible_dependants",
+            "ca/dependant_net_income",
+            "ca/infirm_children",
             "ca/income_tax_deducted",
         }
     )
@@ -298,16 +310,85 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"base": "ca/employment_income"},
             produces={"output": "ca/canada_employment_amount"},
         ),
-        # T1 line 33500 (lines 30000, 30800, 31200, 31260) and ON428 line 58800 (lines 58040,
-        # 58240, 58300), in the forms' line order. ON428 lines 58240 and 58300 are "Amount from
-        # line 30800 / 31200 of your return", so the Ontario sum reads the federal kinds; it has
-        # no Canada employment amount.
+        # Schedule 5, "Line 30400 - Amount for an eligible dependant": line 1 "Basic personal
+        # amount from line 30000 of your return", line 3 "Line 1 plus line 2" with line 2 (an
+        # infirm eligible dependant 18 or older) not triggered, line 4 (51106) "Dependant's net
+        # income from line 23600 of their return" and line 5 "Line 3 minus line 4 (if negative,
+        # enter "0") Enter this amount on line 30400 of your return.".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca/basic_personal_amount", "less": "ca/dependant_net_income"},
+            produces={"output": "ca/eligible_dependant_amount_before_count"},
+        ),
+        # T1 line 80 (line 30400) "Amount for an eligible dependant (complete Schedule 5)": line
+        # 5 for each eligible dependant claimed, at most one ("Each household is allowed only one
+        # claim for this amount").
+        CapabilitySelection(
+            name="core/times_count",
+            params={},
+            consumes={
+                "amount": "ca/eligible_dependant_amount_before_count",
+                "count": "ca/eligible_dependants",
+            },
+            produces={"output": "ca/eligible_dependant_amount"},
+        ),
+        # T1 line 83 (line 30500) "Canada caregiver amount for infirm children under 18 years of
+        # age (see Schedule 5) Number of children you are claiming this amount for Line 30499"
+        # "multiplied by $2,687".
+        CapabilitySelection(
+            name="core/per_unit_amount",
+            params={"amount": "ca/infirm_child_amount"},
+            consumes={"count": "ca/infirm_children"},
+            produces={"output": "ca/infirm_children_amount"},
+        ),
+        # ON428 line 14 "Base amount 11,905.00": the dataset becomes an artifact of the same name.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca-on/eligible_dependant_base"},
+            consumes={},
+            produces={"output": "ca-on/eligible_dependant_base"},
+        ),
+        # ON428 line 15 "Your eligible dependant's net income from line 23600 of their return",
+        # the federal Schedule 5 line 4 figure, and line 16 (line 58160) "Line 14 minus line 15
+        # (if negative, enter "0") (maximum $10,823)", before its maximum, then at most it.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/eligible_dependant_base",
+                "less": "ca/dependant_net_income",
+            },
+            produces={"output": "ca-on/eligible_dependant_amount_before_maximum"},
+        ),
+        CapabilitySelection(
+            name="core/capped_amount",
+            params={"cap": "ca-on/eligible_dependant_maximum"},
+            consumes={"base": "ca-on/eligible_dependant_amount_before_maximum"},
+            produces={"output": "ca-on/eligible_dependant_amount_before_count"},
+        ),
+        # Line 58160 for each eligible dependant claimed, the T1 line 30400 count.
+        CapabilitySelection(
+            name="core/times_count",
+            params={},
+            consumes={
+                "amount": "ca-on/eligible_dependant_amount_before_count",
+                "count": "ca/eligible_dependants",
+            },
+            produces={"output": "ca-on/eligible_dependant_amount"},
+        ),
+        # T1 line 33500 (lines 30000, 30400, 30500, 30800, 31200, 31260) and ON428 line 58800
+        # (lines 58040, 58160, 58240, 58300), in the forms' line order. ON428 lines 58240 and
+        # 58300 are "Amount from line 30800 / 31200 of your return", so the Ontario sum reads the
+        # federal kinds; it has no Canada employment amount.
         CapabilitySelection(
             name="core/sum",
             params={},
             consumes={
                 "parts": (
                     "ca/basic_personal_amount",
+                    "ca/eligible_dependant_amount",
+                    "ca/infirm_children_amount",
                     "ca/cpp_base_contributions",
                     "ca/ei_premiums",
                     "ca/canada_employment_amount",
@@ -321,6 +402,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={
                 "parts": (
                     "ca-on/basic_personal_amount",
+                    "ca-on/eligible_dependant_amount",
                     "ca/cpp_base_contributions",
                     "ca/ei_premiums",
                 )
@@ -586,7 +668,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 50
+    assert len(found.capabilities) == 57
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -596,7 +678,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 50
+    assert len(composition.order) == 57
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -667,10 +749,39 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (CreditAmount, frozenset(), frozenset({ontario.BASIC_PERSONAL_AMOUNT})),
         (CappedAmount, frozenset({EMPLOYMENT_INCOME}), frozenset({CANADA_EMPLOYMENT_AMOUNT})),
         (
+            SubtractNotBelowZero,
+            frozenset({BASIC_PERSONAL_AMOUNT, DEPENDANT_NET_INCOME}),
+            frozenset({ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT}),
+        ),
+        (
+            TimesCount,
+            frozenset({ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT, ELIGIBLE_DEPENDANTS}),
+            frozenset({ELIGIBLE_DEPENDANT_AMOUNT}),
+        ),
+        (PerUnitAmount, frozenset({INFIRM_CHILDREN}), frozenset({INFIRM_CHILDREN_AMOUNT})),
+        (CreditAmount, frozenset(), frozenset({ELIGIBLE_DEPENDANT_BASE})),
+        (
+            SubtractNotBelowZero,
+            frozenset({ELIGIBLE_DEPENDANT_BASE, DEPENDANT_NET_INCOME}),
+            frozenset({ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM}),
+        ),
+        (
+            CappedAmount,
+            frozenset({ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM}),
+            frozenset({ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT}),
+        ),
+        (
+            TimesCount,
+            frozenset({ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT, ELIGIBLE_DEPENDANTS}),
+            frozenset({ontario.ELIGIBLE_DEPENDANT_AMOUNT}),
+        ),
+        (
             Sum,
             frozenset(
                 {
                     BASIC_PERSONAL_AMOUNT,
+                    ELIGIBLE_DEPENDANT_AMOUNT,
+                    INFIRM_CHILDREN_AMOUNT,
                     CPP_BASE_CONTRIBUTIONS,
                     EI_PREMIUMS,
                     CANADA_EMPLOYMENT_AMOUNT,
@@ -680,7 +791,14 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         ),
         (
             Sum,
-            frozenset({ontario.BASIC_PERSONAL_AMOUNT, CPP_BASE_CONTRIBUTIONS, EI_PREMIUMS}),
+            frozenset(
+                {
+                    ontario.BASIC_PERSONAL_AMOUNT,
+                    ontario.ELIGIBLE_DEPENDANT_AMOUNT,
+                    CPP_BASE_CONTRIBUTIONS,
+                    EI_PREMIUMS,
+                }
+            ),
             frozenset({ontario.NON_REFUNDABLE_CREDIT_AMOUNTS}),
         ),
         (
