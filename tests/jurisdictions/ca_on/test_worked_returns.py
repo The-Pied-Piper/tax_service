@@ -53,8 +53,11 @@ description: >-
   deductions from net income. CPP and EI follow Schedule 8's and the EI table's arithmetic:
   base contributions 4.95% x (10000 - 3500) = 321.75, enhanced contributions 1% x 6500 =
   65.00 (the only deduction from total income), EI premiums 1.64% x 10000 = 164.00. Net
-  income and taxable income are 9935.00; each total of credit amounts is its basic personal
-  amount plus 321.75 and 164.00, and each credit exceeds its tax, leaving zero.
+  income and taxable income are 9935.00. The Canada employment amount is the lesser of
+  1471 and the employment income of 10000: 1471. The federal total of credit amounts is its
+  basic personal amount plus 321.75, 164.00 and 1471; the Ontario total is its basic
+  personal amount plus 321.75 and 164.00 (ON428 has no Canada employment amount); each
+  credit exceeds its tax, leaving zero.
 sources:
   - T1, Schedule 3, Schedule 8, ON428 and EI table arithmetic on the 2025 figures.
 inputs:
@@ -74,7 +77,8 @@ expected:
   ca/taxable_income: "9935.00"
   ca/federal_basic_tax: "1440.575"
   ca/basic_personal_amount: "16129"
-  ca/non_refundable_credit_amounts: "16614.75"
+  ca/canada_employment_amount: "1471"
+  ca/non_refundable_credit_amounts: "18085.75"
   ca/federal_tax_after_credits: "0"
   ca-on/ontario_basic_tax: "501.7175"
   ca-on/basic_personal_amount: "12747"

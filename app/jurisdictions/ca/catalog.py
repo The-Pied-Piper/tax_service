@@ -117,10 +117,20 @@ on the T1 and, as ON428 line 21 (line 58300) "Amount from line 31200 of your ret
 The premiums are not computed from insurable earnings, so the claimed amount is an input.
 """
 
+CANADA_EMPLOYMENT_AMOUNT = CATALOG.declare("canada_employment_amount", Decimal)
+"""Canada employment amount, T1 line 31260 "Enter whichever is less: $1,471 or line 1 plus line
+2.": the lesser of the cap and employment income, the fourth part of the total of the credit
+amounts on the T1 alone (ON428 has no such line).
+
+Line 1 (10100) is "Employment income (box 14 of all T4 slips)" and line 2 (10400) is "Other
+employment income". The returns have no other employment income, so the cap applies to
+employment income alone.
+"""
+
 NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare("non_refundable_credit_amounts", Decimal)
 """Total of the non-refundable credit amounts, T1 line 33500 "Line 106 plus line 112": the sum
 of the credit amounts the rate is applied to once, here the basic personal amount, the base CPP
-contributions and the EI premiums."""
+contributions, the EI premiums and the Canada employment amount."""
 
 FEDERAL_TAX_AFTER_CREDITS = CATALOG.declare("federal_tax_after_credits", Decimal)
 """Federal basic tax less federal non-refundable tax credits, not below zero.
