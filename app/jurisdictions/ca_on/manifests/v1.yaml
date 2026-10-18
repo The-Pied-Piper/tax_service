@@ -11,8 +11,6 @@ inputs:
   - ca/capital_gain
   - ca/rrsp_deduction
   - ca/union_dues
-  - ca/cpp_base_contributions
-  - ca/cpp_enhanced_contributions
   - ca/ei_premiums
 outputs:
   - ca/federal_tax_after_credits
@@ -32,6 +30,40 @@ capabilities:
         - ca/taxable_capital_gains
     produces:
       output: ca/total_income
+  # Schedule 8 Part 3, each contribution on employment income: line 11 (base, 4.95% of the
+  # earnings between the $3,500 exemption and the $71,300 ceiling, lines 2 to 7), line 12
+  # (first additional, 1% of the same band) and line 22 (second additional, 4% of the
+  # earnings between the $71,300 and $81,200 ceilings, lines 2 to 4).
+  - name: core/contribution_tier
+    params:
+      tier: ca/cpp_base_contribution
+    consumes:
+      earnings: ca/employment_income
+    produces:
+      output: ca/cpp_base_contributions
+  - name: core/contribution_tier
+    params:
+      tier: ca/cpp_first_additional_contribution
+    consumes:
+      earnings: ca/employment_income
+    produces:
+      output: ca/cpp_first_additional_contributions
+  - name: core/contribution_tier
+    params:
+      tier: ca/cpp_second_additional_contribution
+    consumes:
+      earnings: ca/employment_income
+    produces:
+      output: ca/cpp_second_additional_contributions
+  # Schedule 8 Part 3a line 28 "Line 26 plus line 27": the first and second additional
+  # contributions together, the T1 line 22215 deduction.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/cpp_first_additional_contributions
+        - ca/cpp_second_additional_contributions
+    produces:
+      output: ca/cpp_enhanced_contributions
   - name: core/sum
     consumes:
       parts:
@@ -93,7 +125,7 @@ capabilities:
   # Each form's total of credit amounts is its basic personal amount, the base CPP
   # contributions and the EI premiums, in the forms' line order; the T1's also holds the
   # Canada employment amount. ON428 lines 58240 and 58300 are "Amount from line 30800 /
-  # 31200 of your return", so the Ontario sum reads the federal input kinds.
+  # 31200 of your return", so the Ontario sum reads the federal kinds.
   - name: core/sum
     consumes:
       parts:
