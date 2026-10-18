@@ -13,6 +13,7 @@ from app.domain.parameters.rounding import NO_ROUNDING, RoundingRule, RoundTo
 from app.domain.trace import (
     BracketSliceLine,
     CappedAmountLine,
+    ContributionTierLine,
     CreditAmountLine,
     CreditAppliedLine,
     CreditLine,
@@ -94,6 +95,18 @@ class EnglishTraceRenderer:
             case LesserOfLine(output=output, parts=parts, result=result):
                 terms = " and ".join(f"{kind.label} {amount}" for kind, amount in parts)
                 return f"{output.label}: lesser of {terms} = {result}"
+            case ContributionTierLine(
+                output=output,
+                earnings=earnings,
+                tier=tier,
+                rounding=rule,
+                contributory=contributory,
+            ):
+                return (
+                    f"{output.label}: {self._percent(tier.rate.value)}% of {earnings.label} "
+                    f"between {tier.lower} and {tier.upper} ({contributory}), "
+                    f"at most {tier.maximum} ({self._rounding(rule)})"
+                )
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 
     def render_all(self, trace: Iterable[TraceLine]) -> tuple[str, ...]:

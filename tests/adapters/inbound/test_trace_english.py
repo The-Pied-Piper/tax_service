@@ -15,12 +15,14 @@ import pytest
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.domain.artifact import ArtifactKind
 from app.domain.parameters.amount import Amount
+from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.trace import (
     BracketSliceLine,
     CappedAmountLine,
+    ContributionTierLine,
     CreditAmountLine,
     CreditAppliedLine,
     CreditLine,
@@ -52,6 +54,9 @@ PERSONAL_AMOUNT = ArtifactKind("ex/personal_amount", Decimal)
 CAPPED_AMOUNT = ArtifactKind("ex/capped_amount", Decimal)
 CREDIT_AMOUNTS = ArtifactKind("ex/credit_amounts", Decimal)
 LESSER_AMOUNT = ArtifactKind("ex/lesser_amount", Decimal)
+EARNINGS = ArtifactKind("ex/earnings", Decimal)
+CONTRIBUTION = ArtifactKind("ex/contribution", Decimal)
+TIER = ContributionTier(Rate(D("0.05")), D("3000"), D("50000"), D("2350"))
 
 
 def render(line: TraceLine) -> str:
@@ -371,6 +376,60 @@ def test_renders_the_lesser_of_one_amount() -> None:
     assert render(line) == "lesser_amount: lesser of part_two 40.5 = 40.5"
 
 
+# --- contribution tiers ---------------------------------------------------------------
+
+
+def test_renders_a_contribution_tier() -> None:
+    line = ContributionTierLine(
+        CONTRIBUTION, EARNINGS, D("23000"), TIER, NO_ROUNDING, D("20000"), D("1000")
+    )
+
+    assert render(line) == (
+        "contribution: 5% of earnings between 3000 and 50000 (20000), at most 2350 (no rounding)"
+    )
+
+
+def test_renders_a_rounded_contribution_tier() -> None:
+    line = ContributionTierLine(
+        CONTRIBUTION, EARNINGS, D("23000.10"), TIER, CENT, D("20000.10"), D("1000.01")
+    )
+
+    assert render(line) == (
+        "contribution: 5% of earnings between 3000 and 50000 (20000.10), at most 2350 "
+        "(half-up to 0.01)"
+    )
+
+
+def test_renders_earnings_above_the_band_as_the_band() -> None:
+    line = ContributionTierLine(
+        CONTRIBUTION, EARNINGS, D("80000"), TIER, NO_ROUNDING, D("47000"), D("2350")
+    )
+
+    assert render(line) == (
+        "contribution: 5% of earnings between 3000 and 50000 (47000), at most 2350 (no rounding)"
+    )
+
+
+def test_renders_zero_contributory_earnings() -> None:
+    line = ContributionTierLine(CONTRIBUTION, EARNINGS, D("-500"), TIER, NO_ROUNDING, D(0), D(0))
+
+    assert render(line) == (
+        "contribution: 5% of earnings between 3000 and 50000 (0), at most 2350 (no rounding)"
+    )
+
+
+def test_renders_the_tiers_figures_as_given() -> None:
+    tier = ContributionTier(Rate(D("0.0505")), D("2500.00"), D("61000"), D("2954.20"))
+    line = ContributionTierLine(
+        CONTRIBUTION, EARNINGS, D("90000"), tier, CENT, D("58500.00"), D("2954.20")
+    )
+
+    assert render(line) == (
+        "contribution: 5.05% of earnings between 2500.00 and 61000 (58500.00), at most 2954.20 "
+        "(half-up to 0.01)"
+    )
+
+
 # --- whole traces and unknown lines ----------------------------------------------
 
 
@@ -388,6 +447,9 @@ def test_render_all_renders_each_line_in_order() -> None:
         CreditAmountLine(PERSONAL_AMOUNT, Credit(D("1000")), NO_ROUNDING, D("1000")),
         CappedAmountLine(CAPPED_AMOUNT, TOTAL, D("3"), Amount(D("2")), NO_ROUNDING, D("2")),
         LesserOfLine(LESSER_AMOUNT, ((TOTAL, D("3")), (CAPPED_AMOUNT, D("2"))), D("2")),
+        ContributionTierLine(
+            CONTRIBUTION, EARNINGS, D("23000"), TIER, NO_ROUNDING, D("20000"), D("1000")
+        ),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -403,6 +465,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         "personal_amount: credit amount 1000 (no rounding)",
         "capped_amount: lesser of total 3 and 2 (no rounding)",
         "lesser_amount: lesser of total 3 and capped_amount 2 = 2",
+        "contribution: 5% of earnings between 3000 and 50000 (20000), at most 2350 (no rounding)",
     )
 
 

@@ -64,6 +64,10 @@ class InvalidAmountError(DomainError):
     """An amount is not finite or is negative."""
 
 
+class InvalidContributionTierError(DomainError):
+    """A contribution tier's bounds or maximum are not finite, negative or out of order."""
+
+
 class DuplicateRegistrationError(DomainError):
     """Something was registered under an identifier that is already taken."""
 

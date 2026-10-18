@@ -1,7 +1,8 @@
 """Unit tests for the structured trace: one frozen line class per fact, with made-up values.
 
 Each line records what happened with the domain objects involved (`ArtifactKind`, `Rate`,
-`Credit`, `Amount`, `RoundingRule`), never text; its `amount` is the figure the line is about.
+`Credit`, `Amount`, `ContributionTier`, `RoundingRule`), never text; its `amount` is the figure
+the line is about.
 """
 
 from __future__ import annotations
@@ -14,12 +15,14 @@ import pytest
 
 from app.domain.artifact import ArtifactKind
 from app.domain.parameters.amount import Amount
+from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.domain.trace import (
     BracketSliceLine,
     CappedAmountLine,
+    ContributionTierLine,
     CreditAmountLine,
     CreditAppliedLine,
     CreditLine,
@@ -49,6 +52,9 @@ PERSONAL = ArtifactKind("ex/personal_amount", Decimal)
 CAPPED = ArtifactKind("ex/capped", Decimal)
 CREDIT_AMOUNTS = ArtifactKind("ex/credit_amounts", Decimal)
 LESSER = ArtifactKind("ex/lesser", Decimal)
+EARNINGS = ArtifactKind("ex/earnings", Decimal)
+CONTRIBUTION = ArtifactKind("ex/contribution", Decimal)
+TIER = ContributionTier(Rate(D("0.05")), D(3000), D(50000), D(2350))
 
 
 def slice_line() -> BracketSliceLine:
@@ -99,6 +105,12 @@ def lesser_of_line() -> LesserOfLine:
     return LesserOfLine(LESSER, ((PART_ONE, D("100.25")), (PART_TWO, D(40))), D(40))
 
 
+def contribution_tier_line() -> ContributionTierLine:
+    return ContributionTierLine(
+        CONTRIBUTION, EARNINGS, D("23000.10"), TIER, CENT, D("20000.10"), D("1000.01")
+    )
+
+
 ALL_LINES = [
     slice_line,
     total_line,
@@ -112,6 +124,7 @@ ALL_LINES = [
     credit_amount_line,
     capped_amount_line,
     lesser_of_line,
+    contribution_tier_line,
 ]
 
 
@@ -551,6 +564,80 @@ def test_a_lesser_of_line_is_not_a_sum_line_nor_a_capped_amount_line() -> None:
     assert cast(Any, lesser_of_line()) != SumLine(
         LESSER, ((PART_ONE, D("100.25")), (PART_TWO, D(40))), D(40)
     )
+
+
+def test_contribution_tier_line_fields_in_order() -> None:
+    line = contribution_tier_line()
+
+    assert line == ContributionTierLine(
+        output=CONTRIBUTION,
+        earnings=EARNINGS,
+        earnings_amount=D("23000.10"),
+        tier=TIER,
+        rounding=CENT,
+        contributory=D("20000.10"),
+        result=D("1000.01"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "earnings",
+        "earnings_amount",
+        "tier",
+        "rounding",
+        "contributory",
+        "result",
+    ]
+    assert line.output is CONTRIBUTION
+    assert line.earnings is EARNINGS
+    assert line.earnings_amount == D("23000.10")
+    assert line.tier == TIER
+    assert line.rounding == CENT
+    assert line.contributory == D("20000.10")
+    assert line.result == D("1000.01")
+    assert line.amount == D("1000.01")
+
+
+def test_contribution_tier_line_may_hold_zero_contributory_earnings() -> None:
+    line = ContributionTierLine(CONTRIBUTION, EARNINGS, D("-500"), TIER, NO_ROUNDING, D(0), D(0))
+
+    assert line.earnings_amount == D("-500")
+    assert line.contributory == D(0)
+    assert line.amount == D(0)
+
+
+def test_contribution_tier_lines_differ_by_tier() -> None:
+    other = ContributionTier(Rate(D("0.05")), D(3000), D(50000), D(2000))
+
+    assert contribution_tier_line() != ContributionTierLine(
+        CONTRIBUTION, EARNINGS, D("23000.10"), other, CENT, D("20000.10"), D("1000.01")
+    )
+
+
+def test_contribution_tier_lines_differ_by_rounding() -> None:
+    assert contribution_tier_line() != ContributionTierLine(
+        CONTRIBUTION, EARNINGS, D("23000.10"), TIER, NO_ROUNDING, D("20000.10"), D("1000.01")
+    )
+
+
+def test_contribution_tier_lines_differ_by_contributory_earnings() -> None:
+    assert contribution_tier_line() != ContributionTierLine(
+        CONTRIBUTION, EARNINGS, D("23000.10"), TIER, CENT, D("20000"), D("1000.01")
+    )
+
+
+def test_contribution_tier_lines_are_hashable() -> None:
+    assert hash(contribution_tier_line()) == hash(contribution_tier_line())
+
+
+def test_a_contribution_tier_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(contribution_tier_line())]
+
+
+def test_a_contribution_tier_line_is_not_a_rate_applied_or_capped_amount_line() -> None:
+    line = contribution_tier_line()
+
+    assert not isinstance(line, RateAppliedLine)
+    assert not isinstance(line, CappedAmountLine)
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:

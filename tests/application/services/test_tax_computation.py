@@ -1293,6 +1293,137 @@ def test_core_lesser_of_with_no_amounts_is_an_invalid_selection() -> None:
         built.compose(EX_ON, 2025)
 
 
+# --- core/contribution_tier: a rate on a band of earnings, capped, by a made-up manifest -------
+#
+# `TieredContribution` is imported inside a cached factory, like `Sum` above, so its absence fails
+# only the tests that use it. It is registered in a private registry under its shared identifier,
+# `core/contribution_tier`, consumes `ex/scaled` (base × 3) as its earnings, and reads a made-up
+# `contribution_tier` dataset: 10% of the earnings between 10 and 40, at most 2.5, rounded half-up
+# to the cent.
+
+
+@cache
+def tiered_contribution_class() -> Any:
+    from app.domain.capabilities.contribution_tier import TieredContribution
+
+    return TieredContribution
+
+
+def some_tier_data(tax_year: int = 2025) -> ParameterDataset[Any]:
+    from app.domain.parameters.contribution_tier import CONTRIBUTION_TIER, ContributionTier
+    from app.domain.parameters.rate import Rate
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+
+    return ParameterDataset(
+        family="ex/some_tier",
+        tax_year=tax_year,
+        kind=CONTRIBUTION_TIER,
+        values=ContributionTier(Rate(D("0.1")), D("10"), D("40"), D("2.5")),
+        rounding=RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        sources=("https://example.org/ex/some_tier",),
+    )
+
+
+CONTRIBUTION_TIER_SELECTION = CapabilitySelection(
+    name="core/contribution_tier",
+    params={"tier": "ex/some_tier"},
+    consumes={"earnings": "ex/scaled"},
+    produces={"output": "ex-on/result"},
+)
+
+
+def tiered_contribution_service() -> tuple[TaxComputationService, FakeParameters]:
+    capabilities = capability_registry()
+    capabilities.register("core/contribution_tier", tiered_contribution_class())
+    parameters = FakeParameters(factor_data(), offset_data(), some_tier_data())
+    built = service(
+        manifest(CONTRIBUTION_TIER_SELECTION, SCALE),  # authored out of order on purpose
+        parameters=parameters,
+        capabilities=capabilities,
+    )
+    return built, parameters
+
+
+def test_computes_core_contribution_tier_inside_the_band_end_to_end() -> None:
+    from app.domain.parameters.contribution_tier import ContributionTier
+    from app.domain.parameters.rate import Rate
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.trace import ContributionTierLine
+
+    built, _parameters = tiered_contribution_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5.005")))
+
+    # scaled = 5.005 × 3 = 15.015; contributory = 15.015 − 10 = 5.015; × 10% = 0.5015, rounded
+    # half-up to 0.50, below the maximum of 2.5.
+    assert worksheet.get(SCALED).value == D("15.015")
+    assert worksheet.get(RESULT).value == D("0.50")
+    assert isinstance(worksheet.producer_of(RESULT), tiered_contribution_class())
+    assert worksheet.trace[-1] == ContributionTierLine(
+        RESULT,
+        SCALED,
+        D("15.015"),
+        ContributionTier(Rate(D("0.1")), D("10"), D("40"), D("2.5")),
+        RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        D("5.015"),
+        D("0.50"),
+    )
+    assert [type(line) for line in worksheet.trace].count(ContributionTierLine) == 1
+
+
+def test_computes_core_contribution_tier_above_the_band_end_to_end() -> None:
+    from app.domain.parameters.contribution_tier import ContributionTier
+    from app.domain.parameters.rate import Rate
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.trace import ContributionTierLine
+
+    built, _parameters = tiered_contribution_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("20")))
+
+    # scaled = 60, above the upper bound: contributory = 40 − 10 = 30; × 10% = 3.00, so the
+    # maximum of 2.5 binds.
+    assert worksheet.get(RESULT).value == D("2.5")
+    assert worksheet.trace[-1] == ContributionTierLine(
+        RESULT,
+        SCALED,
+        D("60"),
+        ContributionTier(Rate(D("0.1")), D("10"), D("40"), D("2.5")),
+        RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        D("30"),
+        D("2.5"),
+    )
+
+
+def test_computes_core_contribution_tier_below_the_band_end_to_end() -> None:
+    built, _parameters = tiered_contribution_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("3")))
+
+    # scaled = 9, below the lower bound of 10: nothing is contributory, rounded to 0.00.
+    assert worksheet.get(RESULT).value == D("0")
+    assert str(worksheet.get(RESULT).value) == "0.00"
+
+
+def test_core_contribution_tier_runs_after_its_earnings_are_produced() -> None:
+    built, _parameters = tiered_contribution_service()
+
+    composition = built.compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is tiered_contribution_class()
+    assert composition.order[-1].consumes == frozenset({SCALED})
+
+
+def test_core_contribution_tier_asks_for_its_dataset_as_a_contribution_tier() -> None:
+    from app.domain.parameters.contribution_tier import CONTRIBUTION_TIER
+
+    built, parameters = tiered_contribution_service()
+
+    built.compose(EX_ON, 2025)
+
+    assert ("ex/some_tier", 2025, CONTRIBUTION_TIER) in parameters.requests
+
+
 # --- core/non_refundable_credit: summed amounts × a rate, off a tax, by a made-up manifest ----
 #
 # Like `Sum` above, `NonRefundableCredit` is imported inside a cached factory so its absence fails
