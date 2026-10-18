@@ -60,6 +60,10 @@ class InvalidRateError(DomainError):
     """A rate is not finite or is outside 0..1."""
 
 
+class InvalidAmountError(DomainError):
+    """An amount is not finite or is negative."""
+
+
 class DuplicateRegistrationError(DomainError):
     """Something was registered under an identifier that is already taken."""
 

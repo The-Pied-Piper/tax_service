@@ -6,6 +6,7 @@ from decimal import Decimal
 
 import pytest
 
+from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.brackets import BRACKETS, BracketSchedule
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.kind import ParameterKind
@@ -13,6 +14,7 @@ from app.domain.parameters.rate import RATE, Rate
 
 
 def test_built_in_kinds() -> None:
+    assert AMOUNT == ParameterKind("amount", Amount)
     assert BRACKETS == ParameterKind("brackets", BracketSchedule)
     assert CREDIT == ParameterKind("credit", Credit)
     assert RATE == ParameterKind("rate", Rate)
