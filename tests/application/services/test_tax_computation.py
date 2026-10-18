@@ -1069,3 +1069,116 @@ def test_core_credit_amount_asks_for_its_dataset_as_a_credit() -> None:
     built.compose(EX_ON, 2025)
 
     assert ("ex/personal_credit", 2025, CREDIT) in parameters.requests
+
+
+# --- core/capped_amount: the lesser of base and an amount dataset's cap, by a made-up manifest --
+#
+# `CappedAmount` is imported inside a cached factory, like `Sum` above, so its absence fails only
+# the tests that use it. It is registered in a private registry under its shared identifier,
+# `core/capped_amount`, and reads a made-up `amount` dataset that rounds half-up to the cent.
+
+
+@cache
+def capped_amount_class() -> Any:
+    from app.domain.capabilities.capped_amount import CappedAmount
+
+    return CappedAmount
+
+
+def some_cap_data(tax_year: int = 2025) -> ParameterDataset[Any]:
+    from app.domain.parameters.amount import AMOUNT, Amount
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+
+    return ParameterDataset(
+        family="ex/some_cap",
+        tax_year=tax_year,
+        kind=AMOUNT,
+        values=Amount(D("20")),
+        rounding=RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        sources=("https://example.org/ex/some_cap",),
+    )
+
+
+CAPPED_AMOUNT = CapabilitySelection(
+    name="core/capped_amount",
+    params={"cap": "ex/some_cap"},
+    consumes={"base": "ex/scaled"},
+    produces={"output": "ex-on/result"},
+)
+
+
+def capped_amount_service() -> tuple[TaxComputationService, FakeParameters]:
+    capabilities = capability_registry()
+    capabilities.register("core/capped_amount", capped_amount_class())
+    parameters = FakeParameters(factor_data(), offset_data(), some_cap_data())
+    built = service(
+        manifest(CAPPED_AMOUNT, SCALE),  # authored out of order on purpose
+        parameters=parameters,
+        capabilities=capabilities,
+    )
+    return built, parameters
+
+
+def test_computes_core_capped_amount_below_the_cap_end_to_end() -> None:
+    from app.domain.parameters.amount import Amount
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.trace import CappedAmountLine
+
+    built, _parameters = capped_amount_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5.005")))
+
+    # scaled = 5.005 × 3 = 15.015; below the cap of 20, rounded half-up: result = 15.02.
+    assert worksheet.get(SCALED).value == D("15.015")
+    assert worksheet.get(RESULT).value == D("15.02")
+    assert isinstance(worksheet.producer_of(RESULT), capped_amount_class())
+    assert worksheet.trace[-1] == CappedAmountLine(
+        RESULT,
+        SCALED,
+        D("15.015"),
+        Amount(D("20")),
+        RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        D("15.02"),
+    )
+    assert [type(line) for line in worksheet.trace].count(CappedAmountLine) == 1
+
+
+def test_computes_core_capped_amount_above_the_cap_end_to_end() -> None:
+    from app.domain.parameters.amount import Amount
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.trace import CappedAmountLine
+
+    built, _parameters = capped_amount_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("10")))
+
+    # scaled = 10 × 3 = 30; above the cap: result = 20, rounded half-up to 20.00.
+    assert worksheet.get(RESULT).value == D("20")
+    assert str(worksheet.get(RESULT).value) == "20.00"
+    assert worksheet.trace[-1] == CappedAmountLine(
+        RESULT,
+        SCALED,
+        D("30"),
+        Amount(D("20")),
+        RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        D("20.00"),
+    )
+
+
+def test_core_capped_amount_runs_after_its_base_is_produced() -> None:
+    built, _parameters = capped_amount_service()
+
+    composition = built.compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is capped_amount_class()
+    assert composition.order[-1].consumes == frozenset({SCALED})
+
+
+def test_core_capped_amount_asks_for_its_dataset_as_an_amount() -> None:
+    from app.domain.parameters.amount import AMOUNT
+
+    built, parameters = capped_amount_service()
+
+    built.compose(EX_ON, 2025)
+
+    assert ("ex/some_cap", 2025, AMOUNT) in parameters.requests

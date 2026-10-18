@@ -1,7 +1,7 @@
 """Unit tests for the structured trace: one frozen line class per fact, with made-up values.
 
 Each line records what happened with the domain objects involved (`ArtifactKind`, `Rate`,
-`Credit`, `RoundingRule`), never text; its `amount` is the figure the line is about.
+`Credit`, `Amount`, `RoundingRule`), never text; its `amount` is the figure the line is about.
 """
 
 from __future__ import annotations
@@ -13,11 +13,13 @@ from typing import Any, cast
 import pytest
 
 from app.domain.artifact import ArtifactKind
+from app.domain.parameters.amount import Amount
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.domain.trace import (
     BracketSliceLine,
+    CappedAmountLine,
     CreditAmountLine,
     CreditAppliedLine,
     CreditLine,
@@ -43,6 +45,7 @@ GROSS = ArtifactKind("ex/gross", Decimal)
 REDUCTION = ArtifactKind("ex/reduction", Decimal)
 NET = ArtifactKind("ex/net", Decimal)
 PERSONAL = ArtifactKind("ex/personal_amount", Decimal)
+CAPPED = ArtifactKind("ex/capped", Decimal)
 
 
 def slice_line() -> BracketSliceLine:
@@ -85,6 +88,10 @@ def credit_amount_line() -> CreditAmountLine:
     return CreditAmountLine(PERSONAL, Credit(D("1000.005")), CENT, D("1000.01"))
 
 
+def capped_amount_line() -> CappedAmountLine:
+    return CappedAmountLine(CAPPED, GROSS, D("1500.25"), Amount(D(1000)), CENT, D("1000.00"))
+
+
 ALL_LINES = [
     slice_line,
     total_line,
@@ -96,6 +103,7 @@ ALL_LINES = [
     subtracted_line,
     subtracted_not_below_zero_line,
     credit_amount_line,
+    capped_amount_line,
 ]
 
 
@@ -409,6 +417,57 @@ def test_a_credit_amount_lines_amount_is_not_one_of_its_fields() -> None:
 
 def test_a_credit_amount_line_is_not_a_credit_line() -> None:
     assert not isinstance(credit_amount_line(), CreditLine)
+
+
+def test_capped_amount_line_fields_in_order() -> None:
+    line = capped_amount_line()
+
+    assert line == CappedAmountLine(
+        output=CAPPED,
+        base=GROSS,
+        base_amount=D("1500.25"),
+        cap=Amount(D(1000)),
+        rounding=CENT,
+        result=D("1000.00"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "base",
+        "base_amount",
+        "cap",
+        "rounding",
+        "result",
+    ]
+    assert line.output is CAPPED
+    assert line.base is GROSS
+    assert line.base_amount == D("1500.25")
+    assert line.cap == Amount(D(1000))
+    assert line.rounding == CENT
+    assert line.result == D("1000.00")
+    assert line.amount == D("1000.00")
+
+
+def test_capped_amount_line_may_hold_a_base_below_the_cap() -> None:
+    line = CappedAmountLine(CAPPED, GROSS, D("400.25"), Amount(D(1000)), NO_ROUNDING, D("400.25"))
+
+    assert line.result == D("400.25")
+    assert line.amount == D("400.25")
+
+
+def test_capped_amount_lines_differ_by_cap() -> None:
+    assert capped_amount_line() != CappedAmountLine(
+        CAPPED, GROSS, D("1500.25"), Amount(D(1200)), CENT, D("1000.00")
+    )
+
+
+def test_capped_amount_lines_differ_by_rounding() -> None:
+    assert capped_amount_line() != CappedAmountLine(
+        CAPPED, GROSS, D("1500.25"), Amount(D(1000)), NO_ROUNDING, D("1000.00")
+    )
+
+
+def test_capped_amount_lines_are_hashable() -> None:
+    assert hash(capped_amount_line()) == hash(capped_amount_line())
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:

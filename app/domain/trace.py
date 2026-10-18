@@ -1,8 +1,8 @@
 """The structured trace: what each capability did, recorded as facts.
 
 A trace line holds the domain objects and amounts involved (`ArtifactKind`, `Rate`, `Credit`,
-`RoundingRule`), never text; its `amount` is the figure the line is about. Rendering lines as
-human-readable text lives outside the domain, in the adapters.
+`Amount`, `RoundingRule`), never text; its `amount` is the figure the line is about. Rendering
+lines as human-readable text lives outside the domain, in the adapters.
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from app.domain.artifact import Money
+from app.domain.parameters.amount import Amount
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import RoundingRule
@@ -191,3 +192,21 @@ class CreditAmountLine(TraceLine):
     def amount(self) -> Decimal:
         """The rounded credit amount."""
         return self.value
+
+
+@dataclass(frozen=True)
+class CappedAmountLine(TraceLine):
+    """The `result` produced as `output`: the lesser of `base` (worth `base_amount`) and `cap`,
+    rounded with `rounding`."""
+
+    output: Money
+    base: Money
+    base_amount: Decimal
+    cap: Amount
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The rounded lesser."""
+        return self.result
