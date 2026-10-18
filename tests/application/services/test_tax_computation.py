@@ -1542,6 +1542,94 @@ def test_core_tiered_surcharge_asks_for_its_dataset_as_surcharge_tiers() -> None
     assert ("ex/surcharge_tiers", 2025, SURCHARGE_TIERS) in parameters.requests
 
 
+# The same capability over a made-up `surcharge_tiers` dataset whose tiers each have a maximum:
+# 20% over 10 at most 0.50, and 50% over 12 at most 1, each part rounded half-up to the cent.
+
+
+def capped_surcharge_tiers_data(tax_year: int = 2025) -> ParameterDataset[Any]:
+    from app.domain.parameters.rate import Rate
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.parameters.surcharge_tiers import (
+        SURCHARGE_TIERS,
+        SurchargeTier,
+        SurchargeTiers,
+    )
+
+    return ParameterDataset(
+        family="ex/surcharge_tiers",
+        tax_year=tax_year,
+        kind=SURCHARGE_TIERS,
+        values=SurchargeTiers(
+            (
+                SurchargeTier(D("10"), Rate(D("0.2")), D("0.50")),
+                SurchargeTier(D("12"), Rate(D("0.5")), D("1")),
+            )
+        ),
+        rounding=RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        sources=("https://example.org/ex/surcharge_tiers",),
+    )
+
+
+def capped_surcharge_service() -> tuple[TaxComputationService, FakeParameters]:
+    capabilities = capability_registry()
+    capabilities.register("core/tiered_surcharge", tiered_surcharge_class())
+    parameters = FakeParameters(factor_data(), offset_data(), capped_surcharge_tiers_data())
+    built = service(
+        manifest(TIERED_SURCHARGE, SCALE),
+        parameters=parameters,
+        capabilities=capabilities,
+    )
+    return built, parameters
+
+
+def test_computes_core_tiered_surcharge_with_every_tier_at_its_maximum_end_to_end() -> None:
+    from app.domain.parameters.rate import Rate
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.trace import SurchargeTierLine
+
+    built, _parameters = capped_surcharge_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5.005")))
+
+    # scaled = 15.015; 20% of 5.015 = 1.003, at most 0.50; 50% of 3.015 = 1.5075, at most 1
+    # -> 1.00.
+    cent = RoundTo(D("0.01"), RoundingMode.HALF_UP)
+    assert worksheet.get(RESULT).value == D("1.50")
+    assert worksheet.trace[-2:] == (
+        SurchargeTierLine(
+            RESULT, SCALED, D("15.015"), D("10"), Rate(D("0.2")), cent, D("0.50"), D("0.50")
+        ),
+        SurchargeTierLine(
+            RESULT, SCALED, D("15.015"), D("12"), Rate(D("0.5")), cent, D("1.00"), D("1")
+        ),
+    )
+
+
+def test_computes_core_tiered_surcharge_with_one_tier_at_its_maximum_end_to_end() -> None:
+    from app.domain.trace import SurchargeTierLine
+
+    built, _parameters = capped_surcharge_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("4.2")))
+
+    # scaled = 12.6; 20% of 2.6 = 0.52, at most 0.50; 50% of 0.6 = 0.30, under its maximum.
+    assert worksheet.get(RESULT).value == D("0.80")
+    lines = [line for line in worksheet.trace if isinstance(line, SurchargeTierLine)]
+    assert [(line.part, line.maximum) for line in lines] == [
+        (D("0.50"), D("0.50")),
+        (D("0.30"), D("1")),
+    ]
+
+
+def test_computes_core_tiered_surcharge_under_every_maximum_end_to_end() -> None:
+    built, _parameters = capped_surcharge_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("3.5")))
+
+    # scaled = 10.5; 20% of 0.5 = 0.10, under its maximum; nothing over 12.
+    assert worksheet.get(RESULT).value == D("0.10")
+
+
 # --- core/tapered_amount: a base plus a supplement tapered by a figure, by a made-up manifest --
 #
 # Like `Sum` above, `TaperedAmount` is imported inside a cached factory so its absence fails only
