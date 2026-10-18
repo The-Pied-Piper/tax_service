@@ -24,8 +24,6 @@ from app.domain.trace import (
     CappedAmountLine,
     ContributionTierLine,
     CreditAmountLine,
-    CreditAppliedLine,
-    CreditLine,
     LesserOfLine,
     RateAppliedLine,
     RoundedTotalLine,
@@ -34,14 +32,12 @@ from app.domain.trace import (
     SumLine,
     SurchargeTierLine,
     TraceLine,
-    UnusedCreditLine,
 )
 
 D = Decimal
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 BASE = ArtifactKind("ex/base", Decimal)
 TAX = ArtifactKind("ex/tax", Decimal)
-AFTER = ArtifactKind("ex/after", Decimal)
 PART_ONE = ArtifactKind("ex/part_one", Decimal)
 PART_TWO = ArtifactKind("ex/part_two", Decimal)
 TOTAL = ArtifactKind("ex/total", Decimal)
@@ -51,7 +47,6 @@ REDUCTION = ArtifactKind("ex/reduction", Decimal)
 NET = ArtifactKind("ex/net", Decimal)
 PERSONAL = ArtifactKind("ex/personal_amount", Decimal)
 CAPPED = ArtifactKind("ex/capped", Decimal)
-CREDIT_AMOUNTS = ArtifactKind("ex/credit_amounts", Decimal)
 LESSER = ArtifactKind("ex/lesser", Decimal)
 EARNINGS = ArtifactKind("ex/earnings", Decimal)
 CONTRIBUTION = ArtifactKind("ex/contribution", Decimal)
@@ -65,18 +60,6 @@ def slice_line() -> BracketSliceLine:
 
 def total_line() -> RoundedTotalLine:
     return RoundedTotalLine(TAX, BASE, D(250), CENT, D("40.00"))
-
-
-def credit_line() -> CreditLine:
-    return CreditLine(CREDIT_AMOUNTS, D(1000), Rate(D("0.125")), NO_ROUNDING, D("125.000"))
-
-
-def applied_line() -> CreditAppliedLine:
-    return CreditAppliedLine(AFTER, TAX, D(500), D("375.000"))
-
-
-def unused_line() -> UnusedCreditLine:
-    return UnusedCreditLine(D("25.000"))
 
 
 def sum_line() -> SumLine:
@@ -120,9 +103,6 @@ def surcharge_tier_line() -> SurchargeTierLine:
 ALL_LINES = [
     slice_line,
     total_line,
-    credit_line,
-    applied_line,
-    unused_line,
     sum_line,
     rate_applied_line,
     subtracted_line,
@@ -202,70 +182,6 @@ def test_rounded_total_line_fields_in_order() -> None:
 
 def test_rounded_total_lines_differ_by_rounding() -> None:
     assert total_line() != RoundedTotalLine(TAX, BASE, D(250), NO_ROUNDING, D("40.00"))
-
-
-def test_credit_line_fields_in_order() -> None:
-    line = credit_line()
-
-    assert [f.name for f in fields(CreditLine)] == [
-        "amounts",
-        "amounts_value",
-        "rate",
-        "rounding",
-        "credit",
-    ]
-    assert line == CreditLine(
-        amounts=CREDIT_AMOUNTS,
-        amounts_value=D(1000),
-        rate=Rate(D("0.125")),
-        rounding=NO_ROUNDING,
-        credit=D("125.000"),
-    )
-    # Settled: the rate applies once, to the summed credit amounts (an artifact kind and its
-    # value); the line's figure is `credit`.
-    assert line.amounts is CREDIT_AMOUNTS
-    assert line.amounts_value == D(1000)
-    assert line.rate == Rate(D("0.125"))
-    assert line.rounding == NO_ROUNDING
-    assert line.credit == D("125.000")
-    assert line.amount == D("125.000")
-
-
-def test_credit_lines_differ_by_which_kind_holds_the_amounts() -> None:
-    assert credit_line() != CreditLine(TOTAL, D(1000), Rate(D("0.125")), NO_ROUNDING, D("125.000"))
-
-
-def test_credit_lines_differ_by_rounding() -> None:
-    assert credit_line() != CreditLine(
-        CREDIT_AMOUNTS, D(1000), Rate(D("0.125")), CENT, D("125.000")
-    )
-
-
-def test_credit_line_holds_no_parameter_credit() -> None:
-    # The `credit` parameter kind no longer reaches the credit capability: the amounts are an
-    # artifact, so no field of the line is a `Credit` value object.
-    line = credit_line()
-
-    assert not any(isinstance(getattr(line, f.name), Credit) for f in fields(line))
-
-
-def test_credit_applied_line_fields_in_order() -> None:
-    line = applied_line()
-
-    assert line == CreditAppliedLine(output=AFTER, tax=TAX, tax_amount=D(500), after=D("375.000"))
-    assert line.output is AFTER
-    assert line.tax is TAX
-    assert line.tax_amount == D(500)
-    assert line.after == D("375.000")
-    assert line.amount == D("375.000")
-
-
-def test_unused_credit_line_holds_the_unused_part() -> None:
-    line = unused_line()
-
-    assert line == UnusedCreditLine(unused=D("25.000"))
-    assert line.unused == D("25.000")
-    assert line.amount == D("25.000")
 
 
 def test_sum_line_fields_in_order() -> None:
@@ -472,10 +388,6 @@ def test_credit_amount_lines_are_hashable() -> None:
 
 def test_a_credit_amount_lines_amount_is_not_one_of_its_fields() -> None:
     assert "amount" not in [f.name for f in fields(credit_amount_line())]
-
-
-def test_a_credit_amount_line_is_not_a_credit_line() -> None:
-    assert not isinstance(credit_amount_line(), CreditLine)
 
 
 def test_capped_amount_line_fields_in_order() -> None:
@@ -708,6 +620,6 @@ def test_a_surcharge_tier_line_is_not_a_rate_applied_line() -> None:
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:
-    assert cast(Any, UnusedCreditLine(D(10))) != BracketSliceLine(
+    assert cast(Any, SumLine(TOTAL, (), D(10))) != BracketSliceLine(
         D(0), None, D("0.10"), D(100), D(10)
     )

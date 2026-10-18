@@ -56,8 +56,9 @@ description: >-
   income and taxable income are 9935.00. The Canada employment amount is the lesser of
   1471 and the employment income of 10000: 1471. The federal total of credit amounts is its
   basic personal amount plus 321.75, 164.00 and 1471; the Ontario total is its basic
-  personal amount plus 321.75 and 164.00 (ON428 has no Canada employment amount); each
-  credit exceeds its tax, leaving zero.
+  personal amount plus 321.75 and 164.00 (ON428 has no Canada employment amount). Each
+  form's non-refundable tax credits are its total times its rate (14.5% of 18085.75 =
+  2622.43375; 5.05% of 13232.75 = 668.253875); each exceeds its tax, leaving zero.
 sources:
   - T1, Schedule 3, Schedule 8, ON428 and EI table arithmetic on the 2025 figures.
 inputs:
@@ -79,10 +80,12 @@ expected:
   ca/basic_personal_amount: "16129"
   ca/canada_employment_amount: "1471"
   ca/non_refundable_credit_amounts: "18085.75"
+  ca/non_refundable_tax_credits: "2622.43375"
   ca/federal_tax_after_credits: "0"
   ca-on/ontario_basic_tax: "501.7175"
   ca-on/basic_personal_amount: "12747"
   ca-on/non_refundable_credit_amounts: "13232.75"
+  ca-on/non_refundable_tax_credits: "668.253875"
   ca-on/ontario_tax_after_credits: "0"
 """
 

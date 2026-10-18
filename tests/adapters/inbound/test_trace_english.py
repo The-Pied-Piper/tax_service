@@ -24,8 +24,6 @@ from app.domain.trace import (
     CappedAmountLine,
     ContributionTierLine,
     CreditAmountLine,
-    CreditAppliedLine,
-    CreditLine,
     LesserOfLine,
     RateAppliedLine,
     RoundedTotalLine,
@@ -34,7 +32,6 @@ from app.domain.trace import (
     SumLine,
     SurchargeTierLine,
     TraceLine,
-    UnusedCreditLine,
 )
 
 D = Decimal
@@ -42,7 +39,6 @@ CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 TAXABLE_BASE = ArtifactKind("ex/taxable_base", Decimal)
 BASIC_TAX = ArtifactKind("ex/basic_tax", Decimal)
-TAX_AFTER_CREDIT = ArtifactKind("ex/tax_after_credit", Decimal)
 PART_ONE = ArtifactKind("ex/part_one", Decimal)
 PART_TWO = ArtifactKind("ex/part_two", Decimal)
 PART_THREE = ArtifactKind("ex/part_three", Decimal)
@@ -53,7 +49,6 @@ REDUCTION = ArtifactKind("ex/reduction", Decimal)
 NET_AMOUNT = ArtifactKind("ex/net_amount", Decimal)
 PERSONAL_AMOUNT = ArtifactKind("ex/personal_amount", Decimal)
 CAPPED_AMOUNT = ArtifactKind("ex/capped_amount", Decimal)
-CREDIT_AMOUNTS = ArtifactKind("ex/credit_amounts", Decimal)
 LESSER_AMOUNT = ArtifactKind("ex/lesser_amount", Decimal)
 EARNINGS = ArtifactKind("ex/earnings", Decimal)
 CONTRIBUTION = ArtifactKind("ex/contribution", Decimal)
@@ -135,43 +130,6 @@ def test_renders_each_rounding_rule(rounding: RoundingRule, text: str) -> None:
     line = RoundedTotalLine(BASIC_TAX, TAXABLE_BASE, D(250), rounding, D(25))
 
     assert render(line) == f"basic_tax on taxable_base 250 ({text})"
-
-
-# --- credits ---------------------------------------------------------------------
-
-
-def test_renders_a_credit_without_rounding() -> None:
-    line = CreditLine(CREDIT_AMOUNTS, D("1000"), Rate(D("0.125")), NO_ROUNDING, D("125.000"))
-
-    assert render(line) == "credit: 12.5% of credit_amounts 1000 (no rounding)"
-
-
-def test_renders_a_rounded_credit() -> None:
-    line = CreditLine(CREDIT_AMOUNTS, D("1000.05"), Rate(D("0.1")), CENT, D("100.01"))
-
-    assert render(line) == "credit: 10% of credit_amounts 1000.05 (half-up to 0.01)"
-
-
-def test_renders_a_credit_with_the_label_of_the_kind_holding_the_amounts() -> None:
-    line = CreditLine(TOTAL, D("2500"), Rate(D("0.05")), NO_ROUNDING, D("125.00"))
-
-    assert render(line) == "credit: 5% of total 2500 (no rounding)"
-
-
-def test_renders_the_amounts_value_as_recorded() -> None:
-    line = CreditLine(CREDIT_AMOUNTS, D("1000.50"), Rate(D("0.1")), NO_ROUNDING, D("100.050"))
-
-    assert render(line) == "credit: 10% of credit_amounts 1000.50 (no rounding)"
-
-
-def test_renders_the_credit_applied() -> None:
-    line = CreditAppliedLine(TAX_AFTER_CREDIT, BASIC_TAX, D("500"), D("375.000"))
-
-    assert render(line) == "tax_after_credit: basic_tax 500 less credit, not below 0"
-
-
-def test_renders_the_unused_credit() -> None:
-    assert render(UnusedCreditLine(D("25.000"))) == "unused credit, not refunded"
 
 
 # --- sums ------------------------------------------------------------------------
@@ -475,9 +433,6 @@ def test_render_all_renders_each_line_in_order() -> None:
     trace = (
         BracketSliceLine(D(0), D(100), D("0.10"), D(100), D("10.0")),
         RoundedTotalLine(BASIC_TAX, TAXABLE_BASE, D(100), NO_ROUNDING, D("10.0")),
-        CreditLine(CREDIT_AMOUNTS, D("1000"), Rate(D("0.125")), NO_ROUNDING, D("125.000")),
-        CreditAppliedLine(TAX_AFTER_CREDIT, BASIC_TAX, D("10.0"), D("0")),
-        UnusedCreditLine(D("115.000")),
         SumLine(TOTAL, ((PART_ONE, D("1")), (PART_TWO, D("2"))), D("3")),
         RateAppliedLine(RATED_AMOUNT, TOTAL, D("3"), Rate(D("0.5")), NO_ROUNDING, D("1.5")),
         SubtractedLine(NET_AMOUNT, TOTAL, D("3"), RATED_AMOUNT, D("1.5"), D("1.5")),
@@ -494,9 +449,6 @@ def test_render_all_renders_each_line_in_order() -> None:
     assert EnglishTraceRenderer().render_all(trace) == (
         "10% on 100 (0 to 100)",
         "basic_tax on taxable_base 100 (no rounding)",
-        "credit: 12.5% of credit_amounts 1000 (no rounding)",
-        "tax_after_credit: basic_tax 10.0 less credit, not below 0",
-        "unused credit, not refunded",
         "total: part_one 1 + part_two 2 = 3",
         "rated_amount: 50% of total 3 (no rounding)",
         "net_amount: total 3 less rated_amount 1.5 = 1.5",
@@ -531,4 +483,4 @@ def test_rejects_a_line_class_it_does_not_know() -> None:
 
 def test_render_all_rejects_a_line_class_it_does_not_know() -> None:
     with pytest.raises(TypeError, match="MadeUpLine"):
-        EnglishTraceRenderer().render_all((UnusedCreditLine(D(1)), MadeUpLine(D(1))))
+        EnglishTraceRenderer().render_all((SumLine(TOTAL, (), D(1)), MadeUpLine(D(1))))

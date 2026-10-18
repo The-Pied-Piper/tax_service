@@ -11,8 +11,9 @@ from typing import assert_type
 
 import pytest
 
-from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
+from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.progressive_tax import ProgressiveTax
+from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capability import Capability, CapabilityRegistry, capability
 from app.domain.errors import (
     DuplicateRegistrationError,
@@ -127,7 +128,8 @@ def test_decorating_two_classes_with_one_identifier_fails(fresh: CapabilityRegis
     ("identifier", "cls"),
     [
         ("core/progressive_tax", ProgressiveTax),
-        ("core/non_refundable_credit", NonRefundableCredit),
+        ("core/apply_rate", ApplyRate),
+        ("core/subtract_not_below_zero", SubtractNotBelowZero),
     ],
 )
 def test_core_capabilities_are_registered_in_the_shared_registry(

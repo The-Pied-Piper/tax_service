@@ -132,6 +132,11 @@ NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare("non_refundable_credit_amounts",
 of the credit amounts the rate is applied to once, here the basic personal amount, the base CPP
 contributions, the EI premiums and the Canada employment amount."""
 
+NON_REFUNDABLE_TAX_CREDITS = CATALOG.declare("non_refundable_tax_credits", Decimal)
+"""Federal non-refundable tax credits, T1 line 118 (line 35000) "Add lines 115 to 117. Total
+federal non-refundable tax credits": the total of the credit amounts times the credit rate, here
+line 115 (line 33800) alone, since lines 116 and 117 are not triggered."""
+
 FEDERAL_TAX_AFTER_CREDITS = CATALOG.declare("federal_tax_after_credits", Decimal)
 """Federal basic tax less federal non-refundable tax credits, not below zero.
 
