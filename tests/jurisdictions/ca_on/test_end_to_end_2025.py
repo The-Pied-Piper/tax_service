@@ -18,9 +18,10 @@ tax after credits, the Ontario surtax on the Ontario tax after credits (ON428 li
 the Ontario tax with surtax of line 69, and with no dependent children and no dependants the
 Ontario tax reduction amounts of 294.00 (lines 74 to 77), twice them less the tax with surtax (line
 73), not below zero, the Ontario tax reduction of 0 (line 80), to the Ontario tax after the
-reduction (line 81)) are checked from the files under `returns/` by `test_worked_returns.py`, as
-are Returns C, D and E; this module pins which capability produces each line, the order, and the
-trace that explains them.
+reduction (line 81), and the Ontario health premium on taxable income by the chart of line 89, 750,
+added to it to the Ontario tax of line 90) are checked from the files under `returns/` by
+`test_worked_returns.py`, as are Returns C, D and E; this module pins which capability produces
+each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
@@ -97,7 +98,9 @@ from app.jurisdictions.ca_on.catalog import (
     DEPENDANTS,
     DEPENDENT_CHILDREN,
     ONTARIO_BASIC_TAX,
+    ONTARIO_HEALTH_PREMIUM,
     ONTARIO_SURTAX,
+    ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_REDUCTION,
@@ -242,6 +245,12 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(ONTARIO_TAX_AFTER_REDUCTION) is not worksheet.producer_of(
         ONTARIO_TAX_AFTER_CREDITS
     )
+    assert isinstance(worksheet.producer_of(ONTARIO_HEALTH_PREMIUM), TieredSurcharge)
+    assert worksheet.producer_of(ONTARIO_HEALTH_PREMIUM) is not worksheet.producer_of(
+        ONTARIO_SURTAX
+    )
+    assert isinstance(worksheet.producer_of(ONTARIO_TAX), Sum)
+    assert worksheet.producer_of(ONTARIO_TAX) is not worksheet.producer_of(ONTARIO_TAX_WITH_SURTAX)
 
 
 def test_the_trace_explains_the_computation() -> None:
@@ -397,6 +406,34 @@ def test_the_trace_explains_the_computation() -> None:
         "less ontario_tax_reduction 0, not below 0 = 8195.7644476",
         "8195.7644476",
     )
+    premium_first = position(
+        "ontario_health_premium: 6% of taxable_income 115000 over 20000, at most 300 (no rounding)",
+        "300",
+    )
+    premium_second = position(
+        "ontario_health_premium: 6% of taxable_income 115000 over 36000, at most 150 (no rounding)",
+        "150",
+    )
+    premium_third = position(
+        "ontario_health_premium: 25% of taxable_income 115000 over 48000, at most 150 "
+        "(no rounding)",
+        "150",
+    )
+    premium_fourth = position(
+        "ontario_health_premium: 25% of taxable_income 115000 over 72000, at most 150 "
+        "(no rounding)",
+        "150",
+    )
+    premium_fifth = position(
+        "ontario_health_premium: 25% of taxable_income 115000 over 200000, at most 150 "
+        "(no rounding)",
+        "0",
+    )
+    ontario_tax = position(
+        "ontario_tax: ontario_tax_after_reduction 8195.7644476 "
+        "+ ontario_health_premium 750 = 8945.7644476",
+        "8945.7644476",
+    )
     assert taxable_gains < total < net
     assert cpp_first < cpp_enhanced < deductions < net
     assert rrsp_available < rrsp < deductions
@@ -419,6 +456,9 @@ def test_the_trace_explains_the_computation() -> None:
     assert reduction_dependants < reduction_amounts
     assert with_surtax < reduction < after_reduction
     assert reduction_amounts < reduction
+    assert taxable < premium_first < premium_second < premium_third < premium_fourth
+    assert premium_fourth < premium_fifth < ontario_tax
+    assert after_reduction < ontario_tax
 
 
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
@@ -433,7 +473,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     capped = {line.output: line for line in trace if isinstance(line, CappedAmountLine)}
     tiers = {line.output: line for line in trace if isinstance(line, ContributionTierLine)}
     lesser = {line.output: line for line in trace if isinstance(line, LesserOfLine)}
-    surcharged = [line for line in trace if isinstance(line, SurchargeTierLine)]
+    surcharged = [
+        line
+        for line in trace
+        if isinstance(line, SurchargeTierLine) and line.output == ONTARIO_SURTAX
+    ]
+    premium_tiers = [
+        line
+        for line in trace
+        if isinstance(line, SurchargeTierLine) and line.output == ONTARIO_HEALTH_PREMIUM
+    ]
     per_unit = {line.output: line for line in trace if isinstance(line, PerUnitAmountLine)}
     multiples = {line.output: line for line in trace if isinstance(line, MultipleOverLine)}
 
@@ -528,6 +577,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (TAX_REDUCTION_FOR_DEPENDANTS, D("0")),
             ),
             D("294.00"),
+        ),
+        # ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your return.
+        # Ontario tax": line 88 carries line 81, as the LIFT credit (line 85) is not yet
+        # computed and lines 82 and 87 are not triggered.
+        ONTARIO_TAX: SumLine(
+            ONTARIO_TAX,
+            (
+                (ONTARIO_TAX_AFTER_REDUCTION, D("8195.7644476")),
+                (ONTARIO_HEALTH_PREMIUM, D("750")),
+            ),
+            D("8945.7644476"),
         ),
     }
     # T1 line 30000 and the Federal Worksheet (5000-D1): net income of 115000 is at or below
@@ -677,6 +737,62 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             part=D("131.3917956"),
         ),
     ]
+    # ON428 line 89 and its chart, on line 1 "Enter your taxable income from line 26000 of your
+    # return", in threshold order: taxable income of 115000 is "more than $72,600 but not more
+    # than $200,000", so the four lower tiers each charge their maximum, 300 + 150 + 150 + 150 =
+    # 750, and the top tier nothing; the chart states no rounding.
+    assert premium_tiers == [
+        SurchargeTierLine(
+            output=ONTARIO_HEALTH_PREMIUM,
+            base=TAXABLE_INCOME,
+            base_amount=D("115000"),
+            threshold=D("20000"),
+            rate=Rate(D("0.06")),
+            rounding=NO_ROUNDING,
+            part=D("300"),
+            maximum=D("300"),
+        ),
+        SurchargeTierLine(
+            output=ONTARIO_HEALTH_PREMIUM,
+            base=TAXABLE_INCOME,
+            base_amount=D("115000"),
+            threshold=D("36000"),
+            rate=Rate(D("0.06")),
+            rounding=NO_ROUNDING,
+            part=D("150"),
+            maximum=D("150"),
+        ),
+        SurchargeTierLine(
+            output=ONTARIO_HEALTH_PREMIUM,
+            base=TAXABLE_INCOME,
+            base_amount=D("115000"),
+            threshold=D("48000"),
+            rate=Rate(D("0.25")),
+            rounding=NO_ROUNDING,
+            part=D("150"),
+            maximum=D("150"),
+        ),
+        SurchargeTierLine(
+            output=ONTARIO_HEALTH_PREMIUM,
+            base=TAXABLE_INCOME,
+            base_amount=D("115000"),
+            threshold=D("72000"),
+            rate=Rate(D("0.25")),
+            rounding=NO_ROUNDING,
+            part=D("150"),
+            maximum=D("150"),
+        ),
+        SurchargeTierLine(
+            output=ONTARIO_HEALTH_PREMIUM,
+            base=TAXABLE_INCOME,
+            base_amount=D("115000"),
+            threshold=D("200000"),
+            rate=Rate(D("0.25")),
+            rounding=NO_ROUNDING,
+            part=D("0"),
+            maximum=D("150"),
+        ),
+    ]
     assert floored == {
         NET_INCOME: SubtractedNotBelowZeroLine(
             output=NET_INCOME,
@@ -733,7 +849,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 32
+    assert len(order) == 34
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
@@ -776,7 +892,9 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         position[ONTARIO_TAX_WITH_SURTAX]
         < position[ONTARIO_TAX_REDUCTION]
         < position[ONTARIO_TAX_AFTER_REDUCTION]
+        < position[ONTARIO_TAX]
     )
+    assert position[TAXABLE_INCOME] < position[ONTARIO_HEALTH_PREMIUM] < position[ONTARIO_TAX]
 
 
 def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
@@ -816,6 +934,9 @@ def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     assert worksheet.get(TAX_REDUCTION_AMOUNTS).value == D("294.00")
     assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("588.00")
     assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("0")
+    # A taxable income of 9935.00 is "$20,000 or less" on the health premium chart: no premium.
+    assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("0")
+    assert worksheet.get(ONTARIO_TAX).value == D("0")
 
 
 def test_the_tax_reduction_lowers_a_tax_below_twice_the_reduction_amounts() -> None:
@@ -852,6 +973,46 @@ def test_dependent_children_and_dependants_raise_the_tax_reduction() -> None:
     assert worksheet.get(ONTARIO_TAX_WITH_SURTAX).value == D("8195.7644476")
     assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("1096.2355524")
     assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("7099.5288952")
+
+
+def test_the_health_premium_in_a_sloped_row_adds_the_rate_to_the_plateau() -> None:
+    # A capital gain of 74000 alone, with no employment income, no RRSP contributions and no
+    # union dues: taxable income is half the gain, 37000, and the Ontario credits are 5.05% x
+    # 12747 = 643.7235. ON428 line 89's chart, "more than $36,000 but not more than $38,500":
+    # (37000 - 36000) x 6% + 300 = 360.00; the Ontario basic tax 5.05% x 37000 = 1868.50 less
+    # the credits is 1224.7765, above 588.00, so no reduction, and line 90 is 1224.7765 +
+    # 360.00 = 1584.7765.
+    worksheet = compute("0", "74000", "0", "0", "0", "0")
+
+    assert worksheet.get(TAXABLE_INCOME).value == D("37000")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("1224.7765")
+    assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("360.00")
+    assert worksheet.get(ONTARIO_TAX).value == D("1584.7765")
+
+
+def test_the_health_premium_at_the_top_of_a_sloped_row_is_the_plateau() -> None:
+    # A capital gain of 50000 alone: taxable income 25000, "more than $20,000 but not more than
+    # $25,000": (25000 - 20000) x 6% = 300.00, the plateau itself; the Ontario basic tax 5.05%
+    # x 25000 = 1262.50 less the credits of 643.7235 is 618.7765, above 588.00, so no
+    # reduction, and line 90 is 618.7765 + 300.00 = 918.7765.
+    worksheet = compute("0", "50000", "0", "0", "0", "0")
+
+    assert worksheet.get(TAXABLE_INCOME).value == D("25000")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("618.7765")
+    assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("300.00")
+    assert worksheet.get(ONTARIO_TAX).value == D("918.7765")
+
+
+def test_no_health_premium_at_the_first_threshold() -> None:
+    # A capital gain of 40000 alone: taxable income 20000, "$20,000 or less", so no premium;
+    # the Ontario basic tax 5.05% x 20000 = 1010.00 less the credits of 643.7235 is 366.2765,
+    # below 588.00, so the reduction is 221.7235 and line 81 is 144.5530, which is line 90.
+    worksheet = compute("0", "40000", "0", "0", "0", "0")
+
+    assert worksheet.get(TAXABLE_INCOME).value == D("20000")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("144.5530")
+    assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("0")
+    assert worksheet.get(ONTARIO_TAX).value == D("144.5530")
 
 
 def test_contributions_above_the_deduction_limit_deduct_the_limit() -> None:

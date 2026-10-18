@@ -99,3 +99,18 @@ ONTARIO_TAX_AFTER_REDUCTION = CATALOG.declare(
 )
 """Ontario tax after the Ontario tax reduction, ON428 line 81 "Line 73 minus line 80 (if negative,
 enter "0")": the Ontario tax with surtax (line 73) less the Ontario tax reduction."""
+
+ONTARIO_HEALTH_PREMIUM = CATALOG.declare("ontario_health_premium", Decimal, non_negative=True)
+"""Ontario health premium, ON428 line 89 "Ontario health premium (complete the chart below)": the
+chart on taxable income (its line 1 "Enter your taxable income from line 26000 of your return"),
+each sloped row the previous plateau plus a rate on the income over the row's threshold, at most
+the next plateau."""
+
+ONTARIO_TAX = CATALOG.declare("ontario_tax", Decimal, non_negative=True)
+"""Ontario tax, ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your
+return. Ontario tax": the Ontario tax after the reduction plus the Ontario health premium.
+
+Line 88 carries line 81: the LIFT credit (line 85) is not yet computed, and neither the
+provincial foreign tax credit (line 82) nor the community food program donation tax credit for
+farmers (line 87) is triggered by the returns computed so far.
+"""

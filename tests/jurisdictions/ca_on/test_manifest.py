@@ -56,7 +56,9 @@ from app.jurisdictions.ca_on.catalog import (
     DEPENDANTS,
     DEPENDENT_CHILDREN,
     ONTARIO_BASIC_TAX,
+    ONTARIO_HEALTH_PREMIUM,
     ONTARIO_SURTAX,
+    ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_REDUCTION,
@@ -99,9 +101,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca-on/dependants",
         }
     )
-    assert found.outputs == frozenset(
-        {"ca/federal_tax_after_credits", "ca-on/ontario_tax_after_reduction"}
-    )
+    assert found.outputs == frozenset({"ca/federal_tax_after_credits", "ca-on/ontario_tax"})
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == {
         CapabilitySelection(
@@ -384,8 +384,29 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca-on/ontario_tax_after_reduction"},
         ),
+        # ON428 line 89 "Ontario health premium (complete the chart below)": the chart's tiers on
+        # line 1 "Enter your taxable income from line 26000 of your return", each the previous
+        # plateau plus a rate on the income over its threshold, at most the next plateau.
+        CapabilitySelection(
+            name="core/tiered_surcharge",
+            params={"tiers": "ca-on/health_premium"},
+            consumes={"base": "ca/taxable_income"},
+            produces={"output": "ca-on/ontario_health_premium"},
+        ),
+        # ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your return.
+        # Ontario tax": line 88 carries line 81 while the LIFT credit (line 85) is not yet
+        # computed and neither the provincial foreign tax credit (line 82) nor the community
+        # food program donation tax credit for farmers (line 87) is triggered by the returns.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": ("ca-on/ontario_tax_after_reduction", "ca-on/ontario_health_premium")
+            },
+            produces={"output": "ca-on/ontario_tax"},
+        ),
     }
-    assert len(found.capabilities) == 32
+    assert len(found.capabilities) == 34
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -395,7 +416,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 32
+    assert len(composition.order) == 34
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -517,5 +538,11 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             SubtractNotBelowZero,
             frozenset({ONTARIO_TAX_WITH_SURTAX, ONTARIO_TAX_REDUCTION}),
             frozenset({ONTARIO_TAX_AFTER_REDUCTION}),
+        ),
+        (TieredSurcharge, frozenset({TAXABLE_INCOME}), frozenset({ONTARIO_HEALTH_PREMIUM})),
+        (
+            Sum,
+            frozenset({ONTARIO_TAX_AFTER_REDUCTION, ONTARIO_HEALTH_PREMIUM}),
+            frozenset({ONTARIO_TAX}),
         ),
     }

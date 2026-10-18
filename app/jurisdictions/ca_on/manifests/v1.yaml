@@ -17,7 +17,7 @@ inputs:
   - ca-on/dependants
 outputs:
   - ca/federal_tax_after_credits
-  - ca-on/ontario_tax_after_reduction
+  - ca-on/ontario_tax
 capabilities:
   - name: core/apply_rate
     params:
@@ -287,3 +287,25 @@ capabilities:
       less: ca-on/ontario_tax_reduction
     produces:
       output: ca-on/ontario_tax_after_reduction
+  # ON428 line 89 "Ontario health premium (complete the chart below)": the chart's tiers
+  # on line 1 "Enter your taxable income from line 26000 of your return", each the
+  # previous plateau plus a rate on the income over its threshold, at most the next
+  # plateau.
+  - name: core/tiered_surcharge
+    params:
+      tiers: ca-on/health_premium
+    consumes:
+      base: ca/taxable_income
+    produces:
+      output: ca-on/ontario_health_premium
+  # ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your return.
+  # Ontario tax": line 88 carries line 81, as the LIFT credit (line 85) is not yet
+  # computed and neither the provincial foreign tax credit (line 82) nor the community
+  # food program donation tax credit for farmers (line 87) is triggered.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca-on/ontario_tax_after_reduction
+        - ca-on/ontario_health_premium
+    produces:
+      output: ca-on/ontario_tax

@@ -23,7 +23,9 @@ from app.jurisdictions.ca_on.catalog import (
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     ONTARIO_BASIC_TAX,
+    ONTARIO_HEALTH_PREMIUM,
     ONTARIO_SURTAX,
+    ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_REDUCTION,
@@ -52,6 +54,8 @@ REGISTERED = frozenset(
         "ca-on/tax_reduction_amounts",
         "ca-on/ontario_tax_reduction",
         "ca-on/ontario_tax_after_reduction",
+        "ca-on/ontario_health_premium",
+        "ca-on/ontario_tax",
     }
 )
 # ON428 lines 75 (line 60969) and 76 (line 60970): the numbers of dependent children and of
@@ -94,6 +98,8 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/tax_reduction_amounts") is TAX_REDUCTION_AMOUNTS
     assert registry.get("ca-on/ontario_tax_reduction") is ONTARIO_TAX_REDUCTION
     assert registry.get("ca-on/ontario_tax_after_reduction") is ONTARIO_TAX_AFTER_REDUCTION
+    assert registry.get("ca-on/ontario_health_premium") is ONTARIO_HEALTH_PREMIUM
+    assert registry.get("ca-on/ontario_tax") is ONTARIO_TAX
 
 
 def test_every_registered_kind_but_the_counts_is_money_in_the_package_namespace(

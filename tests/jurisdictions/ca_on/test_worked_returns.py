@@ -70,7 +70,8 @@ description: >-
   zero and the Ontario tax with surtax is zero. With no dependent children and no dependants,
   the Ontario tax reduction amounts are the basic reduction of 294.00, and the reduction is
   twice them less the tax of zero: 588.00, which leaves an Ontario tax after the reduction of
-  zero, not a refund.
+  zero, not a refund. A taxable income of 9935.00 is at or below the health premium chart's
+  first threshold of 20000, so the premium is zero and the Ontario tax is zero.
 sources:
   - >-
     T1, Federal Worksheet, Schedule 3, Schedule 7, Schedule 8, ON428 and EI table arithmetic on
@@ -117,6 +118,8 @@ expected:
   ca-on/tax_reduction_amounts: "294.00"
   ca-on/ontario_tax_reduction: "588.00"
   ca-on/ontario_tax_after_reduction: "0"
+  ca-on/ontario_health_premium: "0"
+  ca-on/ontario_tax: "0"
 """
 
 
@@ -149,9 +152,7 @@ def test_a_file_missing_a_declared_output_fails_naming_the_file_and_output(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "partial.yaml"
-    path.write_text(LOW_INCOME.replace('  ca-on/ontario_tax_after_reduction: "0"\n', ""))
+    path.write_text(LOW_INCOME.replace('  ca-on/ontario_tax: "0"\n', ""))
 
-    with pytest.raises(
-        WorkedReturnError, match=r"partial\.yaml.*ca-on/ontario_tax_after_reduction"
-    ):
+    with pytest.raises(WorkedReturnError, match=r"partial\.yaml.*ca-on/ontario_tax\b"):
         check(path)
