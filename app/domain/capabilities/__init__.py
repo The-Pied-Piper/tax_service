@@ -17,6 +17,7 @@ from app.domain.capabilities import (  # noqa: E402
     subtract,
     subtract_not_below_zero,
     sum,
+    tapered_amount,
     tiered_surcharge,
 )
 
@@ -31,5 +32,6 @@ __all__ = [
     "subtract",
     "subtract_not_below_zero",
     "sum",
+    "tapered_amount",
     "tiered_surcharge",
 ]

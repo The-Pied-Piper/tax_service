@@ -1,8 +1,8 @@
 """Unit tests for the structured trace: one frozen line class per fact, with made-up values.
 
 Each line records what happened with the domain objects involved (`ArtifactKind`, `Rate`,
-`Credit`, `Amount`, `ContributionTier`, `RoundingRule`), never text; its `amount` is the figure
-the line is about.
+`Credit`, `Amount`, `ContributionTier`, `Taper`, `RoundingRule`), never text; its `amount` is the
+figure the line is about.
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
+from app.domain.parameters.taper import Taper
 from app.domain.trace import (
     BracketSliceLine,
     CappedAmountLine,
@@ -31,6 +32,7 @@ from app.domain.trace import (
     SubtractedNotBelowZeroLine,
     SumLine,
     SurchargeTierLine,
+    TaperedAmountLine,
     TraceLine,
 )
 
@@ -52,6 +54,8 @@ EARNINGS = ArtifactKind("ex/earnings", Decimal)
 CONTRIBUTION = ArtifactKind("ex/contribution", Decimal)
 TIER = ContributionTier(Rate(D("0.05")), D(3000), D(50000), D(2350))
 SURCHARGE = ArtifactKind("ex/surcharge", Decimal)
+INCOME = ArtifactKind("ex/income", Decimal)
+TAPER = Taper(D(1000), D(500), D(20000), D(10000))
 
 
 def slice_line() -> BracketSliceLine:
@@ -100,6 +104,12 @@ def surcharge_tier_line() -> SurchargeTierLine:
     return SurchargeTierLine(SURCHARGE, TAX, D("400.25"), D(300), Rate(D("0.25")), CENT, D("25.06"))
 
 
+def tapered_amount_line() -> TaperedAmountLine:
+    return TaperedAmountLine(
+        PERSONAL, INCOME, D("22000.5"), TAPER, CENT, D("100.025"), D("1399.98")
+    )
+
+
 ALL_LINES = [
     slice_line,
     total_line,
@@ -112,6 +122,7 @@ ALL_LINES = [
     lesser_of_line,
     contribution_tier_line,
     surcharge_tier_line,
+    tapered_amount_line,
 ]
 
 
@@ -617,6 +628,88 @@ def test_surcharge_tier_lines_are_hashable() -> None:
 
 def test_a_surcharge_tier_line_is_not_a_rate_applied_line() -> None:
     assert not isinstance(surcharge_tier_line(), RateAppliedLine)
+
+
+def test_tapered_amount_line_fields_in_order() -> None:
+    line = tapered_amount_line()
+
+    assert line == TaperedAmountLine(
+        output=PERSONAL,
+        base=INCOME,
+        base_amount=D("22000.5"),
+        taper=TAPER,
+        rounding=CENT,
+        reduction=D("100.025"),
+        result=D("1399.98"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "base",
+        "base_amount",
+        "taper",
+        "rounding",
+        "reduction",
+        "result",
+    ]
+    assert line.output is PERSONAL
+    assert line.base is INCOME
+    assert line.base_amount == D("22000.5")
+    assert line.taper == TAPER
+    assert line.rounding == CENT
+    assert line.reduction == D("100.025")
+    assert line.result == D("1399.98")
+    assert line.amount == D("1399.98")
+
+
+def test_tapered_amount_line_may_hold_a_zero_reduction() -> None:
+    # A base at or below the threshold reduces nothing: the full amount.
+    line = TaperedAmountLine(PERSONAL, INCOME, D(15000), TAPER, NO_ROUNDING, D(0), D(1500))
+
+    assert line.reduction == D(0)
+    assert line.amount == D(1500)
+
+
+def test_tapered_amount_line_may_hold_a_reduction_above_the_supplement() -> None:
+    # The reduction is recorded before the floor at zero; the result is the base amount.
+    line = TaperedAmountLine(PERSONAL, INCOME, D(80000), TAPER, NO_ROUNDING, D(3000), D(1000))
+
+    assert line.reduction == D(3000)
+    assert line.amount == D(1000)
+
+
+def test_tapered_amount_lines_differ_by_taper() -> None:
+    other = Taper(D(1000), D(500), D(20000), D(5000))
+
+    assert tapered_amount_line() != TaperedAmountLine(
+        PERSONAL, INCOME, D("22000.5"), other, CENT, D("100.025"), D("1399.98")
+    )
+
+
+def test_tapered_amount_lines_differ_by_rounding() -> None:
+    assert tapered_amount_line() != TaperedAmountLine(
+        PERSONAL, INCOME, D("22000.5"), TAPER, NO_ROUNDING, D("100.025"), D("1399.98")
+    )
+
+
+def test_tapered_amount_lines_differ_by_reduction() -> None:
+    assert tapered_amount_line() != TaperedAmountLine(
+        PERSONAL, INCOME, D("22000.5"), TAPER, CENT, D("100"), D("1399.98")
+    )
+
+
+def test_tapered_amount_lines_are_hashable() -> None:
+    assert hash(tapered_amount_line()) == hash(tapered_amount_line())
+
+
+def test_a_tapered_amount_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(tapered_amount_line())]
+
+
+def test_a_tapered_amount_line_is_not_a_contribution_tier_or_subtracted_line() -> None:
+    line = tapered_amount_line()
+
+    assert not isinstance(line, ContributionTierLine)
+    assert not isinstance(line, SubtractedNotBelowZeroLine)
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:

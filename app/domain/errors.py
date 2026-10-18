@@ -72,6 +72,10 @@ class InvalidContributionTierError(DomainError):
     """A contribution tier's bounds or maximum are not finite, negative or out of order."""
 
 
+class InvalidTaperError(DomainError):
+    """A taper's figures are not finite, are negative, or its range is not above zero."""
+
+
 class DuplicateRegistrationError(DomainError):
     """Something was registered under an identifier that is already taken."""
 

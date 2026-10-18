@@ -1540,3 +1540,122 @@ def test_core_tiered_surcharge_asks_for_its_dataset_as_surcharge_tiers() -> None
     built.compose(EX_ON, 2025)
 
     assert ("ex/surcharge_tiers", 2025, SURCHARGE_TIERS) in parameters.requests
+
+
+# --- core/tapered_amount: a base plus a supplement tapered by a figure, by a made-up manifest --
+#
+# Like `Sum` above, `TaperedAmount` is imported inside a cached factory so its absence fails only
+# the tests that use it, and is registered in a private registry under its shared identifier,
+# `core/tapered_amount`. It consumes `ex/scaled` (base × 3) and reads a made-up `taper` dataset:
+# 10 plus 5, the 5 reduced to nothing as the scaled figure goes from 20 to 30, rounded half-up to
+# the cent.
+
+
+@cache
+def tapered_amount_class() -> Any:
+    from app.domain.capabilities.tapered_amount import TaperedAmount
+
+    return TaperedAmount
+
+
+def some_taper_data(tax_year: int = 2025) -> ParameterDataset[Any]:
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.parameters.taper import TAPER, Taper
+
+    return ParameterDataset(
+        family="ex/some_taper",
+        tax_year=tax_year,
+        kind=TAPER,
+        values=Taper(D("10"), D("5"), D("20"), D("10")),
+        rounding=RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        sources=("https://example.org/ex/some_taper",),
+    )
+
+
+TAPERED_AMOUNT = CapabilitySelection(
+    name="core/tapered_amount",
+    params={"taper": "ex/some_taper"},
+    consumes={"base": "ex/scaled"},
+    produces={"output": "ex-on/result"},
+)
+
+
+def tapered_amount_service() -> tuple[TaxComputationService, FakeParameters]:
+    capabilities = capability_registry()
+    capabilities.register("core/tapered_amount", tapered_amount_class())
+    parameters = FakeParameters(factor_data(), offset_data(), some_taper_data())
+    built = service(
+        manifest(TAPERED_AMOUNT, SCALE),  # authored out of order on purpose
+        parameters=parameters,
+        capabilities=capabilities,
+    )
+    return built, parameters
+
+
+def test_computes_core_tapered_amount_inside_the_range_end_to_end() -> None:
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.parameters.taper import Taper
+    from app.domain.trace import TaperedAmountLine
+
+    built, _parameters = tapered_amount_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("7.001")))
+
+    # scaled = 7.001 × 3 = 21.003; reduction = 5 × 1.003 / 10 = 0.5015; 10 + (5 − 0.5015) =
+    # 14.4985, rounded half-up to 14.50.
+    assert worksheet.get(SCALED).value == D("21.003")
+    assert worksheet.get(RESULT).value == D("14.50")
+    assert isinstance(worksheet.producer_of(RESULT), tapered_amount_class())
+    assert worksheet.trace[-1] == TaperedAmountLine(
+        RESULT,
+        SCALED,
+        D("21.003"),
+        Taper(D("10"), D("5"), D("20"), D("10")),
+        RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        D("0.5015"),
+        D("14.50"),
+    )
+    assert [type(line) for line in worksheet.trace].count(TaperedAmountLine) == 1
+
+
+def test_computes_core_tapered_amount_above_the_range_end_to_end() -> None:
+    from app.domain.trace import TaperedAmountLine
+
+    built, _parameters = tapered_amount_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("20")))
+
+    # scaled = 60, past 20 + 10: reduction = 5 × 40 / 10 = 20, so only the base amount is left.
+    assert worksheet.get(RESULT).value == D("10")
+    assert str(worksheet.get(RESULT).value) == "10.00"
+    (line,) = [line for line in worksheet.trace if isinstance(line, TaperedAmountLine)]
+    assert line.reduction == D("20")
+
+
+def test_computes_core_tapered_amount_below_the_threshold_end_to_end() -> None:
+    built, _parameters = tapered_amount_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5")))
+
+    # scaled = 15, below the threshold of 20: the full 10 + 5, rounded to 15.00.
+    assert worksheet.get(RESULT).value == D("15")
+    assert str(worksheet.get(RESULT).value) == "15.00"
+
+
+def test_core_tapered_amount_runs_after_its_base_is_produced() -> None:
+    built, _parameters = tapered_amount_service()
+
+    composition = built.compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is tapered_amount_class()
+    assert composition.order[-1].consumes == frozenset({SCALED})
+
+
+def test_core_tapered_amount_asks_for_its_dataset_as_a_taper() -> None:
+    from app.domain.parameters.taper import TAPER
+
+    built, parameters = tapered_amount_service()
+
+    built.compose(EX_ON, 2025)
+
+    assert ("ex/some_taper", 2025, TAPER) in parameters.requests

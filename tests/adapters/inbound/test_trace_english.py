@@ -21,6 +21,7 @@ from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
+from app.domain.parameters.taper import Taper
 from app.domain.trace import (
     BracketSliceLine,
     CappedAmountLine,
@@ -33,6 +34,7 @@ from app.domain.trace import (
     SubtractedNotBelowZeroLine,
     SumLine,
     SurchargeTierLine,
+    TaperedAmountLine,
     TraceLine,
 )
 
@@ -57,6 +59,8 @@ CONTRIBUTION = ArtifactKind("ex/contribution", Decimal)
 TIER = ContributionTier(Rate(D("0.05")), D("3000"), D("50000"), D("2350"))
 SURCHARGE = ArtifactKind("ex/surcharge", Decimal)
 TAX_SO_FAR = ArtifactKind("ex/tax_so_far", Decimal)
+INCOME = ArtifactKind("ex/income", Decimal)
+TAPER = Taper(D("1000"), D("500"), D("20000"), D("10000"))
 
 
 def render(line: TraceLine) -> str:
@@ -427,6 +431,71 @@ def test_renders_the_threshold_and_base() -> None:
     assert render(line) == "surcharge: 5.05% of tax_so_far 1000.5 over 1471.5 (no rounding)"
 
 
+# --- tapered amounts -------------------------------------------------------------------
+
+
+def test_renders_a_tapered_amount() -> None:
+    line = TaperedAmountLine(
+        PERSONAL_AMOUNT, INCOME, D("22000"), TAPER, NO_ROUNDING, D("100"), D("1400")
+    )
+
+    assert render(line) == (
+        "personal_amount: 1000 plus 500 less 100 for income 22000 over 20000 (range 10000), "
+        "not below 1000 (no rounding)"
+    )
+
+
+def test_renders_a_rounded_tapered_amount() -> None:
+    line = TaperedAmountLine(
+        PERSONAL_AMOUNT, INCOME, D("22000.5"), TAPER, CENT, D("100.025"), D("1399.98")
+    )
+
+    assert render(line) == (
+        "personal_amount: 1000 plus 500 less 100.025 for income 22000.5 over 20000 "
+        "(range 10000), not below 1000 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_tapered_amount_below_the_threshold() -> None:
+    line = TaperedAmountLine(
+        PERSONAL_AMOUNT, INCOME, D("15000"), TAPER, NO_ROUNDING, D("0"), D("1500")
+    )
+
+    assert render(line) == (
+        "personal_amount: 1000 plus 500 less 0 for income 15000 over 20000 (range 10000), "
+        "not below 1000 (no rounding)"
+    )
+
+
+def test_renders_a_reduction_above_the_supplement_as_recorded() -> None:
+    line = TaperedAmountLine(
+        PERSONAL_AMOUNT, INCOME, D("80000"), TAPER, NO_ROUNDING, D("3000"), D("1000")
+    )
+
+    assert render(line) == (
+        "personal_amount: 1000 plus 500 less 3000 for income 80000 over 20000 (range 10000), "
+        "not below 1000 (no rounding)"
+    )
+
+
+def test_renders_an_inexact_reduction_with_every_digit() -> None:
+    taper = Taper(D("1000"), D("500"), D("20000"), D("7000"))
+    line = TaperedAmountLine(
+        PERSONAL_AMOUNT,
+        INCOME,
+        D("21000"),
+        taper,
+        CENT,
+        D("71.42857142857142857142857143"),
+        D("1428.57"),
+    )
+
+    assert render(line) == (
+        "personal_amount: 1000 plus 500 less 71.42857142857142857142857143 for income 21000 "
+        "over 20000 (range 7000), not below 1000 (half-up to 0.01)"
+    )
+
+
 # --- money figures ---------------------------------------------------------------
 
 
@@ -535,6 +604,19 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
             ),
             "surcharge: 25% of tax_so_far 400.5 over 300 (no rounding)",
         ),
+        (
+            TaperedAmountLine(
+                PERSONAL_AMOUNT,
+                INCOME,
+                D("22000.50"),
+                Taper(D("1000.00"), D("5.0E+2"), D("20000.00"), D("1E+4")),
+                NO_ROUNDING,
+                D("100.0250"),
+                D("1399.9750"),
+            ),
+            "personal_amount: 1000 plus 500 less 100.025 for income 22000.5 over 20000 "
+            "(range 10000), not below 1000 (no rounding)",
+        ),
     ],
 )
 def test_renders_every_money_figure_of_a_line_without_trailing_zeros(
@@ -561,6 +643,9 @@ def test_render_all_renders_each_line_in_order() -> None:
             CONTRIBUTION, EARNINGS, D("23000"), TIER, NO_ROUNDING, D("20000"), D("1000")
         ),
         SurchargeTierLine(SURCHARGE, TOTAL, D("3"), D("1"), Rate(D("0.5")), NO_ROUNDING, D("1")),
+        TaperedAmountLine(
+            PERSONAL_AMOUNT, INCOME, D("22000"), TAPER, NO_ROUNDING, D("100"), D("1400")
+        ),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -575,6 +660,8 @@ def test_render_all_renders_each_line_in_order() -> None:
         "lesser_amount: lesser of total 3 and capped_amount 2 = 2",
         "contribution: 5% of earnings between 3000 and 50000 (20000), at most 2350 (no rounding)",
         "surcharge: 50% of total 3 over 1 (no rounding)",
+        "personal_amount: 1000 plus 500 less 100 for income 22000 over 20000 (range 10000), "
+        "not below 1000 (no rounding)",
     )
 
 

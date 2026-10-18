@@ -1,7 +1,7 @@
 """Unit tests for ParameterParserRegistry and `@parameter_parser`.
 
 Parsers are keyed by their kind's plain name (`amount`, `brackets`, `contribution_tier`,
-`credit`, `rate`, `surcharge_tiers`), not namespaced yet.
+`credit`, `rate`, `surcharge_tiers`, `taper`), not namespaced yet.
 Lookups are typed: `for_kind(kind)` for a `ParameterKind[T]` gives a `ParameterParser[T]`; the
 `assert_type` checks below make `mypy .` fail if a lookup returned `Any` or another type.
 Made-up kinds and parsers are never registered in the shared registry: the decorator test
@@ -27,6 +27,7 @@ from app.adapters.outbound.parameter_parsers.registry import (
     parameter_parser,
 )
 from app.adapters.outbound.parameter_parsers.surcharge_tiers import SurchargeTiersParser
+from app.adapters.outbound.parameter_parsers.taper import TaperParser
 from app.adapters.outbound.yaml_support import YamlNode
 from app.domain.capability import CapabilityRegistry
 from app.domain.errors import DuplicateRegistrationError, UnknownRegistrationError
@@ -41,6 +42,7 @@ from app.domain.parameters.surcharge_tiers import (
     SurchargeTier,
     SurchargeTiers,
 )
+from app.domain.parameters.taper import TAPER, Taper
 from app.domain.registry import Registry
 
 D = Decimal
@@ -105,6 +107,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     registry.register_class(AmountParser)
     registry.register_class(ContributionTierParser)
     registry.register_class(SurchargeTiersParser)
+    registry.register_class(TaperParser)
     registry.register_class(FlatRateParser)
 
     schedule = registry.for_kind(BRACKETS).parse(
@@ -121,6 +124,12 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     surcharge_tiers = registry.for_kind(SURCHARGE_TIERS).parse(
         YamlNode.root({"tiers": [{"threshold": "100", "rate": "0.2"}]}, "dataset")
     )
+    taper = registry.for_kind(TAPER).parse(
+        YamlNode.root(
+            {"base": "1000", "supplement": "500", "threshold": "20000", "range": "10000"},
+            "dataset",
+        )
+    )
     flat_rate = registry.for_kind(FLAT_RATE).parse(YamlNode.root({"rate": "0.2"}, "dataset"))
 
     assert_type(schedule, BracketSchedule)
@@ -129,6 +138,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     assert_type(amount, Amount)
     assert_type(tier, ContributionTier)
     assert_type(surcharge_tiers, SurchargeTiers)
+    assert_type(taper, Taper)
     assert_type(flat_rate, Decimal)
 
     assert schedule == BracketSchedule((Bracket(D("0"), D("0.1")),))
@@ -137,6 +147,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     assert amount == Amount(D("250"))
     assert tier == ContributionTier(Rate(D("0.05")), D("3000"), D("50000"), D("2350"))
     assert surcharge_tiers == SurchargeTiers((SurchargeTier(D("100"), Rate(D("0.2"))),))
+    assert taper == Taper(D("1000"), D("500"), D("20000"), D("10000"))
     assert flat_rate == D("0.2")
 
 
@@ -241,6 +252,7 @@ def test_decorating_a_second_parser_for_one_kind_fails(fresh: ParameterParserReg
         (CREDIT, CreditParser),
         (RATE, RateParser),
         (SURCHARGE_TIERS, SurchargeTiersParser),
+        (TAPER, TaperParser),
     ],
 )
 def test_built_in_parsers_are_registered_in_the_shared_registry(
@@ -261,6 +273,7 @@ def test_built_in_parsers_are_registered_in_the_shared_registry(
         (CreditParser, frozenset({"amount"})),
         (RateParser, frozenset({"rate"})),
         (SurchargeTiersParser, frozenset({"tiers"})),
+        (TaperParser, frozenset({"base", "supplement", "threshold", "range"})),
     ],
 )
 def test_built_in_parsers_read_their_body_keys(
@@ -277,4 +290,5 @@ def test_the_shared_registry_holds_exactly_the_built_in_parsers() -> None:
         "credit",
         "rate",
         "surcharge_tiers",
+        "taper",
     }
