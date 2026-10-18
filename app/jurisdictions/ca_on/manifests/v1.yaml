@@ -308,6 +308,56 @@ capabilities:
       less: ca-on/ontario_tax_reduction
     produces:
       output: ca-on/ontario_tax_after_reduction
+  # Schedule ON428-A line 3 "Line 1 plus line 2", line 1 "Amount from line 10100 of your
+  # return" (line 2, line 10400, not triggered), and line 5 "Line 3 multiplied by the
+  # percentage from line 4 (maximum $875)", line 4 "Applicable rate 5.05%": the rate on
+  # employment income, before its maximum.
+  - name: core/apply_rate
+    params:
+      rate: ca-on/lift_rate
+    consumes:
+      base: ca/employment_income
+    produces:
+      output: ca-on/lift_credit_before_maximum
+  # Line 5's "(maximum $875)" and Part A line 14 "Amount from line 5 above (maximum
+  # $875)".
+  - name: core/capped_amount
+    params:
+      cap: ca-on/lift_maximum
+    consumes:
+      base: ca-on/lift_credit_before_maximum
+    produces:
+      output: ca-on/lift_maximum_credit
+  # Lines 15 to 19: line 15 "Amount from line 13 above", the adjusted net income, which
+  # is net income (line 23600) while lines 7, 8, 10 and 11 are not triggered; line 16
+  # "Individual income threshold 32,500.00"; line 17 "Line 15 minus line 16 (if
+  # negative, enter "0")"; line 18 "Applicable rate 5%"; line 19 "Line 17 multiplied by
+  # the percentage from line 18".
+  - name: core/tiered_surcharge
+    params:
+      tiers: ca-on/lift_reduction
+    consumes:
+      base: ca/net_income
+    produces:
+      output: ca-on/lift_reduction
+  # Line 20 "Line 14 minus line 19 (if negative, enter "0") Enter this amount on line
+  # 62140 of your Form ON428.", ON428 line 85.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca-on/lift_maximum_credit
+      less: ca-on/lift_reduction
+    produces:
+      output: ca-on/lift_credit
+  # ON428 line 86 "Line 84 minus line 85 (if negative, enter "0")": line 84 "Amount from
+  # line 83 of the previous page" carries line 83 "Line 81 minus line 82 (if negative,
+  # enter "0")", which is line 81 while line 82 (the provincial foreign tax credit) is not
+  # triggered.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca-on/ontario_tax_after_reduction
+      less: ca-on/lift_credit
+    produces:
+      output: ca-on/ontario_tax_after_lift_credit
   # ON428 line 89 "Ontario health premium (complete the chart below)": the chart's tiers
   # on line 1 "Enter your taxable income from line 26000 of your return", each the
   # previous plateau plus a rate on the income over its threshold, at most the next
@@ -320,13 +370,13 @@ capabilities:
     produces:
       output: ca-on/ontario_health_premium
   # ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your return.
-  # Ontario tax": line 88 carries line 81, as the LIFT credit (line 85) is not yet
-  # computed and neither the provincial foreign tax credit (line 82) nor the community
-  # food program donation tax credit for farmers (line 87) is triggered.
+  # Ontario tax": line 88 "Line 86 minus line 87 (if negative, enter "0")" carries line
+  # 86 while the community food program donation tax credit for farmers (line 87) is not
+  # triggered.
   - name: core/sum
     consumes:
       parts:
-        - ca-on/ontario_tax_after_reduction
+        - ca-on/ontario_tax_after_lift_credit
         - ca-on/ontario_health_premium
     produces:
       output: ca-on/ontario_tax

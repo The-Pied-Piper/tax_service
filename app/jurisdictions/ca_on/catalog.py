@@ -100,6 +100,43 @@ ONTARIO_TAX_AFTER_REDUCTION = CATALOG.declare(
 """Ontario tax after the Ontario tax reduction, ON428 line 81 "Line 73 minus line 80 (if negative,
 enter "0")": the Ontario tax with surtax (line 73) less the Ontario tax reduction."""
 
+LIFT_CREDIT_BEFORE_MAXIMUM = CATALOG.declare(
+    "lift_credit_before_maximum", Decimal, non_negative=True
+)
+"""LIFT credit before its maximum, Schedule ON428-A line 5 "Line 3 multiplied by the percentage
+from line 4 (maximum $875)" before the maximum: line 4 "Applicable rate 5.05%" on line 3 "Line 1
+plus line 2", which is employment income (line 1 "Amount from line 10100 of your return") while
+line 2 "Amount from line 10400 of your return" is not triggered."""
+
+LIFT_MAXIMUM_CREDIT = CATALOG.declare("lift_maximum_credit", Decimal, non_negative=True)
+"""LIFT credit at most its maximum, Schedule ON428-A line 5's "(maximum $875)" and Part A line 14
+"Amount from line 5 above (maximum $875)"."""
+
+LIFT_REDUCTION = CATALOG.declare("lift_reduction", Decimal, non_negative=True)
+"""LIFT credit reduction, Schedule ON428-A Part A line 19 "Line 17 multiplied by the percentage
+from line 18": line 18 "Applicable rate 5%" on line 17 "Line 15 minus line 16 (if negative, enter
+"0")", line 16 "Individual income threshold 32,500.00".
+
+Line 15 is "Amount from line 13 above", the adjusted net income, which is net income (line 6,
+from line 23600 of the return) while lines 7, 8, 10 and 11 are not triggered. Each taxpayer is
+taken to be single at the end of the year, so Part A applies and Part B (a spouse) is not
+modelled; the schedule states no eligibility rules of its own ("To find out if you are eligible
+for the low-income individuals and families tax (LIFT) credit, go to canada.ca/on-tax-info.").
+"""
+
+LIFT_CREDIT = CATALOG.declare("lift_credit", Decimal, non_negative=True)
+"""LIFT credit, Schedule ON428-A line 20 "Line 14 minus line 19 (if negative, enter "0") Enter
+this amount on line 62140 of your Form ON428.", ON428 line 85 (62140) "Low-income individuals and
+families tax (LIFT) credit (complete Schedule ON428-A)"."""
+
+ONTARIO_TAX_AFTER_LIFT_CREDIT = CATALOG.declare(
+    "ontario_tax_after_lift_credit", Decimal, non_negative=True
+)
+"""Ontario tax after the LIFT credit, ON428 line 86 "Line 84 minus line 85 (if negative, enter
+"0")": the Ontario tax after the reduction less the LIFT credit, as line 84 "Amount from line 83
+of the previous page" carries line 83 "Line 81 minus line 82 (if negative, enter "0")", which is
+line 81 while the provincial foreign tax credit (line 82) is not triggered."""
+
 ONTARIO_HEALTH_PREMIUM = CATALOG.declare("ontario_health_premium", Decimal, non_negative=True)
 """Ontario health premium, ON428 line 89 "Ontario health premium (complete the chart below)": the
 chart on taxable income (its line 1 "Enter your taxable income from line 26000 of your return"),
@@ -108,9 +145,8 @@ the next plateau."""
 
 ONTARIO_TAX = CATALOG.declare("ontario_tax", Decimal, non_negative=True)
 """Ontario tax, ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your
-return. Ontario tax": the Ontario tax after the reduction plus the Ontario health premium.
+return. Ontario tax": the Ontario tax after the LIFT credit plus the Ontario health premium.
 
-Line 88 carries line 81: the LIFT credit (line 85) is not yet computed, and neither the
-provincial foreign tax credit (line 82) nor the community food program donation tax credit for
-farmers (line 87) is triggered by the returns computed so far.
+Line 88 "Line 86 minus line 87 (if negative, enter "0")" carries line 86, as the community food
+program donation tax credit for farmers (line 87) is not triggered by the returns computed so far.
 """

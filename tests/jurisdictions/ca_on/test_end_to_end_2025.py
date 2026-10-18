@@ -1,12 +1,12 @@
 """CA-ON 2025, end to end: CRA's worked example computed from the manifest through the service.
 
-The service is the one the composition root builds (`build_tax_computation`): the real YAML
-sources over the jurisdiction packages and the shared registries. Return A's amounts (employment
-income 110000 and a capital gain of 20000 to total income 120000; the CPP contributions computed
-from employment income by Schedule 8's tiers, each at its maximum: base 3356.10, first additional
-678.00 and second additional 396.00, the enhanced contributions 1074.00; the EI premiums computed
-from employment income, at the maximum 1077.48; the RRSP contributions available to deduct of 1926,
-no unused contributions plus the contributions of 1926 (Schedule 7 line 10), the most that may be
+The service is the one the composition root builds (`build_tax_computation`): the real YAML sources
+over the jurisdiction packages and the shared registries. Return A's amounts (employment income
+110000 and a capital gain of 20000 to total income 120000; the CPP contributions computed from
+employment income by Schedule 8's tiers, each at its maximum: base 3356.10, first additional 678.00
+and second additional 396.00, the enhanced contributions 1074.00; the EI premiums computed from
+employment income, at the maximum 1077.48; the RRSP contributions available to deduct of 1926, no
+unused contributions plus the contributions of 1926 (Schedule 7 line 10), the most that may be
 deducted, 1926, the lesser of them and the deduction limit of 19800 (Schedule 7 line 17), the amount
 deducted of 1926 (line 18), at most that, as the RRSP deduction (line 20), and the unused
 contributions carried forward of 0 (line 23), the contributions available less the deduction; less
@@ -16,17 +16,20 @@ federal, the Federal Worksheet's taper on net income, here at or below the 17788
 reduced; 12747 Ontario) plus the base CPP contributions and the EI premiums, and federally the
 Canada employment amount of 1471 (the lesser of employment income and 1471), through each total of
 credit amounts and each form's non-refundable tax credits (T1 line 35000, ON428 line 61500) to each
-tax after credits, the Ontario surtax on the Ontario tax after credits (ON428 lines 66 to 68) to
-the Ontario tax with surtax of line 69, and with no dependent children and no dependants the
-Ontario tax reduction amounts of 294.00 (lines 74 to 77), twice them less the tax with surtax (line
-73), not below zero, the Ontario tax reduction of 0 (line 80), to the Ontario tax after the
-reduction (line 81), and the Ontario health premium on taxable income by the chart of line 89, 750,
-added to it to the Ontario tax of line 90; and on the T1, the federal tax after credits carried to
-the net federal tax (line 42000), added to the Ontario tax (line 42800) to the total payable (line
-43500), less the total credits (line 48200), here the chosen income tax deducted of 25000 (line
-43700) alone, to the refund or balance owing (line 167), 897.1453476, positive so a balance owing)
-are checked from the files under `returns/` by `test_worked_returns.py`, as are Returns C, D and E;
-this module pins which capability produces each line, the order, and the trace that explains them.
+tax after credits, the Ontario surtax on the Ontario tax after credits (ON428 lines 66 to 68) to the
+Ontario tax with surtax of line 69, and with no dependent children and no dependants the Ontario tax
+reduction amounts of 294.00 (lines 74 to 77), twice them less the tax with surtax (line 73), not
+below zero, the Ontario tax reduction of 0 (line 80), to the Ontario tax after the reduction (line
+81); Schedule ON428-A's LIFT credit, 5.05% of employment income, 5555, at most 875 (lines 5 and 14),
+less 5% of net income over 32500, 4125 (line 19), not below zero, 0 (line 20, ON428 line 85), taken
+off the Ontario tax after the reduction, not below zero (line 86); and the Ontario health premium on
+taxable income by the chart of line 89, 750, added to it to the Ontario tax of line 90; and on the
+T1, the federal tax after credits carried to the net federal tax (line 42000), added to the Ontario
+tax (line 42800) to the total payable (line 43500), less the total credits (line 48200), here the
+chosen income tax deducted of 25000 (line 43700) alone, to the refund or balance owing (line 167),
+897.1453476, positive so a balance owing) are checked from the files under `returns/` by
+`test_worked_returns.py`, as are Returns B, C, D and E; this module pins which capability produces
+each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
@@ -117,11 +120,16 @@ from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
     DEPENDANTS,
     DEPENDENT_CHILDREN,
+    LIFT_CREDIT,
+    LIFT_CREDIT_BEFORE_MAXIMUM,
+    LIFT_MAXIMUM_CREDIT,
+    LIFT_REDUCTION,
     ONTARIO_BASIC_TAX,
     ONTARIO_HEALTH_PREMIUM,
     ONTARIO_SURTAX,
     ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_AFTER_LIFT_CREDIT,
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
@@ -279,9 +287,30 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(ONTARIO_TAX_AFTER_REDUCTION) is not worksheet.producer_of(
         ONTARIO_TAX_AFTER_CREDITS
     )
+    assert isinstance(worksheet.producer_of(LIFT_CREDIT_BEFORE_MAXIMUM), ApplyRate)
+    assert worksheet.producer_of(LIFT_CREDIT_BEFORE_MAXIMUM) is not worksheet.producer_of(
+        TAXABLE_CAPITAL_GAINS
+    )
+    assert isinstance(worksheet.producer_of(LIFT_MAXIMUM_CREDIT), CappedAmount)
+    assert worksheet.producer_of(LIFT_MAXIMUM_CREDIT) is not worksheet.producer_of(
+        CANADA_EMPLOYMENT_AMOUNT
+    )
+    assert isinstance(worksheet.producer_of(LIFT_REDUCTION), TieredSurcharge)
+    assert worksheet.producer_of(LIFT_REDUCTION) is not worksheet.producer_of(ONTARIO_SURTAX)
+    assert isinstance(worksheet.producer_of(LIFT_CREDIT), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(ONTARIO_TAX_AFTER_LIFT_CREDIT), SubtractNotBelowZero)
+    assert worksheet.producer_of(LIFT_CREDIT) is not worksheet.producer_of(
+        ONTARIO_TAX_AFTER_LIFT_CREDIT
+    )
+    assert worksheet.producer_of(ONTARIO_TAX_AFTER_LIFT_CREDIT) is not worksheet.producer_of(
+        ONTARIO_TAX_AFTER_REDUCTION
+    )
     assert isinstance(worksheet.producer_of(ONTARIO_HEALTH_PREMIUM), TieredSurcharge)
     assert worksheet.producer_of(ONTARIO_HEALTH_PREMIUM) is not worksheet.producer_of(
         ONTARIO_SURTAX
+    )
+    assert worksheet.producer_of(ONTARIO_HEALTH_PREMIUM) is not worksheet.producer_of(
+        LIFT_REDUCTION
     )
     assert isinstance(worksheet.producer_of(ONTARIO_TAX), Sum)
     assert worksheet.producer_of(ONTARIO_TAX) is not worksheet.producer_of(ONTARIO_TAX_WITH_SURTAX)
@@ -458,6 +487,24 @@ def test_the_trace_explains_the_computation() -> None:
         "less ontario_tax_reduction 0, not below 0 = 8195.7644476",
         "8195.7644476",
     )
+    lift_before_maximum = position(
+        "lift_credit_before_maximum: 5.05% of employment_income 110000 (no rounding)", "5555"
+    )
+    lift_maximum = position(
+        "lift_maximum_credit: lesser of lift_credit_before_maximum 5555 and 875 (no rounding)",
+        "875",
+    )
+    lift_reduction = position(
+        "lift_reduction: 5% of net_income 115000 over 32500 (no rounding)", "4125"
+    )
+    lift = position(
+        "lift_credit: lift_maximum_credit 875 less lift_reduction 4125, not below 0 = 0", "0"
+    )
+    after_lift = position(
+        "ontario_tax_after_lift_credit: ontario_tax_after_reduction 8195.7644476 "
+        "less lift_credit 0, not below 0 = 8195.7644476",
+        "8195.7644476",
+    )
     premium_first = position(
         "ontario_health_premium: 6% of taxable_income 115000 over 20000, at most 300 (no rounding)",
         "300",
@@ -482,7 +529,7 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     ontario_tax = position(
-        "ontario_tax: ontario_tax_after_reduction 8195.7644476 "
+        "ontario_tax: ontario_tax_after_lift_credit 8195.7644476 "
         "+ ontario_health_premium 750 = 8945.7644476",
         "8945.7644476",
     )
@@ -524,7 +571,9 @@ def test_the_trace_explains_the_computation() -> None:
     assert reduction_amounts < reduction
     assert taxable < premium_first < premium_second < premium_third < premium_fourth
     assert premium_fourth < premium_fifth < ontario_tax
-    assert after_reduction < ontario_tax
+    assert lift_before_maximum < lift_maximum < lift < after_lift < ontario_tax
+    assert net < lift_reduction < lift
+    assert after_reduction < after_lift
     assert federal_after < net_federal < payable
     assert ontario_tax < payable < balance
     assert credits < balance
@@ -548,6 +597,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         line
         for line in trace
         if isinstance(line, SurchargeTierLine) and line.output == ONTARIO_SURTAX
+    ]
+    lift_tiers = [
+        line
+        for line in trace
+        if isinstance(line, SurchargeTierLine) and line.output == LIFT_REDUCTION
     ]
     premium_tiers = [
         line
@@ -578,6 +632,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Rate(D("0.0505")),
             NO_ROUNDING,
             D("867.61929"),
+        ),
+        # Schedule ON428-A line 5 "Line 3 multiplied by the percentage from line 4 (maximum
+        # $875)", before its maximum: line 3 is employment income (line 10100), as line 2 (line
+        # 10400) is not triggered.
+        LIFT_CREDIT_BEFORE_MAXIMUM: RateAppliedLine(
+            LIFT_CREDIT_BEFORE_MAXIMUM,
+            EMPLOYMENT_INCOME,
+            D("110000"),
+            Rate(D("0.0505")),
+            NO_ROUNDING,
+            D("5555.0000"),
         ),
     }
     assert sums == {
@@ -650,12 +715,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("294.00"),
         ),
         # ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your return.
-        # Ontario tax": line 88 carries line 81, as the LIFT credit (line 85) is not yet
-        # computed and lines 82 and 87 are not triggered.
+        # Ontario tax": line 88 carries line 86, as line 87 is not triggered.
         ONTARIO_TAX: SumLine(
             ONTARIO_TAX,
             (
-                (ONTARIO_TAX_AFTER_REDUCTION, D("8195.7644476")),
+                (ONTARIO_TAX_AFTER_LIFT_CREDIT, D("8195.7644476")),
                 (ONTARIO_HEALTH_PREMIUM, D("750")),
             ),
             D("8945.7644476"),
@@ -769,7 +833,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Amount(D("1471")),
             NO_ROUNDING,
             D("1471"),
-        )
+        ),
+        # Schedule ON428-A line 5's "(maximum $875)" and line 14 "Amount from line 5 above
+        # (maximum $875)": 5555.0000 is above it.
+        LIFT_MAXIMUM_CREDIT: CappedAmountLine(
+            LIFT_MAXIMUM_CREDIT,
+            LIFT_CREDIT_BEFORE_MAXIMUM,
+            D("5555.0000"),
+            Amount(D("875")),
+            NO_ROUNDING,
+            D("875"),
+        ),
     }
     # Schedule 7 line 17 "Enter whichever is less: amount from line 13 or line 16.": the
     # contributions available to deduct of 1926 are below the deduction limit of 19800, so the
@@ -912,6 +986,20 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             maximum=D("150"),
         ),
     ]
+    # Schedule ON428-A line 17 "Line 15 minus line 16 (if negative, enter "0")" and line 19 "Line
+    # 17 multiplied by the percentage from line 18": net income (line 15, from line 13) of 115000
+    # less the 32,500.00 threshold (line 16), times 5% (line 18); no rounding stated.
+    assert lift_tiers == [
+        SurchargeTierLine(
+            output=LIFT_REDUCTION,
+            base=NET_INCOME,
+            base_amount=D("115000"),
+            threshold=D("32500"),
+            rate=Rate(D("0.05")),
+            rounding=NO_ROUNDING,
+            part=D("4125.00"),
+        )
+    ]
     assert floored == {
         NET_INCOME: SubtractedNotBelowZeroLine(
             output=NET_INCOME,
@@ -956,6 +1044,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("8195.7644476"),
         ),
+        # Schedule ON428-A line 20 "Line 14 minus line 19 (if negative, enter "0")": the
+        # reduction of 4125.00 exceeds the 875, so the credit (ON428 line 85) is 0.
+        LIFT_CREDIT: SubtractedNotBelowZeroLine(
+            output=LIFT_CREDIT,
+            minuend=LIFT_MAXIMUM_CREDIT,
+            minuend_amount=D("875"),
+            subtrahend=LIFT_REDUCTION,
+            subtrahend_amount=D("4125.00"),
+            result=D("0"),
+        ),
+        # ON428 line 86 "Line 84 minus line 85 (if negative, enter "0")".
+        ONTARIO_TAX_AFTER_LIFT_CREDIT: SubtractedNotBelowZeroLine(
+            output=ONTARIO_TAX_AFTER_LIFT_CREDIT,
+            minuend=ONTARIO_TAX_AFTER_REDUCTION,
+            minuend_amount=D("8195.7644476"),
+            subtrahend=LIFT_CREDIT,
+            subtrahend_amount=D("0"),
+            result=D("8195.7644476"),
+        ),
     }
 
     assert totals[FEDERAL_BASIC_TAX].base == TAXABLE_INCOME
@@ -968,7 +1075,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 40
+    assert len(order) == 45
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
@@ -1016,6 +1123,12 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[ONTARIO_TAX]
     )
     assert position[TAXABLE_INCOME] < position[ONTARIO_HEALTH_PREMIUM] < position[ONTARIO_TAX]
+    assert position[LIFT_CREDIT_BEFORE_MAXIMUM] < position[LIFT_MAXIMUM_CREDIT]
+    assert position[NET_INCOME] < position[LIFT_REDUCTION]
+    assert position[LIFT_MAXIMUM_CREDIT] < position[LIFT_CREDIT]
+    assert position[LIFT_REDUCTION] < position[LIFT_CREDIT]
+    assert position[LIFT_CREDIT] < position[ONTARIO_TAX_AFTER_LIFT_CREDIT] < position[ONTARIO_TAX]
+    assert position[ONTARIO_TAX_AFTER_REDUCTION] < position[ONTARIO_TAX_AFTER_LIFT_CREDIT]
     assert position[FEDERAL_TAX_AFTER_CREDITS] < position[NET_FEDERAL_TAX]
     assert position[NET_FEDERAL_TAX] < position[TOTAL_PAYABLE]
     assert position[ONTARIO_TAX] < position[TOTAL_PAYABLE]
@@ -1062,6 +1175,14 @@ def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     assert worksheet.get(TAX_REDUCTION_AMOUNTS).value == D("294.00")
     assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("588.00")
     assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("0")
+    # Schedule ON428-A: line 5 is 5.05% x 10000 = 505.0000, below the $875 maximum, and net
+    # income of 9935.00 is below the 32,500.00 threshold, so no reduction: the credit (ON428 line
+    # 85) is 505.0000, more than the Ontario tax after the reduction of zero, so line 86 is zero.
+    assert worksheet.get(LIFT_CREDIT_BEFORE_MAXIMUM).value == D("505.0000")
+    assert worksheet.get(LIFT_MAXIMUM_CREDIT).value == D("505.0000")
+    assert worksheet.get(LIFT_REDUCTION).value == D("0")
+    assert worksheet.get(LIFT_CREDIT).value == D("505.0000")
+    assert worksheet.get(ONTARIO_TAX_AFTER_LIFT_CREDIT).value == D("0")
     # A taxable income of 9935.00 is "$20,000 or less" on the health premium chart: no premium.
     assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("0")
     assert worksheet.get(ONTARIO_TAX).value == D("0")
@@ -1146,6 +1267,38 @@ def test_no_health_premium_at_the_first_threshold() -> None:
     assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("144.5530")
     assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("0")
     assert worksheet.get(ONTARIO_TAX).value == D("144.5530")
+
+
+def test_the_lift_credit_between_the_thresholds_is_reduced_and_comes_off_the_tax() -> None:
+    # Employment income of 40000, with no capital gain, no RRSP contributions and no union dues:
+    # base CPP contributions 4.95% x (40000 - 3500) = 1806.75, first additional 1% x 36500 =
+    # 365.00, EI premiums 1.64% x 40000 = 656.00; net and taxable income 39635.00. Ontario basic
+    # tax 5.05% x 39635.00 = 2001.567500 less the Ontario credits 5.05% x (12747 + 1806.75 +
+    # 656.00 = 15209.75) = 768.092375 is 1233.475125, below the first surtax threshold and above
+    # 588.00, so line 81 is 1233.475125. Schedule ON428-A: line 5 is 5.05% x 40000 = 2020.0000,
+    # at most 875 (line 14); line 17 is 39635.00 - 32500 = 7135.00 and line 19 7135.00 x 5% =
+    # 356.75; line 20 is 875 - 356.75 = 518.25 (ON428 line 85). Line 86 is 1233.475125 - 518.25
+    # = 715.225125; the health premium on 39635.00, "more than $38,500 but not more than
+    # $48,000", is 450, so line 90 is 715.225125 + 450 = 1165.225125.
+    worksheet = compute("40000", "0", "0", "0", "7200", "0", "0")
+
+    assert worksheet.get(NET_INCOME).value == D("39635.00")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("1233.475125")
+    assert worksheet.get(LIFT_CREDIT_BEFORE_MAXIMUM).value == D("2020.0000")
+    assert worksheet.get(LIFT_MAXIMUM_CREDIT).value == D("875")
+    assert worksheet.get(LIFT_REDUCTION).value == D("356.75")
+    assert worksheet.get(LIFT_CREDIT).value == D("518.25")
+    assert worksheet.get(ONTARIO_TAX_AFTER_LIFT_CREDIT).value == D("715.225125")
+    assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("450")
+    assert worksheet.get(ONTARIO_TAX).value == D("1165.225125")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "lift_credit: lift_maximum_credit 875 less lift_reduction 356.75, not below 0 = 518.25"
+    ) in rendered
+    assert (
+        "ontario_tax_after_lift_credit: ontario_tax_after_reduction 1233.475125 "
+        "less lift_credit 518.25, not below 0 = 715.225125"
+    ) in rendered
 
 
 def test_tax_deducted_above_the_total_payable_is_a_refund() -> None:
