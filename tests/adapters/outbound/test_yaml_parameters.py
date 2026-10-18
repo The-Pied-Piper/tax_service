@@ -127,6 +127,18 @@ tiers:
   - {threshold: "300.50", rate: "0.25"}
 """
 
+CAPPED_SURCHARGE_TIERS_2025 = """\
+family: ex/surcharge_tiers
+tax_year: 2025
+kind: surcharge_tiers
+sources:
+  - https://example.org/surcharge-2025
+rounding: none
+tiers:
+  - {threshold: "100", rate: "0.10"}
+  - {threshold: "300.50", rate: "0.25", maximum: "150.50"}
+"""
+
 TAPER_2025 = """\
 family: ex/taper
 tax_year: 2025
@@ -1135,6 +1147,149 @@ def test_an_invalid_tier_is_reported_as_a_contribution_tier_error(
         source(tmp_path).get("ex/contribution_tier", 2025, CONTRIBUTION_TIER)
 
     assert isinstance(excinfo.value.__cause__, InvalidContributionTierError)
+
+
+def test_reads_a_surcharge_tiers_maximum(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/surcharge_tiers/2025.yaml", CAPPED_SURCHARGE_TIERS_2025)
+
+    result = source(tmp_path).get("ex/surcharge_tiers", 2025, SURCHARGE_TIERS)
+
+    assert result.values == SurchargeTiers(
+        (
+            SurchargeTier(D("100"), Rate(D("0.10"))),
+            SurchargeTier(D("300.50"), Rate(D("0.25")), D("150.50")),
+        )
+    )
+
+
+def test_reads_a_surcharge_tiers_maximum_exactly(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/surcharge_tiers/2025.yaml", CAPPED_SURCHARGE_TIERS_2025)
+
+    tiers = source(tmp_path).get("ex/surcharge_tiers", 2025, SURCHARGE_TIERS).values.tiers
+
+    assert str(tiers[1].maximum) == "150.50"  # exact, scale kept
+
+
+def test_a_surcharge_tier_without_a_maximum_reads_as_none(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/surcharge_tiers/2025.yaml", CAPPED_SURCHARGE_TIERS_2025)
+
+    tiers = source(tmp_path).get("ex/surcharge_tiers", 2025, SURCHARGE_TIERS).values.tiers
+
+    assert tiers[0].maximum is None
+
+
+def test_reads_a_maximum_on_every_surcharge_tier(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/surcharge_tiers/2025.yaml",
+        SURCHARGE_TIERS_2025.replace('rate: "0.10"}', 'rate: "0.10", maximum: "20"}').replace(
+            'rate: "0.25"}', 'rate: "0.25", maximum: "15"}'
+        ),
+    )
+
+    tiers = source(tmp_path).get("ex/surcharge_tiers", 2025, SURCHARGE_TIERS).values.tiers
+
+    assert [tier.maximum for tier in tiers] == [D("20"), D("15")]
+
+
+def test_reads_a_zero_surcharge_tier_maximum(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/surcharge_tiers/2025.yaml",
+        SURCHARGE_TIERS_2025.replace('rate: "0.10"}', 'rate: "0.10", maximum: "0"}'),
+    )
+
+    tiers = source(tmp_path).get("ex/surcharge_tiers", 2025, SURCHARGE_TIERS).values.tiers
+
+    assert tiers[0].maximum == D("0")
+
+
+def test_reads_a_surcharge_tiers_maximum_written_as_a_block_mapping(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/surcharge_tiers/2025.yaml",
+        SURCHARGE_TIERS_2025.replace(
+            '  - {threshold: "300.50", rate: "0.25"}\n',
+            '  - threshold: "300.50"\n    rate: "0.25"\n    maximum: "150"\n',
+        ),
+    )
+
+    tiers = source(tmp_path).get("ex/surcharge_tiers", 2025, SURCHARGE_TIERS).values.tiers
+
+    assert tiers[1] == SurchargeTier(D("300.50"), Rate(D("0.25")), D("150"))
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        pytest.param(
+            CAPPED_SURCHARGE_TIERS_2025.replace('maximum: "150.50"', "maximum: 150"),
+            r"tiers\[1\].maximum must be a string, got int",
+            id="maximum-as-yaml-number",
+        ),
+        pytest.param(
+            CAPPED_SURCHARGE_TIERS_2025.replace('maximum: "150.50"', "maximum: null"),
+            r"tiers\[1\].maximum must be a string",
+            id="maximum-null",
+        ),
+        pytest.param(
+            CAPPED_SURCHARGE_TIERS_2025.replace('maximum: "150.50"', 'maximum: "lots"'),
+            r"tiers\[1\].maximum is not a decimal: 'lots'",
+            id="maximum-not-decimal",
+        ),
+        pytest.param(
+            CAPPED_SURCHARGE_TIERS_2025.replace('maximum: "150.50"', 'maximum: "NaN"'),
+            r"tiers\[1\].maximum is not a decimal",
+            id="maximum-nan",
+        ),
+        pytest.param(
+            CAPPED_SURCHARGE_TIERS_2025.replace('maximum: "150.50"', 'maximum: "Infinity"'),
+            r"tiers\[1\].maximum is not a decimal",
+            id="maximum-infinite",
+        ),
+        pytest.param(
+            CAPPED_SURCHARGE_TIERS_2025.replace('maximum: "150.50"', 'maximum: "-0.01"'),
+            r"tiers\[1\].*maximum must not be negative",
+            id="maximum-negative",
+        ),
+        pytest.param(
+            CAPPED_SURCHARGE_TIERS_2025.replace(
+                'maximum: "150.50"}', 'maximum: "150.50", cap: "1"}'
+            ),
+            r"tiers\[1\]: unknown keys \['cap'\]",
+            id="unknown-key-beside-maximum",
+        ),
+        pytest.param(
+            CAPPED_SURCHARGE_TIERS_2025.replace('{threshold: "300.50", ', "{"),
+            r"tiers\[1\]: missing keys \['threshold'\]",
+            id="maximum-does-not-replace-the-threshold",
+        ),
+    ],
+)
+def test_rejects_a_malformed_surcharge_tier_maximum(
+    tmp_path: Path, content: str, message: str
+) -> None:
+    write(tmp_path, "ex/parameters/surcharge_tiers/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
+        source(tmp_path).get("ex/surcharge_tiers", 2025, SURCHARGE_TIERS)
+
+    assert "2025.yaml" in str(excinfo.value)
+
+
+def test_a_negative_surcharge_tier_maximum_is_reported_as_a_surcharge_tiers_error(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/surcharge_tiers/2025.yaml",
+        CAPPED_SURCHARGE_TIERS_2025.replace('maximum: "150.50"', 'maximum: "-1"'),
+    )
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/surcharge_tiers", 2025, SURCHARGE_TIERS)
+
+    assert isinstance(excinfo.value.__cause__, InvalidSurchargeTiersError)
 
 
 def test_a_rate_dataset_is_not_a_contribution_tier_dataset(tmp_path: Path) -> None:

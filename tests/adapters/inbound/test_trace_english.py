@@ -437,6 +437,65 @@ def test_renders_the_threshold_and_base() -> None:
     assert render(line) == "surcharge: 5.05% of tax_so_far 1000.5 over 1471.5 (no rounding)"
 
 
+def test_renders_a_surcharge_tiers_maximum_before_the_rounding() -> None:
+    line = SurchargeTierLine(
+        SURCHARGE, TAX_SO_FAR, D("400"), D("300"), Rate(D("0.06")), NO_ROUNDING, D("6"), D("300")
+    )
+
+    assert render(line) == "surcharge: 6% of tax_so_far 400 over 300, at most 300 (no rounding)"
+
+
+def test_renders_a_capped_surcharge_tier_with_its_rounding() -> None:
+    line = SurchargeTierLine(
+        SURCHARGE, TAX_SO_FAR, D("1000"), D("100"), Rate(D("0.10")), CENT, D("15.56"), D("15.555")
+    )
+
+    assert render(line) == (
+        "surcharge: 10% of tax_so_far 1000 over 100, at most 15.555 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_zero_maximum() -> None:
+    line = SurchargeTierLine(
+        SURCHARGE, TAX_SO_FAR, D("400"), D("300"), Rate(D("0.25")), NO_ROUNDING, D("0"), D("0")
+    )
+
+    assert render(line) == "surcharge: 25% of tax_so_far 400 over 300, at most 0 (no rounding)"
+
+
+def test_renders_a_maximum_on_a_tier_the_base_does_not_reach() -> None:
+    line = SurchargeTierLine(
+        SURCHARGE, TAX_SO_FAR, D("200"), D("300"), Rate(D("0.25")), NO_ROUNDING, D("0"), D("150")
+    )
+
+    assert render(line) == "surcharge: 25% of tax_so_far 200 over 300, at most 150 (no rounding)"
+
+
+@pytest.mark.parametrize(
+    ("maximum", "text"),
+    [
+        (D("1.500E+2"), "at most 150"),
+        (D("150.50"), "at most 150.5"),
+        (D("0.00"), "at most 0"),
+    ],
+)
+def test_renders_a_surcharge_tiers_maximum_without_trailing_zeros(
+    maximum: Decimal, text: str
+) -> None:
+    line = SurchargeTierLine(
+        SURCHARGE,
+        TAX_SO_FAR,
+        D("400.50"),
+        D("3E+2"),
+        Rate(D("0.25")),
+        NO_ROUNDING,
+        D("25"),
+        maximum,
+    )
+
+    assert render(line) == f"surcharge: 25% of tax_so_far 400.5 over 300, {text} (no rounding)"
+
+
 # --- tapered amounts -------------------------------------------------------------------
 
 

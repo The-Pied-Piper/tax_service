@@ -109,6 +109,12 @@ def surcharge_tier_line() -> SurchargeTierLine:
     return SurchargeTierLine(SURCHARGE, TAX, D("400.25"), D(300), Rate(D("0.25")), CENT, D("25.06"))
 
 
+def capped_surcharge_tier_line() -> SurchargeTierLine:
+    return SurchargeTierLine(
+        SURCHARGE, TAX, D("400.25"), D(300), Rate(D("0.25")), CENT, D("25.06"), D(30)
+    )
+
+
 def tapered_amount_line() -> TaperedAmountLine:
     return TaperedAmountLine(
         PERSONAL, INCOME, D("22000.5"), TAPER, CENT, D("100.025"), D("1399.98")
@@ -607,6 +613,7 @@ def test_surcharge_tier_line_fields_in_order() -> None:
         "rate",
         "rounding",
         "part",
+        "maximum",
     ]
     assert line.output is SURCHARGE
     assert line.base is TAX
@@ -625,6 +632,46 @@ def test_surcharge_tier_line_may_hold_a_zero_part() -> None:
 
     assert line.part == D(0)
     assert line.amount == D(0)
+
+
+def test_surcharge_tier_line_has_no_maximum_by_default() -> None:
+    assert surcharge_tier_line().maximum is None
+
+
+def test_surcharge_tier_line_holds_its_tiers_maximum() -> None:
+    line = SurchargeTierLine(
+        SURCHARGE, TAX, D("400.25"), D(300), Rate(D("0.25")), CENT, D("20"), D("20")
+    )
+
+    assert line.maximum == D("20")
+    # The capped part is still the line's amount.
+    assert line.amount == D("20")
+
+
+def test_surcharge_tier_line_takes_its_maximum_by_keyword() -> None:
+    line = SurchargeTierLine(
+        output=SURCHARGE,
+        base=TAX,
+        base_amount=D("400.25"),
+        threshold=D(300),
+        rate=Rate(D("0.25")),
+        rounding=CENT,
+        part=D("0"),
+        maximum=D(0),
+    )
+
+    assert line.maximum == D(0)
+
+
+def test_surcharge_tier_lines_differ_by_maximum() -> None:
+    assert surcharge_tier_line() != capped_surcharge_tier_line()
+    assert capped_surcharge_tier_line() != SurchargeTierLine(
+        SURCHARGE, TAX, D("400.25"), D(300), Rate(D("0.25")), CENT, D("25.06"), D(40)
+    )
+
+
+def test_surcharge_tier_lines_with_a_maximum_are_hashable() -> None:
+    assert hash(capped_surcharge_tier_line()) == hash(capped_surcharge_tier_line())
 
 
 def test_surcharge_tier_lines_differ_by_threshold() -> None:

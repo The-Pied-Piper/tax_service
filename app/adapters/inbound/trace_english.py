@@ -119,10 +119,13 @@ class EnglishTraceRenderer:
                 threshold=threshold,
                 rate=rate,
                 rounding=rule,
+                maximum=maximum,
             ):
+                at_most = "" if maximum is None else f", at most {self._money(maximum)}"
                 return (
                     f"{output.label}: {self._percent(rate.value)}% of {base.label} "
-                    f"{self._money(amount)} over {self._money(threshold)} ({self._rounding(rule)})"
+                    f"{self._money(amount)} over {self._money(threshold)}{at_most} "
+                    f"({self._rounding(rule)})"
                 )
             case TaperedAmountLine(
                 output=output,

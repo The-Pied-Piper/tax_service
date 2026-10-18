@@ -2,8 +2,9 @@
 
 Its slots: one parameter slot `tiers` (a `surcharge_tiers` dataset), one consumed slot `base` and
 one produced slot `output`. For each tier, part = the dataset's rule applied to
-max(base − threshold, 0) × rate; the output is the sum of the parts. It records one
-`SurchargeTierLine` per tier, in the dataset's order, whatever the part.
+max(base − threshold, 0) × rate, at most the tier's maximum when it has one; the output is the sum
+of the parts. It records one `SurchargeTierLine` per tier, in the dataset's order, whatever the
+part, with the tier's maximum or `None`.
 """
 
 from __future__ import annotations
@@ -37,6 +38,9 @@ SURCHARGE = ArtifactKind("ex/surcharge", Decimal)
 # 10% of the base over 100, plus 25% of the base over 300.
 LOW = SurchargeTier(D(100), Rate(D("0.10")))
 HIGH = SurchargeTier(D(300), Rate(D("0.25")))
+# The same tiers, capped: at most 15 from the first and at most 20 from the second.
+CAPPED_LOW = SurchargeTier(D(100), Rate(D("0.10")), D(15))
+CAPPED_HIGH = SurchargeTier(D(300), Rate(D("0.25")), D(20))
 
 
 def tiers(
@@ -262,6 +266,57 @@ def test_a_missing_base_is_a_missing_artifact() -> None:
         capability().compute(())
 
 
+# --- tiers with a maximum -----------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("base", "surcharge"),
+    [
+        pytest.param("100", "0", id="at-the-first-threshold"),
+        pytest.param("200", "10", id="under-the-first-maximum"),  # 10% of 100
+        pytest.param("250", "15", id="reaching-the-first-maximum"),  # 10% of 150 = 15
+        pytest.param("300", "15", id="on-the-first-plateau"),  # 10% of 200 = 20, at most 15
+        pytest.param("350", "27.5", id="on-the-second-slope"),  # 15 + 25% of 50
+        pytest.param("380", "35", id="reaching-the-second-maximum"),  # 15 + 25% of 80 = 20
+        pytest.param("1000", "35", id="on-the-top-plateau"),  # 15 + 20
+    ],
+)
+def test_charges_each_tiers_rate_over_its_threshold_at_most_its_maximum(
+    base: str, surcharge: str
+) -> None:
+    output = compute(capability(tiers(CAPPED_LOW, CAPPED_HIGH)), base)
+
+    assert output == Artifact(SURCHARGE, D(surcharge))
+
+
+def test_caps_only_the_tiers_with_a_maximum() -> None:
+    wired = capability(tiers(CAPPED_LOW, HIGH))
+
+    # 10% of 900 = 90, at most 15; 25% of 700 = 175, uncapped.
+    assert compute(wired, "1000") == Artifact(SURCHARGE, D("190"))
+
+
+def test_a_zero_maximum_charges_nothing_for_its_tier() -> None:
+    wired = capability(tiers(SurchargeTier(D(100), Rate(D("0.10")), D(0)), HIGH))
+
+    # Nothing from the first tier; 25% of 100 from the second.
+    assert compute(wired, "400") == Artifact(SURCHARGE, D("25"))
+
+
+def test_rounds_a_capped_part_with_the_datasets_rule() -> None:
+    wired = capability(tiers(SurchargeTier(D(100), Rate(D("0.10")), D("15.555")), rounding=CENT))
+
+    # 10% of 900 = 90, at most 15.555; rounded half-up to the cent: 15.56.
+    assert compute(wired, "1000") == Artifact(SURCHARGE, D("15.56"))
+
+
+def test_rounds_a_part_under_its_maximum_with_the_datasets_rule() -> None:
+    wired = capability(tiers(CAPPED_LOW, rounding=CENT))
+
+    # 10% of 100.06 = 10.006 -> 10.01, under the maximum of 15.
+    assert compute(wired, "200.06") == Artifact(SURCHARGE, D("10.01"))
+
+
 # --- trace ------------------------------------------------------------------------------------
 
 
@@ -325,6 +380,59 @@ def test_traces_the_datasets_rounding_rule_and_each_rounded_part() -> None:
             SURCHARGE, TAX_SO_FAR, D("300.06"), D(300), Rate(D("0.25")), CENT, D("0.02")
         ),
     )
+
+
+def test_traces_no_maximum_for_a_tier_without_one() -> None:
+    assert [line.maximum for line in trace_of(capability(), "400")] == [None, None]
+
+
+def test_traces_each_tiers_maximum_and_its_capped_part() -> None:
+    trace = trace_of(capability(tiers(CAPPED_LOW, CAPPED_HIGH)), "1000")
+
+    assert trace == (
+        SurchargeTierLine(
+            output=SURCHARGE,
+            base=TAX_SO_FAR,
+            base_amount=D("1000"),
+            threshold=D(100),
+            rate=Rate(D("0.10")),
+            rounding=NO_ROUNDING,
+            part=D("15"),
+            maximum=D(15),
+        ),
+        SurchargeTierLine(
+            output=SURCHARGE,
+            base=TAX_SO_FAR,
+            base_amount=D("1000"),
+            threshold=D(300),
+            rate=Rate(D("0.25")),
+            rounding=NO_ROUNDING,
+            part=D("20"),
+            maximum=D(20),
+        ),
+    )
+
+
+def test_traces_the_maximum_of_a_tier_the_base_does_not_reach() -> None:
+    (low, high) = trace_of(capability(tiers(CAPPED_LOW, CAPPED_HIGH)), "200")
+
+    assert (low.part, low.maximum) == (D("10"), D(15))
+    assert (high.part, high.maximum) == (D("0"), D(20))
+
+
+def test_traces_the_maximum_only_for_the_tiers_that_have_one() -> None:
+    trace = trace_of(capability(tiers(CAPPED_LOW, HIGH)), "1000")
+
+    assert [line.maximum for line in trace] == [D(15), None]
+
+
+def test_the_capped_parts_in_the_trace_add_up_to_the_output() -> None:
+    wired = capability(tiers(CAPPED_LOW, CAPPED_HIGH, rounding=CENT))
+    result = wired.compute((Artifact(TAX_SO_FAR, D("350.01")),))
+
+    (output,) = result.outputs
+    assert sum((line.amount for line in result.trace), D(0)) == output.value
+    assert output.value == D("27.50")
 
 
 def test_trace_amounts_are_the_parts() -> None:

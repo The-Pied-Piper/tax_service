@@ -211,7 +211,8 @@ class ContributionTierLine(TraceLine):
 @dataclass(frozen=True)
 class SurchargeTierLine(TraceLine):
     """One tier of a surcharge produced as `output`: `rate` of `base` (worth `base_amount`) over
-    `threshold`, not below zero, rounded with `rounding` to `part`.
+    `threshold`, not below zero, at most the tier's `maximum` when it has one (`None` otherwise),
+    rounded with `rounding` to `part`.
 
     `base_amount` is the whole base, not the part over the threshold; a base that does not reach
     the threshold still gets its line, with a zero part.
@@ -224,6 +225,7 @@ class SurchargeTierLine(TraceLine):
     rate: Rate
     rounding: RoundingRule
     part: Decimal
+    maximum: Decimal | None = None
 
     @property
     def amount(self) -> Decimal:
