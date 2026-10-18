@@ -53,40 +53,43 @@ description: >-
   dues and no deductions from net income. The CPP contributions are computed from employment
   income by Schedule 8's tiers: base contributions 4.95% x (10000 - 3500) = 321.75, first
   additional 1% x 6500 = 65.00, no second additional below the 71300 ceiling, so enhanced
-  contributions of 65.00. The EI premiums are computed from employment income: 1.64% x 10000
-  = 164.00. The contributions available to deduct (Schedule 7 line 10) are the unused
+  contributions of 65.00. The EI premiums are computed from employment income: 1.64% x 10000 =
+  164.00. The contributions available to deduct (Schedule 7 line 10) are the unused
   contributions (line 1) of 0 plus the contributions (line 4) of 0: 0. The most that may be
-  deducted (line 17) is the lesser of them and the deduction limit (line 11) of 1800, a
-  chosen limit: 0. The amount deducted (line 18) is that 0, so the RRSP deduction (line 20)
-  is 0, the unused contributions carried forward (line 23) are 0 - 0 = 0, and the enhanced
-  contributions are the only deduction from total income. Net income and taxable
-  income are 9935.00. The Canada employment amount is the lesser of 1471 and the employment
-  income of 10000: 1471. The federal basic personal amount is computed from net income by the
-  Federal Worksheet: 9935.00 is at or below its 177882 threshold, so it is the base amount
-  14538 plus the whole supplement amount 1591, 16129, rounded half-up to the cent. The federal
-  total of credit amounts is its basic personal amount plus 321.75, 164.00 and 1471; the
-  Ontario total is its basic personal amount plus 321.75 and 164.00 (ON428 has no Canada
-  employment amount). Each form's non-refundable tax credits are its total times its rate
-  (14.5% of 18085.75 = 2622.43375; 5.05% of 13232.75 = 668.253875); each exceeds its tax,
+  deducted (line 17) is the lesser of them and the deduction limit (line 11) of 1800, a chosen
+  limit: 0. The amount deducted (line 18) is that 0, so the RRSP deduction (line 20) is 0, the
+  unused contributions carried forward (line 23) are 0 - 0 = 0, and the enhanced contributions
+  are the only deduction from total income. Net income and taxable income are 9935.00. The
+  Canada employment amount is the lesser of 1471 and the employment income of 10000: 1471. The
+  federal basic personal amount is computed from net income by the Federal Worksheet: 9935.00
+  is at or below its 177882 threshold, so it is the base amount 14538 plus the whole
+  supplement amount 1591, 16129, rounded half-up to the cent. With no eligible dependant and
+  no infirm child, the amount for an eligible dependant (16129 less a dependant's net income
+  of 0 federally, 11905.00 less it at most 10823 for Ontario) is claimed for 0 eligible
+  dependants and the amount for infirm children is 0 x 2687: each 0. The federal total of
+  credit amounts is its basic personal amount plus those two zeros, 321.75, 164.00 and 1471;
+  the Ontario total is its basic personal amount plus its zero, 321.75 and 164.00 (ON428 has
+  no Canada employment amount). Each form's non-refundable tax credits are its total times its
+  rate (14.5% of 18085.75 = 2622.43375; 5.05% of 13232.75 = 668.253875); each exceeds its tax,
   leaving zero. An Ontario tax of zero is below the first surtax threshold, so the surtax is
   zero and the Ontario tax with surtax is zero. With no dependent children and no dependants,
   the Ontario tax reduction amounts are the basic reduction of 294.00, and the reduction is
   twice them less the tax of zero: 588.00, which leaves an Ontario tax after the reduction of
   zero, not a refund. The LIFT credit (Schedule ON428-A) is 5.05% of the employment income,
   505, below its 875 maximum, less 5% of net income over 32500, nothing as 9935.00 is below
-  it: 505, more than the Ontario tax after the reduction of zero, so the Ontario tax after
-  the LIFT credit is zero. A taxable income of 9935.00 is at or below the health premium chart's
+  it: 505, more than the Ontario tax after the reduction of zero, so the Ontario tax after the
+  LIFT credit is zero. A taxable income of 9935.00 is at or below the health premium chart's
   first threshold of 20000, so the premium is zero and the Ontario tax is zero. The net
   federal tax is the federal tax after credits, zero, and the total payable is it plus the
-  Ontario tax, zero. The Canada workers benefit (Schedule 6) is 27% of the working income,
-  the employment income of 10000, over 3000: 1890, at most 1633, less 15% of the adjusted
-  family net income, the net income, over 26855, nothing as 9935.00 is below it: 1633. The
-  income tax deducted is a chosen 500, so the total credits are 500 plus the benefit, 2133,
-  and the refund or balance owing is 0 less 2133: -2133, a refund.
+  Ontario tax, zero. The Canada workers benefit (Schedule 6) is 27% of the working income, the
+  employment income of 10000, over 3000: 1890, at most 1633, less 15% of the adjusted family
+  net income, the net income, over 26855, nothing as 9935.00 is below it: 1633. The income tax
+  deducted is a chosen 500, so the total credits are 500 plus the benefit, 2133, and the
+  refund or balance owing is 0 less 2133: -2133, a refund.
 sources:
   - >-
-    T1, Federal Worksheet, Schedule 3, Schedule 6, Schedule 7, Schedule 8, ON428, Schedule
-    ON428-A and EI table arithmetic on the 2025 figures.
+    T1, Federal Worksheet, Schedule 3, Schedule 5, Schedule 6, Schedule 7, Schedule 8, ON428,
+    Schedule ON428-A and EI table arithmetic on the 2025 figures.
 inputs:
   ca/employment_income: "10000"
   ca/capital_gain: "0"
@@ -97,6 +100,9 @@ inputs:
   ca/union_dues: "0"
   ca-on/dependent_children: "0"
   ca-on/dependants: "0"
+  ca/eligible_dependants: "0"
+  ca/dependant_net_income: "0"
+  ca/infirm_children: "0"
   ca/income_tax_deducted: "500"
 expected:
   ca/taxable_capital_gains: "0"
@@ -116,12 +122,19 @@ expected:
   ca/taxable_income: "9935.00"
   ca/federal_basic_tax: "1440.575"
   ca/basic_personal_amount: "16129"
+  ca/eligible_dependant_amount_before_count: "16129"
+  ca/eligible_dependant_amount: "0"
+  ca/infirm_children_amount: "0"
   ca/canada_employment_amount: "1471"
   ca/non_refundable_credit_amounts: "18085.75"
   ca/non_refundable_tax_credits: "2622.43375"
   ca/federal_tax_after_credits: "0"
   ca-on/ontario_basic_tax: "501.7175"
   ca-on/basic_personal_amount: "12747"
+  ca-on/eligible_dependant_base: "11905.00"
+  ca-on/eligible_dependant_amount_before_maximum: "11905.00"
+  ca-on/eligible_dependant_amount_before_count: "10823"
+  ca-on/eligible_dependant_amount: "0"
   ca-on/non_refundable_credit_amounts: "13232.75"
   ca-on/non_refundable_tax_credits: "668.253875"
   ca-on/ontario_tax_after_credits: "0"

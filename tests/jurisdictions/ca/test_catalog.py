@@ -30,10 +30,16 @@ from app.jurisdictions.ca.catalog import (
     CWB_REDUCTION,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
+    DEPENDANT_NET_INCOME,
     EI_PREMIUMS,
+    ELIGIBLE_DEPENDANT_AMOUNT,
+    ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
+    ELIGIBLE_DEPENDANTS,
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
     INCOME_TAX_DEDUCTED,
+    INFIRM_CHILDREN,
+    INFIRM_CHILDREN_AMOUNT,
     NET_FEDERAL_TAX,
     NET_INCOME,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
@@ -81,6 +87,12 @@ REGISTERED = frozenset(
         "ca/taxable_income",
         "ca/federal_basic_tax",
         "ca/basic_personal_amount",
+        "ca/eligible_dependants",
+        "ca/dependant_net_income",
+        "ca/eligible_dependant_amount_before_count",
+        "ca/eligible_dependant_amount",
+        "ca/infirm_children",
+        "ca/infirm_children_amount",
         "ca/cpp_base_contributions",
         "ca/ei_premiums",
         "ca/canada_employment_amount",
@@ -102,6 +114,10 @@ REGISTERED = frozenset(
 # T1 line 167 (line 48400 or 48500): the balance, negative for a refund, the one `ca/` kind that
 # may be below zero.
 SIGNED = frozenset({"ca/refund_or_balance_owing"})
+# T1 line 30400 (Schedule 5, "Each household is allowed only one claim for this amount") and line
+# 30499 ("Number of children you are claiming this amount for"): the numbers of eligible
+# dependants and of infirm children, counted, not money.
+COUNTS = frozenset({"ca/eligible_dependants", "ca/infirm_children"})
 
 
 @pytest.fixture
@@ -154,6 +170,15 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/net_income") is NET_INCOME
     assert registry.get("ca/deductions_from_net_income") is DEDUCTIONS_FROM_NET_INCOME
     assert registry.get("ca/basic_personal_amount") is BASIC_PERSONAL_AMOUNT
+    assert registry.get("ca/eligible_dependants") is ELIGIBLE_DEPENDANTS
+    assert registry.get("ca/dependant_net_income") is DEPENDANT_NET_INCOME
+    assert (
+        registry.get("ca/eligible_dependant_amount_before_count")
+        is ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT
+    )
+    assert registry.get("ca/eligible_dependant_amount") is ELIGIBLE_DEPENDANT_AMOUNT
+    assert registry.get("ca/infirm_children") is INFIRM_CHILDREN
+    assert registry.get("ca/infirm_children_amount") is INFIRM_CHILDREN_AMOUNT
     assert registry.get("ca/non_refundable_credit_amounts") is NON_REFUNDABLE_CREDIT_AMOUNTS
     assert registry.get("ca/cpp_base_contributions") is CPP_BASE_CONTRIBUTIONS
     assert registry.get("ca/ei_premiums") is EI_PREMIUMS
@@ -200,6 +225,10 @@ def test_catalog_kinds_are_money() -> None:
         NET_INCOME,
         DEDUCTIONS_FROM_NET_INCOME,
         BASIC_PERSONAL_AMOUNT,
+        DEPENDANT_NET_INCOME,
+        ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
+        ELIGIBLE_DEPENDANT_AMOUNT,
+        INFIRM_CHILDREN_AMOUNT,
         NON_REFUNDABLE_CREDIT_AMOUNTS,
         CPP_BASE_CONTRIBUTIONS,
         EI_PREMIUMS,
@@ -219,11 +248,22 @@ def test_catalog_kinds_are_money() -> None:
         assert kind.value_type is Decimal, kind.identifier
 
 
-def test_every_registered_kind_is_money(registry: ArtifactRegistry) -> None:
-    for identifier in REGISTERED:
+def test_every_registered_kind_but_the_counts_is_money(registry: ArtifactRegistry) -> None:
+    for identifier in REGISTERED - COUNTS:
         kind = registry.get(identifier)
         assert isinstance(kind, ArtifactKind)
         assert kind.value_type is Decimal, identifier
+
+
+def test_the_counts_are_int_kinds_in_the_package_namespace(registry: ArtifactRegistry) -> None:
+    assert COUNTS <= REGISTERED
+    for identifier in COUNTS:
+        kind = registry.get(identifier)
+        assert isinstance(kind, ArtifactKind)
+        assert kind.identifier.startswith(f"{app.jurisdictions.ca.NAMESPACE}/")
+        assert kind.value_type is int, identifier
+    assert ELIGIBLE_DEPENDANTS.value_type is int
+    assert INFIRM_CHILDREN.value_type is int
 
 
 def test_every_kind_but_the_balance_is_declared_non_negative(registry: ArtifactRegistry) -> None:

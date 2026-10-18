@@ -2,7 +2,8 @@
 
 Only the kinds in use are declared, each non-negative but one: none of these lines can be negative
 on the return as modelled except the refund or balance owing, where negative means a refund.
-Identifiers are stable: `tests/jurisdictions/ca/test_catalog.py` snapshots them.
+Amounts are Decimal, the counts of eligible dependants and of infirm children int. Identifiers are
+stable: `tests/jurisdictions/ca/test_catalog.py` snapshots them.
 """
 
 from __future__ import annotations
@@ -194,6 +195,53 @@ the base amount of line 1 plus the supplement amount of line 2 less its reductio
 over the income threshold of line 4 (line 10 "Line 2 minus line 9 (if negative, enter "0")").
 """
 
+ELIGIBLE_DEPENDANTS = CATALOG.declare("eligible_dependants", int, non_negative=True)
+"""Number of eligible dependants claimed for, T1 line 80 (line 30400) "Amount for an eligible
+dependant (complete Schedule 5)": a starting count, 0 or 1.
+
+Schedule 5 states "Each household is allowed only one claim for this amount"; a count is only
+declared non-negative, so that rule is the return's to keep, as are the conditions: "You did not
+have a spouse or common-law partner or, if you did, you were not living with them, supporting
+them, or being supported by them"; "You supported the dependant in 2025"; "You lived with the
+dependant (in most cases in Canada) in a home ... you maintained"; the dependant is "your child,
+grandchild, brother or sister under 18 years of age" (or a parent, or an infirm relative 18 or
+older); and "You had to pay child support in 2025 for the eligible dependant" bars the claim,
+with exceptions. Eligibility is not computed here.
+"""
+
+DEPENDANT_NET_INCOME = CATALOG.declare("dependant_net_income", Decimal, non_negative=True)
+"""Dependant's net income, Schedule 5 line 4 (line 51106) "Dependant's net income from line 23600
+of their return": a starting amount, also ON428 line 15 "Your eligible dependant's net income from
+line 23600 of their return"."""
+
+ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT = CATALOG.declare(
+    "eligible_dependant_amount_before_count", Decimal, non_negative=True
+)
+"""Amount for an eligible dependant before it is claimed, Schedule 5 line 5 "Line 3 minus line 4
+(if negative, enter "0") Enter this amount on line 30400 of your return.": the basic personal
+amount (line 1 "Basic personal amount from line 30000 of your return") less the dependant's net
+income (line 4), not below zero.
+
+Line 3 is "Line 1 plus line 2"; line 2 "If you are eligible for the Canada caregiver amount for
+your dependant (other than your infirm child under 18 years of age), enter $2,687" is not
+triggered, so line 3 is line 1.
+"""
+
+ELIGIBLE_DEPENDANT_AMOUNT = CATALOG.declare("eligible_dependant_amount", Decimal, non_negative=True)
+"""Amount for an eligible dependant, T1 line 80 (line 30400) "Amount for an eligible dependant
+(complete Schedule 5)": Schedule 5 line 5 for each eligible dependant claimed for, a part of the
+total of the credit amounts."""
+
+INFIRM_CHILDREN = CATALOG.declare("infirm_children", int, non_negative=True)
+"""Number of infirm children, T1 line 83 "Number of children you are claiming this amount for Line
+30499": a starting count."""
+
+INFIRM_CHILDREN_AMOUNT = CATALOG.declare("infirm_children_amount", Decimal, non_negative=True)
+"""Canada caregiver amount for infirm children, T1 line 83 (line 30500) "Canada caregiver amount
+for infirm children under 18 years of age (see Schedule 5) Number of children you are claiming
+this amount for Line 30499" "multiplied by $2,687", a part of the total of the credit amounts on
+the T1 alone (the ON428 caregiver amount, line 58185, is not triggered)."""
+
 CPP_BASE_CONTRIBUTIONS = CATALOG.declare("cpp_base_contributions", Decimal, non_negative=True)
 """Base CPP contributions, Schedule 8 Part 3 line 11 "amount from line 7 multiplied by 4.95%
 (maximum $3,356.10)": the required contributions on the employment income between the basic
@@ -237,8 +285,10 @@ NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare(
     "non_refundable_credit_amounts", Decimal, non_negative=True
 )
 """Total of the non-refundable credit amounts, T1 line 33500 "Line 106 plus line 112": the sum
-of the credit amounts the rate is applied to once, here the basic personal amount, the base CPP
-contributions, the EI premiums and the Canada employment amount."""
+of the credit amounts the rate is applied to once, here, in line order, the basic personal amount
+(line 30000), the amount for an eligible dependant (line 30400), the Canada caregiver amount for
+infirm children (line 30500), the base CPP contributions (line 30800), the EI premiums (line
+31200) and the Canada employment amount (line 31260)."""
 
 NON_REFUNDABLE_TAX_CREDITS = CATALOG.declare(
     "non_refundable_tax_credits", Decimal, non_negative=True
@@ -310,8 +360,10 @@ line 19 "Rate 27%", on line 18 "Line 16 minus line 17 (if negative, enter "0")",
 working income (line 16) over line 17 "Base amount 3,000.00"; line 21 "If you had an eligible
 spouse or an eligible dependant, enter $2,813. If not, enter $1,633."
 
-Each taxpayer is taken to have no eligible spouse and no eligible dependant, so the $1,633 amount
-applies. Schedule 6 states its conditions: "Complete this schedule if you met all of the following
+The wiring uses the no-eligible-spouse-no-eligible-dependant figures ($1,633 here, $26,855 on
+the reduction); a return with an eligible dependant computes the form's other figures only once
+the engine can pick a figure by family status. Schedule 6 states its conditions: "Complete this
+schedule if you met all of the following
 conditions in 2025: You were a resident of Canada throughout the year; You earned working income
 (see Part A); You were, at the end of the year, 19 years of age or older, or you resided with your
 spouse or common-law partner or your child"; "You cannot claim the CWB for 2025 if any of the

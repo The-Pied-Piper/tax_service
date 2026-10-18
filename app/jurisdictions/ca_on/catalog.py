@@ -23,12 +23,35 @@ BASIC_PERSONAL_AMOUNT = CATALOG.declare("basic_personal_amount", Decimal, non_ne
 """Basic personal amount, ON428 line 9 (line 58040) "Basic personal amount Claim $12,747": the
 amount claimed, the first part of the total of the Ontario credit amounts."""
 
+ELIGIBLE_DEPENDANT_BASE = CATALOG.declare("eligible_dependant_base", Decimal, non_negative=True)
+"""Base amount for an eligible dependant, ON428 line 14 "Base amount 11,905.00": the amount
+claimed, before the dependant's net income comes off it."""
+
+ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM = CATALOG.declare(
+    "eligible_dependant_amount_before_maximum", Decimal, non_negative=True
+)
+"""Amount for an eligible dependant before its maximum, ON428 line 16 "Line 14 minus line 15 (if
+negative, enter "0")": the base amount less line 15 "Your eligible dependant's net income from
+line 23600 of their return", the federal Schedule 5 line 4 figure, not below zero."""
+
+ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT = CATALOG.declare(
+    "eligible_dependant_amount_before_count", Decimal, non_negative=True
+)
+"""Amount for an eligible dependant before it is claimed, ON428 line 16's "(maximum $10,823)": the
+amount before its maximum, at most it."""
+
+ELIGIBLE_DEPENDANT_AMOUNT = CATALOG.declare("eligible_dependant_amount", Decimal, non_negative=True)
+"""Amount for an eligible dependant, ON428 line 16 (line 58160): the capped amount for each
+eligible dependant claimed for, the T1 line 30400 count, a part of the total of the Ontario credit
+amounts."""
+
 NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare(
     "non_refundable_credit_amounts", Decimal, non_negative=True
 )
 """Total of the Ontario non-refundable credit amounts, ON428 line 44 (line 58800) "Line 35 plus
-line 43": the sum of the credit amounts the rate is applied to once, here the basic personal
-amount, the base CPP contributions and the EI premiums."""
+line 43": the sum of the credit amounts the rate is applied to once, here, in line order, the
+basic personal amount (line 58040), the amount for an eligible dependant (line 58160), the base
+CPP contributions (line 58240) and the EI premiums (line 58300)."""
 
 NON_REFUNDABLE_TAX_CREDITS = CATALOG.declare(
     "non_refundable_tax_credits", Decimal, non_negative=True
