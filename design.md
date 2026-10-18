@@ -67,8 +67,9 @@ manifest lists which lines make up the total, in the order the trace shows
 them; the engine knows only that it is adding amounts.
 
 Non-refundable credits are worked out in the same generic steps: each credit
-amount is an artifact (from `core/credit_amount`, `core/capped_amount` or an
-input), `core/sum` adds them into one summed-amounts artifact, `core/apply_rate`
+amount is an artifact (from `core/credit_amount`, `core/capped_amount`,
+`core/tapered_amount`, `core/per_unit_amount`, `core/times_count` or an input),
+`core/sum` adds them into one summed-amounts artifact, `core/apply_rate`
 applies the one credit rate once to that sum (rounded with the rate dataset's
 rule) to produce the credits artifact, and `core/subtract_not_below_zero` takes
 the credits off the tax, never below zero; the part of the credits the tax
