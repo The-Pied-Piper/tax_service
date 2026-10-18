@@ -1,8 +1,8 @@
 """The structured trace: what each capability did, recorded as facts.
 
 A trace line holds the domain objects and amounts involved (`ArtifactKind`, `Rate`, `Credit`,
-`Amount`, `ContributionTier`, `RoundingRule`), never text; its `amount` is the figure the line is
-about. Rendering lines as human-readable text lives outside the domain, in the adapters.
+`Amount`, `ContributionTier`, `Taper`, `RoundingRule`), never text; its `amount` is the figure
+the line is about. Rendering lines as human-readable text lives outside the domain, in the adapters.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import RoundingRule
+from app.domain.parameters.taper import Taper
 
 
 @dataclass(frozen=True)
@@ -226,3 +227,27 @@ class SurchargeTierLine(TraceLine):
     def amount(self) -> Decimal:
         """The rounded part charged by this tier."""
         return self.part
+
+
+@dataclass(frozen=True)
+class TaperedAmountLine(TraceLine):
+    """The `result` produced as `output`: `taper`'s base plus its supplement less `reduction`, not
+    below the base, rounded with `rounding`.
+
+    `reduction` is the supplement's share for how far `base` (worth `base_amount`) sits above the
+    taper's threshold, recorded unrounded and before the floor at zero, so it can exceed the
+    supplement; a base at or below the threshold gets a zero reduction.
+    """
+
+    output: Money
+    base: Money
+    base_amount: Decimal
+    taper: Taper
+    rounding: RoundingRule
+    reduction: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The tapered amount: the rounded result."""
+        return self.result

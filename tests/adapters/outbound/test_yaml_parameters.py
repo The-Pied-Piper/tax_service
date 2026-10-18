@@ -24,6 +24,7 @@ from app.adapters.outbound.parameter_parsers.credit import CreditParser
 from app.adapters.outbound.parameter_parsers.rate import RateParser
 from app.adapters.outbound.parameter_parsers.registry import ParameterParserRegistry
 from app.adapters.outbound.parameter_parsers.surcharge_tiers import SurchargeTiersParser
+from app.adapters.outbound.parameter_parsers.taper import TaperParser
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.adapters.outbound.yaml_support import YamlNode
 from app.domain.errors import (
@@ -34,6 +35,7 @@ from app.domain.errors import (
     InvalidParameterDataError,
     InvalidRateError,
     InvalidSurchargeTiersError,
+    InvalidTaperError,
     NotFoundError,
     UnknownRegistrationError,
 )
@@ -50,6 +52,7 @@ from app.domain.parameters.surcharge_tiers import (
     SurchargeTier,
     SurchargeTiers,
 )
+from app.domain.parameters.taper import TAPER, Taper
 from app.domain.registry import Namespace
 
 D = Decimal
@@ -121,6 +124,19 @@ tiers:
   - {threshold: "300.50", rate: "0.25"}
 """
 
+TAPER_2025 = """\
+family: ex/taper
+tax_year: 2025
+kind: taper
+sources:
+  - https://example.org/taper-2025
+rounding: none
+base: "1000"
+supplement: "500"
+threshold: "20000"
+range: "10000"
+"""
+
 
 def built_in_parsers() -> ParameterParserRegistry:
     """A fresh registry holding the built-in parsers, never the shared one."""
@@ -131,6 +147,7 @@ def built_in_parsers() -> ParameterParserRegistry:
     registry.register_class(AmountParser)
     registry.register_class(ContributionTierParser)
     registry.register_class(SurchargeTiersParser)
+    registry.register_class(TaperParser)
     return registry
 
 
@@ -395,6 +412,73 @@ def test_by_default_the_surcharge_tiers_parser_comes_from_the_shared_registry(
     result = YamlParameterSource(roots(tmp_path)).get("ex/surcharge_tiers", 2025, SURCHARGE_TIERS)
 
     assert result.values.tiers[0] == SurchargeTier(D("100"), Rate(D("0.10")))
+
+
+def test_reads_a_taper_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/taper/2025.yaml", TAPER_2025)
+
+    result = source(tmp_path).get("ex/taper", 2025, TAPER)
+
+    assert result == ParameterDataset(
+        family="ex/taper",
+        tax_year=2025,
+        kind=TAPER,
+        values=Taper(base=D("1000"), supplement=D("500"), threshold=D("20000"), range=D("10000")),
+        rounding=NO_ROUNDING,
+        sources=("https://example.org/taper-2025",),
+    )
+
+
+def test_reads_a_tapers_figures_exactly(tmp_path: Path) -> None:
+    content = (
+        TAPER_2025.replace('base: "1000"', 'base: "1000.50"')
+        .replace('supplement: "500"', 'supplement: "500.00"')
+        .replace('threshold: "20000"', 'threshold: "20000.10"')
+        .replace('range: "10000"', 'range: "10000.0"')
+    )
+    write(tmp_path, "ex/parameters/taper/2025.yaml", content)
+
+    taper = source(tmp_path).get("ex/taper", 2025, TAPER).values
+
+    assert (str(taper.base), str(taper.supplement), str(taper.threshold), str(taper.range)) == (
+        "1000.50",
+        "500.00",
+        "20000.10",
+        "10000.0",
+    )
+
+
+def test_reads_a_taper_with_a_zero_base_supplement_and_threshold(tmp_path: Path) -> None:
+    content = (
+        TAPER_2025.replace('base: "1000"', 'base: "0"')
+        .replace('supplement: "500"', 'supplement: "0"')
+        .replace('threshold: "20000"', 'threshold: "0"')
+    )
+    write(tmp_path, "ex/parameters/taper/2025.yaml", content)
+
+    taper = source(tmp_path).get("ex/taper", 2025, TAPER).values
+
+    assert (taper.base, taper.supplement, taper.threshold) == (D("0"), D("0"), D("0"))
+
+
+def test_reads_a_taper_datasets_rounding_rule(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/taper/2025.yaml",
+        TAPER_2025.replace("rounding: none", 'rounding: {increment: "0.01", mode: half_up}'),
+    )
+
+    result = source(tmp_path).get("ex/taper", 2025, TAPER)
+
+    assert result.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
+
+
+def test_by_default_the_taper_parser_comes_from_the_shared_registry(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/taper/2025.yaml", TAPER_2025)
+
+    result = YamlParameterSource(roots(tmp_path)).get("ex/taper", 2025, TAPER)
+
+    assert result.values == Taper(D("1000"), D("500"), D("20000"), D("10000"))
 
 
 def test_reads_a_rounding_rule(tmp_path: Path) -> None:
@@ -1143,3 +1227,144 @@ def test_a_surcharge_tiers_dataset_is_not_a_bracket_dataset(tmp_path: Path) -> N
 
     with pytest.raises(InvalidParameterDataError, match="kind 'surcharge_tiers' does not match"):
         source(tmp_path).get("ex/surcharge_tiers", 2025, BRACKETS)
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        pytest.param(
+            TAPER_2025.replace('base: "1000"', "base: 1000"),
+            "base must be a string, got int",
+            id="base-as-yaml-number",
+        ),
+        pytest.param(
+            TAPER_2025.replace('supplement: "500"', "supplement: 500.5"),
+            "supplement must be a string, got float",
+            id="supplement-as-yaml-float",
+        ),
+        pytest.param(
+            TAPER_2025.replace('threshold: "20000"', "threshold: 20000"),
+            "threshold must be a string, got int",
+            id="threshold-as-yaml-number",
+        ),
+        pytest.param(
+            TAPER_2025.replace('range: "10000"', "range: 10000"),
+            "range must be a string, got int",
+            id="range-as-yaml-number",
+        ),
+        pytest.param(
+            TAPER_2025.replace('base: "1000"', 'base: "lots"'),
+            "base is not a decimal: 'lots'",
+            id="base-not-decimal",
+        ),
+        pytest.param(
+            TAPER_2025.replace('threshold: "20000"', 'threshold: "Infinity"'),
+            "threshold is not a decimal",
+            id="threshold-infinite",
+        ),
+        pytest.param(
+            TAPER_2025.replace('range: "10000"', 'range: "NaN"'),
+            "range is not a decimal",
+            id="range-nan",
+        ),
+        pytest.param(
+            TAPER_2025.replace('base: "1000"', 'base: "-1"'),
+            "base must not be negative",
+            id="base-negative",
+        ),
+        pytest.param(
+            TAPER_2025.replace('supplement: "500"', 'supplement: "-0.01"'),
+            "supplement must not be negative",
+            id="supplement-negative",
+        ),
+        pytest.param(
+            TAPER_2025.replace('threshold: "20000"', 'threshold: "-1"'),
+            "threshold must not be negative",
+            id="threshold-negative",
+        ),
+        pytest.param(
+            TAPER_2025.replace('range: "10000"', 'range: "0"'),
+            "range must be positive",
+            id="range-zero",
+        ),
+        pytest.param(
+            TAPER_2025.replace('range: "10000"', 'range: "-10000"'),
+            "range must be positive",
+            id="range-negative",
+        ),
+        pytest.param(
+            TAPER_2025.replace('range: "10000"\n', ""),
+            r"missing keys \['range'\]",
+            id="range-missing",
+        ),
+        pytest.param(
+            TAPER_2025.replace('base: "1000"\n', "").replace('supplement: "500"\n', ""),
+            r"missing keys \['base', 'supplement'\]",
+            id="base-and-supplement-missing",
+        ),
+        pytest.param(
+            TAPER_2025 + 'maximum: "1500"\n',
+            r"unknown keys \['maximum'\]",
+            id="maximum-is-not-a-taper-key",
+        ),
+        pytest.param(
+            TAPER_2025.replace('range: "10000"', 'upper: "30000"'),
+            r"unknown keys \['upper'\]",
+            id="upper-instead-of-range",
+        ),
+        pytest.param(
+            TAPER_2025.replace("kind: taper", "kind: amount"),
+            "kind 'amount' does not match the requested 'taper'",
+            id="kind-mismatch",
+        ),
+        pytest.param(
+            TAPER_2025.replace("rounding: none\n", ""),
+            r"missing keys \['rounding'\]",
+            id="rounding-missing",
+        ),
+        pytest.param(
+            TAPER_2025.replace("sources:\n  - https://example.org/taper-2025", "sources: []"),
+            "sources must list at least one",
+            id="sources-empty",
+        ),
+    ],
+)
+def test_rejects_malformed_taper_dataset(tmp_path: Path, content: str, message: str) -> None:
+    write(tmp_path, "ex/parameters/taper/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
+        source(tmp_path).get("ex/taper", 2025, TAPER)
+
+    assert "2025.yaml" in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [
+        ('base: "1000"', 'base: "-1"'),
+        ('supplement: "500"', 'supplement: "-1"'),
+        ('threshold: "20000"', 'threshold: "-1"'),
+        ('range: "10000"', 'range: "0"'),
+    ],
+)
+def test_an_invalid_taper_is_reported_as_a_taper_error(tmp_path: Path, old: str, new: str) -> None:
+    write(tmp_path, "ex/parameters/taper/2025.yaml", TAPER_2025.replace(old, new))
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/taper", 2025, TAPER)
+
+    assert isinstance(excinfo.value.__cause__, InvalidTaperError)
+
+
+def test_an_amount_dataset_is_not_a_taper_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/amount_cap/2025.yaml", AMOUNT_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'amount' does not match"):
+        source(tmp_path).get("ex/amount_cap", 2025, TAPER)
+
+
+def test_a_taper_dataset_is_not_a_credit_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/taper/2025.yaml", TAPER_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'taper' does not match"):
+        source(tmp_path).get("ex/taper", 2025, CREDIT)

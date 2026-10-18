@@ -22,6 +22,7 @@ from app.domain.trace import (
     SubtractedNotBelowZeroLine,
     SumLine,
     SurchargeTierLine,
+    TaperedAmountLine,
     TraceLine,
 )
 
@@ -120,6 +121,21 @@ class EnglishTraceRenderer:
                 return (
                     f"{output.label}: {self._percent(rate.value)}% of {base.label} "
                     f"{self._money(amount)} over {self._money(threshold)} ({self._rounding(rule)})"
+                )
+            case TaperedAmountLine(
+                output=output,
+                base=base,
+                base_amount=amount,
+                taper=taper,
+                rounding=rule,
+                reduction=reduction,
+            ):
+                return (
+                    f"{output.label}: {self._money(taper.base)} "
+                    f"plus {self._money(taper.supplement)} less {self._money(reduction)} "
+                    f"for {base.label} {self._money(amount)} "
+                    f"over {self._money(taper.threshold)} (range {self._money(taper.range)}), "
+                    f"not below {self._money(taper.base)} ({self._rounding(rule)})"
                 )
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 
