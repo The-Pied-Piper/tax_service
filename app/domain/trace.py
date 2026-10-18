@@ -65,9 +65,10 @@ class RoundedTotalLine(TraceLine):
 
 @dataclass(frozen=True)
 class CreditLine(TraceLine):
-    """A credit worked out as `basis` × `rate`, rounded with `rounding`."""
+    """A credit worked out once: `amounts_value` (the value of `amounts`) × `rate`, rounded."""
 
-    basis: Credit
+    amounts: Money
+    amounts_value: Decimal
     rate: Rate
     rounding: RoundingRule
     credit: Decimal

@@ -38,9 +38,9 @@ class EnglishTraceRenderer:
                 return f"{self._percent(rate)}% on {taxed} ({lower} to {upper})"
             case RoundedTotalLine(output=output, base=base, base_amount=amount, rounding=rule):
                 return f"{output.label} on {base.label} {amount} ({self._rounding(rule)})"
-            case CreditLine(basis=basis, rate=rate, rounding=rule):
+            case CreditLine(amounts=amounts, amounts_value=value, rate=rate, rounding=rule):
                 return (
-                    f"credit: {self._percent(rate.value)}% of {basis.amount} "
+                    f"credit: {self._percent(rate.value)}% of {amounts.label} {value} "
                     f"({self._rounding(rule)})"
                 )
             case CreditAmountLine(output=output, basis=basis, rounding=rule):

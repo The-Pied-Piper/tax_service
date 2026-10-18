@@ -16,6 +16,7 @@ import app.jurisdictions.ca
 import app.jurisdictions.ca.catalog
 from app.domain.artifact import ArtifactCatalog, ArtifactKind, ArtifactRegistry
 from app.jurisdictions.ca.catalog import (
+    BASIC_PERSONAL_AMOUNT,
     CAPITAL_GAIN,
     CATALOG,
     DEDUCTIONS_FROM_NET_INCOME,
@@ -23,6 +24,7 @@ from app.jurisdictions.ca.catalog import (
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
     NET_INCOME,
+    NON_REFUNDABLE_CREDIT_AMOUNTS,
     RRSP_DEDUCTION,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
@@ -44,6 +46,8 @@ REGISTERED = frozenset(
         "ca/deductions_from_net_income",
         "ca/taxable_income",
         "ca/federal_basic_tax",
+        "ca/basic_personal_amount",
+        "ca/non_refundable_credit_amounts",
         "ca/federal_tax_after_credits",
     }
 )
@@ -80,6 +84,8 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/deductions_from_total_income") is DEDUCTIONS_FROM_TOTAL_INCOME
     assert registry.get("ca/net_income") is NET_INCOME
     assert registry.get("ca/deductions_from_net_income") is DEDUCTIONS_FROM_NET_INCOME
+    assert registry.get("ca/basic_personal_amount") is BASIC_PERSONAL_AMOUNT
+    assert registry.get("ca/non_refundable_credit_amounts") is NON_REFUNDABLE_CREDIT_AMOUNTS
 
 
 def test_catalog_kinds_are_in_the_package_namespace() -> None:
@@ -100,6 +106,8 @@ def test_catalog_kinds_are_money() -> None:
         DEDUCTIONS_FROM_TOTAL_INCOME,
         NET_INCOME,
         DEDUCTIONS_FROM_NET_INCOME,
+        BASIC_PERSONAL_AMOUNT,
+        NON_REFUNDABLE_CREDIT_AMOUNTS,
     ):
         assert kind.value_type is Decimal, kind.identifier
 

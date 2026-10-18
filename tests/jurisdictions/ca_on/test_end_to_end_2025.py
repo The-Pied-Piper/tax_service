@@ -4,7 +4,8 @@ The service is the one the composition root builds (`build_tax_computation`): th
 sources over the jurisdiction packages and the shared registries. Return A's amounts (employment
 income 110000 and a capital gain of 20000 to total income 120000, less an RRSP deduction of 3000
 and union dues of 2000 to net income 115000, less no deductions from net income to taxable income
-115000, through each tax after credits) are checked from the files under `returns/` by
+115000, and from each basic personal amount (16129 federal, 12747 Ontario) through each total of
+credit amounts to each tax after credits) are checked from the files under `returns/` by
 `test_worked_returns.py`; this module pins which capability produces each line, the order, and
 the trace that explains them.
 """
@@ -17,15 +18,19 @@ from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.artifact import Artifact
 from app.domain.capabilities.apply_rate import ApplyRate
+from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.jurisdiction_code import JurisdictionCode
+from app.domain.parameters.credit import Credit
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING
 from app.domain.trace import (
+    CreditAmountLine,
     CreditAppliedLine,
+    CreditLine,
     RateAppliedLine,
     RoundedTotalLine,
     SubtractedNotBelowZeroLine,
@@ -33,6 +38,7 @@ from app.domain.trace import (
 )
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
+    BASIC_PERSONAL_AMOUNT,
     CAPITAL_GAIN,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
@@ -40,12 +46,14 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
     NET_INCOME,
+    NON_REFUNDABLE_CREDIT_AMOUNTS,
     RRSP_DEDUCTION,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
     TOTAL_INCOME,
     UNION_DUES,
 )
+from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX, ONTARIO_TAX_AFTER_CREDITS
 from app.main import build_tax_computation
 
@@ -100,9 +108,22 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     )
     assert isinstance(worksheet.producer_of(FEDERAL_BASIC_TAX), ProgressiveTax)
     assert isinstance(worksheet.producer_of(ONTARIO_BASIC_TAX), ProgressiveTax)
+    assert worksheet.producer_of(FEDERAL_BASIC_TAX) is not worksheet.producer_of(ONTARIO_BASIC_TAX)
+    assert isinstance(worksheet.producer_of(BASIC_PERSONAL_AMOUNT), CreditAmount)
+    assert isinstance(worksheet.producer_of(ontario.BASIC_PERSONAL_AMOUNT), CreditAmount)
+    assert worksheet.producer_of(BASIC_PERSONAL_AMOUNT) is not worksheet.producer_of(
+        ontario.BASIC_PERSONAL_AMOUNT
+    )
+    assert isinstance(worksheet.producer_of(NON_REFUNDABLE_CREDIT_AMOUNTS), Sum)
+    assert isinstance(worksheet.producer_of(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS), Sum)
+    assert worksheet.producer_of(NON_REFUNDABLE_CREDIT_AMOUNTS) is not worksheet.producer_of(
+        ontario.NON_REFUNDABLE_CREDIT_AMOUNTS
+    )
     assert isinstance(worksheet.producer_of(FEDERAL_TAX_AFTER_CREDITS), NonRefundableCredit)
     assert isinstance(worksheet.producer_of(ONTARIO_TAX_AFTER_CREDITS), NonRefundableCredit)
-    assert worksheet.producer_of(FEDERAL_BASIC_TAX) is not worksheet.producer_of(ONTARIO_BASIC_TAX)
+    assert worksheet.producer_of(FEDERAL_TAX_AFTER_CREDITS) is not worksheet.producer_of(
+        ONTARIO_TAX_AFTER_CREDITS
+    )
 
 
 def test_the_trace_explains_the_computation() -> None:
@@ -142,12 +163,26 @@ def test_the_trace_explains_the_computation() -> None:
     federal_basic = position(
         "federal_basic_tax on taxable_income 115000.0 (no rounding)", "20146.25"
     )
+    federal_amount = position("basic_personal_amount: credit amount 16129 (no rounding)", "16129")
+    federal_amounts = position(
+        "non_refundable_credit_amounts: basic_personal_amount 16129 = 16129", "16129"
+    )
+    federal_credit = position(
+        "credit: 14.5% of non_refundable_credit_amounts 16129 (no rounding)", "2338.705"
+    )
     federal_after = position(
         "federal_tax_after_credits: federal_basic_tax 20146.250 less credit, not below 0",
         "17807.545",
     )
     ontario_basic = position(
         "ontario_basic_tax on taxable_income 115000.0 (no rounding)", "8539.5965"
+    )
+    ontario_amount = position("basic_personal_amount: credit amount 12747 (no rounding)", "12747")
+    ontario_amounts = position(
+        "non_refundable_credit_amounts: basic_personal_amount 12747 = 12747", "12747"
+    )
+    ontario_credit = position(
+        "credit: 5.05% of non_refundable_credit_amounts 12747 (no rounding)", "643.7235"
     )
     ontario_after = position(
         "ontario_tax_after_credits: ontario_basic_tax 8539.59650 less credit, not below 0",
@@ -160,6 +195,8 @@ def test_the_trace_explains_the_computation() -> None:
     assert taxable < federal_basic < federal_after
     assert taxable < ontario_basic
     assert ontario_basic < ontario_after
+    assert federal_amount < federal_amounts < federal_credit < federal_after
+    assert ontario_amount < ontario_amounts < ontario_credit < ontario_after
 
 
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
@@ -169,6 +206,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     floored = {line.output: line for line in trace if isinstance(line, SubtractedNotBelowZeroLine)}
     totals = {line.output: line for line in trace if isinstance(line, RoundedTotalLine)}
+    amounts = {line.output: line for line in trace if isinstance(line, CreditAmountLine)}
+    credits = {line.amounts: line for line in trace if isinstance(line, CreditLine)}
     applied = {line.output: line for line in trace if isinstance(line, CreditAppliedLine)}
 
     assert rated == {
@@ -188,6 +227,39 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("5000"),
         ),
         DEDUCTIONS_FROM_NET_INCOME: SumLine(DEDUCTIONS_FROM_NET_INCOME, (), D("0")),
+        NON_REFUNDABLE_CREDIT_AMOUNTS: SumLine(
+            NON_REFUNDABLE_CREDIT_AMOUNTS, ((BASIC_PERSONAL_AMOUNT, D("16129")),), D("16129")
+        ),
+        ontario.NON_REFUNDABLE_CREDIT_AMOUNTS: SumLine(
+            ontario.NON_REFUNDABLE_CREDIT_AMOUNTS,
+            ((ontario.BASIC_PERSONAL_AMOUNT, D("12747")),),
+            D("12747"),
+        ),
+    }
+    assert amounts == {
+        BASIC_PERSONAL_AMOUNT: CreditAmountLine(
+            BASIC_PERSONAL_AMOUNT, Credit(amount=D("16129")), NO_ROUNDING, D("16129")
+        ),
+        ontario.BASIC_PERSONAL_AMOUNT: CreditAmountLine(
+            ontario.BASIC_PERSONAL_AMOUNT, Credit(amount=D("12747")), NO_ROUNDING, D("12747")
+        ),
+    }
+    # The rate is applied once, to each form's total of credit amounts.
+    assert credits == {
+        NON_REFUNDABLE_CREDIT_AMOUNTS: CreditLine(
+            NON_REFUNDABLE_CREDIT_AMOUNTS,
+            D("16129"),
+            Rate(D("0.145")),
+            NO_ROUNDING,
+            D("2338.705"),
+        ),
+        ontario.NON_REFUNDABLE_CREDIT_AMOUNTS: CreditLine(
+            ontario.NON_REFUNDABLE_CREDIT_AMOUNTS,
+            D("12747"),
+            Rate(D("0.0505")),
+            NO_ROUNDING,
+            D("643.7235"),
+        ),
     }
     assert floored == {
         NET_INCOME: SubtractedNotBelowZeroLine(
@@ -224,7 +296,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 10
+    assert len(order) == 14
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
@@ -234,6 +306,10 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[TAXABLE_INCOME] < position[ONTARIO_BASIC_TAX]
     assert position[FEDERAL_BASIC_TAX] < position[FEDERAL_TAX_AFTER_CREDITS]
     assert position[ONTARIO_BASIC_TAX] < position[ONTARIO_TAX_AFTER_CREDITS]
+    assert position[BASIC_PERSONAL_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    assert position[NON_REFUNDABLE_CREDIT_AMOUNTS] < position[FEDERAL_TAX_AFTER_CREDITS]
+    assert position[ontario.BASIC_PERSONAL_AMOUNT] < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
+    assert position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS] < position[ONTARIO_TAX_AFTER_CREDITS]
 
 
 def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
@@ -243,5 +319,7 @@ def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     assert worksheet.get(NET_INCOME).value == D("10000")
     assert worksheet.get(TAXABLE_INCOME).value == D("10000")
     assert worksheet.get(FEDERAL_BASIC_TAX).value == D("1450")
+    assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("16129")
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("12747")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("0")
     assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("0")

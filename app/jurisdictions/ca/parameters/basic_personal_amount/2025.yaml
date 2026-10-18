@@ -3,7 +3,7 @@
 # down to $14,538 at $253,414, is not modelled yet (Federal Worksheet 5000-D1,
 # line 30000). The credit rate that turns it into tax relief is its own dataset,
 # ca/credit_rate.
-# CRA states no rounding rule for amount × rate, so none is assumed.
+# CRA states no rounding for this amount, so none is assumed.
 family: ca/basic_personal_amount
 tax_year: 2025
 kind: credit

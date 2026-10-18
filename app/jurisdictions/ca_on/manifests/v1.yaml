@@ -67,19 +67,42 @@ capabilities:
       base: ca/taxable_income
     produces:
       output: ca-on/ontario_basic_tax
-  - name: core/non_refundable_credit
+  # Each basic personal amount is so far the only part of its form's total of credit amounts.
+  - name: core/credit_amount
     params:
       amount: ca/basic_personal_amount
+    produces:
+      output: ca/basic_personal_amount
+  - name: core/credit_amount
+    params:
+      amount: ca-on/basic_personal_amount
+    produces:
+      output: ca-on/basic_personal_amount
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/basic_personal_amount
+    produces:
+      output: ca/non_refundable_credit_amounts
+  - name: core/sum
+    consumes:
+      parts:
+        - ca-on/basic_personal_amount
+    produces:
+      output: ca-on/non_refundable_credit_amounts
+  - name: core/non_refundable_credit
+    params:
       rate: ca/credit_rate
     consumes:
+      amounts: ca/non_refundable_credit_amounts
       tax: ca/federal_basic_tax
     produces:
       output: ca/federal_tax_after_credits
   - name: core/non_refundable_credit
     params:
-      amount: ca-on/basic_personal_amount
       rate: ca-on/credit_rate
     consumes:
+      amounts: ca-on/non_refundable_credit_amounts
       tax: ca-on/ontario_basic_tax
     produces:
       output: ca-on/ontario_tax_after_credits

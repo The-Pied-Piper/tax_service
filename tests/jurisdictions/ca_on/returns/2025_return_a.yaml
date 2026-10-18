@@ -1,10 +1,12 @@
 # Return A: a 2025 Ontario resident, computed from employment income and a capital gain
 # to total income, less an RRSP deduction and union dues to net income, less the (empty)
-# deductions from net income to taxable income, and through the tax after the basic
-# personal amount credits. Not yet computed, so not in this file: the CPP enhanced
-# contributions deduction, any deduction from net income, the social benefits repayment,
-# capital losses, the other non-refundable credits, the Ontario surtax, tax reduction and
-# health premium, and the balance owing.
+# deductions from net income to taxable income, and through each form's total of
+# non-refundable credit amounts (so far only its basic personal amount), credited once at
+# the form's credit rate, to the tax after credits. Not yet computed, so not in this file: the CPP
+# enhanced contributions deduction, any deduction from net income, the social benefits
+# repayment, capital losses, the other non-refundable credit amounts (CPP, EI, the Canada
+# employment amount), the Ontario surtax, tax reduction and health premium, and the balance
+# owing.
 # Amounts are quoted decimal strings, never floats. Every output the CA-ON manifest
 # declares must appear under `expected`; intermediate lines may be listed and are then
 # checked too.
@@ -18,9 +20,14 @@ description: >-
   dues (line 21200) of $2,000: total deductions (line 23300) of $5,000 and net income
   (line 23600) of $115,000. There are no deductions from net income (lines 24400 to 25600),
   so their total (line 25700) is $0 and taxable income (line 26000), derived as net income
-  less that total, is $115,000, Maria's figure in CRA's worked example. There are no
-  non-refundable credits other than the federal and Ontario basic personal amounts. No
-  amounts are rounded.
+  less that total, is $115,000, Maria's figure in CRA's worked example. The only
+  non-refundable credit amounts modelled so far are the basic personal amounts: federal
+  (line 30000) $16,129, since net income is $177,882 or less, and Ontario (ON428 line
+  58040) $12,747. Each is the whole of its form's total of credit amounts (line 33500 of
+  $16,129; ON428 line 58800 of $12,747), and the rate is applied once to that total: 14.5%
+  federally (line 33800, here also the total federal non-refundable tax credits, line
+  35000) and 5.05% for Ontario (ON428 line 58840, here also the Ontario non-refundable tax
+  credits, line 61500). No amounts are rounded.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -57,11 +64,30 @@ sources:
     8,319 + 11,762 + 65 = 20,146. The file's 20,146.25 is the same arithmetic unrounded
     (8,319.375 + 11,761.875 + 65), because no rounding rule is configured for this line.
   - >-
-    The other lines are the 2025 federal and Ontario brackets and basic personal amounts
-    applied without rounding: federal 20,146.25 less 14.5% of the $16,129 basic personal
-    amount (2,338.705) is 17,807.545; the Ontario brackets on $115,000 give 8,539.5965
-    (the printed ON428 Part A constants, rounded to the cent, would give 8,539.60), less
-    5.05% of the $12,747 basic personal amount (643.7235) is 7,895.873.
+    CRA, the 2025 T1 return (form 5000-R): line 77 (line 30000) "If the amount on line
+    23600 is $177,882 or less, enter $16,129. Otherwise, use the Federal Worksheet to
+    calculate the amount to enter. (maximum $16,129)"; line 113 (line 33500) "Line 106 plus
+    line 112"; line 114 "Federal non-refundable tax credit rate 14.5%"; line 115 (line
+    33800) "Line 113 multiplied by the percentage from line 114"; line 118 (line 35000)
+    "Add lines 115 to 117. Total federal non-refundable tax credits". Net income of 115,000
+    is 177,882 or less, so line 30000 is 16,129; it is the only credit amount modelled, so
+    line 33500 is 16,129, and line 33800 is 16,129 x 14.5% = 2,338.705, with no rounding
+    stated. Lines 116 and 117 are not modelled, so line 35000 is that same 2,338.705.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
+  - >-
+    CRA, the 2025 ON428 (form 5006-C): line 9 (line 58040) "Basic personal amount Claim
+    $12,747"; line 44 (line 58800) "Line 35 plus line 43"; line 45 "Ontario non-refundable
+    tax credit rate 5.05%"; line 46 (line 58840) "Line 44 multiplied by the percentage from
+    line 45"; line 50 (line 61500) "Line 46 plus line 49 Enter this amount on line 52.
+    Ontario non-refundable tax credits". The basic personal amount is the only credit amount
+    modelled, so line 58800 is 12,747, and line 58840 is 12,747 x 5.05% = 643.7235, with no
+    rounding stated; line 49 is not modelled, so line 61500 is that same 643.7235.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
+  - >-
+    The other lines are the 2025 federal and Ontario brackets and those credits applied
+    without rounding: federal 20,146.25 less the 2,338.705 credit is 17,807.545; the Ontario
+    brackets on $115,000 give 8,539.5965 (the printed ON428 Part A constants, rounded to the
+    cent, would give 8,539.60), less the 643.7235 credit is 7,895.873.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.pdf
 inputs:
   ca/employment_income: "110000"
@@ -76,6 +102,10 @@ expected:
   ca/deductions_from_net_income: "0"
   ca/taxable_income: "115000"
   ca/federal_basic_tax: "20146.25"
+  ca/basic_personal_amount: "16129"
+  ca/non_refundable_credit_amounts: "16129"
   ca/federal_tax_after_credits: "17807.545"
   ca-on/ontario_basic_tax: "8539.5965"
+  ca-on/basic_personal_amount: "12747"
+  ca-on/non_refundable_credit_amounts: "12747"
   ca-on/ontario_tax_after_credits: "7895.873"
