@@ -16,9 +16,13 @@
 # the Ontario tax with surtax; and, with no dependent children or dependants, the Ontario
 # tax reduction amounts (the basic reduction alone), twice them less the Ontario tax with
 # surtax, not below zero, to the Ontario tax reduction, taken off the Ontario tax with
-# surtax, not below zero, to the Ontario tax after the reduction. Not yet computed, so not
-# in this file: any deduction from net income, the social benefits repayment, capital
-# losses, the Ontario health premium, and the balance owing.
+# surtax, not below zero, to the Ontario tax after the reduction; and from taxable income,
+# by the health premium chart's tiers, each capped at the next plateau, to the Ontario
+# health premium, added to the Ontario tax after the reduction to the Ontario tax. Not yet
+# computed, so not in this file: any deduction from net income, the social benefits
+# repayment, capital losses, the LIFT credit (ON428 line 85), and the balance owing. Lines
+# 82 (the provincial foreign tax credit) and 87 (the community food program donation tax
+# credit for farmers) are not triggered by this return.
 # Amounts are quoted decimal strings, never floats; counts are plain integers. Every output
 # the CA-ON manifest declares must appear under `expected`; intermediate lines may be listed
 # and are then checked too.
@@ -61,7 +65,10 @@ description: >-
   lines 75 and 76), the Ontario tax reduction amounts (line 77) are the basic reduction of
   $294.00 (line 74); twice them, $588.00 (line 78), less the Ontario tax with surtax (line
   79, from line 73) is negative, so the Ontario tax reduction (line 80) is $0 and the
-  Ontario tax after the reduction (line 81) is that same $8,195.7644476. The CPP
+  Ontario tax after the reduction (line 81) is that same $8,195.7644476. The Ontario health
+  premium (ON428 line 89) is read from its chart on taxable income: $115,000 is more than
+  $72,600 but not more than $200,000, so the premium is $750, and the Ontario tax (ON428
+  line 90) is the Ontario tax after the reduction plus the premium, $8,945.7644476. The CPP
   contributions, the EI premiums and the federal basic personal amount are rounded to the
   cent, which changes none of them; no other amounts are rounded.
 sources:
@@ -299,6 +306,24 @@ sources:
     with the higher net income can claim the amounts on lines 75 and 76.", which changes
     nothing while lines 75 and 76 are 0.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
+  - >-
+    CRA, the 2025 ON428 (form 5006-C): line 81 "Line 73 minus line 80 (if negative, enter
+    "0")"; the LIFT credit (line 85, line 62140) is not yet computed, and lines 82 (the
+    provincial foreign tax credit) and 87 (line 62150, the community food program donation
+    tax credit for farmers) are not triggered by this return, so lines 83, 84, 86 and 88
+    carry line 81, the Ontario tax after the reduction, unchanged; line 89 "Ontario health
+    premium (complete the chart below)"; line 90 "Line 88 plus line 89 Enter this amount on
+    line 42800 of your return. Ontario tax". The chart's line 1 is "Enter your taxable
+    income from line 26000 of your return", here 115,000, which is "more than $72,600 but
+    not more than $200,000": $750. Each row of the chart is the previous plateau plus a rate
+    on the taxable income over the row's threshold, at most the next plateau, so the premium
+    is the sum of five tiers, each capped: (115,000 - 20,000) x 6% = 95,000 x 6% = 5,700,
+    more than 300, so 300; (115,000 - 36,000) x 6% = 79,000 x 6% = 4,740, more than 150, so
+    150; (115,000 - 48,000) x 25% = 67,000 x 25% = 16,750, more than 150, so 150; (115,000 -
+    72,000) x 25% = 43,000 x 25% = 10,750, more than 150, so 150; 115,000 - 200,000 is
+    negative, so 0; with no rounding stated, line 89 is 300 + 150 + 150 + 150 + 0 = 750, and
+    line 90 is 8,195.7644476 + 750 = 8,945.7644476.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
 inputs:
   ca/employment_income: "110000"
   ca/capital_gain: "20000"
@@ -341,3 +366,5 @@ expected:
   ca-on/tax_reduction_amounts: "294.00"
   ca-on/ontario_tax_reduction: "0"
   ca-on/ontario_tax_after_reduction: "8195.7644476"
+  ca-on/ontario_health_premium: "750"
+  ca-on/ontario_tax: "8945.7644476"
