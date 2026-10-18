@@ -1,8 +1,8 @@
 """The structured trace: what each capability did, recorded as facts.
 
 A trace line holds the domain objects and amounts involved (`ArtifactKind`, `Rate`, `Credit`,
-`Amount`, `RoundingRule`), never text; its `amount` is the figure the line is about. Rendering
-lines as human-readable text lives outside the domain, in the adapters.
+`Amount`, `ContributionTier`, `RoundingRule`), never text; its `amount` is the figure the line is
+about. Rendering lines as human-readable text lives outside the domain, in the adapters.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ from decimal import Decimal
 
 from app.domain.artifact import Money
 from app.domain.parameters.amount import Amount
+from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import RoundingRule
@@ -224,4 +225,24 @@ class LesserOfLine(TraceLine):
     @property
     def amount(self) -> Decimal:
         """The least of the parts."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class ContributionTierLine(TraceLine):
+    """The `result` produced as `output`: `tier`'s rate on `contributory`, the part of `earnings`
+    (worth `earnings_amount`) inside the tier's band, rounded with `rounding`, at most the tier's
+    maximum."""
+
+    output: Money
+    earnings: Money
+    earnings_amount: Decimal
+    tier: ContributionTier
+    rounding: RoundingRule
+    contributory: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The contribution: the rounded, capped result."""
         return self.result

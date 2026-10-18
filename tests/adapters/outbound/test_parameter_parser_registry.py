@@ -1,7 +1,7 @@
 """Unit tests for ParameterParserRegistry and `@parameter_parser`.
 
-Parsers are keyed by their kind's plain name (`amount`, `brackets`, `credit`,
-`rate`), not namespaced yet.
+Parsers are keyed by their kind's plain name (`amount`, `brackets`, `contribution_tier`,
+`credit`, `rate`), not namespaced yet.
 Lookups are typed: `for_kind(kind)` for a `ParameterKind[T]` gives a `ParameterParser[T]`; the
 `assert_type` checks below make `mypy .` fail if a lookup returned `Any` or another type.
 Made-up kinds and parsers are never registered in the shared registry: the decorator test
@@ -19,6 +19,7 @@ import app.registrations  # noqa: F401  (fills the capability and parser registr
 from app.adapters.outbound.parameter_parsers import ParameterParser
 from app.adapters.outbound.parameter_parsers.amount import AmountParser
 from app.adapters.outbound.parameter_parsers.brackets import BracketsParser
+from app.adapters.outbound.parameter_parsers.contribution_tier import ContributionTierParser
 from app.adapters.outbound.parameter_parsers.credit import CreditParser
 from app.adapters.outbound.parameter_parsers.rate import RateParser
 from app.adapters.outbound.parameter_parsers.registry import (
@@ -30,6 +31,7 @@ from app.domain.capability import CapabilityRegistry
 from app.domain.errors import DuplicateRegistrationError, UnknownRegistrationError
 from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
+from app.domain.parameters.contribution_tier import CONTRIBUTION_TIER, ContributionTier
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
@@ -95,6 +97,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     registry.register_class(CreditParser)
     registry.register_class(RateParser)
     registry.register_class(AmountParser)
+    registry.register_class(ContributionTierParser)
     registry.register_class(FlatRateParser)
 
     schedule = registry.for_kind(BRACKETS).parse(
@@ -103,18 +106,25 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     credit = registry.for_kind(CREDIT).parse(YamlNode.root({"amount": "100"}, "dataset"))
     rate = registry.for_kind(RATE).parse(YamlNode.root({"rate": "0.5"}, "dataset"))
     amount = registry.for_kind(AMOUNT).parse(YamlNode.root({"amount": "250"}, "dataset"))
+    tier = registry.for_kind(CONTRIBUTION_TIER).parse(
+        YamlNode.root(
+            {"rate": "0.05", "lower": "3000", "upper": "50000", "maximum": "2350"}, "dataset"
+        )
+    )
     flat_rate = registry.for_kind(FLAT_RATE).parse(YamlNode.root({"rate": "0.2"}, "dataset"))
 
     assert_type(schedule, BracketSchedule)
     assert_type(credit, Credit)
     assert_type(rate, Rate)
     assert_type(amount, Amount)
+    assert_type(tier, ContributionTier)
     assert_type(flat_rate, Decimal)
 
     assert schedule == BracketSchedule((Bracket(D("0"), D("0.1")),))
     assert credit == Credit(amount=D("100"))
     assert rate == Rate(D("0.5"))
     assert amount == Amount(D("250"))
+    assert tier == ContributionTier(Rate(D("0.05")), D("3000"), D("50000"), D("2350"))
     assert flat_rate == D("0.2")
 
 
@@ -215,6 +225,7 @@ def test_decorating_a_second_parser_for_one_kind_fails(fresh: ParameterParserReg
     [
         (AMOUNT, AmountParser),
         (BRACKETS, BracketsParser),
+        (CONTRIBUTION_TIER, ContributionTierParser),
         (CREDIT, CreditParser),
         (RATE, RateParser),
     ],
@@ -233,6 +244,7 @@ def test_built_in_parsers_are_registered_in_the_shared_registry(
     [
         (AmountParser, frozenset({"amount"})),
         (BracketsParser, frozenset({"brackets"})),
+        (ContributionTierParser, frozenset({"rate", "lower", "upper", "maximum"})),
         (CreditParser, frozenset({"amount"})),
         (RateParser, frozenset({"rate"})),
     ],
@@ -247,6 +259,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_parsers() -> None:
     assert ParameterParserRegistry.shared().identifiers() == {
         "amount",
         "brackets",
+        "contribution_tier",
         "credit",
         "rate",
     }

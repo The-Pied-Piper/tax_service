@@ -19,6 +19,7 @@ import pytest
 
 from app.adapters.outbound.parameter_parsers.amount import AmountParser
 from app.adapters.outbound.parameter_parsers.brackets import BracketsParser
+from app.adapters.outbound.parameter_parsers.contribution_tier import ContributionTierParser
 from app.adapters.outbound.parameter_parsers.credit import CreditParser
 from app.adapters.outbound.parameter_parsers.rate import RateParser
 from app.adapters.outbound.parameter_parsers.registry import ParameterParserRegistry
@@ -27,6 +28,7 @@ from app.adapters.outbound.yaml_support import YamlNode
 from app.domain.errors import (
     DomainError,
     InvalidAmountError,
+    InvalidContributionTierError,
     InvalidCreditError,
     InvalidParameterDataError,
     InvalidRateError,
@@ -35,6 +37,7 @@ from app.domain.errors import (
 )
 from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
+from app.domain.parameters.contribution_tier import CONTRIBUTION_TIER, ContributionTier
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
@@ -86,6 +89,19 @@ rounding: none
 amount: "1471"
 """
 
+CONTRIBUTION_TIER_2025 = """\
+family: ex/contribution_tier
+tax_year: 2025
+kind: contribution_tier
+sources:
+  - https://example.org/contribution-tier-2025
+rounding: none
+rate: "0.05"
+lower: "3000"
+upper: "50000"
+maximum: "2350"
+"""
+
 
 def built_in_parsers() -> ParameterParserRegistry:
     """A fresh registry holding the built-in parsers, never the shared one."""
@@ -94,6 +110,7 @@ def built_in_parsers() -> ParameterParserRegistry:
     registry.register_class(CreditParser)
     registry.register_class(RateParser)
     registry.register_class(AmountParser)
+    registry.register_class(ContributionTierParser)
     return registry
 
 
@@ -220,6 +237,79 @@ def test_by_default_the_amount_parser_comes_from_the_shared_registry(tmp_path: P
     result = YamlParameterSource(roots(tmp_path)).get("ex/amount_cap", 2025, AMOUNT)
 
     assert result.values == Amount(D("1471"))
+
+
+def test_reads_a_contribution_tier_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/contribution_tier/2025.yaml", CONTRIBUTION_TIER_2025)
+
+    result = source(tmp_path).get("ex/contribution_tier", 2025, CONTRIBUTION_TIER)
+
+    assert result == ParameterDataset(
+        family="ex/contribution_tier",
+        tax_year=2025,
+        kind=CONTRIBUTION_TIER,
+        values=ContributionTier(
+            rate=Rate(D("0.05")), lower=D("3000"), upper=D("50000"), maximum=D("2350")
+        ),
+        rounding=NO_ROUNDING,
+        sources=("https://example.org/contribution-tier-2025",),
+    )
+
+
+def test_reads_a_contribution_tiers_figures_exactly(tmp_path: Path) -> None:
+    content = (
+        CONTRIBUTION_TIER_2025.replace('rate: "0.05"', 'rate: "0.0495"')
+        .replace('lower: "3000"', 'lower: "3000.50"')
+        .replace('upper: "50000"', 'upper: "50000.00"')
+        .replace('maximum: "2350"', 'maximum: "2350.10"')
+    )
+    write(tmp_path, "ex/parameters/contribution_tier/2025.yaml", content)
+
+    tier = source(tmp_path).get("ex/contribution_tier", 2025, CONTRIBUTION_TIER).values
+
+    assert (str(tier.rate.value), str(tier.lower), str(tier.upper), str(tier.maximum)) == (
+        "0.0495",
+        "3000.50",
+        "50000.00",
+        "2350.10",
+    )
+
+
+def test_reads_a_contribution_tier_starting_at_zero_with_a_zero_maximum(tmp_path: Path) -> None:
+    content = CONTRIBUTION_TIER_2025.replace('lower: "3000"', 'lower: "0"').replace(
+        'maximum: "2350"', 'maximum: "0"'
+    )
+    write(tmp_path, "ex/parameters/contribution_tier/2025.yaml", content)
+
+    tier = source(tmp_path).get("ex/contribution_tier", 2025, CONTRIBUTION_TIER).values
+
+    assert (tier.lower, tier.maximum) == (D("0"), D("0"))
+
+
+def test_reads_a_contribution_tier_datasets_rounding_rule(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/contribution_tier/2025.yaml",
+        CONTRIBUTION_TIER_2025.replace(
+            "rounding: none", 'rounding: {increment: "0.01", mode: half_up}'
+        ),
+    )
+
+    result = source(tmp_path).get("ex/contribution_tier", 2025, CONTRIBUTION_TIER)
+
+    assert result.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
+
+
+def test_by_default_the_contribution_tier_parser_comes_from_the_shared_registry(
+    tmp_path: Path,
+) -> None:
+    write(tmp_path, "ex/parameters/contribution_tier/2025.yaml", CONTRIBUTION_TIER_2025)
+
+    result = YamlParameterSource(roots(tmp_path)).get(
+        "ex/contribution_tier", 2025, CONTRIBUTION_TIER
+    )
+
+    assert result.values == ContributionTier(Rate(D("0.05")), D("3000"), D("50000"), D("2350"))
 
 
 def test_reads_a_rounding_rule(tmp_path: Path) -> None:
@@ -665,3 +755,167 @@ def test_a_credit_dataset_is_not_an_amount_dataset(tmp_path: Path) -> None:
 
     with pytest.raises(InvalidParameterDataError, match="kind 'credit' does not match"):
         source(tmp_path).get("ex/personal_credit", 2025, AMOUNT)
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace('rate: "0.05"', 'rate: "1.5"'),
+            "rate must be between 0 and 1",
+            id="rate-above-one",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace('rate: "0.05"', 'rate: "-0.05"'),
+            "rate must be between 0 and 1",
+            id="rate-negative",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace('rate: "0.05"', "rate: 0.05"),
+            "rate must be a string, got float",
+            id="rate-as-yaml-number",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace('lower: "3000"', "lower: 3000"),
+            "lower must be a string, got int",
+            id="lower-as-yaml-number",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace('upper: "50000"', "upper: 50000.5"),
+            "upper must be a string, got float",
+            id="upper-as-yaml-float",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace('maximum: "2350"', "maximum: 2350"),
+            "maximum must be a string, got int",
+            id="maximum-as-yaml-number",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace('lower: "3000"', 'lower: "lots"'),
+            "lower is not a decimal: 'lots'",
+            id="lower-not-decimal",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace('upper: "50000"', 'upper: "Infinity"'),
+            "upper is not a decimal",
+            id="upper-infinite",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace('maximum: "2350"', 'maximum: "NaN"'),
+            "maximum is not a decimal",
+            id="maximum-nan",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace('lower: "3000"', 'lower: "-1"'),
+            "lower must not be negative",
+            id="lower-negative",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace('lower: "3000"', 'lower: "50000"'),
+            "lower must be below upper",
+            id="lower-at-upper",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace('upper: "50000"', 'upper: "2999.99"'),
+            "lower must be below upper",
+            id="upper-below-lower",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace('maximum: "2350"', 'maximum: "-0.01"'),
+            "maximum must not be negative",
+            id="maximum-negative",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace('upper: "50000"\n', ""),
+            r"missing keys \['upper'\]",
+            id="upper-missing",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace('rate: "0.05"\n', "").replace('maximum: "2350"\n', ""),
+            r"missing keys \['maximum', 'rate'\]",
+            id="rate-and-maximum-missing",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025 + 'amount: "1000"\n',
+            r"unknown keys \['amount'\]",
+            id="amount-is-not-a-tier-key",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace("kind: contribution_tier", "kind: rate"),
+            "kind 'rate' does not match the requested 'contribution_tier'",
+            id="kind-mismatch",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace("rounding: none\n", ""),
+            r"missing keys \['rounding'\]",
+            id="rounding-missing",
+        ),
+        pytest.param(
+            CONTRIBUTION_TIER_2025.replace(
+                "sources:\n  - https://example.org/contribution-tier-2025", "sources: []"
+            ),
+            "sources must list at least one",
+            id="sources-empty",
+        ),
+    ],
+)
+def test_rejects_malformed_contribution_tier_dataset(
+    tmp_path: Path, content: str, message: str
+) -> None:
+    write(tmp_path, "ex/parameters/contribution_tier/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
+        source(tmp_path).get("ex/contribution_tier", 2025, CONTRIBUTION_TIER)
+
+    assert "2025.yaml" in str(excinfo.value)
+
+
+def test_an_invalid_tier_rate_is_reported_as_a_rate_error(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/contribution_tier/2025.yaml",
+        CONTRIBUTION_TIER_2025.replace('rate: "0.05"', 'rate: "1.5"'),
+    )
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/contribution_tier", 2025, CONTRIBUTION_TIER)
+
+    assert isinstance(excinfo.value.__cause__, InvalidRateError)
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [
+        ('lower: "3000"', 'lower: "-1"'),
+        ('lower: "3000"', 'lower: "60000"'),
+        ('maximum: "2350"', 'maximum: "-1"'),
+    ],
+)
+def test_an_invalid_tier_is_reported_as_a_contribution_tier_error(
+    tmp_path: Path, old: str, new: str
+) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/contribution_tier/2025.yaml",
+        CONTRIBUTION_TIER_2025.replace(old, new),
+    )
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/contribution_tier", 2025, CONTRIBUTION_TIER)
+
+    assert isinstance(excinfo.value.__cause__, InvalidContributionTierError)
+
+
+def test_a_rate_dataset_is_not_a_contribution_tier_dataset(tmp_path: Path) -> None:
+    # Both kinds read a `rate` key; the declared kind alone tells them apart.
+    write(tmp_path, "ex/parameters/credit_rate/2025.yaml", RATE_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'rate' does not match"):
+        source(tmp_path).get("ex/credit_rate", 2025, CONTRIBUTION_TIER)
+
+
+def test_a_contribution_tier_dataset_is_not_a_rate_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/contribution_tier/2025.yaml", CONTRIBUTION_TIER_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'contribution_tier' does not match"):
+        source(tmp_path).get("ex/contribution_tier", 2025, RATE)
