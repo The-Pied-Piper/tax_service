@@ -9,6 +9,7 @@ re-raises them as its own domain error with the file named.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Hashable
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -17,6 +18,9 @@ from typing import Any
 import yaml
 from yaml.constructor import ConstructorError
 from yaml.nodes import MappingNode
+
+# A whole number's one spelling: ASCII decimal digits, no sign, no leading zero.
+_WHOLE_NUMBER = re.compile(r"0|[1-9][0-9]*")
 
 
 class YamlShapeError(ValueError):
@@ -191,6 +195,21 @@ class YamlNode:
         if not result.is_finite():
             raise YamlShapeError(f"{self._where} is not a decimal: {text!r}")
         return result
+
+    def parse_whole_number(self) -> int:
+        """This node's value as an int, parsed from a YAML string of digits such as "3".
+
+        Numbers must be quoted so YAML never reads them itself; the text must be ASCII decimal
+        digits with no sign and no leading zero, so each number has one spelling. Non-strings,
+        any other text and digits too many for `int` raise YamlShapeError.
+        """
+        text = self.require_string()
+        if not _WHOLE_NUMBER.fullmatch(text):
+            raise YamlShapeError(f"{self._where} is not a whole number: {text!r}")
+        try:
+            return int(text)
+        except ValueError:  # more digits than the interpreter's int conversion allows
+            raise YamlShapeError(f"{self._where} is not a whole number: {text!r}") from None
 
     def _mapping(self) -> dict[object, object]:
         if not isinstance(self._value, dict):

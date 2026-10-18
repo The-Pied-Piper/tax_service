@@ -1,9 +1,9 @@
 """The structured trace: what each capability did, recorded as facts.
 
 A trace line holds the domain objects and amounts involved (`ArtifactKind`, `Rate`, `Credit`,
-`Amount`, `ContributionTier`, `Taper`, `Factor`, `RoundingRule`), never text; its `amount` is the
-figure the line is about. A count is an `int` artifact kind and its `int` value. Rendering lines
-as human-readable text lives outside the domain, in the adapters.
+`Amount`, `ContributionTier`, `Taper`, `Factor`, `Fraction`, `RoundingRule`), never text; its
+`amount` is the figure the line is about. A count is an `int` artifact kind and its `int` value.
+Rendering lines as human-readable text lives outside the domain, in the adapters.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ from app.domain.parameters.amount import Amount
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
+from app.domain.parameters.fraction import Fraction
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import RoundingRule
 from app.domain.parameters.taper import Taper
@@ -317,3 +318,24 @@ class AtMostLine(TraceLine):
     def amount(self) -> Decimal:
         """The amount, as produced."""
         return self.amount_value
+
+
+@dataclass(frozen=True)
+class FractionAppliedLine(TraceLine):
+    """The `result` produced as `output` by `base` (worth `base_amount`) × `fraction`, rounded.
+
+    Its own class, not a `RateAppliedLine`: a fraction is not a rate, and its quotient may be
+    unrounded.
+    """
+
+    output: Money
+    base: Money
+    base_amount: Decimal
+    fraction: Fraction
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The rounded product."""
+        return self.result

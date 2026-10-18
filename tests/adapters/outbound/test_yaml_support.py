@@ -169,3 +169,55 @@ def test_parse_decimal_reads_strings_exactly() -> None:
 def test_parse_decimal_rejects(value: object, message: str) -> None:
     with pytest.raises(YamlShapeError, match=f"^{message}"):
         node({"a": value}).field("a").parse_decimal()
+
+
+@pytest.mark.parametrize(
+    ("value", "number"), [("0", 0), ("3", 3), ("10", 10), ("1000000", 1000000)]
+)
+def test_parse_whole_number_reads_digit_strings_as_ints(value: str, number: int) -> None:
+    parsed = node({"a": value}).field("a").parse_whole_number()
+
+    assert parsed == number
+    assert type(parsed) is int
+
+
+def test_parse_whole_number_reads_more_digits_than_a_machine_word() -> None:
+    assert node({"a": "1" + "0" * 30}).field("a").parse_whole_number() == 10**30
+
+
+@pytest.mark.parametrize(
+    ("value", "message"),
+    [
+        ("-3", r"a is not a whole number: '-3'"),
+        ("+3", r"a is not a whole number: '\+3'"),
+        ("03", r"a is not a whole number: '03'"),
+        ("00", r"a is not a whole number: '00'"),
+        (" 3", r"a is not a whole number: ' 3'"),
+        ("3 ", r"a is not a whole number: '3 '"),
+        ("1_000", r"a is not a whole number: '1_000'"),
+        ("3.0", r"a is not a whole number: '3\.0'"),
+        ("٣", r"a is not a whole number: '٣'"),  # ARABIC-INDIC DIGIT THREE
+        ("３", r"a is not a whole number: '３'"),  # FULLWIDTH DIGIT THREE
+        ("", r"a is not a whole number: ''"),
+        ("three", r"a is not a whole number: 'three'"),
+        (3, "a must be a string, got int"),
+        (3.0, "a must be a string, got float"),
+        (True, "a must be a string, got bool"),
+    ],
+)
+def test_parse_whole_number_rejects(value: object, message: str) -> None:
+    with pytest.raises(YamlShapeError, match=f"^{message}"):
+        node({"a": value}).field("a").parse_whole_number()
+
+
+def test_parse_whole_number_rejects_more_digits_than_int_converts() -> None:
+    # 4,301 digits: one more than `int()` converts from text by default.
+    with pytest.raises(YamlShapeError, match="^a is not a whole number: '1000"):
+        node({"a": "1" + "0" * 4300}).field("a").parse_whole_number()
+
+
+def test_parse_whole_number_names_the_nodes_location() -> None:
+    part = node({"parts": [{"numerator": "-2"}]}).field("parts").items()[0].field("numerator")
+
+    with pytest.raises(YamlShapeError, match=r"^parts\[0\]\.numerator is not a whole number"):
+        part.parse_whole_number()
