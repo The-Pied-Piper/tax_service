@@ -52,8 +52,9 @@ Key facts driving this (UNVERIFIED, verify all):
   come after it (capital-gains deduction). Placement changes downstream
   credit math keyed to `net_income`.
 - Ontario sequence: basic tax → non-refundable credits → surtax (20%/36% on
-  the credited amount) → Ontario tax reduction → health premium (keyed to
-  taxable income, outside surtax base).
+  the credited amount) → Ontario tax reduction → LIFT credit (keyed to
+  employment and net income) → health premium (keyed to taxable income,
+  outside surtax base).
 - Cross-phase consumption is routine (age amount consumes `net_income`;
   dividend tax credit keyed to grossed-up amount added on the income side).
 

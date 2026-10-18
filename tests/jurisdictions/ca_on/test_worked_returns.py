@@ -72,15 +72,18 @@ description: >-
   zero and the Ontario tax with surtax is zero. With no dependent children and no dependants,
   the Ontario tax reduction amounts are the basic reduction of 294.00, and the reduction is
   twice them less the tax of zero: 588.00, which leaves an Ontario tax after the reduction of
-  zero, not a refund. A taxable income of 9935.00 is at or below the health premium chart's
+  zero, not a refund. The LIFT credit (Schedule ON428-A) is 5.05% of the employment income,
+  505, below its 875 maximum, less 5% of net income over 32500, nothing as 9935.00 is below
+  it: 505, more than the Ontario tax after the reduction of zero, so the Ontario tax after
+  the LIFT credit is zero. A taxable income of 9935.00 is at or below the health premium chart's
   first threshold of 20000, so the premium is zero and the Ontario tax is zero. The net
   federal tax is the federal tax after credits, zero, and the total payable is it plus the
   Ontario tax, zero. The income tax deducted is a chosen 500, the only credit, so the refund
   or balance owing is 0 less 500: -500, a refund.
 sources:
   - >-
-    T1, Federal Worksheet, Schedule 3, Schedule 7, Schedule 8, ON428 and EI table arithmetic on
-    the 2025 figures.
+    T1, Federal Worksheet, Schedule 3, Schedule 7, Schedule 8, ON428, Schedule ON428-A and EI
+    table arithmetic on the 2025 figures.
 inputs:
   ca/employment_income: "10000"
   ca/capital_gain: "0"
@@ -127,6 +130,11 @@ expected:
   ca-on/tax_reduction_amounts: "294.00"
   ca-on/ontario_tax_reduction: "588.00"
   ca-on/ontario_tax_after_reduction: "0"
+  ca-on/lift_credit_before_maximum: "505"
+  ca-on/lift_maximum_credit: "505"
+  ca-on/lift_reduction: "0"
+  ca-on/lift_credit: "505"
+  ca-on/ontario_tax_after_lift_credit: "0"
   ca-on/ontario_health_premium: "0"
   ca-on/ontario_tax: "0"
   ca/net_federal_tax: "0"

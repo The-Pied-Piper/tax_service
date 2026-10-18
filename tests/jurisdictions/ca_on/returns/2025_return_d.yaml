@@ -21,16 +21,19 @@
 # and, with no dependent children or dependants, the Ontario tax reduction amounts (the
 # basic reduction alone), twice them less the Ontario tax with surtax, not below zero, to
 # the Ontario tax reduction, taken off the Ontario tax with surtax, not below zero, to the
-# Ontario tax after the reduction; and from taxable income, by the health premium chart's
-# tiers, each capped at the next plateau, to the Ontario health premium, added to the
-# Ontario tax after the reduction to the Ontario tax; and on the T1, the federal tax after
-# credits, carried to the net federal tax, plus the Ontario tax to the total payable, less
-# the total credits, here the chosen income tax deducted alone, to the refund or balance
-# owing, negative for a refund and positive for a balance owing. There is no capital gain,
-# unused or new RRSP contribution or union dues. Not yet computed, so not in this file: any
-# deduction from net income, the social benefits repayment, capital losses, and the LIFT
-# credit (ON428 line 85). Lines 82 (the provincial foreign tax credit) and 87 (the community
-# food program donation tax credit for farmers) are not triggered by this return.
+# Ontario tax after the reduction; from employment income, by Schedule ON428-A, 5.05% of it
+# at most $875, less 5% of net income over $32,500, not below zero, to the LIFT credit
+# (ON428 line 85), taken off the Ontario tax after the reduction, not below zero, to the
+# Ontario tax after the LIFT credit (line 86); and from taxable income, by the health
+# premium chart's tiers, each capped at the next plateau, to the Ontario health premium,
+# added to the Ontario tax after the LIFT credit to the Ontario tax; and on the T1, the
+# federal tax after credits, carried to the net federal tax, plus the Ontario tax to the
+# total payable, less the total credits, here the chosen income tax deducted alone, to the
+# refund or balance owing, negative for a refund and positive for a balance owing. There is
+# no capital gain, unused or new RRSP contribution or union dues. Not yet computed, so not
+# in this file: any deduction from net income, the social benefits repayment and capital
+# losses. Lines 82 (the provincial foreign tax credit) and 87 (the community food program
+# donation tax credit for farmers) are not triggered by this return.
 # Amounts are quoted decimal strings, never floats; counts are quoted digit strings. Every
 # output the CA-ON manifest declares must appear under `expected`; intermediate lines may be
 # listed and are then checked too.
@@ -73,18 +76,21 @@ description: >-
   dependants (ON428 lines 75 and 76), the Ontario tax reduction amounts (line 77) are the
   basic reduction of $294.00 (line 74); twice them, $588.00 (line 78), less the Ontario tax
   with surtax (line 79, from line 73) is negative, so the Ontario tax reduction (line 80) is
-  $0 and the Ontario tax after the reduction (line 81) is that same $3,750.97571. The
-  Ontario health premium (ON428 line 89) is read from its chart on taxable income:
-  $74,174.00 is more than $72,600 but not more than $200,000, so the premium is $750, and
-  the Ontario tax (ON428 line 90) is the Ontario tax after the reduction plus the premium,
-  $4,500.97571. On the T1, the net federal tax (line 42000) is the federal tax after
-  credits, $8,568.3009, and the total payable (line 43500) is it plus the Ontario tax (line
-  42800), $13,069.27661. The income tax deducted (line 43700) is a chosen $10,000, the only
-  credit modelled, so the total credits (line 48200) are $10,000, and the refund or balance
-  owing (line 167) is the total payable less the total credits, $3,069.27661: positive, so a
-  balance owing (line 48500). The CPP contributions, the EI premiums and the federal basic
-  personal amount are rounded to the cent, which changes none of them; no other amounts are
-  rounded.
+  $0 and the Ontario tax after the reduction (line 81) is that same $3,750.97571. The LIFT
+  credit (ON428 line 85, Schedule ON428-A) is 5.05% of employment income, $3,787.50, at most
+  $875, less 5% of net income over $32,500, $2,083.70; the reduction is more than the $875,
+  so the credit is $0, and the Ontario tax after it (ON428 line 86) is that same
+  $3,750.97571. The Ontario health premium (ON428 line 89) is read from its chart on taxable
+  income: $74,174.00 is more than $72,600 but not more than $200,000, so the premium is
+  $750, and the Ontario tax (ON428 line 90) is the Ontario tax after the LIFT credit plus
+  the premium, $4,500.97571. On the T1, the net federal tax (line 42000) is the federal tax
+  after credits, $8,568.3009, and the total payable (line 43500) is it plus the Ontario tax
+  (line 42800), $13,069.27661. The income tax deducted (line 43700) is a chosen $10,000, the
+  only credit modelled, so the total credits (line 48200) are $10,000, and the refund or
+  balance owing (line 167) is the total payable less the total credits, $3,069.27661:
+  positive, so a balance owing (line 48500). The CPP contributions, the EI premiums and the
+  federal basic personal amount are rounded to the cent, which changes none of them; no
+  other amounts are rounded.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -327,17 +333,47 @@ sources:
     75 and 76 are 0.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
+    CRA, the 2025 Schedule ON428-A (form 5006-A): line 1 "Amount from line 10100 of your
+    return"; line 2 "Amount from line 10400 of your return"; line 3 "Line 1 plus line 2";
+    line 4 "Applicable rate 5.05%"; line 5 "Line 3 multiplied by the percentage from line 4
+    (maximum $875)"; line 6 "Net income from line 23600 of your return (or the amount you
+    would have entered if the instructions on line 23600 said "if negative, show in
+    brackets")"; line 9 "Add lines 6 to 8."; line 12 "Line 10 plus line 11"; line 13 "Line 9
+    minus line 12 (if negative, enter "0") Your adjusted net income"; "If you were single at
+    the end of the year, complete Part A"; Part A: line 14 "Amount from line 5 above
+    (maximum $875)"; line 15 "Amount from line 13 above"; line 16 "Individual income
+    threshold 32,500.00"; line 17 "Line 15 minus line 16 (if negative, enter "0")"; line 18
+    "Applicable rate 5%"; line 19 "Line 17 multiplied by the percentage from line 18"; line
+    20 "Line 14 minus line 19 (if negative, enter "0") Enter this amount on line 62140 of
+    your Form ON428." There is no other employment income (line 2), so line 3 is 75,000 + 0
+    = 75,000, and line 5 is 75,000 x 5.05% = 3,787.50, more than $875, so 875. Lines 7 and 8
+    (the UCCB and RDSP repayments) and 10 and 11 (the UCCB and RDSP income) are not
+    triggered, so line 9 is line 6, the net income of 74,174.00, and line 13 is 74,174.00 -
+    0 = 74,174.00. The taxpayer is taken to be single at the end of 2025 (to be confirmed),
+    so Part A applies and Part B (for a spouse or common-law partner) is not triggered: line
+    14 is 875; line 15 is 74,174.00; line 17 is 74,174.00 - 32,500.00 = 41,674.00; line 19
+    is 41,674.00 x 5% = 2,083.70; line 20 is 875 - 2,083.70, negative, so 0, the LIFT credit
+    (ON428 line 62140), with no rounding stated. The schedule states no eligibility rules
+    itself: "To find out if you are eligible for the low-income individuals and families tax
+    (LIFT) credit, go to canada.ca/on-tax-info." The taxpayer is taken to be eligible (to be
+    confirmed from that page).
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-a/5006-a-25e.txt
+  - >-
     CRA, the 2025 ON428 (form 5006-C): line 81 "Line 73 minus line 80 (if negative, enter
-    "0")"; the LIFT credit (line 85, line 62140) is not yet computed, and lines 82 (the
-    provincial foreign tax credit) and 87 (line 62150, the community food program donation
-    tax credit for farmers) are not triggered by this return, so lines 83, 84, 86 and 88
-    carry line 81, the Ontario tax after the reduction, unchanged; line 89 "Ontario health
-    premium (complete the chart below)"; line 90 "Line 88 plus line 89 Enter this amount on
-    line 42800 of your return. Ontario tax". The chart's line 1 is "Enter your taxable
-    income from line 26000 of your return", here 74,174.00, which is "more than $72,600 but
-    not more than $200,000": $750. Each row of the chart is the previous plateau plus a rate
-    on the taxable income over the row's threshold, at most the next plateau, so the premium
-    is the sum of five tiers, each capped: (74,174.00 - 20,000) x 6% = 54,174.00 x 6% =
+    "0")"; lines 82 (the provincial foreign tax credit) and 87 (line 62150, the community
+    food program donation tax credit for farmers) are not triggered by this return, so line
+    83 "Line 81 minus line 82 (if negative, enter "0")" carries line 81, the Ontario tax
+    after the reduction, unchanged, and line 84 is "Amount from line 83 of the previous
+    page"; line 85 (line 62140) "Low-income individuals and families tax (LIFT) credit
+    (complete Schedule ON428-A)", here 0 (Schedule ON428-A line 20); line 86 "Line 84 minus
+    line 85 (if negative, enter "0")", 3,750.97571 - 0 = 3,750.97571; line 88 "Line 86 minus
+    line 87 (if negative, enter "0")" carries line 86; line 89 "Ontario health premium
+    (complete the chart below)"; line 90 "Line 88 plus line 89 Enter this amount on line
+    42800 of your return. Ontario tax". The chart's line 1 is "Enter your taxable income
+    from line 26000 of your return", here 74,174.00, which is "more than $72,600 but not
+    more than $200,000": $750. Each row of the chart is the previous plateau plus a rate on
+    the taxable income over the row's threshold, at most the next plateau, so the premium is
+    the sum of five tiers, each capped: (74,174.00 - 20,000) x 6% = 54,174.00 x 6% =
     3,250.44, more than 300, so 300; (74,174.00 - 36,000) x 6% = 38,174.00 x 6% = 2,290.44,
     more than 150, so 150; (74,174.00 - 48,000) x 25% = 26,174.00 x 25% = 6,543.50, more
     than 150, so 150; (74,174.00 - 72,000) x 25% = 2,174.00 x 25% = 543.50, more than 150,
@@ -433,6 +469,11 @@ expected:
   ca-on/tax_reduction_amounts: "294.00"
   ca-on/ontario_tax_reduction: "0"
   ca-on/ontario_tax_after_reduction: "3750.97571"
+  ca-on/lift_credit_before_maximum: "3787.50"
+  ca-on/lift_maximum_credit: "875"
+  ca-on/lift_reduction: "2083.70"
+  ca-on/lift_credit: "0"
+  ca-on/ontario_tax_after_lift_credit: "3750.97571"
   ca-on/ontario_health_premium: "750"
   ca-on/ontario_tax: "4500.97571"
   ca/net_federal_tax: "8568.3009"

@@ -20,6 +20,10 @@ from app.jurisdictions.ca_on.catalog import (
     CATALOG,
     DEPENDANTS,
     DEPENDENT_CHILDREN,
+    LIFT_CREDIT,
+    LIFT_CREDIT_BEFORE_MAXIMUM,
+    LIFT_MAXIMUM_CREDIT,
+    LIFT_REDUCTION,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     ONTARIO_BASIC_TAX,
@@ -27,6 +31,7 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_SURTAX,
     ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_AFTER_LIFT_CREDIT,
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
@@ -54,6 +59,11 @@ REGISTERED = frozenset(
         "ca-on/tax_reduction_amounts",
         "ca-on/ontario_tax_reduction",
         "ca-on/ontario_tax_after_reduction",
+        "ca-on/lift_credit_before_maximum",
+        "ca-on/lift_maximum_credit",
+        "ca-on/lift_reduction",
+        "ca-on/lift_credit",
+        "ca-on/ontario_tax_after_lift_credit",
         "ca-on/ontario_health_premium",
         "ca-on/ontario_tax",
     }
@@ -98,6 +108,11 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/tax_reduction_amounts") is TAX_REDUCTION_AMOUNTS
     assert registry.get("ca-on/ontario_tax_reduction") is ONTARIO_TAX_REDUCTION
     assert registry.get("ca-on/ontario_tax_after_reduction") is ONTARIO_TAX_AFTER_REDUCTION
+    assert registry.get("ca-on/lift_credit_before_maximum") is LIFT_CREDIT_BEFORE_MAXIMUM
+    assert registry.get("ca-on/lift_maximum_credit") is LIFT_MAXIMUM_CREDIT
+    assert registry.get("ca-on/lift_reduction") is LIFT_REDUCTION
+    assert registry.get("ca-on/lift_credit") is LIFT_CREDIT
+    assert registry.get("ca-on/ontario_tax_after_lift_credit") is ONTARIO_TAX_AFTER_LIFT_CREDIT
     assert registry.get("ca-on/ontario_health_premium") is ONTARIO_HEALTH_PREMIUM
     assert registry.get("ca-on/ontario_tax") is ONTARIO_TAX
 

@@ -65,11 +65,16 @@ from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
     DEPENDANTS,
     DEPENDENT_CHILDREN,
+    LIFT_CREDIT,
+    LIFT_CREDIT_BEFORE_MAXIMUM,
+    LIFT_MAXIMUM_CREDIT,
+    LIFT_REDUCTION,
     ONTARIO_BASIC_TAX,
     ONTARIO_HEALTH_PREMIUM,
     ONTARIO_SURTAX,
     ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_AFTER_LIFT_CREDIT,
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
@@ -419,6 +424,52 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca-on/ontario_tax_after_reduction"},
         ),
+        # Schedule ON428-A line 3 "Line 1 plus line 2", line 1 "Amount from line 10100 of your
+        # return" (line 2, line 10400, not triggered), and line 5 "Line 3 multiplied by the
+        # percentage from line 4 (maximum $875)", line 4 "Applicable rate 5.05%": the rate on
+        # employment income, before its maximum.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/lift_rate"},
+            consumes={"base": "ca/employment_income"},
+            produces={"output": "ca-on/lift_credit_before_maximum"},
+        ),
+        # Line 5's "(maximum $875)" and Part A line 14 "Amount from line 5 above (maximum
+        # $875)".
+        CapabilitySelection(
+            name="core/capped_amount",
+            params={"cap": "ca-on/lift_maximum"},
+            consumes={"base": "ca-on/lift_credit_before_maximum"},
+            produces={"output": "ca-on/lift_maximum_credit"},
+        ),
+        # Lines 15 to 19: line 15 "Amount from line 13 above", the adjusted net income, which is
+        # net income (line 23600) while lines 7, 8, 10 and 11 are not triggered; line 16
+        # "Individual income threshold 32,500.00"; line 17 "Line 15 minus line 16 (if negative,
+        # enter "0")"; line 18 "Applicable rate 5%"; line 19 "Line 17 multiplied by the
+        # percentage from line 18".
+        CapabilitySelection(
+            name="core/tiered_surcharge",
+            params={"tiers": "ca-on/lift_reduction"},
+            consumes={"base": "ca/net_income"},
+            produces={"output": "ca-on/lift_reduction"},
+        ),
+        # Line 20 "Line 14 minus line 19 (if negative, enter "0") Enter this amount on line 62140
+        # of your Form ON428.", ON428 line 85.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca-on/lift_maximum_credit", "less": "ca-on/lift_reduction"},
+            produces={"output": "ca-on/lift_credit"},
+        ),
+        # ON428 line 86 "Line 84 minus line 85 (if negative, enter "0")": line 84 "Amount from line
+        # 83 of the previous page" carries line 83 "Line 81 minus line 82 (if negative, enter "0")",
+        # which is line 81 while line 82 (the provincial foreign tax credit) is not triggered.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca-on/ontario_tax_after_reduction", "less": "ca-on/lift_credit"},
+            produces={"output": "ca-on/ontario_tax_after_lift_credit"},
+        ),
         # ON428 line 89 "Ontario health premium (complete the chart below)": the chart's tiers on
         # line 1 "Enter your taxable income from line 26000 of your return", each the previous
         # plateau plus a rate on the income over its threshold, at most the next plateau.
@@ -429,14 +480,14 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca-on/ontario_health_premium"},
         ),
         # ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your return.
-        # Ontario tax": line 88 carries line 81 while the LIFT credit (line 85) is not yet
-        # computed and neither the provincial foreign tax credit (line 82) nor the community
-        # food program donation tax credit for farmers (line 87) is triggered by the returns.
+        # Ontario tax": line 88 "Line 86 minus line 87 (if negative, enter "0")" carries line 86
+        # while the community food program donation tax credit for farmers (line 87) is not
+        # triggered by the returns.
         CapabilitySelection(
             name="core/sum",
             params={},
             consumes={
-                "parts": ("ca-on/ontario_tax_after_reduction", "ca-on/ontario_health_premium")
+                "parts": ("ca-on/ontario_tax_after_lift_credit", "ca-on/ontario_health_premium")
             },
             produces={"output": "ca-on/ontario_tax"},
         ),
@@ -477,7 +528,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 40
+    assert len(found.capabilities) == 45
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -487,7 +538,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 40
+    assert len(composition.order) == 45
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -620,10 +671,23 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({ONTARIO_TAX_WITH_SURTAX, ONTARIO_TAX_REDUCTION}),
             frozenset({ONTARIO_TAX_AFTER_REDUCTION}),
         ),
+        (ApplyRate, frozenset({EMPLOYMENT_INCOME}), frozenset({LIFT_CREDIT_BEFORE_MAXIMUM})),
+        (CappedAmount, frozenset({LIFT_CREDIT_BEFORE_MAXIMUM}), frozenset({LIFT_MAXIMUM_CREDIT})),
+        (TieredSurcharge, frozenset({NET_INCOME}), frozenset({LIFT_REDUCTION})),
+        (
+            SubtractNotBelowZero,
+            frozenset({LIFT_MAXIMUM_CREDIT, LIFT_REDUCTION}),
+            frozenset({LIFT_CREDIT}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({ONTARIO_TAX_AFTER_REDUCTION, LIFT_CREDIT}),
+            frozenset({ONTARIO_TAX_AFTER_LIFT_CREDIT}),
+        ),
         (TieredSurcharge, frozenset({TAXABLE_INCOME}), frozenset({ONTARIO_HEALTH_PREMIUM})),
         (
             Sum,
-            frozenset({ONTARIO_TAX_AFTER_REDUCTION, ONTARIO_HEALTH_PREMIUM}),
+            frozenset({ONTARIO_TAX_AFTER_LIFT_CREDIT, ONTARIO_HEALTH_PREMIUM}),
             frozenset({ONTARIO_TAX}),
         ),
         (Sum, frozenset({FEDERAL_TAX_AFTER_CREDITS}), frozenset({NET_FEDERAL_TAX})),
