@@ -40,6 +40,7 @@ semantics against the T1 return):
 - `taxable_income`        (T1 line 26000 — bracket input)
 - `federal_basic_tax`
 - `provincial_basic_tax`
+- `provincial_credit_amounts` (ON428 line 58800 — the credit amounts, summed)
 - `provincial_tax_after_credits`
 - `tax_owed` (terminal)
 
@@ -59,6 +60,13 @@ any other, produced by one generic sum capability (`core/sum`) over a **list
 slot**: a consume slot that takes several kinds of one value type. The
 manifest lists which lines make up the total, in the order the trace shows
 them; the engine knows only that it is adding amounts.
+
+Non-refundable credits are totalled the same way: each credit amount is an
+artifact, `core/sum` adds them into one summed-amounts artifact, and
+`core/non_refundable_credit` consumes that sum and the tax, applies its one
+rate once to the sum (rounded with the rate dataset's rule), and produces the
+tax less the credit, never below zero; the part of the credit the tax cannot
+absorb is lost, not refunded.
 
 ## 3. Capability contract
 
@@ -140,9 +148,9 @@ capabilities:
       output: ca-on/ontario_basic_tax
   - name: core/non_refundable_credit
     params:
-      amount: ca-on/basic_personal_amount
       rate: ca-on/credit_rate           # one rate, stated once, in its own dataset
     consumes:
+      amounts: ca-on/non_refundable_credit_amounts  # the summed credit amounts
       tax: ca-on/ontario_basic_tax
     produces:
       output: ca-on/ontario_tax_after_credits

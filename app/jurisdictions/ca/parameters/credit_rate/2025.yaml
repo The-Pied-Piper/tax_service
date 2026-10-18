@@ -1,7 +1,7 @@
 # Federal non-refundable tax credit rate, 2025 tax year (T1 line 114): 14.5%, the
-# full-year blended lowest bracket rate. It is applied to the sum of all credit
-# amounts on the return; with one credit, amount × rate is equivalent.
-# A rate is not rounded; the amount dataset's rule rounds amount × rate.
+# full-year blended lowest bracket rate. It is applied once, to the sum of the credit
+# amounts on the return (T1 line 33500). CRA states no rounding rule for that product
+# (line 33800), so this dataset's rule is none.
 family: ca/credit_rate
 tax_year: 2025
 kind: rate

@@ -1,7 +1,6 @@
 """Apply rate: multiplies a money artifact by a rate from a `rate` dataset, exactly.
 
-The product is rounded only with the `rate` dataset's rule, which defaults to no rounding. (The
-credit capability, which has an amount dataset of its own, rounds with that one's rule instead.)
+The product is rounded only with the `rate` dataset's rule, which defaults to no rounding.
 """
 
 from __future__ import annotations

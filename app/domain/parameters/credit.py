@@ -27,9 +27,5 @@ class Credit:
         if self.amount < 0:
             raise InvalidCreditError(f"credit amount must not be negative, got {self.amount}")
 
-    def at(self, rate: Decimal) -> Decimal:
-        """The exact reduction in tax at `rate`: amount × rate."""
-        return self.amount * rate
-
 
 CREDIT: ParameterKind[Credit] = ParameterKind("credit", Credit)

@@ -46,6 +46,7 @@ REDUCTION = ArtifactKind("ex/reduction", Decimal)
 NET = ArtifactKind("ex/net", Decimal)
 PERSONAL = ArtifactKind("ex/personal_amount", Decimal)
 CAPPED = ArtifactKind("ex/capped", Decimal)
+CREDIT_AMOUNTS = ArtifactKind("ex/credit_amounts", Decimal)
 
 
 def slice_line() -> BracketSliceLine:
@@ -57,7 +58,7 @@ def total_line() -> RoundedTotalLine:
 
 
 def credit_line() -> CreditLine:
-    return CreditLine(Credit(D(1000)), Rate(D("0.125")), NO_ROUNDING, D("125.000"))
+    return CreditLine(CREDIT_AMOUNTS, D(1000), Rate(D("0.125")), NO_ROUNDING, D("125.000"))
 
 
 def applied_line() -> CreditAppliedLine:
@@ -179,15 +180,46 @@ def test_rounded_total_lines_differ_by_rounding() -> None:
 def test_credit_line_fields_in_order() -> None:
     line = credit_line()
 
+    assert [f.name for f in fields(CreditLine)] == [
+        "amounts",
+        "amounts_value",
+        "rate",
+        "rounding",
+        "credit",
+    ]
     assert line == CreditLine(
-        basis=Credit(D(1000)), rate=Rate(D("0.125")), rounding=NO_ROUNDING, credit=D("125.000")
+        amounts=CREDIT_AMOUNTS,
+        amounts_value=D(1000),
+        rate=Rate(D("0.125")),
+        rounding=NO_ROUNDING,
+        credit=D("125.000"),
     )
-    # Settled: `basis` is the Credit the rate applies to; the line's figure is `credit`.
-    assert line.basis == Credit(D(1000))
+    # Settled: the rate applies once, to the summed credit amounts (an artifact kind and its
+    # value); the line's figure is `credit`.
+    assert line.amounts is CREDIT_AMOUNTS
+    assert line.amounts_value == D(1000)
     assert line.rate == Rate(D("0.125"))
     assert line.rounding == NO_ROUNDING
     assert line.credit == D("125.000")
     assert line.amount == D("125.000")
+
+
+def test_credit_lines_differ_by_which_kind_holds_the_amounts() -> None:
+    assert credit_line() != CreditLine(TOTAL, D(1000), Rate(D("0.125")), NO_ROUNDING, D("125.000"))
+
+
+def test_credit_lines_differ_by_rounding() -> None:
+    assert credit_line() != CreditLine(
+        CREDIT_AMOUNTS, D(1000), Rate(D("0.125")), CENT, D("125.000")
+    )
+
+
+def test_credit_line_holds_no_parameter_credit() -> None:
+    # The `credit` parameter kind no longer reaches the credit capability: the amounts are an
+    # artifact, so no field of the line is a `Credit` value object.
+    line = credit_line()
+
+    assert not any(isinstance(getattr(line, f.name), Credit) for f in fields(line))
 
 
 def test_credit_applied_line_fields_in_order() -> None:
