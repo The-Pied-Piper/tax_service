@@ -12,6 +12,7 @@ from decimal import Decimal
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingRule, RoundTo
 from app.domain.trace import (
     BracketSliceLine,
+    CreditAmountLine,
     CreditAppliedLine,
     CreditLine,
     RateAppliedLine,
@@ -41,6 +42,8 @@ class EnglishTraceRenderer:
                     f"credit: {self._percent(rate.value)}% of {basis.amount} "
                     f"({self._rounding(rule)})"
                 )
+            case CreditAmountLine(output=output, basis=basis, rounding=rule):
+                return f"{output.label}: credit amount {basis.amount} ({self._rounding(rule)})"
             case CreditAppliedLine(output=output, tax=tax, tax_amount=amount):
                 return f"{output.label}: {tax.label} {amount} less credit, not below 0"
             case UnusedCreditLine():

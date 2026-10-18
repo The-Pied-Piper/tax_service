@@ -18,6 +18,7 @@ from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.domain.trace import (
     BracketSliceLine,
+    CreditAmountLine,
     CreditAppliedLine,
     CreditLine,
     RateAppliedLine,
@@ -41,6 +42,7 @@ RATED = ArtifactKind("ex/rated", Decimal)
 GROSS = ArtifactKind("ex/gross", Decimal)
 REDUCTION = ArtifactKind("ex/reduction", Decimal)
 NET = ArtifactKind("ex/net", Decimal)
+PERSONAL = ArtifactKind("ex/personal_amount", Decimal)
 
 
 def slice_line() -> BracketSliceLine:
@@ -79,6 +81,10 @@ def subtracted_not_below_zero_line() -> SubtractedNotBelowZeroLine:
     return SubtractedNotBelowZeroLine(NET, GROSS, D(10), REDUCTION, D("25.5"), D(0))
 
 
+def credit_amount_line() -> CreditAmountLine:
+    return CreditAmountLine(PERSONAL, Credit(D("1000.005")), CENT, D("1000.01"))
+
+
 ALL_LINES = [
     slice_line,
     total_line,
@@ -89,6 +95,7 @@ ALL_LINES = [
     rate_applied_line,
     subtracted_line,
     subtracted_not_below_zero_line,
+    credit_amount_line,
 ]
 
 
@@ -355,6 +362,53 @@ def test_a_floored_subtraction_is_not_a_plain_subtracted_line() -> None:
     floored = SubtractedNotBelowZeroLine(NET, GROSS, D("100.25"), REDUCTION, D(40), D("60.25"))
 
     assert cast(Any, floored) != subtracted_line()
+
+
+def test_credit_amount_line_fields_in_order() -> None:
+    line = credit_amount_line()
+
+    assert line == CreditAmountLine(
+        output=PERSONAL, basis=Credit(D("1000.005")), rounding=CENT, value=D("1000.01")
+    )
+    assert [f.name for f in fields(line)] == ["output", "basis", "rounding", "value"]
+    assert line.output is PERSONAL
+    assert line.basis == Credit(D("1000.005"))
+    assert line.rounding == CENT
+    # Settled: `value` is the rounded amount, not the dataset's; the inherited `amount` returns it.
+    assert line.value == D("1000.01")
+    assert line.amount == line.value
+
+
+def test_credit_amount_line_may_hold_an_unrounded_amount() -> None:
+    line = CreditAmountLine(PERSONAL, Credit(D("1000.005")), NO_ROUNDING, D("1000.005"))
+
+    assert line.rounding == NO_ROUNDING
+    assert line.value == D("1000.005")
+    assert line.amount == line.value
+
+
+def test_credit_amount_lines_differ_by_rounding() -> None:
+    assert credit_amount_line() != CreditAmountLine(
+        PERSONAL, Credit(D("1000.005")), NO_ROUNDING, D("1000.01")
+    )
+
+
+def test_credit_amount_lines_differ_by_value() -> None:
+    assert credit_amount_line() != CreditAmountLine(
+        PERSONAL, Credit(D("1000.005")), CENT, D("1000.00")
+    )
+
+
+def test_credit_amount_lines_are_hashable() -> None:
+    assert hash(credit_amount_line()) == hash(credit_amount_line())
+
+
+def test_a_credit_amount_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(credit_amount_line())]
+
+
+def test_a_credit_amount_line_is_not_a_credit_line() -> None:
+    assert not isinstance(credit_amount_line(), CreditLine)
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:

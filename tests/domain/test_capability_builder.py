@@ -364,6 +364,47 @@ def test_a_class_without_parameter_slots_builds_from_an_empty_params() -> None:
     assert built.produces == frozenset({TARGET})
 
 
+class Grant(Capability):
+    """Produces `target` = the `factor` dataset's value; consumes nothing."""
+
+    PARAMETERS: ClassVar[Mapping[str, ParameterKind[Any]]] = {"factor": FACTOR}
+    PRODUCES: ClassVar[Mapping[str, type]] = {"target": Decimal}
+
+    def __init__(self, *, factor: ParameterDataset[Factor], target: Money) -> None:
+        super().__init__(target=target)
+        self.factor, self.target = factor, target
+
+    def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+        return CapabilityResult(
+            outputs=(Artifact(self.target, self.factor.values.value),), trace=()
+        )
+
+
+def grant(consumes: Mapping[str, str] | None = None) -> CapabilitySelection:
+    return CapabilitySelection(
+        name="ex/grant",
+        params={"factor": "ex/factor"},
+        consumes={} if consumes is None else consumes,
+        produces={"target": "ex/target"},
+    )
+
+
+def test_a_class_without_consumed_slots_builds_from_an_empty_consumes() -> None:
+    built = CapabilityBuilder().build(grant(), Grant, datasets(), registry())
+
+    assert isinstance(built, Grant)
+    assert built.consumes == frozenset()
+    assert built.produces == frozenset({TARGET})
+    assert built.compute(()).outputs == (Artifact(TARGET, D("3")),)
+
+
+def test_rejects_a_consumes_key_for_a_class_without_consumed_slots() -> None:
+    with pytest.raises(InvalidSelectionError, match="'source' is given under consumes") as raised:
+        CapabilityBuilder().build(grant({"source": "ex/source"}), Grant, datasets(), registry())
+
+    assert "ex/grant (produces ex/target)" in str(raised.value)
+
+
 def test_identifies_the_selection_by_name_and_produced_identifiers() -> None:
     with pytest.raises(InvalidSelectionError, match=re.escape("ex/scale (produces ex/target)")):
         build(selection(params={}), given_datasets={})

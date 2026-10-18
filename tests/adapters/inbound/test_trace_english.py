@@ -19,6 +19,7 @@ from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.trace import (
     BracketSliceLine,
+    CreditAmountLine,
     CreditAppliedLine,
     CreditLine,
     RateAppliedLine,
@@ -44,6 +45,7 @@ GROSS_AMOUNT = ArtifactKind("ex/gross_amount", Decimal)
 RATED_AMOUNT = ArtifactKind("ex/rated_amount", Decimal)
 REDUCTION = ArtifactKind("ex/reduction", Decimal)
 NET_AMOUNT = ArtifactKind("ex/net_amount", Decimal)
+PERSONAL_AMOUNT = ArtifactKind("ex/personal_amount", Decimal)
 
 
 def render(line: TraceLine) -> str:
@@ -249,6 +251,29 @@ def test_renders_a_subtraction_not_below_zero_to_exactly_zero() -> None:
     assert render(line) == "net_amount: gross_amount 40.50 less reduction 40.50, not below 0 = 0"
 
 
+# --- credit amounts ------------------------------------------------------------------------
+
+
+def test_renders_a_credit_amount_without_rounding() -> None:
+    line = CreditAmountLine(PERSONAL_AMOUNT, Credit(D("1000.005")), NO_ROUNDING, D("1000.005"))
+
+    assert render(line) == "personal_amount: credit amount 1000.005 (no rounding)"
+
+
+def test_renders_a_rounded_credit_amount() -> None:
+    line = CreditAmountLine(PERSONAL_AMOUNT, Credit(D("1000.005")), CENT, D("1000.01"))
+
+    assert render(line) == "personal_amount: credit amount 1000.005 (half-up to 0.01)"
+
+
+def test_renders_the_credit_amount_with_another_rounding_rule() -> None:
+    line = CreditAmountLine(
+        PERSONAL_AMOUNT, Credit(D("1000.99")), RoundTo(D("1"), RoundingMode.FLOOR), D("1000")
+    )
+
+    assert render(line) == "personal_amount: credit amount 1000.99 (floor to 1)"
+
+
 # --- whole traces and unknown lines ----------------------------------------------
 
 
@@ -263,6 +288,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         RateAppliedLine(RATED_AMOUNT, TOTAL, D("3"), Rate(D("0.5")), NO_ROUNDING, D("1.5")),
         SubtractedLine(NET_AMOUNT, TOTAL, D("3"), RATED_AMOUNT, D("1.5"), D("1.5")),
         SubtractedNotBelowZeroLine(TOTAL, RATED_AMOUNT, D("1.5"), PART_TWO, D("2"), D("0")),
+        CreditAmountLine(PERSONAL_AMOUNT, Credit(D("1000")), NO_ROUNDING, D("1000")),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -275,6 +301,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         "rated_amount: 50% of total 3 (no rounding)",
         "net_amount: total 3 less rated_amount 1.5 = 1.5",
         "total: rated_amount 1.5 less part_two 2, not below 0 = 0",
+        "personal_amount: credit amount 1000 (no rounding)",
     )
 
 
