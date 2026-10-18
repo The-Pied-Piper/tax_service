@@ -9,15 +9,16 @@
 # contributions available to deduct (Schedule 7 line 10), and from those and the deduction
 # limit, the lesser of them, to the RRSP deduction (Schedule 7 line 20); less the enhanced
 # CPP contributions to net income, less the (empty) deductions from net income to taxable
-# income, and through each form's total of non-refundable credit amounts (its basic personal
-# amount, the base CPP contributions and the EI premiums, and on the T1 alone the Canada
-# employment amount), credited once at the form's credit rate to the form's non-refundable
-# tax credits (T1 line 35000, ON428 line 61500), taken off its basic tax, not below zero, to
-# the tax after credits, and on ON428 the surtax on the Ontario tax after credits, added to
-# it to the Ontario tax with surtax. There is no capital gain, unused or new RRSP
-# contribution or union dues. Not yet computed, so not in this file: any deduction from net
-# income, the social benefits repayment, capital losses, the Ontario tax reduction and
-# health premium, and the balance owing.
+# income; from net income, by the Federal Worksheet, to the federal basic personal amount;
+# and through each form's total of non-refundable credit amounts (its basic personal amount,
+# the base CPP contributions and the EI premiums, and on the T1 alone the Canada employment
+# amount), credited once at the form's credit rate to the form's non-refundable tax credits
+# (T1 line 35000, ON428 line 61500), taken off its basic tax, not below zero, to the tax
+# after credits, and on ON428 the surtax on the Ontario tax after credits, added to it to
+# the Ontario tax with surtax. There is no capital gain, unused or new RRSP contribution or
+# union dues. Not yet computed, so not in this file: any deduction from net income, the
+# social benefits repayment, capital losses, the Ontario tax reduction and health premium,
+# and the balance owing.
 # Amounts are quoted decimal strings, never floats. Every output the CA-ON manifest
 # declares must appear under `expected`; intermediate lines may be listed and are then
 # checked too.
@@ -55,8 +56,8 @@ description: >-
   zero. The Ontario surtax (ON428 line 68) is 20% of the Ontario tax after credits over
   $5,710 plus 36% of it over $7,307: $0, as the Ontario tax after credits is below $5,710,
   so the Ontario tax with surtax (ON428 line 69) is that same $3,750.97571. The CPP
-  contributions and EI premiums are rounded to the cent, which changes none of them; no
-  other amounts are rounded.
+  contributions, the EI premiums and the federal basic personal amount are rounded to the
+  cent, which changes none of them; no other amounts are rounded.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -198,23 +199,31 @@ sources:
     income less it, not below zero: 74,174.00 - 0 = 74,174.00.
   - >-
     CRA, the 2025 T1 return (form 5000-R): line 77 (line 30000) "If the amount on line 23600
-    is $177,882 or less, enter $16,129. Otherwise, use the Federal Worksheet to calculate
-    the amount to enter. (maximum $16,129)"; line 86 (line 30800) "through employment
-    income" (base CPP or QPP contributions); line 88 (line 31200) "through employment (boxes
-    18 and 55 of all T4 slips) (maximum $1,077.48)"; line 92 (line 31260) "Enter whichever
-    is less: $1,471 or line 1 plus line 2.", with line 1 (line 10100) "Employment income
-    (box 14 of all T4 slips)" and line 2 (line 10400) "Other employment income"; line 113
-    (line 33500) "Line 106 plus line 112"; line 114 "Federal non-refundable tax credit rate
-    14.5%"; line 115 (line 33800) "Line 113 multiplied by the percentage from line 114";
-    line 118 (line 35000) "Add lines 115 to 117. Total federal non-refundable tax credits".
-    Net income of 74,174.00 is 177,882 or less, so line 30000 is 16,129. There is no other
-    employment income on this return, so line 1 plus line 2 is 75,000 + 0 = 75,000 and line
-    31260 is 1,471, the lesser of 1,471 and 75,000, with no rounding stated. With the base
-    CPP contributions, the EI premiums and the Canada employment amount, the credit amounts
-    modelled, line 33500 is 16,129 + 3,356.10 + 1,077.48 + 1,471 = 22,033.58, and line 33800
-    is 22,033.58 x 14.5% = 3,194.8691, with no rounding stated. Lines 116 and 117 are not
-    modelled, so line 35000 is that same 3,194.8691.
+    is $177,882 or less, enter $16,129. If the amount on line 23600 is $253,414 or more,
+    enter $14,538. Otherwise, use the Federal Worksheet to calculate the amount to enter.
+    (maximum $16,129)"; line 86 (line 30800) "through employment income" (base CPP or QPP
+    contributions); line 88 (line 31200) "through employment (boxes 18 and 55 of all T4
+    slips) (maximum $1,077.48)"; line 92 (line 31260) "Enter whichever is less: $1,471 or
+    line 1 plus line 2.", with line 1 (line 10100) "Employment income (box 14 of all T4
+    slips)" and line 2 (line 10400) "Other employment income"; line 113 (line 33500) "Line
+    106 plus line 112"; line 114 "Federal non-refundable tax credit rate 14.5%"; line 115
+    (line 33800) "Line 113 multiplied by the percentage from line 114"; line 118 (line
+    35000) "Add lines 115 to 117. Total federal non-refundable tax credits". Line 30000 is
+    computed from net income by the Federal Worksheet (form 5000-D1), whose line 30000
+    section reads "If the amount from line 23600 of your return is: $177,882 or less, enter
+    $16,129 on line 30000 of your return". Net income of 74,174.00 is 177,882 or less, at or
+    below the worksheet's threshold, so its calculation is not completed and line 30000 is
+    16,129, the base amount (line 1 "Base amount 14,538.00") plus the whole supplement (line
+    2 "Supplement amount 1,591.00"), which T4127's rounding to the cent leaves unchanged.
+    There is no other employment income on this return, so line 1 plus line 2 is 75,000 + 0
+    = 75,000 and line 31260 is 1,471, the lesser of 1,471 and 75,000, with no rounding
+    stated. With the base CPP contributions, the EI premiums and the Canada employment
+    amount, the credit amounts modelled, line 33500 is 16,129 + 3,356.10 + 1,077.48 + 1,471
+    = 22,033.58, and line 33800 is 22,033.58 x 14.5% = 3,194.8691, with no rounding stated.
+    Lines 116 and 117 are not modelled, so line 35000 is that same 3,194.8691.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-d1/5000-d1-25e.txt
+  - https://www.canada.ca/en/revenue-agency/services/forms-publications/payroll/payroll-deductions-t4127-payroll-deductions-formulas/t4127-jan-120th-edition-effective-january-1-2025/t4127-jan-payroll-deductions-formulas-computer-programs.html
   - >-
     CRA, the 2025 ON428 (form 5006-C): line 9 (line 58040) "Basic personal amount Claim
     $12,747"; line 19 (line 58240) "Amount from line 30800 of your return"; line 21 (line
@@ -284,7 +293,7 @@ expected:
   ca/deductions_from_net_income: "0"
   ca/taxable_income: "74174.00"
   ca/federal_basic_tax: "11763.17"
-  ca/basic_personal_amount: "16129"
+  ca/basic_personal_amount: "16129.00"
   ca/canada_employment_amount: "1471"
   ca/non_refundable_credit_amounts: "22033.58"
   ca/non_refundable_tax_credits: "3194.8691"

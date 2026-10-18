@@ -10,13 +10,14 @@ no unused contributions plus the contributions of 1926 (Schedule 7 line 10), and
 of 1926, the lesser of them and the deduction limit of 19800 (Schedule 7 line 20); less that RRSP
 deduction, union dues of 2000 and the enhanced contributions to net income 115000, less no
 deductions from net income to taxable income 115000, and from each basic personal amount (16129
-federal, 12747 Ontario) plus the base CPP contributions and the EI premiums, and federally the
+federal, the Federal Worksheet's taper on net income, here at or below the 177882 threshold so not
+reduced; 12747 Ontario) plus the base CPP contributions and the EI premiums, and federally the
 Canada employment amount of 1471 (the lesser of employment income and 1471), through each total of
 credit amounts and each form's non-refundable tax credits (T1 line 35000, ON428 line 61500) to each
 tax after credits, and the Ontario surtax on the Ontario tax after credits (ON428 lines 66 to 68) to
 the Ontario tax with surtax of line 69) are checked from the files under `returns/` by
-`test_worked_returns.py`, as are Returns C and D; this module pins which capability produces each
-line, the order, and the trace that explains them.
+`test_worked_returns.py`, as are Returns C, D and E; this module pins which capability produces
+each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
@@ -34,6 +35,7 @@ from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
+from app.domain.capabilities.tapered_amount import TaperedAmount
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.parameters.amount import Amount
@@ -41,6 +43,7 @@ from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
+from app.domain.parameters.taper import Taper
 from app.domain.trace import (
     CappedAmountLine,
     ContributionTierLine,
@@ -51,6 +54,7 @@ from app.domain.trace import (
     SubtractedNotBelowZeroLine,
     SumLine,
     SurchargeTierLine,
+    TaperedAmountLine,
 )
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
@@ -92,7 +96,8 @@ from app.main import build_tax_computation
 D = Decimal
 CA_ON = JurisdictionCode("CA-ON")
 # Schedule 8 Part 3a lines 25 and 28: "(in dollars and cents)"; the EI premiums are in dollars and
-# cents too.
+# cents too, and the federal basic personal amount is rounded half-up to the cent by T4127's BPAF
+# rounding footnote.
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
@@ -172,7 +177,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(FEDERAL_BASIC_TAX), ProgressiveTax)
     assert isinstance(worksheet.producer_of(ONTARIO_BASIC_TAX), ProgressiveTax)
     assert worksheet.producer_of(FEDERAL_BASIC_TAX) is not worksheet.producer_of(ONTARIO_BASIC_TAX)
-    assert isinstance(worksheet.producer_of(BASIC_PERSONAL_AMOUNT), CreditAmount)
+    assert isinstance(worksheet.producer_of(BASIC_PERSONAL_AMOUNT), TaperedAmount)
     assert isinstance(worksheet.producer_of(ontario.BASIC_PERSONAL_AMOUNT), CreditAmount)
     assert worksheet.producer_of(BASIC_PERSONAL_AMOUNT) is not worksheet.producer_of(
         ontario.BASIC_PERSONAL_AMOUNT
@@ -272,7 +277,11 @@ def test_the_trace_explains_the_computation() -> None:
         "115000",
     )
     federal_basic = position("federal_basic_tax on taxable_income 115000 (no rounding)", "20146.25")
-    federal_amount = position("basic_personal_amount: credit amount 16129 (no rounding)", "16129")
+    federal_amount = position(
+        "basic_personal_amount: 14538 plus 1591 less 0 for net_income 115000 over 177882 "
+        "(range 75532), not below 14538 (half-up to 0.01)",
+        "16129",
+    )
     employment_amount = position(
         "canada_employment_amount: lesser of employment_income 110000 and 1471 (no rounding)",
         "1471",
@@ -336,7 +345,7 @@ def test_the_trace_explains_the_computation() -> None:
     assert taxable < federal_basic < federal_after
     assert taxable < ontario_basic
     assert ontario_basic < ontario_after
-    assert federal_amount < federal_amounts < federal_credit < federal_after
+    assert net < federal_amount < federal_amounts < federal_credit < federal_after
     assert employment_amount < federal_amounts
     assert ontario_amount < ontario_amounts < ontario_credit < ontario_after
     assert ontario_after < surtax_first < surtax_second < with_surtax
@@ -350,6 +359,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     floored = {line.output: line for line in trace if isinstance(line, SubtractedNotBelowZeroLine)}
     totals = {line.output: line for line in trace if isinstance(line, RoundedTotalLine)}
     amounts = {line.output: line for line in trace if isinstance(line, CreditAmountLine)}
+    tapered = {line.output: line for line in trace if isinstance(line, TaperedAmountLine)}
     capped = {line.output: line for line in trace if isinstance(line, CappedAmountLine)}
     tiers = {line.output: line for line in trace if isinstance(line, ContributionTierLine)}
     lesser = {line.output: line for line in trace if isinstance(line, LesserOfLine)}
@@ -438,10 +448,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("8195.7644476"),
         ),
     }
+    # T1 line 30000 and the Federal Worksheet (5000-D1): net income of 115000 is at or below
+    # the 177882 threshold, so the reduction (line 9) is 0 and the amount is the base plus the
+    # whole supplement, 14538 + 1591 = 16129, rounded half-up to the cent.
+    assert tapered == {
+        BASIC_PERSONAL_AMOUNT: TaperedAmountLine(
+            output=BASIC_PERSONAL_AMOUNT,
+            base=NET_INCOME,
+            base_amount=D("115000"),
+            taper=Taper(
+                base=D("14538"), supplement=D("1591"), threshold=D("177882"), range=D("75532")
+            ),
+            rounding=CENT,
+            reduction=D("0"),
+            result=D("16129.00"),
+        )
+    }
+    # ON428 line 58040 has no reduction: the Ontario amount is the dataset's credit amount.
     assert amounts == {
-        BASIC_PERSONAL_AMOUNT: CreditAmountLine(
-            BASIC_PERSONAL_AMOUNT, Credit(amount=D("16129")), NO_ROUNDING, D("16129")
-        ),
         ontario.BASIC_PERSONAL_AMOUNT: CreditAmountLine(
             ontario.BASIC_PERSONAL_AMOUNT, Credit(amount=D("12747")), NO_ROUNDING, D("12747")
         ),
@@ -598,6 +622,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[TAXABLE_INCOME] < position[ONTARIO_BASIC_TAX]
     assert position[FEDERAL_BASIC_TAX] < position[FEDERAL_TAX_AFTER_CREDITS]
     assert position[ONTARIO_BASIC_TAX] < position[ONTARIO_TAX_AFTER_CREDITS]
+    assert position[NET_INCOME] < position[BASIC_PERSONAL_AMOUNT]
     assert position[BASIC_PERSONAL_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert position[CANADA_EMPLOYMENT_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert position[NON_REFUNDABLE_CREDIT_AMOUNTS] < position[NON_REFUNDABLE_TAX_CREDITS]

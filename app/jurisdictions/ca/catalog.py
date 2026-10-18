@@ -161,11 +161,14 @@ UNVERIFIED.
 
 BASIC_PERSONAL_AMOUNT = CATALOG.declare("basic_personal_amount", Decimal, non_negative=True)
 """Basic personal amount, T1 line 30000 "If the amount on line 23600 is $177,882 or less, enter
-$16,129. Otherwise, use the Federal Worksheet to calculate the amount to enter. (maximum
-$16,129)": the amount claimed, the first part of the total of the credit amounts.
+$16,129. If the amount on line 23600 is $253,414 or more, enter $14,538. Otherwise, use the
+Federal Worksheet to calculate the amount to enter. (maximum $16,129)": the first part of the
+total of the credit amounts.
 
-The reduction for net income above $177,882 is not modelled, so the claimed amount is the full
-amount.
+It is computed from net income (line 23600) by the Federal Worksheet (form 5000-D1), line 30000:
+line 11 "Line 1 plus line 10 Enter this amount on line 30000 of your return. (maximum $16,129)",
+the base amount of line 1 plus the supplement amount of line 2 less its reduction for net income
+over the income threshold of line 4 (line 10 "Line 2 minus line 9 (if negative, enter "0")").
 """
 
 CPP_BASE_CONTRIBUTIONS = CATALOG.declare("cpp_base_contributions", Decimal, non_negative=True)

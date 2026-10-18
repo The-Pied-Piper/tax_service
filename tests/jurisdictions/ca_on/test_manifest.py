@@ -18,6 +18,7 @@ from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
+from app.domain.capabilities.tapered_amount import TaperedAmount
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Manifest
@@ -214,14 +215,19 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"base": "ca/taxable_income"},
             produces={"output": "ca-on/ontario_basic_tax"},
         ),
-        # Each basic personal amount dataset becomes an artifact of the same name (T1 line 30000,
-        # ON428 line 58040), the first part of its form's total of credit amounts.
+        # T1 line 30000 "If the amount on line 23600 is $177,882 or less, enter $16,129. If the
+        # amount on line 23600 is $253,414 or more, enter $14,538. Otherwise, use the Federal
+        # Worksheet to calculate the amount to enter. (maximum $16,129)": the federal basic
+        # personal amount is the worksheet's taper on net income (line 23600), the first part of
+        # the T1's total of credit amounts.
         CapabilitySelection(
-            name="core/credit_amount",
-            params={"amount": "ca/basic_personal_amount"},
-            consumes={},
+            name="core/tapered_amount",
+            params={"taper": "ca/basic_personal_amount"},
+            consumes={"base": "ca/net_income"},
             produces={"output": "ca/basic_personal_amount"},
         ),
+        # ON428 line 58040 has no reduction: the Ontario basic personal amount dataset becomes an
+        # artifact of the same name, the first part of ON428's total of credit amounts.
         CapabilitySelection(
             name="core/credit_amount",
             params={"amount": "ca-on/basic_personal_amount"},
@@ -376,7 +382,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         ),
         (ProgressiveTax, frozenset({TAXABLE_INCOME}), frozenset({FEDERAL_BASIC_TAX})),
         (ProgressiveTax, frozenset({TAXABLE_INCOME}), frozenset({ONTARIO_BASIC_TAX})),
-        (CreditAmount, frozenset(), frozenset({BASIC_PERSONAL_AMOUNT})),
+        (TaperedAmount, frozenset({NET_INCOME}), frozenset({BASIC_PERSONAL_AMOUNT})),
         (CreditAmount, frozenset(), frozenset({ontario.BASIC_PERSONAL_AMOUNT})),
         (CappedAmount, frozenset({EMPLOYMENT_INCOME}), frozenset({CANADA_EMPLOYMENT_AMOUNT})),
         (
