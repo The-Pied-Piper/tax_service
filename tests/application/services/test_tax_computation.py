@@ -1659,3 +1659,294 @@ def test_core_tapered_amount_asks_for_its_dataset_as_a_taper() -> None:
     built.compose(EX_ON, 2025)
 
     assert ("ex/some_taper", 2025, TAPER) in parameters.requests
+
+
+# --- core/per_unit_amount: an amount dataset's amount for each of a count, by a made-up manifest -
+#
+# Like `Sum` above, `PerUnitAmount` is imported inside a cached factory so its absence fails only
+# the tests that use it, and is registered in a private registry under its shared identifier,
+# `core/per_unit_amount`. It consumes `ex/count`, a made-up `int` input, and reads a made-up
+# `amount` dataset of 544.5 for each unit, rounded half-up to the cent.
+
+COUNT = ArtifactKind("ex/count", int)
+
+
+@cache
+def per_unit_amount_class() -> Any:
+    from app.domain.capabilities.per_unit_amount import PerUnitAmount
+
+    return PerUnitAmount
+
+
+def some_amount_per_unit_data(tax_year: int = 2025) -> ParameterDataset[Any]:
+    from app.domain.parameters.amount import AMOUNT, Amount
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+
+    return ParameterDataset(
+        family="ex/some_amount_per_unit",
+        tax_year=tax_year,
+        kind=AMOUNT,
+        values=Amount(D("544.5")),
+        rounding=RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        sources=("https://example.org/ex/some_amount_per_unit",),
+    )
+
+
+PER_UNIT_AMOUNT = CapabilitySelection(
+    name="core/per_unit_amount",
+    params={"amount": "ex/some_amount_per_unit"},
+    consumes={"count": "ex/count"},
+    produces={"output": "ex-on/result"},
+)
+
+
+def per_unit_amount_service() -> tuple[TaxComputationService, FakeParameters]:
+    capabilities = capability_registry()
+    capabilities.register("core/per_unit_amount", per_unit_amount_class())
+    artifacts = artifact_registry()
+    artifacts.register(COUNT.identifier, COUNT)
+    parameters = FakeParameters(factor_data(), offset_data(), some_amount_per_unit_data())
+    built = service(
+        manifest(PER_UNIT_AMOUNT, inputs=frozenset({"ex/count"})),
+        parameters=parameters,
+        capabilities=capabilities,
+        artifacts=artifacts,
+    )
+    return built, parameters
+
+
+def test_computes_core_per_unit_amount_end_to_end() -> None:
+    from app.domain.parameters.amount import Amount
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.trace import PerUnitAmountLine
+
+    built, _parameters = per_unit_amount_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(COUNT, 3))
+
+    # 544.5 × 3 = 1633.5, rounded half-up to the cent: 1633.50.
+    assert worksheet.get(RESULT).value == D("1633.5")
+    assert str(worksheet.get(RESULT).value) == "1633.50"
+    assert isinstance(worksheet.producer_of(RESULT), per_unit_amount_class())
+    assert worksheet.producer_of(COUNT) is None
+    assert worksheet.trace == (
+        PerUnitAmountLine(
+            RESULT,
+            COUNT,
+            3,
+            Amount(D("544.5")),
+            RoundTo(D("0.01"), RoundingMode.HALF_UP),
+            D("1633.50"),
+        ),
+    )
+
+
+def test_computes_core_per_unit_amount_for_a_count_of_zero_end_to_end() -> None:
+    built, _parameters = per_unit_amount_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(COUNT, 0))
+
+    assert worksheet.get(RESULT).value == D("0")
+
+
+def test_core_per_unit_amount_consumes_its_count_as_an_int() -> None:
+    built, _parameters = per_unit_amount_service()
+
+    composition = built.compose(EX_ON, 2025)
+
+    (only,) = composition.order
+    assert type(only) is per_unit_amount_class()
+    assert only.consumes == frozenset({COUNT})
+
+
+def test_core_per_unit_amount_rejects_a_money_input_for_its_count() -> None:
+    built, _parameters = per_unit_amount_service()
+
+    with pytest.raises(InvalidCompositionError, match="'count' was given as Decimal but the input"):
+        built.compute(EX_ON, 2025, Artifact(ArtifactKind("ex/count", Decimal), D("3")))
+
+
+def test_core_per_unit_amount_asks_for_its_dataset_as_an_amount() -> None:
+    from app.domain.parameters.amount import AMOUNT
+
+    built, parameters = per_unit_amount_service()
+
+    built.compose(EX_ON, 2025)
+
+    assert ("ex/some_amount_per_unit", 2025, AMOUNT) in parameters.requests
+
+
+# --- core/multiple_over: a factor of one amount over another, not below 0, by a made-up manifest -
+#
+# Like `Sum` above, `MultipleOver` is imported inside a cached factory so its absence fails only
+# the tests that use it, and is registered in a private registry under its shared identifier,
+# `core/multiple_over`. It multiplies `ex/scaled` (base × 3) by a made-up `factor` dataset of 2,
+# takes off the `ex/extra` input, floors at zero and rounds half-up to the cent. The real `factor`
+# kind shares its name with this file's made-up `FACTOR`, so it is imported under another name.
+
+
+@cache
+def multiple_over_class() -> Any:
+    from app.domain.capabilities.multiple_over import MultipleOver
+
+    return MultipleOver
+
+
+def some_factor_data(tax_year: int = 2025) -> ParameterDataset[Any]:
+    from app.domain.parameters.factor import FACTOR as FACTOR_KIND
+    from app.domain.parameters.factor import Factor as FactorValue
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+
+    return ParameterDataset(
+        family="ex/some_factor",
+        tax_year=tax_year,
+        kind=FACTOR_KIND,
+        values=FactorValue(D("2")),
+        rounding=RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        sources=("https://example.org/ex/some_factor",),
+    )
+
+
+MULTIPLE_OVER = CapabilitySelection(
+    name="core/multiple_over",
+    params={"factor": "ex/some_factor"},
+    consumes={"amount": "ex/scaled", "less": "ex/extra"},
+    produces={"output": "ex-on/result"},
+)
+
+
+def multiple_over_service() -> tuple[TaxComputationService, FakeParameters]:
+    capabilities = capability_registry()
+    capabilities.register("core/multiple_over", multiple_over_class())
+    parameters = FakeParameters(factor_data(), offset_data(), some_factor_data())
+    built = service(
+        manifest(  # authored out of order on purpose
+            MULTIPLE_OVER, SCALE, inputs=frozenset({"ex/base", "ex/extra"})
+        ),
+        parameters=parameters,
+        capabilities=capabilities,
+    )
+    return built, parameters
+
+
+def test_computes_core_multiple_over_above_the_figure_end_to_end() -> None:
+    from app.domain.parameters.factor import Factor as FactorValue
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.trace import MultipleOverLine
+
+    built, _parameters = multiple_over_service()
+
+    worksheet = built.compute(
+        EX_ON, 2025, Artifact(BASE, D("100.005")), Artifact(EXTRA, D("150.0125"))
+    )
+
+    # scaled = 100.005 × 3 = 300.015; 2 × 300.015 = 600.030, less 150.0125 = 450.0175, rounded
+    # half-up to 450.02.
+    assert worksheet.get(SCALED).value == D("300.015")
+    assert worksheet.get(RESULT).value == D("450.02")
+    assert isinstance(worksheet.producer_of(RESULT), multiple_over_class())
+    assert worksheet.trace[-1] == MultipleOverLine(
+        RESULT,
+        SCALED,
+        D("300.015"),
+        FactorValue(D("2")),
+        EXTRA,
+        D("150.0125"),
+        RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        D("450.02"),
+    )
+    assert [type(line) for line in worksheet.trace].count(MultipleOverLine) == 1
+
+
+def test_computes_core_multiple_over_floored_at_zero_end_to_end() -> None:
+    from app.domain.trace import MultipleOverLine
+
+    built, _parameters = multiple_over_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("100")), Artifact(EXTRA, D("700")))
+
+    # 2 × 300 = 600, less 700 is below zero: 0, rounded to 0.00.
+    assert worksheet.get(RESULT).value == D("0")
+    assert str(worksheet.get(RESULT).value) == "0.00"
+    (line,) = [line for line in worksheet.trace if isinstance(line, MultipleOverLine)]
+    assert line.less_amount == D("700")
+
+
+def test_core_multiple_over_runs_after_its_amount_is_produced() -> None:
+    built, _parameters = multiple_over_service()
+
+    composition = built.compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is multiple_over_class()
+    assert composition.order[-1].consumes == frozenset({SCALED, EXTRA})
+
+
+def test_core_multiple_over_asks_for_its_dataset_as_a_factor() -> None:
+    from app.domain.parameters.factor import FACTOR as FACTOR_KIND
+
+    built, parameters = multiple_over_service()
+
+    built.compose(EX_ON, 2025)
+
+    assert ("ex/some_factor", 2025, FACTOR_KIND) in parameters.requests
+    assert ("ex/some_factor", 2025, FACTOR) not in parameters.requests  # not the made-up kind
+
+
+# --- core/per_unit_amount into core/multiple_over, by a made-up manifest ------------------------
+#
+# The two together, as a form's "number multiplied by an amount", then "multiplied by 2", then
+# "minus" another line, "if negative, enter 0": the count's amount is the multiple's `amount`
+# and the scaled base is taken off.
+
+
+def per_unit_into_multiple_over_service() -> TaxComputationService:
+    per_unit = CapabilitySelection(
+        name="core/per_unit_amount",
+        params={"amount": "ex/some_amount_per_unit"},
+        consumes={"count": "ex/count"},
+        produces={"output": "ex/part_one"},
+    )
+    multiple = CapabilitySelection(
+        name="core/multiple_over",
+        params={"factor": "ex/some_factor"},
+        consumes={"amount": "ex/part_one", "less": "ex/scaled"},
+        produces={"output": "ex-on/result"},
+    )
+    capabilities = capability_registry()
+    capabilities.register("core/per_unit_amount", per_unit_amount_class())
+    capabilities.register("core/multiple_over", multiple_over_class())
+    artifacts = artifact_registry()
+    for kind in (COUNT, PART_ONE):
+        artifacts.register(kind.identifier, kind)
+    parameters = FakeParameters(
+        factor_data(), offset_data(), some_amount_per_unit_data(), some_factor_data()
+    )
+    return service(
+        manifest(  # authored out of order on purpose
+            multiple, SCALE, per_unit, inputs=frozenset({"ex/base", "ex/count"})
+        ),
+        parameters=parameters,
+        capabilities=capabilities,
+        artifacts=artifacts,
+    )
+
+
+def test_computes_core_per_unit_amount_into_core_multiple_over_end_to_end() -> None:
+    worksheet = per_unit_into_multiple_over_service().compute(
+        EX_ON, 2025, Artifact(BASE, D("100")), Artifact(COUNT, 2)
+    )
+
+    # part_one = 544.5 × 2 = 1089.0, to 1089.00; scaled = 300; 2 × 1089.00 − 300 = 1878.00.
+    assert worksheet.get(PART_ONE).value == D("1089")
+    assert worksheet.get(SCALED).value == D("300")
+    assert worksheet.get(RESULT).value == D("1878")
+    assert str(worksheet.get(RESULT).value) == "1878.00"
+
+
+def test_computes_core_per_unit_amount_into_core_multiple_over_with_no_units() -> None:
+    worksheet = per_unit_into_multiple_over_service().compute(
+        EX_ON, 2025, Artifact(BASE, D("100")), Artifact(COUNT, 0)
+    )
+
+    # part_one = 0; 2 × 0 − 300 is below zero: 0.
+    assert worksheet.get(RESULT).value == D("0")

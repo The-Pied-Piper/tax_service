@@ -1,7 +1,7 @@
 """Unit tests for ParameterParserRegistry and `@parameter_parser`.
 
 Parsers are keyed by their kind's plain name (`amount`, `brackets`, `contribution_tier`,
-`credit`, `rate`, `surcharge_tiers`, `taper`), not namespaced yet.
+`credit`, `factor`, `rate`, `surcharge_tiers`, `taper`), not namespaced yet.
 Lookups are typed: `for_kind(kind)` for a `ParameterKind[T]` gives a `ParameterParser[T]`; the
 `assert_type` checks below make `mypy .` fail if a lookup returned `Any` or another type.
 Made-up kinds and parsers are never registered in the shared registry: the decorator test
@@ -21,6 +21,7 @@ from app.adapters.outbound.parameter_parsers.amount import AmountParser
 from app.adapters.outbound.parameter_parsers.brackets import BracketsParser
 from app.adapters.outbound.parameter_parsers.contribution_tier import ContributionTierParser
 from app.adapters.outbound.parameter_parsers.credit import CreditParser
+from app.adapters.outbound.parameter_parsers.factor import FactorParser
 from app.adapters.outbound.parameter_parsers.rate import RateParser
 from app.adapters.outbound.parameter_parsers.registry import (
     ParameterParserRegistry,
@@ -35,6 +36,7 @@ from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
 from app.domain.parameters.contribution_tier import CONTRIBUTION_TIER, ContributionTier
 from app.domain.parameters.credit import CREDIT, Credit
+from app.domain.parameters.factor import FACTOR, Factor
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.surcharge_tiers import (
@@ -108,6 +110,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     registry.register_class(ContributionTierParser)
     registry.register_class(SurchargeTiersParser)
     registry.register_class(TaperParser)
+    registry.register_class(FactorParser)
     registry.register_class(FlatRateParser)
 
     schedule = registry.for_kind(BRACKETS).parse(
@@ -130,6 +133,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
             "dataset",
         )
     )
+    factor = registry.for_kind(FACTOR).parse(YamlNode.root({"value": "2"}, "dataset"))
     flat_rate = registry.for_kind(FLAT_RATE).parse(YamlNode.root({"rate": "0.2"}, "dataset"))
 
     assert_type(schedule, BracketSchedule)
@@ -139,6 +143,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     assert_type(tier, ContributionTier)
     assert_type(surcharge_tiers, SurchargeTiers)
     assert_type(taper, Taper)
+    assert_type(factor, Factor)
     assert_type(flat_rate, Decimal)
 
     assert schedule == BracketSchedule((Bracket(D("0"), D("0.1")),))
@@ -148,6 +153,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     assert tier == ContributionTier(Rate(D("0.05")), D("3000"), D("50000"), D("2350"))
     assert surcharge_tiers == SurchargeTiers((SurchargeTier(D("100"), Rate(D("0.2"))),))
     assert taper == Taper(D("1000"), D("500"), D("20000"), D("10000"))
+    assert factor == Factor(D("2"))
     assert flat_rate == D("0.2")
 
 
@@ -250,6 +256,7 @@ def test_decorating_a_second_parser_for_one_kind_fails(fresh: ParameterParserReg
         (BRACKETS, BracketsParser),
         (CONTRIBUTION_TIER, ContributionTierParser),
         (CREDIT, CreditParser),
+        (FACTOR, FactorParser),
         (RATE, RateParser),
         (SURCHARGE_TIERS, SurchargeTiersParser),
         (TAPER, TaperParser),
@@ -271,6 +278,7 @@ def test_built_in_parsers_are_registered_in_the_shared_registry(
         (BracketsParser, frozenset({"brackets"})),
         (ContributionTierParser, frozenset({"rate", "lower", "upper", "maximum"})),
         (CreditParser, frozenset({"amount"})),
+        (FactorParser, frozenset({"value"})),
         (RateParser, frozenset({"rate"})),
         (SurchargeTiersParser, frozenset({"tiers"})),
         (TaperParser, frozenset({"base", "supplement", "threshold", "range"})),
@@ -288,6 +296,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_parsers() -> None:
         "brackets",
         "contribution_tier",
         "credit",
+        "factor",
         "rate",
         "surcharge_tiers",
         "taper",

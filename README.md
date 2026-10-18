@@ -59,8 +59,8 @@ code (`CA-QC` -> `ca_qc`), and change:
 
 - `__init__.py`: `NAMESPACE = "<code lower-cased>"`, e.g. `"ca-qc"`.
 - `catalog.py`: `CATALOG`, an `ArtifactCatalog` for that namespace declaring the jurisdiction's
-  artifact kinds, with `non_negative=True` on every money kind the return cannot make negative.
-  Declaring only records a kind; importing the package registers nothing.
+  artifact kinds, with `non_negative=True` on every money kind or count the return cannot make
+  negative. Declaring only records a kind; importing the package registers nothing.
 - `manifests/`: the manifest(s) selecting capabilities and filling their slots: parameter
   slots with parameter families, artifact slots with artifact identifiers (a consumed list slot
   takes a YAML list of them, in order). Each manifest also requires `inputs:` and `outputs:`,

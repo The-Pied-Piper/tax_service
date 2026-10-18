@@ -1,8 +1,9 @@
 """The structured trace: what each capability did, recorded as facts.
 
 A trace line holds the domain objects and amounts involved (`ArtifactKind`, `Rate`, `Credit`,
-`Amount`, `ContributionTier`, `Taper`, `RoundingRule`), never text; its `amount` is the figure
-the line is about. Rendering lines as human-readable text lives outside the domain, in the adapters.
+`Amount`, `ContributionTier`, `Taper`, `Factor`, `RoundingRule`), never text; its `amount` is the
+figure the line is about. A count is an `int` artifact kind and its `int` value. Rendering lines
+as human-readable text lives outside the domain, in the adapters.
 """
 
 from __future__ import annotations
@@ -11,10 +12,11 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from decimal import Decimal
 
-from app.domain.artifact import Money
+from app.domain.artifact import ArtifactKind, Money
 from app.domain.parameters.amount import Amount
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
+from app.domain.parameters.factor import Factor
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import RoundingRule
 from app.domain.parameters.taper import Taper
@@ -250,4 +252,45 @@ class TaperedAmountLine(TraceLine):
     @property
     def amount(self) -> Decimal:
         """The tapered amount: the rounded result."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class PerUnitAmountLine(TraceLine):
+    """The `result` produced as `output`: `per_unit` for each of `count` units of `count_kind`,
+    rounded once with `rounding`."""
+
+    output: Money
+    count_kind: ArtifactKind[int]
+    count: int
+    per_unit: Amount
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The rounded product."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class MultipleOverLine(TraceLine):
+    """The `result` produced as `output`: `factor` × `base` (worth `base_amount`) less `less`
+    (worth `less_amount`), not below zero, rounded once with `rounding`.
+
+    Its own class, not a `SubtractedNotBelowZeroLine`: the multiple is a different fact.
+    """
+
+    output: Money
+    base: Money
+    base_amount: Decimal
+    factor: Factor
+    less: Money
+    less_amount: Decimal
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The floored, rounded result."""
         return self.result

@@ -1,8 +1,8 @@
 """Unit tests for the structured trace: one frozen line class per fact, with made-up values.
 
 Each line records what happened with the domain objects involved (`ArtifactKind`, `Rate`,
-`Credit`, `Amount`, `ContributionTier`, `Taper`, `RoundingRule`), never text; its `amount` is the
-figure the line is about.
+`Credit`, `Amount`, `ContributionTier`, `Taper`, `Factor`, `RoundingRule`), never text; its
+`amount` is the figure the line is about. A count is an `int` artifact kind and its `int` value.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ from app.domain.artifact import ArtifactKind
 from app.domain.parameters.amount import Amount
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
+from app.domain.parameters.factor import Factor
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.domain.parameters.taper import Taper
@@ -26,6 +27,8 @@ from app.domain.trace import (
     ContributionTierLine,
     CreditAmountLine,
     LesserOfLine,
+    MultipleOverLine,
+    PerUnitAmountLine,
     RateAppliedLine,
     RoundedTotalLine,
     SubtractedLine,
@@ -56,6 +59,8 @@ TIER = ContributionTier(Rate(D("0.05")), D(3000), D(50000), D(2350))
 SURCHARGE = ArtifactKind("ex/surcharge", Decimal)
 INCOME = ArtifactKind("ex/income", Decimal)
 TAPER = Taper(D(1000), D(500), D(20000), D(10000))
+CHILDREN = ArtifactKind("ex/child_count", int)
+CHILD_AMOUNT = ArtifactKind("ex/child_amount", Decimal)
 
 
 def slice_line() -> BracketSliceLine:
@@ -110,6 +115,16 @@ def tapered_amount_line() -> TaperedAmountLine:
     )
 
 
+def per_unit_amount_line() -> PerUnitAmountLine:
+    return PerUnitAmountLine(CHILD_AMOUNT, CHILDREN, 2, Amount(D(544)), CENT, D(1088))
+
+
+def multiple_over_line() -> MultipleOverLine:
+    return MultipleOverLine(
+        REDUCTION, TOTAL, D(294), Factor(D(2)), TAX, D("100.25"), CENT, D("487.75")
+    )
+
+
 ALL_LINES = [
     slice_line,
     total_line,
@@ -123,6 +138,8 @@ ALL_LINES = [
     contribution_tier_line,
     surcharge_tier_line,
     tapered_amount_line,
+    per_unit_amount_line,
+    multiple_over_line,
 ]
 
 
@@ -710,6 +727,161 @@ def test_a_tapered_amount_line_is_not_a_contribution_tier_or_subtracted_line() -
 
     assert not isinstance(line, ContributionTierLine)
     assert not isinstance(line, SubtractedNotBelowZeroLine)
+
+
+def test_per_unit_amount_line_fields_in_order() -> None:
+    line = per_unit_amount_line()
+
+    assert line == PerUnitAmountLine(
+        output=CHILD_AMOUNT,
+        count_kind=CHILDREN,
+        count=2,
+        per_unit=Amount(D(544)),
+        rounding=CENT,
+        result=D(1088),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "count_kind",
+        "count",
+        "per_unit",
+        "rounding",
+        "result",
+    ]
+    assert line.output is CHILD_AMOUNT
+    assert line.count_kind is CHILDREN
+    assert line.count == 2
+    assert type(line.count) is int
+    assert line.per_unit == Amount(D(544))
+    assert line.rounding == CENT
+    assert line.result == D(1088)
+    assert line.amount == D(1088)
+
+
+def test_per_unit_amount_line_may_hold_a_count_of_zero() -> None:
+    line = PerUnitAmountLine(CHILD_AMOUNT, CHILDREN, 0, Amount(D(544)), NO_ROUNDING, D(0))
+
+    assert line.count == 0
+    assert line.amount == D(0)
+
+
+def test_per_unit_amount_lines_differ_by_count() -> None:
+    assert per_unit_amount_line() != PerUnitAmountLine(
+        CHILD_AMOUNT, CHILDREN, 3, Amount(D(544)), CENT, D(1088)
+    )
+
+
+def test_per_unit_amount_lines_differ_by_per_unit_amount() -> None:
+    assert per_unit_amount_line() != PerUnitAmountLine(
+        CHILD_AMOUNT, CHILDREN, 2, Amount(D(545)), CENT, D(1088)
+    )
+
+
+def test_per_unit_amount_lines_differ_by_rounding() -> None:
+    assert per_unit_amount_line() != PerUnitAmountLine(
+        CHILD_AMOUNT, CHILDREN, 2, Amount(D(544)), NO_ROUNDING, D(1088)
+    )
+
+
+def test_per_unit_amount_lines_differ_by_count_kind() -> None:
+    other = ArtifactKind("ex/dependant_count", int)
+
+    assert per_unit_amount_line() != PerUnitAmountLine(
+        CHILD_AMOUNT, other, 2, Amount(D(544)), CENT, D(1088)
+    )
+
+
+def test_per_unit_amount_lines_are_hashable() -> None:
+    assert hash(per_unit_amount_line()) == hash(per_unit_amount_line())
+
+
+def test_a_per_unit_amount_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(per_unit_amount_line())]
+
+
+def test_a_per_unit_amount_line_is_not_a_credit_amount_or_capped_amount_line() -> None:
+    line = per_unit_amount_line()
+
+    assert not isinstance(line, CreditAmountLine)
+    assert not isinstance(line, CappedAmountLine)
+
+
+def test_multiple_over_line_fields_in_order() -> None:
+    line = multiple_over_line()
+
+    assert line == MultipleOverLine(
+        output=REDUCTION,
+        base=TOTAL,
+        base_amount=D(294),
+        factor=Factor(D(2)),
+        less=TAX,
+        less_amount=D("100.25"),
+        rounding=CENT,
+        result=D("487.75"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "base",
+        "base_amount",
+        "factor",
+        "less",
+        "less_amount",
+        "rounding",
+        "result",
+    ]
+    assert line.output is REDUCTION
+    assert line.base is TOTAL
+    assert line.base_amount == D(294)
+    assert line.factor == Factor(D(2))
+    assert line.less is TAX
+    assert line.less_amount == D("100.25")
+    assert line.rounding == CENT
+    assert line.result == D("487.75")
+    assert line.amount == D("487.75")
+
+
+def test_multiple_over_line_may_hold_a_floored_zero() -> None:
+    # The multiple is below the figure taken off: the result is 0.
+    line = MultipleOverLine(
+        REDUCTION, TOTAL, D(294), Factor(D(2)), TAX, D("8195.7644476"), NO_ROUNDING, D(0)
+    )
+
+    assert line.result == D(0)
+    assert line.amount == D(0)
+
+
+def test_multiple_over_lines_differ_by_factor() -> None:
+    assert multiple_over_line() != MultipleOverLine(
+        REDUCTION, TOTAL, D(294), Factor(D(3)), TAX, D("100.25"), CENT, D("487.75")
+    )
+
+
+def test_multiple_over_lines_differ_by_rounding() -> None:
+    assert multiple_over_line() != MultipleOverLine(
+        REDUCTION, TOTAL, D(294), Factor(D(2)), TAX, D("100.25"), NO_ROUNDING, D("487.75")
+    )
+
+
+def test_multiple_over_lines_differ_by_the_figure_taken_off() -> None:
+    assert multiple_over_line() != MultipleOverLine(
+        REDUCTION, TOTAL, D(294), Factor(D(2)), TAX, D("100.5"), CENT, D("487.75")
+    )
+
+
+def test_multiple_over_lines_are_hashable() -> None:
+    assert hash(multiple_over_line()) == hash(multiple_over_line())
+
+
+def test_a_multiple_over_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(multiple_over_line())]
+
+
+def test_a_multiple_over_line_is_not_a_subtracted_or_rate_applied_line() -> None:
+    line = multiple_over_line()
+
+    assert not isinstance(line, SubtractedNotBelowZeroLine)
+    assert not isinstance(line, SubtractedLine)
+    assert not isinstance(line, RateAppliedLine)
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:

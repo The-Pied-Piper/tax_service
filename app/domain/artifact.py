@@ -5,9 +5,10 @@ capability-to-capability dependencies (design.md §2). An `ArtifactKind[V]` name
 artifact by a namespaced identifier such as `ex/taxable_income` and states the type of its
 values; an `Artifact[V]` is one value of a kind, produced in one computation. Each package
 declares its kinds through one `ArtifactCatalog`, which only records them; the composition root
-registers each catalog explicitly with `ArtifactRegistry.register_catalog`. A `Decimal` kind may
-be declared non-negative, and then no artifact of it holds a value below zero. Names come from the
-jurisdiction's own law or return, never from another system's.
+registers each catalog explicitly with `ArtifactRegistry.register_catalog`. A `Decimal` kind, or
+an `int` kind such as a count, may be declared non-negative, and then no artifact of it holds a
+value below zero. Names come from the jurisdiction's own law or return, never from another
+system's.
 """
 
 from __future__ import annotations
@@ -33,8 +34,8 @@ V = TypeVar("V")
 class ArtifactKind(Generic[V]):  # noqa: UP046  (invariant V, see above)
     """A kind of artifact, named by its identifier `<namespace>/<local id>`, and its value type.
 
-    A `Decimal` kind with `non_negative` set never holds a value below zero. Built directly it is
-    unregistered; packages declare theirs through an `ArtifactCatalog`.
+    A `Decimal` or `int` kind with `non_negative` set never holds a value below zero. Built
+    directly it is unregistered; packages declare theirs through an `ArtifactCatalog`.
     """
 
     identifier: str
@@ -51,10 +52,13 @@ class ArtifactKind(Generic[V]):  # noqa: UP046  (invariant V, see above)
             ) from None
         if not isinstance(self.value_type, type):
             raise TypeError(f"value_type must be a type, got {self.value_type!r}")
-        if self.non_negative and not issubclass(self.value_type, Decimal):
+        # `bool` is a subclass of `int` but not a count, so the int check is exact.
+        if self.non_negative and not (
+            issubclass(self.value_type, Decimal) or self.value_type is int
+        ):
             raise InvalidRegistrationError(
-                f"artifact kind {self.identifier!r} cannot be non-negative: only a Decimal kind "
-                f"can, not a {self.value_type.__name__} one"
+                f"artifact kind {self.identifier!r} cannot be non-negative: only a Decimal or "
+                f"int kind can, not a {self.value_type.__name__} one"
             )
 
     @property
@@ -84,7 +88,7 @@ class Artifact[T]:
                 f"{self.kind.label} must be a {self.kind.value_type.__name__}, "
                 f"got {type(self.value).__name__}"
             )
-        if self.kind.non_negative and isinstance(self.value, Decimal) and self.value < 0:
+        if self.kind.non_negative and isinstance(self.value, Decimal | int) and self.value < 0:
             raise NegativeArtifactError(
                 f"{self.kind.identifier} cannot be negative, got {self.value}"
             )
@@ -156,8 +160,8 @@ class ArtifactCatalog:
     ) -> ArtifactKind[T]:
         """Declare the kind `<namespace>/<local_id>` with values of `value_type` and record it.
 
-        `non_negative` declares that its values are never below zero (a `Decimal` kind only). A
-        local id this catalog already declared is an error.
+        `non_negative` declares that its values are never below zero (a `Decimal` or `int` kind
+        only). A local id this catalog already declared is an error.
         """
         kind = ArtifactKind(self._namespace.identifier(local_id), value_type, non_negative)
         if kind.identifier in self._kinds:
