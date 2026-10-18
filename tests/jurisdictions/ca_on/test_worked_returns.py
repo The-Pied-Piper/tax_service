@@ -59,14 +59,19 @@ description: >-
   the lesser of them and the deduction limit (line 11) of 1800, a chosen limit: 0, so the
   enhanced contributions are the only deduction from total income. Net income and taxable
   income are 9935.00. The Canada employment amount is the lesser of 1471 and the employment
-  income of 10000: 1471. The federal total of credit amounts is its basic personal amount
-  plus 321.75, 164.00 and 1471; the Ontario total is its basic personal amount plus 321.75
-  and 164.00 (ON428 has no Canada employment amount). Each form's non-refundable tax credits
-  are its total times its rate (14.5% of 18085.75 = 2622.43375; 5.05% of 13232.75 =
-  668.253875); each exceeds its tax, leaving zero. An Ontario tax of zero is below the first
-  surtax threshold, so the surtax is zero and the Ontario tax with surtax is zero.
+  income of 10000: 1471. The federal basic personal amount is computed from net income by the
+  Federal Worksheet: 9935.00 is at or below its 177882 threshold, so it is the base amount
+  14538 plus the whole supplement amount 1591, 16129, rounded half-up to the cent. The federal
+  total of credit amounts is its basic personal amount plus 321.75, 164.00 and 1471; the
+  Ontario total is its basic personal amount plus 321.75 and 164.00 (ON428 has no Canada
+  employment amount). Each form's non-refundable tax credits are its total times its rate
+  (14.5% of 18085.75 = 2622.43375; 5.05% of 13232.75 = 668.253875); each exceeds its tax,
+  leaving zero. An Ontario tax of zero is below the first surtax threshold, so the surtax is
+  zero and the Ontario tax with surtax is zero.
 sources:
-  - T1, Schedule 3, Schedule 7, Schedule 8, ON428 and EI table arithmetic on the 2025 figures.
+  - >-
+    T1, Federal Worksheet, Schedule 3, Schedule 7, Schedule 8, ON428 and EI table arithmetic on
+    the 2025 figures.
 inputs:
   ca/employment_income: "10000"
   ca/capital_gain: "0"

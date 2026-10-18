@@ -140,12 +140,20 @@ capabilities:
       base: ca/taxable_income
     produces:
       output: ca-on/ontario_basic_tax
-  # Each basic personal amount is the first part of its form's total of credit amounts.
-  - name: core/credit_amount
+  # T1 line 30000 "If the amount on line 23600 is $177,882 or less, enter $16,129. If
+  # the amount on line 23600 is $253,414 or more, enter $14,538. Otherwise, use the
+  # Federal Worksheet to calculate the amount to enter. (maximum $16,129)": the federal
+  # basic personal amount is the worksheet's taper on net income (line 23600), the first
+  # part of the T1's total of credit amounts.
+  - name: core/tapered_amount
     params:
-      amount: ca/basic_personal_amount
+      taper: ca/basic_personal_amount
+    consumes:
+      base: ca/net_income
     produces:
       output: ca/basic_personal_amount
+  # ON428 line 58040 has no reduction: the Ontario basic personal amount dataset becomes
+  # an artifact of the same name, the first part of ON428's total of credit amounts.
   - name: core/credit_amount
     params:
       amount: ca-on/basic_personal_amount
