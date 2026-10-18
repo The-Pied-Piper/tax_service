@@ -1,35 +1,45 @@
 # Return F: a single parent, a 2025 Ontario resident, with one dependent child and
-# employment income above the federal and Ontario lowest brackets but below the EI maximum
-# insurable earnings ($65,700) and the CPP first earnings ceiling ($71,300), so the CPP
-# contributions and EI premiums are the rates' arithmetic and there is no second additional
-# CPP contribution. The child is an eligible dependant (Schedule 5): the amount for an
-# eligible dependant is the filer's own basic personal amount less the child's net income of
-# $0 on the T1 (line 30400), and the $11,905 base less that income, at most $10,823, on
-# ON428 (line 58160), each claimed for one eligible dependant and part of its form's total
-# of credit amounts; the child has no impairment, so there is no amount for infirm children
-# (line 30500). The child is also a dependent child for the Ontario tax reduction (ON428
-# line 75), but twice its amounts are below the Ontario tax with surtax. Net income is above
-# the LIFT credit's $32,500 threshold by enough that its reduction exceeds the $875, so the
-# credit is zero, and above the Canada workers benefit's thresholds by enough that the
-# benefit is zero. Computed from employment income to total income; from employment income,
-# by Schedule 8's three contribution tiers, to the base, first additional and second
-# additional CPP contributions, the last two together the enhanced CPP contributions; from
-# employment income, up to the EI maximum insurable earnings, to the EI premiums; from the
-# unused RRSP contributions from earlier years and the RRSP contributions, their sum, to the
+# employment income below the EI maximum insurable earnings ($65,700) and the CPP
+# first earnings ceiling ($71,300), so the CPP contributions and EI premiums are the
+# rates' arithmetic and there is no second additional CPP contribution. The child
+# is an eligible dependant (Schedule 5): the amount for an eligible dependant is the
+# filer's own basic personal amount less the child's net income of $0 on the T1 (line
+# 30400), and the $11,905 base less that income, at most $10,823, on ON428 (line 58160),
+# each claimed for one eligible dependant and part of its form's total of credit amounts;
+# the child has no impairment, so there is no amount for infirm children (line 30500).
+# The child, born in 2015, is an eligible child for the child care expenses deduction
+# (T1 line 21400, Form T778): the least of $5,000 for the child, the $6,000 paid and
+# two-thirds of the earned income ($40,000) is $5,000, which lowers net income and
+# so every line from it on, leaving taxable income in the lowest federal bracket and
+# the second Ontario bracket. The child is also a dependent child for the Ontario
+# tax reduction (ON428 line 75), and twice its amounts are above the Ontario tax with
+# surtax, so there is a reduction. Net income is above the LIFT credit's $32,500 threshold
+# by enough that its reduction exceeds the $875, so the credit is zero, and above
+# the Canada workers benefit's thresholds by enough that the benefit is zero. Computed
+# from employment income to total income; from employment income, by Schedule 8's
+# three contribution tiers, to the base, first additional and second additional CPP
+# contributions, the last two together the enhanced CPP contributions; from employment
+# income, up to the EI maximum insurable earnings, to the EI premiums; from the unused
+# RRSP contributions from earlier years and the RRSP contributions, their sum, to the
 # contributions available to deduct (Schedule 7 line 10), from those and the deduction
 # limit, the lesser of them, to the most that may be deducted (Schedule 7 line 17), from the
 # amount deducted (line 18), at most that, to the RRSP deduction (line 20), and from the
 # contributions available to deduct less the RRSP deduction to the unused contributions
-# carried forward (line 23); less the enhanced CPP contributions to net income, less the
-# (empty) deductions from net income to taxable income; from net income, by the Federal
-# Worksheet, to the federal basic personal amount; from it less the dependant's net income,
-# not below zero, for each eligible dependant, to the amount for an eligible dependant (T1
-# line 30400), and from the ON428 base less the dependant's net income, not below zero, at
-# most its maximum, for each eligible dependant, to the Ontario amount (ON428 line 58160);
-# from the number of infirm children, $2,687 for each, to the amount for infirm children
-# (line 30500); and through each form's total of non-refundable credit amounts (its basic
-# personal amount, its amount for an eligible dependant, the base CPP contributions and the
-# EI premiums, and on the T1 alone the amount for infirm children and the Canada employment
+# carried forward (line 23); from the numbers of eligible children (T778 Part B lines
+# 1 to 3), $8,000, $11,000 and $5,000 for each, summed to the basic limit (line 4), from
+# employment income, the earned income (line 6), to two-thirds of it, and from those
+# and the child care expenses paid (line 5), the least of them, to the child care expenses
+# deduction (lines 7 and 9, T1 line 21400); less the child care expenses deduction and
+# the enhanced CPP contributions to net income, less the (empty) deductions from net
+# income to taxable income; from net income, by the Federal Worksheet, to the federal
+# basic personal amount; from it less the dependant's net income, not below zero, for
+# each eligible dependant, to the amount for an eligible dependant (T1 line 30400), and
+# from the ON428 base less the dependant's net income, not below zero, at most its maximum,
+# for each eligible dependant, to the Ontario amount (ON428 line 58160); from the number
+# of infirm children, $2,687 for each, to the amount for infirm children (line 30500);
+# and through each form's total of non-refundable credit amounts (its basic personal
+# amount, its amount for an eligible dependant, the base CPP contributions and the EI
+# premiums, and on the T1 alone the amount for infirm children and the Canada employment
 # amount), credited once at the form's credit rate to the form's non-refundable tax credits
 # (T1 line 35000, ON428 line 61500), taken off its basic tax, not below zero, to the tax
 # after credits, and on ON428 the surtax on the Ontario tax after credits, added to it to
@@ -48,14 +58,15 @@
 # tax to the total payable, less the total credits, here the chosen income tax deducted plus
 # the Canada workers benefit, to the refund or balance owing, negative for a refund and
 # positive for a balance owing. There is no capital gain, unused or new RRSP contribution or
-# union dues. Not yet computed, so not in this file: child care expenses (T1 line 21400,
-# Form T778), which this return triggers and which, once computed, lower net income and so
-# every line from net income on; any deduction from net income, the social benefits
-# repayment and capital losses. Lines 82 (the provincial foreign tax credit) and 87 (the
-# community food program donation tax credit for farmers) are not triggered by this return,
-# nor are Schedule 5 line 2, T1 lines 30425 and 30450, the Ontario caregiver amount (ON428
-# line 58185), and Schedule 6's disability supplement (Step 3) and advance payments (Step
-# 4).
+# union dues. Not yet computed, so not in this file: any deduction from net income, the
+# social benefits repayment and capital losses. Lines 82 (the provincial foreign tax credit)
+# and 87 (the community food program donation tax credit for farmers) are not triggered by
+# this return, nor are Schedule 5 line 2, T1 lines 30425 and 30450, the Ontario caregiver
+# amount (ON428 line 58185), Form T778 line 8 (the taxpayer taken as the only person
+# supporting the child, to be confirmed), line 67954 (the expenses for children aged 6 or
+# younger, to be confirmed), Note 1's weekly limits for boarding schools and overnight camps
+# (to be confirmed) and Parts C and D, and Schedule 6's disability supplement (Step 3) and
+# advance payments (Step 4).
 # Schedule 6's lines 22 and 27 are not listed: with an eligible dependant the form's amounts
 # are $2,813 and $30,639, while the CA-ON manifest applies the amounts for a filer with no
 # eligible spouse and no eligible dependant ($1,633 and $26,855); the benefit (line 28) is
@@ -70,64 +81,70 @@ description: >-
   common-law partner at any time in 2025, and one dependent child, born in 2015, who lived
   with the parent all year, has no impairment and had no net income; with 2025 employment
   income (T1 line 10100) of $60,000 and no other income: no capital gain, so taxable capital
-  gains (line 12700) of $0 and total income (line 15000) of $60,000. Child care expenses of
-  $6,000 were paid in 2025 to a daycare, with receipts; the child care deduction (line
-  21400, Form T778) is not yet computed, so it is not in this file and the lines below are
-  those before it. The CPP contributions are computed from employment income, which Schedule
-  8 line 1 reads as the pensionable earnings when T4 box 26 is blank. The EI premiums are
-  computed from employment income, taken as the insurable earnings. Employment income is
-  below the EI maximum insurable earnings ($65,700) and the CPP first earnings ceiling
-  ($71,300), so EI premiums (line 31200, ON428 line 58300) are 1.64% x 60,000 = $984.00,
-  base CPP contributions (Schedule 8 line 11, T1 line 30800, ON428 line 58240) are 4.95% x
-  (60,000 - 3,500) = $2,796.75, and enhanced CPP contributions (line 22215) are the first
-  additional (Schedule 8 line 12) 1% x 56,500 = $565.00 with no second additional
-  contribution (line 22, $0). No unused or new RRSP contributions, so the most that may be
-  deducted (Schedule 7 line 17) is $0, the lesser of the contributions available to deduct
-  (Schedule 7 line 10) of $0 (the unused contributions from earlier years of $0, Schedule 7
-  line 1, plus the contributions of $0, Schedule 7 line 4) and a chosen deduction limit of
-  $10,800 (Schedule 7 line 11); the amount deducted (line 18) is a chosen $0, so the RRSP
-  deduction (line 20800) is $0 and the unused contributions carried forward (line 23) are
-  $0; no union dues (line 21200), so total deductions (line 23300) are the enhanced CPP
-  contributions of $565.00 and net income (line 23600) is $59,435.00. There are no
-  deductions from net income (lines 24400 to 25600), so their total (line 25700) is $0 and
-  taxable income (line 26000), derived as net income less that total, is $59,435.00, in the
-  second federal and Ontario brackets. The non-refundable credit amounts are the basic
-  personal amount (federal line 30000 $16,129, since net income is $177,882 or less; Ontario
-  ON428 line 58040 $12,747); the amount for an eligible dependant, the child (federal line
-  30400, Schedule 5, the $16,129 of line 30000 less the child's net income of $0: $16,129;
-  Ontario ON428 line 58160, the base of $11,905.00 less that $0, at most $10,823: $10,823);
-  no amount for infirm children (line 30500), as the child has no impairment; the base CPP
+  gains (line 12700) of $0 and total income (line 15000) of $60,000. The CPP contributions
+  are computed from employment income, which Schedule 8 line 1 reads as the pensionable
+  earnings when T4 box 26 is blank. The EI premiums are computed from employment income,
+  taken as the insurable earnings. Employment income is below the EI maximum insurable
+  earnings ($65,700) and the CPP first earnings ceiling ($71,300), so EI premiums (line
+  31200, ON428 line 58300) are 1.64% x 60,000 = $984.00, base CPP contributions (Schedule 8
+  line 11, T1 line 30800, ON428 line 58240) are 4.95% x (60,000 - 3,500) = $2,796.75, and
+  enhanced CPP contributions (line 22215) are the first additional (Schedule 8 line 12) 1% x
+  56,500 = $565.00 with no second additional contribution (line 22, $0). No unused or new
+  RRSP contributions, so the most that may be deducted (Schedule 7 line 17) is $0, the
+  lesser of the contributions available to deduct (Schedule 7 line 10) of $0 (the unused
+  contributions from earlier years of $0, Schedule 7 line 1, plus the contributions of $0,
+  Schedule 7 line 4) and a chosen deduction limit of $10,800 (Schedule 7 line 11); the
+  amount deducted (line 18) is a chosen $0, so the RRSP deduction (line 20800) is $0 and the
+  unused contributions carried forward (line 23) are $0; no union dues (line 21200). Child
+  care expenses of $6,000 (Form T778 line 67950) were paid in 2025 to a daycare, with
+  receipts, for the child, an eligible child born in 2009 to 2018 (T778 Part B line 3); the
+  child care expenses deduction (line 21400) is the least of the basic limit (T778 line 4),
+  0 x $8,000 for children born in 2019 or later (line 1) plus 0 x $11,000 for children the
+  disability amount can be claimed for (line 2) plus 1 x $5,000 (line 3), $5,000; the
+  expenses paid (line 5), $6,000; and two-thirds of the earned income (line 6), the
+  employment income of $60,000, $40,000: $5,000 (line 7, and line 9 with line 8 not
+  triggered). Total deductions (line 23300) are $0 + $0 + $5,000 + $565.00 = $5,565.00 and
+  net income (line 23600) is $54,435.00. There are no deductions from net income (lines
+  24400 to 25600), so their total (line 25700) is $0 and taxable income (line 26000),
+  derived as net income less that total, is $54,435.00, in the lowest federal bracket and
+  the second Ontario bracket. The non-refundable credit amounts are the basic personal
+  amount (federal line 30000 $16,129, since net income is $177,882 or less; Ontario ON428
+  line 58040 $12,747); the amount for an eligible dependant, the child (federal line 30400,
+  Schedule 5, the $16,129 of line 30000 less the child's net income of $0: $16,129; Ontario
+  ON428 line 58160, the base of $11,905.00 less that $0, at most $10,823: $10,823); no
+  amount for infirm children (line 30500), as the child has no impairment; the base CPP
   contributions and the EI premiums; and on the T1 alone the Canada employment amount (line
   31260) of $1,471, the lesser of $1,471 and employment income (ON428 has no such line):
   line 33500 of $37,509.75 and ON428 line 58800 of $27,350.75. The rate is applied once to
   each total: 14.5% federally (line 33800) and 5.05% for Ontario (ON428 line 58840). Each
   product is its form's non-refundable tax credits: the total federal non-refundable tax
   credits (line 35000) of $5,438.91375 and the Ontario non-refundable tax credits (ON428
-  line 61500) of $1,381.212875, each taken off its form's basic tax, not below zero. The
-  Ontario surtax (ON428 line 68) is 20% of the Ontario tax after credits over $5,710 plus
-  36% of it over $7,307: $0, as the Ontario tax after credits is below $5,710, so the
-  Ontario tax with surtax (ON428 line 69) is that same $1,888.760625. With one dependent
-  child and no dependants (ON428 lines 75 and 76), the Ontario tax reduction amounts (line
-  77) are the basic reduction of $294.00 (line 74) plus $544 for the child (line 75),
-  $838.00; twice them, $1,676.00 (line 78), less the Ontario tax with surtax (line 79, from
-  line 73) is negative, so the Ontario tax reduction (line 80) is $0 and the Ontario tax
-  after the reduction (line 81) is that same $1,888.760625. The LIFT credit (ON428 line 85,
+  line 61500) of $1,381.212875, each taken off its form's basic tax ($7,893.075 federally,
+  $2,812.4735 for Ontario), not below zero: $2,454.16125 and $1,431.260625. The Ontario
+  surtax (ON428 line 68) is 20% of the Ontario tax after credits over $5,710 plus 36% of it
+  over $7,307: $0, as the Ontario tax after credits is below $5,710, so the Ontario tax with
+  surtax (ON428 line 69) is that same $1,431.260625. With one dependent child and no
+  dependants (ON428 lines 75 and 76), the Ontario tax reduction amounts (line 77) are the
+  basic reduction of $294.00 (line 74) plus $544 for the child (line 75), $838.00; twice
+  them, $1,676.00 (line 78), less the Ontario tax with surtax (line 79, from line 73) is
+  $244.739375, the Ontario tax reduction (line 80), so the Ontario tax after the reduction
+  (line 81) is $1,431.260625 - $244.739375 = $1,186.52125. The LIFT credit (ON428 line 85,
   Schedule ON428-A) is 5.05% of employment income, $3,030, at most $875, less 5% of net
-  income over $32,500, $1,346.75; the reduction is more than the $875, so the credit is $0,
-  and the Ontario tax after it (ON428 line 86) is that same $1,888.760625. The Ontario
-  health premium (ON428 line 89) is read from its chart on taxable income: $59,435.00 is
-  more than $48,600 but not more than $72,000, so the premium is $600, and the Ontario tax
-  (ON428 line 90) is the Ontario tax after the LIFT credit plus the premium, $2,488.760625.
-  On the T1, the net federal tax (line 42000) is the federal tax after credits,
-  $3,302.76625, and the total payable (line 43500) is it plus the Ontario tax (line 42800),
-  $5,791.526875. The Canada workers benefit (line 45300, Schedule 6) is $0: with an eligible
-  dependant, 27% of the working income over $3,000, $15,390, at most $2,813, less 15% of the
-  adjusted family net income, the net income, over $30,639, $4,319.40. The income tax
-  deducted (line 43700) is a chosen $8,000, so the total credits (line 48200) are it plus
-  the benefit, $8,000, and the refund or balance owing (line 167) is the total payable less
-  the total credits, -$2,208.473125: negative, so a refund (line 48400). The CPP
-  contributions, the EI premiums and the federal basic personal amount are rounded to the
-  cent, which changes none of them; no other amounts are rounded.
+  income over $32,500, $1,096.75; the reduction is more than the $875, so the credit is $0,
+  and the Ontario tax after it (ON428 line 86) is that same $1,186.52125. The Ontario health
+  premium (ON428 line 89) is read from its chart on taxable income: $54,435.00 is more than
+  $48,600 but not more than $72,000, so the premium is $600, and the Ontario tax (ON428 line
+  90) is the Ontario tax after the LIFT credit plus the premium, $1,786.52125. On the T1,
+  the net federal tax (line 42000) is the federal tax after credits, $2,454.16125, and the
+  total payable (line 43500) is it plus the Ontario tax (line 42800), $4,240.6825. The
+  Canada workers benefit (line 45300, Schedule 6) is $0: with an eligible dependant, 27% of
+  the working income over $3,000, $15,390, at most $2,813, less 15% of the adjusted family
+  net income, the net income, over $30,639, $3,569.40. The income tax deducted (line 43700)
+  is a chosen $8,000, so the total credits (line 48200) are it plus the benefit, $8,000, and
+  the refund or balance owing (line 167) is the total payable less the total credits,
+  -$3,759.3175: negative, so a refund (line 48400). The CPP contributions, the EI premiums
+  and the federal basic personal amount are rounded to the cent, which changes none of them;
+  no other amounts are rounded.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -259,16 +276,52 @@ sources:
     lines 35 to 52" (total deductions); line 54 (line 23400) "Line 34 minus line 53 (if
     negative, show in brackets) Net income before adjustments"; line 56 (line 23600) "Line
     54 minus line 55 (if negative, enter "0") Net income". There is no RRSP deduction
-    (Schedule 7 line 20 is 0) and no union dues. The child care expenses of 6,000 paid in
-    2025 trigger line 21400, which is not yet computed (Form T778's calculation is not
-    modelled yet), so it is not among the deductions here: the enhanced CPP contributions
-    are the only deduction computed, and total deductions are 0 + 0 + 565.00 = 565.00; line
-    55 (line 23500, social benefits repayment) is not modelled, so net income is total
-    income less total deductions, not below zero: 60,000 - 565.00 = 59,435.00. Once line
-    21400 is computed, it adds to total deductions and lowers net income and every line that
-    reads it.
+    (Schedule 7 line 20 is 0) and no union dues; the child care expenses deduction (line
+    21400) is 5,000, as the T778 entry derives. Total deductions are 0 + 0 + 5,000 + 565.00
+    = 5,565.00; line 55 (line 23500, social benefits repayment) is not modelled, so net
+    income is total income less total deductions, not below zero: 60,000 - 5,565.00 =
+    54,435.00.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.pdf
+  - >-
+    CRA, the 2025 form T778: Part A line 67950 "Total (add all entries for Child care
+    expenses paid)"; Part B line 1 "Number of eligible children born in 2019 or later whom
+    the disability amount cannot be claimed for" "multiplied by $8,000"; line 2 (line 67960)
+    "Number of eligible children born in 2025 or earlier whom the disability amount can be
+    claimed for" "multiplied by $11,000"; line 3 "Number of eligible children born in 2009
+    to 2018 (and born in 2008 or earlier with a mental or physical infirmity whom the
+    disability amount cannot be claimed for)" "multiplied by $5,000"; line 4 "Add lines 1 to
+    3."; line 5 "Enter the amount from line 67950."; line 6 "Enter your earned income."
+    "multiplied by two-thirds", with "Your earned income of line 6 is the total of the
+    following: employment income (including tips and gratuities, and the non-taxable part of
+    an allowance received as an emergency volunteer) ..."; line 7 "Enter whichever amount is
+    the least: line 4, line 5 or line 6."; line 9 "Line 7 minus line 8. ... enter this
+    amount on line 21400 of your return. Allowable deduction". "Eligible child": "An
+    eligible child is:" "- your or your spouse's or common-law partner's child" ... "The
+    child must have been under 16 years of age at some time in the year." The child, the
+    taxpayer's own, born in 2015 and so under 16 all year, lived with the taxpayer all
+    year and has no impairment, so is an eligible child counted on line 3 (born in 2009
+    to 2018), and on neither line 1 (born in 2019 or later) nor line 2 (the disability
+    amount cannot be claimed for the child). "Child care expenses are amounts you or another
+    person paid to have someone look after an eligible child so that you or the other
+    person could:" "- earn income from employment"; "These include payments made to any
+    of the following:" "- day nursery schools and daycare centres". The child care expenses
+    were paid in 2025 to a daycare, with receipts, so that the taxpayer could earn income
+    from employment (to be confirmed): 6,000 (line 67950). The form's other conditions
+    are taken as met and its exclusions as not applying (to be confirmed). Line 1 is 0
+    x 8,000 = 0, line 2 0 x 11,000 = 0 and line 3 1 x 5,000 = 5,000, so line 4 is 0 +
+    0 + 5,000 = 5,000; line 5 is 6,000. The earned income of line 6 is the employment
+    income, the only earned income on this return, 60,000, and two-thirds of it is 60,000
+    x 2 / 3 = 40,000, with no rounding stated. Line 7 is the least of 5,000, 6,000 and
+    40,000: 5,000. "Claiming child care expenses": "If you are the only person supporting
+    the eligible child, claim the child care expenses that you incurred while the eligible
+    child was living with you. Fill out parts A and B, and Part D if it applies." The
+    taxpayer is taken as the only person supporting the child (to be confirmed), so line 8
+    (the other person with the higher net income) is not triggered and line 9, the allowable
+    deduction and line 21400, is 5,000 - 0 = 5,000. Not triggered by this return: Parts
+    C and D (the higher-income claimant and school attendance), line 67954 (the expenses
+    for children aged 6 or younger, to be confirmed; the child is 10 at the end of 2025)
+    and Note 1's weekly limits for boarding schools and overnight camps (to be confirmed).
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t778/t778-25e.txt
   - >-
     CRA, the 2025 T1 return (form 5000-R): line 57 "Enter the amount from line 56 of the
@@ -276,7 +329,7 @@ sources:
     from net income, lines 58 to 67 (lines 24400 to 25600)); line 69 "Line 57 minus line 68
     (if negative, enter "0") Taxable income" (line 26000, as Step 5 refers to it). There are
     no deductions from net income on this return, so line 68 is 0 and taxable income is net
-    income less it, not below zero: 59,435.00 - 0 = 59,435.00.
+    income less it, not below zero: 54,435.00 - 0 = 54,435.00.
   - >-
     CRA, the 2025 T1 return (form 5000-R): line 77 (line 30000) "If the amount on line 23600
     is $177,882 or less, enter $16,129. If the amount on line 23600 is $253,414 or more,
@@ -291,7 +344,7 @@ sources:
     35000) "Add lines 115 to 117. Total federal non-refundable tax credits". Line 30000 is
     computed from net income by the Federal Worksheet (form 5000-D1), whose line 30000
     section reads "If the amount from line 23600 of your return is: $177,882 or less, enter
-    $16,129 on line 30000 of your return". Net income of 59,435.00 is 177,882 or less, at or
+    $16,129 on line 30000 of your return". Net income of 54,435.00 is 177,882 or less, at or
     below the worksheet's threshold, so its calculation is not completed and line 30000 is
     16,129, the base amount (line 1 "Base amount 14,538.00") plus the whole supplement (line
     2 "Supplement amount 1,591.00"), which T4127's rounding to the cent leaves unchanged.
@@ -365,22 +418,22 @@ sources:
     The federal brackets are those of the 2025 T1 return (form 5000-R), Step 5, Part A
     "Federal tax on taxable income", lines 70 to 76, as CRA publishes them; the lowest rate
     of 14.5% is the full-year blend of the cut from 15% to 14% on July 1, 2025, per Finance
-    Canada's announcement. Taxable income of 59,435.00 falls in column 2 "Line 26000 is more
-    than $57,375 but not more than $114,750": line 70 "Amount from line 26000", 59,435.00;
-    line 71 "57,375.00"; line 72 "Line 70 minus line 71 (cannot be negative)", 2,060.00;
-    line 73 "Rate 20.5%"; line 74 "Line 72 multiplied by the percentage from line 73",
-    422.30; line 75 "8,319.38"; line 76 "Line 74 plus line 75 Federal tax on taxable
-    income", 422.30 + 8,319.38 = 8,741.68, with no rounding stated. Less the 5,438.91375 of
-    federal non-refundable tax credits (line 35000), not below zero, it is 3,302.76625. The
-    Ontario brackets are those of the 2025 ON428 (form 5006-C), Part A "Ontario tax on
-    taxable income", lines 1 to 8, as CRA and the Ontario Data Catalogue publish them: line
-    1 "Enter your taxable income from line 26000 of your return.", 59,435.00, in column 2
-    "Line 1 is more than $52,886 but not more than $105,775": line 2 "Amount from line 1";
-    line 3 "52,886.00"; line 4 "Line 2 minus line 3 (cannot be negative)", 6,549.00; line 5
-    "Rate 9.15%"; line 6 "Line 4 multiplied by the percentage from line 5", 599.2335; line 7
-    "2,670.74"; line 8 "Line 6 plus line 7 Ontario tax on taxable income", 599.2335 +
-    2,670.74 = 3,269.9735, with no rounding stated. Less the 1,381.212875 of Ontario
-    non-refundable tax credits (ON428 line 61500), not below zero, it is 1,888.760625.
+    Canada's announcement. Taxable income of 54,435.00 falls in column 1 "Line 26000 is
+    $57,375 or less": line 70 "Amount from line 26000", 54,435.00; line 71 "0.00"; line 72
+    "Line 70 minus line 71 (cannot be negative)", 54,435.00; line 73 "Rate 14.5%"; line 74
+    "Line 72 multiplied by the percentage from line 73", 7,893.075; line 75 "0.00"; line 76
+    "Line 74 plus line 75 Federal tax on taxable income", 7,893.075, with no rounding
+    stated. Less the 5,438.91375 of federal non-refundable tax credits (line 35000), not
+    below zero, it is 2,454.16125. The Ontario brackets are those of the 2025 ON428 (form
+    5006-C), Part A "Ontario tax on taxable income", lines 1 to 8, as CRA and the Ontario
+    Data Catalogue publish them: line 1 "Enter your taxable income from line 26000 of your
+    return.", 54,435.00, in column 2 "Line 1 is more than $52,886 but not more than
+    $105,775": line 2 "Amount from line 1"; line 3 "52,886.00"; line 4 "Line 2 minus line 3
+    (cannot be negative)", 1,549.00; line 5 "Rate 9.15%"; line 6 "Line 4 multiplied by the
+    percentage from line 5", 141.7335; line 7 "2,670.74"; line 8 "Line 6 plus line 7 Ontario
+    tax on taxable income", 141.7335 + 2,670.74 = 2,812.4735, with no rounding stated. Less
+    the 1,381.212875 of Ontario non-refundable tax credits (ON428 line 61500), not below
+    zero, it is 1,431.260625.
   - https://www.canada.ca/en/revenue-agency/services/tax/individuals/tax-rates-brackets/last-year.html
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - https://www.canada.ca/en/department-finance/news/2025/05/delivering-a-middle-class-tax-cut.html
@@ -399,8 +452,8 @@ sources:
     are not modelled, so lines 61, 62 and 63 carry line 53, the Ontario tax after credits,
     unchanged (line 55 "Line 53 plus line 54", line 54 being 0), line 64 is 0 and the surtax
     base, line 65, is the Ontario tax after credits itself. The Ontario tax after credits of
-    1,888.760625 is below 5,710 and 7,307, so lines 66 and 67 are negative and enter 0, the
-    surtax, line 68, is 0 + 0 = 0, and line 69 is 1,888.760625 + 0 = 1,888.760625.
+    1,431.260625 is below 5,710 and 7,307, so lines 66 and 67 are negative and enter 0, the
+    surtax, line 68, is 0 + 0 = 0, and line 69 is 1,431.260625 + 0 = 1,431.260625.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
     CRA, the 2025 ON428 (form 5006-C): line 71 "Line 69 minus line 70 (if negative, enter
@@ -415,18 +468,18 @@ sources:
     born in 2015, is a dependent child (line 75, the children "born in 2007 or later"), and
     has no impairment, so is not a dependant (line 76, the dependants "with a mental or
     physical impairment"): line 75 is 1 x 544 = 544 and line 76 is 0 x 544 = 0, so line 77
-    is 294.00 + 544 + 0 = 838.00; line 78 is 838.00 x 2 = 1,676.00; line 79 is 1,888.760625;
-    line 80 is 1,676.00 - 1,888.760625, negative, so 0; with no rounding stated, line 81 is
-    1,888.760625 - 0 = 1,888.760625. Not modelled: "Enter "0" on line 80 if any of the
-    following applies to you: You were not a resident of Canada at the beginning of the
-    year; You were not a resident of Ontario on December 31, 2025; There is an amount on
-    line 72; You were bankrupt at any time in 2025; Your return is filed for you by a
-    trustee in bankruptcy; You are choosing not to claim an Ontario tax reduction", none of
-    which applies to this taxpayer, a resident of Ontario for all of 2025, on the facts
-    given (the bankruptcy and trustee conditions to be confirmed); and "If you had a spouse
-    or common-law partner on December 31, 2025, only the individual with the higher net
-    income can claim the amounts on lines 75 and 76.", which does not apply, as the taxpayer
-    has no spouse or common-law partner.
+    is 294.00 + 544 + 0 = 838.00; line 78 is 838.00 x 2 = 1,676.00; line 79 is 1,431.260625;
+    line 80 is 1,676.00 - 1,431.260625 = 244.739375, the Ontario tax reduction; with no
+    rounding stated, line 81 is 1,431.260625 - 244.739375 = 1,186.52125. Not modelled:
+    "Enter "0" on line 80 if any of the following applies to you: You were not a resident of
+    Canada at the beginning of the year; You were not a resident of Ontario on December 31,
+    2025; There is an amount on line 72; You were bankrupt at any time in 2025; Your return
+    is filed for you by a trustee in bankruptcy; You are choosing not to claim an Ontario
+    tax reduction", none of which applies to this taxpayer, a resident of Ontario for all of
+    2025, on the facts given (the bankruptcy and trustee conditions to be confirmed); and
+    "If you had a spouse or common-law partner on December 31, 2025, only the individual
+    with the higher net income can claim the amounts on lines 75 and 76.", which does not
+    apply, as the taxpayer has no spouse or common-law partner.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
     CRA, the 2025 Schedule ON428-A (form 5006-A): line 1 "Amount from line 10100 of your
@@ -444,11 +497,11 @@ sources:
     your Form ON428." There is no other employment income (line 2), so line 3 is 60,000 + 0
     = 60,000, and line 5 is 60,000 x 5.05% = 3,030, more than $875, so 875. Lines 7 and 8
     (the UCCB and RDSP repayments) and 10 and 11 (the UCCB and RDSP income) are not
-    triggered, so line 9 is line 6, the net income of 59,435.00, and line 13 is 59,435.00 -
-    0 = 59,435.00. The taxpayer is single at the end of 2025, so Part A applies and Part B
+    triggered, so line 9 is line 6, the net income of 54,435.00, and line 13 is 54,435.00 -
+    0 = 54,435.00. The taxpayer is single at the end of 2025, so Part A applies and Part B
     (for a spouse or common-law partner) is not triggered: line 14 is 875; line 15 is
-    59,435.00; line 17 is 59,435.00 - 32,500.00 = 26,935.00; line 19 is 26,935.00 x 5% =
-    1,346.75; line 20 is 875 - 1,346.75, negative, so 0, the LIFT credit (ON428 line 62140),
+    54,435.00; line 17 is 54,435.00 - 32,500.00 = 21,935.00; line 19 is 21,935.00 x 5% =
+    1,096.75; line 20 is 875 - 1,096.75, negative, so 0, the LIFT credit (ON428 line 62140),
     with no rounding stated. The schedule states no eligibility rules itself: "To find out
     if you are eligible for the low-income individuals and families tax (LIFT) credit, go to
     canada.ca/on-tax-info." The credit is 0 whatever the eligibility conditions, which are
@@ -462,19 +515,19 @@ sources:
     after the reduction, unchanged, and line 84 is "Amount from line 83 of the previous
     page"; line 85 (line 62140) "Low-income individuals and families tax (LIFT) credit
     (complete Schedule ON428-A)", here 0 (Schedule ON428-A line 20); line 86 "Line 84 minus
-    line 85 (if negative, enter "0")", 1,888.760625 - 0 = 1,888.760625; line 88 "Line 86
-    minus line 87 (if negative, enter "0")" carries line 86; line 89 "Ontario health premium
+    line 85 (if negative, enter "0")", 1,186.52125 - 0 = 1,186.52125; line 88 "Line 86 minus
+    line 87 (if negative, enter "0")" carries line 86; line 89 "Ontario health premium
     (complete the chart below)"; line 90 "Line 88 plus line 89 Enter this amount on line
     42800 of your return. Ontario tax". The chart's line 1 is "Enter your taxable income
-    from line 26000 of your return", here 59,435.00, which is "more than $48,600 but not
+    from line 26000 of your return", here 54,435.00, which is "more than $48,600 but not
     more than $72,000": $600. Each row of the chart is the previous plateau plus a rate on
     the taxable income over the row's threshold, at most the next plateau, so the premium is
-    the sum of five tiers, each capped: (59,435.00 - 20,000) x 6% = 39,435.00 x 6% =
-    2,366.10, more than 300, so 300; (59,435.00 - 36,000) x 6% = 23,435.00 x 6% = 1,406.10,
-    more than 150, so 150; (59,435.00 - 48,000) x 25% = 11,435.00 x 25% = 2,858.75, more
-    than 150, so 150; 59,435.00 - 72,000 is negative, so 0; 59,435.00 - 200,000 is negative,
-    so 0; with no rounding stated, line 89 is 300 + 150 + 150 + 0 + 0 = 600, and line 90 is
-    1,888.760625 + 600 = 2,488.760625.
+    the sum of five tiers, each capped: (54,435.00 - 20,000) x 6% = 34,435.00 x 6% =
+    2,066.10, more than 300, so 300; (54,435.00 - 36,000) x 6% = 18,435.00 x 6% = 1,106.10,
+    more than 150, so 150; (54,435.00 - 48,000) x 25% = 6,435.00 x 25% = 1,608.75, more than
+    150, so 150; 54,435.00 - 72,000 is negative, so 0; 54,435.00 - 200,000 is negative, so
+    0; with no rounding stated, line 89 is 300 + 150 + 150 + 0 + 0 = 600, and line 90 is
+    1,186.52125 + 600 = 1,786.52125.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
     CRA, the 2025 Schedule 6 (form 5000-S6). Part A: line 1 "Employment income and other
@@ -499,10 +552,10 @@ sources:
     of your return." Lines 2 to 4 (scholarships, self-employment income and exempt income)
     are not triggered and there is no other employment income (line 10400), so line 1 is the
     employment income of 60,000 and line 5, the working income, is 60,000. Lines 8, 9 and 11
-    are not triggered, so line 10 is line 7, the net income of 59,435.00, and line 12 is
-    59,435.00; with no eligible spouse (column 2) lines 6 and 13 carry lines 5 and 12, line
+    are not triggered, so line 10 is line 7, the net income of 54,435.00, and line 12 is
+    54,435.00; with no eligible spouse (column 2) lines 6 and 13 carry lines 5 and 12, line
     14 (the secondary earner exemption) is not triggered, and line 15, the adjusted family
-    net income, is 59,435.00. The chart: "Your family status: You had an eligible spouse or
+    net income, is 54,435.00. The chart: "Your family status: You had an eligible spouse or
     an eligible dependant Basic CWB: $49,393". "An eligible dependant is a person who meets
     all of the following conditions: They were your or your spouse's or common-law partner's
     child"; "They were under 19 years of age and lived with you on December 31, 2025"; "They
@@ -512,14 +565,14 @@ sources:
     (to be confirmed), the child did not meet the third of page 1's conditions below and so
     was not eligible for the CWB. The child is an eligible dependant, so line 21 is $2,813
     and line 24 $30,639: line 18 is 60,000 - 3,000 = 57,000; line 20 is 57,000 x 27% =
-    15,390; line 22 is the lesser of 15,390 and 2,813: 2,813. Line 25 is 59,435.00 - 30,639
-    = 28,796.00; line 27 is 28,796.00 x 15% = 4,319.40; line 28 is 2,813 - 4,319.40,
+    15,390; line 22 is the lesser of 15,390 and 2,813: 2,813. Line 25 is 54,435.00 - 30,639
+    = 23,796.00; line 27 is 23,796.00 x 15% = 3,569.40; line 28 is 2,813 - 3,569.40,
     negative, so 0, the Canada workers benefit (T1 line 45300), with no rounding stated. The
-    adjusted family net income of 59,435.00 is above the chart's basic limit of $49,393,
+    adjusted family net income of 54,435.00 is above the chart's basic limit of $49,393,
     which agrees. The CA-ON manifest applies the amounts for a filer with no eligible spouse
     and no eligible dependant, $1,633 on line 21 and $26,855 on line 24, so its lines 22 and
-    27 (1,633 and 4,887.00) are not the form's for this return and are not listed under
-    `expected`; its line 28 is 1,633 - 4,887.00, negative, so 0, the same benefit. Not
+    27 (1,633 and 4,137.00) are not the form's for this return and are not listed under
+    `expected`; its line 28 is 1,633 - 4,137.00, negative, so 0, the same benefit. Not
     triggered by this return, so not modelled: Step 3 (the disability supplement) and Step 4
     (the advance payments, Form RC210). Page 1: "Complete this schedule if you met all of
     the following conditions in 2025: You were a resident of Canada throughout the year; You
@@ -543,12 +596,12 @@ sources:
     CRA, the 2025 T1 return (form 5000-R), Part C and Step 6: line 119 "Enter the amount
     from line 76.", line 76 being Part A's "Line 74 plus line 75 Federal tax on taxable
     income" (the same text in each of the form's five columns; this return's taxable income
-    of 59,435.00 falls in column 2), here 8,741.68; line 121 (line 40400) "Line 119 plus
+    of 54,435.00 falls in column 1), here 7,893.075; line 121 (line 40400) "Line 119 plus
     line 120", line 120 (line 40424, tax on split income) not modelled; line 122 "Amount
     from line 35000", the federal non-refundable tax credits, 5,438.91375; line 125 "Add
     lines 122 to 124.", lines 123 (the dividend tax credit) and 124 (the minimum tax
     carryover) not modelled; line 126 (line 42900) "Line 121 minus line 125 (if negative,
-    enter "0") Basic federal tax": 8,741.68 - 5,438.91375 = 3,302.76625, the federal tax
+    enter "0") Basic federal tax": 7,893.075 - 5,438.91375 = 2,454.16125, the federal tax
     after credits. Lines 127 to 133 (the foreign surtax, the foreign tax credit, the ITC
     recapture and the logging credit) are not modelled, so line 134 (line 40600) "Line 132
     minus line 133 (if negative, enter "0") Federal tax" carries line 126; lines 135 to 138
@@ -556,23 +609,23 @@ sources:
     so line 139 (line 41700) "Line 134 minus line 138 (if negative, enter "0")" carries it;
     lines 140 (line 41500, the ACWB) and 141 (line 41800, special taxes) are not modelled,
     so line 142 (line 42000, which the form prints as line "4200") "Add lines 139 to 141.
-    Net federal tax" is 3,302.76625. Step 6: line 143 "Amount from line 42000"; lines 144
+    Net federal tax" is 2,454.16125. Step 6: line 143 "Amount from line 42000"; lines 144
     (line 42100), 145 (line 42120) and 146 (line 42200) are not triggered by this return;
     line 147 (line 42800) "Provincial or territorial tax (complete and attach your
     provincial or territorial Form 428, even if the result is "0")" is the Ontario tax of
-    ON428 line 90, 2,488.760625; line 148 (line 43500) "Add lines 143 to 147. Total
-    payable": 3,302.76625 + 2,488.760625 = 5,791.526875. Line 149 "Enter the amount from
-    line 148 of the previous page."; line 150 (line 43700) "Total income tax deducted
-    (amounts from all Canadian slips)": 8,000, a chosen figure: it is the tax withheld on
-    the taxpayer's slips, which nothing on this return determines. Line 155 (line 45300)
-    "Canada workers benefit (CWB) (complete Schedule 6)" is the benefit of Schedule 6 line
-    28, 0; the other lines 151 to 165 (lines 44000 to 47900) are not triggered by this
-    return or not yet computed, so line 166 (line 48200) "Add lines 150 to 165. Total
-    credits" is 8,000 + 0 = 8,000. Line 167 "Line 149 minus line 166 If the amount is
-    negative, enter it on line 48400 below. If the amount is positive, enter it on line
-    48500 below. Refund or balance owing": 5,791.526875 - 8,000 = -2,208.473125, negative,
-    so line 48400 "Refund", not line 48500 "Balance owing". The T1 states no rounding on any
-    of these lines, so none is applied.
+    ON428 line 90, 1,786.52125; line 148 (line 43500) "Add lines 143 to 147. Total payable":
+    2,454.16125 + 1,786.52125 = 4,240.6825. Line 149 "Enter the amount from line 148 of the
+    previous page."; line 150 (line 43700) "Total income tax deducted (amounts from all
+    Canadian slips)": 8,000, a chosen figure: it is the tax withheld on the taxpayer's
+    slips, which nothing on this return determines. Line 155 (line 45300) "Canada workers
+    benefit (CWB) (complete Schedule 6)" is the benefit of Schedule 6 line 28, 0; the other
+    lines 151 to 165 (lines 44000 to 47900) are not triggered by this return or not yet
+    computed, so line 166 (line 48200) "Add lines 150 to 165. Total credits" is 8,000 + 0 =
+    8,000. Line 167 "Line 149 minus line 166 If the amount is negative, enter it on line
+    48400 below. If the amount is positive, enter it on line 48500 below. Refund or balance
+    owing": 4,240.6825 - 8,000 = -3,759.3175, negative, so line 48400 "Refund", not line
+    48500 "Balance owing". The T1 states no rounding on any of these lines, so none is
+    applied.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
 inputs:
   ca/employment_income: "60000"
@@ -587,6 +640,10 @@ inputs:
   ca/eligible_dependants: "1"
   ca/dependant_net_income: "0"
   ca/infirm_children: "0"
+  ca/child_care_expenses_paid: "6000"
+  ca/children_under_seven: "0"
+  ca/children_with_disability: "0"
+  ca/children_seven_to_sixteen: "1"
   ca/income_tax_deducted: "8000"
 expected:
   ca/taxable_capital_gains: "0"
@@ -600,11 +657,18 @@ expected:
   ca/rrsp_deduction_maximum: "0"
   ca/rrsp_deduction: "0"
   ca/unused_rrsp_contributions_carried_forward: "0"
-  ca/deductions_from_total_income: "565.00"
-  ca/net_income: "59435.00"
+  ca/child_care_limit_for_children_under_seven: "0"
+  ca/child_care_limit_for_children_with_disability: "0"
+  ca/child_care_limit_for_children_seven_to_sixteen: "5000"
+  ca/child_care_basic_limit: "5000"
+  ca/child_care_earned_income: "60000"
+  ca/child_care_earned_income_limit: "40000"
+  ca/child_care_expenses: "5000"
+  ca/deductions_from_total_income: "5565.00"
+  ca/net_income: "54435.00"
   ca/deductions_from_net_income: "0"
-  ca/taxable_income: "59435.00"
-  ca/federal_basic_tax: "8741.68"
+  ca/taxable_income: "54435.00"
+  ca/federal_basic_tax: "7893.075"
   ca/basic_personal_amount: "16129.00"
   ca/eligible_dependant_amount_before_count: "16129.00"
   ca/eligible_dependant_amount: "16129.00"
@@ -612,8 +676,8 @@ expected:
   ca/canada_employment_amount: "1471"
   ca/non_refundable_credit_amounts: "37509.75"
   ca/non_refundable_tax_credits: "5438.91375"
-  ca/federal_tax_after_credits: "3302.76625"
-  ca-on/ontario_basic_tax: "3269.9735"
+  ca/federal_tax_after_credits: "2454.16125"
+  ca-on/ontario_basic_tax: "2812.4735"
   ca-on/basic_personal_amount: "12747"
   ca-on/eligible_dependant_base: "11905.00"
   ca-on/eligible_dependant_amount_before_maximum: "11905.00"
@@ -621,26 +685,26 @@ expected:
   ca-on/eligible_dependant_amount: "10823"
   ca-on/non_refundable_credit_amounts: "27350.75"
   ca-on/non_refundable_tax_credits: "1381.212875"
-  ca-on/ontario_tax_after_credits: "1888.760625"
+  ca-on/ontario_tax_after_credits: "1431.260625"
   ca-on/ontario_surtax: "0"
-  ca-on/ontario_tax_with_surtax: "1888.760625"
+  ca-on/ontario_tax_with_surtax: "1431.260625"
   ca-on/tax_reduction_basic: "294.00"
   ca-on/tax_reduction_for_children: "544"
   ca-on/tax_reduction_for_dependants: "0"
   ca-on/tax_reduction_amounts: "838.00"
-  ca-on/ontario_tax_reduction: "0"
-  ca-on/ontario_tax_after_reduction: "1888.760625"
+  ca-on/ontario_tax_reduction: "244.739375"
+  ca-on/ontario_tax_after_reduction: "1186.52125"
   ca-on/lift_credit_before_maximum: "3030"
   ca-on/lift_maximum_credit: "875"
-  ca-on/lift_reduction: "1346.75"
+  ca-on/lift_reduction: "1096.75"
   ca-on/lift_credit: "0"
-  ca-on/ontario_tax_after_lift_credit: "1888.760625"
+  ca-on/ontario_tax_after_lift_credit: "1186.52125"
   ca-on/ontario_health_premium: "600"
-  ca-on/ontario_tax: "2488.760625"
-  ca/net_federal_tax: "3302.76625"
-  ca/total_payable: "5791.526875"
+  ca-on/ontario_tax: "1786.52125"
+  ca/net_federal_tax: "2454.16125"
+  ca/total_payable: "4240.6825"
   ca/working_income: "60000"
-  ca/adjusted_family_net_income: "59435.00"
+  ca/adjusted_family_net_income: "54435.00"
   ca/canada_workers_benefit: "0"
   ca/total_credits: "8000"
-  ca/refund_or_balance_owing: "-2208.473125"
+  ca/refund_or_balance_owing: "-3759.3175"

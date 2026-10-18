@@ -301,6 +301,28 @@ def test_loads_the_federal_counts_as_integers(tmp_path: Path, artifacts: Artifac
     assert all(type(artifact.value) is int for artifact in worked.inputs)
 
 
+def test_loads_the_child_care_counts_as_integers(
+    tmp_path: Path, artifacts: ArtifactRegistry
+) -> None:
+    # Form T778 Part B lines 1 to 3: the numbers of eligible children, counts read like the others.
+    text = with_section(
+        "inputs",
+        "inputs:\n"
+        '  ca/children_under_seven: "0"\n'
+        '  ca/children_with_disability: "2"\n'
+        '  ca/children_seven_to_sixteen: "1"\n',
+    )
+
+    worked = WorkedReturn.load(write(tmp_path, text, "ok.yaml"), artifacts)
+
+    assert worked.inputs == (
+        Artifact(artifacts.kind("ca/children_under_seven"), 0),
+        Artifact(artifacts.kind("ca/children_with_disability"), 2),
+        Artifact(artifacts.kind("ca/children_seven_to_sixteen"), 1),
+    )
+    assert all(type(artifact.value) is int for artifact in worked.inputs)
+
+
 @pytest.mark.parametrize(("count", "got"), [("0", "int"), ("true", "bool")])
 def test_an_unquoted_ontario_count_names_the_file_and_key(
     tmp_path: Path, artifacts: ArtifactRegistry, count: str, got: str

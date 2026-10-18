@@ -2,8 +2,9 @@
 
 Only the kinds in use are declared, each non-negative but one: none of these lines can be negative
 on the return as modelled except the refund or balance owing, where negative means a refund.
-Amounts are Decimal, the counts of eligible dependants and of infirm children int. Identifiers are
-stable: `tests/jurisdictions/ca/test_catalog.py` snapshots them.
+Amounts are Decimal; the counts of eligible dependants, of infirm children and of the eligible
+children for child care (Form T778 Part B lines 1 to 3) int. Identifiers are stable:
+`tests/jurisdictions/ca/test_catalog.py` snapshots them.
 """
 
 from __future__ import annotations
@@ -106,6 +107,74 @@ UNION_DUES = CATALOG.declare("union_dues", Decimal, non_negative=True)
 """Union dues, T1 line 21200 "Annual union, professional, or like dues (receipts and box 44 of all
 T4 slips)": the amount claimed, a starting amount."""
 
+CHILD_CARE_EXPENSES_PAID = CATALOG.declare("child_care_expenses_paid", Decimal, non_negative=True)
+"""Child care expenses paid, Form T778 Part A line 67950 "Total (add all entries for Child care
+expenses paid)": a starting amount, also Part B line 5 "Enter the amount from line 67950."."""
+
+CHILDREN_UNDER_SEVEN = CATALOG.declare("children_under_seven", int, non_negative=True)
+"""Number of eligible children born in 2019 or later, Form T778 Part B line 1 "Number of eligible
+children born in 2019 or later whom the disability amount cannot be claimed for": a starting
+count."""
+
+CHILDREN_WITH_DISABILITY = CATALOG.declare("children_with_disability", int, non_negative=True)
+"""Number of eligible children with the disability amount, Form T778 Part B line 2 (line 67960)
+"Number of eligible children born in 2025 or earlier whom the disability amount can be claimed
+for": a starting count."""
+
+CHILDREN_SEVEN_TO_SIXTEEN = CATALOG.declare("children_seven_to_sixteen", int, non_negative=True)
+"""Number of eligible children born in 2009 to 2018, Form T778 Part B line 3 "Number of eligible
+children born in 2009 to 2018 (and born in 2008 or earlier with a mental or physical infirmity
+whom the disability amount cannot be claimed for)": a starting count."""
+
+CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN = CATALOG.declare(
+    "child_care_limit_for_children_under_seven", Decimal, non_negative=True
+)
+"""Child care limit for the children born in 2019 or later, Form T778 Part B line 1 "multiplied by
+$8,000": the line 1 count times $8,000, a part of line 4."""
+
+CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY = CATALOG.declare(
+    "child_care_limit_for_children_with_disability", Decimal, non_negative=True
+)
+"""Child care limit for the children with the disability amount, Form T778 Part B line 2 (line
+67960) "multiplied by $11,000": the line 2 count times $11,000, a part of line 4."""
+
+CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN = CATALOG.declare(
+    "child_care_limit_for_children_seven_to_sixteen", Decimal, non_negative=True
+)
+"""Child care limit for the children born in 2009 to 2018, Form T778 Part B line 3 "multiplied by
+$5,000": the line 3 count times $5,000, a part of line 4."""
+
+CHILD_CARE_BASIC_LIMIT = CATALOG.declare("child_care_basic_limit", Decimal, non_negative=True)
+"""Child care basic limit, Form T778 Part B line 4 "Add lines 1 to 3.": the limits for each group
+of eligible children, in line order."""
+
+CHILD_CARE_EARNED_INCOME = CATALOG.declare("child_care_earned_income", Decimal, non_negative=True)
+"""Earned income for child care, Form T778 Part B line 6 "Enter your earned income.": "Your earned
+income of line 6 is the total of the following: employment income (including tips and gratuities,
+and the non-taxable part of an allowance received as an emergency volunteer) ...", here employment
+income alone.
+
+The other parts of earned income the form's "Earned income" definition lists are not triggered by
+the returns modelled.
+"""
+
+CHILD_CARE_EARNED_INCOME_LIMIT = CATALOG.declare(
+    "child_care_earned_income_limit", Decimal, non_negative=True
+)
+"""Earned income limit for child care, Form T778 Part B line 6 "multiplied by two-thirds": the
+earned income times two-thirds, carried unrounded."""
+
+CHILD_CARE_EXPENSES = CATALOG.declare("child_care_expenses", Decimal, non_negative=True)
+"""Child care expenses deduction, T1 line 41 (line 21400) "Child care expenses (complete Form
+T778)": Form T778 Part B line 7 "Enter whichever amount is the least: line 4, line 5 or line 6.",
+carried by line 9 "Line 7 minus line 8. ... enter this amount on line 21400 of your return.
+Allowable deduction", a deduction from total income.
+
+Line 8 (the other person with the higher net income) is not triggered, so line 9 is line 7; nor
+are Parts C and D (the higher-income claimant, school attendance). Eligibility is the return's to
+state, not computed here.
+"""
+
 CPP_FIRST_ADDITIONAL_CONTRIBUTIONS = CATALOG.declare(
     "cpp_first_additional_contributions", Decimal, non_negative=True
 )
@@ -148,7 +217,8 @@ DEDUCTIONS_FROM_TOTAL_INCOME = CATALOG.declare(
     "deductions_from_total_income", Decimal, non_negative=True
 )
 """Total deductions, T1 line 23300 "Add lines 35 to 52": the sum of the deductions from total
-income, here the RRSP deduction, union dues and the enhanced CPP contributions."""
+income, here, in line order, the RRSP deduction (line 20800), union dues (line 21200), the child
+care expenses (line 21400) and the enhanced CPP contributions (line 22215)."""
 
 NET_INCOME = CATALOG.declare("net_income", Decimal, non_negative=True)
 """Net income, T1 line 23600 "Line 54 minus line 55 (if negative, enter "0") Net income": total

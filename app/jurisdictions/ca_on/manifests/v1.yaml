@@ -19,6 +19,10 @@ inputs:
   - ca/eligible_dependants
   - ca/dependant_net_income
   - ca/infirm_children
+  - ca/child_care_expenses_paid
+  - ca/children_under_seven
+  - ca/children_with_disability
+  - ca/children_seven_to_sixteen
   - ca/income_tax_deducted
 outputs:
   - ca/refund_or_balance_owing
@@ -127,11 +131,80 @@ capabilities:
       less: ca/rrsp_deduction
     produces:
       output: ca/unused_rrsp_contributions_carried_forward
+  # Form T778 Part B line 1 "Number of eligible children born in 2019 or later whom the
+  # disability amount cannot be claimed for" "multiplied by $8,000", line 2 (line 67960)
+  # "Number of eligible children born in 2025 or earlier whom the disability amount can
+  # be claimed for" "multiplied by $11,000" and line 3 "Number of eligible children born
+  # in 2009 to 2018 (and born in 2008 or earlier with a mental or physical infirmity whom
+  # the disability amount cannot be claimed for)" "multiplied by $5,000".
+  - name: core/per_unit_amount
+    params:
+      amount: ca/child_care_limit_under_seven
+    consumes:
+      count: ca/children_under_seven
+    produces:
+      output: ca/child_care_limit_for_children_under_seven
+  - name: core/per_unit_amount
+    params:
+      amount: ca/child_care_limit_disability
+    consumes:
+      count: ca/children_with_disability
+    produces:
+      output: ca/child_care_limit_for_children_with_disability
+  - name: core/per_unit_amount
+    params:
+      amount: ca/child_care_limit_seven_to_sixteen
+    consumes:
+      count: ca/children_seven_to_sixteen
+    produces:
+      output: ca/child_care_limit_for_children_seven_to_sixteen
+  # T778 line 4 "Add lines 1 to 3.", in line order.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/child_care_limit_for_children_under_seven
+        - ca/child_care_limit_for_children_with_disability
+        - ca/child_care_limit_for_children_seven_to_sixteen
+    produces:
+      output: ca/child_care_basic_limit
+  # T778 line 6 "Enter your earned income.", "the total of the following: employment
+  # income (including tips and gratuities, and the non-taxable part of an allowance
+  # received as an emergency volunteer) ...": the employment income, the other earned
+  # income lines not triggered; then "multiplied by two-thirds": one part.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/employment_income
+    produces:
+      output: ca/child_care_earned_income
+  - name: core/apply_fraction
+    params:
+      fraction: ca/child_care_earned_income_fraction
+    consumes:
+      base: ca/child_care_earned_income
+    produces:
+      output: ca/child_care_earned_income_limit
+  # T778 line 7 "Enter whichever amount is the least: line 4, line 5 or line 6.", in that
+  # order, line 5 "Enter the amount from line 67950." being the expenses paid; with line
+  # 8 (the other person with the higher net income) not triggered, line 9 "Line 7 minus
+  # line 8. ... enter this amount on line 21400 of your return. Allowable deduction" is
+  # line 7.
+  - name: core/lesser_of
+    consumes:
+      amounts:
+        - ca/child_care_basic_limit
+        - ca/child_care_expenses_paid
+        - ca/child_care_earned_income_limit
+    produces:
+      output: ca/child_care_expenses
+  # T1 line 23300 "Add lines 35 to 52.": the deductions in the form's line order (20800,
+  # 21200, 21400, 22215).
   - name: core/sum
     consumes:
       parts:
         - ca/rrsp_deduction
         - ca/union_dues
+        - ca/child_care_expenses
         - ca/cpp_enhanced_contributions
     produces:
       output: ca/deductions_from_total_income
