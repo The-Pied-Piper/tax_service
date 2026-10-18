@@ -17,8 +17,10 @@ import pytest
 
 from app.domain.artifact import Artifact, ArtifactCatalog, ArtifactKind, ArtifactRegistry, Money
 from app.domain.errors import (
+    DomainError,
     DuplicateRegistrationError,
     InvalidRegistrationError,
+    NegativeArtifactError,
     UnknownRegistrationError,
 )
 from app.domain.registry import Namespace, Registry
@@ -26,6 +28,7 @@ from app.domain.registry import Namespace, Registry
 D = Decimal
 BASE = ArtifactKind("ex/taxable_base", Decimal)
 TAX = ArtifactKind("ex/basic_tax", Decimal)
+NON_NEGATIVE = ArtifactKind("ex/credit_amount", Decimal, non_negative=True)
 
 
 @pytest.fixture
@@ -158,6 +161,89 @@ def test_artifacts_are_immutable() -> None:
 
     with pytest.raises(FrozenInstanceError):
         artifact.value = D(2)  # type: ignore[misc]
+
+
+# --- non-negative kinds --------------------------------------------------------------------
+
+
+def test_a_kind_is_unconstrained_by_default() -> None:
+    assert BASE.non_negative is False
+    assert ArtifactCatalog(Namespace("ex")).declare("taxable_base", Decimal).non_negative is False
+
+
+def test_a_kind_may_be_declared_non_negative() -> None:
+    assert_type(NON_NEGATIVE.non_negative, bool)
+    assert NON_NEGATIVE.non_negative is True
+
+
+def test_a_catalog_declares_a_non_negative_kind(fresh: ArtifactRegistry) -> None:
+    catalog = ArtifactCatalog(Namespace("ex"))
+
+    kind = catalog.declare("credit_amount", Decimal, non_negative=True)
+
+    assert_type(kind, ArtifactKind[Decimal])
+    assert kind.identifier == "ex/credit_amount"
+    assert kind.value_type is Decimal
+    assert kind.non_negative is True
+    assert catalog.kinds == (kind,)
+
+
+def test_a_non_negative_kind_rejects_a_negative_value_naming_the_kind_and_value() -> None:
+    with pytest.raises(NegativeArtifactError, match=r"ex/credit_amount.*-1"):
+        Artifact(NON_NEGATIVE, D("-1"))
+
+
+@pytest.mark.parametrize("value", ["-0.0001", "-1", "-40000", "-1E+10"])
+def test_a_non_negative_kind_rejects_any_value_below_zero(value: str) -> None:
+    with pytest.raises(NegativeArtifactError, match="ex/credit_amount"):
+        Artifact(NON_NEGATIVE, D(value))
+
+
+def test_a_negative_artifact_is_a_domain_error() -> None:
+    assert issubclass(NegativeArtifactError, DomainError)
+
+
+@pytest.mark.parametrize("value", ["0", "-0", "0.00", "-0.00", "0.0001", "16129"])
+def test_a_non_negative_kind_accepts_zero_signed_zero_and_positive_values(value: str) -> None:
+    artifact = Artifact(NON_NEGATIVE, D(value))
+
+    assert artifact.value == D(value)
+
+
+def test_an_unconstrained_kind_accepts_a_negative_value() -> None:
+    assert Artifact(BASE, D("-1")).value == D("-1")
+
+
+def test_a_kind_declared_in_a_catalog_as_non_negative_rejects_a_negative_value(
+    fresh: ArtifactRegistry,
+) -> None:
+    kind = ArtifactCatalog(Namespace("ex")).declare("credit_amount", Decimal, non_negative=True)
+
+    with pytest.raises(NegativeArtifactError, match="ex/credit_amount"):
+        Artifact(kind, D("-1"))
+
+
+def test_only_a_decimal_kind_may_be_non_negative_at_declaration(fresh: ArtifactRegistry) -> None:
+    catalog = ArtifactCatalog(Namespace("ex"))
+
+    with pytest.raises(InvalidRegistrationError, match="ex/person_count"):
+        catalog.declare("person_count", int, non_negative=True)
+
+    assert catalog.kinds == ()
+    assert fresh.identifiers() == frozenset()
+
+
+@pytest.mark.parametrize("value_type", [int, float, str, bool])
+def test_only_a_decimal_kind_may_be_non_negative(value_type: type[Any]) -> None:
+    with pytest.raises(InvalidRegistrationError, match="ex/person_count"):
+        ArtifactKind("ex/person_count", value_type, non_negative=True)
+
+
+def test_a_non_decimal_kind_may_be_declared_unconstrained(fresh: ArtifactRegistry) -> None:
+    kind = ArtifactCatalog(Namespace("ex")).declare("person_count", int, non_negative=False)
+
+    assert kind.non_negative is False
+    assert Artifact(kind, -1).value == -1
 
 
 # --- ArtifactRegistry and ArtifactCatalog ---------------------------------------------------

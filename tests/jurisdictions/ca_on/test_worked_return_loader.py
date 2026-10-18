@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry
+from app.domain.errors import NegativeArtifactError
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.jurisdictions.ca.catalog import (
     FEDERAL_BASIC_TAX,
@@ -158,6 +159,26 @@ def test_an_identifier_that_is_not_an_amount_names_the_file_and_key(tmp_path: Pa
     path = write(tmp_path, with_section("inputs", 'inputs:\n  ex/flag: "1"\n'))
 
     with pytest.raises(WorkedReturnError, match=r"bad\.yaml: inputs\.ex/flag: .*not an amount"):
+        WorkedReturn.load(path, artifacts)
+
+
+def test_return_a_with_negative_ei_premiums_fails_at_load_naming_the_kind(
+    tmp_path: Path, artifacts: ArtifactRegistry
+) -> None:
+    text = (RETURNS / "2025_return_a.yaml").read_text()
+    assert 'ca/ei_premiums: "1077.48"' in text
+    path = write(tmp_path, text.replace('ca/ei_premiums: "1077.48"', 'ca/ei_premiums: "-40000"'))
+
+    with pytest.raises(NegativeArtifactError, match=r"ca/ei_premiums.*-40000"):
+        WorkedReturn.load(path, artifacts)
+
+
+def test_a_negative_expected_amount_for_a_non_negative_kind_fails_at_load_naming_the_kind(
+    tmp_path: Path, artifacts: ArtifactRegistry
+) -> None:
+    path = write(tmp_path, VALID.replace('"20146.25"', '"-1"'))
+
+    with pytest.raises(NegativeArtifactError, match="ca/federal_basic_tax"):
         WorkedReturn.load(path, artifacts)
 
 

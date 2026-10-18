@@ -137,3 +137,16 @@ def test_every_registered_kind_is_money(registry: ArtifactRegistry) -> None:
         kind = registry.get(identifier)
         assert isinstance(kind, ArtifactKind)
         assert kind.value_type is Decimal, identifier
+
+
+def test_every_kind_is_declared_non_negative(registry: ArtifactRegistry) -> None:
+    # No `ca/` kind can be negative on the forms yet; the balance owing (#48), where negative
+    # means a refund, will be the first unconstrained one.
+    for kind in CATALOG.kinds:
+        assert kind.non_negative is True, kind.identifier
+    for identifier in REGISTERED:
+        assert registry.kind(identifier).non_negative is True, identifier
+
+
+def test_capital_gain_is_non_negative_while_losses_are_not_modelled() -> None:
+    assert CAPITAL_GAIN.non_negative is True
