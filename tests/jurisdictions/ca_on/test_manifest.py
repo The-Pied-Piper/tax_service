@@ -10,6 +10,7 @@ from __future__ import annotations
 import app.registrations  # lists the packages; build_tax_computation registers their catalogs
 from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
 from app.application.services.tax_computation import TaxComputationService
+from app.domain.capabilities.apply_fraction import ApplyFraction
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.at_most import AtMost
 from app.domain.capabilities.capped_amount import CappedAmount
@@ -33,6 +34,17 @@ from app.jurisdictions.ca.catalog import (
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_WORKERS_BENEFIT,
     CAPITAL_GAIN,
+    CHILD_CARE_BASIC_LIMIT,
+    CHILD_CARE_EARNED_INCOME,
+    CHILD_CARE_EARNED_INCOME_LIMIT,
+    CHILD_CARE_EXPENSES,
+    CHILD_CARE_EXPENSES_PAID,
+    CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN,
+    CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,
+    CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
+    CHILDREN_SEVEN_TO_SIXTEEN,
+    CHILDREN_UNDER_SEVEN,
+    CHILDREN_WITH_DISABILITY,
     CPP_BASE_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
@@ -132,6 +144,10 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/eligible_dependants",
             "ca/dependant_net_income",
             "ca/infirm_children",
+            "ca/child_care_expenses_paid",
+            "ca/children_under_seven",
+            "ca/children_with_disability",
+            "ca/children_seven_to_sixteen",
             "ca/income_tax_deducted",
         }
     )
@@ -241,7 +257,77 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"amount": "ca/rrsp_contributions_available", "less": "ca/rrsp_deduction"},
             produces={"output": "ca/unused_rrsp_contributions_carried_forward"},
         ),
-        # T1 line 23300: the deductions in the form's line order (20800, 21200, 22215).
+        # Form T778 Part B line 1 "Number of eligible children born in 2019 or later whom the
+        # disability amount cannot be claimed for" "multiplied by $8,000", line 2 (line 67960)
+        # "Number of eligible children born in 2025 or earlier whom the disability amount can be
+        # claimed for" "multiplied by $11,000" and line 3 "Number of eligible children born in
+        # 2009 to 2018 (and born in 2008 or earlier with a mental or physical infirmity whom the
+        # disability amount cannot be claimed for)" "multiplied by $5,000".
+        CapabilitySelection(
+            name="core/per_unit_amount",
+            params={"amount": "ca/child_care_limit_under_seven"},
+            consumes={"count": "ca/children_under_seven"},
+            produces={"output": "ca/child_care_limit_for_children_under_seven"},
+        ),
+        CapabilitySelection(
+            name="core/per_unit_amount",
+            params={"amount": "ca/child_care_limit_disability"},
+            consumes={"count": "ca/children_with_disability"},
+            produces={"output": "ca/child_care_limit_for_children_with_disability"},
+        ),
+        CapabilitySelection(
+            name="core/per_unit_amount",
+            params={"amount": "ca/child_care_limit_seven_to_sixteen"},
+            consumes={"count": "ca/children_seven_to_sixteen"},
+            produces={"output": "ca/child_care_limit_for_children_seven_to_sixteen"},
+        ),
+        # T778 line 4 "Add lines 1 to 3.", in line order.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/child_care_limit_for_children_under_seven",
+                    "ca/child_care_limit_for_children_with_disability",
+                    "ca/child_care_limit_for_children_seven_to_sixteen",
+                )
+            },
+            produces={"output": "ca/child_care_basic_limit"},
+        ),
+        # T778 line 6 "Enter your earned income.", "the total of the following: employment
+        # income (including tips and gratuities, and the non-taxable part of an allowance
+        # received as an emergency volunteer) ...": the employment income, the other earned
+        # income lines not triggered; then "multiplied by two-thirds": one part.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/employment_income",)},
+            produces={"output": "ca/child_care_earned_income"},
+        ),
+        CapabilitySelection(
+            name="core/apply_fraction",
+            params={"fraction": "ca/child_care_earned_income_fraction"},
+            consumes={"base": "ca/child_care_earned_income"},
+            produces={"output": "ca/child_care_earned_income_limit"},
+        ),
+        # T778 line 7 "Enter whichever amount is the least: line 4, line 5 or line 6.", in that
+        # order, line 5 "Enter the amount from line 67950." being the expenses paid; with line 8
+        # (the other person with the higher net income) not triggered, line 9 "Line 7 minus line
+        # 8. ... enter this amount on line 21400 of your return. Allowable deduction" is line 7.
+        CapabilitySelection(
+            name="core/lesser_of",
+            params={},
+            consumes={
+                "amounts": (
+                    "ca/child_care_basic_limit",
+                    "ca/child_care_expenses_paid",
+                    "ca/child_care_earned_income_limit",
+                )
+            },
+            produces={"output": "ca/child_care_expenses"},
+        ),
+        # T1 line 23300 "Add lines 35 to 52.": the deductions in the form's line order (20800,
+        # 21200, 21400, 22215).
         CapabilitySelection(
             name="core/sum",
             params={},
@@ -249,6 +335,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
                 "parts": (
                     "ca/rrsp_deduction",
                     "ca/union_dues",
+                    "ca/child_care_expenses",
                     "ca/cpp_enhanced_contributions",
                 )
             },
@@ -668,7 +755,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 57
+    assert len(found.capabilities) == 64
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -678,7 +765,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 57
+    assert len(composition.order) == 64
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -728,8 +815,49 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD}),
         ),
         (
+            PerUnitAmount,
+            frozenset({CHILDREN_UNDER_SEVEN}),
+            frozenset({CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN}),
+        ),
+        (
+            PerUnitAmount,
+            frozenset({CHILDREN_WITH_DISABILITY}),
+            frozenset({CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY}),
+        ),
+        (
+            PerUnitAmount,
+            frozenset({CHILDREN_SEVEN_TO_SIXTEEN}),
+            frozenset({CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN}),
+        ),
+        (
             Sum,
-            frozenset({RRSP_DEDUCTION, UNION_DUES, CPP_ENHANCED_CONTRIBUTIONS}),
+            frozenset(
+                {
+                    CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,
+                    CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
+                    CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN,
+                }
+            ),
+            frozenset({CHILD_CARE_BASIC_LIMIT}),
+        ),
+        (Sum, frozenset({EMPLOYMENT_INCOME}), frozenset({CHILD_CARE_EARNED_INCOME})),
+        (
+            ApplyFraction,
+            frozenset({CHILD_CARE_EARNED_INCOME}),
+            frozenset({CHILD_CARE_EARNED_INCOME_LIMIT}),
+        ),
+        (
+            LesserOf,
+            frozenset(
+                {CHILD_CARE_BASIC_LIMIT, CHILD_CARE_EXPENSES_PAID, CHILD_CARE_EARNED_INCOME_LIMIT}
+            ),
+            frozenset({CHILD_CARE_EXPENSES}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {RRSP_DEDUCTION, UNION_DUES, CHILD_CARE_EXPENSES, CPP_ENHANCED_CONTRIBUTIONS}
+            ),
             frozenset({DEDUCTIONS_FROM_TOTAL_INCOME}),
         ),
         (

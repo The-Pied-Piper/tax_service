@@ -10,32 +10,36 @@ unused contributions plus the contributions of 1926 (Schedule 7 line 10), the mo
 deducted, 1926, the lesser of them and the deduction limit of 19800 (Schedule 7 line 17), the amount
 deducted of 1926 (line 18), at most that, as the RRSP deduction (line 20), and the unused
 contributions carried forward of 0 (line 23), the contributions available less the deduction; less
-that RRSP deduction, union dues of 2000 and the enhanced contributions to net income 115000, less no
-deductions from net income to taxable income 115000, and from each basic personal amount (16129
-federal, the Federal Worksheet's taper on net income, here at or below the 177882 threshold so not
-reduced; 12747 Ontario) plus each amount for an eligible dependant (T1 line 30400, Schedule 5 line
-5, the federal basic personal amount less the dependant's net income of 0; ON428 line 58160, the
-11905.00 base less it, at most 10823), claimed for 0 eligible dependants and so 0, the base CPP
-contributions and the EI premiums, and federally the amount for infirm children of 0 x 2687 (line
-30500) and the Canada employment amount of 1471 (the lesser of employment income and 1471), through
-each total of credit amounts and each form's non-refundable tax credits (T1 line 35000, ON428 line
-61500) to each tax after credits, the Ontario surtax on the Ontario tax after credits (ON428 lines
-66 to 68) to the Ontario tax with surtax of line 69, and with no dependent children and no
-dependants the Ontario tax reduction amounts of 294.00 (lines 74 to 77), twice them less the tax
-with surtax (line 73), not below zero, the Ontario tax reduction of 0 (line 80), to the Ontario tax
-after the reduction (line 81); Schedule ON428-A's LIFT credit, 5.05% of employment income, 5555, at
-most 875 (lines 5 and 14), less 5% of net income over 32500, 4125 (line 19), not below zero, 0 (line
-20, ON428 line 85), taken off the Ontario tax after the reduction, not below zero (line 86); and the
-Ontario health premium on taxable income by the chart of line 89, 750, added to it to the Ontario
-tax of line 90; and on the T1, the federal tax after credits carried to the net federal tax (line
-42000), added to the Ontario tax (line 42800) to the total payable (line 43500); Schedule 6's Canada
-workers benefit, from the working income of 110000 (line 5, employment income), 27% of it over 3000
-at most 1633 (line 22), less 15% of the adjusted family net income (line 15, net income) of 115000
-over 26855, 13221.75 (line 27), not below zero, 0 (line 28, T1 line 45300); less the total credits
-(line 48200), here the chosen income tax deducted of 25000 (line 43700) plus that benefit, to the
-refund or balance owing (line 167), 897.1508076, positive so a balance owing) are checked from the
-files under `returns/` by `test_worked_returns.py`, as are Returns B, C, D, E and F; this module
-pins which capability produces each line, the order, and the trace that explains them.
+that RRSP deduction, union dues of 2000, the child care expenses deduction of 0 (T1 line 21400, Form
+T778 line 7, the least of the basic limit of line 4, 0 x 8000 + 0 x 11000 + 0 x 5000
+= 0, the 0 paid of line 5 and two-thirds of the earned income of line 6, the employment
+income of 110000, 73333.33...: 0) and the enhanced contributions to net income 115000,
+less no deductions from net income to taxable income 115000, and from each basic personal
+amount (16129 federal, the Federal Worksheet's taper on net income, here at or below
+the 177882 threshold so not reduced; 12747 Ontario) plus each amount for an eligible
+dependant (T1 line 30400, Schedule 5 line 5, the federal basic personal amount less the
+dependant's net income of 0; ON428 line 58160, the 11905.00 base less it, at most 10823), claimed
+for 0 eligible dependants and so 0, the base CPP contributions and the EI premiums, and federally
+the amount for infirm children of 0 x 2687 (line 30500) and the Canada employment amount of 1471
+(the lesser of employment income and 1471), through each total of credit amounts and each form's
+non-refundable tax credits (T1 line 35000, ON428 line 61500) to each tax after credits, the Ontario
+surtax on the Ontario tax after credits (ON428 lines 66 to 68) to the Ontario tax with surtax of
+line 69, and with no dependent children and no dependants the Ontario tax reduction amounts of
+294.00 (lines 74 to 77), twice them less the tax with surtax (line 73), not below zero, the Ontario
+tax reduction of 0 (line 80), to the Ontario tax after the reduction (line 81); Schedule ON428-A's
+LIFT credit, 5.05% of employment income, 5555, at most 875 (lines 5 and 14), less 5% of net income
+over 32500, 4125 (line 19), not below zero, 0 (line 20, ON428 line 85), taken off the Ontario tax
+after the reduction, not below zero (line 86); and the Ontario health premium on taxable income by
+the chart of line 89, 750, added to it to the Ontario tax of line 90; and on the T1, the federal tax
+after credits carried to the net federal tax (line 42000), added to the Ontario tax (line 42800) to
+the total payable (line 43500); Schedule 6's Canada workers benefit, from the working income of
+110000 (line 5, employment income), 27% of it over 3000 at most 1633 (line 22), less 15% of the
+adjusted family net income (line 15, net income) of 115000 over 26855, 13221.75 (line 27), not below
+zero, 0 (line 28, T1 line 45300); less the total credits (line 48200), here the chosen income tax
+deducted of 25000 (line 43700) plus that benefit, to the refund or balance owing (line 167),
+897.1508076, positive so a balance owing) are checked from the files under `returns/` by
+`test_worked_returns.py`, as are Returns B, C, D, E and F; this module pins which capability
+produces each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
@@ -47,6 +51,7 @@ import pytest
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.artifact import Artifact
+from app.domain.capabilities.apply_fraction import ApplyFraction
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.at_most import AtMost
 from app.domain.capabilities.capped_amount import CappedAmount
@@ -68,6 +73,7 @@ from app.domain.parameters.amount import Amount
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
+from app.domain.parameters.fraction import Fraction
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.domain.parameters.taper import Taper
@@ -77,6 +83,7 @@ from app.domain.trace import (
     CappedAmountLine,
     ContributionTierLine,
     CreditAmountLine,
+    FractionAppliedLine,
     LesserOfLine,
     MultipleOverLine,
     PerUnitAmountLine,
@@ -96,6 +103,17 @@ from app.jurisdictions.ca.catalog import (
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_WORKERS_BENEFIT,
     CAPITAL_GAIN,
+    CHILD_CARE_BASIC_LIMIT,
+    CHILD_CARE_EARNED_INCOME,
+    CHILD_CARE_EARNED_INCOME_LIMIT,
+    CHILD_CARE_EXPENSES,
+    CHILD_CARE_EXPENSES_PAID,
+    CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN,
+    CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,
+    CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
+    CHILDREN_SEVEN_TO_SIXTEEN,
+    CHILDREN_UNDER_SEVEN,
+    CHILDREN_WITH_DISABILITY,
     CPP_BASE_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
@@ -188,6 +206,10 @@ def compute(
     eligible_dependants: int = 0,
     dependant_net_income: str = "0",
     infirm_children: int = 0,
+    child_care_expenses_paid: str = "0",
+    children_under_seven: int = 0,
+    children_with_disability: int = 0,
+    children_seven_to_sixteen: int = 0,
     income_tax_deducted: str = "0",
 ) -> Worksheet:
     return service().compute(
@@ -205,6 +227,10 @@ def compute(
         Artifact(ELIGIBLE_DEPENDANTS, eligible_dependants),
         Artifact(DEPENDANT_NET_INCOME, D(dependant_net_income)),
         Artifact(INFIRM_CHILDREN, infirm_children),
+        Artifact(CHILD_CARE_EXPENSES_PAID, D(child_care_expenses_paid)),
+        Artifact(CHILDREN_UNDER_SEVEN, children_under_seven),
+        Artifact(CHILDREN_WITH_DISABILITY, children_with_disability),
+        Artifact(CHILDREN_SEVEN_TO_SIXTEEN, children_seven_to_sixteen),
         Artifact(INCOME_TAX_DEDUCTED, D(income_tax_deducted)),
     )
 
@@ -231,6 +257,10 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(ELIGIBLE_DEPENDANTS) is None
     assert worksheet.producer_of(DEPENDANT_NET_INCOME) is None
     assert worksheet.producer_of(INFIRM_CHILDREN) is None
+    assert worksheet.producer_of(CHILD_CARE_EXPENSES_PAID) is None
+    assert worksheet.producer_of(CHILDREN_UNDER_SEVEN) is None
+    assert worksheet.producer_of(CHILDREN_WITH_DISABILITY) is None
+    assert worksheet.producer_of(CHILDREN_SEVEN_TO_SIXTEEN) is None
     assert worksheet.producer_of(INCOME_TAX_DEDUCTED) is None
     assert isinstance(worksheet.producer_of(RRSP_CONTRIBUTIONS_AVAILABLE), Sum)
     assert isinstance(worksheet.producer_of(RRSP_DEDUCTION_MAXIMUM), LesserOf)
@@ -259,6 +289,27 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(CPP_ENHANCED_CONTRIBUTIONS), Sum)
     assert isinstance(worksheet.producer_of(TAXABLE_CAPITAL_GAINS), ApplyRate)
     assert isinstance(worksheet.producer_of(TOTAL_INCOME), Sum)
+    # Form T778 Part B lines 1 to 3, line 4, line 6 and line 7 (T1 line 21400).
+    child_care_limits = {
+        worksheet.producer_of(kind)
+        for kind in (
+            CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,
+            CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
+            CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN,
+        )
+    }
+    assert len(child_care_limits) == 3
+    assert all(isinstance(producer, PerUnitAmount) for producer in child_care_limits)
+    assert isinstance(worksheet.producer_of(CHILD_CARE_BASIC_LIMIT), Sum)
+    assert isinstance(worksheet.producer_of(CHILD_CARE_EARNED_INCOME), Sum)
+    assert worksheet.producer_of(CHILD_CARE_EARNED_INCOME) is not worksheet.producer_of(
+        WORKING_INCOME
+    )
+    assert isinstance(worksheet.producer_of(CHILD_CARE_EARNED_INCOME_LIMIT), ApplyFraction)
+    assert isinstance(worksheet.producer_of(CHILD_CARE_EXPENSES), LesserOf)
+    assert worksheet.producer_of(CHILD_CARE_EXPENSES) is not worksheet.producer_of(
+        RRSP_DEDUCTION_MAXIMUM
+    )
     assert isinstance(worksheet.producer_of(DEDUCTIONS_FROM_TOTAL_INCOME), Sum)
     assert isinstance(worksheet.producer_of(NET_INCOME), SubtractNotBelowZero)
     assert worksheet.producer_of(TOTAL_INCOME) is not worksheet.producer_of(
@@ -458,9 +509,44 @@ def test_the_trace_explains_the_computation() -> None:
         "less rrsp_deduction 1926 = 0",
         "0",
     )
+    # Form T778 Part B lines 1 to 3 for no eligible children, line 4, line 6 two-thirds of the
+    # employment income, and line 7 the least of lines 4, 5 and 6.
+    child_care_under_seven = position(
+        "child_care_limit_for_children_under_seven: 8000 for each of 0 children_under_seven "
+        "= 0 (no rounding)",
+        "0",
+    )
+    child_care_disability = position(
+        "child_care_limit_for_children_with_disability: 11000 for each of 0 "
+        "children_with_disability = 0 (no rounding)",
+        "0",
+    )
+    child_care_seven_to_sixteen = position(
+        "child_care_limit_for_children_seven_to_sixteen: 5000 for each of 0 "
+        "children_seven_to_sixteen = 0 (no rounding)",
+        "0",
+    )
+    child_care_basic = position(
+        "child_care_basic_limit: child_care_limit_for_children_under_seven 0 "
+        "+ child_care_limit_for_children_with_disability 0 "
+        "+ child_care_limit_for_children_seven_to_sixteen 0 = 0",
+        "0",
+    )
+    child_care_earned = position(
+        "child_care_earned_income: employment_income 110000 = 110000", "110000"
+    )
+    child_care_earned_limit = position(
+        "child_care_earned_income_limit: 2/3 of child_care_earned_income 110000 (no rounding)",
+        "73333.33333333333333333333333",
+    )
+    child_care = position(
+        "child_care_expenses: lesser of child_care_basic_limit 0 and child_care_expenses_paid 0 "
+        "and child_care_earned_income_limit 73333.33333333333333333333333 = 0",
+        "0",
+    )
     deductions = position(
         "deductions_from_total_income: rrsp_deduction 1926 + union_dues 2000 "
-        "+ cpp_enhanced_contributions 1074 = 5000",
+        "+ child_care_expenses 0 + cpp_enhanced_contributions 1074 = 5000",
         "5000",
     )
     net = position(
@@ -673,6 +759,10 @@ def test_the_trace_explains_the_computation() -> None:
     assert cpp_first < cpp_enhanced < deductions < net
     assert rrsp_available < rrsp_maximum < rrsp < deductions
     assert rrsp < rrsp_carried
+    assert child_care_under_seven < child_care_basic
+    assert child_care_disability < child_care_basic
+    assert child_care_seven_to_sixteen < child_care_basic < child_care
+    assert child_care_earned < child_care_earned_limit < child_care < deductions
     assert cpp_second < cpp_enhanced
     assert cpp_base < federal_amounts
     assert cpp_base < ontario_amounts
@@ -750,6 +840,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     per_unit = {line.output: line for line in trace if isinstance(line, PerUnitAmountLine)}
     multiples = {line.output: line for line in trace if isinstance(line, MultipleOverLine)}
     times = {line.output: line for line in trace if isinstance(line, TimesCountLine)}
+    fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
 
     # The rate is applied once, to each form's total of credit amounts (T1 line 33800, ON428
     # line 58840), giving its non-refundable tax credits (T1 line 35000, ON428 line 61500).
@@ -807,11 +898,27 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ((UNUSED_RRSP_CONTRIBUTIONS, D("0")), (RRSP_CONTRIBUTIONS, D("1926"))),
             D("1926"),
         ),
+        # Form T778 line 4 "Add lines 1 to 3.", and line 6's earned income, the employment
+        # income.
+        CHILD_CARE_BASIC_LIMIT: SumLine(
+            CHILD_CARE_BASIC_LIMIT,
+            (
+                (CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN, D("0")),
+                (CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY, D("0")),
+                (CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN, D("0")),
+            ),
+            D("0"),
+        ),
+        CHILD_CARE_EARNED_INCOME: SumLine(
+            CHILD_CARE_EARNED_INCOME, ((EMPLOYMENT_INCOME, D("110000")),), D("110000")
+        ),
+        # T1 line 23300, in line order: 20800, 21200, 21400, 22215.
         DEDUCTIONS_FROM_TOTAL_INCOME: SumLine(
             DEDUCTIONS_FROM_TOTAL_INCOME,
             (
                 (RRSP_DEDUCTION, D("1926")),
                 (UNION_DUES, D("2000")),
+                (CHILD_CARE_EXPENSES, D("0")),
                 (CPP_ENHANCED_CONTRIBUTIONS, D("1074.00")),
             ),
             D("5000"),
@@ -978,6 +1085,44 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rounding=NO_ROUNDING,
             result=D("0"),
         ),
+        # Form T778 Part B lines 1 to 3, "multiplied by $8,000", "$11,000" and "$5,000": Return A
+        # has no eligible child.
+        CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN: PerUnitAmountLine(
+            output=CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,
+            count_kind=CHILDREN_UNDER_SEVEN,
+            count=0,
+            per_unit=Amount(D("8000")),
+            rounding=NO_ROUNDING,
+            result=D("0"),
+        ),
+        CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY: PerUnitAmountLine(
+            output=CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
+            count_kind=CHILDREN_WITH_DISABILITY,
+            count=0,
+            per_unit=Amount(D("11000")),
+            rounding=NO_ROUNDING,
+            result=D("0"),
+        ),
+        CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN: PerUnitAmountLine(
+            output=CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN,
+            count_kind=CHILDREN_SEVEN_TO_SIXTEEN,
+            count=0,
+            per_unit=Amount(D("5000")),
+            rounding=NO_ROUNDING,
+            result=D("0"),
+        ),
+    }
+    # Form T778 line 6 "Enter your earned income." "multiplied by two-thirds": 220000 / 3, the
+    # quotient carried unrounded.
+    assert fractions == {
+        CHILD_CARE_EARNED_INCOME_LIMIT: FractionAppliedLine(
+            output=CHILD_CARE_EARNED_INCOME_LIMIT,
+            base=CHILD_CARE_EARNED_INCOME,
+            base_amount=D("110000"),
+            fraction=Fraction(2, 3),
+            rounding=NO_ROUNDING,
+            result=D("73333.33333333333333333333333"),
+        )
     }
     # T1 line 30400 and ON428 line 58160: Schedule 5 line 5 and ON428 line 16, each claimed for
     # the 0 eligible dependants of Return A, a plain 0.
@@ -1053,7 +1198,18 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             RRSP_DEDUCTION_MAXIMUM,
             ((RRSP_CONTRIBUTIONS_AVAILABLE, D("1926")), (RRSP_DEDUCTION_LIMIT, D("19800"))),
             D("1926"),
-        )
+        ),
+        # Form T778 line 7 "Enter whichever amount is the least: line 4, line 5 or line 6.", in
+        # that order: lines 4 and 5 are both 0, and the first listed is produced.
+        CHILD_CARE_EXPENSES: LesserOfLine(
+            CHILD_CARE_EXPENSES,
+            (
+                (CHILD_CARE_BASIC_LIMIT, D("0")),
+                (CHILD_CARE_EXPENSES_PAID, D("0")),
+                (CHILD_CARE_EARNED_INCOME_LIMIT, D("73333.33333333333333333333333")),
+            ),
+            D("0"),
+        ),
     }
     # Schedule 7 line 18 "(cannot be more than the amount on line 17)": the full 1926 is
     # deducted, equal to line 17, so line 20 is line 18.
@@ -1354,7 +1510,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 57
+    assert len(order) == 64
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
@@ -1365,6 +1521,19 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[CPP_FIRST_ADDITIONAL_CONTRIBUTIONS] < position[CPP_ENHANCED_CONTRIBUTIONS]
     assert position[CPP_SECOND_ADDITIONAL_CONTRIBUTIONS] < position[CPP_ENHANCED_CONTRIBUTIONS]
     assert position[CPP_ENHANCED_CONTRIBUTIONS] < position[DEDUCTIONS_FROM_TOTAL_INCOME]
+    for limit in (
+        CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,
+        CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
+        CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN,
+    ):
+        assert position[limit] < position[CHILD_CARE_BASIC_LIMIT]
+    assert position[CHILD_CARE_BASIC_LIMIT] < position[CHILD_CARE_EXPENSES]
+    assert (
+        position[CHILD_CARE_EARNED_INCOME]
+        < position[CHILD_CARE_EARNED_INCOME_LIMIT]
+        < position[CHILD_CARE_EXPENSES]
+        < position[DEDUCTIONS_FROM_TOTAL_INCOME]
+    )
     assert position[CPP_BASE_CONTRIBUTIONS] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert position[CPP_BASE_CONTRIBUTIONS] < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert position[EI_PREMIUMS] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
@@ -1750,17 +1919,19 @@ def test_a_claim_above_the_maximum_is_refused_naming_both_kinds() -> None:
 
 def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and_10823() -> None:
     # Return F: employment income of 60000, one dependent child who is an eligible dependant with
-    # no net income. Schedule 5 line 5 is its line 30000 of 16129.00 less 0, claimed for 1
-    # eligible dependant: line 30400 is 16129.00. ON428 line 16 is 11905.00 less 0, at most
-    # 10823: line 58160 is 10823. Line 33500 is 16129 + 16129.00 + 0 + 2796.75 + 984.00 + 1471 =
-    # 37509.75, and line 35000 37509.75 x 14.5% = 5438.91375, so the federal tax after credits
-    # is 8741.68 - 5438.91375 = 3302.76625. ON428 line 58800 is 12747 + 10823 + 2796.75 + 984.00
-    # = 27350.75, and line 61500 27350.75 x 5.05% = 1381.212875, so the Ontario tax after
-    # credits is 3269.9735 - 1381.212875 = 1888.760625. The child is a dependent child for the
-    # Ontario tax reduction: 294.00 + 544 = 838.00, twice it 1676.00, below 1888.760625, so no
-    # reduction. With the health premium of 600 the Ontario tax is 2488.760625, the total
-    # payable 3302.76625 + 2488.760625 = 5791.526875, and line 167 5791.526875 - 8000 =
-    # -2208.473125, a refund.
+    # no net income, and the child care expenses deduction of 5000 (T1 line 21400), so net
+    # income is 60000 - (5000 + 565.00) = 54435.00. Schedule 5 line 5 is its line 30000 of
+    # 16129.00 less 0, claimed for 1 eligible dependant: line 30400 is 16129.00. ON428 line 16
+    # is 11905.00 less 0, at most 10823: line 58160 is 10823. Line 33500 is 16129 + 16129.00 + 0
+    # + 2796.75 + 984.00 + 1471 = 37509.75, and line 35000 37509.75 x 14.5% = 5438.91375, so the
+    # federal tax after credits is 14.5% x 54435.00 = 7893.075 less it, 2454.16125. ON428 line
+    # 58800 is 12747 + 10823 + 2796.75 + 984.00 = 27350.75, and line 61500 27350.75 x 5.05% =
+    # 1381.212875, so the Ontario tax after credits is 2670.74 + 9.15% x (54435.00 - 52886) =
+    # 2812.4735 less it, 1431.260625. The child is a dependent child for the Ontario tax
+    # reduction: 294.00 + 544 = 838.00, twice it 1676.00, less 1431.260625 is a reduction of
+    # 244.739375, leaving 1186.52125. With the health premium of 600 the Ontario tax is
+    # 1786.52125, the total payable 2454.16125 + 1786.52125 = 4240.6825, and line 167 4240.6825
+    # - 8000 = -3759.3175, a refund.
     worksheet = compute(
         "60000",
         "0",
@@ -1771,29 +1942,31 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
         "0",
         dependent_children=1,
         eligible_dependants=1,
+        child_care_expenses_paid="6000",
+        children_seven_to_sixteen=1,
         income_tax_deducted="8000",
     )
 
-    assert worksheet.get(NET_INCOME).value == D("59435.00")
+    assert worksheet.get(NET_INCOME).value == D("54435.00")
     assert worksheet.get(BASIC_PERSONAL_AMOUNT).value == D("16129.00")
     assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT).value == D("16129.00")
     assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT).value == D("16129.00")
     assert worksheet.get(INFIRM_CHILDREN_AMOUNT).value == D("0")
     assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("37509.75")
     assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("5438.91375")
-    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("3302.76625")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("2454.16125")
     assert worksheet.get(ELIGIBLE_DEPENDANT_BASE).value == D("11905.00")
     assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM).value == D("11905.00")
     assert worksheet.get(ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT).value == D("10823")
     assert worksheet.get(ontario.ELIGIBLE_DEPENDANT_AMOUNT).value == D("10823")
     assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("27350.75")
     assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("1381.212875")
-    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1888.760625")
+    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1431.260625")
     assert worksheet.get(TAX_REDUCTION_AMOUNTS).value == D("838.00")
-    assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("0")
-    assert worksheet.get(ONTARIO_TAX).value == D("2488.760625")
-    assert worksheet.get(TOTAL_PAYABLE).value == D("5791.526875")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-2208.473125")
+    assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("244.739375")
+    assert worksheet.get(ONTARIO_TAX).value == D("1786.52125")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("4240.6825")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-3759.3175")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "eligible_dependant_amount: eligible_dependant_amount_before_count 16129 "
@@ -1833,6 +2006,8 @@ def test_the_dependants_net_income_comes_off_both_amounts() -> None:
         dependent_children=1,
         eligible_dependants=1,
         dependant_net_income="1500",
+        child_care_expenses_paid="6000",
+        children_seven_to_sixteen=1,
         income_tax_deducted="8000",
     )
 
@@ -1868,6 +2043,8 @@ def test_a_dependant_with_more_income_than_the_amounts_adds_nothing() -> None:
         dependent_children=1,
         eligible_dependants=1,
         dependant_net_income="20000",
+        child_care_expenses_paid="6000",
+        children_seven_to_sixteen=1,
         income_tax_deducted="8000",
     )
 
@@ -1893,6 +2070,8 @@ def test_no_eligible_dependant_claims_nothing_whatever_the_dependants_income() -
         "0",
         dependent_children=1,
         dependant_net_income="1500",
+        child_care_expenses_paid="6000",
+        children_seven_to_sixteen=1,
         income_tax_deducted="8000",
     )
 
@@ -1922,3 +2101,140 @@ def test_infirm_children_add_2687_each_to_the_federal_amounts_only() -> None:
     assert "infirm_children_amount: 2687 for each of 2 infirm_children = 5374 (no rounding)" in (
         rendered
     )
+
+
+def test_the_child_care_expenses_deduction_is_5000_for_one_child_and_lowers_net_income() -> None:
+    # Return F, Form T778: the child, born in 2015, is counted on Part B line 3, so line 1 is 0
+    # x 8000 = 0, line 2 0 x 11000 = 0 and line 3 1 x 5000 = 5000; line 4 is 0 + 0 + 5000 =
+    # 5000; line 5 is the 6000 paid; line 6 is two-thirds of the earned income, the employment
+    # income of 60000: 40000. Line 7 is the least of 5000, 6000 and 40000: 5000, line 21400. T1
+    # line 23300 is 0 + 0 + 5000 + 565.00 = 5565.00, and net income 60000 - 5565.00 =
+    # 54435.00, which the LIFT reduction (5% of 54435.00 over 32500 = 1096.75) and Schedule 6
+    # (15% of 54435.00 over 26855 = 4137.00, as the manifest applies the single amounts) read.
+    worksheet = compute(
+        "60000",
+        "0",
+        "0",
+        "0",
+        "10800",
+        "0",
+        "0",
+        dependent_children=1,
+        eligible_dependants=1,
+        child_care_expenses_paid="6000",
+        children_seven_to_sixteen=1,
+        income_tax_deducted="8000",
+    )
+
+    assert worksheet.get(CHILDREN_SEVEN_TO_SIXTEEN).value == 1
+    assert worksheet.get(CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN).value == D("0")
+    assert worksheet.get(CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY).value == D("0")
+    assert worksheet.get(CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN).value == D("5000")
+    assert worksheet.get(CHILD_CARE_BASIC_LIMIT).value == D("5000")
+    assert worksheet.get(CHILD_CARE_EARNED_INCOME).value == D("60000")
+    assert worksheet.get(CHILD_CARE_EARNED_INCOME_LIMIT).value == D("40000")
+    assert worksheet.get(CHILD_CARE_EXPENSES).value == D("5000")
+    assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("5565.00")
+    assert worksheet.get(NET_INCOME).value == D("54435.00")
+    assert worksheet.get(TAXABLE_INCOME).value == D("54435.00")
+    assert worksheet.get(FEDERAL_BASIC_TAX).value == D("7893.075")
+    assert worksheet.get(ONTARIO_BASIC_TAX).value == D("2812.4735")
+    assert worksheet.get(LIFT_REDUCTION).value == D("1096.75")
+    assert worksheet.get(LIFT_CREDIT).value == D("0")
+    assert worksheet.get(ADJUSTED_FAMILY_NET_INCOME).value == D("54435.00")
+    assert worksheet.get(CWB_REDUCTION).value == D("4137.00")
+    assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("0")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "child_care_limit_for_children_seven_to_sixteen: 5000 for each of 1 "
+        "children_seven_to_sixteen = 5000 (no rounding)"
+    ) in rendered
+    assert (
+        "child_care_earned_income_limit: 2/3 of child_care_earned_income 60000 (no rounding)"
+    ) in rendered
+    assert (
+        "child_care_expenses: lesser of child_care_basic_limit 5000 and child_care_expenses_paid "
+        "6000 and child_care_earned_income_limit 40000 = 5000"
+    ) in rendered
+    assert (
+        "deductions_from_total_income: rrsp_deduction 0 + union_dues 0 "
+        "+ child_care_expenses 5000 + cpp_enhanced_contributions 565 = 5565"
+    ) in rendered
+
+
+def test_expenses_paid_below_the_basic_limit_are_deducted_whole() -> None:
+    # Return F with 3500 paid (T778 line 5): the least of 5000, 3500 and 40000 is 3500, so T1
+    # line 23300 is 3500 + 565.00 = 4065.00 and net income 60000 - 4065.00 = 55935.00.
+    worksheet = compute(
+        "60000",
+        "0",
+        "0",
+        "0",
+        "10800",
+        "0",
+        "0",
+        dependent_children=1,
+        eligible_dependants=1,
+        child_care_expenses_paid="3500",
+        children_seven_to_sixteen=1,
+        income_tax_deducted="8000",
+    )
+
+    assert worksheet.get(CHILD_CARE_EXPENSES).value == D("3500")
+    assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("4065.00")
+    assert worksheet.get(NET_INCOME).value == D("55935.00")
+
+
+def test_the_limits_for_each_kind_of_eligible_child_add_up() -> None:
+    # Return F with one child on each of T778 Part B lines 1, 2 and 3 and 30000 paid: line 4 is
+    # 8000 + 11000 + 5000 = 24000, below the 30000 paid and the 40000 of line 6, so the
+    # deduction is 24000, T1 line 23300 is 24000 + 565.00 = 24565.00 and net income 60000 -
+    # 24565.00 = 35435.00.
+    worksheet = compute(
+        "60000",
+        "0",
+        "0",
+        "0",
+        "10800",
+        "0",
+        "0",
+        dependent_children=1,
+        eligible_dependants=1,
+        child_care_expenses_paid="30000",
+        children_under_seven=1,
+        children_with_disability=1,
+        children_seven_to_sixteen=1,
+        income_tax_deducted="8000",
+    )
+
+    assert worksheet.get(CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN).value == D("8000")
+    assert worksheet.get(CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY).value == D("11000")
+    assert worksheet.get(CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN).value == D("5000")
+    assert worksheet.get(CHILD_CARE_BASIC_LIMIT).value == D("24000")
+    assert worksheet.get(CHILD_CARE_EXPENSES).value == D("24000")
+    assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("24565.00")
+    assert worksheet.get(NET_INCOME).value == D("35435.00")
+
+
+def test_two_thirds_of_a_low_earned_income_caps_the_deduction() -> None:
+    # Employment income of 9000, two children born in 2019 or later and 12000 paid: line 4 is 2
+    # x 8000 = 16000, line 5 12000, line 6 two-thirds of 9000 = 6000, the least, so the
+    # deduction is 6000. The first additional CPP contribution is 1% x (9000 - 3500) = 55.00, so
+    # T1 line 23300 is 6000 + 55.00 = 6055.00 and net income 9000 - 6055.00 = 2945.00.
+    worksheet = compute(
+        "9000",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        child_care_expenses_paid="12000",
+        children_under_seven=2,
+    )
+
+    assert worksheet.get(CHILD_CARE_BASIC_LIMIT).value == D("16000")
+    assert worksheet.get(CHILD_CARE_EARNED_INCOME_LIMIT).value == D("6000")
+    assert worksheet.get(CHILD_CARE_EXPENSES).value == D("6000")
+    assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("6055.00")
+    assert worksheet.get(NET_INCOME).value == D("2945.00")

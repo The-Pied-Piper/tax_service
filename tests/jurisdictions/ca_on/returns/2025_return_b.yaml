@@ -15,12 +15,17 @@
 # deduct (Schedule 7 line 10), from those and the deduction limit, the lesser of them, to
 # the most that may be deducted (Schedule 7 line 17), from the amount deducted (line 18), at
 # most that, to the RRSP deduction (line 20), and from the contributions available to deduct
-# less the RRSP deduction to the unused contributions carried forward (line 23); less the
-# enhanced CPP contributions to net income, less the (empty) deductions from net income to
-# taxable income; from net income, by the Federal Worksheet, to the federal basic personal
-# amount; from it less the dependant's net income, not below zero, for each eligible
-# dependant, to the amount for an eligible dependant (T1 line 30400), and from the ON428
-# base less the dependant's net income, not below zero, at most its maximum, for each
+# less the RRSP deduction to the unused contributions carried forward (line 23); from the
+# numbers of eligible children (T778 Part B lines 1 to 3), $8,000, $11,000 and $5,000 for
+# each, summed to the basic limit (line 4), from employment income, the earned income (line
+# 6), to two-thirds of it, and from those and the child care expenses paid (line 5), the
+# least of them, to the child care expenses deduction (lines 7 and 9, T1 line 21400), here,
+# with no eligible child and no expenses paid, zero; less the child care expenses deduction
+# and the enhanced CPP contributions to net income, less the (empty) deductions from net
+# income to taxable income; from net income, by the Federal Worksheet, to the federal
+# basic personal amount; from it less the dependant's net income, not below zero, for each
+# eligible dependant, to the amount for an eligible dependant (T1 line 30400), and from the
+# ON428 base less the dependant's net income, not below zero, at most its maximum, for each
 # eligible dependant, to the Ontario amount (ON428 line 58160); from the number of infirm
 # children, $2,687 for each, to the amount for infirm children (line 30500), here, with no
 # eligible dependant and no infirm child, all three zero; and through each form's total of
@@ -45,13 +50,13 @@
 # the Ontario tax to the total payable, less the total credits, here the chosen income tax
 # deducted plus the Canada workers benefit, to the refund or balance owing, negative for a
 # refund and positive for a balance owing. There is no capital gain, unused or new RRSP
-# contribution or union dues. Not yet computed, so not in this file: child care expenses (T1
-# line 21400, Form T778), any deduction from net income, the social benefits repayment and
-# capital losses. Lines 82 (the provincial foreign tax credit) and 87 (the community food
-# program donation tax credit for farmers) are not triggered by this return, nor are
-# Schedule 5 line 2, T1 lines 30425 and 30450, the Ontario caregiver amount (ON428 line
-# 58185), and Schedule 6's disability supplement (Step 3) and advance payments (Step 4); the
-# Schedule 6 amounts for a filer with no eligible spouse and no eligible dependant apply.
+# contribution or union dues. Not yet computed, so not in this file: any deduction from net
+# income, the social benefits repayment and capital losses. Lines 82 (the provincial foreign
+# tax credit) and 87 (the community food program donation tax credit for farmers) are not
+# triggered by this return, nor are Schedule 5 line 2, T1 lines 30425 and 30450, the Ontario
+# caregiver amount (ON428 line 58185), Form T778 line 8 and Parts C and D, and Schedule 6's
+# disability supplement (Step 3) and advance payments (Step 4); the Schedule 6 amounts for a
+# filer with no eligible spouse and no eligible dependant apply.
 # Amounts are quoted decimal strings, never floats; counts are quoted digit strings. Every
 # output the CA-ON manifest declares must appear under `expected`; intermediate lines may be
 # listed and are then checked too.
@@ -75,16 +80,18 @@ description: >-
   line 1, plus the contributions of $0, Schedule 7 line 4) and a chosen deduction limit of
   $5,400 (Schedule 7 line 11); the amount deducted (line 18) is that $0, so the RRSP
   deduction (line 20800) is $0 and the unused contributions carried forward (line 23) are
-  $0; no union dues (line 21200), so total deductions (line 23300) are the enhanced CPP
-  contributions of $265.00 and net income (line 23600) is $29,735.00. There are no
-  deductions from net income (lines 24400 to 25600), so their total (line 25700) is $0 and
-  taxable income (line 26000), derived as net income less that total, is $29,735.00, inside
-  the lowest federal and Ontario brackets. The non-refundable credit amounts are the basic
-  personal amount (federal line 30000 $16,129, since net income is $177,882 or less; Ontario
-  ON428 line 58040 $12,747), the base CPP contributions and the EI premiums, and on the T1
-  alone the Canada employment amount (line 31260) of $1,471, the lesser of $1,471 and
-  employment income (ON428 has no such line): line 33500 of $19,403.75 and ON428 line 58800
-  of $14,550.75. Each total includes $0 for an eligible dependant (line 30400, ON428 line
+  $0; no union dues (line 21200) and no child care expenses deduction (line 21400, Form
+  T778, $0 with no eligible child and no child care expenses paid, to be confirmed),
+  so total deductions (line 23300) are the enhanced CPP contributions of $265.00 and
+  net income (line 23600) is $29,735.00. There are no deductions from net income (lines
+  24400 to 25600), so their total (line 25700) is $0 and taxable income (line 26000),
+  derived as net income less that total, is $29,735.00, inside the lowest federal and
+  Ontario brackets. The non-refundable credit amounts are the basic personal amount
+  (federal line 30000 $16,129, since net income is $177,882 or less; Ontario ON428 line
+  58040 $12,747), the base CPP contributions and the EI premiums, and on the T1 alone
+  the Canada employment amount (line 31260) of $1,471, the lesser of $1,471 and employment
+  income (ON428 has no such line): line 33500 of $19,403.75 and ON428 line 58800 of
+  $14,550.75. Each total includes $0 for an eligible dependant (line 30400, ON428 line
   58160) and, on the T1, $0 for infirm children (line 30500), as there is no eligible
   dependant and no infirm child; Schedule 5 and ON428 lines 14 to 16 are computed as for one
   eligible dependant with no net income, 16,129 federally and 11,905.00 at most $10,823 for
@@ -241,17 +248,43 @@ sources:
   - >-
     CRA, the 2025 T1 return (form 5000-R): line 36 (line 20800) "RRSP deduction (complete
     Schedule 7 and attach receipts)"; line 39 (line 21200) "Annual union, professional, or
-    like dues (receipts and box 44 of all T4 slips)"; line 48 (line 22215) "Deduction for
-    CPP or QPP enhanced contributions on employment income" "(maximum $1,074.00)"; line 53
-    (line 23300) "Add lines 35 to 52" (total deductions); line 54 (line 23400) "Line 34
-    minus line 53 (if negative, show in brackets) Net income before adjustments"; line 56
-    (line 23600) "Line 54 minus line 55 (if negative, enter "0") Net income". There is no
-    RRSP deduction (Schedule 7 line 20 is 0) and no union dues, so the enhanced CPP
-    contributions are the only deduction: total deductions are 0 + 0 + 265.00 = 265.00; line
-    55 (line 23500, social benefits repayment) is not modelled, so net income is total
-    income less total deductions, not below zero: 30,000 - 265.00 = 29,735.00.
+    like dues (receipts and box 44 of all T4 slips)"; line 41 (line 21400) "Child care
+    expenses (complete Form T778)"; line 48 (line 22215) "Deduction for CPP or QPP enhanced
+    contributions on employment income" "(maximum $1,074.00)"; line 53 (line 23300) "Add
+    lines 35 to 52" (total deductions); line 54 (line 23400) "Line 34 minus line 53 (if
+    negative, show in brackets) Net income before adjustments"; line 56 (line 23600) "Line
+    54 minus line 55 (if negative, enter "0") Net income". There is no RRSP deduction
+    (Schedule 7 line 20 is 0) and no union dues, and the child care expenses deduction is 0
+    (as the T778 entry derives), so the enhanced CPP contributions are the only deduction:
+    total deductions are 0 + 0 + 0 + 265.00 = 265.00; line 55 (line 23500, social benefits
+    repayment) is not modelled, so net income is total income less total deductions, not
+    below zero: 30,000 - 265.00 = 29,735.00.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.pdf
+  - >-
+    CRA, the 2025 form T778: Part A line 67950 "Total (add all entries for Child care
+    expenses paid)"; Part B line 1 "Number of eligible children born in 2019 or later whom
+    the disability amount cannot be claimed for" "multiplied by $8,000"; line 2 (line 67960)
+    "Number of eligible children born in 2025 or earlier whom the disability amount can be
+    claimed for" "multiplied by $11,000"; line 3 "Number of eligible children born in 2009
+    to 2018 (and born in 2008 or earlier with a mental or physical infirmity whom the
+    disability amount cannot be claimed for)" "multiplied by $5,000"; line 4 "Add lines 1 to
+    3."; line 5 "Enter the amount from line 67950."; line 6 "Enter your earned income."
+    "multiplied by two-thirds", with "Your earned income of line 6 is the total of the
+    following: employment income (including tips and gratuities, and the non-taxable part of
+    an allowance received as an emergency volunteer) ..."; line 7 "Enter whichever amount is
+    the least: line 4, line 5 or line 6."; line 9 "Line 7 minus line 8. ... enter this
+    amount on line 21400 of your return. Allowable deduction". The taxpayer is taken to have
+    no eligible child and to have paid no child care expenses (to be confirmed), so the
+    child care expenses paid (line 67950) are 0 and the numbers of eligible children on
+    lines 1, 2 and 3 are each 0: line 1 is 0 x 8,000 = 0, line 2 0 x 11,000 = 0 and line 3 0
+    x 5,000 = 0, so line 4 is 0 + 0 + 0 = 0; line 5 is 0. The earned income of line 6 is the
+    employment income, the only earned income on this return, 30,000, and two-thirds of it
+    is 30,000 x 2 / 3 = 20,000, with no rounding stated. Line 7 is the least of 0, 0 and
+    20,000: 0. Line 8 (the other person with the higher net income) is not triggered, so
+    line 9, and line 21400, is 0 - 0 = 0. Not triggered by this return: Parts C and D (the
+    higher-income claimant and school attendance).
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t778/t778-25e.txt
   - >-
     CRA, the 2025 T1 return (form 5000-R): line 57 "Enter the amount from line 56 of the
     previous page" (net income); line 68 (line 25700) "Add lines 58 to 67" (the deductions
@@ -547,6 +580,10 @@ inputs:
   ca/eligible_dependants: "0"
   ca/dependant_net_income: "0"
   ca/infirm_children: "0"
+  ca/child_care_expenses_paid: "0"
+  ca/children_under_seven: "0"
+  ca/children_with_disability: "0"
+  ca/children_seven_to_sixteen: "0"
   ca/income_tax_deducted: "3000"
 expected:
   ca/taxable_capital_gains: "0"
@@ -560,6 +597,13 @@ expected:
   ca/rrsp_deduction_maximum: "0"
   ca/rrsp_deduction: "0"
   ca/unused_rrsp_contributions_carried_forward: "0"
+  ca/child_care_limit_for_children_under_seven: "0"
+  ca/child_care_limit_for_children_with_disability: "0"
+  ca/child_care_limit_for_children_seven_to_sixteen: "0"
+  ca/child_care_basic_limit: "0"
+  ca/child_care_earned_income: "30000"
+  ca/child_care_earned_income_limit: "20000"
+  ca/child_care_expenses: "0"
   ca/deductions_from_total_income: "265.00"
   ca/net_income: "29735.00"
   ca/deductions_from_net_income: "0"

@@ -22,6 +22,17 @@ from app.jurisdictions.ca.catalog import (
     CANADA_WORKERS_BENEFIT,
     CAPITAL_GAIN,
     CATALOG,
+    CHILD_CARE_BASIC_LIMIT,
+    CHILD_CARE_EARNED_INCOME,
+    CHILD_CARE_EARNED_INCOME_LIMIT,
+    CHILD_CARE_EXPENSES,
+    CHILD_CARE_EXPENSES_PAID,
+    CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN,
+    CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,
+    CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
+    CHILDREN_SEVEN_TO_SIXTEEN,
+    CHILDREN_UNDER_SEVEN,
+    CHILDREN_WITH_DISABILITY,
     CPP_BASE_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
@@ -78,6 +89,17 @@ REGISTERED = frozenset(
         "ca/rrsp_deduction",
         "ca/unused_rrsp_contributions_carried_forward",
         "ca/union_dues",
+        "ca/child_care_expenses_paid",
+        "ca/children_under_seven",
+        "ca/children_with_disability",
+        "ca/children_seven_to_sixteen",
+        "ca/child_care_limit_for_children_under_seven",
+        "ca/child_care_limit_for_children_with_disability",
+        "ca/child_care_limit_for_children_seven_to_sixteen",
+        "ca/child_care_basic_limit",
+        "ca/child_care_earned_income",
+        "ca/child_care_earned_income_limit",
+        "ca/child_care_expenses",
         "ca/cpp_first_additional_contributions",
         "ca/cpp_second_additional_contributions",
         "ca/cpp_enhanced_contributions",
@@ -116,8 +138,19 @@ REGISTERED = frozenset(
 SIGNED = frozenset({"ca/refund_or_balance_owing"})
 # T1 line 30400 (Schedule 5, "Each household is allowed only one claim for this amount") and line
 # 30499 ("Number of children you are claiming this amount for"): the numbers of eligible
-# dependants and of infirm children, counted, not money.
-COUNTS = frozenset({"ca/eligible_dependants", "ca/infirm_children"})
+# dependants and of infirm children; and Form T778 Part B lines 1 to 3 ("Number of eligible
+# children born in 2019 or later whom the disability amount cannot be claimed for", "... born in
+# 2025 or earlier whom the disability amount can be claimed for", "... born in 2009 to 2018"):
+# the numbers of eligible children for the child care expenses deduction; counted, not money.
+COUNTS = frozenset(
+    {
+        "ca/eligible_dependants",
+        "ca/infirm_children",
+        "ca/children_under_seven",
+        "ca/children_with_disability",
+        "ca/children_seven_to_sixteen",
+    }
+)
 
 
 @pytest.fixture
@@ -166,6 +199,26 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
         registry.get("ca/cpp_second_additional_contributions")
         is CPP_SECOND_ADDITIONAL_CONTRIBUTIONS
     )
+    assert registry.get("ca/child_care_expenses_paid") is CHILD_CARE_EXPENSES_PAID
+    assert registry.get("ca/children_under_seven") is CHILDREN_UNDER_SEVEN
+    assert registry.get("ca/children_with_disability") is CHILDREN_WITH_DISABILITY
+    assert registry.get("ca/children_seven_to_sixteen") is CHILDREN_SEVEN_TO_SIXTEEN
+    assert (
+        registry.get("ca/child_care_limit_for_children_under_seven")
+        is CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN
+    )
+    assert (
+        registry.get("ca/child_care_limit_for_children_with_disability")
+        is CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY
+    )
+    assert (
+        registry.get("ca/child_care_limit_for_children_seven_to_sixteen")
+        is CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN
+    )
+    assert registry.get("ca/child_care_basic_limit") is CHILD_CARE_BASIC_LIMIT
+    assert registry.get("ca/child_care_earned_income") is CHILD_CARE_EARNED_INCOME
+    assert registry.get("ca/child_care_earned_income_limit") is CHILD_CARE_EARNED_INCOME_LIMIT
+    assert registry.get("ca/child_care_expenses") is CHILD_CARE_EXPENSES
     assert registry.get("ca/deductions_from_total_income") is DEDUCTIONS_FROM_TOTAL_INCOME
     assert registry.get("ca/net_income") is NET_INCOME
     assert registry.get("ca/deductions_from_net_income") is DEDUCTIONS_FROM_NET_INCOME
@@ -218,6 +271,14 @@ def test_catalog_kinds_are_money() -> None:
         RRSP_DEDUCTION,
         UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
         UNION_DUES,
+        CHILD_CARE_EXPENSES_PAID,
+        CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,
+        CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
+        CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN,
+        CHILD_CARE_BASIC_LIMIT,
+        CHILD_CARE_EARNED_INCOME,
+        CHILD_CARE_EARNED_INCOME_LIMIT,
+        CHILD_CARE_EXPENSES,
         CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
         CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
         CPP_ENHANCED_CONTRIBUTIONS,

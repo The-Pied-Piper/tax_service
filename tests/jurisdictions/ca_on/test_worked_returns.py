@@ -58,15 +58,19 @@ description: >-
   contributions (line 1) of 0 plus the contributions (line 4) of 0: 0. The most that may be
   deducted (line 17) is the lesser of them and the deduction limit (line 11) of 1800, a
   chosen limit: 0. The amount deducted (line 18) is that 0, so the RRSP deduction (line 20)
-  is 0, the unused contributions carried forward (line 23) are 0 - 0 = 0, and the enhanced
-  contributions are the only deduction from total income. Net income and taxable
-  income are 9935.00. The Canada employment amount is the lesser of 1471 and the employment
-  income of 10000: 1471. The federal basic personal amount is computed from net income by the
-  Federal Worksheet: 9935.00 is at or below its 177882 threshold, so it is the base amount
-  14538 plus the whole supplement amount 1591, 16129, rounded half-up to the cent. With no
-  eligible dependant and no infirm child, the amount for an eligible dependant (16129 less a
-  dependant's net income of 0 federally, 11905.00 less it at most 10823 for Ontario) is
-  claimed for 0 eligible dependants and the amount for infirm children is 0 x 2687: each 0.
+  is 0, the unused contributions carried forward (line 23) are 0 - 0 = 0. With no eligible
+  child and no child care expenses paid, the child care expenses deduction (T778 line 7) is
+  the least of the basic limit 0 x 8000 + 0 x 11000 + 0 x 5000 = 0, the 0 paid and
+  two-thirds of the earned income of 10000, 6666.666666666666666666666667: 0. So the
+  enhanced contributions are the only deduction from total income that is not zero.
+  Net income and taxable income are 9935.00. The Canada employment amount is the
+  lesser of 1471 and the employment income of 10000: 1471. The federal basic personal
+  amount is computed from net income by the Federal Worksheet: 9935.00 is at or below
+  its 177882 threshold, so it is the base amount 14538 plus the whole supplement
+  amount 1591, 16129, rounded half-up to the cent. With no eligible dependant and
+  no infirm child, the amount for an eligible dependant (16129 less a dependant's
+  net income of 0 federally, 11905.00 less it at most 10823 for Ontario) is claimed
+  for 0 eligible dependants and the amount for infirm children is 0 x 2687: each 0.
   The federal total of credit amounts is its basic personal amount plus those two zeros,
   321.75, 164.00 and 1471; the Ontario total is its basic personal amount plus its zero,
   321.75 and 164.00 (ON428 has no Canada employment amount). Each form's non-refundable tax
@@ -90,7 +94,7 @@ description: >-
 sources:
   - >-
     T1, Federal Worksheet, Schedule 3, Schedule 5, Schedule 6, Schedule 7, Schedule 8, ON428,
-    Schedule ON428-A and EI table arithmetic on the 2025 figures.
+    Schedule ON428-A, T778 and EI table arithmetic on the 2025 figures.
 inputs:
   ca/employment_income: "10000"
   ca/capital_gain: "0"
@@ -104,6 +108,10 @@ inputs:
   ca/eligible_dependants: "0"
   ca/dependant_net_income: "0"
   ca/infirm_children: "0"
+  ca/child_care_expenses_paid: "0"
+  ca/children_under_seven: "0"
+  ca/children_with_disability: "0"
+  ca/children_seven_to_sixteen: "0"
   ca/income_tax_deducted: "500"
 expected:
   ca/taxable_capital_gains: "0"
@@ -117,6 +125,13 @@ expected:
   ca/rrsp_deduction_maximum: "0"
   ca/rrsp_deduction: "0"
   ca/unused_rrsp_contributions_carried_forward: "0"
+  ca/child_care_limit_for_children_under_seven: "0"
+  ca/child_care_limit_for_children_with_disability: "0"
+  ca/child_care_limit_for_children_seven_to_sixteen: "0"
+  ca/child_care_basic_limit: "0"
+  ca/child_care_earned_income: "10000"
+  ca/child_care_earned_income_limit: "6666.666666666666666666666667"
+  ca/child_care_expenses: "0"
   ca/deductions_from_total_income: "65.00"
   ca/net_income: "9935.00"
   ca/deductions_from_net_income: "0"

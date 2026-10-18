@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 57
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 64
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -62,6 +62,17 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/rrsp_deduction",
         "ca/unused_rrsp_contributions_carried_forward",
         "ca/union_dues",
+        "ca/child_care_expenses_paid",
+        "ca/children_under_seven",
+        "ca/children_with_disability",
+        "ca/children_seven_to_sixteen",
+        "ca/child_care_limit_for_children_under_seven",
+        "ca/child_care_limit_for_children_with_disability",
+        "ca/child_care_limit_for_children_seven_to_sixteen",
+        "ca/child_care_basic_limit",
+        "ca/child_care_earned_income",
+        "ca/child_care_earned_income_limit",
+        "ca/child_care_expenses",
         "ca/cpp_first_additional_contributions",
         "ca/cpp_second_additional_contributions",
         "ca/cpp_enhanced_contributions",
@@ -142,13 +153,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 57
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 64
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 57
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 64
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
