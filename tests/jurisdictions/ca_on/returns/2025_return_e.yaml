@@ -51,7 +51,7 @@ description: >-
   of $1,077.48. No unused or new RRSP contributions, so the most that may be deducted
   (Schedule 7 line 17) is $0, the lesser of the contributions available to deduct (Schedule
   7 line 10) of $0 (the unused contributions from earlier years of $0, Schedule 7 line 1,
-  plus the contributions of $0, Schedule 7 line 4) and a chosen deduction limit of $36,000
+  plus the contributions of $0, Schedule 7 line 4) and a chosen deduction limit of $30,000
   (Schedule 7 line 11); the amount deducted (line 18) is that $0, so the RRSP deduction
   (line 20800) is $0 and the unused contributions carried forward (line 23) are $0; no union
   dues (line 21200), so total deductions (line 23300) are the enhanced CPP contributions of
@@ -198,14 +198,14 @@ sources:
     4, 2025, to March 2, 2026 (lines 2 and 3), the deduction limit line 11's, and the amount
     deducted line 18's. The unused contributions of 0 are a chosen figure: they are the
     amount on the taxpayer's latest notice of assessment, which nothing on this return
-    determines. The contributions are 0. The deduction limit of 36,000 is a chosen figure:
+    determines. The contributions are 0. The deduction limit of 30,000 is a chosen figure:
     it is the amount on the taxpayer's latest notice of assessment, which nothing on this
-    return determines; it is 18% of a prior year's income of 200,000, chosen as the other
-    returns choose theirs, and with no contributions it does not bind. Line 5 is line 1 plus
+    return determines; a round figure below the year's dollar cap rather than the other
+    returns' 18% rule, and with no contributions it does not bind. Line 5 is line 1 plus
     line 4, 0 + 0 = 0, and so is line 6; with no HBP or LLP repayments (line 9), line 10 is
-    0 - 0 = 0. With no employer PRPP contributions (line 12), line 13 is 36,000 - 0 =
-    36,000; line 14 is 0; with no transfers (line 15), line 16 is 0 - 0 = 0; line 17 is the
-    lesser of 36,000 and 0, 0. The amount deducted is stated on the return, here the full
+    0 - 0 = 0. With no employer PRPP contributions (line 12), line 13 is 30,000 - 0 =
+    30,000; line 14 is 0; with no transfers (line 15), line 16 is 0 - 0 = 0; line 17 is the
+    lesser of 30,000 and 0, 0. The amount deducted is a chosen figure, here the full
     line 17 amount, so line 18 is 0, not more than line 17, and line 19 is 0 + 0 = 0; line
     20, and so line 20800, is the lesser of 0 (line 10) and 0 (line 19): 0, with no rounding
     stated. Part D: line 21 is line 10, 0; line 22 is line 20, 0; line 23 is 0 - 0 = 0, the
@@ -381,7 +381,7 @@ sources:
     not more than $200,000": $750. Each row of the chart is the previous plateau plus a rate
     on the taxable income over the row's threshold, at most the next plateau, so the premium
     is the sum of five tiers, each capped: (198,926.00 - 20,000) x 6% = 178,926.00 x 6% =
-    10,735.56, more than 300, so 300; (198,926.00 - 36,000) x 6% = 162,926.00 x 6% =
+    10,735.56, more than 300, so 300; (198,926.00 - 30,000) x 6% = 162,926.00 x 6% =
     9,775.56, more than 150, so 150; (198,926.00 - 48,000) x 25% = 150,926.00 x 25% =
     37,731.50, more than 150, so 150; (198,926.00 - 72,000) x 25% = 126,926.00 x 25% =
     31,731.50, more than 150, so 150; 198,926.00 - 200,000 is negative, so 0; with no
@@ -426,7 +426,7 @@ inputs:
   ca/capital_gain: "0"
   ca/unused_rrsp_contributions: "0"
   ca/rrsp_contributions: "0"
-  ca/rrsp_deduction_limit: "36000"
+  ca/rrsp_deduction_limit: "30000"
   ca/rrsp_amount_deducted: "0"
   ca/union_dues: "0"
   ca-on/dependent_children: 0
