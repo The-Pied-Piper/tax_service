@@ -573,25 +573,61 @@ capabilities:
     consumes:
       base: ca/working_income
     produces:
-      output: ca/cwb_before_reduction
+      output: ca/cwb_before_reduction_without_dependant
+  # The same lines with an eligible dependant: line 21's $2,813 as the tier's maximum.
+  - name: core/tiered_surcharge
+    params:
+      tiers: ca/cwb_basic_with_dependant
+    consumes:
+      base: ca/working_income
+    produces:
+      output: ca/cwb_before_reduction_with_dependant
   # Schedule 6 lines 23 to 27: line 23 "Adjusted family net income from line 15"; line
   # 24 "If you had an eligible spouse or an eligible dependant, enter $30,639. If not,
   # enter $26,855."; line 25 "Line 23 minus line 24 (if negative, enter "0")"; line 26
-  # "Rate 15%"; line 27 "Line 25 multiplied by the percentage from line 26": one tier.
+  # "Rate 15%"; line 27 "Line 25 multiplied by the percentage from line 26": one tier,
+  # with no eligible spouse or dependant.
   - name: core/tiered_surcharge
     params:
       tiers: ca/cwb_reduction
     consumes:
       base: ca/adjusted_family_net_income
     produces:
-      output: ca/cwb_reduction
+      output: ca/cwb_reduction_without_dependant
+  # The same lines with an eligible dependant: line 24's $30,639 as the tier's threshold.
+  - name: core/tiered_surcharge
+    params:
+      tiers: ca/cwb_reduction_with_dependant
+    consumes:
+      base: ca/adjusted_family_net_income
+    produces:
+      output: ca/cwb_reduction_with_dependant
   # Schedule 6 line 28 "Line 22 minus line 27 (if negative, enter "0") If you are not
-  # completing Step 3, enter this amount on line 45300 of your return.": Step 3 (the
-  # disability supplement) is not triggered.
+  # completing Step 3, enter this amount on line 45300 of your return.", with no
+  # eligible spouse or dependant: Step 3 (the disability supplement) is not triggered.
   - name: core/subtract_not_below_zero
     consumes:
-      amount: ca/cwb_before_reduction
-      less: ca/cwb_reduction
+      amount: ca/cwb_before_reduction_without_dependant
+      less: ca/cwb_reduction_without_dependant
+    produces:
+      output: ca/canada_workers_benefit_without_dependant
+  # Line 28 with an eligible dependant.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/cwb_before_reduction_with_dependant
+      less: ca/cwb_reduction_with_dependant
+    produces:
+      output: ca/canada_workers_benefit_with_dependant
+  # Line 28 for the filer's family status, which lines 21 and 24 read ("If you had an
+  # eligible spouse or an eligible dependant ... If not ..."): the line with no eligible
+  # spouse or dependant when the T1 line 30400 count is 0, else the line with one; that
+  # count stands in for Schedule 6's own eligible dependant; an eligible spouse is not
+  # modelled.
+  - name: core/choose_by_count
+    consumes:
+      count: ca/eligible_dependants
+      when_none: ca/canada_workers_benefit_without_dependant
+      when_any: ca/canada_workers_benefit_with_dependant
     produces:
       output: ca/canada_workers_benefit
   # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700)

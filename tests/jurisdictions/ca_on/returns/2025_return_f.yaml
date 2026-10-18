@@ -53,24 +53,25 @@
 # 86); and from taxable income, by the health premium chart's tiers, each capped at the next
 # plateau, to the Ontario health premium, added to the Ontario tax after the LIFT credit to
 # the Ontario tax; from employment income and net income, by Schedule 6, to the working
-# income, the adjusted family net income and the Canada workers benefit (T1 line 45300); and
-# on the T1, the federal tax after credits, carried to the net federal tax, plus the Ontario
-# tax to the total payable, less the total credits, here the chosen income tax deducted plus
-# the Canada workers benefit, to the refund or balance owing, negative for a refund and
-# positive for a balance owing. There is no capital gain, unused or new RRSP contribution or
-# union dues. Not yet computed, so not in this file: any deduction from net income, the
-# social benefits repayment and capital losses. Lines 82 (the provincial foreign tax credit)
-# and 87 (the community food program donation tax credit for farmers) are not triggered by
-# this return, nor are Schedule 5 line 2, T1 lines 30425 and 30450, the Ontario caregiver
-# amount (ON428 line 58185), Form T778 line 8 (the taxpayer taken as the only person
-# supporting the child, to be confirmed), line 67954 (the expenses for children aged 6 or
-# younger, to be confirmed), Note 1's weekly limits for boarding schools and overnight camps
-# (to be confirmed) and Parts C and D, and Schedule 6's disability supplement (Step 3) and
-# advance payments (Step 4).
-# Schedule 6's lines 22 and 27 are not listed: with an eligible dependant the form's amounts
-# are $2,813 and $30,639, while the CA-ON manifest applies the amounts for a filer with no
-# eligible spouse and no eligible dependant ($1,633 and $26,855); the benefit (line 28) is
-# zero either way, as the Schedule 6 entry derives.
+# income and the adjusted family net income, from those to the basic amount less its
+# reduction, not below zero, for a filer with no eligible spouse and no eligible dependant
+# and for a filer with one, and from those, by the number of eligible dependants (T1 line
+# 30400), the first when it is zero and the second otherwise, to the Canada workers benefit
+# (T1 line 45300); and on the T1, the federal tax after credits, carried to the net federal
+# tax, plus the Ontario tax to the total payable, less the total credits, here the chosen
+# income tax deducted plus the Canada workers benefit, to the refund or balance owing,
+# negative for a refund and positive for a balance owing. There is no capital gain, unused
+# or new RRSP contribution or union dues. Not yet computed, so not in this file: any
+# deduction from net income, the social benefits repayment and capital losses. Lines 82 (the
+# provincial foreign tax credit) and 87 (the community food program donation tax credit for
+# farmers) are not triggered by this return, nor are Schedule 5 line 2, T1 lines 30425 and
+# 30450, the Ontario caregiver amount (ON428 line 58185), Form T778 line 8 (the taxpayer
+# taken as the only person supporting the child, to be confirmed), line 67954 (the expenses
+# for children aged 6 or younger, to be confirmed), Note 1's weekly limits for boarding
+# schools and overnight camps (to be confirmed) and Parts C and D, and Schedule 6's
+# disability supplement (Step 3) and advance payments (Step 4); with one eligible dependant
+# claimed for, the Schedule 6 amounts for a filer with an eligible dependant are the ones
+# chosen (to be confirmed).
 # Amounts are quoted decimal strings, never floats; counts are quoted digit strings. Every
 # output the CA-ON manifest declares must appear under `expected`; intermediate lines may be
 # listed and are then checked too.
@@ -139,7 +140,9 @@ description: >-
   total payable (line 43500) is it plus the Ontario tax (line 42800), $4,240.6825. The
   Canada workers benefit (line 45300, Schedule 6) is $0: with an eligible dependant, 27% of
   the working income over $3,000, $15,390, at most $2,813, less 15% of the adjusted family
-  net income, the net income, over $30,639, $3,569.40. The income tax deducted (line 43700)
+  net income, the net income, over $30,639, $3,569.40. With no eligible spouse or dependant,
+  at most $1,633 less 15% over $26,855, $4,137.00, the benefit would be $0 too; the one
+  eligible dependant chooses the amounts with one. The income tax deducted (line 43700)
   is a chosen $8,000, so the total credits (line 48200) are it plus the benefit, $8,000, and
   the refund or balance owing (line 167) is the total payable less the total credits,
   -$3,759.3175: negative, so a refund (line 48400). The CPP contributions, the EI premiums
@@ -569,28 +572,30 @@ sources:
     = 23,796.00; line 27 is 23,796.00 x 15% = 3,569.40; line 28 is 2,813 - 3,569.40,
     negative, so 0, the Canada workers benefit (T1 line 45300), with no rounding stated. The
     adjusted family net income of 54,435.00 is above the chart's basic limit of $49,393,
-    which agrees. The CA-ON manifest applies the amounts for a filer with no eligible spouse
-    and no eligible dependant, $1,633 on line 21 and $26,855 on line 24, so its lines 22 and
-    27 (1,633 and 4,137.00) are not the form's for this return and are not listed under
-    `expected`; its line 28 is 1,633 - 4,137.00, negative, so 0, the same benefit. Not
-    triggered by this return, so not modelled: Step 3 (the disability supplement) and Step 4
-    (the advance payments, Form RC210). Page 1: "Complete this schedule if you met all of
-    the following conditions in 2025: You were a resident of Canada throughout the year; You
-    earned working income (see Part A); You were, at the end of the year, 19 years of age or
-    older, or you resided with your spouse or common-law partner or your child"; "You cannot
-    claim the CWB for 2025 if any of the following conditions apply to you: You were
-    enrolled as a full-time student at a designated educational institution for a total of
-    more than 13 weeks in the year, unless you had an eligible dependant at the end of the
-    year; You were confined to a prison or similar institution for a period of at least 90
-    days during the year; You were exempt from income tax in Canada for a period in the year
-    when you were an officer or a servant of another country (such as a diplomat) residing
-    in Canada or you were a family member who resided with such a person or an employee of
-    such a person, at any time in the year"; and under line 6: "You can claim the basic CWB
-    in Step 2 if the family working income on line 6 is more than $3,000." The family
-    working income of 60,000 is more than $3,000. The taxpayer meets the three conditions: a
-    resident of Ontario, so of Canada, throughout 2025, with working income of 60,000, and
-    residing with their child at the end of the year; the three exclusions are taken as not
-    applying (to be confirmed).
+    which agrees. Lines 16 to 28 are derived with each of the amounts of lines 21 and 24,
+    and the number of eligible dependants claimed for (T1 line 30400), 1, chooses those with
+    an eligible dependant, above. With no eligible spouse and no eligible dependant, line 21
+    would be $1,633 and line 24 $26,855: line 22 the lesser of 15,390 and 1,633, 1,633; line
+    25 54,435.00 - 26,855 = 27,580.00; line 27 27,580.00 x 15% = 4,137.00; line 28 1,633 -
+    4,137.00, negative, so 0, the same benefit; derived, but not chosen. Not triggered by
+    this return, so not modelled: Step 3 (the disability supplement), Step 4 (the advance
+    payments, Form RC210) and an eligible spouse. Page 1: "Complete this schedule if you met
+    all of the following conditions in 2025: You were a resident of Canada throughout the
+    year; You earned working income (see Part A); You were, at the end of the year, 19 years
+    of age or older, or you resided with your spouse or common-law partner or your child";
+    "You cannot claim the CWB for 2025 if any of the following conditions apply to you: You
+    were enrolled as a full-time student at a designated educational institution for a total
+    of more than 13 weeks in the year, unless you had an eligible dependant at the end of
+    the year; You were confined to a prison or similar institution for a period of at least
+    90 days during the year; You were exempt from income tax in Canada for a period in the
+    year when you were an officer or a servant of another country (such as a diplomat)
+    residing in Canada or you were a family member who resided with such a person or an
+    employee of such a person, at any time in the year"; and under line 6: "You can claim
+    the basic CWB in Step 2 if the family working income on line 6 is more than $3,000." The
+    family working income of 60,000 is more than $3,000. The taxpayer meets the three
+    conditions: a resident of Ontario, so of Canada, throughout 2025, with working income of
+    60,000, and residing with their child at the end of the year; the three exclusions are
+    taken as not applying (to be confirmed).
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s6/5000-s6-25e.txt
   - >-
     CRA, the 2025 T1 return (form 5000-R), Part C and Step 6: line 119 "Enter the amount
@@ -705,6 +710,12 @@ expected:
   ca/total_payable: "4240.6825"
   ca/working_income: "60000"
   ca/adjusted_family_net_income: "54435.00"
+  ca/cwb_before_reduction_without_dependant: "1633"
+  ca/cwb_reduction_without_dependant: "4137.00"
+  ca/canada_workers_benefit_without_dependant: "0"
+  ca/cwb_before_reduction_with_dependant: "2813"
+  ca/cwb_reduction_with_dependant: "3569.40"
+  ca/canada_workers_benefit_with_dependant: "0"
   ca/canada_workers_benefit: "0"
   ca/total_credits: "8000"
   ca/refund_or_balance_owing: "-3759.3175"

@@ -45,8 +45,11 @@
 # capped at the next plateau, to the Ontario health premium, added to the Ontario tax after
 # the LIFT credit to the Ontario tax; from employment income, by Schedule 6, 27% of the
 # working income over $3,000 at most $1,633, less 15% of the adjusted family net income,
-# here net income, over $26,855, not below zero, to the Canada workers benefit (T1 line
-# 45300); and on the T1, the federal tax after credits, carried to the net federal tax, plus
+# here net income, over $26,855, not below zero, for a filer with no eligible spouse and no
+# eligible dependant, and the same at most $2,813 and over $30,639 for a filer with one, and
+# from those, by the number of eligible dependants (T1 line 30400), the first when it is
+# zero and the second otherwise, to the Canada workers benefit (T1 line 45300); and on the
+# T1, the federal tax after credits, carried to the net federal tax, plus
 # the Ontario tax to the total payable, less the total credits, here the chosen income tax
 # deducted plus the Canada workers benefit, to the refund or balance owing, negative for a
 # refund and positive for a balance owing. There is no capital gain, unused or new RRSP
@@ -55,8 +58,9 @@
 # tax credit) and 87 (the community food program donation tax credit for farmers) are not
 # triggered by this return, nor are Schedule 5 line 2, T1 lines 30425 and 30450, the Ontario
 # caregiver amount (ON428 line 58185), Form T778 line 8 and Parts C and D, and Schedule 6's
-# disability supplement (Step 3) and advance payments (Step 4); the Schedule 6 amounts for a
-# filer with no eligible spouse and no eligible dependant apply.
+# disability supplement (Step 3) and advance payments (Step 4); with no eligible dependant
+# claimed for, the Schedule 6 amounts for a filer with no eligible spouse and no eligible
+# dependant are the ones chosen.
 # Amounts are quoted decimal strings, never floats; counts are quoted digit strings. Every
 # output the CA-ON manifest declares must appear under `expected`; intermediate lines may be
 # listed and are then checked too.
@@ -117,12 +121,14 @@ description: >-
   (line 43500) is it plus the Ontario tax (line 42800), $1,798.03125. The Canada workers
   benefit (line 45300, Schedule 6) is 27% of the working income, the employment income, over
   $3,000, $7,290, at most $1,633, less 15% of the adjusted family net income, the net
-  income, over $26,855, $432.00: $1,201.00. The income tax deducted (line 43700) is a chosen
-  $3,000, so the total credits (line 48200) are it plus the benefit, $4,201.00, and the
-  refund or balance owing (line 167) is the total payable less the total credits,
-  -$2,402.96875: negative, so a refund (line 48400). The CPP contributions, the EI premiums
-  and the federal basic personal amount are rounded to the cent, which changes none of them;
-  no other amounts are rounded.
+  income, over $26,855, $432.00: $1,201.00. With no eligible dependant, these are the
+  amounts for a filer with no eligible spouse and no eligible dependant; with one, at most
+  $2,813 less 15% over $30,639, nothing as $29,735.00 is below it, the benefit would be
+  $2,813. The income tax deducted (line 43700) is a chosen $3,000, so the total credits
+  (line 48200) are it plus the benefit, $4,201.00, and the refund or balance owing (line
+  167) is the total payable less the total credits, -$2,402.96875: negative, so a refund
+  (line 48400). The CPP contributions, the EI premiums and the federal basic personal amount
+  are rounded to the cent, which changes none of them; no other amounts are rounded.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -507,30 +513,34 @@ sources:
     carry lines 5 and 12, line 14 (the secondary earner exemption) is not triggered, and
     line 15, the adjusted family net income, is 29,735.00. The taxpayer has no spouse or
     common-law partner and no dependants, so has no eligible spouse and no eligible
-    dependant: line 21 is $1,633 and line 24 $26,855. Line 18 is 30,000 - 3,000 = 27,000;
-    line 20 is 27,000 x 27% = 7,290; line 22 is the lesser of 7,290 and 1,633: 1,633. Line
-    25 is 29,735.00 - 26,855 = 2,880.00; line 27 is 2,880.00 x 15% = 432.00; line 28 is
-    1,633 - 432.00 = 1,201.00, the Canada workers benefit (T1 line 45300), with no rounding
-    stated. The adjusted family net income of 29,735.00 is below the chart's basic limit of
-    $37,742, which agrees. Not triggered by this return, so not modelled: Step 3 (the
-    disability supplement), Step 4 (the advance payments, Form RC210) and the amounts for an
-    eligible spouse or an eligible dependant. Page 1: "Complete this schedule if you met all
-    of the following conditions in 2025: You were a resident of Canada throughout the year;
-    You earned working income (see Part A); You were, at the end of the year, 19 years of
-    age or older, or you resided with your spouse or common-law partner or your child"; "You
-    cannot claim the CWB for 2025 if any of the following conditions apply to you: You were
-    enrolled as a full-time student at a designated educational institution for a total of
-    more than 13 weeks in the year, unless you had an eligible dependant at the end of the
-    year; You were confined to a prison or similar institution for a period of at least 90
-    days during the year; You were exempt from income tax in Canada for a period in the year
-    when you were an officer or a servant of another country (such as a diplomat) residing
-    in Canada or you were a family member who resided with such a person or an employee of
-    such a person, at any time in the year"; and under line 6: "You can claim the basic CWB
-    in Step 2 if the family working income on line 6 is more than $3,000." The family
-    working income of 30,000 is more than $3,000. The taxpayer meets the three conditions: a
-    resident of Ontario, so of Canada, throughout 2025, with working income of 30,000, and
-    over 19 at the end of the year; the three exclusions are taken as not applying (to be
-    confirmed).
+    dependant. Lines 16 to 28 are derived with each of the amounts of lines 21 and 24, and
+    the number of eligible dependants claimed for (T1 line 30400), 0, chooses those for a
+    filer with neither: line 21 is $1,633 and line 24 $26,855. Line 18 is 30,000 - 3,000 =
+    27,000; line 20 is 27,000 x 27% = 7,290; line 22 is the lesser of 7,290 and 1,633:
+    1,633. Line 25 is 29,735.00 - 26,855 = 2,880.00; line 27 is 2,880.00 x 15% = 432.00;
+    line 28 is 1,633 - 432.00 = 1,201.00, the Canada workers benefit (T1 line 45300), with
+    no rounding stated. The adjusted family net income of 29,735.00 is below the chart's
+    basic limit of $37,742, which agrees. With an eligible spouse or an eligible dependant,
+    line 21 would be $2,813 and line 24 $30,639: line 22 the lesser of 7,290 and 2,813,
+    2,813; line 25 29,735.00 - 30,639, negative, so 0; line 27 0 x 15% = 0; line 28 2,813 -
+    0 = 2,813; derived, but not chosen. Not triggered by this return, so not modelled: Step
+    3 (the disability supplement), Step 4 (the advance payments, Form RC210) and an eligible
+    spouse. Page 1: "Complete this schedule if you met all of the following conditions in
+    2025: You were a resident of Canada throughout the year; You earned working income (see
+    Part A); You were, at the end of the year, 19 years of age or older, or you resided with
+    your spouse or common-law partner or your child"; "You cannot claim the CWB for 2025 if
+    any of the following conditions apply to you: You were enrolled as a full-time student
+    at a designated educational institution for a total of more than 13 weeks in the year,
+    unless you had an eligible dependant at the end of the year; You were confined to a
+    prison or similar institution for a period of at least 90 days during the year; You were
+    exempt from income tax in Canada for a period in the year when you were an officer or a
+    servant of another country (such as a diplomat) residing in Canada or you were a family
+    member who resided with such a person or an employee of such a person, at any time in
+    the year"; and under line 6: "You can claim the basic CWB in Step 2 if the family
+    working income on line 6 is more than $3,000." The family working income of 30,000 is
+    more than $3,000. The taxpayer meets the three conditions: a resident of Ontario, so of
+    Canada, throughout 2025, with working income of 30,000, and over 19 at the end of the
+    year; the three exclusions are taken as not applying (to be confirmed).
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s6/5000-s6-25e.txt
   - >-
     CRA, the 2025 T1 return (form 5000-R), Part C and Step 6: line 119 "Enter the amount
@@ -645,8 +655,12 @@ expected:
   ca/total_payable: "1798.03125"
   ca/working_income: "30000"
   ca/adjusted_family_net_income: "29735.00"
-  ca/cwb_before_reduction: "1633"
-  ca/cwb_reduction: "432.00"
+  ca/cwb_before_reduction_without_dependant: "1633"
+  ca/cwb_reduction_without_dependant: "432.00"
+  ca/canada_workers_benefit_without_dependant: "1201.00"
+  ca/cwb_before_reduction_with_dependant: "2813"
+  ca/cwb_reduction_with_dependant: "0"
+  ca/canada_workers_benefit_with_dependant: "2813"
   ca/canada_workers_benefit: "1201.00"
   ca/total_credits: "4201.00"
   ca/refund_or_balance_owing: "-2402.96875"

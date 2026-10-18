@@ -14,6 +14,7 @@ from app.domain.capabilities.apply_fraction import ApplyFraction
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.at_most import AtMost
 from app.domain.capabilities.capped_amount import CappedAmount
+from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.contribution_tier import TieredContribution
 from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.lesser_of import LesserOf
@@ -33,6 +34,8 @@ from app.jurisdictions.ca.catalog import (
     BASIC_PERSONAL_AMOUNT,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_WORKERS_BENEFIT,
+    CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
+    CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
     CAPITAL_GAIN,
     CHILD_CARE_BASIC_LIMIT,
     CHILD_CARE_EARNED_INCOME,
@@ -49,8 +52,10 @@ from app.jurisdictions.ca.catalog import (
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
-    CWB_BEFORE_REDUCTION,
-    CWB_REDUCTION,
+    CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
+    CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
+    CWB_REDUCTION_WITH_DEPENDANT,
+    CWB_REDUCTION_WITHOUT_DEPENDANT,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DEPENDANT_NET_INCOME,
@@ -716,25 +721,68 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             name="core/tiered_surcharge",
             params={"tiers": "ca/cwb_basic"},
             consumes={"base": "ca/working_income"},
-            produces={"output": "ca/cwb_before_reduction"},
+            produces={"output": "ca/cwb_before_reduction_without_dependant"},
+        ),
+        # The same lines with an eligible dependant: line 21's $2,813 as the tier's maximum.
+        CapabilitySelection(
+            name="core/tiered_surcharge",
+            params={"tiers": "ca/cwb_basic_with_dependant"},
+            consumes={"base": "ca/working_income"},
+            produces={"output": "ca/cwb_before_reduction_with_dependant"},
         ),
         # Schedule 6 lines 23 to 27: line 23 "Adjusted family net income from line 15"; line 24
         # "If you had an eligible spouse or an eligible dependant, enter $30,639. If not, enter
         # $26,855."; line 25 "Line 23 minus line 24 (if negative, enter "0")"; line 26 "Rate
-        # 15%"; line 27 "Line 25 multiplied by the percentage from line 26": one tier.
+        # 15%"; line 27 "Line 25 multiplied by the percentage from line 26": one tier, with no
+        # eligible spouse or dependant.
         CapabilitySelection(
             name="core/tiered_surcharge",
             params={"tiers": "ca/cwb_reduction"},
             consumes={"base": "ca/adjusted_family_net_income"},
-            produces={"output": "ca/cwb_reduction"},
+            produces={"output": "ca/cwb_reduction_without_dependant"},
+        ),
+        # The same lines with an eligible dependant: line 24's $30,639 as the tier's threshold.
+        CapabilitySelection(
+            name="core/tiered_surcharge",
+            params={"tiers": "ca/cwb_reduction_with_dependant"},
+            consumes={"base": "ca/adjusted_family_net_income"},
+            produces={"output": "ca/cwb_reduction_with_dependant"},
         ),
         # Schedule 6 line 28 "Line 22 minus line 27 (if negative, enter "0") If you are not
-        # completing Step 3, enter this amount on line 45300 of your return.": Step 3 (the
-        # disability supplement) is not triggered.
+        # completing Step 3, enter this amount on line 45300 of your return.", with no eligible
+        # spouse or dependant: Step 3 (the disability supplement) is not triggered.
         CapabilitySelection(
             name="core/subtract_not_below_zero",
             params={},
-            consumes={"amount": "ca/cwb_before_reduction", "less": "ca/cwb_reduction"},
+            consumes={
+                "amount": "ca/cwb_before_reduction_without_dependant",
+                "less": "ca/cwb_reduction_without_dependant",
+            },
+            produces={"output": "ca/canada_workers_benefit_without_dependant"},
+        ),
+        # Line 28 with an eligible dependant.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca/cwb_before_reduction_with_dependant",
+                "less": "ca/cwb_reduction_with_dependant",
+            },
+            produces={"output": "ca/canada_workers_benefit_with_dependant"},
+        ),
+        # Line 28 for the filer's family status, which lines 21 and 24 read ("If you had an
+        # eligible spouse or an eligible dependant ... If not ..."): the line with no eligible
+        # spouse or dependant when the T1 line 30400 count is 0, else the line with one; that
+        # count stands in for Schedule 6's own eligible dependant; an eligible spouse is not
+        # modelled.
+        CapabilitySelection(
+            name="core/choose_by_count",
+            params={},
+            consumes={
+                "count": "ca/eligible_dependants",
+                "when_none": "ca/canada_workers_benefit_without_dependant",
+                "when_any": "ca/canada_workers_benefit_with_dependant",
+            },
             produces={"output": "ca/canada_workers_benefit"},
         ),
         # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700) and
@@ -755,7 +803,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 64
+    assert len(found.capabilities) == 68
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -765,7 +813,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 64
+    assert len(composition.order) == 68
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -998,11 +1046,45 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (Sum, frozenset({NET_FEDERAL_TAX, ONTARIO_TAX}), frozenset({TOTAL_PAYABLE})),
         (Sum, frozenset({EMPLOYMENT_INCOME}), frozenset({WORKING_INCOME})),
         (Sum, frozenset({NET_INCOME}), frozenset({ADJUSTED_FAMILY_NET_INCOME})),
-        (TieredSurcharge, frozenset({WORKING_INCOME}), frozenset({CWB_BEFORE_REDUCTION})),
-        (TieredSurcharge, frozenset({ADJUSTED_FAMILY_NET_INCOME}), frozenset({CWB_REDUCTION})),
+        (
+            TieredSurcharge,
+            frozenset({WORKING_INCOME}),
+            frozenset({CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT}),
+        ),
+        (
+            TieredSurcharge,
+            frozenset({WORKING_INCOME}),
+            frozenset({CWB_BEFORE_REDUCTION_WITH_DEPENDANT}),
+        ),
+        (
+            TieredSurcharge,
+            frozenset({ADJUSTED_FAMILY_NET_INCOME}),
+            frozenset({CWB_REDUCTION_WITHOUT_DEPENDANT}),
+        ),
+        (
+            TieredSurcharge,
+            frozenset({ADJUSTED_FAMILY_NET_INCOME}),
+            frozenset({CWB_REDUCTION_WITH_DEPENDANT}),
+        ),
         (
             SubtractNotBelowZero,
-            frozenset({CWB_BEFORE_REDUCTION, CWB_REDUCTION}),
+            frozenset({CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT, CWB_REDUCTION_WITHOUT_DEPENDANT}),
+            frozenset({CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({CWB_BEFORE_REDUCTION_WITH_DEPENDANT, CWB_REDUCTION_WITH_DEPENDANT}),
+            frozenset({CANADA_WORKERS_BENEFIT_WITH_DEPENDANT}),
+        ),
+        (
+            ChooseByCount,
+            frozenset(
+                {
+                    ELIGIBLE_DEPENDANTS,
+                    CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
+                    CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
+                }
+            ),
             frozenset({CANADA_WORKERS_BENEFIT}),
         ),
         (
