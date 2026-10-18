@@ -13,31 +13,29 @@ contributions carried forward of 0 (line 23), the contributions available less t
 that RRSP deduction, union dues of 2000 and the enhanced contributions to net income 115000, less no
 deductions from net income to taxable income 115000, and from each basic personal amount (16129
 federal, the Federal Worksheet's taper on net income, here at or below the 177882 threshold so not
-reduced; 12747 Ontario) plus the base CPP contributions and the EI premiums, and federally the
-Canada employment amount of 1471 (the lesser of employment income and 1471), through each total of
-credit amounts and each form's non-refundable tax credits (T1 line 35000, ON428 line 61500) to each
-tax after credits, the Ontario surtax on the Ontario tax after credits (ON428 lines 66 to 68) to the
-Ontario tax with surtax of line 69, and with no dependent children and no dependants the Ontario tax
-reduction amounts of 294.00 (lines 74 to 77), twice them less the tax with surtax (line 73), not
-below zero, the Ontario tax reduction of 0 (line 80), to the Ontario tax after the reduction (line
-81); Schedule ON428-A's LIFT credit, 5.05% of employment income, 5555, at most 875 (lines 5 and 14),
-less 5% of net income over 32500, 4125 (line 19), not below zero, 0 (line 20, ON428 line 85), taken
-off the Ontario tax after the reduction, not below zero (line 86); and the Ontario health premium on
-taxable income by the chart of line 89, 750, added to it to the Ontario tax of line 90; and on the
-T1, the federal tax after credits carried to the net federal tax (line 42000), added to the Ontario
-tax (line 42800) to the total payable (line 43500); Schedule 6's Canada workers benefit, from the
-working income of 110000 (line 5, employment income), 27% of it over 3000 at most 1633 (line 22),
-less 15% of the adjusted family net income (line 15, net income) of 115000 over 26855, 13221.75
-(line 27), not below zero, 0 (line 28, T1 line 45300); less the total credits (line 48200), here
-the chosen income tax deducted of 25000 (line 43700) plus that benefit, to the refund or balance
-owing (line 167), 897.1508076, positive so a balance owing) are checked from the files under
-`returns/` by `test_worked_returns.py`, as are Returns B, C, D, E and F; this module pins which
-capability produces each line, the order, and the trace that explains them. Return A has no
-eligible dependant and no infirm child: its amounts for an eligible dependant (T1 line 30400,
-Schedule 5 line 5, the federal basic personal amount less the dependant's net income of 0;
-ON428 line 58160, the 11,905.00 base less it, at most 10,823) are each claimed for 0 eligible
-dependants, and its amount for infirm children (line 30500) is 0 x 2,687, so each total of
-credit amounts is unchanged.
+reduced; 12747 Ontario) plus each amount for an eligible dependant (T1 line 30400, Schedule 5 line
+5, the federal basic personal amount less the dependant's net income of 0; ON428 line 58160, the
+11905.00 base less it, at most 10823), claimed for 0 eligible dependants and so 0, the base CPP
+contributions and the EI premiums, and federally the amount for infirm children of 0 x 2687 (line
+30500) and the Canada employment amount of 1471 (the lesser of employment income and 1471), through
+each total of credit amounts and each form's non-refundable tax credits (T1 line 35000, ON428 line
+61500) to each tax after credits, the Ontario surtax on the Ontario tax after credits (ON428 lines
+66 to 68) to the Ontario tax with surtax of line 69, and with no dependent children and no
+dependants the Ontario tax reduction amounts of 294.00 (lines 74 to 77), twice them less the tax
+with surtax (line 73), not below zero, the Ontario tax reduction of 0 (line 80), to the Ontario tax
+after the reduction (line 81); Schedule ON428-A's LIFT credit, 5.05% of employment income, 5555, at
+most 875 (lines 5 and 14), less 5% of net income over 32500, 4125 (line 19), not below zero, 0 (line
+20, ON428 line 85), taken off the Ontario tax after the reduction, not below zero (line 86); and the
+Ontario health premium on taxable income by the chart of line 89, 750, added to it to the Ontario
+tax of line 90; and on the T1, the federal tax after credits carried to the net federal tax (line
+42000), added to the Ontario tax (line 42800) to the total payable (line 43500); Schedule 6's Canada
+workers benefit, from the working income of 110000 (line 5, employment income), 27% of it over 3000
+at most 1633 (line 22), less 15% of the adjusted family net income (line 15, net income) of 115000
+over 26855, 13221.75 (line 27), not below zero, 0 (line 28, T1 line 45300); less the total credits
+(line 48200), here the chosen income tax deducted of 25000 (line 43700) plus that benefit, to the
+refund or balance owing (line 167), 897.1508076, positive so a balance owing) are checked from the
+files under `returns/` by `test_worked_returns.py`, as are Returns B, C, D, E and F; this module
+pins which capability produces each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
@@ -215,24 +213,6 @@ def return_a() -> Worksheet:
     """Return A's inputs, as in `returns/2025_return_a.yaml`, with its chosen tax deducted."""
     return compute(
         "110000", "20000", "0", "1926", "19800", "1926", "2000", income_tax_deducted="25000"
-    )
-
-
-def return_f(dependant_net_income: str = "0", eligible_dependants: int = 1) -> Worksheet:
-    """Return F's inputs, as in `returns/2025_return_f.yaml`: one dependent child, an eligible
-    dependant with no net income, and its chosen limit and tax deducted."""
-    return compute(
-        "60000",
-        "0",
-        "0",
-        "0",
-        "10800",
-        "0",
-        "0",
-        dependent_children=1,
-        eligible_dependants=eligible_dependants,
-        dependant_net_income=dependant_net_income,
-        income_tax_deducted="8000",
     )
 
 
@@ -1781,7 +1761,18 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
     # reduction. With the health premium of 600 the Ontario tax is 2488.760625, the total
     # payable 3302.76625 + 2488.760625 = 5791.526875, and line 167 5791.526875 - 8000 =
     # -2208.473125, a refund.
-    worksheet = return_f()
+    worksheet = compute(
+        "60000",
+        "0",
+        "0",
+        "0",
+        "10800",
+        "0",
+        "0",
+        dependent_children=1,
+        eligible_dependants=1,
+        income_tax_deducted="8000",
+    )
 
     assert worksheet.get(NET_INCOME).value == D("59435.00")
     assert worksheet.get(BASIC_PERSONAL_AMOUNT).value == D("16129.00")
@@ -1831,7 +1822,19 @@ def test_the_dependants_net_income_comes_off_both_amounts() -> None:
     # 10405.00, below the $10,823 maximum, so kept. Line 33500 is 16129 + 14629.00 + 0 +
     # 2796.75 + 984.00 + 1471 = 36009.75; ON428 line 58800 is 12747 + 10405.00 + 2796.75 +
     # 984.00 = 26932.75.
-    worksheet = return_f(dependant_net_income="1500")
+    worksheet = compute(
+        "60000",
+        "0",
+        "0",
+        "0",
+        "10800",
+        "0",
+        "0",
+        dependent_children=1,
+        eligible_dependants=1,
+        dependant_net_income="1500",
+        income_tax_deducted="8000",
+    )
 
     assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT).value == D("14629.00")
     assert worksheet.get(ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT).value == D("10405.00")
@@ -1854,7 +1857,19 @@ def test_a_dependant_with_more_income_than_the_amounts_adds_nothing() -> None:
     # of 20000 is above both 16129.00 and 11905.00, so each amount is 0 and the totals are those
     # without a dependant: 16129 + 0 + 0 + 2796.75 + 984.00 + 1471 = 21380.75 and 12747 + 0 +
     # 2796.75 + 984.00 = 16527.75.
-    worksheet = return_f(dependant_net_income="20000")
+    worksheet = compute(
+        "60000",
+        "0",
+        "0",
+        "0",
+        "10800",
+        "0",
+        "0",
+        dependent_children=1,
+        eligible_dependants=1,
+        dependant_net_income="20000",
+        income_tax_deducted="8000",
+    )
 
     assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT).value == D("0")
     assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT).value == D("0")
@@ -1868,7 +1883,18 @@ def test_no_eligible_dependant_claims_nothing_whatever_the_dependants_income() -
     # Return F's amounts with no eligible dependant claimed for but a dependant's net income of
     # 1500 entered: Schedule 5 line 5 is still 14629.00, but line 30400 claims it for 0
     # eligible dependants, so it is 0, and so is line 58160.
-    worksheet = return_f(dependant_net_income="1500", eligible_dependants=0)
+    worksheet = compute(
+        "60000",
+        "0",
+        "0",
+        "0",
+        "10800",
+        "0",
+        "0",
+        dependent_children=1,
+        dependant_net_income="1500",
+        income_tax_deducted="8000",
+    )
 
     assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT).value == D("14629.00")
     assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT).value == D("0")

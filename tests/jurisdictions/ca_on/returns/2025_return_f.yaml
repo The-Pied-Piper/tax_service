@@ -8,14 +8,14 @@
 # ON428 (line 58160), each claimed for one eligible dependant and part of its form's total
 # of credit amounts; the child has no impairment, so there is no amount for infirm children
 # (line 30500). The child is also a dependent child for the Ontario tax reduction (ON428
-# line 75), which does not exceed the Ontario tax with surtax. Net income is above the LIFT
-# credit's $32,500 threshold by enough that its reduction exceeds the $875, so the credit is
-# zero, and above the Canada workers benefit's thresholds by enough that the benefit is
-# zero. Computed from employment income to total income; from employment income, by Schedule
-# 8's three contribution tiers, to the base, first additional and second additional CPP
-# contributions, the last two together the enhanced CPP contributions; from employment
-# income, up to the EI maximum insurable earnings, to the EI premiums; from the unused RRSP
-# contributions from earlier years and the RRSP contributions, their sum, to the
+# line 75), but twice its amounts are below the Ontario tax with surtax. Net income is above
+# the LIFT credit's $32,500 threshold by enough that its reduction exceeds the $875, so the
+# credit is zero, and above the Canada workers benefit's thresholds by enough that the
+# benefit is zero. Computed from employment income to total income; from employment income,
+# by Schedule 8's three contribution tiers, to the base, first additional and second
+# additional CPP contributions, the last two together the enhanced CPP contributions; from
+# employment income, up to the EI maximum insurable earnings, to the EI premiums; from the
+# unused RRSP contributions from earlier years and the RRSP contributions, their sum, to the
 # contributions available to deduct (Schedule 7 line 10), from those and the deduction
 # limit, the lesser of them, to the most that may be deducted (Schedule 7 line 17), from the
 # amount deducted (line 18), at most that, to the RRSP deduction (line 20), and from the
@@ -53,7 +53,9 @@
 # every line from net income on; any deduction from net income, the social benefits
 # repayment and capital losses. Lines 82 (the provincial foreign tax credit) and 87 (the
 # community food program donation tax credit for farmers) are not triggered by this return,
-# nor are Schedule 6's disability supplement (Step 3) and advance payments (Step 4).
+# nor are Schedule 5 line 2, T1 lines 30425 and 30450, the Ontario caregiver amount (ON428
+# line 58185), and Schedule 6's disability supplement (Step 3) and advance payments (Step
+# 4).
 # Schedule 6's lines 22 and 27 are not listed: with an eligible dependant the form's amounts
 # are $2,813 and $30,639, while the CA-ON manifest applies the amounts for a filer with no
 # eligible spouse and no eligible dependant ($1,633 and $26,855); the benefit (line 28) is
@@ -64,7 +66,7 @@
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
-  A single parent, an Ontario resident for all of 2025, over 19, with no spouse or
+  A single parent, an Ontario resident for all of 2025, with no spouse or
   common-law partner at any time in 2025, and one dependent child, born in 2015, who lived
   with the parent all year, has no impairment and had no net income; with 2025 employment
   income (T1 line 10100) of $60,000 and no other income: no capital gain, so taxable capital
@@ -500,19 +502,42 @@ sources:
     are not triggered, so line 10 is line 7, the net income of 59,435.00, and line 12 is
     59,435.00; with no eligible spouse (column 2) lines 6 and 13 carry lines 5 and 12, line
     14 (the secondary earner exemption) is not triggered, and line 15, the adjusted family
-    net income, is 59,435.00. The child is taken to be an eligible dependant for Schedule 6
-    (to be confirmed from the schedule's definition), so line 21 is $2,813 and line 24
-    $30,639: line 18 is 60,000 - 3,000 = 57,000; line 20 is 57,000 x 27% = 15,390; line 22
-    is the lesser of 15,390 and 2,813: 2,813. Line 25 is 59,435.00 - 30,639 = 28,796.00;
-    line 27 is 28,796.00 x 15% = 4,319.40; line 28 is 2,813 - 4,319.40, negative, so 0, the
-    Canada workers benefit (T1 line 45300), with no rounding stated. The CA-ON manifest
-    applies the amounts for a filer with no eligible spouse and no eligible dependant,
-    $1,633 on line 21 and $26,855 on line 24, so its lines 22 and 27 (1,633 and 4,887.00)
-    are not the form's for this return and are not listed under `expected`; its line 28 is
-    1,633 - 4,887.00, negative, so 0, the same benefit. Were the child not an eligible
-    dependant for Schedule 6, the benefit would be 0 too. Not triggered by this return, so
-    not modelled: Step 3 (the disability supplement) and Step 4 (the advance payments, Form
-    RC210).
+    net income, is 59,435.00. The chart: "Your family status: You had an eligible spouse or
+    an eligible dependant Basic CWB: $49,393". "An eligible dependant is a person who meets
+    all of the following conditions: They were your or your spouse's or common-law partner's
+    child"; "They were under 19 years of age and lived with you on December 31, 2025"; "They
+    were not eligible for the CWB for 2025". The child is the taxpayer's, was born in 2015
+    and so was under 19, and lived with the taxpayer all year, so on December 31, 2025;
+    under 19 and taken to reside with no spouse, common-law partner or child of their own
+    (to be confirmed), the child did not meet the third of page 1's conditions below and so
+    was not eligible for the CWB. The child is an eligible dependant, so line 21 is $2,813
+    and line 24 $30,639: line 18 is 60,000 - 3,000 = 57,000; line 20 is 57,000 x 27% =
+    15,390; line 22 is the lesser of 15,390 and 2,813: 2,813. Line 25 is 59,435.00 - 30,639
+    = 28,796.00; line 27 is 28,796.00 x 15% = 4,319.40; line 28 is 2,813 - 4,319.40,
+    negative, so 0, the Canada workers benefit (T1 line 45300), with no rounding stated. The
+    adjusted family net income of 59,435.00 is above the chart's basic limit of $49,393,
+    which agrees. The CA-ON manifest applies the amounts for a filer with no eligible spouse
+    and no eligible dependant, $1,633 on line 21 and $26,855 on line 24, so its lines 22 and
+    27 (1,633 and 4,887.00) are not the form's for this return and are not listed under
+    `expected`; its line 28 is 1,633 - 4,887.00, negative, so 0, the same benefit. Not
+    triggered by this return, so not modelled: Step 3 (the disability supplement) and Step 4
+    (the advance payments, Form RC210). Page 1: "Complete this schedule if you met all of
+    the following conditions in 2025: You were a resident of Canada throughout the year; You
+    earned working income (see Part A); You were, at the end of the year, 19 years of age or
+    older, or you resided with your spouse or common-law partner or your child"; "You cannot
+    claim the CWB for 2025 if any of the following conditions apply to you: You were
+    enrolled as a full-time student at a designated educational institution for a total of
+    more than 13 weeks in the year, unless you had an eligible dependant at the end of the
+    year; You were confined to a prison or similar institution for a period of at least 90
+    days during the year; You were exempt from income tax in Canada for a period in the year
+    when you were an officer or a servant of another country (such as a diplomat) residing
+    in Canada or you were a family member who resided with such a person or an employee of
+    such a person, at any time in the year"; and under line 6: "You can claim the basic CWB
+    in Step 2 if the family working income on line 6 is more than $3,000." The family
+    working income of 60,000 is more than $3,000. The taxpayer meets the three conditions: a
+    resident of Ontario, so of Canada, throughout 2025, with working income of 60,000, and
+    residing with their child at the end of the year; the three exclusions are taken as not
+    applying (to be confirmed).
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s6/5000-s6-25e.txt
   - >-
     CRA, the 2025 T1 return (form 5000-R), Part C and Step 6: line 119 "Enter the amount

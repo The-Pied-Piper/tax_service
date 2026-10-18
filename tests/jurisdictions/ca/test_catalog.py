@@ -262,8 +262,6 @@ def test_the_counts_are_int_kinds_in_the_package_namespace(registry: ArtifactReg
         assert isinstance(kind, ArtifactKind)
         assert kind.identifier.startswith(f"{app.jurisdictions.ca.NAMESPACE}/")
         assert kind.value_type is int, identifier
-    assert ELIGIBLE_DEPENDANTS.value_type is int
-    assert INFIRM_CHILDREN.value_type is int
 
 
 def test_every_kind_but_the_balance_is_declared_non_negative(registry: ArtifactRegistry) -> None:

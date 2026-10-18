@@ -201,12 +201,13 @@ dependant (complete Schedule 5)": a starting count, 0 or 1.
 
 Schedule 5 states "Each household is allowed only one claim for this amount"; a count is only
 declared non-negative, so that rule is the return's to keep, as are the conditions: "You did not
-have a spouse or common-law partner or, if you did, you were not living with them, supporting
-them, or being supported by them"; "You supported the dependant in 2025"; "You lived with the
-dependant (in most cases in Canada) in a home ... you maintained"; the dependant is "your child,
-grandchild, brother or sister under 18 years of age" (or a parent, or an infirm relative 18 or
-older); and "You had to pay child support in 2025 for the eligible dependant" bars the claim,
-with exceptions. Eligibility is not computed here.
+have a spouse or common-law partner or, if you did, you were not living with them, supporting them,
+or being supported by them"; "You supported the dependant in 2025"; "You lived with the dependant
+(in most cases in Canada) in a home ... you maintained"; the dependant is "your child, grandchild,
+brother or sister under 18 years of age" (or "your parent or grandparent", or "your child,
+grandchild, brother or sister 18 years of age or older with a mental or physical infirmity"); and
+"You had to pay child support in 2025 for the eligible dependant" bars the claim, with exceptions.
+Eligibility is not computed here.
 """
 
 DEPENDANT_NET_INCOME = CATALOG.declare("dependant_net_income", Decimal, non_negative=True)
@@ -360,23 +361,22 @@ line 19 "Rate 27%", on line 18 "Line 16 minus line 17 (if negative, enter "0")",
 working income (line 16) over line 17 "Base amount 3,000.00"; line 21 "If you had an eligible
 spouse or an eligible dependant, enter $2,813. If not, enter $1,633."
 
-The wiring uses the no-eligible-spouse-no-eligible-dependant figures ($1,633 here, $26,855 on
-the reduction); a return with an eligible dependant computes the form's other figures only once
-the engine can pick a figure by family status. Schedule 6 states its conditions: "Complete this
-schedule if you met all of the following
-conditions in 2025: You were a resident of Canada throughout the year; You earned working income
-(see Part A); You were, at the end of the year, 19 years of age or older, or you resided with your
-spouse or common-law partner or your child"; "You cannot claim the CWB for 2025 if any of the
-following conditions apply to you: You were enrolled as a full-time student at a designated
-educational institution for a total of more than 13 weeks in the year, unless you had an eligible
-dependant at the end of the year; You were confined to a prison or similar institution for a
-period of at least 90 days during the year; You were exempt from income tax in Canada for a period
-in the year when you were an officer or a servant of another country (such as a diplomat)
-residing in Canada or you were a family member who resided with such a person or an employee of
-such a person, at any time in the year"; and, under line 6, "You can claim the basic CWB in Step 2
-if the family working income on line 6 is more than $3,000." Eligibility is the return's to state,
-not computed here. The basic amount only: the disability supplement (Step 3) and advance payments
-(Step 4) are not triggered."""
+The wiring uses the no-eligible-spouse-no-eligible-dependant figures ($1,633 here, $26,855 on the
+reduction); a return with an eligible dependant computes the form's other figures only once the
+engine can pick a figure by family status. Schedule 6 states its conditions: "Complete this schedule
+if you met all of the following conditions in 2025: You were a resident of Canada throughout the
+year; You earned working income (see Part A); You were, at the end of the year, 19 years of age or
+older, or you resided with your spouse or common-law partner or your child"; "You cannot claim the
+CWB for 2025 if any of the following conditions apply to you: You were enrolled as a full-time
+student at a designated educational institution for a total of more than 13 weeks in the year,
+unless you had an eligible dependant at the end of the year; You were confined to a prison or
+similar institution for a period of at least 90 days during the year; You were exempt from income
+tax in Canada for a period in the year when you were an officer or a servant of another country
+(such as a diplomat) residing in Canada or you were a family member who resided with such a person
+or an employee of such a person, at any time in the year"; and, under line 6, "You can claim the
+basic CWB in Step 2 if the family working income on line 6 is more than $3,000." Eligibility is the
+return's to state, not computed here. The basic amount only: the disability supplement (Step 3) and
+advance payments (Step 4) are not triggered."""
 
 CWB_REDUCTION = CATALOG.declare("cwb_reduction", Decimal, non_negative=True)
 """Canada workers benefit reduction, Schedule 6 line 27 "Line 25 multiplied by the percentage from

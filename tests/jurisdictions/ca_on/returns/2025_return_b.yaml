@@ -18,38 +18,40 @@
 # less the RRSP deduction to the unused contributions carried forward (line 23); less the
 # enhanced CPP contributions to net income, less the (empty) deductions from net income to
 # taxable income; from net income, by the Federal Worksheet, to the federal basic personal
-# amount; and through each form's total of non-refundable credit amounts (its basic personal
-# amount, the base CPP contributions and the EI premiums, and on the T1 alone the Canada
-# employment amount), credited once at the form's credit rate to the form's non-refundable
-# tax credits (T1 line 35000, ON428 line 61500), taken off its basic tax, not below zero, to
-# the tax after credits, and on ON428 the surtax on the Ontario tax after credits, added to
-# it to the Ontario tax with surtax; and, with no dependent children or dependants, the
-# Ontario tax reduction amounts (the basic reduction alone), twice them less the Ontario tax
-# with surtax, not below zero, to the Ontario tax reduction, taken off the Ontario tax with
-# surtax, not below zero, to the Ontario tax after the reduction; from employment income, by
-# Schedule ON428-A, 5.05% of it at most $875, less 5% of net income over $32,500, not below
-# zero, to the LIFT credit (ON428 line 85), taken off the Ontario tax after the reduction,
-# not below zero, to the Ontario tax after the LIFT credit (line 86); and from taxable
-# income, by the health premium chart's tiers, each capped at the next plateau, to the
-# Ontario health premium, added to the Ontario tax after the LIFT credit to the Ontario tax;
-# from employment income, by Schedule 6, 27% of the working income over $3,000 at most
-# $1,633, less 15% of the adjusted family net income, here net income, over $26,855, not
-# below zero, to the Canada workers benefit (T1 line 45300); and on the T1, the federal tax
-# after credits, carried to the net federal tax, plus the Ontario tax to the total payable,
-# less the total credits, here the chosen income tax deducted plus the Canada workers
-# benefit, to the refund or balance owing, negative for a refund and positive for a balance
-# owing. There is no capital gain, unused or new RRSP contribution or union dues. Not yet
-# computed, so not in this file: any deduction from net income, the social benefits
-# repayment and capital losses. Lines 82 (the provincial foreign tax credit) and 87 (the
-# community food program donation tax credit for farmers) are not triggered by this return,
-# nor are Schedule 6's disability supplement (Step 3) and advance payments (Step 4); the
+# amount; from it less the dependant's net income, not below zero, for each eligible
+# dependant, to the amount for an eligible dependant (T1 line 30400), and from the ON428
+# base less the dependant's net income, not below zero, at most its maximum, for each
+# eligible dependant, to the Ontario amount (ON428 line 58160); from the number of infirm
+# children, $2,687 for each, to the amount for infirm children (line 30500), here, with no
+# eligible dependant and no infirm child, all three zero; and through each form's total of
+# non-refundable credit amounts (its basic personal amount, its amount for an eligible
+# dependant, the base CPP contributions and the EI premiums, and on the T1 alone the amount
+# for infirm children and the Canada employment amount), credited once at the form's credit
+# rate to the form's non-refundable tax credits (T1 line 35000, ON428 line 61500), taken off
+# its basic tax, not below zero, to the tax after credits, and on ON428 the surtax on the
+# Ontario tax after credits, added to it to the Ontario tax with surtax; and, with no
+# dependent children or dependants, the Ontario tax reduction amounts (the basic reduction
+# alone), twice them less the Ontario tax with surtax, not below zero, to the Ontario tax
+# reduction, taken off the Ontario tax with surtax, not below zero, to the Ontario tax after
+# the reduction; from employment income, by Schedule ON428-A, 5.05% of it at most $875, less
+# 5% of net income over $32,500, not below zero, to the LIFT credit (ON428 line 85), taken
+# off the Ontario tax after the reduction, not below zero, to the Ontario tax after the LIFT
+# credit (line 86); and from taxable income, by the health premium chart's tiers, each
+# capped at the next plateau, to the Ontario health premium, added to the Ontario tax after
+# the LIFT credit to the Ontario tax; from employment income, by Schedule 6, 27% of the
+# working income over $3,000 at most $1,633, less 15% of the adjusted family net income,
+# here net income, over $26,855, not below zero, to the Canada workers benefit (T1 line
+# 45300); and on the T1, the federal tax after credits, carried to the net federal tax, plus
+# the Ontario tax to the total payable, less the total credits, here the chosen income tax
+# deducted plus the Canada workers benefit, to the refund or balance owing, negative for a
+# refund and positive for a balance owing. There is no capital gain, unused or new RRSP
+# contribution or union dues. Not yet computed, so not in this file: child care expenses (T1
+# line 21400, Form T778), any deduction from net income, the social benefits repayment and
+# capital losses. Lines 82 (the provincial foreign tax credit) and 87 (the community food
+# program donation tax credit for farmers) are not triggered by this return, nor are
+# Schedule 5 line 2, T1 lines 30425 and 30450, the Ontario caregiver amount (ON428 line
+# 58185), and Schedule 6's disability supplement (Step 3) and advance payments (Step 4); the
 # Schedule 6 amounts for a filer with no eligible spouse and no eligible dependant apply.
-# The totals of credit amounts include the amount for an eligible dependant (T1 line 30400,
-# Schedule 5; ON428 line 58160, lines 14 to 16), computed from the basic personal amount
-# (federal) or the $11,905 base at most $10,823 (Ontario) less the dependant's net income,
-# not below zero, for each eligible dependant claimed, and on the T1 the amount for infirm
-# children (line 30500), $2,687 for each: with none claimed, each is zero. Not yet computed,
-# so not in this file: child care expenses (line 21400).
 # Amounts are quoted decimal strings, never floats; counts are quoted digit strings. Every
 # output the CA-ON manifest declares must appear under `expected`; intermediate lines may be
 # listed and are then checked too.
