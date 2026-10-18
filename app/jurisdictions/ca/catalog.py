@@ -1,7 +1,7 @@
 """The federal Canada artifact catalog: artifact kinds named from Canada's own return (§2, §7).
 
-Only the kinds in use are declared, each non-negative: none of these lines can be negative on the
-return as modelled (the balance owing, where negative means a refund, will be unconstrained).
+Only the kinds in use are declared, each non-negative but one: none of these lines can be negative
+on the return as modelled except the refund or balance owing, where negative means a refund.
 Identifiers are stable: `tests/jurisdictions/ca/test_catalog.py` snapshots them.
 """
 
@@ -225,8 +225,58 @@ federal non-refundable tax credits": the total of the credit amounts times the c
 line 115 (line 33800) alone, since lines 116 and 117 are not triggered."""
 
 FEDERAL_TAX_AFTER_CREDITS = CATALOG.declare("federal_tax_after_credits", Decimal, non_negative=True)
-"""Federal basic tax less federal non-refundable tax credits, not below zero.
+"""Basic federal tax, T1 line 126 (line 42900) "Line 121 minus line 125 (if negative, enter "0")
+Basic federal tax": the federal basic tax less the federal non-refundable tax credits, not below
+zero.
 
-Its T1 line reference is still to be confirmed: design.md §2 marks federal line semantics
-UNVERIFIED.
+Line 121 (40400) is "Line 119 plus line 120", line 119 "Enter the amount from line 76."; line 125
+is "Add lines 122 to 124.", line 122 "Amount from line 35000". Not modelled: line 120 (40424, tax
+on split income) and lines 123 and 124 (dividend tax credit, minimum tax carryover).
+"""
+
+NET_FEDERAL_TAX = CATALOG.declare("net_federal_tax", Decimal, non_negative=True)
+"""Net federal tax, T1 line 142 (line 42000) "Add lines 139 to 141. Net federal tax": the federal
+tax after credits carried through the lines between, as nothing else on them is modelled.
+
+Line 126 (42900) is "Line 121 minus line 125 (if negative, enter "0") Basic federal tax", line 121
+(40400) "Line 119 plus line 120" and line 125 "Add lines 122 to 124.", line 122 being "Amount from
+line 35000": the federal tax after credits. Line 134 (40600) "Line 132 minus line 133 (if
+negative, enter "0") Federal tax" and line 139 (41700) "Line 134 minus line 138 (if negative,
+enter "0")" carry it to line 142. Not modelled: line 120 (40424, tax on split income), lines 123
+and 124 (dividend tax credit, minimum tax carryover), lines 127 to 133 (foreign surtax, foreign
+tax credit, investment tax credit recapture, logging tax credit), lines 135 to 138 (political,
+investment and labour-sponsored credits, 41600) and lines 140 (41500, advanced Canada workers
+benefit) and 141 (41800, special taxes).
+"""
+
+TOTAL_PAYABLE = CATALOG.declare("total_payable", Decimal, non_negative=True)
+"""Total payable, T1 line 148 (line 43500) "Add lines 143 to 147. Total payable": the net federal
+tax plus the provincial tax, in line order.
+
+Line 143 is "Amount from line 42000"; line 147 (42800) "Provincial or territorial tax (complete
+and attach your provincial or territorial Form 428, even if the result is "0")". Not triggered by
+the returns modelled: lines 144 (42100), 145 (42120) and 146 (42200).
+"""
+
+INCOME_TAX_DEDUCTED = CATALOG.declare("income_tax_deducted", Decimal, non_negative=True)
+"""Income tax deducted, T1 line 150 (line 43700) "Total income tax deducted (amounts from all
+Canadian slips)": a starting amount."""
+
+TOTAL_CREDITS = CATALOG.declare("total_credits", Decimal, non_negative=True)
+"""Total credits, T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": here line 150
+(43700) alone.
+
+Not triggered by the returns modelled, or left to later work: lines 151 to 165 (lines 44000 to
+47900, among them 44800 CPP overpayment, 45000 EI overpayment and 45300 Canada workers benefit).
+"""
+
+REFUND_OR_BALANCE_OWING = CATALOG.declare("refund_or_balance_owing", Decimal)
+"""Refund or balance owing, T1 line 167 "Line 149 minus line 166 If the amount is negative, enter
+it on line 48400 below. If the amount is positive, enter it on line 48500 below. Refund or balance
+owing": the total payable less the total credits, exact.
+
+Line 149 is "Enter the amount from line 148 of the previous page.", the total payable. The one
+kind not declared non-negative: a negative amount is a refund (line 48400 "Refund"), a positive
+one a balance owing (line 48500 "Balance owing"). The T1 states no rounding on these lines, so
+none is applied.
 """

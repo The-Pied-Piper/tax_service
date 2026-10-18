@@ -19,9 +19,12 @@ the Ontario tax with surtax of line 69, and with no dependent children and no de
 Ontario tax reduction amounts of 294.00 (lines 74 to 77), twice them less the tax with surtax (line
 73), not below zero, the Ontario tax reduction of 0 (line 80), to the Ontario tax after the
 reduction (line 81), and the Ontario health premium on taxable income by the chart of line 89, 750,
-added to it to the Ontario tax of line 90) are checked from the files under `returns/` by
-`test_worked_returns.py`, as are Returns C, D and E; this module pins which capability produces
-each line, the order, and the trace that explains them.
+added to it to the Ontario tax of line 90; and on the T1, the federal tax after credits carried to
+the net federal tax (line 42000), added to the Ontario tax (line 42800) to the total payable (line
+43500), less the total credits (line 48200), here the chosen income tax deducted of 25000 (line
+43700) alone, to the refund or balance owing (line 167), 897.1453476, positive so a balance owing)
+are checked from the files under `returns/` by `test_worked_returns.py`, as are Returns C, D and E;
+this module pins which capability produces each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
@@ -39,6 +42,7 @@ from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.multiple_over import MultipleOver
 from app.domain.capabilities.per_unit_amount import PerUnitAmount
 from app.domain.capabilities.progressive_tax import ProgressiveTax
+from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.tapered_amount import TaperedAmount
@@ -60,6 +64,7 @@ from app.domain.trace import (
     PerUnitAmountLine,
     RateAppliedLine,
     RoundedTotalLine,
+    SubtractedLine,
     SubtractedNotBelowZeroLine,
     SumLine,
     SurchargeTierLine,
@@ -80,16 +85,21 @@ from app.jurisdictions.ca.catalog import (
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
+    INCOME_TAX_DEDUCTED,
+    NET_FEDERAL_TAX,
     NET_INCOME,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
+    REFUND_OR_BALANCE_OWING,
     RRSP_CONTRIBUTIONS,
     RRSP_CONTRIBUTIONS_AVAILABLE,
     RRSP_DEDUCTION,
     RRSP_DEDUCTION_LIMIT,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
+    TOTAL_CREDITS,
     TOTAL_INCOME,
+    TOTAL_PAYABLE,
     UNION_DUES,
     UNUSED_RRSP_CONTRIBUTIONS,
 )
@@ -134,6 +144,7 @@ def compute(
     *,
     dependent_children: int = 0,
     dependants: int = 0,
+    income_tax_deducted: str = "0",
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -146,12 +157,13 @@ def compute(
         Artifact(UNION_DUES, D(union_dues)),
         Artifact(DEPENDENT_CHILDREN, dependent_children),
         Artifact(DEPENDANTS, dependants),
+        Artifact(INCOME_TAX_DEDUCTED, D(income_tax_deducted)),
     )
 
 
 def return_a() -> Worksheet:
-    """Return A's inputs, as in `returns/2025_return_a.yaml`."""
-    return compute("110000", "20000", "0", "1926", "19800", "2000")
+    """Return A's inputs, as in `returns/2025_return_a.yaml`, with its chosen tax deducted."""
+    return compute("110000", "20000", "0", "1926", "19800", "2000", income_tax_deducted="25000")
 
 
 def test_each_amount_is_produced_by_its_capability() -> None:
@@ -165,6 +177,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(UNION_DUES) is None
     assert worksheet.producer_of(DEPENDENT_CHILDREN) is None
     assert worksheet.producer_of(DEPENDANTS) is None
+    assert worksheet.producer_of(INCOME_TAX_DEDUCTED) is None
     assert isinstance(worksheet.producer_of(RRSP_CONTRIBUTIONS_AVAILABLE), Sum)
     assert isinstance(worksheet.producer_of(RRSP_DEDUCTION), LesserOf)
     assert isinstance(worksheet.producer_of(CPP_BASE_CONTRIBUTIONS), TieredContribution)
@@ -251,6 +264,15 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     )
     assert isinstance(worksheet.producer_of(ONTARIO_TAX), Sum)
     assert worksheet.producer_of(ONTARIO_TAX) is not worksheet.producer_of(ONTARIO_TAX_WITH_SURTAX)
+    assert isinstance(worksheet.producer_of(NET_FEDERAL_TAX), Sum)
+    assert isinstance(worksheet.producer_of(TOTAL_PAYABLE), Sum)
+    assert isinstance(worksheet.producer_of(TOTAL_CREDITS), Sum)
+    assert worksheet.producer_of(NET_FEDERAL_TAX) is not worksheet.producer_of(TOTAL_PAYABLE)
+    assert worksheet.producer_of(NET_FEDERAL_TAX) is not worksheet.producer_of(TOTAL_CREDITS)
+    assert worksheet.producer_of(TOTAL_PAYABLE) is not worksheet.producer_of(TOTAL_CREDITS)
+    assert worksheet.producer_of(TOTAL_PAYABLE) is not worksheet.producer_of(ONTARIO_TAX)
+    # Not floored: T1 line 167 is negative for a refund.
+    assert isinstance(worksheet.producer_of(REFUND_OR_BALANCE_OWING), Subtract)
 
 
 def test_the_trace_explains_the_computation() -> None:
@@ -434,6 +456,19 @@ def test_the_trace_explains_the_computation() -> None:
         "+ ontario_health_premium 750 = 8945.7644476",
         "8945.7644476",
     )
+    net_federal = position(
+        "net_federal_tax: federal_tax_after_credits 16951.3809 = 16951.3809", "16951.3809"
+    )
+    payable = position(
+        "total_payable: net_federal_tax 16951.3809 + ontario_tax 8945.7644476 = 25897.1453476",
+        "25897.1453476",
+    )
+    credits = position("total_credits: income_tax_deducted 25000 = 25000", "25000")
+    balance = position(
+        "refund_or_balance_owing: total_payable 25897.1453476 "
+        "less total_credits 25000 = 897.1453476",
+        "897.1453476",
+    )
     assert taxable_gains < total < net
     assert cpp_first < cpp_enhanced < deductions < net
     assert rrsp_available < rrsp < deductions
@@ -459,6 +494,9 @@ def test_the_trace_explains_the_computation() -> None:
     assert taxable < premium_first < premium_second < premium_third < premium_fourth
     assert premium_fourth < premium_fifth < ontario_tax
     assert after_reduction < ontario_tax
+    assert federal_after < net_federal < payable
+    assert ontario_tax < payable < balance
+    assert credits < balance
 
 
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
@@ -467,6 +505,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     rated = {line.output: line for line in trace if isinstance(line, RateAppliedLine)}
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     floored = {line.output: line for line in trace if isinstance(line, SubtractedNotBelowZeroLine)}
+    subtracted = {line.output: line for line in trace if isinstance(line, SubtractedLine)}
     totals = {line.output: line for line in trace if isinstance(line, RoundedTotalLine)}
     amounts = {line.output: line for line in trace if isinstance(line, CreditAmountLine)}
     tapered = {line.output: line for line in trace if isinstance(line, TaperedAmountLine)}
@@ -589,6 +628,33 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("8945.7644476"),
         ),
+        # T1 line 142 (line 42000) "Add lines 139 to 141. Net federal tax": line 139 carries the
+        # federal tax after credits (line 126, 42900, through line 134, 40600), and lines 140
+        # and 141 are not modelled.
+        NET_FEDERAL_TAX: SumLine(
+            NET_FEDERAL_TAX, ((FEDERAL_TAX_AFTER_CREDITS, D("16951.3809")),), D("16951.3809")
+        ),
+        # T1 line 148 (line 43500) "Add lines 143 to 147. Total payable", in line order: line
+        # 143 "Amount from line 42000" and line 147 (42800), the Ontario tax.
+        TOTAL_PAYABLE: SumLine(
+            TOTAL_PAYABLE,
+            ((NET_FEDERAL_TAX, D("16951.3809")), (ONTARIO_TAX, D("8945.7644476"))),
+            D("25897.1453476"),
+        ),
+        # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700) alone.
+        TOTAL_CREDITS: SumLine(TOTAL_CREDITS, ((INCOME_TAX_DEDUCTED, D("25000")),), D("25000")),
+    }
+    # T1 line 167 "Line 149 minus line 166 ... Refund or balance owing": exact, not floored, and
+    # positive here, so a balance owing (line 48500).
+    assert subtracted == {
+        REFUND_OR_BALANCE_OWING: SubtractedLine(
+            output=REFUND_OR_BALANCE_OWING,
+            minuend=TOTAL_PAYABLE,
+            minuend_amount=D("25897.1453476"),
+            subtrahend=TOTAL_CREDITS,
+            subtrahend_amount=D("25000"),
+            result=D("897.1453476"),
+        )
     }
     # T1 line 30000 and the Federal Worksheet (5000-D1): net income of 115000 is at or below
     # the 177882 threshold, so the reduction (line 9) is 0 and the amount is the base plus the
@@ -849,7 +915,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 34
+    assert len(order) == 38
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
@@ -895,6 +961,11 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[ONTARIO_TAX]
     )
     assert position[TAXABLE_INCOME] < position[ONTARIO_HEALTH_PREMIUM] < position[ONTARIO_TAX]
+    assert position[FEDERAL_TAX_AFTER_CREDITS] < position[NET_FEDERAL_TAX]
+    assert position[NET_FEDERAL_TAX] < position[TOTAL_PAYABLE]
+    assert position[ONTARIO_TAX] < position[TOTAL_PAYABLE]
+    assert position[TOTAL_PAYABLE] < position[REFUND_OR_BALANCE_OWING]
+    assert position[TOTAL_CREDITS] < position[REFUND_OR_BALANCE_OWING]
 
 
 def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
@@ -937,6 +1008,11 @@ def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     # A taxable income of 9935.00 is "$20,000 or less" on the health premium chart: no premium.
     assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("0")
     assert worksheet.get(ONTARIO_TAX).value == D("0")
+    # With no tax deducted, nothing is payable and nothing is credited: a zero balance.
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("0")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("0")
+    assert worksheet.get(TOTAL_CREDITS).value == D("0")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("0")
 
 
 def test_the_tax_reduction_lowers_a_tax_below_twice_the_reduction_amounts() -> None:
@@ -1013,6 +1089,43 @@ def test_no_health_premium_at_the_first_threshold() -> None:
     assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("144.5530")
     assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("0")
     assert worksheet.get(ONTARIO_TAX).value == D("144.5530")
+
+
+def test_tax_deducted_above_the_total_payable_is_a_refund() -> None:
+    # Return A's amounts with 30000 of income tax deducted (T1 line 43700): line 167 is the total
+    # payable of 25897.1453476 less the total credits of 30000, -4102.8546524, negative, so a
+    # refund (line 48400), exact as the T1 states no rounding.
+    worksheet = compute(
+        "110000", "20000", "0", "1926", "19800", "2000", income_tax_deducted="30000"
+    )
+
+    assert worksheet.get(TOTAL_PAYABLE).value == D("25897.1453476")
+    assert worksheet.get(TOTAL_CREDITS).value == D("30000")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-4102.8546524")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "refund_or_balance_owing: total_payable 25897.1453476 "
+        "less total_credits 30000 = -4102.8546524"
+    ) in rendered
+
+
+def test_tax_deducted_equal_to_the_total_payable_leaves_no_balance() -> None:
+    worksheet = compute(
+        "110000", "20000", "0", "1926", "19800", "2000", income_tax_deducted="25897.1453476"
+    )
+
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("0")
+
+
+def test_with_no_tax_payable_all_the_tax_deducted_is_refunded() -> None:
+    # Employment income of 10000 leaves no federal and no Ontario tax (see the test of a credit
+    # larger than the tax), so the total payable is 0; with 500 deducted, line 167 is 0 - 500 =
+    # -500, a refund of everything deducted, not floored at zero.
+    worksheet = compute("10000", "0", "0", "0", "1800", "0", income_tax_deducted="500")
+
+    assert worksheet.get(TOTAL_PAYABLE).value == D("0")
+    assert worksheet.get(TOTAL_CREDITS).value == D("500")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-500")
 
 
 def test_contributions_above_the_deduction_limit_deduct_the_limit() -> None:

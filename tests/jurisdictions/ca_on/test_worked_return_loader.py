@@ -274,6 +274,21 @@ def test_a_negative_expected_amount_for_a_non_negative_kind_fails_at_load_naming
         WorkedReturn.load(path, artifacts)
 
 
+def test_a_negative_expected_refund_loads_as_a_negative_amount(
+    tmp_path: Path, artifacts: ArtifactRegistry
+) -> None:
+    # T1 line 167 is negative for a refund: the one signed `ca/` kind loads below zero.
+    text = VALID.replace(
+        'ca/federal_basic_tax: "20146.25"', 'ca/refund_or_balance_owing: "-4102.8546524"'
+    )
+
+    worked = WorkedReturn.load(write(tmp_path, text, "ok.yaml"), artifacts)
+
+    assert worked.expected == (
+        Artifact(artifacts.kind("ca/refund_or_balance_owing"), D("-4102.8546524")),
+    )
+
+
 def test_a_file_that_is_not_yaml_names_the_file(
     tmp_path: Path, artifacts: ArtifactRegistry
 ) -> None:

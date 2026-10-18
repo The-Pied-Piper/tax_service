@@ -21,11 +21,14 @@
 # the Ontario tax reduction, taken off the Ontario tax with surtax, not below zero, to the
 # Ontario tax after the reduction; and from taxable income, by the health premium chart's
 # tiers, each capped at the next plateau, to the Ontario health premium, added to the
-# Ontario tax after the reduction to the Ontario tax. There is no capital gain, unused or
-# new RRSP contribution or union dues. Not yet computed, so not in this file: any deduction
-# from net income, the social benefits repayment, capital losses, the LIFT credit (ON428
-# line 85), and the balance owing. Lines 82 (the provincial foreign tax credit) and 87 (the
-# community food program donation tax credit for farmers) are not triggered by this return.
+# Ontario tax after the reduction to the Ontario tax; and on the T1, the federal tax after
+# credits, carried to the net federal tax, plus the Ontario tax to the total payable, less
+# the total credits, here the chosen income tax deducted alone, to the refund or balance
+# owing, negative for a refund and positive for a balance owing. There is no capital gain,
+# unused or new RRSP contribution or union dues. Not yet computed, so not in this file: any
+# deduction from net income, the social benefits repayment, capital losses, and the LIFT
+# credit (ON428 line 85). Lines 82 (the provincial foreign tax credit) and 87 (the community
+# food program donation tax credit for farmers) are not triggered by this return.
 # Amounts are quoted decimal strings, never floats; counts are plain integers. Every output
 # the CA-ON manifest declares must appear under `expected`; intermediate lines may be listed
 # and are then checked too.
@@ -70,7 +73,13 @@ description: >-
   is read from its chart on taxable income: $49,535.00 is more than $48,600 but not more
   than $72,000, so the premium is $600, and the Ontario tax (ON428 line 90), before the LIFT
   credit (line 85), which is not yet computed, is the Ontario tax after the reduction plus
-  the premium, $2,300.145625. The CPP contributions, the EI premiums and the federal basic
+  the premium, $2,300.145625. On the T1, the net federal tax (line 42000) is the federal tax
+  after credits, $4,177.92125, and the total payable (line 43500) is it plus the Ontario tax
+  (line 42800), $6,478.066875. The income tax deducted (line 43700) is a chosen $5,000, the
+  only credit modelled, so the total credits (line 48200) are $5,000, and the refund or
+  balance owing (line 167), before the LIFT credit (ON428 line 85), which is not yet
+  computed, is the total payable less the total credits, $1,478.066875: positive, so a
+  balance owing (line 48500). The CPP contributions, the EI premiums and the federal basic
   personal amount are rounded to the cent, which changes none of them; no other amounts are
   rounded.
 sources:
@@ -324,6 +333,41 @@ sources:
     200,000 is negative, so 0; with no rounding stated, line 89 is 300 + 150 + 150 + 0 + 0 =
     600, and line 90 is 1,700.145625 + 600 = 2,300.145625.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
+  - >-
+    CRA, the 2025 T1 return (form 5000-R), Part C and Step 6: line 119 "Enter the amount
+    from line 76.", line 76 being Part B's "Line 74 plus line 75 Federal tax on taxable
+    income" (the same text in each of the form's five columns; this return's taxable
+    income of 49,535.00 falls in column 1), here 7,182.575; line 121 (line
+    40400) "Line 119 plus line 120", line 120 (line 40424, tax on split income) not
+    modelled; line 122 "Amount from line 35000", the federal non-refundable tax credits,
+    3,004.65375; line 125 "Add lines 122 to 124.", lines 123 (the dividend tax credit) and
+    124 (the minimum tax carryover) not modelled; line 126 (line 42900) "Line 121 minus line
+    125 (if negative, enter "0") Basic federal tax": 7,182.575 - 3,004.65375 = 4,177.92125,
+    the federal tax after credits. Lines 127 to 133 (the foreign surtax, the foreign tax
+    credit, the ITC recapture and the logging credit) are not modelled, so line 134 (line
+    40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax" carries line 126;
+    lines 135 to 138 (the political, investment and labour-sponsored credits, line 41600)
+    are not modelled, so line 139 (line 41700) "Line 134 minus line 138 (if negative, enter
+    "0")" carries it; lines 140 (line 41500, the ACWB) and 141 (line 41800, special taxes)
+    are not modelled, so line 142 (line 42000, which the form prints as line "4200") "Add
+    lines 139 to 141. Net federal tax" is 4,177.92125. Step 6: line 143 "Amount from line
+    42000"; lines 144 (line 42100), 145 (line 42120) and 146 (line 42200) are not triggered
+    by this return; line 147 (line 42800) "Provincial or territorial tax (complete and
+    attach your provincial or territorial Form 428, even if the result is "0")" is the
+    Ontario tax of ON428 line 90, 2,300.145625; line 148 (line 43500) "Add lines 143 to 147.
+    Total payable": 4,177.92125 + 2,300.145625 = 6,478.066875. Line 149 "Enter the amount
+    from line 148 of the previous page."; line 150 (line 43700) "Total income tax deducted
+    (amounts from all Canadian slips)": 5,000, a chosen figure: it is the tax withheld on
+    the taxpayer's slips, which nothing on this return determines. Lines 151 to 165 (lines
+    44000 to 47900) are not triggered by this return or not yet computed, so line 166 (line
+    48200) "Add lines 150 to 165. Total credits" is 5,000. Line 167 "Line 149 minus line 166
+    If the amount is negative, enter it on line 48400 below. If the amount is positive,
+    enter it on line 48500 below. Refund or balance owing": 6,478.066875 - 5,000 =
+    1,478.066875, positive, so line 48500 "Balance owing", not line 48400 "Refund". The T1
+    states no rounding on any of these lines, so none is applied. Line 147 is the Ontario
+    tax before the LIFT credit (ON428 line 85), which is not yet computed, so this balance
+    is too.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
 inputs:
   ca/employment_income: "50000"
   ca/capital_gain: "0"
@@ -333,6 +377,7 @@ inputs:
   ca/union_dues: "0"
   ca-on/dependent_children: 0
   ca-on/dependants: 0
+  ca/income_tax_deducted: "5000"
 expected:
   ca/taxable_capital_gains: "0"
   ca/total_income: "50000"
@@ -368,3 +413,7 @@ expected:
   ca-on/ontario_tax_after_reduction: "1700.145625"
   ca-on/ontario_health_premium: "600"
   ca-on/ontario_tax: "2300.145625"
+  ca/net_federal_tax: "4177.92125"
+  ca/total_payable: "6478.066875"
+  ca/total_credits: "5000"
+  ca/refund_or_balance_owing: "1478.066875"

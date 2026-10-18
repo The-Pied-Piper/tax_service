@@ -15,9 +15,9 @@ inputs:
   - ca/union_dues
   - ca-on/dependent_children
   - ca-on/dependants
+  - ca/income_tax_deducted
 outputs:
-  - ca/federal_tax_after_credits
-  - ca-on/ontario_tax
+  - ca/refund_or_balance_owing
 capabilities:
   - name: core/apply_rate
     params:
@@ -309,3 +309,41 @@ capabilities:
         - ca-on/ontario_health_premium
     produces:
       output: ca-on/ontario_tax
+  # T1 line 142 (line 42000) "Add lines 139 to 141. Net federal tax": line 126 (42900)
+  # "Line 121 minus line 125 (if negative, enter "0") Basic federal tax" is the federal
+  # tax after credits, as lines 120, 123, 124, 127 to 133 and 135 to 141 are not
+  # modelled or not triggered, and lines 134 (40600) and 139 (41700) carry it: one part.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/federal_tax_after_credits
+    produces:
+      output: ca/net_federal_tax
+  # T1 line 148 (line 43500) "Add lines 143 to 147. Total payable": line 143 "Amount
+  # from line 42000" and line 147 (42800), the Ontario tax, in line order; lines 144 to
+  # 146 are not triggered.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/net_federal_tax
+        - ca-on/ontario_tax
+    produces:
+      output: ca/total_payable
+  # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700)
+  # alone, as lines 151 to 165 are not triggered.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/income_tax_deducted
+    produces:
+      output: ca/total_credits
+  # T1 line 167 "Line 149 minus line 166 If the amount is negative, enter it on line
+  # 48400 below. If the amount is positive, enter it on line 48500 below. Refund or
+  # balance owing": not floored, so a negative result is a refund and a positive one a
+  # balance owing.
+  - name: core/subtract
+    consumes:
+      amount: ca/total_payable
+      less: ca/total_credits
+    produces:
+      output: ca/refund_or_balance_owing

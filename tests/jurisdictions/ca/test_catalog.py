@@ -29,16 +29,21 @@ from app.jurisdictions.ca.catalog import (
     EI_PREMIUMS,
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
+    INCOME_TAX_DEDUCTED,
+    NET_FEDERAL_TAX,
     NET_INCOME,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
+    REFUND_OR_BALANCE_OWING,
     RRSP_CONTRIBUTIONS,
     RRSP_CONTRIBUTIONS_AVAILABLE,
     RRSP_DEDUCTION,
     RRSP_DEDUCTION_LIMIT,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
+    TOTAL_CREDITS,
     TOTAL_INCOME,
+    TOTAL_PAYABLE,
     UNION_DUES,
     UNUSED_RRSP_CONTRIBUTIONS,
 )
@@ -71,8 +76,16 @@ REGISTERED = frozenset(
         "ca/non_refundable_credit_amounts",
         "ca/non_refundable_tax_credits",
         "ca/federal_tax_after_credits",
+        "ca/net_federal_tax",
+        "ca/total_payable",
+        "ca/income_tax_deducted",
+        "ca/total_credits",
+        "ca/refund_or_balance_owing",
     }
 )
+# T1 line 167 (line 48400 or 48500): the balance, negative for a refund, the one `ca/` kind that
+# may be below zero.
+SIGNED = frozenset({"ca/refund_or_balance_owing"})
 
 
 @pytest.fixture
@@ -124,6 +137,11 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/ei_premiums") is EI_PREMIUMS
     assert registry.get("ca/canada_employment_amount") is CANADA_EMPLOYMENT_AMOUNT
     assert registry.get("ca/non_refundable_tax_credits") is NON_REFUNDABLE_TAX_CREDITS
+    assert registry.get("ca/net_federal_tax") is NET_FEDERAL_TAX
+    assert registry.get("ca/total_payable") is TOTAL_PAYABLE
+    assert registry.get("ca/income_tax_deducted") is INCOME_TAX_DEDUCTED
+    assert registry.get("ca/total_credits") is TOTAL_CREDITS
+    assert registry.get("ca/refund_or_balance_owing") is REFUND_OR_BALANCE_OWING
 
 
 def test_catalog_kinds_are_in_the_package_namespace() -> None:
@@ -157,6 +175,11 @@ def test_catalog_kinds_are_money() -> None:
         EI_PREMIUMS,
         CANADA_EMPLOYMENT_AMOUNT,
         NON_REFUNDABLE_TAX_CREDITS,
+        NET_FEDERAL_TAX,
+        TOTAL_PAYABLE,
+        INCOME_TAX_DEDUCTED,
+        TOTAL_CREDITS,
+        REFUND_OR_BALANCE_OWING,
     ):
         assert kind.value_type is Decimal, kind.identifier
 
@@ -168,13 +191,27 @@ def test_every_registered_kind_is_money(registry: ArtifactRegistry) -> None:
         assert kind.value_type is Decimal, identifier
 
 
-def test_every_kind_is_declared_non_negative(registry: ArtifactRegistry) -> None:
-    # No `ca/` kind can be negative on the forms yet; the balance owing (#48), where negative
-    # means a refund, will be the first unconstrained one.
+def test_every_kind_but_the_balance_is_declared_non_negative(registry: ArtifactRegistry) -> None:
+    # No other `ca/` line can be negative on the forms as modelled.
     for kind in CATALOG.kinds:
-        assert kind.non_negative is True, kind.identifier
-    for identifier in REGISTERED:
+        if kind.identifier not in SIGNED:
+            assert kind.non_negative is True, kind.identifier
+    for identifier in REGISTERED - SIGNED:
         assert registry.kind(identifier).non_negative is True, identifier
+
+
+def test_the_refund_or_balance_owing_is_signed(registry: ArtifactRegistry) -> None:
+    # T1 line 167 "Line 149 minus line 166 If the amount is negative, enter it on line 48400
+    # below. If the amount is positive, enter it on line 48500 below. Refund or balance owing":
+    # negative is a refund, so the kind is not declared non-negative.
+    assert REFUND_OR_BALANCE_OWING.non_negative is False
+    assert registry.kind("ca/refund_or_balance_owing").non_negative is False
+    assert SIGNED <= REGISTERED
+
+
+def test_the_income_tax_deducted_is_non_negative() -> None:
+    # T1 line 150 (line 43700) "Total income tax deducted (amounts from all Canadian slips)".
+    assert INCOME_TAX_DEDUCTED.non_negative is True
 
 
 def test_capital_gain_is_non_negative_while_losses_are_not_modelled() -> None:
