@@ -41,6 +41,7 @@ from app.domain.trace import (
     SumLine,
     SurchargeTierLine,
     TaperedAmountLine,
+    TimesCountLine,
     TraceLine,
 )
 
@@ -75,6 +76,9 @@ CLAIM_LIMIT = ArtifactKind("ex/claim_limit", Decimal)
 ALLOWED_AMOUNT = ArtifactKind("ex/allowed_amount", Decimal)
 EARNED_INCOME = ArtifactKind("ex/earned_income", Decimal)
 EARNED_PORTION = ArtifactKind("ex/earned_portion", Decimal)
+AMOUNT_EACH = ArtifactKind("ex/amount_each", Decimal)
+PERSONS = ArtifactKind("ex/person_count", int)
+AMOUNT_CLAIMED = ArtifactKind("ex/amount_claimed", Decimal)
 
 
 def render(line: TraceLine) -> str:
@@ -761,6 +765,44 @@ def test_renders_the_fraction_as_given(numerator: int, denominator: int, text: s
     assert render(line) == f"earned_portion: {text} of earned_income 120 (no rounding)"
 
 
+# --- amounts times a count -------------------------------------------------------------
+#
+# The amount is an artifact, so it prints with its label, unlike a per-unit amount's dataset
+# figure; there is no rounding rule to print.
+
+
+def test_renders_an_amount_times_a_count_of_one() -> None:
+    line = TimesCountLine(AMOUNT_CLAIMED, AMOUNT_EACH, D("16129"), PERSONS, 1, D("16129"))
+
+    assert render(line) == "amount_claimed: amount_each 16129 for each of 1 person_count = 16129"
+
+
+def test_renders_an_amount_times_a_count_of_two() -> None:
+    line = TimesCountLine(AMOUNT_CLAIMED, AMOUNT_EACH, D("16129"), PERSONS, 2, D("32258"))
+
+    assert render(line) == "amount_claimed: amount_each 16129 for each of 2 person_count = 32258"
+
+
+def test_renders_an_amount_times_a_count_of_zero() -> None:
+    line = TimesCountLine(AMOUNT_CLAIMED, AMOUNT_EACH, D("16129"), PERSONS, 0, D("0"))
+
+    assert render(line) == "amount_claimed: amount_each 16129 for each of 0 person_count = 0"
+
+
+def test_renders_an_amount_times_a_count_with_every_digit() -> None:
+    line = TimesCountLine(AMOUNT_CLAIMED, AMOUNT_EACH, D("0.333"), PERSONS, 3, D("0.999"))
+
+    assert render(line) == "amount_claimed: amount_each 0.333 for each of 3 person_count = 0.999"
+
+
+def test_renders_a_negative_amount_times_a_count() -> None:
+    line = TimesCountLine(AMOUNT_CLAIMED, AMOUNT_EACH, D("-250.75"), PERSONS, 2, D("-501.50"))
+
+    assert render(line) == (
+        "amount_claimed: amount_each -250.75 for each of 2 person_count = -501.5"
+    )
+
+
 # --- money figures ---------------------------------------------------------------
 
 
@@ -916,6 +958,12 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
             ),
             "earned_portion: 2/3 of earned_income 60000 (no rounding)",
         ),
+        (
+            TimesCountLine(
+                AMOUNT_CLAIMED, AMOUNT_EACH, D("1.612900E+4"), PERSONS, 2, D("32258.00")
+            ),
+            "amount_claimed: amount_each 16129 for each of 2 person_count = 32258",
+        ),
     ],
 )
 def test_renders_every_money_figure_of_a_line_without_trailing_zeros(
@@ -958,6 +1006,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         ),
         AtMostLine(ALLOWED_AMOUNT, TOTAL, D("3"), CAPPED_AMOUNT, D("3")),
         FractionAppliedLine(EARNED_PORTION, TOTAL, D("3"), Fraction(2, 3), NO_ROUNDING, D("2")),
+        TimesCountLine(AMOUNT_CLAIMED, TOTAL, D("3"), PERSONS, 1, D("3")),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -978,6 +1027,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         "reduction: 2 × child_amount 1088 over total 3, not below 0 (no rounding)",
         "allowed_amount: total 3, at most capped_amount 3",
         "earned_portion: 2/3 of total 3 (no rounding)",
+        "amount_claimed: total 3 for each of 1 person_count = 3",
     )
 
 

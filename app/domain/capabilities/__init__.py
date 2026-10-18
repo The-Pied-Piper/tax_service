@@ -23,6 +23,7 @@ from app.domain.capabilities import (  # noqa: E402
     sum,
     tapered_amount,
     tiered_surcharge,
+    times_count,
 )
 
 __all__ = [
@@ -42,4 +43,5 @@ __all__ = [
     "sum",
     "tapered_amount",
     "tiered_surcharge",
+    "times_count",
 ]

@@ -2217,3 +2217,119 @@ def test_core_apply_fraction_asks_for_its_dataset_as_a_fraction() -> None:
     built.compose(EX_ON, 2025)
 
     assert ("ex/portion_fraction", 2025, FRACTION) in parameters.requests
+
+
+# --- core/times_count: an artifact's amount for each of a count, by a made-up manifest ---------
+#
+# Like `PerUnitAmount` above, `TimesCount` is imported inside a cached factory so its absence fails
+# only the tests that use it, and is registered in a private registry under its shared
+# identifier, `core/times_count`. Its amount is a produced artifact, `ex/scaled` (base × 3), and
+# its count is `ex/count`, a made-up `int` input; it reads no dataset.
+
+PERSON_COUNT = ArtifactKind("ex/person_count", int)
+
+
+@cache
+def times_count_class() -> Any:
+    from app.domain.capabilities.times_count import TimesCount
+
+    return TimesCount
+
+
+def times_count_selection(
+    amount: str = "ex/scaled", count: str = "ex/count"
+) -> CapabilitySelection:
+    return CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={"amount": amount, "count": count},
+        produces={"output": "ex-on/result"},
+    )
+
+
+def times_count_service(
+    selection: CapabilitySelection | None = None,
+) -> TaxComputationService:
+    """`ex/scale` (base × 3) and `core/times_count` producing `ex-on/result` = scaled × count."""
+    capabilities = capability_registry()
+    capabilities.register("core/times_count", times_count_class())
+    artifacts = artifact_registry()
+    for kind in (COUNT, PERSON_COUNT):
+        artifacts.register(kind.identifier, kind)
+    return service(  # authored out of order on purpose
+        manifest(
+            selection or times_count_selection(),
+            SCALE,
+            inputs=frozenset({"ex/base", "ex/count"}),
+        ),
+        capabilities=capabilities,
+        artifacts=artifacts,
+    )
+
+
+def test_computes_core_times_count_end_to_end() -> None:
+    from app.domain.trace import TimesCountLine
+
+    worksheet = times_count_service().compute(
+        EX_ON, 2025, Artifact(BASE, D("5376.50")), Artifact(COUNT, 1)
+    )
+
+    # scaled = 5376.50 × 3 = 16129.50; result = 16129.50 × 1 = 16129.50, exact.
+    assert worksheet.get(SCALED).value == D("16129.50")
+    assert worksheet.get(RESULT).value == D("16129.50")
+    assert str(worksheet.get(RESULT).value) == "16129.50"
+    assert isinstance(worksheet.producer_of(RESULT), times_count_class())
+    assert worksheet.producer_of(COUNT) is None
+    assert worksheet.trace[-1] == TimesCountLine(
+        RESULT, SCALED, D("16129.50"), COUNT, 1, D("16129.50")
+    )
+    assert [type(line) for line in worksheet.trace].count(TimesCountLine) == 1
+
+
+def test_computes_core_times_count_for_a_count_of_two_end_to_end() -> None:
+    worksheet = times_count_service().compute(
+        EX_ON, 2025, Artifact(BASE, D("5")), Artifact(COUNT, 2)
+    )
+
+    # scaled = 15; result = 15 × 2 = 30.
+    assert worksheet.get(RESULT).value == D("30")
+
+
+def test_computes_core_times_count_for_a_count_of_zero_end_to_end() -> None:
+    worksheet = times_count_service().compute(
+        EX_ON, 2025, Artifact(BASE, D("5376.50")), Artifact(COUNT, 0)
+    )
+
+    # A count of 0 gives a plain zero, not the amount's scale.
+    assert worksheet.get(RESULT).value == D("0")
+    assert str(worksheet.get(RESULT).value) == "0"
+
+
+def test_core_times_count_runs_after_its_amount_is_produced() -> None:
+    composition = times_count_service().compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is times_count_class()
+    assert composition.order[-1].consumes == frozenset({SCALED, COUNT})
+
+
+def test_core_times_count_rejects_a_money_input_for_its_count() -> None:
+    built = times_count_service()
+
+    with pytest.raises(InvalidCompositionError, match="'count' was given as Decimal but the input"):
+        built.compute(
+            EX_ON, 2025, Artifact(BASE, D("5")), Artifact(ArtifactKind("ex/count", Decimal), D("1"))
+        )
+
+
+def test_core_times_count_refuses_a_money_kind_for_its_count_at_wiring() -> None:
+    built = times_count_service(times_count_selection(amount="ex/scaled", count="ex/extra"))
+
+    with pytest.raises(InvalidSelectionError, match="core/times_count.*'count'"):
+        built.compose(EX_ON, 2025)
+
+
+def test_core_times_count_refuses_a_count_kind_for_its_amount_at_wiring() -> None:
+    built = times_count_service(times_count_selection(amount="ex/person_count", count="ex/count"))
+
+    with pytest.raises(InvalidSelectionError, match="core/times_count.*'amount'"):
+        built.compose(EX_ON, 2025)
