@@ -159,3 +159,6 @@ cython_debug/
 .idea/
 .vscode
 .devcontainer
+
+# Claude Code
+.claude/
