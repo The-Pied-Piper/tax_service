@@ -148,6 +148,15 @@ class Sink(Summing):
         super().__init__(source=source, tag=tag)
 
 
+class Constant(Summing):
+    """Consumes nothing and produces `target` = `add`: it has no incoming edges."""
+
+    PRODUCES = {"target": Decimal}
+
+    def __init__(self, target: Money, add: Decimal = ZERO, tag: str = "constant") -> None:
+        super().__init__(target=target, add=add, tag=tag)
+
+
 class LeftJoin(Join):
     """A `Join` whose class name sorts before `RightJoin`'s."""
 
@@ -283,6 +292,47 @@ def test_rejects_a_declared_input_a_capability_also_produces() -> None:
 def test_rejects_a_declared_input_nothing_consumes() -> None:
     with pytest.raises(InvalidCompositionError, match="input 'c' is consumed by nothing"):
         Composition([Link(A, B)], inputs=kinds(A, C), outputs=kinds(B))
+
+
+def test_accepts_a_capability_that_consumes_nothing_while_its_output_is_consumed() -> None:
+    constant, join = Constant(B, D(5), "b"), Join(A, B, C)
+
+    composition = Composition([join, constant], inputs=kinds(A), outputs=kinds(C))
+
+    assert composition.order == (constant, join)
+
+
+def test_a_capability_that_consumes_nothing_may_produce_a_declared_output() -> None:
+    constant, link = Constant(B, D(5), "b"), Link(A, C)
+
+    composition = Composition([link, constant], inputs=kinds(A), outputs=kinds(B, C))
+
+    assert set(composition.order) == {constant, link}
+
+
+def test_a_capability_that_consumes_nothing_is_an_orphan_if_nothing_consumes_its_output() -> None:
+    with pytest.raises(InvalidCompositionError, match="orphan output 'b': produced by Constant"):
+        Composition([Link(A, C), Constant(B)], inputs=kinds(A), outputs=kinds(C))
+
+
+def test_a_composition_of_only_capabilities_that_consume_nothing_takes_no_inputs() -> None:
+    constant = Constant(B, D(5), "b")
+    composition = Composition([constant], inputs=kinds(), outputs=kinds(B))
+
+    worksheet = composition.compute()
+
+    assert worksheet.get(B) == Artifact(B, D(5))
+    assert worksheet.producer_of(B) is constant
+
+
+def test_compute_runs_a_capability_that_consumes_nothing_before_its_consumer() -> None:
+    constant, join = Constant(B, D(5), "b"), Join(A, B, C, D(1), "c")
+    composition = Composition([join, constant], inputs=kinds(A), outputs=kinds(C))
+
+    worksheet = composition.compute(Artifact(A, D(2)))
+
+    assert worksheet.get(C) == Artifact(C, D(8))
+    assert worksheet.trace == (TaggedLine("b", D(5)), TaggedLine("c", D(8)))
 
 
 def test_rejects_a_capability_that_produces_nothing() -> None:

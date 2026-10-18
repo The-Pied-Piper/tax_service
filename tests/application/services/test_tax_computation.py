@@ -956,3 +956,116 @@ def test_core_subtract_not_below_zero_runs_after_what_it_consumes_is_produced() 
 
     assert type(composition.order[-1]) is subtract_not_below_zero_class()
     assert composition.order[-1].consumes == frozenset({SCALED, BASE})
+
+
+# --- core/credit_amount: a credit dataset's amount as a part of core/sum, by a made-up manifest -
+#
+# `CreditAmount` is imported inside a cached factory, like `Sum` above, so its absence fails only
+# the tests that use it. It is registered in a private registry under its shared identifier,
+# `core/credit_amount`; its selection fills no consumed slot, and it reads a made-up `credit`
+# dataset that rounds half-up to the cent.
+
+
+@cache
+def credit_amount_class() -> Any:
+    from app.domain.capabilities.credit_amount import CreditAmount
+
+    return CreditAmount
+
+
+def personal_credit_data(tax_year: int = 2025) -> ParameterDataset[Any]:
+    from app.domain.parameters.credit import CREDIT, Credit
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+
+    return ParameterDataset(
+        family="ex/personal_credit",
+        tax_year=tax_year,
+        kind=CREDIT,
+        values=Credit(D("1000.005")),
+        rounding=RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        sources=("https://example.org/ex/personal_credit",),
+    )
+
+
+CREDIT_AMOUNT = CapabilitySelection(
+    name="core/credit_amount",
+    params={"amount": "ex/personal_credit"},
+    consumes={},
+    produces={"output": "ex/part_two"},
+)
+
+
+def credit_amount_service() -> tuple[TaxComputationService, FakeParameters]:
+    """`ex/scale` (base × 3) and `core/credit_amount` summed by `core/sum` into `ex-on/result`."""
+    to_one = CapabilitySelection(
+        name="ex/scale",
+        params={"factor": "ex/factor"},
+        consumes={"source": "ex/base"},
+        produces={"target": "ex/part_one"},
+    )
+    total = CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ex/part_one", "ex/part_two")},
+        produces={"output": "ex-on/result"},
+    )
+    capabilities = capability_registry()
+    capabilities.register("core/sum", sum_class())
+    capabilities.register("core/credit_amount", credit_amount_class())
+    artifacts = artifact_registry()
+    for kind in (PART_ONE, PART_TWO):
+        artifacts.register(kind.identifier, kind)
+    parameters = FakeParameters(factor_data(), offset_data(), personal_credit_data())
+    built = service(
+        manifest(total, CREDIT_AMOUNT, to_one),  # authored out of order on purpose
+        parameters=parameters,
+        capabilities=capabilities,
+        artifacts=artifacts,
+    )
+    return built, parameters
+
+
+def test_computes_core_credit_amount_as_a_part_of_core_sum_end_to_end() -> None:
+    from app.domain.parameters.credit import Credit
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.trace import CreditAmountLine, SumLine
+
+    built, _parameters = credit_amount_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5")))
+
+    # part_one = 5 × 3 = 15; part_two = 1000.005, rounded half-up to 1000.01; result = 1015.01.
+    assert worksheet.get(PART_TWO).value == D("1000.01")
+    assert isinstance(worksheet.producer_of(PART_TWO), credit_amount_class())
+    assert worksheet.get(RESULT).value == D("1015.01")
+    assert (
+        CreditAmountLine(
+            PART_TWO, Credit(D("1000.005")), RoundTo(D("0.01"), RoundingMode.HALF_UP), D("1000.01")
+        )
+        in worksheet.trace
+    )
+    assert [type(line) for line in worksheet.trace].count(CreditAmountLine) == 1
+    assert worksheet.trace[-1] == SumLine(
+        RESULT, ((PART_ONE, D("15")), (PART_TWO, D("1000.01"))), D("1015.01")
+    )
+
+
+def test_the_composition_accepts_a_selection_without_consumes() -> None:
+    built, _parameters = credit_amount_service()
+
+    composition = built.compose(EX_ON, 2025)
+
+    (credit,) = [c for c in composition.order if type(c) is credit_amount_class()]
+    assert credit.consumes == frozenset()
+    assert credit.produces == frozenset({PART_TWO})
+    assert type(composition.order[-1]) is sum_class()
+
+
+def test_core_credit_amount_asks_for_its_dataset_as_a_credit() -> None:
+    from app.domain.parameters.credit import CREDIT
+
+    built, parameters = credit_amount_service()
+
+    built.compose(EX_ON, 2025)
+
+    assert ("ex/personal_credit", 2025, CREDIT) in parameters.requests

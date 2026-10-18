@@ -439,6 +439,28 @@ def test_a_capability_may_produce_nothing() -> None:
     assert drain.produces == frozenset()
 
 
+def test_a_capability_may_consume_nothing() -> None:
+    class Grant(Capability):
+        PARAMETERS = {"factor": FACTOR}
+        PRODUCES = {"target": Decimal}
+
+        def __init__(self, factor: ParameterDataset[Decimal], target: Money) -> None:
+            super().__init__(target=target)
+            self._factor, self._target = factor, target
+
+        def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+            return CapabilityResult(
+                outputs=(Artifact(self._target, self._factor.values),), trace=()
+            )
+
+    grant = Grant(dataset(FACTOR, 7), OUT)
+
+    assert Grant.CONSUMES == {}
+    assert grant.consumes == frozenset()
+    assert grant.produces == frozenset({OUT})
+    assert grant.compute(()).outputs == (Artifact(OUT, D(7)),)
+
+
 def test_mypy_rejects_a_slot_filler_that_is_not_an_artifact_kind() -> None:
     def wire() -> None:  # type-checked, never run
         # The base takes `**slots: ArtifactKind[Any]`; the ignore fails under mypy

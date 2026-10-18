@@ -173,3 +173,21 @@ class SubtractedNotBelowZeroLine(TraceLine):
     def amount(self) -> Decimal:
         """The floored result."""
         return self.result
+
+
+@dataclass(frozen=True)
+class CreditAmountLine(TraceLine):
+    """A credit dataset's amount `basis` produced as `output`, rounded with `rounding` to `value`.
+
+    Its own class, not a `CreditLine`: no rate is applied, and the amount itself is the result.
+    """
+
+    output: Money
+    basis: Credit
+    rounding: RoundingRule
+    value: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The rounded credit amount."""
+        return self.value
