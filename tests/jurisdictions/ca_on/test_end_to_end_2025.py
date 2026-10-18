@@ -5,7 +5,8 @@ sources over the jurisdiction packages and the shared registries. Return A's amo
 income 110000 and a capital gain of 20000 to total income 120000, less an RRSP deduction of 1926,
 union dues of 2000 and enhanced CPP contributions of 1074.00 to net income 115000, less no
 deductions from net income to taxable income 115000, and from each basic personal amount (16129
-federal, 12747 Ontario) plus the base CPP contributions of 3356.10 and the EI premiums of 1077.48
+federal, 12747 Ontario) plus the base CPP contributions of 3356.10 and the EI premiums of 1077.48,
+and federally the Canada employment amount of 1471 (the lesser of employment income and 1471),
 through each total of credit amounts to each tax after credits) are checked from the files under
 `returns/` by `test_worked_returns.py`, as are Returns C and D; this module pins which capability
 produces each line, the order, and the trace that explains them.
@@ -19,16 +20,19 @@ from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.artifact import Artifact
 from app.domain.capabilities.apply_rate import ApplyRate
+from app.domain.capabilities.capped_amount import CappedAmount
 from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.jurisdiction_code import JurisdictionCode
+from app.domain.parameters.amount import Amount
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING
 from app.domain.trace import (
+    CappedAmountLine,
     CreditAmountLine,
     CreditAppliedLine,
     CreditLine,
@@ -40,6 +44,7 @@ from app.domain.trace import (
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     BASIC_PERSONAL_AMOUNT,
+    CANADA_EMPLOYMENT_AMOUNT,
     CAPITAL_GAIN,
     CPP_BASE_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS,
@@ -130,6 +135,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(BASIC_PERSONAL_AMOUNT) is not worksheet.producer_of(
         ontario.BASIC_PERSONAL_AMOUNT
     )
+    assert isinstance(worksheet.producer_of(CANADA_EMPLOYMENT_AMOUNT), CappedAmount)
     assert isinstance(worksheet.producer_of(NON_REFUNDABLE_CREDIT_AMOUNTS), Sum)
     assert isinstance(worksheet.producer_of(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS), Sum)
     assert worksheet.producer_of(NON_REFUNDABLE_CREDIT_AMOUNTS) is not worksheet.producer_of(
@@ -182,17 +188,22 @@ def test_the_trace_explains_the_computation() -> None:
         "federal_basic_tax on taxable_income 115000.00 (no rounding)", "20146.25"
     )
     federal_amount = position("basic_personal_amount: credit amount 16129 (no rounding)", "16129")
+    employment_amount = position(
+        "canada_employment_amount: lesser of employment_income 110000 and 1471 (no rounding)",
+        "1471",
+    )
     federal_amounts = position(
         "non_refundable_credit_amounts: basic_personal_amount 16129 "
-        "+ cpp_base_contributions 3356.10 + ei_premiums 1077.48 = 20562.58",
-        "20562.58",
+        "+ cpp_base_contributions 3356.10 + ei_premiums 1077.48 "
+        "+ canada_employment_amount 1471 = 22033.58",
+        "22033.58",
     )
     federal_credit = position(
-        "credit: 14.5% of non_refundable_credit_amounts 20562.58 (no rounding)", "2981.5741"
+        "credit: 14.5% of non_refundable_credit_amounts 22033.58 (no rounding)", "3194.8691"
     )
     federal_after = position(
         "federal_tax_after_credits: federal_basic_tax 20146.2500 less credit, not below 0",
-        "17164.6759",
+        "16951.3809",
     )
     ontario_basic = position(
         "ontario_basic_tax on taxable_income 115000.00 (no rounding)", "8539.5965"
@@ -218,6 +229,7 @@ def test_the_trace_explains_the_computation() -> None:
     assert taxable < ontario_basic
     assert ontario_basic < ontario_after
     assert federal_amount < federal_amounts < federal_credit < federal_after
+    assert employment_amount < federal_amounts
     assert ontario_amount < ontario_amounts < ontario_credit < ontario_after
 
 
@@ -229,6 +241,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     floored = {line.output: line for line in trace if isinstance(line, SubtractedNotBelowZeroLine)}
     totals = {line.output: line for line in trace if isinstance(line, RoundedTotalLine)}
     amounts = {line.output: line for line in trace if isinstance(line, CreditAmountLine)}
+    capped = {line.output: line for line in trace if isinstance(line, CappedAmountLine)}
     credits = {line.amounts: line for line in trace if isinstance(line, CreditLine)}
     applied = {line.output: line for line in trace if isinstance(line, CreditAppliedLine)}
 
@@ -259,10 +272,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (BASIC_PERSONAL_AMOUNT, D("16129")),
                 (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
                 (EI_PREMIUMS, D("1077.48")),
+                (CANADA_EMPLOYMENT_AMOUNT, D("1471")),
             ),
-            D("20562.58"),
+            D("22033.58"),
         ),
-        # ON428 lines 58240 and 58300 read the federal amounts (lines 30800 and 31200).
+        # ON428 has no Canada employment amount; its lines 58240 and 58300 read the federal
+        # amounts (lines 30800 and 31200).
         ontario.NON_REFUNDABLE_CREDIT_AMOUNTS: SumLine(
             ontario.NON_REFUNDABLE_CREDIT_AMOUNTS,
             (
@@ -281,14 +296,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ontario.BASIC_PERSONAL_AMOUNT, Credit(amount=D("12747")), NO_ROUNDING, D("12747")
         ),
     }
+    # T1 line 92 (line 31260) "Enter whichever is less: $1,471 or line 1 plus line 2.":
+    # employment income of 110000 is above the cap, so the amount is the cap.
+    assert capped == {
+        CANADA_EMPLOYMENT_AMOUNT: CappedAmountLine(
+            CANADA_EMPLOYMENT_AMOUNT,
+            EMPLOYMENT_INCOME,
+            D("110000"),
+            Amount(D("1471")),
+            NO_ROUNDING,
+            D("1471"),
+        )
+    }
     # The rate is applied once, to each form's total of credit amounts.
     assert credits == {
         NON_REFUNDABLE_CREDIT_AMOUNTS: CreditLine(
             NON_REFUNDABLE_CREDIT_AMOUNTS,
-            D("20562.58"),
+            D("22033.58"),
             Rate(D("0.145")),
             NO_ROUNDING,
-            D("2981.5741"),
+            D("3194.8691"),
         ),
         ontario.NON_REFUNDABLE_CREDIT_AMOUNTS: CreditLine(
             ontario.NON_REFUNDABLE_CREDIT_AMOUNTS,
@@ -324,7 +351,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert totals[ONTARIO_BASIC_TAX].amount == D("8539.5965")
     assert applied[FEDERAL_TAX_AFTER_CREDITS].tax == FEDERAL_BASIC_TAX
     assert applied[FEDERAL_TAX_AFTER_CREDITS].tax_amount == D("20146.25")
-    assert applied[FEDERAL_TAX_AFTER_CREDITS].amount == D("17164.6759")
+    assert applied[FEDERAL_TAX_AFTER_CREDITS].amount == D("16951.3809")
     assert applied[ONTARIO_TAX_AFTER_CREDITS].tax == ONTARIO_BASIC_TAX
     assert applied[ONTARIO_TAX_AFTER_CREDITS].tax_amount == D("8539.5965")
     assert applied[ONTARIO_TAX_AFTER_CREDITS].amount == D("7671.97721")
@@ -333,7 +360,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 14
+    assert len(order) == 15
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
@@ -344,6 +371,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[FEDERAL_BASIC_TAX] < position[FEDERAL_TAX_AFTER_CREDITS]
     assert position[ONTARIO_BASIC_TAX] < position[ONTARIO_TAX_AFTER_CREDITS]
     assert position[BASIC_PERSONAL_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    assert position[CANADA_EMPLOYMENT_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert position[NON_REFUNDABLE_CREDIT_AMOUNTS] < position[FEDERAL_TAX_AFTER_CREDITS]
     assert position[ontario.BASIC_PERSONAL_AMOUNT] < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS] < position[ONTARIO_TAX_AFTER_CREDITS]
@@ -352,7 +380,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
 def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     # Employment income of 10000, with CPP and EI from Schedule 8's and the EI table's
     # arithmetic: base 4.95% x (10000 - 3500) = 321.75, enhanced 1% x 6500 = 65.00,
-    # EI 1.64% x 10000 = 164.00.
+    # EI 1.64% x 10000 = 164.00; the Canada employment amount is the lesser of 10000 and 1471.
     worksheet = compute("10000", "0", "0", "0", "321.75", "65.00", "164.00")
 
     assert worksheet.get(TOTAL_INCOME).value == D("10000")
@@ -360,7 +388,8 @@ def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     assert worksheet.get(NET_INCOME).value == D("9935.00")
     assert worksheet.get(TAXABLE_INCOME).value == D("9935.00")
     assert worksheet.get(FEDERAL_BASIC_TAX).value == D("1440.575")
-    assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("16614.75")
+    assert worksheet.get(CANADA_EMPLOYMENT_AMOUNT).value == D("1471")
+    assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("18085.75")
     assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("13232.75")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("0")
     assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("0")

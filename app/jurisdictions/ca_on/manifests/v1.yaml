@@ -82,15 +82,25 @@ capabilities:
       amount: ca-on/basic_personal_amount
     produces:
       output: ca-on/basic_personal_amount
+  # The Canada employment amount: the lesser of the T1's cap and employment income.
+  - name: core/capped_amount
+    params:
+      cap: ca/canada_employment_amount
+    consumes:
+      base: ca/employment_income
+    produces:
+      output: ca/canada_employment_amount
   # Each form's total of credit amounts is its basic personal amount, the base CPP
-  # contributions and the EI premiums. ON428 lines 58240 and 58300 are "Amount from line
-  # 30800 / 31200 of your return", so the Ontario sum reads the federal input kinds.
+  # contributions and the EI premiums, in the forms' line order; the T1's also holds the
+  # Canada employment amount. ON428 lines 58240 and 58300 are "Amount from line 30800 /
+  # 31200 of your return", so the Ontario sum reads the federal input kinds.
   - name: core/sum
     consumes:
       parts:
         - ca/basic_personal_amount
         - ca/cpp_base_contributions
         - ca/ei_premiums
+        - ca/canada_employment_amount
     produces:
       output: ca/non_refundable_credit_amounts
   - name: core/sum
