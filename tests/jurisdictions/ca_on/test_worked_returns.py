@@ -78,12 +78,15 @@ description: >-
   the LIFT credit is zero. A taxable income of 9935.00 is at or below the health premium chart's
   first threshold of 20000, so the premium is zero and the Ontario tax is zero. The net
   federal tax is the federal tax after credits, zero, and the total payable is it plus the
-  Ontario tax, zero. The income tax deducted is a chosen 500, the only credit, so the refund
-  or balance owing is 0 less 500: -500, a refund.
+  Ontario tax, zero. The Canada workers benefit (Schedule 6) is 27% of the working income,
+  the employment income of 10000, over 3000: 1890, at most 1633, less 15% of the adjusted
+  family net income, the net income, over 26855, nothing as 9935.00 is below it: 1633. The
+  income tax deducted is a chosen 500, so the total credits are 500 plus the benefit, 2133,
+  and the refund or balance owing is 0 less 2133: -2133, a refund.
 sources:
   - >-
-    T1, Federal Worksheet, Schedule 3, Schedule 7, Schedule 8, ON428, Schedule ON428-A and EI
-    table arithmetic on the 2025 figures.
+    T1, Federal Worksheet, Schedule 3, Schedule 6, Schedule 7, Schedule 8, ON428, Schedule
+    ON428-A and EI table arithmetic on the 2025 figures.
 inputs:
   ca/employment_income: "10000"
   ca/capital_gain: "0"
@@ -139,8 +142,13 @@ expected:
   ca-on/ontario_tax: "0"
   ca/net_federal_tax: "0"
   ca/total_payable: "0"
-  ca/total_credits: "500"
-  ca/refund_or_balance_owing: "-500"
+  ca/working_income: "10000"
+  ca/adjusted_family_net_income: "9935.00"
+  ca/cwb_before_reduction: "1633"
+  ca/cwb_reduction: "0"
+  ca/canada_workers_benefit: "1633"
+  ca/total_credits: "2133"
+  ca/refund_or_balance_owing: "-2133"
 """
 
 
@@ -173,7 +181,7 @@ def test_a_file_missing_a_declared_output_fails_naming_the_file_and_output(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "partial.yaml"
-    path.write_text(LOW_INCOME.replace('  ca/refund_or_balance_owing: "-500"\n', ""))
+    path.write_text(LOW_INCOME.replace('  ca/refund_or_balance_owing: "-2133"\n', ""))
 
     with pytest.raises(WorkedReturnError, match=r"partial\.yaml.*ca/refund_or_balance_owing"):
         check(path)

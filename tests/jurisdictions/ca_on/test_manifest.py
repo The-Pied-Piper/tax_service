@@ -27,13 +27,17 @@ from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Manifest
 from app.jurisdictions.ca.catalog import (
+    ADJUSTED_FAMILY_NET_INCOME,
     BASIC_PERSONAL_AMOUNT,
     CANADA_EMPLOYMENT_AMOUNT,
+    CANADA_WORKERS_BENEFIT,
     CAPITAL_GAIN,
     CPP_BASE_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CWB_BEFORE_REDUCTION,
+    CWB_REDUCTION,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     EI_PREMIUMS,
@@ -60,6 +64,7 @@ from app.jurisdictions.ca.catalog import (
     UNION_DUES,
     UNUSED_RRSP_CONTRIBUTIONS,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
+    WORKING_INCOME,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
@@ -511,12 +516,65 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"parts": ("ca/net_federal_tax", "ca-on/ontario_tax")},
             produces={"output": "ca/total_payable"},
         ),
-        # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700)
-        # alone, as lines 151 to 165 are not triggered.
+        # Schedule 6 line 5 "Add lines 1 to 4. Enter the result, even if it is "0". Working
+        # income", line 1 "Employment income and other employment income from line 10100 and line
+        # 10400 of the return" (line 10400 and lines 2 to 4 not triggered), carried by line 6
+        # "Add the amounts from line 5 in columns 1 and 2. Enter this amount on line 16. Family
+        # working income" with no eligible spouse: one part.
         CapabilitySelection(
             name="core/sum",
             params={},
-            consumes={"parts": ("ca/income_tax_deducted",)},
+            consumes={"parts": ("ca/employment_income",)},
+            produces={"output": "ca/working_income"},
+        ),
+        # Schedule 6 line 15 "Line 13 minus line 14 Enter this amount on line 23 and line 35.
+        # Adjusted family net income": line 7 "Net income from line 23600 of the return", through
+        # lines 10, 12 and 13 with lines 8, 9 and 11 not triggered and no eligible spouse (line
+        # 14 not triggered): one part.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/net_income",)},
+            produces={"output": "ca/adjusted_family_net_income"},
+        ),
+        # Schedule 6 lines 16 to 22: line 16 "Family working income from line 6"; line 17 "Base
+        # amount 3,000.00"; line 18 "Line 16 minus line 17 (if negative, enter "0")"; line 19
+        # "Rate 27%"; line 20 "Line 18 multiplied by the percentage from line 19"; line 21 "If
+        # you had an eligible spouse or an eligible dependant, enter $2,813. If not, enter
+        # $1,633."; line 22 "Enter whichever is less: amount from line 20 or line 21.": one tier
+        # with a maximum, with no eligible spouse or dependant.
+        CapabilitySelection(
+            name="core/tiered_surcharge",
+            params={"tiers": "ca/cwb_basic"},
+            consumes={"base": "ca/working_income"},
+            produces={"output": "ca/cwb_before_reduction"},
+        ),
+        # Schedule 6 lines 23 to 27: line 23 "Adjusted family net income from line 15"; line 24
+        # "If you had an eligible spouse or an eligible dependant, enter $30,639. If not, enter
+        # $26,855."; line 25 "Line 23 minus line 24 (if negative, enter "0")"; line 26 "Rate
+        # 15%"; line 27 "Line 25 multiplied by the percentage from line 26": one tier.
+        CapabilitySelection(
+            name="core/tiered_surcharge",
+            params={"tiers": "ca/cwb_reduction"},
+            consumes={"base": "ca/adjusted_family_net_income"},
+            produces={"output": "ca/cwb_reduction"},
+        ),
+        # Schedule 6 line 28 "Line 22 minus line 27 (if negative, enter "0") If you are not
+        # completing Step 3, enter this amount on line 45300 of your return.": Step 3 (the
+        # disability supplement) is not triggered.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca/cwb_before_reduction", "less": "ca/cwb_reduction"},
+            produces={"output": "ca/canada_workers_benefit"},
+        ),
+        # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700) and
+        # line 155 (45300) "Canada workers benefit (CWB) (complete Schedule 6)", in line order,
+        # as the other lines are not triggered.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/income_tax_deducted", "ca/canada_workers_benefit")},
             produces={"output": "ca/total_credits"},
         ),
         # T1 line 167 "Line 149 minus line 166 ... Refund or balance owing": not floored, so a
@@ -528,7 +586,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 45
+    assert len(found.capabilities) == 50
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -538,7 +596,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 45
+    assert len(composition.order) == 50
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -692,7 +750,20 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         ),
         (Sum, frozenset({FEDERAL_TAX_AFTER_CREDITS}), frozenset({NET_FEDERAL_TAX})),
         (Sum, frozenset({NET_FEDERAL_TAX, ONTARIO_TAX}), frozenset({TOTAL_PAYABLE})),
-        (Sum, frozenset({INCOME_TAX_DEDUCTED}), frozenset({TOTAL_CREDITS})),
+        (Sum, frozenset({EMPLOYMENT_INCOME}), frozenset({WORKING_INCOME})),
+        (Sum, frozenset({NET_INCOME}), frozenset({ADJUSTED_FAMILY_NET_INCOME})),
+        (TieredSurcharge, frozenset({WORKING_INCOME}), frozenset({CWB_BEFORE_REDUCTION})),
+        (TieredSurcharge, frozenset({ADJUSTED_FAMILY_NET_INCOME}), frozenset({CWB_REDUCTION})),
+        (
+            SubtractNotBelowZero,
+            frozenset({CWB_BEFORE_REDUCTION, CWB_REDUCTION}),
+            frozenset({CANADA_WORKERS_BENEFIT}),
+        ),
+        (
+            Sum,
+            frozenset({INCOME_TAX_DEDUCTED, CANADA_WORKERS_BENEFIT}),
+            frozenset({TOTAL_CREDITS}),
+        ),
         (
             Subtract,
             frozenset({TOTAL_PAYABLE, TOTAL_CREDITS}),
