@@ -16,6 +16,7 @@ from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
+from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Manifest
 from app.jurisdictions.ca.catalog import (
@@ -40,7 +41,12 @@ from app.jurisdictions.ca.catalog import (
     UNION_DUES,
 )
 from app.jurisdictions.ca_on import catalog as ontario
-from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX, ONTARIO_TAX_AFTER_CREDITS
+from app.jurisdictions.ca_on.catalog import (
+    ONTARIO_BASIC_TAX,
+    ONTARIO_SURTAX,
+    ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_WITH_SURTAX,
+)
 from app.main import build_tax_computation
 
 ROOTS = app.registrations.JURISDICTIONS.roots()
@@ -74,7 +80,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
         }
     )
     assert found.outputs == frozenset(
-        {"ca/federal_tax_after_credits", "ca-on/ontario_tax_after_credits"}
+        {"ca/federal_tax_after_credits", "ca-on/ontario_tax_with_surtax"}
     )
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == {
@@ -213,8 +219,22 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca-on/ontario_tax_after_credits"},
         ),
+        # ON428 lines 66 to 68: the surtax on the Ontario tax after credits, which is line 65
+        # while line 64 (tax on split income) is not modelled. Line 69 "Line 62 plus line 68".
+        CapabilitySelection(
+            name="core/tiered_surcharge",
+            params={"tiers": "ca-on/surtax"},
+            consumes={"base": "ca-on/ontario_tax_after_credits"},
+            produces={"output": "ca-on/ontario_surtax"},
+        ),
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca-on/ontario_tax_after_credits", "ca-on/ontario_surtax")},
+            produces={"output": "ca-on/ontario_tax_with_surtax"},
+        ),
     }
-    assert len(found.capabilities) == 17
+    assert len(found.capabilities) == 19
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -224,7 +244,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 17
+    assert len(composition.order) == 19
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -289,5 +309,11 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             SubtractNotBelowZero,
             frozenset({ONTARIO_BASIC_TAX, ontario.NON_REFUNDABLE_TAX_CREDITS}),
             frozenset({ONTARIO_TAX_AFTER_CREDITS}),
+        ),
+        (TieredSurcharge, frozenset({ONTARIO_TAX_AFTER_CREDITS}), frozenset({ONTARIO_SURTAX})),
+        (
+            Sum,
+            frozenset({ONTARIO_TAX_AFTER_CREDITS, ONTARIO_SURTAX}),
+            frozenset({ONTARIO_TAX_WITH_SURTAX}),
         ),
     }
