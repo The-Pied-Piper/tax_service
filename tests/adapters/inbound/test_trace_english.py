@@ -2,7 +2,9 @@
 
 The renderer reproduces the trace text capabilities used to compose themselves, so the move to
 structured lines changes only the structure. Rates print as percentages, `(rate * 100)` normalised
-in fixed-point notation; rounding rules print as "no rounding" or "<mode> to <increment>".
+in fixed-point notation; money figures print the same way, normalised in fixed-point notation, so
+no figure carries trailing zeros after the decimal point or an exponent (the value is untouched;
+only its text changes); rounding rules print as "no rounding" or "<mode> to <increment>".
 """
 
 from __future__ import annotations
@@ -142,13 +144,13 @@ def test_renders_a_sum_of_three_parts() -> None:
         D("150.00"),
     )
 
-    assert render(line) == "total: part_one 100.25 + part_two 40 + part_three 9.75 = 150.00"
+    assert render(line) == "total: part_one 100.25 + part_two 40 + part_three 9.75 = 150"
 
 
 def test_renders_the_parts_in_the_order_of_the_line() -> None:
     line = SumLine(TOTAL, ((PART_THREE, D("9.75")), (PART_ONE, D("100.25"))), D("110.00"))
 
-    assert render(line) == "total: part_three 9.75 + part_one 100.25 = 110.00"
+    assert render(line) == "total: part_three 9.75 + part_one 100.25 = 110"
 
 
 def test_renders_a_sum_of_one_part() -> None:
@@ -205,7 +207,7 @@ def test_renders_a_subtraction_with_a_negative_result() -> None:
 def test_renders_a_subtraction_to_zero() -> None:
     line = SubtractedLine(NET_AMOUNT, GROSS_AMOUNT, D("40.50"), REDUCTION, D("40.50"), D("0.00"))
 
-    assert render(line) == "net_amount: gross_amount 40.50 less reduction 40.50 = 0.00"
+    assert render(line) == "net_amount: gross_amount 40.5 less reduction 40.5 = 0"
 
 
 # --- subtractions not below zero ---------------------------------------------------------
@@ -232,7 +234,7 @@ def test_renders_a_subtraction_not_below_zero_to_exactly_zero() -> None:
         NET_AMOUNT, GROSS_AMOUNT, D("40.50"), REDUCTION, D("40.50"), D("0")
     )
 
-    assert render(line) == "net_amount: gross_amount 40.50 less reduction 40.50, not below 0 = 0"
+    assert render(line) == "net_amount: gross_amount 40.5 less reduction 40.5, not below 0 = 0"
 
 
 # --- credit amounts ------------------------------------------------------------------------
@@ -274,7 +276,7 @@ def test_renders_a_base_below_the_cap() -> None:
         CAPPED_AMOUNT, GROSS_AMOUNT, D("400.50"), Amount(D("1000")), NO_ROUNDING, D("400.50")
     )
 
-    assert render(line) == "capped_amount: lesser of gross_amount 400.50 and 1000 (no rounding)"
+    assert render(line) == "capped_amount: lesser of gross_amount 400.5 and 1000 (no rounding)"
 
 
 def test_renders_a_rounded_capped_amount() -> None:
@@ -283,8 +285,7 @@ def test_renders_a_rounded_capped_amount() -> None:
     )
 
     assert (
-        render(line)
-        == "capped_amount: lesser of gross_amount 400.005 and 1000.00 (half-up to 0.01)"
+        render(line) == "capped_amount: lesser of gross_amount 400.005 and 1000 (half-up to 0.01)"
     )
 
 
@@ -310,7 +311,7 @@ def test_renders_the_lesser_of_amounts_in_the_order_of_the_line() -> None:
         LESSER_AMOUNT, ((PART_TWO, D("1000")), (PART_ONE, D("400.50"))), D("400.50")
     )
 
-    assert render(line) == "lesser_amount: lesser of part_two 1000 and part_one 400.50 = 400.50"
+    assert render(line) == "lesser_amount: lesser of part_two 1000 and part_one 400.5 = 400.5"
 
 
 def test_renders_the_lesser_of_three_amounts_with_and_between_each() -> None:
@@ -325,10 +326,10 @@ def test_renders_the_lesser_of_three_amounts_with_and_between_each() -> None:
     )
 
 
-def test_renders_the_lesser_of_equal_amounts_with_the_result_as_recorded() -> None:
+def test_renders_the_lesser_of_equal_amounts() -> None:
     line = LesserOfLine(LESSER_AMOUNT, ((PART_ONE, D("40.50")), (PART_TWO, D("40.5"))), D("40.50"))
 
-    assert render(line) == "lesser_amount: lesser of part_one 40.50 and part_two 40.5 = 40.50"
+    assert render(line) == "lesser_amount: lesser of part_one 40.5 and part_two 40.5 = 40.5"
 
 
 def test_renders_the_lesser_of_one_amount() -> None:
@@ -356,7 +357,7 @@ def test_renders_a_rounded_contribution_tier() -> None:
     )
 
     assert render(line) == (
-        "contribution: 5% of earnings between 3000 and 50000 (20000.10), at most 2350 "
+        "contribution: 5% of earnings between 3000 and 50000 (20000.1), at most 2350 "
         "(half-up to 0.01)"
     )
 
@@ -379,14 +380,14 @@ def test_renders_zero_contributory_earnings() -> None:
     )
 
 
-def test_renders_the_tiers_figures_as_given() -> None:
+def test_renders_the_tiers_figures() -> None:
     tier = ContributionTier(Rate(D("0.0505")), D("2500.00"), D("61000"), D("2954.20"))
     line = ContributionTierLine(
         CONTRIBUTION, EARNINGS, D("90000"), tier, CENT, D("58500.00"), D("2954.20")
     )
 
     assert render(line) == (
-        "contribution: 5.05% of earnings between 2500.00 and 61000 (58500.00), at most 2954.20 "
+        "contribution: 5.05% of earnings between 2500 and 61000 (58500), at most 2954.2 "
         "(half-up to 0.01)"
     )
 
@@ -418,12 +419,128 @@ def test_renders_a_surcharge_tier_the_base_does_not_reach() -> None:
     assert render(line) == "surcharge: 25% of tax_so_far 200 over 300 (no rounding)"
 
 
-def test_renders_the_threshold_and_base_as_given() -> None:
+def test_renders_the_threshold_and_base() -> None:
     line = SurchargeTierLine(
         SURCHARGE, TAX_SO_FAR, D("1000.50"), D("1471.5"), Rate(D("0.0505")), NO_ROUNDING, D(0)
     )
 
-    assert render(line) == "surcharge: 5.05% of tax_so_far 1000.50 over 1471.5 (no rounding)"
+    assert render(line) == "surcharge: 5.05% of tax_so_far 1000.5 over 1471.5 (no rounding)"
+
+
+# --- money figures ---------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("figure", "text"),
+    [
+        (D("20146.2500"), "20146.25"),
+        (D("115000.00"), "115000"),
+        (D("0.00"), "0"),
+        (D("8539.5965"), "8539.5965"),
+        (D("1.15E+5"), "115000"),
+        (D("115000"), "115000"),
+        (D("-15.50"), "-15.5"),
+        # Longer than the Decimal context precision: the text still shows every digit.
+        (D("1234567890123456789012345678.95"), "1234567890123456789012345678.95"),
+    ],
+)
+def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
+    figure: Decimal, text: str
+) -> None:
+    line = SumLine(TOTAL, ((PART_ONE, figure),), figure)
+
+    assert render(line) == f"total: part_one {text} = {text}"
+
+
+@pytest.mark.parametrize(
+    ("line", "text"),
+    [
+        (
+            BracketSliceLine(D("100.00"), D("300.00"), D("0.20"), D("150.00"), D("30.00")),
+            "20% on 150 (100 to 300)",
+        ),
+        (
+            BracketSliceLine(D("3E+2"), None, D("0.30"), D("1.0E+2"), D("30.0")),
+            "30% on 100 (over 300)",
+        ),
+        (
+            RoundedTotalLine(BASIC_TAX, TAXABLE_BASE, D("250.00"), CENT, D("40.00")),
+            "basic_tax on taxable_base 250 (half-up to 0.01)",
+        ),
+        (
+            CreditAmountLine(PERSONAL_AMOUNT, Credit(D("1000.50")), NO_ROUNDING, D("1000.50")),
+            "personal_amount: credit amount 1000.5 (no rounding)",
+        ),
+        (
+            SumLine(TOTAL, ((PART_ONE, D("100.250")), (PART_TWO, D("4E+1"))), D("140.250")),
+            "total: part_one 100.25 + part_two 40 = 140.25",
+        ),
+        (
+            RateAppliedLine(
+                RATED_AMOUNT, GROSS_AMOUNT, D("1000.00"), Rate(D("0.5")), NO_ROUNDING, D("500.000")
+            ),
+            "rated_amount: 50% of gross_amount 1000 (no rounding)",
+        ),
+        (
+            SubtractedLine(
+                NET_AMOUNT, GROSS_AMOUNT, D("100.250"), REDUCTION, D("40.00"), D("60.250")
+            ),
+            "net_amount: gross_amount 100.25 less reduction 40 = 60.25",
+        ),
+        (
+            SubtractedNotBelowZeroLine(
+                NET_AMOUNT, GROSS_AMOUNT, D("100.250"), REDUCTION, D("4.0E+1"), D("60.250")
+            ),
+            "net_amount: gross_amount 100.25 less reduction 40, not below 0 = 60.25",
+        ),
+        (
+            CappedAmountLine(
+                CAPPED_AMOUNT,
+                GROSS_AMOUNT,
+                D("1500.2500"),
+                Amount(D("1471.50")),
+                NO_ROUNDING,
+                D("1471.50"),
+            ),
+            "capped_amount: lesser of gross_amount 1500.25 and 1471.5 (no rounding)",
+        ),
+        (
+            LesserOfLine(
+                LESSER_AMOUNT, ((PART_ONE, D("1500.2500")), (PART_TWO, D("1E+3"))), D("1E+3")
+            ),
+            "lesser_amount: lesser of part_one 1500.25 and part_two 1000 = 1000",
+        ),
+        (
+            ContributionTierLine(
+                CONTRIBUTION,
+                EARNINGS,
+                D("23000.00"),
+                ContributionTier(Rate(D("0.05")), D("3.0E+3"), D("50000.00"), D("2350.50")),
+                NO_ROUNDING,
+                D("2.00E+4"),
+                D("1000.000"),
+            ),
+            "contribution: 5% of earnings between 3000 and 50000 (20000), at most 2350.5 "
+            "(no rounding)",
+        ),
+        (
+            SurchargeTierLine(
+                SURCHARGE,
+                TAX_SO_FAR,
+                D("400.50"),
+                D("3E+2"),
+                Rate(D("0.25")),
+                NO_ROUNDING,
+                D("25.125"),
+            ),
+            "surcharge: 25% of tax_so_far 400.5 over 300 (no rounding)",
+        ),
+    ],
+)
+def test_renders_every_money_figure_of_a_line_without_trailing_zeros(
+    line: TraceLine, text: str
+) -> None:
+    assert render(line) == text
 
 
 # --- whole traces and unknown lines ----------------------------------------------

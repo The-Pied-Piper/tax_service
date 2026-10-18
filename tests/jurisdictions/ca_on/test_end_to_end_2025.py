@@ -172,28 +172,25 @@ def test_the_trace_explains_the_computation() -> None:
         "taxable_capital_gains: 50% of capital_gain 20000 (no rounding)", "10000"
     )
     total = position(
-        "total_income: employment_income 110000 + taxable_capital_gains 10000.0 = 120000.0",
+        "total_income: employment_income 110000 + taxable_capital_gains 10000 = 120000",
         "120000",
     )
     deductions = position(
         "deductions_from_total_income: rrsp_deduction 1926 + union_dues 2000 "
-        "+ cpp_enhanced_contributions 1074.00 = 5000.00",
+        "+ cpp_enhanced_contributions 1074 = 5000",
         "5000",
     )
     net = position(
-        "net_income: total_income 120000.0 less deductions_from_total_income 5000.00, "
-        "not below 0 = 115000.00",
+        "net_income: total_income 120000 less deductions_from_total_income 5000, "
+        "not below 0 = 115000",
         "115000",
     )
     net_deductions = position("deductions_from_net_income: no parts = 0", "0")
     taxable = position(
-        "taxable_income: net_income 115000.00 less deductions_from_net_income 0, "
-        "not below 0 = 115000.00",
+        "taxable_income: net_income 115000 less deductions_from_net_income 0, not below 0 = 115000",
         "115000",
     )
-    federal_basic = position(
-        "federal_basic_tax on taxable_income 115000.00 (no rounding)", "20146.25"
-    )
+    federal_basic = position("federal_basic_tax on taxable_income 115000 (no rounding)", "20146.25")
     federal_amount = position("basic_personal_amount: credit amount 16129 (no rounding)", "16129")
     employment_amount = position(
         "canada_employment_amount: lesser of employment_income 110000 and 1471 (no rounding)",
@@ -201,7 +198,7 @@ def test_the_trace_explains_the_computation() -> None:
     )
     federal_amounts = position(
         "non_refundable_credit_amounts: basic_personal_amount 16129 "
-        "+ cpp_base_contributions 3356.10 + ei_premiums 1077.48 "
+        "+ cpp_base_contributions 3356.1 + ei_premiums 1077.48 "
         "+ canada_employment_amount 1471 = 22033.58",
         "22033.58",
     )
@@ -210,17 +207,17 @@ def test_the_trace_explains_the_computation() -> None:
         "3194.8691",
     )
     federal_after = position(
-        "federal_tax_after_credits: federal_basic_tax 20146.2500 "
-        "less non_refundable_tax_credits 3194.86910, not below 0 = 16951.38090",
+        "federal_tax_after_credits: federal_basic_tax 20146.25 "
+        "less non_refundable_tax_credits 3194.8691, not below 0 = 16951.3809",
         "16951.3809",
     )
     ontario_basic = position(
-        "ontario_basic_tax on taxable_income 115000.00 (no rounding)", "8539.5965"
+        "ontario_basic_tax on taxable_income 115000 (no rounding)", "8539.5965"
     )
     ontario_amount = position("basic_personal_amount: credit amount 12747 (no rounding)", "12747")
     ontario_amounts = position(
         "non_refundable_credit_amounts: basic_personal_amount 12747 "
-        "+ cpp_base_contributions 3356.10 + ei_premiums 1077.48 = 17180.58",
+        "+ cpp_base_contributions 3356.1 + ei_premiums 1077.48 = 17180.58",
         "17180.58",
     )
     ontario_credit = position(
@@ -228,8 +225,8 @@ def test_the_trace_explains_the_computation() -> None:
         "867.61929",
     )
     ontario_after = position(
-        "ontario_tax_after_credits: ontario_basic_tax 8539.596500 "
-        "less non_refundable_tax_credits 867.619290, not below 0 = 7671.977210",
+        "ontario_tax_after_credits: ontario_basic_tax 8539.5965 "
+        "less non_refundable_tax_credits 867.61929, not below 0 = 7671.97721",
         "7671.97721",
     )
     assert taxable_gains < total < net
