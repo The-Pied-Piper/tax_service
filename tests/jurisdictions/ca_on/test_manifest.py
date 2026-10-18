@@ -18,6 +18,7 @@ from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.multiple_over import MultipleOver
 from app.domain.capabilities.per_unit_amount import PerUnitAmount
 from app.domain.capabilities.progressive_tax import ProgressiveTax
+from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.tapered_amount import TaperedAmount
@@ -38,16 +39,21 @@ from app.jurisdictions.ca.catalog import (
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
+    INCOME_TAX_DEDUCTED,
+    NET_FEDERAL_TAX,
     NET_INCOME,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
+    REFUND_OR_BALANCE_OWING,
     RRSP_CONTRIBUTIONS,
     RRSP_CONTRIBUTIONS_AVAILABLE,
     RRSP_DEDUCTION,
     RRSP_DEDUCTION_LIMIT,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
+    TOTAL_CREDITS,
     TOTAL_INCOME,
+    TOTAL_PAYABLE,
     UNION_DUES,
     UNUSED_RRSP_CONTRIBUTIONS,
 )
@@ -99,9 +105,11 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/union_dues",
             "ca-on/dependent_children",
             "ca-on/dependants",
+            "ca/income_tax_deducted",
         }
     )
-    assert found.outputs == frozenset({"ca/federal_tax_after_credits", "ca-on/ontario_tax"})
+    # T1 line 167: the refund or balance owing is the one line the computation returns.
+    assert found.outputs == frozenset({"ca/refund_or_balance_owing"})
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == {
         CapabilitySelection(
@@ -405,8 +413,44 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca-on/ontario_tax"},
         ),
+        # T1 line 142 (line 42000) "Add lines 139 to 141. Net federal tax": with lines 120, 123,
+        # 124, 127 to 133 and 135 to 141 not modelled or not triggered, line 126 (42900) "Line
+        # 121 minus line 125 (if negative, enter "0") Basic federal tax" is the federal tax
+        # (lines 119 and 121) less line 122 "Amount from line 35000", the federal tax after
+        # credits, and lines 134 (40600), 139 (41700) and 142 carry it: one part.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/federal_tax_after_credits",)},
+            produces={"output": "ca/net_federal_tax"},
+        ),
+        # T1 line 148 (line 43500) "Add lines 143 to 147. Total payable": line 143 "Amount from
+        # line 42000" and line 147 (42800), the Ontario tax, in line order; lines 144 to 146 are
+        # not triggered.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/net_federal_tax", "ca-on/ontario_tax")},
+            produces={"output": "ca/total_payable"},
+        ),
+        # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700)
+        # alone, as lines 151 to 165 are not triggered.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/income_tax_deducted",)},
+            produces={"output": "ca/total_credits"},
+        ),
+        # T1 line 167 "Line 149 minus line 166 ... Refund or balance owing": not floored, so a
+        # negative result is a refund (line 48400) and a positive one a balance owing (48500).
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={"amount": "ca/total_payable", "less": "ca/total_credits"},
+            produces={"output": "ca/refund_or_balance_owing"},
+        ),
     }
-    assert len(found.capabilities) == 34
+    assert len(found.capabilities) == 38
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -416,7 +460,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 34
+    assert len(composition.order) == 38
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -544,5 +588,13 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             Sum,
             frozenset({ONTARIO_TAX_AFTER_REDUCTION, ONTARIO_HEALTH_PREMIUM}),
             frozenset({ONTARIO_TAX}),
+        ),
+        (Sum, frozenset({FEDERAL_TAX_AFTER_CREDITS}), frozenset({NET_FEDERAL_TAX})),
+        (Sum, frozenset({NET_FEDERAL_TAX, ONTARIO_TAX}), frozenset({TOTAL_PAYABLE})),
+        (Sum, frozenset({INCOME_TAX_DEDUCTED}), frozenset({TOTAL_CREDITS})),
+        (
+            Subtract,
+            frozenset({TOTAL_PAYABLE, TOTAL_CREDITS}),
+            frozenset({REFUND_OR_BALANCE_OWING}),
         ),
     }

@@ -71,7 +71,10 @@ description: >-
   the Ontario tax reduction amounts are the basic reduction of 294.00, and the reduction is
   twice them less the tax of zero: 588.00, which leaves an Ontario tax after the reduction of
   zero, not a refund. A taxable income of 9935.00 is at or below the health premium chart's
-  first threshold of 20000, so the premium is zero and the Ontario tax is zero.
+  first threshold of 20000, so the premium is zero and the Ontario tax is zero. The net
+  federal tax is the federal tax after credits, zero, and the total payable is it plus the
+  Ontario tax, zero. The income tax deducted is a chosen 500, the only credit, so the refund
+  or balance owing is 0 less 500: -500, a refund.
 sources:
   - >-
     T1, Federal Worksheet, Schedule 3, Schedule 7, Schedule 8, ON428 and EI table arithmetic on
@@ -85,6 +88,7 @@ inputs:
   ca/union_dues: "0"
   ca-on/dependent_children: 0
   ca-on/dependants: 0
+  ca/income_tax_deducted: "500"
 expected:
   ca/taxable_capital_gains: "0"
   ca/total_income: "10000"
@@ -120,6 +124,10 @@ expected:
   ca-on/ontario_tax_after_reduction: "0"
   ca-on/ontario_health_premium: "0"
   ca-on/ontario_tax: "0"
+  ca/net_federal_tax: "0"
+  ca/total_payable: "0"
+  ca/total_credits: "500"
+  ca/refund_or_balance_owing: "-500"
 """
 
 
@@ -152,7 +160,7 @@ def test_a_file_missing_a_declared_output_fails_naming_the_file_and_output(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "partial.yaml"
-    path.write_text(LOW_INCOME.replace('  ca-on/ontario_tax: "0"\n', ""))
+    path.write_text(LOW_INCOME.replace('  ca/refund_or_balance_owing: "-500"\n', ""))
 
-    with pytest.raises(WorkedReturnError, match=r"partial\.yaml.*ca-on/ontario_tax\b"):
+    with pytest.raises(WorkedReturnError, match=r"partial\.yaml.*ca/refund_or_balance_owing"):
         check(path)
