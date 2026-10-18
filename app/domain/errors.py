@@ -76,6 +76,10 @@ class InvalidTaperError(DomainError):
     """A taper's figures are not finite, are negative, or its range is not above zero."""
 
 
+class InvalidFactorError(DomainError):
+    """A factor is not finite or is negative."""
+
+
 class DuplicateRegistrationError(DomainError):
     """Something was registered under an identifier that is already taken."""
 

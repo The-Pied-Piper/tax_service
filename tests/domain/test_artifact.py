@@ -223,18 +223,21 @@ def test_a_kind_declared_in_a_catalog_as_non_negative_rejects_a_negative_value(
         Artifact(kind, D("-1"))
 
 
-def test_only_a_decimal_kind_may_be_non_negative_at_declaration(fresh: ArtifactRegistry) -> None:
+def test_only_a_decimal_or_int_kind_may_be_non_negative_at_declaration(
+    fresh: ArtifactRegistry,
+) -> None:
     catalog = ArtifactCatalog(Namespace("ex"))
 
-    with pytest.raises(InvalidRegistrationError, match="ex/person_count"):
-        catalog.declare("person_count", int, non_negative=True)
+    with pytest.raises(InvalidRegistrationError, match="ex/person_name"):
+        catalog.declare("person_name", str, non_negative=True)
 
     assert catalog.kinds == ()
     assert fresh.identifiers() == frozenset()
 
 
-@pytest.mark.parametrize("value_type", [int, float, str, bool])
-def test_only_a_decimal_kind_may_be_non_negative(value_type: type[Any]) -> None:
+@pytest.mark.parametrize("value_type", [float, str, bool])
+def test_only_a_decimal_or_int_kind_may_be_non_negative(value_type: type[Any]) -> None:
+    # `bool` is a subclass of `int` but not a count: the flag is still refused on it.
     with pytest.raises(InvalidRegistrationError, match="ex/person_count"):
         ArtifactKind("ex/person_count", value_type, non_negative=True)
 
@@ -244,6 +247,73 @@ def test_a_non_decimal_kind_may_be_declared_unconstrained(fresh: ArtifactRegistr
 
     assert kind.non_negative is False
     assert Artifact(kind, -1).value == -1
+
+
+# --- counts: non-negative int kinds -----------------------------------------------------------
+#
+# A count is an `int` artifact, the number of something a form asks for. The existing
+# `non_negative` flag is allowed on an `int` kind as well as a `Decimal` one, and the same
+# `Artifact` check refuses a flagged count below zero; an unflagged `int` kind accepts any value.
+
+
+COUNT = ArtifactKind("ex/person_count", int, non_negative=True)
+
+
+def test_an_int_kind_may_be_declared_non_negative() -> None:
+    count = COUNT
+
+    assert_type(count, ArtifactKind[int])
+    assert count.value_type is int
+    assert count.non_negative is True
+
+
+def test_a_catalog_declares_a_non_negative_int_kind(fresh: ArtifactRegistry) -> None:
+    catalog = ArtifactCatalog(Namespace("ex"))
+
+    kind = catalog.declare("person_count", int, non_negative=True)
+
+    assert_type(kind, ArtifactKind[int])
+    assert kind.identifier == "ex/person_count"
+    assert kind.value_type is int
+    assert kind.non_negative is True
+    assert catalog.kinds == (kind,)
+
+
+@pytest.mark.parametrize("value", [0, 1, 2, 40])
+def test_a_non_negative_count_accepts_zero_and_positive_ints(value: int) -> None:
+    artifact = Artifact(COUNT, value)
+
+    assert artifact.value == value
+    assert type(artifact.value) is int
+
+
+def test_a_non_negative_count_rejects_a_negative_int_naming_the_kind_and_value() -> None:
+    with pytest.raises(NegativeArtifactError, match=r"ex/person_count.*-1"):
+        Artifact(COUNT, -1)
+
+
+@pytest.mark.parametrize("value", [-1, -2, -1000])
+def test_a_non_negative_count_rejects_any_int_below_zero(value: int) -> None:
+    with pytest.raises(NegativeArtifactError, match="ex/person_count"):
+        Artifact(COUNT, value)
+
+
+def test_a_count_declared_in_a_catalog_as_non_negative_rejects_a_negative_int(
+    fresh: ArtifactRegistry,
+) -> None:
+    kind = ArtifactCatalog(Namespace("ex")).declare("person_count", int, non_negative=True)
+
+    with pytest.raises(NegativeArtifactError, match="ex/person_count"):
+        Artifact(kind, -1)
+
+
+def test_an_unflagged_int_kind_accepts_a_negative_int() -> None:
+    assert Artifact(ArtifactKind("ex/person_count", int), -3).value == -3
+
+
+def test_a_count_still_rejects_a_value_of_another_type() -> None:
+    with pytest.raises(TypeError, match="person_count must be a int, got Decimal"):
+        Artifact(COUNT, cast(Any, D("1")))
 
 
 # --- ArtifactRegistry and ArtifactCatalog ---------------------------------------------------

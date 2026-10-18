@@ -16,6 +16,8 @@ from app.domain.trace import (
     ContributionTierLine,
     CreditAmountLine,
     LesserOfLine,
+    MultipleOverLine,
+    PerUnitAmountLine,
     RateAppliedLine,
     RoundedTotalLine,
     SubtractedLine,
@@ -136,6 +138,32 @@ class EnglishTraceRenderer:
                     f"for {base.label} {self._money(amount)} "
                     f"over {self._money(taper.threshold)} (range {self._money(taper.range)}), "
                     f"not below {self._money(taper.base)} ({self._rounding(rule)})"
+                )
+            case PerUnitAmountLine(
+                output=output,
+                count_kind=count_kind,
+                count=count,
+                per_unit=per_unit,
+                rounding=rule,
+                result=result,
+            ):
+                return (
+                    f"{output.label}: {self._money(per_unit.value)} for each of {count} "
+                    f"{count_kind.label} = {self._money(result)} ({self._rounding(rule)})"
+                )
+            case MultipleOverLine(
+                output=output,
+                base=base,
+                base_amount=amount,
+                factor=factor,
+                less=less,
+                less_amount=less_amount,
+                rounding=rule,
+            ):
+                return (
+                    f"{output.label}: {self._money(factor.value)} × {base.label} "
+                    f"{self._money(amount)} over {less.label} {self._money(less_amount)}, "
+                    f"not below 0 ({self._rounding(rule)})"
                 )
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 

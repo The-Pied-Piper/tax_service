@@ -21,6 +21,7 @@ from app.adapters.outbound.parameter_parsers.amount import AmountParser
 from app.adapters.outbound.parameter_parsers.brackets import BracketsParser
 from app.adapters.outbound.parameter_parsers.contribution_tier import ContributionTierParser
 from app.adapters.outbound.parameter_parsers.credit import CreditParser
+from app.adapters.outbound.parameter_parsers.factor import FactorParser
 from app.adapters.outbound.parameter_parsers.rate import RateParser
 from app.adapters.outbound.parameter_parsers.registry import ParameterParserRegistry
 from app.adapters.outbound.parameter_parsers.surcharge_tiers import SurchargeTiersParser
@@ -32,6 +33,7 @@ from app.domain.errors import (
     InvalidAmountError,
     InvalidContributionTierError,
     InvalidCreditError,
+    InvalidFactorError,
     InvalidParameterDataError,
     InvalidRateError,
     InvalidSurchargeTiersError,
@@ -44,6 +46,7 @@ from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
 from app.domain.parameters.contribution_tier import CONTRIBUTION_TIER, ContributionTier
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
+from app.domain.parameters.factor import FACTOR, Factor
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
@@ -137,6 +140,16 @@ threshold: "20000"
 range: "10000"
 """
 
+FACTOR_2025 = """\
+family: ex/factor
+tax_year: 2025
+kind: factor
+sources:
+  - https://example.org/factor-2025
+rounding: none
+value: "2"
+"""
+
 
 def built_in_parsers() -> ParameterParserRegistry:
     """A fresh registry holding the built-in parsers, never the shared one."""
@@ -148,6 +161,7 @@ def built_in_parsers() -> ParameterParserRegistry:
     registry.register_class(ContributionTierParser)
     registry.register_class(SurchargeTiersParser)
     registry.register_class(TaperParser)
+    registry.register_class(FactorParser)
     return registry
 
 
@@ -479,6 +493,54 @@ def test_by_default_the_taper_parser_comes_from_the_shared_registry(tmp_path: Pa
     result = YamlParameterSource(roots(tmp_path)).get("ex/taper", 2025, TAPER)
 
     assert result.values == Taper(D("1000"), D("500"), D("20000"), D("10000"))
+
+
+def test_reads_a_factor_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/factor/2025.yaml", FACTOR_2025)
+
+    result = source(tmp_path).get("ex/factor", 2025, FACTOR)
+
+    assert result == ParameterDataset(
+        family="ex/factor",
+        tax_year=2025,
+        kind=FACTOR,
+        values=Factor(D("2")),
+        rounding=NO_ROUNDING,
+        sources=("https://example.org/factor-2025",),
+    )
+
+
+@pytest.mark.parametrize("value", ["0", "1", "2", "2.50", "1000000"])
+def test_reads_factors_exactly(tmp_path: Path, value: str) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/factor/2025.yaml",
+        FACTOR_2025.replace('value: "2"', f'value: "{value}"'),
+    )
+
+    factor = source(tmp_path).get("ex/factor", 2025, FACTOR).values.value
+
+    assert str(factor) == value  # exact, scale kept, no upper bound
+
+
+def test_reads_a_factor_datasets_rounding_rule(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/factor/2025.yaml",
+        FACTOR_2025.replace("rounding: none", 'rounding: {increment: "0.01", mode: half_up}'),
+    )
+
+    result = source(tmp_path).get("ex/factor", 2025, FACTOR)
+
+    assert result.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
+
+
+def test_by_default_the_factor_parser_comes_from_the_shared_registry(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/factor/2025.yaml", FACTOR_2025)
+
+    result = YamlParameterSource(roots(tmp_path)).get("ex/factor", 2025, FACTOR)
+
+    assert result.values == Factor(D("2"))
 
 
 def test_reads_a_rounding_rule(tmp_path: Path) -> None:
@@ -1368,3 +1430,109 @@ def test_a_taper_dataset_is_not_a_credit_dataset(tmp_path: Path) -> None:
 
     with pytest.raises(InvalidParameterDataError, match="kind 'taper' does not match"):
         source(tmp_path).get("ex/taper", 2025, CREDIT)
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        pytest.param(
+            FACTOR_2025.replace('value: "2"', 'value: "-1"'),
+            "factor must not be negative",
+            id="value-negative",
+        ),
+        pytest.param(
+            FACTOR_2025.replace('value: "2"', 'value: "-0.01"'),
+            "factor must not be negative",
+            id="value-slightly-negative",
+        ),
+        pytest.param(
+            FACTOR_2025.replace('value: "2"', 'value: "Infinity"'),
+            "value is not a decimal",
+            id="value-infinite",
+        ),
+        pytest.param(
+            FACTOR_2025.replace('value: "2"', 'value: "NaN"'),
+            "value is not a decimal",
+            id="value-nan",
+        ),
+        pytest.param(
+            FACTOR_2025.replace('value: "2"', 'value: "twice"'),
+            "value is not a decimal: 'twice'",
+            id="value-not-decimal",
+        ),
+        pytest.param(
+            FACTOR_2025.replace('value: "2"', "value: 2"),
+            "value must be a string, got int",
+            id="value-as-yaml-number",
+        ),
+        pytest.param(
+            FACTOR_2025.replace('value: "2"', "value: 2.5"),
+            "value must be a string, got float",
+            id="value-as-yaml-float",
+        ),
+        pytest.param(
+            FACTOR_2025.replace('value: "2"\n', ""),
+            r"missing keys \['value'\]",
+            id="value-missing",
+        ),
+        pytest.param(
+            FACTOR_2025.replace('value: "2"', 'factor: "2"'),
+            r"unknown keys \['factor'\]",
+            id="factor-instead-of-value",
+        ),
+        pytest.param(
+            FACTOR_2025 + 'rate: "0.5"\n',
+            r"unknown keys \['rate'\]",
+            id="rate-is-not-a-factor-key",
+        ),
+        pytest.param(
+            FACTOR_2025.replace("kind: factor", "kind: rate"),
+            "kind 'rate' does not match the requested 'factor'",
+            id="kind-mismatch",
+        ),
+        pytest.param(
+            FACTOR_2025.replace("rounding: none\n", ""),
+            r"missing keys \['rounding'\]",
+            id="rounding-missing",
+        ),
+        pytest.param(
+            FACTOR_2025.replace("sources:\n  - https://example.org/factor-2025", "sources: []"),
+            "sources must list at least one",
+            id="sources-empty",
+        ),
+    ],
+)
+def test_rejects_malformed_factor_dataset(tmp_path: Path, content: str, message: str) -> None:
+    write(tmp_path, "ex/parameters/factor/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
+        source(tmp_path).get("ex/factor", 2025, FACTOR)
+
+    assert "2025.yaml" in str(excinfo.value)
+
+
+def test_a_negative_factor_is_reported_as_a_factor_error(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/factor/2025.yaml",
+        FACTOR_2025.replace('value: "2"', 'value: "-1"'),
+    )
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/factor", 2025, FACTOR)
+
+    assert isinstance(excinfo.value.__cause__, InvalidFactorError)
+
+
+def test_a_rate_dataset_is_not_a_factor_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/credit_rate/2025.yaml", RATE_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'rate' does not match"):
+        source(tmp_path).get("ex/credit_rate", 2025, FACTOR)
+
+
+def test_a_factor_dataset_is_not_an_amount_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/factor/2025.yaml", FACTOR_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'factor' does not match"):
+        source(tmp_path).get("ex/factor", 2025, AMOUNT)

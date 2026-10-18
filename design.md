@@ -33,9 +33,9 @@ produced by exactly one capability and consumed by any number. Every artifact
 needs an external justification — a line in the law/worksheet it mirrors, or a
 specific consumer contract it satisfies — and "it made the design cleaner"
 is neither. A kind may also declare a constraint its line carries: a money
-kind declared non-negative never holds a value below zero, whether it is an
-input or a capability's output. Example, from the Canadian pilot (UNVERIFIED
-— confirm line semantics against the T1 return):
+kind or a count declared non-negative never holds a value below zero, whether
+it is an input or a capability's output. Example, from the Canadian pilot
+(UNVERIFIED — confirm line semantics against the T1 return):
 
 - `total_income`
 - `net_income`            (T1 line 23600 — feeds clawbacks, credit phase-outs)

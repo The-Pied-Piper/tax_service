@@ -19,6 +19,7 @@ from app.domain.artifact import ArtifactKind
 from app.domain.parameters.amount import Amount
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
+from app.domain.parameters.factor import Factor
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.parameters.taper import Taper
@@ -28,6 +29,8 @@ from app.domain.trace import (
     ContributionTierLine,
     CreditAmountLine,
     LesserOfLine,
+    MultipleOverLine,
+    PerUnitAmountLine,
     RateAppliedLine,
     RoundedTotalLine,
     SubtractedLine,
@@ -61,6 +64,9 @@ SURCHARGE = ArtifactKind("ex/surcharge", Decimal)
 TAX_SO_FAR = ArtifactKind("ex/tax_so_far", Decimal)
 INCOME = ArtifactKind("ex/income", Decimal)
 TAPER = Taper(D("1000"), D("500"), D("20000"), D("10000"))
+CHILDREN = ArtifactKind("ex/child_count", int)
+CHILD_AMOUNT = ArtifactKind("ex/child_amount", Decimal)
+REDUCTION_AMOUNTS = ArtifactKind("ex/reduction_amounts", Decimal)
 
 
 def render(line: TraceLine) -> str:
@@ -496,6 +502,112 @@ def test_renders_an_inexact_reduction_with_every_digit() -> None:
     )
 
 
+# --- per-unit amounts ------------------------------------------------------------------
+
+
+def test_renders_a_per_unit_amount() -> None:
+    line = PerUnitAmountLine(CHILD_AMOUNT, CHILDREN, 2, Amount(D("544")), NO_ROUNDING, D("1088"))
+
+    assert render(line) == "child_amount: 544 for each of 2 child_count = 1088 (no rounding)"
+
+
+def test_renders_a_per_unit_amount_for_one_unit() -> None:
+    line = PerUnitAmountLine(CHILD_AMOUNT, CHILDREN, 1, Amount(D("544")), NO_ROUNDING, D("544"))
+
+    assert render(line) == "child_amount: 544 for each of 1 child_count = 544 (no rounding)"
+
+
+def test_renders_a_per_unit_amount_for_no_units() -> None:
+    line = PerUnitAmountLine(CHILD_AMOUNT, CHILDREN, 0, Amount(D("544")), NO_ROUNDING, D("0"))
+
+    assert render(line) == "child_amount: 544 for each of 0 child_count = 0 (no rounding)"
+
+
+def test_renders_a_fractional_per_unit_amount() -> None:
+    line = PerUnitAmountLine(CHILD_AMOUNT, CHILDREN, 3, Amount(D("0.333")), NO_ROUNDING, D("0.999"))
+
+    assert render(line) == "child_amount: 0.333 for each of 3 child_count = 0.999 (no rounding)"
+
+
+def test_renders_a_rounded_per_unit_amount() -> None:
+    line = PerUnitAmountLine(CHILD_AMOUNT, CHILDREN, 3, Amount(D("0.333")), CENT, D("1.00"))
+
+    assert render(line) == "child_amount: 0.333 for each of 3 child_count = 1 (half-up to 0.01)"
+
+
+# --- multiples over a figure -----------------------------------------------------------
+
+
+def test_renders_a_multiple_over_a_figure() -> None:
+    line = MultipleOverLine(
+        REDUCTION,
+        REDUCTION_AMOUNTS,
+        D("294"),
+        Factor(D("2")),
+        TAX_SO_FAR,
+        D("8195.7644476"),
+        NO_ROUNDING,
+        D("0"),
+    )
+
+    assert render(line) == (
+        "reduction: 2 × reduction_amounts 294 over tax_so_far 8195.7644476, not below 0 "
+        "(no rounding)"
+    )
+
+
+def test_renders_a_multiple_above_the_figure() -> None:
+    line = MultipleOverLine(
+        REDUCTION,
+        REDUCTION_AMOUNTS,
+        D("294"),
+        Factor(D("2")),
+        TAX_SO_FAR,
+        D("100"),
+        NO_ROUNDING,
+        D("488"),
+    )
+
+    assert render(line) == (
+        "reduction: 2 × reduction_amounts 294 over tax_so_far 100, not below 0 (no rounding)"
+    )
+
+
+def test_renders_a_rounded_multiple_over_a_figure() -> None:
+    line = MultipleOverLine(
+        REDUCTION,
+        REDUCTION_AMOUNTS,
+        D("294.005"),
+        Factor(D("2")),
+        TAX_SO_FAR,
+        D("0.0001"),
+        CENT,
+        D("588.01"),
+    )
+
+    assert render(line) == (
+        "reduction: 2 × reduction_amounts 294.005 over tax_so_far 0.0001, not below 0 "
+        "(half-up to 0.01)"
+    )
+
+
+def test_renders_a_fractional_factor() -> None:
+    line = MultipleOverLine(
+        REDUCTION,
+        REDUCTION_AMOUNTS,
+        D("294"),
+        Factor(D("2.5")),
+        TAX_SO_FAR,
+        D("100.5"),
+        NO_ROUNDING,
+        D("634.5"),
+    )
+
+    assert render(line) == (
+        "reduction: 2.5 × reduction_amounts 294 over tax_so_far 100.5, not below 0 (no rounding)"
+    )
+
+
 # --- money figures ---------------------------------------------------------------
 
 
@@ -617,6 +729,25 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
             "personal_amount: 1000 plus 500 less 100.025 for income 22000.5 over 20000 "
             "(range 10000), not below 1000 (no rounding)",
         ),
+        (
+            PerUnitAmountLine(
+                CHILD_AMOUNT, CHILDREN, 2, Amount(D("544.00")), NO_ROUNDING, D("1088.00")
+            ),
+            "child_amount: 544 for each of 2 child_count = 1088 (no rounding)",
+        ),
+        (
+            MultipleOverLine(
+                REDUCTION,
+                REDUCTION_AMOUNTS,
+                D("294.00"),
+                Factor(D("2.0")),
+                TAX_SO_FAR,
+                D("1.000E+2"),
+                NO_ROUNDING,
+                D("488.00"),
+            ),
+            "reduction: 2 × reduction_amounts 294 over tax_so_far 100, not below 0 (no rounding)",
+        ),
     ],
 )
 def test_renders_every_money_figure_of_a_line_without_trailing_zeros(
@@ -646,6 +777,17 @@ def test_render_all_renders_each_line_in_order() -> None:
         TaperedAmountLine(
             PERSONAL_AMOUNT, INCOME, D("22000"), TAPER, NO_ROUNDING, D("100"), D("1400")
         ),
+        PerUnitAmountLine(CHILD_AMOUNT, CHILDREN, 2, Amount(D("544")), NO_ROUNDING, D("1088")),
+        MultipleOverLine(
+            REDUCTION,
+            CHILD_AMOUNT,
+            D("1088"),
+            Factor(D("2")),
+            TOTAL,
+            D("3"),
+            NO_ROUNDING,
+            D("2173"),
+        ),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -662,6 +804,8 @@ def test_render_all_renders_each_line_in_order() -> None:
         "surcharge: 50% of total 3 over 1 (no rounding)",
         "personal_amount: 1000 plus 500 less 100 for income 22000 over 20000 (range 10000), "
         "not below 1000 (no rounding)",
+        "child_amount: 544 for each of 2 child_count = 1088 (no rounding)",
+        "reduction: 2 × child_amount 1088 over total 3, not below 0 (no rounding)",
     )
 
 
