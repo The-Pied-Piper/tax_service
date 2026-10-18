@@ -5,6 +5,7 @@ Every failure names the file and the key that is wrong, so a reviewer editing a 
 
 from __future__ import annotations
 
+import re
 from decimal import Decimal
 from pathlib import Path
 
@@ -173,8 +174,8 @@ def test_an_identifier_that_is_not_an_amount_names_the_file_and_key(tmp_path: Pa
         WorkedReturn.load(path, artifacts)
 
 
-def test_an_int_kind_takes_a_plain_integer(tmp_path: Path, counts: ArtifactRegistry) -> None:
-    path = write(tmp_path, with_section("inputs", "inputs:\n  ex/count: 3\n"), "ok.yaml")
+def test_an_int_kind_takes_a_digit_string(tmp_path: Path, counts: ArtifactRegistry) -> None:
+    path = write(tmp_path, with_section("inputs", 'inputs:\n  ex/count: "3"\n'), "ok.yaml")
 
     worked = WorkedReturn.load(path, counts)
 
@@ -183,40 +184,77 @@ def test_an_int_kind_takes_a_plain_integer(tmp_path: Path, counts: ArtifactRegis
 
 
 def test_an_int_kind_takes_zero(tmp_path: Path, counts: ArtifactRegistry) -> None:
-    path = write(tmp_path, with_section("inputs", "inputs:\n  ex/count: 0\n"), "ok.yaml")
+    path = write(tmp_path, with_section("inputs", 'inputs:\n  ex/count: "0"\n'), "ok.yaml")
 
     assert WorkedReturn.load(path, counts).inputs == (Artifact(COUNT, 0),)
+
+
+def test_an_int_kind_takes_a_count_of_several_digits(
+    tmp_path: Path, counts: ArtifactRegistry
+) -> None:
+    path = write(tmp_path, with_section("inputs", 'inputs:\n  ex/count: "120"\n'), "ok.yaml")
+
+    assert WorkedReturn.load(path, counts).inputs == (Artifact(COUNT, 120),)
 
 
 @pytest.mark.parametrize(
     ("count", "got"),
     [
-        # A bool is an int in Python, so YAML's booleans must be refused by name.
+        # Unquoted, YAML reads a count before the loader sees it, so it must be quoted.
+        ("3", "int"),
+        ("0", "int"),
+        ("010", "int"),  # YAML 1.1 octal: 8
+        ("0x10", "int"),  # hexadecimal: 16
+        ("1_000", "int"),  # 1000
+        ("1:30", "int"),  # sexagesimal: 90
+        ("-1", "int"),
         ("true", "bool"),
         ("false", "bool"),
         ("yes", "bool"),
-        # Quoted, a count would be read as text; a float is not a count.
-        ('"3"', "str"),
         ("3.0", "float"),
     ],
 )
-def test_an_int_kind_refuses_anything_but_a_plain_integer(
+def test_an_int_kind_refuses_an_unquoted_value(
     tmp_path: Path, counts: ArtifactRegistry, count: str, got: str
 ) -> None:
     path = write(tmp_path, with_section("inputs", f"inputs:\n  ex/count: {count}\n"))
 
     with pytest.raises(
-        WorkedReturnError, match=rf"bad\.yaml: inputs\.ex/count must be an integer, got {got}"
+        WorkedReturnError, match=rf"bad\.yaml: inputs\.ex/count must be a string, got {got}"
     ):
         WorkedReturn.load(path, counts)
 
 
-def test_a_negative_count_fails_at_load_naming_the_kind(
-    tmp_path: Path, counts: ArtifactRegistry
+@pytest.mark.parametrize(
+    "count",
+    [
+        "03",  # a leading zero is refused, so a count has one spelling
+        "00",
+        "+3",
+        "-1",
+        "3.0",
+        "3e0",
+        "three",
+        "",
+        " 3",
+        "3 ",
+        "1_000",
+        "1,000",
+        "0x10",
+        "true",
+        "\u0663",  # ARABIC-INDIC DIGIT THREE: a digit to str.isdigit, not a decimal digit here
+        "\u00b3",  # SUPERSCRIPT THREE
+    ],
+)
+def test_an_int_kind_refuses_a_string_that_is_not_decimal_digits(
+    tmp_path: Path, counts: ArtifactRegistry, count: str
 ) -> None:
-    path = write(tmp_path, with_section("inputs", "inputs:\n  ex/count: -1\n"))
+    path = write(tmp_path, with_section("inputs", f'inputs:\n  ex/count: "{count}"\n'))
 
-    with pytest.raises(NegativeArtifactError, match=r"ex/count.*-1"):
+    with pytest.raises(
+        WorkedReturnError,
+        match=rf"bad\.yaml: inputs\.ex/count is not a count: {re.escape(repr(count))}",
+    ):
         WorkedReturn.load(path, counts)
 
 
@@ -224,15 +262,19 @@ def test_a_count_under_expected_names_the_file_and_key(
     tmp_path: Path, counts: ArtifactRegistry
 ) -> None:
     # Counts are what a return starts from, never a line it expects.
-    text = with_section("inputs", "inputs:\n  ex/count: 3\n")
-    path = write(tmp_path, text.replace('  ca/federal_basic_tax: "20146.25"\n', "  ex/count: 3\n"))
+    text = with_section("inputs", 'inputs:\n  ex/count: "3"\n')
+    path = write(
+        tmp_path, text.replace('  ca/federal_basic_tax: "20146.25"\n', '  ex/count: "3"\n')
+    )
 
     with pytest.raises(WorkedReturnError, match=r"bad\.yaml: expected\.ex/count: .*not an amount"):
         WorkedReturn.load(path, counts)
 
 
 def test_loads_the_ontario_counts_as_integers(tmp_path: Path, artifacts: ArtifactRegistry) -> None:
-    text = with_section("inputs", "inputs:\n  ca-on/dependent_children: 2\n  ca-on/dependants: 1\n")
+    text = with_section(
+        "inputs", 'inputs:\n  ca-on/dependent_children: "2"\n  ca-on/dependants: "1"\n'
+    )
 
     worked = WorkedReturn.load(write(tmp_path, text, "ok.yaml"), artifacts)
 
@@ -240,16 +282,18 @@ def test_loads_the_ontario_counts_as_integers(tmp_path: Path, artifacts: Artifac
         Artifact(artifacts.kind("ca-on/dependent_children"), 2),
         Artifact(artifacts.kind("ca-on/dependants"), 1),
     )
+    assert all(type(artifact.value) is int for artifact in worked.inputs)
 
 
-def test_an_ontario_count_given_as_a_boolean_names_the_file_and_key(
-    tmp_path: Path, artifacts: ArtifactRegistry
+@pytest.mark.parametrize(("count", "got"), [("0", "int"), ("true", "bool")])
+def test_an_unquoted_ontario_count_names_the_file_and_key(
+    tmp_path: Path, artifacts: ArtifactRegistry, count: str, got: str
 ) -> None:
-    path = write(tmp_path, with_section("inputs", "inputs:\n  ca-on/dependants: true\n"))
+    path = write(tmp_path, with_section("inputs", f"inputs:\n  ca-on/dependants: {count}\n"))
 
     with pytest.raises(
         WorkedReturnError,
-        match=r"bad\.yaml: inputs\.ca-on/dependants must be an integer, got bool",
+        match=rf"bad\.yaml: inputs\.ca-on/dependants must be a string, got {got}",
     ):
         WorkedReturn.load(path, artifacts)
 

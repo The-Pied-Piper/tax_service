@@ -28,9 +28,9 @@
 # social benefits repayment, capital losses, and the LIFT credit (ON428 line 85). Lines 82
 # (the provincial foreign tax credit) and 87 (the community food program donation tax credit
 # for farmers) are not triggered by this return.
-# Amounts are quoted decimal strings, never floats; counts are plain integers. Every output
-# the CA-ON manifest declares must appear under `expected`; intermediate lines may be listed
-# and are then checked too.
+# Amounts are quoted decimal strings, never floats; counts are quoted digit strings. Every
+# output the CA-ON manifest declares must appear under `expected`; intermediate lines may be
+# listed and are then checked too.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -383,8 +383,8 @@ inputs:
   ca/rrsp_deduction_limit: "19800"
   ca/rrsp_amount_deducted: "1926"
   ca/union_dues: "2000"
-  ca-on/dependent_children: 0
-  ca-on/dependants: 0
+  ca-on/dependent_children: "0"
+  ca-on/dependants: "0"
   ca/income_tax_deducted: "25000"
 expected:
   ca/taxable_capital_gains: "10000"

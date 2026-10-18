@@ -1,15 +1,17 @@
 """Worked returns: human-reviewed YAML files of a return's inputs and expected lines.
 
 A file under `returns/` names its `jurisdiction` and `tax_year`, describes the taxpayer, lists
-the `sources` its figures were checked against, and maps artifact identifiers to amounts (quoted
-decimal strings) under `inputs` and `expected`; a count (an `int` kind) is a plain YAML integer
-and appears only under `inputs`. `WorkedReturn.load` checks that shape and
-resolves each identifier through an artifact registry; every failure is a WorkedReturnError
-naming the file and the key.
+the `sources` its figures were checked against, and maps artifact identifiers to figures under
+`inputs` and `expected`. Every figure is a quoted string, so YAML never reads it as a number: an
+amount is a decimal string, and a count (an `int` kind, only under `inputs`) is a string of
+decimal digits with no sign and no leading zero, such as "0" or "3". `WorkedReturn.load` checks
+that shape and resolves each identifier through an artifact registry; every failure is a
+WorkedReturnError naming the file and the key.
 """
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
@@ -27,6 +29,8 @@ from app.domain.errors import (
 from app.domain.jurisdiction_code import JurisdictionCode
 
 _SECTIONS = frozenset({"jurisdiction", "tax_year", "description", "sources", "inputs", "expected"})
+# A count's one spelling: ASCII decimal digits, no sign, no leading zero.
+_COUNT = re.compile(r"0|[1-9][0-9]*")
 
 
 class WorkedReturnError(ValueError):
@@ -96,6 +100,13 @@ class WorkedReturn:
         return sources
 
     @staticmethod
+    def _count(node: YamlNode) -> int:
+        text = node.require_string()
+        if not _COUNT.fullmatch(text):
+            raise YamlShapeError(f"{node.where} is not a count: {text!r}")
+        return int(text)
+
+    @staticmethod
     def _artifacts(
         node: YamlNode, artifacts: ArtifactRegistry, *, counts: bool
     ) -> tuple[Artifact[Any], ...]:
@@ -113,7 +124,7 @@ class WorkedReturn:
             if kind.value_type is Decimal:
                 result.append(Artifact(kind, value.parse_decimal()))
             elif counts and kind.value_type is int:
-                result.append(Artifact(kind, value.require_integer()))
+                result.append(Artifact(kind, WorkedReturn._count(value)))
             else:
                 accepted = "an amount or a count" if counts else "an amount"
                 raise YamlShapeError(
