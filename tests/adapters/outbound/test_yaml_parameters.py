@@ -22,6 +22,7 @@ from app.adapters.outbound.parameter_parsers.brackets import BracketsParser
 from app.adapters.outbound.parameter_parsers.contribution_tier import ContributionTierParser
 from app.adapters.outbound.parameter_parsers.credit import CreditParser
 from app.adapters.outbound.parameter_parsers.factor import FactorParser
+from app.adapters.outbound.parameter_parsers.fraction import FractionParser
 from app.adapters.outbound.parameter_parsers.rate import RateParser
 from app.adapters.outbound.parameter_parsers.registry import ParameterParserRegistry
 from app.adapters.outbound.parameter_parsers.surcharge_tiers import SurchargeTiersParser
@@ -35,6 +36,7 @@ from app.domain.errors import (
     InvalidContributionTierError,
     InvalidCreditError,
     InvalidFactorError,
+    InvalidFractionError,
     InvalidParameterDataError,
     InvalidRateError,
     InvalidSurchargeTiersError,
@@ -48,6 +50,7 @@ from app.domain.parameters.contribution_tier import CONTRIBUTION_TIER, Contribut
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.factor import FACTOR, Factor
+from app.domain.parameters.fraction import FRACTION, Fraction
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
@@ -163,6 +166,17 @@ rounding: none
 value: "2"
 """
 
+FRACTION_2025 = """\
+family: ex/fraction
+tax_year: 2025
+kind: fraction
+sources:
+  - https://example.org/fraction-2025
+rounding: none
+numerator: "2"
+denominator: "3"
+"""
+
 
 def built_in_parsers() -> ParameterParserRegistry:
     """A fresh registry holding the built-in parsers, never the shared one."""
@@ -175,6 +189,7 @@ def built_in_parsers() -> ParameterParserRegistry:
     registry.register_class(SurchargeTiersParser)
     registry.register_class(TaperParser)
     registry.register_class(FactorParser)
+    registry.register_class(FractionParser)
     return registry
 
 
@@ -556,6 +571,59 @@ def test_by_default_the_factor_parser_comes_from_the_shared_registry(tmp_path: P
     result = YamlParameterSource(roots(tmp_path)).get("ex/factor", 2025, FACTOR)
 
     assert result.values == Factor(D("2"))
+
+
+def test_reads_a_fraction_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/fraction/2025.yaml", FRACTION_2025)
+
+    result = source(tmp_path).get("ex/fraction", 2025, FRACTION)
+
+    assert result == ParameterDataset(
+        family="ex/fraction",
+        tax_year=2025,
+        kind=FRACTION,
+        values=Fraction(numerator=2, denominator=3),
+        rounding=NO_ROUNDING,
+        sources=("https://example.org/fraction-2025",),
+    )
+
+
+@pytest.mark.parametrize(
+    ("numerator", "denominator"), [("1", "1"), ("2", "3"), ("3", "2"), ("4", "6"), ("7", "1000000")]
+)
+def test_reads_a_fractions_parts_as_whole_numbers(
+    tmp_path: Path, numerator: str, denominator: str
+) -> None:
+    content = FRACTION_2025.replace('numerator: "2"', f'numerator: "{numerator}"').replace(
+        'denominator: "3"', f'denominator: "{denominator}"'
+    )
+    write(tmp_path, "ex/parameters/fraction/2025.yaml", content)
+
+    fraction = source(tmp_path).get("ex/fraction", 2025, FRACTION).values
+
+    assert (fraction.numerator, fraction.denominator) == (int(numerator), int(denominator))
+    assert type(fraction.numerator) is int
+    assert type(fraction.denominator) is int
+
+
+def test_reads_a_fraction_datasets_rounding_rule(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/fraction/2025.yaml",
+        FRACTION_2025.replace("rounding: none", 'rounding: {increment: "0.01", mode: half_up}'),
+    )
+
+    result = source(tmp_path).get("ex/fraction", 2025, FRACTION)
+
+    assert result.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
+
+
+def test_by_default_the_fraction_parser_comes_from_the_shared_registry(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/fraction/2025.yaml", FRACTION_2025)
+
+    result = YamlParameterSource(roots(tmp_path)).get("ex/fraction", 2025, FRACTION)
+
+    assert result.values == Fraction(2, 3)
 
 
 def test_reads_each_brackets_printed_constant_exactly(tmp_path: Path) -> None:
@@ -1776,3 +1844,186 @@ def test_a_factor_dataset_is_not_an_amount_dataset(tmp_path: Path) -> None:
 
     with pytest.raises(InvalidParameterDataError, match="kind 'factor' does not match"):
         source(tmp_path).get("ex/factor", 2025, AMOUNT)
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        pytest.param(
+            FRACTION_2025.replace('numerator: "2"', 'numerator: "0"'),
+            "fraction numerator must be positive",
+            id="numerator-zero",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('denominator: "3"', 'denominator: "0"'),
+            "fraction denominator must be positive",
+            id="denominator-zero",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('numerator: "2"', 'numerator: "-2"'),
+            "numerator is not a whole number: '-2'",
+            id="numerator-negative",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('denominator: "3"', 'denominator: "-3"'),
+            "denominator is not a whole number: '-3'",
+            id="denominator-negative",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('numerator: "2"', 'numerator: "2.5"'),
+            "numerator is not a whole number: '2.5'",
+            id="numerator-not-whole",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('denominator: "3"', 'denominator: "3.0"'),
+            "denominator is not a whole number: '3.0'",
+            id="denominator-with-a-decimal-point",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('numerator: "2"', 'numerator: "NaN"'),
+            "numerator is not a whole number: 'NaN'",
+            id="numerator-nan",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('denominator: "3"', 'denominator: "Infinity"'),
+            "denominator is not a whole number: 'Infinity'",
+            id="denominator-infinite",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('numerator: "2"', 'numerator: "two"'),
+            "numerator is not a whole number: 'two'",
+            id="numerator-words",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('numerator: "2"', 'numerator: "+2"'),
+            r"numerator is not a whole number: '\+2'",
+            id="numerator-signed",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('denominator: "3"', 'denominator: "03"'),
+            "denominator is not a whole number: '03'",
+            id="denominator-leading-zero",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('denominator: "3"', 'denominator: " 3"'),
+            "denominator is not a whole number: ' 3'",
+            id="denominator-padded",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('denominator: "3"', 'denominator: "1_000"'),
+            "denominator is not a whole number: '1_000'",
+            id="denominator-underscored",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('numerator: "2"', 'numerator: "\u0662"'),
+            "numerator is not a whole number",
+            id="numerator-non-ascii-digit",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('numerator: "2"', 'numerator: ""'),
+            "numerator is not a whole number: ''",
+            id="numerator-empty",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('numerator: "2"', "numerator: 2"),
+            "numerator must be a string, got int",
+            id="numerator-as-yaml-number",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('denominator: "3"', "denominator: 3"),
+            "denominator must be a string, got int",
+            id="denominator-as-yaml-number",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('numerator: "2"', "numerator: 2.5"),
+            "numerator must be a string, got float",
+            id="numerator-as-yaml-float",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('denominator: "3"\n', ""),
+            r"missing keys \['denominator'\]",
+            id="denominator-missing",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('numerator: "2"\n', "").replace('denominator: "3"\n', ""),
+            r"missing keys \['denominator', 'numerator'\]",
+            id="both-parts-missing",
+        ),
+        pytest.param(
+            FRACTION_2025.replace('numerator: "2"\ndenominator: "3"', 'value: "2/3"'),
+            r"unknown keys \['value'\]",
+            id="value-instead-of-parts",
+        ),
+        pytest.param(
+            FRACTION_2025 + 'rate: "0.5"\n',
+            r"unknown keys \['rate'\]",
+            id="rate-is-not-a-fraction-key",
+        ),
+        pytest.param(
+            FRACTION_2025.replace("kind: fraction", "kind: rate"),
+            "kind 'rate' does not match the requested 'fraction'",
+            id="kind-mismatch",
+        ),
+        pytest.param(
+            FRACTION_2025.replace("rounding: none\n", ""),
+            r"missing keys \['rounding'\]",
+            id="rounding-missing",
+        ),
+        pytest.param(
+            FRACTION_2025.replace("sources:\n  - https://example.org/fraction-2025", "sources: []"),
+            "sources must list at least one",
+            id="sources-empty",
+        ),
+    ],
+)
+def test_rejects_malformed_fraction_dataset(tmp_path: Path, content: str, message: str) -> None:
+    write(tmp_path, "ex/parameters/fraction/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
+        source(tmp_path).get("ex/fraction", 2025, FRACTION)
+
+    assert "2025.yaml" in str(excinfo.value)
+
+
+def test_rejects_a_part_too_long_for_a_whole_number(tmp_path: Path) -> None:
+    # 4,301 digits: one more than `int()` converts from text by default.
+    part = "1" + "0" * 4300
+    write(
+        tmp_path,
+        "ex/parameters/fraction/2025.yaml",
+        FRACTION_2025.replace('numerator: "2"', f'numerator: "{part}"'),
+    )
+
+    with pytest.raises(
+        InvalidParameterDataError, match="numerator is not a whole number"
+    ) as excinfo:
+        source(tmp_path).get("ex/fraction", 2025, FRACTION)
+
+    assert "2025.yaml" in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [('numerator: "2"', 'numerator: "0"'), ('denominator: "3"', 'denominator: "0"')],
+)
+def test_a_zero_part_is_reported_as_a_fraction_error(tmp_path: Path, old: str, new: str) -> None:
+    write(tmp_path, "ex/parameters/fraction/2025.yaml", FRACTION_2025.replace(old, new))
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/fraction", 2025, FRACTION)
+
+    assert isinstance(excinfo.value.__cause__, InvalidFractionError)
+
+
+def test_a_rate_dataset_is_not_a_fraction_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/credit_rate/2025.yaml", RATE_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'rate' does not match"):
+        source(tmp_path).get("ex/credit_rate", 2025, FRACTION)
+
+
+def test_a_fraction_dataset_is_not_a_rate_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/fraction/2025.yaml", FRACTION_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'fraction' does not match"):
+        source(tmp_path).get("ex/fraction", 2025, RATE)

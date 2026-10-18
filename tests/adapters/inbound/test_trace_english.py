@@ -20,6 +20,7 @@ from app.domain.parameters.amount import Amount
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
+from app.domain.parameters.fraction import Fraction
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.parameters.taper import Taper
@@ -29,6 +30,7 @@ from app.domain.trace import (
     CappedAmountLine,
     ContributionTierLine,
     CreditAmountLine,
+    FractionAppliedLine,
     LesserOfLine,
     MultipleOverLine,
     PerUnitAmountLine,
@@ -71,6 +73,8 @@ REDUCTION_AMOUNTS = ArtifactKind("ex/reduction_amounts", Decimal)
 CLAIMED_AMOUNT = ArtifactKind("ex/claimed_amount", Decimal)
 CLAIM_LIMIT = ArtifactKind("ex/claim_limit", Decimal)
 ALLOWED_AMOUNT = ArtifactKind("ex/allowed_amount", Decimal)
+EARNED_INCOME = ArtifactKind("ex/earned_income", Decimal)
+EARNED_PORTION = ArtifactKind("ex/earned_portion", Decimal)
 
 
 def render(line: TraceLine) -> str:
@@ -707,6 +711,56 @@ def test_renders_an_amount_at_most_a_bound_with_every_digit() -> None:
     assert render(line) == "allowed_amount: claimed_amount 0.0049, at most claim_limit 0.005"
 
 
+# --- fractions applied -----------------------------------------------------------------
+#
+# The fraction prints as its two whole parts, "<numerator>/<denominator>", as given.
+
+
+def test_renders_a_fraction_applied_without_rounding() -> None:
+    line = FractionAppliedLine(
+        EARNED_PORTION, EARNED_INCOME, D("60000"), Fraction(2, 3), NO_ROUNDING, D("40000")
+    )
+
+    assert render(line) == "earned_portion: 2/3 of earned_income 60000 (no rounding)"
+
+
+def test_renders_a_rounded_fraction_applied() -> None:
+    line = FractionAppliedLine(
+        EARNED_PORTION, EARNED_INCOME, D("50000"), Fraction(2, 3), CENT, D("33333.33")
+    )
+
+    assert render(line) == "earned_portion: 2/3 of earned_income 50000 (half-up to 0.01)"
+
+
+def test_renders_an_unrounded_inexact_fraction_applied() -> None:
+    line = FractionAppliedLine(
+        EARNED_PORTION,
+        EARNED_INCOME,
+        D("50000"),
+        Fraction(2, 3),
+        NO_ROUNDING,
+        D("33333.33333333333333333333333"),
+    )
+
+    assert render(line) == "earned_portion: 2/3 of earned_income 50000 (no rounding)"
+
+
+@pytest.mark.parametrize(
+    ("numerator", "denominator", "text"), [(1, 1, "1/1"), (3, 2, "3/2"), (4, 6, "4/6")]
+)
+def test_renders_the_fraction_as_given(numerator: int, denominator: int, text: str) -> None:
+    line = FractionAppliedLine(
+        EARNED_PORTION,
+        EARNED_INCOME,
+        D("120"),
+        Fraction(numerator, denominator),
+        NO_ROUNDING,
+        D("0"),
+    )
+
+    assert render(line) == f"earned_portion: {text} of earned_income 120 (no rounding)"
+
+
 # --- money figures ---------------------------------------------------------------
 
 
@@ -851,6 +905,17 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
             AtMostLine(ALLOWED_AMOUNT, CLAIMED_AMOUNT, D("1926.00"), CLAIM_LIMIT, D("1.9260E+3")),
             "allowed_amount: claimed_amount 1926, at most claim_limit 1926",
         ),
+        (
+            FractionAppliedLine(
+                EARNED_PORTION,
+                EARNED_INCOME,
+                D("6.0000E+4"),
+                Fraction(2, 3),
+                NO_ROUNDING,
+                D("40000.00"),
+            ),
+            "earned_portion: 2/3 of earned_income 60000 (no rounding)",
+        ),
     ],
 )
 def test_renders_every_money_figure_of_a_line_without_trailing_zeros(
@@ -892,6 +957,7 @@ def test_render_all_renders_each_line_in_order() -> None:
             D("2173"),
         ),
         AtMostLine(ALLOWED_AMOUNT, TOTAL, D("3"), CAPPED_AMOUNT, D("3")),
+        FractionAppliedLine(EARNED_PORTION, TOTAL, D("3"), Fraction(2, 3), NO_ROUNDING, D("2")),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -911,6 +977,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         "child_amount: 544 for each of 2 child_count = 1088 (no rounding)",
         "reduction: 2 × child_amount 1088 over total 3, not below 0 (no rounding)",
         "allowed_amount: total 3, at most capped_amount 3",
+        "earned_portion: 2/3 of total 3 (no rounding)",
     )
 
 

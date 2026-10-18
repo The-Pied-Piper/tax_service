@@ -2115,3 +2115,105 @@ def test_core_at_most_runs_after_what_it_consumes_is_produced() -> None:
 
     assert type(composition.order[-1]) is at_most_class()
     assert composition.order[-1].consumes == frozenset({EXTRA, SCALED})
+
+
+# --- core/apply_fraction: base × a fraction dataset's fraction, by a made-up manifest ----------
+#
+# Like `Sum` above, `ApplyFraction` is imported inside a cached factory so its absence fails only
+# the tests that use it, and is registered in a private registry under its shared identifier,
+# `core/apply_fraction`. It consumes `ex/scaled` (base × 3) and reads a made-up `fraction`
+# dataset of five-sevenths that rounds half-up to the cent, so the quotient is inexact.
+
+
+@cache
+def apply_fraction_class() -> Any:
+    from app.domain.capabilities.apply_fraction import ApplyFraction
+
+    return ApplyFraction
+
+
+def portion_fraction_data(tax_year: int = 2025) -> ParameterDataset[Any]:
+    from app.domain.parameters.fraction import FRACTION, Fraction
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+
+    return ParameterDataset(
+        family="ex/portion_fraction",
+        tax_year=tax_year,
+        kind=FRACTION,
+        values=Fraction(5, 7),
+        rounding=RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        sources=("https://example.org/ex/portion_fraction",),
+    )
+
+
+APPLY_FRACTION = CapabilitySelection(
+    name="core/apply_fraction",
+    params={"fraction": "ex/portion_fraction"},
+    consumes={"base": "ex/scaled"},
+    produces={"output": "ex-on/result"},
+)
+
+
+def apply_fraction_service() -> tuple[TaxComputationService, FakeParameters]:
+    capabilities = capability_registry()
+    capabilities.register("core/apply_fraction", apply_fraction_class())
+    parameters = FakeParameters(factor_data(), offset_data(), portion_fraction_data())
+    built = service(
+        manifest(APPLY_FRACTION, SCALE),  # authored out of order on purpose
+        parameters=parameters,
+        capabilities=capabilities,
+    )
+    return built, parameters
+
+
+def test_computes_core_apply_fraction_end_to_end() -> None:
+    from app.domain.parameters.fraction import Fraction
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.trace import FractionAppliedLine
+
+    built, _parameters = apply_fraction_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5")))
+
+    # scaled = 5 × 3 = 15; result = 15 × 5 / 7 = 10.714285..., rounded half-up to 10.71.
+    assert worksheet.get(SCALED).value == D("15")
+    assert worksheet.get(RESULT).value == D("10.71")
+    assert isinstance(worksheet.producer_of(RESULT), apply_fraction_class())
+    assert worksheet.trace[-1] == FractionAppliedLine(
+        RESULT,
+        SCALED,
+        D("15"),
+        Fraction(5, 7),
+        RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        D("10.71"),
+    )
+    assert [type(line) for line in worksheet.trace].count(FractionAppliedLine) == 1
+
+
+def test_computes_core_apply_fraction_to_an_exact_quotient_end_to_end() -> None:
+    built, _parameters = apply_fraction_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("7")))
+
+    # scaled = 21; result = 21 × 5 / 7 = 15 exactly, rounded to 15.00.
+    assert worksheet.get(RESULT).value == D("15")
+    assert str(worksheet.get(RESULT).value) == "15.00"
+
+
+def test_core_apply_fraction_runs_after_its_base_is_produced() -> None:
+    built, _parameters = apply_fraction_service()
+
+    composition = built.compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is apply_fraction_class()
+    assert composition.order[-1].consumes == frozenset({SCALED})
+
+
+def test_core_apply_fraction_asks_for_its_dataset_as_a_fraction() -> None:
+    from app.domain.parameters.fraction import FRACTION
+
+    built, parameters = apply_fraction_service()
+
+    built.compose(EX_ON, 2025)
+
+    assert ("ex/portion_fraction", 2025, FRACTION) in parameters.requests

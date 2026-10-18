@@ -11,7 +11,6 @@ WorkedReturnError naming the file and the key.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
@@ -29,8 +28,6 @@ from app.domain.errors import (
 from app.domain.jurisdiction_code import JurisdictionCode
 
 _SECTIONS = frozenset({"jurisdiction", "tax_year", "description", "sources", "inputs", "expected"})
-# A count's one spelling: ASCII decimal digits, no sign, no leading zero.
-_COUNT = re.compile(r"0|[1-9][0-9]*")
 
 
 class WorkedReturnError(ValueError):
@@ -102,9 +99,10 @@ class WorkedReturn:
     @staticmethod
     def _count(node: YamlNode) -> int:
         text = node.require_string()
-        if not _COUNT.fullmatch(text):
-            raise YamlShapeError(f"{node.where} is not a count: {text!r}")
-        return int(text)
+        try:
+            return node.parse_whole_number()
+        except YamlShapeError:
+            raise YamlShapeError(f"{node.where} is not a count: {text!r}") from None
 
     @staticmethod
     def _artifacts(

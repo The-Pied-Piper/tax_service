@@ -1,8 +1,9 @@
 """Unit tests for the structured trace: one frozen line class per fact, with made-up values.
 
 Each line records what happened with the domain objects involved (`ArtifactKind`, `Rate`,
-`Credit`, `Amount`, `ContributionTier`, `Taper`, `Factor`, `RoundingRule`), never text; its
-`amount` is the figure the line is about. A count is an `int` artifact kind and its `int` value.
+`Credit`, `Amount`, `ContributionTier`, `Taper`, `Factor`, `Fraction`, `RoundingRule`), never
+text; its `amount` is the figure the line is about. A count is an `int` artifact kind and its
+`int` value.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ from app.domain.parameters.amount import Amount
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
+from app.domain.parameters.fraction import Fraction
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.domain.parameters.taper import Taper
@@ -27,6 +29,7 @@ from app.domain.trace import (
     CappedAmountLine,
     ContributionTierLine,
     CreditAmountLine,
+    FractionAppliedLine,
     LesserOfLine,
     MultipleOverLine,
     PerUnitAmountLine,
@@ -65,6 +68,8 @@ CHILD_AMOUNT = ArtifactKind("ex/child_amount", Decimal)
 CLAIMED = ArtifactKind("ex/claimed_amount", Decimal)
 LIMIT = ArtifactKind("ex/claim_limit", Decimal)
 ALLOWED = ArtifactKind("ex/allowed_amount", Decimal)
+EARNED = ArtifactKind("ex/earned_income", Decimal)
+PORTION = ArtifactKind("ex/earned_portion", Decimal)
 
 
 def column_line() -> BracketColumnLine:
@@ -139,6 +144,10 @@ def at_most_line() -> AtMostLine:
     return AtMostLine(ALLOWED, CLAIMED, D("1500.25"), LIMIT, D(1926))
 
 
+def fraction_applied_line() -> FractionAppliedLine:
+    return FractionAppliedLine(PORTION, EARNED, D(50000), Fraction(2, 3), CENT, D("33333.33"))
+
+
 ALL_LINES = [
     column_line,
     total_line,
@@ -155,6 +164,7 @@ ALL_LINES = [
     per_unit_amount_line,
     multiple_over_line,
     at_most_line,
+    fraction_applied_line,
 ]
 
 
@@ -1007,6 +1017,66 @@ def test_an_at_most_line_is_not_a_lesser_of_or_capped_amount_line() -> None:
 
     assert not isinstance(line, LesserOfLine)
     assert not isinstance(line, CappedAmountLine)
+
+
+def test_fraction_applied_line_fields_in_order() -> None:
+    line = fraction_applied_line()
+
+    assert line == FractionAppliedLine(
+        output=PORTION,
+        base=EARNED,
+        base_amount=D(50000),
+        fraction=Fraction(2, 3),
+        rounding=CENT,
+        result=D("33333.33"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "base",
+        "base_amount",
+        "fraction",
+        "rounding",
+        "result",
+    ]
+    assert line.output is PORTION
+    assert line.base is EARNED
+    assert line.base_amount == D(50000)
+    assert line.fraction == Fraction(2, 3)
+    assert line.rounding == CENT
+    assert line.result == D("33333.33")
+    assert line.amount == D("33333.33")
+
+
+def test_fraction_applied_line_may_hold_an_unrounded_quotient() -> None:
+    line = FractionAppliedLine(
+        PORTION, EARNED, D(50000), Fraction(2, 3), NO_ROUNDING, D("33333.33333333333333333333333")
+    )
+
+    assert line.amount == D("33333.33333333333333333333333")
+
+
+def test_fraction_applied_lines_differ_by_fraction() -> None:
+    assert fraction_applied_line() != FractionAppliedLine(
+        PORTION, EARNED, D(50000), Fraction(1, 3), CENT, D("33333.33")
+    )
+
+
+def test_fraction_applied_lines_differ_by_rounding() -> None:
+    assert fraction_applied_line() != FractionAppliedLine(
+        PORTION, EARNED, D(50000), Fraction(2, 3), NO_ROUNDING, D("33333.33")
+    )
+
+
+def test_fraction_applied_lines_are_hashable() -> None:
+    assert hash(fraction_applied_line()) == hash(fraction_applied_line())
+
+
+def test_a_fraction_applied_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(fraction_applied_line())]
+
+
+def test_a_fraction_applied_line_is_not_a_rate_applied_line() -> None:
+    assert not isinstance(fraction_applied_line(), RateAppliedLine)
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:

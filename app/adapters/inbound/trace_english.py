@@ -16,6 +16,7 @@ from app.domain.trace import (
     CappedAmountLine,
     ContributionTierLine,
     CreditAmountLine,
+    FractionAppliedLine,
     LesserOfLine,
     MultipleOverLine,
     PerUnitAmountLine,
@@ -179,6 +180,13 @@ class EnglishTraceRenderer:
                 return (
                     f"{output.label}: {amount_kind.label} {self._money(amount)}, "
                     f"at most {bound.label} {self._money(bound_value)}"
+                )
+            case FractionAppliedLine(
+                output=output, base=base, base_amount=amount, fraction=fraction, rounding=rule
+            ):
+                return (
+                    f"{output.label}: {fraction.numerator}/{fraction.denominator} of {base.label} "
+                    f"{self._money(amount)} ({self._rounding(rule)})"
                 )
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 

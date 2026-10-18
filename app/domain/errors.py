@@ -84,6 +84,10 @@ class InvalidFactorError(DomainError):
     """A factor is not finite or is negative."""
 
 
+class InvalidFractionError(DomainError):
+    """A fraction's numerator or denominator is not positive."""
+
+
 class DuplicateRegistrationError(DomainError):
     """Something was registered under an identifier that is already taken."""
 
