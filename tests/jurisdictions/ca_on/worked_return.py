@@ -2,7 +2,8 @@
 
 A file under `returns/` names its `jurisdiction` and `tax_year`, describes the taxpayer, lists
 the `sources` its figures were checked against, and maps artifact identifiers to amounts (quoted
-decimal strings) under `inputs` and `expected`. `WorkedReturn.load` checks that shape and
+decimal strings) under `inputs` and `expected`; a count (an `int` kind) is a plain YAML integer
+and appears only under `inputs`. `WorkedReturn.load` checks that shape and
 resolves each identifier through an artifact registry; every failure is a WorkedReturnError
 naming the file and the key.
 """
@@ -63,8 +64,8 @@ class WorkedReturn:
                 tax_year=root.field("tax_year").require_integer(),
                 description=root.field("description").require_non_empty_string(),
                 sources=cls._sources(root.field("sources")),
-                inputs=cls._amounts(root.field("inputs"), artifacts),
-                expected=cls._amounts(root.field("expected"), artifacts),
+                inputs=cls._artifacts(root.field("inputs"), artifacts, counts=True),
+                expected=cls._artifacts(root.field("expected"), artifacts, counts=False),
             )
         except (YamlShapeError, yaml.YAMLError) as exc:
             raise WorkedReturnError(f"{path}: {exc}") from None
@@ -95,7 +96,9 @@ class WorkedReturn:
         return sources
 
     @staticmethod
-    def _amounts(node: YamlNode, artifacts: ArtifactRegistry) -> tuple[Artifact[Any], ...]:
+    def _artifacts(
+        node: YamlNode, artifacts: ArtifactRegistry, *, counts: bool
+    ) -> tuple[Artifact[Any], ...]:
         fields = node.fields()
         if not fields:
             raise YamlShapeError(f"{node.where} must not be empty")
@@ -107,10 +110,14 @@ class WorkedReturn:
                 raise YamlShapeError(
                     f"{value.where}: unknown artifact identifier {identifier!r} ({exc})"
                 ) from None
-            if kind.value_type is not Decimal:
+            if kind.value_type is Decimal:
+                result.append(Artifact(kind, value.parse_decimal()))
+            elif counts and kind.value_type is int:
+                result.append(Artifact(kind, value.require_integer()))
+            else:
+                accepted = "an amount or a count" if counts else "an amount"
                 raise YamlShapeError(
                     f"{value.where}: {identifier!r} holds a {kind.value_type.__name__}, "
-                    "not an amount"
+                    f"not {accepted}"
                 )
-            result.append(Artifact(kind, value.parse_decimal()))
         return tuple(result)

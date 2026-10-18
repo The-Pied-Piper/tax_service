@@ -16,12 +16,16 @@
 # amount), credited once at the form's credit rate to the form's non-refundable tax credits
 # (T1 line 35000, ON428 line 61500), taken off its basic tax, not below zero, to the tax
 # after credits, and on ON428 the surtax on the Ontario tax after credits, added to it to
-# the Ontario tax with surtax. There is no capital gain, unused or new RRSP contribution or
-# union dues. Not yet computed, so not in this file: any deduction from net income, the
-# social benefits repayment, capital losses, the Ontario tax reduction and health premium,
-# and the balance owing.
-# Amounts are quoted decimal strings, never floats. Every output the CA-ON manifest declares
-# must appear under `expected`; intermediate lines may be listed and are then checked too.
+# the Ontario tax with surtax; and, with no dependent children or dependants, the Ontario
+# tax reduction amounts (the basic reduction alone), twice them less the Ontario tax with
+# surtax, not below zero, to the Ontario tax reduction, taken off the Ontario tax with
+# surtax, not below zero, to the Ontario tax after the reduction. There is no capital gain,
+# unused or new RRSP contribution or union dues. Not yet computed, so not in this file: any
+# deduction from net income, the social benefits repayment, capital losses, the Ontario
+# health premium, and the balance owing.
+# Amounts are quoted decimal strings, never floats; counts are plain integers. Every output
+# the CA-ON manifest declares must appear under `expected`; intermediate lines may be listed
+# and are then checked too.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -59,9 +63,14 @@ description: >-
   line 61500) of $867.61929, each taken off its form's basic tax, not below zero. The
   Ontario surtax (ON428 line 68) is 20% of the Ontario tax after credits over $5,710 plus
   36% of it over $7,307: $2,363.475762 + $3,679.3363716 = $6,042.8121336, for an Ontario tax
-  with surtax (ON428 line 69) of $23,570.1909436. The CPP contributions and EI premiums are
-  rounded to the cent, which changes none of them, and the federal basic personal amount is
-  rounded half-up to the cent; no other amounts are rounded.
+  with surtax (ON428 line 69) of $23,570.1909436. With no dependent children and no
+  dependants (ON428 lines 75 and 76), the Ontario tax reduction amounts (line 77) are the
+  basic reduction of $294.00 (line 74); twice them, $588.00 (line 78), less the Ontario tax
+  with surtax (line 79, from line 73) is negative, so the Ontario tax reduction (line 80) is
+  $0 and the Ontario tax after the reduction (line 81) is that same $23,570.1909436. The CPP
+  contributions and EI premiums are rounded to the cent, which changes none of them, and the
+  federal basic personal amount is rounded half-up to the cent; no other amounts are
+  rounded.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -313,6 +322,29 @@ sources:
     is 2,363.475762 + 3,679.3363716 = 6,042.8121336, and line 69 is 17,527.37881 +
     6,042.8121336 = 23,570.1909436.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
+  - >-
+    CRA, the 2025 ON428 (form 5006-C): line 71 "Line 69 minus line 70 (if negative, enter
+    "0")", with line 70 the dividend tax credit; line 73 "Line 71 plus line 72", with line
+    72 the minimum tax; line 74 "Basic reduction 294.00"; line 75 (line 60969) "Number of
+    dependent children multiplied by $544"; line 76 (line 60970) "Number of dependants
+    multiplied by $544"; line 77 "Add lines 74 to 76."; line 78 "Amount from line 77 above
+    multiplied by 2"; line 79 "Amount from line 73 above"; line 80 "Line 78 minus line 79
+    (if negative, enter "0") Ontario tax reduction"; line 81 "Line 73 minus line 80 (if
+    negative, enter "0")". Neither the dividend tax credit nor the minimum tax is modelled,
+    so lines 71 and 73 carry line 69, the Ontario tax with surtax, unchanged. The taxpayer
+    is taken to have no dependent children and no dependants (to be confirmed), so lines 75
+    and 76 are 0 x 544 = 0 and line 77 is 294.00 + 0 + 0 = 294.00; line 78 is 294.00 x 2 =
+    588.00; line 79 is 23,570.1909436; line 80 is 588.00 - 23,570.1909436, negative, so 0;
+    with no rounding stated, line 81 is 23,570.1909436 - 0 = 23,570.1909436. Not modelled:
+    "Enter "0" on line 80 if any of the following applies to you: You were not a resident of
+    Canada at the beginning of the year; You were not a resident of Ontario on December 31,
+    2025; There is an amount on line 72; You were bankrupt at any time in 2025; Your return
+    is filed for you by a trustee in bankruptcy; You are choosing not to claim an Ontario
+    tax reduction", none of which is taken to apply to this taxpayer (to be confirmed); and
+    "If you had a spouse or common-law partner on December 31, 2025, only the individual
+    with the higher net income can claim the amounts on lines 75 and 76.", which changes
+    nothing while lines 75 and 76 are 0.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
 inputs:
   ca/employment_income: "200000"
   ca/capital_gain: "0"
@@ -320,6 +352,8 @@ inputs:
   ca/rrsp_contributions: "0"
   ca/rrsp_deduction_limit: "36000"
   ca/union_dues: "0"
+  ca-on/dependent_children: 0
+  ca-on/dependants: 0
 expected:
   ca/taxable_capital_gains: "0"
   ca/total_income: "200000"
@@ -347,3 +381,9 @@ expected:
   ca-on/ontario_tax_after_credits: "17527.37881"
   ca-on/ontario_surtax: "6042.8121336"
   ca-on/ontario_tax_with_surtax: "23570.1909436"
+  ca-on/tax_reduction_basic: "294.00"
+  ca-on/tax_reduction_for_children: "0"
+  ca-on/tax_reduction_for_dependants: "0"
+  ca-on/tax_reduction_amounts: "294.00"
+  ca-on/ontario_tax_reduction: "0"
+  ca-on/ontario_tax_after_reduction: "23570.1909436"

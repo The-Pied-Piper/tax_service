@@ -1,0 +1,12 @@
+# Ontario tax reduction, amount per dependant, 2025 tax year (Form ON428, form
+# 5006-C): line 75 (line 60969) "Number of dependent children multiplied by $544"
+# and line 76 (line 60970) "Number of dependants multiplied by $544". One per-unit
+# amount serves both lines.
+# The form states no rounding on lines 75 and 76, so none is assumed.
+family: ca-on/tax_reduction_per_dependant
+tax_year: 2025
+kind: amount
+sources:
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
+rounding: none
+amount: "544"
