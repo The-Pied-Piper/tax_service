@@ -89,8 +89,8 @@ inputs:
   ca/rrsp_deduction_limit: "1800"
   ca/rrsp_amount_deducted: "0"
   ca/union_dues: "0"
-  ca-on/dependent_children: 0
-  ca-on/dependants: 0
+  ca-on/dependent_children: "0"
+  ca-on/dependants: "0"
   ca/income_tax_deducted: "500"
 expected:
   ca/taxable_capital_gains: "0"
