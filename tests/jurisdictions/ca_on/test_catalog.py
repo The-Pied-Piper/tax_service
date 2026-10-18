@@ -71,3 +71,10 @@ def test_every_registered_kind_is_money_in_the_package_namespace(
         assert isinstance(kind, ArtifactKind)
         assert kind.identifier.startswith(f"{app.jurisdictions.ca_on.NAMESPACE}/")
         assert kind.value_type is Decimal, identifier
+
+
+def test_every_kind_is_declared_non_negative(registry: ArtifactRegistry) -> None:
+    for kind in CATALOG.kinds:
+        assert kind.non_negative is True, kind.identifier
+    for identifier in REGISTERED:
+        assert registry.kind(identifier).non_negative is True, identifier

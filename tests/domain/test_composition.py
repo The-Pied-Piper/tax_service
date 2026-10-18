@@ -28,6 +28,7 @@ from app.domain.errors import (
     DuplicateArtifactError,
     InvalidCapabilityError,
     InvalidCompositionError,
+    NegativeArtifactError,
 )
 from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
 from app.domain.parameters.datasets import ParameterDataset
@@ -545,6 +546,50 @@ def test_compute_rejects_two_values_for_one_input() -> None:
 
     with pytest.raises(DuplicateArtifactError, match="'a'"):
         composition.compute(Artifact(A, D(2)), Artifact(A, D(3)))
+
+
+# --- non-negative kinds ------------------------------------------------------------------------
+
+NON_NEGATIVE_A = ArtifactKind("ex/g", Decimal, non_negative=True)
+NON_NEGATIVE_B = ArtifactKind("ex/h", Decimal, non_negative=True)
+
+
+def test_compute_rejects_a_negative_input_for_a_non_negative_kind_naming_the_kind() -> None:
+    composition = Composition(
+        [Link(NON_NEGATIVE_A, C)], inputs=kinds(NON_NEGATIVE_A), outputs=kinds(C)
+    )
+
+    with pytest.raises(NegativeArtifactError, match=r"ex/g.*-1"):
+        composition.compute(Artifact(NON_NEGATIVE_A, D("-1")))
+
+
+def test_compute_rejects_a_capability_producing_a_negative_value_for_a_non_negative_kind() -> None:
+    composition = Composition(
+        [Link(A, NON_NEGATIVE_B, D("-5"))], inputs=kinds(A), outputs=kinds(NON_NEGATIVE_B)
+    )
+
+    with pytest.raises(NegativeArtifactError, match=r"ex/h.*-4"):
+        composition.compute(Artifact(A, D(1)))
+
+
+def test_compute_accepts_zero_for_a_non_negative_kind() -> None:
+    composition = Composition(
+        [Link(NON_NEGATIVE_A, NON_NEGATIVE_B, D("-5"))],
+        inputs=kinds(NON_NEGATIVE_A),
+        outputs=kinds(NON_NEGATIVE_B),
+    )
+
+    worksheet = composition.compute(Artifact(NON_NEGATIVE_A, D(5)))
+
+    assert worksheet.get(NON_NEGATIVE_B).value == ZERO
+
+
+def test_compute_lets_an_unconstrained_kind_go_negative() -> None:
+    composition = Composition([Link(A, B, D("-5"))], inputs=kinds(A), outputs=kinds(B))
+
+    worksheet = composition.compute(Artifact(A, D(1)))
+
+    assert worksheet.get(B) == Artifact(B, D(-4))
 
 
 # --- end to end, with made-up data ---------------------------------------------------------------

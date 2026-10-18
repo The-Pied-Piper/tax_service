@@ -40,6 +40,10 @@ class DuplicateArtifactError(DomainError):
     """An artifact was given more than one value."""
 
 
+class NegativeArtifactError(DomainError):
+    """An artifact of a kind declared non-negative was given a value below zero."""
+
+
 class CapabilityContractError(DomainError):
     """A capability's outputs do not match the artifacts its contract produces."""
 
