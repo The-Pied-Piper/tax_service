@@ -3,8 +3,10 @@
 Federal: 2025 T1 line 30000 ($16,129 at net income of $177,882 or less) and the
 non-refundable credit rate on line 114 (14.5%). Ontario: 2025 ON428 line 58040
 ($12,747) and the credit rate on line 45 (5.05%). Each rate is its own dataset
-(`credit_rate`), stated once. The federal amount's reduction at higher net incomes
-is not modelled yet. Sources are listed in each dataset.
+(`credit_rate`), stated once, and applies to the total of the credit amounts
+(T1 line 33500, ON428 line 58800), of which the basic personal amount is one
+part. The federal amount's reduction at higher net incomes is not modelled yet.
+Sources are listed in each dataset.
 """
 
 from __future__ import annotations
@@ -16,6 +18,7 @@ import pytest
 import app.registrations
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.artifact import Artifact, ArtifactKind
+from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
 from app.domain.parameters.brackets import BRACKETS
 from app.domain.parameters.credit import CREDIT, Credit
@@ -26,8 +29,10 @@ D = Decimal
 SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
 
 
-# Made up for this test and not registered: whichever basic tax the credit applies to, and
-# that tax less the credit.
+# Made up for this test and not registered: the basic personal amount as an artifact, the
+# credit amounts it stands for alone, whichever basic tax the credit applies to, and that tax
+# less the credit.
+AMOUNT = ArtifactKind("ex/basic_personal_amount", Decimal)
 BASIC_TAX = ArtifactKind("ex/basic_tax", Decimal)
 TAX_AFTER_CREDITS = ArtifactKind("ex/tax_after_credits", Decimal)
 
@@ -83,8 +88,12 @@ def test_applies_to_basic_tax(prefix: str, basic_tax: str, after: str) -> None:
     amount = SOURCE.get(f"{prefix}/basic_personal_amount", 2025, CREDIT)
     rate = SOURCE.get(f"{prefix}/credit_rate", 2025, RATE)
 
-    capability = NonRefundableCredit(BASIC_TAX, TAX_AFTER_CREDITS, amount, rate)
+    # The basic personal amount becomes an artifact, and with no other credit amount it is
+    # the whole total the rate is applied to.
+    (claimed,) = CreditAmount(amount, AMOUNT).compute(()).outputs
+    credit = NonRefundableCredit(rate, amounts=AMOUNT, tax=BASIC_TAX, output=TAX_AFTER_CREDITS)
 
-    result = capability.compute((Artifact(BASIC_TAX, D(basic_tax)),))
+    result = credit.compute((claimed, Artifact(BASIC_TAX, D(basic_tax))))
 
+    assert claimed == Artifact(AMOUNT, amount.values.amount)
     assert result.outputs == (Artifact(TAX_AFTER_CREDITS, D(after)),)

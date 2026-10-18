@@ -50,8 +50,9 @@ jurisdiction: CA-ON
 tax_year: 2025
 description: >-
   Employment income of 10000, no capital gain, no RRSP deduction, no union dues and no
-  deductions from net income, so net income and taxable income of 10000; each credit
-  exceeds its tax, leaving zero.
+  deductions from net income, so net income and taxable income of 10000; each total of
+  credit amounts is its basic personal amount alone, and each credit exceeds its tax,
+  leaving zero.
 sources:
   - T1, Schedule 3 and ON428 arithmetic on the 2025 figures.
 inputs:
@@ -67,8 +68,12 @@ expected:
   ca/deductions_from_net_income: "0"
   ca/taxable_income: "10000"
   ca/federal_basic_tax: "1450"
+  ca/basic_personal_amount: "16129"
+  ca/non_refundable_credit_amounts: "16129"
   ca/federal_tax_after_credits: "0"
   ca-on/ontario_basic_tax: "505"
+  ca-on/basic_personal_amount: "12747"
+  ca-on/non_refundable_credit_amounts: "12747"
   ca-on/ontario_tax_after_credits: "0"
 """
 

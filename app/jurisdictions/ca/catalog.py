@@ -78,6 +78,19 @@ Its T1 line reference is still to be confirmed: design.md §2 marks federal line
 UNVERIFIED.
 """
 
+BASIC_PERSONAL_AMOUNT = CATALOG.declare("basic_personal_amount", Decimal)
+"""Basic personal amount, T1 line 30000 "If the amount on line 23600 is $177,882 or less, enter
+$16,129. Otherwise, use the Federal Worksheet to calculate the amount to enter. (maximum
+$16,129)": the amount claimed, the first part of the total of the credit amounts.
+
+The reduction for net income above $177,882 is not modelled, so the claimed amount is the full
+amount.
+"""
+
+NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare("non_refundable_credit_amounts", Decimal)
+"""Total of the non-refundable credit amounts, T1 line 33500 "Line 106 plus line 112": the sum
+of the credit amounts the rate is applied to once, here the basic personal amount alone."""
+
 FEDERAL_TAX_AFTER_CREDITS = CATALOG.declare("federal_tax_after_credits", Decimal)
 """Federal basic tax less federal non-refundable tax credits, not below zero.
 
