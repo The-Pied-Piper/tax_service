@@ -9,6 +9,7 @@ valid_from_tax_year: 2025
 inputs:
   - ca/employment_income
   - ca/capital_gain
+  - ca/unused_rrsp_contributions
   - ca/rrsp_contributions
   - ca/rrsp_deduction_limit
   - ca/union_dues
@@ -75,17 +76,28 @@ capabilities:
         - ca/cpp_second_additional_contributions
     produces:
       output: ca/cpp_enhanced_contributions
+  # Schedule 7 line 5 "Line 1 plus line 4 ... Total contributions", line 6 "Total
+  # contributions from line 5" and line 10 "Line 6 minus line 9 Contributions available
+  # to deduct": with no HBP or LLP repayments (line 9), line 10 is line 5. In line 5's
+  # order: the unused contributions (line 1), then the contributions (line 4).
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/unused_rrsp_contributions
+        - ca/rrsp_contributions
+    produces:
+      output: ca/rrsp_contributions_available
   # Schedule 7 line 20 "Enter whichever is less: amount from line 10 or line 19. Enter
-  # this amount on line 20800 of your return.": with no unused contributions (line 1), no
-  # HBP or LLP repayments (line 9), no employer PRPP contributions (line 12) and no
-  # transfers (line 15), line 10 is the contributions, line 13 the limit and line 16 the
-  # contributions; line 17 is the lesser of lines 13 and 16, deducted in full on line 18,
-  # so line 19 is line 17, and line 20 is the lesser of the contributions and the limit.
-  # In line 20's order: the contributions (line 10), then the limit, which bounds line 19.
+  # this amount on line 20800 of your return.": with no employer PRPP contributions
+  # (line 12) and no transfers (line 15), line 13 is the limit and line 16 the
+  # contributions available to deduct; line 17 is the lesser of lines 13 and 16, deducted
+  # in full on line 18, so line 19 is line 17, and line 20 is the lesser of the
+  # contributions available to deduct and the limit. In line 20's order: the contributions
+  # available to deduct (line 10), then the limit, which bounds line 19.
   - name: core/lesser_of
     consumes:
       amounts:
-        - ca/rrsp_contributions
+        - ca/rrsp_contributions_available
         - ca/rrsp_deduction_limit
     produces:
       output: ca/rrsp_deduction

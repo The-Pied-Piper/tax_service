@@ -34,6 +34,12 @@ TOTAL_INCOME = CATALOG.declare("total_income", Decimal, non_negative=True)
 """Total income, T1 line 15000: the sum of the income lines, here employment income and taxable
 capital gains."""
 
+UNUSED_RRSP_CONTRIBUTIONS = CATALOG.declare("unused_rrsp_contributions", Decimal, non_negative=True)
+"""Unused RRSP contributions, Schedule 7 line 1 "Enter your unused RRSP contributions previously
+reported and available to deduct for 2025 as shown on your latest notice of assessment or
+reassessment, or Form T1028 for 2025": the contributions previously reported and not yet
+deducted, a starting amount."""
+
 RRSP_CONTRIBUTIONS = CATALOG.declare("rrsp_contributions", Decimal, non_negative=True)
 """RRSP contributions, Schedule 7 line 4 (line 24500) "Line 2 plus line 3": the contributions made
 from March 4, 2025, to March 2, 2026, a starting amount.
@@ -43,6 +49,17 @@ partner's RRSP or SPP from March 4, 2025, to December 31, 2025 (attach all recei
 the same contributions "from January 1, 2026, to March 2, 2026".
 """
 
+RRSP_CONTRIBUTIONS_AVAILABLE = CATALOG.declare(
+    "rrsp_contributions_available", Decimal, non_negative=True
+)
+"""RRSP contributions available to deduct, Schedule 7 line 10 "Line 6 minus line 9 Contributions
+available to deduct": the unused contributions plus the contributions.
+
+Line 5 is "Line 1 plus line 4 ... Total contributions"; line 6 "Total contributions from line 5".
+With line 9 at 0, line 10 is line 5. Not triggered by the returns modelled: HBP and LLP repayments
+(lines 7 to 9).
+"""
+
 RRSP_DEDUCTION_LIMIT = CATALOG.declare("rrsp_deduction_limit", Decimal, non_negative=True)
 """RRSP deduction limit, Schedule 7 line 11 "Enter your RRSP deduction limit for 2025 as shown on
 your latest notice of assessment or reassessment, or Form T1028 for 2025.": a starting amount."""
@@ -50,15 +67,15 @@ your latest notice of assessment or reassessment, or Form T1028 for 2025.": a st
 RRSP_DEDUCTION = CATALOG.declare("rrsp_deduction", Decimal, non_negative=True)
 """RRSP deduction, Schedule 7 line 20 "Enter whichever is less: amount from line 10 or line 19.
 Enter this amount on line 20800 of your return. RRSP deduction": the lesser of the contributions
-and the deduction limit, the T1 line 20800 deduction from total income.
+available to deduct and the deduction limit, the T1 line 20800 deduction from total income.
 
 Line 10 is "Line 6 minus line 9 Contributions available to deduct"; line 17 "Enter whichever is
 less: amount from line 13 or line 16."; line 18 "Enter your RRSP, PRPP, or SPP contributions you
 are deducting for 2025 (cannot be more than the amount on line 17)."; line 19 "Line 15 plus line
-18". With lines 1, 9, 12 and 15 at 0 and line 18 the full line 17, line 10 is the contributions
-and line 19 the lesser of them and the limit. Not triggered by the returns modelled: unused
-contributions from earlier years (line 1), HBP and LLP repayments (lines 7 to 9), employer PRPP
-contributions (line 12), transfers (line 15) and deducting less than line 17 (line 18).
+18". With lines 12 and 15 at 0 and line 18 the full line 17, line 19 is the lesser of the
+contributions available to deduct and the limit. Not triggered by the returns modelled: HBP and
+LLP repayments (lines 7 to 9), employer PRPP contributions (line 12), transfers (line 15) and
+deducting less than line 17 (line 18).
 """
 
 UNION_DUES = CATALOG.declare("union_dues", Decimal, non_negative=True)

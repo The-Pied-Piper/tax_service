@@ -5,8 +5,9 @@ sources over the jurisdiction packages and the shared registries. Return A's amo
 income 110000 and a capital gain of 20000 to total income 120000; the CPP contributions computed
 from employment income by Schedule 8's tiers, each at its maximum: base 3356.10, first additional
 678.00 and second additional 396.00, the enhanced contributions 1074.00; the EI premiums computed
-from employment income, at the maximum 1077.48; the RRSP deduction of 1926, the lesser of the
-contributions of 1926 and the deduction limit of 19800 (Schedule 7 line 20); less that RRSP
+from employment income, at the maximum 1077.48; the RRSP contributions available to deduct of 1926,
+no unused contributions plus the contributions of 1926 (Schedule 7 line 10), and the RRSP deduction
+of 1926, the lesser of them and the deduction limit of 19800 (Schedule 7 line 20); less that RRSP
 deduction, union dues of 2000 and the enhanced contributions to net income 115000, less no
 deductions from net income to taxable income 115000, and from each basic personal amount (16129
 federal, 12747 Ontario) plus the base CPP contributions and the EI premiums, and federally the
@@ -70,12 +71,14 @@ from app.jurisdictions.ca.catalog import (
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     RRSP_CONTRIBUTIONS,
+    RRSP_CONTRIBUTIONS_AVAILABLE,
     RRSP_DEDUCTION,
     RRSP_DEDUCTION_LIMIT,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
     TOTAL_INCOME,
     UNION_DUES,
+    UNUSED_RRSP_CONTRIBUTIONS,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
@@ -100,6 +103,7 @@ def service() -> TaxComputationService:
 def compute(
     employment_income: str,
     capital_gain: str,
+    unused_rrsp_contributions: str,
     rrsp_contributions: str,
     rrsp_deduction_limit: str,
     union_dues: str,
@@ -109,6 +113,7 @@ def compute(
         2025,
         Artifact(EMPLOYMENT_INCOME, D(employment_income)),
         Artifact(CAPITAL_GAIN, D(capital_gain)),
+        Artifact(UNUSED_RRSP_CONTRIBUTIONS, D(unused_rrsp_contributions)),
         Artifact(RRSP_CONTRIBUTIONS, D(rrsp_contributions)),
         Artifact(RRSP_DEDUCTION_LIMIT, D(rrsp_deduction_limit)),
         Artifact(UNION_DUES, D(union_dues)),
@@ -117,7 +122,7 @@ def compute(
 
 def return_a() -> Worksheet:
     """Return A's inputs, as in `returns/2025_return_a.yaml`."""
-    return compute("110000", "20000", "1926", "19800", "2000")
+    return compute("110000", "20000", "0", "1926", "19800", "2000")
 
 
 def test_each_amount_is_produced_by_its_capability() -> None:
@@ -125,9 +130,11 @@ def test_each_amount_is_produced_by_its_capability() -> None:
 
     assert worksheet.producer_of(EMPLOYMENT_INCOME) is None
     assert worksheet.producer_of(CAPITAL_GAIN) is None
+    assert worksheet.producer_of(UNUSED_RRSP_CONTRIBUTIONS) is None
     assert worksheet.producer_of(RRSP_CONTRIBUTIONS) is None
     assert worksheet.producer_of(RRSP_DEDUCTION_LIMIT) is None
     assert worksheet.producer_of(UNION_DUES) is None
+    assert isinstance(worksheet.producer_of(RRSP_CONTRIBUTIONS_AVAILABLE), Sum)
     assert isinstance(worksheet.producer_of(RRSP_DEDUCTION), LesserOf)
     assert isinstance(worksheet.producer_of(CPP_BASE_CONTRIBUTIONS), TieredContribution)
     assert isinstance(worksheet.producer_of(CPP_FIRST_ADDITIONAL_CONTRIBUTIONS), TieredContribution)
@@ -239,8 +246,14 @@ def test_the_trace_explains_the_computation() -> None:
         "at most 1077.48 (half-up to 0.01)",
         "1077.48",
     )
+    rrsp_available = position(
+        "rrsp_contributions_available: unused_rrsp_contributions 0 "
+        "+ rrsp_contributions 1926 = 1926",
+        "1926",
+    )
     rrsp = position(
-        "rrsp_deduction: lesser of rrsp_contributions 1926 and rrsp_deduction_limit 19800 = 1926",
+        "rrsp_deduction: lesser of rrsp_contributions_available 1926 "
+        "and rrsp_deduction_limit 19800 = 1926",
         "1926",
     )
     deductions = position(
@@ -312,7 +325,7 @@ def test_the_trace_explains_the_computation() -> None:
     )
     assert taxable_gains < total < net
     assert cpp_first < cpp_enhanced < deductions < net
-    assert rrsp < deductions
+    assert rrsp_available < rrsp < deductions
     assert cpp_second < cpp_enhanced
     assert cpp_base < federal_amounts
     assert cpp_base < ontario_amounts
@@ -380,6 +393,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("1074.00"),
         ),
+        # Schedule 7 line 5 "Line 1 plus line 4 ... Total contributions", to line 10
+        # "Contributions available to deduct" with no HBP or LLP repayments (line 9).
+        RRSP_CONTRIBUTIONS_AVAILABLE: SumLine(
+            RRSP_CONTRIBUTIONS_AVAILABLE,
+            ((UNUSED_RRSP_CONTRIBUTIONS, D("0")), (RRSP_CONTRIBUTIONS, D("1926"))),
+            D("1926"),
+        ),
         DEDUCTIONS_FROM_TOTAL_INCOME: SumLine(
             DEDUCTIONS_FROM_TOTAL_INCOME,
             (
@@ -439,12 +459,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     # Schedule 7 line 20 "Enter whichever is less: amount from line 10 or line 19.": the
-    # contributions of 1926 are below the deduction limit of 19800, so the deduction is the
-    # contributions.
+    # contributions available to deduct of 1926 are below the deduction limit of 19800, so the
+    # deduction is the contributions available to deduct.
     assert lesser == {
         RRSP_DEDUCTION: LesserOfLine(
             RRSP_DEDUCTION,
-            ((RRSP_CONTRIBUTIONS, D("1926")), (RRSP_DEDUCTION_LIMIT, D("19800"))),
+            ((RRSP_CONTRIBUTIONS_AVAILABLE, D("1926")), (RRSP_DEDUCTION_LIMIT, D("19800"))),
             D("1926"),
         )
     }
@@ -559,10 +579,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 25
+    assert len(order) == 26
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
+    assert position[RRSP_CONTRIBUTIONS_AVAILABLE] < position[RRSP_DEDUCTION]
     assert position[RRSP_DEDUCTION] < position[DEDUCTIONS_FROM_TOTAL_INCOME]
     assert position[CPP_FIRST_ADDITIONAL_CONTRIBUTIONS] < position[CPP_ENHANCED_CONTRIBUTIONS]
     assert position[CPP_SECOND_ADDITIONAL_CONTRIBUTIONS] < position[CPP_ENHANCED_CONTRIBUTIONS]
@@ -598,9 +619,10 @@ def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     # Employment income of 10000, with the CPP contributions computed by Schedule 8's tiers:
     # base 4.95% x (10000 - 3500) = 321.75, first additional 1% x 6500 = 65.00, no second
     # additional, so enhanced 65.00; the EI premiums computed from employment income, 1.64% x
-    # 10000 = 164.00; no RRSP contributions, so the RRSP deduction is the lesser of 0 and the
-    # deduction limit of 1800; the Canada employment amount is the lesser of 10000 and 1471.
-    worksheet = compute("10000", "0", "0", "1800", "0")
+    # 10000 = 164.00; no unused or new RRSP contributions, so the RRSP deduction is the lesser
+    # of 0 and the deduction limit of 1800; the Canada employment amount is the lesser of 10000
+    # and 1471.
+    worksheet = compute("10000", "0", "0", "0", "1800", "0")
 
     assert worksheet.get(TOTAL_INCOME).value == D("10000")
     assert worksheet.get(CPP_BASE_CONTRIBUTIONS).value == D("321.75")
@@ -608,6 +630,7 @@ def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     assert worksheet.get(CPP_SECOND_ADDITIONAL_CONTRIBUTIONS).value == D("0")
     assert worksheet.get(CPP_ENHANCED_CONTRIBUTIONS).value == D("65.00")
     assert worksheet.get(EI_PREMIUMS).value == D("164.00")
+    assert worksheet.get(RRSP_CONTRIBUTIONS_AVAILABLE).value == D("0")
     assert worksheet.get(RRSP_DEDUCTION).value == D("0")
     assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("65.00")
     assert worksheet.get(NET_INCOME).value == D("9935.00")
@@ -630,8 +653,23 @@ def test_contributions_above_the_deduction_limit_deduct_the_limit() -> None:
     # Schedule 7 line 20 "Enter whichever is less: amount from line 10 or line 19.": Return A's
     # amounts with contributions of 25000, above the deduction limit of 19800, so the deduction
     # is the limit; total deductions are 19800 + 2000 + 1074.00 = 22874.00.
-    worksheet = compute("110000", "20000", "25000", "19800", "2000")
+    worksheet = compute("110000", "20000", "0", "25000", "19800", "2000")
 
     assert worksheet.get(RRSP_DEDUCTION).value == D("19800")
     assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("22874.00")
     assert worksheet.get(NET_INCOME).value == D("97126.00")
+
+
+def test_unused_contributions_and_no_new_ones_still_deduct() -> None:
+    # Schedule 7 line 5 "Line 1 plus line 4 ... Total contributions" and line 20 "Enter
+    # whichever is less: amount from line 10 or line 19.": Return A's amounts with unused
+    # contributions of 5000 from earlier years (line 1) and no new contributions (line 4), so
+    # the contributions available to deduct (line 10) are 5000 + 0 = 5000, below the deduction
+    # limit of 19800, and the deduction is 5000; total deductions are 5000 + 2000 + 1074.00 =
+    # 8074.00.
+    worksheet = compute("110000", "20000", "5000", "0", "19800", "2000")
+
+    assert worksheet.get(RRSP_CONTRIBUTIONS_AVAILABLE).value == D("5000")
+    assert worksheet.get(RRSP_DEDUCTION).value == D("5000")
+    assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("8074.00")
+    assert worksheet.get(NET_INCOME).value == D("111926.00")
