@@ -40,6 +40,7 @@ from app.domain.trace import (
     SumLine,
     SurchargeTierLine,
     TaperedAmountLine,
+    TimesCountLine,
     TraceLine,
 )
 
@@ -70,6 +71,9 @@ LIMIT = ArtifactKind("ex/claim_limit", Decimal)
 ALLOWED = ArtifactKind("ex/allowed_amount", Decimal)
 EARNED = ArtifactKind("ex/earned_income", Decimal)
 PORTION = ArtifactKind("ex/earned_portion", Decimal)
+EACH = ArtifactKind("ex/amount_each", Decimal)
+PERSONS = ArtifactKind("ex/person_count", int)
+CLAIMED_FOR_ALL = ArtifactKind("ex/amount_claimed", Decimal)
 
 
 def column_line() -> BracketColumnLine:
@@ -148,6 +152,10 @@ def fraction_applied_line() -> FractionAppliedLine:
     return FractionAppliedLine(PORTION, EARNED, D(50000), Fraction(2, 3), CENT, D("33333.33"))
 
 
+def times_count_line() -> TimesCountLine:
+    return TimesCountLine(CLAIMED_FOR_ALL, EACH, D("16129.50"), PERSONS, 2, D("32259.00"))
+
+
 ALL_LINES = [
     column_line,
     total_line,
@@ -165,6 +173,7 @@ ALL_LINES = [
     multiple_over_line,
     at_most_line,
     fraction_applied_line,
+    times_count_line,
 ]
 
 
@@ -1077,6 +1086,82 @@ def test_a_fraction_applied_lines_amount_is_not_one_of_its_fields() -> None:
 
 def test_a_fraction_applied_line_is_not_a_rate_applied_line() -> None:
     assert not isinstance(fraction_applied_line(), RateAppliedLine)
+
+
+def test_times_count_line_fields_in_order() -> None:
+    line = times_count_line()
+
+    assert line == TimesCountLine(
+        output=CLAIMED_FOR_ALL,
+        amount_kind=EACH,
+        amount_value=D("16129.50"),
+        count_kind=PERSONS,
+        count=2,
+        result=D("32259.00"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "amount_kind",
+        "amount_value",
+        "count_kind",
+        "count",
+        "result",
+    ]
+    assert line.output is CLAIMED_FOR_ALL
+    assert line.amount_kind is EACH
+    assert line.amount_value == D("16129.50")
+    assert line.count_kind is PERSONS
+    assert line.count == 2
+    assert type(line.count) is int
+    assert line.result == D("32259.00")
+    assert line.amount == D("32259.00")
+
+
+def test_times_count_line_may_hold_a_count_of_zero() -> None:
+    line = TimesCountLine(CLAIMED_FOR_ALL, EACH, D("16129.50"), PERSONS, 0, D(0))
+
+    assert line.count == 0
+    assert line.amount == D(0)
+
+
+def test_times_count_lines_differ_by_count() -> None:
+    assert times_count_line() != TimesCountLine(
+        CLAIMED_FOR_ALL, EACH, D("16129.50"), PERSONS, 3, D("32259.00")
+    )
+
+
+def test_times_count_lines_differ_by_amount() -> None:
+    assert times_count_line() != TimesCountLine(
+        CLAIMED_FOR_ALL, EACH, D("16129.75"), PERSONS, 2, D("32259.00")
+    )
+
+
+def test_times_count_lines_differ_by_the_amounts_kind() -> None:
+    other = ArtifactKind("ex/other_amount", Decimal)
+
+    assert times_count_line() != TimesCountLine(
+        CLAIMED_FOR_ALL, other, D("16129.50"), PERSONS, 2, D("32259.00")
+    )
+
+
+def test_times_count_lines_differ_by_count_kind() -> None:
+    other = ArtifactKind("ex/dependant_count", int)
+
+    assert times_count_line() != TimesCountLine(
+        CLAIMED_FOR_ALL, EACH, D("16129.50"), other, 2, D("32259.00")
+    )
+
+
+def test_times_count_lines_are_hashable() -> None:
+    assert hash(times_count_line()) == hash(times_count_line())
+
+
+def test_a_times_count_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(times_count_line())]
+
+
+def test_a_times_count_line_is_not_a_per_unit_amount_line() -> None:
+    assert not isinstance(times_count_line(), PerUnitAmountLine)
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:

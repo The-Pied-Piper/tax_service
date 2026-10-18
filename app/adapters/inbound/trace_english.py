@@ -27,6 +27,7 @@ from app.domain.trace import (
     SumLine,
     SurchargeTierLine,
     TaperedAmountLine,
+    TimesCountLine,
     TraceLine,
 )
 
@@ -187,6 +188,18 @@ class EnglishTraceRenderer:
                 return (
                     f"{output.label}: {fraction.numerator}/{fraction.denominator} of {base.label} "
                     f"{self._money(amount)} ({self._rounding(rule)})"
+                )
+            case TimesCountLine(
+                output=output,
+                amount_kind=amount_kind,
+                amount_value=amount,
+                count_kind=count_kind,
+                count=count,
+                result=result,
+            ):
+                return (
+                    f"{output.label}: {amount_kind.label} {self._money(amount)} for each of "
+                    f"{count} {count_kind.label} = {self._money(result)}"
                 )
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 

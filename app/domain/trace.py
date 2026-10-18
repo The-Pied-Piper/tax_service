@@ -339,3 +339,25 @@ class FractionAppliedLine(TraceLine):
     def amount(self) -> Decimal:
         """The rounded product."""
         return self.result
+
+
+@dataclass(frozen=True)
+class TimesCountLine(TraceLine):
+    """The `result` produced as `output`: `amount_kind` (worth `amount_value`) for each of
+    `count` units of `count_kind`, exactly.
+
+    Its own class, not a `PerUnitAmountLine`: the amount is an artifact, not a dataset's amount,
+    and the product is never rounded.
+    """
+
+    output: Money
+    amount_kind: Money
+    amount_value: Decimal
+    count_kind: ArtifactKind[int]
+    count: int
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The exact product."""
+        return self.result
