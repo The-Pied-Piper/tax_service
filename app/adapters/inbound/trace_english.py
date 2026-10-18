@@ -23,6 +23,7 @@ from app.domain.trace import (
     SubtractedLine,
     SubtractedNotBelowZeroLine,
     SumLine,
+    SurchargeTierLine,
     TraceLine,
     UnusedCreditLine,
 )
@@ -106,6 +107,18 @@ class EnglishTraceRenderer:
                     f"{output.label}: {self._percent(tier.rate.value)}% of {earnings.label} "
                     f"between {tier.lower} and {tier.upper} ({contributory}), "
                     f"at most {tier.maximum} ({self._rounding(rule)})"
+                )
+            case SurchargeTierLine(
+                output=output,
+                base=base,
+                base_amount=amount,
+                threshold=threshold,
+                rate=rate,
+                rounding=rule,
+            ):
+                return (
+                    f"{output.label}: {self._percent(rate.value)}% of {base.label} {amount} "
+                    f"over {threshold} ({self._rounding(rule)})"
                 )
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 

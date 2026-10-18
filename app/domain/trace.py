@@ -246,3 +246,26 @@ class ContributionTierLine(TraceLine):
     def amount(self) -> Decimal:
         """The contribution: the rounded, capped result."""
         return self.result
+
+
+@dataclass(frozen=True)
+class SurchargeTierLine(TraceLine):
+    """One tier of a surcharge produced as `output`: `rate` of `base` (worth `base_amount`) over
+    `threshold`, not below zero, rounded with `rounding` to `part`.
+
+    `base_amount` is the whole base, not the part over the threshold; a base that does not reach
+    the threshold still gets its line, with a zero part.
+    """
+
+    output: Money
+    base: Money
+    base_amount: Decimal
+    threshold: Decimal
+    rate: Rate
+    rounding: RoundingRule
+    part: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The rounded part charged by this tier."""
+        return self.part

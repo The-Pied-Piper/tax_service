@@ -32,6 +32,7 @@ from app.domain.trace import (
     SubtractedLine,
     SubtractedNotBelowZeroLine,
     SumLine,
+    SurchargeTierLine,
     TraceLine,
     UnusedCreditLine,
 )
@@ -55,6 +56,7 @@ LESSER = ArtifactKind("ex/lesser", Decimal)
 EARNINGS = ArtifactKind("ex/earnings", Decimal)
 CONTRIBUTION = ArtifactKind("ex/contribution", Decimal)
 TIER = ContributionTier(Rate(D("0.05")), D(3000), D(50000), D(2350))
+SURCHARGE = ArtifactKind("ex/surcharge", Decimal)
 
 
 def slice_line() -> BracketSliceLine:
@@ -111,6 +113,10 @@ def contribution_tier_line() -> ContributionTierLine:
     )
 
 
+def surcharge_tier_line() -> SurchargeTierLine:
+    return SurchargeTierLine(SURCHARGE, TAX, D("400.25"), D(300), Rate(D("0.25")), CENT, D("25.06"))
+
+
 ALL_LINES = [
     slice_line,
     total_line,
@@ -125,6 +131,7 @@ ALL_LINES = [
     capped_amount_line,
     lesser_of_line,
     contribution_tier_line,
+    surcharge_tier_line,
 ]
 
 
@@ -638,6 +645,66 @@ def test_a_contribution_tier_line_is_not_a_rate_applied_or_capped_amount_line() 
 
     assert not isinstance(line, RateAppliedLine)
     assert not isinstance(line, CappedAmountLine)
+
+
+def test_surcharge_tier_line_fields_in_order() -> None:
+    line = surcharge_tier_line()
+
+    assert line == SurchargeTierLine(
+        output=SURCHARGE,
+        base=TAX,
+        base_amount=D("400.25"),
+        threshold=D(300),
+        rate=Rate(D("0.25")),
+        rounding=CENT,
+        part=D("25.06"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "base",
+        "base_amount",
+        "threshold",
+        "rate",
+        "rounding",
+        "part",
+    ]
+    assert line.output is SURCHARGE
+    assert line.base is TAX
+    # `base_amount` is the whole base, not the part of it over the threshold.
+    assert line.base_amount == D("400.25")
+    assert line.threshold == D(300)
+    assert line.rate == Rate(D("0.25"))
+    assert line.rounding == CENT
+    assert line.part == D("25.06")
+    assert line.amount == D("25.06")
+
+
+def test_surcharge_tier_line_may_hold_a_zero_part() -> None:
+    # A base that does not reach the threshold still gets its tier's line, with nothing charged.
+    line = SurchargeTierLine(SURCHARGE, TAX, D(200), D(300), Rate(D("0.25")), NO_ROUNDING, D(0))
+
+    assert line.part == D(0)
+    assert line.amount == D(0)
+
+
+def test_surcharge_tier_lines_differ_by_threshold() -> None:
+    assert surcharge_tier_line() != SurchargeTierLine(
+        SURCHARGE, TAX, D("400.25"), D(100), Rate(D("0.25")), CENT, D("25.06")
+    )
+
+
+def test_surcharge_tier_lines_differ_by_rounding() -> None:
+    assert surcharge_tier_line() != SurchargeTierLine(
+        SURCHARGE, TAX, D("400.25"), D(300), Rate(D("0.25")), NO_ROUNDING, D("25.06")
+    )
+
+
+def test_surcharge_tier_lines_are_hashable() -> None:
+    assert hash(surcharge_tier_line()) == hash(surcharge_tier_line())
+
+
+def test_a_surcharge_tier_line_is_not_a_rate_applied_line() -> None:
+    assert not isinstance(surcharge_tier_line(), RateAppliedLine)
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:

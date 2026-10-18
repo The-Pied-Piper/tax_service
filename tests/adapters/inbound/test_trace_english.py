@@ -32,6 +32,7 @@ from app.domain.trace import (
     SubtractedLine,
     SubtractedNotBelowZeroLine,
     SumLine,
+    SurchargeTierLine,
     TraceLine,
     UnusedCreditLine,
 )
@@ -57,6 +58,8 @@ LESSER_AMOUNT = ArtifactKind("ex/lesser_amount", Decimal)
 EARNINGS = ArtifactKind("ex/earnings", Decimal)
 CONTRIBUTION = ArtifactKind("ex/contribution", Decimal)
 TIER = ContributionTier(Rate(D("0.05")), D("3000"), D("50000"), D("2350"))
+SURCHARGE = ArtifactKind("ex/surcharge", Decimal)
+TAX_SO_FAR = ArtifactKind("ex/tax_so_far", Decimal)
 
 
 def render(line: TraceLine) -> str:
@@ -430,6 +433,41 @@ def test_renders_the_tiers_figures_as_given() -> None:
     )
 
 
+# --- surcharge tiers -------------------------------------------------------------------
+
+
+def test_renders_a_surcharge_tier() -> None:
+    line = SurchargeTierLine(
+        SURCHARGE, TAX_SO_FAR, D("400"), D("300"), Rate(D("0.25")), NO_ROUNDING, D("25")
+    )
+
+    assert render(line) == "surcharge: 25% of tax_so_far 400 over 300 (no rounding)"
+
+
+def test_renders_a_rounded_surcharge_tier() -> None:
+    line = SurchargeTierLine(
+        SURCHARGE, TAX_SO_FAR, D("300.06"), D("100"), Rate(D("0.10")), CENT, D("20.01")
+    )
+
+    assert render(line) == "surcharge: 10% of tax_so_far 300.06 over 100 (half-up to 0.01)"
+
+
+def test_renders_a_surcharge_tier_the_base_does_not_reach() -> None:
+    line = SurchargeTierLine(
+        SURCHARGE, TAX_SO_FAR, D("200"), D("300"), Rate(D("0.25")), NO_ROUNDING, D("0")
+    )
+
+    assert render(line) == "surcharge: 25% of tax_so_far 200 over 300 (no rounding)"
+
+
+def test_renders_the_threshold_and_base_as_given() -> None:
+    line = SurchargeTierLine(
+        SURCHARGE, TAX_SO_FAR, D("1000.50"), D("1471.5"), Rate(D("0.0505")), NO_ROUNDING, D(0)
+    )
+
+    assert render(line) == "surcharge: 5.05% of tax_so_far 1000.50 over 1471.5 (no rounding)"
+
+
 # --- whole traces and unknown lines ----------------------------------------------
 
 
@@ -450,6 +488,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         ContributionTierLine(
             CONTRIBUTION, EARNINGS, D("23000"), TIER, NO_ROUNDING, D("20000"), D("1000")
         ),
+        SurchargeTierLine(SURCHARGE, TOTAL, D("3"), D("1"), Rate(D("0.5")), NO_ROUNDING, D("1")),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -466,6 +505,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         "capped_amount: lesser of total 3 and 2 (no rounding)",
         "lesser_amount: lesser of total 3 and capped_amount 2 = 2",
         "contribution: 5% of earnings between 3000 and 50000 (20000), at most 2350 (no rounding)",
+        "surcharge: 50% of total 3 over 1 (no rounding)",
     )
 
 

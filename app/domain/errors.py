@@ -94,3 +94,7 @@ class InvalidSelectionError(DomainError):
 
 class AmbiguousManifestError(DomainError):
     """More than one manifest applies to a tax year (design.md §4; §5 rule 6)."""
+
+
+class InvalidSurchargeTiersError(DomainError):
+    """A tier's threshold or rate is invalid, tiers are missing, or thresholds do not increase."""

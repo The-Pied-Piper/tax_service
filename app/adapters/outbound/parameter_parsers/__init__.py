@@ -17,6 +17,7 @@ from app.adapters.outbound.parameter_parsers import (
     parser,
     rate,
     registry,
+    surcharge_tiers,
 )
 from app.adapters.outbound.parameter_parsers.parser import ParameterParser
 
@@ -29,4 +30,5 @@ __all__ = [
     "parser",
     "rate",
     "registry",
+    "surcharge_tiers",
 ]
