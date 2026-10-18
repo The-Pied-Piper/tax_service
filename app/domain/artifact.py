@@ -90,7 +90,9 @@ class Artifact[T]:
             )
         if self.kind.non_negative and isinstance(self.value, Decimal | int) and self.value < 0:
             raise NegativeArtifactError(
-                f"{self.kind.identifier} cannot be negative, got {self.value}"
+                f"{self.kind.identifier} cannot be negative, got {self.value}",
+                identifier=self.kind.identifier,
+                value=self.value,
             )
 
 
