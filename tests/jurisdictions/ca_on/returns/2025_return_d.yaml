@@ -4,15 +4,17 @@
 # Computed from employment income to total income; from employment income, by Schedule 8's
 # three contribution tiers, to the base, first additional and second additional CPP
 # contributions, the last two together the enhanced CPP contributions; from employment
-# income, up to the EI maximum insurable earnings, to the EI premiums; from the RRSP
-# contributions and deduction limit, the lesser of them, to the RRSP deduction (Schedule 7
-# line 20); less the enhanced CPP contributions to net income, less the (empty) deductions
-# from net income to taxable income, and through each form's total of non-refundable credit
-# amounts (its basic personal amount, the base CPP contributions and the EI premiums, and on
-# the T1 alone the Canada employment amount), credited once at the form's credit rate to the
-# form's non-refundable tax credits (T1 line 35000, ON428 line 61500), taken off its basic
-# tax, not below zero, to the tax after credits, and on ON428 the surtax on the Ontario tax
-# after credits, added to it to the Ontario tax with surtax. There is no capital gain, RRSP
+# income, up to the EI maximum insurable earnings, to the EI premiums; from the unused RRSP
+# contributions from earlier years and the RRSP contributions, their sum, to the
+# contributions available to deduct (Schedule 7 line 10), and from those and the deduction
+# limit, the lesser of them, to the RRSP deduction (Schedule 7 line 20); less the enhanced
+# CPP contributions to net income, less the (empty) deductions from net income to taxable
+# income, and through each form's total of non-refundable credit amounts (its basic personal
+# amount, the base CPP contributions and the EI premiums, and on the T1 alone the Canada
+# employment amount), credited once at the form's credit rate to the form's non-refundable
+# tax credits (T1 line 35000, ON428 line 61500), taken off its basic tax, not below zero, to
+# the tax after credits, and on ON428 the surtax on the Ontario tax after credits, added to
+# it to the Ontario tax with surtax. There is no capital gain, unused or new RRSP
 # contribution or union dues. Not yet computed, so not in this file: any deduction from net
 # income, the social benefits repayment, capital losses, the Ontario tax reduction and
 # health premium, and the balance owing.
@@ -32,27 +34,29 @@ description: >-
   ON428 line 58300) are the maximum $1,077.48, base CPP contributions (Schedule 8 line 11,
   T1 line 30800, ON428 line 58240) are the maximum $3,356.10, and enhanced CPP contributions
   (line 22215) are the first additional (Schedule 8 line 12) maximum $678.00 plus the second
-  additional (line 22) 4% x (75,000 - 71,300) = $148.00, together $826.00. No RRSP
-  contributions, so the RRSP deduction (line 20800) is $0, the lesser of the contributions
-  of $0 (Schedule 7 line 4) and a chosen deduction limit of $13,500 (Schedule 7 line 11); no
-  union dues (line 21200), so total deductions (line 23300) are the enhanced CPP
-  contributions of $826.00 and net income (line 23600) is $74,174.00. There are no
-  deductions from net income (lines 24400 to 25600), so their total (line 25700) is $0 and
-  taxable income (line 26000), derived as net income less that total, is $74,174.00, in the
-  second federal and Ontario brackets. The non-refundable credit amounts are the basic
-  personal amount (federal line 30000 $16,129, since net income is $177,882 or less; Ontario
-  ON428 line 58040 $12,747), the base CPP contributions and the EI premiums, and on the T1
-  alone the Canada employment amount (line 31260) of $1,471, the lesser of $1,471 and
-  employment income (ON428 has no such line): line 33500 of $22,033.58 and ON428 line 58800
-  of $17,180.58. The rate is applied once to each total: 14.5% federally (line 33800) and
-  5.05% for Ontario (ON428 line 58840). Each product is its form's non-refundable tax
-  credits: the total federal non-refundable tax credits (line 35000) of $3,194.8691 and the
-  Ontario non-refundable tax credits (ON428 line 61500) of $867.61929, each taken off its
-  form's basic tax, not below zero. The Ontario surtax (ON428 line 68) is 20% of the Ontario
-  tax after credits over $5,710 plus 36% of it over $7,307: $0, as the Ontario tax after
-  credits is below $5,710, so the Ontario tax with surtax (ON428 line 69) is that same
-  $3,750.97571. The CPP contributions and EI premiums are rounded to the cent, which changes
-  none of them; no other amounts are rounded.
+  additional (line 22) 4% x (75,000 - 71,300) = $148.00, together $826.00. No unused or new
+  RRSP contributions, so the RRSP deduction (line 20800) is $0, the lesser of the
+  contributions available to deduct (Schedule 7 line 10) of $0 (the unused contributions
+  from earlier years of $0, Schedule 7 line 1, plus the contributions of $0, Schedule 7 line
+  4) and a chosen deduction limit of $13,500 (Schedule 7 line 11); no union dues (line
+  21200), so total deductions (line 23300) are the enhanced CPP contributions of $826.00 and
+  net income (line 23600) is $74,174.00. There are no deductions from net income (lines
+  24400 to 25600), so their total (line 25700) is $0 and taxable income (line 26000),
+  derived as net income less that total, is $74,174.00, in the second federal and Ontario
+  brackets. The non-refundable credit amounts are the basic personal amount (federal line
+  30000 $16,129, since net income is $177,882 or less; Ontario ON428 line 58040 $12,747),
+  the base CPP contributions and the EI premiums, and on the T1 alone the Canada employment
+  amount (line 31260) of $1,471, the lesser of $1,471 and employment income (ON428 has no
+  such line): line 33500 of $22,033.58 and ON428 line 58800 of $17,180.58. The rate is
+  applied once to each total: 14.5% federally (line 33800) and 5.05% for Ontario (ON428 line
+  58840). Each product is its form's non-refundable tax credits: the total federal
+  non-refundable tax credits (line 35000) of $3,194.8691 and the Ontario non-refundable tax
+  credits (ON428 line 61500) of $867.61929, each taken off its form's basic tax, not below
+  zero. The Ontario surtax (ON428 line 68) is 20% of the Ontario tax after credits over
+  $5,710 plus 36% of it over $7,307: $0, as the Ontario tax after credits is below $5,710,
+  so the Ontario tax with surtax (ON428 line 69) is that same $3,750.97571. The CPP
+  contributions and EI premiums are rounded to the cent, which changes none of them; no
+  other amounts are rounded.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -152,22 +156,24 @@ sources:
     from line 13 or line 16."; line 18 "Enter your RRSP, PRPP, or SPP contributions you are
     deducting for 2025 (cannot be more than the amount on line 17)."; line 19 "Line 15 plus
     line 18"; line 20 "Enter whichever is less: amount from line 10 or line 19. Enter this
-    amount on line 20800 of your return. RRSP deduction". The contributions modelled are
-    line 4's, those made from March 4, 2025, to March 2, 2026 (lines 2 and 3), and the
-    deduction limit is line 11's. The contributions are 0. The deduction limit of 13,500 is
-    a chosen figure: it is the amount on the taxpayer's latest notice of assessment, which
-    nothing on this return determines; 18% of a prior year's income of 75,000 is a plausible
-    one. With no unused contributions (line 1), line 5 is line 4, 0, and so is line 6; with
-    no HBP or LLP repayments (line 9), line 10 is 0 - 0 = 0. With no employer PRPP
+    amount on line 20800 of your return. RRSP deduction". The unused contributions modelled
+    are line 1's, the contributions line 4's, those made from March 4, 2025, to March 2,
+    2026 (lines 2 and 3), and the deduction limit line 11's. The unused contributions of 0
+    are a chosen figure: they are the amount on the taxpayer's latest notice of assessment,
+    which nothing on this return determines. The contributions are 0. The deduction limit of
+    13,500 is a chosen figure: it is the amount on the taxpayer's latest notice of
+    assessment, which nothing on this return determines; 18% of a prior year's income of
+    75,000 is a plausible one. Line 5 is line 1 plus line 4, 0 + 0 = 0, and so is line 6;
+    with no HBP or LLP repayments (line 9), line 10 is 0 - 0 = 0. With no employer PRPP
     contributions (line 12), line 13 is 13,500 - 0 = 13,500; line 14 is 0; with no transfers
     (line 15), line 16 is 0 - 0 = 0; line 17 is the lesser of 13,500 and 0, 0. The full line
     17 amount is deducted, so line 18 is 0 and line 19 is 0 + 0 = 0; line 20, and so line
     20800, is the lesser of 0 (line 10) and 0 (line 19): 0, with no rounding stated. Page
     1's rule, for a return with none of the situations for Parts A to F, enters the total
     contributions on line 20800 directly: the same 0, since the contributions do not exceed
-    the limit. Not triggered by this return, so not modelled: unused contributions from
-    earlier years (line 1); HBP and LLP repayments (lines 7 to 9); employer PRPP
-    contributions (line 12); transfers (line 15); and deducting less than line 17 (line 18).
+    the limit. Not triggered by this return, so not modelled: HBP and LLP repayments (lines
+    7 to 9); employer PRPP contributions (line 12); transfers (line 15); and deducting less
+    than line 17 (line 18).
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s7/5000-s7-25e.txt
   - >-
     CRA, the 2025 T1 return (form 5000-R): line 36 (line 20800) "RRSP deduction (complete
@@ -259,6 +265,7 @@ sources:
 inputs:
   ca/employment_income: "75000"
   ca/capital_gain: "0"
+  ca/unused_rrsp_contributions: "0"
   ca/rrsp_contributions: "0"
   ca/rrsp_deduction_limit: "13500"
   ca/union_dues: "0"
@@ -270,6 +277,7 @@ expected:
   ca/cpp_second_additional_contributions: "148.00"
   ca/cpp_enhanced_contributions: "826.00"
   ca/ei_premiums: "1077.48"
+  ca/rrsp_contributions_available: "0"
   ca/rrsp_deduction: "0"
   ca/deductions_from_total_income: "826.00"
   ca/net_income: "74174.00"

@@ -33,12 +33,14 @@ from app.jurisdictions.ca.catalog import (
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     RRSP_CONTRIBUTIONS,
+    RRSP_CONTRIBUTIONS_AVAILABLE,
     RRSP_DEDUCTION,
     RRSP_DEDUCTION_LIMIT,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
     TOTAL_INCOME,
     UNION_DUES,
+    UNUSED_RRSP_CONTRIBUTIONS,
 )
 from app.registrations import JURISDICTIONS
 
@@ -48,7 +50,9 @@ REGISTERED = frozenset(
         "ca/capital_gain",
         "ca/taxable_capital_gains",
         "ca/total_income",
+        "ca/unused_rrsp_contributions",
         "ca/rrsp_contributions",
+        "ca/rrsp_contributions_available",
         "ca/rrsp_deduction_limit",
         "ca/rrsp_deduction",
         "ca/union_dues",
@@ -97,7 +101,9 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/capital_gain") is CAPITAL_GAIN
     assert registry.get("ca/taxable_capital_gains") is TAXABLE_CAPITAL_GAINS
     assert registry.get("ca/total_income") is TOTAL_INCOME
+    assert registry.get("ca/unused_rrsp_contributions") is UNUSED_RRSP_CONTRIBUTIONS
     assert registry.get("ca/rrsp_contributions") is RRSP_CONTRIBUTIONS
+    assert registry.get("ca/rrsp_contributions_available") is RRSP_CONTRIBUTIONS_AVAILABLE
     assert registry.get("ca/rrsp_deduction_limit") is RRSP_DEDUCTION_LIMIT
     assert registry.get("ca/rrsp_deduction") is RRSP_DEDUCTION
     assert registry.get("ca/union_dues") is UNION_DUES
@@ -133,7 +139,9 @@ def test_catalog_kinds_are_money() -> None:
         CAPITAL_GAIN,
         TAXABLE_CAPITAL_GAINS,
         TOTAL_INCOME,
+        UNUSED_RRSP_CONTRIBUTIONS,
         RRSP_CONTRIBUTIONS,
+        RRSP_CONTRIBUTIONS_AVAILABLE,
         RRSP_DEDUCTION_LIMIT,
         RRSP_DEDUCTION,
         UNION_DUES,

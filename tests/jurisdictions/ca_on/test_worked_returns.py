@@ -49,26 +49,28 @@ LOW_INCOME = """\
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
-  Employment income of 10000, no capital gain, no RRSP contributions, no union dues and no
-  deductions from net income. The CPP contributions are computed from employment income by
-  Schedule 8's tiers: base contributions 4.95% x (10000 - 3500) = 321.75, first additional
-  1% x 6500 = 65.00, no second additional below the 71300 ceiling, so enhanced contributions
-  of 65.00. The EI premiums are computed from employment income: 1.64% x 10000 = 164.00. The
-  RRSP deduction is the lesser of the contributions (Schedule 7 line 4) of 0 and the
-  deduction limit (line 11) of 1800, a chosen limit: 0, so the enhanced contributions are
-  the only deduction from total income. Net income and taxable income are 9935.00. The
-  Canada employment amount is the lesser of 1471 and the employment income of 10000: 1471.
-  The federal total of credit amounts is its basic personal amount plus 321.75, 164.00 and
-  1471; the Ontario total is its basic personal amount plus 321.75 and 164.00 (ON428 has no
-  Canada employment amount). Each form's non-refundable tax credits are its total times its
-  rate (14.5% of 18085.75 = 2622.43375; 5.05% of 13232.75 = 668.253875); each exceeds its
-  tax, leaving zero. An Ontario tax of zero is below the first surtax threshold, so the
-  surtax is zero and the Ontario tax with surtax is zero.
+  Employment income of 10000, no capital gain, no unused or new RRSP contributions, no union
+  dues and no deductions from net income. The CPP contributions are computed from employment
+  income by Schedule 8's tiers: base contributions 4.95% x (10000 - 3500) = 321.75, first
+  additional 1% x 6500 = 65.00, no second additional below the 71300 ceiling, so enhanced
+  contributions of 65.00. The EI premiums are computed from employment income: 1.64% x 10000
+  = 164.00. The contributions available to deduct (Schedule 7 line 10) are the unused
+  contributions (line 1) of 0 plus the contributions (line 4) of 0: 0. The RRSP deduction is
+  the lesser of them and the deduction limit (line 11) of 1800, a chosen limit: 0, so the
+  enhanced contributions are the only deduction from total income. Net income and taxable
+  income are 9935.00. The Canada employment amount is the lesser of 1471 and the employment
+  income of 10000: 1471. The federal total of credit amounts is its basic personal amount
+  plus 321.75, 164.00 and 1471; the Ontario total is its basic personal amount plus 321.75
+  and 164.00 (ON428 has no Canada employment amount). Each form's non-refundable tax credits
+  are its total times its rate (14.5% of 18085.75 = 2622.43375; 5.05% of 13232.75 =
+  668.253875); each exceeds its tax, leaving zero. An Ontario tax of zero is below the first
+  surtax threshold, so the surtax is zero and the Ontario tax with surtax is zero.
 sources:
   - T1, Schedule 3, Schedule 7, Schedule 8, ON428 and EI table arithmetic on the 2025 figures.
 inputs:
   ca/employment_income: "10000"
   ca/capital_gain: "0"
+  ca/unused_rrsp_contributions: "0"
   ca/rrsp_contributions: "0"
   ca/rrsp_deduction_limit: "1800"
   ca/union_dues: "0"
@@ -80,6 +82,7 @@ expected:
   ca/cpp_second_additional_contributions: "0"
   ca/cpp_enhanced_contributions: "65.00"
   ca/ei_premiums: "164.00"
+  ca/rrsp_contributions_available: "0"
   ca/rrsp_deduction: "0"
   ca/deductions_from_total_income: "65.00"
   ca/net_income: "9935.00"
