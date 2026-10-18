@@ -9,6 +9,7 @@ NAMESPACE = "core"
 
 from app.domain.capabilities import (  # noqa: E402
     apply_rate,
+    capped_amount,
     credit_amount,
     non_refundable_credit,
     progressive_tax,
@@ -20,6 +21,7 @@ from app.domain.capabilities import (  # noqa: E402
 __all__ = [
     "NAMESPACE",
     "apply_rate",
+    "capped_amount",
     "credit_amount",
     "non_refundable_credit",
     "progressive_tax",

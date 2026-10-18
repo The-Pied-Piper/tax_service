@@ -14,11 +14,13 @@ import pytest
 
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.domain.artifact import ArtifactKind
+from app.domain.parameters.amount import Amount
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.trace import (
     BracketSliceLine,
+    CappedAmountLine,
     CreditAmountLine,
     CreditAppliedLine,
     CreditLine,
@@ -46,6 +48,7 @@ RATED_AMOUNT = ArtifactKind("ex/rated_amount", Decimal)
 REDUCTION = ArtifactKind("ex/reduction", Decimal)
 NET_AMOUNT = ArtifactKind("ex/net_amount", Decimal)
 PERSONAL_AMOUNT = ArtifactKind("ex/personal_amount", Decimal)
+CAPPED_AMOUNT = ArtifactKind("ex/capped_amount", Decimal)
 
 
 def render(line: TraceLine) -> str:
@@ -274,6 +277,44 @@ def test_renders_the_credit_amount_with_another_rounding_rule() -> None:
     assert render(line) == "personal_amount: credit amount 1000.99 (floor to 1)"
 
 
+# --- capped amounts --------------------------------------------------------------------
+
+
+def test_renders_a_base_above_the_cap() -> None:
+    line = CappedAmountLine(
+        CAPPED_AMOUNT, GROSS_AMOUNT, D("1500.25"), Amount(D("1000")), NO_ROUNDING, D("1000")
+    )
+
+    assert render(line) == "capped_amount: lesser of gross_amount 1500.25 and 1000 (no rounding)"
+
+
+def test_renders_a_base_below_the_cap() -> None:
+    line = CappedAmountLine(
+        CAPPED_AMOUNT, GROSS_AMOUNT, D("400.50"), Amount(D("1000")), NO_ROUNDING, D("400.50")
+    )
+
+    assert render(line) == "capped_amount: lesser of gross_amount 400.50 and 1000 (no rounding)"
+
+
+def test_renders_a_rounded_capped_amount() -> None:
+    line = CappedAmountLine(
+        CAPPED_AMOUNT, GROSS_AMOUNT, D("400.005"), Amount(D("1000.00")), CENT, D("400.01")
+    )
+
+    assert (
+        render(line)
+        == "capped_amount: lesser of gross_amount 400.005 and 1000.00 (half-up to 0.01)"
+    )
+
+
+def test_renders_the_cap_as_given() -> None:
+    line = CappedAmountLine(
+        CAPPED_AMOUNT, GROSS_AMOUNT, D("0"), Amount(D("1471.5")), NO_ROUNDING, D("0")
+    )
+
+    assert render(line) == "capped_amount: lesser of gross_amount 0 and 1471.5 (no rounding)"
+
+
 # --- whole traces and unknown lines ----------------------------------------------
 
 
@@ -289,6 +330,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         SubtractedLine(NET_AMOUNT, TOTAL, D("3"), RATED_AMOUNT, D("1.5"), D("1.5")),
         SubtractedNotBelowZeroLine(TOTAL, RATED_AMOUNT, D("1.5"), PART_TWO, D("2"), D("0")),
         CreditAmountLine(PERSONAL_AMOUNT, Credit(D("1000")), NO_ROUNDING, D("1000")),
+        CappedAmountLine(CAPPED_AMOUNT, TOTAL, D("3"), Amount(D("2")), NO_ROUNDING, D("2")),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -302,6 +344,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         "net_amount: total 3 less rated_amount 1.5 = 1.5",
         "total: rated_amount 1.5 less part_two 2, not below 0 = 0",
         "personal_amount: credit amount 1000 (no rounding)",
+        "capped_amount: lesser of total 3 and 2 (no rounding)",
     )
 
 

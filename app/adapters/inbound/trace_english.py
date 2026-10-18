@@ -12,6 +12,7 @@ from decimal import Decimal
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingRule, RoundTo
 from app.domain.trace import (
     BracketSliceLine,
+    CappedAmountLine,
     CreditAmountLine,
     CreditAppliedLine,
     CreditLine,
@@ -81,6 +82,13 @@ class EnglishTraceRenderer:
                 return (
                     f"{output.label}: {minuend.label} {minuend_amount} "
                     f"less {subtrahend.label} {subtrahend_amount} = {result}"
+                )
+            case CappedAmountLine(
+                output=output, base=base, base_amount=amount, cap=cap, rounding=rule
+            ):
+                return (
+                    f"{output.label}: lesser of {base.label} {amount} and {cap.value} "
+                    f"({self._rounding(rule)})"
                 )
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 
