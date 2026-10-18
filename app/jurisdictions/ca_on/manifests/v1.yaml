@@ -11,6 +11,9 @@ inputs:
   - ca/capital_gain
   - ca/rrsp_deduction
   - ca/union_dues
+  - ca/cpp_base_contributions
+  - ca/cpp_enhanced_contributions
+  - ca/ei_premiums
 outputs:
   - ca/federal_tax_after_credits
   - ca-on/ontario_tax_after_credits
@@ -34,6 +37,7 @@ capabilities:
       parts:
         - ca/rrsp_deduction
         - ca/union_dues
+        - ca/cpp_enhanced_contributions
     produces:
       output: ca/deductions_from_total_income
   - name: core/subtract_not_below_zero
@@ -67,7 +71,7 @@ capabilities:
       base: ca/taxable_income
     produces:
       output: ca-on/ontario_basic_tax
-  # Each basic personal amount is so far the only part of its form's total of credit amounts.
+  # Each basic personal amount is the first part of its form's total of credit amounts.
   - name: core/credit_amount
     params:
       amount: ca/basic_personal_amount
@@ -78,16 +82,23 @@ capabilities:
       amount: ca-on/basic_personal_amount
     produces:
       output: ca-on/basic_personal_amount
+  # Each form's total of credit amounts is its basic personal amount, the base CPP
+  # contributions and the EI premiums. ON428 lines 58240 and 58300 are "Amount from line
+  # 30800 / 31200 of your return", so the Ontario sum reads the federal input kinds.
   - name: core/sum
     consumes:
       parts:
         - ca/basic_personal_amount
+        - ca/cpp_base_contributions
+        - ca/ei_premiums
     produces:
       output: ca/non_refundable_credit_amounts
   - name: core/sum
     consumes:
       parts:
         - ca-on/basic_personal_amount
+        - ca/cpp_base_contributions
+        - ca/ei_premiums
     produces:
       output: ca-on/non_refundable_credit_amounts
   - name: core/non_refundable_credit

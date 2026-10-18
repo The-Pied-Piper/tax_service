@@ -21,8 +21,11 @@ from app.domain.manifest import CapabilitySelection, Manifest
 from app.jurisdictions.ca.catalog import (
     BASIC_PERSONAL_AMOUNT,
     CAPITAL_GAIN,
+    CPP_BASE_CONTRIBUTIONS,
+    CPP_ENHANCED_CONTRIBUTIONS,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
+    EI_PREMIUMS,
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
@@ -58,7 +61,15 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert found.version == 1
     assert found.valid_from_tax_year == 2025
     assert found.inputs == frozenset(
-        {"ca/employment_income", "ca/capital_gain", "ca/rrsp_deduction", "ca/union_dues"}
+        {
+            "ca/employment_income",
+            "ca/capital_gain",
+            "ca/rrsp_deduction",
+            "ca/union_dues",
+            "ca/cpp_base_contributions",
+            "ca/cpp_enhanced_contributions",
+            "ca/ei_premiums",
+        }
     )
     assert found.outputs == frozenset(
         {"ca/federal_tax_after_credits", "ca-on/ontario_tax_after_credits"}
@@ -77,10 +88,17 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"parts": ("ca/employment_income", "ca/taxable_capital_gains")},
             produces={"output": "ca/total_income"},
         ),
+        # T1 line 23300: the deductions in the form's line order (20800, 21200, 22215).
         CapabilitySelection(
             name="core/sum",
             params={},
-            consumes={"parts": ("ca/rrsp_deduction", "ca/union_dues")},
+            consumes={
+                "parts": (
+                    "ca/rrsp_deduction",
+                    "ca/union_dues",
+                    "ca/cpp_enhanced_contributions",
+                )
+            },
             produces={"output": "ca/deductions_from_total_income"},
         ),
         CapabilitySelection(
@@ -127,17 +145,31 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={},
             produces={"output": "ca-on/basic_personal_amount"},
         ),
-        # T1 line 33500 and ON428 line 58800: one part each for now.
+        # T1 line 33500 (lines 30000, 30800, 31200) and ON428 line 58800 (lines 58040, 58240,
+        # 58300), in the forms' line order. ON428 lines 58240 and 58300 are "Amount from line
+        # 30800 / 31200 of your return", so the Ontario sum reads the federal input kinds.
         CapabilitySelection(
             name="core/sum",
             params={},
-            consumes={"parts": ("ca/basic_personal_amount",)},
+            consumes={
+                "parts": (
+                    "ca/basic_personal_amount",
+                    "ca/cpp_base_contributions",
+                    "ca/ei_premiums",
+                )
+            },
             produces={"output": "ca/non_refundable_credit_amounts"},
         ),
         CapabilitySelection(
             name="core/sum",
             params={},
-            consumes={"parts": ("ca-on/basic_personal_amount",)},
+            consumes={
+                "parts": (
+                    "ca-on/basic_personal_amount",
+                    "ca/cpp_base_contributions",
+                    "ca/ei_premiums",
+                )
+            },
             produces={"output": "ca-on/non_refundable_credit_amounts"},
         ),
         # The rate is applied once, to the total (T1 line 33800, ON428 line 58840).
@@ -177,7 +209,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         ),
         (
             Sum,
-            frozenset({RRSP_DEDUCTION, UNION_DUES}),
+            frozenset({RRSP_DEDUCTION, UNION_DUES, CPP_ENHANCED_CONTRIBUTIONS}),
             frozenset({DEDUCTIONS_FROM_TOTAL_INCOME}),
         ),
         (
@@ -195,10 +227,14 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (ProgressiveTax, frozenset({TAXABLE_INCOME}), frozenset({ONTARIO_BASIC_TAX})),
         (CreditAmount, frozenset(), frozenset({BASIC_PERSONAL_AMOUNT})),
         (CreditAmount, frozenset(), frozenset({ontario.BASIC_PERSONAL_AMOUNT})),
-        (Sum, frozenset({BASIC_PERSONAL_AMOUNT}), frozenset({NON_REFUNDABLE_CREDIT_AMOUNTS})),
         (
             Sum,
-            frozenset({ontario.BASIC_PERSONAL_AMOUNT}),
+            frozenset({BASIC_PERSONAL_AMOUNT, CPP_BASE_CONTRIBUTIONS, EI_PREMIUMS}),
+            frozenset({NON_REFUNDABLE_CREDIT_AMOUNTS}),
+        ),
+        (
+            Sum,
+            frozenset({ontario.BASIC_PERSONAL_AMOUNT, CPP_BASE_CONTRIBUTIONS, EI_PREMIUMS}),
             frozenset({ontario.NON_REFUNDABLE_CREDIT_AMOUNTS}),
         ),
         (

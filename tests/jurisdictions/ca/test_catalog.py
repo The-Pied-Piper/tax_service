@@ -19,8 +19,11 @@ from app.jurisdictions.ca.catalog import (
     BASIC_PERSONAL_AMOUNT,
     CAPITAL_GAIN,
     CATALOG,
+    CPP_BASE_CONTRIBUTIONS,
+    CPP_ENHANCED_CONTRIBUTIONS,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
+    EI_PREMIUMS,
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
     NET_INCOME,
@@ -41,12 +44,15 @@ REGISTERED = frozenset(
         "ca/total_income",
         "ca/rrsp_deduction",
         "ca/union_dues",
+        "ca/cpp_enhanced_contributions",
         "ca/deductions_from_total_income",
         "ca/net_income",
         "ca/deductions_from_net_income",
         "ca/taxable_income",
         "ca/federal_basic_tax",
         "ca/basic_personal_amount",
+        "ca/cpp_base_contributions",
+        "ca/ei_premiums",
         "ca/non_refundable_credit_amounts",
         "ca/federal_tax_after_credits",
     }
@@ -86,6 +92,9 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/deductions_from_net_income") is DEDUCTIONS_FROM_NET_INCOME
     assert registry.get("ca/basic_personal_amount") is BASIC_PERSONAL_AMOUNT
     assert registry.get("ca/non_refundable_credit_amounts") is NON_REFUNDABLE_CREDIT_AMOUNTS
+    assert registry.get("ca/cpp_base_contributions") is CPP_BASE_CONTRIBUTIONS
+    assert registry.get("ca/cpp_enhanced_contributions") is CPP_ENHANCED_CONTRIBUTIONS
+    assert registry.get("ca/ei_premiums") is EI_PREMIUMS
 
 
 def test_catalog_kinds_are_in_the_package_namespace() -> None:
@@ -108,6 +117,9 @@ def test_catalog_kinds_are_money() -> None:
         DEDUCTIONS_FROM_NET_INCOME,
         BASIC_PERSONAL_AMOUNT,
         NON_REFUNDABLE_CREDIT_AMOUNTS,
+        CPP_BASE_CONTRIBUTIONS,
+        CPP_ENHANCED_CONTRIBUTIONS,
+        EI_PREMIUMS,
     ):
         assert kind.value_type is Decimal, kind.identifier
 

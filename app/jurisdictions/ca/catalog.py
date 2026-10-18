@@ -43,9 +43,20 @@ UNION_DUES = CATALOG.declare("union_dues", Decimal)
 """Union dues, T1 line 21200 "Annual union, professional, or like dues (receipts and box 44 of all
 T4 slips)": the amount claimed, a starting amount."""
 
+CPP_ENHANCED_CONTRIBUTIONS = CATALOG.declare("cpp_enhanced_contributions", Decimal)
+"""Enhanced CPP contributions, T1 line 22215 "Deduction for CPP or QPP enhanced contributions on
+employment income" "(maximum $1,074.00)": the amount claimed, a starting amount and a deduction
+from total income (not a credit).
+
+Schedule 8 Part 3a line 28 "Enter this amount (in dollars and cents) on line 22215 of your
+return." carries the first additional (Part 3 line 12 "multiplied by 1% (maximum $678.00)") and
+second additional (line 22 "multiplied by 4% (maximum $396.00)") contributions together. The
+contributions are not computed from earnings, so the claimed amount is an input.
+"""
+
 DEDUCTIONS_FROM_TOTAL_INCOME = CATALOG.declare("deductions_from_total_income", Decimal)
 """Total deductions, T1 line 23300 "Add lines 35 to 52": the sum of the deductions from total
-income, here the RRSP deduction and union dues."""
+income, here the RRSP deduction, union dues and the enhanced CPP contributions."""
 
 NET_INCOME = CATALOG.declare("net_income", Decimal)
 """Net income, T1 line 23600 "Line 54 minus line 55 (if negative, enter "0") Net income": total
@@ -87,9 +98,29 @@ The reduction for net income above $177,882 is not modelled, so the claimed amou
 amount.
 """
 
+CPP_BASE_CONTRIBUTIONS = CATALOG.declare("cpp_base_contributions", Decimal)
+"""Base CPP contributions, T1 line 30800 "through employment income": the amount claimed, a
+starting amount and a part of the total of the credit amounts on the T1 and on ON428 (line
+58240 "Amount from line 30800 of your return").
+
+Schedule 8 Part 3a line 25 "Enter this amount (in dollars and cents) on line 30800 of your return
+and line 58240 of your Form 428." carries the base contributions (Part 3 line 11 "multiplied by
+4.95% (maximum $3,356.10)"). The contributions are not computed from earnings, so the claimed
+amount is an input.
+"""
+
+EI_PREMIUMS = CATALOG.declare("ei_premiums", Decimal)
+"""EI premiums, T1 line 31200 "through employment (boxes 18 and 55 of all T4 slips) (maximum
+$1,077.48)": the amount claimed, a starting amount and a part of the total of the credit amounts
+on the T1 and on ON428 (line 58300 "Amount from line 31200 of your return").
+
+The premiums are not computed from insurable earnings, so the claimed amount is an input.
+"""
+
 NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare("non_refundable_credit_amounts", Decimal)
 """Total of the non-refundable credit amounts, T1 line 33500 "Line 106 plus line 112": the sum
-of the credit amounts the rate is applied to once, here the basic personal amount alone."""
+of the credit amounts the rate is applied to once, here the basic personal amount, the base CPP
+contributions and the EI premiums."""
 
 FEDERAL_TAX_AFTER_CREDITS = CATALOG.declare("federal_tax_after_credits", Decimal)
 """Federal basic tax less federal non-refundable tax credits, not below zero.
