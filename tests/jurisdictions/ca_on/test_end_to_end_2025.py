@@ -2,12 +2,13 @@
 
 The service is the one the composition root builds (`build_tax_computation`): the real YAML
 sources over the jurisdiction packages and the shared registries. Return A's amounts (employment
-income 110000 and a capital gain of 20000 to total income 120000, less an RRSP deduction of 3000
-and union dues of 2000 to net income 115000, less no deductions from net income to taxable income
-115000, and from each basic personal amount (16129 federal, 12747 Ontario) through each total of
-credit amounts to each tax after credits) are checked from the files under `returns/` by
-`test_worked_returns.py`; this module pins which capability produces each line, the order, and
-the trace that explains them.
+income 110000 and a capital gain of 20000 to total income 120000, less an RRSP deduction of 1926,
+union dues of 2000 and enhanced CPP contributions of 1074.00 to net income 115000, less no
+deductions from net income to taxable income 115000, and from each basic personal amount (16129
+federal, 12747 Ontario) plus the base CPP contributions of 3356.10 and the EI premiums of 1077.48
+through each total of credit amounts to each tax after credits) are checked from the files under
+`returns/` by `test_worked_returns.py`, as are Returns C and D; this module pins which capability
+produces each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
@@ -40,8 +41,11 @@ from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     BASIC_PERSONAL_AMOUNT,
     CAPITAL_GAIN,
+    CPP_BASE_CONTRIBUTIONS,
+    CPP_ENHANCED_CONTRIBUTIONS,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
+    EI_PREMIUMS,
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
@@ -66,7 +70,13 @@ def service() -> TaxComputationService:
 
 
 def compute(
-    employment_income: str, capital_gain: str, rrsp_deduction: str, union_dues: str
+    employment_income: str,
+    capital_gain: str,
+    rrsp_deduction: str,
+    union_dues: str,
+    cpp_base_contributions: str,
+    cpp_enhanced_contributions: str,
+    ei_premiums: str,
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -75,12 +85,15 @@ def compute(
         Artifact(CAPITAL_GAIN, D(capital_gain)),
         Artifact(RRSP_DEDUCTION, D(rrsp_deduction)),
         Artifact(UNION_DUES, D(union_dues)),
+        Artifact(CPP_BASE_CONTRIBUTIONS, D(cpp_base_contributions)),
+        Artifact(CPP_ENHANCED_CONTRIBUTIONS, D(cpp_enhanced_contributions)),
+        Artifact(EI_PREMIUMS, D(ei_premiums)),
     )
 
 
 def return_a() -> Worksheet:
     """Return A's inputs, as in `returns/2025_return_a.yaml`."""
-    return compute("110000", "20000", "3000", "2000")
+    return compute("110000", "20000", "1926", "2000", "3356.10", "1074.00", "1077.48")
 
 
 def test_each_amount_is_produced_by_its_capability() -> None:
@@ -90,6 +103,9 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(CAPITAL_GAIN) is None
     assert worksheet.producer_of(RRSP_DEDUCTION) is None
     assert worksheet.producer_of(UNION_DUES) is None
+    assert worksheet.producer_of(CPP_BASE_CONTRIBUTIONS) is None
+    assert worksheet.producer_of(CPP_ENHANCED_CONTRIBUTIONS) is None
+    assert worksheet.producer_of(EI_PREMIUMS) is None
     assert isinstance(worksheet.producer_of(TAXABLE_CAPITAL_GAINS), ApplyRate)
     assert isinstance(worksheet.producer_of(TOTAL_INCOME), Sum)
     assert isinstance(worksheet.producer_of(DEDUCTIONS_FROM_TOTAL_INCOME), Sum)
@@ -147,46 +163,52 @@ def test_the_trace_explains_the_computation() -> None:
         "120000",
     )
     deductions = position(
-        "deductions_from_total_income: rrsp_deduction 3000 + union_dues 2000 = 5000", "5000"
+        "deductions_from_total_income: rrsp_deduction 1926 + union_dues 2000 "
+        "+ cpp_enhanced_contributions 1074.00 = 5000.00",
+        "5000",
     )
     net = position(
-        "net_income: total_income 120000.0 less deductions_from_total_income 5000, "
-        "not below 0 = 115000.0",
+        "net_income: total_income 120000.0 less deductions_from_total_income 5000.00, "
+        "not below 0 = 115000.00",
         "115000",
     )
     net_deductions = position("deductions_from_net_income: no parts = 0", "0")
     taxable = position(
-        "taxable_income: net_income 115000.0 less deductions_from_net_income 0, "
-        "not below 0 = 115000.0",
+        "taxable_income: net_income 115000.00 less deductions_from_net_income 0, "
+        "not below 0 = 115000.00",
         "115000",
     )
     federal_basic = position(
-        "federal_basic_tax on taxable_income 115000.0 (no rounding)", "20146.25"
+        "federal_basic_tax on taxable_income 115000.00 (no rounding)", "20146.25"
     )
     federal_amount = position("basic_personal_amount: credit amount 16129 (no rounding)", "16129")
     federal_amounts = position(
-        "non_refundable_credit_amounts: basic_personal_amount 16129 = 16129", "16129"
+        "non_refundable_credit_amounts: basic_personal_amount 16129 "
+        "+ cpp_base_contributions 3356.10 + ei_premiums 1077.48 = 20562.58",
+        "20562.58",
     )
     federal_credit = position(
-        "credit: 14.5% of non_refundable_credit_amounts 16129 (no rounding)", "2338.705"
+        "credit: 14.5% of non_refundable_credit_amounts 20562.58 (no rounding)", "2981.5741"
     )
     federal_after = position(
-        "federal_tax_after_credits: federal_basic_tax 20146.250 less credit, not below 0",
-        "17807.545",
+        "federal_tax_after_credits: federal_basic_tax 20146.2500 less credit, not below 0",
+        "17164.6759",
     )
     ontario_basic = position(
-        "ontario_basic_tax on taxable_income 115000.0 (no rounding)", "8539.5965"
+        "ontario_basic_tax on taxable_income 115000.00 (no rounding)", "8539.5965"
     )
     ontario_amount = position("basic_personal_amount: credit amount 12747 (no rounding)", "12747")
     ontario_amounts = position(
-        "non_refundable_credit_amounts: basic_personal_amount 12747 = 12747", "12747"
+        "non_refundable_credit_amounts: basic_personal_amount 12747 "
+        "+ cpp_base_contributions 3356.10 + ei_premiums 1077.48 = 17180.58",
+        "17180.58",
     )
     ontario_credit = position(
-        "credit: 5.05% of non_refundable_credit_amounts 12747 (no rounding)", "643.7235"
+        "credit: 5.05% of non_refundable_credit_amounts 17180.58 (no rounding)", "867.61929"
     )
     ontario_after = position(
-        "ontario_tax_after_credits: ontario_basic_tax 8539.59650 less credit, not below 0",
-        "7895.873",
+        "ontario_tax_after_credits: ontario_basic_tax 8539.596500 less credit, not below 0",
+        "7671.97721",
     )
     assert taxable_gains < total < net
     assert deductions < net
@@ -223,17 +245,32 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         DEDUCTIONS_FROM_TOTAL_INCOME: SumLine(
             DEDUCTIONS_FROM_TOTAL_INCOME,
-            ((RRSP_DEDUCTION, D("3000")), (UNION_DUES, D("2000"))),
+            (
+                (RRSP_DEDUCTION, D("1926")),
+                (UNION_DUES, D("2000")),
+                (CPP_ENHANCED_CONTRIBUTIONS, D("1074.00")),
+            ),
             D("5000"),
         ),
         DEDUCTIONS_FROM_NET_INCOME: SumLine(DEDUCTIONS_FROM_NET_INCOME, (), D("0")),
         NON_REFUNDABLE_CREDIT_AMOUNTS: SumLine(
-            NON_REFUNDABLE_CREDIT_AMOUNTS, ((BASIC_PERSONAL_AMOUNT, D("16129")),), D("16129")
+            NON_REFUNDABLE_CREDIT_AMOUNTS,
+            (
+                (BASIC_PERSONAL_AMOUNT, D("16129")),
+                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
+                (EI_PREMIUMS, D("1077.48")),
+            ),
+            D("20562.58"),
         ),
+        # ON428 lines 58240 and 58300 read the federal amounts (lines 30800 and 31200).
         ontario.NON_REFUNDABLE_CREDIT_AMOUNTS: SumLine(
             ontario.NON_REFUNDABLE_CREDIT_AMOUNTS,
-            ((ontario.BASIC_PERSONAL_AMOUNT, D("12747")),),
-            D("12747"),
+            (
+                (ontario.BASIC_PERSONAL_AMOUNT, D("12747")),
+                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
+                (EI_PREMIUMS, D("1077.48")),
+            ),
+            D("17180.58"),
         ),
     }
     assert amounts == {
@@ -248,17 +285,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert credits == {
         NON_REFUNDABLE_CREDIT_AMOUNTS: CreditLine(
             NON_REFUNDABLE_CREDIT_AMOUNTS,
-            D("16129"),
+            D("20562.58"),
             Rate(D("0.145")),
             NO_ROUNDING,
-            D("2338.705"),
+            D("2981.5741"),
         ),
         ontario.NON_REFUNDABLE_CREDIT_AMOUNTS: CreditLine(
             ontario.NON_REFUNDABLE_CREDIT_AMOUNTS,
-            D("12747"),
+            D("17180.58"),
             Rate(D("0.0505")),
             NO_ROUNDING,
-            D("643.7235"),
+            D("867.61929"),
         ),
     }
     assert floored == {
@@ -287,10 +324,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert totals[ONTARIO_BASIC_TAX].amount == D("8539.5965")
     assert applied[FEDERAL_TAX_AFTER_CREDITS].tax == FEDERAL_BASIC_TAX
     assert applied[FEDERAL_TAX_AFTER_CREDITS].tax_amount == D("20146.25")
-    assert applied[FEDERAL_TAX_AFTER_CREDITS].amount == D("17807.545")
+    assert applied[FEDERAL_TAX_AFTER_CREDITS].amount == D("17164.6759")
     assert applied[ONTARIO_TAX_AFTER_CREDITS].tax == ONTARIO_BASIC_TAX
     assert applied[ONTARIO_TAX_AFTER_CREDITS].tax_amount == D("8539.5965")
-    assert applied[ONTARIO_TAX_AFTER_CREDITS].amount == D("7895.873")
+    assert applied[ONTARIO_TAX_AFTER_CREDITS].amount == D("7671.97721")
 
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
@@ -313,13 +350,17 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
 
 
 def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
-    worksheet = compute("10000", "0", "0", "0")
+    # Employment income of 10000, with CPP and EI from Schedule 8's and the EI table's
+    # arithmetic: base 4.95% x (10000 - 3500) = 321.75, enhanced 1% x 6500 = 65.00,
+    # EI 1.64% x 10000 = 164.00.
+    worksheet = compute("10000", "0", "0", "0", "321.75", "65.00", "164.00")
 
     assert worksheet.get(TOTAL_INCOME).value == D("10000")
-    assert worksheet.get(NET_INCOME).value == D("10000")
-    assert worksheet.get(TAXABLE_INCOME).value == D("10000")
-    assert worksheet.get(FEDERAL_BASIC_TAX).value == D("1450")
-    assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("16129")
-    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("12747")
+    assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("65.00")
+    assert worksheet.get(NET_INCOME).value == D("9935.00")
+    assert worksheet.get(TAXABLE_INCOME).value == D("9935.00")
+    assert worksheet.get(FEDERAL_BASIC_TAX).value == D("1440.575")
+    assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("16614.75")
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("13232.75")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("0")
     assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("0")

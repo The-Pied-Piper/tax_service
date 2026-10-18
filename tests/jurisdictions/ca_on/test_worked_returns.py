@@ -50,30 +50,35 @@ jurisdiction: CA-ON
 tax_year: 2025
 description: >-
   Employment income of 10000, no capital gain, no RRSP deduction, no union dues and no
-  deductions from net income, so net income and taxable income of 10000; each total of
-  credit amounts is its basic personal amount alone, and each credit exceeds its tax,
-  leaving zero.
+  deductions from net income. CPP and EI follow Schedule 8's and the EI table's arithmetic:
+  base contributions 4.95% x (10000 - 3500) = 321.75, enhanced contributions 1% x 6500 =
+  65.00 (the only deduction from total income), EI premiums 1.64% x 10000 = 164.00. Net
+  income and taxable income are 9935.00; each total of credit amounts is its basic personal
+  amount plus 321.75 and 164.00, and each credit exceeds its tax, leaving zero.
 sources:
-  - T1, Schedule 3 and ON428 arithmetic on the 2025 figures.
+  - T1, Schedule 3, Schedule 8, ON428 and EI table arithmetic on the 2025 figures.
 inputs:
   ca/employment_income: "10000"
   ca/capital_gain: "0"
   ca/rrsp_deduction: "0"
   ca/union_dues: "0"
+  ca/cpp_base_contributions: "321.75"
+  ca/cpp_enhanced_contributions: "65.00"
+  ca/ei_premiums: "164.00"
 expected:
   ca/taxable_capital_gains: "0"
   ca/total_income: "10000"
-  ca/deductions_from_total_income: "0"
-  ca/net_income: "10000"
+  ca/deductions_from_total_income: "65.00"
+  ca/net_income: "9935.00"
   ca/deductions_from_net_income: "0"
-  ca/taxable_income: "10000"
-  ca/federal_basic_tax: "1450"
+  ca/taxable_income: "9935.00"
+  ca/federal_basic_tax: "1440.575"
   ca/basic_personal_amount: "16129"
-  ca/non_refundable_credit_amounts: "16129"
+  ca/non_refundable_credit_amounts: "16614.75"
   ca/federal_tax_after_credits: "0"
-  ca-on/ontario_basic_tax: "505"
+  ca-on/ontario_basic_tax: "501.7175"
   ca-on/basic_personal_amount: "12747"
-  ca-on/non_refundable_credit_amounts: "12747"
+  ca-on/non_refundable_credit_amounts: "13232.75"
   ca-on/ontario_tax_after_credits: "0"
 """
 
@@ -97,7 +102,7 @@ def test_a_new_file_is_a_new_worked_return_without_a_test_change(tmp_path: Path)
 
 def test_a_wrong_expected_amount_fails_naming_the_file_and_line(tmp_path: Path) -> None:
     path = tmp_path / "wrong.yaml"
-    path.write_text(LOW_INCOME.replace('"505"', '"505.01"'))
+    path.write_text(LOW_INCOME.replace('"501.7175"', '"501.7176"'))
 
     with pytest.raises(AssertionError, match=r"wrong\.yaml: ca-on/ontario_basic_tax"):
         check(path)
