@@ -33,22 +33,30 @@ class EnglishTraceRenderer:
         """The English sentence for `line`; raises TypeError for a line class it does not know."""
         match line:
             case BracketSliceLine(lower=lower, upper=None, rate=rate, taxed=taxed):
-                return f"{self._percent(rate)}% on {taxed} (over {lower})"
-            case BracketSliceLine(lower=lower, upper=upper, rate=rate, taxed=taxed):
-                return f"{self._percent(rate)}% on {taxed} ({lower} to {upper})"
+                return f"{self._percent(rate)}% on {self._money(taxed)} (over {self._money(lower)})"
+            case BracketSliceLine(lower=lower, upper=Decimal() as upper, rate=rate, taxed=taxed):
+                return (
+                    f"{self._percent(rate)}% on {self._money(taxed)} "
+                    f"({self._money(lower)} to {self._money(upper)})"
+                )
             case RoundedTotalLine(output=output, base=base, base_amount=amount, rounding=rule):
-                return f"{output.label} on {base.label} {amount} ({self._rounding(rule)})"
+                return (
+                    f"{output.label} on {base.label} {self._money(amount)} ({self._rounding(rule)})"
+                )
             case CreditAmountLine(output=output, basis=basis, rounding=rule):
-                return f"{output.label}: credit amount {basis.amount} ({self._rounding(rule)})"
+                return (
+                    f"{output.label}: credit amount {self._money(basis.amount)} "
+                    f"({self._rounding(rule)})"
+                )
             case SumLine(output=output, parts=parts, total=total):
-                terms = " + ".join(f"{kind.label} {amount}" for kind, amount in parts)
-                return f"{output.label}: {terms or 'no parts'} = {total}"
+                terms = " + ".join(f"{kind.label} {self._money(amount)}" for kind, amount in parts)
+                return f"{output.label}: {terms or 'no parts'} = {self._money(total)}"
             case RateAppliedLine(
                 output=output, base=base, base_amount=amount, rate=rate, rounding=rule
             ):
                 return (
-                    f"{output.label}: {self._percent(rate.value)}% of {base.label} {amount} "
-                    f"({self._rounding(rule)})"
+                    f"{output.label}: {self._percent(rate.value)}% of {base.label} "
+                    f"{self._money(amount)} ({self._rounding(rule)})"
                 )
             case SubtractedNotBelowZeroLine(
                 output=output,
@@ -59,8 +67,9 @@ class EnglishTraceRenderer:
                 result=result,
             ):
                 return (
-                    f"{output.label}: {minuend.label} {minuend_amount} "
-                    f"less {subtrahend.label} {subtrahend_amount}, not below 0 = {result}"
+                    f"{output.label}: {minuend.label} {self._money(minuend_amount)} "
+                    f"less {subtrahend.label} {self._money(subtrahend_amount)}, "
+                    f"not below 0 = {self._money(result)}"
                 )
             case SubtractedLine(
                 output=output,
@@ -71,19 +80,22 @@ class EnglishTraceRenderer:
                 result=result,
             ):
                 return (
-                    f"{output.label}: {minuend.label} {minuend_amount} "
-                    f"less {subtrahend.label} {subtrahend_amount} = {result}"
+                    f"{output.label}: {minuend.label} {self._money(minuend_amount)} "
+                    f"less {subtrahend.label} {self._money(subtrahend_amount)} "
+                    f"= {self._money(result)}"
                 )
             case CappedAmountLine(
                 output=output, base=base, base_amount=amount, cap=cap, rounding=rule
             ):
                 return (
-                    f"{output.label}: lesser of {base.label} {amount} and {cap.value} "
-                    f"({self._rounding(rule)})"
+                    f"{output.label}: lesser of {base.label} {self._money(amount)} "
+                    f"and {self._money(cap.value)} ({self._rounding(rule)})"
                 )
             case LesserOfLine(output=output, parts=parts, result=result):
-                terms = " and ".join(f"{kind.label} {amount}" for kind, amount in parts)
-                return f"{output.label}: lesser of {terms} = {result}"
+                terms = " and ".join(
+                    f"{kind.label} {self._money(amount)}" for kind, amount in parts
+                )
+                return f"{output.label}: lesser of {terms} = {self._money(result)}"
             case ContributionTierLine(
                 output=output,
                 earnings=earnings,
@@ -93,8 +105,9 @@ class EnglishTraceRenderer:
             ):
                 return (
                     f"{output.label}: {self._percent(tier.rate.value)}% of {earnings.label} "
-                    f"between {tier.lower} and {tier.upper} ({contributory}), "
-                    f"at most {tier.maximum} ({self._rounding(rule)})"
+                    f"between {self._money(tier.lower)} and {self._money(tier.upper)} "
+                    f"({self._money(contributory)}), "
+                    f"at most {self._money(tier.maximum)} ({self._rounding(rule)})"
                 )
             case SurchargeTierLine(
                 output=output,
@@ -105,8 +118,8 @@ class EnglishTraceRenderer:
                 rounding=rule,
             ):
                 return (
-                    f"{output.label}: {self._percent(rate.value)}% of {base.label} {amount} "
-                    f"over {threshold} ({self._rounding(rule)})"
+                    f"{output.label}: {self._percent(rate.value)}% of {base.label} "
+                    f"{self._money(amount)} over {self._money(threshold)} ({self._rounding(rule)})"
                 )
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 
@@ -118,6 +131,12 @@ class EnglishTraceRenderer:
     def _percent(rate: Decimal) -> str:
         """`rate` as a plain percentage figure, e.g. 0.125 -> "12.5"."""
         return format((rate * 100).normalize(), "f")
+
+    @staticmethod
+    def _money(amount: Decimal) -> str:
+        """`amount` as a plain figure without trailing zeros, e.g. 115000.00 -> "115000"."""
+        text = format(amount, "f")  # fixed-point, every digit; never an exponent
+        return text.rstrip("0").rstrip(".") if "." in text else text
 
     @staticmethod
     def _rounding(rule: RoundingRule) -> str:
