@@ -1,14 +1,27 @@
-"""Unit tests for the composition root: wiring of services that have no HTTP route yet, and the
+"""Unit tests for the composition root: wiring of services that have no HTTP route yet, the
 explicit registration of jurisdiction catalogs it performs (by `build_tax_computation` and at app
-startup)."""
+startup), and the problem responses it maps domain errors onto."""
 
 from __future__ import annotations
+
+from typing import Any
 
 import pytest
 
 import app.registrations
 from app.application.services.tax_computation import TaxComputationService
+from app.application.services.widgets_service import WidgetsService
 from app.domain.artifact import ArtifactRegistry
+from app.domain.errors import (
+    CapabilityContractError,
+    ConflictError,
+    DomainError,
+    InputAboveBoundError,
+    InvalidCompositionError,
+    NegativeArtifactError,
+    NotFoundError,
+    ValidationError,
+)
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.jurisdictions.ca.catalog import FEDERAL_BASIC_TAX, TAXABLE_INCOME
 from app.main import build_tax_computation, create_app
@@ -134,3 +147,37 @@ def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
     with application.test_client():
         assert shared.get("ca/taxable_income") is TAXABLE_INCOME
         assert shared.get("ca/federal_basic_tax") is FEDERAL_BASIC_TAX
+
+
+# --- domain errors as problem responses ----------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("error", "status"),
+    [
+        (NotFoundError, 404),
+        (ConflictError, 409),
+        (ValidationError, 422),
+        (NegativeArtifactError, 422),
+        (InputAboveBoundError, 422),
+        (CapabilityContractError, 500),
+        (InvalidCompositionError, 400),
+        (DomainError, 400),
+    ],
+)
+def test_a_domain_error_is_a_problem_response_with_its_status(
+    monkeypatch: pytest.MonkeyPatch, error: type[DomainError], status: int
+) -> None:
+    async def raising(self: WidgetsService, **_: Any) -> Any:
+        raise error("ex/made_up went wrong")
+
+    monkeypatch.setattr(WidgetsService, "list_widgets", raising)
+    client = create_app(Settings()).test_client()
+
+    response = client.get("/api/v1/widgets")
+
+    assert response.status_code == status
+    assert response.headers["content-type"] == "application/problem+json"
+    assert response.json()["status"] == status
+    assert response.json()["title"] == error.__name__
+    assert response.json()["detail"] == "ex/made_up went wrong"

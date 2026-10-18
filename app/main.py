@@ -32,7 +32,15 @@ from app.application.services.tax_computation import TaxComputationService
 from app.application.services.widgets_service import WidgetsService
 from app.domain.artifact import ArtifactRegistry
 from app.domain.capability import CapabilityRegistry
-from app.domain.errors import ConflictError, DomainError, NotFoundError, ValidationError
+from app.domain.errors import (
+    CapabilityContractError,
+    ConflictError,
+    DomainError,
+    InputAboveBoundError,
+    NegativeArtifactError,
+    NotFoundError,
+    ValidationError,
+)
 from app.generated.handlers import Adapters, build_operations
 from app.registrations import JURISDICTIONS
 from app.settings import Settings
@@ -44,6 +52,9 @@ _DOMAIN_ERROR_STATUS: dict[type[DomainError], int] = {
     NotFoundError: 404,
     ConflictError: 409,
     ValidationError: 422,
+    NegativeArtifactError: 422,
+    InputAboveBoundError: 422,
+    CapabilityContractError: 500,
     DomainError: 400,
 }
 

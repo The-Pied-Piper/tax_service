@@ -19,13 +19,16 @@ import pytest
 
 from app.domain.artifact import Artifact, ArtifactKind, Money
 from app.domain.capabilities.apply_rate import ApplyRate
+from app.domain.capabilities.at_most import AtMost
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capability import Capability, CapabilityRegistry, CapabilityResult
 from app.domain.composition import Composition
 from app.domain.errors import (
+    CapabilityContractError,
     DomainError,
     DuplicateArtifactError,
+    InputAboveBoundError,
     InvalidCapabilityError,
     InvalidCompositionError,
     NegativeArtifactError,
@@ -563,13 +566,92 @@ def test_compute_rejects_a_negative_input_for_a_non_negative_kind_naming_the_kin
         composition.compute(Artifact(NON_NEGATIVE_A, D("-1")))
 
 
-def test_compute_rejects_a_capability_producing_a_negative_value_for_a_non_negative_kind() -> None:
+def test_a_negative_input_is_a_negative_artifact_error_not_a_contract_error() -> None:
     composition = Composition(
+        [Link(NON_NEGATIVE_A, C)], inputs=kinds(NON_NEGATIVE_A), outputs=kinds(C)
+    )
+
+    with pytest.raises(NegativeArtifactError) as raised:
+        composition.compute(Artifact(NON_NEGATIVE_A, D("-1")))
+
+    assert type(raised.value) is NegativeArtifactError
+
+
+def negative_output_composition() -> Composition:
+    """`ex/a` + -5 into the non-negative `ex/h`: negative for any `ex/a` below 5."""
+    return Composition(
         [Link(A, NON_NEGATIVE_B, D("-5"))], inputs=kinds(A), outputs=kinds(NON_NEGATIVE_B)
     )
 
-    with pytest.raises(NegativeArtifactError, match=r"ex/h.*-4"):
+
+def test_compute_rejects_a_capability_producing_a_negative_value_for_a_non_negative_kind() -> None:
+    with pytest.raises(CapabilityContractError):
+        negative_output_composition().compute(Artifact(A, D(1)))
+
+
+def test_a_produced_negative_names_the_capability_the_kind_and_the_value() -> None:
+    with pytest.raises(CapabilityContractError) as raised:
+        negative_output_composition().compute(Artifact(A, D(1)))
+
+    assert str(raised.value) == "Link produced ex/h -4, which cannot be negative"
+
+
+def test_a_produced_negative_gives_the_value_as_it_was_produced() -> None:
+    with pytest.raises(CapabilityContractError) as raised:
+        negative_output_composition().compute(Artifact(A, D("1.00")))
+
+    assert str(raised.value) == "Link produced ex/h -4.00, which cannot be negative"
+
+
+def test_a_produced_negative_names_the_capability_that_produced_it() -> None:
+    composition = Composition(
+        [Apple(A, B), Zebra(B, NON_NEGATIVE_B, D("-5"))],
+        inputs=kinds(A),
+        outputs=kinds(NON_NEGATIVE_B),
+    )
+
+    with pytest.raises(CapabilityContractError) as raised:
         composition.compute(Artifact(A, D(1)))
+
+    assert str(raised.value) == "Zebra produced ex/h -4, which cannot be negative"
+
+
+def test_a_produced_negative_is_chained_from_the_negative_artifact_error() -> None:
+    with pytest.raises(CapabilityContractError) as raised:
+        negative_output_composition().compute(Artifact(A, D(1)))
+
+    assert isinstance(raised.value.__cause__, NegativeArtifactError)
+    assert "ex/h" in str(raised.value.__cause__)
+
+
+def test_a_produced_negative_is_not_a_negative_artifact_error() -> None:
+    with pytest.raises(CapabilityContractError) as raised:
+        negative_output_composition().compute(Artifact(A, D(1)))
+
+    assert not isinstance(raised.value, NegativeArtifactError)
+
+
+def test_a_produced_negative_returns_no_worksheet() -> None:
+    worksheet: Worksheet | None = None
+
+    with pytest.raises(CapabilityContractError):
+        worksheet = negative_output_composition().compute(Artifact(A, D(1)))
+
+    assert worksheet is None
+
+
+def test_a_contract_error_and_a_negative_artifact_error_are_distinct_types() -> None:
+    assert not issubclass(CapabilityContractError, NegativeArtifactError)
+    assert not issubclass(NegativeArtifactError, CapabilityContractError)
+
+
+def test_an_input_above_its_bound_is_not_wrapped_as_a_contract_error() -> None:
+    composition = Composition([AtMost(A, B, C)], inputs=kinds(A, B), outputs=kinds(C))
+
+    with pytest.raises(InputAboveBoundError) as raised:
+        composition.compute(Artifact(A, D(3)), Artifact(B, D(2)))
+
+    assert type(raised.value) is InputAboveBoundError
 
 
 def test_compute_accepts_zero_for_a_non_negative_kind() -> None:

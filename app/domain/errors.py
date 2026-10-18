@@ -3,6 +3,10 @@
 They carry no HTTP knowledge; `main.py` maps them onto problem+json responses.
 """
 
+from __future__ import annotations
+
+from decimal import Decimal
+
 
 class DomainError(Exception):
     """Base class for all business-rule violations."""
@@ -41,7 +45,17 @@ class DuplicateArtifactError(DomainError):
 
 
 class NegativeArtifactError(DomainError):
-    """An artifact of a kind declared non-negative was given a value below zero."""
+    """An artifact of a kind declared non-negative was given a value below zero.
+
+    Raised by an artifact, it carries the kind's `identifier` and the `value` as produced or given.
+    """
+
+    def __init__(
+        self, message: str, *, identifier: str | None = None, value: Decimal | int | None = None
+    ) -> None:
+        super().__init__(message)
+        self.identifier = identifier
+        self.value = value
 
 
 class InputAboveBoundError(DomainError):
@@ -49,7 +63,11 @@ class InputAboveBoundError(DomainError):
 
 
 class CapabilityContractError(DomainError):
-    """A capability's outputs do not match the artifacts its contract produces."""
+    """A capability's outputs break its contract.
+
+    They are not the artifacts it declares it produces, or one is below zero for a kind declared
+    non-negative.
+    """
 
 
 class InvalidBracketScheduleError(DomainError):

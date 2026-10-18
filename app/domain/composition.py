@@ -12,7 +12,11 @@ from typing import Any
 
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capability import Capability, CapabilityRegistry
-from app.domain.errors import InvalidCompositionError
+from app.domain.errors import (
+    CapabilityContractError,
+    InvalidCompositionError,
+    NegativeArtifactError,
+)
 from app.domain.worksheet import Worksheet
 
 
@@ -48,12 +52,23 @@ class Composition:
     def compute(self, *artifacts: Artifact[Any]) -> Worksheet:
         """Apply every capability, in `order`, to a fresh worksheet of the starting `artifacts`.
 
-        The starting artifacts must be exactly one of each declared input kind.
+        The starting artifacts must be exactly one of each declared input kind. A capability that
+        produces a value below zero for a kind declared non-negative breaks its contract: its
+        `NegativeArtifactError` is raised as the `CapabilityContractError` naming it.
         """
         worksheet = Worksheet(*artifacts)
         self._check_starting_kinds(frozenset(artifact.kind for artifact in artifacts))
         for capability in self._order:
-            worksheet.apply(capability)
+            try:
+                worksheet.apply(capability)
+            except NegativeArtifactError as error:
+                name = type(capability).__name__
+                produced = (
+                    f"{error.identifier} {error.value}, which cannot be negative"
+                    if error.identifier is not None
+                    else f"a value that cannot be negative: {error}"
+                )
+                raise CapabilityContractError(f"{name} produced {produced}") from error
         return worksheet
 
     def _check_each_produces_something(self) -> None:
