@@ -25,11 +25,14 @@ less 5% of net income over 32500, 4125 (line 19), not below zero, 0 (line 20, ON
 off the Ontario tax after the reduction, not below zero (line 86); and the Ontario health premium on
 taxable income by the chart of line 89, 750, added to it to the Ontario tax of line 90; and on the
 T1, the federal tax after credits carried to the net federal tax (line 42000), added to the Ontario
-tax (line 42800) to the total payable (line 43500), less the total credits (line 48200), here the
-chosen income tax deducted of 25000 (line 43700) alone, to the refund or balance owing (line 167),
-897.1508076, positive so a balance owing) are checked from the files under `returns/` by
-`test_worked_returns.py`, as are Returns B, C, D and E; this module pins which capability produces
-each line, the order, and the trace that explains them.
+tax (line 42800) to the total payable (line 43500); Schedule 6's Canada workers benefit, from the
+working income of 110000 (line 5, employment income), 27% of it over 3000 at most 1633 (line 22),
+less 15% of the adjusted family net income (line 15, net income) of 115000 over 26855, 13221.75
+(line 27), not below zero, 0 (line 28, T1 line 45300); less the total credits (line 48200), here
+the chosen income tax deducted of 25000 (line 43700) plus that benefit, to the refund or balance
+owing (line 167), 897.1508076, positive so a balance owing) are checked from the files under
+`returns/` by `test_worked_returns.py`, as are Returns B, C, D and E; this module pins which
+capability produces each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
@@ -83,13 +86,17 @@ from app.domain.trace import (
 )
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
+    ADJUSTED_FAMILY_NET_INCOME,
     BASIC_PERSONAL_AMOUNT,
     CANADA_EMPLOYMENT_AMOUNT,
+    CANADA_WORKERS_BENEFIT,
     CAPITAL_GAIN,
     CPP_BASE_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CWB_BEFORE_REDUCTION,
+    CWB_REDUCTION,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     EI_PREMIUMS,
@@ -116,6 +123,7 @@ from app.jurisdictions.ca.catalog import (
     UNION_DUES,
     UNUSED_RRSP_CONTRIBUTIONS,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
+    WORKING_INCOME,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
@@ -317,6 +325,18 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(ONTARIO_TAX) is not worksheet.producer_of(ONTARIO_TAX_WITH_SURTAX)
     assert isinstance(worksheet.producer_of(NET_FEDERAL_TAX), Sum)
     assert isinstance(worksheet.producer_of(TOTAL_PAYABLE), Sum)
+    assert isinstance(worksheet.producer_of(WORKING_INCOME), Sum)
+    assert isinstance(worksheet.producer_of(ADJUSTED_FAMILY_NET_INCOME), Sum)
+    assert worksheet.producer_of(WORKING_INCOME) is not worksheet.producer_of(
+        ADJUSTED_FAMILY_NET_INCOME
+    )
+    assert worksheet.producer_of(WORKING_INCOME) is not worksheet.producer_of(TOTAL_INCOME)
+    assert isinstance(worksheet.producer_of(CWB_BEFORE_REDUCTION), TieredSurcharge)
+    assert isinstance(worksheet.producer_of(CWB_REDUCTION), TieredSurcharge)
+    assert worksheet.producer_of(CWB_BEFORE_REDUCTION) is not worksheet.producer_of(CWB_REDUCTION)
+    assert worksheet.producer_of(CWB_REDUCTION) is not worksheet.producer_of(LIFT_REDUCTION)
+    assert isinstance(worksheet.producer_of(CANADA_WORKERS_BENEFIT), SubtractNotBelowZero)
+    assert worksheet.producer_of(CANADA_WORKERS_BENEFIT) is not worksheet.producer_of(LIFT_CREDIT)
     assert isinstance(worksheet.producer_of(TOTAL_CREDITS), Sum)
     assert worksheet.producer_of(NET_FEDERAL_TAX) is not worksheet.producer_of(TOTAL_PAYABLE)
     assert worksheet.producer_of(NET_FEDERAL_TAX) is not worksheet.producer_of(TOTAL_CREDITS)
@@ -545,7 +565,24 @@ def test_the_trace_explains_the_computation() -> None:
         "total_payable: net_federal_tax 16951.3809 + ontario_tax 8945.7699076 = 25897.1508076",
         "25897.1508076",
     )
-    credits = position("total_credits: income_tax_deducted 25000 = 25000", "25000")
+    working = position("working_income: employment_income 110000 = 110000", "110000")
+    family_net = position("adjusted_family_net_income: net_income 115000 = 115000", "115000")
+    cwb_before_reduction = position(
+        "cwb_before_reduction: 27% of working_income 110000 over 3000, at most 1633 (no rounding)",
+        "1633",
+    )
+    cwb_reduction = position(
+        "cwb_reduction: 15% of adjusted_family_net_income 115000 over 26855 (no rounding)",
+        "13221.75",
+    )
+    cwb = position(
+        "canada_workers_benefit: cwb_before_reduction 1633 less cwb_reduction 13221.75, "
+        "not below 0 = 0",
+        "0",
+    )
+    credits = position(
+        "total_credits: income_tax_deducted 25000 + canada_workers_benefit 0 = 25000", "25000"
+    )
     balance = position(
         "refund_or_balance_owing: total_payable 25897.1508076 "
         "less total_credits 25000 = 897.1508076",
@@ -581,6 +618,8 @@ def test_the_trace_explains_the_computation() -> None:
     assert after_reduction < after_lift
     assert federal_after < net_federal < payable
     assert ontario_tax < payable < balance
+    assert working < cwb_before_reduction < cwb
+    assert net < family_net < cwb_reduction < cwb < credits
     assert credits < balance
 
 
@@ -612,6 +651,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         line
         for line in trace
         if isinstance(line, SurchargeTierLine) and line.output == ONTARIO_HEALTH_PREMIUM
+    ]
+    cwb_basic_tiers = [
+        line
+        for line in trace
+        if isinstance(line, SurchargeTierLine) and line.output == CWB_BEFORE_REDUCTION
+    ]
+    cwb_reduction_tiers = [
+        line
+        for line in trace
+        if isinstance(line, SurchargeTierLine) and line.output == CWB_REDUCTION
     ]
     per_unit = {line.output: line for line in trace if isinstance(line, PerUnitAmountLine)}
     multiples = {line.output: line for line in trace if isinstance(line, MultipleOverLine)}
@@ -742,8 +791,22 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ((NET_FEDERAL_TAX, D("16951.3809")), (ONTARIO_TAX, D("8945.7699076"))),
             D("25897.1508076"),
         ),
-        # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700) alone.
-        TOTAL_CREDITS: SumLine(TOTAL_CREDITS, ((INCOME_TAX_DEDUCTED, D("25000")),), D("25000")),
+        # Schedule 6 line 5 "Add lines 1 to 4. Enter the result, even if it is "0". Working
+        # income": line 1 "Employment income and other employment income from line 10100 and line
+        # 10400 of the return" alone, as lines 2 to 4 are not triggered.
+        WORKING_INCOME: SumLine(WORKING_INCOME, ((EMPLOYMENT_INCOME, D("110000")),), D("110000")),
+        # Schedule 6 line 15 "Line 13 minus line 14 Enter this amount on line 23 and line 35.
+        # Adjusted family net income": line 7, net income (line 23600), carried unchanged.
+        ADJUSTED_FAMILY_NET_INCOME: SumLine(
+            ADJUSTED_FAMILY_NET_INCOME, ((NET_INCOME, D("115000")),), D("115000")
+        ),
+        # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700) and
+        # line 155 (45300), the Canada workers benefit, in line order.
+        TOTAL_CREDITS: SumLine(
+            TOTAL_CREDITS,
+            ((INCOME_TAX_DEDUCTED, D("25000")), (CANADA_WORKERS_BENEFIT, D("0"))),
+            D("25000"),
+        ),
     }
     assert subtracted == {
         # Schedule 7 line 23 "Line 21 minus line 22 Your unused contributions available to carry
@@ -1005,6 +1068,35 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             part=D("4125.00"),
         )
     ]
+    # Schedule 6 line 18 "Line 16 minus line 17 (if negative, enter "0")", line 20 "Line 18
+    # multiplied by the percentage from line 19" and line 22 "Enter whichever is less: amount from
+    # line 20 or line 21.": (110000 - 3000) x 27% is above the $1,633 of line 21, so line 22 is
+    # 1633; no rounding stated.
+    assert cwb_basic_tiers == [
+        SurchargeTierLine(
+            output=CWB_BEFORE_REDUCTION,
+            base=WORKING_INCOME,
+            base_amount=D("110000"),
+            threshold=D("3000"),
+            rate=Rate(D("0.27")),
+            rounding=NO_ROUNDING,
+            part=D("1633"),
+            maximum=D("1633"),
+        )
+    ]
+    # Schedule 6 line 25 "Line 23 minus line 24 (if negative, enter "0")" and line 27 "Line 25
+    # multiplied by the percentage from line 26": (115000 - 26855) x 15%; no rounding stated.
+    assert cwb_reduction_tiers == [
+        SurchargeTierLine(
+            output=CWB_REDUCTION,
+            base=ADJUSTED_FAMILY_NET_INCOME,
+            base_amount=D("115000"),
+            threshold=D("26855"),
+            rate=Rate(D("0.15")),
+            rounding=NO_ROUNDING,
+            part=D("13221.75"),
+        )
+    ]
     assert floored == {
         NET_INCOME: SubtractedNotBelowZeroLine(
             output=NET_INCOME,
@@ -1068,6 +1160,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("8195.7699076"),
         ),
+        # Schedule 6 line 28 "Line 22 minus line 27 (if negative, enter "0")": the reduction of
+        # 13221.75 exceeds the 1633, so the benefit (T1 line 45300) is 0.
+        CANADA_WORKERS_BENEFIT: SubtractedNotBelowZeroLine(
+            output=CANADA_WORKERS_BENEFIT,
+            minuend=CWB_BEFORE_REDUCTION,
+            minuend_amount=D("1633"),
+            subtrahend=CWB_REDUCTION,
+            subtrahend_amount=D("13221.75"),
+            result=D("0"),
+        ),
     }
 
     assert totals[FEDERAL_BASIC_TAX].base == TAXABLE_INCOME
@@ -1100,7 +1202,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 45
+    assert len(order) == 50
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
@@ -1159,6 +1261,10 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[ONTARIO_TAX] < position[TOTAL_PAYABLE]
     assert position[TOTAL_PAYABLE] < position[REFUND_OR_BALANCE_OWING]
     assert position[TOTAL_CREDITS] < position[REFUND_OR_BALANCE_OWING]
+    assert position[WORKING_INCOME] < position[CWB_BEFORE_REDUCTION]
+    assert position[NET_INCOME] < position[ADJUSTED_FAMILY_NET_INCOME] < position[CWB_REDUCTION]
+    assert position[CWB_BEFORE_REDUCTION] < position[CANADA_WORKERS_BENEFIT]
+    assert position[CWB_REDUCTION] < position[CANADA_WORKERS_BENEFIT] < position[TOTAL_CREDITS]
 
 
 def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
@@ -1211,11 +1317,21 @@ def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     # A taxable income of 9935.00 is "$20,000 or less" on the health premium chart: no premium.
     assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("0")
     assert worksheet.get(ONTARIO_TAX).value == D("0")
-    # With no tax deducted, nothing is payable and nothing is credited: a zero balance.
+    # Schedule 6: the working income is the employment income of 10000, and line 20 is (10000 -
+    # 3000) x 27% = 1890.00, more than the $1,633 of line 21, so line 22 is 1633; the adjusted
+    # family net income of 9935.00 is below the $26,855 of line 24, so no reduction: the benefit
+    # (line 28, T1 line 45300) is 1633.
+    assert worksheet.get(WORKING_INCOME).value == D("10000")
+    assert worksheet.get(ADJUSTED_FAMILY_NET_INCOME).value == D("9935.00")
+    assert worksheet.get(CWB_BEFORE_REDUCTION).value == D("1633")
+    assert worksheet.get(CWB_REDUCTION).value == D("0")
+    assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("1633")
+    # With no tax deducted, nothing is payable and the benefit is the only credit: line 167 is
+    # 0 - 1633 = -1633, a refund.
     assert worksheet.get(NET_FEDERAL_TAX).value == D("0")
     assert worksheet.get(TOTAL_PAYABLE).value == D("0")
-    assert worksheet.get(TOTAL_CREDITS).value == D("0")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("0")
+    assert worksheet.get(TOTAL_CREDITS).value == D("1633")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-1633")
 
 
 def test_the_tax_reduction_lowers_a_tax_below_twice_the_reduction_amounts() -> None:
@@ -1326,6 +1442,36 @@ def test_the_lift_credit_between_the_thresholds_is_reduced_and_comes_off_the_tax
     ) in rendered
 
 
+def test_the_canada_workers_benefit_below_its_maximum_is_27_percent_over_3000() -> None:
+    # Employment income of 8000, with no capital gain, no RRSP contributions and no union dues:
+    # base CPP contributions 4.95% x (8000 - 3500) = 222.75, first additional 1% x 4500 = 45.00,
+    # EI premiums 1.64% x 8000 = 131.20; net income 8000 - 45.00 = 7955.00. Each form's credits
+    # exceed its tax, so nothing is payable. Schedule 6: the working income (line 5) is 8000,
+    # line 18 is 8000 - 3000 = 5000 and line 20 5000 x 27% = 1350.00, less than the $1,633 of
+    # line 21, so line 22 is 1350.00; the adjusted family net income (line 15) of 7955.00 is
+    # below the $26,855 of line 24, so line 27 is 0 and line 28 (T1 line 45300) is 1350.00. With
+    # no tax deducted, the total credits are 0 + 1350.00 and line 167 is 0 - 1350.00 = -1350.00,
+    # a refund.
+    worksheet = compute("8000", "0", "0", "0", "1440", "0", "0")
+
+    assert worksheet.get(NET_INCOME).value == D("7955.00")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("0")
+    assert worksheet.get(WORKING_INCOME).value == D("8000")
+    assert worksheet.get(ADJUSTED_FAMILY_NET_INCOME).value == D("7955.00")
+    assert worksheet.get(CWB_BEFORE_REDUCTION).value == D("1350.00")
+    assert worksheet.get(CWB_REDUCTION).value == D("0")
+    assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("1350.00")
+    assert worksheet.get(TOTAL_CREDITS).value == D("1350.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-1350.00")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "cwb_before_reduction: 27% of working_income 8000 over 3000, at most 1633 (no rounding)"
+    ) in rendered
+    assert (
+        "canada_workers_benefit: cwb_before_reduction 1350 less cwb_reduction 0, not below 0 = 1350"
+    ) in rendered
+
+
 def test_tax_deducted_above_the_total_payable_is_a_refund() -> None:
     # Return A's amounts with 30000 of income tax deducted (T1 line 43700): line 167 is the total
     # payable of 25897.1508076 less the total credits of 30000, -4102.8491924, negative, so a
@@ -1353,14 +1499,20 @@ def test_tax_deducted_equal_to_the_total_payable_leaves_no_balance() -> None:
 
 
 def test_with_no_tax_payable_all_the_tax_deducted_is_refunded() -> None:
-    # Employment income of 10000 leaves no federal and no Ontario tax (see the test of a credit
-    # larger than the tax), so the total payable is 0; with 500 deducted, line 167 is 0 - 500 =
-    # -500, a refund of everything deducted, not floored at zero.
+    # Employment income of 10000 leaves no federal and no Ontario tax and a Canada workers
+    # benefit of 1633 (see the test of a credit larger than the tax), so the total payable is 0;
+    # with 500 deducted, the total credits are 500 + 1633 = 2133 and line 167 is 0 - 2133 =
+    # -2133, a refund of everything deducted and the benefit, not floored at zero.
     worksheet = compute("10000", "0", "0", "0", "1800", "0", "0", income_tax_deducted="500")
 
     assert worksheet.get(TOTAL_PAYABLE).value == D("0")
-    assert worksheet.get(TOTAL_CREDITS).value == D("500")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-500")
+    assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("1633")
+    assert worksheet.get(TOTAL_CREDITS).value == D("2133")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-2133")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "total_credits: income_tax_deducted 500 + canada_workers_benefit 1633 = 2133"
+    ) in rendered
 
 
 def test_contributions_above_the_deduction_limit_deduct_the_limit() -> None:

@@ -16,14 +16,18 @@ import app.jurisdictions.ca
 import app.jurisdictions.ca.catalog
 from app.domain.artifact import ArtifactCatalog, ArtifactKind, ArtifactRegistry
 from app.jurisdictions.ca.catalog import (
+    ADJUSTED_FAMILY_NET_INCOME,
     BASIC_PERSONAL_AMOUNT,
     CANADA_EMPLOYMENT_AMOUNT,
+    CANADA_WORKERS_BENEFIT,
     CAPITAL_GAIN,
     CATALOG,
     CPP_BASE_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CWB_BEFORE_REDUCTION,
+    CWB_REDUCTION,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     EI_PREMIUMS,
@@ -49,6 +53,7 @@ from app.jurisdictions.ca.catalog import (
     UNION_DUES,
     UNUSED_RRSP_CONTRIBUTIONS,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
+    WORKING_INCOME,
 )
 from app.registrations import JURISDICTIONS
 
@@ -85,6 +90,11 @@ REGISTERED = frozenset(
         "ca/net_federal_tax",
         "ca/total_payable",
         "ca/income_tax_deducted",
+        "ca/working_income",
+        "ca/adjusted_family_net_income",
+        "ca/cwb_before_reduction",
+        "ca/cwb_reduction",
+        "ca/canada_workers_benefit",
         "ca/total_credits",
         "ca/refund_or_balance_owing",
     }
@@ -152,6 +162,11 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/net_federal_tax") is NET_FEDERAL_TAX
     assert registry.get("ca/total_payable") is TOTAL_PAYABLE
     assert registry.get("ca/income_tax_deducted") is INCOME_TAX_DEDUCTED
+    assert registry.get("ca/working_income") is WORKING_INCOME
+    assert registry.get("ca/adjusted_family_net_income") is ADJUSTED_FAMILY_NET_INCOME
+    assert registry.get("ca/cwb_before_reduction") is CWB_BEFORE_REDUCTION
+    assert registry.get("ca/cwb_reduction") is CWB_REDUCTION
+    assert registry.get("ca/canada_workers_benefit") is CANADA_WORKERS_BENEFIT
     assert registry.get("ca/total_credits") is TOTAL_CREDITS
     assert registry.get("ca/refund_or_balance_owing") is REFUND_OR_BALANCE_OWING
 
@@ -193,6 +208,11 @@ def test_catalog_kinds_are_money() -> None:
         NET_FEDERAL_TAX,
         TOTAL_PAYABLE,
         INCOME_TAX_DEDUCTED,
+        WORKING_INCOME,
+        ADJUSTED_FAMILY_NET_INCOME,
+        CWB_BEFORE_REDUCTION,
+        CWB_REDUCTION,
+        CANADA_WORKERS_BENEFIT,
         TOTAL_CREDITS,
         REFUND_OR_BALANCE_OWING,
     ):

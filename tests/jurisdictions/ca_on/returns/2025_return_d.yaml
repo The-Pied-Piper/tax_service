@@ -26,14 +26,19 @@
 # (ON428 line 85), taken off the Ontario tax after the reduction, not below zero, to the
 # Ontario tax after the LIFT credit (line 86); and from taxable income, by the health
 # premium chart's tiers, each capped at the next plateau, to the Ontario health premium,
-# added to the Ontario tax after the LIFT credit to the Ontario tax; and on the T1, the
-# federal tax after credits, carried to the net federal tax, plus the Ontario tax to the
-# total payable, less the total credits, here the chosen income tax deducted alone, to the
-# refund or balance owing, negative for a refund and positive for a balance owing. There is
-# no capital gain, unused or new RRSP contribution or union dues. Not yet computed, so not
-# in this file: any deduction from net income, the social benefits repayment and capital
-# losses. Lines 82 (the provincial foreign tax credit) and 87 (the community food program
-# donation tax credit for farmers) are not triggered by this return.
+# added to the Ontario tax after the LIFT credit to the Ontario tax; from employment income,
+# by Schedule 6, 27% of the working income over $3,000 at most $1,633, less 15% of the
+# adjusted family net income, here net income, over $26,855, not below zero, to the Canada
+# workers benefit (T1 line 45300); and on the T1, the federal tax after credits, carried to
+# the net federal tax, plus the Ontario tax to the total payable, less the total credits,
+# here the chosen income tax deducted plus the Canada workers benefit, to the refund or
+# balance owing, negative for a refund and positive for a balance owing. There is no capital
+# gain, unused or new RRSP contribution or union dues. Not yet computed, so not in this
+# file: any deduction from net income, the social benefits repayment and capital losses.
+# Lines 82 (the provincial foreign tax credit) and 87 (the community food program donation
+# tax credit for farmers) are not triggered by this return, nor are Schedule 6's disability
+# supplement (Step 3) and advance payments (Step 4); the Schedule 6 amounts for a filer with
+# no eligible spouse and no eligible dependant apply (to be confirmed).
 # Amounts are quoted decimal strings, never floats; counts are quoted digit strings. Every
 # output the CA-ON manifest declares must appear under `expected`; intermediate lines may be
 # listed and are then checked too.
@@ -85,12 +90,15 @@ description: >-
   $750, and the Ontario tax (ON428 line 90) is the Ontario tax after the LIFT credit plus
   the premium, $4,500.97271. On the T1, the net federal tax (line 42000) is the federal tax
   after credits, $8,568.3059, and the total payable (line 43500) is it plus the Ontario tax
-  (line 42800), $13,069.27861. The income tax deducted (line 43700) is a chosen $10,000, the
-  only credit modelled, so the total credits (line 48200) are $10,000, and the refund or
-  balance owing (line 167) is the total payable less the total credits, $3,069.27861:
-  positive, so a balance owing (line 48500). The CPP contributions, the EI premiums and the
-  federal basic personal amount are rounded to the cent, which changes none of them; no
-  other amounts are rounded.
+  (line 42800), $13,069.27861. The Canada workers benefit (line 45300, Schedule 6) is 27% of
+  the working income, the employment income, over $3,000, $19,440, at most $1,633, less 15%
+  of the adjusted family net income, the net income, over $26,855, $7,097.85; the reduction
+  is more than the $1,633, so the benefit is $0. The income tax deducted (line 43700) is a
+  chosen $10,000, so the total credits (line 48200) are it plus the benefit, $10,000, and
+  the refund or balance owing (line 167) is the total payable less the total credits,
+  $3,069.27861: positive, so a balance owing (line 48500). The CPP contributions, the EI
+  premiums and the federal basic personal amount are rounded to the cent, which changes none
+  of them; no other amounts are rounded.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -386,6 +394,58 @@ sources:
     150 + 150 + 150 + 0 = 750, and line 90 is 3,750.97271 + 750 = 4,500.97271.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
+    CRA, the 2025 Schedule 6 (form 5000-S6). Part A: line 1 "Employment income and other
+    employment income from line 10100 and line 10400 of the return"; line 5 "Add lines 1 to
+    4. Enter the result, even if it is "0". Working income"; line 6 "Add the amounts from
+    line 5 in columns 1 and 2. Enter this amount on line 16. Family working income". Part B:
+    line 7 "Net income from line 23600 of the return (or the amount you would have entered
+    if the instructions on line 23600 said "if negative, show in brackets")"; line 10 "Add
+    lines 7 to 9."; line 12 "Line 10 minus line 11 (if negative, enter "0")"; line 13 "Add
+    the amounts from line 12 in columns 1 and 2. If you had an eligible spouse, continue at
+    line 14; if not, continue at line 15."; line 15 "Line 13 minus line 14 Enter this amount
+    on line 23 and line 35. Adjusted family net income". The chart: "Your family status: You
+    did not have an eligible spouse or an eligible dependant Basic CWB: $37,742". Step 2:
+    line 16 "Family working income from line 6"; line 17 "Base amount 3,000.00"; line 18
+    "Line 16 minus line 17 (if negative, enter "0")"; line 19 "Rate 27%"; line 20 "Line 18
+    multiplied by the percentage from line 19"; line 21 "If you had an eligible spouse or an
+    eligible dependant, enter $2,813. If not, enter $1,633."; line 22 "Enter whichever is
+    less: amount from line 20 or line 21."; line 23 "Adjusted family net income from line
+    15"; line 24 "If you had an eligible spouse or an eligible dependant, enter $30,639. If
+    not, enter $26,855."; line 25 "Line 23 minus line 24 (if negative, enter "0")"; line 26
+    "Rate 15%"; line 27 "Line 25 multiplied by the percentage from line 26"; line 28 "Line
+    22 minus line 27 (if negative, enter "0") If you are not completing Step 3, enter this
+    amount on line 45300 of your return." Lines 2 to 4 (scholarships, self-employment income
+    and exempt income) are not triggered and there is no other employment income (line
+    10400), so line 1 is the employment income of 75,000 and line 5, the working income, is
+    75,000. Lines 8, 9 and 11 are not triggered, so line 10 is line 7, the net income of
+    74,174.00, and line 12 is 74,174.00; with no eligible spouse (column 2) lines 6 and 13
+    carry lines 5 and 12, line 14 (the secondary earner exemption) is not triggered, and
+    line 15, the adjusted family net income, is 74,174.00. The taxpayer is taken to have no
+    eligible spouse and no eligible dependant (to be confirmed), so line 21 is $1,633 and
+    line 24 $26,855. Line 18 is 75,000 - 3,000 = 72,000; line 20 is 72,000 x 27% = 19,440;
+    line 22 is the lesser of 19,440 and 1,633: 1,633. Line 25 is 74,174.00 - 26,855 =
+    47,319.00; line 27 is 47,319.00 x 15% = 7,097.85; line 28 is 1,633 - 7,097.85, negative,
+    so 0, the Canada workers benefit (T1 line 45300), with no rounding stated. The adjusted
+    family net income of 74,174.00 is above the chart's basic limit of $37,742, which
+    agrees. Not triggered by this return, so not modelled: Step 3 (the disability
+    supplement), Step 4 (the advance payments, Form RC210) and the amounts for an eligible
+    spouse or an eligible dependant. Page 1: "Complete this schedule if you met all of the
+    following conditions in 2025: You were a resident of Canada throughout the year; You
+    earned working income (see Part A); You were, at the end of the year, 19 years of age or
+    older, or you resided with your spouse or common-law partner or your child"; "You cannot
+    claim the CWB for 2025 if any of the following conditions apply to you: You were
+    enrolled as a full-time student at a designated educational institution for a total of
+    more than 13 weeks in the year, unless you had an eligible dependant at the end of the
+    year; You were confined to a prison or similar institution for a period of at least 90
+    days during the year; You were exempt from income tax in Canada for a period in the year
+    when you were an officer or a servant of another country (such as a diplomat) residing
+    in Canada or you were a family member who resided with such a person or an employee of
+    such a person, at any time in the year"; and under line 6: "You can claim the basic CWB
+    in Step 2 if the family working income on line 6 is more than $3,000." The family
+    working income of 75,000 is more than $3,000. The taxpayer's eligibility is to be
+    confirmed; the benefit is 0 either way.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s6/5000-s6-25e.txt
+  - >-
     CRA, the 2025 T1 return (form 5000-R), Part C and Step 6: line 119 "Enter the amount
     from line 76.", line 76 being Part A's "Line 74 plus line 75 Federal tax on taxable
     income" (column 2, quoted above), here 11,763.175; line 121 (line 40400) "Line 119 plus
@@ -409,13 +469,15 @@ sources:
     8,568.3059 + 4,500.97271 = 13,069.27861. Line 149 "Enter the amount from line 148 of the
     previous page."; line 150 (line 43700) "Total income tax deducted (amounts from all
     Canadian slips)": 10,000, a chosen figure: it is the tax withheld on the taxpayer's
-    slips, which nothing on this return determines. Lines 151 to 165 (lines 44000 to 47900)
-    are not triggered by this return or not yet computed, so line 166 (line 48200) "Add
-    lines 150 to 165. Total credits" is 10,000. Line 167 "Line 149 minus line 166 If the
-    amount is negative, enter it on line 48400 below. If the amount is positive, enter it on
-    line 48500 below. Refund or balance owing": 13,069.27861 - 10,000 = 3,069.27861,
-    positive, so line 48500 "Balance owing", not line 48400 "Refund". The T1 states no
-    rounding on any of these lines, so none is applied.
+    slips, which nothing on this return determines. Line 155 (line 45300) "Canada workers
+    benefit (CWB) (complete Schedule 6)" is the benefit of Schedule 6 line 28, 0; the other
+    lines 151 to 165 (lines 44000 to 47900) are not triggered by this return or not yet
+    computed, so line 166 (line 48200) "Add lines 150 to 165. Total credits" is 10,000 + 0 =
+    10,000. Line 167 "Line 149 minus line 166 If the amount is negative, enter it on line
+    48400 below. If the amount is positive, enter it on line 48500 below. Refund or balance
+    owing": 13,069.27861 - 10,000 = 3,069.27861, positive, so line 48500 "Balance owing",
+    not line 48400 "Refund". The T1 states no rounding on any of these lines, so none is
+    applied.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
 inputs:
   ca/employment_income: "75000"
@@ -472,5 +534,10 @@ expected:
   ca-on/ontario_tax: "4500.97271"
   ca/net_federal_tax: "8568.3059"
   ca/total_payable: "13069.27861"
+  ca/working_income: "75000"
+  ca/adjusted_family_net_income: "74174.00"
+  ca/cwb_before_reduction: "1633"
+  ca/cwb_reduction: "7097.85"
+  ca/canada_workers_benefit: "0"
   ca/total_credits: "10000"
   ca/refund_or_balance_owing: "3069.27861"
