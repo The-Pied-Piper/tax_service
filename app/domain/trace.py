@@ -36,18 +36,18 @@ class TraceLine(ABC):
 
 
 @dataclass(frozen=True)
-class BracketSliceLine(TraceLine):
-    """The part of a base from `lower` to `upper` taxed at `rate`; `upper` is `None` at the top."""
+class BracketColumnLine(TraceLine):
+    """The bracket a base falls in: `rate` on the `excess` over `lower`, plus `tax_at_start`."""
 
     lower: Decimal
-    upper: Decimal | None
     rate: Decimal
-    taxed: Decimal
+    excess: Decimal
+    tax_at_start: Decimal
     tax: Decimal
 
     @property
     def amount(self) -> Decimal:
-        """The tax on this slice."""
+        """The tax the bracket's column gives."""
         return self.tax
 
 

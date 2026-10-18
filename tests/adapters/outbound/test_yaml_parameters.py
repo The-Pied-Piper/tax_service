@@ -31,6 +31,7 @@ from app.adapters.outbound.yaml_support import YamlNode
 from app.domain.errors import (
     DomainError,
     InvalidAmountError,
+    InvalidBracketScheduleError,
     InvalidContributionTierError,
     InvalidCreditError,
     InvalidFactorError,
@@ -68,8 +69,8 @@ sources:
   - https://example.org/rates-2025
 rounding: none
 brackets:
-  - {from: "0", rate: "0.10"}
-  - {from: "100", rate: "0.20"}
+  - {from: "0", rate: "0.10", tax_at_start: "0.00"}
+  - {from: "100", rate: "0.20", tax_at_start: "10.00"}
 """
 
 CREDIT_2025 = """\
@@ -207,7 +208,9 @@ def test_reads_a_bracket_dataset(tmp_path: Path) -> None:
         family="ex/brackets",
         tax_year=2025,
         kind=BRACKETS,
-        values=BracketSchedule((Bracket(D("0"), D("0.10")), Bracket(D("100"), D("0.20")))),
+        values=BracketSchedule(
+            (Bracket(D("0"), D("0.10"), D("0.00")), Bracket(D("100"), D("0.20"), D("10.00")))
+        ),
         rounding=NO_ROUNDING,
         sources=("https://example.org/rates-2025",),
     )
@@ -555,6 +558,48 @@ def test_by_default_the_factor_parser_comes_from_the_shared_registry(tmp_path: P
     assert result.values == Factor(D("2"))
 
 
+def test_reads_each_brackets_printed_constant_exactly(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/brackets/2025.yaml", BRACKETS_2025)
+
+    schedule = source(tmp_path).get("ex/brackets", 2025, BRACKETS).values
+
+    assert [str(b.tax_at_start) for b in schedule.brackets] == ["0.00", "10.00"]
+
+
+def test_reads_a_constant_the_form_rounds_to_the_cent(tmp_path: Path) -> None:
+    # 10.5% of 105 is 11.025; the form prints 11.03.
+    content = (
+        BRACKETS_2025.replace('rate: "0.10"', 'rate: "0.105"')
+        .replace('from: "100"', 'from: "105"')
+        .replace('tax_at_start: "10.00"', 'tax_at_start: "11.03"')
+    )
+    write(tmp_path, "ex/parameters/brackets/2025.yaml", content)
+
+    schedule = source(tmp_path).get("ex/brackets", 2025, BRACKETS).values
+
+    assert schedule.brackets[1] == Bracket(D("105"), D("0.20"), D("11.03"))
+
+
+@pytest.mark.parametrize("constant", ["11.025", "11.02", "11.04"])
+def test_refuses_a_constant_that_is_not_the_rounded_tax_below_naming_the_bracket(
+    tmp_path: Path, constant: str
+) -> None:
+    content = (
+        BRACKETS_2025.replace('rate: "0.10"', 'rate: "0.105"')
+        .replace('from: "100"', 'from: "105"')
+        .replace('tax_at_start: "10.00"', f'tax_at_start: "{constant}"')
+    )
+    write(tmp_path, "ex/parameters/brackets/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match="from 105") as excinfo:
+        source(tmp_path).get("ex/brackets", 2025, BRACKETS)
+
+    assert isinstance(excinfo.value.__cause__, InvalidBracketScheduleError)
+    assert "2025.yaml" in str(excinfo.value)
+    assert constant in str(excinfo.value)
+    assert "11.03" in str(excinfo.value)
+
+
 def test_reads_a_rounding_rule(tmp_path: Path) -> None:
     write(
         tmp_path,
@@ -622,7 +667,7 @@ def test_by_default_parsers_come_from_the_shared_registry(tmp_path: Path) -> Non
     result = YamlParameterSource(roots(tmp_path)).get("ex/brackets", 2025, BRACKETS)
 
     assert result.values == BracketSchedule(
-        (Bracket(D("0"), D("0.10")), Bracket(D("100"), D("0.20")))
+        (Bracket(D("0"), D("0.10"), D("0.00")), Bracket(D("100"), D("0.20"), D("10.00")))
     )
 
 
@@ -647,9 +692,9 @@ def test_each_namespace_resolves_under_its_own_directory(tmp_path: Path) -> None
     write(
         tmp_path,
         "pkg_two/parameters/brackets/2025.yaml",
-        BRACKETS_2025.replace("family: ex/brackets", "family: ex-two/brackets").replace(
-            '"0.10"', '"0.15"'
-        ),
+        BRACKETS_2025.replace("family: ex/brackets", "family: ex-two/brackets")
+        .replace('"0.10"', '"0.15"')
+        .replace('"10.00"', '"15.00"'),
     )
     two_roots = {EX: tmp_path / "pkg_one", Namespace("ex-two"): tmp_path / "pkg_two"}
     parameters = YamlParameterSource(two_roots, parsers=built_in_parsers())
@@ -749,6 +794,46 @@ def test_invalid_data_is_a_domain_error() -> None:
             BRACKETS_2025.replace('{from: "100"', '{from: "0"'),
             "strictly ascending",
             id="schedule-invalid",
+        ),
+        pytest.param(
+            BRACKETS_2025.replace(', tax_at_start: "10.00"}', "}"),
+            r"brackets\[1\]: missing keys \['tax_at_start'\]",
+            id="constant-missing",
+        ),
+        pytest.param(
+            BRACKETS_2025.replace(', tax_at_start: "0.00"}', "}"),
+            r"brackets\[0\]: missing keys \['tax_at_start'\]",
+            id="first-constant-missing",
+        ),
+        pytest.param(
+            BRACKETS_2025.replace('tax_at_start: "10.00"', "tax_at_start: 10.00"),
+            r"brackets\[1\].tax_at_start must be a string, got float",
+            id="constant-as-yaml-number",
+        ),
+        pytest.param(
+            BRACKETS_2025.replace('tax_at_start: "10.00"', 'tax_at_start: "ten"'),
+            r"brackets\[1\].tax_at_start is not a decimal: 'ten'",
+            id="constant-not-decimal",
+        ),
+        pytest.param(
+            BRACKETS_2025.replace('tax_at_start: "10.00"', 'tax_at_start: "10.01"'),
+            "from 100",
+            id="constant-mistyped",
+        ),
+        pytest.param(
+            BRACKETS_2025.replace('tax_at_start: "0.00"', 'tax_at_start: "1.00"'),
+            "first bracket",
+            id="first-constant-not-zero",
+        ),
+        pytest.param(
+            BRACKETS_2025.replace('tax_at_start: "10.00"', 'tax_at_start: "-10.00"'),
+            "tax_at_start must not be negative",
+            id="constant-negative",
+        ),
+        pytest.param(
+            BRACKETS_2025.replace('tax_at_start: "10.00"}', 'tax_at_start: "10.00", to: "300"}'),
+            r"brackets\[1\]: unknown keys \['to'\]",
+            id="no-upper-bound-key",
         ),
         pytest.param(
             BRACKETS_2025.replace("rounding: none", "rounding: always"),

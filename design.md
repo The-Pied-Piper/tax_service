@@ -122,7 +122,7 @@ Rounding is a parameter, never a jurisdiction constant in code.
   several parameter slots decides which slot's rule it applies where. Rounding can
   therefore differ between capabilities in one jurisdiction and between
   tax years, and the provenance fingerprint (§6) covers it.
-- Each capability defines *where* it rounds (e.g. per bracket slice vs.
+- Each capability defines *where* it rounds (e.g. each tier's part vs.
   once at the end); the parameter defines *how*. Given a rule, the
   capability must apply it; given none, it does not round.
 - No global rounding step. Rounded values appear as rounded in the

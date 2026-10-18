@@ -1,18 +1,29 @@
-# Federal income tax brackets, 2025 tax year.
+# Federal income tax brackets, 2025 tax year (T1-2025, form 5000-R, Step 5, Part A
+# "Federal tax on taxable income", lines 70-76).
 # The lowest rate fell from 15% to 14% on July 1, 2025; 14.5% is the full-year
-# blended rate used on the 2025 return (T1, Step 5, Part A, lines 70-76).
-# CRA states no rounding rule for these lines, so none is assumed.
+# blended rate used on the 2025 return.
+# Column headings: "Line 26000 is $57,375 or less"; "Line 26000 is more than $57,375
+# but not more than $114,750"; "... more than $114,750 but not more than $177,882";
+# "... more than $177,882 but not more than $253,414"; "Line 26000 is more than
+# $253,414". In every column: line 70 "Amount from line 26000"; line 71 the column's
+# lower bound (0.00, 57,375.00, 114,750.00, 177,882.00, 253,414.00); line 72 "Line 70
+# minus line 71 (cannot be negative)"; line 73 "Rate" (14.5%, 20.5%, 26%, 29%, 33%);
+# line 74 "Line 72 multiplied by the percentage from line 73"; line 75 the printed
+# constant (0.00, 8,319.38, 20,081.25, 36,495.57, 58,399.85); line 76 "Line 74 plus
+# line 75 Federal tax on taxable income". Each constant is the exact tax on the
+# brackets below rounded half-up to the cent (8,319.38 for the exact 8,319.375).
+# CRA states no rounding rule for lines 74 or 76, so none is assumed.
 family: ca/brackets
 tax_year: 2025
 kind: brackets
 sources:
   - https://www.canada.ca/en/revenue-agency/services/tax/individuals/tax-rates-brackets/last-year.html
-  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-r/5006-r-25e.txt
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - https://www.canada.ca/en/department-finance/news/2025/05/delivering-a-middle-class-tax-cut.html
 rounding: none
 brackets:
-  - {from: "0", rate: "0.145"}
-  - {from: "57375", rate: "0.205"}
-  - {from: "114750", rate: "0.26"}
-  - {from: "177882", rate: "0.29"}
-  - {from: "253414", rate: "0.33"}
+  - {from: "0", rate: "0.145", tax_at_start: "0.00"}
+  - {from: "57375", rate: "0.205", tax_at_start: "8319.38"}
+  - {from: "114750", rate: "0.26", tax_at_start: "20081.25"}
+  - {from: "177882", rate: "0.29", tax_at_start: "36495.57"}
+  - {from: "253414", rate: "0.33", tax_at_start: "58399.85"}

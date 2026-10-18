@@ -25,7 +25,7 @@ from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRu
 from app.domain.parameters.taper import Taper
 from app.domain.trace import (
     AtMostLine,
-    BracketSliceLine,
+    BracketColumnLine,
     CappedAmountLine,
     ContributionTierLine,
     CreditAmountLine,
@@ -77,25 +77,34 @@ def render(line: TraceLine) -> str:
     return EnglishTraceRenderer().render(line)
 
 
-# --- bracket slices --------------------------------------------------------------
+# --- bracket columns -------------------------------------------------------------
+#
+# One line for the bracket the base falls in, read like the form's column: the rate on the
+# excess over the bracket's lower, plus the bracket's printed constant.
 
 
-def test_renders_a_bounded_slice() -> None:
-    line = BracketSliceLine(D(0), D(100), D("0.10"), D(100), D("10.0"))
+def test_renders_the_bracket_the_base_falls_in() -> None:
+    line = BracketColumnLine(D(100), D("0.20"), D(150), D("10.00"), D("40.00"))
 
-    assert render(line) == "10% on 100 (0 to 100)"
-
-
-def test_renders_a_middle_slice() -> None:
-    line = BracketSliceLine(D(100), D(300), D("0.20"), D(150), D("30.0"))
-
-    assert render(line) == "20% on 150 (100 to 300)"
+    assert render(line) == "20% on 150 over 100 plus 10"
 
 
-def test_renders_the_open_top_slice() -> None:
-    line = BracketSliceLine(D(300), None, D("0.30"), D(100), D("30.0"))
+def test_renders_a_constant_with_its_cents() -> None:
+    line = BracketColumnLine(D(105), D("0.205"), D("45.00"), D("11.03"), D("20.255"))
 
-    assert render(line) == "30% on 100 (over 300)"
+    assert render(line) == "20.5% on 45 over 105 plus 11.03"
+
+
+def test_renders_the_first_bracket_over_zero_plus_zero() -> None:
+    line = BracketColumnLine(D(0), D("0.10"), D(100), D(0), D("10.0"))
+
+    assert render(line) == "10% on 100 over 0 plus 0"
+
+
+def test_renders_the_open_top_bracket_like_any_other() -> None:
+    line = BracketColumnLine(D(300), D("0.30"), D(100), D("50.00"), D("80.00"))
+
+    assert render(line) == "30% on 100 over 300 plus 50"
 
 
 @pytest.mark.parametrize(
@@ -110,9 +119,9 @@ def test_renders_the_open_top_slice() -> None:
     ],
 )
 def test_renders_the_rate_as_a_plain_percentage(rate: str, percent: str) -> None:
-    line = BracketSliceLine(D(0), D(100), D(rate), D(100), D(0))
+    line = BracketColumnLine(D(0), D(rate), D(100), D(0), D(0))
 
-    assert render(line) == f"{percent}% on 100 (0 to 100)"
+    assert render(line) == f"{percent}% on 100 over 0 plus 0"
 
 
 # --- rounded totals --------------------------------------------------------------
@@ -727,12 +736,12 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
     ("line", "text"),
     [
         (
-            BracketSliceLine(D("100.00"), D("300.00"), D("0.20"), D("150.00"), D("30.00")),
-            "20% on 150 (100 to 300)",
+            BracketColumnLine(D("100.00"), D("0.20"), D("150.00"), D("10.00"), D("40.00")),
+            "20% on 150 over 100 plus 10",
         ),
         (
-            BracketSliceLine(D("3E+2"), None, D("0.30"), D("1.0E+2"), D("30.0")),
-            "30% on 100 (over 300)",
+            BracketColumnLine(D("3E+2"), D("0.30"), D("1.0E+2"), D("5.0E+1"), D("80.0")),
+            "30% on 100 over 300 plus 50",
         ),
         (
             RoundedTotalLine(BASIC_TAX, TAXABLE_BASE, D("250.00"), CENT, D("40.00")),
@@ -855,7 +864,7 @@ def test_renders_every_money_figure_of_a_line_without_trailing_zeros(
 
 def test_render_all_renders_each_line_in_order() -> None:
     trace = (
-        BracketSliceLine(D(0), D(100), D("0.10"), D(100), D("10.0")),
+        BracketColumnLine(D(0), D("0.10"), D(100), D(0), D("10.0")),
         RoundedTotalLine(BASIC_TAX, TAXABLE_BASE, D(100), NO_ROUNDING, D("10.0")),
         SumLine(TOTAL, ((PART_ONE, D("1")), (PART_TWO, D("2"))), D("3")),
         RateAppliedLine(RATED_AMOUNT, TOTAL, D("3"), Rate(D("0.5")), NO_ROUNDING, D("1.5")),
@@ -886,7 +895,7 @@ def test_render_all_renders_each_line_in_order() -> None:
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
-        "10% on 100 (0 to 100)",
+        "10% on 100 over 0 plus 0",
         "basic_tax on taxable_base 100 (no rounding)",
         "total: part_one 1 + part_two 2 = 3",
         "rated_amount: 50% of total 3 (no rounding)",

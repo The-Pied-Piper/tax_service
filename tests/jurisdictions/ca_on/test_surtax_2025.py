@@ -52,12 +52,12 @@ def test_2025_tiers_cite_only_the_on428_text() -> None:
 @pytest.mark.parametrize(
     ("tax", "surtax"),
     [
-        # Return A: Ontario tax after credits of 7671.97721, above both thresholds:
-        # (7671.97721 - 5710) x 20% = 392.395442 plus (7671.97721 - 7307) x 36% = 131.3917956.
-        ("7671.97721", "523.7872376"),
+        # Return A: Ontario tax after credits of 7671.98071, above both thresholds:
+        # (7671.98071 - 5710) x 20% = 392.396142 plus (7671.98071 - 7307) x 36% = 131.3930556.
+        ("7671.98071", "523.7891976"),
         # Returns C and D: below the first threshold, so no surtax.
         ("1700.145625", "0"),
-        ("3750.97571", "0"),
+        ("3750.97271", "0"),
         # At the first threshold nothing is over it; a cent above, 20% of the cent, unrounded.
         ("5710", "0"),
         ("5710.01", "0.002"),

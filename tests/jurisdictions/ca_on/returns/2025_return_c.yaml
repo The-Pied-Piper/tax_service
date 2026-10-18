@@ -272,20 +272,26 @@ sources:
     line 49 is not modelled, so line 61500 is that same 801.371875.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
-    The other lines are the 2025 federal and Ontario brackets and those credits applied
-    without rounding. The federal brackets are those of the 2025 T1 return for Ontario (form
-    5006-R), Step 5 Part A lines 70 to 76, as CRA publishes them; the lowest rate of 14.5%
-    is the full-year blend of the cut from 15% to 14% on July 1, 2025, per Finance Canada's
-    announcement: 14.5% from 0 to 57,375, so taxable income of 49,535.00, inside the lowest
-    bracket, gives federal basic tax of 49,535.00 x 14.5% = 7,182.575, less the 3,004.65375
-    of federal non-refundable tax credits (line 35000), not below zero, is 4,177.92125. The
-    Ontario brackets are those of the 2025 ON428 (form 5006-C), Part A lines 2 to 8, as CRA
-    and the Ontario Data Catalogue publish them: 5.05% from 0 to 52,886, so 49,535.00,
-    inside the lowest bracket, gives Ontario basic tax of 49,535.00 x 5.05% = 2,501.5175,
-    less the 801.371875 of Ontario non-refundable tax credits (ON428 line 61500), not below
-    zero, is 1,700.145625.
+    The federal brackets are those of the 2025 T1 return (form 5000-R), Step 5, Part A
+    "Federal tax on taxable income", lines 70 to 76, as CRA publishes them; the lowest rate
+    of 14.5% is the full-year blend of the cut from 15% to 14% on July 1, 2025, per Finance
+    Canada's announcement. Taxable income of 49,535.00 falls in column 1 "Line 26000 is
+    $57,375 or less": line 70 "Amount from line 26000", 49,535.00; line 71 "0.00"; line 72
+    "Line 70 minus line 71 (cannot be negative)", 49,535.00; line 73 "Rate 14.5%"; line 74
+    "Line 72 multiplied by the percentage from line 73", 7,182.575; line 75 "0.00"; line 76
+    "Line 74 plus line 75 Federal tax on taxable income", 7,182.575, with no rounding
+    stated. Less the 3,004.65375 of federal non-refundable tax credits (line 35000), not
+    below zero, it is 4,177.92125. The Ontario brackets are those of the 2025 ON428 (form
+    5006-C), Part A "Ontario tax on taxable income", lines 1 to 8, as CRA and the Ontario
+    Data Catalogue publish them: line 1 "Enter your taxable income from line 26000 of your
+    return.", 49,535.00, in column 1 "Line 1 is $52,886 or less": line 2 "Amount from line
+    1"; line 3 "0.00"; line 4 "Line 2 minus line 3 (cannot be negative)", 49,535.00; line 5
+    "Rate 5.05%"; line 6 "Line 4 multiplied by the percentage from line 5", 2,501.5175; line
+    7 "0.00"; line 8 "Line 6 plus line 7 Ontario tax on taxable income", 2,501.5175, with no
+    rounding stated. Less the 801.371875 of Ontario non-refundable tax credits (ON428 line
+    61500), not below zero, it is 1,700.145625.
   - https://www.canada.ca/en/revenue-agency/services/tax/individuals/tax-rates-brackets/last-year.html
-  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-r/5006-r-25e.txt
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - https://www.canada.ca/en/department-finance/news/2025/05/delivering-a-middle-class-tax-cut.html
   - https://data.ontario.ca/en/dataset/personal-income-tax-rates-and-credits/resource/60f84727-7e12-4fd4-ba06-30955d31b2ae
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.pdf
@@ -378,7 +384,7 @@ sources:
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
     CRA, the 2025 T1 return (form 5000-R), Part C and Step 6: line 119 "Enter the amount
-    from line 76.", line 76 being Part B's "Line 74 plus line 75 Federal tax on taxable
+    from line 76.", line 76 being Part A's "Line 74 plus line 75 Federal tax on taxable
     income" (the same text in each of the form's five columns; this return's taxable income
     of 49,535.00 falls in column 1), here 7,182.575; line 121 (line 40400) "Line 119 plus
     line 120", line 120 (line 40424, tax on split income) not modelled; line 122 "Amount
