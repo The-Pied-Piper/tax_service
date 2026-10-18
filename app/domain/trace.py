@@ -211,3 +211,17 @@ class CappedAmountLine(TraceLine):
     def amount(self) -> Decimal:
         """The rounded lesser."""
         return self.result
+
+
+@dataclass(frozen=True)
+class LesserOfLine(TraceLine):
+    """The `result` produced as `output`: the least of `parts`, each a kind and its value."""
+
+    output: Money
+    parts: tuple[tuple[Money, Decimal], ...]
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The least of the parts."""
+        return self.result

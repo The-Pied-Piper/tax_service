@@ -1184,6 +1184,115 @@ def test_core_capped_amount_asks_for_its_dataset_as_an_amount() -> None:
     assert ("ex/some_cap", 2025, AMOUNT) in parameters.requests
 
 
+# --- core/lesser_of: the least of a list of amounts, wired by a made-up manifest ---------------
+#
+# `LesserOf` is imported inside a cached factory, like `Sum` above, so its absence fails only the
+# tests that use it. It is registered in a private registry under its shared identifier,
+# `core/lesser_of`, and reads the parts the made-up producers of the list-slot section make.
+
+
+@cache
+def lesser_of_class() -> Any:
+    from app.domain.capabilities.lesser_of import LesserOf
+
+    return LesserOf
+
+
+def lesser_of_manifest(amounts: tuple[str, ...]) -> Manifest:
+    """The made-up producers of the wired parts and `core/lesser_of` over `amounts`.
+
+    Only producers whose part is wired are selected (part three is made from part one), so the
+    composition has no orphan output.
+    """
+    to_one = CapabilitySelection(
+        name="ex/scale",
+        params={"factor": "ex/factor"},
+        consumes={"source": "ex/base"},
+        produces={"target": "ex/part_one"},
+    )
+    to_two = CapabilitySelection(
+        name="ex/shift",
+        params={"offset": "ex-on/offset"},
+        consumes={"source": "ex/base"},
+        produces={"target": "ex/part_two"},
+    )
+    to_three = CapabilitySelection(
+        name="ex/shift",
+        params={"offset": "ex-on/offset"},
+        consumes={"source": "ex/part_one"},
+        produces={"target": "ex/part_three"},
+    )
+    lesser = CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={"amounts": amounts},
+        produces={"output": "ex-on/result"},
+    )
+    producers = {"ex/part_one": to_one, "ex/part_two": to_two, "ex/part_three": to_three}
+    wired = set(amounts) | ({"ex/part_one"} if "ex/part_three" in amounts else set())
+    selected = [selection for part, selection in producers.items() if part in wired]
+    return manifest(lesser, *reversed(selected))
+
+
+def lesser_of_service(*manifests: Manifest) -> TaxComputationService:
+    capabilities = capability_registry()
+    capabilities.register("core/lesser_of", lesser_of_class())
+    artifacts = artifact_registry()
+    for kind in (PART_ONE, PART_TWO, PART_THREE):
+        artifacts.register(kind.identifier, kind)
+    return service(*manifests, capabilities=capabilities, artifacts=artifacts)
+
+
+def test_computes_core_lesser_of_three_amounts_end_to_end() -> None:
+    from app.domain.trace import LesserOfLine
+
+    amounts = ("ex/part_three", "ex/part_two", "ex/part_one")
+
+    worksheet = lesser_of_service(lesser_of_manifest(amounts)).compute(
+        EX_ON, 2025, Artifact(BASE, D("5"))
+    )
+
+    # part_one = 5 × 3 = 15; part_two = 5 + 1 = 6; part_three = 15 + 1 = 16; the least is 6.
+    assert worksheet.get(RESULT).value == D("6")
+    assert isinstance(worksheet.producer_of(RESULT), lesser_of_class())
+    assert worksheet.trace[-1] == LesserOfLine(
+        RESULT, ((PART_THREE, D("16")), (PART_TWO, D("6")), (PART_ONE, D("15"))), D("6")
+    )
+    assert [type(line) for line in worksheet.trace].count(LesserOfLine) == 1
+
+
+def test_computes_core_lesser_of_two_amounts_end_to_end() -> None:
+    from app.domain.trace import LesserOfLine
+
+    amounts = ("ex/part_three", "ex/part_one")
+
+    worksheet = lesser_of_service(lesser_of_manifest(amounts)).compute(
+        EX_ON, 2025, Artifact(BASE, D("5"))
+    )
+
+    # part_one = 15 and part_three = 16: the lesser is part_one's 15.
+    assert worksheet.get(RESULT).value == D("15")
+    assert worksheet.trace[-1] == LesserOfLine(
+        RESULT, ((PART_THREE, D("16")), (PART_ONE, D("15"))), D("15")
+    )
+
+
+def test_core_lesser_of_runs_after_all_its_amounts() -> None:
+    amounts = ("ex/part_three", "ex/part_two", "ex/part_one")
+
+    composition = lesser_of_service(lesser_of_manifest(amounts)).compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is lesser_of_class()
+    assert composition.order[-1].consumes == frozenset({PART_ONE, PART_TWO, PART_THREE})
+
+
+def test_core_lesser_of_with_no_amounts_is_an_invalid_selection() -> None:
+    built = lesser_of_service(lesser_of_manifest(()))
+
+    with pytest.raises(InvalidSelectionError, match="core/lesser_of.*'amounts'"):
+        built.compose(EX_ON, 2025)
+
+
 # --- core/non_refundable_credit: summed amounts × a rate, off a tax, by a made-up manifest ----
 #
 # Like `Sum` above, `NonRefundableCredit` is imported inside a cached factory so its absence fails
