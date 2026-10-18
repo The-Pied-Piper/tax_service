@@ -22,6 +22,7 @@ from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.domain.parameters.taper import Taper
 from app.domain.trace import (
+    AtMostLine,
     BracketSliceLine,
     CappedAmountLine,
     ContributionTierLine,
@@ -61,6 +62,9 @@ INCOME = ArtifactKind("ex/income", Decimal)
 TAPER = Taper(D(1000), D(500), D(20000), D(10000))
 CHILDREN = ArtifactKind("ex/child_count", int)
 CHILD_AMOUNT = ArtifactKind("ex/child_amount", Decimal)
+CLAIMED = ArtifactKind("ex/claimed_amount", Decimal)
+LIMIT = ArtifactKind("ex/claim_limit", Decimal)
+ALLOWED = ArtifactKind("ex/allowed_amount", Decimal)
 
 
 def slice_line() -> BracketSliceLine:
@@ -131,6 +135,10 @@ def multiple_over_line() -> MultipleOverLine:
     )
 
 
+def at_most_line() -> AtMostLine:
+    return AtMostLine(ALLOWED, CLAIMED, D("1500.25"), LIMIT, D(1926))
+
+
 ALL_LINES = [
     slice_line,
     total_line,
@@ -146,6 +154,7 @@ ALL_LINES = [
     tapered_amount_line,
     per_unit_amount_line,
     multiple_over_line,
+    at_most_line,
 ]
 
 
@@ -929,6 +938,72 @@ def test_a_multiple_over_line_is_not_a_subtracted_or_rate_applied_line() -> None
     assert not isinstance(line, SubtractedNotBelowZeroLine)
     assert not isinstance(line, SubtractedLine)
     assert not isinstance(line, RateAppliedLine)
+
+
+def test_at_most_line_fields_in_order() -> None:
+    line = at_most_line()
+
+    assert line == AtMostLine(
+        output=ALLOWED,
+        amount_kind=CLAIMED,
+        amount_value=D("1500.25"),
+        bound=LIMIT,
+        bound_value=D(1926),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "amount_kind",
+        "amount_value",
+        "bound",
+        "bound_value",
+    ]
+    assert line.output is ALLOWED
+    assert line.amount_kind is CLAIMED
+    assert line.amount_value == D("1500.25")
+    assert line.bound is LIMIT
+    assert line.bound_value == D(1926)
+    assert line.amount == D("1500.25")
+
+
+def test_at_most_line_may_hold_an_amount_equal_to_its_bound() -> None:
+    line = AtMostLine(ALLOWED, CLAIMED, D(1926), LIMIT, D(1926))
+
+    assert line.amount == D(1926)
+
+
+def test_at_most_line_may_hold_a_zero_amount() -> None:
+    line = AtMostLine(ALLOWED, CLAIMED, D(0), LIMIT, D(0))
+
+    assert line.amount == D(0)
+
+
+def test_at_most_lines_differ_by_amount() -> None:
+    assert at_most_line() != AtMostLine(ALLOWED, CLAIMED, D("1500.5"), LIMIT, D(1926))
+
+
+def test_at_most_lines_differ_by_bound() -> None:
+    assert at_most_line() != AtMostLine(ALLOWED, CLAIMED, D("1500.25"), LIMIT, D(2000))
+
+
+def test_at_most_lines_differ_by_the_bounds_kind() -> None:
+    other = ArtifactKind("ex/other_limit", Decimal)
+
+    assert at_most_line() != AtMostLine(ALLOWED, CLAIMED, D("1500.25"), other, D(1926))
+
+
+def test_at_most_lines_are_hashable() -> None:
+    assert hash(at_most_line()) == hash(at_most_line())
+
+
+def test_an_at_most_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(at_most_line())]
+
+
+def test_an_at_most_line_is_not_a_lesser_of_or_capped_amount_line() -> None:
+    line = at_most_line()
+
+    assert not isinstance(line, LesserOfLine)
+    assert not isinstance(line, CappedAmountLine)
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:

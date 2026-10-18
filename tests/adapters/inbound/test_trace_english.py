@@ -24,6 +24,7 @@ from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.parameters.taper import Taper
 from app.domain.trace import (
+    AtMostLine,
     BracketSliceLine,
     CappedAmountLine,
     ContributionTierLine,
@@ -67,6 +68,9 @@ TAPER = Taper(D("1000"), D("500"), D("20000"), D("10000"))
 CHILDREN = ArtifactKind("ex/child_count", int)
 CHILD_AMOUNT = ArtifactKind("ex/child_amount", Decimal)
 REDUCTION_AMOUNTS = ArtifactKind("ex/reduction_amounts", Decimal)
+CLAIMED_AMOUNT = ArtifactKind("ex/claimed_amount", Decimal)
+CLAIM_LIMIT = ArtifactKind("ex/claim_limit", Decimal)
+ALLOWED_AMOUNT = ArtifactKind("ex/allowed_amount", Decimal)
 
 
 def render(line: TraceLine) -> str:
@@ -667,6 +671,33 @@ def test_renders_a_fractional_factor() -> None:
     )
 
 
+# --- amounts at most a bound ----------------------------------------------------------
+
+
+def test_renders_an_amount_at_most_a_bound() -> None:
+    line = AtMostLine(ALLOWED_AMOUNT, CLAIMED_AMOUNT, D("1500.25"), CLAIM_LIMIT, D("1926"))
+
+    assert render(line) == "allowed_amount: claimed_amount 1500.25, at most claim_limit 1926"
+
+
+def test_renders_an_amount_equal_to_its_bound() -> None:
+    line = AtMostLine(ALLOWED_AMOUNT, CLAIMED_AMOUNT, D("1926"), CLAIM_LIMIT, D("1926"))
+
+    assert render(line) == "allowed_amount: claimed_amount 1926, at most claim_limit 1926"
+
+
+def test_renders_a_zero_amount_at_most_a_zero_bound() -> None:
+    line = AtMostLine(ALLOWED_AMOUNT, CLAIMED_AMOUNT, D("0"), CLAIM_LIMIT, D("0"))
+
+    assert render(line) == "allowed_amount: claimed_amount 0, at most claim_limit 0"
+
+
+def test_renders_an_amount_at_most_a_bound_with_every_digit() -> None:
+    line = AtMostLine(ALLOWED_AMOUNT, CLAIMED_AMOUNT, D("0.0049"), CLAIM_LIMIT, D("0.005"))
+
+    assert render(line) == "allowed_amount: claimed_amount 0.0049, at most claim_limit 0.005"
+
+
 # --- money figures ---------------------------------------------------------------
 
 
@@ -807,6 +838,10 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
             ),
             "reduction: 2 × reduction_amounts 294 over tax_so_far 100, not below 0 (no rounding)",
         ),
+        (
+            AtMostLine(ALLOWED_AMOUNT, CLAIMED_AMOUNT, D("1926.00"), CLAIM_LIMIT, D("1.9260E+3")),
+            "allowed_amount: claimed_amount 1926, at most claim_limit 1926",
+        ),
     ],
 )
 def test_renders_every_money_figure_of_a_line_without_trailing_zeros(
@@ -847,6 +882,7 @@ def test_render_all_renders_each_line_in_order() -> None:
             NO_ROUNDING,
             D("2173"),
         ),
+        AtMostLine(ALLOWED_AMOUNT, TOTAL, D("3"), CAPPED_AMOUNT, D("3")),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -865,6 +901,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         "not below 1000 (no rounding)",
         "child_amount: 544 for each of 2 child_count = 1088 (no rounding)",
         "reduction: 2 × child_amount 1088 over total 3, not below 0 (no rounding)",
+        "allowed_amount: total 3, at most capped_amount 3",
     )
 
 

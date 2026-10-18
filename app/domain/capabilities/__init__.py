@@ -9,6 +9,7 @@ NAMESPACE = "core"
 
 from app.domain.capabilities import (  # noqa: E402
     apply_rate,
+    at_most,
     capped_amount,
     contribution_tier,
     credit_amount,
@@ -26,6 +27,7 @@ from app.domain.capabilities import (  # noqa: E402
 __all__ = [
     "NAMESPACE",
     "apply_rate",
+    "at_most",
     "capped_amount",
     "contribution_tier",
     "credit_amount",
