@@ -11,6 +11,7 @@ import app.registrations  # lists the packages; build_tax_computation registers 
 from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.capabilities.apply_rate import ApplyRate
+from app.domain.capabilities.capped_amount import CappedAmount
 from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
 from app.domain.capabilities.progressive_tax import ProgressiveTax
@@ -20,6 +21,7 @@ from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Manifest
 from app.jurisdictions.ca.catalog import (
     BASIC_PERSONAL_AMOUNT,
+    CANADA_EMPLOYMENT_AMOUNT,
     CAPITAL_GAIN,
     CPP_BASE_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS,
@@ -145,9 +147,19 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={},
             produces={"output": "ca-on/basic_personal_amount"},
         ),
-        # T1 line 33500 (lines 30000, 30800, 31200) and ON428 line 58800 (lines 58040, 58240,
-        # 58300), in the forms' line order. ON428 lines 58240 and 58300 are "Amount from line
-        # 30800 / 31200 of your return", so the Ontario sum reads the federal input kinds.
+        # T1 line 92 (line 31260) "Enter whichever is less: $1,471 or line 1 plus line 2.":
+        # lines 1 and 2 are employment income (10100) and other employment income (10400, not
+        # modelled), so the cap applies to employment income alone. ON428 has no such line.
+        CapabilitySelection(
+            name="core/capped_amount",
+            params={"cap": "ca/canada_employment_amount"},
+            consumes={"base": "ca/employment_income"},
+            produces={"output": "ca/canada_employment_amount"},
+        ),
+        # T1 line 33500 (lines 30000, 30800, 31200, 31260) and ON428 line 58800 (lines 58040,
+        # 58240, 58300), in the forms' line order. ON428 lines 58240 and 58300 are "Amount from
+        # line 30800 / 31200 of your return", so the Ontario sum reads the federal input kinds;
+        # it has no Canada employment amount.
         CapabilitySelection(
             name="core/sum",
             params={},
@@ -156,6 +168,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
                     "ca/basic_personal_amount",
                     "ca/cpp_base_contributions",
                     "ca/ei_premiums",
+                    "ca/canada_employment_amount",
                 )
             },
             produces={"output": "ca/non_refundable_credit_amounts"},
@@ -189,7 +202,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca-on/ontario_tax_after_credits"},
         ),
     }
-    assert len(found.capabilities) == 14
+    assert len(found.capabilities) == 15
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -199,7 +212,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 14
+    assert len(composition.order) == 15
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -227,9 +240,17 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (ProgressiveTax, frozenset({TAXABLE_INCOME}), frozenset({ONTARIO_BASIC_TAX})),
         (CreditAmount, frozenset(), frozenset({BASIC_PERSONAL_AMOUNT})),
         (CreditAmount, frozenset(), frozenset({ontario.BASIC_PERSONAL_AMOUNT})),
+        (CappedAmount, frozenset({EMPLOYMENT_INCOME}), frozenset({CANADA_EMPLOYMENT_AMOUNT})),
         (
             Sum,
-            frozenset({BASIC_PERSONAL_AMOUNT, CPP_BASE_CONTRIBUTIONS, EI_PREMIUMS}),
+            frozenset(
+                {
+                    BASIC_PERSONAL_AMOUNT,
+                    CPP_BASE_CONTRIBUTIONS,
+                    EI_PREMIUMS,
+                    CANADA_EMPLOYMENT_AMOUNT,
+                }
+            ),
             frozenset({NON_REFUNDABLE_CREDIT_AMOUNTS}),
         ),
         (
