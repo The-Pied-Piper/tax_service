@@ -199,13 +199,14 @@ def test_ontario_amount_applies_to_basic_tax() -> None:
     amount = SOURCE.get(ONTARIO, 2025, CREDIT)
     rate = SOURCE.get("ca-on/credit_rate", 2025, RATE)
 
-    # Ontario basic tax on $115,000 (ON428 formula: 8,539.5965) less 12,747 × 5.05%.
+    # Ontario basic tax on $115,000 (ON428 Part A, column 3: 11.16% x 9,225 + 7,510.09 =
+    # 8,539.60) less 12,747 × 5.05%.
     (claimed,) = CreditAmount(amount, AMOUNT).compute(()).outputs
     (credits,) = ApplyRate(rate, base=AMOUNT, output=CREDITS).compute((claimed,)).outputs
     less = SubtractNotBelowZero(amount=BASIC_TAX, less=CREDITS, output=TAX_AFTER_CREDITS)
 
-    result = less.compute((Artifact(BASIC_TAX, D("8539.5965")), credits))
+    result = less.compute((Artifact(BASIC_TAX, D("8539.60")), credits))
 
     assert claimed == Artifact(AMOUNT, amount.values.amount)
     assert credits == Artifact(CREDITS, amount.values.amount * rate.values.value)
-    assert result.outputs == (Artifact(TAX_AFTER_CREDITS, D("7895.873")),)
+    assert result.outputs == (Artifact(TAX_AFTER_CREDITS, D("7895.8765")),)

@@ -23,7 +23,7 @@ from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.domain.parameters.taper import Taper
 from app.domain.trace import (
     AtMostLine,
-    BracketSliceLine,
+    BracketColumnLine,
     CappedAmountLine,
     ContributionTierLine,
     CreditAmountLine,
@@ -67,8 +67,8 @@ LIMIT = ArtifactKind("ex/claim_limit", Decimal)
 ALLOWED = ArtifactKind("ex/allowed_amount", Decimal)
 
 
-def slice_line() -> BracketSliceLine:
-    return BracketSliceLine(D(0), D(100), D("0.10"), D(100), D("10.0"))
+def column_line() -> BracketColumnLine:
+    return BracketColumnLine(D(100), D("0.20"), D(150), D("10.00"), D("40.00"))
 
 
 def total_line() -> RoundedTotalLine:
@@ -140,7 +140,7 @@ def at_most_line() -> AtMostLine:
 
 
 ALL_LINES = [
-    slice_line,
+    column_line,
     total_line,
     sum_line,
     rate_applied_line,
@@ -181,32 +181,35 @@ def test_lines_are_frozen(make: Any) -> None:
         setattr(line, fields(line)[0].name, D(1))
 
 
-def test_bracket_slice_line_fields_in_order() -> None:
-    line = slice_line()
+def test_bracket_column_line_fields_in_order() -> None:
+    line = column_line()
 
-    assert line == BracketSliceLine(
-        lower=D(0), upper=D(100), rate=D("0.10"), taxed=D(100), tax=D("10.0")
+    assert line == BracketColumnLine(
+        lower=D(100), rate=D("0.20"), excess=D(150), tax_at_start=D("10.00"), tax=D("40.00")
     )
-    assert (line.lower, line.upper, line.rate, line.taxed, line.tax) == (
-        D(0),
+    assert [f.name for f in fields(line)] == ["lower", "rate", "excess", "tax_at_start", "tax"]
+    assert (line.lower, line.rate, line.excess, line.tax_at_start, line.tax) == (
         D(100),
-        D("0.10"),
-        D(100),
-        D("10.0"),
+        D("0.20"),
+        D(150),
+        D("10.00"),
+        D("40.00"),
     )
-    assert line.amount == D("10.0")
+    assert line.amount == D("40.00")
 
 
-def test_bracket_slice_line_open_top_slice_has_no_upper() -> None:
-    line = BracketSliceLine(D(300), None, D("0.30"), D(100), D("30.0"))
-
-    assert line.upper is None
-    assert line.amount == D("30.0")
+def test_bracket_column_line_has_no_upper_bound() -> None:
+    assert "upper" not in [f.name for f in fields(BracketColumnLine)]
 
 
-def test_bracket_slice_lines_differ_by_any_field() -> None:
-    assert slice_line() != BracketSliceLine(D(0), D(100), D("0.10"), D(100), D("11.0"))
-    assert slice_line() != BracketSliceLine(D(0), None, D("0.10"), D(100), D("10.0"))
+def test_bracket_column_lines_differ_by_any_field() -> None:
+    line = column_line()
+
+    assert line != BracketColumnLine(D(0), D("0.20"), D(150), D("10.00"), D("40.00"))
+    assert line != BracketColumnLine(D(100), D("0.25"), D(150), D("10.00"), D("40.00"))
+    assert line != BracketColumnLine(D(100), D("0.20"), D(140), D("10.00"), D("40.00"))
+    assert line != BracketColumnLine(D(100), D("0.20"), D(150), D("10.01"), D("40.00"))
+    assert line != BracketColumnLine(D(100), D("0.20"), D(150), D("10.00"), D("40.01"))
 
 
 def test_rounded_total_line_fields_in_order() -> None:
@@ -1007,6 +1010,6 @@ def test_an_at_most_line_is_not_a_lesser_of_or_capped_amount_line() -> None:
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:
-    assert cast(Any, SumLine(TOTAL, (), D(10))) != BracketSliceLine(
-        D(0), None, D("0.10"), D(100), D(10)
+    assert cast(Any, SumLine(TOTAL, (), D(10))) != BracketColumnLine(
+        D(0), D("0.10"), D(100), D(0), D(10)
     )

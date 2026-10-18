@@ -6,5 +6,5 @@ sources:
   - https://example.org/ex-on/rates-2025
 rounding: none
 brackets:
-  - {from: "0", rate: "0.10"}
-  - {from: "100", rate: "0.20"}
+  - {from: "0", rate: "0.10", tax_at_start: "0.00"}
+  - {from: "100", rate: "0.20", tax_at_start: "10.00"}

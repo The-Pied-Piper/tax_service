@@ -2,7 +2,9 @@
 
 One mechanism, wired per use: the same class computes, say, national and
 regional basic tax from the same base, with different schedules and outputs.
-Rounding happens once, on the total, using the schedule dataset's rule.
+It computes the form's two lines for the bracket the base falls in: the rate on the
+excess over the bracket's lower, plus the bracket's printed constant. Rounding happens
+once, on the total, using the schedule dataset's rule.
 """
 
 from __future__ import annotations
@@ -16,7 +18,7 @@ from app.domain.capability import Capability, CapabilityResult, capability
 from app.domain.parameters.brackets import BRACKETS, BracketSchedule
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
-from app.domain.trace import BracketSliceLine, RoundedTotalLine, TraceLine
+from app.domain.trace import BracketColumnLine, RoundedTotalLine, TraceLine
 
 
 @capability(identifier="progressive_tax")
@@ -39,9 +41,12 @@ class ProgressiveTax(Capability):
     def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
         base = self._input(inputs, self._base).value
         schedule, rounding = self._schedule.values, self._schedule.rounding
-        slices = schedule.slices(base)
-        tax = rounding.apply(schedule.tax_on(base))
-        trace: tuple[TraceLine, ...] = tuple(
-            BracketSliceLine(s.lower, s.upper, s.rate, s.taxed, s.tax) for s in slices
-        ) + (RoundedTotalLine(self._output, self._base, base, rounding, tax),)
+        column = schedule.column_for(base)
+        tax = rounding.apply(column.tax)
+        trace: tuple[TraceLine, ...] = (
+            BracketColumnLine(
+                column.lower, column.rate, column.excess, column.tax_at_start, column.tax
+            ),
+            RoundedTotalLine(self._output, self._base, base, rounding, tax),
+        )
         return CapabilityResult(outputs=(Artifact(self._output, tax),), trace=trace)

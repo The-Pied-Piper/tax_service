@@ -34,7 +34,7 @@ from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import NO_ROUNDING
-from app.domain.trace import RoundedTotalLine, TraceLine
+from app.domain.trace import BracketColumnLine, RoundedTotalLine, TraceLine
 from app.domain.worksheet import Worksheet
 
 D = Decimal
@@ -606,7 +606,11 @@ SCHEDULE = ParameterDataset(
     2025,
     BRACKETS,
     BracketSchedule(
-        (Bracket(D(0), D("0.10")), Bracket(D(100), D("0.20")), Bracket(D(300), D("0.30")))
+        (
+            Bracket(D(0), D("0.10"), D(0)),
+            Bracket(D(100), D("0.20"), D("10.00")),
+            Bracket(D(300), D("0.30"), D("50.00")),
+        )
     ),
     NO_ROUNDING,
     SOURCES,
@@ -628,7 +632,7 @@ def test_end_to_end_three_real_capabilities_given_in_the_wrong_order() -> None:
         Artifact(TAXABLE_BASE, D(500)), Artifact(CREDIT_AMOUNTS, D(400))
     )
 
-    # 10% of 100 + 20% of 200 + 30% of 200 = 110; less a credit of 15% of 400 = 60.
+    # 30% of (500 - 300) + 50.00 = 110; less a credit of 15% of 400 = 60.
     assert composition.order[-1] is less
     assert set(composition.order) == {tax, credit, less}
     assert worksheet.get(BASIC_TAX) == Artifact(BASIC_TAX, D(110))
@@ -638,6 +642,8 @@ def test_end_to_end_three_real_capabilities_given_in_the_wrong_order() -> None:
     assert worksheet.trace[-1].amount == D(50)
     (total,) = [line for line in worksheet.trace if isinstance(line, RoundedTotalLine)]
     assert total.amount == D(110)
+    (column,) = [line for line in worksheet.trace if isinstance(line, BracketColumnLine)]
+    assert column == BracketColumnLine(D(300), D("0.30"), D(200), D("50.00"), D(110))
 
 
 # --- list slots: one edge per listed kind ---------------------------------------------------------

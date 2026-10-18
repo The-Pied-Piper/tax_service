@@ -1,5 +1,17 @@
-# Ontario income tax brackets, 2025 tax year (Form ON428, Part A, lines 2-8).
-# CRA states no rounding rule for these lines, so none is assumed.
+# Ontario income tax brackets, 2025 tax year (Form ON428, form 5006-C, Part A "Ontario
+# tax on taxable income", lines 1-8).
+# Line 1 "Enter your taxable income from line 26000 of your return." Column headings:
+# "Line 1 is $52,886 or less"; "Line 1 is more than $52,886 but not more than
+# $105,775"; "... more than $105,775 but not more than $150,000"; "... more than
+# $150,000 but not more than $220,000"; "Line 1 is more than $220,000". In every
+# column: line 2 "Amount from line 1"; line 3 the column's lower bound (0.00,
+# 52,886.00, 105,775.00, 150,000.00, 220,000.00); line 4 "Line 2 minus line 3 (cannot
+# be negative)"; line 5 "Rate" (5.05%, 9.15%, 11.16%, 12.16%, 13.16%); line 6 "Line 4
+# multiplied by the percentage from line 5"; line 7 the printed constant (0.00,
+# 2,670.74, 7,510.09, 12,445.60, 20,957.60); line 8 "Line 6 plus line 7 Ontario tax on
+# taxable income". Each constant is the exact tax on the brackets below rounded half-up
+# to the cent (7,510.09 for the exact 7,510.0865).
+# CRA states no rounding rule for lines 6 or 8, so none is assumed.
 family: ca-on/brackets
 tax_year: 2025
 kind: brackets
@@ -9,8 +21,8 @@ sources:
   - https://data.ontario.ca/en/dataset/personal-income-tax-rates-and-credits/resource/60f84727-7e12-4fd4-ba06-30955d31b2ae
 rounding: none
 brackets:
-  - {from: "0", rate: "0.0505"}
-  - {from: "52886", rate: "0.0915"}
-  - {from: "105775", rate: "0.1116"}
-  - {from: "150000", rate: "0.1216"}
-  - {from: "220000", rate: "0.1316"}
+  - {from: "0", rate: "0.0505", tax_at_start: "0.00"}
+  - {from: "52886", rate: "0.0915", tax_at_start: "2670.74"}
+  - {from: "105775", rate: "0.1116", tax_at_start: "7510.09"}
+  - {from: "150000", rate: "0.1216", tax_at_start: "12445.60"}
+  - {from: "220000", rate: "0.1316", tax_at_start: "20957.60"}

@@ -104,10 +104,10 @@ def test_544_for_each_dependent_child_or_dependant(count: int, amount: str) -> N
     [
         # Returns A, C, D and E: line 77 is the basic reduction alone, 294.00, so line 78 is
         # 588.00; each line 73 exceeds it, so line 80 is 0.
-        ("294.00", "8195.7644476", "0"),
+        ("294.00", "8195.7699076", "0"),
         ("294.00", "1700.145625", "0"),
-        ("294.00", "3750.97571", "0"),
-        ("294.00", "23570.1909436", "0"),
+        ("294.00", "3750.97271", "0"),
+        ("294.00", "23570.1964036", "0"),
         # A tax below 588.00: the reduction is the difference, unrounded.
         ("294.00", "486.802325", "101.197675"),
         # At 588.00 nothing is left; with no tax the whole 588.00.
@@ -115,7 +115,7 @@ def test_544_for_each_dependent_child_or_dependant(count: int, amount: str) -> N
         ("294.00", "0", "588.00"),
         # Five dependent children and three dependants: 294.00 + 2720 + 1632 = 4646.00, so line
         # 78 is 9292.00, above Return A's line 73.
-        ("4646.00", "8195.7644476", "1096.2355524"),
+        ("4646.00", "8195.7699076", "1096.2300924"),
     ],
 )
 def test_twice_the_reduction_amounts_over_the_tax(amounts: str, tax: str, reduction: str) -> None:

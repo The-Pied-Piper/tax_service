@@ -76,23 +76,23 @@ description: >-
   35000) of $3,130.59495 and the Ontario non-refundable tax credits (ON428 line 61500) of
   $867.61929, each taken off its form's basic tax, not below zero. The Ontario surtax (ON428
   line 68) is 20% of the Ontario tax after credits over $5,710 plus 36% of it over $7,307:
-  $2,363.475762 + $3,679.3363716 = $6,042.8121336, for an Ontario tax with surtax (ON428
-  line 69) of $23,570.1909436. With no dependent children and no dependants (ON428 lines 75
+  $2,363.476462 + $3,679.3376316 = $6,042.8140936, for an Ontario tax with surtax (ON428
+  line 69) of $23,570.1964036. With no dependent children and no dependants (ON428 lines 75
   and 76), the Ontario tax reduction amounts (line 77) are the basic reduction of $294.00
   (line 74); twice them, $588.00 (line 78), less the Ontario tax with surtax (line 79, from
   line 73) is negative, so the Ontario tax reduction (line 80) is $0 and the Ontario tax
-  after the reduction (line 81) is that same $23,570.1909436. The LIFT credit (ON428 line
+  after the reduction (line 81) is that same $23,570.1964036. The LIFT credit (ON428 line
   85, Schedule ON428-A) is 5.05% of employment income, $10,100, at most $875, less 5% of net
   income over $32,500, $8,321.30; the reduction is more than the $875, so the credit is $0,
-  and the Ontario tax after it (ON428 line 86) is that same $23,570.1909436. The Ontario
+  and the Ontario tax after it (ON428 line 86) is that same $23,570.1964036. The Ontario
   health premium (ON428 line 89) is read from its chart on taxable income: $198,926.00 is
   more than $72,600 but not more than $200,000, so the premium is $750, and the Ontario tax
   (ON428 line 90) is the Ontario tax after the LIFT credit plus the premium,
-  $24,320.1909436. On the T1, the net federal tax (line 42000) is the federal tax after
+  $24,320.1964036. On the T1, the net federal tax (line 42000) is the federal tax after
   credits, $39,467.73505, and the total payable (line 43500) is it plus the Ontario tax
-  (line 42800), $63,787.9259936. The income tax deducted (line 43700) is a chosen $50,000,
+  (line 42800), $63,787.9314536. The income tax deducted (line 43700) is a chosen $50,000,
   the only credit modelled, so the total credits (line 48200) are $50,000, and the refund or
-  balance owing (line 167) is the total payable less the total credits, $13,787.9259936:
+  balance owing (line 167) is the total payable less the total credits, $13,787.9314536:
   positive, so a balance owing (line 48500). The CPP contributions and EI premiums are
   rounded to the cent, which changes none of them, and the federal basic personal amount is
   rounded half-up to the cent; no other amounts are rounded.
@@ -310,27 +310,28 @@ sources:
     line 49 is not modelled, so line 61500 is that same 867.61929.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
-    The other lines are the 2025 federal and Ontario brackets and those credits applied
-    without rounding. The federal brackets are those of the 2025 T1 return for Ontario (form
-    5006-R), Step 5 Part A lines 70 to 76, as CRA publishes them; the lowest rate of 14.5%
-    is the full-year blend of the cut from 15% to 14% on July 1, 2025, per Finance Canada's
-    announcement: 14.5% from 0 to 57,375, 20.5% from 57,375 to 114,750, 26% from 114,750 to
-    177,882 and 29% from 177,882 to 253,414, so taxable income of 198,926.00 gives 57,375 x
-    14.5% = 8,319.375 plus (114,750 - 57,375 = 57,375) x 20.5% = 11,761.875 plus (177,882 -
-    114,750 = 63,132) x 26% = 16,414.32 plus (198,926.00 - 177,882 = 21,044.00) x 29% =
-    6,102.76, federal basic tax of 8,319.375 + 11,761.875 + 16,414.32 + 6,102.76 =
-    42,598.33, less the 3,130.59495 of federal non-refundable tax credits (line 35000), not
-    below zero, is 39,467.73505. The Ontario brackets are those of the 2025 ON428 (form
-    5006-C), Part A lines 2 to 8, as CRA and the Ontario Data Catalogue publish them: 5.05%
-    from 0 to 52,886, 9.15% from 52,886 to 105,775, 11.16% from 105,775 to 150,000 and
-    12.16% from 150,000 to 220,000, so 198,926.00 gives 52,886 x 5.05% = 2,670.743 plus
-    (105,775 - 52,886 = 52,889) x 9.15% = 4,839.3435 plus (150,000 - 105,775 = 44,225) x
-    11.16% = 4,935.51 plus (198,926.00 - 150,000 = 48,926.00) x 12.16% = 5,949.4016, Ontario
-    basic tax of 2,670.743 + 4,839.3435 + 4,935.51 + 5,949.4016 = 18,394.9981, less the
-    867.61929 of Ontario non-refundable tax credits (ON428 line 61500), not below zero, is
-    17,527.37881.
+    The federal brackets are those of the 2025 T1 return (form 5000-R), Step 5, Part A
+    "Federal tax on taxable income", lines 70 to 76, as CRA publishes them; the lowest rate
+    of 14.5% is the full-year blend of the cut from 15% to 14% on July 1, 2025, per Finance
+    Canada's announcement. Taxable income of 198,926.00 falls in column 4 "Line 26000 is
+    more than $177,882 but not more than $253,414": line 70 "Amount from line 26000",
+    198,926.00; line 71 "177,882.00"; line 72 "Line 70 minus line 71 (cannot be negative)",
+    21,044.00; line 73 "Rate 29%"; line 74 "Line 72 multiplied by the percentage from line
+    73", 6,102.76; line 75 "36,495.57"; line 76 "Line 74 plus line 75 Federal tax on taxable
+    income", 6,102.76 + 36,495.57 = 42,598.33, with no rounding stated. Less the 3,130.59495
+    of federal non-refundable tax credits (line 35000), not below zero, it is 39,467.73505.
+    The Ontario brackets are those of the 2025 ON428 (form 5006-C), Part A "Ontario tax on
+    taxable income", lines 1 to 8, as CRA and the Ontario Data Catalogue publish them: line
+    1 "Enter your taxable income from line 26000 of your return.", 198,926.00, in column 4
+    "Line 1 is more than $150,000 but not more than $220,000": line 2 "Amount from line 1";
+    line 3 "150,000.00"; line 4 "Line 2 minus line 3 (cannot be negative)", 48,926.00; line
+    5 "Rate 12.16%"; line 6 "Line 4 multiplied by the percentage from line 5", 5,949.4016;
+    line 7 "12,445.60"; line 8 "Line 6 plus line 7 Ontario tax on taxable income",
+    5,949.4016 + 12,445.60 = 18,395.0016, with no rounding stated. Less the 867.61929 of
+    Ontario non-refundable tax credits (ON428 line 61500), not below zero, it is
+    17,527.38231.
   - https://www.canada.ca/en/revenue-agency/services/tax/individuals/tax-rates-brackets/last-year.html
-  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-r/5006-r-25e.txt
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - https://www.canada.ca/en/department-finance/news/2025/05/delivering-a-middle-class-tax-cut.html
   - https://data.ontario.ca/en/dataset/personal-income-tax-rates-and-credits/resource/60f84727-7e12-4fd4-ba06-30955d31b2ae
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.pdf
@@ -346,11 +347,11 @@ sources:
     credit (line 57, line 61520) and the minimum tax carryover (lines 59 and 60, line 61540)
     are not modelled, so lines 61, 62 and 63 carry line 53, the Ontario tax after credits,
     unchanged (line 55 "Line 53 plus line 54", line 54 being 0), line 64 is 0 and the surtax
-    base, line 65, is the Ontario tax after credits itself. Line 66 is (17,527.37881 -
-    5,710) x 20% = 11,817.37881 x 20% = 2,363.475762; line 67 is (17,527.37881 - 7,307) x
-    36% = 10,220.37881 x 36% = 3,679.3363716; with no rounding stated, the surtax, line 68,
-    is 2,363.475762 + 3,679.3363716 = 6,042.8121336, and line 69 is 17,527.37881 +
-    6,042.8121336 = 23,570.1909436.
+    base, line 65, is the Ontario tax after credits itself. Line 66 is (17,527.38231 -
+    5,710) x 20% = 11,817.38231 x 20% = 2,363.476462; line 67 is (17,527.38231 - 7,307) x
+    36% = 10,220.38231 x 36% = 3,679.3376316; with no rounding stated, the surtax, line 68,
+    is 2,363.476462 + 3,679.3376316 = 6,042.8140936, and line 69 is 17,527.38231 +
+    6,042.8140936 = 23,570.1964036.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
     CRA, the 2025 ON428 (form 5006-C): line 71 "Line 69 minus line 70 (if negative, enter
@@ -364,8 +365,8 @@ sources:
     so lines 71 and 73 carry line 69, the Ontario tax with surtax, unchanged. The taxpayer
     is taken to have no dependent children and no dependants (to be confirmed), so lines 75
     and 76 are 0 x 544 = 0 and line 77 is 294.00 + 0 + 0 = 294.00; line 78 is 294.00 x 2 =
-    588.00; line 79 is 23,570.1909436; line 80 is 588.00 - 23,570.1909436, negative, so 0;
-    with no rounding stated, line 81 is 23,570.1909436 - 0 = 23,570.1909436. Not modelled:
+    588.00; line 79 is 23,570.1964036; line 80 is 588.00 - 23,570.1964036, negative, so 0;
+    with no rounding stated, line 81 is 23,570.1964036 - 0 = 23,570.1964036. Not modelled:
     "Enter "0" on line 80 if any of the following applies to you: You were not a resident of
     Canada at the beginning of the year; You were not a resident of Ontario on December 31,
     2025; There is an amount on line 72; You were bankrupt at any time in 2025; Your return
@@ -409,7 +410,7 @@ sources:
     after the reduction, unchanged, and line 84 is "Amount from line 83 of the previous
     page"; line 85 (line 62140) "Low-income individuals and families tax (LIFT) credit
     (complete Schedule ON428-A)", here 0 (Schedule ON428-A line 20); line 86 "Line 84 minus
-    line 85 (if negative, enter "0")", 23,570.1909436 - 0 = 23,570.1909436; line 88 "Line 86
+    line 85 (if negative, enter "0")", 23,570.1964036 - 0 = 23,570.1964036; line 88 "Line 86
     minus line 87 (if negative, enter "0")" carries line 86; line 89 "Ontario health premium
     (complete the chart below)"; line 90 "Line 88 plus line 89 Enter this amount on line
     42800 of your return. Ontario tax". The chart's line 1 is "Enter your taxable income
@@ -422,11 +423,11 @@ sources:
     37,731.50, more than 150, so 150; (198,926.00 - 72,000) x 25% = 126,926.00 x 25% =
     31,731.50, more than 150, so 150; 198,926.00 - 200,000 is negative, so 0; with no
     rounding stated, line 89 is 300 + 150 + 150 + 150 + 0 = 750, and line 90 is
-    23,570.1909436 + 750 = 24,320.1909436.
+    23,570.1964036 + 750 = 24,320.1964036.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
     CRA, the 2025 T1 return (form 5000-R), Part C and Step 6: line 119 "Enter the amount
-    from line 76.", line 76 being Part B's "Line 74 plus line 75 Federal tax on taxable
+    from line 76.", line 76 being Part A's "Line 74 plus line 75 Federal tax on taxable
     income" (the same text in each of the form's five columns; this return's taxable
     income of 198,926.00 falls in column 4), here 42,598.33; line 121 (line
     40400) "Line 119 plus line 120", line 120 (line 40424, tax on split income) not
@@ -445,16 +446,16 @@ sources:
     42000"; lines 144 (line 42100), 145 (line 42120) and 146 (line 42200) are not triggered
     by this return; line 147 (line 42800) "Provincial or territorial tax (complete and
     attach your provincial or territorial Form 428, even if the result is "0")" is the
-    Ontario tax of ON428 line 90, 24,320.1909436; line 148 (line 43500) "Add lines 143 to
-    147. Total payable": 39,467.73505 + 24,320.1909436 = 63,787.9259936. Line 149 "Enter the
+    Ontario tax of ON428 line 90, 24,320.1964036; line 148 (line 43500) "Add lines 143 to
+    147. Total payable": 39,467.73505 + 24,320.1964036 = 63,787.9314536. Line 149 "Enter the
     amount from line 148 of the previous page."; line 150 (line 43700) "Total income tax
     deducted (amounts from all Canadian slips)": 50,000, a chosen figure: it is the tax
     withheld on the taxpayer's slips, which nothing on this return determines. Lines 151 to
     165 (lines 44000 to 47900) are not triggered by this return or not yet computed, so line
     166 (line 48200) "Add lines 150 to 165. Total credits" is 50,000. Line 167 "Line 149
     minus line 166 If the amount is negative, enter it on line 48400 below. If the amount is
-    positive, enter it on line 48500 below. Refund or balance owing": 63,787.9259936 -
-    50,000 = 13,787.9259936, positive, so line 48500 "Balance owing", not line 48400
+    positive, enter it on line 48500 below. Refund or balance owing": 63,787.9314536 -
+    50,000 = 13,787.9314536, positive, so line 48500 "Balance owing", not line 48400
     "Refund". The T1 states no rounding on any of these lines, so none is applied.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
 inputs:
@@ -490,27 +491,27 @@ expected:
   ca/non_refundable_credit_amounts: "21590.31"
   ca/non_refundable_tax_credits: "3130.59495"
   ca/federal_tax_after_credits: "39467.73505"
-  ca-on/ontario_basic_tax: "18394.9981"
+  ca-on/ontario_basic_tax: "18395.0016"
   ca-on/basic_personal_amount: "12747"
   ca-on/non_refundable_credit_amounts: "17180.58"
   ca-on/non_refundable_tax_credits: "867.61929"
-  ca-on/ontario_tax_after_credits: "17527.37881"
-  ca-on/ontario_surtax: "6042.8121336"
-  ca-on/ontario_tax_with_surtax: "23570.1909436"
+  ca-on/ontario_tax_after_credits: "17527.38231"
+  ca-on/ontario_surtax: "6042.8140936"
+  ca-on/ontario_tax_with_surtax: "23570.1964036"
   ca-on/tax_reduction_basic: "294.00"
   ca-on/tax_reduction_for_children: "0"
   ca-on/tax_reduction_for_dependants: "0"
   ca-on/tax_reduction_amounts: "294.00"
   ca-on/ontario_tax_reduction: "0"
-  ca-on/ontario_tax_after_reduction: "23570.1909436"
+  ca-on/ontario_tax_after_reduction: "23570.1964036"
   ca-on/lift_credit_before_maximum: "10100"
   ca-on/lift_maximum_credit: "875"
   ca-on/lift_reduction: "8321.30"
   ca-on/lift_credit: "0"
-  ca-on/ontario_tax_after_lift_credit: "23570.1909436"
+  ca-on/ontario_tax_after_lift_credit: "23570.1964036"
   ca-on/ontario_health_premium: "750"
-  ca-on/ontario_tax: "24320.1909436"
+  ca-on/ontario_tax: "24320.1964036"
   ca/net_federal_tax: "39467.73505"
-  ca/total_payable: "63787.9259936"
+  ca/total_payable: "63787.9314536"
   ca/total_credits: "50000"
-  ca/refund_or_balance_owing: "13787.9259936"
+  ca/refund_or_balance_owing: "13787.9314536"

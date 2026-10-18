@@ -12,7 +12,7 @@ from decimal import Decimal
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingRule, RoundTo
 from app.domain.trace import (
     AtMostLine,
-    BracketSliceLine,
+    BracketColumnLine,
     CappedAmountLine,
     ContributionTierLine,
     CreditAmountLine,
@@ -36,12 +36,12 @@ class EnglishTraceRenderer:
     def render(self, line: TraceLine) -> str:
         """The English sentence for `line`; raises TypeError for a line class it does not know."""
         match line:
-            case BracketSliceLine(lower=lower, upper=None, rate=rate, taxed=taxed):
-                return f"{self._percent(rate)}% on {self._money(taxed)} (over {self._money(lower)})"
-            case BracketSliceLine(lower=lower, upper=Decimal() as upper, rate=rate, taxed=taxed):
+            case BracketColumnLine(
+                lower=lower, rate=rate, excess=excess, tax_at_start=tax_at_start
+            ):
                 return (
-                    f"{self._percent(rate)}% on {self._money(taxed)} "
-                    f"({self._money(lower)} to {self._money(upper)})"
+                    f"{self._percent(rate)}% on {self._money(excess)} "
+                    f"over {self._money(lower)} plus {self._money(tax_at_start)}"
                 )
             case RoundedTotalLine(output=output, base=base, base_amount=amount, rounding=rule):
                 return (
