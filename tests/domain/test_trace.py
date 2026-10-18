@@ -27,6 +27,7 @@ from app.domain.trace import (
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
+    ChosenByCountLine,
     ContributionTierLine,
     CreditAmountLine,
     FractionAppliedLine,
@@ -74,6 +75,10 @@ PORTION = ArtifactKind("ex/earned_portion", Decimal)
 EACH = ArtifactKind("ex/amount_each", Decimal)
 PERSONS = ArtifactKind("ex/person_count", int)
 CLAIMED_FOR_ALL = ArtifactKind("ex/amount_claimed", Decimal)
+DEPENDANTS = ArtifactKind("ex/dependant_count", int)
+ALONE = ArtifactKind("ex/amount_alone", Decimal)
+WITH_FAMILY = ArtifactKind("ex/amount_with_family", Decimal)
+CHOSEN = ArtifactKind("ex/amount_chosen", Decimal)
 
 
 def column_line() -> BracketColumnLine:
@@ -156,6 +161,10 @@ def times_count_line() -> TimesCountLine:
     return TimesCountLine(CLAIMED_FOR_ALL, EACH, D("16129.50"), PERSONS, 2, D("32259.00"))
 
 
+def chosen_by_count_line() -> ChosenByCountLine:
+    return ChosenByCountLine(CHOSEN, DEPENDANTS, 1, WITH_FAMILY, D("2813.00"))
+
+
 ALL_LINES = [
     column_line,
     total_line,
@@ -174,6 +183,7 @@ ALL_LINES = [
     at_most_line,
     fraction_applied_line,
     times_count_line,
+    chosen_by_count_line,
 ]
 
 
@@ -1162,6 +1172,83 @@ def test_a_times_count_lines_amount_is_not_one_of_its_fields() -> None:
 
 def test_a_times_count_line_is_not_a_per_unit_amount_line() -> None:
     assert not isinstance(times_count_line(), PerUnitAmountLine)
+
+
+def test_chosen_by_count_line_fields_in_order() -> None:
+    line = chosen_by_count_line()
+
+    assert line == ChosenByCountLine(
+        output=CHOSEN,
+        count_kind=DEPENDANTS,
+        count=1,
+        chosen_kind=WITH_FAMILY,
+        chosen_value=D("2813.00"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "count_kind",
+        "count",
+        "chosen_kind",
+        "chosen_value",
+    ]
+    assert line.output is CHOSEN
+    assert line.count_kind is DEPENDANTS
+    assert line.count == 1
+    assert type(line.count) is int
+    assert line.chosen_kind is WITH_FAMILY
+    assert line.chosen_value == D("2813.00")
+    assert line.amount == D("2813.00")
+    assert str(line.amount) == "2813.00"
+
+
+def test_chosen_by_count_line_may_hold_a_count_of_zero() -> None:
+    line = ChosenByCountLine(CHOSEN, DEPENDANTS, 0, ALONE, D("1633"))
+
+    assert line.count == 0
+    assert line.chosen_kind is ALONE
+    assert line.amount == D("1633")
+
+
+def test_chosen_by_count_lines_differ_by_count() -> None:
+    assert chosen_by_count_line() != ChosenByCountLine(
+        CHOSEN, DEPENDANTS, 2, WITH_FAMILY, D("2813.00")
+    )
+
+
+def test_chosen_by_count_lines_differ_by_the_chosen_kind() -> None:
+    assert chosen_by_count_line() != ChosenByCountLine(CHOSEN, DEPENDANTS, 1, ALONE, D("2813.00"))
+
+
+def test_chosen_by_count_lines_differ_by_the_chosen_value() -> None:
+    assert chosen_by_count_line() != ChosenByCountLine(
+        CHOSEN, DEPENDANTS, 1, WITH_FAMILY, D("2813.01")
+    )
+
+
+def test_chosen_by_count_lines_differ_by_count_kind() -> None:
+    other = ArtifactKind("ex/spouse_count", int)
+
+    assert chosen_by_count_line() != ChosenByCountLine(CHOSEN, other, 1, WITH_FAMILY, D("2813.00"))
+
+
+def test_chosen_by_count_lines_differ_by_output() -> None:
+    other = ArtifactKind("ex/other_amount", Decimal)
+
+    assert chosen_by_count_line() != ChosenByCountLine(
+        other, DEPENDANTS, 1, WITH_FAMILY, D("2813.00")
+    )
+
+
+def test_chosen_by_count_lines_are_hashable() -> None:
+    assert hash(chosen_by_count_line()) == hash(chosen_by_count_line())
+
+
+def test_a_chosen_by_count_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(chosen_by_count_line())]
+
+
+def test_a_chosen_by_count_line_is_not_a_times_count_line() -> None:
+    assert not isinstance(chosen_by_count_line(), TimesCountLine)
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:

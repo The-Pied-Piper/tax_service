@@ -28,6 +28,7 @@ from app.domain.trace import (
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
+    ChosenByCountLine,
     ContributionTierLine,
     CreditAmountLine,
     FractionAppliedLine,
@@ -79,6 +80,10 @@ EARNED_PORTION = ArtifactKind("ex/earned_portion", Decimal)
 AMOUNT_EACH = ArtifactKind("ex/amount_each", Decimal)
 PERSONS = ArtifactKind("ex/person_count", int)
 AMOUNT_CLAIMED = ArtifactKind("ex/amount_claimed", Decimal)
+DEPENDANTS = ArtifactKind("ex/dependant_count", int)
+AMOUNT_ALONE = ArtifactKind("ex/amount_alone", Decimal)
+AMOUNT_WITH_FAMILY = ArtifactKind("ex/amount_with_family", Decimal)
+AMOUNT_CHOSEN = ArtifactKind("ex/amount_chosen", Decimal)
 
 
 def render(line: TraceLine) -> str:
@@ -803,6 +808,56 @@ def test_renders_a_negative_amount_times_a_count() -> None:
     )
 
 
+# --- an amount chosen by a count ------------------------------------------------------
+#
+# The chosen candidate prints with its label and value, and the count that chose it with its
+# label and value; the candidate not chosen is not printed. There is no rounding rule to print.
+
+
+def test_renders_the_first_candidate_chosen_by_a_count_of_zero() -> None:
+    line = ChosenByCountLine(AMOUNT_CHOSEN, DEPENDANTS, 0, AMOUNT_ALONE, D("1633"))
+
+    assert render(line) == "amount_chosen: amount_alone 1633, chosen as dependant_count is 0"
+
+
+def test_renders_the_second_candidate_chosen_by_a_count_of_one() -> None:
+    line = ChosenByCountLine(AMOUNT_CHOSEN, DEPENDANTS, 1, AMOUNT_WITH_FAMILY, D("2813"))
+
+    assert render(line) == (
+        "amount_chosen: amount_with_family 2813, chosen as dependant_count is 1"
+    )
+
+
+def test_renders_the_second_candidate_chosen_by_a_count_of_three() -> None:
+    line = ChosenByCountLine(AMOUNT_CHOSEN, DEPENDANTS, 3, AMOUNT_WITH_FAMILY, D("2813"))
+
+    assert render(line) == (
+        "amount_chosen: amount_with_family 2813, chosen as dependant_count is 3"
+    )
+
+
+def test_renders_a_chosen_candidate_with_every_digit() -> None:
+    line = ChosenByCountLine(AMOUNT_CHOSEN, DEPENDANTS, 1, AMOUNT_WITH_FAMILY, D("4319.4"))
+
+    assert render(line) == (
+        "amount_chosen: amount_with_family 4319.4, chosen as dependant_count is 1"
+    )
+
+
+def test_renders_a_negative_chosen_candidate() -> None:
+    line = ChosenByCountLine(AMOUNT_CHOSEN, DEPENDANTS, 0, AMOUNT_ALONE, D("-250.75"))
+
+    assert render(line) == "amount_chosen: amount_alone -250.75, chosen as dependant_count is 0"
+
+
+def test_renders_a_negative_count_as_given() -> None:
+    line = ChosenByCountLine(AMOUNT_CHOSEN, DEPENDANTS, -1, AMOUNT_WITH_FAMILY, D("2813"))
+
+    assert render(line) == (
+        "amount_chosen: amount_with_family 2813, chosen as dependant_count is -1"
+    )
+
+
 # --- money figures ---------------------------------------------------------------
 
 
@@ -964,6 +1019,10 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
             ),
             "amount_claimed: amount_each 16129 for each of 2 person_count = 32258",
         ),
+        (
+            ChosenByCountLine(AMOUNT_CHOSEN, DEPENDANTS, 1, AMOUNT_WITH_FAMILY, D("4.31940E+3")),
+            "amount_chosen: amount_with_family 4319.4, chosen as dependant_count is 1",
+        ),
     ],
 )
 def test_renders_every_money_figure_of_a_line_without_trailing_zeros(
@@ -1007,6 +1066,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         AtMostLine(ALLOWED_AMOUNT, TOTAL, D("3"), CAPPED_AMOUNT, D("3")),
         FractionAppliedLine(EARNED_PORTION, TOTAL, D("3"), Fraction(2, 3), NO_ROUNDING, D("2")),
         TimesCountLine(AMOUNT_CLAIMED, TOTAL, D("3"), PERSONS, 1, D("3")),
+        ChosenByCountLine(AMOUNT_CHOSEN, PERSONS, 0, TOTAL, D("3")),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -1028,6 +1088,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         "allowed_amount: total 3, at most capped_amount 3",
         "earned_portion: 2/3 of total 3 (no rounding)",
         "amount_claimed: total 3 for each of 1 person_count = 3",
+        "amount_chosen: total 3, chosen as person_count is 0",
     )
 
 

@@ -2333,3 +2333,132 @@ def test_core_times_count_refuses_a_count_kind_for_its_amount_at_wiring() -> Non
 
     with pytest.raises(InvalidSelectionError, match="core/times_count.*'amount'"):
         built.compose(EX_ON, 2025)
+
+
+# --- core/choose_by_count: one of two artifacts chosen by a count, by a made-up manifest -------
+#
+# Like `TimesCount` above, `ChooseByCount` is imported inside a cached factory so its absence fails
+# only the tests that use it, and is registered in a private registry under its shared
+# identifier, `core/choose_by_count`. Its count is `ex/count`, a made-up `int` input; its first
+# candidate is a produced artifact, `ex/scaled` (base × 3), and its second is `ex/extra`, a
+# made-up input; it reads no dataset.
+
+
+@cache
+def choose_by_count_class() -> Any:
+    from app.domain.capabilities.choose_by_count import ChooseByCount
+
+    return ChooseByCount
+
+
+def choose_by_count_selection(
+    count: str = "ex/count", when_none: str = "ex/scaled", when_any: str = "ex/extra"
+) -> CapabilitySelection:
+    return CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={"count": count, "when_none": when_none, "when_any": when_any},
+        produces={"output": "ex-on/result"},
+    )
+
+
+def choose_by_count_service(
+    selection: CapabilitySelection | None = None,
+) -> TaxComputationService:
+    """`ex/scale` (base × 3) and `core/choose_by_count` producing `ex-on/result`: scaled when the
+    count is 0, extra otherwise."""
+    capabilities = capability_registry()
+    capabilities.register("core/choose_by_count", choose_by_count_class())
+    artifacts = artifact_registry()
+    for kind in (COUNT, PERSON_COUNT):
+        artifacts.register(kind.identifier, kind)
+    return service(  # authored out of order on purpose
+        manifest(
+            selection or choose_by_count_selection(),
+            SCALE,
+            inputs=frozenset({"ex/base", "ex/extra", "ex/count"}),
+        ),
+        capabilities=capabilities,
+        artifacts=artifacts,
+    )
+
+
+def test_computes_core_choose_by_count_for_a_count_of_zero_end_to_end() -> None:
+    from app.domain.trace import ChosenByCountLine
+
+    worksheet = choose_by_count_service().compute(
+        EX_ON, 2025, Artifact(BASE, D("544.50")), Artifact(EXTRA, D("2813")), Artifact(COUNT, 0)
+    )
+
+    # scaled = 544.50 × 3 = 1633.50; the count is 0, so result = scaled, unchanged.
+    assert worksheet.get(SCALED).value == D("1633.50")
+    assert worksheet.get(RESULT).value == D("1633.50")
+    assert str(worksheet.get(RESULT).value) == "1633.50"
+    assert isinstance(worksheet.producer_of(RESULT), choose_by_count_class())
+    assert worksheet.producer_of(COUNT) is None
+    assert worksheet.trace[-1] == ChosenByCountLine(RESULT, COUNT, 0, SCALED, D("1633.50"))
+    assert [type(line) for line in worksheet.trace].count(ChosenByCountLine) == 1
+
+
+def test_computes_core_choose_by_count_for_a_count_of_one_end_to_end() -> None:
+    from app.domain.trace import ChosenByCountLine
+
+    worksheet = choose_by_count_service().compute(
+        EX_ON, 2025, Artifact(BASE, D("544.50")), Artifact(EXTRA, D("2813.00")), Artifact(COUNT, 1)
+    )
+
+    # The count is 1, so result = extra 2813.00, unchanged; scaled is still produced.
+    assert worksheet.get(SCALED).value == D("1633.50")
+    assert worksheet.get(RESULT).value == D("2813.00")
+    assert str(worksheet.get(RESULT).value) == "2813.00"
+    assert worksheet.trace[-1] == ChosenByCountLine(RESULT, COUNT, 1, EXTRA, D("2813.00"))
+
+
+def test_computes_core_choose_by_count_for_a_count_of_two_end_to_end() -> None:
+    worksheet = choose_by_count_service().compute(
+        EX_ON, 2025, Artifact(BASE, D("5")), Artifact(EXTRA, D("7")), Artifact(COUNT, 2)
+    )
+
+    # The count is 2: the second candidate, as is, not twice it.
+    assert worksheet.get(RESULT).value == D("7")
+
+
+def test_core_choose_by_count_runs_after_its_candidates_are_produced() -> None:
+    composition = choose_by_count_service().compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is choose_by_count_class()
+    assert composition.order[-1].consumes == frozenset({COUNT, SCALED, EXTRA})
+
+
+def test_core_choose_by_count_rejects_a_money_input_for_its_count() -> None:
+    built = choose_by_count_service()
+
+    with pytest.raises(InvalidCompositionError, match="'count' was given as Decimal but the input"):
+        built.compute(
+            EX_ON,
+            2025,
+            Artifact(BASE, D("5")),
+            Artifact(EXTRA, D("7")),
+            Artifact(ArtifactKind("ex/count", Decimal), D("1")),
+        )
+
+
+def test_core_choose_by_count_refuses_a_money_kind_for_its_count_at_wiring() -> None:
+    built = choose_by_count_service(choose_by_count_selection(count="ex/base"))
+
+    with pytest.raises(InvalidSelectionError, match="core/choose_by_count.*'count'"):
+        built.compose(EX_ON, 2025)
+
+
+def test_core_choose_by_count_refuses_a_count_kind_for_its_first_candidate_at_wiring() -> None:
+    built = choose_by_count_service(choose_by_count_selection(when_none="ex/person_count"))
+
+    with pytest.raises(InvalidSelectionError, match="core/choose_by_count.*'when_none'"):
+        built.compose(EX_ON, 2025)
+
+
+def test_core_choose_by_count_refuses_a_count_kind_for_its_second_candidate_at_wiring() -> None:
+    built = choose_by_count_service(choose_by_count_selection(when_any="ex/person_count"))
+
+    with pytest.raises(InvalidSelectionError, match="core/choose_by_count.*'when_any'"):
+        built.compose(EX_ON, 2025)
