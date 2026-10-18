@@ -16,7 +16,7 @@ inputs:
   - ca/ei_premiums
 outputs:
   - ca/federal_tax_after_credits
-  - ca-on/ontario_tax_after_credits
+  - ca-on/ontario_tax_with_surtax
 capabilities:
   - name: core/apply_rate
     params:
@@ -140,3 +140,20 @@ capabilities:
       less: ca-on/non_refundable_tax_credits
     produces:
       output: ca-on/ontario_tax_after_credits
+  # ON428 lines 66 to 68: the surtax on line 65, which is the Ontario tax after credits
+  # while line 64 (tax on split income) is not modelled.
+  - name: core/tiered_surcharge
+    params:
+      tiers: ca-on/surtax
+    consumes:
+      base: ca-on/ontario_tax_after_credits
+    produces:
+      output: ca-on/ontario_surtax
+  # ON428 line 69 "Line 62 plus line 68": the Ontario tax after credits plus the surtax.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca-on/ontario_tax_after_credits
+        - ca-on/ontario_surtax
+    produces:
+      output: ca-on/ontario_tax_with_surtax

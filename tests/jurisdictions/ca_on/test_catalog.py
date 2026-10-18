@@ -21,7 +21,9 @@ from app.jurisdictions.ca_on.catalog import (
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     ONTARIO_BASIC_TAX,
+    ONTARIO_SURTAX,
     ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_WITH_SURTAX,
 )
 from app.registrations import JURISDICTIONS
 
@@ -32,6 +34,8 @@ REGISTERED = frozenset(
         "ca-on/non_refundable_credit_amounts",
         "ca-on/non_refundable_tax_credits",
         "ca-on/ontario_tax_after_credits",
+        "ca-on/ontario_surtax",
+        "ca-on/ontario_tax_with_surtax",
     }
 )
 
@@ -61,6 +65,8 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/basic_personal_amount") is BASIC_PERSONAL_AMOUNT
     assert registry.get("ca-on/non_refundable_credit_amounts") is NON_REFUNDABLE_CREDIT_AMOUNTS
     assert registry.get("ca-on/non_refundable_tax_credits") is NON_REFUNDABLE_TAX_CREDITS
+    assert registry.get("ca-on/ontario_surtax") is ONTARIO_SURTAX
+    assert registry.get("ca-on/ontario_tax_with_surtax") is ONTARIO_TAX_WITH_SURTAX
 
 
 def test_every_registered_kind_is_money_in_the_package_namespace(

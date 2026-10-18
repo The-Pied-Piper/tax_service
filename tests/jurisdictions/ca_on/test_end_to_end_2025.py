@@ -8,9 +8,10 @@ deductions from net income to taxable income 115000, and from each basic persona
 federal, 12747 Ontario) plus the base CPP contributions of 3356.10 and the EI premiums of 1077.48,
 and federally the Canada employment amount of 1471 (the lesser of employment income and 1471),
 through each total of credit amounts and each form's non-refundable tax credits (T1 line
-35000, ON428 line 61500) to each tax after credits) are checked from the files under
-`returns/` by `test_worked_returns.py`, as are Returns C and D; this module pins which capability
-produces each line, the order, and the trace that explains them.
+35000, ON428 line 61500) to each tax after credits, and the Ontario surtax on the Ontario tax
+after credits (ON428 lines 66 to 68) to the Ontario tax with surtax of line 69) are checked from
+the files under `returns/` by `test_worked_returns.py`, as are Returns C and D; this module pins
+which capability produces each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
+from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.parameters.amount import Amount
 from app.domain.parameters.credit import Credit
@@ -38,6 +40,7 @@ from app.domain.trace import (
     RoundedTotalLine,
     SubtractedNotBelowZeroLine,
     SumLine,
+    SurchargeTierLine,
 )
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
@@ -62,7 +65,12 @@ from app.jurisdictions.ca.catalog import (
     UNION_DUES,
 )
 from app.jurisdictions.ca_on import catalog as ontario
-from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX, ONTARIO_TAX_AFTER_CREDITS
+from app.jurisdictions.ca_on.catalog import (
+    ONTARIO_BASIC_TAX,
+    ONTARIO_SURTAX,
+    ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_WITH_SURTAX,
+)
 from app.main import build_tax_computation
 
 D = Decimal
@@ -153,6 +161,9 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(FEDERAL_TAX_AFTER_CREDITS) is not worksheet.producer_of(
         ONTARIO_TAX_AFTER_CREDITS
     )
+    assert isinstance(worksheet.producer_of(ONTARIO_SURTAX), TieredSurcharge)
+    assert isinstance(worksheet.producer_of(ONTARIO_TAX_WITH_SURTAX), Sum)
+    assert worksheet.producer_of(ONTARIO_TAX_WITH_SURTAX) is not worksheet.producer_of(TOTAL_INCOME)
 
 
 def test_the_trace_explains_the_computation() -> None:
@@ -229,6 +240,19 @@ def test_the_trace_explains_the_computation() -> None:
         "less non_refundable_tax_credits 867.61929, not below 0 = 7671.97721",
         "7671.97721",
     )
+    surtax_first = position(
+        "ontario_surtax: 20% of ontario_tax_after_credits 7671.97721 over 5710 (no rounding)",
+        "392.395442",
+    )
+    surtax_second = position(
+        "ontario_surtax: 36% of ontario_tax_after_credits 7671.97721 over 7307 (no rounding)",
+        "131.3917956",
+    )
+    with_surtax = position(
+        "ontario_tax_with_surtax: ontario_tax_after_credits 7671.97721 "
+        "+ ontario_surtax 523.7872376 = 8195.7644476",
+        "8195.7644476",
+    )
     assert taxable_gains < total < net
     assert deductions < net
     assert net < taxable
@@ -239,6 +263,7 @@ def test_the_trace_explains_the_computation() -> None:
     assert federal_amount < federal_amounts < federal_credit < federal_after
     assert employment_amount < federal_amounts
     assert ontario_amount < ontario_amounts < ontario_credit < ontario_after
+    assert ontario_after < surtax_first < surtax_second < with_surtax
 
 
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
@@ -250,6 +275,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     totals = {line.output: line for line in trace if isinstance(line, RoundedTotalLine)}
     amounts = {line.output: line for line in trace if isinstance(line, CreditAmountLine)}
     capped = {line.output: line for line in trace if isinstance(line, CappedAmountLine)}
+    surcharged = [line for line in trace if isinstance(line, SurchargeTierLine)]
 
     # The rate is applied once, to each form's total of credit amounts (T1 line 33800, ON428
     # line 58840), giving its non-refundable tax credits (T1 line 35000, ON428 line 61500).
@@ -311,6 +337,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("17180.58"),
         ),
+        # ON428 line 69 "Line 62 plus line 68": the Ontario tax after credits plus the surtax.
+        ONTARIO_TAX_WITH_SURTAX: SumLine(
+            ONTARIO_TAX_WITH_SURTAX,
+            ((ONTARIO_TAX_AFTER_CREDITS, D("7671.97721")), (ONTARIO_SURTAX, D("523.7872376"))),
+            D("8195.7644476"),
+        ),
     }
     assert amounts == {
         BASIC_PERSONAL_AMOUNT: CreditAmountLine(
@@ -332,6 +364,29 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("1471"),
         )
     }
+    # ON428 line 66 "(Line 65 minus $5,710) multiplied by 20% (if negative, enter "0")" and line
+    # 67 "(Line 65 minus $7,307) multiplied by 36% (if negative, enter "0")", in that order, on
+    # the Ontario tax after credits (line 65, as line 64 is not modelled); no rounding stated.
+    assert surcharged == [
+        SurchargeTierLine(
+            output=ONTARIO_SURTAX,
+            base=ONTARIO_TAX_AFTER_CREDITS,
+            base_amount=D("7671.97721"),
+            threshold=D("5710"),
+            rate=Rate(D("0.20")),
+            rounding=NO_ROUNDING,
+            part=D("392.395442"),
+        ),
+        SurchargeTierLine(
+            output=ONTARIO_SURTAX,
+            base=ONTARIO_TAX_AFTER_CREDITS,
+            base_amount=D("7671.97721"),
+            threshold=D("7307"),
+            rate=Rate(D("0.36")),
+            rounding=NO_ROUNDING,
+            part=D("131.3917956"),
+        ),
+    ]
     assert floored == {
         NET_INCOME: SubtractedNotBelowZeroLine(
             output=NET_INCOME,
@@ -379,7 +434,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 17
+    assert len(order) == 19
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
@@ -398,6 +453,11 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
         < position[ontario.NON_REFUNDABLE_TAX_CREDITS]
         < position[ONTARIO_TAX_AFTER_CREDITS]
+    )
+    assert (
+        position[ONTARIO_TAX_AFTER_CREDITS]
+        < position[ONTARIO_SURTAX]
+        < position[ONTARIO_TAX_WITH_SURTAX]
     )
 
 
@@ -420,3 +480,6 @@ def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("668.253875")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("0")
     assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("0")
+    # A zero Ontario tax is below the first surtax threshold: no surtax.
+    assert worksheet.get(ONTARIO_SURTAX).value == D("0")
+    assert worksheet.get(ONTARIO_TAX_WITH_SURTAX).value == D("0")

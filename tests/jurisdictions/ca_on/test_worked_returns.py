@@ -58,7 +58,9 @@ description: >-
   basic personal amount plus 321.75, 164.00 and 1471; the Ontario total is its basic
   personal amount plus 321.75 and 164.00 (ON428 has no Canada employment amount). Each
   form's non-refundable tax credits are its total times its rate (14.5% of 18085.75 =
-  2622.43375; 5.05% of 13232.75 = 668.253875); each exceeds its tax, leaving zero.
+  2622.43375; 5.05% of 13232.75 = 668.253875); each exceeds its tax, leaving zero. An Ontario
+  tax of zero is below the first surtax threshold, so the surtax is zero and the Ontario tax
+  with surtax is zero.
 sources:
   - T1, Schedule 3, Schedule 8, ON428 and EI table arithmetic on the 2025 figures.
 inputs:
@@ -87,6 +89,8 @@ expected:
   ca-on/non_refundable_credit_amounts: "13232.75"
   ca-on/non_refundable_tax_credits: "668.253875"
   ca-on/ontario_tax_after_credits: "0"
+  ca-on/ontario_surtax: "0"
+  ca-on/ontario_tax_with_surtax: "0"
 """
 
 
@@ -119,7 +123,7 @@ def test_a_file_missing_a_declared_output_fails_naming_the_file_and_output(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "partial.yaml"
-    path.write_text(LOW_INCOME.replace('  ca-on/ontario_tax_after_credits: "0"\n', ""))
+    path.write_text(LOW_INCOME.replace('  ca-on/ontario_tax_with_surtax: "0"\n', ""))
 
-    with pytest.raises(WorkedReturnError, match=r"partial\.yaml.*ca-on/ontario_tax_after_credits"):
+    with pytest.raises(WorkedReturnError, match=r"partial\.yaml.*ca-on/ontario_tax_with_surtax"):
         check(path)

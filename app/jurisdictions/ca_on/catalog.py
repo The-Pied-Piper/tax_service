@@ -38,3 +38,17 @@ times the credit rate, here line 46 (line 58840) alone."""
 
 ONTARIO_TAX_AFTER_CREDITS = CATALOG.declare("ontario_tax_after_credits", Decimal, non_negative=True)
 """Ontario tax after non-refundable tax credits, not below zero: 2025 ON428 line 53."""
+
+ONTARIO_SURTAX = CATALOG.declare("ontario_surtax", Decimal, non_negative=True)
+"""Ontario surtax, 2025 ON428 line 68 "Line 66 plus line 67": the 20% tier over $5,710 (line 66)
+plus the 36% tier over $7,307 (line 67), each on line 65, the surtax base.
+
+Line 65 is "Line 63 minus line 64 (if negative, enter "0")", with line 64 the Ontario tax on split
+income. Neither that tax (line 54) nor the minimum tax carryover (line 60) is modelled, so lines
+55, 61, 62 and 63 carry line 53 unchanged and line 65 is the Ontario tax after credits itself.
+"""
+
+ONTARIO_TAX_WITH_SURTAX = CATALOG.declare("ontario_tax_with_surtax", Decimal, non_negative=True)
+"""Ontario tax with surtax, 2025 ON428 line 69 "Line 62 plus line 68": the Ontario tax after
+credits (line 62, which carries line 53 while neither the tax on split income nor the minimum tax
+carryover is modelled) plus the Ontario surtax."""
