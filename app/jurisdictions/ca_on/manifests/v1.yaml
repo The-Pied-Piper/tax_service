@@ -11,7 +11,6 @@ inputs:
   - ca/capital_gain
   - ca/rrsp_deduction
   - ca/union_dues
-  - ca/ei_premiums
 outputs:
   - ca/federal_tax_after_credits
   - ca-on/ontario_tax_with_surtax
@@ -55,6 +54,17 @@ capabilities:
       earnings: ca/employment_income
     produces:
       output: ca/cpp_second_additional_contributions
+  # T1 line 31200 "through employment (boxes 18 and 55 of all T4 slips) (maximum
+  # $1,077.48)": the EI premiums, 1.64% of the employment income up to the $65,700
+  # maximum insurable earnings, with no exemption (the EI premium rates and maximums,
+  # 2025 federal row).
+  - name: core/contribution_tier
+    params:
+      tier: ca/ei_premium
+    consumes:
+      earnings: ca/employment_income
+    produces:
+      output: ca/ei_premiums
   # Schedule 8 Part 3a line 28 "Line 26 plus line 27": the first and second additional
   # contributions together, the T1 line 22215 deduction.
   - name: core/sum

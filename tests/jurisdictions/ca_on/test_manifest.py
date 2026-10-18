@@ -77,7 +77,6 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/capital_gain",
             "ca/rrsp_deduction",
             "ca/union_dues",
-            "ca/ei_premiums",
         }
     )
     assert found.outputs == frozenset(
@@ -118,6 +117,16 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             params={"tier": "ca/cpp_second_additional_contribution"},
             consumes={"earnings": "ca/employment_income"},
             produces={"output": "ca/cpp_second_additional_contributions"},
+        ),
+        # T1 line 31200 "through employment (boxes 18 and 55 of all T4 slips) (maximum
+        # $1,077.48)": the EI premiums, 1.64% of the employment income up to the $65,700
+        # maximum insurable earnings, with no exemption (the EI premium rates and maximums,
+        # 2025 federal row).
+        CapabilitySelection(
+            name="core/contribution_tier",
+            params={"tier": "ca/ei_premium"},
+            consumes={"earnings": "ca/employment_income"},
+            produces={"output": "ca/ei_premiums"},
         ),
         # Schedule 8 Part 3a line 28 "Line 26 plus line 27": the first and second additional
         # contributions together, the T1 line 22215 deduction.
@@ -270,7 +279,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca-on/ontario_tax_with_surtax"},
         ),
     }
-    assert len(found.capabilities) == 23
+    assert len(found.capabilities) == 24
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -280,7 +289,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 23
+    assert len(composition.order) == 24
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -298,6 +307,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({EMPLOYMENT_INCOME}),
             frozenset({CPP_SECOND_ADDITIONAL_CONTRIBUTIONS}),
         ),
+        (TieredContribution, frozenset({EMPLOYMENT_INCOME}), frozenset({EI_PREMIUMS})),
         (
             Sum,
             frozenset({CPP_FIRST_ADDITIONAL_CONTRIBUTIONS, CPP_SECOND_ADDITIONAL_CONTRIBUTIONS}),

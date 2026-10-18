@@ -4,7 +4,8 @@
 # there is no second additional CPP contribution. Computed from employment income to total
 # income; from employment income, by Schedule 8's three contribution tiers, to the base,
 # first additional and second additional CPP contributions, the last two together the
-# enhanced CPP contributions; less the enhanced CPP contributions to net income, less the
+# enhanced CPP contributions; from employment income, up to the EI maximum insurable
+# earnings, to the EI premiums; less the enhanced CPP contributions to net income, less the
 # (empty) deductions from net income to taxable income, and through each form's total of
 # non-refundable credit amounts (its basic personal amount, the base CPP contributions and
 # the EI premiums, and on the T1 alone the Canada employment amount), credited once at the
@@ -23,7 +24,8 @@ description: >-
   An Ontario resident with 2025 employment income (T1 line 10100) of $50,000 and no other
   income: no capital gain, so taxable capital gains (line 12700) of $0 and total income
   (line 15000) of $50,000. The CPP contributions are computed from employment income, which
-  Schedule 8 line 1 reads as the pensionable earnings when T4 box 26 is blank. Employment
+  Schedule 8 line 1 reads as the pensionable earnings when T4 box 26 is blank. The EI
+  premiums are computed from employment income, taken as the insurable earnings. Employment
   income is below the EI maximum insurable earnings ($65,700) and the CPP first earnings
   ceiling ($71,300), so EI premiums (line 31200, ON428 line 58300) are 1.64% x 50,000 =
   $820.00, base CPP contributions (Schedule 8 line 11, T1 line 30800, ON428 line 58240) are
@@ -46,7 +48,8 @@ description: >-
   Ontario surtax (ON428 line 68) is 20% of the Ontario tax after credits over $5,710 plus
   36% of it over $7,307: $0, as the Ontario tax after credits is below $5,710, so the
   Ontario tax with surtax (ON428 line 69) is that same $1,700.145625. The CPP contributions
-  are rounded to the cent, which changes none of them; no other amounts are rounded.
+  and EI premiums are rounded to the cent, which changes none of them; no other amounts are
+  rounded.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -116,9 +119,13 @@ sources:
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s8/5000-s8-25e.txt
   - >-
     CRA, "EI premium rates and maximums", 2025 federal row: maximum annual insurable
-    earnings $65,700; rate 1.64%; maximum annual employee premium $1,077.48. Employment
-    income of 50,000 is below $65,700, so the premiums are 50,000 x 1.64% = 820.00 (below
-    the 1,077.48 maximum).
+    earnings $65,700; rate 1.64%; maximum annual employee premium $1,077.48. The premiums
+    are computed from employment income, taken as the insurable earnings: 1.64% of
+    employment income up to the $65,700 maximum insurable earnings, with no exemption, at
+    most $1,077.48, rounded half-up to the cent. Employment income of 50,000 is below
+    $65,700, so the premiums are 50,000 x 1.64% = 820.00 (below the 1,077.48 maximum). Not
+    triggered by this return, so not modelled: insurable earnings (T4 boxes 18 and 55) that
+    differ from employment income, and the EI overpayment (T1 line 45000).
   - https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/payroll/payroll-deductions-contributions/employment-insurance-ei/ei-premium-rates-maximums.html
   - >-
     CRA, the 2025 T1 return (form 5000-R): line 36 (line 20800) "RRSP deduction (complete
@@ -210,7 +217,6 @@ inputs:
   ca/capital_gain: "0"
   ca/rrsp_deduction: "0"
   ca/union_dues: "0"
-  ca/ei_premiums: "820.00"
 expected:
   ca/taxable_capital_gains: "0"
   ca/total_income: "50000"
@@ -218,6 +224,7 @@ expected:
   ca/cpp_first_additional_contributions: "465.00"
   ca/cpp_second_additional_contributions: "0"
   ca/cpp_enhanced_contributions: "465.00"
+  ca/ei_premiums: "820.00"
   ca/deductions_from_total_income: "465.00"
   ca/net_income: "49535.00"
   ca/deductions_from_net_income: "0"
