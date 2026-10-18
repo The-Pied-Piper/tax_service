@@ -111,19 +111,32 @@ capabilities:
         - ca/ei_premiums
     produces:
       output: ca-on/non_refundable_credit_amounts
-  - name: core/non_refundable_credit
+  # The rate is applied once, to each form's total of credit amounts (T1 line 33800, ON428
+  # line 58840), giving its non-refundable tax credits (T1 line 35000, ON428 line 61500).
+  - name: core/apply_rate
     params:
       rate: ca/credit_rate
     consumes:
-      amounts: ca/non_refundable_credit_amounts
-      tax: ca/federal_basic_tax
+      base: ca/non_refundable_credit_amounts
     produces:
-      output: ca/federal_tax_after_credits
-  - name: core/non_refundable_credit
+      output: ca/non_refundable_tax_credits
+  - name: core/apply_rate
     params:
       rate: ca-on/credit_rate
     consumes:
-      amounts: ca-on/non_refundable_credit_amounts
-      tax: ca-on/ontario_basic_tax
+      base: ca-on/non_refundable_credit_amounts
+    produces:
+      output: ca-on/non_refundable_tax_credits
+  # Each form's credits come off its basic tax, not below zero: the unused part is lost.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/federal_basic_tax
+      less: ca/non_refundable_tax_credits
+    produces:
+      output: ca/federal_tax_after_credits
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca-on/ontario_basic_tax
+      less: ca-on/non_refundable_tax_credits
     produces:
       output: ca-on/ontario_tax_after_credits

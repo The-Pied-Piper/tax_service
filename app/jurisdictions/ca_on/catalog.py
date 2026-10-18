@@ -27,5 +27,10 @@ NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare("non_refundable_credit_amounts",
 line 43": the sum of the credit amounts the rate is applied to once, here the basic personal
 amount, the base CPP contributions and the EI premiums."""
 
+NON_REFUNDABLE_TAX_CREDITS = CATALOG.declare("non_refundable_tax_credits", Decimal)
+"""Ontario non-refundable tax credits, ON428 line 50 (line 61500) "Line 46 plus line 49 Enter this
+amount on line 52. Ontario non-refundable tax credits": the total of the Ontario credit amounts
+times the credit rate, here line 46 (line 58840) alone."""
+
 ONTARIO_TAX_AFTER_CREDITS = CATALOG.declare("ontario_tax_after_credits", Decimal)
 """Ontario tax after non-refundable tax credits, not below zero: 2025 ON428 line 53."""

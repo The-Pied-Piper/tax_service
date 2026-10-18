@@ -18,8 +18,9 @@ from typing import Any, assert_type, cast
 import pytest
 
 from app.domain.artifact import Artifact, ArtifactKind, Money
-from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
+from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.progressive_tax import ProgressiveTax
+from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capability import Capability, CapabilityRegistry, CapabilityResult
 from app.domain.composition import Composition
 from app.domain.errors import (
@@ -552,6 +553,7 @@ TAXABLE_BASE = ArtifactKind("ex/taxable_base", Decimal)
 BASIC_TAX = ArtifactKind("ex/basic_tax", Decimal)
 TAX_AFTER_CREDIT = ArtifactKind("ex/tax_after_credit", Decimal)
 CREDIT_AMOUNTS = ArtifactKind("ex/credit_amounts", Decimal)
+CREDIT = ArtifactKind("ex/credit", Decimal)
 
 SOURCES = ("https://example.org/2025",)
 SCHEDULE = ParameterDataset(
@@ -567,11 +569,12 @@ SCHEDULE = ParameterDataset(
 CREDIT_RATE = ParameterDataset("ex/credit_rate", 2025, RATE, Rate(D("0.15")), NO_ROUNDING, SOURCES)
 
 
-def test_end_to_end_two_real_capabilities_given_in_the_wrong_order() -> None:
+def test_end_to_end_three_real_capabilities_given_in_the_wrong_order() -> None:
     tax = ProgressiveTax(TAXABLE_BASE, BASIC_TAX, SCHEDULE)
-    credit = NonRefundableCredit(CREDIT_RATE, CREDIT_AMOUNTS, BASIC_TAX, TAX_AFTER_CREDIT)  # 60
+    credit = ApplyRate(CREDIT_RATE, CREDIT_AMOUNTS, CREDIT)  # 15% of 400 = 60
+    less = SubtractNotBelowZero(BASIC_TAX, CREDIT, TAX_AFTER_CREDIT)
     composition = Composition(
-        [credit, tax],
+        [less, credit, tax],
         inputs=kinds(TAXABLE_BASE, CREDIT_AMOUNTS),
         outputs=kinds(TAX_AFTER_CREDIT),
     )
@@ -581,13 +584,15 @@ def test_end_to_end_two_real_capabilities_given_in_the_wrong_order() -> None:
     )
 
     # 10% of 100 + 20% of 200 + 30% of 200 = 110; less a credit of 15% of 400 = 60.
-    assert composition.order == (tax, credit)
+    assert composition.order[-1] is less
+    assert set(composition.order) == {tax, credit, less}
     assert worksheet.get(BASIC_TAX) == Artifact(BASIC_TAX, D(110))
+    assert worksheet.get(CREDIT) == Artifact(CREDIT, D(60))
     assert worksheet.get(TAX_AFTER_CREDIT) == Artifact(TAX_AFTER_CREDIT, D(50))
-    assert worksheet.producer_of(TAX_AFTER_CREDIT) is credit
+    assert worksheet.producer_of(TAX_AFTER_CREDIT) is less
     assert worksheet.trace[-1].amount == D(50)
-    assert worksheet.trace[3].amount == D(110)
-    assert isinstance(worksheet.trace[3], RoundedTotalLine)
+    (total,) = [line for line in worksheet.trace if isinstance(line, RoundedTotalLine)]
+    assert total.amount == D(110)
 
 
 # --- list slots: one edge per listed kind ---------------------------------------------------------

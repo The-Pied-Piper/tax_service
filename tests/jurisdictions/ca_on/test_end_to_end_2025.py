@@ -7,7 +7,8 @@ union dues of 2000 and enhanced CPP contributions of 1074.00 to net income 11500
 deductions from net income to taxable income 115000, and from each basic personal amount (16129
 federal, 12747 Ontario) plus the base CPP contributions of 3356.10 and the EI premiums of 1077.48,
 and federally the Canada employment amount of 1471 (the lesser of employment income and 1471),
-through each total of credit amounts to each tax after credits) are checked from the files under
+through each total of credit amounts and each form's non-refundable tax credits (T1 line
+35000, ON428 line 61500) to each tax after credits) are checked from the files under
 `returns/` by `test_worked_returns.py`, as are Returns C and D; this module pins which capability
 produces each line, the order, and the trace that explains them.
 """
@@ -22,7 +23,6 @@ from app.domain.artifact import Artifact
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.capped_amount import CappedAmount
 from app.domain.capabilities.credit_amount import CreditAmount
-from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
@@ -34,8 +34,6 @@ from app.domain.parameters.rounding import NO_ROUNDING
 from app.domain.trace import (
     CappedAmountLine,
     CreditAmountLine,
-    CreditAppliedLine,
-    CreditLine,
     RateAppliedLine,
     RoundedTotalLine,
     SubtractedNotBelowZeroLine,
@@ -56,6 +54,7 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_TAX_AFTER_CREDITS,
     NET_INCOME,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
+    NON_REFUNDABLE_TAX_CREDITS,
     RRSP_DEDUCTION,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
@@ -141,8 +140,16 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(NON_REFUNDABLE_CREDIT_AMOUNTS) is not worksheet.producer_of(
         ontario.NON_REFUNDABLE_CREDIT_AMOUNTS
     )
-    assert isinstance(worksheet.producer_of(FEDERAL_TAX_AFTER_CREDITS), NonRefundableCredit)
-    assert isinstance(worksheet.producer_of(ONTARIO_TAX_AFTER_CREDITS), NonRefundableCredit)
+    assert isinstance(worksheet.producer_of(NON_REFUNDABLE_TAX_CREDITS), ApplyRate)
+    assert isinstance(worksheet.producer_of(ontario.NON_REFUNDABLE_TAX_CREDITS), ApplyRate)
+    assert worksheet.producer_of(NON_REFUNDABLE_TAX_CREDITS) is not worksheet.producer_of(
+        ontario.NON_REFUNDABLE_TAX_CREDITS
+    )
+    assert worksheet.producer_of(NON_REFUNDABLE_TAX_CREDITS) is not worksheet.producer_of(
+        TAXABLE_CAPITAL_GAINS
+    )
+    assert isinstance(worksheet.producer_of(FEDERAL_TAX_AFTER_CREDITS), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(ONTARIO_TAX_AFTER_CREDITS), SubtractNotBelowZero)
     assert worksheet.producer_of(FEDERAL_TAX_AFTER_CREDITS) is not worksheet.producer_of(
         ONTARIO_TAX_AFTER_CREDITS
     )
@@ -199,10 +206,12 @@ def test_the_trace_explains_the_computation() -> None:
         "22033.58",
     )
     federal_credit = position(
-        "credit: 14.5% of non_refundable_credit_amounts 22033.58 (no rounding)", "3194.8691"
+        "non_refundable_tax_credits: 14.5% of non_refundable_credit_amounts 22033.58 (no rounding)",
+        "3194.8691",
     )
     federal_after = position(
-        "federal_tax_after_credits: federal_basic_tax 20146.2500 less credit, not below 0",
+        "federal_tax_after_credits: federal_basic_tax 20146.2500 "
+        "less non_refundable_tax_credits 3194.86910, not below 0 = 16951.38090",
         "16951.3809",
     )
     ontario_basic = position(
@@ -215,10 +224,12 @@ def test_the_trace_explains_the_computation() -> None:
         "17180.58",
     )
     ontario_credit = position(
-        "credit: 5.05% of non_refundable_credit_amounts 17180.58 (no rounding)", "867.61929"
+        "non_refundable_tax_credits: 5.05% of non_refundable_credit_amounts 17180.58 (no rounding)",
+        "867.61929",
     )
     ontario_after = position(
-        "ontario_tax_after_credits: ontario_basic_tax 8539.596500 less credit, not below 0",
+        "ontario_tax_after_credits: ontario_basic_tax 8539.596500 "
+        "less non_refundable_tax_credits 867.619290, not below 0 = 7671.977210",
         "7671.97721",
     )
     assert taxable_gains < total < net
@@ -242,13 +253,29 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     totals = {line.output: line for line in trace if isinstance(line, RoundedTotalLine)}
     amounts = {line.output: line for line in trace if isinstance(line, CreditAmountLine)}
     capped = {line.output: line for line in trace if isinstance(line, CappedAmountLine)}
-    credits = {line.amounts: line for line in trace if isinstance(line, CreditLine)}
-    applied = {line.output: line for line in trace if isinstance(line, CreditAppliedLine)}
 
+    # The rate is applied once, to each form's total of credit amounts (T1 line 33800, ON428
+    # line 58840), giving its non-refundable tax credits (T1 line 35000, ON428 line 61500).
     assert rated == {
         TAXABLE_CAPITAL_GAINS: RateAppliedLine(
             TAXABLE_CAPITAL_GAINS, CAPITAL_GAIN, D("20000"), Rate(D("0.5")), NO_ROUNDING, D("10000")
-        )
+        ),
+        NON_REFUNDABLE_TAX_CREDITS: RateAppliedLine(
+            NON_REFUNDABLE_TAX_CREDITS,
+            NON_REFUNDABLE_CREDIT_AMOUNTS,
+            D("22033.58"),
+            Rate(D("0.145")),
+            NO_ROUNDING,
+            D("3194.8691"),
+        ),
+        ontario.NON_REFUNDABLE_TAX_CREDITS: RateAppliedLine(
+            ontario.NON_REFUNDABLE_TAX_CREDITS,
+            ontario.NON_REFUNDABLE_CREDIT_AMOUNTS,
+            D("17180.58"),
+            Rate(D("0.0505")),
+            NO_ROUNDING,
+            D("867.61929"),
+        ),
     }
     assert sums == {
         TOTAL_INCOME: SumLine(
@@ -308,23 +335,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("1471"),
         )
     }
-    # The rate is applied once, to each form's total of credit amounts.
-    assert credits == {
-        NON_REFUNDABLE_CREDIT_AMOUNTS: CreditLine(
-            NON_REFUNDABLE_CREDIT_AMOUNTS,
-            D("22033.58"),
-            Rate(D("0.145")),
-            NO_ROUNDING,
-            D("3194.8691"),
-        ),
-        ontario.NON_REFUNDABLE_CREDIT_AMOUNTS: CreditLine(
-            ontario.NON_REFUNDABLE_CREDIT_AMOUNTS,
-            D("17180.58"),
-            Rate(D("0.0505")),
-            NO_ROUNDING,
-            D("867.61929"),
-        ),
-    }
     assert floored == {
         NET_INCOME: SubtractedNotBelowZeroLine(
             output=NET_INCOME,
@@ -342,6 +352,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("115000"),
         ),
+        # Each form's credits come off its basic tax, not below zero; here both taxes exceed
+        # their credits.
+        FEDERAL_TAX_AFTER_CREDITS: SubtractedNotBelowZeroLine(
+            output=FEDERAL_TAX_AFTER_CREDITS,
+            minuend=FEDERAL_BASIC_TAX,
+            minuend_amount=D("20146.25"),
+            subtrahend=NON_REFUNDABLE_TAX_CREDITS,
+            subtrahend_amount=D("3194.8691"),
+            result=D("16951.3809"),
+        ),
+        ONTARIO_TAX_AFTER_CREDITS: SubtractedNotBelowZeroLine(
+            output=ONTARIO_TAX_AFTER_CREDITS,
+            minuend=ONTARIO_BASIC_TAX,
+            minuend_amount=D("8539.5965"),
+            subtrahend=ontario.NON_REFUNDABLE_TAX_CREDITS,
+            subtrahend_amount=D("867.61929"),
+            result=D("7671.97721"),
+        ),
     }
 
     assert totals[FEDERAL_BASIC_TAX].base == TAXABLE_INCOME
@@ -349,18 +377,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert totals[FEDERAL_BASIC_TAX].amount == D("20146.25")
     assert totals[ONTARIO_BASIC_TAX].base == TAXABLE_INCOME
     assert totals[ONTARIO_BASIC_TAX].amount == D("8539.5965")
-    assert applied[FEDERAL_TAX_AFTER_CREDITS].tax == FEDERAL_BASIC_TAX
-    assert applied[FEDERAL_TAX_AFTER_CREDITS].tax_amount == D("20146.25")
-    assert applied[FEDERAL_TAX_AFTER_CREDITS].amount == D("16951.3809")
-    assert applied[ONTARIO_TAX_AFTER_CREDITS].tax == ONTARIO_BASIC_TAX
-    assert applied[ONTARIO_TAX_AFTER_CREDITS].tax_amount == D("8539.5965")
-    assert applied[ONTARIO_TAX_AFTER_CREDITS].amount == D("7671.97721")
 
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 15
+    assert len(order) == 17
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
@@ -372,9 +394,14 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[ONTARIO_BASIC_TAX] < position[ONTARIO_TAX_AFTER_CREDITS]
     assert position[BASIC_PERSONAL_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert position[CANADA_EMPLOYMENT_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
-    assert position[NON_REFUNDABLE_CREDIT_AMOUNTS] < position[FEDERAL_TAX_AFTER_CREDITS]
+    assert position[NON_REFUNDABLE_CREDIT_AMOUNTS] < position[NON_REFUNDABLE_TAX_CREDITS]
+    assert position[NON_REFUNDABLE_TAX_CREDITS] < position[FEDERAL_TAX_AFTER_CREDITS]
     assert position[ontario.BASIC_PERSONAL_AMOUNT] < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
-    assert position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS] < position[ONTARIO_TAX_AFTER_CREDITS]
+    assert (
+        position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
+        < position[ontario.NON_REFUNDABLE_TAX_CREDITS]
+        < position[ONTARIO_TAX_AFTER_CREDITS]
+    )
 
 
 def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
@@ -391,5 +418,8 @@ def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     assert worksheet.get(CANADA_EMPLOYMENT_AMOUNT).value == D("1471")
     assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("18085.75")
     assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("13232.75")
+    # 14.5% of 18085.75 and 5.05% of 13232.75: each larger than its basic tax.
+    assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("2622.43375")
+    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("668.253875")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("0")
     assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("0")

@@ -15,8 +15,6 @@ from app.domain.trace import (
     CappedAmountLine,
     ContributionTierLine,
     CreditAmountLine,
-    CreditAppliedLine,
-    CreditLine,
     LesserOfLine,
     RateAppliedLine,
     RoundedTotalLine,
@@ -25,7 +23,6 @@ from app.domain.trace import (
     SumLine,
     SurchargeTierLine,
     TraceLine,
-    UnusedCreditLine,
 )
 
 
@@ -41,17 +38,8 @@ class EnglishTraceRenderer:
                 return f"{self._percent(rate)}% on {taxed} ({lower} to {upper})"
             case RoundedTotalLine(output=output, base=base, base_amount=amount, rounding=rule):
                 return f"{output.label} on {base.label} {amount} ({self._rounding(rule)})"
-            case CreditLine(amounts=amounts, amounts_value=value, rate=rate, rounding=rule):
-                return (
-                    f"credit: {self._percent(rate.value)}% of {amounts.label} {value} "
-                    f"({self._rounding(rule)})"
-                )
             case CreditAmountLine(output=output, basis=basis, rounding=rule):
                 return f"{output.label}: credit amount {basis.amount} ({self._rounding(rule)})"
-            case CreditAppliedLine(output=output, tax=tax, tax_amount=amount):
-                return f"{output.label}: {tax.label} {amount} less credit, not below 0"
-            case UnusedCreditLine():
-                return "unused credit, not refunded"
             case SumLine(output=output, parts=parts, total=total):
                 terms = " + ".join(f"{kind.label} {amount}" for kind, amount in parts)
                 return f"{output.label}: {terms or 'no parts'} = {total}"

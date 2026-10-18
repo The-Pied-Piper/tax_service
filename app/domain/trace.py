@@ -65,49 +65,6 @@ class RoundedTotalLine(TraceLine):
 
 
 @dataclass(frozen=True)
-class CreditLine(TraceLine):
-    """A credit worked out once: `amounts_value` (the value of `amounts`) × `rate`, rounded."""
-
-    amounts: Money
-    amounts_value: Decimal
-    rate: Rate
-    rounding: RoundingRule
-    credit: Decimal
-
-    @property
-    def amount(self) -> Decimal:
-        """The rounded credit."""
-        return self.credit
-
-
-@dataclass(frozen=True)
-class CreditAppliedLine(TraceLine):
-    """A credit taken off `tax` (worth `tax_amount`), not below zero, producing `output`."""
-
-    output: Money
-    tax: Money
-    tax_amount: Decimal
-    after: Decimal
-
-    @property
-    def amount(self) -> Decimal:
-        """The tax left after the credit."""
-        return self.after
-
-
-@dataclass(frozen=True)
-class UnusedCreditLine(TraceLine):
-    """The part of a non-refundable credit that exceeded the tax and was lost."""
-
-    unused: Decimal
-
-    @property
-    def amount(self) -> Decimal:
-        """The unused part of the credit."""
-        return self.unused
-
-
-@dataclass(frozen=True)
 class SumLine(TraceLine):
     """The `total` produced as `output` by adding `parts`, each a kind and its value, in order."""
 
@@ -182,7 +139,7 @@ class SubtractedNotBelowZeroLine(TraceLine):
 class CreditAmountLine(TraceLine):
     """A credit dataset's amount `basis` produced as `output`, rounded with `rounding` to `value`.
 
-    Its own class, not a `CreditLine`: no rate is applied, and the amount itself is the result.
+    Its own class, not a `RateAppliedLine`: no rate is applied, and the amount itself is the result.
     """
 
     output: Money

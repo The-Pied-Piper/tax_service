@@ -18,8 +18,9 @@ import pytest
 import app.registrations
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.artifact import Artifact, ArtifactKind
+from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.credit_amount import CreditAmount
-from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
+from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.parameters.brackets import BRACKETS
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.rate import RATE, Rate
@@ -30,9 +31,10 @@ SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
 
 
 # Made up for this test and not registered: the basic personal amount as an artifact, the
-# credit amounts it stands for alone, whichever basic tax the credit applies to, and that tax
-# less the credit.
+# credit amounts it stands for alone, the credits (the amounts times the rate), whichever basic
+# tax the credits come off, and that tax less the credits.
 AMOUNT = ArtifactKind("ex/basic_personal_amount", Decimal)
+CREDITS = ArtifactKind("ex/non_refundable_tax_credits", Decimal)
 BASIC_TAX = ArtifactKind("ex/basic_tax", Decimal)
 TAX_AFTER_CREDITS = ArtifactKind("ex/tax_after_credits", Decimal)
 
@@ -89,11 +91,14 @@ def test_applies_to_basic_tax(prefix: str, basic_tax: str, after: str) -> None:
     rate = SOURCE.get(f"{prefix}/credit_rate", 2025, RATE)
 
     # The basic personal amount becomes an artifact, and with no other credit amount it is
-    # the whole total the rate is applied to.
+    # the whole total the rate is applied to; the credits then come off the basic tax, not
+    # below zero.
     (claimed,) = CreditAmount(amount, AMOUNT).compute(()).outputs
-    credit = NonRefundableCredit(rate, amounts=AMOUNT, tax=BASIC_TAX, output=TAX_AFTER_CREDITS)
+    (credits,) = ApplyRate(rate, base=AMOUNT, output=CREDITS).compute((claimed,)).outputs
+    less = SubtractNotBelowZero(amount=BASIC_TAX, less=CREDITS, output=TAX_AFTER_CREDITS)
 
-    result = credit.compute((claimed, Artifact(BASIC_TAX, D(basic_tax))))
+    result = less.compute((Artifact(BASIC_TAX, D(basic_tax)), credits))
 
     assert claimed == Artifact(AMOUNT, amount.values.amount)
+    assert credits == Artifact(CREDITS, amount.values.amount * rate.values.value)
     assert result.outputs == (Artifact(TAX_AFTER_CREDITS, D(after)),)

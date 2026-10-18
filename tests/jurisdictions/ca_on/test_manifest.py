@@ -13,7 +13,6 @@ from app.application.services.tax_computation import TaxComputationService
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.capped_amount import CappedAmount
 from app.domain.capabilities.credit_amount import CreditAmount
-from app.domain.capabilities.non_refundable_credit import NonRefundableCredit
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
@@ -33,6 +32,7 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_TAX_AFTER_CREDITS,
     NET_INCOME,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
+    NON_REFUNDABLE_TAX_CREDITS,
     RRSP_DEDUCTION,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
@@ -183,24 +183,38 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca-on/non_refundable_credit_amounts"},
         ),
-        # The rate is applied once, to the total (T1 line 33800, ON428 line 58840).
+        # The rate is applied once, to the total (T1 line 33800, ON428 line 58840), giving each
+        # form's non-refundable tax credits (T1 line 35000, ON428 line 61500).
         CapabilitySelection(
-            name="core/non_refundable_credit",
+            name="core/apply_rate",
             params={"rate": "ca/credit_rate"},
-            consumes={"amounts": "ca/non_refundable_credit_amounts", "tax": "ca/federal_basic_tax"},
+            consumes={"base": "ca/non_refundable_credit_amounts"},
+            produces={"output": "ca/non_refundable_tax_credits"},
+        ),
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/credit_rate"},
+            consumes={"base": "ca-on/non_refundable_credit_amounts"},
+            produces={"output": "ca-on/non_refundable_tax_credits"},
+        ),
+        # Each form's credits come off its basic tax, not below zero: the unused part is lost.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca/federal_basic_tax", "less": "ca/non_refundable_tax_credits"},
             produces={"output": "ca/federal_tax_after_credits"},
         ),
         CapabilitySelection(
-            name="core/non_refundable_credit",
-            params={"rate": "ca-on/credit_rate"},
+            name="core/subtract_not_below_zero",
+            params={},
             consumes={
-                "amounts": "ca-on/non_refundable_credit_amounts",
-                "tax": "ca-on/ontario_basic_tax",
+                "amount": "ca-on/ontario_basic_tax",
+                "less": "ca-on/non_refundable_tax_credits",
             },
             produces={"output": "ca-on/ontario_tax_after_credits"},
         ),
     }
-    assert len(found.capabilities) == 15
+    assert len(found.capabilities) == 17
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -210,7 +224,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 15
+    assert len(composition.order) == 17
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -257,13 +271,23 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({ontario.NON_REFUNDABLE_CREDIT_AMOUNTS}),
         ),
         (
-            NonRefundableCredit,
-            frozenset({NON_REFUNDABLE_CREDIT_AMOUNTS, FEDERAL_BASIC_TAX}),
+            ApplyRate,
+            frozenset({NON_REFUNDABLE_CREDIT_AMOUNTS}),
+            frozenset({NON_REFUNDABLE_TAX_CREDITS}),
+        ),
+        (
+            ApplyRate,
+            frozenset({ontario.NON_REFUNDABLE_CREDIT_AMOUNTS}),
+            frozenset({ontario.NON_REFUNDABLE_TAX_CREDITS}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({FEDERAL_BASIC_TAX, NON_REFUNDABLE_TAX_CREDITS}),
             frozenset({FEDERAL_TAX_AFTER_CREDITS}),
         ),
         (
-            NonRefundableCredit,
-            frozenset({ontario.NON_REFUNDABLE_CREDIT_AMOUNTS, ONTARIO_BASIC_TAX}),
+            SubtractNotBelowZero,
+            frozenset({ONTARIO_BASIC_TAX, ontario.NON_REFUNDABLE_TAX_CREDITS}),
             frozenset({ONTARIO_TAX_AFTER_CREDITS}),
         ),
     }

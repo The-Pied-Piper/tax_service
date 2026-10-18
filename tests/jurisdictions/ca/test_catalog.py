@@ -29,6 +29,7 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_BASIC_TAX,
     NET_INCOME,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
+    NON_REFUNDABLE_TAX_CREDITS,
     RRSP_DEDUCTION,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
@@ -56,6 +57,7 @@ REGISTERED = frozenset(
         "ca/ei_premiums",
         "ca/canada_employment_amount",
         "ca/non_refundable_credit_amounts",
+        "ca/non_refundable_tax_credits",
         "ca/federal_tax_after_credits",
     }
 )
@@ -98,6 +100,7 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/cpp_base_contributions") is CPP_BASE_CONTRIBUTIONS
     assert registry.get("ca/ei_premiums") is EI_PREMIUMS
     assert registry.get("ca/canada_employment_amount") is CANADA_EMPLOYMENT_AMOUNT
+    assert registry.get("ca/non_refundable_tax_credits") is NON_REFUNDABLE_TAX_CREDITS
 
 
 def test_catalog_kinds_are_in_the_package_namespace() -> None:
@@ -124,6 +127,7 @@ def test_catalog_kinds_are_money() -> None:
         CPP_BASE_CONTRIBUTIONS,
         EI_PREMIUMS,
         CANADA_EMPLOYMENT_AMOUNT,
+        NON_REFUNDABLE_TAX_CREDITS,
     ):
         assert kind.value_type is Decimal, kind.identifier
 

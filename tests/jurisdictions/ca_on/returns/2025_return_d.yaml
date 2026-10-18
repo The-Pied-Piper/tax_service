@@ -5,10 +5,11 @@
 # net income, less the (empty) deductions from net income to taxable income, and through
 # each form's total of non-refundable credit amounts (its basic personal amount, the base
 # CPP contributions and the EI premiums, and on the T1 alone the Canada employment amount),
-# credited once at the form's credit rate, to the tax after credits. There is no capital
-# gain, RRSP deduction or union dues. Not yet computed, so not in this file: any deduction
-# from net income, the social benefits repayment, capital losses, the Ontario surtax, tax
-# reduction and health premium, and the balance owing.
+# credited once at the form's credit rate to the form's non-refundable tax credits (T1 line
+# 35000, ON428 line 61500), taken off its basic tax, not below zero, to the tax after
+# credits. There is no capital gain, RRSP deduction or union dues. Not yet computed, so not
+# in this file: any deduction from net income, the social benefits repayment, capital
+# losses, the Ontario surtax, tax reduction and health premium, and the balance owing.
 # Amounts are quoted decimal strings, never floats. Every output the CA-ON manifest
 # declares must appear under `expected`; intermediate lines may be listed and are then
 # checked too.
@@ -32,10 +33,11 @@ description: >-
   ON428 line 58040 $12,747), the base CPP contributions and the EI premiums, and on the T1
   alone the Canada employment amount (line 31260) of $1,471, the lesser of $1,471 and
   employment income (ON428 has no such line): line 33500 of $22,033.58 and ON428 line 58800
-  of $17,180.58. The rate is applied once to each total: 14.5% federally (line 33800, here
-  also the total federal non-refundable tax credits, line 35000) and 5.05% for Ontario
-  (ON428 line 58840, here also the Ontario non-refundable tax credits, line 61500). No
-  amounts are rounded.
+  of $17,180.58. The rate is applied once to each total: 14.5% federally (line 33800) and
+  5.05% for Ontario (ON428 line 58840). Each product is its form's non-refundable tax
+  credits: the total federal non-refundable tax credits (line 35000)
+  of $3,194.8691 and the Ontario non-refundable tax credits (ON428 line 61500) of
+  $867.61929, each taken off its form's basic tax, not below zero. No amounts are rounded.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -129,18 +131,19 @@ sources:
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
     The other lines are the 2025 federal and Ontario brackets and those credits applied
-    without rounding. The federal brackets are those of the 2025 T1 return for Ontario
-    (form 5006-R), Step 5 Part A lines 70 to 76, as CRA publishes them; the lowest rate of
-    14.5% is the full-year blend of the cut from 15% to 14% on July 1, 2025, per Finance
-    Canada's announcement: 14.5% from 0 to 57,375 and 20.5% from 57,375 to 114,750, so
-    taxable income of 74,174.00 gives 57,375 x 14.5% = 8,319.375 plus (74,174.00 - 57,375
-    = 16,799.00) x 20.5% = 3,443.795, federal basic tax of 8,319.375 + 3,443.795 =
-    11,763.17, less the 3,194.8691 credit is 8,568.3009. The Ontario brackets are those of
-    the 2025 ON428 (form 5006-C), Part A lines 2 to 8, as CRA and the Ontario Data Catalogue
-    publish them: 5.05% from 0 to 52,886 and 9.15% from 52,886 to 105,775, so 74,174.00
-    gives 52,886 x 5.05% = 2,670.743 plus (74,174.00 - 52,886 = 21,288.00) x 9.15% =
-    1,947.852, Ontario basic tax of 2,670.743 + 1,947.852 = 4,618.595, less the 867.61929
-    credit is 3,750.97571.
+    without rounding. The federal brackets are those of the 2025 T1 return for Ontario (form
+    5006-R), Step 5 Part A lines 70 to 76, as CRA publishes them; the lowest rate of 14.5%
+    is the full-year blend of the cut from 15% to 14% on July 1, 2025, per Finance Canada's
+    announcement: 14.5% from 0 to 57,375 and 20.5% from 57,375 to 114,750, so taxable income
+    of 74,174.00 gives 57,375 x 14.5% = 8,319.375 plus (74,174.00 - 57,375 = 16,799.00) x
+    20.5% = 3,443.795, federal basic tax of 8,319.375 + 3,443.795 = 11,763.17, less the
+    3,194.8691 of federal non-refundable tax credits (line 35000), not below zero, is
+    8,568.3009. The Ontario brackets are those of the 2025 ON428 (form 5006-C), Part A lines
+    2 to 8, as CRA and the Ontario Data Catalogue publish them: 5.05% from 0 to 52,886 and
+    9.15% from 52,886 to 105,775, so 74,174.00 gives 52,886 x 5.05% = 2,670.743 plus
+    (74,174.00 - 52,886 = 21,288.00) x 9.15% = 1,947.852, Ontario basic tax of 2,670.743 +
+    1,947.852 = 4,618.595, less the 867.61929 of Ontario non-refundable tax credits (ON428
+    line 61500), not below zero, is 3,750.97571.
   - https://www.canada.ca/en/revenue-agency/services/tax/individuals/tax-rates-brackets/last-year.html
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-r/5006-r-25e.txt
   - https://www.canada.ca/en/department-finance/news/2025/05/delivering-a-middle-class-tax-cut.html
@@ -165,8 +168,10 @@ expected:
   ca/basic_personal_amount: "16129"
   ca/canada_employment_amount: "1471"
   ca/non_refundable_credit_amounts: "22033.58"
+  ca/non_refundable_tax_credits: "3194.8691"
   ca/federal_tax_after_credits: "8568.3009"
   ca-on/ontario_basic_tax: "4618.595"
   ca-on/basic_personal_amount: "12747"
   ca-on/non_refundable_credit_amounts: "17180.58"
+  ca-on/non_refundable_tax_credits: "867.61929"
   ca-on/ontario_tax_after_credits: "3750.97571"
