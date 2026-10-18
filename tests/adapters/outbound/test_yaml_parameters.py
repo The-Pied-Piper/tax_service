@@ -17,6 +17,7 @@ from textwrap import dedent
 
 import pytest
 
+from app.adapters.outbound.parameter_parsers.amount import AmountParser
 from app.adapters.outbound.parameter_parsers.brackets import BracketsParser
 from app.adapters.outbound.parameter_parsers.credit import CreditParser
 from app.adapters.outbound.parameter_parsers.rate import RateParser
@@ -25,12 +26,14 @@ from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.adapters.outbound.yaml_support import YamlNode
 from app.domain.errors import (
     DomainError,
+    InvalidAmountError,
     InvalidCreditError,
     InvalidParameterDataError,
     InvalidRateError,
     NotFoundError,
     UnknownRegistrationError,
 )
+from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
@@ -73,6 +76,16 @@ rounding: none
 rate: "0.125"
 """
 
+AMOUNT_2025 = """\
+family: ex/amount_cap
+tax_year: 2025
+kind: amount
+sources:
+  - https://example.org/amount-cap-2025
+rounding: none
+amount: "1471"
+"""
+
 
 def built_in_parsers() -> ParameterParserRegistry:
     """A fresh registry holding the built-in parsers, never the shared one."""
@@ -80,6 +93,7 @@ def built_in_parsers() -> ParameterParserRegistry:
     registry.register_class(BracketsParser)
     registry.register_class(CreditParser)
     registry.register_class(RateParser)
+    registry.register_class(AmountParser)
     return registry
 
 
@@ -158,6 +172,54 @@ def test_reads_rates_from_zero_to_one_inclusive(tmp_path: Path, rate: str) -> No
     )
 
     assert source(tmp_path).get("ex/credit_rate", 2025, RATE).values == Rate(D(rate))
+
+
+def test_reads_an_amount_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/amount_cap/2025.yaml", AMOUNT_2025)
+
+    result = source(tmp_path).get("ex/amount_cap", 2025, AMOUNT)
+
+    assert result == ParameterDataset(
+        family="ex/amount_cap",
+        tax_year=2025,
+        kind=AMOUNT,
+        values=Amount(D("1471")),
+        rounding=NO_ROUNDING,
+        sources=("https://example.org/amount-cap-2025",),
+    )
+
+
+@pytest.mark.parametrize("amount", ["0", "1471", "1234.56", "1000.50"])
+def test_reads_amounts_exactly(tmp_path: Path, amount: str) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/amount_cap/2025.yaml",
+        AMOUNT_2025.replace('amount: "1471"', f'amount: "{amount}"'),
+    )
+
+    value = source(tmp_path).get("ex/amount_cap", 2025, AMOUNT).values.value
+
+    assert str(value) == amount  # exact, scale kept
+
+
+def test_reads_an_amount_dataset_rounding_rule(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/amount_cap/2025.yaml",
+        AMOUNT_2025.replace("rounding: none", 'rounding: {increment: "1", mode: down}'),
+    )
+
+    result = source(tmp_path).get("ex/amount_cap", 2025, AMOUNT)
+
+    assert result.rounding == RoundTo(D("1"), RoundingMode.DOWN)
+
+
+def test_by_default_the_amount_parser_comes_from_the_shared_registry(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/amount_cap/2025.yaml", AMOUNT_2025)
+
+    result = YamlParameterSource(roots(tmp_path)).get("ex/amount_cap", 2025, AMOUNT)
+
+    assert result.values == Amount(D("1471"))
 
 
 def test_reads_a_rounding_rule(tmp_path: Path) -> None:
@@ -496,3 +558,110 @@ def test_a_rate_out_of_range_is_reported_as_a_rate_error(tmp_path: Path) -> None
         source(tmp_path).get("ex/credit_rate", 2025, RATE)
 
     assert isinstance(excinfo.value.__cause__, InvalidRateError)
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        pytest.param(
+            AMOUNT_2025.replace('amount: "1471"', 'amount: "-1"'),
+            "amount must not be negative",
+            id="amount-negative",
+        ),
+        pytest.param(
+            AMOUNT_2025.replace('amount: "1471"', 'amount: "-0.01"'),
+            "amount must not be negative",
+            id="amount-slightly-negative",
+        ),
+        pytest.param(
+            AMOUNT_2025.replace('amount: "1471"', 'amount: "Infinity"'),
+            "amount is not a decimal",
+            id="amount-infinite",
+        ),
+        pytest.param(
+            AMOUNT_2025.replace('amount: "1471"', 'amount: "NaN"'),
+            "amount is not a decimal",
+            id="amount-nan",
+        ),
+        pytest.param(
+            AMOUNT_2025.replace('amount: "1471"', 'amount: "lots"'),
+            "amount is not a decimal: 'lots'",
+            id="amount-not-decimal",
+        ),
+        pytest.param(
+            AMOUNT_2025.replace('amount: "1471"', "amount: 1471"),
+            "amount must be a string, got int",
+            id="amount-as-yaml-number",
+        ),
+        pytest.param(
+            AMOUNT_2025.replace('amount: "1471"', "amount: 1471.5"),
+            "amount must be a string, got float",
+            id="amount-as-yaml-float",
+        ),
+        pytest.param(
+            AMOUNT_2025.replace('amount: "1471"\n', ""),
+            r"missing keys \['amount'\]",
+            id="amount-missing",
+        ),
+        pytest.param(
+            AMOUNT_2025 + 'rate: "0.125"\n',
+            r"unknown keys \['rate'\]",
+            id="rate-is-not-an-amount-key",
+        ),
+        pytest.param(
+            AMOUNT_2025.replace("kind: amount", "kind: credit"),
+            "kind 'credit' does not match the requested 'amount'",
+            id="kind-mismatch",
+        ),
+        pytest.param(
+            AMOUNT_2025.replace("kind: amount\n", ""),
+            "missing key 'kind'",
+            id="kind-missing",
+        ),
+        pytest.param(
+            AMOUNT_2025.replace("rounding: none\n", ""),
+            r"missing keys \['rounding'\]",
+            id="rounding-missing",
+        ),
+        pytest.param(
+            AMOUNT_2025.replace("sources:\n  - https://example.org/amount-cap-2025", "sources: []"),
+            "sources must list at least one",
+            id="sources-empty",
+        ),
+    ],
+)
+def test_rejects_malformed_amount_dataset(tmp_path: Path, content: str, message: str) -> None:
+    write(tmp_path, "ex/parameters/amount_cap/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
+        source(tmp_path).get("ex/amount_cap", 2025, AMOUNT)
+
+    assert "2025.yaml" in str(excinfo.value)
+
+
+def test_a_negative_amount_is_reported_as_an_amount_error(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/amount_cap/2025.yaml",
+        AMOUNT_2025.replace('amount: "1471"', 'amount: "-1"'),
+    )
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/amount_cap", 2025, AMOUNT)
+
+    assert isinstance(excinfo.value.__cause__, InvalidAmountError)
+
+
+def test_an_amount_dataset_is_not_a_credit_dataset(tmp_path: Path) -> None:
+    # Both kinds read an `amount` key; the declared kind alone tells them apart.
+    write(tmp_path, "ex/parameters/amount_cap/2025.yaml", AMOUNT_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'amount' does not match"):
+        source(tmp_path).get("ex/amount_cap", 2025, CREDIT)
+
+
+def test_a_credit_dataset_is_not_an_amount_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/personal_credit/2025.yaml", CREDIT_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'credit' does not match"):
+        source(tmp_path).get("ex/personal_credit", 2025, AMOUNT)

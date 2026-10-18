@@ -9,7 +9,14 @@ shared registry; adding a kind means adding a parser and importing it here.
 
 from __future__ import annotations
 
-from app.adapters.outbound.parameter_parsers import brackets, credit, parser, rate, registry
+from app.adapters.outbound.parameter_parsers import (
+    amount,
+    brackets,
+    credit,
+    parser,
+    rate,
+    registry,
+)
 from app.adapters.outbound.parameter_parsers.parser import ParameterParser
 
-__all__ = ["ParameterParser", "brackets", "credit", "parser", "rate", "registry"]
+__all__ = ["ParameterParser", "amount", "brackets", "credit", "parser", "rate", "registry"]
