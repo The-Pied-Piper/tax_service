@@ -14,6 +14,7 @@ from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.capped_amount import CappedAmount
 from app.domain.capabilities.contribution_tier import TieredContribution
 from app.domain.capabilities.credit_amount import CreditAmount
+from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
@@ -37,7 +38,9 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
+    RRSP_CONTRIBUTIONS,
     RRSP_DEDUCTION,
+    RRSP_DEDUCTION_LIMIT,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
     TOTAL_INCOME,
@@ -75,7 +78,8 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
         {
             "ca/employment_income",
             "ca/capital_gain",
-            "ca/rrsp_deduction",
+            "ca/rrsp_contributions",
+            "ca/rrsp_deduction_limit",
             "ca/union_dues",
         }
     )
@@ -140,6 +144,19 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
                 )
             },
             produces={"output": "ca/cpp_enhanced_contributions"},
+        ),
+        # Schedule 7 line 20 "Enter whichever is less: amount from line 10 or line 19. Enter this
+        # amount on line 20800 of your return.": with no unused contributions (line 1), no HBP or
+        # LLP repayments (line 9), no employer PRPP contributions (line 12) and no transfers
+        # (line 15), line 10 is the contributions, line 13 the limit and line 16 the
+        # contributions; line 17 is the lesser of lines 13 and 16, deducted in full on line 18,
+        # so line 19 is line 17, and line 20 is the lesser of the contributions and the limit.
+        # In line 20's order: the contributions (line 10), then the limit, which bounds line 19.
+        CapabilitySelection(
+            name="core/lesser_of",
+            params={},
+            consumes={"amounts": ("ca/rrsp_contributions", "ca/rrsp_deduction_limit")},
+            produces={"output": "ca/rrsp_deduction"},
         ),
         # T1 line 23300: the deductions in the form's line order (20800, 21200, 22215).
         CapabilitySelection(
@@ -279,7 +296,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca-on/ontario_tax_with_surtax"},
         ),
     }
-    assert len(found.capabilities) == 24
+    assert len(found.capabilities) == 25
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -289,7 +306,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 24
+    assert len(composition.order) == 25
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -317,6 +334,11 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             Sum,
             frozenset({EMPLOYMENT_INCOME, TAXABLE_CAPITAL_GAINS}),
             frozenset({TOTAL_INCOME}),
+        ),
+        (
+            LesserOf,
+            frozenset({RRSP_CONTRIBUTIONS, RRSP_DEDUCTION_LIMIT}),
+            frozenset({RRSP_DEDUCTION}),
         ),
         (
             Sum,
