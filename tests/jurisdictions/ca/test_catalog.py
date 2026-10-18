@@ -87,13 +87,13 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/total_income") is TOTAL_INCOME
     assert registry.get("ca/rrsp_deduction") is RRSP_DEDUCTION
     assert registry.get("ca/union_dues") is UNION_DUES
+    assert registry.get("ca/cpp_enhanced_contributions") is CPP_ENHANCED_CONTRIBUTIONS
     assert registry.get("ca/deductions_from_total_income") is DEDUCTIONS_FROM_TOTAL_INCOME
     assert registry.get("ca/net_income") is NET_INCOME
     assert registry.get("ca/deductions_from_net_income") is DEDUCTIONS_FROM_NET_INCOME
     assert registry.get("ca/basic_personal_amount") is BASIC_PERSONAL_AMOUNT
     assert registry.get("ca/non_refundable_credit_amounts") is NON_REFUNDABLE_CREDIT_AMOUNTS
     assert registry.get("ca/cpp_base_contributions") is CPP_BASE_CONTRIBUTIONS
-    assert registry.get("ca/cpp_enhanced_contributions") is CPP_ENHANCED_CONTRIBUTIONS
     assert registry.get("ca/ei_premiums") is EI_PREMIUMS
 
 
@@ -112,13 +112,13 @@ def test_catalog_kinds_are_money() -> None:
         TOTAL_INCOME,
         RRSP_DEDUCTION,
         UNION_DUES,
+        CPP_ENHANCED_CONTRIBUTIONS,
         DEDUCTIONS_FROM_TOTAL_INCOME,
         NET_INCOME,
         DEDUCTIONS_FROM_NET_INCOME,
         BASIC_PERSONAL_AMOUNT,
         NON_REFUNDABLE_CREDIT_AMOUNTS,
         CPP_BASE_CONTRIBUTIONS,
-        CPP_ENHANCED_CONTRIBUTIONS,
         EI_PREMIUMS,
     ):
         assert kind.value_type is Decimal, kind.identifier

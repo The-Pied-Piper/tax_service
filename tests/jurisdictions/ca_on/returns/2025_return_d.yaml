@@ -1,13 +1,14 @@
-# Return D: a 2025 Ontario resident whose employment income is inside the second
-# additional CPP band ($71,300 to $81,200), so CPP2 is exercised below its maximum, while
-# the base and first additional CPP contributions and the EI premiums are at their printed
-# maximums. Computed from employment income to total income, less the enhanced CPP
-# contributions to net income, less the (empty) deductions from net income to taxable
-# income, and through each form's total of non-refundable credit amounts (its basic
-# personal amount, the base CPP contributions and the EI premiums), credited once at the
-# form's credit rate, to the tax after credits. There is no capital gain, RRSP deduction or
-# union dues. Not yet computed, so not in this file: the Canada employment amount, the
-# Ontario surtax, tax reduction and health premium, and the balance owing.
+# Return D: a 2025 Ontario resident whose employment income is inside the second additional
+# CPP band ($71,300 to $81,200), so CPP2 is exercised below its maximum, while the base and
+# first additional CPP contributions and the EI premiums are at their printed maximums.
+# Computed from employment income to total income, less the enhanced CPP contributions to
+# net income, less the (empty) deductions from net income to taxable income, and through
+# each form's total of non-refundable credit amounts (its basic personal amount, the base
+# CPP contributions and the EI premiums), credited once at the form's credit rate, to the
+# tax after credits. There is no capital gain, RRSP deduction or union dues. Not yet
+# computed, so not in this file: any deduction from net income, the social benefits
+# repayment, capital losses, the Canada employment amount, the Ontario surtax, tax reduction
+# and health premium, and the balance owing.
 # Amounts are quoted decimal strings, never floats. Every output the CA-ON manifest
 # declares must appear under `expected`; intermediate lines may be listed and are then
 # checked too.
@@ -24,14 +25,26 @@ description: >-
   additional 4% x (75,000 - 71,300) = $148.00, together $826.00. No RRSP deduction (line
   20800) and no union dues (line 21200), so total deductions (line 23300) are the enhanced
   CPP contributions of $826.00 and net income (line 23600) is $74,174.00. There are no
-  deductions from net income, so taxable income (line 26000) is $74,174.00, in the second
-  federal and Ontario brackets. The non-refundable credit amounts are the basic personal
-  amount (federal line 30000 $16,129, since net income is $177,882 or less; Ontario ON428
-  line 58040 $12,747), the base CPP contributions and the EI premiums: line 33500 of
+  deductions from net income (lines 24400 to 25600), so their total (line 25700) is $0 and
+  taxable income (line 26000), derived as net income less that total, is $74,174.00, in the
+  second federal and Ontario brackets. The non-refundable credit amounts are the basic
+  personal amount (federal line 30000 $16,129, since net income is $177,882 or less; Ontario
+  ON428 line 58040 $12,747), the base CPP contributions and the EI premiums: line 33500 of
   $20,562.58 and ON428 line 58800 of $17,180.58. The rate is applied once to each total:
-  14.5% federally (line 33800, here also line 35000) and 5.05% for Ontario (ON428 line
-  58840, here also line 61500). No amounts are rounded.
+  14.5% federally (line 33800, here also the total federal non-refundable tax credits, line
+  35000) and 5.05% for Ontario (ON428 line 58840, here also the Ontario non-refundable tax
+  credits, line 61500). No amounts are rounded.
 sources:
+  - >-
+    CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
+    rate 50%"; line 24 "Line 22 multiplied by the percentage from line 23"; line 26 (line
+    19900) "If positive, enter the result on line 12700 of your return". There is no capital
+    gain, so taxable capital gains are 0 times 50% = 0, with no rounding stated.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s3/5000-s3-25e.txt
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s3/5000-s3-25e.pdf
+  - >-
+    Total income (line 15000) is employment income (line 10100) plus taxable capital gains
+    (line 12700), the only income lines on this return: 75,000 + 0 = 75,000.
   - >-
     CRA, "CPP contribution rates, maximums and exemptions", 2025 row: maximum annual
     pensionable earnings $71,300; basic exemption $3,500; employee rate 5.95%; maximum
@@ -42,18 +55,18 @@ sources:
   - https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/payroll/calculating-deductions/making-deductions/second-additional-cpp-contribution-rates-maximums.html
   - >-
     CRA, "T1-2025 Schedule 8 Canada Pension Plan Contributions and Overpayment" (form
-    5000-S8), Part 3 (employment income): line 11 "multiplied by 4.95% (maximum
-    $3,356.10)" (base contributions); line 12 "multiplied by 1% (maximum $678.00)" (first
-    additional); line 22 "multiplied by 4% (maximum $396.00)" (second additional, CPP2);
-    Part 3a line 25 "Enter this amount (in dollars and cents) on line 30800 of your return
-    and line 58240 of your Form 428." (the base contributions); Part 3a line 28 "Enter this
-    amount (in dollars and cents) on line 22215 of your return." (the first and second
-    additional contributions together). Employment income of 75,000 is above the $71,300
-    ceiling, so the pensionable earnings above the basic exemption are capped at 71,300 -
-    3,500 = 67,800: base 67,800 x 4.95% = 3,356.10 (the maximum); first additional 67,800 x
-    1% = 678.00 (the maximum). The earnings between the two ceilings are 75,000 - 71,300 =
-    3,700 (below 81,200 - 71,300 = 9,900), so the second additional is 3,700 x 4% = 148.00
-    (below the 396.00 maximum); line 22215 is 678.00 + 148.00 = 826.00.
+    5000-S8), Part 3 (employment income): line 11 "multiplied by 4.95% (maximum $3,356.10)"
+    (base contributions); line 12 "multiplied by 1% (maximum $678.00)" (first additional);
+    line 22 "multiplied by 4% (maximum $396.00)" (second additional, CPP2); Part 3a line 25
+    "Enter this amount (in dollars and cents) on line 30800 of your return and line 58240 of
+    your Form 428." (the base contributions); Part 3a line 28 "Enter this amount (in dollars
+    and cents) on line 22215 of your return." (the first and second additional contributions
+    together). Employment income of 75,000 is above the $71,300 ceiling, so the pensionable
+    earnings above the basic exemption are capped at 71,300 - 3,500 = 67,800: base 67,800 x
+    4.95% = 3,356.10 (the maximum); first additional 67,800 x 1% = 678.00 (the maximum). The
+    earnings between the two ceilings are 75,000 - 71,300 = 3,700 (below 81,200 - 71,300 =
+    9,900), so the second additional is 3,700 x 4% = 148.00 (below the 396.00 maximum); line
+    22215 is 678.00 + 148.00 = 826.00.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s8/5000-s8-25e.txt
   - >-
     CRA, "EI premium rates and maximums", 2025 federal row: maximum annual insurable
@@ -62,62 +75,70 @@ sources:
     T1's printed maximum on line 31200.
   - https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/payroll/payroll-deductions-contributions/employment-insurance-ei/ei-premium-rates-maximums.html
   - >-
-    CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
-    rate 50%"; line 24 "Line 22 multiplied by the percentage from line 23". There is no
-    capital gain, so taxable capital gains are 0 x 50% = 0, and total income (line 15000)
-    is employment income plus taxable capital gains: 75,000 + 0 = 75,000.
-  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s3/5000-s3-25e.txt
-  - >-
     CRA, the 2025 T1 return (form 5000-R): line 36 (line 20800) "RRSP deduction (complete
     Schedule 7 and attach receipts)"; line 39 (line 21200) "Annual union, professional, or
     like dues (receipts and box 44 of all T4 slips)"; line 48 (line 22215) "Deduction for
     CPP or QPP enhanced contributions on employment income" "(maximum $1,074.00)"; line 53
-    (line 23300) "Add lines 35 to 52" (total deductions); line 56 (line 23600) "Line 54
-    minus line 55 (if negative, enter "0") Net income"; line 68 (line 25700) "Add lines 58
-    to 67"; line 69 "Line 57 minus line 68 (if negative, enter "0") Taxable income" (line
-    26000). Total deductions are 0 + 0 + 826.00 = 826.00; net income is 75,000 - 826.00 =
-    74,174.00; there are no deductions from net income, so line 25700 is 0 and taxable
-    income is 74,174.00 - 0 = 74,174.00.
+    (line 23300) "Add lines 35 to 52" (total deductions); line 54 (line 23400) "Line 34
+    minus line 53 (if negative, show in brackets) Net income before adjustments"; line 56
+    (line 23600) "Line 54 minus line 55 (if negative, enter "0") Net income". There is no
+    RRSP deduction and no union dues, so the enhanced CPP contributions are the only
+    deduction: total deductions are 0 + 0 + 826.00 = 826.00; line 55 (line 23500, social
+    benefits repayment) is not modelled, so net income is total income less total
+    deductions, not below zero: 75,000 - 826.00 = 74,174.00.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.pdf
   - >-
-    The 2025 federal brackets (this repository's ca/brackets 2025 dataset, T1 Step 5 Part A
-    lines 70-76, sourced from the pages that dataset lists, the first two of which follow, with no rounding stated): 14.5% from 0 to
-    57,375 and 20.5% from 57,375 to 114,750. On taxable income of 74,174.00: 57,375 x 14.5%
-    = 8,319.375, plus (74,174.00 - 57,375 = 16,799.00) x 20.5% = 3,443.795, so federal basic
-    tax is 8,319.375 + 3,443.795 = 11,763.17.
-  - https://www.canada.ca/en/revenue-agency/services/tax/individuals/tax-rates-brackets/last-year.html
-  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-r/5006-r-25e.txt
+    CRA, the 2025 T1 return (form 5000-R): line 57 "Enter the amount from line 56 of the
+    previous page" (net income); line 68 (line 25700) "Add lines 58 to 67" (the deductions
+    from net income, lines 58 to 67 (lines 24400 to 25600)); line 69 "Line 57 minus line 68
+    (if negative, enter "0") Taxable income" (line 26000, as Step 5 refers to it). There are
+    no deductions from net income on this return, so line 68 is 0 and taxable income is net
+    income less it, not below zero: 74,174.00 - 0 = 74,174.00.
   - >-
-    The 2025 Ontario brackets (this repository's ca-on/brackets 2025 dataset, Form ON428
-    Part A lines 2-8, sourced from the ON428 text listed after the ON428 credit lines below, with no rounding stated): 5.05%
-    from 0 to 52,886 and 9.15% from 52,886 to 105,775. On taxable income of 74,174.00:
-    52,886 x 5.05% = 2,670.743, plus (74,174.00 - 52,886 = 21,288.00) x 9.15% = 1,947.852,
-    so Ontario basic tax is 2,670.743 + 1,947.852 = 4,618.595.
-  - >-
-    CRA, the 2025 T1 return (form 5000-R): line 77 (line 30000) "If the amount on line
-    23600 is $177,882 or less, enter $16,129. Otherwise, use the Federal Worksheet to
-    calculate the amount to enter. (maximum $16,129)"; line 86 (line 30800) "through
-    employment income" (base CPP or QPP contributions); line 88 (line 31200) "through
-    employment (boxes 18 and 55 of all T4 slips) (maximum $1,077.48)"; line 113 (line
-    33500) "Line 106 plus line 112"; line 114 "Federal non-refundable tax credit rate
-    14.5%"; line 115 (line 33800) "Line 113 multiplied by the percentage from line 114";
-    line 118 (line 35000) "Add lines 115 to 117. Total federal non-refundable tax credits".
-    Net income of 74,174.00 is 177,882 or less, so line 30000 is 16,129; line 33500 is
-    16,129 + 3,356.10 + 1,077.48 = 20,562.58, and line 33800 is 20,562.58 x 14.5% =
-    2,981.5741, with no rounding stated. Lines 116 and 117 are not modelled, so line 35000
-    is that same 2,981.5741, and the federal tax after credits is 11,763.17 - 2,981.5741 =
-    8,781.5959.
+    CRA, the 2025 T1 return (form 5000-R): line 77 (line 30000) "If the amount on line 23600
+    is $177,882 or less, enter $16,129. Otherwise, use the Federal Worksheet to calculate
+    the amount to enter. (maximum $16,129)"; line 86 (line 30800) "through employment
+    income" (base CPP or QPP contributions); line 88 (line 31200) "through employment (boxes
+    18 and 55 of all T4 slips) (maximum $1,077.48)"; line 113 (line 33500) "Line 106 plus
+    line 112"; line 114 "Federal non-refundable tax credit rate 14.5%"; line 115 (line
+    33800) "Line 113 multiplied by the percentage from line 114"; line 118 (line 35000) "Add
+    lines 115 to 117. Total federal non-refundable tax credits". Net income of 74,174.00 is
+    177,882 or less, so line 30000 is 16,129. With the base CPP contributions and the EI
+    premiums, the credit amounts modelled, line 33500 is 16,129 + 3,356.10 + 1,077.48 =
+    20,562.58, and line 33800 is 20,562.58 x 14.5% = 2,981.5741, with no rounding stated.
+    Lines 116 and 117 are not modelled, so line 35000 is that same 2,981.5741.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - >-
     CRA, the 2025 ON428 (form 5006-C): line 9 (line 58040) "Basic personal amount Claim
     $12,747"; line 19 (line 58240) "Amount from line 30800 of your return"; line 21 (line
     58300) "Amount from line 31200 of your return"; line 44 (line 58800) "Line 35 plus line
     43"; line 45 "Ontario non-refundable tax credit rate 5.05%"; line 46 (line 58840) "Line
     44 multiplied by the percentage from line 45"; line 50 (line 61500) "Line 46 plus line
-    49 Enter this amount on line 52. Ontario non-refundable tax credits". Line 58800 is
-    12,747 + 3,356.10 + 1,077.48 = 17,180.58, and line 58840 is 17,180.58 x 5.05% =
-    867.61929, with no rounding stated; line 49 is not modelled, so line 61500 is that same
-    867.61929, and the Ontario tax after credits is 4,618.595 - 867.61929 = 3,750.97571.
+    49 Enter this amount on line 52. Ontario non-refundable tax credits". With the federal
+    base CPP contributions and EI premiums, line 58800 is 12,747 + 3,356.10 + 1,077.48 =
+    17,180.58, and line 58840 is 17,180.58 x 5.05% = 867.61929, with no rounding stated;
+    line 49 is not modelled, so line 61500 is that same 867.61929.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
+  - >-
+    The other lines are the 2025 federal and Ontario brackets and those credits applied
+    without rounding. The federal brackets are those of the 2025 T1 return for Ontario
+    (form 5006-R), Step 5 Part A lines 70 to 76, as CRA publishes them; the lowest rate of
+    14.5% is the full-year blend of the cut from 15% to 14% on July 1, 2025, per Finance
+    Canada's announcement: 14.5% from 0 to 57,375 and 20.5% from 57,375 to 114,750, so
+    taxable income of 74,174.00 gives 57,375 x 14.5% = 8,319.375 plus (74,174.00 - 57,375
+    = 16,799.00) x 20.5% = 3,443.795, federal basic tax of 8,319.375 + 3,443.795 =
+    11,763.17, less the 2,981.5741 credit is 8,781.5959. The Ontario brackets are those of
+    the 2025 ON428 (form 5006-C), Part A lines 2 to 8, as CRA and the Ontario Data
+    Catalogue publish them: 5.05% from 0 to 52,886 and 9.15% from 52,886 to 105,775, so
+    74,174.00 gives 52,886 x 5.05% = 2,670.743 plus (74,174.00 - 52,886 = 21,288.00) x
+    9.15% = 1,947.852, Ontario basic tax of 2,670.743 + 1,947.852 = 4,618.595, less the
+    867.61929 credit is 3,750.97571.
+  - https://www.canada.ca/en/revenue-agency/services/tax/individuals/tax-rates-brackets/last-year.html
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-r/5006-r-25e.txt
+  - https://www.canada.ca/en/department-finance/news/2025/05/delivering-a-middle-class-tax-cut.html
+  - https://data.ontario.ca/en/dataset/personal-income-tax-rates-and-credits/resource/60f84727-7e12-4fd4-ba06-30955d31b2ae
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.pdf
 inputs:
   ca/employment_income: "75000"
   ca/capital_gain: "0"

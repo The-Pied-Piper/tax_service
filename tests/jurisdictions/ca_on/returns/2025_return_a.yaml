@@ -20,20 +20,20 @@ description: >-
   (line 30800, ON428 line 58240) of $3,356.10, enhanced CPP contributions (line 22215) of
   $1,074.00 ($678.00 first additional plus $396.00 second additional), and EI premiums
   (line 31200, ON428 line 58300) of $1,077.48. The deductions from total income modelled
-  so far are an RRSP deduction (line 20800) of $1,926, union dues (line 21200) of $2,000
-  and the enhanced CPP contributions of $1,074.00. The RRSP deduction is $1,926, not the
-  $3,000 claimed before the enhanced CPP deduction was modelled, so that net income and
-  taxable income stay at $115,000 (3,000 - 1,074 = 1,926, the milestone's rule): total
-  deductions (line 23300) of $5,000 and net income (line 23600) of $115,000. There are no
-  deductions from net income (lines 24400 to 25600), so their total (line 25700) is $0 and
-  taxable income (line 26000), derived as net income less that total, is $115,000, Maria's
-  figure in CRA's worked example. The non-refundable credit amounts modelled so far are
-  the basic personal amounts, federal (line 30000) $16,129, since net income is $177,882
-  or less, and Ontario (ON428 line 58040) $12,747, with the base CPP contributions and EI
-  premiums on both forms: line 33500 of $20,562.58 and ON428 line 58800 of $17,180.58. The
-  rate is applied once to each total: 14.5% federally (line 33800, here also the total
-  federal non-refundable tax credits, line 35000) and 5.05% for Ontario (ON428 line 58840,
-  here also the Ontario non-refundable tax credits, line 61500). No amounts are rounded.
+  so far are an RRSP deduction (line 20800) of $1,926 claimed, union dues (line 21200) of
+  $2,000 and the enhanced CPP contributions of $1,074.00: with the enhanced CPP deduction,
+  total deductions (line 23300) come to $5,000 (1,926 + 2,000 + 1,074.00) and net income
+  (line 23600) to $115,000 (120,000 - 5,000), the taxable income of CRA's worked example.
+  There are no deductions from net income (lines 24400 to 25600), so their total (line
+  25700) is $0 and taxable income (line 26000), derived as net income less that total, is
+  $115,000, Maria's figure in that example. The non-refundable credit amounts modelled so
+  far are the basic personal amounts, federal (line 30000) $16,129, since net income is
+  $177,882 or less, and Ontario (ON428 line 58040) $12,747, with the base CPP
+  contributions and EI premiums on both forms: line 33500 of $20,562.58 and ON428 line
+  58800 of $17,180.58. The rate is applied once to each total: 14.5% federally (line
+  33800, here also the total federal non-refundable tax credits, line 35000) and 5.05% for
+  Ontario (ON428 line 58840, here also the Ontario non-refundable tax credits, line
+  61500). No amounts are rounded.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -82,12 +82,11 @@ sources:
     minus line 53 (if negative, show in brackets) Net income before adjustments"; line 56
     (line 23600) "Line 54 minus line 55 (if negative, enter "0") Net income". The RRSP
     deduction, union dues and the enhanced CPP contributions are the only deductions
-    modelled so far. The RRSP deduction is 1,926: the milestone fixes taxable income at
-    115,000 (CRA's worked example) and adjusts the RRSP figure for the enhanced CPP
-    deduction, so the 3,000 claimed before becomes 3,000 - 1,074.00 = 1,926. Total
-    deductions are 1,926 + 2,000 + 1,074.00 = 5,000.00; line 55 (line 23500, social
+    modelled so far. The RRSP deduction claimed is 1,926; with the enhanced CPP deduction,
+    total deductions are 1,926 + 2,000 + 1,074.00 = 5,000.00; line 55 (line 23500, social
     benefits repayment) is not modelled, so net income is total income less total
-    deductions, not below zero: 120,000 - 5,000.00 = 115,000.00.
+    deductions, not below zero: 120,000 - 5,000.00 = 115,000.00, the taxable income of
+    CRA's worked example.
   - >-
     CRA, the 2025 T1 return (form 5000-R): line 57 "Enter the amount from line 56 of the
     previous page" (net income); line 68 (line 25700) "Add lines 58 to 67" (the deductions
