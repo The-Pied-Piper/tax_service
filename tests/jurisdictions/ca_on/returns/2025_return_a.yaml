@@ -1,14 +1,16 @@
 # Return A: a 2025 Ontario resident, computed from employment income and a capital gain to
-# total income, less an RRSP deduction, union dues and the enhanced CPP contributions to net
-# income, less the (empty) deductions from net income to taxable income, and through each
-# form's total of non-refundable credit amounts (its basic personal amount, the base CPP
-# contributions and the EI premiums, and on the T1 alone the Canada employment amount),
-# credited once at the form's credit rate to the form's non-refundable tax credits (T1 line
-# 35000, ON428 line 61500), taken off its basic tax, not below zero, to the tax after
-# credits, and on ON428 the surtax on the Ontario tax after credits, added to it to the
-# Ontario tax with surtax. Not yet computed, so not in this file: any deduction from net
-# income, the social benefits repayment, capital losses, the Ontario tax reduction and
-# health premium, and the balance owing.
+# total income; from employment income, by Schedule 8's three contribution tiers, to the
+# base, first additional and second additional CPP contributions, the last two together the
+# enhanced CPP contributions; less an RRSP deduction, union dues and the enhanced CPP
+# contributions to net income, less the (empty) deductions from net income to taxable
+# income, and through each form's total of non-refundable credit amounts (its basic personal
+# amount, the base CPP contributions and the EI premiums, and on the T1 alone the Canada
+# employment amount), credited once at the form's credit rate to the form's non-refundable
+# tax credits (T1 line 35000, ON428 line 61500), taken off its basic tax, not below zero, to
+# the tax after credits, and on ON428 the surtax on the Ontario tax after credits, added to
+# it to the Ontario tax with surtax. Not yet computed, so not in this file: any deduction
+# from net income, the social benefits repayment, capital losses, the Ontario tax reduction
+# and health premium, and the balance owing.
 # Amounts are quoted decimal strings, never floats. Every output the CA-ON manifest
 # declares must appear under `expected`; intermediate lines may be listed and are then
 # checked too.
@@ -17,31 +19,34 @@ tax_year: 2025
 description: >-
   An Ontario resident with 2025 employment income (T1 line 10100) of $110,000 and one
   capital gain of $20,000 (Schedule 3 line 21), of which 50% is taxable: taxable capital
-  gains (line 12700) of $10,000 and total income (line 15000) of $120,000. Employment income
-  is above both CPP earnings ceilings and the EI maximum insurable earnings, so the CPP
-  contributions and EI premiums are the printed 2025 maximums: base CPP contributions (line
-  30800, ON428 line 58240) of $3,356.10, enhanced CPP contributions (line 22215) of
-  $1,074.00 ($678.00 first additional plus $396.00 second additional), and EI premiums (line
-  31200, ON428 line 58300) of $1,077.48. The deductions from total income modelled so far
-  are an RRSP deduction (line 20800) of $1,926 claimed, union dues (line 21200) of $2,000
-  and the enhanced CPP contributions of $1,074.00: with the enhanced CPP deduction, total
-  deductions (line 23300) come to $5,000 (1,926 + 2,000 + 1,074.00) and net income (line
-  23600) to $115,000 (120,000 - 5,000), the taxable income of CRA's worked example. There
-  are no deductions from net income (lines 24400 to 25600), so their total (line 25700) is
-  $0 and taxable income (line 26000), derived as net income less that total, is $115,000,
-  Maria's figure in that example. The non-refundable credit amounts modelled so far are the
-  basic personal amounts, federal (line 30000) $16,129, since net income is $177,882 or
-  less, and Ontario (ON428 line 58040) $12,747, with the base CPP contributions and EI
-  premiums on both forms and, on the T1 alone, the Canada employment amount (line 31260) of
-  $1,471, the lesser of $1,471 and employment income (ON428 has no such line): line 33500 of
-  $22,033.58 and ON428 line 58800 of $17,180.58. The rate is applied once to each total:
-  14.5% federally (line 33800) and 5.05% for Ontario (ON428 line 58840). Each product is its
-  form's non-refundable tax credits: the total federal non-refundable
-  tax credits (line 35000) of $3,194.8691 and the Ontario non-refundable tax credits (ON428
-  line 61500) of $867.61929, each taken off its form's basic tax, not below zero. The
-  Ontario surtax (ON428 line 68) is 20% of the Ontario tax after credits over $5,710 plus
-  36% of it over $7,307: $392.395442 + $131.3917956 = $523.7872376, for an Ontario tax with
-  surtax (ON428 line 69) of $8,195.7644476. No amounts are rounded.
+  gains (line 12700) of $10,000 and total income (line 15000) of $120,000. The CPP
+  contributions are computed from employment income, which Schedule 8 line 1 reads as the
+  pensionable earnings when T4 box 26 is blank. Employment income is above both CPP earnings
+  ceilings and the EI maximum insurable earnings, so the CPP contributions and EI premiums
+  are the printed 2025 maximums: base CPP contributions (Schedule 8 line 11, T1 line 30800,
+  ON428 line 58240) of $3,356.10, enhanced CPP contributions (line 22215) of $1,074.00
+  ($678.00 first additional, Schedule 8 line 12, plus $396.00 second additional, line 22),
+  and EI premiums (line 31200, ON428 line 58300) of $1,077.48. The deductions from total
+  income modelled so far are an RRSP deduction (line 20800) of $1,926 claimed, union dues
+  (line 21200) of $2,000 and the enhanced CPP contributions of $1,074.00: with the enhanced
+  CPP deduction, total deductions (line 23300) come to $5,000 (1,926 + 2,000 + 1,074.00) and
+  net income (line 23600) to $115,000 (120,000 - 5,000), the taxable income of CRA's worked
+  example. There are no deductions from net income (lines 24400 to 25600), so their total
+  (line 25700) is $0 and taxable income (line 26000), derived as net income less that total,
+  is $115,000, Maria's figure in that example. The non-refundable credit amounts modelled so
+  far are the basic personal amounts, federal (line 30000) $16,129, since net income is
+  $177,882 or less, and Ontario (ON428 line 58040) $12,747, with the base CPP contributions
+  and EI premiums on both forms and, on the T1 alone, the Canada employment amount (line
+  31260) of $1,471, the lesser of $1,471 and employment income (ON428 has no such line):
+  line 33500 of $22,033.58 and ON428 line 58800 of $17,180.58. The rate is applied once to
+  each total: 14.5% federally (line 33800) and 5.05% for Ontario (ON428 line 58840). Each
+  product is its form's non-refundable tax credits: the total federal non-refundable tax
+  credits (line 35000) of $3,194.8691 and the Ontario non-refundable tax credits (ON428 line
+  61500) of $867.61929, each taken off its form's basic tax, not below zero. The Ontario
+  surtax (ON428 line 68) is 20% of the Ontario tax after credits over $5,710 plus 36% of it
+  over $7,307: $392.395442 + $131.3917956 = $523.7872376, for an Ontario tax with surtax
+  (ON428 line 69) of $8,195.7644476. The CPP contributions are rounded to the cent, which
+  changes none of them; no other amounts are rounded.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -63,17 +68,53 @@ sources:
   - https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/payroll/calculating-deductions/making-deductions/second-additional-cpp-contribution-rates-maximums.html
   - >-
     CRA, "T1-2025 Schedule 8 Canada Pension Plan Contributions and Overpayment" (form
-    5000-S8), Part 3 (employment income): line 11 "multiplied by 4.95% (maximum
-    $3,356.10)" (base contributions); line 12 "multiplied by 1% (maximum $678.00)" (first
-    additional); line 22 "multiplied by 4% (maximum $396.00)" (second additional, CPP2);
-    Part 3a line 25 "Enter this amount (in dollars and cents) on line 30800 of your return
-    and line 58240 of your Form 428." (the base contributions); Part 3a line 28 "Enter this
-    amount (in dollars and cents) on line 22215 of your return." (the first and second
-    additional contributions together). Employment income of 110,000 is above the $71,300
-    and $81,200 ceilings, so every part is at its maximum: base 4.95% x (71,300 - 3,500) =
-    3,356.10; first additional 1% x 67,800 = 678.00; second additional 4% x (81,200 -
-    71,300) = 396.00; line 22215 is 678.00 + 396.00 = 1,074.00, the T1's printed
-    "(maximum $1,074.00)" on that line.
+    5000-S8). Part 2, 12 months: line B "Your maximum pensionable earnings for 2025 (maximum
+    $71,300)"; line D "Your additional maximum pensionable earnings for 2025 (maximum
+    $81,200)"; line E "Your maximum basic exemption for 2025 (maximum $3,500)". Part 3: line
+    1 (50339) "Total CPP pensionable earnings from box 26 of all of your T4 slips (if box 26
+    is blank, enter the amount from box 14) (maximum $81,200 per slip)"; line 2 "Enter
+    whichever is less: amount from line D of Part 2 or line 1."; line 3 "Amount from line B
+    of Part 2"; line 4 "Line 2 minus line 3 (if negative, enter "0")"; line 5 "Line 2 minus
+    line 4 (if negative, enter "0")"; line 6 "Amount from line E of Part 2"; line 7 "Line 5
+    minus line 6 (if negative, enter "0") (maximum $67,800)"; line 11 "amount from line 7
+    multiplied by 4.95% (maximum $3,356.10)" (base contributions); line 12 "amount from line
+    7 multiplied by 1% (maximum $678.00)" (first additional); line 15 "Amount from line 11";
+    line 18 "Amount from line 12"; line 22 "amount from line 4 multiplied by 4% (maximum
+    $396.00)" (second additional, CPP2). Part 3b, "Amount from line 24 is "0" or negative":
+    line 30 "If line 16 is positive or "0", enter the amount from line 15 at line 30 and
+    line 36, and continue at line 37. If not, enter the amount from line 14 and continue at
+    line 31."; line 32 "... If not, enter "0"."; line 34 "Line 30 plus line 32"; line 35 "If
+    line 23 and line 33 are both positive, enter whichever is less. If not, enter "0".";
+    line 36 "Line 34 plus line 35. Enter this amount (in dollars and cents) on line 30800 of
+    your return and line 58240 of your Form 428."; line 37 (printed "Line 36" on the form,
+    the 37 that line 30 refers to) "If line 19 is positive or "0", enter the amount from
+    line 18 at line 37 and line 43, and continue at line 44."; line 44 "If line 23 is
+    positive or "0", enter the amount from line 22 on line 44 and line 47, and continue at
+    line 48."; line 48 "Line 43 plus line 47 Enter this amount (in dollars and cents) on
+    line 22215 of your return." Pensionable earnings are not modelled apart from employment
+    income: line 1 reads box 14 when box 26 is blank, so the contributions are computed from
+    employment income (T4 box 14). The contributions deducted on the slip are taken as the
+    required ones, so line 24 is 0 and Part 3b applies: with lines 16, 19 and 23 all 0, line
+    30 puts line 15 (the line 11 base) at line 36, lines 32 and 35 are 0, so line 36, and
+    line 30800, is line 11; line 18 (the line 12 first additional) goes to lines 37 and 43
+    and line 22 to lines 44 and 47, so line 48, and line 22215, is line 12 plus line 22.
+    Part 3a (line 25 "Enter the amount from line 15. Enter this amount (in dollars and
+    cents) on line 30800 of your return and line 58240 of your Form 428."; line 26 "Amount
+    from line 18"; line 27 "Amount from line 22 (if any)"; line 28 "Line 26 plus line 27
+    Enter this amount (in dollars and cents) on line 22215 of your return.") carries the
+    same sums when line 24 is positive. Lines 36 and 48 are "in dollars and cents", so each
+    contribution is rounded half-up to the cent, which changes none of the figures here.
+    Employment income of 110,000 is above both ceilings: line 1 is 81,200, the 110,000 of
+    employment income capped by "(maximum $81,200 per slip)"; line 2 is the lesser of 81,200
+    and 81,200, 81,200; line 4 is 81,200 - 71,300 = 9,900; line 5 is 81,200 - 9,900 =
+    71,300; line 7 is 71,300 - 3,500 = 67,800, its maximum. So every part is at its maximum:
+    base (line 11) 67,800 x 4.95% = 3,356.10; first additional (line 12) 67,800 x 1% =
+    678.00; second additional (line 22) 9,900 x 4% = 396.00; line 48, and so line 22215, is
+    678.00 + 396.00 = 1,074.00, the T1's printed "(maximum $1,074.00)" on that line. Not
+    triggered by this return, so not modelled: Part 2's monthly proration for fewer than 12
+    months; a T4 box 26 that differs from box 14; and contributions deducted on the slip
+    (lines 8 to 10 and 14 to 24) that differ from the required ones, with the overpayment on
+    line 29 and T1 line 44800.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s8/5000-s8-25e.txt
   - >-
     CRA, "EI premium rates and maximums", 2025 federal row: maximum annual insurable
@@ -170,12 +211,14 @@ inputs:
   ca/capital_gain: "20000"
   ca/rrsp_deduction: "1926"
   ca/union_dues: "2000"
-  ca/cpp_base_contributions: "3356.10"
-  ca/cpp_enhanced_contributions: "1074.00"
   ca/ei_premiums: "1077.48"
 expected:
   ca/taxable_capital_gains: "10000"
   ca/total_income: "120000"
+  ca/cpp_base_contributions: "3356.10"
+  ca/cpp_first_additional_contributions: "678.00"
+  ca/cpp_second_additional_contributions: "396.00"
+  ca/cpp_enhanced_contributions: "1074.00"
   ca/deductions_from_total_income: "5000"
   ca/net_income: "115000"
   ca/deductions_from_net_income: "0"

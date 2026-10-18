@@ -12,6 +12,7 @@ from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.capped_amount import CappedAmount
+from app.domain.capabilities.contribution_tier import TieredContribution
 from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
@@ -25,6 +26,8 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GAIN,
     CPP_BASE_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS,
+    CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     EI_PREMIUMS,
@@ -74,8 +77,6 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/capital_gain",
             "ca/rrsp_deduction",
             "ca/union_dues",
-            "ca/cpp_base_contributions",
-            "ca/cpp_enhanced_contributions",
             "ca/ei_premiums",
         }
     )
@@ -95,6 +96,41 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             params={},
             consumes={"parts": ("ca/employment_income", "ca/taxable_capital_gains")},
             produces={"output": "ca/total_income"},
+        ),
+        # Schedule 8 Part 3, each contribution on employment income: line 11 (base, 4.95% of the
+        # earnings between the $3,500 exemption and the $71,300 ceiling, lines 2 to 7), line 12
+        # (first additional, 1% of the same band) and line 22 (second additional, 4% of the
+        # earnings between the $71,300 and $81,200 ceilings, lines 2 to 4).
+        CapabilitySelection(
+            name="core/contribution_tier",
+            params={"tier": "ca/cpp_base_contribution"},
+            consumes={"earnings": "ca/employment_income"},
+            produces={"output": "ca/cpp_base_contributions"},
+        ),
+        CapabilitySelection(
+            name="core/contribution_tier",
+            params={"tier": "ca/cpp_first_additional_contribution"},
+            consumes={"earnings": "ca/employment_income"},
+            produces={"output": "ca/cpp_first_additional_contributions"},
+        ),
+        CapabilitySelection(
+            name="core/contribution_tier",
+            params={"tier": "ca/cpp_second_additional_contribution"},
+            consumes={"earnings": "ca/employment_income"},
+            produces={"output": "ca/cpp_second_additional_contributions"},
+        ),
+        # Schedule 8 Part 3a line 28 "Line 26 plus line 27": the first and second additional
+        # contributions together, the T1 line 22215 deduction.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/cpp_first_additional_contributions",
+                    "ca/cpp_second_additional_contributions",
+                )
+            },
+            produces={"output": "ca/cpp_enhanced_contributions"},
         ),
         # T1 line 23300: the deductions in the form's line order (20800, 21200, 22215).
         CapabilitySelection(
@@ -162,8 +198,8 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
         ),
         # T1 line 33500 (lines 30000, 30800, 31200, 31260) and ON428 line 58800 (lines 58040,
         # 58240, 58300), in the forms' line order. ON428 lines 58240 and 58300 are "Amount from
-        # line 30800 / 31200 of your return", so the Ontario sum reads the federal input kinds;
-        # it has no Canada employment amount.
+        # line 30800 / 31200 of your return", so the Ontario sum reads the federal kinds; it has
+        # no Canada employment amount.
         CapabilitySelection(
             name="core/sum",
             params={},
@@ -234,7 +270,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca-on/ontario_tax_with_surtax"},
         ),
     }
-    assert len(found.capabilities) == 19
+    assert len(found.capabilities) == 23
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -244,9 +280,29 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 19
+    assert len(composition.order) == 23
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
+        (
+            TieredContribution,
+            frozenset({EMPLOYMENT_INCOME}),
+            frozenset({CPP_BASE_CONTRIBUTIONS}),
+        ),
+        (
+            TieredContribution,
+            frozenset({EMPLOYMENT_INCOME}),
+            frozenset({CPP_FIRST_ADDITIONAL_CONTRIBUTIONS}),
+        ),
+        (
+            TieredContribution,
+            frozenset({EMPLOYMENT_INCOME}),
+            frozenset({CPP_SECOND_ADDITIONAL_CONTRIBUTIONS}),
+        ),
+        (
+            Sum,
+            frozenset({CPP_FIRST_ADDITIONAL_CONTRIBUTIONS, CPP_SECOND_ADDITIONAL_CONTRIBUTIONS}),
+            frozenset({CPP_ENHANCED_CONTRIBUTIONS}),
+        ),
         (
             Sum,
             frozenset({EMPLOYMENT_INCOME, TAXABLE_CAPITAL_GAINS}),

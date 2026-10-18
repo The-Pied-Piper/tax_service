@@ -22,6 +22,8 @@ from app.jurisdictions.ca.catalog import (
     CATALOG,
     CPP_BASE_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS,
+    CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     EI_PREMIUMS,
@@ -46,6 +48,8 @@ REGISTERED = frozenset(
         "ca/total_income",
         "ca/rrsp_deduction",
         "ca/union_dues",
+        "ca/cpp_first_additional_contributions",
+        "ca/cpp_second_additional_contributions",
         "ca/cpp_enhanced_contributions",
         "ca/deductions_from_total_income",
         "ca/net_income",
@@ -92,6 +96,13 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/rrsp_deduction") is RRSP_DEDUCTION
     assert registry.get("ca/union_dues") is UNION_DUES
     assert registry.get("ca/cpp_enhanced_contributions") is CPP_ENHANCED_CONTRIBUTIONS
+    assert (
+        registry.get("ca/cpp_first_additional_contributions") is CPP_FIRST_ADDITIONAL_CONTRIBUTIONS
+    )
+    assert (
+        registry.get("ca/cpp_second_additional_contributions")
+        is CPP_SECOND_ADDITIONAL_CONTRIBUTIONS
+    )
     assert registry.get("ca/deductions_from_total_income") is DEDUCTIONS_FROM_TOTAL_INCOME
     assert registry.get("ca/net_income") is NET_INCOME
     assert registry.get("ca/deductions_from_net_income") is DEDUCTIONS_FROM_NET_INCOME
@@ -118,6 +129,8 @@ def test_catalog_kinds_are_money() -> None:
         TOTAL_INCOME,
         RRSP_DEDUCTION,
         UNION_DUES,
+        CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+        CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
         CPP_ENHANCED_CONTRIBUTIONS,
         DEDUCTIONS_FROM_TOTAL_INCOME,
         NET_INCOME,

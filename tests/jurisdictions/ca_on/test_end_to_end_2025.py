@@ -2,11 +2,13 @@
 
 The service is the one the composition root builds (`build_tax_computation`): the real YAML
 sources over the jurisdiction packages and the shared registries. Return A's amounts (employment
-income 110000 and a capital gain of 20000 to total income 120000, less an RRSP deduction of 1926,
-union dues of 2000 and enhanced CPP contributions of 1074.00 to net income 115000, less no
+income 110000 and a capital gain of 20000 to total income 120000; the CPP contributions computed
+from employment income by Schedule 8's tiers, each at its maximum: base 3356.10, first additional
+678.00 and second additional 396.00, the enhanced contributions 1074.00; less an RRSP deduction of
+1926, union dues of 2000 and those enhanced contributions to net income 115000, less no
 deductions from net income to taxable income 115000, and from each basic personal amount (16129
-federal, 12747 Ontario) plus the base CPP contributions of 3356.10 and the EI premiums of 1077.48,
-and federally the Canada employment amount of 1471 (the lesser of employment income and 1471),
+federal, 12747 Ontario) plus the base CPP contributions and the EI premiums of 1077.48, and
+federally the Canada employment amount of 1471 (the lesser of employment income and 1471),
 through each total of credit amounts and each form's non-refundable tax credits (T1 line
 35000, ON428 line 61500) to each tax after credits, and the Ontario surtax on the Ontario tax
 after credits (ON428 lines 66 to 68) to the Ontario tax with surtax of line 69) are checked from
@@ -23,6 +25,7 @@ from app.application.services.tax_computation import TaxComputationService
 from app.domain.artifact import Artifact
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.capped_amount import CappedAmount
+from app.domain.capabilities.contribution_tier import TieredContribution
 from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
@@ -30,11 +33,13 @@ from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.parameters.amount import Amount
+from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.rate import Rate
-from app.domain.parameters.rounding import NO_ROUNDING
+from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.domain.trace import (
     CappedAmountLine,
+    ContributionTierLine,
     CreditAmountLine,
     RateAppliedLine,
     RoundedTotalLine,
@@ -49,6 +54,8 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GAIN,
     CPP_BASE_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS,
+    CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     EI_PREMIUMS,
@@ -75,6 +82,8 @@ from app.main import build_tax_computation
 
 D = Decimal
 CA_ON = JurisdictionCode("CA-ON")
+# Schedule 8 Part 3a lines 25 and 28: "(in dollars and cents)".
+CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
 def service() -> TaxComputationService:
@@ -86,8 +95,6 @@ def compute(
     capital_gain: str,
     rrsp_deduction: str,
     union_dues: str,
-    cpp_base_contributions: str,
-    cpp_enhanced_contributions: str,
     ei_premiums: str,
 ) -> Worksheet:
     return service().compute(
@@ -97,15 +104,13 @@ def compute(
         Artifact(CAPITAL_GAIN, D(capital_gain)),
         Artifact(RRSP_DEDUCTION, D(rrsp_deduction)),
         Artifact(UNION_DUES, D(union_dues)),
-        Artifact(CPP_BASE_CONTRIBUTIONS, D(cpp_base_contributions)),
-        Artifact(CPP_ENHANCED_CONTRIBUTIONS, D(cpp_enhanced_contributions)),
         Artifact(EI_PREMIUMS, D(ei_premiums)),
     )
 
 
 def return_a() -> Worksheet:
     """Return A's inputs, as in `returns/2025_return_a.yaml`."""
-    return compute("110000", "20000", "1926", "2000", "3356.10", "1074.00", "1077.48")
+    return compute("110000", "20000", "1926", "2000", "1077.48")
 
 
 def test_each_amount_is_produced_by_its_capability() -> None:
@@ -115,9 +120,22 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(CAPITAL_GAIN) is None
     assert worksheet.producer_of(RRSP_DEDUCTION) is None
     assert worksheet.producer_of(UNION_DUES) is None
-    assert worksheet.producer_of(CPP_BASE_CONTRIBUTIONS) is None
-    assert worksheet.producer_of(CPP_ENHANCED_CONTRIBUTIONS) is None
     assert worksheet.producer_of(EI_PREMIUMS) is None
+    assert isinstance(worksheet.producer_of(CPP_BASE_CONTRIBUTIONS), TieredContribution)
+    assert isinstance(worksheet.producer_of(CPP_FIRST_ADDITIONAL_CONTRIBUTIONS), TieredContribution)
+    assert isinstance(
+        worksheet.producer_of(CPP_SECOND_ADDITIONAL_CONTRIBUTIONS), TieredContribution
+    )
+    tiers = {
+        worksheet.producer_of(kind)
+        for kind in (
+            CPP_BASE_CONTRIBUTIONS,
+            CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+        )
+    }
+    assert len(tiers) == 3
+    assert isinstance(worksheet.producer_of(CPP_ENHANCED_CONTRIBUTIONS), Sum)
     assert isinstance(worksheet.producer_of(TAXABLE_CAPITAL_GAINS), ApplyRate)
     assert isinstance(worksheet.producer_of(TOTAL_INCOME), Sum)
     assert isinstance(worksheet.producer_of(DEDUCTIONS_FROM_TOTAL_INCOME), Sum)
@@ -185,6 +203,26 @@ def test_the_trace_explains_the_computation() -> None:
     total = position(
         "total_income: employment_income 110000 + taxable_capital_gains 10000 = 120000",
         "120000",
+    )
+    cpp_base = position(
+        "cpp_base_contributions: 4.95% of employment_income between 3500 and 71300 (67800), "
+        "at most 3356.1 (half-up to 0.01)",
+        "3356.10",
+    )
+    cpp_first = position(
+        "cpp_first_additional_contributions: 1% of employment_income between 3500 and 71300 "
+        "(67800), at most 678 (half-up to 0.01)",
+        "678.00",
+    )
+    cpp_second = position(
+        "cpp_second_additional_contributions: 4% of employment_income between 71300 and 81200 "
+        "(9900), at most 396 (half-up to 0.01)",
+        "396.00",
+    )
+    cpp_enhanced = position(
+        "cpp_enhanced_contributions: cpp_first_additional_contributions 678 "
+        "+ cpp_second_additional_contributions 396 = 1074",
+        "1074.00",
     )
     deductions = position(
         "deductions_from_total_income: rrsp_deduction 1926 + union_dues 2000 "
@@ -254,7 +292,10 @@ def test_the_trace_explains_the_computation() -> None:
         "8195.7644476",
     )
     assert taxable_gains < total < net
-    assert deductions < net
+    assert cpp_first < cpp_enhanced < deductions < net
+    assert cpp_second < cpp_enhanced
+    assert cpp_base < federal_amounts
+    assert cpp_base < ontario_amounts
     assert net < taxable
     assert net_deductions < taxable
     assert taxable < federal_basic < federal_after
@@ -275,6 +316,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     totals = {line.output: line for line in trace if isinstance(line, RoundedTotalLine)}
     amounts = {line.output: line for line in trace if isinstance(line, CreditAmountLine)}
     capped = {line.output: line for line in trace if isinstance(line, CappedAmountLine)}
+    tiers = {line.output: line for line in trace if isinstance(line, ContributionTierLine)}
     surcharged = [line for line in trace if isinstance(line, SurchargeTierLine)]
 
     # The rate is applied once, to each form's total of credit amounts (T1 line 33800, ON428
@@ -305,6 +347,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             TOTAL_INCOME,
             ((EMPLOYMENT_INCOME, D("110000")), (TAXABLE_CAPITAL_GAINS, D("10000"))),
             D("120000"),
+        ),
+        # Schedule 8 Part 3a line 28 "Line 26 plus line 27", to T1 line 22215.
+        CPP_ENHANCED_CONTRIBUTIONS: SumLine(
+            CPP_ENHANCED_CONTRIBUTIONS,
+            (
+                (CPP_FIRST_ADDITIONAL_CONTRIBUTIONS, D("678.00")),
+                (CPP_SECOND_ADDITIONAL_CONTRIBUTIONS, D("396.00")),
+            ),
+            D("1074.00"),
         ),
         DEDUCTIONS_FROM_TOTAL_INCOME: SumLine(
             DEDUCTIONS_FROM_TOTAL_INCOME,
@@ -363,6 +414,37 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             NO_ROUNDING,
             D("1471"),
         )
+    }
+    # Schedule 8 Part 3 lines 11, 12 and 22: employment income of 110000 is above both
+    # ceilings, so each band is full and each contribution is its maximum.
+    assert tiers == {
+        CPP_BASE_CONTRIBUTIONS: ContributionTierLine(
+            CPP_BASE_CONTRIBUTIONS,
+            EMPLOYMENT_INCOME,
+            D("110000"),
+            ContributionTier(Rate(D("0.0495")), D("3500"), D("71300"), D("3356.10")),
+            CENT,
+            D("67800"),
+            D("3356.10"),
+        ),
+        CPP_FIRST_ADDITIONAL_CONTRIBUTIONS: ContributionTierLine(
+            CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            EMPLOYMENT_INCOME,
+            D("110000"),
+            ContributionTier(Rate(D("0.01")), D("3500"), D("71300"), D("678.00")),
+            CENT,
+            D("67800"),
+            D("678.00"),
+        ),
+        CPP_SECOND_ADDITIONAL_CONTRIBUTIONS: ContributionTierLine(
+            CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            EMPLOYMENT_INCOME,
+            D("110000"),
+            ContributionTier(Rate(D("0.04")), D("71300"), D("81200"), D("396.00")),
+            CENT,
+            D("9900"),
+            D("396.00"),
+        ),
     }
     # ON428 line 66 "(Line 65 minus $5,710) multiplied by 20% (if negative, enter "0")" and line
     # 67 "(Line 65 minus $7,307) multiplied by 36% (if negative, enter "0")", in that order, on
@@ -434,10 +516,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 19
+    assert len(order) == 23
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
+    assert position[CPP_FIRST_ADDITIONAL_CONTRIBUTIONS] < position[CPP_ENHANCED_CONTRIBUTIONS]
+    assert position[CPP_SECOND_ADDITIONAL_CONTRIBUTIONS] < position[CPP_ENHANCED_CONTRIBUTIONS]
+    assert position[CPP_ENHANCED_CONTRIBUTIONS] < position[DEDUCTIONS_FROM_TOTAL_INCOME]
+    assert position[CPP_BASE_CONTRIBUTIONS] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    assert position[CPP_BASE_CONTRIBUTIONS] < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert position[NET_INCOME] < position[TAXABLE_INCOME]
     assert position[DEDUCTIONS_FROM_NET_INCOME] < position[TAXABLE_INCOME]
     assert position[TAXABLE_INCOME] < position[FEDERAL_BASIC_TAX]
@@ -462,12 +549,17 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
 
 
 def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
-    # Employment income of 10000, with CPP and EI from Schedule 8's and the EI table's
-    # arithmetic: base 4.95% x (10000 - 3500) = 321.75, enhanced 1% x 6500 = 65.00,
-    # EI 1.64% x 10000 = 164.00; the Canada employment amount is the lesser of 10000 and 1471.
-    worksheet = compute("10000", "0", "0", "0", "321.75", "65.00", "164.00")
+    # Employment income of 10000, with the CPP contributions computed by Schedule 8's tiers:
+    # base 4.95% x (10000 - 3500) = 321.75, first additional 1% x 6500 = 65.00, no second
+    # additional, so enhanced 65.00; EI from the EI table's arithmetic, 1.64% x 10000 = 164.00;
+    # the Canada employment amount is the lesser of 10000 and 1471.
+    worksheet = compute("10000", "0", "0", "0", "164.00")
 
     assert worksheet.get(TOTAL_INCOME).value == D("10000")
+    assert worksheet.get(CPP_BASE_CONTRIBUTIONS).value == D("321.75")
+    assert worksheet.get(CPP_FIRST_ADDITIONAL_CONTRIBUTIONS).value == D("65.00")
+    assert worksheet.get(CPP_SECOND_ADDITIONAL_CONTRIBUTIONS).value == D("0")
+    assert worksheet.get(CPP_ENHANCED_CONTRIBUTIONS).value == D("65.00")
     assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("65.00")
     assert worksheet.get(NET_INCOME).value == D("9935.00")
     assert worksheet.get(TAXABLE_INCOME).value == D("9935.00")

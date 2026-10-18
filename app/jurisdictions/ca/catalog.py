@@ -45,17 +45,42 @@ UNION_DUES = CATALOG.declare("union_dues", Decimal, non_negative=True)
 """Union dues, T1 line 21200 "Annual union, professional, or like dues (receipts and box 44 of all
 T4 slips)": the amount claimed, a starting amount."""
 
+CPP_FIRST_ADDITIONAL_CONTRIBUTIONS = CATALOG.declare(
+    "cpp_first_additional_contributions", Decimal, non_negative=True
+)
+"""First additional CPP contributions, Schedule 8 Part 3 line 12 "amount from line 7 multiplied
+by 1% (maximum $678.00)": the required contributions on the employment income between the basic
+exemption and the maximum pensionable earnings. Line 18 is "Amount from line 12"; Part 3b line 37
+"If line 19 is positive or "0", enter the amount from line 18 at line 37 and line 43, and continue
+at line 44." carries it into line 48 (Part 3a line 26 into line 28 when line 24 is positive).
+
+Line 7 is "Line 5 minus line 6 (if negative, enter "0") (maximum $67,800)", the same earnings
+as the base contributions'.
+"""
+
+CPP_SECOND_ADDITIONAL_CONTRIBUTIONS = CATALOG.declare(
+    "cpp_second_additional_contributions", Decimal, non_negative=True
+)
+"""Second additional CPP contributions, Schedule 8 Part 3 line 22 "amount from line 4 multiplied
+by 4% (maximum $396.00)": the required contributions on the employment income between the
+maximum and the additional maximum pensionable earnings. Part 3b line 44 "If line 23 is positive
+or "0", enter the amount from line 22 on line 44 and line 47, and continue at line 48." carries it
+into line 48 (Part 3a line 27 "Amount from line 22 (if any)" into line 28 when line 24 is
+positive).
+
+Line 4 is "Line 2 minus line 3 (if negative, enter "0")": the earnings, at most the additional
+maximum (line 2), less the maximum pensionable earnings (line 3).
+"""
+
 CPP_ENHANCED_CONTRIBUTIONS = CATALOG.declare(
     "cpp_enhanced_contributions", Decimal, non_negative=True
 )
-"""Enhanced CPP contributions, T1 line 22215 "Deduction for CPP or QPP enhanced contributions on
-employment income" "(maximum $1,074.00)": the amount claimed, a starting amount and a deduction
-from total income (not a credit).
+"""Enhanced CPP contributions, Schedule 8 Part 3b line 48 "Line 43 plus line 47 Enter this amount
+(in dollars and cents) on line 22215 of your return.": the first and second additional
+contributions together, the T1 line 22215 deduction from total income (not a credit).
 
-Schedule 8 Part 3a line 28 "Enter this amount (in dollars and cents) on line 22215 of your
-return." carries the first additional (Part 3 line 12 "multiplied by 1% (maximum $678.00)") and
-second additional (line 22 "multiplied by 4% (maximum $396.00)") contributions together. The
-contributions are not computed from earnings, so the claimed amount is an input.
+When line 24 is positive, Part 3a line 28 "Line 26 plus line 27 Enter this amount (in dollars and
+cents) on line 22215 of your return." carries the same sum.
 """
 
 DEDUCTIONS_FROM_TOTAL_INCOME = CATALOG.declare(
@@ -107,14 +132,22 @@ amount.
 """
 
 CPP_BASE_CONTRIBUTIONS = CATALOG.declare("cpp_base_contributions", Decimal, non_negative=True)
-"""Base CPP contributions, T1 line 30800 "through employment income": the amount claimed, a
-starting amount and a part of the total of the credit amounts on the T1 and, as ON428 line 19
-(line 58240) "Amount from line 30800 of your return", on ON428.
+"""Base CPP contributions, Schedule 8 Part 3 line 11 "amount from line 7 multiplied by 4.95%
+(maximum $3,356.10)": the required contributions on the employment income between the basic
+exemption and the maximum pensionable earnings, a part of the total of the credit amounts on the
+T1 and, as ON428 line 19 (line 58240) "Amount from line 30800 of your return", on ON428.
 
-Schedule 8 Part 3a line 25 "Enter this amount (in dollars and cents) on line 30800 of your return
-and line 58240 of your Form 428." carries the base contributions (Part 3 line 11 "multiplied by
-4.95% (maximum $3,356.10)"). The contributions are not computed from earnings, so the claimed
-amount is an input.
+Line 15 is "Amount from line 11"; Part 3b line 30 "If line 16 is positive or "0", enter the amount
+from line 15 at line 30 and line 36, and continue at line 37." and line 36 "Line 34 plus line 35.
+Enter this amount (in dollars and cents) on line 30800 of your return and line 58240 of your Form
+428." carry it to T1 line 30800 and ON428 line 58240, lines 32 and 35 being 0. When line 24 is
+positive, Part 3a line 25 "Enter the amount from line 15." carries the same amount.
+
+Line 1 (50339) is "Total CPP pensionable earnings from box 26 of all of your T4 slips (if box 26
+is blank, enter the amount from box 14)", so the three contributions read employment income.
+Not triggered by the returns modelled: Part 2's proration for fewer than 12 months, box 26
+differing from box 14, and the slips' deducted contributions differing from the required ones
+(so no overpayment on T1 line 44800).
 """
 
 EI_PREMIUMS = CATALOG.declare("ei_premiums", Decimal, non_negative=True)
