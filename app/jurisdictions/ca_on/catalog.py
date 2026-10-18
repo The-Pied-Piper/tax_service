@@ -25,7 +25,7 @@ amount claimed, the first part of the total of the Ontario credit amounts."""
 NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare("non_refundable_credit_amounts", Decimal)
 """Total of the Ontario non-refundable credit amounts, ON428 line 44 (line 58800) "Line 35 plus
 line 43": the sum of the credit amounts the rate is applied to once, here the basic personal
-amount alone."""
+amount, the base CPP contributions and the EI premiums."""
 
 ONTARIO_TAX_AFTER_CREDITS = CATALOG.declare("ontario_tax_after_credits", Decimal)
 """Ontario tax after non-refundable tax credits, not below zero: 2025 ON428 line 53."""

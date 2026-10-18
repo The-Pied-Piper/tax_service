@@ -81,7 +81,7 @@ sources:
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - >-
     The 2025 federal brackets (this repository's ca/brackets 2025 dataset, T1 Step 5 Part A
-    lines 70-76, sourced from the two pages below, with no rounding stated): 14.5% from 0 to
+    lines 70-76, sourced from the pages that dataset lists, the first two of which follow, with no rounding stated): 14.5% from 0 to
     57,375 and 20.5% from 57,375 to 114,750. On taxable income of 74,174.00: 57,375 x 14.5%
     = 8,319.375, plus (74,174.00 - 57,375 = 16,799.00) x 20.5% = 3,443.795, so federal basic
     tax is 8,319.375 + 3,443.795 = 11,763.17.
@@ -89,7 +89,7 @@ sources:
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-r/5006-r-25e.txt
   - >-
     The 2025 Ontario brackets (this repository's ca-on/brackets 2025 dataset, Form ON428
-    Part A lines 2-8, sourced from the ON428 page below, with no rounding stated): 5.05%
+    Part A lines 2-8, sourced from the ON428 text listed after the ON428 credit lines below, with no rounding stated): 5.05%
     from 0 to 52,886 and 9.15% from 52,886 to 105,775. On taxable income of 74,174.00:
     52,886 x 5.05% = 2,670.743, plus (74,174.00 - 52,886 = 21,288.00) x 9.15% = 1,947.852,
     so Ontario basic tax is 2,670.743 + 1,947.852 = 4,618.595.
