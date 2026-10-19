@@ -9,6 +9,33 @@ valid_from_tax_year: 2025
 inputs:
   - ca/employment_income
   - ca/capital_gain
+  - ca/other_employment_income
+  - ca/old_age_security
+  - ca/cpp_or_qpp_benefits
+  - ca/other_pensions_and_superannuation
+  - ca/elected_split_pension_amount
+  - ca/universal_child_care_benefit
+  - ca/ei_and_other_benefits
+  - ca/t3_investment_income
+  - ca/t5_investment_income
+  - ca/t5013_investment_income
+  - ca/investment_income_credited_not_received
+  - ca/tax_refund_interest
+  - ca/foreign_investment_income
+  - ca/investment_income_without_a_slip
+  - ca/investment_royalties
+  - ca/investment_income_reported_in_previous_years
+  - ca/net_partnership_income
+  - ca/rdsp_income
+  - ca/taxable_support_payments
+  - ca/rrsp_income
+  - ca/fhsa_income
+  - ca/other_fhsa_income
+  - ca/other_income
+  - ca/taxable_scholarships
+  - ca/workers_compensation_benefits
+  - ca/social_assistance_payments
+  - ca/net_federal_supplements
   - ca/unused_rrsp_contributions
   - ca/rrsp_contributions
   - ca/rrsp_deduction_limit
@@ -38,11 +65,68 @@ capabilities:
       base: ca/capital_gain
     produces:
       output: ca/taxable_capital_gains
+  # T1 Step 2 line 10 (12100) "Interest and other investment income (use Federal
+  # Worksheet)": the Federal Worksheet's "Line 12100 - Interest and other investment
+  # income" line 9 "Add lines 1 to 8.", in line order, then line 11 "Line 9 minus line
+  # 10. Enter this amount on line 12100 of your return." with line 10 "Interest and other
+  # investment income, included on line 9, received and reported in previous years".
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/t3_investment_income
+        - ca/t5_investment_income
+        - ca/t5013_investment_income
+        - ca/investment_income_credited_not_received
+        - ca/tax_refund_interest
+        - ca/foreign_investment_income
+        - ca/investment_income_without_a_slip
+        - ca/investment_royalties
+    produces:
+      output: ca/investment_income_before_prior_years
+  - name: core/subtract
+    consumes:
+      amount: ca/investment_income_before_prior_years
+      less: ca/investment_income_reported_in_previous_years
+    produces:
+      output: ca/interest_and_other_investment_income
+  # T1 line 32 and line 14700 "Add lines 29 to 31 (see line 25000 in Step 4).": workers'
+  # compensation benefits (14400), social assistance payments (14500) and net federal
+  # supplements paid (14600), in line order.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/workers_compensation_benefits
+        - ca/social_assistance_payments
+        - ca/net_federal_supplements
+    produces:
+      output: ca/income_support_benefits
+  # T1 line 33 and line 15000 "Line 28 plus line 32 Total income": every income line the
+  # return lists, in line order (lines 1 to 20, here with the taxable capital gains of
+  # line 14 and the taxable support payments of line 15, then line 32); dividends (lines
+  # 12000 and 12010), rental income (line 13) and self-employment income (lines 22 to 26)
+  # are not wired yet.
   - name: core/sum
     consumes:
       parts:
         - ca/employment_income
+        - ca/other_employment_income
+        - ca/old_age_security
+        - ca/cpp_or_qpp_benefits
+        - ca/other_pensions_and_superannuation
+        - ca/elected_split_pension_amount
+        - ca/universal_child_care_benefit
+        - ca/ei_and_other_benefits
+        - ca/interest_and_other_investment_income
+        - ca/net_partnership_income
+        - ca/rdsp_income
         - ca/taxable_capital_gains
+        - ca/taxable_support_payments
+        - ca/rrsp_income
+        - ca/fhsa_income
+        - ca/other_fhsa_income
+        - ca/other_income
+        - ca/taxable_scholarships
+        - ca/income_support_benefits
     produces:
       output: ca/total_income
   # Schedule 8 Part 3, each contribution on employment income: line 11 (base, 4.95% of the
