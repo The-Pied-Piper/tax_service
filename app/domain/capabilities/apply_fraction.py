@@ -1,16 +1,17 @@
 """Apply fraction: multiplies a money artifact by a fraction from a `fraction` dataset.
 
 For form lines such as "multiplied by two-thirds", whose fraction is not a finite decimal: the
-output is `rounding.apply(base × numerator / denominator)`, multiplied before it divides so the one
-division is the only inexact step, and the quotient is carried unrounded (the Decimal context's
-precision is its only limit). It is rounded only with the `fraction` dataset's rule, which defaults
-to no rounding.
+output is `rounding.apply(base × numerator / denominator)`, the division done as an exact fraction
+so nothing is rounded before the rule. It is rounded only with the `fraction` dataset's rule, which
+defaults to no rounding; under no rounding a quotient with no finite decimal expansion raises
+`decimal.Inexact`.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
 from decimal import Decimal
+from fractions import Fraction as ExactFraction
 from typing import Any, ClassVar
 
 from app.domain.artifact import Artifact, Money
@@ -39,8 +40,7 @@ class ApplyFraction(Capability):
     def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
         base = self._input(inputs, self._base).value
         fraction, rounding = self._fraction.values, self._fraction.rounding
-        # Multiplied first, so the division is the only inexact step; its quotient is unrounded.
-        result = rounding.apply(base * fraction.numerator / fraction.denominator)
+        result = rounding.apply(ExactFraction(base) * fraction.numerator / fraction.denominator)
         return CapabilityResult(
             outputs=(Artifact(self._output, result),),
             trace=(

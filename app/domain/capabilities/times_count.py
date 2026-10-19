@@ -2,9 +2,9 @@
 
 For an amount computed once and claimed for each of a counted number of persons, where the
 amount is itself an artifact (a dataset's per-unit amount is `core/per_unit_amount`): the output
-is `amount × count`, exact and with the amount's scale kept (the Decimal context's precision is
-its only limit); it has no dataset, so it never rounds, and no floor. A count of 0 gives a plain
-zero, without the amount's scale; a zero product is never a signed zero.
+is `amount × count`, exact and with the amount's scale kept (a product that needs more digits
+than the Decimal context holds raises); it has no dataset, so it never rounds, and no floor. A
+count of 0 gives a plain zero, without the amount's scale; a zero product is never a signed zero.
 """
 
 from __future__ import annotations

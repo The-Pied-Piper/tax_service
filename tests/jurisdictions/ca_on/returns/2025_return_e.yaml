@@ -383,20 +383,16 @@ sources:
     on this division."; "** If the BPAF has three or more digits after the decimal point,
     increase the second digit after the decimal point by one if the third digit is five or
     more, and drop the third digit. If the third digit after the decimal point is less than
-    five, drop the third digit." So the quotient is carried unrounded and the amount on line
+    five, drop the third digit." So the quotient is not rounded and the amount on line
     30000 is rounded half-up to the cent, once. Net income of 198,926.00 is more than
     177,882 and less than 253,414, so the calculation is completed: line 3 is 198,926.00;
-    line 5 is 198,926.00 - 177,882 = 21,044.00; line 7 is 21,044.00 / 75,532 =
-    0.27861039029815177673039241..., unrounded; line 9 is that times 1,591, which the engine
-    computes as 1,591 x 21,044.00 / 75,532 in one expression, multiplying before it divides
-    so that the division is its only inexact step: 33,481,004.00 / 75,532 =
-    443.2691309643594767780543346 (to the Decimal context's 28 significant digits); line 10
-    is 1,591 - 443.2691309643594767780543346 = 1,147.7308690356405232219456654, positive;
-    line 11 is 14,538 + 1,147.7308690356405232219456654 = 15,685.7308690356..., whose third
-    digit after the decimal point is 0, less than five, so it is dropped: 15,685.73. The
-    worksheet's own order, line 7's division before line 9's multiplication, gives the same
-    cent: 0.2786103902981517767303924165 x 1,591 = 443.2691309643594767780543347 (to 28
-    significant digits), and line 11 is again 15,685.73.
+    line 5 is 198,926.00 - 177,882 = 21,044.00; line 7 is 21,044.00 / 75,532, not rounded;
+    line 9 is that times 1,591, which the engine computes as the exact fraction
+    1,591 x 21,044.00 / 75,532 = 33,481,004 / 75,532 = 8,370,251 / 18,883
+    (443.26913096435947677805433..., a decimal that does not end); line 10 is 1,591 less
+    that fraction, positive; line 11 is 14,538 plus line 10, the exact fraction
+    15,685.73086903564052322194566..., rounded once: its third digit after the decimal
+    point is 0, less than five, so it is dropped: 15,685.73.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-d1/5000-d1-25e.txt
   - https://www.canada.ca/en/revenue-agency/services/forms-publications/payroll/payroll-deductions-t4127-payroll-deductions-formulas/t4127-jan-120th-edition-effective-january-1-2025/t4127-jan-payroll-deductions-formulas-computer-programs.html
   - >-

@@ -7,6 +7,7 @@ It never decides what runs next; ordering belongs to the composition (§5).
 
 from __future__ import annotations
 
+import decimal
 from collections.abc import Iterable
 from typing import Any, cast
 
@@ -49,13 +50,24 @@ class Worksheet:
     def apply(self, capability: Capability) -> None:
         """Compute `capability` from this worksheet and record its output artifacts.
 
-        Nothing is recorded unless the capability keeps its contract.
+        Nothing is recorded unless the capability keeps its contract, including exact arithmetic:
+        the capability runs under a `decimal` context that traps `Inexact`.
         """
         name = type(capability).__name__
         missing = capability.consumes - self._artifacts.keys()
         if missing:
             raise MissingArtifactError(f"{name} needs {self._labels(missing)}")
-        result = capability.compute(tuple(self._artifacts[k] for k in capability.consumes))
+        inputs = tuple(self._artifacts[k] for k in capability.consumes)
+        # Exact arithmetic only: a result that would lose digits raises. Rounding goes through
+        # a dataset's `RoundingRule`, which is the one place allowed to be inexact.
+        with decimal.localcontext() as context:
+            context.traps[decimal.Inexact] = True
+            try:
+                result = capability.compute(inputs)
+            except decimal.Inexact as error:
+                raise CapabilityContractError(
+                    f"{name} produced an inexact result: {error}"
+                ) from error
         self._check_artifacts(result.outputs)
         produced = [artifact.kind for artifact in result.outputs]
         if frozenset(produced) != capability.produces:

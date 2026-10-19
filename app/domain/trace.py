@@ -11,6 +11,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from decimal import Decimal
+from fractions import Fraction as ExactFraction
 
 from app.domain.artifact import ArtifactKind, Money
 from app.domain.parameters.amount import Amount
@@ -240,8 +241,8 @@ class TaperedAmountLine(TraceLine):
     below the base, rounded with `rounding`.
 
     `reduction` is the supplement's share for how far `base` (worth `base_amount`) sits above the
-    taper's threshold, recorded unrounded and before the floor at zero, so it can exceed the
-    supplement; a base at or below the threshold gets a zero reduction.
+    taper's threshold, recorded as an exact fraction and before the floor at zero, so it can
+    exceed the supplement; a base at or below the threshold gets a zero reduction.
     """
 
     output: Money
@@ -249,7 +250,7 @@ class TaperedAmountLine(TraceLine):
     base_amount: Decimal
     taper: Taper
     rounding: RoundingRule
-    reduction: Decimal
+    reduction: ExactFraction
     result: Decimal
 
     @property
@@ -324,8 +325,8 @@ class AtMostLine(TraceLine):
 class FractionAppliedLine(TraceLine):
     """The `result` produced as `output` by `base` (worth `base_amount`) × `fraction`, rounded.
 
-    Its own class, not a `RateAppliedLine`: a fraction is not a rate, and its quotient may be
-    unrounded.
+    Its own class, not a `RateAppliedLine`: a fraction is not a rate, and its amount may be
+    unrounded (a quotient with no finite decimal expansion is never recorded under no rounding).
     """
 
     output: Money

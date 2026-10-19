@@ -1,14 +1,15 @@
 """Unit tests for the ApplyFraction capability (`core/apply_fraction`), made-up kinds and values.
 
 Its slots: one parameter slot `fraction` (a `fraction` dataset), one consumed slot `base` and one
-produced slot `output`. The output is `rounding.apply(base × numerator / denominator)`, multiplied
-before it divides, so the one division is the only inexact step and the quotient is carried
-unrounded (the Decimal context's precision is its only limit), rounded only with the `fraction`
-dataset's rule (which defaults to no rounding); it records one `FractionAppliedLine`.
+produced slot `output`. The output is `rounding.apply(base × numerator / denominator)` with the
+division done as an exact `fractions.Fraction` and rounded once by the `fraction` dataset's rule:
+under `rounding: none` a quotient with no finite decimal expansion raises `decimal.Inexact`
+instead of being carried to 28 digits. It records one `FractionAppliedLine`.
 """
 
 from __future__ import annotations
 
+import decimal
 from collections.abc import Mapping
 from dataclasses import fields
 from decimal import Decimal
@@ -168,14 +169,41 @@ def test_produces_the_base_times_the_fraction() -> None:
     assert type(output.value) is Decimal
 
 
-def test_carries_an_inexact_quotient_unrounded_to_the_contexts_precision() -> None:
-    # 50000 × 2 / 3 = 33333.333... has no finite expansion: the quotient is carried to the Decimal
-    # context's 28 significant digits, unrounded by any rule. Dividing first (50000 / 3 × 2) or
-    # multiplying by a quotient (50000 × (2 / 3)) would end in ...334 instead.
-    output = compute(capability(), "50000")
+def test_an_inexact_quotient_without_a_rounding_rule_raises_inexact() -> None:
+    # 50000 × 2 / 3 = 33333.333... has no finite expansion. Under `rounding: none` it used to be
+    # carried to 28 digits (33333.33333333333333333333333), rounding no dataset asked for.
+    with pytest.raises(decimal.Inexact):
+        compute(capability(), "50000")
 
-    assert output == Artifact(PORTION, D("33333.33333333333333333333333"))
-    assert str(output.value) == "33333.33333333333333333333333"
+
+def test_an_inexact_quotient_is_inexact_whatever_the_base_scale() -> None:
+    with pytest.raises(decimal.Inexact):
+        compute(capability(), "50000.00")
+    with pytest.raises(decimal.Inexact):
+        compute(capability(fraction(1, 7)), "1")
+
+
+def test_divides_as_an_exact_fraction_so_a_long_base_keeps_every_digit() -> None:
+    # 3/3 of a 30-digit base: base × 3 would not fit the 28-digit context, the exact fraction does.
+    base = "1234567890123456789012345678.90"
+
+    assert compute(capability(fraction(3, 3, CENT)), base) == Artifact(PORTION, D(base))
+    assert str(compute(capability(fraction(3, 3, CENT)), base).value) == base
+
+
+def test_rounds_an_exact_quotient_once_half_up_to_the_cent() -> None:
+    # 42275 × 2 / 3 = 28183.333... rounds once, half-up, to 28183.33.
+    assert compute(capability(fraction(rounding=CENT)), "42275") == Artifact(PORTION, D("28183.33"))
+    # 5.5 × 2 / 3 = 3.666... half-up to 3.67.
+    assert compute(capability(fraction(rounding=CENT)), "5.5") == Artifact(PORTION, D("3.67"))
+
+
+def test_a_quotient_exactly_on_a_half_cent_is_rounded_by_the_rule_alone() -> None:
+    # 1.005 × 1 / 1 sits on the tie: half-up to 1.01, half-even to 1.00.
+    half_even = RoundTo(D("0.01"), RoundingMode.HALF_EVEN)
+
+    assert compute(capability(fraction(1, 1, CENT)), "1.005") == Artifact(PORTION, D("1.01"))
+    assert compute(capability(fraction(1, 1, half_even)), "1.005") == Artifact(PORTION, D("1.00"))
 
 
 def test_multiplies_before_it_divides_so_an_even_quotient_stays_exact() -> None:
@@ -219,9 +247,11 @@ def test_a_fraction_above_one_multiplies_up() -> None:
     assert compute(capability(fraction(3, 2)), "1000") == Artifact(PORTION, D("1500"))
 
 
-def test_four_sixths_and_two_thirds_give_equal_results() -> None:
-    # 4/6 is two-thirds; 1000 × 4 / 6 is the same quotient as 1000 × 2 / 3.
-    assert compute(capability(fraction(4, 6)), "1000") == compute(capability(), "1000")
+def test_three_sixths_and_one_half_give_equal_results() -> None:
+    # 3/6 is one half; 1000 × 3 / 6 is the same quotient as 1000 × 1 / 2.
+    assert compute(capability(fraction(3, 6)), "1000") == compute(
+        capability(fraction(1, 2)), "1000"
+    )
 
 
 def test_a_zero_base_produces_zero() -> None:

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
+from fractions import Fraction as ExactFraction
 
 import pytest
 
@@ -527,7 +528,7 @@ def test_renders_a_surcharge_tiers_maximum_without_trailing_zeros(
 
 def test_renders_a_tapered_amount() -> None:
     line = TaperedAmountLine(
-        PERSONAL_AMOUNT, INCOME, D("22000"), TAPER, NO_ROUNDING, D("100"), D("1400")
+        PERSONAL_AMOUNT, INCOME, D("22000"), TAPER, NO_ROUNDING, ExactFraction(100), D("1400")
     )
 
     assert render(line) == (
@@ -538,7 +539,7 @@ def test_renders_a_tapered_amount() -> None:
 
 def test_renders_a_rounded_tapered_amount() -> None:
     line = TaperedAmountLine(
-        PERSONAL_AMOUNT, INCOME, D("22000.5"), TAPER, CENT, D("100.025"), D("1399.98")
+        PERSONAL_AMOUNT, INCOME, D("22000.5"), TAPER, CENT, ExactFraction("100.025"), D("1399.98")
     )
 
     assert render(line) == (
@@ -549,7 +550,7 @@ def test_renders_a_rounded_tapered_amount() -> None:
 
 def test_renders_a_tapered_amount_below_the_threshold() -> None:
     line = TaperedAmountLine(
-        PERSONAL_AMOUNT, INCOME, D("15000"), TAPER, NO_ROUNDING, D("0"), D("1500")
+        PERSONAL_AMOUNT, INCOME, D("15000"), TAPER, NO_ROUNDING, ExactFraction(0), D("1500")
     )
 
     assert render(line) == (
@@ -560,7 +561,7 @@ def test_renders_a_tapered_amount_below_the_threshold() -> None:
 
 def test_renders_a_reduction_above_the_supplement_as_recorded() -> None:
     line = TaperedAmountLine(
-        PERSONAL_AMOUNT, INCOME, D("80000"), TAPER, NO_ROUNDING, D("3000"), D("1000")
+        PERSONAL_AMOUNT, INCOME, D("80000"), TAPER, NO_ROUNDING, ExactFraction(3000), D("1000")
     )
 
     assert render(line) == (
@@ -569,21 +570,54 @@ def test_renders_a_reduction_above_the_supplement_as_recorded() -> None:
     )
 
 
-def test_renders_an_inexact_reduction_with_every_digit() -> None:
+def test_renders_a_reduction_without_a_finite_expansion_as_a_fraction() -> None:
+    # The reduction is an exact fraction: 500 × 1000 / 7000 = 500/7, which has no decimal form.
     taper = Taper(D("1000"), D("500"), D("20000"), D("7000"))
     line = TaperedAmountLine(
-        PERSONAL_AMOUNT,
-        INCOME,
-        D("21000"),
-        taper,
-        CENT,
-        D("71.42857142857142857142857143"),
-        D("1428.57"),
+        PERSONAL_AMOUNT, INCOME, D("21000"), taper, CENT, ExactFraction(500, 7), D("1428.57")
     )
 
     assert render(line) == (
-        "personal_amount: 1000 plus 500 less 71.42857142857142857142857143 for income 21000 "
+        "personal_amount: 1000 plus 500 less 500/7 for income 21000 "
         "over 20000 (range 7000), not below 1000 (half-up to 0.01)"
+    )
+
+
+def test_renders_the_return_e_style_reduction_as_its_lowest_terms_fraction() -> None:
+    # 1591 × (198926 − 177882) / 75532 = 33481004 / 75532 = 8370251 / 18883 in lowest terms.
+    reduction = ExactFraction(1591 * (198926 - 177882), 75532)
+    taper = Taper(D("14538"), D("1591"), D("177882"), D("75532"))
+    line = TaperedAmountLine(
+        PERSONAL_AMOUNT, INCOME, D("198926"), taper, CENT, reduction, D("15685.73")
+    )
+
+    assert render(line) == (
+        "personal_amount: 14538 plus 1591 less 8370251/18883 "
+        "for income 198926 over 177882 (range 75532), not below 14538 (half-up to 0.01)"
+    )
+
+
+@pytest.mark.parametrize(
+    ("reduction", "text"),
+    [
+        (ExactFraction(0), "0"),
+        (ExactFraction(3000), "3000"),
+        (ExactFraction(4001, 40), "100.025"),
+        (ExactFraction(1, 2), "0.5"),
+        (ExactFraction(-3, 4), "-0.75"),
+        # A finite expansion longer than any default precision still shows every digit.
+        (ExactFraction(1, 2**10), "0.0009765625"),
+        (ExactFraction(1, 2**30), "0.000000000931322574615478515625"),
+    ],
+)
+def test_renders_a_reduction_with_a_finite_expansion_as_a_plain_figure(
+    reduction: ExactFraction, text: str
+) -> None:
+    line = TaperedAmountLine(PERSONAL_AMOUNT, INCOME, D("22000"), TAPER, CENT, reduction, D("1400"))
+
+    assert render(line) == (
+        f"personal_amount: 1000 plus 500 less {text} for income 22000 "
+        "over 20000 (range 10000), not below 1000 (half-up to 0.01)"
     )
 
 
@@ -741,17 +775,12 @@ def test_renders_a_rounded_fraction_applied() -> None:
     assert render(line) == "earned_portion: 2/3 of earned_income 50000 (half-up to 0.01)"
 
 
-def test_renders_an_unrounded_inexact_fraction_applied() -> None:
+def test_renders_an_unrounded_exact_fraction_applied() -> None:
     line = FractionAppliedLine(
-        EARNED_PORTION,
-        EARNED_INCOME,
-        D("50000"),
-        Fraction(2, 3),
-        NO_ROUNDING,
-        D("33333.33333333333333333333333"),
+        EARNED_PORTION, EARNED_INCOME, D("60000"), Fraction(2, 3), NO_ROUNDING, D("40000")
     )
 
-    assert render(line) == "earned_portion: 2/3 of earned_income 50000 (no rounding)"
+    assert render(line) == "earned_portion: 2/3 of earned_income 60000 (no rounding)"
 
 
 @pytest.mark.parametrize(
@@ -973,7 +1002,7 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
                 D("22000.50"),
                 Taper(D("1000.00"), D("5.0E+2"), D("20000.00"), D("1E+4")),
                 NO_ROUNDING,
-                D("100.0250"),
+                ExactFraction("100.025"),
                 D("1399.9750"),
             ),
             "personal_amount: 1000 plus 500 less 100.025 for income 22000.5 over 20000 "
@@ -1050,7 +1079,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         ),
         SurchargeTierLine(SURCHARGE, TOTAL, D("3"), D("1"), Rate(D("0.5")), NO_ROUNDING, D("1")),
         TaperedAmountLine(
-            PERSONAL_AMOUNT, INCOME, D("22000"), TAPER, NO_ROUNDING, D("100"), D("1400")
+            PERSONAL_AMOUNT, INCOME, D("22000"), TAPER, NO_ROUNDING, ExactFraction(100), D("1400")
         ),
         PerUnitAmountLine(CHILD_AMOUNT, CHILDREN, 2, Amount(D("544")), NO_ROUNDING, D("1088")),
         MultipleOverLine(

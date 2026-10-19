@@ -6,6 +6,7 @@ inputs must be present, outputs must match `produces`, and no artifact is overwr
 
 from __future__ import annotations
 
+import decimal
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any, assert_type, cast
@@ -222,3 +223,143 @@ def test_errors_are_domain_errors() -> None:
     assert issubclass(MissingArtifactError, DomainError)
     assert issubclass(CapabilityContractError, DomainError)
     assert issubclass(DuplicateArtifactError, DomainError)
+
+
+# --- the Inexact trap -------------------------------------------------------------------------
+#
+# The worksheet applies every capability, whether through a composition or directly, so it runs
+# each capability's compute under a decimal context that traps `decimal.Inexact`: arithmetic that
+# would lose digits raises instead of being rounded to the context's 28 significant digits. The
+# error is a `CapabilityContractError` naming the capability, chained from the `decimal.Inexact`.
+
+
+class Multiply(Capability):
+    """Produces `out` = `inp` × `factor`: a made-up capability whose product can need many digits"""
+
+    CONSUMES = {"inp": Decimal}
+    PRODUCES = {"out": Decimal}
+
+    def __init__(self, inp: Money, out: Money, factor: Decimal) -> None:
+        super().__init__(inp=inp, out=out)
+        self._inp, self._out, self._factor = inp, out, factor
+
+    def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+        value = self._input(inputs, self._inp).value * self._factor
+        return CapabilityResult(outputs=(Artifact(self._out, value),), trace=(DoubledLine(value),))
+
+
+# 15 digits × 15 digits is 29 digits, and 15 × 18 is 30 or more: a 28-digit context cannot hold it.
+FIFTEEN_DIGITS = D("123456789012345")
+EIGHTEEN_DIGITS = D("123456789012345678")
+
+
+def test_apply_raises_when_a_capability_needs_more_digits_than_the_context_holds() -> None:
+    worksheet = Worksheet(Artifact(A, FIFTEEN_DIGITS))
+
+    with pytest.raises(CapabilityContractError):
+        worksheet.apply(Multiply(A, B, EIGHTEEN_DIGITS))
+
+
+def test_an_inexact_result_names_the_capability_and_says_it_was_inexact() -> None:
+    worksheet = Worksheet(Artifact(A, FIFTEEN_DIGITS))
+
+    with pytest.raises(CapabilityContractError, match=r"^Multiply .*inexact") as raised:
+        worksheet.apply(Multiply(A, B, EIGHTEEN_DIGITS))
+
+    assert isinstance(raised.value, DomainError)
+
+
+def test_an_inexact_result_is_chained_from_decimal_inexact() -> None:
+    worksheet = Worksheet(Artifact(A, FIFTEEN_DIGITS))
+
+    with pytest.raises(CapabilityContractError) as raised:
+        worksheet.apply(Multiply(A, B, EIGHTEEN_DIGITS))
+
+    assert isinstance(raised.value.__cause__, decimal.Inexact)
+
+
+def test_an_inexact_result_is_not_a_bare_decimal_inexact() -> None:
+    worksheet = Worksheet(Artifact(A, FIFTEEN_DIGITS))
+
+    with pytest.raises(CapabilityContractError) as raised:
+        worksheet.apply(Multiply(A, B, EIGHTEEN_DIGITS))
+
+    assert not isinstance(raised.value, decimal.Inexact)
+
+
+def test_an_inexact_division_raises_too() -> None:
+    class Third(Multiply):
+        def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+            value = self._input(inputs, self._inp).value / 3
+            return CapabilityResult(
+                outputs=(Artifact(self._out, value),), trace=(DoubledLine(value),)
+            )
+
+    with pytest.raises(CapabilityContractError, match=r"^Third .*inexact"):
+        Worksheet(Artifact(A, D(1))).apply(Third(A, B, D(1)))
+
+
+def test_an_inexact_result_records_nothing() -> None:
+    worksheet = Worksheet(Artifact(A, FIFTEEN_DIGITS))
+
+    with pytest.raises(CapabilityContractError):
+        worksheet.apply(Multiply(A, B, EIGHTEEN_DIGITS))
+
+    with pytest.raises(MissingArtifactError):
+        worksheet.get(B)
+    assert worksheet.trace == ()
+
+
+def test_apply_accepts_a_product_of_exactly_28_digits() -> None:
+    worksheet = Worksheet(Artifact(A, D("99999999999999")))
+
+    worksheet.apply(Multiply(A, B, D("99999999999999")))
+
+    assert worksheet.get(B) == Artifact(B, D("9999999999999800000000000001"))
+
+
+def test_apply_accepts_an_exact_product_with_a_short_expansion() -> None:
+    worksheet = Worksheet(Artifact(A, D("2.5")))
+
+    worksheet.apply(Multiply(A, B, D("0.5")))
+
+    assert worksheet.get(B) == Artifact(B, D("1.25"))
+
+
+def test_apply_leaves_the_callers_decimal_context_as_it_found_it() -> None:
+    before = decimal.getcontext().copy()
+
+    Worksheet(Artifact(A, D(1))).apply(Multiply(A, B, D(2)))
+    with pytest.raises(CapabilityContractError):
+        Worksheet(Artifact(A, FIFTEEN_DIGITS)).apply(Multiply(A, B, EIGHTEEN_DIGITS))
+
+    after = decimal.getcontext()
+    assert after.prec == before.prec
+    assert after.rounding == before.rounding
+    assert after.traps == before.traps
+    assert not after.traps[decimal.Inexact]
+
+
+def test_the_trap_is_off_again_after_apply_so_other_code_is_not_trapped() -> None:
+    Worksheet(Artifact(A, D(1))).apply(Multiply(A, B, D(2)))
+
+    assert D(1) / D(3) == D("0.3333333333333333333333333333")
+
+
+def test_a_capability_that_rounds_through_a_rounding_rule_is_not_trapped() -> None:
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+
+    class Rounded(Multiply):
+        def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+            value = RoundTo(D("0.01"), RoundingMode.HALF_UP).apply(
+                self._input(inputs, self._inp).value
+            )
+            return CapabilityResult(
+                outputs=(Artifact(self._out, value),), trace=(DoubledLine(value),)
+            )
+
+    worksheet = Worksheet(Artifact(A, D("0.1234567890123456789012345678901234")))
+
+    worksheet.apply(Rounded(A, B, D(1)))
+
+    assert worksheet.get(B) == Artifact(B, D("0.12"))

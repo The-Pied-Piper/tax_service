@@ -2,12 +2,13 @@
 
 Its slots: one parameter slot `taper` (a `taper` dataset), one consumed slot `base` (the figure the
 taper is measured against) and one produced slot `output`. The reduction is
-`supplement × max(base − threshold, 0) / range`, multiplied before it divides, so the one division
-is the only inexact step and the quotient is carried unrounded (the Decimal context's precision is
-its only limit); the output is `rounding.apply(taper.base + max(supplement − reduction, 0))`, with
-the `taper` dataset's rule (which defaults to no rounding), applied once. At or below the threshold
-the output is base + supplement; at or above threshold + range it is the base. It records one
-`TaperedAmountLine`, whose `reduction` is the figure before the floor at zero.
+`supplement × max(base − threshold, 0) / range`, computed as an exact `fractions.Fraction` and
+never carried as a 28-digit Decimal: under `rounding: none` a reduction with no finite decimal
+expansion raises `decimal.Inexact`; the output is
+`rounding.apply(taper.base + max(supplement − reduction, 0))`, with the `taper` dataset's rule
+(which defaults to no rounding), applied once. At or below the threshold the output is base +
+supplement; at or above threshold + range it is the base. It records one `TaperedAmountLine`,
+whose `reduction` is the exact `fractions.Fraction` before the floor at zero.
 
 The class is `TaperedAmount`, not `Taper`, so it does not share a name with the `Taper` value
 object it reads.
@@ -15,9 +16,11 @@ object it reads.
 
 from __future__ import annotations
 
+import decimal
 from collections.abc import Mapping
 from dataclasses import fields
 from decimal import Decimal
+from fractions import Fraction as ExactFraction
 from types import MappingProxyType
 from typing import Any, assert_type, cast
 
@@ -256,10 +259,11 @@ def test_the_taper_dataset_supplies_all_four_figures() -> None:
 
 
 def test_the_full_amount_is_produced_from_the_figures_as_given() -> None:
+    # Computed as an exact fraction, so without a rounding rule the figure has no fixed scale.
     wired = capability(taper(values(base="1000.00")))
 
-    assert str(compute(wired, "15000").value) == "1500.00"
-    assert str(compute(wired, "80000").value) == "1000.00"
+    assert str(compute(wired, "15000").value) == "1500"
+    assert str(compute(wired, "80000").value) == "1000"
 
 
 def test_keeps_the_amount_exact_without_rounding() -> None:
@@ -267,25 +271,47 @@ def test_keeps_the_amount_exact_without_rounding() -> None:
     assert compute(capability(), "22000.5") == Artifact(PERSONAL_AMOUNT, D("1399.975"))
 
 
-def test_carries_an_inexact_quotient_unrounded_to_the_contexts_precision() -> None:
-    # 500 × 1000 / 7000 = 71.428571428571... has no finite expansion: the quotient is carried to
-    # the Decimal context's 28 significant digits, unrounded by any rule, so
-    # 1000 + (500 − 71.42857142857142857142857143) = 1428.571428571428571428571429.
+def test_an_inexact_reduction_without_a_rounding_rule_raises_inexact() -> None:
+    # 500 × 1000 / 7000 = 500/7 = 71.428571... has no finite expansion. Under `rounding: none` it
+    # used to be carried to 28 digits and added to the base, rounding no dataset asked for.
     wired = capability(taper(values(range="7000")))
 
-    assert compute(wired, "21000") == Artifact(PERSONAL_AMOUNT, D("1428.571428571428571428571429"))
+    with pytest.raises(decimal.Inexact):
+        compute(wired, "21000")
 
 
-def test_multiplies_before_it_divides_so_an_even_quotient_stays_exact() -> None:
-    # 3 × 1 / 3 = 1 exactly; dividing first (1 / 3 × 3) would give 0.9999999999999999999999999999.
+def test_the_federal_style_taper_with_a_cent_rule_is_unchanged() -> None:
+    # Return E: 14538 + (1591 − 1591 × (198926 − 177882) / 75532) = 15685.7308..., half-up to the
+    # cent, once. The quotient is 33481004 / 75532, which does not terminate.
+    federal = values(base="14538", supplement="1591", threshold="177882", range="75532")
+
+    assert compute(capability(taper(federal, CENT)), "198926") == Artifact(
+        PERSONAL_AMOUNT, D("15685.73")
+    )
+    with pytest.raises(decimal.Inexact):
+        compute(capability(taper(federal)), "198926")
+
+
+def test_the_reduction_is_divided_exactly_so_a_long_base_keeps_every_digit() -> None:
+    # The base is 29 digits, so base + the supplement does not fit a 28-digit context.
+    wired = capability(taper(values(base="12345678901234567890123456789", supplement="1"), CENT))
+
+    assert compute(wired, "15000") == Artifact(
+        PERSONAL_AMOUNT, D("12345678901234567890123456790.00")
+    )
+    assert str(compute(wired, "15000").value) == "12345678901234567890123456790.00"
+
+
+def test_an_even_quotient_stays_exact() -> None:
+    # 3 × 1 / 3 = 1 exactly; dividing first (1 / 3 × 3) would not.
     wired = capability(taper(values(supplement="3", threshold="0", range="3")))
 
     result = wired.compute((Artifact(INCOME, D("1")),))
 
     (line,) = result.trace
     assert isinstance(line, TaperedAmountLine)
-    assert line.reduction == D("1")
-    assert str(line.reduction) == "1"
+    assert line.reduction == ExactFraction(1)
+    assert isinstance(line.reduction, ExactFraction)
     assert result.outputs == (Artifact(PERSONAL_AMOUNT, D("1002")),)
 
 
@@ -334,6 +360,9 @@ def test_a_missing_base_is_a_missing_artifact() -> None:
 
 
 # --- trace ------------------------------------------------------------------------------------
+#
+# The line's `reduction` is an exact `fractions.Fraction` (it can have no finite decimal form), the
+# supplement's share before the floor at zero.
 
 
 def test_traces_one_tapered_amount_line() -> None:
@@ -346,10 +375,12 @@ def test_traces_one_tapered_amount_line() -> None:
             base_amount=D("22000"),
             taper=values(),
             rounding=NO_ROUNDING,
-            reduction=D("100"),
+            reduction=ExactFraction(100),
             result=D("1400"),
         ),
     )
+    assert isinstance(trace[0], TaperedAmountLine)
+    assert isinstance(trace[0].reduction, ExactFraction)
 
 
 def test_traces_a_zero_reduction_at_or_below_the_threshold() -> None:
@@ -358,7 +389,8 @@ def test_traces_a_zero_reduction_at_or_below_the_threshold() -> None:
 
         assert isinstance(line, TaperedAmountLine)
         assert line.base_amount == D(income)
-        assert line.reduction == D("0")
+        assert line.reduction == ExactFraction(0)
+        assert isinstance(line.reduction, ExactFraction)
         assert line.result == D("1500")
 
 
@@ -369,16 +401,25 @@ def test_traces_the_reduction_before_the_floor_above_the_end_of_the_range() -> N
 
     assert trace == (
         TaperedAmountLine(
-            PERSONAL_AMOUNT, INCOME, D("80000"), values(), NO_ROUNDING, D("3000"), D("1000")
+            PERSONAL_AMOUNT,
+            INCOME,
+            D("80000"),
+            values(),
+            NO_ROUNDING,
+            ExactFraction(3000),
+            D("1000"),
         ),
     )
+    assert isinstance(trace[0], TaperedAmountLine)
+    assert isinstance(trace[0].reduction, ExactFraction)
 
 
-def test_traces_the_unrounded_reduction_and_the_rounded_result() -> None:
+def test_traces_the_exact_reduction_and_the_rounded_result() -> None:
     wired = capability(taper(values(range="7000"), rounding=CENT))
 
     trace = wired.compute((Artifact(INCOME, D("21000")),)).trace
 
+    # 500 × 1000 / 7000 = 500/7, exactly; the result is 1000 + (500 − 500/7), half-up to the cent.
     assert trace == (
         TaperedAmountLine(
             PERSONAL_AMOUNT,
@@ -386,10 +427,23 @@ def test_traces_the_unrounded_reduction_and_the_rounded_result() -> None:
             D("21000"),
             values(range="7000"),
             CENT,
-            D("71.42857142857142857142857143"),
+            ExactFraction(500, 7),
             D("1428.57"),
         ),
     )
+    assert isinstance(trace[0], TaperedAmountLine)
+    assert trace[0].reduction == ExactFraction(500, 7)
+    assert trace[0].reduction.denominator == 7
+
+
+def test_traces_a_reduction_with_a_finite_expansion_exactly() -> None:
+    # 500 × 2000.5 / 10000 = 100.025 = 4001/40.
+    trace = capability().compute((Artifact(INCOME, D("22000.5")),)).trace
+
+    (line,) = trace
+    assert isinstance(line, TaperedAmountLine)
+    assert line.reduction == ExactFraction(4001, 40)
+    assert isinstance(line.reduction, ExactFraction)
 
 
 def test_trace_amount_is_the_result() -> None:

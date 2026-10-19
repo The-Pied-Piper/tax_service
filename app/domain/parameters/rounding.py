@@ -6,12 +6,17 @@ own (a bracket schedule's tax at each bracket's start); the `RoundingRule` each 
 given decides *how*. The default is `NO_ROUNDING`, which leaves amounts exact, so
 every rounding point calls `apply` and an unconfigured rule changes nothing.
 
-Only exact decimals are accepted. Rounding works on exact fractions, so any
-positive increment (0.01, 1, 0.05, ...) rounds without an inexact division.
+Only exact amounts are accepted: a `Decimal`, or the exact `Fraction` a capability gets by
+dividing. Rounding works on exact fractions, so any positive increment (0.01, 1, 0.05, ...)
+rounds without an inexact division. `apply` is the one place allowed to be inexact: the engine
+runs capabilities under a `decimal` context that traps `Inexact`, and rounding is the only
+arithmetic a dataset asks for. `NO_ROUNDING` still never rounds: a quotient with no finite
+decimal expansion raises `decimal.Inexact`.
 """
 
 from __future__ import annotations
 
+import decimal
 import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -64,15 +69,19 @@ class RoundingRule(ABC):
     """How a capability rounds an amount. Capabilities depend on this type."""
 
     @abstractmethod
-    def apply(self, amount: Decimal) -> Decimal:
-        """Return `amount` rounded by this rule."""
+    def apply(self, amount: Decimal | Fraction) -> Decimal:
+        """Return `amount`, a `Decimal` or an exact `Fraction`, rounded by this rule."""
 
     @staticmethod
-    def _check_amount(amount: Decimal) -> None:
+    def _exact(amount: Decimal | Fraction) -> Fraction:
+        """`amount` as an exact fraction; refuses anything but a finite Decimal or Fraction."""
+        if isinstance(amount, Fraction):
+            return amount
         if not isinstance(amount, Decimal):
-            raise TypeError(f"amount must be a Decimal, got {type(amount).__name__}")
+            raise TypeError(f"amount must be a Decimal or a Fraction, got {type(amount).__name__}")
         if not amount.is_finite():
             raise ValueError(f"amount must be finite, got {amount}")
+        return Fraction(amount)
 
 
 @dataclass(frozen=True)
@@ -83,9 +92,31 @@ class _NoRounding(RoundingRule):
     serialisation) is still equal to it.
     """
 
-    def apply(self, amount: Decimal) -> Decimal:
-        self._check_amount(amount)
-        return amount
+    def apply(self, amount: Decimal | Fraction) -> Decimal:
+        if isinstance(amount, Decimal):
+            self._exact(amount)  # refuses a non-finite Decimal
+            return amount
+        return self._terminating(self._exact(amount))
+
+    @staticmethod
+    def _terminating(exact: Fraction) -> Decimal:
+        """`exact` as the shortest Decimal; raises `decimal.Inexact` if it has no finite expansion.
+
+        Built from its digits, so the context's precision never rounds it.
+        """
+        denominator = exact.denominator
+        twos = fives = 0
+        while denominator % 2 == 0:
+            denominator //= 2
+            twos += 1
+        while denominator % 5 == 0:
+            denominator //= 5
+            fives += 1
+        if denominator != 1:
+            raise decimal.Inexact(f"{exact} has no finite decimal expansion")
+        places = max(twos, fives)
+        digits = abs(exact.numerator) * 10**places // exact.denominator
+        return Decimal((int(exact < 0), tuple(int(d) for d in str(digits)), -places))
 
     def __str__(self) -> str:
         """A developer repr; trace text is rendered by adapters, not by this method."""
@@ -115,10 +146,13 @@ class RoundTo(RoundingRule):
                 f"increment must be a positive finite decimal, got {self.increment}"
             )
 
-    def apply(self, amount: Decimal) -> Decimal:
-        self._check_amount(amount)
-        steps = self.mode.to_integer(Fraction(amount) / Fraction(self.increment))
-        return steps * self.increment
+    def apply(self, amount: Decimal | Fraction) -> Decimal:
+        steps = self.mode.to_integer(self._exact(amount) / Fraction(self.increment))
+        # Exact whatever the caller's context: enough digits for the product, no Inexact trap.
+        with decimal.localcontext() as context:
+            context.traps[decimal.Inexact] = False
+            context.prec = len(str(abs(steps))) + len(self.increment.as_tuple().digits) + 2
+            return steps * self.increment
 
     def __str__(self) -> str:
         """A developer repr; trace text is rendered by adapters, not by this method."""

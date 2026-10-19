@@ -21,7 +21,7 @@
 # rounding on this division." and "** If the BPAF has three or more digits after the
 # decimal point, increase the second digit after the decimal point by one if the third
 # digit is five or more, and drop the third digit. If the third digit after the decimal
-# point is less than five, drop the third digit." So the quotient is carried unrounded and
+# point is less than five, drop the third digit." So the quotient is kept exact and
 # the amount rounds half-up to the cent, once.
 family: ca/basic_personal_amount
 tax_year: 2025

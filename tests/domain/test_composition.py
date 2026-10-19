@@ -9,6 +9,7 @@ each declaring its artifact slots.
 
 from __future__ import annotations
 
+import decimal
 from dataclasses import dataclass
 from decimal import Decimal
 from functools import cache
@@ -841,3 +842,134 @@ def test_ties_between_list_slot_capabilities_are_broken_by_what_they_produce() -
         composition = Composition(given, inputs=kinds(A), outputs=kinds(E, F))
 
         assert composition.order == (to_b, to_c, to_e, to_f)
+
+
+# --- the Inexact trap -------------------------------------------------------------------------
+#
+# `compute` runs every capability under a decimal context that traps `decimal.Inexact` (the trap
+# sits in `Worksheet.apply`, which `compute` calls for each capability): arithmetic that would lose
+# digits raises instead of being silently rounded to 28 significant digits. The error is a
+# `CapabilityContractError` naming the capability, chained from the `decimal.Inexact`.
+
+FIFTEEN_DIGITS = D("123456789012345")
+EIGHTEEN_DIGITS = D("123456789012345678")
+
+
+class Multiply(Capability):
+    """Consumes `source` and produces `target` = `source` × `factor`, which can need many digits."""
+
+    CONSUMES = {"source": Decimal}
+    PRODUCES = {"target": Decimal}
+
+    def __init__(self, source: Money, target: Money, factor: Decimal) -> None:
+        super().__init__(source=source, target=target)
+        self._source, self._target, self._factor = source, target, factor
+
+    def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+        total = self._input(inputs, self._source).value * self._factor
+        return CapabilityResult(
+            outputs=(Artifact(self._target, total),), trace=(TaggedLine("multiply", total),)
+        )
+
+
+def inexact_composition() -> Composition:
+    """`ex/a` × a 18-digit factor: 15 × 18 digits is more than the context's 28."""
+    return Composition([Multiply(A, B, EIGHTEEN_DIGITS)], inputs=kinds(A), outputs=kinds(B))
+
+
+def test_compute_fails_loudly_when_a_capability_needs_more_digits_than_the_context_holds() -> None:
+    with pytest.raises(CapabilityContractError):
+        inexact_composition().compute(Artifact(A, FIFTEEN_DIGITS))
+
+
+def test_an_inexact_result_names_the_capability_and_says_it_was_inexact() -> None:
+    with pytest.raises(CapabilityContractError, match=r"^Multiply .*inexact"):
+        inexact_composition().compute(Artifact(A, FIFTEEN_DIGITS))
+
+
+def test_an_inexact_result_names_the_capability_that_did_it_not_an_earlier_one() -> None:
+    composition = Composition(
+        [Apple(A, B), Multiply(B, C, EIGHTEEN_DIGITS)], inputs=kinds(A), outputs=kinds(C)
+    )
+
+    with pytest.raises(CapabilityContractError, match=r"^Multiply .*inexact"):
+        composition.compute(Artifact(A, FIFTEEN_DIGITS))
+
+
+def test_an_inexact_result_is_chained_from_decimal_inexact() -> None:
+    with pytest.raises(CapabilityContractError) as raised:
+        inexact_composition().compute(Artifact(A, FIFTEEN_DIGITS))
+
+    assert isinstance(raised.value.__cause__, decimal.Inexact)
+
+
+def test_an_inexact_result_is_a_domain_error_not_a_bare_decimal_inexact() -> None:
+    with pytest.raises(CapabilityContractError) as raised:
+        inexact_composition().compute(Artifact(A, FIFTEEN_DIGITS))
+
+    assert isinstance(raised.value, DomainError)
+    assert not isinstance(raised.value, decimal.Inexact)
+
+
+def test_an_inexact_result_returns_no_worksheet() -> None:
+    worksheet: Worksheet | None = None
+
+    with pytest.raises(CapabilityContractError):
+        worksheet = inexact_composition().compute(Artifact(A, FIFTEEN_DIGITS))
+
+    assert worksheet is None
+
+
+def test_a_product_of_exactly_28_digits_is_exact() -> None:
+    composition = Composition(
+        [Multiply(A, B, D("99999999999999"))], inputs=kinds(A), outputs=kinds(B)
+    )
+
+    worksheet = composition.compute(Artifact(A, D("99999999999999")))
+
+    assert worksheet.get(B) == Artifact(B, D("9999999999999800000000000001"))
+
+
+def test_a_short_exact_product_is_unaffected() -> None:
+    worksheet = Composition([Multiply(A, B, D("0.25"))], inputs=kinds(A), outputs=kinds(B)).compute(
+        Artifact(A, D("10.5"))
+    )
+
+    assert worksheet.get(B) == Artifact(B, D("2.625"))
+
+
+def test_compute_leaves_the_callers_decimal_context_untrapped() -> None:
+    with pytest.raises(CapabilityContractError):
+        inexact_composition().compute(Artifact(A, FIFTEEN_DIGITS))
+
+    assert not decimal.getcontext().traps[decimal.Inexact]
+    assert decimal.getcontext().prec == 28
+    assert D(1) / D(3) == D("0.3333333333333333333333333333")
+
+
+def test_a_rounding_rule_still_rounds_inside_compute() -> None:
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+
+    class RoundedLink(Link):
+        def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+            total = RoundTo(D("0.01"), RoundingMode.HALF_UP).apply(self._input(inputs, A).value)
+            return CapabilityResult(
+                outputs=(Artifact(B, total),), trace=(TaggedLine("rounded", total),)
+            )
+
+    composition = Composition([RoundedLink(A, B)], inputs=kinds(A), outputs=kinds(B))
+
+    worksheet = composition.compute(Artifact(A, D("0.1234567890123456789012345678901234")))
+
+    assert worksheet.get(B) == Artifact(B, D("0.12"))
+
+
+def test_the_trap_covers_a_capability_late_in_the_order() -> None:
+    composition = Composition(
+        [Link(A, B), Link(B, C), Multiply(C, E, EIGHTEEN_DIGITS)],
+        inputs=kinds(A),
+        outputs=kinds(E),
+    )
+
+    with pytest.raises(CapabilityContractError, match=r"^Multiply .*inexact"):
+        composition.compute(Artifact(A, FIFTEEN_DIGITS))
