@@ -52,7 +52,8 @@ def line_47(schedule_9_line_13: str) -> Decimal:
     capability = ApplyRate(SOURCE.get(FIRST_TIER_RATE, 2025, RATE), SCHEDULE_9_LINE_13, LINE_47)
     result = capability.compute((Artifact(SCHEDULE_9_LINE_13, D(schedule_9_line_13)),))
     (artifact,) = result.outputs
-    return artifact.value
+    value: Decimal = artifact.value
+    return value
 
 
 def line_48(schedule_9_line_14: str) -> Decimal:
@@ -61,7 +62,8 @@ def line_48(schedule_9_line_14: str) -> Decimal:
     )
     result = capability.compute((Artifact(SCHEDULE_9_LINE_14, D(schedule_9_line_14)),))
     (artifact,) = result.outputs
-    return artifact.value
+    value: Decimal = artifact.value
+    return value
 
 
 def line_49(schedule_9_line_13: str, schedule_9_line_14: str) -> Decimal:
@@ -72,7 +74,8 @@ def line_49(schedule_9_line_13: str, schedule_9_line_14: str) -> Decimal:
         )
     )
     (artifact,) = result.outputs
-    return artifact.value
+    value: Decimal = artifact.value
+    return value
 
 
 def test_2025_first_tier_rate_is_5_05_percent() -> None:
