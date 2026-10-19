@@ -296,13 +296,17 @@ sources:
     CRA, the 2025 ON428 (form 5006-C): line 9 (line 58040) "Basic personal amount Claim
     $12,747"; line 44 (line 58800) "Line 35 plus line 43"; line 45 "Ontario non-refundable
     tax credit rate 5.05%"; line 46 (line 58840) "Line 44 multiplied by the percentage from
-    line 45"; line 50 (line 61500) "Line 46 plus line 49 Enter this amount on line 52.
-    Ontario non-refundable tax credits"; line 53 "Line 51 minus line 52 (if negative, enter
-    "0")"; line 66 "(Line 65 minus $5,710) multiplied by 20% (if negative, enter "0")"; line
-    67 "(Line 65 minus $7,307) multiplied by 36% (if negative, enter "0")"; line 68 "Line 66
-    plus line 67"; line 69 "Line 62 plus line 68". Line 58800 is 12,747 + 0 + 2,301.75 +
-    820.00 = 15,868.75 and line 58840 is 15,868.75 x 5.05% = 801.371875, rounded half-up to
-    the cent: 801.37; line 49 is not modelled, so line 61500 is that same 801.37. Line 53 is
+    line 45"; line 47 "Amount from line 13 of your federal Schedule 9" "multiplied by
+    5.05%"; line 48 "Amount from line 14 of your federal Schedule 9" "multiplied by
+    11.16%"; line 49 (line 58969) "Line 47 plus line 48"; line 50 (line 61500) "Line 46
+    plus line 49 Enter this amount on line 52. Ontario non-refundable tax credits"; line 53
+    "Line 51 minus line 52 (if negative, enter "0")"; line 66 "(Line 65 minus $5,710)
+    multiplied by 20% (if negative, enter "0")"; line 67 "(Line 65 minus $7,307) multiplied
+    by 36% (if negative, enter "0")"; line 68 "Line 66 plus line 67"; line 69 "Line 62 plus
+    line 68". Line 58800 is 12,747 + 0 + 2,301.75 + 820.00 = 15,868.75 and line 58840 is
+    15,868.75 x 5.05% = 801.371875, rounded half-up to the cent: 801.37; line 49 (line
+    58969) is computed, and is 0 here because this return's Schedule 9 inputs are all $0 (a
+    chosen figure, caller inputs), so line 61500 is 801.37 + 0 = 801.37. Line 53 is
     2,625.50 - 801.37 = 1,824.13; tax on split income and the minimum tax carryover are not
     modelled, so lines 61 to 65 carry it. It is below 5,710 and 7,307, so lines 66 and 67
     are negative and enter 0; the surtax, line 68, is 0, and line 69 is 1,824.13 + 0 =

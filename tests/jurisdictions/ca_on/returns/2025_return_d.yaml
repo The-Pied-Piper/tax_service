@@ -413,14 +413,18 @@ sources:
     $12,747"; line 19 (line 58240) "Amount from line 30800 of your return"; line 21 (line
     58300) "Amount from line 31200 of your return"; line 44 (line 58800) "Line 35 plus line
     43"; line 45 "Ontario non-refundable tax credit rate 5.05%"; line 46 (line 58840) "Line
-    44 multiplied by the percentage from line 45"; line 50 (line 61500) "Line 46 plus line
-    49 Enter this amount on line 52. Ontario non-refundable tax credits". Line 58040 is
-    12,747, rounded half-up to the cent, which changes nothing. With the amount
-    for an eligible dependant (line 58160), 0 on this return as the Schedule 5 entry
-    derives, and the federal base CPP contributions and EI premiums, line 58800, which takes
-    amounts already in cents, is 12,747 + 0 + 3,356.10 + 1,077.48 = 17,180.58, and line
-    58840 is 17,180.58 x 5.05% = 867.61929, rounded half-up to the cent: 867.62; line 49 is
-    not modelled, so line 61500 is that same 867.62.
+    44 multiplied by the percentage from line 45"; line 47 "Amount from line 13 of your
+    federal Schedule 9" "multiplied by 5.05%"; line 48 "Amount from line 14 of your federal
+    Schedule 9" "multiplied by 11.16%"; line 49 (line 58969) "Line 47 plus line 48"; line
+    50 (line 61500) "Line 46 plus line 49 Enter this amount on line 52. Ontario
+    non-refundable tax credits". Line 58040 is 12,747, rounded half-up to the cent, which
+    changes nothing. With the amount for an eligible dependant (line 58160), 0 on this
+    return as the Schedule 5 entry derives, and the federal base CPP contributions and EI
+    premiums, line 58800, which takes amounts already in cents, is 12,747 + 0 + 3,356.10 +
+    1,077.48 = 17,180.58, and line 58840 is 17,180.58 x 5.05% = 867.61929, rounded half-up
+    to the cent: 867.62; line 49 (line 58969) is computed, and is 0 here because this
+    return's Schedule 9 inputs are all $0 (a chosen figure, caller inputs), so line 61500
+    is 867.62 + 0 = 867.62.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
     CRA, the 2025 T1 return (form 5000-R): line 80 (line 30400) "Amount for an eligible

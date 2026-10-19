@@ -1436,12 +1436,51 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/credit_amounts_at_credit_rate"},
         ),
         # ON428 line 46 (line 58840) "Line 44 multiplied by the percentage from line 45": the
-        # Ontario credit rate is applied once, to the total of credit amounts, giving its
-        # non-refundable tax credits (line 50, line 61500, as line 49 is not modelled).
+        # Ontario credit rate is applied once, to the total of credit amounts. It is the first of
+        # the two lines that line 50 adds.
         CapabilitySelection(
             name="core/apply_rate",
             params={"rate": "ca-on/credit_rate"},
             consumes={"base": "ca-on/non_refundable_credit_amounts"},
+            produces={"output": "ca-on/credit_amounts_at_credit_rate"},
+        ),
+        # ON428 line 47 "Amount from line 13 of your federal Schedule 9" "multiplied by 5.05%":
+        # 5.05% of the first $200 of the donations and gifts, the federal Schedule 9 line 13.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/donation_first_tier_rate"},
+            consumes={"base": "ca/donations_first_tier"},
+            produces={"output": "ca-on/donations_first_tier_credit"},
+        ),
+        # ON428 line 48 "Amount from line 14 of your federal Schedule 9" "multiplied by 11.16%":
+        # 11.16% of the rest of the donations and gifts, the federal Schedule 9 line 14.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/donation_over_first_tier_rate"},
+            consumes={"base": "ca/donations_over_first_tier"},
+            produces={"output": "ca-on/donations_over_first_tier_credit"},
+        ),
+        # ON428 line 49 and line 58969 "Line 47 plus line 48".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca-on/donations_first_tier_credit",
+                    "ca-on/donations_over_first_tier_credit",
+                )
+            },
+            produces={"output": "ca-on/donations_and_gifts_credit"},
+        ),
+        # ON428 line 50 and line 61500 "Line 46 plus line 49 Enter this amount on line 52.
+        # Ontario non-refundable tax credits": line 46 (line 58840) and line 49 (line 58969), in
+        # line order.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": ("ca-on/credit_amounts_at_credit_rate", "ca-on/donations_and_gifts_credit")
+            },
             produces={"output": "ca-on/non_refundable_tax_credits"},
         ),
         # Federal Worksheet 5000-D1, "Line 34990 - Top-up tax credit": line 1 "Amount from line
@@ -2041,7 +2080,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 167
+    assert len(found.capabilities) == 171
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -2051,7 +2090,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 167
+    assert len(composition.order) == 171
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -2605,6 +2644,28 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (
             ApplyRate,
             frozenset({ontario.NON_REFUNDABLE_CREDIT_AMOUNTS}),
+            frozenset({ontario.CREDIT_AMOUNTS_AT_CREDIT_RATE}),
+        ),
+        (
+            ApplyRate,
+            frozenset({DONATIONS_FIRST_TIER}),
+            frozenset({ontario.DONATIONS_FIRST_TIER_CREDIT}),
+        ),
+        (
+            ApplyRate,
+            frozenset({DONATIONS_OVER_FIRST_TIER}),
+            frozenset({ontario.DONATIONS_OVER_FIRST_TIER_CREDIT}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {ontario.DONATIONS_FIRST_TIER_CREDIT, ontario.DONATIONS_OVER_FIRST_TIER_CREDIT}
+            ),
+            frozenset({ontario.DONATIONS_AND_GIFTS_CREDIT}),
+        ),
+        (
+            Sum,
+            frozenset({ontario.CREDIT_AMOUNTS_AT_CREDIT_RATE, ontario.DONATIONS_AND_GIFTS_CREDIT}),
             frozenset({ontario.NON_REFUNDABLE_TAX_CREDITS}),
         ),
         (
