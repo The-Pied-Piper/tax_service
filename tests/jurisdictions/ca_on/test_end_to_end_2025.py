@@ -29,9 +29,12 @@ the amount for infirm children of 0 x 2687 (line 30500) and the Canada employmen
 (the lesser of employment income and 1471), through each total of credit amounts and each form's
 non-refundable tax credits (T1 line 35000, ON428 line 61500) to each tax after credits, the Ontario
 surtax on the Ontario tax after credits (ON428 lines 66 to 68) to the Ontario tax with surtax of
-line 69, and with no dependent children and no dependants the Ontario tax reduction amounts of
-294.00 (lines 74 to 77), twice them less the tax with surtax (line 73), not below zero, the Ontario
-tax reduction of 0 (line 80), to the Ontario tax after the reduction (line 81); Schedule ON428-A's
+line 69, less the Ontario dividend tax credit of 0 (line 70, from line 57 and Worksheet ON428's
+line 61520: no dividends), not below zero, to the Ontario tax after the dividend credit (line 71,
+which is line 73 as line 72 is not triggered), and with no dependent children and no dependants
+the Ontario tax reduction amounts of 294.00 (lines 74 to 77), twice them less line 73, not below
+zero, the Ontario tax reduction of 0 (line 80), to the Ontario tax after the reduction (line 81);
+Schedule ON428-A's
 LIFT credit, 5.05% of employment income, 5555, at most 875 (lines 5 and 14), less 5% of net income
 over 32500, 4125 (line 19), not below zero, 0 (line 20, ON428 line 85), taken off the Ontario tax
 after the reduction, not below zero (line 86), less the community food program donation tax credit
@@ -812,6 +815,43 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(ONTARIO_SURTAX), TieredSurcharge)
     assert isinstance(worksheet.producer_of(ONTARIO_TAX_WITH_SURTAX), Sum)
     assert worksheet.producer_of(ONTARIO_TAX_WITH_SURTAX) is not worksheet.producer_of(TOTAL_INCOME)
+    # Worksheet ON428's lines A, 1, 2, 3 (line 61520) and ON428 lines 56, 58, 70 and 71, each
+    # its own step.
+    for kind in (
+        ontario.DIVIDENDS_AMOUNT_A,
+        ontario.DIVIDENDS_AMOUNT_B,
+        ontario.DIVIDEND_TAX_CREDIT,
+        ontario.ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT,
+        ontario.DIVIDEND_CREDIT_FROM_LINE_57,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Sum), kind
+    assert isinstance(worksheet.producer_of(ontario.OTHER_DIVIDENDS_CREDIT), ApplyRate)
+    assert isinstance(worksheet.producer_of(ontario.ELIGIBLE_DIVIDENDS_CREDIT), ApplyRate)
+    assert isinstance(worksheet.producer_of(ontario.DIVIDENDS_AMOUNT_A_LESS_B), Subtract)
+    assert isinstance(
+        worksheet.producer_of(ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT), SubtractNotBelowZero
+    )
+    assert isinstance(
+        worksheet.producer_of(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT), SubtractNotBelowZero
+    )
+    assert worksheet.producer_of(ontario.DIVIDENDS_AMOUNT_A) is not (
+        worksheet.producer_of(DIVIDENDS_AMOUNT_A)
+    )
+    assert worksheet.producer_of(ontario.OTHER_DIVIDENDS_CREDIT) is not (
+        worksheet.producer_of(OTHER_DIVIDENDS_CREDIT)
+    )
+    assert worksheet.producer_of(ontario.ELIGIBLE_DIVIDENDS_CREDIT) is not (
+        worksheet.producer_of(ELIGIBLE_DIVIDENDS_CREDIT)
+    )
+    assert worksheet.producer_of(ontario.DIVIDENDS_AMOUNT_A_LESS_B) is not (
+        worksheet.producer_of(DIVIDENDS_AMOUNT_A_LESS_B)
+    )
+    assert worksheet.producer_of(ontario.DIVIDEND_TAX_CREDIT) is not (
+        worksheet.producer_of(DIVIDEND_TAX_CREDIT)
+    )
+    assert worksheet.producer_of(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT) is not (
+        worksheet.producer_of(ONTARIO_TAX_WITH_SURTAX)
+    )
     assert isinstance(worksheet.producer_of(TAX_REDUCTION_BASIC), CreditAmount)
     assert worksheet.producer_of(TAX_REDUCTION_BASIC) is not worksheet.producer_of(
         ontario.BASIC_PERSONAL_AMOUNT
@@ -1277,6 +1317,32 @@ def test_the_trace_explains_the_computation() -> None:
         "+ ontario_surtax 523.79 = 8195.77",
         "8195.77",
     )
+    dividend_a = position("dividends_amount_a: taxable_dividends 0 = 0", "0")
+    dividend_b = position("dividends_amount_b: taxable_dividends_other_than_eligible 0 = 0", "0")
+    dividend_other = position(
+        "other_dividends_credit: 2.9863% of dividends_amount_b 0 (half-up to 0.01)", "0"
+    )
+    dividend_eligible = position(
+        "eligible_dividends_credit: 10% of dividends_amount_a_less_b 0 (half-up to 0.01)", "0"
+    )
+    dividend_credit = position(
+        "dividend_tax_credit: other_dividends_credit 0 + eligible_dividends_credit 0 = 0", "0"
+    )
+    line_56 = position(
+        "ontario_tax_before_dividend_credit: ontario_tax_after_credits 7671.98 = 7671.98",
+        "7671.98",
+    )
+    line_58 = position(
+        "ontario_tax_less_dividend_credit: ontario_tax_before_dividend_credit 7671.98 "
+        "less dividend_tax_credit 0, not below 0 = 7671.98",
+        "7671.98",
+    )
+    line_70 = position("dividend_credit_from_line_57: dividend_tax_credit 0 = 0", "0")
+    line_71 = position(
+        "ontario_tax_after_dividend_credit: ontario_tax_with_surtax 8195.77 "
+        "less dividend_credit_from_line_57 0, not below 0 = 8195.77",
+        "8195.77",
+    )
     reduction_basic = position(
         "tax_reduction_basic: credit amount 294 (half-up to 0.01)",
         "294.00",
@@ -1296,11 +1362,11 @@ def test_the_trace_explains_the_computation() -> None:
     )
     reduction = position(
         "ontario_tax_reduction: 2 × tax_reduction_amounts 294 "
-        "over ontario_tax_with_surtax 8195.77, not below 0 (half-up to 0.01)",
+        "over ontario_tax_after_dividend_credit 8195.77, not below 0 (half-up to 0.01)",
         "0",
     )
     after_reduction = position(
-        "ontario_tax_after_reduction: ontario_tax_with_surtax 8195.77 "
+        "ontario_tax_after_reduction: ontario_tax_after_dividend_credit 8195.77 "
         "less ontario_tax_reduction 0, not below 0 = 8195.77",
         "8195.77",
     )
@@ -1485,7 +1551,10 @@ def test_the_trace_explains_the_computation() -> None:
     assert reduction_basic < reduction_amounts
     assert reduction_children < reduction_amounts
     assert reduction_dependants < reduction_amounts
-    assert with_surtax < reduction < after_reduction
+    assert dividend_a < dividend_eligible < dividend_credit < line_70
+    assert dividend_b < dividend_other < dividend_credit
+    assert ontario_after < line_56 < line_58
+    assert with_surtax < line_71 < reduction < after_reduction
     assert reduction_amounts < reduction
     assert taxable < premium_first < premium_second < premium_third < premium_fourth
     assert premium_fourth < premium_fifth < ontario_tax
@@ -1574,6 +1643,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             DIVIDENDS_AMOUNT_A_LESS_B,
             D("0"),
             Rate(D("0.150198")),
+            CENT,
+            D("0"),
+        ),
+        # Worksheet ON428's "Line 61520" line 1 (line B x 2.9863%) and line 2 (line C x 10%), on
+        # no dividends.
+        ontario.OTHER_DIVIDENDS_CREDIT: RateAppliedLine(
+            ontario.OTHER_DIVIDENDS_CREDIT,
+            ontario.DIVIDENDS_AMOUNT_B,
+            D("0"),
+            Rate(D("0.029863")),
+            CENT,
+            D("0"),
+        ),
+        ontario.ELIGIBLE_DIVIDENDS_CREDIT: RateAppliedLine(
+            ontario.ELIGIBLE_DIVIDENDS_CREDIT,
+            ontario.DIVIDENDS_AMOUNT_A_LESS_B,
+            D("0"),
+            Rate(D("0.1")),
             CENT,
             D("0"),
         ),
@@ -1908,6 +1995,32 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("17180.58"),
         ),
+        # Worksheet ON428's "Line 61520" lines A and B (whole lines 12000 and 12010) and line 3
+        # "Line 1 plus line 2", and ON428 lines 56 "Enter the amount from line 53 above." and 70
+        # "Ontario dividend tax credit from line 57": each of A, B, 56 and 70 is one part.
+        ontario.DIVIDENDS_AMOUNT_A: SumLine(
+            ontario.DIVIDENDS_AMOUNT_A, ((TAXABLE_DIVIDENDS, D("0")),), D("0")
+        ),
+        ontario.DIVIDENDS_AMOUNT_B: SumLine(
+            ontario.DIVIDENDS_AMOUNT_B,
+            ((TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE, D("0")),),
+            D("0"),
+        ),
+        ontario.DIVIDEND_TAX_CREDIT: SumLine(
+            ontario.DIVIDEND_TAX_CREDIT,
+            ((ontario.OTHER_DIVIDENDS_CREDIT, D("0")), (ontario.ELIGIBLE_DIVIDENDS_CREDIT, D("0"))),
+            D("0"),
+        ),
+        ontario.ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT: SumLine(
+            ontario.ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT,
+            ((ONTARIO_TAX_AFTER_CREDITS, D("7671.98")),),
+            D("7671.98"),
+        ),
+        ontario.DIVIDEND_CREDIT_FROM_LINE_57: SumLine(
+            ontario.DIVIDEND_CREDIT_FROM_LINE_57,
+            ((ontario.DIVIDEND_TAX_CREDIT, D("0")),),
+            D("0"),
+        ),
         # ON428 line 69 "Line 62 plus line 68": the Ontario tax after credits plus the surtax.
         ONTARIO_TAX_WITH_SURTAX: SumLine(
             ONTARIO_TAX_WITH_SURTAX,
@@ -1983,6 +2096,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert subtracted == {
+        # Worksheet ON428's line C "Amount A minus amount B": no dividends.
+        ontario.DIVIDENDS_AMOUNT_A_LESS_B: SubtractedLine(
+            output=ontario.DIVIDENDS_AMOUNT_A_LESS_B,
+            minuend=ontario.DIVIDENDS_AMOUNT_A,
+            minuend_amount=D("0"),
+            subtrahend=ontario.DIVIDENDS_AMOUNT_B,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # The Federal Worksheet's line C "Amount A minus amount B": no dividends with no slip.
         DIVIDENDS_AMOUNT_A_LESS_B: SubtractedLine(
             output=DIVIDENDS_AMOUNT_A_LESS_B,
@@ -2216,14 +2338,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     # ON428 line 78 "Amount from line 77 above multiplied by 2", line 79 "Amount from line 73
     # above" and line 80 "Line 78 minus line 79 (if negative, enter "0") Ontario tax reduction":
-    # 588.00 is below the tax with surtax of 8195.77, so the reduction is 0.
+    # line 73 is line 71, the tax after the dividend credit, 8195.77; 588.00 is below it, so the
+    # reduction is 0.
     assert multiples == {
         ONTARIO_TAX_REDUCTION: MultipleOverLine(
             output=ONTARIO_TAX_REDUCTION,
             base=TAX_REDUCTION_AMOUNTS,
             base_amount=D("294.00"),
             factor=Factor(D("2")),
-            less=ONTARIO_TAX_WITH_SURTAX,
+            less=ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT,
             less_amount=D("8195.77"),
             rounding=CENT,
             result=D("0"),
@@ -2609,10 +2732,28 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("11905.00"),
         ),
+        # ON428 line 58 "Line 56 minus line 57 (if negative, enter "0")" and line 71 "Line 69
+        # minus line 70 (if negative, enter "0")": the credit is 0.
+        ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT: SubtractedNotBelowZeroLine(
+            output=ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT,
+            minuend=ontario.ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT,
+            minuend_amount=D("7671.98"),
+            subtrahend=ontario.DIVIDEND_TAX_CREDIT,
+            subtrahend_amount=D("0"),
+            result=D("7671.98"),
+        ),
+        ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT: SubtractedNotBelowZeroLine(
+            output=ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT,
+            minuend=ONTARIO_TAX_WITH_SURTAX,
+            minuend_amount=D("8195.77"),
+            subtrahend=ontario.DIVIDEND_CREDIT_FROM_LINE_57,
+            subtrahend_amount=D("0"),
+            result=D("8195.77"),
+        ),
         # ON428 line 81 "Line 73 minus line 80 (if negative, enter "0")".
         ONTARIO_TAX_AFTER_REDUCTION: SubtractedNotBelowZeroLine(
             output=ONTARIO_TAX_AFTER_REDUCTION,
-            minuend=ONTARIO_TAX_WITH_SURTAX,
+            minuend=ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT,
             minuend_amount=D("8195.77"),
             subtrahend=ONTARIO_TAX_REDUCTION,
             subtrahend_amount=D("0"),
@@ -2730,7 +2871,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 119
+    assert len(order) == 129
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -2872,12 +3013,42 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[ONTARIO_SURTAX]
         < position[ONTARIO_TAX_WITH_SURTAX]
     )
+    assert (
+        position[TAXABLE_DIVIDENDS]
+        < position[ontario.DIVIDENDS_AMOUNT_A]
+        < position[ontario.DIVIDENDS_AMOUNT_A_LESS_B]
+        < position[ontario.ELIGIBLE_DIVIDENDS_CREDIT]
+        < position[ontario.DIVIDEND_TAX_CREDIT]
+        < position[ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT]
+    )
+    assert (
+        position[TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE]
+        < position[ontario.DIVIDENDS_AMOUNT_B]
+        < position[ontario.OTHER_DIVIDENDS_CREDIT]
+        < position[ontario.DIVIDEND_TAX_CREDIT]
+    )
+    assert position[ontario.DIVIDENDS_AMOUNT_B] < position[ontario.DIVIDENDS_AMOUNT_A_LESS_B]
+    assert (
+        position[ONTARIO_TAX_AFTER_CREDITS]
+        < position[ontario.ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT]
+        < position[ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT]
+    )
+    assert (
+        position[ONTARIO_TAX_WITH_SURTAX]
+        < position[ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT]
+        < position[ONTARIO_TAX_REDUCTION]
+    )
+    assert (
+        position[ontario.DIVIDEND_TAX_CREDIT]
+        < position[ontario.DIVIDEND_CREDIT_FROM_LINE_57]
+        < position[ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT]
+    )
     assert position[TAX_REDUCTION_BASIC] < position[TAX_REDUCTION_AMOUNTS]
     assert position[TAX_REDUCTION_FOR_CHILDREN] < position[TAX_REDUCTION_AMOUNTS]
     assert position[TAX_REDUCTION_FOR_DEPENDANTS] < position[TAX_REDUCTION_AMOUNTS]
     assert position[TAX_REDUCTION_AMOUNTS] < position[ONTARIO_TAX_REDUCTION]
     assert (
-        position[ONTARIO_TAX_WITH_SURTAX]
+        position[ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT]
         < position[ONTARIO_TAX_REDUCTION]
         < position[ONTARIO_TAX_AFTER_REDUCTION]
         < position[ONTARIO_TAX]
@@ -4671,9 +4842,9 @@ def test_the_dividend_tax_credit_comes_off_the_basic_federal_tax_with_the_other_
     assert worksheet.get(FEDERAL_BASIC_TAX).value == D("7538.55")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("4214.71")
     assert worksheet.get(NET_FEDERAL_TAX).value == D("4214.71")
-    assert worksheet.get(ontario.ONTARIO_TAX).value == D("2424.13")
-    assert worksheet.get(TOTAL_PAYABLE).value == D("6638.84")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-2361.16")
+    assert worksheet.get(ontario.ONTARIO_TAX).value == D("2232.99")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("6447.70")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-2552.30")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "credits_against_basic_federal_tax: non_refundable_tax_credits 3004.65 "
@@ -4990,3 +5161,171 @@ def test_return_ls_deductions_from_net_income_are_8500_and_its_taxable_income_34
     assert worksheet.get(OTHER_PAYMENTS_DEDUCTION).value == D("2000")
     assert worksheet.get(DEDUCTIONS_FROM_NET_INCOME).value == D("8500")
     assert worksheet.get(TAXABLE_INCOME).value == D("34500.00")
+
+
+def test_return_ks_ontario_dividend_tax_credit_uses_the_whole_lines_12000_and_12010() -> None:
+    # Worksheet ON428's "Line 61520" has no Note 1: line A is the whole line 12000, 2455.00, and
+    # line B the whole line 12010, 775.00 (the federal lines A and B, 1955.00 and 575.00, count
+    # the no-slip dividends only). Line 1 is 775.00 x 2.9863% = 23.143825, 23.14; line C is
+    # 2455.00 - 775.00 = 1680.00; line 2 is 1680.00 x 10% = 168.00; line 3, and so line 61520
+    # and ON428 line 57, is 23.14 + 168.00 = 191.14. The slip credit of 60.00 is the federal
+    # credit's and is not read.
+    worksheet = return_k()
+
+    assert worksheet.get(ontario.DIVIDENDS_AMOUNT_A).value == D("2455.00")
+    assert worksheet.get(ontario.DIVIDENDS_AMOUNT_B).value == D("775.00")
+    assert worksheet.get(ontario.OTHER_DIVIDENDS_CREDIT).value == D("23.14")
+    assert worksheet.get(ontario.DIVIDENDS_AMOUNT_A_LESS_B).value == D("1680.00")
+    assert worksheet.get(ontario.ELIGIBLE_DIVIDENDS_CREDIT).value == D("168.00")
+    assert worksheet.get(ontario.DIVIDEND_TAX_CREDIT).value == D("191.14")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    for line in (
+        "dividends_amount_a: taxable_dividends 2455 = 2455",
+        "dividends_amount_b: taxable_dividends_other_than_eligible 775 = 775",
+        "other_dividends_credit: 2.9863% of dividends_amount_b 775 (half-up to 0.01)",
+        "dividends_amount_a_less_b: dividends_amount_a 2455 less dividends_amount_b 775 = 1680",
+        "eligible_dividends_credit: 10% of dividends_amount_a_less_b 1680 (half-up to 0.01)",
+        "dividend_tax_credit: other_dividends_credit 23.14 + eligible_dividends_credit 168 "
+        "= 191.14",
+    ):
+        assert line in rendered, line
+
+
+def test_the_ontario_dividend_tax_credit_comes_off_the_tax_at_lines_58_and_71() -> None:
+    # ON428 line 56 is line 53, 1824.13, and line 58 "Line 56 minus line 57" is 1824.13 -
+    # 191.14 = 1632.99. Line 69 is 1824.13 (no surtax below 5710) and line 70 is line 57,
+    # 191.14, so line 71 "Line 69 minus line 70" is 1632.99, as is line 73. Twice the reduction
+    # amounts, 588.00, is below it, so line 80 is 0 and line 81 is 1632.99; the lift credit
+    # (line 85) is 0; the health premium of 600.00 is added: line 90, the Ontario tax, is
+    # 2232.99.
+    worksheet = return_k()
+
+    assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT).value == D("1824.13")
+    assert worksheet.get(ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT).value == D("1632.99")
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SURTAX).value == D("1824.13")
+    assert worksheet.get(ontario.DIVIDEND_CREDIT_FROM_LINE_57).value == D("191.14")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("1632.99")
+    assert worksheet.get(ontario.ONTARIO_TAX_REDUCTION).value == D("0")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_REDUCTION).value == D("1632.99")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_FOOD_CREDIT).value == D("1632.99")
+    assert worksheet.get(ontario.ONTARIO_TAX).value == D("2232.99")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    for line in (
+        "ontario_tax_before_dividend_credit: ontario_tax_after_credits 1824.13 = 1824.13",
+        "ontario_tax_less_dividend_credit: ontario_tax_before_dividend_credit 1824.13 "
+        "less dividend_tax_credit 191.14, not below 0 = 1632.99",
+        "dividend_credit_from_line_57: dividend_tax_credit 191.14 = 191.14",
+        "ontario_tax_after_dividend_credit: ontario_tax_with_surtax 1824.13 "
+        "less dividend_credit_from_line_57 191.14, not below 0 = 1632.99",
+        "ontario_tax_after_reduction: ontario_tax_after_dividend_credit 1632.99 "
+        "less ontario_tax_reduction 0, not below 0 = 1632.99",
+    ):
+        assert line in rendered, line
+
+
+def test_dividends_received_with_no_slip_give_the_ontario_credit_of_155_17() -> None:
+    # The worked example of the Worksheet: eligible dividends received 1000 and dividends other
+    # than eligible 500, no slips. Line 13 is 1380.00 and line 16 575.00, so line 12000 is
+    # 1955.00 and line 12010 575.00. Ontario line B is 575.00 x 2.9863% = 17.171225, 17.17;
+    # line C is 1955.00 - 575.00 = 1380.00 and line 2 is 1380.00 x 10% = 138.00; line 3 is
+    # 17.17 + 138.00 = 155.17.
+    worksheet = compute(
+        "50000",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        eligible_dividends_received_without_a_slip="1000",
+        other_dividends_received_without_a_slip="500",
+    )
+
+    assert worksheet.get(TAXABLE_DIVIDENDS).value == D("1955.00")
+    assert worksheet.get(TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE).value == D("575.00")
+    assert worksheet.get(ontario.DIVIDENDS_AMOUNT_A).value == D("1955.00")
+    assert worksheet.get(ontario.DIVIDENDS_AMOUNT_B).value == D("575.00")
+    assert worksheet.get(ontario.OTHER_DIVIDENDS_CREDIT).value == D("17.17")
+    assert worksheet.get(ontario.DIVIDENDS_AMOUNT_A_LESS_B).value == D("1380.00")
+    assert worksheet.get(ontario.ELIGIBLE_DIVIDENDS_CREDIT).value == D("138.00")
+    assert worksheet.get(ontario.DIVIDEND_TAX_CREDIT).value == D("155.17")
+    assert worksheet.get(DIVIDEND_TAX_CREDIT).value == D("259.19")
+
+
+def test_dividends_on_slips_alone_are_the_whole_ontario_lines_a_and_b() -> None:
+    # Slip amounts of 800 (T5 boxes 11 and 25) and 300 (box 11) are lines 12000 and 12010, and
+    # the Ontario worksheet reads both whole (the federal lines A and B are 0 here): line 1 is
+    # 300 x 2.9863% = 8.9589, 8.96; line C is 800 - 300 = 500; line 2 is 500 x 10% = 50.00; line
+    # 3 is 58.96.
+    worksheet = compute(
+        "50000",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        t5_taxable_dividends_other_than_eligible="300",
+        t5_taxable_dividends="800",
+        t5_dividend_tax_credit="70.00",
+    )
+
+    assert worksheet.get(DIVIDENDS_AMOUNT_A).value == D("0")
+    assert worksheet.get(ontario.DIVIDENDS_AMOUNT_A).value == D("800")
+    assert worksheet.get(ontario.DIVIDENDS_AMOUNT_B).value == D("300")
+    assert worksheet.get(ontario.OTHER_DIVIDENDS_CREDIT).value == D("8.96")
+    assert worksheet.get(ontario.DIVIDENDS_AMOUNT_A_LESS_B).value == D("500")
+    assert worksheet.get(ontario.ELIGIBLE_DIVIDENDS_CREDIT).value == D("50.00")
+    assert worksheet.get(ontario.DIVIDEND_TAX_CREDIT).value == D("58.96")
+
+
+def test_slip_credits_alone_give_no_ontario_dividend_tax_credit() -> None:
+    # The Ontario credit is computed from lines 12000 and 12010, not taken from the slips'
+    # credit boxes: with no dividends the federal line 40425 is the slip credit of 100.00 and
+    # ON428 line 57 is 0.
+    worksheet = compute("50000", "0", "0", "0", "0", "0", "0", t5_dividend_tax_credit="100.00")
+
+    assert worksheet.get(DIVIDEND_TAX_CREDIT).value == D("100.00")
+    assert worksheet.get(ontario.DIVIDEND_TAX_CREDIT).value == D("0")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == (
+        worksheet.get(ONTARIO_TAX_WITH_SURTAX).value
+    )
+
+
+def test_the_dividend_credit_is_taken_off_line_69_after_the_surtax() -> None:
+    # Line 70 comes off line 69, the tax plus the surtax (line 68), and the surtax is still
+    # computed on line 65 before it: line 71 is line 69 less the credit.
+    worksheet = compute("100000", "0", "0", "0", "0", "0", "0", t5_taxable_dividends="100000")
+
+    credit = worksheet.get(ontario.DIVIDEND_TAX_CREDIT).value
+    assert credit == D("10000.00")
+    assert worksheet.get(ONTARIO_SURTAX).value > D("0")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == (
+        worksheet.get(ONTARIO_TAX_WITH_SURTAX).value - credit
+    )
+
+
+def test_the_ontario_tax_reduction_is_set_against_line_71_not_line_69() -> None:
+    # Employment income of 26000 and a T5 slip with boxes 11 and 25 of 1000 (box 11 0): line 12000
+    # is 1000 and line 12010 is 0, so line 1 is 0, line C is 1000.00 and line 2 is 100.00, line
+    # 57 being 100.00. Line 69 is 630.64, above twice the reduction amounts, 588.00; line 71,
+    # and so line 73, is 630.64 - 100.00 = 530.64, so line 80 "Line 78 minus line 79" is 588.00
+    # - 530.64 = 57.36 and line 81 is 530.64 - 57.36 = 473.28.
+    worksheet = compute("26000", "0", "0", "0", "0", "0", "0", t5_taxable_dividends="1000")
+
+    assert worksheet.get(ontario.DIVIDEND_TAX_CREDIT).value == D("100.00")
+    assert worksheet.get(ONTARIO_TAX_WITH_SURTAX).value == D("630.64")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("530.64")
+    assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("57.36")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("473.28")
+
+
+def test_an_ontario_dividend_credit_above_the_tax_leaves_zero_not_a_negative() -> None:
+    # Employment income of 20000 and slip dividends of 20000: the credit (line 57) is 2000.00,
+    # above the Ontario tax of 1310.14, so lines 58 and 71 are "0" (if negative, enter "0").
+    worksheet = compute("20000", "0", "0", "0", "0", "0", "0", t5_taxable_dividends="20000")
+
+    assert worksheet.get(ontario.DIVIDEND_TAX_CREDIT).value == D("2000.00")
+    assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT).value == D("1310.14")
+    assert worksheet.get(ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT).value == D("0")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("0")

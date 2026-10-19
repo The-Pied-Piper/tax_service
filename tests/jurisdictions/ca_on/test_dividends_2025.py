@@ -1,4 +1,4 @@
-"""The 2025 dividend gross-ups and federal credit rates, checked against CRA's Federal Worksheet.
+"""The 2025 dividend gross-ups and the federal and Ontario credit rates, checked against CRA.
 
 2025 Federal Worksheet (form 5000-D1), "Lines 12000 and 12010 - Taxable amount of dividends from
 taxable Canadian corporations": "Taxable amount of dividends if you did not receive an information
@@ -13,6 +13,11 @@ where line 7 is meant). 138% and 115% are above one, which the `rate` kind refus
 gross-ups are `fraction` datasets (138/100 and 115/100, kept as given); the two credit rates are
 `rate` datasets. Lines 13 and 16 and the two credit lines (6 and 7) are dollars-and-cents boxes,
 so each product is rounded half-up to the cent.
+
+2025 Worksheet ON428 (form 5006-D), "Line 61520 - Ontario dividend tax credit": "Line 1: Amount from
+line 12010 of your return Line B" "multiplied by 2.9863% ="; "Line 2: Amount A minus amount B Line C
+=" "multiplied by 10% =". Both percentages are `rate` datasets and both products are
+dollars-and-cents boxes, so each is rounded half-up to the cent.
 """
 
 from __future__ import annotations
@@ -38,6 +43,11 @@ OTHER_CREDIT_RATE = "ca/dividend_credit_rate_other_than_eligible"
 ELIGIBLE_CREDIT_RATE = "ca/dividend_credit_rate_eligible"
 FEDERAL_WORKSHEET_TEXT = (
     "https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-d1/5000-d1-25e.txt"
+)
+ON_OTHER_CREDIT_RATE = "ca-on/dividend_credit_rate_other_than_eligible"
+ON_ELIGIBLE_CREDIT_RATE = "ca-on/dividend_credit_rate_eligible"
+ON428_WORKSHEET_TEXT = (
+    "https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-d/5006-d-25e.txt"
 )
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
@@ -163,6 +173,69 @@ def test_the_credit_on_dividends_other_than_eligible_is_9_0301_percent(
 )
 def test_the_credit_on_eligible_dividends_is_15_0198_percent(base: str, credit: str) -> None:
     capability = ApplyRate(SOURCE.get(ELIGIBLE_CREDIT_RATE, 2025, RATE), BASE, CREDIT)
+
+    result = capability.compute((Artifact(BASE, D(base)),))
+
+    assert result.outputs == (Artifact(CREDIT, D(credit)),)
+
+
+def test_2025_ontario_credit_rate_on_dividends_other_than_eligible_is_2_9863_percent() -> None:
+    data = SOURCE.get(ON_OTHER_CREDIT_RATE, 2025, RATE)
+
+    assert data.values == Rate(D("0.029863"))
+    # Worksheet ON428 line 1, a dollars-and-cents box: half-up to the cent.
+    assert data.rounding == CENT
+
+
+def test_2025_ontario_credit_rate_on_eligible_dividends_is_10_percent() -> None:
+    data = SOURCE.get(ON_ELIGIBLE_CREDIT_RATE, 2025, RATE)
+
+    assert data.values == Rate(D("0.1"))
+    # Worksheet ON428 line 2, a dollars-and-cents box: half-up to the cent.
+    assert data.rounding == CENT
+
+
+def test_2025_ontario_datasets_cite_the_on428_worksheet_text() -> None:
+    for family in (ON_OTHER_CREDIT_RATE, ON_ELIGIBLE_CREDIT_RATE):
+        assert ON428_WORKSHEET_TEXT in SOURCE.get(family, 2025, RATE).sources, family
+
+
+@pytest.mark.parametrize(
+    ("base", "credit"),
+    [
+        # The worked example (Return K): line B of 775.00 x 2.9863% = 23.143825.
+        ("775", "23.14"),
+        # The no-slip example: line B of 575.00 x 2.9863% = 17.171225.
+        ("575", "17.17"),
+        ("0", "0"),
+        # Rounded half-up to the cent: 5000 x 2.9863% is 149.315, a tie, up to 149.32.
+        ("5000", "149.32"),
+    ],
+)
+def test_the_ontario_credit_on_dividends_other_than_eligible_is_2_9863_percent(
+    base: str, credit: str
+) -> None:
+    capability = ApplyRate(SOURCE.get(ON_OTHER_CREDIT_RATE, 2025, RATE), BASE, CREDIT)
+
+    result = capability.compute((Artifact(BASE, D(base)),))
+
+    assert result.outputs == (Artifact(CREDIT, D(credit)),)
+
+
+@pytest.mark.parametrize(
+    ("base", "credit"),
+    [
+        # The worked example (Return K): line C of 1,680.00 x 10% = 168.00.
+        ("1680", "168.00"),
+        # The no-slip example: line C of 1,380.00 x 10% = 138.00.
+        ("1380", "138"),
+        ("0", "0"),
+        # Rounded half-up to the cent: 0.05 x 10% is 0.005, a tie, up to 0.01.
+        ("0.05", "0.01"),
+    ],
+)
+def test_the_ontario_credit_on_eligible_dividends_is_10_percent(base: str, credit: str) -> None:
+    capability = ApplyRate(SOURCE.get(ON_ELIGIBLE_CREDIT_RATE, 2025, RATE), BASE, CREDIT)
 
     result = capability.compute((Artifact(BASE, D(base)),))
 

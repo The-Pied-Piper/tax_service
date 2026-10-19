@@ -74,37 +74,40 @@ description: >-
   for Ontario, on the taxable income of $34,500.00), not below zero: $2,093.40 and $974.16.
   The Ontario surtax (ON428 line 68) is $0, as the Ontario tax after credits is below
   $5,710, so the Ontario tax with surtax (ON428 line 69) is that same $974.16. With no
+  dividends, Worksheet ON428's lines A and B (lines 12000 and 12010) are $0, so the Ontario
+  dividend tax credit (ON428 line 57, line 61520) and line 70 are $0, and the Ontario tax
+  after the dividend credit (ON428 line 71, which is line 73) is that same $974.16. With no
   dependent children and no dependants (ON428 lines 75 and 76), the Ontario tax reduction
   amounts (line 77) are the basic reduction of $294.00 (line 74); twice them, $588.00 (line
-  78), less the Ontario tax with surtax (line 79, from line 73) is negative, so the Ontario
-  tax reduction (line 80) is $0 and the Ontario tax after the reduction (line 81) is that
-  same $974.16. The LIFT credit (ON428 line 85, Schedule ON428-A) is 5.05% of employment
-  income, $2,020, at most $875, less 5% of net income over $32,500, $525.00: $350.00, and
-  the Ontario tax after it (ON428 line 86) is $974.16 - $350.00 = $624.16. With chosen
-  qualifying donations of $0, the community food program donation tax credit for farmers
-  (ON428 line 87) is 25% x $0 = $0 and the Ontario tax after it (line 88) is that same
-  $624.16. The Ontario health premium (ON428 line 89) is read from its chart on taxable
-  income: $34,500.00 is more than $20,000 but not more than $36,000, so the premium is $300,
-  and the Ontario tax (ON428 line 90) is the Ontario tax after the food credit plus the
-  premium, $624.16 + $300 = $924.16. On the T1, the net federal tax (line 42000) is the
-  federal tax after credits, $2,093.40, and the total payable (line 43500) is it plus the
-  Ontario tax (line 42800), $3,017.56. The Canada workers benefit (line 45300, Schedule 6)
-  is 27% of the working income, the employment income, over $3,000, $9,990, at most $1,633,
-  less 15% of the adjusted family net income, the net income, over $26,855, $2,421.75; the
-  reduction is more than the $1,633, so the benefit is $0. With no eligible dependant, these
-  are the amounts for a filer with no eligible spouse and no eligible dependant; with one,
-  at most $2,813 less 15% over $30,639, $1,854.15, the benefit would be $958.85. The income
-  tax deducted (line 43700) is a chosen $5,000, so the total credits (line 48200) are it
-  plus the benefit plus the provincial credits (line 47900, the Ontario credits of Form
-  ON479 line 21, $0 with no fertility treatment expenses and no seniors' transit amount
-  paid), $5,000, and the refund or balance owing (line 167) is the total payable less the
-  total credits, $3,017.56 - $5,000 = -$1,982.44: negative, so a refund (line 48400). Every
-  amount computed from a rate, fraction, amount or chart on the forms is rounded half-up to
-  the cent, each line being a dollars-and-cents box; here that changes Form T778 line 6, the
-  federal tax on taxable income, the Ontario tax on taxable income and both forms'
-  non-refundable tax credits, and the lines that follow from them. The lines that only add,
-  subtract, compare or choose take amounts already in cents, so the refund or balance owing
-  is in cents too.
+  78), less the Ontario tax after the dividend credit (line 79, from line 73, which is line
+  71 as line 72 is not triggered) is negative, so the Ontario tax reduction (line 80) is $0
+  and the Ontario tax after the reduction (line 81) is that same $974.16. The LIFT credit
+  (ON428 line 85, Schedule ON428-A) is 5.05% of employment income, $2,020, at most $875,
+  less 5% of net income over $32,500, $525.00: $350.00, and the Ontario tax after it (ON428
+  line 86) is $974.16 - $350.00 = $624.16. With chosen qualifying donations of $0, the
+  community food program donation tax credit for farmers (ON428 line 87) is 25% x $0 = $0
+  and the Ontario tax after it (line 88) is that same $624.16. The Ontario health premium
+  (ON428 line 89) is read from its chart on taxable income: $34,500.00 is more than $20,000
+  but not more than $36,000, so the premium is $300, and the Ontario tax (ON428 line 90) is
+  the Ontario tax after the food credit plus the premium, $624.16 + $300 = $924.16. On the
+  T1, the net federal tax (line 42000) is the federal tax after credits, $2,093.40, and the
+  total payable (line 43500) is it plus the Ontario tax (line 42800), $3,017.56. The Canada
+  workers benefit (line 45300, Schedule 6) is 27% of the working income, the employment
+  income, over $3,000, $9,990, at most $1,633, less 15% of the adjusted family net income,
+  the net income, over $26,855, $2,421.75; the reduction is more than the $1,633, so the
+  benefit is $0. With no eligible dependant, these are the amounts for a filer with no
+  eligible spouse and no eligible dependant; with one, at most $2,813 less 15% over $30,639,
+  $1,854.15, the benefit would be $958.85. The income tax deducted (line 43700) is a chosen
+  $5,000, so the total credits (line 48200) are it plus the benefit plus the provincial
+  credits (line 47900, the Ontario credits of Form ON479 line 21, $0 with no fertility
+  treatment expenses and no seniors' transit amount paid), $5,000, and the refund or balance
+  owing (line 167) is the total payable less the total credits, $3,017.56 - $5,000 =
+  -$1,982.44: negative, so a refund (line 48400). Every amount computed from a rate,
+  fraction, amount or chart on the forms is rounded half-up to the cent, each line being a
+  dollars-and-cents box; here that changes Form T778 line 6, the federal tax on taxable
+  income, the Ontario tax on taxable income and both forms' non-refundable tax credits, and
+  the lines that follow from them. The lines that only add, subtract, compare or choose take
+  amounts already in cents, so the refund or balance owing is in cents too.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -441,38 +444,52 @@ sources:
     54"; line 65 "Line 63 minus line 64 (if negative, enter "0")"; line 66 "(Line 65 minus
     $5,710) multiplied by 20% (if negative, enter "0")"; line 67 "(Line 65 minus $7,307)
     multiplied by 36% (if negative, enter "0")"; line 68 "Line 66 plus line 67"; line 69
-    "Line 62 plus line 68". Tax on split income (line 54, line 61510), the dividend tax
-    credit (line 57, line 61520) and the minimum tax carryover (lines 59 and 60, line 61540)
-    are not modelled, so lines 61, 62 and 63 carry line 53, the Ontario tax after credits,
-    unchanged (line 55 "Line 53 plus line 54", line 54 being 0), line 64 is 0 and the surtax
-    base, line 65, is the Ontario tax after credits itself. The Ontario tax after credits of
-    974.16 is below 5,710 and 7,307, so lines 66 and 67 are negative and enter 0, each
-    rounded half-up to the cent, which changes neither; the surtax, line 68, is 0 + 0 = 0,
-    and line 69 is 974.16 + 0 = 974.16; lines 68 and 69 take amounts already in cents.
+    "Line 62 plus line 68". Tax on split income (line 54, line 61510) and the minimum tax
+    carryover (lines 59 and 60, line 61540) are not modelled, so lines 61, 62 and 63 carry
+    line 53, the Ontario tax after credits, unchanged (line 55 "Line 53 plus line 54", line
+    54 being 0), line 64 is 0 and the surtax base, line 65, is the Ontario tax after credits
+    itself. The Ontario tax after credits of 974.16 is below 5,710 and 7,307, so lines 66
+    and 67 are negative and enter 0, each rounded half-up to the cent, which changes
+    neither; the surtax, line 68, is 0 + 0 = 0, and line 69 is 974.16 + 0 = 974.16; lines 68
+    and 69 take amounts already in cents.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
-    CRA, the 2025 ON428 (form 5006-C): line 71 "Line 69 minus line 70 (if negative, enter
-    "0")", with line 70 the dividend tax credit; line 73 "Line 71 plus line 72", with line
-    72 the minimum tax; line 74 "Basic reduction 294.00"; line 75 (line 60969) "Number of
-    dependent children multiplied by $544"; line 76 (line 60970) "Number of dependants
-    multiplied by $544"; line 77 "Add lines 74 to 76."; line 78 "Amount from line 77 above
-    multiplied by 2"; line 79 "Amount from line 73 above"; line 80 "Line 78 minus line 79
-    (if negative, enter "0") Ontario tax reduction"; line 81 "Line 73 minus line 80 (if
-    negative, enter "0")". Neither the dividend tax credit nor the minimum tax is modelled,
-    so lines 71 and 73 carry line 69, the Ontario tax with surtax, unchanged. The taxpayer
-    is taken to have no dependent children and no dependants (to be confirmed), so lines 75
-    and 76 are 0 x 544 = 0 and line 77 is 294.00 + 0 + 0 = 294.00; line 78 is 294.00 x 2 =
-    588.00; line 79 is 974.16; line 80 is 588.00 - 974.16, negative, so 0; lines 74 to 76
-    and 80 are rounded half-up to the cent, which changes none of them, and line 81 is
-    974.16 - 0 = 974.16; lines 77, 79 and 81 take amounts already in cents. Not modelled:
-    "Enter "0" on line 80 if any of the following applies to you: You were not a resident of
-    Canada at the beginning of the year; You were not a resident of Ontario on December 31,
-    2025; There is an amount on line 72; You were bankrupt at any time in 2025; Your return
-    is filed for you by a trustee in bankruptcy; You are choosing not to claim an Ontario
-    tax reduction", none of which is taken to apply to this taxpayer (to be confirmed); and
-    "If you had a spouse or common-law partner on December 31, 2025, only the individual
-    with the higher net income can claim the amounts on lines 75 and 76.", which changes
-    nothing while lines 75 and 76 are 0.
+    CRA, the 2025 Worksheet ON428 (form 5006-D, docs/cra-forms-2025/5006-d-25e.txt), "Line
+    61520 - Ontario dividend tax credit": "Line A: Amount from line 12000 of your return";
+    "Line 1: Amount from line 12010 of your return Line B" "multiplied by 2.9863%"; "Line 2:
+    Amount A minus amount B Line C" "multiplied by 10%"; "Line 3: Line 1 plus line 2 Enter
+    this amount on line 61520 of your Form ON428." Lines A and B are the whole lines 12000
+    and 12010, both 0 with no dividends, so line 1 is 0 x 2.9863% = 0, line C is 0 - 0 = 0,
+    line 2 is 0 x 10% = 0 and line 3, and so line 61520, is 0 + 0 = 0; lines 1 and 2 are
+    rounded half-up to the cent, which changes neither.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-d/5006-d-25e.txt
+  - >-
+    CRA, the 2025 ON428 (form 5006-C): line 56 "Enter the amount from line 53 above."; line
+    57 (printed "Line 57 and line and line 61520") "Ontario dividend tax credit (use
+    Worksheet ON428)"; line 58 "Line 56 minus line 57 (if negative, enter "0")"; line 70
+    "Ontario dividend tax credit from line 57"; line 71 "Line 69 minus line 70 (if negative,
+    enter "0")"; line 73 "Line 71 plus line 72", with line 72 the minimum tax; line 74
+    "Basic reduction 294.00"; line 75 (line 60969) "Number of dependent children multiplied
+    by $544"; line 76 (line 60970) "Number of dependants multiplied by $544"; line 77 "Add
+    lines 74 to 76."; line 78 "Amount from line 77 above multiplied by 2"; line 79 "Amount
+    from line 73 above"; line 80 "Line 78 minus line 79 (if negative, enter "0") Ontario tax
+    reduction"; line 81 "Line 73 minus line 80 (if negative, enter "0")". With no dividends,
+    line 57 is 0 (Worksheet ON428 above), so line 56, which is line 53, 974.16, and line 58,
+    974.16 - 0 = 974.16, are the same; line 70 is 0 and line 71 is 974.16 - 0 = 974.16,
+    which takes amounts already in cents; the minimum tax (line 72) is not triggered, so
+    line 73 is line 71, 974.16. The taxpayer is taken to have no dependent children and no
+    dependants (to be confirmed), so lines 75 and 76 are 0 x 544 = 0 and line 77 is 294.00 +
+    0 + 0 = 294.00; line 78 is 294.00 x 2 = 588.00; line 79 is 974.16; line 80 is 588.00 -
+    974.16, negative, so 0; lines 74 to 76 and 80 are rounded half-up to the cent, which
+    changes none of them, and line 81 is 974.16 - 0 = 974.16; lines 77, 79 and 81 take
+    amounts already in cents. Not modelled: "Enter "0" on line 80 if any of the following
+    applies to you: You were not a resident of Canada at the beginning of the year; You were
+    not a resident of Ontario on December 31, 2025; There is an amount on line 72; You were
+    bankrupt at any time in 2025; Your return is filed for you by a trustee in bankruptcy;
+    You are choosing not to claim an Ontario tax reduction", none of which is taken to apply
+    to this taxpayer (to be confirmed); and "If you had a spouse or common-law partner on
+    December 31, 2025, only the individual with the higher net income can claim the amounts
+    on lines 75 and 76.", which changes nothing while lines 75 and 76 are 0.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
     CRA, the 2025 Schedule ON428-A (form 5006-A): line 1 "Amount from line 10100 of your
@@ -769,6 +786,16 @@ expected:
   ca-on/ontario_tax_after_credits: "974.16"
   ca-on/ontario_surtax: "0"
   ca-on/ontario_tax_with_surtax: "974.16"
+  ca-on/dividends_amount_a: "0"
+  ca-on/dividends_amount_b: "0"
+  ca-on/other_dividends_credit: "0"
+  ca-on/dividends_amount_a_less_b: "0"
+  ca-on/eligible_dividends_credit: "0"
+  ca-on/dividend_tax_credit: "0"
+  ca-on/ontario_tax_before_dividend_credit: "974.16"
+  ca-on/ontario_tax_less_dividend_credit: "974.16"
+  ca-on/dividend_credit_from_line_57: "0"
+  ca-on/ontario_tax_after_dividend_credit: "974.16"
   ca-on/tax_reduction_basic: "294.00"
   ca-on/tax_reduction_for_children: "0"
   ca-on/tax_reduction_for_dependants: "0"

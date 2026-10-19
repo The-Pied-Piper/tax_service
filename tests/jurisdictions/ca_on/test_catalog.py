@@ -23,10 +23,16 @@ from app.jurisdictions.ca_on.catalog import (
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
     DEPENDANTS,
     DEPENDENT_CHILDREN,
+    DIVIDEND_CREDIT_FROM_LINE_57,
+    DIVIDEND_TAX_CREDIT,
+    DIVIDENDS_AMOUNT_A,
+    DIVIDENDS_AMOUNT_A_LESS_B,
+    DIVIDENDS_AMOUNT_B,
     ELIGIBLE_DEPENDANT_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
     ELIGIBLE_DEPENDANT_BASE,
+    ELIGIBLE_DIVIDENDS_CREDIT,
     FERTILITY_CREDIT,
     FERTILITY_CREDIT_BEFORE_MAXIMUM,
     FERTILITY_EXPENSES,
@@ -47,11 +53,15 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_SURTAX,
     ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_AFTER_DIVIDEND_CREDIT,
     ONTARIO_TAX_AFTER_FOOD_CREDIT,
     ONTARIO_TAX_AFTER_LIFT_CREDIT,
     ONTARIO_TAX_AFTER_REDUCTION,
+    ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT,
+    ONTARIO_TAX_LESS_DIVIDEND_CREDIT,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
+    OTHER_DIVIDENDS_CREDIT,
     SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
     SENIORS_TRANSIT_CREDIT,
     SENIORS_TRANSIT_PAID,
@@ -75,6 +85,16 @@ REGISTERED = frozenset(
         "ca-on/ontario_tax_after_credits",
         "ca-on/ontario_surtax",
         "ca-on/ontario_tax_with_surtax",
+        "ca-on/dividends_amount_a",
+        "ca-on/dividends_amount_b",
+        "ca-on/other_dividends_credit",
+        "ca-on/dividends_amount_a_less_b",
+        "ca-on/eligible_dividends_credit",
+        "ca-on/dividend_tax_credit",
+        "ca-on/ontario_tax_before_dividend_credit",
+        "ca-on/ontario_tax_less_dividend_credit",
+        "ca-on/dividend_credit_from_line_57",
+        "ca-on/ontario_tax_after_dividend_credit",
         "ca-on/tax_reduction_basic",
         "ca-on/dependent_children",
         "ca-on/tax_reduction_for_children",
@@ -151,6 +171,23 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/non_refundable_tax_credits") is NON_REFUNDABLE_TAX_CREDITS
     assert registry.get("ca-on/ontario_surtax") is ONTARIO_SURTAX
     assert registry.get("ca-on/ontario_tax_with_surtax") is ONTARIO_TAX_WITH_SURTAX
+    assert registry.get("ca-on/dividends_amount_a") is DIVIDENDS_AMOUNT_A
+    assert registry.get("ca-on/dividends_amount_b") is DIVIDENDS_AMOUNT_B
+    assert registry.get("ca-on/other_dividends_credit") is OTHER_DIVIDENDS_CREDIT
+    assert registry.get("ca-on/dividends_amount_a_less_b") is DIVIDENDS_AMOUNT_A_LESS_B
+    assert registry.get("ca-on/eligible_dividends_credit") is ELIGIBLE_DIVIDENDS_CREDIT
+    assert registry.get("ca-on/dividend_tax_credit") is DIVIDEND_TAX_CREDIT
+    assert (
+        registry.get("ca-on/ontario_tax_before_dividend_credit")
+        is ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT
+    )
+    assert (
+        registry.get("ca-on/ontario_tax_less_dividend_credit") is ONTARIO_TAX_LESS_DIVIDEND_CREDIT
+    )
+    assert registry.get("ca-on/dividend_credit_from_line_57") is DIVIDEND_CREDIT_FROM_LINE_57
+    assert (
+        registry.get("ca-on/ontario_tax_after_dividend_credit") is ONTARIO_TAX_AFTER_DIVIDEND_CREDIT
+    )
     assert registry.get("ca-on/tax_reduction_basic") is TAX_REDUCTION_BASIC
     assert registry.get("ca-on/dependent_children") is DEPENDENT_CHILDREN
     assert registry.get("ca-on/tax_reduction_for_children") is TAX_REDUCTION_FOR_CHILDREN
