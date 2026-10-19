@@ -50,6 +50,7 @@ explains them.
 from __future__ import annotations
 
 from decimal import Decimal
+from fractions import Fraction as ExactFraction
 
 import pytest
 
@@ -1107,7 +1108,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 base=D("14538"), supplement=D("1591"), threshold=D("177882"), range=D("75532")
             ),
             rounding=CENT,
-            reduction=D("0"),
+            reduction=ExactFraction(0),
             result=D("16129.00"),
         )
     }

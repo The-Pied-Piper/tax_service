@@ -6,8 +6,10 @@ the tax authority's own worksheet. Other languages get their own renderer class.
 
 from __future__ import annotations
 
+import decimal
 from collections.abc import Iterable
 from decimal import Decimal
+from fractions import Fraction as ExactFraction
 
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingRule, RoundTo
 from app.domain.trace import (
@@ -141,7 +143,7 @@ class EnglishTraceRenderer:
             ):
                 return (
                     f"{output.label}: {self._money(taper.base)} "
-                    f"plus {self._money(taper.supplement)} less {self._money(reduction)} "
+                    f"plus {self._money(taper.supplement)} less {self._exact(reduction)} "
                     f"for {base.label} {self._money(amount)} "
                     f"over {self._money(taper.threshold)} (range {self._money(taper.range)}), "
                     f"not below {self._money(taper.base)} ({self._rounding(rule)})"
@@ -229,6 +231,14 @@ class EnglishTraceRenderer:
         """`amount` as a plain figure without trailing zeros, e.g. 115000.00 -> "115000"."""
         text = format(amount, "f")  # fixed-point, every digit; never an exponent
         return text.rstrip("0").rstrip(".") if "." in text else text
+
+    @staticmethod
+    def _exact(amount: ExactFraction) -> str:
+        """An exact fraction as a plain figure if it terminates, else "numerator/denominator"."""
+        try:
+            return EnglishTraceRenderer._money(NO_ROUNDING.apply(amount))
+        except decimal.Inexact:
+            return f"{amount.numerator}/{amount.denominator}"
 
     @staticmethod
     def _rounding(rule: RoundingRule) -> str:

@@ -119,6 +119,12 @@ Rounding is a parameter, never a jurisdiction constant in code.
   rounding**: exact decimal arithmetic, never floats. An assumed default
   (e.g. half-up to the cent) would be a silent prior, the same failure
   class as implicit carry-forward.
+- Exactness is enforced, not assumed: every capability runs under a `decimal`
+  context that traps `Inexact`, so arithmetic that would lose digits raises
+  instead of being rounded to the context's precision. A division is done as an
+  exact fraction and handed to the rule, which rounds once; the rule is the only
+  place allowed to be inexact. With no rounding, a quotient that has no finite
+  decimal expansion raises.
 - A capability's rounding rule lives in its parameter datasets, resolved
   per (family, tax_year) like any other parameter. A capability with
   several parameter slots decides which slot's rule it applies where. Rounding can

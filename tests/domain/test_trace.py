@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import FrozenInstanceError, fields
 from decimal import Decimal
+from fractions import Fraction as ExactFraction
 from typing import Any, cast
 
 import pytest
@@ -135,7 +136,7 @@ def capped_surcharge_tier_line() -> SurchargeTierLine:
 
 def tapered_amount_line() -> TaperedAmountLine:
     return TaperedAmountLine(
-        PERSONAL, INCOME, D("22000.5"), TAPER, CENT, D("100.025"), D("1399.98")
+        PERSONAL, INCOME, D("22000.5"), TAPER, CENT, ExactFraction("100.025"), D("1399.98")
     )
 
 
@@ -744,7 +745,7 @@ def test_tapered_amount_line_fields_in_order() -> None:
         base_amount=D("22000.5"),
         taper=TAPER,
         rounding=CENT,
-        reduction=D("100.025"),
+        reduction=ExactFraction("100.025"),
         result=D("1399.98"),
     )
     assert [f.name for f in fields(line)] == [
@@ -761,24 +762,29 @@ def test_tapered_amount_line_fields_in_order() -> None:
     assert line.base_amount == D("22000.5")
     assert line.taper == TAPER
     assert line.rounding == CENT
-    assert line.reduction == D("100.025")
+    assert line.reduction == ExactFraction(4001, 40)
+    assert isinstance(line.reduction, ExactFraction)
     assert line.result == D("1399.98")
     assert line.amount == D("1399.98")
 
 
 def test_tapered_amount_line_may_hold_a_zero_reduction() -> None:
     # A base at or below the threshold reduces nothing: the full amount.
-    line = TaperedAmountLine(PERSONAL, INCOME, D(15000), TAPER, NO_ROUNDING, D(0), D(1500))
+    line = TaperedAmountLine(
+        PERSONAL, INCOME, D(15000), TAPER, NO_ROUNDING, ExactFraction(0), D(1500)
+    )
 
-    assert line.reduction == D(0)
+    assert line.reduction == ExactFraction(0)
     assert line.amount == D(1500)
 
 
 def test_tapered_amount_line_may_hold_a_reduction_above_the_supplement() -> None:
     # The reduction is recorded before the floor at zero; the result is the base amount.
-    line = TaperedAmountLine(PERSONAL, INCOME, D(80000), TAPER, NO_ROUNDING, D(3000), D(1000))
+    line = TaperedAmountLine(
+        PERSONAL, INCOME, D(80000), TAPER, NO_ROUNDING, ExactFraction(3000), D(1000)
+    )
 
-    assert line.reduction == D(3000)
+    assert line.reduction == ExactFraction(3000)
     assert line.amount == D(1000)
 
 
@@ -786,19 +792,19 @@ def test_tapered_amount_lines_differ_by_taper() -> None:
     other = Taper(D(1000), D(500), D(20000), D(5000))
 
     assert tapered_amount_line() != TaperedAmountLine(
-        PERSONAL, INCOME, D("22000.5"), other, CENT, D("100.025"), D("1399.98")
+        PERSONAL, INCOME, D("22000.5"), other, CENT, ExactFraction("100.025"), D("1399.98")
     )
 
 
 def test_tapered_amount_lines_differ_by_rounding() -> None:
     assert tapered_amount_line() != TaperedAmountLine(
-        PERSONAL, INCOME, D("22000.5"), TAPER, NO_ROUNDING, D("100.025"), D("1399.98")
+        PERSONAL, INCOME, D("22000.5"), TAPER, NO_ROUNDING, ExactFraction("100.025"), D("1399.98")
     )
 
 
 def test_tapered_amount_lines_differ_by_reduction() -> None:
     assert tapered_amount_line() != TaperedAmountLine(
-        PERSONAL, INCOME, D("22000.5"), TAPER, CENT, D("100"), D("1399.98")
+        PERSONAL, INCOME, D("22000.5"), TAPER, CENT, ExactFraction(100), D("1399.98")
     )
 
 
@@ -1066,12 +1072,10 @@ def test_fraction_applied_line_fields_in_order() -> None:
     assert line.amount == D("33333.33")
 
 
-def test_fraction_applied_line_may_hold_an_unrounded_quotient() -> None:
-    line = FractionAppliedLine(
-        PORTION, EARNED, D(50000), Fraction(2, 3), NO_ROUNDING, D("33333.33333333333333333333333")
-    )
+def test_fraction_applied_line_may_hold_an_unrounded_exact_amount() -> None:
+    line = FractionAppliedLine(PORTION, EARNED, D(60000), Fraction(2, 3), NO_ROUNDING, D("40000"))
 
-    assert line.amount == D("33333.33333333333333333333333")
+    assert line.amount == D("40000")
 
 
 def test_fraction_applied_lines_differ_by_fraction() -> None:

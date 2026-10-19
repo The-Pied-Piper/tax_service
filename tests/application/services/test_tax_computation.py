@@ -10,9 +10,11 @@ code, capability, kind and dataset is made up.
 
 from __future__ import annotations
 
+import decimal
 from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import Decimal
+from fractions import Fraction as ExactFraction
 from functools import cache
 from typing import Any, ClassVar, assert_type
 
@@ -1700,7 +1702,7 @@ def test_computes_core_tapered_amount_inside_the_range_end_to_end() -> None:
         D("21.003"),
         Taper(D("10"), D("5"), D("20"), D("10")),
         RoundTo(D("0.01"), RoundingMode.HALF_UP),
-        D("0.5015"),
+        ExactFraction("0.5015"),
         D("14.50"),
     )
     assert [type(line) for line in worksheet.trace].count(TaperedAmountLine) == 1
@@ -1717,7 +1719,8 @@ def test_computes_core_tapered_amount_above_the_range_end_to_end() -> None:
     assert worksheet.get(RESULT).value == D("10")
     assert str(worksheet.get(RESULT).value) == "10.00"
     (line,) = [line for line in worksheet.trace if isinstance(line, TaperedAmountLine)]
-    assert line.reduction == D("20")
+    assert line.reduction == ExactFraction(20)
+    assert isinstance(line.reduction, ExactFraction)
 
 
 def test_computes_core_tapered_amount_below_the_threshold_end_to_end() -> None:
@@ -2198,6 +2201,35 @@ def test_computes_core_apply_fraction_to_an_exact_quotient_end_to_end() -> None:
     # scaled = 21; result = 21 × 5 / 7 = 15 exactly, rounded to 15.00.
     assert worksheet.get(RESULT).value == D("15")
     assert str(worksheet.get(RESULT).value) == "15.00"
+
+
+def test_core_apply_fraction_with_an_inexact_quotient_and_no_rounding_names_the_capability() -> (
+    None
+):
+    from app.domain.errors import CapabilityContractError
+    from app.domain.parameters.fraction import FRACTION, Fraction
+
+    capabilities = capability_registry()
+    capabilities.register("core/apply_fraction", apply_fraction_class())
+    unrounded = ParameterDataset(
+        family="ex/portion_fraction",
+        tax_year=2025,
+        kind=FRACTION,
+        values=Fraction(5, 7),
+        rounding=NO_ROUNDING,
+        sources=("https://example.org/ex/portion_fraction",),
+    )
+    built = service(
+        manifest(APPLY_FRACTION, SCALE),
+        parameters=FakeParameters(factor_data(), offset_data(), unrounded),
+        capabilities=capabilities,
+    )
+
+    # scaled = 15; 15 × 5 / 7 has no finite expansion and the dataset states no rounding.
+    with pytest.raises(CapabilityContractError, match=r"ApplyFraction .*inexact") as raised:
+        built.compute(EX_ON, 2025, Artifact(BASE, D("5")))
+
+    assert isinstance(raised.value.__cause__, decimal.Inexact)
 
 
 def test_core_apply_fraction_runs_after_its_base_is_produced() -> None:

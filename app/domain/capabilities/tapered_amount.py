@@ -2,12 +2,12 @@
 
 For amounts made of a base plus a supplement that is reduced in proportion to how far a figure
 sits above a threshold, over a stated range, not below zero: the reduction is
-`supplement × max(base − threshold, 0) / range`, multiplied before it divides so the one division
-is the only inexact step, and the quotient is carried unrounded (the Decimal context's precision is
-its only limit). The output is `rounding.apply(taper.base + max(supplement − reduction, 0))`,
-rounded once with the `taper` dataset's rule, which defaults to no rounding. At or below the
-threshold the output is base plus supplement; at or above threshold plus range it is the base
-(within the context's precision, since the quotient is unrounded).
+`supplement × max(base − threshold, 0) / range`, computed as an exact fraction so nothing is
+rounded before the rule. The output is
+`rounding.apply(taper.base + max(supplement − reduction, 0))`, rounded once with the `taper`
+dataset's rule, which defaults to no rounding; under no rounding a reduction with no finite
+decimal expansion raises `decimal.Inexact`. At or below the threshold the output is base plus
+supplement; at or above threshold plus range it is the base.
 
 The class is `TaperedAmount` so that it does not share a name with the `Taper` value object it
 reads.
@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from decimal import Decimal
+from fractions import Fraction as ExactFraction
 from typing import Any, ClassVar
 
 from app.domain.artifact import Artifact, Money
@@ -45,14 +46,13 @@ class TaperedAmount(Capability):
     def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
         base = self._input(inputs, self._base).value
         taper, rounding = self._taper.values, self._taper.rounding
-        over = base - taper.threshold
+        over = ExactFraction(base - taper.threshold)
         # Like the floored subtraction: a tie at zero gives a plain 0, never a signed one.
-        excess = over if over > 0 else Decimal(0)
-        # Multiplied first, so the division is the only inexact step; its quotient is unrounded.
-        reduction = taper.supplement * excess / taper.range
-        remaining = taper.supplement - reduction
-        kept = remaining if remaining > 0 else Decimal(0)
-        result = rounding.apply(taper.base + kept)
+        excess = over if over > 0 else ExactFraction(0)
+        reduction = ExactFraction(taper.supplement) * excess / ExactFraction(taper.range)
+        remaining = ExactFraction(taper.supplement) - reduction
+        kept = remaining if remaining > 0 else ExactFraction(0)
+        result = rounding.apply(ExactFraction(taper.base) + kept)
         return CapabilityResult(
             outputs=(Artifact(self._output, result),),
             trace=(
