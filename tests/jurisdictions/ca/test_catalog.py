@@ -41,6 +41,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
+    CWB_ELIGIBLE_DEPENDANTS,
     CWB_REDUCTION_WITH_DEPENDANT,
     CWB_REDUCTION_WITHOUT_DEPENDANT,
     DEDUCTIONS_FROM_NET_INCOME,
@@ -128,6 +129,7 @@ REGISTERED = frozenset(
         "ca/net_federal_tax",
         "ca/total_payable",
         "ca/income_tax_deducted",
+        "ca/cwb_eligible_dependants",
         "ca/working_income",
         "ca/adjusted_family_net_income",
         "ca/cwb_before_reduction_without_dependant",
@@ -149,7 +151,10 @@ SIGNED = frozenset({"ca/refund_or_balance_owing"})
 # dependants and of infirm children; and Form T778 Part B lines 1 to 3 ("Number of eligible
 # children born in 2019 or later whom the disability amount cannot be claimed for", "... born in
 # 2025 or earlier whom the disability amount can be claimed for", "... born in 2009 to 2018"):
-# the numbers of eligible children for the child care expenses deduction; counted, not money.
+# the numbers of eligible children for the child care expenses deduction; and Schedule 6 line 38100
+# ("Do you have an eligible dependant? 1 Yes or 2 No"), whose eligible dependant is "your or your
+# spouse's or common-law partner's child", "under 19 years of age" and "not eligible for the CWB for
+# 2025": the number of eligible dependants for the Canada workers benefit; counted, not money.
 COUNTS = frozenset(
     {
         "ca/eligible_dependants",
@@ -157,6 +162,7 @@ COUNTS = frozenset(
         "ca/children_under_seven",
         "ca/children_with_disability",
         "ca/children_seven_to_sixteen",
+        "ca/cwb_eligible_dependants",
     }
 )
 
@@ -248,6 +254,7 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/net_federal_tax") is NET_FEDERAL_TAX
     assert registry.get("ca/total_payable") is TOTAL_PAYABLE
     assert registry.get("ca/income_tax_deducted") is INCOME_TAX_DEDUCTED
+    assert registry.get("ca/cwb_eligible_dependants") is CWB_ELIGIBLE_DEPENDANTS
     assert registry.get("ca/working_income") is WORKING_INCOME
     assert registry.get("ca/adjusted_family_net_income") is ADJUSTED_FAMILY_NET_INCOME
     assert (

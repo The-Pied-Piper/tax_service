@@ -54,6 +54,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
+    CWB_ELIGIBLE_DEPENDANTS,
     CWB_REDUCTION_WITH_DEPENDANT,
     CWB_REDUCTION_WITHOUT_DEPENDANT,
     DEDUCTIONS_FROM_NET_INCOME,
@@ -153,6 +154,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/children_under_seven",
             "ca/children_with_disability",
             "ca/children_seven_to_sixteen",
+            "ca/cwb_eligible_dependants",
             "ca/income_tax_deducted",
         }
     )
@@ -772,14 +774,13 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
         ),
         # Line 28 for the filer's family status, which lines 21 and 24 read ("If you had an
         # eligible spouse or an eligible dependant ... If not ..."): the line with no eligible
-        # spouse or dependant when the T1 line 30400 count is 0, else the line with one; that
-        # count stands in for Schedule 6's own eligible dependant; an eligible spouse is not
-        # modelled.
+        # spouse or dependant when the number of Schedule 6 eligible dependants (line 38100) is
+        # 0, else the line with one; an eligible spouse is not modelled.
         CapabilitySelection(
             name="core/choose_by_count",
             params={},
             consumes={
-                "count": "ca/eligible_dependants",
+                "count": "ca/cwb_eligible_dependants",
                 "when_none": "ca/canada_workers_benefit_without_dependant",
                 "when_any": "ca/canada_workers_benefit_with_dependant",
             },
@@ -1080,7 +1081,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             ChooseByCount,
             frozenset(
                 {
-                    ELIGIBLE_DEPENDANTS,
+                    CWB_ELIGIBLE_DEPENDANTS,
                     CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
                     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
                 }

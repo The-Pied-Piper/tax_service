@@ -42,9 +42,9 @@
 # by Schedule 6, 27% of the working income over $3,000 at most $1,633, less 15% of the
 # adjusted family net income, here net income, over $26,855, not below zero, for a filer
 # with no eligible spouse and no eligible dependant, and the same at most $2,813 and over
-# $30,639 for a filer with one, and from those, by the number of eligible dependants (T1
-# line 30400), the first when it is zero and the second otherwise, to the Canada workers
-# benefit (T1 line 45300); and on the T1, the federal tax after credits, carried to
+# $30,639 for a filer with one, and from those, by the number of Schedule 6 eligible
+# dependants (line 38100), the first when it is zero and the second otherwise, to the Canada
+# workers benefit (T1 line 45300); and on the T1, the federal tax after credits, carried to
 # the net federal tax, plus the Ontario tax to the total payable, less the total credits,
 # here the chosen income tax deducted plus the Canada workers benefit, to the refund or
 # balance owing, negative for a refund and positive for a balance owing. There is no capital
@@ -54,8 +54,9 @@
 # tax credit for farmers) are not triggered by this return, nor are Schedule 5 line 2, T1
 # lines 30425 and 30450, the Ontario caregiver amount (ON428 line 58185), Form T778 line 8
 # and Parts C and D, and Schedule 6's disability supplement (Step 3) and advance payments
-# (Step 4); with no eligible dependant claimed for, the Schedule 6 amounts for a filer with
-# no eligible spouse and no eligible dependant are the ones chosen (to be confirmed).
+# (Step 4); with no Schedule 6 eligible dependant (line 38100), the Schedule 6 amounts for a
+# filer with no eligible spouse and no eligible dependant are the ones chosen (to be
+# confirmed).
 # Amounts are quoted decimal strings, never floats; counts are quoted digit strings. Every
 # output the CA-ON manifest declares must appear under `expected`; intermediate lines may be
 # listed and are then checked too.
@@ -532,8 +533,8 @@ sources:
     carry lines 5 and 12, line 14 (the secondary earner exemption) is not triggered, and
     line 15, the adjusted family net income, is 74,174.00. The taxpayer is taken to have no
     eligible spouse and no eligible dependant (to be confirmed). Lines 16 to 28 are derived
-    with each of the amounts of lines 21 and 24, and the number of eligible dependants
-    claimed for (T1 line 30400), 0, chooses those for a filer with neither: line 21 is
+    with each of the amounts of lines 21 and 24, and the number of Schedule 6 eligible
+    dependants (line 38100), 0, chooses those for a filer with neither: line 21 is
     $1,633 and line 24 $26,855. Line 18 is 75,000 - 3,000 = 72,000; line 20 is 72,000 x 27%
     = 19,440; line 22 is the lesser of 19,440 and 1,633: 1,633. Line 25 is 74,174.00 -
     26,855 = 47,319.00; line 27 is 47,319.00 x 15% = 7,097.85; line 28 is 1,633 - 7,097.85,
@@ -611,6 +612,7 @@ inputs:
   ca/children_under_seven: "0"
   ca/children_with_disability: "0"
   ca/children_seven_to_sixteen: "0"
+  ca/cwb_eligible_dependants: "0"
   ca/income_tax_deducted: "10000"
 expected:
   ca/taxable_capital_gains: "0"

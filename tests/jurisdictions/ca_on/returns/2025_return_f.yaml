@@ -55,13 +55,13 @@
 # the Ontario tax; from employment income and net income, by Schedule 6, to the working
 # income and the adjusted family net income, from those to the basic amount less its
 # reduction, not below zero, for a filer with no eligible spouse and no eligible dependant
-# and for a filer with one, and from those, by the number of eligible dependants (T1 line
-# 30400), the first when it is zero and the second otherwise, to the Canada workers benefit
-# (T1 line 45300); and on the T1, the federal tax after credits, carried to the net federal
-# tax, plus the Ontario tax to the total payable, less the total credits, here the chosen
-# income tax deducted plus the Canada workers benefit, to the refund or balance owing,
-# negative for a refund and positive for a balance owing. There is no capital gain, unused
-# or new RRSP contribution or union dues. Not yet computed, so not in this file: any
+# and for a filer with one, and from those, by the number of Schedule 6 eligible dependants
+# (line 38100), the first when it is zero and the second otherwise, to the Canada workers
+# benefit (T1 line 45300); and on the T1, the federal tax after credits, carried to the net
+# federal tax, plus the Ontario tax to the total payable, less the total credits, here the
+# chosen income tax deducted plus the Canada workers benefit, to the refund or balance
+# owing, negative for a refund and positive for a balance owing. There is no capital gain,
+# unused or new RRSP contribution or union dues. Not yet computed, so not in this file: any
 # deduction from net income, the social benefits repayment and capital losses. Lines 82 (the
 # provincial foreign tax credit) and 87 (the community food program donation tax credit for
 # farmers) are not triggered by this return, nor are Schedule 5 line 2, T1 lines 30425 and
@@ -69,9 +69,9 @@
 # taken as the only person supporting the child, to be confirmed), line 67954 (the expenses
 # for children aged 6 or younger, to be confirmed), Note 1's weekly limits for boarding
 # schools and overnight camps (to be confirmed) and Parts C and D, and Schedule 6's
-# disability supplement (Step 3) and advance payments (Step 4); with one eligible dependant
-# claimed for, the Schedule 6 amounts for a filer with an eligible dependant are the ones
-# chosen (to be confirmed).
+# disability supplement (Step 3) and advance payments (Step 4); with one Schedule 6 eligible
+# dependant (line 38100), the Schedule 6 amounts for a filer with an eligible dependant are
+# the ones chosen (to be confirmed).
 # Amounts are quoted decimal strings, never floats; counts are quoted digit strings. Every
 # output the CA-ON manifest declares must appear under `expected`; intermediate lines may be
 # listed and are then checked too.
@@ -592,8 +592,8 @@ sources:
     half-up to the cent, which changes neither; lines 18, 25 and 28 and the choice for line
     45300 take amounts already in cents. The adjusted family net income of 54,435.00
     is above the chart's basic limit of $49,393, which agrees. Lines 16 to 28 are derived
-    with each of the amounts of lines 21 and 24, and the number of eligible dependants
-    claimed for (T1 line 30400), 1, chooses those with an eligible dependant, above. With no
+    with each of the amounts of lines 21 and 24, and the number of Schedule 6 eligible
+    dependants (line 38100), 1, chooses those with an eligible dependant, above. With no
     eligible spouse and no eligible dependant, line 21 would be $1,633 and line 24 $26,855:
     line 22 the lesser of 15,390 and 1,633, 1,633; line 25 54,435.00 - 26,855 = 27,580.00;
     line 27 27,580.00 x 15% = 4,137.00; line 28 1,633 - 4,137.00, negative, so 0, the same
@@ -667,6 +667,7 @@ inputs:
   ca/children_under_seven: "0"
   ca/children_with_disability: "0"
   ca/children_seven_to_sixteen: "1"
+  ca/cwb_eligible_dependants: "1"
   ca/income_tax_deducted: "8000"
 expected:
   ca/taxable_capital_gains: "0"

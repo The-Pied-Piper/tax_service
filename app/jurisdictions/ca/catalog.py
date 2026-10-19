@@ -2,9 +2,9 @@
 
 Only the kinds in use are declared, each non-negative but one: none of these lines can be negative
 on the return as modelled except the refund or balance owing, where negative means a refund.
-Amounts are Decimal; the counts of eligible dependants, of infirm children and of the eligible
-children for child care (Form T778 Part B lines 1 to 3) int. Identifiers are stable:
-`tests/jurisdictions/ca/test_catalog.py` snapshots them.
+Amounts are Decimal; the counts of eligible dependants, of infirm children, of the eligible
+children for child care (Form T778 Part B lines 1 to 3) and of the Schedule 6 eligible dependants
+(line 38100) int. Identifiers are stable: `tests/jurisdictions/ca/test_catalog.py` snapshots them.
 """
 
 from __future__ import annotations
@@ -407,6 +407,19 @@ INCOME_TAX_DEDUCTED = CATALOG.declare("income_tax_deducted", Decimal, non_negati
 """Income tax deducted, T1 line 150 (line 43700) "Total income tax deducted (amounts from all
 Canadian slips)": a starting amount."""
 
+CWB_ELIGIBLE_DEPENDANTS = CATALOG.declare("cwb_eligible_dependants", int, non_negative=True)
+"""Number of eligible dependants for the Canada workers benefit, Schedule 6 Step 1 "Line 38100: Do
+you have an eligible dependant? 1 Yes or 2 No": a starting count, 0 or 1, the count of 0 answering
+no and of 1 yes.
+
+Schedule 6 defines the eligible dependant by its own conditions: "They were your or your spouse's or
+common-law partner's child"; "They were under 19 years of age and lived with you on December 31,
+2025 ..."; "They were not eligible for the CWB for 2025". They differ from the eligible dependant
+claimed for on T1 line 30400, so a dependant can be one and not the other. A count is only declared
+non-negative, so the conditions are the return's to check against its facts; eligibility is not
+computed here. Line 38101 "Do you have an eligible spouse? 1 Yes or 2 No" is not modelled.
+"""
+
 WORKING_INCOME = CATALOG.declare("working_income", Decimal, non_negative=True)
 """Working income, Schedule 6 line 5 "Add lines 1 to 4. Enter the result, even if it is "0".
 Working income": line 1 "Employment income and other employment income from line 10100 and line
@@ -509,13 +522,10 @@ CANADA_WORKERS_BENEFIT = CATALOG.declare("canada_workers_benefit", Decimal, non_
 are not completing Step 3, enter this amount on line 45300 of your return.", T1 line 155 (45300)
 "Canada workers benefit (CWB) (complete Schedule 6)": line 28 for the filer's family status, which
 lines 21 and 24 read ("If you had an eligible spouse or an eligible dependant ... If not ..."),
-chosen by the number of eligible dependants claimed for (T1 line 30400): with none, the benefit
-with no eligible spouse and no eligible dependant, else the benefit with one. That count stands in
-for Schedule 6's own eligible dependant ("They were your or your spouse's or common-law partner's
-child"; "They were under 19 years of age and lived with you on December 31, 2025"; "They were not
-eligible for the CWB for 2025"), which the return is to check against its facts: a line 30400
-dependant who is not one (a parent, say) or a Schedule 6 dependant not claimed on line 30400 would
-be placed in the wrong family status.
+chosen by the number of Schedule 6 eligible dependants (line 38100): with none, the benefit with no
+eligible spouse and no eligible dependant, else the benefit with one. The eligible dependants
+claimed for on T1 line 30400 do not choose it, as Schedule 6 defines its eligible dependant by its
+own conditions.
 
 An eligible spouse is not modelled: a filer with one and no eligible dependant is computed with the
 amounts for no eligible spouse and no eligible dependant, which the form does not give them."""

@@ -38,8 +38,8 @@ status, from the working income of 110000 (line 5, employment income), 27% of it
 1633 (line 22), less 15% of the adjusted family net income (line 15, net income) of 115000 over
 26855, 13221.75 (line 27), not below zero, 0 (line 28), and with an eligible dependant 27% of the
 working income at most 2813, less 15% of the adjusted family net income over 30639, 12654.15, not
-below zero, 0, the count of 0 eligible dependants choosing the first (T1 line 45300); less the total
-credits (line 48200), here the chosen income tax
+below zero, 0, the count of 0 Schedule 6 eligible dependants (line 38100) choosing the first (T1
+line 45300); less the total credits (line 48200), here the chosen income tax
 deducted of 25000 (line 43700) plus that benefit, to the refund or balance owing (line 167),
 897.15, positive so a balance owing; every line computed from a dataset rounded half-up to the
 cent) are checked from the files under `returns/` by `test_worked_returns.py`, as are Returns B,
@@ -129,6 +129,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
+    CWB_ELIGIBLE_DEPENDANTS,
     CWB_REDUCTION_WITH_DEPENDANT,
     CWB_REDUCTION_WITHOUT_DEPENDANT,
     DEDUCTIONS_FROM_NET_INCOME,
@@ -222,6 +223,7 @@ def compute(
     children_under_seven: int = 0,
     children_with_disability: int = 0,
     children_seven_to_sixteen: int = 0,
+    cwb_eligible_dependants: int = 0,
     income_tax_deducted: str = "0",
 ) -> Worksheet:
     return service().compute(
@@ -243,6 +245,7 @@ def compute(
         Artifact(CHILDREN_UNDER_SEVEN, children_under_seven),
         Artifact(CHILDREN_WITH_DISABILITY, children_with_disability),
         Artifact(CHILDREN_SEVEN_TO_SIXTEEN, children_seven_to_sixteen),
+        Artifact(CWB_ELIGIBLE_DEPENDANTS, cwb_eligible_dependants),
         Artifact(INCOME_TAX_DEDUCTED, D(income_tax_deducted)),
     )
 
@@ -273,6 +276,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(CHILDREN_UNDER_SEVEN) is None
     assert worksheet.producer_of(CHILDREN_WITH_DISABILITY) is None
     assert worksheet.producer_of(CHILDREN_SEVEN_TO_SIXTEEN) is None
+    assert worksheet.producer_of(CWB_ELIGIBLE_DEPENDANTS) is None
     assert worksheet.producer_of(INCOME_TAX_DEDUCTED) is None
     assert isinstance(worksheet.producer_of(RRSP_CONTRIBUTIONS_AVAILABLE), Sum)
     assert isinstance(worksheet.producer_of(RRSP_DEDUCTION_MAXIMUM), LesserOf)
@@ -803,7 +807,7 @@ def test_the_trace_explains_the_computation() -> None:
     )
     cwb = position(
         "canada_workers_benefit: canada_workers_benefit_without_dependant 0, "
-        "chosen as eligible_dependants is 0",
+        "chosen as cwb_eligible_dependants is 0",
         "0",
     )
     credits = position(
@@ -1577,11 +1581,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     # T1 line 45300: Schedule 6 line 28 for Return A's family status, no eligible spouse and 0
-    # eligible dependants (T1 line 30400), so the amounts with neither.
+    # Schedule 6 eligible dependants (line 38100), so the amounts with neither.
     assert chosen == {
         CANADA_WORKERS_BENEFIT: ChosenByCountLine(
             output=CANADA_WORKERS_BENEFIT,
-            count_kind=ELIGIBLE_DEPENDANTS,
+            count_kind=CWB_ELIGIBLE_DEPENDANTS,
             count=0,
             chosen_kind=CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
             chosen_value=D("0"),
@@ -1944,7 +1948,7 @@ def test_the_canada_workers_benefit_below_its_maximum_is_27_percent_over_3000() 
     ) in rendered
     assert (
         "canada_workers_benefit: canada_workers_benefit_without_dependant 1350, "
-        "chosen as eligible_dependants is 0"
+        "chosen as cwb_eligible_dependants is 0"
     ) in rendered
 
 
@@ -1957,10 +1961,19 @@ def test_an_eligible_dependant_takes_the_schedule_6_amounts_of_2813_and_30639() 
     # 1633 (32000 x 27% = 8640.00 is more), line 27 (34685.00 - 26855) x 15% = 1174.50 and
     # line 28 458.50; with one, line 22 is 2813, line 27 (34685.00 - 30639) x 15% = 606.90
     # and line 28 2206.10, each rounded half-up to the cent, which changes none of them. The
-    # count of 1 eligible dependant (T1 line 30400) chooses the second for line 45300, so with
-    # no tax deducted the total credits are 2206.10.
+    # count of 1 Schedule 6 eligible dependant (line 38100) chooses the second for line 45300, so
+    # with no tax deducted the total credits are 2206.10.
     worksheet = compute(
-        "35000", "0", "0", "0", "6300", "0", "0", dependent_children=1, eligible_dependants=1
+        "35000",
+        "0",
+        "0",
+        "0",
+        "6300",
+        "0",
+        "0",
+        dependent_children=1,
+        eligible_dependants=1,
+        cwb_eligible_dependants=1,
     )
 
     assert worksheet.get(NET_INCOME).value == D("34685.00")
@@ -1983,7 +1996,7 @@ def test_an_eligible_dependant_takes_the_schedule_6_amounts_of_2813_and_30639() 
     ) in rendered
     assert (
         "canada_workers_benefit: canada_workers_benefit_with_dependant 2206.1, "
-        "chosen as eligible_dependants is 1"
+        "chosen as cwb_eligible_dependants is 1"
     ) in rendered
 
 
@@ -2000,7 +2013,40 @@ def test_with_no_eligible_dependant_the_same_income_takes_the_amounts_of_1633_an
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "canada_workers_benefit: canada_workers_benefit_without_dependant 458.5, "
-        "chosen as eligible_dependants is 0"
+        "chosen as cwb_eligible_dependants is 0"
+    ) in rendered
+
+
+def test_a_line_30400_dependant_who_is_not_schedule_6s_leaves_the_amounts_without_one() -> None:
+    # The amounts of the tests above with one eligible dependant claimed for on T1 line 30400, a
+    # parent, say, who is not Schedule 6's eligible dependant ("They were your or your spouse's
+    # or common-law partner's child"): the Schedule 6 count of 0 (line 38100), not the line
+    # 30400 count of 1, chooses the amounts with no eligible dependant, 458.50.
+    worksheet = compute("35000", "0", "0", "0", "6300", "0", "0", eligible_dependants=1)
+
+    assert worksheet.get(CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT).value == D("458.50")
+    assert worksheet.get(CANADA_WORKERS_BENEFIT_WITH_DEPENDANT).value == D("2206.10")
+    assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("458.50")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "canada_workers_benefit: canada_workers_benefit_without_dependant 458.5, "
+        "chosen as cwb_eligible_dependants is 0"
+    ) in rendered
+
+
+def test_a_schedule_6_dependant_not_claimed_on_line_30400_takes_the_amounts_with_one() -> None:
+    # The same income with a child under 19 who lived with the filer but is not claimed for on
+    # T1 line 30400 (claimed by the other parent, say): the Schedule 6 count of 1 (line 38100)
+    # chooses the amounts with an eligible dependant, 2206.10, though the line 30400 count is 0.
+    worksheet = compute("35000", "0", "0", "0", "6300", "0", "0", cwb_eligible_dependants=1)
+
+    assert worksheet.get(CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT).value == D("458.50")
+    assert worksheet.get(CANADA_WORKERS_BENEFIT_WITH_DEPENDANT).value == D("2206.10")
+    assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("2206.10")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "canada_workers_benefit: canada_workers_benefit_with_dependant 2206.1, "
+        "chosen as cwb_eligible_dependants is 1"
     ) in rendered
 
 
@@ -2139,6 +2185,7 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
         "0",
         dependent_children=1,
         eligible_dependants=1,
+        cwb_eligible_dependants=1,
         child_care_expenses_paid="6000",
         children_seven_to_sixteen=1,
         income_tax_deducted="8000",
@@ -2192,7 +2239,7 @@ def test_return_fs_canada_workers_benefit_is_zero_with_an_eligible_dependant() -
     # 27% = 15390.00 and 2813: 2813; line 27 is (54435.00 - 30639) x 15% = 3569.40; line 28 is
     # 2813 - 3569.40, negative, so 0. Without an eligible dependant, line 22 1633 and line 27
     # (54435.00 - 26855) x 15% = 4137.00, is computed too and is also 0; the count of 1
-    # eligible dependant chooses the amounts with one for T1 line 45300.
+    # Schedule 6 eligible dependant (line 38100) chooses the amounts with one for T1 line 45300.
     worksheet = compute(
         "60000",
         "0",
@@ -2203,6 +2250,7 @@ def test_return_fs_canada_workers_benefit_is_zero_with_an_eligible_dependant() -
         "0",
         dependent_children=1,
         eligible_dependants=1,
+        cwb_eligible_dependants=1,
         child_care_expenses_paid="6000",
         children_seven_to_sixteen=1,
         income_tax_deducted="8000",
@@ -2221,7 +2269,7 @@ def test_return_fs_canada_workers_benefit_is_zero_with_an_eligible_dependant() -
     (chosen,) = [line for line in worksheet.trace if isinstance(line, ChosenByCountLine)]
     assert chosen == ChosenByCountLine(
         output=CANADA_WORKERS_BENEFIT,
-        count_kind=ELIGIBLE_DEPENDANTS,
+        count_kind=CWB_ELIGIBLE_DEPENDANTS,
         count=1,
         chosen_kind=CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
         chosen_value=D("0"),
@@ -2233,7 +2281,7 @@ def test_return_fs_canada_workers_benefit_is_zero_with_an_eligible_dependant() -
     ) in rendered
     assert (
         "canada_workers_benefit: canada_workers_benefit_with_dependant 0, "
-        "chosen as eligible_dependants is 1"
+        "chosen as cwb_eligible_dependants is 1"
     ) in rendered
 
 
@@ -2253,6 +2301,7 @@ def test_the_dependants_net_income_comes_off_both_amounts() -> None:
         "0",
         dependent_children=1,
         eligible_dependants=1,
+        cwb_eligible_dependants=1,
         dependant_net_income="1500",
         child_care_expenses_paid="6000",
         children_seven_to_sixteen=1,
@@ -2290,6 +2339,7 @@ def test_a_dependant_with_more_income_than_the_amounts_adds_nothing() -> None:
         "0",
         dependent_children=1,
         eligible_dependants=1,
+        cwb_eligible_dependants=1,
         dependant_net_income="20000",
         child_care_expenses_paid="6000",
         children_seven_to_sixteen=1,
@@ -2372,6 +2422,7 @@ def test_the_child_care_expenses_deduction_is_5000_for_one_child_and_lowers_net_
         "0",
         dependent_children=1,
         eligible_dependants=1,
+        cwb_eligible_dependants=1,
         child_care_expenses_paid="6000",
         children_seven_to_sixteen=1,
         income_tax_deducted="8000",
@@ -2426,6 +2477,7 @@ def test_expenses_paid_below_the_basic_limit_are_deducted_whole() -> None:
         "0",
         dependent_children=1,
         eligible_dependants=1,
+        cwb_eligible_dependants=1,
         child_care_expenses_paid="3500",
         children_seven_to_sixteen=1,
         income_tax_deducted="8000",
@@ -2451,6 +2503,7 @@ def test_the_limits_for_each_kind_of_eligible_child_add_up() -> None:
         "0",
         dependent_children=1,
         eligible_dependants=1,
+        cwb_eligible_dependants=1,
         child_care_expenses_paid="30000",
         children_under_seven=1,
         children_with_disability=1,

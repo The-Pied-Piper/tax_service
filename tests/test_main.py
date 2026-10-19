@@ -97,6 +97,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/net_federal_tax",
         "ca/total_payable",
         "ca/income_tax_deducted",
+        "ca/cwb_eligible_dependants",
         "ca/working_income",
         "ca/adjusted_family_net_income",
         "ca/cwb_before_reduction_without_dependant",
