@@ -583,14 +583,32 @@ sources:
     income tax deducted (amounts from all Canadian slips)": 5,000, a chosen figure: it is
     the tax withheld on the taxpayer's slips, which nothing on this return determines. Line
     155 (line 45300) "Canada workers benefit (CWB) (complete Schedule 6)" is the benefit of
-    Schedule 6 line 28, 0; the other lines 151 to 165 (lines 44000 to 47900) are not
-    triggered by this return or not yet computed, so line 166 (line 48200) "Add lines 150 to
-    165. Total credits" is 5,000 + 0 = 5,000. Line 167 "Line 149 minus line 166 If the
-    amount is negative, enter it on line 48400 below. If the amount is positive, enter it on
-    line 48500 below. Refund or balance owing": 6,454.83 - 5,000 = 1,454.83, positive, so
-    line 48500 "Balance owing", not line 48400 "Refund". These lines add and subtract
-    amounts already in cents, so each is in cents too.
+    Schedule 6 line 28, 0; the other lines 151 to 164 (lines 44000 to 47600) are not
+    triggered by this return or not yet computed; line 165 (line 47900) "Provincial or
+    territorial credits (complete Form 479, if it applies)" is the Ontario credits of ON479
+    line 21, 0 (see the ON479 source below), so line 166 (line 48200) "Add lines 150 to 165.
+    Total credits" is 5,000 + 0 + 0 = 5,000. Line 167 "Line 149 minus line 166 If the amount
+    is negative, enter it on line 48400 below. If the amount is positive, enter it on line
+    48500 below. Refund or balance owing": 6,454.83 - 5,000 = 1,454.83, positive, so line
+    48500 "Balance owing", not line 48400 "Refund". These lines add and subtract amounts
+    already in cents, so each is in cents too.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
+  - >-
+    CRA, Form ON479 (form 5006-TC), "Ontario Credits": "Line 1 and line 61268: Eligible
+    medical expenses for fertility treatment multiplied by 25% (maximum $5,000) ="; "Line
+    14: Amount paid in the year for eligible seniors' use of Ontario public transit services
+    (maximum $3,000) Line 63100 multiplied by 15% ="; "Line 18: Add lines 1, 2, 13, 14, 16,
+    and 17. ="; "Line 19: Amount from line 18 of the previous page"; "Line 21: Line 19 plus
+    line 20 Enter this amount online 47900 of your return. Ontario credits =". This return
+    has no eligible medical expenses for fertility treatment and no amount paid for seniors'
+    use of Ontario public transit services, so line 1 is 0 x 25% = 0, at most $5,000: 0, and
+    line 14 is 0, at most $3,000, x 15% = 0; lines 2, 13 and 16 are not triggered and line
+    17 (the focused flow-through share credit) is not yet computed, so line 18 is 0 + 0 = 0,
+    line 19 carries it, line 20 is not triggered and line 21 is 0. The T1 (form 5000-R) line
+    165 and line 47900: "Provincial or territorial credits (complete Form 479, if it
+    applies)" is that 0. These lines are dollars-and-cents boxes, rounded half-up to the
+    cent, which changes nothing here.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-tc/5006-tc-25e.txt
 inputs:
   ca/employment_income: "50000"
   ca/capital_gain: "0"
@@ -610,6 +628,8 @@ inputs:
   ca/children_seven_to_sixteen: "0"
   ca/cwb_eligible_dependants: "0"
   ca/income_tax_deducted: "5000"
+  ca-on/fertility_expenses: "0"
+  ca-on/seniors_transit_paid: "0"
 expected:
   ca/taxable_capital_gains: "0"
   ca/total_income: "50000"
@@ -677,5 +697,12 @@ expected:
   ca/cwb_reduction_with_dependant: "2834.40"
   ca/canada_workers_benefit_with_dependant: "0"
   ca/canada_workers_benefit: "0"
+  ca-on/fertility_credit_before_maximum: "0"
+  ca-on/fertility_credit: "0"
+  ca-on/seniors_transit_amount_paid_at_most_maximum: "0"
+  ca-on/seniors_transit_credit: "0"
+  ca-on/ontario_credits_subtotal: "0"
+  ca-on/ontario_credits: "0"
+  ca/provincial_credits: "0"
   ca/total_credits: "5000"
   ca/refund_or_balance_owing: "1454.83"

@@ -74,6 +74,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
+    PROVINCIAL_CREDITS,
     REFUND_OR_BALANCE_OWING,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
@@ -97,11 +98,16 @@ from app.jurisdictions.ca_on.catalog import (
     DEPENDENT_CHILDREN,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
     ELIGIBLE_DEPENDANT_BASE,
+    FERTILITY_CREDIT,
+    FERTILITY_CREDIT_BEFORE_MAXIMUM,
+    FERTILITY_EXPENSES,
     LIFT_CREDIT,
     LIFT_CREDIT_BEFORE_MAXIMUM,
     LIFT_MAXIMUM_CREDIT,
     LIFT_REDUCTION,
     ONTARIO_BASIC_TAX,
+    ONTARIO_CREDITS,
+    ONTARIO_CREDITS_SUBTOTAL,
     ONTARIO_HEALTH_PREMIUM,
     ONTARIO_SURTAX,
     ONTARIO_TAX,
@@ -110,6 +116,9 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
+    SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
+    SENIORS_TRANSIT_CREDIT,
+    SENIORS_TRANSIT_PAID,
     TAX_REDUCTION_AMOUNTS,
     TAX_REDUCTION_BASIC,
     TAX_REDUCTION_FOR_CHILDREN,
@@ -156,6 +165,8 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/children_seven_to_sixteen",
             "ca/cwb_eligible_dependants",
             "ca/income_tax_deducted",
+            "ca-on/fertility_expenses",
+            "ca-on/seniors_transit_paid",
         }
     )
     # T1 line 167, the refund or balance owing, and Schedule 7 line 23, what the return produces
@@ -786,13 +797,76 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca/canada_workers_benefit"},
         ),
-        # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700) and
-        # line 155 (45300) "Canada workers benefit (CWB) (complete Schedule 6)", in line order,
-        # as the other lines are not triggered.
+        # Form ON479 line 1 and line 61268 "Eligible medical expenses for fertility treatment
+        # multiplied by 25% (maximum $5,000) =": the rate on the expenses, before its maximum.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/fertility_credit_rate"},
+            consumes={"base": "ca-on/fertility_expenses"},
+            produces={"output": "ca-on/fertility_credit_before_maximum"},
+        ),
+        # Line 1's "(maximum $5,000)", printed after the percentage, so it caps the credit.
+        CapabilitySelection(
+            name="core/capped_amount",
+            params={"cap": "ca-on/fertility_credit_maximum"},
+            consumes={"base": "ca-on/fertility_credit_before_maximum"},
+            produces={"output": "ca-on/fertility_credit"},
+        ),
+        # Line 14 "Amount paid in the year for eligible seniors' use of Ontario public transit
+        # services (maximum $3,000) Line 63100 multiplied by 15% =": the "(maximum $3,000)" is
+        # printed before the percentage, so it caps the amount paid.
+        CapabilitySelection(
+            name="core/capped_amount",
+            params={"cap": "ca-on/seniors_transit_maximum"},
+            consumes={"base": "ca-on/seniors_transit_paid"},
+            produces={"output": "ca-on/seniors_transit_amount_paid_at_most_maximum"},
+        ),
+        # Line 14's "multiplied by 15% =", on the capped amount.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/seniors_transit_rate"},
+            consumes={"base": "ca-on/seniors_transit_amount_paid_at_most_maximum"},
+            produces={"output": "ca-on/seniors_transit_credit"},
+        ),
+        # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1 and 14, in line order, as lines
+        # 2, 13 and 16 are not triggered and line 17 (the focused flow-through share credit) is
+        # not yet computed.
         CapabilitySelection(
             name="core/sum",
             params={},
-            consumes={"parts": ("ca/income_tax_deducted", "ca/canada_workers_benefit")},
+            consumes={"parts": ("ca-on/fertility_credit", "ca-on/seniors_transit_credit")},
+            produces={"output": "ca-on/ontario_credits_subtotal"},
+        ),
+        # Line 21 "Line 19 plus line 20 Enter this amount online 47900 of your return. Ontario
+        # credits =": line 19 "Amount from line 18 of the previous page" carries line 18, and
+        # line 20 (the co-operative education credit) is not triggered.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca-on/ontario_credits_subtotal",)},
+            produces={"output": "ca-on/ontario_credits"},
+        ),
+        # T1 line 165 and line 47900 "Provincial or territorial credits (complete Form 479, if it
+        # applies)": ON479 line 21, the Ontario credits.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca-on/ontario_credits",)},
+            produces={"output": "ca/provincial_credits"},
+        ),
+        # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700), line
+        # 155 (45300) "Canada workers benefit (CWB) (complete Schedule 6)" and line 165 (47900), in
+        # line order, as the other lines are not triggered.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/income_tax_deducted",
+                    "ca/canada_workers_benefit",
+                    "ca/provincial_credits",
+                )
+            },
             produces={"output": "ca/total_credits"},
         ),
         # T1 line 167 "Line 149 minus line 166 ... Refund or balance owing": not floored, so a
@@ -804,7 +878,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 68
+    assert len(found.capabilities) == 75
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -814,7 +888,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 68
+    assert len(composition.order) == 75
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -1088,9 +1162,28 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             ),
             frozenset({CANADA_WORKERS_BENEFIT}),
         ),
+        (ApplyRate, frozenset({FERTILITY_EXPENSES}), frozenset({FERTILITY_CREDIT_BEFORE_MAXIMUM})),
+        (CappedAmount, frozenset({FERTILITY_CREDIT_BEFORE_MAXIMUM}), frozenset({FERTILITY_CREDIT})),
+        (
+            CappedAmount,
+            frozenset({SENIORS_TRANSIT_PAID}),
+            frozenset({SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM}),
+        ),
+        (
+            ApplyRate,
+            frozenset({SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM}),
+            frozenset({SENIORS_TRANSIT_CREDIT}),
+        ),
         (
             Sum,
-            frozenset({INCOME_TAX_DEDUCTED, CANADA_WORKERS_BENEFIT}),
+            frozenset({FERTILITY_CREDIT, SENIORS_TRANSIT_CREDIT}),
+            frozenset({ONTARIO_CREDITS_SUBTOTAL}),
+        ),
+        (Sum, frozenset({ONTARIO_CREDITS_SUBTOTAL}), frozenset({ONTARIO_CREDITS})),
+        (Sum, frozenset({ONTARIO_CREDITS}), frozenset({PROVINCIAL_CREDITS})),
+        (
+            Sum,
+            frozenset({INCOME_TAX_DEDUCTED, CANADA_WORKERS_BENEFIT, PROVINCIAL_CREDITS}),
             frozenset({TOTAL_CREDITS}),
         ),
         (

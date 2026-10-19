@@ -60,6 +60,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
+    PROVINCIAL_CREDITS,
     REFUND_OR_BALANCE_OWING,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
@@ -139,6 +140,7 @@ REGISTERED = frozenset(
         "ca/cwb_reduction_with_dependant",
         "ca/canada_workers_benefit_with_dependant",
         "ca/canada_workers_benefit",
+        "ca/provincial_credits",
         "ca/total_credits",
         "ca/refund_or_balance_owing",
     }
@@ -276,6 +278,7 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
         is CANADA_WORKERS_BENEFIT_WITH_DEPENDANT
     )
     assert registry.get("ca/canada_workers_benefit") is CANADA_WORKERS_BENEFIT
+    assert registry.get("ca/provincial_credits") is PROVINCIAL_CREDITS
     assert registry.get("ca/total_credits") is TOTAL_CREDITS
     assert registry.get("ca/refund_or_balance_owing") is REFUND_OR_BALANCE_OWING
 
@@ -338,6 +341,7 @@ def test_catalog_kinds_are_money() -> None:
         CWB_REDUCTION_WITH_DEPENDANT,
         CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
         CANADA_WORKERS_BENEFIT,
+        PROVINCIAL_CREDITS,
         TOTAL_CREDITS,
         REFUND_OR_BALANCE_OWING,
     ):

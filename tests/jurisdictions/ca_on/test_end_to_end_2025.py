@@ -149,6 +149,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
+    PROVINCIAL_CREDITS,
     REFUND_OR_BALANCE_OWING,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
@@ -172,11 +173,16 @@ from app.jurisdictions.ca_on.catalog import (
     DEPENDENT_CHILDREN,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
     ELIGIBLE_DEPENDANT_BASE,
+    FERTILITY_CREDIT,
+    FERTILITY_CREDIT_BEFORE_MAXIMUM,
+    FERTILITY_EXPENSES,
     LIFT_CREDIT,
     LIFT_CREDIT_BEFORE_MAXIMUM,
     LIFT_MAXIMUM_CREDIT,
     LIFT_REDUCTION,
     ONTARIO_BASIC_TAX,
+    ONTARIO_CREDITS,
+    ONTARIO_CREDITS_SUBTOTAL,
     ONTARIO_HEALTH_PREMIUM,
     ONTARIO_SURTAX,
     ONTARIO_TAX,
@@ -185,6 +191,9 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
+    SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
+    SENIORS_TRANSIT_CREDIT,
+    SENIORS_TRANSIT_PAID,
     TAX_REDUCTION_AMOUNTS,
     TAX_REDUCTION_BASIC,
     TAX_REDUCTION_FOR_CHILDREN,
@@ -225,6 +234,8 @@ def compute(
     children_seven_to_sixteen: int = 0,
     cwb_eligible_dependants: int = 0,
     income_tax_deducted: str = "0",
+    fertility_expenses: str = "0",
+    seniors_transit_paid: str = "0",
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -247,6 +258,8 @@ def compute(
         Artifact(CHILDREN_SEVEN_TO_SIXTEEN, children_seven_to_sixteen),
         Artifact(CWB_ELIGIBLE_DEPENDANTS, cwb_eligible_dependants),
         Artifact(INCOME_TAX_DEDUCTED, D(income_tax_deducted)),
+        Artifact(FERTILITY_EXPENSES, D(fertility_expenses)),
+        Artifact(SENIORS_TRANSIT_PAID, D(seniors_transit_paid)),
     )
 
 
@@ -278,6 +291,8 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(CHILDREN_SEVEN_TO_SIXTEEN) is None
     assert worksheet.producer_of(CWB_ELIGIBLE_DEPENDANTS) is None
     assert worksheet.producer_of(INCOME_TAX_DEDUCTED) is None
+    assert worksheet.producer_of(FERTILITY_EXPENSES) is None
+    assert worksheet.producer_of(SENIORS_TRANSIT_PAID) is None
     assert isinstance(worksheet.producer_of(RRSP_CONTRIBUTIONS_AVAILABLE), Sum)
     assert isinstance(worksheet.producer_of(RRSP_DEDUCTION_MAXIMUM), LesserOf)
     # Schedule 7 line 18 "cannot be more than the amount on line 17": checked, not capped.
@@ -466,6 +481,37 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT
     ) is not worksheet.producer_of(CANADA_WORKERS_BENEFIT_WITH_DEPENDANT)
     assert isinstance(worksheet.producer_of(CANADA_WORKERS_BENEFIT), ChooseByCount)
+    # ON479 line 1 (the rate, then the maximum on the credit), line 14 (the maximum on the amount
+    # paid, then the rate), lines 18 and 21 and T1 line 47900.
+    assert isinstance(worksheet.producer_of(FERTILITY_CREDIT_BEFORE_MAXIMUM), ApplyRate)
+    assert isinstance(worksheet.producer_of(FERTILITY_CREDIT), CappedAmount)
+    assert isinstance(
+        worksheet.producer_of(SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM), CappedAmount
+    )
+    assert isinstance(worksheet.producer_of(SENIORS_TRANSIT_CREDIT), ApplyRate)
+    assert worksheet.producer_of(FERTILITY_CREDIT_BEFORE_MAXIMUM) is not worksheet.producer_of(
+        SENIORS_TRANSIT_CREDIT
+    )
+    assert worksheet.producer_of(FERTILITY_CREDIT) is not worksheet.producer_of(
+        SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM
+    )
+    assert isinstance(worksheet.producer_of(ONTARIO_CREDITS_SUBTOTAL), Sum)
+    assert isinstance(worksheet.producer_of(ONTARIO_CREDITS), Sum)
+    assert isinstance(worksheet.producer_of(PROVINCIAL_CREDITS), Sum)
+    assert (
+        len(
+            {
+                id(worksheet.producer_of(kind))
+                for kind in (
+                    ONTARIO_CREDITS_SUBTOTAL,
+                    ONTARIO_CREDITS,
+                    PROVINCIAL_CREDITS,
+                    TOTAL_CREDITS,
+                )
+            }
+        )
+        == 4
+    )
     assert isinstance(worksheet.producer_of(TOTAL_CREDITS), Sum)
     assert worksheet.producer_of(NET_FEDERAL_TAX) is not worksheet.producer_of(TOTAL_PAYABLE)
     assert worksheet.producer_of(NET_FEDERAL_TAX) is not worksheet.producer_of(TOTAL_CREDITS)
@@ -810,8 +856,32 @@ def test_the_trace_explains_the_computation() -> None:
         "chosen as cwb_eligible_dependants is 0",
         "0",
     )
+    fertility_before_maximum = position(
+        "fertility_credit_before_maximum: 25% of fertility_expenses 0 (half-up to 0.01)", "0"
+    )
+    fertility = position(
+        "fertility_credit: lesser of fertility_credit_before_maximum 0 and 5000 (half-up to 0.01)",
+        "0",
+    )
+    transit_paid = position(
+        "seniors_transit_amount_paid_at_most_maximum: lesser of seniors_transit_paid 0 and 3000 "
+        "(half-up to 0.01)",
+        "0",
+    )
+    transit = position(
+        "seniors_transit_credit: 15% of seniors_transit_amount_paid_at_most_maximum 0 "
+        "(half-up to 0.01)",
+        "0",
+    )
+    ontario_credits_subtotal = position(
+        "ontario_credits_subtotal: fertility_credit 0 + seniors_transit_credit 0 = 0", "0"
+    )
+    ontario_credits = position("ontario_credits: ontario_credits_subtotal 0 = 0", "0")
+    provincial = position("provincial_credits: ontario_credits 0 = 0", "0")
     credits = position(
-        "total_credits: income_tax_deducted 25000 + canada_workers_benefit 0 = 25000", "25000"
+        "total_credits: income_tax_deducted 25000 + canada_workers_benefit 0 "
+        "+ provincial_credits 0 = 25000",
+        "25000",
     )
     balance = position(
         "refund_or_balance_owing: total_payable 25897.15 less total_credits 25000 = 897.15",
@@ -859,6 +929,9 @@ def test_the_trace_explains_the_computation() -> None:
     assert net < family_net < cwb_reduction < cwb_without
     assert working < cwb_before_reduction_dependant < cwb_with < cwb
     assert family_net < cwb_reduction_dependant < cwb_with
+    assert fertility_before_maximum < fertility < ontario_credits_subtotal
+    assert transit_paid < transit < ontario_credits_subtotal
+    assert ontario_credits_subtotal < ontario_credits < provincial < credits
     assert cwb < credits
     assert credits < balance
 
@@ -932,6 +1005,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Rate(D("0.0505")),
             CENT,
             D("867.62"),
+        ),
+        # ON479 line 1 "Eligible medical expenses for fertility treatment multiplied by 25%
+        # (maximum $5,000)", before its maximum: no expenses.
+        FERTILITY_CREDIT_BEFORE_MAXIMUM: RateAppliedLine(
+            FERTILITY_CREDIT_BEFORE_MAXIMUM,
+            FERTILITY_EXPENSES,
+            D("0"),
+            Rate(D("0.25")),
+            CENT,
+            D("0"),
+        ),
+        # ON479 line 14 "multiplied by 15%", on the amount paid after its maximum of $3,000.
+        SENIORS_TRANSIT_CREDIT: RateAppliedLine(
+            SENIORS_TRANSIT_CREDIT,
+            SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
+            D("0"),
+            Rate(D("0.15")),
+            CENT,
+            D("0"),
         ),
         # Schedule ON428-A line 5 "Line 3 multiplied by the percentage from line 4 (maximum
         # $875)", before its maximum: line 3 is employment income (line 10100), as line 2 (line
@@ -1065,11 +1157,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ADJUSTED_FAMILY_NET_INCOME: SumLine(
             ADJUSTED_FAMILY_NET_INCOME, ((NET_INCOME, D("115000")),), D("115000")
         ),
-        # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700) and
-        # line 155 (45300), the Canada workers benefit, in line order.
+        # ON479 line 18 "Add lines 1, 2, 13, 14, 16, and 17.": lines 1 and 14, in line order.
+        ONTARIO_CREDITS_SUBTOTAL: SumLine(
+            ONTARIO_CREDITS_SUBTOTAL,
+            ((FERTILITY_CREDIT, D("0")), (SENIORS_TRANSIT_CREDIT, D("0"))),
+            D("0"),
+        ),
+        # ON479 line 21 "Line 19 plus line 20": line 19 carries line 18, line 20 is not triggered.
+        ONTARIO_CREDITS: SumLine(ONTARIO_CREDITS, ((ONTARIO_CREDITS_SUBTOTAL, D("0")),), D("0")),
+        # T1 line 165 (line 47900) "Provincial or territorial credits": ON479 line 21.
+        PROVINCIAL_CREDITS: SumLine(PROVINCIAL_CREDITS, ((ONTARIO_CREDITS, D("0")),), D("0")),
+        # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700), line
+        # 155 (45300), the Canada workers benefit, and line 165 (47900), in line order.
         TOTAL_CREDITS: SumLine(
             TOTAL_CREDITS,
-            ((INCOME_TAX_DEDUCTED, D("25000")), (CANADA_WORKERS_BENEFIT, D("0"))),
+            (
+                (INCOME_TAX_DEDUCTED, D("25000")),
+                (CANADA_WORKERS_BENEFIT, D("0")),
+                (PROVINCIAL_CREDITS, D("0")),
+            ),
             D("25000"),
         ),
     }
@@ -1248,6 +1354,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Amount(D("875")),
             CENT,
             D("875"),
+        ),
+        # ON479 line 1's "(maximum $5,000)", printed after the percentage: it caps the credit.
+        FERTILITY_CREDIT: CappedAmountLine(
+            FERTILITY_CREDIT,
+            FERTILITY_CREDIT_BEFORE_MAXIMUM,
+            D("0"),
+            Amount(D("5000")),
+            CENT,
+            D("0"),
+        ),
+        # ON479 line 14's "(maximum $3,000)", printed before the percentage: it caps the amount
+        # paid.
+        SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM: CappedAmountLine(
+            SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
+            SENIORS_TRANSIT_PAID,
+            D("0"),
+            Amount(D("3000")),
+            CENT,
+            D("0"),
         ),
         # ON428 line 16's "(maximum $10,823)": 11905.00 is above it.
         ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT: CappedAmountLine(
@@ -1622,7 +1747,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 68
+    assert len(order) == 75
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
@@ -1725,6 +1850,16 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         assert position[NET_INCOME] < position[ADJUSTED_FAMILY_NET_INCOME] < position[reduction]
         assert position[reduction] < position[benefit] < position[CANADA_WORKERS_BENEFIT]
     assert position[CANADA_WORKERS_BENEFIT] < position[TOTAL_CREDITS]
+    assert position[FERTILITY_CREDIT_BEFORE_MAXIMUM] < position[FERTILITY_CREDIT]
+    assert position[SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM] < position[SENIORS_TRANSIT_CREDIT]
+    assert position[FERTILITY_CREDIT] < position[ONTARIO_CREDITS_SUBTOTAL]
+    assert position[SENIORS_TRANSIT_CREDIT] < position[ONTARIO_CREDITS_SUBTOTAL]
+    assert (
+        position[ONTARIO_CREDITS_SUBTOTAL]
+        < position[ONTARIO_CREDITS]
+        < position[PROVINCIAL_CREDITS]
+        < position[TOTAL_CREDITS]
+    )
 
 
 def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
@@ -2088,7 +2223,8 @@ def test_with_no_tax_payable_all_the_tax_deducted_is_refunded() -> None:
     assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-2133")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
-        "total_credits: income_tax_deducted 500 + canada_workers_benefit 1633 = 2133"
+        "total_credits: income_tax_deducted 500 + canada_workers_benefit 1633 "
+        "+ provincial_credits 0 = 2133"
     ) in rendered
 
 
@@ -2283,6 +2419,142 @@ def test_return_fs_canada_workers_benefit_is_zero_with_an_eligible_dependant() -
         "canada_workers_benefit: canada_workers_benefit_with_dependant 0, "
         "chosen as cwb_eligible_dependants is 1"
     ) in rendered
+
+
+def return_f_with_credits(fertility_expenses: str, seniors_transit_paid: str) -> Worksheet:
+    """Return F's inputs, as in `returns/2025_return_f.yaml`, with the ON479 amounts given."""
+    return compute(
+        "60000",
+        "0",
+        "0",
+        "0",
+        "10800",
+        "0",
+        "0",
+        dependent_children=1,
+        eligible_dependants=1,
+        cwb_eligible_dependants=1,
+        child_care_expenses_paid="6000",
+        children_seven_to_sixteen=1,
+        income_tax_deducted="8000",
+        fertility_expenses=fertility_expenses,
+        seniors_transit_paid=seniors_transit_paid,
+    )
+
+
+def test_return_gs_ontario_credits_are_5180_and_lower_the_refund_by_that_much() -> None:
+    # Return G is Return F with fertility expenses of 24000 and 1200 paid for seniors' transit.
+    # ON479 line 1: 24000 x 25% = 6000.00, at most 5000: 5000. Line 14: 1200, at most 3000, x 15%
+    # = 180.00. Line 18 is 5000 + 180.00 = 5180.00, line 19 carries it, line 21 and T1 line
+    # 47900 are 5180.00; the total credits are 8000 + 0 + 5180.00 = 13180.00 and line 167 is
+    # 4240.69 - 13180.00 = -8939.31, Return F's -3759.31 less 5180.00.
+    without = return_f_with_credits("0", "0")
+    worksheet = return_f_with_credits("24000", "1200")
+
+    assert worksheet.get(FERTILITY_CREDIT_BEFORE_MAXIMUM).value == D("6000.00")
+    assert worksheet.get(FERTILITY_CREDIT).value == D("5000")
+    assert worksheet.get(SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM).value == D("1200")
+    assert worksheet.get(SENIORS_TRANSIT_CREDIT).value == D("180.00")
+    assert worksheet.get(ONTARIO_CREDITS_SUBTOTAL).value == D("5180.00")
+    assert worksheet.get(ONTARIO_CREDITS).value == D("5180.00")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D("5180.00")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("4240.69")
+    assert worksheet.get(TOTAL_CREDITS).value == D("13180.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-8939.31")
+    assert without.get(PROVINCIAL_CREDITS).value == D("0")
+    assert without.get(REFUND_OR_BALANCE_OWING).value == D("-3759.31")
+    assert without.get(REFUND_OR_BALANCE_OWING).value - worksheet.get(
+        REFUND_OR_BALANCE_OWING
+    ).value == D("5180.00")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "fertility_credit_before_maximum: 25% of fertility_expenses 24000 (half-up to 0.01)"
+    ) in rendered
+    assert (
+        "fertility_credit: lesser of fertility_credit_before_maximum 6000 and 5000 "
+        "(half-up to 0.01)"
+    ) in rendered
+    assert (
+        "seniors_transit_amount_paid_at_most_maximum: lesser of seniors_transit_paid 1200 and "
+        "3000 (half-up to 0.01)"
+    ) in rendered
+    assert (
+        "seniors_transit_credit: 15% of seniors_transit_amount_paid_at_most_maximum 1200 "
+        "(half-up to 0.01)"
+    ) in rendered
+    assert (
+        "ontario_credits_subtotal: fertility_credit 5000 + seniors_transit_credit 180 = 5180"
+    ) in rendered
+    assert "ontario_credits: ontario_credits_subtotal 5180 = 5180" in rendered
+    assert "provincial_credits: ontario_credits 5180 = 5180" in rendered
+    assert (
+        "total_credits: income_tax_deducted 8000 + canada_workers_benefit 0 "
+        "+ provincial_credits 5180 = 13180"
+    ) in rendered
+    assert (
+        "refund_or_balance_owing: total_payable 4240.69 less total_credits 13180 = -8939.31"
+    ) in rendered
+
+
+def test_the_fertility_credit_below_its_maximum_is_25_percent_of_the_expenses() -> None:
+    # 12000 x 25% = 3000.00, below the maximum of 5000, so line 1 is 3000.00 and the credits are
+    # 3000.00 with no transit amount.
+    worksheet = return_f_with_credits("12000", "0")
+
+    assert worksheet.get(FERTILITY_CREDIT_BEFORE_MAXIMUM).value == D("3000.00")
+    assert worksheet.get(FERTILITY_CREDIT).value == D("3000.00")
+    assert worksheet.get(SENIORS_TRANSIT_CREDIT).value == D("0")
+    assert worksheet.get(ONTARIO_CREDITS).value == D("3000.00")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D("3000.00")
+    assert worksheet.get(TOTAL_CREDITS).value == D("11000.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-6759.31")
+
+
+def test_the_transit_amount_paid_is_capped_before_the_rate() -> None:
+    # 3500 paid is capped at 3000 (ON479 line 14, "(maximum $3,000)" before the percentage), and
+    # 3000 x 15% = 450.00, not 3500 x 15% = 525.00.
+    worksheet = return_f_with_credits("0", "3500")
+
+    assert worksheet.get(SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM).value == D("3000")
+    assert worksheet.get(SENIORS_TRANSIT_CREDIT).value == D("450.00")
+    assert worksheet.get(FERTILITY_CREDIT).value == D("0")
+    assert worksheet.get(ONTARIO_CREDITS).value == D("450.00")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D("450.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-4209.31")
+    (capped_paid,) = [
+        line
+        for line in worksheet.trace
+        if isinstance(line, CappedAmountLine)
+        and line.output == SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM
+    ]
+    assert capped_paid == CappedAmountLine(
+        SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
+        SENIORS_TRANSIT_PAID,
+        D("3500"),
+        Amount(D("3000")),
+        CENT,
+        D("3000"),
+    )
+
+
+def test_the_fertility_credit_is_capped_after_the_rate() -> None:
+    # 24000 x 25% = 6000.00 is above 5000, so line 1 is the maximum, whereas capping the expenses
+    # at 5000 first would give 1250.00.
+    worksheet = return_f_with_credits("24000", "0")
+
+    (capped,) = [
+        line
+        for line in worksheet.trace
+        if isinstance(line, CappedAmountLine) and line.output == FERTILITY_CREDIT
+    ]
+    assert capped == CappedAmountLine(
+        FERTILITY_CREDIT,
+        FERTILITY_CREDIT_BEFORE_MAXIMUM,
+        D("6000.00"),
+        Amount(D("5000")),
+        CENT,
+        D("5000"),
+    )
 
 
 def test_the_dependants_net_income_comes_off_both_amounts() -> None:

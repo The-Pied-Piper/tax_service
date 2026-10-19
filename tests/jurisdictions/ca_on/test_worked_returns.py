@@ -94,13 +94,15 @@ description: >-
   at most 1633, less 15% of the adjusted family net income, the net income, over 26855,
   nothing as 9935.00 is below it: 1633; with one it would be 1890, at most 2813, less
   nothing over 30639: 1890. With 0 Schedule 6 eligible dependants the first applies: 1633.
-  The income tax deducted is a chosen 500, so the total credits are 500 plus the benefit,
-  2133, and the refund or balance owing is 0 less 2133: -2133, a refund. Every amount
-  computed from a rate, fraction, amount or chart on the forms is rounded half-up to the
-  cent, each line being a dollars-and-cents box; here that changes Form T778 line 6, the
-  federal and Ontario tax on taxable income and both forms' non-refundable tax credits. The
-  lines that only add, subtract, compare or choose take amounts already in cents, so the
-  refund or balance owing is in cents too.
+  With no fertility treatment expenses and no seniors' transit amount paid, the Ontario
+  credits (ON479 lines 1, 14, 18 and 21) and the provincial credits (T1 line 47900) are 0.
+  The income tax deducted is a chosen 500, so the total credits are 500 plus the benefit
+  plus the provincial credits, 2133, and the refund or balance owing is 0 less 2133: -2133,
+  a refund. Every amount computed from a rate, fraction, amount or chart on the forms is
+  rounded half-up to the cent, each line being a dollars-and-cents box; here that changes
+  Form T778 line 6, the federal and Ontario tax on taxable income and both forms'
+  non-refundable tax credits. The lines that only add, subtract, compare or choose take
+  amounts already in cents, so the refund or balance owing is in cents too.
 sources:
   - >-
     T1, Federal Worksheet, Schedule 3, Schedule 5, Schedule 6, Schedule 7, Schedule 8, ON428,
@@ -124,6 +126,8 @@ inputs:
   ca/children_seven_to_sixteen: "0"
   ca/cwb_eligible_dependants: "0"
   ca/income_tax_deducted: "500"
+  ca-on/fertility_expenses: "0"
+  ca-on/seniors_transit_paid: "0"
 expected:
   ca/taxable_capital_gains: "0"
   ca/total_income: "10000"
@@ -191,6 +195,13 @@ expected:
   ca/cwb_reduction_with_dependant: "0"
   ca/canada_workers_benefit_with_dependant: "1890.00"
   ca/canada_workers_benefit: "1633"
+  ca-on/fertility_credit_before_maximum: "0"
+  ca-on/fertility_credit: "0"
+  ca-on/seniors_transit_amount_paid_at_most_maximum: "0"
+  ca-on/seniors_transit_credit: "0"
+  ca-on/ontario_credits_subtotal: "0"
+  ca-on/ontario_credits: "0"
+  ca/provincial_credits: "0"
   ca/total_credits: "2133"
   ca/refund_or_balance_owing: "-2133"
 """
