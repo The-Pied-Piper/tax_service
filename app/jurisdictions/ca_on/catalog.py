@@ -24,6 +24,56 @@ BASIC_PERSONAL_AMOUNT = CATALOG.declare("basic_personal_amount", Decimal, non_ne
 """Basic personal amount, ON428 line 9 (line 58040) "Basic personal amount Claim $12,747": the
 amount claimed, the first part of the total of the Ontario credit amounts."""
 
+AGE_MAXIMUM = CATALOG.declare("age_maximum", Decimal, non_negative=True)
+"""Maximum Ontario age amount, Worksheet ON428 (form 5006-D), "Line 58080 - Age amount", line 1
+"Maximum amount 6,223.00": the dataset as an artifact."""
+
+AGE_INCOME_THRESHOLD = CATALOG.declare("age_income_threshold", Decimal, non_negative=True)
+"""Income threshold of the Ontario age amount, Worksheet ON428 (form 5006-D), "Line 58080 - Age
+amount", line 3 "Income threshold 46,330.00": the dataset as an artifact."""
+
+AGE_INCOME_OVER_THRESHOLD = CATALOG.declare("age_income_over_threshold", Decimal, non_negative=True)
+"""Net income over the income threshold, Worksheet ON428 (form 5006-D), "Line 58080 - Age amount",
+line 4 "Line 2 minus line 3 (if negative, enter "0")": line 2 "Amount from line 23600 of your
+return" less the income threshold of line 3, not below zero."""
+
+AGE_REDUCTION = CATALOG.declare("age_reduction", Decimal, non_negative=True)
+"""Reduction of the Ontario age amount, Worksheet ON428 (form 5006-D), "Line 58080 - Age amount",
+line 6 "Line 4 multiplied by the percentage from line 5": line 4 at the applicable rate of line 5
+"15%"."""
+
+AGE_AMOUNT_BEFORE_COUNT = CATALOG.declare("age_amount_before_count", Decimal, non_negative=True)
+"""Ontario age amount before it is claimed, Worksheet ON428 (form 5006-D), "Line 58080 - Age
+amount", line 7 "Line 1 minus line 6 (if negative, enter "0") Enter this amount on line 58080 of
+your Form ON428.": the maximum amount less the reduction, not below zero."""
+
+AGE_AMOUNT = CATALOG.declare("age_amount", Decimal, non_negative=True)
+"""Age amount, ON428 line 10 (line 58080) "Age amount (if you were born in 1960 or earlier) (use
+Worksheet ON428) (maximum $6,223)": the worksheet's line 7 once if the filer was born in 1960 or
+earlier, else 0, the T1 line 30100 count; a part of the total of the Ontario credit amounts."""
+
+SPOUSE_BASE = CATALOG.declare("spouse_base", Decimal, non_negative=True)
+"""Base amount for a spouse or common-law partner, ON428 line 11 "Base amount 11,905.00": the
+amount claimed, before the spouse's net income comes off it."""
+
+SPOUSE_AMOUNT_BEFORE_MAXIMUM = CATALOG.declare(
+    "spouse_amount_before_maximum", Decimal, non_negative=True
+)
+"""Spouse or common-law partner amount before its maximum, ON428 line 13 "Line 11 minus line 12 (if
+negative, enter "0")": the base amount less line 12 "Your spouse's or common-law partner's net
+income from line 23600 of their return", the federal Schedule 5 line 4 figure, not below zero."""
+
+SPOUSE_AMOUNT_BEFORE_COUNT = CATALOG.declare(
+    "spouse_amount_before_count", Decimal, non_negative=True
+)
+"""Spouse or common-law partner amount before it is claimed, ON428 line 13's "(maximum $10,823)":
+the amount before its maximum, at most it."""
+
+SPOUSE_AMOUNT = CATALOG.declare("spouse_amount", Decimal, non_negative=True)
+"""Spouse or common-law partner amount, ON428 line 13 (line 58120) "Line 11 minus line 12 (if
+negative, enter "0") (maximum $10,823)": the capped amount once if the filer claims it, else 0,
+the T1 line 30300 count; a part of the total of the Ontario credit amounts."""
+
 ELIGIBLE_DEPENDANT_BASE = CATALOG.declare("eligible_dependant_base", Decimal, non_negative=True)
 """Base amount for an eligible dependant, ON428 line 14 "Base amount 11,905.00": the amount
 claimed, before the dependant's net income comes off it."""
@@ -51,8 +101,9 @@ NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare(
 )
 """Total of the Ontario non-refundable credit amounts, ON428 line 44 (line 58800) "Line 35 plus
 line 43": the sum of the credit amounts the rate is applied to once, here, in line order, the
-basic personal amount (line 58040), the amount for an eligible dependant (line 58160), the base
-CPP contributions (line 58240) and the EI premiums (line 58300)."""
+basic personal amount (line 58040), the age amount (line 58080), the spouse or common-law
+partner amount (line 58120), the amount for an eligible dependant (line 58160), the base CPP
+contributions (line 58240) and the EI premiums (line 58300)."""
 
 NON_REFUNDABLE_TAX_CREDITS = CATALOG.declare(
     "non_refundable_tax_credits", Decimal, non_negative=True
