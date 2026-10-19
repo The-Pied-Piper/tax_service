@@ -30,6 +30,7 @@ from app.domain.capabilities.times_count import TimesCount
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Manifest
 from app.jurisdictions.ca.catalog import (
+    ADDITIONAL_DEDUCTIONS,
     ADJUSTED_FAMILY_NET_INCOME,
     AGE_AMOUNT,
     AGE_AMOUNT_BEFORE_COUNT,
@@ -43,6 +44,7 @@ from app.jurisdictions.ca.catalog import (
     CANADA_WORKERS_BENEFIT,
     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
     CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
+    CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
     CAPITAL_GAIN,
     CHILD_CARE_BASIC_LIMIT,
     CHILD_CARE_EARNED_INCOME,
@@ -98,11 +100,14 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
     INVESTMENT_INCOME_WITHOUT_A_SLIP,
     INVESTMENT_ROYALTIES,
+    LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
     NET_INCOME,
+    NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NET_PARTNERSHIP_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
+    NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     OLD_AGE_SECURITY,
@@ -112,9 +117,16 @@ from app.jurisdictions.ca.catalog import (
     OTHER_EMPLOYMENT_INCOME,
     OTHER_FHSA_INCOME,
     OTHER_INCOME,
+    OTHER_PAYMENTS_DEDUCTION,
+    OTHER_PAYMENTS_DEDUCTION_ABOVE_LIMIT,
+    OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT,
+    OTHER_PAYMENTS_LIMIT_INCOME,
+    OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
+    OTHER_PAYMENTS_WORKSHEET_REQUIRED,
     OTHER_PENSIONS_AND_SUPERANNUATION,
     PROVINCIAL_CREDITS,
     RDSP_INCOME,
+    RDSP_INCOME_REPAYMENT,
     REFUND_OR_BALANCE_OWING,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
@@ -123,6 +135,7 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION_LIMIT,
     RRSP_DEDUCTION_MAXIMUM,
     RRSP_INCOME,
+    SECURITY_OPTIONS_DEDUCTIONS,
     SLIP_DIVIDEND_TAX_CREDIT,
     SLIP_TAXABLE_DIVIDENDS,
     SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
@@ -164,6 +177,9 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_CREDITS,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
+    UCCB_AND_RDSP_INCOME,
+    UCCB_AND_RDSP_INCOME_REPAYMENTS,
+    UCCB_REPAYMENT,
     UNION_DUES,
     UNIVERSAL_CHILD_CARE_BENEFIT,
     UNUSED_RRSP_CONTRIBUTIONS,
@@ -272,6 +288,16 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/workers_compensation_benefits",
             "ca/social_assistance_payments",
             "ca/net_federal_supplements",
+            "ca/uccb_repayment",
+            "ca/rdsp_income_repayment",
+            "ca/canadian_armed_forces_and_police_deduction",
+            "ca/security_options_deductions",
+            "ca/limited_partnership_losses_of_other_years",
+            "ca/non_capital_losses_of_other_years",
+            "ca/additional_deductions",
+            "ca/other_payments_deduction_above_limit",
+            "ca/other_payments_worksheet_required",
+            "ca/other_payments_worksheet_line_9_over_limit",
             "ca/unused_rrsp_contributions",
             "ca/rrsp_contributions",
             "ca/rrsp_deduction_limit",
@@ -298,13 +324,16 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
         }
     )
     # T1 line 167, the refund or balance owing, Schedule 7 line 23, what the return produces for
-    # the next year's line 1, and line 12010, the amount of dividends other than eligible, which
-    # nothing else on the return reads: the lines the computation returns.
+    # the next year's line 1, line 12010, the amount of dividends other than eligible, which
+    # nothing else on the return reads; and the Federal Worksheet's "Line 25000 - Other payments
+    # deduction" line 9 "Line 5 plus line 8 =", which nothing consumes while the count of line 9
+    # over $93,454 is a starting count: the lines the computation returns.
     assert found.outputs == frozenset(
         {
             "ca/refund_or_balance_owing",
             "ca/unused_rrsp_contributions_carried_forward",
             "ca/taxable_dividends_other_than_eligible",
+            "ca/other_payments_limit_income",
         }
     )
     # List order carries no meaning: the composition derives the run order from the contracts.
@@ -651,10 +680,93 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"amount": "ca/total_income", "less": "ca/deductions_from_total_income"},
             produces={"output": "ca/net_income"},
         ),
+        # Federal Worksheet "Line 25000 - Other payments deduction", "Complete the following
+        # calculation if you reported net federal supplements on line 14600 of your return.":
+        # line 1 "Amount from line 23400 of your return (if negative, enter "0")" is the net
+        # income artifact (line 23400 floored at 0, as line 23500 is not wired yet); line 4 "Line
+        # 2 plus line 3 =" adds line 2 "Amount from line 11700 of your return" (the universal
+        # child care benefit) and line 3 "Amount from line 12500 of your return" (the RDSP
+        # income), in line order.
         CapabilitySelection(
             name="core/sum",
             params={},
-            consumes={"parts": ()},
+            consumes={"parts": ("ca/universal_child_care_benefit", "ca/rdsp_income")},
+            produces={"output": "ca/uccb_and_rdsp_income"},
+        ),
+        # Line 5 "Line 1 minus line 4 =" prints no "(if negative, enter "0")", unlike line 1, so
+        # it may be negative.
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={"amount": "ca/net_income", "less": "ca/uccb_and_rdsp_income"},
+            produces={"output": "ca/net_income_less_uccb_and_rdsp_income"},
+        ),
+        # Line 8 "Line 6 plus line 7 =": line 6 "Amount from line 21300 of your return" (the UCCB
+        # repayment, a starting amount as line 21300 is not wired yet) and line 7 "RDSP income
+        # repayment (included in the amount on line 23200 of your return)", in line order.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/uccb_repayment", "ca/rdsp_income_repayment")},
+            produces={"output": "ca/uccb_and_rdsp_income_repayments"},
+        ),
+        # Line 9 "Line 5 plus line 8 =", the amount the worksheet compares with $93,454.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/net_income_less_uccb_and_rdsp_income",
+                    "ca/uccb_and_rdsp_income_repayments",
+                )
+            },
+            produces={"output": "ca/other_payments_limit_income"},
+        ),
+        # "If the amount on line 9 is more than $93,454, go to canada.ca/line-25000 to find out
+        # how much you can deduct. Otherwise, enter the amount from line 14700 of your return on
+        # line 25000 of your return.": a count of 1 when line 9 is more than $93,454 (a starting
+        # count, 0 or 1, until a comparison capability derives it) chooses the amount that chart
+        # gives (a starting amount) over line 14700.
+        CapabilitySelection(
+            name="core/choose_by_count",
+            params={},
+            consumes={
+                "count": "ca/other_payments_worksheet_line_9_over_limit",
+                "when_none": "ca/income_support_benefits",
+                "when_any": "ca/other_payments_deduction_above_limit",
+            },
+            produces={"output": "ca/other_payments_deduction_after_limit"},
+        ),
+        # T1 line 60 and line 25000 "Other payments deduction (enter the amount from line 14700
+        # if you did not enter an amount on line 14600; otherwise, use Federal Worksheet)": a
+        # count of 1 when an amount was entered on line 14600 (a starting count, 0 or 1, until a
+        # comparison capability derives it) chooses the worksheet's result over line 14700.
+        CapabilitySelection(
+            name="core/choose_by_count",
+            params={},
+            consumes={
+                "count": "ca/other_payments_worksheet_required",
+                "when_none": "ca/income_support_benefits",
+                "when_any": "ca/other_payments_deduction_after_limit",
+            },
+            produces={"output": "ca/other_payments_deduction"},
+        ),
+        # T1 line 68 and line 25700 "Add lines 58 to 67.": lines 58, 59, 60, 61, 62 and 67 (lines
+        # 24400, 24900, 25000, 25100, 25200 and 25600), in line order; lines 63 to 66 (25300,
+        # 25395, 25400 and 25500) are not wired yet.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/canadian_armed_forces_and_police_deduction",
+                    "ca/security_options_deductions",
+                    "ca/other_payments_deduction",
+                    "ca/limited_partnership_losses_of_other_years",
+                    "ca/non_capital_losses_of_other_years",
+                    "ca/additional_deductions",
+                )
+            },
             produces={"output": "ca/deductions_from_net_income"},
         ),
         CapabilitySelection(
@@ -1399,7 +1511,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 111
+    assert len(found.capabilities) == 117
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -1409,7 +1521,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 111
+    assert len(composition.order) == 117
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -1611,7 +1723,62 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({TOTAL_INCOME, DEDUCTIONS_FROM_TOTAL_INCOME}),
             frozenset({NET_INCOME}),
         ),
-        (Sum, frozenset(), frozenset({DEDUCTIONS_FROM_NET_INCOME})),
+        (
+            Sum,
+            frozenset({UNIVERSAL_CHILD_CARE_BENEFIT, RDSP_INCOME}),
+            frozenset({UCCB_AND_RDSP_INCOME}),
+        ),
+        (
+            Subtract,
+            frozenset({NET_INCOME, UCCB_AND_RDSP_INCOME}),
+            frozenset({NET_INCOME_LESS_UCCB_AND_RDSP_INCOME}),
+        ),
+        (
+            Sum,
+            frozenset({UCCB_REPAYMENT, RDSP_INCOME_REPAYMENT}),
+            frozenset({UCCB_AND_RDSP_INCOME_REPAYMENTS}),
+        ),
+        (
+            Sum,
+            frozenset({NET_INCOME_LESS_UCCB_AND_RDSP_INCOME, UCCB_AND_RDSP_INCOME_REPAYMENTS}),
+            frozenset({OTHER_PAYMENTS_LIMIT_INCOME}),
+        ),
+        (
+            ChooseByCount,
+            frozenset(
+                {
+                    OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
+                    INCOME_SUPPORT_BENEFITS,
+                    OTHER_PAYMENTS_DEDUCTION_ABOVE_LIMIT,
+                }
+            ),
+            frozenset({OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT}),
+        ),
+        (
+            ChooseByCount,
+            frozenset(
+                {
+                    OTHER_PAYMENTS_WORKSHEET_REQUIRED,
+                    INCOME_SUPPORT_BENEFITS,
+                    OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT,
+                }
+            ),
+            frozenset({OTHER_PAYMENTS_DEDUCTION}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {
+                    CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
+                    SECURITY_OPTIONS_DEDUCTIONS,
+                    OTHER_PAYMENTS_DEDUCTION,
+                    LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
+                    NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
+                    ADDITIONAL_DEDUCTIONS,
+                }
+            ),
+            frozenset({DEDUCTIONS_FROM_NET_INCOME}),
+        ),
         (
             SubtractNotBelowZero,
             frozenset({NET_INCOME, DEDUCTIONS_FROM_NET_INCOME}),

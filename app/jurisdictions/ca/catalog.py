@@ -1,10 +1,12 @@
 """The federal Canada artifact catalog: artifact kinds named from Canada's own return (§2, §7).
 
-Only the kinds in use are declared, each non-negative but one: none of these lines can be negative
-on the return as modelled except the refund or balance owing, where negative means a refund.
-Amounts are Decimal; the counts of eligible dependants, of infirm children, of the eligible
-children for child care (Form T778 Part B lines 1 to 3) and of the Schedule 6 eligible dependants
-(line 38100) int. Identifiers are stable: `tests/jurisdictions/ca/test_catalog.py` snapshots them.
+Only the kinds in use are declared, each non-negative but three: none of these lines can be negative
+on the return as modelled except the refund or balance owing, where negative means a refund, and
+lines 5 and 9 of the Federal Worksheet for line 25000, which print no floor. Amounts are Decimal;
+the counts of eligible dependants, of infirm children, of the eligible children for child care
+(Form T778 Part B lines 1 to 3), of the Schedule 6 eligible dependants (line 38100) and the two
+starting counts of the Federal Worksheet for line 25000 int. Identifiers are stable:
+`tests/jurisdictions/ca/test_catalog.py` snapshots them.
 """
 
 from __future__ import annotations
@@ -536,13 +538,114 @@ Line 54 (23400) is "Line 34 minus line 53 (if negative, show in brackets) Net in
 adjustments"; line 55 (23500, social benefits repayment) is not modelled.
 """
 
+CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION = CATALOG.declare(
+    "canadian_armed_forces_and_police_deduction", Decimal, non_negative=True
+)
+"""Canadian Armed Forces personnel and police deduction, T1 line 58 and line 24400 "Canadian Armed
+Forces personnel and police deduction (box 43 of all T4 slips)": a starting amount."""
+
+SECURITY_OPTIONS_DEDUCTIONS = CATALOG.declare(
+    "security_options_deductions", Decimal, non_negative=True
+)
+"""Security options deductions, T1 line 59 and line 24900 "Security options deductions (boxes 39,
+41, 91 and 92 of all T4 slips or see Form T1212)": a starting amount."""
+
+UCCB_REPAYMENT = CATALOG.declare("uccb_repayment", Decimal, non_negative=True)
+"""UCCB repayment, Federal Worksheet "Line 25000 - Other payments deduction" line 6 "Amount from
+line 21300 of your return": a starting amount, as line 21300 is not wired yet."""
+
+RDSP_INCOME_REPAYMENT = CATALOG.declare("rdsp_income_repayment", Decimal, non_negative=True)
+"""RDSP income repayment, Federal Worksheet "Line 25000 - Other payments deduction" line 7 "RDSP
+income repayment (included in the amount on line 23200 of your return)": a starting amount."""
+
+UCCB_AND_RDSP_INCOME = CATALOG.declare("uccb_and_rdsp_income", Decimal, non_negative=True)
+"""UCCB and RDSP income, Federal Worksheet "Line 25000 - Other payments deduction" line 4 "Line 2
+plus line 3 =": the amount from line 11700 of the return (line 2) and the amount from line 12500
+(line 3)."""
+
+NET_INCOME_LESS_UCCB_AND_RDSP_INCOME = CATALOG.declare(
+    "net_income_less_uccb_and_rdsp_income", Decimal
+)
+"""Net income less the UCCB and RDSP income, Federal Worksheet "Line 25000 - Other payments
+deduction" line 5 "Line 1 minus line 4 =": the net income (line 1, "Amount from line 23400 of your
+return (if negative, enter "0")") less line 4.
+
+The form prints no "(if negative, enter "0")" on line 5, so the kind is signed.
+"""
+
+UCCB_AND_RDSP_INCOME_REPAYMENTS = CATALOG.declare(
+    "uccb_and_rdsp_income_repayments", Decimal, non_negative=True
+)
+"""UCCB and RDSP income repayments, Federal Worksheet "Line 25000 - Other payments deduction" line
+8 "Line 6 plus line 7 =": the UCCB repayment (line 6) and the RDSP income repayment (line 7)."""
+
+OTHER_PAYMENTS_LIMIT_INCOME = CATALOG.declare("other_payments_limit_income", Decimal)
+"""Income for the limit, Federal Worksheet "Line 25000 - Other payments deduction" line 9 "Line 5
+plus line 8 =": the amount the worksheet compares with $93,454 ("If the amount on line 9 is more
+than $93,454, go to canada.ca/line-25000 to find out how much you can deduct.").
+
+The form prints no "(if negative, enter "0")" on line 9, so the kind is signed. The count of line 9
+over $93,454 is a starting count, so nothing consumes this line and the manifest returns it.
+"""
+
+OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT = CATALOG.declare(
+    "other_payments_worksheet_line_9_over_limit", int, non_negative=True
+)
+"""Line 9 over the limit, Federal Worksheet "Line 25000 - Other payments deduction" "If the amount
+on line 9 is more than $93,454, go to canada.ca/line-25000 to find out how much you can deduct.":
+a starting count, 1 when line 9 is more than $93,454 and 0 otherwise, until a comparison
+capability derives it."""
+
+OTHER_PAYMENTS_DEDUCTION_ABOVE_LIMIT = CATALOG.declare(
+    "other_payments_deduction_above_limit", Decimal, non_negative=True
+)
+"""Other payments deduction above the limit, Federal Worksheet "Line 25000 - Other payments
+deduction" "go to canada.ca/line-25000 to find out how much you can deduct": the amount that
+chart gives when line 9 is more than $93,454, a starting amount."""
+
+OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT = CATALOG.declare(
+    "other_payments_deduction_after_limit", Decimal, non_negative=True
+)
+"""Other payments deduction after the limit, Federal Worksheet "Line 25000 - Other payments
+deduction" "Otherwise, enter the amount from line 14700 of your return on line 25000 of your
+return.": line 14700 when line 9 is not more than $93,454, else the amount the canada.ca/line-25000
+chart gives."""
+
+OTHER_PAYMENTS_WORKSHEET_REQUIRED = CATALOG.declare(
+    "other_payments_worksheet_required", int, non_negative=True
+)
+"""Worksheet required, T1 line 60 and line 25000 "Other payments deduction (enter the amount from
+line 14700 if you did not enter an amount on line 14600; otherwise, use Federal Worksheet)": a
+starting count, 1 when an amount was entered on line 14600 and 0 otherwise, until a comparison
+capability derives it."""
+
+OTHER_PAYMENTS_DEDUCTION = CATALOG.declare("other_payments_deduction", Decimal, non_negative=True)
+"""Other payments deduction, T1 line 60 and line 25000 "Other payments deduction (enter the amount
+from line 14700 if you did not enter an amount on line 14600; otherwise, use Federal Worksheet)":
+line 14700 when no amount was entered on line 14600, else the Federal Worksheet's result."""
+
+LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS = CATALOG.declare(
+    "limited_partnership_losses_of_other_years", Decimal, non_negative=True
+)
+"""Limited partnership losses of other years, T1 line 61 and line 25100 "Limited partnership losses
+of other years": the amount the filer chooses to claim, a starting amount."""
+
+NON_CAPITAL_LOSSES_OF_OTHER_YEARS = CATALOG.declare(
+    "non_capital_losses_of_other_years", Decimal, non_negative=True
+)
+"""Non-capital losses of other years, T1 line 62 and line 25200 "Non-capital losses of other
+years": the amount the filer chooses to claim, a starting amount."""
+
+ADDITIONAL_DEDUCTIONS = CATALOG.declare("additional_deductions", Decimal, non_negative=True)
+"""Additional deductions, T1 line 67 and line 25600 "Additional deductions": a starting amount."""
+
 DEDUCTIONS_FROM_NET_INCOME = CATALOG.declare(
     "deductions_from_net_income", Decimal, non_negative=True
 )
-"""Deductions from net income, T1 line 25700 "Add lines 58 to 67": the sum of the deductions
-from net income, lines 58 to 67 (lines 24400 to 25600).
-
-None of those deductions is modelled yet, so the sum has no parts.
+"""Deductions from net income, T1 line 68 and line 25700 "Add lines 58 to 67.": the sum of the
+deductions from net income, here, in line order, lines 58, 59, 60, 61, 62 and 67 (lines 24400,
+24900, 25000, 25100, 25200 and 25600); lines 63 to 66 (25300, 25395, 25400 and 25500) are not
+wired yet.
 """
 
 TAXABLE_INCOME = CATALOG.declare("taxable_income", Decimal, non_negative=True)

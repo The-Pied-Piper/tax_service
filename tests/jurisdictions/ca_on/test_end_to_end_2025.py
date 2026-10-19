@@ -48,7 +48,7 @@ eligible dependants (line 38100) choosing the first (T1 line 45300); less the to
 48200), here the chosen income tax deducted of 25000 (line 43700) plus that benefit, to the refund
 or balance owing (line 167), 897.15, positive so a balance owing; every line computed from a dataset
 rounded half-up to the cent) are checked from the files under `returns/` by
-`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H, I and K; this module pins which
+`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H, I, K and L; this module pins which
 capability produces each line, the order, and the trace that explains them.
 """
 
@@ -111,6 +111,7 @@ from app.domain.trace import (
 )
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
+    ADDITIONAL_DEDUCTIONS,
     ADJUSTED_FAMILY_NET_INCOME,
     AGE_AMOUNT,
     AGE_AMOUNT_BEFORE_COUNT,
@@ -124,6 +125,7 @@ from app.jurisdictions.ca.catalog import (
     CANADA_WORKERS_BENEFIT,
     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
     CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
+    CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
     CAPITAL_GAIN,
     CHILD_CARE_BASIC_LIMIT,
     CHILD_CARE_EARNED_INCOME,
@@ -179,11 +181,14 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
     INVESTMENT_INCOME_WITHOUT_A_SLIP,
     INVESTMENT_ROYALTIES,
+    LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
     NET_INCOME,
+    NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NET_PARTNERSHIP_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
+    NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     OLD_AGE_SECURITY,
@@ -193,9 +198,16 @@ from app.jurisdictions.ca.catalog import (
     OTHER_EMPLOYMENT_INCOME,
     OTHER_FHSA_INCOME,
     OTHER_INCOME,
+    OTHER_PAYMENTS_DEDUCTION,
+    OTHER_PAYMENTS_DEDUCTION_ABOVE_LIMIT,
+    OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT,
+    OTHER_PAYMENTS_LIMIT_INCOME,
+    OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
+    OTHER_PAYMENTS_WORKSHEET_REQUIRED,
     OTHER_PENSIONS_AND_SUPERANNUATION,
     PROVINCIAL_CREDITS,
     RDSP_INCOME,
+    RDSP_INCOME_REPAYMENT,
     REFUND_OR_BALANCE_OWING,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
@@ -204,6 +216,7 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION_LIMIT,
     RRSP_DEDUCTION_MAXIMUM,
     RRSP_INCOME,
+    SECURITY_OPTIONS_DEDUCTIONS,
     SLIP_DIVIDEND_TAX_CREDIT,
     SLIP_TAXABLE_DIVIDENDS,
     SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
@@ -245,6 +258,9 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_CREDITS,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
+    UCCB_AND_RDSP_INCOME,
+    UCCB_AND_RDSP_INCOME_REPAYMENTS,
+    UCCB_REPAYMENT,
     UNION_DUES,
     UNIVERSAL_CHILD_CARE_BENEFIT,
     UNUSED_RRSP_CONTRIBUTIONS,
@@ -352,6 +368,16 @@ def compute(
     workers_compensation_benefits: str = "0",
     social_assistance_payments: str = "0",
     net_federal_supplements: str = "0",
+    uccb_repayment: str = "0",
+    rdsp_income_repayment: str = "0",
+    canadian_armed_forces_and_police_deduction: str = "0",
+    security_options_deductions: str = "0",
+    limited_partnership_losses_of_other_years: str = "0",
+    non_capital_losses_of_other_years: str = "0",
+    additional_deductions: str = "0",
+    other_payments_deduction_above_limit: str = "0",
+    other_payments_worksheet_required: int = 0,
+    other_payments_worksheet_line_9_over_limit: int = 0,
     dependent_children: int = 0,
     dependants: int = 0,
     eligible_dependants: int = 0,
@@ -437,6 +463,23 @@ def compute(
         Artifact(WORKERS_COMPENSATION_BENEFITS, D(workers_compensation_benefits)),
         Artifact(SOCIAL_ASSISTANCE_PAYMENTS, D(social_assistance_payments)),
         Artifact(NET_FEDERAL_SUPPLEMENTS, D(net_federal_supplements)),
+        Artifact(UCCB_REPAYMENT, D(uccb_repayment)),
+        Artifact(RDSP_INCOME_REPAYMENT, D(rdsp_income_repayment)),
+        Artifact(
+            CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
+            D(canadian_armed_forces_and_police_deduction),
+        ),
+        Artifact(SECURITY_OPTIONS_DEDUCTIONS, D(security_options_deductions)),
+        Artifact(
+            LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS, D(limited_partnership_losses_of_other_years)
+        ),
+        Artifact(NON_CAPITAL_LOSSES_OF_OTHER_YEARS, D(non_capital_losses_of_other_years)),
+        Artifact(ADDITIONAL_DEDUCTIONS, D(additional_deductions)),
+        Artifact(OTHER_PAYMENTS_DEDUCTION_ABOVE_LIMIT, D(other_payments_deduction_above_limit)),
+        Artifact(OTHER_PAYMENTS_WORKSHEET_REQUIRED, other_payments_worksheet_required),
+        Artifact(
+            OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT, other_payments_worksheet_line_9_over_limit
+        ),
         Artifact(UNUSED_RRSP_CONTRIBUTIONS, D(unused_rrsp_contributions)),
         Artifact(RRSP_CONTRIBUTIONS, D(rrsp_contributions)),
         Artifact(RRSP_DEDUCTION_LIMIT, D(rrsp_deduction_limit)),
@@ -539,6 +582,33 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(WORKERS_COMPENSATION_BENEFITS) is None
     assert worksheet.producer_of(SOCIAL_ASSISTANCE_PAYMENTS) is None
     assert worksheet.producer_of(NET_FEDERAL_SUPPLEMENTS) is None
+    for starting_kind in (
+        UCCB_REPAYMENT,
+        RDSP_INCOME_REPAYMENT,
+        CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
+        SECURITY_OPTIONS_DEDUCTIONS,
+        LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
+        NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
+        ADDITIONAL_DEDUCTIONS,
+        OTHER_PAYMENTS_DEDUCTION_ABOVE_LIMIT,
+        OTHER_PAYMENTS_WORKSHEET_REQUIRED,
+        OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
+    ):
+        assert worksheet.producer_of(starting_kind) is None, starting_kind.identifier
+    # The Federal Worksheet's "Line 25000 - Other payments deduction": lines 4, 8 and 9 add, line
+    # 5 subtracts, and line 25000 is chosen twice by a count.
+    assert isinstance(worksheet.producer_of(UCCB_AND_RDSP_INCOME), Sum)
+    assert isinstance(worksheet.producer_of(NET_INCOME_LESS_UCCB_AND_RDSP_INCOME), Subtract)
+    assert isinstance(worksheet.producer_of(UCCB_AND_RDSP_INCOME_REPAYMENTS), Sum)
+    assert isinstance(worksheet.producer_of(OTHER_PAYMENTS_LIMIT_INCOME), Sum)
+    assert isinstance(worksheet.producer_of(OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT), ChooseByCount)
+    assert isinstance(worksheet.producer_of(OTHER_PAYMENTS_DEDUCTION), ChooseByCount)
+    assert worksheet.producer_of(OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT) is not (
+        worksheet.producer_of(OTHER_PAYMENTS_DEDUCTION)
+    )
+    assert worksheet.producer_of(OTHER_PAYMENTS_DEDUCTION) is not (
+        worksheet.producer_of(CANADA_WORKERS_BENEFIT)
+    )
     # T1 Step 2: the Federal Worksheet's line 9 and line 11 (line 12100), and line 14700.
     assert isinstance(worksheet.producer_of(INVESTMENT_INCOME_BEFORE_PRIOR_YEARS), Sum)
     assert isinstance(worksheet.producer_of(INTEREST_AND_OTHER_INVESTMENT_INCOME), Subtract)
@@ -977,7 +1047,39 @@ def test_the_trace_explains_the_computation() -> None:
         "not below 0 = 115000",
         "115000",
     )
-    net_deductions = position("deductions_from_net_income: no parts = 0", "0")
+    uccb_and_rdsp = position(
+        "uccb_and_rdsp_income: universal_child_care_benefit 0 + rdsp_income 0 = 0", "0"
+    )
+    line_5 = position(
+        "net_income_less_uccb_and_rdsp_income: net_income 115000 less uccb_and_rdsp_income 0 "
+        "= 115000",
+        "115000",
+    )
+    repayments = position(
+        "uccb_and_rdsp_income_repayments: uccb_repayment 0 + rdsp_income_repayment 0 = 0", "0"
+    )
+    line_9 = position(
+        "other_payments_limit_income: net_income_less_uccb_and_rdsp_income 115000 "
+        "+ uccb_and_rdsp_income_repayments 0 = 115000",
+        "115000",
+    )
+    after_limit = position(
+        "other_payments_deduction_after_limit: income_support_benefits 0, "
+        "chosen as other_payments_worksheet_line_9_over_limit is 0",
+        "0",
+    )
+    other_payments = position(
+        "other_payments_deduction: income_support_benefits 0, "
+        "chosen as other_payments_worksheet_required is 0",
+        "0",
+    )
+    net_deductions = position(
+        "deductions_from_net_income: canadian_armed_forces_and_police_deduction 0 "
+        "+ security_options_deductions 0 + other_payments_deduction 0 "
+        "+ limited_partnership_losses_of_other_years 0 + non_capital_losses_of_other_years 0 "
+        "+ additional_deductions 0 = 0",
+        "0",
+    )
     taxable = position(
         "taxable_income: net_income 115000 less deductions_from_net_income 0, not below 0 = 115000",
         "115000",
@@ -1326,7 +1428,12 @@ def test_the_trace_explains_the_computation() -> None:
     assert ei < federal_amounts
     assert ei < ontario_amounts
     assert net < taxable
-    assert net_deductions < taxable
+    # Line 9 feeds nothing yet: the count of line 9 over $93,454 is a starting count.
+    assert net < line_5 < line_9
+    assert support < after_limit < other_payments < net_deductions < taxable
+    assert uccb_and_rdsp < line_5
+    assert repayments < line_9
+    assert support < after_limit
     assert taxable < federal_column < federal_basic < federal_after
     assert taxable < ontario_column < ontario_basic
     assert ontario_basic < ontario_after
@@ -1690,7 +1797,39 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("5000"),
         ),
-        DEDUCTIONS_FROM_NET_INCOME: SumLine(DEDUCTIONS_FROM_NET_INCOME, (), D("0")),
+        # The Federal Worksheet's "Line 25000 - Other payments deduction" lines 4, 8 and 9, each
+        # in line order.
+        UCCB_AND_RDSP_INCOME: SumLine(
+            UCCB_AND_RDSP_INCOME,
+            ((UNIVERSAL_CHILD_CARE_BENEFIT, D("0")), (RDSP_INCOME, D("0"))),
+            D("0"),
+        ),
+        UCCB_AND_RDSP_INCOME_REPAYMENTS: SumLine(
+            UCCB_AND_RDSP_INCOME_REPAYMENTS,
+            ((UCCB_REPAYMENT, D("0")), (RDSP_INCOME_REPAYMENT, D("0"))),
+            D("0"),
+        ),
+        OTHER_PAYMENTS_LIMIT_INCOME: SumLine(
+            OTHER_PAYMENTS_LIMIT_INCOME,
+            (
+                (NET_INCOME_LESS_UCCB_AND_RDSP_INCOME, D("115000")),
+                (UCCB_AND_RDSP_INCOME_REPAYMENTS, D("0")),
+            ),
+            D("115000"),
+        ),
+        # T1 line 68 and line 25700 "Add lines 58 to 67.", in line order.
+        DEDUCTIONS_FROM_NET_INCOME: SumLine(
+            DEDUCTIONS_FROM_NET_INCOME,
+            (
+                (CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION, D("0")),
+                (SECURITY_OPTIONS_DEDUCTIONS, D("0")),
+                (OTHER_PAYMENTS_DEDUCTION, D("0")),
+                (LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS, D("0")),
+                (NON_CAPITAL_LOSSES_OF_OTHER_YEARS, D("0")),
+                (ADDITIONAL_DEDUCTIONS, D("0")),
+            ),
+            D("0"),
+        ),
         NON_REFUNDABLE_CREDIT_AMOUNTS: SumLine(
             NON_REFUNDABLE_CREDIT_AMOUNTS,
             (
@@ -1807,6 +1946,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=DIVIDENDS_AMOUNT_B,
             subtrahend_amount=D("0"),
             result=D("0"),
+        ),
+        # The Federal Worksheet's line 5 "Line 1 minus line 4 =": no floor is printed.
+        NET_INCOME_LESS_UCCB_AND_RDSP_INCOME: SubtractedLine(
+            output=NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
+            minuend=NET_INCOME,
+            minuend_amount=D("115000"),
+            subtrahend=UCCB_AND_RDSP_INCOME,
+            subtrahend_amount=D("0"),
+            result=D("115000"),
         ),
         # The Federal Worksheet's line 11 "Line 9 minus line 10. Enter this amount on line 12100
         # of your return.": nothing reported in previous years comes off nothing.
@@ -2476,13 +2624,29 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # T1 line 45300: Schedule 6 line 28 for Return A's family status, no eligible spouse and 0
     # Schedule 6 eligible dependants (line 38100), so the amounts with neither.
     assert chosen == {
+        # Line 25000: line 9 is not over $93,454 and no amount was entered on line 14600, so
+        # line 14700 (0 here) twice.
+        OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT: ChosenByCountLine(
+            output=OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT,
+            count_kind=OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
+            count=0,
+            chosen_kind=INCOME_SUPPORT_BENEFITS,
+            chosen_value=D("0"),
+        ),
+        OTHER_PAYMENTS_DEDUCTION: ChosenByCountLine(
+            output=OTHER_PAYMENTS_DEDUCTION,
+            count_kind=OTHER_PAYMENTS_WORKSHEET_REQUIRED,
+            count=0,
+            chosen_kind=INCOME_SUPPORT_BENEFITS,
+            chosen_value=D("0"),
+        ),
         CANADA_WORKERS_BENEFIT: ChosenByCountLine(
             output=CANADA_WORKERS_BENEFIT,
             count_kind=CWB_ELIGIBLE_DEPENDANTS,
             count=0,
             chosen_kind=CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
             chosen_value=D("0"),
-        )
+        ),
     }
 
     assert totals[FEDERAL_BASIC_TAX].base == TAXABLE_INCOME
@@ -2515,7 +2679,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 111
+    assert len(order) == 117
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -2580,6 +2744,18 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[EI_PREMIUMS] < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert position[NET_INCOME] < position[TAXABLE_INCOME]
     assert position[DEDUCTIONS_FROM_NET_INCOME] < position[TAXABLE_INCOME]
+    # The Federal Worksheet's "Line 25000 - Other payments deduction": line 1 is the net income.
+    assert position[NET_INCOME] < position[NET_INCOME_LESS_UCCB_AND_RDSP_INCOME]
+    assert position[UCCB_AND_RDSP_INCOME] < position[NET_INCOME_LESS_UCCB_AND_RDSP_INCOME]
+    # Line 9 feeds nothing yet: the count of line 9 over $93,454 is a starting count.
+    assert position[NET_INCOME_LESS_UCCB_AND_RDSP_INCOME] < position[OTHER_PAYMENTS_LIMIT_INCOME]
+    assert (
+        position[INCOME_SUPPORT_BENEFITS]
+        < position[OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT]
+        < position[OTHER_PAYMENTS_DEDUCTION]
+        < position[DEDUCTIONS_FROM_NET_INCOME]
+    )
+    assert position[UCCB_AND_RDSP_INCOME_REPAYMENTS] < position[OTHER_PAYMENTS_LIMIT_INCOME]
     assert position[TAXABLE_INCOME] < position[FEDERAL_BASIC_TAX]
     assert position[TAXABLE_INCOME] < position[ONTARIO_BASIC_TAX]
     assert position[FEDERAL_BASIC_TAX] < position[FEDERAL_TAX_AFTER_CREDITS]
@@ -3331,7 +3507,11 @@ def test_return_fs_canada_workers_benefit_is_zero_with_an_eligible_dependant() -
     assert worksheet.get(CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT).value == D("0")
     assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("0")
     assert worksheet.get(TOTAL_CREDITS).value == D("8000")
-    (chosen,) = [line for line in worksheet.trace if isinstance(line, ChosenByCountLine)]
+    (chosen,) = [
+        line
+        for line in worksheet.trace
+        if isinstance(line, ChosenByCountLine) and line.output == CANADA_WORKERS_BENEFIT
+    ]
     assert chosen == ChosenByCountLine(
         output=CANADA_WORKERS_BENEFIT,
         count_kind=CWB_ELIGIBLE_DEPENDANTS,
@@ -3903,7 +4083,8 @@ def test_return_hs_pension_and_benefit_income_is_all_of_its_total_income() -> No
     # no slip 300 (line 7) is 1500 (line 9), less 100 reported in previous years (line 10): 1400
     # (line 12100). Total income 8000 + 9000 + 20000 + 1400 + 5000 + 2000 = 45400, with no
     # employment income, so no CPP contributions, EI premiums, Canada employment amount, LIFT
-    # credit or Canada workers benefit.
+    # credit or Canada workers benefit. With no amount entered on line 14600, line 25000 is line
+    # 14700, 2000, so taxable income is 45400 - 2000 = 43400.
     worksheet = compute(
         "0",
         "0",
@@ -3929,21 +4110,23 @@ def test_return_hs_pension_and_benefit_income_is_all_of_its_total_income() -> No
     assert worksheet.get(TOTAL_INCOME).value == D("45400")
     assert worksheet.get(CPP_ENHANCED_CONTRIBUTIONS).value == D("0")
     assert worksheet.get(NET_INCOME).value == D("45400")
-    assert worksheet.get(TAXABLE_INCOME).value == D("45400")
-    assert worksheet.get(FEDERAL_BASIC_TAX).value == D("6583.00")
+    assert worksheet.get(OTHER_PAYMENTS_DEDUCTION).value == D("2000")
+    assert worksheet.get(DEDUCTIONS_FROM_NET_INCOME).value == D("2000")
+    assert worksheet.get(TAXABLE_INCOME).value == D("43400.00")
+    assert worksheet.get(FEDERAL_BASIC_TAX).value == D("6293.00")
     assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("2338.71")
-    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("4244.29")
-    assert worksheet.get(ONTARIO_BASIC_TAX).value == D("2292.70")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("3954.29")
+    assert worksheet.get(ONTARIO_BASIC_TAX).value == D("2191.70")
     assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("643.72")
-    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1648.98")
+    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1547.98")
     assert worksheet.get(LIFT_REDUCTION).value == D("645.00")
     assert worksheet.get(LIFT_CREDIT).value == D("0")
     assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("450")
-    assert worksheet.get(ONTARIO_TAX).value == D("2098.98")
-    assert worksheet.get(TOTAL_PAYABLE).value == D("6343.27")
+    assert worksheet.get(ONTARIO_TAX).value == D("1997.98")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("5952.27")
     assert worksheet.get(WORKING_INCOME).value == D("0")
     assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("0")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("3343.27")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("2952.27")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "total_income: employment_income 0 + other_employment_income 0 + old_age_security 8000 "
@@ -4408,3 +4591,224 @@ def test_a_dividend_credit_above_the_basic_tax_leaves_zero_federal_tax_not_a_ref
         > worksheet.get(FEDERAL_BASIC_TAX).value
     )
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("0")
+
+
+def test_the_other_payments_deduction_is_line_14700_when_nothing_was_entered_on_line_14600() -> (
+    None
+):
+    # T1 line 60 and line 25000 "enter the amount from line 14700 if you did not enter an amount on
+    # line 14600": workers' compensation 2000 (line 14400) and social assistance 300 (line 14500)
+    # make line 14700 2300, and with no amount on line 14600 (count 0) that is line 25000, whatever
+    # the chart amount of 999 and the count of 1 for a line 9 over the limit, which only the
+    # worksheet reads. Employment income 30000: enhanced CPP contributions 1% x (30000 - 3500) =
+    # 265.00, total income 30000 + 2300 = 32300, net income 32035.00, taxable income
+    # 32035.00 - 2300 = 29735.00.
+    worksheet = compute(
+        "30000",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        workers_compensation_benefits="2000",
+        social_assistance_payments="300",
+        other_payments_deduction_above_limit="999",
+        other_payments_worksheet_line_9_over_limit=1,
+    )
+
+    assert worksheet.get(INCOME_SUPPORT_BENEFITS).value == D("2300")
+    assert worksheet.get(OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT).value == D("999")
+    assert worksheet.get(OTHER_PAYMENTS_DEDUCTION).value == D("2300")
+    assert worksheet.get(DEDUCTIONS_FROM_NET_INCOME).value == D("2300")
+    assert worksheet.get(NET_INCOME).value == D("32035.00")
+    assert worksheet.get(TAXABLE_INCOME).value == D("29735.00")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "other_payments_deduction: income_support_benefits 2300, "
+        "chosen as other_payments_worksheet_required is 0"
+    ) in rendered
+
+
+def test_the_worksheets_lines_4_5_8_and_9_with_supplements_uccb_rdsp_income_and_repayments() -> (
+    None
+):
+    # Federal Worksheet "Line 25000 - Other payments deduction" for a filer with net federal
+    # supplements of 400 on line 14600 (count 1). Employment income 50000, UCCB 1000 (line
+    # 11700), RDSP income 3000 (line 12500): total income 50000 + 1000 + 3000 + 400 = 54400,
+    # enhanced CPP contributions 1% x (50000 - 3500) = 465.00, so net income (line 1) is 53935.00.
+    # Line 4 is 1000 + 3000 = 4000; line 5 is 53935.00 - 4000 = 49935.00; line 6 (UCCB repayment)
+    # 200 and line 7 (RDSP income repayment) 100 make line 8 300; line 9 is 49935.00 + 300 =
+    # 50235.00, not more than $93,454 (count 0), so line 25000 is line 14700, 400, and taxable
+    # income is 53935.00 - 400 = 53535.00.
+    worksheet = compute(
+        "50000",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        universal_child_care_benefit="1000",
+        rdsp_income="3000",
+        net_federal_supplements="400",
+        uccb_repayment="200",
+        rdsp_income_repayment="100",
+        other_payments_worksheet_required=1,
+    )
+
+    assert worksheet.get(NET_INCOME).value == D("53935.00")
+    assert worksheet.get(UCCB_AND_RDSP_INCOME).value == D("4000")
+    assert worksheet.get(NET_INCOME_LESS_UCCB_AND_RDSP_INCOME).value == D("49935.00")
+    assert worksheet.get(UCCB_AND_RDSP_INCOME_REPAYMENTS).value == D("300")
+    assert worksheet.get(OTHER_PAYMENTS_LIMIT_INCOME).value == D("50235.00")
+    assert worksheet.get(OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT).value == D("400")
+    assert worksheet.get(OTHER_PAYMENTS_DEDUCTION).value == D("400")
+    assert worksheet.get(TAXABLE_INCOME).value == D("53535.00")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert "uccb_and_rdsp_income: universal_child_care_benefit 1000 + rdsp_income 3000 = 4000" in (
+        rendered
+    )
+    assert (
+        "net_income_less_uccb_and_rdsp_income: net_income 53935 less uccb_and_rdsp_income 4000 "
+        "= 49935"
+    ) in rendered
+    assert (
+        "uccb_and_rdsp_income_repayments: uccb_repayment 200 + rdsp_income_repayment 100 = 300"
+    ) in rendered
+    assert (
+        "other_payments_limit_income: net_income_less_uccb_and_rdsp_income 49935 "
+        "+ uccb_and_rdsp_income_repayments 300 = 50235"
+    ) in rendered
+    assert (
+        "other_payments_deduction_after_limit: income_support_benefits 400, "
+        "chosen as other_payments_worksheet_line_9_over_limit is 0"
+    ) in rendered
+    assert (
+        "other_payments_deduction: other_payments_deduction_after_limit 400, "
+        "chosen as other_payments_worksheet_required is 1"
+    ) in rendered
+
+
+def test_a_line_9_over_93454_takes_the_charts_amount_as_line_25000() -> None:
+    # "If the amount on line 9 is more than $93,454, go to canada.ca/line-25000 to find out how
+    # much you can deduct": employment income 100000, workers' compensation 1500 and net federal
+    # supplements 500 (line 14700 is 2000), total income 102000, enhanced CPP contributions
+    # 678.00 + 396.00 = 1074.00, net income 100926.00; with no UCCB, RDSP income or repayments
+    # line 9 is 100926.00, over the limit (count 1), so line 25000 is the chart's amount, a
+    # chosen 700, not line 14700, and taxable income is 100926.00 - 700 = 100226.00.
+    worksheet = compute(
+        "100000",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        workers_compensation_benefits="1500",
+        net_federal_supplements="500",
+        other_payments_deduction_above_limit="700",
+        other_payments_worksheet_required=1,
+        other_payments_worksheet_line_9_over_limit=1,
+    )
+
+    assert worksheet.get(INCOME_SUPPORT_BENEFITS).value == D("2000")
+    assert worksheet.get(NET_INCOME).value == D("100926.00")
+    assert worksheet.get(OTHER_PAYMENTS_LIMIT_INCOME).value == D("100926.00")
+    assert worksheet.get(OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT).value == D("700")
+    assert worksheet.get(OTHER_PAYMENTS_DEDUCTION).value == D("700")
+    assert worksheet.get(TAXABLE_INCOME).value == D("100226.00")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "other_payments_deduction_after_limit: other_payments_deduction_above_limit 700, "
+        "chosen as other_payments_worksheet_line_9_over_limit is 1"
+    ) in rendered
+    assert (
+        "other_payments_deduction: other_payments_deduction_after_limit 700, "
+        "chosen as other_payments_worksheet_required is 1"
+    ) in rendered
+
+
+def test_line_9_may_be_negative_as_the_form_prints_no_floor() -> None:
+    # Net income 0 (UCCB of 1000 less union dues of 1500, not below zero) less line 4 (1000) is
+    # line 5, -1000, with no repayments line 9 is -1000, not over the limit, so with an amount on
+    # line 14600 of 0 entered as such (count 1) line 25000 is line 14700, 0.
+    worksheet = compute(
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "1500",
+        universal_child_care_benefit="1000",
+        other_payments_worksheet_required=1,
+    )
+
+    assert worksheet.get(NET_INCOME).value == D("0")
+    assert worksheet.get(NET_INCOME_LESS_UCCB_AND_RDSP_INCOME).value == D("-1000")
+    assert worksheet.get(OTHER_PAYMENTS_LIMIT_INCOME).value == D("-1000")
+    assert worksheet.get(OTHER_PAYMENTS_DEDUCTION).value == D("0")
+
+
+def test_deductions_from_net_income_add_lines_58_to_62_and_67_once_each() -> None:
+    # T1 line 68 and line 25700 "Add lines 58 to 67.": one distinct power of two for each of the
+    # six lines wired: line 24400 1, line 24900 2, line 25000 4 (workers' compensation of 4, so
+    # line 14700, with no amount on line 14600), line 25100 8, line 25200 16 and line 25600 32,
+    # so a line left out or added twice changes the sum: 63. Other income 1000 gives total
+    # income 1004 and taxable income 1004 - 63 = 941.
+    worksheet = compute(
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        other_income="1000",
+        workers_compensation_benefits="4",
+        canadian_armed_forces_and_police_deduction="1",
+        security_options_deductions="2",
+        limited_partnership_losses_of_other_years="8",
+        non_capital_losses_of_other_years="16",
+        additional_deductions="32",
+    )
+
+    assert worksheet.get(OTHER_PAYMENTS_DEDUCTION).value == D("4")
+    assert worksheet.get(DEDUCTIONS_FROM_NET_INCOME).value == D("63")
+    assert worksheet.get(TAXABLE_INCOME).value == D("941")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "deductions_from_net_income: canadian_armed_forces_and_police_deduction 1 "
+        "+ security_options_deductions 2 + other_payments_deduction 4 "
+        "+ limited_partnership_losses_of_other_years 8 + non_capital_losses_of_other_years 16 "
+        "+ additional_deductions 32 = 63"
+    ) in rendered
+
+
+def test_return_ls_deductions_from_net_income_are_8500_and_its_taxable_income_34500() -> None:
+    # Return L: employment income 40000 and other income 1365 (line 13000), both chosen, and
+    # workers' compensation 2000 (line 14400): total income 43365; enhanced CPP contributions
+    # 1% x (40000 - 3500) = 365.00; net income 43000.00. Line 25000 is line 14700, 2000.00;
+    # security options deduction 1500 (line 24900) and non-capital losses of other years 5000
+    # (line 25200): line 25700 is 1500 + 2000 + 5000 = 8500, taxable income 43000.00 - 8500 =
+    # 34500.00.
+    worksheet = compute(
+        "40000",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        other_income="1365",
+        workers_compensation_benefits="2000",
+        security_options_deductions="1500",
+        non_capital_losses_of_other_years="5000",
+    )
+
+    assert worksheet.get(TOTAL_INCOME).value == D("43365")
+    assert worksheet.get(NET_INCOME).value == D("43000.00")
+    assert worksheet.get(OTHER_PAYMENTS_DEDUCTION).value == D("2000")
+    assert worksheet.get(DEDUCTIONS_FROM_NET_INCOME).value == D("8500")
+    assert worksheet.get(TAXABLE_INCOME).value == D("34500.00")

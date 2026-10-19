@@ -50,6 +50,16 @@ inputs:
   - ca/workers_compensation_benefits
   - ca/social_assistance_payments
   - ca/net_federal_supplements
+  - ca/uccb_repayment
+  - ca/rdsp_income_repayment
+  - ca/canadian_armed_forces_and_police_deduction
+  - ca/security_options_deductions
+  - ca/limited_partnership_losses_of_other_years
+  - ca/non_capital_losses_of_other_years
+  - ca/additional_deductions
+  - ca/other_payments_deduction_above_limit
+  - ca/other_payments_worksheet_required
+  - ca/other_payments_worksheet_line_9_over_limit
   - ca/unused_rrsp_contributions
   - ca/rrsp_contributions
   - ca/rrsp_deduction_limit
@@ -77,6 +87,7 @@ outputs:
   - ca/refund_or_balance_owing
   - ca/unused_rrsp_contributions_carried_forward
   - ca/taxable_dividends_other_than_eligible
+  - ca/other_payments_limit_income
 capabilities:
   - name: core/apply_rate
     params:
@@ -389,9 +400,81 @@ capabilities:
       less: ca/deductions_from_total_income
     produces:
       output: ca/net_income
+  # Federal Worksheet "Line 25000 - Other payments deduction", "Complete the following
+  # calculation if you reported net federal supplements on line 14600 of your return.":
+  # line 1 "Amount from line 23400 of your return (if negative, enter "0")" is the net
+  # income artifact (line 23400 floored at 0, as line 23500 is not wired yet); line 4 "Line
+  # 2 plus line 3 =" adds line 2 "Amount from line 11700 of your return" (the universal
+  # child care benefit) and line 3 "Amount from line 12500 of your return" (the RDSP
+  # income), in line order.
   - name: core/sum
     consumes:
-      parts: []
+      parts:
+        - ca/universal_child_care_benefit
+        - ca/rdsp_income
+    produces:
+      output: ca/uccb_and_rdsp_income
+  # Line 5 "Line 1 minus line 4 =" prints no "(if negative, enter "0")", unlike line 1, so
+  # it may be negative.
+  - name: core/subtract
+    consumes:
+      amount: ca/net_income
+      less: ca/uccb_and_rdsp_income
+    produces:
+      output: ca/net_income_less_uccb_and_rdsp_income
+  # Line 8 "Line 6 plus line 7 =": line 6 "Amount from line 21300 of your return" (the UCCB
+  # repayment, a starting amount as line 21300 is not wired yet) and line 7 "RDSP income
+  # repayment (included in the amount on line 23200 of your return)", in line order.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/uccb_repayment
+        - ca/rdsp_income_repayment
+    produces:
+      output: ca/uccb_and_rdsp_income_repayments
+  # Line 9 "Line 5 plus line 8 =", the amount the worksheet compares with $93,454.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/net_income_less_uccb_and_rdsp_income
+        - ca/uccb_and_rdsp_income_repayments
+    produces:
+      output: ca/other_payments_limit_income
+  # "If the amount on line 9 is more than $93,454, go to canada.ca/line-25000 to find out
+  # how much you can deduct. Otherwise, enter the amount from line 14700 of your return on
+  # line 25000 of your return.": a count of 1 when line 9 is more than $93,454 (a starting
+  # count, 0 or 1, until a comparison capability derives it) chooses the amount that chart
+  # gives (a starting amount) over line 14700.
+  - name: core/choose_by_count
+    consumes:
+      count: ca/other_payments_worksheet_line_9_over_limit
+      when_none: ca/income_support_benefits
+      when_any: ca/other_payments_deduction_above_limit
+    produces:
+      output: ca/other_payments_deduction_after_limit
+  # T1 line 60 and line 25000 "Other payments deduction (enter the amount from line 14700
+  # if you did not enter an amount on line 14600; otherwise, use Federal Worksheet)": a
+  # count of 1 when an amount was entered on line 14600 (a starting count, 0 or 1, until a
+  # comparison capability derives it) chooses the worksheet's result over line 14700.
+  - name: core/choose_by_count
+    consumes:
+      count: ca/other_payments_worksheet_required
+      when_none: ca/income_support_benefits
+      when_any: ca/other_payments_deduction_after_limit
+    produces:
+      output: ca/other_payments_deduction
+  # T1 line 68 and line 25700 "Add lines 58 to 67.": lines 58, 59, 60, 61, 62 and 67 (lines
+  # 24400, 24900, 25000, 25100, 25200 and 25600), in line order; lines 63 to 66 (25300,
+  # 25395, 25400 and 25500) are not wired yet.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/canadian_armed_forces_and_police_deduction
+        - ca/security_options_deductions
+        - ca/other_payments_deduction
+        - ca/limited_partnership_losses_of_other_years
+        - ca/non_capital_losses_of_other_years
+        - ca/additional_deductions
     produces:
       output: ca/deductions_from_net_income
   - name: core/subtract_not_below_zero
