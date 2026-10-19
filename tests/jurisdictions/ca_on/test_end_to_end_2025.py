@@ -56,14 +56,15 @@ eligible dependants (line 38100) choosing the first (T1 line 45300); less the to
 48200), here the chosen income tax deducted of 25000 (line 43700) plus that benefit, to the refund
 or balance owing (line 167), 897.15, positive so a balance owing; every line computed from a dataset
 rounded half-up to the cent) are checked from the files under `returns/` by
-`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H, I, J, K, L, M and N; this module pins
-which capability produces each line, the order, and the trace that explains them.
+`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H, I, J, K, L, M, N and O; this module
+pins which capability produces each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
 
 from decimal import Decimal
 from fractions import Fraction as ExactFraction
+from typing import Any
 
 import pytest
 
@@ -129,19 +130,32 @@ from app.jurisdictions.ca.catalog import (
     AGE_INCOME_THRESHOLD,
     AGE_MAXIMUM,
     AGE_REDUCTION,
+    ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
+    BUSINESS_INVESTMENT_LOSS,
+    BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
+    BUSINESS_INVESTMENT_LOSS_REDUCTION,
+    BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_WORKERS_BENEFIT,
     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
     CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
     CAPITAL_GAIN,
+    CAPITAL_GAINS_DEDUCTIONS_1985_TO_1987,
+    CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_ELIGIBLE_CAPITAL_PROPERTY,
+    CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_OTHER_THAN_ELIGIBLE_CAPITAL_PROPERTY,
+    CAPITAL_GAINS_DEDUCTIONS_1990_TO_1999,
+    CAPITAL_GAINS_DEDUCTIONS_2000,
+    CAPITAL_GAINS_DEDUCTIONS_2001_TO_2024,
+    CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024,
     CAPITAL_GIFT_GAINS_DEDUCTION,
     CAPITAL_GIFT_TAXABLE_GAINS,
     CAPITAL_GIFTS_LIMIT_ADDITION,
     CAPITAL_GIFTS_TOTAL,
     CAPITAL_PROPERTY_GIFTS,
+    CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES,
     CHARITABLE_DONATIONS,
     CHARITABLE_DONATIONS_CLAIMED,
     CHARITABLE_DONATIONS_LIMIT,
@@ -195,6 +209,7 @@ from app.jurisdictions.ca.catalog import (
     EI_AND_OTHER_BENEFITS,
     EI_PREMIUMS,
     ELECTED_SPLIT_PENSION_AMOUNT,
+    ELECTED_SPLIT_PENSION_DEDUCTION,
     ELIGIBLE_DEPENDANT_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANTS,
@@ -202,9 +217,61 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     EMPLOYMENT_INCOME,
+    EXPLORATION_AND_DEVELOPMENT_EXPENSES,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
+    FHSA_ANNUAL_AMOUNT,
+    FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS,
+    FHSA_ANNUAL_AMOUNT_FOR_2024,
+    FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD,
+    FHSA_ANNUAL_AMOUNT_WITH_CARRYFORWARD,
+    FHSA_ANNUAL_LIMIT,
+    FHSA_ANNUAL_LIMIT_AFTER_MAXIMUM_PARTICIPATION_PERIOD,
+    FHSA_ANNUAL_LIMIT_FROM_STEP_2,
+    FHSA_ANNUAL_LIMITS_FOR_2024_AND_PRIOR_YEARS,
+    FHSA_ANNUAL_LIMITS_LESS_DEDUCTIONS,
+    FHSA_CARRYFORWARD_FOR_2024,
+    FHSA_CARRYFORWARD_FOR_2025,
+    FHSA_CONTRIBUTIONS_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+    FHSA_CONTRIBUTIONS_AVAILABLE,
+    FHSA_CONTRIBUTIONS_DEDUCTED,
+    FHSA_CONTRIBUTIONS_IN_2024,
+    FHSA_CONTRIBUTIONS_IN_2024_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+    FHSA_CONTRIBUTIONS_IN_2024_BEFORE_FIRST_QUALIFYING_WITHDRAWAL,
+    FHSA_CONTRIBUTIONS_IN_2025,
+    FHSA_CONTRIBUTIONS_IN_2025_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+    FHSA_CONTRIBUTIONS_IN_2025_BEFORE_FIRST_QUALIFYING_WITHDRAWAL,
+    FHSA_CONTRIBUTIONS_LIMIT,
+    FHSA_CONTRIBUTIONS_PLUS_VARIABLE_B_AMOUNT,
+    FHSA_DEDUCTION,
+    FHSA_DEDUCTIONS_FOR_2024_AND_PRIOR_YEARS,
+    FHSA_DESIGNATED_TRANSFERS_IN_2024_AND_PRIOR_YEARS,
+    FHSA_DESIGNATED_TRANSFERS_IN_2025,
+    FHSA_DESIGNATED_WITHDRAWALS_IN_2025,
+    FHSA_EXCESS_DESIGNATED_WITHDRAWALS,
     FHSA_INCOME,
+    FHSA_LIFETIME_LIMIT,
+    FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS,
+    FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS_AND_TRANSFERS,
+    FHSA_MAXIMUM_DEDUCTION,
+    FHSA_MAXIMUM_PARTICIPATION_PERIOD_ENDED,
+    FHSA_NET_RRSP_TRANSFER_AMOUNT,
+    FHSA_NET_RRSP_TRANSFER_AMOUNT_FOR_2024_AND_PRIOR_YEARS,
+    FHSA_NET_TRANSFER_AMOUNT_AFTER_PRIOR_YEARS,
+    FHSA_NET_TRANSFER_AMOUNT_LESS_VARIABLE_H_AMOUNT,
+    FHSA_RRSP_TRANSFERS_IN_2024_AND_PRIOR_YEARS,
+    FHSA_RRSP_TRANSFERS_IN_2025,
+    FHSA_TOTAL_ANNUAL_LIMITS,
+    FHSA_TOTAL_DESIGNATED_TRANSFERS,
+    FHSA_TOTAL_RRSP_TRANSFERS,
+    FHSA_TRANSFER_AMOUNT_AT_MOST_LIMIT,
+    FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT,
+    FHSA_UNUSED_CONTRIBUTIONS_BROUGHT_FORWARD,
+    FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
+    FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS,
+    FHSA_VARIABLE_B_AMOUNT,
+    FHSA_VARIABLE_F_AMOUNT,
+    FHSA_VARIABLE_H_AMOUNT,
     FIRST_TIER_DONATION_CREDIT,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
@@ -225,6 +292,7 @@ from app.jurisdictions.ca.catalog import (
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
     NET_INCOME,
+    NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NET_PARTNERSHIP_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
@@ -232,6 +300,14 @@ from app.jurisdictions.ca.catalog import (
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     OLD_AGE_SECURITY,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_1994,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1994_TO_1996,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1997_TO_1999,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2000,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2001_TO_2023,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2024,
+    OTHER_DEDUCTIONS,
     OTHER_DIVIDENDS_CREDIT,
     OTHER_DIVIDENDS_GROSSED_UP,
     OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
@@ -251,6 +327,7 @@ from app.jurisdictions.ca.catalog import (
     REFUND_OR_BALANCE_OWING,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
+    RPP_DEDUCTION,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
     RRSP_CONTRIBUTIONS_AVAILABLE,
@@ -275,6 +352,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_INFIRMITY_SUPPLEMENT,
     SPOUSE_NET_INCOME,
     SPOUSES_CLAIMED,
+    SUPPORT_PAYMENTS_DEDUCTION,
     T3_DIVIDEND_TAX_CREDIT,
     T3_INVESTMENT_INCOME,
     T3_TAXABLE_DIVIDENDS,
@@ -302,9 +380,12 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
     TOP_UP_THRESHOLD,
+    TOTAL_CARRYING_CHARGES,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
     TOTAL_INCOME,
+    TOTAL_INTEREST_EXPENSES,
+    TOTAL_OTHER_EXPENSES,
     TOTAL_PAYABLE,
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
@@ -440,6 +521,46 @@ def compute(
     other_payments_deduction_above_limit: str = "0",
     other_payments_worksheet_required: int = 0,
     other_payments_worksheet_line_9_over_limit: int = 0,
+    rpp_deduction: str = "0",
+    elected_split_pension_deduction: str = "0",
+    support_payments_deduction: str = "0",
+    exploration_and_development_expenses: str = "0",
+    other_deductions: str = "0",
+    total_carrying_charges: str = "0",
+    total_interest_expenses: str = "0",
+    total_other_expenses: str = "0",
+    capital_gains_deductions_1985_to_1987: str = "0",
+    capital_gains_deductions_1988_and_1989_other_than_eligible_capital_property: str = "0",
+    capital_gains_deductions_1988_and_1989_eligible_capital_property: str = "0",
+    capital_gains_deductions_1990_to_1999: str = "0",
+    capital_gains_deductions_2000: str = "0",
+    capital_gains_deductions_2001_to_2024: str = "0",
+    other_business_investment_loss_reductions_1986_to_1994: str = "0",
+    other_business_investment_loss_reductions_1994_to_1996: str = "0",
+    other_business_investment_loss_reductions_1997_to_1999: str = "0",
+    other_business_investment_loss_reductions_2000: str = "0",
+    other_business_investment_loss_reductions_2001_to_2023: str = "0",
+    other_business_investment_loss_reductions_2024: str = "0",
+    business_investment_loss: str = "0",
+    fhsa_contributions_in_2025: str = "0",
+    fhsa_contributions_in_2025_after_first_qualifying_withdrawal: str = "0",
+    fhsa_variable_b_amount: str = "0",
+    fhsa_designated_withdrawals_in_2025: str = "0",
+    fhsa_contributions_in_2024: str = "0",
+    fhsa_contributions_in_2024_before_first_qualifying_withdrawal: str = "0",
+    fhsa_carryforward_for_2025: str = "0",
+    fhsa_rrsp_transfers_in_2024_and_prior_years: str = "0",
+    fhsa_rrsp_transfers_in_2025: str = "0",
+    fhsa_designated_transfers_in_2024_and_prior_years: str = "0",
+    fhsa_designated_transfers_in_2025: str = "0",
+    fhsa_variable_h_amount: str = "0",
+    fhsa_carryforward_for_2024: str = "0",
+    fhsa_variable_f_amount: str = "0",
+    fhsa_annual_limits_for_2024_and_prior_years: str = "0",
+    fhsa_deductions_for_2024_and_prior_years: str = "0",
+    fhsa_unused_contributions_brought_forward: str = "0",
+    fhsa_contributions_deducted: str = "0",
+    fhsa_maximum_participation_period_ended: int = 0,
     dependent_children: int = 0,
     dependants: int = 0,
     eligible_dependants: int = 0,
@@ -554,6 +675,89 @@ def compute(
         Artifact(
             OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT, other_payments_worksheet_line_9_over_limit
         ),
+        Artifact(RPP_DEDUCTION, D(rpp_deduction)),
+        Artifact(ELECTED_SPLIT_PENSION_DEDUCTION, D(elected_split_pension_deduction)),
+        Artifact(SUPPORT_PAYMENTS_DEDUCTION, D(support_payments_deduction)),
+        Artifact(EXPLORATION_AND_DEVELOPMENT_EXPENSES, D(exploration_and_development_expenses)),
+        Artifact(OTHER_DEDUCTIONS, D(other_deductions)),
+        Artifact(TOTAL_CARRYING_CHARGES, D(total_carrying_charges)),
+        Artifact(TOTAL_INTEREST_EXPENSES, D(total_interest_expenses)),
+        Artifact(TOTAL_OTHER_EXPENSES, D(total_other_expenses)),
+        Artifact(CAPITAL_GAINS_DEDUCTIONS_1985_TO_1987, D(capital_gains_deductions_1985_to_1987)),
+        Artifact(
+            CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_OTHER_THAN_ELIGIBLE_CAPITAL_PROPERTY,
+            D(capital_gains_deductions_1988_and_1989_other_than_eligible_capital_property),
+        ),
+        Artifact(
+            CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_ELIGIBLE_CAPITAL_PROPERTY,
+            D(capital_gains_deductions_1988_and_1989_eligible_capital_property),
+        ),
+        Artifact(CAPITAL_GAINS_DEDUCTIONS_1990_TO_1999, D(capital_gains_deductions_1990_to_1999)),
+        Artifact(CAPITAL_GAINS_DEDUCTIONS_2000, D(capital_gains_deductions_2000)),
+        Artifact(CAPITAL_GAINS_DEDUCTIONS_2001_TO_2024, D(capital_gains_deductions_2001_to_2024)),
+        Artifact(
+            OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_1994,
+            D(other_business_investment_loss_reductions_1986_to_1994),
+        ),
+        Artifact(
+            OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1994_TO_1996,
+            D(other_business_investment_loss_reductions_1994_to_1996),
+        ),
+        Artifact(
+            OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1997_TO_1999,
+            D(other_business_investment_loss_reductions_1997_to_1999),
+        ),
+        Artifact(
+            OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2000,
+            D(other_business_investment_loss_reductions_2000),
+        ),
+        Artifact(
+            OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2001_TO_2023,
+            D(other_business_investment_loss_reductions_2001_to_2023),
+        ),
+        Artifact(
+            OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2024,
+            D(other_business_investment_loss_reductions_2024),
+        ),
+        Artifact(BUSINESS_INVESTMENT_LOSS, D(business_investment_loss)),
+        Artifact(FHSA_CONTRIBUTIONS_IN_2025, D(fhsa_contributions_in_2025)),
+        Artifact(
+            FHSA_CONTRIBUTIONS_IN_2025_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+            D(fhsa_contributions_in_2025_after_first_qualifying_withdrawal),
+        ),
+        Artifact(FHSA_VARIABLE_B_AMOUNT, D(fhsa_variable_b_amount)),
+        Artifact(FHSA_DESIGNATED_WITHDRAWALS_IN_2025, D(fhsa_designated_withdrawals_in_2025)),
+        Artifact(FHSA_CONTRIBUTIONS_IN_2024, D(fhsa_contributions_in_2024)),
+        Artifact(
+            FHSA_CONTRIBUTIONS_IN_2024_BEFORE_FIRST_QUALIFYING_WITHDRAWAL,
+            D(fhsa_contributions_in_2024_before_first_qualifying_withdrawal),
+        ),
+        Artifact(FHSA_CARRYFORWARD_FOR_2025, D(fhsa_carryforward_for_2025)),
+        Artifact(
+            FHSA_RRSP_TRANSFERS_IN_2024_AND_PRIOR_YEARS,
+            D(fhsa_rrsp_transfers_in_2024_and_prior_years),
+        ),
+        Artifact(FHSA_RRSP_TRANSFERS_IN_2025, D(fhsa_rrsp_transfers_in_2025)),
+        Artifact(
+            FHSA_DESIGNATED_TRANSFERS_IN_2024_AND_PRIOR_YEARS,
+            D(fhsa_designated_transfers_in_2024_and_prior_years),
+        ),
+        Artifact(FHSA_DESIGNATED_TRANSFERS_IN_2025, D(fhsa_designated_transfers_in_2025)),
+        Artifact(FHSA_VARIABLE_H_AMOUNT, D(fhsa_variable_h_amount)),
+        Artifact(FHSA_CARRYFORWARD_FOR_2024, D(fhsa_carryforward_for_2024)),
+        Artifact(FHSA_VARIABLE_F_AMOUNT, D(fhsa_variable_f_amount)),
+        Artifact(
+            FHSA_ANNUAL_LIMITS_FOR_2024_AND_PRIOR_YEARS,
+            D(fhsa_annual_limits_for_2024_and_prior_years),
+        ),
+        Artifact(
+            FHSA_DEDUCTIONS_FOR_2024_AND_PRIOR_YEARS, D(fhsa_deductions_for_2024_and_prior_years)
+        ),
+        Artifact(
+            FHSA_UNUSED_CONTRIBUTIONS_BROUGHT_FORWARD, D(fhsa_unused_contributions_brought_forward)
+        ),
+        Artifact(FHSA_CONTRIBUTIONS_DEDUCTED, D(fhsa_contributions_deducted)),
+        Artifact(FHSA_MAXIMUM_PARTICIPATION_PERIOD_ENDED, fhsa_maximum_participation_period_ended),
         Artifact(UNUSED_RRSP_CONTRIBUTIONS, D(unused_rrsp_contributions)),
         Artifact(RRSP_CONTRIBUTIONS, D(rrsp_contributions)),
         Artifact(RRSP_DEDUCTION_LIMIT, D(rrsp_deduction_limit)),
@@ -796,6 +1000,122 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     )
     assert isinstance(worksheet.producer_of(DEDUCTIONS_FROM_TOTAL_INCOME), Sum)
     assert isinstance(worksheet.producer_of(NET_INCOME), SubtractNotBelowZero)
+    # T1 Step 3's new deduction lines, all starting amounts but the ones computed below: the
+    # Federal Worksheet's line 22100, Form T1436's line 21700 and Schedule 15's line 20805.
+    for starting_kind in (
+        RPP_DEDUCTION,
+        ELECTED_SPLIT_PENSION_DEDUCTION,
+        SUPPORT_PAYMENTS_DEDUCTION,
+        EXPLORATION_AND_DEVELOPMENT_EXPENSES,
+        OTHER_DEDUCTIONS,
+        TOTAL_CARRYING_CHARGES,
+        TOTAL_INTEREST_EXPENSES,
+        TOTAL_OTHER_EXPENSES,
+        CAPITAL_GAINS_DEDUCTIONS_1985_TO_1987,
+        CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_OTHER_THAN_ELIGIBLE_CAPITAL_PROPERTY,
+        CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_ELIGIBLE_CAPITAL_PROPERTY,
+        CAPITAL_GAINS_DEDUCTIONS_1990_TO_1999,
+        CAPITAL_GAINS_DEDUCTIONS_2000,
+        CAPITAL_GAINS_DEDUCTIONS_2001_TO_2024,
+        OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_1994,
+        OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1994_TO_1996,
+        OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1997_TO_1999,
+        OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2000,
+        OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2001_TO_2023,
+        OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2024,
+        BUSINESS_INVESTMENT_LOSS,
+        FHSA_CONTRIBUTIONS_IN_2025,
+        FHSA_CONTRIBUTIONS_IN_2025_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+        FHSA_VARIABLE_B_AMOUNT,
+        FHSA_DESIGNATED_WITHDRAWALS_IN_2025,
+        FHSA_CONTRIBUTIONS_IN_2024,
+        FHSA_CONTRIBUTIONS_IN_2024_BEFORE_FIRST_QUALIFYING_WITHDRAWAL,
+        FHSA_CARRYFORWARD_FOR_2025,
+        FHSA_RRSP_TRANSFERS_IN_2024_AND_PRIOR_YEARS,
+        FHSA_RRSP_TRANSFERS_IN_2025,
+        FHSA_DESIGNATED_TRANSFERS_IN_2024_AND_PRIOR_YEARS,
+        FHSA_DESIGNATED_TRANSFERS_IN_2025,
+        FHSA_VARIABLE_H_AMOUNT,
+        FHSA_CARRYFORWARD_FOR_2024,
+        FHSA_VARIABLE_F_AMOUNT,
+        FHSA_ANNUAL_LIMITS_FOR_2024_AND_PRIOR_YEARS,
+        FHSA_DEDUCTIONS_FOR_2024_AND_PRIOR_YEARS,
+        FHSA_UNUSED_CONTRIBUTIONS_BROUGHT_FORWARD,
+        FHSA_CONTRIBUTIONS_DEDUCTED,
+        FHSA_MAXIMUM_PARTICIPATION_PERIOD_ENDED,
+    ):
+        assert worksheet.producer_of(starting_kind) is None, starting_kind.identifier
+    for kind in (
+        CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES,
+        CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024,
+        OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
+        FHSA_CONTRIBUTIONS_PLUS_VARIABLE_B_AMOUNT,
+        FHSA_CONTRIBUTIONS_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+        FHSA_ANNUAL_AMOUNT_WITH_CARRYFORWARD,
+        FHSA_TOTAL_RRSP_TRANSFERS,
+        FHSA_TOTAL_DESIGNATED_TRANSFERS,
+        FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD,
+        FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT,
+        FHSA_TOTAL_ANNUAL_LIMITS,
+        FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
+    for kind in (
+        BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
+        BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
+        FHSA_CONTRIBUTIONS_IN_2025_BEFORE_FIRST_QUALIFYING_WITHDRAWAL,
+        FHSA_CONTRIBUTIONS_IN_2024_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+        FHSA_NET_RRSP_TRANSFER_AMOUNT,
+        FHSA_NET_RRSP_TRANSFER_AMOUNT_FOR_2024_AND_PRIOR_YEARS,
+        FHSA_NET_TRANSFER_AMOUNT_AFTER_PRIOR_YEARS,
+        FHSA_ANNUAL_LIMITS_LESS_DEDUCTIONS,
+        FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS,
+        FHSA_CONTRIBUTIONS_AVAILABLE,
+        FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
+        NET_INCOME_BEFORE_ADJUSTMENTS,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Subtract), kind.identifier
+    for kind in (
+        FHSA_EXCESS_DESIGNATED_WITHDRAWALS,
+        FHSA_CONTRIBUTIONS_LIMIT,
+        FHSA_NET_TRANSFER_AMOUNT_LESS_VARIABLE_H_AMOUNT,
+        FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS,
+        FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS_AND_TRANSFERS,
+    ):
+        assert isinstance(worksheet.producer_of(kind), SubtractNotBelowZero), kind.identifier
+    for kind in (
+        BUSINESS_INVESTMENT_LOSS_REDUCTION,
+        FHSA_TRANSFER_AMOUNT_AT_MOST_LIMIT,
+        FHSA_ANNUAL_LIMIT_FROM_STEP_2,
+        FHSA_MAXIMUM_DEDUCTION,
+    ):
+        assert isinstance(worksheet.producer_of(kind), LesserOf), kind.identifier
+    for kind in (ALLOWABLE_BUSINESS_INVESTMENT_LOSS,):
+        assert isinstance(worksheet.producer_of(kind), ApplyRate), kind.identifier
+    for kind in (
+        FHSA_ANNUAL_AMOUNT,
+        FHSA_ANNUAL_AMOUNT_FOR_2024,
+        FHSA_ANNUAL_LIMIT_AFTER_MAXIMUM_PARTICIPATION_PERIOD,
+        FHSA_LIFETIME_LIMIT,
+    ):
+        assert isinstance(worksheet.producer_of(kind), CreditAmount), kind.identifier
+    for kind in (FHSA_ANNUAL_LIMIT,):
+        assert isinstance(worksheet.producer_of(kind), ChooseByCount), kind.identifier
+    for kind in (FHSA_DEDUCTION,):
+        assert isinstance(worksheet.producer_of(kind), AtMost), kind.identifier
+    # Lines 14 and 30 of Schedule 15 print the same 8,000.00: one dataset read by two steps, each
+    # producing its own artifact.
+    assert worksheet.producer_of(FHSA_ANNUAL_AMOUNT) is not (
+        worksheet.producer_of(FHSA_ANNUAL_AMOUNT_FOR_2024)
+    )
+    # Line 40 is chosen by the count between Step 2's result and the printed "0".
+    assert worksheet.producer_of(FHSA_ANNUAL_LIMIT) is not (
+        worksheet.producer_of(FHSA_ANNUAL_LIMIT_FROM_STEP_2)
+    )
+    # T1 line 23400 is its own step, apart from the floored net income of line 23600.
+    assert worksheet.producer_of(NET_INCOME_BEFORE_ADJUSTMENTS) is not (
+        worksheet.producer_of(NET_INCOME)
+    )
     assert worksheet.producer_of(TOTAL_INCOME) is not worksheet.producer_of(
         DEDUCTIONS_FROM_TOTAL_INCOME
     )
@@ -1296,8 +1616,13 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     deductions = position(
-        "deductions_from_total_income: rrsp_deduction 1926 + union_dues 2000 "
-        "+ child_care_expenses 0 + cpp_enhanced_contributions 1074 = 5000",
+        "deductions_from_total_income: rpp_deduction 0 + rrsp_deduction 1926 + fhsa_deduction 0 "
+        "+ elected_split_pension_deduction 0 + union_dues 2000 + uccb_repayment 0 "
+        "+ child_care_expenses 0 + allowable_business_investment_loss 0 "
+        "+ support_payments_deduction 0 "
+        "+ carrying_charges_interest_expenses_and_other_expenses 0 "
+        "+ cpp_enhanced_contributions 1074 + exploration_and_development_expenses 0 "
+        "+ other_deductions 0 = 5000",
         "5000",
     )
     net = position(
@@ -2211,6 +2536,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CENT,
             D("5555.00"),
         ),
+        # Form T1436 line 20 (T1 line 21700).
+        ALLOWABLE_BUSINESS_INVESTMENT_LOSS: RateAppliedLine(
+            ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+            BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
+            D("0"),
+            Rate(D("0.5")),
+            CENT,
+            D("0.00"),
+        ),
     }
     assert sums == {
         # The Federal Worksheet's "Lines 12000 and 12010" lines 5 and 10, line 17 and, with the
@@ -2384,14 +2718,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         CHILD_CARE_EARNED_INCOME: SumLine(
             CHILD_CARE_EARNED_INCOME, ((EMPLOYMENT_INCOME, D("110000")),), D("110000")
         ),
-        # T1 line 23300, in line order: 20800, 21200, 21400, 22215.
+        # T1 line 23300, in line order: 20700, 20800, 20805, 21000, 21200, 21300, 21400, 21700,
+        # 22000, 22100, 22215, 22400, 23200.
         DEDUCTIONS_FROM_TOTAL_INCOME: SumLine(
             DEDUCTIONS_FROM_TOTAL_INCOME,
             (
+                (RPP_DEDUCTION, D("0")),
                 (RRSP_DEDUCTION, D("1926")),
+                (FHSA_DEDUCTION, D("0")),
+                (ELECTED_SPLIT_PENSION_DEDUCTION, D("0")),
                 (UNION_DUES, D("2000")),
+                (UCCB_REPAYMENT, D("0")),
                 (CHILD_CARE_EXPENSES, D("0")),
+                (ALLOWABLE_BUSINESS_INVESTMENT_LOSS, D("0")),
+                (SUPPORT_PAYMENTS_DEDUCTION, D("0")),
+                (CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES, D("0")),
                 (CPP_ENHANCED_CONTRIBUTIONS, D("1074.00")),
+                (EXPLORATION_AND_DEVELOPMENT_EXPENSES, D("0")),
+                (OTHER_DEDUCTIONS, D("0")),
             ),
             D("5000"),
         ),
@@ -2643,6 +2987,114 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("25000"),
         ),
+        # Federal Worksheet line 22100, line 4.
+        CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES: SumLine(
+            CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES,
+            (
+                (TOTAL_CARRYING_CHARGES, D("0")),
+                (TOTAL_INTEREST_EXPENSES, D("0")),
+                (TOTAL_OTHER_EXPENSES, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T1436 line 7.
+        CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024: SumLine(
+            CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024,
+            (
+                (CAPITAL_GAINS_DEDUCTIONS_1985_TO_1987, D("0")),
+                (
+                    CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_OTHER_THAN_ELIGIBLE_CAPITAL_PROPERTY,
+                    D("0"),
+                ),
+                (CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_ELIGIBLE_CAPITAL_PROPERTY, D("0")),
+                (CAPITAL_GAINS_DEDUCTIONS_1990_TO_1999, D("0")),
+                (CAPITAL_GAINS_DEDUCTIONS_2000, D("0")),
+                (CAPITAL_GAINS_DEDUCTIONS_2001_TO_2024, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T1436 line 14.
+        OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024: SumLine(
+            OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
+            (
+                (OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_1994, D("0")),
+                (OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1994_TO_1996, D("0")),
+                (OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1997_TO_1999, D("0")),
+                (OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2000, D("0")),
+                (OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2001_TO_2023, D("0")),
+                (OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2024, D("0")),
+            ),
+            D("0"),
+        ),
+        # Schedule 15 line 5.
+        FHSA_CONTRIBUTIONS_PLUS_VARIABLE_B_AMOUNT: SumLine(
+            FHSA_CONTRIBUTIONS_PLUS_VARIABLE_B_AMOUNT,
+            (
+                (FHSA_CONTRIBUTIONS_IN_2025_BEFORE_FIRST_QUALIFYING_WITHDRAWAL, D("0")),
+                (FHSA_VARIABLE_B_AMOUNT, D("0")),
+            ),
+            D("0"),
+        ),
+        # Schedule 15 line 11.
+        FHSA_CONTRIBUTIONS_AFTER_FIRST_QUALIFYING_WITHDRAWAL: SumLine(
+            FHSA_CONTRIBUTIONS_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+            (
+                (FHSA_CONTRIBUTIONS_IN_2024_AFTER_FIRST_QUALIFYING_WITHDRAWAL, D("0")),
+                (FHSA_CONTRIBUTIONS_IN_2025_AFTER_FIRST_QUALIFYING_WITHDRAWAL, D("0")),
+            ),
+            D("0"),
+        ),
+        # Schedule 15 line 16.
+        FHSA_ANNUAL_AMOUNT_WITH_CARRYFORWARD: SumLine(
+            FHSA_ANNUAL_AMOUNT_WITH_CARRYFORWARD,
+            ((FHSA_ANNUAL_AMOUNT, D("8000.00")), (FHSA_CARRYFORWARD_FOR_2025, D("0"))),
+            D("8000.00"),
+        ),
+        # Schedule 15 line 19.
+        FHSA_TOTAL_RRSP_TRANSFERS: SumLine(
+            FHSA_TOTAL_RRSP_TRANSFERS,
+            (
+                (FHSA_RRSP_TRANSFERS_IN_2024_AND_PRIOR_YEARS, D("0")),
+                (FHSA_RRSP_TRANSFERS_IN_2025, D("0")),
+            ),
+            D("0"),
+        ),
+        # Schedule 15 line 22.
+        FHSA_TOTAL_DESIGNATED_TRANSFERS: SumLine(
+            FHSA_TOTAL_DESIGNATED_TRANSFERS,
+            (
+                (FHSA_DESIGNATED_TRANSFERS_IN_2024_AND_PRIOR_YEARS, D("0")),
+                (FHSA_DESIGNATED_TRANSFERS_IN_2025, D("0")),
+            ),
+            D("0"),
+        ),
+        # Schedule 15 line 32.
+        FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD: SumLine(
+            FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD,
+            ((FHSA_ANNUAL_AMOUNT_FOR_2024, D("8000.00")), (FHSA_CARRYFORWARD_FOR_2024, D("0"))),
+            D("8000.00"),
+        ),
+        # Schedule 15 line 35.
+        FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT: SumLine(
+            FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT,
+            ((FHSA_TRANSFER_AMOUNT_AT_MOST_LIMIT, D("0")), (FHSA_VARIABLE_F_AMOUNT, D("0"))),
+            D("0"),
+        ),
+        # Schedule 15 line 43.
+        FHSA_TOTAL_ANNUAL_LIMITS: SumLine(
+            FHSA_TOTAL_ANNUAL_LIMITS,
+            ((FHSA_ANNUAL_LIMIT, D("0")), (FHSA_ANNUAL_LIMITS_FOR_2024_AND_PRIOR_YEARS, D("0"))),
+            D("0"),
+        ),
+        # Schedule 15 line 54.
+        FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS: SumLine(
+            FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS,
+            (
+                (FHSA_UNUSED_CONTRIBUTIONS_BROUGHT_FORWARD, D("0")),
+                (FHSA_CONTRIBUTIONS_IN_2025_BEFORE_FIRST_QUALIFYING_WITHDRAWAL, D("0")),
+            ),
+            D("0"),
+        ),
     }
     assert subtracted == {
         # Worksheet ON428's line C "Amount A minus amount B": no dividends.
@@ -2728,6 +3180,114 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("25000"),
             result=D("897.15"),
         ),
+        # Form T1436 line 15.
+        BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE: SubtractedLine(
+            output=BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
+            minuend=CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024,
+            minuend_amount=D("0"),
+            subtrahend=OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T1436 line 18.
+        BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION: SubtractedLine(
+            output=BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
+            minuend=BUSINESS_INVESTMENT_LOSS,
+            minuend_amount=D("0"),
+            subtrahend=BUSINESS_INVESTMENT_LOSS_REDUCTION,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Schedule 15 line 3.
+        FHSA_CONTRIBUTIONS_IN_2025_BEFORE_FIRST_QUALIFYING_WITHDRAWAL: SubtractedLine(
+            output=FHSA_CONTRIBUTIONS_IN_2025_BEFORE_FIRST_QUALIFYING_WITHDRAWAL,
+            minuend=FHSA_CONTRIBUTIONS_IN_2025,
+            minuend_amount=D("0"),
+            subtrahend=FHSA_CONTRIBUTIONS_IN_2025_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Schedule 15 line 9.
+        FHSA_CONTRIBUTIONS_IN_2024_AFTER_FIRST_QUALIFYING_WITHDRAWAL: SubtractedLine(
+            output=FHSA_CONTRIBUTIONS_IN_2024_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+            minuend=FHSA_CONTRIBUTIONS_IN_2024,
+            minuend_amount=D("0"),
+            subtrahend=FHSA_CONTRIBUTIONS_IN_2024_BEFORE_FIRST_QUALIFYING_WITHDRAWAL,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Schedule 15 line 23.
+        FHSA_NET_RRSP_TRANSFER_AMOUNT: SubtractedLine(
+            output=FHSA_NET_RRSP_TRANSFER_AMOUNT,
+            minuend=FHSA_TOTAL_RRSP_TRANSFERS,
+            minuend_amount=D("0"),
+            subtrahend=FHSA_TOTAL_DESIGNATED_TRANSFERS,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Schedule 15 line 27.
+        FHSA_NET_RRSP_TRANSFER_AMOUNT_FOR_2024_AND_PRIOR_YEARS: SubtractedLine(
+            output=FHSA_NET_RRSP_TRANSFER_AMOUNT_FOR_2024_AND_PRIOR_YEARS,
+            minuend=FHSA_RRSP_TRANSFERS_IN_2024_AND_PRIOR_YEARS,
+            minuend_amount=D("0"),
+            subtrahend=FHSA_DESIGNATED_TRANSFERS_IN_2024_AND_PRIOR_YEARS,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Schedule 15 line 36.
+        FHSA_NET_TRANSFER_AMOUNT_AFTER_PRIOR_YEARS: SubtractedLine(
+            output=FHSA_NET_TRANSFER_AMOUNT_AFTER_PRIOR_YEARS,
+            minuend=FHSA_NET_RRSP_TRANSFER_AMOUNT,
+            minuend_amount=D("0"),
+            subtrahend=FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Schedule 15 line 45.
+        FHSA_ANNUAL_LIMITS_LESS_DEDUCTIONS: SubtractedLine(
+            output=FHSA_ANNUAL_LIMITS_LESS_DEDUCTIONS,
+            minuend=FHSA_TOTAL_ANNUAL_LIMITS,
+            minuend_amount=D("0"),
+            subtrahend=FHSA_DEDUCTIONS_FOR_2024_AND_PRIOR_YEARS,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Schedule 15 line 48.
+        FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS: SubtractedLine(
+            output=FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS,
+            minuend=FHSA_LIFETIME_LIMIT,
+            minuend_amount=D("40000.00"),
+            subtrahend=FHSA_DEDUCTIONS_FOR_2024_AND_PRIOR_YEARS,
+            subtrahend_amount=D("0"),
+            result=D("40000.00"),
+        ),
+        # Schedule 15 line 56.
+        FHSA_CONTRIBUTIONS_AVAILABLE: SubtractedLine(
+            output=FHSA_CONTRIBUTIONS_AVAILABLE,
+            minuend=FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS,
+            minuend_amount=D("0"),
+            subtrahend=FHSA_EXCESS_DESIGNATED_WITHDRAWALS,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Schedule 15 line 58.
+        FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD: SubtractedLine(
+            output=FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
+            minuend=FHSA_CONTRIBUTIONS_AVAILABLE,
+            minuend_amount=D("0"),
+            subtrahend=FHSA_DEDUCTION,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # T1 line 23400.
+        NET_INCOME_BEFORE_ADJUSTMENTS: SubtractedLine(
+            output=NET_INCOME_BEFORE_ADJUSTMENTS,
+            minuend=TOTAL_INCOME,
+            minuend_amount=D("120000"),
+            subtrahend=DEDUCTIONS_FROM_TOTAL_INCOME,
+            subtrahend_amount=D("5000"),
+            result=D("115000"),
+        ),
     }
     # T1 line 30000 and the Federal Worksheet (5000-D1): net income of 115000 is at or below
     # the 177882 threshold, so the reduction (line 9) is 0 and the amount is the base plus the
@@ -2790,6 +3350,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         TOP_UP_THRESHOLD: CreditAmountLine(
             TOP_UP_THRESHOLD, Credit(amount=D("8319.38")), CENT, D("8319.38")
+        ),
+        # Schedule 15 line 14.
+        FHSA_ANNUAL_AMOUNT: CreditAmountLine(
+            FHSA_ANNUAL_AMOUNT, Credit(amount=D("8000.00")), CENT, D("8000.00")
+        ),
+        # Schedule 15 line 30.
+        FHSA_ANNUAL_AMOUNT_FOR_2024: CreditAmountLine(
+            FHSA_ANNUAL_AMOUNT_FOR_2024, Credit(amount=D("8000.00")), CENT, D("8000.00")
+        ),
+        # Schedule 15 Step 2's printed "0".
+        FHSA_ANNUAL_LIMIT_AFTER_MAXIMUM_PARTICIPATION_PERIOD: CreditAmountLine(
+            FHSA_ANNUAL_LIMIT_AFTER_MAXIMUM_PARTICIPATION_PERIOD,
+            Credit(amount=D("0")),
+            CENT,
+            D("0.00"),
+        ),
+        # Schedule 15 line 46.
+        FHSA_LIFETIME_LIMIT: CreditAmountLine(
+            FHSA_LIFETIME_LIMIT, Credit(amount=D("40000.00")), CENT, D("40000.00")
         ),
     }
     # ON428 line 75 (line 60969) "Number of dependent children multiplied by $544" and line 76
@@ -3098,6 +3677,42 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("0"),
         ),
+        # Form T1436 line 17.
+        BUSINESS_INVESTMENT_LOSS_REDUCTION: LesserOfLine(
+            BUSINESS_INVESTMENT_LOSS_REDUCTION,
+            (
+                (BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE, D("0")),
+                (BUSINESS_INVESTMENT_LOSS, D("0")),
+            ),
+            D("0"),
+        ),
+        # Schedule 15 line 33.
+        FHSA_TRANSFER_AMOUNT_AT_MOST_LIMIT: LesserOfLine(
+            FHSA_TRANSFER_AMOUNT_AT_MOST_LIMIT,
+            (
+                (FHSA_NET_TRANSFER_AMOUNT_LESS_VARIABLE_H_AMOUNT, D("0")),
+                (FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD, D("8000.00")),
+            ),
+            D("0"),
+        ),
+        # Schedule 15 line 40, Step 2's result.
+        FHSA_ANNUAL_LIMIT_FROM_STEP_2: LesserOfLine(
+            FHSA_ANNUAL_LIMIT_FROM_STEP_2,
+            (
+                (FHSA_CONTRIBUTIONS_LIMIT, D("0")),
+                (FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS, D("8000.00")),
+            ),
+            D("0"),
+        ),
+        # Schedule 15 line 51.
+        FHSA_MAXIMUM_DEDUCTION: LesserOfLine(
+            FHSA_MAXIMUM_DEDUCTION,
+            (
+                (FHSA_ANNUAL_LIMITS_LESS_DEDUCTIONS, D("0")),
+                (FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS_AND_TRANSFERS, D("40000.00")),
+            ),
+            D("0"),
+        ),
     }
     # Schedule 7 line 18 "(cannot be more than the amount on line 17)": the full 1926 is
     # deducted, equal to line 17, so line 20 is line 18.
@@ -3108,7 +3723,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             amount_value=D("1926"),
             bound=RRSP_DEDUCTION_MAXIMUM,
             bound_value=D("1926"),
-        )
+        ),
+        # Schedule 15 line 57 (T1 line 20805).
+        FHSA_DEDUCTION: AtMostLine(
+            output=FHSA_DEDUCTION,
+            amount_kind=FHSA_CONTRIBUTIONS_DEDUCTED,
+            amount_value=D("0"),
+            bound=FHSA_MAXIMUM_DEDUCTION,
+            bound_value=D("0"),
+        ),
     }
     # Schedule 8 Part 3 lines 11, 12 and 22: employment income of 110000 is above both
     # ceilings, so each band is full and each contribution is its maximum. T1 line 31200: it
@@ -3531,6 +4154,51 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("12654.15"),
             result=D("0"),
         ),
+        # Schedule 15 line 12.
+        FHSA_EXCESS_DESIGNATED_WITHDRAWALS: SubtractedNotBelowZeroLine(
+            output=FHSA_EXCESS_DESIGNATED_WITHDRAWALS,
+            minuend=FHSA_DESIGNATED_WITHDRAWALS_IN_2025,
+            minuend_amount=D("0"),
+            subtrahend=FHSA_CONTRIBUTIONS_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Schedule 15 line 13.
+        FHSA_CONTRIBUTIONS_LIMIT: SubtractedNotBelowZeroLine(
+            output=FHSA_CONTRIBUTIONS_LIMIT,
+            minuend=FHSA_CONTRIBUTIONS_PLUS_VARIABLE_B_AMOUNT,
+            minuend_amount=D("0"),
+            subtrahend=FHSA_EXCESS_DESIGNATED_WITHDRAWALS,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Schedule 15 line 29.
+        FHSA_NET_TRANSFER_AMOUNT_LESS_VARIABLE_H_AMOUNT: SubtractedNotBelowZeroLine(
+            output=FHSA_NET_TRANSFER_AMOUNT_LESS_VARIABLE_H_AMOUNT,
+            minuend=FHSA_NET_RRSP_TRANSFER_AMOUNT_FOR_2024_AND_PRIOR_YEARS,
+            minuend_amount=D("0"),
+            subtrahend=FHSA_VARIABLE_H_AMOUNT,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Schedule 15 line 39.
+        FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS: SubtractedNotBelowZeroLine(
+            output=FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS,
+            minuend=FHSA_ANNUAL_AMOUNT_WITH_CARRYFORWARD,
+            minuend_amount=D("8000.00"),
+            subtrahend=FHSA_NET_TRANSFER_AMOUNT_AFTER_PRIOR_YEARS,
+            subtrahend_amount=D("0"),
+            result=D("8000.00"),
+        ),
+        # Schedule 15 line 50.
+        FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS_AND_TRANSFERS: SubtractedNotBelowZeroLine(
+            output=FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS_AND_TRANSFERS,
+            minuend=FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS,
+            minuend_amount=D("40000.00"),
+            subtrahend=FHSA_NET_RRSP_TRANSFER_AMOUNT,
+            subtrahend_amount=D("0"),
+            result=D("40000.00"),
+        ),
     }
     # Form T1221 line 4 "Add lines 1 to 3.": Return A has no slips, so no items and a total of 0.
     assert record_totals == {
@@ -3562,6 +4230,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=CWB_ELIGIBLE_DEPENDANTS,
             count=0,
             chosen_kind=CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
+            chosen_value=D("0"),
+        ),
+        # Schedule 15 line 40.
+        FHSA_ANNUAL_LIMIT: ChosenByCountLine(
+            output=FHSA_ANNUAL_LIMIT,
+            count_kind=FHSA_MAXIMUM_PARTICIPATION_PERIOD_ENDED,
+            count=0,
+            chosen_kind=FHSA_ANNUAL_LIMIT_FROM_STEP_2,
             chosen_value=D("0"),
         ),
     }
@@ -3596,7 +4272,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 171
+    assert len(order) == 211
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -3634,6 +4310,56 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     )
     assert position[DIVIDENDS_AMOUNT_B] < position[DIVIDENDS_AMOUNT_A_LESS_B]
     assert position[SLIP_DIVIDEND_TAX_CREDIT] < position[DIVIDEND_TAX_CREDIT]
+    # T1 line 23400 is total income less the deductions, before line 23600 floors it.
+    assert position[TOTAL_INCOME] < position[NET_INCOME_BEFORE_ADJUSTMENTS]
+    assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME_BEFORE_ADJUSTMENTS]
+    # The deductions Step 3 adds are all computed before line 23300 adds them.
+    assert (
+        position[CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES]
+        < position[DEDUCTIONS_FROM_TOTAL_INCOME]
+    )
+    assert position[ALLOWABLE_BUSINESS_INVESTMENT_LOSS] < position[DEDUCTIONS_FROM_TOTAL_INCOME]
+    assert position[FHSA_DEDUCTION] < position[DEDUCTIONS_FROM_TOTAL_INCOME]
+    # Form T1436: lines 7 and 14, then 15, then 17 (which reads line 16 as well), 18 and 20.
+    assert (
+        position[CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024]
+        < position[BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE]
+        < position[BUSINESS_INVESTMENT_LOSS_REDUCTION]
+        < position[BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION]
+        < position[ALLOWABLE_BUSINESS_INVESTMENT_LOSS]
+    )
+    assert (
+        position[OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024]
+        < position[BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE]
+    )
+    # Schedule 15: Step 2 before line 40, line 40 before Step 3's lines 43 to 51, the deduction
+    # (line 57) after the maximum (line 51), and line 58 after the deduction.
+    assert (
+        position[FHSA_CONTRIBUTIONS_LIMIT]
+        < position[FHSA_ANNUAL_LIMIT_FROM_STEP_2]
+        < position[FHSA_ANNUAL_LIMIT]
+        < position[FHSA_TOTAL_ANNUAL_LIMITS]
+        < position[FHSA_ANNUAL_LIMITS_LESS_DEDUCTIONS]
+        < position[FHSA_MAXIMUM_DEDUCTION]
+        < position[FHSA_DEDUCTION]
+        < position[FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD]
+    )
+    assert (
+        position[FHSA_ANNUAL_LIMIT_AFTER_MAXIMUM_PARTICIPATION_PERIOD] < position[FHSA_ANNUAL_LIMIT]
+    )
+    assert (
+        position[FHSA_NET_RRSP_TRANSFER_AMOUNT]
+        < position[FHSA_NET_TRANSFER_AMOUNT_AFTER_PRIOR_YEARS]
+    )
+    assert position[FHSA_ANNUAL_AMOUNT] < position[FHSA_ANNUAL_AMOUNT_WITH_CARRYFORWARD]
+    assert (
+        position[FHSA_ANNUAL_AMOUNT_FOR_2024]
+        < position[FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD]
+    )
+    assert position[FHSA_LIFETIME_LIMIT] < position[FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS]
+    assert (
+        position[FHSA_CONTRIBUTIONS_AVAILABLE] < position[FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD]
+    )
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
     assert position[RRSP_CONTRIBUTIONS_AVAILABLE] < position[RRSP_DEDUCTION_MAXIMUM]
     assert position[RRSP_DEDUCTION_MAXIMUM] < position[RRSP_DEDUCTION]
@@ -5366,8 +6092,13 @@ def test_the_child_care_expenses_deduction_is_5000_for_one_child_and_lowers_net_
         "6000 and child_care_earned_income_limit 40000 = 5000"
     ) in rendered
     assert (
-        "deductions_from_total_income: rrsp_deduction 0 + union_dues 0 "
-        "+ child_care_expenses 5000 + cpp_enhanced_contributions 565 = 5565"
+        "deductions_from_total_income: rpp_deduction 0 + rrsp_deduction 0 + fhsa_deduction 0 "
+        "+ elected_split_pension_deduction 0 + union_dues 0 + uccb_repayment 0 "
+        "+ child_care_expenses 5000 + allowable_business_investment_loss 0 "
+        "+ support_payments_deduction 0 "
+        "+ carrying_charges_interest_expenses_and_other_expenses 0 "
+        "+ cpp_enhanced_contributions 565 + exploration_and_development_expenses 0 "
+        "+ other_deductions 0 = 5565"
     ) in rendered
 
 
@@ -6277,11 +7008,13 @@ def test_the_worksheets_lines_4_5_8_and_9_with_supplements_uccb_rdsp_income_and_
     # Federal Worksheet "Line 25000 - Other payments deduction" for a filer with net federal
     # supplements of 400 on line 14600 (count 1). Employment income 50000, UCCB 1000 (line
     # 11700), RDSP income 3000 (line 12500): total income 50000 + 1000 + 3000 + 400 = 54400,
-    # enhanced CPP contributions 1% x (50000 - 3500) = 465.00, so net income (line 1) is 53935.00.
-    # Line 4 is 1000 + 3000 = 4000; line 5 is 53935.00 - 4000 = 49935.00; line 6 (UCCB repayment)
-    # 200 and line 7 (RDSP income repayment) 100 make line 8 300; line 9 is 49935.00 + 300 =
-    # 50235.00, not more than $93,454 (count 0), so line 25000 is line 14700, 400, and taxable
-    # income is 53935.00 - 400 = 53535.00.
+    # enhanced CPP contributions 1% x (50000 - 3500) = 465.00. Line 6 (UCCB repayment) 200 is
+    # also T1 line 21300, and line 7 (RDSP income repayment) 100 is "included in the amount on
+    # line 23200 of your return", so line 23200 is 100: total deductions are 200 + 100 + 465.00 =
+    # 765.00, so net income (line 1) is 54400 - 765.00 = 53635.00. Line 4 is 1000 + 3000 = 4000;
+    # line 5 is 53635.00 - 4000 = 49635.00; lines 6 and 7 make line 8 300; line 9 is 49635.00 +
+    # 300 = 49935.00, not more than $93,454 (count 0), so line 25000 is line 14700, 400, and
+    # taxable income is 53635.00 - 400 = 53235.00.
     worksheet = compute(
         "50000",
         "0",
@@ -6295,31 +7028,33 @@ def test_the_worksheets_lines_4_5_8_and_9_with_supplements_uccb_rdsp_income_and_
         net_federal_supplements="400",
         uccb_repayment="200",
         rdsp_income_repayment="100",
+        other_deductions="100",
         other_payments_worksheet_required=1,
     )
 
-    assert worksheet.get(NET_INCOME).value == D("53935.00")
+    assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("765.00")
+    assert worksheet.get(NET_INCOME).value == D("53635.00")
     assert worksheet.get(UCCB_AND_RDSP_INCOME).value == D("4000")
-    assert worksheet.get(NET_INCOME_LESS_UCCB_AND_RDSP_INCOME).value == D("49935.00")
+    assert worksheet.get(NET_INCOME_LESS_UCCB_AND_RDSP_INCOME).value == D("49635.00")
     assert worksheet.get(UCCB_AND_RDSP_INCOME_REPAYMENTS).value == D("300")
-    assert worksheet.get(OTHER_PAYMENTS_LIMIT_INCOME).value == D("50235.00")
+    assert worksheet.get(OTHER_PAYMENTS_LIMIT_INCOME).value == D("49935.00")
     assert worksheet.get(OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT).value == D("400")
     assert worksheet.get(OTHER_PAYMENTS_DEDUCTION).value == D("400")
-    assert worksheet.get(TAXABLE_INCOME).value == D("53535.00")
+    assert worksheet.get(TAXABLE_INCOME).value == D("53235.00")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert "uccb_and_rdsp_income: universal_child_care_benefit 1000 + rdsp_income 3000 = 4000" in (
         rendered
     )
     assert (
-        "net_income_less_uccb_and_rdsp_income: net_income 53935 less uccb_and_rdsp_income 4000 "
-        "= 49935"
+        "net_income_less_uccb_and_rdsp_income: net_income 53635 less uccb_and_rdsp_income 4000 "
+        "= 49635"
     ) in rendered
     assert (
         "uccb_and_rdsp_income_repayments: uccb_repayment 200 + rdsp_income_repayment 100 = 300"
     ) in rendered
     assert (
-        "other_payments_limit_income: net_income_less_uccb_and_rdsp_income 49935 "
-        "+ uccb_and_rdsp_income_repayments 300 = 50235"
+        "other_payments_limit_income: net_income_less_uccb_and_rdsp_income 49635 "
+        "+ uccb_and_rdsp_income_repayments 300 = 49935"
     ) in rendered
     assert (
         "other_payments_deduction_after_limit: income_support_benefits 400, "
@@ -6621,3 +7356,707 @@ def test_an_ontario_dividend_credit_above_the_tax_leaves_zero_not_a_negative() -
     assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT).value == D("1310.14")
     assert worksheet.get(ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT).value == D("0")
     assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("0")
+
+
+def step_3(**amounts: Any) -> Worksheet:
+    """A return with no income, no CPP, no RRSP and no deductions but the keyword `amounts`."""
+    return compute("0", "0", "0", "0", "0", "0", "0", **amounts)
+
+
+def return_o() -> Worksheet:
+    """Return O's inputs, as in `returns/2025_return_o.yaml`: a pension and the Step 3 lines."""
+    return compute(
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        other_pensions_and_superannuation="60000",
+        rpp_deduction="3000",
+        support_payments_deduction="6000",
+        total_carrying_charges="300",
+        total_interest_expenses="200",
+        business_investment_loss="10000",
+        income_tax_deducted="6000",
+    )
+
+
+def test_return_os_deductions_are_14500_and_its_net_income_before_adjustments_45500() -> None:
+    # Return O: other pensions and superannuation of 60000 (line 11500), the only income, so total
+    # income is 60000. RPP deduction 3000 (line 20700); a business investment loss of 10000 (line
+    # 21699) with no earlier capital gains deduction, so Form T1436 line 15 is 0 and line 18 is
+    # 10000, 50% of it 5000.00 (line 21700); the deductible support payments 6000 (line 22000); the
+    # Federal Worksheet's carrying charges 300 and interest expenses 200 (line 22100, 500). Line
+    # 23300 is 3000 + 5000.00 + 6000 + 500 = 14500.00, line 23400 is 60000 - 14500.00 = 45500.00,
+    # and net income (line 23600) and taxable income are the same.
+    worksheet = return_o()
+
+    assert worksheet.get(TOTAL_INCOME).value == D("60000")
+    assert worksheet.get(CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES).value == D("500.00")
+    assert worksheet.get(CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024).value == D("0")
+    assert worksheet.get(BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE).value == D("0")
+    assert worksheet.get(BUSINESS_INVESTMENT_LOSS_REDUCTION).value == D("0")
+    assert worksheet.get(BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION).value == D("10000")
+    assert worksheet.get(ALLOWABLE_BUSINESS_INVESTMENT_LOSS).value == D("5000.00")
+    assert worksheet.get(FHSA_DEDUCTION).value == D("0")
+    assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("14500.00")
+    assert worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value == D("45500.00")
+    assert worksheet.get(NET_INCOME).value == D("45500.00")
+    assert worksheet.get(TAXABLE_INCOME).value == D("45500.00")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "carrying_charges_interest_expenses_and_other_expenses: total_carrying_charges 300 "
+        "+ total_interest_expenses 200 + total_other_expenses 0 = 500"
+    ) in rendered
+    assert (
+        "business_investment_loss_reduction_available: "
+        "capital_gains_deductions_claimed_1985_to_2024 0 "
+        "less other_business_investment_loss_reductions_1986_to_2024 0 = 0"
+    ) in rendered
+    assert (
+        "business_investment_loss_reduction: lesser of "
+        "business_investment_loss_reduction_available 0 and business_investment_loss 10000 = 0"
+    ) in rendered
+    assert (
+        "business_investment_loss_after_reduction: business_investment_loss 10000 "
+        "less business_investment_loss_reduction 0 = 10000"
+    ) in rendered
+    assert (
+        "allowable_business_investment_loss: 50% of business_investment_loss_after_reduction "
+        "10000 (half-up to 0.01)"
+    ) in rendered
+    assert (
+        "deductions_from_total_income: rpp_deduction 3000 + rrsp_deduction 0 + fhsa_deduction 0 "
+        "+ elected_split_pension_deduction 0 + union_dues 0 + uccb_repayment 0 "
+        "+ child_care_expenses 0 + allowable_business_investment_loss 5000 "
+        "+ support_payments_deduction 6000 "
+        "+ carrying_charges_interest_expenses_and_other_expenses 500 "
+        "+ cpp_enhanced_contributions 0 + exploration_and_development_expenses 0 "
+        "+ other_deductions 0 = 14500"
+    ) in rendered
+    assert (
+        "net_income_before_adjustments: total_income 60000 "
+        "less deductions_from_total_income 14500 = 45500"
+    ) in rendered
+    assert (
+        "net_income: total_income 60000 less deductions_from_total_income 14500, "
+        "not below 0 = 45500"
+    ) in rendered
+
+
+def test_return_os_taxes_follow_from_its_taxable_income_of_45500() -> None:
+    # Taxable income 45500.00: 14.5% federally, 6597.50, less 14.5% of the basic personal amount
+    # 16129.00, 2338.71 (the Canada employment amount is 0 with no employment income): 4258.79.
+    # Ontario: 5.05% of 45500.00 is 2297.75, less 5.05% of 12747.00, 643.72: 1654.03, no surtax,
+    # no tax reduction, no LIFT credit; the health premium on taxable income of more than 38500
+    # but not more than 48000 is 450, so the Ontario tax is 2104.03 and the total payable
+    # 4258.79 + 2104.03 = 6362.82. The income tax deducted of 6000 leaves a balance owing of
+    # 362.82.
+    worksheet = return_o()
+
+    assert worksheet.get(FEDERAL_BASIC_TAX).value == D("6597.50")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("4258.79")
+    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1654.03")
+    assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("450")
+    assert worksheet.get(ONTARIO_TAX).value == D("2104.03")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("6362.82")
+    assert worksheet.get(TOTAL_CREDITS).value == D("6000")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("362.82")
+
+
+@pytest.mark.parametrize(
+    ("carrying_charges", "interest_expenses", "other_expenses", "line_22100"),
+    [
+        # Carrying charges 300 and interest expenses 200, as in Return O.
+        ("300", "200", "0", "500.00"),
+        # One distinct power of two for each line, so a line left out or added twice changes it.
+        ("1", "2", "4", "7"),
+        ("0", "0", "0", "0"),
+    ],
+)
+def test_line_22100_adds_the_worksheets_lines_1_to_3(
+    carrying_charges: str, interest_expenses: str, other_expenses: str, line_22100: str
+) -> None:
+    # Federal Worksheet "Line 22100": line 4 "Add lines 1 to 3. Enter this amount on line 22100 of
+    # your return."
+    worksheet = step_3(
+        total_carrying_charges=carrying_charges,
+        total_interest_expenses=interest_expenses,
+        total_other_expenses=other_expenses,
+    )
+
+    assert worksheet.get(CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES).value == D(
+        line_22100
+    )
+    assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D(line_22100)
+
+
+@pytest.mark.parametrize(
+    ("gains_deductions", "other_reductions", "line_15", "line_17", "line_18", "line_20"),
+    [
+        # No capital gains deduction in earlier years: the whole loss of 10000 is reduced by
+        # nothing, and 50% of it is deductible.
+        ("0", "0", "0", "0", "10000", "5000.00"),
+        # Line 15 of 4000 and a loss of 10000 give line 17 of 4000 and line 21700 of 3000.00.
+        ("4000", "0", "4000", "4000", "6000", "3000.00"),
+        # Line 7 is 6000 and line 14 is 2000 (the 2024 amounts of Schedule 3): line 15 is 4000.
+        ("6000", "2000", "4000", "4000", "6000", "3000.00"),
+        # Line 15 above the loss: line 17 is the loss itself, so nothing is left to deduct.
+        ("12000", "0", "12000", "10000", "0", "0.00"),
+        # Line 15 equal to the loss.
+        ("10000", "0", "10000", "10000", "0", "0.00"),
+    ],
+)
+def test_the_business_investment_loss_is_reduced_by_the_earlier_gains_deductions_then_halved(
+    gains_deductions: str,
+    other_reductions: str,
+    line_15: str,
+    line_17: str,
+    line_18: str,
+    line_20: str,
+) -> None:
+    # Form T1436 line 21700: line 15 "Line 7 minus line 14"; line 16 the loss in 2025; line 17
+    # "Enter whichever is less: amount from line 15 or line 16."; line 18 "Line 16 minus line
+    # 17"; line 20 "Line 18 multiplied by the percentage on line 19" (50 %).
+    worksheet = step_3(
+        capital_gains_deductions_2001_to_2024=gains_deductions,
+        other_business_investment_loss_reductions_2024=other_reductions,
+        business_investment_loss="10000",
+    )
+
+    assert worksheet.get(BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE).value == D(line_15)
+    assert worksheet.get(BUSINESS_INVESTMENT_LOSS_REDUCTION).value == D(line_17)
+    assert worksheet.get(BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION).value == D(line_18)
+    assert worksheet.get(ALLOWABLE_BUSINESS_INVESTMENT_LOSS).value == D(line_20)
+    assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D(line_20)
+
+
+def test_a_line_15_of_4000_renders_the_reduction_lines_of_the_trace() -> None:
+    # Line 15 of 4000 (line 6, the 2001 to 2024 deductions) and a loss of 10000.
+    worksheet = step_3(
+        capital_gains_deductions_2001_to_2024="4000", business_investment_loss="10000"
+    )
+
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "business_investment_loss_reduction: lesser of "
+        "business_investment_loss_reduction_available 4000 and business_investment_loss 10000 "
+        "= 4000"
+    ) in rendered
+    assert (
+        "business_investment_loss_after_reduction: business_investment_loss 10000 "
+        "less business_investment_loss_reduction 4000 = 6000"
+    ) in rendered
+    assert (
+        "allowable_business_investment_loss: 50% of business_investment_loss_after_reduction "
+        "6000 (half-up to 0.01)"
+    ) in rendered
+
+
+def test_t1436_line_15_goes_negative_when_line_14_exceeds_line_7() -> None:
+    # Form T1436 line 15 "Line 7 minus line 14" prints no "(if negative, enter "0")", and line 17
+    # "Enter whichever is less: amount from line 15 or line 16." prints no floor either, so the
+    # lines follow the form as printed: line 7 of 0 and line 14 of 2000 give line 15 of -2000,
+    # line 17 of -2000 (the lesser of -2000 and 10000), line 18 of 10000 - (-2000) = 12000 and
+    # line 21700 of 12000 x 50% = 6000.00, more than half of the loss of 10000. The form states
+    # no treatment of this case, so this records the printed arithmetic, not a confirmed one.
+    worksheet = step_3(
+        other_business_investment_loss_reductions_2024="2000", business_investment_loss="10000"
+    )
+
+    assert worksheet.get(BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE).value == D("-2000")
+    assert worksheet.get(BUSINESS_INVESTMENT_LOSS_REDUCTION).value == D("-2000")
+    assert worksheet.get(BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION).value == D("12000")
+    assert worksheet.get(ALLOWABLE_BUSINESS_INVESTMENT_LOSS).value == D("6000.00")
+    assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("6000.00")
+
+
+def test_t1436_lines_7_and_14_add_lines_1_to_6_and_8_to_13_once_each() -> None:
+    # Line 7 "Add lines 1 to 6." and line 14 "Add lines 8 to 13.": one distinct power of two for
+    # each of the twelve lines, so a line left out or added twice changes the sums: 1 + 2 + 4 + 8
+    # + 16 + 32 = 63 and 64 + 128 + 256 + 512 + 1024 + 2048 = 4032. Line 15, "Line 7 minus line
+    # 14", is -3969: the form prints no "(if negative, enter "0")".
+    worksheet = step_3(
+        capital_gains_deductions_1985_to_1987="1",
+        capital_gains_deductions_1988_and_1989_other_than_eligible_capital_property="2",
+        capital_gains_deductions_1988_and_1989_eligible_capital_property="4",
+        capital_gains_deductions_1990_to_1999="8",
+        capital_gains_deductions_2000="16",
+        capital_gains_deductions_2001_to_2024="32",
+        other_business_investment_loss_reductions_1986_to_1994="64",
+        other_business_investment_loss_reductions_1994_to_1996="128",
+        other_business_investment_loss_reductions_1997_to_1999="256",
+        other_business_investment_loss_reductions_2000="512",
+        other_business_investment_loss_reductions_2001_to_2023="1024",
+        other_business_investment_loss_reductions_2024="2048",
+    )
+
+    assert worksheet.get(CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024).value == D("63")
+    assert worksheet.get(OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024).value == D("4032")
+    assert worksheet.get(BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE).value == D("-3969")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "capital_gains_deductions_claimed_1985_to_2024: capital_gains_deductions_1985_to_1987 1 "
+        "+ capital_gains_deductions_1988_and_1989_other_than_eligible_capital_property 2 "
+        "+ capital_gains_deductions_1988_and_1989_eligible_capital_property 4 "
+        "+ capital_gains_deductions_1990_to_1999 8 + capital_gains_deductions_2000 16 "
+        "+ capital_gains_deductions_2001_to_2024 32 = 63"
+    ) in rendered
+    assert (
+        "other_business_investment_loss_reductions_1986_to_2024: "
+        "other_business_investment_loss_reductions_1986_to_1994 64 "
+        "+ other_business_investment_loss_reductions_1994_to_1996 128 "
+        "+ other_business_investment_loss_reductions_1997_to_1999 256 "
+        "+ other_business_investment_loss_reductions_2000 512 "
+        "+ other_business_investment_loss_reductions_2001_to_2023 1024 "
+        "+ other_business_investment_loss_reductions_2024 2048 = 4032"
+    ) in rendered
+    assert (
+        "business_investment_loss_reduction_available: "
+        "capital_gains_deductions_claimed_1985_to_2024 63 "
+        "less other_business_investment_loss_reductions_1986_to_2024 4032 = -3969"
+    ) in rendered
+
+
+def test_line_15_may_be_negative_as_the_form_prints_no_floor() -> None:
+    # Other reductions (line 14) of 500 and no capital gains deductions (line 7): line 15 is -500,
+    # and line 17 "Enter whichever is less: amount from line 15 or line 16." is -500 too, so line 18
+    # "Line 16 minus line 17" is 10000 + 500 = 10500 and line 20 is 5250.00. The form prints no
+    # floor on lines 15 and 17, so the kinds are signed and the result follows the printed lines.
+    worksheet = step_3(
+        other_business_investment_loss_reductions_2024="500", business_investment_loss="10000"
+    )
+
+    assert worksheet.get(BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE).value == D("-500")
+    assert worksheet.get(BUSINESS_INVESTMENT_LOSS_REDUCTION).value == D("-500")
+    assert worksheet.get(BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION).value == D("10500")
+    assert worksheet.get(ALLOWABLE_BUSINESS_INVESTMENT_LOSS).value == D("5250.00")
+
+
+def test_the_allowable_business_investment_loss_is_rounded_half_up_to_the_cent() -> None:
+    # Line 20 is a dollars-and-cents box: 10000.01 x 50% = 5000.005, a tie, up to 5000.01.
+    worksheet = step_3(business_investment_loss="10000.01")
+
+    assert worksheet.get(ALLOWABLE_BUSINESS_INVESTMENT_LOSS).value == D("5000.01")
+
+
+def test_a_loss_of_0_gives_an_allowable_loss_of_0() -> None:
+    worksheet = step_3()
+
+    assert worksheet.get(ALLOWABLE_BUSINESS_INVESTMENT_LOSS).value == D("0")
+
+
+def test_line_23300_adds_every_wired_deduction_once_in_the_forms_line_order() -> None:
+    # T1 line 53 and line 23300 "Add lines 35 to 52.": one distinct power of two for each line
+    # wired but the child care expenses and the enhanced CPP contributions (0 here, with no child
+    # and no employment income), so a line left out or added twice changes the sum: RPP deduction
+    # 1 (line 20700), RRSP deduction 2 (line 20800), FHSA deduction 4 (line 20805), split-pension
+    # deduction 8 (line 21000), union dues 16 (line 21200), UCCB repayment 32 (line 21300), the
+    # allowable business investment loss 64.00 (line 21700, 50% of a loss of 128), the deductible
+    # support payments 128 (line 22000), the Federal Worksheet's 100 + 100 + 56 = 256 (line
+    # 22100), exploration and development expenses 512 (line 22400) and other deductions 1024
+    # (line 23200): 2047. Other income of 5000 is total income, so line 23400 is 2953.
+    worksheet = compute(
+        "0",
+        "0",
+        "0",
+        "2",
+        "2",
+        "2",
+        "16",
+        other_income="5000",
+        rpp_deduction="1",
+        fhsa_contributions_in_2025="4",
+        fhsa_contributions_deducted="4",
+        elected_split_pension_deduction="8",
+        uccb_repayment="32",
+        business_investment_loss="128",
+        support_payments_deduction="128",
+        total_carrying_charges="100",
+        total_interest_expenses="100",
+        total_other_expenses="56",
+        exploration_and_development_expenses="512",
+        other_deductions="1024",
+    )
+
+    assert worksheet.get(RRSP_DEDUCTION).value == D("2")
+    assert worksheet.get(FHSA_DEDUCTION).value == D("4")
+    assert worksheet.get(ALLOWABLE_BUSINESS_INVESTMENT_LOSS).value == D("64.00")
+    assert worksheet.get(CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES).value == D("256")
+    assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("2047")
+    assert worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value == D("2953")
+    assert worksheet.get(NET_INCOME).value == D("2953")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "deductions_from_total_income: rpp_deduction 1 + rrsp_deduction 2 + fhsa_deduction 4 "
+        "+ elected_split_pension_deduction 8 + union_dues 16 + uccb_repayment 32 "
+        "+ child_care_expenses 0 + allowable_business_investment_loss 64 "
+        "+ support_payments_deduction 128 "
+        "+ carrying_charges_interest_expenses_and_other_expenses 256 "
+        "+ cpp_enhanced_contributions 0 + exploration_and_development_expenses 512 "
+        "+ other_deductions 1024 = 2047"
+    ) in rendered
+
+
+def test_line_23400_is_negative_when_the_deductions_exceed_total_income() -> None:
+    # T1 line 54 and line 23400 "Line 34 minus line 53 (if negative, show in brackets)": total
+    # income of 1000 less deductions of 2047 (the same lines as above) is -1047. The net income of
+    # line 56 (line 23600) "Line 54 minus line 55 (if negative, enter "0")" is 0, as is the
+    # taxable income, until line 23500 is wired.
+    worksheet = compute(
+        "0",
+        "0",
+        "0",
+        "2",
+        "2",
+        "2",
+        "16",
+        other_income="1000",
+        rpp_deduction="1",
+        fhsa_contributions_in_2025="4",
+        fhsa_contributions_deducted="4",
+        elected_split_pension_deduction="8",
+        uccb_repayment="32",
+        business_investment_loss="128",
+        support_payments_deduction="128",
+        total_carrying_charges="100",
+        total_interest_expenses="100",
+        total_other_expenses="56",
+        exploration_and_development_expenses="512",
+        other_deductions="1024",
+    )
+
+    assert worksheet.get(TOTAL_INCOME).value == D("1000")
+    assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("2047")
+    assert worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value == D("-1047")
+    assert worksheet.get(NET_INCOME).value == D("0")
+    assert worksheet.get(TAXABLE_INCOME).value == D("0")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "net_income_before_adjustments: total_income 1000 "
+        "less deductions_from_total_income 2047 = -1047"
+    ) in rendered
+    assert (
+        "net_income: total_income 1000 less deductions_from_total_income 2047, not below 0 = 0"
+    ) in rendered
+
+
+def test_line_23400_equals_net_income_when_the_deductions_are_below_total_income() -> None:
+    worksheet = step_3(other_income="1000", other_deductions="400")
+
+    assert worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value == D("600")
+    assert worksheet.get(NET_INCOME).value == D("600")
+
+
+def test_the_uccb_repayment_is_a_deduction_on_line_21300_and_still_the_worksheets_line_6() -> None:
+    # T1 line 40 and line 21300 "Universal child care benefit (UCCB) repayment": the same input
+    # the Federal Worksheet's line 6 "Amount from line 21300 of your return" reads. UCCB of 1000
+    # (line 11700) and a repayment of 300: total income 1000, line 23300 300, net income 700, and
+    # the worksheet's line 8 is 300.
+    worksheet = step_3(universal_child_care_benefit="1000", uccb_repayment="300")
+
+    assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("300")
+    assert worksheet.get(NET_INCOME).value == D("700")
+    assert worksheet.get(UCCB_AND_RDSP_INCOME_REPAYMENTS).value == D("300")
+
+
+def test_a_first_fhsa_with_8000_contributed_and_deducted_gives_20805_of_8000() -> None:
+    # Schedule 15: a first FHSA opened in 2025, 8000 contributed (line 1), no statement figures,
+    # all 8000 deducted (line 57). Line 3 is 8000 - 0, line 5 8000 + 0, line 13 8000; line 16 is
+    # 8000.00 + 0; line 39 is 8000.00 - 0, so line 40 is the lesser of 8000 and 8000.00, 8000.
+    # Step 3: line 43 is 8000 + 0, line 45 8000 - 0, line 48 is 40000.00 - 0 and line 50 the same;
+    # line 51 is the lesser of 8000 and 40000.00: 8000. Line 57 is 8000, at most line 51, line
+    # 20805; line 56 is 0 + 8000 - 0, so line 58 is 0.
+    worksheet = step_3(fhsa_contributions_in_2025="8000", fhsa_contributions_deducted="8000")
+
+    assert worksheet.get(FHSA_CONTRIBUTIONS_IN_2025_BEFORE_FIRST_QUALIFYING_WITHDRAWAL).value == D(
+        "8000"
+    )
+    assert worksheet.get(FHSA_CONTRIBUTIONS_LIMIT).value == D("8000.00")
+    assert worksheet.get(FHSA_ANNUAL_AMOUNT).value == D("8000.00")
+    assert worksheet.get(FHSA_ANNUAL_AMOUNT_WITH_CARRYFORWARD).value == D("8000.00")
+    assert worksheet.get(FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS).value == D("8000.00")
+    assert worksheet.get(FHSA_ANNUAL_LIMIT_FROM_STEP_2).value == D("8000.00")
+    assert worksheet.get(FHSA_ANNUAL_LIMIT).value == D("8000.00")
+    assert worksheet.get(FHSA_TOTAL_ANNUAL_LIMITS).value == D("8000.00")
+    assert worksheet.get(FHSA_ANNUAL_LIMITS_LESS_DEDUCTIONS).value == D("8000.00")
+    assert worksheet.get(FHSA_LIFETIME_LIMIT).value == D("40000.00")
+    assert worksheet.get(FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS_AND_TRANSFERS).value == D("40000.00")
+    assert worksheet.get(FHSA_MAXIMUM_DEDUCTION).value == D("8000.00")
+    assert worksheet.get(FHSA_CONTRIBUTIONS_AVAILABLE).value == D("8000")
+    assert worksheet.get(FHSA_DEDUCTION).value == D("8000")
+    assert worksheet.get(FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD).value == D("0")
+    assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("8000")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert "fhsa_annual_amount: credit amount 8000 (half-up to 0.01)" in rendered
+    assert "fhsa_annual_amount_for_2024: credit amount 8000 (half-up to 0.01)" in rendered
+    assert "fhsa_lifetime_limit: credit amount 40000 (half-up to 0.01)" in rendered
+    assert (
+        "fhsa_annual_limit: fhsa_annual_limit_from_step_2 8000, "
+        "chosen as fhsa_maximum_participation_period_ended is 0"
+    ) in rendered
+    assert (
+        "fhsa_maximum_deduction: lesser of fhsa_annual_limits_less_deductions 8000 "
+        "and fhsa_lifetime_limit_less_deductions_and_transfers 40000 = 8000"
+    ) in rendered
+    assert (
+        "fhsa_deduction: fhsa_contributions_deducted 8000, at most fhsa_maximum_deduction 8000"
+    ) in rendered
+    assert (
+        "fhsa_unused_contributions_carried_forward: fhsa_contributions_available 8000 "
+        "less fhsa_deduction 8000 = 0"
+    ) in rendered
+
+
+def test_a_deduction_below_line_51_carries_the_rest_forward_as_line_58() -> None:
+    # Line 57 of 5000 against a line 51 of 8000: line 20805 is 5000, and line 58 "Line 56 minus
+    # line 57 Your unused FHSA contributions available to deduct in future years" is 8000 - 5000.
+    worksheet = step_3(fhsa_contributions_in_2025="8000", fhsa_contributions_deducted="5000")
+
+    assert worksheet.get(FHSA_MAXIMUM_DEDUCTION).value == D("8000")
+    assert worksheet.get(FHSA_DEDUCTION).value == D("5000")
+    assert worksheet.get(FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD).value == D("3000")
+    assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("5000")
+
+
+def test_a_claim_above_line_51_is_refused_naming_both_kinds() -> None:
+    # Line 57 "(cannot be more than the amount on line 51 of the previous page)": 8000.01 against a
+    # line 51 of 8000 is an input error, not capped to 8000.
+    with pytest.raises(InputAboveBoundError) as raised:
+        step_3(fhsa_contributions_in_2025="8000", fhsa_contributions_deducted="8000.01")
+
+    assert str(raised.value).startswith(
+        "ca/fhsa_contributions_deducted 8000.01 is above ca/fhsa_maximum_deduction 8000"
+    )
+
+
+def test_any_claim_is_refused_when_line_51_is_0() -> None:
+    # No contributions and no room: line 51 is 0, so a claim of 1 is above it.
+    with pytest.raises(InputAboveBoundError) as raised:
+        step_3(fhsa_contributions_deducted="1")
+
+    assert str(raised.value).startswith(
+        "ca/fhsa_contributions_deducted 1 is above ca/fhsa_maximum_deduction 0"
+    )
+
+
+def test_a_maximum_participation_period_ended_in_a_prior_year_sets_line_40_to_0() -> None:
+    # Step 2: "If your maximum participation period (MPP) ended in a prior year, do not complete
+    # this step. Your 2025 annual FHSA limit is "0". Enter "0" on line 40 and continue at Step 3."
+    # With 8000 contributed Step 2 would give 8000 (the count 0), but with the count 1 line 40 is
+    # the printed 0, so lines 43 and 45 are 0 + 0 - 0, line 51 is the lesser of 0 and 40000.00:
+    # 0, and 8000 is carried forward (line 58 is 8000 + 0 - 0 - 0).
+    worksheet = step_3(
+        fhsa_contributions_in_2025="8000",
+        fhsa_maximum_participation_period_ended=1,
+        fhsa_contributions_deducted="0",
+    )
+
+    assert worksheet.get(FHSA_ANNUAL_LIMIT_FROM_STEP_2).value == D("8000")
+    assert worksheet.get(FHSA_ANNUAL_LIMIT_AFTER_MAXIMUM_PARTICIPATION_PERIOD).value == D("0")
+    assert worksheet.get(FHSA_ANNUAL_LIMIT).value == D("0")
+    assert worksheet.get(FHSA_TOTAL_ANNUAL_LIMITS).value == D("0")
+    assert worksheet.get(FHSA_ANNUAL_LIMITS_LESS_DEDUCTIONS).value == D("0")
+    assert worksheet.get(FHSA_MAXIMUM_DEDUCTION).value == D("0")
+    assert worksheet.get(FHSA_DEDUCTION).value == D("0")
+    assert worksheet.get(FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD).value == D("8000")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "fhsa_annual_limit_after_maximum_participation_period: credit amount 0 (half-up to 0.01)"
+    ) in rendered
+    assert (
+        "fhsa_annual_limit: fhsa_annual_limit_after_maximum_participation_period 0, "
+        "chosen as fhsa_maximum_participation_period_ended is 1"
+    ) in rendered
+
+
+def test_a_claim_is_refused_once_the_maximum_participation_period_has_ended() -> None:
+    with pytest.raises(InputAboveBoundError) as raised:
+        step_3(
+            fhsa_contributions_in_2025="8000",
+            fhsa_maximum_participation_period_ended=1,
+            fhsa_contributions_deducted="1000",
+        )
+
+    assert str(raised.value).startswith(
+        "ca/fhsa_contributions_deducted 1000 is above ca/fhsa_maximum_deduction 0"
+    )
+
+
+def test_a_second_year_adds_the_statements_totals_to_the_new_annual_limit() -> None:
+    # An FHSA opened in 2024 with 8000 contributed and deducted that year. The 2025 participation
+    # room statement gives line 7 (contributions in 2024) 8000, line 8 (before a first qualifying
+    # withdrawal) 8000, line 42 (total annual limits for 2024 and prior years) 8000 and line 44
+    # (total deductions for 2024 and prior years) 8000. With 8000 contributed in 2025 the annual
+    # limit (line 40) is 8000, line 43 is 8000 + 8000 = 16000, line 45 16000 - 8000 = 8000, line
+    # 48 is 40000.00 - 8000 = 32000.00 and line 51 the lesser of 8000 and 32000.00: 8000.
+    worksheet = step_3(
+        fhsa_contributions_in_2025="8000",
+        fhsa_contributions_in_2024="8000",
+        fhsa_contributions_in_2024_before_first_qualifying_withdrawal="8000",
+        fhsa_annual_limits_for_2024_and_prior_years="8000",
+        fhsa_deductions_for_2024_and_prior_years="8000",
+        fhsa_contributions_deducted="8000",
+    )
+
+    assert worksheet.get(FHSA_CONTRIBUTIONS_IN_2024_AFTER_FIRST_QUALIFYING_WITHDRAWAL).value == D(
+        "0"
+    )
+    assert worksheet.get(FHSA_ANNUAL_LIMIT).value == D("8000")
+    assert worksheet.get(FHSA_TOTAL_ANNUAL_LIMITS).value == D("16000")
+    assert worksheet.get(FHSA_ANNUAL_LIMITS_LESS_DEDUCTIONS).value == D("8000")
+    assert worksheet.get(FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS).value == D("32000")
+    assert worksheet.get(FHSA_MAXIMUM_DEDUCTION).value == D("8000")
+    assert worksheet.get(FHSA_DEDUCTION).value == D("8000")
+    assert worksheet.get(FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD).value == D("0")
+
+
+def test_an_rrsp_transfer_in_2025_lowers_the_annual_limit_and_the_lifetime_room() -> None:
+    # Line 18 (transfers from RRSPs to FHSAs in 2025) of 3000: lines 19 and 23 are 3000; line 36
+    # is line 24 (3000) less line 35 (0); line 39 is 8000.00 - 3000 = 5000.00, so line 40, the
+    # lesser of line 13 (8000) and 5000.00, is 5000.00. Line 50 is 40000.00 - 0 - 3000 =
+    # 37000.00, so line 51 is the lesser of 5000.00 and 37000.00: 5000.00. A deduction of 5000
+    # leaves 8000 - 5000 = 3000 as line 58.
+    worksheet = step_3(
+        fhsa_contributions_in_2025="8000",
+        fhsa_rrsp_transfers_in_2025="3000",
+        fhsa_contributions_deducted="5000",
+    )
+
+    assert worksheet.get(FHSA_TOTAL_RRSP_TRANSFERS).value == D("3000")
+    assert worksheet.get(FHSA_NET_RRSP_TRANSFER_AMOUNT).value == D("3000")
+    assert worksheet.get(FHSA_NET_TRANSFER_AMOUNT_AFTER_PRIOR_YEARS).value == D("3000")
+    assert worksheet.get(FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS).value == D("5000")
+    assert worksheet.get(FHSA_ANNUAL_LIMIT).value == D("5000")
+    assert worksheet.get(FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS_AND_TRANSFERS).value == D("37000")
+    assert worksheet.get(FHSA_MAXIMUM_DEDUCTION).value == D("5000")
+    assert worksheet.get(FHSA_DEDUCTION).value == D("5000")
+    assert worksheet.get(FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD).value == D("3000")
+    with pytest.raises(InputAboveBoundError):
+        step_3(
+            fhsa_contributions_in_2025="8000",
+            fhsa_rrsp_transfers_in_2025="3000",
+            fhsa_contributions_deducted="5000.01",
+        )
+
+
+def test_a_designated_withdrawal_lowers_line_13_and_comes_off_line_56() -> None:
+    # Line 6 (designated withdrawals in 2025) of 1000 against contributions after a first
+    # qualifying withdrawal (line 11) of 0: line 12 is 1000, line 13 is 8000 - 1000 = 7000, so
+    # line 40 is 7000 and line 51 7000; line 56 is 0 + 8000 - 1000 = 7000, and a deduction of
+    # 7000 leaves 0 as line 58.
+    worksheet = step_3(
+        fhsa_contributions_in_2025="8000",
+        fhsa_designated_withdrawals_in_2025="1000",
+        fhsa_contributions_deducted="7000",
+    )
+
+    assert worksheet.get(FHSA_EXCESS_DESIGNATED_WITHDRAWALS).value == D("1000")
+    assert worksheet.get(FHSA_CONTRIBUTIONS_LIMIT).value == D("7000")
+    assert worksheet.get(FHSA_ANNUAL_LIMIT).value == D("7000")
+    assert worksheet.get(FHSA_CONTRIBUTIONS_AVAILABLE).value == D("7000")
+    assert worksheet.get(FHSA_DEDUCTION).value == D("7000")
+    assert worksheet.get(FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD).value == D("0")
+
+
+def test_contributions_after_a_first_qualifying_withdrawal_count_against_the_withdrawals() -> None:
+    # Lines 1 and 2: 8000 contributed in 2025, of which 600 after the first qualifying withdrawal,
+    # so line 3 is 7400; designated withdrawals (line 6) of 1000 less line 11 (0 for 2024 + 600
+    # after the withdrawal in 2025) is line 12, 400, and line 13 is 7400 - 400 = 7000.
+    worksheet = step_3(
+        fhsa_contributions_in_2025="8000",
+        fhsa_contributions_in_2025_after_first_qualifying_withdrawal="600",
+        fhsa_designated_withdrawals_in_2025="1000",
+    )
+
+    assert worksheet.get(FHSA_CONTRIBUTIONS_IN_2025_BEFORE_FIRST_QUALIFYING_WITHDRAWAL).value == D(
+        "7400"
+    )
+    assert worksheet.get(FHSA_CONTRIBUTIONS_AFTER_FIRST_QUALIFYING_WITHDRAWAL).value == D("600")
+    assert worksheet.get(FHSA_EXCESS_DESIGNATED_WITHDRAWALS).value == D("400")
+    assert worksheet.get(FHSA_CONTRIBUTIONS_LIMIT).value == D("7000")
+
+
+def test_line_3_may_be_negative_as_the_form_prints_no_floor() -> None:
+    # Line 2 of 500 above line 1 of 100: line 3 "Line 1 minus line 2 =" is -400 and so is line 5
+    # "Line 3 plus line 4 =", but line 13 "Line 5 minus line 12 (if negative, enter "0")" is 0.
+    worksheet = step_3(
+        fhsa_contributions_in_2025="100",
+        fhsa_contributions_in_2025_after_first_qualifying_withdrawal="500",
+    )
+
+    assert worksheet.get(FHSA_CONTRIBUTIONS_IN_2025_BEFORE_FIRST_QUALIFYING_WITHDRAWAL).value == D(
+        "-400"
+    )
+    assert worksheet.get(FHSA_CONTRIBUTIONS_PLUS_VARIABLE_B_AMOUNT).value == D("-400")
+    assert worksheet.get(FHSA_CONTRIBUTIONS_LIMIT).value == D("0")
+    assert worksheet.get(FHSA_ANNUAL_LIMIT).value == D("0")
+
+
+def test_the_statements_carryforwards_and_variables_each_enter_their_line_once() -> None:
+    # One distinct figure for each statement figure, so a figure left out or added twice changes
+    # the result: line 4 ("B") 1, line 15 (carryforward for 2025) 10, line 17 100, line 20 1000,
+    # line 28 ("H") 5, line 31 (carryforward for 2024) 20 and line 34 ("F") 50. Line 3 is 0, so
+    # line 5 is 0 + 1 = 1 and line 13 is 1. Line 16 is 8000.00 + 10 = 8010.00. Line 19 is 100 + 0
+    # and line 22 is 1000 + 0, so line 23 (and line 24) is 100 - 1000 = -900, and line 27 (line 25
+    # minus line 26) is 100 - 1000 = -900 too; line 29 is -900 - 5 floored at 0, line 32 is
+    # 8000.00 + 20 = 8020.00, line 33 is the lesser of 0 and 8020.00, 0, line 35 is 0 + 50 = 50 and
+    # line 36 is -900 - 50 = -950. Line 39 is 8010.00 - (-950) = 8960.00 and line 40 the lesser of
+    # line 13 (1) and 8960.00: 1.
+    worksheet = step_3(
+        fhsa_variable_b_amount="1",
+        fhsa_carryforward_for_2025="10",
+        fhsa_rrsp_transfers_in_2024_and_prior_years="100",
+        fhsa_designated_transfers_in_2024_and_prior_years="1000",
+        fhsa_variable_h_amount="5",
+        fhsa_carryforward_for_2024="20",
+        fhsa_variable_f_amount="50",
+    )
+
+    assert worksheet.get(FHSA_CONTRIBUTIONS_PLUS_VARIABLE_B_AMOUNT).value == D("1")
+    assert worksheet.get(FHSA_CONTRIBUTIONS_LIMIT).value == D("1")
+    assert worksheet.get(FHSA_ANNUAL_AMOUNT_WITH_CARRYFORWARD).value == D("8010")
+    assert worksheet.get(FHSA_TOTAL_RRSP_TRANSFERS).value == D("100")
+    assert worksheet.get(FHSA_TOTAL_DESIGNATED_TRANSFERS).value == D("1000")
+    assert worksheet.get(FHSA_NET_RRSP_TRANSFER_AMOUNT).value == D("-900")
+    assert worksheet.get(FHSA_NET_RRSP_TRANSFER_AMOUNT_FOR_2024_AND_PRIOR_YEARS).value == D("-900")
+    assert worksheet.get(FHSA_NET_TRANSFER_AMOUNT_LESS_VARIABLE_H_AMOUNT).value == D("0")
+    assert worksheet.get(FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD).value == D("8020")
+    assert worksheet.get(FHSA_TRANSFER_AMOUNT_AT_MOST_LIMIT).value == D("0")
+    assert worksheet.get(FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT).value == D("50")
+    assert worksheet.get(FHSA_NET_TRANSFER_AMOUNT_AFTER_PRIOR_YEARS).value == D("-950")
+    assert worksheet.get(FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS).value == D("8960")
+    assert worksheet.get(FHSA_ANNUAL_LIMIT).value == D("1")
+
+
+def test_the_unused_contributions_from_the_statement_add_to_line_56() -> None:
+    # Line 52 (unused contributions available to deduct, from the statement) of 2500 and 8000
+    # contributed in 2025: line 54 is 2500 + 8000 = 10500 and line 56 is 10500 - 0. The annual
+    # limit is 8000, so line 51 is 8000 and 8000 is deducted: line 58 is 10500 - 8000 = 2500.
+    worksheet = step_3(
+        fhsa_contributions_in_2025="8000",
+        fhsa_unused_contributions_brought_forward="2500",
+        fhsa_contributions_deducted="8000",
+    )
+
+    assert worksheet.get(FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS).value == D("10500")
+    assert worksheet.get(FHSA_CONTRIBUTIONS_AVAILABLE).value == D("10500")
+    assert worksheet.get(FHSA_MAXIMUM_DEDUCTION).value == D("8000")
+    assert worksheet.get(FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD).value == D("2500")
+
+
+def test_the_lifetime_limit_caps_the_maximum_deduction() -> None:
+    # Total deductions for 2024 and prior years (line 44) of 38000 and total annual limits (line
+    # 42) of 38000: line 45 is 8000 + 38000 - 38000 = 8000 but line 48 is 40000.00 - 38000 =
+    # 2000.00, so line 51 is the lesser of 8000 and 2000.00: 2000.00.
+    worksheet = step_3(
+        fhsa_contributions_in_2025="8000",
+        fhsa_annual_limits_for_2024_and_prior_years="38000",
+        fhsa_deductions_for_2024_and_prior_years="38000",
+    )
+
+    assert worksheet.get(FHSA_ANNUAL_LIMITS_LESS_DEDUCTIONS).value == D("8000")
+    assert worksheet.get(FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS).value == D("2000")
+    assert worksheet.get(FHSA_MAXIMUM_DEDUCTION).value == D("2000")

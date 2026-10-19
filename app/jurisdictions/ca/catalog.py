@@ -1,11 +1,14 @@
 """The federal Canada artifact catalog: artifact kinds named from Canada's own return (§2, §7).
 
-Only the kinds in use are declared, each non-negative but three: none of these lines can be negative
-on the return as modelled except the refund or balance owing, where negative means a refund, and
-lines 5 and 9 of the Federal Worksheet for line 25000, which print no floor. Amounts are Decimal;
-the counts of eligible dependants, of infirm children, of the eligible children for child care
-(Form T778 Part B lines 1 to 3), of the Schedule 6 eligible dependants (line 38100) and the two
-starting counts of the Federal Worksheet for line 25000 int. Identifiers are stable:
+Only the kinds in use are declared, each non-negative except the lines that print no floor: none of
+these lines can be negative on the return as modelled except the refund or balance owing, where
+negative means a refund, lines 5 and 9 of the Federal Worksheet for line 25000, the net income
+before adjustments (line 23400, "if negative, show in brackets") and the lines of Form T1436 and of
+Schedule 15 that print no "(if negative, enter "0")". Amounts are Decimal; the counts of eligible
+dependants, of infirm children, of the eligible children for child care (Form T778 Part B lines 1
+to 3), of the Schedule 6 eligible dependants (line 38100), the two starting counts of the Federal
+Worksheet for line 25000 and the Schedule 15 count of a maximum participation period that ended in
+a prior year are int. Identifiers are stable:
 `tests/jurisdictions/ca/test_catalog.py` snapshots them.
 """
 
@@ -345,6 +348,11 @@ INCOME_SUPPORT_BENEFITS = CATALOG.declare("income_support_benefits", Decimal, no
 """Income support benefits, T1 line 14700 "Add lines 29 to 31 (see line 25000 in Step 4).": the
 workers' compensation benefits, social assistance payments and net federal supplements."""
 
+RPP_DEDUCTION = CATALOG.declare("rpp_deduction", Decimal, non_negative=True)
+"""Registered pension plan (RPP) deduction, T1 line 35 and line 20700 "Registered pension plan
+(RPP) deduction (box 20 of all T4 slips and box 032 of all T4A slips)": the amount claimed, a
+starting amount."""
+
 UNUSED_RRSP_CONTRIBUTIONS = CATALOG.declare("unused_rrsp_contributions", Decimal, non_negative=True)
 """Unused RRSP contributions, Schedule 7 line 1 "Enter your unused RRSP contributions previously
 reported and available to deduct for 2025 as shown on your latest notice of assessment or
@@ -411,6 +419,312 @@ Line 21 is "Enter your contributions available to deduct from line 10 of the pre
 22 "Enter your RRSP deduction from line 20 of the previous page.". Never negative, as line 20 is
 at most line 10.
 """
+
+FHSA_CONTRIBUTIONS_IN_2025 = CATALOG.declare(
+    "fhsa_contributions_in_2025", Decimal, non_negative=True
+)
+"""Total contributions made to your FHSAs in 2025, Schedule 15 Step 2 line 1 and line 68935 (box
+18 of your 2025 T4FHSA slips): a starting amount."""
+
+FHSA_CONTRIBUTIONS_IN_2025_AFTER_FIRST_QUALIFYING_WITHDRAWAL = CATALOG.declare(
+    "fhsa_contributions_in_2025_after_first_qualifying_withdrawal", Decimal, non_negative=True
+)
+"""Total contributions made to your FHSAs in 2025 after your first qualifying withdrawal,
+Schedule 15 Step 2 line 2 and line 68940: a starting amount; line 10 "Amount from line 2" is
+this same artifact."""
+
+FHSA_CONTRIBUTIONS_IN_2025_BEFORE_FIRST_QUALIFYING_WITHDRAWAL = CATALOG.declare(
+    "fhsa_contributions_in_2025_before_first_qualifying_withdrawal", Decimal
+)
+"""Contributions in 2025 before your first qualifying withdrawal, Schedule 15 Step 2 line 3 "Line 1
+minus line 2 =": the 2025 contributions less those made after the first qualifying withdrawal. The
+line prints no floor, so the kind is signed."""
+
+FHSA_VARIABLE_B_AMOUNT = CATALOG.declare("fhsa_variable_b_amount", Decimal, non_negative=True)
+"""Variable "B" amount of your annual FHSA limit for 2024, Schedule 15 Step 2 line 4 (from your
+2025 FHSA participation room statement): a starting amount."""
+
+FHSA_CONTRIBUTIONS_PLUS_VARIABLE_B_AMOUNT = CATALOG.declare(
+    "fhsa_contributions_plus_variable_b_amount", Decimal
+)
+"""Contributions plus variable "B", Schedule 15 Step 2 line 5 "Line 3 plus line 4 =": line 3 plus
+the variable "B" amount of line 4. Signed, as line 3 is."""
+
+FHSA_DESIGNATED_WITHDRAWALS_IN_2025 = CATALOG.declare(
+    "fhsa_designated_withdrawals_in_2025", Decimal, non_negative=True
+)
+"""Total designated withdrawals from your FHSAs in 2025, Schedule 15 Step 2 line 6 and line
+68945 (box 38 of your 2025 T4FHSA slips): a starting amount."""
+
+FHSA_CONTRIBUTIONS_IN_2024 = CATALOG.declare(
+    "fhsa_contributions_in_2024", Decimal, non_negative=True
+)
+"""Total contributions made to your FHSAs in 2024, Schedule 15 Step 2 line 7 (from your 2025
+FHSA participation room statement): a starting amount."""
+
+FHSA_CONTRIBUTIONS_IN_2024_BEFORE_FIRST_QUALIFYING_WITHDRAWAL = CATALOG.declare(
+    "fhsa_contributions_in_2024_before_first_qualifying_withdrawal", Decimal, non_negative=True
+)
+"""Contributions to your FHSAs in 2024 before your first qualifying withdrawal, Schedule 15 Step
+2 line 8 (from your 2025 FHSA participation room statement): a starting amount."""
+
+FHSA_CONTRIBUTIONS_IN_2024_AFTER_FIRST_QUALIFYING_WITHDRAWAL = CATALOG.declare(
+    "fhsa_contributions_in_2024_after_first_qualifying_withdrawal", Decimal
+)
+"""Contributions in 2024 after your first qualifying withdrawal, Schedule 15 Step 2 line 9 "Line 7
+minus line 8 =": the 2024 contributions less those made before the first qualifying withdrawal. The
+line prints no floor, so the kind is signed."""
+
+FHSA_CONTRIBUTIONS_AFTER_FIRST_QUALIFYING_WITHDRAWAL = CATALOG.declare(
+    "fhsa_contributions_after_first_qualifying_withdrawal", Decimal
+)
+"""Contributions after your first qualifying withdrawal, Schedule 15 Step 2 line 11 "Line 9 plus
+line 10 =": line 9 plus line 10 "Amount from line 2", the same artifact as line 2. Signed, as line 9
+is."""
+
+FHSA_EXCESS_DESIGNATED_WITHDRAWALS = CATALOG.declare(
+    "fhsa_excess_designated_withdrawals", Decimal, non_negative=True
+)
+"""Excess designated withdrawals, Schedule 15 Step 2 line 12 "Line 6 minus line 11 (if negative,
+enter "0") =": the designated withdrawals in 2025 beyond the contributions after the first
+qualifying withdrawal, not below zero."""
+
+FHSA_CONTRIBUTIONS_LIMIT = CATALOG.declare("fhsa_contributions_limit", Decimal, non_negative=True)
+"""Contributions limit, Schedule 15 Step 2 line 13 "Line 5 minus line 12 (if negative, enter "0")
+=": the contributions plus variable "B" less the excess designated withdrawals, not below zero."""
+
+FHSA_ANNUAL_AMOUNT = CATALOG.declare("fhsa_annual_amount", Decimal, non_negative=True)
+"""Annual FHSA amount, Schedule 15 Step 2 line 14 "8,000.00": the printed amount, from its dataset;
+line 30 prints the same figure."""
+
+FHSA_CARRYFORWARD_FOR_2025 = CATALOG.declare(
+    "fhsa_carryforward_for_2025", Decimal, non_negative=True
+)
+"""Your FHSA carryforward for 2025, Schedule 15 Step 2 line 15 (from your 2025 FHSA
+participation room statement): a starting amount."""
+
+FHSA_ANNUAL_AMOUNT_WITH_CARRYFORWARD = CATALOG.declare(
+    "fhsa_annual_amount_with_carryforward", Decimal, non_negative=True
+)
+"""Annual FHSA amount with carryforward, Schedule 15 Step 2 line 16 "Line 14 plus line 15 =": the
+printed amount plus the FHSA carryforward for 2025."""
+
+FHSA_RRSP_TRANSFERS_IN_2024_AND_PRIOR_YEARS = CATALOG.declare(
+    "fhsa_rrsp_transfers_in_2024_and_prior_years", Decimal, non_negative=True
+)
+"""Total transfers from your RRSPs to your FHSAs in 2024 and prior years, Schedule 15 Step 2
+line 17 (from your 2025 FHSA participation room statement): a starting amount; line 25 is this
+same artifact."""
+
+FHSA_RRSP_TRANSFERS_IN_2025 = CATALOG.declare(
+    "fhsa_rrsp_transfers_in_2025", Decimal, non_negative=True
+)
+"""Total transfers from your RRSPs to your FHSAs in 2025, Schedule 15 Step 2 line 18 and line
+68950 (boxes 32 and 34 of your 2025 T4FHSA slips): a starting amount."""
+
+FHSA_TOTAL_RRSP_TRANSFERS = CATALOG.declare("fhsa_total_rrsp_transfers", Decimal, non_negative=True)
+"""Total transfers from your RRSPs to your FHSAs, Schedule 15 Step 2 line 19 "Line 17 plus line 18
+=": the transfers of 2024 and prior years plus those of 2025."""
+
+FHSA_DESIGNATED_TRANSFERS_IN_2024_AND_PRIOR_YEARS = CATALOG.declare(
+    "fhsa_designated_transfers_in_2024_and_prior_years", Decimal, non_negative=True
+)
+"""Total designated transfers from your FHSAs to your RRSPs or RRIFs in 2024 and prior years,
+Schedule 15 Step 2 line 20 (from your 2025 FHSA participation room statement): a starting
+amount; line 26 is this same artifact."""
+
+FHSA_DESIGNATED_TRANSFERS_IN_2025 = CATALOG.declare(
+    "fhsa_designated_transfers_in_2025", Decimal, non_negative=True
+)
+"""Total designated transfers from your FHSAs to your RRSPs or RRIFs in 2025, Schedule 15 Step 2
+line 21 and line 68955 (box 36 of your 2025 T4FHSA slips): a starting amount."""
+
+FHSA_TOTAL_DESIGNATED_TRANSFERS = CATALOG.declare(
+    "fhsa_total_designated_transfers", Decimal, non_negative=True
+)
+"""Total designated transfers from your FHSAs to your RRSPs or RRIFs, Schedule 15 Step 2 line 22
+"Line 20 plus line 21 =": the transfers of 2024 and prior years plus those of 2025."""
+
+FHSA_NET_RRSP_TRANSFER_AMOUNT = CATALOG.declare("fhsa_net_rrsp_transfer_amount", Decimal)
+"""Net RRSP-to-FHSA transfer amount, Schedule 15 Step 2 line 23 "Line 19 minus line 22 =": the
+transfers to FHSAs less the designated transfers back. The line prints no floor, so the kind is
+signed; lines 24 and 49 are this same artifact."""
+
+FHSA_NET_RRSP_TRANSFER_AMOUNT_FOR_2024_AND_PRIOR_YEARS = CATALOG.declare(
+    "fhsa_net_rrsp_transfer_amount_for_2024_and_prior_years", Decimal
+)
+"""Net RRSP-to-FHSA transfer amount for 2024 and prior years, Schedule 15 Step 2 line 27 "Line 25
+minus line 26 =": the transfers of 2024 and prior years less the designated transfers of those
+years. The line prints no floor, so the kind is signed."""
+
+FHSA_VARIABLE_H_AMOUNT = CATALOG.declare("fhsa_variable_h_amount", Decimal, non_negative=True)
+"""Variable "H" amount of your annual FHSA limit for 2024, Schedule 15 Step 2 line 28 (from your
+2025 FHSA participation room statement): a starting amount."""
+
+FHSA_NET_TRANSFER_AMOUNT_LESS_VARIABLE_H_AMOUNT = CATALOG.declare(
+    "fhsa_net_transfer_amount_less_variable_h_amount", Decimal, non_negative=True
+)
+"""Net transfer amount less variable "H", Schedule 15 Step 2 line 29 "Line 27 minus line 28 (if
+negative, enter "0") =": line 27 less the variable "H" amount of line 28, not below zero."""
+
+FHSA_ANNUAL_AMOUNT_FOR_2024 = CATALOG.declare(
+    "fhsa_annual_amount_for_2024", Decimal, non_negative=True
+)
+"""Annual FHSA amount for 2024, Schedule 15 Step 2 line 30 "8,000.00": the printed amount, from the
+same dataset as line 14."""
+
+FHSA_CARRYFORWARD_FOR_2024 = CATALOG.declare(
+    "fhsa_carryforward_for_2024", Decimal, non_negative=True
+)
+"""Your FHSA carryforward for 2024, Schedule 15 Step 2 line 31 (from your 2024 FHSA
+participation room statement): a starting amount."""
+
+FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD = CATALOG.declare(
+    "fhsa_annual_amount_for_2024_with_carryforward", Decimal, non_negative=True
+)
+"""Annual FHSA amount for 2024 with carryforward, Schedule 15 Step 2 line 32 "Line 30 plus line 31
+=": the printed amount plus the FHSA carryforward for 2024."""
+
+FHSA_TRANSFER_AMOUNT_AT_MOST_LIMIT = CATALOG.declare(
+    "fhsa_transfer_amount_at_most_limit", Decimal, non_negative=True
+)
+"""Transfer amount at most the 2024 limit, Schedule 15 Step 2 line 33 "Enter whichever is less:
+amount from line 29 or line 32.": the lesser of the two."""
+
+FHSA_VARIABLE_F_AMOUNT = CATALOG.declare("fhsa_variable_f_amount", Decimal, non_negative=True)
+"""Variable "F" amount of your annual FHSA limit for 2024, Schedule 15 Step 2 line 34 (from your
+2025 FHSA participation room statement): a starting amount."""
+
+FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT = CATALOG.declare(
+    "fhsa_transfer_amount_plus_variable_f_amount", Decimal, non_negative=True
+)
+"""Transfer amount plus variable "F", Schedule 15 Step 2 line 35 "Line 33 plus line 34 =": line 33
+plus the variable "F" amount of line 34."""
+
+FHSA_NET_TRANSFER_AMOUNT_AFTER_PRIOR_YEARS = CATALOG.declare(
+    "fhsa_net_transfer_amount_after_prior_years", Decimal
+)
+"""Net transfer amount after prior years, Schedule 15 Step 2 line 36 "Line 24 minus line 35 =": the
+net RRSP-to-FHSA transfer amount less line 35. The line prints no floor, so the kind is signed."""
+
+FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS = CATALOG.declare(
+    "fhsa_annual_amount_after_transfers", Decimal, non_negative=True
+)
+"""Annual FHSA amount after transfers, Schedule 15 Step 2 line 39 "Line 37 minus line 38 (if
+negative, enter "0") =": line 37 "Amount from line 16" less line 38 "Amount from line 36", not below
+zero."""
+
+FHSA_MAXIMUM_PARTICIPATION_PERIOD_ENDED = CATALOG.declare(
+    "fhsa_maximum_participation_period_ended", int, non_negative=True
+)
+"""Whether the maximum participation period (MPP) of your FHSAs ended in a prior year, Schedule
+15 Step 2: a count of 0 or 1, a starting amount. At 1 the schedule says "do not complete this
+step" and line 40 is "0"."""
+
+FHSA_ANNUAL_LIMIT_FROM_STEP_2 = CATALOG.declare(
+    "fhsa_annual_limit_from_step_2", Decimal, non_negative=True
+)
+"""Annual FHSA limit from Step 2, Schedule 15 Step 2 line 40 "Enter whichever is less: amount from
+line 13 of the previous page or line 39. Annual FHSA limit for 2025": the lesser of the two, when
+the maximum participation period has not ended."""
+
+FHSA_ANNUAL_LIMIT_AFTER_MAXIMUM_PARTICIPATION_PERIOD = CATALOG.declare(
+    "fhsa_annual_limit_after_maximum_participation_period", Decimal, non_negative=True
+)
+"""Annual FHSA limit after the maximum participation period, Schedule 15 Step 2 line 40 "Your 2025
+annual FHSA limit is "0". Enter "0" on line 40": the printed 0, from its dataset, for a maximum
+participation period that ended in a prior year."""
+
+FHSA_ANNUAL_LIMIT = CATALOG.declare("fhsa_annual_limit", Decimal, non_negative=True)
+"""Annual FHSA limit for 2025, Schedule 15 Step 2 line 41 "Annual FHSA limit from line 40": the
+result of Step 2, or the printed 0 when the maximum participation period ended in a prior year."""
+
+FHSA_ANNUAL_LIMITS_FOR_2024_AND_PRIOR_YEARS = CATALOG.declare(
+    "fhsa_annual_limits_for_2024_and_prior_years", Decimal, non_negative=True
+)
+"""Your total annual FHSA limits for 2024 and prior years, Schedule 15 Step 3 line 42 (from your
+2025 FHSA participation room statement): a starting amount."""
+
+FHSA_TOTAL_ANNUAL_LIMITS = CATALOG.declare("fhsa_total_annual_limits", Decimal, non_negative=True)
+"""Total annual FHSA limits, Schedule 15 Step 3 line 43 "Line 41 plus line 42 =": the limit for 2025
+plus the limits for 2024 and prior years."""
+
+FHSA_DEDUCTIONS_FOR_2024_AND_PRIOR_YEARS = CATALOG.declare(
+    "fhsa_deductions_for_2024_and_prior_years", Decimal, non_negative=True
+)
+"""Your total FHSA deductions for 2024 and prior years, Schedule 15 Step 3 line 44 (from your
+2025 FHSA participation room statement): a starting amount; line 47 is this same artifact."""
+
+FHSA_ANNUAL_LIMITS_LESS_DEDUCTIONS = CATALOG.declare("fhsa_annual_limits_less_deductions", Decimal)
+"""Annual FHSA limits less deductions, Schedule 15 Step 3 line 45 "Line 43 minus line 44 =": the
+total limits less the deductions of 2024 and prior years. The line prints no floor, so the kind is
+signed."""
+
+FHSA_LIFETIME_LIMIT = CATALOG.declare("fhsa_lifetime_limit", Decimal, non_negative=True)
+"""Lifetime FHSA limit, Schedule 15 Step 3 line 46 "40,000.00": the printed amount, from its
+dataset."""
+
+FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS = CATALOG.declare(
+    "fhsa_lifetime_limit_less_deductions", Decimal
+)
+"""Lifetime limit less deductions, Schedule 15 Step 3 line 48 "Line 46 minus line 47 =": the
+lifetime FHSA limit less the deductions of 2024 and prior years. The line prints no floor, so the
+kind is signed."""
+
+FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS_AND_TRANSFERS = CATALOG.declare(
+    "fhsa_lifetime_limit_less_deductions_and_transfers", Decimal, non_negative=True
+)
+"""Lifetime limit less deductions and transfers, Schedule 15 Step 3 line 50 "Line 48 minus line 49
+(if negative, enter "0") =": line 48 less line 49 "Net RRSP-to-FHSA transfer amount from line 24",
+not below zero."""
+
+FHSA_MAXIMUM_DEDUCTION = CATALOG.declare("fhsa_maximum_deduction", Decimal)
+"""Maximum FHSA deduction available for 2025, Schedule 15 Step 3 line 51 "Enter whichever is less:
+amount from line 45 or line 50.": the lesser of the two; signed, as line 45 is."""
+
+FHSA_UNUSED_CONTRIBUTIONS_BROUGHT_FORWARD = CATALOG.declare(
+    "fhsa_unused_contributions_brought_forward", Decimal, non_negative=True
+)
+"""Your unused FHSA contributions available to deduct in future years, Schedule 15 Step 3 line
+52 (from your 2025 FHSA participation room statement): a starting amount."""
+
+FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS = CATALOG.declare(
+    "fhsa_unused_contributions_plus_contributions", Decimal
+)
+"""Unused FHSA contributions plus contributions, Schedule 15 Step 3 line 54 "Line 52 plus line 53
+=": the unused contributions brought forward plus line 53 "Amount from line 3 of page 2", the same
+artifact as line 3. Signed, as line 3 is."""
+
+FHSA_CONTRIBUTIONS_AVAILABLE = CATALOG.declare("fhsa_contributions_available", Decimal)
+"""FHSA contributions available to deduct, Schedule 15 Step 3 line 56 "Line 54 minus line 55 =":
+line 54 less line 55 "Amount from line 12 of page 2", the same artifact as line 12. The line prints
+no floor, so the kind is signed."""
+
+FHSA_CONTRIBUTIONS_DEDUCTED = CATALOG.declare(
+    "fhsa_contributions_deducted", Decimal, non_negative=True
+)
+"""FHSA contributions you are deducting for 2025, Schedule 15 Step 3 line 57: the amount the
+filer chooses to deduct, a starting amount, refused when above line 51 (as Schedule 7 line 18 is
+refused above line 17)."""
+
+FHSA_DEDUCTION = CATALOG.declare("fhsa_deduction", Decimal, non_negative=True)
+"""FHSA deduction, T1 line 37 and line 20805, Schedule 15 Step 3 line 57 "Enter this amount on
+line 20805 of your return. FHSA deduction for 2025": the contributions deducted, at most line
+51, a deduction from total income."""
+
+FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD = CATALOG.declare(
+    "fhsa_unused_contributions_carried_forward", Decimal
+)
+"""Your unused FHSA contributions available to deduct in future years, Schedule 15 Step 3 line
+58 "Line 56 minus line 57 =": what the return produces for the next year's line 52. The line
+prints no floor, so the kind is signed."""
+
+ELECTED_SPLIT_PENSION_DEDUCTION = CATALOG.declare(
+    "elected_split_pension_deduction", Decimal, non_negative=True
+)
+"""Deduction for elected split-pension amount, T1 line 38 and line 21000 "Deduction for elected
+split-pension amount (complete Form T1032)": the amount claimed, a starting amount; the election
+is the filer's, from the spouse-coupled Form T1032."""
 
 UNION_DUES = CATALOG.declare("union_dues", Decimal, non_negative=True)
 """Union dues, T1 line 21200 "Annual union, professional, or like dues (receipts and box 44 of all
@@ -485,6 +799,156 @@ are Parts C and D (the higher-income claimant, school attendance). Eligibility i
 state, not computed here.
 """
 
+CAPITAL_GAINS_DEDUCTIONS_1985_TO_1987 = CATALOG.declare(
+    "capital_gains_deductions_1985_to_1987", Decimal, non_negative=True
+)
+"""Capital gains deductions claimed for 1985 to 1987, Form T1436 (Capital Gains Worksheet) line
+1, as the line prints it after its multiplier: a starting amount, a figure from the returns of
+1985 to 2024."""
+
+CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_OTHER_THAN_ELIGIBLE_CAPITAL_PROPERTY = CATALOG.declare(
+    "capital_gains_deductions_1988_and_1989_other_than_eligible_capital_property",
+    Decimal,
+    non_negative=True,
+)
+"""Capital gains deductions claimed for 1988 and 1989 other than for eligible capital property,
+Form T1436 (Capital Gains Worksheet) line 2, as the line prints it after its multiplier: a
+starting amount, a figure from the returns of 1985 to 2024."""
+
+CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_ELIGIBLE_CAPITAL_PROPERTY = CATALOG.declare(
+    "capital_gains_deductions_1988_and_1989_eligible_capital_property", Decimal, non_negative=True
+)
+"""Capital gains deductions claimed for 1988 and 1989 for eligible capital property, Form T1436
+(Capital Gains Worksheet) line 3, as the line prints it after its multiplier: a starting amount,
+a figure from the returns of 1985 to 2024."""
+
+CAPITAL_GAINS_DEDUCTIONS_1990_TO_1999 = CATALOG.declare(
+    "capital_gains_deductions_1990_to_1999", Decimal, non_negative=True
+)
+"""Capital gains deductions claimed for 1990 to 1999, Form T1436 (Capital Gains Worksheet) line
+4, as the line prints it after its multiplier: a starting amount, a figure from the returns of
+1985 to 2024."""
+
+CAPITAL_GAINS_DEDUCTIONS_2000 = CATALOG.declare(
+    "capital_gains_deductions_2000", Decimal, non_negative=True
+)
+"""Capital gains deductions claimed for 2000, Form T1436 (Capital Gains Worksheet) line 5, as
+the line prints it after its multiplier: a starting amount, a figure from the returns of 1985 to
+2024."""
+
+CAPITAL_GAINS_DEDUCTIONS_2001_TO_2024 = CATALOG.declare(
+    "capital_gains_deductions_2001_to_2024", Decimal, non_negative=True
+)
+"""Capital gains deductions claimed for 2001 to 2024, Form T1436 (Capital Gains Worksheet) line
+6, as the line prints it after its multiplier: a starting amount, a figure from the returns of
+1985 to 2024."""
+
+CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024 = CATALOG.declare(
+    "capital_gains_deductions_claimed_1985_to_2024", Decimal, non_negative=True
+)
+"""Total capital gains deductions claimed from 1985 to 2024, Form T1436 (Capital Gains Worksheet)
+line 7 "Add lines 1 to 6.": the sum of the six deductions claimed in earlier years."""
+
+OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_1994 = CATALOG.declare(
+    "other_business_investment_loss_reductions_1986_to_1994", Decimal, non_negative=True
+)
+"""Other business investment loss reductions for 1986 to 1994, Form T1436 (Capital Gains
+Worksheet) line 8: a starting amount, a figure from the returns of 1986 to 2024."""
+
+OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1994_TO_1996 = CATALOG.declare(
+    "other_business_investment_loss_reductions_1994_to_1996", Decimal, non_negative=True
+)
+"""Other business investment loss reductions for 1994 to 1996, Form T1436 (Capital Gains
+Worksheet) line 9: a starting amount, a figure from the returns of 1986 to 2024."""
+
+OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1997_TO_1999 = CATALOG.declare(
+    "other_business_investment_loss_reductions_1997_to_1999", Decimal, non_negative=True
+)
+"""Other business investment loss reductions for 1997 to 1999, Form T1436 (Capital Gains
+Worksheet) line 10: a starting amount, a figure from the returns of 1986 to 2024."""
+
+OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2000 = CATALOG.declare(
+    "other_business_investment_loss_reductions_2000", Decimal, non_negative=True
+)
+"""Other business investment loss reductions for 2000, Form T1436 (Capital Gains Worksheet) line
+11: a starting amount, a figure from the returns of 1986 to 2024."""
+
+OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2001_TO_2023 = CATALOG.declare(
+    "other_business_investment_loss_reductions_2001_to_2023", Decimal, non_negative=True
+)
+"""Other business investment loss reductions for 2001 to 2023, Form T1436 (Capital Gains
+Worksheet) line 12: a starting amount, a figure from the returns of 1986 to 2024."""
+
+OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2024 = CATALOG.declare(
+    "other_business_investment_loss_reductions_2024", Decimal, non_negative=True
+)
+"""Other business investment loss reductions for 2024, Form T1436 (Capital Gains Worksheet) line
+13: a starting amount, a figure from the returns of 1986 to 2024."""
+
+OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024 = CATALOG.declare(
+    "other_business_investment_loss_reductions_1986_to_2024", Decimal, non_negative=True
+)
+"""Total other business investment loss reductions for 1986 to 2024, Form T1436 (Capital Gains
+Worksheet) line 14 "Add lines 8 to 13.": the sum of the six reductions of earlier years."""
+
+BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE = CATALOG.declare(
+    "business_investment_loss_reduction_available", Decimal
+)
+"""Business investment loss reduction available, Form T1436 (Capital Gains Worksheet) line 15 "Line
+7 minus line 14": the capital gains deductions claimed less the other reductions. The line prints no
+"(if negative, enter "0")", so the kind is signed."""
+
+BUSINESS_INVESTMENT_LOSS = CATALOG.declare("business_investment_loss", Decimal, non_negative=True)
+"""Business investment loss in 2025, Form T1436 line 16 and T1 line 43 gross, line 21699 "Enter
+this amount on line 21699 of your return.": a starting amount."""
+
+BUSINESS_INVESTMENT_LOSS_REDUCTION = CATALOG.declare("business_investment_loss_reduction", Decimal)
+"""Business investment loss reduction, Form T1436 (Capital Gains Worksheet) line 17 "Enter whichever
+is less: amount from line 15 or line 16. Enter this amount on line 17800 of Schedule 3.": the lesser
+of the reduction available and the loss. The line prints no floor, so the kind is signed (negative
+with line 15)."""
+
+BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION = CATALOG.declare(
+    "business_investment_loss_after_reduction", Decimal, non_negative=True
+)
+"""Business investment loss after the reduction, Form T1436 (Capital Gains Worksheet) line 18 "Line
+16 minus line 17 Business investment loss reduction": never negative, as line 17 is at most line
+16."""
+
+ALLOWABLE_BUSINESS_INVESTMENT_LOSS = CATALOG.declare(
+    "allowable_business_investment_loss", Decimal, non_negative=True
+)
+"""Allowable business investment loss, T1 line 43 and line 21700, Form T1436 line 20 "Line 18
+multiplied by the percentage on line 19 Enter this amount on line 21700 of your return.": half
+the loss after the reduction, a deduction from total income."""
+
+SUPPORT_PAYMENTS_DEDUCTION = CATALOG.declare(
+    "support_payments_deduction", Decimal, non_negative=True
+)
+"""Support payments made, T1 line 45 and line 22000 "Enter on line 22000 of your return the
+deductible part of the support payments that you made.": the deductible part, a starting amount
+as the return asks for it. The total of line 21999 informs it and nothing on this return reads
+it."""
+
+TOTAL_CARRYING_CHARGES = CATALOG.declare("total_carrying_charges", Decimal, non_negative=True)
+"""Total carrying charges, Federal Worksheet "Line 22100 - Carrying charges, interest expenses,
+and other expenses" line 1: a starting amount."""
+
+TOTAL_INTEREST_EXPENSES = CATALOG.declare("total_interest_expenses", Decimal, non_negative=True)
+"""Total interest expenses, Federal Worksheet "Line 22100 - Carrying charges, interest expenses,
+and other expenses" line 2: a starting amount."""
+
+TOTAL_OTHER_EXPENSES = CATALOG.declare("total_other_expenses", Decimal, non_negative=True)
+"""Total other expenses, Federal Worksheet "Line 22100 - Carrying charges, interest expenses,
+and other expenses" line 3: a starting amount."""
+
+CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES = CATALOG.declare(
+    "carrying_charges_interest_expenses_and_other_expenses", Decimal, non_negative=True
+)
+"""Carrying charges, interest expenses, and other expenses, T1 line 46 and line 22100: Federal
+Worksheet "Line 22100 - Carrying charges, interest expenses, and other expenses" line 4 "Add
+lines 1 to 3. Enter this amount on line 22100 of your return.", a deduction from total income."""
+
 CPP_FIRST_ADDITIONAL_CONTRIBUTIONS = CATALOG.declare(
     "cpp_first_additional_contributions", Decimal, non_negative=True
 )
@@ -523,19 +987,41 @@ When line 24 is positive, Part 3a line 28 "Line 26 plus line 27 Enter this amoun
 cents) on line 22215 of your return." carries the same sum.
 """
 
+EXPLORATION_AND_DEVELOPMENT_EXPENSES = CATALOG.declare(
+    "exploration_and_development_expenses", Decimal, non_negative=True
+)
+"""Exploration and development expenses, T1 line 49 and line 22400 "Exploration and development
+expenses (complete Form T1229)": a starting amount until CRA publishes a 2025 edition of Form
+T1229 (the latest is 2023)."""
+
+OTHER_DEDUCTIONS = CATALOG.declare("other_deductions", Decimal, non_negative=True)
+"""Other deductions, T1 line 52 and line 23200 "Other deductions": a starting amount, which
+includes the RDSP income repayment (a starting amount of its own, Federal Worksheet for line
+25000 line 7)."""
+
 DEDUCTIONS_FROM_TOTAL_INCOME = CATALOG.declare(
     "deductions_from_total_income", Decimal, non_negative=True
 )
 """Total deductions, T1 line 23300 "Add lines 35 to 52": the sum of the deductions from total
-income, here, in line order, the RRSP deduction (line 20800), union dues (line 21200), the child
-care expenses (line 21400) and the enhanced CPP contributions (line 22215)."""
+income, here, in line order, the RPP deduction (line 20700), the RRSP deduction (line 20800), the
+FHSA deduction (line 20805), the elected split-pension deduction (line 21000), union dues (line
+21200), the UCCB repayment (line 21300), the child care expenses (line 21400), the allowable
+business investment loss (line 21700), the deductible support payments (line 22000), carrying
+charges, interest expenses and other expenses (line 22100), the enhanced CPP contributions (line
+22215), exploration and development expenses (line 22400) and other deductions (line 23200).
+
+Not wired yet: lines 21500, 21900, 22200, 22900 and 23100."""
+
+NET_INCOME_BEFORE_ADJUSTMENTS = CATALOG.declare("net_income_before_adjustments", Decimal)
+"""Net income before adjustments, T1 line 54 and line 23400 "Line 34 minus line 53 (if negative,
+show in brackets)": total income less total deductions, not floored, so the kind is signed."""
 
 NET_INCOME = CATALOG.declare("net_income", Decimal, non_negative=True)
 """Net income, T1 line 23600 "Line 54 minus line 55 (if negative, enter "0") Net income": total
 income less total deductions, not below zero.
 
-Line 54 (23400) is "Line 34 minus line 53 (if negative, show in brackets) Net income before
-adjustments"; line 55 (23500, social benefits repayment) is not modelled.
+Line 54 (23400, net income before adjustments) is its own kind, not floored; line 55 (23500,
+social benefits repayment) is not modelled.
 """
 
 CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION = CATALOG.declare(
@@ -551,8 +1037,9 @@ SECURITY_OPTIONS_DEDUCTIONS = CATALOG.declare(
 41, 91 and 92 of all T4 slips or see Form T1212)": a starting amount."""
 
 UCCB_REPAYMENT = CATALOG.declare("uccb_repayment", Decimal, non_negative=True)
-"""UCCB repayment, Federal Worksheet "Line 25000 - Other payments deduction" line 6 "Amount from
-line 21300 of your return": a starting amount, as line 21300 is not wired yet."""
+"""UCCB repayment, T1 line 40 and line 21300 "Universal child care benefit (UCCB) repayment (box 12
+of all RC62 slips)", also Federal Worksheet "Line 25000 - Other payments deduction" line 6 "Amount
+from line 21300 of your return": a starting amount, a deduction from total income."""
 
 RDSP_INCOME_REPAYMENT = CATALOG.declare("rdsp_income_repayment", Decimal, non_negative=True)
 """RDSP income repayment, Federal Worksheet "Line 25000 - Other payments deduction" line 7 "RDSP

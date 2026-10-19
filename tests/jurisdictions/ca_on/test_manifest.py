@@ -38,19 +38,32 @@ from app.jurisdictions.ca.catalog import (
     AGE_INCOME_THRESHOLD,
     AGE_MAXIMUM,
     AGE_REDUCTION,
+    ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
+    BUSINESS_INVESTMENT_LOSS,
+    BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
+    BUSINESS_INVESTMENT_LOSS_REDUCTION,
+    BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_WORKERS_BENEFIT,
     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
     CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
     CAPITAL_GAIN,
+    CAPITAL_GAINS_DEDUCTIONS_1985_TO_1987,
+    CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_ELIGIBLE_CAPITAL_PROPERTY,
+    CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_OTHER_THAN_ELIGIBLE_CAPITAL_PROPERTY,
+    CAPITAL_GAINS_DEDUCTIONS_1990_TO_1999,
+    CAPITAL_GAINS_DEDUCTIONS_2000,
+    CAPITAL_GAINS_DEDUCTIONS_2001_TO_2024,
+    CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024,
     CAPITAL_GIFT_GAINS_DEDUCTION,
     CAPITAL_GIFT_TAXABLE_GAINS,
     CAPITAL_GIFTS_LIMIT_ADDITION,
     CAPITAL_GIFTS_TOTAL,
     CAPITAL_PROPERTY_GIFTS,
+    CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES,
     CHARITABLE_DONATIONS,
     CHARITABLE_DONATIONS_CLAIMED,
     CHARITABLE_DONATIONS_LIMIT,
@@ -104,6 +117,7 @@ from app.jurisdictions.ca.catalog import (
     EI_AND_OTHER_BENEFITS,
     EI_PREMIUMS,
     ELECTED_SPLIT_PENSION_AMOUNT,
+    ELECTED_SPLIT_PENSION_DEDUCTION,
     ELIGIBLE_DEPENDANT_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANTS,
@@ -111,9 +125,61 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     EMPLOYMENT_INCOME,
+    EXPLORATION_AND_DEVELOPMENT_EXPENSES,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
+    FHSA_ANNUAL_AMOUNT,
+    FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS,
+    FHSA_ANNUAL_AMOUNT_FOR_2024,
+    FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD,
+    FHSA_ANNUAL_AMOUNT_WITH_CARRYFORWARD,
+    FHSA_ANNUAL_LIMIT,
+    FHSA_ANNUAL_LIMIT_AFTER_MAXIMUM_PARTICIPATION_PERIOD,
+    FHSA_ANNUAL_LIMIT_FROM_STEP_2,
+    FHSA_ANNUAL_LIMITS_FOR_2024_AND_PRIOR_YEARS,
+    FHSA_ANNUAL_LIMITS_LESS_DEDUCTIONS,
+    FHSA_CARRYFORWARD_FOR_2024,
+    FHSA_CARRYFORWARD_FOR_2025,
+    FHSA_CONTRIBUTIONS_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+    FHSA_CONTRIBUTIONS_AVAILABLE,
+    FHSA_CONTRIBUTIONS_DEDUCTED,
+    FHSA_CONTRIBUTIONS_IN_2024,
+    FHSA_CONTRIBUTIONS_IN_2024_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+    FHSA_CONTRIBUTIONS_IN_2024_BEFORE_FIRST_QUALIFYING_WITHDRAWAL,
+    FHSA_CONTRIBUTIONS_IN_2025,
+    FHSA_CONTRIBUTIONS_IN_2025_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+    FHSA_CONTRIBUTIONS_IN_2025_BEFORE_FIRST_QUALIFYING_WITHDRAWAL,
+    FHSA_CONTRIBUTIONS_LIMIT,
+    FHSA_CONTRIBUTIONS_PLUS_VARIABLE_B_AMOUNT,
+    FHSA_DEDUCTION,
+    FHSA_DEDUCTIONS_FOR_2024_AND_PRIOR_YEARS,
+    FHSA_DESIGNATED_TRANSFERS_IN_2024_AND_PRIOR_YEARS,
+    FHSA_DESIGNATED_TRANSFERS_IN_2025,
+    FHSA_DESIGNATED_WITHDRAWALS_IN_2025,
+    FHSA_EXCESS_DESIGNATED_WITHDRAWALS,
     FHSA_INCOME,
+    FHSA_LIFETIME_LIMIT,
+    FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS,
+    FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS_AND_TRANSFERS,
+    FHSA_MAXIMUM_DEDUCTION,
+    FHSA_MAXIMUM_PARTICIPATION_PERIOD_ENDED,
+    FHSA_NET_RRSP_TRANSFER_AMOUNT,
+    FHSA_NET_RRSP_TRANSFER_AMOUNT_FOR_2024_AND_PRIOR_YEARS,
+    FHSA_NET_TRANSFER_AMOUNT_AFTER_PRIOR_YEARS,
+    FHSA_NET_TRANSFER_AMOUNT_LESS_VARIABLE_H_AMOUNT,
+    FHSA_RRSP_TRANSFERS_IN_2024_AND_PRIOR_YEARS,
+    FHSA_RRSP_TRANSFERS_IN_2025,
+    FHSA_TOTAL_ANNUAL_LIMITS,
+    FHSA_TOTAL_DESIGNATED_TRANSFERS,
+    FHSA_TOTAL_RRSP_TRANSFERS,
+    FHSA_TRANSFER_AMOUNT_AT_MOST_LIMIT,
+    FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT,
+    FHSA_UNUSED_CONTRIBUTIONS_BROUGHT_FORWARD,
+    FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
+    FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS,
+    FHSA_VARIABLE_B_AMOUNT,
+    FHSA_VARIABLE_F_AMOUNT,
+    FHSA_VARIABLE_H_AMOUNT,
     FIRST_TIER_DONATION_CREDIT,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
@@ -134,6 +200,7 @@ from app.jurisdictions.ca.catalog import (
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
     NET_INCOME,
+    NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NET_PARTNERSHIP_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
@@ -141,6 +208,14 @@ from app.jurisdictions.ca.catalog import (
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     OLD_AGE_SECURITY,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_1994,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1994_TO_1996,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1997_TO_1999,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2000,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2001_TO_2023,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2024,
+    OTHER_DEDUCTIONS,
     OTHER_DIVIDENDS_CREDIT,
     OTHER_DIVIDENDS_GROSSED_UP,
     OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
@@ -160,6 +235,7 @@ from app.jurisdictions.ca.catalog import (
     REFUND_OR_BALANCE_OWING,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
+    RPP_DEDUCTION,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
     RRSP_CONTRIBUTIONS_AVAILABLE,
@@ -184,6 +260,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_INFIRMITY_SUPPLEMENT,
     SPOUSE_NET_INCOME,
     SPOUSES_CLAIMED,
+    SUPPORT_PAYMENTS_DEDUCTION,
     T3_DIVIDEND_TAX_CREDIT,
     T3_INVESTMENT_INCOME,
     T3_TAXABLE_DIVIDENDS,
@@ -211,9 +288,12 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
     TOP_UP_THRESHOLD,
+    TOTAL_CARRYING_CHARGES,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
     TOTAL_INCOME,
+    TOTAL_INTEREST_EXPENSES,
+    TOTAL_OTHER_EXPENSES,
     TOTAL_PAYABLE,
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
@@ -351,6 +431,46 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/rrsp_deduction_limit",
             "ca/rrsp_amount_deducted",
             "ca/union_dues",
+            "ca/rpp_deduction",
+            "ca/elected_split_pension_deduction",
+            "ca/support_payments_deduction",
+            "ca/exploration_and_development_expenses",
+            "ca/other_deductions",
+            "ca/total_carrying_charges",
+            "ca/total_interest_expenses",
+            "ca/total_other_expenses",
+            "ca/capital_gains_deductions_1985_to_1987",
+            "ca/capital_gains_deductions_1988_and_1989_other_than_eligible_capital_property",
+            "ca/capital_gains_deductions_1988_and_1989_eligible_capital_property",
+            "ca/capital_gains_deductions_1990_to_1999",
+            "ca/capital_gains_deductions_2000",
+            "ca/capital_gains_deductions_2001_to_2024",
+            "ca/other_business_investment_loss_reductions_1986_to_1994",
+            "ca/other_business_investment_loss_reductions_1994_to_1996",
+            "ca/other_business_investment_loss_reductions_1997_to_1999",
+            "ca/other_business_investment_loss_reductions_2000",
+            "ca/other_business_investment_loss_reductions_2001_to_2023",
+            "ca/other_business_investment_loss_reductions_2024",
+            "ca/business_investment_loss",
+            "ca/fhsa_contributions_in_2025",
+            "ca/fhsa_contributions_in_2025_after_first_qualifying_withdrawal",
+            "ca/fhsa_variable_b_amount",
+            "ca/fhsa_designated_withdrawals_in_2025",
+            "ca/fhsa_contributions_in_2024",
+            "ca/fhsa_contributions_in_2024_before_first_qualifying_withdrawal",
+            "ca/fhsa_carryforward_for_2025",
+            "ca/fhsa_rrsp_transfers_in_2024_and_prior_years",
+            "ca/fhsa_rrsp_transfers_in_2025",
+            "ca/fhsa_designated_transfers_in_2024_and_prior_years",
+            "ca/fhsa_designated_transfers_in_2025",
+            "ca/fhsa_variable_h_amount",
+            "ca/fhsa_carryforward_for_2024",
+            "ca/fhsa_variable_f_amount",
+            "ca/fhsa_annual_limits_for_2024_and_prior_years",
+            "ca/fhsa_deductions_for_2024_and_prior_years",
+            "ca/fhsa_unused_contributions_brought_forward",
+            "ca/fhsa_contributions_deducted",
+            "ca/fhsa_maximum_participation_period_ended",
             "ca-on/dependent_children",
             "ca-on/dependants",
             "ca/eligible_dependants",
@@ -389,11 +509,16 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     # deduction" line 9 "Line 5 plus line 8 =", which nothing consumes while the count of line 9
     # over $93,454 is a starting count; and ON428 line 58, the Ontario tax less the dividend tax
     # credit, which nothing else on the return reads (the surtax and line 69 read line 53; line
-    # 60, the minimum tax carryover, is not modelled): the lines the computation returns.
+    # 60, the minimum tax carryover, is not modelled); T1 line 54 (line 23400) "Net income before
+    # adjustments", which nothing reads while line 23500 is not wired (the floored net income of
+    # line 56 is the next line of the chain); and Schedule 15 line 58, what the return produces
+    # for the next year's line 52: the lines the computation returns.
     assert found.outputs == frozenset(
         {
             "ca/refund_or_balance_owing",
             "ca/unused_rrsp_contributions_carried_forward",
+            "ca/net_income_before_adjustments",
+            "ca/fhsa_unused_contributions_carried_forward",
             "ca/taxable_dividends_other_than_eligible",
             "ca/other_payments_limit_income",
             "ca-on/ontario_tax_less_dividend_credit",
@@ -722,20 +847,503 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca/child_care_expenses"},
         ),
-        # T1 line 23300 "Add lines 35 to 52.": the deductions in the form's line order (20800,
-        # 21200, 21400, 22215).
+        # Federal Worksheet "Line 22100 - Carrying charges, interest expenses, and other expenses":
+        # line 1 "Total carrying charges", line 2 "Total interest expenses" and line 3 "Total other
+        # expenses" (starting amounts), and line 4 "Add lines 1 to 3. Enter this amount on line
+        # 22100 of your return.", in line order.
         CapabilitySelection(
             name="core/sum",
             params={},
             consumes={
                 "parts": (
+                    "ca/total_carrying_charges",
+                    "ca/total_interest_expenses",
+                    "ca/total_other_expenses",
+                )
+            },
+            produces={"output": "ca/carrying_charges_interest_expenses_and_other_expenses"},
+        ),
+        # Form T1436 (Capital Gains Worksheet), "Line 21700 – Allowable business investment loss",
+        # "Calculating your business investment loss reduction, if any": lines 1 to 6 (the capital
+        # gains deductions claimed for 1985 to 1987, for 1988 and 1989 other than for eligible
+        # capital property, for 1988 and 1989 for eligible capital property, for 1990 to 1999, for
+        # 2000 and for 2001 to 2024) are starting amounts, each as its line prints it after its
+        # multiplier (the figures come from the returns of 1985 to 2024); line 7 "Add lines 1 to 6."
+        # Total of all capital gains deductions claimed from 1985 to 2024.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/capital_gains_deductions_1985_to_1987",
+                    "ca/capital_gains_deductions_1988_and_1989_other_than_eligible_capital_property",
+                    "ca/capital_gains_deductions_1988_and_1989_eligible_capital_property",
+                    "ca/capital_gains_deductions_1990_to_1999",
+                    "ca/capital_gains_deductions_2000",
+                    "ca/capital_gains_deductions_2001_to_2024",
+                )
+            },
+            produces={"output": "ca/capital_gains_deductions_claimed_1985_to_2024"},
+        ),
+        # Lines 8 to 13 (the amounts of Schedule 3 for 1986 to 1994, 1994 to 1996, 1997 to 1999,
+        # 2000, 2001 to 2023 and 2024) are starting amounts; line 14 "Add lines 8 to 13." Total of
+        # all other business investment loss reductions for 1986 to 2024.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/other_business_investment_loss_reductions_1986_to_1994",
+                    "ca/other_business_investment_loss_reductions_1994_to_1996",
+                    "ca/other_business_investment_loss_reductions_1997_to_1999",
+                    "ca/other_business_investment_loss_reductions_2000",
+                    "ca/other_business_investment_loss_reductions_2001_to_2023",
+                    "ca/other_business_investment_loss_reductions_2024",
+                )
+            },
+            produces={"output": "ca/other_business_investment_loss_reductions_1986_to_2024"},
+        ),
+        # Line 15 "Line 7 minus line 14" prints no "(if negative, enter "0")", so it may be
+        # negative.
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={
+                "amount": "ca/capital_gains_deductions_claimed_1985_to_2024",
+                "less": "ca/other_business_investment_loss_reductions_1986_to_2024",
+            },
+            produces={"output": "ca/business_investment_loss_reduction_available"},
+        ),
+        # Line 16 "Business investment loss in 2025 Enter this amount on line 21699 of your return."
+        # is a starting amount, the gross of line 21699; line 17 "Enter whichever is less: amount
+        # from line 15 or line 16. Enter this amount on line 17800 of Schedule 3." prints no "(if
+        # negative, enter "0")" either, so it may be negative with line 15.
+        CapabilitySelection(
+            name="core/lesser_of",
+            params={},
+            consumes={
+                "amounts": (
+                    "ca/business_investment_loss_reduction_available",
+                    "ca/business_investment_loss",
+                )
+            },
+            produces={"output": "ca/business_investment_loss_reduction"},
+        ),
+        # Line 18 "Line 16 minus line 17 Business investment loss reduction": never negative, as
+        # line 17 is at most line 16.
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={
+                "amount": "ca/business_investment_loss",
+                "less": "ca/business_investment_loss_reduction",
+            },
+            produces={"output": "ca/business_investment_loss_after_reduction"},
+        ),
+        # Line 19 "Inclusion rate for 2025 × 50 %", the rate dataset, and line 20 "Line 18
+        # multiplied by the percentage on line 19 Enter this amount on line 21700 of your return.
+        # Allowable business investment loss".
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/business_investment_loss_inclusion_rate"},
+            consumes={"base": "ca/business_investment_loss_after_reduction"},
+            produces={"output": "ca/allowable_business_investment_loss"},
+        ),
+        # Schedule 15 (form 5000-S15) Step 2 "Calculate your annual FHSA limit for 2025": line 1 and
+        # line 68935 "Total contributions made to your FHSAs in 2025 (box 18 of your 2025 T4FHSA
+        # slips)" and line 2 and line 68940 "Total contributions made to your FHSAs in 2025 after
+        # your first qualifying withdrawal" are starting amounts; line 3 "Line 1 minus line 2 ="
+        # prints no "(if negative, enter "0")", so it may be negative.
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={
+                "amount": "ca/fhsa_contributions_in_2025",
+                "less": "ca/fhsa_contributions_in_2025_after_first_qualifying_withdrawal",
+            },
+            produces={"output": "ca/fhsa_contributions_in_2025_before_first_qualifying_withdrawal"},
+        ),
+        # Line 4 "Variable "B" amount of your annual FHSA limit for 2024 (from your 2025 FHSA
+        # participation room statement)" is a starting amount; line 5 "Line 3 plus line 4 =".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/fhsa_contributions_in_2025_before_first_qualifying_withdrawal",
+                    "ca/fhsa_variable_b_amount",
+                )
+            },
+            produces={"output": "ca/fhsa_contributions_plus_variable_b_amount"},
+        ),
+        # Line 6 and line 68945 "Total designated withdrawals from your FHSAs in 2025 (box 38 of
+        # your 2025 T4FHSA slips)", line 7 "Total contributions made to your FHSAs in 2024 (from
+        # your 2025 FHSA participation room statement)" and line 8 "Contributions to your FHSAs in
+        # 2024 before your first qualifying withdrawal (from your 2025 FHSA participation room
+        # statement)" are starting amounts; line 9 "Line 7 minus line 8 =" prints no floor.
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={
+                "amount": "ca/fhsa_contributions_in_2024",
+                "less": "ca/fhsa_contributions_in_2024_before_first_qualifying_withdrawal",
+            },
+            produces={"output": "ca/fhsa_contributions_in_2024_after_first_qualifying_withdrawal"},
+        ),
+        # Line 10 "Amount from line 2" is the same artifact as line 2; line 11 "Line 9 plus line 10
+        # =".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/fhsa_contributions_in_2024_after_first_qualifying_withdrawal",
+                    "ca/fhsa_contributions_in_2025_after_first_qualifying_withdrawal",
+                )
+            },
+            produces={"output": "ca/fhsa_contributions_after_first_qualifying_withdrawal"},
+        ),
+        # Line 12 "Line 6 minus line 11 (if negative, enter "0") =".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca/fhsa_designated_withdrawals_in_2025",
+                "less": "ca/fhsa_contributions_after_first_qualifying_withdrawal",
+            },
+            produces={"output": "ca/fhsa_excess_designated_withdrawals"},
+        ),
+        # Line 13 "Line 5 minus line 12 (if negative, enter "0") =".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca/fhsa_contributions_plus_variable_b_amount",
+                "less": "ca/fhsa_excess_designated_withdrawals",
+            },
+            produces={"output": "ca/fhsa_contributions_limit"},
+        ),
+        # Line 14 "8,000.00", the dataset as an artifact of the same name; line 30 "8,000.00" is the
+        # same figure, read again below.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca/fhsa_annual_amount"},
+            consumes={},
+            produces={"output": "ca/fhsa_annual_amount"},
+        ),
+        # Line 15 "Your FHSA carryforward for 2025 (from your 2025 FHSA participation room
+        # statement)" is a starting amount; line 16 "Line 14 plus line 15 =".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/fhsa_annual_amount", "ca/fhsa_carryforward_for_2025")},
+            produces={"output": "ca/fhsa_annual_amount_with_carryforward"},
+        ),
+        # Line 17 "Total transfers from your RRSPs to your FHSAs in 2024 and prior years (from your
+        # 2025 FHSA participation room statement)" and line 18 and line 68950 "Total transfers from
+        # your RRSPs to your FHSAs in 2025 (boxes 32 and 34 of your 2025 T4FHSA slips)" are starting
+        # amounts; line 19 "Line 17 plus line 18 =".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/fhsa_rrsp_transfers_in_2024_and_prior_years",
+                    "ca/fhsa_rrsp_transfers_in_2025",
+                )
+            },
+            produces={"output": "ca/fhsa_total_rrsp_transfers"},
+        ),
+        # Line 20 "Total designated transfers from your FHSAs to your RRSPs or RRIFs in 2024 and
+        # prior years (from your 2025 FHSA participation room statement)" and line 21 and line 68955
+        # "Total designated transfers from your FHSAs to your RRSPs or RRIFs in 2025 (box 36 of your
+        # 2025 T4FHSA slips)" are starting amounts; line 22 "Line 20 plus line 21 =".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/fhsa_designated_transfers_in_2024_and_prior_years",
+                    "ca/fhsa_designated_transfers_in_2025",
+                )
+            },
+            produces={"output": "ca/fhsa_total_designated_transfers"},
+        ),
+        # Line 23 "Line 19 minus line 22 Net RRSP-to-FHSA transfer amount =" prints no floor. Line
+        # 24 "Amount from line 23 of the previous page" is the same artifact.
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={
+                "amount": "ca/fhsa_total_rrsp_transfers",
+                "less": "ca/fhsa_total_designated_transfers",
+            },
+            produces={"output": "ca/fhsa_net_rrsp_transfer_amount"},
+        ),
+        # Step 2 (continued): line 25 "Amount from line 17 of the previous page" and line 26 "Amount
+        # from line 20 of the previous page" are the same artifacts; line 27 "Net RRSP-to-FHSA
+        # transfer amount for 2024 and prior years: Line 25 minus line 26 =" prints no floor.
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={
+                "amount": "ca/fhsa_rrsp_transfers_in_2024_and_prior_years",
+                "less": "ca/fhsa_designated_transfers_in_2024_and_prior_years",
+            },
+            produces={"output": "ca/fhsa_net_rrsp_transfer_amount_for_2024_and_prior_years"},
+        ),
+        # Line 28 "Variable "H" amount of your annual FHSA limit for 2024 (from your 2025 FHSA
+        # participation room statement)" is a starting amount; line 29 "Line 27 minus line 28 (if
+        # negative, enter "0") =".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca/fhsa_net_rrsp_transfer_amount_for_2024_and_prior_years",
+                "less": "ca/fhsa_variable_h_amount",
+            },
+            produces={"output": "ca/fhsa_net_transfer_amount_less_variable_h_amount"},
+        ),
+        # Line 30 "8,000.00", the same dataset as line 14, read by its own step.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca/fhsa_annual_amount"},
+            consumes={},
+            produces={"output": "ca/fhsa_annual_amount_for_2024"},
+        ),
+        # Line 31 "Your FHSA carryforward for 2024 (from your 2024 FHSA participation room
+        # statement)" is a starting amount; line 32 "Line 30 plus line 31 =".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/fhsa_annual_amount_for_2024", "ca/fhsa_carryforward_for_2024")},
+            produces={"output": "ca/fhsa_annual_amount_for_2024_with_carryforward"},
+        ),
+        # Line 33 "Enter whichever is less: amount from line 29 or line 32.", in that order.
+        CapabilitySelection(
+            name="core/lesser_of",
+            params={},
+            consumes={
+                "amounts": (
+                    "ca/fhsa_net_transfer_amount_less_variable_h_amount",
+                    "ca/fhsa_annual_amount_for_2024_with_carryforward",
+                )
+            },
+            produces={"output": "ca/fhsa_transfer_amount_at_most_limit"},
+        ),
+        # Line 34 "Variable "F" amount of your annual FHSA limit for 2024 (from your 2025 FHSA
+        # participation room statement)" is a starting amount; line 35 "Line 33 plus line 34 =".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": ("ca/fhsa_transfer_amount_at_most_limit", "ca/fhsa_variable_f_amount")
+            },
+            produces={"output": "ca/fhsa_transfer_amount_plus_variable_f_amount"},
+        ),
+        # Line 36 "Line 24 minus line 35 =" (line 24 "Amount from line 23 of the previous page")
+        # prints no floor.
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={
+                "amount": "ca/fhsa_net_rrsp_transfer_amount",
+                "less": "ca/fhsa_transfer_amount_plus_variable_f_amount",
+            },
+            produces={"output": "ca/fhsa_net_transfer_amount_after_prior_years"},
+        ),
+        # Line 37 "Amount from line 16 of the previous page" and line 38 "Amount from line 36" are
+        # the same artifacts; line 39 "Line 37 minus line 38 (if negative, enter "0") =".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca/fhsa_annual_amount_with_carryforward",
+                "less": "ca/fhsa_net_transfer_amount_after_prior_years",
+            },
+            produces={"output": "ca/fhsa_annual_amount_after_transfers"},
+        ),
+        # Line 40 "Enter whichever is less: amount from line 13 of the previous page or line 39.
+        # Annual FHSA limit for 2025", in that order, when the maximum participation period has not
+        # ended.
+        CapabilitySelection(
+            name="core/lesser_of",
+            params={},
+            consumes={
+                "amounts": ("ca/fhsa_contributions_limit", "ca/fhsa_annual_amount_after_transfers")
+            },
+            produces={"output": "ca/fhsa_annual_limit_from_step_2"},
+        ),
+        # "If your maximum participation period (MPP) ended in a prior year, do not complete this
+        # step. Your 2025 annual FHSA limit is "0". Enter "0" on line 40 and continue at Step 3.":
+        # the printed 0, the dataset as an artifact of the same name.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca/fhsa_annual_limit_after_maximum_participation_period"},
+            consumes={},
+            produces={"output": "ca/fhsa_annual_limit_after_maximum_participation_period"},
+        ),
+        # A count of 1 when the maximum participation period ended in a prior year (a caller's 0 or
+        # 1) chooses the printed 0 over the result of Step 2 for line 40 (and so for line 41 "Annual
+        # FHSA limit from line 40").
+        CapabilitySelection(
+            name="core/choose_by_count",
+            params={},
+            consumes={
+                "count": "ca/fhsa_maximum_participation_period_ended",
+                "when_none": "ca/fhsa_annual_limit_from_step_2",
+                "when_any": "ca/fhsa_annual_limit_after_maximum_participation_period",
+            },
+            produces={"output": "ca/fhsa_annual_limit"},
+        ),
+        # Step 3 "Calculate your FHSA deduction and unused FHSA contributions available to deduct in
+        # future years": line 42 "Your total annual FHSA limits for 2024 and prior years (from your
+        # 2025 FHSA participation room statement)" is a starting amount; line 43 "Line 41 plus line
+        # 42 =".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": ("ca/fhsa_annual_limit", "ca/fhsa_annual_limits_for_2024_and_prior_years")
+            },
+            produces={"output": "ca/fhsa_total_annual_limits"},
+        ),
+        # Line 44 "Your total FHSA deductions for 2024 and prior years (from your 2025 FHSA
+        # participation room statement)" is a starting amount; line 45 "Line 43 minus line 44 ="
+        # prints no floor.
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={
+                "amount": "ca/fhsa_total_annual_limits",
+                "less": "ca/fhsa_deductions_for_2024_and_prior_years",
+            },
+            produces={"output": "ca/fhsa_annual_limits_less_deductions"},
+        ),
+        # Line 46 "Lifetime FHSA limit 40,000.00", the dataset as an artifact of the same name.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca/fhsa_lifetime_limit"},
+            consumes={},
+            produces={"output": "ca/fhsa_lifetime_limit"},
+        ),
+        # Line 47 "Your FHSA deduction from line 44" is the same artifact as line 44; line 48 "Line
+        # 46 minus line 47 =" prints no floor.
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={
+                "amount": "ca/fhsa_lifetime_limit",
+                "less": "ca/fhsa_deductions_for_2024_and_prior_years",
+            },
+            produces={"output": "ca/fhsa_lifetime_limit_less_deductions"},
+        ),
+        # Line 49 "Net RRSP-to-FHSA transfer amount from line 24" is the same artifact as line 23;
+        # line 50 "Line 48 minus line 49 (if negative, enter "0") =".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca/fhsa_lifetime_limit_less_deductions",
+                "less": "ca/fhsa_net_rrsp_transfer_amount",
+            },
+            produces={"output": "ca/fhsa_lifetime_limit_less_deductions_and_transfers"},
+        ),
+        # Line 51 "Enter whichever is less: amount from line 45 or line 50. Maximum FHSA deduction
+        # available for 2025", in that order.
+        CapabilitySelection(
+            name="core/lesser_of",
+            params={},
+            consumes={
+                "amounts": (
+                    "ca/fhsa_annual_limits_less_deductions",
+                    "ca/fhsa_lifetime_limit_less_deductions_and_transfers",
+                )
+            },
+            produces={"output": "ca/fhsa_maximum_deduction"},
+        ),
+        # Line 52 "Your unused FHSA contributions available to deduct in future years (from your
+        # 2025 FHSA participation room statement)" is a starting amount; line 53 "Amount from line 3
+        # of page 2" is the same artifact as line 3; line 54 "Line 52 plus line 53 =".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/fhsa_unused_contributions_brought_forward",
+                    "ca/fhsa_contributions_in_2025_before_first_qualifying_withdrawal",
+                )
+            },
+            produces={"output": "ca/fhsa_unused_contributions_plus_contributions"},
+        ),
+        # Line 55 "Amount from line 12 of page 2" is the same artifact as line 12; line 56 "Line 54
+        # minus line 55 =" prints no floor.
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={
+                "amount": "ca/fhsa_unused_contributions_plus_contributions",
+                "less": "ca/fhsa_excess_designated_withdrawals",
+            },
+            produces={"output": "ca/fhsa_contributions_available"},
+        ),
+        # Line 57 "Enter the FHSA contributions you are deducting for 2025 (cannot be more than the
+        # amount on line 51 of the previous page). Enter this amount on line 20805 of your return.
+        # FHSA deduction for 2025": the amount the filer chooses to deduct, a starting amount,
+        # refused when above line 51, not capped (as Schedule 7 line 18 is refused above line 17);
+        # T1 line 37 and line 20805 is that amount.
+        CapabilitySelection(
+            name="core/at_most",
+            params={},
+            consumes={
+                "amount": "ca/fhsa_contributions_deducted",
+                "bound": "ca/fhsa_maximum_deduction",
+            },
+            produces={"output": "ca/fhsa_deduction"},
+        ),
+        # Line 58 "Line 56 minus line 57 Your unused FHSA contributions available to deduct in
+        # future years =", a product of the return for the next year's line 52; it prints no floor.
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={"amount": "ca/fhsa_contributions_available", "less": "ca/fhsa_deduction"},
+            produces={"output": "ca/fhsa_unused_contributions_carried_forward"},
+        ),
+        # T1 line 53 and line 23300 "Add lines 35 to 52.": the deductions wired so far in the form's
+        # line order (20700, 20800, 20805, 21000, 21200, 21300, 21400, 21700, 22000, 22100, 22215,
+        # 22400, 23200). Not wired yet: 21500, 21900, 22200, 22900 and 23100; lines 20810 and 21999
+        # have no line among lines 35 to 52 and nothing on this return reads them.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/rpp_deduction",
                     "ca/rrsp_deduction",
+                    "ca/fhsa_deduction",
+                    "ca/elected_split_pension_deduction",
                     "ca/union_dues",
+                    "ca/uccb_repayment",
                     "ca/child_care_expenses",
+                    "ca/allowable_business_investment_loss",
+                    "ca/support_payments_deduction",
+                    "ca/carrying_charges_interest_expenses_and_other_expenses",
                     "ca/cpp_enhanced_contributions",
+                    "ca/exploration_and_development_expenses",
+                    "ca/other_deductions",
                 )
             },
             produces={"output": "ca/deductions_from_total_income"},
+        ),
+        # T1 line 54 and line 23400 "Line 34 minus line 53 (if negative, show in brackets) Net
+        # income before adjustments": total income less total deductions, not floored, so a negative
+        # result is shown in brackets. The net income of line 56 (line 23600) stays the floored
+        # result until line 23500 is wired.
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={"amount": "ca/total_income", "less": "ca/deductions_from_total_income"},
+            produces={"output": "ca/net_income_before_adjustments"},
         ),
         CapabilitySelection(
             name="core/subtract_not_below_zero",
@@ -765,8 +1373,9 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/net_income_less_uccb_and_rdsp_income"},
         ),
         # Line 8 "Line 6 plus line 7 =": line 6 "Amount from line 21300 of your return" (the UCCB
-        # repayment, a starting amount as line 21300 is not wired yet) and line 7 "RDSP income
-        # repayment (included in the amount on line 23200 of your return)", in line order.
+        # repayment, a starting amount, also a part of line 23300) and line 7 "RDSP income
+        # repayment (included in the amount on line 23200 of your return)", a starting amount of
+        # its own that the caller also includes in line 23200, in line order.
         CapabilitySelection(
             name="core/sum",
             params={},
@@ -1627,8 +2236,8 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca-on/ontario_tax_after_credits"},
         ),
-        # ON428 lines 66 to 68: the surtax on the Ontario tax after credits, which is line 65
-        # while line 64 (tax on split income) is not modelled. Line 69 "Line 62 plus line 68".
+        # ON428 lines 66 to 68: the surtax on line 65, which is the Ontario tax after credits
+        # while line 64 (tax on split income) is not modelled.
         CapabilitySelection(
             name="core/tiered_surcharge",
             params={"tiers": "ca-on/surtax"},
@@ -1852,9 +2461,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca-on/ontario_health_premium"},
         ),
         # ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your return.
-        # Ontario tax": line 88 "Line 86 minus line 87 (if negative, enter "0")" carries line 86
-        # while the community food program donation tax credit for farmers (line 87) is not
-        # triggered by the returns.
+        # Ontario tax".
         CapabilitySelection(
             name="core/sum",
             params={},
@@ -1863,11 +2470,10 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca-on/ontario_tax"},
         ),
-        # T1 line 142 (line 42000) "Add lines 139 to 141. Net federal tax": with lines 120, 123,
-        # 124, 127 to 133 and 135 to 141 not modelled or not triggered, line 126 (42900) "Line
-        # 121 minus line 125 (if negative, enter "0") Basic federal tax" is the federal tax
-        # (lines 119 and 121) less line 122 "Amount from line 35000", the federal tax after
-        # credits, and lines 134 (40600), 139 (41700) and 142 carry it: one part.
+        # T1 line 142 (line 42000) "Add lines 139 to 141. Net federal tax": line 126 (42900)
+        # "Line 121 minus line 125 (if negative, enter "0") Basic federal tax" is the federal
+        # tax after credits, as lines 120 and 124, 127 to 133 and 135 to 141 are not
+        # modelled or not triggered, and lines 134 (40600) and 139 (41700) carry it: one part.
         CapabilitySelection(
             name="core/sum",
             params={},
@@ -2071,8 +2677,10 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca/total_credits"},
         ),
-        # T1 line 167 "Line 149 minus line 166 ... Refund or balance owing": not floored, so a
-        # negative result is a refund (line 48400) and a positive one a balance owing (48500).
+        # T1 line 167 "Line 149 minus line 166 If the amount is negative, enter it on line
+        # 48400 below. If the amount is positive, enter it on line 48500 below. Refund or
+        # balance owing": not floored, so a negative result is a refund and a positive one a
+        # balance owing.
         CapabilitySelection(
             name="core/subtract",
             params={},
@@ -2080,7 +2688,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 171
+    assert len(found.capabilities) == 211
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -2090,7 +2698,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 171
+    assert len(composition.order) == 211
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -2282,10 +2890,299 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         ),
         (
             Sum,
+            frozenset({TOTAL_CARRYING_CHARGES, TOTAL_INTEREST_EXPENSES, TOTAL_OTHER_EXPENSES}),
+            frozenset({CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES}),
+        ),
+        (
+            Sum,
             frozenset(
-                {RRSP_DEDUCTION, UNION_DUES, CHILD_CARE_EXPENSES, CPP_ENHANCED_CONTRIBUTIONS}
+                {
+                    CAPITAL_GAINS_DEDUCTIONS_1985_TO_1987,
+                    CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_OTHER_THAN_ELIGIBLE_CAPITAL_PROPERTY,
+                    CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_ELIGIBLE_CAPITAL_PROPERTY,
+                    CAPITAL_GAINS_DEDUCTIONS_1990_TO_1999,
+                    CAPITAL_GAINS_DEDUCTIONS_2000,
+                    CAPITAL_GAINS_DEDUCTIONS_2001_TO_2024,
+                }
+            ),
+            frozenset({CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {
+                    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_1994,
+                    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1994_TO_1996,
+                    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1997_TO_1999,
+                    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2000,
+                    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2001_TO_2023,
+                    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2024,
+                }
+            ),
+            frozenset({OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024}),
+        ),
+        (
+            Subtract,
+            frozenset(
+                {
+                    CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024,
+                    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
+                }
+            ),
+            frozenset({BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE}),
+        ),
+        (
+            LesserOf,
+            frozenset({BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE, BUSINESS_INVESTMENT_LOSS}),
+            frozenset({BUSINESS_INVESTMENT_LOSS_REDUCTION}),
+        ),
+        (
+            Subtract,
+            frozenset({BUSINESS_INVESTMENT_LOSS, BUSINESS_INVESTMENT_LOSS_REDUCTION}),
+            frozenset({BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION}),
+        ),
+        (
+            ApplyRate,
+            frozenset({BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION}),
+            frozenset({ALLOWABLE_BUSINESS_INVESTMENT_LOSS}),
+        ),
+        (
+            Subtract,
+            frozenset(
+                {
+                    FHSA_CONTRIBUTIONS_IN_2025,
+                    FHSA_CONTRIBUTIONS_IN_2025_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+                }
+            ),
+            frozenset({FHSA_CONTRIBUTIONS_IN_2025_BEFORE_FIRST_QUALIFYING_WITHDRAWAL}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {
+                    FHSA_CONTRIBUTIONS_IN_2025_BEFORE_FIRST_QUALIFYING_WITHDRAWAL,
+                    FHSA_VARIABLE_B_AMOUNT,
+                }
+            ),
+            frozenset({FHSA_CONTRIBUTIONS_PLUS_VARIABLE_B_AMOUNT}),
+        ),
+        (
+            Subtract,
+            frozenset(
+                {
+                    FHSA_CONTRIBUTIONS_IN_2024,
+                    FHSA_CONTRIBUTIONS_IN_2024_BEFORE_FIRST_QUALIFYING_WITHDRAWAL,
+                }
+            ),
+            frozenset({FHSA_CONTRIBUTIONS_IN_2024_AFTER_FIRST_QUALIFYING_WITHDRAWAL}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {
+                    FHSA_CONTRIBUTIONS_IN_2024_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+                    FHSA_CONTRIBUTIONS_IN_2025_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+                }
+            ),
+            frozenset({FHSA_CONTRIBUTIONS_AFTER_FIRST_QUALIFYING_WITHDRAWAL}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset(
+                {
+                    FHSA_DESIGNATED_WITHDRAWALS_IN_2025,
+                    FHSA_CONTRIBUTIONS_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+                }
+            ),
+            frozenset({FHSA_EXCESS_DESIGNATED_WITHDRAWALS}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset(
+                {FHSA_CONTRIBUTIONS_PLUS_VARIABLE_B_AMOUNT, FHSA_EXCESS_DESIGNATED_WITHDRAWALS}
+            ),
+            frozenset({FHSA_CONTRIBUTIONS_LIMIT}),
+        ),
+        (CreditAmount, frozenset(), frozenset({FHSA_ANNUAL_AMOUNT})),
+        (
+            Sum,
+            frozenset({FHSA_ANNUAL_AMOUNT, FHSA_CARRYFORWARD_FOR_2025}),
+            frozenset({FHSA_ANNUAL_AMOUNT_WITH_CARRYFORWARD}),
+        ),
+        (
+            Sum,
+            frozenset({FHSA_RRSP_TRANSFERS_IN_2024_AND_PRIOR_YEARS, FHSA_RRSP_TRANSFERS_IN_2025}),
+            frozenset({FHSA_TOTAL_RRSP_TRANSFERS}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {
+                    FHSA_DESIGNATED_TRANSFERS_IN_2024_AND_PRIOR_YEARS,
+                    FHSA_DESIGNATED_TRANSFERS_IN_2025,
+                }
+            ),
+            frozenset({FHSA_TOTAL_DESIGNATED_TRANSFERS}),
+        ),
+        (
+            Subtract,
+            frozenset({FHSA_TOTAL_RRSP_TRANSFERS, FHSA_TOTAL_DESIGNATED_TRANSFERS}),
+            frozenset({FHSA_NET_RRSP_TRANSFER_AMOUNT}),
+        ),
+        (
+            Subtract,
+            frozenset(
+                {
+                    FHSA_RRSP_TRANSFERS_IN_2024_AND_PRIOR_YEARS,
+                    FHSA_DESIGNATED_TRANSFERS_IN_2024_AND_PRIOR_YEARS,
+                }
+            ),
+            frozenset({FHSA_NET_RRSP_TRANSFER_AMOUNT_FOR_2024_AND_PRIOR_YEARS}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset(
+                {FHSA_NET_RRSP_TRANSFER_AMOUNT_FOR_2024_AND_PRIOR_YEARS, FHSA_VARIABLE_H_AMOUNT}
+            ),
+            frozenset({FHSA_NET_TRANSFER_AMOUNT_LESS_VARIABLE_H_AMOUNT}),
+        ),
+        (CreditAmount, frozenset(), frozenset({FHSA_ANNUAL_AMOUNT_FOR_2024})),
+        (
+            Sum,
+            frozenset({FHSA_ANNUAL_AMOUNT_FOR_2024, FHSA_CARRYFORWARD_FOR_2024}),
+            frozenset({FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD}),
+        ),
+        (
+            LesserOf,
+            frozenset(
+                {
+                    FHSA_NET_TRANSFER_AMOUNT_LESS_VARIABLE_H_AMOUNT,
+                    FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD,
+                }
+            ),
+            frozenset({FHSA_TRANSFER_AMOUNT_AT_MOST_LIMIT}),
+        ),
+        (
+            Sum,
+            frozenset({FHSA_TRANSFER_AMOUNT_AT_MOST_LIMIT, FHSA_VARIABLE_F_AMOUNT}),
+            frozenset({FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT}),
+        ),
+        (
+            Subtract,
+            frozenset({FHSA_NET_RRSP_TRANSFER_AMOUNT, FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT}),
+            frozenset({FHSA_NET_TRANSFER_AMOUNT_AFTER_PRIOR_YEARS}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset(
+                {FHSA_ANNUAL_AMOUNT_WITH_CARRYFORWARD, FHSA_NET_TRANSFER_AMOUNT_AFTER_PRIOR_YEARS}
+            ),
+            frozenset({FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS}),
+        ),
+        (
+            LesserOf,
+            frozenset({FHSA_CONTRIBUTIONS_LIMIT, FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS}),
+            frozenset({FHSA_ANNUAL_LIMIT_FROM_STEP_2}),
+        ),
+        (
+            CreditAmount,
+            frozenset(),
+            frozenset({FHSA_ANNUAL_LIMIT_AFTER_MAXIMUM_PARTICIPATION_PERIOD}),
+        ),
+        (
+            ChooseByCount,
+            frozenset(
+                {
+                    FHSA_MAXIMUM_PARTICIPATION_PERIOD_ENDED,
+                    FHSA_ANNUAL_LIMIT_FROM_STEP_2,
+                    FHSA_ANNUAL_LIMIT_AFTER_MAXIMUM_PARTICIPATION_PERIOD,
+                }
+            ),
+            frozenset({FHSA_ANNUAL_LIMIT}),
+        ),
+        (
+            Sum,
+            frozenset({FHSA_ANNUAL_LIMIT, FHSA_ANNUAL_LIMITS_FOR_2024_AND_PRIOR_YEARS}),
+            frozenset({FHSA_TOTAL_ANNUAL_LIMITS}),
+        ),
+        (
+            Subtract,
+            frozenset({FHSA_TOTAL_ANNUAL_LIMITS, FHSA_DEDUCTIONS_FOR_2024_AND_PRIOR_YEARS}),
+            frozenset({FHSA_ANNUAL_LIMITS_LESS_DEDUCTIONS}),
+        ),
+        (CreditAmount, frozenset(), frozenset({FHSA_LIFETIME_LIMIT})),
+        (
+            Subtract,
+            frozenset({FHSA_LIFETIME_LIMIT, FHSA_DEDUCTIONS_FOR_2024_AND_PRIOR_YEARS}),
+            frozenset({FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS, FHSA_NET_RRSP_TRANSFER_AMOUNT}),
+            frozenset({FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS_AND_TRANSFERS}),
+        ),
+        (
+            LesserOf,
+            frozenset(
+                {
+                    FHSA_ANNUAL_LIMITS_LESS_DEDUCTIONS,
+                    FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS_AND_TRANSFERS,
+                }
+            ),
+            frozenset({FHSA_MAXIMUM_DEDUCTION}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {
+                    FHSA_UNUSED_CONTRIBUTIONS_BROUGHT_FORWARD,
+                    FHSA_CONTRIBUTIONS_IN_2025_BEFORE_FIRST_QUALIFYING_WITHDRAWAL,
+                }
+            ),
+            frozenset({FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS}),
+        ),
+        (
+            Subtract,
+            frozenset(
+                {FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS, FHSA_EXCESS_DESIGNATED_WITHDRAWALS}
+            ),
+            frozenset({FHSA_CONTRIBUTIONS_AVAILABLE}),
+        ),
+        (
+            AtMost,
+            frozenset({FHSA_CONTRIBUTIONS_DEDUCTED, FHSA_MAXIMUM_DEDUCTION}),
+            frozenset({FHSA_DEDUCTION}),
+        ),
+        (
+            Subtract,
+            frozenset({FHSA_CONTRIBUTIONS_AVAILABLE, FHSA_DEDUCTION}),
+            frozenset({FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {
+                    RPP_DEDUCTION,
+                    RRSP_DEDUCTION,
+                    FHSA_DEDUCTION,
+                    ELECTED_SPLIT_PENSION_DEDUCTION,
+                    UNION_DUES,
+                    UCCB_REPAYMENT,
+                    CHILD_CARE_EXPENSES,
+                    ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+                    SUPPORT_PAYMENTS_DEDUCTION,
+                    CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES,
+                    CPP_ENHANCED_CONTRIBUTIONS,
+                    EXPLORATION_AND_DEVELOPMENT_EXPENSES,
+                    OTHER_DEDUCTIONS,
+                }
             ),
             frozenset({DEDUCTIONS_FROM_TOTAL_INCOME}),
+        ),
+        (
+            Subtract,
+            frozenset({TOTAL_INCOME, DEDUCTIONS_FROM_TOTAL_INCOME}),
+            frozenset({NET_INCOME_BEFORE_ADJUSTMENTS}),
         ),
         (
             SubtractNotBelowZero,
