@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 171
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 211
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -113,6 +113,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/social_assistance_payments",
         "ca/net_federal_supplements",
         "ca/income_support_benefits",
+        "ca/rpp_deduction",
         "ca/canadian_armed_forces_and_police_deduction",
         "ca/security_options_deductions",
         "ca/uccb_repayment",
@@ -137,6 +138,58 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/rrsp_amount_deducted",
         "ca/rrsp_deduction",
         "ca/unused_rrsp_contributions_carried_forward",
+        "ca/fhsa_contributions_in_2025",
+        "ca/fhsa_contributions_in_2025_after_first_qualifying_withdrawal",
+        "ca/fhsa_contributions_in_2025_before_first_qualifying_withdrawal",
+        "ca/fhsa_variable_b_amount",
+        "ca/fhsa_contributions_plus_variable_b_amount",
+        "ca/fhsa_designated_withdrawals_in_2025",
+        "ca/fhsa_contributions_in_2024",
+        "ca/fhsa_contributions_in_2024_before_first_qualifying_withdrawal",
+        "ca/fhsa_contributions_in_2024_after_first_qualifying_withdrawal",
+        "ca/fhsa_contributions_after_first_qualifying_withdrawal",
+        "ca/fhsa_excess_designated_withdrawals",
+        "ca/fhsa_contributions_limit",
+        "ca/fhsa_annual_amount",
+        "ca/fhsa_carryforward_for_2025",
+        "ca/fhsa_annual_amount_with_carryforward",
+        "ca/fhsa_rrsp_transfers_in_2024_and_prior_years",
+        "ca/fhsa_rrsp_transfers_in_2025",
+        "ca/fhsa_total_rrsp_transfers",
+        "ca/fhsa_designated_transfers_in_2024_and_prior_years",
+        "ca/fhsa_designated_transfers_in_2025",
+        "ca/fhsa_total_designated_transfers",
+        "ca/fhsa_net_rrsp_transfer_amount",
+        "ca/fhsa_net_rrsp_transfer_amount_for_2024_and_prior_years",
+        "ca/fhsa_variable_h_amount",
+        "ca/fhsa_net_transfer_amount_less_variable_h_amount",
+        "ca/fhsa_annual_amount_for_2024",
+        "ca/fhsa_carryforward_for_2024",
+        "ca/fhsa_annual_amount_for_2024_with_carryforward",
+        "ca/fhsa_transfer_amount_at_most_limit",
+        "ca/fhsa_variable_f_amount",
+        "ca/fhsa_transfer_amount_plus_variable_f_amount",
+        "ca/fhsa_net_transfer_amount_after_prior_years",
+        "ca/fhsa_annual_amount_after_transfers",
+        "ca/fhsa_maximum_participation_period_ended",
+        "ca/fhsa_annual_limit_from_step_2",
+        "ca/fhsa_annual_limit_after_maximum_participation_period",
+        "ca/fhsa_annual_limit",
+        "ca/fhsa_annual_limits_for_2024_and_prior_years",
+        "ca/fhsa_total_annual_limits",
+        "ca/fhsa_deductions_for_2024_and_prior_years",
+        "ca/fhsa_annual_limits_less_deductions",
+        "ca/fhsa_lifetime_limit",
+        "ca/fhsa_lifetime_limit_less_deductions",
+        "ca/fhsa_lifetime_limit_less_deductions_and_transfers",
+        "ca/fhsa_maximum_deduction",
+        "ca/fhsa_unused_contributions_brought_forward",
+        "ca/fhsa_unused_contributions_plus_contributions",
+        "ca/fhsa_contributions_available",
+        "ca/fhsa_contributions_deducted",
+        "ca/fhsa_deduction",
+        "ca/fhsa_unused_contributions_carried_forward",
+        "ca/elected_split_pension_deduction",
         "ca/union_dues",
         "ca/child_care_expenses_paid",
         "ca/children_under_seven",
@@ -149,10 +202,37 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/child_care_earned_income",
         "ca/child_care_earned_income_limit",
         "ca/child_care_expenses",
+        "ca/capital_gains_deductions_1985_to_1987",
+        "ca/capital_gains_deductions_1988_and_1989_other_than_eligible_capital_property",
+        "ca/capital_gains_deductions_1988_and_1989_eligible_capital_property",
+        "ca/capital_gains_deductions_1990_to_1999",
+        "ca/capital_gains_deductions_2000",
+        "ca/capital_gains_deductions_2001_to_2024",
+        "ca/capital_gains_deductions_claimed_1985_to_2024",
+        "ca/other_business_investment_loss_reductions_1986_to_1994",
+        "ca/other_business_investment_loss_reductions_1994_to_1996",
+        "ca/other_business_investment_loss_reductions_1997_to_1999",
+        "ca/other_business_investment_loss_reductions_2000",
+        "ca/other_business_investment_loss_reductions_2001_to_2023",
+        "ca/other_business_investment_loss_reductions_2024",
+        "ca/other_business_investment_loss_reductions_1986_to_2024",
+        "ca/business_investment_loss_reduction_available",
+        "ca/business_investment_loss",
+        "ca/business_investment_loss_reduction",
+        "ca/business_investment_loss_after_reduction",
+        "ca/allowable_business_investment_loss",
+        "ca/support_payments_deduction",
+        "ca/total_carrying_charges",
+        "ca/total_interest_expenses",
+        "ca/total_other_expenses",
+        "ca/carrying_charges_interest_expenses_and_other_expenses",
         "ca/cpp_first_additional_contributions",
         "ca/cpp_second_additional_contributions",
         "ca/cpp_enhanced_contributions",
+        "ca/exploration_and_development_expenses",
+        "ca/other_deductions",
         "ca/deductions_from_total_income",
+        "ca/net_income_before_adjustments",
         "ca/net_income",
         "ca/deductions_from_net_income",
         "ca/taxable_income",
@@ -332,13 +412,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 171
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 211
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 171
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 211
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

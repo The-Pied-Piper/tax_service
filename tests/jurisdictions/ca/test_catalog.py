@@ -24,19 +24,32 @@ from app.jurisdictions.ca.catalog import (
     AGE_INCOME_THRESHOLD,
     AGE_MAXIMUM,
     AGE_REDUCTION,
+    ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
+    BUSINESS_INVESTMENT_LOSS,
+    BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
+    BUSINESS_INVESTMENT_LOSS_REDUCTION,
+    BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_WORKERS_BENEFIT,
     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
     CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
     CAPITAL_GAIN,
+    CAPITAL_GAINS_DEDUCTIONS_1985_TO_1987,
+    CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_ELIGIBLE_CAPITAL_PROPERTY,
+    CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_OTHER_THAN_ELIGIBLE_CAPITAL_PROPERTY,
+    CAPITAL_GAINS_DEDUCTIONS_1990_TO_1999,
+    CAPITAL_GAINS_DEDUCTIONS_2000,
+    CAPITAL_GAINS_DEDUCTIONS_2001_TO_2024,
+    CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024,
     CAPITAL_GIFT_GAINS_DEDUCTION,
     CAPITAL_GIFT_TAXABLE_GAINS,
     CAPITAL_GIFTS_LIMIT_ADDITION,
     CAPITAL_GIFTS_TOTAL,
     CAPITAL_PROPERTY_GIFTS,
+    CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES,
     CATALOG,
     CHARITABLE_DONATIONS,
     CHARITABLE_DONATIONS_CLAIMED,
@@ -91,6 +104,7 @@ from app.jurisdictions.ca.catalog import (
     EI_AND_OTHER_BENEFITS,
     EI_PREMIUMS,
     ELECTED_SPLIT_PENSION_AMOUNT,
+    ELECTED_SPLIT_PENSION_DEDUCTION,
     ELIGIBLE_DEPENDANT_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANTS,
@@ -98,8 +112,60 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     EMPLOYMENT_INCOME,
+    EXPLORATION_AND_DEVELOPMENT_EXPENSES,
     FEDERAL_BASIC_TAX,
+    FHSA_ANNUAL_AMOUNT,
+    FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS,
+    FHSA_ANNUAL_AMOUNT_FOR_2024,
+    FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD,
+    FHSA_ANNUAL_AMOUNT_WITH_CARRYFORWARD,
+    FHSA_ANNUAL_LIMIT,
+    FHSA_ANNUAL_LIMIT_AFTER_MAXIMUM_PARTICIPATION_PERIOD,
+    FHSA_ANNUAL_LIMIT_FROM_STEP_2,
+    FHSA_ANNUAL_LIMITS_FOR_2024_AND_PRIOR_YEARS,
+    FHSA_ANNUAL_LIMITS_LESS_DEDUCTIONS,
+    FHSA_CARRYFORWARD_FOR_2024,
+    FHSA_CARRYFORWARD_FOR_2025,
+    FHSA_CONTRIBUTIONS_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+    FHSA_CONTRIBUTIONS_AVAILABLE,
+    FHSA_CONTRIBUTIONS_DEDUCTED,
+    FHSA_CONTRIBUTIONS_IN_2024,
+    FHSA_CONTRIBUTIONS_IN_2024_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+    FHSA_CONTRIBUTIONS_IN_2024_BEFORE_FIRST_QUALIFYING_WITHDRAWAL,
+    FHSA_CONTRIBUTIONS_IN_2025,
+    FHSA_CONTRIBUTIONS_IN_2025_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+    FHSA_CONTRIBUTIONS_IN_2025_BEFORE_FIRST_QUALIFYING_WITHDRAWAL,
+    FHSA_CONTRIBUTIONS_LIMIT,
+    FHSA_CONTRIBUTIONS_PLUS_VARIABLE_B_AMOUNT,
+    FHSA_DEDUCTION,
+    FHSA_DEDUCTIONS_FOR_2024_AND_PRIOR_YEARS,
+    FHSA_DESIGNATED_TRANSFERS_IN_2024_AND_PRIOR_YEARS,
+    FHSA_DESIGNATED_TRANSFERS_IN_2025,
+    FHSA_DESIGNATED_WITHDRAWALS_IN_2025,
+    FHSA_EXCESS_DESIGNATED_WITHDRAWALS,
     FHSA_INCOME,
+    FHSA_LIFETIME_LIMIT,
+    FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS,
+    FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS_AND_TRANSFERS,
+    FHSA_MAXIMUM_DEDUCTION,
+    FHSA_MAXIMUM_PARTICIPATION_PERIOD_ENDED,
+    FHSA_NET_RRSP_TRANSFER_AMOUNT,
+    FHSA_NET_RRSP_TRANSFER_AMOUNT_FOR_2024_AND_PRIOR_YEARS,
+    FHSA_NET_TRANSFER_AMOUNT_AFTER_PRIOR_YEARS,
+    FHSA_NET_TRANSFER_AMOUNT_LESS_VARIABLE_H_AMOUNT,
+    FHSA_RRSP_TRANSFERS_IN_2024_AND_PRIOR_YEARS,
+    FHSA_RRSP_TRANSFERS_IN_2025,
+    FHSA_TOTAL_ANNUAL_LIMITS,
+    FHSA_TOTAL_DESIGNATED_TRANSFERS,
+    FHSA_TOTAL_RRSP_TRANSFERS,
+    FHSA_TRANSFER_AMOUNT_AT_MOST_LIMIT,
+    FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT,
+    FHSA_UNUSED_CONTRIBUTIONS_BROUGHT_FORWARD,
+    FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
+    FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS,
+    FHSA_VARIABLE_B_AMOUNT,
+    FHSA_VARIABLE_F_AMOUNT,
+    FHSA_VARIABLE_H_AMOUNT,
     FIRST_TIER_DONATION_CREDIT,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
@@ -120,6 +186,7 @@ from app.jurisdictions.ca.catalog import (
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
     NET_INCOME,
+    NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NET_PARTNERSHIP_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
@@ -127,6 +194,14 @@ from app.jurisdictions.ca.catalog import (
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     OLD_AGE_SECURITY,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_1994,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1994_TO_1996,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1997_TO_1999,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2000,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2001_TO_2023,
+    OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2024,
+    OTHER_DEDUCTIONS,
     OTHER_DIVIDENDS_CREDIT,
     OTHER_DIVIDENDS_GROSSED_UP,
     OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
@@ -146,6 +221,7 @@ from app.jurisdictions.ca.catalog import (
     REFUND_OR_BALANCE_OWING,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
+    RPP_DEDUCTION,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
     RRSP_CONTRIBUTIONS_AVAILABLE,
@@ -170,6 +246,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_INFIRMITY_SUPPLEMENT,
     SPOUSE_NET_INCOME,
     SPOUSES_CLAIMED,
+    SUPPORT_PAYMENTS_DEDUCTION,
     T3_DIVIDEND_TAX_CREDIT,
     T3_INVESTMENT_INCOME,
     T3_TAXABLE_DIVIDENDS,
@@ -197,9 +274,12 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
     TOP_UP_THRESHOLD,
+    TOTAL_CARRYING_CHARGES,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
     TOTAL_INCOME,
+    TOTAL_INTEREST_EXPENSES,
+    TOTAL_OTHER_EXPENSES,
     TOTAL_PAYABLE,
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
@@ -280,6 +360,7 @@ REGISTERED = frozenset(
         "ca/social_assistance_payments",
         "ca/net_federal_supplements",
         "ca/income_support_benefits",
+        "ca/rpp_deduction",
         "ca/canadian_armed_forces_and_police_deduction",
         "ca/security_options_deductions",
         "ca/uccb_repayment",
@@ -304,6 +385,58 @@ REGISTERED = frozenset(
         "ca/rrsp_amount_deducted",
         "ca/rrsp_deduction",
         "ca/unused_rrsp_contributions_carried_forward",
+        "ca/fhsa_contributions_in_2025",
+        "ca/fhsa_contributions_in_2025_after_first_qualifying_withdrawal",
+        "ca/fhsa_contributions_in_2025_before_first_qualifying_withdrawal",
+        "ca/fhsa_variable_b_amount",
+        "ca/fhsa_contributions_plus_variable_b_amount",
+        "ca/fhsa_designated_withdrawals_in_2025",
+        "ca/fhsa_contributions_in_2024",
+        "ca/fhsa_contributions_in_2024_before_first_qualifying_withdrawal",
+        "ca/fhsa_contributions_in_2024_after_first_qualifying_withdrawal",
+        "ca/fhsa_contributions_after_first_qualifying_withdrawal",
+        "ca/fhsa_excess_designated_withdrawals",
+        "ca/fhsa_contributions_limit",
+        "ca/fhsa_annual_amount",
+        "ca/fhsa_carryforward_for_2025",
+        "ca/fhsa_annual_amount_with_carryforward",
+        "ca/fhsa_rrsp_transfers_in_2024_and_prior_years",
+        "ca/fhsa_rrsp_transfers_in_2025",
+        "ca/fhsa_total_rrsp_transfers",
+        "ca/fhsa_designated_transfers_in_2024_and_prior_years",
+        "ca/fhsa_designated_transfers_in_2025",
+        "ca/fhsa_total_designated_transfers",
+        "ca/fhsa_net_rrsp_transfer_amount",
+        "ca/fhsa_net_rrsp_transfer_amount_for_2024_and_prior_years",
+        "ca/fhsa_variable_h_amount",
+        "ca/fhsa_net_transfer_amount_less_variable_h_amount",
+        "ca/fhsa_annual_amount_for_2024",
+        "ca/fhsa_carryforward_for_2024",
+        "ca/fhsa_annual_amount_for_2024_with_carryforward",
+        "ca/fhsa_transfer_amount_at_most_limit",
+        "ca/fhsa_variable_f_amount",
+        "ca/fhsa_transfer_amount_plus_variable_f_amount",
+        "ca/fhsa_net_transfer_amount_after_prior_years",
+        "ca/fhsa_annual_amount_after_transfers",
+        "ca/fhsa_maximum_participation_period_ended",
+        "ca/fhsa_annual_limit_from_step_2",
+        "ca/fhsa_annual_limit_after_maximum_participation_period",
+        "ca/fhsa_annual_limit",
+        "ca/fhsa_annual_limits_for_2024_and_prior_years",
+        "ca/fhsa_total_annual_limits",
+        "ca/fhsa_deductions_for_2024_and_prior_years",
+        "ca/fhsa_annual_limits_less_deductions",
+        "ca/fhsa_lifetime_limit",
+        "ca/fhsa_lifetime_limit_less_deductions",
+        "ca/fhsa_lifetime_limit_less_deductions_and_transfers",
+        "ca/fhsa_maximum_deduction",
+        "ca/fhsa_unused_contributions_brought_forward",
+        "ca/fhsa_unused_contributions_plus_contributions",
+        "ca/fhsa_contributions_available",
+        "ca/fhsa_contributions_deducted",
+        "ca/fhsa_deduction",
+        "ca/fhsa_unused_contributions_carried_forward",
+        "ca/elected_split_pension_deduction",
         "ca/union_dues",
         "ca/child_care_expenses_paid",
         "ca/children_under_seven",
@@ -316,10 +449,37 @@ REGISTERED = frozenset(
         "ca/child_care_earned_income",
         "ca/child_care_earned_income_limit",
         "ca/child_care_expenses",
+        "ca/capital_gains_deductions_1985_to_1987",
+        "ca/capital_gains_deductions_1988_and_1989_other_than_eligible_capital_property",
+        "ca/capital_gains_deductions_1988_and_1989_eligible_capital_property",
+        "ca/capital_gains_deductions_1990_to_1999",
+        "ca/capital_gains_deductions_2000",
+        "ca/capital_gains_deductions_2001_to_2024",
+        "ca/capital_gains_deductions_claimed_1985_to_2024",
+        "ca/other_business_investment_loss_reductions_1986_to_1994",
+        "ca/other_business_investment_loss_reductions_1994_to_1996",
+        "ca/other_business_investment_loss_reductions_1997_to_1999",
+        "ca/other_business_investment_loss_reductions_2000",
+        "ca/other_business_investment_loss_reductions_2001_to_2023",
+        "ca/other_business_investment_loss_reductions_2024",
+        "ca/other_business_investment_loss_reductions_1986_to_2024",
+        "ca/business_investment_loss_reduction_available",
+        "ca/business_investment_loss",
+        "ca/business_investment_loss_reduction",
+        "ca/business_investment_loss_after_reduction",
+        "ca/allowable_business_investment_loss",
+        "ca/support_payments_deduction",
+        "ca/total_carrying_charges",
+        "ca/total_interest_expenses",
+        "ca/total_other_expenses",
+        "ca/carrying_charges_interest_expenses_and_other_expenses",
         "ca/cpp_first_additional_contributions",
         "ca/cpp_second_additional_contributions",
         "ca/cpp_enhanced_contributions",
+        "ca/exploration_and_development_expenses",
+        "ca/other_deductions",
         "ca/deductions_from_total_income",
+        "ca/net_income_before_adjustments",
         "ca/net_income",
         "ca/deductions_from_net_income",
         "ca/taxable_income",
@@ -416,12 +576,33 @@ REGISTERED = frozenset(
 # T1 line 167 (line 48400 or 48500): the balance, negative for a refund; and the Federal
 # Worksheet's "Line 25000 - Other payments deduction" line 5 "Line 1 minus line 4 =" and line 9
 # "Line 5 plus line 8 =", which print no "(if negative, enter "0")" and so may be below zero: the
-# `ca/` kinds that may be below zero.
+# `ca/` kinds that may be below zero. So are the lines of the T1 Step 3 chain that print no "(if
+# negative, enter "0")": T1 line 54 (line 23400) "Line 34 minus line 53 (if negative, show in
+# brackets)", the lines of Form T1436 (Capital Gains Worksheet) line 21700 that subtract with no
+# floor or take the lesser of such a line (lines 15 and 17), and the lines of Schedule 15 (FHSA)
+# Steps 2 and 3 that subtract or add such a line with no floor (lines 3, 5, 9, 11, 23, 27, 36, 45,
+# 48, 51, 54, 56 and 58).
 SIGNED = frozenset(
     {
         "ca/refund_or_balance_owing",
         "ca/net_income_less_uccb_and_rdsp_income",
         "ca/other_payments_limit_income",
+        "ca/fhsa_contributions_in_2025_before_first_qualifying_withdrawal",
+        "ca/fhsa_contributions_plus_variable_b_amount",
+        "ca/fhsa_contributions_in_2024_after_first_qualifying_withdrawal",
+        "ca/fhsa_contributions_after_first_qualifying_withdrawal",
+        "ca/fhsa_net_rrsp_transfer_amount",
+        "ca/fhsa_net_rrsp_transfer_amount_for_2024_and_prior_years",
+        "ca/fhsa_net_transfer_amount_after_prior_years",
+        "ca/fhsa_annual_limits_less_deductions",
+        "ca/fhsa_lifetime_limit_less_deductions",
+        "ca/fhsa_maximum_deduction",
+        "ca/fhsa_unused_contributions_plus_contributions",
+        "ca/fhsa_contributions_available",
+        "ca/fhsa_unused_contributions_carried_forward",
+        "ca/business_investment_loss_reduction_available",
+        "ca/business_investment_loss_reduction",
+        "ca/net_income_before_adjustments",
     }
 )
 # T1 line 30400 (Schedule 5, "Each household is allowed only one claim for this amount") and line
@@ -438,7 +619,9 @@ SIGNED = frozenset(
 # take it; and the Federal Worksheet's "Line 25000 - Other payments deduction": 1 if an amount was
 # entered on line 14600 ("enter the amount from line 14700 if you did not enter an amount on line
 # 14600; otherwise, use Federal Worksheet") and 1 if "the amount on line 9 is more than $93,454",
-# each 0 or 1 until a comparison capability derives them; counted, not money.
+# each 0 or 1 until a comparison capability derives them; and Schedule 15 Step 2 "If your maximum
+# participation period (MPP) ended in a prior year, do not complete this step. Your 2025 annual FHSA
+# limit is "0".": 1 if it ended in a prior year and 0 otherwise; counted, not money.
 COUNTS = frozenset(
     {
         "ca/eligible_dependants",
@@ -452,6 +635,7 @@ COUNTS = frozenset(
         "ca/cwb_eligible_dependants",
         "ca/other_payments_worksheet_required",
         "ca/other_payments_worksheet_line_9_over_limit",
+        "ca/fhsa_maximum_participation_period_ended",
     }
 )
 
@@ -581,6 +765,7 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/social_assistance_payments") is SOCIAL_ASSISTANCE_PAYMENTS
     assert registry.get("ca/net_federal_supplements") is NET_FEDERAL_SUPPLEMENTS
     assert registry.get("ca/income_support_benefits") is INCOME_SUPPORT_BENEFITS
+    assert registry.get("ca/rpp_deduction") is RPP_DEDUCTION
     assert (
         registry.get("ca/canadian_armed_forces_and_police_deduction")
         is CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION
@@ -626,8 +811,145 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
         registry.get("ca/unused_rrsp_contributions_carried_forward")
         is UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD
     )
+    assert registry.get("ca/fhsa_contributions_in_2025") is FHSA_CONTRIBUTIONS_IN_2025
+    assert (
+        registry.get("ca/fhsa_contributions_in_2025_after_first_qualifying_withdrawal")
+        is FHSA_CONTRIBUTIONS_IN_2025_AFTER_FIRST_QUALIFYING_WITHDRAWAL
+    )
+    assert (
+        registry.get("ca/fhsa_contributions_in_2025_before_first_qualifying_withdrawal")
+        is FHSA_CONTRIBUTIONS_IN_2025_BEFORE_FIRST_QUALIFYING_WITHDRAWAL
+    )
+    assert registry.get("ca/fhsa_variable_b_amount") is FHSA_VARIABLE_B_AMOUNT
+    assert (
+        registry.get("ca/fhsa_contributions_plus_variable_b_amount")
+        is FHSA_CONTRIBUTIONS_PLUS_VARIABLE_B_AMOUNT
+    )
+    assert (
+        registry.get("ca/fhsa_designated_withdrawals_in_2025")
+        is FHSA_DESIGNATED_WITHDRAWALS_IN_2025
+    )
+    assert registry.get("ca/fhsa_contributions_in_2024") is FHSA_CONTRIBUTIONS_IN_2024
+    assert (
+        registry.get("ca/fhsa_contributions_in_2024_before_first_qualifying_withdrawal")
+        is FHSA_CONTRIBUTIONS_IN_2024_BEFORE_FIRST_QUALIFYING_WITHDRAWAL
+    )
+    assert (
+        registry.get("ca/fhsa_contributions_in_2024_after_first_qualifying_withdrawal")
+        is FHSA_CONTRIBUTIONS_IN_2024_AFTER_FIRST_QUALIFYING_WITHDRAWAL
+    )
+    assert (
+        registry.get("ca/fhsa_contributions_after_first_qualifying_withdrawal")
+        is FHSA_CONTRIBUTIONS_AFTER_FIRST_QUALIFYING_WITHDRAWAL
+    )
+    assert (
+        registry.get("ca/fhsa_excess_designated_withdrawals") is FHSA_EXCESS_DESIGNATED_WITHDRAWALS
+    )
+    assert registry.get("ca/fhsa_contributions_limit") is FHSA_CONTRIBUTIONS_LIMIT
+    assert registry.get("ca/fhsa_annual_amount") is FHSA_ANNUAL_AMOUNT
+    assert registry.get("ca/fhsa_carryforward_for_2025") is FHSA_CARRYFORWARD_FOR_2025
+    assert (
+        registry.get("ca/fhsa_annual_amount_with_carryforward")
+        is FHSA_ANNUAL_AMOUNT_WITH_CARRYFORWARD
+    )
+    assert (
+        registry.get("ca/fhsa_rrsp_transfers_in_2024_and_prior_years")
+        is FHSA_RRSP_TRANSFERS_IN_2024_AND_PRIOR_YEARS
+    )
+    assert registry.get("ca/fhsa_rrsp_transfers_in_2025") is FHSA_RRSP_TRANSFERS_IN_2025
+    assert registry.get("ca/fhsa_total_rrsp_transfers") is FHSA_TOTAL_RRSP_TRANSFERS
+    assert (
+        registry.get("ca/fhsa_designated_transfers_in_2024_and_prior_years")
+        is FHSA_DESIGNATED_TRANSFERS_IN_2024_AND_PRIOR_YEARS
+    )
+    assert registry.get("ca/fhsa_designated_transfers_in_2025") is FHSA_DESIGNATED_TRANSFERS_IN_2025
+    assert registry.get("ca/fhsa_total_designated_transfers") is FHSA_TOTAL_DESIGNATED_TRANSFERS
+    assert registry.get("ca/fhsa_net_rrsp_transfer_amount") is FHSA_NET_RRSP_TRANSFER_AMOUNT
+    assert (
+        registry.get("ca/fhsa_net_rrsp_transfer_amount_for_2024_and_prior_years")
+        is FHSA_NET_RRSP_TRANSFER_AMOUNT_FOR_2024_AND_PRIOR_YEARS
+    )
+    assert registry.get("ca/fhsa_variable_h_amount") is FHSA_VARIABLE_H_AMOUNT
+    assert (
+        registry.get("ca/fhsa_net_transfer_amount_less_variable_h_amount")
+        is FHSA_NET_TRANSFER_AMOUNT_LESS_VARIABLE_H_AMOUNT
+    )
+    assert registry.get("ca/fhsa_annual_amount_for_2024") is FHSA_ANNUAL_AMOUNT_FOR_2024
+    assert registry.get("ca/fhsa_carryforward_for_2024") is FHSA_CARRYFORWARD_FOR_2024
+    assert (
+        registry.get("ca/fhsa_annual_amount_for_2024_with_carryforward")
+        is FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD
+    )
+    assert (
+        registry.get("ca/fhsa_transfer_amount_at_most_limit") is FHSA_TRANSFER_AMOUNT_AT_MOST_LIMIT
+    )
+    assert registry.get("ca/fhsa_variable_f_amount") is FHSA_VARIABLE_F_AMOUNT
+    assert (
+        registry.get("ca/fhsa_transfer_amount_plus_variable_f_amount")
+        is FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT
+    )
+    assert (
+        registry.get("ca/fhsa_net_transfer_amount_after_prior_years")
+        is FHSA_NET_TRANSFER_AMOUNT_AFTER_PRIOR_YEARS
+    )
+    assert (
+        registry.get("ca/fhsa_annual_amount_after_transfers") is FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS
+    )
+    assert (
+        registry.get("ca/fhsa_maximum_participation_period_ended")
+        is FHSA_MAXIMUM_PARTICIPATION_PERIOD_ENDED
+    )
+    assert registry.get("ca/fhsa_annual_limit_from_step_2") is FHSA_ANNUAL_LIMIT_FROM_STEP_2
+    assert (
+        registry.get("ca/fhsa_annual_limit_after_maximum_participation_period")
+        is FHSA_ANNUAL_LIMIT_AFTER_MAXIMUM_PARTICIPATION_PERIOD
+    )
+    assert registry.get("ca/fhsa_annual_limit") is FHSA_ANNUAL_LIMIT
+    assert (
+        registry.get("ca/fhsa_annual_limits_for_2024_and_prior_years")
+        is FHSA_ANNUAL_LIMITS_FOR_2024_AND_PRIOR_YEARS
+    )
+    assert registry.get("ca/fhsa_total_annual_limits") is FHSA_TOTAL_ANNUAL_LIMITS
+    assert (
+        registry.get("ca/fhsa_deductions_for_2024_and_prior_years")
+        is FHSA_DEDUCTIONS_FOR_2024_AND_PRIOR_YEARS
+    )
+    assert (
+        registry.get("ca/fhsa_annual_limits_less_deductions") is FHSA_ANNUAL_LIMITS_LESS_DEDUCTIONS
+    )
+    assert registry.get("ca/fhsa_lifetime_limit") is FHSA_LIFETIME_LIMIT
+    assert (
+        registry.get("ca/fhsa_lifetime_limit_less_deductions")
+        is FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS
+    )
+    assert (
+        registry.get("ca/fhsa_lifetime_limit_less_deductions_and_transfers")
+        is FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS_AND_TRANSFERS
+    )
+    assert registry.get("ca/fhsa_maximum_deduction") is FHSA_MAXIMUM_DEDUCTION
+    assert (
+        registry.get("ca/fhsa_unused_contributions_brought_forward")
+        is FHSA_UNUSED_CONTRIBUTIONS_BROUGHT_FORWARD
+    )
+    assert (
+        registry.get("ca/fhsa_unused_contributions_plus_contributions")
+        is FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS
+    )
+    assert registry.get("ca/fhsa_contributions_available") is FHSA_CONTRIBUTIONS_AVAILABLE
+    assert registry.get("ca/fhsa_contributions_deducted") is FHSA_CONTRIBUTIONS_DEDUCTED
+    assert registry.get("ca/fhsa_deduction") is FHSA_DEDUCTION
+    assert (
+        registry.get("ca/fhsa_unused_contributions_carried_forward")
+        is FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD
+    )
+    assert registry.get("ca/elected_split_pension_deduction") is ELECTED_SPLIT_PENSION_DEDUCTION
     assert registry.get("ca/union_dues") is UNION_DUES
     assert registry.get("ca/cpp_enhanced_contributions") is CPP_ENHANCED_CONTRIBUTIONS
+    assert (
+        registry.get("ca/exploration_and_development_expenses")
+        is EXPLORATION_AND_DEVELOPMENT_EXPENSES
+    )
+    assert registry.get("ca/other_deductions") is OTHER_DEDUCTIONS
     assert (
         registry.get("ca/cpp_first_additional_contributions") is CPP_FIRST_ADDITIONAL_CONTRIBUTIONS
     )
@@ -655,7 +977,86 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/child_care_earned_income") is CHILD_CARE_EARNED_INCOME
     assert registry.get("ca/child_care_earned_income_limit") is CHILD_CARE_EARNED_INCOME_LIMIT
     assert registry.get("ca/child_care_expenses") is CHILD_CARE_EXPENSES
+    assert (
+        registry.get("ca/capital_gains_deductions_1985_to_1987")
+        is CAPITAL_GAINS_DEDUCTIONS_1985_TO_1987
+    )
+    assert (
+        registry.get(
+            "ca/capital_gains_deductions_1988_and_1989_other_than_eligible_capital_property"
+        )
+        is CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_OTHER_THAN_ELIGIBLE_CAPITAL_PROPERTY
+    )
+    assert (
+        registry.get("ca/capital_gains_deductions_1988_and_1989_eligible_capital_property")
+        is CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_ELIGIBLE_CAPITAL_PROPERTY
+    )
+    assert (
+        registry.get("ca/capital_gains_deductions_1990_to_1999")
+        is CAPITAL_GAINS_DEDUCTIONS_1990_TO_1999
+    )
+    assert registry.get("ca/capital_gains_deductions_2000") is CAPITAL_GAINS_DEDUCTIONS_2000
+    assert (
+        registry.get("ca/capital_gains_deductions_2001_to_2024")
+        is CAPITAL_GAINS_DEDUCTIONS_2001_TO_2024
+    )
+    assert (
+        registry.get("ca/capital_gains_deductions_claimed_1985_to_2024")
+        is CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024
+    )
+    assert (
+        registry.get("ca/other_business_investment_loss_reductions_1986_to_1994")
+        is OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_1994
+    )
+    assert (
+        registry.get("ca/other_business_investment_loss_reductions_1994_to_1996")
+        is OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1994_TO_1996
+    )
+    assert (
+        registry.get("ca/other_business_investment_loss_reductions_1997_to_1999")
+        is OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1997_TO_1999
+    )
+    assert (
+        registry.get("ca/other_business_investment_loss_reductions_2000")
+        is OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2000
+    )
+    assert (
+        registry.get("ca/other_business_investment_loss_reductions_2001_to_2023")
+        is OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2001_TO_2023
+    )
+    assert (
+        registry.get("ca/other_business_investment_loss_reductions_2024")
+        is OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2024
+    )
+    assert (
+        registry.get("ca/other_business_investment_loss_reductions_1986_to_2024")
+        is OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024
+    )
+    assert (
+        registry.get("ca/business_investment_loss_reduction_available")
+        is BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE
+    )
+    assert registry.get("ca/business_investment_loss") is BUSINESS_INVESTMENT_LOSS
+    assert (
+        registry.get("ca/business_investment_loss_reduction") is BUSINESS_INVESTMENT_LOSS_REDUCTION
+    )
+    assert (
+        registry.get("ca/business_investment_loss_after_reduction")
+        is BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION
+    )
+    assert (
+        registry.get("ca/allowable_business_investment_loss") is ALLOWABLE_BUSINESS_INVESTMENT_LOSS
+    )
+    assert registry.get("ca/support_payments_deduction") is SUPPORT_PAYMENTS_DEDUCTION
+    assert registry.get("ca/total_carrying_charges") is TOTAL_CARRYING_CHARGES
+    assert registry.get("ca/total_interest_expenses") is TOTAL_INTEREST_EXPENSES
+    assert registry.get("ca/total_other_expenses") is TOTAL_OTHER_EXPENSES
+    assert (
+        registry.get("ca/carrying_charges_interest_expenses_and_other_expenses")
+        is CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES
+    )
     assert registry.get("ca/deductions_from_total_income") is DEDUCTIONS_FROM_TOTAL_INCOME
+    assert registry.get("ca/net_income_before_adjustments") is NET_INCOME_BEFORE_ADJUSTMENTS
     assert registry.get("ca/net_income") is NET_INCOME
     assert registry.get("ca/deductions_from_net_income") is DEDUCTIONS_FROM_NET_INCOME
     assert registry.get("ca/basic_personal_amount") is BASIC_PERSONAL_AMOUNT
@@ -1014,6 +1415,96 @@ def test_the_other_payments_worksheets_lines_5_and_9_are_signed(registry: Artifa
     assert UCCB_AND_RDSP_INCOME.non_negative is True
     assert UCCB_AND_RDSP_INCOME_REPAYMENTS.non_negative is True
     assert OTHER_PAYMENTS_DEDUCTION.non_negative is True
+
+
+def test_the_net_income_before_adjustments_is_signed(registry: ArtifactRegistry) -> None:
+    # T1 line 54 and line 23400 "Line 34 minus line 53 (if negative, show in brackets) Net income
+    # before adjustments": the brackets are a negative figure, unlike line 56 (line 23600) "Line 54
+    # minus line 55 (if negative, enter "0")", which stays the non-negative `ca/net_income`.
+    assert NET_INCOME_BEFORE_ADJUSTMENTS.non_negative is False
+    assert registry.kind("ca/net_income_before_adjustments").non_negative is False
+    assert NET_INCOME.non_negative is True
+    assert DEDUCTIONS_FROM_TOTAL_INCOME.non_negative is True
+
+
+def test_the_t1436_lines_that_print_no_floor_are_signed(registry: ArtifactRegistry) -> None:
+    # Form T1436 line 21700: line 15 "Line 7 minus line 14" and line 17 "Enter whichever is less:
+    # amount from line 15 or line 16." print no "(if negative, enter "0")".
+    assert BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE.non_negative is False
+    assert BUSINESS_INVESTMENT_LOSS_REDUCTION.non_negative is False
+    assert registry.kind("ca/business_investment_loss_reduction_available").non_negative is False
+    assert registry.kind("ca/business_investment_loss_reduction").non_negative is False
+
+
+def test_the_other_t1436_lines_are_non_negative(registry: ArtifactRegistry) -> None:
+    # Lines 7 and 14 add non-negative figures; line 18 "Line 16 minus line 17" is never negative as
+    # line 17 is at most line 16; line 20 "Line 18 multiplied by the percentage on line 19".
+    for kind in (
+        CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024,
+        OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
+        BUSINESS_INVESTMENT_LOSS,
+        BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
+        ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    ):
+        assert kind.non_negative is True, kind.identifier
+        assert registry.kind(kind.identifier).non_negative is True, kind.identifier
+
+
+def test_the_schedule_15_lines_that_print_no_floor_are_signed(registry: ArtifactRegistry) -> None:
+    # Schedule 15 (FHSA) Steps 2 and 3: lines 3, 5, 9, 11, 23, 27, 36, 45, 48, 51, 54, 56 and 58
+    # subtract (or add a line that subtracts, or take the lesser of such a line) with no "(if
+    # negative, enter "0")".
+    for kind in (
+        FHSA_CONTRIBUTIONS_IN_2025_BEFORE_FIRST_QUALIFYING_WITHDRAWAL,
+        FHSA_CONTRIBUTIONS_PLUS_VARIABLE_B_AMOUNT,
+        FHSA_CONTRIBUTIONS_IN_2024_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+        FHSA_CONTRIBUTIONS_AFTER_FIRST_QUALIFYING_WITHDRAWAL,
+        FHSA_NET_RRSP_TRANSFER_AMOUNT,
+        FHSA_NET_RRSP_TRANSFER_AMOUNT_FOR_2024_AND_PRIOR_YEARS,
+        FHSA_NET_TRANSFER_AMOUNT_AFTER_PRIOR_YEARS,
+        FHSA_ANNUAL_LIMITS_LESS_DEDUCTIONS,
+        FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS,
+        FHSA_MAXIMUM_DEDUCTION,
+        FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS,
+        FHSA_CONTRIBUTIONS_AVAILABLE,
+        FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
+    ):
+        assert kind.non_negative is False, kind.identifier
+        assert registry.kind(kind.identifier).non_negative is False, kind.identifier
+
+
+def test_the_schedule_15_lines_that_print_a_floor_or_add_non_negative_figures_are_non_negative(
+    registry: ArtifactRegistry,
+) -> None:
+    # Lines 12, 13, 29, 39 and 50 print "(if negative, enter "0")"; lines 16, 19, 22, 32, 33, 35,
+    # 40 and 43 and the deduction (line 57, at most line 51) add or take the lesser of
+    # non-negative lines.
+    for kind in (
+        FHSA_EXCESS_DESIGNATED_WITHDRAWALS,
+        FHSA_CONTRIBUTIONS_LIMIT,
+        FHSA_ANNUAL_AMOUNT_WITH_CARRYFORWARD,
+        FHSA_TOTAL_RRSP_TRANSFERS,
+        FHSA_TOTAL_DESIGNATED_TRANSFERS,
+        FHSA_NET_TRANSFER_AMOUNT_LESS_VARIABLE_H_AMOUNT,
+        FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD,
+        FHSA_TRANSFER_AMOUNT_AT_MOST_LIMIT,
+        FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT,
+        FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS,
+        FHSA_ANNUAL_LIMIT_FROM_STEP_2,
+        FHSA_ANNUAL_LIMIT,
+        FHSA_TOTAL_ANNUAL_LIMITS,
+        FHSA_LIFETIME_LIMIT_LESS_DEDUCTIONS_AND_TRANSFERS,
+        FHSA_DEDUCTION,
+    ):
+        assert kind.non_negative is True, kind.identifier
+        assert registry.kind(kind.identifier).non_negative is True, kind.identifier
+
+
+def test_the_fhsa_maximum_participation_period_count_is_a_non_negative_int() -> None:
+    # Schedule 15 Step 2: "If your maximum participation period (MPP) ended in a prior year, ...
+    # Enter "0" on line 40": a caller's 0 or 1 count.
+    assert FHSA_MAXIMUM_PARTICIPATION_PERIOD_ENDED.value_type is int
+    assert FHSA_MAXIMUM_PARTICIPATION_PERIOD_ENDED.non_negative is True
 
 
 def test_the_income_tax_deducted_is_non_negative() -> None:
