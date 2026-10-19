@@ -60,6 +60,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_OR_QPP_BENEFITS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
     CWB_ELIGIBLE_DEPENDANTS,
@@ -68,12 +69,20 @@ from app.jurisdictions.ca.catalog import (
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DEPENDANT_NET_INCOME,
+    DIVIDEND_TAX_CREDIT,
+    DIVIDENDS_AMOUNT_A,
+    DIVIDENDS_AMOUNT_A_LESS_B,
+    DIVIDENDS_AMOUNT_B,
+    DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP,
     EI_AND_OTHER_BENEFITS,
     EI_PREMIUMS,
     ELECTED_SPLIT_PENSION_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANTS,
+    ELIGIBLE_DIVIDENDS_CREDIT,
+    ELIGIBLE_DIVIDENDS_GROSSED_UP,
+    ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
@@ -93,9 +102,13 @@ from app.jurisdictions.ca.catalog import (
     NET_FEDERAL_TAX,
     NET_INCOME,
     NET_PARTNERSHIP_INCOME,
+    NO_SLIP_DIVIDEND_TAX_CREDIT,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     OLD_AGE_SECURITY,
+    OTHER_DIVIDENDS_CREDIT,
+    OTHER_DIVIDENDS_GROSSED_UP,
+    OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     OTHER_EMPLOYMENT_INCOME,
     OTHER_FHSA_INCOME,
     OTHER_INCOME,
@@ -110,6 +123,9 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION_LIMIT,
     RRSP_DEDUCTION_MAXIMUM,
     RRSP_INCOME,
+    SLIP_DIVIDEND_TAX_CREDIT,
+    SLIP_TAXABLE_DIVIDENDS,
+    SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SOCIAL_ASSISTANCE_PAYMENTS,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BASIS,
@@ -123,11 +139,25 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_INFIRMITY_SUPPLEMENT,
     SPOUSE_NET_INCOME,
     SPOUSES_CLAIMED,
+    T3_DIVIDEND_TAX_CREDIT,
     T3_INVESTMENT_INCOME,
+    T3_TAXABLE_DIVIDENDS,
+    T3_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    T4PS_DIVIDEND_TAX_CREDIT,
+    T4PS_TAXABLE_DIVIDENDS,
+    T4PS_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    T5_DIVIDEND_TAX_CREDIT,
     T5_INVESTMENT_INCOME,
+    T5_TAXABLE_DIVIDENDS,
+    T5_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    T5013_DIVIDEND_TAX_CREDIT,
     T5013_INVESTMENT_INCOME,
+    T5013_TAXABLE_DIVIDENDS,
+    T5013_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     TAX_REFUND_INTEREST,
     TAXABLE_CAPITAL_GAINS,
+    TAXABLE_DIVIDENDS,
+    TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     TAXABLE_INCOME,
     TAXABLE_SCHOLARSHIPS,
     TAXABLE_SUPPORT_PAYMENTS,
@@ -208,6 +238,20 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/elected_split_pension_amount",
             "ca/universal_child_care_benefit",
             "ca/ei_and_other_benefits",
+            "ca/t3_taxable_dividends_other_than_eligible",
+            "ca/t4ps_taxable_dividends_other_than_eligible",
+            "ca/t5_taxable_dividends_other_than_eligible",
+            "ca/t5013_taxable_dividends_other_than_eligible",
+            "ca/t3_taxable_dividends",
+            "ca/t4ps_taxable_dividends",
+            "ca/t5_taxable_dividends",
+            "ca/t5013_taxable_dividends",
+            "ca/eligible_dividends_received_without_a_slip",
+            "ca/other_dividends_received_without_a_slip",
+            "ca/t3_dividend_tax_credit",
+            "ca/t4ps_dividend_tax_credit",
+            "ca/t5_dividend_tax_credit",
+            "ca/t5013_dividend_tax_credit",
             "ca/t3_investment_income",
             "ca/t5_investment_income",
             "ca/t5013_investment_income",
@@ -253,10 +297,15 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca-on/community_food_program_donations",
         }
     )
-    # T1 line 167, the refund or balance owing, and Schedule 7 line 23, what the return produces
-    # for the next year's line 1: the two lines the computation returns.
+    # T1 line 167, the refund or balance owing, Schedule 7 line 23, what the return produces for
+    # the next year's line 1, and line 12010, the amount of dividends other than eligible, which
+    # nothing else on the return reads: the lines the computation returns.
     assert found.outputs == frozenset(
-        {"ca/refund_or_balance_owing", "ca/unused_rrsp_contributions_carried_forward"}
+        {
+            "ca/refund_or_balance_owing",
+            "ca/unused_rrsp_contributions_carried_forward",
+            "ca/taxable_dividends_other_than_eligible",
+        }
     )
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == {
@@ -265,6 +314,85 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             params={"rate": "ca/capital_gains_inclusion_rate"},
             consumes={"base": "ca/capital_gain"},
             produces={"output": "ca/taxable_capital_gains"},
+        ),
+        # T1 line 9 (12000) "Amount of dividends (eligible and other than eligible)" and line
+        # 12010 "Amount of dividends (other than eligible)" (use Federal Worksheet): the Federal
+        # Worksheet's "Lines 12000 and 12010 - Taxable amount of dividends from taxable Canadian
+        # corporations", line 5 "Add lines 1 to 4. Enter this amount on line 12010 of your
+        # return." (the T3, T4PS, T5 and T5013 slip boxes of lines 1 to 4) and line 10 "Add lines
+        # 6 to 9. Enter this amount on line 12000 of your return." (lines 6 to 9). For dividends
+        # with no information slip, line 11 "Actual amount of eligible dividends received" and
+        # line 12 "Applicable rate 138%" give line 13 "Line 11 multiplied by the percentage from
+        # line 12"; line 14 "Actual amount of dividends other than eligible dividends received"
+        # and line 15 "Applicable rate 115%" give line 16 "Line 14 multiplied by the percentage
+        # from line 15 Include this amount on line 12010 of your return."; line 17 "Line 13 plus
+        # line 16. Include this amount on line 12000 of your return." The rates are above one, so
+        # they are fractions, not rates. Line 12010 is line 5 plus line 16 and line 12000 is line
+        # 10 plus line 17.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/t3_taxable_dividends_other_than_eligible",
+                    "ca/t4ps_taxable_dividends_other_than_eligible",
+                    "ca/t5_taxable_dividends_other_than_eligible",
+                    "ca/t5013_taxable_dividends_other_than_eligible",
+                )
+            },
+            produces={"output": "ca/slip_taxable_dividends_other_than_eligible"},
+        ),
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/t3_taxable_dividends",
+                    "ca/t4ps_taxable_dividends",
+                    "ca/t5_taxable_dividends",
+                    "ca/t5013_taxable_dividends",
+                )
+            },
+            produces={"output": "ca/slip_taxable_dividends"},
+        ),
+        CapabilitySelection(
+            name="core/apply_fraction",
+            params={"fraction": "ca/eligible_dividend_gross_up"},
+            consumes={"base": "ca/eligible_dividends_received_without_a_slip"},
+            produces={"output": "ca/eligible_dividends_grossed_up"},
+        ),
+        CapabilitySelection(
+            name="core/apply_fraction",
+            params={"fraction": "ca/other_dividend_gross_up"},
+            consumes={"base": "ca/other_dividends_received_without_a_slip"},
+            produces={"output": "ca/other_dividends_grossed_up"},
+        ),
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": ("ca/eligible_dividends_grossed_up", "ca/other_dividends_grossed_up")
+            },
+            produces={"output": "ca/dividends_without_a_slip_grossed_up"},
+        ),
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/slip_taxable_dividends_other_than_eligible",
+                    "ca/other_dividends_grossed_up",
+                )
+            },
+            produces={"output": "ca/taxable_dividends_other_than_eligible"},
+        ),
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": ("ca/slip_taxable_dividends", "ca/dividends_without_a_slip_grossed_up")
+            },
+            produces={"output": "ca/taxable_dividends"},
         ),
         # T1 Step 2 line 10 (12100) "Interest and other investment income (use Federal
         # Worksheet)": the Federal Worksheet's "Line 12100 - Interest and other investment
@@ -313,10 +441,10 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/income_support_benefits"},
         ),
         # T1 line 33 and line 15000 "Line 28 plus line 32 Total income": every income line the
-        # return lists, in line order (lines 1 to 20, here with the taxable capital gains of
-        # line 14 and the taxable support payments of line 15, then line 32); dividends (lines
-        # 12000 and 12010), rental income (line 13) and self-employment income (lines 22 to 26)
-        # are not wired yet.
+        # return lists, in line order (lines 1 to 20, here with the amount of dividends of line
+        # 9 (12000), the taxable capital gains of line 14 and the taxable support payments of
+        # line 15, then line 32); rental income (line 13) and self-employment income (lines 22
+        # to 26) are not wired yet.
         CapabilitySelection(
             name="core/sum",
             params={},
@@ -330,6 +458,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
                     "ca/elected_split_pension_amount",
                     "ca/universal_child_care_benefit",
                     "ca/ei_and_other_benefits",
+                    "ca/taxable_dividends",
                     "ca/interest_and_other_investment_income",
                     "ca/net_partnership_income",
                     "ca/rdsp_income",
@@ -822,11 +951,89 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"base": "ca-on/non_refundable_credit_amounts"},
             produces={"output": "ca-on/non_refundable_tax_credits"},
         ),
+        # T1 line 123 (40425) "Federal dividend tax credit (use Federal Worksheet)": the Federal
+        # Worksheet's "Line 40425 - Federal dividend tax credit", line 5 "Add lines 1 to 4." of
+        # the credits shown on the T3, T4PS, T5 and T5013 slips. For dividends with no
+        # information slip, line A "Amount from line 12000 of your return (Note 1)" and line B
+        # "Amount from line 12010 of your return (Note 1)", Note 1 being "Enter only the amount
+        # of dividends that were not shown on an information slip.", so line A is the
+        # Worksheet's line 17 and line B its line 16, each its own step; line 6 is "Line B,
+        # multiplied by 9.0301%"; line C is "Amount A minus amount B", and line 7 (printed
+        # "Line 2") is line C "multiplied by 15.0198%"; line 8 is "Line 6 plus line 7" and
+        # line 9 "Line 5 plus line 8 Enter this amount on line 40425 of your return."
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/t3_dividend_tax_credit",
+                    "ca/t4ps_dividend_tax_credit",
+                    "ca/t5_dividend_tax_credit",
+                    "ca/t5013_dividend_tax_credit",
+                )
+            },
+            produces={"output": "ca/slip_dividend_tax_credit"},
+        ),
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/dividends_without_a_slip_grossed_up",)},
+            produces={"output": "ca/dividends_amount_a"},
+        ),
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/other_dividends_grossed_up",)},
+            produces={"output": "ca/dividends_amount_b"},
+        ),
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/dividend_credit_rate_other_than_eligible"},
+            consumes={"base": "ca/dividends_amount_b"},
+            produces={"output": "ca/other_dividends_credit"},
+        ),
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={"amount": "ca/dividends_amount_a", "less": "ca/dividends_amount_b"},
+            produces={"output": "ca/dividends_amount_a_less_b"},
+        ),
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/dividend_credit_rate_eligible"},
+            consumes={"base": "ca/dividends_amount_a_less_b"},
+            produces={"output": "ca/eligible_dividends_credit"},
+        ),
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/other_dividends_credit", "ca/eligible_dividends_credit")},
+            produces={"output": "ca/no_slip_dividend_tax_credit"},
+        ),
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/slip_dividend_tax_credit", "ca/no_slip_dividend_tax_credit")},
+            produces={"output": "ca/dividend_tax_credit"},
+        ),
+        # T1 line 125 "Add lines 122 to 124.": line 122 "Amount from line 35000" and line 123
+        # (40425), in line order; line 124 (40427, minimum tax carryover) is not triggered.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/non_refundable_tax_credits", "ca/dividend_tax_credit")},
+            produces={"output": "ca/credits_against_basic_federal_tax"},
+        ),
         # Each form's credits come off its basic tax, not below zero: the unused part is lost.
+        # Federally the credits are line 125 (T1 line 126 "Line 121 minus line 125 (if negative,
+        # enter "0")").
         CapabilitySelection(
             name="core/subtract_not_below_zero",
             params={},
-            consumes={"amount": "ca/federal_basic_tax", "less": "ca/non_refundable_tax_credits"},
+            consumes={
+                "amount": "ca/federal_basic_tax",
+                "less": "ca/credits_against_basic_federal_tax",
+            },
             produces={"output": "ca/federal_tax_after_credits"},
         ),
         CapabilitySelection(
@@ -1192,7 +1399,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 95
+    assert len(found.capabilities) == 111
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -1202,7 +1409,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 95
+    assert len(composition.order) == 111
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -1225,6 +1432,55 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             Sum,
             frozenset({CPP_FIRST_ADDITIONAL_CONTRIBUTIONS, CPP_SECOND_ADDITIONAL_CONTRIBUTIONS}),
             frozenset({CPP_ENHANCED_CONTRIBUTIONS}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {
+                    T3_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+                    T4PS_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+                    T5_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+                    T5013_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+                }
+            ),
+            frozenset({SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {
+                    T3_TAXABLE_DIVIDENDS,
+                    T4PS_TAXABLE_DIVIDENDS,
+                    T5_TAXABLE_DIVIDENDS,
+                    T5013_TAXABLE_DIVIDENDS,
+                }
+            ),
+            frozenset({SLIP_TAXABLE_DIVIDENDS}),
+        ),
+        (
+            ApplyFraction,
+            frozenset({ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP}),
+            frozenset({ELIGIBLE_DIVIDENDS_GROSSED_UP}),
+        ),
+        (
+            ApplyFraction,
+            frozenset({OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP}),
+            frozenset({OTHER_DIVIDENDS_GROSSED_UP}),
+        ),
+        (
+            Sum,
+            frozenset({ELIGIBLE_DIVIDENDS_GROSSED_UP, OTHER_DIVIDENDS_GROSSED_UP}),
+            frozenset({DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP}),
+        ),
+        (
+            Sum,
+            frozenset({SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE, OTHER_DIVIDENDS_GROSSED_UP}),
+            frozenset({TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE}),
+        ),
+        (
+            Sum,
+            frozenset({SLIP_TAXABLE_DIVIDENDS, DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP}),
+            frozenset({TAXABLE_DIVIDENDS}),
         ),
         (
             Sum,
@@ -1268,6 +1524,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
                     ELECTED_SPLIT_PENSION_AMOUNT,
                     UNIVERSAL_CHILD_CARE_BENEFIT,
                     EI_AND_OTHER_BENEFITS,
+                    TAXABLE_DIVIDENDS,
                     INTEREST_AND_OTHER_INVESTMENT_INCOME,
                     NET_PARTNERSHIP_INCOME,
                     RDSP_INCOME,
@@ -1491,8 +1748,52 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({ontario.NON_REFUNDABLE_TAX_CREDITS}),
         ),
         (
+            Sum,
+            frozenset(
+                {
+                    T3_DIVIDEND_TAX_CREDIT,
+                    T4PS_DIVIDEND_TAX_CREDIT,
+                    T5_DIVIDEND_TAX_CREDIT,
+                    T5013_DIVIDEND_TAX_CREDIT,
+                }
+            ),
+            frozenset({SLIP_DIVIDEND_TAX_CREDIT}),
+        ),
+        (
+            Sum,
+            frozenset({DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP}),
+            frozenset({DIVIDENDS_AMOUNT_A}),
+        ),
+        (Sum, frozenset({OTHER_DIVIDENDS_GROSSED_UP}), frozenset({DIVIDENDS_AMOUNT_B})),
+        (ApplyRate, frozenset({DIVIDENDS_AMOUNT_B}), frozenset({OTHER_DIVIDENDS_CREDIT})),
+        (
+            Subtract,
+            frozenset({DIVIDENDS_AMOUNT_A, DIVIDENDS_AMOUNT_B}),
+            frozenset({DIVIDENDS_AMOUNT_A_LESS_B}),
+        ),
+        (
+            ApplyRate,
+            frozenset({DIVIDENDS_AMOUNT_A_LESS_B}),
+            frozenset({ELIGIBLE_DIVIDENDS_CREDIT}),
+        ),
+        (
+            Sum,
+            frozenset({OTHER_DIVIDENDS_CREDIT, ELIGIBLE_DIVIDENDS_CREDIT}),
+            frozenset({NO_SLIP_DIVIDEND_TAX_CREDIT}),
+        ),
+        (
+            Sum,
+            frozenset({SLIP_DIVIDEND_TAX_CREDIT, NO_SLIP_DIVIDEND_TAX_CREDIT}),
+            frozenset({DIVIDEND_TAX_CREDIT}),
+        ),
+        (
+            Sum,
+            frozenset({NON_REFUNDABLE_TAX_CREDITS, DIVIDEND_TAX_CREDIT}),
+            frozenset({CREDITS_AGAINST_BASIC_FEDERAL_TAX}),
+        ),
+        (
             SubtractNotBelowZero,
-            frozenset({FEDERAL_BASIC_TAX, NON_REFUNDABLE_TAX_CREDITS}),
+            frozenset({FEDERAL_BASIC_TAX, CREDITS_AGAINST_BASIC_FEDERAL_TAX}),
             frozenset({FEDERAL_TAX_AFTER_CREDITS}),
         ),
         (

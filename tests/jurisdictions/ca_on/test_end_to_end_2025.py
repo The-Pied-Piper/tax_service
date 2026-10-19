@@ -48,7 +48,7 @@ eligible dependants (line 38100) choosing the first (T1 line 45300); less the to
 48200), here the chosen income tax deducted of 25000 (line 43700) plus that benefit, to the refund
 or balance owing (line 167), 897.15, positive so a balance owing; every line computed from a dataset
 rounded half-up to the cent) are checked from the files under `returns/` by
-`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H and I; this module pins which
+`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H, I and K; this module pins which
 capability produces each line, the order, and the trace that explains them.
 """
 
@@ -141,6 +141,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_OR_QPP_BENEFITS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
     CWB_ELIGIBLE_DEPENDANTS,
@@ -149,12 +150,20 @@ from app.jurisdictions.ca.catalog import (
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DEPENDANT_NET_INCOME,
+    DIVIDEND_TAX_CREDIT,
+    DIVIDENDS_AMOUNT_A,
+    DIVIDENDS_AMOUNT_A_LESS_B,
+    DIVIDENDS_AMOUNT_B,
+    DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP,
     EI_AND_OTHER_BENEFITS,
     EI_PREMIUMS,
     ELECTED_SPLIT_PENSION_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANTS,
+    ELIGIBLE_DIVIDENDS_CREDIT,
+    ELIGIBLE_DIVIDENDS_GROSSED_UP,
+    ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
@@ -174,9 +183,13 @@ from app.jurisdictions.ca.catalog import (
     NET_FEDERAL_TAX,
     NET_INCOME,
     NET_PARTNERSHIP_INCOME,
+    NO_SLIP_DIVIDEND_TAX_CREDIT,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     OLD_AGE_SECURITY,
+    OTHER_DIVIDENDS_CREDIT,
+    OTHER_DIVIDENDS_GROSSED_UP,
+    OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     OTHER_EMPLOYMENT_INCOME,
     OTHER_FHSA_INCOME,
     OTHER_INCOME,
@@ -191,6 +204,9 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION_LIMIT,
     RRSP_DEDUCTION_MAXIMUM,
     RRSP_INCOME,
+    SLIP_DIVIDEND_TAX_CREDIT,
+    SLIP_TAXABLE_DIVIDENDS,
+    SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SOCIAL_ASSISTANCE_PAYMENTS,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BASIS,
@@ -204,11 +220,25 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_INFIRMITY_SUPPLEMENT,
     SPOUSE_NET_INCOME,
     SPOUSES_CLAIMED,
+    T3_DIVIDEND_TAX_CREDIT,
     T3_INVESTMENT_INCOME,
+    T3_TAXABLE_DIVIDENDS,
+    T3_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    T4PS_DIVIDEND_TAX_CREDIT,
+    T4PS_TAXABLE_DIVIDENDS,
+    T4PS_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    T5_DIVIDEND_TAX_CREDIT,
     T5_INVESTMENT_INCOME,
+    T5_TAXABLE_DIVIDENDS,
+    T5_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    T5013_DIVIDEND_TAX_CREDIT,
     T5013_INVESTMENT_INCOME,
+    T5013_TAXABLE_DIVIDENDS,
+    T5013_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     TAX_REFUND_INTEREST,
     TAXABLE_CAPITAL_GAINS,
+    TAXABLE_DIVIDENDS,
+    TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     TAXABLE_INCOME,
     TAXABLE_SCHOLARSHIPS,
     TAXABLE_SUPPORT_PAYMENTS,
@@ -288,6 +318,20 @@ def compute(
     elected_split_pension_amount: str = "0",
     universal_child_care_benefit: str = "0",
     ei_and_other_benefits: str = "0",
+    t3_taxable_dividends_other_than_eligible: str = "0",
+    t4ps_taxable_dividends_other_than_eligible: str = "0",
+    t5_taxable_dividends_other_than_eligible: str = "0",
+    t5013_taxable_dividends_other_than_eligible: str = "0",
+    t3_taxable_dividends: str = "0",
+    t4ps_taxable_dividends: str = "0",
+    t5_taxable_dividends: str = "0",
+    t5013_taxable_dividends: str = "0",
+    eligible_dividends_received_without_a_slip: str = "0",
+    other_dividends_received_without_a_slip: str = "0",
+    t3_dividend_tax_credit: str = "0",
+    t4ps_dividend_tax_credit: str = "0",
+    t5_dividend_tax_credit: str = "0",
+    t5013_dividend_tax_credit: str = "0",
     t3_investment_income: str = "0",
     t5_investment_income: str = "0",
     t5013_investment_income: str = "0",
@@ -339,6 +383,35 @@ def compute(
         Artifact(ELECTED_SPLIT_PENSION_AMOUNT, D(elected_split_pension_amount)),
         Artifact(UNIVERSAL_CHILD_CARE_BENEFIT, D(universal_child_care_benefit)),
         Artifact(EI_AND_OTHER_BENEFITS, D(ei_and_other_benefits)),
+        Artifact(
+            T3_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE, D(t3_taxable_dividends_other_than_eligible)
+        ),
+        Artifact(
+            T4PS_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+            D(t4ps_taxable_dividends_other_than_eligible),
+        ),
+        Artifact(
+            T5_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE, D(t5_taxable_dividends_other_than_eligible)
+        ),
+        Artifact(
+            T5013_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+            D(t5013_taxable_dividends_other_than_eligible),
+        ),
+        Artifact(T3_TAXABLE_DIVIDENDS, D(t3_taxable_dividends)),
+        Artifact(T4PS_TAXABLE_DIVIDENDS, D(t4ps_taxable_dividends)),
+        Artifact(T5_TAXABLE_DIVIDENDS, D(t5_taxable_dividends)),
+        Artifact(T5013_TAXABLE_DIVIDENDS, D(t5013_taxable_dividends)),
+        Artifact(
+            ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
+            D(eligible_dividends_received_without_a_slip),
+        ),
+        Artifact(
+            OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP, D(other_dividends_received_without_a_slip)
+        ),
+        Artifact(T3_DIVIDEND_TAX_CREDIT, D(t3_dividend_tax_credit)),
+        Artifact(T4PS_DIVIDEND_TAX_CREDIT, D(t4ps_dividend_tax_credit)),
+        Artifact(T5_DIVIDEND_TAX_CREDIT, D(t5_dividend_tax_credit)),
+        Artifact(T5013_DIVIDEND_TAX_CREDIT, D(t5013_dividend_tax_credit)),
         Artifact(T3_INVESTMENT_INCOME, D(t3_investment_income)),
         Artifact(T5_INVESTMENT_INCOME, D(t5_investment_income)),
         Artifact(T5013_INVESTMENT_INCOME, D(t5013_investment_income)),
@@ -432,6 +505,20 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(ELECTED_SPLIT_PENSION_AMOUNT) is None
     assert worksheet.producer_of(UNIVERSAL_CHILD_CARE_BENEFIT) is None
     assert worksheet.producer_of(EI_AND_OTHER_BENEFITS) is None
+    assert worksheet.producer_of(T3_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE) is None
+    assert worksheet.producer_of(T4PS_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE) is None
+    assert worksheet.producer_of(T5_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE) is None
+    assert worksheet.producer_of(T5013_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE) is None
+    assert worksheet.producer_of(T3_TAXABLE_DIVIDENDS) is None
+    assert worksheet.producer_of(T4PS_TAXABLE_DIVIDENDS) is None
+    assert worksheet.producer_of(T5_TAXABLE_DIVIDENDS) is None
+    assert worksheet.producer_of(T5013_TAXABLE_DIVIDENDS) is None
+    assert worksheet.producer_of(ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP) is None
+    assert worksheet.producer_of(OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP) is None
+    assert worksheet.producer_of(T3_DIVIDEND_TAX_CREDIT) is None
+    assert worksheet.producer_of(T4PS_DIVIDEND_TAX_CREDIT) is None
+    assert worksheet.producer_of(T5_DIVIDEND_TAX_CREDIT) is None
+    assert worksheet.producer_of(T5013_DIVIDEND_TAX_CREDIT) is None
     assert worksheet.producer_of(T3_INVESTMENT_INCOME) is None
     assert worksheet.producer_of(T5_INVESTMENT_INCOME) is None
     assert worksheet.producer_of(T5013_INVESTMENT_INCOME) is None
@@ -456,6 +543,33 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(INVESTMENT_INCOME_BEFORE_PRIOR_YEARS), Sum)
     assert isinstance(worksheet.producer_of(INTEREST_AND_OTHER_INVESTMENT_INCOME), Subtract)
     assert isinstance(worksheet.producer_of(INCOME_SUPPORT_BENEFITS), Sum)
+    # The Federal Worksheet's dividend lines 5, 10, 13, 16, 17 (lines 12000 and 12010), and the
+    # federal dividend tax credit's lines 5, A, B, 6, C, 7, 8 and 9 (line 40425).
+    for kind in (
+        SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+        SLIP_TAXABLE_DIVIDENDS,
+        DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP,
+        TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+        TAXABLE_DIVIDENDS,
+        SLIP_DIVIDEND_TAX_CREDIT,
+        DIVIDENDS_AMOUNT_A,
+        DIVIDENDS_AMOUNT_B,
+        NO_SLIP_DIVIDEND_TAX_CREDIT,
+        DIVIDEND_TAX_CREDIT,
+        CREDITS_AGAINST_BASIC_FEDERAL_TAX,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Sum), kind
+    assert isinstance(worksheet.producer_of(ELIGIBLE_DIVIDENDS_GROSSED_UP), ApplyFraction)
+    assert isinstance(worksheet.producer_of(OTHER_DIVIDENDS_GROSSED_UP), ApplyFraction)
+    assert isinstance(worksheet.producer_of(OTHER_DIVIDENDS_CREDIT), ApplyRate)
+    assert isinstance(worksheet.producer_of(ELIGIBLE_DIVIDENDS_CREDIT), ApplyRate)
+    assert isinstance(worksheet.producer_of(DIVIDENDS_AMOUNT_A_LESS_B), Subtract)
+    assert worksheet.producer_of(ELIGIBLE_DIVIDENDS_GROSSED_UP) is not (
+        worksheet.producer_of(OTHER_DIVIDENDS_GROSSED_UP)
+    )
+    assert worksheet.producer_of(OTHER_DIVIDENDS_CREDIT) is not (
+        worksheet.producer_of(ELIGIBLE_DIVIDENDS_CREDIT)
+    )
     assert worksheet.producer_of(INTEREST_AND_OTHER_INVESTMENT_INCOME) is not (
         worksheet.producer_of(REFUND_OR_BALANCE_OWING)
     )
@@ -767,7 +881,7 @@ def test_the_trace_explains_the_computation() -> None:
         "total_income: employment_income 110000 + other_employment_income 0 + "
         "old_age_security 0 + cpp_or_qpp_benefits 0 + "
         "other_pensions_and_superannuation 0 + elected_split_pension_amount 0 + "
-        "universal_child_care_benefit 0 + ei_and_other_benefits 0 + "
+        "universal_child_care_benefit 0 + ei_and_other_benefits 0 + taxable_dividends 0 + "
         "interest_and_other_investment_income 0 + net_partnership_income 0 + "
         "rdsp_income 0 + taxable_capital_gains 10000 + taxable_support_payments 0 "
         "+ rrsp_income 0 + fhsa_income 0 + other_fhsa_income 0 + other_income 0 + "
@@ -977,7 +1091,7 @@ def test_the_trace_explains_the_computation() -> None:
     )
     federal_after = position(
         "federal_tax_after_credits: federal_basic_tax 20146.25 "
-        "less non_refundable_tax_credits 3194.87, not below 0 = 16951.38",
+        "less credits_against_basic_federal_tax 3194.87, not below 0 = 16951.38",
         "16951.38",
     )
     # ON428 Part A, the column "more than $105,775 but not more than $150,000": line 4 is
@@ -1306,6 +1420,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # The rate is applied once, to each form's total of credit amounts (T1 line 33800, ON428
     # line 58840), giving its non-refundable tax credits (T1 line 35000, ON428 line 61500).
     assert rated == {
+        # The Federal Worksheet's "Line 40425" line 6 (line B x 9.0301%) and line 7 (line C x
+        # 15.0198%), on no dividends with no slip.
+        OTHER_DIVIDENDS_CREDIT: RateAppliedLine(
+            OTHER_DIVIDENDS_CREDIT,
+            DIVIDENDS_AMOUNT_B,
+            D("0"),
+            Rate(D("0.090301")),
+            CENT,
+            D("0"),
+        ),
+        ELIGIBLE_DIVIDENDS_CREDIT: RateAppliedLine(
+            ELIGIBLE_DIVIDENDS_CREDIT,
+            DIVIDENDS_AMOUNT_A_LESS_B,
+            D("0"),
+            Rate(D("0.150198")),
+            CENT,
+            D("0"),
+        ),
         TAXABLE_CAPITAL_GAINS: RateAppliedLine(
             TAXABLE_CAPITAL_GAINS, CAPITAL_GAIN, D("20000"), Rate(D("0.5")), CENT, D("10000")
         ),
@@ -1376,6 +1508,95 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert sums == {
+        # The Federal Worksheet's "Lines 12000 and 12010" lines 5 and 10, line 17 and, with the
+        # slip amounts, lines 12010 and 12000: no dividends, so every line is 0.
+        SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE: SumLine(
+            SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+            (
+                (T3_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE, D("0")),
+                (T4PS_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE, D("0")),
+                (T5_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE, D("0")),
+                (T5013_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE, D("0")),
+            ),
+            D("0"),
+        ),
+        SLIP_TAXABLE_DIVIDENDS: SumLine(
+            SLIP_TAXABLE_DIVIDENDS,
+            (
+                (T3_TAXABLE_DIVIDENDS, D("0")),
+                (T4PS_TAXABLE_DIVIDENDS, D("0")),
+                (T5_TAXABLE_DIVIDENDS, D("0")),
+                (T5013_TAXABLE_DIVIDENDS, D("0")),
+            ),
+            D("0"),
+        ),
+        DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP: SumLine(
+            DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP,
+            (
+                (ELIGIBLE_DIVIDENDS_GROSSED_UP, D("0")),
+                (OTHER_DIVIDENDS_GROSSED_UP, D("0")),
+            ),
+            D("0"),
+        ),
+        TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE: SumLine(
+            TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+            (
+                (SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE, D("0")),
+                (OTHER_DIVIDENDS_GROSSED_UP, D("0")),
+            ),
+            D("0"),
+        ),
+        TAXABLE_DIVIDENDS: SumLine(
+            TAXABLE_DIVIDENDS,
+            (
+                (SLIP_TAXABLE_DIVIDENDS, D("0")),
+                (DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP, D("0")),
+            ),
+            D("0"),
+        ),
+        # The Federal Worksheet's "Line 40425 - Federal dividend tax credit" lines 5, A, B, 8 and
+        # 9 and T1 line 125 "Add lines 122 to 124.": lines A and B are each one part.
+        SLIP_DIVIDEND_TAX_CREDIT: SumLine(
+            SLIP_DIVIDEND_TAX_CREDIT,
+            (
+                (T3_DIVIDEND_TAX_CREDIT, D("0")),
+                (T4PS_DIVIDEND_TAX_CREDIT, D("0")),
+                (T5_DIVIDEND_TAX_CREDIT, D("0")),
+                (T5013_DIVIDEND_TAX_CREDIT, D("0")),
+            ),
+            D("0"),
+        ),
+        DIVIDENDS_AMOUNT_A: SumLine(
+            DIVIDENDS_AMOUNT_A,
+            ((DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP, D("0")),),
+            D("0"),
+        ),
+        DIVIDENDS_AMOUNT_B: SumLine(
+            DIVIDENDS_AMOUNT_B,
+            ((OTHER_DIVIDENDS_GROSSED_UP, D("0")),),
+            D("0"),
+        ),
+        NO_SLIP_DIVIDEND_TAX_CREDIT: SumLine(
+            NO_SLIP_DIVIDEND_TAX_CREDIT,
+            (
+                (OTHER_DIVIDENDS_CREDIT, D("0")),
+                (ELIGIBLE_DIVIDENDS_CREDIT, D("0")),
+            ),
+            D("0"),
+        ),
+        DIVIDEND_TAX_CREDIT: SumLine(
+            DIVIDEND_TAX_CREDIT,
+            (
+                (SLIP_DIVIDEND_TAX_CREDIT, D("0")),
+                (NO_SLIP_DIVIDEND_TAX_CREDIT, D("0")),
+            ),
+            D("0"),
+        ),
+        CREDITS_AGAINST_BASIC_FEDERAL_TAX: SumLine(
+            CREDITS_AGAINST_BASIC_FEDERAL_TAX,
+            ((NON_REFUNDABLE_TAX_CREDITS, D("3194.87")), (DIVIDEND_TAX_CREDIT, D("0"))),
+            D("3194.87"),
+        ),
         # T1 line 15000 "Line 28 plus line 32 Total income": the income lines, in line order.
         TOTAL_INCOME: SumLine(
             TOTAL_INCOME,
@@ -1388,6 +1609,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ELECTED_SPLIT_PENSION_AMOUNT, D("0")),
                 (UNIVERSAL_CHILD_CARE_BENEFIT, D("0")),
                 (EI_AND_OTHER_BENEFITS, D("0")),
+                (TAXABLE_DIVIDENDS, D("0")),
                 (INTEREST_AND_OTHER_INVESTMENT_INCOME, D("0")),
                 (NET_PARTNERSHIP_INCOME, D("0")),
                 (RDSP_INCOME, D("0")),
@@ -1577,6 +1799,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert subtracted == {
+        # The Federal Worksheet's line C "Amount A minus amount B": no dividends with no slip.
+        DIVIDENDS_AMOUNT_A_LESS_B: SubtractedLine(
+            output=DIVIDENDS_AMOUNT_A_LESS_B,
+            minuend=DIVIDENDS_AMOUNT_A,
+            minuend_amount=D("0"),
+            subtrahend=DIVIDENDS_AMOUNT_B,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # The Federal Worksheet's line 11 "Line 9 minus line 10. Enter this amount on line 12100
         # of your return.": nothing reported in previous years comes off nothing.
         INTEREST_AND_OTHER_INVESTMENT_INCOME: SubtractedLine(
@@ -1717,6 +1948,23 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # Form T778 line 6 "Enter your earned income." "multiplied by two-thirds": 220000 / 3,
     # rounded half-up to the cent.
     assert fractions == {
+        # The Federal Worksheet's lines 13 and 16: 138% and 115% of no dividends with no slip.
+        ELIGIBLE_DIVIDENDS_GROSSED_UP: FractionAppliedLine(
+            output=ELIGIBLE_DIVIDENDS_GROSSED_UP,
+            base=ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
+            base_amount=D("0"),
+            fraction=Fraction(138, 100),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        OTHER_DIVIDENDS_GROSSED_UP: FractionAppliedLine(
+            output=OTHER_DIVIDENDS_GROSSED_UP,
+            base=OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
+            base_amount=D("0"),
+            fraction=Fraction(115, 100),
+            rounding=CENT,
+            result=D("0"),
+        ),
         CHILD_CARE_EARNED_INCOME_LIMIT: FractionAppliedLine(
             output=CHILD_CARE_EARNED_INCOME_LIMIT,
             base=CHILD_CARE_EARNED_INCOME,
@@ -1724,7 +1972,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             fraction=Fraction(2, 3),
             rounding=CENT,
             result=D("73333.33"),
-        )
+        ),
     }
     # T1 line 30400 and ON428 line 58160: Schedule 5 line 5 and ON428 line 16, each claimed for
     # the 0 eligible dependants of Return A, a plain 0.
@@ -2088,7 +2336,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             output=FEDERAL_TAX_AFTER_CREDITS,
             minuend=FEDERAL_BASIC_TAX,
             minuend_amount=D("20146.25"),
-            subtrahend=NON_REFUNDABLE_TAX_CREDITS,
+            subtrahend=CREDITS_AGAINST_BASIC_FEDERAL_TAX,
             subtrahend_amount=D("3194.87"),
             result=D("16951.38"),
         ),
@@ -2267,7 +2515,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 95
+    assert len(order) == 111
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -2276,6 +2524,35 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     )
     assert position[INTEREST_AND_OTHER_INVESTMENT_INCOME] < position[TOTAL_INCOME]
     assert position[INCOME_SUPPORT_BENEFITS] < position[TOTAL_INCOME]
+    assert (
+        position[SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE]
+        < position[TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE]
+    )
+    assert position[SLIP_TAXABLE_DIVIDENDS] < position[TAXABLE_DIVIDENDS] < position[TOTAL_INCOME]
+    assert (
+        position[ELIGIBLE_DIVIDENDS_GROSSED_UP]
+        < position[DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP]
+        < position[TAXABLE_DIVIDENDS]
+    )
+    assert position[OTHER_DIVIDENDS_GROSSED_UP] < position[DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP]
+    assert position[OTHER_DIVIDENDS_GROSSED_UP] < position[TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE]
+    assert (
+        position[DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP]
+        < position[DIVIDENDS_AMOUNT_A]
+        < position[DIVIDENDS_AMOUNT_A_LESS_B]
+        < position[ELIGIBLE_DIVIDENDS_CREDIT]
+        < position[NO_SLIP_DIVIDEND_TAX_CREDIT]
+        < position[DIVIDEND_TAX_CREDIT]
+        < position[CREDITS_AGAINST_BASIC_FEDERAL_TAX]
+    )
+    assert (
+        position[OTHER_DIVIDENDS_GROSSED_UP]
+        < position[DIVIDENDS_AMOUNT_B]
+        < position[OTHER_DIVIDENDS_CREDIT]
+        < position[NO_SLIP_DIVIDEND_TAX_CREDIT]
+    )
+    assert position[DIVIDENDS_AMOUNT_B] < position[DIVIDENDS_AMOUNT_A_LESS_B]
+    assert position[SLIP_DIVIDEND_TAX_CREDIT] < position[DIVIDEND_TAX_CREDIT]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
     assert position[RRSP_CONTRIBUTIONS_AVAILABLE] < position[RRSP_DEDUCTION_MAXIMUM]
     assert position[RRSP_DEDUCTION_MAXIMUM] < position[RRSP_DEDUCTION]
@@ -2355,7 +2632,8 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
     )
     assert position[NON_REFUNDABLE_CREDIT_AMOUNTS] < position[NON_REFUNDABLE_TAX_CREDITS]
-    assert position[NON_REFUNDABLE_TAX_CREDITS] < position[FEDERAL_TAX_AFTER_CREDITS]
+    assert position[NON_REFUNDABLE_TAX_CREDITS] < position[CREDITS_AGAINST_BASIC_FEDERAL_TAX]
+    assert position[CREDITS_AGAINST_BASIC_FEDERAL_TAX] < position[FEDERAL_TAX_AFTER_CREDITS]
     assert position[ontario.BASIC_PERSONAL_AMOUNT] < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert (
         position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
@@ -3671,7 +3949,8 @@ def test_return_hs_pension_and_benefit_income_is_all_of_its_total_income() -> No
         "total_income: employment_income 0 + other_employment_income 0 + old_age_security 8000 "
         "+ cpp_or_qpp_benefits 9000 + other_pensions_and_superannuation 20000 "
         "+ elected_split_pension_amount 0 + universal_child_care_benefit 0 "
-        "+ ei_and_other_benefits 0 + interest_and_other_investment_income 1400 "
+        "+ ei_and_other_benefits 0 + taxable_dividends 0 "
+        "+ interest_and_other_investment_income 1400 "
         "+ net_partnership_income 0 + rdsp_income 0 + taxable_capital_gains 0 "
         "+ taxable_support_payments 0 + rrsp_income 5000 + fhsa_income 0 + other_fhsa_income 0 "
         "+ other_income 0 + taxable_scholarships 0 + income_support_benefits 2000 = 45400"
@@ -3927,3 +4206,205 @@ def test_there_is_no_caregiver_amount_for_a_spouse_not_eligible_for_it(
     worksheet = return_j(spouse_net_income=spouse_net_income, spouse_caregiver_eligible=0)
 
     assert worksheet.get(SPOUSE_CAREGIVER_AMOUNT).value == D("0")
+
+
+def return_k() -> Worksheet:
+    """Return K's inputs, as in `returns/2025_return_k.yaml`: slip and no-slip dividends."""
+    return compute(
+        "50000",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        t5_taxable_dividends_other_than_eligible="200",
+        t5_taxable_dividends="500",
+        t5_dividend_tax_credit="60.00",
+        eligible_dividends_received_without_a_slip="1000",
+        other_dividends_received_without_a_slip="500",
+        income_tax_deducted="9000",
+    )
+
+
+def test_return_ks_taxable_dividends_are_the_federal_worksheets_lines_12000_and_12010() -> None:
+    # The Federal Worksheet for lines 12000 and 12010: a T5 slip with box 11 of 200 (line 3) and
+    # boxes 11 and 25 of 500 (line 8), so lines 5 and 10; no information slip for eligible
+    # dividends of 1000 (line 11) and dividends other than eligible of 500 (line 14): line 13 is
+    # 1000 x 138% = 1380.00, line 16 is 500 x 115% = 575.00 and line 17 is 1955.00. Line 12010 is
+    # line 5 plus line 16, 775.00, and line 12000 is line 10 plus line 17, 2455.00.
+    worksheet = return_k()
+
+    assert worksheet.get(SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE).value == D("200")
+    assert worksheet.get(SLIP_TAXABLE_DIVIDENDS).value == D("500")
+    assert worksheet.get(ELIGIBLE_DIVIDENDS_GROSSED_UP).value == D("1380.00")
+    assert worksheet.get(OTHER_DIVIDENDS_GROSSED_UP).value == D("575.00")
+    assert worksheet.get(DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP).value == D("1955.00")
+    assert worksheet.get(TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE).value == D("775.00")
+    assert worksheet.get(TAXABLE_DIVIDENDS).value == D("2455.00")
+    assert worksheet.get(TOTAL_INCOME).value == D("52455.00")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    for line in (
+        "slip_taxable_dividends_other_than_eligible: t3_taxable_dividends_other_than_eligible 0 "
+        "+ t4ps_taxable_dividends_other_than_eligible 0 "
+        "+ t5_taxable_dividends_other_than_eligible 200 "
+        "+ t5013_taxable_dividends_other_than_eligible 0 = 200",
+        "slip_taxable_dividends: t3_taxable_dividends 0 + t4ps_taxable_dividends 0 "
+        "+ t5_taxable_dividends 500 + t5013_taxable_dividends 0 = 500",
+        "eligible_dividends_grossed_up: 138/100 of eligible_dividends_received_without_a_slip "
+        "1000 (half-up to 0.01)",
+        "other_dividends_grossed_up: 115/100 of other_dividends_received_without_a_slip 500 "
+        "(half-up to 0.01)",
+        "dividends_without_a_slip_grossed_up: eligible_dividends_grossed_up 1380 "
+        "+ other_dividends_grossed_up 575 = 1955",
+        "taxable_dividends_other_than_eligible: slip_taxable_dividends_other_than_eligible 200 "
+        "+ other_dividends_grossed_up 575 = 775",
+        "taxable_dividends: slip_taxable_dividends 500 "
+        "+ dividends_without_a_slip_grossed_up 1955 = 2455",
+    ):
+        assert line in rendered, line
+
+
+def test_return_ks_federal_dividend_tax_credit_counts_the_no_slip_dividends_only() -> None:
+    # The Federal Worksheet's "Line 40425": line 5 is the slip credit, 60.00 (T5 boxes 12 and
+    # 26). Note 1 "Enter only the amount of dividends that were not shown on an information
+    # slip." makes line A the worksheet's line 17, 1955.00, not the 2455.00 of line 12000, and
+    # line B its line 16, 575.00, not the 775.00 of line 12010. Line 6 is 575.00 x 9.0301% =
+    # 51.92, line C is 1955.00 - 575.00 = 1380.00, line 7 is 1380.00 x 15.0198% = 207.27, line
+    # 8 is 259.19 and line 9, and so line 40425, is 60.00 + 259.19 = 319.19.
+    worksheet = return_k()
+
+    assert worksheet.get(SLIP_DIVIDEND_TAX_CREDIT).value == D("60.00")
+    assert worksheet.get(DIVIDENDS_AMOUNT_A).value == D("1955.00")
+    assert worksheet.get(DIVIDENDS_AMOUNT_B).value == D("575.00")
+    assert worksheet.get(OTHER_DIVIDENDS_CREDIT).value == D("51.92")
+    assert worksheet.get(DIVIDENDS_AMOUNT_A_LESS_B).value == D("1380.00")
+    assert worksheet.get(ELIGIBLE_DIVIDENDS_CREDIT).value == D("207.27")
+    assert worksheet.get(NO_SLIP_DIVIDEND_TAX_CREDIT).value == D("259.19")
+    assert worksheet.get(DIVIDEND_TAX_CREDIT).value == D("319.19")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    for line in (
+        "slip_dividend_tax_credit: t3_dividend_tax_credit 0 + t4ps_dividend_tax_credit 0 "
+        "+ t5_dividend_tax_credit 60 + t5013_dividend_tax_credit 0 = 60",
+        "dividends_amount_a: dividends_without_a_slip_grossed_up 1955 = 1955",
+        "dividends_amount_b: other_dividends_grossed_up 575 = 575",
+        "other_dividends_credit: 9.0301% of dividends_amount_b 575 (half-up to 0.01)",
+        "dividends_amount_a_less_b: dividends_amount_a 1955 less dividends_amount_b 575 = 1380",
+        "eligible_dividends_credit: 15.0198% of dividends_amount_a_less_b 1380 (half-up to 0.01)",
+        "no_slip_dividend_tax_credit: other_dividends_credit 51.92 "
+        "+ eligible_dividends_credit 207.27 = 259.19",
+        "dividend_tax_credit: slip_dividend_tax_credit 60 + no_slip_dividend_tax_credit 259.19 "
+        "= 319.19",
+    ):
+        assert line in rendered, line
+
+
+def test_the_dividend_tax_credit_comes_off_the_basic_federal_tax_with_the_other_credits() -> None:
+    # T1 line 125 "Add lines 122 to 124.": line 122 (35000) 3004.65 and line 123 (40425)
+    # 319.19, 3323.84; line 126 "Line 121 minus line 125 (if negative, enter "0")" is
+    # 7538.55 - 3323.84 = 4214.71, the federal tax after credits carried to the net federal tax.
+    worksheet = return_k()
+
+    assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("3004.65")
+    assert worksheet.get(CREDITS_AGAINST_BASIC_FEDERAL_TAX).value == D("3323.84")
+    assert worksheet.get(FEDERAL_BASIC_TAX).value == D("7538.55")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("4214.71")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("4214.71")
+    assert worksheet.get(ontario.ONTARIO_TAX).value == D("2424.13")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("6638.84")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-2361.16")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "credits_against_basic_federal_tax: non_refundable_tax_credits 3004.65 "
+        "+ dividend_tax_credit 319.19 = 3323.84"
+    ) in rendered
+    assert (
+        "federal_tax_after_credits: federal_basic_tax 7538.55 "
+        "less credits_against_basic_federal_tax 3323.84, not below 0 = 4214.71"
+    ) in rendered
+
+
+def test_slip_credits_of_100_and_no_other_dividends_give_line_40425_of_100() -> None:
+    # Line 5 of the credit chart is 100.00 and nothing is on line A or B: "Otherwise, enter the
+    # amount from line 5 on line 40425 of your return."
+    worksheet = compute("50000", "0", "0", "0", "0", "0", "0", t5_dividend_tax_credit="100.00")
+
+    assert worksheet.get(SLIP_DIVIDEND_TAX_CREDIT).value == D("100.00")
+    assert worksheet.get(OTHER_DIVIDENDS_CREDIT).value == D("0")
+    assert worksheet.get(ELIGIBLE_DIVIDENDS_CREDIT).value == D("0")
+    assert worksheet.get(NO_SLIP_DIVIDEND_TAX_CREDIT).value == D("0")
+    assert worksheet.get(DIVIDEND_TAX_CREDIT).value == D("100.00")
+    assert worksheet.get(TAXABLE_DIVIDENDS).value == D("0")
+    assert worksheet.get(CREDITS_AGAINST_BASIC_FEDERAL_TAX).value == (
+        worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value + D("100.00")
+    )
+
+
+def test_dividends_on_slips_alone_are_not_grossed_up_and_leave_lines_a_and_b_at_zero() -> None:
+    # Slip amounts of 800 (T5 boxes 11 and 25) and 300 (box 11) are lines 12000 and 12010 as
+    # they stand, and the slip credit of 70.00 is line 40425: with nothing received without a
+    # slip, lines A and B and the credits computed from them are 0.
+    worksheet = compute(
+        "50000",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        t5_taxable_dividends_other_than_eligible="300",
+        t5_taxable_dividends="800",
+        t5_dividend_tax_credit="70.00",
+    )
+
+    assert worksheet.get(TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE).value == D("300")
+    assert worksheet.get(TAXABLE_DIVIDENDS).value == D("800")
+    assert worksheet.get(DIVIDENDS_AMOUNT_A).value == D("0")
+    assert worksheet.get(DIVIDENDS_AMOUNT_B).value == D("0")
+    assert worksheet.get(NO_SLIP_DIVIDEND_TAX_CREDIT).value == D("0")
+    assert worksheet.get(DIVIDEND_TAX_CREDIT).value == D("70.00")
+    assert worksheet.get(TOTAL_INCOME).value == D("50800")
+
+
+def test_each_slip_box_adds_to_its_worksheet_line_once() -> None:
+    # Distinct powers of two, one per slip line, so a line left out or added twice changes the
+    # sum: lines 1 to 4 (T3, T4PS, T5, T5013) 1 + 2 + 4 + 8 = 15, lines 6 to 9 16 + 32 + 64 +
+    # 128 = 240, and credit lines 1 to 4 256 + 512 + 1024 + 2048 = 3840.
+    worksheet = compute(
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        t3_taxable_dividends_other_than_eligible="1",
+        t4ps_taxable_dividends_other_than_eligible="2",
+        t5_taxable_dividends_other_than_eligible="4",
+        t5013_taxable_dividends_other_than_eligible="8",
+        t3_taxable_dividends="16",
+        t4ps_taxable_dividends="32",
+        t5_taxable_dividends="64",
+        t5013_taxable_dividends="128",
+        t3_dividend_tax_credit="256",
+        t4ps_dividend_tax_credit="512",
+        t5_dividend_tax_credit="1024",
+        t5013_dividend_tax_credit="2048",
+    )
+
+    assert worksheet.get(SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE).value == D("15")
+    assert worksheet.get(SLIP_TAXABLE_DIVIDENDS).value == D("240")
+    assert worksheet.get(SLIP_DIVIDEND_TAX_CREDIT).value == D("3840")
+    assert worksheet.get(DIVIDEND_TAX_CREDIT).value == D("3840")
+
+
+def test_a_dividend_credit_above_the_basic_tax_leaves_zero_federal_tax_not_a_refund() -> None:
+    # Low income, so a small basic tax: the credits against it (35000 and 40425) are more, and
+    # the unused part is lost, as line 126 is "if negative, enter "0"".
+    worksheet = compute("10000", "0", "0", "0", "0", "0", "0", t5_dividend_tax_credit="5000")
+
+    assert (
+        worksheet.get(CREDITS_AGAINST_BASIC_FEDERAL_TAX).value
+        > worksheet.get(FEDERAL_BASIC_TAX).value
+    )
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("0")

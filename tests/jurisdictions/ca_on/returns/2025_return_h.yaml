@@ -7,31 +7,32 @@
 # Worksheet's line 9, the eight sources of line 12100 added, and its line 11, that less the
 # part reported in previous years, to the interest and other investment income (T1 line
 # 12100); lines 14400, 14500 and 14600 added to line 14700; and, in line order, employment
-# income (line 10100), the other employment income, the pension, benefit and investment
-# lines, the taxable capital gains, the taxable support payments, the RRSP, FHSA, other and
-# scholarship income and line 14700 to total income (line 15000), $45,400. With no
-# employment income there are no CPP contributions or EI premiums, no Canada employment
-# amount, no LIFT credit and no working income, so no Canada workers benefit. Net income is
-# below the $177,882 at which the basic personal amount starts to fall, so net income and
-# taxable income are $45,400.00, in the lowest federal bracket and the first Ontario
-# bracket; the Ontario health premium is $450 (the row for taxable income more than $38,500
-# but not more than $48,000); the Ontario tax reduction is zero, as twice its amounts are
-# below the Ontario tax with surtax. The filer receives Old Age Security, which starts at
-# 65, so is taken as born in 1960 or earlier (to be confirmed): the age amount (T1 line
-# 30100) is claimed once and, as net income of $45,400.00 is at or below the $45,522 income
-# threshold of the Federal Worksheet, it is the whole maximum, $9,028.00. ON428 line 58080
-# (the Ontario age amount) is not computed in this return, so the Ontario figures are
-# without it. The spouse or common-law partner amount (line 30300) and the Canada caregiver
-# amount for a spouse (line 30425) are $0, as there is no spouse. There is no capital gain,
-# unused or new RRSP contribution, union dues, child care expense or dependant. Not yet
-# computed, so not in this file: the deduction of line 14700 on line 25000 (Step 4), the
-# pension income amount, the amounts transferred and the credits that follow from the
-# pension and benefit lines, the social benefits repayment, and any deduction from net
-# income. Line 82 of ON428 is not triggered by this return, and the qualifying donations for
-# line 87 (the community food program donation tax credit for farmers) are a chosen $0, so
-# line 87 is $0 and line 88 is line 86. Amounts are quoted decimal strings, never floats;
-# counts are quoted digit strings. Every output the CA-ON manifest declares must appear
-# under `expected`; intermediate lines may be listed and are then checked too.
+# income (line 10100), the other employment income, the pension and benefit lines, the
+# taxable dividends, the investment lines, the taxable capital gains, the taxable support
+# payments, the RRSP, FHSA, other and scholarship income and line 14700 to total income
+# (line 15000), $45,400. With no employment income there are no CPP contributions or EI
+# premiums, no Canada employment amount, no LIFT credit and no working income, so no Canada
+# workers benefit. Net income is below the $177,882 at which the basic personal amount
+# starts to fall, so net income and taxable income are $45,400.00, in the lowest federal
+# bracket and the first Ontario bracket; the Ontario health premium is $450 (the row for
+# taxable income more than $38,500 but not more than $48,000); the Ontario tax reduction is
+# zero, as twice its amounts are below the Ontario tax with surtax. The filer receives Old
+# Age Security, which starts at 65, so is taken as born in 1960 or earlier (to be
+# confirmed): the age amount (T1 line 30100) is claimed once and, as net income of
+# $45,400.00 is at or below the $45,522 income threshold of the Federal Worksheet, it is the
+# whole maximum, $9,028.00. ON428 line 58080 (the Ontario age amount) is not computed in
+# this return, so the Ontario figures are without it. The spouse or common-law partner
+# amount (line 30300) and the Canada caregiver amount for a spouse (line 30425) are $0, as
+# there is no spouse. There is no capital gain, unused or new RRSP contribution, union dues,
+# child care expense or dependant. Not yet computed, so not in this file: the deduction of
+# line 14700 on line 25000 (Step 4), the pension income amount, the amounts transferred and
+# the credits that follow from the pension and benefit lines, the social benefits repayment,
+# and any deduction from net income. Line 82 of ON428 is not triggered by this return, and
+# the qualifying donations for line 87 (the community food program donation tax credit for
+# farmers) are a chosen $0, so line 87 is $0 and line 88 is line 86. Amounts are quoted
+# decimal strings, never floats; counts are quoted digit strings. Every output the CA-ON
+# manifest declares must appear under `expected`; intermediate lines may be listed and are
+# then checked too.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -54,10 +55,10 @@ description: >-
   included on line 9 and reported in previous years) is a chosen $100; line 11, the amount
   for line 12100, is 1,500 - 100 = 1,400. Lines 14400, 14500 and 14600 add to line 14700:
   2,000 + 0 + 0 = 2,000. Total income (line 15000) is the sum of the income lines: 0 + 0 +
-  8,000 + 9,000 + 20,000 + 0 + 0 + 0 + 1,400 + 0 + 0 + 0 + 0 + 5,000 + 0 + 0 + 0 + 0 + 2,000
-  = 45,400. With no employment income there are no CPP contributions (Schedule 8, base 0,
-  first and second additional 0, so the enhanced contributions, line 22215, are 0) and no EI
-  premiums (line 31200: 0). No unused or new RRSP contributions, so the most that may be
+  8,000 + 9,000 + 20,000 + 0 + 0 + 0 + 0 + 1,400 + 0 + 0 + 0 + 0 + 5,000 + 0 + 0 + 0 + 0 +
+  2,000 = 45,400. With no employment income there are no CPP contributions (Schedule 8, base
+  0, first and second additional 0, so the enhanced contributions, line 22215, are 0) and no
+  EI premiums (line 31200: 0). No unused or new RRSP contributions, so the most that may be
   deducted (Schedule 7 line 17) is $0, the lesser of the contributions available to deduct
   (line 10) of $0 and a chosen deduction limit of $0 (line 11); the amount deducted (line
   18) is $0, so the RRSP deduction (line 20800) is $0 and the unused contributions carried
@@ -142,10 +143,10 @@ sources:
     line 29 is 2,000, each a chosen figure: the amounts on the taxpayer's slips, which
     nothing on this return determines. Line 32 (line 14700) is lines 29 to 31, 2,000 + 0 + 0
     = 2,000. Only line 12800, the taxable amount, enters total income; line 12799, the
-    total, is not an input of the computation. Dividends (lines 12000 and 12010), rental
-    income (line 13) and self-employment income (lines 22 to 26) are not wired yet. Total income (line 15000), which takes
+    total, is not an input of the computation. Rental income (line 13) and self-employment
+    income (lines 22 to 26) are not wired yet. Total income (line 15000), which takes
     amounts already in cents, is the sum of the income lines: 0 + 0 + 8,000 + 9,000 + 20,000
-    + 0 + 0 + 0 + 1,400 + 0 + 0 + 0 + 0 + 5,000 + 0 + 0 + 0 + 0 + 2,000 = 45,400.
+    + 0 + 0 + 0 + 0 + 1,400 + 0 + 0 + 0 + 0 + 5,000 + 0 + 0 + 0 + 0 + 2,000 = 45,400.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-r/5006-r-25e.txt
   - >-
     CRA, the 2025 Federal Worksheet (form 5000-D1, docs/cra-forms-2025/5000-d1-25e.txt,
@@ -437,6 +438,20 @@ inputs:
   ca/elected_split_pension_amount: "0"
   ca/universal_child_care_benefit: "0"
   ca/ei_and_other_benefits: "0"
+  ca/t3_taxable_dividends_other_than_eligible: "0"
+  ca/t4ps_taxable_dividends_other_than_eligible: "0"
+  ca/t5_taxable_dividends_other_than_eligible: "0"
+  ca/t5013_taxable_dividends_other_than_eligible: "0"
+  ca/t3_taxable_dividends: "0"
+  ca/t4ps_taxable_dividends: "0"
+  ca/t5_taxable_dividends: "0"
+  ca/t5013_taxable_dividends: "0"
+  ca/eligible_dividends_received_without_a_slip: "0"
+  ca/other_dividends_received_without_a_slip: "0"
+  ca/t3_dividend_tax_credit: "0"
+  ca/t4ps_dividend_tax_credit: "0"
+  ca/t5_dividend_tax_credit: "0"
+  ca/t5013_dividend_tax_credit: "0"
   ca/t3_investment_income: "0"
   ca/t5_investment_income: "1200"
   ca/t5013_investment_income: "0"
@@ -482,6 +497,7 @@ inputs:
   ca-on/community_food_program_donations: "0"
 expected:
   ca/taxable_capital_gains: "0"
+  ca/taxable_dividends_other_than_eligible: "0"
   ca/investment_income_before_prior_years: "1500"
   ca/interest_and_other_investment_income: "1400"
   ca/income_support_benefits: "2000"
