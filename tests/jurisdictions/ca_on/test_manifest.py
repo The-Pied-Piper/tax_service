@@ -46,6 +46,14 @@ from app.jurisdictions.ca.catalog import (
     CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
     CAPITAL_GAIN,
+    CAPITAL_GIFT_GAINS_DEDUCTION,
+    CAPITAL_GIFT_TAXABLE_GAINS,
+    CAPITAL_GIFTS_LIMIT_ADDITION,
+    CAPITAL_GIFTS_TOTAL,
+    CAPITAL_PROPERTY_GIFTS,
+    CHARITABLE_DONATIONS,
+    CHARITABLE_DONATIONS_CLAIMED,
+    CHARITABLE_DONATIONS_LIMIT,
     CHILD_CARE_BASIC_LIMIT,
     CHILD_CARE_EARNED_INCOME,
     CHILD_CARE_EARNED_INCOME_LIMIT,
@@ -62,6 +70,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_OR_QPP_BENEFITS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
@@ -71,11 +80,27 @@ from app.jurisdictions.ca.catalog import (
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DEPENDANT_NET_INCOME,
+    DEPRECIABLE_GIFT_CAPITAL_COST,
+    DEPRECIABLE_GIFT_NET_PROCEEDS,
+    DEPRECIABLE_GIFT_PROCEEDS_OR_COST,
+    DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
+    DEPRECIABLE_GIFTS,
     DIVIDEND_TAX_CREDIT,
     DIVIDENDS_AMOUNT_A,
     DIVIDENDS_AMOUNT_A_LESS_B,
     DIVIDENDS_AMOUNT_B,
     DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP,
+    DONATION_FIRST_TIER_MAXIMUM,
+    DONATION_HIGH_INCOME_THRESHOLD,
+    DONATION_LIMIT_ON_NET_INCOME,
+    DONATION_LIMIT_WITH_CAPITAL_GIFTS,
+    DONATIONS_AND_GIFTS_CREDIT,
+    DONATIONS_AND_GIFTS_TOTAL,
+    DONATIONS_FIRST_TIER,
+    DONATIONS_OVER_FIRST_TIER,
+    DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS,
+    ECOLOGICAL_AND_CULTURAL_GIFTS,
+    ECOLOGICAL_GIFTS_BEFORE_2016,
     EI_AND_OTHER_BENEFITS,
     EI_PREMIUMS,
     ELECTED_SPLIT_PENSION_AMOUNT,
@@ -89,7 +114,12 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
     FHSA_INCOME,
+    FIRST_TIER_DONATION_CREDIT,
+    FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
+    GOVERNMENT_DONATIONS,
+    HIGH_INCOME_DONATION_CREDIT,
+    HIGH_INCOME_DONATIONS,
     INCOME_SUPPORT_BENEFITS,
     INCOME_TAX_DEDUCTED,
     INFIRM_CHILDREN,
@@ -128,6 +158,8 @@ from app.jurisdictions.ca.catalog import (
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REFUND_OR_BALANCE_OWING,
+    REGULAR_RATE_DONATION_CREDIT,
+    REGULAR_RATE_DONATIONS,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
     RRSP_CONTRIBUTIONS_AVAILABLE,
@@ -172,8 +204,14 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_DIVIDENDS,
     TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     TAXABLE_INCOME,
+    TAXABLE_INCOME_OVER_DONATION_THRESHOLD,
     TAXABLE_SCHOLARSHIPS,
     TAXABLE_SUPPORT_PAYMENTS,
+    TOP_UP_CREDITS_BASE,
+    TOP_UP_EXCESS,
+    TOP_UP_TAX_CREDIT,
+    TOP_UP_THRESHOLD,
+    TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
@@ -182,6 +220,7 @@ from app.jurisdictions.ca.catalog import (
     UCCB_REPAYMENT,
     UNION_DUES,
     UNIVERSAL_CHILD_CARE_BENEFIT,
+    UNIVERSITY_DONATIONS_OUTSIDE_CANADA,
     UNUSED_RRSP_CONTRIBUTIONS,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
     WORKERS_COMPENSATION_BENEFITS,
@@ -331,6 +370,17 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca-on/seniors_transit_paid",
             "ca-on/flow_through_share_slips",
             "ca-on/community_food_program_donations",
+            "ca/charitable_donations",
+            "ca/government_donations",
+            "ca/university_donations_outside_canada",
+            "ca/foreign_charity_donations",
+            "ca/ecological_and_cultural_gifts",
+            "ca/ecological_gifts_before_2016",
+            "ca/depreciable_gift_recaptured_depreciation",
+            "ca/depreciable_gift_net_proceeds",
+            "ca/depreciable_gift_capital_cost",
+            "ca/capital_gift_taxable_gains",
+            "ca/capital_gift_gains_deduction",
         }
     )
     # T1 line 167, the refund or balance owing, Schedule 7 line 23, what the return produces for
@@ -1148,19 +1198,301 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca-on/non_refundable_credit_amounts"},
         ),
-        # The rate is applied once, to the total (T1 line 33800, ON428 line 58840), giving each
-        # form's non-refundable tax credits (T1 line 35000, ON428 line 61500).
+        # Schedule 9 chart for line 33700 "Gifts of capital property that is depreciable property",
+        # line 4 "Enter whichever is less: amount from line 2 or line 3.": the net proceeds of
+        # disposition of the property donated in 2025 (line 2) and its capital cost (line 3), caller
+        # inputs for the one class and property the return claims.
+        CapabilitySelection(
+            name="core/lesser_of",
+            params={},
+            consumes={
+                "amounts": ("ca/depreciable_gift_net_proceeds", "ca/depreciable_gift_capital_cost")
+            },
+            produces={"output": "ca/depreciable_gift_proceeds_or_cost"},
+        ),
+        # Schedule 9 chart for line 33700, line 5 "Enter whichever is less: amount from line 1 or
+        # line 4. Enter this amount on line 33700 of the previous page.": line 1 "Amount of
+        # recaptured depreciation included on your 2025 return" is a caller input. This is the
+        # previous page's line B, "Gifts of capital property that are depreciable property".
+        CapabilitySelection(
+            name="core/lesser_of",
+            params={},
+            consumes={
+                "amounts": (
+                    "ca/depreciable_gift_recaptured_depreciation",
+                    "ca/depreciable_gift_proceeds_or_cost",
+                )
+            },
+            produces={"output": "ca/depreciable_gifts"},
+        ),
+        # Schedule 9 chart for line 33900 "Gifts of capital property", line 3 "Line 1 minus Line 2
+        # Enter this amount on line 33900 on the previous page.": line 1 "Amount of current-year
+        # taxable capital gains from capital property donated in 2025" and line 2 "Amount of
+        # current-year capital gains deduction from capital property donated in 2025" are caller
+        # inputs. This is the previous page's line C, "Gifts of capital property".
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={
+                "amount": "ca/capital_gift_taxable_gains",
+                "less": "ca/capital_gift_gains_deduction",
+            },
+            produces={"output": "ca/capital_property_gifts"},
+        ),
+        # Schedule 9 line 5 "Add lines 1 to 4. Total eligible amount of charitable donations": line
+        # 1 donations to registered charities and similar organizations, line 2 (line 32900)
+        # donations to the Government of Canada, a province or territory and similar bodies, line 3
+        # (line 33300) donations to registered universities outside Canada and line 4 (line 33400)
+        # donations to the United Nations and its agencies and registered foreign charities, caller
+        # inputs taken as the receipts state them, with any unused donations of the previous five
+        # years that the filer chooses to claim.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/charitable_donations",
+                    "ca/government_donations",
+                    "ca/university_donations_outside_canada",
+                    "ca/foreign_charity_donations",
+                )
+            },
+            produces={"output": "ca/total_charitable_donations"},
+        ),
+        # Schedule 9 line 6 "Enter your net income from line 23600 of your return. Line A"
+        # "multiplied by 75%": 75% of the net income.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/donation_net_income_rate"},
+            consumes={"base": "ca/net_income"},
+            produces={"output": "ca/donation_limit_on_net_income"},
+        ),
+        # Schedule 9 line 7 "Amount B plus amount C Line D" "multiplied by 25%": line D is the gifts
+        # of capital property that are depreciable property (line B, line 33700) plus the gifts of
+        # capital property (line C, line 33900), and line 7 is 25% of it.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/depreciable_gifts", "ca/capital_property_gifts")},
+            produces={"output": "ca/capital_gifts_total"},
+        ),
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/capital_gifts_limit_rate"},
+            consumes={"base": "ca/capital_gifts_total"},
+            produces={"output": "ca/capital_gifts_limit_addition"},
+        ),
+        # Schedule 9 line 8 "Line 6 plus line 7".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": ("ca/donation_limit_on_net_income", "ca/capital_gifts_limit_addition")
+            },
+            produces={"output": "ca/donation_limit_with_capital_gifts"},
+        ),
+        # Schedule 9 line 9 "Enter whichever is less: amount A or line 8. Total charitable donations
+        # limit": amount A is the net income of line 6, so the 25% of the gifts of capital property
+        # can raise the limit above 75% of the net income, but not above the net income itself.
+        CapabilitySelection(
+            name="core/lesser_of",
+            params={},
+            consumes={"amounts": ("ca/net_income", "ca/donation_limit_with_capital_gifts")},
+            produces={"output": "ca/charitable_donations_limit"},
+        ),
+        # Schedule 9 line 10 and line 34000 "Enter whichever is less: amount from line 5 or line 9."
+        CapabilitySelection(
+            name="core/lesser_of",
+            params={},
+            consumes={
+                "amounts": ("ca/total_charitable_donations", "ca/charitable_donations_limit")
+            },
+            produces={"output": "ca/charitable_donations_claimed"},
+        ),
+        # Schedule 9 line 11 and line 34200 "Eligible amount of ecological gifts and cultural gifts
+        # (see Guide P113)", a caller input, and line 12 "Line 10 plus line 11".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": ("ca/charitable_donations_claimed", "ca/ecological_and_cultural_gifts")
+            },
+            produces={"output": "ca/donations_and_gifts_total"},
+        ),
+        # Schedule 9 line 13 "Enter whichever is less: amount from line 12 or $200.": the $200 is a
+        # dataset, claimed whole.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca/donation_first_tier_maximum"},
+            consumes={},
+            produces={"output": "ca/donation_first_tier_maximum"},
+        ),
+        CapabilitySelection(
+            name="core/lesser_of",
+            params={},
+            consumes={
+                "amounts": ("ca/donations_and_gifts_total", "ca/donation_first_tier_maximum")
+            },
+            produces={"output": "ca/donations_first_tier"},
+        ),
+        # Schedule 9 line 14 "Line 12 minus line 13".
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={"amount": "ca/donations_and_gifts_total", "less": "ca/donations_first_tier"},
+            produces={"output": "ca/donations_over_first_tier"},
+        ),
+        # Schedule 9 line 15 and line 34210 "Total ecological gifts made after February 10, 2014,
+        # and before 2016 included in the amount on line 11", a caller input, and line 16 "Line 14
+        # minus line 15 (if negative, enter "0")".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca/donations_over_first_tier",
+                "less": "ca/ecological_gifts_before_2016",
+            },
+            produces={"output": "ca/donations_over_first_tier_after_2016_gifts"},
+        ),
+        # Schedule 9 line 18 "Income threshold 253,414.00": the dataset becomes an artifact of the
+        # same name.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca/donation_high_income_threshold"},
+            consumes={},
+            produces={"output": "ca/donation_high_income_threshold"},
+        ),
+        # Schedule 9 line 17 "Enter your taxable income from line 26000 of your return." and line 19
+        # "Line 17 minus line 18 (if negative, enter "0")".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca/taxable_income", "less": "ca/donation_high_income_threshold"},
+            produces={"output": "ca/taxable_income_over_donation_threshold"},
+        ),
+        # Schedule 9 line 20 "Enter whichever is less: amount from line 16 or line 19. Line F"
+        # "multiplied by 33%": line F, then 33% of it.
+        CapabilitySelection(
+            name="core/lesser_of",
+            params={},
+            consumes={
+                "amounts": (
+                    "ca/donations_over_first_tier_after_2016_gifts",
+                    "ca/taxable_income_over_donation_threshold",
+                )
+            },
+            produces={"output": "ca/high_income_donations"},
+        ),
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/donation_high_income_rate"},
+            consumes={"base": "ca/high_income_donations"},
+            produces={"output": "ca/high_income_donation_credit"},
+        ),
+        # Schedule 9 line 21 "Amount E minus amount F Line G" "multiplied by 29%": amount E is the
+        # amount from line 14 of the previous page and amount F is line F; line G, then 29% of it.
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={"amount": "ca/donations_over_first_tier", "less": "ca/high_income_donations"},
+            produces={"output": "ca/regular_rate_donations"},
+        ),
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/donation_regular_rate"},
+            consumes={"base": "ca/regular_rate_donations"},
+            produces={"output": "ca/regular_rate_donation_credit"},
+        ),
+        # Schedule 9 line 22 "Amount from line 13 of the previous page Line H" "multiplied by
+        # 14.5%".
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/donation_first_tier_rate"},
+            consumes={"base": "ca/donations_first_tier"},
+            produces={"output": "ca/first_tier_donation_credit"},
+        ),
+        # Schedule 9 line 23 "Add lines 20 to 22. Enter this amount on line 34900 of your return.
+        # Allowable donations for 2025", T1 line 116 (line 34900) "Donations and gifts (complete
+        # Schedule 9)".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/high_income_donation_credit",
+                    "ca/regular_rate_donation_credit",
+                    "ca/first_tier_donation_credit",
+                )
+            },
+            produces={"output": "ca/donations_and_gifts_credit"},
+        ),
+        # T1 line 115 (line 33800) "Line 113 multiplied by the percentage from line 114": the
+        # federal credit rate is applied once, to the total of credit amounts. It is the first of
+        # the three lines that line 35000 adds, and the base of the top-up tax credit.
         CapabilitySelection(
             name="core/apply_rate",
             params={"rate": "ca/credit_rate"},
             consumes={"base": "ca/non_refundable_credit_amounts"},
-            produces={"output": "ca/non_refundable_tax_credits"},
+            produces={"output": "ca/credit_amounts_at_credit_rate"},
         ),
+        # ON428 line 46 (line 58840) "Line 44 multiplied by the percentage from line 45": the
+        # Ontario credit rate is applied once, to the total of credit amounts, giving its
+        # non-refundable tax credits (line 50, line 61500, as line 49 is not modelled).
         CapabilitySelection(
             name="core/apply_rate",
             params={"rate": "ca-on/credit_rate"},
             consumes={"base": "ca-on/non_refundable_credit_amounts"},
             produces={"output": "ca-on/non_refundable_tax_credits"},
+        ),
+        # Federal Worksheet 5000-D1, "Line 34990 - Top-up tax credit": line 1 "Amount from line
+        # 33800 of your return", line 2 "Amount from line 22 of your Schedule 9" and line 3 "Line 1
+        # plus line 2".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": ("ca/credit_amounts_at_credit_rate", "ca/first_tier_donation_credit")
+            },
+            produces={"output": "ca/top_up_credits_base"},
+        ),
+        # Federal Worksheet 5000-D1, "Line 34990 - Top-up tax credit", line 4 "8,319.38": the
+        # dataset becomes an artifact of the same name; line 5 "Line 3 minus line 4 (if negative,
+        # enter "0")".
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca/top_up_threshold"},
+            consumes={},
+            produces={"output": "ca/top_up_threshold"},
+        ),
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca/top_up_credits_base", "less": "ca/top_up_threshold"},
+            produces={"output": "ca/top_up_excess"},
+        ),
+        # Federal Worksheet 5000-D1, "Line 34990 - Top-up tax credit", line 6 "Applicable rate
+        # 3.45%" and line 7 "Line 5 multiplied by the percentage from line 6 Enter this amount on
+        # line 34990 of your return.", T1 line 117 (line 34990) "Top-up tax credit (use Federal
+        # Worksheet)".
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/top_up_rate"},
+            consumes={"base": "ca/top_up_excess"},
+            produces={"output": "ca/top_up_tax_credit"},
+        ),
+        # T1 line 118 (line 35000) "Add lines 115 to 117. Total federal non-refundable tax credits":
+        # line 115 (line 33800), line 116 (line 34900) and line 117 (line 34990), in line order.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/credit_amounts_at_credit_rate",
+                    "ca/donations_and_gifts_credit",
+                    "ca/top_up_tax_credit",
+                )
+            },
+            produces={"output": "ca/non_refundable_tax_credits"},
         ),
         # T1 line 123 (40425) "Federal dividend tax credit (use Federal Worksheet)": the Federal
         # Worksheet's "Line 40425 - Federal dividend tax credit", line 5 "Add lines 1 to 4." of
@@ -1709,7 +2041,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 139
+    assert len(found.capabilities) == 167
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -1719,7 +2051,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 139
+    assert len(composition.order) == 167
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -2145,6 +2477,129 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (
             ApplyRate,
             frozenset({NON_REFUNDABLE_CREDIT_AMOUNTS}),
+            frozenset({CREDIT_AMOUNTS_AT_CREDIT_RATE}),
+        ),
+        (
+            LesserOf,
+            frozenset({DEPRECIABLE_GIFT_NET_PROCEEDS, DEPRECIABLE_GIFT_CAPITAL_COST}),
+            frozenset({DEPRECIABLE_GIFT_PROCEEDS_OR_COST}),
+        ),
+        (
+            LesserOf,
+            frozenset(
+                {DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION, DEPRECIABLE_GIFT_PROCEEDS_OR_COST}
+            ),
+            frozenset({DEPRECIABLE_GIFTS}),
+        ),
+        (
+            Subtract,
+            frozenset({CAPITAL_GIFT_TAXABLE_GAINS, CAPITAL_GIFT_GAINS_DEDUCTION}),
+            frozenset({CAPITAL_PROPERTY_GIFTS}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {
+                    CHARITABLE_DONATIONS,
+                    GOVERNMENT_DONATIONS,
+                    UNIVERSITY_DONATIONS_OUTSIDE_CANADA,
+                    FOREIGN_CHARITY_DONATIONS,
+                }
+            ),
+            frozenset({TOTAL_CHARITABLE_DONATIONS}),
+        ),
+        (ApplyRate, frozenset({NET_INCOME}), frozenset({DONATION_LIMIT_ON_NET_INCOME})),
+        (
+            Sum,
+            frozenset({DEPRECIABLE_GIFTS, CAPITAL_PROPERTY_GIFTS}),
+            frozenset({CAPITAL_GIFTS_TOTAL}),
+        ),
+        (ApplyRate, frozenset({CAPITAL_GIFTS_TOTAL}), frozenset({CAPITAL_GIFTS_LIMIT_ADDITION})),
+        (
+            Sum,
+            frozenset({DONATION_LIMIT_ON_NET_INCOME, CAPITAL_GIFTS_LIMIT_ADDITION}),
+            frozenset({DONATION_LIMIT_WITH_CAPITAL_GIFTS}),
+        ),
+        (
+            LesserOf,
+            frozenset({NET_INCOME, DONATION_LIMIT_WITH_CAPITAL_GIFTS}),
+            frozenset({CHARITABLE_DONATIONS_LIMIT}),
+        ),
+        (
+            LesserOf,
+            frozenset({TOTAL_CHARITABLE_DONATIONS, CHARITABLE_DONATIONS_LIMIT}),
+            frozenset({CHARITABLE_DONATIONS_CLAIMED}),
+        ),
+        (
+            Sum,
+            frozenset({CHARITABLE_DONATIONS_CLAIMED, ECOLOGICAL_AND_CULTURAL_GIFTS}),
+            frozenset({DONATIONS_AND_GIFTS_TOTAL}),
+        ),
+        (CreditAmount, frozenset(), frozenset({DONATION_FIRST_TIER_MAXIMUM})),
+        (
+            LesserOf,
+            frozenset({DONATIONS_AND_GIFTS_TOTAL, DONATION_FIRST_TIER_MAXIMUM}),
+            frozenset({DONATIONS_FIRST_TIER}),
+        ),
+        (
+            Subtract,
+            frozenset({DONATIONS_AND_GIFTS_TOTAL, DONATIONS_FIRST_TIER}),
+            frozenset({DONATIONS_OVER_FIRST_TIER}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({DONATIONS_OVER_FIRST_TIER, ECOLOGICAL_GIFTS_BEFORE_2016}),
+            frozenset({DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS}),
+        ),
+        (CreditAmount, frozenset(), frozenset({DONATION_HIGH_INCOME_THRESHOLD})),
+        (
+            SubtractNotBelowZero,
+            frozenset({TAXABLE_INCOME, DONATION_HIGH_INCOME_THRESHOLD}),
+            frozenset({TAXABLE_INCOME_OVER_DONATION_THRESHOLD}),
+        ),
+        (
+            LesserOf,
+            frozenset(
+                {DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS, TAXABLE_INCOME_OVER_DONATION_THRESHOLD}
+            ),
+            frozenset({HIGH_INCOME_DONATIONS}),
+        ),
+        (ApplyRate, frozenset({HIGH_INCOME_DONATIONS}), frozenset({HIGH_INCOME_DONATION_CREDIT})),
+        (
+            Subtract,
+            frozenset({DONATIONS_OVER_FIRST_TIER, HIGH_INCOME_DONATIONS}),
+            frozenset({REGULAR_RATE_DONATIONS}),
+        ),
+        (ApplyRate, frozenset({REGULAR_RATE_DONATIONS}), frozenset({REGULAR_RATE_DONATION_CREDIT})),
+        (ApplyRate, frozenset({DONATIONS_FIRST_TIER}), frozenset({FIRST_TIER_DONATION_CREDIT})),
+        (
+            Sum,
+            frozenset(
+                {
+                    HIGH_INCOME_DONATION_CREDIT,
+                    REGULAR_RATE_DONATION_CREDIT,
+                    FIRST_TIER_DONATION_CREDIT,
+                }
+            ),
+            frozenset({DONATIONS_AND_GIFTS_CREDIT}),
+        ),
+        (
+            Sum,
+            frozenset({CREDIT_AMOUNTS_AT_CREDIT_RATE, FIRST_TIER_DONATION_CREDIT}),
+            frozenset({TOP_UP_CREDITS_BASE}),
+        ),
+        (CreditAmount, frozenset(), frozenset({TOP_UP_THRESHOLD})),
+        (
+            SubtractNotBelowZero,
+            frozenset({TOP_UP_CREDITS_BASE, TOP_UP_THRESHOLD}),
+            frozenset({TOP_UP_EXCESS}),
+        ),
+        (ApplyRate, frozenset({TOP_UP_EXCESS}), frozenset({TOP_UP_TAX_CREDIT})),
+        (
+            Sum,
+            frozenset(
+                {CREDIT_AMOUNTS_AT_CREDIT_RATE, DONATIONS_AND_GIFTS_CREDIT, TOP_UP_TAX_CREDIT}
+            ),
             frozenset({NON_REFUNDABLE_TAX_CREDITS}),
         ),
         (

@@ -26,8 +26,11 @@ dependant (T1 line 30400, Schedule 5 line 5, the federal basic personal amount l
 dependant's net income of 0; ON428 line 58160, the 11905.00 base less it, at most 10823), claimed
 for 0 eligible dependants and so 0, the base CPP contributions and the EI premiums, and federally
 the amount for infirm children of 0 x 2687 (line 30500) and the Canada employment amount of 1471
-(the lesser of employment income and 1471), through each total of credit amounts and each form's
-non-refundable tax credits (T1 line 35000, ON428 line 61500) to each tax after credits, the Ontario
+(the lesser of employment income and 1471), through each total of credit amounts and the credit rate
+applied once to it (T1 line 33800, ON428 line 58840) to each form's non-refundable tax credits
+(ON428 line 61500; T1 line 35000, which adds the donations and gifts credit of Schedule 9 (line
+34900) and the top-up tax credit of the Federal Worksheet (line 34990), both 0 for donations of 0)
+to each tax after credits, the Ontario
 surtax on the Ontario tax after credits (ON428 lines 66 to 68) to the Ontario tax with surtax of
 line 69, less the Ontario dividend tax credit of 0 (line 70, from line 57 and Worksheet ON428's
 line 61520: no dividends), not below zero, to the Ontario tax after the dividend credit (line 71,
@@ -51,7 +54,7 @@ eligible dependants (line 38100) choosing the first (T1 line 45300); less the to
 48200), here the chosen income tax deducted of 25000 (line 43700) plus that benefit, to the refund
 or balance owing (line 167), 897.15, positive so a balance owing; every line computed from a dataset
 rounded half-up to the cent) are checked from the files under `returns/` by
-`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H, I, J, K, L and M; this module pins
+`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H, I, J, K, L, M and N; this module pins
 which capability produces each line, the order, and the trace that explains them.
 """
 
@@ -132,6 +135,14 @@ from app.jurisdictions.ca.catalog import (
     CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
     CAPITAL_GAIN,
+    CAPITAL_GIFT_GAINS_DEDUCTION,
+    CAPITAL_GIFT_TAXABLE_GAINS,
+    CAPITAL_GIFTS_LIMIT_ADDITION,
+    CAPITAL_GIFTS_TOTAL,
+    CAPITAL_PROPERTY_GIFTS,
+    CHARITABLE_DONATIONS,
+    CHARITABLE_DONATIONS_CLAIMED,
+    CHARITABLE_DONATIONS_LIMIT,
     CHILD_CARE_BASIC_LIMIT,
     CHILD_CARE_EARNED_INCOME,
     CHILD_CARE_EARNED_INCOME_LIMIT,
@@ -148,6 +159,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_OR_QPP_BENEFITS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
@@ -157,11 +169,27 @@ from app.jurisdictions.ca.catalog import (
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DEPENDANT_NET_INCOME,
+    DEPRECIABLE_GIFT_CAPITAL_COST,
+    DEPRECIABLE_GIFT_NET_PROCEEDS,
+    DEPRECIABLE_GIFT_PROCEEDS_OR_COST,
+    DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
+    DEPRECIABLE_GIFTS,
     DIVIDEND_TAX_CREDIT,
     DIVIDENDS_AMOUNT_A,
     DIVIDENDS_AMOUNT_A_LESS_B,
     DIVIDENDS_AMOUNT_B,
     DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP,
+    DONATION_FIRST_TIER_MAXIMUM,
+    DONATION_HIGH_INCOME_THRESHOLD,
+    DONATION_LIMIT_ON_NET_INCOME,
+    DONATION_LIMIT_WITH_CAPITAL_GIFTS,
+    DONATIONS_AND_GIFTS_CREDIT,
+    DONATIONS_AND_GIFTS_TOTAL,
+    DONATIONS_FIRST_TIER,
+    DONATIONS_OVER_FIRST_TIER,
+    DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS,
+    ECOLOGICAL_AND_CULTURAL_GIFTS,
+    ECOLOGICAL_GIFTS_BEFORE_2016,
     EI_AND_OTHER_BENEFITS,
     EI_PREMIUMS,
     ELECTED_SPLIT_PENSION_AMOUNT,
@@ -175,7 +203,12 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
     FHSA_INCOME,
+    FIRST_TIER_DONATION_CREDIT,
+    FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
+    GOVERNMENT_DONATIONS,
+    HIGH_INCOME_DONATION_CREDIT,
+    HIGH_INCOME_DONATIONS,
     INCOME_SUPPORT_BENEFITS,
     INCOME_TAX_DEDUCTED,
     INFIRM_CHILDREN,
@@ -214,6 +247,8 @@ from app.jurisdictions.ca.catalog import (
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REFUND_OR_BALANCE_OWING,
+    REGULAR_RATE_DONATION_CREDIT,
+    REGULAR_RATE_DONATIONS,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
     RRSP_CONTRIBUTIONS_AVAILABLE,
@@ -258,8 +293,14 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_DIVIDENDS,
     TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     TAXABLE_INCOME,
+    TAXABLE_INCOME_OVER_DONATION_THRESHOLD,
     TAXABLE_SCHOLARSHIPS,
     TAXABLE_SUPPORT_PAYMENTS,
+    TOP_UP_CREDITS_BASE,
+    TOP_UP_EXCESS,
+    TOP_UP_TAX_CREDIT,
+    TOP_UP_THRESHOLD,
+    TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
@@ -268,6 +309,7 @@ from app.jurisdictions.ca.catalog import (
     UCCB_REPAYMENT,
     UNION_DUES,
     UNIVERSAL_CHILD_CARE_BENEFIT,
+    UNIVERSITY_DONATIONS_OUTSIDE_CANADA,
     UNUSED_RRSP_CONTRIBUTIONS,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
     WORKERS_COMPENSATION_BENEFITS,
@@ -415,6 +457,17 @@ def compute(
     seniors_transit_paid: str = "0",
     flow_through_share_slips: tuple[str, ...] = (),
     community_food_program_donations: str = "0",
+    charitable_donations: str = "0",
+    government_donations: str = "0",
+    university_donations_outside_canada: str = "0",
+    foreign_charity_donations: str = "0",
+    ecological_and_cultural_gifts: str = "0",
+    ecological_gifts_before_2016: str = "0",
+    depreciable_gift_recaptured_depreciation: str = "0",
+    depreciable_gift_net_proceeds: str = "0",
+    depreciable_gift_capital_cost: str = "0",
+    capital_gift_taxable_gains: str = "0",
+    capital_gift_gains_deduction: str = "0",
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -523,6 +576,19 @@ def compute(
         Artifact(SENIORS_TRANSIT_PAID, D(seniors_transit_paid)),
         slips(*flow_through_share_slips),
         Artifact(COMMUNITY_FOOD_PROGRAM_DONATIONS, D(community_food_program_donations)),
+        Artifact(CHARITABLE_DONATIONS, D(charitable_donations)),
+        Artifact(GOVERNMENT_DONATIONS, D(government_donations)),
+        Artifact(UNIVERSITY_DONATIONS_OUTSIDE_CANADA, D(university_donations_outside_canada)),
+        Artifact(FOREIGN_CHARITY_DONATIONS, D(foreign_charity_donations)),
+        Artifact(ECOLOGICAL_AND_CULTURAL_GIFTS, D(ecological_and_cultural_gifts)),
+        Artifact(ECOLOGICAL_GIFTS_BEFORE_2016, D(ecological_gifts_before_2016)),
+        Artifact(
+            DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION, D(depreciable_gift_recaptured_depreciation)
+        ),
+        Artifact(DEPRECIABLE_GIFT_NET_PROCEEDS, D(depreciable_gift_net_proceeds)),
+        Artifact(DEPRECIABLE_GIFT_CAPITAL_COST, D(depreciable_gift_capital_cost)),
+        Artifact(CAPITAL_GIFT_TAXABLE_GAINS, D(capital_gift_taxable_gains)),
+        Artifact(CAPITAL_GIFT_GAINS_DEDUCTION, D(capital_gift_gains_deduction)),
     )
 
 
@@ -562,6 +628,17 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(SENIORS_TRANSIT_PAID) is None
     assert worksheet.producer_of(FLOW_THROUGH_SHARE_SLIPS) is None
     assert worksheet.producer_of(COMMUNITY_FOOD_PROGRAM_DONATIONS) is None
+    assert worksheet.producer_of(CHARITABLE_DONATIONS) is None
+    assert worksheet.producer_of(GOVERNMENT_DONATIONS) is None
+    assert worksheet.producer_of(UNIVERSITY_DONATIONS_OUTSIDE_CANADA) is None
+    assert worksheet.producer_of(FOREIGN_CHARITY_DONATIONS) is None
+    assert worksheet.producer_of(ECOLOGICAL_AND_CULTURAL_GIFTS) is None
+    assert worksheet.producer_of(ECOLOGICAL_GIFTS_BEFORE_2016) is None
+    assert worksheet.producer_of(DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION) is None
+    assert worksheet.producer_of(DEPRECIABLE_GIFT_NET_PROCEEDS) is None
+    assert worksheet.producer_of(DEPRECIABLE_GIFT_CAPITAL_COST) is None
+    assert worksheet.producer_of(CAPITAL_GIFT_TAXABLE_GAINS) is None
+    assert worksheet.producer_of(CAPITAL_GIFT_GAINS_DEDUCTION) is None
     assert worksheet.producer_of(OTHER_EMPLOYMENT_INCOME) is None
     assert worksheet.producer_of(OLD_AGE_SECURITY) is None
     assert worksheet.producer_of(CPP_OR_QPP_BENEFITS) is None
@@ -817,8 +894,17 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(NON_REFUNDABLE_CREDIT_AMOUNTS) is not worksheet.producer_of(
         ontario.NON_REFUNDABLE_CREDIT_AMOUNTS
     )
-    assert isinstance(worksheet.producer_of(NON_REFUNDABLE_TAX_CREDITS), ApplyRate)
+    # T1 line 115 (line 33800) is the credit rate applied once; line 118 (line 35000) adds lines
+    # 115 to 117, so it is a sum, while ON428 line 61500 stays the rate applied once.
+    assert isinstance(worksheet.producer_of(CREDIT_AMOUNTS_AT_CREDIT_RATE), ApplyRate)
+    assert isinstance(worksheet.producer_of(NON_REFUNDABLE_TAX_CREDITS), Sum)
     assert isinstance(worksheet.producer_of(ontario.NON_REFUNDABLE_TAX_CREDITS), ApplyRate)
+    assert worksheet.producer_of(CREDIT_AMOUNTS_AT_CREDIT_RATE) is not worksheet.producer_of(
+        ontario.NON_REFUNDABLE_TAX_CREDITS
+    )
+    assert worksheet.producer_of(CREDIT_AMOUNTS_AT_CREDIT_RATE) is not worksheet.producer_of(
+        NON_REFUNDABLE_TAX_CREDITS
+    )
     assert worksheet.producer_of(NON_REFUNDABLE_TAX_CREDITS) is not worksheet.producer_of(
         ontario.NON_REFUNDABLE_TAX_CREDITS
     )
@@ -826,6 +912,70 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         TAXABLE_CAPITAL_GAINS
     )
     assert isinstance(worksheet.producer_of(FEDERAL_TAX_AFTER_CREDITS), SubtractNotBelowZero)
+    # Schedule 9: one capability for each line of the schedule and of its two charts.
+    assert isinstance(worksheet.producer_of(DEPRECIABLE_GIFT_PROCEEDS_OR_COST), LesserOf)
+    assert isinstance(worksheet.producer_of(DEPRECIABLE_GIFTS), LesserOf)
+    assert isinstance(worksheet.producer_of(CAPITAL_PROPERTY_GIFTS), Subtract)
+    assert isinstance(worksheet.producer_of(TOTAL_CHARITABLE_DONATIONS), Sum)
+    assert isinstance(worksheet.producer_of(DONATION_LIMIT_ON_NET_INCOME), ApplyRate)
+    assert isinstance(worksheet.producer_of(CAPITAL_GIFTS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(CAPITAL_GIFTS_LIMIT_ADDITION), ApplyRate)
+    assert isinstance(worksheet.producer_of(DONATION_LIMIT_WITH_CAPITAL_GIFTS), Sum)
+    assert isinstance(worksheet.producer_of(CHARITABLE_DONATIONS_LIMIT), LesserOf)
+    assert isinstance(worksheet.producer_of(CHARITABLE_DONATIONS_CLAIMED), LesserOf)
+    assert isinstance(worksheet.producer_of(DONATIONS_AND_GIFTS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(DONATION_FIRST_TIER_MAXIMUM), CreditAmount)
+    assert isinstance(worksheet.producer_of(DONATIONS_FIRST_TIER), LesserOf)
+    assert isinstance(worksheet.producer_of(DONATIONS_OVER_FIRST_TIER), Subtract)
+    assert isinstance(
+        worksheet.producer_of(DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS), SubtractNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(DONATION_HIGH_INCOME_THRESHOLD), CreditAmount)
+    assert isinstance(
+        worksheet.producer_of(TAXABLE_INCOME_OVER_DONATION_THRESHOLD), SubtractNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(HIGH_INCOME_DONATIONS), LesserOf)
+    assert isinstance(worksheet.producer_of(HIGH_INCOME_DONATION_CREDIT), ApplyRate)
+    assert isinstance(worksheet.producer_of(REGULAR_RATE_DONATIONS), Subtract)
+    assert isinstance(worksheet.producer_of(REGULAR_RATE_DONATION_CREDIT), ApplyRate)
+    assert isinstance(worksheet.producer_of(FIRST_TIER_DONATION_CREDIT), ApplyRate)
+    assert isinstance(worksheet.producer_of(DONATIONS_AND_GIFTS_CREDIT), Sum)
+    # The Federal Worksheet's line 34990 calculation, lines 3, 4, 5 and 7.
+    assert isinstance(worksheet.producer_of(TOP_UP_CREDITS_BASE), Sum)
+    assert isinstance(worksheet.producer_of(TOP_UP_THRESHOLD), CreditAmount)
+    assert isinstance(worksheet.producer_of(TOP_UP_EXCESS), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(TOP_UP_TAX_CREDIT), ApplyRate)
+    schedule_9 = (
+        DEPRECIABLE_GIFT_PROCEEDS_OR_COST,
+        DEPRECIABLE_GIFTS,
+        CAPITAL_PROPERTY_GIFTS,
+        TOTAL_CHARITABLE_DONATIONS,
+        DONATION_LIMIT_ON_NET_INCOME,
+        CAPITAL_GIFTS_TOTAL,
+        CAPITAL_GIFTS_LIMIT_ADDITION,
+        DONATION_LIMIT_WITH_CAPITAL_GIFTS,
+        CHARITABLE_DONATIONS_LIMIT,
+        CHARITABLE_DONATIONS_CLAIMED,
+        DONATIONS_AND_GIFTS_TOTAL,
+        DONATION_FIRST_TIER_MAXIMUM,
+        DONATIONS_FIRST_TIER,
+        DONATIONS_OVER_FIRST_TIER,
+        DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS,
+        DONATION_HIGH_INCOME_THRESHOLD,
+        TAXABLE_INCOME_OVER_DONATION_THRESHOLD,
+        HIGH_INCOME_DONATIONS,
+        HIGH_INCOME_DONATION_CREDIT,
+        REGULAR_RATE_DONATIONS,
+        REGULAR_RATE_DONATION_CREDIT,
+        FIRST_TIER_DONATION_CREDIT,
+        DONATIONS_AND_GIFTS_CREDIT,
+        TOP_UP_CREDITS_BASE,
+        TOP_UP_THRESHOLD,
+        TOP_UP_EXCESS,
+        TOP_UP_TAX_CREDIT,
+    )
+    # One line, one capability: no two lines share a producer.
+    assert len({id(worksheet.producer_of(kind)) for kind in schedule_9}) == len(schedule_9)
     assert isinstance(worksheet.producer_of(ONTARIO_TAX_AFTER_CREDITS), SubtractNotBelowZero)
     assert worksheet.producer_of(FEDERAL_TAX_AFTER_CREDITS) is not worksheet.producer_of(
         ONTARIO_TAX_AFTER_CREDITS
@@ -1279,8 +1429,9 @@ def test_the_trace_explains_the_computation() -> None:
         "+ canada_employment_amount 1471 = 22033.58",
         "22033.58",
     )
+    # T1 line 115 (line 33800); line 118 (line 35000) adds lines 115 to 117 further below.
     federal_credit = position(
-        "non_refundable_tax_credits: 14.5% of non_refundable_credit_amounts 22033.58 "
+        "credit_amounts_at_credit_rate: 14.5% of non_refundable_credit_amounts 22033.58 "
         "(half-up to 0.01)",
         "3194.87",
     )
@@ -1575,6 +1726,122 @@ def test_the_trace_explains_the_computation() -> None:
         "refund_or_balance_owing: total_payable 25897.15 less total_credits 25000 = 897.15",
         "897.15",
     )
+    # Schedule 9 and its charts, and the Federal Worksheet's line 34990, for donations of 0.
+    depreciable_proceeds_or_cost = position(
+        "depreciable_gift_proceeds_or_cost: lesser of depreciable_gift_net_proceeds 0 "
+        "and depreciable_gift_capital_cost 0 = 0",
+        "0",
+    )
+    depreciable_gifts = position(
+        "depreciable_gifts: lesser of depreciable_gift_recaptured_depreciation 0 "
+        "and depreciable_gift_proceeds_or_cost 0 = 0",
+        "0",
+    )
+    capital_gifts = position(
+        "capital_property_gifts: capital_gift_taxable_gains 0 "
+        "less capital_gift_gains_deduction 0 = 0",
+        "0",
+    )
+    donations_total = position(
+        "total_charitable_donations: charitable_donations 0 + government_donations 0 "
+        "+ university_donations_outside_canada 0 + foreign_charity_donations 0 = 0",
+        "0",
+    )
+    limit_on_net_income = position(
+        "donation_limit_on_net_income: 75% of net_income 115000 (half-up to 0.01)", "86250"
+    )
+    capital_gifts_total = position(
+        "capital_gifts_total: depreciable_gifts 0 + capital_property_gifts 0 = 0", "0"
+    )
+    capital_gifts_addition = position(
+        "capital_gifts_limit_addition: 25% of capital_gifts_total 0 (half-up to 0.01)", "0"
+    )
+    limit_with_gifts = position(
+        "donation_limit_with_capital_gifts: donation_limit_on_net_income 86250 "
+        "+ capital_gifts_limit_addition 0 = 86250",
+        "86250",
+    )
+    donations_limit = position(
+        "charitable_donations_limit: lesser of net_income 115000 "
+        "and donation_limit_with_capital_gifts 86250 = 86250",
+        "86250",
+    )
+    donations_claimed = position(
+        "charitable_donations_claimed: lesser of total_charitable_donations 0 "
+        "and charitable_donations_limit 86250 = 0",
+        "0",
+    )
+    donations_and_gifts = position(
+        "donations_and_gifts_total: charitable_donations_claimed 0 "
+        "+ ecological_and_cultural_gifts 0 = 0",
+        "0",
+    )
+    first_tier_maximum = position(
+        "donation_first_tier_maximum: credit amount 200 (half-up to 0.01)", "200"
+    )
+    first_tier = position(
+        "donations_first_tier: lesser of donations_and_gifts_total 0 "
+        "and donation_first_tier_maximum 200 = 0",
+        "0",
+    )
+    over_first_tier = position(
+        "donations_over_first_tier: donations_and_gifts_total 0 less donations_first_tier 0 = 0",
+        "0",
+    )
+    over_first_tier_after_2016 = position(
+        "donations_over_first_tier_after_2016_gifts: donations_over_first_tier 0 "
+        "less ecological_gifts_before_2016 0, not below 0 = 0",
+        "0",
+    )
+    high_income_threshold = position(
+        "donation_high_income_threshold: credit amount 253414 (half-up to 0.01)", "253414"
+    )
+    taxable_over_threshold = position(
+        "taxable_income_over_donation_threshold: taxable_income 115000 "
+        "less donation_high_income_threshold 253414, not below 0 = 0",
+        "0",
+    )
+    high_income_donations = position(
+        "high_income_donations: lesser of donations_over_first_tier_after_2016_gifts 0 "
+        "and taxable_income_over_donation_threshold 0 = 0",
+        "0",
+    )
+    high_income_credit = position(
+        "high_income_donation_credit: 33% of high_income_donations 0 (half-up to 0.01)", "0"
+    )
+    regular_donations = position(
+        "regular_rate_donations: donations_over_first_tier 0 less high_income_donations 0 = 0",
+        "0",
+    )
+    regular_credit = position(
+        "regular_rate_donation_credit: 29% of regular_rate_donations 0 (half-up to 0.01)", "0"
+    )
+    first_tier_credit = position(
+        "first_tier_donation_credit: 14.5% of donations_first_tier 0 (half-up to 0.01)", "0"
+    )
+    donations_credit = position(
+        "donations_and_gifts_credit: high_income_donation_credit 0 "
+        "+ regular_rate_donation_credit 0 + first_tier_donation_credit 0 = 0",
+        "0",
+    )
+    top_up_base = position(
+        "top_up_credits_base: credit_amounts_at_credit_rate 3194.87 "
+        "+ first_tier_donation_credit 0 = 3194.87",
+        "3194.87",
+    )
+    top_up_threshold = position(
+        "top_up_threshold: credit amount 8319.38 (half-up to 0.01)", "8319.38"
+    )
+    top_up_excess = position(
+        "top_up_excess: top_up_credits_base 3194.87 less top_up_threshold 8319.38, not below 0 = 0",
+        "0",
+    )
+    top_up_credit = position("top_up_tax_credit: 3.45% of top_up_excess 0 (half-up to 0.01)", "0")
+    federal_credits = position(
+        "non_refundable_tax_credits: credit_amounts_at_credit_rate 3194.87 "
+        "+ donations_and_gifts_credit 0 + top_up_tax_credit 0 = 3194.87",
+        "3194.87",
+    )
     assert taxable_gains < total < net
     assert investment_before < interest < total
     assert support < total
@@ -1601,6 +1868,24 @@ def test_the_trace_explains_the_computation() -> None:
     assert taxable < ontario_column < ontario_basic
     assert ontario_basic < ontario_after
     assert net < federal_amount < federal_amounts < federal_credit < federal_after
+    assert depreciable_proceeds_or_cost < depreciable_gifts < capital_gifts_total
+    assert capital_gifts < capital_gifts_total < capital_gifts_addition < limit_with_gifts
+    assert net < limit_on_net_income < limit_with_gifts < donations_limit < donations_claimed
+    assert donations_total < donations_claimed < donations_and_gifts
+    assert first_tier_maximum < first_tier < over_first_tier < over_first_tier_after_2016
+    assert donations_and_gifts < first_tier
+    assert taxable < taxable_over_threshold
+    assert high_income_threshold < taxable_over_threshold < high_income_donations
+    assert over_first_tier_after_2016 < high_income_donations < high_income_credit
+    assert high_income_donations < regular_donations < regular_credit
+    assert first_tier < first_tier_credit
+    assert high_income_credit < donations_credit
+    assert regular_credit < donations_credit
+    assert first_tier_credit < donations_credit < federal_credits
+    assert federal_credit < top_up_base < top_up_excess < top_up_credit < federal_credits
+    assert first_tier_credit < top_up_base
+    assert top_up_threshold < top_up_excess
+    assert federal_credit < federal_credits < federal_after
     assert employment_amount < federal_amounts
     assert federal_amount < federal_dependant < federal_dependant_claimed < federal_amounts
     assert infirm_children < federal_amounts
@@ -1699,7 +1984,9 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     record_totals = {line.output: line for line in trace if isinstance(line, RecordTotalLine)}
 
     # The rate is applied once, to each form's total of credit amounts (T1 line 33800, ON428
-    # line 58840), giving its non-refundable tax credits (T1 line 35000, ON428 line 61500).
+    # line 58840), giving the T1's credit amounts at the credit rate (line 35000 adds the donations
+    # and gifts credit and the top-up tax credit to them) and ON428's non-refundable tax credits
+    # (line 61500).
     assert rated == {
         # The Federal Worksheet's "Line 40425" line 6 (line B x 9.0301%) and line 7 (line C x
         # 15.0198%), on no dividends with no slip.
@@ -1740,13 +2027,57 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         TAXABLE_CAPITAL_GAINS: RateAppliedLine(
             TAXABLE_CAPITAL_GAINS, CAPITAL_GAIN, D("20000"), Rate(D("0.5")), CENT, D("10000")
         ),
-        NON_REFUNDABLE_TAX_CREDITS: RateAppliedLine(
-            NON_REFUNDABLE_TAX_CREDITS,
+        CREDIT_AMOUNTS_AT_CREDIT_RATE: RateAppliedLine(
+            CREDIT_AMOUNTS_AT_CREDIT_RATE,
             NON_REFUNDABLE_CREDIT_AMOUNTS,
             D("22033.58"),
             Rate(D("0.145")),
             CENT,
             D("3194.87"),
+        ),
+        # Schedule 9 line 6 "Enter your net income from line 23600 of your return. Line A"
+        # "multiplied by 75%", line 7 "Amount B plus amount C Line D" "multiplied by 25%", line 20
+        # "Line F" "multiplied by 33%", line 21 "Line G" "multiplied by 29%" and line 22 "Line H"
+        # "multiplied by 14.5%": Return A has donations of 0, so every line but line 6 is 0.
+        DONATION_LIMIT_ON_NET_INCOME: RateAppliedLine(
+            DONATION_LIMIT_ON_NET_INCOME, NET_INCOME, D("115000"), Rate(D("0.75")), CENT, D("86250")
+        ),
+        CAPITAL_GIFTS_LIMIT_ADDITION: RateAppliedLine(
+            CAPITAL_GIFTS_LIMIT_ADDITION,
+            CAPITAL_GIFTS_TOTAL,
+            D("0"),
+            Rate(D("0.25")),
+            CENT,
+            D("0.00"),
+        ),
+        HIGH_INCOME_DONATION_CREDIT: RateAppliedLine(
+            HIGH_INCOME_DONATION_CREDIT,
+            HIGH_INCOME_DONATIONS,
+            D("0"),
+            Rate(D("0.33")),
+            CENT,
+            D("0.00"),
+        ),
+        REGULAR_RATE_DONATION_CREDIT: RateAppliedLine(
+            REGULAR_RATE_DONATION_CREDIT,
+            REGULAR_RATE_DONATIONS,
+            D("0"),
+            Rate(D("0.29")),
+            CENT,
+            D("0.00"),
+        ),
+        FIRST_TIER_DONATION_CREDIT: RateAppliedLine(
+            FIRST_TIER_DONATION_CREDIT,
+            DONATIONS_FIRST_TIER,
+            D("0"),
+            Rate(D("0.145")),
+            CENT,
+            D("0.00"),
+        ),
+        # Federal Worksheet line 6 "Applicable rate 3.45%" and line 7 "Line 5 multiplied by the
+        # percentage from line 6": line 5 is 0.
+        TOP_UP_TAX_CREDIT: RateAppliedLine(
+            TOP_UP_TAX_CREDIT, TOP_UP_EXCESS, D("0"), Rate(D("0.0345")), CENT, D("0.00")
         ),
         ontario.NON_REFUNDABLE_TAX_CREDITS: RateAppliedLine(
             ontario.NON_REFUNDABLE_TAX_CREDITS,
@@ -2041,6 +2372,65 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("0"),
         ),
+        # T1 line 118 (line 35000) "Add lines 115 to 117. Total federal non-refundable tax credits":
+        # line 115 (line 33800), line 116 (line 34900) and line 117 (line 34990), in line order.
+        NON_REFUNDABLE_TAX_CREDITS: SumLine(
+            NON_REFUNDABLE_TAX_CREDITS,
+            (
+                (CREDIT_AMOUNTS_AT_CREDIT_RATE, D("3194.87")),
+                (DONATIONS_AND_GIFTS_CREDIT, D("0.00")),
+                (TOP_UP_TAX_CREDIT, D("0.00")),
+            ),
+            D("3194.87"),
+        ),
+        # Schedule 9 line 5 "Add lines 1 to 4.", line 7 "Amount B plus amount C Line D", line 8
+        # "Line 6 plus line 7", line 12 "Line 10 plus line 11" and line 23 "Add lines 20 to 22.".
+        TOTAL_CHARITABLE_DONATIONS: SumLine(
+            TOTAL_CHARITABLE_DONATIONS,
+            (
+                (CHARITABLE_DONATIONS, D("0")),
+                (GOVERNMENT_DONATIONS, D("0")),
+                (UNIVERSITY_DONATIONS_OUTSIDE_CANADA, D("0")),
+                (FOREIGN_CHARITY_DONATIONS, D("0")),
+            ),
+            D("0"),
+        ),
+        CAPITAL_GIFTS_TOTAL: SumLine(
+            CAPITAL_GIFTS_TOTAL,
+            ((DEPRECIABLE_GIFTS, D("0")), (CAPITAL_PROPERTY_GIFTS, D("0"))),
+            D("0"),
+        ),
+        DONATION_LIMIT_WITH_CAPITAL_GIFTS: SumLine(
+            DONATION_LIMIT_WITH_CAPITAL_GIFTS,
+            (
+                (DONATION_LIMIT_ON_NET_INCOME, D("86250")),
+                (CAPITAL_GIFTS_LIMIT_ADDITION, D("0.00")),
+            ),
+            D("86250"),
+        ),
+        DONATIONS_AND_GIFTS_TOTAL: SumLine(
+            DONATIONS_AND_GIFTS_TOTAL,
+            ((CHARITABLE_DONATIONS_CLAIMED, D("0")), (ECOLOGICAL_AND_CULTURAL_GIFTS, D("0"))),
+            D("0"),
+        ),
+        DONATIONS_AND_GIFTS_CREDIT: SumLine(
+            DONATIONS_AND_GIFTS_CREDIT,
+            (
+                (HIGH_INCOME_DONATION_CREDIT, D("0.00")),
+                (REGULAR_RATE_DONATION_CREDIT, D("0.00")),
+                (FIRST_TIER_DONATION_CREDIT, D("0.00")),
+            ),
+            D("0.00"),
+        ),
+        # Federal Worksheet line 3 "Line 1 plus line 2": line 33800 and Schedule 9 line 22.
+        TOP_UP_CREDITS_BASE: SumLine(
+            TOP_UP_CREDITS_BASE,
+            (
+                (CREDIT_AMOUNTS_AT_CREDIT_RATE, D("3194.87")),
+                (FIRST_TIER_DONATION_CREDIT, D("0.00")),
+            ),
+            D("3194.87"),
+        ),
         NON_REFUNDABLE_CREDIT_AMOUNTS: SumLine(
             NON_REFUNDABLE_CREDIT_AMOUNTS,
             (
@@ -2208,6 +2598,32 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("115000"),
         ),
+        # Schedule 9 chart for line 33900 line 3 "Line 1 minus Line 2", line 14 "Line 12 minus line
+        # 13" and line 21's amount G, "Amount E minus amount F": all 0 for donations of 0.
+        CAPITAL_PROPERTY_GIFTS: SubtractedLine(
+            output=CAPITAL_PROPERTY_GIFTS,
+            minuend=CAPITAL_GIFT_TAXABLE_GAINS,
+            minuend_amount=D("0"),
+            subtrahend=CAPITAL_GIFT_GAINS_DEDUCTION,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        DONATIONS_OVER_FIRST_TIER: SubtractedLine(
+            output=DONATIONS_OVER_FIRST_TIER,
+            minuend=DONATIONS_AND_GIFTS_TOTAL,
+            minuend_amount=D("0"),
+            subtrahend=DONATIONS_FIRST_TIER,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        REGULAR_RATE_DONATIONS: SubtractedLine(
+            output=REGULAR_RATE_DONATIONS,
+            minuend=DONATIONS_OVER_FIRST_TIER,
+            minuend_amount=D("0"),
+            subtrahend=HIGH_INCOME_DONATIONS,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # The Federal Worksheet's line 11 "Line 9 minus line 10. Enter this amount on line 12100
         # of your return.": nothing reported in previous years comes off nothing.
         INTEREST_AND_OTHER_INVESTMENT_INCOME: SubtractedLine(
@@ -2289,6 +2705,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # ON428 line 14 "Base amount 11,905.00".
         ELIGIBLE_DEPENDANT_BASE: CreditAmountLine(
             ELIGIBLE_DEPENDANT_BASE, Credit(amount=D("11905.00")), CENT, D("11905.00")
+        ),
+        # Schedule 9 line 13 "$200" and line 18 "Income threshold 253,414.00"; Federal Worksheet
+        # line 4 "8,319.38": each claimed whole.
+        DONATION_FIRST_TIER_MAXIMUM: CreditAmountLine(
+            DONATION_FIRST_TIER_MAXIMUM, Credit(amount=D("200")), CENT, D("200.00")
+        ),
+        DONATION_HIGH_INCOME_THRESHOLD: CreditAmountLine(
+            DONATION_HIGH_INCOME_THRESHOLD, Credit(amount=D("253414.00")), CENT, D("253414.00")
+        ),
+        TOP_UP_THRESHOLD: CreditAmountLine(
+            TOP_UP_THRESHOLD, Credit(amount=D("8319.38")), CENT, D("8319.38")
         ),
     }
     # ON428 line 75 (line 60969) "Number of dependent children multiplied by $544" and line 76
@@ -2539,6 +2966,48 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # contributions available to deduct of 1926 are below the deduction limit of 19800, so the
     # most that may be deducted is the contributions available to deduct.
     assert lesser == {
+        # Schedule 9 chart for line 33700, line 4 "Enter whichever is less: amount from line 2 or
+        # line 3." and line 5 "amount from line 1 or line 4", both 0.
+        DEPRECIABLE_GIFT_PROCEEDS_OR_COST: LesserOfLine(
+            DEPRECIABLE_GIFT_PROCEEDS_OR_COST,
+            ((DEPRECIABLE_GIFT_NET_PROCEEDS, D("0")), (DEPRECIABLE_GIFT_CAPITAL_COST, D("0"))),
+            D("0"),
+        ),
+        DEPRECIABLE_GIFTS: LesserOfLine(
+            DEPRECIABLE_GIFTS,
+            (
+                (DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION, D("0")),
+                (DEPRECIABLE_GIFT_PROCEEDS_OR_COST, D("0")),
+            ),
+            D("0"),
+        ),
+        # Schedule 9 line 9 "Enter whichever is less: amount A or line 8.": amount A is the net
+        # income, 115000, above line 8 (75% of it), so line 9 is line 8 when line 7 is 0. Line 10
+        # "amount from line 5 or line 9", line 13 "amount from line 12 or $200." and line 20 "amount
+        # from line 16 or line 19".
+        CHARITABLE_DONATIONS_LIMIT: LesserOfLine(
+            CHARITABLE_DONATIONS_LIMIT,
+            ((NET_INCOME, D("115000")), (DONATION_LIMIT_WITH_CAPITAL_GIFTS, D("86250"))),
+            D("86250"),
+        ),
+        CHARITABLE_DONATIONS_CLAIMED: LesserOfLine(
+            CHARITABLE_DONATIONS_CLAIMED,
+            ((TOTAL_CHARITABLE_DONATIONS, D("0")), (CHARITABLE_DONATIONS_LIMIT, D("86250"))),
+            D("0"),
+        ),
+        DONATIONS_FIRST_TIER: LesserOfLine(
+            DONATIONS_FIRST_TIER,
+            ((DONATIONS_AND_GIFTS_TOTAL, D("0")), (DONATION_FIRST_TIER_MAXIMUM, D("200.00"))),
+            D("0"),
+        ),
+        HIGH_INCOME_DONATIONS: LesserOfLine(
+            HIGH_INCOME_DONATIONS,
+            (
+                (DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS, D("0")),
+                (TAXABLE_INCOME_OVER_DONATION_THRESHOLD, D("0")),
+            ),
+            D("0"),
+        ),
         RRSP_DEDUCTION_MAXIMUM: LesserOfLine(
             RRSP_DEDUCTION_MAXIMUM,
             ((RRSP_CONTRIBUTIONS_AVAILABLE, D("1926")), (RRSP_DEDUCTION_LIMIT, D("19800"))),
@@ -2754,6 +3223,34 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Schedule 9 line 16 "Line 14 minus line 15 (if negative, enter "0")" and line 19 "Line 17
+        # minus line 18 (if negative, enter "0")": the taxable income of 115000 is below the
+        # threshold of 253414.00. Federal Worksheet line 5 "Line 3 minus line 4 (if negative,
+        # enter "0")": 3194.87 is below 8319.38.
+        DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS: SubtractedNotBelowZeroLine(
+            output=DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS,
+            minuend=DONATIONS_OVER_FIRST_TIER,
+            minuend_amount=D("0"),
+            subtrahend=ECOLOGICAL_GIFTS_BEFORE_2016,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        TAXABLE_INCOME_OVER_DONATION_THRESHOLD: SubtractedNotBelowZeroLine(
+            output=TAXABLE_INCOME_OVER_DONATION_THRESHOLD,
+            minuend=TAXABLE_INCOME,
+            minuend_amount=D("115000"),
+            subtrahend=DONATION_HIGH_INCOME_THRESHOLD,
+            subtrahend_amount=D("253414.00"),
+            result=D("0"),
+        ),
+        TOP_UP_EXCESS: SubtractedNotBelowZeroLine(
+            output=TOP_UP_EXCESS,
+            minuend=TOP_UP_CREDITS_BASE,
+            minuend_amount=D("3194.87"),
+            subtrahend=TOP_UP_THRESHOLD,
+            subtrahend_amount=D("8319.38"),
+            result=D("0"),
+        ),
         NET_INCOME: SubtractedNotBelowZeroLine(
             output=NET_INCOME,
             minuend=TOTAL_INCOME,
@@ -3025,7 +3522,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 139
+    assert len(order) == 167
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -3170,9 +3667,55 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[ontario.SPOUSE_AMOUNT]
         < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
     )
-    assert position[NON_REFUNDABLE_CREDIT_AMOUNTS] < position[NON_REFUNDABLE_TAX_CREDITS]
+    assert position[NON_REFUNDABLE_CREDIT_AMOUNTS] < position[CREDIT_AMOUNTS_AT_CREDIT_RATE]
+    assert position[CREDIT_AMOUNTS_AT_CREDIT_RATE] < position[NON_REFUNDABLE_TAX_CREDITS]
     assert position[NON_REFUNDABLE_TAX_CREDITS] < position[CREDITS_AGAINST_BASIC_FEDERAL_TAX]
     assert position[CREDITS_AGAINST_BASIC_FEDERAL_TAX] < position[FEDERAL_TAX_AFTER_CREDITS]
+    # Schedule 9, in line order, from its two charts and the net and taxable income it reads.
+    assert position[DEPRECIABLE_GIFT_PROCEEDS_OR_COST] < position[DEPRECIABLE_GIFTS]
+    assert position[DEPRECIABLE_GIFTS] < position[CAPITAL_GIFTS_TOTAL]
+    assert position[CAPITAL_PROPERTY_GIFTS] < position[CAPITAL_GIFTS_TOTAL]
+    assert position[CAPITAL_GIFTS_TOTAL] < position[CAPITAL_GIFTS_LIMIT_ADDITION]
+    assert position[NET_INCOME] < position[DONATION_LIMIT_ON_NET_INCOME]
+    assert position[DONATION_LIMIT_ON_NET_INCOME] < position[DONATION_LIMIT_WITH_CAPITAL_GIFTS]
+    assert position[CAPITAL_GIFTS_LIMIT_ADDITION] < position[DONATION_LIMIT_WITH_CAPITAL_GIFTS]
+    assert position[NET_INCOME] < position[CHARITABLE_DONATIONS_LIMIT]
+    assert position[DONATION_LIMIT_WITH_CAPITAL_GIFTS] < position[CHARITABLE_DONATIONS_LIMIT]
+    assert position[CHARITABLE_DONATIONS_LIMIT] < position[CHARITABLE_DONATIONS_CLAIMED]
+    assert position[TOTAL_CHARITABLE_DONATIONS] < position[CHARITABLE_DONATIONS_CLAIMED]
+    assert position[CHARITABLE_DONATIONS_CLAIMED] < position[DONATIONS_AND_GIFTS_TOTAL]
+    assert position[DONATIONS_AND_GIFTS_TOTAL] < position[DONATIONS_FIRST_TIER]
+    assert position[DONATION_FIRST_TIER_MAXIMUM] < position[DONATIONS_FIRST_TIER]
+    assert position[DONATIONS_FIRST_TIER] < position[DONATIONS_OVER_FIRST_TIER]
+    assert (
+        position[DONATIONS_OVER_FIRST_TIER] < position[DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS]
+    )
+    assert position[TAXABLE_INCOME] < position[TAXABLE_INCOME_OVER_DONATION_THRESHOLD]
+    assert (
+        position[DONATION_HIGH_INCOME_THRESHOLD] < position[TAXABLE_INCOME_OVER_DONATION_THRESHOLD]
+    )
+    assert position[DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS] < position[HIGH_INCOME_DONATIONS]
+    assert position[TAXABLE_INCOME_OVER_DONATION_THRESHOLD] < position[HIGH_INCOME_DONATIONS]
+    assert position[HIGH_INCOME_DONATIONS] < position[HIGH_INCOME_DONATION_CREDIT]
+    assert position[HIGH_INCOME_DONATIONS] < position[REGULAR_RATE_DONATIONS]
+    assert position[DONATIONS_OVER_FIRST_TIER] < position[REGULAR_RATE_DONATIONS]
+    assert position[REGULAR_RATE_DONATIONS] < position[REGULAR_RATE_DONATION_CREDIT]
+    assert position[DONATIONS_FIRST_TIER] < position[FIRST_TIER_DONATION_CREDIT]
+    assert (
+        position[HIGH_INCOME_DONATION_CREDIT]
+        < position[DONATIONS_AND_GIFTS_CREDIT]
+        < position[NON_REFUNDABLE_TAX_CREDITS]
+    )
+    assert position[REGULAR_RATE_DONATION_CREDIT] < position[DONATIONS_AND_GIFTS_CREDIT]
+    assert position[FIRST_TIER_DONATION_CREDIT] < position[DONATIONS_AND_GIFTS_CREDIT]
+    # The Federal Worksheet's line 34990 reads line 33800 and Schedule 9 line 22.
+    assert position[CREDIT_AMOUNTS_AT_CREDIT_RATE] < position[TOP_UP_CREDITS_BASE]
+    assert position[FIRST_TIER_DONATION_CREDIT] < position[TOP_UP_CREDITS_BASE]
+    assert position[TOP_UP_CREDITS_BASE] < position[TOP_UP_EXCESS]
+    assert position[TOP_UP_THRESHOLD] < position[TOP_UP_EXCESS]
+    assert (
+        position[TOP_UP_EXCESS] < position[TOP_UP_TAX_CREDIT] < position[NON_REFUNDABLE_TAX_CREDITS]
+    )
     assert position[ontario.BASIC_PERSONAL_AMOUNT] < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert (
         position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
@@ -3545,6 +4088,268 @@ def test_no_donations_leave_line_88_at_line_86() -> None:
     assert worksheet.get(COMMUNITY_FOOD_PROGRAM_CREDIT).value == D("0")
     assert worksheet.get(ONTARIO_TAX_AFTER_FOOD_CREDIT).value == D("715.23")
     assert worksheet.get(ONTARIO_TAX).value == D("1165.23")
+
+
+def test_return_ns_donations_and_gifts_credit_and_top_up_come_off_the_federal_tax() -> None:
+    # Return N is Return I with charitable donations of 1500.00 (Schedule 9 line 1): net and
+    # taxable income 47555.00 as in Return I. Line 5 = 1500.00; line 6 = 75% x 47555.00 =
+    # 35666.25; no gifts of capital property, so line 7 = 25% x 0 = 0.00 and line 8 = 35666.25;
+    # line 9 is the lesser of the net income (amount A) and line 8: 35666.25; line 10 = 1500.00;
+    # line 12 = 1500.00; line 13 = 200 (the lesser of 1500.00 and $200); line 14 = 1300.00; line 16
+    # = 1300.00; line 19 = 47555.00 - 253414.00, negative, so 0; line F = 0 and line 20 = 33% x 0
+    # = 0.00; line G = 1300.00 and line 21 = 29% x 1300.00 = 377.00; line 22 = 14.5% x 200 = 29.00;
+    # line 23 = 406.00 (T1 line 34900). Federal Worksheet: line 33800 = 14.5% x 20589.95 =
+    # 2985.54275, rounded half-up to the cent: 2985.54; line 3 = 2985.54 + 29.00 = 3014.54, less
+    # 8319.38 is negative, so line 5 = 0 and line 34990 = 0.00. Line 35000 = 2985.54 + 406.00 +
+    # 0.00 = 3391.54, off the federal basic tax of 6895.48: 3503.94. The total payable is 3503.94
+    # + 1684.56 = 5188.50 and, with the chosen tax deducted of 4800 and no Canada workers
+    # benefit, line 167 is 5188.50 - 4800 = 388.50, a balance owing.
+    worksheet = compute(
+        "48000",
+        "0",
+        "0",
+        "0",
+        "8640",
+        "0",
+        "0",
+        income_tax_deducted="4800",
+        community_food_program_donations="1000",
+        charitable_donations="1500",
+    )
+
+    assert worksheet.get(NET_INCOME).value == D("47555.00")
+    assert worksheet.get(TAXABLE_INCOME).value == D("47555.00")
+    assert worksheet.get(CHARITABLE_DONATIONS).value == D("1500")
+    assert worksheet.get(TOTAL_CHARITABLE_DONATIONS).value == D("1500")
+    assert worksheet.get(DONATION_LIMIT_ON_NET_INCOME).value == D("35666.25")
+    assert worksheet.get(DEPRECIABLE_GIFTS).value == D("0")
+    assert worksheet.get(CAPITAL_PROPERTY_GIFTS).value == D("0")
+    assert worksheet.get(CAPITAL_GIFTS_TOTAL).value == D("0")
+    assert worksheet.get(CAPITAL_GIFTS_LIMIT_ADDITION).value == D("0.00")
+    assert worksheet.get(DONATION_LIMIT_WITH_CAPITAL_GIFTS).value == D("35666.25")
+    assert worksheet.get(CHARITABLE_DONATIONS_LIMIT).value == D("35666.25")
+    assert worksheet.get(CHARITABLE_DONATIONS_CLAIMED).value == D("1500")
+    assert worksheet.get(DONATIONS_AND_GIFTS_TOTAL).value == D("1500")
+    assert worksheet.get(DONATIONS_FIRST_TIER).value == D("200")
+    assert worksheet.get(DONATIONS_OVER_FIRST_TIER).value == D("1300")
+    assert worksheet.get(DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS).value == D("1300")
+    assert worksheet.get(TAXABLE_INCOME_OVER_DONATION_THRESHOLD).value == D("0")
+    assert worksheet.get(HIGH_INCOME_DONATIONS).value == D("0")
+    assert worksheet.get(HIGH_INCOME_DONATION_CREDIT).value == D("0.00")
+    assert worksheet.get(REGULAR_RATE_DONATIONS).value == D("1300")
+    assert worksheet.get(REGULAR_RATE_DONATION_CREDIT).value == D("377.00")
+    assert worksheet.get(FIRST_TIER_DONATION_CREDIT).value == D("29.00")
+    assert worksheet.get(DONATIONS_AND_GIFTS_CREDIT).value == D("406.00")
+    assert worksheet.get(CREDIT_AMOUNTS_AT_CREDIT_RATE).value == D("2985.54")
+    assert worksheet.get(TOP_UP_CREDITS_BASE).value == D("3014.54")
+    assert worksheet.get(TOP_UP_EXCESS).value == D("0")
+    assert worksheet.get(TOP_UP_TAX_CREDIT).value == D("0.00")
+    assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("3391.54")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("3503.94")
+    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("794.72")
+    assert worksheet.get(ONTARIO_TAX).value == D("1684.56")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("5188.50")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("388.50")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert ("donation_limit_on_net_income: 75% of net_income 47555 (half-up to 0.01)") in rendered
+    assert (
+        "charitable_donations_limit: lesser of net_income 47555 "
+        "and donation_limit_with_capital_gifts 35666.25 = 35666.25"
+    ) in rendered
+    assert (
+        "donations_first_tier: lesser of donations_and_gifts_total 1500 "
+        "and donation_first_tier_maximum 200 = 200"
+    ) in rendered
+    assert (
+        "regular_rate_donation_credit: 29% of regular_rate_donations 1300 (half-up to 0.01)"
+    ) in rendered
+    assert (
+        "first_tier_donation_credit: 14.5% of donations_first_tier 200 (half-up to 0.01)"
+    ) in rendered
+    assert (
+        "donations_and_gifts_credit: high_income_donation_credit 0 "
+        "+ regular_rate_donation_credit 377 + first_tier_donation_credit 29 = 406"
+    ) in rendered
+    assert (
+        "top_up_credits_base: credit_amounts_at_credit_rate 2985.54 "
+        "+ first_tier_donation_credit 29 = 3014.54"
+    ) in rendered
+    assert (
+        "top_up_excess: top_up_credits_base 3014.54 less top_up_threshold 8319.38, not below 0 = 0"
+    ) in rendered
+    assert (
+        "non_refundable_tax_credits: credit_amounts_at_credit_rate 2985.54 "
+        "+ donations_and_gifts_credit 406 + top_up_tax_credit 0 = 3391.54"
+    ) in rendered
+    assert (
+        "credits_against_basic_federal_tax: non_refundable_tax_credits 3391.54 "
+        "+ dividend_tax_credit 0 = 3391.54"
+    ) in rendered
+    assert (
+        "federal_tax_after_credits: federal_basic_tax 6895.48 "
+        "less credits_against_basic_federal_tax 3391.54, not below 0 = 3503.94"
+    ) in rendered
+
+
+def test_taxable_income_over_the_threshold_is_charged_33_percent_up_to_line_16() -> None:
+    # Employment income of 300000, with donations of 50200 (Schedule 9 line 1): enhanced CPP
+    # contributions of 1074.00 give net and taxable income 300000 - 1074.00 = 298926.00. Line 6 =
+    # 75% x 298926.00 = 224194.50, line 9 = 224194.50, line 10 = 50200, line 12 = 50200, line 13 =
+    # 200, line 14 = 50000 and line 16 = 50000. Line 19 = 298926.00 - 253414.00 = 45512.00, below
+    # line 16, so line F = 45512.00 and line 20 = 33% x 45512.00 = 15018.96; line G = 50000 -
+    # 45512.00 = 4488.00 and line 21 = 29% x 4488.00 = 1301.52; line 22 = 29.00; line 23 =
+    # 15018.96 + 1301.52 + 29.00 = 16349.48. The credit amounts are 14538 (the basic personal
+    # amount at or above 253,414) + 3356.10 + 1077.48 + 1471 = 20442.58, and line 33800 = 14.5% x
+    # it = 2964.1741, rounded half-up to the cent: 2964.17; the top-up base 2964.17 + 29.00 is
+    # below 8319.38, so line 34990 is 0; line 35000 = 2964.17 + 16349.48 + 0.00 = 19313.65.
+    worksheet = compute("300000", "0", "0", "0", "0", "0", "0", charitable_donations="50200")
+
+    assert worksheet.get(NET_INCOME).value == D("298926.00")
+    assert worksheet.get(TAXABLE_INCOME).value == D("298926.00")
+    assert worksheet.get(DONATION_LIMIT_ON_NET_INCOME).value == D("224194.50")
+    assert worksheet.get(CHARITABLE_DONATIONS_LIMIT).value == D("224194.50")
+    assert worksheet.get(CHARITABLE_DONATIONS_CLAIMED).value == D("50200")
+    assert worksheet.get(DONATIONS_FIRST_TIER).value == D("200")
+    assert worksheet.get(DONATIONS_OVER_FIRST_TIER).value == D("50000")
+    assert worksheet.get(DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS).value == D("50000")
+    assert worksheet.get(TAXABLE_INCOME_OVER_DONATION_THRESHOLD).value == D("45512.00")
+    assert worksheet.get(HIGH_INCOME_DONATIONS).value == D("45512.00")
+    assert worksheet.get(HIGH_INCOME_DONATION_CREDIT).value == D("15018.96")
+    assert worksheet.get(REGULAR_RATE_DONATIONS).value == D("4488.00")
+    assert worksheet.get(REGULAR_RATE_DONATION_CREDIT).value == D("1301.52")
+    assert worksheet.get(FIRST_TIER_DONATION_CREDIT).value == D("29.00")
+    assert worksheet.get(DONATIONS_AND_GIFTS_CREDIT).value == D("16349.48")
+    assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("20442.58")
+    assert worksheet.get(CREDIT_AMOUNTS_AT_CREDIT_RATE).value == D("2964.17")
+    assert worksheet.get(TOP_UP_CREDITS_BASE).value == D("2993.17")
+    assert worksheet.get(TOP_UP_TAX_CREDIT).value == D("0.00")
+    assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("19313.65")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "high_income_donations: lesser of donations_over_first_tier_after_2016_gifts 50000 "
+        "and taxable_income_over_donation_threshold 45512 = 45512"
+    ) in rendered
+    assert (
+        "high_income_donation_credit: 33% of high_income_donations 45512 (half-up to 0.01)"
+    ) in rendered
+
+
+def test_the_top_up_tax_credit_is_3_45_percent_of_the_credits_over_8319_38() -> None:
+    # Employment income of 48000, 15 infirm children (line 30500: 15 x 2687 = 40305.00) and
+    # donations of 1500.00: the credit amounts are 16129 + 0 + 40305.00 + 2202.75 + 787.20 + 1471
+    # = 60894.95 and line 33800 = 14.5% x 60894.95 = 8829.77275, rounded half-up to the cent:
+    # 8829.77. Federal Worksheet line 3 = 8829.77 + 29.00 (Schedule 9 line 22) = 8858.77; line 5 =
+    # 8858.77 - 8319.38 = 539.39; line 7 = 3.45% x 539.39 = 18.608955, rounded half-up to the
+    # cent: 18.61 (line 34990). Line 35000 = 8829.77 + 406.00 + 18.61 = 9254.38, more than the
+    # federal basic tax of 6895.48, so the federal tax after credits is 0.
+    worksheet = compute(
+        "48000", "0", "0", "0", "8640", "0", "0", infirm_children=15, charitable_donations="1500"
+    )
+
+    assert worksheet.get(INFIRM_CHILDREN_AMOUNT).value == D("40305.00")
+    assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("60894.95")
+    assert worksheet.get(CREDIT_AMOUNTS_AT_CREDIT_RATE).value == D("8829.77")
+    assert worksheet.get(FIRST_TIER_DONATION_CREDIT).value == D("29.00")
+    assert worksheet.get(TOP_UP_CREDITS_BASE).value == D("8858.77")
+    assert worksheet.get(TOP_UP_THRESHOLD).value == D("8319.38")
+    assert worksheet.get(TOP_UP_EXCESS).value == D("539.39")
+    assert worksheet.get(TOP_UP_TAX_CREDIT).value == D("18.61")
+    assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("9254.38")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("0")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "top_up_excess: top_up_credits_base 8858.77 less top_up_threshold 8319.38, not below 0 "
+        "= 539.39"
+    ) in rendered
+    assert "top_up_tax_credit: 3.45% of top_up_excess 539.39 (half-up to 0.01)" in rendered
+
+
+def test_gifts_of_capital_property_raise_the_donation_limit_above_75_percent_of_net_income() -> (
+    None
+):
+    # Employment income of 48000: net income 47555.00, so line 6 = 35666.25. Depreciable property
+    # (chart for line 33700): recaptured depreciation 3000, net proceeds 5000, capital cost 4000:
+    # line 4 = 4000, line 5 (line B) = 3000. Other capital property (chart for line 33900): taxable
+    # gains 4000 less the capital gains deduction 1000: 3000 (line C). Line D = 6000 and line 7 =
+    # 25% x 6000 = 1500.00; line 8 = 35666.25 + 1500.00 = 37166.25; line 9 is the lesser of the net
+    # income 47555.00 and line 8: 37166.25. Donations of 40000 (line 5) are limited to it (line 10),
+    # so line 12 = 37166.25, line 14 = 37166.25 - 200 = 36966.25 and, below the threshold, line 21
+    # = 29% x 36966.25 = 10720.2125, rounded half-up to the cent: 10720.21; line 22 = 29.00; line
+    # 23 = 10749.21.
+    worksheet = compute(
+        "48000",
+        "0",
+        "0",
+        "0",
+        "8640",
+        "0",
+        "0",
+        charitable_donations="40000",
+        depreciable_gift_recaptured_depreciation="3000",
+        depreciable_gift_net_proceeds="5000",
+        depreciable_gift_capital_cost="4000",
+        capital_gift_taxable_gains="4000",
+        capital_gift_gains_deduction="1000",
+    )
+
+    assert worksheet.get(DEPRECIABLE_GIFT_PROCEEDS_OR_COST).value == D("4000")
+    assert worksheet.get(DEPRECIABLE_GIFTS).value == D("3000")
+    assert worksheet.get(CAPITAL_PROPERTY_GIFTS).value == D("3000")
+    assert worksheet.get(CAPITAL_GIFTS_TOTAL).value == D("6000")
+    assert worksheet.get(DONATION_LIMIT_ON_NET_INCOME).value == D("35666.25")
+    assert worksheet.get(CAPITAL_GIFTS_LIMIT_ADDITION).value == D("1500.00")
+    assert worksheet.get(DONATION_LIMIT_WITH_CAPITAL_GIFTS).value == D("37166.25")
+    assert worksheet.get(CHARITABLE_DONATIONS_LIMIT).value == D("37166.25")
+    assert worksheet.get(CHARITABLE_DONATIONS_CLAIMED).value == D("37166.25")
+    assert worksheet.get(DONATIONS_AND_GIFTS_TOTAL).value == D("37166.25")
+    assert worksheet.get(DONATIONS_OVER_FIRST_TIER).value == D("36966.25")
+    assert worksheet.get(REGULAR_RATE_DONATION_CREDIT).value == D("10720.21")
+    assert worksheet.get(DONATIONS_AND_GIFTS_CREDIT).value == D("10749.21")
+
+
+def test_ecological_and_cultural_gifts_join_line_12_and_those_before_2016_come_off_line_16() -> (
+    None
+):
+    # Employment income of 300000: taxable income 298926.00, line 19 = 45512.00. Donations of
+    # 50000 (line 1) and ecological gifts of 10000 (line 11), 4000 of them made before 2016 (line
+    # 15): line 12 = 60000, line 13 = 200, line 14 = 59800, line 16 = 59800 - 4000 = 55800, line F
+    # = the lesser of 55800 and 45512.00: 45512.00, line 20 = 33% x 45512.00 = 15018.96; line G =
+    # 59800 - 45512.00 = 14288.00 and line 21 = 29% x 14288.00 = 4143.52; line 22 = 29.00; line
+    # 23 = 19191.48. The 4000 made before 2016 is in line G, at 29%, not at 33%.
+    worksheet = compute(
+        "300000",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        charitable_donations="50000",
+        ecological_and_cultural_gifts="10000",
+        ecological_gifts_before_2016="4000",
+    )
+
+    assert worksheet.get(DONATIONS_AND_GIFTS_TOTAL).value == D("60000")
+    assert worksheet.get(DONATIONS_OVER_FIRST_TIER).value == D("59800")
+    assert worksheet.get(DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS).value == D("55800")
+    assert worksheet.get(HIGH_INCOME_DONATIONS).value == D("45512.00")
+    assert worksheet.get(HIGH_INCOME_DONATION_CREDIT).value == D("15018.96")
+    assert worksheet.get(REGULAR_RATE_DONATIONS).value == D("14288.00")
+    assert worksheet.get(REGULAR_RATE_DONATION_CREDIT).value == D("4143.52")
+    assert worksheet.get(DONATIONS_AND_GIFTS_CREDIT).value == D("19191.48")
+
+
+def test_no_donations_leave_the_federal_credits_at_the_credit_rate() -> None:
+    # The defaults of 0, as for Returns A to I: lines 34900 and 34990 are 0.00, so line 35000 is
+    # line 33800 alone.
+    worksheet = compute("40000", "0", "0", "0", "7200", "0", "0")
+
+    assert worksheet.get(DONATIONS_AND_GIFTS_CREDIT).value == D("0.00")
+    assert worksheet.get(TOP_UP_TAX_CREDIT).value == D("0.00")
+    assert (
+        worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value
+        == worksheet.get(CREDIT_AMOUNTS_AT_CREDIT_RATE).value
+    )
 
 
 def test_the_canada_workers_benefit_below_its_maximum_is_27_percent_over_3000() -> None:

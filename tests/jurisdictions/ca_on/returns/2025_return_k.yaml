@@ -22,15 +22,16 @@
 # 1,632.99. There is no capital gain, unused or new RRSP contribution, union dues, child
 # care expense or dependant. Line 82 of ON428 is not triggered by this return, and the
 # qualifying donations for line 87 (the community food program donation tax credit for
-# farmers) are a chosen $0, so line 87 is $0 and line 88 is line 86. Amounts are quoted
-# decimal strings, never floats; counts are quoted digit strings. Every output the CA-ON
-# manifest declares must appear under `expected`; intermediate lines may be listed and are
-# then checked too.
-# ON428's age amount (line 58080, from Worksheet ON428) and spouse or common-law partner
-# amount (lines 11 to 13, line 58120) are not triggered either, for the same counts of 0, so
-# each is 0 and its part of ON428's total of credit amounts is 0. They are computed all the
-# same, in the order of the forms' lines, from net income less the $46,330 income threshold,
-# not below zero, at 15%, taken off $6,223, not below zero (line 58080), and from $11,905.00
+# farmers) are a chosen $0, so line 87 is $0 and line 88 is line 86.
+# Schedule 9's inputs are all a chosen $0, so lines 116 (34900) and 117 (34990) are $0 and
+# line 35000 is line 33800. Amounts are quoted decimal strings, never floats; counts are
+# quoted digit strings. Every output the CA-ON manifest declares must appear under
+# `expected`; intermediate lines may be listed and are then checked too. ON428's age
+# amount (line 58080, from Worksheet ON428) and spouse or common-law partner amount (lines
+# 11 to 13, line 58120) are not triggered either, for the same counts of 0, so each is 0
+# and its part of ON428's total of credit amounts is 0. They are computed all the same, in
+# the order of the forms' lines, from net income less the $46,330 income threshold, not
+# below zero, at 15%, taken off $6,223, not below zero (line 58080), and from $11,905.00
 # less the spouse's net income, not below zero, at most $10,823 (line 58120), each claimed
 # for its count.
 jurisdiction: CA-ON
@@ -234,7 +235,10 @@ sources:
     children (line 30500: 0 x 2,687 = 0); the Canada employment amount is the lesser of
     1,471 and 50,000 + 0: 1,471. Line 33500 is 16,129 + 0 + 0 + 2,301.75 + 820.00 + 1,471 =
     20,721.75 and line 33800 is 20,721.75 x 14.5% = 3,004.65375, rounded half-up to the
-    cent: 3,004.65. Lines 116 and 117 are not modelled, so line 35000 is that same 3,004.65.
+    cent: 3,004.65. Lines 116 (line 34900,
+    Schedule 9) and 117 (line 34990, the top-up tax credit) are computed, and are $0 here
+    because this return's Schedule 9 inputs are all $0 (a chosen figure, caller inputs), so
+    line 35000 is 3,004.65 + 0 + 0 = 3,004.65.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-d1/5000-d1-25e.txt
   - >-
@@ -463,6 +467,17 @@ inputs:
   ca-on/seniors_transit_paid: "0"
   ca-on/flow_through_share_slips: []
   ca-on/community_food_program_donations: "0"
+  ca/charitable_donations: "0"
+  ca/government_donations: "0"
+  ca/university_donations_outside_canada: "0"
+  ca/foreign_charity_donations: "0"
+  ca/ecological_and_cultural_gifts: "0"
+  ca/ecological_gifts_before_2016: "0"
+  ca/depreciable_gift_recaptured_depreciation: "0"
+  ca/depreciable_gift_net_proceeds: "0"
+  ca/depreciable_gift_capital_cost: "0"
+  ca/capital_gift_taxable_gains: "0"
+  ca/capital_gift_gains_deduction: "0"
 expected:
   ca/taxable_capital_gains: "0.00"
   ca/slip_taxable_dividends_other_than_eligible: "200"

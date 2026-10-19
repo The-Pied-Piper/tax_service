@@ -32,7 +32,15 @@ from app.jurisdictions.ca.catalog import (
     CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
     CAPITAL_GAIN,
+    CAPITAL_GIFT_GAINS_DEDUCTION,
+    CAPITAL_GIFT_TAXABLE_GAINS,
+    CAPITAL_GIFTS_LIMIT_ADDITION,
+    CAPITAL_GIFTS_TOTAL,
+    CAPITAL_PROPERTY_GIFTS,
     CATALOG,
+    CHARITABLE_DONATIONS,
+    CHARITABLE_DONATIONS_CLAIMED,
+    CHARITABLE_DONATIONS_LIMIT,
     CHILD_CARE_BASIC_LIMIT,
     CHILD_CARE_EARNED_INCOME,
     CHILD_CARE_EARNED_INCOME_LIMIT,
@@ -49,6 +57,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_OR_QPP_BENEFITS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
@@ -58,11 +67,27 @@ from app.jurisdictions.ca.catalog import (
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DEPENDANT_NET_INCOME,
+    DEPRECIABLE_GIFT_CAPITAL_COST,
+    DEPRECIABLE_GIFT_NET_PROCEEDS,
+    DEPRECIABLE_GIFT_PROCEEDS_OR_COST,
+    DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
+    DEPRECIABLE_GIFTS,
     DIVIDEND_TAX_CREDIT,
     DIVIDENDS_AMOUNT_A,
     DIVIDENDS_AMOUNT_A_LESS_B,
     DIVIDENDS_AMOUNT_B,
     DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP,
+    DONATION_FIRST_TIER_MAXIMUM,
+    DONATION_HIGH_INCOME_THRESHOLD,
+    DONATION_LIMIT_ON_NET_INCOME,
+    DONATION_LIMIT_WITH_CAPITAL_GIFTS,
+    DONATIONS_AND_GIFTS_CREDIT,
+    DONATIONS_AND_GIFTS_TOTAL,
+    DONATIONS_FIRST_TIER,
+    DONATIONS_OVER_FIRST_TIER,
+    DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS,
+    ECOLOGICAL_AND_CULTURAL_GIFTS,
+    ECOLOGICAL_GIFTS_BEFORE_2016,
     EI_AND_OTHER_BENEFITS,
     EI_PREMIUMS,
     ELECTED_SPLIT_PENSION_AMOUNT,
@@ -75,7 +100,12 @@ from app.jurisdictions.ca.catalog import (
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
     FHSA_INCOME,
+    FIRST_TIER_DONATION_CREDIT,
+    FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
+    GOVERNMENT_DONATIONS,
+    HIGH_INCOME_DONATION_CREDIT,
+    HIGH_INCOME_DONATIONS,
     INCOME_SUPPORT_BENEFITS,
     INCOME_TAX_DEDUCTED,
     INFIRM_CHILDREN,
@@ -114,6 +144,8 @@ from app.jurisdictions.ca.catalog import (
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REFUND_OR_BALANCE_OWING,
+    REGULAR_RATE_DONATION_CREDIT,
+    REGULAR_RATE_DONATIONS,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
     RRSP_CONTRIBUTIONS_AVAILABLE,
@@ -158,8 +190,14 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_DIVIDENDS,
     TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     TAXABLE_INCOME,
+    TAXABLE_INCOME_OVER_DONATION_THRESHOLD,
     TAXABLE_SCHOLARSHIPS,
     TAXABLE_SUPPORT_PAYMENTS,
+    TOP_UP_CREDITS_BASE,
+    TOP_UP_EXCESS,
+    TOP_UP_TAX_CREDIT,
+    TOP_UP_THRESHOLD,
+    TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
@@ -168,6 +206,7 @@ from app.jurisdictions.ca.catalog import (
     UCCB_REPAYMENT,
     UNION_DUES,
     UNIVERSAL_CHILD_CARE_BENEFIT,
+    UNIVERSITY_DONATIONS_OUTSIDE_CANADA,
     UNUSED_RRSP_CONTRIBUTIONS,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
     WORKERS_COMPENSATION_BENEFITS,
@@ -333,6 +372,45 @@ REGISTERED = frozenset(
         "ca/provincial_credits",
         "ca/total_credits",
         "ca/refund_or_balance_owing",
+        "ca/charitable_donations",
+        "ca/government_donations",
+        "ca/university_donations_outside_canada",
+        "ca/foreign_charity_donations",
+        "ca/ecological_and_cultural_gifts",
+        "ca/ecological_gifts_before_2016",
+        "ca/depreciable_gift_recaptured_depreciation",
+        "ca/depreciable_gift_net_proceeds",
+        "ca/depreciable_gift_capital_cost",
+        "ca/capital_gift_taxable_gains",
+        "ca/capital_gift_gains_deduction",
+        "ca/depreciable_gift_proceeds_or_cost",
+        "ca/depreciable_gifts",
+        "ca/capital_property_gifts",
+        "ca/total_charitable_donations",
+        "ca/donation_limit_on_net_income",
+        "ca/capital_gifts_total",
+        "ca/capital_gifts_limit_addition",
+        "ca/donation_limit_with_capital_gifts",
+        "ca/charitable_donations_limit",
+        "ca/charitable_donations_claimed",
+        "ca/donations_and_gifts_total",
+        "ca/donation_first_tier_maximum",
+        "ca/donations_first_tier",
+        "ca/donations_over_first_tier",
+        "ca/donations_over_first_tier_after_2016_gifts",
+        "ca/donation_high_income_threshold",
+        "ca/taxable_income_over_donation_threshold",
+        "ca/high_income_donations",
+        "ca/high_income_donation_credit",
+        "ca/regular_rate_donations",
+        "ca/regular_rate_donation_credit",
+        "ca/first_tier_donation_credit",
+        "ca/donations_and_gifts_credit",
+        "ca/credit_amounts_at_credit_rate",
+        "ca/top_up_credits_base",
+        "ca/top_up_threshold",
+        "ca/top_up_excess",
+        "ca/top_up_tax_credit",
     }
 )
 # T1 line 167 (line 48400 or 48500): the balance, negative for a refund; and the Federal
@@ -645,6 +723,57 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/provincial_credits") is PROVINCIAL_CREDITS
     assert registry.get("ca/total_credits") is TOTAL_CREDITS
     assert registry.get("ca/refund_or_balance_owing") is REFUND_OR_BALANCE_OWING
+    assert registry.get("ca/charitable_donations") is CHARITABLE_DONATIONS
+    assert registry.get("ca/government_donations") is GOVERNMENT_DONATIONS
+    assert (
+        registry.get("ca/university_donations_outside_canada")
+        is UNIVERSITY_DONATIONS_OUTSIDE_CANADA
+    )
+    assert registry.get("ca/foreign_charity_donations") is FOREIGN_CHARITY_DONATIONS
+    assert registry.get("ca/ecological_and_cultural_gifts") is ECOLOGICAL_AND_CULTURAL_GIFTS
+    assert registry.get("ca/ecological_gifts_before_2016") is ECOLOGICAL_GIFTS_BEFORE_2016
+    assert (
+        registry.get("ca/depreciable_gift_recaptured_depreciation")
+        is DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION
+    )
+    assert registry.get("ca/depreciable_gift_net_proceeds") is DEPRECIABLE_GIFT_NET_PROCEEDS
+    assert registry.get("ca/depreciable_gift_capital_cost") is DEPRECIABLE_GIFT_CAPITAL_COST
+    assert registry.get("ca/capital_gift_taxable_gains") is CAPITAL_GIFT_TAXABLE_GAINS
+    assert registry.get("ca/capital_gift_gains_deduction") is CAPITAL_GIFT_GAINS_DEDUCTION
+    assert registry.get("ca/depreciable_gift_proceeds_or_cost") is DEPRECIABLE_GIFT_PROCEEDS_OR_COST
+    assert registry.get("ca/depreciable_gifts") is DEPRECIABLE_GIFTS
+    assert registry.get("ca/capital_property_gifts") is CAPITAL_PROPERTY_GIFTS
+    assert registry.get("ca/total_charitable_donations") is TOTAL_CHARITABLE_DONATIONS
+    assert registry.get("ca/donation_limit_on_net_income") is DONATION_LIMIT_ON_NET_INCOME
+    assert registry.get("ca/capital_gifts_total") is CAPITAL_GIFTS_TOTAL
+    assert registry.get("ca/capital_gifts_limit_addition") is CAPITAL_GIFTS_LIMIT_ADDITION
+    assert registry.get("ca/donation_limit_with_capital_gifts") is DONATION_LIMIT_WITH_CAPITAL_GIFTS
+    assert registry.get("ca/charitable_donations_limit") is CHARITABLE_DONATIONS_LIMIT
+    assert registry.get("ca/charitable_donations_claimed") is CHARITABLE_DONATIONS_CLAIMED
+    assert registry.get("ca/donations_and_gifts_total") is DONATIONS_AND_GIFTS_TOTAL
+    assert registry.get("ca/donation_first_tier_maximum") is DONATION_FIRST_TIER_MAXIMUM
+    assert registry.get("ca/donations_first_tier") is DONATIONS_FIRST_TIER
+    assert registry.get("ca/donations_over_first_tier") is DONATIONS_OVER_FIRST_TIER
+    assert (
+        registry.get("ca/donations_over_first_tier_after_2016_gifts")
+        is DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS
+    )
+    assert registry.get("ca/donation_high_income_threshold") is DONATION_HIGH_INCOME_THRESHOLD
+    assert (
+        registry.get("ca/taxable_income_over_donation_threshold")
+        is TAXABLE_INCOME_OVER_DONATION_THRESHOLD
+    )
+    assert registry.get("ca/high_income_donations") is HIGH_INCOME_DONATIONS
+    assert registry.get("ca/high_income_donation_credit") is HIGH_INCOME_DONATION_CREDIT
+    assert registry.get("ca/regular_rate_donations") is REGULAR_RATE_DONATIONS
+    assert registry.get("ca/regular_rate_donation_credit") is REGULAR_RATE_DONATION_CREDIT
+    assert registry.get("ca/first_tier_donation_credit") is FIRST_TIER_DONATION_CREDIT
+    assert registry.get("ca/donations_and_gifts_credit") is DONATIONS_AND_GIFTS_CREDIT
+    assert registry.get("ca/credit_amounts_at_credit_rate") is CREDIT_AMOUNTS_AT_CREDIT_RATE
+    assert registry.get("ca/top_up_credits_base") is TOP_UP_CREDITS_BASE
+    assert registry.get("ca/top_up_threshold") is TOP_UP_THRESHOLD
+    assert registry.get("ca/top_up_excess") is TOP_UP_EXCESS
+    assert registry.get("ca/top_up_tax_credit") is TOP_UP_TAX_CREDIT
 
 
 def test_catalog_kinds_are_in_the_package_namespace() -> None:
@@ -798,6 +927,45 @@ def test_catalog_kinds_are_money() -> None:
         PROVINCIAL_CREDITS,
         TOTAL_CREDITS,
         REFUND_OR_BALANCE_OWING,
+        CHARITABLE_DONATIONS,
+        GOVERNMENT_DONATIONS,
+        UNIVERSITY_DONATIONS_OUTSIDE_CANADA,
+        FOREIGN_CHARITY_DONATIONS,
+        ECOLOGICAL_AND_CULTURAL_GIFTS,
+        ECOLOGICAL_GIFTS_BEFORE_2016,
+        DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
+        DEPRECIABLE_GIFT_NET_PROCEEDS,
+        DEPRECIABLE_GIFT_CAPITAL_COST,
+        CAPITAL_GIFT_TAXABLE_GAINS,
+        CAPITAL_GIFT_GAINS_DEDUCTION,
+        DEPRECIABLE_GIFT_PROCEEDS_OR_COST,
+        DEPRECIABLE_GIFTS,
+        CAPITAL_PROPERTY_GIFTS,
+        TOTAL_CHARITABLE_DONATIONS,
+        DONATION_LIMIT_ON_NET_INCOME,
+        CAPITAL_GIFTS_TOTAL,
+        CAPITAL_GIFTS_LIMIT_ADDITION,
+        DONATION_LIMIT_WITH_CAPITAL_GIFTS,
+        CHARITABLE_DONATIONS_LIMIT,
+        CHARITABLE_DONATIONS_CLAIMED,
+        DONATIONS_AND_GIFTS_TOTAL,
+        DONATION_FIRST_TIER_MAXIMUM,
+        DONATIONS_FIRST_TIER,
+        DONATIONS_OVER_FIRST_TIER,
+        DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS,
+        DONATION_HIGH_INCOME_THRESHOLD,
+        TAXABLE_INCOME_OVER_DONATION_THRESHOLD,
+        HIGH_INCOME_DONATIONS,
+        HIGH_INCOME_DONATION_CREDIT,
+        REGULAR_RATE_DONATIONS,
+        REGULAR_RATE_DONATION_CREDIT,
+        FIRST_TIER_DONATION_CREDIT,
+        DONATIONS_AND_GIFTS_CREDIT,
+        CREDIT_AMOUNTS_AT_CREDIT_RATE,
+        TOP_UP_CREDITS_BASE,
+        TOP_UP_THRESHOLD,
+        TOP_UP_EXCESS,
+        TOP_UP_TAX_CREDIT,
     ):
         assert kind.value_type is Decimal, kind.identifier
 
