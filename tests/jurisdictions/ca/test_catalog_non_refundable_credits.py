@@ -16,6 +16,7 @@ from app.jurisdictions.ca.catalog import (
     CHARITABLE_DONATIONS_CLAIMED,
     CHARITABLE_DONATIONS_LIMIT,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     DEPRECIABLE_GIFT_CAPITAL_COST,
     DEPRECIABLE_GIFT_NET_PROCEEDS,
@@ -34,6 +35,7 @@ from app.jurisdictions.ca.catalog import (
     ECOLOGICAL_AND_CULTURAL_GIFTS,
     ECOLOGICAL_GIFTS_BEFORE_2016,
     EI_PREMIUMS,
+    EI_PREMIUMS_ON_SELF_EMPLOYMENT,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FIRST_TIER_DONATION_CREDIT,
     FOREIGN_CHARITY_DONATIONS,
@@ -64,7 +66,12 @@ def test_the_non_refundable_credits_kinds_are_the_registered_ones(
 ) -> None:
     assert registry.get("ca/non_refundable_credit_amounts") is NON_REFUNDABLE_CREDIT_AMOUNTS
     assert registry.get("ca/cpp_base_contributions") is CPP_BASE_CONTRIBUTIONS
+    assert (
+        registry.get("ca/cpp_base_contributions_on_self_employment")
+        is CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT
+    )
     assert registry.get("ca/ei_premiums") is EI_PREMIUMS
+    assert registry.get("ca/ei_premiums_on_self_employment") is EI_PREMIUMS_ON_SELF_EMPLOYMENT
     assert registry.get("ca/canada_employment_amount") is CANADA_EMPLOYMENT_AMOUNT
     assert registry.get("ca/non_refundable_tax_credits") is NON_REFUNDABLE_TAX_CREDITS
     assert (
@@ -136,7 +143,9 @@ def test_the_non_refundable_credits_kinds_are_money() -> None:
     for kind in (
         NON_REFUNDABLE_CREDIT_AMOUNTS,
         CPP_BASE_CONTRIBUTIONS,
+        CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
         EI_PREMIUMS,
+        EI_PREMIUMS_ON_SELF_EMPLOYMENT,
         CANADA_EMPLOYMENT_AMOUNT,
         NON_REFUNDABLE_TAX_CREDITS,
         ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT,

@@ -20,7 +20,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import D, compute, step_3
 
 def test_line_23300_adds_every_wired_deduction_once_in_the_forms_line_order() -> None:
     # T1 line 53 and line 23300 "Add lines 35 to 52.": one distinct power of two for each line
-    # wired but the child care expenses and the enhanced CPP contributions (0 here, with no child
+    # wired but the child care expenses, the CPP contributions on self-employment income (line
+    # 22200) and the enhanced CPP contributions (0 here, with no child, no self-employment income
     # and no employment income), so a line left out or added twice changes the sum: RPP deduction
     # 1 (line 20700), RRSP deduction 2 (line 20800), FHSA deduction 4 (line 20805), split-pension
     # deduction 8 (line 21000), union dues 16 (line 21200), UCCB repayment 32 (line 21300), the
@@ -65,6 +66,7 @@ def test_line_23300_adds_every_wired_deduction_once_in_the_forms_line_order() ->
         "+ child_care_expenses 0 + allowable_business_investment_loss 64 "
         "+ support_payments_deduction 128 "
         "+ carrying_charges_interest_expenses_and_other_expenses 256 "
+        "+ cpp_deduction_on_self_employment 0 "
         "+ cpp_enhanced_contributions 0 + exploration_and_development_expenses 512 "
         "+ other_deductions 1024 = 2047"
     ) in rendered

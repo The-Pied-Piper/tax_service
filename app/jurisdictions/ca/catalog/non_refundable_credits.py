@@ -29,6 +29,15 @@ differing from box 14, and the slips' deducted contributions differing from the 
 (so no overpayment on T1 line 44800).
 """
 
+CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT = CATALOG.declare(
+    "cpp_base_contributions_on_self_employment", Decimal, non_negative=True
+)
+"""Base CPP contributions on self-employment income and other earnings, T1 line 87 and line 31000
+"on self-employment income and other earnings" under "Base CPP or QPP contributions (complete
+Schedule 8 or Form RC381, whichever applies)": Schedule 8 Part 4 line 15, entered once for each
+Part 4 completed (1 or 0), a part of the total of the credit amounts on the T1 (ON428 line 20,
+line 58280, is not wired)."""
+
 EI_PREMIUMS = CATALOG.declare("ei_premiums", Decimal, non_negative=True)
 """EI premiums, T1 line 31200 "through employment (boxes 18 and 55 of all T4 slips) (maximum
 $1,077.48)": the rate on employment income up to the maximum insurable earnings, a part of the
@@ -38,6 +47,16 @@ of your return", on ON428.
 Employment income is taken as the insurable earnings: boxes 18 and 55 of the slip are not
 modelled. Not triggered by the returns modelled: the EI overpayment (T1 line 45000).
 """
+
+EI_PREMIUMS_ON_SELF_EMPLOYMENT = CATALOG.declare(
+    "ei_premiums_on_self_employment", Decimal, non_negative=True
+)
+"""EI premiums on self-employment and other eligible earnings, T1 line 89 and line 31217 "on
+self-employment and other eligible earnings (complete Schedule 13)" under "Employment insurance
+premiums": Schedule 13 line 9 ("Enter the amount from line 9 or line 10, whichever applies, on
+line 31217 and line 42120 of your return."), entered once for each agreement with the Commission
+(1 or 0), a part of the total of the credit amounts on the T1 (ON428 line 22, line 58305, is not
+wired)."""
 
 CANADA_EMPLOYMENT_AMOUNT = CATALOG.declare("canada_employment_amount", Decimal, non_negative=True)
 """Canada employment amount, T1 line 31260 "Enter whichever is less: $1,471 or line 1 plus line
@@ -57,8 +76,9 @@ of the credit amounts the rate is applied to once, here, in line order, the basi
 (line 30000), the age amount (line 78, 30100), the spouse or common-law partner amount (line 79,
 30300), the amount for an eligible dependant (line 80, 30400), the Canada caregiver amount for a
 spouse or common-law partner (line 81, 30425), the Canada caregiver amount for infirm children
-(line 83, 30500), the base CPP contributions (line 30800), the EI premiums (line 31200) and the
-Canada employment amount (line 31260)."""
+(line 83, 30500), the base CPP contributions (line 30800), the base CPP contributions on
+self-employment income (line 31000), the EI premiums (line 31200), the EI premiums on
+self-employment income (line 31217) and the Canada employment amount (line 31260)."""
 
 CHARITABLE_DONATIONS = CATALOG.declare("charitable_donations", Decimal, non_negative=True)
 """Charitable donations, Schedule 9 line 1 "Donations to registered charities and similar

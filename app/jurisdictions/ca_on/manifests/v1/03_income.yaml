@@ -405,3 +405,18 @@ capabilities:
         - ca/dividend_tax_credit
     produces:
       output: ca/credits_against_basic_federal_tax
+  # T1 line 27 "Add lines 22 to 26. Net self-employment income": line 22 (13500) business
+  # income, line 23 (13700) professional income, line 24 (13900) commission income, line 25
+  # (14100) farming income and line 26 (14300) fishing income, the "Net" box of each, in
+  # line order. Line 28 "Line 21 plus line 27" and total income (line 15000) are not yet
+  # computed from it.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/business_income
+        - ca/professional_income
+        - ca/commission_income
+        - ca/farming_income
+        - ca/fishing_income
+    produces:
+      output: ca/net_self_employment_income

@@ -24,13 +24,34 @@ capabilities:
         - ca/special_taxes
     produces:
       output: ca/net_federal_tax
+  # T1 line 144 and line 42100, entered from Schedule 8 Part 4 line 14: Part 4 is completed
+  # only when the filer reports self-employment income alone, so the amount is counted once
+  # for each Part 4 completed, 1 or 0.
+  - name: core/times_count
+    consumes:
+      amount: ca/self_employed_cpp_contributions_payable
+      count: ca/cpp_part_4_completed
+    produces:
+      output: ca/cpp_payable_on_self_employment
+  # T1 line 145 and line 42120, entered from Schedule 13 line 9, counted once for each
+  # agreement with the Canada Employment Insurance Commission, 1 or 0.
+  - name: core/times_count
+    consumes:
+      amount: ca/self_employed_ei_premiums
+      count: ca/ei_special_benefits_agreement
+    produces:
+      output: ca/ei_payable_on_self_employment
   # T1 line 148 (line 43500) "Add lines 143 to 147. Total payable": line 143 "Amount
-  # from line 42000" and line 147 (42800), the Ontario tax, in line order; lines 144 to
-  # 146 are not triggered.
+  # from line 42000", line 144 (42100) "CPP contributions payable on self-employment income
+  # and other earnings", line 145 (42120) "Employment insurance premiums payable on
+  # self-employment and other eligible earnings" and line 147 (42800), the Ontario tax, in
+  # line order; line 146 (42200), the social benefits repayment, is not yet computed.
   - name: core/sum
     consumes:
       parts:
         - ca/net_federal_tax
+        - ca/cpp_payable_on_self_employment
+        - ca/ei_payable_on_self_employment
         - ca-on/ontario_tax
     produces:
       output: ca/total_payable

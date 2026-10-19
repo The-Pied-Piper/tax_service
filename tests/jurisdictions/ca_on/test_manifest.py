@@ -124,7 +124,10 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     # for the next year's line 52; the Ontario opportunities fund's line 3 (line 46600) "Net
     # refund (line 1 minus line 2)", which nothing reads (line 48400, the refund, is read by that
     # page's line 1, so it is not a line the computation returns); and ON479 line 63260, the
-    # number of eligible work placements, which nothing else reads; T776 line 8140 "Total of
+    # number of eligible work placements, which nothing else reads; Schedule 8 Part 2 line C
+    # "Maximum amount subject to second additional contributions" of the "Monthly proration for
+    # 2025" table, which nothing consumes, as Part 4 line 12 reads the maximum of 9,900 (and the
+    # 8% rate) from its own dataset; T776 line 8140 "Total of
     # your gross rents for short-term rentals", which nothing else reads; T776 line 9365 "Total
     # for short-term rental portion", which nothing else reads (Chart A's column 3 is a
     # starting amount); Form T2222 Chart A's row C "Enter the total of all amounts in row B.
@@ -136,7 +139,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 401
+    assert len(found.capabilities) == 430
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -146,5 +149,5 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 401
+    assert len(composition.order) == 430
     assert wiring == WIRING

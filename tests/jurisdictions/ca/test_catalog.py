@@ -23,6 +23,7 @@ from app.jurisdictions.ca.catalog import (
     ADVANCED_CANADA_WORKERS_BENEFIT,
     AGED_18_OR_OLDER_AT_END_OF_2025,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    BUSINESS_INCOME,
     BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
@@ -41,6 +42,13 @@ from app.jurisdictions.ca.catalog import (
     CCA_UCC_AT_END,
     CCA_UCC_AT_START,
     CLERGY_RESIDENCE_DEDUCTION,
+    COMMISSION_INCOME,
+    CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
+    CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
+    CPP_EARNINGS_UP_TO_MAXIMUM,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+    CPP_PENSIONABLE_EARNINGS,
+    CPT20_EARNINGS,
     CREDITS_AGAINST_FEDERAL_TAX,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DEPENDANT_CARE_EXPENSES,
@@ -54,7 +62,11 @@ from app.jurisdictions.ca.catalog import (
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
     EDUCATOR_SUPPLIES_EXPENSES,
     EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
+    EI_INSURABLE_EARNINGS_REMAINING,
+    EI_PAYABLE_ON_SELF_EMPLOYMENT,
+    EI_SELF_EMPLOYMENT_EARNINGS,
     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
+    FARMING_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
@@ -87,6 +99,7 @@ from app.jurisdictions.ca.catalog import (
     FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT,
     FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
     FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS,
+    FISHING_INCOME,
     GROSS_RENTAL_INCOME,
     INCOME_TAX_DEDUCTED,
     INFIRM_DEPENDANTS,
@@ -135,6 +148,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NET_PROFESSIONAL_INCOME,
     NET_RENTAL_INCOME,
+    NET_SELF_EMPLOYMENT_INCOME,
     NORTHERN_RESIDENTS_DEDUCTIONS,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
     OTHER_DEPENDANT_MEDICAL_EXPENSES,
@@ -144,6 +158,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_DEDUCTION,
     OTHER_PAYMENTS_LIMIT_INCOME,
     PART_XII_2_TAX_CREDIT,
+    PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     POLITICAL_CONTRIBUTIONS,
     POLITICAL_CREDIT,
     POLITICAL_CREDIT_BEFORE_MAXIMUM,
@@ -167,6 +182,7 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
     PRINCIPAL_RESIDENCE_GAIN,
     PRINCIPAL_RESIDENCE_PROPERTIES,
+    PROFESSIONAL_INCOME,
     REFUND,
     REFUND_OR_BALANCE_OWING,
     REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
@@ -266,6 +282,7 @@ from app.jurisdictions.ca.catalog import (
     RESP_AIPS_SUBJECT_TO_TAX,
     RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
     RRSP_AMOUNT_DEDUCTED,
+    SELF_EMPLOYED_CPP_DEDUCTION,
     SHORT_TERM_RENTAL_DAYS,
     SHORT_TERM_RENTAL_GROSS_RENTS,
     SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
@@ -1780,3 +1797,42 @@ def test_the_step_2_residency_lines_are_non_negative() -> None:
         NORTHERN_RESIDENTS_DEDUCTIONS,
     ):
         assert kind.non_negative is True, kind.identifier
+
+
+def test_the_self_employment_incomes_and_the_pensionable_earnings_are_signed(
+    registry: ArtifactRegistry,
+) -> None:
+    # T1 lines 13500, 13700, 13900, 14100 and 14300 "Net" (a loss when the expenses are larger),
+    # line 27 "Add lines 22 to 26. Net self-employment income" and Schedule 8 Part 4 line 1
+    # "amount from line 12200 of your return plus line 27 of your return" print no floor.
+    for kind in (
+        BUSINESS_INCOME,
+        PROFESSIONAL_INCOME,
+        COMMISSION_INCOME,
+        FARMING_INCOME,
+        FISHING_INCOME,
+        NET_SELF_EMPLOYMENT_INCOME,
+        PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
+    ):
+        assert kind.non_negative is False, kind.identifier
+        assert registry.kind(kind.identifier).non_negative is False, kind.identifier
+
+
+def test_the_lines_after_a_floor_are_non_negative(registry: ArtifactRegistry) -> None:
+    # Schedule 8 Part 4 line 3 "Line 1 plus line 2 (if negative, enter "0")", line 6 and line 7
+    # "(if negative, enter "0")", line 9 "(if negative, enter "0")"; Schedule 13 line 1 "(if
+    # negative, enter "0")" and line 7 "(if negative, enter "0")".
+    for kind in (
+        CPP_PENSIONABLE_EARNINGS,
+        CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
+        CPP_EARNINGS_UP_TO_MAXIMUM,
+        CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
+        EI_SELF_EMPLOYMENT_EARNINGS,
+        EI_INSURABLE_EARNINGS_REMAINING,
+        CPT20_EARNINGS,
+        SELF_EMPLOYED_CPP_DEDUCTION,
+        CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+        EI_PAYABLE_ON_SELF_EMPLOYMENT,
+    ):
+        assert kind.non_negative is True, kind.identifier
+        assert registry.kind(kind.identifier).non_negative is True, kind.identifier

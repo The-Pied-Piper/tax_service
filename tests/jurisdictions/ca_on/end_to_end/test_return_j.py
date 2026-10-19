@@ -146,9 +146,9 @@ def test_return_js_age_spouse_and_caregiver_amounts_come_off_net_income_and_the_
         "non_refundable_credit_amounts: basic_personal_amount 16129 + age_amount 8356.3 "
         "+ spouse_amount 6816 + eligible_dependant_amount 0 + spouse_caregiver_amount 1785 "
         "+ caregiver_amount 0 + infirm_children_amount 0 + cpp_base_contributions 2301.75 "
-        "+ ei_premiums 820 + canada_employment_amount 1471 + disability_transferred_amount 0 "
-        "+ medical_claim 0 "
-        "= 37679.05",
+        "+ cpp_base_contributions_on_self_employment 0 + ei_premiums 820 "
+        "+ ei_premiums_on_self_employment 0 + canada_employment_amount 1471 "
+        "+ disability_transferred_amount 0 + medical_claim 0 = 37679.05",
         "age_income_over_threshold: net_income 50000 less age_income_threshold 46330, not below 0 "
         "= 3670",
         "age_reduction: 15% of age_income_over_threshold 3670 (half-up to 0.01)",

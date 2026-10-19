@@ -6,7 +6,9 @@ from decimal import Decimal
 
 from app.domain.artifact import ArtifactRegistry
 from app.jurisdictions.ca.catalog import (
+    BUSINESS_INCOME,
     CAPITAL_GAIN,
+    COMMISSION_INCOME,
     CPP_OR_QPP_BENEFITS,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     DIVIDEND_TAX_CREDIT,
@@ -20,7 +22,9 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     EMPLOYMENT_INCOME,
+    FARMING_INCOME,
     FHSA_INCOME,
+    FISHING_INCOME,
     FOREIGN_INVESTMENT_INCOME,
     GROSS_RENTAL_INCOME,
     INCOME_SUPPORT_BENEFITS,
@@ -33,6 +37,7 @@ from app.jurisdictions.ca.catalog import (
     NET_FEDERAL_SUPPLEMENTS,
     NET_PARTNERSHIP_INCOME,
     NET_RENTAL_INCOME,
+    NET_SELF_EMPLOYMENT_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
     OLD_AGE_SECURITY,
     OTHER_DIVIDENDS_CREDIT,
@@ -42,6 +47,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_FHSA_INCOME,
     OTHER_INCOME,
     OTHER_PENSIONS_AND_SUPERANNUATION,
+    PROFESSIONAL_INCOME,
     RDSP_INCOME,
     RENTAL_ADVERTISING,
     RENTAL_ADVERTISING_PERSONAL_PORTION,
@@ -249,10 +255,16 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     assert registry.get("ca/other_fhsa_income") is OTHER_FHSA_INCOME
     assert registry.get("ca/other_income") is OTHER_INCOME
     assert registry.get("ca/taxable_scholarships") is TAXABLE_SCHOLARSHIPS
+    assert registry.get("ca/business_income") is BUSINESS_INCOME
+    assert registry.get("ca/professional_income") is PROFESSIONAL_INCOME
+    assert registry.get("ca/commission_income") is COMMISSION_INCOME
+    assert registry.get("ca/farming_income") is FARMING_INCOME
+    assert registry.get("ca/fishing_income") is FISHING_INCOME
     assert registry.get("ca/workers_compensation_benefits") is WORKERS_COMPENSATION_BENEFITS
     assert registry.get("ca/social_assistance_payments") is SOCIAL_ASSISTANCE_PAYMENTS
     assert registry.get("ca/net_federal_supplements") is NET_FEDERAL_SUPPLEMENTS
     assert registry.get("ca/income_support_benefits") is INCOME_SUPPORT_BENEFITS
+    assert registry.get("ca/net_self_employment_income") is NET_SELF_EMPLOYMENT_INCOME
     assert (
         registry.get("ca/short_term_rental_related_expenses") is SHORT_TERM_RENTAL_RELATED_EXPENSES
     )
@@ -481,6 +493,12 @@ def test_the_income_kinds_are_money() -> None:
         OTHER_FHSA_INCOME,
         OTHER_INCOME,
         TAXABLE_SCHOLARSHIPS,
+        BUSINESS_INCOME,
+        PROFESSIONAL_INCOME,
+        COMMISSION_INCOME,
+        FARMING_INCOME,
+        FISHING_INCOME,
+        NET_SELF_EMPLOYMENT_INCOME,
         WORKERS_COMPENSATION_BENEFITS,
         SOCIAL_ASSISTANCE_PAYMENTS,
         NET_FEDERAL_SUPPLEMENTS,

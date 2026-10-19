@@ -10,6 +10,7 @@ from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
+from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.catalog import (
     AGE_AMOUNT,
@@ -25,6 +26,8 @@ from app.jurisdictions.ca.catalog import (
     CHARITABLE_DONATIONS_CLAIMED,
     CHARITABLE_DONATIONS_LIMIT,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_PART_4_COMPLETED,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     DEPRECIABLE_GIFT_CAPITAL_COST,
@@ -45,6 +48,8 @@ from app.jurisdictions.ca.catalog import (
     ECOLOGICAL_AND_CULTURAL_GIFTS,
     ECOLOGICAL_GIFTS_BEFORE_2016,
     EI_PREMIUMS,
+    EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+    EI_SPECIAL_BENEFITS_AGREEMENT,
     ELIGIBLE_DEPENDANT_AMOUNT,
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
@@ -67,6 +72,8 @@ from app.jurisdictions.ca.catalog import (
     NON_REFUNDABLE_TAX_CREDITS,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
+    SELF_EMPLOYED_CPP_BASE_CREDIT,
+    SELF_EMPLOYED_EI_PREMIUMS,
     SPOUSE_AMOUNT,
     SPOUSE_CAREGIVER_AMOUNT,
     TAXABLE_INCOME,
@@ -94,6 +101,7 @@ INPUTS = frozenset(
         "ca/depreciable_gift_capital_cost",
         "ca/capital_gift_taxable_gains",
         "ca/capital_gift_gains_deduction",
+        "ca/ei_special_benefits_agreement",
     }
 )
 
@@ -127,14 +135,41 @@ STEPS = {
         consumes={"base": "ca/employment_income"},
         produces={"output": "ca/canada_employment_amount"},
     ),
-    # T1 line 33500 (lines 30000, 30100, 30300, 30400, 30425, 30450, 30500, 30800, 31200, 31260,
-    # 31800, 33200) and ON428 line 58800 (lines 58040, 58080, 58120, 58160, 58185, 58240,
-    # 58300, 58769), in the forms' line order. T1 line 113 and line 33500 is "Line 106 plus
-    # line 112", and line 112 (line 33200) follows the lines that line 106 adds; ON428 line 44
-    # and line 58800 is "Line 35 plus line 43", and line 43 (line 58769) follows the lines
-    # that line 35 adds. ON428 lines 58240 and 58300 are "Amount from line 30800 / 31200 of
-    # your return", so the Ontario sum reads the federal kinds; it has no Canada employment
-    # amount.
+    # T1 line 87 and line 31000, entered from Schedule 8 Part 4 line 15: Part 4 is completed only
+    # when the filer reports self-employment income alone, so the amount is counted once for
+    # each Part 4 completed, 1 or 0.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/self_employed_cpp_base_credit",
+            "count": "ca/cpp_part_4_completed",
+        },
+        produces={"output": "ca/cpp_base_contributions_on_self_employment"},
+    ),
+    # "Enter the amount from line 9 or line 10, whichever applies, on line 31217 and line 42120
+    # of your return.": Schedule 13 is completed only with an agreement with the Canada
+    # Employment Insurance Commission, so line 9 is counted once for each agreement, 1 or 0, on
+    # each of the two lines.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/self_employed_ei_premiums",
+            "count": "ca/ei_special_benefits_agreement",
+        },
+        produces={"output": "ca/ei_premiums_on_self_employment"},
+    ),
+    # T1 line 33500 (lines 30000, 30100, 30300, 30400, 30425, 30450, 30500, 30800, 31000, 31200,
+    # 31217, 31260, 31800, 33200) and ON428 line 58800 (lines 58040, 58080, 58120, 58160, 58185,
+    # 58240, 58300, 58769), in the forms' line order. T1 line 113 and line 33500 is "Line 106 plus
+    # line 112", and line 112 (line 33200) follows the lines that line 106 adds; ON428 line 44 and
+    # line 58800 is "Line 35 plus line 43", and line 43 (line 58769) follows the lines that line 35
+    # adds. ON428 lines 58240 and 58300 are "Amount from line 30800 / 31200 of your return", so the
+    # Ontario sum reads the federal kinds; it has no Canada employment amount. Lines 31000 "on
+    # self-employment income and other earnings" and 31217 "on self-employment and other eligible
+    # earnings (complete Schedule 13)" follow lines 30800 and 31200; ON428's counterparts (lines
+    # 58280 and 58305) are not wired.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -148,7 +183,9 @@ STEPS = {
                 "ca/caregiver_amount",
                 "ca/infirm_children_amount",
                 "ca/cpp_base_contributions",
+                "ca/cpp_base_contributions_on_self_employment",
                 "ca/ei_premiums",
+                "ca/ei_premiums_on_self_employment",
                 "ca/canada_employment_amount",
                 "ca/disability_transferred_amount",
                 "ca/medical_claim",
@@ -494,6 +531,16 @@ WIRING = {
     (TieredContribution, frozenset({EMPLOYMENT_INCOME}), frozenset({EI_PREMIUMS})),
     (CappedAmount, frozenset({EMPLOYMENT_INCOME}), frozenset({CANADA_EMPLOYMENT_AMOUNT})),
     (
+        TimesCount,
+        frozenset({SELF_EMPLOYED_CPP_BASE_CREDIT, CPP_PART_4_COMPLETED}),
+        frozenset({CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT}),
+    ),
+    (
+        TimesCount,
+        frozenset({SELF_EMPLOYED_EI_PREMIUMS, EI_SPECIAL_BENEFITS_AGREEMENT}),
+        frozenset({EI_PREMIUMS_ON_SELF_EMPLOYMENT}),
+    ),
+    (
         Sum,
         frozenset(
             {
@@ -505,7 +552,9 @@ WIRING = {
                 CAREGIVER_AMOUNT,
                 INFIRM_CHILDREN_AMOUNT,
                 CPP_BASE_CONTRIBUTIONS,
+                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
                 EI_PREMIUMS,
+                EI_PREMIUMS_ON_SELF_EMPLOYMENT,
                 CANADA_EMPLOYMENT_AMOUNT,
                 MEDICAL_CLAIM,
                 DISABILITY_TRANSFERRED_AMOUNT,

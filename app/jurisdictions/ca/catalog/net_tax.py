@@ -31,13 +31,30 @@ triggered on a return whose income is all allocated to Ontario), line 129 (forei
 line 133 (logging tax credit) and line 136 (investment tax credit).
 """
 
+CPP_PAYABLE_ON_SELF_EMPLOYMENT = CATALOG.declare(
+    "cpp_payable_on_self_employment", Decimal, non_negative=True
+)
+"""CPP contributions payable on self-employment income and other earnings, T1 line 144 and line
+42100 "CPP contributions payable on self-employment income and other earnings (complete Schedule 8
+or Form RC381, whichever applies)": Schedule 8 Part 4 line 14, entered once for each Part 4
+completed (1 or 0). Part 5 and Form RC381 are not wired."""
+
+EI_PAYABLE_ON_SELF_EMPLOYMENT = CATALOG.declare(
+    "ei_payable_on_self_employment", Decimal, non_negative=True
+)
+"""EI premiums payable on self-employment and other eligible earnings, T1 line 145 and line 42120
+"Employment insurance premiums payable on self-employment and other eligible earnings (complete
+Schedule 13)": Schedule 13 line 9, entered once for each agreement with the Commission (1 or 0)."""
+
 TOTAL_PAYABLE = CATALOG.declare("total_payable", Decimal, non_negative=True)
 """Total payable, T1 line 148 (line 43500) "Add lines 143 to 147. Total payable": the net federal
-tax plus the provincial tax, in line order.
+tax, the CPP contributions and EI premiums payable on self-employment income and the provincial
+tax, in line order.
 
-Line 143 is "Amount from line 42000"; line 147 (42800) "Provincial or territorial tax (complete
-and attach your provincial or territorial Form 428, even if the result is "0")". Not triggered by
-the returns modelled: lines 144 (42100), 145 (42120) and 146 (42200).
+Line 143 is "Amount from line 42000"; line 144 (42100) and line 145 (42120) are the Schedule 8
+Part 4 and Schedule 13 amounts; line 147 (42800) "Provincial or territorial tax (complete and
+attach your provincial or territorial Form 428, even if the result is "0")". Not computed: line 146
+(42200), the social benefits repayment.
 """
 
 INCOME_TAX_DEDUCTED = CATALOG.declare("income_tax_deducted", Decimal, non_negative=True)

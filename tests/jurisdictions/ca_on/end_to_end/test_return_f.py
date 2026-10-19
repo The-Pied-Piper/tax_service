@@ -107,7 +107,8 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
         "+ age_amount 0 + spouse_amount 0 "
         "+ eligible_dependant_amount 16129 + spouse_caregiver_amount 0 + caregiver_amount 0 "
         "+ infirm_children_amount 0 "
-        "+ cpp_base_contributions 2796.75 + ei_premiums 984 "
+        "+ cpp_base_contributions 2796.75 + cpp_base_contributions_on_self_employment 0 "
+        "+ ei_premiums 984 + ei_premiums_on_self_employment 0 "
         "+ canada_employment_amount 1471 + disability_transferred_amount 0 "
         "+ medical_claim 0 = 37509.75"
     ) in rendered

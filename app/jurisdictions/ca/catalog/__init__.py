@@ -2,14 +2,16 @@
 
 Only the kinds in use are declared, each non-negative except the lines that print no floor: none of
 these lines can be negative on the return as modelled except the refund or balance owing, where
-negative means a refund, lines 5 and 9 of the Federal Worksheet for line 25000, the net income
+negative means a refund, lines 5 and 9 of the Federal Worksheet for line 25000, the five "Net"
+self-employment income lines (T1 lines 22 to 26), line 27, Schedule 8 Part 4 line 1, the net income
 before adjustments (line 23400, "if negative, show in brackets") and the lines of Form T1436 and of
 Schedule 15 that print no "(if negative, enter "0")". Amounts are Decimal; the counts of eligible
 dependants, of infirm children, of the eligible children for child care (Form T778 Part B lines 1
 to 3), of the Schedule 6 eligible dependants (line 38100), the two starting counts of the Federal
 Worksheet for line 25000, the Schedule 15 count of a maximum participation period that ended in
-a prior year, the capital cost allowance count of no property left in a class, the day counts of
-Form T2222 Step 2 and the individual and the zone of a trip are int. Chart A and Chart B of Form
+a prior year, the months of Schedule 8 box A, the Schedule 8 Part 4 and Schedule 13 counts, the
+capital cost allowance count of no property left in a class, the day counts of Form T2222 Step 2
+and the individual and the zone of a trip are int. Chart A and Chart B of Form
 T2222 are record lists, each a `RecordListKind` declared here.
 Identifiers are stable: `tests/jurisdictions/ca/test_catalog.py` snapshots them.
 """

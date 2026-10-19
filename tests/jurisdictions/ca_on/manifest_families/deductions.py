@@ -2,15 +2,19 @@
 
 from __future__ import annotations
 
+from app.domain.capabilities.amount_by_count import AmountForCount
 from app.domain.capabilities.apply_fraction import ApplyFraction
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.contribution_tier import TieredContribution
+from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.per_unit_amount import PerUnitAmount
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
+from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
+from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.chart_a_row_c_total import ChartARowCTotal
 from app.jurisdictions.ca.capabilities.chart_b_zone_a_total import ChartBZoneATotal
@@ -40,10 +44,31 @@ from app.jurisdictions.ca.catalog import (
     CHILDREN_SEVEN_TO_SIXTEEN,
     CHILDREN_UNDER_SEVEN,
     CHILDREN_WITH_DISABILITY,
+    CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
+    CPP_BASIC_EXEMPTION,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
+    CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
+    CPP_EARNINGS_UP_TO_MAXIMUM,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_MAXIMUM_PENSIONABLE_EARNINGS,
+    CPP_MONTHS,
+    CPP_PART_4_COMPLETED,
+    CPP_PENSIONABLE_EARNINGS,
+    CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+    CPT20_EARNINGS,
     DEDUCTIONS_FROM_TOTAL_INCOME,
+    EI_CONTROLLED_CORPORATION_EARNINGS,
+    EI_EARNINGS_SUBJECT_TO_PREMIUM,
+    EI_EXEMPT_SELF_EMPLOYMENT_INCOME,
+    EI_INSURABLE_EARNINGS,
+    EI_INSURABLE_EARNINGS_REMAINING,
+    EI_MAXIMUM_INSURABLE_EARNINGS,
+    EI_NET_SELF_EMPLOYMENT_INCOME,
+    EI_SELF_EMPLOYMENT_EARNINGS,
     ELECTED_SPLIT_PENSION_DEDUCTION,
     EMPLOYMENT_INCOME,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
@@ -52,6 +77,8 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
+    NET_PARTNERSHIP_INCOME,
+    NET_SELF_EMPLOYMENT_INCOME,
     NORTHERN_RESIDENTS_DEDUCTIONS,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_1994,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
@@ -67,6 +94,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_LIMIT_INCOME,
     OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
+    PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     RESIDENCY_AMOUNT,
@@ -74,6 +102,14 @@ from app.jurisdictions.ca.catalog import (
     RESIDENCY_NET_INCOME_LIMIT,
     RPP_DEDUCTION,
     RRSP_DEDUCTION,
+    SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS,
+    SELF_EMPLOYED_CPP_BASE_CREDIT,
+    SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE,
+    SELF_EMPLOYED_CPP_DEDUCTION,
+    SELF_EMPLOYED_CPP_ENHANCED_CONTRIBUTIONS,
+    SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    SELF_EMPLOYED_EI_PREMIUMS,
     STANDARD_AMOUNT_ALLOCATED,
     SUPPORT_PAYMENTS_DEDUCTION,
     TOTAL_CARRYING_CHARGES,
@@ -117,6 +153,12 @@ INPUTS = frozenset(
         "ca/other_payments_worksheet_required",
         "ca/other_payments_worksheet_line_9_over_limit",
         "ca/union_dues",
+        "ca/cpp_months",
+        "ca/cpt20_earnings",
+        "ca/cpp_part_4_completed",
+        "ca/ei_controlled_corporation_earnings",
+        "ca/ei_exempt_self_employment_income",
+        "ca/ei_insurable_earnings",
         "ca/elected_split_pension_deduction",
         "ca/support_payments_deduction",
         "ca/exploration_and_development_expenses",
@@ -157,6 +199,7 @@ OUTPUTS = frozenset(
         "ca/net_income_before_adjustments",
         "ca/other_payments_limit_income",
         "ca/standard_amount_allocated",
+        "ca/cpp_second_additional_earnings_maximum",
     }
 )
 
@@ -185,6 +228,238 @@ STEPS = {
             )
         },
         produces={"output": "ca/cpp_enhanced_contributions"},
+    ),
+    # Schedule 8 Part 2 "Box A: Enter the number of months that CPP applied in 2025." and the
+    # "Monthly proration for 2025" table, a row for each number of months (1 to 12): line B
+    # (maximum pensionable earnings), line C (maximum amount subject to second additional
+    # contributions), line D (additional maximum pensionable earnings) and line E (maximum
+    # basic exemption), each the figure of the row for the months in box A.
+    CapabilitySelection(
+        name="core/amount_by_count",
+        params={"table": "ca/cpp_maximum_pensionable_earnings"},
+        consumes={"count": "ca/cpp_months"},
+        produces={"output": "ca/cpp_maximum_pensionable_earnings"},
+    ),
+    CapabilitySelection(
+        name="core/amount_by_count",
+        params={"table": "ca/cpp_second_additional_earnings_maximum"},
+        consumes={"count": "ca/cpp_months"},
+        produces={"output": "ca/cpp_second_additional_earnings_maximum"},
+    ),
+    CapabilitySelection(
+        name="core/amount_by_count",
+        params={"table": "ca/cpp_additional_maximum_pensionable_earnings"},
+        consumes={"count": "ca/cpp_months"},
+        produces={"output": "ca/cpp_additional_maximum_pensionable_earnings"},
+    ),
+    CapabilitySelection(
+        name="core/amount_by_count",
+        params={"table": "ca/cpp_basic_exemption"},
+        consumes={"count": "ca/cpp_months"},
+        produces={"output": "ca/cpp_basic_exemption"},
+    ),
+    # Schedule 8 Part 4 line 1 "amount from line 12200 of your return plus line 27 of your
+    # return": the pensionable net self-employment earnings, the net partnership income then
+    # the net self-employment income.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/net_partnership_income", "ca/net_self_employment_income")},
+        produces={"output": "ca/pensionable_net_self_employment_earnings"},
+    ),
+    # Part 4 line 2 and line 50373 "Employment earnings not shown on a T4 slip that you are
+    # electing to pay additional CPP contributions on (complete Form CPT20)" and line 3 "Line 1
+    # plus line 2 (if negative, enter "0")": the CPP pensionable earnings.
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={
+            "parts": ("ca/pensionable_net_self_employment_earnings", "ca/cpt20_earnings"),
+        },
+        produces={"output": "ca/cpp_pensionable_earnings"},
+    ),
+    # Part 4 line 4 "Enter whichever is less: amount from line D of Part 2 or line 3.", line D
+    # in the form's order first.
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/cpp_additional_maximum_pensionable_earnings",
+                "ca/cpp_pensionable_earnings",
+            ),
+        },
+        produces={"output": "ca/cpp_pensionable_earnings_up_to_additional_maximum"},
+    ),
+    # Part 4 line 6 "Line 4 minus line 5 (if negative, enter "0")", line 5 "Amount from line B
+    # of Part 2": the earnings subject to second additional contributions; line 7 "Line 4 minus
+    # line 6 (if negative, enter "0")"; and line 9 "Line 7 minus line 8 (if negative, enter
+    # "0") (maximum $67,800)", line 8 "Amount from line E of Part 2": the earnings subject to
+    # base and first additional contributions.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/cpp_pensionable_earnings_up_to_additional_maximum",
+            "less": "ca/cpp_maximum_pensionable_earnings",
+        },
+        produces={"output": "ca/cpp_earnings_subject_to_second_additional"},
+    ),
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/cpp_pensionable_earnings_up_to_additional_maximum",
+            "less": "ca/cpp_earnings_subject_to_second_additional",
+        },
+        produces={"output": "ca/cpp_earnings_up_to_maximum"},
+    ),
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={"amount": "ca/cpp_earnings_up_to_maximum", "less": "ca/cpp_basic_exemption"},
+        produces={"output": "ca/cpp_earnings_subject_to_base_and_first_additional"},
+    ),
+    # Part 4 line 10 "amount from line 9 multiplied by 9.9% (maximum $6,712.20)", line 11
+    # "amount from line 9 multiplied by 2% (maximum $1,356.00)" and line 12 "amount from line 6
+    # multiplied by 8% (maximum $792.00)": the self-employed person's base, first additional
+    # and second additional contributions, each the tier on the earnings of its line (lines 9,
+    # 9 and 6).
+    CapabilitySelection(
+        name="core/contribution_tier",
+        params={"tier": "ca/cpp_self_employed_base_contribution"},
+        consumes={"earnings": "ca/cpp_earnings_subject_to_base_and_first_additional"},
+        produces={"output": "ca/self_employed_cpp_base_contributions"},
+    ),
+    CapabilitySelection(
+        name="core/contribution_tier",
+        params={"tier": "ca/cpp_self_employed_first_additional_contribution"},
+        consumes={"earnings": "ca/cpp_earnings_subject_to_base_and_first_additional"},
+        produces={"output": "ca/self_employed_cpp_first_additional_contributions"},
+    ),
+    CapabilitySelection(
+        name="core/contribution_tier",
+        params={"tier": "ca/cpp_self_employed_second_additional_contribution"},
+        consumes={"earnings": "ca/cpp_earnings_subject_to_second_additional"},
+        produces={"output": "ca/self_employed_cpp_second_additional_contributions"},
+    ),
+    # Part 4 line 13 "Line 11 plus line 12" and line 14 "Line 10 plus line 13 Enter this amount
+    # (in dollars and cents) on line 42100 of your return.": the enhanced contributions, then
+    # the CPP contributions payable.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/self_employed_cpp_first_additional_contributions",
+                "ca/self_employed_cpp_second_additional_contributions",
+            ),
+        },
+        produces={"output": "ca/self_employed_cpp_enhanced_contributions"},
+    ),
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/self_employed_cpp_base_contributions",
+                "ca/self_employed_cpp_enhanced_contributions",
+            ),
+        },
+        produces={"output": "ca/self_employed_cpp_contributions_payable"},
+    ),
+    # Part 4 line 15 "amount from line 10 multiplied by 50%" (enter on line 31000) and line 17
+    # "Line 15 plus line 16 Enter this amount (in dollars and cents) on line 22200 of your
+    # return.", line 16 "Amount from line 13": the base CPP contributions credit and the
+    # deduction.
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/cpp_self_employed_base_credit_rate"},
+        consumes={"base": "ca/self_employed_cpp_base_contributions"},
+        produces={"output": "ca/self_employed_cpp_base_credit"},
+    ),
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/self_employed_cpp_base_credit",
+                "ca/self_employed_cpp_enhanced_contributions",
+            ),
+        },
+        produces={"output": "ca/self_employed_cpp_deduction"},
+    ),
+    # T1 line 47 (22200), entered from Part 4 line 17: Part 4 is completed only when the filer
+    # reports self-employment income alone, so the amount is counted once for each Part 4
+    # completed, 1 or 0.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/self_employed_cpp_deduction",
+            "count": "ca/cpp_part_4_completed",
+        },
+        produces={"output": "ca/cpp_deduction_on_self_employment"},
+    ),
+    # Schedule 13 line 1 "Enter the total amount from line 1 1 plus line 27 of your return ...
+    # (if negative, enter "0")", read as line 12200 plus line 27, and line 4 "Add lines 1 to 3.
+    # Net self-employment income": line 2 and line 54493 (a corporation controlled by the
+    # filer) and line 3 and line 54494 (tax-exempt self-employment income) follow line 1.
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={"parts": ("ca/net_partnership_income", "ca/net_self_employment_income")},
+        produces={"output": "ca/ei_self_employment_earnings"},
+    ),
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/ei_self_employment_earnings",
+                "ca/ei_controlled_corporation_earnings",
+                "ca/ei_exempt_self_employment_income",
+            ),
+        },
+        produces={"output": "ca/ei_net_self_employment_income"},
+    ),
+    # Schedule 13 line 5 "Maximum insurable earnings 65,700.00", line 6 and line 54780 "Total
+    # EI insurable earnings (amount from box 24 of all your T4 slips ...)" and line 7 "Line 5
+    # minus line 6 (if negative, enter "0")".
+    CapabilitySelection(
+        name="core/credit_amount",
+        params={"amount": "ca/ei_maximum_insurable_earnings"},
+        consumes={},
+        produces={"output": "ca/ei_maximum_insurable_earnings"},
+    ),
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/ei_maximum_insurable_earnings",
+            "less": "ca/ei_insurable_earnings",
+        },
+        produces={"output": "ca/ei_insurable_earnings_remaining"},
+    ),
+    # Schedule 13 line 8 "Enter whichever is less: amount from line 4 or line 7." and line 9
+    # "Residents of a province or territory other than Quebec: Line 9: Amount from line 8
+    # multiplied by 1.64% (maximum $1,077.48)": the premiums on the earnings of line 8.
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/ei_net_self_employment_income",
+                "ca/ei_insurable_earnings_remaining",
+            ),
+        },
+        produces={"output": "ca/ei_earnings_subject_to_premium"},
+    ),
+    CapabilitySelection(
+        name="core/contribution_tier",
+        params={"tier": "ca/ei_self_employed_premium"},
+        consumes={"earnings": "ca/ei_earnings_subject_to_premium"},
+        produces={"output": "ca/self_employed_ei_premiums"},
     ),
     # Form T778 Part B line 1 "Number of eligible children born in 2019 or later whom the
     # disability amount cannot be claimed for" "multiplied by $8,000", line 2 (line 67960)
@@ -358,9 +633,9 @@ STEPS = {
         produces={"output": "ca/allowable_business_investment_loss"},
     ),
     # T1 line 53 and line 23300 "Add lines 35 to 52.": the deductions wired so far in the form's
-    # line order (20700, 20800, 20805, 21000, 21200, 21300, 21400, 21700, 22000, 22100, 22215,
-    # 22400, 23200). Not wired yet: 21500, 21900, 22200, 22900 and 23100; lines 20810 and 21999
-    # have no line among lines 35 to 52 and nothing on this return reads them.
+    # line order (20700, 20800, 20805, 21000, 21200, 21300, 21400, 21700, 22000, 22100, 22200,
+    # 22215, 22400, 23200). Not wired yet: 21500, 21900, 22900 and 23100; lines 20810 and 21999 have
+    # no line among lines 35 to 52 and nothing on this return reads them.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -376,6 +651,7 @@ STEPS = {
                 "ca/allowable_business_investment_loss",
                 "ca/support_payments_deduction",
                 "ca/carrying_charges_interest_expenses_and_other_expenses",
+                "ca/cpp_deduction_on_self_employment",
                 "ca/cpp_enhanced_contributions",
                 "ca/exploration_and_development_expenses",
                 "ca/other_deductions",
@@ -656,6 +932,147 @@ WIRING = {
         frozenset({CPP_ENHANCED_CONTRIBUTIONS}),
     ),
     (
+        AmountForCount,
+        frozenset({CPP_MONTHS}),
+        frozenset({CPP_MAXIMUM_PENSIONABLE_EARNINGS}),
+    ),
+    (
+        AmountForCount,
+        frozenset({CPP_MONTHS}),
+        frozenset({CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM}),
+    ),
+    (
+        AmountForCount,
+        frozenset({CPP_MONTHS}),
+        frozenset({CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS}),
+    ),
+    (
+        AmountForCount,
+        frozenset({CPP_MONTHS}),
+        frozenset({CPP_BASIC_EXEMPTION}),
+    ),
+    (
+        Sum,
+        frozenset({NET_PARTNERSHIP_INCOME, NET_SELF_EMPLOYMENT_INCOME}),
+        frozenset({PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS}),
+    ),
+    (
+        SumNotBelowZero,
+        frozenset({PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS, CPT20_EARNINGS}),
+        frozenset({CPP_PENSIONABLE_EARNINGS}),
+    ),
+    (
+        LesserOf,
+        frozenset({CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS, CPP_PENSIONABLE_EARNINGS}),
+        frozenset({CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset(
+            {
+                CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
+                CPP_MAXIMUM_PENSIONABLE_EARNINGS,
+            }
+        ),
+        frozenset({CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset(
+            {
+                CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
+                CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
+            }
+        ),
+        frozenset({CPP_EARNINGS_UP_TO_MAXIMUM}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({CPP_EARNINGS_UP_TO_MAXIMUM, CPP_BASIC_EXEMPTION}),
+        frozenset({CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL}),
+    ),
+    (
+        TieredContribution,
+        frozenset({CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL}),
+        frozenset({SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS}),
+    ),
+    (
+        TieredContribution,
+        frozenset({CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL}),
+        frozenset({SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS}),
+    ),
+    (
+        TieredContribution,
+        frozenset({CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL}),
+        frozenset({SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+                SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            }
+        ),
+        frozenset({SELF_EMPLOYED_CPP_ENHANCED_CONTRIBUTIONS}),
+    ),
+    (
+        Sum,
+        frozenset({SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS, SELF_EMPLOYED_CPP_ENHANCED_CONTRIBUTIONS}),
+        frozenset({SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE}),
+    ),
+    (
+        ApplyRate,
+        frozenset({SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS}),
+        frozenset({SELF_EMPLOYED_CPP_BASE_CREDIT}),
+    ),
+    (
+        Sum,
+        frozenset({SELF_EMPLOYED_CPP_BASE_CREDIT, SELF_EMPLOYED_CPP_ENHANCED_CONTRIBUTIONS}),
+        frozenset({SELF_EMPLOYED_CPP_DEDUCTION}),
+    ),
+    (
+        TimesCount,
+        frozenset({SELF_EMPLOYED_CPP_DEDUCTION, CPP_PART_4_COMPLETED}),
+        frozenset({CPP_DEDUCTION_ON_SELF_EMPLOYMENT}),
+    ),
+    (
+        SumNotBelowZero,
+        frozenset({NET_PARTNERSHIP_INCOME, NET_SELF_EMPLOYMENT_INCOME}),
+        frozenset({EI_SELF_EMPLOYMENT_EARNINGS}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                EI_SELF_EMPLOYMENT_EARNINGS,
+                EI_CONTROLLED_CORPORATION_EARNINGS,
+                EI_EXEMPT_SELF_EMPLOYMENT_INCOME,
+            }
+        ),
+        frozenset({EI_NET_SELF_EMPLOYMENT_INCOME}),
+    ),
+    (
+        CreditAmount,
+        frozenset(),
+        frozenset({EI_MAXIMUM_INSURABLE_EARNINGS}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({EI_MAXIMUM_INSURABLE_EARNINGS, EI_INSURABLE_EARNINGS}),
+        frozenset({EI_INSURABLE_EARNINGS_REMAINING}),
+    ),
+    (
+        LesserOf,
+        frozenset({EI_NET_SELF_EMPLOYMENT_INCOME, EI_INSURABLE_EARNINGS_REMAINING}),
+        frozenset({EI_EARNINGS_SUBJECT_TO_PREMIUM}),
+    ),
+    (
+        TieredContribution,
+        frozenset({EI_EARNINGS_SUBJECT_TO_PREMIUM}),
+        frozenset({SELF_EMPLOYED_EI_PREMIUMS}),
+    ),
+    (
         PerUnitAmount,
         frozenset({CHILDREN_UNDER_SEVEN}),
         frozenset({CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN}),
@@ -766,6 +1183,7 @@ WIRING = {
                 ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
                 SUPPORT_PAYMENTS_DEDUCTION,
                 CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES,
+                CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
                 CPP_ENHANCED_CONTRIBUTIONS,
                 EXPLORATION_AND_DEVELOPMENT_EXPENSES,
                 OTHER_DEDUCTIONS,

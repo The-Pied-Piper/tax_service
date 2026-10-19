@@ -33,7 +33,8 @@ and the taxable support payments. Not floored, so a loss larger than the other i
 brackets as the form prints it (T1 line 33 prints no floor; the General Guide says "If you have a
 loss, show it on the applicable line using brackets").
 
-Not wired yet: rental income (line 13) and self-employment income (lines 22 to 26).
+Not wired yet: rental income (line 13) and the net self-employment income (line 27), which is
+computed but not yet part of line 28 or line 15000.
 """
 
 OTHER_EMPLOYMENT_INCOME = CATALOG.declare("other_employment_income", Decimal, non_negative=True)
@@ -319,6 +320,37 @@ OTHER_INCOME = CATALOG.declare("other_income", Decimal, non_negative=True)
 TAXABLE_SCHOLARSHIPS = CATALOG.declare("taxable_scholarships", Decimal, non_negative=True)
 """Taxable scholarships, T1 line 13010 "Taxable scholarships, fellowships, bursaries and artists'
 project grants": a starting amount."""
+
+BUSINESS_INCOME = CATALOG.declare("business_income", Decimal)
+"""Business income, T1 line 22 "Business income", line 13500 "Net": the net business income, a
+starting amount. Negative when the expenses are larger (a loss), as the form prints no floor."""
+
+PROFESSIONAL_INCOME = CATALOG.declare("professional_income", Decimal)
+"""Professional income, T1 line 23 "Professional income", line 13700 "Net": the net professional
+income, a starting amount. Negative when the expenses are larger (a loss), as the form prints no
+floor."""
+
+COMMISSION_INCOME = CATALOG.declare("commission_income", Decimal)
+"""Commission income, T1 line 24 "Commission income", line 13900 "Net": the net commission income,
+a starting amount. Negative when the expenses are larger (a loss), as the form prints no floor."""
+
+FARMING_INCOME = CATALOG.declare("farming_income", Decimal)
+"""Farming income, T1 line 25 "Farming income", line 14100 "Net": the net farming income, a
+starting amount. Negative when the expenses are larger (a loss), as the form prints no floor."""
+
+FISHING_INCOME = CATALOG.declare("fishing_income", Decimal)
+"""Fishing income, T1 line 26 "Fishing income", line 14300 "Net": the net fishing income, a
+starting amount. Negative when the expenses are larger (a loss), as the form prints no floor."""
+
+NET_SELF_EMPLOYMENT_INCOME = CATALOG.declare("net_self_employment_income", Decimal)
+"""Net self-employment income, T1 line 27 "Add lines 22 to 26. Net self-employment income": the net
+business, professional, commission, farming and fishing income, in line order. Negative when the
+losses exceed the income, as the form prints no floor.
+
+Not yet part of line 28 "Line 21 plus line 27", of total income (line 15000) or of the working
+income of Schedule 6, which still read the other income lines alone. Schedule 8 and Schedule 13
+read it.
+"""
 
 WORKERS_COMPENSATION_BENEFITS = CATALOG.declare(
     "workers_compensation_benefits", Decimal, non_negative=True
