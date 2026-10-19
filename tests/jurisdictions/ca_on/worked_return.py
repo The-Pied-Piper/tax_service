@@ -4,9 +4,12 @@ A file under `returns/` names its `jurisdiction` and `tax_year`, describes the t
 the `sources` its figures were checked against, and maps artifact identifiers to figures under
 `inputs` and `expected`. Every figure is a quoted string, so YAML never reads it as a number: an
 amount is a decimal string, and a count (an `int` kind, only under `inputs`) is a string of
-decimal digits with no sign and no leading zero, such as "0" or "3". `WorkedReturn.load` checks
+decimal digits with no sign and no leading zero, such as "0" or "3". A record list (also only
+under `inputs`) is a list of mappings, one per record in order, each keyed by its fields'
+identifiers with figures spelled as above; `[]` is no records. `WorkedReturn.load` checks
 that shape and resolves each identifier through an artifact registry; every failure is a
-WorkedReturnError naming the file and the key.
+WorkedReturnError naming the file and the key, except a value its kind refuses, such as a
+negative amount, which is the value type's own error.
 """
 
 from __future__ import annotations
@@ -19,13 +22,14 @@ from typing import Any
 import yaml
 
 from app.adapters.outbound.yaml_support import YamlNode, YamlShapeError
-from app.domain.artifact import Artifact, ArtifactRegistry
+from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry
 from app.domain.errors import (
     InvalidJurisdictionCodeError,
     InvalidRegistrationError,
     UnknownRegistrationError,
 )
 from app.domain.jurisdiction_code import JurisdictionCode
+from app.domain.record_list import RecordList, RecordListKind
 
 _SECTIONS = frozenset({"jurisdiction", "tax_year", "description", "sources", "inputs", "expected"})
 
@@ -65,8 +69,8 @@ class WorkedReturn:
                 tax_year=root.field("tax_year").require_integer(),
                 description=root.field("description").require_non_empty_string(),
                 sources=cls._sources(root.field("sources")),
-                inputs=cls._artifacts(root.field("inputs"), artifacts, counts=True),
-                expected=cls._artifacts(root.field("expected"), artifacts, counts=False),
+                inputs=cls._artifacts(root.field("inputs"), artifacts, inputs=True),
+                expected=cls._artifacts(root.field("expected"), artifacts, inputs=False),
             )
         except (YamlShapeError, yaml.YAMLError) as exc:
             raise WorkedReturnError(f"{path}: {exc}") from None
@@ -105,8 +109,23 @@ class WorkedReturn:
             raise YamlShapeError(f"{node.where} is not a count: {text!r}") from None
 
     @staticmethod
+    def _records(node: YamlNode, kind: RecordListKind) -> RecordList:
+        """`node` read as a list of records of `kind`'s fields, each field a count or an amount."""
+        keys = frozenset(field.identifier for field in kind.fields)
+        records: list[dict[ArtifactKind[Any], Decimal | int]] = []
+        for item in node.items():
+            item.require_mapping(keys)
+            record: dict[ArtifactKind[Any], Decimal | int] = {}
+            for field in kind.fields:
+                value = item.field(field.identifier)
+                is_count = field.value_type is int
+                record[field] = WorkedReturn._count(value) if is_count else value.parse_decimal()
+            records.append(record)
+        return RecordList(kind.fields, records)
+
+    @staticmethod
     def _artifacts(
-        node: YamlNode, artifacts: ArtifactRegistry, *, counts: bool
+        node: YamlNode, artifacts: ArtifactRegistry, *, inputs: bool
     ) -> tuple[Artifact[Any], ...]:
         fields = node.fields()
         if not fields:
@@ -121,10 +140,12 @@ class WorkedReturn:
                 ) from None
             if kind.value_type is Decimal:
                 result.append(Artifact(kind, value.parse_decimal()))
-            elif counts and kind.value_type is int:
+            elif inputs and kind.value_type is int:
                 result.append(Artifact(kind, WorkedReturn._count(value)))
+            elif inputs and isinstance(kind, RecordListKind):
+                result.append(Artifact(kind, WorkedReturn._records(value, kind)))
             else:
-                accepted = "an amount or a count" if counts else "an amount"
+                accepted = "an amount, a count or a record list" if inputs else "an amount"
                 raise YamlShapeError(
                     f"{value.where}: {identifier!r} holds a {kind.value_type.__name__}, "
                     f"not {accepted}"

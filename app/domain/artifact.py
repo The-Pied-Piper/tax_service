@@ -7,15 +7,16 @@ values; an `Artifact[V]` is one value of a kind, produced in one computation. Ea
 declares its kinds through one `ArtifactCatalog`, which only records them; the composition root
 registers each catalog explicitly with `ArtifactRegistry.register_catalog`. A `Decimal` kind, or
 an `int` kind such as a count, may be declared non-negative, and then no artifact of it holds a
-value below zero. Names come from the jurisdiction's own law or return, never from another
-system's.
+value below zero. A record-list kind, declared with `ArtifactCatalog.declare_records`, holds a
+variable number of records of named `Decimal` or `int` fields as one value (record_list.py).
+Names come from the jurisdiction's own law or return, never from another system's.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from app.domain.errors import (
     DuplicateRegistrationError,
@@ -23,6 +24,11 @@ from app.domain.errors import (
     NegativeArtifactError,
 )
 from app.domain.registry import Namespace, Registry
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from app.domain.record_list import RecordListKind
 
 # Invariant on purpose. PEP 695 syntax would infer covariance from `value_type: type[V]`, and
 # mypy would then accept, say, an ArtifactKind[int] wired where an ArtifactKind[Decimal] is
@@ -66,6 +72,13 @@ class ArtifactKind(Generic[V]):  # noqa: UP046  (invariant V, see above)
         """The local part of the identifier, for traces and messages."""
         return self.identifier.partition("/")[2]
 
+    def check_value(self, value: V) -> None:
+        """Refuse `value`, already an instance of the value type, if this kind cannot hold it.
+
+        Called by `Artifact`; a kind accepts every instance unless a subclass says otherwise, as
+        `RecordListKind` does for a record list of other fields.
+        """
+
 
 type Money = ArtifactKind[Decimal]
 """A money kind: its artifacts are exact `Decimal`s in the jurisdiction's currency."""
@@ -88,6 +101,7 @@ class Artifact[T]:
                 f"{self.kind.label} must be a {self.kind.value_type.__name__}, "
                 f"got {type(self.value).__name__}"
             )
+        self.kind.check_value(self.value)
         if self.kind.non_negative and isinstance(self.value, Decimal | int) and self.value < 0:
             raise NegativeArtifactError(
                 f"{self.kind.identifier} cannot be negative, got {self.value}",
@@ -163,12 +177,37 @@ class ArtifactCatalog:
         """Declare the kind `<namespace>/<local_id>` with values of `value_type` and record it.
 
         `non_negative` declares that its values are never below zero (a `Decimal` or `int` kind
-        only). A local id this catalog already declared is an error.
+        only). A local id this catalog already declared is an error, and so is a `RecordList` value
+        type: a record-list kind carries its fields, so it is declared with `declare_records`.
         """
+        from app.domain.record_list import RecordList  # record_list.py imports this module
+
+        if value_type is RecordList:
+            raise InvalidRegistrationError(
+                f"{self._namespace.identifier(local_id)!r} holds record lists: declare it with "
+                f"declare_records, which takes its fields"
+            )
         kind = ArtifactKind(self._namespace.identifier(local_id), value_type, non_negative)
+        self._record(kind)
+        return kind
+
+    def declare_records(self, local_id: str, fields: Sequence[ArtifactKind[Any]]) -> RecordListKind:
+        """Declare the record-list kind `<namespace>/<local_id>` of `fields` and record it.
+
+        The fields, any sequence held as a tuple, are already-declared `Decimal` or `int` kinds,
+        from any package's catalog, at least one and none twice; anything else is an
+        InvalidRegistrationError. A local id this
+        catalog already declared is an error.
+        """
+        from app.domain.record_list import RecordListKind  # record_list.py imports this module
+
+        kind = RecordListKind(self._namespace.identifier(local_id), fields=fields)
+        self._record(kind)
+        return kind
+
+    def _record(self, kind: ArtifactKind[Any]) -> None:
         if kind.identifier in self._kinds:
             raise DuplicateRegistrationError(
                 f"{kind.identifier!r} is already declared in this catalog"
             )
         self._kinds[kind.identifier] = kind
-        return kind

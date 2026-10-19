@@ -23,7 +23,7 @@ import pytest
 from app.application.ports.jurisdiction_source import JurisdictionSource
 from app.application.ports.parameter_source import ParameterSource
 from app.application.services.tax_computation import TaxComputationService
-from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry, Money
+from app.domain.artifact import Artifact, ArtifactCatalog, ArtifactKind, ArtifactRegistry, Money
 from app.domain.capability import Capability, CapabilityRegistry, CapabilityResult
 from app.domain.composition import Composition
 from app.domain.errors import (
@@ -40,6 +40,7 @@ from app.domain.manifest import CapabilitySelection, Manifest
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import NO_ROUNDING
+from app.domain.registry import Namespace
 from app.domain.trace import TraceLine
 from app.domain.worksheet import Worksheet
 
@@ -2493,4 +2494,206 @@ def test_core_choose_by_count_refuses_a_count_kind_for_its_second_candidate_at_w
     built = choose_by_count_service(choose_by_count_selection(when_any="ex/person_count"))
 
     with pytest.raises(InvalidSelectionError, match="core/choose_by_count.*'when_any'"):
+        built.compose(EX_ON, 2025)
+
+
+# --- a record list consumed by a made-up per-item capability -----------------------------------
+#
+# `ex/dependants` is a made-up record-list input whose records have one field, the made-up
+# `ex/dependant_net_income`. `PerItemClaim` (`ex/per_item_claim`) consumes it with two made-up
+# scalar inputs, `ex/base_amount` and `ex/maximum_amount`, and does the per-item work itself: for
+# each record the claim is the base less that record's net income, at least 0 and at most the
+# maximum, and `ex-on/result` is the sum, with one trace line per item named by its position.
+# Like `ChooseByCount` above, `RecordList` and `declare_records` are reached inside cached
+# factories so their absence fails only the tests that use them.
+
+DEPENDANT_NET_INCOME = ArtifactKind("ex/dependant_net_income", Decimal, non_negative=True)
+BASE_AMOUNT = ArtifactKind("ex/base_amount", Decimal)
+MAXIMUM_AMOUNT = ArtifactKind("ex/maximum_amount", Decimal)
+
+
+@cache
+def dependants_kind() -> Any:
+    """The made-up `ex/dependants` record-list kind, declared like any package's."""
+    catalog = ArtifactCatalog(Namespace("ex"))
+    return catalog.declare_records("dependants", fields=(DEPENDANT_NET_INCOME,))
+
+
+def dependants(*net_incomes: str) -> Artifact[Any]:
+    """An `ex/dependants` artifact of one record per net income, in the order given."""
+    from app.domain.record_list import RecordList
+
+    kind = dependants_kind()
+    records = [{DEPENDANT_NET_INCOME: D(net_income)} for net_income in net_incomes]
+    return Artifact(kind, RecordList(kind.fields, records))
+
+
+@cache
+def per_item_claim_class() -> Any:
+    from app.domain.record_list import RecordList
+
+    class PerItemClaim(Capability):
+        """Produces `total`: for each record, `base` less its net income, from 0 up to
+        `maximum`, summed."""
+
+        CONSUMES: ClassVar[Mapping[str, type]] = {
+            "items": RecordList,
+            "base": Decimal,
+            "maximum": Decimal,
+        }
+        PRODUCES: ClassVar[Mapping[str, type]] = {"total": Decimal}
+
+        def __init__(
+            self, items: ArtifactKind[RecordList], base: Money, maximum: Money, total: Money
+        ) -> None:
+            super().__init__(items=items, base=base, maximum=maximum, total=total)
+            self._items, self._base, self._maximum, self._total = items, base, maximum, total
+
+        def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+            records = self._input(inputs, self._items).value.records
+            base = self._input(inputs, self._base).value
+            maximum = self._input(inputs, self._maximum).value
+            total = D("0")
+            trace: list[TraceLine] = []
+            for position, record in enumerate(records, start=1):
+                claim = min(maximum, max(D("0"), base - record[DEPENDANT_NET_INCOME]))
+                trace.append(StepLine(f"item {position}", claim))
+                total += claim
+            trace.append(StepLine("total", total))
+            return CapabilityResult(outputs=(Artifact(self._total, total),), trace=tuple(trace))
+
+    return PerItemClaim
+
+
+def per_item_claim_selection(
+    items: str = "ex/dependants", base: str = "ex/base_amount"
+) -> CapabilitySelection:
+    return CapabilitySelection(
+        name="ex/per_item_claim",
+        params={},
+        consumes={"items": items, "base": base, "maximum": "ex/maximum_amount"},
+        produces={"total": "ex-on/result"},
+    )
+
+
+def per_item_claim_service(
+    selection: CapabilitySelection | None = None,
+) -> TaxComputationService:
+    """`ex/per_item_claim` producing `ex-on/result` from the `ex/dependants` records, the base
+    amount and the maximum: each record's claim from 0 up to the maximum, summed."""
+    capabilities = capability_registry()
+    capabilities.register("ex/per_item_claim", per_item_claim_class())
+    artifacts = artifact_registry()
+    for kind in (dependants_kind(), DEPENDANT_NET_INCOME, BASE_AMOUNT, MAXIMUM_AMOUNT):
+        artifacts.register(kind.identifier, kind)
+    return service(
+        manifest(
+            selection or per_item_claim_selection(),
+            inputs=frozenset({"ex/dependants", "ex/base_amount", "ex/maximum_amount"}),
+        ),
+        capabilities=capabilities,
+        artifacts=artifacts,
+    )
+
+
+def compute_claim(*net_incomes: str) -> Worksheet:
+    return per_item_claim_service().compute(
+        EX_ON,
+        2025,
+        dependants(*net_incomes),
+        Artifact(BASE_AMOUNT, D("28798.00")),
+        Artifact(MAXIMUM_AMOUNT, D("8601")),
+    )
+
+
+def test_a_per_item_capability_over_no_records_claims_nothing() -> None:
+    worksheet = compute_claim()
+
+    assert worksheet.get(RESULT).value == D("0")
+    assert worksheet.trace == (StepLine("total", D("0")),)
+
+
+def test_a_per_item_capability_over_one_record() -> None:
+    worksheet = compute_claim("25000")
+
+    # 28,798.00 − 25,000 = 3,798.00, under the 8,601 maximum.
+    assert worksheet.get(RESULT).value == D("3798.00")
+    assert worksheet.trace == (
+        StepLine("item 1", D("3798.00")),
+        StepLine("total", D("3798.00")),
+    )
+
+
+def test_a_per_item_capability_over_three_records_differs_from_pooling_them() -> None:
+    worksheet = compute_claim("5000", "25000", "20000")
+
+    # item 1: 28,798.00 − 5,000 = 23,798.00, at most 8,601 → 8,601
+    # item 2: 28,798.00 − 25,000 = 3,798.00
+    # item 3: 28,798.00 − 20,000 = 8,798.00, at most 8,601 → 8,601
+    # total: 8,601 + 3,798.00 + 8,601 = 21,000.00
+    assert worksheet.get(RESULT).value == D("21000.00")
+    assert worksheet.trace == (
+        StepLine("item 1", D("8601")),
+        StepLine("item 2", D("3798.00")),
+        StepLine("item 3", D("8601")),
+        StepLine("total", D("21000.00")),
+    )
+    # Pooled: 28,798.00 − (5,000 + 25,000 + 20,000) = −21,202.00, at least 0 → 0.
+    pooled = min(D("8601"), max(D("0"), D("28798.00") - D("50000")))
+    assert pooled == D("0")
+    assert worksheet.get(RESULT).value != pooled
+
+
+def test_a_per_item_capability_keeps_the_callers_record_order() -> None:
+    worksheet = compute_claim("30000", "5000")
+
+    assert [line for line in worksheet.trace if line != worksheet.trace[-1]] == [
+        StepLine("item 1", D("0")),
+        StepLine("item 2", D("8601")),
+    ]
+
+
+def test_a_record_list_is_an_ordinary_starting_artifact() -> None:
+    worksheet = compute_claim("25000")
+
+    assert worksheet.get(dependants_kind()) == dependants("25000")
+    assert worksheet.producer_of(dependants_kind()) is None
+    assert isinstance(worksheet.producer_of(RESULT), per_item_claim_class())
+
+
+def test_a_per_item_capability_consumes_the_record_list_kind() -> None:
+    composition = per_item_claim_service().compose(EX_ON, 2025)
+
+    (claim,) = composition.order
+    assert claim.consumes == frozenset({dependants_kind(), BASE_AMOUNT, MAXIMUM_AMOUNT})
+
+
+def test_a_per_item_capability_rejects_a_money_input_for_its_record_list() -> None:
+    built = per_item_claim_service()
+
+    with pytest.raises(
+        InvalidCompositionError, match="'dependants' was given as Decimal but the input"
+    ):
+        built.compute(
+            EX_ON,
+            2025,
+            Artifact(ArtifactKind("ex/dependants", Decimal), D("2")),
+            Artifact(BASE_AMOUNT, D("28798.00")),
+            Artifact(MAXIMUM_AMOUNT, D("8601")),
+        )
+
+
+def test_a_per_item_capability_refuses_a_money_kind_for_its_record_list_at_wiring() -> None:
+    built = per_item_claim_service(per_item_claim_selection(items="ex/base_amount"))
+
+    with pytest.raises(InvalidSelectionError, match="ex/per_item_claim.*'items'"):
+        built.compose(EX_ON, 2025)
+
+
+def test_a_per_item_capability_refuses_a_record_list_kind_for_a_money_slot_at_wiring() -> None:
+    built = per_item_claim_service(
+        per_item_claim_selection(items="ex/dependants", base="ex/dependants")
+    )
+
+    with pytest.raises(InvalidSelectionError, match="ex/per_item_claim"):
         built.compose(EX_ON, 2025)
