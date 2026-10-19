@@ -18,6 +18,8 @@ from app.domain.artifact import ArtifactCatalog, ArtifactKind, ArtifactRegistry
 from app.jurisdictions.ca_on.catalog import (
     BASIC_PERSONAL_AMOUNT,
     CATALOG,
+    COMMUNITY_FOOD_PROGRAM_CREDIT,
+    COMMUNITY_FOOD_PROGRAM_DONATIONS,
     DEPENDANTS,
     DEPENDENT_CHILDREN,
     ELIGIBLE_DEPENDANT_AMOUNT,
@@ -40,6 +42,7 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_SURTAX,
     ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_AFTER_FOOD_CREDIT,
     ONTARIO_TAX_AFTER_LIFT_CREDIT,
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_REDUCTION,
@@ -80,6 +83,9 @@ REGISTERED = frozenset(
         "ca-on/lift_reduction",
         "ca-on/lift_credit",
         "ca-on/ontario_tax_after_lift_credit",
+        "ca-on/community_food_program_donations",
+        "ca-on/community_food_program_credit",
+        "ca-on/ontario_tax_after_food_credit",
         "ca-on/ontario_health_premium",
         "ca-on/ontario_tax",
         "ca-on/fertility_expenses",
@@ -147,6 +153,11 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/lift_reduction") is LIFT_REDUCTION
     assert registry.get("ca-on/lift_credit") is LIFT_CREDIT
     assert registry.get("ca-on/ontario_tax_after_lift_credit") is ONTARIO_TAX_AFTER_LIFT_CREDIT
+    assert (
+        registry.get("ca-on/community_food_program_donations") is COMMUNITY_FOOD_PROGRAM_DONATIONS
+    )
+    assert registry.get("ca-on/community_food_program_credit") is COMMUNITY_FOOD_PROGRAM_CREDIT
+    assert registry.get("ca-on/ontario_tax_after_food_credit") is ONTARIO_TAX_AFTER_FOOD_CREDIT
     assert registry.get("ca-on/ontario_health_premium") is ONTARIO_HEALTH_PREMIUM
     assert registry.get("ca-on/ontario_tax") is ONTARIO_TAX
     assert registry.get("ca-on/fertility_expenses") is FERTILITY_EXPENSES

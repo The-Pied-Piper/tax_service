@@ -86,7 +86,9 @@ description: >-
   refund. The LIFT credit (Schedule ON428-A) is 5.05% of the employment income,
   505, below its 875 maximum, less 5% of net income over 32500, nothing as 9935.00 is below
   it: 505, more than the Ontario tax after the reduction of zero, so the Ontario tax after
-  the LIFT credit is zero. A taxable income of 9935.00 is at or below the health premium chart's
+  the LIFT credit is zero. With chosen qualifying donations of 0, the community food program
+  donation tax credit for farmers (line 87) is 25% x 0 = 0 and the Ontario tax after it (line
+  88) is 0 less 0, zero. A taxable income of 9935.00 is at or below the health premium chart's
   first threshold of 20000, so the premium is zero and the Ontario tax is zero. The net
   federal tax is the federal tax after credits, zero, and the total payable is it plus the
   Ontario tax, zero. The Canada workers benefit (Schedule 6) with no eligible spouse or
@@ -155,6 +157,7 @@ inputs:
   ca/income_tax_deducted: "500"
   ca-on/fertility_expenses: "0"
   ca-on/seniors_transit_paid: "0"
+  ca-on/community_food_program_donations: "0"
 expected:
   ca/taxable_capital_gains: "0"
   ca/investment_income_before_prior_years: "0"
@@ -212,6 +215,8 @@ expected:
   ca-on/lift_reduction: "0"
   ca-on/lift_credit: "505"
   ca-on/ontario_tax_after_lift_credit: "0"
+  ca-on/community_food_program_credit: "0"
+  ca-on/ontario_tax_after_food_credit: "0"
   ca-on/ontario_health_premium: "0"
   ca-on/ontario_tax: "0"
   ca/net_federal_tax: "0"

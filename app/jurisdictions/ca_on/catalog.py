@@ -160,6 +160,26 @@ ONTARIO_TAX_AFTER_LIFT_CREDIT = CATALOG.declare(
 of the previous page" carries line 83 "Line 81 minus line 82 (if negative, enter "0")", which is
 line 81 while the provincial foreign tax credit (line 82) is not triggered."""
 
+COMMUNITY_FOOD_PROGRAM_DONATIONS = CATALOG.declare(
+    "community_food_program_donations", Decimal, non_negative=True
+)
+"""Qualifying community food program donations, ON428 line 87 and line 62150 "Enter the amount of
+qualifying donations that have also been claimed as a charitable donation.": a starting amount,
+taken as entered, as nothing here checks it against Schedule 9."""
+
+COMMUNITY_FOOD_PROGRAM_CREDIT = CATALOG.declare(
+    "community_food_program_credit", Decimal, non_negative=True
+)
+"""Community food program donation tax credit for farmers, ON428 line 87 "multiplied by 25%": the
+qualifying donations (line 62150) at the rate."""
+
+ONTARIO_TAX_AFTER_FOOD_CREDIT = CATALOG.declare(
+    "ontario_tax_after_food_credit", Decimal, non_negative=True
+)
+"""Ontario tax after the community food program donation tax credit for farmers, ON428 line 88
+"Line 86 minus line 87 (if negative, enter "0")": the Ontario tax after the LIFT credit less the
+credit."""
+
 ONTARIO_HEALTH_PREMIUM = CATALOG.declare("ontario_health_premium", Decimal, non_negative=True)
 """Ontario health premium, ON428 line 89 "Ontario health premium (complete the chart below)": the
 chart on taxable income (its line 1 "Enter your taxable income from line 26000 of your return"),
@@ -168,11 +188,8 @@ the next plateau."""
 
 ONTARIO_TAX = CATALOG.declare("ontario_tax", Decimal, non_negative=True)
 """Ontario tax, ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your
-return. Ontario tax": the Ontario tax after the LIFT credit plus the Ontario health premium.
-
-Line 88 "Line 86 minus line 87 (if negative, enter "0")" carries line 86, as the community food
-program donation tax credit for farmers (line 87) is not triggered by the returns computed so far.
-"""
+return. Ontario tax": the Ontario tax after the community food program donation tax credit for
+farmers plus the Ontario health premium."""
 
 FERTILITY_EXPENSES = CATALOG.declare("fertility_expenses", Decimal, non_negative=True)
 """Eligible medical expenses for fertility treatment, Form ON479 line 1 and line 61268 "Eligible
