@@ -31,7 +31,14 @@ from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Manifest
 from app.jurisdictions.ca.catalog import (
     ADJUSTED_FAMILY_NET_INCOME,
+    AGE_AMOUNT,
+    AGE_AMOUNT_BEFORE_COUNT,
+    AGE_INCOME_OVER_THRESHOLD,
+    AGE_INCOME_THRESHOLD,
+    AGE_MAXIMUM,
+    AGE_REDUCTION,
     BASIC_PERSONAL_AMOUNT,
+    BORN_IN_1960_OR_EARLIER,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_WORKERS_BENEFIT,
     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
@@ -104,6 +111,18 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION_MAXIMUM,
     RRSP_INCOME,
     SOCIAL_ASSISTANCE_PAYMENTS,
+    SPOUSE_AMOUNT,
+    SPOUSE_AMOUNT_BASIS,
+    SPOUSE_AMOUNT_BEFORE_COUNT,
+    SPOUSE_CAREGIVER_AMOUNT,
+    SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT,
+    SPOUSE_CAREGIVER_BASE,
+    SPOUSE_CAREGIVER_BEFORE_MAXIMUM,
+    SPOUSE_CAREGIVER_ELIGIBLE,
+    SPOUSE_CAREGIVER_LIMIT,
+    SPOUSE_INFIRMITY_SUPPLEMENT,
+    SPOUSE_NET_INCOME,
+    SPOUSES_CLAIMED,
     T3_INVESTMENT_INCOME,
     T5_INVESTMENT_INCOME,
     T5013_INVESTMENT_INCOME,
@@ -219,6 +238,10 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/eligible_dependants",
             "ca/dependant_net_income",
             "ca/infirm_children",
+            "ca/born_in_1960_or_earlier",
+            "ca/spouse_net_income",
+            "ca/spouses_claimed",
+            "ca/spouse_caregiver_eligible",
             "ca/child_care_expenses_paid",
             "ca/children_under_seven",
             "ca/children_with_disability",
@@ -549,6 +572,94 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"base": "ca/employment_income"},
             produces={"output": "ca/canada_employment_amount"},
         ),
+        # Federal Worksheet, "Line 30100 - Age amount": line 1 "Maximum amount 9,028.00", the
+        # dataset as an artifact of the same name.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca/age_maximum"},
+            consumes={},
+            produces={"output": "ca/age_maximum"},
+        ),
+        # Line 3 "Income threshold 45,522.00", the dataset as an artifact of the same name.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca/age_income_threshold"},
+            consumes={},
+            produces={"output": "ca/age_income_threshold"},
+        ),
+        # Line 2 "Amount from line 23600 of your return", the net income, and line 4 "Line 2 minus
+        # line 3 (if negative, enter "0")".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca/net_income", "less": "ca/age_income_threshold"},
+            produces={"output": "ca/age_income_over_threshold"},
+        ),
+        # Line 5 "Applicable rate 15%" and line 6 "Line 4 multiplied by the percentage from line
+        # 5".
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/age_rate"},
+            consumes={"base": "ca/age_income_over_threshold"},
+            produces={"output": "ca/age_reduction"},
+        ),
+        # Line 7 "Line 1 minus line 6 (if negative, enter "0") Enter this amount on line 30100 of
+        # your return."
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca/age_maximum", "less": "ca/age_reduction"},
+            produces={"output": "ca/age_amount_before_count"},
+        ),
+        # T1 line 78 (line 30100) "Age amount (if you were born in 1960 or earlier) (use Federal
+        # Worksheet) (maximum $9,028)": line 7 once if born in 1960 or earlier, else 0.
+        CapabilitySelection(
+            name="core/times_count",
+            params={},
+            consumes={
+                "amount": "ca/age_amount_before_count",
+                "count": "ca/born_in_1960_or_earlier",
+            },
+            produces={"output": "ca/age_amount"},
+        ),
+        # Schedule 5, "Line 30300 - Spouse or common-law partner amount": line 2 and line 51090
+        # "If you are eligible for the Canada caregiver amount for your spouse or common-law
+        # partner, enter $2,687", for each spouse eligible for it, at most one.
+        CapabilitySelection(
+            name="core/per_unit_amount",
+            params={"amount": "ca/spouse_infirmity_amount"},
+            consumes={"count": "ca/spouse_caregiver_eligible"},
+            produces={"output": "ca/spouse_infirmity_supplement"},
+        ),
+        # Line 3 "Line 1 plus line 2", line 1 "Basic personal amount from line 30000 of your
+        # return".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/basic_personal_amount", "ca/spouse_infirmity_supplement")},
+            produces={"output": "ca/spouse_amount_basis"},
+        ),
+        # Line 4 "Your spouse's or common-law partner's net income from line 23600 of their
+        # return (Note 1)" and line 5 "Line 3 minus line 4 (if negative, enter "0") Enter this
+        # amount on line 30300 of your return."
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca/spouse_amount_basis", "less": "ca/spouse_net_income"},
+            produces={"output": "ca/spouse_amount_before_count"},
+        ),
+        # T1 line 79 (line 30300) "Spouse or common-law partner amount (complete Schedule 5)":
+        # line 5 once if the filer claims it ("Only one spouse or common-law partner can claim
+        # the amount on line 30300 for each other for the same year"), else 0.
+        CapabilitySelection(
+            name="core/times_count",
+            params={},
+            consumes={
+                "amount": "ca/spouse_amount_before_count",
+                "count": "ca/spouses_claimed",
+            },
+            produces={"output": "ca/spouse_amount"},
+        ),
         # Schedule 5, "Line 30400 - Amount for an eligible dependant": line 1 "Basic personal
         # amount from line 30000 of your return", line 3 "Line 1 plus line 2" with line 2 (an
         # infirm eligible dependant 18 or older) not triggered, line 4 (51106) "Dependant's net
@@ -571,6 +682,52 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
                 "count": "ca/eligible_dependants",
             },
             produces={"output": "ca/eligible_dependant_amount"},
+        ),
+        # Schedule 5, "Line 30425 - Canada caregiver amount for spouse or common-law partner,
+        # or eligible dependant age 18 or older": line 1 "Base amount 28,798.00", the dataset as
+        # an artifact of the same name.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca/spouse_caregiver_base"},
+            consumes={},
+            produces={"output": "ca/spouse_caregiver_base"},
+        ),
+        # Line 2 "Net income for this person from line 23600 of their return", the spouse's
+        # net income, and line 3 "Line 1 minus line 2 (if negative, enter "0") (maximum
+        # $8,601)", before its maximum, then at most it.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca/spouse_caregiver_base", "less": "ca/spouse_net_income"},
+            produces={"output": "ca/spouse_caregiver_before_maximum"},
+        ),
+        CapabilitySelection(
+            name="core/capped_amount",
+            params={"cap": "ca/spouse_caregiver_maximum"},
+            consumes={"base": "ca/spouse_caregiver_before_maximum"},
+            produces={"output": "ca/spouse_caregiver_limit"},
+        ),
+        # Line 4 "Amount claimed on line 30300 or line 30400 of your return, if applicable", the
+        # spouse amount, and line 5 "Line 3 minus line 4 (if negative, enter "0") Enter this
+        # amount on line 30425 of your return."
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca/spouse_caregiver_limit", "less": "ca/spouse_amount"},
+            produces={"output": "ca/spouse_caregiver_amount_before_count"},
+        ),
+        # T1 line 81 (line 30425) "Canada caregiver amount for spouse or common-law partner,
+        # or eligible dependant age 18 or older (complete Schedule 5)": line 5 once if the
+        # spouse is eligible for the Canada caregiver amount (line 51090), else 0. The eligible
+        # dependant 18 or older (line 30400) is not wired here.
+        CapabilitySelection(
+            name="core/times_count",
+            params={},
+            consumes={
+                "amount": "ca/spouse_caregiver_amount_before_count",
+                "count": "ca/spouse_caregiver_eligible",
+            },
+            produces={"output": "ca/spouse_caregiver_amount"},
         ),
         # T1 line 83 (line 30500) "Canada caregiver amount for infirm children under 18 years of
         # age (see Schedule 5) Number of children you are claiming this amount for Line 30499"
@@ -616,17 +773,20 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca-on/eligible_dependant_amount"},
         ),
-        # T1 line 33500 (lines 30000, 30400, 30500, 30800, 31200, 31260) and ON428 line 58800
-        # (lines 58040, 58160, 58240, 58300), in the forms' line order. ON428 lines 58240 and
-        # 58300 are "Amount from line 30800 / 31200 of your return", so the Ontario sum reads the
-        # federal kinds; it has no Canada employment amount.
+        # T1 line 33500 (lines 30000, 30100, 30300, 30400, 30425, 30500, 30800, 31200, 31260) and
+        # ON428 line 58800 (lines 58040, 58160, 58240, 58300), in the forms' line order. ON428
+        # lines 58240 and 58300 are "Amount from line 30800 / 31200 of your return", so the
+        # Ontario sum reads the federal kinds; it has no Canada employment amount.
         CapabilitySelection(
             name="core/sum",
             params={},
             consumes={
                 "parts": (
                     "ca/basic_personal_amount",
+                    "ca/age_amount",
+                    "ca/spouse_amount",
                     "ca/eligible_dependant_amount",
+                    "ca/spouse_caregiver_amount",
                     "ca/infirm_children_amount",
                     "ca/cpp_base_contributions",
                     "ca/ei_premiums",
@@ -1032,7 +1192,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 80
+    assert len(found.capabilities) == 95
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -1042,7 +1202,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 80
+    assert len(composition.order) == 95
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -1205,6 +1365,44 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (TaperedAmount, frozenset({NET_INCOME}), frozenset({BASIC_PERSONAL_AMOUNT})),
         (CreditAmount, frozenset(), frozenset({ontario.BASIC_PERSONAL_AMOUNT})),
         (CappedAmount, frozenset({EMPLOYMENT_INCOME}), frozenset({CANADA_EMPLOYMENT_AMOUNT})),
+        (CreditAmount, frozenset(), frozenset({AGE_MAXIMUM})),
+        (CreditAmount, frozenset(), frozenset({AGE_INCOME_THRESHOLD})),
+        (
+            SubtractNotBelowZero,
+            frozenset({NET_INCOME, AGE_INCOME_THRESHOLD}),
+            frozenset({AGE_INCOME_OVER_THRESHOLD}),
+        ),
+        (ApplyRate, frozenset({AGE_INCOME_OVER_THRESHOLD}), frozenset({AGE_REDUCTION})),
+        (
+            SubtractNotBelowZero,
+            frozenset({AGE_MAXIMUM, AGE_REDUCTION}),
+            frozenset({AGE_AMOUNT_BEFORE_COUNT}),
+        ),
+        (
+            TimesCount,
+            frozenset({AGE_AMOUNT_BEFORE_COUNT, BORN_IN_1960_OR_EARLIER}),
+            frozenset({AGE_AMOUNT}),
+        ),
+        (
+            PerUnitAmount,
+            frozenset({SPOUSE_CAREGIVER_ELIGIBLE}),
+            frozenset({SPOUSE_INFIRMITY_SUPPLEMENT}),
+        ),
+        (
+            Sum,
+            frozenset({BASIC_PERSONAL_AMOUNT, SPOUSE_INFIRMITY_SUPPLEMENT}),
+            frozenset({SPOUSE_AMOUNT_BASIS}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({SPOUSE_AMOUNT_BASIS, SPOUSE_NET_INCOME}),
+            frozenset({SPOUSE_AMOUNT_BEFORE_COUNT}),
+        ),
+        (
+            TimesCount,
+            frozenset({SPOUSE_AMOUNT_BEFORE_COUNT, SPOUSES_CLAIMED}),
+            frozenset({SPOUSE_AMOUNT}),
+        ),
         (
             SubtractNotBelowZero,
             frozenset({BASIC_PERSONAL_AMOUNT, DEPENDANT_NET_INCOME}),
@@ -1214,6 +1412,27 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             TimesCount,
             frozenset({ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT, ELIGIBLE_DEPENDANTS}),
             frozenset({ELIGIBLE_DEPENDANT_AMOUNT}),
+        ),
+        (CreditAmount, frozenset(), frozenset({SPOUSE_CAREGIVER_BASE})),
+        (
+            SubtractNotBelowZero,
+            frozenset({SPOUSE_CAREGIVER_BASE, SPOUSE_NET_INCOME}),
+            frozenset({SPOUSE_CAREGIVER_BEFORE_MAXIMUM}),
+        ),
+        (
+            CappedAmount,
+            frozenset({SPOUSE_CAREGIVER_BEFORE_MAXIMUM}),
+            frozenset({SPOUSE_CAREGIVER_LIMIT}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({SPOUSE_CAREGIVER_LIMIT, SPOUSE_AMOUNT}),
+            frozenset({SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT}),
+        ),
+        (
+            TimesCount,
+            frozenset({SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT, SPOUSE_CAREGIVER_ELIGIBLE}),
+            frozenset({SPOUSE_CAREGIVER_AMOUNT}),
         ),
         (PerUnitAmount, frozenset({INFIRM_CHILDREN}), frozenset({INFIRM_CHILDREN_AMOUNT})),
         (CreditAmount, frozenset(), frozenset({ELIGIBLE_DEPENDANT_BASE})),
@@ -1237,7 +1456,10 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset(
                 {
                     BASIC_PERSONAL_AMOUNT,
+                    AGE_AMOUNT,
+                    SPOUSE_AMOUNT,
                     ELIGIBLE_DEPENDANT_AMOUNT,
+                    SPOUSE_CAREGIVER_AMOUNT,
                     INFIRM_CHILDREN_AMOUNT,
                     CPP_BASE_CONTRIBUTIONS,
                     EI_PREMIUMS,

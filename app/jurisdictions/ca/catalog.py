@@ -410,6 +410,95 @@ the base amount of line 1 plus the supplement amount of line 2 less its reductio
 over the income threshold of line 4 (line 10 "Line 2 minus line 9 (if negative, enter "0")").
 """
 
+BORN_IN_1960_OR_EARLIER = CATALOG.declare("born_in_1960_or_earlier", int, non_negative=True)
+"""Born in 1960 or earlier, T1 line 78 (line 30100) "Age amount (if you were born in 1960 or
+earlier) (use Federal Worksheet) (maximum $9,028)": a starting count, 0 or 1, from the date of birth
+the return asks for.
+
+The age amount is claimed only if the filer was born in 1960 or earlier; a count is only declared
+non-negative, so that condition is the return's to keep. It multiplies the age amount, as the form
+takes it.
+"""
+
+AGE_MAXIMUM = CATALOG.declare("age_maximum", Decimal, non_negative=True)
+"""Maximum age amount, Federal Worksheet (form 5000-D1), "Line 30100 - Age amount", line 1 "Maximum
+amount 9,028.00": the dataset as an artifact."""
+
+AGE_INCOME_THRESHOLD = CATALOG.declare("age_income_threshold", Decimal, non_negative=True)
+"""Income threshold of the age amount, Federal Worksheet (form 5000-D1), "Line 30100 - Age amount",
+line 3 "Income threshold 45,522.00": the dataset as an artifact."""
+
+AGE_INCOME_OVER_THRESHOLD = CATALOG.declare("age_income_over_threshold", Decimal, non_negative=True)
+"""Net income over the income threshold, Federal Worksheet (form 5000-D1), "Line 30100 - Age
+amount", line 4 "Line 2 minus line 3 (if negative, enter "0")": line 2 "Amount from line 23600 of
+your return" less the income threshold of line 3, not below zero."""
+
+AGE_REDUCTION = CATALOG.declare("age_reduction", Decimal, non_negative=True)
+"""Reduction of the age amount, Federal Worksheet (form 5000-D1), "Line 30100 - Age amount", line 6
+"Line 4 multiplied by the percentage from line 5": line 4 at the applicable rate of line 5 "15%"."""
+
+AGE_AMOUNT_BEFORE_COUNT = CATALOG.declare("age_amount_before_count", Decimal, non_negative=True)
+"""Age amount before it is claimed, Federal Worksheet (form 5000-D1), "Line 30100 - Age amount",
+line 7 "Line 1 minus line 6 (if negative, enter "0") Enter this amount on line 30100 of your
+return.": the maximum amount less the reduction, not below zero."""
+
+AGE_AMOUNT = CATALOG.declare("age_amount", Decimal, non_negative=True)
+"""Age amount, T1 line 78 (line 30100) "Age amount (if you were born in 1960 or earlier) (use
+Federal Worksheet) (maximum $9,028)": the worksheet's line 7 once if the filer was born in 1960 or
+earlier, else 0; a part of the total of the credit amounts."""
+
+SPOUSE_NET_INCOME = CATALOG.declare("spouse_net_income", Decimal, non_negative=True)
+"""Spouse's net income, Schedule 5 line 4 "Your spouse's or common-law partner's net income from
+line 23600 of their return (Note 1)": a starting amount, also line 2 "Net income for this person
+from line 23600 of their return" of the Canada caregiver calculation for line 30425, and ON428
+line 12 "Your spouse's or common-law partner's net income from line 23600 of their return".
+"""
+
+SPOUSES_CLAIMED = CATALOG.declare("spouses_claimed", int, non_negative=True)
+"""Number of spouse or common-law partner amounts claimed, T1 line 79 (line 30300) "Spouse or
+common-law partner amount (complete Schedule 5)": a starting count, 0 or 1.
+
+Schedule 5 states "Claim this amount if, at any time in the year, you supported your spouse or
+common-law partner" and "Only one spouse or common-law partner can claim the amount on line 30300
+for each other for the same year"; a count is only declared non-negative, so that rule is the
+return's to keep. The claim is the filer's statement; without it a return with no spouse would claim
+the whole basic personal amount.
+"""
+
+SPOUSE_CAREGIVER_ELIGIBLE = CATALOG.declare("spouse_caregiver_eligible", int, non_negative=True)
+"""Eligible for the Canada caregiver amount for the spouse, Schedule 5 line 2 and line 51090 "If you
+are eligible for the Canada caregiver amount for your spouse or common-law partner, enter $2,687
+(see line 30425 on page 4)": a starting count, 0 or 1.
+
+Eligibility is the filer's statement, as the schedule takes it, and is not computed here. It adds
+the $2,687 at line 2 of line 30300 and triggers line 30425, which the schedule asks for only if
+"you entered $2,687 on line 51090 or line 51100".
+"""
+
+SPOUSE_INFIRMITY_SUPPLEMENT = CATALOG.declare(
+    "spouse_infirmity_supplement", Decimal, non_negative=True
+)
+"""Supplement for a spouse with an infirmity, Schedule 5, "Line 30300 - Spouse or common-law partner
+amount", line 2 and line 51090 "If you are eligible for the Canada caregiver amount for your spouse
+or common-law partner, enter $2,687": the dataset once if eligible, else 0."""
+
+SPOUSE_AMOUNT_BASIS = CATALOG.declare("spouse_amount_basis", Decimal, non_negative=True)
+"""Basis of the spouse or common-law partner amount, Schedule 5, "Line 30300 - Spouse or common-law
+partner amount", line 3 "Line 1 plus line 2": line 1 "Basic personal amount from line 30000 of your
+return" plus the supplement of line 2."""
+
+SPOUSE_AMOUNT_BEFORE_COUNT = CATALOG.declare(
+    "spouse_amount_before_count", Decimal, non_negative=True
+)
+"""Spouse or common-law partner amount before it is claimed, Schedule 5, "Line 30300 - Spouse or
+common-law partner amount", line 5 "Line 3 minus line 4 (if negative, enter "0") Enter this amount
+on line 30300 of your return.": line 3 less line 4, the spouse's net income, not below zero."""
+
+SPOUSE_AMOUNT = CATALOG.declare("spouse_amount", Decimal, non_negative=True)
+"""Spouse or common-law partner amount, T1 line 79 (line 30300) "Spouse or common-law partner amount
+(complete Schedule 5)": Schedule 5 line 5 once if the filer claims it, else 0; a part of the total
+of the credit amounts."""
+
 ELIGIBLE_DEPENDANTS = CATALOG.declare("eligible_dependants", int, non_negative=True)
 """Number of eligible dependants claimed for, T1 line 80 (line 30400) "Amount for an eligible
 dependant (complete Schedule 5)": a starting count, 0 or 1.
@@ -447,6 +536,47 @@ ELIGIBLE_DEPENDANT_AMOUNT = CATALOG.declare("eligible_dependant_amount", Decimal
 """Amount for an eligible dependant, T1 line 80 (line 30400) "Amount for an eligible dependant
 (complete Schedule 5)": Schedule 5 line 5 for each eligible dependant claimed for, a part of the
 total of the credit amounts."""
+
+SPOUSE_CAREGIVER_BASE = CATALOG.declare("spouse_caregiver_base", Decimal, non_negative=True)
+"""Base amount for the Canada caregiver amount for a spouse, Schedule 5, "Line 30425 - Canada
+caregiver amount for spouse or common-law partner, or eligible dependant age 18 or older", line 1
+"Base amount 28,798.00": the dataset as an artifact."""
+
+SPOUSE_CAREGIVER_BEFORE_MAXIMUM = CATALOG.declare(
+    "spouse_caregiver_before_maximum", Decimal, non_negative=True
+)
+"""Canada caregiver amount for a spouse before its maximum, Schedule 5 (form 5000-S5), "Line 30425",
+line 3 "Line 1 minus line 2 (if negative, enter "0") (maximum $8,601)": line 1 "Base amount
+28,798.00" less line 2 "Net income for this person from line 23600 of their return", not below
+zero, before the "(maximum $8,601)" is applied."""
+
+SPOUSE_CAREGIVER_LIMIT = CATALOG.declare("spouse_caregiver_limit", Decimal, non_negative=True)
+"""Canada caregiver amount for a spouse at most its maximum, Schedule 5 (form 5000-S5), "Line
+30425", line 3 "Line 1 minus line 2 (if negative, enter "0") (maximum $8,601)": the amount before
+its maximum, at most $8,601.
+
+It is not named `..._before_count`, as the eligible dependant's capped amount is, because that name
+is the line 5 result's (`spouse_caregiver_amount_before_count`), which line 4 comes off first.
+"""
+
+SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT = CATALOG.declare(
+    "spouse_caregiver_amount_before_count", Decimal, non_negative=True
+)
+"""Canada caregiver amount for a spouse before it is claimed, Schedule 5, "Line 30425", line 5 "Line
+3 minus line 4 (if negative, enter "0") Enter this amount on line 30425 of your return. Allowable
+amount for this person": line 3 less line 4 "Amount claimed on line 30300 or line 30400 of your
+return, if applicable", here the spouse amount, not below zero.
+
+The condition "a person whose net income is between $8,624 and $28,798" needs no gate: below $8,624
+line 4 is already more than $8,601, so line 5 is 0. The eligible dependant 18 or older (line 30400)
+is not wired here.
+"""
+
+SPOUSE_CAREGIVER_AMOUNT = CATALOG.declare("spouse_caregiver_amount", Decimal, non_negative=True)
+"""Canada caregiver amount for a spouse, T1 line 81 (line 30425) "Canada caregiver amount for spouse
+or common-law partner, or eligible dependant age 18 or older (complete Schedule 5)": Schedule 5 line
+5 once if the spouse is eligible for it (line 51090), else 0; a part of the total of the credit
+amounts."""
 
 INFIRM_CHILDREN = CATALOG.declare("infirm_children", int, non_negative=True)
 """Number of infirm children, T1 line 83 "Number of children you are claiming this amount for Line
@@ -502,9 +632,11 @@ NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare(
 )
 """Total of the non-refundable credit amounts, T1 line 33500 "Line 106 plus line 112": the sum
 of the credit amounts the rate is applied to once, here, in line order, the basic personal amount
-(line 30000), the amount for an eligible dependant (line 30400), the Canada caregiver amount for
-infirm children (line 30500), the base CPP contributions (line 30800), the EI premiums (line
-31200) and the Canada employment amount (line 31260)."""
+(line 30000), the age amount (line 78, 30100), the spouse or common-law partner amount (line 79,
+30300), the amount for an eligible dependant (line 80, 30400), the Canada caregiver amount for a
+spouse or common-law partner (line 81, 30425), the Canada caregiver amount for infirm children
+(line 83, 30500), the base CPP contributions (line 30800), the EI premiums (line 31200) and the
+Canada employment amount (line 31260)."""
 
 NON_REFUNDABLE_TAX_CREDITS = CATALOG.declare(
     "non_refundable_tax_credits", Decimal, non_negative=True
