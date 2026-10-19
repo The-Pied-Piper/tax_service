@@ -5,9 +5,9 @@ every record has, and its `records` in the caller's order. A `Record` is a froze
 field kind, read by kind and never by position. Every field is a `Decimal` or `int` kind; a record
 holds each of them, an instance of its value type and, for a kind declared non-negative, never
 below zero, and nothing else. A list may be empty. Packages declare a record-list kind, a
-`RecordListKind`, with `ArtifactCatalog.declare_records`; an `Artifact` of one holds only a list
-built with that kind's fields. A capability consuming one does the per-item work itself and names
-each item by its position from 1 ("item 2").
+`RecordListKind`, on their own catalog with `RecordListKind.declare`; an `Artifact` of one holds
+only a list built with that kind's fields. A capability consuming one does the per-item work
+itself and names each item by its position from 1 ("item 2").
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any
 
-from app.domain.artifact import ArtifactKind
+from app.domain.artifact import ArtifactCatalog, ArtifactKind
 from app.domain.errors import InvalidRecordError, InvalidRegistrationError, NegativeArtifactError
 
 
@@ -136,8 +136,7 @@ class RecordListKind(ArtifactKind[RecordList]):
 
     The fields are `Decimal` or `int` kinds, at least one, no identifier twice, else an
     InvalidRegistrationError naming the kind; they may come from any package's catalog. Two kinds
-    of one identifier with other fields are not equal. Packages declare theirs through
-    `ArtifactCatalog.declare_records`.
+    of one identifier with other fields are not equal. Packages declare theirs with `declare`.
     """
 
     fields: tuple[ArtifactKind[Any], ...] = field(kw_only=True)
@@ -157,6 +156,19 @@ class RecordListKind(ArtifactKind[RecordList]):
             RecordList(self.fields, ())
         except InvalidRecordError as exc:
             raise InvalidRegistrationError(f"record list {self.identifier!r}: {exc}") from None
+
+    @classmethod
+    def declare(
+        cls, catalog: ArtifactCatalog, local_id: str, fields: Sequence[ArtifactKind[Any]]
+    ) -> RecordListKind:
+        """Declare the record-list kind `<namespace>/<local_id>` of `fields` on `catalog`.
+
+        The kind lands in the catalog's namespace, e.g. `ex/dependants`; its fields may come from
+        any package's catalog. A local id the catalog already declared is an error.
+        """
+        kind = cls(catalog.namespace.identifier(local_id), fields=fields)
+        catalog.add(kind)
+        return kind
 
     def check_value(self, value: RecordList) -> None:
         """Refuse a record list built with other fields than this kind's, as a TypeError."""

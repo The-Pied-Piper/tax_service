@@ -2504,7 +2504,7 @@ def test_core_choose_by_count_refuses_a_count_kind_for_its_second_candidate_at_w
 # scalar inputs, `ex/base_amount` and `ex/maximum_amount`, and does the per-item work itself: for
 # each record the claim is the base less that record's net income, at least 0 and at most the
 # maximum, and `ex-on/result` is the sum, with one trace line per item named by its position.
-# Like `ChooseByCount` above, `RecordList` and `declare_records` are reached inside cached
+# Like `ChooseByCount` above, `RecordList` and `RecordListKind` are reached inside cached
 # factories so their absence fails only the tests that use them.
 
 DEPENDANT_NET_INCOME = ArtifactKind("ex/dependant_net_income", Decimal, non_negative=True)
@@ -2515,8 +2515,10 @@ MAXIMUM_AMOUNT = ArtifactKind("ex/maximum_amount", Decimal)
 @cache
 def dependants_kind() -> Any:
     """The made-up `ex/dependants` record-list kind, declared like any package's."""
+    from app.domain.record_list import RecordListKind
+
     catalog = ArtifactCatalog(Namespace("ex"))
-    return catalog.declare_records("dependants", fields=(DEPENDANT_NET_INCOME,))
+    return RecordListKind.declare(catalog, "dependants", fields=(DEPENDANT_NET_INCOME,))
 
 
 def dependants(*net_incomes: str) -> Artifact[Any]:

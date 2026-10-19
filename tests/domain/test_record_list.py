@@ -5,7 +5,7 @@ caller's order. A record is a frozen mapping keyed by field kind, read by kind a
 position. Each record is checked when the list is built: every field present, no other key, each
 value an instance of its field kind's value type and, for a kind declared non-negative, not below
 zero; an error names the record by its position from 1 ("item 2") and the field by its identifier.
-A list may be empty. `ArtifactCatalog.declare_records` declares a record-list kind, a
+A list may be empty. `RecordListKind.declare` declares a record-list kind on a catalog, a
 `RecordListKind` whose value type is `RecordList` and which carries its fields; it refuses an empty
 field list, a repeated field and a field kind that is not `Decimal` or `int`. Names are made up;
 like the artifact tests, the catalog tests point `ArtifactRegistry.shared` at a fresh registry.
@@ -123,7 +123,7 @@ def test_record_lists_are_equal_by_fields_and_records_in_order() -> None:
 
 
 def test_a_record_list_is_a_value_an_artifact_can_hold(fresh: ArtifactRegistry) -> None:
-    kind = ArtifactCatalog(Namespace("ex")).declare_records("dependants", fields=FIELDS)
+    kind = RecordListKind.declare(ArtifactCatalog(Namespace("ex")), "dependants", fields=FIELDS)
     records = RecordList(kind.fields, [record("5000", 6)])
 
     artifact = Artifact(kind, records)
@@ -135,7 +135,7 @@ def test_a_record_list_is_a_value_an_artifact_can_hold(fresh: ArtifactRegistry) 
 def test_an_artifact_accepts_a_record_list_built_with_its_kinds_fields(
     fresh: ArtifactRegistry,
 ) -> None:
-    kind = ArtifactCatalog(Namespace("ex")).declare_records("dependants", fields=FIELDS)
+    kind = RecordListKind.declare(ArtifactCatalog(Namespace("ex")), "dependants", fields=FIELDS)
     records = RecordList((NET_INCOME, MONTHS), [record("5000", 6)])
 
     assert Artifact(kind, records).value is records
@@ -156,7 +156,7 @@ def test_an_artifact_refuses_a_record_list_with_other_fields_than_its_kind(
     fresh: ArtifactRegistry, fields: tuple[ArtifactKind[Any], ...]
 ) -> None:
     # The field list is structure: a record list built for other fields is not a value of the kind.
-    kind = ArtifactCatalog(Namespace("ex")).declare_records("dependants", fields=FIELDS)
+    kind = RecordListKind.declare(ArtifactCatalog(Namespace("ex")), "dependants", fields=FIELDS)
 
     with pytest.raises(TypeError, match=r"ex/dependants.*fields"):
         Artifact(kind, RecordList(fields, []))
@@ -257,13 +257,13 @@ def test_an_invalid_record_is_a_domain_error() -> None:
     assert issubclass(InvalidRecordError, DomainError)
 
 
-# --- ArtifactCatalog.declare_records ----------------------------------------------------------
+# --- RecordListKind.declare -------------------------------------------------------------------
 
 
 def test_a_catalog_declares_a_record_list_kind_in_its_namespace(fresh: ArtifactRegistry) -> None:
     catalog = ArtifactCatalog(Namespace("ex"))
 
-    kind = catalog.declare_records("dependants", fields=FIELDS)
+    kind = RecordListKind.declare(catalog, "dependants", fields=FIELDS)
 
     assert_type(kind, RecordListKind)
     assert isinstance(kind, ArtifactKind)
@@ -276,14 +276,14 @@ def test_a_catalog_declares_a_record_list_kind_in_its_namespace(fresh: ArtifactR
 
 
 def test_the_fields_may_be_given_by_position(fresh: ArtifactRegistry) -> None:
-    kind = ArtifactCatalog(Namespace("ex")).declare_records("dependants", (NET_INCOME,))
+    kind = RecordListKind.declare(ArtifactCatalog(Namespace("ex")), "dependants", (NET_INCOME,))
 
     assert kind.fields == (NET_INCOME,)
 
 
 def test_the_fields_keep_their_declared_order(fresh: ArtifactRegistry) -> None:
-    kind = ArtifactCatalog(Namespace("ex")).declare_records(
-        "dependants", fields=(MONTHS, NET_INCOME)
+    kind = RecordListKind.declare(
+        ArtifactCatalog(Namespace("ex")), "dependants", fields=(MONTHS, NET_INCOME)
     )
 
     assert kind.fields == (MONTHS, NET_INCOME)
@@ -294,7 +294,7 @@ def test_a_field_may_come_from_another_packages_catalog(fresh: ArtifactRegistry)
     net_income = parent.declare("dependant_net_income", Decimal, non_negative=True)
     child = ArtifactCatalog(Namespace("ex-on"))
 
-    kind = child.declare_records("dependants", fields=(net_income,))
+    kind = RecordListKind.declare(child, "dependants", fields=(net_income,))
 
     assert kind.identifier == "ex-on/dependants"
     assert kind.fields == (net_income,)
@@ -304,9 +304,11 @@ def test_a_field_may_come_from_another_packages_catalog(fresh: ArtifactRegistry)
 
 def test_record_list_kinds_are_told_apart_by_their_fields(fresh: ArtifactRegistry) -> None:
     # The field list is structure: the same identifier with other fields is another kind.
-    one = ArtifactCatalog(Namespace("ex")).declare_records("dependants", fields=(NET_INCOME,))
-    two = ArtifactCatalog(Namespace("ex")).declare_records("dependants", fields=FIELDS)
-    again = ArtifactCatalog(Namespace("ex")).declare_records("dependants", fields=FIELDS)
+    one = RecordListKind.declare(
+        ArtifactCatalog(Namespace("ex")), "dependants", fields=(NET_INCOME,)
+    )
+    two = RecordListKind.declare(ArtifactCatalog(Namespace("ex")), "dependants", fields=FIELDS)
+    again = RecordListKind.declare(ArtifactCatalog(Namespace("ex")), "dependants", fields=FIELDS)
 
     assert one != two
     assert two == again
@@ -314,7 +316,7 @@ def test_record_list_kinds_are_told_apart_by_their_fields(fresh: ArtifactRegistr
 
 
 def test_declaring_a_record_list_registers_nothing(fresh: ArtifactRegistry) -> None:
-    ArtifactCatalog(Namespace("ex")).declare_records("dependants", fields=FIELDS)
+    RecordListKind.declare(ArtifactCatalog(Namespace("ex")), "dependants", fields=FIELDS)
 
     assert fresh.identifiers() == frozenset()
 
@@ -322,7 +324,7 @@ def test_declaring_a_record_list_registers_nothing(fresh: ArtifactRegistry) -> N
 def test_a_declared_record_list_kind_registers_with_its_catalog(fresh: ArtifactRegistry) -> None:
     catalog = ArtifactCatalog(Namespace("ex"))
     count = catalog.declare("person_count", int)
-    kind = catalog.declare_records("dependants", fields=FIELDS)
+    kind = RecordListKind.declare(catalog, "dependants", fields=FIELDS)
     registry = ArtifactRegistry()
 
     registry.register_catalog(catalog)
@@ -331,22 +333,22 @@ def test_a_declared_record_list_kind_registers_with_its_catalog(fresh: ArtifactR
     assert registry.kind("ex/person_count") is count
 
 
-def test_declare_records_refuses_an_empty_field_list(fresh: ArtifactRegistry) -> None:
+def test_declare_refuses_an_empty_field_list(fresh: ArtifactRegistry) -> None:
     catalog = ArtifactCatalog(Namespace("ex"))
 
     with pytest.raises(InvalidRegistrationError, match=r"ex/dependants.*no fields"):
-        catalog.declare_records("dependants", fields=())
+        RecordListKind.declare(catalog, "dependants", fields=())
 
     assert catalog.kinds == ()
 
 
-def test_declare_records_refuses_a_repeated_field(fresh: ArtifactRegistry) -> None:
+def test_declare_refuses_a_repeated_field(fresh: ArtifactRegistry) -> None:
     catalog = ArtifactCatalog(Namespace("ex"))
 
     with pytest.raises(
         InvalidRegistrationError, match=r"ex/dependants.*ex/dependant_net_income.*more than once"
     ):
-        catalog.declare_records("dependants", fields=(NET_INCOME, MONTHS, NET_INCOME))
+        RecordListKind.declare(catalog, "dependants", fields=(NET_INCOME, MONTHS, NET_INCOME))
 
     assert catalog.kinds == ()
 
@@ -355,7 +357,7 @@ def test_declare_records_refuses_a_repeated_field(fresh: ArtifactRegistry) -> No
     ("value_type", "name"),
     [(float, "float"), (str, "str"), (bool, "bool"), (RecordList, "RecordList")],
 )
-def test_declare_records_refuses_a_field_that_is_not_decimal_or_int(
+def test_declare_refuses_a_field_that_is_not_decimal_or_int(
     fresh: ArtifactRegistry, value_type: type[Any], name: str
 ) -> None:
     # `bool` is a subclass of `int` but not a count, as for a non-negative kind.
@@ -363,17 +365,17 @@ def test_declare_records_refuses_a_field_that_is_not_decimal_or_int(
     field = ArtifactKind("ex/odd_field", value_type)
 
     with pytest.raises(InvalidRegistrationError, match=rf"ex/dependants.*ex/odd_field.*{name}"):
-        catalog.declare_records("dependants", fields=(NET_INCOME, field))
+        RecordListKind.declare(catalog, "dependants", fields=(NET_INCOME, field))
 
     assert catalog.kinds == ()
 
 
-def test_declare_records_refuses_a_local_id_already_declared(fresh: ArtifactRegistry) -> None:
+def test_declare_refuses_a_local_id_already_declared(fresh: ArtifactRegistry) -> None:
     catalog = ArtifactCatalog(Namespace("ex"))
     first = catalog.declare("dependants", int)
 
     with pytest.raises(DuplicateRegistrationError, match="'ex/dependants'"):
-        catalog.declare_records("dependants", fields=FIELDS)
+        RecordListKind.declare(catalog, "dependants", fields=FIELDS)
 
     assert catalog.kinds == (first,)
 
@@ -382,7 +384,7 @@ def test_declare_refuses_a_local_id_already_declared_as_a_record_list(
     fresh: ArtifactRegistry,
 ) -> None:
     catalog = ArtifactCatalog(Namespace("ex"))
-    first = catalog.declare_records("dependants", fields=FIELDS)
+    first = RecordListKind.declare(catalog, "dependants", fields=FIELDS)
 
     with pytest.raises(DuplicateRegistrationError, match="'ex/dependants'"):
         catalog.declare("dependants", int)
@@ -391,28 +393,34 @@ def test_declare_refuses_a_local_id_already_declared_as_a_record_list(
 
 
 @pytest.mark.parametrize("local_id", ["", "Dependants", "dependant-list", "ex/dependants"])
-def test_declare_records_refuses_a_local_id_that_is_not_snake_case(
+def test_declare_refuses_a_local_id_that_is_not_snake_case(
     fresh: ArtifactRegistry, local_id: str
 ) -> None:
     catalog = ArtifactCatalog(Namespace("ex"))
 
     with pytest.raises(InvalidRegistrationError, match="invalid local id"):
-        catalog.declare_records(local_id, fields=FIELDS)
+        RecordListKind.declare(catalog, local_id, fields=FIELDS)
 
     assert catalog.kinds == ()
 
 
-def test_declare_refuses_a_record_list_value_type_pointing_to_declare_records(
-    fresh: ArtifactRegistry,
-) -> None:
-    # A plain kind of `RecordList` would carry no fields, so no record list could be checked.
+def test_a_catalog_adds_a_kind_built_elsewhere_in_its_namespace(fresh: ArtifactRegistry) -> None:
+    catalog = ArtifactCatalog(Namespace("ex"))
+    kind = RecordListKind("ex/dependants", fields=FIELDS)
+
+    catalog.add(kind)
+
+    assert catalog.kinds == (kind,)
+    assert fresh.identifiers() == frozenset()
+
+
+def test_a_catalog_refuses_to_add_a_kind_of_another_namespace(fresh: ArtifactRegistry) -> None:
     catalog = ArtifactCatalog(Namespace("ex"))
 
-    with pytest.raises(InvalidRegistrationError, match=r"ex/dependants.*declare_records"):
-        catalog.declare("dependants", RecordList)
+    with pytest.raises(InvalidRegistrationError, match=r"ex-on/dependants.*'ex'"):
+        catalog.add(RecordListKind("ex-on/dependants", fields=FIELDS))
 
     assert catalog.kinds == ()
-    assert fresh.identifiers() == frozenset()
 
 
 def test_a_record_list_kind_given_a_list_of_fields_holds_them_as_a_tuple() -> None:
@@ -424,12 +432,12 @@ def test_a_record_list_kind_given_a_list_of_fields_holds_them_as_a_tuple() -> No
     assert len({kind, RecordListKind("ex/dependants", fields=FIELDS)}) == 1
 
 
-def test_declare_records_given_a_list_of_fields_holds_them_as_a_tuple(
+def test_declare_given_a_list_of_fields_holds_them_as_a_tuple(
     fresh: ArtifactRegistry,
 ) -> None:
     catalog = ArtifactCatalog(Namespace("ex"))
 
-    kind = catalog.declare_records("dependants", fields=[NET_INCOME, MONTHS])
+    kind = RecordListKind.declare(catalog, "dependants", fields=[NET_INCOME, MONTHS])
 
     assert kind.fields == (NET_INCOME, MONTHS)
     assert isinstance(kind.fields, tuple)
@@ -444,12 +452,14 @@ def test_a_record_list_kind_refuses_a_field_that_is_not_an_artifact_kind(field: 
         RecordListKind("ex/dependants", fields=cast(Any, (NET_INCOME, field)))
 
 
-def test_declare_records_refuses_a_field_that_is_not_an_artifact_kind(
+def test_declare_refuses_a_field_that_is_not_an_artifact_kind(
     fresh: ArtifactRegistry,
 ) -> None:
     catalog = ArtifactCatalog(Namespace("ex"))
 
     with pytest.raises(InvalidRegistrationError, match=r"ex/dependants"):
-        catalog.declare_records("dependants", fields=cast(Any, (NET_INCOME, "ex/months_resident")))
+        RecordListKind.declare(
+            catalog, "dependants", fields=cast(Any, (NET_INCOME, "ex/months_resident"))
+        )
 
     assert catalog.kinds == ()

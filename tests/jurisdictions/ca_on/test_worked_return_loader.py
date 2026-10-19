@@ -14,7 +14,7 @@ import pytest
 from app.domain.artifact import Artifact, ArtifactCatalog, ArtifactKind, ArtifactRegistry
 from app.domain.errors import NegativeArtifactError
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.record_list import RecordList
+from app.domain.record_list import RecordList, RecordListKind
 from app.domain.registry import Namespace
 from app.jurisdictions.ca.catalog import (
     FEDERAL_BASIC_TAX,
@@ -70,7 +70,7 @@ def records() -> ArtifactRegistry:
     catalog = ArtifactCatalog(Namespace("ex"))
     net_income = catalog.declare("dependant_net_income", Decimal, non_negative=True)
     months = catalog.declare("months_resident", int, non_negative=True)
-    catalog.declare_records("dependants", fields=(net_income, months))
+    RecordListKind.declare(catalog, "dependants", fields=(net_income, months))
     artifacts = ArtifactRegistry()
     artifacts.register_catalog(catalog)
     artifacts.register(FEDERAL_BASIC_TAX.identifier, FEDERAL_BASIC_TAX)
