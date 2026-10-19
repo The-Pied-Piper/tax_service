@@ -323,6 +323,24 @@ def test_loads_the_child_care_counts_as_integers(
     assert all(type(artifact.value) is int for artifact in worked.inputs)
 
 
+def test_loads_the_schedule_6_eligible_dependant_count_as_an_integer(
+    tmp_path: Path, artifacts: ArtifactRegistry
+) -> None:
+    # Schedule 6 line 38100: the number of eligible dependants for the Canada workers benefit,
+    # a count read like the others, apart from the T1 line 30400 count.
+    text = with_section(
+        "inputs", 'inputs:\n  ca/eligible_dependants: "0"\n  ca/cwb_eligible_dependants: "1"\n'
+    )
+
+    worked = WorkedReturn.load(write(tmp_path, text, "ok.yaml"), artifacts)
+
+    assert worked.inputs == (
+        Artifact(artifacts.kind("ca/eligible_dependants"), 0),
+        Artifact(artifacts.kind("ca/cwb_eligible_dependants"), 1),
+    )
+    assert all(type(artifact.value) is int for artifact in worked.inputs)
+
+
 @pytest.mark.parametrize(("count", "got"), [("0", "int"), ("true", "bool")])
 def test_an_unquoted_ontario_count_names_the_file_and_key(
     tmp_path: Path, artifacts: ArtifactRegistry, count: str, got: str

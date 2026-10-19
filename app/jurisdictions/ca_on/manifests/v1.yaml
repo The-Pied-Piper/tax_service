@@ -23,6 +23,7 @@ inputs:
   - ca/children_under_seven
   - ca/children_with_disability
   - ca/children_seven_to_sixteen
+  - ca/cwb_eligible_dependants
   - ca/income_tax_deducted
 outputs:
   - ca/refund_or_balance_owing
@@ -620,12 +621,11 @@ capabilities:
       output: ca/canada_workers_benefit_with_dependant
   # Line 28 for the filer's family status, which lines 21 and 24 read ("If you had an
   # eligible spouse or an eligible dependant ... If not ..."): the line with no eligible
-  # spouse or dependant when the T1 line 30400 count is 0, else the line with one; that
-  # count stands in for Schedule 6's own eligible dependant; an eligible spouse is not
-  # modelled.
+  # spouse or dependant when the number of Schedule 6 eligible dependants (line 38100) is
+  # 0, else the line with one; an eligible spouse is not modelled.
   - name: core/choose_by_count
     consumes:
-      count: ca/eligible_dependants
+      count: ca/cwb_eligible_dependants
       when_none: ca/canada_workers_benefit_without_dependant
       when_any: ca/canada_workers_benefit_with_dependant
     produces:

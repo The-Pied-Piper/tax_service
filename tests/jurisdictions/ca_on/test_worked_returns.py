@@ -93,14 +93,14 @@ description: >-
   dependant is 27% of the working income, the employment income of 10000, over 3000: 1890,
   at most 1633, less 15% of the adjusted family net income, the net income, over 26855,
   nothing as 9935.00 is below it: 1633; with one it would be 1890, at most 2813, less
-  nothing over 30639: 1890. With 0 eligible dependants the first applies: 1633. The
-  income tax deducted is a chosen 500, so the total credits are 500 plus the benefit, 2133,
-  and the refund or balance owing is 0 less 2133: -2133, a refund. Every amount computed from
-  a rate, fraction, amount or chart on the forms is rounded half-up to the cent, each line
-  being a dollars-and-cents box; here that changes Form T778 line 6, the federal and Ontario
-  tax on taxable income and both forms' non-refundable tax credits. The lines that only add,
-  subtract, compare or choose take amounts already in cents, so the refund or balance owing
-  is in cents too.
+  nothing over 30639: 1890. With 0 Schedule 6 eligible dependants the first applies: 1633.
+  The income tax deducted is a chosen 500, so the total credits are 500 plus the benefit,
+  2133, and the refund or balance owing is 0 less 2133: -2133, a refund. Every amount
+  computed from a rate, fraction, amount or chart on the forms is rounded half-up to the
+  cent, each line being a dollars-and-cents box; here that changes Form T778 line 6, the
+  federal and Ontario tax on taxable income and both forms' non-refundable tax credits. The
+  lines that only add, subtract, compare or choose take amounts already in cents, so the
+  refund or balance owing is in cents too.
 sources:
   - >-
     T1, Federal Worksheet, Schedule 3, Schedule 5, Schedule 6, Schedule 7, Schedule 8, ON428,
@@ -122,6 +122,7 @@ inputs:
   ca/children_under_seven: "0"
   ca/children_with_disability: "0"
   ca/children_seven_to_sixteen: "0"
+  ca/cwb_eligible_dependants: "0"
   ca/income_tax_deducted: "500"
 expected:
   ca/taxable_capital_gains: "0"
