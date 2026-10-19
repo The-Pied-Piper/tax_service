@@ -43,9 +43,15 @@ def test_each_root_is_the_directory_of_the_package_declaring_its_namespace() -> 
 
 
 def test_lists_the_core_packages() -> None:
+    # Ontario's capability package registers capabilities under `ca-on/`, as a decorator-filled
+    # package, so it is listed with the core ones. Imported here, so its absence fails this test
+    # alone.
+    ca_on_capabilities = importlib.import_module("app.jurisdictions.ca_on.capabilities")
+
     assert app.registrations.CORE_PACKAGES == (
         app.domain.capabilities,
         app.adapters.outbound.parameter_parsers,
+        ca_on_capabilities,
     )
 
 

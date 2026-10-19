@@ -188,6 +188,9 @@ from app.jurisdictions.ca.catalog import (
     WORKING_INCOME,
 )
 from app.jurisdictions.ca_on import catalog as ontario
+from app.jurisdictions.ca_on.capabilities.flow_through_share_expenses import (
+    FlowThroughShareExpenses,
+)
 from app.jurisdictions.ca_on.catalog import (
     COMMUNITY_FOOD_PROGRAM_CREDIT,
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
@@ -198,6 +201,9 @@ from app.jurisdictions.ca_on.catalog import (
     FERTILITY_CREDIT,
     FERTILITY_CREDIT_BEFORE_MAXIMUM,
     FERTILITY_EXPENSES,
+    FLOW_THROUGH_SHARE_CREDIT,
+    FLOW_THROUGH_SHARE_EXPENSES,
+    FLOW_THROUGH_SHARE_SLIPS,
     LIFT_CREDIT,
     LIFT_CREDIT_BEFORE_MAXIMUM,
     LIFT_MAXIMUM_CREDIT,
@@ -320,6 +326,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/income_tax_deducted",
             "ca-on/fertility_expenses",
             "ca-on/seniors_transit_paid",
+            "ca-on/flow_through_share_slips",
             "ca-on/community_food_program_donations",
         }
     )
@@ -1461,13 +1468,35 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"base": "ca-on/seniors_transit_amount_paid_at_most_maximum"},
             produces={"output": "ca-on/seniors_transit_credit"},
         ),
-        # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1 and 14, in line order, as lines
-        # 2, 13 and 16 are not triggered and line 17 (the focused flow-through share credit) is
-        # not yet computed.
+        # Form T1221 lines 1 to 3 "Enter the amount of qualifying expenses." (one line for each
+        # corporation or slip) and line 4 "Add lines 1 to 3. Enter this amount on line 63220 of
+        # your Form ON479.": the expenses of every slip in the list, added.
+        CapabilitySelection(
+            name="ca-on/flow_through_share_expenses",
+            params={},
+            consumes={"slips": "ca-on/flow_through_share_slips"},
+            produces={"output": "ca-on/flow_through_share_expenses"},
+        ),
+        # Form ON479 line 17 and line 63220 "Enter your total expenses from your Form T1221.
+        # multiplied by 5% =": the 5% on T1221 line 4.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/flow_through_share_rate"},
+            consumes={"base": "ca-on/flow_through_share_expenses"},
+            produces={"output": "ca-on/flow_through_share_credit"},
+        ),
+        # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1, 14 and 17, in line order, as
+        # lines 2, 13 and 16 are not triggered.
         CapabilitySelection(
             name="core/sum",
             params={},
-            consumes={"parts": ("ca-on/fertility_credit", "ca-on/seniors_transit_credit")},
+            consumes={
+                "parts": (
+                    "ca-on/fertility_credit",
+                    "ca-on/seniors_transit_credit",
+                    "ca-on/flow_through_share_credit",
+                )
+            },
             produces={"output": "ca-on/ontario_credits_subtotal"},
         ),
         # Line 21 "Line 19 plus line 20 Enter this amount online 47900 of your return. Ontario
@@ -1511,7 +1540,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 117
+    assert len(found.capabilities) == 119
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -1521,7 +1550,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 117
+    assert len(composition.order) == 119
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -2081,8 +2110,18 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({SENIORS_TRANSIT_CREDIT}),
         ),
         (
+            FlowThroughShareExpenses,
+            frozenset({FLOW_THROUGH_SHARE_SLIPS}),
+            frozenset({FLOW_THROUGH_SHARE_EXPENSES}),
+        ),
+        (
+            ApplyRate,
+            frozenset({FLOW_THROUGH_SHARE_EXPENSES}),
+            frozenset({FLOW_THROUGH_SHARE_CREDIT}),
+        ),
+        (
             Sum,
-            frozenset({FERTILITY_CREDIT, SENIORS_TRANSIT_CREDIT}),
+            frozenset({FERTILITY_CREDIT, SENIORS_TRANSIT_CREDIT, FLOW_THROUGH_SHARE_CREDIT}),
             frozenset({ONTARIO_CREDITS_SUBTOTAL}),
         ),
         (Sum, frozenset({ONTARIO_CREDITS_SUBTOTAL}), frozenset({ONTARIO_CREDITS})),

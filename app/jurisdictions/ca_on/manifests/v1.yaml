@@ -82,6 +82,7 @@ inputs:
   - ca/income_tax_deducted
   - ca-on/fertility_expenses
   - ca-on/seniors_transit_paid
+  - ca-on/flow_through_share_slips
   - ca-on/community_food_program_donations
 outputs:
   - ca/refund_or_balance_owing
@@ -1143,14 +1144,31 @@ capabilities:
       base: ca-on/seniors_transit_amount_paid_at_most_maximum
     produces:
       output: ca-on/seniors_transit_credit
-  # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1 and 14, in line order, as lines
-  # 2, 13 and 16 are not triggered and line 17 (the focused flow-through share credit) is
-  # not yet computed.
+  # Form T1221 lines 1 to 3 "Enter the amount of qualifying expenses." (one line for each
+  # corporation or slip) and line 4 "Add lines 1 to 3. Enter this amount on line 63220 of your
+  # Form ON479.": the expenses of every slip in the list, added.
+  - name: ca-on/flow_through_share_expenses
+    consumes:
+      slips: ca-on/flow_through_share_slips
+    produces:
+      output: ca-on/flow_through_share_expenses
+  # Form ON479 line 17 and line 63220 "Enter your total expenses from your Form T1221.
+  # multiplied by 5% =": the 5% on T1221 line 4.
+  - name: core/apply_rate
+    params:
+      rate: ca-on/flow_through_share_rate
+    consumes:
+      base: ca-on/flow_through_share_expenses
+    produces:
+      output: ca-on/flow_through_share_credit
+  # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1, 14 and 17, in line order, as
+  # lines 2, 13 and 16 are not triggered.
   - name: core/sum
     consumes:
       parts:
         - ca-on/fertility_credit
         - ca-on/seniors_transit_credit
+        - ca-on/flow_through_share_credit
     produces:
       output: ca-on/ontario_credits_subtotal
   # Line 21 "Line 19 plus line 20 Enter this amount online 47900 of your return. Ontario

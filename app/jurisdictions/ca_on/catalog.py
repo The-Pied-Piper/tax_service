@@ -1,9 +1,9 @@
-"""The Ontario artifact catalog: Ontario's own kinds, named from Forms ON428 (§2, §7) and ON479.
+"""The Ontario artifact catalog: Ontario's own kinds, named from Forms ON428 (§2, §7), ON479, T1221.
 
 Only the kinds in use are declared, each non-negative, as no ON428 or ON479 line here can be
-negative: amounts are Decimal, the counts of dependent children and dependants int. Federal kinds
-come from `app.jurisdictions.ca.catalog`. Identifiers are stable:
-`tests/jurisdictions/ca_on/test_catalog.py` snapshots them.
+negative: amounts are Decimal, the counts of dependent children and dependants int, and the T1221
+slips a record list. Federal kinds come from `app.jurisdictions.ca.catalog`. Identifiers are
+stable: `tests/jurisdictions/ca_on/test_catalog.py` snapshots them.
 """
 
 from __future__ import annotations
@@ -11,6 +11,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from app.domain.artifact import ArtifactCatalog
+from app.domain.record_list import RecordListKind
 from app.domain.registry import Namespace
 from app.jurisdictions.ca_on import NAMESPACE
 
@@ -228,12 +229,37 @@ SENIORS_TRANSIT_CREDIT = CATALOG.declare("seniors_transit_credit", Decimal, non_
 seniors' use of Ontario public transit services (maximum $3,000) Line 63100 multiplied by 15% =":
 15% of the amount paid, at most $3,000."""
 
+FLOW_THROUGH_SHARE_SLIP_EXPENSES = CATALOG.declare(
+    "flow_through_share_slip_expenses", Decimal, non_negative=True
+)
+"""Qualifying expenses of one slip, Form T1221 lines 1 to 3 "Enter the amount of qualifying
+expenses.": the amounts from boxes 145 and 155 of a T101 slip or boxes 200 and 244 of a T5013 slip,
+one line for each corporation or slip, taken as entered. The identification number the form asks
+for beside it is not a field, as it feeds no calculation."""
+
+FLOW_THROUGH_SHARE_SLIPS = RecordListKind.declare(
+    CATALOG, "flow_through_share_slips", fields=(FLOW_THROUGH_SHARE_SLIP_EXPENSES,)
+)
+"""Slips for the focused flow-through share credit, Form T1221 lines 1 to 3 "Use a separate line to
+enter the identification number for each corporation ... and the amounts from boxes 145 and 155 of
+your T101 slips, or boxes 200 and 244 of your T5013 slips": one record for each slip, in the order
+entered. A list may be empty."""
+
+FLOW_THROUGH_SHARE_EXPENSES = CATALOG.declare(
+    "flow_through_share_expenses", Decimal, non_negative=True
+)
+"""Total expenses of the flow-through share slips, Form T1221 line 4 "Add lines 1 to 3. Enter this
+amount on line 63220 of your Form ON479.": the qualifying expenses of every slip, added."""
+
+FLOW_THROUGH_SHARE_CREDIT = CATALOG.declare("flow_through_share_credit", Decimal, non_negative=True)
+"""Focused flow-through share credit, Form ON479 line 17 and line 63220 "Enter your total expenses
+from your Form T1221. multiplied by 5% =": the 5% on the total expenses of the slips."""
+
 ONTARIO_CREDITS_SUBTOTAL = CATALOG.declare("ontario_credits_subtotal", Decimal, non_negative=True)
 """Ontario credits subtotal, Form ON479 line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": here
-lines 1 and 14, in line order. Line 19 "Amount from line 18 of the previous page" carries it.
+lines 1, 14 and 17, in line order. Line 19 "Amount from line 18 of the previous page" carries it.
 
-Not triggered by the returns modelled, or left to later work: lines 2, 13 and 16, and line 17 (the
-focused flow-through share credit, from Form T1221)."""
+Not triggered by the returns modelled, or left to later work: lines 2, 13 and 16."""
 
 ONTARIO_CREDITS = CATALOG.declare("ontario_credits", Decimal, non_negative=True)
 """Ontario credits, Form ON479 line 21 "Line 19 plus line 20 Enter this amount online 47900 of

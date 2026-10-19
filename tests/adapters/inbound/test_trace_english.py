@@ -37,6 +37,7 @@ from app.domain.trace import (
     MultipleOverLine,
     PerUnitAmountLine,
     RateAppliedLine,
+    RecordTotalLine,
     RoundedTotalLine,
     SubtractedLine,
     SubtractedNotBelowZeroLine,
@@ -85,6 +86,7 @@ DEPENDANTS = ArtifactKind("ex/dependant_count", int)
 AMOUNT_ALONE = ArtifactKind("ex/amount_alone", Decimal)
 AMOUNT_WITH_FAMILY = ArtifactKind("ex/amount_with_family", Decimal)
 AMOUNT_CHOSEN = ArtifactKind("ex/amount_chosen", Decimal)
+ITEM_AMOUNT = ArtifactKind("ex/item_amount", Decimal)
 
 
 def render(line: TraceLine) -> str:
@@ -887,6 +889,48 @@ def test_renders_a_negative_count_as_given() -> None:
     )
 
 
+# --- the total of a field over a list of records ---------------------------------------
+#
+# Each item is named by its position from 1, with the field's label and its amount; the total
+# follows "=". An empty list prints "no items".
+
+
+def test_renders_the_total_of_two_items() -> None:
+    line = RecordTotalLine(TOTAL, ITEM_AMOUNT, (D("6000"), D("4000")), D("10000"))
+
+    assert render(line) == "total: item 1 item_amount 6000 + item 2 item_amount 4000 = 10000"
+
+
+def test_renders_the_total_of_three_items_named_by_position() -> None:
+    line = RecordTotalLine(TOTAL, ITEM_AMOUNT, (D("1.5"), D("0"), D("250.25")), D("251.75"))
+
+    assert render(line) == (
+        "total: item 1 item_amount 1.5 + item 2 item_amount 0 + item 3 item_amount 250.25 = 251.75"
+    )
+
+
+def test_renders_the_total_of_one_item() -> None:
+    line = RecordTotalLine(TOTAL, ITEM_AMOUNT, (D("40.5"),), D("40.5"))
+
+    assert render(line) == "total: item 1 item_amount 40.5 = 40.5"
+
+
+def test_renders_the_total_of_no_items() -> None:
+    assert render(RecordTotalLine(TOTAL, ITEM_AMOUNT, (), D(0))) == "total: no items = 0"
+
+
+def test_renders_the_items_in_the_order_of_the_line() -> None:
+    line = RecordTotalLine(TOTAL, ITEM_AMOUNT, (D("4000"), D("6000")), D("10000"))
+
+    assert render(line) == "total: item 1 item_amount 4000 + item 2 item_amount 6000 = 10000"
+
+
+def test_renders_the_output_and_field_labels_without_their_namespace() -> None:
+    line = RecordTotalLine(GROSS_AMOUNT, PART_ONE, (D("2"),), D("2"))
+
+    assert render(line) == "gross_amount: item 1 part_one 2 = 2"
+
+
 # --- money figures ---------------------------------------------------------------
 
 
@@ -1052,6 +1096,10 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
             ChosenByCountLine(AMOUNT_CHOSEN, DEPENDANTS, 1, AMOUNT_WITH_FAMILY, D("4.31940E+3")),
             "amount_chosen: amount_with_family 4319.4, chosen as dependant_count is 1",
         ),
+        (
+            RecordTotalLine(TOTAL, ITEM_AMOUNT, (D("6000.00"), D("4E+3")), D("10000.00")),
+            "total: item 1 item_amount 6000 + item 2 item_amount 4000 = 10000",
+        ),
     ],
 )
 def test_renders_every_money_figure_of_a_line_without_trailing_zeros(
@@ -1096,6 +1144,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         FractionAppliedLine(EARNED_PORTION, TOTAL, D("3"), Fraction(2, 3), NO_ROUNDING, D("2")),
         TimesCountLine(AMOUNT_CLAIMED, TOTAL, D("3"), PERSONS, 1, D("3")),
         ChosenByCountLine(AMOUNT_CHOSEN, PERSONS, 0, TOTAL, D("3")),
+        RecordTotalLine(TOTAL, ITEM_AMOUNT, (D("1"), D("2")), D("3")),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -1118,6 +1167,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         "earned_portion: 2/3 of total 3 (no rounding)",
         "amount_claimed: total 3 for each of 1 person_count = 3",
         "amount_chosen: total 3, chosen as person_count is 0",
+        "total: item 1 item_amount 1 + item 2 item_amount 2 = 3",
     )
 
 

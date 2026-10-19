@@ -24,6 +24,7 @@ from app.domain.trace import (
     MultipleOverLine,
     PerUnitAmountLine,
     RateAppliedLine,
+    RecordTotalLine,
     RoundedTotalLine,
     SubtractedLine,
     SubtractedNotBelowZeroLine,
@@ -215,6 +216,12 @@ class EnglishTraceRenderer:
                     f"{output.label}: {chosen_kind.label} {self._money(chosen)}, "
                     f"chosen as {count_kind.label} is {count}"
                 )
+            case RecordTotalLine(output=output, field=field, amounts=amounts, total=total):
+                items = " + ".join(
+                    f"item {position} {field.label} {self._money(amount)}"
+                    for position, amount in enumerate(amounts, start=1)
+                )
+                return f"{output.label}: {items or 'no items'} = {self._money(total)}"
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 
     def render_all(self, trace: Iterable[TraceLine]) -> tuple[str, ...]:

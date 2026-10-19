@@ -36,6 +36,7 @@ from app.domain.trace import (
     MultipleOverLine,
     PerUnitAmountLine,
     RateAppliedLine,
+    RecordTotalLine,
     RoundedTotalLine,
     SubtractedLine,
     SubtractedNotBelowZeroLine,
@@ -80,6 +81,7 @@ DEPENDANTS = ArtifactKind("ex/dependant_count", int)
 ALONE = ArtifactKind("ex/amount_alone", Decimal)
 WITH_FAMILY = ArtifactKind("ex/amount_with_family", Decimal)
 CHOSEN = ArtifactKind("ex/amount_chosen", Decimal)
+ITEM_AMOUNT = ArtifactKind("ex/item_amount", Decimal)
 
 
 def column_line() -> BracketColumnLine:
@@ -166,6 +168,10 @@ def chosen_by_count_line() -> ChosenByCountLine:
     return ChosenByCountLine(CHOSEN, DEPENDANTS, 1, WITH_FAMILY, D("2813.00"))
 
 
+def record_total_line() -> RecordTotalLine:
+    return RecordTotalLine(TOTAL, ITEM_AMOUNT, (D("6000"), D("4000.50")), D("10000.50"))
+
+
 ALL_LINES = [
     column_line,
     total_line,
@@ -185,6 +191,7 @@ ALL_LINES = [
     fraction_applied_line,
     times_count_line,
     chosen_by_count_line,
+    record_total_line,
 ]
 
 
@@ -1253,6 +1260,78 @@ def test_a_chosen_by_count_lines_amount_is_not_one_of_its_fields() -> None:
 
 def test_a_chosen_by_count_line_is_not_a_times_count_line() -> None:
     assert not isinstance(chosen_by_count_line(), TimesCountLine)
+
+
+def test_record_total_line_fields_in_order() -> None:
+    line = record_total_line()
+
+    assert line == RecordTotalLine(
+        output=TOTAL, field=ITEM_AMOUNT, amounts=(D("6000"), D("4000.50")), total=D("10000.50")
+    )
+    assert [f.name for f in fields(line)] == ["output", "field", "amounts", "total"]
+    assert line.output is TOTAL
+    assert line.field is ITEM_AMOUNT
+    assert line.amounts == (D("6000"), D("4000.50"))
+    assert isinstance(line.amounts, tuple)
+    assert line.total == D("10000.50")
+    assert line.amount == D("10000.50")
+    assert str(line.amount) == "10000.50"
+
+
+def test_record_total_line_may_have_no_amounts() -> None:
+    line = RecordTotalLine(TOTAL, ITEM_AMOUNT, (), D(0))
+
+    assert line.amounts == ()
+    assert line.amount == D(0)
+
+
+def test_record_total_lines_differ_by_the_order_of_their_amounts() -> None:
+    assert record_total_line() != RecordTotalLine(
+        TOTAL, ITEM_AMOUNT, (D("4000.50"), D("6000")), D("10000.50")
+    )
+
+
+def test_record_total_lines_differ_by_the_amounts() -> None:
+    assert record_total_line() != RecordTotalLine(
+        TOTAL, ITEM_AMOUNT, (D("6000"), D("4000.51")), D("10000.50")
+    )
+
+
+def test_record_total_lines_differ_by_the_total() -> None:
+    assert record_total_line() != RecordTotalLine(
+        TOTAL, ITEM_AMOUNT, (D("6000"), D("4000.50")), D("10000.51")
+    )
+
+
+def test_record_total_lines_differ_by_the_field() -> None:
+    other = ArtifactKind("ex/other_item_amount", Decimal)
+
+    assert record_total_line() != RecordTotalLine(
+        TOTAL, other, (D("6000"), D("4000.50")), D("10000.50")
+    )
+
+
+def test_record_total_lines_differ_by_the_output() -> None:
+    other = ArtifactKind("ex/other_total", Decimal)
+
+    assert record_total_line() != RecordTotalLine(
+        other, ITEM_AMOUNT, (D("6000"), D("4000.50")), D("10000.50")
+    )
+
+
+def test_record_total_lines_are_hashable() -> None:
+    assert hash(record_total_line()) == hash(record_total_line())
+
+
+def test_a_record_total_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(record_total_line())]
+
+
+def test_a_record_total_line_is_not_a_sum_line() -> None:
+    assert not isinstance(record_total_line(), SumLine)
+    assert cast(Any, record_total_line()) != SumLine(
+        TOTAL, ((ITEM_AMOUNT, D("6000")), (ITEM_AMOUNT, D("4000.50"))), D("10000.50")
+    )
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:
