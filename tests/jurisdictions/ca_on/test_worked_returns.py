@@ -71,7 +71,12 @@ description: >-
   amount 1591, 16129, rounded half-up to the cent. With no eligible dependant and
   no infirm child, the amount for an eligible dependant (16129 less a dependant's
   net income of 0 federally, 11905.00 less it at most 10823 for Ontario) is claimed
-  for 0 eligible dependants and the amount for infirm children is 0 x 2687: each 0.
+  for 0 eligible dependants and the amount for infirm children is 0 x 2687: each 0. Born
+  in 1961 or later, the age amount (9028 less 15% of net income over 45522, nothing) is
+  claimed for 0 filers born in 1960 or earlier: 0. With a spouse's net income of 0 and no
+  spouse amount claimed, the spouse amount (16129 less 0) and the Canada caregiver amount
+  for the spouse (28798 less 0, at most 8601, less the spouse amount) are each claimed
+  for 0: 0.
   The federal total of credit amounts is its basic personal amount plus those two zeros,
   321.75, 164.00 and 1471; the Ontario total is its basic personal amount plus its zero,
   321.75 and 164.00 (ON428 has no Canada employment amount). Each form's non-refundable tax
@@ -149,6 +154,10 @@ inputs:
   ca/eligible_dependants: "0"
   ca/dependant_net_income: "0"
   ca/infirm_children: "0"
+  ca/born_in_1960_or_earlier: "0"
+  ca/spouse_net_income: "0"
+  ca/spouses_claimed: "0"
+  ca/spouse_caregiver_eligible: "0"
   ca/child_care_expenses_paid: "0"
   ca/children_under_seven: "0"
   ca/children_with_disability: "0"
@@ -186,8 +195,23 @@ expected:
   ca/taxable_income: "9935.00"
   ca/federal_basic_tax: "1440.58"
   ca/basic_personal_amount: "16129"
+  ca/age_maximum: "9028.00"
+  ca/age_income_threshold: "45522.00"
+  ca/age_income_over_threshold: "0"
+  ca/age_reduction: "0"
+  ca/age_amount_before_count: "9028.00"
+  ca/age_amount: "0"
+  ca/spouse_infirmity_supplement: "0"
+  ca/spouse_amount_basis: "16129"
+  ca/spouse_amount_before_count: "16129"
+  ca/spouse_amount: "0"
   ca/eligible_dependant_amount_before_count: "16129"
   ca/eligible_dependant_amount: "0"
+  ca/spouse_caregiver_base: "28798.00"
+  ca/spouse_caregiver_before_maximum: "28798.00"
+  ca/spouse_caregiver_limit: "8601.00"
+  ca/spouse_caregiver_amount_before_count: "8601.00"
+  ca/spouse_caregiver_amount: "0"
   ca/infirm_children_amount: "0"
   ca/canada_employment_amount: "1471"
   ca/non_refundable_credit_amounts: "18085.75"

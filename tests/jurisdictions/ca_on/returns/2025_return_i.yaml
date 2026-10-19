@@ -138,6 +138,15 @@ description: >-
   taxable income, the Ontario tax on taxable income and both forms' non-refundable tax
   credits, and the lines that follow from them. The lines that only add, subtract, compare
   or choose take amounts already in cents, so the refund or balance owing is in cents too.
+  The age amount (line 30100), the spouse or common-law partner amount (line 30300) and the
+  Canada caregiver amount for a spouse or common-law partner (line 30425) are each $0: the
+  filer is taken as born in 1961 or later (the count of filers born in 1960 or earlier, line
+  78, is 0), claims no spouse amount (count 0) and has no spouse eligible for the Canada
+  caregiver amount (line 51090, count 0), and the spouse's net income entered is $0 (to be
+  confirmed). They are computed all the same (the Federal Worksheet's line 4 is the net
+  income over $45,522, $2,033.00, line 6 is 15% of it, $304.95, and line 7 is $8,723.05;
+  Schedule 5 line 30300 is $16,129.00 and line 30425 $8,601.00) and claimed for 0, so the
+  totals of credit amounts are those without them.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -664,6 +673,10 @@ inputs:
   ca/eligible_dependants: "0"
   ca/dependant_net_income: "0"
   ca/infirm_children: "0"
+  ca/born_in_1960_or_earlier: "0"
+  ca/spouse_net_income: "0"
+  ca/spouses_claimed: "0"
+  ca/spouse_caregiver_eligible: "0"
   ca/child_care_expenses_paid: "0"
   ca/children_under_seven: "0"
   ca/children_with_disability: "0"
@@ -701,8 +714,23 @@ expected:
   ca/taxable_income: "47555.00"
   ca/federal_basic_tax: "6895.48"
   ca/basic_personal_amount: "16129.00"
+  ca/age_maximum: "9028.00"
+  ca/age_income_threshold: "45522.00"
+  ca/age_income_over_threshold: "2033.00"
+  ca/age_reduction: "304.95"
+  ca/age_amount_before_count: "8723.05"
+  ca/age_amount: "0"
+  ca/spouse_infirmity_supplement: "0"
+  ca/spouse_amount_basis: "16129.00"
+  ca/spouse_amount_before_count: "16129.00"
+  ca/spouse_amount: "0"
   ca/eligible_dependant_amount_before_count: "16129.00"
   ca/eligible_dependant_amount: "0"
+  ca/spouse_caregiver_base: "28798.00"
+  ca/spouse_caregiver_before_maximum: "28798.00"
+  ca/spouse_caregiver_limit: "8601.00"
+  ca/spouse_caregiver_amount_before_count: "8601.00"
+  ca/spouse_caregiver_amount: "0"
   ca/infirm_children_amount: "0"
   ca/canada_employment_amount: "1471"
   ca/non_refundable_credit_amounts: "20589.95"

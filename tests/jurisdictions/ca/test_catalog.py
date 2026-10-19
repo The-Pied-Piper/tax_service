@@ -17,7 +17,14 @@ import app.jurisdictions.ca.catalog
 from app.domain.artifact import ArtifactCatalog, ArtifactKind, ArtifactRegistry
 from app.jurisdictions.ca.catalog import (
     ADJUSTED_FAMILY_NET_INCOME,
+    AGE_AMOUNT,
+    AGE_AMOUNT_BEFORE_COUNT,
+    AGE_INCOME_OVER_THRESHOLD,
+    AGE_INCOME_THRESHOLD,
+    AGE_MAXIMUM,
+    AGE_REDUCTION,
     BASIC_PERSONAL_AMOUNT,
+    BORN_IN_1960_OR_EARLIER,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_WORKERS_BENEFIT,
     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
@@ -90,6 +97,18 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION_MAXIMUM,
     RRSP_INCOME,
     SOCIAL_ASSISTANCE_PAYMENTS,
+    SPOUSE_AMOUNT,
+    SPOUSE_AMOUNT_BASIS,
+    SPOUSE_AMOUNT_BEFORE_COUNT,
+    SPOUSE_CAREGIVER_AMOUNT,
+    SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT,
+    SPOUSE_CAREGIVER_BASE,
+    SPOUSE_CAREGIVER_BEFORE_MAXIMUM,
+    SPOUSE_CAREGIVER_ELIGIBLE,
+    SPOUSE_CAREGIVER_LIMIT,
+    SPOUSE_INFIRMITY_SUPPLEMENT,
+    SPOUSE_NET_INCOME,
+    SPOUSES_CLAIMED,
     T3_INVESTMENT_INCOME,
     T5_INVESTMENT_INCOME,
     T5013_INVESTMENT_INCOME,
@@ -175,10 +194,29 @@ REGISTERED = frozenset(
         "ca/taxable_income",
         "ca/federal_basic_tax",
         "ca/basic_personal_amount",
+        "ca/born_in_1960_or_earlier",
+        "ca/age_maximum",
+        "ca/age_income_threshold",
+        "ca/age_income_over_threshold",
+        "ca/age_reduction",
+        "ca/age_amount_before_count",
+        "ca/age_amount",
+        "ca/spouses_claimed",
+        "ca/spouse_caregiver_eligible",
+        "ca/spouse_net_income",
+        "ca/spouse_infirmity_supplement",
+        "ca/spouse_amount_basis",
+        "ca/spouse_amount_before_count",
+        "ca/spouse_amount",
         "ca/eligible_dependants",
         "ca/dependant_net_income",
         "ca/eligible_dependant_amount_before_count",
         "ca/eligible_dependant_amount",
+        "ca/spouse_caregiver_base",
+        "ca/spouse_caregiver_before_maximum",
+        "ca/spouse_caregiver_limit",
+        "ca/spouse_caregiver_amount_before_count",
+        "ca/spouse_caregiver_amount",
         "ca/infirm_children",
         "ca/infirm_children_amount",
         "ca/cpp_base_contributions",
@@ -216,11 +254,17 @@ SIGNED = frozenset({"ca/refund_or_balance_owing"})
 # the numbers of eligible children for the child care expenses deduction; and Schedule 6 line 38100
 # ("Do you have an eligible dependant? 1 Yes or 2 No"), whose eligible dependant is "your or your
 # spouse's or common-law partner's child", "under 19 years of age" and "not eligible for the CWB for
-# 2025": the number of eligible dependants for the Canada workers benefit; counted, not money.
+# 2025": the number of eligible dependants for the Canada workers benefit; and T1 line 30100 ("if
+# you were born in 1960 or earlier"), Schedule 5 line 30300 (the spouse amount claimed) and line
+# 51090 (eligible for the Canada caregiver amount for the spouse), each a 0 or 1 count as the forms
+# take it; counted, not money.
 COUNTS = frozenset(
     {
         "ca/eligible_dependants",
         "ca/infirm_children",
+        "ca/born_in_1960_or_earlier",
+        "ca/spouses_claimed",
+        "ca/spouse_caregiver_eligible",
         "ca/children_under_seven",
         "ca/children_with_disability",
         "ca/children_seven_to_sixteen",
@@ -341,6 +385,20 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/net_income") is NET_INCOME
     assert registry.get("ca/deductions_from_net_income") is DEDUCTIONS_FROM_NET_INCOME
     assert registry.get("ca/basic_personal_amount") is BASIC_PERSONAL_AMOUNT
+    assert registry.get("ca/born_in_1960_or_earlier") is BORN_IN_1960_OR_EARLIER
+    assert registry.get("ca/age_maximum") is AGE_MAXIMUM
+    assert registry.get("ca/age_income_threshold") is AGE_INCOME_THRESHOLD
+    assert registry.get("ca/age_income_over_threshold") is AGE_INCOME_OVER_THRESHOLD
+    assert registry.get("ca/age_reduction") is AGE_REDUCTION
+    assert registry.get("ca/age_amount_before_count") is AGE_AMOUNT_BEFORE_COUNT
+    assert registry.get("ca/age_amount") is AGE_AMOUNT
+    assert registry.get("ca/spouses_claimed") is SPOUSES_CLAIMED
+    assert registry.get("ca/spouse_caregiver_eligible") is SPOUSE_CAREGIVER_ELIGIBLE
+    assert registry.get("ca/spouse_net_income") is SPOUSE_NET_INCOME
+    assert registry.get("ca/spouse_infirmity_supplement") is SPOUSE_INFIRMITY_SUPPLEMENT
+    assert registry.get("ca/spouse_amount_basis") is SPOUSE_AMOUNT_BASIS
+    assert registry.get("ca/spouse_amount_before_count") is SPOUSE_AMOUNT_BEFORE_COUNT
+    assert registry.get("ca/spouse_amount") is SPOUSE_AMOUNT
     assert registry.get("ca/eligible_dependants") is ELIGIBLE_DEPENDANTS
     assert registry.get("ca/dependant_net_income") is DEPENDANT_NET_INCOME
     assert (
@@ -348,6 +406,14 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
         is ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT
     )
     assert registry.get("ca/eligible_dependant_amount") is ELIGIBLE_DEPENDANT_AMOUNT
+    assert registry.get("ca/spouse_caregiver_base") is SPOUSE_CAREGIVER_BASE
+    assert registry.get("ca/spouse_caregiver_before_maximum") is SPOUSE_CAREGIVER_BEFORE_MAXIMUM
+    assert registry.get("ca/spouse_caregiver_limit") is SPOUSE_CAREGIVER_LIMIT
+    assert (
+        registry.get("ca/spouse_caregiver_amount_before_count")
+        is SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT
+    )
+    assert registry.get("ca/spouse_caregiver_amount") is SPOUSE_CAREGIVER_AMOUNT
     assert registry.get("ca/infirm_children") is INFIRM_CHILDREN
     assert registry.get("ca/infirm_children_amount") is INFIRM_CHILDREN_AMOUNT
     assert registry.get("ca/non_refundable_credit_amounts") is NON_REFUNDABLE_CREDIT_AMOUNTS
@@ -452,9 +518,25 @@ def test_catalog_kinds_are_money() -> None:
         NET_INCOME,
         DEDUCTIONS_FROM_NET_INCOME,
         BASIC_PERSONAL_AMOUNT,
+        AGE_MAXIMUM,
+        AGE_INCOME_THRESHOLD,
+        AGE_INCOME_OVER_THRESHOLD,
+        AGE_REDUCTION,
+        AGE_AMOUNT_BEFORE_COUNT,
+        AGE_AMOUNT,
+        SPOUSE_NET_INCOME,
+        SPOUSE_INFIRMITY_SUPPLEMENT,
+        SPOUSE_AMOUNT_BASIS,
+        SPOUSE_AMOUNT_BEFORE_COUNT,
+        SPOUSE_AMOUNT,
         DEPENDANT_NET_INCOME,
         ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
         ELIGIBLE_DEPENDANT_AMOUNT,
+        SPOUSE_CAREGIVER_BASE,
+        SPOUSE_CAREGIVER_BEFORE_MAXIMUM,
+        SPOUSE_CAREGIVER_LIMIT,
+        SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT,
+        SPOUSE_CAREGIVER_AMOUNT,
         INFIRM_CHILDREN_AMOUNT,
         NON_REFUNDABLE_CREDIT_AMOUNTS,
         CPP_BASE_CONTRIBUTIONS,

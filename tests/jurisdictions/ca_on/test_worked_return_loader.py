@@ -327,6 +327,30 @@ def test_loads_the_federal_counts_as_integers(tmp_path: Path, artifacts: Artifac
     assert all(type(artifact.value) is int for artifact in worked.inputs)
 
 
+def test_loads_the_age_and_spouse_inputs(tmp_path: Path, artifacts: ArtifactRegistry) -> None:
+    # T1 line 30100 "(if you were born in 1960 or earlier)", Schedule 5 line 30300 (claimed) and
+    # line 51090 (eligible for the Canada caregiver amount for the spouse): counts, read like the
+    # others; the spouse's net income (Schedule 5 line 4) an amount.
+    text = with_section(
+        "inputs",
+        "inputs:\n"
+        '  ca/born_in_1960_or_earlier: "1"\n'
+        '  ca/spouse_net_income: "12000.00"\n'
+        '  ca/spouses_claimed: "1"\n'
+        '  ca/spouse_caregiver_eligible: "1"\n',
+    )
+
+    worked = WorkedReturn.load(write(tmp_path, text, "ok.yaml"), artifacts)
+
+    assert worked.inputs == (
+        Artifact(artifacts.kind("ca/born_in_1960_or_earlier"), 1),
+        Artifact(artifacts.kind("ca/spouse_net_income"), D("12000.00")),
+        Artifact(artifacts.kind("ca/spouses_claimed"), 1),
+        Artifact(artifacts.kind("ca/spouse_caregiver_eligible"), 1),
+    )
+    assert [type(artifact.value) for artifact in worked.inputs] == [int, D, int, int]
+
+
 def test_loads_the_child_care_counts_as_integers(
     tmp_path: Path, artifacts: ArtifactRegistry
 ) -> None:

@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 80
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 95
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -112,10 +112,29 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/taxable_income",
         "ca/federal_basic_tax",
         "ca/basic_personal_amount",
+        "ca/born_in_1960_or_earlier",
+        "ca/age_maximum",
+        "ca/age_income_threshold",
+        "ca/age_income_over_threshold",
+        "ca/age_reduction",
+        "ca/age_amount_before_count",
+        "ca/age_amount",
+        "ca/spouses_claimed",
+        "ca/spouse_caregiver_eligible",
+        "ca/spouse_net_income",
+        "ca/spouse_infirmity_supplement",
+        "ca/spouse_amount_basis",
+        "ca/spouse_amount_before_count",
+        "ca/spouse_amount",
         "ca/eligible_dependants",
         "ca/dependant_net_income",
         "ca/eligible_dependant_amount_before_count",
         "ca/eligible_dependant_amount",
+        "ca/spouse_caregiver_base",
+        "ca/spouse_caregiver_before_maximum",
+        "ca/spouse_caregiver_limit",
+        "ca/spouse_caregiver_amount_before_count",
+        "ca/spouse_caregiver_amount",
         "ca/infirm_children",
         "ca/infirm_children_amount",
         "ca/cpp_base_contributions",
@@ -200,13 +219,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 80
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 95
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 80
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 95
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

@@ -112,7 +112,14 @@ from app.domain.trace import (
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     ADJUSTED_FAMILY_NET_INCOME,
+    AGE_AMOUNT,
+    AGE_AMOUNT_BEFORE_COUNT,
+    AGE_INCOME_OVER_THRESHOLD,
+    AGE_INCOME_THRESHOLD,
+    AGE_MAXIMUM,
+    AGE_REDUCTION,
     BASIC_PERSONAL_AMOUNT,
+    BORN_IN_1960_OR_EARLIER,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_WORKERS_BENEFIT,
     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
@@ -185,6 +192,18 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION_MAXIMUM,
     RRSP_INCOME,
     SOCIAL_ASSISTANCE_PAYMENTS,
+    SPOUSE_AMOUNT,
+    SPOUSE_AMOUNT_BASIS,
+    SPOUSE_AMOUNT_BEFORE_COUNT,
+    SPOUSE_CAREGIVER_AMOUNT,
+    SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT,
+    SPOUSE_CAREGIVER_BASE,
+    SPOUSE_CAREGIVER_BEFORE_MAXIMUM,
+    SPOUSE_CAREGIVER_ELIGIBLE,
+    SPOUSE_CAREGIVER_LIMIT,
+    SPOUSE_INFIRMITY_SUPPLEMENT,
+    SPOUSE_NET_INCOME,
+    SPOUSES_CLAIMED,
     T3_INVESTMENT_INCOME,
     T5_INVESTMENT_INCOME,
     T5013_INVESTMENT_INCOME,
@@ -294,6 +313,10 @@ def compute(
     eligible_dependants: int = 0,
     dependant_net_income: str = "0",
     infirm_children: int = 0,
+    born_in_1960_or_earlier: int = 0,
+    spouse_net_income: str = "0",
+    spouses_claimed: int = 0,
+    spouse_caregiver_eligible: int = 0,
     child_care_expenses_paid: str = "0",
     children_under_seven: int = 0,
     children_with_disability: int = 0,
@@ -351,6 +374,10 @@ def compute(
         Artifact(ELIGIBLE_DEPENDANTS, eligible_dependants),
         Artifact(DEPENDANT_NET_INCOME, D(dependant_net_income)),
         Artifact(INFIRM_CHILDREN, infirm_children),
+        Artifact(BORN_IN_1960_OR_EARLIER, born_in_1960_or_earlier),
+        Artifact(SPOUSE_NET_INCOME, D(spouse_net_income)),
+        Artifact(SPOUSES_CLAIMED, spouses_claimed),
+        Artifact(SPOUSE_CAREGIVER_ELIGIBLE, spouse_caregiver_eligible),
         Artifact(CHILD_CARE_EXPENSES_PAID, D(child_care_expenses_paid)),
         Artifact(CHILDREN_UNDER_SEVEN, children_under_seven),
         Artifact(CHILDREN_WITH_DISABILITY, children_with_disability),
@@ -385,6 +412,10 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(ELIGIBLE_DEPENDANTS) is None
     assert worksheet.producer_of(DEPENDANT_NET_INCOME) is None
     assert worksheet.producer_of(INFIRM_CHILDREN) is None
+    assert worksheet.producer_of(BORN_IN_1960_OR_EARLIER) is None
+    assert worksheet.producer_of(SPOUSE_NET_INCOME) is None
+    assert worksheet.producer_of(SPOUSES_CLAIMED) is None
+    assert worksheet.producer_of(SPOUSE_CAREGIVER_ELIGIBLE) is None
     assert worksheet.producer_of(CHILD_CARE_EXPENSES_PAID) is None
     assert worksheet.producer_of(CHILDREN_UNDER_SEVEN) is None
     assert worksheet.producer_of(CHILDREN_WITH_DISABILITY) is None
@@ -507,6 +538,36 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         worksheet.producer_of(ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT), SubtractNotBelowZero
     )
     assert isinstance(worksheet.producer_of(ELIGIBLE_DEPENDANT_AMOUNT), TimesCount)
+    # T1 line 30100 and the Federal Worksheet (5000-D1) lines 1 to 7; T1 line 30300 and Schedule 5
+    # (5000-S5) lines 2 to 5; T1 line 30425 and Schedule 5 lines 1 to 5 of its line 30425 part.
+    assert isinstance(worksheet.producer_of(AGE_MAXIMUM), CreditAmount)
+    assert isinstance(worksheet.producer_of(AGE_INCOME_THRESHOLD), CreditAmount)
+    assert isinstance(worksheet.producer_of(AGE_INCOME_OVER_THRESHOLD), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AGE_REDUCTION), ApplyRate)
+    assert isinstance(worksheet.producer_of(AGE_AMOUNT_BEFORE_COUNT), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AGE_AMOUNT), TimesCount)
+    assert isinstance(worksheet.producer_of(SPOUSE_INFIRMITY_SUPPLEMENT), PerUnitAmount)
+    assert isinstance(worksheet.producer_of(SPOUSE_AMOUNT_BASIS), Sum)
+    assert isinstance(worksheet.producer_of(SPOUSE_AMOUNT_BEFORE_COUNT), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(SPOUSE_AMOUNT), TimesCount)
+    assert isinstance(worksheet.producer_of(SPOUSE_CAREGIVER_BASE), CreditAmount)
+    assert isinstance(worksheet.producer_of(SPOUSE_CAREGIVER_BEFORE_MAXIMUM), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(SPOUSE_CAREGIVER_LIMIT), CappedAmount)
+    assert isinstance(
+        worksheet.producer_of(SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT), SubtractNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(SPOUSE_CAREGIVER_AMOUNT), TimesCount)
+    assert worksheet.producer_of(AGE_AMOUNT) is not worksheet.producer_of(SPOUSE_AMOUNT)
+    assert worksheet.producer_of(SPOUSE_AMOUNT) is not worksheet.producer_of(
+        SPOUSE_CAREGIVER_AMOUNT
+    )
+    assert worksheet.producer_of(SPOUSE_AMOUNT) is not worksheet.producer_of(
+        ELIGIBLE_DEPENDANT_AMOUNT
+    )
+    assert worksheet.producer_of(AGE_MAXIMUM) is not worksheet.producer_of(SPOUSE_CAREGIVER_BASE)
+    assert worksheet.producer_of(SPOUSE_INFIRMITY_SUPPLEMENT) is not (
+        worksheet.producer_of(INFIRM_CHILDREN_AMOUNT)
+    )
     assert isinstance(worksheet.producer_of(INFIRM_CHILDREN_AMOUNT), PerUnitAmount)
     assert worksheet.producer_of(INFIRM_CHILDREN_AMOUNT) is not worksheet.producer_of(
         TAX_REDUCTION_FOR_CHILDREN
@@ -836,9 +897,75 @@ def test_the_trace_explains_the_computation() -> None:
     infirm_children = position(
         "infirm_children_amount: 2687 for each of 0 infirm_children = 0 (half-up to 0.01)", "0"
     )
+    # Federal Worksheet (5000-D1) lines 1 to 7 and T1 line 30100: 15% x (115000 - 45522) =
+    # 10421.70 is more than the maximum 9028, so line 7 is 0, claimed for 0 filers born in 1960
+    # or earlier.
+    age_maximum = position("age_maximum: credit amount 9028 (half-up to 0.01)", "9028.00")
+    age_threshold = position(
+        "age_income_threshold: credit amount 45522 (half-up to 0.01)", "45522.00"
+    )
+    age_over_threshold = position(
+        "age_income_over_threshold: net_income 115000 less age_income_threshold 45522, not below 0 "
+        "= 69478",
+        "69478",
+    )
+    age_reduction = position(
+        "age_reduction: 15% of age_income_over_threshold 69478 (half-up to 0.01)", "10421.70"
+    )
+    age_before_count = position(
+        "age_amount_before_count: age_maximum 9028 less age_reduction 10421.7, not below 0 = 0",
+        "0",
+    )
+    age = position(
+        "age_amount: age_amount_before_count 0 for each of 0 born_in_1960_or_earlier = 0", "0"
+    )
+    # Schedule 5 (5000-S5) line 30300 lines 2 to 5 and T1 line 30300, for 0 spouse amounts claimed.
+    spouse_supplement = position(
+        "spouse_infirmity_supplement: 2687 for each of 0 spouse_caregiver_eligible = 0 "
+        "(half-up to 0.01)",
+        "0",
+    )
+    spouse_basis = position(
+        "spouse_amount_basis: basic_personal_amount 16129 + spouse_infirmity_supplement 0 = 16129",
+        "16129",
+    )
+    spouse_before_count = position(
+        "spouse_amount_before_count: spouse_amount_basis 16129 "
+        "less spouse_net_income 0, not below 0 = 16129",
+        "16129",
+    )
+    spouse = position(
+        "spouse_amount: spouse_amount_before_count 16129 for each of 0 spouses_claimed = 0", "0"
+    )
+    # Schedule 5 line 30425 lines 1 to 5 and T1 line 30425, for 0 spouses eligible for the Canada
+    # caregiver amount.
+    caregiver_base = position(
+        "spouse_caregiver_base: credit amount 28798 (half-up to 0.01)", "28798.00"
+    )
+    caregiver_before_maximum = position(
+        "spouse_caregiver_before_maximum: spouse_caregiver_base 28798 "
+        "less spouse_net_income 0, not below 0 = 28798",
+        "28798",
+    )
+    caregiver_limit = position(
+        "spouse_caregiver_limit: lesser of spouse_caregiver_before_maximum 28798 and 8601 "
+        "(half-up to 0.01)",
+        "8601",
+    )
+    caregiver_before_count = position(
+        "spouse_caregiver_amount_before_count: spouse_caregiver_limit 8601 "
+        "less spouse_amount 0, not below 0 = 8601",
+        "8601",
+    )
+    caregiver = position(
+        "spouse_caregiver_amount: spouse_caregiver_amount_before_count 8601 "
+        "for each of 0 spouse_caregiver_eligible = 0",
+        "0",
+    )
     federal_amounts = position(
         "non_refundable_credit_amounts: basic_personal_amount 16129 "
-        "+ eligible_dependant_amount 0 + infirm_children_amount 0 "
+        "+ age_amount 0 + spouse_amount 0 "
+        "+ eligible_dependant_amount 0 + spouse_caregiver_amount 0 + infirm_children_amount 0 "
         "+ cpp_base_contributions 3356.1 + ei_premiums 1077.48 "
         "+ canada_employment_amount 1471 = 22033.58",
         "22033.58",
@@ -1093,6 +1220,13 @@ def test_the_trace_explains_the_computation() -> None:
     assert employment_amount < federal_amounts
     assert federal_amount < federal_dependant < federal_dependant_claimed < federal_amounts
     assert infirm_children < federal_amounts
+    assert net < age_over_threshold < age_reduction < age_before_count < age < federal_amounts
+    assert age_threshold < age_over_threshold
+    assert age_maximum < age_before_count
+    assert federal_amount < spouse_basis < spouse_before_count < spouse < federal_amounts
+    assert spouse_supplement < spouse_basis
+    assert caregiver_base < caregiver_before_maximum < caregiver_limit < caregiver_before_count
+    assert spouse < caregiver_before_count < caregiver < federal_amounts
     assert ontario_base < ontario_before_maximum < ontario_dependant
     assert ontario_dependant < ontario_dependant_claimed < ontario_amounts
     assert ontario_amount < ontario_amounts < ontario_credit < ontario_after
@@ -1209,6 +1343,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Rate(D("0.15")),
             CENT,
             D("0"),
+        ),
+        # Federal Worksheet line 5 "Applicable rate 15%" and line 6 "Line 4 multiplied by the
+        # percentage from line 5": line 4 is the net income 115000 over the income threshold.
+        AGE_REDUCTION: RateAppliedLine(
+            AGE_REDUCTION,
+            AGE_INCOME_OVER_THRESHOLD,
+            D("69478.00"),
+            Rate(D("0.15")),
+            CENT,
+            D("10421.70"),
         ),
         # ON428 line 87 and line 62150 "multiplied by 25%": the qualifying donations of 0.
         COMMUNITY_FOOD_PROGRAM_CREDIT: RateAppliedLine(
@@ -1329,13 +1473,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             NON_REFUNDABLE_CREDIT_AMOUNTS,
             (
                 (BASIC_PERSONAL_AMOUNT, D("16129")),
+                (AGE_AMOUNT, D("0")),
+                (SPOUSE_AMOUNT, D("0")),
                 (ELIGIBLE_DEPENDANT_AMOUNT, D("0")),
+                (SPOUSE_CAREGIVER_AMOUNT, D("0")),
                 (INFIRM_CHILDREN_AMOUNT, D("0")),
                 (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
                 (EI_PREMIUMS, D("1077.48")),
                 (CANADA_EMPLOYMENT_AMOUNT, D("1471")),
             ),
             D("22033.58"),
+        ),
+        # Schedule 5 (5000-S5) line 3 "Line 1 plus line 2": the basic personal amount plus the
+        # amount for a spouse eligible for the Canada caregiver amount, here none.
+        SPOUSE_AMOUNT_BASIS: SumLine(
+            SPOUSE_AMOUNT_BASIS,
+            (
+                (BASIC_PERSONAL_AMOUNT, D("16129.00")),
+                (SPOUSE_INFIRMITY_SUPPLEMENT, D("0")),
+            ),
+            D("16129.00"),
         ),
         # ON428 has no Canada employment amount; its lines 58240 and 58300 read the federal
         # amounts (lines 30800 and 31200).
@@ -1476,6 +1633,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         TAX_REDUCTION_BASIC: CreditAmountLine(
             TAX_REDUCTION_BASIC, Credit(amount=D("294.00")), CENT, D("294.00")
         ),
+        # Federal Worksheet line 1 "Maximum amount 9,028.00" and Schedule 5 line 1 of the line
+        # 30425 part "Base amount 28,798.00".
+        AGE_MAXIMUM: CreditAmountLine(AGE_MAXIMUM, Credit(amount=D("9028.00")), CENT, D("9028.00")),
+        # Federal Worksheet line 3 "Income threshold 45,522.00".
+        AGE_INCOME_THRESHOLD: CreditAmountLine(
+            AGE_INCOME_THRESHOLD, Credit(amount=D("45522.00")), CENT, D("45522.00")
+        ),
+        SPOUSE_CAREGIVER_BASE: CreditAmountLine(
+            SPOUSE_CAREGIVER_BASE, Credit(amount=D("28798.00")), CENT, D("28798.00")
+        ),
         # ON428 line 14 "Base amount 11,905.00".
         ELIGIBLE_DEPENDANT_BASE: CreditAmountLine(
             ELIGIBLE_DEPENDANT_BASE, Credit(amount=D("11905.00")), CENT, D("11905.00")
@@ -1497,6 +1664,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=DEPENDANTS,
             count=0,
             per_unit=Amount(D("544")),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        # Schedule 5 line 2 (line 51090) "enter $2,687" for each spouse eligible for the Canada
+        # caregiver amount: Return A has none.
+        SPOUSE_INFIRMITY_SUPPLEMENT: PerUnitAmountLine(
+            output=SPOUSE_INFIRMITY_SUPPLEMENT,
+            count_kind=SPOUSE_CAREGIVER_ELIGIBLE,
+            count=0,
+            per_unit=Amount(D("2687")),
             rounding=CENT,
             result=D("0"),
         ),
@@ -1557,6 +1734,33 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             amount_kind=ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
             amount_value=D("16129.00"),
             count_kind=ELIGIBLE_DEPENDANTS,
+            count=0,
+            result=D("0"),
+        ),
+        # T1 line 30100, line 30300 and line 30425, each line 7 or 5 claimed for the 0 filers
+        # born in 1960 or earlier, 0 spouse amounts and 0 spouses eligible for the Canada
+        # caregiver amount of Return A, a plain 0.
+        AGE_AMOUNT: TimesCountLine(
+            output=AGE_AMOUNT,
+            amount_kind=AGE_AMOUNT_BEFORE_COUNT,
+            amount_value=D("0"),
+            count_kind=BORN_IN_1960_OR_EARLIER,
+            count=0,
+            result=D("0"),
+        ),
+        SPOUSE_AMOUNT: TimesCountLine(
+            output=SPOUSE_AMOUNT,
+            amount_kind=SPOUSE_AMOUNT_BEFORE_COUNT,
+            amount_value=D("16129.00"),
+            count_kind=SPOUSES_CLAIMED,
+            count=0,
+            result=D("0"),
+        ),
+        SPOUSE_CAREGIVER_AMOUNT: TimesCountLine(
+            output=SPOUSE_CAREGIVER_AMOUNT,
+            amount_kind=SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT,
+            amount_value=D("8601.00"),
+            count_kind=SPOUSE_CAREGIVER_ELIGIBLE,
             count=0,
             result=D("0"),
         ),
@@ -1623,6 +1827,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Amount(D("3000")),
             CENT,
             D("0"),
+        ),
+        # Schedule 5 line 3 of the line 30425 part "(maximum $8,601)": 28798.00 is above it.
+        SPOUSE_CAREGIVER_LIMIT: CappedAmountLine(
+            SPOUSE_CAREGIVER_LIMIT,
+            SPOUSE_CAREGIVER_BEFORE_MAXIMUM,
+            D("28798.00"),
+            Amount(D("8601")),
+            CENT,
+            D("8601"),
         ),
         # ON428 line 16's "(maximum $10,823)": 11905.00 is above it.
         ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT: CappedAmountLine(
@@ -1898,6 +2111,54 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("16129.00"),
         ),
+        # Federal Worksheet line 4 "Line 2 minus line 3 (if negative, enter "0")": the net income
+        # 115000 less the income threshold 45522.00.
+        AGE_INCOME_OVER_THRESHOLD: SubtractedNotBelowZeroLine(
+            output=AGE_INCOME_OVER_THRESHOLD,
+            minuend=NET_INCOME,
+            minuend_amount=D("115000"),
+            subtrahend=AGE_INCOME_THRESHOLD,
+            subtrahend_amount=D("45522.00"),
+            result=D("69478.00"),
+        ),
+        # Federal Worksheet line 7 "Line 1 minus line 6 (if negative, enter "0")": 9028.00 less
+        # 10421.70 is negative, so 0.
+        AGE_AMOUNT_BEFORE_COUNT: SubtractedNotBelowZeroLine(
+            output=AGE_AMOUNT_BEFORE_COUNT,
+            minuend=AGE_MAXIMUM,
+            minuend_amount=D("9028.00"),
+            subtrahend=AGE_REDUCTION,
+            subtrahend_amount=D("10421.70"),
+            result=D("0"),
+        ),
+        # Schedule 5 line 5 of the line 30300 part "Line 3 minus line 4 (if negative, enter "0")",
+        # with the spouse's net income entered as 0.
+        SPOUSE_AMOUNT_BEFORE_COUNT: SubtractedNotBelowZeroLine(
+            output=SPOUSE_AMOUNT_BEFORE_COUNT,
+            minuend=SPOUSE_AMOUNT_BASIS,
+            minuend_amount=D("16129.00"),
+            subtrahend=SPOUSE_NET_INCOME,
+            subtrahend_amount=D("0"),
+            result=D("16129.00"),
+        ),
+        # Schedule 5 line 3 and line 5 of the line 30425 part, "Line 1 minus line 2" and "Line 3
+        # minus line 4", each "(if negative, enter "0")".
+        SPOUSE_CAREGIVER_BEFORE_MAXIMUM: SubtractedNotBelowZeroLine(
+            output=SPOUSE_CAREGIVER_BEFORE_MAXIMUM,
+            minuend=SPOUSE_CAREGIVER_BASE,
+            minuend_amount=D("28798.00"),
+            subtrahend=SPOUSE_NET_INCOME,
+            subtrahend_amount=D("0"),
+            result=D("28798.00"),
+        ),
+        SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT: SubtractedNotBelowZeroLine(
+            output=SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT,
+            minuend=SPOUSE_CAREGIVER_LIMIT,
+            minuend_amount=D("8601"),
+            subtrahend=SPOUSE_AMOUNT,
+            subtrahend_amount=D("0"),
+            result=D("8601"),
+        ),
         # ON428 line 16 "Line 14 minus line 15 (if negative, enter "0")", before its maximum.
         ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM: SubtractedNotBelowZeroLine(
             output=ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
@@ -2006,7 +2267,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 80
+    assert len(order) == 95
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -2056,6 +2317,36 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     )
     assert position[INFIRM_CHILDREN_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    # T1 lines 30100, 30300 and 30425, each after the lines it reads (net income for the age
+    # reduction, the basic personal amount for the spouse amount, the spouse amount for the Canada
+    # caregiver amount) and before the total of credit amounts.
+    assert (
+        position[NET_INCOME]
+        < position[AGE_INCOME_OVER_THRESHOLD]
+        < position[AGE_REDUCTION]
+        < position[AGE_AMOUNT_BEFORE_COUNT]
+        < position[AGE_AMOUNT]
+        < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    )
+    assert position[AGE_INCOME_THRESHOLD] < position[AGE_INCOME_OVER_THRESHOLD]
+    assert position[AGE_MAXIMUM] < position[AGE_AMOUNT_BEFORE_COUNT]
+    assert (
+        position[BASIC_PERSONAL_AMOUNT]
+        < position[SPOUSE_AMOUNT_BASIS]
+        < position[SPOUSE_AMOUNT_BEFORE_COUNT]
+        < position[SPOUSE_AMOUNT]
+        < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    )
+    assert position[SPOUSE_INFIRMITY_SUPPLEMENT] < position[SPOUSE_AMOUNT_BASIS]
+    assert (
+        position[SPOUSE_CAREGIVER_BASE]
+        < position[SPOUSE_CAREGIVER_BEFORE_MAXIMUM]
+        < position[SPOUSE_CAREGIVER_LIMIT]
+        < position[SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT]
+        < position[SPOUSE_CAREGIVER_AMOUNT]
+        < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    )
+    assert position[SPOUSE_AMOUNT] < position[SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT]
     assert (
         position[ELIGIBLE_DEPENDANT_BASE]
         < position[ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM]
@@ -2717,7 +3008,8 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
     ) in rendered
     assert (
         "non_refundable_credit_amounts: basic_personal_amount 16129 "
-        "+ eligible_dependant_amount 16129 + infirm_children_amount 0 "
+        "+ age_amount 0 + spouse_amount 0 "
+        "+ eligible_dependant_amount 16129 + spouse_caregiver_amount 0 + infirm_children_amount 0 "
         "+ cpp_base_contributions 2796.75 + ei_premiums 984 "
         "+ canada_employment_amount 1471 = 37509.75"
     ) in rendered
@@ -3384,3 +3676,254 @@ def test_return_hs_pension_and_benefit_income_is_all_of_its_total_income() -> No
         "+ taxable_support_payments 0 + rrsp_income 5000 + fhsa_income 0 + other_fhsa_income 0 "
         "+ other_income 0 + taxable_scholarships 0 + income_support_benefits 2000 = 45400"
     ) in rendered
+
+
+def return_j(
+    born_in_1960_or_earlier: int = 1,
+    spouse_net_income: str = "12000",
+    spouses_claimed: int = 1,
+    spouse_caregiver_eligible: int = 1,
+) -> Worksheet:
+    """Return J's inputs, as in `returns/2025_return_j.yaml`, with the age and spouse ones given."""
+    return compute(
+        "50000",
+        "930",
+        "0",
+        "0",
+        "9000",
+        "0",
+        "0",
+        born_in_1960_or_earlier=born_in_1960_or_earlier,
+        spouse_net_income=spouse_net_income,
+        spouses_claimed=spouses_claimed,
+        spouse_caregiver_eligible=spouse_caregiver_eligible,
+        income_tax_deducted="6000",
+    )
+
+
+def test_return_js_age_spouse_and_caregiver_amounts_come_off_net_income_and_the_spouses() -> None:
+    # Return J: employment income of 50000 and a capital gain of 930, so total income is 50000 +
+    # 465.00 = 50465.00 and, less the enhanced CPP contributions of 465.00, net income is
+    # 50000.00. The filer was born in 1960 or earlier and the spouse, whose net income is 12000,
+    # is infirm and eligible for the Canada caregiver amount (line 51090). Age amount (5000-D1):
+    # 9028.00 - 15% x (50000.00 - 45522) = 9028.00 - 671.70 = 8356.30. Spouse amount (5000-S5):
+    # (16129.00 + 2687) - 12000 = 6816.00. Canada caregiver amount for the spouse: 28798.00 -
+    # 12000 = 16798.00, at most 8601, less the spouse amount 6816.00: 1785.00. Line 33500 is
+    # 16129.00 + 8356.30 + 6816.00 + 0 + 1785.00 + 0 + 2301.75 + 820.00 + 1471 = 37679.05, and
+    # line 35000 37679.05 x 14.5% = 5463.46225, rounded half-up to the cent: 5463.46.
+    worksheet = return_j()
+
+    assert worksheet.get(NET_INCOME).value == D("50000.00")
+    assert worksheet.get(BORN_IN_1960_OR_EARLIER).value == 1
+    assert worksheet.get(SPOUSE_NET_INCOME).value == D("12000")
+    assert worksheet.get(SPOUSES_CLAIMED).value == 1
+    assert worksheet.get(SPOUSE_CAREGIVER_ELIGIBLE).value == 1
+    assert worksheet.get(AGE_MAXIMUM).value == D("9028.00")
+    assert worksheet.get(AGE_INCOME_THRESHOLD).value == D("45522.00")
+    assert worksheet.get(AGE_INCOME_OVER_THRESHOLD).value == D("4478.00")
+    assert worksheet.get(AGE_REDUCTION).value == D("671.70")
+    assert worksheet.get(AGE_AMOUNT_BEFORE_COUNT).value == D("8356.30")
+    assert worksheet.get(AGE_AMOUNT).value == D("8356.30")
+    assert worksheet.get(SPOUSE_INFIRMITY_SUPPLEMENT).value == D("2687")
+    assert worksheet.get(SPOUSE_AMOUNT_BASIS).value == D("18816.00")
+    assert worksheet.get(SPOUSE_AMOUNT_BEFORE_COUNT).value == D("6816.00")
+    assert worksheet.get(SPOUSE_AMOUNT).value == D("6816.00")
+    assert worksheet.get(SPOUSE_CAREGIVER_BASE).value == D("28798.00")
+    assert worksheet.get(SPOUSE_CAREGIVER_BEFORE_MAXIMUM).value == D("16798.00")
+    assert worksheet.get(SPOUSE_CAREGIVER_LIMIT).value == D("8601")
+    assert worksheet.get(SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT).value == D("1785.00")
+    assert worksheet.get(SPOUSE_CAREGIVER_AMOUNT).value == D("1785.00")
+    assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("37679.05")
+    assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("5463.46")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("1786.54")
+    # ON428 lines 58080 and 58120 are not computed in this return, so ON428's total of credit
+    # amounts has no age, spouse or caregiver part.
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("15868.75")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-1889.83")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    for line in (
+        "age_income_over_threshold: net_income 50000 less age_income_threshold 45522, not below 0 "
+        "= 4478",
+        "age_reduction: 15% of age_income_over_threshold 4478 (half-up to 0.01)",
+        "age_amount_before_count: age_maximum 9028 less age_reduction 671.7, not below 0 = 8356.3",
+        "age_amount: age_amount_before_count 8356.3 for each of 1 born_in_1960_or_earlier = 8356.3",
+        "spouse_infirmity_supplement: 2687 for each of 1 spouse_caregiver_eligible = 2687 "
+        "(half-up to 0.01)",
+        "spouse_amount_basis: basic_personal_amount 16129 + spouse_infirmity_supplement 2687 "
+        "= 18816",
+        "spouse_amount_before_count: spouse_amount_basis 18816 "
+        "less spouse_net_income 12000, not below 0 = 6816",
+        "spouse_amount: spouse_amount_before_count 6816 for each of 1 spouses_claimed = 6816",
+        "spouse_caregiver_before_maximum: spouse_caregiver_base 28798 "
+        "less spouse_net_income 12000, not below 0 = 16798",
+        "spouse_caregiver_limit: lesser of spouse_caregiver_before_maximum 16798 and 8601 "
+        "(half-up to 0.01)",
+        "spouse_caregiver_amount_before_count: spouse_caregiver_limit 8601 "
+        "less spouse_amount 6816, not below 0 = 1785",
+        "spouse_caregiver_amount: spouse_caregiver_amount_before_count 1785 "
+        "for each of 1 spouse_caregiver_eligible = 1785",
+        "non_refundable_credit_amounts: basic_personal_amount 16129 + age_amount 8356.3 "
+        "+ spouse_amount 6816 + eligible_dependant_amount 0 + spouse_caregiver_amount 1785 "
+        "+ infirm_children_amount 0 + cpp_base_contributions 2301.75 + ei_premiums 820 "
+        "+ canada_employment_amount 1471 = 37679.05",
+    ):
+        assert line in rendered
+
+
+def test_a_filer_born_in_1961_or_later_claims_no_age_amount_whatever_the_net_income() -> None:
+    # Federal Worksheet line 7 is 8356.30 at net income 50000.00, but the count of filers born in
+    # 1960 or earlier is 0: line 30100 is 0, and the other amounts are as in Return J.
+    worksheet = return_j(born_in_1960_or_earlier=0)
+
+    assert worksheet.get(AGE_AMOUNT_BEFORE_COUNT).value == D("8356.30")
+    assert worksheet.get(AGE_AMOUNT).value == D("0")
+    assert worksheet.get(SPOUSE_AMOUNT).value == D("6816.00")
+    assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("29322.75")
+
+
+def test_the_age_amount_is_reduced_to_ten_cents_at_net_income_105708() -> None:
+    # Net income is employment income less the enhanced CPP contributions at their maximum
+    # (1074.00): 106782 - 1074.00 = 105708.00. The Federal Worksheet's line 6 is 15% x (105708.00
+    # - 45522) = 9027.90, so line 7 is 9028.00 - 9027.90 = 0.10.
+    worksheet = compute("106782", "0", "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
+
+    assert worksheet.get(NET_INCOME).value == D("105708.00")
+    assert worksheet.get(AGE_REDUCTION).value == D("9027.90")
+    assert worksheet.get(AGE_AMOUNT).value == D("0.10")
+
+
+def test_the_age_amount_is_zero_at_net_income_105709() -> None:
+    # 106783 - 1074.00 = 105709.00: line 6 is 15% x (105709.00 - 45522) = 9028.05, more than the
+    # maximum 9028.00, so line 7 "(if negative, enter "0")" is 0.
+    worksheet = compute("106783", "0", "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
+
+    assert worksheet.get(NET_INCOME).value == D("105709.00")
+    assert worksheet.get(AGE_REDUCTION).value == D("9028.05")
+    assert worksheet.get(AGE_AMOUNT_BEFORE_COUNT).value == D("0")
+    assert worksheet.get(AGE_AMOUNT).value == D("0")
+
+
+def test_the_caregiver_amount_is_zero_at_a_spouse_net_income_of_8623() -> None:
+    # Schedule 5: with the spouse eligible for the Canada caregiver amount, line 3 of the
+    # line 30300 part is 16129.00 + 2687 = 18816.00 and line 5 is 18816.00 - 8623 = 10193.00,
+    # claimed. The caregiver part's line 3 is 28798.00 - 8623 = 20175.00, at most 8601, and line 5
+    # is 8601 - 10193.00, negative, so 0.
+    worksheet = return_j(spouse_net_income="8623")
+
+    assert worksheet.get(SPOUSE_AMOUNT).value == D("10193.00")
+    assert worksheet.get(SPOUSE_CAREGIVER_BEFORE_MAXIMUM).value == D("20175.00")
+    assert worksheet.get(SPOUSE_CAREGIVER_LIMIT).value == D("8601")
+    assert worksheet.get(SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT).value == D("0")
+    assert worksheet.get(SPOUSE_CAREGIVER_AMOUNT).value == D("0")
+
+
+def test_the_caregiver_amount_starts_at_a_dollar_past_a_spouse_net_income_of_10215() -> None:
+    # 18816.00 - 10216 = 8600.00 is the spouse amount, so the caregiver amount is 8601 - 8600.00
+    # = 1.00; at 10215 the spouse amount is 8601.00 and the caregiver amount is 0.
+    at = return_j(spouse_net_income="10215")
+    past = return_j(spouse_net_income="10216")
+
+    assert at.get(SPOUSE_AMOUNT).value == D("8601.00")
+    assert at.get(SPOUSE_CAREGIVER_AMOUNT).value == D("0")
+    assert past.get(SPOUSE_AMOUNT).value == D("8600.00")
+    assert past.get(SPOUSE_CAREGIVER_AMOUNT).value == D("1.00")
+
+
+def test_a_spouse_not_eligible_for_the_caregiver_amount_adds_no_supplement() -> None:
+    # The count for line 51090 is 0: line 2 is 0, so line 3 is 16129.00 and line 5 is 16129.00 -
+    # 4000 = 12129.00, claimed; the caregiver amount is 0 although its line 5 is 8601 - 12129.00,
+    # negative, so 0 as well.
+    worksheet = return_j(spouse_net_income="4000", spouse_caregiver_eligible=0)
+
+    assert worksheet.get(SPOUSE_INFIRMITY_SUPPLEMENT).value == D("0")
+    assert worksheet.get(SPOUSE_AMOUNT_BASIS).value == D("16129.00")
+    assert worksheet.get(SPOUSE_AMOUNT).value == D("12129.00")
+    assert worksheet.get(SPOUSE_CAREGIVER_AMOUNT).value == D("0")
+
+
+def test_a_spouse_amount_not_claimed_leaves_the_whole_caregiver_limit() -> None:
+    # The count of spouse amounts claimed is 0: line 30300 is 0 (line 5 of the line 30300 part is
+    # 6816.00). The model takes line 4 of the line 30425 part, "Amount claimed on line 30300 or
+    # line 30400 of your return, if applicable", to be the line 30300 artifact, so line 4 is 0
+    # and line 5 is 8601 - 0 = 8601.
+    worksheet = return_j(spouses_claimed=0)
+
+    assert worksheet.get(SPOUSE_AMOUNT_BEFORE_COUNT).value == D("6816.00")
+    assert worksheet.get(SPOUSE_AMOUNT).value == D("0")
+    assert worksheet.get(SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT).value == D("8601")
+    assert worksheet.get(SPOUSE_CAREGIVER_AMOUNT).value == D("8601")
+
+
+def test_the_age_amount_is_the_whole_maximum_at_a_net_income_below_the_threshold() -> None:
+    # Net income is 45000 - 415.00 (1% x (45000 - 3500), the enhanced CPP contributions) =
+    # 44585.00. Federal Worksheet line 4 is 44585.00 - 45522.00, negative, so 0, line 6 is 0 and
+    # line 7 is 9028.00 - 0.00: "$45,522 or less, enter $9,028".
+    worksheet = compute("45000", "0", "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
+
+    assert worksheet.get(NET_INCOME).value == D("44585.00")
+    assert worksheet.get(AGE_INCOME_OVER_THRESHOLD).value == D("0")
+    assert worksheet.get(AGE_REDUCTION).value == D("0")
+    assert worksheet.get(AGE_AMOUNT).value == D("9028.00")
+
+
+@pytest.mark.parametrize(
+    ("spouse_net_income", "eligible", "amount"),
+    [
+        # Line 3 is 16129.00 (no supplement) or 18816.00 (16129.00 + 2687), less the net income.
+        ("0", 0, "16129.00"),
+        ("4000", 0, "12129.00"),
+        ("12000", 0, "4129.00"),
+        # Net income at the basic personal amount leaves nothing; a cent under it, a cent.
+        ("16128.99", 0, "0.01"),
+        ("16129", 0, "0"),
+        ("20000", 0, "0"),
+        ("0", 1, "18816.00"),
+        ("12000", 1, "6816.00"),
+        ("18815.50", 1, "0.50"),
+        ("18816", 1, "0"),
+        ("20000", 1, "0"),
+    ],
+)
+def test_the_spouse_amount_is_the_basic_personal_amount_and_2687_less_their_net_income(
+    spouse_net_income: str, eligible: int, amount: str
+) -> None:
+    worksheet = return_j(spouse_net_income=spouse_net_income, spouse_caregiver_eligible=eligible)
+
+    assert worksheet.get(SPOUSE_AMOUNT).value == D(amount)
+
+
+@pytest.mark.parametrize(
+    ("spouse_net_income", "amount"),
+    [
+        # Up to a net income of 10215 line 4 is 8601 or more; 10216 leaves 8601 - 8600.
+        ("10215", "0"),
+        ("10216", "1.00"),
+        # Line 4 (the line 30300 amount) falls as the net income rises: 18816 - 16129 = 2687.
+        ("16129", "5914.00"),
+        # From 18816 up line 30300 is 0, so line 5 is line 3, at most 8601.
+        ("18816", "8601.00"),
+        ("20000", "8601.00"),
+        # Line 3 falls below the maximum above 20197 (28798 - 8601): 28798 - 25000 = 3798.
+        ("25000", "3798.00"),
+        ("28797.99", "0.01"),
+        # "net income is between $8,624 and $28,798": at and above the base, line 3 is 0.
+        ("28798", "0"),
+        ("30000", "0"),
+    ],
+)
+def test_the_caregiver_amount_for_an_infirm_spouse_is_28798_less_their_net_income(
+    spouse_net_income: str, amount: str
+) -> None:
+    worksheet = return_j(spouse_net_income=spouse_net_income)
+
+    assert worksheet.get(SPOUSE_CAREGIVER_AMOUNT).value == D(amount)
+
+
+@pytest.mark.parametrize("spouse_net_income", ["0", "8623", "12000", "20000"])
+def test_there_is_no_caregiver_amount_for_a_spouse_not_eligible_for_it(
+    spouse_net_income: str,
+) -> None:
+    # Line 51090 not entered (the count of eligible spouses is 0): line 30425 is not triggered.
+    worksheet = return_j(spouse_net_income=spouse_net_income, spouse_caregiver_eligible=0)
+
+    assert worksheet.get(SPOUSE_CAREGIVER_AMOUNT).value == D("0")
