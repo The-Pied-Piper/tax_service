@@ -86,9 +86,11 @@ description: >-
   the LIFT credit is zero. A taxable income of 9935.00 is at or below the health premium chart's
   first threshold of 20000, so the premium is zero and the Ontario tax is zero. The net
   federal tax is the federal tax after credits, zero, and the total payable is it plus the
-  Ontario tax, zero. The Canada workers benefit (Schedule 6) is 27% of the working income,
-  the employment income of 10000, over 3000: 1890, at most 1633, less 15% of the adjusted
-  family net income, the net income, over 26855, nothing as 9935.00 is below it: 1633. The
+  Ontario tax, zero. The Canada workers benefit (Schedule 6) with no eligible spouse or
+  dependant is 27% of the working income, the employment income of 10000, over 3000: 1890,
+  at most 1633, less 15% of the adjusted family net income, the net income, over 26855,
+  nothing as 9935.00 is below it: 1633; with one it would be 1890, at most 2813, less
+  nothing over 30639: 1890. With 0 eligible dependants the first applies: 1633. The
   income tax deducted is a chosen 500, so the total credits are 500 plus the benefit, 2133,
   and the refund or balance owing is 0 less 2133: -2133, a refund.
 sources:
@@ -173,8 +175,12 @@ expected:
   ca/total_payable: "0"
   ca/working_income: "10000"
   ca/adjusted_family_net_income: "9935.00"
-  ca/cwb_before_reduction: "1633"
-  ca/cwb_reduction: "0"
+  ca/cwb_before_reduction_without_dependant: "1633"
+  ca/cwb_reduction_without_dependant: "0"
+  ca/canada_workers_benefit_without_dependant: "1633"
+  ca/cwb_before_reduction_with_dependant: "1890.00"
+  ca/cwb_reduction_with_dependant: "0"
+  ca/canada_workers_benefit_with_dependant: "1890.00"
   ca/canada_workers_benefit: "1633"
   ca/total_credits: "2133"
   ca/refund_or_balance_owing: "-2133"

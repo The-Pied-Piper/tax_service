@@ -20,6 +20,8 @@ from app.jurisdictions.ca.catalog import (
     BASIC_PERSONAL_AMOUNT,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_WORKERS_BENEFIT,
+    CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
+    CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
     CAPITAL_GAIN,
     CATALOG,
     CHILD_CARE_BASIC_LIMIT,
@@ -37,8 +39,10 @@ from app.jurisdictions.ca.catalog import (
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
-    CWB_BEFORE_REDUCTION,
-    CWB_REDUCTION,
+    CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
+    CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
+    CWB_REDUCTION_WITH_DEPENDANT,
+    CWB_REDUCTION_WITHOUT_DEPENDANT,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DEPENDANT_NET_INCOME,
@@ -126,8 +130,12 @@ REGISTERED = frozenset(
         "ca/income_tax_deducted",
         "ca/working_income",
         "ca/adjusted_family_net_income",
-        "ca/cwb_before_reduction",
-        "ca/cwb_reduction",
+        "ca/cwb_before_reduction_without_dependant",
+        "ca/cwb_reduction_without_dependant",
+        "ca/canada_workers_benefit_without_dependant",
+        "ca/cwb_before_reduction_with_dependant",
+        "ca/cwb_reduction_with_dependant",
+        "ca/canada_workers_benefit_with_dependant",
         "ca/canada_workers_benefit",
         "ca/total_credits",
         "ca/refund_or_balance_owing",
@@ -242,8 +250,24 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/income_tax_deducted") is INCOME_TAX_DEDUCTED
     assert registry.get("ca/working_income") is WORKING_INCOME
     assert registry.get("ca/adjusted_family_net_income") is ADJUSTED_FAMILY_NET_INCOME
-    assert registry.get("ca/cwb_before_reduction") is CWB_BEFORE_REDUCTION
-    assert registry.get("ca/cwb_reduction") is CWB_REDUCTION
+    assert (
+        registry.get("ca/cwb_before_reduction_without_dependant")
+        is CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT
+    )
+    assert registry.get("ca/cwb_reduction_without_dependant") is CWB_REDUCTION_WITHOUT_DEPENDANT
+    assert (
+        registry.get("ca/canada_workers_benefit_without_dependant")
+        is CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT
+    )
+    assert (
+        registry.get("ca/cwb_before_reduction_with_dependant")
+        is CWB_BEFORE_REDUCTION_WITH_DEPENDANT
+    )
+    assert registry.get("ca/cwb_reduction_with_dependant") is CWB_REDUCTION_WITH_DEPENDANT
+    assert (
+        registry.get("ca/canada_workers_benefit_with_dependant")
+        is CANADA_WORKERS_BENEFIT_WITH_DEPENDANT
+    )
     assert registry.get("ca/canada_workers_benefit") is CANADA_WORKERS_BENEFIT
     assert registry.get("ca/total_credits") is TOTAL_CREDITS
     assert registry.get("ca/refund_or_balance_owing") is REFUND_OR_BALANCE_OWING
@@ -300,8 +324,12 @@ def test_catalog_kinds_are_money() -> None:
         INCOME_TAX_DEDUCTED,
         WORKING_INCOME,
         ADJUSTED_FAMILY_NET_INCOME,
-        CWB_BEFORE_REDUCTION,
-        CWB_REDUCTION,
+        CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
+        CWB_REDUCTION_WITHOUT_DEPENDANT,
+        CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
+        CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
+        CWB_REDUCTION_WITH_DEPENDANT,
+        CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
         CANADA_WORKERS_BENEFIT,
         TOTAL_CREDITS,
         REFUND_OR_BALANCE_OWING,
