@@ -10,8 +10,8 @@ but not more than $72,000: $600; more than $72,000 but not more than $72,600: (t
 $72,000) × 25% + $600; more than $72,600 but not more than $200,000: $750; more than $200,000 but
 not more than $200,600: (taxable income − $200,000) × 25% + $750; more than $200,600: $900. Each
 row is the previous plateau plus a rate on the income over the row's threshold, capped at the
-next plateau, so each sloped row is a tier with its own maximum: the plateaus' differences. The
-chart states no rounding.
+next plateau, so each sloped row is a tier with its own maximum: the plateaus' differences. Line
+89 is a dollars-and-cents box, so each tier is rounded half-up to the cent.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.parameters.rate import Rate
-from app.domain.parameters.rounding import NO_ROUNDING
+from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.parameters.surcharge_tiers import SURCHARGE_TIERS, SurchargeTier, SurchargeTiers
 
 D = Decimal
@@ -50,7 +50,8 @@ def test_2025_tiers_are_the_chart_rows_each_capped_at_the_next_plateau() -> None
             SurchargeTier(D("200000"), Rate(D("0.25")), D("150")),
         )
     )
-    assert data.rounding == NO_ROUNDING  # the chart states no rounding
+    # ON428 line 89, a dollars-and-cents box: each tier half-up to the cent.
+    assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
 def test_2025_tiers_cite_only_the_on428_text() -> None:
@@ -72,8 +73,10 @@ def test_2025_tiers_cite_only_the_on428_text() -> None:
         # "$20,000 or less": $0, at the threshold and below it.
         ("0", "0"),
         ("20000", "0"),
-        # A cent over: (20000.01 - 20000) x 6%, unrounded.
-        ("20000.01", "0.0006"),
+        # A cent over: (20000.01 - 20000) x 6% = 0.0006, rounded half-up to 0.00; 0.75 over,
+        # 0.045, a tie, up to 0.05.
+        ("20000.01", "0.00"),
+        ("20000.75", "0.05"),
         # Inside the first sloped row: (22000 - 20000) x 6% = 120.
         ("22000", "120"),
         # At the row's top, (25000 - 20000) x 6% = 300, the plateau itself; above it, $300.

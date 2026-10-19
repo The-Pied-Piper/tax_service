@@ -5,7 +5,8 @@ line 2.", where line 1 (line 10100) is "Employment income (box 14 of all T4 slip
 (line 10400) is "Other employment income". Other employment income is not modelled, so the cap
 applies to employment income alone. The $1,471 is a plain amount (the `amount` kind), not a
 credit: the rate is applied once to the total of the credit amounts (line 33500), of which the
-capped amount is one part. The form states no rounding.
+capped amount is one part. Line 92 is a dollars-and-cents box, so the lesser is rounded half-up
+to the cent.
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capabilities.capped_amount import CappedAmount
 from app.domain.parameters.amount import AMOUNT, Amount
-from app.domain.parameters.rounding import NO_ROUNDING
+from app.domain.parameters.rounding import RoundingMode, RoundTo
 
 D = Decimal
 SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
@@ -34,7 +35,8 @@ def test_2025_cap_is_1471() -> None:
     data = SOURCE.get(FAMILY, 2025, AMOUNT)
 
     assert data.values == Amount(D("1471"))
-    assert data.rounding == NO_ROUNDING  # the T1 states no rounding on line 92
+    # T1 line 92, a dollars-and-cents box: half-up to the cent.
+    assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
 @pytest.mark.parametrize(
@@ -62,6 +64,8 @@ def test_2025_cap_cites_its_sources(source: str) -> None:
         ("1471.01", "1471"),
         # Below the cap the income itself is the lesser, cents and all.
         ("1000.50", "1000.50"),
+        # An income past the cent is rounded half-up to it: 1000.505, a tie, up to 1000.51.
+        ("1000.505", "1000.51"),
         ("0", "0"),
     ],
 )

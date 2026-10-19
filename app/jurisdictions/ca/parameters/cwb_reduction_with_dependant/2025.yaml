@@ -8,12 +8,14 @@
 # an eligible spouse or an eligible dependant Basic CWB: $49,393" limit is not a
 # dataset: it follows from the arithmetic, as 2,813 less 15% of (49,393 - 30,639) is
 # below zero.
-# The form states no rounding on lines 25 and 27, so none is assumed.
+# Line 27 is a dollars-and-cents box, so the tier rounds half-up to the cent, the
+# owner's decision, as the form states no rounding rule; line 25 takes amounts already
+# in cents.
 family: ca/cwb_reduction_with_dependant
 tax_year: 2025
 kind: surcharge_tiers
 sources:
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s6/5000-s6-25e.txt
-rounding: none
+rounding: {increment: "0.01", mode: half_up}
 tiers:
   - {threshold: "30639", rate: "0.15"}

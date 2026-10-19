@@ -3,8 +3,8 @@
 2025 ON428 (form 5006-C): line 65 "Line 63 minus line 64 (if negative, enter "0")" is the surtax
 base; line 66 "(Line 65 minus $5,710) multiplied by 20% (if negative, enter "0")"; line 67 "(Line
 65 minus $7,307) multiplied by 36% (if negative, enter "0")"; line 68 "Line 66 plus line 67" is
-the surtax. Each tier is a separate line, so each is its own part; the form states no rounding on
-lines 66 and 67.
+the surtax. Each tier is a separate line, so each is its own part; lines 66 and 67 are
+dollars-and-cents boxes, so each part is rounded half-up to the cent before line 68 adds them.
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.parameters.rate import Rate
-from app.domain.parameters.rounding import NO_ROUNDING
+from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.parameters.surcharge_tiers import SURCHARGE_TIERS, SurchargeTier, SurchargeTiers
 
 D = Decimal
@@ -40,7 +40,8 @@ def test_2025_tiers_are_20_percent_over_5710_and_36_percent_over_7307() -> None:
             SurchargeTier(D("7307"), Rate(D("0.36"))),
         )
     )
-    assert data.rounding == NO_ROUNDING  # ON428 states no rounding on lines 66 and 67
+    # ON428 lines 66 and 67, dollars-and-cents boxes: each part half-up to the cent.
+    assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
 def test_2025_tiers_cite_only_the_on428_text() -> None:
@@ -52,19 +53,22 @@ def test_2025_tiers_cite_only_the_on428_text() -> None:
 @pytest.mark.parametrize(
     ("tax", "surtax"),
     [
-        # Return A: Ontario tax after credits of 7671.98071, above both thresholds:
-        # (7671.98071 - 5710) x 20% = 392.396142 plus (7671.98071 - 7307) x 36% = 131.3930556.
-        ("7671.98071", "523.7891976"),
+        # Return A: Ontario tax after credits of 7671.98, above both thresholds:
+        # (7671.98 - 5710) x 20% = 392.396, so 392.40, plus (7671.98 - 7307) x 36% = 131.3928,
+        # so 131.39.
+        ("7671.98", "523.79"),
         # Returns C and D: below the first threshold, so no surtax.
-        ("1700.145625", "0"),
-        ("3750.97271", "0"),
-        # At the first threshold nothing is over it; a cent above, 20% of the cent, unrounded.
+        ("1700.15", "0"),
+        ("3750.97", "0"),
+        # At the first threshold nothing is over it; a cent above, 20% of the cent is 0.002,
+        # rounded half-up to 0.00.
         ("5710", "0"),
-        ("5710.01", "0.002"),
+        ("5710.01", "0.00"),
         # At the second threshold only the first tier charges: 1597 x 20%.
         ("7307", "319.40"),
-        # A cent above it: 1597.01 x 20% plus 0.01 x 36%.
-        ("7307.01", "319.4056"),
+        # A cent above it: 1597.01 x 20% = 319.402, so 319.40, plus 0.01 x 36% = 0.0036, so
+        # 0.00; each part is rounded, not the sum, which would give 319.41.
+        ("7307.01", "319.40"),
         ("0", "0"),
     ],
 )

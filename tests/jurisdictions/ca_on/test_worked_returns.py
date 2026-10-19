@@ -61,8 +61,9 @@ description: >-
   is 0, the unused contributions carried forward (line 23) are 0 - 0 = 0. With no eligible
   child and no child care expenses paid, the child care expenses deduction (T778 line 7) is
   the least of the basic limit 0 x 8000 + 0 x 11000 + 0 x 5000 = 0, the 0 paid and
-  two-thirds of the earned income of 10000, 6666.666666666666666666666667: 0. So the
-  enhanced contributions are the only deduction from total income that is not zero.
+  two-thirds of the earned income of 10000, 6666.666..., rounded half-up to the cent:
+  6666.67: 0. So the enhanced contributions are the only deduction from total income that
+  is not zero.
   Net income and taxable income are 9935.00. The Canada employment amount is the
   lesser of 1471 and the employment income of 10000: 1471. The federal basic personal
   amount is computed from net income by the Federal Worksheet: 9935.00 is at or below
@@ -74,13 +75,15 @@ description: >-
   The federal total of credit amounts is its basic personal amount plus those two zeros,
   321.75, 164.00 and 1471; the Ontario total is its basic personal amount plus its zero,
   321.75 and 164.00 (ON428 has no Canada employment amount). Each form's non-refundable tax
-  credits are its total times its rate
-  (14.5% of 18085.75 = 2622.43375; 5.05% of 13232.75 = 668.253875); each exceeds its tax,
-  leaving zero. An Ontario tax of zero is below the first surtax threshold, so the surtax is
-  zero and the Ontario tax with surtax is zero. With no dependent children and no dependants,
-  the Ontario tax reduction amounts are the basic reduction of 294.00, and the reduction is
-  twice them less the tax of zero: 588.00, which leaves an Ontario tax after the reduction of
-  zero, not a refund. The LIFT credit (Schedule ON428-A) is 5.05% of the employment income,
+  credits are its total times its rate (14.5% of 18085.75 = 2622.43375, rounded half-up to
+  the cent: 2622.43; 5.05% of 13232.75 = 668.253875, rounded half-up to the cent: 668.25);
+  each exceeds its tax (14.5% of 9935.00 = 1440.575, rounded half-up to the cent: 1440.58;
+  5.05% of it = 501.7175, rounded half-up to the cent: 501.72), leaving zero. An Ontario tax
+  of zero is below the first surtax threshold, so the surtax is zero and the Ontario tax
+  with surtax is zero. With no dependent children and no dependants, the Ontario tax
+  reduction amounts are the basic reduction of 294.00, and the reduction is twice them less
+  the tax of zero: 588.00, which leaves an Ontario tax after the reduction of zero, not a
+  refund. The LIFT credit (Schedule ON428-A) is 5.05% of the employment income,
   505, below its 875 maximum, less 5% of net income over 32500, nothing as 9935.00 is below
   it: 505, more than the Ontario tax after the reduction of zero, so the Ontario tax after
   the LIFT credit is zero. A taxable income of 9935.00 is at or below the health premium chart's
@@ -92,7 +95,12 @@ description: >-
   nothing as 9935.00 is below it: 1633; with one it would be 1890, at most 2813, less
   nothing over 30639: 1890. With 0 eligible dependants the first applies: 1633. The
   income tax deducted is a chosen 500, so the total credits are 500 plus the benefit, 2133,
-  and the refund or balance owing is 0 less 2133: -2133, a refund.
+  and the refund or balance owing is 0 less 2133: -2133, a refund. Every amount computed from
+  a rate, fraction, amount or chart on the forms is rounded half-up to the cent, each line
+  being a dollars-and-cents box; here that changes Form T778 line 6, the federal and Ontario
+  tax on taxable income and both forms' non-refundable tax credits. The lines that only add,
+  subtract, compare or choose take amounts already in cents, so the refund or balance owing
+  is in cents too.
 sources:
   - >-
     T1, Federal Worksheet, Schedule 3, Schedule 5, Schedule 6, Schedule 7, Schedule 8, ON428,
@@ -132,29 +140,29 @@ expected:
   ca/child_care_limit_for_children_seven_to_sixteen: "0"
   ca/child_care_basic_limit: "0"
   ca/child_care_earned_income: "10000"
-  ca/child_care_earned_income_limit: "6666.666666666666666666666667"
+  ca/child_care_earned_income_limit: "6666.67"
   ca/child_care_expenses: "0"
   ca/deductions_from_total_income: "65.00"
   ca/net_income: "9935.00"
   ca/deductions_from_net_income: "0"
   ca/taxable_income: "9935.00"
-  ca/federal_basic_tax: "1440.575"
+  ca/federal_basic_tax: "1440.58"
   ca/basic_personal_amount: "16129"
   ca/eligible_dependant_amount_before_count: "16129"
   ca/eligible_dependant_amount: "0"
   ca/infirm_children_amount: "0"
   ca/canada_employment_amount: "1471"
   ca/non_refundable_credit_amounts: "18085.75"
-  ca/non_refundable_tax_credits: "2622.43375"
+  ca/non_refundable_tax_credits: "2622.43"
   ca/federal_tax_after_credits: "0"
-  ca-on/ontario_basic_tax: "501.7175"
+  ca-on/ontario_basic_tax: "501.72"
   ca-on/basic_personal_amount: "12747"
   ca-on/eligible_dependant_base: "11905.00"
   ca-on/eligible_dependant_amount_before_maximum: "11905.00"
   ca-on/eligible_dependant_amount_before_count: "10823"
   ca-on/eligible_dependant_amount: "0"
   ca-on/non_refundable_credit_amounts: "13232.75"
-  ca-on/non_refundable_tax_credits: "668.253875"
+  ca-on/non_refundable_tax_credits: "668.25"
   ca-on/ontario_tax_after_credits: "0"
   ca-on/ontario_surtax: "0"
   ca-on/ontario_tax_with_surtax: "0"
@@ -206,7 +214,7 @@ def test_a_new_file_is_a_new_worked_return_without_a_test_change(tmp_path: Path)
 
 def test_a_wrong_expected_amount_fails_naming_the_file_and_line(tmp_path: Path) -> None:
     path = tmp_path / "wrong.yaml"
-    path.write_text(LOW_INCOME.replace('"501.7175"', '"501.7176"'))
+    path.write_text(LOW_INCOME.replace('"501.72"', '"501.73"'))
 
     with pytest.raises(AssertionError, match=r"wrong\.yaml: ca-on/ontario_basic_tax"):
         check(path)

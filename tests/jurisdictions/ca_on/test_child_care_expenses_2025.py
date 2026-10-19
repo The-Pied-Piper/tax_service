@@ -11,7 +11,8 @@ whom the disability amount cannot be claimed for)" "multiplied by $5,000"; line 
 two-thirds"; line 7 "Enter whichever amount is the least: line 4, line 5 or line 6."; line 9 "Line
 7 minus line 8. ... enter this amount on line 21400 of your return. Allowable deduction". The
 $8,000, $11,000 and $5,000 are per-unit amounts (the `amount` kind); two-thirds is not a finite
-decimal, so it is a `fraction`. The form states no rounding on any of these lines.
+decimal, so it is a `fraction`. Each line is a dollars-and-cents box, so lines 1 to 3 and 6
+are rounded half-up to the cent.
 """
 
 from __future__ import annotations
@@ -27,7 +28,7 @@ from app.domain.capabilities.apply_fraction import ApplyFraction
 from app.domain.capabilities.per_unit_amount import PerUnitAmount
 from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.fraction import FRACTION, Fraction
-from app.domain.parameters.rounding import NO_ROUNDING
+from app.domain.parameters.rounding import RoundingMode, RoundTo
 
 D = Decimal
 SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
@@ -53,14 +54,16 @@ def test_2025_amount_per_eligible_child(family: str, amount: str) -> None:
     data = SOURCE.get(family, 2025, AMOUNT)
 
     assert data.values == Amount(D(amount))
-    assert data.rounding == NO_ROUNDING  # T778 states no rounding on Part B lines 1 to 3
+    # T778 Part B lines 1 to 3, dollars-and-cents boxes: half-up to the cent.
+    assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
 def test_2025_earned_income_fraction_is_two_thirds() -> None:
     data = SOURCE.get(EARNED_INCOME_FRACTION, 2025, FRACTION)
 
     assert data.values == Fraction(2, 3)
-    assert data.rounding == NO_ROUNDING  # T778 states no rounding on line 6
+    # T778 line 6, a dollars-and-cents box: half-up to the cent.
+    assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
 def test_2025_datasets_cite_only_their_form_text() -> None:
@@ -100,8 +103,10 @@ def test_the_limit_for_each_eligible_child(family: str, count: int, limit: str) 
         ("60000", "40000"),
         ("30000", "20000"),
         ("75000", "50000"),
-        # Return A: 220000 / 3, carried unrounded to the context's precision.
-        ("110000", "73333.33333333333333333333333"),
+        # Return A: 220000 / 3 = 73333.333..., rounded half-up to the cent.
+        ("110000", "73333.33"),
+        # 200 / 3 = 66.666..., rounded half-up to 66.67.
+        ("100", "66.67"),
         ("0", "0"),
     ],
 )

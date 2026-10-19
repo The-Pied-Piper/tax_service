@@ -6,8 +6,8 @@ dependants multiplied by $544"; line 77 "Add lines 74 to 76."; line 78 "Amount f
 multiplied by 2"; line 79 "Amount from line 73 above"; line 80 "Line 78 minus line 79 (if negative,
 enter "0") Ontario tax reduction". The basic reduction is a claimed amount (the `credit` kind, as
 the basic personal amount), the $544 a per-unit amount (the `amount` kind) for both lines 75 and
-76, and the 2 a factor (the `factor` kind), since a `rate` is at most 1. The form states no
-rounding on lines 74 to 80.
+76, and the 2 a factor (the `factor` kind), since a `rate` is at most 1. Lines 74, 75, 76 and 80
+are dollars-and-cents boxes, so each is rounded half-up to the cent.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ from app.domain.capabilities.per_unit_amount import PerUnitAmount
 from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.factor import FACTOR, Factor
-from app.domain.parameters.rounding import NO_ROUNDING
+from app.domain.parameters.rounding import RoundingMode, RoundTo
 
 D = Decimal
 SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
@@ -49,21 +49,24 @@ def test_2025_basic_reduction_is_294() -> None:
     data = SOURCE.get(BASIC, 2025, CREDIT)
 
     assert data.values == Credit(amount=D("294.00"))
-    assert data.rounding == NO_ROUNDING  # ON428 states no rounding on line 74
+    # ON428 line 74, a dollars-and-cents box: half-up to the cent.
+    assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
 def test_2025_amount_per_dependant_is_544() -> None:
     data = SOURCE.get(PER_DEPENDANT, 2025, AMOUNT)
 
     assert data.values == Amount(D("544"))
-    assert data.rounding == NO_ROUNDING  # ON428 states no rounding on lines 75 and 76
+    # ON428 lines 75 and 76, dollars-and-cents boxes: half-up to the cent.
+    assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
 def test_2025_factor_is_2() -> None:
     data = SOURCE.get(FACTOR_FAMILY, 2025, FACTOR)
 
     assert data.values == Factor(D("2"))
-    assert data.rounding == NO_ROUNDING  # ON428 states no rounding on lines 78 and 80
+    # ON428 line 80, a dollars-and-cents box: half-up to the cent.
+    assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
 def test_2025_datasets_cite_only_the_on428_text() -> None:
@@ -104,18 +107,22 @@ def test_544_for_each_dependent_child_or_dependant(count: int, amount: str) -> N
     [
         # Returns A, C, D and E: line 77 is the basic reduction alone, 294.00, so line 78 is
         # 588.00; each line 73 exceeds it, so line 80 is 0.
-        ("294.00", "8195.7699076", "0"),
-        ("294.00", "1700.145625", "0"),
-        ("294.00", "3750.97271", "0"),
-        ("294.00", "23570.1964036", "0"),
-        # A tax below 588.00: the reduction is the difference, unrounded.
-        ("294.00", "486.802325", "101.197675"),
+        ("294.00", "8195.77", "0"),
+        ("294.00", "1700.15", "0"),
+        ("294.00", "3750.97", "0"),
+        ("294.00", "23570.20", "0"),
+        # A tax below 588.00: the reduction is the difference.
+        ("294.00", "486.80", "101.20"),
+        # A tax past the cent: the difference is rounded half-up to the cent, 101.197675 to
+        # 101.20, and 100.985, a tie, up to 100.99.
+        ("294.00", "486.802325", "101.20"),
+        ("294.00", "487.015", "100.99"),
         # At 588.00 nothing is left; with no tax the whole 588.00.
         ("294.00", "588.00", "0"),
         ("294.00", "0", "588.00"),
         # Five dependent children and three dependants: 294.00 + 2720 + 1632 = 4646.00, so line
         # 78 is 9292.00, above Return A's line 73.
-        ("4646.00", "8195.7699076", "1096.2300924"),
+        ("4646.00", "8195.77", "1096.23"),
     ],
 )
 def test_twice_the_reduction_amounts_over_the_tax(amounts: str, tax: str, reduction: str) -> None:

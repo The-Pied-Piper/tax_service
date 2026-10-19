@@ -75,7 +75,8 @@ def test_2025_first_additional_tier_cites_its_sources(source: str) -> None:
         ("71300", "678.00"),
         ("3500", "0"),
         ("0", "0"),
-        # Rounded half-up to the cent: 1% of 0.49 is 0.0049, of 0.50 is 0.005, a tie.
+        # Rounded half-up to the cent: 1% of 0.49 is 0.0049, down to 0.00; of 0.50 is
+        # 0.005, a tie, up to 0.01.
         ("3500.49", "0.00"),
         ("3500.50", "0.01"),
     ],
