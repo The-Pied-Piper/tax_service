@@ -16,6 +16,7 @@ import app.jurisdictions.ca
 import app.jurisdictions.ca.catalog
 from app.domain.artifact import ArtifactCatalog, ArtifactKind, ArtifactRegistry
 from app.jurisdictions.ca.catalog import (
+    ADDITIONAL_DEDUCTIONS,
     ADJUSTED_FAMILY_NET_INCOME,
     AGE_AMOUNT,
     AGE_AMOUNT_BEFORE_COUNT,
@@ -29,6 +30,7 @@ from app.jurisdictions.ca.catalog import (
     CANADA_WORKERS_BENEFIT,
     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
     CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
+    CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
     CAPITAL_GAIN,
     CATALOG,
     CHILD_CARE_BASIC_LIMIT,
@@ -84,11 +86,14 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
     INVESTMENT_INCOME_WITHOUT_A_SLIP,
     INVESTMENT_ROYALTIES,
+    LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
     NET_INCOME,
+    NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NET_PARTNERSHIP_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
+    NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     OLD_AGE_SECURITY,
@@ -98,9 +103,16 @@ from app.jurisdictions.ca.catalog import (
     OTHER_EMPLOYMENT_INCOME,
     OTHER_FHSA_INCOME,
     OTHER_INCOME,
+    OTHER_PAYMENTS_DEDUCTION,
+    OTHER_PAYMENTS_DEDUCTION_ABOVE_LIMIT,
+    OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT,
+    OTHER_PAYMENTS_LIMIT_INCOME,
+    OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
+    OTHER_PAYMENTS_WORKSHEET_REQUIRED,
     OTHER_PENSIONS_AND_SUPERANNUATION,
     PROVINCIAL_CREDITS,
     RDSP_INCOME,
+    RDSP_INCOME_REPAYMENT,
     REFUND_OR_BALANCE_OWING,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
@@ -109,6 +121,7 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION_LIMIT,
     RRSP_DEDUCTION_MAXIMUM,
     RRSP_INCOME,
+    SECURITY_OPTIONS_DEDUCTIONS,
     SLIP_DIVIDEND_TAX_CREDIT,
     SLIP_TAXABLE_DIVIDENDS,
     SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
@@ -150,6 +163,9 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_CREDITS,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
+    UCCB_AND_RDSP_INCOME,
+    UCCB_AND_RDSP_INCOME_REPAYMENTS,
+    UCCB_REPAYMENT,
     UNION_DUES,
     UNIVERSAL_CHILD_CARE_BENEFIT,
     UNUSED_RRSP_CONTRIBUTIONS,
@@ -225,6 +241,22 @@ REGISTERED = frozenset(
         "ca/social_assistance_payments",
         "ca/net_federal_supplements",
         "ca/income_support_benefits",
+        "ca/canadian_armed_forces_and_police_deduction",
+        "ca/security_options_deductions",
+        "ca/uccb_repayment",
+        "ca/rdsp_income_repayment",
+        "ca/uccb_and_rdsp_income",
+        "ca/net_income_less_uccb_and_rdsp_income",
+        "ca/uccb_and_rdsp_income_repayments",
+        "ca/other_payments_limit_income",
+        "ca/other_payments_worksheet_required",
+        "ca/other_payments_worksheet_line_9_over_limit",
+        "ca/other_payments_deduction_above_limit",
+        "ca/other_payments_deduction_after_limit",
+        "ca/other_payments_deduction",
+        "ca/limited_partnership_losses_of_other_years",
+        "ca/non_capital_losses_of_other_years",
+        "ca/additional_deductions",
         "ca/unused_rrsp_contributions",
         "ca/rrsp_contributions",
         "ca/rrsp_contributions_available",
@@ -303,9 +335,17 @@ REGISTERED = frozenset(
         "ca/refund_or_balance_owing",
     }
 )
-# T1 line 167 (line 48400 or 48500): the balance, negative for a refund, the one `ca/` kind that
-# may be below zero.
-SIGNED = frozenset({"ca/refund_or_balance_owing"})
+# T1 line 167 (line 48400 or 48500): the balance, negative for a refund; and the Federal
+# Worksheet's "Line 25000 - Other payments deduction" line 5 "Line 1 minus line 4 =" and line 9
+# "Line 5 plus line 8 =", which print no "(if negative, enter "0")" and so may be below zero: the
+# `ca/` kinds that may be below zero.
+SIGNED = frozenset(
+    {
+        "ca/refund_or_balance_owing",
+        "ca/net_income_less_uccb_and_rdsp_income",
+        "ca/other_payments_limit_income",
+    }
+)
 # T1 line 30400 (Schedule 5, "Each household is allowed only one claim for this amount") and line
 # 30499 ("Number of children you are claiming this amount for"): the numbers of eligible
 # dependants and of infirm children; and Form T778 Part B lines 1 to 3 ("Number of eligible
@@ -314,10 +354,13 @@ SIGNED = frozenset({"ca/refund_or_balance_owing"})
 # the numbers of eligible children for the child care expenses deduction; and Schedule 6 line 38100
 # ("Do you have an eligible dependant? 1 Yes or 2 No"), whose eligible dependant is "your or your
 # spouse's or common-law partner's child", "under 19 years of age" and "not eligible for the CWB for
-# 2025": the number of eligible dependants for the Canada workers benefit; and T1 line 30100 ("if
+# 2025": the number of eligible dependants for the Canada workers benefit; T1 line 30100 ("if
 # you were born in 1960 or earlier"), Schedule 5 line 30300 (the spouse amount claimed) and line
 # 51090 (eligible for the Canada caregiver amount for the spouse), each a 0 or 1 count as the forms
-# take it; counted, not money.
+# take it; and the Federal Worksheet's "Line 25000 - Other payments deduction": 1 if an amount was
+# entered on line 14600 ("enter the amount from line 14700 if you did not enter an amount on line
+# 14600; otherwise, use Federal Worksheet") and 1 if "the amount on line 9 is more than $93,454",
+# each 0 or 1 until a comparison capability derives them; counted, not money.
 COUNTS = frozenset(
     {
         "ca/eligible_dependants",
@@ -329,6 +372,8 @@ COUNTS = frozenset(
         "ca/children_with_disability",
         "ca/children_seven_to_sixteen",
         "ca/cwb_eligible_dependants",
+        "ca/other_payments_worksheet_required",
+        "ca/other_payments_worksheet_line_9_over_limit",
     }
 )
 
@@ -458,6 +503,40 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/social_assistance_payments") is SOCIAL_ASSISTANCE_PAYMENTS
     assert registry.get("ca/net_federal_supplements") is NET_FEDERAL_SUPPLEMENTS
     assert registry.get("ca/income_support_benefits") is INCOME_SUPPORT_BENEFITS
+    assert (
+        registry.get("ca/canadian_armed_forces_and_police_deduction")
+        is CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION
+    )
+    assert registry.get("ca/security_options_deductions") is SECURITY_OPTIONS_DEDUCTIONS
+    assert registry.get("ca/uccb_repayment") is UCCB_REPAYMENT
+    assert registry.get("ca/rdsp_income_repayment") is RDSP_INCOME_REPAYMENT
+    assert registry.get("ca/uccb_and_rdsp_income") is UCCB_AND_RDSP_INCOME
+    assert (
+        registry.get("ca/net_income_less_uccb_and_rdsp_income")
+        is NET_INCOME_LESS_UCCB_AND_RDSP_INCOME
+    )
+    assert registry.get("ca/uccb_and_rdsp_income_repayments") is UCCB_AND_RDSP_INCOME_REPAYMENTS
+    assert registry.get("ca/other_payments_limit_income") is OTHER_PAYMENTS_LIMIT_INCOME
+    assert registry.get("ca/other_payments_worksheet_required") is OTHER_PAYMENTS_WORKSHEET_REQUIRED
+    assert (
+        registry.get("ca/other_payments_worksheet_line_9_over_limit")
+        is OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT
+    )
+    assert (
+        registry.get("ca/other_payments_deduction_above_limit")
+        is OTHER_PAYMENTS_DEDUCTION_ABOVE_LIMIT
+    )
+    assert (
+        registry.get("ca/other_payments_deduction_after_limit")
+        is OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT
+    )
+    assert registry.get("ca/other_payments_deduction") is OTHER_PAYMENTS_DEDUCTION
+    assert (
+        registry.get("ca/limited_partnership_losses_of_other_years")
+        is LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS
+    )
+    assert registry.get("ca/non_capital_losses_of_other_years") is NON_CAPITAL_LOSSES_OF_OTHER_YEARS
+    assert registry.get("ca/additional_deductions") is ADDITIONAL_DEDUCTIONS
     assert registry.get("ca/unused_rrsp_contributions") is UNUSED_RRSP_CONTRIBUTIONS
     assert registry.get("ca/rrsp_contributions") is RRSP_CONTRIBUTIONS
     assert registry.get("ca/rrsp_contributions_available") is RRSP_CONTRIBUTIONS_AVAILABLE
@@ -641,6 +720,20 @@ def test_catalog_kinds_are_money() -> None:
         SOCIAL_ASSISTANCE_PAYMENTS,
         NET_FEDERAL_SUPPLEMENTS,
         INCOME_SUPPORT_BENEFITS,
+        CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
+        SECURITY_OPTIONS_DEDUCTIONS,
+        UCCB_REPAYMENT,
+        RDSP_INCOME_REPAYMENT,
+        UCCB_AND_RDSP_INCOME,
+        NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
+        UCCB_AND_RDSP_INCOME_REPAYMENTS,
+        OTHER_PAYMENTS_LIMIT_INCOME,
+        OTHER_PAYMENTS_DEDUCTION_ABOVE_LIMIT,
+        OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT,
+        OTHER_PAYMENTS_DEDUCTION,
+        LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
+        NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
+        ADDITIONAL_DEDUCTIONS,
         UNUSED_RRSP_CONTRIBUTIONS,
         RRSP_CONTRIBUTIONS,
         RRSP_CONTRIBUTIONS_AVAILABLE,
@@ -741,6 +834,18 @@ def test_the_refund_or_balance_owing_is_signed(registry: ArtifactRegistry) -> No
     assert REFUND_OR_BALANCE_OWING.non_negative is False
     assert registry.kind("ca/refund_or_balance_owing").non_negative is False
     assert SIGNED <= REGISTERED
+
+
+def test_the_other_payments_worksheets_lines_5_and_9_are_signed(registry: ArtifactRegistry) -> None:
+    # Federal Worksheet "Line 25000 - Other payments deduction": line 5 "Line 1 minus line 4 =" and
+    # line 9 "Line 5 plus line 8 =" print no floor, unlike line 1 ("if negative, enter "0"").
+    assert NET_INCOME_LESS_UCCB_AND_RDSP_INCOME.non_negative is False
+    assert OTHER_PAYMENTS_LIMIT_INCOME.non_negative is False
+    assert registry.kind("ca/net_income_less_uccb_and_rdsp_income").non_negative is False
+    assert registry.kind("ca/other_payments_limit_income").non_negative is False
+    assert UCCB_AND_RDSP_INCOME.non_negative is True
+    assert UCCB_AND_RDSP_INCOME_REPAYMENTS.non_negative is True
+    assert OTHER_PAYMENTS_DEDUCTION.non_negative is True
 
 
 def test_the_income_tax_deducted_is_non_negative() -> None:

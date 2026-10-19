@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 111
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 117
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -113,6 +113,22 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/social_assistance_payments",
         "ca/net_federal_supplements",
         "ca/income_support_benefits",
+        "ca/canadian_armed_forces_and_police_deduction",
+        "ca/security_options_deductions",
+        "ca/uccb_repayment",
+        "ca/rdsp_income_repayment",
+        "ca/uccb_and_rdsp_income",
+        "ca/net_income_less_uccb_and_rdsp_income",
+        "ca/uccb_and_rdsp_income_repayments",
+        "ca/other_payments_limit_income",
+        "ca/other_payments_worksheet_required",
+        "ca/other_payments_worksheet_line_9_over_limit",
+        "ca/other_payments_deduction_above_limit",
+        "ca/other_payments_deduction_after_limit",
+        "ca/other_payments_deduction",
+        "ca/limited_partnership_losses_of_other_years",
+        "ca/non_capital_losses_of_other_years",
+        "ca/additional_deductions",
         "ca/unused_rrsp_contributions",
         "ca/rrsp_contributions",
         "ca/rrsp_contributions_available",
@@ -249,13 +265,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 111
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 117
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 111
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 117
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
