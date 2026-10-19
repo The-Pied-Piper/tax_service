@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 139
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 167
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -205,6 +205,45 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/provincial_credits",
         "ca/total_credits",
         "ca/refund_or_balance_owing",
+        "ca/charitable_donations",
+        "ca/government_donations",
+        "ca/university_donations_outside_canada",
+        "ca/foreign_charity_donations",
+        "ca/ecological_and_cultural_gifts",
+        "ca/ecological_gifts_before_2016",
+        "ca/depreciable_gift_recaptured_depreciation",
+        "ca/depreciable_gift_net_proceeds",
+        "ca/depreciable_gift_capital_cost",
+        "ca/capital_gift_taxable_gains",
+        "ca/capital_gift_gains_deduction",
+        "ca/depreciable_gift_proceeds_or_cost",
+        "ca/depreciable_gifts",
+        "ca/capital_property_gifts",
+        "ca/total_charitable_donations",
+        "ca/donation_limit_on_net_income",
+        "ca/capital_gifts_total",
+        "ca/capital_gifts_limit_addition",
+        "ca/donation_limit_with_capital_gifts",
+        "ca/charitable_donations_limit",
+        "ca/charitable_donations_claimed",
+        "ca/donations_and_gifts_total",
+        "ca/donation_first_tier_maximum",
+        "ca/donations_first_tier",
+        "ca/donations_over_first_tier",
+        "ca/donations_over_first_tier_after_2016_gifts",
+        "ca/donation_high_income_threshold",
+        "ca/taxable_income_over_donation_threshold",
+        "ca/high_income_donations",
+        "ca/high_income_donation_credit",
+        "ca/regular_rate_donations",
+        "ca/regular_rate_donation_credit",
+        "ca/first_tier_donation_credit",
+        "ca/donations_and_gifts_credit",
+        "ca/credit_amounts_at_credit_rate",
+        "ca/top_up_credits_base",
+        "ca/top_up_threshold",
+        "ca/top_up_excess",
+        "ca/top_up_tax_credit",
     }
     assert {i for i in shared.identifiers() if i.startswith("ca-on/")} == {
         "ca-on/ontario_basic_tax",
@@ -289,13 +328,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 139
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 167
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 139
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 167
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

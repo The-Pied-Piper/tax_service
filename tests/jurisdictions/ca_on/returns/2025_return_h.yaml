@@ -32,10 +32,11 @@
 # lines, the social benefits repayment, and any deduction from net income other than line
 # 25000. Line 82 of ON428 is not triggered by this return, and
 # the qualifying donations for line 87 (the community food program donation tax credit for
-# farmers) are a chosen $0, so line 87 is $0 and line 88 is line 86. Amounts are quoted
-# decimal strings, never floats; counts are quoted digit strings. Every output the CA-ON
-# manifest declares must appear under `expected`; intermediate lines may be listed and are
-# then checked too.
+# farmers) are a chosen $0, so line 87 is $0 and line 88 is line 86. Schedule 9's inputs are
+# all a chosen $0, so lines 116 (34900) and 117 (34990) are $0 and line 35000 is line 33800.
+# Amounts are quoted decimal strings, never floats; counts are quoted digit strings. Every
+# output the CA-ON manifest declares must appear under `expected`; intermediate lines may be
+# listed and are then checked too.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -280,8 +281,10 @@ sources:
     basic personal amount, the age amount of line 30100, no spouse amount, no eligible
     dependant, no Canada caregiver amount for a spouse, no infirm children, no base CPP
     contributions or EI premiums and no Canada employment amount), and line 33800 is
-    25,157.00 x 14.5% = 3,647.765, rounded half-up to the cent: 3,647.77. Lines 116 and 117
-    are not modelled, so line 35000 is that same 3,647.77. The pension income amount (line
+    25,157.00 x 14.5% = 3,647.765, rounded half-up to the cent: 3,647.77. Lines 116 (line
+    34900, Schedule 9) and 117 (line 34990, the top-up tax credit) are computed, and are $0
+    here because this return's Schedule 9 inputs are all $0 (a chosen figure, caller
+    inputs), so line 35000 is 3,647.77 + 0 + 0 = 3,647.77. The pension income amount (line
     31400) is not computed in this return.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-d1/5000-d1-25e.txt
@@ -569,6 +572,17 @@ inputs:
   ca-on/seniors_transit_paid: "0"
   ca-on/flow_through_share_slips: []
   ca-on/community_food_program_donations: "0"
+  ca/charitable_donations: "0"
+  ca/government_donations: "0"
+  ca/university_donations_outside_canada: "0"
+  ca/foreign_charity_donations: "0"
+  ca/ecological_and_cultural_gifts: "0"
+  ca/ecological_gifts_before_2016: "0"
+  ca/depreciable_gift_recaptured_depreciation: "0"
+  ca/depreciable_gift_net_proceeds: "0"
+  ca/depreciable_gift_capital_cost: "0"
+  ca/capital_gift_taxable_gains: "0"
+  ca/capital_gift_gains_deduction: "0"
 expected:
   ca/taxable_capital_gains: "0"
   ca/taxable_dividends_other_than_eligible: "0"

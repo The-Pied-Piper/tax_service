@@ -62,32 +62,35 @@
 # benefits repayment and capital losses. Line 82 (the provincial foreign tax credit) is not
 # triggered by this return, and the qualifying donations for line 87 (the community food
 # program donation tax credit for farmers) are a chosen $0, so line 87 is $0 and line 88 is
-# line 86. Nor are Schedule 5 line 2, T1 lines 30425 and 30450, the Ontario caregiver amount
-# (ON428 line 58185), Form T778 line 8 and Parts C and D, and Schedule 6's disability
-# supplement (Step 3) and advance payments (Step 4); with no Schedule 6 eligible dependant
-# (line 38100), the Schedule 6 amounts for a filer with no eligible spouse and no eligible
-# dependant are the ones chosen (to be confirmed). The age amount (line 30100), the spouse
-# or common-law partner amount (line 30300) and the Canada caregiver amount for a spouse or
-# common-law partner (line 30425) are not triggered by this return, so each is 0 and its
-# part of the T1's total of credit amounts is 0: the filer is taken as born in 1961 or
-# later, with no spouse or common-law partner (to be confirmed), so the counts of filers
-# born in 1960 or earlier, of spouse amounts claimed and of spouses eligible for the Canada
-# caregiver amount (line 51090) are 0 and the spouse's net income is entered as 0. They are
-# computed all the same, in the order of the form's lines, from net income less the $45,522
-# income threshold, not below zero, at 15%, taken off $9,028, not below zero (line 30100),
-# from the basic personal amount, the $2,687 for a spouse eligible for the Canada caregiver
-# amount and the spouse's net income, not below zero (line 30300), and from $28,798 less the
-# spouse's net income, at most $8,601, less the line 30300 amount, not below zero (line
-# 30425), each claimed for its count. Amounts are quoted decimal strings, never floats;
-# counts are quoted digit strings. Every output the CA-ON manifest declares must appear
-# under `expected`; intermediate lines may be listed and are then checked too.
-# ON428's age amount (line 58080, from Worksheet ON428) and spouse or common-law partner
-# amount (lines 11 to 13, line 58120) are not triggered either, for the same counts of 0, so
-# each is 0 and its part of ON428's total of credit amounts is 0. They are computed all the
-# same, in the order of the forms' lines, from net income less the $46,330 income threshold,
-# not below zero, at 15%, taken off $6,223, not below zero (line 58080), and from $11,905.00
-# less the spouse's net income, not below zero, at most $10,823 (line 58120), each claimed
-# for its count.
+# line 86.
+# Schedule 9's inputs are all a chosen $0, so lines 116 (34900) and 117 (34990) are $0 and
+# line 35000 is line 33800. Nor are Schedule 5 line 2, T1 lines 30425 and 30450, the
+# Ontario caregiver amount (ON428 line 58185), Form T778 line 8 and Parts C and D, and
+# Schedule 6's disability supplement (Step 3) and advance payments (Step 4); with no
+# Schedule 6 eligible dependant (line 38100), the Schedule 6 amounts for a filer with no
+# eligible spouse and no eligible dependant are the ones chosen (to be confirmed). The age
+# amount (line 30100), the spouse or common-law partner amount (line 30300) and the Canada
+# caregiver amount for a spouse or common-law partner (line 30425) are not triggered by
+# this return, so each is 0 and its part of the T1's total of credit amounts is 0: the
+# filer is taken as born in 1961 or later, with no spouse or common-law partner (to be
+# confirmed), so the counts of filers born in 1960 or earlier, of spouse amounts claimed
+# and of spouses eligible for the Canada caregiver amount (line 51090) are 0 and the
+# spouse's net income is entered as 0. They are computed all the same, in the order of the
+# form's lines, from net income less the $45,522 income threshold, not below zero, at 15%,
+# taken off $9,028, not below zero (line 30100), from the basic personal amount, the
+# $2,687 for a spouse eligible for the Canada caregiver amount and the spouse's net
+# income, not below zero (line 30300), and from $28,798 less the spouse's net income, at
+# most $8,601, less the line 30300 amount, not below zero (line 30425), each claimed for
+# its count. Amounts are quoted decimal strings, never floats; counts are quoted digit
+# strings. Every output the CA-ON manifest declares must appear under `expected`;
+# intermediate lines may be listed and are then checked too. ON428's age amount (line
+# 58080, from Worksheet ON428) and spouse or common-law partner amount (lines 11 to 13,
+# line 58120) are not triggered either, for the same counts of 0, so each is 0 and its
+# part of ON428's total of credit amounts is 0. They are computed all the same, in the
+# order of the forms' lines, from net income less the $46,330 income threshold, not below
+# zero, at 15%, taken off $6,223, not below zero (line 58080), and from $11,905.00 less
+# the spouse's net income, not below zero, at most $10,823 (line 58120), each claimed for
+# its count.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -400,8 +403,10 @@ sources:
     base CPP contributions, the EI premiums and the Canada employment amount, the credit
     amounts modelled, line 33500, which takes amounts already in cents, is 15,685.73 + 0 + 0
     + 3,356.10 + 1,077.48 + 1,471 = 21,590.31, and line 33800 is 21,590.31 x 14.5% =
-    3,130.59495, rounded half-up to the cent: 3,130.59. Lines 116 and 117 are not modelled,
-    so line 35000 is that same 3,130.59.
+    3,130.59495, rounded half-up to the cent: 3,130.59. Lines 116 (line 34900,
+    Schedule 9) and 117 (line 34990, the top-up tax credit) are computed, and are $0 here
+    because this return's Schedule 9 inputs are all $0 (a chosen figure, caller inputs), so
+    line 35000 is 3,130.59 + 0 + 0 = 3,130.59.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - >-
     CRA, the 2025 Federal Worksheet (form 5000-D1): "Line 30000 - Basic personal amount. If
@@ -905,6 +910,17 @@ inputs:
   ca-on/seniors_transit_paid: "0"
   ca-on/flow_through_share_slips: []
   ca-on/community_food_program_donations: "0"
+  ca/charitable_donations: "0"
+  ca/government_donations: "0"
+  ca/university_donations_outside_canada: "0"
+  ca/foreign_charity_donations: "0"
+  ca/ecological_and_cultural_gifts: "0"
+  ca/ecological_gifts_before_2016: "0"
+  ca/depreciable_gift_recaptured_depreciation: "0"
+  ca/depreciable_gift_net_proceeds: "0"
+  ca/depreciable_gift_capital_cost: "0"
+  ca/capital_gift_taxable_gains: "0"
+  ca/capital_gift_gains_deduction: "0"
 expected:
   ca/taxable_capital_gains: "0"
   ca/taxable_dividends_other_than_eligible: "0"

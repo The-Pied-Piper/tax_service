@@ -73,19 +73,20 @@
 # income, the social benefits repayment and capital losses. Line 82 (the provincial foreign
 # tax credit) is not triggered by this return, and the qualifying donations for line 87 (the
 # community food program donation tax credit for farmers) are a chosen $0, so line 87 is $0
-# and line 88 is line 86. Nor are the amount for an eligible dependant (T1 line 30400), T1
-# line 30450, the Canada caregiver amount for infirm children (line 30500), Form T778 line 8
-# and Parts C and D, and Schedule 6's disability supplement (Step 3) and advance payments
-# (Step 4); the Ontario tax reduction for dependants (ON428 line 76) is taken as not claimed
-# for the infirm spouse (to be confirmed), though it would change the result: twice 838.00
-# is 1,676.00, more than the Ontario tax after the dividend credit of 1,437.17, so the
-# reduction would be 238.83. Schedule 6's eligible spouse
-# is not modelled: with no Schedule 6 eligible dependant (line 38100) the amounts for a
-# filer with no eligible spouse and no eligible dependant are the ones chosen (to be
-# confirmed), and the benefit is 0 with an eligible spouse too. Amounts are quoted decimal
-# strings, never floats; counts are quoted digit strings. Every output the CA-ON manifest
-# declares must appear under `expected`; intermediate lines may be listed and are then
-# checked too.
+# and line 88 is line 86.
+# Schedule 9's inputs are all a chosen $0, so lines 116 (34900) and 117 (34990) are $0 and
+# line 35000 is line 33800. Nor are the amount for an eligible dependant (T1 line 30400),
+# T1 line 30450, the Canada caregiver amount for infirm children (line 30500), Form T778
+# line 8 and Parts C and D, and Schedule 6's disability supplement (Step 3) and advance
+# payments (Step 4); the Ontario tax reduction for dependants (ON428 line 76) is taken as
+# not claimed for the infirm spouse (to be confirmed), though it would change the result:
+# twice 838.00 is 1,676.00, more than the Ontario tax after the dividend credit of
+# 1,437.17, so the reduction would be 238.83. Schedule 6's eligible spouse is not
+# modelled: with no Schedule 6 eligible dependant (line 38100) the amounts for a filer
+# with no eligible spouse and no eligible dependant are the ones chosen (to be confirmed),
+# and the benefit is 0 with an eligible spouse too. Amounts are quoted decimal strings,
+# never floats; counts are quoted digit strings. Every output the CA-ON manifest declares
+# must appear under `expected`; intermediate lines may be listed and are then checked too.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -459,7 +460,10 @@ sources:
     employment amount, the credit amounts modelled, line 33500, which takes amounts already
     in cents, is 16,129 + 8,356.30 + 6,816.00 + 0 + 1,785.00 + 0 + 2,301.75 + 820.00 + 1,471
     = 37,679.05, and line 33800 is 37,679.05 x 14.5% = 5463.46225, rounded half-up to the
-    cent: 5,463.46. Lines 116 and 117 are not modelled, so line 35000 is that same 5,463.46.
+    cent: 5,463.46. Lines 116 (line 34900,
+    Schedule 9) and 117 (line 34990, the top-up tax credit) are computed, and are $0 here
+    because this return's Schedule 9 inputs are all $0 (a chosen figure, caller inputs), so
+    line 35000 is 5,463.46 + 0 + 0 = 5,463.46.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-d1/5000-d1-25e.txt
   - https://www.canada.ca/en/revenue-agency/services/forms-publications/payroll/payroll-deductions-t4127-payroll-deductions-formulas/t4127-jan-120th-edition-effective-january-1-2025/t4127-jan-payroll-deductions-formulas-computer-programs.html
@@ -901,6 +905,17 @@ inputs:
   ca-on/seniors_transit_paid: "0"
   ca-on/flow_through_share_slips: []
   ca-on/community_food_program_donations: "0"
+  ca/charitable_donations: "0"
+  ca/government_donations: "0"
+  ca/university_donations_outside_canada: "0"
+  ca/foreign_charity_donations: "0"
+  ca/ecological_and_cultural_gifts: "0"
+  ca/ecological_gifts_before_2016: "0"
+  ca/depreciable_gift_recaptured_depreciation: "0"
+  ca/depreciable_gift_net_proceeds: "0"
+  ca/depreciable_gift_capital_cost: "0"
+  ca/capital_gift_taxable_gains: "0"
+  ca/capital_gift_gains_deduction: "0"
 expected:
   ca/taxable_capital_gains: "465.00"
   ca/taxable_dividends_other_than_eligible: "0"

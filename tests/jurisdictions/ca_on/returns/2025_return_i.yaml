@@ -56,17 +56,19 @@
 # no eligible medical expenses for fertility treatment and no amount paid for seniors' use
 # of Ontario public transit services, so lines 1, 14, 18 and 21 and T1 line 47900 are $0 (to
 # be confirmed). The ON428 community food program donation tax credit for farmers is claimed
-# on chosen qualifying donations of $1,000, a caller input taken as entered (line 87), which
-# the return also claims as a charitable donation (Schedule 9, not yet computed). Not yet
-# computed, so not in this file: any deduction from net income, the social benefits
-# repayment and capital losses. Line 82 (the provincial foreign tax credit) is not triggered
-# by this return, nor are Schedule 5 line 2, T1 lines 30425 and 30450, the Ontario caregiver
-# amount (ON428 line 58185), Form T778 line 8 and Parts C and D, and Schedule 6's disability
-# supplement (Step 3) and advance payments (Step 4); with no Schedule 6 eligible dependant
-# (line 38100), the Schedule 6 amounts for a filer with no eligible spouse and no eligible
-# dependant are the ones chosen (to be confirmed). Amounts are quoted decimal strings, never
-# floats; counts are quoted digit strings. Every output the CA-ON manifest declares must
-# appear under `expected`; intermediate lines may be listed and are then checked too.
+# on chosen qualifying donations of $1,000, a caller input taken as entered (line 87). The
+# Schedule 9 inputs of this return are $0 (a chosen figure), so its charitable donation
+# claim is not entered there, and lines 116 (34900) and 117 (34990) are $0 and line 35000 is
+# line 33800. Not yet computed, so not in this file: any deduction from net income, the
+# social benefits repayment and capital losses. Line 82 (the provincial foreign tax credit)
+# is not triggered by this return, nor are Schedule 5 line 2, T1 lines 30425 and 30450, the
+# Ontario caregiver amount (ON428 line 58185), Form T778 line 8 and Parts C and D, and
+# Schedule 6's disability supplement (Step 3) and advance payments (Step 4); with no
+# Schedule 6 eligible dependant (line 38100), the Schedule 6 amounts for a filer with no
+# eligible spouse and no eligible dependant are the ones chosen (to be confirmed). Amounts
+# are quoted decimal strings, never floats; counts are quoted digit strings. Every output
+# the CA-ON manifest declares must appear under `expected`; intermediate lines may be listed
+# and are then checked too.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -358,8 +360,10 @@ sources:
     entry derives, the base CPP contributions, the EI premiums and the Canada employment
     amount, the credit amounts modelled, line 33500, which takes amounts already in cents,
     is 16,129 + 0 + 0 + 2,202.75 + 787.20 + 1,471 = 20,589.95, and line 33800 is 20,589.95 x
-    14.5% = 2,985.54275, rounded half-up to the cent: 2,985.54. Lines 116 and 117 are not
-    modelled, so line 35000 is that same 2,985.54.
+    14.5% = 2,985.54275, rounded half-up to the cent: 2,985.54. Lines 116 (line 34900,
+    Schedule 9) and 117 (line 34990, the top-up tax credit) are computed, and are $0 here
+    because this return's Schedule 9 inputs are all $0 (a chosen figure, caller inputs), so
+    line 35000 is 2,985.54 + 0 + 0 = 2,985.54.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-d1/5000-d1-25e.txt
   - https://www.canada.ca/en/revenue-agency/services/forms-publications/payroll/payroll-deductions-t4127-payroll-deductions-formulas/t4127-jan-120th-edition-effective-january-1-2025/t4127-jan-payroll-deductions-formulas-computer-programs.html
@@ -561,20 +565,20 @@ sources:
     62150 "Enter the amount of qualifying donations that have also been claimed as a
     charitable donation." "multiplied by 25%", under "Community food program donation tax
     credit for farmers:", the qualifying donations being a caller input taken as entered,
-    with nothing checked against Schedule 9, and here a chosen 1,000 within the donations
-    claimed (to be confirmed): 1,000 x 25% = 250, rounded half-up to the cent: 250.00; line
-    88 "Line 86 minus line 87 (if negative, enter "0")", 1,484.56 - 250.00 = 1,234.56; line
-    89 "Ontario health premium (complete the chart below)"; line 90 "Line 88 plus line 89
-    Enter this amount on line 42800 of your return. Ontario tax". The chart's line 1 is
-    "Enter your taxable income from line 26000 of your return", here 47,555.00, which is
-    "more than $38,500 but not more than $48,000": $450. Each row of the chart is the
-    previous plateau plus a rate on the taxable income over the row's threshold, at most the
-    next plateau, so the premium is the sum of five tiers, each capped: (47,555.00 - 20,000)
-    x 6% = 27,555.00 x 6% = 1,653.30, more than 300, so 300; (47,555.00 - 36,000) x 6% =
-    11,555.00 x 6% = 693.30, more than 150, so 150; 47,555.00 - 48,000 is negative, so 0;
-    47,555.00 - 72,000 is negative, so 0; 47,555.00 - 200,000 is negative, so 0; each tier
-    is rounded half-up to the cent, which changes none of them, so line 89 is 300 + 150 + 0
-    + 0 + 0 = 450, and line 90 is 1,234.56 + 450 = 1,684.56; lines 86, 88 and 90 take
+    with nothing checked against Schedule 9 (whose inputs are $0, a chosen figure), and here
+    a chosen 1,000 (to be confirmed): 1,000 x 25% = 250, rounded half-up to the cent:
+    250.00; line 88 "Line 86 minus line 87 (if negative, enter "0")", 1,484.56 - 250.00 =
+    1,234.56; line 89 "Ontario health premium (complete the chart below)"; line 90 "Line 88
+    plus line 89 Enter this amount on line 42800 of your return. Ontario tax". The chart's
+    line 1 is "Enter your taxable income from line 26000 of your return", here 47,555.00,
+    which is "more than $38,500 but not more than $48,000": $450. Each row of the chart is
+    the previous plateau plus a rate on the taxable income over the row's threshold, at most
+    the next plateau, so the premium is the sum of five tiers, each capped: (47,555.00 -
+    20,000) x 6% = 27,555.00 x 6% = 1,653.30, more than 300, so 300; (47,555.00 - 36,000) x
+    6% = 11,555.00 x 6% = 693.30, more than 150, so 150; 47,555.00 - 48,000 is negative, so
+    0; 47,555.00 - 72,000 is negative, so 0; 47,555.00 - 200,000 is negative, so 0; each
+    tier is rounded half-up to the cent, which changes none of them, so line 89 is 300 + 150
+    + 0 + 0 + 0 = 450, and line 90 is 1,234.56 + 450 = 1,684.56; lines 86, 88 and 90 take
     amounts already in cents.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-c/5006-c-25e.txt
   - >-
@@ -773,6 +777,17 @@ inputs:
   ca-on/seniors_transit_paid: "0"
   ca-on/flow_through_share_slips: []
   ca-on/community_food_program_donations: "1000"
+  ca/charitable_donations: "0"
+  ca/government_donations: "0"
+  ca/university_donations_outside_canada: "0"
+  ca/foreign_charity_donations: "0"
+  ca/ecological_and_cultural_gifts: "0"
+  ca/ecological_gifts_before_2016: "0"
+  ca/depreciable_gift_recaptured_depreciation: "0"
+  ca/depreciable_gift_net_proceeds: "0"
+  ca/depreciable_gift_capital_cost: "0"
+  ca/capital_gift_taxable_gains: "0"
+  ca/capital_gift_gains_deduction: "0"
 expected:
   ca/taxable_capital_gains: "0"
   ca/taxable_dividends_other_than_eligible: "0"

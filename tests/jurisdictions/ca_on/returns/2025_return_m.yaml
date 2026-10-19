@@ -68,27 +68,28 @@
 # in this file: any deduction from net income, the social benefits repayment and capital
 # losses. Line 82 (the provincial foreign tax credit) is not triggered by this return, and
 # the qualifying donations for line 87 (the community food program donation tax credit for
-# farmers) are a chosen $0, so line 87 is $0 and line 88 is line 86. Nor are Schedule 5 line
-# 2, T1 lines 30425 and 30450, the Ontario caregiver amount (ON428 line 58185), Form T778
-# line 8 (the taxpayer taken as the only person supporting the child, to be confirmed), line
-# 67954 (the expenses for children aged 6 or younger, to be confirmed), Note 1's weekly
-# limits for boarding schools and overnight camps (to be confirmed) and Parts C and D, and
-# Schedule 6's disability supplement (Step 3) and advance payments (Step 4); with one
-# Schedule 6 eligible dependant (line 38100), the Schedule 6 amounts for a filer with an
-# eligible dependant are the ones chosen (to be confirmed). Return M is Return G's taxpayer
-# with Ontario credits (Form ON479): eligible medical expenses for fertility treatment of
-# $24,000, a chosen figure, 25% of them, $6,000, at most $5,000, is line 1, $5,000; an
-# amount paid for seniors' use of Ontario public transit services of $1,200, a chosen
-# figure, at most $3,000, x 15% is line 14, $180.00; and the focused flow-through share
-# credit (line 17, from Form T1221): qualifying expenses of $6,000 and $4,000 from two
-# corporations, chosen figures, listed on two lines of the T1221, total $10,000 (T1221 line
-# 4, entered on line 63220) x 5%, $500.00; with lines 2, 13 and 16 not triggered, line 18 is
-# $5,000.00 + $180.00 + $500.00 = $5,680.00, line 19 carries it, line 20 is not triggered
-# and line 21, carried to T1 line 47900, is $5,680.00, which raises the total credits and
-# lowers the refund or balance owing by that amount. The taxpayer's eligibility for these
-# credits is to be confirmed. Amounts are quoted decimal strings, never floats; counts are
-# quoted digit strings. Every output the CA-ON manifest declares must appear under
-# `expected`; intermediate lines may be listed and are then checked too.
+# farmers) are a chosen $0, so line 87 is $0 and line 88 is line 86. Schedule 9's inputs are
+# all a chosen $0, so lines 116 (34900) and 117 (34990) are $0 and line 35000 is line 33800.
+# Nor are Schedule 5 line 2, T1 lines 30425 and 30450, the Ontario caregiver amount (ON428
+# line 58185), Form T778 line 8 (the taxpayer taken as the only person supporting the child,
+# to be confirmed), line 67954 (the expenses for children aged 6 or younger, to be
+# confirmed), Note 1's weekly limits for boarding schools and overnight camps (to be
+# confirmed) and Parts C and D, and Schedule 6's disability supplement (Step 3) and advance
+# payments (Step 4); with one Schedule 6 eligible dependant (line 38100), the Schedule 6
+# amounts for a filer with an eligible dependant are the ones chosen (to be confirmed).
+# Return M is Return G's taxpayer with Ontario credits (Form ON479): eligible medical
+# expenses for fertility treatment of $24,000, a chosen figure, 25% of them, $6,000, at most
+# $5,000, is line 1, $5,000; an amount paid for seniors' use of Ontario public transit
+# services of $1,200, a chosen figure, at most $3,000, x 15% is line 14, $180.00; and the
+# focused flow-through share credit (line 17, from Form T1221): qualifying expenses of
+# $6,000 and $4,000 from two corporations, chosen figures, listed on two lines of the T1221,
+# total $10,000 (T1221 line 4, entered on line 63220) x 5%, $500.00; with lines 2, 13 and 16
+# not triggered, line 18 is $5,000.00 + $180.00 + $500.00 = $5,680.00, line 19 carries it,
+# line 20 is not triggered and line 21, carried to T1 line 47900, is $5,680.00, which raises
+# the total credits and lowers the refund or balance owing by that amount. The taxpayer's
+# eligibility for these credits is to be confirmed. Amounts are quoted decimal strings,
+# never floats; counts are quoted digit strings. Every output the CA-ON manifest declares
+# must appear under `expected`; intermediate lines may be listed and are then checked too.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -416,8 +417,10 @@ sources:
     derives, the base CPP contributions, the EI premiums and the Canada employment amount,
     the credit amounts modelled, line 33500, which takes amounts already in cents, is 16,129
     + 16,129 + 0 + 2,796.75 + 984.00 + 1,471 = 37,509.75, and line 33800 is 37,509.75 x
-    14.5% = 5,438.91375, rounded half-up to the cent: 5,438.91. Lines 116 and 117 are not
-    modelled, so line 35000 is that same 5,438.91.
+    14.5% = 5,438.91375, rounded half-up to the cent: 5,438.91. Lines 116 (line 34900,
+    Schedule 9) and 117 (line 34990, the top-up tax credit) are computed, and are $0 here
+    because this return's Schedule 9 inputs are all $0 (a chosen figure, caller inputs), so
+    line 35000 is 5,438.91 + 0 + 0 = 5,438.91.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-d1/5000-d1-25e.txt
   - https://www.canada.ca/en/revenue-agency/services/forms-publications/payroll/payroll-deductions-t4127-payroll-deductions-formulas/t4127-jan-120th-edition-effective-january-1-2025/t4127-jan-payroll-deductions-formulas-computer-programs.html
@@ -876,6 +879,17 @@ inputs:
     - ca-on/flow_through_share_slip_expenses: "6000"
     - ca-on/flow_through_share_slip_expenses: "4000"
   ca-on/community_food_program_donations: "0"
+  ca/charitable_donations: "0"
+  ca/government_donations: "0"
+  ca/university_donations_outside_canada: "0"
+  ca/foreign_charity_donations: "0"
+  ca/ecological_and_cultural_gifts: "0"
+  ca/ecological_gifts_before_2016: "0"
+  ca/depreciable_gift_recaptured_depreciation: "0"
+  ca/depreciable_gift_net_proceeds: "0"
+  ca/depreciable_gift_capital_cost: "0"
+  ca/capital_gift_taxable_gains: "0"
+  ca/capital_gift_gains_deduction: "0"
 expected:
   ca/taxable_capital_gains: "0"
   ca/taxable_dividends_other_than_eligible: "0"

@@ -904,12 +904,233 @@ spouse or common-law partner (line 81, 30425), the Canada caregiver amount for i
 (line 83, 30500), the base CPP contributions (line 30800), the EI premiums (line 31200) and the
 Canada employment amount (line 31260)."""
 
+CHARITABLE_DONATIONS = CATALOG.declare("charitable_donations", Decimal, non_negative=True)
+"""Charitable donations, Schedule 9 line 1 "Donations to registered charities and similar
+organizations": the eligible amount on the receipts, with any unused donations of the previous five
+years that the filer chooses to claim, a starting amount."""
+
+GOVERNMENT_DONATIONS = CATALOG.declare("government_donations", Decimal, non_negative=True)
+"""Government donations, Schedule 9 line 2 (line 32900) "Donations to the Government of Canada, a
+province or territory and similar bodies": the eligible amount on the receipts, a starting amount.
+"""
+
+UNIVERSITY_DONATIONS_OUTSIDE_CANADA = CATALOG.declare(
+    "university_donations_outside_canada", Decimal, non_negative=True
+)
+"""University donations outside Canada, Schedule 9 line 3 (line 33300) "Donations to registered
+universities outside Canada": the eligible amount on the receipts, a starting amount."""
+
+FOREIGN_CHARITY_DONATIONS = CATALOG.declare("foreign_charity_donations", Decimal, non_negative=True)
+"""Foreign charity donations, Schedule 9 line 4 (line 33400) "Donations to the United Nations and
+its agencies and registered foreign charities": the eligible amount on the receipts, a starting
+amount."""
+
+ECOLOGICAL_AND_CULTURAL_GIFTS = CATALOG.declare(
+    "ecological_and_cultural_gifts", Decimal, non_negative=True
+)
+"""Ecological and cultural gifts, Schedule 9 line 11 (line 34200) "Eligible amount of ecological
+gifts and cultural gifts (see Guide P113)": a starting amount."""
+
+ECOLOGICAL_GIFTS_BEFORE_2016 = CATALOG.declare(
+    "ecological_gifts_before_2016", Decimal, non_negative=True
+)
+"""Ecological gifts before 2016, Schedule 9 line 15 (line 34210) "Total ecological gifts made after
+February 10, 2014, and before 2016 included in the amount on line 11": a starting amount."""
+
+DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION = CATALOG.declare(
+    "depreciable_gift_recaptured_depreciation", Decimal, non_negative=True
+)
+"""Recaptured depreciation on the depreciable property donated, Schedule 9 chart for line 33700,
+line 1 "Amount of recaptured depreciation included on your 2025 return": a starting amount."""
+
+DEPRECIABLE_GIFT_NET_PROCEEDS = CATALOG.declare(
+    "depreciable_gift_net_proceeds", Decimal, non_negative=True
+)
+"""Net proceeds of disposition of the depreciable property donated, Schedule 9 chart for line 33700,
+line 2: the net proceeds of disposition of the property donated in 2025, a starting amount for the
+one class and property the return claims."""
+
+DEPRECIABLE_GIFT_CAPITAL_COST = CATALOG.declare(
+    "depreciable_gift_capital_cost", Decimal, non_negative=True
+)
+"""Capital cost of the depreciable property donated, Schedule 9 chart for line 33700, line 3: the
+capital cost of the property donated in 2025, a starting amount for the one class and property the
+return claims."""
+
+CAPITAL_GIFT_TAXABLE_GAINS = CATALOG.declare(
+    "capital_gift_taxable_gains", Decimal, non_negative=True
+)
+"""Taxable capital gains on the capital property donated, Schedule 9 chart for line 33900, line 1
+"Amount of current-year taxable capital gains from capital property donated in 2025": a starting
+amount."""
+
+CAPITAL_GIFT_GAINS_DEDUCTION = CATALOG.declare(
+    "capital_gift_gains_deduction", Decimal, non_negative=True
+)
+"""Capital gains deduction on the capital property donated, Schedule 9 chart for line 33900, line 2
+"Amount of current-year capital gains deduction from capital property donated in 2025": a starting
+amount."""
+
+DEPRECIABLE_GIFT_PROCEEDS_OR_COST = CATALOG.declare(
+    "depreciable_gift_proceeds_or_cost", Decimal, non_negative=True
+)
+"""Lesser of the proceeds and the cost of the depreciable property donated, Schedule 9 chart for
+line 33700, line 4 "Enter whichever is less: amount from line 2 or line 3.": the lesser of the net
+proceeds of disposition and the capital cost."""
+
+DEPRECIABLE_GIFTS = CATALOG.declare("depreciable_gifts", Decimal, non_negative=True)
+"""Gifts of capital property that are depreciable property, Schedule 9 line B and line 33700, chart
+line 5 "Enter whichever is less: amount from line 1 or line 4. Enter this amount on line 33700 of
+the previous page.": the lesser of the recaptured depreciation and line 4."""
+
+CAPITAL_PROPERTY_GIFTS = CATALOG.declare("capital_property_gifts", Decimal, non_negative=True)
+"""Gifts of capital property, Schedule 9 line C and line 33900, chart line 3 "Line 1 minus Line 2
+Enter this amount on line 33900 on the previous page.": the taxable capital gains less the capital
+gains deduction."""
+
+TOTAL_CHARITABLE_DONATIONS = CATALOG.declare(
+    "total_charitable_donations", Decimal, non_negative=True
+)
+"""Total eligible amount of charitable donations, Schedule 9 line 5 "Add lines 1 to 4. Total
+eligible amount of charitable donations": the sum of the four kinds of donations."""
+
+DONATION_LIMIT_ON_NET_INCOME = CATALOG.declare(
+    "donation_limit_on_net_income", Decimal, non_negative=True
+)
+"""Donation limit on the net income, Schedule 9 line 6 "Enter your net income from line 23600 of
+your return. Line A multiplied by 75%": 75% of the net income."""
+
+CAPITAL_GIFTS_TOTAL = CATALOG.declare("capital_gifts_total", Decimal, non_negative=True)
+"""Gifts of capital property, Schedule 9 line 7 "Amount B plus amount C Line D": the gifts of
+capital property that are depreciable property (line B) plus the gifts of capital property (line C).
+"""
+
+CAPITAL_GIFTS_LIMIT_ADDITION = CATALOG.declare(
+    "capital_gifts_limit_addition", Decimal, non_negative=True
+)
+"""Donation limit addition for gifts of capital property, Schedule 9 line 7 "multiplied by 25%": 25%
+of line D."""
+
+DONATION_LIMIT_WITH_CAPITAL_GIFTS = CATALOG.declare(
+    "donation_limit_with_capital_gifts", Decimal, non_negative=True
+)
+"""Donation limit with the gifts of capital property, Schedule 9 line 8 "Line 6 plus line 7": line 6
+plus line 7."""
+
+CHARITABLE_DONATIONS_LIMIT = CATALOG.declare(
+    "charitable_donations_limit", Decimal, non_negative=True
+)
+"""Total charitable donations limit, Schedule 9 line 9 "Enter whichever is less: amount A or line 8.
+Total charitable donations limit": the lesser of the net income (amount A) and line 8."""
+
+CHARITABLE_DONATIONS_CLAIMED = CATALOG.declare(
+    "charitable_donations_claimed", Decimal, non_negative=True
+)
+"""Charitable donations claimed, Schedule 9 line 10 and line 34000 "Enter whichever is less: amount
+from line 5 or line 9.": the lesser of the total eligible amount of charitable donations and the
+limit."""
+
+DONATIONS_AND_GIFTS_TOTAL = CATALOG.declare("donations_and_gifts_total", Decimal, non_negative=True)
+"""Donations and gifts, Schedule 9 line 12 "Line 10 plus line 11": the charitable donations claimed
+plus the ecological and cultural gifts."""
+
+DONATION_FIRST_TIER_MAXIMUM = CATALOG.declare(
+    "donation_first_tier_maximum", Decimal, non_negative=True
+)
+"""Donations first tier maximum, Schedule 9 line 13 "Enter whichever is less: amount from line 12 or
+$200.": the $200, claimed whole."""
+
+DONATIONS_FIRST_TIER = CATALOG.declare("donations_first_tier", Decimal, non_negative=True)
+"""Donations at the first tier, Schedule 9 line 13 "Enter whichever is less: amount from line 12 or
+$200." (line H): the lesser of line 12 and $200."""
+
+DONATIONS_OVER_FIRST_TIER = CATALOG.declare("donations_over_first_tier", Decimal, non_negative=True)
+"""Donations over the first tier, Schedule 9 line 14 "Line 12 minus line 13" (amount E): line 12
+less line 13."""
+
+DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS = CATALOG.declare(
+    "donations_over_first_tier_after_2016_gifts", Decimal, non_negative=True
+)
+"""Donations over the first tier less the ecological gifts before 2016, Schedule 9 line 16 "Line 14
+minus line 15 (if negative, enter "0")": line 14 less line 15, not below zero."""
+
+DONATION_HIGH_INCOME_THRESHOLD = CATALOG.declare(
+    "donation_high_income_threshold", Decimal, non_negative=True
+)
+"""Donations high income threshold, Schedule 9 line 18 "Income threshold 253,414.00": the threshold,
+claimed whole."""
+
+TAXABLE_INCOME_OVER_DONATION_THRESHOLD = CATALOG.declare(
+    "taxable_income_over_donation_threshold", Decimal, non_negative=True
+)
+"""Taxable income over the donations threshold, Schedule 9 line 19 "Line 17 minus line 18 (if
+negative, enter "0")": the taxable income of line 17 (line 26000) less the threshold, not below
+zero."""
+
+HIGH_INCOME_DONATIONS = CATALOG.declare("high_income_donations", Decimal, non_negative=True)
+"""Donations at the high income rate, Schedule 9 line 20 "Enter whichever is less: amount from line
+16 or line 19. Line F": the lesser of line 16 and line 19."""
+
+HIGH_INCOME_DONATION_CREDIT = CATALOG.declare(
+    "high_income_donation_credit", Decimal, non_negative=True
+)
+"""Donations credit at the high income rate, Schedule 9 line 20 "multiplied by 33%": 33% of line F.
+"""
+
+REGULAR_RATE_DONATIONS = CATALOG.declare("regular_rate_donations", Decimal, non_negative=True)
+"""Donations at the regular rate, Schedule 9 line 21 "Amount E minus amount F Line G": the donations
+over the first tier (amount E) less line F."""
+
+REGULAR_RATE_DONATION_CREDIT = CATALOG.declare(
+    "regular_rate_donation_credit", Decimal, non_negative=True
+)
+"""Donations credit at the regular rate, Schedule 9 line 21 "multiplied by 29%": 29% of line G."""
+
+FIRST_TIER_DONATION_CREDIT = CATALOG.declare(
+    "first_tier_donation_credit", Decimal, non_negative=True
+)
+"""Donations credit at the first tier, Schedule 9 line 22 "Amount from line 13 of the previous page
+Line H multiplied by 14.5%": 14.5% of line 13."""
+
+DONATIONS_AND_GIFTS_CREDIT = CATALOG.declare(
+    "donations_and_gifts_credit", Decimal, non_negative=True
+)
+"""Donations and gifts credit, Schedule 9 line 23 "Add lines 20 to 22. Enter this amount on line
+34900 of your return. Allowable donations for 2025", T1 line 116 (line 34900) "Donations and gifts
+(complete Schedule 9)": lines 20, 21 and 22 added."""
+
+CREDIT_AMOUNTS_AT_CREDIT_RATE = CATALOG.declare(
+    "credit_amounts_at_credit_rate", Decimal, non_negative=True
+)
+"""Federal credit amounts at the credit rate, T1 line 115 (line 33800) "Line 113 multiplied by the
+percentage from line 114": the total of the credit amounts times the credit rate, the first of the
+three lines that line 35000 adds and line 1 of the top-up tax credit worksheet."""
+
+TOP_UP_CREDITS_BASE = CATALOG.declare("top_up_credits_base", Decimal, non_negative=True)
+"""Credits for the top-up tax credit, Federal Worksheet "Line 34990 - Top-up tax credit", line 3
+"Line 1 plus line 2": line 1 "Amount from line 33800 of your return" plus line 2 "Amount from line
+22 of your Schedule 9"."""
+
+TOP_UP_THRESHOLD = CATALOG.declare("top_up_threshold", Decimal, non_negative=True)
+"""Top-up tax credit threshold, Federal Worksheet "Line 34990 - Top-up tax credit", line 4
+"8,319.38": the threshold, claimed whole."""
+
+TOP_UP_EXCESS = CATALOG.declare("top_up_excess", Decimal, non_negative=True)
+"""Credits over the top-up threshold, Federal Worksheet "Line 34990 - Top-up tax credit", line 5
+"Line 3 minus line 4 (if negative, enter "0")": line 3 less line 4, not below zero."""
+
+TOP_UP_TAX_CREDIT = CATALOG.declare("top_up_tax_credit", Decimal, non_negative=True)
+"""Top-up tax credit, Federal Worksheet "Line 34990 - Top-up tax credit", line 7 "Line 5 multiplied
+by the percentage from line 6 Enter this amount on line 34990 of your return.", T1 line 117 (line
+34990) "Top-up tax credit (use Federal Worksheet)": line 5 times the 3.45% of line 6."""
+
 NON_REFUNDABLE_TAX_CREDITS = CATALOG.declare(
     "non_refundable_tax_credits", Decimal, non_negative=True
 )
 """Federal non-refundable tax credits, T1 line 118 (line 35000) "Add lines 115 to 117. Total
-federal non-refundable tax credits": the total of the credit amounts times the credit rate, here
-line 115 (line 33800) alone, since lines 116 and 117 are not triggered."""
+federal non-refundable tax credits": line 115 (line 33800, the total of the credit amounts times the
+credit rate), line 116 (line 34900, the donations and gifts credit) and line 117 (line 34990, the
+top-up tax credit), in line order."""
 
 FEDERAL_TAX_AFTER_CREDITS = CATALOG.declare("federal_tax_after_credits", Decimal, non_negative=True)
 """Basic federal tax, T1 line 126 (line 42900) "Line 121 minus line 125 (if negative, enter "0")
