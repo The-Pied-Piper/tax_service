@@ -1,9 +1,10 @@
 """Rounding rules (design.md §3, Rounding).
 
 Rounding is a parameter, never a jurisdiction constant in code. A capability
-decides *where* it rounds; the `RoundingRule` it is given decides *how*. The
-default is `NO_ROUNDING`, which leaves amounts exact, so capabilities always call
-`apply` at their rounding points and an unconfigured rule changes nothing.
+decides *where* it rounds, as does a parameter value that computes a figure of its
+own (a bracket schedule's tax at each bracket's start); the `RoundingRule` each is
+given decides *how*. The default is `NO_ROUNDING`, which leaves amounts exact, so
+every rounding point calls `apply` and an unconfigured rule changes nothing.
 
 Only exact decimals are accepted. Rounding works on exact fractions, so any
 positive increment (0.01, 1, 0.05, ...) rounds without an inexact division.

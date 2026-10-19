@@ -2,8 +2,9 @@
 
 Its slots: parameter `schedule` (a brackets dataset, whose rounding rule it applies to the total),
 consumed `base` and produced `output`. It computes the form's two lines for the bracket the base
-falls in: the rate on the excess over the bracket's lower, plus the bracket's printed constant. Its
-trace is one line for that bracket, then the rounded total.
+falls in: the rate on the excess over the bracket's lower, plus the tax at the bracket's start,
+which the schedule computes by its own rule. Its trace is one line for that bracket, then the
+rounded total.
 """
 
 from __future__ import annotations
@@ -37,19 +38,21 @@ OTHER_TAX = ArtifactKind("ex/other_tax", Decimal)
 
 SCHEDULE = BracketSchedule(
     (
-        Bracket(D(0), D("0.10"), D(0)),
-        Bracket(D(100), D("0.20"), D("10.00")),
-        Bracket(D(300), D("0.30"), D("50.00")),
+        Bracket(D(0), D("0.10")),
+        Bracket(D(100), D("0.20")),
+        Bracket(D(300), D("0.30")),
     )
 )
 
-# 10.5% of 105 is 11.025, printed 11.03; plus 20.5% of 105 is 32.55.
-PRINTED = BracketSchedule(
+# 10.5% of 105 is 11.025, rounded half-up to the cent at the bracket's start: 11.03; plus 20.5% of
+# 105 is 32.55.
+ROUNDED = BracketSchedule(
     (
-        Bracket(D(0), D("0.105"), D(0)),
-        Bracket(D(105), D("0.205"), D("11.03")),
-        Bracket(D(210), D("0.30"), D("32.55")),
-    )
+        Bracket(D(0), D("0.105")),
+        Bracket(D(105), D("0.205")),
+        Bracket(D(210), D("0.30")),
+    ),
+    RoundTo(D("0.01"), RoundingMode.HALF_UP),
 )
 
 
@@ -100,22 +103,22 @@ def test_the_same_capability_serves_different_wiring() -> None:
     assert result.outputs == (Artifact(OTHER_TAX, D("5.0")),)
 
 
-def test_adds_the_printed_constant_to_the_rate_on_the_excess() -> None:
-    # 20.5% of (150 - 105) = 9.225, plus the printed 11.03, not the exact 11.025.
-    result = capability(values=PRINTED).compute((Artifact(TAXABLE_BASE, D(150)),))
+def test_adds_the_tax_at_the_brackets_start_to_the_rate_on_the_excess() -> None:
+    # 20.5% of (150 - 105) = 9.225, plus the rounded 11.03, not the exact 11.025.
+    result = capability(values=ROUNDED).compute((Artifact(TAXABLE_BASE, D(150)),))
 
     assert result.outputs == (Artifact(BASIC_TAX, D("20.255")),)
 
 
 def test_a_base_at_a_threshold_is_taxed_in_the_lower_bracket() -> None:
-    # 10.5% of 105 + 0 = 11.025, not the next bracket's printed 11.03.
-    result = capability(values=PRINTED).compute((Artifact(TAXABLE_BASE, D(105)),))
+    # 10.5% of 105 + 0 = 11.025, not the next bracket's 11.03.
+    result = capability(values=ROUNDED).compute((Artifact(TAXABLE_BASE, D(105)),))
 
     assert result.outputs == (Artifact(BASIC_TAX, D("11.025")),)
 
 
-def test_a_base_in_the_open_top_bracket_uses_its_constant() -> None:
-    result = capability(values=PRINTED).compute((Artifact(TAXABLE_BASE, D(310)),))
+def test_a_base_in_the_open_top_bracket_uses_its_tax_at_start() -> None:
+    result = capability(values=ROUNDED).compute((Artifact(TAXABLE_BASE, D(310)),))
 
     assert result.outputs == (Artifact(BASIC_TAX, D("62.55")),)
 
@@ -128,8 +131,8 @@ def test_a_zero_base_is_taxed_nothing() -> None:
 
 def test_rounds_once_at_the_end_with_the_schedules_rule() -> None:
     cent = RoundTo(D("0.01"), RoundingMode.HALF_UP)
-    # 20.5% of 45.01 = 9.22705, plus the printed 11.03 = 20.25705 -> 20.26.
-    result = capability(cent, PRINTED).compute((Artifact(TAXABLE_BASE, D("150.01")),))
+    # 20.5% of 45.01 = 9.22705, plus the rounded 11.03 = 20.25705 -> 20.26.
+    result = capability(cent, ROUNDED).compute((Artifact(TAXABLE_BASE, D("150.01")),))
 
     assert result.outputs == (Artifact(BASIC_TAX, D("20.26")),)
 
@@ -173,8 +176,8 @@ def test_traces_one_bracket_line_however_many_brackets_the_base_spans() -> None:
     assert [type(line) for line in trace] == [BracketColumnLine, RoundedTotalLine]
 
 
-def test_trace_records_the_printed_constant() -> None:
-    trace = capability(values=PRINTED).compute((Artifact(TAXABLE_BASE, D(150)),)).trace
+def test_trace_records_the_computed_tax_at_start() -> None:
+    trace = capability(values=ROUNDED).compute((Artifact(TAXABLE_BASE, D(150)),)).trace
 
     assert trace[0] == BracketColumnLine(D(105), D("0.205"), D(45), D("11.03"), D("20.255"))
 
@@ -211,7 +214,7 @@ def test_trace_records_the_wired_kinds() -> None:
 def test_trace_amounts_are_the_brackets_tax_and_the_total() -> None:
     cent = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
-    trace = capability(cent, PRINTED).compute((Artifact(TAXABLE_BASE, D(150)),)).trace
+    trace = capability(cent, ROUNDED).compute((Artifact(TAXABLE_BASE, D(150)),)).trace
 
     assert [line.amount for line in trace] == [D("20.255"), D("20.26")]
 

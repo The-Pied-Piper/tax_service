@@ -93,7 +93,7 @@ def render(line: TraceLine) -> str:
 # --- bracket columns -------------------------------------------------------------
 #
 # One line for the bracket the base falls in, read like the form's column: the rate on the
-# excess over the bracket's lower, plus the bracket's printed constant.
+# excess over the bracket's lower, plus the tax at the bracket's start.
 
 
 def test_renders_the_bracket_the_base_falls_in() -> None:

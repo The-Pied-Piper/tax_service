@@ -1,11 +1,13 @@
 """2025 federal and Ontario bracket data, checked against CRA's published figures.
 
-Sources are listed in each dataset file. Each bracket carries the form's printed column: its lower
-bound, its rate and the constant printed for it, the tax at the bracket's start in dollars and
-cents (2025 T1, Step 5, Part A, lines 71, 73 and 75; Form ON428, Part A, lines 3, 5 and 7). The
-tax on taxable income is "Line 72 multiplied by the percentage from line 73" plus line 75 (T1),
-or line 6 plus line 7 (ON428), for the column the income falls in; an income exactly at a column's
-upper bound falls in that column ("more than ... but not more than ...").
+Sources are listed in each dataset file. Each bracket holds the form's column: its lower bound and
+its rate (2025 T1, Step 5, Part A, lines 71 and 73; Form ON428, Part A, lines 3 and 5). The engine
+computes the tax at each bracket's start, the exact tax on the brackets below rounded by the
+dataset's rule, half-up to the cent; the figures it gives are the constants the forms print (T1
+line 75; ON428 line 7). The tax on taxable income is "Line 72 multiplied by the percentage from
+line 73" plus line 75 (T1), or line 6 plus line 7 (ON428), for the column the income falls in; an
+income exactly at a column's upper bound falls in that column ("more than ... but not more than
+...").
 """
 
 from __future__ import annotations
@@ -18,8 +20,8 @@ import app.registrations
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.artifact import Artifact
 from app.domain.capabilities.progressive_tax import ProgressiveTax
-from app.domain.parameters.brackets import BRACKETS
-from app.domain.parameters.rounding import NO_ROUNDING
+from app.domain.parameters.brackets import BRACKETS, BracketSchedule
+from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.jurisdictions.ca.catalog import FEDERAL_BASIC_TAX, TAXABLE_INCOME
 
 D = Decimal
@@ -37,17 +39,24 @@ ONTARIO_SOURCES = (
 )
 
 
+def tax_at_starts(schedule: BracketSchedule) -> list[Decimal]:
+    """Each bracket's computed tax at its start, from the column of an income a cent above its
+    lower bound (an income at the bound falls in the column below)."""
+    return [schedule.column_for(b.lower + D("0.01")).tax_at_start for b in schedule.brackets]
+
+
 def test_federal_2025_brackets() -> None:
     data = SOURCE.get("ca/brackets", 2025, BRACKETS)
 
-    # 2025 T1, Step 5, Part A: line 71 lower bound, line 73 rate, line 75 printed constant.
-    assert [(b.lower, b.rate, b.tax_at_start) for b in data.values.brackets] == [
-        (D("0"), D("0.145"), D("0.00")),
-        (D("57375"), D("0.205"), D("8319.38")),
-        (D("114750"), D("0.26"), D("20081.25")),
-        (D("177882"), D("0.29"), D("36495.57")),
-        (D("253414"), D("0.33"), D("58399.85")),
+    # 2025 T1, Step 5, Part A: line 71 lower bound, line 73 rate.
+    assert [(b.lower, b.rate) for b in data.values.brackets] == [
+        (D("0"), D("0.145")),
+        (D("57375"), D("0.205")),
+        (D("114750"), D("0.26")),
+        (D("177882"), D("0.29")),
+        (D("253414"), D("0.33")),
     ]
+    assert data.values.tax_at_start_rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
     assert data.rounding == NO_ROUNDING  # CRA states no rounding rule for lines 74 or 76
     assert data.sources == FEDERAL_SOURCES
 
@@ -55,29 +64,61 @@ def test_federal_2025_brackets() -> None:
 def test_ontario_2025_brackets() -> None:
     data = SOURCE.get("ca-on/brackets", 2025, BRACKETS)
 
-    # 2025 ON428, Part A: line 3 lower bound, line 5 rate, line 7 printed constant.
-    assert [(b.lower, b.rate, b.tax_at_start) for b in data.values.brackets] == [
-        (D("0"), D("0.0505"), D("0.00")),
-        (D("52886"), D("0.0915"), D("2670.74")),
-        (D("105775"), D("0.1116"), D("7510.09")),
-        (D("150000"), D("0.1216"), D("12445.60")),
-        (D("220000"), D("0.1316"), D("20957.60")),
+    # 2025 ON428, Part A: line 3 lower bound, line 5 rate.
+    assert [(b.lower, b.rate) for b in data.values.brackets] == [
+        (D("0"), D("0.0505")),
+        (D("52886"), D("0.0915")),
+        (D("105775"), D("0.1116")),
+        (D("150000"), D("0.1216")),
+        (D("220000"), D("0.1316")),
     ]
+    assert data.values.tax_at_start_rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
     assert data.rounding == NO_ROUNDING  # CRA states no rounding rule for lines 6 or 8
     assert data.sources == ONTARIO_SOURCES
 
 
-def test_the_printed_constants_are_held_to_the_cent() -> None:
-    for family in ("ca/brackets", "ca-on/brackets"):
-        brackets = SOURCE.get(family, 2025, BRACKETS).values.brackets
-        assert all(b.tax_at_start.as_tuple().exponent == -2 for b in brackets)
+def test_the_computed_federal_tax_at_each_start_is_the_t1_line_75_printed_constant() -> None:
+    schedule = SOURCE.get("ca/brackets", 2025, BRACKETS).values
+
+    # 2025 T1, Step 5, Part A, line 75 in columns 1 to 5. The exact tax below the second column
+    # is 14.5% x 57,375 = 8,319.375, printed 8,319.38.
+    assert tax_at_starts(schedule) == [
+        D("0.00"),
+        D("8319.38"),
+        D("20081.25"),
+        D("36495.57"),
+        D("58399.85"),
+    ]
+
+
+def test_the_computed_ontario_tax_at_each_start_is_the_on428_line_7_printed_constant() -> None:
+    schedule = SOURCE.get("ca-on/brackets", 2025, BRACKETS).values
+
+    # 2025 ON428, Part A, line 7 in columns 1 to 5. The exact tax below the third column is
+    # 5.05% x 52,886 + 9.15% x 52,889 = 7,510.0865, printed 7,510.09.
+    assert tax_at_starts(schedule) == [
+        D("0.00"),
+        D("2670.74"),
+        D("7510.09"),
+        D("12445.60"),
+        D("20957.60"),
+    ]
+
+
+@pytest.mark.parametrize("family", ["ca/brackets", "ca-on/brackets"])
+def test_the_computed_tax_at_each_start_is_held_to_the_cent(family: str) -> None:
+    schedule = SOURCE.get(family, 2025, BRACKETS).values
+
+    # Every start, the first's 0.00 included, carries the cent's scale.
+    assert all(tax.as_tuple().exponent == -2 for tax in tax_at_starts(schedule))
+    assert str(tax_at_starts(schedule)[0]) == "0.00"
 
 
 @pytest.mark.parametrize(
     ("family", "income", "tax"),
     [
         # An income at a column's upper bound falls in that column: its rate on the excess
-        # over the column's lower bound, plus the column's printed constant.
+        # over the column's lower bound, plus the column's tax at its start (the printed constant).
         ("ca/brackets", "57375", "8319.375"),  # 14.5% x 57,375 + 0.00
         ("ca/brackets", "114750", "20081.255"),  # 20.5% x 57,375 + 8,319.38
         ("ca/brackets", "177882", "36495.57"),  # 26% x 63,132 + 20,081.25
@@ -99,12 +140,12 @@ def test_an_income_at_a_threshold_is_taxed_in_the_lower_column(
 @pytest.mark.parametrize(
     ("family", "income", "tax"),
     [
-        # Just above a threshold: the next column's printed constant, plus its rate on a cent.
+        # Just above a threshold: the next column's tax at its start, plus its rate on a cent.
         ("ca/brackets", "57375.01", "8319.38205"),  # 20.5% x 0.01 + 8,319.38
         ("ca-on/brackets", "105775.01", "7510.091116"),  # 11.16% x 0.01 + 7,510.09
     ],
 )
-def test_an_income_above_a_threshold_starts_from_the_next_columns_constant(
+def test_an_income_above_a_threshold_starts_from_the_next_columns_tax_at_start(
     family: str, income: str, tax: str
 ) -> None:
     schedule = SOURCE.get(family, 2025, BRACKETS).values

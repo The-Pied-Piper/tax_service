@@ -19,8 +19,11 @@ import yaml
 from yaml.constructor import ConstructorError
 from yaml.nodes import MappingNode
 
+from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
+
 # A whole number's one spelling: ASCII decimal digits, no sign, no leading zero.
 _WHOLE_NUMBER = re.compile(r"0|[1-9][0-9]*")
+_ROUNDING_KEYS = frozenset({"increment", "mode"})
 
 
 class YamlShapeError(ValueError):
@@ -210,6 +213,24 @@ class YamlNode:
             return int(text)
         except ValueError:  # more digits than the interpreter's int conversion allows
             raise YamlShapeError(f"{self._where} is not a whole number: {text!r}") from None
+
+    def parse_rounding_rule(self) -> RoundingRule:
+        """This node's value as a RoundingRule, parsed from `none` or `{increment, mode}`.
+
+        `none` is NO_ROUNDING; a mapping of a quoted decimal `increment` and a `mode` such as
+        `half_up` is a RoundTo. Any other value, unknown or missing keys and an unknown mode
+        raise YamlShapeError; an increment that is not positive raises InvalidRoundingRuleError.
+        """
+        if self._value == "none":
+            return NO_ROUNDING
+        if not isinstance(self._value, dict):
+            raise YamlShapeError(f"{self._where} must be 'none' or a mapping of increment and mode")
+        fields = self.require_mapping(_ROUNDING_KEYS)
+        mode_name = fields.field("mode").require_string()
+        modes = {mode.value: mode for mode in RoundingMode}
+        if mode_name not in modes:
+            raise YamlShapeError(f"{self._where}.mode {mode_name!r} is not one of {sorted(modes)}")
+        return RoundTo(increment=fields.field("increment").parse_decimal(), mode=modes[mode_name])
 
     def _mapping(self) -> dict[object, object]:
         if not isinstance(self._value, dict):

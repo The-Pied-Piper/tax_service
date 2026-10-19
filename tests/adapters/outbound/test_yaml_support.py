@@ -9,6 +9,8 @@ import pytest
 import yaml
 
 from app.adapters.outbound.yaml_support import YamlNode, YamlShapeError
+from app.domain.errors import InvalidRoundingRuleError
+from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 
 
 def node(value: object) -> YamlNode:
@@ -221,3 +223,101 @@ def test_parse_whole_number_names_the_nodes_location() -> None:
 
     with pytest.raises(YamlShapeError, match=r"^parts\[0\]\.numerator is not a whole number"):
         part.parse_whole_number()
+
+
+# --- rounding rules ----------------------------------------------------------------
+
+
+def test_parse_rounding_rule_reads_none_as_no_rounding() -> None:
+    assert node({"a": "none"}).field("a").parse_rounding_rule() == NO_ROUNDING
+
+
+@pytest.mark.parametrize(
+    ("increment", "mode", "rule"),
+    [
+        ("0.01", "half_up", RoundTo(Decimal("0.01"), RoundingMode.HALF_UP)),
+        ("1", "down", RoundTo(Decimal("1"), RoundingMode.DOWN)),
+        ("0.05", "half_even", RoundTo(Decimal("0.05"), RoundingMode.HALF_EVEN)),
+        ("1", "up", RoundTo(Decimal("1"), RoundingMode.UP)),
+        ("0.01", "floor", RoundTo(Decimal("0.01"), RoundingMode.FLOOR)),
+        ("0.01", "ceiling", RoundTo(Decimal("0.01"), RoundingMode.CEILING)),
+    ],
+)
+def test_parse_rounding_rule_reads_an_increment_and_a_mode(
+    increment: str, mode: str, rule: RoundingRule
+) -> None:
+    parsed = node({"a": {"increment": increment, "mode": mode}}).field("a").parse_rounding_rule()
+
+    assert parsed == rule
+    assert isinstance(parsed, RoundingRule)
+
+
+def test_parse_rounding_rule_reads_the_increment_exactly() -> None:
+    parsed = node({"a": {"increment": "0.01", "mode": "half_up"}}).field("a").parse_rounding_rule()
+
+    assert isinstance(parsed, RoundTo)
+    assert str(parsed.increment) == "0.01"
+
+
+@pytest.mark.parametrize(
+    ("value", "message"),
+    [
+        ("always", "a must be 'none' or a mapping of increment and mode"),
+        ("None", "a must be 'none' or a mapping of increment and mode"),
+        ("", "a must be 'none' or a mapping of increment and mode"),
+        (None, "a must be 'none' or a mapping of increment and mode"),
+        (False, "a must be 'none' or a mapping of increment and mode"),
+        (1, "a must be 'none' or a mapping of increment and mode"),
+        (["0.01", "half_up"], "a must be 'none' or a mapping of increment and mode"),
+        ({"increment": "0.01"}, r"a: missing keys \['mode'\]"),
+        ({"mode": "down"}, r"a: missing keys \['increment'\]"),
+        ({}, r"a: missing keys \['increment', 'mode'\]"),
+        (
+            {"increment": "1", "mode": "up", "step": "1"},
+            r"a: unknown keys \['step'\]",
+        ),
+        ({"increment": "0.01", "mode": "sideways"}, r"a\.mode 'sideways' is not one of"),
+        ({"increment": "0.01", "mode": "HALF_UP"}, r"a\.mode 'HALF_UP' is not one of"),
+        ({"increment": "0.01", "mode": 1}, r"a\.mode must be a string, got int"),
+        ({"increment": "0.01", "mode": None}, r"a\.mode must be a string, got NoneType"),
+        ({"increment": 0.01, "mode": "down"}, r"a\.increment must be a string, got float"),
+        ({"increment": 1, "mode": "down"}, r"a\.increment must be a string, got int"),
+        ({"increment": "cent", "mode": "down"}, r"a\.increment is not a decimal: 'cent'"),
+        ({"increment": "NaN", "mode": "down"}, r"a\.increment is not a decimal: 'NaN'"),
+    ],
+)
+def test_parse_rounding_rule_rejects(value: object, message: str) -> None:
+    with pytest.raises(YamlShapeError, match=f"^{message}"):
+        node({"a": value}).field("a").parse_rounding_rule()
+
+
+def test_parse_rounding_rule_lists_the_modes_it_accepts() -> None:
+    modes = sorted(mode.value for mode in RoundingMode)
+
+    with pytest.raises(YamlShapeError) as raised:
+        node({"a": {"increment": "1", "mode": "sideways"}}).field("a").parse_rounding_rule()
+
+    assert str(raised.value) == f"a.mode 'sideways' is not one of {modes}"
+
+
+@pytest.mark.parametrize("increment", ["0", "-0.01"])
+def test_parse_rounding_rule_refuses_an_increment_that_is_not_positive(increment: str) -> None:
+    with pytest.raises(InvalidRoundingRuleError, match="^increment must be a positive"):
+        node({"a": {"increment": increment, "mode": "down"}}).field("a").parse_rounding_rule()
+
+
+@pytest.mark.parametrize(
+    ("value", "message"),
+    [
+        ("always", r"^dataset\.rounding must be 'none' or a mapping of increment and mode"),
+        ({"increment": "1"}, r"^dataset\.rounding: missing keys \['mode'\]"),
+        ({"increment": "1", "mode": "x"}, r"^dataset\.rounding\.mode 'x' is not one of"),
+        ({"increment": "x", "mode": "up"}, r"^dataset\.rounding\.increment is not a decimal"),
+    ],
+)
+def test_parse_rounding_rule_names_the_nodes_location(value: object, message: str) -> None:
+    rule = node({"dataset": {"rounding": value}}).field("dataset").field("rounding")
+
+    assert rule.where == "dataset.rounding"
+    with pytest.raises(YamlShapeError, match=message):
+        rule.parse_rounding_rule()

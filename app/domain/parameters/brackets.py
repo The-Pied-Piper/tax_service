@@ -1,41 +1,39 @@
 """Progressive bracket schedules: the form's bracket columns over ascending thresholds.
 
-Each bracket holds what a form prints in its column: the threshold it starts from (`lower`), its
-`rate` and `tax_at_start`, the tax at the bracket's start as a dollars-and-cents constant. The tax
-on an amount is the form's two lines for the bracket the amount falls in: the rate on the excess
-over the bracket's lower, plus that constant. An amount at a threshold falls in the lower bracket,
-as the columns read "more than ... but not more than ...".
+Each bracket holds the threshold it starts from (`lower`) and its `rate`. The schedule computes
+each bracket's `tax_at_start`, the tax at the bracket's start: the exact cumulative tax on the
+brackets below (never a sum of rounded figures), rounded with the schedule's
+`tax_at_start_rounding` rule; the first bracket's is 0, put through the same rule. By default the
+rule is none, so the tax at each start is the exact sum. The tax on an amount is the form's two
+lines for the bracket the amount falls in: the rate on the excess over the bracket's lower, plus
+its tax at its start. An amount at a threshold falls in the lower bracket, as the columns read
+"more than ... but not more than ...".
 
-A schedule checks each constant against the exact tax on the brackets below, rounded half-up to
-the cent, so a mistyped constant is refused when the schedule is built. A schedule is parameter
-data, resolved per (family, tax_year); the code holds no jurisdiction's thresholds, rates or
-constants. Arithmetic is exact: rounding the result is the capability's decision, made with its
-rounding rule.
+A schedule is parameter data, resolved per (family, tax_year); the code holds no jurisdiction's
+thresholds, rates or rounding. Arithmetic is exact apart from the rule's rounding of each start:
+rounding the column's tax is the capability's decision, made with its own rounding rule.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import ClassVar
 
 from app.domain.errors import InvalidBracketScheduleError
 from app.domain.parameters.kind import ParameterKind
-from app.domain.parameters.rounding import RoundingMode, RoundTo
+from app.domain.parameters.rounding import NO_ROUNDING, RoundingRule
 
 
 @dataclass(frozen=True)
 class Bracket:
-    """One column: `rate` on amounts above `lower`, plus `tax_at_start`, the printed constant."""
+    """One column: `rate` on amounts above `lower`."""
 
     lower: Decimal
     rate: Decimal
-    tax_at_start: Decimal
 
     def __post_init__(self) -> None:
-        """Check: finite Decimal figures, `lower` and `tax_at_start` >= 0, `rate` in [0, 1]."""
-        figures = (("lower", self.lower), ("rate", self.rate), ("tax_at_start", self.tax_at_start))
-        for name, value in figures:
+        """Check: finite Decimal figures, `lower` >= 0, `rate` in [0, 1]."""
+        for name, value in (("lower", self.lower), ("rate", self.rate)):
             if not isinstance(value, Decimal):
                 raise TypeError(f"bracket {name} must be a Decimal, got {type(value).__name__}")
             if not value.is_finite():
@@ -47,10 +45,6 @@ class Bracket:
         if not 0 <= self.rate <= 1:
             raise InvalidBracketScheduleError(
                 f"bracket rate must be between 0 and 1, got {self.rate}"
-            )
-        if self.tax_at_start < 0:
-            raise InvalidBracketScheduleError(
-                f"bracket tax_at_start must not be negative, got {self.tax_at_start}"
             )
 
 
@@ -67,14 +61,18 @@ class BracketColumn:
 
 @dataclass(frozen=True)
 class BracketSchedule:
-    """Brackets from 0, strictly ascending, each constant the rounded exact tax below it."""
+    """Brackets from 0, strictly ascending; the tax at each start rounded by one rule."""
 
     brackets: tuple[Bracket, ...]
-
-    _CONSTANT_ROUNDING: ClassVar[RoundTo] = RoundTo(Decimal("0.01"), RoundingMode.HALF_UP)
+    tax_at_start_rounding: RoundingRule = NO_ROUNDING
 
     def __post_init__(self) -> None:
-        """Check the thresholds, then each bracket's constant against the exact tax below it."""
+        """Check the rule is a RoundingRule, the first threshold 0 and each above the last."""
+        if not isinstance(self.tax_at_start_rounding, RoundingRule):
+            raise TypeError(
+                "schedule tax_at_start_rounding must be a RoundingRule, "
+                f"got {type(self.tax_at_start_rounding).__name__}"
+            )
         if not self.brackets:
             raise InvalidBracketScheduleError("a schedule needs at least one bracket")
         first = self.brackets[0]
@@ -88,39 +86,36 @@ class BracketSchedule:
                     f"bracket thresholds must be strictly ascending: {above.lower} "
                     f"follows {below.lower}"
                 )
-        if first.tax_at_start != 0:
-            raise InvalidBracketScheduleError(
-                f"the first bracket's tax_at_start must be 0, got {first.tax_at_start}"
-            )
-        exact = Decimal(0)
-        for below, above in zip(self.brackets, self.brackets[1:], strict=False):
-            exact += (above.lower - below.lower) * below.rate
-            expected = self._CONSTANT_ROUNDING.apply(exact)
-            if above.tax_at_start != expected:
-                raise InvalidBracketScheduleError(
-                    f"bracket from {above.lower}: tax_at_start {above.tax_at_start} is not the "
-                    f"tax on the brackets below rounded half-up to the cent, {expected}"
-                )
 
     def column_for(self, amount: Decimal) -> BracketColumn:
-        """The column `amount` falls in, with the rate on its excess plus the bracket's constant."""
+        """The column `amount` falls in, with the rate on its excess plus its tax at its start."""
         if not isinstance(amount, Decimal):
             raise TypeError(f"amount must be a Decimal, got {type(amount).__name__}")
         if amount < 0:
             raise ValueError(f"amount must not be negative, got {amount}")
-        bracket = self.brackets[0]
-        for candidate in self.brackets[1:]:
-            if amount <= candidate.lower:
+        index = 0
+        for candidate in range(1, len(self.brackets)):
+            if amount <= self.brackets[candidate].lower:
                 break
-            bracket = candidate
+            index = candidate
+        bracket, tax_at_start = self.brackets[index], self._tax_at_start(index)
         excess = amount - bracket.lower
         return BracketColumn(
-            bracket.lower,
-            bracket.rate,
-            excess,
-            bracket.tax_at_start,
-            excess * bracket.rate + bracket.tax_at_start,
+            bracket.lower, bracket.rate, excess, tax_at_start, excess * bracket.rate + tax_at_start
         )
+
+    def _tax_at_start(self, index: int) -> Decimal:
+        # The exact tax on the brackets below, summed unrounded, then rounded once by the rule;
+        # the first bracket's 0 passes through the rule too, so every start has the rule's scale.
+        below = self.brackets[: index + 1]
+        exact = sum(
+            (
+                (above.lower - bracket.lower) * bracket.rate
+                for bracket, above in zip(below, below[1:], strict=False)
+            ),
+            Decimal(0),
+        )
+        return self.tax_at_start_rounding.apply(exact)
 
     def tax_on(self, amount: Decimal) -> Decimal:
         """Exact tax on `amount`: the tax of the column it falls in."""

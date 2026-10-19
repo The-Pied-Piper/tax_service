@@ -48,7 +48,7 @@ def test_its_datasets_are_read_from_the_package() -> None:
     dataset = YamlParameterSource(PACKAGES.roots()).get("ex-on/brackets", 2025, BRACKETS)
 
     assert dataset.values == BracketSchedule(
-        (Bracket(D("0"), D("0.10"), D("0.00")), Bracket(D("100"), D("0.20"), D("10.00")))
+        (Bracket(D("0"), D("0.10")), Bracket(D("100"), D("0.20")))
     )
 
 
