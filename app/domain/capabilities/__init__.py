@@ -8,6 +8,7 @@ imports every one of them, so importing the package fills the shared CapabilityR
 NAMESPACE = "core"
 
 from app.domain.capabilities import (  # noqa: E402
+    amount_by_count,
     apply_fraction,
     apply_rate,
     apply_ratio,
@@ -24,6 +25,7 @@ from app.domain.capabilities import (  # noqa: E402
     subtract,
     subtract_not_below_zero,
     sum,
+    sum_not_below_zero,
     tapered_amount,
     tiered_surcharge,
     times_count,
@@ -31,6 +33,7 @@ from app.domain.capabilities import (  # noqa: E402
 
 __all__ = [
     "NAMESPACE",
+    "amount_by_count",
     "apply_fraction",
     "apply_rate",
     "apply_ratio",
@@ -47,6 +50,7 @@ __all__ = [
     "subtract",
     "subtract_not_below_zero",
     "sum",
+    "sum_not_below_zero",
     "tapered_amount",
     "tiered_surcharge",
     "times_count",

@@ -108,6 +108,14 @@ class InvalidTaperError(DomainError):
     """A taper's figures are not finite, are negative, or its range is not above zero."""
 
 
+class InvalidAmountByCountError(DomainError):
+    """A table of amounts by count is empty, repeats a count or has a negative or non-finite figure."""
+
+
+class NoAmountForCountError(DomainError):
+    """A count was given that the table of amounts by count has no row for."""
+
+
 class InvalidFactorError(DomainError):
     """A factor is not finite or is negative."""
 

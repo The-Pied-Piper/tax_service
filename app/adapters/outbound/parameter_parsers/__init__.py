@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from app.adapters.outbound.parameter_parsers import (
     amount,
+    amount_by_count,
     brackets,
     claim_reduction,
     class_rates,
@@ -32,6 +33,7 @@ from app.adapters.outbound.parameter_parsers.parser import ParameterParser
 __all__ = [
     "ParameterParser",
     "amount",
+    "amount_by_count",
     "brackets",
     "claim_reduction",
     "class_rates",

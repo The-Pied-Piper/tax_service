@@ -29,6 +29,7 @@ from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.domain.parameters.taper import Taper
 from app.domain.record_list import RecordListKind
 from app.domain.trace import (
+    AmountByCountLine,
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
@@ -66,6 +67,7 @@ from app.domain.trace import (
     SubtractedLine,
     SubtractedNotBelowZeroLine,
     SumLine,
+    SumNotBelowZeroLine,
     SurchargeTierLine,
     TaperedAmountLine,
     TerminalLossLine,
@@ -135,6 +137,8 @@ COUNT_GATE = ArtifactKind("ex/gate", int)
 FLAG = ArtifactKind("ex/flag", int)
 REDUCTION_BASE = ArtifactKind("ex/reduction_base", Decimal)
 OTHER_BASE = ArtifactKind("ex/other_base", Decimal)
+MONTHS = ArtifactKind("ex/month_count", int)
+MONTHLY = ArtifactKind("ex/monthly_amount", Decimal)
 
 
 def column_line() -> BracketColumnLine:
@@ -147,6 +151,10 @@ def total_line() -> RoundedTotalLine:
 
 def sum_line() -> SumLine:
     return SumLine(TOTAL, ((PART_ONE, D("1.25")), (PART_TWO, D(2))), D("3.25"))
+
+
+def sum_not_below_zero_line() -> SumNotBelowZeroLine:
+    return SumNotBelowZeroLine(TOTAL, ((PART_ONE, D("1.25")), (PART_TWO, D("-2"))), D(0))
 
 
 def rate_applied_line() -> RateAppliedLine:
@@ -243,6 +251,10 @@ def ratio_applied_line() -> RatioAppliedLine:
         CENT,
         D("333.33"),
     )
+
+
+def amount_by_count_line() -> AmountByCountLine:
+    return AmountByCountLine(MONTHLY, MONTHS, 4, D("400.255"), CENT, D("400.26"))
 
 
 def record_total_line() -> RecordTotalLine:
@@ -373,6 +385,7 @@ ALL_LINES = [
     column_line,
     total_line,
     sum_line,
+    sum_not_below_zero_line,
     rate_applied_line,
     subtracted_line,
     subtracted_not_below_zero_line,
@@ -391,6 +404,7 @@ ALL_LINES = [
     times_count_line,
     chosen_by_count_line,
     ratio_applied_line,
+    amount_by_count_line,
     record_total_line,
     chosen_by_range_line,
     rate_by_income_band_line,
@@ -505,6 +519,53 @@ def test_sum_lines_differ_by_the_order_of_their_parts() -> None:
 
 def test_sum_lines_are_hashable() -> None:
     assert hash(sum_line()) == hash(sum_line())
+
+
+def test_sum_not_below_zero_line_fields_in_order() -> None:
+    line = sum_not_below_zero_line()
+
+    assert line == SumNotBelowZeroLine(
+        output=TOTAL, parts=((PART_ONE, D("1.25")), (PART_TWO, D("-2"))), total=D(0)
+    )
+    assert [f.name for f in fields(line)] == ["output", "parts", "total"]
+    assert line.output is TOTAL
+    assert line.parts == ((PART_ONE, D("1.25")), (PART_TWO, D("-2")))
+    assert line.total == D(0)
+    assert line.amount == D(0)
+
+
+def test_sum_not_below_zero_line_may_hold_a_positive_total() -> None:
+    line = SumNotBelowZeroLine(TOTAL, ((PART_ONE, D("1.25")), (PART_TWO, D(2))), D("3.25"))
+
+    assert line.total == D("3.25")
+    assert line.amount == D("3.25")
+
+
+def test_sum_not_below_zero_line_may_have_no_parts() -> None:
+    line = SumNotBelowZeroLine(TOTAL, (), D(0))
+
+    assert line.parts == ()
+    assert line.amount == D(0)
+
+
+def test_sum_not_below_zero_lines_differ_by_the_order_of_their_parts() -> None:
+    assert sum_not_below_zero_line() != SumNotBelowZeroLine(
+        TOTAL, ((PART_TWO, D("-2")), (PART_ONE, D("1.25"))), D(0)
+    )
+
+
+def test_sum_not_below_zero_lines_are_hashable() -> None:
+    assert hash(sum_not_below_zero_line()) == hash(sum_not_below_zero_line())
+
+
+def test_a_floored_sum_is_not_a_plain_sum_line() -> None:
+    # The class says the floor applied, so the same fields in the two classes are not equal.
+    floored = SumNotBelowZeroLine(TOTAL, ((PART_ONE, D("1.25")), (PART_TWO, D(2))), D("3.25"))
+
+    assert not isinstance(floored, SumLine)
+    assert cast(Any, floored) != SumLine(
+        TOTAL, ((PART_ONE, D("1.25")), (PART_TWO, D(2))), D("3.25")
+    )
 
 
 def test_rate_applied_line_fields_in_order() -> None:
@@ -1515,6 +1576,90 @@ def test_a_chosen_by_count_lines_amount_is_not_one_of_its_fields() -> None:
 
 def test_a_chosen_by_count_line_is_not_a_times_count_line() -> None:
     assert not isinstance(chosen_by_count_line(), TimesCountLine)
+
+
+def test_amount_by_count_line_fields_in_order() -> None:
+    line = amount_by_count_line()
+
+    assert line == AmountByCountLine(
+        output=MONTHLY,
+        count_kind=MONTHS,
+        count=4,
+        row=D("400.255"),
+        rounding=CENT,
+        result=D("400.26"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "count_kind",
+        "count",
+        "row",
+        "rounding",
+        "result",
+    ]
+    assert line.output is MONTHLY
+    assert line.count_kind is MONTHS
+    assert line.count == 4
+    assert type(line.count) is int
+    assert line.row == D("400.255")
+    assert line.rounding == CENT
+    assert line.result == D("400.26")
+    assert line.amount == D("400.26")
+
+
+def test_amount_by_count_line_may_hold_a_count_of_zero() -> None:
+    line = AmountByCountLine(MONTHLY, MONTHS, 0, D("0"), NO_ROUNDING, D("0"))
+
+    assert line.count == 0
+    assert line.amount == D("0")
+
+
+def test_amount_by_count_lines_differ_by_count() -> None:
+    assert amount_by_count_line() != AmountByCountLine(
+        MONTHLY, MONTHS, 3, D("400.255"), CENT, D("400.26")
+    )
+
+
+def test_amount_by_count_lines_differ_by_row() -> None:
+    assert amount_by_count_line() != AmountByCountLine(
+        MONTHLY, MONTHS, 4, D("400.256"), CENT, D("400.26")
+    )
+
+
+def test_amount_by_count_lines_differ_by_rounding() -> None:
+    assert amount_by_count_line() != AmountByCountLine(
+        MONTHLY, MONTHS, 4, D("400.255"), NO_ROUNDING, D("400.26")
+    )
+
+
+def test_amount_by_count_lines_differ_by_result() -> None:
+    assert amount_by_count_line() != AmountByCountLine(
+        MONTHLY, MONTHS, 4, D("400.255"), CENT, D("400.27")
+    )
+
+
+def test_amount_by_count_lines_differ_by_count_kind() -> None:
+    other = ArtifactKind("ex/week_count", int)
+
+    assert amount_by_count_line() != AmountByCountLine(
+        MONTHLY, other, 4, D("400.255"), CENT, D("400.26")
+    )
+
+
+def test_amount_by_count_lines_are_hashable() -> None:
+    assert hash(amount_by_count_line()) == hash(amount_by_count_line())
+
+
+def test_an_amount_by_count_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(amount_by_count_line())]
+
+
+def test_an_amount_by_count_line_is_not_a_per_unit_or_chosen_by_count_line() -> None:
+    line = amount_by_count_line()
+
+    assert not isinstance(line, PerUnitAmountLine)
+    assert not isinstance(line, ChosenByCountLine)
+    assert not isinstance(line, TimesCountLine)
 
 
 def test_record_total_line_fields_in_order() -> None:

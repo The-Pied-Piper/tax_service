@@ -753,6 +753,95 @@ def test_core_sum_runs_after_all_its_parts() -> None:
     assert composition.order[-1].consumes == frozenset({PART_ONE, PART_TWO, PART_THREE})
 
 
+# --- core/sum_not_below_zero: the sum over a list slot, floored at zero, by a made-up manifest -
+#
+# Like `Sum` above, `SumNotBelowZero` is imported inside a cached factory so its absence fails
+# only the tests that use it, and is registered in a private registry under its shared
+# identifier, `core/sum_not_below_zero`. It reuses `sum_manifest`'s three made-up producers of
+# parts (part_one = base × 3, part_two = base + 1, part_three = part_one + 1).
+
+
+@cache
+def sum_not_below_zero_class() -> Any:
+    from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
+
+    return SumNotBelowZero
+
+
+def sum_not_below_zero_service(parts: tuple[str, ...]) -> TaxComputationService:
+    """The three producers of parts and `core/sum_not_below_zero` producing `ex-on/result`."""
+    base = sum_manifest(parts)
+    total = CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={"parts": parts},
+        produces={"output": "ex-on/result"},
+    )
+    built = manifest(total, *(c for c in base.capabilities if c.name != "core/sum"))
+    capabilities = capability_registry()
+    capabilities.register("core/sum_not_below_zero", sum_not_below_zero_class())
+    artifacts = artifact_registry()
+    for kind in (PART_ONE, PART_TWO, PART_THREE):
+        artifacts.register(kind.identifier, kind)
+    return service(built, capabilities=capabilities, artifacts=artifacts)
+
+
+def test_computes_core_sum_not_below_zero_end_to_end() -> None:
+    from app.domain.trace import SumNotBelowZeroLine
+
+    parts = ("ex/part_two", "ex/part_three", "ex/part_one")
+
+    worksheet = sum_not_below_zero_service(parts).compute(EX_ON, 2025, Artifact(BASE, D("5")))
+
+    # part_one = 5 × 3 = 15; part_two = 5 + 1 = 6; part_three = 15 + 1 = 16; 37 is above zero.
+    assert worksheet.get(RESULT).value == D("37")
+    assert isinstance(worksheet.producer_of(RESULT), sum_not_below_zero_class())
+    assert worksheet.trace[-1] == SumNotBelowZeroLine(
+        RESULT, ((PART_TWO, D("6")), (PART_THREE, D("16")), (PART_ONE, D("15"))), D("37")
+    )
+    assert [type(line) for line in worksheet.trace].count(SumNotBelowZeroLine) == 1
+
+
+def test_core_sum_not_below_zero_floors_a_negative_total_end_to_end() -> None:
+    from app.domain.trace import SumNotBelowZeroLine
+
+    parts = ("ex/part_two", "ex/part_three", "ex/part_one")
+
+    worksheet = sum_not_below_zero_service(parts).compute(EX_ON, 2025, Artifact(BASE, D("-20")))
+
+    # part_one = −60; part_two = −19; part_three = −59; the sum, −138, is floored: result = 0.
+    assert worksheet.get(RESULT).value == D("0")
+    assert str(worksheet.get(RESULT).value) == "0"
+    assert worksheet.trace[-1] == SumNotBelowZeroLine(
+        RESULT, ((PART_TWO, D("-19")), (PART_THREE, D("-59")), (PART_ONE, D("-60"))), D("0")
+    )
+    assert [type(line) for line in worksheet.trace].count(SumNotBelowZeroLine) == 1
+
+
+def test_core_sum_not_below_zero_runs_after_all_its_parts() -> None:
+    parts = ("ex/part_two", "ex/part_three", "ex/part_one")
+
+    composition = sum_not_below_zero_service(parts).compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is sum_not_below_zero_class()
+    assert composition.order[-1].consumes == frozenset({PART_ONE, PART_TWO, PART_THREE})
+
+
+def test_core_sum_not_below_zero_refuses_a_single_kind_for_its_parts_at_wiring() -> None:
+    selection = CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={"parts": "ex/part_one"},
+        produces={"output": "ex-on/result"},
+    )
+    capabilities = capability_registry()
+    capabilities.register("core/sum_not_below_zero", sum_not_below_zero_class())
+    wired = service(manifest(selection, SCALE), capabilities=capabilities)
+
+    with pytest.raises(InvalidSelectionError, match="'parts'"):
+        wired.compose(EX_ON, 2025)
+
+
 # --- core/apply_rate: base × a rate dataset's rate, wired by a made-up manifest ----------------
 #
 # `ApplyRate` is imported inside a cached factory, like `Sum` above, so its absence fails only
@@ -1987,6 +2076,137 @@ def test_core_per_unit_amount_asks_for_its_dataset_as_an_amount() -> None:
     built.compose(EX_ON, 2025)
 
     assert ("ex/some_amount_per_unit", 2025, AMOUNT) in parameters.requests
+
+
+# --- core/amount_by_count: a table's amount for a count, by a made-up manifest -----------------
+#
+# Like `PerUnitAmount` above, `AmountForCount` is imported inside a cached factory so its absence
+# fails only the tests that use it, and is registered in a private registry under its shared
+# identifier, `core/amount_by_count`. It consumes `ex/count`, a made-up `int` input, and reads a
+# made-up `amount_by_count` dataset with a row for each count from 1 to 4, rounded half-up to the
+# cent.
+
+
+@cache
+def amount_by_count_class() -> Any:
+    from app.domain.capabilities.amount_by_count import AmountForCount
+
+    return AmountForCount
+
+
+def some_amount_by_count_data(tax_year: int = 2025) -> ParameterDataset[Any]:
+    from app.domain.parameters.amount_by_count import AMOUNT_BY_COUNT, AmountByCount
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+
+    return ParameterDataset(
+        family="ex/some_amount_by_count",
+        tax_year=tax_year,
+        kind=AMOUNT_BY_COUNT,
+        values=AmountByCount(((1, D("100")), (2, D("200.50")), (3, D("300")), (4, D("400.255")))),
+        rounding=RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        sources=("https://example.org/ex/some_amount_by_count",),
+    )
+
+
+AMOUNT_BY_COUNT_SELECTION = CapabilitySelection(
+    name="core/amount_by_count",
+    params={"table": "ex/some_amount_by_count"},
+    consumes={"count": "ex/count"},
+    produces={"output": "ex-on/result"},
+)
+
+
+def amount_by_count_service() -> tuple[TaxComputationService, FakeParameters]:
+    capabilities = capability_registry()
+    capabilities.register("core/amount_by_count", amount_by_count_class())
+    artifacts = artifact_registry()
+    artifacts.register(COUNT.identifier, COUNT)
+    parameters = FakeParameters(factor_data(), offset_data(), some_amount_by_count_data())
+    built = service(
+        manifest(AMOUNT_BY_COUNT_SELECTION, inputs=frozenset({"ex/count"})),
+        parameters=parameters,
+        capabilities=capabilities,
+        artifacts=artifacts,
+    )
+    return built, parameters
+
+
+def test_computes_core_amount_by_count_end_to_end() -> None:
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.trace import AmountByCountLine
+
+    built, _parameters = amount_by_count_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(COUNT, 2))
+
+    # The row for 2 is 200.50, already at the cent.
+    assert worksheet.get(RESULT).value == D("200.5")
+    assert str(worksheet.get(RESULT).value) == "200.50"
+    assert isinstance(worksheet.producer_of(RESULT), amount_by_count_class())
+    assert worksheet.producer_of(COUNT) is None
+    assert worksheet.trace == (
+        AmountByCountLine(
+            RESULT,
+            COUNT,
+            2,
+            D("200.50"),
+            RoundTo(D("0.01"), RoundingMode.HALF_UP),
+            D("200.50"),
+        ),
+    )
+
+
+def test_computes_core_amount_by_count_rounding_the_row_end_to_end() -> None:
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.trace import AmountByCountLine
+
+    built, _parameters = amount_by_count_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(COUNT, 4))
+
+    # The row for 4 is 400.255, half-up to 400.26.
+    assert worksheet.get(RESULT).value == D("400.26")
+    assert worksheet.trace[-1] == AmountByCountLine(
+        RESULT, COUNT, 4, D("400.255"), RoundTo(D("0.01"), RoundingMode.HALF_UP), D("400.26")
+    )
+
+
+def test_core_amount_by_count_refuses_a_count_without_a_row_end_to_end() -> None:
+    from app.domain.errors import NoAmountForCountError
+
+    built, _parameters = amount_by_count_service()
+
+    with pytest.raises(NoAmountForCountError, match="count 0"):
+        built.compute(EX_ON, 2025, Artifact(COUNT, 0))
+    with pytest.raises(NoAmountForCountError, match="count 5"):
+        built.compute(EX_ON, 2025, Artifact(COUNT, 5))
+
+
+def test_core_amount_by_count_consumes_its_count_as_an_int() -> None:
+    built, _parameters = amount_by_count_service()
+
+    composition = built.compose(EX_ON, 2025)
+
+    (only,) = composition.order
+    assert type(only) is amount_by_count_class()
+    assert only.consumes == frozenset({COUNT})
+
+
+def test_core_amount_by_count_rejects_a_money_input_for_its_count() -> None:
+    built, _parameters = amount_by_count_service()
+
+    with pytest.raises(InvalidCompositionError, match="'count' was given as Decimal but the input"):
+        built.compute(EX_ON, 2025, Artifact(ArtifactKind("ex/count", Decimal), D("3")))
+
+
+def test_core_amount_by_count_asks_for_its_dataset_as_an_amount_by_count() -> None:
+    from app.domain.parameters.amount_by_count import AMOUNT_BY_COUNT
+
+    built, parameters = amount_by_count_service()
+
+    built.compose(EX_ON, 2025)
+
+    assert ("ex/some_amount_by_count", 2025, AMOUNT_BY_COUNT) in parameters.requests
 
 
 # --- core/multiple_over: a factor of one amount over another, not below 0, by a made-up manifest -

@@ -90,6 +90,25 @@ class SumLine(TraceLine):
 
 
 @dataclass(frozen=True)
+class SumNotBelowZeroLine(TraceLine):
+    """The `total` produced as `output` by adding `parts`, each a kind and its value, in order, and
+    taking 0 when the sum would not be above zero.
+
+    Its own class, not a `SumLine`: the floor is a different fact, and a renderer or a check
+    matching plain sums must not catch floored ones.
+    """
+
+    output: Money
+    parts: tuple[tuple[Money, Decimal], ...]
+    total: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The floored total."""
+        return self.total
+
+
+@dataclass(frozen=True)
 class RateAppliedLine(TraceLine):
     """The `result` produced as `output` by `base` (worth `base_amount`) × `rate`, rounded."""
 
@@ -429,6 +448,28 @@ class ChosenByCountLine(TraceLine):
     def amount(self) -> Decimal:
         """The chosen value, unchanged."""
         return self.chosen_value
+
+
+@dataclass(frozen=True)
+class AmountByCountLine(TraceLine):
+    """The `result` produced as `output`: the table's `row` for `count` of `count_kind`, rounded
+    with `rounding`.
+
+    Its own class, not a `CreditAmountLine`: the figure is one row of a table, chosen by a count
+    an artifact holds.
+    """
+
+    output: Money
+    count_kind: ArtifactKind[int]
+    count: int
+    row: Decimal
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The rounded result."""
+        return self.result
 
 
 @dataclass(frozen=True)
