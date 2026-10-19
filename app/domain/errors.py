@@ -109,7 +109,7 @@ class InvalidTaperError(DomainError):
 
 
 class InvalidAmountByCountError(DomainError):
-    """A table of amounts by count is empty, repeats a count or has a negative or non-finite figure."""
+    """A table of amounts by count is empty, repeats a count or has a bad figure."""
 
 
 class NoAmountForCountError(DomainError):
