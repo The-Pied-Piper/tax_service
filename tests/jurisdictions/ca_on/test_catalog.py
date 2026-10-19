@@ -72,6 +72,24 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
     OTHER_DIVIDENDS_CREDIT,
+    POLITICAL_CONTRIBUTIONS,
+    POLITICAL_CREDIT,
+    POLITICAL_CREDIT_BEFORE_MAXIMUM,
+    POLITICAL_CREDIT_COLUMN_1_LINE_2,
+    POLITICAL_CREDIT_COLUMN_1_LINE_3,
+    POLITICAL_CREDIT_COLUMN_1_LINE_5,
+    POLITICAL_CREDIT_COLUMN_1_LINE_6,
+    POLITICAL_CREDIT_COLUMN_1_LINE_7,
+    POLITICAL_CREDIT_COLUMN_2_LINE_2,
+    POLITICAL_CREDIT_COLUMN_2_LINE_3,
+    POLITICAL_CREDIT_COLUMN_2_LINE_5,
+    POLITICAL_CREDIT_COLUMN_2_LINE_6,
+    POLITICAL_CREDIT_COLUMN_2_LINE_7,
+    POLITICAL_CREDIT_COLUMN_3_LINE_2,
+    POLITICAL_CREDIT_COLUMN_3_LINE_3,
+    POLITICAL_CREDIT_COLUMN_3_LINE_5,
+    POLITICAL_CREDIT_COLUMN_3_LINE_6,
+    POLITICAL_CREDIT_COLUMN_3_LINE_7,
     SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
     SENIORS_TRANSIT_CREDIT,
     SENIORS_TRANSIT_PAID,
@@ -147,6 +165,24 @@ REGISTERED = frozenset(
         "ca-on/seniors_transit_paid",
         "ca-on/seniors_transit_amount_paid_at_most_maximum",
         "ca-on/seniors_transit_credit",
+        "ca-on/political_contributions",
+        "ca-on/political_credit_column_1_line_2",
+        "ca-on/political_credit_column_1_line_3",
+        "ca-on/political_credit_column_1_line_5",
+        "ca-on/political_credit_column_1_line_6",
+        "ca-on/political_credit_column_1_line_7",
+        "ca-on/political_credit_column_2_line_2",
+        "ca-on/political_credit_column_2_line_3",
+        "ca-on/political_credit_column_2_line_5",
+        "ca-on/political_credit_column_2_line_6",
+        "ca-on/political_credit_column_2_line_7",
+        "ca-on/political_credit_column_3_line_2",
+        "ca-on/political_credit_column_3_line_3",
+        "ca-on/political_credit_column_3_line_5",
+        "ca-on/political_credit_column_3_line_6",
+        "ca-on/political_credit_column_3_line_7",
+        "ca-on/political_credit_before_maximum",
+        "ca-on/political_credit",
         "ca-on/flow_through_share_slip_expenses",
         "ca-on/flow_through_share_slips",
         "ca-on/flow_through_share_expenses",
@@ -261,6 +297,54 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
         is SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM
     )
     assert registry.get("ca-on/seniors_transit_credit") is SENIORS_TRANSIT_CREDIT
+    assert registry.get("ca-on/political_contributions") is POLITICAL_CONTRIBUTIONS
+    assert (
+        registry.get("ca-on/political_credit_column_1_line_2") is POLITICAL_CREDIT_COLUMN_1_LINE_2
+    )
+    assert (
+        registry.get("ca-on/political_credit_column_1_line_3") is POLITICAL_CREDIT_COLUMN_1_LINE_3
+    )
+    assert (
+        registry.get("ca-on/political_credit_column_1_line_5") is POLITICAL_CREDIT_COLUMN_1_LINE_5
+    )
+    assert (
+        registry.get("ca-on/political_credit_column_1_line_6") is POLITICAL_CREDIT_COLUMN_1_LINE_6
+    )
+    assert (
+        registry.get("ca-on/political_credit_column_1_line_7") is POLITICAL_CREDIT_COLUMN_1_LINE_7
+    )
+    assert (
+        registry.get("ca-on/political_credit_column_2_line_2") is POLITICAL_CREDIT_COLUMN_2_LINE_2
+    )
+    assert (
+        registry.get("ca-on/political_credit_column_2_line_3") is POLITICAL_CREDIT_COLUMN_2_LINE_3
+    )
+    assert (
+        registry.get("ca-on/political_credit_column_2_line_5") is POLITICAL_CREDIT_COLUMN_2_LINE_5
+    )
+    assert (
+        registry.get("ca-on/political_credit_column_2_line_6") is POLITICAL_CREDIT_COLUMN_2_LINE_6
+    )
+    assert (
+        registry.get("ca-on/political_credit_column_2_line_7") is POLITICAL_CREDIT_COLUMN_2_LINE_7
+    )
+    assert (
+        registry.get("ca-on/political_credit_column_3_line_2") is POLITICAL_CREDIT_COLUMN_3_LINE_2
+    )
+    assert (
+        registry.get("ca-on/political_credit_column_3_line_3") is POLITICAL_CREDIT_COLUMN_3_LINE_3
+    )
+    assert (
+        registry.get("ca-on/political_credit_column_3_line_5") is POLITICAL_CREDIT_COLUMN_3_LINE_5
+    )
+    assert (
+        registry.get("ca-on/political_credit_column_3_line_6") is POLITICAL_CREDIT_COLUMN_3_LINE_6
+    )
+    assert (
+        registry.get("ca-on/political_credit_column_3_line_7") is POLITICAL_CREDIT_COLUMN_3_LINE_7
+    )
+    assert registry.get("ca-on/political_credit_before_maximum") is POLITICAL_CREDIT_BEFORE_MAXIMUM
+    assert registry.get("ca-on/political_credit") is POLITICAL_CREDIT
     assert (
         registry.get("ca-on/flow_through_share_slip_expenses") is FLOW_THROUGH_SHARE_SLIP_EXPENSES
     )

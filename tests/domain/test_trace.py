@@ -29,6 +29,7 @@ from app.domain.trace import (
     BracketColumnLine,
     CappedAmountLine,
     ChosenByCountLine,
+    ChosenByRangeLine,
     ContributionTierLine,
     CreditAmountLine,
     FractionAppliedLine,
@@ -82,6 +83,9 @@ ALONE = ArtifactKind("ex/amount_alone", Decimal)
 WITH_FAMILY = ArtifactKind("ex/amount_with_family", Decimal)
 CHOSEN = ArtifactKind("ex/amount_chosen", Decimal)
 ITEM_AMOUNT = ArtifactKind("ex/item_amount", Decimal)
+TESTED = ArtifactKind("ex/amount_tested", Decimal)
+IN_THE_FIRST_RANGE = ArtifactKind("ex/amount_in_the_first_range", Decimal)
+IN_THE_SECOND_RANGE = ArtifactKind("ex/amount_in_the_second_range", Decimal)
 
 
 def column_line() -> BracketColumnLine:
@@ -172,6 +176,10 @@ def record_total_line() -> RecordTotalLine:
     return RecordTotalLine(TOTAL, ITEM_AMOUNT, (D("6000"), D("4000.50")), D("10000.50"))
 
 
+def chosen_by_range_line() -> ChosenByRangeLine:
+    return ChosenByRangeLine(CHOSEN, TESTED, D("1000.00"), IN_THE_SECOND_RANGE, D("625.01"))
+
+
 ALL_LINES = [
     column_line,
     total_line,
@@ -192,6 +200,7 @@ ALL_LINES = [
     times_count_line,
     chosen_by_count_line,
     record_total_line,
+    chosen_by_range_line,
 ]
 
 
@@ -1332,6 +1341,79 @@ def test_a_record_total_line_is_not_a_sum_line() -> None:
     assert cast(Any, record_total_line()) != SumLine(
         TOTAL, ((ITEM_AMOUNT, D("6000")), (ITEM_AMOUNT, D("4000.50"))), D("10000.50")
     )
+
+
+def test_chosen_by_range_line_fields_in_order() -> None:
+    line = chosen_by_range_line()
+
+    assert line == ChosenByRangeLine(
+        output=CHOSEN,
+        tested_kind=TESTED,
+        tested_value=D("1000.00"),
+        chosen_kind=IN_THE_SECOND_RANGE,
+        chosen_value=D("625.01"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "tested_kind",
+        "tested_value",
+        "chosen_kind",
+        "chosen_value",
+    ]
+    assert line.output is CHOSEN
+    assert line.tested_kind is TESTED
+    assert line.tested_value == D("1000.00")
+    assert str(line.tested_value) == "1000.00"
+    assert line.chosen_kind is IN_THE_SECOND_RANGE
+    assert line.chosen_value == D("625.01")
+    assert line.amount == D("625.01")
+    assert str(line.amount) == "625.01"
+
+
+def test_chosen_by_range_lines_differ_by_the_tested_value() -> None:
+    assert chosen_by_range_line() != ChosenByRangeLine(
+        CHOSEN, TESTED, D("1000.01"), IN_THE_SECOND_RANGE, D("625.01")
+    )
+
+
+def test_chosen_by_range_lines_differ_by_the_tested_kind() -> None:
+    other = ArtifactKind("ex/other_tested", Decimal)
+
+    assert chosen_by_range_line() != ChosenByRangeLine(
+        CHOSEN, other, D("1000.00"), IN_THE_SECOND_RANGE, D("625.01")
+    )
+
+
+def test_chosen_by_range_lines_differ_by_the_chosen_kind() -> None:
+    assert chosen_by_range_line() != ChosenByRangeLine(
+        CHOSEN, TESTED, D("1000.00"), IN_THE_FIRST_RANGE, D("625.01")
+    )
+
+
+def test_chosen_by_range_lines_differ_by_the_chosen_value() -> None:
+    assert chosen_by_range_line() != ChosenByRangeLine(
+        CHOSEN, TESTED, D("1000.00"), IN_THE_SECOND_RANGE, D("625.02")
+    )
+
+
+def test_chosen_by_range_lines_differ_by_output() -> None:
+    other = ArtifactKind("ex/other_amount", Decimal)
+
+    assert chosen_by_range_line() != ChosenByRangeLine(
+        other, TESTED, D("1000.00"), IN_THE_SECOND_RANGE, D("625.01")
+    )
+
+
+def test_chosen_by_range_lines_are_hashable() -> None:
+    assert hash(chosen_by_range_line()) == hash(chosen_by_range_line())
+
+
+def test_a_chosen_by_range_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(chosen_by_range_line())]
+
+
+def test_a_chosen_by_range_line_is_not_a_chosen_by_count_line() -> None:
+    assert not isinstance(chosen_by_range_line(), ChosenByCountLine)
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:

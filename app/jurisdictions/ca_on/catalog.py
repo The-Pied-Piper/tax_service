@@ -359,6 +359,126 @@ SENIORS_TRANSIT_CREDIT = CATALOG.declare("seniors_transit_credit", Decimal, non_
 seniors' use of Ontario public transit services (maximum $3,000) Line 63100 multiplied by 15% =":
 15% of the amount paid, at most $3,000."""
 
+POLITICAL_CONTRIBUTIONS = CATALOG.declare("political_contributions", Decimal, non_negative=True)
+"""Ontario political contributions, Form ON479 line 15 and line 63100 "Ontario political
+contributions made in 2025": a starting amount, taken as the form takes it. Worksheet ON479 line 1
+of each column "Enter your total political contributions from line 63110 of your Form ON479." reads
+it.
+
+The form gives no eligibility conditions beyond "Ontario political contributions"."""
+
+POLITICAL_CREDIT_COLUMN_1_LINE_2 = CATALOG.declare(
+    "political_credit_column_1_line_2", Decimal, non_negative=True
+)
+"""Political contribution credit column 1 line 2, Worksheet ON479 "Column 1: Line 63110 is $500.05
+or less", line 2 "0.00": a printed constant."""
+
+POLITICAL_CREDIT_COLUMN_1_LINE_3 = CATALOG.declare(
+    "political_credit_column_1_line_3", Decimal, non_negative=True
+)
+"""Political contribution credit column 1 line 3, Worksheet ON479 "Column 1: Line 63110 is $500.05
+or less", line 3 "Line 1 minus line 2 (cannot be negative)": the contributions less line 2, not
+below zero."""
+
+POLITICAL_CREDIT_COLUMN_1_LINE_5 = CATALOG.declare(
+    "political_credit_column_1_line_5", Decimal, non_negative=True
+)
+"""Political contribution credit column 1 line 5, Worksheet ON479 "Column 1: Line 63110 is $500.05
+or less", line 5 "Line 3 multiplied by the percentage from line 4": line 3 at the line 4 rate of
+75%."""
+
+POLITICAL_CREDIT_COLUMN_1_LINE_6 = CATALOG.declare(
+    "political_credit_column_1_line_6", Decimal, non_negative=True
+)
+"""Political contribution credit column 1 line 6, Worksheet ON479 "Column 1: Line 63110 is $500.05
+or less", line 6 "0.00": a printed constant."""
+
+POLITICAL_CREDIT_COLUMN_1_LINE_7 = CATALOG.declare(
+    "political_credit_column_1_line_7", Decimal, non_negative=True
+)
+"""Political contribution credit column 1 line 7, Worksheet ON479 "Column 1: Line 63110 is $500.05
+or less", line 7 "Line 5 plus line 6 Enter this amount on line 16 of your Form ON479.": line 5
+plus line 6."""
+
+POLITICAL_CREDIT_COLUMN_2_LINE_2 = CATALOG.declare(
+    "political_credit_column_2_line_2", Decimal, non_negative=True
+)
+"""Political contribution credit column 2 line 2, Worksheet ON479 "Column 2: Line 63110 is more than
+$500.05 but not more than $1,666.82", line 2 "500.05": a printed constant."""
+
+POLITICAL_CREDIT_COLUMN_2_LINE_3 = CATALOG.declare(
+    "political_credit_column_2_line_3", Decimal, non_negative=True
+)
+"""Political contribution credit column 2 line 3, Worksheet ON479 "Column 2: Line 63110 is more than
+$500.05 but not more than $1,666.82", line 3 "Line 1 minus line 2 (cannot be negative)": the
+contributions less line 2, not below zero."""
+
+POLITICAL_CREDIT_COLUMN_2_LINE_5 = CATALOG.declare(
+    "political_credit_column_2_line_5", Decimal, non_negative=True
+)
+"""Political contribution credit column 2 line 5, Worksheet ON479 "Column 2: Line 63110 is more than
+$500.05 but not more than $1,666.82", line 5 "Line 3 multiplied by the percentage from line 4":
+line 3 at the line 4 rate of 50%."""
+
+POLITICAL_CREDIT_COLUMN_2_LINE_6 = CATALOG.declare(
+    "political_credit_column_2_line_6", Decimal, non_negative=True
+)
+"""Political contribution credit column 2 line 6, Worksheet ON479 "Column 2: Line 63110 is more than
+$500.05 but not more than $1,666.82", line 6 "375.03": a printed constant."""
+
+POLITICAL_CREDIT_COLUMN_2_LINE_7 = CATALOG.declare(
+    "political_credit_column_2_line_7", Decimal, non_negative=True
+)
+"""Political contribution credit column 2 line 7, Worksheet ON479 "Column 2: Line 63110 is more than
+$500.05 but not more than $1,666.82", line 7 "Line 5 plus line 6 Enter this amount on line 16 of
+your Form ON479.": line 5 plus line 6."""
+
+POLITICAL_CREDIT_COLUMN_3_LINE_2 = CATALOG.declare(
+    "political_credit_column_3_line_2", Decimal, non_negative=True
+)
+"""Political contribution credit column 3 line 2, Worksheet ON479 "Column 3: Line 63110 is more than
+$1,666.82", line 2 "1,666.82": a printed constant."""
+
+POLITICAL_CREDIT_COLUMN_3_LINE_3 = CATALOG.declare(
+    "political_credit_column_3_line_3", Decimal, non_negative=True
+)
+"""Political contribution credit column 3 line 3, Worksheet ON479 "Column 3: Line 63110 is more than
+$1,666.82", line 3 "Line 1 minus line 2 (cannot be negative)": the contributions less line 2, not
+below zero."""
+
+POLITICAL_CREDIT_COLUMN_3_LINE_5 = CATALOG.declare(
+    "political_credit_column_3_line_5", Decimal, non_negative=True
+)
+"""Political contribution credit column 3 line 5, Worksheet ON479 "Column 3: Line 63110 is more than
+$1,666.82", line 5 "Line 3 multiplied by the percentage from line 4": line 3 at the line 4 rate
+of 33.33%."""
+
+POLITICAL_CREDIT_COLUMN_3_LINE_6 = CATALOG.declare(
+    "political_credit_column_3_line_6", Decimal, non_negative=True
+)
+"""Political contribution credit column 3 line 6, Worksheet ON479 "Column 3: Line 63110 is more than
+$1,666.82", line 6 "958.41": a printed constant."""
+
+POLITICAL_CREDIT_COLUMN_3_LINE_7 = CATALOG.declare(
+    "political_credit_column_3_line_7", Decimal, non_negative=True
+)
+"""Political contribution credit column 3 line 7, Worksheet ON479 "Column 3: Line 63110 is more than
+$1,666.82", line 7 "Line 5 plus line 6 Enter this amount on line 16 of your Form ON479.": line 5
+plus line 6."""
+
+POLITICAL_CREDIT_BEFORE_MAXIMUM = CATALOG.declare(
+    "political_credit_before_maximum", Decimal, non_negative=True
+)
+"""Political contribution credit before its maximum, Worksheet ON479 "Line 16 - Ontario political
+contribution tax credit" line 7 "Enter this amount on line 16 of your Form ON479.": the line 7 of
+the column that applies, column 1 if line 63110 is $500.05 or less, column 2 if it is more than
+$500.05 but not more than $1,666.82, column 3 if it is more than $1,666.82."""
+
+POLITICAL_CREDIT = CATALOG.declare("political_credit", Decimal, non_negative=True)
+"""Ontario political contribution tax credit, Form ON479 line 16 "Enter $1,666.82 if your total
+contributions are $3,793 or more. If not, use Worksheet ON479. (maximum $1,666.82)": the worksheet's
+line 7, at most $1,666.82."""
+
 FLOW_THROUGH_SHARE_SLIP_EXPENSES = CATALOG.declare(
     "flow_through_share_slip_expenses", Decimal, non_negative=True
 )
@@ -387,9 +507,10 @@ from your Form T1221. multiplied by 5% =": the 5% on the total expenses of the s
 
 ONTARIO_CREDITS_SUBTOTAL = CATALOG.declare("ontario_credits_subtotal", Decimal, non_negative=True)
 """Ontario credits subtotal, Form ON479 line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": here
-lines 1, 14 and 17, in line order. Line 19 "Amount from line 18 of the previous page" carries it.
+lines 1, 14, 16 and 17, in line order. Line 19 "Amount from line 18 of the previous page" carries
+it.
 
-Not triggered by the returns modelled, or left to later work: lines 2, 13 and 16."""
+Not triggered by the returns modelled, or left to later work: lines 2 and 13."""
 
 ONTARIO_CREDITS = CATALOG.declare("ontario_credits", Decimal, non_negative=True)
 """Ontario credits, Form ON479 line 21 "Line 19 plus line 20 Enter this amount online 47900 of

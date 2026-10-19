@@ -2699,3 +2699,151 @@ def test_a_per_item_capability_refuses_a_record_list_kind_for_a_money_slot_at_wi
 
     with pytest.raises(InvalidSelectionError, match="ex/per_item_claim"):
         built.compose(EX_ON, 2025)
+
+
+# --- ca-on/choose_by_range: one of three artifacts chosen by a range, by a made-up manifest ----
+#
+# Like `ChooseByCount` above, `ChooseByRange` is imported inside a cached factory so its absence
+# fails only the tests that use it, and is registered in a private registry under its shared
+# identifier, `ca-on/choose_by_range`. Its tested amount is `ex/base`; its limits are
+# `ex/first_limit` and `ex/second_limit`, made-up inputs; its first candidate is a produced
+# artifact, `ex/scaled` (base × 3), its second is `ex/extra` and its third `ex/last`, made-up
+# inputs; it reads no dataset.
+
+FIRST_LIMIT = ArtifactKind("ex/first_limit", Decimal)
+SECOND_LIMIT = ArtifactKind("ex/second_limit", Decimal)
+LAST = ArtifactKind("ex/last", Decimal)
+
+
+@cache
+def choose_by_range_class() -> Any:
+    from app.jurisdictions.ca_on.capabilities.choose_by_range import ChooseByRange
+
+    return ChooseByRange
+
+
+def choose_by_range_selection(
+    amount: str = "ex/base",
+    first: str = "ex/scaled",
+    second: str = "ex/extra",
+    third: str = "ex/last",
+) -> CapabilitySelection:
+    return CapabilitySelection(
+        name="ca-on/choose_by_range",
+        params={},
+        consumes={
+            "amount": amount,
+            "first_limit": "ex/first_limit",
+            "second_limit": "ex/second_limit",
+            "first": first,
+            "second": second,
+            "third": third,
+        },
+        produces={"output": "ex-on/result"},
+    )
+
+
+def choose_by_range_service(
+    selection: CapabilitySelection | None = None,
+) -> TaxComputationService:
+    """`ex/scale` (base × 3) and `ca-on/choose_by_range` producing `ex-on/result`: scaled when the
+    base is at most the first limit, extra when it is over that but at most the second limit, last
+    otherwise."""
+    capabilities = capability_registry()
+    capabilities.register("ca-on/choose_by_range", choose_by_range_class())
+    artifacts = artifact_registry()
+    for kind in (FIRST_LIMIT, SECOND_LIMIT, LAST, PERSON_COUNT):
+        artifacts.register(kind.identifier, kind)
+    return service(  # authored out of order on purpose
+        manifest(
+            selection or choose_by_range_selection(),
+            SCALE,
+            inputs=frozenset(
+                {"ex/base", "ex/extra", "ex/last", "ex/first_limit", "ex/second_limit"}
+            ),
+        ),
+        capabilities=capabilities,
+        artifacts=artifacts,
+    )
+
+
+def compute_choose_by_range(base: str) -> Worksheet:
+    return choose_by_range_service().compute(
+        EX_ON,
+        2025,
+        Artifact(BASE, D(base)),
+        Artifact(EXTRA, D("20.00")),
+        Artifact(LAST, D("30.00")),
+        Artifact(FIRST_LIMIT, D("100")),
+        Artifact(SECOND_LIMIT, D("200")),
+    )
+
+
+def test_computes_ca_on_choose_by_range_for_the_first_range_end_to_end() -> None:
+    from app.domain.trace import ChosenByRangeLine
+
+    worksheet = compute_choose_by_range("30")
+
+    # scaled = 30 × 3 = 90; 30 is at most the first limit of 100, so result = scaled, unchanged.
+    assert worksheet.get(SCALED).value == D("90")
+    assert worksheet.get(RESULT).value == D("90")
+    assert isinstance(worksheet.producer_of(RESULT), choose_by_range_class())
+    assert worksheet.producer_of(BASE) is None
+    assert worksheet.producer_of(FIRST_LIMIT) is None
+    assert worksheet.trace[-1] == ChosenByRangeLine(RESULT, BASE, D("30"), SCALED, D("90"))
+    assert [type(line) for line in worksheet.trace].count(ChosenByRangeLine) == 1
+
+
+def test_computes_ca_on_choose_by_range_for_the_second_range_end_to_end() -> None:
+    from app.domain.trace import ChosenByRangeLine
+
+    worksheet = compute_choose_by_range("150")
+
+    # 150 is more than 100 but at most 200, so result = extra 20.00, unchanged; scaled is still
+    # produced.
+    assert worksheet.get(SCALED).value == D("450")
+    assert worksheet.get(RESULT).value == D("20.00")
+    assert str(worksheet.get(RESULT).value) == "20.00"
+    assert worksheet.trace[-1] == ChosenByRangeLine(RESULT, BASE, D("150"), EXTRA, D("20.00"))
+
+
+def test_computes_ca_on_choose_by_range_for_the_third_range_end_to_end() -> None:
+    worksheet = compute_choose_by_range("250")
+
+    assert worksheet.get(RESULT).value == D("30.00")
+
+
+def test_computes_ca_on_choose_by_range_on_each_limit_end_to_end() -> None:
+    assert compute_choose_by_range("100").get(RESULT).value == D("300")
+    assert compute_choose_by_range("200").get(RESULT).value == D("20.00")
+    assert compute_choose_by_range("200.01").get(RESULT).value == D("30.00")
+
+
+def test_ca_on_choose_by_range_runs_after_its_candidates_and_limits_are_produced() -> None:
+    composition = choose_by_range_service().compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is choose_by_range_class()
+    assert composition.order[-1].consumes == frozenset(
+        {BASE, FIRST_LIMIT, SECOND_LIMIT, SCALED, EXTRA, LAST}
+    )
+
+
+def test_ca_on_choose_by_range_refuses_a_count_kind_for_its_amount_at_wiring() -> None:
+    built = choose_by_range_service(choose_by_range_selection(amount="ex/person_count"))
+
+    with pytest.raises(InvalidSelectionError, match="ca-on/choose_by_range.*'amount'"):
+        built.compose(EX_ON, 2025)
+
+
+def test_ca_on_choose_by_range_refuses_a_count_kind_for_its_first_candidate_at_wiring() -> None:
+    built = choose_by_range_service(choose_by_range_selection(first="ex/person_count"))
+
+    with pytest.raises(InvalidSelectionError, match="ca-on/choose_by_range.*'first'"):
+        built.compose(EX_ON, 2025)
+
+
+def test_ca_on_choose_by_range_refuses_a_count_kind_for_its_third_candidate_at_wiring() -> None:
+    built = choose_by_range_service(choose_by_range_selection(third="ex/person_count"))
+
+    with pytest.raises(InvalidSelectionError, match="ca-on/choose_by_range.*'third'"):
+        built.compose(EX_ON, 2025)

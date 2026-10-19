@@ -135,6 +135,7 @@ inputs:
   - ca/depreciable_gift_capital_cost
   - ca/capital_gift_taxable_gains
   - ca/capital_gift_gains_deduction
+  - ca-on/political_contributions
 outputs:
   - ca/refund_or_balance_owing
   - ca/unused_rrsp_contributions_carried_forward
@@ -2025,6 +2026,143 @@ capabilities:
       base: ca-on/seniors_transit_amount_paid_at_most_maximum
     produces:
       output: ca-on/seniors_transit_credit
+  # Form ON479 line 15 and line 63100 "Ontario political contributions made in 2025" is a
+  # caller input, ca-on/political_contributions, taken as the form takes it; Worksheet ON479
+  # "Line 16 - Ontario political contribution tax credit" reads it as line 63110 and builds
+  # each of its three columns as printed, then the one that applies is picked.
+  # Worksheet ON479 "Column 1: Line 63110 is $500.05 or less".
+  # Line 2: 0.00, a printed constant.
+  - name: core/credit_amount
+    params:
+      amount: ca-on/political_credit_column_1_line_2
+    produces:
+      output: ca-on/political_credit_column_1_line_2
+  # Column 1 line 3 "Line 1 minus line 2 (cannot be negative)", line 1 being the
+  # contributions.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca-on/political_contributions
+      less: ca-on/political_credit_column_1_line_2
+    produces:
+      output: ca-on/political_credit_column_1_line_3
+  # Column 1 line 4 "Rate 75%" and line 5 "Line 3 multiplied by the percentage from line 4".
+  - name: core/apply_rate
+    params:
+      rate: ca-on/political_credit_column_1_line_4
+    consumes:
+      base: ca-on/political_credit_column_1_line_3
+    produces:
+      output: ca-on/political_credit_column_1_line_5
+  # Column 1 line 6: 0.00, a printed constant.
+  - name: core/credit_amount
+    params:
+      amount: ca-on/political_credit_column_1_line_6
+    produces:
+      output: ca-on/political_credit_column_1_line_6
+  # Column 1 line 7 "Line 5 plus line 6 Enter this amount on line 16 of your Form ON479.".
+  - name: core/sum
+    consumes:
+      parts:
+        - ca-on/political_credit_column_1_line_5
+        - ca-on/political_credit_column_1_line_6
+    produces:
+      output: ca-on/political_credit_column_1_line_7
+  # Worksheet ON479 "Column 2: Line 63110 is more than $500.05 but not more than $1,666.82".
+  # Line 2: 500.05, a printed constant.
+  - name: core/credit_amount
+    params:
+      amount: ca-on/political_credit_column_2_line_2
+    produces:
+      output: ca-on/political_credit_column_2_line_2
+  # Column 2 line 3 "Line 1 minus line 2 (cannot be negative)", line 1 being the
+  # contributions.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca-on/political_contributions
+      less: ca-on/political_credit_column_2_line_2
+    produces:
+      output: ca-on/political_credit_column_2_line_3
+  # Column 2 line 4 "Rate 50%" and line 5 "Line 3 multiplied by the percentage from line 4".
+  - name: core/apply_rate
+    params:
+      rate: ca-on/political_credit_column_2_line_4
+    consumes:
+      base: ca-on/political_credit_column_2_line_3
+    produces:
+      output: ca-on/political_credit_column_2_line_5
+  # Column 2 line 6: 375.03, a printed constant.
+  - name: core/credit_amount
+    params:
+      amount: ca-on/political_credit_column_2_line_6
+    produces:
+      output: ca-on/political_credit_column_2_line_6
+  # Column 2 line 7 "Line 5 plus line 6 Enter this amount on line 16 of your Form ON479.".
+  - name: core/sum
+    consumes:
+      parts:
+        - ca-on/political_credit_column_2_line_5
+        - ca-on/political_credit_column_2_line_6
+    produces:
+      output: ca-on/political_credit_column_2_line_7
+  # Worksheet ON479 "Column 3: Line 63110 is more than $1,666.82".
+  # Line 2: 1,666.82, a printed constant.
+  - name: core/credit_amount
+    params:
+      amount: ca-on/political_credit_column_3_line_2
+    produces:
+      output: ca-on/political_credit_column_3_line_2
+  # Column 3 line 3 "Line 1 minus line 2 (cannot be negative)", line 1 being the
+  # contributions.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca-on/political_contributions
+      less: ca-on/political_credit_column_3_line_2
+    produces:
+      output: ca-on/political_credit_column_3_line_3
+  # Column 3 line 4 "Rate 33.33%" and line 5 "Line 3 multiplied by the percentage from line
+  # 4".
+  - name: core/apply_rate
+    params:
+      rate: ca-on/political_credit_column_3_line_4
+    consumes:
+      base: ca-on/political_credit_column_3_line_3
+    produces:
+      output: ca-on/political_credit_column_3_line_5
+  # Column 3 line 6: 958.41, a printed constant.
+  - name: core/credit_amount
+    params:
+      amount: ca-on/political_credit_column_3_line_6
+    produces:
+      output: ca-on/political_credit_column_3_line_6
+  # Column 3 line 7 "Line 5 plus line 6 Enter this amount on line 16 of your Form ON479.".
+  - name: core/sum
+    consumes:
+      parts:
+        - ca-on/political_credit_column_3_line_5
+        - ca-on/political_credit_column_3_line_6
+    produces:
+      output: ca-on/political_credit_column_3_line_7
+  # The column that applies: column 1 if line 63110 is $500.05 or less, column 2 if it is more
+  # than $500.05 but not more than $1,666.82, column 3 if it is more than $1,666.82. The
+  # limits are the columns' own line 2 constants, which their headings print again.
+  - name: ca-on/choose_by_range
+    consumes:
+      amount: ca-on/political_contributions
+      first_limit: ca-on/political_credit_column_2_line_2
+      second_limit: ca-on/political_credit_column_3_line_2
+      first: ca-on/political_credit_column_1_line_7
+      second: ca-on/political_credit_column_2_line_7
+      third: ca-on/political_credit_column_3_line_7
+    produces:
+      output: ca-on/political_credit_before_maximum
+  # ON479 line 16 "(maximum $1,666.82)", after the chosen column's line 7.
+  - name: core/capped_amount
+    params:
+      cap: ca-on/political_credit_maximum
+    consumes:
+      base: ca-on/political_credit_before_maximum
+    produces:
+      output: ca-on/political_credit
   # Form T1221 lines 1 to 3 "Enter the amount of qualifying expenses." (one line for each
   # corporation or slip) and line 4 "Add lines 1 to 3. Enter this amount on line 63220 of your
   # Form ON479.": the expenses of every slip in the list, added.
@@ -2042,13 +2180,14 @@ capabilities:
       base: ca-on/flow_through_share_expenses
     produces:
       output: ca-on/flow_through_share_credit
-  # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1, 14 and 17, in line order, as
-  # lines 2, 13 and 16 are not triggered.
+  # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1, 14, 16 and 17, in line order, as
+  # lines 2 and 13 are not triggered.
   - name: core/sum
     consumes:
       parts:
         - ca-on/fertility_credit
         - ca-on/seniors_transit_credit
+        - ca-on/political_credit
         - ca-on/flow_through_share_credit
     produces:
       output: ca-on/ontario_credits_subtotal

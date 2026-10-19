@@ -37,6 +37,8 @@
 # Amounts are quoted decimal strings, never floats; counts are quoted digit strings. Every
 # output the CA-ON manifest declares must appear under `expected`; intermediate lines may be
 # listed and are then checked too.
+# Ontario political contributions (ON479 line 15, line 63100) are a chosen $0, so Worksheet
+# ON479's line 16 is $0 (column 1 applies).
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -616,6 +618,7 @@ inputs:
   ca-on/seniors_transit_paid: "0"
   ca-on/flow_through_share_slips: []
   ca-on/community_food_program_donations: "0"
+  ca-on/political_contributions: "0"
   ca/charitable_donations: "0"
   ca/government_donations: "0"
   ca/university_donations_outside_canada: "0"
@@ -744,6 +747,8 @@ expected:
   ca-on/fertility_credit: "0"
   ca-on/seniors_transit_amount_paid_at_most_maximum: "0"
   ca-on/seniors_transit_credit: "0"
+  ca-on/political_credit_before_maximum: "0"
+  ca-on/political_credit: "0"
   ca-on/flow_through_share_expenses: "0"
   ca-on/flow_through_share_credit: "0"
   ca-on/ontario_credits_subtotal: "0"

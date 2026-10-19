@@ -104,6 +104,8 @@
 # the $46,330 income threshold, not below zero, at 15%, taken off $6,223, not below zero
 # (line 58080), and from $11,905.00 less the spouse's net income, not below zero, at most
 # $10,823 (line 58120), each claimed for its count.
+# Ontario political contributions (ON479 line 15, line 63100) are a chosen $0, so Worksheet
+# ON479's line 16 is $0 (column 1 applies).
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -973,6 +975,7 @@ inputs:
   ca-on/seniors_transit_paid: "0"
   ca-on/flow_through_share_slips: []
   ca-on/community_food_program_donations: "0"
+  ca-on/political_contributions: "0"
   ca/charitable_donations: "0"
   ca/government_donations: "0"
   ca/university_donations_outside_canada: "0"
@@ -1099,6 +1102,8 @@ expected:
   ca-on/fertility_credit: "0"
   ca-on/seniors_transit_amount_paid_at_most_maximum: "0"
   ca-on/seniors_transit_credit: "0"
+  ca-on/political_credit_before_maximum: "0"
+  ca-on/political_credit: "0"
   ca-on/flow_through_share_expenses: "0"
   ca-on/flow_through_share_credit: "0"
   ca-on/ontario_credits_subtotal: "0"

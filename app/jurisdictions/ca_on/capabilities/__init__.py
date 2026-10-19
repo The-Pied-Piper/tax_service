@@ -7,6 +7,9 @@ imports every one of them, so importing the package fills the shared CapabilityR
 
 NAMESPACE = "ca-on"
 
-from app.jurisdictions.ca_on.capabilities import flow_through_share_expenses  # noqa: E402
+from app.jurisdictions.ca_on.capabilities import (  # noqa: E402
+    choose_by_range,
+    flow_through_share_expenses,
+)
 
-__all__ = ["NAMESPACE", "flow_through_share_expenses"]
+__all__ = ["NAMESPACE", "choose_by_range", "flow_through_share_expenses"]

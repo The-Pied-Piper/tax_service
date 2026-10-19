@@ -403,3 +403,25 @@ class RecordTotalLine(TraceLine):
     def amount(self) -> Decimal:
         """The exact total."""
         return self.total
+
+
+@dataclass(frozen=True)
+class ChosenByRangeLine(TraceLine):
+    """`chosen_kind` (worth `chosen_value`) produced as `output`, chosen as `tested_kind` is
+    `tested_value`: the first, second or third candidate by the range the tested amount is in.
+
+    Its own class, not a `ChosenByCountLine`: the tested amount is a money amount compared with
+    limits, and the line names the candidate that was chosen; the ones not chosen and the limits
+    are not recorded.
+    """
+
+    output: Money
+    tested_kind: Money
+    tested_value: Decimal
+    chosen_kind: Money
+    chosen_value: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The chosen value, unchanged."""
+        return self.chosen_value
