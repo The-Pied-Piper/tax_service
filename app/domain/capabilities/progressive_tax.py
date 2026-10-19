@@ -3,8 +3,9 @@
 One mechanism, wired per use: the same class computes, say, national and
 regional basic tax from the same base, with different schedules and outputs.
 It computes the form's two lines for the bracket the base falls in: the rate on the
-excess over the bracket's lower, plus the bracket's printed constant. Rounding happens
-once, on the total, using the schedule dataset's rule.
+excess over the bracket's lower, plus the tax at the bracket's start, which the schedule
+computes by its own rule. Rounding happens once, on the total, using the schedule dataset's
+rule.
 """
 
 from __future__ import annotations

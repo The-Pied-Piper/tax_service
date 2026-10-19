@@ -689,9 +689,9 @@ SCHEDULE = ParameterDataset(
     BRACKETS,
     BracketSchedule(
         (
-            Bracket(D(0), D("0.10"), D(0)),
-            Bracket(D(100), D("0.20"), D("10.00")),
-            Bracket(D(300), D("0.30"), D("50.00")),
+            Bracket(D(0), D("0.10")),
+            Bracket(D(100), D("0.20")),
+            Bracket(D(300), D("0.30")),
         )
     ),
     NO_ROUNDING,

@@ -124,9 +124,19 @@ Rounding is a parameter, never a jurisdiction constant in code.
   several parameter slots decides which slot's rule it applies where. Rounding can
   therefore differ between capabilities in one jurisdiction and between
   tax years, and the provenance fingerprint (§6) covers it.
+- A figure a parameter's own values compute is rounded by a rule its dataset
+  states beside the capability's, in the same form. A bracket schedule holds
+  each bracket's lower bound and rate; it computes the tax at each bracket's
+  start as the exact tax on the brackets below, rounded by the dataset's
+  `tax_at_start_rounding` (the dataset for a form that prints that tax to the
+  cent states half-up to 0.01). The dataset never repeats a figure the engine
+  computes; that the computed figure matches the form's printed one is a
+  jurisdiction test.
 - Each capability defines *where* it rounds (e.g. each tier's part vs.
   once at the end); the parameter defines *how*. Given a rule, the
-  capability must apply it; given none, it does not round.
+  capability must apply it; given none, it does not round. Progressive tax
+  rounds once, on the column's tax; the tax at the bracket's start inside it
+  is already rounded by the schedule's own rule.
 - No global rounding step. Rounded values appear as rounded in the
   trace.
 

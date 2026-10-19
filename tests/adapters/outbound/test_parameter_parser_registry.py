@@ -117,7 +117,9 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     registry.register_class(FlatRateParser)
 
     schedule = registry.for_kind(BRACKETS).parse(
-        YamlNode.root({"brackets": [{"from": "0", "rate": "0.1", "tax_at_start": "0"}]}, "dataset")
+        YamlNode.root(
+            {"brackets": [{"from": "0", "rate": "0.1"}], "tax_at_start_rounding": "none"}, "dataset"
+        )
     )
     credit = registry.for_kind(CREDIT).parse(YamlNode.root({"amount": "100"}, "dataset"))
     rate = registry.for_kind(RATE).parse(YamlNode.root({"rate": "0.5"}, "dataset"))
@@ -153,7 +155,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     assert_type(fraction, Fraction)
     assert_type(flat_rate, Decimal)
 
-    assert schedule == BracketSchedule((Bracket(D("0"), D("0.1"), D("0")),))
+    assert schedule == BracketSchedule((Bracket(D("0"), D("0.1")),))
     assert credit == Credit(amount=D("100"))
     assert rate == Rate(D("0.5"))
     assert amount == Amount(D("250"))
@@ -284,7 +286,7 @@ def test_built_in_parsers_are_registered_in_the_shared_registry(
     ("parser_class", "body_keys"),
     [
         (AmountParser, frozenset({"amount"})),
-        (BracketsParser, frozenset({"brackets"})),
+        (BracketsParser, frozenset({"brackets", "tax_at_start_rounding"})),
         (ContributionTierParser, frozenset({"rate", "lower", "upper", "maximum"})),
         (CreditParser, frozenset({"amount"})),
         (FactorParser, frozenset({"value"})),

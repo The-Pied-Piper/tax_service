@@ -23,12 +23,10 @@ from app.adapters.outbound.yaml_support import YamlNode, YamlShapeError
 from app.domain.errors import DomainError, InvalidParameterDataError, NotFoundError
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
-from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.registry import Namespace
 
 _FAMILY = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*(/[a-z0-9]+([_-][a-z0-9]+)*)+")
 _ENVELOPE_KEYS = frozenset({"family", "tax_year", "kind", "sources", "rounding"})
-_ROUNDING_KEYS = frozenset({"increment", "mode"})
 
 
 class YamlParameterSource:
@@ -66,7 +64,7 @@ class YamlParameterSource:
                 tax_year=tax_year,
                 kind=kind,
                 values=parser.parse(doc),
-                rounding=self._rounding(doc.field("rounding")),
+                rounding=doc.field("rounding").parse_rounding_rule(),
                 sources=self._sources(doc.field("sources")),
             )
         except (YamlShapeError, DomainError) as exc:
@@ -98,19 +96,6 @@ class YamlParameterSource:
         declared_year = doc.field("tax_year").require_integer()
         if declared_year != tax_year:
             raise YamlShapeError(f"tax_year {declared_year} does not match {tax_year}")
-
-    @staticmethod
-    def _rounding(node: YamlNode) -> RoundingRule:
-        if node.value == "none":
-            return NO_ROUNDING
-        if not isinstance(node.value, dict):
-            raise YamlShapeError("rounding must be 'none' or a mapping of increment and mode")
-        fields = node.require_mapping(_ROUNDING_KEYS)
-        mode_name = fields.field("mode").require_string()
-        modes = {mode.value: mode for mode in RoundingMode}
-        if mode_name not in modes:
-            raise YamlShapeError(f"rounding.mode {mode_name!r} is not one of {sorted(modes)}")
-        return RoundTo(increment=fields.field("increment").parse_decimal(), mode=modes[mode_name])
 
     @staticmethod
     def _sources(node: YamlNode) -> tuple[str, ...]:
