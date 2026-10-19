@@ -7,8 +7,9 @@ values; an `Artifact[V]` is one value of a kind, produced in one computation. Ea
 declares its kinds through one `ArtifactCatalog`, which only records them; the composition root
 registers each catalog explicitly with `ArtifactRegistry.register_catalog`. A `Decimal` kind, or
 an `int` kind such as a count, may be declared non-negative, and then no artifact of it holds a
-value below zero. Names come from the jurisdiction's own law or return, never from another
-system's.
+value below zero. A kind that carries more than its value type, such as a record-list kind
+(record_list.py), is built by its own class and recorded with `ArtifactCatalog.add`. Names come
+from the jurisdiction's own law or return, never from another system's.
 """
 
 from __future__ import annotations
@@ -66,6 +67,13 @@ class ArtifactKind(Generic[V]):  # noqa: UP046  (invariant V, see above)
         """The local part of the identifier, for traces and messages."""
         return self.identifier.partition("/")[2]
 
+    def check_value(self, value: V) -> None:
+        """Refuse `value`, already an instance of the value type, if this kind cannot hold it.
+
+        Called by `Artifact`; a kind accepts every instance unless a subclass says otherwise, as
+        `RecordListKind` does for a record list of other fields.
+        """
+
 
 type Money = ArtifactKind[Decimal]
 """A money kind: its artifacts are exact `Decimal`s in the jurisdiction's currency."""
@@ -88,6 +96,7 @@ class Artifact[T]:
                 f"{self.kind.label} must be a {self.kind.value_type.__name__}, "
                 f"got {type(self.value).__name__}"
             )
+        self.kind.check_value(self.value)
         if self.kind.non_negative and isinstance(self.value, Decimal | int) and self.value < 0:
             raise NegativeArtifactError(
                 f"{self.kind.identifier} cannot be negative, got {self.value}",
@@ -166,9 +175,22 @@ class ArtifactCatalog:
         only). A local id this catalog already declared is an error.
         """
         kind = ArtifactKind(self._namespace.identifier(local_id), value_type, non_negative)
+        self.add(kind)
+        return kind
+
+    def add(self, kind: ArtifactKind[Any]) -> None:
+        """Record `kind`, built by its own class, such as a record-list kind.
+
+        A kind outside this catalog's namespace is an InvalidRegistrationError; a local id this
+        catalog already declared is an error.
+        """
+        namespace = kind.identifier.partition("/")[0]
+        if namespace != self._namespace.name:
+            raise InvalidRegistrationError(
+                f"{kind.identifier!r} is not in this catalog's namespace {self._namespace.name!r}"
+            )
         if kind.identifier in self._kinds:
             raise DuplicateRegistrationError(
                 f"{kind.identifier!r} is already declared in this catalog"
             )
         self._kinds[kind.identifier] = kind
-        return kind

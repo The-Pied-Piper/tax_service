@@ -58,6 +58,12 @@ class NegativeArtifactError(DomainError):
         self.value = value
 
 
+class InvalidRecordError(DomainError):
+    """A record list's fields are not a list of Decimal or int kinds, or one of its records is not
+    a mapping, misses one of its fields or has another key.
+    """
+
+
 class InputAboveBoundError(DomainError):
     """An amount was given above the bound it may not exceed."""
 

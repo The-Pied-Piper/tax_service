@@ -11,9 +11,11 @@ from pathlib import Path
 
 import pytest
 
-from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry
+from app.domain.artifact import Artifact, ArtifactCatalog, ArtifactKind, ArtifactRegistry
 from app.domain.errors import NegativeArtifactError
 from app.domain.jurisdiction_code import JurisdictionCode
+from app.domain.record_list import RecordList, RecordListKind
+from app.domain.registry import Namespace
 from app.jurisdictions.ca.catalog import (
     FEDERAL_BASIC_TAX,
     TAXABLE_INCOME,
@@ -34,6 +36,16 @@ SECTIONS = {
 VALID = "".join(SECTIONS.values())
 # Made up for the count tests and not registered with the application: a non-negative count.
 COUNT = ArtifactKind("ex/count", int, non_negative=True)
+# Made up for the record-list tests: a YAML list of two records, each keyed by the identifiers
+# of its fields, an amount and a count, both quoted.
+DEPENDANTS = (
+    "inputs:\n"
+    "  ex/dependants:\n"
+    '    - ex/dependant_net_income: "25000"\n'
+    '      ex/months_resident: "12"\n'
+    '    - ex/dependant_net_income: "5000.50"\n'
+    '      ex/months_resident: "6"\n'
+)
 
 
 @pytest.fixture
@@ -47,6 +59,20 @@ def counts() -> ArtifactRegistry:
     """A registry of the made-up count and the federal basic tax `VALID` expects."""
     artifacts = ArtifactRegistry()
     artifacts.register(COUNT.identifier, COUNT)
+    artifacts.register(FEDERAL_BASIC_TAX.identifier, FEDERAL_BASIC_TAX)
+    return artifacts
+
+
+@pytest.fixture
+def records() -> ArtifactRegistry:
+    """A registry of made-up `ex/dependants` records (a non-negative amount and count) and the
+    federal basic tax `VALID` expects."""
+    catalog = ArtifactCatalog(Namespace("ex"))
+    net_income = catalog.declare("dependant_net_income", Decimal, non_negative=True)
+    months = catalog.declare("months_resident", int, non_negative=True)
+    RecordListKind.declare(catalog, "dependants", fields=(net_income, months))
+    artifacts = ArtifactRegistry()
+    artifacts.register_catalog(catalog)
     artifacts.register(FEDERAL_BASIC_TAX.identifier, FEDERAL_BASIC_TAX)
     return artifacts
 
@@ -414,3 +440,151 @@ def test_discovers_every_yaml_file_in_name_order(tmp_path: Path) -> None:
         (tmp_path / name).write_text("")
 
     assert WorkedReturn.discover(tmp_path) == (tmp_path / "a.yaml", tmp_path / "b.yaml")
+
+
+def test_a_record_list_input_loads_its_records_in_order(
+    tmp_path: Path, records: ArtifactRegistry
+) -> None:
+    path = write(tmp_path, with_section("inputs", DEPENDANTS), "ok.yaml")
+    kind = records.kind("ex/dependants")
+    net_income = records.kind("ex/dependant_net_income")
+    months = records.kind("ex/months_resident")
+
+    worked = WorkedReturn.load(path, records)
+
+    expected = RecordList(
+        (net_income, months),
+        [{net_income: D("25000"), months: 12}, {net_income: D("5000.50"), months: 6}],
+    )
+    assert worked.inputs == (Artifact(kind, expected),)
+    loaded = worked.inputs[0].value.records
+    assert str(loaded[1][net_income]) == "5000.50"
+    assert type(loaded[1][months]) is int
+
+
+def test_an_empty_record_list_loads_as_no_records(
+    tmp_path: Path, records: ArtifactRegistry
+) -> None:
+    path = write(tmp_path, with_section("inputs", "inputs:\n  ex/dependants: []\n"), "ok.yaml")
+    kind = records.kind("ex/dependants")
+    fields = (records.kind("ex/dependant_net_income"), records.kind("ex/months_resident"))
+
+    worked = WorkedReturn.load(path, records)
+
+    assert worked.inputs == (Artifact(kind, RecordList(fields, [])),)
+
+
+def test_a_record_list_that_is_not_a_list_names_the_file_and_key(
+    tmp_path: Path, records: ArtifactRegistry
+) -> None:
+    path = write(tmp_path, with_section("inputs", 'inputs:\n  ex/dependants: "2"\n'))
+
+    with pytest.raises(WorkedReturnError, match=r"bad\.yaml: inputs\.ex/dependants must be a list"):
+        WorkedReturn.load(path, records)
+
+
+def test_a_record_that_is_not_a_mapping_names_the_file_and_item(
+    tmp_path: Path, records: ArtifactRegistry
+) -> None:
+    path = write(tmp_path, with_section("inputs", 'inputs:\n  ex/dependants:\n    - "25000"\n'))
+
+    with pytest.raises(
+        WorkedReturnError, match=r"bad\.yaml: inputs\.ex/dependants\[0\] must be a mapping"
+    ):
+        WorkedReturn.load(path, records)
+
+
+def test_a_record_missing_a_field_names_the_file_item_and_field(
+    tmp_path: Path, records: ArtifactRegistry
+) -> None:
+    text = DEPENDANTS.replace('      ex/months_resident: "6"\n', "")
+    path = write(tmp_path, with_section("inputs", text))
+
+    with pytest.raises(
+        WorkedReturnError,
+        match=r"bad\.yaml: inputs\.ex/dependants\[1\]: missing keys \['ex/months_resident'\]",
+    ):
+        WorkedReturn.load(path, records)
+
+
+@pytest.mark.parametrize("key", ["ex/other", "ca/federal_basic_tax", "months_resident"])
+def test_a_record_with_an_unknown_field_names_the_file_item_and_field(
+    tmp_path: Path, records: ArtifactRegistry, key: str
+) -> None:
+    # A field is one of the record list's own kinds: another registered kind is unknown here too.
+    text = DEPENDANTS + f'      {key}: "1"\n'
+    path = write(tmp_path, with_section("inputs", text))
+
+    with pytest.raises(
+        WorkedReturnError,
+        match=rf"bad\.yaml: inputs\.ex/dependants\[1\]: unknown keys \['{key}'\]",
+    ):
+        WorkedReturn.load(path, records)
+
+
+@pytest.mark.parametrize(
+    ("amount", "problem"),
+    [
+        ('"lots"', "is not a decimal"),
+        ('"NaN"', "is not a decimal"),
+        ("5000.50", "must be a string"),  # unquoted: YAML would make it a float
+    ],
+)
+def test_a_non_decimal_record_amount_names_the_file_item_and_field(
+    tmp_path: Path, records: ArtifactRegistry, amount: str, problem: str
+) -> None:
+    path = write(tmp_path, with_section("inputs", DEPENDANTS.replace('"5000.50"', amount)))
+
+    with pytest.raises(
+        WorkedReturnError,
+        match=rf"bad\.yaml: inputs\.ex/dependants\[1\]\.ex/dependant_net_income {problem}",
+    ):
+        WorkedReturn.load(path, records)
+
+
+@pytest.mark.parametrize(
+    ("count", "problem"),
+    [
+        ("6", "must be a string, got int"),  # unquoted: YAML would read it itself
+        ('"06"', "is not a count: '06'"),
+        ('"6.0"', "is not a count: '6.0'"),
+        ('"-1"', "is not a count: '-1'"),
+    ],
+)
+def test_a_record_count_that_is_not_a_digit_string_names_the_file_item_and_field(
+    tmp_path: Path, records: ArtifactRegistry, count: str, problem: str
+) -> None:
+    path = write(tmp_path, with_section("inputs", DEPENDANTS.replace('"6"', count)))
+
+    with pytest.raises(
+        WorkedReturnError,
+        match=rf"bad\.yaml: inputs\.ex/dependants\[1\]\.ex/months_resident {problem}",
+    ):
+        WorkedReturn.load(path, records)
+
+
+def test_a_negative_record_amount_fails_at_load_naming_the_item_and_field(
+    tmp_path: Path, records: ArtifactRegistry
+) -> None:
+    # Like a negative scalar input, the value type's own check refuses it, unwrapped.
+    path = write(tmp_path, with_section("inputs", DEPENDANTS.replace('"5000.50"', '"-1"')))
+
+    with pytest.raises(
+        NegativeArtifactError, match=r"item 2: ex/dependant_net_income cannot be negative"
+    ):
+        WorkedReturn.load(path, records)
+
+
+def test_a_record_list_under_expected_names_the_file_and_key(
+    tmp_path: Path, records: ArtifactRegistry
+) -> None:
+    # Record lists are what a return starts from, never a line it expects, like counts.
+    text = VALID.replace('  ca/federal_basic_tax: "20146.25"\n', "  ex/dependants: []\n").replace(
+        'inputs:\n  ca/taxable_income: "115000"\n', DEPENDANTS
+    )
+    path = write(tmp_path, text)
+
+    with pytest.raises(
+        WorkedReturnError, match=r"bad\.yaml: expected\.ex/dependants: .*not an amount"
+    ):
+        WorkedReturn.load(path, records)
