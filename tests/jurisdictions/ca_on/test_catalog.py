@@ -15,6 +15,7 @@ import pytest
 import app.jurisdictions.ca_on
 import app.jurisdictions.ca_on.catalog
 from app.domain.artifact import ArtifactCatalog, ArtifactKind, ArtifactRegistry
+from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca_on.catalog import (
     BASIC_PERSONAL_AMOUNT,
     CATALOG,
@@ -29,6 +30,10 @@ from app.jurisdictions.ca_on.catalog import (
     FERTILITY_CREDIT,
     FERTILITY_CREDIT_BEFORE_MAXIMUM,
     FERTILITY_EXPENSES,
+    FLOW_THROUGH_SHARE_CREDIT,
+    FLOW_THROUGH_SHARE_EXPENSES,
+    FLOW_THROUGH_SHARE_SLIP_EXPENSES,
+    FLOW_THROUGH_SHARE_SLIPS,
     LIFT_CREDIT,
     LIFT_CREDIT_BEFORE_MAXIMUM,
     LIFT_MAXIMUM_CREDIT,
@@ -94,6 +99,10 @@ REGISTERED = frozenset(
         "ca-on/seniors_transit_paid",
         "ca-on/seniors_transit_amount_paid_at_most_maximum",
         "ca-on/seniors_transit_credit",
+        "ca-on/flow_through_share_slip_expenses",
+        "ca-on/flow_through_share_slips",
+        "ca-on/flow_through_share_expenses",
+        "ca-on/flow_through_share_credit",
         "ca-on/ontario_credits_subtotal",
         "ca-on/ontario_credits",
     }
@@ -101,6 +110,8 @@ REGISTERED = frozenset(
 # ON428 lines 75 (line 60969) and 76 (line 60970): the numbers of dependent children and of
 # dependants, counted, not money.
 COUNTS = frozenset({"ca-on/dependent_children", "ca-on/dependants"})
+# Form T1221 lines 1 to 3, one line per corporation or slip: the record list of the slips.
+RECORD_LISTS = frozenset({"ca-on/flow_through_share_slips"})
 
 
 @pytest.fixture
@@ -169,14 +180,20 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
         is SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM
     )
     assert registry.get("ca-on/seniors_transit_credit") is SENIORS_TRANSIT_CREDIT
+    assert (
+        registry.get("ca-on/flow_through_share_slip_expenses") is FLOW_THROUGH_SHARE_SLIP_EXPENSES
+    )
+    assert registry.get("ca-on/flow_through_share_slips") is FLOW_THROUGH_SHARE_SLIPS
+    assert registry.get("ca-on/flow_through_share_expenses") is FLOW_THROUGH_SHARE_EXPENSES
+    assert registry.get("ca-on/flow_through_share_credit") is FLOW_THROUGH_SHARE_CREDIT
     assert registry.get("ca-on/ontario_credits_subtotal") is ONTARIO_CREDITS_SUBTOTAL
     assert registry.get("ca-on/ontario_credits") is ONTARIO_CREDITS
 
 
-def test_every_registered_kind_but_the_counts_is_money_in_the_package_namespace(
+def test_every_registered_kind_but_the_counts_and_record_lists_is_money_in_the_package_namespace(
     registry: ArtifactRegistry,
 ) -> None:
-    for identifier in REGISTERED - COUNTS:
+    for identifier in REGISTERED - COUNTS - RECORD_LISTS:
         kind = registry.get(identifier)
         assert isinstance(kind, ArtifactKind)
         assert kind.identifier.startswith(f"{app.jurisdictions.ca_on.NAMESPACE}/")
@@ -192,8 +209,23 @@ def test_the_counts_are_int_kinds_in_the_package_namespace(registry: ArtifactReg
         assert kind.value_type is int, identifier
 
 
-def test_every_kind_is_declared_non_negative(registry: ArtifactRegistry) -> None:
+def test_the_flow_through_share_slips_are_a_record_list_of_the_slip_expenses(
+    registry: ArtifactRegistry,
+) -> None:
+    assert RECORD_LISTS <= REGISTERED
+    for identifier in RECORD_LISTS:
+        kind = registry.get(identifier)
+        assert isinstance(kind, RecordListKind)
+        assert kind.identifier.startswith(f"{app.jurisdictions.ca_on.NAMESPACE}/")
+    assert FLOW_THROUGH_SHARE_SLIPS.fields == (FLOW_THROUGH_SHARE_SLIP_EXPENSES,)
+    assert FLOW_THROUGH_SHARE_SLIP_EXPENSES.value_type is Decimal
+
+
+def test_every_kind_but_the_record_lists_is_declared_non_negative(
+    registry: ArtifactRegistry,
+) -> None:
     for kind in CATALOG.kinds:
-        assert kind.non_negative is True, kind.identifier
-    for identifier in REGISTERED:
+        if kind.identifier not in RECORD_LISTS:
+            assert kind.non_negative is True, kind.identifier
+    for identifier in REGISTERED - RECORD_LISTS:
         assert registry.kind(identifier).non_negative is True, identifier

@@ -383,3 +383,23 @@ class ChosenByCountLine(TraceLine):
     def amount(self) -> Decimal:
         """The chosen value, unchanged."""
         return self.chosen_value
+
+
+@dataclass(frozen=True)
+class RecordTotalLine(TraceLine):
+    """The `total` produced as `output`: `field` added over the items of a record list, in the
+    list's order, each item's `amounts` entry its value of `field`, exactly.
+
+    Its own class, not a `SumLine`: the parts are the items of one list, named by position, not
+    artifacts of their own.
+    """
+
+    output: Money
+    field: Money
+    amounts: tuple[Decimal, ...]
+    total: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The exact total."""
+        return self.total

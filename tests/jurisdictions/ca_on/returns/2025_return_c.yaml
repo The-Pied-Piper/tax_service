@@ -711,18 +711,25 @@ sources:
     CRA, Form ON479 (form 5006-TC), "Ontario Credits": "Line 1 and line 61268: Eligible
     medical expenses for fertility treatment multiplied by 25% (maximum $5,000) ="; "Line
     14: Amount paid in the year for eligible seniors' use of Ontario public transit services
-    (maximum $3,000) Line 63100 multiplied by 15% ="; "Line 18: Add lines 1, 2, 13, 14, 16,
-    and 17. ="; "Line 19: Amount from line 18 of the previous page"; "Line 21: Line 19 plus
-    line 20 Enter this amount online 47900 of your return. Ontario credits =". This return
-    has no eligible medical expenses for fertility treatment and no amount paid for seniors'
-    use of Ontario public transit services, so line 1 is 0 x 25% = 0, at most $5,000: 0, and
-    line 14 is 0, at most $3,000, x 15% = 0; lines 2, 13 and 16 are not triggered and line
-    17 (the focused flow-through share credit) is not yet computed, so line 18 is 0 + 0 = 0,
-    line 19 carries it, line 20 is not triggered and line 21 is 0. The T1 (form 5000-R) line
-    165 and line 47900: "Provincial or territorial credits (complete Form 479, if it
-    applies)" is that 0. These lines are dollars-and-cents boxes, rounded half-up to the
-    cent, which changes nothing here.
+    (maximum $3,000) Line 63100 multiplied by 15% ="; "Line 17 and line 63220: Enter your
+    total expenses from your Form T1221. multiplied by 5% ="; "Line 18: Add lines 1, 2, 13,
+    14, 16, and 17. ="; "Line 19: Amount from line 18 of the previous page"; "Line 21: Line
+    19 plus line 20 Enter this amount online 47900 of your return. Ontario credits =". This
+    return has no eligible medical expenses for fertility treatment and no amount paid for
+    seniors' use of Ontario public transit services, so line 1 is 0 x 25% = 0, at most
+    $5,000: 0, and line 14 is 0, at most $3,000, x 15% = 0; line 17 is the total expenses of
+    Form T1221 line 4, 0 as this return has no T1221 slips, x 5% = 0; lines 2, 13 and 16 are
+    not triggered, so line 18 is 0 + 0 + 0 = 0, line 19 carries it, line 20 is not triggered
+    and line 21 is 0. The T1 (form 5000-R) line 165 and line 47900: "Provincial or
+    territorial credits (complete Form 479, if it applies)" is that 0. These lines are
+    dollars-and-cents boxes, rounded half-up to the cent, which changes nothing here.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-tc/5006-tc-25e.txt
+  - >-
+    CRA, Form T1221, "Ontario Focused Flow-Through Share Resource Expenses (Individuals)"
+    (confirmed 2026-10-19 from the PDF; no .txt published): line 4 "Add lines 1 to 3. Enter
+    this amount on line 63220 of your Form ON479." This return has no T1221 slips, so there
+    is no amount of qualifying expenses on lines 1 to 3 and line 4 is 0.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t1221/t1221-25e.pdf
 inputs:
   ca/employment_income: "50000"
   ca/capital_gain: "0"
@@ -799,6 +806,7 @@ inputs:
   ca/income_tax_deducted: "5000"
   ca-on/fertility_expenses: "0"
   ca-on/seniors_transit_paid: "0"
+  ca-on/flow_through_share_slips: []
   ca-on/community_food_program_donations: "0"
 expected:
   ca/taxable_capital_gains: "0"
@@ -893,6 +901,8 @@ expected:
   ca-on/fertility_credit: "0"
   ca-on/seniors_transit_amount_paid_at_most_maximum: "0"
   ca-on/seniors_transit_credit: "0"
+  ca-on/flow_through_share_expenses: "0"
+  ca-on/flow_through_share_credit: "0"
   ca-on/ontario_credits_subtotal: "0"
   ca-on/ontario_credits: "0"
   ca/provincial_credits: "0"

@@ -392,6 +392,7 @@ inputs:
   ca/income_tax_deducted: "9000"
   ca-on/fertility_expenses: "0"
   ca-on/seniors_transit_paid: "0"
+  ca-on/flow_through_share_slips: []
   ca-on/community_food_program_donations: "0"
 expected:
   ca/taxable_capital_gains: "0.00"
@@ -501,6 +502,8 @@ expected:
   ca-on/fertility_credit: "0.00"
   ca-on/seniors_transit_amount_paid_at_most_maximum: "0.00"
   ca-on/seniors_transit_credit: "0.00"
+  ca-on/flow_through_share_expenses: "0"
+  ca-on/flow_through_share_credit: "0"
   ca-on/ontario_credits_subtotal: "0.00"
   ca-on/ontario_credits: "0.00"
   ca/provincial_credits: "0.00"

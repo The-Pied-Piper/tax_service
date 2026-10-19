@@ -48,8 +48,8 @@ eligible dependants (line 38100) choosing the first (T1 line 45300); less the to
 48200), here the chosen income tax deducted of 25000 (line 43700) plus that benefit, to the refund
 or balance owing (line 167), 897.15, positive so a balance owing; every line computed from a dataset
 rounded half-up to the cent) are checked from the files under `returns/` by
-`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H, I, K and L; this module pins which
-capability produces each line, the order, and the trace that explains them.
+`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H, I, J, K, L and M; this module pins
+which capability produces each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
@@ -89,6 +89,7 @@ from app.domain.parameters.fraction import Fraction
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.parameters.taper import Taper
+from app.domain.record_list import RecordList
 from app.domain.trace import (
     AtMostLine,
     BracketColumnLine,
@@ -101,6 +102,7 @@ from app.domain.trace import (
     MultipleOverLine,
     PerUnitAmountLine,
     RateAppliedLine,
+    RecordTotalLine,
     RoundedTotalLine,
     SubtractedLine,
     SubtractedNotBelowZeroLine,
@@ -269,6 +271,9 @@ from app.jurisdictions.ca.catalog import (
     WORKING_INCOME,
 )
 from app.jurisdictions.ca_on import catalog as ontario
+from app.jurisdictions.ca_on.capabilities.flow_through_share_expenses import (
+    FlowThroughShareExpenses,
+)
 from app.jurisdictions.ca_on.catalog import (
     COMMUNITY_FOOD_PROGRAM_CREDIT,
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
@@ -279,6 +284,10 @@ from app.jurisdictions.ca_on.catalog import (
     FERTILITY_CREDIT,
     FERTILITY_CREDIT_BEFORE_MAXIMUM,
     FERTILITY_EXPENSES,
+    FLOW_THROUGH_SHARE_CREDIT,
+    FLOW_THROUGH_SHARE_EXPENSES,
+    FLOW_THROUGH_SHARE_SLIP_EXPENSES,
+    FLOW_THROUGH_SHARE_SLIPS,
     LIFT_CREDIT,
     LIFT_CREDIT_BEFORE_MAXIMUM,
     LIFT_MAXIMUM_CREDIT,
@@ -316,6 +325,12 @@ CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 def service() -> TaxComputationService:
     return build_tax_computation()
+
+
+def slips(*expenses: str) -> Artifact[RecordList]:
+    """The Form T1221 slips, one record per amount of qualifying expenses, in the order given."""
+    records = [{FLOW_THROUGH_SHARE_SLIP_EXPENSES: D(amount)} for amount in expenses]
+    return Artifact(FLOW_THROUGH_SHARE_SLIPS, RecordList(FLOW_THROUGH_SHARE_SLIPS.fields, records))
 
 
 def compute(
@@ -395,6 +410,7 @@ def compute(
     income_tax_deducted: str = "0",
     fertility_expenses: str = "0",
     seniors_transit_paid: str = "0",
+    flow_through_share_slips: tuple[str, ...] = (),
     community_food_program_donations: str = "0",
 ) -> Worksheet:
     return service().compute(
@@ -502,6 +518,7 @@ def compute(
         Artifact(INCOME_TAX_DEDUCTED, D(income_tax_deducted)),
         Artifact(FERTILITY_EXPENSES, D(fertility_expenses)),
         Artifact(SENIORS_TRANSIT_PAID, D(seniors_transit_paid)),
+        slips(*flow_through_share_slips),
         Artifact(COMMUNITY_FOOD_PROGRAM_DONATIONS, D(community_food_program_donations)),
     )
 
@@ -540,6 +557,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(INCOME_TAX_DEDUCTED) is None
     assert worksheet.producer_of(FERTILITY_EXPENSES) is None
     assert worksheet.producer_of(SENIORS_TRANSIT_PAID) is None
+    assert worksheet.producer_of(FLOW_THROUGH_SHARE_SLIPS) is None
     assert worksheet.producer_of(COMMUNITY_FOOD_PROGRAM_DONATIONS) is None
     assert worksheet.producer_of(OTHER_EMPLOYMENT_INCOME) is None
     assert worksheet.producer_of(OLD_AGE_SECURITY) is None
@@ -885,6 +903,12 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     )
     assert worksheet.producer_of(FERTILITY_CREDIT) is not worksheet.producer_of(
         SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM
+    )
+    # Form T1221 line 4 (the slips added), then ON479 line 17 (the rate on it), which line 18 adds.
+    assert isinstance(worksheet.producer_of(FLOW_THROUGH_SHARE_EXPENSES), FlowThroughShareExpenses)
+    assert isinstance(worksheet.producer_of(FLOW_THROUGH_SHARE_CREDIT), ApplyRate)
+    assert worksheet.producer_of(FLOW_THROUGH_SHARE_CREDIT) is not worksheet.producer_of(
+        SENIORS_TRANSIT_CREDIT
     )
     assert isinstance(worksheet.producer_of(ONTARIO_CREDITS_SUBTOTAL), Sum)
     assert isinstance(worksheet.producer_of(ONTARIO_CREDITS), Sum)
@@ -1398,8 +1422,14 @@ def test_the_trace_explains_the_computation() -> None:
         "(half-up to 0.01)",
         "0",
     )
+    flow_through_expenses = position("flow_through_share_expenses: no items = 0", "0")
+    flow_through = position(
+        "flow_through_share_credit: 5% of flow_through_share_expenses 0 (half-up to 0.01)", "0"
+    )
     ontario_credits_subtotal = position(
-        "ontario_credits_subtotal: fertility_credit 0 + seniors_transit_credit 0 = 0", "0"
+        "ontario_credits_subtotal: fertility_credit 0 + seniors_transit_credit 0 "
+        "+ flow_through_share_credit 0 = 0",
+        "0",
     )
     ontario_credits = position("ontario_credits: ontario_credits_subtotal 0 = 0", "0")
     provincial = position("provincial_credits: ontario_credits 0 = 0", "0")
@@ -1471,6 +1501,7 @@ def test_the_trace_explains_the_computation() -> None:
     assert family_net < cwb_reduction_dependant < cwb_with
     assert fertility_before_maximum < fertility < ontario_credits_subtotal
     assert transit_paid < transit < ontario_credits_subtotal
+    assert flow_through_expenses < flow_through < ontario_credits_subtotal
     assert ontario_credits_subtotal < ontario_credits < provincial < credits
     assert cwb < credits
     assert credits < balance
@@ -1523,6 +1554,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     times = {line.output: line for line in trace if isinstance(line, TimesCountLine)}
     fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
     chosen = {line.output: line for line in trace if isinstance(line, ChosenByCountLine)}
+    record_totals = {line.output: line for line in trace if isinstance(line, RecordTotalLine)}
 
     # The rate is applied once, to each form's total of credit amounts (T1 line 33800, ON428
     # line 58840), giving its non-refundable tax credits (T1 line 35000, ON428 line 61500).
@@ -1592,6 +1624,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Rate(D("0.15")),
             CENT,
             D("10421.70"),
+        ),
+        # ON479 line 17 and line 63220 "multiplied by 5%", on Form T1221 line 4: no slips, 0.
+        FLOW_THROUGH_SHARE_CREDIT: RateAppliedLine(
+            FLOW_THROUGH_SHARE_CREDIT,
+            FLOW_THROUGH_SHARE_EXPENSES,
+            D("0"),
+            Rate(D("0.05")),
+            CENT,
+            D("0"),
         ),
         # ON428 line 87 and line 62150 "multiplied by 25%": the qualifying donations of 0.
         COMMUNITY_FOOD_PROGRAM_CREDIT: RateAppliedLine(
@@ -1915,10 +1956,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ADJUSTED_FAMILY_NET_INCOME: SumLine(
             ADJUSTED_FAMILY_NET_INCOME, ((NET_INCOME, D("115000")),), D("115000")
         ),
-        # ON479 line 18 "Add lines 1, 2, 13, 14, 16, and 17.": lines 1 and 14, in line order.
+        # ON479 line 18 "Add lines 1, 2, 13, 14, 16, and 17.": lines 1, 14 and 17, in line order.
         ONTARIO_CREDITS_SUBTOTAL: SumLine(
             ONTARIO_CREDITS_SUBTOTAL,
-            ((FERTILITY_CREDIT, D("0")), (SENIORS_TRANSIT_CREDIT, D("0"))),
+            (
+                (FERTILITY_CREDIT, D("0")),
+                (SENIORS_TRANSIT_CREDIT, D("0")),
+                (FLOW_THROUGH_SHARE_CREDIT, D("0")),
+            ),
             D("0"),
         ),
         # ON479 line 21 "Line 19 plus line 20": line 19 carries line 18, line 20 is not triggered.
@@ -2621,6 +2666,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             result=D("0"),
         ),
     }
+    # Form T1221 line 4 "Add lines 1 to 3.": Return A has no slips, so no items and a total of 0.
+    assert record_totals == {
+        FLOW_THROUGH_SHARE_EXPENSES: RecordTotalLine(
+            FLOW_THROUGH_SHARE_EXPENSES, FLOW_THROUGH_SHARE_SLIP_EXPENSES, (), D("0")
+        ),
+    }
     # T1 line 45300: Schedule 6 line 28 for Return A's family status, no eligible spouse and 0
     # Schedule 6 eligible dependants (line 38100), so the amounts with neither.
     assert chosen == {
@@ -2679,7 +2730,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 117
+    assert len(order) == 119
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -2868,6 +2919,8 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[CANADA_WORKERS_BENEFIT] < position[TOTAL_CREDITS]
     assert position[FERTILITY_CREDIT_BEFORE_MAXIMUM] < position[FERTILITY_CREDIT]
     assert position[SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM] < position[SENIORS_TRANSIT_CREDIT]
+    assert position[FLOW_THROUGH_SHARE_EXPENSES] < position[FLOW_THROUGH_SHARE_CREDIT]
+    assert position[FLOW_THROUGH_SHARE_CREDIT] < position[ONTARIO_CREDITS_SUBTOTAL]
     assert position[FERTILITY_CREDIT] < position[ONTARIO_CREDITS_SUBTOTAL]
     assert position[SENIORS_TRANSIT_CREDIT] < position[ONTARIO_CREDITS_SUBTOTAL]
     assert (
@@ -3530,7 +3583,11 @@ def test_return_fs_canada_workers_benefit_is_zero_with_an_eligible_dependant() -
     ) in rendered
 
 
-def return_f_with_credits(fertility_expenses: str, seniors_transit_paid: str) -> Worksheet:
+def return_f_with_credits(
+    fertility_expenses: str,
+    seniors_transit_paid: str,
+    flow_through_share_slips: tuple[str, ...] = (),
+) -> Worksheet:
     """Return F's inputs, as in `returns/2025_return_f.yaml`, with the ON479 amounts given."""
     return compute(
         "60000",
@@ -3548,6 +3605,7 @@ def return_f_with_credits(fertility_expenses: str, seniors_transit_paid: str) ->
         income_tax_deducted="8000",
         fertility_expenses=fertility_expenses,
         seniors_transit_paid=seniors_transit_paid,
+        flow_through_share_slips=flow_through_share_slips,
     )
 
 
@@ -3592,7 +3650,8 @@ def test_return_gs_ontario_credits_are_5180_and_lower_the_refund_by_that_much() 
         "(half-up to 0.01)"
     ) in rendered
     assert (
-        "ontario_credits_subtotal: fertility_credit 5000 + seniors_transit_credit 180 = 5180"
+        "ontario_credits_subtotal: fertility_credit 5000 + seniors_transit_credit 180 "
+        "+ flow_through_share_credit 0 = 5180"
     ) in rendered
     assert "ontario_credits: ontario_credits_subtotal 5180 = 5180" in rendered
     assert "provincial_credits: ontario_credits 5180 = 5180" in rendered
@@ -3603,6 +3662,125 @@ def test_return_gs_ontario_credits_are_5180_and_lower_the_refund_by_that_much() 
     assert (
         "refund_or_balance_owing: total_payable 4240.69 less total_credits 13180 = -8939.31"
     ) in rendered
+
+
+def test_return_ms_flow_through_share_credit_is_500_and_lowers_the_refund_by_that_much() -> None:
+    # Return M is Return G with two Form T1221 slips, of 6000 and 4000 (two corporations). T1221
+    # line 4 is 6000 + 4000 = 10000, entered on ON479 line 17 and line 63220, x 5% = 500.00. Line
+    # 18 is 5000 + 180.00 + 500.00 = 5680.00, line 19 carries it, line 21 and T1 line 47900 are
+    # 5680.00; the total credits are 8000 + 0 + 5680.00 = 13680.00 and line 167 is 4240.69 -
+    # 13680.00 = -9439.31, Return G's -8939.31 less 500.00.
+    return_g = return_f_with_credits("24000", "1200")
+    worksheet = return_f_with_credits("24000", "1200", ("6000", "4000"))
+
+    assert worksheet.get(FLOW_THROUGH_SHARE_SLIPS) == slips("6000", "4000")
+    assert worksheet.get(FLOW_THROUGH_SHARE_EXPENSES).value == D("10000")
+    assert worksheet.get(FLOW_THROUGH_SHARE_CREDIT).value == D("500.00")
+    assert worksheet.get(FERTILITY_CREDIT).value == D("5000")
+    assert worksheet.get(SENIORS_TRANSIT_CREDIT).value == D("180.00")
+    assert worksheet.get(ONTARIO_CREDITS_SUBTOTAL).value == D("5680.00")
+    assert worksheet.get(ONTARIO_CREDITS).value == D("5680.00")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D("5680.00")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("4240.69")
+    assert worksheet.get(TOTAL_CREDITS).value == D("13680.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-9439.31")
+    assert return_g.get(FLOW_THROUGH_SHARE_CREDIT).value == D("0")
+    assert return_g.get(REFUND_OR_BALANCE_OWING).value == D("-8939.31")
+    assert return_g.get(REFUND_OR_BALANCE_OWING).value - worksheet.get(
+        REFUND_OR_BALANCE_OWING
+    ).value == D("500.00")
+    (total,) = [line for line in worksheet.trace if isinstance(line, RecordTotalLine)]
+    assert total == RecordTotalLine(
+        FLOW_THROUGH_SHARE_EXPENSES,
+        FLOW_THROUGH_SHARE_SLIP_EXPENSES,
+        (D("6000"), D("4000")),
+        D("10000"),
+    )
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "flow_through_share_expenses: item 1 flow_through_share_slip_expenses 6000 "
+        "+ item 2 flow_through_share_slip_expenses 4000 = 10000"
+    ) in rendered
+    assert (
+        "flow_through_share_credit: 5% of flow_through_share_expenses 10000 (half-up to 0.01)"
+    ) in rendered
+    assert (
+        "ontario_credits_subtotal: fertility_credit 5000 + seniors_transit_credit 180 "
+        "+ flow_through_share_credit 500 = 5680"
+    ) in rendered
+    assert "ontario_credits: ontario_credits_subtotal 5680 = 5680" in rendered
+    assert "provincial_credits: ontario_credits 5680 = 5680" in rendered
+    assert (
+        "total_credits: income_tax_deducted 8000 + canada_workers_benefit 0 "
+        "+ provincial_credits 5680 = 13680"
+    ) in rendered
+    assert (
+        "refund_or_balance_owing: total_payable 4240.69 less total_credits 13680 = -9439.31"
+    ) in rendered
+
+
+def test_no_slips_leave_the_flow_through_share_credit_at_zero() -> None:
+    worksheet = return_f_with_credits("0", "0")
+
+    assert worksheet.get(FLOW_THROUGH_SHARE_SLIPS) == slips()
+    assert worksheet.get(FLOW_THROUGH_SHARE_EXPENSES).value == D("0")
+    assert worksheet.get(FLOW_THROUGH_SHARE_CREDIT).value == D("0")
+    assert worksheet.get(ONTARIO_CREDITS).value == D("0")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-3759.31")
+    assert "flow_through_share_expenses: no items = 0" in EnglishTraceRenderer().render_all(
+        worksheet.trace
+    )
+
+
+def test_a_single_slip_gives_its_own_5_percent_as_the_only_ontario_credit() -> None:
+    # T1221 line 4 is the one slip, 6000; ON479 line 17 is 6000 x 5% = 300.00 with no lines 1
+    # or 14, so lines 18 and 21 and T1 line 47900 are 300.00.
+    worksheet = return_f_with_credits("0", "0", ("6000",))
+
+    assert worksheet.get(FLOW_THROUGH_SHARE_EXPENSES).value == D("6000")
+    assert worksheet.get(FLOW_THROUGH_SHARE_CREDIT).value == D("300.00")
+    assert worksheet.get(ONTARIO_CREDITS_SUBTOTAL).value == D("300.00")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D("300.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-4059.31")
+    assert "flow_through_share_expenses: item 1 flow_through_share_slip_expenses 6000 = 6000" in (
+        EnglishTraceRenderer().render_all(worksheet.trace)
+    )
+
+
+def test_each_slip_is_an_item_named_by_its_position_and_added_before_the_rate() -> None:
+    # Four slips, one of them 0: 1000.10 + 0 + 2000.20 + 3000.30 = 6000.60, x 5% = 300.03 exactly.
+    worksheet = return_f_with_credits("0", "0", ("1000.10", "0", "2000.20", "3000.30"))
+
+    assert worksheet.get(FLOW_THROUGH_SHARE_EXPENSES).value == D("6000.60")
+    assert worksheet.get(FLOW_THROUGH_SHARE_CREDIT).value == D("300.03")
+    assert (
+        "flow_through_share_expenses: item 1 flow_through_share_slip_expenses 1000.1 "
+        "+ item 2 flow_through_share_slip_expenses 0 "
+        "+ item 3 flow_through_share_slip_expenses 2000.2 "
+        "+ item 4 flow_through_share_slip_expenses 3000.3 = 6000.6"
+    ) in EnglishTraceRenderer().render_all(worksheet.trace)
+
+
+def test_the_5_percent_is_applied_once_to_the_total_not_to_each_slip() -> None:
+    # Two slips of 0.10: the total 0.20 x 5% = 0.01 exactly. Rounding each slip's 0.005 half-up
+    # (0.01 each) would give 0.02.
+    worksheet = return_f_with_credits("0", "0", ("0.10", "0.10"))
+
+    assert worksheet.get(FLOW_THROUGH_SHARE_EXPENSES).value == D("0.20")
+    assert worksheet.get(FLOW_THROUGH_SHARE_CREDIT).value == D("0.01")
+
+
+def test_the_flow_through_share_credit_is_not_limited_by_the_tax() -> None:
+    # ON479 is a refundable-credits form: line 17 is not taken off the Ontario tax. Slips of
+    # 200000 give 200000 x 5% = 10000.00, far above Return F's Ontario tax of 1786.52, and it is
+    # added to the credits whole.
+    worksheet = return_f_with_credits("0", "0", ("200000",))
+
+    assert worksheet.get(ONTARIO_TAX).value == D("1786.52")
+    assert worksheet.get(FLOW_THROUGH_SHARE_CREDIT).value == D("10000.00")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D("10000.00")
+    assert worksheet.get(TOTAL_CREDITS).value == D("18000.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-13759.31")
 
 
 def test_the_fertility_credit_below_its_maximum_is_25_percent_of_the_expenses() -> None:
