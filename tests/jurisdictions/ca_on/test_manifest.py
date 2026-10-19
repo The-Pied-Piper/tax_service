@@ -29,6 +29,7 @@ from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.capabilities.times_count import TimesCount
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Manifest
+from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADJUSTED_FAMILY_NET_INCOME,
@@ -63,6 +64,7 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GIFTS_LIMIT_ADDITION,
     CAPITAL_GIFTS_TOTAL,
     CAPITAL_PROPERTY_GIFTS,
+    CAREGIVER_AMOUNT,
     CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES,
     CHARITABLE_DONATIONS,
     CHARITABLE_DONATIONS_CLAIMED,
@@ -194,6 +196,7 @@ from app.jurisdictions.ca.catalog import (
     INCOME_TAX_DEDUCTED,
     INFIRM_CHILDREN,
     INFIRM_CHILDREN_AMOUNT,
+    INFIRM_DEPENDANTS,
     INTEREST_AND_OTHER_INVESTMENT_INCOME,
     INVESTMENT_INCOME_BEFORE_PRIOR_YEARS,
     INVESTMENT_INCOME_CREDITED_NOT_RECEIVED,
@@ -502,6 +505,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca-on/dependants",
             "ca/eligible_dependants",
             "ca/dependant_net_income",
+            "ca/infirm_dependants",
             "ca/infirm_children",
             "ca/born_in_1960_or_earlier",
             "ca/spouse_net_income",
@@ -1680,6 +1684,18 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca/spouse_caregiver_amount"},
         ),
+        # T1 line 82 (line 30450) "Canada caregiver amount for other infirm dependants age 18 or
+        # older (complete Schedule 5)", Schedule 5 "Line 30450 - Canada caregiver amount for other
+        # infirm dependants age 18 or older": for each dependant, line 1 "Base amount 28,798.00"
+        # less line 2 "Infirm dependant's net income from line 23600 of their return", line 3
+        # "Line 1 minus line 2 (if negative, enter "0") (maximum $8,601)", and "the total of
+        # allowable amounts claimed for all dependants".
+        CapabilitySelection(
+            name="ca/caregiver_amount",
+            params={"base": "ca/caregiver_base_amount", "maximum": "ca/caregiver_maximum_amount"},
+            consumes={"dependants": "ca/infirm_dependants"},
+            produces={"output": "ca/caregiver_amount"},
+        ),
         # T1 line 83 (line 30500) "Canada caregiver amount for infirm children under 18 years of
         # age (see Schedule 5) Number of children you are claiming this amount for Line 30499"
         # "multiplied by $2,687".
@@ -1807,11 +1823,10 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca-on/eligible_dependant_amount"},
         ),
-        # T1 line 33500 (lines 30000, 30100, 30300, 30400, 30425, 30500, 30800, 31200, 31260) and
-        # ON428 line 58800 (lines 58040, 58080, 58120, 58160, 58240, 58300), in the forms' line
-        # order. ON428 lines 58240 and 58300 are "Amount from line 30800 / 31200 of your
-        # return", so the Ontario sum reads the federal kinds; it has no Canada employment
-        # amount.
+        # T1 line 33500 (lines 30000, 30100, 30300, 30400, 30425, 30450, 30500, 30800, 31200, 31260)
+        # and ON428 line 58800 (lines 58040, 58080, 58120, 58160, 58240, 58300), in the forms' line
+        # order. ON428 lines 58240 and 58300 are "Amount from line 30800 / 31200 of your return",
+        # so the Ontario sum reads the federal kinds; it has no Canada employment amount.
         CapabilitySelection(
             name="core/sum",
             params={},
@@ -1822,6 +1837,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
                     "ca/spouse_amount",
                     "ca/eligible_dependant_amount",
                     "ca/spouse_caregiver_amount",
+                    "ca/caregiver_amount",
                     "ca/infirm_children_amount",
                     "ca/cpp_base_contributions",
                     "ca/ei_premiums",
@@ -2942,7 +2958,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca-on/net_refund"},
         ),
     }
-    assert len(found.capabilities) == 233
+    assert len(found.capabilities) == 234
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -2952,7 +2968,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 233
+    assert len(composition.order) == 234
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -3578,6 +3594,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT, SPOUSE_CAREGIVER_ELIGIBLE}),
             frozenset({SPOUSE_CAREGIVER_AMOUNT}),
         ),
+        (CaregiverAmount, frozenset({INFIRM_DEPENDANTS}), frozenset({CAREGIVER_AMOUNT})),
         (PerUnitAmount, frozenset({INFIRM_CHILDREN}), frozenset({INFIRM_CHILDREN_AMOUNT})),
         (CreditAmount, frozenset(), frozenset({ontario.AGE_MAXIMUM})),
         (CreditAmount, frozenset(), frozenset({ontario.AGE_INCOME_THRESHOLD})),
@@ -3642,6 +3659,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
                     SPOUSE_AMOUNT,
                     ELIGIBLE_DEPENDANT_AMOUNT,
                     SPOUSE_CAREGIVER_AMOUNT,
+                    CAREGIVER_AMOUNT,
                     INFIRM_CHILDREN_AMOUNT,
                     CPP_BASE_CONTRIBUTIONS,
                     EI_PREMIUMS,

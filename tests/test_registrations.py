@@ -58,6 +58,12 @@ def test_importing_a_jurisdiction_package_registers_its_capabilities() -> None:
         assert registered.__module__ == f"app.jurisdictions.ca_on.capabilities.{name}"
 
 
+def test_importing_the_federal_package_registers_its_capabilities() -> None:
+    registered = CapabilityRegistry.shared().get("ca/caregiver_amount")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.caregiver_amount"
+
+
 def test_each_core_package_imports_every_module_in_its_directory() -> None:
     for package in app.registrations.CORE_PACKAGES:
         directory = Path(package.__file__ or "").parent

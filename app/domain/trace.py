@@ -472,3 +472,47 @@ class ChosenRateAppliedLine(TraceLine):
     def amount(self) -> Decimal:
         """The rounded product."""
         return self.result
+
+
+@dataclass(frozen=True)
+class CaregiverClaimLine(TraceLine):
+    """The allowable amount `result` for one dependant, by `position` (from 1), for `output`.
+
+    It is `base` less the dependant's `net_income`, from 0 up to `maximum`, rounded with
+    `rounding`.
+
+    Its own class, not a `CappedAmountLine`: the amount is worked on for one dependant, named by
+    position, not for an artifact of its own.
+    """
+
+    output: Money
+    position: int
+    base: Amount
+    net_income: Decimal
+    maximum: Amount
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The dependant's allowable amount."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class ItemsTotalLine(TraceLine):
+    """The `total` produced as `output` by adding `items`, each the position (from 1) of an item
+    of a record list and its amount, in order. No items is a total of 0.
+
+    Its own class, not a `SumLine`: the parts are items of one list, named by position, not
+    artifacts of their own.
+    """
+
+    output: Money
+    items: tuple[tuple[int, Decimal], ...]
+    total: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The exact total."""
+        return self.total

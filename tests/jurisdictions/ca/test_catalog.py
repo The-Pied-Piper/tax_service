@@ -15,6 +15,7 @@ import pytest
 import app.jurisdictions.ca
 import app.jurisdictions.ca.catalog
 from app.domain.artifact import ArtifactCatalog, ArtifactKind, ArtifactRegistry
+from app.domain.record_list import RecordList, RecordListKind
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADJUSTED_FAMILY_NET_INCOME,
@@ -49,6 +50,7 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GIFTS_LIMIT_ADDITION,
     CAPITAL_GIFTS_TOTAL,
     CAPITAL_PROPERTY_GIFTS,
+    CAREGIVER_AMOUNT,
     CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES,
     CATALOG,
     CHARITABLE_DONATIONS,
@@ -180,6 +182,7 @@ from app.jurisdictions.ca.catalog import (
     INCOME_TAX_DEDUCTED,
     INFIRM_CHILDREN,
     INFIRM_CHILDREN_AMOUNT,
+    INFIRM_DEPENDANTS,
     INTEREST_AND_OTHER_INVESTMENT_INCOME,
     INVESTMENT_INCOME_BEFORE_PRIOR_YEARS,
     INVESTMENT_INCOME_CREDITED_NOT_RECEIVED,
@@ -516,6 +519,8 @@ REGISTERED = frozenset(
         "ca/spouse_caregiver_limit",
         "ca/spouse_caregiver_amount_before_count",
         "ca/spouse_caregiver_amount",
+        "ca/infirm_dependants",
+        "ca/caregiver_amount",
         "ca/infirm_children",
         "ca/infirm_children_amount",
         "ca/cpp_base_contributions",
@@ -654,6 +659,10 @@ COUNTS = frozenset(
         "ca/fhsa_maximum_participation_period_ended",
     }
 )
+# T1 line 82 (line 30450) and Schedule 5 "Line 30450 - Canada caregiver amount for other infirm
+# dependants age 18 or older": "Complete the chart below for each dependant who meets the
+# conditions above", so the infirm dependants are a list of records, not a number.
+RECORD_LISTS = frozenset({"ca/infirm_dependants"})
 
 
 @pytest.fixture
@@ -1105,6 +1114,8 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
         is SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT
     )
     assert registry.get("ca/spouse_caregiver_amount") is SPOUSE_CAREGIVER_AMOUNT
+    assert registry.get("ca/infirm_dependants") is INFIRM_DEPENDANTS
+    assert registry.get("ca/caregiver_amount") is CAREGIVER_AMOUNT
     assert registry.get("ca/infirm_children") is INFIRM_CHILDREN
     assert registry.get("ca/infirm_children_amount") is INFIRM_CHILDREN_AMOUNT
     assert registry.get("ca/non_refundable_credit_amounts") is NON_REFUNDABLE_CREDIT_AMOUNTS
@@ -1337,6 +1348,7 @@ def test_catalog_kinds_are_money() -> None:
         SPOUSE_CAREGIVER_LIMIT,
         SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT,
         SPOUSE_CAREGIVER_AMOUNT,
+        CAREGIVER_AMOUNT,
         INFIRM_CHILDREN_AMOUNT,
         NON_REFUNDABLE_CREDIT_AMOUNTS,
         CPP_BASE_CONTRIBUTIONS,
@@ -1409,8 +1421,10 @@ def test_catalog_kinds_are_money() -> None:
         assert kind.value_type is Decimal, kind.identifier
 
 
-def test_every_registered_kind_but_the_counts_is_money(registry: ArtifactRegistry) -> None:
-    for identifier in REGISTERED - COUNTS:
+def test_every_registered_kind_but_the_counts_and_record_lists_is_money(
+    registry: ArtifactRegistry,
+) -> None:
+    for identifier in REGISTERED - COUNTS - RECORD_LISTS:
         kind = registry.get(identifier)
         assert isinstance(kind, ArtifactKind)
         assert kind.value_type is Decimal, identifier
@@ -1427,10 +1441,11 @@ def test_the_counts_are_int_kinds_in_the_package_namespace(registry: ArtifactReg
 
 def test_every_kind_but_the_balance_is_declared_non_negative(registry: ArtifactRegistry) -> None:
     # No other `ca/` line can be negative on the forms as modelled.
+    # A record list is not an amount: it is never declared non-negative, its fields are.
     for kind in CATALOG.kinds:
-        if kind.identifier not in SIGNED:
+        if kind.identifier not in SIGNED | RECORD_LISTS:
             assert kind.non_negative is True, kind.identifier
-    for identifier in REGISTERED - SIGNED:
+    for identifier in REGISTERED - SIGNED - RECORD_LISTS:
         assert registry.kind(identifier).non_negative is True, identifier
 
 
@@ -1579,3 +1594,45 @@ def test_the_step_6_credit_lines_are_non_negative(registry: ArtifactRegistry) ->
         assert kind.non_negative is True, kind.identifier
         assert registry.kind(kind.identifier).non_negative is True, kind.identifier
     assert REFUND_OR_BALANCE_OWING.non_negative is False
+
+
+def test_the_infirm_dependants_are_a_record_list_of_their_net_incomes(
+    registry: ArtifactRegistry,
+) -> None:
+    # Schedule 5 line 30450's chart, per dependant: line 2 "Infirm dependant's net income from
+    # line 23600 of their return", the one field a record holds (the caller lists only the
+    # dependants who are eligible, so there are no eligibility fields).
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(INFIRM_DEPENDANTS, RecordListKind)
+    assert INFIRM_DEPENDANTS.identifier == "ca/infirm_dependants"
+    assert INFIRM_DEPENDANTS.value_type is RecordList
+    assert INFIRM_DEPENDANTS.fields == (DEPENDANT_NET_INCOME,)
+    assert registry.get("ca/infirm_dependants") is INFIRM_DEPENDANTS
+
+
+def test_the_record_list_reuses_the_dependants_net_income_kind() -> None:
+    # Schedule 5 line 4 and ON428 line 15 read the same kind; here it is the field of a record.
+    assert INFIRM_DEPENDANTS.fields[0] is DEPENDANT_NET_INCOME
+    assert DEPENDANT_NET_INCOME.identifier == "ca/dependant_net_income"
+    assert DEPENDANT_NET_INCOME.non_negative is True
+
+
+def test_the_infirm_dependants_hold_a_net_income_each_in_the_callers_order() -> None:
+    dependants = RecordList(
+        INFIRM_DEPENDANTS.fields,
+        [{DEPENDANT_NET_INCOME: Decimal("5000")}, {DEPENDANT_NET_INCOME: Decimal("25000")}],
+    )
+
+    assert [record[DEPENDANT_NET_INCOME] for record in dependants.records] == [
+        Decimal("5000"),
+        Decimal("25000"),
+    ]
+
+
+def test_the_caregiver_amount_is_a_non_negative_decimal(registry: ArtifactRegistry) -> None:
+    # T1 line 82 (line 30450) "Canada caregiver amount for other infirm dependants age 18 or
+    # older (complete Schedule 5)": the total of the allowable amounts, each at least "0".
+    assert CAREGIVER_AMOUNT.identifier == "ca/caregiver_amount"
+    assert CAREGIVER_AMOUNT.value_type is Decimal
+    assert CAREGIVER_AMOUNT.non_negative is True
+    assert registry.kind("ca/caregiver_amount") is CAREGIVER_AMOUNT

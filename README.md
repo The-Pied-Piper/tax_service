@@ -44,7 +44,8 @@ app/
   adapters/
     inbound/              HTTP request adapters (DTO -> domain -> DTO), trace renderers
     outbound/             driven adapters: database, files
-  jurisdictions/          one package per jurisdiction: catalog, manifests, parameter data
+  jurisdictions/          one package per jurisdiction: catalog, manifests, parameter data,
+                          and capabilities of its own where a form line needs one
   registrations.py        explicit lists of core packages and jurisdiction packages
   generated/              written by the generator from the spec; never edit
 migrations/               Alembic (async)
