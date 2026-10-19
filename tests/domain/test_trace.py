@@ -1,9 +1,9 @@
 """Unit tests for the structured trace: one frozen line class per fact, with made-up values.
 
 Each line records what happened with the domain objects involved (`ArtifactKind`, `Rate`,
-`Credit`, `Amount`, `ContributionTier`, `Taper`, `Factor`, `Fraction`, `RoundingRule`), never
-text; its `amount` is the figure the line is about. A count is an `int` artifact kind and its
-`int` value.
+`Credit`, `Amount`, `ContributionTier`, `Taper`, `Factor`, `Fraction`, `RateTableRow`,
+`RoundingRule`), never text; its `amount` is the figure the line is about. A count is an `int`
+artifact kind and its `int` value; a chosen rate is a `Rate` artifact kind and its `Rate` value.
 """
 
 from __future__ import annotations
@@ -22,6 +22,7 @@ from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
 from app.domain.parameters.fraction import Fraction
 from app.domain.parameters.rate import Rate
+from app.domain.parameters.rate_table import RateTableRow
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.domain.parameters.taper import Taper
 from app.domain.trace import (
@@ -30,6 +31,7 @@ from app.domain.trace import (
     CappedAmountLine,
     ChosenByCountLine,
     ChosenByRangeLine,
+    ChosenRateAppliedLine,
     ContributionTierLine,
     CreditAmountLine,
     FractionAppliedLine,
@@ -37,6 +39,7 @@ from app.domain.trace import (
     MultipleOverLine,
     PerUnitAmountLine,
     RateAppliedLine,
+    RateByIncomeBandLine,
     RecordTotalLine,
     RoundedTotalLine,
     SubtractedLine,
@@ -86,6 +89,12 @@ ITEM_AMOUNT = ArtifactKind("ex/item_amount", Decimal)
 TESTED = ArtifactKind("ex/amount_tested", Decimal)
 IN_THE_FIRST_RANGE = ArtifactKind("ex/amount_in_the_first_range", Decimal)
 IN_THE_SECOND_RANGE = ArtifactKind("ex/amount_in_the_second_range", Decimal)
+FAMILY_INCOME = ArtifactKind("ex/family_income", Decimal)
+BAND_RATE = ArtifactKind("ex/band_rate", Rate)
+BAND = RateTableRow(D(45000), D(50000), Rate(D("0.55")))
+TOP_BAND = RateTableRow(D(150000), None, Rate(D(0)))
+CARE_EXPENSES = ArtifactKind("ex/care_expenses", Decimal)
+CARE_CREDIT = ArtifactKind("ex/care_credit", Decimal)
 
 
 def column_line() -> BracketColumnLine:
@@ -180,6 +189,16 @@ def chosen_by_range_line() -> ChosenByRangeLine:
     return ChosenByRangeLine(CHOSEN, TESTED, D("1000.00"), IN_THE_SECOND_RANGE, D("625.01"))
 
 
+def rate_by_income_band_line() -> RateByIncomeBandLine:
+    return RateByIncomeBandLine(BAND_RATE, FAMILY_INCOME, D("45500.25"), BAND, Rate(D("0.55")))
+
+
+def chosen_rate_applied_line() -> ChosenRateAppliedLine:
+    return ChosenRateAppliedLine(
+        CARE_CREDIT, CARE_EXPENSES, D("5000.01"), BAND_RATE, Rate(D("0.55")), CENT, D("2750.01")
+    )
+
+
 ALL_LINES = [
     column_line,
     total_line,
@@ -201,6 +220,8 @@ ALL_LINES = [
     chosen_by_count_line,
     record_total_line,
     chosen_by_range_line,
+    rate_by_income_band_line,
+    chosen_rate_applied_line,
 ]
 
 
@@ -1414,6 +1435,174 @@ def test_a_chosen_by_range_lines_amount_is_not_one_of_its_fields() -> None:
 
 def test_a_chosen_by_range_line_is_not_a_chosen_by_count_line() -> None:
     assert not isinstance(chosen_by_range_line(), ChosenByCountLine)
+
+
+def test_rate_by_income_band_line_fields_in_order() -> None:
+    line = rate_by_income_band_line()
+
+    assert line == RateByIncomeBandLine(
+        output=BAND_RATE,
+        income=FAMILY_INCOME,
+        income_amount=D("45500.25"),
+        row=BAND,
+        rate=Rate(D("0.55")),
+    )
+    assert [f.name for f in fields(line)] == ["output", "income", "income_amount", "row", "rate"]
+    assert line.output is BAND_RATE
+    assert line.income is FAMILY_INCOME
+    assert line.income_amount == D("45500.25")
+    assert line.row == BAND
+    assert line.rate == Rate(D("0.55"))
+
+
+def test_a_rate_by_income_band_lines_amount_is_the_rates_value() -> None:
+    line = rate_by_income_band_line()
+
+    assert line.amount == D("0.55")
+    assert type(line.amount) is Decimal
+
+
+def test_rate_by_income_band_line_may_hold_the_unbounded_last_row() -> None:
+    line = RateByIncomeBandLine(BAND_RATE, FAMILY_INCOME, D(150001), TOP_BAND, Rate(D(0)))
+
+    assert line.row == TOP_BAND
+    assert line.amount == D(0)
+
+
+def test_rate_by_income_band_line_holds_no_row_for_the_rate_at_zero() -> None:
+    # A figure of exactly zero takes the table's rate at zero, which is no row's.
+    line = RateByIncomeBandLine(BAND_RATE, FAMILY_INCOME, D(0), None, Rate(D("0.75")))
+
+    assert line.row is None
+    assert line.amount == D("0.75")
+
+
+def test_rate_by_income_band_lines_differ_by_row() -> None:
+    assert rate_by_income_band_line() != RateByIncomeBandLine(
+        BAND_RATE,
+        FAMILY_INCOME,
+        D("45500.25"),
+        RateTableRow(D(40000), D(45000), Rate(D("0.55"))),
+        Rate(D("0.55")),
+    )
+
+
+def test_rate_by_income_band_lines_differ_by_rate() -> None:
+    assert rate_by_income_band_line() != RateByIncomeBandLine(
+        BAND_RATE, FAMILY_INCOME, D("45500.25"), BAND, Rate(D("0.57"))
+    )
+
+
+def test_rate_by_income_band_lines_differ_by_income() -> None:
+    assert rate_by_income_band_line() != RateByIncomeBandLine(
+        BAND_RATE, FAMILY_INCOME, D("45500.26"), BAND, Rate(D("0.55"))
+    )
+
+
+def test_rate_by_income_band_lines_differ_by_output() -> None:
+    other = ArtifactKind("ex/other_rate", Rate)
+
+    assert rate_by_income_band_line() != RateByIncomeBandLine(
+        other, FAMILY_INCOME, D("45500.25"), BAND, Rate(D("0.55"))
+    )
+
+
+def test_rate_by_income_band_lines_are_hashable() -> None:
+    assert hash(rate_by_income_band_line()) == hash(rate_by_income_band_line())
+
+
+def test_a_rate_by_income_band_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(rate_by_income_band_line())]
+
+
+def test_a_rate_by_income_band_line_is_not_a_bracket_column_or_surcharge_tier_line() -> None:
+    line = rate_by_income_band_line()
+
+    assert not isinstance(line, BracketColumnLine)
+    assert not isinstance(line, SurchargeTierLine)
+
+
+def test_chosen_rate_applied_line_fields_in_order() -> None:
+    line = chosen_rate_applied_line()
+
+    assert line == ChosenRateAppliedLine(
+        output=CARE_CREDIT,
+        base=CARE_EXPENSES,
+        base_amount=D("5000.01"),
+        rate_kind=BAND_RATE,
+        rate=Rate(D("0.55")),
+        rounding=CENT,
+        result=D("2750.01"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "base",
+        "base_amount",
+        "rate_kind",
+        "rate",
+        "rounding",
+        "result",
+    ]
+    assert line.output is CARE_CREDIT
+    assert line.base is CARE_EXPENSES
+    assert line.base_amount == D("5000.01")
+    assert line.rate_kind is BAND_RATE
+    assert line.rate == Rate(D("0.55"))
+    assert line.rounding == CENT
+    assert line.result == D("2750.01")
+    assert line.amount == D("2750.01")
+
+
+def test_chosen_rate_applied_line_may_hold_an_unrounded_amount() -> None:
+    line = ChosenRateAppliedLine(
+        CARE_CREDIT,
+        CARE_EXPENSES,
+        D("5000.01"),
+        BAND_RATE,
+        Rate(D("0.55")),
+        NO_ROUNDING,
+        D("2750.0055"),
+    )
+
+    assert line.amount == D("2750.0055")
+
+
+def test_chosen_rate_applied_lines_differ_by_rate() -> None:
+    assert chosen_rate_applied_line() != ChosenRateAppliedLine(
+        CARE_CREDIT, CARE_EXPENSES, D("5000.01"), BAND_RATE, Rate(D("0.53")), CENT, D("2750.01")
+    )
+
+
+def test_chosen_rate_applied_lines_differ_by_the_rates_kind() -> None:
+    other = ArtifactKind("ex/other_rate", Rate)
+
+    assert chosen_rate_applied_line() != ChosenRateAppliedLine(
+        CARE_CREDIT, CARE_EXPENSES, D("5000.01"), other, Rate(D("0.55")), CENT, D("2750.01")
+    )
+
+
+def test_chosen_rate_applied_lines_differ_by_rounding() -> None:
+    assert chosen_rate_applied_line() != ChosenRateAppliedLine(
+        CARE_CREDIT,
+        CARE_EXPENSES,
+        D("5000.01"),
+        BAND_RATE,
+        Rate(D("0.55")),
+        NO_ROUNDING,
+        D("2750.01"),
+    )
+
+
+def test_chosen_rate_applied_lines_are_hashable() -> None:
+    assert hash(chosen_rate_applied_line()) == hash(chosen_rate_applied_line())
+
+
+def test_a_chosen_rate_applied_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(chosen_rate_applied_line())]
+
+
+def test_a_chosen_rate_applied_line_is_not_a_rate_applied_line() -> None:
+    assert not isinstance(chosen_rate_applied_line(), RateAppliedLine)
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:

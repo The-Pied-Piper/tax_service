@@ -1,8 +1,9 @@
 """The structured trace: what each capability did, recorded as facts.
 
 A trace line holds the domain objects and amounts involved (`ArtifactKind`, `Rate`, `Credit`,
-`Amount`, `ContributionTier`, `Taper`, `Factor`, `Fraction`, `RoundingRule`), never text; its
-`amount` is the figure the line is about. A count is an `int` artifact kind and its `int` value.
+`Amount`, `ContributionTier`, `Taper`, `Factor`, `Fraction`, `RateTableRow`, `RoundingRule`), never
+text; its `amount` is the figure the line is about. A count is an `int` artifact kind and its `int`
+value; a chosen rate is a `Rate` artifact kind and its `Rate` value.
 Rendering lines as human-readable text lives outside the domain, in the adapters.
 """
 
@@ -20,6 +21,7 @@ from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
 from app.domain.parameters.fraction import Fraction
 from app.domain.parameters.rate import Rate
+from app.domain.parameters.rate_table import RateTableRow
 from app.domain.parameters.rounding import RoundingRule
 from app.domain.parameters.taper import Taper
 
@@ -425,3 +427,48 @@ class ChosenByRangeLine(TraceLine):
     def amount(self) -> Decimal:
         """The chosen value, unchanged."""
         return self.chosen_value
+
+
+@dataclass(frozen=True)
+class RateByIncomeBandLine(TraceLine):
+    """`rate` produced as `output`, the rate of the table's `row` that `income` (worth
+    `income_amount`) falls in; `row` is `None` for a figure of exactly 0, which takes the table's
+    rate at zero.
+
+    Its own class, not a `BracketColumnLine` or `SurchargeTierLine`: the row chooses one rate for
+    the whole figure, and nothing is charged or rounded.
+    """
+
+    output: ArtifactKind[Rate]
+    income: Money
+    income_amount: Decimal
+    row: RateTableRow | None
+    rate: Rate
+
+    @property
+    def amount(self) -> Decimal:
+        """The chosen rate's value."""
+        return self.rate.value
+
+
+@dataclass(frozen=True)
+class ChosenRateAppliedLine(TraceLine):
+    """The `result` produced as `output` by `base` (worth `base_amount`) × `rate_kind` (worth
+    `rate`), rounded once with `rounding`.
+
+    Its own class, not a `RateAppliedLine`: the rate is an artifact chosen earlier, not a rate
+    dataset's, so the line names the kind it came from.
+    """
+
+    output: Money
+    base: Money
+    base_amount: Decimal
+    rate_kind: ArtifactKind[Rate]
+    rate: Rate
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The rounded product."""
+        return self.result

@@ -112,6 +112,10 @@ class InvalidFractionError(DomainError):
     """A fraction's numerator or denominator is not positive."""
 
 
+class InvalidRateTableError(DomainError):
+    """A rate table's bounds or rates are invalid, rows are missing, out of order or leave a gap."""
+
+
 class DuplicateRegistrationError(DomainError):
     """Something was registered under an identifier that is already taken."""
 
