@@ -183,7 +183,7 @@ TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE = CATALOG.declare(
 """Taxable dividends other than eligible, T1 line 12010 "Amount of dividends (other than
 eligible)" (use Federal Worksheet): the slip amount (line 5) plus the amount with no slip (line 16).
 
-No other line reads it on the return as modelled, so the manifest returns it."""
+No federal line reads it, so the manifest returns it as a return line."""
 
 TAXABLE_DIVIDENDS = CATALOG.declare("taxable_dividends", Decimal, non_negative=True)
 """Taxable dividends, T1 line 12000 "Amount of dividends (eligible and other than eligible)"

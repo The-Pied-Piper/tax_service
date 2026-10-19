@@ -78,6 +78,58 @@ ONTARIO_TAX_WITH_SURTAX = CATALOG.declare("ontario_tax_with_surtax", Decimal, no
 credits (line 62, which carries line 53 while neither the tax on split income nor the minimum tax
 carryover is modelled) plus the Ontario surtax."""
 
+DIVIDENDS_AMOUNT_A = CATALOG.declare("dividends_amount_a", Decimal, non_negative=True)
+"""Dividends amount A, Worksheet ON428 line 61520 line A "Amount from line 12000 of your
+return": the whole line 12000, as the worksheet has no Note 1."""
+
+DIVIDENDS_AMOUNT_B = CATALOG.declare("dividends_amount_b", Decimal, non_negative=True)
+"""Dividends amount B, Worksheet ON428 line 61520 line 1 "Amount from line 12010 of your return Line
+B": the whole line 12010."""
+
+OTHER_DIVIDENDS_CREDIT = CATALOG.declare("other_dividends_credit", Decimal, non_negative=True)
+"""Ontario credit on dividends other than eligible, Worksheet ON428 line 61520 line 1 "multiplied by
+2.9863%": amount B times the rate."""
+
+DIVIDENDS_AMOUNT_A_LESS_B = CATALOG.declare("dividends_amount_a_less_b", Decimal, non_negative=True)
+"""Dividends amount A less amount B, Worksheet ON428 line 61520 line 2 "Amount A minus amount B Line
+C": the eligible dividends."""
+
+ELIGIBLE_DIVIDENDS_CREDIT = CATALOG.declare("eligible_dividends_credit", Decimal, non_negative=True)
+"""Ontario credit on eligible dividends, Worksheet ON428 line 61520 line 2 "multiplied by 10%": line
+C times the rate."""
+
+DIVIDEND_TAX_CREDIT = CATALOG.declare("dividend_tax_credit", Decimal, non_negative=True)
+"""Ontario dividend tax credit, Worksheet ON428 line 61520 line 3 "Line 1 plus line 2 Enter this
+amount on line 61520 of your Form ON428.": the credit on dividends other than eligible plus the
+credit on eligible dividends, which is ON428 line 57."""
+
+ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT = CATALOG.declare(
+    "ontario_tax_before_dividend_credit", Decimal, non_negative=True
+)
+"""Ontario tax before the dividend tax credit, ON428 line 56 "Enter the amount from line 53 above.":
+the Ontario tax after non-refundable tax credits."""
+
+ONTARIO_TAX_LESS_DIVIDEND_CREDIT = CATALOG.declare(
+    "ontario_tax_less_dividend_credit", Decimal, non_negative=True
+)
+"""Ontario tax less the dividend tax credit, ON428 line 58 "Line 56 minus line 57 (if negative,
+enter "0")": the Ontario tax after credits less the Ontario dividend tax credit (line 57), not
+below zero. Nothing else on the return reads it, as the surtax and line 69 read line 53, so the
+manifest returns it."""
+
+DIVIDEND_CREDIT_FROM_LINE_57 = CATALOG.declare(
+    "dividend_credit_from_line_57", Decimal, non_negative=True
+)
+"""Ontario dividend tax credit from line 57, ON428 line 70 "Ontario dividend tax credit from line
+57": the credit of line 57 again."""
+
+ONTARIO_TAX_AFTER_DIVIDEND_CREDIT = CATALOG.declare(
+    "ontario_tax_after_dividend_credit", Decimal, non_negative=True
+)
+"""Ontario tax after the dividend tax credit, ON428 line 71 "Line 69 minus line 70 (if negative,
+enter "0")": the Ontario tax with surtax less the dividend tax credit, not below zero. It is line
+73, as line 72 (the additional tax for minimum tax purposes) is not triggered."""
+
 TAX_REDUCTION_BASIC = CATALOG.declare("tax_reduction_basic", Decimal, non_negative=True)
 """Basic reduction, ON428 line 74 "Basic reduction 294.00": the amount claimed, the first part of
 the Ontario tax reduction amounts."""
@@ -112,8 +164,8 @@ tax reduction": line 78 "Amount from line 77 above multiplied by 2", less line 7
 line 73 above".
 
 Line 73 is "Line 71 plus line 72" and line 71 "Line 69 minus line 70 (if negative, enter "0")".
-Neither the dividend tax credit (line 70) nor the minimum tax (line 72) is modelled, so line 73 is
-the Ontario tax with surtax itself. The conditions under which the form enters "0" on line 80, and
+The minimum tax (line 72) is not triggered, so line 73 is line 71, the Ontario tax after the
+dividend tax credit. The conditions under which the form enters "0" on line 80, and
 the rule that only the spouse or common-law partner with the higher net income claims lines 75
 and 76, are not modelled.
 """
@@ -122,7 +174,8 @@ ONTARIO_TAX_AFTER_REDUCTION = CATALOG.declare(
     "ontario_tax_after_reduction", Decimal, non_negative=True
 )
 """Ontario tax after the Ontario tax reduction, ON428 line 81 "Line 73 minus line 80 (if negative,
-enter "0")": the Ontario tax with surtax (line 73) less the Ontario tax reduction."""
+enter "0")": the Ontario tax after the dividend tax credit (line 73) less the Ontario tax
+reduction."""
 
 LIFT_CREDIT_BEFORE_MAXIMUM = CATALOG.declare(
     "lift_credit_before_maximum", Decimal, non_negative=True

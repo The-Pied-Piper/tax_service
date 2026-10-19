@@ -215,9 +215,12 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_SURTAX,
     ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_AFTER_DIVIDEND_CREDIT,
     ONTARIO_TAX_AFTER_FOOD_CREDIT,
     ONTARIO_TAX_AFTER_LIFT_CREDIT,
     ONTARIO_TAX_AFTER_REDUCTION,
+    ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT,
+    ONTARIO_TAX_LESS_DIVIDEND_CREDIT,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
     SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
@@ -332,15 +335,18 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     )
     # T1 line 167, the refund or balance owing, Schedule 7 line 23, what the return produces for
     # the next year's line 1, line 12010, the amount of dividends other than eligible, which
-    # nothing else on the return reads; and the Federal Worksheet's "Line 25000 - Other payments
+    # nothing else on the return reads; the Federal Worksheet's "Line 25000 - Other payments
     # deduction" line 9 "Line 5 plus line 8 =", which nothing consumes while the count of line 9
-    # over $93,454 is a starting count: the lines the computation returns.
+    # over $93,454 is a starting count; and ON428 line 58, the Ontario tax less the dividend tax
+    # credit, which nothing else on the return reads (the surtax and line 69 read line 53; line
+    # 60, the minimum tax carryover, is not modelled): the lines the computation returns.
     assert found.outputs == frozenset(
         {
             "ca/refund_or_balance_owing",
             "ca/unused_rrsp_contributions_carried_forward",
             "ca/taxable_dividends_other_than_eligible",
             "ca/other_payments_limit_income",
+            "ca-on/ontario_tax_less_dividend_credit",
         }
     )
     # List order carries no meaning: the composition derives the run order from the contracts.
@@ -1178,6 +1184,83 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"parts": ("ca-on/ontario_tax_after_credits", "ca-on/ontario_surtax")},
             produces={"output": "ca-on/ontario_tax_with_surtax"},
         ),
+        # ON428 line 56 "Enter the amount from line 53 above.", line 57 (printed "Line 57 and
+        # line and line 61520") "Ontario dividend tax credit (use Worksheet ON428)" and line 58
+        # "Line 56 minus line 57 (if negative, enter "0")". Worksheet ON428's "Line 61520 -
+        # Ontario dividend tax credit": line A "Amount from line 12000 of your return" and line
+        # 1 "Amount from line 12010 of your return Line B" "multiplied by 2.9863%", with no Note
+        # 1, so A and B are the whole lines 12000 and 12010, each its own step; line 2 "Amount
+        # A minus amount B Line C" "multiplied by 10%"; line 3 "Line 1 plus line 2 Enter this
+        # amount on line 61520 of your Form ON428.", which is line 57.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca-on/ontario_tax_after_credits",)},
+            produces={"output": "ca-on/ontario_tax_before_dividend_credit"},
+        ),
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/taxable_dividends",)},
+            produces={"output": "ca-on/dividends_amount_a"},
+        ),
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/taxable_dividends_other_than_eligible",)},
+            produces={"output": "ca-on/dividends_amount_b"},
+        ),
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/dividend_credit_rate_other_than_eligible"},
+            consumes={"base": "ca-on/dividends_amount_b"},
+            produces={"output": "ca-on/other_dividends_credit"},
+        ),
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={"amount": "ca-on/dividends_amount_a", "less": "ca-on/dividends_amount_b"},
+            produces={"output": "ca-on/dividends_amount_a_less_b"},
+        ),
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/dividend_credit_rate_eligible"},
+            consumes={"base": "ca-on/dividends_amount_a_less_b"},
+            produces={"output": "ca-on/eligible_dividends_credit"},
+        ),
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca-on/other_dividends_credit", "ca-on/eligible_dividends_credit")},
+            produces={"output": "ca-on/dividend_tax_credit"},
+        ),
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/ontario_tax_before_dividend_credit",
+                "less": "ca-on/dividend_tax_credit",
+            },
+            produces={"output": "ca-on/ontario_tax_less_dividend_credit"},
+        ),
+        # ON428 line 70 "Ontario dividend tax credit from line 57" and line 71 "Line 69 minus
+        # line 70 (if negative, enter "0")": line 71 is line 73, as line 72 (the additional tax
+        # for minimum tax purposes) is not triggered.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca-on/dividend_tax_credit",)},
+            produces={"output": "ca-on/dividend_credit_from_line_57"},
+        ),
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/ontario_tax_with_surtax",
+                "less": "ca-on/dividend_credit_from_line_57",
+            },
+            produces={"output": "ca-on/ontario_tax_after_dividend_credit"},
+        ),
         # ON428 line 74 "Basic reduction 294.00": the dataset becomes an artifact of the same
         # name, the first part of line 77.
         CapabilitySelection(
@@ -1215,14 +1298,14 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
         ),
         # ON428 line 78 "Amount from line 77 above multiplied by 2", line 79 "Amount from line 73
         # above" and line 80 "Line 78 minus line 79 (if negative, enter "0") Ontario tax
-        # reduction": line 73 is the Ontario tax with surtax while neither the dividend tax
-        # credit (line 70) nor the minimum tax (line 72) is modelled.
+        # reduction": line 73 is line 71, the Ontario tax after the dividend credit, while the
+        # minimum tax (line 72) is not triggered.
         CapabilitySelection(
             name="core/multiple_over",
             params={"factor": "ca-on/tax_reduction_factor"},
             consumes={
                 "amount": "ca-on/tax_reduction_amounts",
-                "less": "ca-on/ontario_tax_with_surtax",
+                "less": "ca-on/ontario_tax_after_dividend_credit",
             },
             produces={"output": "ca-on/ontario_tax_reduction"},
         ),
@@ -1231,7 +1314,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             name="core/subtract_not_below_zero",
             params={},
             consumes={
-                "amount": "ca-on/ontario_tax_with_surtax",
+                "amount": "ca-on/ontario_tax_after_dividend_credit",
                 "less": "ca-on/ontario_tax_reduction",
             },
             produces={"output": "ca-on/ontario_tax_after_reduction"},
@@ -1540,7 +1623,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 119
+    assert len(found.capabilities) == 129
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -1550,7 +1633,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 119
+    assert len(composition.order) == 129
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -2003,6 +2086,52 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({ONTARIO_TAX_AFTER_CREDITS, ONTARIO_SURTAX}),
             frozenset({ONTARIO_TAX_WITH_SURTAX}),
         ),
+        (
+            Sum,
+            frozenset({ONTARIO_TAX_AFTER_CREDITS}),
+            frozenset({ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT}),
+        ),
+        (Sum, frozenset({TAXABLE_DIVIDENDS}), frozenset({ontario.DIVIDENDS_AMOUNT_A})),
+        (
+            Sum,
+            frozenset({TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE}),
+            frozenset({ontario.DIVIDENDS_AMOUNT_B}),
+        ),
+        (
+            ApplyRate,
+            frozenset({ontario.DIVIDENDS_AMOUNT_B}),
+            frozenset({ontario.OTHER_DIVIDENDS_CREDIT}),
+        ),
+        (
+            Subtract,
+            frozenset({ontario.DIVIDENDS_AMOUNT_A, ontario.DIVIDENDS_AMOUNT_B}),
+            frozenset({ontario.DIVIDENDS_AMOUNT_A_LESS_B}),
+        ),
+        (
+            ApplyRate,
+            frozenset({ontario.DIVIDENDS_AMOUNT_A_LESS_B}),
+            frozenset({ontario.ELIGIBLE_DIVIDENDS_CREDIT}),
+        ),
+        (
+            Sum,
+            frozenset({ontario.OTHER_DIVIDENDS_CREDIT, ontario.ELIGIBLE_DIVIDENDS_CREDIT}),
+            frozenset({ontario.DIVIDEND_TAX_CREDIT}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT, ontario.DIVIDEND_TAX_CREDIT}),
+            frozenset({ONTARIO_TAX_LESS_DIVIDEND_CREDIT}),
+        ),
+        (
+            Sum,
+            frozenset({ontario.DIVIDEND_TAX_CREDIT}),
+            frozenset({ontario.DIVIDEND_CREDIT_FROM_LINE_57}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({ONTARIO_TAX_WITH_SURTAX, ontario.DIVIDEND_CREDIT_FROM_LINE_57}),
+            frozenset({ONTARIO_TAX_AFTER_DIVIDEND_CREDIT}),
+        ),
         (CreditAmount, frozenset(), frozenset({TAX_REDUCTION_BASIC})),
         (PerUnitAmount, frozenset({DEPENDENT_CHILDREN}), frozenset({TAX_REDUCTION_FOR_CHILDREN})),
         (PerUnitAmount, frozenset({DEPENDANTS}), frozenset({TAX_REDUCTION_FOR_DEPENDANTS})),
@@ -2015,12 +2144,12 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         ),
         (
             MultipleOver,
-            frozenset({TAX_REDUCTION_AMOUNTS, ONTARIO_TAX_WITH_SURTAX}),
+            frozenset({TAX_REDUCTION_AMOUNTS, ONTARIO_TAX_AFTER_DIVIDEND_CREDIT}),
             frozenset({ONTARIO_TAX_REDUCTION}),
         ),
         (
             SubtractNotBelowZero,
-            frozenset({ONTARIO_TAX_WITH_SURTAX, ONTARIO_TAX_REDUCTION}),
+            frozenset({ONTARIO_TAX_AFTER_DIVIDEND_CREDIT, ONTARIO_TAX_REDUCTION}),
             frozenset({ONTARIO_TAX_AFTER_REDUCTION}),
         ),
         (ApplyRate, frozenset({EMPLOYMENT_INCOME}), frozenset({LIFT_CREDIT_BEFORE_MAXIMUM})),
