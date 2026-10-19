@@ -16,62 +16,68 @@
 # surtax, so there is a reduction. Net income is above the LIFT credit's $32,500 threshold
 # by enough that its reduction exceeds the $875, so the credit is zero, and above
 # the Canada workers benefit's thresholds by enough that the benefit is zero. Computed
-# from employment income to total income; from employment income, by Schedule 8's
-# three contribution tiers, to the base, first additional and second additional CPP
-# contributions, the last two together the enhanced CPP contributions; from employment
-# income, up to the EI maximum insurable earnings, to the EI premiums; from the unused
-# RRSP contributions from earlier years and the RRSP contributions, their sum, to the
-# contributions available to deduct (Schedule 7 line 10), from those and the deduction
-# limit, the lesser of them, to the most that may be deducted (Schedule 7 line 17), from the
-# amount deducted (line 18), at most that, to the RRSP deduction (line 20), and from the
-# contributions available to deduct less the RRSP deduction to the unused contributions
-# carried forward (line 23); from the numbers of eligible children (T778 Part B lines
-# 1 to 3), $8,000, $11,000 and $5,000 for each, summed to the basic limit (line 4), from
-# employment income, the earned income (line 6), to two-thirds of it, and from those
-# and the child care expenses paid (line 5), the least of them, to the child care expenses
-# deduction (lines 7 and 9, T1 line 21400); less the child care expenses deduction and
-# the enhanced CPP contributions to net income, less the (empty) deductions from net
-# income to taxable income; from net income, by the Federal Worksheet, to the federal
-# basic personal amount; from it less the dependant's net income, not below zero, for
-# each eligible dependant, to the amount for an eligible dependant (T1 line 30400), and
-# from the ON428 base less the dependant's net income, not below zero, at most its maximum,
-# for each eligible dependant, to the Ontario amount (ON428 line 58160); from the number
-# of infirm children, $2,687 for each, to the amount for infirm children (line 30500);
-# and through each form's total of non-refundable credit amounts (its basic personal
-# amount, its amount for an eligible dependant, the base CPP contributions and the EI
-# premiums, and on the T1 alone the amount for infirm children and the Canada employment
-# amount), credited once at the form's credit rate to the form's non-refundable tax credits
-# (T1 line 35000, ON428 line 61500), taken off its basic tax, not below zero, to the tax
-# after credits, and on ON428 the surtax on the Ontario tax after credits, added to it to
-# the Ontario tax with surtax; and, with one dependent child and no dependants, the Ontario
-# tax reduction amounts (the basic reduction plus $544 for the child), twice them less the
-# Ontario tax with surtax, not below zero, to the Ontario tax reduction, taken off the
-# Ontario tax with surtax, not below zero, to the Ontario tax after the reduction; from
-# employment income, by Schedule ON428-A, 5.05% of it at most $875, less 5% of net income
-# over $32,500, not below zero, to the LIFT credit (ON428 line 85), taken off the Ontario
-# tax after the reduction, not below zero, to the Ontario tax after the LIFT credit (line
-# 86); and from taxable income, by the health premium chart's tiers, each capped at the next
-# plateau, to the Ontario health premium, added to the Ontario tax after the LIFT credit to
-# the Ontario tax; from employment income and net income, by Schedule 6, to the working
-# income and the adjusted family net income, from those to the basic amount less its
-# reduction, not below zero, for a filer with no eligible spouse and no eligible dependant
-# and for a filer with one, and from those, by the number of Schedule 6 eligible dependants
-# (line 38100), the first when it is zero and the second otherwise, to the Canada workers
-# benefit (T1 line 45300); and on the T1, the federal tax after credits, carried to the net
-# federal tax, plus the Ontario tax to the total payable, less the total credits, here the
-# chosen income tax deducted plus the Canada workers benefit, to the refund or balance
-# owing, negative for a refund and positive for a balance owing. There is no capital gain,
-# unused or new RRSP contribution or union dues. Not yet computed, so not in this file: any
-# deduction from net income, the social benefits repayment and capital losses. Lines 82 (the
-# provincial foreign tax credit) and 87 (the community food program donation tax credit for
-# farmers) are not triggered by this return, nor are Schedule 5 line 2, T1 lines 30425 and
-# 30450, the Ontario caregiver amount (ON428 line 58185), Form T778 line 8 (the taxpayer
-# taken as the only person supporting the child, to be confirmed), line 67954 (the expenses
-# for children aged 6 or younger, to be confirmed), Note 1's weekly limits for boarding
+# from the Federal Worksheet's line 9, the eight sources of line 12100 added, and its line
+# 11, that less the part reported in previous years, to the interest and other investment
+# income (T1 line 12100); lines 14400, 14500 and 14600 added to line 14700; and, in line
+# order, employment income (line 10100), the other employment income, the pension, benefit
+# and investment lines, the taxable capital gains, the taxable support payments, the RRSP,
+# FHSA, other and scholarship income and line 14700 to total income (line 15000); from
+# employment income, by Schedule 8's three contribution tiers, to the base, first
+# additional and second additional CPP contributions, the last two together the enhanced
+# CPP contributions; from employment income, up to the EI maximum insurable earnings, to
+# the EI premiums; from the unused RRSP contributions from earlier years and the RRSP
+# contributions, their sum, to the contributions available to deduct (Schedule 7 line 10),
+# from those and the deduction limit, the lesser of them, to the most that may be deducted
+# (Schedule 7 line 17), from the amount deducted (line 18), at most that, to the RRSP
+# deduction (line 20), and from the contributions available to deduct less the RRSP
+# deduction to the unused contributions carried forward (line 23); from the numbers of
+# eligible children (T778 Part B lines 1 to 3), $8,000, $11,000 and $5,000 for each,
+# summed to the basic limit (line 4), from employment income, the earned income (line 6),
+# to two-thirds of it, and from those and the child care expenses paid (line 5), the least
+# of them, to the child care expenses deduction (lines 7 and 9, T1 line 21400); less the
+# child care expenses deduction and the enhanced CPP contributions to net income, less the
+# (empty) deductions from net income to taxable income; from net income, by the Federal
+# Worksheet, to the federal basic personal amount; from it less the dependant's net
+# income, not below zero, for each eligible dependant, to the amount for an eligible
+# dependant (T1 line 30400), and from the ON428 base less the dependant's net income, not
+# below zero, at most its maximum, for each eligible dependant, to the Ontario amount
+# (ON428 line 58160); from the number of infirm children, $2,687 for each, to the amount
+# for infirm children (line 30500); and through each form's total of non-refundable credit
+# amounts (its basic personal amount, its amount for an eligible dependant, the base CPP
+# contributions and the EI premiums, and on the T1 alone the amount for infirm children
+# and the Canada employment amount), credited once at the form's credit rate to the form's
+# non-refundable tax credits (T1 line 35000, ON428 line 61500), taken off its basic tax,
+# not below zero, to the tax after credits, and on ON428 the surtax on the Ontario tax
+# after credits, added to it to the Ontario tax with surtax; and, with one dependent child
+# and no dependants, the Ontario tax reduction amounts (the basic reduction plus $544 for
+# the child), twice them less the Ontario tax with surtax, not below zero, to the Ontario
+# tax reduction, taken off the Ontario tax with surtax, not below zero, to the Ontario tax
+# after the reduction; from employment income, by Schedule ON428-A, 5.05% of it at most
+# $875, less 5% of net income over $32,500, not below zero, to the LIFT credit (ON428 line
+# 85), taken off the Ontario tax after the reduction, not below zero, to the Ontario tax
+# after the LIFT credit (line 86); and from taxable income, by the health premium chart's
+# tiers, each capped at the next plateau, to the Ontario health premium, added to the
+# Ontario tax after the LIFT credit to the Ontario tax; from employment income and net
+# income, by Schedule 6, to the working income and the adjusted family net income, from
+# those to the basic amount less its reduction, not below zero, for a filer with no
+# eligible spouse and no eligible dependant and for a filer with one, and from those, by
+# the number of Schedule 6 eligible dependants (line 38100), the first when it is zero and
+# the second otherwise, to the Canada workers benefit (T1 line 45300); and on the T1, the
+# federal tax after credits, carried to the net federal tax, plus the Ontario tax to the
+# total payable, less the total credits, here the chosen income tax deducted plus the
+# Canada workers benefit, to the refund or balance owing, negative for a refund and
+# positive for a balance owing. There is no capital gain, unused or new RRSP contribution
+# or union dues. Not yet computed, so not in this file: any deduction from net income, the
+# social benefits repayment and capital losses. Lines 82 (the provincial foreign tax
+# credit) and 87 (the community food program donation tax credit for farmers) are not
+# triggered by this return, nor are Schedule 5 line 2, T1 lines 30425 and 30450, the
+# Ontario caregiver amount (ON428 line 58185), Form T778 line 8 (the taxpayer taken as the
+# only person supporting the child, to be confirmed), line 67954 (the expenses for
+# children aged 6 or younger, to be confirmed), Note 1's weekly limits for boarding
 # schools and overnight camps (to be confirmed) and Parts C and D, and Schedule 6's
-# disability supplement (Step 3) and advance payments (Step 4); with one Schedule 6 eligible
-# dependant (line 38100), the Schedule 6 amounts for a filer with an eligible dependant are
-# the ones chosen (to be confirmed).
+# disability supplement (Step 3) and advance payments (Step 4); with one Schedule 6
+# eligible dependant (line 38100), the Schedule 6 amounts for a filer with an eligible
+# dependant are the ones chosen (to be confirmed).
 # Amounts are quoted decimal strings, never floats; counts are quoted digit strings. Every
 # output the CA-ON manifest declares must appear under `expected`; intermediate lines may be
 # listed and are then checked too.
@@ -151,6 +157,12 @@ description: >-
   tax on taxable income and both forms' non-refundable tax credits, and the lines that
   follow from them. The lines that only add, subtract, compare or choose take amounts
   already in cents, so the refund or balance owing is in cents too.
+  The other Step 2 income lines are 0: no other employment income, pension or benefit
+  income (lines 10400 to 11900), the Federal Worksheet's lines 1 to 8 and line 10 being 0 so
+  that its line 9, its line 11 and the interest and other investment income (line 12100)
+  are 0, no partnership or RDSP income (lines 12200 and 12500), no taxable support payments,
+  RRSP, FHSA, other or scholarship income (lines 12800 to 13010) and no workers'
+  compensation, social assistance or net federal supplements, so line 14700 is 0 + 0 + 0 = 0.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -161,9 +173,23 @@ sources:
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s3/5000-s3-25e.txt
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s3/5000-s3-25e.pdf
   - >-
-    Total income (line 15000), which takes amounts already in cents, is employment income
-    (line 10100) plus taxable capital gains (line 12700), the only income lines on this
-    return: 60,000 + 0 = 60,000.
+    Total income (line 15000), which takes amounts already in cents, is the sum of Step 2's
+    income lines: employment income (line 10100) plus taxable capital gains (line 12700),
+    the only income lines with an amount on this return, the other lines (10400 to 11900,
+    12100 to 12500, 12800 to 13010 and 14700) being 0: 60,000 + 0 = 60,000.
+  - >-
+    CRA, the 2025 Federal Worksheet (form 5000-D1, docs/cra-forms-2025/5000-d1-25e.txt),
+    "Line 12100 - Interest and other investment income": "Line 9: Add lines 1 to 8."; "Line
+    10: Interest and other investment income, included on line 9, received and reported in
+    previous years"; "Line 11: Line 9 minus line 10. Enter this amount on line 12100 of your
+    return."; and the T1-2025 Ontario edition return (form 5006-R,
+    docs/cra-forms-2025/5006-r-25e.txt), "Step 2 - Total income": "Line 32 and line 14700: Add
+    lines 29 to 31 (see line 25000 in Step 4)."; "Line 33 and line 15000: Line 28 plus line 32
+    Total income". Lines 1 to 8 and 10 of the worksheet are 0, so line 9 is 0, line 11 is 0 -
+    0 = 0 and so is line 12100; lines 29 to 31 are 0, so line 14700 is 0 + 0 + 0 = 0. These
+    lines take amounts already in cents.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-d1/5000-d1-25e.txt
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-r/5006-r-25e.txt
   - >-
     CRA, "CPP contribution rates, maximums and exemptions", 2025 row: maximum annual
     pensionable earnings $71,300; basic exemption $3,500; employee rate 5.95%; maximum
@@ -671,6 +697,33 @@ sources:
 inputs:
   ca/employment_income: "60000"
   ca/capital_gain: "0"
+  ca/other_employment_income: "0"
+  ca/old_age_security: "0"
+  ca/cpp_or_qpp_benefits: "0"
+  ca/other_pensions_and_superannuation: "0"
+  ca/elected_split_pension_amount: "0"
+  ca/universal_child_care_benefit: "0"
+  ca/ei_and_other_benefits: "0"
+  ca/t3_investment_income: "0"
+  ca/t5_investment_income: "0"
+  ca/t5013_investment_income: "0"
+  ca/investment_income_credited_not_received: "0"
+  ca/tax_refund_interest: "0"
+  ca/foreign_investment_income: "0"
+  ca/investment_income_without_a_slip: "0"
+  ca/investment_royalties: "0"
+  ca/investment_income_reported_in_previous_years: "0"
+  ca/net_partnership_income: "0"
+  ca/rdsp_income: "0"
+  ca/taxable_support_payments: "0"
+  ca/rrsp_income: "0"
+  ca/fhsa_income: "0"
+  ca/other_fhsa_income: "0"
+  ca/other_income: "0"
+  ca/taxable_scholarships: "0"
+  ca/workers_compensation_benefits: "0"
+  ca/social_assistance_payments: "0"
+  ca/net_federal_supplements: "0"
   ca/unused_rrsp_contributions: "0"
   ca/rrsp_contributions: "0"
   ca/rrsp_deduction_limit: "10800"
@@ -691,6 +744,9 @@ inputs:
   ca-on/seniors_transit_paid: "0"
 expected:
   ca/taxable_capital_gains: "0"
+  ca/investment_income_before_prior_years: "0"
+  ca/interest_and_other_investment_income: "0"
+  ca/income_support_benefits: "0"
   ca/total_income: "60000"
   ca/cpp_base_contributions: "2796.75"
   ca/cpp_first_additional_contributions: "565.00"

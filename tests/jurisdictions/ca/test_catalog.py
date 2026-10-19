@@ -38,6 +38,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_BASE_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_OR_QPP_BENEFITS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
@@ -47,20 +48,39 @@ from app.jurisdictions.ca.catalog import (
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DEPENDANT_NET_INCOME,
+    EI_AND_OTHER_BENEFITS,
     EI_PREMIUMS,
+    ELECTED_SPLIT_PENSION_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANTS,
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
+    FHSA_INCOME,
+    FOREIGN_INVESTMENT_INCOME,
+    INCOME_SUPPORT_BENEFITS,
     INCOME_TAX_DEDUCTED,
     INFIRM_CHILDREN,
     INFIRM_CHILDREN_AMOUNT,
+    INTEREST_AND_OTHER_INVESTMENT_INCOME,
+    INVESTMENT_INCOME_BEFORE_PRIOR_YEARS,
+    INVESTMENT_INCOME_CREDITED_NOT_RECEIVED,
+    INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
+    INVESTMENT_INCOME_WITHOUT_A_SLIP,
+    INVESTMENT_ROYALTIES,
+    NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
     NET_INCOME,
+    NET_PARTNERSHIP_INCOME,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
+    OLD_AGE_SECURITY,
+    OTHER_EMPLOYMENT_INCOME,
+    OTHER_FHSA_INCOME,
+    OTHER_INCOME,
+    OTHER_PENSIONS_AND_SUPERANNUATION,
     PROVINCIAL_CREDITS,
+    RDSP_INCOME,
     REFUND_OR_BALANCE_OWING,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
@@ -68,14 +88,24 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION,
     RRSP_DEDUCTION_LIMIT,
     RRSP_DEDUCTION_MAXIMUM,
+    RRSP_INCOME,
+    SOCIAL_ASSISTANCE_PAYMENTS,
+    T3_INVESTMENT_INCOME,
+    T5_INVESTMENT_INCOME,
+    T5013_INVESTMENT_INCOME,
+    TAX_REFUND_INTEREST,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
+    TAXABLE_SCHOLARSHIPS,
+    TAXABLE_SUPPORT_PAYMENTS,
     TOTAL_CREDITS,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
     UNION_DUES,
+    UNIVERSAL_CHILD_CARE_BENEFIT,
     UNUSED_RRSP_CONTRIBUTIONS,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
+    WORKERS_COMPENSATION_BENEFITS,
     WORKING_INCOME,
 )
 from app.registrations import JURISDICTIONS
@@ -86,6 +116,36 @@ REGISTERED = frozenset(
         "ca/capital_gain",
         "ca/taxable_capital_gains",
         "ca/total_income",
+        "ca/other_employment_income",
+        "ca/old_age_security",
+        "ca/cpp_or_qpp_benefits",
+        "ca/other_pensions_and_superannuation",
+        "ca/elected_split_pension_amount",
+        "ca/universal_child_care_benefit",
+        "ca/ei_and_other_benefits",
+        "ca/t3_investment_income",
+        "ca/t5_investment_income",
+        "ca/t5013_investment_income",
+        "ca/investment_income_credited_not_received",
+        "ca/tax_refund_interest",
+        "ca/foreign_investment_income",
+        "ca/investment_income_without_a_slip",
+        "ca/investment_royalties",
+        "ca/investment_income_before_prior_years",
+        "ca/investment_income_reported_in_previous_years",
+        "ca/interest_and_other_investment_income",
+        "ca/net_partnership_income",
+        "ca/rdsp_income",
+        "ca/taxable_support_payments",
+        "ca/rrsp_income",
+        "ca/fhsa_income",
+        "ca/other_fhsa_income",
+        "ca/other_income",
+        "ca/taxable_scholarships",
+        "ca/workers_compensation_benefits",
+        "ca/social_assistance_payments",
+        "ca/net_federal_supplements",
+        "ca/income_support_benefits",
         "ca/unused_rrsp_contributions",
         "ca/rrsp_contributions",
         "ca/rrsp_contributions_available",
@@ -195,6 +255,48 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/capital_gain") is CAPITAL_GAIN
     assert registry.get("ca/taxable_capital_gains") is TAXABLE_CAPITAL_GAINS
     assert registry.get("ca/total_income") is TOTAL_INCOME
+    assert registry.get("ca/other_employment_income") is OTHER_EMPLOYMENT_INCOME
+    assert registry.get("ca/old_age_security") is OLD_AGE_SECURITY
+    assert registry.get("ca/cpp_or_qpp_benefits") is CPP_OR_QPP_BENEFITS
+    assert registry.get("ca/other_pensions_and_superannuation") is OTHER_PENSIONS_AND_SUPERANNUATION
+    assert registry.get("ca/elected_split_pension_amount") is ELECTED_SPLIT_PENSION_AMOUNT
+    assert registry.get("ca/universal_child_care_benefit") is UNIVERSAL_CHILD_CARE_BENEFIT
+    assert registry.get("ca/ei_and_other_benefits") is EI_AND_OTHER_BENEFITS
+    assert registry.get("ca/t3_investment_income") is T3_INVESTMENT_INCOME
+    assert registry.get("ca/t5_investment_income") is T5_INVESTMENT_INCOME
+    assert registry.get("ca/t5013_investment_income") is T5013_INVESTMENT_INCOME
+    assert (
+        registry.get("ca/investment_income_credited_not_received")
+        is INVESTMENT_INCOME_CREDITED_NOT_RECEIVED
+    )
+    assert registry.get("ca/tax_refund_interest") is TAX_REFUND_INTEREST
+    assert registry.get("ca/foreign_investment_income") is FOREIGN_INVESTMENT_INCOME
+    assert registry.get("ca/investment_income_without_a_slip") is INVESTMENT_INCOME_WITHOUT_A_SLIP
+    assert registry.get("ca/investment_royalties") is INVESTMENT_ROYALTIES
+    assert (
+        registry.get("ca/investment_income_before_prior_years")
+        is INVESTMENT_INCOME_BEFORE_PRIOR_YEARS
+    )
+    assert (
+        registry.get("ca/investment_income_reported_in_previous_years")
+        is INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS
+    )
+    assert (
+        registry.get("ca/interest_and_other_investment_income")
+        is INTEREST_AND_OTHER_INVESTMENT_INCOME
+    )
+    assert registry.get("ca/net_partnership_income") is NET_PARTNERSHIP_INCOME
+    assert registry.get("ca/rdsp_income") is RDSP_INCOME
+    assert registry.get("ca/taxable_support_payments") is TAXABLE_SUPPORT_PAYMENTS
+    assert registry.get("ca/rrsp_income") is RRSP_INCOME
+    assert registry.get("ca/fhsa_income") is FHSA_INCOME
+    assert registry.get("ca/other_fhsa_income") is OTHER_FHSA_INCOME
+    assert registry.get("ca/other_income") is OTHER_INCOME
+    assert registry.get("ca/taxable_scholarships") is TAXABLE_SCHOLARSHIPS
+    assert registry.get("ca/workers_compensation_benefits") is WORKERS_COMPENSATION_BENEFITS
+    assert registry.get("ca/social_assistance_payments") is SOCIAL_ASSISTANCE_PAYMENTS
+    assert registry.get("ca/net_federal_supplements") is NET_FEDERAL_SUPPLEMENTS
+    assert registry.get("ca/income_support_benefits") is INCOME_SUPPORT_BENEFITS
     assert registry.get("ca/unused_rrsp_contributions") is UNUSED_RRSP_CONTRIBUTIONS
     assert registry.get("ca/rrsp_contributions") is RRSP_CONTRIBUTIONS
     assert registry.get("ca/rrsp_contributions_available") is RRSP_CONTRIBUTIONS_AVAILABLE
@@ -296,6 +398,36 @@ def test_catalog_kinds_are_money() -> None:
         CAPITAL_GAIN,
         TAXABLE_CAPITAL_GAINS,
         TOTAL_INCOME,
+        OTHER_EMPLOYMENT_INCOME,
+        OLD_AGE_SECURITY,
+        CPP_OR_QPP_BENEFITS,
+        OTHER_PENSIONS_AND_SUPERANNUATION,
+        ELECTED_SPLIT_PENSION_AMOUNT,
+        UNIVERSAL_CHILD_CARE_BENEFIT,
+        EI_AND_OTHER_BENEFITS,
+        T3_INVESTMENT_INCOME,
+        T5_INVESTMENT_INCOME,
+        T5013_INVESTMENT_INCOME,
+        INVESTMENT_INCOME_CREDITED_NOT_RECEIVED,
+        TAX_REFUND_INTEREST,
+        FOREIGN_INVESTMENT_INCOME,
+        INVESTMENT_INCOME_WITHOUT_A_SLIP,
+        INVESTMENT_ROYALTIES,
+        INVESTMENT_INCOME_BEFORE_PRIOR_YEARS,
+        INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
+        INTEREST_AND_OTHER_INVESTMENT_INCOME,
+        NET_PARTNERSHIP_INCOME,
+        RDSP_INCOME,
+        TAXABLE_SUPPORT_PAYMENTS,
+        RRSP_INCOME,
+        FHSA_INCOME,
+        OTHER_FHSA_INCOME,
+        OTHER_INCOME,
+        TAXABLE_SCHOLARSHIPS,
+        WORKERS_COMPENSATION_BENEFITS,
+        SOCIAL_ASSISTANCE_PAYMENTS,
+        NET_FEDERAL_SUPPLEMENTS,
+        INCOME_SUPPORT_BENEFITS,
         UNUSED_RRSP_CONTRIBUTIONS,
         RRSP_CONTRIBUTIONS,
         RRSP_CONTRIBUTIONS_AVAILABLE,
