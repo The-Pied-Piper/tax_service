@@ -6,7 +6,8 @@
 # The 2024 proposal to raise the rate did not proceed: the Report on Federal Tax
 # Expenditures 2026, part 2, records that Budget 2025 confirmed the increase would not
 # go ahead.
-# The form states no rounding on these lines, so none is assumed.
+# Line 24 is a dollars-and-cents box, so the product rounds half-up to the cent, the
+# owner's decision, as the form states no rounding rule.
 family: ca/capital_gains_inclusion_rate
 tax_year: 2025
 kind: rate
@@ -14,5 +15,5 @@ sources:
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s3/5000-s3-25e.txt
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s3/5000-s3-25e.pdf
   - https://www.canada.ca/en/department-finance/services/publications/federal-tax-expenditures/2026/part-2.html
-rounding: none
+rounding: {increment: "0.01", mode: half_up}
 rate: "0.5"

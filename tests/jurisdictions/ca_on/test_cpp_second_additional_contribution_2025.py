@@ -77,7 +77,8 @@ def test_2025_second_additional_tier_cites_its_sources(source: str) -> None:
         ("71300", "0"),
         ("81200", "396.00"),
         ("0", "0"),
-        # Rounded half-up to the cent: 4% of 0.12 is 0.0048, of 0.125 is 0.005, a tie.
+        # Rounded half-up to the cent: 4% of 0.12 is 0.0048, down to 0.00; of 0.125 is
+        # 0.005, a tie, up to 0.01.
         ("71300.12", "0.00"),
         ("71300.125", "0.01"),
     ],

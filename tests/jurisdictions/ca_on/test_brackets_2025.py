@@ -7,7 +7,8 @@ dataset's rule, half-up to the cent; the figures it gives are the constants the 
 line 75; ON428 line 7). The tax on taxable income is "Line 72 multiplied by the percentage from
 line 73" plus line 75 (T1), or line 6 plus line 7 (ON428), for the column the income falls in; an
 income exactly at a column's upper bound falls in that column ("more than ... but not more than
-...").
+..."). Line 76 (T1) and line 8 (ON428) are dollars-and-cents boxes, so the tax on taxable income
+is rounded half-up to the cent, by the dataset's own rule.
 """
 
 from __future__ import annotations
@@ -21,7 +22,7 @@ from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.artifact import Artifact
 from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.parameters.brackets import BRACKETS, BracketSchedule
-from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
+from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.jurisdictions.ca.catalog import FEDERAL_BASIC_TAX, TAXABLE_INCOME
 
 D = Decimal
@@ -57,7 +58,8 @@ def test_federal_2025_brackets() -> None:
         (D("253414"), D("0.33")),
     ]
     assert data.values.tax_at_start_rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
-    assert data.rounding == NO_ROUNDING  # CRA states no rounding rule for lines 74 or 76
+    # T1 line 76, a dollars-and-cents box: half-up to the cent.
+    assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
     assert data.sources == FEDERAL_SOURCES
 
 
@@ -73,7 +75,8 @@ def test_ontario_2025_brackets() -> None:
         (D("220000"), D("0.1316")),
     ]
     assert data.values.tax_at_start_rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
-    assert data.rounding == NO_ROUNDING  # CRA states no rounding rule for lines 6 or 8
+    # ON428 line 8, a dollars-and-cents box: half-up to the cent.
+    assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
     assert data.sources == ONTARIO_SOURCES
 
 
@@ -167,3 +170,35 @@ def test_matches_cra_worked_examples(taxable_income: str, federal_basic_tax: str
     result = capability.compute((Artifact(TAXABLE_INCOME, D(taxable_income)),))
 
     assert result.outputs == (Artifact(FEDERAL_BASIC_TAX, D(federal_basic_tax)),)
+
+
+@pytest.mark.parametrize(
+    ("family", "taxable_income", "tax"),
+    [
+        # The schedule's tax at a threshold, rounded half-up to the cent by the dataset's rule:
+        # 14.5% x 57,375 = 8,319.375, a tie, up to 8,319.38; 20.5% x 57,375 + 8,319.38 =
+        # 20,081.255, a tie, up to 20,081.26, though column 3 starts at 20,081.25; 5.05% x 52,886
+        # = 2,670.743, to 2,670.74; 9.15% x 52,889 + 2,670.74 = 7,510.0835, to 7,510.08, though
+        # column 3 starts at 7,510.09.
+        ("ca/brackets", "57375", "8319.38"),
+        ("ca/brackets", "114750", "20081.26"),
+        ("ca-on/brackets", "52886", "2670.74"),
+        ("ca-on/brackets", "105775", "7510.08"),
+        # Returns B and F: 14.5% x 29,735.00 = 4,311.575, to 4,311.58; 2,670.74 + 9.15% x 1,549.00
+        # = 2,812.4735, to 2,812.47.
+        ("ca/brackets", "29735.00", "4311.58"),
+        ("ca-on/brackets", "54435.00", "2812.47"),
+        # Return E's Ontario tax: 12,445.60 + 12.16% x 48,926.00 = 18,395.0016, to 18,395.00.
+        ("ca-on/brackets", "198926.00", "18395.00"),
+    ],
+)
+def test_the_tax_on_taxable_income_is_rounded_half_up_to_the_cent(
+    family: str, taxable_income: str, tax: str
+) -> None:
+    capability = ProgressiveTax(
+        TAXABLE_INCOME, FEDERAL_BASIC_TAX, SOURCE.get(family, 2025, BRACKETS)
+    )
+
+    result = capability.compute((Artifact(TAXABLE_INCOME, D(taxable_income)),))
+
+    assert result.outputs == (Artifact(FEDERAL_BASIC_TAX, D(tax)),)

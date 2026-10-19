@@ -162,7 +162,8 @@ CHILD_CARE_EARNED_INCOME_LIMIT = CATALOG.declare(
     "child_care_earned_income_limit", Decimal, non_negative=True
 )
 """Earned income limit for child care, Form T778 Part B line 6 "multiplied by two-thirds": the
-earned income times two-thirds, carried unrounded."""
+earned income times two-thirds, rounded half-up to the cent, once, as line 6 is a dollars-and-cents
+box."""
 
 CHILD_CARE_EXPENSES = CATALOG.declare("child_care_expenses", Decimal, non_negative=True)
 """Child care expenses deduction, T1 line 41 (line 21400) "Child care expenses (complete Form
@@ -530,10 +531,10 @@ Not triggered by the returns modelled, or left to later work: the other lines fr
 REFUND_OR_BALANCE_OWING = CATALOG.declare("refund_or_balance_owing", Decimal)
 """Refund or balance owing, T1 line 167 "Line 149 minus line 166 If the amount is negative, enter
 it on line 48400 below. If the amount is positive, enter it on line 48500 below. Refund or balance
-owing": the total payable less the total credits, exact.
+owing": the total payable less the total credits, both already in cents.
 
 Line 149 is "Enter the amount from line 148 of the previous page.", the total payable. The one
 kind not declared non-negative: a negative amount is a refund (line 48400 "Refund"), a positive
-one a balance owing (line 48500 "Balance owing"). The T1 states no rounding on these lines, so
-none is applied.
+one a balance owing (line 48500 "Balance owing"). The line takes amounts already in cents, so it
+is in cents without a rounding of its own.
 """

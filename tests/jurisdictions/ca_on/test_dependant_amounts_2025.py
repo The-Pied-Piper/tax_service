@@ -16,8 +16,8 @@ line 30500 is a per-unit amount (the `amount` kind).
 Ontario: 2025 ON428 (form 5006-C) line 14 "Base amount 11,905.00"; line 15 "Your eligible
 dependant's net income from line 23600 of their return"; line 16 (line 58160) "Line 14 minus line
 15 (if negative, enter "0") (maximum $10,823)". The base is a claimed amount (the `credit` kind,
-as the basic reduction), the maximum a plain cap (the `amount` kind). The forms state no rounding
-on any of these lines.
+as the basic reduction), the maximum a plain cap (the `amount` kind). Lines 30500, 14 and 16 are
+dollars-and-cents boxes, so each is rounded half-up to the cent.
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.per_unit_amount import PerUnitAmount
 from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.credit import CREDIT, Credit
-from app.domain.parameters.rounding import NO_ROUNDING
+from app.domain.parameters.rounding import RoundingMode, RoundTo
 
 D = Decimal
 SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
@@ -58,21 +58,24 @@ def test_2025_amount_per_infirm_child_is_2687() -> None:
     data = SOURCE.get(INFIRM_CHILD, 2025, AMOUNT)
 
     assert data.values == Amount(D("2687"))
-    assert data.rounding == NO_ROUNDING  # the T1 states no rounding on line 30500
+    # T1 line 30500, a dollars-and-cents box: half-up to the cent.
+    assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
 def test_2025_ontario_base_is_11905() -> None:
     data = SOURCE.get(ONTARIO_BASE, 2025, CREDIT)
 
     assert data.values == Credit(amount=D("11905.00"))
-    assert data.rounding == NO_ROUNDING  # ON428 states no rounding on line 14
+    # ON428 line 14, a dollars-and-cents box: half-up to the cent.
+    assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
 def test_2025_ontario_maximum_is_10823() -> None:
     data = SOURCE.get(ONTARIO_MAXIMUM, 2025, AMOUNT)
 
     assert data.values == Amount(D("10823"))
-    assert data.rounding == NO_ROUNDING  # ON428 states no rounding on line 16
+    # ON428 line 16, a dollars-and-cents box: half-up to the cent.
+    assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
 def test_2025_datasets_cite_only_their_form_text() -> None:
@@ -119,6 +122,8 @@ def test_the_ontario_base_is_claimed_whole() -> None:
         ("10823.01", "10823"),
         # Below it, the amount itself, as for a dependant with 1500 of net income.
         ("10405.00", "10405.00"),
+        # An amount past the cent is rounded half-up to it.
+        ("10405.005", "10405.01"),
         ("0", "0"),
     ],
 )

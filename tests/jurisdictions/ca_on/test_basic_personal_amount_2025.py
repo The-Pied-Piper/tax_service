@@ -19,7 +19,9 @@ amount is rounded half-up to the cent, once. The federal non-refundable credit r
 Ontario: 2025 ON428 line 58040 ($12,747), with no reduction, and the credit rate on ON428 line 45
 (5.05%). Each rate is its own dataset (`credit_rate`), stated once, and applies to the total of
 the credit amounts (T1 line 33500, ON428 line 58800), of which the basic personal amount is one
-part. Sources are listed in each dataset.
+part. The Ontario amount and both rates' products are dollars-and-cents boxes too (ON428 line
+58040; T1 line 33800, ON428 line 58840), so each is rounded half-up to the cent. Sources are
+listed in each dataset.
 """
 
 from __future__ import annotations
@@ -38,7 +40,7 @@ from app.domain.capabilities.tapered_amount import TaperedAmount
 from app.domain.parameters.brackets import BRACKETS
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.rate import RATE, Rate
-from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
+from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.parameters.taper import TAPER, Taper
 
 D = Decimal
@@ -136,7 +138,8 @@ def test_2025_ontario_amount() -> None:
     data = SOURCE.get(ONTARIO, 2025, CREDIT)
 
     assert data.values == Credit(amount=D("12747"))
-    assert data.rounding == NO_ROUNDING  # CRA states no rounding rule for amount × rate
+    # ON428 line 58040, a dollars-and-cents box: half-up to the cent.
+    assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
     assert data.sources
 
 
@@ -148,6 +151,8 @@ def test_2025_credit_rates(family: str, rate: str) -> None:
     data = SOURCE.get(family, 2025, RATE)
 
     assert data.values == Rate(D(rate))
+    # T1 line 33800 and ON428 line 58840, dollars-and-cents boxes: half-up to the cent.
+    assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
     assert data.sources
 
 
@@ -167,8 +172,9 @@ def test_2025_credit_rate_is_the_lowest_bracket_rate(
 @pytest.mark.parametrize(
     ("net_income", "basic_tax", "after"),
     [
-        # $115,000 of net and taxable income: federal basic tax 20,146.25 less 16,129 × 14.5%.
-        ("115000", "20146.25", "17807.545"),
+        # $115,000 of net and taxable income: federal basic tax 20,146.25 less 16,129 × 14.5% =
+        # 2,338.705, a tie, up to 2,338.71.
+        ("115000", "20146.25", "17807.54"),
         # $10,000 of net and taxable income: federal basic tax 1,450 is fully offset.
         ("10000", "1450", "0"),
     ],
@@ -191,7 +197,7 @@ def test_federal_amount_applies_to_basic_tax(net_income: str, basic_tax: str, af
     result = less.compute((Artifact(BASIC_TAX, D(basic_tax)), credits))
 
     assert claimed == Artifact(AMOUNT, D("16129"))
-    assert credits == Artifact(CREDITS, D("16129") * rate.values.value)
+    assert credits == Artifact(CREDITS, D("2338.71"))
     assert result.outputs == (Artifact(TAX_AFTER_CREDITS, D(after)),)
 
 
@@ -200,7 +206,7 @@ def test_ontario_amount_applies_to_basic_tax() -> None:
     rate = SOURCE.get("ca-on/credit_rate", 2025, RATE)
 
     # Ontario basic tax on $115,000 (ON428 Part A, column 3: 11.16% x 9,225 + 7,510.09 =
-    # 8,539.60) less 12,747 × 5.05%.
+    # 8,539.60) less 12,747 × 5.05% = 643.7235, rounded half-up to 643.72.
     (claimed,) = CreditAmount(amount, AMOUNT).compute(()).outputs
     (credits,) = ApplyRate(rate, base=AMOUNT, output=CREDITS).compute((claimed,)).outputs
     less = SubtractNotBelowZero(amount=BASIC_TAX, less=CREDITS, output=TAX_AFTER_CREDITS)
@@ -208,5 +214,5 @@ def test_ontario_amount_applies_to_basic_tax() -> None:
     result = less.compute((Artifact(BASIC_TAX, D("8539.60")), credits))
 
     assert claimed == Artifact(AMOUNT, amount.values.amount)
-    assert credits == Artifact(CREDITS, amount.values.amount * rate.values.value)
-    assert result.outputs == (Artifact(TAX_AFTER_CREDITS, D("7895.8765")),)
+    assert credits == Artifact(CREDITS, D("643.72"))
+    assert result.outputs == (Artifact(TAX_AFTER_CREDITS, D("7895.88")),)

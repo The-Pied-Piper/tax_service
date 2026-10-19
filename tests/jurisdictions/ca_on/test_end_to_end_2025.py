@@ -13,8 +13,9 @@ contributions carried forward of 0 (line 23), the contributions available less t
 that RRSP deduction, union dues of 2000, the child care expenses deduction of 0 (T1 line 21400, Form
 T778 line 7, the least of the basic limit of line 4, 0 x 8000 + 0 x 11000 + 0 x 5000
 = 0, the 0 paid of line 5 and two-thirds of the earned income of line 6, the employment
-income of 110000, 73333.33...: 0) and the enhanced contributions to net income 115000,
-less no deductions from net income to taxable income 115000, and from each basic personal
+income of 110000, 73333.33..., rounded half-up to the cent, 73333.33: 0) and the enhanced
+contributions to net income 115000, less no deductions from net income to taxable income
+115000, and from each basic personal
 amount (16129 federal, the Federal Worksheet's taper on net income, here at or below
 the 177882 threshold so not reduced; 12747 Ontario) plus each amount for an eligible
 dependant (T1 line 30400, Schedule 5 line 5, the federal basic personal amount less the
@@ -40,9 +41,10 @@ working income at most 2813, less 15% of the adjusted family net income over 306
 below zero, 0, the count of 0 eligible dependants choosing the first (T1 line 45300); less the total
 credits (line 48200), here the chosen income tax
 deducted of 25000 (line 43700) plus that benefit, to the refund or balance owing (line 167),
-897.1508076, positive so a balance owing) are checked from the files under `returns/` by
-`test_worked_returns.py`, as are Returns B, C, D, E and F; this module pins which capability
-produces each line, the order, and the trace that explains them.
+897.15, positive so a balance owing; every line computed from a dataset rounded half-up to the
+cent) are checked from the files under `returns/` by `test_worked_returns.py`, as are Returns B,
+C, D, E and F; this module pins which capability produces each line, the order, and the trace that
+explains them.
 """
 
 from __future__ import annotations
@@ -79,7 +81,7 @@ from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
 from app.domain.parameters.fraction import Fraction
 from app.domain.parameters.rate import Rate
-from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
+from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.parameters.taper import Taper
 from app.domain.trace import (
     AtMostLine,
@@ -191,9 +193,10 @@ from app.main import build_tax_computation
 
 D = Decimal
 CA_ON = JurisdictionCode("CA-ON")
-# Schedule 8 Part 3a lines 25 and 28: "(in dollars and cents)"; the EI premiums are in dollars and
-# cents too, and the federal basic personal amount is rounded half-up to the cent by T4127's BPAF
-# rounding footnote.
+# Every amount computed from a rate, fraction, amount or chart on the forms is rounded half-up to
+# the cent, each line being a dollars-and-cents box: Schedule 8 Part 3a lines 25 and 28 say "(in
+# dollars and cents)", the EI premiums are in dollars and cents too, T4127's BPAF rounding footnote
+# rounds the federal basic personal amount so, and every other line is so by the owner's decision.
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
@@ -482,7 +485,7 @@ def test_the_trace_explains_the_computation() -> None:
         return found
 
     taxable_gains = position(
-        "taxable_capital_gains: 50% of capital_gain 20000 (no rounding)", "10000"
+        "taxable_capital_gains: 50% of capital_gain 20000 (half-up to 0.01)", "10000"
     )
     total = position(
         "total_income: employment_income 110000 + taxable_capital_gains 10000 = 120000",
@@ -536,17 +539,17 @@ def test_the_trace_explains_the_computation() -> None:
     # employment income, and line 7 the least of lines 4, 5 and 6.
     child_care_under_seven = position(
         "child_care_limit_for_children_under_seven: 8000 for each of 0 children_under_seven "
-        "= 0 (no rounding)",
+        "= 0 (half-up to 0.01)",
         "0",
     )
     child_care_disability = position(
         "child_care_limit_for_children_with_disability: 11000 for each of 0 "
-        "children_with_disability = 0 (no rounding)",
+        "children_with_disability = 0 (half-up to 0.01)",
         "0",
     )
     child_care_seven_to_sixteen = position(
         "child_care_limit_for_children_seven_to_sixteen: 5000 for each of 0 "
-        "children_seven_to_sixteen = 0 (no rounding)",
+        "children_seven_to_sixteen = 0 (half-up to 0.01)",
         "0",
     )
     child_care_basic = position(
@@ -559,12 +562,12 @@ def test_the_trace_explains_the_computation() -> None:
         "child_care_earned_income: employment_income 110000 = 110000", "110000"
     )
     child_care_earned_limit = position(
-        "child_care_earned_income_limit: 2/3 of child_care_earned_income 110000 (no rounding)",
-        "73333.33333333333333333333333",
+        "child_care_earned_income_limit: 2/3 of child_care_earned_income 110000 (half-up to 0.01)",
+        "73333.33",
     )
     child_care = position(
         "child_care_expenses: lesser of child_care_basic_limit 0 and child_care_expenses_paid 0 "
-        "and child_care_earned_income_limit 73333.33333333333333333333333 = 0",
+        "and child_care_earned_income_limit 73333.33 = 0",
         "0",
     )
     deductions = position(
@@ -585,14 +588,16 @@ def test_the_trace_explains_the_computation() -> None:
     # T1 Part A, the column "more than $114,750 but not more than $177,882": line 72 is
     # 115000 - 114750 = 250, line 74 is 26% of it, 65.00, and line 76 adds line 75's 20,081.25.
     federal_column = position("26% on 250 over 114750 plus 20081.25", "20146.25")
-    federal_basic = position("federal_basic_tax on taxable_income 115000 (no rounding)", "20146.25")
+    federal_basic = position(
+        "federal_basic_tax on taxable_income 115000 (half-up to 0.01)", "20146.25"
+    )
     federal_amount = position(
         "basic_personal_amount: 14538 plus 1591 less 0 for net_income 115000 over 177882 "
         "(range 75532), not below 14538 (half-up to 0.01)",
         "16129",
     )
     employment_amount = position(
-        "canada_employment_amount: lesser of employment_income 110000 and 1471 (no rounding)",
+        "canada_employment_amount: lesser of employment_income 110000 and 1471 (half-up to 0.01)",
         "1471",
     )
     # Schedule 5 line 5, then T1 line 30400 for 0 eligible dependants; line 30500.
@@ -607,7 +612,7 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     infirm_children = position(
-        "infirm_children_amount: 2687 for each of 0 infirm_children = 0 (no rounding)", "0"
+        "infirm_children_amount: 2687 for each of 0 infirm_children = 0 (half-up to 0.01)", "0"
     )
     federal_amounts = position(
         "non_refundable_credit_amounts: basic_personal_amount 16129 "
@@ -617,21 +622,28 @@ def test_the_trace_explains_the_computation() -> None:
         "22033.58",
     )
     federal_credit = position(
-        "non_refundable_tax_credits: 14.5% of non_refundable_credit_amounts 22033.58 (no rounding)",
-        "3194.8691",
+        "non_refundable_tax_credits: 14.5% of non_refundable_credit_amounts 22033.58 "
+        "(half-up to 0.01)",
+        "3194.87",
     )
     federal_after = position(
         "federal_tax_after_credits: federal_basic_tax 20146.25 "
-        "less non_refundable_tax_credits 3194.8691, not below 0 = 16951.3809",
-        "16951.3809",
+        "less non_refundable_tax_credits 3194.87, not below 0 = 16951.38",
+        "16951.38",
     )
     # ON428 Part A, the column "more than $105,775 but not more than $150,000": line 4 is
     # 115000 - 105775 = 9225, line 6 is 11.16% of it, 1029.51, and line 8 adds line 7's 7,510.09.
     ontario_column = position("11.16% on 9225 over 105775 plus 7510.09", "8539.60")
-    ontario_basic = position("ontario_basic_tax on taxable_income 115000 (no rounding)", "8539.60")
-    ontario_amount = position("basic_personal_amount: credit amount 12747 (no rounding)", "12747")
+    ontario_basic = position(
+        "ontario_basic_tax on taxable_income 115000 (half-up to 0.01)", "8539.60"
+    )
+    ontario_amount = position(
+        "basic_personal_amount: credit amount 12747 (half-up to 0.01)", "12747"
+    )
     # ON428 lines 14 to 16 (line 58160), for 0 eligible dependants.
-    ontario_base = position("eligible_dependant_base: credit amount 11905 (no rounding)", "11905")
+    ontario_base = position(
+        "eligible_dependant_base: credit amount 11905 (half-up to 0.01)", "11905"
+    )
     ontario_before_maximum = position(
         "eligible_dependant_amount_before_maximum: eligible_dependant_base 11905 "
         "less dependant_net_income 0, not below 0 = 11905",
@@ -639,7 +651,7 @@ def test_the_trace_explains_the_computation() -> None:
     )
     ontario_dependant = position(
         "eligible_dependant_amount_before_count: lesser of "
-        "eligible_dependant_amount_before_maximum 11905 and 10823 (no rounding)",
+        "eligible_dependant_amount_before_maximum 11905 and 10823 (half-up to 0.01)",
         "10823",
     )
     ontario_dependant_claimed = position(
@@ -654,37 +666,38 @@ def test_the_trace_explains_the_computation() -> None:
         "17180.58",
     )
     ontario_credit = position(
-        "non_refundable_tax_credits: 5.05% of non_refundable_credit_amounts 17180.58 (no rounding)",
-        "867.61929",
+        "non_refundable_tax_credits: 5.05% of non_refundable_credit_amounts 17180.58 "
+        "(half-up to 0.01)",
+        "867.62",
     )
     ontario_after = position(
         "ontario_tax_after_credits: ontario_basic_tax 8539.6 "
-        "less non_refundable_tax_credits 867.61929, not below 0 = 7671.98071",
-        "7671.98071",
+        "less non_refundable_tax_credits 867.62, not below 0 = 7671.98",
+        "7671.98",
     )
     surtax_first = position(
-        "ontario_surtax: 20% of ontario_tax_after_credits 7671.98071 over 5710 (no rounding)",
-        "392.396142",
+        "ontario_surtax: 20% of ontario_tax_after_credits 7671.98 over 5710 (half-up to 0.01)",
+        "392.40",
     )
     surtax_second = position(
-        "ontario_surtax: 36% of ontario_tax_after_credits 7671.98071 over 7307 (no rounding)",
-        "131.3930556",
+        "ontario_surtax: 36% of ontario_tax_after_credits 7671.98 over 7307 (half-up to 0.01)",
+        "131.39",
     )
     with_surtax = position(
-        "ontario_tax_with_surtax: ontario_tax_after_credits 7671.98071 "
-        "+ ontario_surtax 523.7891976 = 8195.7699076",
-        "8195.7699076",
+        "ontario_tax_with_surtax: ontario_tax_after_credits 7671.98 "
+        "+ ontario_surtax 523.79 = 8195.77",
+        "8195.77",
     )
     reduction_basic = position(
-        "tax_reduction_basic: credit amount 294 (no rounding)",
+        "tax_reduction_basic: credit amount 294 (half-up to 0.01)",
         "294.00",
     )
     reduction_children = position(
-        "tax_reduction_for_children: 544 for each of 0 dependent_children = 0 (no rounding)",
+        "tax_reduction_for_children: 544 for each of 0 dependent_children = 0 (half-up to 0.01)",
         "0",
     )
     reduction_dependants = position(
-        "tax_reduction_for_dependants: 544 for each of 0 dependants = 0 (no rounding)",
+        "tax_reduction_for_dependants: 544 for each of 0 dependants = 0 (half-up to 0.01)",
         "0",
     )
     reduction_amounts = position(
@@ -694,77 +707,78 @@ def test_the_trace_explains_the_computation() -> None:
     )
     reduction = position(
         "ontario_tax_reduction: 2 × tax_reduction_amounts 294 "
-        "over ontario_tax_with_surtax 8195.7699076, not below 0 (no rounding)",
+        "over ontario_tax_with_surtax 8195.77, not below 0 (half-up to 0.01)",
         "0",
     )
     after_reduction = position(
-        "ontario_tax_after_reduction: ontario_tax_with_surtax 8195.7699076 "
-        "less ontario_tax_reduction 0, not below 0 = 8195.7699076",
-        "8195.7699076",
+        "ontario_tax_after_reduction: ontario_tax_with_surtax 8195.77 "
+        "less ontario_tax_reduction 0, not below 0 = 8195.77",
+        "8195.77",
     )
     lift_before_maximum = position(
-        "lift_credit_before_maximum: 5.05% of employment_income 110000 (no rounding)", "5555"
+        "lift_credit_before_maximum: 5.05% of employment_income 110000 (half-up to 0.01)", "5555"
     )
     lift_maximum = position(
-        "lift_maximum_credit: lesser of lift_credit_before_maximum 5555 and 875 (no rounding)",
+        "lift_maximum_credit: lesser of lift_credit_before_maximum 5555 and 875 (half-up to 0.01)",
         "875",
     )
     lift_reduction = position(
-        "lift_reduction: 5% of net_income 115000 over 32500 (no rounding)", "4125"
+        "lift_reduction: 5% of net_income 115000 over 32500 (half-up to 0.01)", "4125"
     )
     lift = position(
         "lift_credit: lift_maximum_credit 875 less lift_reduction 4125, not below 0 = 0", "0"
     )
     after_lift = position(
-        "ontario_tax_after_lift_credit: ontario_tax_after_reduction 8195.7699076 "
-        "less lift_credit 0, not below 0 = 8195.7699076",
-        "8195.7699076",
+        "ontario_tax_after_lift_credit: ontario_tax_after_reduction 8195.77 "
+        "less lift_credit 0, not below 0 = 8195.77",
+        "8195.77",
     )
     premium_first = position(
-        "ontario_health_premium: 6% of taxable_income 115000 over 20000, at most 300 (no rounding)",
+        "ontario_health_premium: 6% of taxable_income 115000 over 20000, at most 300 "
+        "(half-up to 0.01)",
         "300",
     )
     premium_second = position(
-        "ontario_health_premium: 6% of taxable_income 115000 over 36000, at most 150 (no rounding)",
+        "ontario_health_premium: 6% of taxable_income 115000 over 36000, at most 150 "
+        "(half-up to 0.01)",
         "150",
     )
     premium_third = position(
         "ontario_health_premium: 25% of taxable_income 115000 over 48000, at most 150 "
-        "(no rounding)",
+        "(half-up to 0.01)",
         "150",
     )
     premium_fourth = position(
         "ontario_health_premium: 25% of taxable_income 115000 over 72000, at most 150 "
-        "(no rounding)",
+        "(half-up to 0.01)",
         "150",
     )
     premium_fifth = position(
         "ontario_health_premium: 25% of taxable_income 115000 over 200000, at most 150 "
-        "(no rounding)",
+        "(half-up to 0.01)",
         "0",
     )
     ontario_tax = position(
-        "ontario_tax: ontario_tax_after_lift_credit 8195.7699076 "
-        "+ ontario_health_premium 750 = 8945.7699076",
-        "8945.7699076",
+        "ontario_tax: ontario_tax_after_lift_credit 8195.77 + ontario_health_premium 750 = 8945.77",
+        "8945.77",
     )
     net_federal = position(
-        "net_federal_tax: federal_tax_after_credits 16951.3809 = 16951.3809", "16951.3809"
+        "net_federal_tax: federal_tax_after_credits 16951.38 = 16951.38", "16951.38"
     )
     payable = position(
-        "total_payable: net_federal_tax 16951.3809 + ontario_tax 8945.7699076 = 25897.1508076",
-        "25897.1508076",
+        "total_payable: net_federal_tax 16951.38 + ontario_tax 8945.77 = 25897.15",
+        "25897.15",
     )
     working = position("working_income: employment_income 110000 = 110000", "110000")
     family_net = position("adjusted_family_net_income: net_income 115000 = 115000", "115000")
     cwb_before_reduction = position(
         "cwb_before_reduction_without_dependant: 27% of working_income 110000 over 3000, "
-        "at most 1633 (no rounding)",
+        "at most 1633 (half-up to 0.01)",
         "1633",
     )
     cwb_reduction = position(
         "cwb_reduction_without_dependant: 15% of adjusted_family_net_income 115000 over 26855 "
-        "(no rounding)",
+        "(half-up to 0.01)",
         "13221.75",
     )
     cwb_without = position(
@@ -774,12 +788,12 @@ def test_the_trace_explains_the_computation() -> None:
     )
     cwb_before_reduction_dependant = position(
         "cwb_before_reduction_with_dependant: 27% of working_income 110000 over 3000, "
-        "at most 2813 (no rounding)",
+        "at most 2813 (half-up to 0.01)",
         "2813",
     )
     cwb_reduction_dependant = position(
         "cwb_reduction_with_dependant: 15% of adjusted_family_net_income 115000 over 30639 "
-        "(no rounding)",
+        "(half-up to 0.01)",
         "12654.15",
     )
     cwb_with = position(
@@ -796,9 +810,8 @@ def test_the_trace_explains_the_computation() -> None:
         "total_credits: income_tax_deducted 25000 + canada_workers_benefit 0 = 25000", "25000"
     )
     balance = position(
-        "refund_or_balance_owing: total_payable 25897.1508076 "
-        "less total_credits 25000 = 897.1508076",
-        "897.1508076",
+        "refund_or_balance_owing: total_payable 25897.15 less total_credits 25000 = 897.15",
+        "897.15",
     )
     assert taxable_gains < total < net
     assert cpp_first < cpp_enhanced < deductions < net
@@ -898,23 +911,23 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # line 58840), giving its non-refundable tax credits (T1 line 35000, ON428 line 61500).
     assert rated == {
         TAXABLE_CAPITAL_GAINS: RateAppliedLine(
-            TAXABLE_CAPITAL_GAINS, CAPITAL_GAIN, D("20000"), Rate(D("0.5")), NO_ROUNDING, D("10000")
+            TAXABLE_CAPITAL_GAINS, CAPITAL_GAIN, D("20000"), Rate(D("0.5")), CENT, D("10000")
         ),
         NON_REFUNDABLE_TAX_CREDITS: RateAppliedLine(
             NON_REFUNDABLE_TAX_CREDITS,
             NON_REFUNDABLE_CREDIT_AMOUNTS,
             D("22033.58"),
             Rate(D("0.145")),
-            NO_ROUNDING,
-            D("3194.8691"),
+            CENT,
+            D("3194.87"),
         ),
         ontario.NON_REFUNDABLE_TAX_CREDITS: RateAppliedLine(
             ontario.NON_REFUNDABLE_TAX_CREDITS,
             ontario.NON_REFUNDABLE_CREDIT_AMOUNTS,
             D("17180.58"),
             Rate(D("0.0505")),
-            NO_ROUNDING,
-            D("867.61929"),
+            CENT,
+            D("867.62"),
         ),
         # Schedule ON428-A line 5 "Line 3 multiplied by the percentage from line 4 (maximum
         # $875)", before its maximum: line 3 is employment income (line 10100), as line 2 (line
@@ -924,8 +937,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             EMPLOYMENT_INCOME,
             D("110000"),
             Rate(D("0.0505")),
-            NO_ROUNDING,
-            D("5555.0000"),
+            CENT,
+            D("5555.00"),
         ),
     }
     assert sums == {
@@ -1003,8 +1016,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # ON428 line 69 "Line 62 plus line 68": the Ontario tax after credits plus the surtax.
         ONTARIO_TAX_WITH_SURTAX: SumLine(
             ONTARIO_TAX_WITH_SURTAX,
-            ((ONTARIO_TAX_AFTER_CREDITS, D("7671.98071")), (ONTARIO_SURTAX, D("523.7891976"))),
-            D("8195.7699076"),
+            ((ONTARIO_TAX_AFTER_CREDITS, D("7671.98")), (ONTARIO_SURTAX, D("523.79"))),
+            D("8195.77"),
         ),
         # ON428 line 77 "Add lines 74 to 76.", in line order.
         TAX_REDUCTION_AMOUNTS: SumLine(
@@ -1021,23 +1034,23 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ONTARIO_TAX: SumLine(
             ONTARIO_TAX,
             (
-                (ONTARIO_TAX_AFTER_LIFT_CREDIT, D("8195.7699076")),
+                (ONTARIO_TAX_AFTER_LIFT_CREDIT, D("8195.77")),
                 (ONTARIO_HEALTH_PREMIUM, D("750")),
             ),
-            D("8945.7699076"),
+            D("8945.77"),
         ),
         # T1 line 142 (line 42000) "Add lines 139 to 141. Net federal tax": line 139 carries the
         # federal tax after credits (line 126, 42900, through line 134, 40600), and lines 140
         # and 141 are not modelled.
         NET_FEDERAL_TAX: SumLine(
-            NET_FEDERAL_TAX, ((FEDERAL_TAX_AFTER_CREDITS, D("16951.3809")),), D("16951.3809")
+            NET_FEDERAL_TAX, ((FEDERAL_TAX_AFTER_CREDITS, D("16951.38")),), D("16951.38")
         ),
         # T1 line 148 (line 43500) "Add lines 143 to 147. Total payable", in line order: line
         # 143 "Amount from line 42000" and line 147 (42800), the Ontario tax.
         TOTAL_PAYABLE: SumLine(
             TOTAL_PAYABLE,
-            ((NET_FEDERAL_TAX, D("16951.3809")), (ONTARIO_TAX, D("8945.7699076"))),
-            D("25897.1508076"),
+            ((NET_FEDERAL_TAX, D("16951.38")), (ONTARIO_TAX, D("8945.77"))),
+            D("25897.15"),
         ),
         # Schedule 6 line 5 "Add lines 1 to 4. Enter the result, even if it is "0". Working
         # income": line 1 "Employment income and other employment income from line 10100 and line
@@ -1067,15 +1080,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("1926"),
             result=D("0"),
         ),
-        # T1 line 167 "Line 149 minus line 166 ... Refund or balance owing": exact, not floored,
-        # and positive here, so a balance owing (line 48500).
+        # T1 line 167 "Line 149 minus line 166 ... Refund or balance owing": it takes amounts
+        # already in cents, is not floored, and is positive here, so a balance owing (line 48500).
         REFUND_OR_BALANCE_OWING: SubtractedLine(
             output=REFUND_OR_BALANCE_OWING,
             minuend=TOTAL_PAYABLE,
-            minuend_amount=D("25897.1508076"),
+            minuend_amount=D("25897.15"),
             subtrahend=TOTAL_CREDITS,
             subtrahend_amount=D("25000"),
-            result=D("897.1508076"),
+            result=D("897.15"),
         ),
     }
     # T1 line 30000 and the Federal Worksheet (5000-D1): net income of 115000 is at or below
@@ -1098,14 +1111,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # line 74 "Basic reduction 294.00" is claimed whole too.
     assert amounts == {
         ontario.BASIC_PERSONAL_AMOUNT: CreditAmountLine(
-            ontario.BASIC_PERSONAL_AMOUNT, Credit(amount=D("12747")), NO_ROUNDING, D("12747")
+            ontario.BASIC_PERSONAL_AMOUNT, Credit(amount=D("12747")), CENT, D("12747")
         ),
         TAX_REDUCTION_BASIC: CreditAmountLine(
-            TAX_REDUCTION_BASIC, Credit(amount=D("294.00")), NO_ROUNDING, D("294.00")
+            TAX_REDUCTION_BASIC, Credit(amount=D("294.00")), CENT, D("294.00")
         ),
         # ON428 line 14 "Base amount 11,905.00".
         ELIGIBLE_DEPENDANT_BASE: CreditAmountLine(
-            ELIGIBLE_DEPENDANT_BASE, Credit(amount=D("11905.00")), NO_ROUNDING, D("11905.00")
+            ELIGIBLE_DEPENDANT_BASE, Credit(amount=D("11905.00")), CENT, D("11905.00")
         ),
     }
     # ON428 line 75 (line 60969) "Number of dependent children multiplied by $544" and line 76
@@ -1116,7 +1129,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=DEPENDENT_CHILDREN,
             count=0,
             per_unit=Amount(D("544")),
-            rounding=NO_ROUNDING,
+            rounding=CENT,
             result=D("0"),
         ),
         TAX_REDUCTION_FOR_DEPENDANTS: PerUnitAmountLine(
@@ -1124,7 +1137,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=DEPENDANTS,
             count=0,
             per_unit=Amount(D("544")),
-            rounding=NO_ROUNDING,
+            rounding=CENT,
             result=D("0"),
         ),
         # T1 line 30500 "Number of children you are claiming this amount for Line 30499"
@@ -1134,7 +1147,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=INFIRM_CHILDREN,
             count=0,
             per_unit=Amount(D("2687")),
-            rounding=NO_ROUNDING,
+            rounding=CENT,
             result=D("0"),
         ),
         # Form T778 Part B lines 1 to 3, "multiplied by $8,000", "$11,000" and "$5,000": Return A
@@ -1144,7 +1157,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=CHILDREN_UNDER_SEVEN,
             count=0,
             per_unit=Amount(D("8000")),
-            rounding=NO_ROUNDING,
+            rounding=CENT,
             result=D("0"),
         ),
         CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY: PerUnitAmountLine(
@@ -1152,7 +1165,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=CHILDREN_WITH_DISABILITY,
             count=0,
             per_unit=Amount(D("11000")),
-            rounding=NO_ROUNDING,
+            rounding=CENT,
             result=D("0"),
         ),
         CHILD_CARE_LIMIT_FOR_CHILDREN_SEVEN_TO_SIXTEEN: PerUnitAmountLine(
@@ -1160,20 +1173,20 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=CHILDREN_SEVEN_TO_SIXTEEN,
             count=0,
             per_unit=Amount(D("5000")),
-            rounding=NO_ROUNDING,
+            rounding=CENT,
             result=D("0"),
         ),
     }
-    # Form T778 line 6 "Enter your earned income." "multiplied by two-thirds": 220000 / 3, the
-    # quotient carried unrounded.
+    # Form T778 line 6 "Enter your earned income." "multiplied by two-thirds": 220000 / 3,
+    # rounded half-up to the cent.
     assert fractions == {
         CHILD_CARE_EARNED_INCOME_LIMIT: FractionAppliedLine(
             output=CHILD_CARE_EARNED_INCOME_LIMIT,
             base=CHILD_CARE_EARNED_INCOME,
             base_amount=D("110000"),
             fraction=Fraction(2, 3),
-            rounding=NO_ROUNDING,
-            result=D("73333.33333333333333333333333"),
+            rounding=CENT,
+            result=D("73333.33"),
         )
     }
     # T1 line 30400 and ON428 line 58160: Schedule 5 line 5 and ON428 line 16, each claimed for
@@ -1198,7 +1211,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     # ON428 line 78 "Amount from line 77 above multiplied by 2", line 79 "Amount from line 73
     # above" and line 80 "Line 78 minus line 79 (if negative, enter "0") Ontario tax reduction":
-    # 588.00 is below the tax with surtax of 8195.7699076, so the reduction is 0.
+    # 588.00 is below the tax with surtax of 8195.77, so the reduction is 0.
     assert multiples == {
         ONTARIO_TAX_REDUCTION: MultipleOverLine(
             output=ONTARIO_TAX_REDUCTION,
@@ -1206,8 +1219,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             base_amount=D("294.00"),
             factor=Factor(D("2")),
             less=ONTARIO_TAX_WITH_SURTAX,
-            less_amount=D("8195.7699076"),
-            rounding=NO_ROUNDING,
+            less_amount=D("8195.77"),
+            rounding=CENT,
             result=D("0"),
         )
     }
@@ -1219,17 +1232,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             EMPLOYMENT_INCOME,
             D("110000"),
             Amount(D("1471")),
-            NO_ROUNDING,
+            CENT,
             D("1471"),
         ),
         # Schedule ON428-A line 5's "(maximum $875)" and line 14 "Amount from line 5 above
-        # (maximum $875)": 5555.0000 is above it.
+        # (maximum $875)": 5555.00 is above it.
         LIFT_MAXIMUM_CREDIT: CappedAmountLine(
             LIFT_MAXIMUM_CREDIT,
             LIFT_CREDIT_BEFORE_MAXIMUM,
-            D("5555.0000"),
+            D("5555.00"),
             Amount(D("875")),
-            NO_ROUNDING,
+            CENT,
             D("875"),
         ),
         # ON428 line 16's "(maximum $10,823)": 11905.00 is above it.
@@ -1238,7 +1251,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
             D("11905.00"),
             Amount(D("10823")),
-            NO_ROUNDING,
+            CENT,
             D("10823"),
         ),
     }
@@ -1258,7 +1271,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             (
                 (CHILD_CARE_BASIC_LIMIT, D("0")),
                 (CHILD_CARE_EXPENSES_PAID, D("0")),
-                (CHILD_CARE_EARNED_INCOME_LIMIT, D("73333.33333333333333333333333")),
+                (CHILD_CARE_EARNED_INCOME_LIMIT, D("73333.33")),
             ),
             D("0"),
         ),
@@ -1317,31 +1330,32 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     # ON428 line 66 "(Line 65 minus $5,710) multiplied by 20% (if negative, enter "0")" and line
     # 67 "(Line 65 minus $7,307) multiplied by 36% (if negative, enter "0")", in that order, on
-    # the Ontario tax after credits (line 65, as line 64 is not modelled); no rounding stated.
+    # the Ontario tax after credits (line 65, as line 64 is not modelled); each part rounded
+    # half-up to the cent.
     assert surcharged == [
         SurchargeTierLine(
             output=ONTARIO_SURTAX,
             base=ONTARIO_TAX_AFTER_CREDITS,
-            base_amount=D("7671.98071"),
+            base_amount=D("7671.98"),
             threshold=D("5710"),
             rate=Rate(D("0.20")),
-            rounding=NO_ROUNDING,
-            part=D("392.396142"),
+            rounding=CENT,
+            part=D("392.40"),
         ),
         SurchargeTierLine(
             output=ONTARIO_SURTAX,
             base=ONTARIO_TAX_AFTER_CREDITS,
-            base_amount=D("7671.98071"),
+            base_amount=D("7671.98"),
             threshold=D("7307"),
             rate=Rate(D("0.36")),
-            rounding=NO_ROUNDING,
-            part=D("131.3930556"),
+            rounding=CENT,
+            part=D("131.39"),
         ),
     ]
     # ON428 line 89 and its chart, on line 1 "Enter your taxable income from line 26000 of your
     # return", in threshold order: taxable income of 115000 is "more than $72,600 but not more
     # than $200,000", so the four lower tiers each charge their maximum, 300 + 150 + 150 + 150 =
-    # 750, and the top tier nothing; the chart states no rounding.
+    # 750, and the top tier nothing; each tier rounded half-up to the cent.
     assert premium_tiers == [
         SurchargeTierLine(
             output=ONTARIO_HEALTH_PREMIUM,
@@ -1349,7 +1363,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             base_amount=D("115000"),
             threshold=D("20000"),
             rate=Rate(D("0.06")),
-            rounding=NO_ROUNDING,
+            rounding=CENT,
             part=D("300"),
             maximum=D("300"),
         ),
@@ -1359,7 +1373,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             base_amount=D("115000"),
             threshold=D("36000"),
             rate=Rate(D("0.06")),
-            rounding=NO_ROUNDING,
+            rounding=CENT,
             part=D("150"),
             maximum=D("150"),
         ),
@@ -1369,7 +1383,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             base_amount=D("115000"),
             threshold=D("48000"),
             rate=Rate(D("0.25")),
-            rounding=NO_ROUNDING,
+            rounding=CENT,
             part=D("150"),
             maximum=D("150"),
         ),
@@ -1379,7 +1393,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             base_amount=D("115000"),
             threshold=D("72000"),
             rate=Rate(D("0.25")),
-            rounding=NO_ROUNDING,
+            rounding=CENT,
             part=D("150"),
             maximum=D("150"),
         ),
@@ -1389,14 +1403,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             base_amount=D("115000"),
             threshold=D("200000"),
             rate=Rate(D("0.25")),
-            rounding=NO_ROUNDING,
+            rounding=CENT,
             part=D("0"),
             maximum=D("150"),
         ),
     ]
     # Schedule ON428-A line 17 "Line 15 minus line 16 (if negative, enter "0")" and line 19 "Line
     # 17 multiplied by the percentage from line 18": net income (line 15, from line 13) of 115000
-    # less the 32,500.00 threshold (line 16), times 5% (line 18); no rounding stated.
+    # less the 32,500.00 threshold (line 16), times 5% (line 18), rounded half-up to the cent.
     assert lift_tiers == [
         SurchargeTierLine(
             output=LIFT_REDUCTION,
@@ -1404,14 +1418,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             base_amount=D("115000"),
             threshold=D("32500"),
             rate=Rate(D("0.05")),
-            rounding=NO_ROUNDING,
+            rounding=CENT,
             part=D("4125.00"),
         )
     ]
     # Schedule 6 line 18 "Line 16 minus line 17 (if negative, enter "0")", line 20 "Line 18
     # multiplied by the percentage from line 19" and line 22 "Enter whichever is less: amount from
     # line 20 or line 21.": (110000 - 3000) x 27% is above both of line 21's amounts, so line 22
-    # is 1633 with no eligible spouse or dependant and 2813 with one; no rounding stated.
+    # is 1633 with no eligible spouse or dependant and 2813 with one, rounded half-up to the cent.
     assert set(cwb_basic_tiers) == {
         SurchargeTierLine(
             output=CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
@@ -1419,7 +1433,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             base_amount=D("110000"),
             threshold=D("3000"),
             rate=Rate(D("0.27")),
-            rounding=NO_ROUNDING,
+            rounding=CENT,
             part=D("1633"),
             maximum=D("1633"),
         ),
@@ -1429,7 +1443,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             base_amount=D("110000"),
             threshold=D("3000"),
             rate=Rate(D("0.27")),
-            rounding=NO_ROUNDING,
+            rounding=CENT,
             part=D("2813"),
             maximum=D("2813"),
         ),
@@ -1437,7 +1451,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert len(cwb_basic_tiers) == 2
     # Schedule 6 line 25 "Line 23 minus line 24 (if negative, enter "0")" and line 27 "Line 25
     # multiplied by the percentage from line 26": (115000 - 26855) x 15% with no eligible spouse
-    # or dependant and (115000 - 30639) x 15% with one; no rounding stated.
+    # or dependant and (115000 - 30639) x 15% with one, rounded half-up to the cent.
     assert set(cwb_reduction_tiers) == {
         SurchargeTierLine(
             output=CWB_REDUCTION_WITHOUT_DEPENDANT,
@@ -1445,7 +1459,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             base_amount=D("115000"),
             threshold=D("26855"),
             rate=Rate(D("0.15")),
-            rounding=NO_ROUNDING,
+            rounding=CENT,
             part=D("13221.75"),
         ),
         SurchargeTierLine(
@@ -1454,7 +1468,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             base_amount=D("115000"),
             threshold=D("30639"),
             rate=Rate(D("0.15")),
-            rounding=NO_ROUNDING,
+            rounding=CENT,
             part=D("12654.15"),
         ),
     }
@@ -1483,16 +1497,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             minuend=FEDERAL_BASIC_TAX,
             minuend_amount=D("20146.25"),
             subtrahend=NON_REFUNDABLE_TAX_CREDITS,
-            subtrahend_amount=D("3194.8691"),
-            result=D("16951.3809"),
+            subtrahend_amount=D("3194.87"),
+            result=D("16951.38"),
         ),
         ONTARIO_TAX_AFTER_CREDITS: SubtractedNotBelowZeroLine(
             output=ONTARIO_TAX_AFTER_CREDITS,
             minuend=ONTARIO_BASIC_TAX,
             minuend_amount=D("8539.60"),
             subtrahend=ontario.NON_REFUNDABLE_TAX_CREDITS,
-            subtrahend_amount=D("867.61929"),
-            result=D("7671.98071"),
+            subtrahend_amount=D("867.62"),
+            result=D("7671.98"),
         ),
         # Schedule 5 line 5 "Line 3 minus line 4 (if negative, enter "0")": line 3 is line 1,
         # the basic personal amount, as line 2 is not triggered; line 4 the dependant's net
@@ -1518,10 +1532,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ONTARIO_TAX_AFTER_REDUCTION: SubtractedNotBelowZeroLine(
             output=ONTARIO_TAX_AFTER_REDUCTION,
             minuend=ONTARIO_TAX_WITH_SURTAX,
-            minuend_amount=D("8195.7699076"),
+            minuend_amount=D("8195.77"),
             subtrahend=ONTARIO_TAX_REDUCTION,
             subtrahend_amount=D("0"),
-            result=D("8195.7699076"),
+            result=D("8195.77"),
         ),
         # Schedule ON428-A line 20 "Line 14 minus line 19 (if negative, enter "0")": the
         # reduction of 4125.00 exceeds the 875, so the credit (ON428 line 85) is 0.
@@ -1537,10 +1551,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ONTARIO_TAX_AFTER_LIFT_CREDIT: SubtractedNotBelowZeroLine(
             output=ONTARIO_TAX_AFTER_LIFT_CREDIT,
             minuend=ONTARIO_TAX_AFTER_REDUCTION,
-            minuend_amount=D("8195.7699076"),
+            minuend_amount=D("8195.77"),
             subtrahend=LIFT_CREDIT,
             subtrahend_amount=D("0"),
-            result=D("8195.7699076"),
+            result=D("8195.77"),
         ),
         # Schedule 6 line 28 "Line 22 minus line 27 (if negative, enter "0")": the reduction of
         # 13221.75 exceeds the 1633, and that of 12654.15 the 2813, so the benefit is 0 with or
@@ -1731,13 +1745,15 @@ def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("65.00")
     assert worksheet.get(NET_INCOME).value == D("9935.00")
     assert worksheet.get(TAXABLE_INCOME).value == D("9935.00")
-    assert worksheet.get(FEDERAL_BASIC_TAX).value == D("1440.575")
+    assert worksheet.get(FEDERAL_BASIC_TAX).value == D("1440.58")
     assert worksheet.get(CANADA_EMPLOYMENT_AMOUNT).value == D("1471")
     assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("18085.75")
     assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("13232.75")
-    # 14.5% of 18085.75 and 5.05% of 13232.75: each larger than its basic tax.
-    assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("2622.43375")
-    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("668.253875")
+    # 14.5% of 18085.75 = 2622.43375 and 5.05% of 13232.75 = 668.253875, each rounded half-up to
+    # the cent: each larger than its basic tax (14.5% of 9935.00 = 1440.575, rounded half-up to
+    # the cent: 1440.58).
+    assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("2622.43")
+    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("668.25")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("0")
     assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("0")
     # A zero Ontario tax is below the first surtax threshold: no surtax.
@@ -1748,13 +1764,13 @@ def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     assert worksheet.get(TAX_REDUCTION_AMOUNTS).value == D("294.00")
     assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("588.00")
     assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("0")
-    # Schedule ON428-A: line 5 is 5.05% x 10000 = 505.0000, below the $875 maximum, and net
+    # Schedule ON428-A: line 5 is 5.05% x 10000 = 505.00, below the $875 maximum, and net
     # income of 9935.00 is below the 32,500.00 threshold, so no reduction: the credit (ON428 line
-    # 85) is 505.0000, more than the Ontario tax after the reduction of zero, so line 86 is zero.
-    assert worksheet.get(LIFT_CREDIT_BEFORE_MAXIMUM).value == D("505.0000")
-    assert worksheet.get(LIFT_MAXIMUM_CREDIT).value == D("505.0000")
+    # 85) is 505.00, more than the Ontario tax after the reduction of zero, so line 86 is zero.
+    assert worksheet.get(LIFT_CREDIT_BEFORE_MAXIMUM).value == D("505.00")
+    assert worksheet.get(LIFT_MAXIMUM_CREDIT).value == D("505.00")
     assert worksheet.get(LIFT_REDUCTION).value == D("0")
-    assert worksheet.get(LIFT_CREDIT).value == D("505.0000")
+    assert worksheet.get(LIFT_CREDIT).value == D("505.00")
     assert worksheet.get(ONTARIO_TAX_AFTER_LIFT_CREDIT).value == D("0")
     # A taxable income of 9935.00 is "$20,000 or less" on the health premium chart: no premium.
     assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("0")
@@ -1786,24 +1802,25 @@ def test_the_tax_reduction_lowers_a_tax_below_twice_the_reduction_amounts() -> N
     # Employment income of 24000, with no capital gain, no RRSP contributions and no union dues:
     # base CPP contributions 4.95% x (24000 - 3500) = 1014.75, first additional 1% x 20500 =
     # 205.00, EI premiums 1.64% x 24000 = 393.60; net and taxable income 23795.00; Ontario basic
-    # tax 5.05% x 23795.00 = 1201.6475 less the Ontario credits 5.05% x (12747 + 1014.75 +
-    # 393.60 = 14155.35) = 714.845175 is 486.802325, below the first surtax threshold, so the
-    # Ontario tax with surtax (ON428 line 73) is 486.802325. With no dependent children and no
-    # dependants, line 78 is 2 x 294.00 = 588.00, and line 80 is 588.00 - 486.802325 =
-    # 101.197675; line 81 is 486.802325 - 101.197675 = 385.604650.
+    # tax 5.05% x 23795.00 = 1201.6475, rounded half-up to the cent: 1201.65, less the Ontario
+    # credits 5.05% x (12747 + 1014.75 + 393.60 = 14155.35) = 714.845175, rounded half-up to the
+    # cent: 714.85, is 486.80, below the first surtax threshold, so the Ontario tax with surtax
+    # (ON428 line 73) is 486.80. With no dependent children and no dependants, line 78 is 2 x
+    # 294.00 = 588.00, and line 80 is 588.00 - 486.80 = 101.20; line 81 is 486.80 - 101.20 =
+    # 385.60.
     worksheet = compute("24000", "0", "0", "0", "4320", "0", "0")
 
-    assert worksheet.get(ONTARIO_TAX_WITH_SURTAX).value == D("486.802325")
+    assert worksheet.get(ONTARIO_TAX_WITH_SURTAX).value == D("486.80")
     assert worksheet.get(TAX_REDUCTION_AMOUNTS).value == D("294.00")
-    assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("101.197675")
-    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("385.604650")
+    assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("101.20")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("385.60")
 
 
 def test_dependent_children_and_dependants_raise_the_tax_reduction() -> None:
     # Return A's amounts with five dependent children (ON428 line 75, line 60969) and three
     # dependants (line 76, line 60970): line 75 is 5 x 544 = 2720, line 76 is 3 x 544 = 1632,
     # line 77 is 294.00 + 2720 + 1632 = 4646.00 and line 78 is 9292.00; line 80 is 9292.00 -
-    # 8195.7699076 = 1096.2300924, and line 81 is 8195.7699076 - 1096.2300924 = 7099.5398152.
+    # 8195.77 = 1096.23, and line 81 is 8195.77 - 1096.23 = 7099.54.
     worksheet = compute(
         "110000", "20000", "0", "1926", "19800", "1926", "2000", dependent_children=5, dependants=3
     )
@@ -1813,80 +1830,82 @@ def test_dependent_children_and_dependants_raise_the_tax_reduction() -> None:
     assert worksheet.get(TAX_REDUCTION_FOR_CHILDREN).value == D("2720")
     assert worksheet.get(TAX_REDUCTION_FOR_DEPENDANTS).value == D("1632")
     assert worksheet.get(TAX_REDUCTION_AMOUNTS).value == D("4646.00")
-    assert worksheet.get(ONTARIO_TAX_WITH_SURTAX).value == D("8195.7699076")
-    assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("1096.2300924")
-    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("7099.5398152")
+    assert worksheet.get(ONTARIO_TAX_WITH_SURTAX).value == D("8195.77")
+    assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("1096.23")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("7099.54")
 
 
 def test_the_health_premium_in_a_sloped_row_adds_the_rate_to_the_plateau() -> None:
     # A capital gain of 74000 alone, with no employment income, no RRSP contributions and no
     # union dues: taxable income is half the gain, 37000, and the Ontario credits are 5.05% x
-    # 12747 = 643.7235. ON428 line 89's chart, "more than $36,000 but not more than $38,500":
-    # (37000 - 36000) x 6% + 300 = 360.00; the Ontario basic tax 5.05% x 37000 = 1868.50 less
-    # the credits is 1224.7765, above 588.00, so no reduction, and line 90 is 1224.7765 +
-    # 360.00 = 1584.7765.
+    # 12747 = 643.7235, rounded half-up to the cent: 643.72. ON428 line 89's chart, "more than
+    # $36,000 but not more than $38,500": (37000 - 36000) x 6% + 300 = 360.00; the Ontario basic
+    # tax 5.05% x 37000 = 1868.50 less the credits is 1224.78, above 588.00, so no reduction,
+    # and line 90 is 1224.78 + 360.00 = 1584.78.
     worksheet = compute("0", "74000", "0", "0", "0", "0", "0")
 
     assert worksheet.get(TAXABLE_INCOME).value == D("37000")
-    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("1224.7765")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("1224.78")
     assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("360.00")
-    assert worksheet.get(ONTARIO_TAX).value == D("1584.7765")
+    assert worksheet.get(ONTARIO_TAX).value == D("1584.78")
 
 
 def test_the_health_premium_at_the_top_of_a_sloped_row_is_the_plateau() -> None:
     # A capital gain of 50000 alone: taxable income 25000, "more than $20,000 but not more than
     # $25,000": (25000 - 20000) x 6% = 300.00, the plateau itself; the Ontario basic tax 5.05%
-    # x 25000 = 1262.50 less the credits of 643.7235 is 618.7765, above 588.00, so no
-    # reduction, and line 90 is 618.7765 + 300.00 = 918.7765.
+    # x 25000 = 1262.50 less the credits of 643.72 is 618.78, above 588.00, so no reduction,
+    # and line 90 is 618.78 + 300.00 = 918.78.
     worksheet = compute("0", "50000", "0", "0", "0", "0", "0")
 
     assert worksheet.get(TAXABLE_INCOME).value == D("25000")
-    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("618.7765")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("618.78")
     assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("300.00")
-    assert worksheet.get(ONTARIO_TAX).value == D("918.7765")
+    assert worksheet.get(ONTARIO_TAX).value == D("918.78")
 
 
 def test_no_health_premium_at_the_first_threshold() -> None:
     # A capital gain of 40000 alone: taxable income 20000, "$20,000 or less", so no premium;
-    # the Ontario basic tax 5.05% x 20000 = 1010.00 less the credits of 643.7235 is 366.2765,
-    # below 588.00, so the reduction is 221.7235 and line 81 is 144.5530, which is line 90.
+    # the Ontario basic tax 5.05% x 20000 = 1010.00 less the credits of 643.72 is 366.28, below
+    # 588.00, so the reduction is 221.72 and line 81 is 144.56, which is line 90.
     worksheet = compute("0", "40000", "0", "0", "0", "0", "0")
 
     assert worksheet.get(TAXABLE_INCOME).value == D("20000")
-    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("144.5530")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("144.56")
     assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("0")
-    assert worksheet.get(ONTARIO_TAX).value == D("144.5530")
+    assert worksheet.get(ONTARIO_TAX).value == D("144.56")
 
 
 def test_the_lift_credit_between_the_thresholds_is_reduced_and_comes_off_the_tax() -> None:
     # Employment income of 40000, with no capital gain, no RRSP contributions and no union dues:
     # base CPP contributions 4.95% x (40000 - 3500) = 1806.75, first additional 1% x 36500 =
     # 365.00, EI premiums 1.64% x 40000 = 656.00; net and taxable income 39635.00. Ontario basic
-    # tax 5.05% x 39635.00 = 2001.567500 less the Ontario credits 5.05% x (12747 + 1806.75 +
-    # 656.00 = 15209.75) = 768.092375 is 1233.475125, below the first surtax threshold and above
-    # 588.00, so line 81 is 1233.475125. Schedule ON428-A: line 5 is 5.05% x 40000 = 2020.0000,
-    # at most 875 (line 14); line 17 is 39635.00 - 32500 = 7135.00 and line 19 7135.00 x 5% =
-    # 356.75; line 20 is 875 - 356.75 = 518.25 (ON428 line 85). Line 86 is 1233.475125 - 518.25
-    # = 715.225125; the health premium on 39635.00, "more than $38,500 but not more than
-    # $48,000", is 450, so line 90 is 715.225125 + 450 = 1165.225125.
+    # tax 5.05% x 39635.00 = 2001.5675, rounded half-up to the cent: 2001.57, less the Ontario
+    # credits 5.05% x (12747 + 1806.75 + 656.00 = 15209.75) = 768.092375, rounded half-up to the
+    # cent: 768.09, is 1233.48, below the first surtax threshold and above 588.00, so line 81 is
+    # 1233.48.
+    # Schedule ON428-A: line 5 is 5.05% x 40000 = 2020.00, at most 875 (line 14); line 17 is
+    # 39635.00 - 32500 = 7135.00 and line 19 7135.00 x 5% = 356.75; line 20 is 875 - 356.75 =
+    # 518.25 (ON428 line 85). Line 86 is 1233.48 - 518.25 = 715.23; the health premium on
+    # 39635.00, "more than $38,500 but not more than $48,000", is 450, so line 90 is 715.23 + 450
+    # = 1165.23.
     worksheet = compute("40000", "0", "0", "0", "7200", "0", "0")
 
     assert worksheet.get(NET_INCOME).value == D("39635.00")
-    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("1233.475125")
-    assert worksheet.get(LIFT_CREDIT_BEFORE_MAXIMUM).value == D("2020.0000")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("1233.48")
+    assert worksheet.get(LIFT_CREDIT_BEFORE_MAXIMUM).value == D("2020.00")
     assert worksheet.get(LIFT_MAXIMUM_CREDIT).value == D("875")
     assert worksheet.get(LIFT_REDUCTION).value == D("356.75")
     assert worksheet.get(LIFT_CREDIT).value == D("518.25")
-    assert worksheet.get(ONTARIO_TAX_AFTER_LIFT_CREDIT).value == D("715.225125")
+    assert worksheet.get(ONTARIO_TAX_AFTER_LIFT_CREDIT).value == D("715.23")
     assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("450")
-    assert worksheet.get(ONTARIO_TAX).value == D("1165.225125")
+    assert worksheet.get(ONTARIO_TAX).value == D("1165.23")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "lift_credit: lift_maximum_credit 875 less lift_reduction 356.75, not below 0 = 518.25"
     ) in rendered
     assert (
-        "ontario_tax_after_lift_credit: ontario_tax_after_reduction 1233.475125 "
-        "less lift_credit 518.25, not below 0 = 715.225125"
+        "ontario_tax_after_lift_credit: ontario_tax_after_reduction 1233.48 "
+        "less lift_credit 518.25, not below 0 = 715.23"
     ) in rendered
 
 
@@ -1917,7 +1936,7 @@ def test_the_canada_workers_benefit_below_its_maximum_is_27_percent_over_3000() 
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "cwb_before_reduction_without_dependant: 27% of working_income 8000 over 3000, "
-        "at most 1633 (no rounding)"
+        "at most 1633 (half-up to 0.01)"
     ) in rendered
     assert (
         "canada_workers_benefit_without_dependant: cwb_before_reduction_without_dependant 1350 "
@@ -1935,31 +1954,32 @@ def test_an_eligible_dependant_takes_the_schedule_6_amounts_of_2813_and_30639() 
     # net income is 35000 - 315.00 = 34685.00. Schedule 6 lines 21 and 24, "If you had an
     # eligible spouse or an eligible dependant, enter $2,813. If not, enter $1,633." and "...
     # enter $30,639. If not, enter $26,855.": with no eligible spouse or dependant, line 22 is
-    # 1633 (32000 x 27% = 8640.00 is more), line 27 (34685.00 - 26855) x 15% = 1174.5000 and
-    # line 28 458.5000; with one, line 22 is 2813, line 27 (34685.00 - 30639) x 15% = 606.9000
-    # and line 28 2206.1000. The count of 1 eligible dependant (T1 line 30400) chooses the
-    # second for line 45300, so with no tax deducted the total credits are 2206.1000.
+    # 1633 (32000 x 27% = 8640.00 is more), line 27 (34685.00 - 26855) x 15% = 1174.50 and
+    # line 28 458.50; with one, line 22 is 2813, line 27 (34685.00 - 30639) x 15% = 606.90
+    # and line 28 2206.10, each rounded half-up to the cent, which changes none of them. The
+    # count of 1 eligible dependant (T1 line 30400) chooses the second for line 45300, so with
+    # no tax deducted the total credits are 2206.10.
     worksheet = compute(
         "35000", "0", "0", "0", "6300", "0", "0", dependent_children=1, eligible_dependants=1
     )
 
     assert worksheet.get(NET_INCOME).value == D("34685.00")
     assert worksheet.get(CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT).value == D("1633")
-    assert worksheet.get(CWB_REDUCTION_WITHOUT_DEPENDANT).value == D("1174.5000")
-    assert worksheet.get(CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT).value == D("458.5000")
+    assert worksheet.get(CWB_REDUCTION_WITHOUT_DEPENDANT).value == D("1174.50")
+    assert worksheet.get(CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT).value == D("458.50")
     assert worksheet.get(CWB_BEFORE_REDUCTION_WITH_DEPENDANT).value == D("2813")
-    assert worksheet.get(CWB_REDUCTION_WITH_DEPENDANT).value == D("606.9000")
-    assert worksheet.get(CANADA_WORKERS_BENEFIT_WITH_DEPENDANT).value == D("2206.1000")
-    assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("2206.1000")
-    assert worksheet.get(TOTAL_CREDITS).value == D("2206.1000")
+    assert worksheet.get(CWB_REDUCTION_WITH_DEPENDANT).value == D("606.90")
+    assert worksheet.get(CANADA_WORKERS_BENEFIT_WITH_DEPENDANT).value == D("2206.10")
+    assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("2206.10")
+    assert worksheet.get(TOTAL_CREDITS).value == D("2206.10")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "cwb_before_reduction_with_dependant: 27% of working_income 35000 over 3000, "
-        "at most 2813 (no rounding)"
+        "at most 2813 (half-up to 0.01)"
     ) in rendered
     assert (
         "cwb_reduction_with_dependant: 15% of adjusted_family_net_income 34685 over 30639 "
-        "(no rounding)"
+        "(half-up to 0.01)"
     ) in rendered
     assert (
         "canada_workers_benefit: canada_workers_benefit_with_dependant 2206.1, "
@@ -1970,13 +1990,13 @@ def test_an_eligible_dependant_takes_the_schedule_6_amounts_of_2813_and_30639() 
 def test_with_no_eligible_dependant_the_same_income_takes_the_amounts_of_1633_and_26855() -> None:
     # The amounts of the test above with no eligible dependant claimed for, and no dependent
     # child: both family statuses are computed alike, and the count of 0 chooses the one
-    # without an eligible dependant, 458.5000.
+    # without an eligible dependant, 458.50.
     worksheet = compute("35000", "0", "0", "0", "6300", "0", "0")
 
-    assert worksheet.get(CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT).value == D("458.5000")
-    assert worksheet.get(CANADA_WORKERS_BENEFIT_WITH_DEPENDANT).value == D("2206.1000")
-    assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("458.5000")
-    assert worksheet.get(TOTAL_CREDITS).value == D("458.5000")
+    assert worksheet.get(CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT).value == D("458.50")
+    assert worksheet.get(CANADA_WORKERS_BENEFIT_WITH_DEPENDANT).value == D("2206.10")
+    assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("458.50")
+    assert worksheet.get(TOTAL_CREDITS).value == D("458.50")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "canada_workers_benefit: canada_workers_benefit_without_dependant 458.5, "
@@ -1986,25 +2006,24 @@ def test_with_no_eligible_dependant_the_same_income_takes_the_amounts_of_1633_an
 
 def test_tax_deducted_above_the_total_payable_is_a_refund() -> None:
     # Return A's amounts with 30000 of income tax deducted (T1 line 43700): line 167 is the total
-    # payable of 25897.1508076 less the total credits of 30000, -4102.8491924, negative, so a
-    # refund (line 48400), exact as the T1 states no rounding.
+    # payable of 25897.15 less the total credits of 30000, -4102.85, negative, so a refund (line
+    # 48400), in cents as every line before it is.
     worksheet = compute(
         "110000", "20000", "0", "1926", "19800", "1926", "2000", income_tax_deducted="30000"
     )
 
-    assert worksheet.get(TOTAL_PAYABLE).value == D("25897.1508076")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("25897.15")
     assert worksheet.get(TOTAL_CREDITS).value == D("30000")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-4102.8491924")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-4102.85")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
-        "refund_or_balance_owing: total_payable 25897.1508076 "
-        "less total_credits 30000 = -4102.8491924"
+        "refund_or_balance_owing: total_payable 25897.15 less total_credits 30000 = -4102.85"
     ) in rendered
 
 
 def test_tax_deducted_equal_to_the_total_payable_leaves_no_balance() -> None:
     worksheet = compute(
-        "110000", "20000", "0", "1926", "19800", "1926", "2000", income_tax_deducted="25897.1508076"
+        "110000", "20000", "0", "1926", "19800", "1926", "2000", income_tax_deducted="25897.15"
     )
 
     assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("0")
@@ -2100,15 +2119,16 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
     # income is 60000 - (5000 + 565.00) = 54435.00. Schedule 5 line 5 is its line 30000 of
     # 16129.00 less 0, claimed for 1 eligible dependant: line 30400 is 16129.00. ON428 line 16
     # is 11905.00 less 0, at most 10823: line 58160 is 10823. Line 33500 is 16129 + 16129.00 + 0
-    # + 2796.75 + 984.00 + 1471 = 37509.75, and line 35000 37509.75 x 14.5% = 5438.91375, so the
-    # federal tax after credits is 14.5% x 54435.00 = 7893.075 less it, 2454.16125. ON428 line
-    # 58800 is 12747 + 10823 + 2796.75 + 984.00 = 27350.75, and line 61500 27350.75 x 5.05% =
-    # 1381.212875, so the Ontario tax after credits is 2670.74 + 9.15% x (54435.00 - 52886) =
-    # 2812.4735 less it, 1431.260625. The child is a dependent child for the Ontario tax
-    # reduction: 294.00 + 544 = 838.00, twice it 1676.00, less 1431.260625 is a reduction of
-    # 244.739375, leaving 1186.52125. With the health premium of 600 the Ontario tax is
-    # 1786.52125, the total payable 2454.16125 + 1786.52125 = 4240.6825, and line 167 4240.6825
-    # - 8000 = -3759.3175, a refund.
+    # + 2796.75 + 984.00 + 1471 = 37509.75, and line 35000 37509.75 x 14.5% = 5438.91375,
+    # rounded half-up to the cent: 5438.91, so the federal tax after credits is 14.5% x 54435.00
+    # = 7893.075, rounded half-up to the cent: 7893.08, less it, 2454.17. ON428 line 58800 is
+    # 12747 + 10823 + 2796.75 + 984.00 = 27350.75, and line 61500 27350.75 x 5.05% =
+    # 1381.212875, rounded half-up to the cent: 1381.21, so the Ontario tax after credits is
+    # 2670.74 + 9.15% x (54435.00 - 52886) = 2812.4735, rounded half-up to the cent: 2812.47,
+    # less it, 1431.26. The child is a dependent child for the Ontario tax reduction: 294.00 +
+    # 544 = 838.00, twice it 1676.00, less 1431.26 is a reduction of 244.74, leaving 1186.52.
+    # With the health premium of 600 the Ontario tax is 1786.52, the total payable 2454.17 +
+    # 1786.52 = 4240.69, and line 167 4240.69 - 8000 = -3759.31, a refund.
     worksheet = compute(
         "60000",
         "0",
@@ -2130,20 +2150,20 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
     assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT).value == D("16129.00")
     assert worksheet.get(INFIRM_CHILDREN_AMOUNT).value == D("0")
     assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("37509.75")
-    assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("5438.91375")
-    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("2454.16125")
+    assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("5438.91")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("2454.17")
     assert worksheet.get(ELIGIBLE_DEPENDANT_BASE).value == D("11905.00")
     assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM).value == D("11905.00")
     assert worksheet.get(ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT).value == D("10823")
     assert worksheet.get(ontario.ELIGIBLE_DEPENDANT_AMOUNT).value == D("10823")
     assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("27350.75")
-    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("1381.212875")
-    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1431.260625")
+    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("1381.21")
+    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1431.26")
     assert worksheet.get(TAX_REDUCTION_AMOUNTS).value == D("838.00")
-    assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("244.739375")
-    assert worksheet.get(ONTARIO_TAX).value == D("1786.52125")
-    assert worksheet.get(TOTAL_PAYABLE).value == D("4240.6825")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-3759.3175")
+    assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("244.74")
+    assert worksheet.get(ONTARIO_TAX).value == D("1786.52")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("4240.69")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-3759.31")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "eligible_dependant_amount: eligible_dependant_amount_before_count 16129 "
@@ -2169,9 +2189,9 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
 def test_return_fs_canada_workers_benefit_is_zero_with_an_eligible_dependant() -> None:
     # Return F, Schedule 6: working income 60000 (line 5) and adjusted family net income
     # 54435.00 (line 15). With the eligible dependant, line 22 is the lesser of (60000 - 3000) x
-    # 27% = 15390.00 and 2813: 2813; line 27 is (54435.00 - 30639) x 15% = 3569.4000; line 28 is
-    # 2813 - 3569.4000, negative, so 0. Without an eligible dependant, line 22 1633 and line 27
-    # (54435.00 - 26855) x 15% = 4137.0000, is computed too and is also 0; the count of 1
+    # 27% = 15390.00 and 2813: 2813; line 27 is (54435.00 - 30639) x 15% = 3569.40; line 28 is
+    # 2813 - 3569.40, negative, so 0. Without an eligible dependant, line 22 1633 and line 27
+    # (54435.00 - 26855) x 15% = 4137.00, is computed too and is also 0; the count of 1
     # eligible dependant chooses the amounts with one for T1 line 45300.
     worksheet = compute(
         "60000",
@@ -2191,10 +2211,10 @@ def test_return_fs_canada_workers_benefit_is_zero_with_an_eligible_dependant() -
     assert worksheet.get(WORKING_INCOME).value == D("60000")
     assert worksheet.get(ADJUSTED_FAMILY_NET_INCOME).value == D("54435.00")
     assert worksheet.get(CWB_BEFORE_REDUCTION_WITH_DEPENDANT).value == D("2813")
-    assert worksheet.get(CWB_REDUCTION_WITH_DEPENDANT).value == D("3569.4000")
+    assert worksheet.get(CWB_REDUCTION_WITH_DEPENDANT).value == D("3569.40")
     assert worksheet.get(CANADA_WORKERS_BENEFIT_WITH_DEPENDANT).value == D("0")
     assert worksheet.get(CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT).value == D("1633")
-    assert worksheet.get(CWB_REDUCTION_WITHOUT_DEPENDANT).value == D("4137.0000")
+    assert worksheet.get(CWB_REDUCTION_WITHOUT_DEPENDANT).value == D("4137.00")
     assert worksheet.get(CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT).value == D("0")
     assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("0")
     assert worksheet.get(TOTAL_CREDITS).value == D("8000")
@@ -2251,7 +2271,7 @@ def test_the_dependants_net_income_comes_off_both_amounts() -> None:
     ) in rendered
     assert (
         "eligible_dependant_amount_before_count: lesser of "
-        "eligible_dependant_amount_before_maximum 10405 and 10823 (no rounding)"
+        "eligible_dependant_amount_before_maximum 10405 and 10823 (half-up to 0.01)"
     ) in rendered
 
 
@@ -2314,7 +2334,8 @@ def test_no_eligible_dependant_claims_nothing_whatever_the_dependants_income() -
 def test_infirm_children_add_2687_each_to_the_federal_amounts_only() -> None:
     # Return A's amounts with two infirm children (T1 line 30499): line 30500 is 2 x 2687 =
     # 5374, so line 33500 is 22033.58 + 5374 = 27407.58, line 35000 27407.58 x 14.5% =
-    # 3974.0991, and the federal tax after credits 20146.25 - 3974.0991 = 16172.1509. ON428 has
+    # 3974.0991, rounded half-up to the cent: 3974.10, and the federal tax after credits
+    # 20146.25 - 3974.10 = 16172.15. ON428 has
     # no such line here (its caregiver amount, line 58185, is not triggered), so its total is
     # unchanged at 17180.58.
     worksheet = compute("110000", "20000", "0", "1926", "19800", "1926", "2000", infirm_children=2)
@@ -2322,12 +2343,13 @@ def test_infirm_children_add_2687_each_to_the_federal_amounts_only() -> None:
     assert worksheet.get(INFIRM_CHILDREN).value == 2
     assert worksheet.get(INFIRM_CHILDREN_AMOUNT).value == D("5374")
     assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("27407.58")
-    assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("3974.0991")
-    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("16172.1509")
+    assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("3974.10")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("16172.15")
     assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("17180.58")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
-    assert "infirm_children_amount: 2687 for each of 2 infirm_children = 5374 (no rounding)" in (
-        rendered
+    assert (
+        "infirm_children_amount: 2687 for each of 2 infirm_children = 5374 (half-up to 0.01)"
+        in (rendered)
     )
 
 
@@ -2338,7 +2360,8 @@ def test_the_child_care_expenses_deduction_is_5000_for_one_child_and_lowers_net_
     # income of 60000: 40000. Line 7 is the least of 5000, 6000 and 40000: 5000, line 21400. T1
     # line 23300 is 0 + 0 + 5000 + 565.00 = 5565.00, and net income 60000 - 5565.00 =
     # 54435.00, which the LIFT reduction (5% of 54435.00 over 32500 = 1096.75) and Schedule 6
-    # (15% of 54435.00 over 30639 = 3569.4000, with the eligible dependant) read.
+    # (15% of 54435.00 over 30639 = 3569.40, with the eligible dependant) read; the federal and
+    # Ontario taxes on it are 7893.075 and 2812.4735, rounded half-up to the cent.
     worksheet = compute(
         "60000",
         "0",
@@ -2365,20 +2388,20 @@ def test_the_child_care_expenses_deduction_is_5000_for_one_child_and_lowers_net_
     assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("5565.00")
     assert worksheet.get(NET_INCOME).value == D("54435.00")
     assert worksheet.get(TAXABLE_INCOME).value == D("54435.00")
-    assert worksheet.get(FEDERAL_BASIC_TAX).value == D("7893.075")
-    assert worksheet.get(ONTARIO_BASIC_TAX).value == D("2812.4735")
+    assert worksheet.get(FEDERAL_BASIC_TAX).value == D("7893.08")
+    assert worksheet.get(ONTARIO_BASIC_TAX).value == D("2812.47")
     assert worksheet.get(LIFT_REDUCTION).value == D("1096.75")
     assert worksheet.get(LIFT_CREDIT).value == D("0")
     assert worksheet.get(ADJUSTED_FAMILY_NET_INCOME).value == D("54435.00")
-    assert worksheet.get(CWB_REDUCTION_WITH_DEPENDANT).value == D("3569.4000")
+    assert worksheet.get(CWB_REDUCTION_WITH_DEPENDANT).value == D("3569.40")
     assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("0")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "child_care_limit_for_children_seven_to_sixteen: 5000 for each of 1 "
-        "children_seven_to_sixteen = 5000 (no rounding)"
+        "children_seven_to_sixteen = 5000 (half-up to 0.01)"
     ) in rendered
     assert (
-        "child_care_earned_income_limit: 2/3 of child_care_earned_income 60000 (no rounding)"
+        "child_care_earned_income_limit: 2/3 of child_care_earned_income 60000 (half-up to 0.01)"
     ) in rendered
     assert (
         "child_care_expenses: lesser of child_care_basic_limit 5000 and child_care_expenses_paid "

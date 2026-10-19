@@ -2,9 +2,9 @@
 
 T1-2025 Schedule 3 (form 5000-S3): line 23 "Inclusion rate 50%"; line 24 multiplies line 22
 by that percentage; line 26 (line 19900), if positive, goes to T1 line 12700 (taxable capital
-gains). The form states no rounding on these lines. The 2024 proposal to raise the rate did not
-proceed: Finance's Report on Federal Tax Expenditures 2026 records that Budget 2025 confirmed
-the increase would not go ahead.
+gains). Line 24 is a dollars-and-cents box, so the product is rounded half-up to the cent. The
+2024 proposal to raise the rate did not proceed: Finance's Report on Federal Tax Expenditures
+2026 records that Budget 2025 confirmed the increase would not go ahead.
 Netting gains against losses (Schedule 3 line 21) is not modelled yet.
 """
 
@@ -19,7 +19,7 @@ from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.parameters.rate import RATE, Rate
-from app.domain.parameters.rounding import NO_ROUNDING
+from app.domain.parameters.rounding import RoundingMode, RoundTo
 
 D = Decimal
 SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
@@ -34,7 +34,8 @@ def test_2025_inclusion_rate_is_half() -> None:
     data = SOURCE.get(FAMILY, 2025, RATE)
 
     assert data.values == Rate(D("0.5"))
-    assert data.rounding == NO_ROUNDING  # Schedule 3 states no rounding on lines 24 to 26
+    # Schedule 3 line 24, a dollars-and-cents box: half-up to the cent.
+    assert data.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
 @pytest.mark.parametrize(
@@ -56,8 +57,8 @@ def test_2025_inclusion_rate_cites_its_sources(source: str) -> None:
     [
         # Return A: a capital gain of $20,000, half of it taxable.
         ("20000", "10000"),
-        # Cents carry through unrounded: 0.01 × 50% is 0.005.
-        ("1234.57", "617.285"),
+        # Rounded half-up to the cent: 1234.57 × 50% is 617.285, a tie, up to 617.29.
+        ("1234.57", "617.29"),
         ("0", "0"),
     ],
 )
