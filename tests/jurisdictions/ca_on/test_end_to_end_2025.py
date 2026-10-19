@@ -34,21 +34,22 @@ line 69, and with no dependent children and no dependants the Ontario tax reduct
 tax reduction of 0 (line 80), to the Ontario tax after the reduction (line 81); Schedule ON428-A's
 LIFT credit, 5.05% of employment income, 5555, at most 875 (lines 5 and 14), less 5% of net income
 over 32500, 4125 (line 19), not below zero, 0 (line 20, ON428 line 85), taken off the Ontario tax
-after the reduction, not below zero (line 86); and the Ontario health premium on taxable income by
-the chart of line 89, 750, added to it to the Ontario tax of line 90; and on the T1, the federal tax
-after credits carried to the net federal tax (line 42000), added to the Ontario tax (line 42800) to
-the total payable (line 43500); Schedule 6's Canada workers benefit, computed for each family
-status, from the working income of 110000 (line 5, employment income), 27% of it over 3000 at most
-1633 (line 22), less 15% of the adjusted family net income (line 15, net income) of 115000 over
-26855, 13221.75 (line 27), not below zero, 0 (line 28), and with an eligible dependant 27% of the
-working income at most 2813, less 15% of the adjusted family net income over 30639, 12654.15, not
-below zero, 0, the count of 0 Schedule 6 eligible dependants (line 38100) choosing the first (T1
-line 45300); less the total credits (line 48200), here the chosen income tax
-deducted of 25000 (line 43700) plus that benefit, to the refund or balance owing (line 167),
-897.15, positive so a balance owing; every line computed from a dataset rounded half-up to the
-cent) are checked from the files under `returns/` by `test_worked_returns.py`, as are Returns B,
-C, D, E, F and G; this module pins which capability produces each line, the order, and the trace
-that explains them.
+after the reduction, not below zero (line 86), less the community food program donation tax credit
+for farmers, 25% of the qualifying donations (line 87), here 0 for donations of 0, not below zero
+(line 88); and the Ontario health premium on taxable income by the chart of line 89, 750, added to
+it to the Ontario tax of line 90; and on the T1, the federal tax after credits carried to the net
+federal tax (line 42000), added to the Ontario tax (line 42800) to the total payable (line 43500);
+Schedule 6's Canada workers benefit, computed for each family status, from the working income of
+110000 (line 5, employment income), 27% of it over 3000 at most 1633 (line 22), less 15% of the
+adjusted family net income (line 15, net income) of 115000 over 26855, 13221.75 (line 27), not below
+zero, 0 (line 28), and with an eligible dependant 27% of the working income at most 2813, less 15%
+of the adjusted family net income over 30639, 12654.15, not below zero, 0, the count of 0 Schedule 6
+eligible dependants (line 38100) choosing the first (T1 line 45300); less the total credits (line
+48200), here the chosen income tax deducted of 25000 (line 43700) plus that benefit, to the refund
+or balance owing (line 167), 897.15, positive so a balance owing; every line computed from a dataset
+rounded half-up to the cent) are checked from the files under `returns/` by
+`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H and I; this module pins which
+capability produces each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
@@ -203,6 +204,8 @@ from app.jurisdictions.ca.catalog import (
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
+    COMMUNITY_FOOD_PROGRAM_CREDIT,
+    COMMUNITY_FOOD_PROGRAM_DONATIONS,
     DEPENDANTS,
     DEPENDENT_CHILDREN,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
@@ -221,6 +224,7 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_SURTAX,
     ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_AFTER_FOOD_CREDIT,
     ONTARIO_TAX_AFTER_LIFT_CREDIT,
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_REDUCTION,
@@ -297,6 +301,7 @@ def compute(
     income_tax_deducted: str = "0",
     fertility_expenses: str = "0",
     seniors_transit_paid: str = "0",
+    community_food_program_donations: str = "0",
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -353,6 +358,7 @@ def compute(
         Artifact(INCOME_TAX_DEDUCTED, D(income_tax_deducted)),
         Artifact(FERTILITY_EXPENSES, D(fertility_expenses)),
         Artifact(SENIORS_TRANSIT_PAID, D(seniors_transit_paid)),
+        Artifact(COMMUNITY_FOOD_PROGRAM_DONATIONS, D(community_food_program_donations)),
     )
 
 
@@ -386,6 +392,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(INCOME_TAX_DEDUCTED) is None
     assert worksheet.producer_of(FERTILITY_EXPENSES) is None
     assert worksheet.producer_of(SENIORS_TRANSIT_PAID) is None
+    assert worksheet.producer_of(COMMUNITY_FOOD_PROGRAM_DONATIONS) is None
     assert worksheet.producer_of(OTHER_EMPLOYMENT_INCOME) is None
     assert worksheet.producer_of(OLD_AGE_SECURITY) is None
     assert worksheet.producer_of(CPP_OR_QPP_BENEFITS) is None
@@ -573,6 +580,14 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     )
     assert worksheet.producer_of(ONTARIO_TAX_AFTER_LIFT_CREDIT) is not worksheet.producer_of(
         ONTARIO_TAX_AFTER_REDUCTION
+    )
+    assert isinstance(worksheet.producer_of(COMMUNITY_FOOD_PROGRAM_CREDIT), ApplyRate)
+    assert worksheet.producer_of(COMMUNITY_FOOD_PROGRAM_CREDIT) is not worksheet.producer_of(
+        LIFT_CREDIT_BEFORE_MAXIMUM
+    )
+    assert isinstance(worksheet.producer_of(ONTARIO_TAX_AFTER_FOOD_CREDIT), SubtractNotBelowZero)
+    assert worksheet.producer_of(ONTARIO_TAX_AFTER_FOOD_CREDIT) is not worksheet.producer_of(
+        ONTARIO_TAX_AFTER_LIFT_CREDIT
     )
     assert isinstance(worksheet.producer_of(ONTARIO_HEALTH_PREMIUM), TieredSurcharge)
     assert worksheet.producer_of(ONTARIO_HEALTH_PREMIUM) is not worksheet.producer_of(
@@ -939,6 +954,16 @@ def test_the_trace_explains_the_computation() -> None:
         "less lift_credit 0, not below 0 = 8195.77",
         "8195.77",
     )
+    food_credit = position(
+        "community_food_program_credit: 25% of community_food_program_donations 0 "
+        "(half-up to 0.01)",
+        "0",
+    )
+    after_food = position(
+        "ontario_tax_after_food_credit: ontario_tax_after_lift_credit 8195.77 "
+        "less community_food_program_credit 0, not below 0 = 8195.77",
+        "8195.77",
+    )
     premium_first = position(
         "ontario_health_premium: 6% of taxable_income 115000 over 20000, at most 300 "
         "(half-up to 0.01)",
@@ -965,7 +990,7 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     ontario_tax = position(
-        "ontario_tax: ontario_tax_after_lift_credit 8195.77 + ontario_health_premium 750 = 8945.77",
+        "ontario_tax: ontario_tax_after_food_credit 8195.77 + ontario_health_premium 750 = 8945.77",
         "8945.77",
     )
     net_federal = position(
@@ -1078,7 +1103,8 @@ def test_the_trace_explains_the_computation() -> None:
     assert reduction_amounts < reduction
     assert taxable < premium_first < premium_second < premium_third < premium_fourth
     assert premium_fourth < premium_fifth < ontario_tax
-    assert lift_before_maximum < lift_maximum < lift < after_lift < ontario_tax
+    assert lift_before_maximum < lift_maximum < lift < after_lift < after_food < ontario_tax
+    assert food_credit < after_food
     assert net < lift_reduction < lift
     assert after_reduction < after_lift
     assert federal_after < net_federal < payable
@@ -1182,6 +1208,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Rate(D("0.15")),
             CENT,
             D("0"),
+        ),
+        # ON428 line 87 and line 62150 "multiplied by 25%": the qualifying donations of 0.
+        COMMUNITY_FOOD_PROGRAM_CREDIT: RateAppliedLine(
+            COMMUNITY_FOOD_PROGRAM_CREDIT,
+            COMMUNITY_FOOD_PROGRAM_DONATIONS,
+            D("0"),
+            Rate(D("0.25")),
+            CENT,
+            D("0.00"),
         ),
         # Schedule ON428-A line 5 "Line 3 multiplied by the percentage from line 4 (maximum
         # $875)", before its maximum: line 3 is employment income (line 10100), as line 2 (line
@@ -1330,11 +1365,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("294.00"),
         ),
         # ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your return.
-        # Ontario tax": line 88 carries line 86, as line 87 is not triggered.
+        # Ontario tax": line 88 is line 86, as line 87 is 0.
         ONTARIO_TAX: SumLine(
             ONTARIO_TAX,
             (
-                (ONTARIO_TAX_AFTER_LIFT_CREDIT, D("8195.77")),
+                (ONTARIO_TAX_AFTER_FOOD_CREDIT, D("8195.77")),
                 (ONTARIO_HEALTH_PREMIUM, D("750")),
             ),
             D("8945.77"),
@@ -1899,6 +1934,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("8195.77"),
         ),
+        # ON428 line 88 "Line 86 minus line 87 (if negative, enter "0")": line 87 is 0.
+        ONTARIO_TAX_AFTER_FOOD_CREDIT: SubtractedNotBelowZeroLine(
+            output=ONTARIO_TAX_AFTER_FOOD_CREDIT,
+            minuend=ONTARIO_TAX_AFTER_LIFT_CREDIT,
+            minuend_amount=D("8195.77"),
+            subtrahend=COMMUNITY_FOOD_PROGRAM_CREDIT,
+            subtrahend_amount=D("0.00"),
+            result=D("8195.77"),
+        ),
         # Schedule 6 line 28 "Line 22 minus line 27 (if negative, enter "0")": the reduction of
         # 13221.75 exceeds the 1633, and that of 12654.15 the 2813, so the benefit is 0 with or
         # without an eligible dependant.
@@ -1961,7 +2005,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 78
+    assert len(order) == 80
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -2048,6 +2092,12 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[LIFT_REDUCTION] < position[LIFT_CREDIT]
     assert position[LIFT_CREDIT] < position[ONTARIO_TAX_AFTER_LIFT_CREDIT] < position[ONTARIO_TAX]
     assert position[ONTARIO_TAX_AFTER_REDUCTION] < position[ONTARIO_TAX_AFTER_LIFT_CREDIT]
+    assert (
+        position[COMMUNITY_FOOD_PROGRAM_CREDIT]
+        < position[ONTARIO_TAX_AFTER_FOOD_CREDIT]
+        < position[ONTARIO_TAX]
+    )
+    assert position[ONTARIO_TAX_AFTER_LIFT_CREDIT] < position[ONTARIO_TAX_AFTER_FOOD_CREDIT]
     assert position[FEDERAL_TAX_AFTER_CREDITS] < position[NET_FEDERAL_TAX]
     assert position[NET_FEDERAL_TAX] < position[TOTAL_PAYABLE]
     assert position[ONTARIO_TAX] < position[TOTAL_PAYABLE]
@@ -2266,6 +2316,94 @@ def test_the_lift_credit_between_the_thresholds_is_reduced_and_comes_off_the_tax
         "ontario_tax_after_lift_credit: ontario_tax_after_reduction 1233.48 "
         "less lift_credit 518.25, not below 0 = 715.23"
     ) in rendered
+
+
+def test_return_is_community_food_program_credit_comes_off_the_tax_after_the_lift_credit() -> None:
+    # Return I: employment income of 48000, with no capital gain, no RRSP contributions and no
+    # union dues: base CPP contributions 4.95% x (48000 - 3500) = 2202.75, first additional 1% x
+    # 44500 = 445.00, EI premiums 1.64% x 48000 = 787.20; net and taxable income 48000 - 445.00
+    # = 47555.00. Ontario basic tax 5.05% x 47555.00 = 2401.5275, rounded half-up to the cent:
+    # 2401.53, less the Ontario credits 5.05% x (12747 + 2202.75 + 787.20 = 15736.95) =
+    # 794.715975, rounded half-up to the cent: 794.72, is 1606.81, below the first surtax
+    # threshold and above 588.00, so line 81 is 1606.81.
+    # Schedule ON428-A: line 5 is 5.05% x 48000 = 2424.00, at most 875 (line 14); line 17 is
+    # 47555.00 - 32500 = 15055.00 and line 19 15055.00 x 5% = 752.75; line 20 is 875 - 752.75 =
+    # 122.25 (ON428 line 85). Line 86 is 1606.81 - 122.25 = 1484.56. Qualifying donations of 1000
+    # (a caller input, within the donations claimed): line 87 is 25% x 1000 = 250.00 and line 88
+    # is 1484.56 - 250.00 = 1234.56. The health premium on 47555.00, "more than $38,500 but not
+    # more than $48,000", is 450, so line 90 is 1234.56 + 450 = 1684.56.
+    # The federal tax after credits is 14.5% x 47555.00 = 6895.475, rounded half-up to the cent:
+    # 6895.48, less 14.5% x (16129 + 2202.75 + 787.20 + 1471 = 20589.95) = 2985.54275, rounded
+    # half-up to the cent: 2985.54, is 3909.94. The total payable is 3909.94 + 1684.56 =
+    # 5594.50, and with the chosen tax deducted of 4800 and no Canada workers benefit (the
+    # reduction 15% x (47555.00 - 26855) = 3105.00 exceeds the 1633), line 167 is 5594.50 - 4800
+    # = 794.50, a balance owing.
+    worksheet = compute(
+        "48000",
+        "0",
+        "0",
+        "0",
+        "8640",
+        "0",
+        "0",
+        income_tax_deducted="4800",
+        community_food_program_donations="1000",
+    )
+
+    assert worksheet.get(NET_INCOME).value == D("47555.00")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("1606.81")
+    assert worksheet.get(LIFT_CREDIT).value == D("122.25")
+    assert worksheet.get(ONTARIO_TAX_AFTER_LIFT_CREDIT).value == D("1484.56")
+    assert worksheet.get(COMMUNITY_FOOD_PROGRAM_DONATIONS).value == D("1000")
+    assert worksheet.get(COMMUNITY_FOOD_PROGRAM_CREDIT).value == D("250.00")
+    assert worksheet.get(ONTARIO_TAX_AFTER_FOOD_CREDIT).value == D("1234.56")
+    assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("450")
+    assert worksheet.get(ONTARIO_TAX).value == D("1684.56")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("3909.94")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("5594.50")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("794.50")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "community_food_program_credit: 25% of community_food_program_donations 1000 "
+        "(half-up to 0.01)"
+    ) in rendered
+    assert (
+        "ontario_tax_after_food_credit: ontario_tax_after_lift_credit 1484.56 "
+        "less community_food_program_credit 250, not below 0 = 1234.56"
+    ) in rendered
+    assert (
+        "ontario_tax: ontario_tax_after_food_credit 1234.56 + ontario_health_premium 450 = 1684.56"
+    ) in rendered
+
+
+def test_donations_without_a_larger_line_86_leave_line_88_at_zero_not_negative() -> None:
+    # Employment income of 40000 as in the LIFT test above: line 86 is 715.23. Qualifying
+    # donations of 4000 give line 87 = 25% x 4000 = 1000.00, more than line 86, so line 88 is 0,
+    # not negative, and line 90 is the health premium of 450 alone.
+    worksheet = compute(
+        "40000", "0", "0", "0", "7200", "0", "0", community_food_program_donations="4000"
+    )
+
+    assert worksheet.get(ONTARIO_TAX_AFTER_LIFT_CREDIT).value == D("715.23")
+    assert worksheet.get(COMMUNITY_FOOD_PROGRAM_CREDIT).value == D("1000.00")
+    assert worksheet.get(ONTARIO_TAX_AFTER_FOOD_CREDIT).value == D("0")
+    assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("450")
+    assert worksheet.get(ONTARIO_TAX).value == D("450")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "ontario_tax_after_food_credit: ontario_tax_after_lift_credit 715.23 "
+        "less community_food_program_credit 1000, not below 0 = 0"
+    ) in rendered
+
+
+def test_no_donations_leave_line_88_at_line_86() -> None:
+    # The default of 0 donations, as for Returns A to H: line 87 is 0 and line 88 is line 86.
+    worksheet = compute("40000", "0", "0", "0", "7200", "0", "0")
+
+    assert worksheet.get(COMMUNITY_FOOD_PROGRAM_DONATIONS).value == D("0")
+    assert worksheet.get(COMMUNITY_FOOD_PROGRAM_CREDIT).value == D("0")
+    assert worksheet.get(ONTARIO_TAX_AFTER_FOOD_CREDIT).value == D("715.23")
+    assert worksheet.get(ONTARIO_TAX).value == D("1165.23")
 
 
 def test_the_canada_workers_benefit_below_its_maximum_is_27_percent_over_3000() -> None:

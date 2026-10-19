@@ -124,6 +124,8 @@ from app.jurisdictions.ca.catalog import (
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
+    COMMUNITY_FOOD_PROGRAM_CREDIT,
+    COMMUNITY_FOOD_PROGRAM_DONATIONS,
     DEPENDANTS,
     DEPENDENT_CHILDREN,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
@@ -142,6 +144,7 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_SURTAX,
     ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_AFTER_FOOD_CREDIT,
     ONTARIO_TAX_AFTER_LIFT_CREDIT,
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_REDUCTION,
@@ -224,6 +227,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/income_tax_deducted",
             "ca-on/fertility_expenses",
             "ca-on/seniors_transit_paid",
+            "ca-on/community_food_program_donations",
         }
     )
     # T1 line 167, the refund or balance owing, and Schedule 7 line 23, what the return produces
@@ -792,6 +796,26 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"amount": "ca-on/ontario_tax_after_reduction", "less": "ca-on/lift_credit"},
             produces={"output": "ca-on/ontario_tax_after_lift_credit"},
         ),
+        # ON428 line 87 and line 62150 "Enter the amount of qualifying donations that have also
+        # been claimed as a charitable donation." "multiplied by 25%", under "Community food
+        # program donation tax credit for farmers:": the donations are a caller input, taken as
+        # entered.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/community_food_program_rate"},
+            consumes={"base": "ca-on/community_food_program_donations"},
+            produces={"output": "ca-on/community_food_program_credit"},
+        ),
+        # ON428 line 88 "Line 86 minus line 87 (if negative, enter "0")".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/ontario_tax_after_lift_credit",
+                "less": "ca-on/community_food_program_credit",
+            },
+            produces={"output": "ca-on/ontario_tax_after_food_credit"},
+        ),
         # ON428 line 89 "Ontario health premium (complete the chart below)": the chart's tiers on
         # line 1 "Enter your taxable income from line 26000 of your return", each the previous
         # plateau plus a rate on the income over its threshold, at most the next plateau.
@@ -809,7 +833,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             name="core/sum",
             params={},
             consumes={
-                "parts": ("ca-on/ontario_tax_after_lift_credit", "ca-on/ontario_health_premium")
+                "parts": ("ca-on/ontario_tax_after_food_credit", "ca-on/ontario_health_premium")
             },
             produces={"output": "ca-on/ontario_tax"},
         ),
@@ -1008,7 +1032,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 78
+    assert len(found.capabilities) == 80
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -1018,7 +1042,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 78
+    assert len(composition.order) == 80
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -1293,10 +1317,20 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({ONTARIO_TAX_AFTER_REDUCTION, LIFT_CREDIT}),
             frozenset({ONTARIO_TAX_AFTER_LIFT_CREDIT}),
         ),
+        (
+            ApplyRate,
+            frozenset({COMMUNITY_FOOD_PROGRAM_DONATIONS}),
+            frozenset({COMMUNITY_FOOD_PROGRAM_CREDIT}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({ONTARIO_TAX_AFTER_LIFT_CREDIT, COMMUNITY_FOOD_PROGRAM_CREDIT}),
+            frozenset({ONTARIO_TAX_AFTER_FOOD_CREDIT}),
+        ),
         (TieredSurcharge, frozenset({TAXABLE_INCOME}), frozenset({ONTARIO_HEALTH_PREMIUM})),
         (
             Sum,
-            frozenset({ONTARIO_TAX_AFTER_LIFT_CREDIT, ONTARIO_HEALTH_PREMIUM}),
+            frozenset({ONTARIO_TAX_AFTER_FOOD_CREDIT, ONTARIO_HEALTH_PREMIUM}),
             frozenset({ONTARIO_TAX}),
         ),
         (Sum, frozenset({FEDERAL_TAX_AFTER_CREDITS}), frozenset({NET_FEDERAL_TAX})),

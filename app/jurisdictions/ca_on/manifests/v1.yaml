@@ -54,6 +54,7 @@ inputs:
   - ca/income_tax_deducted
   - ca-on/fertility_expenses
   - ca-on/seniors_transit_paid
+  - ca-on/community_food_program_donations
 outputs:
   - ca/refund_or_balance_owing
   - ca/unused_rrsp_contributions_carried_forward
@@ -585,6 +586,24 @@ capabilities:
       less: ca-on/lift_credit
     produces:
       output: ca-on/ontario_tax_after_lift_credit
+  # ON428 line 87 and line 62150 "Enter the amount of qualifying donations that have also
+  # been claimed as a charitable donation." "multiplied by 25%", under "Community food
+  # program donation tax credit for farmers:": the donations are a caller input, taken as
+  # entered.
+  - name: core/apply_rate
+    params:
+      rate: ca-on/community_food_program_rate
+    consumes:
+      base: ca-on/community_food_program_donations
+    produces:
+      output: ca-on/community_food_program_credit
+  # ON428 line 88 "Line 86 minus line 87 (if negative, enter "0")".
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca-on/ontario_tax_after_lift_credit
+      less: ca-on/community_food_program_credit
+    produces:
+      output: ca-on/ontario_tax_after_food_credit
   # ON428 line 89 "Ontario health premium (complete the chart below)": the chart's tiers
   # on line 1 "Enter your taxable income from line 26000 of your return", each the
   # previous plateau plus a rate on the income over its threshold, at most the next
@@ -597,13 +616,11 @@ capabilities:
     produces:
       output: ca-on/ontario_health_premium
   # ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your return.
-  # Ontario tax": line 88 "Line 86 minus line 87 (if negative, enter "0")" carries line
-  # 86 while the community food program donation tax credit for farmers (line 87) is not
-  # triggered.
+  # Ontario tax".
   - name: core/sum
     consumes:
       parts:
-        - ca-on/ontario_tax_after_lift_credit
+        - ca-on/ontario_tax_after_food_credit
         - ca-on/ontario_health_premium
     produces:
       output: ca-on/ontario_tax
