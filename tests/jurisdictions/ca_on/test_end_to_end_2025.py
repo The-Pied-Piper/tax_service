@@ -28,8 +28,10 @@ for 0 eligible dependants and so 0, the base CPP contributions and the EI premiu
 the amount for infirm children of 0 x 2687 (line 30500) and the Canada employment amount of 1471
 (the lesser of employment income and 1471), through each total of credit amounts and the credit rate
 applied once to it (T1 line 33800, ON428 line 58840) to each form's non-refundable tax credits
-(ON428 line 61500; T1 line 35000, which adds the donations and gifts credit of Schedule 9 (line
-34900) and the top-up tax credit of the Federal Worksheet (line 34990), both 0 for donations of 0)
+(ON428 line 61500, which adds to line 46 the donations and gifts credit of lines 47 to 49 (line
+58969), 5.05% of Schedule 9 line 13 and 11.16% of its line 14; T1 line 35000, which adds the
+donations and gifts credit of Schedule 9 (line 34900) and the top-up tax credit of the Federal
+Worksheet (line 34990); all 0 for donations of 0)
 to each tax after credits, the Ontario
 surtax on the Ontario tax after credits (ON428 lines 66 to 68) to the Ontario tax with surtax of
 line 69, less the Ontario dividend tax credit of 0 (line 70, from line 57 and Worksheet ON428's
@@ -895,10 +897,25 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         ontario.NON_REFUNDABLE_CREDIT_AMOUNTS
     )
     # T1 line 115 (line 33800) is the credit rate applied once; line 118 (line 35000) adds lines
-    # 115 to 117, so it is a sum, while ON428 line 61500 stays the rate applied once.
+    # 115 to 117, so it is a sum. ON428 line 46 (line 58840) is the Ontario credit rate applied
+    # once; lines 47 and 48 are one rate each on Schedule 9 lines 13 and 14, line 49 (line 58969)
+    # their sum and line 50 (line 61500) adds line 46 and line 49, so it is a sum too.
     assert isinstance(worksheet.producer_of(CREDIT_AMOUNTS_AT_CREDIT_RATE), ApplyRate)
     assert isinstance(worksheet.producer_of(NON_REFUNDABLE_TAX_CREDITS), Sum)
-    assert isinstance(worksheet.producer_of(ontario.NON_REFUNDABLE_TAX_CREDITS), ApplyRate)
+    assert isinstance(worksheet.producer_of(ontario.CREDIT_AMOUNTS_AT_CREDIT_RATE), ApplyRate)
+    assert isinstance(worksheet.producer_of(ontario.DONATIONS_FIRST_TIER_CREDIT), ApplyRate)
+    assert isinstance(worksheet.producer_of(ontario.DONATIONS_OVER_FIRST_TIER_CREDIT), ApplyRate)
+    assert isinstance(worksheet.producer_of(ontario.DONATIONS_AND_GIFTS_CREDIT), Sum)
+    assert isinstance(worksheet.producer_of(ontario.NON_REFUNDABLE_TAX_CREDITS), Sum)
+    assert worksheet.producer_of(ontario.CREDIT_AMOUNTS_AT_CREDIT_RATE) is not (
+        worksheet.producer_of(CREDIT_AMOUNTS_AT_CREDIT_RATE)
+    )
+    assert worksheet.producer_of(ontario.DONATIONS_AND_GIFTS_CREDIT) is not (
+        worksheet.producer_of(DONATIONS_AND_GIFTS_CREDIT)
+    )
+    assert worksheet.producer_of(ontario.DONATIONS_FIRST_TIER_CREDIT) is not (
+        worksheet.producer_of(ontario.DONATIONS_OVER_FIRST_TIER_CREDIT)
+    )
     assert worksheet.producer_of(CREDIT_AMOUNTS_AT_CREDIT_RATE) is not worksheet.producer_of(
         ontario.NON_REFUNDABLE_TAX_CREDITS
     )
@@ -1512,9 +1529,27 @@ def test_the_trace_explains_the_computation() -> None:
         "+ cpp_base_contributions 3356.1 + ei_premiums 1077.48 = 17180.58",
         "17180.58",
     )
+    # ON428 line 46 (line 58840); line 50 (line 61500) adds lines 46 and 49 further below.
     ontario_credit = position(
-        "non_refundable_tax_credits: 5.05% of non_refundable_credit_amounts 17180.58 "
+        "credit_amounts_at_credit_rate: 5.05% of non_refundable_credit_amounts 17180.58 "
         "(half-up to 0.01)",
+        "867.62",
+    )
+    ontario_first_tier_credit = position(
+        "donations_first_tier_credit: 5.05% of donations_first_tier 0 (half-up to 0.01)", "0"
+    )
+    ontario_over_first_tier_credit = position(
+        "donations_over_first_tier_credit: 11.16% of donations_over_first_tier 0 (half-up to 0.01)",
+        "0",
+    )
+    ontario_donations_credit = position(
+        "donations_and_gifts_credit: donations_first_tier_credit 0 "
+        "+ donations_over_first_tier_credit 0 = 0",
+        "0",
+    )
+    ontario_line_50 = position(
+        "non_refundable_tax_credits: credit_amounts_at_credit_rate 867.62 "
+        "+ donations_and_gifts_credit 0 = 867.62",
         "867.62",
     )
     ontario_after = position(
@@ -1904,7 +1939,9 @@ def test_the_trace_explains_the_computation() -> None:
     assert ontario_age_maximum < ontario_age_before_count
     assert ontario_spouse_base < ontario_spouse_before_maximum < ontario_spouse_before_count
     assert ontario_spouse_before_count < ontario_spouse < ontario_amounts
-    assert ontario_amount < ontario_amounts < ontario_credit < ontario_after
+    assert ontario_amount < ontario_amounts < ontario_credit < ontario_line_50 < ontario_after
+    assert first_tier < ontario_first_tier_credit < ontario_donations_credit < ontario_line_50
+    assert over_first_tier < ontario_over_first_tier_credit < ontario_donations_credit
     assert ontario_after < surtax_first < surtax_second < with_surtax
     assert reduction_basic < reduction_amounts
     assert reduction_children < reduction_amounts
@@ -1984,9 +2021,9 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     record_totals = {line.output: line for line in trace if isinstance(line, RecordTotalLine)}
 
     # The rate is applied once, to each form's total of credit amounts (T1 line 33800, ON428
-    # line 58840), giving the T1's credit amounts at the credit rate (line 35000 adds the donations
-    # and gifts credit and the top-up tax credit to them) and ON428's non-refundable tax credits
-    # (line 61500).
+    # line 58840), giving each form's credit amounts at the credit rate (T1 line 35000 adds the
+    # donations and gifts credit and the top-up tax credit to them; ON428 line 61500 adds the
+    # donations and gifts credit of lines 47 to 49 to them).
     assert rated == {
         # The Federal Worksheet's "Line 40425" line 6 (line B x 9.0301%) and line 7 (line C x
         # 15.0198%), on no dividends with no slip.
@@ -2079,13 +2116,32 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         TOP_UP_TAX_CREDIT: RateAppliedLine(
             TOP_UP_TAX_CREDIT, TOP_UP_EXCESS, D("0"), Rate(D("0.0345")), CENT, D("0.00")
         ),
-        ontario.NON_REFUNDABLE_TAX_CREDITS: RateAppliedLine(
-            ontario.NON_REFUNDABLE_TAX_CREDITS,
+        ontario.CREDIT_AMOUNTS_AT_CREDIT_RATE: RateAppliedLine(
+            ontario.CREDIT_AMOUNTS_AT_CREDIT_RATE,
             ontario.NON_REFUNDABLE_CREDIT_AMOUNTS,
             D("17180.58"),
             Rate(D("0.0505")),
             CENT,
             D("867.62"),
+        ),
+        # ON428 line 47 "Amount from line 13 of your federal Schedule 9" "multiplied by 5.05%" and
+        # line 48 "Amount from line 14 of your federal Schedule 9" "multiplied by 11.16%": lines
+        # 13 and 14 are 0.
+        ontario.DONATIONS_FIRST_TIER_CREDIT: RateAppliedLine(
+            ontario.DONATIONS_FIRST_TIER_CREDIT,
+            DONATIONS_FIRST_TIER,
+            D("0"),
+            Rate(D("0.0505")),
+            CENT,
+            D("0.00"),
+        ),
+        ontario.DONATIONS_OVER_FIRST_TIER_CREDIT: RateAppliedLine(
+            ontario.DONATIONS_OVER_FIRST_TIER_CREDIT,
+            DONATIONS_OVER_FIRST_TIER,
+            D("0"),
+            Rate(D("0.1116")),
+            CENT,
+            D("0.00"),
         ),
         # ON479 line 1 "Eligible medical expenses for fertility treatment multiplied by 25%
         # (maximum $5,000)", before its maximum: no expenses.
@@ -2382,6 +2438,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (TOP_UP_TAX_CREDIT, D("0.00")),
             ),
             D("3194.87"),
+        ),
+        # ON428 line 49 and line 58969 "Line 47 plus line 48", and line 50 and line 61500 "Line 46
+        # plus line 49 Enter this amount on line 52. Ontario non-refundable tax credits".
+        ontario.DONATIONS_AND_GIFTS_CREDIT: SumLine(
+            ontario.DONATIONS_AND_GIFTS_CREDIT,
+            (
+                (ontario.DONATIONS_FIRST_TIER_CREDIT, D("0.00")),
+                (ontario.DONATIONS_OVER_FIRST_TIER_CREDIT, D("0.00")),
+            ),
+            D("0.00"),
+        ),
+        ontario.NON_REFUNDABLE_TAX_CREDITS: SumLine(
+            ontario.NON_REFUNDABLE_TAX_CREDITS,
+            (
+                (ontario.CREDIT_AMOUNTS_AT_CREDIT_RATE, D("867.62")),
+                (ontario.DONATIONS_AND_GIFTS_CREDIT, D("0.00")),
+            ),
+            D("867.62"),
         ),
         # Schedule 9 line 5 "Add lines 1 to 4.", line 7 "Amount B plus amount C Line D", line 8
         # "Line 6 plus line 7", line 12 "Line 10 plus line 11" and line 23 "Add lines 20 to 22.".
@@ -3522,7 +3596,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 167
+    assert len(order) == 171
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -3717,10 +3791,24 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         position[TOP_UP_EXCESS] < position[TOP_UP_TAX_CREDIT] < position[NON_REFUNDABLE_TAX_CREDITS]
     )
     assert position[ontario.BASIC_PERSONAL_AMOUNT] < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
+    # ON428 line 46 reads line 44; lines 47 and 48 read the federal Schedule 9 lines 13 and 14;
+    # line 49 adds them; line 50 adds line 46 and line 49 and line 53 takes it off the basic tax.
     assert (
         position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
+        < position[ontario.CREDIT_AMOUNTS_AT_CREDIT_RATE]
         < position[ontario.NON_REFUNDABLE_TAX_CREDITS]
         < position[ONTARIO_TAX_AFTER_CREDITS]
+    )
+    assert position[DONATIONS_FIRST_TIER] < position[ontario.DONATIONS_FIRST_TIER_CREDIT]
+    assert position[DONATIONS_OVER_FIRST_TIER] < position[ontario.DONATIONS_OVER_FIRST_TIER_CREDIT]
+    assert (
+        position[ontario.DONATIONS_FIRST_TIER_CREDIT]
+        < position[ontario.DONATIONS_AND_GIFTS_CREDIT]
+        < position[ontario.NON_REFUNDABLE_TAX_CREDITS]
+    )
+    assert (
+        position[ontario.DONATIONS_OVER_FIRST_TIER_CREDIT]
+        < position[ontario.DONATIONS_AND_GIFTS_CREDIT]
     )
     assert (
         position[ONTARIO_TAX_AFTER_CREDITS]
@@ -4101,9 +4189,16 @@ def test_return_ns_donations_and_gifts_credit_and_top_up_come_off_the_federal_ta
     # line 23 = 406.00 (T1 line 34900). Federal Worksheet: line 33800 = 14.5% x 20589.95 =
     # 2985.54275, rounded half-up to the cent: 2985.54; line 3 = 2985.54 + 29.00 = 3014.54, less
     # 8319.38 is negative, so line 5 = 0 and line 34990 = 0.00. Line 35000 = 2985.54 + 406.00 +
-    # 0.00 = 3391.54, off the federal basic tax of 6895.48: 3503.94. The total payable is 3503.94
-    # + 1684.56 = 5188.50 and, with the chosen tax deducted of 4800 and no Canada workers
-    # benefit, line 167 is 5188.50 - 4800 = 388.50, a balance owing.
+    # 0.00 = 3391.54, off the federal basic tax of 6895.48: 3503.94. ON428 reads Schedule 9
+    # lines 13 and 14: line 46 = 5.05% x 15736.95 = 794.715975, rounded half-up to the cent:
+    # 794.72; line 47 = 5.05% x 200 = 10.10; line 48 = 11.16% x 1300.00 = 145.08; line 49 (line
+    # 58969) = 10.10 + 145.08 = 155.18; line 50 (line 61500) = 794.72 + 155.18 = 949.90, off the
+    # Ontario basic tax of 2401.53: 1451.63, with no surtax and no tax reduction (twice the
+    # 294.00 is 588.00, less than the 1451.63, so line 80 is 0); the LIFT credit of 122.25
+    # gives 1329.38 and the food credit of 250.00 gives 1079.38; with the health premium of
+    # 450, line 90 is 1529.38. The total payable is 3503.94 + 1529.38 = 5033.32 and, with the
+    # chosen tax deducted of 4800 and no Canada workers benefit, line 167 is 5033.32 - 4800 =
+    # 233.32, a balance owing.
     worksheet = compute(
         "48000",
         "0",
@@ -4146,10 +4241,19 @@ def test_return_ns_donations_and_gifts_credit_and_top_up_come_off_the_federal_ta
     assert worksheet.get(TOP_UP_TAX_CREDIT).value == D("0.00")
     assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("3391.54")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("3503.94")
-    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("794.72")
-    assert worksheet.get(ONTARIO_TAX).value == D("1684.56")
-    assert worksheet.get(TOTAL_PAYABLE).value == D("5188.50")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("388.50")
+    assert worksheet.get(ontario.CREDIT_AMOUNTS_AT_CREDIT_RATE).value == D("794.72")
+    assert worksheet.get(ontario.DONATIONS_FIRST_TIER_CREDIT).value == D("10.10")
+    assert worksheet.get(ontario.DONATIONS_OVER_FIRST_TIER_CREDIT).value == D("145.08")
+    assert worksheet.get(ontario.DONATIONS_AND_GIFTS_CREDIT).value == D("155.18")
+    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("949.90")
+    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1451.63")
+    assert worksheet.get(ONTARIO_TAX_WITH_SURTAX).value == D("1451.63")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("1451.63")
+    assert worksheet.get(ONTARIO_TAX_AFTER_LIFT_CREDIT).value == D("1329.38")
+    assert worksheet.get(ONTARIO_TAX_AFTER_FOOD_CREDIT).value == D("1079.38")
+    assert worksheet.get(ONTARIO_TAX).value == D("1529.38")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("5033.32")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("233.32")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert ("donation_limit_on_net_income: 75% of net_income 47555 (half-up to 0.01)") in rendered
     assert (
@@ -4189,6 +4293,28 @@ def test_return_ns_donations_and_gifts_credit_and_top_up_come_off_the_federal_ta
         "federal_tax_after_credits: federal_basic_tax 6895.48 "
         "less credits_against_basic_federal_tax 3391.54, not below 0 = 3503.94"
     ) in rendered
+    assert (
+        "donations_first_tier_credit: 5.05% of donations_first_tier 200 (half-up to 0.01)"
+    ) in rendered
+    assert (
+        "donations_over_first_tier_credit: 11.16% of donations_over_first_tier 1300 "
+        "(half-up to 0.01)"
+    ) in rendered
+    assert (
+        "donations_and_gifts_credit: donations_first_tier_credit 10.1 "
+        "+ donations_over_first_tier_credit 145.08 = 155.18"
+    ) in rendered
+    assert (
+        "non_refundable_tax_credits: credit_amounts_at_credit_rate 794.72 "
+        "+ donations_and_gifts_credit 155.18 = 949.9"
+    ) in rendered
+    assert (
+        "ontario_tax_after_credits: ontario_basic_tax 2401.53 "
+        "less non_refundable_tax_credits 949.9, not below 0 = 1451.63"
+    ) in rendered
+    assert (
+        "ontario_tax: ontario_tax_after_food_credit 1079.38 + ontario_health_premium 450 = 1529.38"
+    ) in rendered
 
 
 def test_taxable_income_over_the_threshold_is_charged_33_percent_up_to_line_16() -> None:
@@ -4224,6 +4350,18 @@ def test_taxable_income_over_the_threshold_is_charged_33_percent_up_to_line_16()
     assert worksheet.get(TOP_UP_CREDITS_BASE).value == D("2993.17")
     assert worksheet.get(TOP_UP_TAX_CREDIT).value == D("0.00")
     assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("19313.65")
+    # ON428 reads lines 13 and 14, not the 33% and 29% parts: line 47 = 5.05% x 200 = 10.10 and
+    # line 48 = 11.16% x 50000 = 5580.00, so line 49 = 5590.10; line 46 = 5.05% x 17180.58 =
+    # 867.61929, rounded half-up to the cent: 867.62; line 50 = 867.62 + 5590.10 = 6457.72.
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("17180.58")
+    assert worksheet.get(ontario.CREDIT_AMOUNTS_AT_CREDIT_RATE).value == D("867.62")
+    assert worksheet.get(ontario.DONATIONS_FIRST_TIER_CREDIT).value == D("10.10")
+    assert worksheet.get(ontario.DONATIONS_OVER_FIRST_TIER_CREDIT).value == D("5580.00")
+    assert worksheet.get(ontario.DONATIONS_AND_GIFTS_CREDIT).value == D("5590.10")
+    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("6457.72")
+    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == (
+        worksheet.get(ONTARIO_BASIC_TAX).value - D("6457.72")
+    )
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "high_income_donations: lesser of donations_over_first_tier_after_2016_gifts 50000 "
@@ -4256,6 +4394,11 @@ def test_the_top_up_tax_credit_is_3_45_percent_of_the_credits_over_8319_38() -> 
     assert worksheet.get(TOP_UP_TAX_CREDIT).value == D("18.61")
     assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("9254.38")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("0")
+    # The infirm children are federal only: ON428 line 46 is 794.72 as for Return N, and lines
+    # 47 to 49 give 10.10 + 145.08 = 155.18, so line 61500 is 949.90 whatever the federal credits.
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("15736.95")
+    assert worksheet.get(ontario.DONATIONS_AND_GIFTS_CREDIT).value == D("155.18")
+    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("949.90")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "top_up_excess: top_up_credits_base 8858.77 less top_up_threshold 8319.38, not below 0 "
@@ -4305,6 +4448,15 @@ def test_gifts_of_capital_property_raise_the_donation_limit_above_75_percent_of_
     assert worksheet.get(DONATIONS_OVER_FIRST_TIER).value == D("36966.25")
     assert worksheet.get(REGULAR_RATE_DONATION_CREDIT).value == D("10720.21")
     assert worksheet.get(DONATIONS_AND_GIFTS_CREDIT).value == D("10749.21")
+    # ON428 line 47 = 5.05% x 200 = 10.10 and line 48 = 11.16% x 36966.25 = 4125.4335, rounded
+    # half-up to the cent: 4125.43; line 49 = 4135.53; line 50 = 794.72 + 4135.53 = 4930.25,
+    # more than the Ontario basic tax of 2401.53, so line 53 is 0, not negative.
+    assert worksheet.get(ontario.DONATIONS_FIRST_TIER_CREDIT).value == D("10.10")
+    assert worksheet.get(ontario.DONATIONS_OVER_FIRST_TIER_CREDIT).value == D("4125.43")
+    assert worksheet.get(ontario.DONATIONS_AND_GIFTS_CREDIT).value == D("4135.53")
+    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("4930.25")
+    assert worksheet.get(ONTARIO_BASIC_TAX).value == D("2401.53")
+    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("0")
 
 
 def test_ecological_and_cultural_gifts_join_line_12_and_those_before_2016_come_off_line_16() -> (
@@ -4337,6 +4489,13 @@ def test_ecological_and_cultural_gifts_join_line_12_and_those_before_2016_come_o
     assert worksheet.get(REGULAR_RATE_DONATIONS).value == D("14288.00")
     assert worksheet.get(REGULAR_RATE_DONATION_CREDIT).value == D("4143.52")
     assert worksheet.get(DONATIONS_AND_GIFTS_CREDIT).value == D("19191.48")
+    # ON428 line 48 takes Schedule 9 line 14 whole, 59800, with the 4000 made before 2016 and
+    # the part federal charges at 33% in it: 11.16% x 59800 = 6673.68; line 47 = 10.10; line 49 =
+    # 6683.78; line 50 = 867.62 + 6683.78 = 7551.40.
+    assert worksheet.get(ontario.DONATIONS_FIRST_TIER_CREDIT).value == D("10.10")
+    assert worksheet.get(ontario.DONATIONS_OVER_FIRST_TIER_CREDIT).value == D("6673.68")
+    assert worksheet.get(ontario.DONATIONS_AND_GIFTS_CREDIT).value == D("6683.78")
+    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("7551.40")
 
 
 def test_no_donations_leave_the_federal_credits_at_the_credit_rate() -> None:
@@ -4350,6 +4509,48 @@ def test_no_donations_leave_the_federal_credits_at_the_credit_rate() -> None:
         worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value
         == worksheet.get(CREDIT_AMOUNTS_AT_CREDIT_RATE).value
     )
+
+
+def test_no_donations_leave_the_ontario_credits_at_the_credit_rate() -> None:
+    # The defaults of 0, as for Returns A to M: lines 47 to 49 are 0.00, so line 50 is line 46
+    # alone.
+    worksheet = compute("40000", "0", "0", "0", "7200", "0", "0")
+
+    assert worksheet.get(ontario.DONATIONS_FIRST_TIER_CREDIT).value == D("0.00")
+    assert worksheet.get(ontario.DONATIONS_OVER_FIRST_TIER_CREDIT).value == D("0.00")
+    assert worksheet.get(ontario.DONATIONS_AND_GIFTS_CREDIT).value == D("0.00")
+    assert (
+        worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value
+        == worksheet.get(ontario.CREDIT_AMOUNTS_AT_CREDIT_RATE).value
+    )
+
+
+@pytest.mark.parametrize(
+    ("charitable_donations", "line_47", "line_48", "line_49"),
+    [
+        # Schedule 9 line 13 is the lesser of line 12 and $200, line 14 the rest.
+        ("0", "0.00", "0.00", "0.00"),
+        ("100", "5.05", "0.00", "5.05"),
+        ("200", "10.10", "0.00", "10.10"),
+        ("200.01", "10.10", "0.00", "10.10"),
+        ("201", "10.10", "0.11", "10.21"),
+        # 11.16% x 1300 = 145.08; x 1234.57 = 137.778012, rounded half-up to 137.78 (line 14 is
+        # 1234.57 for a line 12 of 1434.57).
+        ("1500", "10.10", "145.08", "155.18"),
+        ("1434.57", "10.10", "137.78", "147.88"),
+    ],
+)
+def test_the_ontario_donations_credit_follows_schedule_9_lines_13_and_14(
+    charitable_donations: str, line_47: str, line_48: str, line_49: str
+) -> None:
+    worksheet = compute(
+        "48000", "0", "0", "0", "8640", "0", "0", charitable_donations=charitable_donations
+    )
+
+    assert worksheet.get(ontario.DONATIONS_FIRST_TIER_CREDIT).value == D(line_47)
+    assert worksheet.get(ontario.DONATIONS_OVER_FIRST_TIER_CREDIT).value == D(line_48)
+    assert worksheet.get(ontario.DONATIONS_AND_GIFTS_CREDIT).value == D(line_49)
+    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("794.72") + D(line_49)
 
 
 def test_the_canada_workers_benefit_below_its_maximum_is_27_percent_over_3000() -> None:

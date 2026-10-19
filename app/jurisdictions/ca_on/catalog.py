@@ -105,12 +105,38 @@ basic personal amount (line 58040), the age amount (line 58080), the spouse or c
 partner amount (line 58120), the amount for an eligible dependant (line 58160), the base CPP
 contributions (line 58240) and the EI premiums (line 58300)."""
 
+CREDIT_AMOUNTS_AT_CREDIT_RATE = CATALOG.declare(
+    "credit_amounts_at_credit_rate", Decimal, non_negative=True
+)
+"""Ontario credit amounts at the credit rate, ON428 line 46 (line 58840) "Line 44 multiplied by the
+percentage from line 45": the total of the credit amounts times the credit rate, the first of the
+two lines that line 50 adds."""
+
+DONATIONS_FIRST_TIER_CREDIT = CATALOG.declare(
+    "donations_first_tier_credit", Decimal, non_negative=True
+)
+"""Ontario donations credit at the first tier, ON428 line 47 "Amount from line 13 of your federal
+Schedule 9" "multiplied by 5.05%": 5.05% of Schedule 9 line 13."""
+
+DONATIONS_OVER_FIRST_TIER_CREDIT = CATALOG.declare(
+    "donations_over_first_tier_credit", Decimal, non_negative=True
+)
+"""Ontario donations credit over the first tier, ON428 line 48 "Amount from line 14 of your federal
+Schedule 9" "multiplied by 11.16%": 11.16% of Schedule 9 line 14."""
+
+DONATIONS_AND_GIFTS_CREDIT = CATALOG.declare(
+    "donations_and_gifts_credit", Decimal, non_negative=True
+)
+"""Ontario donations and gifts credit, ON428 line 49 (line 58969) "Line 47 plus line 48": the sum of
+the two tiers."""
+
 NON_REFUNDABLE_TAX_CREDITS = CATALOG.declare(
     "non_refundable_tax_credits", Decimal, non_negative=True
 )
 """Ontario non-refundable tax credits, ON428 line 50 (line 61500) "Line 46 plus line 49 Enter this
-amount on line 52. Ontario non-refundable tax credits": the total of the Ontario credit amounts
-times the credit rate, here line 46 (line 58840) alone."""
+amount on line 52. Ontario non-refundable tax credits": line 46 (line 58840), the total of the
+Ontario credit amounts times the credit rate, plus line 49 (line 58969), the donations and gifts
+credit."""
 
 ONTARIO_TAX_AFTER_CREDITS = CATALOG.declare("ontario_tax_after_credits", Decimal, non_negative=True)
 """Ontario tax after non-refundable tax credits, not below zero: 2025 ON428 line 53."""

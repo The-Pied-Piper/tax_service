@@ -27,6 +27,7 @@ from app.jurisdictions.ca_on.catalog import (
     CATALOG,
     COMMUNITY_FOOD_PROGRAM_CREDIT,
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
+    CREDIT_AMOUNTS_AT_CREDIT_RATE,
     DEPENDANTS,
     DEPENDENT_CHILDREN,
     DIVIDEND_CREDIT_FROM_LINE_57,
@@ -34,6 +35,9 @@ from app.jurisdictions.ca_on.catalog import (
     DIVIDENDS_AMOUNT_A,
     DIVIDENDS_AMOUNT_A_LESS_B,
     DIVIDENDS_AMOUNT_B,
+    DONATIONS_AND_GIFTS_CREDIT,
+    DONATIONS_FIRST_TIER_CREDIT,
+    DONATIONS_OVER_FIRST_TIER_CREDIT,
     ELIGIBLE_DEPENDANT_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
@@ -101,6 +105,10 @@ REGISTERED = frozenset(
         "ca-on/eligible_dependant_amount_before_count",
         "ca-on/eligible_dependant_amount",
         "ca-on/non_refundable_credit_amounts",
+        "ca-on/credit_amounts_at_credit_rate",
+        "ca-on/donations_first_tier_credit",
+        "ca-on/donations_over_first_tier_credit",
+        "ca-on/donations_and_gifts_credit",
         "ca-on/non_refundable_tax_credits",
         "ca-on/ontario_tax_after_credits",
         "ca-on/ontario_surtax",
@@ -198,6 +206,12 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     )
     assert registry.get("ca-on/eligible_dependant_amount") is ELIGIBLE_DEPENDANT_AMOUNT
     assert registry.get("ca-on/non_refundable_credit_amounts") is NON_REFUNDABLE_CREDIT_AMOUNTS
+    assert registry.get("ca-on/credit_amounts_at_credit_rate") is CREDIT_AMOUNTS_AT_CREDIT_RATE
+    assert registry.get("ca-on/donations_first_tier_credit") is DONATIONS_FIRST_TIER_CREDIT
+    assert (
+        registry.get("ca-on/donations_over_first_tier_credit") is DONATIONS_OVER_FIRST_TIER_CREDIT
+    )
+    assert registry.get("ca-on/donations_and_gifts_credit") is DONATIONS_AND_GIFTS_CREDIT
     assert registry.get("ca-on/non_refundable_tax_credits") is NON_REFUNDABLE_TAX_CREDITS
     assert registry.get("ca-on/ontario_surtax") is ONTARIO_SURTAX
     assert registry.get("ca-on/ontario_tax_with_surtax") is ONTARIO_TAX_WITH_SURTAX
