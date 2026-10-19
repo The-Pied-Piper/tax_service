@@ -66,3 +66,38 @@ PDFs are here because their .txt URL 404s.
 | t1206-25e.pdf | T1206, Tax on Split Income (PDF only) | 896a42d5be2fb7f36dd2d14a3744c60c1488ca12dffda9d219dfbbf9b9498061 |
 | t2036-25e.pdf | T2036, Provincial or Territorial Foreign Tax Credit (PDF only) | 9eafaa97b1bb012fc75944affa32ef9345961b4ac73426cf3c1b8571f10c3770 |
 | t1221-25e.pdf | T1221, Ontario Focused Flow-Through Share Resource Expenses (Individuals) (PDF only) | 73eb8d8558d604e199f6de042f4eac458c300e181f59a8bba24f7b121b538789 |
+
+## Fourth batch (2026-10-19)
+Downloaded on Umar's machine through headless Chrome from `/formspubs/pbg/<code>/<code>-25e.(txt|pdf)`;
+sha256 checked against the download. Only Schedules 12 and 15 and T2222 publish a .txt; the rest are
+PDF only (their .txt URL 404s), so quotes from them carry "(confirmed DATE from the PDF; no .txt
+published)".
+
+| File | Form | sha256 |
+|---|---|---|
+| t2042-25e.pdf | T2042, Statement of Farming Activities (PDF only) | 0223f8a766b06beb93a6e94282ffcd84c2265444b2992c35efc34185233b2597 |
+| t2121-25e.pdf | T2121, Statement of Fishing Activities (PDF only) | 6667327bdd83502f826ac247e62fbc32e054b909160f1a540780a7773033381b |
+| 5000-s15-25e.txt | Schedule 15, FHSA Contributions, Transfers and Activities | 6031f31255b0d406a41f59b92d99b95eb039ea11c5ca2683742d8d7d3ecd1f8f |
+| t929-24e.pdf | T929, Disability Supports Deduction, **2024 edition** (no 2025 edition; PDF only) | 89b8dd2eff41f7887e0a880f7415cf079519a7313a8032bf2f074a187466f9a5 |
+| t1-m-25e.pdf | T1-M, Moving Expenses Deduction (PDF only) | d33ce87b0ea135a4145aae7df824f6e5745f7bd03b6193b2958131a170d6a2fd |
+| t1223-25e.pdf | T1223, Clergy Residence Deduction (PDF only) | ae7177e65c4dabaab6a05affde0aa0768d3872cafb670f6e32c1afd41c73a6c1 |
+| t777-25e.pdf | T777, Statement of Employment Expenses (PDF only) | 99e767b0c8a2a841f66f516e28b5f9fe631d6dbd4db6eaae36cb7c82b93f1204 |
+| t2048-25e.pdf | T2048, Capital Gains Deduction for Qualifying Business Transfers or Qualifying Cooperative Conversions (PDF only) | 75f4790ffb5e8b1dfcda6af0a68bff4fbe7852f149fbdcb5660b2c1f6ecc3734 |
+| t657-25e.pdf | T657, Calculation of Capital Gains Deduction (PDF only) | 5ad7c7a95a4bcf24ecb909db8f1e24ed3f8707c4fab4c7987e149850f900d240 |
+| t2222-25e.txt | T2222, Northern Residents Deductions | aedc9f64a7f8857415c9a8d18a20e0dc860601a88510a4b9710158816245ff53 |
+| rc381-25e.pdf | RC381, Inter-Provincial Calculation for CPP and QPP Contributions and Overpayments (PDF only) | 3c472af23df02adc22f976d34cfca733e0d702e094f4f5f0335248d41c50fa9b |
+| t2038-ind-25e.pdf | T2038(IND), Investment Tax Credit (Individuals) (PDF only; CRA's path is `t2038-ind`) | 782d8ade84f7b79f4f73624a992ea3668ee008b168d3ad0579ffd3d01db8b48d |
+| t1172-25e.pdf | T1172, Additional Tax on Accumulated Income Payments from RESPs (PDF only) | 0985388e35ca1b70d6a92d0764d36b39b9754d9c8403cbb75426805ec4b052ef |
+| rc359-25e.pdf | RC359, Tax on Excess Employees Profit Sharing Plan Amounts (PDF only) | 9561b6c3fb12904a01741515f32977cf23225de2e980d7091dc89bb275cb3ed5 |
+| 5000-s12-25e.txt | Schedule 12, Multigenerational Home Renovation Tax Credit | 05a0a91988a533eb82f9222eb4133418dafdcdce51091b4e4dbdade376544b75 |
+| t2043-25e.pdf | T2043, Return of Fuel Charge Proceeds to Farmers Tax Credit (PDF only) | 6f445e20f97ce7b7ba4204480b98342ee922a976069e3575464b5146f7f70e36 |
+| t2204-25e.pdf | T2204, Employee Overpayment of Employment Insurance Premiums (PDF only) | 5b34eff9998812738dc116272db8cd20add88b84a3fde7532f580cd1fd11f987 |
+
+Not saved, because CRA publishes no 2024 or 2025 file:
+- **T1229**, Statement of Resource Expenses and Depletion Allowance: CRA's page links only
+  `t1229-23e.pdf`; the 2024 and 2025 .txt and .pdf URLs 404.
+- **T777S**, Statement of Employment Expenses for Working at Home Due to COVID-19: archived by CRA;
+  the latest edition is 2022.
+- **Line 25000 calculation chart** (other payments deduction over $93,454): an HTML table only, at
+  https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/tax-return/completing-a-tax-return/deductions-credits-expenses/line-25000-other-payments-deduction.html.
+  The first part of the calculation is in the Federal Worksheet, `5000-d1-25e.txt`.
