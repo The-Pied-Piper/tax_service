@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 95
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 111
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -60,6 +60,36 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/elected_split_pension_amount",
         "ca/universal_child_care_benefit",
         "ca/ei_and_other_benefits",
+        "ca/t3_taxable_dividends_other_than_eligible",
+        "ca/t4ps_taxable_dividends_other_than_eligible",
+        "ca/t5_taxable_dividends_other_than_eligible",
+        "ca/t5013_taxable_dividends_other_than_eligible",
+        "ca/t3_taxable_dividends",
+        "ca/t4ps_taxable_dividends",
+        "ca/t5_taxable_dividends",
+        "ca/t5013_taxable_dividends",
+        "ca/eligible_dividends_received_without_a_slip",
+        "ca/other_dividends_received_without_a_slip",
+        "ca/t3_dividend_tax_credit",
+        "ca/t4ps_dividend_tax_credit",
+        "ca/t5_dividend_tax_credit",
+        "ca/t5013_dividend_tax_credit",
+        "ca/slip_taxable_dividends_other_than_eligible",
+        "ca/slip_taxable_dividends",
+        "ca/eligible_dividends_grossed_up",
+        "ca/other_dividends_grossed_up",
+        "ca/dividends_without_a_slip_grossed_up",
+        "ca/taxable_dividends_other_than_eligible",
+        "ca/taxable_dividends",
+        "ca/slip_dividend_tax_credit",
+        "ca/dividends_amount_a",
+        "ca/dividends_amount_b",
+        "ca/other_dividends_credit",
+        "ca/dividends_amount_a_less_b",
+        "ca/eligible_dividends_credit",
+        "ca/no_slip_dividend_tax_credit",
+        "ca/dividend_tax_credit",
+        "ca/credits_against_basic_federal_tax",
         "ca/t3_investment_income",
         "ca/t5_investment_income",
         "ca/t5013_investment_income",
@@ -219,13 +249,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 95
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 111
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 95
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 111
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

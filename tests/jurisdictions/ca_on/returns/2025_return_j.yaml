@@ -166,14 +166,14 @@ description: >-
   tax credits, and the lines that follow from them. The lines that only add, subtract,
   compare or choose take amounts already in cents, so the refund or balance owing is in
   cents too. The other Step 2 income lines are 0: no other employment income, pension or
-  benefit income (lines 10400 to 11900), the Federal Worksheet's lines 1 to 8 and line 10
-  being 0 so that its line 9, its line 11 and the interest and other investment income (line
-  12100) are 0, no partnership or RDSP income (lines 12200 and 12500), no taxable support
-  payments, RRSP, FHSA, other or scholarship income (lines 12800 to 13010) and no workers'
-  compensation, social assistance or net federal supplements, so line 14700 is 0 + 0 + 0 =
-  0. There are no eligible medical expenses for fertility treatment and no amount paid for
-  seniors' use of Ontario public transit, so the Ontario credits (ON479 line 21, T1 line
-  47900) are 0.
+  benefit income (lines 10400 to 11900), no taxable dividends (lines 12000 and 12010), the
+  Federal Worksheet's lines 1 to 8 and line 10 being 0 so that its line 9, its line 11 and
+  the interest and other investment income (line 12100) are 0, no partnership or RDSP income
+  (lines 12200 and 12500), no taxable support payments, RRSP, FHSA, other or scholarship
+  income (lines 12800 to 13010) and no workers' compensation, social assistance or net
+  federal supplements, so line 14700 is 0 + 0 + 0 = 0. There are no eligible medical
+  expenses for fertility treatment and no amount paid for seniors' use of Ontario public
+  transit, so the Ontario credits (ON479 line 21, T1 line 47900) are 0.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -186,7 +186,7 @@ sources:
   - >-
     Total income (line 15000), which takes amounts already in cents, is employment income
     (line 10100) plus taxable capital gains (line 12700), the only income lines on this
-    return: 50,000 + 465.00 = 50,465.00. The other lines of Step 2 (10400 to 11900, 12100 to
+    return: 50,000 + 465.00 = 50,465.00. The other lines of Step 2 (10400 to 11900, 12000 to
     12500, 12800 to 13010 and 14700) are 0.
   - >-
     CRA, "CPP contribution rates, maximums and exemptions", 2025 row: maximum annual
@@ -712,34 +712,35 @@ sources:
     of 50,000.00 falls in column 1), here 7,250.00; line 121 (line 40400) "Line 119 plus
     line 120", line 120 (line 40424, tax on split income) not modelled; line 122 "Amount
     from line 35000", the federal non-refundable tax credits, 5,463.46; line 125 "Add lines
-    122 to 124.", lines 123 (the dividend tax credit) and 124 (the minimum tax carryover)
-    not modelled; line 126 (line 42900) "Line 121 minus line 125 (if negative, enter "0")
-    Basic federal tax": 7,250.00 - 5,463.46 = 1,786.54, the federal tax after credits. Lines
-    127 to 133 (the foreign surtax, the foreign tax credit, the ITC recapture and the
-    logging credit) are not modelled, so line 134 (line 40600) "Line 132 minus line 133 (if
-    negative, enter "0") Federal tax" carries line 126; lines 135 to 138 (the political,
-    investment and labour-sponsored credits, line 41600) are not modelled, so line 139 (line
-    41700) "Line 134 minus line 138 (if negative, enter "0")" carries it; lines 140 (line
-    41500, the ACWB) and 141 (line 41800, special taxes) are not modelled, so line 142 (line
-    42000, which the form prints as line "4200") "Add lines 139 to 141. Net federal tax" is
-    1,786.54. Step 6: line 143 "Amount from line 42000"; lines 144 (line 42100), 145 (line
-    42120) and 146 (line 42200) are not triggered by this return; line 147 (line 42800)
-    "Provincial or territorial tax (complete and attach your provincial or territorial Form
-    428, even if the result is "0")" is the Ontario tax of ON428 line 90, 2,323.63; line 148
-    (line 43500) "Add lines 143 to 147. Total payable": 1,786.54 + 2,323.63 = 4,110.17. Line
-    149 "Enter the amount from line 148 of the previous page."; line 150 (line 43700) "Total
-    income tax deducted (amounts from all Canadian slips)": 6,000, a chosen figure: it is
-    the tax withheld on the taxpayer's slips, which nothing on this return determines. Line
-    155 (line 45300) "Canada workers benefit (CWB) (complete Schedule 6)" is the benefit of
-    Schedule 6 line 28, 0; the other lines 151 to 165 (lines 44000 to 47900) are not
-    triggered by this return or not yet computed, except line 165 (line 47900) "Provincial
-    or territorial credits (complete Form 479, if it applies)", the Ontario credits of ON479
-    line 21, 0 (see the ON479 source below), so line 166 (line 48200) "Add lines 150 to 165.
-    Total credits" is 6,000 + 0 + 0 = 6,000. Line 167 "Line 149 minus line 166 If the
-    amount is negative, enter it on line 48400 below. If the amount is positive, enter it on
-    line 48500 below. Refund or balance owing": 4,110.17 - 6,000 = -1,889.83, negative, so
-    line 48400 "Refund", not line 48500 "Balance owing". These lines add and subtract
-    amounts already in cents, so each is in cents too.
+    122 to 124.", line 123 (line 40425, the dividend tax credit), 0 with no dividends, and
+    line 124 (the minimum tax carryover) not modelled; line 126 (line 42900) "Line 121 minus
+    line 125 (if negative, enter "0") Basic federal tax": 7,250.00 - 5,463.46 = 1,786.54,
+    the federal tax after credits. Lines 127 to 133 (the foreign surtax, the foreign tax
+    credit, the ITC recapture and the logging credit) are not modelled, so line 134 (line
+    40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax" carries line 126;
+    lines 135 to 138 (the political, investment and labour-sponsored credits, line 41600)
+    are not modelled, so line 139 (line 41700) "Line 134 minus line 138 (if negative, enter
+    "0")" carries it; lines 140 (line 41500, the ACWB) and 141 (line 41800, special taxes)
+    are not modelled, so line 142 (line 42000, which the form prints as line "4200") "Add
+    lines 139 to 141. Net federal tax" is 1,786.54. Step 6: line 143 "Amount from line
+    42000"; lines 144 (line 42100), 145 (line 42120) and 146 (line 42200) are not triggered
+    by this return; line 147 (line 42800) "Provincial or territorial tax (complete and
+    attach your provincial or territorial Form 428, even if the result is "0")" is the
+    Ontario tax of ON428 line 90, 2,323.63; line 148 (line 43500) "Add lines 143 to 147.
+    Total payable": 1,786.54 + 2,323.63 = 4,110.17. Line 149 "Enter the amount from line 148
+    of the previous page."; line 150 (line 43700) "Total income tax deducted (amounts from
+    all Canadian slips)": 6,000, a chosen figure: it is the tax withheld on the taxpayer's
+    slips, which nothing on this return determines. Line 155 (line 45300) "Canada workers
+    benefit (CWB) (complete Schedule 6)" is the benefit of Schedule 6 line 28, 0; the other
+    lines 151 to 165 (lines 44000 to 47900) are not triggered by this return or not yet
+    computed, except line 165 (line 47900) "Provincial or territorial credits (complete Form
+    479, if it applies)", the Ontario credits of ON479 line 21, 0 (see the ON479 source
+    below), so line 166 (line 48200) "Add lines 150 to 165. Total credits" is 6,000 + 0 + 0
+    = 6,000. Line 167 "Line 149 minus line 166 If the amount is negative, enter it on line
+    48400 below. If the amount is positive, enter it on line 48500 below. Refund or balance
+    owing": 4,110.17 - 6,000 = -1,889.83, negative, so line 48400 "Refund", not line 48500
+    "Balance owing". These lines add and subtract amounts already in cents, so each is in
+    cents too.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - >-
     CRA, Form ON479 (form 5006-TC), "Ontario Credits": "Line 1 and line 61268: Eligible
@@ -767,6 +768,20 @@ inputs:
   ca/elected_split_pension_amount: "0"
   ca/universal_child_care_benefit: "0"
   ca/ei_and_other_benefits: "0"
+  ca/t3_taxable_dividends_other_than_eligible: "0"
+  ca/t4ps_taxable_dividends_other_than_eligible: "0"
+  ca/t5_taxable_dividends_other_than_eligible: "0"
+  ca/t5013_taxable_dividends_other_than_eligible: "0"
+  ca/t3_taxable_dividends: "0"
+  ca/t4ps_taxable_dividends: "0"
+  ca/t5_taxable_dividends: "0"
+  ca/t5013_taxable_dividends: "0"
+  ca/eligible_dividends_received_without_a_slip: "0"
+  ca/other_dividends_received_without_a_slip: "0"
+  ca/t3_dividend_tax_credit: "0"
+  ca/t4ps_dividend_tax_credit: "0"
+  ca/t5_dividend_tax_credit: "0"
+  ca/t5013_dividend_tax_credit: "0"
   ca/t3_investment_income: "0"
   ca/t5_investment_income: "0"
   ca/t5013_investment_income: "0"
@@ -812,6 +827,7 @@ inputs:
   ca-on/community_food_program_donations: "0"
 expected:
   ca/taxable_capital_gains: "465.00"
+  ca/taxable_dividends_other_than_eligible: "0"
   ca/investment_income_before_prior_years: "0"
   ca/interest_and_other_investment_income: "0"
   ca/income_support_benefits: "0"

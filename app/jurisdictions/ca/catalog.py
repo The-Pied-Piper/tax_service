@@ -34,10 +34,10 @@ lines 23 to 26)."""
 
 TOTAL_INCOME = CATALOG.declare("total_income", Decimal, non_negative=True)
 """Total income, T1 line 15000 "Line 28 plus line 32 Total income": the sum of the income lines
-wired so far, in line order, with the taxable capital gains and the taxable support payments.
+wired so far, in line order, with the taxable dividends (line 12000), the taxable capital gains
+and the taxable support payments.
 
-Not wired yet: dividends (lines 12000 and 12010), rental income (line 13) and self-employment
-income (lines 22 to 26).
+Not wired yet: rental income (line 13) and self-employment income (lines 22 to 26).
 """
 
 OTHER_EMPLOYMENT_INCOME = CATALOG.declare("other_employment_income", Decimal, non_negative=True)
@@ -72,6 +72,169 @@ slip)": a starting amount."""
 EI_AND_OTHER_BENEFITS = CATALOG.declare("ei_and_other_benefits", Decimal, non_negative=True)
 """Employment insurance and other benefits, T1 line 11900 "Employment insurance (EI) and other
 benefits (box 14 of the T4E slip)": a starting amount."""
+
+T3_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE = CATALOG.declare(
+    "t3_taxable_dividends_other_than_eligible", Decimal, non_negative=True
+)
+"""T3 taxable dividends other than eligible, Federal Worksheet for lines 12000 and 12010 line 1 "Box
+32 of all T3 slips": a starting amount."""
+
+T4PS_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE = CATALOG.declare(
+    "t4ps_taxable_dividends_other_than_eligible", Decimal, non_negative=True
+)
+"""T4PS taxable dividends other than eligible, Federal Worksheet for lines 12000 and 12010 line 2
+"Box 25 of all T4PS slips": a starting amount."""
+
+T5_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE = CATALOG.declare(
+    "t5_taxable_dividends_other_than_eligible", Decimal, non_negative=True
+)
+"""T5 taxable dividends other than eligible, Federal Worksheet for lines 12000 and 12010 line 3 "Box
+11 of all T5 slips": a starting amount."""
+
+T5013_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE = CATALOG.declare(
+    "t5013_taxable_dividends_other_than_eligible", Decimal, non_negative=True
+)
+"""T5013 taxable dividends other than eligible, Federal Worksheet for lines 12000 and 12010 line 4
+"Box 130 of all T5013 slips": a starting amount."""
+
+T3_TAXABLE_DIVIDENDS = CATALOG.declare("t3_taxable_dividends", Decimal, non_negative=True)
+"""T3 taxable dividends, Federal Worksheet for lines 12000 and 12010 line 6 "Boxes 32 and 50 of all
+T3 slips": a starting amount."""
+
+T4PS_TAXABLE_DIVIDENDS = CATALOG.declare("t4ps_taxable_dividends", Decimal, non_negative=True)
+"""T4PS taxable dividends, Federal Worksheet for lines 12000 and 12010 line 7 "Boxes 25 and 31 of
+all T4PS slips": a starting amount."""
+
+T5_TAXABLE_DIVIDENDS = CATALOG.declare("t5_taxable_dividends", Decimal, non_negative=True)
+"""T5 taxable dividends, Federal Worksheet for lines 12000 and 12010 line 8 "Boxes 11 and 25 of all
+T5 slips": a starting amount."""
+
+T5013_TAXABLE_DIVIDENDS = CATALOG.declare("t5013_taxable_dividends", Decimal, non_negative=True)
+"""T5013 taxable dividends, Federal Worksheet for lines 12000 and 12010 line 9 "Boxes 130 and 133 of
+all T5013 slips": a starting amount."""
+
+ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP = CATALOG.declare(
+    "eligible_dividends_received_without_a_slip", Decimal, non_negative=True
+)
+"""Eligible dividends received with no slip, Federal Worksheet for lines 12000 and 12010 line 11
+"Actual amount of eligible dividends received", under "Taxable amount of dividends if you did not
+receive an information slip": a starting amount."""
+
+OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP = CATALOG.declare(
+    "other_dividends_received_without_a_slip", Decimal, non_negative=True
+)
+"""Other dividends received with no slip, Federal Worksheet for lines 12000 and 12010 line 14
+"Actual amount of dividends other than eligible dividends received", under "Taxable amount of
+dividends if you did not receive an information slip": a starting amount."""
+
+T3_DIVIDEND_TAX_CREDIT = CATALOG.declare("t3_dividend_tax_credit", Decimal, non_negative=True)
+"""T3 dividend tax credit, Federal Worksheet for line 40425 line 1 "Boxes 39 and 51 of all T3
+slips": a starting amount."""
+
+T4PS_DIVIDEND_TAX_CREDIT = CATALOG.declare("t4ps_dividend_tax_credit", Decimal, non_negative=True)
+"""T4PS dividend tax credit, Federal Worksheet for line 40425 line 2 "Boxes 26 and 32 of all T4PS
+slips": a starting amount."""
+
+T5_DIVIDEND_TAX_CREDIT = CATALOG.declare("t5_dividend_tax_credit", Decimal, non_negative=True)
+"""T5 dividend tax credit, Federal Worksheet for line 40425 line 3 "Boxes 12 and 26 of all T5
+slips": a starting amount."""
+
+T5013_DIVIDEND_TAX_CREDIT = CATALOG.declare("t5013_dividend_tax_credit", Decimal, non_negative=True)
+"""T5013 dividend tax credit, Federal Worksheet for line 40425 line 4 "Boxes 131 and 134 of all
+T5013 slips": a starting amount."""
+
+SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE = CATALOG.declare(
+    "slip_taxable_dividends_other_than_eligible", Decimal, non_negative=True
+)
+"""Slip taxable dividends other than eligible, Federal Worksheet for lines 12000 and 12010 line 5
+"Add lines 1 to 4. Enter this amount on line 12010 of your return.": the four slip boxes of lines 1
+to 4."""
+
+SLIP_TAXABLE_DIVIDENDS = CATALOG.declare("slip_taxable_dividends", Decimal, non_negative=True)
+"""Slip taxable dividends, Federal Worksheet for lines 12000 and 12010 line 10 "Add lines 6 to 9.
+Enter this amount on line 12000 of your return.": the four slip boxes of lines 6 to 9."""
+
+ELIGIBLE_DIVIDENDS_GROSSED_UP = CATALOG.declare(
+    "eligible_dividends_grossed_up", Decimal, non_negative=True
+)
+"""Eligible dividends grossed up, Federal Worksheet for lines 12000 and 12010 line 13 "Line 11
+multiplied by the percentage from line 12": line 12 "Applicable rate 138%" on the eligible dividends
+received with no slip."""
+
+OTHER_DIVIDENDS_GROSSED_UP = CATALOG.declare(
+    "other_dividends_grossed_up", Decimal, non_negative=True
+)
+"""Other dividends grossed up, Federal Worksheet for lines 12000 and 12010 line 16 "Line 14
+multiplied by the percentage from line 15 Include this amount on line 12010 of your return.": line
+15 "Applicable rate 115%" on the dividends other than eligible received with no slip."""
+
+DIVIDENDS_WITHOUT_A_SLIP_GROSSED_UP = CATALOG.declare(
+    "dividends_without_a_slip_grossed_up", Decimal, non_negative=True
+)
+"""Dividends with no slip, grossed up, Federal Worksheet for lines 12000 and 12010 line 17 "Line 13
+plus line 16. Include this amount on line 12000 of your return.": the grossed-up eligible dividends
+and the grossed-up other dividends."""
+
+TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE = CATALOG.declare(
+    "taxable_dividends_other_than_eligible", Decimal, non_negative=True
+)
+"""Taxable dividends other than eligible, T1 line 12010 "Amount of dividends (other than
+eligible)" (use Federal Worksheet): the slip amount (line 5) plus the amount with no slip (line 16).
+
+No other line reads it on the return as modelled, so the manifest returns it."""
+
+TAXABLE_DIVIDENDS = CATALOG.declare("taxable_dividends", Decimal, non_negative=True)
+"""Taxable dividends, T1 line 12000 "Amount of dividends (eligible and other than eligible)"
+(use Federal Worksheet): the slip amount (line 10) plus the amount with no slip (line 17); total
+income sums it."""
+
+SLIP_DIVIDEND_TAX_CREDIT = CATALOG.declare("slip_dividend_tax_credit", Decimal, non_negative=True)
+"""Slip dividend tax credit, Federal Worksheet for line 40425 line 5 "Add lines 1 to 4.": the
+credits shown on the T3, T4PS, T5 and T5013 slips, which the worksheet enters on line 40425 as they
+are."""
+
+DIVIDENDS_AMOUNT_A = CATALOG.declare("dividends_amount_a", Decimal, non_negative=True)
+"""Dividends amount A, Federal Worksheet for line 40425 line A "Amount from line 12000 of your
+return (Note 1)", Note 1 being "Enter only the amount of dividends that were not shown on an
+information slip.": the worksheet's line 17 for lines 12000 and 12010, the grossed-up dividends with
+no slip."""
+
+DIVIDENDS_AMOUNT_B = CATALOG.declare("dividends_amount_b", Decimal, non_negative=True)
+"""Dividends amount B, Federal Worksheet for line 40425 line B "Amount from line 12010 of your
+return (Note 1)", Note 1 being "Enter only the amount of dividends that were not shown on an
+information slip.": the worksheet's line 16 for lines 12000 and 12010, the grossed-up other
+dividends with no slip."""
+
+OTHER_DIVIDENDS_CREDIT = CATALOG.declare("other_dividends_credit", Decimal, non_negative=True)
+"""Credit on other dividends, Federal Worksheet for line 40425 line 6 "Line B multiplied by
+9.0301%": the amount B times the credit rate for dividends other than eligible."""
+
+DIVIDENDS_AMOUNT_A_LESS_B = CATALOG.declare("dividends_amount_a_less_b", Decimal, non_negative=True)
+"""Dividends amount A less amount B, Federal Worksheet for line 40425 line C "Amount A minus amount
+B": the grossed-up eligible dividends with no slip."""
+
+ELIGIBLE_DIVIDENDS_CREDIT = CATALOG.declare("eligible_dividends_credit", Decimal, non_negative=True)
+"""Credit on eligible dividends, Federal Worksheet for line 40425 line 7 (printed "Line 2") "Line C
+multiplied by 15.0198%": the amount A less amount B times the credit rate for eligible dividends."""
+
+NO_SLIP_DIVIDEND_TAX_CREDIT = CATALOG.declare(
+    "no_slip_dividend_tax_credit", Decimal, non_negative=True
+)
+"""Dividend tax credit with no slip, Federal Worksheet for line 40425 line 8 "Line 6 plus line 7":
+the credit on other dividends and the credit on eligible dividends."""
+
+DIVIDEND_TAX_CREDIT = CATALOG.declare("dividend_tax_credit", Decimal, non_negative=True)
+"""Federal dividend tax credit, T1 line 123 (line 40425) "Federal dividend tax credit (use Federal
+Worksheet)": Federal Worksheet line 9 "Line 5 plus line 8 Enter this amount on line 40425 of your
+return.", the slip credits and the credit with no slip."""
+
+CREDITS_AGAINST_BASIC_FEDERAL_TAX = CATALOG.declare(
+    "credits_against_basic_federal_tax", Decimal, non_negative=True
+)
+"""Credits against the basic federal tax, T1 line 125 "Add lines 122 to 124.": line 122 "Amount from
+line 35000" and line 123 (40425), the federal dividend tax credit, in line order.
+
+Line 124 (40427, minimum tax carryover) is not modelled."""
 
 T3_INVESTMENT_INCOME = CATALOG.declare("t3_investment_income", Decimal, non_negative=True)
 """T3 investment income, Federal Worksheet for line 12100 line 1 "Box 25 of all T3 slips": a
@@ -647,12 +810,12 @@ line 115 (line 33800) alone, since lines 116 and 117 are not triggered."""
 
 FEDERAL_TAX_AFTER_CREDITS = CATALOG.declare("federal_tax_after_credits", Decimal, non_negative=True)
 """Basic federal tax, T1 line 126 (line 42900) "Line 121 minus line 125 (if negative, enter "0")
-Basic federal tax": the federal basic tax less the federal non-refundable tax credits, not below
-zero.
+Basic federal tax": the federal basic tax less the credits against it, not below zero.
 
 Line 121 (40400) is "Line 119 plus line 120", line 119 "Enter the amount from line 76."; line 125
-is "Add lines 122 to 124.", line 122 "Amount from line 35000". Not modelled: line 120 (40424, tax
-on split income) and lines 123 and 124 (dividend tax credit, minimum tax carryover).
+is "Add lines 122 to 124.", line 122 "Amount from line 35000" and line 123 "Federal dividend tax
+credit". Not modelled: line 120 (40424, tax on split income) and line 124 (minimum tax
+carryover).
 """
 
 NET_FEDERAL_TAX = CATALOG.declare("net_federal_tax", Decimal, non_negative=True)
@@ -661,10 +824,10 @@ tax after credits carried through the lines between, as nothing else on them is 
 
 Line 126 (42900) is "Line 121 minus line 125 (if negative, enter "0") Basic federal tax", line 121
 (40400) "Line 119 plus line 120" and line 125 "Add lines 122 to 124.", line 122 being "Amount from
-line 35000": the federal tax after credits. Line 134 (40600) "Line 132 minus line 133 (if
-negative, enter "0") Federal tax" and line 139 (41700) "Line 134 minus line 138 (if negative,
-enter "0")" carry it to line 142. Not modelled: line 120 (40424, tax on split income), lines 123
-and 124 (dividend tax credit, minimum tax carryover), lines 127 to 133 (foreign surtax, foreign
+line 35000" and line 123 the federal dividend tax credit: the federal tax after credits. Line 134
+(40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax" and line 139 (41700) "Line
+134 minus line 138 (if negative, enter "0")" carry it to line 142. Not modelled: line 120 (40424,
+tax on split income), line 124 (minimum tax carryover), lines 127 to 133 (foreign surtax, foreign
 tax credit, investment tax credit recapture, logging tax credit), lines 135 to 138 (political,
 investment and labour-sponsored credits, 41600) and lines 140 (41500, advanced Canada workers
 benefit) and 141 (41800, special taxes).
