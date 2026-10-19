@@ -992,6 +992,89 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"count": "ca/infirm_children"},
             produces={"output": "ca/infirm_children_amount"},
         ),
+        # Worksheet ON428, "Line 58080 - Age amount": line 1 "Maximum amount 6,223.00", the
+        # dataset as an artifact of the same name.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca-on/age_maximum"},
+            consumes={},
+            produces={"output": "ca-on/age_maximum"},
+        ),
+        # Line 3 "Income threshold 46,330.00", the dataset as an artifact of the same name.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca-on/age_income_threshold"},
+            consumes={},
+            produces={"output": "ca-on/age_income_threshold"},
+        ),
+        # Line 2 "Amount from line 23600 of your return", the net income, and line 4 "Line 2
+        # minus line 3 (if negative, enter "0")".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca/net_income", "less": "ca-on/age_income_threshold"},
+            produces={"output": "ca-on/age_income_over_threshold"},
+        ),
+        # Line 5 "Applicable rate 15%" and line 6 "Line 4 multiplied by the percentage from line
+        # 5".
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/age_rate"},
+            consumes={"base": "ca-on/age_income_over_threshold"},
+            produces={"output": "ca-on/age_reduction"},
+        ),
+        # Line 7 "Line 1 minus line 6 (if negative, enter "0") Enter this amount on line 58080 of
+        # your Form ON428."
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca-on/age_maximum", "less": "ca-on/age_reduction"},
+            produces={"output": "ca-on/age_amount_before_count"},
+        ),
+        # ON428 line 10 and line 58080 "Age amount (if you were born in 1960 or earlier) (use
+        # Worksheet ON428) (maximum $6,223)": line 7 once if born in 1960 or earlier, else 0.
+        CapabilitySelection(
+            name="core/times_count",
+            params={},
+            consumes={
+                "amount": "ca-on/age_amount_before_count",
+                "count": "ca/born_in_1960_or_earlier",
+            },
+            produces={"output": "ca-on/age_amount"},
+        ),
+        # ON428 line 11 "Base amount 11,905.00": the dataset becomes an artifact of the same name.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca-on/spouse_base"},
+            consumes={},
+            produces={"output": "ca-on/spouse_base"},
+        ),
+        # Line 12 "Your spouse's or common-law partner's net income from line 23600 of their
+        # return", and line 13 (line 58120) "Line 11 minus line 12 (if negative, enter "0")
+        # (maximum $10,823)", before its maximum, then at most it.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca-on/spouse_base", "less": "ca/spouse_net_income"},
+            produces={"output": "ca-on/spouse_amount_before_maximum"},
+        ),
+        CapabilitySelection(
+            name="core/capped_amount",
+            params={"cap": "ca-on/spouse_maximum"},
+            consumes={"base": "ca-on/spouse_amount_before_maximum"},
+            produces={"output": "ca-on/spouse_amount_before_count"},
+        ),
+        # Line 58120 for each spouse or common-law partner amount claimed, the T1 line 30300
+        # count.
+        CapabilitySelection(
+            name="core/times_count",
+            params={},
+            consumes={
+                "amount": "ca-on/spouse_amount_before_count",
+                "count": "ca/spouses_claimed",
+            },
+            produces={"output": "ca-on/spouse_amount"},
+        ),
         # ON428 line 14 "Base amount 11,905.00": the dataset becomes an artifact of the same name.
         CapabilitySelection(
             name="core/credit_amount",
@@ -1028,9 +1111,10 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca-on/eligible_dependant_amount"},
         ),
         # T1 line 33500 (lines 30000, 30100, 30300, 30400, 30425, 30500, 30800, 31200, 31260) and
-        # ON428 line 58800 (lines 58040, 58160, 58240, 58300), in the forms' line order. ON428
-        # lines 58240 and 58300 are "Amount from line 30800 / 31200 of your return", so the
-        # Ontario sum reads the federal kinds; it has no Canada employment amount.
+        # ON428 line 58800 (lines 58040, 58080, 58120, 58160, 58240, 58300), in the forms' line
+        # order. ON428 lines 58240 and 58300 are "Amount from line 30800 / 31200 of your
+        # return", so the Ontario sum reads the federal kinds; it has no Canada employment
+        # amount.
         CapabilitySelection(
             name="core/sum",
             params={},
@@ -1055,6 +1139,8 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={
                 "parts": (
                     "ca-on/basic_personal_amount",
+                    "ca-on/age_amount",
+                    "ca-on/spouse_amount",
                     "ca-on/eligible_dependant_amount",
                     "ca/cpp_base_contributions",
                     "ca/ei_premiums",
@@ -1623,7 +1709,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 129
+    assert len(found.capabilities) == 139
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -1633,7 +1719,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 129
+    assert len(composition.order) == 139
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -1971,6 +2057,44 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({SPOUSE_CAREGIVER_AMOUNT}),
         ),
         (PerUnitAmount, frozenset({INFIRM_CHILDREN}), frozenset({INFIRM_CHILDREN_AMOUNT})),
+        (CreditAmount, frozenset(), frozenset({ontario.AGE_MAXIMUM})),
+        (CreditAmount, frozenset(), frozenset({ontario.AGE_INCOME_THRESHOLD})),
+        (
+            SubtractNotBelowZero,
+            frozenset({NET_INCOME, ontario.AGE_INCOME_THRESHOLD}),
+            frozenset({ontario.AGE_INCOME_OVER_THRESHOLD}),
+        ),
+        (
+            ApplyRate,
+            frozenset({ontario.AGE_INCOME_OVER_THRESHOLD}),
+            frozenset({ontario.AGE_REDUCTION}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({ontario.AGE_MAXIMUM, ontario.AGE_REDUCTION}),
+            frozenset({ontario.AGE_AMOUNT_BEFORE_COUNT}),
+        ),
+        (
+            TimesCount,
+            frozenset({ontario.AGE_AMOUNT_BEFORE_COUNT, BORN_IN_1960_OR_EARLIER}),
+            frozenset({ontario.AGE_AMOUNT}),
+        ),
+        (CreditAmount, frozenset(), frozenset({ontario.SPOUSE_BASE})),
+        (
+            SubtractNotBelowZero,
+            frozenset({ontario.SPOUSE_BASE, SPOUSE_NET_INCOME}),
+            frozenset({ontario.SPOUSE_AMOUNT_BEFORE_MAXIMUM}),
+        ),
+        (
+            CappedAmount,
+            frozenset({ontario.SPOUSE_AMOUNT_BEFORE_MAXIMUM}),
+            frozenset({ontario.SPOUSE_AMOUNT_BEFORE_COUNT}),
+        ),
+        (
+            TimesCount,
+            frozenset({ontario.SPOUSE_AMOUNT_BEFORE_COUNT, SPOUSES_CLAIMED}),
+            frozenset({ontario.SPOUSE_AMOUNT}),
+        ),
         (CreditAmount, frozenset(), frozenset({ELIGIBLE_DEPENDANT_BASE})),
         (
             SubtractNotBelowZero,
@@ -2009,6 +2133,8 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset(
                 {
                     ontario.BASIC_PERSONAL_AMOUNT,
+                    ontario.AGE_AMOUNT,
+                    ontario.SPOUSE_AMOUNT,
                     ontario.ELIGIBLE_DEPENDANT_AMOUNT,
                     CPP_BASE_CONTRIBUTIONS,
                     EI_PREMIUMS,

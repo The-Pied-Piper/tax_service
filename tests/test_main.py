@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 129
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 139
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -209,6 +209,16 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
     assert {i for i in shared.identifiers() if i.startswith("ca-on/")} == {
         "ca-on/ontario_basic_tax",
         "ca-on/basic_personal_amount",
+        "ca-on/age_maximum",
+        "ca-on/age_income_threshold",
+        "ca-on/age_income_over_threshold",
+        "ca-on/age_reduction",
+        "ca-on/age_amount_before_count",
+        "ca-on/age_amount",
+        "ca-on/spouse_base",
+        "ca-on/spouse_amount_before_maximum",
+        "ca-on/spouse_amount_before_count",
+        "ca-on/spouse_amount",
         "ca-on/eligible_dependant_base",
         "ca-on/eligible_dependant_amount_before_maximum",
         "ca-on/eligible_dependant_amount_before_count",
@@ -279,13 +289,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 129
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 139
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 129
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 139
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

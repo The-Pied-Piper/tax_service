@@ -17,6 +17,12 @@ import app.jurisdictions.ca_on.catalog
 from app.domain.artifact import ArtifactCatalog, ArtifactKind, ArtifactRegistry
 from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca_on.catalog import (
+    AGE_AMOUNT,
+    AGE_AMOUNT_BEFORE_COUNT,
+    AGE_INCOME_OVER_THRESHOLD,
+    AGE_INCOME_THRESHOLD,
+    AGE_MAXIMUM,
+    AGE_REDUCTION,
     BASIC_PERSONAL_AMOUNT,
     CATALOG,
     COMMUNITY_FOOD_PROGRAM_CREDIT,
@@ -65,6 +71,10 @@ from app.jurisdictions.ca_on.catalog import (
     SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
     SENIORS_TRANSIT_CREDIT,
     SENIORS_TRANSIT_PAID,
+    SPOUSE_AMOUNT,
+    SPOUSE_AMOUNT_BEFORE_COUNT,
+    SPOUSE_AMOUNT_BEFORE_MAXIMUM,
+    SPOUSE_BASE,
     TAX_REDUCTION_AMOUNTS,
     TAX_REDUCTION_BASIC,
     TAX_REDUCTION_FOR_CHILDREN,
@@ -76,6 +86,16 @@ REGISTERED = frozenset(
     {
         "ca-on/ontario_basic_tax",
         "ca-on/basic_personal_amount",
+        "ca-on/age_maximum",
+        "ca-on/age_income_threshold",
+        "ca-on/age_income_over_threshold",
+        "ca-on/age_reduction",
+        "ca-on/age_amount_before_count",
+        "ca-on/age_amount",
+        "ca-on/spouse_base",
+        "ca-on/spouse_amount_before_maximum",
+        "ca-on/spouse_amount_before_count",
+        "ca-on/spouse_amount",
         "ca-on/eligible_dependant_base",
         "ca-on/eligible_dependant_amount_before_maximum",
         "ca-on/eligible_dependant_amount_before_count",
@@ -157,6 +177,16 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/ontario_basic_tax") is ONTARIO_BASIC_TAX
     assert registry.get("ca-on/ontario_tax_after_credits") is ONTARIO_TAX_AFTER_CREDITS
     assert registry.get("ca-on/basic_personal_amount") is BASIC_PERSONAL_AMOUNT
+    assert registry.get("ca-on/age_maximum") is AGE_MAXIMUM
+    assert registry.get("ca-on/age_income_threshold") is AGE_INCOME_THRESHOLD
+    assert registry.get("ca-on/age_income_over_threshold") is AGE_INCOME_OVER_THRESHOLD
+    assert registry.get("ca-on/age_reduction") is AGE_REDUCTION
+    assert registry.get("ca-on/age_amount_before_count") is AGE_AMOUNT_BEFORE_COUNT
+    assert registry.get("ca-on/age_amount") is AGE_AMOUNT
+    assert registry.get("ca-on/spouse_base") is SPOUSE_BASE
+    assert registry.get("ca-on/spouse_amount_before_maximum") is SPOUSE_AMOUNT_BEFORE_MAXIMUM
+    assert registry.get("ca-on/spouse_amount_before_count") is SPOUSE_AMOUNT_BEFORE_COUNT
+    assert registry.get("ca-on/spouse_amount") is SPOUSE_AMOUNT
     assert registry.get("ca-on/eligible_dependant_base") is ELIGIBLE_DEPENDANT_BASE
     assert (
         registry.get("ca-on/eligible_dependant_amount_before_maximum")

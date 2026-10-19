@@ -64,7 +64,7 @@ import pytest
 
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.application.services.tax_computation import TaxComputationService
-from app.domain.artifact import Artifact
+from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capabilities.apply_fraction import ApplyFraction
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.at_most import AtMost
@@ -794,6 +794,24 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(ontario.ELIGIBLE_DEPENDANT_AMOUNT) is not (
         worksheet.producer_of(ELIGIBLE_DEPENDANT_AMOUNT)
     )
+    # ON428 line 10 (line 58080) and Worksheet ON428 (5006-D) lines 1 to 7; ON428 lines 11 to 13
+    # (line 58120).
+    assert isinstance(worksheet.producer_of(ontario.AGE_MAXIMUM), CreditAmount)
+    assert isinstance(worksheet.producer_of(ontario.AGE_INCOME_THRESHOLD), CreditAmount)
+    assert isinstance(
+        worksheet.producer_of(ontario.AGE_INCOME_OVER_THRESHOLD), SubtractNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(ontario.AGE_REDUCTION), ApplyRate)
+    assert isinstance(worksheet.producer_of(ontario.AGE_AMOUNT_BEFORE_COUNT), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(ontario.AGE_AMOUNT), TimesCount)
+    assert worksheet.producer_of(ontario.AGE_AMOUNT) is not worksheet.producer_of(AGE_AMOUNT)
+    assert isinstance(worksheet.producer_of(ontario.SPOUSE_BASE), CreditAmount)
+    assert isinstance(
+        worksheet.producer_of(ontario.SPOUSE_AMOUNT_BEFORE_MAXIMUM), SubtractNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(ontario.SPOUSE_AMOUNT_BEFORE_COUNT), CappedAmount)
+    assert isinstance(worksheet.producer_of(ontario.SPOUSE_AMOUNT), TimesCount)
+    assert worksheet.producer_of(ontario.SPOUSE_AMOUNT) is not worksheet.producer_of(SPOUSE_AMOUNT)
     assert isinstance(worksheet.producer_of(NON_REFUNDABLE_CREDIT_AMOUNTS), Sum)
     assert isinstance(worksheet.producer_of(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS), Sum)
     assert worksheet.producer_of(NON_REFUNDABLE_CREDIT_AMOUNTS) is not worksheet.producer_of(
@@ -980,12 +998,21 @@ def test_the_trace_explains_the_computation() -> None:
     worksheet = return_a()
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
 
-    def position(expected: str, amount: str) -> int:
-        """The index of the one rendered line reading `expected` whose line has `amount`."""
+    def position(expected: str, amount: str, claimed: ArtifactKind[Decimal] | None = None) -> int:
+        """The index of the one rendered line reading `expected` whose line has `amount`.
+
+        A claimed line (an amount times a count) reads the same federally and for Ontario when the
+        amounts are alike, so it is told apart by the kind of the amount it claims.
+        """
         (found,) = [
             i
             for i, (text, line) in enumerate(zip(rendered, worksheet.trace, strict=True))
-            if text == expected and line.amount == D(amount)
+            if text == expected
+            and line.amount == D(amount)
+            and (
+                claimed is None
+                or (isinstance(line, TimesCountLine) and line.amount_kind is claimed)
+            )
         ]
         return found
 
@@ -1197,7 +1224,9 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     age = position(
-        "age_amount: age_amount_before_count 0 for each of 0 born_in_1960_or_earlier = 0", "0"
+        "age_amount: age_amount_before_count 0 for each of 0 born_in_1960_or_earlier = 0",
+        "0",
+        AGE_AMOUNT_BEFORE_COUNT,
     )
     # Schedule 5 (5000-S5) line 30300 lines 2 to 5 and T1 line 30300, for 0 spouse amounts claimed.
     spouse_supplement = position(
@@ -1288,9 +1317,47 @@ def test_the_trace_explains_the_computation() -> None:
         "for each of 0 eligible_dependants = 0",
         "0",
     )
+    # Worksheet ON428 (5006-D) lines 1 to 7 and ON428 line 10 (line 58080): 15% x (115000 -
+    # 46330) = 10300.50 is more than the maximum 6223, so line 7 is 0, claimed for 0 filers born
+    # in 1960 or earlier; ON428 lines 11 to 13 (line 58120), for 0 spouse amounts claimed.
+    ontario_age_maximum = position("age_maximum: credit amount 6223 (half-up to 0.01)", "6223.00")
+    ontario_age_threshold = position(
+        "age_income_threshold: credit amount 46330 (half-up to 0.01)", "46330.00"
+    )
+    ontario_age_over_threshold = position(
+        "age_income_over_threshold: net_income 115000 less age_income_threshold 46330, not below 0 "
+        "= 68670",
+        "68670",
+    )
+    ontario_age_reduction = position(
+        "age_reduction: 15% of age_income_over_threshold 68670 (half-up to 0.01)", "10300.50"
+    )
+    ontario_age_before_count = position(
+        "age_amount_before_count: age_maximum 6223 less age_reduction 10300.5, not below 0 = 0",
+        "0",
+    )
+    ontario_age = position(
+        "age_amount: age_amount_before_count 0 for each of 0 born_in_1960_or_earlier = 0",
+        "0",
+        ontario.AGE_AMOUNT_BEFORE_COUNT,
+    )
+    ontario_spouse_base = position("spouse_base: credit amount 11905 (half-up to 0.01)", "11905")
+    ontario_spouse_before_maximum = position(
+        "spouse_amount_before_maximum: spouse_base 11905 "
+        "less spouse_net_income 0, not below 0 = 11905",
+        "11905",
+    )
+    ontario_spouse_before_count = position(
+        "spouse_amount_before_count: lesser of spouse_amount_before_maximum 11905 and 10823 "
+        "(half-up to 0.01)",
+        "10823",
+    )
+    ontario_spouse = position(
+        "spouse_amount: spouse_amount_before_count 10823 for each of 0 spouses_claimed = 0", "0"
+    )
     ontario_amounts = position(
         "non_refundable_credit_amounts: basic_personal_amount 12747 "
-        "+ eligible_dependant_amount 0 "
+        "+ age_amount 0 + spouse_amount 0 + eligible_dependant_amount 0 "
         "+ cpp_base_contributions 3356.1 + ei_premiums 1077.48 = 17180.58",
         "17180.58",
     )
@@ -1546,6 +1613,12 @@ def test_the_trace_explains_the_computation() -> None:
     assert spouse < caregiver_before_count < caregiver < federal_amounts
     assert ontario_base < ontario_before_maximum < ontario_dependant
     assert ontario_dependant < ontario_dependant_claimed < ontario_amounts
+    assert net < ontario_age_over_threshold < ontario_age_reduction < ontario_age_before_count
+    assert ontario_age_before_count < ontario_age < ontario_amounts
+    assert ontario_age_threshold < ontario_age_over_threshold
+    assert ontario_age_maximum < ontario_age_before_count
+    assert ontario_spouse_base < ontario_spouse_before_maximum < ontario_spouse_before_count
+    assert ontario_spouse_before_count < ontario_spouse < ontario_amounts
     assert ontario_amount < ontario_amounts < ontario_credit < ontario_after
     assert ontario_after < surtax_first < surtax_second < with_surtax
     assert reduction_basic < reduction_amounts
@@ -1720,6 +1793,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Rate(D("0.05")),
             CENT,
             D("0"),
+        ),
+        # Worksheet ON428 line 5 "Applicable rate 15%" and line 6 "Line 4 multiplied by the
+        # percentage from line 5": line 4 is the net income 115000 over the income threshold.
+        ontario.AGE_REDUCTION: RateAppliedLine(
+            ontario.AGE_REDUCTION,
+            ontario.AGE_INCOME_OVER_THRESHOLD,
+            D("68670.00"),
+            Rate(D("0.15")),
+            CENT,
+            D("10300.50"),
         ),
         # ON428 line 87 and line 62150 "multiplied by 25%": the qualifying donations of 0.
         COMMUNITY_FOOD_PROGRAM_CREDIT: RateAppliedLine(
@@ -1989,6 +2072,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ontario.NON_REFUNDABLE_CREDIT_AMOUNTS,
             (
                 (ontario.BASIC_PERSONAL_AMOUNT, D("12747")),
+                (ontario.AGE_AMOUNT, D("0")),
+                (ontario.SPOUSE_AMOUNT, D("0")),
                 (ontario.ELIGIBLE_DEPENDANT_AMOUNT, D("0")),
                 (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
                 (EI_PREMIUMS, D("1077.48")),
@@ -2189,6 +2274,18 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         SPOUSE_CAREGIVER_BASE: CreditAmountLine(
             SPOUSE_CAREGIVER_BASE, Credit(amount=D("28798.00")), CENT, D("28798.00")
         ),
+        # Worksheet ON428 line 1 "Maximum amount 6,223.00" and line 3 "Income threshold
+        # 46,330.00".
+        ontario.AGE_MAXIMUM: CreditAmountLine(
+            ontario.AGE_MAXIMUM, Credit(amount=D("6223.00")), CENT, D("6223.00")
+        ),
+        ontario.AGE_INCOME_THRESHOLD: CreditAmountLine(
+            ontario.AGE_INCOME_THRESHOLD, Credit(amount=D("46330.00")), CENT, D("46330.00")
+        ),
+        # ON428 line 11 "Base amount 11,905.00".
+        ontario.SPOUSE_BASE: CreditAmountLine(
+            ontario.SPOUSE_BASE, Credit(amount=D("11905.00")), CENT, D("11905.00")
+        ),
         # ON428 line 14 "Base amount 11,905.00".
         ELIGIBLE_DEPENDANT_BASE: CreditAmountLine(
             ELIGIBLE_DEPENDANT_BASE, Credit(amount=D("11905.00")), CENT, D("11905.00")
@@ -2327,6 +2424,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
             result=D("0"),
         ),
+        # ON428 line 10 (line 58080) and lines 11 to 13 (line 58120), each claimed for the 0
+        # filers born in 1960 or earlier and 0 spouse amounts of Return A, a plain 0.
+        ontario.AGE_AMOUNT: TimesCountLine(
+            output=ontario.AGE_AMOUNT,
+            amount_kind=ontario.AGE_AMOUNT_BEFORE_COUNT,
+            amount_value=D("0"),
+            count_kind=BORN_IN_1960_OR_EARLIER,
+            count=0,
+            result=D("0"),
+        ),
+        ontario.SPOUSE_AMOUNT: TimesCountLine(
+            output=ontario.SPOUSE_AMOUNT,
+            amount_kind=ontario.SPOUSE_AMOUNT_BEFORE_COUNT,
+            amount_value=D("10823"),
+            count_kind=SPOUSES_CLAIMED,
+            count=0,
+            result=D("0"),
+        ),
         ontario.ELIGIBLE_DEPENDANT_AMOUNT: TimesCountLine(
             output=ontario.ELIGIBLE_DEPENDANT_AMOUNT,
             amount_kind=ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
@@ -2400,6 +2515,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Amount(D("8601")),
             CENT,
             D("8601"),
+        ),
+        # ON428 line 13's "(maximum $10,823)": 11905.00 is above it.
+        ontario.SPOUSE_AMOUNT_BEFORE_COUNT: CappedAmountLine(
+            ontario.SPOUSE_AMOUNT_BEFORE_COUNT,
+            ontario.SPOUSE_AMOUNT_BEFORE_MAXIMUM,
+            D("11905.00"),
+            Amount(D("10823")),
+            CENT,
+            D("10823"),
         ),
         # ON428 line 16's "(maximum $10,823)": 11905.00 is above it.
         ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT: CappedAmountLine(
@@ -2723,6 +2847,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("8601"),
         ),
+        # Worksheet ON428 line 4 "Line 2 minus line 3 (if negative, enter "0")": the net income
+        # 115000 less the income threshold 46330.00.
+        ontario.AGE_INCOME_OVER_THRESHOLD: SubtractedNotBelowZeroLine(
+            output=ontario.AGE_INCOME_OVER_THRESHOLD,
+            minuend=NET_INCOME,
+            minuend_amount=D("115000"),
+            subtrahend=ontario.AGE_INCOME_THRESHOLD,
+            subtrahend_amount=D("46330.00"),
+            result=D("68670.00"),
+        ),
+        # Worksheet ON428 line 7 "Line 1 minus line 6 (if negative, enter "0")": 6223.00 less
+        # 10300.50 is negative, so 0.
+        ontario.AGE_AMOUNT_BEFORE_COUNT: SubtractedNotBelowZeroLine(
+            output=ontario.AGE_AMOUNT_BEFORE_COUNT,
+            minuend=ontario.AGE_MAXIMUM,
+            minuend_amount=D("6223.00"),
+            subtrahend=ontario.AGE_REDUCTION,
+            subtrahend_amount=D("10300.50"),
+            result=D("0"),
+        ),
+        # ON428 line 13 "Line 11 minus line 12 (if negative, enter "0")", before its maximum,
+        # with the spouse's net income entered as 0.
+        ontario.SPOUSE_AMOUNT_BEFORE_MAXIMUM: SubtractedNotBelowZeroLine(
+            output=ontario.SPOUSE_AMOUNT_BEFORE_MAXIMUM,
+            minuend=ontario.SPOUSE_BASE,
+            minuend_amount=D("11905.00"),
+            subtrahend=SPOUSE_NET_INCOME,
+            subtrahend_amount=D("0"),
+            result=D("11905.00"),
+        ),
         # ON428 line 16 "Line 14 minus line 15 (if negative, enter "0")", before its maximum.
         ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM: SubtractedNotBelowZeroLine(
             output=ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
@@ -2871,7 +3025,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 129
+    assert len(order) == 139
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -2997,6 +3151,23 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM]
         < position[ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT]
         < position[ontario.ELIGIBLE_DEPENDANT_AMOUNT]
+        < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
+    )
+    assert (
+        position[NET_INCOME]
+        < position[ontario.AGE_INCOME_OVER_THRESHOLD]
+        < position[ontario.AGE_REDUCTION]
+        < position[ontario.AGE_AMOUNT_BEFORE_COUNT]
+        < position[ontario.AGE_AMOUNT]
+        < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
+    )
+    assert position[ontario.AGE_INCOME_THRESHOLD] < position[ontario.AGE_INCOME_OVER_THRESHOLD]
+    assert position[ontario.AGE_MAXIMUM] < position[ontario.AGE_AMOUNT_BEFORE_COUNT]
+    assert (
+        position[ontario.SPOUSE_BASE]
+        < position[ontario.SPOUSE_AMOUNT_BEFORE_MAXIMUM]
+        < position[ontario.SPOUSE_AMOUNT_BEFORE_COUNT]
+        < position[ontario.SPOUSE_AMOUNT]
         < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
     )
     assert position[NON_REFUNDABLE_CREDIT_AMOUNTS] < position[NON_REFUNDABLE_TAX_CREDITS]
@@ -3692,8 +3863,8 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
         "+ canada_employment_amount 1471 = 37509.75"
     ) in rendered
     assert (
-        "non_refundable_credit_amounts: basic_personal_amount 12747 "
-        "+ eligible_dependant_amount 10823 "
+        "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 0 "
+        "+ spouse_amount 0 + eligible_dependant_amount 10823 "
         "+ cpp_base_contributions 2796.75 + ei_premiums 984 = 27350.75"
     ) in rendered
 
@@ -4547,10 +4718,28 @@ def test_return_js_age_spouse_and_caregiver_amounts_come_off_net_income_and_the_
     assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("37679.05")
     assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("5463.46")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("1786.54")
-    # ON428 lines 58080 and 58120 are not computed in this return, so ON428's total of credit
-    # amounts has no age, spouse or caregiver part.
-    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("15868.75")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-1889.83")
+    # Worksheet ON428 (form 5006-D), "Line 58080 - Age amount": line 1 6223.00, line 3 46330.00;
+    # line 4 is 50000.00 - 46330.00 = 3670.00, line 6 15% of it, 550.50, and line 7 is 6223.00 -
+    # 550.50 = 5672.50, claimed once. ON428 line 11 is 11905.00 and line 12 the spouse's net income,
+    # 12000, so line 13 is 11905.00 - 12000, negative, so 0, at most 10823: 0.
+    assert worksheet.get(ontario.AGE_MAXIMUM).value == D("6223.00")
+    assert worksheet.get(ontario.AGE_INCOME_THRESHOLD).value == D("46330.00")
+    assert worksheet.get(ontario.AGE_INCOME_OVER_THRESHOLD).value == D("3670.00")
+    assert worksheet.get(ontario.AGE_REDUCTION).value == D("550.50")
+    assert worksheet.get(ontario.AGE_AMOUNT_BEFORE_COUNT).value == D("5672.50")
+    assert worksheet.get(ontario.AGE_AMOUNT).value == D("5672.50")
+    assert worksheet.get(ontario.SPOUSE_BASE).value == D("11905.00")
+    assert worksheet.get(ontario.SPOUSE_AMOUNT_BEFORE_MAXIMUM).value == D("0")
+    assert worksheet.get(ontario.SPOUSE_AMOUNT_BEFORE_COUNT).value == D("0")
+    assert worksheet.get(ontario.SPOUSE_AMOUNT).value == D("0")
+    # ON428 line 58800 is 12747 + 5672.50 + 0 + 0 + 2301.75 + 820.00 = 21541.25, and line 61500
+    # 21541.25 x 5.05% = 1087.833125, rounded half-up to the cent: 1087.83.
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("21541.25")
+    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("1087.83")
+    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1437.17")
+    assert worksheet.get(ONTARIO_TAX).value == D("2037.17")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("3823.71")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-2176.29")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     for line in (
         "age_income_over_threshold: net_income 50000 less age_income_threshold 45522, not below 0 "
@@ -4577,6 +4766,19 @@ def test_return_js_age_spouse_and_caregiver_amounts_come_off_net_income_and_the_
         "+ spouse_amount 6816 + eligible_dependant_amount 0 + spouse_caregiver_amount 1785 "
         "+ infirm_children_amount 0 + cpp_base_contributions 2301.75 + ei_premiums 820 "
         "+ canada_employment_amount 1471 = 37679.05",
+        "age_income_over_threshold: net_income 50000 less age_income_threshold 46330, not below 0 "
+        "= 3670",
+        "age_reduction: 15% of age_income_over_threshold 3670 (half-up to 0.01)",
+        "age_amount_before_count: age_maximum 6223 less age_reduction 550.5, not below 0 = 5672.5",
+        "age_amount: age_amount_before_count 5672.5 for each of 1 born_in_1960_or_earlier = 5672.5",
+        "spouse_amount_before_maximum: spouse_base 11905 "
+        "less spouse_net_income 12000, not below 0 = 0",
+        "spouse_amount_before_count: lesser of spouse_amount_before_maximum 0 and 10823 "
+        "(half-up to 0.01)",
+        "spouse_amount: spouse_amount_before_count 0 for each of 1 spouses_claimed = 0",
+        "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 5672.5 "
+        "+ spouse_amount 0 + eligible_dependant_amount 0 + cpp_base_contributions 2301.75 "
+        "+ ei_premiums 820 = 21541.25",
     ):
         assert line in rendered
 
@@ -4590,6 +4792,90 @@ def test_a_filer_born_in_1961_or_later_claims_no_age_amount_whatever_the_net_inc
     assert worksheet.get(AGE_AMOUNT).value == D("0")
     assert worksheet.get(SPOUSE_AMOUNT).value == D("6816.00")
     assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("29322.75")
+
+
+def test_the_ontario_age_amount_is_zero_at_net_income_87817() -> None:
+    # Net income is employment income less the enhanced CPP contributions at their maximum
+    # (1074.00): 88891 - 1074.00 = 87817.00. Worksheet ON428 line 6 is 15% x (87817.00 - 46330) =
+    # 6223.05, more than the 6223.00 maximum, so line 7 "(if negative, enter "0")" is 0.
+    worksheet = compute("88891", "0", "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
+
+    assert worksheet.get(NET_INCOME).value == D("87817.00")
+    assert worksheet.get(ontario.AGE_REDUCTION).value == D("6223.05")
+    assert worksheet.get(ontario.AGE_AMOUNT_BEFORE_COUNT).value == D("0")
+    assert worksheet.get(ontario.AGE_AMOUNT).value == D("0")
+
+
+def test_the_ontario_age_amount_is_still_a_dollar_short_of_zero_at_net_income_87816() -> None:
+    # 88890 - 1074.00 = 87816.00: line 6 is 15% x (87816.00 - 46330) = 6222.90, so line 7 is
+    # 6223.00 - 6222.90 = 0.10.
+    worksheet = compute("88890", "0", "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
+
+    assert worksheet.get(NET_INCOME).value == D("87816.00")
+    assert worksheet.get(ontario.AGE_REDUCTION).value == D("6222.90")
+    assert worksheet.get(ontario.AGE_AMOUNT).value == D("0.10")
+
+
+def test_the_ontario_age_amount_is_the_whole_maximum_at_a_net_income_below_the_threshold() -> None:
+    # Net income is 44585.00 (as for the federal case), below 46330: line 4 is negative, so 0,
+    # line 6 is 0 and line 7 is 6223.00: "$46,330 or less, enter $6,223".
+    worksheet = compute("45000", "0", "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
+
+    assert worksheet.get(ontario.AGE_INCOME_OVER_THRESHOLD).value == D("0")
+    assert worksheet.get(ontario.AGE_AMOUNT).value == D("6223.00")
+
+
+def test_a_filer_born_in_1961_or_later_claims_no_ontario_age_amount() -> None:
+    worksheet = return_j(born_in_1960_or_earlier=0)
+
+    assert worksheet.get(ontario.AGE_AMOUNT_BEFORE_COUNT).value == D("5672.50")
+    assert worksheet.get(ontario.AGE_AMOUNT).value == D("0")
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("15868.75")
+
+
+def test_a_spouse_with_net_income_4000_who_is_not_infirm_gives_ontario_line_58120_of_7905() -> None:
+    # ON428 line 11 11905.00 less line 12, 4000: line 13 is 7905.00, below the 10823 maximum,
+    # claimed once. (The federal line 30300 is 16129.00 - 4000 = 12129.00.)
+    worksheet = return_j(spouse_net_income="4000", spouse_caregiver_eligible=0)
+
+    assert worksheet.get(ontario.SPOUSE_AMOUNT_BEFORE_MAXIMUM).value == D("7905.00")
+    assert worksheet.get(ontario.SPOUSE_AMOUNT_BEFORE_COUNT).value == D("7905.00")
+    assert worksheet.get(ontario.SPOUSE_AMOUNT).value == D("7905.00")
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("29446.25")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "spouse_amount_before_maximum: spouse_base 11905 "
+        "less spouse_net_income 4000, not below 0 = 7905"
+    ) in rendered
+
+
+def test_a_spouse_amount_not_claimed_gives_no_ontario_spouse_amount() -> None:
+    worksheet = return_j(spouse_net_income="4000", spouse_caregiver_eligible=0, spouses_claimed=0)
+
+    assert worksheet.get(ontario.SPOUSE_AMOUNT_BEFORE_COUNT).value == D("7905.00")
+    assert worksheet.get(ontario.SPOUSE_AMOUNT).value == D("0")
+
+
+@pytest.mark.parametrize(
+    ("spouse_net_income", "amount"),
+    [
+        # Line 13 is 11905.00 less the spouse's net income, at most 10823: the cap holds up to a
+        # net income of 1082.
+        ("0", "10823.00"),
+        ("1082", "10823.00"),
+        ("1083", "10822.00"),
+        ("4000", "7905.00"),
+        ("11904.99", "0.01"),
+        ("11905", "0"),
+        ("20000", "0"),
+    ],
+)
+def test_the_ontario_spouse_amount_is_11905_less_their_net_income_at_most_10823(
+    spouse_net_income: str, amount: str
+) -> None:
+    worksheet = return_j(spouse_net_income=spouse_net_income)
+
+    assert worksheet.get(ontario.SPOUSE_AMOUNT).value == D(amount)
 
 
 def test_the_age_amount_is_reduced_to_ten_cents_at_net_income_105708() -> None:
