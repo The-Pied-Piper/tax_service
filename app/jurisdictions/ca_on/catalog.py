@@ -1,8 +1,8 @@
-"""The Ontario artifact catalog: Ontario's own kinds, named from Form ON428 (§2, §7).
+"""The Ontario artifact catalog: Ontario's own kinds, named from Forms ON428 (§2, §7) and ON479.
 
-Only the kinds in use are declared, each non-negative, as no ON428 line here can be negative:
-amounts are Decimal, the counts of dependent children and dependants int. Federal kinds come
-from `app.jurisdictions.ca.catalog`. Identifiers are stable:
+Only the kinds in use are declared, each non-negative, as no ON428 or ON479 line here can be
+negative: amounts are Decimal, the counts of dependent children and dependants int. Federal kinds
+come from `app.jurisdictions.ca.catalog`. Identifiers are stable:
 `tests/jurisdictions/ca_on/test_catalog.py` snapshots them.
 """
 
@@ -160,6 +160,26 @@ ONTARIO_TAX_AFTER_LIFT_CREDIT = CATALOG.declare(
 of the previous page" carries line 83 "Line 81 minus line 82 (if negative, enter "0")", which is
 line 81 while the provincial foreign tax credit (line 82) is not triggered."""
 
+COMMUNITY_FOOD_PROGRAM_DONATIONS = CATALOG.declare(
+    "community_food_program_donations", Decimal, non_negative=True
+)
+"""Qualifying community food program donations, ON428 line 87 and line 62150 "Enter the amount of
+qualifying donations that have also been claimed as a charitable donation.": a starting amount,
+taken as entered, as nothing here checks it against Schedule 9."""
+
+COMMUNITY_FOOD_PROGRAM_CREDIT = CATALOG.declare(
+    "community_food_program_credit", Decimal, non_negative=True
+)
+"""Community food program donation tax credit for farmers, ON428 line 87 "multiplied by 25%": the
+qualifying donations (line 62150) at the rate."""
+
+ONTARIO_TAX_AFTER_FOOD_CREDIT = CATALOG.declare(
+    "ontario_tax_after_food_credit", Decimal, non_negative=True
+)
+"""Ontario tax after the community food program donation tax credit for farmers, ON428 line 88
+"Line 86 minus line 87 (if negative, enter "0")": the Ontario tax after the LIFT credit less the
+credit."""
+
 ONTARIO_HEALTH_PREMIUM = CATALOG.declare("ontario_health_premium", Decimal, non_negative=True)
 """Ontario health premium, ON428 line 89 "Ontario health premium (complete the chart below)": the
 chart on taxable income (its line 1 "Enter your taxable income from line 26000 of your return"),
@@ -168,8 +188,56 @@ the next plateau."""
 
 ONTARIO_TAX = CATALOG.declare("ontario_tax", Decimal, non_negative=True)
 """Ontario tax, ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your
-return. Ontario tax": the Ontario tax after the LIFT credit plus the Ontario health premium.
+return. Ontario tax": the Ontario tax after the community food program donation tax credit for
+farmers plus the Ontario health premium."""
 
-Line 88 "Line 86 minus line 87 (if negative, enter "0")" carries line 86, as the community food
-program donation tax credit for farmers (line 87) is not triggered by the returns computed so far.
-"""
+FERTILITY_EXPENSES = CATALOG.declare("fertility_expenses", Decimal, non_negative=True)
+"""Eligible medical expenses for fertility treatment, Form ON479 line 1 and line 61268 "Eligible
+medical expenses for fertility treatment": a starting amount, from the receipts the form asks for.
+
+The form prints no eligibility rules for the line; eligibility is to be confirmed."""
+
+FERTILITY_CREDIT_BEFORE_MAXIMUM = CATALOG.declare(
+    "fertility_credit_before_maximum", Decimal, non_negative=True
+)
+"""Fertility treatment credit before its maximum, Form ON479 line 1 "Eligible medical expenses for
+fertility treatment multiplied by 25% (maximum $5,000) =" before the maximum: the 25% on the
+expenses."""
+
+FERTILITY_CREDIT = CATALOG.declare("fertility_credit", Decimal, non_negative=True)
+"""Fertility treatment credit, Form ON479 line 1 and line 61268 "Eligible medical expenses for
+fertility treatment multiplied by 25% (maximum $5,000) =": the 25% on the expenses, at most
+$5,000, the maximum being printed after the percentage."""
+
+SENIORS_TRANSIT_PAID = CATALOG.declare("seniors_transit_paid", Decimal, non_negative=True)
+"""Amount paid for eligible seniors' use of Ontario public transit services, Form ON479 line 14
+"Amount paid in the year for eligible seniors' use of Ontario public transit services (maximum
+$3,000) Line 63100": a starting amount, from the receipts the form asks for.
+
+The form prints no eligibility rules for the line; eligibility is to be confirmed."""
+
+SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM = CATALOG.declare(
+    "seniors_transit_amount_paid_at_most_maximum", Decimal, non_negative=True
+)
+"""Amount paid for seniors' transit at most its maximum, Form ON479 line 14 "Amount paid in the year
+for eligible seniors' use of Ontario public transit services (maximum $3,000)": the amount paid, at
+most $3,000, the maximum being printed before the percentage."""
+
+SENIORS_TRANSIT_CREDIT = CATALOG.declare("seniors_transit_credit", Decimal, non_negative=True)
+"""Seniors' public transit credit, Form ON479 line 14 "Amount paid in the year for eligible
+seniors' use of Ontario public transit services (maximum $3,000) Line 63100 multiplied by 15% =":
+15% of the amount paid, at most $3,000."""
+
+ONTARIO_CREDITS_SUBTOTAL = CATALOG.declare("ontario_credits_subtotal", Decimal, non_negative=True)
+"""Ontario credits subtotal, Form ON479 line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": here
+lines 1 and 14, in line order. Line 19 "Amount from line 18 of the previous page" carries it.
+
+Not triggered by the returns modelled, or left to later work: lines 2, 13 and 16, and line 17 (the
+focused flow-through share credit, from Form T1221)."""
+
+ONTARIO_CREDITS = CATALOG.declare("ontario_credits", Decimal, non_negative=True)
+"""Ontario credits, Form ON479 line 21 "Line 19 plus line 20 Enter this amount online 47900 of
+your return. Ontario credits =": line 19 "Amount from line 18 of the previous page", which carries
+line 18.
+
+Line 20 (the co-operative education credit) is not triggered by the returns modelled."""

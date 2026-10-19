@@ -33,8 +33,152 @@ TAXABLE_CAPITAL_GAINS = CATALOG.declare("taxable_capital_gains", Decimal, non_ne
 lines 23 to 26)."""
 
 TOTAL_INCOME = CATALOG.declare("total_income", Decimal, non_negative=True)
-"""Total income, T1 line 15000: the sum of the income lines, here employment income and taxable
-capital gains."""
+"""Total income, T1 line 15000 "Line 28 plus line 32 Total income": the sum of the income lines
+wired so far, in line order, with the taxable capital gains and the taxable support payments.
+
+Not wired yet: dividends (lines 12000 and 12010), rental income (line 13) and self-employment
+income (lines 22 to 26).
+"""
+
+OTHER_EMPLOYMENT_INCOME = CATALOG.declare("other_employment_income", Decimal, non_negative=True)
+"""Other employment income, T1 line 10400 "Other employment income": a starting amount."""
+
+OLD_AGE_SECURITY = CATALOG.declare("old_age_security", Decimal, non_negative=True)
+"""Old age security pension, T1 line 11300 "Old age security (OAS) pension (box 18 of the T4A(OAS)
+slip)": a starting amount."""
+
+CPP_OR_QPP_BENEFITS = CATALOG.declare("cpp_or_qpp_benefits", Decimal, non_negative=True)
+"""CPP or QPP benefits, T1 line 11400 "CPP or QPP benefits (box 20 of the T4A(P) slip)": a starting
+amount."""
+
+OTHER_PENSIONS_AND_SUPERANNUATION = CATALOG.declare(
+    "other_pensions_and_superannuation", Decimal, non_negative=True
+)
+"""Other pensions and superannuation, T1 line 11500 "Other pensions and superannuation": a starting
+amount."""
+
+ELECTED_SPLIT_PENSION_AMOUNT = CATALOG.declare(
+    "elected_split_pension_amount", Decimal, non_negative=True
+)
+"""Elected split-pension amount, T1 line 11600 "Elected split-pension amount (complete Form T1032)":
+the election made with the spouse or common-law partner, a starting amount."""
+
+UNIVERSAL_CHILD_CARE_BENEFIT = CATALOG.declare(
+    "universal_child_care_benefit", Decimal, non_negative=True
+)
+"""Universal child care benefit, T1 line 11700 "Universal child care benefit (UCCB) (see the RC62
+slip)": a starting amount."""
+
+EI_AND_OTHER_BENEFITS = CATALOG.declare("ei_and_other_benefits", Decimal, non_negative=True)
+"""Employment insurance and other benefits, T1 line 11900 "Employment insurance (EI) and other
+benefits (box 14 of the T4E slip)": a starting amount."""
+
+T3_INVESTMENT_INCOME = CATALOG.declare("t3_investment_income", Decimal, non_negative=True)
+"""T3 investment income, Federal Worksheet for line 12100 line 1 "Box 25 of all T3 slips": a
+starting amount."""
+
+T5_INVESTMENT_INCOME = CATALOG.declare("t5_investment_income", Decimal, non_negative=True)
+"""T5 investment income, Federal Worksheet for line 12100 line 2 "Boxes 13, 14, 15, and 30 of all T5
+slips": a starting amount."""
+
+T5013_INVESTMENT_INCOME = CATALOG.declare("t5013_investment_income", Decimal, non_negative=True)
+"""T5013 investment income, Federal Worksheet for line 12100 line 3 "Boxes 128, 135, and 146 of all
+T5013 slips": a starting amount."""
+
+INVESTMENT_INCOME_CREDITED_NOT_RECEIVED = CATALOG.declare(
+    "investment_income_credited_not_received", Decimal, non_negative=True
+)
+"""Investment income credited and not received, Federal Worksheet for line 12100 line 4 "Amounts
+credited to you that you did not receive (such as reinvestments)": a starting amount."""
+
+TAX_REFUND_INTEREST = CATALOG.declare("tax_refund_interest", Decimal, non_negative=True)
+"""Interest on a tax refund, Federal Worksheet for line 12100 line 5 "Interest on any tax refund you
+received in 2025 as shown on your notice of assessment or reassessment": a starting amount."""
+
+FOREIGN_INVESTMENT_INCOME = CATALOG.declare("foreign_investment_income", Decimal, non_negative=True)
+"""Foreign investment income, Federal Worksheet for line 12100 line 6 "Income from foreign sources,
+including foreign dividends, in Canadian dollars": a starting amount."""
+
+INVESTMENT_INCOME_WITHOUT_A_SLIP = CATALOG.declare(
+    "investment_income_without_a_slip", Decimal, non_negative=True
+)
+"""Investment income with no slip, Federal Worksheet for line 12100 line 7 "Interest or income
+earned from bank accounts, term deposits, guaranteed investment certificates (GICs), and other
+similar investments, treasury bills or life insurance policies not reported on any information
+slip": a starting amount."""
+
+INVESTMENT_ROYALTIES = CATALOG.declare("investment_royalties", Decimal, non_negative=True)
+"""Investment royalties, Federal Worksheet for line 12100 line 8 "Royalties not included on line
+10400 or line 13500 of your return": a starting amount."""
+
+INVESTMENT_INCOME_BEFORE_PRIOR_YEARS = CATALOG.declare(
+    "investment_income_before_prior_years", Decimal, non_negative=True
+)
+"""Investment income before the part reported in previous years, Federal Worksheet for line 12100
+line 9 "Add lines 1 to 8.": the sum of the eight sources."""
+
+INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS = CATALOG.declare(
+    "investment_income_reported_in_previous_years", Decimal, non_negative=True
+)
+"""Investment income reported in previous years, Federal Worksheet for line 12100 line 10 "Interest
+and other investment income, included on line 9, received and reported in previous years": a
+starting amount."""
+
+INTEREST_AND_OTHER_INVESTMENT_INCOME = CATALOG.declare(
+    "interest_and_other_investment_income", Decimal, non_negative=True
+)
+"""Interest and other investment income, T1 line 12100 "Interest and other investment income (use
+Federal Worksheet)": Federal Worksheet line 11 "Line 9 minus line 10. Enter this amount on line
+12100 of your return.", the investment income less the part reported in previous years."""
+
+NET_PARTNERSHIP_INCOME = CATALOG.declare("net_partnership_income", Decimal, non_negative=True)
+"""Net partnership income, T1 line 12200 "Net partnership income (limited or non-active partners
+only)": a starting amount."""
+
+RDSP_INCOME = CATALOG.declare("rdsp_income", Decimal, non_negative=True)
+"""Registered disability savings plan income, T1 line 12500 "Registered disability savings plan
+(RDSP) income (box 131 of the T4A slip)": a starting amount."""
+
+TAXABLE_SUPPORT_PAYMENTS = CATALOG.declare("taxable_support_payments", Decimal, non_negative=True)
+"""Taxable support payments, T1 line 12800 "Taxable amount": a starting amount."""
+
+RRSP_INCOME = CATALOG.declare("rrsp_income", Decimal, non_negative=True)
+"""RRSP income, T1 line 12900 "Registered retirement savings plan (RRSP) income (from all T4RSP
+slips)": a starting amount."""
+
+FHSA_INCOME = CATALOG.declare("fhsa_income", Decimal, non_negative=True)
+"""Taxable FHSA income, T1 line 12905 "Taxable first home savings account (FHSA) income (see the
+T4FHSA slip)": a starting amount."""
+
+OTHER_FHSA_INCOME = CATALOG.declare("other_fhsa_income", Decimal, non_negative=True)
+"""Taxable FHSA income - other, T1 line 12906 "Taxable FHSA income - other (see the T4FHSA slip)": a
+starting amount."""
+
+OTHER_INCOME = CATALOG.declare("other_income", Decimal, non_negative=True)
+"""Other income, T1 line 13000 "Other income": a starting amount."""
+
+TAXABLE_SCHOLARSHIPS = CATALOG.declare("taxable_scholarships", Decimal, non_negative=True)
+"""Taxable scholarships, T1 line 13010 "Taxable scholarships, fellowships, bursaries and artists'
+project grants": a starting amount."""
+
+WORKERS_COMPENSATION_BENEFITS = CATALOG.declare(
+    "workers_compensation_benefits", Decimal, non_negative=True
+)
+"""Workers' compensation benefits, T1 line 14400 "Workers' compensation benefits (box 10 of the
+T5007 slip)": a starting amount."""
+
+SOCIAL_ASSISTANCE_PAYMENTS = CATALOG.declare(
+    "social_assistance_payments", Decimal, non_negative=True
+)
+"""Social assistance payments, T1 line 14500 "Social assistance payments": a starting amount."""
+
+NET_FEDERAL_SUPPLEMENTS = CATALOG.declare("net_federal_supplements", Decimal, non_negative=True)
+"""Net federal supplements paid, T1 line 14600 "Net federal supplements paid (box 21 of the T4A(OAS)
+slip)": a starting amount."""
+
+INCOME_SUPPORT_BENEFITS = CATALOG.declare("income_support_benefits", Decimal, non_negative=True)
+"""Income support benefits, T1 line 14700 "Add lines 29 to 31 (see line 25000 in Step 4).": the
+workers' compensation benefits, social assistance payments and net federal supplements."""
 
 UNUSED_RRSP_CONTRIBUTIONS = CATALOG.declare("unused_rrsp_contributions", Decimal, non_negative=True)
 """Unused RRSP contributions, Schedule 7 line 1 "Enter your unused RRSP contributions previously
@@ -530,12 +674,16 @@ own conditions.
 An eligible spouse is not modelled: a filer with one and no eligible dependant is computed with the
 amounts for no eligible spouse and no eligible dependant, which the form does not give them."""
 
+PROVINCIAL_CREDITS = CATALOG.declare("provincial_credits", Decimal, non_negative=True)
+"""Provincial or territorial credits, T1 line 165 and line 47900 "Provincial or territorial credits
+(complete Form 479, if it applies)": the Ontario credits, Form ON479 line 21."""
+
 TOTAL_CREDITS = CATALOG.declare("total_credits", Decimal, non_negative=True)
 """Total credits, T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": here line 150
-(43700) and line 155 (45300), in line order.
+(43700), line 155 (45300) and line 165 (47900), in line order.
 
-Not triggered by the returns modelled, or left to later work: the other lines from 151 to 165
-(lines 44000 to 47900, among them 44800 CPP overpayment and 45000 EI overpayment).
+Not triggered by the returns modelled, or left to later work: the other lines from 151 to 164
+(lines 44000 to 47600, among them 44800 CPP overpayment and 45000 EI overpayment).
 """
 
 REFUND_OR_BALANCE_OWING = CATALOG.declare("refund_or_balance_owing", Decimal)

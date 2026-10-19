@@ -86,7 +86,9 @@ description: >-
   refund. The LIFT credit (Schedule ON428-A) is 5.05% of the employment income,
   505, below its 875 maximum, less 5% of net income over 32500, nothing as 9935.00 is below
   it: 505, more than the Ontario tax after the reduction of zero, so the Ontario tax after
-  the LIFT credit is zero. A taxable income of 9935.00 is at or below the health premium chart's
+  the LIFT credit is zero. With chosen qualifying donations of 0, the community food program
+  donation tax credit for farmers (line 87) is 25% x 0 = 0 and the Ontario tax after it (line
+  88) is 0 less 0, zero. A taxable income of 9935.00 is at or below the health premium chart's
   first threshold of 20000, so the premium is zero and the Ontario tax is zero. The net
   federal tax is the federal tax after credits, zero, and the total payable is it plus the
   Ontario tax, zero. The Canada workers benefit (Schedule 6) with no eligible spouse or
@@ -94,13 +96,15 @@ description: >-
   at most 1633, less 15% of the adjusted family net income, the net income, over 26855,
   nothing as 9935.00 is below it: 1633; with one it would be 1890, at most 2813, less
   nothing over 30639: 1890. With 0 Schedule 6 eligible dependants the first applies: 1633.
-  The income tax deducted is a chosen 500, so the total credits are 500 plus the benefit,
-  2133, and the refund or balance owing is 0 less 2133: -2133, a refund. Every amount
-  computed from a rate, fraction, amount or chart on the forms is rounded half-up to the
-  cent, each line being a dollars-and-cents box; here that changes Form T778 line 6, the
-  federal and Ontario tax on taxable income and both forms' non-refundable tax credits. The
-  lines that only add, subtract, compare or choose take amounts already in cents, so the
-  refund or balance owing is in cents too.
+  With no fertility treatment expenses and no seniors' transit amount paid, the Ontario
+  credits (ON479 lines 1, 14, 18 and 21) and the provincial credits (T1 line 47900) are 0.
+  The income tax deducted is a chosen 500, so the total credits are 500 plus the benefit
+  plus the provincial credits, 2133, and the refund or balance owing is 0 less 2133: -2133,
+  a refund. Every amount computed from a rate, fraction, amount or chart on the forms is
+  rounded half-up to the cent, each line being a dollars-and-cents box; here that changes
+  Form T778 line 6, the federal and Ontario tax on taxable income and both forms'
+  non-refundable tax credits. The lines that only add, subtract, compare or choose take
+  amounts already in cents, so the refund or balance owing is in cents too.
 sources:
   - >-
     T1, Federal Worksheet, Schedule 3, Schedule 5, Schedule 6, Schedule 7, Schedule 8, ON428,
@@ -108,6 +112,33 @@ sources:
 inputs:
   ca/employment_income: "10000"
   ca/capital_gain: "0"
+  ca/other_employment_income: "0"
+  ca/old_age_security: "0"
+  ca/cpp_or_qpp_benefits: "0"
+  ca/other_pensions_and_superannuation: "0"
+  ca/elected_split_pension_amount: "0"
+  ca/universal_child_care_benefit: "0"
+  ca/ei_and_other_benefits: "0"
+  ca/t3_investment_income: "0"
+  ca/t5_investment_income: "0"
+  ca/t5013_investment_income: "0"
+  ca/investment_income_credited_not_received: "0"
+  ca/tax_refund_interest: "0"
+  ca/foreign_investment_income: "0"
+  ca/investment_income_without_a_slip: "0"
+  ca/investment_royalties: "0"
+  ca/investment_income_reported_in_previous_years: "0"
+  ca/net_partnership_income: "0"
+  ca/rdsp_income: "0"
+  ca/taxable_support_payments: "0"
+  ca/rrsp_income: "0"
+  ca/fhsa_income: "0"
+  ca/other_fhsa_income: "0"
+  ca/other_income: "0"
+  ca/taxable_scholarships: "0"
+  ca/workers_compensation_benefits: "0"
+  ca/social_assistance_payments: "0"
+  ca/net_federal_supplements: "0"
   ca/unused_rrsp_contributions: "0"
   ca/rrsp_contributions: "0"
   ca/rrsp_deduction_limit: "1800"
@@ -124,8 +155,14 @@ inputs:
   ca/children_seven_to_sixteen: "0"
   ca/cwb_eligible_dependants: "0"
   ca/income_tax_deducted: "500"
+  ca-on/fertility_expenses: "0"
+  ca-on/seniors_transit_paid: "0"
+  ca-on/community_food_program_donations: "0"
 expected:
   ca/taxable_capital_gains: "0"
+  ca/investment_income_before_prior_years: "0"
+  ca/interest_and_other_investment_income: "0"
+  ca/income_support_benefits: "0"
   ca/total_income: "10000"
   ca/cpp_base_contributions: "321.75"
   ca/cpp_first_additional_contributions: "65.00"
@@ -178,6 +215,8 @@ expected:
   ca-on/lift_reduction: "0"
   ca-on/lift_credit: "505"
   ca-on/ontario_tax_after_lift_credit: "0"
+  ca-on/community_food_program_credit: "0"
+  ca-on/ontario_tax_after_food_credit: "0"
   ca-on/ontario_health_premium: "0"
   ca-on/ontario_tax: "0"
   ca/net_federal_tax: "0"
@@ -191,6 +230,13 @@ expected:
   ca/cwb_reduction_with_dependant: "0"
   ca/canada_workers_benefit_with_dependant: "1890.00"
   ca/canada_workers_benefit: "1633"
+  ca-on/fertility_credit_before_maximum: "0"
+  ca-on/fertility_credit: "0"
+  ca-on/seniors_transit_amount_paid_at_most_maximum: "0"
+  ca-on/seniors_transit_credit: "0"
+  ca-on/ontario_credits_subtotal: "0"
+  ca-on/ontario_credits: "0"
+  ca/provincial_credits: "0"
   ca/total_credits: "2133"
   ca/refund_or_balance_owing: "-2133"
 """

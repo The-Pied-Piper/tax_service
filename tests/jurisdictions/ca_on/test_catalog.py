@@ -18,12 +18,17 @@ from app.domain.artifact import ArtifactCatalog, ArtifactKind, ArtifactRegistry
 from app.jurisdictions.ca_on.catalog import (
     BASIC_PERSONAL_AMOUNT,
     CATALOG,
+    COMMUNITY_FOOD_PROGRAM_CREDIT,
+    COMMUNITY_FOOD_PROGRAM_DONATIONS,
     DEPENDANTS,
     DEPENDENT_CHILDREN,
     ELIGIBLE_DEPENDANT_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
     ELIGIBLE_DEPENDANT_BASE,
+    FERTILITY_CREDIT,
+    FERTILITY_CREDIT_BEFORE_MAXIMUM,
+    FERTILITY_EXPENSES,
     LIFT_CREDIT,
     LIFT_CREDIT_BEFORE_MAXIMUM,
     LIFT_MAXIMUM_CREDIT,
@@ -31,14 +36,20 @@ from app.jurisdictions.ca_on.catalog import (
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     ONTARIO_BASIC_TAX,
+    ONTARIO_CREDITS,
+    ONTARIO_CREDITS_SUBTOTAL,
     ONTARIO_HEALTH_PREMIUM,
     ONTARIO_SURTAX,
     ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_AFTER_FOOD_CREDIT,
     ONTARIO_TAX_AFTER_LIFT_CREDIT,
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
+    SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
+    SENIORS_TRANSIT_CREDIT,
+    SENIORS_TRANSIT_PAID,
     TAX_REDUCTION_AMOUNTS,
     TAX_REDUCTION_BASIC,
     TAX_REDUCTION_FOR_CHILDREN,
@@ -72,8 +83,19 @@ REGISTERED = frozenset(
         "ca-on/lift_reduction",
         "ca-on/lift_credit",
         "ca-on/ontario_tax_after_lift_credit",
+        "ca-on/community_food_program_donations",
+        "ca-on/community_food_program_credit",
+        "ca-on/ontario_tax_after_food_credit",
         "ca-on/ontario_health_premium",
         "ca-on/ontario_tax",
+        "ca-on/fertility_expenses",
+        "ca-on/fertility_credit_before_maximum",
+        "ca-on/fertility_credit",
+        "ca-on/seniors_transit_paid",
+        "ca-on/seniors_transit_amount_paid_at_most_maximum",
+        "ca-on/seniors_transit_credit",
+        "ca-on/ontario_credits_subtotal",
+        "ca-on/ontario_credits",
     }
 )
 # ON428 lines 75 (line 60969) and 76 (line 60970): the numbers of dependent children and of
@@ -131,8 +153,24 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/lift_reduction") is LIFT_REDUCTION
     assert registry.get("ca-on/lift_credit") is LIFT_CREDIT
     assert registry.get("ca-on/ontario_tax_after_lift_credit") is ONTARIO_TAX_AFTER_LIFT_CREDIT
+    assert (
+        registry.get("ca-on/community_food_program_donations") is COMMUNITY_FOOD_PROGRAM_DONATIONS
+    )
+    assert registry.get("ca-on/community_food_program_credit") is COMMUNITY_FOOD_PROGRAM_CREDIT
+    assert registry.get("ca-on/ontario_tax_after_food_credit") is ONTARIO_TAX_AFTER_FOOD_CREDIT
     assert registry.get("ca-on/ontario_health_premium") is ONTARIO_HEALTH_PREMIUM
     assert registry.get("ca-on/ontario_tax") is ONTARIO_TAX
+    assert registry.get("ca-on/fertility_expenses") is FERTILITY_EXPENSES
+    assert registry.get("ca-on/fertility_credit_before_maximum") is FERTILITY_CREDIT_BEFORE_MAXIMUM
+    assert registry.get("ca-on/fertility_credit") is FERTILITY_CREDIT
+    assert registry.get("ca-on/seniors_transit_paid") is SENIORS_TRANSIT_PAID
+    assert (
+        registry.get("ca-on/seniors_transit_amount_paid_at_most_maximum")
+        is SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM
+    )
+    assert registry.get("ca-on/seniors_transit_credit") is SENIORS_TRANSIT_CREDIT
+    assert registry.get("ca-on/ontario_credits_subtotal") is ONTARIO_CREDITS_SUBTOTAL
+    assert registry.get("ca-on/ontario_credits") is ONTARIO_CREDITS
 
 
 def test_every_registered_kind_but_the_counts_is_money_in_the_package_namespace(

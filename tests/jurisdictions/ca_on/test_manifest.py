@@ -51,6 +51,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_BASE_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_OR_QPP_BENEFITS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
@@ -60,20 +61,40 @@ from app.jurisdictions.ca.catalog import (
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DEPENDANT_NET_INCOME,
+    EI_AND_OTHER_BENEFITS,
     EI_PREMIUMS,
+    ELECTED_SPLIT_PENSION_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANTS,
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
+    FHSA_INCOME,
+    FOREIGN_INVESTMENT_INCOME,
+    INCOME_SUPPORT_BENEFITS,
     INCOME_TAX_DEDUCTED,
     INFIRM_CHILDREN,
     INFIRM_CHILDREN_AMOUNT,
+    INTEREST_AND_OTHER_INVESTMENT_INCOME,
+    INVESTMENT_INCOME_BEFORE_PRIOR_YEARS,
+    INVESTMENT_INCOME_CREDITED_NOT_RECEIVED,
+    INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
+    INVESTMENT_INCOME_WITHOUT_A_SLIP,
+    INVESTMENT_ROYALTIES,
+    NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
     NET_INCOME,
+    NET_PARTNERSHIP_INCOME,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
+    OLD_AGE_SECURITY,
+    OTHER_EMPLOYMENT_INCOME,
+    OTHER_FHSA_INCOME,
+    OTHER_INCOME,
+    OTHER_PENSIONS_AND_SUPERANNUATION,
+    PROVINCIAL_CREDITS,
+    RDSP_INCOME,
     REFUND_OR_BALANCE_OWING,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
@@ -81,35 +102,56 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION,
     RRSP_DEDUCTION_LIMIT,
     RRSP_DEDUCTION_MAXIMUM,
+    RRSP_INCOME,
+    SOCIAL_ASSISTANCE_PAYMENTS,
+    T3_INVESTMENT_INCOME,
+    T5_INVESTMENT_INCOME,
+    T5013_INVESTMENT_INCOME,
+    TAX_REFUND_INTEREST,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
+    TAXABLE_SCHOLARSHIPS,
+    TAXABLE_SUPPORT_PAYMENTS,
     TOTAL_CREDITS,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
     UNION_DUES,
+    UNIVERSAL_CHILD_CARE_BENEFIT,
     UNUSED_RRSP_CONTRIBUTIONS,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
+    WORKERS_COMPENSATION_BENEFITS,
     WORKING_INCOME,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
+    COMMUNITY_FOOD_PROGRAM_CREDIT,
+    COMMUNITY_FOOD_PROGRAM_DONATIONS,
     DEPENDANTS,
     DEPENDENT_CHILDREN,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
     ELIGIBLE_DEPENDANT_BASE,
+    FERTILITY_CREDIT,
+    FERTILITY_CREDIT_BEFORE_MAXIMUM,
+    FERTILITY_EXPENSES,
     LIFT_CREDIT,
     LIFT_CREDIT_BEFORE_MAXIMUM,
     LIFT_MAXIMUM_CREDIT,
     LIFT_REDUCTION,
     ONTARIO_BASIC_TAX,
+    ONTARIO_CREDITS,
+    ONTARIO_CREDITS_SUBTOTAL,
     ONTARIO_HEALTH_PREMIUM,
     ONTARIO_SURTAX,
     ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_AFTER_FOOD_CREDIT,
     ONTARIO_TAX_AFTER_LIFT_CREDIT,
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
+    SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
+    SENIORS_TRANSIT_CREDIT,
+    SENIORS_TRANSIT_PAID,
     TAX_REDUCTION_AMOUNTS,
     TAX_REDUCTION_BASIC,
     TAX_REDUCTION_FOR_CHILDREN,
@@ -140,6 +182,33 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
         {
             "ca/employment_income",
             "ca/capital_gain",
+            "ca/other_employment_income",
+            "ca/old_age_security",
+            "ca/cpp_or_qpp_benefits",
+            "ca/other_pensions_and_superannuation",
+            "ca/elected_split_pension_amount",
+            "ca/universal_child_care_benefit",
+            "ca/ei_and_other_benefits",
+            "ca/t3_investment_income",
+            "ca/t5_investment_income",
+            "ca/t5013_investment_income",
+            "ca/investment_income_credited_not_received",
+            "ca/tax_refund_interest",
+            "ca/foreign_investment_income",
+            "ca/investment_income_without_a_slip",
+            "ca/investment_royalties",
+            "ca/investment_income_reported_in_previous_years",
+            "ca/net_partnership_income",
+            "ca/rdsp_income",
+            "ca/taxable_support_payments",
+            "ca/rrsp_income",
+            "ca/fhsa_income",
+            "ca/other_fhsa_income",
+            "ca/other_income",
+            "ca/taxable_scholarships",
+            "ca/workers_compensation_benefits",
+            "ca/social_assistance_payments",
+            "ca/net_federal_supplements",
             "ca/unused_rrsp_contributions",
             "ca/rrsp_contributions",
             "ca/rrsp_deduction_limit",
@@ -156,6 +225,9 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/children_seven_to_sixteen",
             "ca/cwb_eligible_dependants",
             "ca/income_tax_deducted",
+            "ca-on/fertility_expenses",
+            "ca-on/seniors_transit_paid",
+            "ca-on/community_food_program_donations",
         }
     )
     # T1 line 167, the refund or balance owing, and Schedule 7 line 23, what the return produces
@@ -171,10 +243,83 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"base": "ca/capital_gain"},
             produces={"output": "ca/taxable_capital_gains"},
         ),
+        # T1 Step 2 line 10 (12100) "Interest and other investment income (use Federal
+        # Worksheet)": the Federal Worksheet's "Line 12100 - Interest and other investment
+        # income" line 9 "Add lines 1 to 8.", in line order, then line 11 "Line 9 minus line
+        # 10. Enter this amount on line 12100 of your return." with line 10 "Interest and other
+        # investment income, included on line 9, received and reported in previous years".
         CapabilitySelection(
             name="core/sum",
             params={},
-            consumes={"parts": ("ca/employment_income", "ca/taxable_capital_gains")},
+            consumes={
+                "parts": (
+                    "ca/t3_investment_income",
+                    "ca/t5_investment_income",
+                    "ca/t5013_investment_income",
+                    "ca/investment_income_credited_not_received",
+                    "ca/tax_refund_interest",
+                    "ca/foreign_investment_income",
+                    "ca/investment_income_without_a_slip",
+                    "ca/investment_royalties",
+                )
+            },
+            produces={"output": "ca/investment_income_before_prior_years"},
+        ),
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={
+                "amount": "ca/investment_income_before_prior_years",
+                "less": "ca/investment_income_reported_in_previous_years",
+            },
+            produces={"output": "ca/interest_and_other_investment_income"},
+        ),
+        # T1 line 32 and line 14700 "Add lines 29 to 31 (see line 25000 in Step 4).": workers'
+        # compensation benefits (14400), social assistance payments (14500) and net federal
+        # supplements paid (14600), in line order.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/workers_compensation_benefits",
+                    "ca/social_assistance_payments",
+                    "ca/net_federal_supplements",
+                )
+            },
+            produces={"output": "ca/income_support_benefits"},
+        ),
+        # T1 line 33 and line 15000 "Line 28 plus line 32 Total income": every income line the
+        # return lists, in line order (lines 1 to 20, here with the taxable capital gains of
+        # line 14 and the taxable support payments of line 15, then line 32); dividends (lines
+        # 12000 and 12010), rental income (line 13) and self-employment income (lines 22 to 26)
+        # are not wired yet.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/employment_income",
+                    "ca/other_employment_income",
+                    "ca/old_age_security",
+                    "ca/cpp_or_qpp_benefits",
+                    "ca/other_pensions_and_superannuation",
+                    "ca/elected_split_pension_amount",
+                    "ca/universal_child_care_benefit",
+                    "ca/ei_and_other_benefits",
+                    "ca/interest_and_other_investment_income",
+                    "ca/net_partnership_income",
+                    "ca/rdsp_income",
+                    "ca/taxable_capital_gains",
+                    "ca/taxable_support_payments",
+                    "ca/rrsp_income",
+                    "ca/fhsa_income",
+                    "ca/other_fhsa_income",
+                    "ca/other_income",
+                    "ca/taxable_scholarships",
+                    "ca/income_support_benefits",
+                )
+            },
             produces={"output": "ca/total_income"},
         ),
         # Schedule 8 Part 3, each contribution on employment income: line 11 (base, 4.95% of the
@@ -651,6 +796,26 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"amount": "ca-on/ontario_tax_after_reduction", "less": "ca-on/lift_credit"},
             produces={"output": "ca-on/ontario_tax_after_lift_credit"},
         ),
+        # ON428 line 87 and line 62150 "Enter the amount of qualifying donations that have also
+        # been claimed as a charitable donation." "multiplied by 25%", under "Community food
+        # program donation tax credit for farmers:": the donations are a caller input, taken as
+        # entered.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/community_food_program_rate"},
+            consumes={"base": "ca-on/community_food_program_donations"},
+            produces={"output": "ca-on/community_food_program_credit"},
+        ),
+        # ON428 line 88 "Line 86 minus line 87 (if negative, enter "0")".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/ontario_tax_after_lift_credit",
+                "less": "ca-on/community_food_program_credit",
+            },
+            produces={"output": "ca-on/ontario_tax_after_food_credit"},
+        ),
         # ON428 line 89 "Ontario health premium (complete the chart below)": the chart's tiers on
         # line 1 "Enter your taxable income from line 26000 of your return", each the previous
         # plateau plus a rate on the income over its threshold, at most the next plateau.
@@ -668,7 +833,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             name="core/sum",
             params={},
             consumes={
-                "parts": ("ca-on/ontario_tax_after_lift_credit", "ca-on/ontario_health_premium")
+                "parts": ("ca-on/ontario_tax_after_food_credit", "ca-on/ontario_health_premium")
             },
             produces={"output": "ca-on/ontario_tax"},
         ),
@@ -786,13 +951,76 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca/canada_workers_benefit"},
         ),
-        # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700) and
-        # line 155 (45300) "Canada workers benefit (CWB) (complete Schedule 6)", in line order,
-        # as the other lines are not triggered.
+        # Form ON479 line 1 and line 61268 "Eligible medical expenses for fertility treatment
+        # multiplied by 25% (maximum $5,000) =": the rate on the expenses, before its maximum.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/fertility_credit_rate"},
+            consumes={"base": "ca-on/fertility_expenses"},
+            produces={"output": "ca-on/fertility_credit_before_maximum"},
+        ),
+        # Line 1's "(maximum $5,000)", printed after the percentage, so it caps the credit.
+        CapabilitySelection(
+            name="core/capped_amount",
+            params={"cap": "ca-on/fertility_credit_maximum"},
+            consumes={"base": "ca-on/fertility_credit_before_maximum"},
+            produces={"output": "ca-on/fertility_credit"},
+        ),
+        # Line 14 "Amount paid in the year for eligible seniors' use of Ontario public transit
+        # services (maximum $3,000) Line 63100 multiplied by 15% =": the "(maximum $3,000)" is
+        # printed before the percentage, so it caps the amount paid.
+        CapabilitySelection(
+            name="core/capped_amount",
+            params={"cap": "ca-on/seniors_transit_maximum"},
+            consumes={"base": "ca-on/seniors_transit_paid"},
+            produces={"output": "ca-on/seniors_transit_amount_paid_at_most_maximum"},
+        ),
+        # Line 14's "multiplied by 15% =", on the capped amount.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/seniors_transit_rate"},
+            consumes={"base": "ca-on/seniors_transit_amount_paid_at_most_maximum"},
+            produces={"output": "ca-on/seniors_transit_credit"},
+        ),
+        # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1 and 14, in line order, as lines
+        # 2, 13 and 16 are not triggered and line 17 (the focused flow-through share credit) is
+        # not yet computed.
         CapabilitySelection(
             name="core/sum",
             params={},
-            consumes={"parts": ("ca/income_tax_deducted", "ca/canada_workers_benefit")},
+            consumes={"parts": ("ca-on/fertility_credit", "ca-on/seniors_transit_credit")},
+            produces={"output": "ca-on/ontario_credits_subtotal"},
+        ),
+        # Line 21 "Line 19 plus line 20 Enter this amount online 47900 of your return. Ontario
+        # credits =": line 19 "Amount from line 18 of the previous page" carries line 18, and
+        # line 20 (the co-operative education credit) is not triggered.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca-on/ontario_credits_subtotal",)},
+            produces={"output": "ca-on/ontario_credits"},
+        ),
+        # T1 line 165 and line 47900 "Provincial or territorial credits (complete Form 479, if it
+        # applies)": ON479 line 21, the Ontario credits.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca-on/ontario_credits",)},
+            produces={"output": "ca/provincial_credits"},
+        ),
+        # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700), line
+        # 155 (45300) "Canada workers benefit (CWB) (complete Schedule 6)" and line 165 (47900), in
+        # line order, as the other lines are not triggered.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/income_tax_deducted",
+                    "ca/canada_workers_benefit",
+                    "ca/provincial_credits",
+                )
+            },
             produces={"output": "ca/total_credits"},
         ),
         # T1 line 167 "Line 149 minus line 166 ... Refund or balance owing": not floored, so a
@@ -804,7 +1032,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 68
+    assert len(found.capabilities) == 80
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -814,7 +1042,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 68
+    assert len(composition.order) == 80
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -840,7 +1068,59 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         ),
         (
             Sum,
-            frozenset({EMPLOYMENT_INCOME, TAXABLE_CAPITAL_GAINS}),
+            frozenset(
+                {
+                    T3_INVESTMENT_INCOME,
+                    T5_INVESTMENT_INCOME,
+                    T5013_INVESTMENT_INCOME,
+                    INVESTMENT_INCOME_CREDITED_NOT_RECEIVED,
+                    TAX_REFUND_INTEREST,
+                    FOREIGN_INVESTMENT_INCOME,
+                    INVESTMENT_INCOME_WITHOUT_A_SLIP,
+                    INVESTMENT_ROYALTIES,
+                }
+            ),
+            frozenset({INVESTMENT_INCOME_BEFORE_PRIOR_YEARS}),
+        ),
+        (
+            Subtract,
+            frozenset(
+                {INVESTMENT_INCOME_BEFORE_PRIOR_YEARS, INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS}
+            ),
+            frozenset({INTEREST_AND_OTHER_INVESTMENT_INCOME}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {WORKERS_COMPENSATION_BENEFITS, SOCIAL_ASSISTANCE_PAYMENTS, NET_FEDERAL_SUPPLEMENTS}
+            ),
+            frozenset({INCOME_SUPPORT_BENEFITS}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {
+                    EMPLOYMENT_INCOME,
+                    OTHER_EMPLOYMENT_INCOME,
+                    OLD_AGE_SECURITY,
+                    CPP_OR_QPP_BENEFITS,
+                    OTHER_PENSIONS_AND_SUPERANNUATION,
+                    ELECTED_SPLIT_PENSION_AMOUNT,
+                    UNIVERSAL_CHILD_CARE_BENEFIT,
+                    EI_AND_OTHER_BENEFITS,
+                    INTEREST_AND_OTHER_INVESTMENT_INCOME,
+                    NET_PARTNERSHIP_INCOME,
+                    RDSP_INCOME,
+                    TAXABLE_CAPITAL_GAINS,
+                    TAXABLE_SUPPORT_PAYMENTS,
+                    RRSP_INCOME,
+                    FHSA_INCOME,
+                    OTHER_FHSA_INCOME,
+                    OTHER_INCOME,
+                    TAXABLE_SCHOLARSHIPS,
+                    INCOME_SUPPORT_BENEFITS,
+                }
+            ),
             frozenset({TOTAL_INCOME}),
         ),
         (
@@ -1037,10 +1317,20 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({ONTARIO_TAX_AFTER_REDUCTION, LIFT_CREDIT}),
             frozenset({ONTARIO_TAX_AFTER_LIFT_CREDIT}),
         ),
+        (
+            ApplyRate,
+            frozenset({COMMUNITY_FOOD_PROGRAM_DONATIONS}),
+            frozenset({COMMUNITY_FOOD_PROGRAM_CREDIT}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({ONTARIO_TAX_AFTER_LIFT_CREDIT, COMMUNITY_FOOD_PROGRAM_CREDIT}),
+            frozenset({ONTARIO_TAX_AFTER_FOOD_CREDIT}),
+        ),
         (TieredSurcharge, frozenset({TAXABLE_INCOME}), frozenset({ONTARIO_HEALTH_PREMIUM})),
         (
             Sum,
-            frozenset({ONTARIO_TAX_AFTER_LIFT_CREDIT, ONTARIO_HEALTH_PREMIUM}),
+            frozenset({ONTARIO_TAX_AFTER_FOOD_CREDIT, ONTARIO_HEALTH_PREMIUM}),
             frozenset({ONTARIO_TAX}),
         ),
         (Sum, frozenset({FEDERAL_TAX_AFTER_CREDITS}), frozenset({NET_FEDERAL_TAX})),
@@ -1088,9 +1378,28 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             ),
             frozenset({CANADA_WORKERS_BENEFIT}),
         ),
+        (ApplyRate, frozenset({FERTILITY_EXPENSES}), frozenset({FERTILITY_CREDIT_BEFORE_MAXIMUM})),
+        (CappedAmount, frozenset({FERTILITY_CREDIT_BEFORE_MAXIMUM}), frozenset({FERTILITY_CREDIT})),
+        (
+            CappedAmount,
+            frozenset({SENIORS_TRANSIT_PAID}),
+            frozenset({SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM}),
+        ),
+        (
+            ApplyRate,
+            frozenset({SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM}),
+            frozenset({SENIORS_TRANSIT_CREDIT}),
+        ),
         (
             Sum,
-            frozenset({INCOME_TAX_DEDUCTED, CANADA_WORKERS_BENEFIT}),
+            frozenset({FERTILITY_CREDIT, SENIORS_TRANSIT_CREDIT}),
+            frozenset({ONTARIO_CREDITS_SUBTOTAL}),
+        ),
+        (Sum, frozenset({ONTARIO_CREDITS_SUBTOTAL}), frozenset({ONTARIO_CREDITS})),
+        (Sum, frozenset({ONTARIO_CREDITS}), frozenset({PROVINCIAL_CREDITS})),
+        (
+            Sum,
+            frozenset({INCOME_TAX_DEDUCTED, CANADA_WORKERS_BENEFIT, PROVINCIAL_CREDITS}),
             frozenset({TOTAL_CREDITS}),
         ),
         (

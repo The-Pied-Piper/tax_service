@@ -2,7 +2,11 @@
 
 The service is the one the composition root builds (`build_tax_computation`): the real YAML sources
 over the jurisdiction packages and the shared registries. Return A's amounts (employment income
-110000 and a capital gain of 20000 to total income 120000; the CPP contributions computed from
+110000 and a capital gain of 20000 to total income 120000, the other Step 2 lines being 0 (the
+Federal Worksheet's line 9, the eight sources of line 12100 added, less line 10, the part reported
+in previous years, as line 11 and so the interest and other investment income, line 12100; lines
+14400, 14500 and 14600 added to line 14700; and every income line, in line order, summed to line
+15000); the CPP contributions computed from
 employment income by Schedule 8's tiers, each at its maximum: base 3356.10, first additional 678.00
 and second additional 396.00, the enhanced contributions 1074.00; the EI premiums computed from
 employment income, at the maximum 1077.48; the RRSP contributions available to deduct of 1926, no
@@ -30,21 +34,22 @@ line 69, and with no dependent children and no dependants the Ontario tax reduct
 tax reduction of 0 (line 80), to the Ontario tax after the reduction (line 81); Schedule ON428-A's
 LIFT credit, 5.05% of employment income, 5555, at most 875 (lines 5 and 14), less 5% of net income
 over 32500, 4125 (line 19), not below zero, 0 (line 20, ON428 line 85), taken off the Ontario tax
-after the reduction, not below zero (line 86); and the Ontario health premium on taxable income by
-the chart of line 89, 750, added to it to the Ontario tax of line 90; and on the T1, the federal tax
-after credits carried to the net federal tax (line 42000), added to the Ontario tax (line 42800) to
-the total payable (line 43500); Schedule 6's Canada workers benefit, computed for each family
-status, from the working income of 110000 (line 5, employment income), 27% of it over 3000 at most
-1633 (line 22), less 15% of the adjusted family net income (line 15, net income) of 115000 over
-26855, 13221.75 (line 27), not below zero, 0 (line 28), and with an eligible dependant 27% of the
-working income at most 2813, less 15% of the adjusted family net income over 30639, 12654.15, not
-below zero, 0, the count of 0 Schedule 6 eligible dependants (line 38100) choosing the first (T1
-line 45300); less the total credits (line 48200), here the chosen income tax
-deducted of 25000 (line 43700) plus that benefit, to the refund or balance owing (line 167),
-897.15, positive so a balance owing; every line computed from a dataset rounded half-up to the
-cent) are checked from the files under `returns/` by `test_worked_returns.py`, as are Returns B,
-C, D, E and F; this module pins which capability produces each line, the order, and the trace that
-explains them.
+after the reduction, not below zero (line 86), less the community food program donation tax credit
+for farmers, 25% of the qualifying donations (line 87), here 0 for donations of 0, not below zero
+(line 88); and the Ontario health premium on taxable income by the chart of line 89, 750, added to
+it to the Ontario tax of line 90; and on the T1, the federal tax after credits carried to the net
+federal tax (line 42000), added to the Ontario tax (line 42800) to the total payable (line 43500);
+Schedule 6's Canada workers benefit, computed for each family status, from the working income of
+110000 (line 5, employment income), 27% of it over 3000 at most 1633 (line 22), less 15% of the
+adjusted family net income (line 15, net income) of 115000 over 26855, 13221.75 (line 27), not below
+zero, 0 (line 28), and with an eligible dependant 27% of the working income at most 2813, less 15%
+of the adjusted family net income over 30639, 12654.15, not below zero, 0, the count of 0 Schedule 6
+eligible dependants (line 38100) choosing the first (T1 line 45300); less the total credits (line
+48200), here the chosen income tax deducted of 25000 (line 43700) plus that benefit, to the refund
+or balance owing (line 167), 897.15, positive so a balance owing; every line computed from a dataset
+rounded half-up to the cent) are checked from the files under `returns/` by
+`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H and I; this module pins which
+capability produces each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
@@ -74,7 +79,7 @@ from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.tapered_amount import TaperedAmount
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.capabilities.times_count import TimesCount
-from app.domain.errors import InputAboveBoundError
+from app.domain.errors import CapabilityContractError, InputAboveBoundError
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.parameters.amount import Amount
 from app.domain.parameters.contribution_tier import ContributionTier
@@ -127,6 +132,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_BASE_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_OR_QPP_BENEFITS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
@@ -136,20 +142,40 @@ from app.jurisdictions.ca.catalog import (
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DEPENDANT_NET_INCOME,
+    EI_AND_OTHER_BENEFITS,
     EI_PREMIUMS,
+    ELECTED_SPLIT_PENSION_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANTS,
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
+    FHSA_INCOME,
+    FOREIGN_INVESTMENT_INCOME,
+    INCOME_SUPPORT_BENEFITS,
     INCOME_TAX_DEDUCTED,
     INFIRM_CHILDREN,
     INFIRM_CHILDREN_AMOUNT,
+    INTEREST_AND_OTHER_INVESTMENT_INCOME,
+    INVESTMENT_INCOME_BEFORE_PRIOR_YEARS,
+    INVESTMENT_INCOME_CREDITED_NOT_RECEIVED,
+    INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
+    INVESTMENT_INCOME_WITHOUT_A_SLIP,
+    INVESTMENT_ROYALTIES,
+    NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
     NET_INCOME,
+    NET_PARTNERSHIP_INCOME,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
+    OLD_AGE_SECURITY,
+    OTHER_EMPLOYMENT_INCOME,
+    OTHER_FHSA_INCOME,
+    OTHER_INCOME,
+    OTHER_PENSIONS_AND_SUPERANNUATION,
+    PROVINCIAL_CREDITS,
+    RDSP_INCOME,
     REFUND_OR_BALANCE_OWING,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
@@ -157,35 +183,56 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION,
     RRSP_DEDUCTION_LIMIT,
     RRSP_DEDUCTION_MAXIMUM,
+    RRSP_INCOME,
+    SOCIAL_ASSISTANCE_PAYMENTS,
+    T3_INVESTMENT_INCOME,
+    T5_INVESTMENT_INCOME,
+    T5013_INVESTMENT_INCOME,
+    TAX_REFUND_INTEREST,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
+    TAXABLE_SCHOLARSHIPS,
+    TAXABLE_SUPPORT_PAYMENTS,
     TOTAL_CREDITS,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
     UNION_DUES,
+    UNIVERSAL_CHILD_CARE_BENEFIT,
     UNUSED_RRSP_CONTRIBUTIONS,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
+    WORKERS_COMPENSATION_BENEFITS,
     WORKING_INCOME,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
+    COMMUNITY_FOOD_PROGRAM_CREDIT,
+    COMMUNITY_FOOD_PROGRAM_DONATIONS,
     DEPENDANTS,
     DEPENDENT_CHILDREN,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
     ELIGIBLE_DEPENDANT_BASE,
+    FERTILITY_CREDIT,
+    FERTILITY_CREDIT_BEFORE_MAXIMUM,
+    FERTILITY_EXPENSES,
     LIFT_CREDIT,
     LIFT_CREDIT_BEFORE_MAXIMUM,
     LIFT_MAXIMUM_CREDIT,
     LIFT_REDUCTION,
     ONTARIO_BASIC_TAX,
+    ONTARIO_CREDITS,
+    ONTARIO_CREDITS_SUBTOTAL,
     ONTARIO_HEALTH_PREMIUM,
     ONTARIO_SURTAX,
     ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_AFTER_FOOD_CREDIT,
     ONTARIO_TAX_AFTER_LIFT_CREDIT,
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
+    SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
+    SENIORS_TRANSIT_CREDIT,
+    SENIORS_TRANSIT_PAID,
     TAX_REDUCTION_AMOUNTS,
     TAX_REDUCTION_BASIC,
     TAX_REDUCTION_FOR_CHILDREN,
@@ -215,6 +262,33 @@ def compute(
     rrsp_amount_deducted: str,
     union_dues: str,
     *,
+    other_employment_income: str = "0",
+    old_age_security: str = "0",
+    cpp_or_qpp_benefits: str = "0",
+    other_pensions_and_superannuation: str = "0",
+    elected_split_pension_amount: str = "0",
+    universal_child_care_benefit: str = "0",
+    ei_and_other_benefits: str = "0",
+    t3_investment_income: str = "0",
+    t5_investment_income: str = "0",
+    t5013_investment_income: str = "0",
+    investment_income_credited_not_received: str = "0",
+    tax_refund_interest: str = "0",
+    foreign_investment_income: str = "0",
+    investment_income_without_a_slip: str = "0",
+    investment_royalties: str = "0",
+    investment_income_reported_in_previous_years: str = "0",
+    net_partnership_income: str = "0",
+    rdsp_income: str = "0",
+    taxable_support_payments: str = "0",
+    rrsp_income: str = "0",
+    fhsa_income: str = "0",
+    other_fhsa_income: str = "0",
+    other_income: str = "0",
+    taxable_scholarships: str = "0",
+    workers_compensation_benefits: str = "0",
+    social_assistance_payments: str = "0",
+    net_federal_supplements: str = "0",
     dependent_children: int = 0,
     dependants: int = 0,
     eligible_dependants: int = 0,
@@ -226,12 +300,47 @@ def compute(
     children_seven_to_sixteen: int = 0,
     cwb_eligible_dependants: int = 0,
     income_tax_deducted: str = "0",
+    fertility_expenses: str = "0",
+    seniors_transit_paid: str = "0",
+    community_food_program_donations: str = "0",
 ) -> Worksheet:
     return service().compute(
         CA_ON,
         2025,
         Artifact(EMPLOYMENT_INCOME, D(employment_income)),
         Artifact(CAPITAL_GAIN, D(capital_gain)),
+        Artifact(OTHER_EMPLOYMENT_INCOME, D(other_employment_income)),
+        Artifact(OLD_AGE_SECURITY, D(old_age_security)),
+        Artifact(CPP_OR_QPP_BENEFITS, D(cpp_or_qpp_benefits)),
+        Artifact(OTHER_PENSIONS_AND_SUPERANNUATION, D(other_pensions_and_superannuation)),
+        Artifact(ELECTED_SPLIT_PENSION_AMOUNT, D(elected_split_pension_amount)),
+        Artifact(UNIVERSAL_CHILD_CARE_BENEFIT, D(universal_child_care_benefit)),
+        Artifact(EI_AND_OTHER_BENEFITS, D(ei_and_other_benefits)),
+        Artifact(T3_INVESTMENT_INCOME, D(t3_investment_income)),
+        Artifact(T5_INVESTMENT_INCOME, D(t5_investment_income)),
+        Artifact(T5013_INVESTMENT_INCOME, D(t5013_investment_income)),
+        Artifact(
+            INVESTMENT_INCOME_CREDITED_NOT_RECEIVED, D(investment_income_credited_not_received)
+        ),
+        Artifact(TAX_REFUND_INTEREST, D(tax_refund_interest)),
+        Artifact(FOREIGN_INVESTMENT_INCOME, D(foreign_investment_income)),
+        Artifact(INVESTMENT_INCOME_WITHOUT_A_SLIP, D(investment_income_without_a_slip)),
+        Artifact(INVESTMENT_ROYALTIES, D(investment_royalties)),
+        Artifact(
+            INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
+            D(investment_income_reported_in_previous_years),
+        ),
+        Artifact(NET_PARTNERSHIP_INCOME, D(net_partnership_income)),
+        Artifact(RDSP_INCOME, D(rdsp_income)),
+        Artifact(TAXABLE_SUPPORT_PAYMENTS, D(taxable_support_payments)),
+        Artifact(RRSP_INCOME, D(rrsp_income)),
+        Artifact(FHSA_INCOME, D(fhsa_income)),
+        Artifact(OTHER_FHSA_INCOME, D(other_fhsa_income)),
+        Artifact(OTHER_INCOME, D(other_income)),
+        Artifact(TAXABLE_SCHOLARSHIPS, D(taxable_scholarships)),
+        Artifact(WORKERS_COMPENSATION_BENEFITS, D(workers_compensation_benefits)),
+        Artifact(SOCIAL_ASSISTANCE_PAYMENTS, D(social_assistance_payments)),
+        Artifact(NET_FEDERAL_SUPPLEMENTS, D(net_federal_supplements)),
         Artifact(UNUSED_RRSP_CONTRIBUTIONS, D(unused_rrsp_contributions)),
         Artifact(RRSP_CONTRIBUTIONS, D(rrsp_contributions)),
         Artifact(RRSP_DEDUCTION_LIMIT, D(rrsp_deduction_limit)),
@@ -248,6 +357,9 @@ def compute(
         Artifact(CHILDREN_SEVEN_TO_SIXTEEN, children_seven_to_sixteen),
         Artifact(CWB_ELIGIBLE_DEPENDANTS, cwb_eligible_dependants),
         Artifact(INCOME_TAX_DEDUCTED, D(income_tax_deducted)),
+        Artifact(FERTILITY_EXPENSES, D(fertility_expenses)),
+        Artifact(SENIORS_TRANSIT_PAID, D(seniors_transit_paid)),
+        Artifact(COMMUNITY_FOOD_PROGRAM_DONATIONS, D(community_food_program_donations)),
     )
 
 
@@ -279,6 +391,46 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(CHILDREN_SEVEN_TO_SIXTEEN) is None
     assert worksheet.producer_of(CWB_ELIGIBLE_DEPENDANTS) is None
     assert worksheet.producer_of(INCOME_TAX_DEDUCTED) is None
+    assert worksheet.producer_of(FERTILITY_EXPENSES) is None
+    assert worksheet.producer_of(SENIORS_TRANSIT_PAID) is None
+    assert worksheet.producer_of(COMMUNITY_FOOD_PROGRAM_DONATIONS) is None
+    assert worksheet.producer_of(OTHER_EMPLOYMENT_INCOME) is None
+    assert worksheet.producer_of(OLD_AGE_SECURITY) is None
+    assert worksheet.producer_of(CPP_OR_QPP_BENEFITS) is None
+    assert worksheet.producer_of(OTHER_PENSIONS_AND_SUPERANNUATION) is None
+    assert worksheet.producer_of(ELECTED_SPLIT_PENSION_AMOUNT) is None
+    assert worksheet.producer_of(UNIVERSAL_CHILD_CARE_BENEFIT) is None
+    assert worksheet.producer_of(EI_AND_OTHER_BENEFITS) is None
+    assert worksheet.producer_of(T3_INVESTMENT_INCOME) is None
+    assert worksheet.producer_of(T5_INVESTMENT_INCOME) is None
+    assert worksheet.producer_of(T5013_INVESTMENT_INCOME) is None
+    assert worksheet.producer_of(INVESTMENT_INCOME_CREDITED_NOT_RECEIVED) is None
+    assert worksheet.producer_of(TAX_REFUND_INTEREST) is None
+    assert worksheet.producer_of(FOREIGN_INVESTMENT_INCOME) is None
+    assert worksheet.producer_of(INVESTMENT_INCOME_WITHOUT_A_SLIP) is None
+    assert worksheet.producer_of(INVESTMENT_ROYALTIES) is None
+    assert worksheet.producer_of(INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS) is None
+    assert worksheet.producer_of(NET_PARTNERSHIP_INCOME) is None
+    assert worksheet.producer_of(RDSP_INCOME) is None
+    assert worksheet.producer_of(TAXABLE_SUPPORT_PAYMENTS) is None
+    assert worksheet.producer_of(RRSP_INCOME) is None
+    assert worksheet.producer_of(FHSA_INCOME) is None
+    assert worksheet.producer_of(OTHER_FHSA_INCOME) is None
+    assert worksheet.producer_of(OTHER_INCOME) is None
+    assert worksheet.producer_of(TAXABLE_SCHOLARSHIPS) is None
+    assert worksheet.producer_of(WORKERS_COMPENSATION_BENEFITS) is None
+    assert worksheet.producer_of(SOCIAL_ASSISTANCE_PAYMENTS) is None
+    assert worksheet.producer_of(NET_FEDERAL_SUPPLEMENTS) is None
+    # T1 Step 2: the Federal Worksheet's line 9 and line 11 (line 12100), and line 14700.
+    assert isinstance(worksheet.producer_of(INVESTMENT_INCOME_BEFORE_PRIOR_YEARS), Sum)
+    assert isinstance(worksheet.producer_of(INTEREST_AND_OTHER_INVESTMENT_INCOME), Subtract)
+    assert isinstance(worksheet.producer_of(INCOME_SUPPORT_BENEFITS), Sum)
+    assert worksheet.producer_of(INTEREST_AND_OTHER_INVESTMENT_INCOME) is not (
+        worksheet.producer_of(REFUND_OR_BALANCE_OWING)
+    )
+    assert worksheet.producer_of(INVESTMENT_INCOME_BEFORE_PRIOR_YEARS) is not (
+        worksheet.producer_of(INCOME_SUPPORT_BENEFITS)
+    )
     assert isinstance(worksheet.producer_of(RRSP_CONTRIBUTIONS_AVAILABLE), Sum)
     assert isinstance(worksheet.producer_of(RRSP_DEDUCTION_MAXIMUM), LesserOf)
     # Schedule 7 line 18 "cannot be more than the amount on line 17": checked, not capped.
@@ -430,6 +582,14 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(ONTARIO_TAX_AFTER_LIFT_CREDIT) is not worksheet.producer_of(
         ONTARIO_TAX_AFTER_REDUCTION
     )
+    assert isinstance(worksheet.producer_of(COMMUNITY_FOOD_PROGRAM_CREDIT), ApplyRate)
+    assert worksheet.producer_of(COMMUNITY_FOOD_PROGRAM_CREDIT) is not worksheet.producer_of(
+        LIFT_CREDIT_BEFORE_MAXIMUM
+    )
+    assert isinstance(worksheet.producer_of(ONTARIO_TAX_AFTER_FOOD_CREDIT), SubtractNotBelowZero)
+    assert worksheet.producer_of(ONTARIO_TAX_AFTER_FOOD_CREDIT) is not worksheet.producer_of(
+        ONTARIO_TAX_AFTER_LIFT_CREDIT
+    )
     assert isinstance(worksheet.producer_of(ONTARIO_HEALTH_PREMIUM), TieredSurcharge)
     assert worksheet.producer_of(ONTARIO_HEALTH_PREMIUM) is not worksheet.producer_of(
         ONTARIO_SURTAX
@@ -467,6 +627,37 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT
     ) is not worksheet.producer_of(CANADA_WORKERS_BENEFIT_WITH_DEPENDANT)
     assert isinstance(worksheet.producer_of(CANADA_WORKERS_BENEFIT), ChooseByCount)
+    # ON479 line 1 (the rate, then the maximum on the credit), line 14 (the maximum on the amount
+    # paid, then the rate), lines 18 and 21 and T1 line 47900.
+    assert isinstance(worksheet.producer_of(FERTILITY_CREDIT_BEFORE_MAXIMUM), ApplyRate)
+    assert isinstance(worksheet.producer_of(FERTILITY_CREDIT), CappedAmount)
+    assert isinstance(
+        worksheet.producer_of(SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM), CappedAmount
+    )
+    assert isinstance(worksheet.producer_of(SENIORS_TRANSIT_CREDIT), ApplyRate)
+    assert worksheet.producer_of(FERTILITY_CREDIT_BEFORE_MAXIMUM) is not worksheet.producer_of(
+        SENIORS_TRANSIT_CREDIT
+    )
+    assert worksheet.producer_of(FERTILITY_CREDIT) is not worksheet.producer_of(
+        SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM
+    )
+    assert isinstance(worksheet.producer_of(ONTARIO_CREDITS_SUBTOTAL), Sum)
+    assert isinstance(worksheet.producer_of(ONTARIO_CREDITS), Sum)
+    assert isinstance(worksheet.producer_of(PROVINCIAL_CREDITS), Sum)
+    assert (
+        len(
+            {
+                id(worksheet.producer_of(kind))
+                for kind in (
+                    ONTARIO_CREDITS_SUBTOTAL,
+                    ONTARIO_CREDITS,
+                    PROVINCIAL_CREDITS,
+                    TOTAL_CREDITS,
+                )
+            }
+        )
+        == 4
+    )
     assert isinstance(worksheet.producer_of(TOTAL_CREDITS), Sum)
     assert worksheet.producer_of(NET_FEDERAL_TAX) is not worksheet.producer_of(TOTAL_PAYABLE)
     assert worksheet.producer_of(NET_FEDERAL_TAX) is not worksheet.producer_of(TOTAL_CREDITS)
@@ -492,8 +683,34 @@ def test_the_trace_explains_the_computation() -> None:
     taxable_gains = position(
         "taxable_capital_gains: 50% of capital_gain 20000 (half-up to 0.01)", "10000"
     )
+    investment_before = position(
+        "investment_income_before_prior_years: t3_investment_income 0 + "
+        "t5_investment_income 0 + t5013_investment_income 0 + "
+        "investment_income_credited_not_received 0 + tax_refund_interest 0 + "
+        "foreign_investment_income 0 + investment_income_without_a_slip 0 + "
+        "investment_royalties 0 = 0",
+        "0",
+    )
+    interest = position(
+        "interest_and_other_investment_income: "
+        "investment_income_before_prior_years 0 less "
+        "investment_income_reported_in_previous_years 0 = 0",
+        "0",
+    )
+    support = position(
+        "income_support_benefits: workers_compensation_benefits 0 + "
+        "social_assistance_payments 0 + net_federal_supplements 0 = 0",
+        "0",
+    )
     total = position(
-        "total_income: employment_income 110000 + taxable_capital_gains 10000 = 120000",
+        "total_income: employment_income 110000 + other_employment_income 0 + "
+        "old_age_security 0 + cpp_or_qpp_benefits 0 + "
+        "other_pensions_and_superannuation 0 + elected_split_pension_amount 0 + "
+        "universal_child_care_benefit 0 + ei_and_other_benefits 0 + "
+        "interest_and_other_investment_income 0 + net_partnership_income 0 + "
+        "rdsp_income 0 + taxable_capital_gains 10000 + taxable_support_payments 0 "
+        "+ rrsp_income 0 + fhsa_income 0 + other_fhsa_income 0 + other_income 0 + "
+        "taxable_scholarships 0 + income_support_benefits 0 = 120000",
         "120000",
     )
     cpp_base = position(
@@ -738,6 +955,16 @@ def test_the_trace_explains_the_computation() -> None:
         "less lift_credit 0, not below 0 = 8195.77",
         "8195.77",
     )
+    food_credit = position(
+        "community_food_program_credit: 25% of community_food_program_donations 0 "
+        "(half-up to 0.01)",
+        "0",
+    )
+    after_food = position(
+        "ontario_tax_after_food_credit: ontario_tax_after_lift_credit 8195.77 "
+        "less community_food_program_credit 0, not below 0 = 8195.77",
+        "8195.77",
+    )
     premium_first = position(
         "ontario_health_premium: 6% of taxable_income 115000 over 20000, at most 300 "
         "(half-up to 0.01)",
@@ -764,7 +991,7 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     ontario_tax = position(
-        "ontario_tax: ontario_tax_after_lift_credit 8195.77 + ontario_health_premium 750 = 8945.77",
+        "ontario_tax: ontario_tax_after_food_credit 8195.77 + ontario_health_premium 750 = 8945.77",
         "8945.77",
     )
     net_federal = position(
@@ -811,14 +1038,40 @@ def test_the_trace_explains_the_computation() -> None:
         "chosen as cwb_eligible_dependants is 0",
         "0",
     )
+    fertility_before_maximum = position(
+        "fertility_credit_before_maximum: 25% of fertility_expenses 0 (half-up to 0.01)", "0"
+    )
+    fertility = position(
+        "fertility_credit: lesser of fertility_credit_before_maximum 0 and 5000 (half-up to 0.01)",
+        "0",
+    )
+    transit_paid = position(
+        "seniors_transit_amount_paid_at_most_maximum: lesser of seniors_transit_paid 0 and 3000 "
+        "(half-up to 0.01)",
+        "0",
+    )
+    transit = position(
+        "seniors_transit_credit: 15% of seniors_transit_amount_paid_at_most_maximum 0 "
+        "(half-up to 0.01)",
+        "0",
+    )
+    ontario_credits_subtotal = position(
+        "ontario_credits_subtotal: fertility_credit 0 + seniors_transit_credit 0 = 0", "0"
+    )
+    ontario_credits = position("ontario_credits: ontario_credits_subtotal 0 = 0", "0")
+    provincial = position("provincial_credits: ontario_credits 0 = 0", "0")
     credits = position(
-        "total_credits: income_tax_deducted 25000 + canada_workers_benefit 0 = 25000", "25000"
+        "total_credits: income_tax_deducted 25000 + canada_workers_benefit 0 "
+        "+ provincial_credits 0 = 25000",
+        "25000",
     )
     balance = position(
         "refund_or_balance_owing: total_payable 25897.15 less total_credits 25000 = 897.15",
         "897.15",
     )
     assert taxable_gains < total < net
+    assert investment_before < interest < total
+    assert support < total
     assert cpp_first < cpp_enhanced < deductions < net
     assert rrsp_available < rrsp_maximum < rrsp < deductions
     assert rrsp < rrsp_carried
@@ -851,7 +1104,8 @@ def test_the_trace_explains_the_computation() -> None:
     assert reduction_amounts < reduction
     assert taxable < premium_first < premium_second < premium_third < premium_fourth
     assert premium_fourth < premium_fifth < ontario_tax
-    assert lift_before_maximum < lift_maximum < lift < after_lift < ontario_tax
+    assert lift_before_maximum < lift_maximum < lift < after_lift < after_food < ontario_tax
+    assert food_credit < after_food
     assert net < lift_reduction < lift
     assert after_reduction < after_lift
     assert federal_after < net_federal < payable
@@ -860,6 +1114,9 @@ def test_the_trace_explains_the_computation() -> None:
     assert net < family_net < cwb_reduction < cwb_without
     assert working < cwb_before_reduction_dependant < cwb_with < cwb
     assert family_net < cwb_reduction_dependant < cwb_with
+    assert fertility_before_maximum < fertility < ontario_credits_subtotal
+    assert transit_paid < transit < ontario_credits_subtotal
+    assert ontario_credits_subtotal < ontario_credits < provincial < credits
     assert cwb < credits
     assert credits < balance
 
@@ -934,6 +1191,34 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CENT,
             D("867.62"),
         ),
+        # ON479 line 1 "Eligible medical expenses for fertility treatment multiplied by 25%
+        # (maximum $5,000)", before its maximum: no expenses.
+        FERTILITY_CREDIT_BEFORE_MAXIMUM: RateAppliedLine(
+            FERTILITY_CREDIT_BEFORE_MAXIMUM,
+            FERTILITY_EXPENSES,
+            D("0"),
+            Rate(D("0.25")),
+            CENT,
+            D("0"),
+        ),
+        # ON479 line 14 "multiplied by 15%", on the amount paid after its maximum of $3,000.
+        SENIORS_TRANSIT_CREDIT: RateAppliedLine(
+            SENIORS_TRANSIT_CREDIT,
+            SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
+            D("0"),
+            Rate(D("0.15")),
+            CENT,
+            D("0"),
+        ),
+        # ON428 line 87 and line 62150 "multiplied by 25%": the qualifying donations of 0.
+        COMMUNITY_FOOD_PROGRAM_CREDIT: RateAppliedLine(
+            COMMUNITY_FOOD_PROGRAM_CREDIT,
+            COMMUNITY_FOOD_PROGRAM_DONATIONS,
+            D("0"),
+            Rate(D("0.25")),
+            CENT,
+            D("0.00"),
+        ),
         # Schedule ON428-A line 5 "Line 3 multiplied by the percentage from line 4 (maximum
         # $875)", before its maximum: line 3 is employment income (line 10100), as line 2 (line
         # 10400) is not triggered.
@@ -947,10 +1232,56 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert sums == {
+        # T1 line 15000 "Line 28 plus line 32 Total income": the income lines, in line order.
         TOTAL_INCOME: SumLine(
             TOTAL_INCOME,
-            ((EMPLOYMENT_INCOME, D("110000")), (TAXABLE_CAPITAL_GAINS, D("10000"))),
+            (
+                (EMPLOYMENT_INCOME, D("110000")),
+                (OTHER_EMPLOYMENT_INCOME, D("0")),
+                (OLD_AGE_SECURITY, D("0")),
+                (CPP_OR_QPP_BENEFITS, D("0")),
+                (OTHER_PENSIONS_AND_SUPERANNUATION, D("0")),
+                (ELECTED_SPLIT_PENSION_AMOUNT, D("0")),
+                (UNIVERSAL_CHILD_CARE_BENEFIT, D("0")),
+                (EI_AND_OTHER_BENEFITS, D("0")),
+                (INTEREST_AND_OTHER_INVESTMENT_INCOME, D("0")),
+                (NET_PARTNERSHIP_INCOME, D("0")),
+                (RDSP_INCOME, D("0")),
+                (TAXABLE_CAPITAL_GAINS, D("10000")),
+                (TAXABLE_SUPPORT_PAYMENTS, D("0")),
+                (RRSP_INCOME, D("0")),
+                (FHSA_INCOME, D("0")),
+                (OTHER_FHSA_INCOME, D("0")),
+                (OTHER_INCOME, D("0")),
+                (TAXABLE_SCHOLARSHIPS, D("0")),
+                (INCOME_SUPPORT_BENEFITS, D("0")),
+            ),
             D("120000"),
+        ),
+        # The Federal Worksheet's "Line 12100 - Interest and other investment income" line 9
+        # "Add lines 1 to 8.", and T1 line 14700 "Add lines 29 to 31", each in line order.
+        INVESTMENT_INCOME_BEFORE_PRIOR_YEARS: SumLine(
+            INVESTMENT_INCOME_BEFORE_PRIOR_YEARS,
+            (
+                (T3_INVESTMENT_INCOME, D("0")),
+                (T5_INVESTMENT_INCOME, D("0")),
+                (T5013_INVESTMENT_INCOME, D("0")),
+                (INVESTMENT_INCOME_CREDITED_NOT_RECEIVED, D("0")),
+                (TAX_REFUND_INTEREST, D("0")),
+                (FOREIGN_INVESTMENT_INCOME, D("0")),
+                (INVESTMENT_INCOME_WITHOUT_A_SLIP, D("0")),
+                (INVESTMENT_ROYALTIES, D("0")),
+            ),
+            D("0"),
+        ),
+        INCOME_SUPPORT_BENEFITS: SumLine(
+            INCOME_SUPPORT_BENEFITS,
+            (
+                (WORKERS_COMPENSATION_BENEFITS, D("0")),
+                (SOCIAL_ASSISTANCE_PAYMENTS, D("0")),
+                (NET_FEDERAL_SUPPLEMENTS, D("0")),
+            ),
+            D("0"),
         ),
         # Schedule 8 Part 3a line 28 "Line 26 plus line 27", to T1 line 22215.
         CPP_ENHANCED_CONTRIBUTIONS: SumLine(
@@ -1035,11 +1366,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("294.00"),
         ),
         # ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your return.
-        # Ontario tax": line 88 carries line 86, as line 87 is not triggered.
+        # Ontario tax": line 88 is line 86, as line 87 is 0.
         ONTARIO_TAX: SumLine(
             ONTARIO_TAX,
             (
-                (ONTARIO_TAX_AFTER_LIFT_CREDIT, D("8195.77")),
+                (ONTARIO_TAX_AFTER_FOOD_CREDIT, D("8195.77")),
                 (ONTARIO_HEALTH_PREMIUM, D("750")),
             ),
             D("8945.77"),
@@ -1066,15 +1397,39 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ADJUSTED_FAMILY_NET_INCOME: SumLine(
             ADJUSTED_FAMILY_NET_INCOME, ((NET_INCOME, D("115000")),), D("115000")
         ),
-        # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700) and
-        # line 155 (45300), the Canada workers benefit, in line order.
+        # ON479 line 18 "Add lines 1, 2, 13, 14, 16, and 17.": lines 1 and 14, in line order.
+        ONTARIO_CREDITS_SUBTOTAL: SumLine(
+            ONTARIO_CREDITS_SUBTOTAL,
+            ((FERTILITY_CREDIT, D("0")), (SENIORS_TRANSIT_CREDIT, D("0"))),
+            D("0"),
+        ),
+        # ON479 line 21 "Line 19 plus line 20": line 19 carries line 18, line 20 is not triggered.
+        ONTARIO_CREDITS: SumLine(ONTARIO_CREDITS, ((ONTARIO_CREDITS_SUBTOTAL, D("0")),), D("0")),
+        # T1 line 165 (line 47900) "Provincial or territorial credits": ON479 line 21.
+        PROVINCIAL_CREDITS: SumLine(PROVINCIAL_CREDITS, ((ONTARIO_CREDITS, D("0")),), D("0")),
+        # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700), line
+        # 155 (45300), the Canada workers benefit, and line 165 (47900), in line order.
         TOTAL_CREDITS: SumLine(
             TOTAL_CREDITS,
-            ((INCOME_TAX_DEDUCTED, D("25000")), (CANADA_WORKERS_BENEFIT, D("0"))),
+            (
+                (INCOME_TAX_DEDUCTED, D("25000")),
+                (CANADA_WORKERS_BENEFIT, D("0")),
+                (PROVINCIAL_CREDITS, D("0")),
+            ),
             D("25000"),
         ),
     }
     assert subtracted == {
+        # The Federal Worksheet's line 11 "Line 9 minus line 10. Enter this amount on line 12100
+        # of your return.": nothing reported in previous years comes off nothing.
+        INTEREST_AND_OTHER_INVESTMENT_INCOME: SubtractedLine(
+            output=INTEREST_AND_OTHER_INVESTMENT_INCOME,
+            minuend=INVESTMENT_INCOME_BEFORE_PRIOR_YEARS,
+            minuend_amount=D("0"),
+            subtrahend=INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Schedule 7 line 23 "Line 21 minus line 22 Your unused contributions available to carry
         # forward to a future year": all of the 1926 available is deducted, so nothing is left.
         UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD: SubtractedLine(
@@ -1249,6 +1604,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Amount(D("875")),
             CENT,
             D("875"),
+        ),
+        # ON479 line 1's "(maximum $5,000)", printed after the percentage: it caps the credit.
+        FERTILITY_CREDIT: CappedAmountLine(
+            FERTILITY_CREDIT,
+            FERTILITY_CREDIT_BEFORE_MAXIMUM,
+            D("0"),
+            Amount(D("5000")),
+            CENT,
+            D("0"),
+        ),
+        # ON479 line 14's "(maximum $3,000)", printed before the percentage: it caps the amount
+        # paid.
+        SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM: CappedAmountLine(
+            SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
+            SENIORS_TRANSIT_PAID,
+            D("0"),
+            Amount(D("3000")),
+            CENT,
+            D("0"),
         ),
         # ON428 line 16's "(maximum $10,823)": 11905.00 is above it.
         ontario.ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT: CappedAmountLine(
@@ -1561,6 +1935,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("8195.77"),
         ),
+        # ON428 line 88 "Line 86 minus line 87 (if negative, enter "0")": line 87 is 0.
+        ONTARIO_TAX_AFTER_FOOD_CREDIT: SubtractedNotBelowZeroLine(
+            output=ONTARIO_TAX_AFTER_FOOD_CREDIT,
+            minuend=ONTARIO_TAX_AFTER_LIFT_CREDIT,
+            minuend_amount=D("8195.77"),
+            subtrahend=COMMUNITY_FOOD_PROGRAM_CREDIT,
+            subtrahend_amount=D("0.00"),
+            result=D("8195.77"),
+        ),
         # Schedule 6 line 28 "Line 22 minus line 27 (if negative, enter "0")": the reduction of
         # 13221.75 exceeds the 1633, and that of 12654.15 the 2813, so the benefit is 0 with or
         # without an eligible dependant.
@@ -1623,9 +2006,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 68
+    assert len(order) == 80
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
+    assert (
+        position[INVESTMENT_INCOME_BEFORE_PRIOR_YEARS]
+        < position[INTEREST_AND_OTHER_INVESTMENT_INCOME]
+    )
+    assert position[INTEREST_AND_OTHER_INVESTMENT_INCOME] < position[TOTAL_INCOME]
+    assert position[INCOME_SUPPORT_BENEFITS] < position[TOTAL_INCOME]
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
     assert position[RRSP_CONTRIBUTIONS_AVAILABLE] < position[RRSP_DEDUCTION_MAXIMUM]
     assert position[RRSP_DEDUCTION_MAXIMUM] < position[RRSP_DEDUCTION]
@@ -1704,6 +2093,12 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[LIFT_REDUCTION] < position[LIFT_CREDIT]
     assert position[LIFT_CREDIT] < position[ONTARIO_TAX_AFTER_LIFT_CREDIT] < position[ONTARIO_TAX]
     assert position[ONTARIO_TAX_AFTER_REDUCTION] < position[ONTARIO_TAX_AFTER_LIFT_CREDIT]
+    assert (
+        position[COMMUNITY_FOOD_PROGRAM_CREDIT]
+        < position[ONTARIO_TAX_AFTER_FOOD_CREDIT]
+        < position[ONTARIO_TAX]
+    )
+    assert position[ONTARIO_TAX_AFTER_LIFT_CREDIT] < position[ONTARIO_TAX_AFTER_FOOD_CREDIT]
     assert position[FEDERAL_TAX_AFTER_CREDITS] < position[NET_FEDERAL_TAX]
     assert position[NET_FEDERAL_TAX] < position[TOTAL_PAYABLE]
     assert position[ONTARIO_TAX] < position[TOTAL_PAYABLE]
@@ -1726,6 +2121,16 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         assert position[NET_INCOME] < position[ADJUSTED_FAMILY_NET_INCOME] < position[reduction]
         assert position[reduction] < position[benefit] < position[CANADA_WORKERS_BENEFIT]
     assert position[CANADA_WORKERS_BENEFIT] < position[TOTAL_CREDITS]
+    assert position[FERTILITY_CREDIT_BEFORE_MAXIMUM] < position[FERTILITY_CREDIT]
+    assert position[SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM] < position[SENIORS_TRANSIT_CREDIT]
+    assert position[FERTILITY_CREDIT] < position[ONTARIO_CREDITS_SUBTOTAL]
+    assert position[SENIORS_TRANSIT_CREDIT] < position[ONTARIO_CREDITS_SUBTOTAL]
+    assert (
+        position[ONTARIO_CREDITS_SUBTOTAL]
+        < position[ONTARIO_CREDITS]
+        < position[PROVINCIAL_CREDITS]
+        < position[TOTAL_CREDITS]
+    )
 
 
 def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
@@ -1914,6 +2319,94 @@ def test_the_lift_credit_between_the_thresholds_is_reduced_and_comes_off_the_tax
     ) in rendered
 
 
+def test_return_is_community_food_program_credit_comes_off_the_tax_after_the_lift_credit() -> None:
+    # Return I: employment income of 48000, with no capital gain, no RRSP contributions and no
+    # union dues: base CPP contributions 4.95% x (48000 - 3500) = 2202.75, first additional 1% x
+    # 44500 = 445.00, EI premiums 1.64% x 48000 = 787.20; net and taxable income 48000 - 445.00
+    # = 47555.00. Ontario basic tax 5.05% x 47555.00 = 2401.5275, rounded half-up to the cent:
+    # 2401.53, less the Ontario credits 5.05% x (12747 + 2202.75 + 787.20 = 15736.95) =
+    # 794.715975, rounded half-up to the cent: 794.72, is 1606.81, below the first surtax
+    # threshold and above 588.00, so line 81 is 1606.81.
+    # Schedule ON428-A: line 5 is 5.05% x 48000 = 2424.00, at most 875 (line 14); line 17 is
+    # 47555.00 - 32500 = 15055.00 and line 19 15055.00 x 5% = 752.75; line 20 is 875 - 752.75 =
+    # 122.25 (ON428 line 85). Line 86 is 1606.81 - 122.25 = 1484.56. Qualifying donations of 1000
+    # (a caller input, within the donations claimed): line 87 is 25% x 1000 = 250.00 and line 88
+    # is 1484.56 - 250.00 = 1234.56. The health premium on 47555.00, "more than $38,500 but not
+    # more than $48,000", is 450, so line 90 is 1234.56 + 450 = 1684.56.
+    # The federal tax after credits is 14.5% x 47555.00 = 6895.475, rounded half-up to the cent:
+    # 6895.48, less 14.5% x (16129 + 2202.75 + 787.20 + 1471 = 20589.95) = 2985.54275, rounded
+    # half-up to the cent: 2985.54, is 3909.94. The total payable is 3909.94 + 1684.56 =
+    # 5594.50, and with the chosen tax deducted of 4800 and no Canada workers benefit (the
+    # reduction 15% x (47555.00 - 26855) = 3105.00 exceeds the 1633), line 167 is 5594.50 - 4800
+    # = 794.50, a balance owing.
+    worksheet = compute(
+        "48000",
+        "0",
+        "0",
+        "0",
+        "8640",
+        "0",
+        "0",
+        income_tax_deducted="4800",
+        community_food_program_donations="1000",
+    )
+
+    assert worksheet.get(NET_INCOME).value == D("47555.00")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("1606.81")
+    assert worksheet.get(LIFT_CREDIT).value == D("122.25")
+    assert worksheet.get(ONTARIO_TAX_AFTER_LIFT_CREDIT).value == D("1484.56")
+    assert worksheet.get(COMMUNITY_FOOD_PROGRAM_DONATIONS).value == D("1000")
+    assert worksheet.get(COMMUNITY_FOOD_PROGRAM_CREDIT).value == D("250.00")
+    assert worksheet.get(ONTARIO_TAX_AFTER_FOOD_CREDIT).value == D("1234.56")
+    assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("450")
+    assert worksheet.get(ONTARIO_TAX).value == D("1684.56")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("3909.94")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("5594.50")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("794.50")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "community_food_program_credit: 25% of community_food_program_donations 1000 "
+        "(half-up to 0.01)"
+    ) in rendered
+    assert (
+        "ontario_tax_after_food_credit: ontario_tax_after_lift_credit 1484.56 "
+        "less community_food_program_credit 250, not below 0 = 1234.56"
+    ) in rendered
+    assert (
+        "ontario_tax: ontario_tax_after_food_credit 1234.56 + ontario_health_premium 450 = 1684.56"
+    ) in rendered
+
+
+def test_donations_without_a_larger_line_86_leave_line_88_at_zero_not_negative() -> None:
+    # Employment income of 40000 as in the LIFT test above: line 86 is 715.23. Qualifying
+    # donations of 4000 give line 87 = 25% x 4000 = 1000.00, more than line 86, so line 88 is 0,
+    # not negative, and line 90 is the health premium of 450 alone.
+    worksheet = compute(
+        "40000", "0", "0", "0", "7200", "0", "0", community_food_program_donations="4000"
+    )
+
+    assert worksheet.get(ONTARIO_TAX_AFTER_LIFT_CREDIT).value == D("715.23")
+    assert worksheet.get(COMMUNITY_FOOD_PROGRAM_CREDIT).value == D("1000.00")
+    assert worksheet.get(ONTARIO_TAX_AFTER_FOOD_CREDIT).value == D("0")
+    assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("450")
+    assert worksheet.get(ONTARIO_TAX).value == D("450")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "ontario_tax_after_food_credit: ontario_tax_after_lift_credit 715.23 "
+        "less community_food_program_credit 1000, not below 0 = 0"
+    ) in rendered
+
+
+def test_no_donations_leave_line_88_at_line_86() -> None:
+    # The default of 0 donations, as for Returns A to H: line 87 is 0 and line 88 is line 86.
+    worksheet = compute("40000", "0", "0", "0", "7200", "0", "0")
+
+    assert worksheet.get(COMMUNITY_FOOD_PROGRAM_DONATIONS).value == D("0")
+    assert worksheet.get(COMMUNITY_FOOD_PROGRAM_CREDIT).value == D("0")
+    assert worksheet.get(ONTARIO_TAX_AFTER_FOOD_CREDIT).value == D("715.23")
+    assert worksheet.get(ONTARIO_TAX).value == D("1165.23")
+
+
 def test_the_canada_workers_benefit_below_its_maximum_is_27_percent_over_3000() -> None:
     # Employment income of 8000, with no capital gain, no RRSP contributions and no union dues:
     # base CPP contributions 4.95% x (8000 - 3500) = 222.75, first additional 1% x 4500 = 45.00,
@@ -2089,7 +2582,8 @@ def test_with_no_tax_payable_all_the_tax_deducted_is_refunded() -> None:
     assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-2133")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
-        "total_credits: income_tax_deducted 500 + canada_workers_benefit 1633 = 2133"
+        "total_credits: income_tax_deducted 500 + canada_workers_benefit 1633 "
+        "+ provincial_credits 0 = 2133"
     ) in rendered
 
 
@@ -2284,6 +2778,142 @@ def test_return_fs_canada_workers_benefit_is_zero_with_an_eligible_dependant() -
         "canada_workers_benefit: canada_workers_benefit_with_dependant 0, "
         "chosen as cwb_eligible_dependants is 1"
     ) in rendered
+
+
+def return_f_with_credits(fertility_expenses: str, seniors_transit_paid: str) -> Worksheet:
+    """Return F's inputs, as in `returns/2025_return_f.yaml`, with the ON479 amounts given."""
+    return compute(
+        "60000",
+        "0",
+        "0",
+        "0",
+        "10800",
+        "0",
+        "0",
+        dependent_children=1,
+        eligible_dependants=1,
+        cwb_eligible_dependants=1,
+        child_care_expenses_paid="6000",
+        children_seven_to_sixteen=1,
+        income_tax_deducted="8000",
+        fertility_expenses=fertility_expenses,
+        seniors_transit_paid=seniors_transit_paid,
+    )
+
+
+def test_return_gs_ontario_credits_are_5180_and_lower_the_refund_by_that_much() -> None:
+    # Return G is Return F with fertility expenses of 24000 and 1200 paid for seniors' transit.
+    # ON479 line 1: 24000 x 25% = 6000.00, at most 5000: 5000. Line 14: 1200, at most 3000, x 15%
+    # = 180.00. Line 18 is 5000 + 180.00 = 5180.00, line 19 carries it, line 21 and T1 line
+    # 47900 are 5180.00; the total credits are 8000 + 0 + 5180.00 = 13180.00 and line 167 is
+    # 4240.69 - 13180.00 = -8939.31, Return F's -3759.31 less 5180.00.
+    without = return_f_with_credits("0", "0")
+    worksheet = return_f_with_credits("24000", "1200")
+
+    assert worksheet.get(FERTILITY_CREDIT_BEFORE_MAXIMUM).value == D("6000.00")
+    assert worksheet.get(FERTILITY_CREDIT).value == D("5000")
+    assert worksheet.get(SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM).value == D("1200")
+    assert worksheet.get(SENIORS_TRANSIT_CREDIT).value == D("180.00")
+    assert worksheet.get(ONTARIO_CREDITS_SUBTOTAL).value == D("5180.00")
+    assert worksheet.get(ONTARIO_CREDITS).value == D("5180.00")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D("5180.00")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("4240.69")
+    assert worksheet.get(TOTAL_CREDITS).value == D("13180.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-8939.31")
+    assert without.get(PROVINCIAL_CREDITS).value == D("0")
+    assert without.get(REFUND_OR_BALANCE_OWING).value == D("-3759.31")
+    assert without.get(REFUND_OR_BALANCE_OWING).value - worksheet.get(
+        REFUND_OR_BALANCE_OWING
+    ).value == D("5180.00")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "fertility_credit_before_maximum: 25% of fertility_expenses 24000 (half-up to 0.01)"
+    ) in rendered
+    assert (
+        "fertility_credit: lesser of fertility_credit_before_maximum 6000 and 5000 "
+        "(half-up to 0.01)"
+    ) in rendered
+    assert (
+        "seniors_transit_amount_paid_at_most_maximum: lesser of seniors_transit_paid 1200 and "
+        "3000 (half-up to 0.01)"
+    ) in rendered
+    assert (
+        "seniors_transit_credit: 15% of seniors_transit_amount_paid_at_most_maximum 1200 "
+        "(half-up to 0.01)"
+    ) in rendered
+    assert (
+        "ontario_credits_subtotal: fertility_credit 5000 + seniors_transit_credit 180 = 5180"
+    ) in rendered
+    assert "ontario_credits: ontario_credits_subtotal 5180 = 5180" in rendered
+    assert "provincial_credits: ontario_credits 5180 = 5180" in rendered
+    assert (
+        "total_credits: income_tax_deducted 8000 + canada_workers_benefit 0 "
+        "+ provincial_credits 5180 = 13180"
+    ) in rendered
+    assert (
+        "refund_or_balance_owing: total_payable 4240.69 less total_credits 13180 = -8939.31"
+    ) in rendered
+
+
+def test_the_fertility_credit_below_its_maximum_is_25_percent_of_the_expenses() -> None:
+    # 12000 x 25% = 3000.00, below the maximum of 5000, so line 1 is 3000.00 and the credits are
+    # 3000.00 with no transit amount.
+    worksheet = return_f_with_credits("12000", "0")
+
+    assert worksheet.get(FERTILITY_CREDIT_BEFORE_MAXIMUM).value == D("3000.00")
+    assert worksheet.get(FERTILITY_CREDIT).value == D("3000.00")
+    assert worksheet.get(SENIORS_TRANSIT_CREDIT).value == D("0")
+    assert worksheet.get(ONTARIO_CREDITS).value == D("3000.00")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D("3000.00")
+    assert worksheet.get(TOTAL_CREDITS).value == D("11000.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-6759.31")
+
+
+def test_the_transit_amount_paid_is_capped_before_the_rate() -> None:
+    # 3500 paid is capped at 3000 (ON479 line 14, "(maximum $3,000)" before the percentage), and
+    # 3000 x 15% = 450.00, not 3500 x 15% = 525.00.
+    worksheet = return_f_with_credits("0", "3500")
+
+    assert worksheet.get(SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM).value == D("3000")
+    assert worksheet.get(SENIORS_TRANSIT_CREDIT).value == D("450.00")
+    assert worksheet.get(FERTILITY_CREDIT).value == D("0")
+    assert worksheet.get(ONTARIO_CREDITS).value == D("450.00")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D("450.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-4209.31")
+    (capped_paid,) = [
+        line
+        for line in worksheet.trace
+        if isinstance(line, CappedAmountLine)
+        and line.output == SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM
+    ]
+    assert capped_paid == CappedAmountLine(
+        SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
+        SENIORS_TRANSIT_PAID,
+        D("3500"),
+        Amount(D("3000")),
+        CENT,
+        D("3000"),
+    )
+
+
+def test_the_fertility_credit_is_capped_after_the_rate() -> None:
+    # 24000 x 25% = 6000.00 is above 5000, so line 1 is the maximum, whereas capping the expenses
+    # at 5000 first would give 1250.00.
+    worksheet = return_f_with_credits("24000", "0")
+
+    (capped,) = [
+        line
+        for line in worksheet.trace
+        if isinstance(line, CappedAmountLine) and line.output == FERTILITY_CREDIT
+    ]
+    assert capped == CappedAmountLine(
+        FERTILITY_CREDIT,
+        FERTILITY_CREDIT_BEFORE_MAXIMUM,
+        D("6000.00"),
+        Amount(D("5000")),
+        CENT,
+        D("5000"),
+    )
 
 
 def test_the_dependants_net_income_comes_off_both_amounts() -> None:
@@ -2543,3 +3173,214 @@ def test_two_thirds_of_a_low_earned_income_caps_the_deduction() -> None:
     assert worksheet.get(CHILD_CARE_EXPENSES).value == D("6000")
     assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("6055.00")
     assert worksheet.get(NET_INCOME).value == D("2945.00")
+
+
+def test_the_interest_and_other_investment_income_is_the_worksheets_line_9_less_line_10() -> None:
+    # The Federal Worksheet's "Line 12100 - Interest and other investment income": line 2 (the T5
+    # boxes) 1200 and line 7 (bank interest with no slip) 300 add to line 9 "Add lines 1 to 8."
+    # of 1500; line 10 (reported in previous years) 100 comes off it: line 11, and so line
+    # 12100, is 1400.
+    worksheet = compute(
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        t5_investment_income="1200",
+        investment_income_without_a_slip="300",
+        investment_income_reported_in_previous_years="100",
+    )
+
+    assert worksheet.get(INVESTMENT_INCOME_BEFORE_PRIOR_YEARS).value == D("1500")
+    assert worksheet.get(INTEREST_AND_OTHER_INVESTMENT_INCOME).value == D("1400")
+    assert worksheet.get(TOTAL_INCOME).value == D("1400")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "investment_income_before_prior_years: t3_investment_income 0 + t5_investment_income 1200 "
+        "+ t5013_investment_income 0 + investment_income_credited_not_received 0 "
+        "+ tax_refund_interest 0 + foreign_investment_income 0 "
+        "+ investment_income_without_a_slip 300 + investment_royalties 0 = 1500"
+    ) in rendered
+    assert (
+        "interest_and_other_investment_income: investment_income_before_prior_years 1500 "
+        "less investment_income_reported_in_previous_years 100 = 1400"
+    ) in rendered
+
+
+def test_prior_year_investment_income_above_line_9_is_refused_as_a_negative_line_11() -> None:
+    # The Federal Worksheet's line 10 (reported in previous years) of 200 is more than line 9 of
+    # 150, so line 11 "Line 9 minus line 10", and so line 12100, would be negative; the kind
+    # cannot be below zero, so the capability's output breaks its contract.
+    with pytest.raises(
+        CapabilityContractError,
+        match="ca/interest_and_other_investment_income -50, which cannot be negative",
+    ):
+        compute(
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            t5_investment_income="150",
+            investment_income_reported_in_previous_years="200",
+        )
+
+
+def test_each_of_the_worksheets_lines_1_to_8_adds_to_line_9() -> None:
+    # Distinct amounts, one per line, so a line left out or added twice changes the sum: 1 + 2 +
+    # 4 + 8 + 16 + 32 + 64 + 128 = 255, and line 10 of 5 leaves 250.
+    worksheet = compute(
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        t3_investment_income="1",
+        t5_investment_income="2",
+        t5013_investment_income="4",
+        investment_income_credited_not_received="8",
+        tax_refund_interest="16",
+        foreign_investment_income="32",
+        investment_income_without_a_slip="64",
+        investment_royalties="128",
+        investment_income_reported_in_previous_years="5",
+    )
+
+    assert worksheet.get(INVESTMENT_INCOME_BEFORE_PRIOR_YEARS).value == D("255")
+    assert worksheet.get(INTEREST_AND_OTHER_INVESTMENT_INCOME).value == D("250")
+
+
+def test_line_14700_adds_lines_29_to_31() -> None:
+    # T1 line 32 and line 14700 "Add lines 29 to 31 (see line 25000 in Step 4).": the workers'
+    # compensation benefits (14400), the social assistance payments (14500) and the net federal
+    # supplements (14600), 2000 + 300 + 40 = 2340, which line 15000 adds.
+    worksheet = compute(
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        workers_compensation_benefits="2000",
+        social_assistance_payments="300",
+        net_federal_supplements="40",
+    )
+
+    assert worksheet.get(INCOME_SUPPORT_BENEFITS).value == D("2340")
+    assert worksheet.get(TOTAL_INCOME).value == D("2340")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "income_support_benefits: workers_compensation_benefits 2000 "
+        "+ social_assistance_payments 300 + net_federal_supplements 40 = 2340"
+    ) in rendered
+
+
+def test_total_income_adds_every_income_line_once() -> None:
+    # T1 line 33 and line 15000 "Line 28 plus line 32 Total income": one distinct power of two
+    # for each of the nineteen amounts that enter it, so a line left out or added twice changes
+    # the total: 2^0 + ... + 2^18 = 524287. Employment income 1 (line 10100), other employment
+    # income 2 (10400), OAS 4 (11300), CPP benefits 8 (11400), other pensions 16 (11500),
+    # elected split-pension amount 32 (11600), UCCB 64 (11700), EI 128 (11900), interest and
+    # other investment income 256 (12100, from the T5 slips), net partnership income 512
+    # (12200), RDSP income 1024 (12500), taxable capital gains 2048 (12700, 50% of a capital
+    # gain of 4096), taxable support payments 4096 (12800), RRSP income 8192 (12900), FHSA
+    # income 16384 (12905), taxable FHSA income - other 32768 (12906), other income 65536
+    # (13000), scholarships 131072 (13010) and the lines 14400 to 14600 of 262144 (14700).
+    worksheet = compute(
+        "1",
+        "4096",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        other_employment_income="2",
+        old_age_security="4",
+        cpp_or_qpp_benefits="8",
+        other_pensions_and_superannuation="16",
+        elected_split_pension_amount="32",
+        universal_child_care_benefit="64",
+        ei_and_other_benefits="128",
+        t5_investment_income="256",
+        net_partnership_income="512",
+        rdsp_income="1024",
+        taxable_support_payments="4096",
+        rrsp_income="8192",
+        fhsa_income="16384",
+        other_fhsa_income="32768",
+        other_income="65536",
+        taxable_scholarships="131072",
+        workers_compensation_benefits="262144",
+    )
+
+    assert worksheet.get(TAXABLE_CAPITAL_GAINS).value == D("2048.00")
+    assert worksheet.get(INTEREST_AND_OTHER_INVESTMENT_INCOME).value == D("256")
+    assert worksheet.get(INCOME_SUPPORT_BENEFITS).value == D("262144")
+    assert worksheet.get(TOTAL_INCOME).value == D("524287")
+
+
+def test_return_hs_pension_and_benefit_income_is_all_of_its_total_income() -> None:
+    # Return H, a retiree: OAS 8000 (line 11300), CPP benefits 9000 (11400), other pensions
+    # 20000 (11500), RRSP income 5000 (12900) and workers' compensation 2000 (14400, so line
+    # 14700); interest from the Federal Worksheet: T5 slips 1200 (line 2) plus bank interest with
+    # no slip 300 (line 7) is 1500 (line 9), less 100 reported in previous years (line 10): 1400
+    # (line 12100). Total income 8000 + 9000 + 20000 + 1400 + 5000 + 2000 = 45400, with no
+    # employment income, so no CPP contributions, EI premiums, Canada employment amount, LIFT
+    # credit or Canada workers benefit.
+    worksheet = compute(
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        old_age_security="8000",
+        cpp_or_qpp_benefits="9000",
+        other_pensions_and_superannuation="20000",
+        t5_investment_income="1200",
+        investment_income_without_a_slip="300",
+        investment_income_reported_in_previous_years="100",
+        rrsp_income="5000",
+        workers_compensation_benefits="2000",
+        income_tax_deducted="3000",
+    )
+
+    assert worksheet.get(INVESTMENT_INCOME_BEFORE_PRIOR_YEARS).value == D("1500")
+    assert worksheet.get(INTEREST_AND_OTHER_INVESTMENT_INCOME).value == D("1400")
+    assert worksheet.get(INCOME_SUPPORT_BENEFITS).value == D("2000")
+    assert worksheet.get(TOTAL_INCOME).value == D("45400")
+    assert worksheet.get(CPP_ENHANCED_CONTRIBUTIONS).value == D("0")
+    assert worksheet.get(NET_INCOME).value == D("45400")
+    assert worksheet.get(TAXABLE_INCOME).value == D("45400")
+    assert worksheet.get(FEDERAL_BASIC_TAX).value == D("6583.00")
+    assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("2338.71")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("4244.29")
+    assert worksheet.get(ONTARIO_BASIC_TAX).value == D("2292.70")
+    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("643.72")
+    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1648.98")
+    assert worksheet.get(LIFT_REDUCTION).value == D("645.00")
+    assert worksheet.get(LIFT_CREDIT).value == D("0")
+    assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("450")
+    assert worksheet.get(ONTARIO_TAX).value == D("2098.98")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("6343.27")
+    assert worksheet.get(WORKING_INCOME).value == D("0")
+    assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("0")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("3343.27")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "total_income: employment_income 0 + other_employment_income 0 + old_age_security 8000 "
+        "+ cpp_or_qpp_benefits 9000 + other_pensions_and_superannuation 20000 "
+        "+ elected_split_pension_amount 0 + universal_child_care_benefit 0 "
+        "+ ei_and_other_benefits 0 + interest_and_other_investment_income 1400 "
+        "+ net_partnership_income 0 + rdsp_income 0 + taxable_capital_gains 0 "
+        "+ taxable_support_payments 0 + rrsp_income 5000 + fhsa_income 0 + other_fhsa_income 0 "
+        "+ other_income 0 + taxable_scholarships 0 + income_support_benefits 2000 = 45400"
+    ) in rendered

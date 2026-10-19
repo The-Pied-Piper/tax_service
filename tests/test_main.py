@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 68
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 80
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -53,6 +53,36 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/capital_gain",
         "ca/taxable_capital_gains",
         "ca/total_income",
+        "ca/other_employment_income",
+        "ca/old_age_security",
+        "ca/cpp_or_qpp_benefits",
+        "ca/other_pensions_and_superannuation",
+        "ca/elected_split_pension_amount",
+        "ca/universal_child_care_benefit",
+        "ca/ei_and_other_benefits",
+        "ca/t3_investment_income",
+        "ca/t5_investment_income",
+        "ca/t5013_investment_income",
+        "ca/investment_income_credited_not_received",
+        "ca/tax_refund_interest",
+        "ca/foreign_investment_income",
+        "ca/investment_income_without_a_slip",
+        "ca/investment_royalties",
+        "ca/investment_income_before_prior_years",
+        "ca/investment_income_reported_in_previous_years",
+        "ca/interest_and_other_investment_income",
+        "ca/net_partnership_income",
+        "ca/rdsp_income",
+        "ca/taxable_support_payments",
+        "ca/rrsp_income",
+        "ca/fhsa_income",
+        "ca/other_fhsa_income",
+        "ca/other_income",
+        "ca/taxable_scholarships",
+        "ca/workers_compensation_benefits",
+        "ca/social_assistance_payments",
+        "ca/net_federal_supplements",
+        "ca/income_support_benefits",
         "ca/unused_rrsp_contributions",
         "ca/rrsp_contributions",
         "ca/rrsp_contributions_available",
@@ -107,6 +137,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/cwb_reduction_with_dependant",
         "ca/canada_workers_benefit_with_dependant",
         "ca/canada_workers_benefit",
+        "ca/provincial_credits",
         "ca/total_credits",
         "ca/refund_or_balance_owing",
     }
@@ -135,8 +166,19 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca-on/lift_reduction",
         "ca-on/lift_credit",
         "ca-on/ontario_tax_after_lift_credit",
+        "ca-on/community_food_program_donations",
+        "ca-on/community_food_program_credit",
+        "ca-on/ontario_tax_after_food_credit",
         "ca-on/ontario_health_premium",
         "ca-on/ontario_tax",
+        "ca-on/fertility_expenses",
+        "ca-on/fertility_credit_before_maximum",
+        "ca-on/fertility_credit",
+        "ca-on/seniors_transit_paid",
+        "ca-on/seniors_transit_amount_paid_at_most_maximum",
+        "ca-on/seniors_transit_credit",
+        "ca-on/ontario_credits_subtotal",
+        "ca-on/ontario_credits",
     }
     assert shared.get("ca/taxable_income") is TAXABLE_INCOME
     assert shared.get("ca/federal_basic_tax") is FEDERAL_BASIC_TAX
@@ -158,13 +200,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 68
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 80
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 68
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 80
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
