@@ -530,12 +530,16 @@ own conditions.
 An eligible spouse is not modelled: a filer with one and no eligible dependant is computed with the
 amounts for no eligible spouse and no eligible dependant, which the form does not give them."""
 
+PROVINCIAL_CREDITS = CATALOG.declare("provincial_credits", Decimal, non_negative=True)
+"""Provincial or territorial credits, T1 line 165 and line 47900 "Provincial or territorial credits
+(complete Form 479, if it applies)": the Ontario credits, Form ON479 line 21."""
+
 TOTAL_CREDITS = CATALOG.declare("total_credits", Decimal, non_negative=True)
 """Total credits, T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": here line 150
-(43700) and line 155 (45300), in line order.
+(43700), line 155 (45300) and line 165 (47900), in line order.
 
-Not triggered by the returns modelled, or left to later work: the other lines from 151 to 165
-(lines 44000 to 47900, among them 44800 CPP overpayment and 45000 EI overpayment).
+Not triggered by the returns modelled, or left to later work: the other lines from 151 to 164
+(lines 44000 to 47600, among them 44800 CPP overpayment and 45000 EI overpayment).
 """
 
 REFUND_OR_BALANCE_OWING = CATALOG.declare("refund_or_balance_owing", Decimal)
