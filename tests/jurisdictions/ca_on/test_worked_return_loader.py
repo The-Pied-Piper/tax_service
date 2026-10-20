@@ -756,6 +756,14 @@ def with_business_number(value: str) -> str:
     return with_section("inputs", f"inputs:\n  ex/business_number: {value}\n")
 
 
+def with_expected_business_number(value: str) -> str:
+    """`VALID` with a business number input, also expecting it back spelled `value`."""
+    return with_business_number('"012345678"').replace(
+        'expected:\n  ca/federal_basic_tax: "20146.25"\n',
+        f'expected:\n  ca/federal_basic_tax: "20146.25"\n  ex/business_number: {value}\n',
+    )
+
+
 @pytest.mark.parametrize("text", ["123456789", "012345678", "000000000"])
 def test_a_digits_kind_takes_its_digits_as_quoted_text_as_entered(
     tmp_path: Path, digits: ArtifactRegistry, text: str
@@ -837,12 +845,9 @@ def test_digits_under_expected_are_read_as_entered(
     tmp_path: Path, digits: ArtifactRegistry
 ) -> None:
     # A carried entry is listed as an input and as an output, so a return expects it back.
-    text = with_business_number('"012345678"').replace(
-        'expected:\n  ca/federal_basic_tax: "20146.25"\n',
-        'expected:\n  ca/federal_basic_tax: "20146.25"\n  ex/business_number: "012345678"\n',
-    )
+    path = write(tmp_path, with_expected_business_number('"012345678"'), "ok.yaml")
 
-    worked = WorkedReturn.load(write(tmp_path, text, "ok.yaml"), digits)
+    worked = WorkedReturn.load(path, digits)
 
     assert worked.expected[1] == Artifact(digits.kind("ex/business_number"), "012345678")
 
@@ -850,13 +855,10 @@ def test_digits_under_expected_are_read_as_entered(
 def test_digits_under_expected_that_are_not_quoted_text_name_the_file_and_key(
     tmp_path: Path, digits: ArtifactRegistry
 ) -> None:
-    text = with_business_number('"123456789"').replace(
-        'expected:\n  ca/federal_basic_tax: "20146.25"\n',
-        'expected:\n  ca/federal_basic_tax: "20146.25"\n  ex/business_number: 123456789\n',
-    )
+    path = write(tmp_path, with_expected_business_number("123456789"))
 
     with pytest.raises(
         WorkedReturnError,
         match=r"bad\.yaml: expected\.ex/business_number must be a string, got int",
     ):
-        WorkedReturn.load(write(tmp_path, text), digits)
+        WorkedReturn.load(path, digits)
