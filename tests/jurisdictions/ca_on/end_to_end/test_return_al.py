@@ -598,9 +598,7 @@ def test_return_al_records_the_ontario_split_income_lines_as_structured_lines() 
     )
 
 
-def test_an_ontario_disability_amount_larger_than_the_tax_leaves_line_47_negative_and_line_88_is_line_52() -> (  # noqa: E501
-    None
-):
+def test_an_ontario_disability_credit_above_the_tax_leaves_line_88_as_line_52() -> None:
     # Return B's filer (employment income 30000) with 1000 of split dividends (1150 grossed up) and
     # the Ontario disability amount of ON428 line 58440, a chosen 10298. Line 33 is 1150 x 20.53%
     # = 236.095, rounded half-up to the cent: 236.10. Line 36 is 10298 + 0 and line 38 is 5.05% of
