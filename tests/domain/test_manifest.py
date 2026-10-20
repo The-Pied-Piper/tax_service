@@ -3,8 +3,8 @@
 A selection is one capability chosen by a manifest, with its slots filled: `params` maps parameter
 slots to families; `consumes` and `produces` map artifact slots to artifact identifiers. All are
 kept as strings (the registries resolve them later) in read-only mappings. A manifest declares the
-computation's `inputs` and `outputs` as frozensets of artifact identifiers: each non-empty, and
-no identifier in both. Names are made up.
+computation's `inputs` and `outputs` as frozensets of artifact identifiers: each non-empty. An
+identifier in both is carried onto the return as entered. Names are made up.
 """
 
 from __future__ import annotations
@@ -140,12 +140,20 @@ def test_manifest_rejects_empty_inputs_or_outputs(field: str) -> None:
         manifest(**empty)
 
 
-def test_manifest_rejects_an_identifier_that_is_both_input_and_output() -> None:
-    with pytest.raises(InvalidManifestError, match="'ex/levy' is both an input and an output"):
-        manifest(
-            inputs=frozenset({"ex/taxable_base", "ex/levy"}),
-            outputs=frozenset({"ex/levy"}),
-        )
+def test_manifest_accepts_an_identifier_that_is_both_input_and_output() -> None:
+    found = manifest(
+        inputs=frozenset({"ex/taxable_base", "ex/levy"}),
+        outputs=frozenset({"ex/levy"}),
+    )
+
+    assert found.inputs == frozenset({"ex/taxable_base", "ex/levy"})
+    assert found.outputs == frozenset({"ex/levy"})
+
+
+def test_manifest_accepts_inputs_and_outputs_that_are_all_the_same() -> None:
+    found = manifest(inputs=frozenset({"ex/levy"}), outputs=frozenset({"ex/levy"}))
+
+    assert found.inputs == found.outputs == frozenset({"ex/levy"})
 
 
 # --- list slots: a consumed slot filled with a list of identifiers ------------------------------

@@ -24,10 +24,14 @@ from app.jurisdictions.ca_on.catalog import (
     AGE_INCOME_THRESHOLD,
     AGE_MAXIMUM,
     AGE_REDUCTION,
+    APPLIES_FOR_ENERGY_AND_PROPERTY_TAX_CREDIT,
+    APPLIES_FOR_NORTHERN_ENERGY_CREDIT,
+    APPLIES_FOR_SENIOR_HOMEOWNERS_GRANT,
     BASIC_PERSONAL_AMOUNT,
     CAREGIVER_AMOUNT,
     CAREGIVER_DEPENDANTS,
     CATALOG,
+    CHOOSES_SINGLE_BENEFIT_PAYMENT,
     CLAIMED_AS_ELIGIBLE_DEPENDANT,
     CLAIMS_SENIORS_CARE_CREDIT,
     COMMUNITY_FOOD_PROGRAM_CREDIT,
@@ -86,6 +90,7 @@ from app.jurisdictions.ca_on.catalog import (
     LIFT_SPOUSE_NET_INCOME_AND_REPAYMENTS,
     LIFT_SPOUSE_UCCB_AND_RDSP_INCOME,
     LIFT_UCCB_AND_RDSP_INCOME,
+    LIVED_IN_STUDENT_RESIDENCE,
     MEDICAL_CLAIM,
     MEDICAL_EXPENSES_OVER_THRESHOLD,
     MEDICAL_NET_INCOME_SHARE,
@@ -129,7 +134,11 @@ from app.jurisdictions.ca_on.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_5,
     POLITICAL_CREDIT_COLUMN_3_LINE_6,
     POLITICAL_CREDIT_COLUMN_3_LINE_7,
+    PROPERTY_TAX_PAID,
+    PUBLIC_LONG_TERM_CARE_PAID,
     REFUND_BEFORE_DONATION,
+    RENT_PAID,
+    RESERVE_HOME_ENERGY_COSTS,
     SENIORS_CARE_AMOUNT,
     SENIORS_CARE_BASE_AMOUNT,
     SENIORS_CARE_BEFORE_CLAIM,
@@ -141,6 +150,7 @@ from app.jurisdictions.ca_on.catalog import (
     SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
     SENIORS_TRANSIT_CREDIT,
     SENIORS_TRANSIT_PAID,
+    SEPARATE_RESIDENCES_FOR_MEDICAL_REASONS,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BEFORE_COUNT,
     SPOUSE_AMOUNT_BEFORE_MAXIMUM,
@@ -284,6 +294,16 @@ REGISTERED = frozenset(
         "ca-on/refund_before_donation",
         "ca-on/opportunities_fund_donation",
         "ca-on/net_refund",
+        "ca-on/applies_for_energy_and_property_tax_credit",
+        "ca-on/applies_for_northern_energy_credit",
+        "ca-on/chooses_single_benefit_payment",
+        "ca-on/applies_for_senior_homeowners_grant",
+        "ca-on/separate_residences_for_medical_reasons",
+        "ca-on/lived_in_student_residence",
+        "ca-on/rent_paid",
+        "ca-on/property_tax_paid",
+        "ca-on/reserve_home_energy_costs",
+        "ca-on/public_long_term_care_paid",
     }
 )
 # ON428 lines 75 (line 60969) and 76 (line 60970): the numbers of dependent children and of
@@ -292,6 +312,9 @@ REGISTERED = frozenset(
 # ON479 line 63260, the number of eligible work placements; and Schedule ON428-A's choice of
 # Part A or Part B, whether there was a spouse or common-law partner at the end of the year
 # (0 or 1).
+# line 4, whether a dependant is the one claimed on line 58160 (0 or 1), a field of each record; and
+# ON479 line 63260, the number of eligible work placements; and Form ON-BEN's six tick boxes
+# (lines 61020, 61040, 61060, 61070, 61080 and 61140), each 0 or 1.
 COUNTS = frozenset(
     {
         "ca-on/dependent_children",
@@ -300,6 +323,12 @@ COUNTS = frozenset(
         "ca-on/coop_education_placement_count",
         "ca-on/claims_seniors_care_credit",
         "ca-on/lift_spouse_at_year_end",
+        "ca-on/applies_for_energy_and_property_tax_credit",
+        "ca-on/applies_for_northern_energy_credit",
+        "ca-on/chooses_single_benefit_payment",
+        "ca-on/applies_for_senior_homeowners_grant",
+        "ca-on/separate_residences_for_medical_reasons",
+        "ca-on/lived_in_student_residence",
     }
 )
 # Form T1221 lines 1 to 3, one line per corporation or slip: the record list of the slips;
@@ -546,6 +575,28 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/refund_before_donation") is REFUND_BEFORE_DONATION
     assert registry.get("ca-on/opportunities_fund_donation") is OPPORTUNITIES_FUND_DONATION
     assert registry.get("ca-on/net_refund") is NET_REFUND
+    assert (
+        registry.get("ca-on/applies_for_energy_and_property_tax_credit")
+        is APPLIES_FOR_ENERGY_AND_PROPERTY_TAX_CREDIT
+    )
+    assert (
+        registry.get("ca-on/applies_for_northern_energy_credit")
+        is APPLIES_FOR_NORTHERN_ENERGY_CREDIT
+    )
+    assert registry.get("ca-on/chooses_single_benefit_payment") is CHOOSES_SINGLE_BENEFIT_PAYMENT
+    assert (
+        registry.get("ca-on/applies_for_senior_homeowners_grant")
+        is APPLIES_FOR_SENIOR_HOMEOWNERS_GRANT
+    )
+    assert (
+        registry.get("ca-on/separate_residences_for_medical_reasons")
+        is SEPARATE_RESIDENCES_FOR_MEDICAL_REASONS
+    )
+    assert registry.get("ca-on/lived_in_student_residence") is LIVED_IN_STUDENT_RESIDENCE
+    assert registry.get("ca-on/rent_paid") is RENT_PAID
+    assert registry.get("ca-on/property_tax_paid") is PROPERTY_TAX_PAID
+    assert registry.get("ca-on/reserve_home_energy_costs") is RESERVE_HOME_ENERGY_COSTS
+    assert registry.get("ca-on/public_long_term_care_paid") is PUBLIC_LONG_TERM_CARE_PAID
 
 
 def test_every_registered_kind_but_the_counts_and_record_lists_is_money_in_the_package_namespace(
@@ -687,3 +738,34 @@ def test_the_seniors_care_at_home_kinds_are_non_negative_amounts_and_a_claim_cou
     assert CLAIMS_SENIORS_CARE_CREDIT.identifier == "ca-on/claims_seniors_care_credit"
     assert CLAIMS_SENIORS_CARE_CREDIT.value_type is int
     assert CLAIMS_SENIORS_CARE_CREDIT.non_negative is True
+
+
+def test_the_on_ben_tick_boxes_are_counts_and_its_part_a_lines_amounts() -> None:
+    # Form ON-BEN "Line 61020: If you met any of these conditions and are applying for the 2026
+    # OEPTC, tick this box", lines 61040, 61060, 61070, 61080 and 61140: tick boxes, taken from
+    # the caller as 0 or 1.
+    for kind, identifier in (
+        (APPLIES_FOR_ENERGY_AND_PROPERTY_TAX_CREDIT, "applies_for_energy_and_property_tax_credit"),
+        (APPLIES_FOR_NORTHERN_ENERGY_CREDIT, "applies_for_northern_energy_credit"),
+        (CHOOSES_SINGLE_BENEFIT_PAYMENT, "chooses_single_benefit_payment"),
+        (APPLIES_FOR_SENIOR_HOMEOWNERS_GRANT, "applies_for_senior_homeowners_grant"),
+        (SEPARATE_RESIDENCES_FOR_MEDICAL_REASONS, "separate_residences_for_medical_reasons"),
+        (LIVED_IN_STUDENT_RESIDENCE, "lived_in_student_residence"),
+    ):
+        assert kind.identifier == f"ca-on/{identifier}"
+        assert kind.value_type is int
+        assert kind.non_negative is True
+    # Part A "Line 61100: Enter the total amount of rent paid for your principal residence",
+    # "Line 61120: Enter the total amount of property tax paid for your principal residence",
+    # "Line 61210: ... enter the total amount of home energy costs (like electricity and heat)
+    # paid for your principal residence" and "Line 61230: Enter the total amount paid for your
+    # accommodation in a public long-term care home or non-profit long-term care home".
+    for amount_kind, identifier in (
+        (RENT_PAID, "rent_paid"),
+        (PROPERTY_TAX_PAID, "property_tax_paid"),
+        (RESERVE_HOME_ENERGY_COSTS, "reserve_home_energy_costs"),
+        (PUBLIC_LONG_TERM_CARE_PAID, "public_long_term_care_paid"),
+    ):
+        assert amount_kind.identifier == f"ca-on/{identifier}"
+        assert amount_kind.value_type is Decimal
+        assert amount_kind.non_negative is True

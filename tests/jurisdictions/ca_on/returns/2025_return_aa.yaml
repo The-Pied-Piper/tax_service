@@ -117,6 +117,8 @@
 # below zero, at most $10,823 (line 58120), each claimed for its count. Ontario political
 # contributions (ON479 line 15, line 63100) are a chosen $0, so Worksheet ON479's line 16 is
 # $0 (column 1 applies).
+# Form ON-BEN (lines 61020 to 61230) is not applied for (a chosen 0 for each tick box and a
+# chosen $0 for each Part A amount), so its ten lines are carried as entered, all 0.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -1045,6 +1047,16 @@ inputs:
   ca-on/opportunities_fund_donation: "0"
   ca-on/fertility_expenses: "0"
   ca-on/claims_seniors_care_credit: "0"
+  ca-on/applies_for_energy_and_property_tax_credit: "0"
+  ca-on/applies_for_northern_energy_credit: "0"
+  ca-on/chooses_single_benefit_payment: "0"
+  ca-on/applies_for_senior_homeowners_grant: "0"
+  ca-on/separate_residences_for_medical_reasons: "0"
+  ca-on/lived_in_student_residence: "0"
+  ca-on/rent_paid: "0"
+  ca-on/property_tax_paid: "0"
+  ca-on/reserve_home_energy_costs: "0"
+  ca-on/public_long_term_care_paid: "0"
   ca-on/seniors_transit_paid: "0"
   ca-on/flow_through_share_slips: []
   ca-on/community_food_program_donations: "0"
@@ -1228,6 +1240,16 @@ expected:
   ca/canada_workers_benefit: "1633.00"
   ca-on/fertility_credit_before_maximum: "0"
   ca-on/fertility_credit: "0"
+  ca-on/applies_for_energy_and_property_tax_credit: "0"
+  ca-on/applies_for_northern_energy_credit: "0"
+  ca-on/chooses_single_benefit_payment: "0"
+  ca-on/applies_for_senior_homeowners_grant: "0"
+  ca-on/separate_residences_for_medical_reasons: "0"
+  ca-on/lived_in_student_residence: "0"
+  ca-on/rent_paid: "0"
+  ca-on/property_tax_paid: "0"
+  ca-on/reserve_home_energy_costs: "0"
+  ca-on/public_long_term_care_paid: "0"
   ca-on/seniors_transit_amount_paid_at_most_maximum: "0"
   ca-on/seniors_transit_credit: "0"
   ca/political_credit_before_maximum: "0"

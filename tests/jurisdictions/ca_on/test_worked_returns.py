@@ -273,6 +273,16 @@ inputs:
   ca-on/opportunities_fund_donation: "0"
   ca-on/fertility_expenses: "0"
   ca-on/claims_seniors_care_credit: "0"
+  ca-on/applies_for_energy_and_property_tax_credit: "0"
+  ca-on/applies_for_northern_energy_credit: "0"
+  ca-on/chooses_single_benefit_payment: "0"
+  ca-on/applies_for_senior_homeowners_grant: "0"
+  ca-on/separate_residences_for_medical_reasons: "0"
+  ca-on/lived_in_student_residence: "0"
+  ca-on/rent_paid: "0"
+  ca-on/property_tax_paid: "0"
+  ca-on/reserve_home_energy_costs: "0"
+  ca-on/public_long_term_care_paid: "0"
   ca-on/seniors_transit_paid: "0"
   ca-on/flow_through_share_slips: []
   ca-on/coop_education_payroll: "0"
@@ -445,6 +455,16 @@ expected:
   ca-on/seniors_care_reduction: "0.00"
   ca-on/seniors_care_before_claim: "0"
   ca-on/seniors_care_credit: "0"
+  ca-on/applies_for_energy_and_property_tax_credit: "0"
+  ca-on/applies_for_northern_energy_credit: "0"
+  ca-on/chooses_single_benefit_payment: "0"
+  ca-on/applies_for_senior_homeowners_grant: "0"
+  ca-on/separate_residences_for_medical_reasons: "0"
+  ca-on/lived_in_student_residence: "0"
+  ca-on/rent_paid: "0"
+  ca-on/property_tax_paid: "0"
+  ca-on/reserve_home_energy_costs: "0"
+  ca-on/public_long_term_care_paid: "0"
   ca-on/seniors_transit_amount_paid_at_most_maximum: "0"
   ca-on/seniors_transit_credit: "0"
   ca-on/political_credit_before_maximum: "0"
@@ -674,6 +694,39 @@ def test_return_ah_claims_the_refundable_medical_expense_supplement_on_line_4520
     assert expected["ca/medical_supplement_line_14"] == Decimal("1500.00")
     assert expected["ca/medical_supplement_line_16"] == Decimal("1500.00")
     assert expected["ca/refundable_medical_expense_supplement"] == Decimal("1500.00")
+
+
+def test_return_aj_applies_for_the_energy_and_property_tax_credit_on_form_on_ben() -> None:
+    path = RETURNS / "2025_return_aj.yaml"
+    build_tax_computation()  # registers the catalogs the loader resolves through
+    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+
+    # Form ON-BEN line 61020 is ticked and line 61100 is the rent paid; the other tick boxes are
+    # not ticked and the other Part A lines are $0. Each line is an input and, as entered, an
+    # expected line.
+    entered = {
+        "ca-on/applies_for_energy_and_property_tax_credit": 1,
+        "ca-on/applies_for_northern_energy_credit": 0,
+        "ca-on/chooses_single_benefit_payment": 0,
+        "ca-on/applies_for_senior_homeowners_grant": 0,
+        "ca-on/separate_residences_for_medical_reasons": 0,
+        "ca-on/lived_in_student_residence": 0,
+        "ca-on/rent_paid": Decimal("14400.00"),
+        "ca-on/property_tax_paid": Decimal("0"),
+        "ca-on/reserve_home_energy_costs": Decimal("0"),
+        "ca-on/public_long_term_care_paid": Decimal("0"),
+    }
+    for identifier, value in entered.items():
+        (given,) = [a for a in worked.inputs if a.kind.identifier == identifier]
+        assert given.value == value, identifier
+        assert type(given.value) is type(value), identifier
+        (carried,) = [a for a in worked.expected if a.kind.identifier == identifier]
+        assert carried.value == value, identifier
+    # Every other figure is Return B's: the application changes no computed line.
+    (refund,) = [a for a in worked.expected if a.kind.identifier == "ca/refund_or_balance_owing"]
+    assert refund.value == Decimal("-2402.96")
+    (net_income,) = [a for a in worked.expected if a.kind.identifier == "ca/net_income"]
+    assert net_income.value == Decimal("29735.00")
     check(path)
 
 

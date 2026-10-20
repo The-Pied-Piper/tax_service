@@ -2,7 +2,8 @@
 
 A manifest selects capabilities and fills their slots (design.md §4): parameter slots with
 families, artifact slots with artifact identifiers. The slots themselves are declared in code.
-A manifest also declares the computation's inputs and outputs by artifact identifier.
+A manifest also declares the computation's inputs and outputs by artifact identifier; an
+identifier in both is carried onto the return as entered.
 """
 
 from __future__ import annotations
@@ -50,8 +51,8 @@ class Manifest:
     """One structural version of a jurisdiction's composition.
 
     `capabilities` keeps the authored order, which is advisory only. `inputs` and `outputs` are
-    the identifiers of the artifacts a computation starts from and returns: each non-empty, and
-    no identifier in both.
+    the identifiers of the artifacts a computation starts from and returns: each non-empty. An
+    identifier in both is an input carried onto the return as entered.
     """
 
     jurisdiction: JurisdictionCode
@@ -65,6 +66,3 @@ class Manifest:
         for field in ("inputs", "outputs"):
             if not getattr(self, field):
                 raise InvalidManifestError(f"{field} must name at least one artifact")
-        both = self.inputs & self.outputs
-        if both:
-            raise InvalidManifestError(f"{min(both)!r} is both an input and an output")

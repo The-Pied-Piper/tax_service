@@ -603,11 +603,6 @@ def test_one_bad_file_fails_the_whole_load(tmp_path: Path) -> None:
             r"outputs\[1\]: 'ex/savings_deduction' is listed more than once",
             id="output-duplicate",
         ),
-        pytest.param(
-            EX_ON_V1.replace("  - ex-on/levy\n", "  - ex/taxable_base\n"),
-            "'ex/taxable_base' is both an input and an output",
-            id="input-also-output",
-        ),
     ],
 )
 def test_rejects_malformed_manifest(tmp_path: Path, content: str, message: str) -> None:
@@ -617,3 +612,18 @@ def test_rejects_malformed_manifest(tmp_path: Path, content: str, message: str) 
         source(tmp_path).get_jurisdiction(EX_ON)
 
     assert "ex-on-v1.yaml" in str(excinfo.value)
+
+
+def test_an_identifier_listed_as_both_input_and_output_is_carried_by_the_manifest(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path,
+        "ex-on/manifests/v1.yaml",
+        EX_ON_V1.replace("  - ex-on/levy\n", "  - ex-on/levy\n  - ex/taxable_base\n"),
+    )
+
+    manifest = source(tmp_path).get_jurisdiction(EX_ON).manifests[0]
+
+    assert manifest.inputs == frozenset({"ex/gross_income", "ex/taxable_base"})
+    assert manifest.outputs == frozenset({"ex/savings_deduction", "ex-on/levy", "ex/taxable_base"})

@@ -1,7 +1,8 @@
 """The composition: wired capabilities, checked and ordered (design.md §5).
 
 A composition is built once from capabilities and the artifact kinds a computation takes and
-returns. It rejects bad wiring when built, derives the execution order from the capabilities'
+returns. An input that is also a declared output is carried onto the worksheet as entered, with
+no producer. It rejects bad wiring when built, derives the execution order from the capabilities'
 contracts, and computes by applying each capability, in that order, to a fresh worksheet.
 """
 
@@ -95,7 +96,8 @@ class Composition:
             raise InvalidCompositionError(
                 f"input {kind.label!r} is also produced by {type(self._producers[kind]).__name__}"
             )
-        unused = self._inputs - self._consumed()
+        # An input that is also a declared output is used: it is carried onto the return as entered.
+        unused = self._inputs - self._consumed() - self._outputs
         if unused:
             kind = min(unused, key=self._sort_key)
             raise InvalidCompositionError(f"input {kind.label!r} is consumed by nothing")
@@ -116,7 +118,7 @@ class Composition:
                 raise InvalidCompositionError(message)
 
     def _check_outputs(self) -> None:
-        unproduced = self._outputs - self._producers.keys()
+        unproduced = self._outputs - self._producers.keys() - self._inputs
         if unproduced:
             kind = min(unproduced, key=self._sort_key)
             raise InvalidCompositionError(f"declared output {kind.label!r} is produced by nothing")

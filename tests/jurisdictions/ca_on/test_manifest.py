@@ -712,6 +712,20 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/capital_gift_gains_deduction",
             "ca-on/political_contributions",
             "ca-on/lift_spouse_at_year_end",
+            # Form ON-BEN, "Application for the 2026 Ontario Trillium Benefit and Ontario Senior
+            # Homeowners' Property Tax Grant": the tick boxes of lines 61020, 61040, 61060, 61070,
+            # 61080 and 61140 and the amounts of Part A's lines 61100, 61120, 61210 and 61230, as
+            # the form takes them. Each is also an output: the form computes nothing from them.
+            "ca-on/applies_for_energy_and_property_tax_credit",
+            "ca-on/applies_for_northern_energy_credit",
+            "ca-on/chooses_single_benefit_payment",
+            "ca-on/applies_for_senior_homeowners_grant",
+            "ca-on/separate_residences_for_medical_reasons",
+            "ca-on/lived_in_student_residence",
+            "ca-on/rent_paid",
+            "ca-on/property_tax_paid",
+            "ca-on/reserve_home_energy_costs",
+            "ca-on/public_long_term_care_paid",
         }
     )
     # T1 line 167, the refund or balance owing, Schedule 7 line 23, what the return produces for
@@ -726,8 +740,10 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     # for the next year's line 52; the Ontario opportunities fund's line 3 (line 46600) "Net
     # refund (line 1 minus line 2)", which nothing reads (line 48400, the refund, is read by that
     # page's line 1, so it is not a line the computation returns); and ON479 line 63260, the
-    # number of eligible work placements, which nothing else reads: the lines the computation
-    # returns.
+    # number of eligible work placements, which nothing else reads; and Form ON-BEN's ten lines
+    # (tick boxes 61020, 61040, 61060, 61070, 61080 and 61140, Part A lines 61100, 61120, 61210
+    # and 61230), which the return carries as entered, each also an input with nothing computing
+    # from it: the lines the computation returns.
     assert found.outputs == frozenset(
         {
             "ca/refund_or_balance_owing",
@@ -743,6 +759,16 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/net_capital_loss_balance_1988_and_1989",
             "ca/net_capital_loss_balance_1990_to_1999",
             "ca/net_capital_loss_balance_2001_to_2024",
+            "ca-on/applies_for_energy_and_property_tax_credit",
+            "ca-on/applies_for_northern_energy_credit",
+            "ca-on/chooses_single_benefit_payment",
+            "ca-on/applies_for_senior_homeowners_grant",
+            "ca-on/separate_residences_for_medical_reasons",
+            "ca-on/lived_in_student_residence",
+            "ca-on/rent_paid",
+            "ca-on/property_tax_paid",
+            "ca-on/reserve_home_energy_costs",
+            "ca-on/public_long_term_care_paid",
         }
     )
     # List order carries no meaning: the composition derives the run order from the contracts.

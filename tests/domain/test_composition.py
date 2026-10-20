@@ -299,6 +299,45 @@ def test_rejects_a_declared_input_nothing_consumes() -> None:
         Composition([Link(A, B)], inputs=kinds(A, C), outputs=kinds(B))
 
 
+def test_accepts_an_input_nothing_consumes_when_it_is_also_a_declared_output() -> None:
+    link = Link(A, B)
+
+    composition = Composition([link], inputs=kinds(A, C), outputs=kinds(B, C))
+
+    assert composition.order == (link,)
+
+
+def test_accepts_an_input_a_capability_consumes_when_it_is_also_a_declared_output() -> None:
+    link = Link(A, B)
+
+    composition = Composition([link], inputs=kinds(A), outputs=kinds(A, B))
+
+    assert composition.order == (link,)
+
+
+def test_computing_returns_an_input_that_is_also_an_output_unchanged() -> None:
+    link, entered = Link(A, B), Artifact(C, D("7.25"))
+
+    worksheet = Composition([link], inputs=kinds(A, C), outputs=kinds(B, C)).compute(
+        Artifact(A, D(5)), entered
+    )
+
+    assert worksheet.get(C) == entered
+    assert worksheet.producer_of(C) is None
+    assert worksheet.get(B) == Artifact(B, D(5))
+    assert worksheet.trace == (TaggedLine("link", D(5)),)
+
+
+def test_still_rejects_an_input_nothing_consumes_when_only_another_kind_is_the_output() -> None:
+    with pytest.raises(InvalidCompositionError, match="input 'c' is consumed by nothing"):
+        Composition([Link(A, B)], inputs=kinds(A, C), outputs=kinds(B, E))
+
+
+def test_still_rejects_an_input_a_capability_produces_even_when_it_is_a_declared_output() -> None:
+    with pytest.raises(InvalidCompositionError, match="input 'b' is also produced by Link"):
+        Composition([Link(A, B)], inputs=kinds(A, B), outputs=kinds(B))
+
+
 def test_accepts_a_capability_that_consumes_nothing_while_its_output_is_consumed() -> None:
     constant, join = Constant(B, D(5), "b"), Join(A, B, C)
 
