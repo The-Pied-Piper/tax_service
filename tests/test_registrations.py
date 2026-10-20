@@ -70,6 +70,12 @@ def test_importing_the_federal_package_registers_the_other_dependants_medical_ca
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.other_dependants_medical"
 
 
+def test_importing_the_federal_package_registers_the_threshold_gate_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/threshold_gate")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.threshold_gate"
+
+
 def test_importing_the_federal_package_registers_the_disability_transfer_amount() -> None:
     registered = CapabilityRegistry.shared().get("ca/disability_transfer_amount")
 

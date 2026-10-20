@@ -58,6 +58,7 @@ from app.domain.trace import (
     SumLine,
     SurchargeTierLine,
     TaperedAmountLine,
+    ThresholdGateLine,
     TimesCountLine,
     TraceLine,
 )
@@ -98,6 +99,8 @@ ALONE = ArtifactKind("ex/amount_alone", Decimal)
 WITH_FAMILY = ArtifactKind("ex/amount_with_family", Decimal)
 CHOSEN = ArtifactKind("ex/amount_chosen", Decimal)
 ITEM_AMOUNT = ArtifactKind("ex/item_amount", Decimal)
+GATED = ArtifactKind("ex/gated_amount", Decimal)
+GATE = ArtifactKind("ex/gate_amount", Decimal)
 TESTED = ArtifactKind("ex/amount_tested", Decimal)
 IN_THE_FIRST_RANGE = ArtifactKind("ex/amount_in_the_first_range", Decimal)
 IN_THE_SECOND_RANGE = ArtifactKind("ex/amount_in_the_second_range", Decimal)
@@ -143,6 +146,12 @@ def credit_amount_line() -> CreditAmountLine:
 
 def capped_amount_line() -> CappedAmountLine:
     return CappedAmountLine(CAPPED, GROSS, D("1500.25"), Amount(D(1000)), CENT, D("1000.00"))
+
+
+def threshold_gate_line() -> ThresholdGateLine:
+    return ThresholdGateLine(
+        GATED, GROSS, D("1500.25"), GATE, D("4390"), Amount(D("4390")), CENT, D("1500.25")
+    )
 
 
 def greater_of_line() -> GreaterOfLine:
@@ -293,6 +302,7 @@ ALL_LINES = [
     subtracted_not_below_zero_line,
     credit_amount_line,
     capped_amount_line,
+    threshold_gate_line,
     lesser_of_line,
     greater_of_line,
     contribution_tier_line,
@@ -2388,3 +2398,82 @@ def test_placement_credit_lines_are_hashable() -> None:
 
 def test_a_placement_credit_line_is_not_a_record_total_line() -> None:
     assert not isinstance(placement_credit_line(), RecordTotalLine)
+
+
+def test_threshold_gate_line_fields_in_order() -> None:
+    line = threshold_gate_line()
+
+    assert line == ThresholdGateLine(
+        output=GATED,
+        amount_kind=GROSS,
+        amount_value=D("1500.25"),
+        gate_kind=GATE,
+        gate_value=D("4390"),
+        threshold=Amount(D("4390")),
+        rounding=CENT,
+        result=D("1500.25"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "amount_kind",
+        "amount_value",
+        "gate_kind",
+        "gate_value",
+        "threshold",
+        "rounding",
+        "result",
+    ]
+    assert line.output is GATED
+    assert line.amount_kind is GROSS
+    assert line.amount_value == D("1500.25")
+    assert line.gate_kind is GATE
+    assert line.gate_value == D("4390")
+    assert line.threshold == Amount(D("4390"))
+    assert line.rounding == CENT
+    assert line.result == D("1500.25")
+    assert line.amount == D("1500.25")
+
+
+def test_a_threshold_gate_line_may_hold_a_gate_below_the_threshold() -> None:
+    line = ThresholdGateLine(
+        GATED, GROSS, D("1500.25"), GATE, D("4389.99"), Amount(D("4390")), NO_ROUNDING, D("0")
+    )
+
+    assert line.result == D("0")
+    assert line.amount == D("0")
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"output": CAPPED},
+        {"amount_kind": CLAIMED},
+        {"amount_value": D("1500.5")},
+        {"gate_kind": LIMIT},
+        {"gate_value": D("4389.99")},
+        {"threshold": Amount(D("5000"))},
+        {"rounding": NO_ROUNDING},
+        {"result": D("0")},
+    ],
+)
+def test_threshold_gate_lines_differ_by_each_field(change: dict[str, Any]) -> None:
+    line = threshold_gate_line()
+    values = {f.name: getattr(line, f.name) for f in fields(line)}
+    values.update(change)
+
+    assert line != ThresholdGateLine(**values)
+
+
+def test_threshold_gate_lines_are_hashable() -> None:
+    assert hash(threshold_gate_line()) == hash(threshold_gate_line())
+
+
+def test_a_threshold_gate_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(threshold_gate_line())]
+
+
+def test_a_threshold_gate_line_is_not_a_capped_amount_or_at_most_line() -> None:
+    line = threshold_gate_line()
+
+    assert not isinstance(line, CappedAmountLine)
+    assert not isinstance(line, AtMostLine)
