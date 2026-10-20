@@ -785,7 +785,6 @@ NET_REFUND = CATALOG.declare("net_refund", Decimal, non_negative=True)
 """Net refund, Ontario opportunities fund line 3 and line 46600 "Net refund (line 1 minus line
 2) =": line 1 less line 2."""
 
-
 APPLIES_FOR_ENERGY_AND_PROPERTY_TAX_CREDIT = CATALOG.declare(
     "applies_for_energy_and_property_tax_credit", int, non_negative=True
 )

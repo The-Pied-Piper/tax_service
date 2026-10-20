@@ -253,16 +253,6 @@ REGISTERED = frozenset(
         "ca-on/seniors_care_reduction",
         "ca-on/seniors_care_before_claim",
         "ca-on/seniors_care_credit",
-        "ca-on/applies_for_energy_and_property_tax_credit",
-        "ca-on/applies_for_northern_energy_credit",
-        "ca-on/chooses_single_benefit_payment",
-        "ca-on/applies_for_senior_homeowners_grant",
-        "ca-on/separate_residences_for_medical_reasons",
-        "ca-on/lived_in_student_residence",
-        "ca-on/rent_paid",
-        "ca-on/property_tax_paid",
-        "ca-on/reserve_home_energy_costs",
-        "ca-on/public_long_term_care_paid",
         "ca-on/seniors_transit_paid",
         "ca-on/seniors_transit_amount_paid_at_most_maximum",
         "ca-on/seniors_transit_credit",
@@ -304,6 +294,16 @@ REGISTERED = frozenset(
         "ca-on/refund_before_donation",
         "ca-on/opportunities_fund_donation",
         "ca-on/net_refund",
+        "ca-on/applies_for_energy_and_property_tax_credit",
+        "ca-on/applies_for_northern_energy_credit",
+        "ca-on/chooses_single_benefit_payment",
+        "ca-on/applies_for_senior_homeowners_grant",
+        "ca-on/separate_residences_for_medical_reasons",
+        "ca-on/lived_in_student_residence",
+        "ca-on/rent_paid",
+        "ca-on/property_tax_paid",
+        "ca-on/reserve_home_energy_costs",
+        "ca-on/public_long_term_care_paid",
     }
 )
 # ON428 lines 75 (line 60969) and 76 (line 60970): the numbers of dependent children and of
@@ -491,28 +491,6 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/seniors_care_reduction") is SENIORS_CARE_REDUCTION
     assert registry.get("ca-on/seniors_care_before_claim") is SENIORS_CARE_BEFORE_CLAIM
     assert registry.get("ca-on/seniors_care_credit") is SENIORS_CARE_CREDIT
-    assert (
-        registry.get("ca-on/applies_for_energy_and_property_tax_credit")
-        is APPLIES_FOR_ENERGY_AND_PROPERTY_TAX_CREDIT
-    )
-    assert (
-        registry.get("ca-on/applies_for_northern_energy_credit")
-        is APPLIES_FOR_NORTHERN_ENERGY_CREDIT
-    )
-    assert registry.get("ca-on/chooses_single_benefit_payment") is CHOOSES_SINGLE_BENEFIT_PAYMENT
-    assert (
-        registry.get("ca-on/applies_for_senior_homeowners_grant")
-        is APPLIES_FOR_SENIOR_HOMEOWNERS_GRANT
-    )
-    assert (
-        registry.get("ca-on/separate_residences_for_medical_reasons")
-        is SEPARATE_RESIDENCES_FOR_MEDICAL_REASONS
-    )
-    assert registry.get("ca-on/lived_in_student_residence") is LIVED_IN_STUDENT_RESIDENCE
-    assert registry.get("ca-on/rent_paid") is RENT_PAID
-    assert registry.get("ca-on/property_tax_paid") is PROPERTY_TAX_PAID
-    assert registry.get("ca-on/reserve_home_energy_costs") is RESERVE_HOME_ENERGY_COSTS
-    assert registry.get("ca-on/public_long_term_care_paid") is PUBLIC_LONG_TERM_CARE_PAID
     assert registry.get("ca-on/seniors_transit_paid") is SENIORS_TRANSIT_PAID
     assert (
         registry.get("ca-on/seniors_transit_amount_paid_at_most_maximum")
@@ -597,6 +575,28 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/refund_before_donation") is REFUND_BEFORE_DONATION
     assert registry.get("ca-on/opportunities_fund_donation") is OPPORTUNITIES_FUND_DONATION
     assert registry.get("ca-on/net_refund") is NET_REFUND
+    assert (
+        registry.get("ca-on/applies_for_energy_and_property_tax_credit")
+        is APPLIES_FOR_ENERGY_AND_PROPERTY_TAX_CREDIT
+    )
+    assert (
+        registry.get("ca-on/applies_for_northern_energy_credit")
+        is APPLIES_FOR_NORTHERN_ENERGY_CREDIT
+    )
+    assert registry.get("ca-on/chooses_single_benefit_payment") is CHOOSES_SINGLE_BENEFIT_PAYMENT
+    assert (
+        registry.get("ca-on/applies_for_senior_homeowners_grant")
+        is APPLIES_FOR_SENIOR_HOMEOWNERS_GRANT
+    )
+    assert (
+        registry.get("ca-on/separate_residences_for_medical_reasons")
+        is SEPARATE_RESIDENCES_FOR_MEDICAL_REASONS
+    )
+    assert registry.get("ca-on/lived_in_student_residence") is LIVED_IN_STUDENT_RESIDENCE
+    assert registry.get("ca-on/rent_paid") is RENT_PAID
+    assert registry.get("ca-on/property_tax_paid") is PROPERTY_TAX_PAID
+    assert registry.get("ca-on/reserve_home_energy_costs") is RESERVE_HOME_ENERGY_COSTS
+    assert registry.get("ca-on/public_long_term_care_paid") is PUBLIC_LONG_TERM_CARE_PAID
 
 
 def test_every_registered_kind_but_the_counts_and_record_lists_is_money_in_the_package_namespace(
