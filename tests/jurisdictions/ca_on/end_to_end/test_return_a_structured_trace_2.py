@@ -1596,7 +1596,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # value when it is part of an adjusted net income calculation, otherwise use zero.)" and Part 2
     # line 24 "Line 22 minus line 23 (if negative, enter "0")", line 23 not being wired, so line 22
     # alone: both floored sums, in their own trace line class.
-    sum_floors = {line.output: line for line in trace if isinstance(line, SumNotBelowZeroLine)}
+    sum_floors = {
+        line.output: line
+        for line in trace
+        if isinstance(line, SumNotBelowZeroLine)
+        and line.output in (TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO, SPLIT_INCOME_LINE_24)
+    }
     assert sum_floors == {
         TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO: SumNotBelowZeroLine(
             output=TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,

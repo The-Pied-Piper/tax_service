@@ -22,7 +22,7 @@ from app.domain.trace import (
     SumNotBelowZeroLine,
     SurchargeTierLine,
 )
-from app.jurisdictions.ca.catalog import (
+from app.jurisdictions.ca.catalog import (  # noqa: E402
     ADJUSTED_FAMILY_NET_INCOME,
     ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987,
     ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
@@ -208,6 +208,7 @@ from app.jurisdictions.ca.catalog import (
     SPLIT_INCOME_DIVIDENDS,
     SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SPLIT_INCOME_LINE_18,
+    SPLIT_INCOME_LINE_22,
     SPLIT_INCOME_LINE_24,
     SPLIT_INCOME_LINE_29,
     SPLIT_INCOME_LINE_30,
@@ -232,6 +233,7 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_CREDITS,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
+    TOTAL_SPLIT_INCOME,
     TRAVEL_TOTAL_ZONE_A,
     TRAVEL_TOTAL_ZONE_B,
     UCCB_AND_RDSP_INCOME,
@@ -1335,8 +1337,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     # Schedule 8 Part 4 line 3 "Line 1 plus line 2 (if negative, enter "0")" and Schedule 13 line 1
     # "(if negative, enter "0")", on no self-employment income and no partnership income, and the
-    # rental CCA limit.
+    # rental CCA limit, and the Form T1206 lines floored in Part 1 (the TOSI-adjusted net income)
+    # and Part 2 (line 24, on line 22 alone) for a return without split income.
     assert summed_floored == {
+        TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO: SumNotBelowZeroLine(
+            output=TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
+            parts=((TOTAL_SPLIT_INCOME, D("0")), (NET_INCOME_BEFORE_ADJUSTMENTS, D("115000"))),
+            total=D("115000"),
+        ),
+        SPLIT_INCOME_LINE_24: SumNotBelowZeroLine(
+            output=SPLIT_INCOME_LINE_24, parts=((SPLIT_INCOME_LINE_22, D("0")),), total=D("0")
+        ),
         CPP_PENSIONABLE_EARNINGS: SumNotBelowZeroLine(
             CPP_PENSIONABLE_EARNINGS,
             ((PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS, D("0")), (CPT20_EARNINGS, D("0"))),

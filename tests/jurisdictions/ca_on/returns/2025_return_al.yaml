@@ -262,10 +262,12 @@ sources:
 inputs:
   ca/other_dividends_received_without_a_slip: "10000"
   ca/resident_in_canada_throughout_2025: "1"
+  ca/cpp_months: "12"
   ca/aged_18_or_older_at_end_of_2025: "1"
   ca/split_income_dividends: "11500"
   ca/split_income_dividends_other_than_eligible: "11500"
 expected:
+  ca/cpp_second_additional_earnings_maximum: "9900.00"
   ca/other_dividends_grossed_up: "11500.00"
   ca/dividends_without_a_slip_grossed_up: "11500.00"
   ca/taxable_dividends_other_than_eligible: "11500.00"
