@@ -9,7 +9,7 @@ one dataset each (the `rate` kind). Each is rounded half-up to the cent, as ever
 box on the forms is. The form is a PDF with no published .txt, so the datasets cite the PDF.
 
 The datasets are tested with the capabilities that read them, on made-up kinds; Part A and Part B
-together, from the AIPs of lines 1 and 11 to line 41800, are in test_end_to_end_2025.py.
+together, from the AIPs of lines 1 and 11 to line 41800, are in the `end_to_end` tests.
 """
 
 from __future__ import annotations

@@ -7,7 +7,7 @@ the credit. The percentage is a rate (the `rate` kind) and the maximum a plain c
 kind). Line 161 is a dollars-and-cents box, so each is rounded half-up to the cent.
 
 The datasets are tested with the capabilities that read them, on made-up kinds; the lines together,
-from the supplies paid to line 48200, are in test_end_to_end_2025.py.
+from the supplies paid to line 48200, are in the `end_to_end` tests.
 """
 
 from __future__ import annotations

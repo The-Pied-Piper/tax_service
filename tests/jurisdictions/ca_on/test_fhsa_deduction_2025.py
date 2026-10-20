@@ -10,7 +10,7 @@ limit 40,000.00". Each is a printed figure claimed whole (the `credit` kind, rea
 
 Each dataset is tested with the capability that reads it, on made-up kinds; the lines together,
 from the T4FHSA slip boxes and the participation room statement to line 20805, are in
-test_end_to_end_2025.py.
+the `end_to_end` tests.
 """
 
 from __future__ import annotations

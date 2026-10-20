@@ -11,7 +11,7 @@ a rate (the `rate` kind), rounded half-up to the cent, as every dollars-and-cent
 is. The form is a PDF with no published .txt, so the datasets cite the PDF.
 
 The datasets are tested with the capabilities that read them, on made-up kinds; the lines together,
-from the expenditures of lines 67193 and 67195 to line 42000, are in test_end_to_end_2025.py.
+from the expenditures of lines 67193 and 67195 to line 42000, are in the `end_to_end` tests.
 """
 
 from __future__ import annotations

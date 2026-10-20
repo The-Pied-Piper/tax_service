@@ -14,7 +14,7 @@ and 13 of the form are dollars-and-cents boxes, so each is rounded half-up to th
 
 Each dataset is tested with the one capability that reads it, on made-up kinds; the lines together,
 from net income and the spouse's net income to lines 58080 and 58120, are in
-test_end_to_end_2025.py.
+the `end_to_end` tests.
 """
 
 from __future__ import annotations

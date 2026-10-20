@@ -18,7 +18,7 @@ printing none) gives line 2 from the dependant's net income.
 
 The datasets are tested with the capabilities that read them, on made-up kinds for the T1 lines
 and with the registered kinds for line 33199; the lines together, from the expenses paid to line
-48200, are in test_end_to_end_2025.py and `returns/2025_return_x.yaml`.
+48200, are in the `end_to_end` tests and `returns/2025_return_x.yaml`.
 """
 
 from __future__ import annotations

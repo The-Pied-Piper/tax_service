@@ -18,7 +18,7 @@ The form's first printed rule says that a family net income of $35,000 or less e
 up to $35,000; at $65,000 line 12 is 5% of $30,000, $1,500.00, the most line 5 can be), so the
 tests pin the edges at $35,000 and $65,000 instead of a gate. The datasets are tested with the
 capabilities that read them, on made-up kinds; the lines together, from the expenses paid to line
-167, are in test_end_to_end_2025.py and `returns/2025_return_ag.yaml`.
+167, are in the `end_to_end` tests and `returns/2025_return_ag.yaml`.
 """
 
 from __future__ import annotations
