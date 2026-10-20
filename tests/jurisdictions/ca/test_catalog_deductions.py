@@ -77,6 +77,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_LIMIT_INCOME,
     OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
+    OTHER_SPLIT_INCOME,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     RDSP_INCOME_REPAYMENT,
     RESIDENCY_AMOUNT,
@@ -91,14 +92,19 @@ from app.jurisdictions.ca.catalog import (
     SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     SELF_EMPLOYED_EI_PREMIUMS,
+    SPLIT_INCOME_DIVIDENDS,
+    SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     STANDARD_AMOUNT_ALLOCATED,
     STANDARD_AMOUNT_ALLOCATED_1,
     STANDARD_AMOUNT_ALLOCATED_2,
     STANDARD_AMOUNT_ALLOCATED_3,
     SUPPORT_PAYMENTS_DEDUCTION,
+    TOSI_ADJUSTED_NET_INCOME,
+    TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOTAL_CARRYING_CHARGES,
     TOTAL_INTEREST_EXPENSES,
     TOTAL_OTHER_EXPENSES,
+    TOTAL_SPLIT_INCOME,
     TRAVEL_DEDUCTION,
     TRAVEL_INDIVIDUAL,
     TRAVEL_INDIVIDUALS,
@@ -129,6 +135,7 @@ from app.jurisdictions.ca.catalog import (
     ZONE_B_RESIDENCY_AMOUNT,
     ZONE_B_SPECIAL_WORK_SITE_BENEFITS,
 )
+from tests.jurisdictions.ca.catalog_snapshot import SIGNED
 
 
 def test_the_deductions_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
@@ -379,6 +386,18 @@ def test_the_deductions_kinds_are_the_registered_ones(registry: ArtifactRegistry
     assert registry.get("ca/deductions_from_total_income") is DEDUCTIONS_FROM_TOTAL_INCOME
     assert registry.get("ca/net_income_before_adjustments") is NET_INCOME_BEFORE_ADJUSTMENTS
     assert registry.get("ca/net_income") is NET_INCOME
+    assert registry.get("ca/split_income_dividends") is SPLIT_INCOME_DIVIDENDS
+    assert (
+        registry.get("ca/split_income_dividends_other_than_eligible")
+        is SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE
+    )
+    assert registry.get("ca/other_split_income") is OTHER_SPLIT_INCOME
+    assert registry.get("ca/total_split_income") is TOTAL_SPLIT_INCOME
+    assert registry.get("ca/tosi_adjusted_net_income") is TOSI_ADJUSTED_NET_INCOME
+    assert (
+        registry.get("ca/tosi_adjusted_net_income_not_below_zero")
+        is TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO
+    )
 
 
 def test_the_deductions_kinds_are_money() -> None:
@@ -461,5 +480,47 @@ def test_the_deductions_kinds_are_money() -> None:
         SELF_EMPLOYED_EI_PREMIUMS,
         DEDUCTIONS_FROM_TOTAL_INCOME,
         NET_INCOME,
+        SPLIT_INCOME_DIVIDENDS,
+        SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+        OTHER_SPLIT_INCOME,
+        TOTAL_SPLIT_INCOME,
+        TOSI_ADJUSTED_NET_INCOME,
+        TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     ):
         assert kind.value_type is Decimal, kind.identifier
+
+
+def test_the_tosi_adjusted_net_income_is_signed(registry: ArtifactRegistry) -> None:
+    # Form T1206 Part 1 line 6 "TOSI-adjusted net income: line 4 plus line 5 If negative, enter
+    # the result in brackets" (line 5 may itself be in brackets) prints no "(if negative, enter
+    # "0")", so it is signed.
+    assert TOSI_ADJUSTED_NET_INCOME.non_negative is False
+    assert registry.kind("ca/tosi_adjusted_net_income") is TOSI_ADJUSTED_NET_INCOME
+    assert "ca/tosi_adjusted_net_income" in SIGNED
+
+
+def test_the_tosi_adjusted_net_income_not_below_zero_is_its_non_negative_twin(
+    registry: ArtifactRegistry,
+) -> None:
+    # "(If the TOSI-adjusted net income at line 6 is negative, use the negative value when it is
+    # part of an adjusted net income calculation, otherwise use zero.)": the signed line 6 and a
+    # second kind for "otherwise use zero", which the basic personal amount, the age amount and
+    # Schedule 6 line 7 read.
+    assert TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO is not TOSI_ADJUSTED_NET_INCOME
+    assert TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO.non_negative is True
+    assert registry.kind("ca/tosi_adjusted_net_income_not_below_zero").non_negative is True
+    assert "ca/tosi_adjusted_net_income_not_below_zero" not in SIGNED
+
+
+def test_the_t1206_part_1_amounts_are_non_negative_decimals(registry: ArtifactRegistry) -> None:
+    # Lines 1 to 3 are the caller's amounts of split income, and line 4 adds them.
+    for kind in (
+        SPLIT_INCOME_DIVIDENDS,
+        SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+        OTHER_SPLIT_INCOME,
+        TOTAL_SPLIT_INCOME,
+    ):
+        assert kind.identifier not in SIGNED, kind.identifier
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+        assert registry.kind(kind.identifier) is kind

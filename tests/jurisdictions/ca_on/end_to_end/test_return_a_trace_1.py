@@ -170,7 +170,7 @@ def test_the_trace_explains_the_computation() -> None:
         "+ carrying_charges_interest_expenses_and_other_expenses 0 "
         "+ cpp_deduction_on_self_employment 0 "
         "+ cpp_enhanced_contributions 1074 + exploration_and_development_expenses 0 "
-        "+ other_deductions 0 = 5000",
+        "+ other_deductions 0 + total_split_income 0 = 5000",
         "5000",
     )
     net = position(
@@ -237,7 +237,8 @@ def test_the_trace_explains_the_computation() -> None:
     position("26% on 250 over 114750 plus 20081.25", "20146.25")
     position("federal_basic_tax on taxable_income 115000 (half-up to 0.01)", "20146.25")
     position(
-        "basic_personal_amount: 14538 plus 1591 less 0 for net_income 115000 over 177882 "
+        "basic_personal_amount: 14538 plus 1591 less 0 for "
+        "tosi_adjusted_net_income_not_below_zero 115000 over 177882 "
         "(range 75532), not below 14538 (half-up to 0.01)",
         "16129",
     )
@@ -313,8 +314,8 @@ def test_the_trace_explains_the_computation() -> None:
     position("age_maximum: credit amount 9028 (half-up to 0.01)", "9028.00")
     position("age_income_threshold: credit amount 45522 (half-up to 0.01)", "45522.00")
     position(
-        "age_income_over_threshold: net_income 115000 less age_income_threshold 45522, not below 0 "
-        "= 69478",
+        "age_income_over_threshold: tosi_adjusted_net_income_not_below_zero 115000 "
+        "less age_income_threshold 45522, not below 0 = 69478",
         "69478",
     )
     position("age_reduction: 15% of age_income_over_threshold 69478 (half-up to 0.01)", "10421.70")
@@ -382,7 +383,7 @@ def test_the_trace_explains_the_computation() -> None:
         "3194.87",
     )
     position(
-        "federal_tax_after_credits: federal_basic_tax 20146.25 "
+        "federal_tax_after_credits: federal_tax_with_split_income 20146.25 "
         "less credits_against_basic_federal_tax 3194.87, not below 0 = 16951.38",
         "16951.38",
     )
@@ -769,8 +770,7 @@ def test_the_trace_explains_the_computation() -> None:
         "special_taxes: resp_aips_additional_tax 0 + rl_10_labour_sponsored_fund_amount 0 = 0", "0"
     )
     position(
-        "net_federal_tax: federal_tax_less_credits 16951.38 + advanced_canada_workers_benefit 0 "
-        "+ special_taxes 0 = 16951.38",
+        "net_federal_tax: split_income_line_30 16951.38 + special_taxes 0 = 16951.38",
         "16951.38",
     )
     position(
@@ -779,7 +779,10 @@ def test_the_trace_explains_the_computation() -> None:
         "25897.15",
     )
     position("working_income: employment_income 110000 = 110000", "110000")
-    position("adjusted_family_net_income: net_income 115000 = 115000", "115000")
+    position(
+        "adjusted_family_net_income: tosi_adjusted_net_income_not_below_zero 115000 = 115000",
+        "115000",
+    )
     position(
         "cwb_before_reduction_without_dependant: 27% of working_income 110000 over 3000, "
         "at most 1633 (half-up to 0.01)",

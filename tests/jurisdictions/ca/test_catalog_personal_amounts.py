@@ -29,6 +29,7 @@ from app.jurisdictions.ca.catalog import (
     DEPENDANT_NET_INCOME,
     DEPENDANT_TAXABLE_INCOME,
     DEPENDANT_UNDER_18,
+    DISABILITY_AMOUNT_FOR_SELF,
     DISABILITY_DEPENDANTS,
     DISABILITY_TRANSFERRED_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT,
@@ -148,6 +149,7 @@ def test_the_personal_amounts_kinds_are_the_registered_ones(registry: ArtifactRe
     assert registry.get("ca/cca_ucc_at_end") is CCA_UCC_AT_END
     assert registry.get("ca/infirm_children") is INFIRM_CHILDREN
     assert registry.get("ca/infirm_children_amount") is INFIRM_CHILDREN_AMOUNT
+    assert registry.get("ca/disability_amount_for_self") is DISABILITY_AMOUNT_FOR_SELF
 
 
 def test_the_personal_amounts_kinds_are_money() -> None:
@@ -197,5 +199,6 @@ def test_the_personal_amounts_kinds_are_money() -> None:
         CCA_CLAIMED,
         CCA_UCC_AT_END,
         INFIRM_CHILDREN_AMOUNT,
+        DISABILITY_AMOUNT_FOR_SELF,
     ):
         assert kind.value_type is Decimal, kind.identifier

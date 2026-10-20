@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from app.domain.trace import (
     SumLine,
+    SumNotBelowZeroLine,
 )
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
@@ -56,6 +57,7 @@ from app.jurisdictions.ca.catalog import (
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DEPRECIABLE_GIFTS,
+    DISABILITY_AMOUNT_FOR_SELF,
     DISABILITY_SUPPORTS_DEDUCTION,
     DISABILITY_TRANSFERRED_AMOUNT,
     DIVIDEND_TAX_CREDIT,
@@ -85,9 +87,12 @@ from app.jurisdictions.ca.catalog import (
     EMPLOYMENT_INCOME,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
     FARMING_INCOME,
+    FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
+    FEDERAL_TAX_WITH_SPLIT_INCOME,
     FHSA_ANNUAL_AMOUNT,
     FHSA_ANNUAL_AMOUNT_FOR_2024,
     FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD,
@@ -190,6 +195,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_DEDUCTION,
     OTHER_PAYMENTS_LIMIT_INCOME,
     OTHER_PENSIONS_AND_SUPERANNUATION,
+    OTHER_SPLIT_INCOME,
     PART_XII_2_TAX_CREDIT,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     POLITICAL_CREDIT,
@@ -281,6 +287,16 @@ from app.jurisdictions.ca.catalog import (
     SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SOCIAL_ASSISTANCE_PAYMENTS,
     SPECIAL_TAXES,
+    SPLIT_INCOME_DIVIDENDS,
+    SPLIT_INCOME_LINE_10,
+    SPLIT_INCOME_LINE_13,
+    SPLIT_INCOME_LINE_19,
+    SPLIT_INCOME_LINE_20,
+    SPLIT_INCOME_LINE_21,
+    SPLIT_INCOME_LINE_22,
+    SPLIT_INCOME_LINE_24,
+    SPLIT_INCOME_LINE_29,
+    SPLIT_INCOME_LINE_30,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BASIS,
     SPOUSE_CAREGIVER_AMOUNT,
@@ -316,6 +332,8 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_SUPPORT_PAYMENTS,
     TOP_UP_CREDITS_BASE,
     TOP_UP_TAX_CREDIT,
+    TOSI_ADJUSTED_NET_INCOME,
+    TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
     TOTAL_CARRYING_CHARGES,
     TOTAL_CHARITABLE_DONATIONS,
@@ -324,6 +342,7 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_INTEREST_EXPENSES,
     TOTAL_OTHER_EXPENSES,
     TOTAL_PAYABLE,
+    TOTAL_SPLIT_INCOME,
     TRAVEL_DEDUCTION,
     TRAVEL_TOTAL_ZONE_A,
     TRAVEL_ZONE_B_DEDUCTION,
@@ -671,7 +690,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CHILD_CARE_EARNED_INCOME, ((EMPLOYMENT_INCOME, D("110000")),), D("110000")
         ),
         # T1 line 23300, in line order: 20700, 20800, 20805, 21000, 21200, 21300, 21400, 21700,
-        # 22000, 22100, 22200, 22215, 22400, 23200.
+        # 22000, 22100, 22200, 22215, 22400, 23200 (the caller's other deductions), then the total split
+        # income of Form T1206 Part 1 line 4, here 0.
         DEDUCTIONS_FROM_TOTAL_INCOME: SumLine(
             DEDUCTIONS_FROM_TOTAL_INCOME,
             (
@@ -689,8 +709,51 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (CPP_ENHANCED_CONTRIBUTIONS, D("1074.00")),
                 (EXPLORATION_AND_DEVELOPMENT_EXPENSES, D("0")),
                 (OTHER_DEDUCTIONS, D("0")),
+                (TOTAL_SPLIT_INCOME, D("0")),
             ),
             D("5000"),
+        ),
+        # Form T1206 Part 1 line 4 "Total split income: line 1 plus line 3", and line 6
+        # "TOSI-adjusted net income: line 4 plus line 5", line 5 being the net income before
+        # adjustments (line 23400); Part 2 line 10 "Line 8 plus line 9", line 13 "Line 11 plus
+        # line 12", line 21 "Line 19 plus line 20" and line 29 "Line 27 plus line 28" (line 27
+        # being the federal tax less credits, T1 line 139): Return A has no split income, so each
+        # is its other part.
+        TOTAL_SPLIT_INCOME: SumLine(
+            TOTAL_SPLIT_INCOME,
+            ((SPLIT_INCOME_DIVIDENDS, D("0")), (OTHER_SPLIT_INCOME, D("0"))),
+            D("0"),
+        ),
+        TOSI_ADJUSTED_NET_INCOME: SumLine(
+            TOSI_ADJUSTED_NET_INCOME,
+            ((TOTAL_SPLIT_INCOME, D("0")), (NET_INCOME_BEFORE_ADJUSTMENTS, D("115000"))),
+            D("115000"),
+        ),
+        # T1 line 121 "Line 119 plus line 120".
+        FEDERAL_TAX_WITH_SPLIT_INCOME: SumLine(
+            FEDERAL_TAX_WITH_SPLIT_INCOME,
+            ((FEDERAL_BASIC_TAX, D("20146.25")), (FEDERAL_TAX_ON_SPLIT_INCOME, D("0"))),
+            D("20146.25"),
+        ),
+        SPLIT_INCOME_LINE_10: SumLine(
+            SPLIT_INCOME_LINE_10,
+            ((FEDERAL_TAX_ON_SPLIT_INCOME, D("0")), (ADVANCED_CANADA_WORKERS_BENEFIT, D("0"))),
+            D("0"),
+        ),
+        SPLIT_INCOME_LINE_13: SumLine(
+            SPLIT_INCOME_LINE_13,
+            ((DISABILITY_AMOUNT_FOR_SELF, D("0")), (DISABILITY_TRANSFERRED_AMOUNT, D("0"))),
+            D("0"),
+        ),
+        SPLIT_INCOME_LINE_21: SumLine(
+            SPLIT_INCOME_LINE_21,
+            ((SPLIT_INCOME_LINE_19, D("0")), (SPLIT_INCOME_LINE_20, D("0"))),
+            D("0"),
+        ),
+        SPLIT_INCOME_LINE_29: SumLine(
+            SPLIT_INCOME_LINE_29,
+            ((FEDERAL_TAX_LESS_CREDITS, D("16951.38")), (ADVANCED_CANADA_WORKERS_BENEFIT, D("0"))),
+            D("16951.38"),
         ),
         # The Federal Worksheet's "Line 25000 - Other payments deduction" lines 4, 8 and 9, each
         # in line order.
@@ -973,16 +1036,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("8945.77"),
         ),
-        # T1 line 142 (line 42000) "Add lines 139 to 141. Net federal tax", in line order: line
-        # 139 (41700), line 140 (41500, the advanced Canada workers benefit) and line 141 (41800,
-        # special taxes), the last two 0 here.
+        # Form T1206 Part 2 "Add the amount from line 30 to the amount from line 41800 of your
+        # return, and enter the result on line 42000 of your return.", in that order, the second
+        # being 0 here.
         NET_FEDERAL_TAX: SumLine(
             NET_FEDERAL_TAX,
-            (
-                (FEDERAL_TAX_LESS_CREDITS, D("16951.38")),
-                (ADVANCED_CANADA_WORKERS_BENEFIT, D("0")),
-                (SPECIAL_TAXES, D("0")),
-            ),
+            ((SPLIT_INCOME_LINE_30, D("16951.38")), (SPECIAL_TAXES, D("0"))),
             D("16951.38"),
         ),
         # T2038(IND) Part C amount 3 "Total recapture of investment tax credit on SR&ED
@@ -1055,9 +1114,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # 10400 of the return" alone, as lines 2 to 4 are not triggered.
         WORKING_INCOME: SumLine(WORKING_INCOME, ((EMPLOYMENT_INCOME, D("110000")),), D("110000")),
         # Schedule 6 line 15 "Line 13 minus line 14 Enter this amount on line 23 and line 35.
-        # Adjusted family net income": line 7, net income (line 23600), carried unchanged.
+        # Adjusted family net income": line 7, the TOSI-adjusted net income not below zero (in
+        # place of the net income, line 23600), carried unchanged.
         ADJUSTED_FAMILY_NET_INCOME: SumLine(
-            ADJUSTED_FAMILY_NET_INCOME, ((NET_INCOME, D("115000")),), D("115000")
+            ADJUSTED_FAMILY_NET_INCOME,
+            ((TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO, D("115000")),),
+            D("115000"),
         ),
         # Schedule ON479-A line 5 "Add the amounts from line 4 of columns 1 and 2. Family adjusted
         # income": column 1 (line 4) and column 2 (line 4, line 63047, no supporting person).
@@ -1404,7 +1466,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             output=MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3,
             parts=(
                 (
-                    NET_INCOME_BEFORE_ADJUSTMENTS,
+                    TOSI_ADJUSTED_NET_INCOME,
                     D("115000.00"),
                 ),
                 (
@@ -1483,5 +1545,20 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (EI_EXEMPT_SELF_EMPLOYMENT_INCOME, D("0")),
             ),
             D("0"),
+        ),
+    }
+    # Form T1206 Part 1 "(If the TOSI-adjusted net income at line 6 is negative, use the negative
+    # value when it is part of an adjusted net income calculation, otherwise use zero.)" and Part 2
+    # line 24 "Line 22 minus line 23 (if negative, enter "0")", line 23 not being wired, so line 22
+    # alone: both floored sums, in their own trace line class.
+    sum_floors = {line.output: line for line in trace if isinstance(line, SumNotBelowZeroLine)}
+    assert sum_floors == {
+        TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO: SumNotBelowZeroLine(
+            output=TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
+            parts=((TOTAL_SPLIT_INCOME, D("0")), (NET_INCOME_BEFORE_ADJUSTMENTS, D("115000"))),
+            total=D("115000"),
+        ),
+        SPLIT_INCOME_LINE_24: SumNotBelowZeroLine(
+            output=SPLIT_INCOME_LINE_24, parts=((SPLIT_INCOME_LINE_22, D("0")),), total=D("0")
         ),
     }

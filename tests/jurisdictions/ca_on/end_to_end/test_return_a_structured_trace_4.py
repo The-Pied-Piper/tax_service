@@ -99,10 +99,10 @@ from app.jurisdictions.ca.catalog import (
     EI_SELF_EMPLOYMENT_EARNINGS,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     EMPLOYMENT_INCOME,
-    FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
+    FEDERAL_TAX_WITH_SPLIT_INCOME,
     FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS,
     FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD,
     FHSA_ANNUAL_AMOUNT_WITH_CARRYFORWARD,
@@ -205,6 +205,12 @@ from app.jurisdictions.ca.catalog import (
     SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     SELF_EMPLOYED_EI_PREMIUMS,
     SHORT_TERM_RENTAL_GROSS_RENTS,
+    SPLIT_INCOME_DIVIDENDS,
+    SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    SPLIT_INCOME_LINE_18,
+    SPLIT_INCOME_LINE_24,
+    SPLIT_INCOME_LINE_29,
+    SPLIT_INCOME_LINE_30,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BASIS,
     SPOUSE_AMOUNT_BEFORE_COUNT,
@@ -220,6 +226,7 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_CREDITS_BASE,
     TOP_UP_EXCESS,
     TOP_UP_THRESHOLD,
+    TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
@@ -753,6 +760,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Form T1206 Part 2 line 18 "Line 16 minus line 17 (if negative, enter "0")": no
+        # dividends, so 0.
+        SPLIT_INCOME_LINE_18: SubtractedNotBelowZeroLine(
+            output=SPLIT_INCOME_LINE_18,
+            minuend=SPLIT_INCOME_DIVIDENDS,
+            minuend_amount=D("0"),
+            subtrahend=SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # T1 line 110 "Line 107 minus line 109 (if negative, enter "0")": no medical expenses.
         MEDICAL_EXPENSES_OVER_THRESHOLD: SubtractedNotBelowZeroLine(
             output=MEDICAL_EXPENSES_OVER_THRESHOLD,
@@ -939,11 +956,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("115000"),
         ),
-        # Each form's credits come off its basic tax, not below zero; here both taxes exceed
-        # their credits.
+        # Each form's credits come off its tax, not below zero (federally the tax of T1 line 121,
+        # the basic tax plus the tax on split income); here both taxes exceed their credits.
         FEDERAL_TAX_AFTER_CREDITS: SubtractedNotBelowZeroLine(
             output=FEDERAL_TAX_AFTER_CREDITS,
-            minuend=FEDERAL_BASIC_TAX,
+            minuend=FEDERAL_TAX_WITH_SPLIT_INCOME,
             minuend_amount=D("20146.25"),
             subtrahend=CREDITS_AGAINST_BASIC_FEDERAL_TAX,
             subtrahend_amount=D("3194.87"),
@@ -968,11 +985,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("16129.00"),
         ),
-        # Federal Worksheet line 4 "Line 2 minus line 3 (if negative, enter "0")": the net income
-        # 115000 less the income threshold 45522.00.
+        # Federal Worksheet line 4 "Line 2 minus line 3 (if negative, enter "0")": the TOSI-adjusted
+        # net income not below zero, 115000, less the income threshold 45522.00.
         AGE_INCOME_OVER_THRESHOLD: SubtractedNotBelowZeroLine(
             output=AGE_INCOME_OVER_THRESHOLD,
-            minuend=NET_INCOME,
+            minuend=TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
             minuend_amount=D("115000"),
             subtrahend=AGE_INCOME_THRESHOLD,
             subtrahend_amount=D("45522.00"),
@@ -1392,6 +1409,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         STANDARD_AMOUNT_ALLOCATED: ItemsTotalLine(STANDARD_AMOUNT_ALLOCATED, (), D("0")),
     }
     assert {line.output: line for line in trace if isinstance(line, GreaterOfLine)} == {
+        # Form T1206 Part 2 line 30 "Enter whichever is more: the amount from line 24 or line 29."
+        SPLIT_INCOME_LINE_30: GreaterOfLine(
+            output=SPLIT_INCOME_LINE_30,
+            parts=((SPLIT_INCOME_LINE_24, D("0")), (SPLIT_INCOME_LINE_29, D("16951.38"))),
+            result=D("16951.38"),
+        ),
         ontario.LIFT_GREATER_EXCESS: GreaterOfLine(
             ontario.LIFT_GREATER_EXCESS,
             (
@@ -1399,7 +1422,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ontario.LIFT_EXCESS_OVER_FAMILY_THRESHOLD, D("50000.00")),
             ),
             D("82500.00"),
-        )
+        ),
     }
     assert chosen == {
         # T776 Part 4 line 2 (the co-owner's share, amount 2): a count of 0 chooses line 9369. Line

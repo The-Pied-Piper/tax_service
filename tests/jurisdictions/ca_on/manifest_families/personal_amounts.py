@@ -56,6 +56,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_NET_INCOME,
     SPOUSES_CLAIMED,
     TAXABLE_INCOME,
+    TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
 )
 
 INPUTS = frozenset(
@@ -71,6 +72,7 @@ INPUTS = frozenset(
         "ca/spouse_net_income",
         "ca/spouses_claimed",
         "ca/spouse_caregiver_eligible",
+        "ca/disability_amount_for_self",
     }
 )
 
@@ -83,15 +85,16 @@ STEPS = {
         consumes={"base": "ca/taxable_income"},
         produces={"output": "ca/federal_basic_tax"},
     ),
-    # T1 line 30000 "If the amount on line 23600 is $177,882 or less, enter $16,129. If the
-    # amount on line 23600 is $253,414 or more, enter $14,538. Otherwise, use the Federal
-    # Worksheet to calculate the amount to enter. (maximum $16,129)": the federal basic
-    # personal amount is the worksheet's taper on net income (line 23600), the first part of
-    # the T1's total of credit amounts.
+    # T1 line 30000 "If the amount on line 23600 is $177,882 or less, enter $16,129. If the amount
+    # on line 23600 is $253,414 or more, enter $14,538. Otherwise, use the Federal Worksheet to
+    # calculate the amount to enter. (maximum $16,129)": the federal basic personal amount is the
+    # worksheet's taper on the TOSI-adjusted net income of Form T1206 Part 1 line 6 in place of the
+    # net income (line 23600), not below zero ("use line 6 of this form at line 3 of your Federal
+    # Worksheet for line 30000"), the first part of the T1's total of credit amounts.
     CapabilitySelection(
         name="core/tapered_amount",
         params={"taper": "ca/basic_personal_amount"},
-        consumes={"base": "ca/net_income"},
+        consumes={"base": "ca/tosi_adjusted_net_income_not_below_zero"},
         produces={"output": "ca/basic_personal_amount"},
     ),
     # T1 line 100 (line 31800) "Disability amount transferred from a dependant (use Federal
@@ -128,12 +131,16 @@ STEPS = {
         consumes={},
         produces={"output": "ca/age_income_threshold"},
     ),
-    # Line 2 "Amount from line 23600 of your return", the net income, and line 4 "Line 2 minus
-    # line 3 (if negative, enter "0")".
+    # Line 2 "Amount from line 23600 of your return", the TOSI-adjusted net income of Form T1206
+    # Part 1 line 6 in its place, not below zero ("use line 6 of this form at line 2 of your Federal
+    # Worksheet for line 30100"), and line 4 "Line 2 minus line 3 (if negative, enter "0")".
     CapabilitySelection(
         name="core/subtract_not_below_zero",
         params={},
-        consumes={"amount": "ca/net_income", "less": "ca/age_income_threshold"},
+        consumes={
+            "amount": "ca/tosi_adjusted_net_income_not_below_zero",
+            "less": "ca/age_income_threshold",
+        },
         produces={"output": "ca/age_income_over_threshold"},
     ),
     # Line 5 "Applicable rate 15%" and line 6 "Line 4 multiplied by the percentage from line
@@ -337,12 +344,16 @@ STEPS = {
 
 WIRING = {
     (ProgressiveTax, frozenset({TAXABLE_INCOME}), frozenset({FEDERAL_BASIC_TAX})),
-    (TaperedAmount, frozenset({NET_INCOME}), frozenset({BASIC_PERSONAL_AMOUNT})),
+    (
+        TaperedAmount,
+        frozenset({TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO}),
+        frozenset({BASIC_PERSONAL_AMOUNT}),
+    ),
     (CreditAmount, frozenset(), frozenset({AGE_MAXIMUM})),
     (CreditAmount, frozenset(), frozenset({AGE_INCOME_THRESHOLD})),
     (
         SubtractNotBelowZero,
-        frozenset({NET_INCOME, AGE_INCOME_THRESHOLD}),
+        frozenset({TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO, AGE_INCOME_THRESHOLD}),
         frozenset({AGE_INCOME_OVER_THRESHOLD}),
     ),
     (ApplyRate, frozenset({AGE_INCOME_OVER_THRESHOLD}), frozenset({AGE_REDUCTION})),

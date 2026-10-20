@@ -54,7 +54,9 @@ from app.jurisdictions.ca.catalog import (
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
+    FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
+    FEDERAL_TAX_WITH_SPLIT_INCOME,
     FIRST_TIER_DONATION_CREDIT,
     FOREIGN_CHARITY_DONATIONS,
     GOVERNMENT_DONATIONS,
@@ -83,6 +85,7 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_TAX_CREDIT,
     TOP_UP_THRESHOLD,
     TOTAL_CHARITABLE_DONATIONS,
+    TOTAL_SPLIT_INCOME,
     UNIVERSITY_DONATIONS_OUTSIDE_CANADA,
 )
 
@@ -471,14 +474,37 @@ STEPS = {
         },
         produces={"output": "ca/non_refundable_tax_credits"},
     ),
-    # Each form's credits come off its basic tax, not below zero: the unused part is lost.
-    # Federally the credits are line 125 (T1 line 126 "Line 121 minus line 125 (if negative,
-    # enter "0")").
+    # Form T1206 Part 2 line 8 "Amount from line 7 multiplied by 33% Enter this amount on line 40424
+    # of your return. Federal tax on split income", line 7 being "Total split income from line 4",
+    # which is line 4 itself: T1 line 120 and line 40424 "Federal tax on split income (TOSI)
+    # (complete Form T1206)".
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/split_income_rate"},
+        consumes={"base": "ca/total_split_income"},
+        produces={"output": "ca/federal_tax_on_split_income"},
+    ),
+    # T1 line 121 and line 40400 "Line 119 plus line 120 =": line 119 "Enter the amount from line
+    # 76." is the federal basic tax and line 120 is the federal tax on split income, in line order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/federal_basic_tax",
+                "ca/federal_tax_on_split_income",
+            )
+        },
+        produces={"output": "ca/federal_tax_with_split_income"},
+    ),
+    # Each form's credits come off its tax, not below zero: the unused part is lost. Federally the
+    # tax is line 121 (line 119, the basic tax, plus line 120, the tax on split income) and the
+    # credits are line 125 (T1 line 126 "Line 121 minus line 125 (if negative, enter "0")").
     CapabilitySelection(
         name="core/subtract_not_below_zero",
         params={},
         consumes={
-            "amount": "ca/federal_basic_tax",
+            "amount": "ca/federal_tax_with_split_income",
             "less": "ca/credits_against_basic_federal_tax",
         },
         produces={"output": "ca/federal_tax_after_credits"},
@@ -687,9 +713,15 @@ WIRING = {
         frozenset({CREDIT_AMOUNTS_AT_CREDIT_RATE, DONATIONS_AND_GIFTS_CREDIT, TOP_UP_TAX_CREDIT}),
         frozenset({NON_REFUNDABLE_TAX_CREDITS}),
     ),
+    (ApplyRate, frozenset({TOTAL_SPLIT_INCOME}), frozenset({FEDERAL_TAX_ON_SPLIT_INCOME})),
+    (
+        Sum,
+        frozenset({FEDERAL_BASIC_TAX, FEDERAL_TAX_ON_SPLIT_INCOME}),
+        frozenset({FEDERAL_TAX_WITH_SPLIT_INCOME}),
+    ),
     (
         SubtractNotBelowZero,
-        frozenset({FEDERAL_BASIC_TAX, CREDITS_AGAINST_BASIC_FEDERAL_TAX}),
+        frozenset({FEDERAL_TAX_WITH_SPLIT_INCOME, CREDITS_AGAINST_BASIC_FEDERAL_TAX}),
         frozenset({FEDERAL_TAX_AFTER_CREDITS}),
     ),
     (

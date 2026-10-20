@@ -341,12 +341,32 @@ capabilities:
         - ca/top_up_tax_credit
     produces:
       output: ca/non_refundable_tax_credits
-  # Each form's credits come off its basic tax, not below zero: the unused part is lost.
-  # Federally the credits are line 125 (T1 line 126 "Line 121 minus line 125 (if negative,
-  # enter "0")").
+  # Form T1206 Part 2 line 8 "Amount from line 7 multiplied by 33% Enter this amount on line 40424
+  # of your return. Federal tax on split income", line 7 being "Total split income from line 4",
+  # which is line 4 itself: T1 line 120 and line 40424 "Federal tax on split income (TOSI)
+  # (complete Form T1206)".
+  - name: core/apply_rate
+    params:
+      rate: ca/split_income_rate
+    consumes:
+      base: ca/total_split_income
+    produces:
+      output: ca/federal_tax_on_split_income
+  # T1 line 121 and line 40400 "Line 119 plus line 120 =": line 119 "Enter the amount from line
+  # 76." is the federal basic tax and line 120 is the federal tax on split income, in line order.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/federal_basic_tax
+        - ca/federal_tax_on_split_income
+    produces:
+      output: ca/federal_tax_with_split_income
+  # Each form's credits come off its tax, not below zero: the unused part is lost. Federally the
+  # tax is line 121 (line 119, the basic tax, plus line 120, the tax on split income) and the
+  # credits are line 125 (T1 line 126 "Line 121 minus line 125 (if negative, enter "0")").
   - name: core/subtract_not_below_zero
     consumes:
-      amount: ca/federal_basic_tax
+      amount: ca/federal_tax_with_split_income
       less: ca/credits_against_basic_federal_tax
     produces:
       output: ca/federal_tax_after_credits

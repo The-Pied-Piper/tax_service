@@ -259,7 +259,7 @@ def test_return_ns_donations_and_gifts_credit_and_top_up_come_off_the_federal_ta
         "+ dividend_tax_credit 0 = 3391.54"
     ) in rendered
     assert (
-        "federal_tax_after_credits: federal_basic_tax 6895.48 "
+        "federal_tax_after_credits: federal_tax_with_split_income 6895.48 "
         "less credits_against_basic_federal_tax 3391.54, not below 0 = 3503.94"
     ) in rendered
     assert (
