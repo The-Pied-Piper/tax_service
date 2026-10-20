@@ -16,6 +16,7 @@ from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rate_table import RATE_TABLE, RateTable
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
+from app.domain.parameters.threshold_rate import THRESHOLD_RATE, ThresholdRate
 
 
 def test_built_in_kinds() -> None:
@@ -28,6 +29,7 @@ def test_built_in_kinds() -> None:
     assert RATE == ParameterKind("rate", Rate)
     assert RATE_TABLE == ParameterKind("rate_table", RateTable)
     assert ROUNDING_ONLY == ParameterKind("rounding_only", RoundingOnly)
+    assert THRESHOLD_RATE == ParameterKind("threshold_rate", ThresholdRate)
 
 
 @pytest.mark.parametrize("name", ["", "Brackets", "flat-rate", "2x", "_x"])

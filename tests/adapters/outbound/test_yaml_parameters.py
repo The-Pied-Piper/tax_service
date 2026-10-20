@@ -33,6 +33,7 @@ from app.adapters.outbound.parameter_parsers.registry import ParameterParserRegi
 from app.adapters.outbound.parameter_parsers.rounding_only import RoundingOnlyParser
 from app.adapters.outbound.parameter_parsers.surcharge_tiers import SurchargeTiersParser
 from app.adapters.outbound.parameter_parsers.taper import TaperParser
+from app.adapters.outbound.parameter_parsers.threshold_rate import ThresholdRateParser
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.adapters.outbound.yaml_support import YamlNode
 from app.domain.errors import (
@@ -51,6 +52,7 @@ from app.domain.errors import (
     InvalidRateTableError,
     InvalidSurchargeTiersError,
     InvalidTaperError,
+    InvalidThresholdRateError,
     NotFoundError,
     UnknownRegistrationError,
 )
@@ -88,6 +90,7 @@ from app.domain.parameters.surcharge_tiers import (
     SurchargeTiers,
 )
 from app.domain.parameters.taper import TAPER, Taper
+from app.domain.parameters.threshold_rate import THRESHOLD_RATE, ThresholdRate
 from app.domain.registry import Namespace
 
 D = Decimal
@@ -147,6 +150,17 @@ ceiling: "2834"
 """
 
 CLAIM_REDUCTION_WITH_MAXIMUM_2025 = CLAIM_REDUCTION_2025 + 'maximum: "15551"\n'
+
+THRESHOLD_RATE_2025 = """\
+family: ex/threshold_rate
+tax_year: 2025
+kind: threshold_rate
+sources:
+  - https://example.org/threshold-rate-2025
+rounding: none
+threshold: "52886"
+rate: "0.0505"
+"""
 
 CONTRIBUTION_TIER_2025 = """\
 family: ex/contribution_tier
@@ -329,6 +343,7 @@ def built_in_parsers() -> ParameterParserRegistry:
     registry.register_class(RateParser)
     registry.register_class(AmountParser)
     registry.register_class(ClaimReductionParser)
+    registry.register_class(ThresholdRateParser)
     registry.register_class(ContributionTierParser)
     registry.register_class(SurchargeTiersParser)
     registry.register_class(TaperParser)
@@ -1652,6 +1667,143 @@ def test_an_invalid_claim_reduction_figure_is_reported_as_a_claim_reduction_erro
         source(tmp_path).get("ex/claim_reduction", 2025, CLAIM_REDUCTION)
 
     assert isinstance(raised.value.__cause__, InvalidClaimReductionError)
+
+
+def test_reads_a_threshold_rate_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/threshold_rate/2025.yaml", THRESHOLD_RATE_2025)
+
+    result = source(tmp_path).get("ex/threshold_rate", 2025, THRESHOLD_RATE)
+
+    assert result == ParameterDataset(
+        family="ex/threshold_rate",
+        tax_year=2025,
+        kind=THRESHOLD_RATE,
+        values=ThresholdRate(Rate(D("0.0505")), D("52886")),
+        rounding=NO_ROUNDING,
+        sources=("https://example.org/threshold-rate-2025",),
+    )
+
+
+def test_reads_a_threshold_rates_figures_exactly(tmp_path: Path) -> None:
+    content = THRESHOLD_RATE_2025.replace('threshold: "52886"', 'threshold: "52886.50"').replace(
+        'rate: "0.0505"', 'rate: "0.05050"'
+    )
+    write(tmp_path, "ex/parameters/threshold_rate/2025.yaml", content)
+
+    values = source(tmp_path).get("ex/threshold_rate", 2025, THRESHOLD_RATE).values
+
+    assert str(values.threshold) == "52886.50"
+    assert str(values.rate.value) == "0.05050"  # exact, scale kept
+
+
+def test_reads_a_threshold_rate_datasets_rounding_rule(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/threshold_rate/2025.yaml",
+        THRESHOLD_RATE_2025.replace(
+            "rounding: none", 'rounding: {increment: "0.01", mode: half_up}'
+        ),
+    )
+
+    result = source(tmp_path).get("ex/threshold_rate", 2025, THRESHOLD_RATE)
+
+    assert result.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
+
+
+def test_by_default_the_threshold_rate_parser_comes_from_the_shared_registry(
+    tmp_path: Path,
+) -> None:
+    write(tmp_path, "ex/parameters/threshold_rate/2025.yaml", THRESHOLD_RATE_2025)
+
+    result = YamlParameterSource(roots(tmp_path)).get("ex/threshold_rate", 2025, THRESHOLD_RATE)
+
+    assert result.values == ThresholdRate(Rate(D("0.0505")), D("52886"))
+
+
+def test_a_threshold_rate_dataset_is_not_a_rate_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/threshold_rate/2025.yaml", THRESHOLD_RATE_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'threshold_rate' does not match"):
+        source(tmp_path).get("ex/threshold_rate", 2025, RATE)
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        pytest.param(
+            THRESHOLD_RATE_2025.replace('rate: "0.0505"', 'rate: "1.5"'),
+            "rate must be between 0 and 1",
+            id="rate-above-one",
+        ),
+        pytest.param(
+            THRESHOLD_RATE_2025.replace('rate: "0.0505"', 'rate: "0"'),
+            "rate must not be zero",
+            id="rate-zero",
+        ),
+        pytest.param(
+            THRESHOLD_RATE_2025.replace('rate: "0.0505"', "rate: 0.0505"),
+            "rate must be a string, got float",
+            id="rate-as-yaml-number",
+        ),
+        pytest.param(
+            THRESHOLD_RATE_2025.replace('threshold: "52886"', "threshold: 52886"),
+            "threshold must be a string, got int",
+            id="threshold-as-yaml-number",
+        ),
+        pytest.param(
+            THRESHOLD_RATE_2025.replace('threshold: "52886"', 'threshold: "lots"'),
+            "threshold is not a decimal: 'lots'",
+            id="threshold-not-decimal",
+        ),
+        pytest.param(
+            THRESHOLD_RATE_2025.replace('threshold: "52886"', 'threshold: "-1"'),
+            "threshold must not be negative",
+            id="threshold-negative",
+        ),
+        pytest.param(
+            THRESHOLD_RATE_2025.replace('threshold: "52886"', 'threshold: "Infinity"'),
+            "threshold is not a decimal",
+            id="threshold-infinite",
+        ),
+        pytest.param(
+            THRESHOLD_RATE_2025.replace('rate: "0.0505"\n', ""),
+            r"missing keys \['rate'\]",
+            id="rate-missing",
+        ),
+        pytest.param(
+            THRESHOLD_RATE_2025.replace('threshold: "52886"\n', ""),
+            r"missing keys \['threshold'\]",
+            id="threshold-missing",
+        ),
+        pytest.param(
+            THRESHOLD_RATE_2025 + 'amount: "1"\n',
+            r"unknown keys \['amount'\]",
+            id="unknown-key",
+        ),
+    ],
+)
+def test_rejects_an_invalid_threshold_rate_dataset(
+    tmp_path: Path, content: str, message: str
+) -> None:
+    write(tmp_path, "ex/parameters/threshold_rate/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message):
+        source(tmp_path).get("ex/threshold_rate", 2025, THRESHOLD_RATE)
+
+
+def test_an_invalid_threshold_rate_figure_is_reported_as_a_threshold_rate_error(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/threshold_rate/2025.yaml",
+        THRESHOLD_RATE_2025.replace('threshold: "52886"', 'threshold: "-1"'),
+    )
+
+    with pytest.raises(InvalidParameterDataError) as raised:
+        source(tmp_path).get("ex/threshold_rate", 2025, THRESHOLD_RATE)
+
+    assert isinstance(raised.value.__cause__, InvalidThresholdRateError)
 
 
 def test_an_amount_dataset_is_not_a_credit_dataset(tmp_path: Path) -> None:

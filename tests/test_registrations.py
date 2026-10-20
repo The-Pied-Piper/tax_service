@@ -130,6 +130,12 @@ def test_importing_the_federal_package_registers_the_rental_gross_rents() -> Non
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.rental_gross_rents"
 
 
+def test_importing_the_federal_package_registers_the_amount_or_divided_by_rate_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/amount_or_divided_by_rate")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.amount_or_divided_by_rate"
+
+
 def test_importing_the_federal_package_registers_the_disability_transfer_amount() -> None:
     registered = CapabilityRegistry.shared().get("ca/disability_transfer_amount")
 

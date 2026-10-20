@@ -28,9 +28,11 @@ from app.domain.parameters.rate import Rate
 from app.domain.parameters.rate_table import RateTableRow
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.parameters.taper import Taper
+from app.domain.parameters.threshold_rate import ThresholdRate
 from app.domain.record_list import RecordListKind
 from app.domain.trace import (
     AmountByCountLine,
+    AmountOrDividedByRateLine,
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
@@ -131,6 +133,8 @@ CARE_EXPENSES = ArtifactKind("ex/care_expenses", Decimal)
 CARE_CREDIT = ArtifactKind("ex/care_credit", Decimal)
 CAREGIVER_AMOUNT = ArtifactKind("ex/caregiver_amount", Decimal)
 DEPENDANTS_MEDICAL = ArtifactKind("ex/dependants_medical", Decimal)
+LIMITED_AMOUNT = ArtifactKind("ex/limited_amount", Decimal)
+DIVIDED_AMOUNT = ArtifactKind("ex/divided_amount", Decimal)
 NON_COMPLIANT_EXPENSES = ArtifactKind("ex/non_compliant_expenses", Decimal)
 TRANSFERRED_AMOUNT = ArtifactKind("ex/transferred_amount", Decimal)
 RESIDENCE_GAIN = ArtifactKind("ex/residence_gain", Decimal)
@@ -948,6 +952,85 @@ def test_renders_a_rounded_gated_amount() -> None:
     assert render(line) == (
         "gated_amount: gross_amount 400.005 if gate_amount 5000 is at least 4390 "
         "(half-up to 0.01) = 400.01"
+    )
+
+
+# --- amounts passed through or divided by a rate ----------------------------------------
+#
+# "<output>: <amount kind> <amount> if <threshold> or less, otherwise <dividend kind> <dividend>
+# divided by <rate>% (<rule>) = <result>", one sentence that does not pick the branch, every
+# figure as given without trailing zeros, the result last.
+
+
+def test_renders_an_amount_or_a_figure_divided_by_a_rate() -> None:
+    line = AmountOrDividedByRateLine(
+        LIMITED_AMOUNT,
+        AMOUNT_TESTED,
+        D("60000"),
+        DIVIDED_AMOUNT,
+        D("3321.67"),
+        ThresholdRate(Rate(D("0.0505")), D("52886")),
+        CENT,
+        D("65775.64"),
+    )
+
+    assert render(line) == (
+        "limited_amount: amount_tested 60000 if 52886 or less, otherwise divided_amount 3321.67 "
+        "divided by 5.05% (half-up to 0.01) = 65775.64"
+    )
+
+
+def test_renders_the_same_sentence_when_the_amount_is_passed_through() -> None:
+    line = AmountOrDividedByRateLine(
+        LIMITED_AMOUNT,
+        AMOUNT_TESTED,
+        D("50000"),
+        DIVIDED_AMOUNT,
+        D("3321.67"),
+        ThresholdRate(Rate(D("0.0505")), D("52886")),
+        CENT,
+        D("50000.00"),
+    )
+
+    assert render(line) == (
+        "limited_amount: amount_tested 50000 if 52886 or less, otherwise divided_amount 3321.67 "
+        "divided by 5.05% (half-up to 0.01) = 50000"
+    )
+
+
+def test_renders_a_second_threshold_and_rate_without_rounding() -> None:
+    line = AmountOrDividedByRateLine(
+        LIMITED_AMOUNT,
+        AMOUNT_TESTED,
+        D("70000"),
+        DIVIDED_AMOUNT,
+        D("10907.51"),
+        ThresholdRate(Rate(D("0.145")), D("57375")),
+        NO_ROUNDING,
+        D("75224.2"),
+    )
+
+    assert render(line) == (
+        "limited_amount: amount_tested 70000 if 57375 or less, otherwise divided_amount 10907.51 "
+        "divided by 14.5% (no rounding) = 75224.2"
+    )
+
+
+def test_renders_this_lines_figures_without_trailing_zeros_or_an_exponent() -> None:
+    line = AmountOrDividedByRateLine(
+        LIMITED_AMOUNT,
+        AMOUNT_TESTED,
+        D("6.0000E+4"),
+        DIVIDED_AMOUNT,
+        D("3321.670"),
+        ThresholdRate(Rate(D("0.0505")), D("5.2886E+4")),
+        CENT,
+        D("65775.64"),
+    )
+
+    assert render(line) == (
+        "limited_amount: amount_tested 60000 if 52886 or less, otherwise divided_amount 3321.67 "
+        "divided by 5.05% (half-up to 0.01) = 65775.64"
     )
 
 
@@ -2345,6 +2428,16 @@ def test_render_all_renders_each_line_in_order() -> None:
         ThresholdGateLine(
             GATED_AMOUNT, TOTAL, D("3"), GATE_AMOUNT, D("4"), Amount(D("4")), NO_ROUNDING, D("3")
         ),
+        AmountOrDividedByRateLine(
+            LIMITED_AMOUNT,
+            TOTAL,
+            D("3"),
+            DIVIDED_AMOUNT,
+            D("3321.67"),
+            ThresholdRate(Rate(D("0.0505")), D("52886")),
+            CENT,
+            D("65775.64"),
+        ),
         FractionAppliedLine(EARNED_PORTION, TOTAL, D("3"), Fraction(2, 3), NO_ROUNDING, D("2")),
         TimesCountLine(AMOUNT_CLAIMED, TOTAL, D("3"), PERSONS, 1, D("3")),
         ChosenByCountLine(AMOUNT_CHOSEN, PERSONS, 0, TOTAL, D("3")),
@@ -2393,6 +2486,8 @@ def test_render_all_renders_each_line_in_order() -> None:
         "reduction: 2 × child_amount 1088 over total 3, not below 0 (no rounding)",
         "allowed_amount: total 3, at most capped_amount 3",
         "gated_amount: total 3 if gate_amount 4 is at least 4 (no rounding) = 3",
+        "limited_amount: total 3 if 52886 or less, otherwise divided_amount 3321.67 divided by "
+        "5.05% (half-up to 0.01) = 65775.64",
         "earned_portion: 2/3 of total 3 (no rounding)",
         "amount_claimed: total 3 for each of 1 person_count = 3",
         "amount_chosen: total 3, chosen as person_count is 0",

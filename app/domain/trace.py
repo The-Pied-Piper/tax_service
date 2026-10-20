@@ -27,6 +27,7 @@ from app.domain.parameters.rate import Rate
 from app.domain.parameters.rate_table import RateTableRow
 from app.domain.parameters.rounding import RoundingRule
 from app.domain.parameters.taper import Taper
+from app.domain.parameters.threshold_rate import ThresholdRate
 from app.domain.record_list import RecordList
 
 
@@ -580,6 +581,33 @@ class ThresholdGateLine(TraceLine):
     @property
     def amount(self) -> Decimal:
         """The rounded amount, or 0 when gated off."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class AmountOrDividedByRateLine(TraceLine):
+    """The figure `result` for `output`: the tested amount passed through, or a figure divided.
+
+    The tested amount (`amount_kind`, `amount_value`) is compared with the `limit`'s threshold.
+    At or below it the amount is the result; over it the result is the `dividend_value` of
+    `dividend_kind` divided by the limit's rate. Either way it is rounded with `rounding`.
+
+    The tested amount's fields are named `amount_kind` and `amount_value` because `amount` is
+    the result.
+    """
+
+    output: Money
+    amount_kind: Money
+    amount_value: Decimal
+    dividend_kind: Money
+    dividend_value: Decimal
+    limit: ThresholdRate
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The figure chosen."""
         return self.result
 
 

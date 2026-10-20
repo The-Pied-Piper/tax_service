@@ -27,6 +27,7 @@ from app.adapters.outbound.parameter_parsers import (
     rounding_only,
     surcharge_tiers,
     taper,
+    threshold_rate,
 )
 from app.adapters.outbound.parameter_parsers.parser import ParameterParser
 
@@ -49,4 +50,5 @@ __all__ = [
     "rounding_only",
     "surcharge_tiers",
     "taper",
+    "threshold_rate",
 ]

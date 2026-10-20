@@ -104,6 +104,10 @@ class InvalidClaimReductionError(DomainError):
     """A claim reduction's ceiling or maximum is not finite or is negative."""
 
 
+class InvalidThresholdRateError(DomainError):
+    """A threshold rate's threshold is not finite or is negative, or its rate is zero."""
+
+
 class InvalidContributionTierError(DomainError):
     """A contribution tier's bounds or maximum are not finite, negative or out of order."""
 
