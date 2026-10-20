@@ -172,6 +172,58 @@ inputs:
   ca/investment_income_reported_in_previous_years: "0"
   ca/net_partnership_income: "0"
   ca/rdsp_income: "0"
+  ca/rental_properties: []
+  ca/rental_other_income: "0"
+  ca/rental_advertising: "0"
+  ca/rental_advertising_personal_portion: "0"
+  ca/rental_advertising_short_term_portion: "0"
+  ca/rental_insurance: "0"
+  ca/rental_insurance_personal_portion: "0"
+  ca/rental_insurance_short_term_portion: "0"
+  ca/rental_interest_and_bank_charges: "0"
+  ca/rental_interest_and_bank_charges_personal_portion: "0"
+  ca/rental_interest_and_bank_charges_short_term_portion: "0"
+  ca/rental_office_expenses: "0"
+  ca/rental_office_expenses_personal_portion: "0"
+  ca/rental_office_expenses_short_term_portion: "0"
+  ca/rental_professional_fees: "0"
+  ca/rental_professional_fees_personal_portion: "0"
+  ca/rental_professional_fees_short_term_portion: "0"
+  ca/rental_management_and_administration_fees: "0"
+  ca/rental_management_and_administration_fees_personal_portion: "0"
+  ca/rental_management_and_administration_fees_short_term_portion: "0"
+  ca/rental_repairs_and_maintenance: "0"
+  ca/rental_repairs_and_maintenance_personal_portion: "0"
+  ca/rental_repairs_and_maintenance_short_term_portion: "0"
+  ca/rental_salaries_wages_and_benefits: "0"
+  ca/rental_salaries_wages_and_benefits_personal_portion: "0"
+  ca/rental_salaries_wages_and_benefits_short_term_portion: "0"
+  ca/rental_property_taxes: "0"
+  ca/rental_property_taxes_personal_portion: "0"
+  ca/rental_property_taxes_short_term_portion: "0"
+  ca/rental_travel: "0"
+  ca/rental_travel_personal_portion: "0"
+  ca/rental_travel_short_term_portion: "0"
+  ca/rental_utilities: "0"
+  ca/rental_utilities_personal_portion: "0"
+  ca/rental_utilities_short_term_portion: "0"
+  ca/rental_motor_vehicle_expenses: "0"
+  ca/rental_motor_vehicle_expenses_personal_portion: "0"
+  ca/rental_motor_vehicle_expenses_short_term_portion: "0"
+  ca/rental_other_expenses: "0"
+  ca/rental_other_expenses_personal_portion: "0"
+  ca/rental_other_expenses_short_term_portion: "0"
+  ca/short_term_rental_units: []
+  ca/rental_coowner: "0"
+  ca/rental_coowner_share: "0"
+  ca/rental_coowner_other_expenses: "0"
+  ca/rental_recaptured_cca: "0"
+  ca/rental_terminal_loss: "0"
+  ca/rental_cca_claim: "0"
+  ca/rental_partner: "0"
+  ca/rental_partner_share: "0"
+  ca/rental_partner_gst_hst_rebate: "0"
+  ca/rental_partner_other_expenses: "0"
   ca/taxable_support_payments: "0"
   ca/rrsp_income: "0"
   ca/fhsa_income: "0"
@@ -330,6 +382,24 @@ expected:
   ca/investment_income_before_prior_years: "0"
   ca/interest_and_other_investment_income: "0"
   ca/income_support_benefits: "0"
+  ca/short_term_rental_gross_rents: "0"
+  ca/rental_gross_rents: "0"
+  ca/gross_rental_income: "0"
+  ca/rental_total_expenses: "0"
+  ca/rental_personal_portion: "0"
+  ca/rental_short_term_portion: "0"
+  ca/rental_non_compliant_expenses: "0"
+  ca/rental_expenses_less_personal_portion: "0"
+  ca/rental_deductible_expenses: "0"
+  ca/rental_net_income_before_adjustments: "0"
+  ca/rental_net_income_share: "0"
+  ca/rental_net_income_after_coowner_expenses: "0"
+  ca/rental_net_income_with_recapture: "0"
+  ca/rental_net_income_after_terminal_loss: "0"
+  ca/rental_net_income_after_cca: "0"
+  ca/rental_partner_share_with_rebate: "0"
+  ca/rental_partnership_net_income: "0"
+  ca/net_rental_income: "0"
   ca/total_income: "10000"
   ca/cpp_base_contributions: "321.75"
   ca/cpp_first_additional_contributions: "65.00"
@@ -733,6 +803,22 @@ def test_return_aj_applies_for_the_energy_and_property_tax_credit_on_form_on_ben
     assert refund.value == Decimal("-2402.96")
     (net_income,) = [a for a in worked.expected if a.kind.identifier == "ca/net_income"]
     assert net_income.value == Decimal("29735.00")
+
+    check(path)
+
+
+def test_return_ad_reports_rental_income_on_lines_12599_and_12600() -> None:
+    path = RETURNS / "2025_return_ad.yaml"
+    build_tax_computation()  # registers the catalogs the loader resolves through
+    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+
+    (properties,) = [a for a in worked.inputs if a.kind.identifier == "ca/rental_properties"]
+    assert len(properties.value.records) == 1
+    expected = {a.kind.identifier: a.value for a in worked.expected}
+    # T776 line 8299 is T1 line 12599 and line 9946 is T1 line 12600.
+    assert expected["ca/gross_rental_income"] == Decimal("24000.00")
+    assert expected["ca/net_rental_income"] == Decimal("12000.00")
+    assert expected["ca/total_income"] == Decimal("12000.00")
     check(path)
 
 

@@ -12,6 +12,8 @@ outputs:
   - ca/net_capital_loss_balance_1988_and_1989
   - ca/net_capital_loss_balance_1990_to_1999
   - ca/net_capital_loss_balance_2001_to_2024
+  - ca/rental_short_term_portion
+  - ca/short_term_rental_gross_rents
   - ca-on/applies_for_energy_and_property_tax_credit
   - ca-on/applies_for_northern_energy_credit
   - ca-on/chooses_single_benefit_payment

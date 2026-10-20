@@ -373,3 +373,411 @@ property on a separate row": a starting list with one record for each row, holdi
 property was a non compliant short-term rental" and column 5 "Number of days the residential
 property was a short-term rental" (columns 1 and 2, the address and the unit number, are labels
 the engine does not use)."""
+
+
+RENTAL_PROPERTY_UNITS = CATALOG.declare("rental_property_units", int, non_negative=True)
+"""Number of units of a rental property, Form T776 Part 3 "Number of units": a field of each
+record of the rental properties, not an artifact of its own."""
+
+RENTAL_PROPERTY_SHORT_TERM_RENTS = CATALOG.declare(
+    "rental_property_short_term_rents", Decimal, non_negative=True
+)
+"""Gross rents for short-term rentals of a rental property, Form T776 Part 3 "Gross rents for
+short-term rentals": a field of each record of the rental properties, not an artifact of its
+own."""
+
+RENTAL_PROPERTY_GROSS_RENTS = CATALOG.declare(
+    "rental_property_gross_rents", Decimal, non_negative=True
+)
+"""Gross rents for all units of a rental property, Form T776 Part 3 "Gross rents for all units": a
+field of each record of the rental properties, not an artifact of its own."""
+
+RENTAL_PROPERTIES = RecordListKind.declare(
+    CATALOG,
+    "rental_properties",
+    fields=(
+        RENTAL_PROPERTY_UNITS,
+        RENTAL_PROPERTY_SHORT_TERM_RENTS,
+        RENTAL_PROPERTY_GROSS_RENTS,
+    ),
+)
+"""Rental properties, Form T776 Part 3 "List the addresses of your rental properties." with the
+columns "Number of units", "Gross rents for short-term rentals" and "Gross rents for all units": a
+starting list with one record for each property, holding those three columns (the address is a
+label the engine does not use)."""
+
+SHORT_TERM_RENTAL_GROSS_RENTS = CATALOG.declare(
+    "short_term_rental_gross_rents", Decimal, non_negative=True
+)
+"""Total gross rents for short-term rentals, Form T776 line 8140 "Total of your gross rents for
+short-term rentals in the year you receive them (add amounts under "Gross rents for short-term
+rentals")": the column of the rental properties, added."""
+
+RENTAL_GROSS_RENTS = CATALOG.declare("rental_gross_rents", Decimal, non_negative=True)
+"""Total of all gross rents, Form T776 line 8141 "Total of all your gross rents in the year you
+receive them (add lines under "Gross rents for all units")": the column of the rental
+properties, added."""
+
+RENTAL_OTHER_INCOME = CATALOG.declare("rental_other_income", Decimal, non_negative=True)
+"""Other rental income, Form T776 line 8230 "Other income (for example, premiums and leases,
+sharecropping)": a starting amount."""
+
+GROSS_RENTAL_INCOME = CATALOG.declare("gross_rental_income", Decimal, non_negative=True)
+"""Gross rental income, Form T776 line 8299 "Total gross rental income: Enter this amount on your
+income tax and benefit return on line 12599 (line 8141 plus line 8230)", T1 line 13 and line
+12599 "Gross": line 8141 plus line 8230."""
+
+RENTAL_ADVERTISING = CATALOG.declare("rental_advertising", Decimal, non_negative=True)
+"""Rental advertising, Form T776 line 8521 "Advertising", "Total expenses": a starting amount."""
+
+RENTAL_ADVERTISING_PERSONAL_PORTION = CATALOG.declare(
+    "rental_advertising_personal_portion", Decimal, non_negative=True
+)
+"""Personal portion of the rental advertising, Form T776 line 8521 "Advertising", "Personal
+portion of total expenses": a starting amount."""
+
+RENTAL_ADVERTISING_SHORT_TERM_PORTION = CATALOG.declare(
+    "rental_advertising_short_term_portion", Decimal, non_negative=True
+)
+"""Short-term rental portion of the rental advertising, Form T776 line 8521 "Advertising",
+"Short-term rental portion of total expenses": a starting amount."""
+
+RENTAL_INSURANCE = CATALOG.declare("rental_insurance", Decimal, non_negative=True)
+"""Rental insurance, Form T776 line 8690 "Insurance", "Total expenses": a starting amount."""
+
+RENTAL_INSURANCE_PERSONAL_PORTION = CATALOG.declare(
+    "rental_insurance_personal_portion", Decimal, non_negative=True
+)
+"""Personal portion of the rental insurance, Form T776 line 8690 "Insurance", "Personal portion of
+total expenses": a starting amount."""
+
+RENTAL_INSURANCE_SHORT_TERM_PORTION = CATALOG.declare(
+    "rental_insurance_short_term_portion", Decimal, non_negative=True
+)
+"""Short-term rental portion of the rental insurance, Form T776 line 8690 "Insurance", "Short-term
+rental portion of total expenses": a starting amount."""
+
+RENTAL_INTEREST_AND_BANK_CHARGES = CATALOG.declare(
+    "rental_interest_and_bank_charges", Decimal, non_negative=True
+)
+"""Rental interest and bank charges, Form T776 line 8710 "Interest and bank charges", "Total
+expenses": a starting amount."""
+
+RENTAL_INTEREST_AND_BANK_CHARGES_PERSONAL_PORTION = CATALOG.declare(
+    "rental_interest_and_bank_charges_personal_portion", Decimal, non_negative=True
+)
+"""Personal portion of the rental interest and bank charges, Form T776 line 8710 "Interest and
+bank charges", "Personal portion of total expenses": a starting amount."""
+
+RENTAL_INTEREST_AND_BANK_CHARGES_SHORT_TERM_PORTION = CATALOG.declare(
+    "rental_interest_and_bank_charges_short_term_portion", Decimal, non_negative=True
+)
+"""Short-term rental portion of the rental interest and bank charges, Form T776 line 8710
+"Interest and bank charges", "Short-term rental portion of total expenses": a starting amount."""
+
+RENTAL_OFFICE_EXPENSES = CATALOG.declare("rental_office_expenses", Decimal, non_negative=True)
+"""Rental office expenses, Form T776 line 8810 "Office expenses", "Total expenses": a starting
+amount."""
+
+RENTAL_OFFICE_EXPENSES_PERSONAL_PORTION = CATALOG.declare(
+    "rental_office_expenses_personal_portion", Decimal, non_negative=True
+)
+"""Personal portion of the rental office expenses, Form T776 line 8810 "Office expenses",
+"Personal portion of total expenses": a starting amount."""
+
+RENTAL_OFFICE_EXPENSES_SHORT_TERM_PORTION = CATALOG.declare(
+    "rental_office_expenses_short_term_portion", Decimal, non_negative=True
+)
+"""Short-term rental portion of the rental office expenses, Form T776 line 8810 "Office expenses",
+"Short-term rental portion of total expenses": a starting amount."""
+
+RENTAL_PROFESSIONAL_FEES = CATALOG.declare("rental_professional_fees", Decimal, non_negative=True)
+"""Rental professional fees, Form T776 line 8860 "Professional fees (including legal and
+accounting fees)", "Total expenses": a starting amount."""
+
+RENTAL_PROFESSIONAL_FEES_PERSONAL_PORTION = CATALOG.declare(
+    "rental_professional_fees_personal_portion", Decimal, non_negative=True
+)
+"""Personal portion of the rental professional fees, Form T776 line 8860 "Professional fees
+(including legal and accounting fees)", "Personal portion of total expenses": a starting
+amount."""
+
+RENTAL_PROFESSIONAL_FEES_SHORT_TERM_PORTION = CATALOG.declare(
+    "rental_professional_fees_short_term_portion", Decimal, non_negative=True
+)
+"""Short-term rental portion of the rental professional fees, Form T776 line 8860 "Professional
+fees (including legal and accounting fees)", "Short-term rental portion of total expenses": a
+starting amount."""
+
+RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES = CATALOG.declare(
+    "rental_management_and_administration_fees", Decimal, non_negative=True
+)
+"""Rental management and administration fees, Form T776 line 8871 "Management and administration
+fees", "Total expenses": a starting amount."""
+
+RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_PERSONAL_PORTION = CATALOG.declare(
+    "rental_management_and_administration_fees_personal_portion", Decimal, non_negative=True
+)
+"""Personal portion of the rental management and administration fees, Form T776 line 8871
+"Management and administration fees", "Personal portion of total expenses": a starting amount."""
+
+RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_SHORT_TERM_PORTION = CATALOG.declare(
+    "rental_management_and_administration_fees_short_term_portion", Decimal, non_negative=True
+)
+"""Short-term rental portion of the rental management and administration fees, Form T776 line 8871
+"Management and administration fees", "Short-term rental portion of total expenses": a starting
+amount."""
+
+RENTAL_REPAIRS_AND_MAINTENANCE = CATALOG.declare(
+    "rental_repairs_and_maintenance", Decimal, non_negative=True
+)
+"""Rental repairs and maintenance, Form T776 line 8960 "Repairs and maintenance", "Total
+expenses": a starting amount."""
+
+RENTAL_REPAIRS_AND_MAINTENANCE_PERSONAL_PORTION = CATALOG.declare(
+    "rental_repairs_and_maintenance_personal_portion", Decimal, non_negative=True
+)
+"""Personal portion of the rental repairs and maintenance, Form T776 line 8960 "Repairs and
+maintenance", "Personal portion of total expenses": a starting amount."""
+
+RENTAL_REPAIRS_AND_MAINTENANCE_SHORT_TERM_PORTION = CATALOG.declare(
+    "rental_repairs_and_maintenance_short_term_portion", Decimal, non_negative=True
+)
+"""Short-term rental portion of the rental repairs and maintenance, Form T776 line 8960 "Repairs
+and maintenance", "Short-term rental portion of total expenses": a starting amount."""
+
+RENTAL_SALARIES_WAGES_AND_BENEFITS = CATALOG.declare(
+    "rental_salaries_wages_and_benefits", Decimal, non_negative=True
+)
+"""Rental salaries, wages and benefits, Form T776 line 9060 "Salaries, wages and benefits
+(including employer's contributions)", "Total expenses": a starting amount."""
+
+RENTAL_SALARIES_WAGES_AND_BENEFITS_PERSONAL_PORTION = CATALOG.declare(
+    "rental_salaries_wages_and_benefits_personal_portion", Decimal, non_negative=True
+)
+"""Personal portion of the rental salaries, wages and benefits, Form T776 line 9060 "Salaries,
+wages and benefits (including employer's contributions)", "Personal portion of total expenses":
+a starting amount."""
+
+RENTAL_SALARIES_WAGES_AND_BENEFITS_SHORT_TERM_PORTION = CATALOG.declare(
+    "rental_salaries_wages_and_benefits_short_term_portion", Decimal, non_negative=True
+)
+"""Short-term rental portion of the rental salaries, wages and benefits, Form T776 line 9060
+"Salaries, wages and benefits (including employer's contributions)", "Short-term rental portion
+of total expenses": a starting amount."""
+
+RENTAL_PROPERTY_TAXES = CATALOG.declare("rental_property_taxes", Decimal, non_negative=True)
+"""Rental property taxes, Form T776 line 9180 "Property taxes", "Total expenses": a starting
+amount."""
+
+RENTAL_PROPERTY_TAXES_PERSONAL_PORTION = CATALOG.declare(
+    "rental_property_taxes_personal_portion", Decimal, non_negative=True
+)
+"""Personal portion of the rental property taxes, Form T776 line 9180 "Property taxes", "Personal
+portion of total expenses": a starting amount."""
+
+RENTAL_PROPERTY_TAXES_SHORT_TERM_PORTION = CATALOG.declare(
+    "rental_property_taxes_short_term_portion", Decimal, non_negative=True
+)
+"""Short-term rental portion of the rental property taxes, Form T776 line 9180 "Property taxes",
+"Short-term rental portion of total expenses": a starting amount."""
+
+RENTAL_TRAVEL = CATALOG.declare("rental_travel", Decimal, non_negative=True)
+"""Rental travel, Form T776 line 9200 "Travel", "Total expenses": a starting amount."""
+
+RENTAL_TRAVEL_PERSONAL_PORTION = CATALOG.declare(
+    "rental_travel_personal_portion", Decimal, non_negative=True
+)
+"""Personal portion of the rental travel, Form T776 line 9200 "Travel", "Personal portion of total
+expenses": a starting amount."""
+
+RENTAL_TRAVEL_SHORT_TERM_PORTION = CATALOG.declare(
+    "rental_travel_short_term_portion", Decimal, non_negative=True
+)
+"""Short-term rental portion of the rental travel, Form T776 line 9200 "Travel", "Short-term
+rental portion of total expenses": a starting amount."""
+
+RENTAL_UTILITIES = CATALOG.declare("rental_utilities", Decimal, non_negative=True)
+"""Rental utilities, Form T776 line 9220 "Utilities", "Total expenses": a starting amount."""
+
+RENTAL_UTILITIES_PERSONAL_PORTION = CATALOG.declare(
+    "rental_utilities_personal_portion", Decimal, non_negative=True
+)
+"""Personal portion of the rental utilities, Form T776 line 9220 "Utilities", "Personal portion of
+total expenses": a starting amount."""
+
+RENTAL_UTILITIES_SHORT_TERM_PORTION = CATALOG.declare(
+    "rental_utilities_short_term_portion", Decimal, non_negative=True
+)
+"""Short-term rental portion of the rental utilities, Form T776 line 9220 "Utilities", "Short-term
+rental portion of total expenses": a starting amount."""
+
+RENTAL_MOTOR_VEHICLE_EXPENSES = CATALOG.declare(
+    "rental_motor_vehicle_expenses", Decimal, non_negative=True
+)
+"""Rental motor vehicle expenses, Form T776 line 9281 "Motor vehicle expenses (not including
+capital cost allowance)", "Total expenses": a starting amount."""
+
+RENTAL_MOTOR_VEHICLE_EXPENSES_PERSONAL_PORTION = CATALOG.declare(
+    "rental_motor_vehicle_expenses_personal_portion", Decimal, non_negative=True
+)
+"""Personal portion of the rental motor vehicle expenses, Form T776 line 9281 "Motor vehicle
+expenses (not including capital cost allowance)", "Personal portion of total expenses": a
+starting amount."""
+
+RENTAL_MOTOR_VEHICLE_EXPENSES_SHORT_TERM_PORTION = CATALOG.declare(
+    "rental_motor_vehicle_expenses_short_term_portion", Decimal, non_negative=True
+)
+"""Short-term rental portion of the rental motor vehicle expenses, Form T776 line 9281 "Motor
+vehicle expenses (not including capital cost allowance)", "Short-term rental portion of total
+expenses": a starting amount."""
+
+RENTAL_OTHER_EXPENSES = CATALOG.declare("rental_other_expenses", Decimal, non_negative=True)
+"""Rental other expenses, Form T776 line 9270 "Other expenses", "Total expenses": a starting
+amount."""
+
+RENTAL_OTHER_EXPENSES_PERSONAL_PORTION = CATALOG.declare(
+    "rental_other_expenses_personal_portion", Decimal, non_negative=True
+)
+"""Personal portion of the rental other expenses, Form T776 line 9270 "Other expenses", "Personal
+portion of total expenses": a starting amount."""
+
+RENTAL_OTHER_EXPENSES_SHORT_TERM_PORTION = CATALOG.declare(
+    "rental_other_expenses_short_term_portion", Decimal, non_negative=True
+)
+"""Short-term rental portion of the rental other expenses, Form T776 line 9270 "Other expenses",
+"Short-term rental portion of total expenses": a starting amount."""
+
+RENTAL_TOTAL_EXPENSES = CATALOG.declare("rental_total_expenses", Decimal, non_negative=True)
+"""Total rental expenses, Form T776 line A "Total expenses (add amounts listed under "Total
+expenses")": the 13 expense lines (8521 to 9270), in line order."""
+
+RENTAL_PERSONAL_PORTION = CATALOG.declare("rental_personal_portion", Decimal, non_negative=True)
+"""Personal portion of the rental expenses, Form T776 line 9949 "Total for personal portion (add
+amounts listed under "Personal portion of total expenses")": the 13 expense lines, in line
+order."""
+
+RENTAL_SHORT_TERM_PORTION = CATALOG.declare("rental_short_term_portion", Decimal, non_negative=True)
+"""Short-term rental portion of the rental expenses, Form T776 line 9365 "Total for short-term
+rental portion (add amounts listed under "Short-term rental portion of total expenses")": the
+13 expense lines, in line order."""
+
+RENTAL_NON_COMPLIANT_EXPENSES = CATALOG.declare(
+    "rental_non_compliant_expenses", Decimal, non_negative=True
+)
+"""Non-compliant amount of the short-term rental expenses, Form T776 line 9366 "Non-compliant
+amount for short-term rentals (amount B from Chart A)": Chart A line B, the total of column 6
+over the short-term rental units."""
+
+RENTAL_EXPENSES_LESS_PERSONAL_PORTION = CATALOG.declare(
+    "rental_expenses_less_personal_portion", Decimal, non_negative=True
+)
+"""Rental expenses less the personal portion, the first step of Form T776 line 1 "Deductible
+expenses (amount A minus line 9949 minus line 9366)": amount A minus line 9949, which the form
+prints as one line with no figure of its own."""
+
+RENTAL_DEDUCTIBLE_EXPENSES = CATALOG.declare(
+    "rental_deductible_expenses", Decimal, non_negative=True
+)
+"""Deductible rental expenses, Form T776 line 1 "Deductible expenses (amount A minus line 9949
+minus line 9366)": amount A minus line 9949, less line 9366."""
+
+RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS = CATALOG.declare(
+    "rental_net_income_before_adjustments", Decimal
+)
+"""Rental net income (loss) before adjustments, Form T776 line 9369 "Net income (loss) before
+adjustments (total gross rental income from line 8299 minus deductible expenses from amount
+1)": signed, a loss is negative."""
+
+RENTAL_COOWNER = CATALOG.declare("rental_coowner", int, non_negative=True)
+"""Whether the filer is a co-owner of the rental, Form T776 line 2 "Co-owners: calculate your
+share of net income from line 9369. Enter your result on amount 2": 1 for a co-owner, 0 for a
+sole proprietor or a partner, a starting count."""
+
+RENTAL_COOWNER_SHARE = CATALOG.declare("rental_coowner_share", Decimal)
+"""Co-owner's share of the rental net income, Form T776 line 2 "Co-owners: calculate your share of
+net income from line 9369. Enter your result on amount 2": a starting amount, signed."""
+
+RENTAL_NET_INCOME_SHARE = CATALOG.declare("rental_net_income_share", Decimal)
+"""Rental net income share, Form T776 amount 2 "Co-owners: calculate your share of net income from
+line 9369. Enter your result on amount 2": the co-owner's share (line 2, as entered) when the
+filer is a co-owner; otherwise line 9369, which is how this wiring reads a sole proprietor's
+amount 2 (the form prints no instruction for one)."""
+
+RENTAL_COOWNER_OTHER_EXPENSES = CATALOG.declare(
+    "rental_coowner_other_expenses", Decimal, non_negative=True
+)
+"""Other expenses of the rental co-owner, Form T776 line 9945 "Other expenses of the co-owner:
+other deductible expenses you have as a co-owner which you did not deduct elsewhere": a
+starting amount."""
+
+RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES = CATALOG.declare(
+    "rental_net_income_after_coowner_expenses", Decimal
+)
+"""Rental subtotal after the co-owner's other expenses, Form T776 line 3 "Subtotal (amount 2 minus
+line 9945)": signed."""
+
+RENTAL_RECAPTURED_CCA = CATALOG.declare("rental_recaptured_cca", Decimal, non_negative=True)
+"""Recaptured capital cost allowance on the rental, Form T776 line 9947 "Recaptured capital cost
+allowance (co-owners: enter your share of the amount)": a starting amount, as entered."""
+
+RENTAL_NET_INCOME_WITH_RECAPTURE = CATALOG.declare("rental_net_income_with_recapture", Decimal)
+"""Rental subtotal with recaptured capital cost allowance, Form T776 line 4 "Subtotal (amount 3
+plus line 9947)": signed."""
+
+RENTAL_TERMINAL_LOSS = CATALOG.declare("rental_terminal_loss", Decimal, non_negative=True)
+"""Terminal loss on the rental, Form T776 line 9948 "Terminal loss (co-owners: enter your share of
+the amount)": a starting amount, as entered."""
+
+RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS = CATALOG.declare(
+    "rental_net_income_after_terminal_loss", Decimal
+)
+"""Rental subtotal after the terminal loss, Form T776 line 5 "Subtotal (amount 4 minus line
+9948)": signed."""
+
+RENTAL_CCA_CLAIM = CATALOG.declare("rental_cca_claim", Decimal, non_negative=True)
+"""Capital cost allowance claimed on the rental, Form T776 line 9936 "Total CCA claim for the year
+(amount ii from Area A minus any personal part of CCA, and any CCA for business-use-of home
+expenses)": a starting amount, as entered."""
+
+RENTAL_NET_INCOME_AFTER_CCA = CATALOG.declare("rental_net_income_after_cca", Decimal)
+"""Rental net income (loss) of a sole proprietor or a co-owner, Form T776 line 6 "Net income
+(loss) (amount 5 minus line 9936)": signed, a loss is negative."""
+
+RENTAL_PARTNER = CATALOG.declare("rental_partner", int, non_negative=True)
+"""Whether the filer is a partner in the rental, Form T776 line 7 "Partners: your share of amount
+6, or the amount from your T5013 slip, Statement of Partnership Income": 1 for a partner, 0
+otherwise, a starting count."""
+
+RENTAL_PARTNER_SHARE = CATALOG.declare("rental_partner_share", Decimal)
+"""Partner's share of the rental net income, Form T776 line 7 "Partners: your share of amount 6,
+or the amount from your T5013 slip, Statement of Partnership Income": a starting amount,
+signed."""
+
+RENTAL_PARTNER_GST_HST_REBATE = CATALOG.declare(
+    "rental_partner_gst_hst_rebate", Decimal, non_negative=True
+)
+"""GST/HST rebate of the rental partner, Form T776 line 9974 "Partners: GST/HST rebate for
+partners received in the year": a starting amount."""
+
+RENTAL_PARTNER_OTHER_EXPENSES = CATALOG.declare(
+    "rental_partner_other_expenses", Decimal, non_negative=True
+)
+"""Other expenses of the rental partner, Form T776 line 9943 "Partners: other expenses of the
+partner": a starting amount."""
+
+RENTAL_PARTNER_SHARE_WITH_REBATE = CATALOG.declare("rental_partner_share_with_rebate", Decimal)
+"""Rental partner's share with the GST/HST rebate, the first step of Form T776 line 9946 "For
+partnerships, enter the result from amount 7 plus line 9974 minus line 9943": amount 7 plus
+line 9974."""
+
+RENTAL_PARTNERSHIP_NET_INCOME = CATALOG.declare("rental_partnership_net_income", Decimal)
+"""Rental net income (loss) of a partner, Form T776 line 9946 "For partnerships, enter the result
+from amount 7 plus line 9974 minus line 9943": amount 7 plus line 9974, less line 9943, signed."""
+
+NET_RENTAL_INCOME = CATALOG.declare("net_rental_income", Decimal)
+"""Net rental income, Form T776 line 9946 "Your net income (loss): For sole proprietors or
+co-owners, enter the result from amount 6. For partnerships, enter the result from amount 7
+plus line 9974 minus line 9943. Enter this amount on line 12600 of your income tax and benefit
+return", T1 line 13 and line 12600 "Net": amount 6, or for a partner the partnership figure;
+signed, a loss is negative."""

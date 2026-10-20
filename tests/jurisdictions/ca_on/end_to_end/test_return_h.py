@@ -91,7 +91,8 @@ def test_return_hs_pension_and_benefit_income_is_all_of_its_total_income() -> No
         "+ elected_split_pension_amount 0 + universal_child_care_benefit 0 "
         "+ ei_and_other_benefits 0 + taxable_dividends 0 "
         "+ interest_and_other_investment_income 1400 "
-        "+ net_partnership_income 0 + rdsp_income 0 + taxable_capital_gains 0 "
+        "+ net_partnership_income 0 + rdsp_income 0 + net_rental_income 0 "
+        "+ taxable_capital_gains 0 "
         "+ taxable_support_payments 0 + rrsp_income 5000 + fhsa_income 0 + other_fhsa_income 0 "
         "+ other_income 0 + taxable_scholarships 0 + income_support_benefits 2000 = 45400"
     ) in rendered
