@@ -65,7 +65,9 @@ code (`CA-QC` -> `ca_qc`), and change:
 - `manifests/`: the manifest(s) selecting capabilities and filling their slots: parameter
   slots with parameter families, artifact slots with artifact identifiers (a consumed list slot
   takes a YAML list of them, in order). Each manifest also requires `inputs:` and `outputs:`,
-  the artifact identifiers a computation starts from and returns.
+  the artifact identifiers a computation starts from and returns. A manifest is one YAML file, or
+  a subfolder of parts (named so they sort in order) that the loader merges into one: scalar keys
+  in exactly one part, `inputs`, `outputs` and `capabilities` concatenated in part order.
 - `parameters/`: one dataset per family and tax year, at `parameters/<family>/<year>.yaml`
   for family `<namespace>/<family>`.
 
