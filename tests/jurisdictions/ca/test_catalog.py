@@ -31,6 +31,15 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024,
     CAREGIVER_AMOUNT,
     CATALOG,
+    CCA_ADDITIONS,
+    CCA_AIIP_ADDITIONS,
+    CCA_CLAIMED,
+    CCA_CLASS_NUMBER,
+    CCA_NO_PROPERTY_LEFT,
+    CCA_PROCEEDS,
+    CCA_RIIP_ADDITIONS,
+    CCA_UCC_AT_END,
+    CCA_UCC_AT_START,
     CLERGY_RESIDENCE_DEDUCTION,
     CREDITS_AGAINST_FEDERAL_TAX,
     DEDUCTIONS_FROM_TOTAL_INCOME,
@@ -951,6 +960,119 @@ def test_the_principal_residence_gain_is_a_non_negative_decimal(registry: Artifa
     assert PRINCIPAL_RESIDENCE_GAIN.value_type is Decimal
     assert PRINCIPAL_RESIDENCE_GAIN.non_negative is True
     assert registry.kind("ca/principal_residence_gain") is PRINCIPAL_RESIDENCE_GAIN
+
+
+# --- the capital cost allowance table, one record per class -------------------------------------
+#
+# T776 Area A, "Calculation of capital cost allowance (CCA) claim", one row per class, and T2125
+# Area A with the same columns: the fields each class's record holds, shared by the rental and the
+# business lists (each list is declared when its form is wired). Columns 4, 6, 8 and 9 (DIEPs) are
+# left out, so column 10 is column 3 and column 13 is column 7.
+
+
+@pytest.mark.parametrize(
+    ("kind", "identifier"),
+    [
+        # "Column 1: Class number": a number such as 10.1 or 43.1, so a Decimal.
+        (CCA_CLASS_NUMBER, "ca/cca_class_number"),
+        # "Column 2: Undepreciated capital cost (UCC) at the start of the year".
+        (CCA_UCC_AT_START, "ca/cca_ucc_at_start"),
+        # "Column 3: Cost of additions in the year".
+        (CCA_ADDITIONS, "ca/cca_additions"),
+        # "Column 5: Proceeds of dispositions in the year".
+        (CCA_PROCEEDS, "ca/cca_proceeds"),
+        # "Column 11: Cost of remaining additions from column 10 that are AIIPs or ZEVs acquired
+        # before 2025".
+        (CCA_AIIP_ADDITIONS, "ca/cca_aiip_additions"),
+        # "Column 12: Cost of remaining additions from column 10 that are RIIPs or ZEVs acquired
+        # after 2024".
+        (CCA_RIIP_ADDITIONS, "ca/cca_riip_additions"),
+        # T776 "Column 23: CCA claim for the year" (T2125 column 21): the amount claimed, an
+        # election from 0 to the class's maximum.
+        (CCA_CLAIMED, "ca/cca_claimed"),
+        # T776 "Column 24: UCC at the end of the year (column 7 minus column 23)" (T2125 column
+        # 22): a field of the closing list for next year.
+        (CCA_UCC_AT_END, "ca/cca_ucc_at_end"),
+    ],
+)
+def test_the_cca_table_fields_are_non_negative_decimals(
+    registry: ArtifactRegistry, kind: ArtifactKind[Any], identifier: str
+) -> None:
+    assert kind.identifier == identifier
+    assert kind.value_type is Decimal
+    assert kind.non_negative is True
+    assert registry.kind(identifier) is kind
+
+
+def test_no_property_left_in_the_class_is_a_non_negative_int_count(
+    registry: ArtifactRegistry,
+) -> None:
+    # Note 3: "If no property is left in the class and there is a positive amount in this column,
+    # deduct the amount from your income as a terminal loss": a caller's 1 if no property is left
+    # in the class at the end of the year, else 0, as the other 0 or 1 counts of the forms.
+    assert CCA_NO_PROPERTY_LEFT.identifier == "ca/cca_no_property_left"
+    assert CCA_NO_PROPERTY_LEFT.value_type is int
+    assert CCA_NO_PROPERTY_LEFT.non_negative is True
+    assert registry.kind("ca/cca_no_property_left") is CCA_NO_PROPERTY_LEFT
+
+
+def test_the_cca_table_fields_are_kinds_of_their_own() -> None:
+    kinds = (
+        CCA_CLASS_NUMBER,
+        CCA_UCC_AT_START,
+        CCA_ADDITIONS,
+        CCA_PROCEEDS,
+        CCA_AIIP_ADDITIONS,
+        CCA_RIIP_ADDITIONS,
+        CCA_CLAIMED,
+        CCA_NO_PROPERTY_LEFT,
+        CCA_UCC_AT_END,
+    )
+
+    assert len({kind.identifier for kind in kinds}) == 9
+    assert {kind.identifier for kind in kinds} <= REGISTERED
+    assert not {kind.identifier for kind in kinds} & RECORD_LISTS
+
+
+def test_the_cca_table_fields_hold_one_class_per_record() -> None:
+    fields = (
+        CCA_CLASS_NUMBER,
+        CCA_UCC_AT_START,
+        CCA_ADDITIONS,
+        CCA_PROCEEDS,
+        CCA_AIIP_ADDITIONS,
+        CCA_RIIP_ADDITIONS,
+        CCA_CLAIMED,
+        CCA_NO_PROPERTY_LEFT,
+    )
+    classes = RecordList(
+        fields,
+        [
+            {
+                CCA_CLASS_NUMBER: Decimal("10.1"),
+                CCA_UCC_AT_START: Decimal("20000"),
+                CCA_ADDITIONS: Decimal("0"),
+                CCA_PROCEEDS: Decimal("0"),
+                CCA_AIIP_ADDITIONS: Decimal("0"),
+                CCA_RIIP_ADDITIONS: Decimal("0"),
+                CCA_CLAIMED: Decimal("6000"),
+                CCA_NO_PROPERTY_LEFT: 0,
+            }
+        ],
+    )
+
+    (record,) = classes.records
+    assert record[CCA_CLASS_NUMBER] == Decimal("10.1")
+    assert record[CCA_NO_PROPERTY_LEFT] == 0
+
+
+def test_a_negative_cca_claim_is_refused() -> None:
+    # T4036: "You can claim any amount you like, from zero to the maximum allowed for the year."
+    with pytest.raises(NegativeArtifactError, match="item 1: ca/cca_claimed cannot be negative"):
+        RecordList(
+            (CCA_CLASS_NUMBER, CCA_CLAIMED),
+            [{CCA_CLASS_NUMBER: Decimal("8"), CCA_CLAIMED: Decimal("-1")}],
+        )
 
 
 def test_the_special_tax_and_credit_lines_are_non_negative(registry: ArtifactRegistry) -> None:

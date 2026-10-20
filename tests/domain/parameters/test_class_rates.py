@@ -1,0 +1,330 @@
+"""Unit tests for ClassRates: a yearly table of classes and their rates, the `class_rates` kind.
+
+A class-rate table is one entry per class, keyed by the class number as printed: each `ClassRate`
+holds its `class_number` (an exact `Decimal`, so "10.1" is a number), its `rate` (a `Rate`),
+whether the half-year rule applies to it or it is exempt (`HalfYearRule`), whether recapture and a
+terminal loss apply to it or it is excluded (`RecaptureAndTerminalLoss`), and its two factors, the
+`aiip_factor` and the `riip_factor`, each a `Fraction` (the `fraction` kind's value, which accepts
+a numerator of 0, since a form can print a factor of 0, and refuses a negative part itself), kept
+as given, never reduced. Like `RateTable`, the value objects only hold and check the table:
+at least one class, no class number twice (by value, so "10.1" and "10.10" are the same class),
+the classes kept in the order given. `for_class` finds a class by its number, or `None` for a
+class the table does not list. Values are made up.
+"""
+
+from __future__ import annotations
+
+import fractions
+from dataclasses import FrozenInstanceError, fields
+from decimal import Decimal
+from typing import Any, cast
+
+import pytest
+
+from app.domain.errors import DomainError, InvalidClassRatesError
+from app.domain.parameters.class_rates import (
+    CLASS_RATES,
+    ClassRate,
+    ClassRates,
+    HalfYearRule,
+    RecaptureAndTerminalLoss,
+)
+from app.domain.parameters.fraction import Fraction
+from app.domain.parameters.kind import ParameterKind
+from app.domain.parameters.rate import Rate
+
+D = Decimal
+F = Fraction
+APPLIES = HalfYearRule.APPLIES
+EXEMPT = HalfYearRule.EXEMPT
+INCLUDED = RecaptureAndTerminalLoss.APPLIES
+EXCLUDED = RecaptureAndTerminalLoss.EXCLUDED
+ZERO = F(0, 1)
+ONE_HALF = F(1, 2)
+
+
+def entry(
+    number: str,
+    rate: str = "0.20",
+    half_year_rule: HalfYearRule = APPLIES,
+    recapture_and_terminal_loss: RecaptureAndTerminalLoss = INCLUDED,
+    aiip_factor: Fraction = ZERO,
+    riip_factor: Fraction = ONE_HALF,
+) -> ClassRate:
+    return ClassRate(
+        class_number=D(number),
+        rate=Rate(D(rate)),
+        half_year_rule=half_year_rule,
+        recapture_and_terminal_loss=recapture_and_terminal_loss,
+        aiip_factor=aiip_factor,
+        riip_factor=riip_factor,
+    )
+
+
+def first() -> ClassRate:
+    return entry("8")
+
+
+def decimal_class() -> ClassRate:
+    return entry("10.1", "0.30", recapture_and_terminal_loss=EXCLUDED)
+
+
+def exempt() -> ClassRate:
+    return entry("12", "1", half_year_rule=EXEMPT, riip_factor=F(0, 1))
+
+
+def table(*classes: ClassRate) -> ClassRates:
+    return ClassRates(classes=classes or (first(), decimal_class(), exempt()))
+
+
+# --- the two choices ---------------------------------------------------------------------------
+
+
+def test_the_half_year_rule_applies_or_is_exempt() -> None:
+    assert [rule.value for rule in HalfYearRule] == ["applies", "exempt"]
+    assert HalfYearRule("applies") is HalfYearRule.APPLIES
+    assert HalfYearRule("exempt") is HalfYearRule.EXEMPT
+
+
+def test_recapture_and_terminal_loss_apply_or_are_excluded() -> None:
+    assert [choice.value for choice in RecaptureAndTerminalLoss] == ["applies", "excluded"]
+    assert RecaptureAndTerminalLoss("applies") is RecaptureAndTerminalLoss.APPLIES
+    assert RecaptureAndTerminalLoss("excluded") is RecaptureAndTerminalLoss.EXCLUDED
+
+
+# --- one class ---------------------------------------------------------------------------------
+
+
+def test_a_class_holds_its_number_rate_rules_and_factors() -> None:
+    held = entry("43.1", "0.30", aiip_factor=F(3, 2), riip_factor=F(7, 3))
+
+    assert held.class_number == D("43.1")
+    assert held.rate == Rate(D("0.30"))
+    assert held.half_year_rule is HalfYearRule.APPLIES
+    assert held.recapture_and_terminal_loss is RecaptureAndTerminalLoss.APPLIES
+    assert held.aiip_factor == F(3, 2)
+    assert held.riip_factor == F(7, 3)
+
+
+def test_a_class_holds_its_fields_in_order() -> None:
+    assert [field.name for field in fields(ClassRate)] == [
+        "class_number",
+        "rate",
+        "half_year_rule",
+        "recapture_and_terminal_loss",
+        "aiip_factor",
+        "riip_factor",
+    ]
+
+
+def test_a_class_is_built_positionally_in_field_order() -> None:
+    assert ClassRate(D("8"), Rate(D("0.20")), APPLIES, INCLUDED, F(0, 1), F(1, 2)) == first()
+
+
+def test_a_class_keeps_its_number_exact() -> None:
+    assert str(decimal_class().class_number) == "10.1"
+    assert str(entry("43.10").class_number) == "43.10"
+
+
+def test_a_class_may_have_factors_of_zero() -> None:
+    held = entry("12", aiip_factor=F(0, 1), riip_factor=F(0, 1))
+
+    assert (held.aiip_factor, held.riip_factor) == (F(0, 1), F(0, 1))
+
+
+def test_a_class_may_have_factors_above_one() -> None:
+    held = entry("44", "0.25", aiip_factor=F(3, 1), riip_factor=F(9, 11))
+
+    assert (held.aiip_factor, held.riip_factor) == (F(3, 1), F(9, 11))
+
+
+def test_keeps_its_factors_as_given() -> None:
+    # Not reduced: 4/8 stays 4/8, and 0/3 stays 0/3, as the dataset writes them.
+    held = entry("8", aiip_factor=F(0, 3), riip_factor=F(4, 8))
+
+    assert (held.aiip_factor.numerator, held.aiip_factor.denominator) == (0, 3)
+    assert (held.riip_factor.numerator, held.riip_factor.denominator) == (4, 8)
+    assert type(held.aiip_factor) is Fraction
+    assert type(held.riip_factor) is Fraction
+
+
+def test_a_class_may_have_a_rate_of_one() -> None:
+    assert exempt().rate == Rate(D("1"))
+
+
+def test_equal_classes_are_equal() -> None:
+    assert entry("8", "0.2") == entry("8.0", "0.20")
+    assert entry("8") != entry("8", "0.30")
+    assert entry("8") != entry("8", half_year_rule=EXEMPT)
+    assert entry("8") != entry("8", recapture_and_terminal_loss=EXCLUDED)
+    assert entry("8") != entry("8", aiip_factor=F(1, 2))
+    assert entry("8") != entry("8", riip_factor=F(1, 1))
+    assert entry("8") != entry("10")
+
+
+def test_a_class_is_frozen() -> None:
+    with pytest.raises(FrozenInstanceError):
+        cast(Any, first()).rate = Rate(D("0.5"))
+
+
+def test_a_class_is_hashable() -> None:
+    assert hash(first()) == hash(first())
+
+
+@pytest.mark.parametrize("value", [8, 8.0, "8", F(8, 1)])
+def test_rejects_a_class_number_that_is_not_a_decimal(value: object) -> None:
+    with pytest.raises(TypeError, match="class_number must be a Decimal"):
+        ClassRate(value, Rate(D("0.2")), APPLIES, INCLUDED, F(0, 1), F(1, 2))  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("number", ["Infinity", "-Infinity", "NaN"])
+def test_rejects_a_class_number_that_is_not_finite(number: str) -> None:
+    with pytest.raises(InvalidClassRatesError, match="class_number must be finite"):
+        entry(number)
+
+
+@pytest.mark.parametrize("number", ["0", "-1", "-10.1"])
+def test_rejects_a_class_number_that_is_not_positive(number: str) -> None:
+    with pytest.raises(InvalidClassRatesError, match="class_number must be positive"):
+        entry(number)
+
+
+@pytest.mark.parametrize("rate", [D("0.2"), 0.2, "0.2"])
+def test_rejects_a_rate_that_is_not_a_rate(rate: object) -> None:
+    with pytest.raises(TypeError, match="rate must be a Rate"):
+        ClassRate(D("8"), rate, APPLIES, INCLUDED, F(0, 1), F(1, 2))  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("rule", ["applies", True, RecaptureAndTerminalLoss.APPLIES])
+def test_rejects_a_half_year_rule_that_is_not_one(rule: object) -> None:
+    with pytest.raises(TypeError, match="half_year_rule must be a HalfYearRule"):
+        ClassRate(D("8"), Rate(D("0.2")), rule, INCLUDED, F(0, 1), F(1, 2))  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("choice", ["applies", False, HalfYearRule.APPLIES])
+def test_rejects_a_recapture_and_terminal_loss_choice_that_is_not_one(choice: object) -> None:
+    with pytest.raises(
+        TypeError, match="recapture_and_terminal_loss must be a RecaptureAndTerminalLoss"
+    ):
+        ClassRate(D("8"), Rate(D("0.2")), APPLIES, choice, F(0, 1), F(1, 2))  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("factor", ["aiip_factor", "riip_factor"])
+@pytest.mark.parametrize(
+    ("value", "type_name"),
+    [
+        (0, "int"),
+        (1, "int"),
+        (True, "bool"),
+        (D("0.5"), "Decimal"),
+        (0.5, "float"),
+        ("1/2", "str"),
+        # The standard library's fraction is not the `fraction` kind's value.
+        (fractions.Fraction(1, 2), "Fraction"),
+        ((1, 2), "tuple"),
+    ],
+)
+def test_rejects_a_factor_that_is_not_a_fraction(
+    factor: str, value: object, type_name: str
+) -> None:
+    parts: dict[str, object] = {"aiip_factor": F(0, 1), "riip_factor": F(1, 2)}
+    parts[factor] = value
+
+    with pytest.raises(TypeError, match=f"{factor} must be a Fraction, got {type_name}"):
+        ClassRate(D("8"), Rate(D("0.2")), APPLIES, INCLUDED, **parts)  # type: ignore[arg-type]
+
+
+# --- the table ---------------------------------------------------------------------------------
+
+
+def test_holds_its_classes_in_the_order_given() -> None:
+    assert table().classes == (first(), decimal_class(), exempt())
+    assert table(exempt(), first()).classes == (exempt(), first())
+
+
+def test_holds_its_classes_only() -> None:
+    assert [field.name for field in fields(ClassRates)] == ["classes"]
+
+
+def test_is_built_positionally() -> None:
+    assert ClassRates((first(), decimal_class(), exempt())) == table()
+
+
+def test_a_single_class_is_enough() -> None:
+    assert table(first()).classes == (first(),)
+
+
+def test_equal_tables_are_equal() -> None:
+    assert table(first()) == table(entry("8.0", "0.2"))
+    assert table(first()) != table(entry("8", "0.3"))
+    assert table(first(), exempt()) != table(exempt(), first())
+
+
+def test_is_frozen() -> None:
+    with pytest.raises(FrozenInstanceError):
+        cast(Any, table()).classes = (first(),)
+
+
+def test_is_hashable() -> None:
+    assert hash(table()) == hash(table())
+
+
+def test_rejects_no_classes() -> None:
+    with pytest.raises(InvalidClassRatesError, match="at least one class"):
+        ClassRates(())
+
+
+def test_rejects_a_class_listed_twice() -> None:
+    with pytest.raises(InvalidClassRatesError, match="class 8 is listed more than once"):
+        table(first(), exempt(), entry("8", "0.30"))
+
+
+def test_rejects_a_class_listed_twice_with_another_spelling_of_its_number() -> None:
+    with pytest.raises(InvalidClassRatesError, match="listed more than once"):
+        table(decimal_class(), entry("10.10"))
+
+
+@pytest.mark.parametrize("classes", [[first()], "classes", None])
+def test_rejects_classes_that_are_not_a_tuple(classes: object) -> None:
+    with pytest.raises(TypeError, match="classes must be a tuple"):
+        ClassRates(classes)  # type: ignore[arg-type]
+
+
+def test_rejects_a_class_that_is_not_a_class_rate() -> None:
+    with pytest.raises(TypeError, match=r"classes\[1\] must be a ClassRate, got Rate"):
+        ClassRates((first(), Rate(D("0.2"))))  # type: ignore[arg-type]
+
+
+# --- finding a class ---------------------------------------------------------------------------
+
+
+def test_finds_a_class_by_its_number() -> None:
+    assert table().for_class(D("8")) == first()
+    assert table().for_class(D("12")) == exempt()
+
+
+def test_finds_a_class_numbered_with_a_decimal_point() -> None:
+    assert table().for_class(D("10.1")) == decimal_class()
+
+
+def test_finds_a_class_by_the_value_of_its_number() -> None:
+    assert table().for_class(D("8.0")) == first()
+    assert table().for_class(D("10.10")) == decimal_class()
+
+
+@pytest.mark.parametrize("number", ["13", "14", "10", "1", "10.2"])
+def test_a_class_the_table_does_not_list_is_none(number: str) -> None:
+    assert table().for_class(D(number)) is None
+
+
+# --- the kind ----------------------------------------------------------------------------------
+
+
+def test_class_rates_kind() -> None:
+    assert CLASS_RATES == ParameterKind("class_rates", ClassRates)
+    assert CLASS_RATES.name == "class_rates"
+    assert CLASS_RATES.value_type is ClassRates
+
+
+def test_invalid_class_rates_is_a_domain_error() -> None:
+    assert issubclass(InvalidClassRatesError, DomainError)

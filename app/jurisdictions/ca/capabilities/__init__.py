@@ -9,17 +9,27 @@ NAMESPACE = "ca"
 
 from app.jurisdictions.ca.capabilities import (  # noqa: E402
     caregiver_amount,
+    cca_claim,
+    cca_table,
+    closing_ucc,
     disability_transfer_amount,
     other_dependants_medical,
     principal_residence_gain,
+    recaptured_cca,
+    terminal_loss,
     threshold_gate,
 )
 
 __all__ = [
     "NAMESPACE",
     "caregiver_amount",
+    "cca_claim",
+    "cca_table",
+    "closing_ucc",
     "disability_transfer_amount",
     "other_dependants_medical",
     "principal_residence_gain",
+    "recaptured_cca",
+    "terminal_loss",
     "threshold_gate",
 ]

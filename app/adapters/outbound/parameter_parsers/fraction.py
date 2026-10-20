@@ -1,5 +1,5 @@
 """Parses `fraction` datasets: a quoted whole `numerator` and `denominator` into a Fraction,
-which checks both are positive."""
+which checks the numerator is zero or more and the denominator positive."""
 
 from __future__ import annotations
 

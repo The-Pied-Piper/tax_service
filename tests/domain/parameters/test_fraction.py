@@ -1,11 +1,12 @@
 """Unit tests for Fraction: a fraction of whole numbers, the `fraction` kind's values.
 
 A form line such as "multiplied by two-thirds" multiplies by a fraction that is not a finite
-decimal, so it cannot be a `Rate`: the fraction is carried as its `numerator` and `denominator`,
-both positive whole numbers, and the one division is left to the capability that applies it. Like
-`Rate`, the value object checks itself: a part that is zero or negative is an
+decimal, so it cannot be a `Rate`: the fraction is carried as its `numerator`, a whole number of
+zero or more (a form can print a factor of 0), and its `denominator`, a positive whole number, and
+the one division is left to the capability that applies it. Like `Rate`, the value object checks
+itself: a negative numerator, or a denominator that is zero or negative, is an
 `InvalidFractionError`, and a part that is not an `int` (a bool, a Decimal, a float, a string) is
-a `TypeError`. The parts are kept as given. Values are made up.
+a `TypeError`. The parts are kept as given, never reduced. Values are made up.
 """
 
 from __future__ import annotations
@@ -72,17 +73,31 @@ def test_accepts_positive_whole_parts(numerator: int, denominator: int) -> None:
     assert (held.numerator, held.denominator) == (numerator, denominator)
 
 
+@pytest.mark.parametrize(("numerator", "denominator"), [(0, 1), (0, 3), (0, 1000000)])
+def test_accepts_a_numerator_of_zero(numerator: int, denominator: int) -> None:
+    # A form can print a factor of 0; the denominator is still positive.
+    held = Fraction(numerator, denominator)
+
+    assert (held.numerator, held.denominator) == (numerator, denominator)
+
+
+def test_a_zero_fraction_keeps_its_denominator_as_given() -> None:
+    # Not reduced: 0/3 is not 0/1.
+    assert Fraction(0, 3) != Fraction(0, 1)
+
+
 @pytest.mark.parametrize(
     ("numerator", "denominator", "message"),
     [
-        pytest.param(0, 3, "fraction numerator must be positive, got 0", id="numerator-zero"),
-        pytest.param(-2, 3, "fraction numerator must be positive, got -2", id="numerator-neg"),
+        pytest.param(-2, 3, "fraction numerator must not be negative, got -2", id="numerator-neg"),
+        pytest.param(-1, 1, "fraction numerator must not be negative, got -1", id="minus-one"),
         pytest.param(2, 0, "fraction denominator must be positive, got 0", id="denominator-zero"),
         pytest.param(2, -3, "fraction denominator must be positive, got -3", id="denominator-neg"),
-        pytest.param(0, 0, "fraction numerator must be positive", id="both-zero"),
+        pytest.param(0, 0, "fraction denominator must be positive, got 0", id="both-zero"),
+        pytest.param(0, -3, "fraction denominator must be positive, got -3", id="zero-over-neg"),
     ],
 )
-def test_rejects_parts_that_are_not_positive(
+def test_rejects_a_negative_numerator_or_a_denominator_that_is_not_positive(
     numerator: int, denominator: int, message: str
 ) -> None:
     with pytest.raises(InvalidFractionError, match=message):

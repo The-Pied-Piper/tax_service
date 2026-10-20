@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from enum import Enum
 from pathlib import Path
+from typing import assert_type
 
 import pytest
 import yaml
@@ -321,3 +323,66 @@ def test_parse_rounding_rule_names_the_nodes_location(value: object, message: st
     assert rule.where == "dataset.rounding"
     with pytest.raises(YamlShapeError, match=message):
         rule.parse_rounding_rule()
+
+
+# --- choices from an enum ----------------------------------------------------------------------
+
+
+class Shade(Enum):
+    """A made-up choice, read by its values."""
+
+    LIGHT = "light"
+    DARK = "dark"
+
+
+@pytest.mark.parametrize(("text", "member"), [("light", Shade.LIGHT), ("dark", Shade.DARK)])
+def test_parse_choice_reads_the_member_of_that_value(text: str, member: Shade) -> None:
+    parsed = node({"a": text}).field("a").parse_choice(Shade)
+
+    assert_type(parsed, Shade)
+    assert parsed is member
+
+
+def test_parse_choice_lists_the_values_it_accepts_sorted() -> None:
+    with pytest.raises(YamlShapeError) as raised:
+        node({"a": "dim"}).field("a").parse_choice(Shade)
+
+    assert str(raised.value) == "a 'dim' is not one of ['dark', 'light']"
+
+
+@pytest.mark.parametrize(
+    ("value", "message"),
+    [
+        ("LIGHT", r"^a 'LIGHT' is not one of \['dark', 'light'\]$"),
+        ("", r"^a '' is not one of"),
+        (True, r"^a must be a string, got bool$"),
+        (1, r"^a must be a string, got int$"),
+        (None, r"^a must be a string, got NoneType$"),
+        (["light"], r"^a must be a string, got list$"),
+    ],
+)
+def test_parse_choice_rejects(value: object, message: str) -> None:
+    with pytest.raises(YamlShapeError, match=message):
+        node({"a": value}).field("a").parse_choice(Shade)
+
+
+def test_parse_choice_names_the_nodes_location() -> None:
+    choice = node({"dataset": {"shade": "dim"}}).field("dataset").field("shade")
+
+    with pytest.raises(YamlShapeError, match=r"^dataset\.shade 'dim' is not one of"):
+        choice.parse_choice(Shade)
+
+
+def test_parse_choice_reads_a_rounding_mode_as_parse_rounding_rule_does() -> None:
+    # One reading of an enum choice: the rounding rule's mode gives the same member and the same
+    # refusal as `parse_choice(RoundingMode)`.
+    rule = node({"a": {"increment": "1", "mode": "half_even"}}).field("a").parse_rounding_rule()
+
+    assert rule == RoundTo(
+        Decimal("1"), node({"m": "half_even"}).field("m").parse_choice(RoundingMode)
+    )
+    with pytest.raises(YamlShapeError) as by_choice:
+        node({"a": {"mode": "sideways"}}).field("a").field("mode").parse_choice(RoundingMode)
+    with pytest.raises(YamlShapeError) as by_rule:
+        node({"a": {"increment": "1", "mode": "sideways"}}).field("a").parse_rounding_rule()
+    assert str(by_rule.value) == str(by_choice.value)
