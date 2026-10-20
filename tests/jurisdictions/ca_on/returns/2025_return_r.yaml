@@ -92,8 +92,8 @@
 # capped at $3,000. Line 20 is $2,200.00 + $3,000 = $5,200.00, and line 21 is line 19 plus
 # line 20, $5,680.00 + $5,200.00 = $10,880.00, carried to T1 line 47900, which raises the
 # total credits and lowers the refund or balance owing by $5,200.00. Line 63265 (the answer
-# on a partnership claim) and line 63270 (the business number) are not modelled, to be
-# confirmed. The taxpayer's eligibility for these credits is to be confirmed. Amounts are
+# on a partnership claim) and line 63270 (the business number) are carried as entered,
+# blank. The taxpayer's eligibility for these credits is to be confirmed. Amounts are
 # quoted decimal strings, never floats; counts are quoted digit strings. Every output the
 # CA-ON manifest declares must appear under `expected`; intermediate lines may be listed and
 # are then checked too.
@@ -861,7 +861,7 @@ sources:
     and line 20 is the total of its line 13 for the two placements, 2,200.00 + 3,000.00 =
     5,200.00 (see the Worksheet source below); line 63260 is 2; line 21 is 5,680.00 +
     5,200.00 = 10,880.00. Line 63265 (the answer on a partnership claim) and line 63270 (the
-    business number) are not modelled, to be confirmed. The credit is a dollars-and-cents
+    business number) are carried as entered, blank. The credit is a dollars-and-cents
     box, rounded half-up to the cent, which changes nothing here.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-tc/5006-tc-25e.txt
   - >-

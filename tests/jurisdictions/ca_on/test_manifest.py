@@ -134,8 +134,9 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     # This total cannot be more than $1,200.", totalled over the individuals, which no line of
     # the form reads; and Form ON-BEN's ten lines (tick boxes 61020, 61040, 61060, 61070,
     # 61080 and 61140, Part A lines 61100, 61120, 61210 and 61230), which the return carries as
-    # entered, each also an input with nothing computing from it: the lines the computation
-    # returns.
+    # entered, each also an input with nothing computing from it; and ON479 line 63265 (the
+    # answer on a partnership claim) and line 63270 (the business number), likewise carried as
+    # entered: the lines the computation returns.
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS

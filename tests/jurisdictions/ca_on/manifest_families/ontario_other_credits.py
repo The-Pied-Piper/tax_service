@@ -68,6 +68,11 @@ INPUTS = frozenset(
         "ca-on/flow_through_share_slips",
         "ca-on/coop_education_payroll",
         "ca-on/coop_education_placements",
+        # ON479 line 63265 "Are you claiming this credit as a member of a partnership? 1 Yes or
+        # 2 No" and line 63270 "If yes, enter your nine-digit business number. (enter 9
+        # digits)": the form computes nothing from them, so each is also an output.
+        "ca-on/coop_claimed_as_partnership_member",
+        "ca-on/coop_partnership_business_number",
         "ca-on/community_food_program_donations",
         "ca-on/political_contributions",
     }
@@ -77,6 +82,8 @@ OUTPUTS = frozenset(
     {
         "ca-on/net_refund",
         "ca-on/coop_education_placement_count",
+        "ca-on/coop_claimed_as_partnership_member",
+        "ca-on/coop_partnership_business_number",
     }
 )
 
