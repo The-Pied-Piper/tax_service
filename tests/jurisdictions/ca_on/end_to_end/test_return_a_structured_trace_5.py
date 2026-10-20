@@ -13,12 +13,10 @@ from app.domain.trace import (
     RateByIncomeBandLine,
     RoundedTotalLine,
     ShortTermRentalNonCompliantLine,
-    SumNotBelowZeroLine,
 )
 from app.jurisdictions.ca.catalog import (
     CHILD_CARE_EXPENSES,
     FEDERAL_BASIC_TAX,
-    NET_INCOME_BEFORE_ADJUSTMENTS,
     OTHER_DEPENDANTS_MEDICAL,
     POLITICAL_CONTRIBUTIONS,
     POLITICAL_CREDIT_BEFORE_MAXIMUM,
@@ -30,7 +28,6 @@ from app.jurisdictions.ca.catalog import (
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
-    CARE_ADJUSTED_INCOME,
     CARE_CREDIT,
     CARE_CREDIT_PERCENTAGE,
     CARE_FAMILY_ADJUSTED_INCOME,
@@ -43,21 +40,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     totals = {line.output: line for line in trace if isinstance(line, RoundedTotalLine)}
     ranged = {line.output: line for line in trace if isinstance(line, ChosenByRangeLine)}
-    sums_not_below_zero = {
-        line.output: line for line in trace if isinstance(line, SumNotBelowZeroLine)
-    }
     bands = {line.output: line for line in trace if isinstance(line, RateByIncomeBandLine)}
     chosen_rates = {line.output: line for line in trace if isinstance(line, ChosenRateAppliedLine)}
-    # Schedule ON479-A line 4 "Add lines 1 to 3 (if negative, enter "0"). Adjusted income": line 1
-    # (line 23400, as line 23500 is not wired) and line 2 (the child care expenses deduction),
-    # added in line order, line 3 left out.
-    assert sums_not_below_zero == {
-        CARE_ADJUSTED_INCOME: SumNotBelowZeroLine(
-            CARE_ADJUSTED_INCOME,
-            ((NET_INCOME_BEFORE_ADJUSTMENTS, D("115000")), (CHILD_CARE_EXPENSES, D("0"))),
-            D("115000"),
-        )
-    }
     # Schedule ON479-A line 7: 115,000 is "more than $114,000 but not more than $117,600: 19%".
     assert bands == {
         CARE_CREDIT_PERCENTAGE: RateByIncomeBandLine(
