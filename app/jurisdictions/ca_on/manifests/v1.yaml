@@ -148,6 +148,7 @@ inputs:
   - ca/political_contributions
   - ca-on/opportunities_fund_donation
   - ca-on/fertility_expenses
+  - ca-on/claims_seniors_care_credit
   - ca-on/seniors_transit_paid
   - ca-on/flow_through_share_slips
   - ca-on/coop_education_payroll
@@ -2746,6 +2747,77 @@ capabilities:
       base: ca-on/fertility_credit_before_maximum
     produces:
       output: ca-on/fertility_credit
+  # Form ON479 line 3 "Medical expenses from line 58769 of your Form ON428" is the artifact
+  # ca-on/medical_claim (ON428 line 43), read directly. Line 4 "Allowable percentage 25%" and
+  # line 5 "Line 3 multiplied by the percentage from line 4 (maximum $1,500) =": the
+  # percentage on line 3, before the maximum.
+  - name: core/apply_rate
+    params:
+      rate: ca-on/seniors_care_rate
+    consumes:
+      base: ca-on/medical_claim
+    produces:
+      output: ca-on/seniors_care_before_maximum
+  # Line 5's "(maximum $1,500)", printed after the percentage, so it caps the result.
+  - name: core/capped_amount
+    params:
+      cap: ca-on/seniors_care_maximum
+    consumes:
+      base: ca-on/seniors_care_before_maximum
+    produces:
+      output: ca-on/seniors_care_amount
+  # Line 8 "Line 6 plus line 7 Family net income =", line 6 being "Your net income from line
+  # 23600 of your return" and line 7 "Your spouse's or common-law partner's net income from
+  # line 23600 of their return (if applicable)", the caller input shared with T1 line 30300
+  # and ON428 line 58120 (0 with no spouse).
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/net_income
+        - ca/spouse_net_income
+    produces:
+      output: ca-on/seniors_care_family_net_income
+  # Line 9 "Base amount 35,000.00", the dataset as an artifact of the same name.
+  - name: core/credit_amount
+    params:
+      amount: ca-on/seniors_care_base_amount
+    produces:
+      output: ca-on/seniors_care_base_amount
+  # Line 10 "Line 8 minus line 9 (if negative, enter "0") =".
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca-on/seniors_care_family_net_income
+      less: ca-on/seniors_care_base_amount
+    produces:
+      output: ca-on/seniors_care_income_over_base
+  # Line 11 "Applicable rate 5%" and line 12 "Line 10 multiplied by the percentage from
+  # line 11 =".
+  - name: core/apply_rate
+    params:
+      rate: ca-on/seniors_care_reduction_rate
+    consumes:
+      base: ca-on/seniors_care_income_over_base
+    produces:
+      output: ca-on/seniors_care_reduction
+  # Line 13 and line 63095 "Line 5 minus line 12 (if negative, enter "0") =". The form's
+  # rules for a family net income of $35,000 or less (line 5 on line 13) and of more than
+  # $65,000 ("0" on line 13) follow from lines 9 to 12: line 10 is 0 up to $35,000, and at
+  # $65,000 line 12 is $1,500.00, the most line 5 can be.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca-on/seniors_care_amount
+      less: ca-on/seniors_care_reduction
+    produces:
+      output: ca-on/seniors_care_before_claim
+  # The caller's 0/1 count "claims the Ontario seniors care at home tax credit": line 13
+  # once if the filer claims it, else 0. ON479 prints no eligibility text for the credit, so
+  # the caller claims it only for a filer who qualifies.
+  - name: core/times_count
+    consumes:
+      amount: ca-on/seniors_care_before_claim
+      count: ca-on/claims_seniors_care_credit
+    produces:
+      output: ca-on/seniors_care_credit
   # Line 14 "Amount paid in the year for eligible seniors' use of Ontario public transit
   # services (maximum $3,000) Line 63100 multiplied by 15% =": the "(maximum $3,000)" is
   # printed before the percentage, so it caps the amount paid.
@@ -2918,12 +2990,13 @@ capabilities:
       base: ca-on/flow_through_share_expenses
     produces:
       output: ca-on/flow_through_share_credit
-  # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1, 14, 16 and 17, in line order, as
-  # lines 2 and 13 are not triggered.
+  # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1, 13, 14, 16 and 17, in line
+  # order, as line 2 is not triggered.
   - name: core/sum
     consumes:
       parts:
         - ca-on/fertility_credit
+        - ca-on/seniors_care_credit
         - ca-on/seniors_transit_credit
         - ca-on/political_credit
         - ca-on/flow_through_share_credit

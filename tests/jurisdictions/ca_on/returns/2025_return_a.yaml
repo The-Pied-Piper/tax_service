@@ -106,6 +106,8 @@
 # Unapplied net capital losses of other years (Form T1436 Chart A column A) are a chosen $0 in
 # each period and the amount claimed (line 7, T1 line 25300) a chosen $0, so lines 4, 6 and 7 are
 # $0 and the Chart A balances (column G) are $0.
+# The Ontario seniors care at home tax credit (ON479 line 13, line 63095) is not claimed (a
+# chosen count of 0), so ON479 line 13 is $0.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -994,6 +996,7 @@ inputs:
   ca/political_contributions: "0"
   ca-on/opportunities_fund_donation: "0"
   ca-on/fertility_expenses: "0"
+  ca-on/claims_seniors_care_credit: "0"
   ca-on/seniors_transit_paid: "0"
   ca-on/flow_through_share_slips: []
   ca-on/coop_education_payroll: "0"
@@ -1150,6 +1153,14 @@ expected:
   ca/canada_workers_benefit: "0"
   ca-on/fertility_credit_before_maximum: "0"
   ca-on/fertility_credit: "0"
+  ca-on/seniors_care_before_maximum: "0.00"
+  ca-on/seniors_care_amount: "0.00"
+  ca-on/seniors_care_family_net_income: "115000.00"
+  ca-on/seniors_care_base_amount: "35000.00"
+  ca-on/seniors_care_income_over_base: "80000.00"
+  ca-on/seniors_care_reduction: "4000.00"
+  ca-on/seniors_care_before_claim: "0"
+  ca-on/seniors_care_credit: "0"
   ca-on/seniors_transit_amount_paid_at_most_maximum: "0"
   ca-on/seniors_transit_credit: "0"
   ca-on/political_credit_before_maximum: "0"

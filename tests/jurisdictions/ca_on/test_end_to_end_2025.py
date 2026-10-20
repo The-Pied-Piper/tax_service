@@ -521,6 +521,7 @@ from app.jurisdictions.ca_on.capabilities.flow_through_share_expenses import (
 from app.jurisdictions.ca_on.capabilities.quotient import Quotient
 from app.jurisdictions.ca_on.capabilities.record_count import RecordCount
 from app.jurisdictions.ca_on.catalog import (
+    CLAIMS_SENIORS_CARE_CREDIT,
     COMMUNITY_FOOD_PROGRAM_CREDIT,
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
     COOP_EDUCATION_CREDIT,
@@ -561,6 +562,14 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
+    SENIORS_CARE_AMOUNT,
+    SENIORS_CARE_BASE_AMOUNT,
+    SENIORS_CARE_BEFORE_CLAIM,
+    SENIORS_CARE_BEFORE_MAXIMUM,
+    SENIORS_CARE_CREDIT,
+    SENIORS_CARE_FAMILY_NET_INCOME,
+    SENIORS_CARE_INCOME_OVER_BASE,
+    SENIORS_CARE_REDUCTION,
     SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
     SENIORS_TRANSIT_CREDIT,
     SENIORS_TRANSIT_PAID,
@@ -785,6 +794,7 @@ def compute(
     rl_10_labour_sponsored_fund_amount: str = "0",
     opportunities_fund_donation: str = "0",
     fertility_expenses: str = "0",
+    claims_seniors_care_credit: int = 0,
     seniors_transit_paid: str = "0",
     flow_through_share_slips: tuple[str, ...] = (),
     coop_education_payroll: str = "0",
@@ -1070,6 +1080,7 @@ def compute(
         Artifact(RL_10_LABOUR_SPONSORED_FUND_AMOUNT, D(rl_10_labour_sponsored_fund_amount)),
         Artifact(ontario.OPPORTUNITIES_FUND_DONATION, D(opportunities_fund_donation)),
         Artifact(FERTILITY_EXPENSES, D(fertility_expenses)),
+        Artifact(CLAIMS_SENIORS_CARE_CREDIT, claims_seniors_care_credit),
         Artifact(SENIORS_TRANSIT_PAID, D(seniors_transit_paid)),
         slips(*flow_through_share_slips),
         Artifact(COOP_EDUCATION_PAYROLL, D(coop_education_payroll)),
@@ -1829,6 +1840,28 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(FERTILITY_CREDIT) is not worksheet.producer_of(
         SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM
     )
+    # ON479 lines 3 to 13, one capability for each line: line 3 is the artifact ca-on/medical_claim
+    # itself, lines 4 and 5 are the rate then the maximum, line 8 the sum of lines 6 and 7, line 9
+    # the dataset as an artifact, line 10 a difference not below zero, line 12 the rate on it, line
+    # 13 a difference not below zero, and the claim a count times line 13.
+    assert isinstance(worksheet.producer_of(SENIORS_CARE_BEFORE_MAXIMUM), ApplyRate)
+    assert isinstance(worksheet.producer_of(SENIORS_CARE_AMOUNT), CappedAmount)
+    assert isinstance(worksheet.producer_of(SENIORS_CARE_FAMILY_NET_INCOME), Sum)
+    assert isinstance(worksheet.producer_of(SENIORS_CARE_BASE_AMOUNT), CreditAmount)
+    assert isinstance(worksheet.producer_of(SENIORS_CARE_INCOME_OVER_BASE), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(SENIORS_CARE_REDUCTION), ApplyRate)
+    assert isinstance(worksheet.producer_of(SENIORS_CARE_BEFORE_CLAIM), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(SENIORS_CARE_CREDIT), TimesCount)
+    assert worksheet.producer_of(SENIORS_CARE_BEFORE_MAXIMUM) is not worksheet.producer_of(
+        SENIORS_CARE_REDUCTION
+    )
+    assert worksheet.producer_of(SENIORS_CARE_INCOME_OVER_BASE) is not worksheet.producer_of(
+        SENIORS_CARE_BEFORE_CLAIM
+    )
+    assert worksheet.producer_of(SENIORS_CARE_BEFORE_MAXIMUM) is not worksheet.producer_of(
+        FERTILITY_CREDIT_BEFORE_MAXIMUM
+    )
+    assert worksheet.producer_of(CLAIMS_SENIORS_CARE_CREDIT) is None
     for column in (1, 2, 3):
         assert isinstance(worksheet.producer_of(POLITICAL_COLUMN_LINES[column][2]), CreditAmount)
         assert isinstance(
@@ -2711,6 +2744,37 @@ def test_the_trace_explains_the_computation() -> None:
         "fertility_credit: lesser of fertility_credit_before_maximum 0 and 5000 (half-up to 0.01)",
         "0",
     )
+    care_before_maximum = position(
+        "seniors_care_before_maximum: 25% of medical_claim 0 (half-up to 0.01)", "0"
+    )
+    care_amount = position(
+        "seniors_care_amount: lesser of seniors_care_before_maximum 0 and 1500 (half-up to 0.01)",
+        "0",
+    )
+    care_family_net_income = position(
+        "seniors_care_family_net_income: net_income 115000 + spouse_net_income 0 = 115000",
+        "115000",
+    )
+    care_base = position("seniors_care_base_amount: credit amount 35000 (half-up to 0.01)", "35000")
+    care_over_base = position(
+        "seniors_care_income_over_base: seniors_care_family_net_income 115000 "
+        "less seniors_care_base_amount 35000, not below 0 = 80000",
+        "80000",
+    )
+    care_reduction = position(
+        "seniors_care_reduction: 5% of seniors_care_income_over_base 80000 (half-up to 0.01)",
+        "4000",
+    )
+    care_before_claim = position(
+        "seniors_care_before_claim: seniors_care_amount 0 "
+        "less seniors_care_reduction 4000, not below 0 = 0",
+        "0",
+    )
+    care_credit = position(
+        "seniors_care_credit: seniors_care_before_claim 0 "
+        "for each of 0 claims_seniors_care_credit = 0",
+        "0",
+    )
     transit_paid = position(
         "seniors_transit_amount_paid_at_most_maximum: lesser of seniors_transit_paid 0 and 3000 "
         "(half-up to 0.01)",
@@ -2726,8 +2790,8 @@ def test_the_trace_explains_the_computation() -> None:
         "flow_through_share_credit: 5% of flow_through_share_expenses 0 (half-up to 0.01)", "0"
     )
     ontario_credits_subtotal = position(
-        "ontario_credits_subtotal: fertility_credit 0 + seniors_transit_credit 0 "
-        "+ political_credit 0 + flow_through_share_credit 0 = 0",
+        "ontario_credits_subtotal: fertility_credit 0 + seniors_care_credit 0 "
+        "+ seniors_transit_credit 0 + political_credit 0 + flow_through_share_credit 0 = 0",
         "0",
     )
     coop_threshold = position(
@@ -3005,6 +3069,10 @@ def test_the_trace_explains_the_computation() -> None:
     assert working < cwb_before_reduction_dependant < cwb_with < cwb
     assert family_net < cwb_reduction_dependant < cwb_with
     assert fertility_before_maximum < fertility < ontario_credits_subtotal
+    assert care_before_maximum < care_amount < care_before_claim < care_credit
+    assert net < care_family_net_income < care_over_base < care_reduction < care_before_claim
+    assert care_base < care_over_base
+    assert care_credit < ontario_credits_subtotal
     assert transit_paid < transit < ontario_credits_subtotal
     assert flow_through_expenses < flow_through < ontario_credits_subtotal
     assert coop_threshold < coop_over_threshold < coop_phase_out < coop_remaining < coop_credit
@@ -3267,6 +3335,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Rate(D("0.25")),
             CENT,
             D("0"),
+        ),
+        # ON479 line 4 "Allowable percentage 25%" and line 5 "Line 3 multiplied by the percentage
+        # from line 4", before its maximum: line 3 is ON428 line 58769, 0 for Return A.
+        SENIORS_CARE_BEFORE_MAXIMUM: RateAppliedLine(
+            SENIORS_CARE_BEFORE_MAXIMUM,
+            ontario.MEDICAL_CLAIM,
+            D("0"),
+            Rate(D("0.25")),
+            CENT,
+            D("0"),
+        ),
+        # ON479 line 11 "Applicable rate 5%" and line 12 "Line 10 multiplied by the percentage from
+        # line 11": 5% of 115000.00 - 35000.00 = 80000.00.
+        SENIORS_CARE_REDUCTION: RateAppliedLine(
+            SENIORS_CARE_REDUCTION,
+            SENIORS_CARE_INCOME_OVER_BASE,
+            D("80000.00"),
+            Rate(D("0.05")),
+            CENT,
+            D("4000.00"),
         ),
         # T1 line 161 (line 46900) "multiplied by 25%", on the supplies expenses after their
         # maximum of $1,000.
@@ -3931,11 +4019,19 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("958.41"),
         ),
-        # ON479 line 18 "Add lines 1, 2, 13, 14, 16, and 17.": lines 1, 14, 16 and 17, in order.
+        # ON479 line 8 "Line 6 plus line 7 Family net income": the net income (line 6) and the
+        # spouse's (line 7, 0 with no spouse).
+        SENIORS_CARE_FAMILY_NET_INCOME: SumLine(
+            SENIORS_CARE_FAMILY_NET_INCOME,
+            ((NET_INCOME, D("115000.00")), (SPOUSE_NET_INCOME, D("0"))),
+            D("115000.00"),
+        ),
+        # ON479 line 18 "Add lines 1, 2, 13, 14, 16, and 17.": lines 1, 13, 14, 16 and 17, in order.
         ONTARIO_CREDITS_SUBTOTAL: SumLine(
             ONTARIO_CREDITS_SUBTOTAL,
             (
                 (FERTILITY_CREDIT, D("0")),
+                (SENIORS_CARE_CREDIT, D("0")),
                 (SENIORS_TRANSIT_CREDIT, D("0")),
                 (ontario.POLITICAL_CREDIT, D("0.00")),
                 (FLOW_THROUGH_SHARE_CREDIT, D("0")),
@@ -4514,6 +4610,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         POLITICAL_CREDIT_SHORTCUT_AMOUNT: CreditAmountLine(
             POLITICAL_CREDIT_SHORTCUT_AMOUNT, Credit(amount=D("650")), CENT, D("650")
         ),
+        # ON479 line 9 "Base amount 35,000.00".
+        SENIORS_CARE_BASE_AMOUNT: CreditAmountLine(
+            SENIORS_CARE_BASE_AMOUNT, Credit(amount=D("35000.00")), CENT, D("35000.00")
+        ),
         # Worksheet ON479 "Line 20" line 5 "400,000.00", line 7 "200,000.00" and line 9 "1.00".
         COOP_EDUCATION_PAYROLL_THRESHOLD: CreditAmountLine(
             COOP_EDUCATION_PAYROLL_THRESHOLD, Credit(amount=D("400000.00")), CENT, D("400000.00")
@@ -4725,6 +4825,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
             result=D("0"),
         ),
+        # The caller's count "claims the Ontario seniors care at home tax credit" times ON479 line
+        # 13: Return A claims none, so a plain 0.
+        SENIORS_CARE_CREDIT: TimesCountLine(
+            output=SENIORS_CARE_CREDIT,
+            amount_kind=SENIORS_CARE_BEFORE_CLAIM,
+            amount_value=D("0"),
+            count_kind=CLAIMS_SENIORS_CARE_CREDIT,
+            count=0,
+            result=D("0"),
+        ),
         # ON428 line 10 (line 58080) and lines 11 to 13 (line 58120), each claimed for the 0
         # filers born in 1960 or earlier and 0 spouse amounts of Return A, a plain 0.
         ontario.AGE_AMOUNT: TimesCountLine(
@@ -4823,6 +4933,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             FERTILITY_CREDIT_BEFORE_MAXIMUM,
             D("0"),
             Amount(D("5000")),
+            CENT,
+            D("0"),
+        ),
+        # ON479 line 5's "(maximum $1,500)", printed after the percentage: it caps the result.
+        SENIORS_CARE_AMOUNT: CappedAmountLine(
+            SENIORS_CARE_AMOUNT,
+            SENIORS_CARE_BEFORE_MAXIMUM,
+            D("0"),
+            Amount(D("1500")),
             CENT,
             D("0"),
         ),
@@ -5293,6 +5412,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=CREDITS_AGAINST_FEDERAL_TAX,
             subtrahend_amount=D("0"),
             result=D("16951.38"),
+        ),
+        # ON479 line 10 "Line 8 minus line 9 (if negative, enter "0")" and line 13 "Line 5 minus
+        # line 12 (if negative, enter "0")": Return A's family net income is its own 115000.00
+        # (line 7 is 0), 80000.00 over the base, so line 12 is 4000.00 and line 13 is 0 - 4000.00,
+        # negative, so 0.
+        SENIORS_CARE_INCOME_OVER_BASE: SubtractedNotBelowZeroLine(
+            output=SENIORS_CARE_INCOME_OVER_BASE,
+            minuend=SENIORS_CARE_FAMILY_NET_INCOME,
+            minuend_amount=D("115000.00"),
+            subtrahend=SENIORS_CARE_BASE_AMOUNT,
+            subtrahend_amount=D("35000.00"),
+            result=D("80000.00"),
+        ),
+        SENIORS_CARE_BEFORE_CLAIM: SubtractedNotBelowZeroLine(
+            output=SENIORS_CARE_BEFORE_CLAIM,
+            minuend=SENIORS_CARE_AMOUNT,
+            minuend_amount=D("0"),
+            subtrahend=SENIORS_CARE_REDUCTION,
+            subtrahend_amount=D("4000.00"),
+            result=D("0"),
         ),
         # Worksheet ON479 "Line 20" line 6 "Line 4 minus line 5 (if negative, enter "0")" and line
         # 11 "Line 9 minus line 10 (if negative, enter "0")": Return A has no payroll entered (0),
@@ -5797,7 +5936,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 313
+    assert len(order) == 321
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -6267,6 +6406,19 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         position[REFUND] < position[ontario.REFUND_BEFORE_DONATION] < position[ontario.NET_REFUND]
     )
     assert position[FERTILITY_CREDIT_BEFORE_MAXIMUM] < position[FERTILITY_CREDIT]
+    # ON479 lines 3 to 13: line 5 after the percentage of line 3, line 8 after the net incomes,
+    # line 10 after lines 8 and 9, line 12 after line 10, line 13 after lines 5 and 12, and the
+    # claim after line 13; line 18 after the claim.
+    assert position[ontario.MEDICAL_CLAIM] < position[SENIORS_CARE_BEFORE_MAXIMUM]
+    assert position[SENIORS_CARE_BEFORE_MAXIMUM] < position[SENIORS_CARE_AMOUNT]
+    assert position[NET_INCOME] < position[SENIORS_CARE_FAMILY_NET_INCOME]
+    assert position[SENIORS_CARE_FAMILY_NET_INCOME] < position[SENIORS_CARE_INCOME_OVER_BASE]
+    assert position[SENIORS_CARE_BASE_AMOUNT] < position[SENIORS_CARE_INCOME_OVER_BASE]
+    assert position[SENIORS_CARE_INCOME_OVER_BASE] < position[SENIORS_CARE_REDUCTION]
+    assert position[SENIORS_CARE_AMOUNT] < position[SENIORS_CARE_BEFORE_CLAIM]
+    assert position[SENIORS_CARE_REDUCTION] < position[SENIORS_CARE_BEFORE_CLAIM]
+    assert position[SENIORS_CARE_BEFORE_CLAIM] < position[SENIORS_CARE_CREDIT]
+    assert position[SENIORS_CARE_CREDIT] < position[ONTARIO_CREDITS_SUBTOTAL]
     assert position[SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM] < position[SENIORS_TRANSIT_CREDIT]
     assert position[FLOW_THROUGH_SHARE_EXPENSES] < position[FLOW_THROUGH_SHARE_CREDIT]
     assert position[FLOW_THROUGH_SHARE_CREDIT] < position[ONTARIO_CREDITS_SUBTOTAL]
@@ -7412,7 +7564,8 @@ def test_return_gs_ontario_credits_are_5180_and_lower_the_refund_by_that_much() 
         "(half-up to 0.01)"
     ) in rendered
     assert (
-        "ontario_credits_subtotal: fertility_credit 5000 + seniors_transit_credit 180 "
+        "ontario_credits_subtotal: fertility_credit 5000 + seniors_care_credit 0 "
+        "+ seniors_transit_credit 180 "
         "+ political_credit 0 + flow_through_share_credit 0 = 5180"
     ) in rendered
     assert (
@@ -7471,7 +7624,8 @@ def test_return_ms_flow_through_share_credit_is_500_and_lowers_the_refund_by_tha
         "flow_through_share_credit: 5% of flow_through_share_expenses 10000 (half-up to 0.01)"
     ) in rendered
     assert (
-        "ontario_credits_subtotal: fertility_credit 5000 + seniors_transit_credit 180 "
+        "ontario_credits_subtotal: fertility_credit 5000 + seniors_care_credit 0 "
+        "+ seniors_transit_credit 180 "
         "+ political_credit 0 + flow_through_share_credit 500 = 5680"
     ) in rendered
     assert (
@@ -11423,7 +11577,8 @@ def test_return_ps_political_contribution_credit_is_1402_76_and_lowers_the_refun
         "(half-up to 0.01)"
     ) in rendered
     assert (
-        "ontario_credits_subtotal: fertility_credit 0 + seniors_transit_credit 0 "
+        "ontario_credits_subtotal: fertility_credit 0 + seniors_care_credit 0 "
+        "+ seniors_transit_credit 0 "
         "+ political_credit 1402.76 + flow_through_share_credit 0 = 1402.76"
     ) in rendered
     assert (
@@ -12264,3 +12419,162 @@ def test_the_special_and_credit_lines_do_not_change_a_return_that_does_not_take_
     assert worksheet.get(FEDERAL_TAX_LESS_CREDITS).value == D("16951.38")
     assert worksheet.get(NET_FEDERAL_TAX).value == D("16951.38")
     assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("897.15")
+
+
+def return_ag(**overrides: Any) -> Worksheet:
+    """Return AG's inputs, as in `returns/2025_return_ag.yaml`: a retiree with a spouse.
+
+    Other pensions and superannuation of 30000 are the whole income, so the net income is
+    30000.00; the filer, born in 1960 or earlier, claims the spouse amount for a spouse of net
+    income 10000 and 4900 of medical expenses (line 58769 of 4000.00), claims the Ontario seniors
+    care at home tax credit and has 3000 deducted.
+    """
+    inputs: dict[str, Any] = {
+        "other_pensions_and_superannuation": "30000",
+        "born_in_1960_or_earlier": 1,
+        "spouse_net_income": "10000",
+        "spouses_claimed": 1,
+        "medical_expenses": "4900",
+        "income_tax_deducted": "3000",
+        "claims_seniors_care_credit": 1,
+    }
+    return compute("0", "0", "0", "0", "0", "0", "0", **{**inputs, **overrides})
+
+
+def test_return_ags_seniors_care_at_home_credit_is_750_and_lowers_the_refund() -> None:
+    # Return AG has other pensions and superannuation of 30000 and no other income: total income
+    # and net income are 30000.00, and taxable income too. Its medical expenses of 4900 (T1 line
+    # 107, ON428 line 36) less the lesser of 2885 and 3% of 30000.00 (900.00) are 4000.00: ON428
+    # line 41, and with no other dependants line 43 (line 58769) is 4000.00.
+    # ON479 line 3 is that 4000.00; line 5 is 25% of it, 1000.00, at most 1500; line 6 is the net
+    # income 30000.00 and line 7 the spouse's 10000, so line 8 is 40000.00; line 9 is 35000.00,
+    # line 10 is 40000.00 - 35000.00 = 5000.00, line 12 is 5% of it, 250.00, and line 13 is
+    # 1000.00 - 250.00 = 750.00, claimed once. Line 18 adds lines 1, 13, 14, 16 and 17: 0 + 750.00
+    # + 0 + 0 + 0, line 21 is that 750.00 with no co-operative education credit, and so is T1 line
+    # 47900. The total credits (line 166) are the 3000 deducted plus 750.00, 3750.00; the total
+    # payable is the Ontario tax of 300.00 (the health premium alone, the rest taken off by the
+    # credits) with no federal tax: line 167 is 300.00 - 3750.00 = -3450.00, a refund.
+    worksheet = return_ag()
+
+    assert worksheet.get(NET_INCOME).value == D("30000.00")
+    assert worksheet.get(MEDICAL_CLAIM).value == D("4000.00")
+    assert worksheet.get(ontario.MEDICAL_CLAIM).value == D("4000.00")
+    assert worksheet.get(SENIORS_CARE_BEFORE_MAXIMUM).value == D("1000.00")
+    assert worksheet.get(SENIORS_CARE_AMOUNT).value == D("1000.00")
+    assert worksheet.get(SENIORS_CARE_FAMILY_NET_INCOME).value == D("40000.00")
+    assert worksheet.get(SENIORS_CARE_BASE_AMOUNT).value == D("35000.00")
+    assert worksheet.get(SENIORS_CARE_INCOME_OVER_BASE).value == D("5000.00")
+    assert worksheet.get(SENIORS_CARE_REDUCTION).value == D("250.00")
+    assert worksheet.get(SENIORS_CARE_BEFORE_CLAIM).value == D("750.00")
+    assert worksheet.get(SENIORS_CARE_CREDIT).value == D("750.00")
+    assert worksheet.get(ONTARIO_CREDITS_SUBTOTAL).value == D("750.00")
+    assert worksheet.get(ONTARIO_CREDITS).value == D("750.00")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D("750.00")
+    assert worksheet.get(ontario.ONTARIO_TAX).value == D("300.00")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("0")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("300.00")
+    assert worksheet.get(TOTAL_CREDITS).value == D("3750.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-3450.00")
+    assert worksheet.get(REFUND).value == D("3450.00")
+    assert worksheet.get(ontario.NET_REFUND).value == D("3450.00")
+
+
+def test_return_ags_trace_names_each_line_of_the_seniors_care_at_home_credit() -> None:
+    rendered = EnglishTraceRenderer().render_all(return_ag().trace)
+
+    for line in (
+        "seniors_care_before_maximum: 25% of medical_claim 4000 (half-up to 0.01)",
+        "seniors_care_amount: lesser of seniors_care_before_maximum 1000 and 1500 "
+        "(half-up to 0.01)",
+        "seniors_care_family_net_income: net_income 30000 + spouse_net_income 10000 = 40000",
+        "seniors_care_base_amount: credit amount 35000 (half-up to 0.01)",
+        "seniors_care_income_over_base: seniors_care_family_net_income 40000 "
+        "less seniors_care_base_amount 35000, not below 0 = 5000",
+        "seniors_care_reduction: 5% of seniors_care_income_over_base 5000 (half-up to 0.01)",
+        "seniors_care_before_claim: seniors_care_amount 1000 "
+        "less seniors_care_reduction 250, not below 0 = 750",
+        "seniors_care_credit: seniors_care_before_claim 750 "
+        "for each of 1 claims_seniors_care_credit = 750",
+        "ontario_credits_subtotal: fertility_credit 0 + seniors_care_credit 750 "
+        "+ seniors_transit_credit 0 + political_credit 0 + flow_through_share_credit 0 = 750",
+        "ontario_credits: ontario_credits_subtotal 750 + coop_education_credit 0 = 750",
+        "provincial_credits: ontario_credits 750 = 750",
+    ):
+        assert line in rendered, line
+
+
+def test_a_filer_who_does_not_claim_the_credit_gets_none_whatever_line_13_is() -> None:
+    # The count is the caller's: the engine checks no eligibility condition. Line 13 is still
+    # worked out, 750.00, but the credit is 0 and so are lines 18 and 21 and the provincial credits.
+    worksheet = return_ag(claims_seniors_care_credit=0)
+
+    assert worksheet.get(SENIORS_CARE_BEFORE_CLAIM).value == D("750.00")
+    assert worksheet.get(SENIORS_CARE_CREDIT).value == D("0")
+    assert worksheet.get(ONTARIO_CREDITS_SUBTOTAL).value == D("0")
+    assert worksheet.get(ONTARIO_CREDITS).value == D("0")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D("0")
+    assert worksheet.get(TOTAL_CREDITS).value == D("3000")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-2700.00")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "seniors_care_credit: seniors_care_before_claim 750 "
+        "for each of 0 claims_seniors_care_credit = 0"
+    ) in rendered
+
+
+@pytest.mark.parametrize(
+    ("spouse_net_income", "medical_expenses", "line_5", "line_12", "credit"),
+    [
+        # The acceptance figures: family net income 40000 gives 750.00; 30000 (no spouse income)
+        # gives 1000.00; 70000 gives 0.
+        ("10000", "4900", "1000.00", "250.00", "750.00"),
+        ("0", "4900", "1000.00", "0", "1000.00"),
+        ("40000", "4900", "1000.00", "1750.00", "0"),
+        # Line 58769 of 8000 (medical expenses of 8900 less 900.00) gives line 5 of 1500, the
+        # maximum: 25% of 8000 is 2000.00.
+        ("0", "8900", "1500", "0", "1500.00"),
+        ("10000", "8900", "1500", "250.00", "1250.00"),
+        # A spouse's 5000 makes the family net income 35000, where nothing comes off. At 65000
+        # line 12 is 5% of 30000, 1500.00, and at 65000.01 it is 1500.0005, down to 1500.00: line
+        # 13 is 0 at both, whatever the spouse's net income above.
+        ("5000", "8900", "1500", "0", "1500.00"),
+        ("35000", "8900", "1500", "1500.00", "0"),
+        ("35000.01", "8900", "1500", "1500.00", "0"),
+        ("35000", "4900", "1000.00", "1500.00", "0"),
+    ],
+)
+def test_the_credit_follows_the_family_net_income_and_the_maximum(
+    spouse_net_income: str, medical_expenses: str, line_5: str, line_12: str, credit: str
+) -> None:
+    worksheet = return_ag(spouse_net_income=spouse_net_income, medical_expenses=medical_expenses)
+
+    assert worksheet.get(SENIORS_CARE_AMOUNT).value == D(line_5)
+    assert worksheet.get(SENIORS_CARE_REDUCTION).value == D(line_12)
+    assert worksheet.get(SENIORS_CARE_CREDIT).value == D(credit)
+    assert worksheet.get(ONTARIO_CREDITS).value == D(credit)
+
+
+def test_line_7_is_the_spouses_net_income_that_the_spouse_amount_reads_too() -> None:
+    # The same caller input as T1 line 30300 and ON428 line 58120: a spouse of net income 10000
+    # takes 10000 off the spouse amount (16129 - 10000 = 6129.00; 11905 - 10000 = 1905.00) and
+    # adds 10000 to ON479 line 8.
+    worksheet = return_ag()
+
+    assert worksheet.get(SPOUSE_NET_INCOME).value == D("10000")
+    assert worksheet.get(SPOUSE_AMOUNT).value == D("6129.00")
+    assert worksheet.get(ontario.SPOUSE_AMOUNT).value == D("1905.00")
+    assert worksheet.get(SENIORS_CARE_FAMILY_NET_INCOME).value == D("40000.00")
+
+
+def test_line_3_is_the_ontario_medical_claim_and_not_the_federal_one() -> None:
+    # ON479 line 3 reads line 58769 of the ON428, so a figure only the ON428 changes moves it: two
+    # other dependants' expenses are the same on both forms, but the Ontario per-dependant maximum
+    # of 15551 is not on the T1. A dependant with expenses of 20000 and no income: 15551 on ON428,
+    # 20000 on the T1.
+    worksheet = return_ag(other_dependants=(("20000", "0"),))
+
+    assert worksheet.get(MEDICAL_CLAIM).value == D("24000.00")
+    assert worksheet.get(ontario.MEDICAL_CLAIM).value == D("19551.00")
+    assert worksheet.get(SENIORS_CARE_BEFORE_MAXIMUM).value == D("4887.75")
+    assert worksheet.get(SENIORS_CARE_AMOUNT).value == D("1500")
+    assert worksheet.get(SENIORS_CARE_BEFORE_CLAIM).value == D("1250.00")
