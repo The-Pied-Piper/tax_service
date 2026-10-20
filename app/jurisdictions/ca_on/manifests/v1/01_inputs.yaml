@@ -170,6 +170,7 @@ inputs:
   - ca/medical_expenses
   - ca/other_dependants
   - ca-on/caregiver_dependants
+  - ca-on/disability_dependants
   - ca/disability_dependants
   - ca/infirm_children
   - ca/born_in_1960_or_earlier

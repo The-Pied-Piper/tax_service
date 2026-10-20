@@ -48,6 +48,7 @@ STEPS = {
                 "ca-on/caregiver_amount",
                 "ca/cpp_base_contributions",
                 "ca/ei_premiums",
+                "ca-on/disability_transferred_amount",
                 "ca-on/medical_claim",
             )
         },
@@ -215,6 +216,7 @@ WIRING = {
                 ontario.CAREGIVER_AMOUNT,
                 CPP_BASE_CONTRIBUTIONS,
                 EI_PREMIUMS,
+                ontario.DISABILITY_TRANSFERRED_AMOUNT,
                 ontario.MEDICAL_CLAIM,
             }
         ),

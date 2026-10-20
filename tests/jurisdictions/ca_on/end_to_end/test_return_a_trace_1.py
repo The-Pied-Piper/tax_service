@@ -12,6 +12,7 @@ from app.domain.trace import (
 from app.jurisdictions.ca.catalog import (
     AGE_AMOUNT_BEFORE_COUNT,
     CAREGIVER_AMOUNT,
+    DISABILITY_TRANSFERRED_AMOUNT,
     MEDICAL_CLAIM,
     MEDICAL_NET_INCOME_SHARE,
     OTHER_DEPENDANTS_MEDICAL,
@@ -255,7 +256,16 @@ def test_the_trace_explains_the_computation() -> None:
     )
     position("caregiver_amount: no items = 0", "0", output=CAREGIVER_AMOUNT)
     position("caregiver_amount: no items = 0", "0", output=ontario.CAREGIVER_AMOUNT)
-    position("disability_transferred_amount: no items = 0", "0")
+    # The T1's line 31800 and ON428's line 58480 read alike when both lists are empty, so each
+    # total is told apart by the kind it produces.
+    position(
+        "disability_transferred_amount: no items = 0", "0", output=DISABILITY_TRANSFERRED_AMOUNT
+    )
+    position(
+        "disability_transferred_amount: no items = 0",
+        "0",
+        output=ontario.DISABILITY_TRANSFERRED_AMOUNT,
+    )
     position(
         "infirm_children_amount: 2687 for each of 0 infirm_children = 0 (half-up to 0.01)", "0"
     )
@@ -428,7 +438,7 @@ def test_the_trace_explains_the_computation() -> None:
         "non_refundable_credit_amounts: basic_personal_amount 12747 "
         "+ age_amount 0 + spouse_amount 0 + eligible_dependant_amount 0 "
         "+ caregiver_amount 0 + cpp_base_contributions 3356.1 + ei_premiums 1077.48 "
-        "+ medical_claim 0 = 17180.58",
+        "+ disability_transferred_amount 0 + medical_claim 0 = 17180.58",
         "17180.58",
     )
     position(

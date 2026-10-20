@@ -874,6 +874,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ontario.CAREGIVER_AMOUNT, D("0")),
                 (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
                 (EI_PREMIUMS, D("1077.48")),
+                (ontario.DISABILITY_TRANSFERRED_AMOUNT, D("0")),
                 (ontario.MEDICAL_CLAIM, D("0")),
             ),
             D("17180.58"),

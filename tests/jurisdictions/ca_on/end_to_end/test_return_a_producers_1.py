@@ -462,6 +462,9 @@ from app.jurisdictions.ca.catalog import (
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.capabilities.caregiver_amount import OntarioCaregiverAmount
+from app.jurisdictions.ca_on.capabilities.disability_transfer_amount import (
+    OntarioDisabilityTransferAmount,
+)
 from app.jurisdictions.ca_on.catalog import (
     COMMUNITY_FOOD_PROGRAM_CREDIT,
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
@@ -517,6 +520,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(MEDICAL_EXPENSES) is None
     assert worksheet.producer_of(OTHER_DEPENDANTS) is None
     assert worksheet.producer_of(ontario.CAREGIVER_DEPENDANTS) is None
+    assert worksheet.producer_of(ontario.DISABILITY_DEPENDANTS) is None
     assert worksheet.producer_of(DISABILITY_DEPENDANTS) is None
     assert worksheet.producer_of(INFIRM_CHILDREN) is None
     assert worksheet.producer_of(BORN_IN_1960_OR_EARLIER) is None
@@ -1068,6 +1072,14 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(MEDICAL_CLAIM), Sum)
     assert isinstance(
         worksheet.producer_of(DISABILITY_TRANSFERRED_AMOUNT), DisabilityTransferAmount
+    )
+    # ON428 line 30 (line 58480), over the Ontario record list of dependants with a disability.
+    assert isinstance(
+        worksheet.producer_of(ontario.DISABILITY_TRANSFERRED_AMOUNT),
+        OntarioDisabilityTransferAmount,
+    )
+    assert worksheet.producer_of(ontario.DISABILITY_TRANSFERRED_AMOUNT) is not (
+        worksheet.producer_of(DISABILITY_TRANSFERRED_AMOUNT)
     )
     assert worksheet.producer_of(INFIRM_CHILDREN_AMOUNT) is not worksheet.producer_of(
         TAX_REDUCTION_FOR_CHILDREN

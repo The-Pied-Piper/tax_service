@@ -643,6 +643,7 @@ def compute(
     other_dependants: tuple[tuple[str, str], ...] = (),
     caregiver_dependants: tuple[tuple[str, int], ...] = (),
     disability_dependants: tuple[tuple[int, str, str, str], ...] = (),
+    ontario_disability_dependants: tuple[tuple[int, str, str, str], ...] = (),
     child_care_expenses_paid: str = "0",
     children_under_seven: int = 0,
     children_with_disability: int = 0,
@@ -946,6 +947,23 @@ def compute(
                         ontario.CLAIMED_AS_ELIGIBLE_DEPENDANT: claimed,
                     }
                     for income, claimed in caregiver_dependants
+                ],
+            ),
+        ),
+        Artifact(
+            ontario.DISABILITY_DEPENDANTS,
+            RecordList(
+                ontario.DISABILITY_DEPENDANTS.fields,
+                [
+                    {
+                        DEPENDANT_UNDER_18: under_18,
+                        DEPENDANT_CARE_EXPENSES: D(care_expenses),
+                        ontario.DEPENDANT_ON428_LINE_28: D(on428_line_28),
+                        DEPENDANT_TAXABLE_INCOME: D(taxable_income),
+                    }
+                    for under_18, care_expenses, on428_line_28, taxable_income in (
+                        ontario_disability_dependants
+                    )
                 ],
             ),
         ),

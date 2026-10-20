@@ -53,7 +53,12 @@ def test_lists_the_core_packages() -> None:
 def test_importing_a_jurisdiction_package_registers_its_capabilities() -> None:
     registry = CapabilityRegistry.shared()
 
-    for name in ("caregiver_amount", "choose_by_range", "flow_through_share_expenses"):
+    for name in (
+        "caregiver_amount",
+        "choose_by_range",
+        "disability_transfer_amount",
+        "flow_through_share_expenses",
+    ):
         registered = registry.get(f"ca-on/{name}")
         assert registered.__module__ == f"app.jurisdictions.ca_on.capabilities.{name}"
 
