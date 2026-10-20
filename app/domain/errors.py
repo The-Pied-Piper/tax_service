@@ -124,6 +124,11 @@ class InvalidClassRatesError(DomainError):
     """A class-rate table's classes are invalid, missing or list a class number twice."""
 
 
+class InvalidConditionsError(DomainError):
+    """A list of conditions is invalid: a count other than 0 or 1, nothing to test, or a test that
+    names no figure to compare or compares with two."""
+
+
 class DuplicateRegistrationError(DomainError):
     """Something was registered under an identifier that is already taken."""
 

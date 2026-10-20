@@ -10,6 +10,7 @@ from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.brackets import BRACKETS, BracketSchedule
 from app.domain.parameters.claim_reduction import CLAIM_REDUCTION, ClaimReduction
 from app.domain.parameters.class_rates import CLASS_RATES, ClassRates
+from app.domain.parameters.conditions import CONDITIONS, ConditionList
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
@@ -22,6 +23,7 @@ def test_built_in_kinds() -> None:
     assert BRACKETS == ParameterKind("brackets", BracketSchedule)
     assert CLAIM_REDUCTION == ParameterKind("claim_reduction", ClaimReduction)
     assert CLASS_RATES == ParameterKind("class_rates", ClassRates)
+    assert CONDITIONS == ParameterKind("conditions", ConditionList)
     assert CREDIT == ParameterKind("credit", Credit)
     assert RATE == ParameterKind("rate", Rate)
     assert RATE_TABLE == ParameterKind("rate_table", RateTable)

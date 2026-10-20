@@ -41,6 +41,8 @@ from app.domain.trace import (
     ChosenByRangeLine,
     ChosenRateAppliedLine,
     ClosingUccLine,
+    ConditionLine,
+    ConditionsCountLine,
     ContributionTierLine,
     CreditAmountLine,
     DisabilityTransferLine,
@@ -1830,6 +1832,89 @@ def test_renders_the_total_of_the_gains_by_position() -> None:
 
 def test_renders_the_total_of_no_properties() -> None:
     assert render(ItemsTotalLine(RESIDENCE_GAIN, (), D("0"))) == "residence_gain: no items = 0"
+
+
+# --- conditions --------------------------------------------------------------------------------
+#
+# One line for each condition: the output's label, "condition <position>", the printed text in
+# double quotes, the figures read (each kind's label and value, a count as a whole number, an
+# amount like any money figure, in the order read, separated by ", "), then "applies" or "does not
+# apply". The total line names the positions that applied ("condition 3 applies", "conditions 2, 3
+# apply", "no condition applies") and the count: ", so <count>".
+
+CONDITION_GATE = ArtifactKind("ex/tax_reduction_gate", int)
+CONDITION_FLAG = ArtifactKind("ex/bankrupt_flag", int)
+CONDITION_LINE_72 = ArtifactKind("ex/amount_on_line_72", Decimal)
+CONDITION_OTHER = ArtifactKind("ex/other_income", Decimal)
+
+
+def test_renders_a_condition_on_a_count_that_applies() -> None:
+    line = ConditionLine(
+        CONDITION_GATE,
+        3,
+        "You were bankrupt at any time in 2025",
+        ((CONDITION_FLAG, 1),),
+        True,
+    )
+
+    assert render(line) == (
+        'tax_reduction_gate: condition 3 "You were bankrupt at any time in 2025": '
+        "bankrupt_flag 1, applies"
+    )
+
+
+def test_renders_a_condition_on_an_amount_that_does_not_apply() -> None:
+    line = ConditionLine(
+        CONDITION_GATE,
+        2,
+        "There is an amount on line 72",
+        ((CONDITION_LINE_72, D("0.00")),),
+        False,
+    )
+
+    assert render(line) == (
+        'tax_reduction_gate: condition 2 "There is an amount on line 72": '
+        "amount_on_line_72 0, does not apply"
+    )
+
+
+def test_renders_a_condition_that_reads_several_figures_in_the_order_read() -> None:
+    line = ConditionLine(
+        CONDITION_GATE,
+        1,
+        "first",
+        ((CONDITION_FLAG, 0), (CONDITION_LINE_72, D("82125.50")), (CONDITION_OTHER, D("1E+3"))),
+        True,
+    )
+
+    assert render(line) == (
+        'tax_reduction_gate: condition 1 "first": '
+        "bankrupt_flag 0, amount_on_line_72 82125.5, other_income 1000, applies"
+    )
+
+
+def test_renders_the_conditions_total_when_one_applies() -> None:
+    assert render(ConditionsCountLine(CONDITION_GATE, (3,), 0)) == (
+        "tax_reduction_gate: condition 3 applies, so 0"
+    )
+
+
+def test_renders_the_conditions_total_when_several_apply() -> None:
+    assert render(ConditionsCountLine(CONDITION_GATE, (2, 3), 0)) == (
+        "tax_reduction_gate: conditions 2, 3 apply, so 0"
+    )
+
+
+def test_renders_the_conditions_total_when_none_applies() -> None:
+    assert render(ConditionsCountLine(CONDITION_GATE, (), 1)) == (
+        "tax_reduction_gate: no condition applies, so 1"
+    )
+
+
+def test_renders_a_condition_without_a_namespace_in_any_label() -> None:
+    line = ConditionLine(CONDITION_GATE, 1, "text", ((CONDITION_FLAG, 1),), False)
+
+    assert "ex/" not in render(line)
 
 
 # --- money figures ---------------------------------------------------------------

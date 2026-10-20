@@ -25,6 +25,8 @@ from app.domain.trace import (
     ChosenByRangeLine,
     ChosenRateAppliedLine,
     ClosingUccLine,
+    ConditionLine,
+    ConditionsCountLine,
     ContributionTierLine,
     CreditAmountLine,
     DisabilityTransferLine,
@@ -579,6 +581,23 @@ class EnglishTraceRenderer:
                     f"item {position} {self._money(amount)}" for position, amount in items
                 )
                 return f"{output.label}: {terms or 'no items'} = {self._money(total)}"
+            case ConditionLine(
+                output=output, position=position, text=text, reads=reads, applies=applies
+            ):
+                figures = ", ".join(
+                    f"{kind.label} {value if isinstance(value, int) else self._money(value)}"
+                    for kind, value in reads
+                )
+                verdict = "applies" if applies else "does not apply"
+                return f'{output.label}: condition {position} "{text}": {figures}, {verdict}'
+            case ConditionsCountLine(output=output, applied=applied, count=count):
+                if not applied:
+                    which = "no condition applies"
+                elif len(applied) == 1:
+                    which = f"condition {applied[0]} applies"
+                else:
+                    which = f"conditions {', '.join(str(position) for position in applied)} apply"
+                return f"{output.label}: {which}, so {count}"
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 
     def render_all(self, trace: Iterable[TraceLine]) -> tuple[str, ...]:

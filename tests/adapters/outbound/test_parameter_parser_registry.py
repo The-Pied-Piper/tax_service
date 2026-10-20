@@ -1,8 +1,8 @@
 """Unit tests for ParameterParserRegistry and `@parameter_parser`.
 
 Parsers are keyed by their kind's plain name (`amount`, `brackets`, `claim_reduction`,
-`class_rates`, `contribution_tier`, `credit`, `factor`, `fraction`, `rate`, `rate_table`,
-`rounding_only`, `surcharge_tiers`, `taper`), not namespaced yet.
+`class_rates`, `conditions`, `contribution_tier`, `credit`, `factor`, `fraction`, `rate`,
+`rate_table`, `rounding_only`, `surcharge_tiers`, `taper`), not namespaced yet.
 Lookups are typed: `for_kind(kind)` for a `ParameterKind[T]` gives a `ParameterParser[T]`; the
 `assert_type` checks below make `mypy .` fail if a lookup returned `Any` or another type.
 Made-up kinds and parsers are never registered in the shared registry: the decorator test
@@ -22,6 +22,7 @@ from app.adapters.outbound.parameter_parsers.amount import AmountParser
 from app.adapters.outbound.parameter_parsers.brackets import BracketsParser
 from app.adapters.outbound.parameter_parsers.claim_reduction import ClaimReductionParser
 from app.adapters.outbound.parameter_parsers.class_rates import ClassRatesParser
+from app.adapters.outbound.parameter_parsers.conditions import ConditionsParser
 from app.adapters.outbound.parameter_parsers.contribution_tier import ContributionTierParser
 from app.adapters.outbound.parameter_parsers.credit import CreditParser
 from app.adapters.outbound.parameter_parsers.factor import FactorParser
@@ -47,6 +48,13 @@ from app.domain.parameters.class_rates import (
     ClassRates,
     HalfYearRule,
     RecaptureAndTerminalLoss,
+)
+from app.domain.parameters.conditions import (
+    CONDITIONS,
+    Condition,
+    ConditionList,
+    ConditionPart,
+    ConditionTest,
 )
 from app.domain.parameters.contribution_tier import CONTRIBUTION_TIER, ContributionTier
 from app.domain.parameters.credit import CREDIT, Credit
@@ -132,6 +140,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     registry.register_class(RateTableParser)
     registry.register_class(RoundingOnlyParser)
     registry.register_class(ClassRatesParser)
+    registry.register_class(ConditionsParser)
     registry.register_class(FlatRateParser)
 
     schedule = registry.for_kind(BRACKETS).parse(
@@ -189,6 +198,31 @@ def test_for_kind_is_typed_by_the_kind() -> None:
             "dataset",
         )
     )
+    conditions = registry.for_kind(CONDITIONS).parse(
+        YamlNode.root(
+            {
+                "count_when_any_applies": "0",
+                "conditions": [
+                    {
+                        "text": "You were bankrupt at any time in 2025",
+                        "parts": [
+                            {
+                                "tests": [
+                                    {
+                                        "reads": "count",
+                                        "position": "1",
+                                        "relation": "equal_to",
+                                        "than": "1",
+                                    }
+                                ]
+                            }
+                        ],
+                    }
+                ],
+            },
+            "dataset",
+        )
+    )
     flat_rate = registry.for_kind(FLAT_RATE).parse(YamlNode.root({"rate": "0.2"}, "dataset"))
 
     assert_type(schedule, BracketSchedule)
@@ -203,6 +237,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     assert_type(rate_table, RateTable)
     assert_type(rounding_only, RoundingOnly)
     assert_type(class_rates, ClassRates)
+    assert_type(conditions, ConditionList)
     assert_type(flat_rate, Decimal)
 
     assert schedule == BracketSchedule((Bracket(D("0"), D("0.1")),))
@@ -233,6 +268,15 @@ def test_for_kind_is_typed_by_the_kind() -> None:
                 Fraction(1, 2),
             ),
         )
+    )
+    assert conditions == ConditionList(
+        0,
+        (
+            Condition(
+                "You were bankrupt at any time in 2025",
+                (ConditionPart((ConditionTest("count", 1, "equal_to", D("1"), None),)),),
+            ),
+        ),
     )
     assert flat_rate == D("0.2")
 
@@ -336,6 +380,7 @@ def test_decorating_a_second_parser_for_one_kind_fails(fresh: ParameterParserReg
         (BRACKETS, BracketsParser),
         (CLAIM_REDUCTION, ClaimReductionParser),
         (CLASS_RATES, ClassRatesParser),
+        (CONDITIONS, ConditionsParser),
         (CONTRIBUTION_TIER, ContributionTierParser),
         (CREDIT, CreditParser),
         (FACTOR, FactorParser),
@@ -362,6 +407,7 @@ def test_built_in_parsers_are_registered_in_the_shared_registry(
         (AmountParser, frozenset({"amount"})),
         (BracketsParser, frozenset({"brackets", "tax_at_start_rounding"})),
         (ClassRatesParser, frozenset({"classes"})),
+        (ConditionsParser, frozenset({"count_when_any_applies", "conditions"})),
         (ContributionTierParser, frozenset({"rate", "lower", "upper", "maximum"})),
         (CreditParser, frozenset({"amount"})),
         (FactorParser, frozenset({"value"})),
@@ -385,6 +431,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_parsers() -> None:
         "brackets",
         "claim_reduction",
         "class_rates",
+        "conditions",
         "contribution_tier",
         "credit",
         "factor",

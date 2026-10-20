@@ -21,6 +21,7 @@ from app.adapters.outbound.parameter_parsers.amount import AmountParser
 from app.adapters.outbound.parameter_parsers.brackets import BracketsParser
 from app.adapters.outbound.parameter_parsers.claim_reduction import ClaimReductionParser
 from app.adapters.outbound.parameter_parsers.class_rates import ClassRatesParser
+from app.adapters.outbound.parameter_parsers.conditions import ConditionsParser
 from app.adapters.outbound.parameter_parsers.contribution_tier import ContributionTierParser
 from app.adapters.outbound.parameter_parsers.credit import CreditParser
 from app.adapters.outbound.parameter_parsers.factor import FactorParser
@@ -38,6 +39,7 @@ from app.domain.errors import (
     InvalidAmountError,
     InvalidClaimReductionError,
     InvalidClassRatesError,
+    InvalidConditionsError,
     InvalidContributionTierError,
     InvalidCreditError,
     InvalidFactorError,
@@ -59,6 +61,13 @@ from app.domain.parameters.class_rates import (
     ClassRates,
     HalfYearRule,
     RecaptureAndTerminalLoss,
+)
+from app.domain.parameters.conditions import (
+    CONDITIONS,
+    Condition,
+    ConditionList,
+    ConditionPart,
+    ConditionTest,
 )
 from app.domain.parameters.contribution_tier import CONTRIBUTION_TIER, ContributionTier
 from app.domain.parameters.credit import CREDIT, Credit
@@ -255,6 +264,36 @@ classes:
     riip_factor: {numerator: "0", denominator: "1"}
 """
 
+CONDITIONS_2025 = """\
+family: ex/conditions
+tax_year: 2025
+kind: conditions
+sources:
+  - https://example.org/conditions-2025
+rounding: none
+count_when_any_applies: "0"
+conditions:
+  - text: You were bankrupt at any time in 2025
+    parts:
+      - tests:
+          - {reads: count, position: "1", relation: equal_to, than: "1"}
+  - text: There is an amount on line 72
+    parts:
+      - tests:
+          - {reads: amount, position: "1", relation: not_equal_to, than: "0"}
+  - text: You entered an amount and the other amount is more than $82,125.50
+    parts:
+      - tests:
+          - {reads: count, position: "2", relation: not_equal_to, than: "0"}
+          - {reads: amount, position: "2", relation: not_equal_to, than: "0"}
+      - tests:
+          - {reads: amount, position: "3", relation: more_than, than: "82125.50"}
+  - text: The first amount is more than the second
+    parts:
+      - tests:
+          - {reads: amount, position: "1", relation: more_than, against: "2"}
+"""
+
 ROUNDING_ONLY_2025 = """\
 family: ex/rounding_only
 tax_year: 2025
@@ -279,6 +318,7 @@ def built_in_parsers() -> ParameterParserRegistry:
     registry.register_class(FactorParser)
     registry.register_class(FractionParser)
     registry.register_class(RateTableParser)
+    registry.register_class(ConditionsParser)
     registry.register_class(RoundingOnlyParser)
     registry.register_class(ClassRatesParser)
     return registry
@@ -3097,3 +3137,375 @@ def test_a_rate_dataset_is_not_a_rounding_only_dataset(tmp_path: Path) -> None:
 
     with pytest.raises(InvalidParameterDataError, match="kind 'rate' does not match"):
         source(tmp_path).get("ex/credit_rate", 2025, ROUNDING_ONLY)
+
+
+# --- conditions -------------------------------------------------------------------------------
+#
+# A `conditions` dataset holds `count_when_any_applies` (a quoted whole number, "0" or "1") and
+# `conditions`, a list in the form's order, each a `text` and `parts`; each part holds `tests`;
+# each test a `reads`, a `position` (quoted, from 1), a `relation` and exactly one of `than` (a
+# quoted decimal) and `against` (a quoted position, from 1).
+
+FIRST_TEST = '          - {reads: count, position: "1", relation: equal_to, than: "1"}\n'
+FIRST_PARTS = "    parts:\n      - tests:\n" + FIRST_TEST
+
+CONDITIONS_VALUES = ConditionList(
+    0,
+    (
+        Condition(
+            "You were bankrupt at any time in 2025",
+            (ConditionPart((ConditionTest("count", 1, "equal_to", D("1"), None),)),),
+        ),
+        Condition(
+            "There is an amount on line 72",
+            (ConditionPart((ConditionTest("amount", 1, "not_equal_to", D("0"), None),)),),
+        ),
+        Condition(
+            "You entered an amount and the other amount is more than $82,125.50",
+            (
+                ConditionPart(
+                    (
+                        ConditionTest("count", 2, "not_equal_to", D("0"), None),
+                        ConditionTest("amount", 2, "not_equal_to", D("0"), None),
+                    )
+                ),
+                ConditionPart((ConditionTest("amount", 3, "more_than", D("82125.50"), None),)),
+            ),
+        ),
+        Condition(
+            "The first amount is more than the second",
+            (ConditionPart((ConditionTest("amount", 1, "more_than", None, 2),)),),
+        ),
+    ),
+)
+
+
+def test_reads_a_conditions_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/conditions/2025.yaml", CONDITIONS_2025)
+
+    result = source(tmp_path).get("ex/conditions", 2025, CONDITIONS)
+
+    assert result == ParameterDataset(
+        family="ex/conditions",
+        tax_year=2025,
+        kind=CONDITIONS,
+        values=CONDITIONS_VALUES,
+        rounding=NO_ROUNDING,
+        sources=("https://example.org/conditions-2025",),
+    )
+
+
+def test_reads_the_conditions_in_the_order_written(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/conditions/2025.yaml", CONDITIONS_2025)
+
+    listed = source(tmp_path).get("ex/conditions", 2025, CONDITIONS).values
+
+    assert [entry.text for entry in listed.conditions] == [
+        "You were bankrupt at any time in 2025",
+        "There is an amount on line 72",
+        "You entered an amount and the other amount is more than $82,125.50",
+        "The first amount is more than the second",
+    ]
+
+
+def test_reads_a_conditions_figures_exactly(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/conditions/2025.yaml", CONDITIONS_2025)
+
+    listed = source(tmp_path).get("ex/conditions", 2025, CONDITIONS).values
+
+    third = listed.conditions[2].parts[1].tests[0]
+    assert third.than is not None
+    assert str(third.than) == "82125.50"
+
+
+def test_reads_one_as_the_count_when_any_applies(tmp_path: Path) -> None:
+    content = CONDITIONS_2025.replace('count_when_any_applies: "0"', 'count_when_any_applies: "1"')
+    write(tmp_path, "ex/parameters/conditions/2025.yaml", content)
+
+    listed = source(tmp_path).get("ex/conditions", 2025, CONDITIONS).values
+
+    assert listed.count_when_any_applies == 1
+
+
+def test_reads_a_conditions_dataset_written_as_block_mappings(tmp_path: Path) -> None:
+    content = CONDITIONS_2025.replace(
+        '          - {reads: count, position: "1", relation: equal_to, than: "1"}\n',
+        '          - reads: count\n            position: "1"\n            relation: equal_to\n'
+        '            than: "1"\n',
+    )
+    write(tmp_path, "ex/parameters/conditions/2025.yaml", content)
+
+    assert source(tmp_path).get("ex/conditions", 2025, CONDITIONS).values == CONDITIONS_VALUES
+
+
+def test_reads_a_conditions_datasets_rounding_rule(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/conditions/2025.yaml",
+        CONDITIONS_2025.replace("rounding: none", 'rounding: {increment: "0.01", mode: half_up}'),
+    )
+
+    result = source(tmp_path).get("ex/conditions", 2025, CONDITIONS)
+
+    assert result.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
+
+
+def test_by_default_the_conditions_parser_comes_from_the_shared_registry(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/conditions/2025.yaml", CONDITIONS_2025)
+
+    result = YamlParameterSource(roots(tmp_path)).get("ex/conditions", 2025, CONDITIONS)
+
+    assert result.values == CONDITIONS_VALUES
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        pytest.param(
+            CONDITIONS_2025.replace('count_when_any_applies: "0"', "count_when_any_applies: 0"),
+            "count_when_any_applies must be a string, got int",
+            id="count-as-yaml-number",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace('count_when_any_applies: "0"', 'count_when_any_applies: "two"'),
+            "count_when_any_applies is not a whole number: 'two'",
+            id="count-not-a-number",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace('count_when_any_applies: "0"', 'count_when_any_applies: "2"'),
+            "count_when_any_applies must be 0 or 1",
+            id="count-not-0-or-1",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace('count_when_any_applies: "0"\n', ""),
+            r"missing keys \['count_when_any_applies'\]",
+            id="count-missing",
+        ),
+        pytest.param(
+            CONDITIONS_2025.split("conditions:\n")[0] + "conditions: []\n",
+            "at least one condition",
+            id="no-conditions",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace("conditions:\n", "rules:\n"),
+            r"unknown keys \['rules'\]",
+            id="rules-are-not-conditions",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace(
+                "  - text: You were bankrupt at any time in 2025\n"
+                "    parts:\n"
+                "      - tests:\n"
+                '          - {reads: count, position: "1", relation: equal_to, than: "1"}\n',
+                "  - not a condition\n",
+            ),
+            r"conditions\[0\] must be a mapping",
+            id="condition-not-a-mapping",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace(
+                "  - text: You were bankrupt at any time in 2025\n    parts", "  - parts"
+            ),
+            r"conditions\[0\]: missing keys \['text'\]",
+            id="text-missing",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace("text: You were bankrupt at any time in 2025", 'text: ""'),
+            "text must not be empty",
+            id="text-empty",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace(
+                FIRST_PARTS,
+                "",
+            ),
+            r"conditions\[0\]: missing keys \['parts'\]",
+            id="parts-missing",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace(
+                FIRST_PARTS,
+                "    parts: []\n",
+            ),
+            "at least one part",
+            id="parts-empty",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace(
+                "      - tests:\n" + FIRST_TEST,
+                "      - {}\n",
+            ),
+            r"conditions\[0\].parts\[0\]: missing keys \['tests'\]",
+            id="tests-missing",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace(
+                "      - tests:\n" + FIRST_TEST,
+                "      - tests: []\n",
+            ),
+            "at least one test",
+            id="tests-empty",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace('reads: count, position: "1"', 'reads: money, position: "1"'),
+            r"conditions\[0\].*reads must be 'count' or 'amount'",
+            id="reads-unknown",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace("relation: equal_to", "relation: less_than"),
+            r"conditions\[0\].*relation must be 'equal_to', 'not_equal_to' or 'more_than'",
+            id="relation-unknown",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace(
+                'reads: count, position: "1", relation: equal_to, than: "1"',
+                'reads: count, position: "1", relation: equal_to',
+            ),
+            r"conditions\[0\].*exactly one of than and against",
+            id="neither-than-nor-against",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace(
+                'relation: more_than, against: "2"',
+                'relation: more_than, against: "2", than: "5"',
+            ),
+            "exactly one of than and against",
+            id="both-than-and-against",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace('against: "2"', "against: 2"),
+            "against must be a string, got int",
+            id="against-as-yaml-number",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace('against: "2"', 'against: "0"'),
+            "against must be 1 or more",
+            id="against-below-1",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace('against: "2"', 'against: "two"'),
+            "against is not a whole number: 'two'",
+            id="against-not-a-number",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace(
+                '{reads: count, position: "1", relation: equal_to, than: "1"}',
+                '{reads: count, position: "1", relation: equal_to, against: "2"}',
+            ),
+            "against needs reads 'amount'",
+            id="against-on-a-count",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace(
+                'reads: count, position: "1", relation', "reads: count, relation"
+            ),
+            r"tests\[0\]: missing keys \['position'\]",
+            id="position-missing",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace(
+                'position: "1", relation: equal_to', "position: 1, relation: equal_to"
+            ),
+            r"tests\[0\].position must be a string, got int",
+            id="position-as-yaml-number",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace(
+                'position: "1", relation: equal_to', 'position: "0", relation: equal_to'
+            ),
+            "position must be 1 or more",
+            id="position-below-1",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace(
+                'position: "1", relation: equal_to', 'position: "first", relation: equal_to'
+            ),
+            r"tests\[0\].position is not a whole number: 'first'",
+            id="position-not-a-number",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace('than: "1"', "than: 1"),
+            r"conditions\[0\].parts\[0\].tests\[0\].than must be a string, got int",
+            id="than-as-yaml-number",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace('than: "1"', 'than: "lots"'),
+            r"tests\[0\].than is not a decimal: 'lots'",
+            id="than-not-decimal",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace("relation: equal_to,", 'relation: equal_to, threshold: "1",'),
+            r"tests\[0\]: unknown keys \['threshold'\]",
+            id="unknown-test-key",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace("kind: conditions", "kind: rate"),
+            "kind 'rate' does not match the requested 'conditions'",
+            id="kind-mismatch",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace("rounding: none\n", ""),
+            r"missing keys \['rounding'\]",
+            id="rounding-missing",
+        ),
+        pytest.param(
+            CONDITIONS_2025.replace(
+                "sources:\n  - https://example.org/conditions-2025", "sources: []"
+            ),
+            "sources must list at least one",
+            id="sources-empty",
+        ),
+    ],
+)
+def test_rejects_malformed_conditions_dataset(tmp_path: Path, content: str, message: str) -> None:
+    write(tmp_path, "ex/parameters/conditions/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
+        source(tmp_path).get("ex/conditions", 2025, CONDITIONS)
+
+    assert "2025.yaml" in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [
+        ('count_when_any_applies: "0"', 'count_when_any_applies: "2"'),
+        ('reads: count, position: "1"', 'reads: money, position: "1"'),
+        ("relation: equal_to", "relation: less_than"),
+        ('against: "2"', 'against: "0"'),
+        ('position: "1", relation: equal_to', 'position: "0", relation: equal_to'),
+    ],
+)
+def test_an_invalid_conditions_dataset_is_reported_as_a_conditions_error(
+    tmp_path: Path, old: str, new: str
+) -> None:
+    write(tmp_path, "ex/parameters/conditions/2025.yaml", CONDITIONS_2025.replace(old, new))
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/conditions", 2025, CONDITIONS)
+
+    assert isinstance(excinfo.value.__cause__, InvalidConditionsError)
+
+
+def test_an_empty_list_of_conditions_is_reported_as_a_conditions_error(tmp_path: Path) -> None:
+    content = CONDITIONS_2025.split("conditions:\n")[0] + "conditions: []\n"
+    write(tmp_path, "ex/parameters/conditions/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/conditions", 2025, CONDITIONS)
+
+    assert isinstance(excinfo.value.__cause__, InvalidConditionsError)
+
+
+def test_a_rate_table_dataset_is_not_a_conditions_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/rate_table/2025.yaml", RATE_TABLE_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'rate_table' does not match"):
+        source(tmp_path).get("ex/rate_table", 2025, CONDITIONS)
+
+
+def test_a_conditions_dataset_is_not_a_rate_table_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/conditions/2025.yaml", CONDITIONS_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'conditions' does not match"):
+        source(tmp_path).get("ex/conditions", 2025, RATE_TABLE)
