@@ -13908,6 +13908,8 @@ def test_return_aa_without_the_spouse_at_year_end_takes_the_whole_875() -> None:
     assert worksheet.get(LIFT_CREDIT).value == D("875")
     assert worksheet.get(ONTARIO_TAX_AFTER_LIFT_CREDIT).value == D("0")
     assert worksheet.get(ONTARIO_TAX).value == D("300")
+
+
 def return_aj(**overrides: Any) -> Worksheet:
     """Return AJ's inputs, as in `returns/2025_return_aj.yaml`: Return B's filer on Form ON-BEN.
 

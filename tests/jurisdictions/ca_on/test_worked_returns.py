@@ -694,6 +694,8 @@ def test_return_ah_claims_the_refundable_medical_expense_supplement_on_line_4520
     assert expected["ca/medical_supplement_line_14"] == Decimal("1500.00")
     assert expected["ca/medical_supplement_line_16"] == Decimal("1500.00")
     assert expected["ca/refundable_medical_expense_supplement"] == Decimal("1500.00")
+
+
 def test_return_aj_applies_for_the_energy_and_property_tax_credit_on_form_on_ben() -> None:
     path = RETURNS / "2025_return_aj.yaml"
     build_tax_computation()  # registers the catalogs the loader resolves through
