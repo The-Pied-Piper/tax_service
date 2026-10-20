@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 234
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 251
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -271,6 +271,33 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/non_refundable_credit_amounts",
         "ca/non_refundable_tax_credits",
         "ca/federal_tax_after_credits",
+        "ca/itc_recapture_expenditure_at_15_percent",
+        "ca/itc_recapture_expenditure_at_20_percent",
+        "ca/labour_sponsored_funds_net_cost",
+        "ca/advanced_canada_workers_benefit",
+        "ca/resp_aips_received_part_a",
+        "ca/resp_aips_rrsp_contributions",
+        "ca/resp_aips_reduction_used_in_previous_years",
+        "ca/resp_aips_received_part_b",
+        "ca/resp_aips_part_a_applies",
+        "ca/rl_10_labour_sponsored_fund_amount",
+        "ca/itc_recapture_at_15_percent",
+        "ca/itc_recapture_at_20_percent",
+        "ca/itc_recapture",
+        "ca/federal_tax_with_itc_recapture",
+        "ca/labour_sponsored_funds_credit_before_maximum",
+        "ca/labour_sponsored_funds_credit",
+        "ca/credits_against_federal_tax",
+        "ca/federal_tax_less_credits",
+        "ca/resp_aips_contributions_counted",
+        "ca/resp_aips_lifetime_limit",
+        "ca/resp_aips_limit_remaining",
+        "ca/resp_aips_reduction",
+        "ca/resp_aips_subject_to_tax",
+        "ca/resp_aips_part_a_tax",
+        "ca/resp_aips_part_b_tax",
+        "ca/resp_aips_additional_tax",
+        "ca/special_taxes",
         "ca/net_federal_tax",
         "ca/total_payable",
         "ca/income_tax_deducted",
@@ -443,13 +470,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 234
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 251
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 234
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 251
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

@@ -1645,19 +1645,187 @@ credit". Not modelled: line 120 (40424, tax on split income) and line 124 (minim
 carryover).
 """
 
+ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT = CATALOG.declare(
+    "itc_recapture_expenditure_at_15_percent", Decimal, non_negative=True
+)
+"""Expenditure on which ITC earned at 15% is recaptured, Form T2038(IND) Part C, line 67193 "Amount
+of expenditure on which ITC earned at 15% (after 2013) is recaptured. Do not enter more than the
+amount of the original expenditure": the caller's amount, as entered."""
+
+ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT = CATALOG.declare(
+    "itc_recapture_expenditure_at_20_percent", Decimal, non_negative=True
+)
+"""Expenditure on which ITC earned at 20% is recaptured, Form T2038(IND) Part C, line 67195 "Amount
+of expenditure on which ITC earned at 20% (before 2014) is recaptured. Do not enter more than the
+amount of the original expenditure": the caller's amount, as entered."""
+
+ITC_RECAPTURE_AT_15_PERCENT = CATALOG.declare(
+    "itc_recapture_at_15_percent", Decimal, non_negative=True
+)
+"""Recapture at 15%, Form T2038(IND) Part C, amount 1: line 67193 "× 0.15 =", the expenditure on
+which ITC earned at 15% is recaptured times 0.15."""
+
+ITC_RECAPTURE_AT_20_PERCENT = CATALOG.declare(
+    "itc_recapture_at_20_percent", Decimal, non_negative=True
+)
+"""Recapture at 20%, Form T2038(IND) Part C, amount 2: line 67195 "× 0.20 =", the expenditure on
+which ITC earned at 20% is recaptured times 0.20."""
+
+ITC_RECAPTURE = CATALOG.declare("itc_recapture", Decimal, non_negative=True)
+"""Recapture of investment tax credit, T1 line 131 "Recapture of investment tax credit (complete
+Form T2038(IND))": Part C amount 3 "Total recapture of investment tax credit on SR&ED expenditures
+(add amounts 1 and 2)", which the form says to enter on this line."""
+
+FEDERAL_TAX_WITH_ITC_RECAPTURE = CATALOG.declare(
+    "federal_tax_with_itc_recapture", Decimal, non_negative=True
+)
+"""Federal tax with the recapture, T1 line 132 "Line 130 plus line 131 =": line 126 (the federal
+tax after credits) and line 131 (`itc_recapture`).
+
+Line 127 "Federal surtax on income earned outside Canada (complete Form T2203)" is not triggered on
+a return whose income is all allocated to Ontario and line 129 (40500) is not wired, so lines 128
+and 130 carry line 126 unchanged."""
+
+LABOUR_SPONSORED_FUNDS_NET_COST = CATALOG.declare(
+    "labour_sponsored_funds_net_cost", Decimal, non_negative=True
+)
+"""Net cost of shares of a provincially registered fund, T1 line 137, line 41300 "Net cost of shares
+of a provincially registered fund": the caller's net cost, as entered."""
+
+LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM = CATALOG.declare(
+    "labour_sponsored_funds_credit_before_maximum", Decimal, non_negative=True
+)
+"""Labour-sponsored funds credit before the maximum, T1 line 137 (line 41400): the guide's "equal to
+15% of the net cost reported on line 41300 of your return", before its "to a maximum of $750"."""
+
+LABOUR_SPONSORED_FUNDS_CREDIT = CATALOG.declare(
+    "labour_sponsored_funds_credit", Decimal, non_negative=True
+)
+"""Labour-sponsored funds tax credit, T1 line 137 and line 41400 "Labour-sponsored funds tax credit
+Line 41300: Net cost of shares of a provincially registered fund Line 41300: Allowable credit": the
+guide's "allowable credit on line 41400 of your return that is equal to 15% of the net cost
+reported on line 41300 of your return, to a maximum of $750."."""
+
+CREDITS_AGAINST_FEDERAL_TAX = CATALOG.declare(
+    "credits_against_federal_tax", Decimal, non_negative=True
+)
+"""Credits against federal tax, T1 line 138 (line 41600) "Add lines 135 to 137.": here line 137
+(`labour_sponsored_funds_credit`) alone, as line 135 (41000) and line 136 (41200) are not wired."""
+
+FEDERAL_TAX_LESS_CREDITS = CATALOG.declare("federal_tax_less_credits", Decimal, non_negative=True)
+"""Federal tax less credits, T1 line 139 (line 41700) "Line 134 minus line 138 (if negative, enter
+"0")": line 134 (40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax", here line
+132 (`federal_tax_with_itc_recapture`) as line 133 is not wired, less line 138, not below zero."""
+
+ADVANCED_CANADA_WORKERS_BENEFIT = CATALOG.declare(
+    "advanced_canada_workers_benefit", Decimal, non_negative=True
+)
+"""Advanced Canada workers benefit, T1 line 140 (line 41500) "Advanced Canada workers benefit (ACWB)
+(complete Schedule 6)": the amount from box 10 of the RC210 slips the guide says to report, the
+caller's, as entered."""
+
+RESP_AIPS_RECEIVED_PART_A = CATALOG.declare("resp_aips_received_part_a", Decimal, non_negative=True)
+"""AIPs received, Form T1172 Part A, line 1 (68270) "Total of all AIPs you received or the promoter
+had transferred to an RRSP, PRPP or SPP on your behalf, during the year.": the caller's amount, as
+entered."""
+
+RESP_AIPS_RRSP_CONTRIBUTIONS = CATALOG.declare(
+    "resp_aips_rrsp_contributions", Decimal, non_negative=True
+)
+"""RRSP contributions deducted, Form T1172 Part A, line 2 "Total amounts you or your promoter
+contributed on your behalf to your RRSP, PRPP, or SPP, or the RRSP or SPP of your spouse or
+common-law partner, in the year you received the AIPs or the first 60 days of the following year,
+that you deducted on line 20800 of your income tax and benefit return for the year you received the
+AIPs. This amount cannot be more than your RRSP deduction limit for that year": the caller's
+amount, as entered; keeping it within the RRSP deduction limit is the caller's, the engine does not
+bound it."""
+
+RESP_AIPS_CONTRIBUTIONS_COUNTED = CATALOG.declare(
+    "resp_aips_contributions_counted", Decimal, non_negative=True
+)
+"""Contributions counted, Form T1172 Part A, line 3 "Amount from line 1 or 2, whichever is less":
+the AIPs received and the RRSP contributions deducted, the lesser."""
+
+RESP_AIPS_LIFETIME_LIMIT = CATALOG.declare("resp_aips_lifetime_limit", Decimal, non_negative=True)
+"""Lifetime limit, Form T1172 Part A, line 4 "Maximum lifetime RRSP contribution limit that can be
+used to reduce or eliminate the amount of AIPs subject to the additional tax $ 50,000.00"."""
+
+RESP_AIPS_REDUCTION_USED_IN_PREVIOUS_YEARS = CATALOG.declare(
+    "resp_aips_reduction_used_in_previous_years", Decimal, non_negative=True
+)
+"""Amounts used in previous years, Form T1172 Part A, line 5 "Total of all amounts used to reduce
+the amount of additional tax payable on AIPs received in previous years (if applicable). This
+amount is the total of the amount entered at line 5 of all T1172 forms you filed for 1998 and at
+line 7 of all T1172 forms you filed for 1999 and later": the caller's figure, as entered, and not
+bounded by the engine."""
+
+RESP_AIPS_LIMIT_REMAINING = CATALOG.declare("resp_aips_limit_remaining", Decimal)
+"""Limit remaining, Form T1172 Part A, line 6 "Line 4 minus line 5": the lifetime limit less the
+amounts used in previous years. The form prints no "(if negative, enter "0")", so the kind is
+signed."""
+
+RESP_AIPS_REDUCTION = CATALOG.declare("resp_aips_reduction", Decimal)
+"""Reduction, Form T1172 Part A, line 7 "Amount from line 3 or 6, whichever is less": the
+contributions counted and the limit remaining, the lesser. It follows line 6, which the form does
+not floor, so the kind is signed."""
+
+RESP_AIPS_SUBJECT_TO_TAX = CATALOG.declare("resp_aips_subject_to_tax", Decimal, non_negative=True)
+"""AIPs subject to the additional tax, Form T1172 Part A, line 8 "Amount of AIPs subject to the
+additional tax: line 1 minus line 7"."""
+
+RESP_AIPS_PART_A_TAX = CATALOG.declare("resp_aips_part_a_tax", Decimal, non_negative=True)
+"""Additional tax on AIPs, Form T1172 Part A, line 10 "Additional tax on AIPs: line 8 multiplied by
+line 9." (line 9 "Rate of the additional tax on AIPs × 20%"). Part C, for a resident of Quebec on
+December 31, is not triggered on an Ontario resident's return."""
+
+RESP_AIPS_RECEIVED_PART_B = CATALOG.declare("resp_aips_received_part_b", Decimal, non_negative=True)
+"""AIPs received, Form T1172 Part B, line 11 (68280) "Total of all AIPs you received from RESPs
+during the year.": the caller's amount, as entered."""
+
+RESP_AIPS_PART_B_TAX = CATALOG.declare("resp_aips_part_b_tax", Decimal, non_negative=True)
+"""Additional tax on AIPs, Form T1172 Part B, line 13 "Additional tax on AIPs: line 11 multiplied by
+line 12." (line 12 "Rate of the additional tax on AIPs × 20%")."""
+
+RESP_AIPS_PART_A_APPLIES = CATALOG.declare("resp_aips_part_a_applies", int, non_negative=True)
+"""Part A applies, Form T1172 "Part B - Fill out this part only if Part A does not apply to you.":
+the caller's count, 1 when Part A applies (the original subscriber and the other listed cases) and
+0 when Part B does."""
+
+RESP_AIPS_ADDITIONAL_TAX = CATALOG.declare("resp_aips_additional_tax", Decimal, non_negative=True)
+"""Additional tax on AIPs, Form T1172 line 10 or 13: the amount the form says to "enter on line
+41800 of your income tax and benefit return", line 10 when Part A applies and line 13 when it does
+not."""
+
+RL_10_LABOUR_SPONSORED_FUND_AMOUNT = CATALOG.declare(
+    "rl_10_labour_sponsored_fund_amount", Decimal, non_negative=True
+)
+"""Tax Credit for a Labour-Sponsored Fund (Revenu Québec), the guide's "Line 41800 - Special taxes":
+"Report, on line 41800 of your return, the result of the following calculation using your RL-10
+slip: Tax Credit for a Labour-Sponsored Fund (Revenu Québec)", the tax for not purchasing
+replacement shares in a Quebec labour-sponsored fund. The caller's result, as entered: the guide's
+text ends the list at "75% of box"."""
+
+SPECIAL_TAXES = CATALOG.declare("special_taxes", Decimal, non_negative=True)
+"""Special taxes, T1 line 141 (line 41800) "Special taxes": the additional tax on RESP accumulated
+income payments (`resp_aips_additional_tax`, Form T1172) and the tax for not purchasing replacement
+shares in a Quebec labour-sponsored fund (`rl_10_labour_sponsored_fund_amount`). Not wired: the tax
+on excess employees profit sharing plan amounts (Form RC359)."""
+
 NET_FEDERAL_TAX = CATALOG.declare("net_federal_tax", Decimal, non_negative=True)
 """Net federal tax, T1 line 142 (line 42000) "Add lines 139 to 141. Net federal tax": the federal
-tax after credits carried through the lines between, as nothing else on them is modelled.
+tax less the credits against it (`federal_tax_less_credits`, line 139), the advanced Canada workers
+benefit (`advanced_canada_workers_benefit`, line 140) and the special taxes (`special_taxes`, line
+141), in line order.
 
 Line 126 (42900) is "Line 121 minus line 125 (if negative, enter "0") Basic federal tax", line 121
 (40400) "Line 119 plus line 120" and line 125 "Add lines 122 to 124.", line 122 being "Amount from
-line 35000" and line 123 the federal dividend tax credit: the federal tax after credits. Line 134
-(40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax" and line 139 (41700) "Line
-134 minus line 138 (if negative, enter "0")" carry it to line 142. Not modelled: line 120 (40424,
-tax on split income), line 124 (minimum tax carryover), lines 127 to 133 (foreign surtax, foreign
-tax credit, investment tax credit recapture, logging tax credit), lines 135 to 138 (political,
-investment and labour-sponsored credits, 41600) and lines 140 (41500, advanced Canada workers
-benefit) and 141 (41800, special taxes).
+line 35000" and line 123 the federal dividend tax credit: the federal tax after credits. Line 131
+(`itc_recapture`) is added to it (line 132) and line 134 (40600) "Line 132 minus line 133 (if
+negative, enter "0") Federal tax" carries line 132, as line 133 is not wired. Not modelled: line 120
+(40424, tax on split income), line 124 (minimum tax carryover), line 127 (foreign surtax, not
+triggered on a return whose income is all allocated to Ontario), line 129 (foreign tax credit),
+line 133 (logging tax credit), line 135 (political contributions) and line 136 (investment tax
+credit).
 """
 
 TOTAL_PAYABLE = CATALOG.declare("total_payable", Decimal, non_negative=True)

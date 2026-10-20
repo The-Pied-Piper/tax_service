@@ -33,6 +33,7 @@ from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADJUSTED_FAMILY_NET_INCOME,
+    ADVANCED_CANADA_WORKERS_BENEFIT,
     AGE_AMOUNT,
     AGE_AMOUNT_BEFORE_COUNT,
     AGE_INCOME_OVER_THRESHOLD,
@@ -87,6 +88,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
+    CREDITS_AGAINST_FEDERAL_TAX,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
     CWB_ELIGIBLE_DEPENDANTS,
@@ -134,6 +136,8 @@ from app.jurisdictions.ca.catalog import (
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
+    FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FHSA_ANNUAL_AMOUNT,
     FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS,
     FHSA_ANNUAL_AMOUNT_FOR_2024,
@@ -203,7 +207,15 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
     INVESTMENT_INCOME_WITHOUT_A_SLIP,
     INVESTMENT_ROYALTIES,
+    ITC_RECAPTURE,
+    ITC_RECAPTURE_AT_15_PERCENT,
+    ITC_RECAPTURE_AT_20_PERCENT,
+    ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT,
+    ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT,
     JOURNALISM_LABOUR_TAX_CREDIT,
+    LABOUR_SPONSORED_FUNDS_CREDIT,
+    LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
+    LABOUR_SPONSORED_FUNDS_NET_COST,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
@@ -245,6 +257,20 @@ from app.jurisdictions.ca.catalog import (
     REFUND_OR_BALANCE_OWING,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
+    RESP_AIPS_ADDITIONAL_TAX,
+    RESP_AIPS_CONTRIBUTIONS_COUNTED,
+    RESP_AIPS_LIFETIME_LIMIT,
+    RESP_AIPS_LIMIT_REMAINING,
+    RESP_AIPS_PART_A_APPLIES,
+    RESP_AIPS_PART_A_TAX,
+    RESP_AIPS_PART_B_TAX,
+    RESP_AIPS_RECEIVED_PART_A,
+    RESP_AIPS_RECEIVED_PART_B,
+    RESP_AIPS_REDUCTION,
+    RESP_AIPS_REDUCTION_USED_IN_PREVIOUS_YEARS,
+    RESP_AIPS_RRSP_CONTRIBUTIONS,
+    RESP_AIPS_SUBJECT_TO_TAX,
+    RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
     RPP_DEDUCTION,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
@@ -258,6 +284,7 @@ from app.jurisdictions.ca.catalog import (
     SLIP_TAXABLE_DIVIDENDS,
     SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SOCIAL_ASSISTANCE_PAYMENTS,
+    SPECIAL_TAXES,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BASIS,
     SPOUSE_AMOUNT_BEFORE_COUNT,
@@ -522,6 +549,16 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/educator_supplies_expenses",
             "ca/journalism_labour_tax_credit",
             "ca/tax_paid_by_instalments",
+            "ca/itc_recapture_expenditure_at_15_percent",
+            "ca/itc_recapture_expenditure_at_20_percent",
+            "ca/labour_sponsored_funds_net_cost",
+            "ca/advanced_canada_workers_benefit",
+            "ca/resp_aips_received_part_a",
+            "ca/resp_aips_rrsp_contributions",
+            "ca/resp_aips_reduction_used_in_previous_years",
+            "ca/resp_aips_received_part_b",
+            "ca/resp_aips_part_a_applies",
+            "ca/rl_10_labour_sponsored_fund_amount",
             "ca-on/opportunities_fund_donation",
             "ca-on/fertility_expenses",
             "ca-on/seniors_transit_paid",
@@ -2524,14 +2561,199 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca-on/ontario_tax"},
         ),
-        # T1 line 142 (line 42000) "Add lines 139 to 141. Net federal tax": line 126 (42900)
-        # "Line 121 minus line 125 (if negative, enter "0") Basic federal tax" is the federal
-        # tax after credits, as lines 120 and 124, 127 to 133 and 135 to 141 are not
-        # modelled or not triggered, and lines 134 (40600) and 139 (41700) carry it: one part.
+        # T2038(IND) Part C "Recapture", "Amount of expenditure on which ITC earned at 15% (after
+        # 2013) is recaptured. Do not enter more than the amount of the original expenditure" (line
+        # 67193), times 0.15, amount 1: the caller's line 67193 at 15%.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/itc_recapture_rate_after_2013"},
+            consumes={"base": "ca/itc_recapture_expenditure_at_15_percent"},
+            produces={"output": "ca/itc_recapture_at_15_percent"},
+        ),
+        # Line 67195 "Amount of expenditure on which ITC earned at 20% (before 2014) is recaptured.
+        # Do not enter more than the amount of the original expenditure", times 0.20, amount 2: the
+        # caller's line 67195 at 20%.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/itc_recapture_rate_before_2014"},
+            consumes={"base": "ca/itc_recapture_expenditure_at_20_percent"},
+            produces={"output": "ca/itc_recapture_at_20_percent"},
+        ),
+        # "Total recapture of investment tax credit on SR&ED expenditures (add amounts 1 and 2)
+        # Enter this amount on the Recapture of investment tax credit line of your income tax and
+        # benefit return" (amount 3), T1 line 131 "Recapture of investment tax credit (complete Form
+        # T2038(IND))": amounts 1 and 2 added.
         CapabilitySelection(
             name="core/sum",
             params={},
-            consumes={"parts": ("ca/federal_tax_after_credits",)},
+            consumes={
+                "parts": ("ca/itc_recapture_at_15_percent", "ca/itc_recapture_at_20_percent")
+            },
+            produces={"output": "ca/itc_recapture"},
+        ),
+        # T1 line 132 "Line 130 plus line 131 =": line 126 (42900) "Basic federal tax" and line 131.
+        # Line 127 "Federal surtax on income earned outside Canada (complete Form T2203)" is not
+        # triggered on a return whose income is all allocated to Ontario and line 129 (40500) is not
+        # yet wired, so lines 128 and 130 carry line 126 unchanged.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/federal_tax_after_credits", "ca/itc_recapture")},
+            produces={"output": "ca/federal_tax_with_itc_recapture"},
+        ),
+        # T1 line 137 and line 41400 "Labour-sponsored funds tax credit Line 41300: Net cost of
+        # shares of a provincially registered fund Line 41300: Allowable credit": the guide's "Claim
+        # the amount of your allowable credit on line 41400 of your return that is equal to 15% of
+        # the net cost reported on line 41300 of your return, to a maximum of $750." is 15% of line
+        # 41300, the caller's net cost.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/labour_sponsored_funds_rate"},
+            consumes={"base": "ca/labour_sponsored_funds_net_cost"},
+            produces={"output": "ca/labour_sponsored_funds_credit_before_maximum"},
+        ),
+        # The guide's "to a maximum of $750" comes after the percentage, so it caps the credit.
+        CapabilitySelection(
+            name="core/capped_amount",
+            params={"cap": "ca/labour_sponsored_funds_maximum"},
+            consumes={"base": "ca/labour_sponsored_funds_credit_before_maximum"},
+            produces={"output": "ca/labour_sponsored_funds_credit"},
+        ),
+        # T1 line 138 (line 41600) "Add lines 135 to 137.": line 137 (41400) alone, as line 135
+        # (41000, the federal political contribution tax credit) and line 136 (41200, the investment
+        # tax credit) are not yet wired.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/labour_sponsored_funds_credit",)},
+            produces={"output": "ca/credits_against_federal_tax"},
+        ),
+        # T1 line 139 (line 41700) "Line 134 minus line 138 (if negative, enter "0")": line 134
+        # (40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax" carries line 132,
+        # as line 133 (the federal logging tax credit) is not yet wired.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca/federal_tax_with_itc_recapture",
+                "less": "ca/credits_against_federal_tax",
+            },
+            produces={"output": "ca/federal_tax_less_credits"},
+        ),
+        # Form T1172 Part A, line 3 "Amount from line 1 or 2, whichever is less": line 1 (68270)
+        # "Total of all AIPs you received or the promoter had transferred to an RRSP, PRPP or SPP on
+        # your behalf, during the year." and line 2 "Total amounts you or your promoter contributed
+        # on your behalf to your RRSP, PRPP, or SPP, or the RRSP or SPP of your spouse or common-law
+        # partner, in the year you received the AIPs or the first 60 days of the following year,
+        # that you deducted on line 20800 of your income tax and benefit return for the year you
+        # received the AIPs.", both the caller's.
+        CapabilitySelection(
+            name="core/lesser_of",
+            params={},
+            consumes={
+                "amounts": ("ca/resp_aips_received_part_a", "ca/resp_aips_rrsp_contributions")
+            },
+            produces={"output": "ca/resp_aips_contributions_counted"},
+        ),
+        # Line 4 "Maximum lifetime RRSP contribution limit that can be used to reduce or eliminate
+        # the amount of AIPs subject to the additional tax $ 50,000.00", the dataset as an artifact
+        # of the same name.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca/resp_aips_lifetime_limit"},
+            consumes={},
+            produces={"output": "ca/resp_aips_lifetime_limit"},
+        ),
+        # Line 6 "Line 4 minus line 5": line 5 "Total of all amounts used to reduce the amount of
+        # additional tax payable on AIPs received in previous years (if applicable). This amount is
+        # the total of the amount entered at line 5 of all T1172 forms you filed for 1998 and at
+        # line 7 of all T1172 forms you filed for 1999 and later", the caller's, with no floor on
+        # the line.
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={
+                "amount": "ca/resp_aips_lifetime_limit",
+                "less": "ca/resp_aips_reduction_used_in_previous_years",
+            },
+            produces={"output": "ca/resp_aips_limit_remaining"},
+        ),
+        # Line 7 "Amount from line 3 or 6, whichever is less".
+        CapabilitySelection(
+            name="core/lesser_of",
+            params={},
+            consumes={
+                "amounts": ("ca/resp_aips_contributions_counted", "ca/resp_aips_limit_remaining")
+            },
+            produces={"output": "ca/resp_aips_reduction"},
+        ),
+        # Line 8 "Amount of AIPs subject to the additional tax: line 1 minus line 7".
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={"amount": "ca/resp_aips_received_part_a", "less": "ca/resp_aips_reduction"},
+            produces={"output": "ca/resp_aips_subject_to_tax"},
+        ),
+        # Line 9 "Rate of the additional tax on AIPs" (20%) and line 10 "Additional tax on AIPs:
+        # line 8 multiplied by line 9." (Part C, for a resident of Quebec on December 31, is not
+        # triggered on an Ontario resident's return).
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/resp_aips_part_a_rate"},
+            consumes={"base": "ca/resp_aips_subject_to_tax"},
+            produces={"output": "ca/resp_aips_part_a_tax"},
+        ),
+        # Part B "Fill out this part only if Part A does not apply to you.": line 11 (68280) "Total
+        # of all AIPs you received from RESPs during the year.", the caller's, line 12 "Rate of the
+        # additional tax on AIPs" (20%) and line 13 "Additional tax on AIPs: line 11 multiplied by
+        # line 12.".
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/resp_aips_part_b_rate"},
+            consumes={"base": "ca/resp_aips_received_part_b"},
+            produces={"output": "ca/resp_aips_part_b_tax"},
+        ),
+        # A count of 1 when Part A applies (a caller's 0 or 1, as the form takes the original
+        # subscriber and the other listed cases) chooses line 10 over line 13, the amount the form
+        # says to enter on line 41800; a count of 0 is Part B.
+        CapabilitySelection(
+            name="core/choose_by_count",
+            params={},
+            consumes={
+                "count": "ca/resp_aips_part_a_applies",
+                "when_none": "ca/resp_aips_part_b_tax",
+                "when_any": "ca/resp_aips_part_a_tax",
+            },
+            produces={"output": "ca/resp_aips_additional_tax"},
+        ),
+        # T1 line 141 and line 41800 "Special taxes": the amount of Form T1172 (line 10 or 13) and
+        # the RL-10 amount, the guide's "Report, on line 41800 of your return, the result of the
+        # following calculation using your RL-10 slip: Tax Credit for a Labour-Sponsored Fund" whose
+        # list the guide's .txt cuts off after "75% of box", so the amount is the caller's until the
+        # rest is quoted (to be confirmed). The tax on excess EPSP amounts (Form RC359 line 9, per
+        # employer) is not yet wired.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": ("ca/resp_aips_additional_tax", "ca/rl_10_labour_sponsored_fund_amount")
+            },
+            produces={"output": "ca/special_taxes"},
+        ),
+        # T1 line 142 (line 42000) "Add lines 139 to 141. Net federal tax": line 139 (41700), line
+        # 140 (41500) "Advanced Canada workers benefit (ACWB) (complete Schedule 6)", the RC210 box
+        # 10 amount the guide says to report, the caller's, and line 141 (41800), in line order.
+        # Lines 120 and 124 (tax on split income, minimum tax carryover) are not modelled.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/federal_tax_less_credits",
+                    "ca/advanced_canada_workers_benefit",
+                    "ca/special_taxes",
+                )
+            },
             produces={"output": "ca/net_federal_tax"},
         ),
         # T1 line 148 (line 43500) "Add lines 143 to 147. Total payable": line 143 "Amount from
@@ -2958,7 +3180,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca-on/net_refund"},
         ),
     }
-    assert len(found.capabilities) == 234
+    assert len(found.capabilities) == 251
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -2968,7 +3190,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 234
+    assert len(composition.order) == 251
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -3992,7 +4214,80 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({ONTARIO_TAX_AFTER_FOOD_CREDIT, ONTARIO_HEALTH_PREMIUM}),
             frozenset({ONTARIO_TAX}),
         ),
-        (Sum, frozenset({FEDERAL_TAX_AFTER_CREDITS}), frozenset({NET_FEDERAL_TAX})),
+        (
+            ApplyRate,
+            frozenset({ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT}),
+            frozenset({ITC_RECAPTURE_AT_15_PERCENT}),
+        ),
+        (
+            ApplyRate,
+            frozenset({ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT}),
+            frozenset({ITC_RECAPTURE_AT_20_PERCENT}),
+        ),
+        (
+            Sum,
+            frozenset({ITC_RECAPTURE_AT_15_PERCENT, ITC_RECAPTURE_AT_20_PERCENT}),
+            frozenset({ITC_RECAPTURE}),
+        ),
+        (
+            Sum,
+            frozenset({FEDERAL_TAX_AFTER_CREDITS, ITC_RECAPTURE}),
+            frozenset({FEDERAL_TAX_WITH_ITC_RECAPTURE}),
+        ),
+        (
+            ApplyRate,
+            frozenset({LABOUR_SPONSORED_FUNDS_NET_COST}),
+            frozenset({LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM}),
+        ),
+        (
+            CappedAmount,
+            frozenset({LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM}),
+            frozenset({LABOUR_SPONSORED_FUNDS_CREDIT}),
+        ),
+        (Sum, frozenset({LABOUR_SPONSORED_FUNDS_CREDIT}), frozenset({CREDITS_AGAINST_FEDERAL_TAX})),
+        (
+            SubtractNotBelowZero,
+            frozenset({FEDERAL_TAX_WITH_ITC_RECAPTURE, CREDITS_AGAINST_FEDERAL_TAX}),
+            frozenset({FEDERAL_TAX_LESS_CREDITS}),
+        ),
+        (
+            LesserOf,
+            frozenset({RESP_AIPS_RECEIVED_PART_A, RESP_AIPS_RRSP_CONTRIBUTIONS}),
+            frozenset({RESP_AIPS_CONTRIBUTIONS_COUNTED}),
+        ),
+        (CreditAmount, frozenset({}), frozenset({RESP_AIPS_LIFETIME_LIMIT})),
+        (
+            Subtract,
+            frozenset({RESP_AIPS_LIFETIME_LIMIT, RESP_AIPS_REDUCTION_USED_IN_PREVIOUS_YEARS}),
+            frozenset({RESP_AIPS_LIMIT_REMAINING}),
+        ),
+        (
+            LesserOf,
+            frozenset({RESP_AIPS_CONTRIBUTIONS_COUNTED, RESP_AIPS_LIMIT_REMAINING}),
+            frozenset({RESP_AIPS_REDUCTION}),
+        ),
+        (
+            Subtract,
+            frozenset({RESP_AIPS_RECEIVED_PART_A, RESP_AIPS_REDUCTION}),
+            frozenset({RESP_AIPS_SUBJECT_TO_TAX}),
+        ),
+        (ApplyRate, frozenset({RESP_AIPS_SUBJECT_TO_TAX}), frozenset({RESP_AIPS_PART_A_TAX})),
+        (ApplyRate, frozenset({RESP_AIPS_RECEIVED_PART_B}), frozenset({RESP_AIPS_PART_B_TAX})),
+        (
+            ChooseByCount,
+            frozenset({RESP_AIPS_PART_A_APPLIES, RESP_AIPS_PART_B_TAX, RESP_AIPS_PART_A_TAX}),
+            frozenset({RESP_AIPS_ADDITIONAL_TAX}),
+        ),
+        (
+            Sum,
+            frozenset({RESP_AIPS_ADDITIONAL_TAX, RL_10_LABOUR_SPONSORED_FUND_AMOUNT}),
+            frozenset({SPECIAL_TAXES}),
+        ),
+        (
+            Sum,
+            frozenset({FEDERAL_TAX_LESS_CREDITS, ADVANCED_CANADA_WORKERS_BENEFIT, SPECIAL_TAXES}),
+            frozenset({NET_FEDERAL_TAX}),
+        ),
         (Sum, frozenset({NET_FEDERAL_TAX, ONTARIO_TAX}), frozenset({TOTAL_PAYABLE})),
         (Sum, frozenset({EMPLOYMENT_INCOME}), frozenset({WORKING_INCOME})),
         (Sum, frozenset({NET_INCOME}), frozenset({ADJUSTED_FAMILY_NET_INCOME})),
