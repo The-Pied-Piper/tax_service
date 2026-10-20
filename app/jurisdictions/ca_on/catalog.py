@@ -518,3 +518,17 @@ your return. Ontario credits =": line 19 "Amount from line 18 of the previous pa
 line 18.
 
 Line 20 (the co-operative education credit) is not triggered by the returns modelled."""
+
+REFUND_BEFORE_DONATION = CATALOG.declare("refund_before_donation", Decimal, non_negative=True)
+"""Refund before the donation, Ontario opportunities fund line 1 "Amount from line 48400 above":
+the refund."""
+
+OPPORTUNITIES_FUND_DONATION = CATALOG.declare(
+    "opportunities_fund_donation", Decimal, non_negative=True
+)
+"""Donation to the Ontario opportunities fund, line 2 and line 46500 "Your donation to the Ontario
+opportunities fund": the part of the refund the filer gives, as entered."""
+
+NET_REFUND = CATALOG.declare("net_refund", Decimal, non_negative=True)
+"""Net refund, Ontario opportunities fund line 3 and line 46600 "Net refund (line 1 minus line
+2) =": line 1 less line 2."""

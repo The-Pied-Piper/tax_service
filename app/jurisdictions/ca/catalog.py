@@ -1784,12 +1784,52 @@ PROVINCIAL_CREDITS = CATALOG.declare("provincial_credits", Decimal, non_negative
 """Provincial or territorial credits, T1 line 165 and line 47900 "Provincial or territorial credits
 (complete Form 479, if it applies)": the Ontario credits, Form ON479 line 21."""
 
+PART_XII_2_TAX_CREDIT = CATALOG.declare("part_xii_2_tax_credit", Decimal, non_negative=True)
+"""Part XII.2 tax credit, T1 line 159 (45600) "Part XII.2 tax credit (box 38 of all T3 slips and
+box 209 of all T5013 slips)": the amount of those boxes, added by the filer."""
+
+EMPLOYEE_AND_PARTNER_GST_HST_REBATE = CATALOG.declare(
+    "employee_and_partner_gst_hst_rebate", Decimal, non_negative=True
+)
+"""Employee and partner GST/HST rebate, T1 line 160 (45700) "Employee and partner GST/HST rebate
+(complete Form GST370)": the rebate of Form GST370, taken as entered."""
+
+EDUCATOR_SUPPLIES_EXPENSES = CATALOG.declare(
+    "educator_supplies_expenses", Decimal, non_negative=True
+)
+"""Educator supplies expenses, T1 line 46800 on the eligible educator school supply tax credit
+"Supplies expenses (maximum $1,000) Line 46800": the eligible supplies paid, before the maximum."""
+
+EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM = CATALOG.declare(
+    "educator_supplies_expenses_at_most_maximum", Decimal, non_negative=True
+)
+"""Educator supplies expenses that count, T1 line 161 and line 46900 "Supplies expenses (maximum
+$1,000) Line 46800": line 46800 up to the printed maximum of $1,000, which sits before the
+percentage, so it caps the supplies expenses and not the credit."""
+
+EDUCATOR_SCHOOL_SUPPLY_CREDIT = CATALOG.declare(
+    "educator_school_supply_credit", Decimal, non_negative=True
+)
+"""Eligible educator school supply tax credit, T1 line 161 and line 46900 "Supplies expenses
+(maximum $1,000) Line 46800 multiplied by 25% =": the supplies expenses that count, at 25%."""
+
+JOURNALISM_LABOUR_TAX_CREDIT = CATALOG.declare(
+    "journalism_labour_tax_credit", Decimal, non_negative=True
+)
+"""Canadian journalism labour tax credit, T1 line 162 (47555) "Canadian journalism labour tax
+credit (box 236 of all T5013 slips)": the amount of that box, added by the filer."""
+
+TAX_PAID_BY_INSTALMENTS = CATALOG.declare("tax_paid_by_instalments", Decimal, non_negative=True)
+"""Tax paid by instalments, T1 line 164 (47600) "Tax paid by instalments": the instalments paid
+for the year, as entered."""
+
 TOTAL_CREDITS = CATALOG.declare("total_credits", Decimal, non_negative=True)
 """Total credits, T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": here line 150
-(43700), line 155 (45300) and line 165 (47900), in line order.
+(43700), line 155 (45300), line 159 (45600), line 160 (45700), line 161 (46900), line 162 (47555),
+line 164 (47600) and line 165 (47900), in line order.
 
-Not triggered by the returns modelled, or left to later work: the other lines from 151 to 164
-(lines 44000 to 47600, among them 44800 CPP overpayment and 45000 EI overpayment).
+Not triggered by the returns modelled, or left to later work: the other lines from 151 to 163
+(lines 44000 to 47556, among them 44800 CPP overpayment and 45000 EI overpayment).
 """
 
 REFUND_OR_BALANCE_OWING = CATALOG.declare("refund_or_balance_owing", Decimal)
@@ -1802,3 +1842,8 @@ kind not declared non-negative: a negative amount is a refund (line 48400 "Refun
 one a balance owing (line 48500 "Balance owing"). The line takes amounts already in cents, so it
 is in cents without a rounding of its own.
 """
+
+REFUND = CATALOG.declare("refund", Decimal, non_negative=True)
+"""Refund, T1 line 48400 "Refund": line 167 "If the amount is negative, enter it on line 48400
+below", so the total credits less the total payable, not below zero. A refund is never negative,
+unlike line 167 (`refund_or_balance_owing`), which stays signed."""

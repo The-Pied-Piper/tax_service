@@ -101,6 +101,9 @@ from app.jurisdictions.ca.catalog import (
     DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS,
     ECOLOGICAL_AND_CULTURAL_GIFTS,
     ECOLOGICAL_GIFTS_BEFORE_2016,
+    EDUCATOR_SCHOOL_SUPPLY_CREDIT,
+    EDUCATOR_SUPPLIES_EXPENSES,
+    EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
     EI_AND_OTHER_BENEFITS,
     EI_PREMIUMS,
     ELECTED_SPLIT_PENSION_AMOUNT,
@@ -111,6 +114,7 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_CREDIT,
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
+    EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
     EMPLOYMENT_INCOME,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
     FEDERAL_BASIC_TAX,
@@ -182,6 +186,7 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
     INVESTMENT_INCOME_WITHOUT_A_SLIP,
     INVESTMENT_ROYALTIES,
+    JOURNALISM_LABOUR_TAX_CREDIT,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
@@ -215,9 +220,11 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
     OTHER_PENSIONS_AND_SUPERANNUATION,
+    PART_XII_2_TAX_CREDIT,
     PROVINCIAL_CREDITS,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
+    REFUND,
     REFUND_OR_BALANCE_OWING,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
@@ -262,6 +269,7 @@ from app.jurisdictions.ca.catalog import (
     T5013_INVESTMENT_INCOME,
     T5013_TAXABLE_DIVIDENDS,
     T5013_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    TAX_PAID_BY_INSTALMENTS,
     TAX_REFUND_INTEREST,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_DIVIDENDS,
@@ -530,8 +538,16 @@ REGISTERED = frozenset(
         "ca/canada_workers_benefit_with_dependant",
         "ca/canada_workers_benefit",
         "ca/provincial_credits",
+        "ca/part_xii_2_tax_credit",
+        "ca/employee_and_partner_gst_hst_rebate",
+        "ca/educator_supplies_expenses",
+        "ca/educator_supplies_expenses_at_most_maximum",
+        "ca/educator_school_supply_credit",
+        "ca/journalism_labour_tax_credit",
+        "ca/tax_paid_by_instalments",
         "ca/total_credits",
         "ca/refund_or_balance_owing",
+        "ca/refund",
         "ca/charitable_donations",
         "ca/government_donations",
         "ca/university_donations_outside_canada",
@@ -1122,8 +1138,22 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     )
     assert registry.get("ca/canada_workers_benefit") is CANADA_WORKERS_BENEFIT
     assert registry.get("ca/provincial_credits") is PROVINCIAL_CREDITS
+    assert registry.get("ca/part_xii_2_tax_credit") is PART_XII_2_TAX_CREDIT
+    assert (
+        registry.get("ca/employee_and_partner_gst_hst_rebate")
+        is EMPLOYEE_AND_PARTNER_GST_HST_REBATE
+    )
+    assert registry.get("ca/educator_supplies_expenses") is EDUCATOR_SUPPLIES_EXPENSES
+    assert (
+        registry.get("ca/educator_supplies_expenses_at_most_maximum")
+        is EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM
+    )
+    assert registry.get("ca/educator_school_supply_credit") is EDUCATOR_SCHOOL_SUPPLY_CREDIT
+    assert registry.get("ca/journalism_labour_tax_credit") is JOURNALISM_LABOUR_TAX_CREDIT
+    assert registry.get("ca/tax_paid_by_instalments") is TAX_PAID_BY_INSTALMENTS
     assert registry.get("ca/total_credits") is TOTAL_CREDITS
     assert registry.get("ca/refund_or_balance_owing") is REFUND_OR_BALANCE_OWING
+    assert registry.get("ca/refund") is REFUND
     assert registry.get("ca/charitable_donations") is CHARITABLE_DONATIONS
     assert registry.get("ca/government_donations") is GOVERNMENT_DONATIONS
     assert (
@@ -1326,8 +1356,16 @@ def test_catalog_kinds_are_money() -> None:
         CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
         CANADA_WORKERS_BENEFIT,
         PROVINCIAL_CREDITS,
+        PART_XII_2_TAX_CREDIT,
+        EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
+        EDUCATOR_SUPPLIES_EXPENSES,
+        EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
+        EDUCATOR_SCHOOL_SUPPLY_CREDIT,
+        JOURNALISM_LABOUR_TAX_CREDIT,
+        TAX_PAID_BY_INSTALMENTS,
         TOTAL_CREDITS,
         REFUND_OR_BALANCE_OWING,
+        REFUND,
         CHARITABLE_DONATIONS,
         GOVERNMENT_DONATIONS,
         UNIVERSITY_DONATIONS_OUTSIDE_CANADA,
@@ -1520,3 +1558,24 @@ def test_the_rrsp_amount_deducted_is_non_negative() -> None:
 
 def test_capital_gain_is_non_negative_while_losses_are_not_modelled() -> None:
     assert CAPITAL_GAIN.non_negative is True
+
+
+def test_the_step_6_credit_lines_are_non_negative(registry: ArtifactRegistry) -> None:
+    # T1 lines 45600, 45700, 46800, 46900, 47555 and 47600 are slip, receipt or form amounts of
+    # money paid or credited to the filer, none of which prints a negative figure; line 48400
+    # "Refund" is the negative of line 167 and is entered only when line 167 is negative, so it is
+    # never below zero, unlike line 167 (`ca/refund_or_balance_owing`), which stays signed.
+    for kind in (
+        PART_XII_2_TAX_CREDIT,
+        EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
+        EDUCATOR_SUPPLIES_EXPENSES,
+        EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
+        EDUCATOR_SCHOOL_SUPPLY_CREDIT,
+        JOURNALISM_LABOUR_TAX_CREDIT,
+        TAX_PAID_BY_INSTALMENTS,
+        REFUND,
+    ):
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+        assert registry.kind(kind.identifier).non_negative is True, kind.identifier
+    assert REFUND_OR_BALANCE_OWING.non_negative is False

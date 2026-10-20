@@ -56,7 +56,7 @@ eligible dependants (line 38100) choosing the first (T1 line 45300); less the to
 48200), here the chosen income tax deducted of 25000 (line 43700) plus that benefit, to the refund
 or balance owing (line 167), 897.15, positive so a balance owing; every line computed from a dataset
 rounded half-up to the cent) are checked from the files under `returns/` by
-`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H, I, J, K, L, M, N, O and P; this
+`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H, I, J, K, L, M, N, O, P and T; this
 module pins which capability produces each line, the order, and the trace that explains them.
 """
 
@@ -207,6 +207,9 @@ from app.jurisdictions.ca.catalog import (
     DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS,
     ECOLOGICAL_AND_CULTURAL_GIFTS,
     ECOLOGICAL_GIFTS_BEFORE_2016,
+    EDUCATOR_SCHOOL_SUPPLY_CREDIT,
+    EDUCATOR_SUPPLIES_EXPENSES,
+    EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
     EI_AND_OTHER_BENEFITS,
     EI_PREMIUMS,
     ELECTED_SPLIT_PENSION_AMOUNT,
@@ -217,6 +220,7 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_CREDIT,
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
+    EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
     EMPLOYMENT_INCOME,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
     FEDERAL_BASIC_TAX,
@@ -289,6 +293,7 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
     INVESTMENT_INCOME_WITHOUT_A_SLIP,
     INVESTMENT_ROYALTIES,
+    JOURNALISM_LABOUR_TAX_CREDIT,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
@@ -322,9 +327,11 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
     OTHER_PENSIONS_AND_SUPERANNUATION,
+    PART_XII_2_TAX_CREDIT,
     PROVINCIAL_CREDITS,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
+    REFUND,
     REFUND_OR_BALANCE_OWING,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
@@ -369,6 +376,7 @@ from app.jurisdictions.ca.catalog import (
     T5013_INVESTMENT_INCOME,
     T5013_TAXABLE_DIVIDENDS,
     T5013_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    TAX_PAID_BY_INSTALMENTS,
     TAX_REFUND_INTEREST,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_DIVIDENDS,
@@ -621,6 +629,12 @@ def compute(
     children_seven_to_sixteen: int = 0,
     cwb_eligible_dependants: int = 0,
     income_tax_deducted: str = "0",
+    part_xii_2_tax_credit: str = "0",
+    employee_and_partner_gst_hst_rebate: str = "0",
+    educator_supplies_expenses: str = "0",
+    journalism_labour_tax_credit: str = "0",
+    tax_paid_by_instalments: str = "0",
+    opportunities_fund_donation: str = "0",
     fertility_expenses: str = "0",
     seniors_transit_paid: str = "0",
     flow_through_share_slips: tuple[str, ...] = (),
@@ -824,6 +838,12 @@ def compute(
         Artifact(CHILDREN_SEVEN_TO_SIXTEEN, children_seven_to_sixteen),
         Artifact(CWB_ELIGIBLE_DEPENDANTS, cwb_eligible_dependants),
         Artifact(INCOME_TAX_DEDUCTED, D(income_tax_deducted)),
+        Artifact(PART_XII_2_TAX_CREDIT, D(part_xii_2_tax_credit)),
+        Artifact(EMPLOYEE_AND_PARTNER_GST_HST_REBATE, D(employee_and_partner_gst_hst_rebate)),
+        Artifact(EDUCATOR_SUPPLIES_EXPENSES, D(educator_supplies_expenses)),
+        Artifact(JOURNALISM_LABOUR_TAX_CREDIT, D(journalism_labour_tax_credit)),
+        Artifact(TAX_PAID_BY_INSTALMENTS, D(tax_paid_by_instalments)),
+        Artifact(ontario.OPPORTUNITIES_FUND_DONATION, D(opportunities_fund_donation)),
         Artifact(FERTILITY_EXPENSES, D(fertility_expenses)),
         Artifact(SENIORS_TRANSIT_PAID, D(seniors_transit_paid)),
         slips(*flow_through_share_slips),
@@ -1540,6 +1560,27 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(TOTAL_PAYABLE) is not worksheet.producer_of(ONTARIO_TAX)
     # Not floored: T1 line 167 is negative for a refund.
     assert isinstance(worksheet.producer_of(REFUND_OR_BALANCE_OWING), Subtract)
+    # Line 161 and line 46900: the "(maximum $1,000)" caps line 46800, then 25% of it.
+    assert isinstance(
+        worksheet.producer_of(EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM), CappedAmount
+    )
+    assert isinstance(worksheet.producer_of(EDUCATOR_SCHOOL_SUPPLY_CREDIT), ApplyRate)
+    # Lines 45600, 45700, 46800, 47555 and 47600 are inputs the return takes, not computed.
+    for kind in (
+        PART_XII_2_TAX_CREDIT,
+        EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
+        EDUCATOR_SUPPLIES_EXPENSES,
+        JOURNALISM_LABOUR_TAX_CREDIT,
+        TAX_PAID_BY_INSTALMENTS,
+        ontario.OPPORTUNITIES_FUND_DONATION,
+    ):
+        assert worksheet.producer_of(kind) is None, kind
+    # Line 48400 is floored, unlike line 167: a refund is never negative.
+    assert isinstance(worksheet.producer_of(REFUND), SubtractNotBelowZero)
+    assert worksheet.producer_of(REFUND) is not worksheet.producer_of(REFUND_OR_BALANCE_OWING)
+    # The Ontario opportunities fund page: line 1 carries line 48400, line 3 is line 1 less line 2.
+    assert isinstance(worksheet.producer_of(ontario.REFUND_BEFORE_DONATION), Sum)
+    assert isinstance(worksheet.producer_of(ontario.NET_REFUND), Subtract)
 
 
 def test_the_trace_explains_the_computation() -> None:
@@ -2138,14 +2179,33 @@ def test_the_trace_explains_the_computation() -> None:
     )
     ontario_credits = position("ontario_credits: ontario_credits_subtotal 0 = 0", "0")
     provincial = position("provincial_credits: ontario_credits 0 = 0", "0")
+    educator_expenses = position(
+        "educator_supplies_expenses_at_most_maximum: lesser of educator_supplies_expenses 0 "
+        "and 1000 (half-up to 0.01)",
+        "0",
+    )
+    educator_credit = position(
+        "educator_school_supply_credit: 25% of educator_supplies_expenses_at_most_maximum 0 "
+        "(half-up to 0.01)",
+        "0",
+    )
     credits = position(
         "total_credits: income_tax_deducted 25000 + canada_workers_benefit 0 "
-        "+ provincial_credits 0 = 25000",
+        "+ part_xii_2_tax_credit 0 + employee_and_partner_gst_hst_rebate 0 "
+        "+ educator_school_supply_credit 0 + journalism_labour_tax_credit 0 "
+        "+ tax_paid_by_instalments 0 + provincial_credits 0 = 25000",
         "25000",
     )
     balance = position(
         "refund_or_balance_owing: total_payable 25897.15 less total_credits 25000 = 897.15",
         "897.15",
+    )
+    refund = position(
+        "refund: total_credits 25000 less total_payable 25897.15, not below 0 = 0", "0"
+    )
+    refund_before_donation = position("refund_before_donation: refund 0 = 0", "0")
+    net_refund = position(
+        "net_refund: refund_before_donation 0 less opportunities_fund_donation 0 = 0", "0"
     )
     # Schedule 9 and its charts, and the Federal Worksheet's line 34990, for donations of 0.
     depreciable_proceeds_or_cost = position(
@@ -2355,6 +2415,9 @@ def test_the_trace_explains_the_computation() -> None:
     assert ontario_credits_subtotal < ontario_credits < provincial < credits
     assert cwb < credits
     assert credits < balance
+    assert educator_expenses < educator_credit < credits
+    assert credits < refund < refund_before_donation < net_refund
+    assert payable < refund
 
 
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
@@ -2535,6 +2598,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         FERTILITY_CREDIT_BEFORE_MAXIMUM: RateAppliedLine(
             FERTILITY_CREDIT_BEFORE_MAXIMUM,
             FERTILITY_EXPENSES,
+            D("0"),
+            Rate(D("0.25")),
+            CENT,
+            D("0"),
+        ),
+        # T1 line 161 (line 46900) "multiplied by 25%", on the supplies expenses after their
+        # maximum of $1,000.
+        EDUCATOR_SCHOOL_SUPPLY_CREDIT: RateAppliedLine(
+            EDUCATOR_SCHOOL_SUPPLY_CREDIT,
+            EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
             D("0"),
             Rate(D("0.25")),
             CENT,
@@ -3103,9 +3176,18 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             (
                 (INCOME_TAX_DEDUCTED, D("25000")),
                 (CANADA_WORKERS_BENEFIT, D("0")),
+                (PART_XII_2_TAX_CREDIT, D("0")),
+                (EMPLOYEE_AND_PARTNER_GST_HST_REBATE, D("0")),
+                (EDUCATOR_SCHOOL_SUPPLY_CREDIT, D("0")),
+                (JOURNALISM_LABOUR_TAX_CREDIT, D("0")),
+                (TAX_PAID_BY_INSTALMENTS, D("0")),
                 (PROVINCIAL_CREDITS, D("0")),
             ),
             D("25000"),
+        ),
+        # The Ontario opportunities fund, line 1 "Amount from line 48400 above".
+        ontario.REFUND_BEFORE_DONATION: SumLine(
+            ontario.REFUND_BEFORE_DONATION, ((REFUND, D("0")),), D("0")
         ),
         # Federal Worksheet line 22100, line 4.
         CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES: SumLine(
@@ -3299,6 +3381,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=TOTAL_CREDITS,
             subtrahend_amount=D("25000"),
             result=D("897.15"),
+        ),
+        # The Ontario opportunities fund, line 3 and line 46600 "Net refund (line 1 minus line 2)".
+        ontario.NET_REFUND: SubtractedLine(
+            output=ontario.NET_REFUND,
+            minuend=ontario.REFUND_BEFORE_DONATION,
+            minuend_amount=D("0"),
+            subtrahend=ontario.OPPORTUNITIES_FUND_DONATION,
+            subtrahend_amount=D("0"),
+            result=D("0"),
         ),
         # Form T1436 line 15.
         BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE: SubtractedLine(
@@ -3718,6 +3809,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             FERTILITY_CREDIT_BEFORE_MAXIMUM,
             D("0"),
             Amount(D("5000")),
+            CENT,
+            D("0"),
+        ),
+        # T1 line 161's "(maximum $1,000)", printed before the percentage: it caps the supplies
+        # expenses (line 46800).
+        EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM: CappedAmountLine(
+            EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
+            EDUCATOR_SUPPLIES_EXPENSES,
+            D("0"),
+            Amount(D("1000")),
             CENT,
             D("0"),
         ),
@@ -4297,6 +4398,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("4125.00"),
             result=D("0"),
         ),
+        # T1 line 48400 "Refund": the total credits of 25000 less the total payable of 25897.15 is
+        # not above zero, so the refund is 0 (the balance owing of 897.15 is line 48500).
+        REFUND: SubtractedNotBelowZeroLine(
+            output=REFUND,
+            minuend=TOTAL_CREDITS,
+            minuend_amount=D("25000"),
+            subtrahend=TOTAL_PAYABLE,
+            subtrahend_amount=D("25897.15"),
+            result=D("0"),
+        ),
         # ON428 line 86 "Line 84 minus line 85 (if negative, enter "0")".
         ONTARIO_TAX_AFTER_LIFT_CREDIT: SubtractedNotBelowZeroLine(
             output=ONTARIO_TAX_AFTER_LIFT_CREDIT,
@@ -4463,7 +4574,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 228
+    assert len(order) == 233
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -4807,6 +4918,19 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         assert position[NET_INCOME] < position[ADJUSTED_FAMILY_NET_INCOME] < position[reduction]
         assert position[reduction] < position[benefit] < position[CANADA_WORKERS_BENEFIT]
     assert position[CANADA_WORKERS_BENEFIT] < position[TOTAL_CREDITS]
+    # Line 161 (46900): the cap on line 46800 first, then the rate; the total credits add it.
+    assert (
+        position[EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM]
+        < position[EDUCATOR_SCHOOL_SUPPLY_CREDIT]
+        < position[TOTAL_CREDITS]
+    )
+    # Line 48400 reads the total credits and the total payable; the opportunities fund page reads
+    # line 48400, and line 46600 reads its line 1.
+    assert position[TOTAL_CREDITS] < position[REFUND]
+    assert position[TOTAL_PAYABLE] < position[REFUND]
+    assert (
+        position[REFUND] < position[ontario.REFUND_BEFORE_DONATION] < position[ontario.NET_REFUND]
+    )
     assert position[FERTILITY_CREDIT_BEFORE_MAXIMUM] < position[FERTILITY_CREDIT]
     assert position[SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM] < position[SENIORS_TRANSIT_CREDIT]
     assert position[FLOW_THROUGH_SHARE_EXPENSES] < position[FLOW_THROUGH_SHARE_CREDIT]
@@ -5658,7 +5782,9 @@ def test_with_no_tax_payable_all_the_tax_deducted_is_refunded() -> None:
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "total_credits: income_tax_deducted 500 + canada_workers_benefit 1633 "
-        "+ provincial_credits 0 = 2133"
+        "+ part_xii_2_tax_credit 0 + employee_and_partner_gst_hst_rebate 0 "
+        "+ educator_school_supply_credit 0 + journalism_labour_tax_credit 0 "
+        "+ tax_paid_by_instalments 0 + provincial_credits 0 = 2133"
     ) in rendered
 
 
@@ -5934,7 +6060,9 @@ def test_return_gs_ontario_credits_are_5180_and_lower_the_refund_by_that_much() 
     assert "provincial_credits: ontario_credits 5180 = 5180" in rendered
     assert (
         "total_credits: income_tax_deducted 8000 + canada_workers_benefit 0 "
-        "+ provincial_credits 5180 = 13180"
+        "+ part_xii_2_tax_credit 0 + employee_and_partner_gst_hst_rebate 0 "
+        "+ educator_school_supply_credit 0 + journalism_labour_tax_credit 0 "
+        "+ tax_paid_by_instalments 0 + provincial_credits 5180 = 13180"
     ) in rendered
     assert (
         "refund_or_balance_owing: total_payable 4240.69 less total_credits 13180 = -8939.31"
@@ -5989,7 +6117,9 @@ def test_return_ms_flow_through_share_credit_is_500_and_lowers_the_refund_by_tha
     assert "provincial_credits: ontario_credits 5680 = 5680" in rendered
     assert (
         "total_credits: income_tax_deducted 8000 + canada_workers_benefit 0 "
-        "+ provincial_credits 5680 = 13680"
+        "+ part_xii_2_tax_credit 0 + employee_and_partner_gst_hst_rebate 0 "
+        "+ educator_school_supply_credit 0 + journalism_labour_tax_credit 0 "
+        "+ tax_paid_by_instalments 0 + provincial_credits 5680 = 13680"
     ) in rendered
     assert (
         "refund_or_balance_owing: total_payable 4240.69 less total_credits 13680 = -9439.31"
@@ -8338,7 +8468,9 @@ def test_return_ps_political_contribution_credit_is_1402_76_and_lowers_the_refun
     ) in rendered
     assert (
         "total_credits: income_tax_deducted 4800 + canada_workers_benefit 0 "
-        "+ provincial_credits 1402.76 = 6202.76"
+        "+ part_xii_2_tax_credit 0 + employee_and_partner_gst_hst_rebate 0 "
+        "+ educator_school_supply_credit 0 + journalism_labour_tax_credit 0 "
+        "+ tax_paid_by_instalments 0 + provincial_credits 1402.76 = 6202.76"
     ) in rendered
 
 
@@ -8383,3 +8515,191 @@ def test_no_contributions_leave_the_ontario_credits_at_zero() -> None:
     assert worksheet.get(POLITICAL_CREDIT).value == D("0")
     assert worksheet.get(ONTARIO_CREDITS).value == D("0")
     assert worksheet.get(PROVINCIAL_CREDITS).value == D("0")
+
+
+def return_t(
+    *,
+    income_tax_deducted: str = "4929.83",
+    part_xii_2_tax_credit: str = "50",
+    employee_and_partner_gst_hst_rebate: str = "150",
+    educator_supplies_expenses: str = "1200",
+    journalism_labour_tax_credit: str = "75",
+    tax_paid_by_instalments: str = "2000",
+    opportunities_fund_donation: str = "100",
+) -> Worksheet:
+    """Return T's inputs, as in `returns/2025_return_t.yaml`: Return C's with the Step 6 lines.
+
+    Employment income of 50000 gives a total payable of 6454.83 and no Canada workers benefit. The
+    Part XII.2 credit (45600) is 50, the GST/HST rebate (45700) 150, the supplies paid (46800)
+    1200, the journalism labour credit (47555) 75 and the instalments (47600) 2000; the income tax
+    deducted (43700) of 4929.83 makes the refund (48400) 1000.00, of which 100 is donated (46500).
+    """
+    return compute(
+        "50000",
+        "0",
+        "0",
+        "0",
+        "9000",
+        "0",
+        "0",
+        income_tax_deducted=income_tax_deducted,
+        part_xii_2_tax_credit=part_xii_2_tax_credit,
+        employee_and_partner_gst_hst_rebate=employee_and_partner_gst_hst_rebate,
+        educator_supplies_expenses=educator_supplies_expenses,
+        journalism_labour_tax_credit=journalism_labour_tax_credit,
+        tax_paid_by_instalments=tax_paid_by_instalments,
+        opportunities_fund_donation=opportunities_fund_donation,
+    )
+
+
+def test_return_ts_lines_46800_and_46900_are_1000_and_250() -> None:
+    # Line 46800, the supplies paid, is 1200: it counts as 1000, the maximum, and line 46900 is
+    # 1000 x 25% = 250.00.
+    worksheet = return_t()
+
+    assert worksheet.get(EDUCATOR_SUPPLIES_EXPENSES).value == D("1200")
+    assert worksheet.get(EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM).value == D("1000")
+    assert worksheet.get(EDUCATOR_SCHOOL_SUPPLY_CREDIT).value == D("250.00")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "educator_supplies_expenses_at_most_maximum: lesser of educator_supplies_expenses 1200 "
+        "and 1000 (half-up to 0.01)"
+    ) in rendered
+    assert (
+        "educator_school_supply_credit: 25% of educator_supplies_expenses_at_most_maximum 1000 "
+        "(half-up to 0.01)"
+    ) in rendered
+
+
+def test_return_ts_total_credits_add_lines_150_to_165_in_line_order() -> None:
+    # 4929.83 (43700) + 0 (45300, the benefit) + 50 (45600) + 150 (45700) + 250.00 (46900) + 75
+    # (47555) + 2000 (47600) + 0 (47900) = 7454.83: 2525 more than the tax deducted, the added
+    # credits being 50 + 150 + 250 + 75 + 2000.
+    worksheet = return_t()
+
+    assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("0")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D("0")
+    assert worksheet.get(TOTAL_CREDITS).value == D("7454.83")
+    assert worksheet.get(TOTAL_CREDITS).value - worksheet.get(INCOME_TAX_DEDUCTED).value == D(
+        "2525.00"
+    )
+    (line,) = [
+        line
+        for line in worksheet.trace
+        if isinstance(line, SumLine) and line.output == TOTAL_CREDITS
+    ]
+    assert line.parts == (
+        (INCOME_TAX_DEDUCTED, D("4929.83")),
+        (CANADA_WORKERS_BENEFIT, D("0")),
+        (PART_XII_2_TAX_CREDIT, D("50")),
+        (EMPLOYEE_AND_PARTNER_GST_HST_REBATE, D("150")),
+        (EDUCATOR_SCHOOL_SUPPLY_CREDIT, D("250.00")),
+        (JOURNALISM_LABOUR_TAX_CREDIT, D("75")),
+        (TAX_PAID_BY_INSTALMENTS, D("2000")),
+        (PROVINCIAL_CREDITS, D("0")),
+    )
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "total_credits: income_tax_deducted 4929.83 + canada_workers_benefit 0 "
+        "+ part_xii_2_tax_credit 50 + employee_and_partner_gst_hst_rebate 150 "
+        "+ educator_school_supply_credit 250 + journalism_labour_tax_credit 75 "
+        "+ tax_paid_by_instalments 2000 + provincial_credits 0 = 7454.83"
+    ) in rendered
+
+
+def test_return_ts_refund_is_1000_and_the_net_refund_after_a_donation_of_100_is_900() -> None:
+    # Line 167 is 6454.83 - 7454.83 = -1000.00, negative so a refund, entered on line 48400 as a
+    # positive 1000.00; the opportunities fund page's line 1 is that, line 2 (46500) is 100 and
+    # line 3 (46600) is 900.00.
+    worksheet = return_t()
+
+    assert worksheet.get(TOTAL_PAYABLE).value == D("6454.83")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-1000.00")
+    assert worksheet.get(REFUND).value == D("1000.00")
+    assert worksheet.get(ontario.REFUND_BEFORE_DONATION).value == D("1000.00")
+    assert worksheet.get(ontario.OPPORTUNITIES_FUND_DONATION).value == D("100")
+    assert worksheet.get(ontario.NET_REFUND).value == D("900.00")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "refund: total_credits 7454.83 less total_payable 6454.83, not below 0 = 1000"
+    ) in rendered
+    assert "refund_before_donation: refund 1000 = 1000" in rendered
+    assert (
+        "net_refund: refund_before_donation 1000 less opportunities_fund_donation 100 = 900"
+    ) in rendered
+
+
+def test_a_balance_owing_gives_a_refund_of_zero_and_a_net_refund_of_zero() -> None:
+    # Return T with 3929.82 deducted, 0.01 short of the total payable once the 2525.00 of other
+    # credits are added: line 167 is +0.01 (line 48500), so line 48400 is 0
+    # and the page's line 1 is 0; with no donation line 3 is 0.
+    worksheet = return_t(income_tax_deducted="3929.82", opportunities_fund_donation="0")
+
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("0.01")
+    assert worksheet.get(REFUND).value == D("0")
+    assert worksheet.get(ontario.REFUND_BEFORE_DONATION).value == D("0")
+    assert worksheet.get(ontario.NET_REFUND).value == D("0")
+
+
+def test_total_credits_equal_to_the_total_payable_give_a_refund_of_zero() -> None:
+    worksheet = return_t(income_tax_deducted="3929.83", opportunities_fund_donation="0")
+
+    assert worksheet.get(TOTAL_CREDITS).value == D("6454.83")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("0.00")
+    assert worksheet.get(REFUND).value == D("0")
+
+
+def test_donating_the_whole_refund_leaves_a_net_refund_of_zero() -> None:
+    worksheet = return_t(opportunities_fund_donation="1000.00")
+
+    assert worksheet.get(ontario.NET_REFUND).value == D("0.00")
+
+
+def test_each_credit_line_enters_the_total_credits_once() -> None:
+    # Distinct figures for each line, so a line left out or added twice changes the total:
+    # 1 (43700) + 2 (45600) + 4 (45700) + 200.00 (46900, 25% of the 800 paid) + 8 (47555) + 16
+    # (47600) = 231.00.
+    worksheet = return_t(
+        income_tax_deducted="1",
+        part_xii_2_tax_credit="2",
+        employee_and_partner_gst_hst_rebate="4",
+        educator_supplies_expenses="800",
+        journalism_labour_tax_credit="8",
+        tax_paid_by_instalments="16",
+        opportunities_fund_donation="0",
+    )
+
+    assert worksheet.get(EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM).value == D("800")
+    assert worksheet.get(EDUCATOR_SCHOOL_SUPPLY_CREDIT).value == D("200.00")
+    assert worksheet.get(TOTAL_CREDITS).value == D("231.00")
+
+
+@pytest.mark.parametrize(
+    ("supplies_paid", "credit"),
+    [
+        ("0", "0"),
+        ("800", "200.00"),
+        ("1000", "250.00"),
+        ("1000.01", "250.00"),
+        ("1200", "250.00"),
+        ("100000", "250.00"),
+        # 0.02 x 25% = 0.005, a tie, rounded half-up to 0.01.
+        ("0.02", "0.01"),
+    ],
+)
+def test_line_46900_is_25_percent_of_line_46800_at_most_1000(
+    supplies_paid: str, credit: str
+) -> None:
+    worksheet = return_t(educator_supplies_expenses=supplies_paid)
+
+    assert worksheet.get(EDUCATOR_SCHOOL_SUPPLY_CREDIT).value == D(credit)
+
+
+def test_the_new_lines_do_not_change_a_return_that_does_not_take_them() -> None:
+    # Return A's balance owing is unchanged: 25897.15 less 25000 with every new line 0.
+    worksheet = return_a()
+
+    assert worksheet.get(TOTAL_CREDITS).value == D("25000")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("897.15")
+    assert worksheet.get(REFUND).value == D("0")
+    assert worksheet.get(ontario.NET_REFUND).value == D("0")
