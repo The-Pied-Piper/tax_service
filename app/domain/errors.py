@@ -113,11 +113,15 @@ class InvalidFactorError(DomainError):
 
 
 class InvalidFractionError(DomainError):
-    """A fraction's numerator or denominator is not positive."""
+    """A fraction's numerator is negative or its denominator is not positive."""
 
 
 class InvalidRateTableError(DomainError):
     """A rate table's bounds or rates are invalid, rows are missing, out of order or leave a gap."""
+
+
+class InvalidClassRatesError(DomainError):
+    """A class-rate table's classes are invalid, missing or list a class number twice."""
 
 
 class DuplicateRegistrationError(DomainError):

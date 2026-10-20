@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 from collections.abc import Hashable
 from decimal import Decimal, InvalidOperation
+from enum import Enum
 from pathlib import Path
 from typing import Any
 
@@ -226,11 +227,20 @@ class YamlNode:
         if not isinstance(self._value, dict):
             raise YamlShapeError(f"{self._where} must be 'none' or a mapping of increment and mode")
         fields = self.require_mapping(_ROUNDING_KEYS)
-        mode_name = fields.field("mode").require_string()
-        modes = {mode.value: mode for mode in RoundingMode}
-        if mode_name not in modes:
-            raise YamlShapeError(f"{self._where}.mode {mode_name!r} is not one of {sorted(modes)}")
-        return RoundTo(increment=fields.field("increment").parse_decimal(), mode=modes[mode_name])
+        mode = fields.field("mode").parse_choice(RoundingMode)
+        return RoundTo(increment=fields.field("increment").parse_decimal(), mode=mode)
+
+    def parse_choice[E: Enum](self, choices: type[E]) -> E:
+        """This node's value as the member of the enum `choices` whose value is its string.
+
+        Non-strings and a string that is no member's value raise YamlShapeError, the latter
+        listing the accepted values, sorted.
+        """
+        text = self.require_string()
+        by_value = {str(member.value): member for member in choices}
+        if text not in by_value:
+            raise YamlShapeError(f"{self._where} {text!r} is not one of {sorted(by_value)}")
+        return by_value[text]
 
     def _mapping(self) -> dict[object, object]:
         if not isinstance(self._value, dict):

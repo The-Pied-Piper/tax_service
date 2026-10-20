@@ -20,6 +20,7 @@ import pytest
 from app.adapters.outbound.parameter_parsers.amount import AmountParser
 from app.adapters.outbound.parameter_parsers.brackets import BracketsParser
 from app.adapters.outbound.parameter_parsers.claim_reduction import ClaimReductionParser
+from app.adapters.outbound.parameter_parsers.class_rates import ClassRatesParser
 from app.adapters.outbound.parameter_parsers.contribution_tier import ContributionTierParser
 from app.adapters.outbound.parameter_parsers.credit import CreditParser
 from app.adapters.outbound.parameter_parsers.factor import FactorParser
@@ -36,6 +37,7 @@ from app.domain.errors import (
     DomainError,
     InvalidAmountError,
     InvalidClaimReductionError,
+    InvalidClassRatesError,
     InvalidContributionTierError,
     InvalidCreditError,
     InvalidFactorError,
@@ -51,6 +53,13 @@ from app.domain.errors import (
 from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
 from app.domain.parameters.claim_reduction import CLAIM_REDUCTION, ClaimReduction
+from app.domain.parameters.class_rates import (
+    CLASS_RATES,
+    ClassRate,
+    ClassRates,
+    HalfYearRule,
+    RecaptureAndTerminalLoss,
+)
 from app.domain.parameters.contribution_tier import CONTRIBUTION_TIER, ContributionTier
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
@@ -212,6 +221,40 @@ rows:
   - {more_than: "2500.50", rate: "0"}
 """
 
+CLASS_RATES_2025 = """\
+family: ex/class_rates
+tax_year: 2025
+kind: class_rates
+sources:
+  - https://example.org/class-rates-2025
+rounding: none
+classes:
+  "8":
+    rate: "0.20"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "10.1":
+    rate: "0.30"
+    half_year_rule: applies
+    recapture_and_terminal_loss: excluded
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "43.1":
+    rate: "0.30"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "3", denominator: "2"}
+    riip_factor: {numerator: "7", denominator: "3"}
+  "12":
+    rate: "1"
+    half_year_rule: exempt
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "0", denominator: "1"}
+"""
+
 ROUNDING_ONLY_2025 = """\
 family: ex/rounding_only
 tax_year: 2025
@@ -237,6 +280,7 @@ def built_in_parsers() -> ParameterParserRegistry:
     registry.register_class(FractionParser)
     registry.register_class(RateTableParser)
     registry.register_class(RoundingOnlyParser)
+    registry.register_class(ClassRatesParser)
     return registry
 
 
@@ -634,7 +678,8 @@ def test_reads_a_fraction_dataset(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    ("numerator", "denominator"), [("1", "1"), ("2", "3"), ("3", "2"), ("4", "6"), ("7", "1000000")]
+    ("numerator", "denominator"),
+    [("1", "1"), ("2", "3"), ("3", "2"), ("4", "6"), ("7", "1000000"), ("0", "3"), ("0", "1")],
 )
 def test_reads_a_fractions_parts_as_whole_numbers(
     tmp_path: Path, numerator: str, denominator: str
@@ -2167,11 +2212,6 @@ def test_a_factor_dataset_is_not_an_amount_dataset(tmp_path: Path) -> None:
     ("content", "message"),
     [
         pytest.param(
-            FRACTION_2025.replace('numerator: "2"', 'numerator: "0"'),
-            "fraction numerator must be positive",
-            id="numerator-zero",
-        ),
-        pytest.param(
             FRACTION_2025.replace('denominator: "3"', 'denominator: "0"'),
             "fraction denominator must be positive",
             id="denominator-zero",
@@ -2321,10 +2361,17 @@ def test_rejects_a_part_too_long_for_a_whole_number(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize(
     ("old", "new"),
-    [('numerator: "2"', 'numerator: "0"'), ('denominator: "3"', 'denominator: "0"')],
+    [
+        ('denominator: "3"', 'denominator: "0"'),
+        ('numerator: "2"\ndenominator: "3"', 'numerator: "0"\ndenominator: "0"'),
+    ],
 )
-def test_a_zero_part_is_reported_as_a_fraction_error(tmp_path: Path, old: str, new: str) -> None:
-    write(tmp_path, "ex/parameters/fraction/2025.yaml", FRACTION_2025.replace(old, new))
+def test_a_zero_denominator_is_reported_as_a_fraction_error(
+    tmp_path: Path, old: str, new: str
+) -> None:
+    content = FRACTION_2025.replace(old, new)
+    assert content != FRACTION_2025
+    write(tmp_path, "ex/parameters/fraction/2025.yaml", content)
 
     with pytest.raises(InvalidParameterDataError) as excinfo:
         source(tmp_path).get("ex/fraction", 2025, FRACTION)
@@ -2602,6 +2649,359 @@ def test_a_rate_table_dataset_is_not_a_rate_dataset(tmp_path: Path) -> None:
 
     with pytest.raises(InvalidParameterDataError, match="kind 'rate_table' does not match"):
         source(tmp_path).get("ex/rate_table", 2025, RATE)
+
+
+# --- class rates ------------------------------------------------------------------------------
+#
+# A `class_rates` dataset holds `classes`, a mapping keyed by each class number as printed (a
+# quoted decimal), each class a quoted decimal `rate`, a `half_year_rule` of `applies` or
+# `exempt`, a `recapture_and_terminal_loss` of `applies` or `excluded`, and an `aiip_factor` and a
+# `riip_factor`, each a quoted whole `numerator` (0 or more) and `denominator` (above 0).
+
+APPLIES = HalfYearRule.APPLIES
+EXEMPT = HalfYearRule.EXEMPT
+INCLUDED = RecaptureAndTerminalLoss.APPLIES
+EXCLUDED = RecaptureAndTerminalLoss.EXCLUDED
+F = Fraction
+
+CLASS_RATES_CLASSES = (
+    ClassRate(D("8"), Rate(D("0.20")), APPLIES, INCLUDED, F(0, 1), F(1, 2)),
+    ClassRate(D("10.1"), Rate(D("0.30")), APPLIES, EXCLUDED, F(0, 1), F(1, 2)),
+    ClassRate(D("43.1"), Rate(D("0.30")), APPLIES, INCLUDED, F(3, 2), F(7, 3)),
+    ClassRate(D("12"), Rate(D("1")), EXEMPT, INCLUDED, F(0, 1), F(0, 1)),
+)
+
+
+def test_reads_a_class_rates_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", CLASS_RATES_2025)
+
+    result = source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES)
+
+    assert result == ParameterDataset(
+        family="ex/class_rates",
+        tax_year=2025,
+        kind=CLASS_RATES,
+        values=ClassRates(classes=CLASS_RATES_CLASSES),
+        rounding=NO_ROUNDING,
+        sources=("https://example.org/class-rates-2025",),
+    )
+
+
+def test_reads_the_classes_in_the_files_order(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", CLASS_RATES_2025)
+
+    table = source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES).values
+
+    assert [str(each.class_number) for each in table.classes] == ["8", "10.1", "43.1", "12"]
+
+
+def test_reads_class_numbers_and_rates_exactly(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", CLASS_RATES_2025)
+
+    table = source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES).values
+
+    assert [str(each.rate.value) for each in table.classes] == ["0.20", "0.30", "0.30", "1"]
+    assert table.for_class(D("10.1")) == CLASS_RATES_CLASSES[1]
+
+
+def test_reads_factors_as_fractions_kept_as_written(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", CLASS_RATES_2025)
+
+    table = source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES).values
+
+    assert [each.aiip_factor for each in table.classes] == [F(0, 1), F(0, 1), F(3, 2), F(0, 1)]
+    assert [each.riip_factor for each in table.classes] == [F(1, 2), F(1, 2), F(7, 3), F(0, 1)]
+    assert all(type(each.aiip_factor) is Fraction for each in table.classes)
+    assert all(type(each.riip_factor) is Fraction for each in table.classes)
+
+
+def test_reads_a_factor_unreduced(tmp_path: Path) -> None:
+    content = CLASS_RATES_2025.replace(
+        'riip_factor: {numerator: "7", denominator: "3"}',
+        'riip_factor: {numerator: "14", denominator: "6"}',
+    ).replace(
+        'aiip_factor: {numerator: "3", denominator: "2"}',
+        'aiip_factor: {numerator: "0", denominator: "2"}',
+    )
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", content)
+
+    table = source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES).values
+
+    assert table.classes[2].riip_factor == F(14, 6)
+    assert table.classes[2].aiip_factor == F(0, 2)
+
+
+def test_reads_a_whole_factor(tmp_path: Path) -> None:
+    content = CLASS_RATES_2025.replace(
+        'aiip_factor: {numerator: "3", denominator: "2"}',
+        'aiip_factor: {numerator: "3", denominator: "1"}',
+    )
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", content)
+
+    table = source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES).values
+
+    assert table.classes[2].aiip_factor == F(3, 1)
+
+
+def test_reads_a_single_class(tmp_path: Path) -> None:
+    content = CLASS_RATES_2025.split('  "10.1":\n')[0]
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", content)
+
+    table = source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES).values
+
+    assert table.classes == (CLASS_RATES_CLASSES[0],)
+
+
+def test_reads_a_class_written_as_a_flow_mapping(tmp_path: Path) -> None:
+    content = CLASS_RATES_2025.split('  "10.1":\n')[0].replace(
+        '  "8":\n'
+        '    rate: "0.20"\n'
+        "    half_year_rule: applies\n"
+        "    recapture_and_terminal_loss: applies\n"
+        '    aiip_factor: {numerator: "0", denominator: "1"}\n'
+        '    riip_factor: {numerator: "1", denominator: "2"}\n',
+        '  "8": {rate: "0.20", half_year_rule: applies, recapture_and_terminal_loss: applies, '
+        'aiip_factor: {numerator: "0", denominator: "1"}, '
+        'riip_factor: {numerator: "1", denominator: "2"}}\n',
+    )
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", content)
+
+    table = source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES).values
+
+    assert table.classes == (CLASS_RATES_CLASSES[0],)
+
+
+def test_reads_a_class_rates_datasets_rounding_rule(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/class_rates/2025.yaml",
+        CLASS_RATES_2025.replace("rounding: none", 'rounding: {increment: "0.01", mode: half_up}'),
+    )
+
+    result = source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES)
+
+    assert result.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
+
+
+def test_by_default_the_class_rates_parser_comes_from_the_shared_registry(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", CLASS_RATES_2025)
+
+    result = YamlParameterSource(roots(tmp_path)).get("ex/class_rates", 2025, CLASS_RATES)
+
+    assert result.values == ClassRates(CLASS_RATES_CLASSES)
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        pytest.param(
+            CLASS_RATES_2025.replace('rate: "0.20"', "rate: 0.20"),
+            r"classes\.8\.rate must be a string, got float",
+            id="rate-as-yaml-number",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace('rate: "0.20"', 'rate: "1.5"'),
+            "rate must be between 0 and 1",
+            id="rate-above-one",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace('rate: "0.20"', 'rate: "lots"'),
+            r"classes\.8\.rate is not a decimal: 'lots'",
+            id="rate-not-decimal",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace('  "8":\n    rate: "0.20"\n', '  "8":\n'),
+            r"classes\.8: missing keys \['rate'\]",
+            id="rate-missing",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace("half_year_rule: exempt", "half_year_rule: sometimes"),
+            r"classes\.12\.half_year_rule 'sometimes' is not one of \['applies', 'exempt'\]",
+            id="half-year-rule-unknown",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace("half_year_rule: exempt", "half_year_rule: true"),
+            r"classes\.12\.half_year_rule must be a string, got bool",
+            id="half-year-rule-as-yaml-bool",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace(
+                "recapture_and_terminal_loss: excluded", "recapture_and_terminal_loss: exempt"
+            ),
+            r"classes\.10\.1\.recapture_and_terminal_loss 'exempt' is not one of "
+            r"\['applies', 'excluded'\]",
+            id="recapture-and-terminal-loss-unknown",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace("    recapture_and_terminal_loss: excluded\n", ""),
+            r"classes\.10\.1: missing keys \['recapture_and_terminal_loss'\]",
+            id="recapture-and-terminal-loss-missing",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace(
+                "    half_year_rule: exempt\n", '    half_year_rule: exempt\n    maximum: "0"\n'
+            ),
+            r"classes\.12: unknown keys \['maximum'\]",
+            id="unknown-class-key",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace('  "8":\n', "  8:\n"),
+            r"classes: key 8 must be a string, got int",
+            id="class-number-as-yaml-number",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace('  "8":\n', '  "eight":\n'),
+            r"classes.* is not a decimal: 'eight'",
+            id="class-number-not-decimal",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace('  "8":\n', '  "0":\n'),
+            "class_number must be positive",
+            id="class-number-zero",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace('  "8":\n', '  "10.10":\n'),
+            "class 10.1.? is listed more than once",
+            id="class-number-twice-by-value",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace(
+                'aiip_factor: {numerator: "3", denominator: "2"}',
+                'aiip_factor: {numerator: "-3", denominator: "2"}',
+            ),
+            r"classes\.43\.1\.aiip_factor\.numerator is not a whole number: '-3'",
+            id="factor-numerator-negative",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace(
+                'riip_factor: {numerator: "7", denominator: "3"}',
+                'riip_factor: {numerator: "7", denominator: "0"}',
+            ),
+            r"classes\.43\.1.*fraction denominator must be positive, got 0",
+            id="factor-denominator-zero",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace(
+                'riip_factor: {numerator: "7", denominator: "3"}',
+                'riip_factor: {numerator: 7, denominator: "3"}',
+            ),
+            r"classes\.43\.1\.riip_factor\.numerator must be a string, got int",
+            id="factor-numerator-as-yaml-number",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace(
+                'riip_factor: {numerator: "7", denominator: "3"}',
+                'riip_factor: {numerator: "7"}',
+            ),
+            r"classes\.43\.1\.riip_factor: missing keys \['denominator'\]",
+            id="factor-denominator-missing",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace(
+                'aiip_factor: {numerator: "3", denominator: "2"}', 'aiip_factor: "1.5"'
+            ),
+            r"classes\.43\.1\.aiip_factor must be a mapping",
+            id="factor-as-a-decimal",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.split("classes:\n")[0] + "classes: {}\n",
+            "at least one class",
+            id="no-classes",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.split("classes:\n")[0] + 'classes:\n  - "8"\n',
+            r"classes must be a mapping",
+            id="classes-as-a-list",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace("classes:", "rows:"),
+            r"unknown keys \['rows'\]",
+            id="rows-are-not-classes",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace("kind: class_rates", "kind: rate_table"),
+            "kind 'rate_table' does not match the requested 'class_rates'",
+            id="kind-mismatch",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace("rounding: none\n", ""),
+            r"missing keys \['rounding'\]",
+            id="rounding-missing",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace(
+                "sources:\n  - https://example.org/class-rates-2025", "sources: []"
+            ),
+            "sources must list at least one",
+            id="sources-empty",
+        ),
+    ],
+)
+def test_rejects_malformed_class_rates_dataset(tmp_path: Path, content: str, message: str) -> None:
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
+        source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES)
+
+    assert "2025.yaml" in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [
+        ('  "8":\n', '  "0":\n'),
+        ('  "8":\n', '  "10.10":\n'),
+        ('denominator: "3"}', 'denominator: "0"}'),
+    ],
+)
+def test_an_invalid_class_rates_table_is_reported_as_a_class_rates_error(
+    tmp_path: Path, old: str, new: str
+) -> None:
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", CLASS_RATES_2025.replace(old, new))
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES)
+
+    assert isinstance(excinfo.value.__cause__, InvalidClassRatesError)
+
+
+@pytest.mark.parametrize("factor", ["aiip_factor", "riip_factor"])
+def test_a_zero_factor_denominator_is_fractions_own_error_named_by_its_class(
+    tmp_path: Path, factor: str
+) -> None:
+    # As a rate table names the row of a refused rate, the table names the class of a refused
+    # factor; the refusal itself is the `fraction` kind's.
+    old = {
+        "aiip_factor": 'aiip_factor: {numerator: "3", denominator: "2"}',
+        "riip_factor": 'riip_factor: {numerator: "7", denominator: "3"}',
+    }[factor]
+    new = old.replace('denominator: "2"', 'denominator: "0"').replace(
+        'denominator: "3"', 'denominator: "0"'
+    )
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", CLASS_RATES_2025.replace(old, new))
+
+    with pytest.raises(
+        InvalidParameterDataError,
+        match=r"classes\.43\.1.*fraction denominator must be positive, got 0",
+    ) as excinfo:
+        source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES)
+
+    assert isinstance(excinfo.value.__cause__, InvalidClassRatesError)
+    assert isinstance(excinfo.value.__cause__.__cause__, InvalidFractionError)
+
+
+def test_a_rate_table_dataset_is_not_a_class_rates_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/rate_table/2025.yaml", RATE_TABLE_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'rate_table' does not match"):
+        source(tmp_path).get("ex/rate_table", 2025, CLASS_RATES)
+
+
+def test_a_class_rates_dataset_is_not_a_rate_table_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", CLASS_RATES_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'class_rates' does not match"):
+        source(tmp_path).get("ex/class_rates", 2025, RATE_TABLE)
 
 
 # --- rounding only ----------------------------------------------------------------------------
