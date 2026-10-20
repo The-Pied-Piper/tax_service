@@ -16,8 +16,7 @@ from app.jurisdictions.ca_on.catalog import (
     COOP_PARTNERSHIP_BUSINESS_NUMBER,
     ONTARIO_CREDITS,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute
-from tests.jurisdictions.ca_on.end_to_end.test_return_r import return_r
+from tests.jurisdictions.ca_on.end_to_end.support import D, compute, return_r
 
 
 def return_ak(**overrides: Any) -> Worksheet:

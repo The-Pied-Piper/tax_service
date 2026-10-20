@@ -14,7 +14,6 @@ from app.domain.trace import (
     QuotientLine,
     RecordCountLine,
 )
-from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     PROVINCIAL_CREDITS,
     REFUND_OR_BALANCE_OWING,
@@ -42,18 +41,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
     D,
     placement_list,
     return_f_with_credits,
+    return_r,
 )
-
-
-def return_r(payroll: str = "500000", placements: tuple[str, ...] = ("8000", "15000")) -> Worksheet:
-    """Return R's inputs, as in `returns/2025_return_r.yaml`: Return M with work placements."""
-    return return_f_with_credits(
-        "24000",
-        "1200",
-        ("6000", "4000"),
-        coop_education_payroll=payroll,
-        coop_education_placements=placements,
-    )
 
 
 def test_return_rs_co_operative_education_credit_is_5200_and_lowers_the_refund_by_that_much() -> (

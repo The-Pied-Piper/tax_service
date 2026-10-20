@@ -1191,6 +1191,17 @@ def return_f_with_credits(
     )
 
 
+def return_r(payroll: str = "500000", placements: tuple[str, ...] = ("8000", "15000")) -> Worksheet:
+    """Return R's inputs, as in `returns/2025_return_r.yaml`: Return M with work placements."""
+    return return_f_with_credits(
+        "24000",
+        "1200",
+        ("6000", "4000"),
+        coop_education_payroll=payroll,
+        coop_education_placements=placements,
+    )
+
+
 def return_k() -> Worksheet:
     """Return K's inputs, as in `returns/2025_return_k.yaml`: slip and no-slip dividends."""
     return compute(
