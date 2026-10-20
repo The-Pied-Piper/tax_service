@@ -1043,6 +1043,7 @@ inputs:
     - ca-on/coop_education_placement_expenditures: "15000"
   ca-on/community_food_program_donations: "0"
   ca-on/political_contributions: "0"
+  ca-on/lift_spouse_at_year_end: "0"
   ca/charitable_donations: "0"
   ca/government_donations: "0"
   ca/university_donations_outside_canada: "0"

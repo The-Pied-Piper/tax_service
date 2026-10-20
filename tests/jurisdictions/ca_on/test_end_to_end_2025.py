@@ -79,6 +79,7 @@ from app.domain.capabilities.capped_amount import CappedAmount
 from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.contribution_tier import TieredContribution
 from app.domain.capabilities.credit_amount import CreditAmount
+from app.domain.capabilities.greater_of import GreaterOf
 from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.multiple_over import MultipleOver
 from app.domain.capabilities.per_unit_amount import PerUnitAmount
@@ -113,6 +114,7 @@ from app.domain.trace import (
     CreditAmountLine,
     DisabilityTransferLine,
     FractionAppliedLine,
+    GreaterOfLine,
     ItemsTotalLine,
     LesserOfLine,
     MultipleOverLine,
@@ -875,6 +877,7 @@ def compute(
     unapplied_net_capital_losses_1990_to_1999: str = "0",
     unapplied_net_capital_losses_2001_to_2024: str = "0",
     net_capital_losses_claimed: str = "0",
+    lift_spouse_at_year_end: int = 0,
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -1188,6 +1191,7 @@ def compute(
             UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024, D(unapplied_net_capital_losses_2001_to_2024)
         ),
         Artifact(NET_CAPITAL_LOSSES_CLAIMED, D(net_capital_losses_claimed)),
+        Artifact(ontario.LIFT_SPOUSE_AT_YEAR_END, lift_spouse_at_year_end),
     )
 
 
@@ -1263,6 +1267,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(SPOUSE_RDSP_INCOME_REPAYMENT) is None
     assert worksheet.producer_of(SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT) is None
     assert worksheet.producer_of(SPOUSE_RDSP_INCOME) is None
+    assert worksheet.producer_of(ontario.LIFT_SPOUSE_AT_YEAR_END) is None
     assert worksheet.producer_of(OTHER_EMPLOYMENT_INCOME) is None
     assert worksheet.producer_of(OLD_AGE_SECURITY) is None
     assert worksheet.producer_of(CPP_OR_QPP_BENEFITS) is None
@@ -1862,7 +1867,34 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     )
     assert isinstance(worksheet.producer_of(LIFT_REDUCTION), TieredSurcharge)
     assert worksheet.producer_of(LIFT_REDUCTION) is not worksheet.producer_of(ONTARIO_SURTAX)
-    assert isinstance(worksheet.producer_of(LIFT_CREDIT), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(LIFT_CREDIT), ChooseByCount)
+    assert isinstance(worksheet.producer_of(ontario.LIFT_CREDIT_SINGLE), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(ontario.LIFT_CREDIT_WITH_SPOUSE), SubtractNotBelowZero)
+    assert worksheet.producer_of(ontario.LIFT_CREDIT_SINGLE) is not worksheet.producer_of(
+        ontario.LIFT_CREDIT_WITH_SPOUSE
+    )
+    # Schedule ON428-A lines 9, 12, 24, 27 and 35 add; lines 13, 28, 32 and 37 floor at zero.
+    for kind in (
+        ontario.LIFT_NET_INCOME_AND_REPAYMENTS,
+        ontario.LIFT_UCCB_AND_RDSP_INCOME,
+        ontario.LIFT_SPOUSE_NET_INCOME_AND_REPAYMENTS,
+        ontario.LIFT_SPOUSE_UCCB_AND_RDSP_INCOME,
+        ontario.LIFT_FAMILY_NET_INCOME,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
+    for kind in (
+        ontario.LIFT_ADJUSTED_NET_INCOME,
+        ontario.LIFT_SPOUSE_ADJUSTED_NET_INCOME,
+        ontario.LIFT_EXCESS_OVER_INDIVIDUAL_THRESHOLD,
+        ontario.LIFT_EXCESS_OVER_FAMILY_THRESHOLD,
+    ):
+        assert isinstance(worksheet.producer_of(kind), SubtractNotBelowZero), kind.identifier
+    # Lines 31 and 36 are datasets taken whole; line 38 is the greater of lines 32 and 37 and
+    # line 40 applies the rate once to it.
+    assert isinstance(worksheet.producer_of(ontario.LIFT_INDIVIDUAL_INCOME_THRESHOLD), CreditAmount)
+    assert isinstance(worksheet.producer_of(ontario.LIFT_FAMILY_INCOME_THRESHOLD), CreditAmount)
+    assert isinstance(worksheet.producer_of(ontario.LIFT_GREATER_EXCESS), GreaterOf)
+    assert isinstance(worksheet.producer_of(ontario.LIFT_FAMILY_REDUCTION), ApplyRate)
     assert isinstance(worksheet.producer_of(ONTARIO_TAX_AFTER_LIFT_CREDIT), SubtractNotBelowZero)
     assert worksheet.producer_of(LIFT_CREDIT) is not worksheet.producer_of(
         ONTARIO_TAX_AFTER_LIFT_CREDIT
@@ -2695,11 +2727,78 @@ def test_the_trace_explains_the_computation() -> None:
         "lift_maximum_credit: lesser of lift_credit_before_maximum 5555 and 875 (half-up to 0.01)",
         "875",
     )
+    lift_net = position(
+        "lift_net_income_and_repayments: net_income_before_adjustments 115000 "
+        "+ uccb_repayment 0 + rdsp_income_repayment 0 = 115000",
+        "115000",
+    )
+    lift_uccb_and_rdsp = position(
+        "lift_uccb_and_rdsp_income: universal_child_care_benefit 0 + rdsp_income 0 = 0", "0"
+    )
+    lift_adjusted = position(
+        "lift_adjusted_net_income: lift_net_income_and_repayments 115000 "
+        "less lift_uccb_and_rdsp_income 0, not below 0 = 115000",
+        "115000",
+    )
     lift_reduction = position(
-        "lift_reduction: 5% of net_income 115000 over 32500 (half-up to 0.01)", "4125"
+        "lift_reduction: 5% of lift_adjusted_net_income 115000 over 32500 (half-up to 0.01)",
+        "4125",
+    )
+    lift_single = position(
+        "lift_credit_single: lift_maximum_credit 875 less lift_reduction 4125, not below 0 = 0",
+        "0",
+    )
+    lift_spouse_net = position(
+        "lift_spouse_net_income_and_repayments: spouse_net_income_before_adjustments 0 "
+        "+ spouse_uccb_repayment 0 + spouse_rdsp_income_repayment 0 = 0",
+        "0",
+    )
+    lift_spouse_uccb_and_rdsp = position(
+        "lift_spouse_uccb_and_rdsp_income: spouse_universal_child_care_benefit 0 "
+        "+ spouse_rdsp_income 0 = 0",
+        "0",
+    )
+    lift_spouse_adjusted = position(
+        "lift_spouse_adjusted_net_income: lift_spouse_net_income_and_repayments 0 "
+        "less lift_spouse_uccb_and_rdsp_income 0, not below 0 = 0",
+        "0",
+    )
+    lift_individual_threshold = position(
+        "lift_individual_income_threshold: credit amount 32500 (half-up to 0.01)", "32500.00"
+    )
+    lift_excess_individual = position(
+        "lift_excess_over_individual_threshold: lift_adjusted_net_income 115000 "
+        "less lift_individual_income_threshold 32500, not below 0 = 82500",
+        "82500",
+    )
+    lift_family_net = position(
+        "lift_family_net_income: lift_adjusted_net_income 115000 "
+        "+ lift_spouse_adjusted_net_income 0 = 115000",
+        "115000",
+    )
+    lift_family_threshold = position(
+        "lift_family_income_threshold: credit amount 65000 (half-up to 0.01)", "65000.00"
+    )
+    lift_excess_family = position(
+        "lift_excess_over_family_threshold: lift_family_net_income 115000 "
+        "less lift_family_income_threshold 65000, not below 0 = 50000",
+        "50000",
+    )
+    lift_greater = position(
+        "lift_greater_excess: greater of lift_excess_over_individual_threshold 82500 "
+        "and lift_excess_over_family_threshold 50000 = 82500",
+        "82500",
+    )
+    lift_family_reduction = position(
+        "lift_family_reduction: 5% of lift_greater_excess 82500 (half-up to 0.01)", "4125"
+    )
+    lift_with_spouse = position(
+        "lift_credit_with_spouse: lift_maximum_credit 875 less lift_family_reduction 4125, "
+        "not below 0 = 0",
+        "0",
     )
     lift = position(
-        "lift_credit: lift_maximum_credit 875 less lift_reduction 4125, not below 0 = 0", "0"
+        "lift_credit: lift_credit_single 0, chosen as lift_spouse_at_year_end is 0", "0"
     )
     after_lift = position(
         "ontario_tax_after_lift_credit: ontario_tax_after_reduction 8195.77 "
@@ -3180,8 +3279,15 @@ def test_the_trace_explains_the_computation() -> None:
     assert taxable < premium_first < premium_second < premium_third < premium_fourth
     assert premium_fourth < premium_fifth < ontario_tax
     assert lift_before_maximum < lift_maximum < lift < after_lift < after_food < ontario_tax
+    assert lift_net < lift_adjusted < lift_reduction < lift_single < lift
+    assert lift_uccb_and_rdsp < lift_adjusted
+    assert lift_spouse_net < lift_spouse_adjusted < lift_family_net < lift_excess_family
+    assert lift_spouse_uccb_and_rdsp < lift_spouse_adjusted
+    assert lift_individual_threshold < lift_excess_individual < lift_greater
+    assert lift_family_threshold < lift_excess_family < lift_greater
+    assert lift_greater < lift_family_reduction < lift_with_spouse < lift
     assert food_credit < after_food
-    assert net < lift_reduction < lift
+    assert net < lift_net < lift_reduction < lift
     assert after_reduction < after_lift
     assert federal_after < with_recapture < less_credits < net_federal < payable
     assert recapture_at_15 < recapture < with_recapture
@@ -3613,6 +3719,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CENT,
             D("5555.00"),
         ),
+        # Schedule ON428-A line 40 "Line 38 multiplied by the percentage from line 39": line 38,
+        # the greater of lines 32 and 37 (82500 and 50000), at 5% (line 39).
+        ontario.LIFT_FAMILY_REDUCTION: RateAppliedLine(
+            ontario.LIFT_FAMILY_REDUCTION,
+            ontario.LIFT_GREATER_EXCESS,
+            D("82500"),
+            Rate(D("0.05")),
+            CENT,
+            D("4125.00"),
+        ),
         # Form T1436 line 20 (T1 line 21700).
         ALLOWABLE_BUSINESS_INVESTMENT_LOSS: RateAppliedLine(
             ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
@@ -3845,6 +3961,48 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             UCCB_AND_RDSP_INCOME_REPAYMENTS,
             ((UCCB_REPAYMENT, D("0")), (RDSP_INCOME_REPAYMENT, D("0"))),
             D("0"),
+        ),
+        # Schedule ON428-A lines 9 "Add lines 6 to 8.", 12 "Line 10 plus line 11", 24 "Add lines
+        # 21 to 23.", 27 "Line 25 plus line 26" and 35 "Line 33 plus line 34 Adjusted family net
+        # income", each in line order; the spouse's lines are 0 for a filer with no spouse.
+        ontario.LIFT_NET_INCOME_AND_REPAYMENTS: SumLine(
+            ontario.LIFT_NET_INCOME_AND_REPAYMENTS,
+            (
+                (NET_INCOME_BEFORE_ADJUSTMENTS, D("115000")),
+                (UCCB_REPAYMENT, D("0")),
+                (RDSP_INCOME_REPAYMENT, D("0")),
+            ),
+            D("115000"),
+        ),
+        ontario.LIFT_UCCB_AND_RDSP_INCOME: SumLine(
+            ontario.LIFT_UCCB_AND_RDSP_INCOME,
+            ((UNIVERSAL_CHILD_CARE_BENEFIT, D("0")), (RDSP_INCOME, D("0"))),
+            D("0"),
+        ),
+        ontario.LIFT_SPOUSE_NET_INCOME_AND_REPAYMENTS: SumLine(
+            ontario.LIFT_SPOUSE_NET_INCOME_AND_REPAYMENTS,
+            (
+                (SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS, D("0")),
+                (SPOUSE_UCCB_REPAYMENT, D("0")),
+                (SPOUSE_RDSP_INCOME_REPAYMENT, D("0")),
+            ),
+            D("0"),
+        ),
+        ontario.LIFT_SPOUSE_UCCB_AND_RDSP_INCOME: SumLine(
+            ontario.LIFT_SPOUSE_UCCB_AND_RDSP_INCOME,
+            (
+                (SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT, D("0")),
+                (SPOUSE_RDSP_INCOME, D("0")),
+            ),
+            D("0"),
+        ),
+        ontario.LIFT_FAMILY_NET_INCOME: SumLine(
+            ontario.LIFT_FAMILY_NET_INCOME,
+            (
+                (ontario.LIFT_ADJUSTED_NET_INCOME, D("115000")),
+                (ontario.LIFT_SPOUSE_ADJUSTED_NET_INCOME, D("0")),
+            ),
+            D("115000"),
         ),
         OTHER_PAYMENTS_LIMIT_INCOME: SumLine(
             OTHER_PAYMENTS_LIMIT_INCOME,
@@ -4852,6 +5010,20 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ontario.SPOUSE_BASE: CreditAmountLine(
             ontario.SPOUSE_BASE, Credit(amount=D("11905.00")), CENT, D("11905.00")
         ),
+        # Schedule ON428-A line 31 "Individual income threshold 32,500.00" and line 36 "Family
+        # income threshold 65,0000.00", a typo for 65,000.00.
+        ontario.LIFT_INDIVIDUAL_INCOME_THRESHOLD: CreditAmountLine(
+            ontario.LIFT_INDIVIDUAL_INCOME_THRESHOLD,
+            Credit(amount=D("32500.00")),
+            CENT,
+            D("32500.00"),
+        ),
+        ontario.LIFT_FAMILY_INCOME_THRESHOLD: CreditAmountLine(
+            ontario.LIFT_FAMILY_INCOME_THRESHOLD,
+            Credit(amount=D("65000.00")),
+            CENT,
+            D("65000.00"),
+        ),
         # ON428 line 14 "Base amount 11,905.00".
         ELIGIBLE_DEPENDANT_BASE: CreditAmountLine(
             ELIGIBLE_DEPENDANT_BASE, Credit(amount=D("11905.00")), CENT, D("11905.00")
@@ -5691,12 +5863,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     ]
     # Schedule ON428-A line 17 "Line 15 minus line 16 (if negative, enter "0")" and line 19 "Line
-    # 17 multiplied by the percentage from line 18": net income (line 15, from line 13) of 115000
-    # less the 32,500.00 threshold (line 16), times 5% (line 18), rounded half-up to the cent.
+    # 17 multiplied by the percentage from line 18": the adjusted net income (line 15, from line
+    # 13) of 115000 less the 32,500.00 threshold (line 16), times 5% (line 18), rounded half-up to
+    # the cent.
     assert lift_tiers == [
         SurchargeTierLine(
             output=LIFT_REDUCTION,
-            base=NET_INCOME,
+            base=ontario.LIFT_ADJUSTED_NET_INCOME,
             base_amount=D("115000"),
             threshold=D("32500"),
             rate=Rate(D("0.05")),
@@ -6068,12 +6241,56 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             result=D("8195.77"),
         ),
         # Schedule ON428-A line 20 "Line 14 minus line 19 (if negative, enter "0")": the
-        # reduction of 4125.00 exceeds the 875, so the credit (ON428 line 85) is 0.
-        LIFT_CREDIT: SubtractedNotBelowZeroLine(
-            output=LIFT_CREDIT,
+        # reduction of 4125.00 exceeds the 875, so the credit for a single individual is 0.
+        ontario.LIFT_CREDIT_SINGLE: SubtractedNotBelowZeroLine(
+            output=ontario.LIFT_CREDIT_SINGLE,
             minuend=LIFT_MAXIMUM_CREDIT,
             minuend_amount=D("875"),
             subtrahend=LIFT_REDUCTION,
+            subtrahend_amount=D("4125.00"),
+            result=D("0"),
+        ),
+        # Schedule ON428-A line 13 "Line 9 minus line 12 (if negative, enter "0")" and line 28
+        # "Line 24 minus line 27 (if negative, enter "0")", then lines 32 "Line 30 minus line 31"
+        # and 37 "Line 35 minus line 36", each "(if negative, enter "0")", and line 41 "Line 29
+        # minus line 40 (if negative, enter "0")": the family reduction of 4125.00 exceeds the 875.
+        ontario.LIFT_ADJUSTED_NET_INCOME: SubtractedNotBelowZeroLine(
+            output=ontario.LIFT_ADJUSTED_NET_INCOME,
+            minuend=ontario.LIFT_NET_INCOME_AND_REPAYMENTS,
+            minuend_amount=D("115000"),
+            subtrahend=ontario.LIFT_UCCB_AND_RDSP_INCOME,
+            subtrahend_amount=D("0"),
+            result=D("115000"),
+        ),
+        ontario.LIFT_SPOUSE_ADJUSTED_NET_INCOME: SubtractedNotBelowZeroLine(
+            output=ontario.LIFT_SPOUSE_ADJUSTED_NET_INCOME,
+            minuend=ontario.LIFT_SPOUSE_NET_INCOME_AND_REPAYMENTS,
+            minuend_amount=D("0"),
+            subtrahend=ontario.LIFT_SPOUSE_UCCB_AND_RDSP_INCOME,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        ontario.LIFT_EXCESS_OVER_INDIVIDUAL_THRESHOLD: SubtractedNotBelowZeroLine(
+            output=ontario.LIFT_EXCESS_OVER_INDIVIDUAL_THRESHOLD,
+            minuend=ontario.LIFT_ADJUSTED_NET_INCOME,
+            minuend_amount=D("115000"),
+            subtrahend=ontario.LIFT_INDIVIDUAL_INCOME_THRESHOLD,
+            subtrahend_amount=D("32500.00"),
+            result=D("82500.00"),
+        ),
+        ontario.LIFT_EXCESS_OVER_FAMILY_THRESHOLD: SubtractedNotBelowZeroLine(
+            output=ontario.LIFT_EXCESS_OVER_FAMILY_THRESHOLD,
+            minuend=ontario.LIFT_FAMILY_NET_INCOME,
+            minuend_amount=D("115000"),
+            subtrahend=ontario.LIFT_FAMILY_INCOME_THRESHOLD,
+            subtrahend_amount=D("65000.00"),
+            result=D("50000.00"),
+        ),
+        ontario.LIFT_CREDIT_WITH_SPOUSE: SubtractedNotBelowZeroLine(
+            output=ontario.LIFT_CREDIT_WITH_SPOUSE,
+            minuend=LIFT_MAXIMUM_CREDIT,
+            minuend_amount=D("875"),
+            subtrahend=ontario.LIFT_FAMILY_REDUCTION,
             subtrahend_amount=D("4125.00"),
             result=D("0"),
         ),
@@ -6242,6 +6459,18 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     # T1 line 45300: Schedule 6 line 28 for Return A's family status, no eligible spouse and 0
     # Schedule 6 eligible dependants (line 38100), so the amounts with neither.
+    # Schedule ON428-A line 38 "Enter whichever is more: amount from line 32 or line 37.": 82500
+    # (line 32) against 50000 (line 37).
+    assert {line.output: line for line in trace if isinstance(line, GreaterOfLine)} == {
+        ontario.LIFT_GREATER_EXCESS: GreaterOfLine(
+            ontario.LIFT_GREATER_EXCESS,
+            (
+                (ontario.LIFT_EXCESS_OVER_INDIVIDUAL_THRESHOLD, D("82500.00")),
+                (ontario.LIFT_EXCESS_OVER_FAMILY_THRESHOLD, D("50000.00")),
+            ),
+            D("82500.00"),
+        )
+    }
     assert chosen == {
         # Form T1172: a count of 0 (Part A does not apply) chooses Part B's line 13.
         RESP_AIPS_ADDITIONAL_TAX: ChosenByCountLine(
@@ -6265,6 +6494,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=OTHER_PAYMENTS_WORKSHEET_REQUIRED,
             count=0,
             chosen_kind=INCOME_SUPPORT_BENEFITS,
+            chosen_value=D("0"),
+        ),
+        # ON428 line 85, from Schedule ON428-A: Part A (line 20) with no spouse or common-law
+        # partner at the end of the year.
+        LIFT_CREDIT: ChosenByCountLine(
+            output=LIFT_CREDIT,
+            count_kind=ontario.LIFT_SPOUSE_AT_YEAR_END,
+            count=0,
+            chosen_kind=ontario.LIFT_CREDIT_SINGLE,
             chosen_value=D("0"),
         ),
         CANADA_WORKERS_BENEFIT: ChosenByCountLine(
@@ -6349,7 +6587,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 344
+    assert len(order) == 359
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -6730,9 +6968,43 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     )
     assert position[TAXABLE_INCOME] < position[ONTARIO_HEALTH_PREMIUM] < position[ONTARIO_TAX]
     assert position[LIFT_CREDIT_BEFORE_MAXIMUM] < position[LIFT_MAXIMUM_CREDIT]
-    assert position[NET_INCOME] < position[LIFT_REDUCTION]
-    assert position[LIFT_MAXIMUM_CREDIT] < position[LIFT_CREDIT]
-    assert position[LIFT_REDUCTION] < position[LIFT_CREDIT]
+    assert (
+        position[NET_INCOME_BEFORE_ADJUSTMENTS] < position[ontario.LIFT_NET_INCOME_AND_REPAYMENTS]
+    )
+    assert (
+        position[ontario.LIFT_NET_INCOME_AND_REPAYMENTS]
+        < position[ontario.LIFT_ADJUSTED_NET_INCOME]
+    )
+    assert position[ontario.LIFT_UCCB_AND_RDSP_INCOME] < position[ontario.LIFT_ADJUSTED_NET_INCOME]
+    assert position[ontario.LIFT_ADJUSTED_NET_INCOME] < position[LIFT_REDUCTION]
+    assert (
+        position[ontario.LIFT_SPOUSE_NET_INCOME_AND_REPAYMENTS]
+        < position[ontario.LIFT_SPOUSE_ADJUSTED_NET_INCOME]
+    )
+    assert (
+        position[ontario.LIFT_SPOUSE_UCCB_AND_RDSP_INCOME]
+        < position[ontario.LIFT_SPOUSE_ADJUSTED_NET_INCOME]
+    )
+    assert (
+        position[ontario.LIFT_SPOUSE_ADJUSTED_NET_INCOME] < position[ontario.LIFT_FAMILY_NET_INCOME]
+    )
+    assert (
+        position[ontario.LIFT_FAMILY_NET_INCOME]
+        < position[ontario.LIFT_EXCESS_OVER_FAMILY_THRESHOLD]
+    )
+    assert (
+        position[ontario.LIFT_EXCESS_OVER_INDIVIDUAL_THRESHOLD]
+        < position[ontario.LIFT_GREATER_EXCESS]
+    )
+    assert (
+        position[ontario.LIFT_EXCESS_OVER_FAMILY_THRESHOLD] < position[ontario.LIFT_GREATER_EXCESS]
+    )
+    assert position[ontario.LIFT_GREATER_EXCESS] < position[ontario.LIFT_FAMILY_REDUCTION]
+    assert position[ontario.LIFT_FAMILY_REDUCTION] < position[ontario.LIFT_CREDIT_WITH_SPOUSE]
+    assert position[ontario.LIFT_CREDIT_SINGLE] < position[LIFT_CREDIT]
+    assert position[ontario.LIFT_CREDIT_WITH_SPOUSE] < position[LIFT_CREDIT]
+    assert position[LIFT_MAXIMUM_CREDIT] < position[ontario.LIFT_CREDIT_SINGLE]
+    assert position[LIFT_REDUCTION] < position[ontario.LIFT_CREDIT_SINGLE]
     assert position[LIFT_CREDIT] < position[ONTARIO_TAX_AFTER_LIFT_CREDIT] < position[ONTARIO_TAX]
     assert position[ONTARIO_TAX_AFTER_REDUCTION] < position[ONTARIO_TAX_AFTER_LIFT_CREDIT]
     assert (
@@ -7110,12 +7382,217 @@ def test_the_lift_credit_between_the_thresholds_is_reduced_and_comes_off_the_tax
     assert worksheet.get(ONTARIO_TAX).value == D("1165.23")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
-        "lift_credit: lift_maximum_credit 875 less lift_reduction 356.75, not below 0 = 518.25"
+        "lift_credit_single: lift_maximum_credit 875 less lift_reduction 356.75, "
+        "not below 0 = 518.25"
     ) in rendered
+    assert "lift_credit: lift_credit_single 518.25, chosen as lift_spouse_at_year_end is 0" in (
+        rendered
+    )
     assert (
         "ontario_tax_after_lift_credit: ontario_tax_after_reduction 1233.48 "
         "less lift_credit 518.25, not below 0 = 715.23"
     ) in rendered
+
+
+def test_the_lift_credit_with_a_spouse_is_reduced_by_the_family_income_over_65000() -> None:
+    # The ticket's example. Employment income of 25217.17, with no capital gain, no RRSP
+    # contributions and no union dues: first additional CPP contribution 1% x (25217.17 - 3500) =
+    # 217.1717, rounded half-up to the cent: 217.17, so net income is 25217.17 - 217.17 = 25000.00.
+    # Schedule ON428-A: line 5 is 5.05% x 25217.17 = 1273.4670, rounded half-up to 1273.47, at
+    # most 875 (lines 14 and 29). Line 13 (and lines 15, 30 and 33) is 25000.00; the spouse's
+    # line 21 is 50000, so line 28 (and line 34) is 50000 and line 35 is 75000.00. Line 32 is
+    # 25000.00 - 32500.00 below zero, so 0; line 37 is 75000.00 - 65000.00 = 10000.00; line 38,
+    # whichever is more, is 10000.00; line 40 is 10000.00 x 5% = 500.00; line 41 is 875 - 500.00
+    # = 375.00 (ON428 line 85), where Part A (line 20) would have been the whole 875.
+    worksheet = compute(
+        "25217.17",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        lift_spouse_at_year_end=1,
+        spouse_net_income_before_adjustments="50000",
+    )
+
+    assert worksheet.get(NET_INCOME).value == D("25000.00")
+    assert worksheet.get(LIFT_CREDIT_BEFORE_MAXIMUM).value == D("1273.47")
+    assert worksheet.get(LIFT_MAXIMUM_CREDIT).value == D("875")
+    assert worksheet.get(ontario.LIFT_ADJUSTED_NET_INCOME).value == D("25000.00")
+    assert worksheet.get(ontario.LIFT_SPOUSE_ADJUSTED_NET_INCOME).value == D("50000")
+    assert worksheet.get(ontario.LIFT_FAMILY_NET_INCOME).value == D("75000.00")
+    assert worksheet.get(ontario.LIFT_EXCESS_OVER_INDIVIDUAL_THRESHOLD).value == D("0")
+    assert worksheet.get(ontario.LIFT_EXCESS_OVER_FAMILY_THRESHOLD).value == D("10000.00")
+    assert worksheet.get(ontario.LIFT_GREATER_EXCESS).value == D("10000.00")
+    assert worksheet.get(ontario.LIFT_FAMILY_REDUCTION).value == D("500.00")
+    assert worksheet.get(ontario.LIFT_CREDIT_WITH_SPOUSE).value == D("375.00")
+    assert worksheet.get(ontario.LIFT_CREDIT_SINGLE).value == D("875.00")
+    assert worksheet.get(LIFT_CREDIT).value == D("375.00")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "lift_greater_excess: greater of lift_excess_over_individual_threshold 0 "
+        "and lift_excess_over_family_threshold 10000 = 10000"
+    ) in rendered
+    assert (
+        "lift_credit: lift_credit_with_spouse 375, chosen as lift_spouse_at_year_end is 1"
+    ) in rendered
+
+
+def test_a_count_of_0_spouses_at_year_end_applies_part_a_even_with_the_spouse_figures_given() -> (
+    None
+):
+    # The same figures as the ticket's example, but the spouse or common-law partner died during
+    # the year ("complete Part A as if you were single"), so the caller enters 0 for the count:
+    # Part B is still computed from the figures given, 375.00, and line 20 is 875 - 0 = 875.00,
+    # the credit.
+    worksheet = compute(
+        "25217.17",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        lift_spouse_at_year_end=0,
+        spouse_net_income_before_adjustments="50000",
+    )
+
+    assert worksheet.get(NET_INCOME).value == D("25000.00")
+    assert worksheet.get(ontario.LIFT_CREDIT_WITH_SPOUSE).value == D("375.00")
+    assert worksheet.get(ontario.LIFT_CREDIT_SINGLE).value == D("875.00")
+    assert worksheet.get(LIFT_CREDIT).value == D("875.00")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert "lift_credit: lift_credit_single 875, chosen as lift_spouse_at_year_end is 0" in (
+        rendered
+    )
+
+
+def test_with_a_spouse_the_greater_of_the_two_excesses_is_line_32_below_the_family_threshold() -> (
+    None
+):
+    # Employment income of 40000 as in the LIFT test above: net income 39635.00 and line 32 =
+    # 39635.00 - 32500.00 = 7135.00. The spouse's 20000 makes line 35 59635.00, below the
+    # 65000.00 family threshold, so line 37 is 0 and line 38 is line 32: 7135.00 x 5% = 356.75
+    # and line 41 is 875 - 356.75 = 518.25, as for a single filer.
+    worksheet = compute(
+        "40000",
+        "0",
+        "0",
+        "0",
+        "7200",
+        "0",
+        "0",
+        lift_spouse_at_year_end=1,
+        spouse_net_income_before_adjustments="20000",
+    )
+
+    assert worksheet.get(ontario.LIFT_EXCESS_OVER_INDIVIDUAL_THRESHOLD).value == D("7135.00")
+    assert worksheet.get(ontario.LIFT_FAMILY_NET_INCOME).value == D("59635.00")
+    assert worksheet.get(ontario.LIFT_EXCESS_OVER_FAMILY_THRESHOLD).value == D("0")
+    assert worksheet.get(ontario.LIFT_GREATER_EXCESS).value == D("7135.00")
+    assert worksheet.get(ontario.LIFT_FAMILY_REDUCTION).value == D("356.75")
+    assert worksheet.get(LIFT_CREDIT).value == D("518.25")
+
+
+def test_the_spouses_own_adjustments_make_line_28_as_the_filers_make_line_13() -> None:
+    # Employment income of 25217.17 (net income 25000.00). The spouse's net income is 50000
+    # (line 21), their UCCB repayment (line 22) 1000 and RDSP income repayment (line 23) 500, so
+    # line 24 is 51500; their UCCB (line 25) is 2000 and RDSP income (line 26) 300, so line 27 is
+    # 2300 and line 28 is 51500 - 2300 = 49200. Line 35 is 25000.00 + 49200 = 74200.00, line 37
+    # 9200.00, line 40 9200.00 x 5% = 460.00 and line 41 875 - 460.00 = 415.00.
+    worksheet = compute(
+        "25217.17",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        lift_spouse_at_year_end=1,
+        spouse_net_income_before_adjustments="50000",
+        spouse_uccb_repayment="1000",
+        spouse_rdsp_income_repayment="500",
+        spouse_universal_child_care_benefit="2000",
+        spouse_rdsp_income="300",
+    )
+
+    assert worksheet.get(ontario.LIFT_SPOUSE_NET_INCOME_AND_REPAYMENTS).value == D("51500")
+    assert worksheet.get(ontario.LIFT_SPOUSE_UCCB_AND_RDSP_INCOME).value == D("2300")
+    assert worksheet.get(ontario.LIFT_SPOUSE_ADJUSTED_NET_INCOME).value == D("49200")
+    assert worksheet.get(ontario.LIFT_FAMILY_NET_INCOME).value == D("74200.00")
+    assert worksheet.get(ontario.LIFT_EXCESS_OVER_FAMILY_THRESHOLD).value == D("9200.00")
+    assert worksheet.get(ontario.LIFT_FAMILY_REDUCTION).value == D("460.00")
+    assert worksheet.get(LIFT_CREDIT).value == D("415.00")
+
+
+def test_a_negative_spouse_net_income_is_kept_on_line_21_and_floored_on_line_28() -> None:
+    # Line 21 takes the net income "or the amount they would have entered if the instructions on
+    # line 23600 said "if negative, show in brackets"": -5000 here, added to the repayments on
+    # line 24 and floored at zero on line 28, so the family income is the filer's alone.
+    worksheet = compute(
+        "25217.17",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        lift_spouse_at_year_end=1,
+        spouse_net_income_before_adjustments="-5000",
+        spouse_uccb_repayment="1000",
+    )
+
+    assert worksheet.get(SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("-5000")
+    assert worksheet.get(ontario.LIFT_SPOUSE_NET_INCOME_AND_REPAYMENTS).value == D("-4000")
+    assert worksheet.get(ontario.LIFT_SPOUSE_ADJUSTED_NET_INCOME).value == D("0")
+    assert worksheet.get(ontario.LIFT_FAMILY_NET_INCOME).value == D("25000.00")
+    assert worksheet.get(ontario.LIFT_GREATER_EXCESS).value == D("0")
+    assert worksheet.get(LIFT_CREDIT).value == D("875.00")
+
+
+def test_the_filers_repayments_and_income_adjust_net_income_into_line_13() -> None:
+    # Employment income of 25217.17, a UCCB repayment of 1000 and an RDSP income repayment of 500
+    # (both in the deductions, the latter as other deductions), a UCCB of 2000 and RDSP income of
+    # 300. Line 6 is net income before adjustments: 25217.17 + 2000 + 300 = 27517.17, less the
+    # first additional CPP contribution 217.17, the 1000 and the 500 = 25800.00 (line 23400,
+    # which is not floored). Line 9 is 25800.00 + 1000 + 500 = 27300.00 (lines 7 and 8 add the
+    # repayments back); line 12 is 2000 + 300 = 2300; line 13 is 27300.00 - 2300 = 25000.00.
+    worksheet = compute(
+        "25217.17",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        universal_child_care_benefit="2000",
+        rdsp_income="300",
+        uccb_repayment="1000",
+        rdsp_income_repayment="500",
+        other_deductions="500",
+    )
+
+    assert worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value == D("25800.00")
+    assert worksheet.get(ontario.LIFT_NET_INCOME_AND_REPAYMENTS).value == D("27300.00")
+    assert worksheet.get(ontario.LIFT_UCCB_AND_RDSP_INCOME).value == D("2300")
+    assert worksheet.get(ontario.LIFT_ADJUSTED_NET_INCOME).value == D("25000.00")
+    # Part A's reduction reads line 13, not net income: 25000.00 is below 32500.
+    assert worksheet.get(LIFT_REDUCTION).value == D("0")
+    assert worksheet.get(LIFT_CREDIT).value == D("875.00")
+
+
+def test_a_negative_net_income_before_adjustments_is_floored_into_line_13() -> None:
+    # Line 6 may be negative ("if negative, show in brackets"), and line 13 floors line 9 minus
+    # line 12 at zero: an other deduction of 30000 against employment income of 10000 gives net
+    # income before adjustments of 10000 - 65 - 30000 = -20065.00 (the first additional CPP
+    # contribution is 1% x 6500 = 65.00), line 9 is -20065.00 and line 13 is 0.
+    worksheet = compute("10000", "0", "0", "0", "0", "0", "0", other_deductions="30000")
+
+    assert worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value == D("-20065.00")
+    assert worksheet.get(NET_INCOME).value == D("0")
+    assert worksheet.get(ontario.LIFT_NET_INCOME_AND_REPAYMENTS).value == D("-20065.00")
+    assert worksheet.get(ontario.LIFT_ADJUSTED_NET_INCOME).value == D("0")
 
 
 def test_return_is_community_food_program_credit_comes_off_the_tax_after_the_lift_credit() -> None:
@@ -13346,3 +13823,56 @@ def test_the_filers_uccb_and_rdsp_amounts_adjust_column_1() -> None:
     assert worksheet.get(MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3).value == (
         worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value + D("150")
     )
+
+
+def return_aa(**overrides: Any) -> Worksheet:
+    """Return AA's inputs (`returns/2025_return_aa.yaml`): a filer with a spouse at year end.
+
+    `overrides` replace any keyword of `compute`, for the variants below.
+    """
+    given: dict[str, Any] = {
+        "income_tax_deducted": "2500",
+        "spouse_net_income": "50000",
+        "lift_spouse_at_year_end": 1,
+        "spouse_net_income_before_adjustments": "50000",
+    }
+    return compute("25217.17", "0", "0", "0", "4500", "0", "0", **{**given, **overrides})
+
+
+def test_return_aas_lift_credit_is_375_from_part_b_and_comes_off_the_ontario_tax() -> None:
+    # Return AA: employment income of 25217.17 (net income 25000.00 after the first additional
+    # CPP contribution of 217.17), a spouse at the end of the year with a net income of 50000.
+    # Schedule ON428-A line 41 is 875 - 5% of (75000.00 - 65000.00) = 875 - 500.00 = 375.00.
+    # The Ontario tax on 25000.00 is 1262.50 less the credits 5.05% x (12747 + 1075.00 + 413.56 =
+    # 14235.56) = 718.90, 543.60; the tax reduction is 588.00 - 543.60 = 44.40, so line 81 is
+    # 499.20 and line 86 is 499.20 - 375.00 = 124.20. With the health premium of 300 the Ontario
+    # tax is 424.20; the federal tax after credits is 3625.00 - 2767.84 = 857.16, so the total
+    # payable is 857.16 + 424.20 = 1281.36 and, with the chosen tax deducted of 2500 and the
+    # Canada workers benefit of 1633.00 (no eligible spouse is modelled), line 167 is 1281.36 -
+    # 4133.00 = -2851.64, a refund.
+    worksheet = return_aa()
+
+    assert worksheet.get(NET_INCOME).value == D("25000.00")
+    assert worksheet.get(ontario.LIFT_ADJUSTED_NET_INCOME).value == D("25000.00")
+    assert worksheet.get(ontario.LIFT_SPOUSE_ADJUSTED_NET_INCOME).value == D("50000")
+    assert worksheet.get(ontario.LIFT_FAMILY_NET_INCOME).value == D("75000.00")
+    assert worksheet.get(ontario.LIFT_CREDIT_SINGLE).value == D("875")
+    assert worksheet.get(ontario.LIFT_CREDIT_WITH_SPOUSE).value == D("375.00")
+    assert worksheet.get(LIFT_CREDIT).value == D("375.00")
+    assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("499.20")
+    assert worksheet.get(ONTARIO_TAX_AFTER_LIFT_CREDIT).value == D("124.20")
+    assert worksheet.get(ONTARIO_TAX).value == D("424.20")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("1281.36")
+    assert worksheet.get(TOTAL_CREDITS).value == D("4133.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-2851.64")
+
+
+def test_return_aa_without_the_spouse_at_year_end_takes_the_whole_875() -> None:
+    # The same return with a count of 0 (single, or the spouse died during the year): Part A's
+    # line 20 is 875 - 0 = 875, so line 86 is 499.20 - 875, below zero, 0, and the Ontario tax is
+    # the health premium of 300 alone.
+    worksheet = return_aa(lift_spouse_at_year_end=0)
+
+    assert worksheet.get(LIFT_CREDIT).value == D("875")
+    assert worksheet.get(ONTARIO_TAX_AFTER_LIFT_CREDIT).value == D("0")
+    assert worksheet.get(ONTARIO_TAX).value == D("300")

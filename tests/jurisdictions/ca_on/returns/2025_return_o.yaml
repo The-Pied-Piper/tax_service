@@ -995,6 +995,7 @@ inputs:
   ca/capital_gift_taxable_gains: "0"
   ca/capital_gift_gains_deduction: "0"
   ca-on/political_contributions: "0"
+  ca-on/lift_spouse_at_year_end: "0"
 expected:
   ca/taxable_capital_gains: "0.00"
   ca/taxable_dividends_other_than_eligible: "0.00"

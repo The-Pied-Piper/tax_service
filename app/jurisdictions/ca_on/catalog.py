@@ -315,25 +315,116 @@ plus line 2", which is employment income (line 1 "Amount from line 10100 of your
 line 2 "Amount from line 10400 of your return" is not triggered."""
 
 LIFT_MAXIMUM_CREDIT = CATALOG.declare("lift_maximum_credit", Decimal, non_negative=True)
-"""LIFT credit at most its maximum, Schedule ON428-A line 5's "(maximum $875)" and Part A line 14
-"Amount from line 5 above (maximum $875)"."""
+"""LIFT credit at most its maximum, Schedule ON428-A line 5's "(maximum $875)", Part A line 14
+"Amount from line 5 above (maximum $875)" and Part B line 29 "Amount from line 5 of the previous
+page (maximum $875)"."""
+
+LIFT_NET_INCOME_AND_REPAYMENTS = CATALOG.declare(
+    "lift_net_income_and_repayments", Decimal, non_negative=False
+)
+"""Net income and repayments, Schedule ON428-A line 9 "Add lines 6 to 8.": line 6 "Net income from
+line 23600 of your return (or the amount you would have entered if the instructions on line 23600
+said "if negative, show in brackets")", line 7 "Amount from line 21300 of your return" and line 8
+"Amount of registered disability savings plan (RDSP) income repayment included on line 23200 of
+your return". Line 9 prints no floor and line 6 may be negative, so the kind is signed."""
+
+LIFT_UCCB_AND_RDSP_INCOME = CATALOG.declare("lift_uccb_and_rdsp_income", Decimal, non_negative=True)
+"""UCCB and RDSP income, Schedule ON428-A line 12 "Line 10 plus line 11": line 10 "Amount from line
+11700 of your return" and line 11 "Amount of RDSP income included on line 12500 of your return"."""
+
+LIFT_ADJUSTED_NET_INCOME = CATALOG.declare("lift_adjusted_net_income", Decimal, non_negative=True)
+"""Adjusted net income, Schedule ON428-A line 13 "Line 9 minus line 12 (if negative, enter "0")
+Your adjusted net income", which Part A line 15 "Amount from line 13 above" and Part B line 30
+"Amount from line 13 of the previous page" take."""
 
 LIFT_REDUCTION = CATALOG.declare("lift_reduction", Decimal, non_negative=True)
 """LIFT credit reduction, Schedule ON428-A Part A line 19 "Line 17 multiplied by the percentage
 from line 18": line 18 "Applicable rate 5%" on line 17 "Line 15 minus line 16 (if negative, enter
 "0")", line 16 "Individual income threshold 32,500.00".
 
-Line 15 is "Amount from line 13 above", the adjusted net income, which is net income (line 6,
-from line 23600 of the return) while lines 7, 8, 10 and 11 are not triggered. Each taxpayer is
-taken to be single at the end of the year, so Part A applies and Part B (a spouse) is not
-modelled; the schedule states no eligibility rules of its own ("To find out if you are eligible
-for the low-income individuals and families tax (LIFT) credit, go to canada.ca/on-tax-info.").
+Line 15 is "Amount from line 13 above", the adjusted net income (line 13). The schedule states no
+eligibility rules of its own ("To find out if you are eligible for the low-income individuals and
+families tax (LIFT) credit, go to canada.ca/on-tax-info.").
 """
 
+LIFT_CREDIT_SINGLE = CATALOG.declare("lift_credit_single", Decimal, non_negative=True)
+"""LIFT credit for a single individual, Schedule ON428-A Part A line 20 "Line 14 minus line 19 (if
+negative, enter "0") Enter this amount on line 62140 of your Form ON428.": the maximum credit less
+the reduction."""
+
+LIFT_SPOUSE_AT_YEAR_END = CATALOG.declare("lift_spouse_at_year_end", int, non_negative=True)
+"""Spouse or common-law partner at the end of the year, Schedule ON428-A "If you had a spouse or
+common-law partner at the end of the year, complete Part B on the next page" (and "If you were
+single at the end of the year, complete Part A"): a starting count, 0 or 1. The note "If your
+spouse or common-law partner died at any time during the year, complete Part A as if you were
+single" means the caller enters 0 then."""
+
+LIFT_SPOUSE_NET_INCOME_AND_REPAYMENTS = CATALOG.declare(
+    "lift_spouse_net_income_and_repayments", Decimal, non_negative=False
+)
+"""Spouse's net income and repayments, Schedule ON428-A Part B line 24 "Add lines 21 to 23.", the
+sum of the caller's existing spouse inputs (`ca/spouse_net_income_before_adjustments`,
+`ca/spouse_uccb_repayment`, `ca/spouse_rdsp_income_repayment`). Line 24 prints no floor and line 21
+may be negative, so the kind is signed."""
+
+LIFT_SPOUSE_UCCB_AND_RDSP_INCOME = CATALOG.declare(
+    "lift_spouse_uccb_and_rdsp_income", Decimal, non_negative=True
+)
+"""Spouse's UCCB and RDSP income, Schedule ON428-A Part B line 27 "Line 25 plus line 26", the sum of
+the caller's existing spouse inputs (`ca/spouse_universal_child_care_benefit`,
+`ca/spouse_rdsp_income`)."""
+
+LIFT_SPOUSE_ADJUSTED_NET_INCOME = CATALOG.declare(
+    "lift_spouse_adjusted_net_income", Decimal, non_negative=True
+)
+"""Spouse's adjusted net income, Schedule ON428-A Part B line 28 "Line 24 minus line 27 (if
+negative, enter "0") Your spouse's or common-law partner's adjusted net income"."""
+
+LIFT_INDIVIDUAL_INCOME_THRESHOLD = CATALOG.declare(
+    "lift_individual_income_threshold", Decimal, non_negative=True
+)
+"""Individual income threshold, Schedule ON428-A Part B line 31 "Individual income threshold
+32,500.00": a printed amount, taken whole."""
+
+LIFT_EXCESS_OVER_INDIVIDUAL_THRESHOLD = CATALOG.declare(
+    "lift_excess_over_individual_threshold", Decimal, non_negative=True
+)
+"""Excess over the individual threshold, Schedule ON428-A Part B line 32 "Line 30 minus line 31 (if
+negative, enter "0")", line 30 being "Amount from line 13 of the previous page"."""
+
+LIFT_FAMILY_NET_INCOME = CATALOG.declare("lift_family_net_income", Decimal, non_negative=True)
+"""Adjusted family net income, Schedule ON428-A Part B line 35 "Line 33 plus line 34 Adjusted
+family net income": line 33 "Amount from line 30 above" and line 34 "Amount from line 28 above"."""
+
+LIFT_FAMILY_INCOME_THRESHOLD = CATALOG.declare(
+    "lift_family_income_threshold", Decimal, non_negative=True
+)
+"""Family income threshold, Schedule ON428-A Part B line 36 "Family income threshold 65,0000.00":
+a printed amount, taken whole. The text prints a typo; the threshold is 65,000.00."""
+
+LIFT_EXCESS_OVER_FAMILY_THRESHOLD = CATALOG.declare(
+    "lift_excess_over_family_threshold", Decimal, non_negative=True
+)
+"""Excess over the family threshold, Schedule ON428-A Part B line 37 "Line 35 minus line 36 (if
+negative, enter "0")"."""
+
+LIFT_GREATER_EXCESS = CATALOG.declare("lift_greater_excess", Decimal, non_negative=True)
+"""Greater excess, Schedule ON428-A Part B line 38 "Enter whichever is more: amount from line 32 or
+line 37."."""
+
+LIFT_FAMILY_REDUCTION = CATALOG.declare("lift_family_reduction", Decimal, non_negative=True)
+"""LIFT credit reduction for a family, Schedule ON428-A Part B line 40 "Line 38 multiplied by the
+percentage from line 39", line 39 being "Applicable rate 5%"."""
+
+LIFT_CREDIT_WITH_SPOUSE = CATALOG.declare("lift_credit_with_spouse", Decimal, non_negative=True)
+"""LIFT credit for an individual with a spouse or common-law partner, Schedule ON428-A Part B line
+41 "Line 29 minus line 40 (if negative, enter "0") Enter this amount on line 62140 of your Form
+ON428.": line 29 "Amount from line 5 of the previous page (maximum $875)" less the reduction."""
+
 LIFT_CREDIT = CATALOG.declare("lift_credit", Decimal, non_negative=True)
-"""LIFT credit, Schedule ON428-A line 20 "Line 14 minus line 19 (if negative, enter "0") Enter
-this amount on line 62140 of your Form ON428.", ON428 line 85 (62140) "Low-income individuals and
-families tax (LIFT) credit (complete Schedule ON428-A)"."""
+"""LIFT credit, ON428 line 85 (62140) "Low-income individuals and families tax (LIFT) credit
+(complete Schedule ON428-A)": Part A line 20 for a single individual, or Part B line 41 when there
+was a spouse or common-law partner at the end of the year."""
 
 ONTARIO_TAX_AFTER_LIFT_CREDIT = CATALOG.declare(
     "ontario_tax_after_lift_credit", Decimal, non_negative=True
