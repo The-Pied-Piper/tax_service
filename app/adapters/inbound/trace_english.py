@@ -24,6 +24,7 @@ from app.domain.trace import (
     ContributionTierLine,
     CreditAmountLine,
     FractionAppliedLine,
+    GreaterOfLine,
     ItemsTotalLine,
     LesserOfLine,
     MultipleOverLine,
@@ -112,6 +113,11 @@ class EnglishTraceRenderer:
                     f"{kind.label} {self._money(amount)}" for kind, amount in parts
                 )
                 return f"{output.label}: lesser of {terms} = {self._money(result)}"
+            case GreaterOfLine(output=output, parts=parts, result=result):
+                terms = " and ".join(
+                    f"{kind.label} {self._money(amount)}" for kind, amount in parts
+                )
+                return f"{output.label}: greater of {terms} = {self._money(result)}"
             case ContributionTierLine(
                 output=output,
                 earnings=earnings,

@@ -37,6 +37,7 @@ from app.domain.trace import (
     ContributionTierLine,
     CreditAmountLine,
     FractionAppliedLine,
+    GreaterOfLine,
     ItemsTotalLine,
     LesserOfLine,
     MultipleOverLine,
@@ -68,6 +69,7 @@ NET = ArtifactKind("ex/net", Decimal)
 PERSONAL = ArtifactKind("ex/personal_amount", Decimal)
 CAPPED = ArtifactKind("ex/capped", Decimal)
 LESSER = ArtifactKind("ex/lesser", Decimal)
+GREATER = ArtifactKind("ex/greater", Decimal)
 EARNINGS = ArtifactKind("ex/earnings", Decimal)
 CONTRIBUTION = ArtifactKind("ex/contribution", Decimal)
 TIER = ContributionTier(Rate(D("0.05")), D(3000), D(50000), D(2350))
@@ -131,6 +133,10 @@ def credit_amount_line() -> CreditAmountLine:
 
 def capped_amount_line() -> CappedAmountLine:
     return CappedAmountLine(CAPPED, GROSS, D("1500.25"), Amount(D(1000)), CENT, D("1000.00"))
+
+
+def greater_of_line() -> GreaterOfLine:
+    return GreaterOfLine(GREATER, ((PART_ONE, D("100.25")), (PART_TWO, D(40))), D("100.25"))
 
 
 def lesser_of_line() -> LesserOfLine:
@@ -243,6 +249,7 @@ ALL_LINES = [
     credit_amount_line,
     capped_amount_line,
     lesser_of_line,
+    greater_of_line,
     contribution_tier_line,
     surcharge_tier_line,
     tapered_amount_line,
@@ -632,6 +639,49 @@ def test_a_lesser_of_line_is_not_a_sum_line_nor_a_capped_amount_line() -> None:
     assert not isinstance(lesser_of_line(), CappedAmountLine)
     assert cast(Any, lesser_of_line()) != SumLine(
         LESSER, ((PART_ONE, D("100.25")), (PART_TWO, D(40))), D(40)
+    )
+
+
+def test_greater_of_line_fields_in_order() -> None:
+    line = greater_of_line()
+
+    assert line == GreaterOfLine(
+        output=GREATER, parts=((PART_ONE, D("100.25")), (PART_TWO, D(40))), result=D("100.25")
+    )
+    assert [f.name for f in fields(line)] == ["output", "parts", "result"]
+    assert line.output is GREATER
+    assert line.parts == ((PART_ONE, D("100.25")), (PART_TWO, D(40)))
+    assert line.result == D("100.25")
+    assert line.amount == D("100.25")
+
+
+def test_greater_of_line_may_have_one_part() -> None:
+    line = GreaterOfLine(GREATER, ((PART_ONE, D("1.25")),), D("1.25"))
+
+    assert line.parts == ((PART_ONE, D("1.25")),)
+    assert line.amount == D("1.25")
+
+
+def test_greater_of_lines_differ_by_the_order_of_their_parts() -> None:
+    assert greater_of_line() != GreaterOfLine(
+        GREATER, ((PART_TWO, D(40)), (PART_ONE, D("100.25"))), D("100.25")
+    )
+
+
+def test_greater_of_lines_differ_by_result() -> None:
+    assert greater_of_line() != GreaterOfLine(
+        GREATER, ((PART_ONE, D("100.25")), (PART_TWO, D(40))), D(40)
+    )
+
+
+def test_greater_of_lines_are_hashable() -> None:
+    assert hash(greater_of_line()) == hash(greater_of_line())
+
+
+def test_a_greater_of_line_is_not_a_lesser_of_line() -> None:
+    assert not isinstance(greater_of_line(), LesserOfLine)
+    assert cast(Any, greater_of_line()) != LesserOfLine(
+        GREATER, ((PART_ONE, D("100.25")), (PART_TWO, D(40))), D("100.25")
     )
 
 

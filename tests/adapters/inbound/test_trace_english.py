@@ -38,6 +38,7 @@ from app.domain.trace import (
     ContributionTierLine,
     CreditAmountLine,
     FractionAppliedLine,
+    GreaterOfLine,
     ItemsTotalLine,
     LesserOfLine,
     MultipleOverLine,
@@ -71,6 +72,7 @@ NET_AMOUNT = ArtifactKind("ex/net_amount", Decimal)
 PERSONAL_AMOUNT = ArtifactKind("ex/personal_amount", Decimal)
 CAPPED_AMOUNT = ArtifactKind("ex/capped_amount", Decimal)
 LESSER_AMOUNT = ArtifactKind("ex/lesser_amount", Decimal)
+GREATER_AMOUNT = ArtifactKind("ex/greater_amount", Decimal)
 EARNINGS = ArtifactKind("ex/earnings", Decimal)
 CONTRIBUTION = ArtifactKind("ex/contribution", Decimal)
 TIER = ContributionTier(Rate(D("0.05")), D("3000"), D("50000"), D("2350"))
@@ -389,6 +391,51 @@ def test_renders_the_lesser_of_one_amount() -> None:
     line = LesserOfLine(LESSER_AMOUNT, ((PART_TWO, D("40.5")),), D("40.5"))
 
     assert render(line) == "lesser_amount: lesser of part_two 40.5 = 40.5"
+
+
+# --- greater of amounts -------------------------------------------------------------------
+
+
+def test_renders_the_greater_of_two_amounts() -> None:
+    line = GreaterOfLine(
+        GREATER_AMOUNT, ((PART_ONE, D("1500.25")), (PART_TWO, D("1000"))), D("1500.25")
+    )
+
+    assert render(line) == "greater_amount: greater of part_one 1500.25 and part_two 1000 = 1500.25"
+
+
+def test_renders_the_greater_of_amounts_in_the_order_of_the_line() -> None:
+    line = GreaterOfLine(
+        GREATER_AMOUNT, ((PART_TWO, D("1000")), (PART_ONE, D("400.50"))), D("1000")
+    )
+
+    assert render(line) == "greater_amount: greater of part_two 1000 and part_one 400.5 = 1000"
+
+
+def test_renders_the_greater_of_three_amounts_with_and_between_each() -> None:
+    line = GreaterOfLine(
+        GREATER_AMOUNT,
+        ((PART_ONE, D("100.25")), (PART_TWO, D("40")), (PART_THREE, D("9.75"))),
+        D("100.25"),
+    )
+
+    assert render(line) == (
+        "greater_amount: greater of part_one 100.25 and part_two 40 and part_three 9.75 = 100.25"
+    )
+
+
+def test_renders_the_greater_of_equal_amounts() -> None:
+    line = GreaterOfLine(
+        GREATER_AMOUNT, ((PART_ONE, D("40.50")), (PART_TWO, D("40.5"))), D("40.50")
+    )
+
+    assert render(line) == "greater_amount: greater of part_one 40.5 and part_two 40.5 = 40.5"
+
+
+def test_renders_the_greater_of_one_amount() -> None:
+    line = GreaterOfLine(GREATER_AMOUNT, ((PART_TWO, D("40.5")),), D("40.5"))
+
+    assert render(line) == "greater_amount: greater of part_two 40.5 = 40.5"
 
 
 # --- contribution tiers ---------------------------------------------------------------
@@ -1307,6 +1354,12 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
             "lesser_amount: lesser of part_one 1500.25 and part_two 1000 = 1000",
         ),
         (
+            GreaterOfLine(
+                GREATER_AMOUNT, ((PART_ONE, D("1500.2500")), (PART_TWO, D("1E+3"))), D("1500.2500")
+            ),
+            "greater_amount: greater of part_one 1500.25 and part_two 1000 = 1500.25",
+        ),
+        (
             ContributionTierLine(
                 CONTRIBUTION,
                 EARNINGS,
@@ -1474,6 +1527,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         CreditAmountLine(PERSONAL_AMOUNT, Credit(D("1000")), NO_ROUNDING, D("1000")),
         CappedAmountLine(CAPPED_AMOUNT, TOTAL, D("3"), Amount(D("2")), NO_ROUNDING, D("2")),
         LesserOfLine(LESSER_AMOUNT, ((TOTAL, D("3")), (CAPPED_AMOUNT, D("2"))), D("2")),
+        GreaterOfLine(GREATER_AMOUNT, ((TOTAL, D("3")), (CAPPED_AMOUNT, D("2"))), D("3")),
         ContributionTierLine(
             CONTRIBUTION, EARNINGS, D("23000"), TIER, NO_ROUNDING, D("20000"), D("1000")
         ),
@@ -1525,6 +1579,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         "personal_amount: credit amount 1000 (no rounding)",
         "capped_amount: lesser of total 3 and 2 (no rounding)",
         "lesser_amount: lesser of total 3 and capped_amount 2 = 2",
+        "greater_amount: greater of total 3 and capped_amount 2 = 3",
         "contribution: 5% of earnings between 3000 and 50000 (20000), at most 2350 (no rounding)",
         "surcharge: 50% of total 3 over 1 (no rounding)",
         "personal_amount: 1000 plus 500 less 100 for income 22000 over 20000 (range 10000), "

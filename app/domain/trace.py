@@ -193,6 +193,20 @@ class LesserOfLine(TraceLine):
 
 
 @dataclass(frozen=True)
+class GreaterOfLine(TraceLine):
+    """The `result` produced as `output`: the greatest of `parts`, each a kind and its value."""
+
+    output: Money
+    parts: tuple[tuple[Money, Decimal], ...]
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The greatest of the parts."""
+        return self.result
+
+
+@dataclass(frozen=True)
 class ContributionTierLine(TraceLine):
     """The `result` produced as `output`: `tier`'s rate on `contributory`, the part of `earnings`
     (worth `earnings_amount`) inside the tier's band, rounded with `rounding`, at most the tier's
