@@ -59,6 +59,7 @@ from app.domain.trace import (
     SumLine,
     SurchargeTierLine,
     TaperedAmountLine,
+    ThresholdGateLine,
     TimesCountLine,
     TraceLine,
 )
@@ -103,6 +104,8 @@ AMOUNT_ALONE = ArtifactKind("ex/amount_alone", Decimal)
 AMOUNT_WITH_FAMILY = ArtifactKind("ex/amount_with_family", Decimal)
 AMOUNT_CHOSEN = ArtifactKind("ex/amount_chosen", Decimal)
 ITEM_AMOUNT = ArtifactKind("ex/item_amount", Decimal)
+GATED_AMOUNT = ArtifactKind("ex/gated_amount", Decimal)
+GATE_AMOUNT = ArtifactKind("ex/gate_amount", Decimal)
 AMOUNT_TESTED = ArtifactKind("ex/amount_tested", Decimal)
 AMOUNT_IN_RANGE = ArtifactKind("ex/amount_in_range", Decimal)
 FAMILY_INCOME = ArtifactKind("ex/family_income", Decimal)
@@ -824,6 +827,64 @@ def test_renders_an_amount_at_most_a_bound_with_every_digit() -> None:
     line = AtMostLine(ALLOWED_AMOUNT, CLAIMED_AMOUNT, D("0.0049"), CLAIM_LIMIT, D("0.005"))
 
     assert render(line) == "allowed_amount: claimed_amount 0.0049, at most claim_limit 0.005"
+
+
+# --- amounts gated by a threshold ---------------------------------------------------------
+#
+# "<output>: <amount kind> <amount> if <gate kind> <gate> is at least <threshold> (<rule>) =
+# <result>", every figure as given without trailing zeros, the result last.
+
+
+def test_renders_an_amount_passed_through_a_gate_at_the_threshold() -> None:
+    line = ThresholdGateLine(
+        GATED_AMOUNT,
+        GROSS_AMOUNT,
+        D("1500.00"),
+        GATE_AMOUNT,
+        D("4390"),
+        Amount(D("4390.00")),
+        NO_ROUNDING,
+        D("1500.00"),
+    )
+
+    assert render(line) == (
+        "gated_amount: gross_amount 1500 if gate_amount 4390 is at least 4390 (no rounding) = 1500"
+    )
+
+
+def test_renders_an_amount_held_back_by_a_gate_below_the_threshold() -> None:
+    line = ThresholdGateLine(
+        GATED_AMOUNT,
+        GROSS_AMOUNT,
+        D("1500"),
+        GATE_AMOUNT,
+        D("4389.99"),
+        Amount(D("4390")),
+        NO_ROUNDING,
+        D("0"),
+    )
+
+    assert render(line) == (
+        "gated_amount: gross_amount 1500 if gate_amount 4389.99 is at least 4390 (no rounding) = 0"
+    )
+
+
+def test_renders_a_rounded_gated_amount() -> None:
+    line = ThresholdGateLine(
+        GATED_AMOUNT,
+        GROSS_AMOUNT,
+        D("400.005"),
+        GATE_AMOUNT,
+        D("5000"),
+        Amount(D("4390")),
+        CENT,
+        D("400.01"),
+    )
+
+    assert render(line) == (
+        "gated_amount: gross_amount 400.005 if gate_amount 5000 is at least 4390 "
+        "(half-up to 0.01) = 400.01"
+    )
 
 
 # --- fractions applied -----------------------------------------------------------------
@@ -1835,6 +1896,9 @@ def test_render_all_renders_each_line_in_order() -> None:
             D("2173"),
         ),
         AtMostLine(ALLOWED_AMOUNT, TOTAL, D("3"), CAPPED_AMOUNT, D("3")),
+        ThresholdGateLine(
+            GATED_AMOUNT, TOTAL, D("3"), GATE_AMOUNT, D("4"), Amount(D("4")), NO_ROUNDING, D("3")
+        ),
         FractionAppliedLine(EARNED_PORTION, TOTAL, D("3"), Fraction(2, 3), NO_ROUNDING, D("2")),
         TimesCountLine(AMOUNT_CLAIMED, TOTAL, D("3"), PERSONS, 1, D("3")),
         ChosenByCountLine(AMOUNT_CHOSEN, PERSONS, 0, TOTAL, D("3")),
@@ -1876,6 +1940,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         "child_amount: 544 for each of 2 child_count = 1088 (no rounding)",
         "reduction: 2 × child_amount 1088 over total 3, not below 0 (no rounding)",
         "allowed_amount: total 3, at most capped_amount 3",
+        "gated_amount: total 3 if gate_amount 4 is at least 4 (no rounding) = 3",
         "earned_portion: 2/3 of total 3 (no rounding)",
         "amount_claimed: total 3 for each of 1 person_count = 3",
         "amount_chosen: total 3, chosen as person_count is 0",

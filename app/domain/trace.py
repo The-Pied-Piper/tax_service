@@ -491,6 +491,30 @@ class ChosenRateAppliedLine(TraceLine):
 
 
 @dataclass(frozen=True)
+class ThresholdGateLine(TraceLine):
+    """The `result` produced as `output`: `amount_kind` (worth `amount_value`) when `gate_kind`
+    (worth `gate_value`) is at least `threshold`, otherwise 0, rounded with `rounding`.
+
+    Its own class, not a `CappedAmountLine`: the gate decides whether the amount passes at all,
+    it does not limit it.
+    """
+
+    output: Money
+    amount_kind: Money
+    amount_value: Decimal
+    gate_kind: Money
+    gate_value: Decimal
+    threshold: Amount
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The rounded amount, or 0 when gated off."""
+        return self.result
+
+
+@dataclass(frozen=True)
 class OtherDependantMedicalLine(TraceLine):
     """The allowable amount `result` of medical expenses for one dependant, by `position` (from
     1), for `output`.

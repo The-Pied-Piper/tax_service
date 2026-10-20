@@ -43,6 +43,7 @@ from app.domain.trace import (
     SumLine,
     SurchargeTierLine,
     TaperedAmountLine,
+    ThresholdGateLine,
     TimesCountLine,
     TraceLine,
 )
@@ -202,6 +203,22 @@ class EnglishTraceRenderer:
                 return (
                     f"{output.label}: {amount_kind.label} {self._money(amount)}, "
                     f"at most {bound.label} {self._money(bound_value)}"
+                )
+            case ThresholdGateLine(
+                output=output,
+                amount_kind=amount_kind,
+                amount_value=amount,
+                gate_kind=gate_kind,
+                gate_value=gate_value,
+                threshold=threshold,
+                rounding=rule,
+                result=result,
+            ):
+                return (
+                    f"{output.label}: {amount_kind.label} {self._money(amount)} "
+                    f"if {gate_kind.label} {self._money(gate_value)} is at least "
+                    f"{self._money(threshold.value)} ({self._rounding(rule)}) = "
+                    f"{self._money(result)}"
                 )
             case FractionAppliedLine(
                 output=output, base=base, base_amount=amount, fraction=fraction, rounding=rule
