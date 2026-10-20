@@ -8,6 +8,7 @@ imports every one of them, so importing the package fills the shared CapabilityR
 NAMESPACE = "ca"
 
 from app.jurisdictions.ca.capabilities import (  # noqa: E402
+    amount_or_divided_by_rate,
     caregiver_amount,
     cca_claim,
     cca_table,
@@ -25,6 +26,7 @@ from app.jurisdictions.ca.capabilities import (  # noqa: E402
 
 __all__ = [
     "NAMESPACE",
+    "amount_or_divided_by_rate",
     "caregiver_amount",
     "cca_claim",
     "cca_table",

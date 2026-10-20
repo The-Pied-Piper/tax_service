@@ -27,9 +27,11 @@ from app.domain.parameters.rate import Rate
 from app.domain.parameters.rate_table import RateTableRow
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.domain.parameters.taper import Taper
+from app.domain.parameters.threshold_rate import ThresholdRate
 from app.domain.record_list import RecordListKind
 from app.domain.trace import (
     AmountByCountLine,
+    AmountOrDividedByRateLine,
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
@@ -130,6 +132,9 @@ CARE_CREDIT = ArtifactKind("ex/care_credit", Decimal)
 CAREGIVER = ArtifactKind("ex/caregiver_amount", Decimal)
 MEDICAL = ArtifactKind("ex/dependants_medical", Decimal)
 MEDICAL_REDUCTION = ClaimReduction(Rate(D("0.03")), D("2834"), D("15551"))
+LIMITED = ArtifactKind("ex/limited_amount", Decimal)
+DIVIDED = ArtifactKind("ex/divided_amount", Decimal)
+THRESHOLD_LIMIT = ThresholdRate(Rate(D("0.0505")), D("52886"))
 NON_COMPLIANT = ArtifactKind("ex/non_compliant_expenses", Decimal)
 TRANSFERRED = ArtifactKind("ex/transferred_amount", Decimal)
 RESIDENCE_GAIN = ArtifactKind("ex/residence_gain", Decimal)
@@ -180,6 +185,12 @@ def capped_amount_line() -> CappedAmountLine:
 def threshold_gate_line() -> ThresholdGateLine:
     return ThresholdGateLine(
         GATED, GROSS, D("1500.25"), GATE, D("4390"), Amount(D("4390")), CENT, D("1500.25")
+    )
+
+
+def amount_or_divided_by_rate_line() -> AmountOrDividedByRateLine:
+    return AmountOrDividedByRateLine(
+        LIMITED, TESTED, D("60000"), DIVIDED, D("3321.67"), THRESHOLD_LIMIT, CENT, D("65775.64")
     )
 
 
@@ -392,6 +403,7 @@ ALL_LINES = [
     credit_amount_line,
     capped_amount_line,
     threshold_gate_line,
+    amount_or_divided_by_rate_line,
     lesser_of_line,
     greater_of_line,
     contribution_tier_line,
@@ -3150,6 +3162,87 @@ def test_a_threshold_gate_lines_amount_is_not_one_of_its_fields() -> None:
 def test_a_threshold_gate_line_is_not_a_capped_amount_or_at_most_line() -> None:
     line = threshold_gate_line()
 
+    assert not isinstance(line, CappedAmountLine)
+    assert not isinstance(line, AtMostLine)
+
+
+def test_amount_or_divided_by_rate_line_fields_in_order() -> None:
+    line = amount_or_divided_by_rate_line()
+
+    assert line == AmountOrDividedByRateLine(
+        output=LIMITED,
+        amount_kind=TESTED,
+        amount_value=D("60000"),
+        dividend_kind=DIVIDED,
+        dividend_value=D("3321.67"),
+        limit=THRESHOLD_LIMIT,
+        rounding=CENT,
+        result=D("65775.64"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "amount_kind",
+        "amount_value",
+        "dividend_kind",
+        "dividend_value",
+        "limit",
+        "rounding",
+        "result",
+    ]
+    assert line.output is LIMITED
+    assert line.amount_kind is TESTED
+    assert line.amount_value == D("60000")
+    assert line.dividend_kind is DIVIDED
+    assert line.dividend_value == D("3321.67")
+    assert line.limit == THRESHOLD_LIMIT
+    assert line.rounding == CENT
+    assert line.result == D("65775.64")
+    assert line.amount == D("65775.64")
+
+
+def test_an_amount_or_divided_by_rate_line_may_hold_an_amount_at_the_threshold() -> None:
+    line = AmountOrDividedByRateLine(
+        LIMITED, TESTED, D("52886"), DIVIDED, D("3321.67"), THRESHOLD_LIMIT, NO_ROUNDING, D("52886")
+    )
+
+    assert line.result == D("52886")
+    assert line.amount == D("52886")
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"output": CAPPED},
+        {"amount_kind": CLAIMED},
+        {"amount_value": D("60001")},
+        {"dividend_kind": LIMIT},
+        {"dividend_value": D("3321.68")},
+        {"limit": ThresholdRate(Rate(D("0.0505")), D("57375"))},
+        {"limit": ThresholdRate(Rate(D("0.145")), D("52886"))},
+        {"rounding": NO_ROUNDING},
+        {"result": D("65775.65")},
+    ],
+)
+def test_amount_or_divided_by_rate_lines_differ_by_each_field(change: dict[str, Any]) -> None:
+    line = amount_or_divided_by_rate_line()
+    values = {f.name: getattr(line, f.name) for f in fields(line)}
+    values.update(change)
+
+    assert line != AmountOrDividedByRateLine(**values)
+
+
+def test_amount_or_divided_by_rate_lines_are_hashable() -> None:
+    assert hash(amount_or_divided_by_rate_line()) == hash(amount_or_divided_by_rate_line())
+
+
+def test_an_amount_or_divided_by_rate_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(amount_or_divided_by_rate_line())]
+
+
+def test_an_amount_or_divided_by_rate_line_is_not_a_threshold_gate_line() -> None:
+    line = amount_or_divided_by_rate_line()
+
+    assert not isinstance(line, ThresholdGateLine)
     assert not isinstance(line, CappedAmountLine)
     assert not isinstance(line, AtMostLine)
 

@@ -15,6 +15,7 @@ from app.domain.parameters.class_rates import ClassRate, RecaptureAndTerminalLos
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingRule, RoundTo
 from app.domain.trace import (
     AmountByCountLine,
+    AmountOrDividedByRateLine,
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
@@ -380,6 +381,23 @@ class EnglishTraceRenderer:
                     f"{output.label}: row {position}: expenses {self._money(related_expenses)} "
                     f"for {non_compliant_days} non-compliant days of {days} short-term days = "
                     f"{self._money(result)} ({self._rounding(rule)})"
+                )
+            case AmountOrDividedByRateLine(
+                output=output,
+                amount_kind=amount_kind,
+                amount_value=amount_value,
+                dividend_kind=dividend_kind,
+                dividend_value=dividend_value,
+                limit=limit,
+                rounding=rule,
+                result=result,
+            ):
+                return (
+                    f"{output.label}: {amount_kind.label} {self._money(amount_value)} "
+                    f"if {self._money(limit.threshold)} or less, otherwise {dividend_kind.label} "
+                    f"{self._money(dividend_value)} divided by "
+                    f"{self._percent(limit.rate.value)}% ({self._rounding(rule)}) = "
+                    f"{self._money(result)}"
                 )
             case CaregiverClaimLessClaimedLine(
                 output=output,
