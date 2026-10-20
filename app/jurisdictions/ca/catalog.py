@@ -38,10 +38,12 @@ TAXABLE_CAPITAL_GAINS = CATALOG.declare("taxable_capital_gains", Decimal, non_ne
 """Taxable capital gains, T1 line 12700: the capital gain times the inclusion rate (Schedule 3
 lines 23 to 26)."""
 
-TOTAL_INCOME = CATALOG.declare("total_income", Decimal, non_negative=True)
+TOTAL_INCOME = CATALOG.declare("total_income", Decimal)
 """Total income, T1 line 15000 "Line 28 plus line 32 Total income": the sum of the income lines
 wired so far, in line order, with the taxable dividends (line 12000), the taxable capital gains
-and the taxable support payments.
+and the taxable support payments. Not floored, so a loss larger than the other income is shown in
+brackets as the form prints it (T1 line 33 prints no floor; the General Guide says "If you have a
+loss, show it on the applicable line using brackets").
 
 Not wired yet: rental income (line 13) and self-employment income (lines 22 to 26).
 """

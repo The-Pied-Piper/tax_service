@@ -15,7 +15,7 @@ import pytest
 
 import app.jurisdictions.ca
 import app.jurisdictions.ca.catalog
-from app.domain.artifact import ArtifactCatalog, ArtifactKind, ArtifactRegistry
+from app.domain.artifact import Artifact, ArtifactCatalog, ArtifactKind, ArtifactRegistry
 from app.domain.errors import InvalidRecordError, NegativeArtifactError
 from app.domain.record_list import RecordList, RecordListKind
 from app.jurisdictions.ca.catalog import (
@@ -877,7 +877,9 @@ REGISTERED = frozenset(
 # "Line 5 plus line 8 =", which print no "(if negative, enter "0")" and so may be below zero: the
 # `ca/` kinds that may be below zero. So are the lines of the T1 Step 3 chain that print no "(if
 # negative, enter "0")": T1 line 54 (line 23400) "Line 34 minus line 53 (if negative, show in
-# brackets)", the lines of Form T1436 (Capital Gains Worksheet) line 21700 that subtract with no
+# brackets)", T1 line 15000 "Line 28 plus line 32 Total income" (no floor printed; the Guide says
+# "If you have a loss, show it on the applicable line using brackets"), the lines of Form T1436
+# (Capital Gains Worksheet) line 21700 that subtract with no
 # floor or take the lesser of such a line (lines 15 and 17), and the lines of Schedule 15 (FHSA)
 # Steps 2 and 3 that subtract or add such a line with no floor (lines 3, 5, 9, 11, 23, 27, 36, 45,
 # 48, 51, 54, 56 and 58); and Form T1172 (RESP additional tax) Part A line 6 "Line 4 minus line
@@ -903,6 +905,7 @@ SIGNED = frozenset(
         "ca/fhsa_unused_contributions_carried_forward",
         "ca/business_investment_loss_reduction_available",
         "ca/business_investment_loss_reduction",
+        "ca/total_income",
         "ca/net_income_before_adjustments",
         "ca/resp_aips_limit_remaining",
         "ca/resp_aips_reduction",
@@ -2182,6 +2185,17 @@ def test_the_other_payments_worksheets_lines_5_and_9_are_signed(registry: Artifa
     assert UCCB_AND_RDSP_INCOME.non_negative is True
     assert UCCB_AND_RDSP_INCOME_REPAYMENTS.non_negative is True
     assert OTHER_PAYMENTS_DEDUCTION.non_negative is True
+
+
+def test_the_total_income_is_signed(registry: ArtifactRegistry) -> None:
+    # T1 line 33 and line 15000 "Line 28 plus line 32 Total income" prints no floor, and the
+    # General Guide for lines 13499 to 14300 says "If you have a loss, show it on the applicable
+    # line using brackets": a loss larger than the other income is a negative total income. The
+    # floor stays at line 23600 (`ca/net_income`).
+    assert TOTAL_INCOME.non_negative is False
+    assert registry.kind("ca/total_income").non_negative is False
+    assert NET_INCOME.non_negative is True
+    assert Artifact(TOTAL_INCOME, Decimal("-2000.00")).value == Decimal("-2000.00")
 
 
 def test_the_net_income_before_adjustments_is_signed(registry: ArtifactRegistry) -> None:
