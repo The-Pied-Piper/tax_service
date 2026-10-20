@@ -101,9 +101,9 @@ description: >-
   at most 1633, less 15% of the adjusted family net income, the net income, over 26855,
   nothing as 9935.00 is below it: 1633; with one it would be 1890, at most 2813, less
   nothing over 30639: 1890. With 0 Schedule 6 eligible dependants the first applies: 1633.
-  With no fertility treatment expenses, no seniors' transit amount paid and no Form T1221
-  slips, the Ontario credits (ON479 lines 1, 14, 17, 18 and 21) and the provincial credits
-  (T1 line 47900) are 0.
+  With no fertility treatment expenses, no seniors' transit amount paid, no political
+  contributions and no Form T1221 slips, the Ontario credits (ON479 lines 1, 14, 16, 17, 18 and
+  21) and the provincial credits (T1 line 47900) are 0.
   The income tax deducted is a chosen 500, so the total credits are 500 plus the benefit
   plus the provincial credits, 2133, and the refund or balance owing is 0 less 2133: -2133,
   a refund. Every amount computed from a rate, fraction, amount or chart on the forms is
@@ -244,6 +244,7 @@ inputs:
   ca/depreciable_gift_capital_cost: "0"
   ca/capital_gift_taxable_gains: "0"
   ca/capital_gift_gains_deduction: "0"
+  ca-on/political_contributions: "0"
 expected:
   ca/taxable_capital_gains: "0"
   ca/taxable_dividends_other_than_eligible: "0"
@@ -349,6 +350,8 @@ expected:
   ca-on/fertility_credit: "0"
   ca-on/seniors_transit_amount_paid_at_most_maximum: "0"
   ca-on/seniors_transit_credit: "0"
+  ca-on/political_credit_before_maximum: "0"
+  ca-on/political_credit: "0"
   ca-on/flow_through_share_expenses: "0"
   ca-on/flow_through_share_credit: "0"
   ca-on/ontario_credits_subtotal: "0"

@@ -17,6 +17,7 @@ from app.domain.trace import (
     BracketColumnLine,
     CappedAmountLine,
     ChosenByCountLine,
+    ChosenByRangeLine,
     ContributionTierLine,
     CreditAmountLine,
     FractionAppliedLine,
@@ -222,6 +223,17 @@ class EnglishTraceRenderer:
                     for position, amount in enumerate(amounts, start=1)
                 )
                 return f"{output.label}: {items or 'no items'} = {self._money(total)}"
+            case ChosenByRangeLine(
+                output=output,
+                tested_kind=tested_kind,
+                tested_value=tested,
+                chosen_kind=chosen_kind,
+                chosen_value=chosen,
+            ):
+                return (
+                    f"{output.label}: {chosen_kind.label} {self._money(chosen)}, "
+                    f"chosen as {tested_kind.label} is {self._money(tested)}"
+                )
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 
     def render_all(self, trace: Iterable[TraceLine]) -> tuple[str, ...]:

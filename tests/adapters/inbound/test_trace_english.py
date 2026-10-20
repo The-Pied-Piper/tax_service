@@ -30,6 +30,7 @@ from app.domain.trace import (
     BracketColumnLine,
     CappedAmountLine,
     ChosenByCountLine,
+    ChosenByRangeLine,
     ContributionTierLine,
     CreditAmountLine,
     FractionAppliedLine,
@@ -87,6 +88,8 @@ AMOUNT_ALONE = ArtifactKind("ex/amount_alone", Decimal)
 AMOUNT_WITH_FAMILY = ArtifactKind("ex/amount_with_family", Decimal)
 AMOUNT_CHOSEN = ArtifactKind("ex/amount_chosen", Decimal)
 ITEM_AMOUNT = ArtifactKind("ex/item_amount", Decimal)
+AMOUNT_TESTED = ArtifactKind("ex/amount_tested", Decimal)
+AMOUNT_IN_RANGE = ArtifactKind("ex/amount_in_range", Decimal)
 
 
 def render(line: TraceLine) -> str:
@@ -931,6 +934,41 @@ def test_renders_the_output_and_field_labels_without_their_namespace() -> None:
     assert render(line) == "gross_amount: item 1 part_one 2 = 2"
 
 
+# --- an amount chosen by a range ------------------------------------------------------
+#
+# The chosen candidate prints with its label and value, and the tested amount with its label and
+# value; the candidates not chosen and the limits are not printed. There is no rounding rule to
+# print.
+
+
+def test_renders_a_candidate_chosen_by_the_tested_amount() -> None:
+    line = ChosenByRangeLine(AMOUNT_CHOSEN, AMOUNT_TESTED, D("1000"), AMOUNT_IN_RANGE, D("625.01"))
+
+    assert render(line) == "amount_chosen: amount_in_range 625.01, chosen as amount_tested is 1000"
+
+
+def test_renders_a_tested_amount_and_a_chosen_candidate_with_every_digit() -> None:
+    line = ChosenByRangeLine(
+        AMOUNT_CHOSEN, AMOUNT_TESTED, D("500.05"), AMOUNT_IN_RANGE, D("4319.4")
+    )
+
+    assert (
+        render(line) == "amount_chosen: amount_in_range 4319.4, chosen as amount_tested is 500.05"
+    )
+
+
+def test_renders_a_zero_tested_amount() -> None:
+    line = ChosenByRangeLine(AMOUNT_CHOSEN, AMOUNT_TESTED, D("0"), AMOUNT_IN_RANGE, D("0"))
+
+    assert render(line) == "amount_chosen: amount_in_range 0, chosen as amount_tested is 0"
+
+
+def test_renders_a_negative_chosen_candidate_and_a_negative_tested_amount() -> None:
+    line = ChosenByRangeLine(AMOUNT_CHOSEN, AMOUNT_TESTED, D("-5"), AMOUNT_IN_RANGE, D("-250.75"))
+
+    assert render(line) == "amount_chosen: amount_in_range -250.75, chosen as amount_tested is -5"
+
+
 # --- money figures ---------------------------------------------------------------
 
 
@@ -1100,6 +1138,12 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
             RecordTotalLine(TOTAL, ITEM_AMOUNT, (D("6000.00"), D("4E+3")), D("10000.00")),
             "total: item 1 item_amount 6000 + item 2 item_amount 4000 = 10000",
         ),
+        (
+            ChosenByRangeLine(
+                AMOUNT_CHOSEN, AMOUNT_TESTED, D("1.00000E+3"), AMOUNT_IN_RANGE, D("4.31940E+3")
+            ),
+            "amount_chosen: amount_in_range 4319.4, chosen as amount_tested is 1000",
+        ),
     ],
 )
 def test_renders_every_money_figure_of_a_line_without_trailing_zeros(
@@ -1145,6 +1189,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         TimesCountLine(AMOUNT_CLAIMED, TOTAL, D("3"), PERSONS, 1, D("3")),
         ChosenByCountLine(AMOUNT_CHOSEN, PERSONS, 0, TOTAL, D("3")),
         RecordTotalLine(TOTAL, ITEM_AMOUNT, (D("1"), D("2")), D("3")),
+        ChosenByRangeLine(AMOUNT_CHOSEN, TOTAL, D("3"), AMOUNT_IN_RANGE, D("3")),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -1168,6 +1213,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         "amount_claimed: total 3 for each of 1 person_count = 3",
         "amount_chosen: total 3, chosen as person_count is 0",
         "total: item 1 item_amount 1 + item 2 item_amount 2 = 3",
+        "amount_chosen: amount_in_range 3, chosen as total is 3",
     )
 
 

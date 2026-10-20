@@ -307,6 +307,7 @@ from app.jurisdictions.ca.catalog import (
     WORKING_INCOME,
 )
 from app.jurisdictions.ca_on import catalog as ontario
+from app.jurisdictions.ca_on.capabilities.choose_by_range import ChooseByRange
 from app.jurisdictions.ca_on.capabilities.flow_through_share_expenses import (
     FlowThroughShareExpenses,
 )
@@ -342,6 +343,24 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX_LESS_DIVIDEND_CREDIT,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
+    POLITICAL_CONTRIBUTIONS,
+    POLITICAL_CREDIT,
+    POLITICAL_CREDIT_BEFORE_MAXIMUM,
+    POLITICAL_CREDIT_COLUMN_1_LINE_2,
+    POLITICAL_CREDIT_COLUMN_1_LINE_3,
+    POLITICAL_CREDIT_COLUMN_1_LINE_5,
+    POLITICAL_CREDIT_COLUMN_1_LINE_6,
+    POLITICAL_CREDIT_COLUMN_1_LINE_7,
+    POLITICAL_CREDIT_COLUMN_2_LINE_2,
+    POLITICAL_CREDIT_COLUMN_2_LINE_3,
+    POLITICAL_CREDIT_COLUMN_2_LINE_5,
+    POLITICAL_CREDIT_COLUMN_2_LINE_6,
+    POLITICAL_CREDIT_COLUMN_2_LINE_7,
+    POLITICAL_CREDIT_COLUMN_3_LINE_2,
+    POLITICAL_CREDIT_COLUMN_3_LINE_3,
+    POLITICAL_CREDIT_COLUMN_3_LINE_5,
+    POLITICAL_CREDIT_COLUMN_3_LINE_6,
+    POLITICAL_CREDIT_COLUMN_3_LINE_7,
     SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
     SENIORS_TRANSIT_CREDIT,
     SENIORS_TRANSIT_PAID,
@@ -501,6 +520,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/depreciable_gift_capital_cost",
             "ca/capital_gift_taxable_gains",
             "ca/capital_gift_gains_deduction",
+            "ca-on/political_contributions",
         }
     )
     # T1 line 167, the refund or balance owing, Schedule 7 line 23, what the return produces for
@@ -2614,6 +2634,169 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"base": "ca-on/seniors_transit_amount_paid_at_most_maximum"},
             produces={"output": "ca-on/seniors_transit_credit"},
         ),
+        # Form ON479 line 15 and line 63100 "Ontario political contributions made in 2025" is a
+        # caller input, ca-on/political_contributions, taken as the form takes it; Worksheet ON479
+        # "Line 16 - Ontario political contribution tax credit" reads it as line 63110 and builds
+        # each of its three columns as printed, then the one that applies is picked.
+        # Worksheet ON479 "Column 1: Line 63110 is $500.05 or less".
+        # Line 2: 0.00, a printed constant.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca-on/political_credit_column_1_line_2"},
+            consumes={},
+            produces={"output": "ca-on/political_credit_column_1_line_2"},
+        ),
+        # Column 1 line 3 "Line 1 minus line 2 (cannot be negative)", line 1 being the
+        # contributions.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/political_contributions",
+                "less": "ca-on/political_credit_column_1_line_2",
+            },
+            produces={"output": "ca-on/political_credit_column_1_line_3"},
+        ),
+        # Column 1 line 4 "Rate 75%" and line 5 "Line 3 multiplied by the percentage from line 4".
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/political_credit_column_1_line_4"},
+            consumes={"base": "ca-on/political_credit_column_1_line_3"},
+            produces={"output": "ca-on/political_credit_column_1_line_5"},
+        ),
+        # Column 1 line 6: 0.00, a printed constant.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca-on/political_credit_column_1_line_6"},
+            consumes={},
+            produces={"output": "ca-on/political_credit_column_1_line_6"},
+        ),
+        # Column 1 line 7 "Line 5 plus line 6 Enter this amount on line 16 of your Form ON479.".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca-on/political_credit_column_1_line_5",
+                    "ca-on/political_credit_column_1_line_6",
+                )
+            },
+            produces={"output": "ca-on/political_credit_column_1_line_7"},
+        ),
+        # Worksheet ON479 "Column 2: Line 63110 is more than $500.05 but not more than $1,666.82".
+        # Line 2: 500.05, a printed constant.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca-on/political_credit_column_2_line_2"},
+            consumes={},
+            produces={"output": "ca-on/political_credit_column_2_line_2"},
+        ),
+        # Column 2 line 3 "Line 1 minus line 2 (cannot be negative)", line 1 being the
+        # contributions.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/political_contributions",
+                "less": "ca-on/political_credit_column_2_line_2",
+            },
+            produces={"output": "ca-on/political_credit_column_2_line_3"},
+        ),
+        # Column 2 line 4 "Rate 50%" and line 5 "Line 3 multiplied by the percentage from line 4".
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/political_credit_column_2_line_4"},
+            consumes={"base": "ca-on/political_credit_column_2_line_3"},
+            produces={"output": "ca-on/political_credit_column_2_line_5"},
+        ),
+        # Column 2 line 6: 375.03, a printed constant.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca-on/political_credit_column_2_line_6"},
+            consumes={},
+            produces={"output": "ca-on/political_credit_column_2_line_6"},
+        ),
+        # Column 2 line 7 "Line 5 plus line 6 Enter this amount on line 16 of your Form ON479.".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca-on/political_credit_column_2_line_5",
+                    "ca-on/political_credit_column_2_line_6",
+                )
+            },
+            produces={"output": "ca-on/political_credit_column_2_line_7"},
+        ),
+        # Worksheet ON479 "Column 3: Line 63110 is more than $1,666.82".
+        # Line 2: 1,666.82, a printed constant.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca-on/political_credit_column_3_line_2"},
+            consumes={},
+            produces={"output": "ca-on/political_credit_column_3_line_2"},
+        ),
+        # Column 3 line 3 "Line 1 minus line 2 (cannot be negative)", line 1 being the
+        # contributions.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/political_contributions",
+                "less": "ca-on/political_credit_column_3_line_2",
+            },
+            produces={"output": "ca-on/political_credit_column_3_line_3"},
+        ),
+        # Column 3 line 4 "Rate 33.33%" and line 5 "Line 3 multiplied by the percentage from line
+        # 4".
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/political_credit_column_3_line_4"},
+            consumes={"base": "ca-on/political_credit_column_3_line_3"},
+            produces={"output": "ca-on/political_credit_column_3_line_5"},
+        ),
+        # Column 3 line 6: 958.41, a printed constant.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca-on/political_credit_column_3_line_6"},
+            consumes={},
+            produces={"output": "ca-on/political_credit_column_3_line_6"},
+        ),
+        # Column 3 line 7 "Line 5 plus line 6 Enter this amount on line 16 of your Form ON479.".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca-on/political_credit_column_3_line_5",
+                    "ca-on/political_credit_column_3_line_6",
+                )
+            },
+            produces={"output": "ca-on/political_credit_column_3_line_7"},
+        ),
+        # The column that applies: column 1 if line 63110 is $500.05 or less, column 2 if it is more
+        # than $500.05 but not more than $1,666.82, column 3 if it is more than $1,666.82. The
+        # limits are the columns' own line 2 constants, which their headings print again.
+        CapabilitySelection(
+            name="ca-on/choose_by_range",
+            params={},
+            consumes={
+                "amount": "ca-on/political_contributions",
+                "first_limit": "ca-on/political_credit_column_2_line_2",
+                "second_limit": "ca-on/political_credit_column_3_line_2",
+                "first": "ca-on/political_credit_column_1_line_7",
+                "second": "ca-on/political_credit_column_2_line_7",
+                "third": "ca-on/political_credit_column_3_line_7",
+            },
+            produces={"output": "ca-on/political_credit_before_maximum"},
+        ),
+        # ON479 line 16 "(maximum $1,666.82)", after the chosen column's line 7.
+        CapabilitySelection(
+            name="core/capped_amount",
+            params={"cap": "ca-on/political_credit_maximum"},
+            consumes={"base": "ca-on/political_credit_before_maximum"},
+            produces={"output": "ca-on/political_credit"},
+        ),
         # Form T1221 lines 1 to 3 "Enter the amount of qualifying expenses." (one line for each
         # corporation or slip) and line 4 "Add lines 1 to 3. Enter this amount on line 63220 of
         # your Form ON479.": the expenses of every slip in the list, added.
@@ -2631,8 +2814,8 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"base": "ca-on/flow_through_share_expenses"},
             produces={"output": "ca-on/flow_through_share_credit"},
         ),
-        # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1, 14 and 17, in line order, as
-        # lines 2, 13 and 16 are not triggered.
+        # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1, 14, 16 and 17, in line order, as
+        # lines 2 and 13 are not triggered.
         CapabilitySelection(
             name="core/sum",
             params={},
@@ -2640,6 +2823,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
                 "parts": (
                     "ca-on/fertility_credit",
                     "ca-on/seniors_transit_credit",
+                    "ca-on/political_credit",
                     "ca-on/flow_through_share_credit",
                 )
             },
@@ -2688,7 +2872,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca/refund_or_balance_owing"},
         ),
     }
-    assert len(found.capabilities) == 211
+    assert len(found.capabilities) == 228
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -2698,7 +2882,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 211
+    assert len(composition.order) == 228
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -3777,6 +3961,18 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM}),
             frozenset({SENIORS_TRANSIT_CREDIT}),
         ),
+        (CreditAmount, frozenset(), frozenset({POLITICAL_CREDIT_COLUMN_1_LINE_2})),
+        (
+            SubtractNotBelowZero,
+            frozenset({POLITICAL_CONTRIBUTIONS, POLITICAL_CREDIT_COLUMN_1_LINE_2}),
+            frozenset({POLITICAL_CREDIT_COLUMN_1_LINE_3}),
+        ),
+        (
+            ApplyRate,
+            frozenset({POLITICAL_CREDIT_COLUMN_1_LINE_3}),
+            frozenset({POLITICAL_CREDIT_COLUMN_1_LINE_5}),
+        ),
+        (CreditAmount, frozenset(), frozenset({POLITICAL_CREDIT_COLUMN_1_LINE_6})),
         (
             FlowThroughShareExpenses,
             frozenset({FLOW_THROUGH_SHARE_SLIPS}),
@@ -3789,7 +3985,68 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         ),
         (
             Sum,
-            frozenset({FERTILITY_CREDIT, SENIORS_TRANSIT_CREDIT, FLOW_THROUGH_SHARE_CREDIT}),
+            frozenset({POLITICAL_CREDIT_COLUMN_1_LINE_5, POLITICAL_CREDIT_COLUMN_1_LINE_6}),
+            frozenset({POLITICAL_CREDIT_COLUMN_1_LINE_7}),
+        ),
+        (CreditAmount, frozenset(), frozenset({POLITICAL_CREDIT_COLUMN_2_LINE_2})),
+        (
+            SubtractNotBelowZero,
+            frozenset({POLITICAL_CONTRIBUTIONS, POLITICAL_CREDIT_COLUMN_2_LINE_2}),
+            frozenset({POLITICAL_CREDIT_COLUMN_2_LINE_3}),
+        ),
+        (
+            ApplyRate,
+            frozenset({POLITICAL_CREDIT_COLUMN_2_LINE_3}),
+            frozenset({POLITICAL_CREDIT_COLUMN_2_LINE_5}),
+        ),
+        (CreditAmount, frozenset(), frozenset({POLITICAL_CREDIT_COLUMN_2_LINE_6})),
+        (
+            Sum,
+            frozenset({POLITICAL_CREDIT_COLUMN_2_LINE_5, POLITICAL_CREDIT_COLUMN_2_LINE_6}),
+            frozenset({POLITICAL_CREDIT_COLUMN_2_LINE_7}),
+        ),
+        (CreditAmount, frozenset(), frozenset({POLITICAL_CREDIT_COLUMN_3_LINE_2})),
+        (
+            SubtractNotBelowZero,
+            frozenset({POLITICAL_CONTRIBUTIONS, POLITICAL_CREDIT_COLUMN_3_LINE_2}),
+            frozenset({POLITICAL_CREDIT_COLUMN_3_LINE_3}),
+        ),
+        (
+            ApplyRate,
+            frozenset({POLITICAL_CREDIT_COLUMN_3_LINE_3}),
+            frozenset({POLITICAL_CREDIT_COLUMN_3_LINE_5}),
+        ),
+        (CreditAmount, frozenset(), frozenset({POLITICAL_CREDIT_COLUMN_3_LINE_6})),
+        (
+            Sum,
+            frozenset({POLITICAL_CREDIT_COLUMN_3_LINE_5, POLITICAL_CREDIT_COLUMN_3_LINE_6}),
+            frozenset({POLITICAL_CREDIT_COLUMN_3_LINE_7}),
+        ),
+        (
+            ChooseByRange,
+            frozenset(
+                {
+                    POLITICAL_CONTRIBUTIONS,
+                    POLITICAL_CREDIT_COLUMN_2_LINE_2,
+                    POLITICAL_CREDIT_COLUMN_3_LINE_2,
+                    POLITICAL_CREDIT_COLUMN_1_LINE_7,
+                    POLITICAL_CREDIT_COLUMN_2_LINE_7,
+                    POLITICAL_CREDIT_COLUMN_3_LINE_7,
+                }
+            ),
+            frozenset({POLITICAL_CREDIT_BEFORE_MAXIMUM}),
+        ),
+        (CappedAmount, frozenset({POLITICAL_CREDIT_BEFORE_MAXIMUM}), frozenset({POLITICAL_CREDIT})),
+        (
+            Sum,
+            frozenset(
+                {
+                    FERTILITY_CREDIT,
+                    SENIORS_TRANSIT_CREDIT,
+                    POLITICAL_CREDIT,
+                    FLOW_THROUGH_SHARE_CREDIT,
+                }
+            ),
             frozenset({ONTARIO_CREDITS_SUBTOTAL}),
         ),
         (Sum, frozenset({ONTARIO_CREDITS_SUBTOTAL}), frozenset({ONTARIO_CREDITS})),
