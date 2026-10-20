@@ -711,15 +711,20 @@ sources:
     lines 122 to 124.", line 123 (line 40425, the dividend tax credit), 0 with no
     dividends, and line 124 (the minimum tax carryover) not modelled; line 126 (line
     42900) "Line 121 minus line 125 (if negative, enter "0") Basic federal tax": 6,895.48
-    - 4,783.40 = 2,112.08, the federal tax after credits. Lines 127 to 133 (the foreign
-    surtax, the foreign tax credit, the ITC recapture and the logging credit) are not
-    modelled, so line 134 (line 40600) "Line 132 minus line 133 (if negative, enter "0")
-    Federal tax" carries line 126; lines 135 to 138 (the political, investment and
-    labour-sponsored credits, line 41600) are not modelled, so line 139 (line 41700) "Line
-    134 minus line 138 (if negative, enter "0")" carries it; lines 140 (line 41500, the
-    ACWB) and 141 (line 41800, special taxes) are not modelled, so line 142 (line 42000,
-    which the form prints as line "4200") "Add lines 139 to 141. Net federal tax" is
-    2,112.08. Step 6: line 143 "Amount from line 42000"; lines 144 (line 42100), 145 (line
+    - 4,783.40 = 2,112.08, the federal tax after credits. Line 127 (the federal surtax on
+    income earned outside Canada, Form T2203) is not triggered, as all the income is
+    allocated to Ontario, and line 129 (line 40500, the foreign tax credit) is not yet
+    wired, so lines 128 and 130 carry line 126; line 131 (the investment tax credit
+    recapture, Form T2038(IND) Part C) is 0 with 0 of expenditure on lines 67193 and 67195,
+    so line 132 "Line 130 plus line 131" is line 126; line 133 (the logging tax credit) is
+    not yet wired, so line 134 (line 40600) "Line 132 minus line 133 (if negative, enter
+    "0") Federal tax" carries line 132; line 137 (line 41400, the labour-sponsored funds tax
+    credit) is 0 with a net cost of 0 on line 41300, and lines 135 (line 41000) and 136
+    (line 41200) are not yet wired, so line 138 (line 41600) "Add lines 135 to 137." is 0
+    and line 139 (line 41700) "Line 134 minus line 138 (if negative, enter "0")" is line
+    134; line 140 (line 41500, the ACWB) is 0 and line 141 (line 41800, special taxes) is
+    0, with 0 on Form T1172 and 0 on the RL-10 slip, so line 142 (line 42000, which the form
+    prints as line "4200") "Add lines 139 to 141. Net federal tax" is 2,112.08. Step 6: line 143 "Amount from line 42000"; lines 144 (line 42100), 145 (line
     42120) and 146 (line 42200) are not triggered by this return; line 147 (line 42800)
     "Provincial or territorial tax (complete and attach your provincial or territorial
     Form 428, even if the result is "0")" is the Ontario tax of ON428 line 90, 1,684.56;
@@ -884,6 +889,16 @@ inputs:
   ca/educator_supplies_expenses: "0"
   ca/journalism_labour_tax_credit: "0"
   ca/tax_paid_by_instalments: "0"
+  ca/itc_recapture_expenditure_at_15_percent: "0"
+  ca/itc_recapture_expenditure_at_20_percent: "0"
+  ca/labour_sponsored_funds_net_cost: "0"
+  ca/advanced_canada_workers_benefit: "0"
+  ca/resp_aips_received_part_a: "0"
+  ca/resp_aips_rrsp_contributions: "0"
+  ca/resp_aips_reduction_used_in_previous_years: "0"
+  ca/resp_aips_received_part_b: "0"
+  ca/resp_aips_part_a_applies: "0"
+  ca/rl_10_labour_sponsored_fund_amount: "0"
   ca-on/opportunities_fund_donation: "0"
   ca-on/fertility_expenses: "0"
   ca-on/seniors_transit_paid: "0"
@@ -1002,6 +1017,23 @@ expected:
   ca-on/ontario_tax_after_food_credit: "1234.56"
   ca-on/ontario_health_premium: "450"
   ca-on/ontario_tax: "1684.56"
+  ca/itc_recapture_at_15_percent: "0"
+  ca/itc_recapture_at_20_percent: "0"
+  ca/itc_recapture: "0"
+  ca/federal_tax_with_itc_recapture: "2112.08"
+  ca/labour_sponsored_funds_credit_before_maximum: "0"
+  ca/labour_sponsored_funds_credit: "0"
+  ca/credits_against_federal_tax: "0"
+  ca/federal_tax_less_credits: "2112.08"
+  ca/resp_aips_contributions_counted: "0"
+  ca/resp_aips_lifetime_limit: "50000"
+  ca/resp_aips_limit_remaining: "50000"
+  ca/resp_aips_reduction: "0"
+  ca/resp_aips_subject_to_tax: "0"
+  ca/resp_aips_part_a_tax: "0"
+  ca/resp_aips_part_b_tax: "0"
+  ca/resp_aips_additional_tax: "0"
+  ca/special_taxes: "0"
   ca/net_federal_tax: "2112.08"
   ca/total_payable: "3796.64"
   ca/working_income: "48000"

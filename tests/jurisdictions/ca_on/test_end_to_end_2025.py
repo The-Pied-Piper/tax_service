@@ -56,7 +56,7 @@ eligible dependants (line 38100) choosing the first (T1 line 45300); less the to
 48200), here the chosen income tax deducted of 25000 (line 43700) plus that benefit, to the refund
 or balance owing (line 167), 897.15, positive so a balance owing; every line computed from a dataset
 rounded half-up to the cent) are checked from the files under `returns/` by
-`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q and T;
+`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, T and V;
 this module pins which capability produces each line, the order, and the trace that explains them.
 """
 
@@ -128,6 +128,7 @@ from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADJUSTED_FAMILY_NET_INCOME,
+    ADVANCED_CANADA_WORKERS_BENEFIT,
     AGE_AMOUNT,
     AGE_AMOUNT_BEFORE_COUNT,
     AGE_INCOME_OVER_THRESHOLD,
@@ -182,6 +183,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
+    CREDITS_AGAINST_FEDERAL_TAX,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
     CWB_ELIGIBLE_DEPENDANTS,
@@ -229,6 +231,8 @@ from app.jurisdictions.ca.catalog import (
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
+    FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FHSA_ANNUAL_AMOUNT,
     FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS,
     FHSA_ANNUAL_AMOUNT_FOR_2024,
@@ -298,7 +302,15 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
     INVESTMENT_INCOME_WITHOUT_A_SLIP,
     INVESTMENT_ROYALTIES,
+    ITC_RECAPTURE,
+    ITC_RECAPTURE_AT_15_PERCENT,
+    ITC_RECAPTURE_AT_20_PERCENT,
+    ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT,
+    ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT,
     JOURNALISM_LABOUR_TAX_CREDIT,
+    LABOUR_SPONSORED_FUNDS_CREDIT,
+    LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
+    LABOUR_SPONSORED_FUNDS_NET_COST,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
@@ -340,6 +352,20 @@ from app.jurisdictions.ca.catalog import (
     REFUND_OR_BALANCE_OWING,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
+    RESP_AIPS_ADDITIONAL_TAX,
+    RESP_AIPS_CONTRIBUTIONS_COUNTED,
+    RESP_AIPS_LIFETIME_LIMIT,
+    RESP_AIPS_LIMIT_REMAINING,
+    RESP_AIPS_PART_A_APPLIES,
+    RESP_AIPS_PART_A_TAX,
+    RESP_AIPS_PART_B_TAX,
+    RESP_AIPS_RECEIVED_PART_A,
+    RESP_AIPS_RECEIVED_PART_B,
+    RESP_AIPS_REDUCTION,
+    RESP_AIPS_REDUCTION_USED_IN_PREVIOUS_YEARS,
+    RESP_AIPS_RRSP_CONTRIBUTIONS,
+    RESP_AIPS_SUBJECT_TO_TAX,
+    RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
     RPP_DEDUCTION,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
@@ -353,6 +379,7 @@ from app.jurisdictions.ca.catalog import (
     SLIP_TAXABLE_DIVIDENDS,
     SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SOCIAL_ASSISTANCE_PAYMENTS,
+    SPECIAL_TAXES,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BASIS,
     SPOUSE_AMOUNT_BEFORE_COUNT,
@@ -640,6 +667,16 @@ def compute(
     educator_supplies_expenses: str = "0",
     journalism_labour_tax_credit: str = "0",
     tax_paid_by_instalments: str = "0",
+    itc_recapture_expenditure_at_15_percent: str = "0",
+    itc_recapture_expenditure_at_20_percent: str = "0",
+    labour_sponsored_funds_net_cost: str = "0",
+    advanced_canada_workers_benefit: str = "0",
+    resp_aips_received_part_a: str = "0",
+    resp_aips_rrsp_contributions: str = "0",
+    resp_aips_reduction_used_in_previous_years: str = "0",
+    resp_aips_received_part_b: str = "0",
+    resp_aips_part_a_applies: int = 0,
+    rl_10_labour_sponsored_fund_amount: str = "0",
     opportunities_fund_donation: str = "0",
     fertility_expenses: str = "0",
     seniors_transit_paid: str = "0",
@@ -856,6 +893,23 @@ def compute(
         Artifact(EDUCATOR_SUPPLIES_EXPENSES, D(educator_supplies_expenses)),
         Artifact(JOURNALISM_LABOUR_TAX_CREDIT, D(journalism_labour_tax_credit)),
         Artifact(TAX_PAID_BY_INSTALMENTS, D(tax_paid_by_instalments)),
+        Artifact(
+            ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT, D(itc_recapture_expenditure_at_15_percent)
+        ),
+        Artifact(
+            ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT, D(itc_recapture_expenditure_at_20_percent)
+        ),
+        Artifact(LABOUR_SPONSORED_FUNDS_NET_COST, D(labour_sponsored_funds_net_cost)),
+        Artifact(ADVANCED_CANADA_WORKERS_BENEFIT, D(advanced_canada_workers_benefit)),
+        Artifact(RESP_AIPS_RECEIVED_PART_A, D(resp_aips_received_part_a)),
+        Artifact(RESP_AIPS_RRSP_CONTRIBUTIONS, D(resp_aips_rrsp_contributions)),
+        Artifact(
+            RESP_AIPS_REDUCTION_USED_IN_PREVIOUS_YEARS,
+            D(resp_aips_reduction_used_in_previous_years),
+        ),
+        Artifact(RESP_AIPS_RECEIVED_PART_B, D(resp_aips_received_part_b)),
+        Artifact(RESP_AIPS_PART_A_APPLIES, resp_aips_part_a_applies),
+        Artifact(RL_10_LABOUR_SPONSORED_FUND_AMOUNT, D(rl_10_labour_sponsored_fund_amount)),
         Artifact(ontario.OPPORTUNITIES_FUND_DONATION, D(opportunities_fund_donation)),
         Artifact(FERTILITY_EXPENSES, D(fertility_expenses)),
         Artifact(SENIORS_TRANSIT_PAID, D(seniors_transit_paid)),
@@ -1597,6 +1651,63 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     # The Ontario opportunities fund page: line 1 carries line 48400, line 3 is line 1 less line 2.
     assert isinstance(worksheet.producer_of(ontario.REFUND_BEFORE_DONATION), Sum)
     assert isinstance(worksheet.producer_of(ontario.NET_REFUND), Subtract)
+    # Line 131 (T2038(IND) Part C): each expenditure at its own rate, then amount 3 adds them; line
+    # 132 adds line 131 to line 126, a sum that is not the net federal tax's.
+    assert isinstance(worksheet.producer_of(ITC_RECAPTURE_AT_15_PERCENT), ApplyRate)
+    assert isinstance(worksheet.producer_of(ITC_RECAPTURE_AT_20_PERCENT), ApplyRate)
+    assert worksheet.producer_of(ITC_RECAPTURE_AT_15_PERCENT) is not worksheet.producer_of(
+        ITC_RECAPTURE_AT_20_PERCENT
+    )
+    assert isinstance(worksheet.producer_of(ITC_RECAPTURE), Sum)
+    assert isinstance(worksheet.producer_of(FEDERAL_TAX_WITH_ITC_RECAPTURE), Sum)
+    assert worksheet.producer_of(FEDERAL_TAX_WITH_ITC_RECAPTURE) is not worksheet.producer_of(
+        NET_FEDERAL_TAX
+    )
+    # Line 41400: the percentage first, then the maximum of $750 on the credit.
+    assert isinstance(
+        worksheet.producer_of(LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM), ApplyRate
+    )
+    assert isinstance(worksheet.producer_of(LABOUR_SPONSORED_FUNDS_CREDIT), CappedAmount)
+    # Line 138 adds line 137 alone; line 139 is floored, like line 126.
+    assert isinstance(worksheet.producer_of(CREDITS_AGAINST_FEDERAL_TAX), Sum)
+    assert isinstance(worksheet.producer_of(FEDERAL_TAX_LESS_CREDITS), SubtractNotBelowZero)
+    assert worksheet.producer_of(FEDERAL_TAX_LESS_CREDITS) is not worksheet.producer_of(
+        FEDERAL_TAX_AFTER_CREDITS
+    )
+    # Form T1172: line 3 and line 7 are the lesser of two lines, line 4 is the printed
+    # $50,000.00, lines 6 and 8 subtract with no floor, lines 10 and 13 are 20% of line 8 and
+    # line 11, and the count of Part A chooses between them.
+    assert isinstance(worksheet.producer_of(RESP_AIPS_CONTRIBUTIONS_COUNTED), LesserOf)
+    assert isinstance(worksheet.producer_of(RESP_AIPS_LIFETIME_LIMIT), CreditAmount)
+    assert isinstance(worksheet.producer_of(RESP_AIPS_LIMIT_REMAINING), Subtract)
+    assert isinstance(worksheet.producer_of(RESP_AIPS_REDUCTION), LesserOf)
+    assert worksheet.producer_of(RESP_AIPS_REDUCTION) is not worksheet.producer_of(
+        RESP_AIPS_CONTRIBUTIONS_COUNTED
+    )
+    assert isinstance(worksheet.producer_of(RESP_AIPS_SUBJECT_TO_TAX), Subtract)
+    assert isinstance(worksheet.producer_of(RESP_AIPS_PART_A_TAX), ApplyRate)
+    assert isinstance(worksheet.producer_of(RESP_AIPS_PART_B_TAX), ApplyRate)
+    assert worksheet.producer_of(RESP_AIPS_PART_A_TAX) is not worksheet.producer_of(
+        RESP_AIPS_PART_B_TAX
+    )
+    assert isinstance(worksheet.producer_of(RESP_AIPS_ADDITIONAL_TAX), ChooseByCount)
+    # Line 41800 adds Form T1172's tax and the RL-10 amount.
+    assert isinstance(worksheet.producer_of(SPECIAL_TAXES), Sum)
+    # Lines 67193, 67195, 41300, 41500, Form T1172's lines 1, 2, 5 and 11, its count of Part A
+    # and the RL-10 amount are inputs the return takes, not computed.
+    for kind in (
+        ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT,
+        ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT,
+        LABOUR_SPONSORED_FUNDS_NET_COST,
+        ADVANCED_CANADA_WORKERS_BENEFIT,
+        RESP_AIPS_RECEIVED_PART_A,
+        RESP_AIPS_RRSP_CONTRIBUTIONS,
+        RESP_AIPS_REDUCTION_USED_IN_PREVIOUS_YEARS,
+        RESP_AIPS_RECEIVED_PART_B,
+        RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
+    ):
+        assert worksheet.producer_of(kind) is None, kind
+    assert worksheet.producer_of(RESP_AIPS_PART_A_APPLIES) is None
 
 
 def test_the_trace_explains_the_computation() -> None:
@@ -2125,8 +2236,83 @@ def test_the_trace_explains_the_computation() -> None:
         "ontario_tax: ontario_tax_after_food_credit 8195.77 + ontario_health_premium 750 = 8945.77",
         "8945.77",
     )
+    # T1 line 131 (T2038(IND) Part C) and line 132 for no recapture; line 41400 and lines 138 and
+    # 139 for a net cost of 0; Form T1172 Parts A and B for no AIPs, Part B chosen by a count of 0;
+    # and line 41800.
+    recapture_at_15 = position(
+        "itc_recapture_at_15_percent: 15% of itc_recapture_expenditure_at_15_percent 0 "
+        "(half-up to 0.01)",
+        "0",
+    )
+    recapture_at_20 = position(
+        "itc_recapture_at_20_percent: 20% of itc_recapture_expenditure_at_20_percent 0 "
+        "(half-up to 0.01)",
+        "0",
+    )
+    recapture = position(
+        "itc_recapture: itc_recapture_at_15_percent 0 + itc_recapture_at_20_percent 0 = 0", "0"
+    )
+    with_recapture = position(
+        "federal_tax_with_itc_recapture: federal_tax_after_credits 16951.38 + itc_recapture 0 "
+        "= 16951.38",
+        "16951.38",
+    )
+    labour_before_maximum = position(
+        "labour_sponsored_funds_credit_before_maximum: 15% of labour_sponsored_funds_net_cost 0 "
+        "(half-up to 0.01)",
+        "0",
+    )
+    labour_credit = position(
+        "labour_sponsored_funds_credit: lesser of labour_sponsored_funds_credit_before_maximum 0 "
+        "and 750 (half-up to 0.01)",
+        "0",
+    )
+    federal_credits = position(
+        "credits_against_federal_tax: labour_sponsored_funds_credit 0 = 0", "0"
+    )
+    less_credits = position(
+        "federal_tax_less_credits: federal_tax_with_itc_recapture 16951.38 "
+        "less credits_against_federal_tax 0, not below 0 = 16951.38",
+        "16951.38",
+    )
+    aips_counted = position(
+        "resp_aips_contributions_counted: lesser of resp_aips_received_part_a 0 "
+        "and resp_aips_rrsp_contributions 0 = 0",
+        "0",
+    )
+    aips_limit = position(
+        "resp_aips_lifetime_limit: credit amount 50000 (half-up to 0.01)", "50000"
+    )
+    aips_remaining = position(
+        "resp_aips_limit_remaining: resp_aips_lifetime_limit 50000 "
+        "less resp_aips_reduction_used_in_previous_years 0 = 50000",
+        "50000",
+    )
+    aips_reduction = position(
+        "resp_aips_reduction: lesser of resp_aips_contributions_counted 0 "
+        "and resp_aips_limit_remaining 50000 = 0",
+        "0",
+    )
+    aips_subject = position(
+        "resp_aips_subject_to_tax: resp_aips_received_part_a 0 less resp_aips_reduction 0 = 0", "0"
+    )
+    aips_part_a = position(
+        "resp_aips_part_a_tax: 20% of resp_aips_subject_to_tax 0 (half-up to 0.01)", "0"
+    )
+    aips_part_b = position(
+        "resp_aips_part_b_tax: 20% of resp_aips_received_part_b 0 (half-up to 0.01)", "0"
+    )
+    aips_tax = position(
+        "resp_aips_additional_tax: resp_aips_part_b_tax 0, chosen as resp_aips_part_a_applies is 0",
+        "0",
+    )
+    special = position(
+        "special_taxes: resp_aips_additional_tax 0 + rl_10_labour_sponsored_fund_amount 0 = 0", "0"
+    )
     net_federal = position(
-        "net_federal_tax: federal_tax_after_credits 16951.38 = 16951.38", "16951.38"
+        "net_federal_tax: federal_tax_less_credits 16951.38 + advanced_canada_workers_benefit 0 "
+        "+ special_taxes 0 = 16951.38",
+        "16951.38",
     )
     payable = position(
         "total_payable: net_federal_tax 16951.38 + ontario_tax 8945.77 = 25897.15",
@@ -2422,7 +2608,14 @@ def test_the_trace_explains_the_computation() -> None:
     assert food_credit < after_food
     assert net < lift_reduction < lift
     assert after_reduction < after_lift
-    assert federal_after < net_federal < payable
+    assert federal_after < with_recapture < less_credits < net_federal < payable
+    assert recapture_at_15 < recapture < with_recapture
+    assert recapture_at_20 < recapture
+    assert labour_before_maximum < labour_credit < federal_credits < less_credits
+    assert aips_counted < aips_reduction < aips_subject < aips_part_a < aips_tax < special
+    assert aips_limit < aips_remaining < aips_reduction
+    assert aips_part_b < aips_tax
+    assert special < net_federal
     assert ontario_tax < payable < balance
     assert working < cwb_before_reduction < cwb_without < cwb
     assert net < family_net < cwb_reduction < cwb_without
@@ -2494,6 +2687,50 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # donations and gifts credit and the top-up tax credit to them; ON428 line 61500 adds the
     # donations and gifts credit of lines 47 to 49 to them).
     assert rated == {
+        # T2038(IND) Part C amounts 1 and 2: the expenditures on lines 67193 and 67195 at 15% and
+        # 20%, here 0.
+        ITC_RECAPTURE_AT_15_PERCENT: RateAppliedLine(
+            ITC_RECAPTURE_AT_15_PERCENT,
+            ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT,
+            D("0"),
+            Rate(D("0.15")),
+            CENT,
+            D("0"),
+        ),
+        ITC_RECAPTURE_AT_20_PERCENT: RateAppliedLine(
+            ITC_RECAPTURE_AT_20_PERCENT,
+            ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT,
+            D("0"),
+            Rate(D("0.20")),
+            CENT,
+            D("0"),
+        ),
+        # Line 41400's "15% of the net cost reported on line 41300", before the maximum of $750.
+        LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM: RateAppliedLine(
+            LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
+            LABOUR_SPONSORED_FUNDS_NET_COST,
+            D("0"),
+            Rate(D("0.15")),
+            CENT,
+            D("0"),
+        ),
+        # Form T1172 line 10 (line 8 x 20%, Part A) and line 13 (line 11 x 20%, Part B).
+        RESP_AIPS_PART_A_TAX: RateAppliedLine(
+            RESP_AIPS_PART_A_TAX,
+            RESP_AIPS_SUBJECT_TO_TAX,
+            D("0"),
+            Rate(D("0.20")),
+            CENT,
+            D("0"),
+        ),
+        RESP_AIPS_PART_B_TAX: RateAppliedLine(
+            RESP_AIPS_PART_B_TAX,
+            RESP_AIPS_RECEIVED_PART_B,
+            D("0"),
+            Rate(D("0.20")),
+            CENT,
+            D("0"),
+        ),
         # The Federal Worksheet's "Line 40425" line 6 (line B x 9.0301%) and line 7 (line C x
         # 15.0198%), on no dividends with no slip.
         OTHER_DIVIDENDS_CREDIT: RateAppliedLine(
@@ -3125,11 +3362,40 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("8945.77"),
         ),
-        # T1 line 142 (line 42000) "Add lines 139 to 141. Net federal tax": line 139 carries the
-        # federal tax after credits (line 126, 42900, through line 134, 40600), and lines 140
-        # and 141 are not modelled.
+        # T1 line 142 (line 42000) "Add lines 139 to 141. Net federal tax", in line order: line
+        # 139 (41700), line 140 (41500, the advanced Canada workers benefit) and line 141 (41800,
+        # special taxes), the last two 0 here.
         NET_FEDERAL_TAX: SumLine(
-            NET_FEDERAL_TAX, ((FEDERAL_TAX_AFTER_CREDITS, D("16951.38")),), D("16951.38")
+            NET_FEDERAL_TAX,
+            (
+                (FEDERAL_TAX_LESS_CREDITS, D("16951.38")),
+                (ADVANCED_CANADA_WORKERS_BENEFIT, D("0")),
+                (SPECIAL_TAXES, D("0")),
+            ),
+            D("16951.38"),
+        ),
+        # T2038(IND) Part C amount 3 "Total recapture of investment tax credit on SR&ED
+        # expenditures (add amounts 1 and 2)", T1 line 131, and line 132 "Line 130 plus line 131"
+        # with line 130 carrying line 126.
+        ITC_RECAPTURE: SumLine(
+            ITC_RECAPTURE,
+            ((ITC_RECAPTURE_AT_15_PERCENT, D("0")), (ITC_RECAPTURE_AT_20_PERCENT, D("0"))),
+            D("0"),
+        ),
+        FEDERAL_TAX_WITH_ITC_RECAPTURE: SumLine(
+            FEDERAL_TAX_WITH_ITC_RECAPTURE,
+            ((FEDERAL_TAX_AFTER_CREDITS, D("16951.38")), (ITC_RECAPTURE, D("0"))),
+            D("16951.38"),
+        ),
+        # T1 line 138 (line 41600) "Add lines 135 to 137.": line 137 alone.
+        CREDITS_AGAINST_FEDERAL_TAX: SumLine(
+            CREDITS_AGAINST_FEDERAL_TAX, ((LABOUR_SPONSORED_FUNDS_CREDIT, D("0")),), D("0")
+        ),
+        # T1 line 141 (line 41800) "Special taxes": Form T1172's line 10 or 13 and the RL-10 amount.
+        SPECIAL_TAXES: SumLine(
+            SPECIAL_TAXES,
+            ((RESP_AIPS_ADDITIONAL_TAX, D("0")), (RL_10_LABOUR_SPONSORED_FUND_AMOUNT, D("0"))),
+            D("0"),
         ),
         # T1 line 148 (line 43500) "Add lines 143 to 147. Total payable", in line order: line
         # 143 "Amount from line 42000" and line 147 (42800), the Ontario tax.
@@ -3319,6 +3585,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert subtracted == {
+        # Form T1172 line 6 "Line 4 minus line 5" and line 8 "line 1 minus line 7", with no
+        # floor on either.
+        RESP_AIPS_LIMIT_REMAINING: SubtractedLine(
+            output=RESP_AIPS_LIMIT_REMAINING,
+            minuend=RESP_AIPS_LIFETIME_LIMIT,
+            minuend_amount=D("50000.00"),
+            subtrahend=RESP_AIPS_REDUCTION_USED_IN_PREVIOUS_YEARS,
+            subtrahend_amount=D("0"),
+            result=D("50000.00"),
+        ),
+        RESP_AIPS_SUBJECT_TO_TAX: SubtractedLine(
+            output=RESP_AIPS_SUBJECT_TO_TAX,
+            minuend=RESP_AIPS_RECEIVED_PART_A,
+            minuend_amount=D("0"),
+            subtrahend=RESP_AIPS_REDUCTION,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Worksheet ON428's line C "Amount A minus amount B": no dividends.
         ontario.DIVIDENDS_AMOUNT_A_LESS_B: SubtractedLine(
             output=ontario.DIVIDENDS_AMOUNT_A_LESS_B,
@@ -3539,6 +3823,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # ON428 line 58040 has no reduction: the Ontario amount is the dataset's credit amount. ON428
     # line 74 "Basic reduction 294.00" is claimed whole too.
     assert amounts == {
+        # Form T1172 line 4 "Maximum lifetime RRSP contribution limit ... $ 50,000.00".
+        RESP_AIPS_LIFETIME_LIMIT: CreditAmountLine(
+            RESP_AIPS_LIFETIME_LIMIT, Credit(amount=D("50000.00")), CENT, D("50000.00")
+        ),
         ontario.BASIC_PERSONAL_AMOUNT: CreditAmountLine(
             ontario.BASIC_PERSONAL_AMOUNT, Credit(amount=D("12747")), CENT, D("12747")
         ),
@@ -3805,6 +4093,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # T1 line 92 (line 31260) "Enter whichever is less: $1,471 or line 1 plus line 2.":
     # employment income of 110000 is above the cap, so the amount is the cap.
     assert capped == {
+        # The guide's line 41400 "to a maximum of $750", after the 15%: 0 is below it.
+        LABOUR_SPONSORED_FUNDS_CREDIT: CappedAmountLine(
+            LABOUR_SPONSORED_FUNDS_CREDIT,
+            LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
+            D("0"),
+            Amount(D("750")),
+            CENT,
+            D("0"),
+        ),
         CANADA_EMPLOYMENT_AMOUNT: CappedAmountLine(
             CANADA_EMPLOYMENT_AMOUNT,
             EMPLOYMENT_INCOME,
@@ -3893,6 +4190,21 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # contributions available to deduct of 1926 are below the deduction limit of 19800, so the
     # most that may be deducted is the contributions available to deduct.
     assert lesser == {
+        # Form T1172 line 3 "Amount from line 1 or 2, whichever is less" and line 7 "Amount from
+        # line 3 or 6, whichever is less", for no AIPs.
+        RESP_AIPS_CONTRIBUTIONS_COUNTED: LesserOfLine(
+            RESP_AIPS_CONTRIBUTIONS_COUNTED,
+            ((RESP_AIPS_RECEIVED_PART_A, D("0")), (RESP_AIPS_RRSP_CONTRIBUTIONS, D("0"))),
+            D("0"),
+        ),
+        RESP_AIPS_REDUCTION: LesserOfLine(
+            RESP_AIPS_REDUCTION,
+            (
+                (RESP_AIPS_CONTRIBUTIONS_COUNTED, D("0")),
+                (RESP_AIPS_LIMIT_REMAINING, D("50000.00")),
+            ),
+            D("0"),
+        ),
         # Schedule 9 chart for line 33700, line 4 "Enter whichever is less: amount from line 2 or
         # line 3." and line 5 "amount from line 1 or line 4", both 0.
         DEPRECIABLE_GIFT_PROCEEDS_OR_COST: LesserOfLine(
@@ -4194,6 +4506,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # T1 line 139 (line 41700) "Line 134 minus line 138 (if negative, enter "0")", with line
+        # 134 carrying line 132: no credit against a federal tax of 16951.38.
+        FEDERAL_TAX_LESS_CREDITS: SubtractedNotBelowZeroLine(
+            output=FEDERAL_TAX_LESS_CREDITS,
+            minuend=FEDERAL_TAX_WITH_ITC_RECAPTURE,
+            minuend_amount=D("16951.38"),
+            subtrahend=CREDITS_AGAINST_FEDERAL_TAX,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
         # Schedule 9 line 16 "Line 14 minus line 15 (if negative, enter "0")" and line 19 "Line 17
         # minus line 18 (if negative, enter "0")": the taxable income of 115000 is below the
         # threshold of 253414.00. Federal Worksheet line 5 "Line 3 minus line 4 (if negative,
@@ -4520,6 +4842,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # T1 line 45300: Schedule 6 line 28 for Return A's family status, no eligible spouse and 0
     # Schedule 6 eligible dependants (line 38100), so the amounts with neither.
     assert chosen == {
+        # Form T1172: a count of 0 (Part A does not apply) chooses Part B's line 13.
+        RESP_AIPS_ADDITIONAL_TAX: ChosenByCountLine(
+            output=RESP_AIPS_ADDITIONAL_TAX,
+            count_kind=RESP_AIPS_PART_A_APPLIES,
+            count=0,
+            chosen_kind=RESP_AIPS_PART_B_TAX,
+            chosen_value=D("0"),
+        ),
         # Line 25000: line 9 is not over $93,454 and no amount was entered on line 14600, so
         # line 14700 (0 here) twice.
         OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT: ChosenByCountLine(
@@ -4594,7 +4924,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 234
+    assert len(order) == 251
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -4918,6 +5248,34 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     )
     assert position[ONTARIO_TAX_AFTER_LIFT_CREDIT] < position[ONTARIO_TAX_AFTER_FOOD_CREDIT]
     assert position[FEDERAL_TAX_AFTER_CREDITS] < position[NET_FEDERAL_TAX]
+    # Line 131: each expenditure at its rate, then amount 3; line 132 adds it to line 126.
+    assert position[ITC_RECAPTURE_AT_15_PERCENT] < position[ITC_RECAPTURE]
+    assert position[ITC_RECAPTURE_AT_20_PERCENT] < position[ITC_RECAPTURE]
+    assert position[ITC_RECAPTURE] < position[FEDERAL_TAX_WITH_ITC_RECAPTURE]
+    assert position[FEDERAL_TAX_AFTER_CREDITS] < position[FEDERAL_TAX_WITH_ITC_RECAPTURE]
+    # Line 41400: the rate, then the maximum; line 138 adds it and line 139 takes it off line 132.
+    assert (
+        position[LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM]
+        < position[LABOUR_SPONSORED_FUNDS_CREDIT]
+        < position[CREDITS_AGAINST_FEDERAL_TAX]
+        < position[FEDERAL_TAX_LESS_CREDITS]
+    )
+    assert position[FEDERAL_TAX_WITH_ITC_RECAPTURE] < position[FEDERAL_TAX_LESS_CREDITS]
+    # Form T1172: line 3, line 4, line 6, line 7, line 8, line 10, the count's choice, line 41800
+    # and line 42000 each read the one before.
+    assert position[RESP_AIPS_CONTRIBUTIONS_COUNTED] < position[RESP_AIPS_REDUCTION]
+    assert (
+        position[RESP_AIPS_LIFETIME_LIMIT]
+        < position[RESP_AIPS_LIMIT_REMAINING]
+        < position[RESP_AIPS_REDUCTION]
+        < position[RESP_AIPS_SUBJECT_TO_TAX]
+        < position[RESP_AIPS_PART_A_TAX]
+        < position[RESP_AIPS_ADDITIONAL_TAX]
+        < position[SPECIAL_TAXES]
+    )
+    assert position[RESP_AIPS_PART_B_TAX] < position[RESP_AIPS_ADDITIONAL_TAX]
+    assert position[FEDERAL_TAX_LESS_CREDITS] < position[NET_FEDERAL_TAX]
+    assert position[SPECIAL_TAXES] < position[NET_FEDERAL_TAX]
     assert position[NET_FEDERAL_TAX] < position[TOTAL_PAYABLE]
     assert position[ONTARIO_TAX] < position[TOTAL_PAYABLE]
     assert position[TOTAL_PAYABLE] < position[REFUND_OR_BALANCE_OWING]
@@ -8857,3 +9215,433 @@ def test_the_new_lines_do_not_change_a_return_that_does_not_take_them() -> None:
     assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("897.15")
     assert worksheet.get(REFUND).value == D("0")
     assert worksheet.get(ontario.NET_REFUND).value == D("0")
+
+
+def return_v(
+    *,
+    income_tax_deducted: str = "6929.83",
+    opportunities_fund_donation: str = "100",
+    itc_recapture_expenditure_at_15_percent: str = "2000",
+    itc_recapture_expenditure_at_20_percent: str = "500",
+    labour_sponsored_funds_net_cost: str = "4000",
+    advanced_canada_workers_benefit: str = "300",
+    resp_aips_received_part_a: str = "0",
+    resp_aips_rrsp_contributions: str = "0",
+    resp_aips_reduction_used_in_previous_years: str = "0",
+    resp_aips_received_part_b: str = "10000",
+    resp_aips_part_a_applies: int = 0,
+    rl_10_labour_sponsored_fund_amount: str = "150",
+) -> Worksheet:
+    """Return V's inputs, as in `returns/2025_return_v.yaml`: Return T's with the special lines.
+
+    Return T's filer (employment income of 50000, the federal tax after credits of 4177.93, the
+    Ontario tax of 2276.90 and the Step 6 credits of 2525.00 besides the tax deducted) with the
+    recapture of an investment tax credit on 2000 at 15% and 500 at 20% (line 131, 400.00), a net
+    cost of 4000 of labour-sponsored fund shares (line 41400, 600.00), the advanced Canada workers
+    benefit of 300 (line 41500) and special taxes (line 41800) of 2000.00 from Form T1172 Part B
+    on 10000 of AIPs and 150 from the RL-10 slip. The net federal tax (line 42000) is 6427.93, the
+    total payable 8704.83 and, with 6929.83 deducted, the refund (line 48400) is 750.00.
+    """
+    return compute(
+        "50000",
+        "0",
+        "0",
+        "0",
+        "9000",
+        "0",
+        "0",
+        income_tax_deducted=income_tax_deducted,
+        part_xii_2_tax_credit="50",
+        employee_and_partner_gst_hst_rebate="150",
+        educator_supplies_expenses="1200",
+        journalism_labour_tax_credit="75",
+        tax_paid_by_instalments="2000",
+        opportunities_fund_donation=opportunities_fund_donation,
+        itc_recapture_expenditure_at_15_percent=itc_recapture_expenditure_at_15_percent,
+        itc_recapture_expenditure_at_20_percent=itc_recapture_expenditure_at_20_percent,
+        labour_sponsored_funds_net_cost=labour_sponsored_funds_net_cost,
+        advanced_canada_workers_benefit=advanced_canada_workers_benefit,
+        resp_aips_received_part_a=resp_aips_received_part_a,
+        resp_aips_rrsp_contributions=resp_aips_rrsp_contributions,
+        resp_aips_reduction_used_in_previous_years=resp_aips_reduction_used_in_previous_years,
+        resp_aips_received_part_b=resp_aips_received_part_b,
+        resp_aips_part_a_applies=resp_aips_part_a_applies,
+        rl_10_labour_sponsored_fund_amount=rl_10_labour_sponsored_fund_amount,
+    )
+
+
+def test_return_vs_line_41400_is_600_for_a_net_cost_of_4000() -> None:
+    # Line 41300 is 4000: 15% is 600.00, below the maximum of 750, so line 41400 is 600.00.
+    worksheet = return_v()
+
+    assert worksheet.get(LABOUR_SPONSORED_FUNDS_NET_COST).value == D("4000")
+    assert worksheet.get(LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM).value == D("600.00")
+    assert worksheet.get(LABOUR_SPONSORED_FUNDS_CREDIT).value == D("600.00")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "labour_sponsored_funds_credit_before_maximum: 15% of labour_sponsored_funds_net_cost 4000 "
+        "(half-up to 0.01)"
+    ) in rendered
+    assert (
+        "labour_sponsored_funds_credit: lesser of labour_sponsored_funds_credit_before_maximum 600 "
+        "and 750 (half-up to 0.01)"
+    ) in rendered
+
+
+def test_a_net_cost_of_6000_gives_900_capped_at_750() -> None:
+    worksheet = return_v(labour_sponsored_funds_net_cost="6000")
+
+    assert worksheet.get(LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM).value == D("900.00")
+    assert worksheet.get(LABOUR_SPONSORED_FUNDS_CREDIT).value == D("750.00")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "labour_sponsored_funds_credit: lesser of labour_sponsored_funds_credit_before_maximum 900 "
+        "and 750 (half-up to 0.01)"
+    ) in rendered
+
+
+@pytest.mark.parametrize(
+    ("net_cost", "credit"),
+    [
+        ("0", "0"),
+        ("4000", "600.00"),
+        # 4999.90 x 15% = 749.985, a tie, rounded half-up to 749.99, below the maximum.
+        ("4999.90", "749.99"),
+        # 5000 x 15% is 750.00 exactly, the net cost at which the maximum starts.
+        ("5000", "750.00"),
+        ("5000.01", "750.00"),
+        ("6000", "750.00"),
+        ("100000", "750.00"),
+        # 0.10 x 15% = 0.015, a tie, rounded half-up to 0.02.
+        ("0.10", "0.02"),
+    ],
+)
+def test_line_41400_is_15_percent_of_line_41300_at_most_750(net_cost: str, credit: str) -> None:
+    worksheet = return_v(labour_sponsored_funds_net_cost=net_cost)
+
+    assert worksheet.get(LABOUR_SPONSORED_FUNDS_CREDIT).value == D(credit)
+
+
+def test_return_vs_recapture_is_300_plus_100_and_adds_to_the_federal_tax_on_line_132() -> None:
+    # T2038(IND) Part C: amount 1 is 2000 x 0.15 = 300.00, amount 2 is 500 x 0.20 = 100.00 and
+    # amount 3, line 131, is 400.00; line 132 is line 126 (4177.93) plus it, 4577.93.
+    worksheet = return_v()
+
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("4177.93")
+    assert worksheet.get(ITC_RECAPTURE_AT_15_PERCENT).value == D("300.00")
+    assert worksheet.get(ITC_RECAPTURE_AT_20_PERCENT).value == D("100.00")
+    assert worksheet.get(ITC_RECAPTURE).value == D("400.00")
+    assert worksheet.get(FEDERAL_TAX_WITH_ITC_RECAPTURE).value == D("4577.93")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "itc_recapture_at_15_percent: 15% of itc_recapture_expenditure_at_15_percent 2000 "
+        "(half-up to 0.01)"
+    ) in rendered
+    assert (
+        "itc_recapture_at_20_percent: 20% of itc_recapture_expenditure_at_20_percent 500 "
+        "(half-up to 0.01)"
+    ) in rendered
+    assert (
+        "itc_recapture: itc_recapture_at_15_percent 300 + itc_recapture_at_20_percent 100 = 400"
+    ) in rendered
+    assert (
+        "federal_tax_with_itc_recapture: federal_tax_after_credits 4177.93 + itc_recapture 400 "
+        "= 4577.93"
+    ) in rendered
+
+
+def test_each_recapture_rate_applies_to_its_own_expenditure() -> None:
+    # Distinct figures, so an expenditure at the wrong rate changes the total: 1000 x 0.15 =
+    # 150.00 and 3000 x 0.20 = 600.00, not 1000 x 0.20 + 3000 x 0.15 = 650.00.
+    worksheet = return_v(
+        itc_recapture_expenditure_at_15_percent="1000",
+        itc_recapture_expenditure_at_20_percent="3000",
+    )
+
+    assert worksheet.get(ITC_RECAPTURE_AT_15_PERCENT).value == D("150.00")
+    assert worksheet.get(ITC_RECAPTURE_AT_20_PERCENT).value == D("600.00")
+    assert worksheet.get(ITC_RECAPTURE).value == D("750.00")
+
+
+def test_no_expenditure_leaves_line_132_at_line_126() -> None:
+    worksheet = return_v(
+        itc_recapture_expenditure_at_15_percent="0", itc_recapture_expenditure_at_20_percent="0"
+    )
+
+    assert worksheet.get(ITC_RECAPTURE).value == D("0")
+    assert worksheet.get(FEDERAL_TAX_WITH_ITC_RECAPTURE).value == D("4177.93")
+
+
+def test_return_vs_credit_comes_off_line_132_and_line_139_is_3977_93() -> None:
+    # Line 138 (41600) is line 137 (41400) alone, 600.00; line 139 (41700) is line 134, which
+    # carries line 132 (4577.93), less it: 3977.93.
+    worksheet = return_v()
+
+    assert worksheet.get(CREDITS_AGAINST_FEDERAL_TAX).value == D("600.00")
+    assert worksheet.get(FEDERAL_TAX_LESS_CREDITS).value == D("3977.93")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert "credits_against_federal_tax: labour_sponsored_funds_credit 600 = 600" in rendered
+    assert (
+        "federal_tax_less_credits: federal_tax_with_itc_recapture 4577.93 "
+        "less credits_against_federal_tax 600, not below 0 = 3977.93"
+    ) in rendered
+
+
+def test_a_credit_above_the_federal_tax_with_the_recapture_leaves_zero_on_line_139() -> None:
+    # Employment income of 10000 leaves the federal tax after credits at 0 (see the credit larger
+    # than the tax above); a recapture of 500 x 0.20 = 100.00 makes line 132 100.00, and the
+    # credit of 6000 x 15% = 900.00, at most 750.00, is more than that: line 139 is 0, not
+    # -650.00, and the unused credit is lost.
+    worksheet = compute(
+        "10000",
+        "0",
+        "0",
+        "0",
+        "1800",
+        "0",
+        "0",
+        itc_recapture_expenditure_at_20_percent="500",
+        labour_sponsored_funds_net_cost="6000",
+    )
+
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("0")
+    assert worksheet.get(ITC_RECAPTURE).value == D("100.00")
+    assert worksheet.get(FEDERAL_TAX_WITH_ITC_RECAPTURE).value == D("100.00")
+    assert worksheet.get(LABOUR_SPONSORED_FUNDS_CREDIT).value == D("750.00")
+    assert worksheet.get(FEDERAL_TAX_LESS_CREDITS).value == D("0")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("0")
+
+
+def test_return_vs_t1172_part_b_on_10000_of_aips_is_2000_on_line_13_and_line_41800() -> None:
+    # Part A does not apply (the count is 0): line 13 is line 11 (10000) x 20% = 2000.00, the
+    # amount for line 41800; the RL-10 amount of 150 is added: 2150.00.
+    worksheet = return_v()
+
+    assert worksheet.get(RESP_AIPS_RECEIVED_PART_B).value == D("10000")
+    assert worksheet.get(RESP_AIPS_PART_B_TAX).value == D("2000.00")
+    assert worksheet.get(RESP_AIPS_PART_A_APPLIES).value == 0
+    assert worksheet.get(RESP_AIPS_ADDITIONAL_TAX).value == D("2000.00")
+    assert worksheet.get(RL_10_LABOUR_SPONSORED_FUND_AMOUNT).value == D("150")
+    assert worksheet.get(SPECIAL_TAXES).value == D("2150.00")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "resp_aips_part_b_tax: 20% of resp_aips_received_part_b 10000 (half-up to 0.01)"
+    ) in rendered
+    assert (
+        "resp_aips_additional_tax: resp_aips_part_b_tax 2000, chosen as resp_aips_part_a_applies "
+        "is 0"
+    ) in rendered
+    assert (
+        "special_taxes: resp_aips_additional_tax 2000 + rl_10_labour_sponsored_fund_amount 150 "
+        "= 2150"
+    ) in rendered
+
+
+def test_part_a_is_not_applicable_so_its_lines_are_computed_on_figures_of_0() -> None:
+    # Return V enters 0 on lines 1, 2 and 5: line 3 is 0, line 4 is 50,000.00, line 6 is
+    # 50,000.00 less 0, line 7 is the lesser of 0 and 50,000.00, line 8 is 0 less 0 and line 10
+    # is 0.00.
+    worksheet = return_v()
+
+    assert worksheet.get(RESP_AIPS_CONTRIBUTIONS_COUNTED).value == D("0")
+    assert worksheet.get(RESP_AIPS_LIFETIME_LIMIT).value == D("50000.00")
+    assert worksheet.get(RESP_AIPS_LIMIT_REMAINING).value == D("50000.00")
+    assert worksheet.get(RESP_AIPS_REDUCTION).value == D("0")
+    assert worksheet.get(RESP_AIPS_SUBJECT_TO_TAX).value == D("0")
+    assert worksheet.get(RESP_AIPS_PART_A_TAX).value == D("0.00")
+
+
+def test_a_count_of_1_takes_part_a_and_line_10_for_line_41800() -> None:
+    # Part A: 10000 of AIPs (line 1) and 4000 contributed to an RRSP and deducted (line 2): line
+    # 3 is 4000, line 4 50,000.00, line 6 50,000.00 less the 0 used before, line 7 the lesser of
+    # 4000 and 50,000.00, line 8 10000 - 4000 = 6000 and line 10 6000 x 20% = 1200.00. Part B's
+    # 2000.00 is not the one for line 41800 now.
+    worksheet = return_v(
+        resp_aips_received_part_a="10000",
+        resp_aips_rrsp_contributions="4000",
+        resp_aips_part_a_applies=1,
+    )
+
+    assert worksheet.get(RESP_AIPS_CONTRIBUTIONS_COUNTED).value == D("4000")
+    assert worksheet.get(RESP_AIPS_LIFETIME_LIMIT).value == D("50000.00")
+    assert worksheet.get(RESP_AIPS_LIMIT_REMAINING).value == D("50000.00")
+    assert worksheet.get(RESP_AIPS_REDUCTION).value == D("4000")
+    assert worksheet.get(RESP_AIPS_SUBJECT_TO_TAX).value == D("6000")
+    assert worksheet.get(RESP_AIPS_PART_A_TAX).value == D("1200.00")
+    assert worksheet.get(RESP_AIPS_PART_B_TAX).value == D("2000.00")
+    assert worksheet.get(RESP_AIPS_ADDITIONAL_TAX).value == D("1200.00")
+    assert worksheet.get(SPECIAL_TAXES).value == D("1350.00")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "resp_aips_contributions_counted: lesser of resp_aips_received_part_a 10000 "
+        "and resp_aips_rrsp_contributions 4000 = 4000"
+    ) in rendered
+    assert (
+        "resp_aips_reduction: lesser of resp_aips_contributions_counted 4000 "
+        "and resp_aips_limit_remaining 50000 = 4000"
+    ) in rendered
+    assert (
+        "resp_aips_subject_to_tax: resp_aips_received_part_a 10000 less resp_aips_reduction 4000 "
+        "= 6000"
+    ) in rendered
+    assert (
+        "resp_aips_part_a_tax: 20% of resp_aips_subject_to_tax 6000 (half-up to 0.01)"
+    ) in rendered
+    assert (
+        "resp_aips_additional_tax: resp_aips_part_a_tax 1200, chosen as resp_aips_part_a_applies "
+        "is 1"
+    ) in rendered
+
+
+@pytest.mark.parametrize(
+    ("aips", "contributions", "used_before", "reduction", "subject", "tax"),
+    [
+        # Contributions below the AIPs and the room: the contributions reduce the AIPs.
+        ("10000", "4000", "0", "4000", "6000", "1200.00"),
+        # No contributions: nothing reduces the AIPs, all of them are taxed.
+        ("10000", "0", "0", "0", "10000", "2000.00"),
+        # Contributions above the AIPs: line 3 is the AIPs, so the whole amount is reduced.
+        ("10000", "12000", "0", "10000", "0", "0.00"),
+        # 48,000 of the lifetime limit used before leaves 2,000 of room, below the contributions.
+        ("10000", "4000", "48000", "2000", "8000", "1600.00"),
+        # The whole 50,000.00 used before leaves no room: line 6 is 0.
+        ("10000", "4000", "50000", "0", "10000", "2000.00"),
+        # Room of exactly the contributions: either line gives the same line 7.
+        ("10000", "4000", "46000", "4000", "6000", "1200.00"),
+    ],
+)
+def test_part_a_reduces_the_aips_by_the_lesser_of_the_contributions_and_the_lifetime_room(
+    aips: str, contributions: str, used_before: str, reduction: str, subject: str, tax: str
+) -> None:
+    worksheet = return_v(
+        resp_aips_received_part_a=aips,
+        resp_aips_rrsp_contributions=contributions,
+        resp_aips_reduction_used_in_previous_years=used_before,
+        resp_aips_part_a_applies=1,
+    )
+
+    assert worksheet.get(RESP_AIPS_REDUCTION).value == D(reduction)
+    assert worksheet.get(RESP_AIPS_SUBJECT_TO_TAX).value == D(subject)
+    assert worksheet.get(RESP_AIPS_PART_A_TAX).value == D(tax)
+    assert worksheet.get(RESP_AIPS_ADDITIONAL_TAX).value == D(tax)
+
+
+def test_line_6_may_be_negative_as_the_form_prints_no_floor() -> None:
+    # T1172 line 6 "Line 4 minus line 5" prints no "(if negative, enter "0")": 60,000 used before
+    # gives -10,000.00, and line 7, the lesser of 4000 and that, is -10000.00, as the form prints:
+    # line 8 is 10000 less that, 20000.00, and line 10 is 20% of it, 4000.00.
+    worksheet = return_v(
+        resp_aips_received_part_a="10000",
+        resp_aips_rrsp_contributions="4000",
+        resp_aips_reduction_used_in_previous_years="60000",
+        resp_aips_part_a_applies=1,
+        opportunities_fund_donation="0",
+    )
+
+    assert worksheet.get(RESP_AIPS_LIMIT_REMAINING).value == D("-10000.00")
+    assert worksheet.get(RESP_AIPS_REDUCTION).value == D("-10000.00")
+    assert worksheet.get(RESP_AIPS_SUBJECT_TO_TAX).value == D("20000.00")
+    assert worksheet.get(RESP_AIPS_PART_A_TAX).value == D("4000.00")
+
+
+@pytest.mark.parametrize("part_a_applies", [0, 1])
+def test_only_the_chosen_part_is_the_additional_tax_whatever_the_other_part_holds(
+    part_a_applies: int,
+) -> None:
+    # Part A lines give 1200.00 and Part B's line 11 gives 2000.00; the count picks one.
+    worksheet = return_v(
+        resp_aips_received_part_a="10000",
+        resp_aips_rrsp_contributions="4000",
+        resp_aips_part_a_applies=part_a_applies,
+    )
+
+    assert worksheet.get(RESP_AIPS_PART_A_TAX).value == D("1200.00")
+    assert worksheet.get(RESP_AIPS_PART_B_TAX).value == D("2000.00")
+    assert worksheet.get(RESP_AIPS_ADDITIONAL_TAX).value == D(
+        "1200.00" if part_a_applies else "2000.00"
+    )
+
+
+@pytest.mark.parametrize(
+    ("aips", "tax"),
+    [
+        ("10000", "2000.00"),
+        ("0", "0"),
+        # 0.02 x 20% = 0.004, rounded half-up to 0.00; 0.03 x 20% = 0.006, to 0.01.
+        ("0.02", "0.00"),
+        ("0.03", "0.01"),
+    ],
+)
+def test_line_13_is_20_percent_of_line_11(aips: str, tax: str) -> None:
+    worksheet = return_v(resp_aips_received_part_b=aips)
+
+    assert worksheet.get(RESP_AIPS_PART_B_TAX).value == D(tax)
+
+
+def test_return_vs_net_federal_tax_adds_lines_139_140_and_141_in_line_order() -> None:
+    # 3977.93 (139) + 300 (140, the advanced Canada workers benefit) + 2150.00 (141) = 6427.93.
+    worksheet = return_v()
+
+    assert worksheet.get(ADVANCED_CANADA_WORKERS_BENEFIT).value == D("300")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("6427.93")
+    (line,) = [
+        line
+        for line in worksheet.trace
+        if isinstance(line, SumLine) and line.output == NET_FEDERAL_TAX
+    ]
+    assert line.parts == (
+        (FEDERAL_TAX_LESS_CREDITS, D("3977.93")),
+        (ADVANCED_CANADA_WORKERS_BENEFIT, D("300")),
+        (SPECIAL_TAXES, D("2150.00")),
+    )
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "net_federal_tax: federal_tax_less_credits 3977.93 + advanced_canada_workers_benefit 300 "
+        "+ special_taxes 2150 = 6427.93"
+    ) in rendered
+
+
+def test_each_line_between_126_and_142_enters_the_net_federal_tax_once() -> None:
+    # Distinct figures for each line, so a line left out or added twice changes the total: 4177.93
+    # (126) + 3 x 0.15 = 0.45 (131 from 3) - 0.15 x 100 = 15.00 (137 from 100) + 1000 (140) + 20%
+    # of 100 = 20.00 (141, Part B) + 7 (141, RL-10) = 5190.38.
+    worksheet = return_v(
+        itc_recapture_expenditure_at_15_percent="3",
+        itc_recapture_expenditure_at_20_percent="0",
+        labour_sponsored_funds_net_cost="100",
+        advanced_canada_workers_benefit="1000",
+        resp_aips_received_part_b="100",
+        rl_10_labour_sponsored_fund_amount="7",
+    )
+
+    assert worksheet.get(ITC_RECAPTURE).value == D("0.45")
+    assert worksheet.get(LABOUR_SPONSORED_FUNDS_CREDIT).value == D("15.00")
+    assert worksheet.get(FEDERAL_TAX_LESS_CREDITS).value == D("4163.38")
+    assert worksheet.get(SPECIAL_TAXES).value == D("27.00")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("5190.38")
+
+
+def test_return_vs_total_payable_is_8704_83_and_the_refund_is_750() -> None:
+    # Line 148 is 6427.93 + 2276.90 = 8704.83; the total credits are the 6929.83 deducted plus
+    # 2525.00 of the Step 6 credits, 9454.83; line 167 is 8704.83 - 9454.83 = -750.00, a refund
+    # of 750.00, of which 100 is donated: the net refund is 650.00.
+    worksheet = return_v()
+
+    assert worksheet.get(ONTARIO_TAX).value == D("2276.90")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("8704.83")
+    assert worksheet.get(TOTAL_CREDITS).value == D("9454.83")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-750.00")
+    assert worksheet.get(REFUND).value == D("750.00")
+    assert worksheet.get(ontario.NET_REFUND).value == D("650.00")
+
+
+def test_the_special_and_credit_lines_do_not_change_a_return_that_does_not_take_them() -> None:
+    # Return A's balance owing is unchanged: 25897.15 less 25000 with every new line 0.
+    worksheet = return_a()
+
+    assert worksheet.get(ITC_RECAPTURE).value == D("0")
+    assert worksheet.get(LABOUR_SPONSORED_FUNDS_CREDIT).value == D("0")
+    assert worksheet.get(SPECIAL_TAXES).value == D("0")
+    assert worksheet.get(FEDERAL_TAX_LESS_CREDITS).value == D("16951.38")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("16951.38")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("897.15")

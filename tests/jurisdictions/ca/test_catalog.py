@@ -19,6 +19,7 @@ from app.domain.record_list import RecordList, RecordListKind
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADJUSTED_FAMILY_NET_INCOME,
+    ADVANCED_CANADA_WORKERS_BENEFIT,
     AGE_AMOUNT,
     AGE_AMOUNT_BEFORE_COUNT,
     AGE_INCOME_OVER_THRESHOLD,
@@ -74,6 +75,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
+    CREDITS_AGAINST_FEDERAL_TAX,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
     CWB_ELIGIBLE_DEPENDANTS,
@@ -120,6 +122,8 @@ from app.jurisdictions.ca.catalog import (
     EMPLOYMENT_INCOME,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
     FEDERAL_BASIC_TAX,
+    FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FHSA_ANNUAL_AMOUNT,
     FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS,
     FHSA_ANNUAL_AMOUNT_FOR_2024,
@@ -189,7 +193,15 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
     INVESTMENT_INCOME_WITHOUT_A_SLIP,
     INVESTMENT_ROYALTIES,
+    ITC_RECAPTURE,
+    ITC_RECAPTURE_AT_15_PERCENT,
+    ITC_RECAPTURE_AT_20_PERCENT,
+    ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT,
+    ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT,
     JOURNALISM_LABOUR_TAX_CREDIT,
+    LABOUR_SPONSORED_FUNDS_CREDIT,
+    LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
+    LABOUR_SPONSORED_FUNDS_NET_COST,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
@@ -231,6 +243,20 @@ from app.jurisdictions.ca.catalog import (
     REFUND_OR_BALANCE_OWING,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
+    RESP_AIPS_ADDITIONAL_TAX,
+    RESP_AIPS_CONTRIBUTIONS_COUNTED,
+    RESP_AIPS_LIFETIME_LIMIT,
+    RESP_AIPS_LIMIT_REMAINING,
+    RESP_AIPS_PART_A_APPLIES,
+    RESP_AIPS_PART_A_TAX,
+    RESP_AIPS_PART_B_TAX,
+    RESP_AIPS_RECEIVED_PART_A,
+    RESP_AIPS_RECEIVED_PART_B,
+    RESP_AIPS_REDUCTION,
+    RESP_AIPS_REDUCTION_USED_IN_PREVIOUS_YEARS,
+    RESP_AIPS_RRSP_CONTRIBUTIONS,
+    RESP_AIPS_SUBJECT_TO_TAX,
+    RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
     RPP_DEDUCTION,
     RRSP_AMOUNT_DEDUCTED,
     RRSP_CONTRIBUTIONS,
@@ -244,6 +270,7 @@ from app.jurisdictions.ca.catalog import (
     SLIP_TAXABLE_DIVIDENDS,
     SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SOCIAL_ASSISTANCE_PAYMENTS,
+    SPECIAL_TAXES,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BASIS,
     SPOUSE_AMOUNT_BEFORE_COUNT,
@@ -529,6 +556,33 @@ REGISTERED = frozenset(
         "ca/non_refundable_credit_amounts",
         "ca/non_refundable_tax_credits",
         "ca/federal_tax_after_credits",
+        "ca/itc_recapture_expenditure_at_15_percent",
+        "ca/itc_recapture_expenditure_at_20_percent",
+        "ca/labour_sponsored_funds_net_cost",
+        "ca/advanced_canada_workers_benefit",
+        "ca/resp_aips_received_part_a",
+        "ca/resp_aips_rrsp_contributions",
+        "ca/resp_aips_reduction_used_in_previous_years",
+        "ca/resp_aips_received_part_b",
+        "ca/resp_aips_part_a_applies",
+        "ca/rl_10_labour_sponsored_fund_amount",
+        "ca/itc_recapture_at_15_percent",
+        "ca/itc_recapture_at_20_percent",
+        "ca/itc_recapture",
+        "ca/federal_tax_with_itc_recapture",
+        "ca/labour_sponsored_funds_credit_before_maximum",
+        "ca/labour_sponsored_funds_credit",
+        "ca/credits_against_federal_tax",
+        "ca/federal_tax_less_credits",
+        "ca/resp_aips_contributions_counted",
+        "ca/resp_aips_lifetime_limit",
+        "ca/resp_aips_limit_remaining",
+        "ca/resp_aips_reduction",
+        "ca/resp_aips_subject_to_tax",
+        "ca/resp_aips_part_a_tax",
+        "ca/resp_aips_part_b_tax",
+        "ca/resp_aips_additional_tax",
+        "ca/special_taxes",
         "ca/net_federal_tax",
         "ca/total_payable",
         "ca/income_tax_deducted",
@@ -602,7 +656,9 @@ REGISTERED = frozenset(
 # brackets)", the lines of Form T1436 (Capital Gains Worksheet) line 21700 that subtract with no
 # floor or take the lesser of such a line (lines 15 and 17), and the lines of Schedule 15 (FHSA)
 # Steps 2 and 3 that subtract or add such a line with no floor (lines 3, 5, 9, 11, 23, 27, 36, 45,
-# 48, 51, 54, 56 and 58).
+# 48, 51, 54, 56 and 58); and Form T1172 (RESP additional tax) Part A line 6 "Line 4 minus line
+# 5" and line 7 "Amount from line 3 or 6, whichever is less", which print no "(if negative, enter
+# "0")".
 SIGNED = frozenset(
     {
         "ca/refund_or_balance_owing",
@@ -624,6 +680,8 @@ SIGNED = frozenset(
         "ca/business_investment_loss_reduction_available",
         "ca/business_investment_loss_reduction",
         "ca/net_income_before_adjustments",
+        "ca/resp_aips_limit_remaining",
+        "ca/resp_aips_reduction",
     }
 )
 # T1 line 30400 (Schedule 5, "Each household is allowed only one claim for this amount") and line
@@ -642,7 +700,9 @@ SIGNED = frozenset(
 # 14600; otherwise, use Federal Worksheet") and 1 if "the amount on line 9 is more than $93,454",
 # each 0 or 1 until a comparison capability derives them; and Schedule 15 Step 2 "If your maximum
 # participation period (MPP) ended in a prior year, do not complete this step. Your 2025 annual FHSA
-# limit is "0".": 1 if it ended in a prior year and 0 otherwise; counted, not money.
+# limit is "0".": 1 if it ended in a prior year and 0 otherwise; and Form T1172 "Part B - Fill out
+# this part only if Part A does not apply to you": 1 if Part A applies and 0 otherwise; counted, not
+# money.
 COUNTS = frozenset(
     {
         "ca/eligible_dependants",
@@ -657,6 +717,7 @@ COUNTS = frozenset(
         "ca/other_payments_worksheet_required",
         "ca/other_payments_worksheet_line_9_over_limit",
         "ca/fhsa_maximum_participation_period_ended",
+        "ca/resp_aips_part_a_applies",
     }
 )
 # T1 line 82 (line 30450) and Schedule 5 "Line 30450 - Canada caregiver amount for other infirm
@@ -1123,6 +1184,47 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/ei_premiums") is EI_PREMIUMS
     assert registry.get("ca/canada_employment_amount") is CANADA_EMPLOYMENT_AMOUNT
     assert registry.get("ca/non_refundable_tax_credits") is NON_REFUNDABLE_TAX_CREDITS
+    assert (
+        registry.get("ca/itc_recapture_expenditure_at_15_percent")
+        is ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT
+    )
+    assert (
+        registry.get("ca/itc_recapture_expenditure_at_20_percent")
+        is ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT
+    )
+    assert registry.get("ca/labour_sponsored_funds_net_cost") is LABOUR_SPONSORED_FUNDS_NET_COST
+    assert registry.get("ca/advanced_canada_workers_benefit") is ADVANCED_CANADA_WORKERS_BENEFIT
+    assert registry.get("ca/resp_aips_received_part_a") is RESP_AIPS_RECEIVED_PART_A
+    assert registry.get("ca/resp_aips_rrsp_contributions") is RESP_AIPS_RRSP_CONTRIBUTIONS
+    assert (
+        registry.get("ca/resp_aips_reduction_used_in_previous_years")
+        is RESP_AIPS_REDUCTION_USED_IN_PREVIOUS_YEARS
+    )
+    assert registry.get("ca/resp_aips_received_part_b") is RESP_AIPS_RECEIVED_PART_B
+    assert registry.get("ca/resp_aips_part_a_applies") is RESP_AIPS_PART_A_APPLIES
+    assert (
+        registry.get("ca/rl_10_labour_sponsored_fund_amount") is RL_10_LABOUR_SPONSORED_FUND_AMOUNT
+    )
+    assert registry.get("ca/itc_recapture_at_15_percent") is ITC_RECAPTURE_AT_15_PERCENT
+    assert registry.get("ca/itc_recapture_at_20_percent") is ITC_RECAPTURE_AT_20_PERCENT
+    assert registry.get("ca/itc_recapture") is ITC_RECAPTURE
+    assert registry.get("ca/federal_tax_with_itc_recapture") is FEDERAL_TAX_WITH_ITC_RECAPTURE
+    assert (
+        registry.get("ca/labour_sponsored_funds_credit_before_maximum")
+        is LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM
+    )
+    assert registry.get("ca/labour_sponsored_funds_credit") is LABOUR_SPONSORED_FUNDS_CREDIT
+    assert registry.get("ca/credits_against_federal_tax") is CREDITS_AGAINST_FEDERAL_TAX
+    assert registry.get("ca/federal_tax_less_credits") is FEDERAL_TAX_LESS_CREDITS
+    assert registry.get("ca/resp_aips_contributions_counted") is RESP_AIPS_CONTRIBUTIONS_COUNTED
+    assert registry.get("ca/resp_aips_lifetime_limit") is RESP_AIPS_LIFETIME_LIMIT
+    assert registry.get("ca/resp_aips_limit_remaining") is RESP_AIPS_LIMIT_REMAINING
+    assert registry.get("ca/resp_aips_reduction") is RESP_AIPS_REDUCTION
+    assert registry.get("ca/resp_aips_subject_to_tax") is RESP_AIPS_SUBJECT_TO_TAX
+    assert registry.get("ca/resp_aips_part_a_tax") is RESP_AIPS_PART_A_TAX
+    assert registry.get("ca/resp_aips_part_b_tax") is RESP_AIPS_PART_B_TAX
+    assert registry.get("ca/resp_aips_additional_tax") is RESP_AIPS_ADDITIONAL_TAX
+    assert registry.get("ca/special_taxes") is SPECIAL_TAXES
     assert registry.get("ca/net_federal_tax") is NET_FEDERAL_TAX
     assert registry.get("ca/total_payable") is TOTAL_PAYABLE
     assert registry.get("ca/income_tax_deducted") is INCOME_TAX_DEDUCTED
@@ -1355,6 +1457,32 @@ def test_catalog_kinds_are_money() -> None:
         EI_PREMIUMS,
         CANADA_EMPLOYMENT_AMOUNT,
         NON_REFUNDABLE_TAX_CREDITS,
+        ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT,
+        ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT,
+        LABOUR_SPONSORED_FUNDS_NET_COST,
+        ADVANCED_CANADA_WORKERS_BENEFIT,
+        RESP_AIPS_RECEIVED_PART_A,
+        RESP_AIPS_RRSP_CONTRIBUTIONS,
+        RESP_AIPS_REDUCTION_USED_IN_PREVIOUS_YEARS,
+        RESP_AIPS_RECEIVED_PART_B,
+        RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
+        ITC_RECAPTURE_AT_15_PERCENT,
+        ITC_RECAPTURE_AT_20_PERCENT,
+        ITC_RECAPTURE,
+        FEDERAL_TAX_WITH_ITC_RECAPTURE,
+        LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
+        LABOUR_SPONSORED_FUNDS_CREDIT,
+        CREDITS_AGAINST_FEDERAL_TAX,
+        FEDERAL_TAX_LESS_CREDITS,
+        RESP_AIPS_CONTRIBUTIONS_COUNTED,
+        RESP_AIPS_LIFETIME_LIMIT,
+        RESP_AIPS_LIMIT_REMAINING,
+        RESP_AIPS_REDUCTION,
+        RESP_AIPS_SUBJECT_TO_TAX,
+        RESP_AIPS_PART_A_TAX,
+        RESP_AIPS_PART_B_TAX,
+        RESP_AIPS_ADDITIONAL_TAX,
+        SPECIAL_TAXES,
         NET_FEDERAL_TAX,
         TOTAL_PAYABLE,
         INCOME_TAX_DEDUCTED,
@@ -1636,3 +1764,61 @@ def test_the_caregiver_amount_is_a_non_negative_decimal(registry: ArtifactRegist
     assert CAREGIVER_AMOUNT.value_type is Decimal
     assert CAREGIVER_AMOUNT.non_negative is True
     assert registry.kind("ca/caregiver_amount") is CAREGIVER_AMOUNT
+
+
+def test_the_special_tax_and_credit_lines_are_non_negative(registry: ArtifactRegistry) -> None:
+    # T1 lines 131, 41300, 41400, 41500 and 41800 and the forms behind them (T2038(IND) Part C,
+    # T1172 Parts A and B, the RC210 box 10 and the RL-10 slip) print amounts of tax, credit or
+    # expenditure with no negative figure; the lines that carry or subtract them print a floor
+    # or cannot be negative: line 132 adds line 131 to line 126, line 139 is "if negative, enter
+    # "0"" and T1172's line 3 is the lesser of two such amounts, line 8 is line 1 less a line 7
+    # that is at most line 1.
+    for kind in (
+        ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT,
+        ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT,
+        LABOUR_SPONSORED_FUNDS_NET_COST,
+        ADVANCED_CANADA_WORKERS_BENEFIT,
+        RESP_AIPS_RECEIVED_PART_A,
+        RESP_AIPS_RRSP_CONTRIBUTIONS,
+        RESP_AIPS_REDUCTION_USED_IN_PREVIOUS_YEARS,
+        RESP_AIPS_RECEIVED_PART_B,
+        RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
+        ITC_RECAPTURE_AT_15_PERCENT,
+        ITC_RECAPTURE_AT_20_PERCENT,
+        ITC_RECAPTURE,
+        FEDERAL_TAX_WITH_ITC_RECAPTURE,
+        LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
+        LABOUR_SPONSORED_FUNDS_CREDIT,
+        CREDITS_AGAINST_FEDERAL_TAX,
+        FEDERAL_TAX_LESS_CREDITS,
+        RESP_AIPS_CONTRIBUTIONS_COUNTED,
+        RESP_AIPS_LIFETIME_LIMIT,
+        RESP_AIPS_SUBJECT_TO_TAX,
+        RESP_AIPS_PART_A_TAX,
+        RESP_AIPS_PART_B_TAX,
+        RESP_AIPS_ADDITIONAL_TAX,
+        SPECIAL_TAXES,
+    ):
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+        assert registry.kind(kind.identifier).non_negative is True, kind.identifier
+
+
+def test_the_t1172_lines_that_print_no_floor_are_signed(registry: ArtifactRegistry) -> None:
+    # Form T1172 Part A: line 6 "Line 4 minus line 5" and line 7 "Amount from line 3 or 6, whichever
+    # is less" print no "(if negative, enter "0")", so line 5 above 50,000.00 would make them
+    # negative, as the form prints; line 8 "line 1 minus line 7" is never negative as line 7 is at
+    # most line 3, which is at most line 1.
+    assert RESP_AIPS_LIMIT_REMAINING.non_negative is False
+    assert RESP_AIPS_REDUCTION.non_negative is False
+    assert registry.kind("ca/resp_aips_limit_remaining").non_negative is False
+    assert registry.kind("ca/resp_aips_reduction").non_negative is False
+    assert RESP_AIPS_CONTRIBUTIONS_COUNTED.non_negative is True
+    assert RESP_AIPS_SUBJECT_TO_TAX.non_negative is True
+
+
+def test_the_t1172_part_a_count_is_a_non_negative_int() -> None:
+    # Form T1172 "Part B - Fill out this part only if Part A does not apply to you": a caller's 0
+    # (Part B) or 1 (Part A) count, as the other 0 or 1 counts of the forms.
+    assert RESP_AIPS_PART_A_APPLIES.value_type is int
+    assert RESP_AIPS_PART_A_APPLIES.non_negative is True
