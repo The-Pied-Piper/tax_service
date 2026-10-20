@@ -818,6 +818,24 @@ def test_the_trace_explains_the_computation() -> None:
         "fertility_credit: lesser of fertility_credit_before_maximum 0 and 5000 (half-up to 0.01)",
         "0",
     )
+    position(
+        "care_adjusted_income: net_income_before_adjustments 115000 + child_care_expenses 0, "
+        "not below 0 = 115000",
+        "115000",
+    )
+    position(
+        "care_family_adjusted_income: care_adjusted_income 115000 "
+        "+ care_supporting_persons_adjusted_income 0 = 115000",
+        "115000",
+    )
+    position(
+        "care_credit_percentage: care_family_adjusted_income 115000, "
+        "more than 114000 but not more than 117600: 19%",
+        "0.19",
+    )
+    position(
+        "care_credit: care_credit_percentage 19% of child_care_expenses 0 (half-up to 0.01)", "0"
+    )
     position("seniors_care_before_maximum: 25% of medical_claim 0 (half-up to 0.01)", "0")
     position(
         "seniors_care_amount: lesser of seniors_care_before_maximum 0 and 1500 (half-up to 0.01)",
@@ -862,7 +880,7 @@ def test_the_trace_explains_the_computation() -> None:
         "flow_through_share_credit: 5% of flow_through_share_expenses 0 (half-up to 0.01)", "0"
     )
     position(
-        "ontario_credits_subtotal: fertility_credit 0 + seniors_care_credit 0 "
+        "ontario_credits_subtotal: fertility_credit 0 + care_credit 0 + seniors_care_credit 0 "
         "+ seniors_transit_credit 0 + political_credit 0 + flow_through_share_credit 0 = 0",
         "0",
     )

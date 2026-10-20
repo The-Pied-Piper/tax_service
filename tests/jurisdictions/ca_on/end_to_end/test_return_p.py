@@ -37,9 +37,9 @@ def test_return_ps_political_contribution_credit_is_1402_76_and_lowers_the_refun
     # 1,402.76, below the maximum of 1,666.82, so ON479 line 16 is 1,402.76. (Columns 1 and 2 are
     # also built: column 1 line 7 is 75% x 3000 = 2,250.00 and column 2 line 7 is 50% x 2,499.95 =
     # 1,249.975, up to 1,249.98, + 375.03 = 1,625.01; neither applies.) Line 18 is the sum of
-    # lines 1, 14 and 16, 0 + 0 + 1,402.76, line 21 and T1 line 47900 are 1,402.76; the total
-    # credits are 4800 + 0 + 1,402.76 = 6,202.76 and line 167 is 5,844.50 - 6,202.76 = -358.26, a
-    # refund.
+    # lines 1, 2, 14 and 16, 0 + 0 + 0 + 1,402.76 (no child care expenses), line 21 and T1 line
+    # 47900 are 1,402.76; the total credits are 4800 + 0 + 1,402.76 = 6,202.76 and line 167 is
+    # 5,844.50 - 6,202.76 = -358.26, a refund.
     worksheet = compute(
         "48000",
         "0",
@@ -93,7 +93,7 @@ def test_return_ps_political_contribution_credit_is_1402_76_and_lowers_the_refun
         "(half-up to 0.01)"
     ) in rendered
     assert (
-        "ontario_credits_subtotal: fertility_credit 0 + seniors_care_credit 0 "
+        "ontario_credits_subtotal: fertility_credit 0 + care_credit 0 + seniors_care_credit 0 "
         "+ seniors_transit_credit 0 "
         "+ political_credit 1402.76 + flow_through_share_credit 0 = 1402.76"
     ) in rendered

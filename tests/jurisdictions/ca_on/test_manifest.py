@@ -118,9 +118,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     # deduction" line 9 "Line 5 plus line 8 =", which nothing consumes while the count of line 9
     # over $93,454 is a starting count; and ON428 line 58, the Ontario tax less the dividend tax
     # credit, which nothing else on the return reads (the surtax and line 69 read line 53; line
-    # 60, the minimum tax carryover, is not modelled); T1 line 54 (line 23400) "Net income before
-    # adjustments", which nothing reads while line 23500 is not wired (the floored net income of
-    # line 56 is the next line of the chain); Schedule 15 line 58, what the return produces
+    # 60, the minimum tax carryover, is not modelled); Schedule 15 line 58, what the return produces
     # for the next year's line 52; the Ontario opportunities fund's line 3 (line 46600) "Net
     # refund (line 1 minus line 2)", which nothing reads (line 48400, the refund, is read by that
     # page's line 1, so it is not a line the computation returns); and ON479 line 63260, the
@@ -140,7 +138,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 430
+    assert len(found.capabilities) == 434
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -150,5 +148,5 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 430
+    assert len(composition.order) == 434
     assert wiring == WIRING

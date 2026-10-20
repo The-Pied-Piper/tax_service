@@ -18,6 +18,7 @@ import app.jurisdictions.ca_on.catalog
 from app.domain.artifact import ArtifactCatalog, ArtifactKind, ArtifactRegistry
 from app.domain.digits import DigitsKind
 from app.domain.errors import InvalidRecordError, NegativeArtifactError
+from app.domain.parameters.rate import Rate
 from app.domain.record_list import RecordList, RecordListKind
 from app.jurisdictions.ca.catalog import (
     DEPENDANT_CARE_EXPENSES,
@@ -41,6 +42,11 @@ from app.jurisdictions.ca_on.catalog import (
     APPLIES_FOR_SENIOR_HOMEOWNERS_GRANT,
     BANKRUPT_IN_YEAR,
     BASIC_PERSONAL_AMOUNT,
+    CARE_ADJUSTED_INCOME,
+    CARE_CREDIT,
+    CARE_CREDIT_PERCENTAGE,
+    CARE_FAMILY_ADJUSTED_INCOME,
+    CARE_SUPPORTING_PERSONS_ADJUSTED_INCOME,
     CAREGIVER_AMOUNT,
     CAREGIVER_DEPENDANTS,
     CATALOG,
@@ -290,6 +296,11 @@ REGISTERED = frozenset(
         "ca-on/fertility_expenses",
         "ca-on/fertility_credit_before_maximum",
         "ca-on/fertility_credit",
+        "ca-on/care_supporting_persons_adjusted_income",
+        "ca-on/care_adjusted_income",
+        "ca-on/care_family_adjusted_income",
+        "ca-on/care_credit_percentage",
+        "ca-on/care_credit",
         "ca-on/claims_seniors_care_credit",
         "ca-on/seniors_care_before_maximum",
         "ca-on/seniors_care_amount",
@@ -391,6 +402,8 @@ COUNTS = frozenset(
 )
 # ON479 line 63270, the business number, "(enter 9 digits)": a digits kind of nine digits.
 DIGITS = frozenset({"ca-on/coop_partnership_business_number"})
+# Schedule ON479-A line 7: the tax credit rate the family adjusted income gives, a rate, not money.
+RATES = frozenset({"ca-on/care_credit_percentage"})
 # Form T1221 lines 1 to 3, one line per corporation or slip: the record list of the slips;
 # Worksheet ON428's "Line 58185 - Ontario caregiver amount", "Complete one column for each
 # dependant": the record list of its dependants; and Worksheet ON428's "Line 58480 - Disability
@@ -585,6 +598,14 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/fertility_expenses") is FERTILITY_EXPENSES
     assert registry.get("ca-on/fertility_credit_before_maximum") is FERTILITY_CREDIT_BEFORE_MAXIMUM
     assert registry.get("ca-on/fertility_credit") is FERTILITY_CREDIT
+    assert (
+        registry.get("ca-on/care_supporting_persons_adjusted_income")
+        is CARE_SUPPORTING_PERSONS_ADJUSTED_INCOME
+    )
+    assert registry.get("ca-on/care_adjusted_income") is CARE_ADJUSTED_INCOME
+    assert registry.get("ca-on/care_family_adjusted_income") is CARE_FAMILY_ADJUSTED_INCOME
+    assert registry.get("ca-on/care_credit_percentage") is CARE_CREDIT_PERCENTAGE
+    assert registry.get("ca-on/care_credit") is CARE_CREDIT
     assert registry.get("ca-on/claims_seniors_care_credit") is CLAIMS_SENIORS_CARE_CREDIT
     assert registry.get("ca-on/seniors_care_before_maximum") is SENIORS_CARE_BEFORE_MAXIMUM
     assert registry.get("ca-on/seniors_care_amount") is SENIORS_CARE_AMOUNT
@@ -709,10 +730,10 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     )
 
 
-def test_every_registered_kind_but_the_counts_lists_and_digits_is_money_in_the_package_namespace(
+def test_every_registered_kind_but_counts_lists_digits_and_rates_is_money_in_the_namespace(
     registry: ArtifactRegistry,
 ) -> None:
-    for identifier in REGISTERED - COUNTS - RECORD_LISTS - DIGITS:
+    for identifier in REGISTERED - COUNTS - RECORD_LISTS - DIGITS - RATES:
         kind = registry.get(identifier)
         assert isinstance(kind, ArtifactKind)
         assert kind.identifier.startswith(f"{app.jurisdictions.ca_on.NAMESPACE}/")
@@ -726,6 +747,17 @@ def test_the_counts_are_int_kinds_in_the_package_namespace(registry: ArtifactReg
         assert isinstance(kind, ArtifactKind)
         assert kind.identifier.startswith(f"{app.jurisdictions.ca_on.NAMESPACE}/")
         assert kind.value_type is int, identifier
+
+
+def test_the_care_credit_percentage_is_a_rate_kind_in_the_package_namespace(
+    registry: ArtifactRegistry,
+) -> None:
+    assert RATES <= REGISTERED
+    for identifier in RATES:
+        kind = registry.get(identifier)
+        assert isinstance(kind, ArtifactKind)
+        assert kind.identifier.startswith(f"{app.jurisdictions.ca_on.NAMESPACE}/")
+        assert kind.value_type is Rate, identifier
 
 
 def test_the_flow_through_share_slips_are_a_record_list_of_the_slip_expenses(
@@ -991,13 +1023,13 @@ def test_the_lift_spouse_at_year_end_is_a_non_negative_count(registry: ArtifactR
     assert registry.kind("ca-on/lift_spouse_at_year_end") is LIFT_SPOUSE_AT_YEAR_END
 
 
-def test_every_kind_but_the_record_lists_the_signed_lines_and_digits_is_declared_non_negative(
+def test_every_kind_but_record_lists_signed_lines_digits_and_rates_is_declared_non_negative(
     registry: ArtifactRegistry,
 ) -> None:
     for kind in CATALOG.kinds:
-        if kind.identifier not in RECORD_LISTS | SIGNED | DIGITS:
+        if kind.identifier not in RECORD_LISTS | SIGNED | DIGITS | RATES:
             assert kind.non_negative is True, kind.identifier
-    for identifier in REGISTERED - RECORD_LISTS - SIGNED - DIGITS:
+    for identifier in REGISTERED - RECORD_LISTS - SIGNED - DIGITS - RATES:
         assert registry.kind(identifier).non_negative is True, identifier
 
 

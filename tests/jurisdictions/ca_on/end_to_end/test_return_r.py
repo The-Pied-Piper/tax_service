@@ -53,9 +53,9 @@ def test_return_rs_co_operative_education_credit_is_5200_and_lowers_the_refund_b
     # 400000.00 = 100000.00, line 8 is 100000.00 / 200000.00 = 0.5 and line 11 is 1.00 - 0.5 =
     # 0.5. Placement 1: line 1 is 2000.00, line 3 400.00, line 12 200.00, line 13 2200.00.
     # Placement 2: line 1 is 3750.00, line 3 750.00, line 12 375.00, line 13 4125.00, capped at
-    # 3000. ON479 line 20 is 5200.00; line 21 is 5680.00 + 5200.00 = 10880.00, T1 line 47900 the
-    # same; the total credits are 8000 + 0 + 10880.00 = 18880.00 and line 167 is 4240.69 -
-    # 18880.00 = -14639.31, Return M's -9439.31 less 5200.00.
+    # 3000. ON479 line 20 is 5200.00; line 21 is 8230.00 + 5200.00 = 13430.00, T1 line 47900 the
+    # same; the total credits are 8000 + 0 + 13430.00 = 21430.00 and line 167 is 4240.69 -
+    # 21430.00 = -17189.31, Return M's -11989.31 less 5200.00.
     return_m = return_f_with_credits("24000", "1200", ("6000", "4000"))
     worksheet = return_r()
 
@@ -70,14 +70,14 @@ def test_return_rs_co_operative_education_credit_is_5200_and_lowers_the_refund_b
     assert worksheet.get(COOP_EDUCATION_CREDIT).value == D("5200.00")
     assert worksheet.get(COOP_EDUCATION_PLACEMENT_COUNT).value == 2
     assert type(worksheet.get(COOP_EDUCATION_PLACEMENT_COUNT).value) is int
-    assert worksheet.get(ONTARIO_CREDITS_SUBTOTAL).value == D("5680.00")
-    assert worksheet.get(ONTARIO_CREDITS).value == D("10880.00")
-    assert worksheet.get(PROVINCIAL_CREDITS).value == D("10880.00")
+    assert worksheet.get(ONTARIO_CREDITS_SUBTOTAL).value == D("8230.00")
+    assert worksheet.get(ONTARIO_CREDITS).value == D("13430.00")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D("13430.00")
     assert worksheet.get(TOTAL_PAYABLE).value == D("4240.69")
-    assert worksheet.get(TOTAL_CREDITS).value == D("18880.00")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-14639.31")
+    assert worksheet.get(TOTAL_CREDITS).value == D("21430.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-17189.31")
     assert return_m.get(COOP_EDUCATION_CREDIT).value == D("0")
-    assert return_m.get(REFUND_OR_BALANCE_OWING).value == D("-9439.31")
+    assert return_m.get(REFUND_OR_BALANCE_OWING).value == D("-11989.31")
     assert return_m.get(REFUND_OR_BALANCE_OWING).value - worksheet.get(
         REFUND_OR_BALANCE_OWING
     ).value == D("5200.00")
@@ -160,18 +160,18 @@ def test_return_rs_co_operative_education_credit_is_5200_and_lowers_the_refund_b
     assert "coop_education_credit: item 1 2200 + item 2 3000 = 5200" in rendered
     assert ("coop_education_placement_count: 2 items in coop_education_placements = 2") in rendered
     assert (
-        "ontario_credits: ontario_credits_subtotal 5680 + coop_education_credit 5200 = 10880"
+        "ontario_credits: ontario_credits_subtotal 8230 + coop_education_credit 5200 = 13430"
     ) in rendered
-    assert "provincial_credits: ontario_credits 10880 = 10880" in rendered
+    assert "provincial_credits: ontario_credits 13430 = 13430" in rendered
     assert (
         "total_credits: income_tax_deducted 8000 + refundable_medical_expense_supplement 0 "
         "+ canada_workers_benefit 0 "
         "+ part_xii_2_tax_credit 0 + employee_and_partner_gst_hst_rebate 0 "
         "+ educator_school_supply_credit 0 + journalism_labour_tax_credit 0 "
-        "+ tax_paid_by_instalments 0 + provincial_credits 10880 = 18880"
+        "+ tax_paid_by_instalments 0 + provincial_credits 13430 = 21430"
     ) in rendered
     assert (
-        "refund_or_balance_owing: total_payable 4240.69 less total_credits 18880 = -14639.31"
+        "refund_or_balance_owing: total_payable 4240.69 less total_credits 21430 = -17189.31"
     ) in rendered
 
 
@@ -197,8 +197,9 @@ def test_the_worksheets_worked_examples_for_two_placements(
     assert worksheet.get(COOP_EDUCATION_PHASE_OUT_SHARE).value == D(line_8)
     assert worksheet.get(COOP_EDUCATION_REMAINING_SHARE).value == D(line_11)
     assert worksheet.get(COOP_EDUCATION_CREDIT).value == D(credit)
-    assert worksheet.get(ONTARIO_CREDITS).value == D(credit)
-    assert worksheet.get(PROVINCIAL_CREDITS).value == D(credit)
+    # Line 21 adds line 20 to line 18, which is Return F's care credit of 2550.00 (line 2).
+    assert worksheet.get(ONTARIO_CREDITS).value == D(credit) + D("2550.00")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D(credit) + D("2550.00")
     assert worksheet.get(COOP_EDUCATION_PLACEMENT_COUNT).value == 2
 
 
@@ -281,8 +282,8 @@ def test_no_placements_leave_the_credit_and_the_count_at_zero_whatever_the_payro
     assert worksheet.get(COOP_EDUCATION_PLACEMENTS) == placement_list()
     assert worksheet.get(COOP_EDUCATION_CREDIT).value == D("0")
     assert worksheet.get(COOP_EDUCATION_PLACEMENT_COUNT).value == 0
-    assert worksheet.get(ONTARIO_CREDITS).value == D("0")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-3759.31")
+    assert worksheet.get(ONTARIO_CREDITS).value == D("2550.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-6309.31")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert "coop_education_placement_count: no items in coop_education_placements = 0" in rendered
     assert "coop_education_credit: no items = 0" in rendered
@@ -327,15 +328,15 @@ def test_the_maximum_of_3000_applies_to_each_student_and_not_to_the_total() -> N
 
 def test_the_co_operative_education_credit_is_not_limited_by_the_tax() -> None:
     # ON479 is a refundable-credits form: line 20 is not taken off the Ontario tax of 1786.52; it
-    # is added to line 21 and T1 line 47900 whole.
+    # is added to line 21 and T1 line 47900 whole, with the care credit of 2550.00 (line 2).
     worksheet = return_f_with_credits(
         "0", "0", (), coop_education_payroll="400000", coop_education_placements=("15000",) * 10
     )
 
     assert worksheet.get(ONTARIO_TAX).value == D("1786.52")
-    assert worksheet.get(PROVINCIAL_CREDITS).value == D("30000.00")
-    assert worksheet.get(TOTAL_CREDITS).value == D("38000.00")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-33759.31")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D("32550.00")
+    assert worksheet.get(TOTAL_CREDITS).value == D("40550.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-36309.31")
 
 
 def test_each_placements_line_13_is_rounded_before_they_are_added() -> None:
@@ -346,7 +347,7 @@ def test_each_placements_line_13_is_rounded_before_they_are_added() -> None:
     )
 
     assert worksheet.get(COOP_EDUCATION_CREDIT).value == D("0.06")
-    assert worksheet.get(ONTARIO_CREDITS).value == D("0.06")
+    assert worksheet.get(ONTARIO_CREDITS).value == D("2550.06")
 
 
 def test_lines_1_and_12_are_added_before_line_13_is_rounded() -> None:

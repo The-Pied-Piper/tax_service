@@ -56,7 +56,11 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
     # less it, 1431.26. The child is a dependent child for the Ontario tax reduction: 294.00 +
     # 544 = 838.00, twice it 1676.00, less 1431.26 is a reduction of 244.74, leaving 1186.52.
     # With the health premium of 600 the Ontario tax is 1786.52, the total payable 2454.17 +
-    # 1786.52 = 4240.69, and line 167 4240.69 - 8000 = -3759.31, a refund.
+    # 1786.52 = 4240.69. Schedule ON479-A: line 4 is 54435.00 + 5000 = 59435.00, which is the
+    # family adjusted income (line 5) with no supporting person, in "more than $55,000 but not
+    # more than $60,000: 51%", so the care credit (line 8) is 5000 x 51% = 2550.00. The total
+    # credits are 8000 + 2550.00 = 10550.00 and line 167 is 4240.69 - 10550.00 = -6309.31, a
+    # refund.
     worksheet = compute(
         "60000",
         "0",
@@ -92,7 +96,7 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
     assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("244.74")
     assert worksheet.get(ONTARIO_TAX).value == D("1786.52")
     assert worksheet.get(TOTAL_PAYABLE).value == D("4240.69")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-3759.31")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-6309.31")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "eligible_dependant_amount: eligible_dependant_amount_before_count 16129 "
@@ -152,7 +156,7 @@ def test_return_fs_canada_workers_benefit_is_zero_with_an_eligible_dependant() -
     assert worksheet.get(CWB_REDUCTION_WITHOUT_DEPENDANT).value == D("4137.00")
     assert worksheet.get(CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT).value == D("0")
     assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("0")
-    assert worksheet.get(TOTAL_CREDITS).value == D("8000")
+    assert worksheet.get(TOTAL_CREDITS).value == D("10550.00")
     (chosen,) = [
         line
         for line in worksheet.trace

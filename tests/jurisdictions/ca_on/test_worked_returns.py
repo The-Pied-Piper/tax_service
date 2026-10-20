@@ -121,14 +121,17 @@ description: >-
   at most 1633, less 15% of the adjusted family net income, the net income, over 26855,
   nothing as 9935.00 is below it: 1633; with one it would be 1890, at most 2813, less
   nothing over 30639: 1890. With 0 Schedule 6 eligible dependants the first applies: 1633.
-  With no fertility treatment expenses, no seniors' transit amount paid, no political
-  contributions (federal or Ontario), no Form T1221 slips and no co-operative education work
-  placements (a chosen payroll of 0), the Ontario credits (ON479 lines 1, 14, 16, 17, 18, 20
-  and 21) and the provincial credits (T1 line 47900) are 0, as is the federal political
-  contribution tax credit (T1 line 41000). With no amount on line 21500 and no medical claim
-  (line 33200), the refundable medical expense supplement (T1 line 45200, Federal Worksheet)
-  is 0: its line 11 is 0, so its line 16 is 0, for a filer resident in Canada throughout 2025
-  and 18 or older at the end of 2025 (counts of 1) with working income of 10000, $4,390 or more.
+  With no fertility treatment expenses, no child care expenses deduction (so the Ontario CARE
+  credit, Schedule ON479-A, has a family adjusted income of 9935.00 + 0 + 0 = 9935.00, which
+  is at most 20000 and gives a rate of 75%, and line 8 is 0 x 75% = 0), no seniors' transit
+  amount paid, no political contributions (federal or Ontario), no Form T1221 slips and no
+  co-operative education work placements (a chosen payroll of 0), the Ontario credits (ON479
+  lines 1, 2, 14, 16, 17, 18, 20 and 21) and the provincial credits (T1 line 47900) are 0, as
+  is the federal political contribution tax credit (T1 line 41000). With no amount on line
+  21500 and no medical claim (line 33200), the refundable medical expense supplement (T1 line
+  45200, Federal Worksheet) is 0: its line 11 is 0, so its line 16 is 0, for a filer resident
+  in Canada throughout 2025 and 18 or older at the end of 2025 (counts of 1) with working
+  income of 10000, $4,390 or more.
   With no net business, professional, commission, farming or fishing income (T1 lines
   13500 to 14300), line 27 is 0; the CPP months (Schedule 8 box A) are 12, so Part 2's
   line C is 9900.00, and with Schedule 8 Part 4 not completed and no agreement for EI special
@@ -378,6 +381,7 @@ inputs:
   ca/capital_gift_taxable_gains: "0"
   ca/capital_gift_gains_deduction: "0"
   ca-on/political_contributions: "0"
+  ca-on/care_supporting_persons_adjusted_income: "0"
   ca/political_contributions: "0"
   ca/disability_supports_deduction: "0"
   ca/other_employment_expenses: "0"
@@ -550,6 +554,10 @@ expected:
   ca/canada_workers_benefit: "1633"
   ca-on/fertility_credit_before_maximum: "0"
   ca-on/fertility_credit: "0"
+  ca-on/care_adjusted_income: "9935.00"
+  ca-on/care_family_adjusted_income: "9935.00"
+  ca-on/care_credit_percentage: "0.75"
+  ca-on/care_credit: "0"
   ca-on/seniors_care_before_maximum: "0.00"
   ca-on/seniors_care_amount: "0.00"
   ca-on/seniors_care_family_net_income: "9935.00"

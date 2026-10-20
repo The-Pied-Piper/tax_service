@@ -54,6 +54,53 @@ capabilities:
       base: ca-on/fertility_credit_before_maximum
     produces:
       output: ca-on/fertility_credit
+  # Schedule ON479-A "Family adjusted income calculation for the tax credit", column 1 "You".
+  # Line 1 "Net income from line 23600 of the return (or the amount you would have entered if
+  # the instructions on line 23600 said "if negative, show in brackets")" is line 23600 before
+  # the floor at 0, which is line 23400 less line 23500; line 23500 is not wired yet, so line 1
+  # reads T1 line 54 (line 23400) "Net income before adjustments". Line 2 "Child care
+  # expenses deduction from line 21400 of the return". Line 3 "Social benefits repayment from
+  # line 23500 of the return" is not yet computed, so it is left out. Line 4 "Add lines 1 to 3
+  # (if negative, enter "0"). Adjusted income".
+  - name: core/sum_not_below_zero
+    consumes:
+      parts:
+        - ca/net_income_before_adjustments
+        - ca/child_care_expenses
+    produces:
+      output: ca-on/care_adjusted_income
+  # Column 2 "Supporting person(s)", line 4 (line 63047) is the supporting persons' adjusted
+  # income, a caller input, ca-on/care_supporting_persons_adjusted_income, as it comes from
+  # other people's returns; line 5 "Add the amounts from line 4 of columns 1 and 2. Family
+  # adjusted income".
+  - name: core/sum
+    consumes:
+      parts:
+        - ca-on/care_adjusted_income
+        - ca-on/care_supporting_persons_adjusted_income
+    produces:
+      output: ca-on/care_family_adjusted_income
+  # Line 7 "If your family adjusted income on line 5 is "0", enter 75%. If not, enter the tax
+  # credit rate that applies to your family adjusted income from the table below.": the table
+  # "Family adjusted income and Tax credit rate", as printed.
+  - name: ca-on/rate_by_income_band
+    params:
+      table: ca-on/care_credit_rate
+    consumes:
+      income: ca-on/care_family_adjusted_income
+    produces:
+      output: ca-on/care_credit_percentage
+  # Line 6 "Enter your child care expenses deduction from line 21400 of your return." and
+  # line 8 "Line 6 multiplied by the percentage from line 7 Enter this amount on line 63050
+  # of your Form ON479.": line 6 reads the child care expenses deduction, as line 2 does.
+  - name: ca-on/apply_chosen_rate
+    params:
+      rounding: ca-on/care_credit_rounding
+    consumes:
+      base: ca/child_care_expenses
+      rate: ca-on/care_credit_percentage
+    produces:
+      output: ca-on/care_credit
   # Form ON479 line 3 "Medical expenses from line 58769 of your Form ON428" is the artifact
   # ca-on/medical_claim (ON428 line 43), read directly. Line 4 "Allowable percentage 25%" and
   # line 5 "Line 3 multiplied by the percentage from line 4 (maximum $1,500) =": the
@@ -297,12 +344,13 @@ capabilities:
       base: ca-on/flow_through_share_expenses
     produces:
       output: ca-on/flow_through_share_credit
-  # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1, 13, 14, 16 and 17, in line
-  # order, as line 2 is not triggered.
+  # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1, 2 (line 63050, Schedule
+  # ON479-A's line 8), 13, 14, 16 and 17, in line order.
   - name: core/sum
     consumes:
       parts:
         - ca-on/fertility_credit
+        - ca-on/care_credit
         - ca-on/seniors_care_credit
         - ca-on/seniors_transit_credit
         - ca-on/political_credit

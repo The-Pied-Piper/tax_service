@@ -289,6 +289,7 @@ from app.jurisdictions.ca_on.catalog import (
     APPLIES_FOR_ENERGY_AND_PROPERTY_TAX_CREDIT,
     APPLIES_FOR_NORTHERN_ENERGY_CREDIT,
     APPLIES_FOR_SENIOR_HOMEOWNERS_GRANT,
+    CARE_SUPPORTING_PERSONS_ADJUSTED_INCOME,
     CHOOSES_SINGLE_BENEFIT_PAYMENT,
     CLAIMS_SENIORS_CARE_CREDIT,
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
@@ -712,6 +713,7 @@ def compute(
     capital_gift_taxable_gains: str = "0",
     capital_gift_gains_deduction: str = "0",
     political_contributions: str = "0",
+    care_supporting_persons_adjusted_income: str = "0",
     federal_political_contributions: str = "0",
     disability_supports_deduction: str = "0",
     other_employment_expenses: str = "0",
@@ -1090,6 +1092,9 @@ def compute(
         Artifact(CAPITAL_GIFT_TAXABLE_GAINS, D(capital_gift_taxable_gains)),
         Artifact(CAPITAL_GIFT_GAINS_DEDUCTION, D(capital_gift_gains_deduction)),
         Artifact(ontario.POLITICAL_CONTRIBUTIONS, D(political_contributions)),
+        Artifact(
+            CARE_SUPPORTING_PERSONS_ADJUSTED_INCOME, D(care_supporting_persons_adjusted_income)
+        ),
         Artifact(POLITICAL_CONTRIBUTIONS, D(federal_political_contributions)),
         Artifact(DISABILITY_SUPPORTS_DEDUCTION, D(disability_supports_deduction)),
         Artifact(OTHER_EMPLOYMENT_EXPENSES, D(other_employment_expenses)),

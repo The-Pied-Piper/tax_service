@@ -717,20 +717,50 @@ sources:
   - >-
     CRA, Form ON479 (form 5006-TC), "Ontario Credits": "Line 1 and line 61268: Eligible
     medical expenses for fertility treatment multiplied by 25% (maximum $5,000) ="; "Line
-    14: Amount paid in the year for eligible seniors' use of Ontario public transit services
+    2 and line 63050: Complete Schedule ON479-A to calculate this amount."; "Line 14:
+    Amount paid in the year for eligible seniors' use of Ontario public transit services
     (maximum $3,000) Line 63100 multiplied by 15% ="; "Line 17 and line 63220: Enter your
-    total expenses from your Form T1221. multiplied by 5% ="; "Line 18: Add lines 1, 2, 13,
-    14, 16, and 17. ="; "Line 19: Amount from line 18 of the previous page"; "Line 21: Line
-    19 plus line 20 Enter this amount online 47900 of your return. Ontario credits =". This
-    return has no eligible medical expenses for fertility treatment and no amount paid for
-    seniors' use of Ontario public transit services, so line 1 is 0 x 25% = 0, at most
-    $5,000: 0, and line 14 is 0, at most $3,000, x 15% = 0; line 17 is the total expenses of
-    Form T1221 line 4, 0 as this return has no T1221 slips, x 5% = 0; lines 2, 13 and 16 are
-    not triggered, so line 18 is 0 + 0 + 0 = 0, line 19 carries it, line 20 is 0 (no placements)
-    and line 21 is 0. The T1 (form 5000-R) line 165 and line 47900: "Provincial or
-    territorial credits (complete Form 479, if it applies)" is that 0. These lines are
-    dollars-and-cents boxes, rounded half-up to the cent, which changes nothing here.
+    total expenses from your Form T1221. multiplied by 5% ="; "Line 18: Add lines 1, 2,
+    13, 14, 16, and 17. ="; "Line 19: Amount from line 18 of the previous page"; "Line 21:
+    Line 19 plus line 20 Enter this amount online 47900 of your return. Ontario credits
+    =". This return has no eligible medical expenses for fertility treatment and no amount
+    paid for seniors' use of Ontario public transit services, so line 1 is 0 x 25% = 0, at
+    most $5,000: 0, and line 14 is 0, at most $3,000, x 15% = 0; line 17 is the total
+    expenses of Form T1221 line 4, 0 as this return has no T1221 slips, x 5% = 0; line 2
+    is the CARE credit of Schedule ON479-A line 8, 0 (see the ON479-A source below); lines
+    13 and 16 are not triggered, so line 18 is 0 + 0 + 0 + 0 = 0, line 19 carries it, line
+    20 is 0 (no placements) and line 21 is 0. The T1 (form 5000-R) line 165 and line
+    47900: "Provincial or territorial credits (complete Form 479, if it applies)" is that
+    0. These lines are dollars-and-cents boxes, rounded half-up to the cent, which changes
+    nothing here.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-tc/5006-tc-25e.txt
+  - >-
+    CRA, Schedule ON479-A (form 5006-TCA), "Ontario Childcare Access and Relief from
+    Expenses (CARE) Tax Credit", "Family adjusted income calculation for the tax credit":
+    line 1 "Net income from line 23600 of the return (or the amount you would have entered
+    if the instructions on line 23600 said "if negative, show in brackets")"; line 2
+    "Child care expenses deduction from line 21400 of the return"; line 3 "Social benefits
+    repayment from line 23500 of the return"; line 4 "Add lines 1 to 3 (if negative, enter
+    "0"). Adjusted income"; line 5 "Add the amounts from line 4 of columns 1 and 2. Family
+    adjusted income"; line 6 "Enter your child care expenses deduction from line 21400 of
+    your return."; line 7 "If your family adjusted income on line 5 is "0", enter 75%. If
+    not, enter the tax credit rate that applies to your family adjusted income from the
+    table below." under "Family adjusted income and Tax credit rate"; line 8 "Line 6
+    multiplied by the percentage from line 7 Enter this amount on line 63050 of your Form
+    ON479." Form ON479 (form 5006-TC): "Line 2 and line 63050: Complete Schedule ON479-A
+    to calculate this amount." Under "No supporting person for any eligible children": "If
+    none of the eligible children has a supporting person, calculate your adjusted income
+    and enter it on line 4 of column 1". Line 23600 before the floor at 0 is line 23400
+    less line 23500, and line 23500 is not yet computed, so line 1 is the net income
+    before adjustments (line 23400), 47,555.00, which is not negative; line 2 is the child
+    care expenses deduction (line 21400), 0; line 3 is left out (not yet computed); so
+    line 4 is 47,555.00 + 0 = 47,555.00. No eligible child has a supporting person (to be
+    confirmed), so only column 1 is completed, column 2 line 4 (line 63047) is 0 and line
+    5 is 47,555.00 + 0 = 47,555.00. Line 7: 47,555.00 is in the table row "more than
+    $45,000 but not more than $50,000: 55%", so the rate is 55%. Line 6 is the child care
+    expenses deduction, 0, and line 8 is 0 x 55% = 0.00, rounded half-up to the cent,
+    entered on line 63050 of Form ON479, so ON479 line 2 is 0.00.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-tca/5006-tca-25e.txt
   - >-
     CRA, Form T1221, "Ontario Focused Flow-Through Share Resource Expenses (Individuals)"
     (confirmed 2026-10-19 from the PDF; no .txt published): line 4 "Add lines 1 to 3. Enter
@@ -915,6 +945,10 @@ expected:
   ca/canada_workers_benefit: "0"
   ca-on/fertility_credit_before_maximum: "0"
   ca-on/fertility_credit: "0"
+  ca-on/care_adjusted_income: "47555.00"
+  ca-on/care_family_adjusted_income: "47555.00"
+  ca-on/care_credit_percentage: "0.55"
+  ca-on/care_credit: "0.00"
   ca-on/seniors_care_before_maximum: "0.00"
   ca-on/seniors_care_amount: "0.00"
   ca-on/seniors_care_family_net_income: "47555.00"

@@ -2,16 +2,23 @@
 
 from __future__ import annotations
 
+from app.domain.parameters.rate import Rate
+from app.domain.parameters.rate_table import RateTableRow
 from app.domain.trace import (
     BracketColumnLine,
     ChosenByRangeLine,
+    ChosenRateAppliedLine,
     ItemsTotalLine,
     OtherDependantMedicalLine,
+    RateByIncomeBandLine,
     RoundedTotalLine,
     ShortTermRentalNonCompliantLine,
+    SumNotBelowZeroLine,
 )
 from app.jurisdictions.ca.catalog import (
+    CHILD_CARE_EXPENSES,
     FEDERAL_BASIC_TAX,
+    NET_INCOME_BEFORE_ADJUSTMENTS,
     OTHER_DEPENDANTS_MEDICAL,
     POLITICAL_CONTRIBUTIONS,
     POLITICAL_CREDIT_BEFORE_MAXIMUM,
@@ -23,15 +30,56 @@ from app.jurisdictions.ca.catalog import (
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
+    CARE_ADJUSTED_INCOME,
+    CARE_CREDIT,
+    CARE_CREDIT_PERCENTAGE,
+    CARE_FAMILY_ADJUSTED_INCOME,
     ONTARIO_BASIC_TAX,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, return_a
+from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, return_a
 
 
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     totals = {line.output: line for line in trace if isinstance(line, RoundedTotalLine)}
     ranged = {line.output: line for line in trace if isinstance(line, ChosenByRangeLine)}
+    sums_not_below_zero = {
+        line.output: line for line in trace if isinstance(line, SumNotBelowZeroLine)
+    }
+    bands = {line.output: line for line in trace if isinstance(line, RateByIncomeBandLine)}
+    chosen_rates = {line.output: line for line in trace if isinstance(line, ChosenRateAppliedLine)}
+    # Schedule ON479-A line 4 "Add lines 1 to 3 (if negative, enter "0"). Adjusted income": line 1
+    # (line 23400, as line 23500 is not wired) and line 2 (the child care expenses deduction),
+    # added in line order, line 3 left out.
+    assert sums_not_below_zero == {
+        CARE_ADJUSTED_INCOME: SumNotBelowZeroLine(
+            CARE_ADJUSTED_INCOME,
+            ((NET_INCOME_BEFORE_ADJUSTMENTS, D("115000")), (CHILD_CARE_EXPENSES, D("0"))),
+            D("115000"),
+        )
+    }
+    # Schedule ON479-A line 7: 115,000 is "more than $114,000 but not more than $117,600: 19%".
+    assert bands == {
+        CARE_CREDIT_PERCENTAGE: RateByIncomeBandLine(
+            output=CARE_CREDIT_PERCENTAGE,
+            income=CARE_FAMILY_ADJUSTED_INCOME,
+            income_amount=D("115000"),
+            row=RateTableRow(D("114000"), D("117600"), Rate(D("0.19"))),
+            rate=Rate(D("0.19")),
+        )
+    }
+    # Schedule ON479-A line 8 "Line 6 multiplied by the percentage from line 7": line 6 is 0.
+    assert chosen_rates == {
+        CARE_CREDIT: ChosenRateAppliedLine(
+            output=CARE_CREDIT,
+            base=CHILD_CARE_EXPENSES,
+            base_amount=D("0"),
+            rate_kind=CARE_CREDIT_PERCENTAGE,
+            rate=Rate(D("0.19")),
+            rounding=CENT,
+            result=D("0.00"),
+        )
+    }
     assert ranged == {
         ontario.POLITICAL_CREDIT_BEFORE_MAXIMUM: ChosenByRangeLine(
             output=ontario.POLITICAL_CREDIT_BEFORE_MAXIMUM,

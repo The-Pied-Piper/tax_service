@@ -261,6 +261,7 @@ inputs:
   - ca/capital_gift_taxable_gains
   - ca/capital_gift_gains_deduction
   - ca-on/political_contributions
+  - ca-on/care_supporting_persons_adjusted_income
   - ca-on/lift_spouse_at_year_end
   # Form ON-BEN lines 61020 to 61230: listed under outputs too, since the form
   # computes nothing from them and the return carries them as entered.
