@@ -3353,6 +3353,10 @@ def test_an_input_that_is_also_an_output_is_carried_onto_the_worksheet_as_entere
     assert worksheet.get(RESULT).value == D("16")
 
 
+# `ex/business_number` is a made-up digits input of nine digits that the default manifest also
+# returns, so it is carried onto the return as entered: nothing computes it and nothing has to
+# consume it. Like `RecordListKind` above, `DigitsKind` is reached inside a cached factory so its
+# absence fails only the tests that use it.
 @cache
 def business_number_kind() -> Any:
     """The made-up `ex/business_number` digits kind of nine digits, declared like any package's."""
