@@ -161,3 +161,11 @@ def test_amount_by_count_kind() -> None:
 
 def test_invalid_amount_by_count_is_a_domain_error() -> None:
     assert issubclass(InvalidAmountByCountError, DomainError)
+
+
+def test_a_negative_zero_amount_is_kept_as_a_plain_zero_with_its_scale() -> None:
+    result = table((1, "-0.00"), (2, "5")).rows
+
+    assert result[0][1].is_signed() is False
+    assert str(result[0][1]) == "0.00"
+    assert result[1][1] == D("5")

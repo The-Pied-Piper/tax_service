@@ -49,6 +49,14 @@ class AmountByCount:
             if count in seen:
                 raise InvalidAmountByCountError(f"amount by count: duplicate count {count}")
             seen.add(count)
+        # A zero amount is a plain zero (its scale kept), never a negative zero.
+        object.__setattr__(
+            self,
+            "rows",
+            tuple(
+                (count, amount.copy_abs() if not amount else amount) for count, amount in self.rows
+            ),
+        )
 
 
 AMOUNT_BY_COUNT: ParameterKind[AmountByCount] = ParameterKind("amount_by_count", AmountByCount)
