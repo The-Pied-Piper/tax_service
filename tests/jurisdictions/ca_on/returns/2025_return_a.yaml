@@ -103,6 +103,9 @@
 # ON479's line 16 is $0 (column 1 applies).
 # Federal political contributions (T1 line 135 and line 40900) are a chosen $0, so the Federal
 # Worksheet's line 41000 is $0 (column 1 applies).
+# Unapplied net capital losses of other years (Form T1436 Chart A column A) are a chosen $0 in
+# each period and the amount claimed (line 7, T1 line 25300) a chosen $0, so lines 4, 6 and 7 are
+# $0 and the Chart A balances (column G) are $0.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -899,6 +902,11 @@ inputs:
   ca/security_options_deductions: "0"
   ca/limited_partnership_losses_of_other_years: "0"
   ca/non_capital_losses_of_other_years: "0"
+  ca/unapplied_net_capital_losses_1985_to_1987: "0"
+  ca/unapplied_net_capital_losses_1988_and_1989: "0"
+  ca/unapplied_net_capital_losses_1990_to_1999: "0"
+  ca/unapplied_net_capital_losses_2001_to_2024: "0"
+  ca/net_capital_losses_claimed: "0"
   ca/additional_deductions: "0"
   ca/other_payments_deduction_above_limit: "0"
   ca/other_payments_worksheet_required: "0"
@@ -1031,6 +1039,13 @@ expected:
   ca/net_income_before_adjustments: "115000"
   ca/fhsa_unused_contributions_carried_forward: "0"
   ca/other_payments_limit_income: "115000"
+  ca/total_adjusted_net_capital_losses: "0.00"
+  ca/net_capital_losses_available_to_claim: "0.00"
+  ca/net_capital_losses_of_other_years: "0"
+  ca/net_capital_loss_balance_1985_to_1987: "0.00"
+  ca/net_capital_loss_balance_1988_and_1989: "0.00"
+  ca/net_capital_loss_balance_1990_to_1999: "0.00"
+  ca/net_capital_loss_balance_2001_to_2024: "0.00"
   ca/deductions_from_net_income: "0"
   ca/taxable_income: "115000"
   ca/federal_basic_tax: "20146.25"

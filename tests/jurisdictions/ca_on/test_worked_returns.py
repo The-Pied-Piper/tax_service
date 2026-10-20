@@ -60,7 +60,8 @@ jurisdiction: CA-ON
 tax_year: 2025
 description: >-
   Employment income of 10000, no capital gain, no unused or new RRSP contributions, no union
-  dues and no deductions from net income. The CPP contributions are computed from employment
+  dues and no deductions from net income, among them no net capital losses of other years
+  (T1 line 25300). The CPP contributions are computed from employment
   income by Schedule 8's tiers: base contributions 4.95% x (10000 - 3500) = 321.75, first
   additional 1% x 6500 = 65.00, no second additional below the 71300 ceiling, so enhanced
   contributions of 65.00. The EI premiums are computed from employment income: 1.64% x 10000
@@ -177,6 +178,11 @@ inputs:
   ca/security_options_deductions: "0"
   ca/limited_partnership_losses_of_other_years: "0"
   ca/non_capital_losses_of_other_years: "0"
+  ca/unapplied_net_capital_losses_1985_to_1987: "0"
+  ca/unapplied_net_capital_losses_1988_and_1989: "0"
+  ca/unapplied_net_capital_losses_1990_to_1999: "0"
+  ca/unapplied_net_capital_losses_2001_to_2024: "0"
+  ca/net_capital_losses_claimed: "0"
   ca/additional_deductions: "0"
   ca/other_payments_deduction_above_limit: "0"
   ca/other_payments_worksheet_required: "0"
@@ -309,6 +315,13 @@ expected:
   ca/net_income_before_adjustments: "9935.00"
   ca/fhsa_unused_contributions_carried_forward: "0"
   ca/other_payments_limit_income: "9935.00"
+  ca/total_adjusted_net_capital_losses: "0.00"
+  ca/net_capital_losses_available_to_claim: "0.00"
+  ca/net_capital_losses_of_other_years: "0"
+  ca/net_capital_loss_balance_1985_to_1987: "0.00"
+  ca/net_capital_loss_balance_1988_and_1989: "0.00"
+  ca/net_capital_loss_balance_1990_to_1999: "0.00"
+  ca/net_capital_loss_balance_2001_to_2024: "0.00"
   ca/deductions_from_net_income: "0"
   ca/taxable_income: "9935.00"
   ca/federal_basic_tax: "1440.58"
@@ -525,6 +538,34 @@ def test_return_x_claims_two_other_dependants_medical_expenses_on_line_33199() -
     assert ontario_amounts.value == Decimal("21510.30")
     (refund,) = [a for a in worked.expected if a.kind.identifier == "ca/refund_or_balance_owing"]
     assert refund.value == Decimal("-334.19")
+
+
+def test_return_af_claims_net_capital_losses_of_other_years_on_line_25300() -> None:
+    path = RETURNS / "2025_return_af.yaml"
+    build_tax_computation()  # registers the catalogs the loader resolves through
+    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+
+    inputs = {a.kind.identifier: a.value for a in worked.inputs}
+    assert inputs["ca/capital_gain"] == Decimal("5000")
+    assert inputs["ca/unapplied_net_capital_losses_1985_to_1987"] == Decimal("0")
+    assert inputs["ca/unapplied_net_capital_losses_1988_and_1989"] == Decimal("0")
+    assert inputs["ca/unapplied_net_capital_losses_1990_to_1999"] == Decimal("3000")
+    assert inputs["ca/unapplied_net_capital_losses_2001_to_2024"] == Decimal("1000")
+    assert inputs["ca/net_capital_losses_claimed"] == Decimal("2500")
+    expected = {a.kind.identifier: a.value for a in worked.expected}
+    assert expected["ca/taxable_capital_gains"] == Decimal("2500.00")
+    assert expected["ca/adjusted_gross_capital_losses_1990_to_1999"] == Decimal("2000.00")
+    assert expected["ca/adjusted_gross_capital_losses_2001_to_2024"] == Decimal("1000.00")
+    assert expected["ca/total_adjusted_net_capital_losses"] == Decimal("3000.00")
+    assert expected["ca/net_capital_losses_available_to_claim"] == Decimal("2500.00")
+    assert expected["ca/net_capital_losses_of_other_years"] == Decimal("2500")
+    assert expected["ca/adjusted_losses_applied_1990_to_1999"] == Decimal("2000.00")
+    assert expected["ca/adjusted_losses_applied_2001_to_2024"] == Decimal("500.00")
+    assert expected["ca/net_capital_loss_balance_1990_to_1999"] == Decimal("0.00")
+    assert expected["ca/net_capital_loss_balance_2001_to_2024"] == Decimal("500.00")
+    assert expected["ca/deductions_from_net_income"] == Decimal("2500")
+    assert expected["ca/net_income"] == Decimal("50055.00")
+    assert expected["ca/taxable_income"] == Decimal("47555.00")
     check(path)
 
 

@@ -138,6 +138,17 @@ from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDepe
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADJUSTED_FAMILY_NET_INCOME,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+    ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
+    ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
+    ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
+    ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
+    ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
+    ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
+    ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
     ADVANCED_CANADA_WORKERS_BENEFIT,
     AGE_AMOUNT,
     AGE_AMOUNT_BEFORE_COUNT,
@@ -333,6 +344,13 @@ from app.jurisdictions.ca.catalog import (
     MEDICAL_EXPENSES_OVER_THRESHOLD,
     MEDICAL_NET_INCOME_SHARE,
     MEDICAL_THRESHOLD,
+    NET_CAPITAL_LOSS_BALANCE_1985_TO_1987,
+    NET_CAPITAL_LOSS_BALANCE_1988_AND_1989,
+    NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
+    NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
+    NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
+    NET_CAPITAL_LOSSES_CLAIMED,
+    NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
     NET_INCOME,
@@ -397,6 +415,10 @@ from app.jurisdictions.ca.catalog import (
     REFUND_OR_BALANCE_OWING,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
+    REMAINING_ADJUSTED_LOSSES_1985_TO_1987,
+    REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
+    REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
+    REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
     RESP_AIPS_ADDITIONAL_TAX,
     RESP_AIPS_CONTRIBUTIONS_COUNTED,
     RESP_AIPS_LIFETIME_LIMIT,
@@ -466,6 +488,7 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
     TOP_UP_THRESHOLD,
+    TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
     TOTAL_CARRYING_CHARGES,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
@@ -476,6 +499,10 @@ from app.jurisdictions.ca.catalog import (
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
     UCCB_REPAYMENT,
+    UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987,
+    UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989,
+    UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
+    UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024,
     UNION_DUES,
     UNIVERSAL_CHILD_CARE_BENEFIT,
     UNIVERSITY_DONATIONS_OUTSIDE_CANADA,
@@ -776,6 +803,11 @@ def compute(
     capital_gift_gains_deduction: str = "0",
     political_contributions: str = "0",
     federal_political_contributions: str = "0",
+    unapplied_net_capital_losses_1985_to_1987: str = "0",
+    unapplied_net_capital_losses_1988_and_1989: str = "0",
+    unapplied_net_capital_losses_1990_to_1999: str = "0",
+    unapplied_net_capital_losses_2001_to_2024: str = "0",
+    net_capital_losses_claimed: str = "0",
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -1058,6 +1090,20 @@ def compute(
         Artifact(CAPITAL_GIFT_GAINS_DEDUCTION, D(capital_gift_gains_deduction)),
         Artifact(ontario.POLITICAL_CONTRIBUTIONS, D(political_contributions)),
         Artifact(POLITICAL_CONTRIBUTIONS, D(federal_political_contributions)),
+        Artifact(
+            UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987, D(unapplied_net_capital_losses_1985_to_1987)
+        ),
+        Artifact(
+            UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989,
+            D(unapplied_net_capital_losses_1988_and_1989),
+        ),
+        Artifact(
+            UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999, D(unapplied_net_capital_losses_1990_to_1999)
+        ),
+        Artifact(
+            UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024, D(unapplied_net_capital_losses_2001_to_2024)
+        ),
+        Artifact(NET_CAPITAL_LOSSES_CLAIMED, D(net_capital_losses_claimed)),
     )
 
 
@@ -1165,6 +1211,11 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         SECURITY_OPTIONS_DEDUCTIONS,
         LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
         NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
+        UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987,
+        UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989,
+        UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
+        UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024,
+        NET_CAPITAL_LOSSES_CLAIMED,
         ADDITIONAL_DEDUCTIONS,
         OTHER_PAYMENTS_DEDUCTION_ABOVE_LIMIT,
         OTHER_PAYMENTS_WORKSHEET_REQUIRED,
@@ -1392,6 +1443,43 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         DEDUCTIONS_FROM_TOTAL_INCOME
     )
     assert isinstance(worksheet.producer_of(DEDUCTIONS_FROM_NET_INCOME), Sum)
+    # Form T1436 Chart A, one step per cell of each printed row: column C (column A multiplied by
+    # column B) and column G (column E multiplied by column F) by a fraction, column D the lesser of
+    # column C and what is left of line 13, what is left the line 13 amount less the older rows'
+    # column D, column E column C less column D; then lines 4, 6 and 7 (also T1 line 25300).
+    assert isinstance(
+        worksheet.producer_of(ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987), ApplyFraction
+    )
+    assert isinstance(
+        worksheet.producer_of(ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989), ApplyFraction
+    )
+    assert isinstance(
+        worksheet.producer_of(ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999), ApplyFraction
+    )
+    assert isinstance(
+        worksheet.producer_of(ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024), ApplyFraction
+    )
+    assert isinstance(worksheet.producer_of(TOTAL_ADJUSTED_NET_CAPITAL_LOSSES), Sum)
+    assert isinstance(worksheet.producer_of(NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM), LesserOf)
+    assert isinstance(worksheet.producer_of(NET_CAPITAL_LOSSES_OF_OTHER_YEARS), AtMost)
+    assert isinstance(worksheet.producer_of(ADJUSTED_LOSSES_APPLIED_1985_TO_1987), LesserOf)
+    assert isinstance(worksheet.producer_of(ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987), Subtract)
+    assert isinstance(worksheet.producer_of(REMAINING_ADJUSTED_LOSSES_1985_TO_1987), Subtract)
+    assert isinstance(worksheet.producer_of(NET_CAPITAL_LOSS_BALANCE_1985_TO_1987), ApplyFraction)
+    assert isinstance(worksheet.producer_of(ADJUSTED_LOSSES_APPLIED_1988_AND_1989), LesserOf)
+    assert isinstance(worksheet.producer_of(ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989), Subtract)
+    assert isinstance(worksheet.producer_of(REMAINING_ADJUSTED_LOSSES_1988_AND_1989), Subtract)
+    assert isinstance(worksheet.producer_of(NET_CAPITAL_LOSS_BALANCE_1988_AND_1989), ApplyFraction)
+    assert isinstance(worksheet.producer_of(ADJUSTED_LOSSES_APPLIED_1990_TO_1999), LesserOf)
+    assert isinstance(worksheet.producer_of(ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999), Subtract)
+    assert isinstance(worksheet.producer_of(REMAINING_ADJUSTED_LOSSES_1990_TO_1999), Subtract)
+    assert isinstance(worksheet.producer_of(NET_CAPITAL_LOSS_BALANCE_1990_TO_1999), ApplyFraction)
+    assert isinstance(worksheet.producer_of(ADJUSTED_LOSSES_APPLIED_2001_TO_2024), LesserOf)
+    assert isinstance(worksheet.producer_of(REMAINING_ADJUSTED_LOSSES_2001_TO_2024), Subtract)
+    assert isinstance(worksheet.producer_of(NET_CAPITAL_LOSS_BALANCE_2001_TO_2024), ApplyFraction)
+    assert worksheet.producer_of(NET_CAPITAL_LOSSES_OF_OTHER_YEARS) is not worksheet.producer_of(
+        NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM
+    )
     assert isinstance(worksheet.producer_of(TAXABLE_INCOME), SubtractNotBelowZero)
     assert worksheet.producer_of(TAXABLE_INCOME) is not worksheet.producer_of(NET_INCOME)
     assert worksheet.producer_of(DEDUCTIONS_FROM_NET_INCOME) is not worksheet.producer_of(
@@ -2094,7 +2182,7 @@ def test_the_trace_explains_the_computation() -> None:
         "deductions_from_net_income: canadian_armed_forces_and_police_deduction 0 "
         "+ security_options_deductions 0 + other_payments_deduction 0 "
         "+ limited_partnership_losses_of_other_years 0 + non_capital_losses_of_other_years 0 "
-        "+ additional_deductions 0 = 0",
+        "+ net_capital_losses_of_other_years 0 + additional_deductions 0 = 0",
         "0",
     )
     taxable = position(
@@ -3531,7 +3619,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("115000"),
         ),
-        # T1 line 68 and line 25700 "Add lines 58 to 67.", in line order.
+        # T1 line 68 and line 25700 "Add lines 58 to 67.", in line order, line 63 (25300) included.
         DEDUCTIONS_FROM_NET_INCOME: SumLine(
             DEDUCTIONS_FROM_NET_INCOME,
             (
@@ -3540,6 +3628,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (OTHER_PAYMENTS_DEDUCTION, D("0")),
                 (LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS, D("0")),
                 (NON_CAPITAL_LOSSES_OF_OTHER_YEARS, D("0")),
+                (NET_CAPITAL_LOSSES_OF_OTHER_YEARS, D("0")),
                 (ADDITIONAL_DEDUCTIONS, D("0")),
             ),
             D("0"),
@@ -3990,6 +4079,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("0"),
         ),
+        # Form T1436 line 4 "Total of column C from Chart A", for no unapplied losses.
+        TOTAL_ADJUSTED_NET_CAPITAL_LOSSES: SumLine(
+            TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
+            (
+                (ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987, D("0.00")),
+                (ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989, D("0.00")),
+                (ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999, D("0.00")),
+                (ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024, D("0.00")),
+            ),
+            D("0.00"),
+        ),
     }
     assert subtracted == {
         # Form T1172 line 6 "Line 4 minus line 5" and line 8 "line 1 minus line 7", with no
@@ -4209,6 +4309,65 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=DEDUCTIONS_FROM_TOTAL_INCOME,
             subtrahend_amount=D("5000"),
             result=D("115000"),
+        ),
+        # Form T1436 Chart A: what is left of line 13 (the amount claimed, 0) after each of the
+        # older rows, and column E "Remaining adjusted net capital losses (column C minus column
+        # D)".
+        ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987: SubtractedLine(
+            output=ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
+            minuend=NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+            minuend_amount=D("0"),
+            subtrahend=ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        REMAINING_ADJUSTED_LOSSES_1985_TO_1987: SubtractedLine(
+            output=REMAINING_ADJUSTED_LOSSES_1985_TO_1987,
+            minuend=ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987,
+            minuend_amount=D("0.00"),
+            subtrahend=ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989: SubtractedLine(
+            output=ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
+            minuend=ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
+            minuend_amount=D("0.00"),
+            subtrahend=ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        REMAINING_ADJUSTED_LOSSES_1988_AND_1989: SubtractedLine(
+            output=REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
+            minuend=ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
+            minuend_amount=D("0.00"),
+            subtrahend=ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999: SubtractedLine(
+            output=ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
+            minuend=ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
+            minuend_amount=D("0.00"),
+            subtrahend=ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        REMAINING_ADJUSTED_LOSSES_1990_TO_1999: SubtractedLine(
+            output=REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
+            minuend=ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
+            minuend_amount=D("0.00"),
+            subtrahend=ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        REMAINING_ADJUSTED_LOSSES_2001_TO_2024: SubtractedLine(
+            output=REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
+            minuend=ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+            minuend_amount=D("0.00"),
+            subtrahend=ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
         ),
     }
     # T1 line 30000 and the Federal Worksheet (5000-D1): net income of 115000 is at or below
@@ -4459,6 +4618,73 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             fraction=Fraction(2, 3),
             rounding=CENT,
             result=D("73333.33"),
+        ),
+        # Form T1436 Chart A column C "Adjusted gross capital losses (column A multiplied by column
+        # B)" for no unapplied losses, and column G "Net capital loss balance available to carry
+        # forward (column E multiplied by column F)" for none remaining, each a fraction of 0.
+        ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987: FractionAppliedLine(
+            output=ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987,
+            base=UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987,
+            base_amount=D("0"),
+            fraction=Fraction(1, 1),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989: FractionAppliedLine(
+            output=ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
+            base=UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989,
+            base_amount=D("0"),
+            fraction=Fraction(3, 4),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999: FractionAppliedLine(
+            output=ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
+            base=UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
+            base_amount=D("0"),
+            fraction=Fraction(2, 3),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024: FractionAppliedLine(
+            output=ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+            base=UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024,
+            base_amount=D("0"),
+            fraction=Fraction(1, 1),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        NET_CAPITAL_LOSS_BALANCE_1985_TO_1987: FractionAppliedLine(
+            output=NET_CAPITAL_LOSS_BALANCE_1985_TO_1987,
+            base=REMAINING_ADJUSTED_LOSSES_1985_TO_1987,
+            base_amount=D("0.00"),
+            fraction=Fraction(1, 1),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        NET_CAPITAL_LOSS_BALANCE_1988_AND_1989: FractionAppliedLine(
+            output=NET_CAPITAL_LOSS_BALANCE_1988_AND_1989,
+            base=REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
+            base_amount=D("0.00"),
+            fraction=Fraction(4, 3),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        NET_CAPITAL_LOSS_BALANCE_1990_TO_1999: FractionAppliedLine(
+            output=NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
+            base=REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
+            base_amount=D("0.00"),
+            fraction=Fraction(3, 2),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        NET_CAPITAL_LOSS_BALANCE_2001_TO_2024: FractionAppliedLine(
+            output=NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
+            base=REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
+            base_amount=D("0.00"),
+            fraction=Fraction(1, 1),
+            rounding=CENT,
+            result=D("0.00"),
         ),
     }
     # T1 line 30400 and ON428 line 58160: Schedule 5 line 5 and ON428 line 16, each claimed for
@@ -4779,6 +5005,51 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("0"),
         ),
+        # Form T1436 line 6 "Enter whichever is less: amount from line 4 or line 5.": the total of
+        # column C, 0.00, is below the taxable capital gains of 10000.00 (half of the 20000 gain).
+        NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM: LesserOfLine(
+            NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
+            (
+                (TOTAL_ADJUSTED_NET_CAPITAL_LOSSES, D("0.00")),
+                (TAXABLE_CAPITAL_GAINS, D("10000.00")),
+            ),
+            D("0.00"),
+        ),
+        # Form T1436 Chart A column D "Total adjusted net capital losses applied against taxable
+        # capital gains in 2025": the lesser of column C and what is left of line 13, 0 for no
+        # claim.
+        ADJUSTED_LOSSES_APPLIED_1985_TO_1987: LesserOfLine(
+            ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
+            (
+                (ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987, D("0.00")),
+                (NET_CAPITAL_LOSSES_OF_OTHER_YEARS, D("0")),
+            ),
+            D("0.00"),
+        ),
+        ADJUSTED_LOSSES_APPLIED_1988_AND_1989: LesserOfLine(
+            ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
+            (
+                (ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989, D("0.00")),
+                (ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987, D("0.00")),
+            ),
+            D("0.00"),
+        ),
+        ADJUSTED_LOSSES_APPLIED_1990_TO_1999: LesserOfLine(
+            ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
+            (
+                (ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999, D("0.00")),
+                (ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989, D("0.00")),
+            ),
+            D("0.00"),
+        ),
+        ADJUSTED_LOSSES_APPLIED_2001_TO_2024: LesserOfLine(
+            ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
+            (
+                (ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024, D("0.00")),
+                (ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999, D("0.00")),
+            ),
+            D("0.00"),
+        ),
     }
     # Schedule 7 line 18 "(cannot be more than the amount on line 17)": the full 1926 is
     # deducted, equal to line 17, so line 20 is line 18.
@@ -4797,6 +5068,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             amount_value=D("0"),
             bound=FHSA_MAXIMUM_DEDUCTION,
             bound_value=D("0"),
+        ),
+        # Form T1436 line 7 "Enter the amount of losses you want to claim (3).", which is T1 line
+        # 25300 and line 13: a claim of 0 against a line 6 of 0.00.
+        NET_CAPITAL_LOSSES_OF_OTHER_YEARS: AtMostLine(
+            output=NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+            amount_kind=NET_CAPITAL_LOSSES_CLAIMED,
+            amount_value=D("0"),
+            bound=NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
+            bound_value=D("0.00"),
         ),
     }
     # Schedule 8 Part 3 lines 11, 12 and 22: employment income of 110000 is above both
@@ -5517,7 +5797,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 291
+    assert len(order) == 313
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -5632,6 +5912,61 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[EI_PREMIUMS] < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert position[NET_INCOME] < position[TAXABLE_INCOME]
     assert position[DEDUCTIONS_FROM_NET_INCOME] < position[TAXABLE_INCOME]
+    # Form T1436: column C of each row, then line 4, line 6 (which reads line 12700), line 7 (T1
+    # line 25300, also line 13), then column D oldest row first, each reading what the older rows
+    # left of line 13, then columns E and G; and the deduction before taxable income.
+    assert position[TAXABLE_CAPITAL_GAINS] < position[NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM]
+    assert (
+        max(
+            position[ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987],
+            position[ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989],
+            position[ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999],
+            position[ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024],
+        )
+        < position[TOTAL_ADJUSTED_NET_CAPITAL_LOSSES]
+        < position[NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM]
+        < position[NET_CAPITAL_LOSSES_OF_OTHER_YEARS]
+        < position[ADJUSTED_LOSSES_APPLIED_1985_TO_1987]
+        < position[ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987]
+        < position[ADJUSTED_LOSSES_APPLIED_1988_AND_1989]
+        < position[ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989]
+        < position[ADJUSTED_LOSSES_APPLIED_1990_TO_1999]
+        < position[ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999]
+        < position[ADJUSTED_LOSSES_APPLIED_2001_TO_2024]
+    )
+    assert (
+        position[ADJUSTED_LOSSES_APPLIED_1985_TO_1987]
+        < position[REMAINING_ADJUSTED_LOSSES_1985_TO_1987]
+    )
+    assert (
+        position[REMAINING_ADJUSTED_LOSSES_1985_TO_1987]
+        < position[NET_CAPITAL_LOSS_BALANCE_1985_TO_1987]
+    )
+    assert (
+        position[ADJUSTED_LOSSES_APPLIED_1988_AND_1989]
+        < position[REMAINING_ADJUSTED_LOSSES_1988_AND_1989]
+    )
+    assert (
+        position[REMAINING_ADJUSTED_LOSSES_1988_AND_1989]
+        < position[NET_CAPITAL_LOSS_BALANCE_1988_AND_1989]
+    )
+    assert (
+        position[ADJUSTED_LOSSES_APPLIED_1990_TO_1999]
+        < position[REMAINING_ADJUSTED_LOSSES_1990_TO_1999]
+    )
+    assert (
+        position[REMAINING_ADJUSTED_LOSSES_1990_TO_1999]
+        < position[NET_CAPITAL_LOSS_BALANCE_1990_TO_1999]
+    )
+    assert (
+        position[ADJUSTED_LOSSES_APPLIED_2001_TO_2024]
+        < position[REMAINING_ADJUSTED_LOSSES_2001_TO_2024]
+    )
+    assert (
+        position[REMAINING_ADJUSTED_LOSSES_2001_TO_2024]
+        < position[NET_CAPITAL_LOSS_BALANCE_2001_TO_2024]
+    )
+    assert position[NET_CAPITAL_LOSSES_OF_OTHER_YEARS] < position[DEDUCTIONS_FROM_NET_INCOME]
     # The Federal Worksheet's "Line 25000 - Other payments deduction": line 1 is the net income.
     assert position[NET_INCOME] < position[NET_INCOME_LESS_UCCB_AND_RDSP_INCOME]
     assert position[UCCB_AND_RDSP_INCOME] < position[NET_INCOME_LESS_UCCB_AND_RDSP_INCOME]
@@ -8839,15 +9174,17 @@ def test_line_9_may_be_negative_as_the_form_prints_no_floor() -> None:
     assert worksheet.get(OTHER_PAYMENTS_DEDUCTION).value == D("0")
 
 
-def test_deductions_from_net_income_add_lines_58_to_62_and_67_once_each() -> None:
+def test_deductions_from_net_income_add_lines_58_to_63_and_67_once_each() -> None:
     # T1 line 68 and line 25700 "Add lines 58 to 67.": one distinct power of two for each of the
-    # six lines wired: line 24400 1, line 24900 2, line 25000 4 (workers' compensation of 4, so
-    # line 14700, with no amount on line 14600), line 25100 8, line 25200 16 and line 25600 32,
-    # so a line left out or added twice changes the sum: 63. Other income 1000 gives total
-    # income 1004 and taxable income 1004 - 63 = 941.
+    # seven lines wired: line 24400 1, line 24900 2, line 25000 4 (workers' compensation of 4, so
+    # line 14700, with no amount on line 14600), line 25100 8, line 25200 16, line 25300 32 (a
+    # capital gain of 64, taxable capital gains of 32.00, and unapplied net capital losses of 32
+    # claimed whole) and line 25600 64, so a line left out or added twice changes the sum: 127.
+    # Other income 1000 and workers' compensation 4 and taxable capital gains 32.00 give total
+    # income 1036.00 and taxable income 1036.00 - 127 = 909.00.
     worksheet = compute(
         "0",
-        "0",
+        "64",
         "0",
         "0",
         "0",
@@ -8859,18 +9196,22 @@ def test_deductions_from_net_income_add_lines_58_to_62_and_67_once_each() -> Non
         security_options_deductions="2",
         limited_partnership_losses_of_other_years="8",
         non_capital_losses_of_other_years="16",
-        additional_deductions="32",
+        unapplied_net_capital_losses_2001_to_2024="32",
+        net_capital_losses_claimed="32",
+        additional_deductions="64",
     )
 
+    assert worksheet.get(TAXABLE_CAPITAL_GAINS).value == D("32.00")
     assert worksheet.get(OTHER_PAYMENTS_DEDUCTION).value == D("4")
-    assert worksheet.get(DEDUCTIONS_FROM_NET_INCOME).value == D("63")
-    assert worksheet.get(TAXABLE_INCOME).value == D("941")
+    assert worksheet.get(NET_CAPITAL_LOSSES_OF_OTHER_YEARS).value == D("32")
+    assert worksheet.get(DEDUCTIONS_FROM_NET_INCOME).value == D("127")
+    assert worksheet.get(TAXABLE_INCOME).value == D("909.00")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "deductions_from_net_income: canadian_armed_forces_and_police_deduction 1 "
         "+ security_options_deductions 2 + other_payments_deduction 4 "
         "+ limited_partnership_losses_of_other_years 8 + non_capital_losses_of_other_years 16 "
-        "+ additional_deductions 32 = 63"
+        "+ net_capital_losses_of_other_years 32 + additional_deductions 64 = 127"
     ) in rendered
 
 
@@ -8900,6 +9241,350 @@ def test_return_ls_deductions_from_net_income_are_8500_and_its_taxable_income_34
     assert worksheet.get(OTHER_PAYMENTS_DEDUCTION).value == D("2000")
     assert worksheet.get(DEDUCTIONS_FROM_NET_INCOME).value == D("8500")
     assert worksheet.get(TAXABLE_INCOME).value == D("34500.00")
+
+
+def return_af(capital_gain: str = "5000", **overrides: Any) -> Worksheet:
+    """Return AF's inputs, as in `returns/2025_return_af.yaml`: Return AE's filer, no political
+    contributions, with a capital gain and unapplied net capital losses of other years.
+
+    Employment income of 48000, a capital gain of 5000 (taxable capital gains of 2500.00),
+    4800 deducted, unapplied net capital losses of 3000 from 1990 to 1999 and 1000 from 2001 to
+    2024 (Form T1436 Chart A column A), and an amount claimed (line 7) of 2500.
+    """
+    inputs: dict[str, Any] = {
+        "income_tax_deducted": "4800",
+        "unapplied_net_capital_losses_1990_to_1999": "3000",
+        "unapplied_net_capital_losses_2001_to_2024": "1000",
+        "net_capital_losses_claimed": "2500",
+    }
+    return compute("48000", capital_gain, "0", "0", "8640", "0", "0", **{**inputs, **overrides})
+
+
+def test_return_afs_claim_is_applied_to_the_oldest_row_first_and_lowers_taxable_income() -> None:
+    # Form T1436 Chart A: a 1995 loss of 3000 (row "After 1989 and before 2000", column B 2/3) gives
+    # column C 3000 x 2/3 = 2000.00; a 2010 loss of 1000 (row "After 2000 and before 2025", column B
+    # 1) gives 1000 x 1 = 1000.00; the other two rows have no loss: 0.00. Line 4 is 3000.00 and line
+    # 5, the taxable capital gains (line 12700), is 5000 x 50% = 2500.00, so line 6 is 2500.00. The
+    # claim of 2500 (line 7, which is also T1 line 25300 and line 13) is at most line 6. It is
+    # applied oldest row first: column D is 0.00 for each of the first two rows, 2000.00 for the
+    # 1990 to 1999 row (of the 2500 left, 500.00 remains) and 500.00 for the 2001 to 2024 row.
+    # Column E is column C less column D: 0.00, 0.00, 0.00 and 500.00; column G is column E x
+    # column F (1, 4/3, 3/2 and 1): 0.00, 0.00, 0.00 and 500.00. Net income is 50500.00 - 445.00 =
+    # 50055.00 (the deduction is below net income); line 25700 is 2500 and taxable income is
+    # 47555.00. The LIFT credit's reduction is 5% x (50055.00 - 32500) = 877.75, more than 875, so
+    # the credit is 0; the Ontario tax is 1606.81 + 450 = 2056.81 and the total payable is
+    # 3909.94 + 2056.81 = 5966.75, against total credits of 4800.00: 1166.75 owing.
+    worksheet = return_af()
+
+    assert worksheet.get(TAXABLE_CAPITAL_GAINS).value == D("2500.00")
+    assert worksheet.get(ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987).value == D("0.00")
+    assert worksheet.get(ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989).value == D("0.00")
+    assert worksheet.get(ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999).value == D("2000.00")
+    assert worksheet.get(ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024).value == D("1000.00")
+    assert worksheet.get(TOTAL_ADJUSTED_NET_CAPITAL_LOSSES).value == D("3000.00")
+    assert worksheet.get(NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM).value == D("2500.00")
+    assert worksheet.get(NET_CAPITAL_LOSSES_OF_OTHER_YEARS).value == D("2500")
+    assert worksheet.get(ADJUSTED_LOSSES_APPLIED_1985_TO_1987).value == D("0.00")
+    assert worksheet.get(ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987).value == D("2500.00")
+    assert worksheet.get(ADJUSTED_LOSSES_APPLIED_1988_AND_1989).value == D("0.00")
+    assert worksheet.get(ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989).value == D("2500.00")
+    assert worksheet.get(ADJUSTED_LOSSES_APPLIED_1990_TO_1999).value == D("2000.00")
+    assert worksheet.get(ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999).value == D("500.00")
+    assert worksheet.get(ADJUSTED_LOSSES_APPLIED_2001_TO_2024).value == D("500.00")
+    assert worksheet.get(REMAINING_ADJUSTED_LOSSES_1985_TO_1987).value == D("0.00")
+    assert worksheet.get(REMAINING_ADJUSTED_LOSSES_1988_AND_1989).value == D("0.00")
+    assert worksheet.get(REMAINING_ADJUSTED_LOSSES_1990_TO_1999).value == D("0.00")
+    assert worksheet.get(REMAINING_ADJUSTED_LOSSES_2001_TO_2024).value == D("500.00")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_1985_TO_1987).value == D("0.00")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_1988_AND_1989).value == D("0.00")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_1990_TO_1999).value == D("0.00")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_2001_TO_2024).value == D("500.00")
+    assert worksheet.get(DEDUCTIONS_FROM_NET_INCOME).value == D("2500")
+    assert worksheet.get(NET_INCOME).value == D("50055.00")
+    assert worksheet.get(TAXABLE_INCOME).value == D("47555.00")
+    assert worksheet.get(LIFT_CREDIT).value == D("0")
+    assert worksheet.get(ONTARIO_TAX).value == D("2056.81")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("5966.75")
+    assert worksheet.get(TOTAL_CREDITS).value == D("4800.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("1166.75")
+    assert worksheet.get(REFUND).value == D("0")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "adjusted_gross_capital_losses_1990_to_1999: 2/3 of "
+        "unapplied_net_capital_losses_1990_to_1999 3000 (half-up to 0.01)"
+    ) in rendered
+    assert (
+        "adjusted_gross_capital_losses_2001_to_2024: 1/1 of "
+        "unapplied_net_capital_losses_2001_to_2024 1000 (half-up to 0.01)"
+    ) in rendered
+    assert (
+        "total_adjusted_net_capital_losses: adjusted_gross_capital_losses_1985_to_1987 0 "
+        "+ adjusted_gross_capital_losses_1988_and_1989 0 "
+        "+ adjusted_gross_capital_losses_1990_to_1999 2000 "
+        "+ adjusted_gross_capital_losses_2001_to_2024 1000 = 3000"
+    ) in rendered
+    assert (
+        "net_capital_losses_available_to_claim: lesser of total_adjusted_net_capital_losses 3000 "
+        "and taxable_capital_gains 2500 = 2500"
+    ) in rendered
+    assert (
+        "net_capital_losses_of_other_years: net_capital_losses_claimed 2500, "
+        "at most net_capital_losses_available_to_claim 2500"
+    ) in rendered
+    assert (
+        "adjusted_losses_applied_1990_to_1999: lesser of "
+        "adjusted_gross_capital_losses_1990_to_1999 2000 "
+        "and adjusted_losses_left_after_1988_and_1989 2500 = 2000"
+    ) in rendered
+    assert (
+        "adjusted_losses_left_after_1990_to_1999: adjusted_losses_left_after_1988_and_1989 2500 "
+        "less adjusted_losses_applied_1990_to_1999 2000 = 500"
+    ) in rendered
+    assert (
+        "adjusted_losses_applied_2001_to_2024: lesser of "
+        "adjusted_gross_capital_losses_2001_to_2024 1000 "
+        "and adjusted_losses_left_after_1990_to_1999 500 = 500"
+    ) in rendered
+    assert (
+        "remaining_adjusted_losses_2001_to_2024: adjusted_gross_capital_losses_2001_to_2024 1000 "
+        "less adjusted_losses_applied_2001_to_2024 500 = 500"
+    ) in rendered
+    assert (
+        "net_capital_loss_balance_2001_to_2024: 1/1 of remaining_adjusted_losses_2001_to_2024 500 "
+        "(half-up to 0.01)"
+    ) in rendered
+    assert (
+        "deductions_from_net_income: canadian_armed_forces_and_police_deduction 0 "
+        "+ security_options_deductions 0 + other_payments_deduction 0 "
+        "+ limited_partnership_losses_of_other_years 0 + non_capital_losses_of_other_years 0 "
+        "+ net_capital_losses_of_other_years 2500 + additional_deductions 0 = 2500"
+    ) in rendered
+    assert (
+        "taxable_income: net_income 50055 less deductions_from_net_income 2500, not below 0 = 47555"
+    ) in rendered
+
+
+def test_the_claim_lowers_taxable_income_and_leaves_net_income() -> None:
+    # Guide T4037: applying a net capital loss of another year "will not change" net income, which
+    # is used to calculate certain credits and benefits; it reduces taxable income only.
+    claimed = return_af()
+    unclaimed = return_af(net_capital_losses_claimed="0")
+
+    assert claimed.get(NET_INCOME).value == D("50055.00")
+    assert unclaimed.get(NET_INCOME).value == D("50055.00")
+    assert claimed.get(ADJUSTED_FAMILY_NET_INCOME).value == D("50055.00")
+    assert claimed.get(TAXABLE_INCOME).value == D("47555.00")
+    assert unclaimed.get(TAXABLE_INCOME).value == D("50055.00")
+    assert unclaimed.get(DEDUCTIONS_FROM_NET_INCOME).value == D("0")
+
+
+def test_a_claim_above_the_lesser_of_the_losses_and_the_taxable_gains_is_refused() -> None:
+    # Form T1436 line 7, note (3): "You can apply all or part of the amount from line 6": line 6 is
+    # 2500.00 (the taxable capital gains, below the 3000.00 of losses), so 2500.01 is an input
+    # error, not capped to 2500.00.
+    with pytest.raises(InputAboveBoundError) as raised:
+        return_af(net_capital_losses_claimed="2500.01")
+
+    assert str(raised.value) == (
+        "ca/net_capital_losses_claimed 2500.01 is above "
+        "ca/net_capital_losses_available_to_claim 2500.00"
+    )
+
+
+def test_a_claim_with_no_taxable_capital_gains_is_refused_naming_both_kinds() -> None:
+    # No capital gain: line 5 is 0.00, so line 6 is 0.00 whatever the losses, and a claim of 1 is
+    # above it.
+    with pytest.raises(InputAboveBoundError) as raised:
+        compute(
+            "48000",
+            "0",
+            "0",
+            "0",
+            "8640",
+            "0",
+            "0",
+            unapplied_net_capital_losses_2001_to_2024="1000",
+            net_capital_losses_claimed="1",
+        )
+
+    assert str(raised.value) == (
+        "ca/net_capital_losses_claimed 1 is above ca/net_capital_losses_available_to_claim 0.00"
+    )
+
+
+def test_a_claim_of_zero_with_no_taxable_capital_gains_is_allowed() -> None:
+    worksheet = compute(
+        "48000",
+        "0",
+        "0",
+        "0",
+        "8640",
+        "0",
+        "0",
+        unapplied_net_capital_losses_2001_to_2024="1000",
+    )
+
+    assert worksheet.get(NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM).value == D("0.00")
+    assert worksheet.get(NET_CAPITAL_LOSSES_OF_OTHER_YEARS).value == D("0")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_2001_TO_2024).value == D("1000.00")
+
+
+def test_line_6_is_the_taxable_capital_gains_when_the_losses_are_larger() -> None:
+    # Losses of 10000 from 2001 to 2024 (column C 10000.00) against taxable capital gains of
+    # 2500.00: line 6 is 2500.00 and a claim of 2500 leaves 7500.00 for next year.
+    worksheet = return_af(
+        unapplied_net_capital_losses_1990_to_1999="0",
+        unapplied_net_capital_losses_2001_to_2024="10000",
+    )
+
+    assert worksheet.get(TOTAL_ADJUSTED_NET_CAPITAL_LOSSES).value == D("10000.00")
+    assert worksheet.get(NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM).value == D("2500.00")
+    assert worksheet.get(ADJUSTED_LOSSES_APPLIED_2001_TO_2024).value == D("2500.00")
+    assert worksheet.get(REMAINING_ADJUSTED_LOSSES_2001_TO_2024).value == D("7500.00")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_2001_TO_2024).value == D("7500.00")
+    with pytest.raises(InputAboveBoundError):
+        return_af(
+            unapplied_net_capital_losses_1990_to_1999="0",
+            unapplied_net_capital_losses_2001_to_2024="10000",
+            net_capital_losses_claimed="2500.01",
+        )
+
+
+def test_line_6_is_the_total_of_column_c_when_the_taxable_gains_are_larger() -> None:
+    # A capital gain of 20000 (taxable capital gains of 10000.00) against column C of 3000.00: line
+    # 6 is 3000.00, the whole of both rows is applied and nothing is left to carry forward.
+    worksheet = return_af(capital_gain="20000", net_capital_losses_claimed="3000")
+
+    assert worksheet.get(TAXABLE_CAPITAL_GAINS).value == D("10000.00")
+    assert worksheet.get(NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM).value == D("3000.00")
+    assert worksheet.get(NET_CAPITAL_LOSSES_OF_OTHER_YEARS).value == D("3000")
+    assert worksheet.get(ADJUSTED_LOSSES_APPLIED_1990_TO_1999).value == D("2000.00")
+    assert worksheet.get(ADJUSTED_LOSSES_APPLIED_2001_TO_2024).value == D("1000.00")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_1990_TO_1999).value == D("0.00")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_2001_TO_2024).value == D("0.00")
+    assert worksheet.get(DEDUCTIONS_FROM_NET_INCOME).value == D("3000")
+
+
+def test_a_partial_claim_uses_the_oldest_row_first_and_carries_the_rest_forward() -> None:
+    # A claim of 1000 against column C of 2000.00 (1990 to 1999) and 1000.00 (2001 to 2024): all
+    # of it comes off the older row, column D 1000.00 and 0.00; column E is 1000.00 for each;
+    # column G is 1000.00 x 3/2 = 1500.00 for the older row and 1000.00 x 1 = 1000.00.
+    worksheet = return_af(net_capital_losses_claimed="1000")
+
+    assert worksheet.get(ADJUSTED_LOSSES_APPLIED_1990_TO_1999).value == D("1000.00")
+    assert worksheet.get(ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999).value == D("0.00")
+    assert worksheet.get(ADJUSTED_LOSSES_APPLIED_2001_TO_2024).value == D("0.00")
+    assert worksheet.get(REMAINING_ADJUSTED_LOSSES_1990_TO_1999).value == D("1000.00")
+    assert worksheet.get(REMAINING_ADJUSTED_LOSSES_2001_TO_2024).value == D("1000.00")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_1990_TO_1999).value == D("1500.00")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_2001_TO_2024).value == D("1000.00")
+    assert worksheet.get(DEDUCTIONS_FROM_NET_INCOME).value == D("1000")
+
+
+def test_no_claim_keeps_every_loss_and_gives_back_the_unapplied_amounts() -> None:
+    # Nothing claimed: column D is 0.00 everywhere, column E is column C, and column G is column E x
+    # column F: 2000.00 x 3/2 = 3000.00 and 1000.00 x 1, the unapplied losses of column A again.
+    worksheet = return_af(net_capital_losses_claimed="0")
+
+    assert worksheet.get(NET_CAPITAL_LOSSES_OF_OTHER_YEARS).value == D("0")
+    assert worksheet.get(ADJUSTED_LOSSES_APPLIED_1990_TO_1999).value == D("0.00")
+    assert worksheet.get(ADJUSTED_LOSSES_APPLIED_2001_TO_2024).value == D("0.00")
+    assert worksheet.get(REMAINING_ADJUSTED_LOSSES_1990_TO_1999).value == D("2000.00")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_1990_TO_1999).value == D("3000.00")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_2001_TO_2024).value == D("1000.00")
+
+
+def test_all_four_rows_are_applied_oldest_first_and_column_d_adds_up_to_line_13() -> None:
+    # Column A: 100, 400, 600 and 500. Column C (x 1, 3/4, 2/3, 1): 100.00, 300.00, 400.00 and
+    # 500.00; line 4 is 1300.00, below the taxable capital gains of 2500.00, so line 6 is 1300.00. A
+    # claim of 700: column D is 100.00, 300.00, 300.00 and 0.00 (700 left, then 600.00, 300.00 and
+    # 0.00 left after each of the first three), which add up to 700, line 13. Column E is 0.00,
+    # 0.00, 100.00 and 500.00; column G (x 1, 4/3, 3/2 and 1) is 0.00, 0.00, 150.00 and 500.00.
+    worksheet = return_af(
+        unapplied_net_capital_losses_1985_to_1987="100",
+        unapplied_net_capital_losses_1988_and_1989="400",
+        unapplied_net_capital_losses_1990_to_1999="600",
+        unapplied_net_capital_losses_2001_to_2024="500",
+        net_capital_losses_claimed="700",
+    )
+
+    assert worksheet.get(ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987).value == D("100.00")
+    assert worksheet.get(ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989).value == D("300.00")
+    assert worksheet.get(ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999).value == D("400.00")
+    assert worksheet.get(ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024).value == D("500.00")
+    assert worksheet.get(TOTAL_ADJUSTED_NET_CAPITAL_LOSSES).value == D("1300.00")
+    assert worksheet.get(NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM).value == D("1300.00")
+    applied = [
+        worksheet.get(kind).value
+        for kind in (
+            ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
+            ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
+            ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
+            ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
+        )
+    ]
+    assert applied == [D("100.00"), D("300.00"), D("300.00"), D("0.00")]
+    assert sum(applied) == worksheet.get(NET_CAPITAL_LOSSES_OF_OTHER_YEARS).value == D("700")
+    assert worksheet.get(ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987).value == D("600.00")
+    assert worksheet.get(ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989).value == D("300.00")
+    assert worksheet.get(ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999).value == D("0.00")
+    assert worksheet.get(REMAINING_ADJUSTED_LOSSES_1985_TO_1987).value == D("0.00")
+    assert worksheet.get(REMAINING_ADJUSTED_LOSSES_1988_AND_1989).value == D("0.00")
+    assert worksheet.get(REMAINING_ADJUSTED_LOSSES_1990_TO_1999).value == D("100.00")
+    assert worksheet.get(REMAINING_ADJUSTED_LOSSES_2001_TO_2024).value == D("500.00")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_1985_TO_1987).value == D("0.00")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_1988_AND_1989).value == D("0.00")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_1990_TO_1999).value == D("150.00")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_2001_TO_2024).value == D("500.00")
+
+
+@pytest.mark.parametrize(
+    ("row", "loss", "adjusted", "balance"),
+    [
+        # The form prints 0.75 and 1.33, whose product is 0.9975; the exact fractions 3/4 and 4/3
+        # give the loss back: 900 x 3/4 = 675.00 and 675.00 x 4/3 = 900.00.
+        ("1988_and_1989", "900", "675.00", "900.00"),
+        # The form prints 0.6667 and 1.5; the exact fractions 2/3 and 3/2: 900 x 2/3 = 600.00 and
+        # 600.00 x 3/2 = 900.00.
+        ("1990_to_1999", "900", "600.00", "900.00"),
+        # Half-up to the cent at column C: 0.02 x 3/4 = 0.015 is 0.02, and at column G: 0.02 x 4/3
+        # = 0.02666... is 0.03.
+        ("1988_and_1989", "0.02", "0.02", "0.03"),
+        # 1.01 x 2/3 = 0.67333... is 0.67 (not carried unrounded to column G); 0.67 x 3/2 = 1.005
+        # is 1.01.
+        ("1990_to_1999", "1.01", "0.67", "1.01"),
+        # Factors of 1 change nothing: 1234.56 x 1.
+        ("1985_to_1987", "1234.56", "1234.56", "1234.56"),
+        ("2001_to_2024", "1234.56", "1234.56", "1234.56"),
+    ],
+)
+def test_columns_c_and_g_use_the_exact_fractions_rounded_half_up_to_the_cent(
+    row: str, loss: str, adjusted: str, balance: str
+) -> None:
+    kinds = {
+        "1985_to_1987": (
+            ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987,
+            NET_CAPITAL_LOSS_BALANCE_1985_TO_1987,
+        ),
+        "1988_and_1989": (
+            ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
+            NET_CAPITAL_LOSS_BALANCE_1988_AND_1989,
+        ),
+        "1990_to_1999": (
+            ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
+            NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
+        ),
+        "2001_to_2024": (
+            ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+            NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
+        ),
+    }
+    column_c, column_g = kinds[row]
+    losses: dict[str, Any] = {f"unapplied_net_capital_losses_{row}": loss}
+    worksheet = compute("48000", "20000", "0", "0", "8640", "0", "0", **losses)
+
+    assert worksheet.get(column_c).value == D(adjusted)
+    assert worksheet.get(column_g).value == D(balance)
 
 
 def test_return_ks_ontario_dividend_tax_credit_uses_the_whole_lines_12000_and_12010() -> None:
