@@ -106,6 +106,9 @@
 # expenses) are 0.
 # Form ON-BEN (lines 61020 to 61230) is not applied for (a chosen 0 for each tick box and a
 # chosen $0 for each Part A amount), so its ten lines are carried as entered, all 0.
+# Rental income (T1 line 13, Form T776 Parts 3 and 4) is a chosen $0: no rental properties
+# and no Chart A rows, and every expense box and co-owner and partner figure $0, so T1 lines
+# 12599 and 12600 are $0.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -843,6 +846,22 @@ expected:
   ca/investment_income_before_prior_years: "0"
   ca/interest_and_other_investment_income: "0"
   ca/income_support_benefits: "0"
+  ca/rental_gross_rents: "0"
+  ca/gross_rental_income: "0"
+  ca/rental_total_expenses: "0"
+  ca/rental_personal_portion: "0"
+  ca/rental_non_compliant_expenses: "0"
+  ca/rental_expenses_less_personal_portion: "0"
+  ca/rental_deductible_expenses: "0"
+  ca/rental_net_income_before_adjustments: "0"
+  ca/rental_net_income_share: "0"
+  ca/rental_net_income_after_coowner_expenses: "0"
+  ca/rental_net_income_with_recapture: "0"
+  ca/rental_net_income_after_terminal_loss: "0"
+  ca/rental_net_income_after_cca: "0"
+  ca/rental_partner_share_with_rebate: "0"
+  ca/rental_partnership_net_income: "0"
+  ca/net_rental_income: "0"
   ca/total_income: "60000"
   ca/cpp_base_contributions: "2796.75"
   ca/cpp_first_additional_contributions: "565.00"

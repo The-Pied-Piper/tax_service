@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from decimal import Decimal
 from typing import Any
 
 from app.application.services.tax_computation import TaxComputationService
-from app.domain.artifact import Artifact
+from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.record_list import RecordList
@@ -139,6 +140,60 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_7,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
+    RENTAL_ADVERTISING,
+    RENTAL_ADVERTISING_PERSONAL_PORTION,
+    RENTAL_ADVERTISING_SHORT_TERM_PORTION,
+    RENTAL_CCA_CLAIM,
+    RENTAL_COOWNER,
+    RENTAL_COOWNER_OTHER_EXPENSES,
+    RENTAL_COOWNER_SHARE,
+    RENTAL_INSURANCE,
+    RENTAL_INSURANCE_PERSONAL_PORTION,
+    RENTAL_INSURANCE_SHORT_TERM_PORTION,
+    RENTAL_INTEREST_AND_BANK_CHARGES,
+    RENTAL_INTEREST_AND_BANK_CHARGES_PERSONAL_PORTION,
+    RENTAL_INTEREST_AND_BANK_CHARGES_SHORT_TERM_PORTION,
+    RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES,
+    RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_PERSONAL_PORTION,
+    RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_SHORT_TERM_PORTION,
+    RENTAL_MOTOR_VEHICLE_EXPENSES,
+    RENTAL_MOTOR_VEHICLE_EXPENSES_PERSONAL_PORTION,
+    RENTAL_MOTOR_VEHICLE_EXPENSES_SHORT_TERM_PORTION,
+    RENTAL_OFFICE_EXPENSES,
+    RENTAL_OFFICE_EXPENSES_PERSONAL_PORTION,
+    RENTAL_OFFICE_EXPENSES_SHORT_TERM_PORTION,
+    RENTAL_OTHER_EXPENSES,
+    RENTAL_OTHER_EXPENSES_PERSONAL_PORTION,
+    RENTAL_OTHER_EXPENSES_SHORT_TERM_PORTION,
+    RENTAL_OTHER_INCOME,
+    RENTAL_PARTNER,
+    RENTAL_PARTNER_GST_HST_REBATE,
+    RENTAL_PARTNER_OTHER_EXPENSES,
+    RENTAL_PARTNER_SHARE,
+    RENTAL_PROFESSIONAL_FEES,
+    RENTAL_PROFESSIONAL_FEES_PERSONAL_PORTION,
+    RENTAL_PROFESSIONAL_FEES_SHORT_TERM_PORTION,
+    RENTAL_PROPERTIES,
+    RENTAL_PROPERTY_GROSS_RENTS,
+    RENTAL_PROPERTY_SHORT_TERM_RENTS,
+    RENTAL_PROPERTY_TAXES,
+    RENTAL_PROPERTY_TAXES_PERSONAL_PORTION,
+    RENTAL_PROPERTY_TAXES_SHORT_TERM_PORTION,
+    RENTAL_PROPERTY_UNITS,
+    RENTAL_RECAPTURED_CCA,
+    RENTAL_REPAIRS_AND_MAINTENANCE,
+    RENTAL_REPAIRS_AND_MAINTENANCE_PERSONAL_PORTION,
+    RENTAL_REPAIRS_AND_MAINTENANCE_SHORT_TERM_PORTION,
+    RENTAL_SALARIES_WAGES_AND_BENEFITS,
+    RENTAL_SALARIES_WAGES_AND_BENEFITS_PERSONAL_PORTION,
+    RENTAL_SALARIES_WAGES_AND_BENEFITS_SHORT_TERM_PORTION,
+    RENTAL_TERMINAL_LOSS,
+    RENTAL_TRAVEL,
+    RENTAL_TRAVEL_PERSONAL_PORTION,
+    RENTAL_TRAVEL_SHORT_TERM_PORTION,
+    RENTAL_UTILITIES,
+    RENTAL_UTILITIES_PERSONAL_PORTION,
+    RENTAL_UTILITIES_SHORT_TERM_PORTION,
     RESIDENT_IN_CANADA_THROUGHOUT_2025,
     RESP_AIPS_PART_A_APPLIES,
     RESP_AIPS_RECEIVED_PART_A,
@@ -152,6 +207,10 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION_LIMIT,
     RRSP_INCOME,
     SECURITY_OPTIONS_DEDUCTIONS,
+    SHORT_TERM_RENTAL_DAYS,
+    SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
+    SHORT_TERM_RENTAL_RELATED_EXPENSES,
+    SHORT_TERM_RENTAL_UNITS,
     SOCIAL_ASSISTANCE_PAYMENTS,
     SPOUSE_CAREGIVER_ELIGIBLE,
     SPOUSE_NET_INCOME,
@@ -303,6 +362,112 @@ def placement_list(*expenditures: str) -> Artifact[RecordList]:
     )
 
 
+def rental_properties_list(*rows: tuple[int, str, str]) -> Artifact[RecordList]:
+    """The Form T776 Part 3 rows, one record per (units, short-term rents, all rents)."""
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {
+            RENTAL_PROPERTY_UNITS: units,
+            RENTAL_PROPERTY_SHORT_TERM_RENTS: D(short_term),
+            RENTAL_PROPERTY_GROSS_RENTS: D(gross),
+        }
+        for units, short_term, gross in rows
+    ]
+    return Artifact(RENTAL_PROPERTIES, RecordList(RENTAL_PROPERTIES.fields, records))
+
+
+def short_term_rental_units(*rows: tuple[str, int, int]) -> Artifact[RecordList]:
+    """The Form T776 Chart A rows, one record per (column 3, column 4, column 5)."""
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {
+            SHORT_TERM_RENTAL_RELATED_EXPENSES: D(expenses),
+            SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS: non_compliant_days,
+            SHORT_TERM_RENTAL_DAYS: days,
+        }
+        for expenses, non_compliant_days, days in rows
+    ]
+    return Artifact(SHORT_TERM_RENTAL_UNITS, RecordList(SHORT_TERM_RENTAL_UNITS.fields, records))
+
+
+# The Form T776 Part 4 expense lines by name, each with the kinds of its three boxes: "Total
+# expenses", "Personal portion of total expenses" and "Short-term rental portion of total
+# expenses".
+RENTAL_EXPENSE_KINDS: dict[str, tuple[ArtifactKind[Decimal], ...]] = {
+    "advertising": (
+        RENTAL_ADVERTISING,
+        RENTAL_ADVERTISING_PERSONAL_PORTION,
+        RENTAL_ADVERTISING_SHORT_TERM_PORTION,
+    ),
+    "insurance": (
+        RENTAL_INSURANCE,
+        RENTAL_INSURANCE_PERSONAL_PORTION,
+        RENTAL_INSURANCE_SHORT_TERM_PORTION,
+    ),
+    "interest_and_bank_charges": (
+        RENTAL_INTEREST_AND_BANK_CHARGES,
+        RENTAL_INTEREST_AND_BANK_CHARGES_PERSONAL_PORTION,
+        RENTAL_INTEREST_AND_BANK_CHARGES_SHORT_TERM_PORTION,
+    ),
+    "office_expenses": (
+        RENTAL_OFFICE_EXPENSES,
+        RENTAL_OFFICE_EXPENSES_PERSONAL_PORTION,
+        RENTAL_OFFICE_EXPENSES_SHORT_TERM_PORTION,
+    ),
+    "professional_fees": (
+        RENTAL_PROFESSIONAL_FEES,
+        RENTAL_PROFESSIONAL_FEES_PERSONAL_PORTION,
+        RENTAL_PROFESSIONAL_FEES_SHORT_TERM_PORTION,
+    ),
+    "management_and_administration_fees": (
+        RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES,
+        RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_PERSONAL_PORTION,
+        RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_SHORT_TERM_PORTION,
+    ),
+    "repairs_and_maintenance": (
+        RENTAL_REPAIRS_AND_MAINTENANCE,
+        RENTAL_REPAIRS_AND_MAINTENANCE_PERSONAL_PORTION,
+        RENTAL_REPAIRS_AND_MAINTENANCE_SHORT_TERM_PORTION,
+    ),
+    "salaries_wages_and_benefits": (
+        RENTAL_SALARIES_WAGES_AND_BENEFITS,
+        RENTAL_SALARIES_WAGES_AND_BENEFITS_PERSONAL_PORTION,
+        RENTAL_SALARIES_WAGES_AND_BENEFITS_SHORT_TERM_PORTION,
+    ),
+    "property_taxes": (
+        RENTAL_PROPERTY_TAXES,
+        RENTAL_PROPERTY_TAXES_PERSONAL_PORTION,
+        RENTAL_PROPERTY_TAXES_SHORT_TERM_PORTION,
+    ),
+    "travel": (RENTAL_TRAVEL, RENTAL_TRAVEL_PERSONAL_PORTION, RENTAL_TRAVEL_SHORT_TERM_PORTION),
+    "utilities": (
+        RENTAL_UTILITIES,
+        RENTAL_UTILITIES_PERSONAL_PORTION,
+        RENTAL_UTILITIES_SHORT_TERM_PORTION,
+    ),
+    "motor_vehicle_expenses": (
+        RENTAL_MOTOR_VEHICLE_EXPENSES,
+        RENTAL_MOTOR_VEHICLE_EXPENSES_PERSONAL_PORTION,
+        RENTAL_MOTOR_VEHICLE_EXPENSES_SHORT_TERM_PORTION,
+    ),
+    "other_expenses": (
+        RENTAL_OTHER_EXPENSES,
+        RENTAL_OTHER_EXPENSES_PERSONAL_PORTION,
+        RENTAL_OTHER_EXPENSES_SHORT_TERM_PORTION,
+    ),
+}
+
+
+def rental_expense_artifacts(
+    amounts: Mapping[str, tuple[str, str, str]],
+) -> list[Artifact[Decimal]]:
+    """The 39 expense boxes: each line's (total, personal portion, short-term portion), else 0."""
+    assert set(amounts) <= set(RENTAL_EXPENSE_KINDS)
+    artifacts: list[Artifact[Decimal]] = []
+    for name, kinds in RENTAL_EXPENSE_KINDS.items():
+        for kind, amount in zip(kinds, amounts.get(name, ("0", "0", "0")), strict=True):
+            artifacts.append(Artifact(kind, D(amount)))
+    return artifacts
+
+
 def compute(
     employment_income: str,
     capital_gain: str,
@@ -344,6 +509,20 @@ def compute(
     investment_income_reported_in_previous_years: str = "0",
     net_partnership_income: str = "0",
     rdsp_income: str = "0",
+    rental_properties: tuple[tuple[int, str, str], ...] = (),
+    rental_other_income: str = "0",
+    rental_expenses: Mapping[str, tuple[str, str, str]] | None = None,
+    short_term_rental_units_rows: tuple[tuple[str, int, int], ...] = (),
+    rental_coowner: int = 0,
+    rental_coowner_share: str = "0",
+    rental_coowner_other_expenses: str = "0",
+    rental_recaptured_cca: str = "0",
+    rental_terminal_loss: str = "0",
+    rental_cca_claim: str = "0",
+    rental_partner: int = 0,
+    rental_partner_share: str = "0",
+    rental_partner_gst_hst_rebate: str = "0",
+    rental_partner_other_expenses: str = "0",
     taxable_support_payments: str = "0",
     rrsp_income: str = "0",
     fhsa_income: str = "0",
@@ -549,6 +728,20 @@ def compute(
         ),
         Artifact(NET_PARTNERSHIP_INCOME, D(net_partnership_income)),
         Artifact(RDSP_INCOME, D(rdsp_income)),
+        rental_properties_list(*rental_properties),
+        Artifact(RENTAL_OTHER_INCOME, D(rental_other_income)),
+        *rental_expense_artifacts(rental_expenses or {}),
+        short_term_rental_units(*short_term_rental_units_rows),
+        Artifact(RENTAL_COOWNER, rental_coowner),
+        Artifact(RENTAL_COOWNER_SHARE, D(rental_coowner_share)),
+        Artifact(RENTAL_COOWNER_OTHER_EXPENSES, D(rental_coowner_other_expenses)),
+        Artifact(RENTAL_RECAPTURED_CCA, D(rental_recaptured_cca)),
+        Artifact(RENTAL_TERMINAL_LOSS, D(rental_terminal_loss)),
+        Artifact(RENTAL_CCA_CLAIM, D(rental_cca_claim)),
+        Artifact(RENTAL_PARTNER, rental_partner),
+        Artifact(RENTAL_PARTNER_SHARE, D(rental_partner_share)),
+        Artifact(RENTAL_PARTNER_GST_HST_REBATE, D(rental_partner_gst_hst_rebate)),
+        Artifact(RENTAL_PARTNER_OTHER_EXPENSES, D(rental_partner_other_expenses)),
         Artifact(TAXABLE_SUPPORT_PAYMENTS, D(taxable_support_payments)),
         Artifact(RRSP_INCOME, D(rrsp_income)),
         Artifact(FHSA_INCOME, D(fhsa_income)),

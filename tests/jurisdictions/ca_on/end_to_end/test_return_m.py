@@ -51,7 +51,11 @@ def test_return_ms_flow_through_share_credit_is_500_and_lowers_the_refund_by_tha
     assert return_g.get(REFUND_OR_BALANCE_OWING).value - worksheet.get(
         REFUND_OR_BALANCE_OWING
     ).value == D("500.00")
-    (total,) = [line for line in worksheet.trace if isinstance(line, RecordTotalLine)]
+    (total,) = [
+        line
+        for line in worksheet.trace
+        if isinstance(line, RecordTotalLine) and line.output == FLOW_THROUGH_SHARE_EXPENSES
+    ]
     assert total == RecordTotalLine(
         FLOW_THROUGH_SHARE_EXPENSES,
         FLOW_THROUGH_SHARE_SLIP_EXPENSES,

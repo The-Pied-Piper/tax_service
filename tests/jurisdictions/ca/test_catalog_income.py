@@ -22,6 +22,7 @@ from app.jurisdictions.ca.catalog import (
     EMPLOYMENT_INCOME,
     FHSA_INCOME,
     FOREIGN_INVESTMENT_INCOME,
+    GROSS_RENTAL_INCOME,
     INCOME_SUPPORT_BENEFITS,
     INTEREST_AND_OTHER_INVESTMENT_INCOME,
     INVESTMENT_INCOME_BEFORE_PRIOR_YEARS,
@@ -31,6 +32,7 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_ROYALTIES,
     NET_FEDERAL_SUPPLEMENTS,
     NET_PARTNERSHIP_INCOME,
+    NET_RENTAL_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
     OLD_AGE_SECURITY,
     OTHER_DIVIDENDS_CREDIT,
@@ -41,8 +43,78 @@ from app.jurisdictions.ca.catalog import (
     OTHER_INCOME,
     OTHER_PENSIONS_AND_SUPERANNUATION,
     RDSP_INCOME,
+    RENTAL_ADVERTISING,
+    RENTAL_ADVERTISING_PERSONAL_PORTION,
+    RENTAL_ADVERTISING_SHORT_TERM_PORTION,
+    RENTAL_CCA_CLAIM,
+    RENTAL_COOWNER,
+    RENTAL_COOWNER_OTHER_EXPENSES,
+    RENTAL_COOWNER_SHARE,
+    RENTAL_DEDUCTIBLE_EXPENSES,
+    RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
+    RENTAL_GROSS_RENTS,
+    RENTAL_INSURANCE,
+    RENTAL_INSURANCE_PERSONAL_PORTION,
+    RENTAL_INSURANCE_SHORT_TERM_PORTION,
+    RENTAL_INTEREST_AND_BANK_CHARGES,
+    RENTAL_INTEREST_AND_BANK_CHARGES_PERSONAL_PORTION,
+    RENTAL_INTEREST_AND_BANK_CHARGES_SHORT_TERM_PORTION,
+    RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES,
+    RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_PERSONAL_PORTION,
+    RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_SHORT_TERM_PORTION,
+    RENTAL_MOTOR_VEHICLE_EXPENSES,
+    RENTAL_MOTOR_VEHICLE_EXPENSES_PERSONAL_PORTION,
+    RENTAL_MOTOR_VEHICLE_EXPENSES_SHORT_TERM_PORTION,
+    RENTAL_NET_INCOME_AFTER_CCA,
+    RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES,
+    RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS,
+    RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS,
+    RENTAL_NET_INCOME_SHARE,
+    RENTAL_NET_INCOME_WITH_RECAPTURE,
+    RENTAL_NON_COMPLIANT_EXPENSES,
+    RENTAL_OFFICE_EXPENSES,
+    RENTAL_OFFICE_EXPENSES_PERSONAL_PORTION,
+    RENTAL_OFFICE_EXPENSES_SHORT_TERM_PORTION,
+    RENTAL_OTHER_EXPENSES,
+    RENTAL_OTHER_EXPENSES_PERSONAL_PORTION,
+    RENTAL_OTHER_EXPENSES_SHORT_TERM_PORTION,
+    RENTAL_OTHER_INCOME,
+    RENTAL_PARTNER,
+    RENTAL_PARTNER_GST_HST_REBATE,
+    RENTAL_PARTNER_OTHER_EXPENSES,
+    RENTAL_PARTNER_SHARE,
+    RENTAL_PARTNER_SHARE_WITH_REBATE,
+    RENTAL_PARTNERSHIP_NET_INCOME,
+    RENTAL_PERSONAL_PORTION,
+    RENTAL_PROFESSIONAL_FEES,
+    RENTAL_PROFESSIONAL_FEES_PERSONAL_PORTION,
+    RENTAL_PROFESSIONAL_FEES_SHORT_TERM_PORTION,
+    RENTAL_PROPERTIES,
+    RENTAL_PROPERTY_GROSS_RENTS,
+    RENTAL_PROPERTY_SHORT_TERM_RENTS,
+    RENTAL_PROPERTY_TAXES,
+    RENTAL_PROPERTY_TAXES_PERSONAL_PORTION,
+    RENTAL_PROPERTY_TAXES_SHORT_TERM_PORTION,
+    RENTAL_PROPERTY_UNITS,
+    RENTAL_RECAPTURED_CCA,
+    RENTAL_REPAIRS_AND_MAINTENANCE,
+    RENTAL_REPAIRS_AND_MAINTENANCE_PERSONAL_PORTION,
+    RENTAL_REPAIRS_AND_MAINTENANCE_SHORT_TERM_PORTION,
+    RENTAL_SALARIES_WAGES_AND_BENEFITS,
+    RENTAL_SALARIES_WAGES_AND_BENEFITS_PERSONAL_PORTION,
+    RENTAL_SALARIES_WAGES_AND_BENEFITS_SHORT_TERM_PORTION,
+    RENTAL_SHORT_TERM_PORTION,
+    RENTAL_TERMINAL_LOSS,
+    RENTAL_TOTAL_EXPENSES,
+    RENTAL_TRAVEL,
+    RENTAL_TRAVEL_PERSONAL_PORTION,
+    RENTAL_TRAVEL_SHORT_TERM_PORTION,
+    RENTAL_UTILITIES,
+    RENTAL_UTILITIES_PERSONAL_PORTION,
+    RENTAL_UTILITIES_SHORT_TERM_PORTION,
     RRSP_INCOME,
     SHORT_TERM_RENTAL_DAYS,
+    SHORT_TERM_RENTAL_GROSS_RENTS,
     SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
     SHORT_TERM_RENTAL_RELATED_EXPENSES,
     SHORT_TERM_RENTAL_UNITS,
@@ -190,6 +262,161 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     )
     assert registry.get("ca/short_term_rental_days") is SHORT_TERM_RENTAL_DAYS
     assert registry.get("ca/short_term_rental_units") is SHORT_TERM_RENTAL_UNITS
+    assert registry.get("ca/rental_property_units") is RENTAL_PROPERTY_UNITS
+    assert registry.get("ca/rental_property_short_term_rents") is RENTAL_PROPERTY_SHORT_TERM_RENTS
+    assert registry.get("ca/rental_property_gross_rents") is RENTAL_PROPERTY_GROSS_RENTS
+    assert registry.get("ca/rental_properties") is RENTAL_PROPERTIES
+    assert registry.get("ca/short_term_rental_gross_rents") is SHORT_TERM_RENTAL_GROSS_RENTS
+    assert registry.get("ca/rental_gross_rents") is RENTAL_GROSS_RENTS
+    assert registry.get("ca/rental_other_income") is RENTAL_OTHER_INCOME
+    assert registry.get("ca/gross_rental_income") is GROSS_RENTAL_INCOME
+    assert registry.get("ca/rental_advertising") is RENTAL_ADVERTISING
+    assert (
+        registry.get("ca/rental_advertising_personal_portion")
+        is RENTAL_ADVERTISING_PERSONAL_PORTION
+    )
+    assert (
+        registry.get("ca/rental_advertising_short_term_portion")
+        is RENTAL_ADVERTISING_SHORT_TERM_PORTION
+    )
+    assert registry.get("ca/rental_insurance") is RENTAL_INSURANCE
+    assert registry.get("ca/rental_insurance_personal_portion") is RENTAL_INSURANCE_PERSONAL_PORTION
+    assert (
+        registry.get("ca/rental_insurance_short_term_portion")
+        is RENTAL_INSURANCE_SHORT_TERM_PORTION
+    )
+    assert registry.get("ca/rental_interest_and_bank_charges") is RENTAL_INTEREST_AND_BANK_CHARGES
+    assert (
+        registry.get("ca/rental_interest_and_bank_charges_personal_portion")
+        is RENTAL_INTEREST_AND_BANK_CHARGES_PERSONAL_PORTION
+    )
+    assert (
+        registry.get("ca/rental_interest_and_bank_charges_short_term_portion")
+        is RENTAL_INTEREST_AND_BANK_CHARGES_SHORT_TERM_PORTION
+    )
+    assert registry.get("ca/rental_office_expenses") is RENTAL_OFFICE_EXPENSES
+    assert (
+        registry.get("ca/rental_office_expenses_personal_portion")
+        is RENTAL_OFFICE_EXPENSES_PERSONAL_PORTION
+    )
+    assert (
+        registry.get("ca/rental_office_expenses_short_term_portion")
+        is RENTAL_OFFICE_EXPENSES_SHORT_TERM_PORTION
+    )
+    assert registry.get("ca/rental_professional_fees") is RENTAL_PROFESSIONAL_FEES
+    assert (
+        registry.get("ca/rental_professional_fees_personal_portion")
+        is RENTAL_PROFESSIONAL_FEES_PERSONAL_PORTION
+    )
+    assert (
+        registry.get("ca/rental_professional_fees_short_term_portion")
+        is RENTAL_PROFESSIONAL_FEES_SHORT_TERM_PORTION
+    )
+    assert (
+        registry.get("ca/rental_management_and_administration_fees")
+        is RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES
+    )
+    assert (
+        registry.get("ca/rental_management_and_administration_fees_personal_portion")
+        is RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_PERSONAL_PORTION
+    )
+    assert (
+        registry.get("ca/rental_management_and_administration_fees_short_term_portion")
+        is RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_SHORT_TERM_PORTION
+    )
+    assert registry.get("ca/rental_repairs_and_maintenance") is RENTAL_REPAIRS_AND_MAINTENANCE
+    assert (
+        registry.get("ca/rental_repairs_and_maintenance_personal_portion")
+        is RENTAL_REPAIRS_AND_MAINTENANCE_PERSONAL_PORTION
+    )
+    assert (
+        registry.get("ca/rental_repairs_and_maintenance_short_term_portion")
+        is RENTAL_REPAIRS_AND_MAINTENANCE_SHORT_TERM_PORTION
+    )
+    assert (
+        registry.get("ca/rental_salaries_wages_and_benefits") is RENTAL_SALARIES_WAGES_AND_BENEFITS
+    )
+    assert (
+        registry.get("ca/rental_salaries_wages_and_benefits_personal_portion")
+        is RENTAL_SALARIES_WAGES_AND_BENEFITS_PERSONAL_PORTION
+    )
+    assert (
+        registry.get("ca/rental_salaries_wages_and_benefits_short_term_portion")
+        is RENTAL_SALARIES_WAGES_AND_BENEFITS_SHORT_TERM_PORTION
+    )
+    assert registry.get("ca/rental_property_taxes") is RENTAL_PROPERTY_TAXES
+    assert (
+        registry.get("ca/rental_property_taxes_personal_portion")
+        is RENTAL_PROPERTY_TAXES_PERSONAL_PORTION
+    )
+    assert (
+        registry.get("ca/rental_property_taxes_short_term_portion")
+        is RENTAL_PROPERTY_TAXES_SHORT_TERM_PORTION
+    )
+    assert registry.get("ca/rental_travel") is RENTAL_TRAVEL
+    assert registry.get("ca/rental_travel_personal_portion") is RENTAL_TRAVEL_PERSONAL_PORTION
+    assert registry.get("ca/rental_travel_short_term_portion") is RENTAL_TRAVEL_SHORT_TERM_PORTION
+    assert registry.get("ca/rental_utilities") is RENTAL_UTILITIES
+    assert registry.get("ca/rental_utilities_personal_portion") is RENTAL_UTILITIES_PERSONAL_PORTION
+    assert (
+        registry.get("ca/rental_utilities_short_term_portion")
+        is RENTAL_UTILITIES_SHORT_TERM_PORTION
+    )
+    assert registry.get("ca/rental_motor_vehicle_expenses") is RENTAL_MOTOR_VEHICLE_EXPENSES
+    assert (
+        registry.get("ca/rental_motor_vehicle_expenses_personal_portion")
+        is RENTAL_MOTOR_VEHICLE_EXPENSES_PERSONAL_PORTION
+    )
+    assert (
+        registry.get("ca/rental_motor_vehicle_expenses_short_term_portion")
+        is RENTAL_MOTOR_VEHICLE_EXPENSES_SHORT_TERM_PORTION
+    )
+    assert registry.get("ca/rental_other_expenses") is RENTAL_OTHER_EXPENSES
+    assert (
+        registry.get("ca/rental_other_expenses_personal_portion")
+        is RENTAL_OTHER_EXPENSES_PERSONAL_PORTION
+    )
+    assert (
+        registry.get("ca/rental_other_expenses_short_term_portion")
+        is RENTAL_OTHER_EXPENSES_SHORT_TERM_PORTION
+    )
+    assert registry.get("ca/rental_total_expenses") is RENTAL_TOTAL_EXPENSES
+    assert registry.get("ca/rental_personal_portion") is RENTAL_PERSONAL_PORTION
+    assert registry.get("ca/rental_short_term_portion") is RENTAL_SHORT_TERM_PORTION
+    assert registry.get("ca/rental_non_compliant_expenses") is RENTAL_NON_COMPLIANT_EXPENSES
+    assert (
+        registry.get("ca/rental_expenses_less_personal_portion")
+        is RENTAL_EXPENSES_LESS_PERSONAL_PORTION
+    )
+    assert registry.get("ca/rental_deductible_expenses") is RENTAL_DEDUCTIBLE_EXPENSES
+    assert (
+        registry.get("ca/rental_net_income_before_adjustments")
+        is RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS
+    )
+    assert registry.get("ca/rental_coowner") is RENTAL_COOWNER
+    assert registry.get("ca/rental_coowner_share") is RENTAL_COOWNER_SHARE
+    assert registry.get("ca/rental_net_income_share") is RENTAL_NET_INCOME_SHARE
+    assert registry.get("ca/rental_coowner_other_expenses") is RENTAL_COOWNER_OTHER_EXPENSES
+    assert (
+        registry.get("ca/rental_net_income_after_coowner_expenses")
+        is RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES
+    )
+    assert registry.get("ca/rental_recaptured_cca") is RENTAL_RECAPTURED_CCA
+    assert registry.get("ca/rental_net_income_with_recapture") is RENTAL_NET_INCOME_WITH_RECAPTURE
+    assert registry.get("ca/rental_terminal_loss") is RENTAL_TERMINAL_LOSS
+    assert (
+        registry.get("ca/rental_net_income_after_terminal_loss")
+        is RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS
+    )
+    assert registry.get("ca/rental_cca_claim") is RENTAL_CCA_CLAIM
+    assert registry.get("ca/rental_net_income_after_cca") is RENTAL_NET_INCOME_AFTER_CCA
+    assert registry.get("ca/rental_partner") is RENTAL_PARTNER
+    assert registry.get("ca/rental_partner_share") is RENTAL_PARTNER_SHARE
+    assert registry.get("ca/rental_partner_gst_hst_rebate") is RENTAL_PARTNER_GST_HST_REBATE
+    assert registry.get("ca/rental_partner_other_expenses") is RENTAL_PARTNER_OTHER_EXPENSES
+    assert registry.get("ca/rental_partner_share_with_rebate") is RENTAL_PARTNER_SHARE_WITH_REBATE
+    assert registry.get("ca/rental_partnership_net_income") is RENTAL_PARTNERSHIP_NET_INCOME
+    assert registry.get("ca/net_rental_income") is NET_RENTAL_INCOME
 
 
 def test_the_income_kinds_are_money() -> None:

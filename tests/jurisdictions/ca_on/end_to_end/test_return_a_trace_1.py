@@ -78,7 +78,8 @@ def test_the_trace_explains_the_computation() -> None:
         "other_pensions_and_superannuation 0 + elected_split_pension_amount 0 + "
         "universal_child_care_benefit 0 + ei_and_other_benefits 0 + taxable_dividends 0 + "
         "interest_and_other_investment_income 0 + net_partnership_income 0 + "
-        "rdsp_income 0 + taxable_capital_gains 10000 + taxable_support_payments 0 "
+        "rdsp_income 0 + net_rental_income 0 + taxable_capital_gains 10000 "
+        "+ taxable_support_payments 0 "
         "+ rrsp_income 0 + fhsa_income 0 + other_fhsa_income 0 + other_income 0 + "
         "taxable_scholarships 0 + income_support_benefits 0 = 120000",
         "120000",

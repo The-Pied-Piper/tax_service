@@ -128,6 +128,7 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSSES_CLAIMED,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_INCOME,
+    NET_RENTAL_INCOME,
     OTHER_PAYMENTS_DEDUCTION,
     OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
@@ -140,6 +141,14 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_2,
     POLITICAL_CREDIT_COLUMN_3_LINE_3,
     REFUND,
+    RENTAL_COOWNER,
+    RENTAL_GROSS_RENTS,
+    RENTAL_NET_INCOME_AFTER_CCA,
+    RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS,
+    RENTAL_NET_INCOME_SHARE,
+    RENTAL_PARTNER,
+    RENTAL_PROPERTY_GROSS_RENTS,
+    RENTAL_PROPERTY_SHORT_TERM_RENTS,
     RESP_AIPS_ADDITIONAL_TAX,
     RESP_AIPS_CONTRIBUTIONS_COUNTED,
     RESP_AIPS_LIMIT_REMAINING,
@@ -153,6 +162,7 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION,
     RRSP_DEDUCTION_LIMIT,
     RRSP_DEDUCTION_MAXIMUM,
+    SHORT_TERM_RENTAL_GROSS_RENTS,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BASIS,
     SPOUSE_AMOUNT_BEFORE_COUNT,
@@ -1107,6 +1117,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert record_totals == {
+        # T776 Part 3 lines 8140 and 8141: Return A has no rental properties, so no items and 0.
+        SHORT_TERM_RENTAL_GROSS_RENTS: RecordTotalLine(
+            SHORT_TERM_RENTAL_GROSS_RENTS, RENTAL_PROPERTY_SHORT_TERM_RENTS, (), D("0")
+        ),
+        RENTAL_GROSS_RENTS: RecordTotalLine(
+            RENTAL_GROSS_RENTS, RENTAL_PROPERTY_GROSS_RENTS, (), D("0")
+        ),
         FLOW_THROUGH_SHARE_EXPENSES: RecordTotalLine(
             FLOW_THROUGH_SHARE_EXPENSES, FLOW_THROUGH_SHARE_SLIP_EXPENSES, (), D("0")
         ),
@@ -1141,6 +1158,22 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     assert chosen == {
+        # T776 Part 4 line 2 (the co-owner's share, amount 2): a count of 0 chooses line 9369. Line
+        # 9946 (T1 line 12600): a count of 0 chooses amount 6.
+        RENTAL_NET_INCOME_SHARE: ChosenByCountLine(
+            output=RENTAL_NET_INCOME_SHARE,
+            count_kind=RENTAL_COOWNER,
+            count=0,
+            chosen_kind=RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS,
+            chosen_value=D("0"),
+        ),
+        NET_RENTAL_INCOME: ChosenByCountLine(
+            output=NET_RENTAL_INCOME,
+            count_kind=RENTAL_PARTNER,
+            count=0,
+            chosen_kind=RENTAL_NET_INCOME_AFTER_CCA,
+            chosen_value=D("0"),
+        ),
         # Form T1172: a count of 0 (Part A does not apply) chooses Part B's line 13.
         RESP_AIPS_ADDITIONAL_TAX: ChosenByCountLine(
             output=RESP_AIPS_ADDITIONAL_TAX,

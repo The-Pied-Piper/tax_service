@@ -55,6 +55,9 @@
 # $0 with no medical expenses) are 0.
 # Form ON-BEN (lines 61020 to 61230) is not applied for (a chosen 0 for each tick box and a
 # chosen $0 for each Part A amount), so its ten lines are carried as entered, all 0.
+# Rental income (T1 line 13, Form T776 Parts 3 and 4) is a chosen $0: no rental properties
+# and no Chart A rows, and every expense box and co-owner and partner figure $0, so T1 lines
+# 12599 and 12600 are $0.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -76,9 +79,10 @@ description: >-
   the rest of lines 1 to 8 being $0, so line 9 is 1,200 + 300 = 1,500; line 10 (income
   included on line 9 and reported in previous years) is a chosen $100; line 11, the amount
   for line 12100, is 1,500 - 100 = 1,400. Lines 14400, 14500 and 14600 add to line 14700:
-  2,000 + 0 + 0 = 2,000. Total income (line 15000) is the sum of the income lines: 0 + 0 +
-  8,000 + 9,000 + 20,000 + 0 + 0 + 0 + 0 + 1,400 + 0 + 0 + 0 + 0 + 5,000 + 0 + 0 + 0 + 0 +
-  2,000 = 45,400. With no employment income there are no CPP contributions (Schedule 8, base
+  2,000 + 0 + 0 = 2,000. Total income (line 15000) is the sum of the income lines in line
+  order, line 13 being the net rental income: 0 + 0 + 8,000 + 9,000 + 20,000 + 0 + 0 + 0 + 0
+  + 1,400 + 0 + 0 + 0 + 0 + 0 + 5,000 + 0 + 0 + 0 + 0 + 2,000 = 45,400. With no employment
+  income there are no CPP contributions (Schedule 8, base
   0, first and second additional 0, so the enhanced contributions, line 22215, are 0) and no
   EI premiums (line 31200: 0). No unused or new RRSP contributions, so the most that may be
   deducted (Schedule 7 line 17) is $0, the lesser of the contributions available to deduct
@@ -175,10 +179,11 @@ sources:
     line 29 is 2,000, each a chosen figure: the amounts on the taxpayer's slips, which
     nothing on this return determines. Line 32 (line 14700) is lines 29 to 31, 2,000 + 0 + 0
     = 2,000. Only line 12800, the taxable amount, enters total income; line 12799, the
-    total, is not an input of the computation. Rental income (line 13) and self-employment
-    income (lines 22 to 26) are not wired yet. Total income (line 15000), which takes
-    amounts already in cents, is the sum of the income lines: 0 + 0 + 8,000 + 9,000 + 20,000
-    + 0 + 0 + 0 + 0 + 1,400 + 0 + 0 + 0 + 0 + 5,000 + 0 + 0 + 0 + 0 + 2,000 = 45,400.
+    total, is not an input of the computation. Self-employment income (lines 22 to 26) is
+    not wired yet. Total income (line 15000), which takes amounts already in cents, is the
+    sum of the income lines in line order, line 13 being the net rental income: 0 + 0 +
+    8,000 + 9,000 + 20,000 + 0 + 0 + 0 + 0 + 1,400 + 0 + 0 + 0 + 0 + 0 + 5,000 + 0 + 0 + 0 +
+    0 + 2,000 = 45,400.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-r/5006-r-25e.txt
   - >-
     CRA, the 2025 Federal Worksheet (form 5000-D1, docs/cra-forms-2025/5000-d1-25e.txt,
@@ -534,6 +539,22 @@ expected:
   ca/investment_income_before_prior_years: "1500"
   ca/interest_and_other_investment_income: "1400"
   ca/income_support_benefits: "2000"
+  ca/rental_gross_rents: "0"
+  ca/gross_rental_income: "0"
+  ca/rental_total_expenses: "0"
+  ca/rental_personal_portion: "0"
+  ca/rental_non_compliant_expenses: "0"
+  ca/rental_expenses_less_personal_portion: "0"
+  ca/rental_deductible_expenses: "0"
+  ca/rental_net_income_before_adjustments: "0"
+  ca/rental_net_income_share: "0"
+  ca/rental_net_income_after_coowner_expenses: "0"
+  ca/rental_net_income_with_recapture: "0"
+  ca/rental_net_income_after_terminal_loss: "0"
+  ca/rental_net_income_after_cca: "0"
+  ca/rental_partner_share_with_rebate: "0"
+  ca/rental_partnership_net_income: "0"
+  ca/net_rental_income: "0"
   ca/total_income: "45400"
   ca/cpp_base_contributions: "0.00"
   ca/cpp_first_additional_contributions: "0.00"

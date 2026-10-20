@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 359
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 377
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -297,6 +297,78 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/short_term_rental_non_compliant_days",
         "ca/short_term_rental_days",
         "ca/short_term_rental_units",
+        "ca/rental_property_units",
+        "ca/rental_property_short_term_rents",
+        "ca/rental_property_gross_rents",
+        "ca/rental_properties",
+        "ca/short_term_rental_gross_rents",
+        "ca/rental_gross_rents",
+        "ca/rental_other_income",
+        "ca/gross_rental_income",
+        "ca/rental_advertising",
+        "ca/rental_advertising_personal_portion",
+        "ca/rental_advertising_short_term_portion",
+        "ca/rental_insurance",
+        "ca/rental_insurance_personal_portion",
+        "ca/rental_insurance_short_term_portion",
+        "ca/rental_interest_and_bank_charges",
+        "ca/rental_interest_and_bank_charges_personal_portion",
+        "ca/rental_interest_and_bank_charges_short_term_portion",
+        "ca/rental_office_expenses",
+        "ca/rental_office_expenses_personal_portion",
+        "ca/rental_office_expenses_short_term_portion",
+        "ca/rental_professional_fees",
+        "ca/rental_professional_fees_personal_portion",
+        "ca/rental_professional_fees_short_term_portion",
+        "ca/rental_management_and_administration_fees",
+        "ca/rental_management_and_administration_fees_personal_portion",
+        "ca/rental_management_and_administration_fees_short_term_portion",
+        "ca/rental_repairs_and_maintenance",
+        "ca/rental_repairs_and_maintenance_personal_portion",
+        "ca/rental_repairs_and_maintenance_short_term_portion",
+        "ca/rental_salaries_wages_and_benefits",
+        "ca/rental_salaries_wages_and_benefits_personal_portion",
+        "ca/rental_salaries_wages_and_benefits_short_term_portion",
+        "ca/rental_property_taxes",
+        "ca/rental_property_taxes_personal_portion",
+        "ca/rental_property_taxes_short_term_portion",
+        "ca/rental_travel",
+        "ca/rental_travel_personal_portion",
+        "ca/rental_travel_short_term_portion",
+        "ca/rental_utilities",
+        "ca/rental_utilities_personal_portion",
+        "ca/rental_utilities_short_term_portion",
+        "ca/rental_motor_vehicle_expenses",
+        "ca/rental_motor_vehicle_expenses_personal_portion",
+        "ca/rental_motor_vehicle_expenses_short_term_portion",
+        "ca/rental_other_expenses",
+        "ca/rental_other_expenses_personal_portion",
+        "ca/rental_other_expenses_short_term_portion",
+        "ca/rental_total_expenses",
+        "ca/rental_personal_portion",
+        "ca/rental_short_term_portion",
+        "ca/rental_non_compliant_expenses",
+        "ca/rental_expenses_less_personal_portion",
+        "ca/rental_deductible_expenses",
+        "ca/rental_net_income_before_adjustments",
+        "ca/rental_coowner",
+        "ca/rental_coowner_share",
+        "ca/rental_net_income_share",
+        "ca/rental_coowner_other_expenses",
+        "ca/rental_net_income_after_coowner_expenses",
+        "ca/rental_recaptured_cca",
+        "ca/rental_net_income_with_recapture",
+        "ca/rental_terminal_loss",
+        "ca/rental_net_income_after_terminal_loss",
+        "ca/rental_cca_claim",
+        "ca/rental_net_income_after_cca",
+        "ca/rental_partner",
+        "ca/rental_partner_share",
+        "ca/rental_partner_gst_hst_rebate",
+        "ca/rental_partner_other_expenses",
+        "ca/rental_partner_share_with_rebate",
+        "ca/rental_partnership_net_income",
+        "ca/net_rental_income",
         "ca/medical_expenses",
         "ca/medical_net_income_share",
         "ca/medical_threshold",
@@ -648,13 +720,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 359
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 377
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 359
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 377
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

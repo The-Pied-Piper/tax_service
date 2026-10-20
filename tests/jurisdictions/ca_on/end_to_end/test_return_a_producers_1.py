@@ -23,6 +23,13 @@ from app.domain.capabilities.times_count import TimesCount
 from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
 from app.jurisdictions.ca.capabilities.disability_transfer_amount import DisabilityTransferAmount
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
+from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
+from app.jurisdictions.ca.capabilities.short_term_rental_gross_rents import (
+    ShortTermRentalGrossRents,
+)
+from app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_expenses import (
+    ShortTermRentalNonCompliantExpenses,
+)
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADJUSTED_FAMILY_NET_INCOME,
@@ -195,6 +202,7 @@ from app.jurisdictions.ca.catalog import (
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
     GOVERNMENT_DONATIONS,
+    GROSS_RENTAL_INCOME,
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
     INCOME_SUPPORT_BENEFITS,
@@ -232,6 +240,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NET_PARTNERSHIP_INCOME,
     NET_PROFESSIONAL_INCOME,
+    NET_RENTAL_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
@@ -271,6 +280,72 @@ from app.jurisdictions.ca.catalog import (
     REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
     REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
     REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
+    RENTAL_ADVERTISING,
+    RENTAL_ADVERTISING_PERSONAL_PORTION,
+    RENTAL_ADVERTISING_SHORT_TERM_PORTION,
+    RENTAL_CCA_CLAIM,
+    RENTAL_COOWNER,
+    RENTAL_COOWNER_OTHER_EXPENSES,
+    RENTAL_COOWNER_SHARE,
+    RENTAL_DEDUCTIBLE_EXPENSES,
+    RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
+    RENTAL_GROSS_RENTS,
+    RENTAL_INSURANCE,
+    RENTAL_INSURANCE_PERSONAL_PORTION,
+    RENTAL_INSURANCE_SHORT_TERM_PORTION,
+    RENTAL_INTEREST_AND_BANK_CHARGES,
+    RENTAL_INTEREST_AND_BANK_CHARGES_PERSONAL_PORTION,
+    RENTAL_INTEREST_AND_BANK_CHARGES_SHORT_TERM_PORTION,
+    RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES,
+    RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_PERSONAL_PORTION,
+    RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_SHORT_TERM_PORTION,
+    RENTAL_MOTOR_VEHICLE_EXPENSES,
+    RENTAL_MOTOR_VEHICLE_EXPENSES_PERSONAL_PORTION,
+    RENTAL_MOTOR_VEHICLE_EXPENSES_SHORT_TERM_PORTION,
+    RENTAL_NET_INCOME_AFTER_CCA,
+    RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES,
+    RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS,
+    RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS,
+    RENTAL_NET_INCOME_SHARE,
+    RENTAL_NET_INCOME_WITH_RECAPTURE,
+    RENTAL_NON_COMPLIANT_EXPENSES,
+    RENTAL_OFFICE_EXPENSES,
+    RENTAL_OFFICE_EXPENSES_PERSONAL_PORTION,
+    RENTAL_OFFICE_EXPENSES_SHORT_TERM_PORTION,
+    RENTAL_OTHER_EXPENSES,
+    RENTAL_OTHER_EXPENSES_PERSONAL_PORTION,
+    RENTAL_OTHER_EXPENSES_SHORT_TERM_PORTION,
+    RENTAL_OTHER_INCOME,
+    RENTAL_PARTNER,
+    RENTAL_PARTNER_GST_HST_REBATE,
+    RENTAL_PARTNER_OTHER_EXPENSES,
+    RENTAL_PARTNER_SHARE,
+    RENTAL_PARTNER_SHARE_WITH_REBATE,
+    RENTAL_PARTNERSHIP_NET_INCOME,
+    RENTAL_PERSONAL_PORTION,
+    RENTAL_PROFESSIONAL_FEES,
+    RENTAL_PROFESSIONAL_FEES_PERSONAL_PORTION,
+    RENTAL_PROFESSIONAL_FEES_SHORT_TERM_PORTION,
+    RENTAL_PROPERTIES,
+    RENTAL_PROPERTY_TAXES,
+    RENTAL_PROPERTY_TAXES_PERSONAL_PORTION,
+    RENTAL_PROPERTY_TAXES_SHORT_TERM_PORTION,
+    RENTAL_RECAPTURED_CCA,
+    RENTAL_REPAIRS_AND_MAINTENANCE,
+    RENTAL_REPAIRS_AND_MAINTENANCE_PERSONAL_PORTION,
+    RENTAL_REPAIRS_AND_MAINTENANCE_SHORT_TERM_PORTION,
+    RENTAL_SALARIES_WAGES_AND_BENEFITS,
+    RENTAL_SALARIES_WAGES_AND_BENEFITS_PERSONAL_PORTION,
+    RENTAL_SALARIES_WAGES_AND_BENEFITS_SHORT_TERM_PORTION,
+    RENTAL_SHORT_TERM_PORTION,
+    RENTAL_TERMINAL_LOSS,
+    RENTAL_TOTAL_EXPENSES,
+    RENTAL_TRAVEL,
+    RENTAL_TRAVEL_PERSONAL_PORTION,
+    RENTAL_TRAVEL_SHORT_TERM_PORTION,
+    RENTAL_UTILITIES,
+    RENTAL_UTILITIES_PERSONAL_PORTION,
+    RENTAL_UTILITIES_SHORT_TERM_PORTION,
     RESIDENT_IN_CANADA_THROUGHOUT_2025,
     RPP_DEDUCTION,
     RRSP_AMOUNT_DEDUCTED,
@@ -281,6 +356,8 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION_MAXIMUM,
     RRSP_INCOME,
     SECURITY_OPTIONS_DEDUCTIONS,
+    SHORT_TERM_RENTAL_GROSS_RENTS,
+    SHORT_TERM_RENTAL_UNITS,
     SLIP_DIVIDEND_TAX_CREDIT,
     SLIP_TAXABLE_DIVIDENDS,
     SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
@@ -490,6 +567,90 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS) is None
     assert worksheet.producer_of(NET_PARTNERSHIP_INCOME) is None
     assert worksheet.producer_of(RDSP_INCOME) is None
+    # T776 Parts 3 and 4 and T1 lines 12599 and 12600: the caller's rows, expense boxes and the
+    # co-owner's and partner's figures are starting inputs; every other line has a producer.
+    assert worksheet.producer_of(RENTAL_PROPERTIES) is None
+    assert worksheet.producer_of(RENTAL_OTHER_INCOME) is None
+    assert worksheet.producer_of(RENTAL_ADVERTISING) is None
+    assert worksheet.producer_of(RENTAL_ADVERTISING_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_ADVERTISING_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_INSURANCE) is None
+    assert worksheet.producer_of(RENTAL_INSURANCE_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_INSURANCE_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_INTEREST_AND_BANK_CHARGES) is None
+    assert worksheet.producer_of(RENTAL_INTEREST_AND_BANK_CHARGES_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_INTEREST_AND_BANK_CHARGES_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_OFFICE_EXPENSES) is None
+    assert worksheet.producer_of(RENTAL_OFFICE_EXPENSES_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_OFFICE_EXPENSES_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_PROFESSIONAL_FEES) is None
+    assert worksheet.producer_of(RENTAL_PROFESSIONAL_FEES_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_PROFESSIONAL_FEES_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES) is None
+    assert worksheet.producer_of(RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_PERSONAL_PORTION) is None
+    assert (
+        worksheet.producer_of(RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_SHORT_TERM_PORTION) is None
+    )
+    assert worksheet.producer_of(RENTAL_REPAIRS_AND_MAINTENANCE) is None
+    assert worksheet.producer_of(RENTAL_REPAIRS_AND_MAINTENANCE_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_REPAIRS_AND_MAINTENANCE_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_SALARIES_WAGES_AND_BENEFITS) is None
+    assert worksheet.producer_of(RENTAL_SALARIES_WAGES_AND_BENEFITS_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_SALARIES_WAGES_AND_BENEFITS_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_PROPERTY_TAXES) is None
+    assert worksheet.producer_of(RENTAL_PROPERTY_TAXES_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_PROPERTY_TAXES_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_TRAVEL) is None
+    assert worksheet.producer_of(RENTAL_TRAVEL_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_TRAVEL_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_UTILITIES) is None
+    assert worksheet.producer_of(RENTAL_UTILITIES_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_UTILITIES_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_MOTOR_VEHICLE_EXPENSES) is None
+    assert worksheet.producer_of(RENTAL_MOTOR_VEHICLE_EXPENSES_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_MOTOR_VEHICLE_EXPENSES_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_OTHER_EXPENSES) is None
+    assert worksheet.producer_of(RENTAL_OTHER_EXPENSES_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_OTHER_EXPENSES_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_COOWNER) is None
+    assert worksheet.producer_of(RENTAL_COOWNER_SHARE) is None
+    assert worksheet.producer_of(RENTAL_COOWNER_OTHER_EXPENSES) is None
+    assert worksheet.producer_of(RENTAL_RECAPTURED_CCA) is None
+    assert worksheet.producer_of(RENTAL_TERMINAL_LOSS) is None
+    assert worksheet.producer_of(RENTAL_CCA_CLAIM) is None
+    assert worksheet.producer_of(RENTAL_PARTNER) is None
+    assert worksheet.producer_of(RENTAL_PARTNER_SHARE) is None
+    assert worksheet.producer_of(RENTAL_PARTNER_GST_HST_REBATE) is None
+    assert worksheet.producer_of(RENTAL_PARTNER_OTHER_EXPENSES) is None
+    assert worksheet.producer_of(SHORT_TERM_RENTAL_UNITS) is None
+    assert isinstance(
+        worksheet.producer_of(SHORT_TERM_RENTAL_GROSS_RENTS), ShortTermRentalGrossRents
+    )
+    assert isinstance(worksheet.producer_of(RENTAL_GROSS_RENTS), RentalGrossRents)
+    assert isinstance(worksheet.producer_of(GROSS_RENTAL_INCOME), Sum)
+    assert isinstance(worksheet.producer_of(RENTAL_TOTAL_EXPENSES), Sum)
+    assert isinstance(worksheet.producer_of(RENTAL_PERSONAL_PORTION), Sum)
+    assert isinstance(worksheet.producer_of(RENTAL_SHORT_TERM_PORTION), Sum)
+    assert isinstance(
+        worksheet.producer_of(RENTAL_NON_COMPLIANT_EXPENSES), ShortTermRentalNonCompliantExpenses
+    )
+    assert isinstance(worksheet.producer_of(RENTAL_EXPENSES_LESS_PERSONAL_PORTION), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_DEDUCTIBLE_EXPENSES), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_SHARE), ChooseByCount)
+    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_WITH_RECAPTURE), Sum)
+    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_AFTER_CCA), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_PARTNER_SHARE_WITH_REBATE), Sum)
+    assert isinstance(worksheet.producer_of(RENTAL_PARTNERSHIP_NET_INCOME), Subtract)
+    assert isinstance(worksheet.producer_of(NET_RENTAL_INCOME), ChooseByCount)
+    assert worksheet.producer_of(RENTAL_GROSS_RENTS) is not worksheet.producer_of(
+        SHORT_TERM_RENTAL_GROSS_RENTS
+    )
+    assert worksheet.producer_of(RENTAL_NET_INCOME_SHARE) is not worksheet.producer_of(
+        NET_RENTAL_INCOME
+    )
     assert worksheet.producer_of(TAXABLE_SUPPORT_PAYMENTS) is None
     assert worksheet.producer_of(RRSP_INCOME) is None
     assert worksheet.producer_of(FHSA_INCOME) is None

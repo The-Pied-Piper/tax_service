@@ -87,6 +87,7 @@ from app.jurisdictions.ca.catalog import (
     FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT,
     FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
     FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS,
+    GROSS_RENTAL_INCOME,
     INCOME_TAX_DEDUCTED,
     INFIRM_DEPENDANTS,
     ITC_RECAPTURE,
@@ -133,6 +134,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NET_PROFESSIONAL_INCOME,
+    NET_RENTAL_INCOME,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
     OTHER_DEPENDANT_MEDICAL_EXPENSES,
     OTHER_DEPENDANTS,
@@ -167,6 +169,75 @@ from app.jurisdictions.ca.catalog import (
     REFUND,
     REFUND_OR_BALANCE_OWING,
     REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
+    RENTAL_ADVERTISING,
+    RENTAL_ADVERTISING_PERSONAL_PORTION,
+    RENTAL_ADVERTISING_SHORT_TERM_PORTION,
+    RENTAL_CCA_CLAIM,
+    RENTAL_COOWNER,
+    RENTAL_COOWNER_OTHER_EXPENSES,
+    RENTAL_COOWNER_SHARE,
+    RENTAL_DEDUCTIBLE_EXPENSES,
+    RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
+    RENTAL_GROSS_RENTS,
+    RENTAL_INSURANCE,
+    RENTAL_INSURANCE_PERSONAL_PORTION,
+    RENTAL_INSURANCE_SHORT_TERM_PORTION,
+    RENTAL_INTEREST_AND_BANK_CHARGES,
+    RENTAL_INTEREST_AND_BANK_CHARGES_PERSONAL_PORTION,
+    RENTAL_INTEREST_AND_BANK_CHARGES_SHORT_TERM_PORTION,
+    RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES,
+    RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_PERSONAL_PORTION,
+    RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_SHORT_TERM_PORTION,
+    RENTAL_MOTOR_VEHICLE_EXPENSES,
+    RENTAL_MOTOR_VEHICLE_EXPENSES_PERSONAL_PORTION,
+    RENTAL_MOTOR_VEHICLE_EXPENSES_SHORT_TERM_PORTION,
+    RENTAL_NET_INCOME_AFTER_CCA,
+    RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES,
+    RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS,
+    RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS,
+    RENTAL_NET_INCOME_SHARE,
+    RENTAL_NET_INCOME_WITH_RECAPTURE,
+    RENTAL_NON_COMPLIANT_EXPENSES,
+    RENTAL_OFFICE_EXPENSES,
+    RENTAL_OFFICE_EXPENSES_PERSONAL_PORTION,
+    RENTAL_OFFICE_EXPENSES_SHORT_TERM_PORTION,
+    RENTAL_OTHER_EXPENSES,
+    RENTAL_OTHER_EXPENSES_PERSONAL_PORTION,
+    RENTAL_OTHER_EXPENSES_SHORT_TERM_PORTION,
+    RENTAL_OTHER_INCOME,
+    RENTAL_PARTNER,
+    RENTAL_PARTNER_GST_HST_REBATE,
+    RENTAL_PARTNER_OTHER_EXPENSES,
+    RENTAL_PARTNER_SHARE,
+    RENTAL_PARTNER_SHARE_WITH_REBATE,
+    RENTAL_PARTNERSHIP_NET_INCOME,
+    RENTAL_PERSONAL_PORTION,
+    RENTAL_PROFESSIONAL_FEES,
+    RENTAL_PROFESSIONAL_FEES_PERSONAL_PORTION,
+    RENTAL_PROFESSIONAL_FEES_SHORT_TERM_PORTION,
+    RENTAL_PROPERTIES,
+    RENTAL_PROPERTY_GROSS_RENTS,
+    RENTAL_PROPERTY_SHORT_TERM_RENTS,
+    RENTAL_PROPERTY_TAXES,
+    RENTAL_PROPERTY_TAXES_PERSONAL_PORTION,
+    RENTAL_PROPERTY_TAXES_SHORT_TERM_PORTION,
+    RENTAL_PROPERTY_UNITS,
+    RENTAL_RECAPTURED_CCA,
+    RENTAL_REPAIRS_AND_MAINTENANCE,
+    RENTAL_REPAIRS_AND_MAINTENANCE_PERSONAL_PORTION,
+    RENTAL_REPAIRS_AND_MAINTENANCE_SHORT_TERM_PORTION,
+    RENTAL_SALARIES_WAGES_AND_BENEFITS,
+    RENTAL_SALARIES_WAGES_AND_BENEFITS_PERSONAL_PORTION,
+    RENTAL_SALARIES_WAGES_AND_BENEFITS_SHORT_TERM_PORTION,
+    RENTAL_SHORT_TERM_PORTION,
+    RENTAL_TERMINAL_LOSS,
+    RENTAL_TOTAL_EXPENSES,
+    RENTAL_TRAVEL,
+    RENTAL_TRAVEL_PERSONAL_PORTION,
+    RENTAL_TRAVEL_SHORT_TERM_PORTION,
+    RENTAL_UTILITIES,
+    RENTAL_UTILITIES_PERSONAL_PORTION,
+    RENTAL_UTILITIES_SHORT_TERM_PORTION,
     RESIDENCE_ADJUSTED_COST_BASE,
     RESIDENCE_OUTLAYS,
     RESIDENCE_PLUS_ONE_YEAR,
@@ -192,6 +263,7 @@ from app.jurisdictions.ca.catalog import (
     RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
     RRSP_AMOUNT_DEDUCTED,
     SHORT_TERM_RENTAL_DAYS,
+    SHORT_TERM_RENTAL_GROSS_RENTS,
     SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
     SHORT_TERM_RENTAL_RELATED_EXPENSES,
     SHORT_TERM_RENTAL_UNITS,
@@ -623,6 +695,288 @@ def test_a_short_term_rental_row_missing_a_column_is_refused_naming_the_row() ->
 
     with pytest.raises(InvalidRecordError, match="item 1.*short_term_rental_days"):
         RecordList(SHORT_TERM_RENTAL_UNITS.fields, [record])
+
+
+def rental_property_record(**changes: object) -> dict[ArtifactKind[Any], object]:
+    """One row of Return AD (2 units, no short-term rents, 24000) with `changes` by field name."""
+    names: dict[str, ArtifactKind[Any]] = {
+        "units": RENTAL_PROPERTY_UNITS,
+        "short_term_rents": RENTAL_PROPERTY_SHORT_TERM_RENTS,
+        "gross_rents": RENTAL_PROPERTY_GROSS_RENTS,
+    }
+    record: dict[ArtifactKind[Any], object] = {
+        RENTAL_PROPERTY_UNITS: 2,
+        RENTAL_PROPERTY_SHORT_TERM_RENTS: Decimal("0"),
+        RENTAL_PROPERTY_GROSS_RENTS: Decimal("24000"),
+    }
+    for name, value in changes.items():
+        record[names[name]] = value
+    return record
+
+
+def test_the_rental_properties_are_a_record_list_of_the_part_3_columns(
+    registry: ArtifactRegistry,
+) -> None:
+    # Form T776 Part 3, "List the addresses of your rental properties." with the headings
+    # "Number of units", "Gross rents for short-term rentals" and "Gross rents for all units":
+    # one row for each property (the address is a label the engine does not use).
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(RENTAL_PROPERTIES, RecordListKind)
+    assert RENTAL_PROPERTIES.identifier == "ca/rental_properties"
+    assert RENTAL_PROPERTIES.value_type is RecordList
+    assert RENTAL_PROPERTIES.non_negative is False
+    assert RENTAL_PROPERTIES.fields == (
+        RENTAL_PROPERTY_UNITS,
+        RENTAL_PROPERTY_SHORT_TERM_RENTS,
+        RENTAL_PROPERTY_GROSS_RENTS,
+    )
+    assert registry.get("ca/rental_properties") is RENTAL_PROPERTIES
+
+
+def test_the_rental_property_units_are_a_non_negative_int_count(
+    registry: ArtifactRegistry,
+) -> None:
+    # Part 3, "Number of units", whole units.
+    assert RENTAL_PROPERTY_UNITS.identifier == "ca/rental_property_units"
+    assert RENTAL_PROPERTY_UNITS.value_type is int
+    assert RENTAL_PROPERTY_UNITS.non_negative is True
+    assert registry.kind("ca/rental_property_units") is RENTAL_PROPERTY_UNITS
+
+
+@pytest.mark.parametrize(
+    ("kind", "identifier"),
+    [
+        (RENTAL_PROPERTY_SHORT_TERM_RENTS, "ca/rental_property_short_term_rents"),
+        (RENTAL_PROPERTY_GROSS_RENTS, "ca/rental_property_gross_rents"),
+    ],
+)
+def test_the_rental_property_rents_are_non_negative_decimals(
+    kind: ArtifactKind[Decimal], identifier: str, registry: ArtifactRegistry
+) -> None:
+    # Part 3, "Gross rents for short-term rentals" and "Gross rents for all units".
+    assert kind.identifier == identifier
+    assert kind.value_type is Decimal
+    assert kind.non_negative is True
+    assert registry.kind(identifier) is kind
+
+
+def test_the_rental_properties_hold_each_rows_columns_in_the_callers_order() -> None:
+    rows = RecordList(
+        RENTAL_PROPERTIES.fields,
+        [rental_property_record(), rental_property_record(units=1, gross_rents=Decimal("500"))],
+    )
+
+    assert [record[RENTAL_PROPERTY_UNITS] for record in rows.records] == [2, 1]
+    assert [record[RENTAL_PROPERTY_GROSS_RENTS] for record in rows.records] == [
+        Decimal("24000"),
+        Decimal("500"),
+    ]
+    assert rows.records[0][RENTAL_PROPERTY_SHORT_TERM_RENTS] == Decimal("0")
+
+
+def test_the_rental_properties_may_be_empty() -> None:
+    assert RecordList(RENTAL_PROPERTIES.fields, []).records == ()
+
+
+@pytest.mark.parametrize("field", ["units", "short_term_rents", "gross_rents"])
+def test_a_rental_property_row_refuses_a_negative_column(field: str) -> None:
+    value: object = -1 if field == "units" else Decimal("-1")
+
+    with pytest.raises(NegativeArtifactError, match="item 1"):
+        RecordList(RENTAL_PROPERTIES.fields, [rental_property_record(**{field: value})])
+
+
+def test_a_rental_property_row_refuses_a_fractional_number_of_units() -> None:
+    with pytest.raises(TypeError, match="item 1.*rental_property_units"):
+        RecordList(RENTAL_PROPERTIES.fields, [rental_property_record(units=Decimal("2"))])
+
+
+def test_a_rental_property_row_missing_a_column_is_refused_naming_the_row() -> None:
+    record = rental_property_record()
+    del record[RENTAL_PROPERTY_GROSS_RENTS]
+
+    with pytest.raises(InvalidRecordError, match="item 1.*rental_property_gross_rents"):
+        RecordList(RENTAL_PROPERTIES.fields, [record])
+
+
+# Form T776 Part 3 and Part 4 lines that are never below zero: the Part 3 totals and other income,
+# every "Total expenses", "Personal portion of total expenses" and "Short-term rental portion of
+# total expenses" box of the 13 expense lines and their totals (A, 9949, 9365, 9366), line 1
+# "Deductible expenses (amount A minus line 9949 minus line 9366)", the co-owner's, partner's and
+# CCA lines that print a positive figure (9945, 9947, 9948, 9936, 9974, 9943).
+T776_NON_NEGATIVE_LINES = [
+    ("ca/short_term_rental_gross_rents", SHORT_TERM_RENTAL_GROSS_RENTS),
+    ("ca/rental_gross_rents", RENTAL_GROSS_RENTS),
+    ("ca/rental_other_income", RENTAL_OTHER_INCOME),
+    ("ca/gross_rental_income", GROSS_RENTAL_INCOME),
+    ("ca/rental_advertising", RENTAL_ADVERTISING),
+    ("ca/rental_advertising_personal_portion", RENTAL_ADVERTISING_PERSONAL_PORTION),
+    ("ca/rental_advertising_short_term_portion", RENTAL_ADVERTISING_SHORT_TERM_PORTION),
+    ("ca/rental_insurance", RENTAL_INSURANCE),
+    ("ca/rental_insurance_personal_portion", RENTAL_INSURANCE_PERSONAL_PORTION),
+    ("ca/rental_insurance_short_term_portion", RENTAL_INSURANCE_SHORT_TERM_PORTION),
+    ("ca/rental_interest_and_bank_charges", RENTAL_INTEREST_AND_BANK_CHARGES),
+    (
+        "ca/rental_interest_and_bank_charges_personal_portion",
+        RENTAL_INTEREST_AND_BANK_CHARGES_PERSONAL_PORTION,
+    ),
+    (
+        "ca/rental_interest_and_bank_charges_short_term_portion",
+        RENTAL_INTEREST_AND_BANK_CHARGES_SHORT_TERM_PORTION,
+    ),
+    ("ca/rental_office_expenses", RENTAL_OFFICE_EXPENSES),
+    ("ca/rental_office_expenses_personal_portion", RENTAL_OFFICE_EXPENSES_PERSONAL_PORTION),
+    ("ca/rental_office_expenses_short_term_portion", RENTAL_OFFICE_EXPENSES_SHORT_TERM_PORTION),
+    ("ca/rental_professional_fees", RENTAL_PROFESSIONAL_FEES),
+    ("ca/rental_professional_fees_personal_portion", RENTAL_PROFESSIONAL_FEES_PERSONAL_PORTION),
+    ("ca/rental_professional_fees_short_term_portion", RENTAL_PROFESSIONAL_FEES_SHORT_TERM_PORTION),
+    ("ca/rental_management_and_administration_fees", RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES),
+    (
+        "ca/rental_management_and_administration_fees_personal_portion",
+        RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_PERSONAL_PORTION,
+    ),
+    (
+        "ca/rental_management_and_administration_fees_short_term_portion",
+        RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_SHORT_TERM_PORTION,
+    ),
+    ("ca/rental_repairs_and_maintenance", RENTAL_REPAIRS_AND_MAINTENANCE),
+    (
+        "ca/rental_repairs_and_maintenance_personal_portion",
+        RENTAL_REPAIRS_AND_MAINTENANCE_PERSONAL_PORTION,
+    ),
+    (
+        "ca/rental_repairs_and_maintenance_short_term_portion",
+        RENTAL_REPAIRS_AND_MAINTENANCE_SHORT_TERM_PORTION,
+    ),
+    ("ca/rental_salaries_wages_and_benefits", RENTAL_SALARIES_WAGES_AND_BENEFITS),
+    (
+        "ca/rental_salaries_wages_and_benefits_personal_portion",
+        RENTAL_SALARIES_WAGES_AND_BENEFITS_PERSONAL_PORTION,
+    ),
+    (
+        "ca/rental_salaries_wages_and_benefits_short_term_portion",
+        RENTAL_SALARIES_WAGES_AND_BENEFITS_SHORT_TERM_PORTION,
+    ),
+    ("ca/rental_property_taxes", RENTAL_PROPERTY_TAXES),
+    ("ca/rental_property_taxes_personal_portion", RENTAL_PROPERTY_TAXES_PERSONAL_PORTION),
+    ("ca/rental_property_taxes_short_term_portion", RENTAL_PROPERTY_TAXES_SHORT_TERM_PORTION),
+    ("ca/rental_travel", RENTAL_TRAVEL),
+    ("ca/rental_travel_personal_portion", RENTAL_TRAVEL_PERSONAL_PORTION),
+    ("ca/rental_travel_short_term_portion", RENTAL_TRAVEL_SHORT_TERM_PORTION),
+    ("ca/rental_utilities", RENTAL_UTILITIES),
+    ("ca/rental_utilities_personal_portion", RENTAL_UTILITIES_PERSONAL_PORTION),
+    ("ca/rental_utilities_short_term_portion", RENTAL_UTILITIES_SHORT_TERM_PORTION),
+    ("ca/rental_motor_vehicle_expenses", RENTAL_MOTOR_VEHICLE_EXPENSES),
+    (
+        "ca/rental_motor_vehicle_expenses_personal_portion",
+        RENTAL_MOTOR_VEHICLE_EXPENSES_PERSONAL_PORTION,
+    ),
+    (
+        "ca/rental_motor_vehicle_expenses_short_term_portion",
+        RENTAL_MOTOR_VEHICLE_EXPENSES_SHORT_TERM_PORTION,
+    ),
+    ("ca/rental_other_expenses", RENTAL_OTHER_EXPENSES),
+    ("ca/rental_other_expenses_personal_portion", RENTAL_OTHER_EXPENSES_PERSONAL_PORTION),
+    ("ca/rental_other_expenses_short_term_portion", RENTAL_OTHER_EXPENSES_SHORT_TERM_PORTION),
+    ("ca/rental_total_expenses", RENTAL_TOTAL_EXPENSES),
+    ("ca/rental_personal_portion", RENTAL_PERSONAL_PORTION),
+    ("ca/rental_short_term_portion", RENTAL_SHORT_TERM_PORTION),
+    ("ca/rental_non_compliant_expenses", RENTAL_NON_COMPLIANT_EXPENSES),
+    ("ca/rental_expenses_less_personal_portion", RENTAL_EXPENSES_LESS_PERSONAL_PORTION),
+    ("ca/rental_deductible_expenses", RENTAL_DEDUCTIBLE_EXPENSES),
+    ("ca/rental_coowner_other_expenses", RENTAL_COOWNER_OTHER_EXPENSES),
+    ("ca/rental_recaptured_cca", RENTAL_RECAPTURED_CCA),
+    ("ca/rental_terminal_loss", RENTAL_TERMINAL_LOSS),
+    ("ca/rental_cca_claim", RENTAL_CCA_CLAIM),
+    ("ca/rental_partner_gst_hst_rebate", RENTAL_PARTNER_GST_HST_REBATE),
+    ("ca/rental_partner_other_expenses", RENTAL_PARTNER_OTHER_EXPENSES),
+]
+
+
+@pytest.mark.parametrize(("identifier", "kind"), T776_NON_NEGATIVE_LINES)
+def test_the_t776_lines_that_print_no_loss_are_non_negative_decimals(
+    identifier: str, kind: ArtifactKind[Decimal], registry: ArtifactRegistry
+) -> None:
+    assert kind.identifier == identifier
+    assert kind.value_type is Decimal
+    assert kind.non_negative is True
+    assert registry.kind(identifier) is kind
+
+
+# Form T776 Part 4 lines that print "(loss)" or subtract with no floor, so may be below zero: line
+# 9369 "Net income (loss) before adjustments", line 2 (the co-owner's share, entered as the form's
+# amount 2), amounts 2 to 6, line 7 "Partners: your share of amount 6, or the amount from your T5013
+# slip", the partnership's amount (line 7 plus line 9974 minus line 9943) and line 9946 "Your net
+# income (loss)", which T1 line 12600 takes.
+T776_SIGNED_LINES = [
+    ("ca/rental_net_income_before_adjustments", RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS),
+    ("ca/rental_coowner_share", RENTAL_COOWNER_SHARE),
+    ("ca/rental_net_income_share", RENTAL_NET_INCOME_SHARE),
+    ("ca/rental_net_income_after_coowner_expenses", RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES),
+    ("ca/rental_net_income_with_recapture", RENTAL_NET_INCOME_WITH_RECAPTURE),
+    ("ca/rental_net_income_after_terminal_loss", RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS),
+    ("ca/rental_net_income_after_cca", RENTAL_NET_INCOME_AFTER_CCA),
+    ("ca/rental_partner_share", RENTAL_PARTNER_SHARE),
+    ("ca/rental_partner_share_with_rebate", RENTAL_PARTNER_SHARE_WITH_REBATE),
+    ("ca/rental_partnership_net_income", RENTAL_PARTNERSHIP_NET_INCOME),
+    ("ca/net_rental_income", NET_RENTAL_INCOME),
+]
+
+
+@pytest.mark.parametrize(("identifier", "kind"), T776_SIGNED_LINES)
+def test_the_t776_lines_that_print_a_loss_are_signed_decimals(
+    identifier: str, kind: ArtifactKind[Decimal], registry: ArtifactRegistry
+) -> None:
+    assert kind.identifier == identifier
+    assert kind.value_type is Decimal
+    assert kind.non_negative is False
+    assert registry.kind(identifier) is kind
+    assert identifier in SIGNED
+
+
+@pytest.mark.parametrize(
+    ("kind", "identifier"),
+    [
+        (RENTAL_COOWNER, "ca/rental_coowner"),
+        (RENTAL_PARTNER, "ca/rental_partner"),
+    ],
+)
+def test_the_co_owner_and_partner_counts_are_non_negative_int_counts(
+    kind: ArtifactKind[int], identifier: str, registry: ArtifactRegistry
+) -> None:
+    # Part 4 line 2 "Co-owners: calculate your share of net income from line 9369" and line 7
+    # "Partners: your share of amount 6": 1 if the filer is one, else 0, as the form takes it.
+    assert kind.identifier == identifier
+    assert kind.value_type is int
+    assert kind.non_negative is True
+    assert registry.kind(identifier) is kind
+
+
+def test_each_expense_line_has_its_three_boxes() -> None:
+    for _line, name in EXPENSE_LINE_NAMES:
+        for suffix in ("", "_personal_portion", "_short_term_portion"):
+            assert f"ca/rental_{name}{suffix}" in REGISTERED
+    assert len(EXPENSE_LINE_NAMES) == 13
+
+
+# Form T776 Part 4, each of the 13 expense lines (its line number and the name its three boxes
+# share) with the boxes "Total expenses", "Personal portion of total expenses" and "Short-term
+# rental portion of total expenses".
+EXPENSE_LINE_NAMES = [
+    (8521, "advertising"),
+    (8690, "insurance"),
+    (8710, "interest_and_bank_charges"),
+    (8810, "office_expenses"),
+    (8860, "professional_fees"),
+    (8871, "management_and_administration_fees"),
+    (8960, "repairs_and_maintenance"),
+    (9060, "salaries_wages_and_benefits"),
+    (9180, "property_taxes"),
+    (9200, "travel"),
+    (9220, "utilities"),
+    (9281, "motor_vehicle_expenses"),
+    (9270, "other_expenses"),
+]
 
 
 def test_medical_expenses_is_a_non_negative_decimal(registry: ArtifactRegistry) -> None:

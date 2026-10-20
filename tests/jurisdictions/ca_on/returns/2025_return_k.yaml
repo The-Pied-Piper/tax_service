@@ -52,6 +52,9 @@
 # expenses) are 0.
 # Form ON-BEN (lines 61020 to 61230) is not applied for (a chosen 0 for each tick box and a
 # chosen $0 for each Part A amount), so its ten lines are carried as entered, all 0.
+# Rental income (T1 line 13, Form T776 Parts 3 and 4) is a chosen $0: no rental properties
+# and no Chart A rows, and every expense box and co-owner and partner figure $0, so T1 lines
+# 12599 and 12600 are $0.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -67,9 +70,10 @@ description: >-
   200 + 0 = 200 and line 10 (lines 6 to 9) is 0 + 0 + 500 + 0 = 500; line 13 is 1,000 x 138%
   = 1,380.00; line 16 is 500 x 115% = 575.00; line 17 is 1,380.00 + 575.00 = 1,955.00; line
   12010 is line 5 plus line 16, 200 + 575.00 = 775.00, and line 12000 is line 10 plus line
-  17, 500 + 1,955.00 = 2,455.00. Total income (line 15000) is the sum of the income lines:
-  50,000 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 2,455.00 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0
-  = 52,455.00. The CPP contributions are computed from employment income by Schedule 8's
+  17, 500 + 1,955.00 = 2,455.00. Total income (line 15000) is the sum of the income lines in
+  line order, line 13 being the net rental income: 50,000 + 0 + 0 + 0 + 0 + 0 + 0 + 0 +
+  2,455.00 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 = 52,455.00. The CPP
+  contributions are computed from employment income by Schedule 8's
   tiers: base 4.95% x (50,000 - 3,500) = 2,301.75, first additional 1% x 46,500 = 465.00 and
   no second additional below the 71,300 ceiling, so the enhanced contributions (line 22215)
   are 465.00; the EI premiums (line 31200) are 1.64% x 50,000 = 820.00. No unused or new
@@ -194,8 +198,9 @@ sources:
     lines 122 to 124."; "Line 126 and line 42900: Line 121 minus line 125 (if negative,
     enter "0")". Line 2 and line 10400 and the other Step 2 lines are 0 except line 10100, a
     chosen 50,000, and line 12000, 2,455.00, which adds to total income (line 15000) in line
-    order: 50,000 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 2,455.00 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0
-    + 0 + 0 = 52,455.00. Line 12010 is not a part of total income. Line 124 is not
+    order, line 13 being the net rental income: 50,000 + 0 + 0 + 0 + 0 + 0 + 0 + 0 +
+    2,455.00 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 = 52,455.00. Line 12010 is not
+    a part of total income. Line 124 is not
     triggered. Line 125 is 3,004.65 + 319.19 = 3,323.84; line 126 is the federal tax on
     taxable income less it, not below zero: 7,538.55 - 3,323.84 = 4,214.71, carried to line
     142, the net federal tax (the other lines not modelled or not triggered). These lines
@@ -433,6 +438,22 @@ expected:
   ca/investment_income_before_prior_years: "0"
   ca/interest_and_other_investment_income: "0"
   ca/income_support_benefits: "0"
+  ca/rental_gross_rents: "0"
+  ca/gross_rental_income: "0"
+  ca/rental_total_expenses: "0"
+  ca/rental_personal_portion: "0"
+  ca/rental_non_compliant_expenses: "0"
+  ca/rental_expenses_less_personal_portion: "0"
+  ca/rental_deductible_expenses: "0"
+  ca/rental_net_income_before_adjustments: "0"
+  ca/rental_net_income_share: "0"
+  ca/rental_net_income_after_coowner_expenses: "0"
+  ca/rental_net_income_with_recapture: "0"
+  ca/rental_net_income_after_terminal_loss: "0"
+  ca/rental_net_income_after_cca: "0"
+  ca/rental_partner_share_with_rebate: "0"
+  ca/rental_partnership_net_income: "0"
+  ca/net_rental_income: "0"
   ca/total_income: "52455.00"
   ca/cpp_base_contributions: "2301.75"
   ca/cpp_first_additional_contributions: "465.00"
