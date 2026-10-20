@@ -57,6 +57,7 @@ from app.domain.trace import (
     QuotientLine,
     RateAppliedLine,
     RateByIncomeBandLine,
+    RatioAppliedLine,
     RecapturedCcaLine,
     RecordCountLine,
     RecordTotalLine,
@@ -108,6 +109,10 @@ DEPENDANTS = ArtifactKind("ex/dependant_count", int)
 ALONE = ArtifactKind("ex/amount_alone", Decimal)
 WITH_FAMILY = ArtifactKind("ex/amount_with_family", Decimal)
 CHOSEN = ArtifactKind("ex/amount_chosen", Decimal)
+TAX_PAYABLE = ArtifactKind("ex/tax_payable", Decimal)
+FOREIGN_INCOME = ArtifactKind("ex/foreign_income", Decimal)
+WORLD_INCOME = ArtifactKind("ex/worldwide_income", Decimal)
+CREDIT_SHARE = ArtifactKind("ex/credit_share", Decimal)
 ITEM_AMOUNT = ArtifactKind("ex/item_amount", Decimal)
 GATED = ArtifactKind("ex/gated_amount", Decimal)
 GATE = ArtifactKind("ex/gate_amount", Decimal)
@@ -224,6 +229,20 @@ def times_count_line() -> TimesCountLine:
 
 def chosen_by_count_line() -> ChosenByCountLine:
     return ChosenByCountLine(CHOSEN, DEPENDANTS, 1, WITH_FAMILY, D("2813.00"))
+
+
+def ratio_applied_line() -> RatioAppliedLine:
+    return RatioAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("1000"),
+        FOREIGN_INCOME,
+        D("1"),
+        WORLD_INCOME,
+        D("3"),
+        CENT,
+        D("333.33"),
+    )
 
 
 def record_total_line() -> RecordTotalLine:
@@ -371,6 +390,7 @@ ALL_LINES = [
     fraction_applied_line,
     times_count_line,
     chosen_by_count_line,
+    ratio_applied_line,
     record_total_line,
     chosen_by_range_line,
     rate_by_income_band_line,
@@ -2526,6 +2546,166 @@ def test_conditions_count_lines_are_hashable() -> None:
 
 def test_a_conditions_count_line_is_not_an_items_total_line() -> None:
     assert not isinstance(conditions_count_line(), ItemsTotalLine)
+
+
+def test_ratio_applied_line_fields_in_order() -> None:
+    line = ratio_applied_line()
+
+    assert line == RatioAppliedLine(
+        output=CREDIT_SHARE,
+        amount_kind=TAX_PAYABLE,
+        amount_value=D("1000"),
+        numerator_kind=FOREIGN_INCOME,
+        numerator_value=D("1"),
+        denominator_kind=WORLD_INCOME,
+        denominator_value=D("3"),
+        rounding=CENT,
+        result=D("333.33"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "amount_kind",
+        "amount_value",
+        "numerator_kind",
+        "numerator_value",
+        "denominator_kind",
+        "denominator_value",
+        "rounding",
+        "result",
+    ]
+    assert line.output is CREDIT_SHARE
+    assert line.amount_kind is TAX_PAYABLE
+    assert line.amount_value == D("1000")
+    assert line.numerator_kind is FOREIGN_INCOME
+    assert line.numerator_value == D("1")
+    assert line.denominator_kind is WORLD_INCOME
+    assert line.denominator_value == D("3")
+    assert line.rounding == CENT
+    assert line.result == D("333.33")
+    assert line.amount == D("333.33")
+
+
+def test_ratio_applied_line_may_hold_an_unrounded_exact_amount() -> None:
+    line = RatioAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("14000"),
+        FOREIGN_INCOME,
+        D("10000"),
+        WORLD_INCOME,
+        D("100000"),
+        NO_ROUNDING,
+        D("1400"),
+    )
+
+    assert line.amount == D("1400")
+
+
+def test_ratio_applied_lines_differ_by_amount_value() -> None:
+    assert ratio_applied_line() != RatioAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("1001"),
+        FOREIGN_INCOME,
+        D("1"),
+        WORLD_INCOME,
+        D("3"),
+        CENT,
+        D("333.33"),
+    )
+
+
+def test_ratio_applied_lines_differ_by_numerator_value() -> None:
+    assert ratio_applied_line() != RatioAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("1000"),
+        FOREIGN_INCOME,
+        D("2"),
+        WORLD_INCOME,
+        D("3"),
+        CENT,
+        D("333.33"),
+    )
+
+
+def test_ratio_applied_lines_differ_by_denominator_value() -> None:
+    assert ratio_applied_line() != RatioAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("1000"),
+        FOREIGN_INCOME,
+        D("1"),
+        WORLD_INCOME,
+        D("4"),
+        CENT,
+        D("333.33"),
+    )
+
+
+def test_ratio_applied_lines_differ_by_kind() -> None:
+    other = ArtifactKind("ex/other_amount", Decimal)
+
+    assert ratio_applied_line() != RatioAppliedLine(
+        CREDIT_SHARE,
+        other,
+        D("1000"),
+        FOREIGN_INCOME,
+        D("1"),
+        WORLD_INCOME,
+        D("3"),
+        CENT,
+        D("333.33"),
+    )
+    assert ratio_applied_line() != RatioAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("1000"),
+        other,
+        D("1"),
+        WORLD_INCOME,
+        D("3"),
+        CENT,
+        D("333.33"),
+    )
+    assert ratio_applied_line() != RatioAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("1000"),
+        FOREIGN_INCOME,
+        D("1"),
+        other,
+        D("3"),
+        CENT,
+        D("333.33"),
+    )
+
+
+def test_ratio_applied_lines_differ_by_rounding() -> None:
+    assert ratio_applied_line() != RatioAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("1000"),
+        FOREIGN_INCOME,
+        D("1"),
+        WORLD_INCOME,
+        D("3"),
+        NO_ROUNDING,
+        D("333.33"),
+    )
+
+
+def test_ratio_applied_lines_are_hashable() -> None:
+    assert hash(ratio_applied_line()) == hash(ratio_applied_line())
+
+
+def test_a_ratio_applied_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(ratio_applied_line())]
+
+
+def test_a_ratio_applied_line_is_not_a_fraction_applied_line() -> None:
+    assert not isinstance(ratio_applied_line(), FractionAppliedLine)
+    assert not isinstance(ratio_applied_line(), RateAppliedLine)
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:
