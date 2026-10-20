@@ -138,6 +138,7 @@ inputs:
   - ca/resp_aips_received_part_b
   - ca/resp_aips_part_a_applies
   - ca/rl_10_labour_sponsored_fund_amount
+  - ca/political_contributions
   - ca-on/opportunities_fund_donation
   - ca-on/fertility_expenses
   - ca-on/seniors_transit_paid
@@ -1999,6 +2000,176 @@ capabilities:
         - ca/itc_recapture
     produces:
       output: ca/federal_tax_with_itc_recapture
+  # T1 line 135 and line 41000 "Total federal political contributions (attach receipts) Line
+  # 40900" is a caller input, ca/political_contributions, taken as the T1 takes it; the
+  # Federal Worksheet "Line 41000 - Federal political contribution tax credit" reads it as
+  # line 40900 and builds each of its three columns as printed, then the one that applies is
+  # picked.
+  # Federal Worksheet "Column 1: Line 40900 is $400 or less".
+  # Line 2: 0.00, a printed constant.
+  - name: core/credit_amount
+    params:
+      amount: ca/political_credit_column_1_line_2
+    produces:
+      output: ca/political_credit_column_1_line_2
+  # Column 1 line 3 "Line 1 minus line 2 (if negative, enter "0") =", line 1 being the
+  # contributions.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/political_contributions
+      less: ca/political_credit_column_1_line_2
+    produces:
+      output: ca/political_credit_column_1_line_3
+  # Column 1 line 4 "Rate 75%" and line 5 "Line 3 multiplied by the percentage from line 4
+  # =".
+  - name: core/apply_rate
+    params:
+      rate: ca/political_credit_column_1_line_4
+    consumes:
+      base: ca/political_credit_column_1_line_3
+    produces:
+      output: ca/political_credit_column_1_line_5
+  # Column 1 line 6: 0.00, a printed constant.
+  - name: core/credit_amount
+    params:
+      amount: ca/political_credit_column_1_line_6
+    produces:
+      output: ca/political_credit_column_1_line_6
+  # Column 1 line 7 "Line 5 plus line 6 Enter this amount on line 41000 of your return. =".
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/political_credit_column_1_line_5
+        - ca/political_credit_column_1_line_6
+    produces:
+      output: ca/political_credit_column_1_line_7
+  # Federal Worksheet "Column 2: Line 40900 is more than $400 but not more than $750".
+  # Line 2: 400.00, a printed constant.
+  - name: core/credit_amount
+    params:
+      amount: ca/political_credit_column_2_line_2
+    produces:
+      output: ca/political_credit_column_2_line_2
+  # Column 2 line 3 "Line 1 minus line 2 (if negative, enter "0") =", line 1 being the
+  # contributions.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/political_contributions
+      less: ca/political_credit_column_2_line_2
+    produces:
+      output: ca/political_credit_column_2_line_3
+  # Column 2 line 4 "Rate 50%" and line 5 "Line 3 multiplied by the percentage from line 4
+  # =".
+  - name: core/apply_rate
+    params:
+      rate: ca/political_credit_column_2_line_4
+    consumes:
+      base: ca/political_credit_column_2_line_3
+    produces:
+      output: ca/political_credit_column_2_line_5
+  # Column 2 line 6: 300.00, a printed constant.
+  - name: core/credit_amount
+    params:
+      amount: ca/political_credit_column_2_line_6
+    produces:
+      output: ca/political_credit_column_2_line_6
+  # Column 2 line 7 "Line 5 plus line 6 Enter this amount on line 41000 of your return. =".
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/political_credit_column_2_line_5
+        - ca/political_credit_column_2_line_6
+    produces:
+      output: ca/political_credit_column_2_line_7
+  # Federal Worksheet "Column 3: Line 40900 is more than more than $750".
+  # Line 2: 750.00, a printed constant.
+  - name: core/credit_amount
+    params:
+      amount: ca/political_credit_column_3_line_2
+    produces:
+      output: ca/political_credit_column_3_line_2
+  # Column 3 line 3 "Line 1 minus line 2 (if negative, enter "0") =", line 1 being the
+  # contributions.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/political_contributions
+      less: ca/political_credit_column_3_line_2
+    produces:
+      output: ca/political_credit_column_3_line_3
+  # Column 3 line 4 "Rate 33.33%" and line 5 "Line 3 multiplied by the percentage from line
+  # 4 =".
+  - name: core/apply_rate
+    params:
+      rate: ca/political_credit_column_3_line_4
+    consumes:
+      base: ca/political_credit_column_3_line_3
+    produces:
+      output: ca/political_credit_column_3_line_5
+  # Column 3 line 6: 475.00, a printed constant.
+  - name: core/credit_amount
+    params:
+      amount: ca/political_credit_column_3_line_6
+    produces:
+      output: ca/political_credit_column_3_line_6
+  # Column 3 line 7 "Line 5 plus line 6 Enter this amount on line 41000 of your return. =".
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/political_credit_column_3_line_5
+        - ca/political_credit_column_3_line_6
+    produces:
+      output: ca/political_credit_column_3_line_7
+  # The column that applies, "Use column 1 if the amount from line 40900 is $400 or less.
+  # Use column 2 if the amount from line 40900 is more than $400 but not more than $750. Use
+  # column 3 if the amount from line 40900 is more than $750.": the limits are the columns'
+  # own line 2 constants, which their headings print again.
+  - name: ca-on/choose_by_range
+    consumes:
+      amount: ca/political_contributions
+      first_limit: ca/political_credit_column_2_line_2
+      second_limit: ca/political_credit_column_3_line_2
+      first: ca/political_credit_column_1_line_7
+      second: ca/political_credit_column_2_line_7
+      third: ca/political_credit_column_3_line_7
+    produces:
+      output: ca/political_credit_chosen_column
+  # The shortcut, "If your total federal political contributions from line 40900 of your
+  # return were" "$1,275 or more, enter $650 on line 41000 of your return. If not, use the
+  # amount from line 40900 of your return to decide which column to complete.": the printed
+  # 1,275 and 650 are datasets. Nothing compares two amounts yet, so the same chooser tests
+  # the 1,275 against the contributions: when it is at most the contributions it chooses the
+  # 650, otherwise the chosen column's line 7. A chooser's six artifact slots must be six
+  # different artifacts, so the middle range is given column 3's line 2 (750) as its limit
+  # and column 3's line 7 as its value: 1,275 is never at most 750, so it is never chosen.
+  - name: core/credit_amount
+    params:
+      amount: ca/political_credit_shortcut_threshold
+    produces:
+      output: ca/political_credit_shortcut_threshold
+  - name: core/credit_amount
+    params:
+      amount: ca/political_credit_shortcut_amount
+    produces:
+      output: ca/political_credit_shortcut_amount
+  - name: ca-on/choose_by_range
+    consumes:
+      amount: ca/political_credit_shortcut_threshold
+      first_limit: ca/political_contributions
+      second_limit: ca/political_credit_column_3_line_2
+      first: ca/political_credit_shortcut_amount
+      second: ca/political_credit_column_3_line_7
+      third: ca/political_credit_chosen_column
+    produces:
+      output: ca/political_credit_before_maximum
+  # T1 line 135 and line 41000 "(maximum $650)", after the worksheet's line 7 or the
+  # shortcut's $650.
+  - name: core/capped_amount
+    params:
+      cap: ca/political_credit_maximum
+    consumes:
+      base: ca/political_credit_before_maximum
+    produces:
+      output: ca/political_credit
   # T1 line 137 and line 41400 "Labour-sponsored funds tax credit Line 41300: Net cost of
   # shares of a provincially registered fund Line 41300: Allowable credit": the guide's
   # "Claim the amount of your allowable credit on line 41400 of your return that is equal to
@@ -2019,12 +2190,13 @@ capabilities:
       base: ca/labour_sponsored_funds_credit_before_maximum
     produces:
       output: ca/labour_sponsored_funds_credit
-  # T1 line 138 (line 41600) "Add lines 135 to 137.": line 137 (41400) alone, as line 135
-  # (41000, the federal political contribution tax credit) and line 136 (41200, the
-  # investment tax credit) are not yet wired.
+  # T1 line 138 (line 41600) "Add lines 135 to 137.": line 135 (41000, the federal political
+  # contribution tax credit) and line 137 (41400), in line order, as line 136 (41200, the
+  # investment tax credit) is not yet wired.
   - name: core/sum
     consumes:
       parts:
+        - ca/political_credit
         - ca/labour_sponsored_funds_credit
     produces:
       output: ca/credits_against_federal_tax

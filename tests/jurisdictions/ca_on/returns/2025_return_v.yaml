@@ -23,6 +23,8 @@
 # counts are quoted digit strings. Every output the CA-ON manifest declares must appear
 # under `expected`; intermediate lines may be listed and are then checked too. Everything
 # else is Return T's.
+# Federal political contributions (T1 line 135 and line 40900) are a chosen $0, so the Federal
+# Worksheet's line 41000 is $0 (column 1 applies).
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -1026,6 +1028,7 @@ inputs:
   ca/resp_aips_received_part_b: "10000"
   ca/resp_aips_part_a_applies: "0"
   ca/rl_10_labour_sponsored_fund_amount: "150"
+  ca/political_contributions: "0"
   ca-on/opportunities_fund_donation: "100"
   ca-on/political_contributions: "0"
   ca-on/fertility_expenses: "0"
@@ -1149,6 +1152,8 @@ expected:
   ca/itc_recapture_at_20_percent: "100.00"
   ca/itc_recapture: "400.00"
   ca/federal_tax_with_itc_recapture: "4577.93"
+  ca/political_credit_before_maximum: "0"
+  ca/political_credit: "0"
   ca/labour_sponsored_funds_credit_before_maximum: "600.00"
   ca/labour_sponsored_funds_credit: "600.00"
   ca/credits_against_federal_tax: "600.00"

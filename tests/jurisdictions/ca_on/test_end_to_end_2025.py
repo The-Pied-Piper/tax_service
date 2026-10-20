@@ -358,6 +358,27 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
     OTHER_PENSIONS_AND_SUPERANNUATION,
     PART_XII_2_TAX_CREDIT,
+    POLITICAL_CONTRIBUTIONS,
+    POLITICAL_CREDIT,
+    POLITICAL_CREDIT_BEFORE_MAXIMUM,
+    POLITICAL_CREDIT_CHOSEN_COLUMN,
+    POLITICAL_CREDIT_COLUMN_1_LINE_2,
+    POLITICAL_CREDIT_COLUMN_1_LINE_3,
+    POLITICAL_CREDIT_COLUMN_1_LINE_5,
+    POLITICAL_CREDIT_COLUMN_1_LINE_6,
+    POLITICAL_CREDIT_COLUMN_1_LINE_7,
+    POLITICAL_CREDIT_COLUMN_2_LINE_2,
+    POLITICAL_CREDIT_COLUMN_2_LINE_3,
+    POLITICAL_CREDIT_COLUMN_2_LINE_5,
+    POLITICAL_CREDIT_COLUMN_2_LINE_6,
+    POLITICAL_CREDIT_COLUMN_2_LINE_7,
+    POLITICAL_CREDIT_COLUMN_3_LINE_2,
+    POLITICAL_CREDIT_COLUMN_3_LINE_3,
+    POLITICAL_CREDIT_COLUMN_3_LINE_5,
+    POLITICAL_CREDIT_COLUMN_3_LINE_6,
+    POLITICAL_CREDIT_COLUMN_3_LINE_7,
+    POLITICAL_CREDIT_SHORTCUT_AMOUNT,
+    POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
     PROVINCIAL_CREDITS,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
@@ -502,24 +523,6 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
-    POLITICAL_CONTRIBUTIONS,
-    POLITICAL_CREDIT,
-    POLITICAL_CREDIT_BEFORE_MAXIMUM,
-    POLITICAL_CREDIT_COLUMN_1_LINE_2,
-    POLITICAL_CREDIT_COLUMN_1_LINE_3,
-    POLITICAL_CREDIT_COLUMN_1_LINE_5,
-    POLITICAL_CREDIT_COLUMN_1_LINE_6,
-    POLITICAL_CREDIT_COLUMN_1_LINE_7,
-    POLITICAL_CREDIT_COLUMN_2_LINE_2,
-    POLITICAL_CREDIT_COLUMN_2_LINE_3,
-    POLITICAL_CREDIT_COLUMN_2_LINE_5,
-    POLITICAL_CREDIT_COLUMN_2_LINE_6,
-    POLITICAL_CREDIT_COLUMN_2_LINE_7,
-    POLITICAL_CREDIT_COLUMN_3_LINE_2,
-    POLITICAL_CREDIT_COLUMN_3_LINE_3,
-    POLITICAL_CREDIT_COLUMN_3_LINE_5,
-    POLITICAL_CREDIT_COLUMN_3_LINE_6,
-    POLITICAL_CREDIT_COLUMN_3_LINE_7,
     SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
     SENIORS_TRANSIT_CREDIT,
     SENIORS_TRANSIT_PAID,
@@ -539,7 +542,7 @@ CA_ON = JurisdictionCode("CA-ON")
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 
 
-POLITICAL_COLUMN_LINES = {
+FEDERAL_POLITICAL_COLUMN_LINES = {
     1: {
         2: POLITICAL_CREDIT_COLUMN_1_LINE_2,
         3: POLITICAL_CREDIT_COLUMN_1_LINE_3,
@@ -560,6 +563,31 @@ POLITICAL_COLUMN_LINES = {
         5: POLITICAL_CREDIT_COLUMN_3_LINE_5,
         6: POLITICAL_CREDIT_COLUMN_3_LINE_6,
         7: POLITICAL_CREDIT_COLUMN_3_LINE_7,
+    },
+}
+
+
+POLITICAL_COLUMN_LINES = {
+    1: {
+        2: ontario.POLITICAL_CREDIT_COLUMN_1_LINE_2,
+        3: ontario.POLITICAL_CREDIT_COLUMN_1_LINE_3,
+        5: ontario.POLITICAL_CREDIT_COLUMN_1_LINE_5,
+        6: ontario.POLITICAL_CREDIT_COLUMN_1_LINE_6,
+        7: ontario.POLITICAL_CREDIT_COLUMN_1_LINE_7,
+    },
+    2: {
+        2: ontario.POLITICAL_CREDIT_COLUMN_2_LINE_2,
+        3: ontario.POLITICAL_CREDIT_COLUMN_2_LINE_3,
+        5: ontario.POLITICAL_CREDIT_COLUMN_2_LINE_5,
+        6: ontario.POLITICAL_CREDIT_COLUMN_2_LINE_6,
+        7: ontario.POLITICAL_CREDIT_COLUMN_2_LINE_7,
+    },
+    3: {
+        2: ontario.POLITICAL_CREDIT_COLUMN_3_LINE_2,
+        3: ontario.POLITICAL_CREDIT_COLUMN_3_LINE_3,
+        5: ontario.POLITICAL_CREDIT_COLUMN_3_LINE_5,
+        6: ontario.POLITICAL_CREDIT_COLUMN_3_LINE_6,
+        7: ontario.POLITICAL_CREDIT_COLUMN_3_LINE_7,
     },
 }
 
@@ -734,6 +762,7 @@ def compute(
     capital_gift_taxable_gains: str = "0",
     capital_gift_gains_deduction: str = "0",
     political_contributions: str = "0",
+    federal_political_contributions: str = "0",
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -1000,7 +1029,8 @@ def compute(
         Artifact(DEPRECIABLE_GIFT_CAPITAL_COST, D(depreciable_gift_capital_cost)),
         Artifact(CAPITAL_GIFT_TAXABLE_GAINS, D(capital_gift_taxable_gains)),
         Artifact(CAPITAL_GIFT_GAINS_DEDUCTION, D(capital_gift_gains_deduction)),
-        Artifact(POLITICAL_CONTRIBUTIONS, D(political_contributions)),
+        Artifact(ontario.POLITICAL_CONTRIBUTIONS, D(political_contributions)),
+        Artifact(POLITICAL_CONTRIBUTIONS, D(federal_political_contributions)),
     )
 
 
@@ -1056,6 +1086,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(DEPRECIABLE_GIFT_CAPITAL_COST) is None
     assert worksheet.producer_of(CAPITAL_GIFT_TAXABLE_GAINS) is None
     assert worksheet.producer_of(CAPITAL_GIFT_GAINS_DEDUCTION) is None
+    assert worksheet.producer_of(ontario.POLITICAL_CONTRIBUTIONS) is None
     assert worksheet.producer_of(POLITICAL_CONTRIBUTIONS) is None
     assert worksheet.producer_of(OTHER_EMPLOYMENT_INCOME) is None
     assert worksheet.producer_of(OLD_AGE_SECURITY) is None
@@ -1680,10 +1711,10 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         assert isinstance(worksheet.producer_of(POLITICAL_COLUMN_LINES[column][5]), ApplyRate)
         assert isinstance(worksheet.producer_of(POLITICAL_COLUMN_LINES[column][6]), CreditAmount)
         assert isinstance(worksheet.producer_of(POLITICAL_COLUMN_LINES[column][7]), Sum)
-    assert isinstance(worksheet.producer_of(POLITICAL_CREDIT_BEFORE_MAXIMUM), ChooseByRange)
-    assert isinstance(worksheet.producer_of(POLITICAL_CREDIT), CappedAmount)
-    assert worksheet.producer_of(POLITICAL_CREDIT) is not worksheet.producer_of(
-        POLITICAL_CREDIT_BEFORE_MAXIMUM
+    assert isinstance(worksheet.producer_of(ontario.POLITICAL_CREDIT_BEFORE_MAXIMUM), ChooseByRange)
+    assert isinstance(worksheet.producer_of(ontario.POLITICAL_CREDIT), CappedAmount)
+    assert worksheet.producer_of(ontario.POLITICAL_CREDIT) is not worksheet.producer_of(
+        ontario.POLITICAL_CREDIT_BEFORE_MAXIMUM
     )
     # Form T1221 line 4 (the slips added), then ON479 line 17 (the rate on it), which line 18 adds.
     assert isinstance(worksheet.producer_of(FLOW_THROUGH_SHARE_EXPENSES), FlowThroughShareExpenses)
@@ -1772,7 +1803,31 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         worksheet.producer_of(LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM), ApplyRate
     )
     assert isinstance(worksheet.producer_of(LABOUR_SPONSORED_FUNDS_CREDIT), CappedAmount)
-    # Line 138 adds line 137 alone; line 139 is floored, like line 126.
+    # Line 41000: each Federal Worksheet column as printed, the column that applies, the shortcut's
+    # $650 over it, then the maximum of $650.
+    for column in (1, 2, 3):
+        assert isinstance(
+            worksheet.producer_of(FEDERAL_POLITICAL_COLUMN_LINES[column][2]), CreditAmount
+        )
+        assert isinstance(
+            worksheet.producer_of(FEDERAL_POLITICAL_COLUMN_LINES[column][3]), SubtractNotBelowZero
+        )
+        assert isinstance(
+            worksheet.producer_of(FEDERAL_POLITICAL_COLUMN_LINES[column][5]), ApplyRate
+        )
+        assert isinstance(
+            worksheet.producer_of(FEDERAL_POLITICAL_COLUMN_LINES[column][6]), CreditAmount
+        )
+        assert isinstance(worksheet.producer_of(FEDERAL_POLITICAL_COLUMN_LINES[column][7]), Sum)
+    assert isinstance(worksheet.producer_of(POLITICAL_CREDIT_CHOSEN_COLUMN), ChooseByRange)
+    assert isinstance(worksheet.producer_of(POLITICAL_CREDIT_SHORTCUT_THRESHOLD), CreditAmount)
+    assert isinstance(worksheet.producer_of(POLITICAL_CREDIT_SHORTCUT_AMOUNT), CreditAmount)
+    assert isinstance(worksheet.producer_of(POLITICAL_CREDIT_BEFORE_MAXIMUM), ChooseByRange)
+    assert worksheet.producer_of(POLITICAL_CREDIT_BEFORE_MAXIMUM) is not worksheet.producer_of(
+        POLITICAL_CREDIT_CHOSEN_COLUMN
+    )
+    assert isinstance(worksheet.producer_of(POLITICAL_CREDIT), CappedAmount)
+    # Line 138 adds lines 135 and 137; line 139 is floored, like line 126.
     assert isinstance(worksheet.producer_of(CREDITS_AGAINST_FEDERAL_TAX), Sum)
     assert isinstance(worksheet.producer_of(FEDERAL_TAX_LESS_CREDITS), SubtractNotBelowZero)
     assert worksheet.producer_of(FEDERAL_TAX_LESS_CREDITS) is not worksheet.producer_of(
@@ -2385,7 +2440,7 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     federal_credits = position(
-        "credits_against_federal_tax: labour_sponsored_funds_credit 0 = 0", "0"
+        "credits_against_federal_tax: political_credit 0 + labour_sponsored_funds_credit 0 = 0", "0"
     )
     less_credits = position(
         "federal_tax_less_credits: federal_tax_with_itc_recapture 16951.38 "
@@ -3049,6 +3104,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         # Worksheet ON479 column 1 line 5 "Line 3 multiplied by the percentage from line 4":
         # line 3 is 0.
+        ontario.POLITICAL_CREDIT_COLUMN_1_LINE_5: RateAppliedLine(
+            ontario.POLITICAL_CREDIT_COLUMN_1_LINE_5,
+            ontario.POLITICAL_CREDIT_COLUMN_1_LINE_3,
+            D("0"),
+            Rate(D("0.75")),
+            CENT,
+            D("0.00"),
+        ),
+        # Worksheet ON479 column 2 line 5 "Line 3 multiplied by the percentage from line 4":
+        # line 3 is 0.
+        ontario.POLITICAL_CREDIT_COLUMN_2_LINE_5: RateAppliedLine(
+            ontario.POLITICAL_CREDIT_COLUMN_2_LINE_5,
+            ontario.POLITICAL_CREDIT_COLUMN_2_LINE_3,
+            D("0"),
+            Rate(D("0.5")),
+            CENT,
+            D("0.00"),
+        ),
+        # Worksheet ON479 column 3 line 5 "Line 3 multiplied by the percentage from line 4":
+        # line 3 is 0.
+        ontario.POLITICAL_CREDIT_COLUMN_3_LINE_5: RateAppliedLine(
+            ontario.POLITICAL_CREDIT_COLUMN_3_LINE_5,
+            ontario.POLITICAL_CREDIT_COLUMN_3_LINE_3,
+            D("0"),
+            Rate(D("0.3333")),
+            CENT,
+            D("0.00"),
+        ),
+        # Federal Worksheet column 1 line 5 "Line 3 multiplied by the percentage from line 4 =":
+        # line 3 is 0.
         POLITICAL_CREDIT_COLUMN_1_LINE_5: RateAppliedLine(
             POLITICAL_CREDIT_COLUMN_1_LINE_5,
             POLITICAL_CREDIT_COLUMN_1_LINE_3,
@@ -3057,7 +3142,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CENT,
             D("0.00"),
         ),
-        # Worksheet ON479 column 2 line 5 "Line 3 multiplied by the percentage from line 4":
+        # Federal Worksheet column 2 line 5 "Line 3 multiplied by the percentage from line 4 =":
         # line 3 is 0.
         POLITICAL_CREDIT_COLUMN_2_LINE_5: RateAppliedLine(
             POLITICAL_CREDIT_COLUMN_2_LINE_5,
@@ -3067,7 +3152,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CENT,
             D("0.00"),
         ),
-        # Worksheet ON479 column 3 line 5 "Line 3 multiplied by the percentage from line 4":
+        # Federal Worksheet column 3 line 5 "Line 3 multiplied by the percentage from line 4 =":
         # line 3 is 0.
         POLITICAL_CREDIT_COLUMN_3_LINE_5: RateAppliedLine(
             POLITICAL_CREDIT_COLUMN_3_LINE_5,
@@ -3548,9 +3633,38 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ((FEDERAL_TAX_AFTER_CREDITS, D("16951.38")), (ITC_RECAPTURE, D("0"))),
             D("16951.38"),
         ),
-        # T1 line 138 (line 41600) "Add lines 135 to 137.": line 137 alone.
+        # T1 line 138 (line 41600) "Add lines 135 to 137.": lines 135 and 137, in line order.
         CREDITS_AGAINST_FEDERAL_TAX: SumLine(
-            CREDITS_AGAINST_FEDERAL_TAX, ((LABOUR_SPONSORED_FUNDS_CREDIT, D("0")),), D("0")
+            CREDITS_AGAINST_FEDERAL_TAX,
+            ((POLITICAL_CREDIT, D("0.00")), (LABOUR_SPONSORED_FUNDS_CREDIT, D("0"))),
+            D("0.00"),
+        ),
+        # Federal Worksheet column 1 line 7 "Line 5 plus line 6 =": line 5 is 0.
+        POLITICAL_CREDIT_COLUMN_1_LINE_7: SumLine(
+            POLITICAL_CREDIT_COLUMN_1_LINE_7,
+            (
+                (POLITICAL_CREDIT_COLUMN_1_LINE_5, D("0.00")),
+                (POLITICAL_CREDIT_COLUMN_1_LINE_6, D("0.00")),
+            ),
+            D("0.00"),
+        ),
+        # Federal Worksheet column 2 line 7 "Line 5 plus line 6 =": line 5 is 0.
+        POLITICAL_CREDIT_COLUMN_2_LINE_7: SumLine(
+            POLITICAL_CREDIT_COLUMN_2_LINE_7,
+            (
+                (POLITICAL_CREDIT_COLUMN_2_LINE_5, D("0.00")),
+                (POLITICAL_CREDIT_COLUMN_2_LINE_6, D("300.00")),
+            ),
+            D("300.00"),
+        ),
+        # Federal Worksheet column 3 line 7 "Line 5 plus line 6 =": line 5 is 0.
+        POLITICAL_CREDIT_COLUMN_3_LINE_7: SumLine(
+            POLITICAL_CREDIT_COLUMN_3_LINE_7,
+            (
+                (POLITICAL_CREDIT_COLUMN_3_LINE_5, D("0.00")),
+                (POLITICAL_CREDIT_COLUMN_3_LINE_6, D("475.00")),
+            ),
+            D("475.00"),
         ),
         # T1 line 141 (line 41800) "Special taxes": Form T1172's line 10 or 13 and the RL-10 amount.
         SPECIAL_TAXES: SumLine(
@@ -3575,29 +3689,29 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ADJUSTED_FAMILY_NET_INCOME, ((NET_INCOME, D("115000")),), D("115000")
         ),
         # Worksheet ON479 column 1 line 7 "Line 5 plus line 6": line 5 is 0.
-        POLITICAL_CREDIT_COLUMN_1_LINE_7: SumLine(
-            POLITICAL_CREDIT_COLUMN_1_LINE_7,
+        ontario.POLITICAL_CREDIT_COLUMN_1_LINE_7: SumLine(
+            ontario.POLITICAL_CREDIT_COLUMN_1_LINE_7,
             (
-                (POLITICAL_CREDIT_COLUMN_1_LINE_5, D("0.00")),
-                (POLITICAL_CREDIT_COLUMN_1_LINE_6, D("0.00")),
+                (ontario.POLITICAL_CREDIT_COLUMN_1_LINE_5, D("0.00")),
+                (ontario.POLITICAL_CREDIT_COLUMN_1_LINE_6, D("0.00")),
             ),
             D("0.00"),
         ),
         # Worksheet ON479 column 2 line 7 "Line 5 plus line 6": line 5 is 0.
-        POLITICAL_CREDIT_COLUMN_2_LINE_7: SumLine(
-            POLITICAL_CREDIT_COLUMN_2_LINE_7,
+        ontario.POLITICAL_CREDIT_COLUMN_2_LINE_7: SumLine(
+            ontario.POLITICAL_CREDIT_COLUMN_2_LINE_7,
             (
-                (POLITICAL_CREDIT_COLUMN_2_LINE_5, D("0.00")),
-                (POLITICAL_CREDIT_COLUMN_2_LINE_6, D("375.03")),
+                (ontario.POLITICAL_CREDIT_COLUMN_2_LINE_5, D("0.00")),
+                (ontario.POLITICAL_CREDIT_COLUMN_2_LINE_6, D("375.03")),
             ),
             D("375.03"),
         ),
         # Worksheet ON479 column 3 line 7 "Line 5 plus line 6": line 5 is 0.
-        POLITICAL_CREDIT_COLUMN_3_LINE_7: SumLine(
-            POLITICAL_CREDIT_COLUMN_3_LINE_7,
+        ontario.POLITICAL_CREDIT_COLUMN_3_LINE_7: SumLine(
+            ontario.POLITICAL_CREDIT_COLUMN_3_LINE_7,
             (
-                (POLITICAL_CREDIT_COLUMN_3_LINE_5, D("0.00")),
-                (POLITICAL_CREDIT_COLUMN_3_LINE_6, D("958.41")),
+                (ontario.POLITICAL_CREDIT_COLUMN_3_LINE_5, D("0.00")),
+                (ontario.POLITICAL_CREDIT_COLUMN_3_LINE_6, D("958.41")),
             ),
             D("958.41"),
         ),
@@ -3607,7 +3721,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             (
                 (FERTILITY_CREDIT, D("0")),
                 (SENIORS_TRANSIT_CREDIT, D("0")),
-                (POLITICAL_CREDIT, D("0.00")),
+                (ontario.POLITICAL_CREDIT, D("0.00")),
                 (FLOW_THROUGH_SHARE_CREDIT, D("0")),
             ),
             D("0"),
@@ -4056,28 +4170,63 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             FHSA_LIFETIME_LIMIT, Credit(amount=D("40000.00")), CENT, D("40000.00")
         ),
         # Worksheet ON479 column 1 line 2: 0.00, a printed constant.
+        ontario.POLITICAL_CREDIT_COLUMN_1_LINE_2: CreditAmountLine(
+            ontario.POLITICAL_CREDIT_COLUMN_1_LINE_2, Credit(amount=D("0.00")), CENT, D("0.00")
+        ),
+        # Worksheet ON479 column 1 line 6: 0.00, a printed constant.
+        ontario.POLITICAL_CREDIT_COLUMN_1_LINE_6: CreditAmountLine(
+            ontario.POLITICAL_CREDIT_COLUMN_1_LINE_6, Credit(amount=D("0.00")), CENT, D("0.00")
+        ),
+        # Worksheet ON479 column 2 line 2: 500.05, a printed constant.
+        ontario.POLITICAL_CREDIT_COLUMN_2_LINE_2: CreditAmountLine(
+            ontario.POLITICAL_CREDIT_COLUMN_2_LINE_2, Credit(amount=D("500.05")), CENT, D("500.05")
+        ),
+        # Worksheet ON479 column 2 line 6: 375.03, a printed constant.
+        ontario.POLITICAL_CREDIT_COLUMN_2_LINE_6: CreditAmountLine(
+            ontario.POLITICAL_CREDIT_COLUMN_2_LINE_6, Credit(amount=D("375.03")), CENT, D("375.03")
+        ),
+        # Worksheet ON479 column 3 line 2: 1666.82, a printed constant.
+        ontario.POLITICAL_CREDIT_COLUMN_3_LINE_2: CreditAmountLine(
+            ontario.POLITICAL_CREDIT_COLUMN_3_LINE_2,
+            Credit(amount=D("1666.82")),
+            CENT,
+            D("1666.82"),
+        ),
+        # Worksheet ON479 column 3 line 6: 958.41, a printed constant.
+        ontario.POLITICAL_CREDIT_COLUMN_3_LINE_6: CreditAmountLine(
+            ontario.POLITICAL_CREDIT_COLUMN_3_LINE_6, Credit(amount=D("958.41")), CENT, D("958.41")
+        ),
+        # Federal Worksheet column 1 line 2: 0.00, a printed constant.
         POLITICAL_CREDIT_COLUMN_1_LINE_2: CreditAmountLine(
             POLITICAL_CREDIT_COLUMN_1_LINE_2, Credit(amount=D("0.00")), CENT, D("0.00")
         ),
-        # Worksheet ON479 column 1 line 6: 0.00, a printed constant.
+        # Federal Worksheet column 1 line 6: 0.00, a printed constant.
         POLITICAL_CREDIT_COLUMN_1_LINE_6: CreditAmountLine(
             POLITICAL_CREDIT_COLUMN_1_LINE_6, Credit(amount=D("0.00")), CENT, D("0.00")
         ),
-        # Worksheet ON479 column 2 line 2: 500.05, a printed constant.
+        # Federal Worksheet column 2 line 2: 400.00, a printed constant.
         POLITICAL_CREDIT_COLUMN_2_LINE_2: CreditAmountLine(
-            POLITICAL_CREDIT_COLUMN_2_LINE_2, Credit(amount=D("500.05")), CENT, D("500.05")
+            POLITICAL_CREDIT_COLUMN_2_LINE_2, Credit(amount=D("400.00")), CENT, D("400.00")
         ),
-        # Worksheet ON479 column 2 line 6: 375.03, a printed constant.
+        # Federal Worksheet column 2 line 6: 300.00, a printed constant.
         POLITICAL_CREDIT_COLUMN_2_LINE_6: CreditAmountLine(
-            POLITICAL_CREDIT_COLUMN_2_LINE_6, Credit(amount=D("375.03")), CENT, D("375.03")
+            POLITICAL_CREDIT_COLUMN_2_LINE_6, Credit(amount=D("300.00")), CENT, D("300.00")
         ),
-        # Worksheet ON479 column 3 line 2: 1666.82, a printed constant.
+        # Federal Worksheet column 3 line 2: 750.00, a printed constant.
         POLITICAL_CREDIT_COLUMN_3_LINE_2: CreditAmountLine(
-            POLITICAL_CREDIT_COLUMN_3_LINE_2, Credit(amount=D("1666.82")), CENT, D("1666.82")
+            POLITICAL_CREDIT_COLUMN_3_LINE_2, Credit(amount=D("750.00")), CENT, D("750.00")
         ),
-        # Worksheet ON479 column 3 line 6: 958.41, a printed constant.
+        # Federal Worksheet column 3 line 6: 475.00, a printed constant.
         POLITICAL_CREDIT_COLUMN_3_LINE_6: CreditAmountLine(
-            POLITICAL_CREDIT_COLUMN_3_LINE_6, Credit(amount=D("958.41")), CENT, D("958.41")
+            POLITICAL_CREDIT_COLUMN_3_LINE_6, Credit(amount=D("475.00")), CENT, D("475.00")
+        ),
+        # Federal Worksheet shortcut "$1,275 or more": the printed threshold.
+        POLITICAL_CREDIT_SHORTCUT_THRESHOLD: CreditAmountLine(
+            POLITICAL_CREDIT_SHORTCUT_THRESHOLD, Credit(amount=D("1275")), CENT, D("1275")
+        ),
+        # Federal Worksheet shortcut "enter $650 on line 41000": the printed amount.
+        POLITICAL_CREDIT_SHORTCUT_AMOUNT: CreditAmountLine(
+            POLITICAL_CREDIT_SHORTCUT_AMOUNT, Credit(amount=D("650")), CENT, D("650")
         ),
         # Worksheet ON479 "Line 20" line 5 "400,000.00", line 7 "200,000.00" and line 9 "1.00".
         COOP_EDUCATION_PAYROLL_THRESHOLD: CreditAmountLine(
@@ -4344,11 +4493,20 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("10823"),
         ),
         # ON479 line 16's "(maximum $1,666.82)": the pick for contributions of 0 is 0.
+        ontario.POLITICAL_CREDIT: CappedAmountLine(
+            ontario.POLITICAL_CREDIT,
+            ontario.POLITICAL_CREDIT_BEFORE_MAXIMUM,
+            D("0.00"),
+            Amount(D("1666.82")),
+            CENT,
+            D("0.00"),
+        ),
+        # T1 line 135 and line 41000 "(maximum $650)": the pick for contributions of 0 is 0.
         POLITICAL_CREDIT: CappedAmountLine(
             POLITICAL_CREDIT,
             POLITICAL_CREDIT_BEFORE_MAXIMUM,
             D("0.00"),
-            Amount(D("1666.82")),
+            Amount(D("650")),
             CENT,
             D("0.00"),
         ),
@@ -4740,6 +4898,34 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             result=D("0"),
         ),
         # Worksheet ON479 column 1 line 3 "Line 1 minus line 2 (cannot be negative)": line 1 is 0.
+        ontario.POLITICAL_CREDIT_COLUMN_1_LINE_3: SubtractedNotBelowZeroLine(
+            output=ontario.POLITICAL_CREDIT_COLUMN_1_LINE_3,
+            minuend=ontario.POLITICAL_CONTRIBUTIONS,
+            minuend_amount=D("0"),
+            subtrahend=ontario.POLITICAL_CREDIT_COLUMN_1_LINE_2,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Worksheet ON479 column 2 line 3 "Line 1 minus line 2 (cannot be negative)": line 1 is 0.
+        ontario.POLITICAL_CREDIT_COLUMN_2_LINE_3: SubtractedNotBelowZeroLine(
+            output=ontario.POLITICAL_CREDIT_COLUMN_2_LINE_3,
+            minuend=ontario.POLITICAL_CONTRIBUTIONS,
+            minuend_amount=D("0"),
+            subtrahend=ontario.POLITICAL_CREDIT_COLUMN_2_LINE_2,
+            subtrahend_amount=D("500.05"),
+            result=D("0"),
+        ),
+        # Worksheet ON479 column 3 line 3 "Line 1 minus line 2 (cannot be negative)": line 1 is 0.
+        ontario.POLITICAL_CREDIT_COLUMN_3_LINE_3: SubtractedNotBelowZeroLine(
+            output=ontario.POLITICAL_CREDIT_COLUMN_3_LINE_3,
+            minuend=ontario.POLITICAL_CONTRIBUTIONS,
+            minuend_amount=D("0"),
+            subtrahend=ontario.POLITICAL_CREDIT_COLUMN_3_LINE_2,
+            subtrahend_amount=D("1666.82"),
+            result=D("0"),
+        ),
+        # Federal Worksheet column 1 line 3 "Line 1 minus line 2 (if negative, enter "0") =": line 1
+        # is 0.
         POLITICAL_CREDIT_COLUMN_1_LINE_3: SubtractedNotBelowZeroLine(
             output=POLITICAL_CREDIT_COLUMN_1_LINE_3,
             minuend=POLITICAL_CONTRIBUTIONS,
@@ -4748,22 +4934,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0.00"),
             result=D("0"),
         ),
-        # Worksheet ON479 column 2 line 3 "Line 1 minus line 2 (cannot be negative)": line 1 is 0.
+        # Federal Worksheet column 2 line 3 "Line 1 minus line 2 (if negative, enter "0") =": line 1
+        # is 0.
         POLITICAL_CREDIT_COLUMN_2_LINE_3: SubtractedNotBelowZeroLine(
             output=POLITICAL_CREDIT_COLUMN_2_LINE_3,
             minuend=POLITICAL_CONTRIBUTIONS,
             minuend_amount=D("0"),
             subtrahend=POLITICAL_CREDIT_COLUMN_2_LINE_2,
-            subtrahend_amount=D("500.05"),
+            subtrahend_amount=D("400.00"),
             result=D("0"),
         ),
-        # Worksheet ON479 column 3 line 3 "Line 1 minus line 2 (cannot be negative)": line 1 is 0.
+        # Federal Worksheet column 3 line 3 "Line 1 minus line 2 (if negative, enter "0") =": line 1
+        # is 0.
         POLITICAL_CREDIT_COLUMN_3_LINE_3: SubtractedNotBelowZeroLine(
             output=POLITICAL_CREDIT_COLUMN_3_LINE_3,
             minuend=POLITICAL_CONTRIBUTIONS,
             minuend_amount=D("0"),
             subtrahend=POLITICAL_CREDIT_COLUMN_3_LINE_2,
-            subtrahend_amount=D("1666.82"),
+            subtrahend_amount=D("750.00"),
             result=D("0"),
         ),
         NET_INCOME: SubtractedNotBelowZeroLine(
@@ -5100,15 +5288,31 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
 
-    # ON479 line 16: the worksheet's column for contributions of 0 (line 63110), column 1.
+    # ON479 line 16: the worksheet's column for contributions of 0 (line 63110), column 1. T1 line
+    # 135: the Federal Worksheet's column for contributions of 0 (line 40900), column 1, then the
+    # shortcut's $1,275 against the contributions: not reached, so the column stands.
     assert ranged == {
-        POLITICAL_CREDIT_BEFORE_MAXIMUM: ChosenByRangeLine(
-            output=POLITICAL_CREDIT_BEFORE_MAXIMUM,
+        ontario.POLITICAL_CREDIT_BEFORE_MAXIMUM: ChosenByRangeLine(
+            output=ontario.POLITICAL_CREDIT_BEFORE_MAXIMUM,
+            tested_kind=ontario.POLITICAL_CONTRIBUTIONS,
+            tested_value=D("0"),
+            chosen_kind=ontario.POLITICAL_CREDIT_COLUMN_1_LINE_7,
+            chosen_value=D("0.00"),
+        ),
+        POLITICAL_CREDIT_CHOSEN_COLUMN: ChosenByRangeLine(
+            output=POLITICAL_CREDIT_CHOSEN_COLUMN,
             tested_kind=POLITICAL_CONTRIBUTIONS,
             tested_value=D("0"),
             chosen_kind=POLITICAL_CREDIT_COLUMN_1_LINE_7,
             chosen_value=D("0.00"),
-        )
+        ),
+        POLITICAL_CREDIT_BEFORE_MAXIMUM: ChosenByRangeLine(
+            output=POLITICAL_CREDIT_BEFORE_MAXIMUM,
+            tested_kind=POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
+            tested_value=D("1275"),
+            chosen_kind=POLITICAL_CREDIT_CHOSEN_COLUMN,
+            chosen_value=D("0.00"),
+        ),
     }
 
     assert totals[FEDERAL_BASIC_TAX].base == TAXABLE_INCOME
@@ -5141,7 +5345,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 261
+    assert len(order) == 281
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -5484,6 +5688,20 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[CREDITS_AGAINST_FEDERAL_TAX]
         < position[FEDERAL_TAX_LESS_CREDITS]
     )
+    # Line 41000: the lines of each column, the column that applies, the shortcut and the maximum
+    # in that order; line 138 adds it.
+    for column in (1, 2, 3):
+        lines = FEDERAL_POLITICAL_COLUMN_LINES[column]
+        assert position[lines[2]] < position[lines[3]] < position[lines[5]] < position[lines[7]]
+        assert position[lines[6]] < position[lines[7]] < position[POLITICAL_CREDIT_CHOSEN_COLUMN]
+    assert (
+        position[POLITICAL_CREDIT_CHOSEN_COLUMN]
+        < position[POLITICAL_CREDIT_BEFORE_MAXIMUM]
+        < position[POLITICAL_CREDIT]
+        < position[CREDITS_AGAINST_FEDERAL_TAX]
+    )
+    assert position[POLITICAL_CREDIT_SHORTCUT_THRESHOLD] < position[POLITICAL_CREDIT_BEFORE_MAXIMUM]
+    assert position[POLITICAL_CREDIT_SHORTCUT_AMOUNT] < position[POLITICAL_CREDIT_BEFORE_MAXIMUM]
     assert position[FEDERAL_TAX_WITH_ITC_RECAPTURE] < position[FEDERAL_TAX_LESS_CREDITS]
     # Form T1172: line 3, line 4, line 6, line 7, line 8, line 10, the count's choice, line 41800
     # and line 42000 each read the one before.
@@ -5558,12 +5776,16 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         lines = POLITICAL_COLUMN_LINES[column]
         assert position[lines[2]] < position[lines[3]] < position[lines[5]] < position[lines[7]]
         assert position[lines[6]] < position[lines[7]]
-        assert position[lines[7]] < position[POLITICAL_CREDIT_BEFORE_MAXIMUM]
-    assert position[POLITICAL_COLUMN_LINES[2][2]] < position[POLITICAL_CREDIT_BEFORE_MAXIMUM]
-    assert position[POLITICAL_COLUMN_LINES[3][2]] < position[POLITICAL_CREDIT_BEFORE_MAXIMUM]
+        assert position[lines[7]] < position[ontario.POLITICAL_CREDIT_BEFORE_MAXIMUM]
     assert (
-        position[POLITICAL_CREDIT_BEFORE_MAXIMUM]
-        < position[POLITICAL_CREDIT]
+        position[POLITICAL_COLUMN_LINES[2][2]] < position[ontario.POLITICAL_CREDIT_BEFORE_MAXIMUM]
+    )
+    assert (
+        position[POLITICAL_COLUMN_LINES[3][2]] < position[ontario.POLITICAL_CREDIT_BEFORE_MAXIMUM]
+    )
+    assert (
+        position[ontario.POLITICAL_CREDIT_BEFORE_MAXIMUM]
+        < position[ontario.POLITICAL_CREDIT]
         < position[ONTARIO_CREDITS_SUBTOTAL]
     )
     assert (
@@ -9963,16 +10185,16 @@ def test_return_ps_political_contribution_credit_is_1402_76_and_lowers_the_refun
     assert worksheet.get(ONTARIO_TAX_AFTER_FOOD_CREDIT).value == D("1484.56")
     assert worksheet.get(ONTARIO_TAX).value == D("1934.56")
     assert worksheet.get(TOTAL_PAYABLE).value == D("5844.50")
-    assert worksheet.get(POLITICAL_CONTRIBUTIONS).value == D("3000")
-    assert worksheet.get(POLITICAL_CREDIT_COLUMN_3_LINE_2).value == D("1666.82")
-    assert worksheet.get(POLITICAL_CREDIT_COLUMN_3_LINE_3).value == D("1333.18")
-    assert worksheet.get(POLITICAL_CREDIT_COLUMN_3_LINE_5).value == D("444.35")
-    assert worksheet.get(POLITICAL_CREDIT_COLUMN_3_LINE_6).value == D("958.41")
-    assert worksheet.get(POLITICAL_CREDIT_COLUMN_3_LINE_7).value == D("1402.76")
-    assert worksheet.get(POLITICAL_CREDIT_COLUMN_1_LINE_7).value == D("2250.00")
-    assert worksheet.get(POLITICAL_CREDIT_COLUMN_2_LINE_7).value == D("1625.01")
-    assert worksheet.get(POLITICAL_CREDIT_BEFORE_MAXIMUM).value == D("1402.76")
-    assert worksheet.get(POLITICAL_CREDIT).value == D("1402.76")
+    assert worksheet.get(ontario.POLITICAL_CONTRIBUTIONS).value == D("3000")
+    assert worksheet.get(ontario.POLITICAL_CREDIT_COLUMN_3_LINE_2).value == D("1666.82")
+    assert worksheet.get(ontario.POLITICAL_CREDIT_COLUMN_3_LINE_3).value == D("1333.18")
+    assert worksheet.get(ontario.POLITICAL_CREDIT_COLUMN_3_LINE_5).value == D("444.35")
+    assert worksheet.get(ontario.POLITICAL_CREDIT_COLUMN_3_LINE_6).value == D("958.41")
+    assert worksheet.get(ontario.POLITICAL_CREDIT_COLUMN_3_LINE_7).value == D("1402.76")
+    assert worksheet.get(ontario.POLITICAL_CREDIT_COLUMN_1_LINE_7).value == D("2250.00")
+    assert worksheet.get(ontario.POLITICAL_CREDIT_COLUMN_2_LINE_7).value == D("1625.01")
+    assert worksheet.get(ontario.POLITICAL_CREDIT_BEFORE_MAXIMUM).value == D("1402.76")
+    assert worksheet.get(ontario.POLITICAL_CREDIT).value == D("1402.76")
     assert worksheet.get(ONTARIO_CREDITS_SUBTOTAL).value == D("1402.76")
     assert worksheet.get(ONTARIO_CREDITS).value == D("1402.76")
     assert worksheet.get(PROVINCIAL_CREDITS).value == D("1402.76")
@@ -10036,10 +10258,11 @@ def test_the_credit_is_the_applicable_columns_line_7_at_most_1666_82(
     (picked,) = [
         line
         for line in worksheet.trace
-        if isinstance(line, ChosenByRangeLine) and line.output == POLITICAL_CREDIT_BEFORE_MAXIMUM
+        if isinstance(line, ChosenByRangeLine)
+        and line.output == ontario.POLITICAL_CREDIT_BEFORE_MAXIMUM
     ]
     assert picked.chosen_kind == POLITICAL_COLUMN_LINES[column][7]
-    assert worksheet.get(POLITICAL_CREDIT).value == D(credit)
+    assert worksheet.get(ontario.POLITICAL_CREDIT).value == D(credit)
     assert worksheet.get(ONTARIO_CREDITS).value == D(credit)
     assert worksheet.get(PROVINCIAL_CREDITS).value == D(credit)
 
@@ -10048,10 +10271,178 @@ def test_no_contributions_leave_the_ontario_credits_at_zero() -> None:
     # The default of 0 contributions, as for Returns A to N: column 1 applies and line 16 is 0.
     worksheet = compute("48000", "0", "0", "0", "8640", "0", "0")
 
-    assert worksheet.get(POLITICAL_CONTRIBUTIONS).value == D("0")
-    assert worksheet.get(POLITICAL_CREDIT).value == D("0")
+    assert worksheet.get(ontario.POLITICAL_CONTRIBUTIONS).value == D("0")
+    assert worksheet.get(ontario.POLITICAL_CREDIT).value == D("0")
     assert worksheet.get(ONTARIO_CREDITS).value == D("0")
     assert worksheet.get(PROVINCIAL_CREDITS).value == D("0")
+
+
+def return_ae(**overrides: Any) -> Worksheet:
+    """Return AE's inputs, as in `returns/2025_return_ae.yaml`: Return P's with federal ones.
+
+    Return P's filer (employment income of 48000, the federal tax after credits of 3909.94, the
+    Ontario tax of 1934.56, Ontario political contributions of 3000 and 4800 deducted) with
+    federal political contributions of 1000 (T1 line 135, line 40900).
+    """
+    inputs: dict[str, Any] = {
+        "income_tax_deducted": "4800",
+        "political_contributions": "3000",
+        "federal_political_contributions": "1000",
+    }
+    return compute("48000", "0", "0", "0", "8640", "0", "0", **{**inputs, **overrides})
+
+
+def test_return_aes_federal_political_contribution_credit_is_558_33_and_lowers_the_refund() -> None:
+    # Return AE is Return P with federal political contributions of 1000 (T1 line 135, line
+    # 40900): the federal tax after credits is 3909.94 and the Ontario tax 1934.56, as for Return P.
+    # Federal Worksheet "Line 41000": 1000 is more than 750, so column 3 applies. Line 2 is 750.00,
+    # line 3 is 1000 - 750.00 = 250.00, line 5 is 250.00 x 33.33% = 83.325, rounded half-up to the
+    # cent: 83.33, line 6 is the printed 475.00 and line 7 is 83.33 + 475.00 = 558.33. (Columns 1
+    # and 2 are also built: column 1 line 7 is 75% x 1000 = 750.00 and column 2 line 7 is 50% x
+    # 600.00 = 300.00, + 300.00 = 600.00; neither applies.) 1000 is less than the $1,275 of the
+    # shortcut, so the column's 558.33 stands, at most the maximum of $650: line 41000 is 558.33.
+    # Line 138 adds lines 135 and 137, 558.33 + 0, and line 139 is 3909.94 - 558.33 = 3351.61, the
+    # net federal tax; the total payable is 3351.61 + 1934.56 = 5286.17 and, with total credits of
+    # 4800 + 0 + 1402.76 = 6202.76 as for Return P, line 167 is 5286.17 - 6202.76 = -916.59.
+    worksheet = return_ae()
+
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("3909.94")
+    assert worksheet.get(POLITICAL_CONTRIBUTIONS).value == D("1000")
+    assert worksheet.get(POLITICAL_CREDIT_COLUMN_3_LINE_2).value == D("750.00")
+    assert worksheet.get(POLITICAL_CREDIT_COLUMN_3_LINE_3).value == D("250.00")
+    assert worksheet.get(POLITICAL_CREDIT_COLUMN_3_LINE_5).value == D("83.33")
+    assert worksheet.get(POLITICAL_CREDIT_COLUMN_3_LINE_6).value == D("475.00")
+    assert worksheet.get(POLITICAL_CREDIT_COLUMN_3_LINE_7).value == D("558.33")
+    assert worksheet.get(POLITICAL_CREDIT_COLUMN_1_LINE_7).value == D("750.00")
+    assert worksheet.get(POLITICAL_CREDIT_COLUMN_2_LINE_7).value == D("600.00")
+    assert worksheet.get(POLITICAL_CREDIT_CHOSEN_COLUMN).value == D("558.33")
+    assert worksheet.get(POLITICAL_CREDIT_SHORTCUT_THRESHOLD).value == D("1275")
+    assert worksheet.get(POLITICAL_CREDIT_SHORTCUT_AMOUNT).value == D("650")
+    assert worksheet.get(POLITICAL_CREDIT_BEFORE_MAXIMUM).value == D("558.33")
+    assert worksheet.get(POLITICAL_CREDIT).value == D("558.33")
+    assert worksheet.get(CREDITS_AGAINST_FEDERAL_TAX).value == D("558.33")
+    assert worksheet.get(FEDERAL_TAX_LESS_CREDITS).value == D("3351.61")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("3351.61")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("5286.17")
+    assert worksheet.get(ontario.POLITICAL_CREDIT).value == D("1402.76")
+    assert worksheet.get(TOTAL_CREDITS).value == D("6202.76")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-916.59")
+    assert worksheet.get(REFUND).value == D("916.59")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "political_credit_column_3_line_3: political_contributions 1000 "
+        "less political_credit_column_3_line_2 750, not below 0 = 250"
+    ) in rendered
+    assert (
+        "political_credit_column_3_line_5: 33.33% of political_credit_column_3_line_3 250 "
+        "(half-up to 0.01)"
+    ) in rendered
+    assert (
+        "political_credit_column_3_line_7: political_credit_column_3_line_5 83.33 "
+        "+ political_credit_column_3_line_6 475 = 558.33"
+    ) in rendered
+    assert (
+        "political_credit_chosen_column: political_credit_column_3_line_7 558.33, "
+        "chosen as political_contributions is 1000"
+    ) in rendered
+    assert (
+        "political_credit_before_maximum: political_credit_chosen_column 558.33, "
+        "chosen as political_credit_shortcut_threshold is 1275"
+    ) in rendered
+    assert (
+        "political_credit: lesser of political_credit_before_maximum 558.33 and 650 "
+        "(half-up to 0.01)"
+    ) in rendered
+    assert (
+        "credits_against_federal_tax: political_credit 558.33 "
+        "+ labour_sponsored_funds_credit 0 = 558.33"
+    ) in rendered
+    assert (
+        "federal_tax_less_credits: federal_tax_with_itc_recapture 3909.94 "
+        "less credits_against_federal_tax 558.33, not below 0 = 3351.61"
+    ) in rendered
+
+
+@pytest.mark.parametrize(
+    ("contributions", "column", "credit"),
+    [
+        # The acceptance figures.
+        ("0", 1, "0.00"),
+        ("400", 1, "300.00"),
+        ("750", 2, "475.00"),
+        ("1000", 3, "558.33"),
+        ("1275", None, "650"),
+        ("5000", None, "650"),
+        # The ends of the columns: column 1 line 7 at 400 is 300.00; a cent over, column 2 line 5
+        # is 0.01 x 50% = 0.005, up to 0.01; a cent over 750, column 3 line 5 is 0.003333, down to
+        # 0.00.
+        ("400.01", 2, "300.01"),
+        ("750.01", 3, "475.00"),
+        # A cent under the $1,275: column 3 line 3 is 524.99, line 5 is 174.9792, down to 174.98.
+        ("1274.99", 3, "649.98"),
+        ("1275.01", None, "650"),
+    ],
+)
+def test_line_41000_is_the_applicable_column_or_the_shortcut_at_most_650(
+    contributions: str, column: int | None, credit: str
+) -> None:
+    worksheet = return_ae(federal_political_contributions=contributions)
+
+    (chosen,) = [
+        line
+        for line in worksheet.trace
+        if isinstance(line, ChosenByRangeLine) and line.output == POLITICAL_CREDIT_BEFORE_MAXIMUM
+    ]
+    if column is None:
+        assert chosen.chosen_kind == POLITICAL_CREDIT_SHORTCUT_AMOUNT
+    else:
+        assert chosen.chosen_kind == POLITICAL_CREDIT_CHOSEN_COLUMN
+        (column_pick,) = [
+            line
+            for line in worksheet.trace
+            if isinstance(line, ChosenByRangeLine) and line.output == POLITICAL_CREDIT_CHOSEN_COLUMN
+        ]
+        assert column_pick.chosen_kind == FEDERAL_POLITICAL_COLUMN_LINES[column][7]
+    assert worksheet.get(POLITICAL_CREDIT).value == D(credit)
+    assert worksheet.get(CREDITS_AGAINST_FEDERAL_TAX).value == D(credit)
+
+
+def test_the_federal_credit_does_not_change_the_ontario_credit() -> None:
+    # Ontario contributions of 0 leave ON479 line 16 at 0, whatever the federal contributions.
+    worksheet = return_ae(political_contributions="0")
+
+    assert worksheet.get(POLITICAL_CREDIT).value == D("558.33")
+    assert worksheet.get(ontario.POLITICAL_CREDIT).value == D("0")
+    assert worksheet.get(ontario.ONTARIO_CREDITS).value == D("0")
+    assert worksheet.get(TOTAL_CREDITS).value == D("4800")
+
+
+def test_line_138_adds_the_political_credit_and_the_labour_sponsored_funds_credit() -> None:
+    # 558.33 + 600.00 (15% of a net cost of 4000), in line order; line 139 is 3909.94 - 1158.33.
+    worksheet = return_ae(labour_sponsored_funds_net_cost="4000")
+
+    assert worksheet.get(LABOUR_SPONSORED_FUNDS_CREDIT).value == D("600.00")
+    assert worksheet.get(CREDITS_AGAINST_FEDERAL_TAX).value == D("1158.33")
+    assert worksheet.get(FEDERAL_TAX_LESS_CREDITS).value == D("2751.61")
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "credits_against_federal_tax: political_credit 558.33 "
+        "+ labour_sponsored_funds_credit 600 = 1158.33"
+    ) in rendered
+
+
+def test_a_credit_above_the_federal_tax_leaves_zero_on_line_139() -> None:
+    # Employment income of 10000 leaves the federal tax after credits at 0; contributions of 5000
+    # give the credit of 650, which is more than that: line 139 is 0, not -650, and it is lost.
+    worksheet = compute(
+        "10000", "0", "0", "0", "1800", "0", "0", federal_political_contributions="5000"
+    )
+
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("0")
+    assert worksheet.get(POLITICAL_CREDIT).value == D("650")
+    assert worksheet.get(CREDITS_AGAINST_FEDERAL_TAX).value == D("650")
+    assert worksheet.get(FEDERAL_TAX_LESS_CREDITS).value == D("0")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("0")
 
 
 def return_t(
@@ -10405,7 +10796,9 @@ def test_return_vs_credit_comes_off_line_132_and_line_139_is_3977_93() -> None:
     assert worksheet.get(CREDITS_AGAINST_FEDERAL_TAX).value == D("600.00")
     assert worksheet.get(FEDERAL_TAX_LESS_CREDITS).value == D("3977.93")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
-    assert "credits_against_federal_tax: labour_sponsored_funds_credit 600 = 600" in rendered
+    assert (
+        "credits_against_federal_tax: political_credit 0 + labour_sponsored_funds_credit 600 = 600"
+    ) in rendered
     assert (
         "federal_tax_less_credits: federal_tax_with_itc_recapture 4577.93 "
         "less credits_against_federal_tax 600, not below 0 = 3977.93"
