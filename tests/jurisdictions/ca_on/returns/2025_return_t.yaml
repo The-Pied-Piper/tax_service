@@ -787,7 +787,7 @@ sources:
     credits =" (confirmed 2026-10-19). This return claims no work placements, so its list of
     placements is empty, line 63260 is 0 and line 20 is the total of no placements, 0, which
     line 21 adds to line 19. Line 63265 (the answer on a partnership claim) and line 63270 (the
-    business number) are not modelled, to be confirmed.
+    business number) are carried as entered, blank.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-tc/5006-tc-25e.txt
   - >-
     CRA, Worksheet ON479 (form 5006-D1), "Line 20 - Ontario co-operative education tax

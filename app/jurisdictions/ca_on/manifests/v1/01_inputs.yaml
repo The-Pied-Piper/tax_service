@@ -242,6 +242,12 @@ inputs:
   - ca-on/flow_through_share_slips
   - ca-on/coop_education_payroll
   - ca-on/coop_education_placements
+  # Form ON479 line 63265 "Are you claiming this credit as a member of a partnership? 1 Yes or
+  # 2 No" and line 63270 "If yes, enter your nine-digit business number. (enter 9 digits)":
+  # listed under outputs too, since the form computes nothing from them and the return
+  # carries them as entered.
+  - ca-on/coop_claimed_as_partnership_member
+  - ca-on/coop_partnership_business_number
   - ca-on/community_food_program_donations
   - ca/charitable_donations
   - ca/government_donations

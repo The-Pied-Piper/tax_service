@@ -16,6 +16,7 @@ import pytest
 import app.jurisdictions.ca_on
 import app.jurisdictions.ca_on.catalog
 from app.domain.artifact import ArtifactCatalog, ArtifactKind, ArtifactRegistry
+from app.domain.digits import DigitsKind
 from app.domain.errors import InvalidRecordError, NegativeArtifactError
 from app.domain.record_list import RecordList, RecordListKind
 from app.jurisdictions.ca.catalog import (
@@ -49,6 +50,7 @@ from app.jurisdictions.ca_on.catalog import (
     CLAIMS_TAX_REDUCTION_AMOUNTS_AT_EQUAL_NET_INCOME,
     COMMUNITY_FOOD_PROGRAM_CREDIT,
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
+    COOP_CLAIMED_AS_PARTNERSHIP_MEMBER,
     COOP_EDUCATION_CREDIT,
     COOP_EDUCATION_FULL_SHARE,
     COOP_EDUCATION_PAYROLL,
@@ -60,6 +62,7 @@ from app.jurisdictions.ca_on.catalog import (
     COOP_EDUCATION_PLACEMENT_EXPENDITURES,
     COOP_EDUCATION_PLACEMENTS,
     COOP_EDUCATION_REMAINING_SHARE,
+    COOP_PARTNERSHIP_BUSINESS_NUMBER,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     DEPENDANT_ON428_LINE_28,
     DEPENDANTS,
@@ -347,6 +350,8 @@ REGISTERED = frozenset(
         "ca-on/property_tax_paid",
         "ca-on/reserve_home_energy_costs",
         "ca-on/public_long_term_care_paid",
+        "ca-on/coop_claimed_as_partnership_member",
+        "ca-on/coop_partnership_business_number",
     }
 )
 # ON428 lines 75 (line 60969) and 76 (line 60970): the numbers of dependent children and of
@@ -356,8 +361,9 @@ REGISTERED = frozenset(
 # Part A or Part B, whether there was a spouse or common-law partner at the end of the year
 # (0 or 1).
 # line 4, whether a dependant is the one claimed on line 58160 (0 or 1), a field of each record; and
-# ON479 line 63260, the number of eligible work placements; and Form ON-BEN's six tick boxes
-# (lines 61020, 61040, 61060, 61070, 61080 and 61140), each 0 or 1.
+# ON479 line 63260, the number of eligible work placements; Form ON-BEN's six tick boxes
+# (lines 61020, 61040, 61060, 61070, 61080 and 61140), each 0 or 1; and ON479 line 63265, the
+# answer on a partnership claim, 0 or 1.
 COUNTS = frozenset(
     {
         "ca-on/dependent_children",
@@ -380,8 +386,11 @@ COUNTS = frozenset(
         "ca-on/applies_for_senior_homeowners_grant",
         "ca-on/separate_residences_for_medical_reasons",
         "ca-on/lived_in_student_residence",
+        "ca-on/coop_claimed_as_partnership_member",
     }
 )
+# ON479 line 63270, the business number, "(enter 9 digits)": a digits kind of nine digits.
+DIGITS = frozenset({"ca-on/coop_partnership_business_number"})
 # Form T1221 lines 1 to 3, one line per corporation or slip: the record list of the slips;
 # Worksheet ON428's "Line 58185 - Ontario caregiver amount", "Complete one column for each
 # dependant": the record list of its dependants; and Worksheet ON428's "Line 58480 - Disability
@@ -691,12 +700,19 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/property_tax_paid") is PROPERTY_TAX_PAID
     assert registry.get("ca-on/reserve_home_energy_costs") is RESERVE_HOME_ENERGY_COSTS
     assert registry.get("ca-on/public_long_term_care_paid") is PUBLIC_LONG_TERM_CARE_PAID
+    assert (
+        registry.get("ca-on/coop_claimed_as_partnership_member")
+        is COOP_CLAIMED_AS_PARTNERSHIP_MEMBER
+    )
+    assert (
+        registry.get("ca-on/coop_partnership_business_number") is COOP_PARTNERSHIP_BUSINESS_NUMBER
+    )
 
 
-def test_every_registered_kind_but_the_counts_and_record_lists_is_money_in_the_package_namespace(
+def test_every_registered_kind_but_the_counts_lists_and_digits_is_money_in_the_package_namespace(
     registry: ArtifactRegistry,
 ) -> None:
-    for identifier in REGISTERED - COUNTS - RECORD_LISTS:
+    for identifier in REGISTERED - COUNTS - RECORD_LISTS - DIGITS:
         kind = registry.get(identifier)
         assert isinstance(kind, ArtifactKind)
         assert kind.identifier.startswith(f"{app.jurisdictions.ca_on.NAMESPACE}/")
@@ -975,13 +991,13 @@ def test_the_lift_spouse_at_year_end_is_a_non_negative_count(registry: ArtifactR
     assert registry.kind("ca-on/lift_spouse_at_year_end") is LIFT_SPOUSE_AT_YEAR_END
 
 
-def test_every_kind_but_the_record_lists_and_the_signed_lines_is_declared_non_negative(
+def test_every_kind_but_the_record_lists_the_signed_lines_and_digits_is_declared_non_negative(
     registry: ArtifactRegistry,
 ) -> None:
     for kind in CATALOG.kinds:
-        if kind.identifier not in RECORD_LISTS | SIGNED:
+        if kind.identifier not in RECORD_LISTS | SIGNED | DIGITS:
             assert kind.non_negative is True, kind.identifier
-    for identifier in REGISTERED - RECORD_LISTS - SIGNED:
+    for identifier in REGISTERED - RECORD_LISTS - SIGNED - DIGITS:
         assert registry.kind(identifier).non_negative is True, identifier
 
 
@@ -1062,3 +1078,27 @@ def test_line_72_and_line_73_are_non_negative_amounts() -> None:
     for kind in (ONTARIO_MINIMUM_TAX, ONTARIO_TAX_BEFORE_REDUCTION):
         assert kind.value_type is Decimal, kind.identifier
         assert kind.non_negative is True, kind.identifier
+
+
+def test_the_co_operative_education_partnership_lines_are_a_yes_no_count_and_nine_digits(
+    registry: ArtifactRegistry,
+) -> None:
+    # ON479 "Line 63265: Are you claiming this credit as a member of a partnership? 1 Yes or 2
+    # No", taken as a count, 0 for no and 1 for yes, as the other yes/no answers are; and "Line
+    # 63270: If yes, enter your nine-digit business number. (enter 9 digits)", a digits kind of
+    # nine digits.
+    assert COOP_CLAIMED_AS_PARTNERSHIP_MEMBER.identifier == (
+        "ca-on/coop_claimed_as_partnership_member"
+    )
+    assert COOP_CLAIMED_AS_PARTNERSHIP_MEMBER.value_type is int
+    assert COOP_CLAIMED_AS_PARTNERSHIP_MEMBER.non_negative is True
+    assert COOP_PARTNERSHIP_BUSINESS_NUMBER.identifier == ("ca-on/coop_partnership_business_number")
+    assert isinstance(COOP_PARTNERSHIP_BUSINESS_NUMBER, DigitsKind)
+    assert COOP_PARTNERSHIP_BUSINESS_NUMBER.digits == 9
+    assert COOP_PARTNERSHIP_BUSINESS_NUMBER.value_type is str
+    assert registry.kind("ca-on/coop_partnership_business_number") == DigitsKind(
+        "ca-on/coop_partnership_business_number", digits=9
+    )
+    assert DIGITS <= REGISTERED
+    for identifier in DIGITS:
+        assert isinstance(registry.kind(identifier), DigitsKind), identifier

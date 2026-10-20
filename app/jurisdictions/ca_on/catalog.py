@@ -13,6 +13,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from app.domain.artifact import ArtifactCatalog
+from app.domain.digits import DigitsKind
 from app.domain.record_list import RecordListKind
 from app.domain.registry import Namespace
 from app.jurisdictions.ca.catalog import (
@@ -873,6 +874,20 @@ COOP_EDUCATION_PLACEMENT_COUNT = CATALOG.declare(
 """Number of work placements, Form ON479 line 63260 "Number of eligible work placements your
 business or partnership is claiming under the Ontario co-operative education tax credit program":
 the placements in the list."""
+
+COOP_CLAIMED_AS_PARTNERSHIP_MEMBER = CATALOG.declare(
+    "coop_claimed_as_partnership_member", int, non_negative=True
+)
+"""Whether the credit is claimed as a member of a partnership, Form ON479 line 63265 "Are you
+claiming this credit as a member of a partnership? 1 Yes or 2 No": a yes/no answer, taken as a
+count, 0 for no and 1 for yes."""
+
+COOP_PARTNERSHIP_BUSINESS_NUMBER = DigitsKind.declare(
+    CATALOG, "coop_partnership_business_number", digits=9
+)
+"""Business number of the partnership, Form ON479 line 63270 "If yes, enter your nine-digit
+business number. (enter 9 digits)": nine digits as entered, blank when the answer on line 63265 is
+no."""
 
 COOP_EDUCATION_CREDIT = CATALOG.declare("coop_education_credit", Decimal, non_negative=True)
 """Co-operative education credit, Form ON479 line 20 and line 63300 "Enter the total amount claimed

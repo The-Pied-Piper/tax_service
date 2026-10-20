@@ -790,6 +790,8 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca-on/property_tax_paid",
         "ca-on/reserve_home_energy_costs",
         "ca-on/public_long_term_care_paid",
+        "ca-on/coop_claimed_as_partnership_member",
+        "ca-on/coop_partnership_business_number",
     }
     assert shared.get("ca/taxable_income") is TAXABLE_INCOME
     assert shared.get("ca/federal_basic_tax") is FEDERAL_BASIC_TAX

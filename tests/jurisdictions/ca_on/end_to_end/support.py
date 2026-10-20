@@ -292,9 +292,11 @@ from app.jurisdictions.ca_on.catalog import (
     CHOOSES_SINGLE_BENEFIT_PAYMENT,
     CLAIMS_SENIORS_CARE_CREDIT,
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
+    COOP_CLAIMED_AS_PARTNERSHIP_MEMBER,
     COOP_EDUCATION_PAYROLL,
     COOP_EDUCATION_PLACEMENT_EXPENDITURES,
     COOP_EDUCATION_PLACEMENTS,
+    COOP_PARTNERSHIP_BUSINESS_NUMBER,
     DEPENDANTS,
     DEPENDENT_CHILDREN,
     FERTILITY_EXPENSES,
@@ -695,6 +697,8 @@ def compute(
     flow_through_share_slips: tuple[str, ...] = (),
     coop_education_payroll: str = "0",
     coop_education_placements: tuple[str, ...] = (),
+    coop_claimed_as_partnership_member: int = 0,
+    coop_partnership_business_number: str = "",
     community_food_program_donations: str = "0",
     charitable_donations: str = "0",
     government_donations: str = "0",
@@ -1069,6 +1073,8 @@ def compute(
         slips(*flow_through_share_slips),
         Artifact(COOP_EDUCATION_PAYROLL, D(coop_education_payroll)),
         placement_list(*coop_education_placements),
+        Artifact(COOP_CLAIMED_AS_PARTNERSHIP_MEMBER, coop_claimed_as_partnership_member),
+        Artifact(COOP_PARTNERSHIP_BUSINESS_NUMBER, coop_partnership_business_number),
         Artifact(COMMUNITY_FOOD_PROGRAM_DONATIONS, D(community_food_program_donations)),
         Artifact(CHARITABLE_DONATIONS, D(charitable_donations)),
         Artifact(GOVERNMENT_DONATIONS, D(government_donations)),
@@ -1182,6 +1188,17 @@ def return_f_with_credits(
         flow_through_share_slips=flow_through_share_slips,
         coop_education_payroll=coop_education_payroll,
         coop_education_placements=coop_education_placements,
+    )
+
+
+def return_r(payroll: str = "500000", placements: tuple[str, ...] = ("8000", "15000")) -> Worksheet:
+    """Return R's inputs, as in `returns/2025_return_r.yaml`: Return M with work placements."""
+    return return_f_with_credits(
+        "24000",
+        "1200",
+        ("6000", "4000"),
+        coop_education_payroll=payroll,
+        coop_education_placements=placements,
     )
 
 
