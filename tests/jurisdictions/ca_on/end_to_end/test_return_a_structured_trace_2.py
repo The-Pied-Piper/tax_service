@@ -219,6 +219,7 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_5,
     POLITICAL_CREDIT_COLUMN_3_LINE_6,
     POLITICAL_CREDIT_COLUMN_3_LINE_7,
+    PRINCIPAL_RESIDENCE_GAIN,
     PROFESSIONAL_INCOME,
     PROVINCIAL_CREDITS,
     QFFP_FORECLOSURE_GAIN_OR_LOSS,
@@ -421,7 +422,9 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # 14 to 16" and line 21 (19700) "Line 19 plus line 20": Return A's one share row of 20000
         # is line 4, so lines 11, 14, 17, 19 and 21 are 20000 and every other figure is 0.
         PERSONAL_USE_PROPERTY_GAIN: SumLine(
-            PERSONAL_USE_PROPERTY_GAIN, ((PERSONAL_USE_PROPERTY_GAIN_ROWS, D("0")),), D("0")
+            PERSONAL_USE_PROPERTY_GAIN,
+            ((PERSONAL_USE_PROPERTY_GAIN_ROWS, D("0")), (PRINCIPAL_RESIDENCE_GAIN, D("0"))),
+            D("0"),
         ),
         CAPITAL_GAINS_OF_QUALIFIED_AND_OTHER_PROPERTIES: SumLine(
             CAPITAL_GAINS_OF_QUALIFIED_AND_OTHER_PROPERTIES,

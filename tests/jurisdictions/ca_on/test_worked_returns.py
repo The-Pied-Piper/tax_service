@@ -26,6 +26,14 @@ from app.jurisdictions.ca.catalog import (
     DISPOSITION_OUTLAYS,
     DISPOSITION_PROCEEDS,
     OTHER_DEPENDANT_MEDICAL_EXPENSES,
+    RESIDENCE_ADJUSTED_COST_BASE,
+    RESIDENCE_OUTLAYS,
+    RESIDENCE_PLUS_ONE_YEAR,
+    RESIDENCE_PROCEEDS,
+    RESIDENCE_YEARS_DESIGNATED_1972_TO_1981,
+    RESIDENCE_YEARS_DESIGNATED_AFTER_1981,
+    RESIDENCE_YEARS_OWNED_1972_TO_1981,
+    RESIDENCE_YEARS_OWNED_AFTER_1981,
 )
 from app.jurisdictions.ca_on.catalog import (
     CLAIMED_AS_ELIGIBLE_DEPENDANT,
@@ -916,6 +924,37 @@ def test_return_ad_reports_rental_income_on_lines_12599_and_12600() -> None:
     assert expected["ca/gross_rental_income"] == Decimal("24000.00")
     assert expected["ca/net_rental_income"] == Decimal("12000.00")
     assert expected["ca/total_income"] == Decimal("12000.00")
+    check(path)
+
+
+def test_return_ai_enters_the_taxable_gains_of_two_properties_on_line_15800() -> None:
+    path = RETURNS / "2025_return_ai.yaml"
+    build_tax_computation()  # registers the catalogs the loader resolves through
+    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+
+    (properties,) = [
+        a for a in worked.inputs if a.kind.identifier == "ca/principal_residence_properties"
+    ]
+    first, second = properties.value.records
+    assert first[RESIDENCE_YEARS_DESIGNATED_AFTER_1981] == 6
+    assert first[RESIDENCE_YEARS_DESIGNATED_1972_TO_1981] == 0
+    assert first[RESIDENCE_YEARS_OWNED_AFTER_1981] == 10
+    assert first[RESIDENCE_YEARS_OWNED_1972_TO_1981] == 0
+    assert first[RESIDENCE_PROCEEDS] == Decimal("400000.00")
+    assert first[RESIDENCE_OUTLAYS] == Decimal("5000.00")
+    assert first[RESIDENCE_ADJUSTED_COST_BASE] == Decimal("95000.00")
+    assert first[RESIDENCE_PLUS_ONE_YEAR] == 1
+    assert second[RESIDENCE_YEARS_DESIGNATED_AFTER_1981] == 1
+    assert second[RESIDENCE_YEARS_OWNED_AFTER_1981] == 6
+    assert second[RESIDENCE_PROCEEDS] == Decimal("250000.00")
+    assert second[RESIDENCE_OUTLAYS] == Decimal("0.00")
+    assert second[RESIDENCE_ADJUSTED_COST_BASE] == Decimal("180000.00")
+    assert second[RESIDENCE_PLUS_ONE_YEAR] == 1
+    expected = {a.kind.identifier: a.value for a in worked.expected}
+    # T2091(IND) line 54 of each form: 90000.00 and 46666.67, entered on Schedule 3 line 15800.
+    assert expected["ca/principal_residence_gain"] == Decimal("136666.67")
+    assert expected["ca/personal_use_property_gain"] == Decimal("136666.67")
+    assert expected["ca/taxable_capital_gains"] == Decimal("68333.34")
     check(path)
 
 

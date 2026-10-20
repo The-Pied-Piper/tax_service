@@ -168,6 +168,7 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_5,
     POLITICAL_CREDIT_COLUMN_3_LINE_6,
     POLITICAL_CREDIT_COLUMN_3_LINE_7,
+    PRINCIPAL_RESIDENCE_PROPERTIES,
     PROFESSIONAL_INCOME,
     QFFP_DISPOSITIONS,
     QFFP_FORECLOSURE_DISPOSITIONS,
@@ -232,6 +233,14 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_UTILITIES,
     RENTAL_UTILITIES_PERSONAL_PORTION,
     RENTAL_UTILITIES_SHORT_TERM_PORTION,
+    RESIDENCE_ADJUSTED_COST_BASE,
+    RESIDENCE_OUTLAYS,
+    RESIDENCE_PLUS_ONE_YEAR,
+    RESIDENCE_PROCEEDS,
+    RESIDENCE_YEARS_DESIGNATED_1972_TO_1981,
+    RESIDENCE_YEARS_DESIGNATED_AFTER_1981,
+    RESIDENCE_YEARS_OWNED_1972_TO_1981,
+    RESIDENCE_YEARS_OWNED_AFTER_1981,
     RESIDENT_IN_CANADA_THROUGHOUT_2025,
     RESP_AIPS_PART_A_APPLIES,
     RESP_AIPS_RECEIVED_PART_A,
@@ -604,6 +613,42 @@ def dispositions(kind: RecordListKind, *rows: Disposition) -> Artifact[RecordLis
     return Artifact(kind, RecordList(kind.fields, records))
 
 
+ResidenceProperty = tuple[int, int, int, int, str, str, str, int]
+"""One Form T2091(IND) property: the years designated after 1981 and from 1972 to 1981 (lines 1
+and 2), the years owned in the same periods (lines 5 and 6), the proceeds of disposition (line 8),
+the outlays and expenses (line 9), the adjusted cost base (line 10) and 1 if the "plus one" rule
+applies, else 0."""
+
+
+def principal_residence_properties(*rows: ResidenceProperty) -> Artifact[RecordList]:
+    """The Form T2091(IND) properties, one record per row, in the order given."""
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {
+            RESIDENCE_YEARS_DESIGNATED_AFTER_1981: designated_after,
+            RESIDENCE_YEARS_DESIGNATED_1972_TO_1981: designated_before,
+            RESIDENCE_YEARS_OWNED_AFTER_1981: owned_after,
+            RESIDENCE_YEARS_OWNED_1972_TO_1981: owned_before,
+            RESIDENCE_PROCEEDS: D(proceeds),
+            RESIDENCE_OUTLAYS: D(outlays),
+            RESIDENCE_ADJUSTED_COST_BASE: D(cost_base),
+            RESIDENCE_PLUS_ONE_YEAR: plus_one,
+        }
+        for (
+            designated_after,
+            designated_before,
+            owned_after,
+            owned_before,
+            proceeds,
+            outlays,
+            cost_base,
+            plus_one,
+        ) in rows
+    ]
+    return Artifact(
+        PRINCIPAL_RESIDENCE_PROPERTIES, RecordList(PRINCIPAL_RESIDENCE_PROPERTIES.fields, records)
+    )
+
+
 def compute(
     employment_income: str,
     share_dispositions: tuple[Disposition, ...],
@@ -622,6 +667,7 @@ def compute(
     other_foreclosure_dispositions: tuple[Disposition, ...] = (),
     personal_use_property_dispositions: tuple[Disposition, ...] = (),
     listed_personal_property_dispositions: tuple[Disposition, ...] = (),
+    principal_residence_properties_rows: tuple[ResidenceProperty, ...] = (),
     unapplied_listed_personal_property_losses: str = "0",
     capital_gains_deferral: str = "0",
     slip_capital_gains_or_losses: str = "0",
@@ -875,6 +921,7 @@ def compute(
         dispositions(OTHER_FORECLOSURE_DISPOSITIONS, *other_foreclosure_dispositions),
         dispositions(PERSONAL_USE_PROPERTY_DISPOSITIONS, *personal_use_property_dispositions),
         dispositions(LISTED_PERSONAL_PROPERTY_DISPOSITIONS, *listed_personal_property_dispositions),
+        principal_residence_properties(*principal_residence_properties_rows),
         Artifact(
             UNAPPLIED_LISTED_PERSONAL_PROPERTY_LOSSES, D(unapplied_listed_personal_property_losses)
         ),

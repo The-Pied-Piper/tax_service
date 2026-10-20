@@ -15,6 +15,7 @@ from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
 from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
 from app.jurisdictions.ca.capabilities.disposition_gains import DispositionGains
 from app.jurisdictions.ca.capabilities.disposition_gains_only import DispositionGainsOnly
+from app.jurisdictions.ca.capabilities.principal_residence_gain import PrincipalResidenceGain
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
 from app.jurisdictions.ca.capabilities.short_term_rental_gross_rents import (
@@ -87,6 +88,8 @@ from app.jurisdictions.ca.catalog import (
     PERSONAL_USE_PROPERTY_DISPOSITIONS,
     PERSONAL_USE_PROPERTY_GAIN,
     PERSONAL_USE_PROPERTY_GAIN_ROWS,
+    PRINCIPAL_RESIDENCE_GAIN,
+    PRINCIPAL_RESIDENCE_PROPERTIES,
     PROFESSIONAL_INCOME,
     QFFP_DISPOSITIONS,
     QFFP_FORECLOSURE_DISPOSITIONS,
@@ -219,8 +222,9 @@ INPUTS = frozenset(
     {
         "ca/employment_income",
         # Schedule 3 Part 3 and Part 4: the ten property lists (lines 1 to 10), the unapplied
-        # listed personal property losses, line 13 (16100), line 15 (17400), line 16 (17600) and
-        # line 20 (19200); line 21 (19700) is computed.
+        # listed personal property losses, the properties sold (Form T2091(IND)), line 13
+        # (16100), line 15 (17400), line 16 (17600) and line 20 (19200); line 21 (19700) is
+        # computed.
         "ca/qsbcs_dispositions",
         "ca/qffp_dispositions",
         "ca/qffp_foreclosure_dispositions",
@@ -232,6 +236,7 @@ INPUTS = frozenset(
         "ca/personal_use_property_dispositions",
         "ca/listed_personal_property_dispositions",
         "ca/unapplied_listed_personal_property_losses",
+        "ca/principal_residence_properties",
         "ca/capital_gains_deferral",
         "ca/slip_capital_gains_or_losses",
         "ca/t3_capital_gains_or_losses",
@@ -404,9 +409,20 @@ STEPS = {
         consumes={"dispositions": "ca/other_foreclosure_dispositions"},
         produces={"output": "ca/other_foreclosure_gain_or_loss"},
     ),
+    # Form T2091(IND) Part 1 and Part 3, one form for each property sold: "Divide line 21 by line
+    # 22." (line 23, the exempt part, rounded half up to the cent), "Line 18 minus line 23 (if
+    # negative, enter "0")" (line 24) and "Total capital gain" (line 54, which is line 24 when
+    # Part 2 is not completed), added over the properties.
+    CapabilitySelection(
+        name="ca/principal_residence_gain",
+        params={"rounding": "ca/principal_residence_gain_rounding"},
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_gain"},
+    ),
     # Part 3, Personal-use property: "Line 9 and line 15800: Total gain only (add all the amounts
-    # under column 5)": the rows' gains, a row's loss counting 0, then line 9 itself, a sum whose
-    # only part today is those rows.
+    # under column 5)": the rows' gains, a row's loss counting 0, then line 9 itself, a sum of
+    # those rows and line 54 of T2091(IND) ("enter the amount from line 54 above on line 15800 of
+    # Schedule 3").
     CapabilitySelection(
         name="ca/disposition_gains_only",
         params={},
@@ -416,7 +432,7 @@ STEPS = {
     CapabilitySelection(
         name="core/sum",
         params={},
-        consumes={"parts": ("ca/personal_use_property_gain_rows",)},
+        consumes={"parts": ("ca/personal_use_property_gain_rows", "ca/principal_residence_gain")},
         produces={"output": "ca/personal_use_property_gain"},
     ),
     # Part 3, Listed personal property: the rows' gains and losses (column 5) added, then line 10
@@ -1168,7 +1184,16 @@ WIRING = {
         frozenset({PERSONAL_USE_PROPERTY_DISPOSITIONS}),
         frozenset({PERSONAL_USE_PROPERTY_GAIN_ROWS}),
     ),
-    (Sum, frozenset({PERSONAL_USE_PROPERTY_GAIN_ROWS}), frozenset({PERSONAL_USE_PROPERTY_GAIN})),
+    (
+        PrincipalResidenceGain,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_GAIN}),
+    ),
+    (
+        Sum,
+        frozenset({PERSONAL_USE_PROPERTY_GAIN_ROWS, PRINCIPAL_RESIDENCE_GAIN}),
+        frozenset({PERSONAL_USE_PROPERTY_GAIN}),
+    ),
     (
         DispositionGains,
         frozenset({LISTED_PERSONAL_PROPERTY_DISPOSITIONS}),
