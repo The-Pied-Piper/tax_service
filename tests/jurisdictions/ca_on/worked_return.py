@@ -14,7 +14,7 @@ negative amount, which is the value type's own error.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -75,16 +75,48 @@ class WorkedReturn:
         except (YamlShapeError, yaml.YAMLError) as exc:
             raise WorkedReturnError(f"{path}: {exc}") from None
 
-    def require_outputs(self, outputs: frozenset[str]) -> None:
-        """Check `expected` lists every one of `outputs`, the identifiers the manifest declares.
+    def with_blanks(
+        self, inputs: frozenset[str], outputs: frozenset[str], artifacts: ArtifactRegistry
+    ) -> WorkedReturn:
+        """This return with every blank line of the form filled in, as the filer left it blank.
 
-        Raises WorkedReturnError naming the file and the missing outputs.
+        `inputs` and `outputs` are the identifiers the manifest declares. A declared input the
+        file leaves out is entered as blank: 0 for an amount or a count, no records for a record
+        list. A declared output the file leaves out is expected to be 0, so a line that fires
+        on a return not meant to trigger it still fails. Raises WorkedReturnError naming the
+        file and the identifier for one `artifacts` does not know or that holds no blank.
         """
-        missing = outputs - {artifact.kind.identifier for artifact in self.expected}
-        if missing:
-            raise WorkedReturnError(
-                f"{self.path}: expected: missing declared outputs {sorted(missing)}"
-            )
+        given = {artifact.kind.identifier for artifact in self.inputs}
+        listed = {artifact.kind.identifier for artifact in self.expected}
+        return replace(
+            self,
+            inputs=self.inputs + self._blanks(sorted(inputs - given), "inputs", artifacts),
+            expected=self.expected + self._blanks(sorted(outputs - listed), "expected", artifacts),
+        )
+
+    def _blanks(
+        self, identifiers: list[str], section: str, artifacts: ArtifactRegistry
+    ) -> tuple[Artifact[Any], ...]:
+        result: list[Artifact[Any]] = []
+        for identifier in identifiers:
+            try:
+                kind = artifacts.kind(identifier)
+            except (UnknownRegistrationError, InvalidRegistrationError) as exc:
+                raise WorkedReturnError(
+                    f"{self.path}: {section}: unknown artifact identifier {identifier!r} ({exc})"
+                ) from None
+            if kind.value_type is Decimal:
+                result.append(Artifact(kind, Decimal(0)))
+            elif kind.value_type is int:
+                result.append(Artifact(kind, 0))
+            elif section == "inputs" and isinstance(kind, RecordListKind):
+                result.append(Artifact(kind, RecordList(kind.fields, [])))
+            else:
+                raise WorkedReturnError(
+                    f"{self.path}: {section}: {identifier!r} holds a "
+                    f"{kind.value_type.__name__}, which has no blank"
+                )
+        return tuple(result)
 
     @staticmethod
     def _jurisdiction(node: YamlNode) -> JurisdictionCode:
