@@ -21,7 +21,7 @@ from app.domain.errors import NegativeArtifactError
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import Rate
-from app.domain.parameters.rate_table import RATE_TABLE, RateTable, RateTableRow
+from app.domain.parameters.rate_table import RATE_TABLE, RateTable
 from app.domain.trace import RateByIncomeBandLine
 
 
@@ -51,18 +51,9 @@ class RateByIncomeBand(Capability):
                 value=income,
             )
         table = self._table.values
-        row = None if income == 0 else self._row_for(table, income)
-        rate = table.rate_at_zero if row is None else row.rate
+        row = table.row_for(income)
+        rate = table.rate_for(row)
         return CapabilityResult(
             outputs=(Artifact(self._output, rate),),
             trace=(RateByIncomeBandLine(self._output, self._income, income, row, rate),),
         )
-
-    @staticmethod
-    def _row_for(table: RateTable, income: Decimal) -> RateTableRow:
-        """The last row whose `more_than` a positive `income` exceeds.
-
-        The first row is more than 0, so one always does; a table has no gaps, so `income` is at
-        most that row's `not_more_than` whenever it has one.
-        """
-        return [row for row in table.rows if income > row.more_than][-1]

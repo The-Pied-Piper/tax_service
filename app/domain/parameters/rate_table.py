@@ -3,8 +3,9 @@
 Each row is printed as "more than X but not more than Y: rate" (the last row "more than X: rate",
 with no upper bound); the table also holds `rate_at_zero`, the rate a form gives a figure of
 exactly zero. The bounds are exact and kept as printed: an overlap between a row's upper bound and
-the next row's lower bound, as a form's typo can print, is kept, while a gap is refused. Choosing
-a row for a figure is the capability's. The code holds no jurisdiction's tables.
+the next row's lower bound, as a form's typo can print, is kept, while a gap is refused. A figure
+above zero falls in the last row whose `more_than` it exceeds, so in an overlap the later row
+applies. The code holds no jurisdiction's tables.
 """
 
 from __future__ import annotations
@@ -95,6 +96,21 @@ class RateTable:
             raise InvalidRateTableError(
                 f"the last row must have no not_more_than, got {self.rows[-1].not_more_than}"
             )
+
+    def row_for(self, figure: Decimal) -> RateTableRow | None:
+        """The row a `figure` of zero or more falls in: `None` for exactly zero, which takes
+        `rate_at_zero`, else the last row whose `more_than` it exceeds.
+
+        The first row is more than 0, so a figure above zero always exceeds one; with no gaps,
+        the figure is at most that row's `not_more_than` whenever it has one.
+        """
+        if figure == 0:
+            return None
+        return [row for row in self.rows if figure > row.more_than][-1]
+
+    def rate_for(self, row: RateTableRow | None) -> Rate:
+        """The rate `row` gives, or `rate_at_zero` for `None`."""
+        return self.rate_at_zero if row is None else row.rate
 
 
 RATE_TABLE: ParameterKind[RateTable] = ParameterKind("rate_table", RateTable)

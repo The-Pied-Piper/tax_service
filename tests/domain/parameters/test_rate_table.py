@@ -7,7 +7,8 @@ zero. Like `SurchargeTiers`, the value objects only hold and check the table: at
 the first row more than 0, `more_than` strictly increasing, each `not_more_than` above its own
 `more_than`, no gap between a row's `not_more_than` and the next row's `more_than` (an overlap,
 as a form's typo can print, is kept as printed), and an upper bound on every row but the last.
-Choosing a row is the capability's. Values are made up.
+A figure of zero takes no row and `rate_at_zero`; above zero it falls in the last row whose
+`more_than` it exceeds. Values are made up.
 """
 
 from __future__ import annotations
@@ -249,6 +250,41 @@ def test_rejects_rows_that_are_not_a_tuple(rows: object) -> None:
 def test_rejects_a_rate_at_zero_that_is_not_a_rate(rate: object) -> None:
     with pytest.raises(TypeError, match="rate_at_zero must be a Rate"):
         RateTable(rate, (first(), middle(), last()))  # type: ignore[arg-type]
+
+
+# --- choosing a row ---------------------------------------------------------------------------
+
+
+def test_a_figure_of_zero_takes_no_row_and_the_rate_at_zero() -> None:
+    held = table(rate_at_zero="0.40")
+
+    assert held.row_for(D("0")) is None
+    assert held.row_for(D("-0.00")) is None
+    assert held.rate_for(None) == Rate(D("0.40"))
+
+
+@pytest.mark.parametrize(
+    ("figure", "chosen"),
+    [("0.01", first()), ("1000", first()), ("1000.01", middle()), ("2500", middle())],
+)
+def test_a_figure_falls_in_the_row_whose_bounds_hold_it(figure: str, chosen: RateTableRow) -> None:
+    held = table()
+
+    assert held.row_for(D(figure)) == chosen
+    assert held.rate_for(chosen) == chosen.rate
+
+
+def test_a_figure_above_the_last_lower_bound_falls_in_the_last_row() -> None:
+    assert table().row_for(D("2500.01")) == last()
+    assert table().row_for(D("1E+9")) == last()
+
+
+def test_in_an_overlap_the_later_row_applies() -> None:
+    overlapping = table(row("0", "1200", "0.30"), row("1000", "2500", "0.20"), last())
+
+    assert overlapping.row_for(D("1000")) == row("0", "1200", "0.30")
+    assert overlapping.row_for(D("1000.01")) == row("1000", "2500", "0.20")
+    assert overlapping.row_for(D("1200")) == row("1000", "2500", "0.20")
 
 
 # --- the kind ---------------------------------------------------------------------------------
