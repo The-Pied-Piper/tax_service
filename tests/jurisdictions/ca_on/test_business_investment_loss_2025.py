@@ -11,7 +11,7 @@ The printed 50% is its own rate dataset, not the capital gains inclusion rate of
 different form's printed figure, so each follows its own form.
 
 The dataset is tested with the capability that reads it, on made-up kinds; the worksheet's lines
-together, from the earlier years' deductions to line 21700, are in test_end_to_end_2025.py.
+together, from the earlier years' deductions to line 21700, are in the `end_to_end` tests.
 """
 
 from __future__ import annotations

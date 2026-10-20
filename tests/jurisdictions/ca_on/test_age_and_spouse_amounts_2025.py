@@ -19,7 +19,7 @@ half-up to the cent.
 
 Each dataset is tested with the one capability that reads it, on made-up kinds; the lines together,
 from net income and the spouse's net income to lines 30100, 30300 and 30425, are in
-test_end_to_end_2025.py.
+the `end_to_end` tests.
 """
 
 from __future__ import annotations

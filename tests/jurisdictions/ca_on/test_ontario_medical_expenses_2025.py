@@ -22,7 +22,7 @@ have.
 
 The datasets are tested with the capabilities that read them, on made-up kinds for the ON428
 lines and with the registered kinds for line 58729; the lines together, from the expenses paid to
-line 167, are in test_end_to_end_2025.py and `returns/2025_return_x.yaml`.
+line 167, are in the `end_to_end` tests and `returns/2025_return_x.yaml`.
 """
 
 from __future__ import annotations

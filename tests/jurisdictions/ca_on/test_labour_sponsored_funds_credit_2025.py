@@ -8,7 +8,7 @@ first and then at most the maximum, so the cap sits after the percentage. Line 4
 dollars-and-cents box, so each is rounded half-up to the cent.
 
 The datasets are tested with the capabilities that read them, on made-up kinds; the lines together,
-from the net cost of line 41300 to line 42000, are in test_end_to_end_2025.py.
+from the net cost of line 41300 to line 42000, are in the `end_to_end` tests.
 """
 
 from __future__ import annotations
