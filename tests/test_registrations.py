@@ -51,11 +51,11 @@ def test_lists_the_core_packages() -> None:
 
 
 def test_importing_a_jurisdiction_package_registers_its_capabilities() -> None:
-    registered = CapabilityRegistry.shared().get("ca-on/flow_through_share_expenses")
+    registry = CapabilityRegistry.shared()
 
-    assert (
-        registered.__module__ == "app.jurisdictions.ca_on.capabilities.flow_through_share_expenses"
-    )
+    for name in ("choose_by_range", "flow_through_share_expenses"):
+        registered = registry.get(f"ca-on/{name}")
+        assert registered.__module__ == f"app.jurisdictions.ca_on.capabilities.{name}"
 
 
 def test_each_core_package_imports_every_module_in_its_directory() -> None:
