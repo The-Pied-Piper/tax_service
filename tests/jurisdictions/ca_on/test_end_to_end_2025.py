@@ -10277,8 +10277,8 @@ def test_no_contributions_leave_the_ontario_credits_at_zero() -> None:
     assert worksheet.get(PROVINCIAL_CREDITS).value == D("0")
 
 
-def return_z(**overrides: Any) -> Worksheet:
-    """Return Z's inputs, as in `returns/2025_return_z.yaml`: Return P's with federal contributions.
+def return_ae(**overrides: Any) -> Worksheet:
+    """Return AE's inputs, as in `returns/2025_return_ae.yaml`: Return P's with federal ones.
 
     Return P's filer (employment income of 48000, the federal tax after credits of 3909.94, the
     Ontario tax of 1934.56, Ontario political contributions of 3000 and 4800 deducted) with
@@ -10292,8 +10292,8 @@ def return_z(**overrides: Any) -> Worksheet:
     return compute("48000", "0", "0", "0", "8640", "0", "0", **{**inputs, **overrides})
 
 
-def test_return_zs_federal_political_contribution_credit_is_558_33_and_lowers_the_refund() -> None:
-    # Return Z is Return P with federal political contributions of 1000 (T1 line 135, line
+def test_return_aes_federal_political_contribution_credit_is_558_33_and_lowers_the_refund() -> None:
+    # Return AE is Return P with federal political contributions of 1000 (T1 line 135, line
     # 40900): the federal tax after credits is 3909.94 and the Ontario tax 1934.56, as for Return P.
     # Federal Worksheet "Line 41000": 1000 is more than 750, so column 3 applies. Line 2 is 750.00,
     # line 3 is 1000 - 750.00 = 250.00, line 5 is 250.00 x 33.33% = 83.325, rounded half-up to the
@@ -10304,7 +10304,7 @@ def test_return_zs_federal_political_contribution_credit_is_558_33_and_lowers_th
     # Line 138 adds lines 135 and 137, 558.33 + 0, and line 139 is 3909.94 - 558.33 = 3351.61, the
     # net federal tax; the total payable is 3351.61 + 1934.56 = 5286.17 and, with total credits of
     # 4800 + 0 + 1402.76 = 6202.76 as for Return P, line 167 is 5286.17 - 6202.76 = -916.59.
-    worksheet = return_z()
+    worksheet = return_ae()
 
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("3909.94")
     assert worksheet.get(POLITICAL_CONTRIBUTIONS).value == D("1000")
@@ -10386,7 +10386,7 @@ def test_return_zs_federal_political_contribution_credit_is_558_33_and_lowers_th
 def test_line_41000_is_the_applicable_column_or_the_shortcut_at_most_650(
     contributions: str, column: int | None, credit: str
 ) -> None:
-    worksheet = return_z(federal_political_contributions=contributions)
+    worksheet = return_ae(federal_political_contributions=contributions)
 
     (chosen,) = [
         line
@@ -10409,7 +10409,7 @@ def test_line_41000_is_the_applicable_column_or_the_shortcut_at_most_650(
 
 def test_the_federal_credit_does_not_change_the_ontario_credit() -> None:
     # Ontario contributions of 0 leave ON479 line 16 at 0, whatever the federal contributions.
-    worksheet = return_z(political_contributions="0")
+    worksheet = return_ae(political_contributions="0")
 
     assert worksheet.get(POLITICAL_CREDIT).value == D("558.33")
     assert worksheet.get(ontario.POLITICAL_CREDIT).value == D("0")
@@ -10419,7 +10419,7 @@ def test_the_federal_credit_does_not_change_the_ontario_credit() -> None:
 
 def test_line_138_adds_the_political_credit_and_the_labour_sponsored_funds_credit() -> None:
     # 558.33 + 600.00 (15% of a net cost of 4000), in line order; line 139 is 3909.94 - 1158.33.
-    worksheet = return_z(labour_sponsored_funds_net_cost="4000")
+    worksheet = return_ae(labour_sponsored_funds_net_cost="4000")
 
     assert worksheet.get(LABOUR_SPONSORED_FUNDS_CREDIT).value == D("600.00")
     assert worksheet.get(CREDITS_AGAINST_FEDERAL_TAX).value == D("1158.33")

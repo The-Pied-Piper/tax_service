@@ -1,4 +1,4 @@
-# Return Z: a 2025 Ontario resident whose employment income is below the EI maximum
+# Return AE: a 2025 Ontario resident whose employment income is below the EI maximum
 # insurable earnings ($65,700) and the CPP first earnings ceiling ($71,300), so the CPP
 # contributions and EI premiums are the rates' arithmetic, not the printed maximums, and
 # there is no second additional CPP contribution. Computed from employment income to total

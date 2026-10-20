@@ -479,8 +479,8 @@ def test_return_x_claims_one_dependant_with_a_disability_on_line_31800() -> None
     check(path)
 
 
-def test_return_z_claims_the_federal_political_contribution_credit_on_line_41000() -> None:
-    path = RETURNS / "2025_return_z.yaml"
+def test_return_ae_claims_the_federal_political_contribution_credit_on_line_41000() -> None:
+    path = RETURNS / "2025_return_ae.yaml"
     build_tax_computation()  # registers the catalogs the loader resolves through
     worked = WorkedReturn.load(path, ArtifactRegistry.shared())
 
