@@ -31,8 +31,11 @@ from app.domain.trace import (
     MultipleOverLine,
     OtherDependantMedicalLine,
     PerUnitAmountLine,
+    PlacementCreditLine,
+    QuotientLine,
     RateAppliedLine,
     RateByIncomeBandLine,
+    RecordCountLine,
     RecordTotalLine,
     RoundedTotalLine,
     SubtractedLine,
@@ -369,6 +372,40 @@ class EnglishTraceRenderer:
                 )
                 age = "under 18" if under_18 else "18 or older"
                 return f"{output.label}: dependant {position}: {age}: {'; '.join(steps)}"
+            case QuotientLine(
+                output=output,
+                dividend=dividend,
+                dividend_amount=dividend_amount,
+                divisor=divisor,
+                divisor_amount=divisor_amount,
+                result=result,
+            ):
+                return (
+                    f"{output.label}: {dividend.label} {self._money(dividend_amount)} "
+                    f"divided by {divisor.label} {self._money(divisor_amount)} "
+                    f"= {self._money(result)}"
+                )
+            case RecordCountLine(output=output, records=records, count=count):
+                noun = "item" if count == 1 else "items"
+                counted = "no items" if count == 0 else f"{count} {noun}"
+                return f"{output.label}: {counted} in {records.label} = {count}"
+            case PlacementCreditLine(
+                output=output,
+                position=position,
+                field=field,
+                expenditure=expenditure,
+                line_1=line_1,
+                line_3=line_3,
+                line_12=line_12,
+                line_13=line_13,
+                rounding=rule,
+            ):
+                return (
+                    f"{output.label}: item {position} {field.label} {self._money(expenditure)}: "
+                    f"line 1 {self._money(line_1)}, line 3 {self._money(line_3)}, "
+                    f"line 12 {self._money(line_12)}, line 13 {self._money(line_13)} "
+                    f"({self._rounding(rule)})"
+                )
             case ItemsTotalLine(output=output, items=items, total=total):
                 terms = " + ".join(
                     f"item {position} {self._money(amount)}" for position, amount in items

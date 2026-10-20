@@ -26,6 +26,7 @@ from app.domain.parameters.rate import Rate
 from app.domain.parameters.rate_table import RateTableRow
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.domain.parameters.taper import Taper
+from app.domain.record_list import RecordListKind
 from app.domain.trace import (
     AtMostLine,
     BracketColumnLine,
@@ -45,8 +46,11 @@ from app.domain.trace import (
     MultipleOverLine,
     OtherDependantMedicalLine,
     PerUnitAmountLine,
+    PlacementCreditLine,
+    QuotientLine,
     RateAppliedLine,
     RateByIncomeBandLine,
+    RecordCountLine,
     RecordTotalLine,
     RoundedTotalLine,
     SubtractedLine,
@@ -2168,3 +2172,219 @@ def test_lines_of_different_classes_are_not_equal() -> None:
     assert cast(Any, SumLine(TOTAL, (), D(10))) != BracketColumnLine(
         D(0), D("0.10"), D(100), D(0), D(10)
     )
+
+
+DIVIDEND = ArtifactKind("ex/dividend_amount", Decimal)
+
+
+DIVISOR = ArtifactKind("ex/divisor_amount", Decimal)
+
+
+QUOTIENT = ArtifactKind("ex/quotient_amount", Decimal)
+
+
+ITEM_COUNT = ArtifactKind("ex/item_count", int)
+
+
+ITEMS = RecordListKind("ex/items", fields=(ITEM_AMOUNT,))
+
+
+SHARE = ArtifactKind("ex/remaining_share", Decimal)
+
+
+def quotient_line() -> QuotientLine:
+    return QuotientLine(QUOTIENT, DIVIDEND, D("100000.00"), DIVISOR, D("200000.00"), D("0.5"))
+
+
+def record_count_line() -> RecordCountLine:
+    return RecordCountLine(ITEM_COUNT, ITEMS, 2)
+
+
+def placement_credit_line() -> PlacementCreditLine:
+    return PlacementCreditLine(
+        output=TOTAL,
+        position=1,
+        field=ITEM_AMOUNT,
+        expenditure=D("8000"),
+        line_1=D("2000.00"),
+        line_3=D("400.00"),
+        line_12=D("200.000"),
+        line_13=D("2200.00"),
+        remaining_share=SHARE,
+        remaining_share_amount=D("0.5"),
+        expenditure_rate=Rate(D("0.25")),
+        supplement_rate=Rate(D("0.05")),
+        maximum=Amount(D("3000")),
+        rounding=CENT,
+    )
+
+
+def test_quotient_line_fields_in_order() -> None:
+    line = quotient_line()
+
+    assert line == QuotientLine(
+        output=QUOTIENT,
+        dividend=DIVIDEND,
+        dividend_amount=D("100000.00"),
+        divisor=DIVISOR,
+        divisor_amount=D("200000.00"),
+        result=D("0.5"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "dividend",
+        "dividend_amount",
+        "divisor",
+        "divisor_amount",
+        "result",
+    ]
+    assert line.output is QUOTIENT
+    assert line.dividend is DIVIDEND
+    assert line.dividend_amount == D("100000.00")
+    assert line.divisor is DIVISOR
+    assert line.divisor_amount == D("200000.00")
+    assert line.result == D("0.5")
+    assert line.amount == D("0.5")
+
+
+def test_quotient_lines_differ_by_the_dividend_and_the_divisor() -> None:
+    other = ArtifactKind("ex/other_amount", Decimal)
+
+    assert quotient_line() != QuotientLine(
+        QUOTIENT, other, D("100000.00"), DIVISOR, D("200000.00"), D("0.5")
+    )
+    assert quotient_line() != QuotientLine(
+        QUOTIENT, DIVIDEND, D("100000.00"), other, D("200000.00"), D("0.5")
+    )
+    assert quotient_line() != QuotientLine(
+        QUOTIENT, DIVIDEND, D("100000.01"), DIVISOR, D("200000.00"), D("0.5")
+    )
+    assert quotient_line() != QuotientLine(
+        QUOTIENT, DIVIDEND, D("100000.00"), DIVISOR, D("200000.01"), D("0.5")
+    )
+
+
+def test_quotient_lines_differ_by_the_result_and_the_output() -> None:
+    other = ArtifactKind("ex/other_quotient", Decimal)
+
+    assert quotient_line() != QuotientLine(
+        QUOTIENT, DIVIDEND, D("100000.00"), DIVISOR, D("200000.00"), D("0.6")
+    )
+    assert quotient_line() != QuotientLine(
+        other, DIVIDEND, D("100000.00"), DIVISOR, D("200000.00"), D("0.5")
+    )
+
+
+def test_quotient_lines_are_hashable() -> None:
+    assert hash(quotient_line()) == hash(quotient_line())
+
+
+def test_a_quotient_line_is_not_a_subtracted_line() -> None:
+    assert not isinstance(quotient_line(), SubtractedLine)
+
+
+def test_record_count_line_fields_in_order() -> None:
+    line = record_count_line()
+
+    assert line == RecordCountLine(output=ITEM_COUNT, records=ITEMS, count=2)
+    assert [f.name for f in fields(line)] == ["output", "records", "count"]
+    assert line.output is ITEM_COUNT
+    assert line.records is ITEMS
+    assert line.count == 2
+    assert type(line.count) is int
+    assert line.amount == D(2)
+
+
+def test_record_count_line_may_count_no_records() -> None:
+    line = RecordCountLine(ITEM_COUNT, ITEMS, 0)
+
+    assert line.count == 0
+    assert line.amount == D(0)
+
+
+def test_record_count_lines_differ_by_the_count_the_list_and_the_output() -> None:
+    other_list = RecordListKind("ex/other_items", fields=(ITEM_AMOUNT,))
+    other_count = ArtifactKind("ex/other_count", int)
+
+    assert record_count_line() != RecordCountLine(ITEM_COUNT, ITEMS, 3)
+    assert record_count_line() != RecordCountLine(ITEM_COUNT, other_list, 2)
+    assert record_count_line() != RecordCountLine(other_count, ITEMS, 2)
+
+
+def test_record_count_lines_are_hashable() -> None:
+    assert hash(record_count_line()) == hash(record_count_line())
+
+
+def test_placement_credit_line_fields_in_order() -> None:
+    line = placement_credit_line()
+
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "field",
+        "expenditure",
+        "line_1",
+        "line_3",
+        "line_12",
+        "line_13",
+        "remaining_share",
+        "remaining_share_amount",
+        "expenditure_rate",
+        "supplement_rate",
+        "maximum",
+        "rounding",
+    ]
+    assert line.output is TOTAL
+    assert line.position == 1
+    assert line.field is ITEM_AMOUNT
+    assert line.expenditure == D("8000")
+    assert line.line_1 == D("2000.00")
+    assert line.line_3 == D("400.00")
+    assert line.line_12 == D("200.000")
+    assert line.line_13 == D("2200.00")
+    assert line.remaining_share is SHARE
+    assert line.remaining_share_amount == D("0.5")
+    assert line.expenditure_rate == Rate(D("0.25"))
+    assert line.supplement_rate == Rate(D("0.05"))
+    assert line.maximum == Amount(D("3000"))
+    assert line.rounding == CENT
+
+
+def test_a_placement_credit_lines_amount_is_its_line_13() -> None:
+    assert placement_credit_line().amount == D("2200.00")
+    assert "amount" not in [f.name for f in fields(placement_credit_line())]
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"output": ArtifactKind("ex/other_total", Decimal)},
+        {"position": 2},
+        {"field": ArtifactKind("ex/other_item_amount", Decimal)},
+        {"expenditure": D("8000.01")},
+        {"line_1": D("2000.01")},
+        {"line_3": D("400.01")},
+        {"line_12": D("200.01")},
+        {"line_13": D("2200.01")},
+        {"remaining_share": ArtifactKind("ex/other_share", Decimal)},
+        {"remaining_share_amount": D("0.6")},
+        {"expenditure_rate": Rate(D("0.30"))},
+        {"supplement_rate": Rate(D("0.06"))},
+        {"maximum": Amount(D("3001"))},
+        {"rounding": NO_ROUNDING},
+    ],
+)
+def test_placement_credit_lines_differ_by_each_field(change: dict[str, Any]) -> None:
+    line = placement_credit_line()
+    values = {f.name: getattr(line, f.name) for f in fields(line)}
+    values.update(change)
+
+    assert line != PlacementCreditLine(**values)
+
+
+def test_placement_credit_lines_are_hashable() -> None:
+    assert hash(placement_credit_line()) == hash(placement_credit_line())
+
+
+def test_a_placement_credit_line_is_not_a_record_total_line() -> None:
+    assert not isinstance(placement_credit_line(), RecordTotalLine)

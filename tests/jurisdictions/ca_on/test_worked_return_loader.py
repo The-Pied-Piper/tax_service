@@ -284,17 +284,68 @@ def test_an_int_kind_refuses_a_string_that_is_not_decimal_digits(
         WorkedReturn.load(path, counts)
 
 
-def test_a_count_under_expected_names_the_file_and_key(
-    tmp_path: Path, counts: ArtifactRegistry
-) -> None:
-    # Counts are what a return starts from, never a line it expects.
-    text = with_section("inputs", 'inputs:\n  ex/count: "3"\n')
-    path = write(
-        tmp_path, text.replace('  ca/federal_basic_tax: "20146.25"\n', '  ex/count: "3"\n')
+def with_expected_count(value: str) -> str:
+    """`VALID` with a count input, also expecting the made-up count `ex/count` (a count output)."""
+    return with_section("inputs", 'inputs:\n  ex/count: "3"\n').replace(
+        'expected:\n  ca/federal_basic_tax: "20146.25"\n',
+        f'expected:\n  ca/federal_basic_tax: "20146.25"\n  ex/count: {value}\n',
     )
 
-    with pytest.raises(WorkedReturnError, match=r"bad\.yaml: expected\.ex/count: .*not an amount"):
+
+def test_a_count_under_expected_loads_as_an_integer(
+    tmp_path: Path, counts: ArtifactRegistry
+) -> None:
+    # A count a manifest declares as an output, such as a number of list items, is a line a return
+    # expects, spelled like an input count.
+    path = write(tmp_path, with_expected_count('"3"'), "ok.yaml")
+
+    worked = WorkedReturn.load(path, counts)
+
+    assert worked.expected == (Artifact(FEDERAL_BASIC_TAX, D("20146.25")), Artifact(COUNT, 3))
+    assert type(worked.expected[1].value) is int
+
+
+def test_a_zero_count_under_expected_loads(tmp_path: Path, counts: ArtifactRegistry) -> None:
+    path = write(tmp_path, with_expected_count('"0"'), "ok.yaml")
+
+    assert WorkedReturn.load(path, counts).expected[1] == Artifact(COUNT, 0)
+
+
+@pytest.mark.parametrize(("count", "got"), [("3", "int"), ("true", "bool"), ("3.0", "float")])
+def test_an_unquoted_count_under_expected_names_the_file_and_key(
+    tmp_path: Path, counts: ArtifactRegistry, count: str, got: str
+) -> None:
+    path = write(tmp_path, with_expected_count(count))
+
+    with pytest.raises(
+        WorkedReturnError, match=rf"bad\.yaml: expected\.ex/count must be a string, got {got}"
+    ):
         WorkedReturn.load(path, counts)
+
+
+@pytest.mark.parametrize("count", ["03", "-1", "3.0", "three", ""])
+def test_a_count_under_expected_that_is_not_decimal_digits_names_the_file_and_key(
+    tmp_path: Path, counts: ArtifactRegistry, count: str
+) -> None:
+    path = write(tmp_path, with_expected_count(f'"{count}"'))
+
+    with pytest.raises(
+        WorkedReturnError,
+        match=rf"bad\.yaml: expected\.ex/count is not a count: {re.escape(repr(count))}",
+    ):
+        WorkedReturn.load(path, counts)
+
+
+def test_a_count_under_expected_is_checked_when_the_outputs_are_required(
+    tmp_path: Path, counts: ArtifactRegistry
+) -> None:
+    path = write(tmp_path, with_expected_count('"3"'), "ok.yaml")
+    worked = WorkedReturn.load(path, counts)
+
+    worked.require_outputs(frozenset({"ca/federal_basic_tax", "ex/count"}))
+
+    with pytest.raises(WorkedReturnError, match=r"ok\.yaml: expected: missing declared outputs"):
+        worked.require_outputs(frozenset({"ca/federal_basic_tax", "ex/count", "ex/other_count"}))
 
 
 def test_loads_the_ontario_counts_as_integers(tmp_path: Path, artifacts: ArtifactRegistry) -> None:
@@ -602,13 +653,13 @@ def test_a_negative_record_amount_fails_at_load_naming_the_item_and_field(
 def test_a_record_list_under_expected_names_the_file_and_key(
     tmp_path: Path, records: ArtifactRegistry
 ) -> None:
-    # Record lists are what a return starts from, never a line it expects, like counts.
+    # Record lists are what a return starts from, never a line it expects (unlike counts).
     text = VALID.replace('  ca/federal_basic_tax: "20146.25"\n', "  ex/dependants: []\n").replace(
         'inputs:\n  ca/taxable_income: "115000"\n', DEPENDANTS
     )
     path = write(tmp_path, text)
 
     with pytest.raises(
-        WorkedReturnError, match=r"bad\.yaml: expected\.ex/dependants: .*not an amount"
+        WorkedReturnError, match=r"bad\.yaml: expected\.ex/dependants: .*not an amount or a count"
     ):
         WorkedReturn.load(path, records)

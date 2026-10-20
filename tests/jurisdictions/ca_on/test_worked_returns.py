@@ -111,8 +111,9 @@ description: >-
   nothing as 9935.00 is below it: 1633; with one it would be 1890, at most 2813, less
   nothing over 30639: 1890. With 0 Schedule 6 eligible dependants the first applies: 1633.
   With no fertility treatment expenses, no seniors' transit amount paid, no political
-  contributions and no Form T1221 slips, the Ontario credits (ON479 lines 1, 14, 16, 17, 18 and
-  21) and the provincial credits (T1 line 47900) are 0.
+  contributions, no Form T1221 slips and no co-operative education work placements (a chosen
+  payroll of 0), the Ontario credits (ON479 lines 1, 14, 16, 17, 18, 20 and 21) and the
+  provincial credits (T1 line 47900) are 0.
   The income tax deducted is a chosen 500, so the total credits are 500 plus the benefit
   plus the provincial credits, 2133, and the refund or balance owing is 0 less 2133: -2133,
   a refund. Every amount computed from a rate, fraction, amount or chart on the forms is
@@ -260,6 +261,8 @@ inputs:
   ca-on/fertility_expenses: "0"
   ca-on/seniors_transit_paid: "0"
   ca-on/flow_through_share_slips: []
+  ca-on/coop_education_payroll: "0"
+  ca-on/coop_education_placements: []
   ca-on/community_food_program_donations: "0"
   ca/charitable_donations: "0"
   ca/government_donations: "0"
@@ -400,6 +403,14 @@ expected:
   ca-on/flow_through_share_expenses: "0"
   ca-on/flow_through_share_credit: "0"
   ca-on/ontario_credits_subtotal: "0"
+  ca-on/coop_education_payroll_threshold: "400000.00"
+  ca-on/coop_education_payroll_over_threshold: "0"
+  ca-on/coop_education_payroll_range: "200000.00"
+  ca-on/coop_education_phase_out_share: "0"
+  ca-on/coop_education_full_share: "1.00"
+  ca-on/coop_education_remaining_share: "1.00"
+  ca-on/coop_education_placement_count: "0"
+  ca-on/coop_education_credit: "0"
   ca-on/ontario_credits: "0"
   ca/provincial_credits: "0"
   ca/total_credits: "2133"

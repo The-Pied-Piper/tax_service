@@ -25,6 +25,7 @@ from app.domain.parameters.rate import Rate
 from app.domain.parameters.rate_table import RateTableRow
 from app.domain.parameters.rounding import RoundingRule
 from app.domain.parameters.taper import Taper
+from app.domain.record_list import RecordList
 
 
 @dataclass(frozen=True)
@@ -608,6 +609,76 @@ class DisabilityTransferLine(TraceLine):
     def amount(self) -> Decimal:
         """The dependant's allowable amount."""
         return self.result
+
+
+@dataclass(frozen=True)
+class QuotientLine(TraceLine):
+    """The `result` produced as `output`: `dividend` (worth `dividend_amount`) divided by
+    `divisor` (worth `divisor_amount`), exactly.
+
+    Its own class, not a `FractionAppliedLine`: both parts are artifacts, no dataset is read and
+    nothing is rounded.
+    """
+
+    output: Money
+    dividend: Money
+    dividend_amount: Decimal
+    divisor: Money
+    divisor_amount: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The exact quotient."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class RecordCountLine(TraceLine):
+    """The `count` of the records of the list `records`, produced as `output`."""
+
+    output: ArtifactKind[int]
+    records: ArtifactKind[RecordList]
+    count: int
+
+    @property
+    def amount(self) -> Decimal:
+        """The count, as an amount."""
+        return Decimal(self.count)
+
+
+@dataclass(frozen=True)
+class PlacementCreditLine(TraceLine):
+    """The credit of one item of a record list, produced as part of `output`: the item at
+    `position` (from 1) has `field` (the eligible expenditures) worth `expenditure`; its line 1 is
+    that at `expenditure_rate`, its line 3 is that at `supplement_rate`, its line 12 is line 3
+    multiplied by `remaining_share` (worth `remaining_share_amount`), and its line 13 is the
+    lesser of line 1 plus line 12 and `maximum`, rounded with `rounding`.
+
+    `line_1`, `line_3` and `line_12` are exact; `line_13` is rounded. Its own class, not a
+    `RecordTotalLine`: each item carries several lines of its own. The total of the items is an
+    `ItemsTotalLine`.
+    """
+
+    output: Money
+    position: int
+    field: Money
+    expenditure: Decimal
+    line_1: Decimal
+    line_3: Decimal
+    line_12: Decimal
+    line_13: Decimal
+    remaining_share: Money
+    remaining_share_amount: Decimal
+    expenditure_rate: Rate
+    supplement_rate: Rate
+    maximum: Amount
+    rounding: RoundingRule
+
+    @property
+    def amount(self) -> Decimal:
+        """The item's last line, line 13."""
+        return self.line_13
 
 
 @dataclass(frozen=True)

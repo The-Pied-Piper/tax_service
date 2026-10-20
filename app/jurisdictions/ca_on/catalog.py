@@ -2,8 +2,9 @@
 
 Only the kinds in use are declared, each non-negative, as no ON428 or ON479 line here can be
 negative: amounts are Decimal, the counts of dependent children and dependants int, and the T1221
-slips a record list. Federal kinds come from `app.jurisdictions.ca.catalog`. Identifiers are
-stable: `tests/jurisdictions/ca_on/test_catalog.py` snapshots them.
+slips and the co-operative education work placements record lists. Federal kinds come from
+`app.jurisdictions.ca.catalog`. Identifiers are stable: `tests/jurisdictions/ca_on/test_catalog.py`
+snapshots them.
 """
 
 from __future__ import annotations
@@ -530,6 +531,66 @@ FLOW_THROUGH_SHARE_CREDIT = CATALOG.declare("flow_through_share_credit", Decimal
 """Focused flow-through share credit, Form ON479 line 17 and line 63220 "Enter your total expenses
 from your Form T1221. multiplied by 5% =": the 5% on the total expenses of the slips."""
 
+COOP_EDUCATION_PAYROLL = CATALOG.declare("coop_education_payroll", Decimal, non_negative=True)
+"""Total salaries and wages paid in the 2024 taxation year, Worksheet ON479 "Line 20 - Ontario
+co-operative education tax credit" line 4: a starting amount, taken as entered."""
+
+COOP_EDUCATION_PAYROLL_THRESHOLD = CATALOG.declare(
+    "coop_education_payroll_threshold", Decimal, non_negative=True
+)
+"""Worksheet ON479 "Line 20" line 5 "400,000.00": the dataset's amount as an artifact."""
+
+COOP_EDUCATION_PAYROLL_OVER_THRESHOLD = CATALOG.declare(
+    "coop_education_payroll_over_threshold", Decimal, non_negative=True
+)
+"""Worksheet ON479 "Line 20" line 6 "Line 4 minus line 5 (if negative, enter "0") =": the payroll
+over $400,000, not below zero."""
+
+COOP_EDUCATION_PAYROLL_RANGE = CATALOG.declare(
+    "coop_education_payroll_range", Decimal, non_negative=True
+)
+"""Worksheet ON479 "Line 20" line 7 "200,000.00": the dataset's amount as an artifact."""
+
+COOP_EDUCATION_PHASE_OUT_SHARE = CATALOG.declare(
+    "coop_education_phase_out_share", Decimal, non_negative=True
+)
+"""Worksheet ON479 "Line 20" line 8 "Line 6 divided by line 7 =", which line 10 "Amount from line 8
+above" repeats: an exact fraction, never rounded."""
+
+COOP_EDUCATION_FULL_SHARE = CATALOG.declare("coop_education_full_share", Decimal, non_negative=True)
+"""Worksheet ON479 "Line 20" line 9 "1.00": the dataset's amount as an artifact."""
+
+COOP_EDUCATION_REMAINING_SHARE = CATALOG.declare(
+    "coop_education_remaining_share", Decimal, non_negative=True
+)
+"""Worksheet ON479 "Line 20" line 11 "Line 9 minus line 10 (if negative, enter "0") =": the share
+of the 5% that remains."""
+
+COOP_EDUCATION_PLACEMENT_EXPENDITURES = CATALOG.declare(
+    "coop_education_placement_expenditures", Decimal, non_negative=True
+)
+"""Eligible expenditures of one work placement, Worksheet ON479 "Line 20" line 1 "Amount of
+eligible expenditures (Note 1) incurred in 2025 Line A": already reduced by government assistance
+as Note 1 asks, taken as entered."""
+
+COOP_EDUCATION_PLACEMENTS = RecordListKind.declare(
+    CATALOG, "coop_education_placements", fields=(COOP_EDUCATION_PLACEMENT_EXPENDITURES,)
+)
+"""Qualifying work placements, Worksheet ON479 "Line 20" "complete this chart for each qualifying
+work placement": one record for each placement, in the order entered. A list may be empty."""
+
+COOP_EDUCATION_PLACEMENT_COUNT = CATALOG.declare(
+    "coop_education_placement_count", int, non_negative=True
+)
+"""Number of work placements, Form ON479 line 63260 "Number of eligible work placements your
+business or partnership is claiming under the Ontario co-operative education tax credit program":
+the placements in the list."""
+
+COOP_EDUCATION_CREDIT = CATALOG.declare("coop_education_credit", Decimal, non_negative=True)
+"""Co-operative education credit, Form ON479 line 20 and line 63300 "Enter the total amount claimed
+for all qualifying work placements. (maximum $3,000 per student)": the total of the placements'
+Worksheet ON479 line 13, each at most $3,000."""
+
 ONTARIO_CREDITS_SUBTOTAL = CATALOG.declare("ontario_credits_subtotal", Decimal, non_negative=True)
 """Ontario credits subtotal, Form ON479 line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": here
 lines 1, 14, 16 and 17, in line order. Line 19 "Amount from line 18 of the previous page" carries
@@ -542,7 +603,7 @@ ONTARIO_CREDITS = CATALOG.declare("ontario_credits", Decimal, non_negative=True)
 your return. Ontario credits =": line 19 "Amount from line 18 of the previous page", which carries
 line 18.
 
-Line 20 (the co-operative education credit) is not triggered by the returns modelled."""
+Line 20 is the co-operative education credit."""
 
 REFUND_BEFORE_DONATION = CATALOG.declare("refund_before_donation", Decimal, non_negative=True)
 """Refund before the donation, Ontario opportunities fund line 1 "Amount from line 48400 above":

@@ -31,6 +31,17 @@ from app.jurisdictions.ca_on.catalog import (
     CLAIMED_AS_ELIGIBLE_DEPENDANT,
     COMMUNITY_FOOD_PROGRAM_CREDIT,
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
+    COOP_EDUCATION_CREDIT,
+    COOP_EDUCATION_FULL_SHARE,
+    COOP_EDUCATION_PAYROLL,
+    COOP_EDUCATION_PAYROLL_OVER_THRESHOLD,
+    COOP_EDUCATION_PAYROLL_RANGE,
+    COOP_EDUCATION_PAYROLL_THRESHOLD,
+    COOP_EDUCATION_PHASE_OUT_SHARE,
+    COOP_EDUCATION_PLACEMENT_COUNT,
+    COOP_EDUCATION_PLACEMENT_EXPENDITURES,
+    COOP_EDUCATION_PLACEMENTS,
+    COOP_EDUCATION_REMAINING_SHARE,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     DEPENDANTS,
     DEPENDENT_CHILDREN,
@@ -197,6 +208,17 @@ REGISTERED = frozenset(
         "ca-on/flow_through_share_slips",
         "ca-on/flow_through_share_expenses",
         "ca-on/flow_through_share_credit",
+        "ca-on/coop_education_payroll",
+        "ca-on/coop_education_payroll_threshold",
+        "ca-on/coop_education_payroll_over_threshold",
+        "ca-on/coop_education_payroll_range",
+        "ca-on/coop_education_phase_out_share",
+        "ca-on/coop_education_full_share",
+        "ca-on/coop_education_remaining_share",
+        "ca-on/coop_education_placement_expenditures",
+        "ca-on/coop_education_placements",
+        "ca-on/coop_education_placement_count",
+        "ca-on/coop_education_credit",
         "ca-on/ontario_credits_subtotal",
         "ca-on/ontario_credits",
         "ca-on/refund_before_donation",
@@ -205,15 +227,28 @@ REGISTERED = frozenset(
     }
 )
 # ON428 lines 75 (line 60969) and 76 (line 60970): the numbers of dependent children and of
-# dependants, counted, not money; and Worksheet ON428's "Line 58185 - Ontario caregiver amount"
-# line 4, whether a dependant is the one claimed on line 58160 (0 or 1), a field of each record.
+# dependants, counted, not money; Worksheet ON428's "Line 58185 - Ontario caregiver amount"
+# line 4, whether a dependant is the one claimed on line 58160 (0 or 1), a field of each record; and
+# ON479 line 63260, the number of eligible work placements.
 COUNTS = frozenset(
-    {"ca-on/dependent_children", "ca-on/dependants", "ca-on/claimed_as_eligible_dependant"}
+    {
+        "ca-on/dependent_children",
+        "ca-on/dependants",
+        "ca-on/claimed_as_eligible_dependant",
+        "ca-on/coop_education_placement_count",
+    }
 )
-# Form T1221 lines 1 to 3, one line per corporation or slip: the record list of the slips; and
+# Form T1221 lines 1 to 3, one line per corporation or slip: the record list of the slips;
 # Worksheet ON428's "Line 58185 - Ontario caregiver amount", "Complete one column for each
-# dependant": the record list of its dependants.
-RECORD_LISTS = frozenset({"ca-on/flow_through_share_slips", "ca-on/caregiver_dependants"})
+# dependant": the record list of its dependants; and Worksheet ON479's chart for each qualifying
+# work placement: the record list of the placements.
+RECORD_LISTS = frozenset(
+    {
+        "ca-on/flow_through_share_slips",
+        "ca-on/caregiver_dependants",
+        "ca-on/coop_education_placements",
+    }
+)
 
 
 @pytest.fixture
@@ -372,6 +407,25 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/flow_through_share_slips") is FLOW_THROUGH_SHARE_SLIPS
     assert registry.get("ca-on/flow_through_share_expenses") is FLOW_THROUGH_SHARE_EXPENSES
     assert registry.get("ca-on/flow_through_share_credit") is FLOW_THROUGH_SHARE_CREDIT
+    assert registry.get("ca-on/coop_education_payroll") is COOP_EDUCATION_PAYROLL
+    assert (
+        registry.get("ca-on/coop_education_payroll_threshold") is COOP_EDUCATION_PAYROLL_THRESHOLD
+    )
+    assert (
+        registry.get("ca-on/coop_education_payroll_over_threshold")
+        is COOP_EDUCATION_PAYROLL_OVER_THRESHOLD
+    )
+    assert registry.get("ca-on/coop_education_payroll_range") is COOP_EDUCATION_PAYROLL_RANGE
+    assert registry.get("ca-on/coop_education_phase_out_share") is COOP_EDUCATION_PHASE_OUT_SHARE
+    assert registry.get("ca-on/coop_education_full_share") is COOP_EDUCATION_FULL_SHARE
+    assert registry.get("ca-on/coop_education_remaining_share") is COOP_EDUCATION_REMAINING_SHARE
+    assert (
+        registry.get("ca-on/coop_education_placement_expenditures")
+        is COOP_EDUCATION_PLACEMENT_EXPENDITURES
+    )
+    assert registry.get("ca-on/coop_education_placements") is COOP_EDUCATION_PLACEMENTS
+    assert registry.get("ca-on/coop_education_placement_count") is COOP_EDUCATION_PLACEMENT_COUNT
+    assert registry.get("ca-on/coop_education_credit") is COOP_EDUCATION_CREDIT
     assert registry.get("ca-on/ontario_credits_subtotal") is ONTARIO_CREDITS_SUBTOTAL
     assert registry.get("ca-on/ontario_credits") is ONTARIO_CREDITS
     assert registry.get("ca-on/refund_before_donation") is REFUND_BEFORE_DONATION
@@ -437,6 +491,30 @@ def test_the_caregiver_amount_is_a_non_negative_decimal(registry: ArtifactRegist
     assert CAREGIVER_AMOUNT.value_type is Decimal
     assert CAREGIVER_AMOUNT.non_negative is True
     assert registry.kind("ca-on/caregiver_amount") is CAREGIVER_AMOUNT
+
+
+def test_the_co_operative_education_placements_are_a_record_list_of_the_expenditures(
+    registry: ArtifactRegistry,
+) -> None:
+    kind = registry.get("ca-on/coop_education_placements")
+
+    assert isinstance(kind, RecordListKind)
+    assert kind is COOP_EDUCATION_PLACEMENTS
+    assert COOP_EDUCATION_PLACEMENTS.fields == (COOP_EDUCATION_PLACEMENT_EXPENDITURES,)
+    assert COOP_EDUCATION_PLACEMENT_EXPENDITURES.value_type is Decimal
+    assert COOP_EDUCATION_PLACEMENT_EXPENDITURES.non_negative is True
+
+
+def test_the_co_operative_education_placement_count_is_a_non_negative_int_kind() -> None:
+    assert COOP_EDUCATION_PLACEMENT_COUNT.identifier == "ca-on/coop_education_placement_count"
+    assert COOP_EDUCATION_PLACEMENT_COUNT.value_type is int
+    assert COOP_EDUCATION_PLACEMENT_COUNT.non_negative is True
+
+
+def test_the_co_operative_education_payroll_and_credit_are_non_negative_amounts() -> None:
+    for kind in (COOP_EDUCATION_PAYROLL, COOP_EDUCATION_CREDIT):
+        assert kind.value_type is Decimal
+        assert kind.non_negative is True
 
 
 def test_every_kind_but_the_record_lists_is_declared_non_negative(
