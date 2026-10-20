@@ -836,6 +836,56 @@ class PrincipalResidenceGainLine(TraceLine):
 
 
 @dataclass(frozen=True)
+class DispositionGainLine(TraceLine):
+    """The gain or loss `result` of one disposition, by `position` (from 1), for `output`.
+
+    It follows a row of Schedule 3 Part 3: column 5 "Gain or loss (column 2 minus columns 3 and
+    4)", the `proceeds` (column 2) less the `adjusted_cost_base` (column 3) and the `outlays`
+    (column 4). A loss is a negative `result`. Exact.
+
+    Its own class, not a `PrincipalResidenceGainLine`: a row has only the three columns and no
+    exemption.
+    """
+
+    output: Money
+    position: int
+    proceeds: Decimal
+    adjusted_cost_base: Decimal
+    outlays: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The row's gain or loss, signed."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class DispositionGainOnlyLine(TraceLine):
+    """The figure `result` counted for one disposition, by `position` (from 1), for `output`.
+
+    It follows a row of Schedule 3 Part 3 whose line is "Total gain only": the `gain` is column 5
+    (the `proceeds` less the `adjusted_cost_base` and the `outlays`), and `result` is that gain
+    not below 0, a loss counting 0. Exact.
+
+    Its own class, not a `DispositionGainLine`: it carries the gain and the figure counted.
+    """
+
+    output: Money
+    position: int
+    proceeds: Decimal
+    adjusted_cost_base: Decimal
+    outlays: Decimal
+    gain: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The figure counted, never negative."""
+        return self.result
+
+
+@dataclass(frozen=True)
 class QuotientLine(TraceLine):
     """The `result` produced as `output`: `dividend` (worth `dividend_amount`) divided by
     `divisor` (worth `divisor_amount`), exactly.

@@ -50,7 +50,7 @@ def return_s() -> Worksheet:
     """Return S's inputs, as in `returns/2025_return_s.yaml`."""
     return compute(
         "50000",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -73,7 +73,7 @@ def return_s() -> Worksheet:
 
 def northern(net_income: str = "50000", **inputs: Any) -> Worksheet:
     """A return of other income only, so that net income is `net_income`, with T2222 inputs."""
-    return compute("0", "0", "0", "0", "0", "0", "0", other_income=net_income, **inputs)
+    return compute("0", (), "0", "0", "0", "0", "0", other_income=net_income, **inputs)
 
 
 def test_zone_a_for_365_days_as_the_sole_claimant_deducts_8030_with_no_travel() -> None:

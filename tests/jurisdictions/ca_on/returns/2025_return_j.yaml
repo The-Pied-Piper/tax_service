@@ -117,7 +117,11 @@ description: >-
   (line 23600 of their return) was $12,000, with 2025 employment income (T1 line 10100) of
   $50,000 and one capital gain of $930 (Schedule 3 line 21), of which 50% is taxable:
   taxable capital gains (line 12700) of $930 x 50% = 465.00 and total income (line 15000) of
-  $50,000 + 465.00 = 50,465.00. The CPP contributions are computed from employment income,
+  $50,000 + 465.00 = 50,465.00. The capital gain is one row of Schedule 3 Part 3 line 4
+  (shares), with proceeds of 930, an adjusted cost base of 0 and outlays of 0, a chosen figure:
+  line 4 is 930, so lines 11, 14, 17, 19 and 21 are 930 (no deferral, no slip or T3 capital
+  gains, no business investment loss, no reserves). The CPP contributions are computed from
+  employment income,
   which Schedule 8 line 1 reads as the pensionable earnings when T4 box 26 is blank (the
   filer is taken as still contributing at 66, to be confirmed). The EI premiums are computed
   from employment income, taken as the insurable earnings. Employment income is below the EI
@@ -918,7 +922,10 @@ sources:
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-d1/5006-d1-25e.txt
 inputs:
   ca/employment_income: "50000"
-  ca/capital_gain: "930"
+  ca/share_dispositions:
+    - ca/disposition_proceeds: "930"
+      ca/disposition_adjusted_cost_base: "0"
+      ca/disposition_outlays: "0"
   ca/rrsp_deduction_limit: "9000"
   ca/cpp_months: "12"
   ca/born_in_1960_or_earlier: "1"

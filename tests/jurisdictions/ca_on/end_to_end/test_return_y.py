@@ -33,7 +33,7 @@ def test_return_ys_supporting_person_lowers_the_care_credit_to_1650() -> None:
     return_f = return_f_with_credits("0", "0")
     worksheet = compute(
         "60000",
-        "0",
+        (),
         "0",
         "0",
         "10800",
@@ -87,7 +87,7 @@ def test_a_family_adjusted_income_of_0_is_taxed_at_75_percent() -> None:
     # Schedule ON479-A line 7: "If your family adjusted income on line 5 is "0", enter 75%." No
     # income and no supporting person: line 4 is 0, line 5 is 0, line 7 is 75% and, with no child
     # care expenses (line 6, 0), line 8 is 0 x 75% = 0.00.
-    worksheet = compute("0", "0", "0", "0", "0", "0", "0")
+    worksheet = compute("0", (), "0", "0", "0", "0", "0")
 
     assert worksheet.get(CARE_ADJUSTED_INCOME).value == D("0")
     assert worksheet.get(CARE_FAMILY_ADJUSTED_INCOME).value == D("0")
@@ -99,7 +99,7 @@ def test_a_family_adjusted_income_on_a_row_limit_takes_that_rows_rate() -> None:
     # Schedule ON479-A line 5 is the supporting person's 30000 alone: "more than $27,500 but not
     # more than $30,000: 67%" includes 30,000, so line 7 is 67%, not the next row's 65%.
     worksheet = compute(
-        "0", "0", "0", "0", "0", "0", "0", care_supporting_persons_adjusted_income="30000"
+        "0", (), "0", "0", "0", "0", "0", care_supporting_persons_adjusted_income="30000"
     )
 
     assert worksheet.get(CARE_FAMILY_ADJUSTED_INCOME).value == D("30000")
@@ -111,7 +111,7 @@ def test_a_net_income_below_zero_is_floored_at_zero_on_line_4() -> None:
     # Schedule ON479-A line 4 "Add lines 1 to 3 (if negative, enter "0")": line 1 is the net income
     # before adjustments, 0 - union dues 1000 = -1000.00, and line 2 is 0, so line 4 is 0, not
     # -1000.00, and line 5 is 0 with no supporting person.
-    worksheet = compute("0", "0", "0", "0", "0", "0", "1000")
+    worksheet = compute("0", (), "0", "0", "0", "0", "1000")
 
     assert worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value == D("-1000.00")
     assert worksheet.get(CARE_ADJUSTED_INCOME).value == D("0")

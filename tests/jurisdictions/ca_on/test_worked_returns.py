@@ -22,6 +22,9 @@ from app.jurisdictions.ca.catalog import (
     DEPENDANT_NET_INCOME,
     DEPENDANT_TAXABLE_INCOME,
     DEPENDANT_UNDER_18,
+    DISPOSITION_ADJUSTED_COST_BASE,
+    DISPOSITION_OUTLAYS,
+    DISPOSITION_PROCEEDS,
     OTHER_DEPENDANT_MEDICAL_EXPENSES,
 )
 from app.jurisdictions.ca_on.catalog import (
@@ -151,7 +154,21 @@ sources:
     Schedule ON428-A, T778 and EI table arithmetic on the 2025 figures.
 inputs:
   ca/employment_income: "10000"
-  ca/capital_gain: "0"
+  ca/qsbcs_dispositions: []
+  ca/qffp_dispositions: []
+  ca/qffp_foreclosure_dispositions: []
+  ca/share_dispositions: []
+  ca/real_estate_dispositions: []
+  ca/bond_dispositions: []
+  ca/crypto_asset_dispositions: []
+  ca/other_foreclosure_dispositions: []
+  ca/personal_use_property_dispositions: []
+  ca/listed_personal_property_dispositions: []
+  ca/unapplied_listed_personal_property_losses: "0"
+  ca/capital_gains_deferral: "0"
+  ca/slip_capital_gains_or_losses: "0"
+  ca/t3_capital_gains_or_losses: "0"
+  ca/capital_gains_reserves: "0"
   ca/other_employment_income: "0"
   ca/old_age_security: "0"
   ca/cpp_or_qpp_benefits: "0"
@@ -758,7 +775,12 @@ def test_return_af_claims_net_capital_losses_of_other_years_on_line_25300() -> N
     worked = load(path)
 
     inputs = {a.kind.identifier: a.value for a in worked.inputs}
-    assert inputs["ca/capital_gain"] == Decimal("5000")
+    (shares,) = [a for a in worked.inputs if a.kind.identifier == "ca/share_dispositions"]
+    (row,) = shares.value.records
+    assert row[DISPOSITION_PROCEEDS] == Decimal("5000")
+    assert row[DISPOSITION_ADJUSTED_COST_BASE] == Decimal("0")
+    assert row[DISPOSITION_OUTLAYS] == Decimal("0")
+    assert "ca/capital_gain" not in inputs
     assert inputs["ca/unapplied_net_capital_losses_1985_to_1987"] == Decimal("0")
     assert inputs["ca/unapplied_net_capital_losses_1988_and_1989"] == Decimal("0")
     assert inputs["ca/unapplied_net_capital_losses_1990_to_1999"] == Decimal("3000")
@@ -919,7 +941,7 @@ def test_a_wrong_expected_amount_fails_naming_the_file_and_line(tmp_path: Path) 
 
 
 def test_a_line_and_an_input_left_out_that_are_blank_pass(tmp_path: Path) -> None:
-    text = LOW_INCOME.replace('  ca/capital_gain: "0"\n', "").replace(
+    text = LOW_INCOME.replace("  ca/share_dispositions: []\n", "").replace(
         '  ca/taxable_capital_gains: "0"\n', ""
     )
     assert text != LOW_INCOME

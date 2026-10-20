@@ -49,6 +49,8 @@ from app.domain.trace import (
     ContributionTierLine,
     CreditAmountLine,
     DisabilityTransferLine,
+    DispositionGainLine,
+    DispositionGainOnlyLine,
     FractionAppliedLine,
     GreaterOfLine,
     ItemLesserOfLine,
@@ -2031,6 +2033,65 @@ def test_renders_the_total_of_the_gains_by_position() -> None:
 
 def test_renders_the_total_of_no_properties() -> None:
     assert render(ItemsTotalLine(RESIDENCE_GAIN, (), D("0"))) == "residence_gain: no items = 0"
+
+
+# --- disposition gains (Schedule 3 Part 3) ----------------------------------------------------
+#
+# One line per row: the output's label, "disposition <position>", the gain or loss as column 2
+# less columns 3 and 4; a loss prints with its minus sign. The gain-only line adds the figure
+# counted, a loss counting 0. Every figure prints without trailing zeros.
+
+DISPOSITION_GAINS = ArtifactKind("ex/share_gain_or_loss", Decimal)
+
+
+def test_renders_a_gain_row() -> None:
+    line = DispositionGainLine(
+        DISPOSITION_GAINS, 1, D("1500.00"), D("1000.00"), D("50.00"), D("450.00")
+    )
+
+    assert render(line) == (
+        "share_gain_or_loss: disposition 1: gain or loss 450 = proceeds 1500 less adjusted cost "
+        "base 1000 less outlays 50"
+    )
+
+
+def test_renders_a_loss_row_with_its_minus_sign() -> None:
+    line = DispositionGainLine(
+        DISPOSITION_GAINS, 2, D("800.00"), D("1000.00"), D("30.00"), D("-230.00")
+    )
+
+    assert render(line) == (
+        "share_gain_or_loss: disposition 2: gain or loss -230 = proceeds 800 less adjusted cost "
+        "base 1000 less outlays 30"
+    )
+
+
+def test_renders_a_gain_only_row_counting_a_gain() -> None:
+    line = DispositionGainOnlyLine(
+        DISPOSITION_GAINS, 1, D("1500.00"), D("1000.00"), D("50.00"), D("450.00"), D("450.00")
+    )
+
+    assert render(line) == (
+        "share_gain_or_loss: disposition 1: gain 450 = proceeds 1500 less adjusted cost base "
+        "1000 less outlays 50; gain only 450, not below 0"
+    )
+
+
+def test_renders_a_gain_only_row_counting_a_loss_as_0() -> None:
+    line = DispositionGainOnlyLine(
+        DISPOSITION_GAINS, 2, D("800.00"), D("1000.00"), D("30.00"), D("-230.00"), D("0")
+    )
+
+    assert render(line) == (
+        "share_gain_or_loss: disposition 2: gain -230 = proceeds 800 less adjusted cost base "
+        "1000 less outlays 30; gain only 0, not below 0"
+    )
+
+
+def test_renders_the_total_of_the_dispositions_by_position() -> None:
+    line = ItemsTotalLine(DISPOSITION_GAINS, ((1, D("450.00")), (2, D("-230.00"))), D("220.00"))
+
+    assert render(line) == "share_gain_or_loss: item 1 450 + item 2 -230 = 220"
 
 
 # --- conditions --------------------------------------------------------------------------------

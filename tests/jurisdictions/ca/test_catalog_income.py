@@ -3,14 +3,29 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import Any
 
-from app.domain.artifact import ArtifactRegistry
+from app.domain.artifact import ArtifactKind, ArtifactRegistry
+from app.domain.record_list import RecordList, RecordListKind
 from app.jurisdictions.ca.catalog import (
+    BOND_DISPOSITIONS,
+    BOND_GAIN_OR_LOSS,
     BUSINESS_INCOME,
     CAPITAL_GAIN,
+    CAPITAL_GAINS_AFTER_DEFERRAL,
+    CAPITAL_GAINS_BEFORE_INVESTMENT_LOSS_REDUCTION,
+    CAPITAL_GAINS_BEFORE_RESERVES,
+    CAPITAL_GAINS_DEFERRAL,
+    CAPITAL_GAINS_OF_QUALIFIED_AND_OTHER_PROPERTIES,
+    CAPITAL_GAINS_RESERVES,
     COMMISSION_INCOME,
     CPP_OR_QPP_BENEFITS,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
+    CRYPTO_ASSET_DISPOSITIONS,
+    CRYPTO_ASSET_GAIN_OR_LOSS,
+    DISPOSITION_ADJUSTED_COST_BASE,
+    DISPOSITION_OUTLAYS,
+    DISPOSITION_PROCEEDS,
     DIVIDEND_TAX_CREDIT,
     DIVIDENDS_AMOUNT_A,
     DIVIDENDS_AMOUNT_A_LESS_B,
@@ -27,6 +42,7 @@ from app.jurisdictions.ca.catalog import (
     FISHING_INCOME,
     FOREIGN_INVESTMENT_INCOME,
     GROSS_RENTAL_INCOME,
+    INCLUDED_CAPITAL_GAIN,
     INCOME_SUPPORT_BENEFITS,
     INTEREST_AND_OTHER_INVESTMENT_INCOME,
     INVESTMENT_INCOME_BEFORE_PRIOR_YEARS,
@@ -34,6 +50,9 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
     INVESTMENT_INCOME_WITHOUT_A_SLIP,
     INVESTMENT_ROYALTIES,
+    LISTED_PERSONAL_PROPERTY_DISPOSITIONS,
+    LISTED_PERSONAL_PROPERTY_GAIN_OR_LOSS,
+    LISTED_PERSONAL_PROPERTY_NET_GAIN,
     NET_FEDERAL_SUPPLEMENTS,
     NET_PARTNERSHIP_INCOME,
     NET_RENTAL_INCOME,
@@ -45,10 +64,23 @@ from app.jurisdictions.ca.catalog import (
     OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     OTHER_EMPLOYMENT_INCOME,
     OTHER_FHSA_INCOME,
+    OTHER_FORECLOSURE_DISPOSITIONS,
+    OTHER_FORECLOSURE_GAIN_OR_LOSS,
     OTHER_INCOME,
     OTHER_PENSIONS_AND_SUPERANNUATION,
+    PERSONAL_USE_PROPERTY_DISPOSITIONS,
+    PERSONAL_USE_PROPERTY_GAIN,
+    PERSONAL_USE_PROPERTY_GAIN_ROWS,
     PROFESSIONAL_INCOME,
+    QFFP_DISPOSITIONS,
+    QFFP_FORECLOSURE_DISPOSITIONS,
+    QFFP_FORECLOSURE_GAIN_OR_LOSS,
+    QFFP_GAIN_OR_LOSS,
+    QSBCS_DISPOSITIONS,
+    QSBCS_GAIN_OR_LOSS,
     RDSP_INCOME,
+    REAL_ESTATE_DISPOSITIONS,
+    REAL_ESTATE_GAIN_OR_LOSS,
     RENTAL_ADVERTISING,
     RENTAL_ADVERTISING_PERSONAL_PORTION,
     RENTAL_ADVERTISING_SHORT_TERM_PORTION,
@@ -133,15 +165,19 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_UTILITIES_PERSONAL_PORTION,
     RENTAL_UTILITIES_SHORT_TERM_PORTION,
     RRSP_INCOME,
+    SHARE_DISPOSITIONS,
+    SHARE_GAIN_OR_LOSS,
     SHORT_TERM_RENTAL_DAYS,
     SHORT_TERM_RENTAL_GROSS_RENTS,
     SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
     SHORT_TERM_RENTAL_RELATED_EXPENSES,
     SHORT_TERM_RENTAL_UNITS,
+    SLIP_CAPITAL_GAINS_OR_LOSSES,
     SLIP_DIVIDEND_TAX_CREDIT,
     SLIP_TAXABLE_DIVIDENDS,
     SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SOCIAL_ASSISTANCE_PAYMENTS,
+    T3_CAPITAL_GAINS_OR_LOSSES,
     T3_DIVIDEND_TAX_CREDIT,
     T3_INVESTMENT_INCOME,
     T3_TAXABLE_DIVIDENDS,
@@ -164,9 +200,11 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_SCHOLARSHIPS,
     TAXABLE_SUPPORT_PAYMENTS,
     TOTAL_INCOME,
+    UNAPPLIED_LISTED_PERSONAL_PROPERTY_LOSSES,
     UNIVERSAL_CHILD_CARE_BENEFIT,
     WORKERS_COMPENSATION_BENEFITS,
 )
+from tests.jurisdictions.ca.catalog_snapshot import RECORD_LISTS, REGISTERED, SIGNED
 
 
 def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
@@ -536,3 +574,112 @@ def test_the_income_kinds_are_money() -> None:
         INCOME_SUPPORT_BENEFITS,
     ):
         assert kind.value_type is Decimal, kind.identifier
+
+
+# --- Schedule 3 (form 5000-S3) Parts 3 and 4 --------------------------------------------------
+
+DISPOSITION_LISTS: list[tuple[str, RecordListKind]] = [
+    ("ca/qsbcs_dispositions", QSBCS_DISPOSITIONS),
+    ("ca/qffp_dispositions", QFFP_DISPOSITIONS),
+    ("ca/qffp_foreclosure_dispositions", QFFP_FORECLOSURE_DISPOSITIONS),
+    ("ca/share_dispositions", SHARE_DISPOSITIONS),
+    ("ca/real_estate_dispositions", REAL_ESTATE_DISPOSITIONS),
+    ("ca/bond_dispositions", BOND_DISPOSITIONS),
+    ("ca/crypto_asset_dispositions", CRYPTO_ASSET_DISPOSITIONS),
+    ("ca/other_foreclosure_dispositions", OTHER_FORECLOSURE_DISPOSITIONS),
+    ("ca/personal_use_property_dispositions", PERSONAL_USE_PROPERTY_DISPOSITIONS),
+    ("ca/listed_personal_property_dispositions", LISTED_PERSONAL_PROPERTY_DISPOSITIONS),
+]
+
+SIGNED_LINES: list[tuple[str, ArtifactKind[Any]]] = [
+    ("ca/qsbcs_gain_or_loss", QSBCS_GAIN_OR_LOSS),
+    ("ca/qffp_gain_or_loss", QFFP_GAIN_OR_LOSS),
+    ("ca/qffp_foreclosure_gain_or_loss", QFFP_FORECLOSURE_GAIN_OR_LOSS),
+    ("ca/share_gain_or_loss", SHARE_GAIN_OR_LOSS),
+    ("ca/real_estate_gain_or_loss", REAL_ESTATE_GAIN_OR_LOSS),
+    ("ca/bond_gain_or_loss", BOND_GAIN_OR_LOSS),
+    ("ca/crypto_asset_gain_or_loss", CRYPTO_ASSET_GAIN_OR_LOSS),
+    ("ca/other_foreclosure_gain_or_loss", OTHER_FORECLOSURE_GAIN_OR_LOSS),
+    ("ca/listed_personal_property_gain_or_loss", LISTED_PERSONAL_PROPERTY_GAIN_OR_LOSS),
+    (
+        "ca/capital_gains_of_qualified_and_other_properties",
+        CAPITAL_GAINS_OF_QUALIFIED_AND_OTHER_PROPERTIES,
+    ),
+    ("ca/capital_gains_after_deferral", CAPITAL_GAINS_AFTER_DEFERRAL),
+    ("ca/slip_capital_gains_or_losses", SLIP_CAPITAL_GAINS_OR_LOSSES),
+    ("ca/t3_capital_gains_or_losses", T3_CAPITAL_GAINS_OR_LOSSES),
+    (
+        "ca/capital_gains_before_investment_loss_reduction",
+        CAPITAL_GAINS_BEFORE_INVESTMENT_LOSS_REDUCTION,
+    ),
+    ("ca/capital_gains_before_reserves", CAPITAL_GAINS_BEFORE_RESERVES),
+    ("ca/capital_gains_reserves", CAPITAL_GAINS_RESERVES),
+    ("ca/capital_gain", CAPITAL_GAIN),
+    ("ca/included_capital_gain", INCLUDED_CAPITAL_GAIN),
+]
+
+NON_NEGATIVE_LINES: list[tuple[str, ArtifactKind[Any]]] = [
+    ("ca/personal_use_property_gain_rows", PERSONAL_USE_PROPERTY_GAIN_ROWS),
+    ("ca/personal_use_property_gain", PERSONAL_USE_PROPERTY_GAIN),
+    ("ca/unapplied_listed_personal_property_losses", UNAPPLIED_LISTED_PERSONAL_PROPERTY_LOSSES),
+    ("ca/listed_personal_property_net_gain", LISTED_PERSONAL_PROPERTY_NET_GAIN),
+    ("ca/capital_gains_deferral", CAPITAL_GAINS_DEFERRAL),
+    ("ca/disposition_proceeds", DISPOSITION_PROCEEDS),
+    ("ca/disposition_adjusted_cost_base", DISPOSITION_ADJUSTED_COST_BASE),
+    ("ca/disposition_outlays", DISPOSITION_OUTLAYS),
+]
+
+
+def test_the_schedule_3_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    for identifier, kind in [*DISPOSITION_LISTS, *SIGNED_LINES, *NON_NEGATIVE_LINES]:
+        assert registry.get(identifier) is kind, identifier
+        assert kind.identifier == identifier
+        assert identifier in REGISTERED
+
+
+def test_the_ten_property_lists_are_record_lists_of_columns_2_to_4() -> None:
+    # Schedule 3 Part 3: "(Column 2): Proceeds of disposition", "(Column 3): Adjusted cost base",
+    # "(Column 4): Outlays and expenses"; column 1 (year acquired) feeds no line, column 5 is
+    # worked out. One kind of each field, shared by all ten lists, in the form's column order.
+    for identifier, kind in DISPOSITION_LISTS:
+        assert isinstance(kind, RecordListKind), identifier
+        assert kind.value_type is RecordList
+        assert kind.fields == (
+            DISPOSITION_PROCEEDS,
+            DISPOSITION_ADJUSTED_COST_BASE,
+            DISPOSITION_OUTLAYS,
+        ), identifier
+        assert identifier in RECORD_LISTS
+
+
+def test_the_disposition_fields_are_non_negative_decimals() -> None:
+    for kind in (DISPOSITION_PROCEEDS, DISPOSITION_ADJUSTED_COST_BASE, DISPOSITION_OUTLAYS):
+        assert kind.value_type is Decimal
+        assert kind.non_negative is True
+
+
+def test_the_part_3_and_part_4_lines_that_print_losses_in_brackets_are_signed_decimals() -> None:
+    # "Report all negative amounts (losses) using brackets."
+    for identifier, kind in SIGNED_LINES:
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is False, identifier
+        assert identifier in SIGNED
+
+
+def test_the_gain_only_lines_the_deferral_and_the_unapplied_losses_are_non_negative() -> None:
+    # Line 9 and line 10 are "gain only"; line 13 and the unapplied listed personal property
+    # losses are amounts the filer states.
+    for identifier, kind in NON_NEGATIVE_LINES:
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is True, identifier
+        assert identifier not in SIGNED
+
+
+def test_the_taxable_capital_gains_stay_non_negative() -> None:
+    # T1 line 12700 takes line 26 only "If positive".
+    assert TAXABLE_CAPITAL_GAINS.non_negative is True
+    assert "ca/taxable_capital_gains" not in SIGNED
+
+
+def test_every_disposition_list_is_a_kind_of_its_own() -> None:
+    assert len({id(kind) for _, kind in DISPOSITION_LISTS}) == 10

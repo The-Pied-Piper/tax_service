@@ -40,7 +40,7 @@ def test_the_canada_workers_benefit_below_its_maximum_is_27_percent_over_3000() 
     # an eligible dependant the same 1350.00, below its $2,813 and over nothing above its
     # $30,639. With no tax deducted, the total credits are 0 + 1350.00 and line 167 is
     # 0 - 1350.00 = -1350.00, a refund.
-    worksheet = compute("8000", "0", "0", "0", "1440", "0", "0")
+    worksheet = compute("8000", (), "0", "0", "1440", "0", "0")
 
     assert worksheet.get(NET_INCOME).value == D("7955.00")
     assert worksheet.get(TOTAL_PAYABLE).value == D("0")
@@ -81,7 +81,7 @@ def test_an_eligible_dependant_takes_the_schedule_6_amounts_of_2813_and_30639() 
     # with no tax deducted the total credits are 2206.10.
     worksheet = compute(
         "35000",
-        "0",
+        (),
         "0",
         "0",
         "6300",
@@ -120,7 +120,7 @@ def test_with_no_eligible_dependant_the_same_income_takes_the_amounts_of_1633_an
     # The amounts of the test above with no eligible dependant claimed for, and no dependent
     # child: both family statuses are computed alike, and the count of 0 chooses the one
     # without an eligible dependant, 458.50.
-    worksheet = compute("35000", "0", "0", "0", "6300", "0", "0")
+    worksheet = compute("35000", (), "0", "0", "6300", "0", "0")
 
     assert worksheet.get(CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT).value == D("458.50")
     assert worksheet.get(CANADA_WORKERS_BENEFIT_WITH_DEPENDANT).value == D("2206.10")
@@ -138,7 +138,7 @@ def test_a_line_30400_dependant_who_is_not_schedule_6s_leaves_the_amounts_withou
     # parent, say, who is not Schedule 6's eligible dependant ("They were your or your spouse's
     # or common-law partner's child"): the Schedule 6 count of 0 (line 38100), not the line
     # 30400 count of 1, chooses the amounts with no eligible dependant, 458.50.
-    worksheet = compute("35000", "0", "0", "0", "6300", "0", "0", eligible_dependants=1)
+    worksheet = compute("35000", (), "0", "0", "6300", "0", "0", eligible_dependants=1)
 
     assert worksheet.get(CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT).value == D("458.50")
     assert worksheet.get(CANADA_WORKERS_BENEFIT_WITH_DEPENDANT).value == D("2206.10")
@@ -154,7 +154,7 @@ def test_a_schedule_6_dependant_not_claimed_on_line_30400_takes_the_amounts_with
     # The same income with a child under 19 who lived with the filer but is not claimed for on
     # T1 line 30400 (claimed by the other parent, say): the Schedule 6 count of 1 (line 38100)
     # chooses the amounts with an eligible dependant, 2206.10, though the line 30400 count is 0.
-    worksheet = compute("35000", "0", "0", "0", "6300", "0", "0", cwb_eligible_dependants=1)
+    worksheet = compute("35000", (), "0", "0", "6300", "0", "0", cwb_eligible_dependants=1)
 
     assert worksheet.get(CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT).value == D("458.50")
     assert worksheet.get(CANADA_WORKERS_BENEFIT_WITH_DEPENDANT).value == D("2206.10")
@@ -171,7 +171,14 @@ def test_tax_deducted_above_the_total_payable_is_a_refund() -> None:
     # payable of 25897.15 less the total credits of 30000, -4102.85, negative, so a refund (line
     # 48400), in cents as every line before it is.
     worksheet = compute(
-        "110000", "20000", "0", "1926", "19800", "1926", "2000", income_tax_deducted="30000"
+        "110000",
+        (("20000", "0", "0"),),
+        "0",
+        "1926",
+        "19800",
+        "1926",
+        "2000",
+        income_tax_deducted="30000",
     )
 
     assert worksheet.get(TOTAL_PAYABLE).value == D("25897.15")
@@ -185,7 +192,14 @@ def test_tax_deducted_above_the_total_payable_is_a_refund() -> None:
 
 def test_tax_deducted_equal_to_the_total_payable_leaves_no_balance() -> None:
     worksheet = compute(
-        "110000", "20000", "0", "1926", "19800", "1926", "2000", income_tax_deducted="25897.15"
+        "110000",
+        (("20000", "0", "0"),),
+        "0",
+        "1926",
+        "19800",
+        "1926",
+        "2000",
+        income_tax_deducted="25897.15",
     )
 
     assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("0")
@@ -196,7 +210,7 @@ def test_with_no_tax_payable_all_the_tax_deducted_is_refunded() -> None:
     # benefit of 1633 (see the test of a credit larger than the tax), so the total payable is 0;
     # with 500 deducted, the total credits are 500 + 1633 = 2133 and line 167 is 0 - 2133 =
     # -2133, a refund of everything deducted and the benefit, not floored at zero.
-    worksheet = compute("10000", "0", "0", "0", "1800", "0", "0", income_tax_deducted="500")
+    worksheet = compute("10000", (), "0", "0", "1800", "0", "0", income_tax_deducted="500")
 
     assert worksheet.get(TOTAL_PAYABLE).value == D("0")
     assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("1633")
@@ -218,7 +232,7 @@ def test_contributions_above_the_deduction_limit_deduct_the_limit() -> None:
     # may be deducted is the limit, and deducting all of it (line 18) makes it the deduction;
     # total deductions are 19800 + 2000 + 1074.00 = 22874.00. Line 23 carries 25000 - 19800 =
     # 5200 forward.
-    worksheet = compute("110000", "20000", "0", "25000", "19800", "19800", "2000")
+    worksheet = compute("110000", (("20000", "0", "0"),), "0", "25000", "19800", "19800", "2000")
 
     assert worksheet.get(RRSP_DEDUCTION_MAXIMUM).value == D("19800")
     assert worksheet.get(RRSP_DEDUCTION).value == D("19800")
@@ -234,7 +248,7 @@ def test_unused_contributions_and_no_new_ones_still_deduct() -> None:
     # the contributions available to deduct (line 10) are 5000 + 0 = 5000, below the deduction
     # limit of 19800; all 5000 is deducted (line 18); total deductions are 5000 + 2000 + 1074.00
     # = 8074.00.
-    worksheet = compute("110000", "20000", "5000", "0", "19800", "5000", "2000")
+    worksheet = compute("110000", (("20000", "0", "0"),), "5000", "0", "19800", "5000", "2000")
 
     assert worksheet.get(RRSP_CONTRIBUTIONS_AVAILABLE).value == D("5000")
     assert worksheet.get(RRSP_DEDUCTION_MAXIMUM).value == D("5000")
@@ -251,7 +265,7 @@ def test_a_claim_below_the_maximum_deducts_the_claim_and_carries_the_rest_forwar
     # line 22 Your unused contributions available to carry forward to a future year" is 1926 -
     # 1000 = 926. Total deductions are 1000 + 2000 + 1074.00 = 4074.00, and net income
     # 120000 - 4074.00 = 115926.00.
-    worksheet = compute("110000", "20000", "0", "1926", "19800", "1000", "2000")
+    worksheet = compute("110000", (("20000", "0", "0"),), "0", "1926", "19800", "1000", "2000")
 
     assert worksheet.get(RRSP_DEDUCTION_MAXIMUM).value == D("1926")
     assert worksheet.get(RRSP_DEDUCTION).value == D("1000")
@@ -272,7 +286,7 @@ def test_a_claim_above_the_maximum_is_refused_naming_both_kinds() -> None:
     # Line 18 "cannot be more than the amount on line 17": Return A's amounts claiming 3000
     # against a line 17 of 1926 is an input error, not capped to 1926.
     with pytest.raises(InputAboveBoundError) as raised:
-        compute("110000", "20000", "0", "1926", "19800", "3000", "2000")
+        compute("110000", (("20000", "0", "0"),), "0", "1926", "19800", "3000", "2000")
 
     assert str(raised.value) == (
         "ca/rrsp_amount_deducted 3000 is above ca/rrsp_deduction_maximum 1926"

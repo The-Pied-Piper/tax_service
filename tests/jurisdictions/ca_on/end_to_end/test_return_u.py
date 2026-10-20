@@ -77,7 +77,7 @@ RETURN_U: dict[str, Any] = {
 
 def self_employed(**changes: Any) -> Worksheet:
     """Return U's inputs, as in `returns/2025_return_u.yaml`, with `changes` to them."""
-    return compute("0", "0", "0", "0", "0", "0", "0", **{**RETURN_U, **changes})
+    return compute("0", (), "0", "0", "0", "0", "0", **{**RETURN_U, **changes})
 
 
 def return_u() -> Worksheet:

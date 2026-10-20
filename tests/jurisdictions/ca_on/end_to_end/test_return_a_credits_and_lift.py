@@ -68,7 +68,7 @@ def test_a_credit_larger_than_the_tax_leaves_zero_not_a_refund() -> None:
     # 10000 = 164.00; no unused or new RRSP contributions, so the most that may be deducted is
     # the lesser of 0 and the deduction limit of 1800, and the amount deducted is 0; the Canada
     # employment amount is the lesser of 10000 and 1471.
-    worksheet = compute("10000", "0", "0", "0", "1800", "0", "0")
+    worksheet = compute("10000", (), "0", "0", "1800", "0", "0")
 
     assert worksheet.get(TOTAL_INCOME).value == D("10000")
     assert worksheet.get(CPP_BASE_CONTRIBUTIONS).value == D("321.75")
@@ -146,7 +146,7 @@ def test_the_tax_reduction_lowers_a_tax_below_twice_the_reduction_amounts() -> N
     # (ON428 line 73) is 486.80. With no dependent children and no dependants, line 78 is 2 x
     # 294.00 = 588.00, and line 80 is 588.00 - 486.80 = 101.20; line 81 is 486.80 - 101.20 =
     # 385.60.
-    worksheet = compute("24000", "0", "0", "0", "4320", "0", "0")
+    worksheet = compute("24000", (), "0", "0", "4320", "0", "0")
 
     assert worksheet.get(ONTARIO_TAX_WITH_SURTAX).value == D("486.80")
     assert worksheet.get(TAX_REDUCTION_AMOUNTS).value == D("294.00")
@@ -160,7 +160,15 @@ def test_dependent_children_and_dependants_raise_the_tax_reduction() -> None:
     # line 77 is 294.00 + 2720 + 1632 = 4646.00 and line 78 is 9292.00; line 80 is 9292.00 -
     # 8195.77 = 1096.23, and line 81 is 8195.77 - 1096.23 = 7099.54.
     worksheet = compute(
-        "110000", "20000", "0", "1926", "19800", "1926", "2000", dependent_children=5, dependants=3
+        "110000",
+        (("20000", "0", "0"),),
+        "0",
+        "1926",
+        "19800",
+        "1926",
+        "2000",
+        dependent_children=5,
+        dependants=3,
     )
 
     assert worksheet.get(DEPENDENT_CHILDREN).value == 5
@@ -180,7 +188,7 @@ def test_the_health_premium_in_a_sloped_row_adds_the_rate_to_the_plateau() -> No
     # $36,000 but not more than $38,500": (37000 - 36000) x 6% + 300 = 360.00; the Ontario basic
     # tax 5.05% x 37000 = 1868.50 less the credits is 1224.78, above 588.00, so no reduction,
     # and line 90 is 1224.78 + 360.00 = 1584.78.
-    worksheet = compute("0", "74000", "0", "0", "0", "0", "0")
+    worksheet = compute("0", (("74000", "0", "0"),), "0", "0", "0", "0", "0")
 
     assert worksheet.get(TAXABLE_INCOME).value == D("37000")
     assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("1224.78")
@@ -193,7 +201,7 @@ def test_the_health_premium_at_the_top_of_a_sloped_row_is_the_plateau() -> None:
     # $25,000": (25000 - 20000) x 6% = 300.00, the plateau itself; the Ontario basic tax 5.05%
     # x 25000 = 1262.50 less the credits of 643.72 is 618.78, above 588.00, so no reduction,
     # and line 90 is 618.78 + 300.00 = 918.78.
-    worksheet = compute("0", "50000", "0", "0", "0", "0", "0")
+    worksheet = compute("0", (("50000", "0", "0"),), "0", "0", "0", "0", "0")
 
     assert worksheet.get(TAXABLE_INCOME).value == D("25000")
     assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("618.78")
@@ -205,7 +213,7 @@ def test_no_health_premium_at_the_first_threshold() -> None:
     # A capital gain of 40000 alone: taxable income 20000, "$20,000 or less", so no premium;
     # the Ontario basic tax 5.05% x 20000 = 1010.00 less the credits of 643.72 is 366.28, below
     # 588.00, so the reduction is 221.72 and line 81 is 144.56, which is line 90.
-    worksheet = compute("0", "40000", "0", "0", "0", "0", "0")
+    worksheet = compute("0", (("40000", "0", "0"),), "0", "0", "0", "0", "0")
 
     assert worksheet.get(TAXABLE_INCOME).value == D("20000")
     assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("144.56")
@@ -226,7 +234,7 @@ def test_the_lift_credit_between_the_thresholds_is_reduced_and_comes_off_the_tax
     # 518.25 (ON428 line 85). Line 86 is 1233.48 - 518.25 = 715.23; the health premium on
     # 39635.00, "more than $38,500 but not more than $48,000", is 450, so line 90 is 715.23 + 450
     # = 1165.23.
-    worksheet = compute("40000", "0", "0", "0", "7200", "0", "0")
+    worksheet = compute("40000", (), "0", "0", "7200", "0", "0")
 
     assert worksheet.get(NET_INCOME).value == D("39635.00")
     assert worksheet.get(ONTARIO_TAX_AFTER_REDUCTION).value == D("1233.48")
@@ -263,7 +271,7 @@ def test_the_lift_credit_with_a_spouse_is_reduced_by_the_family_income_over_6500
     # = 375.00 (ON428 line 85), where Part A (line 20) would have been the whole 875.
     worksheet = compute(
         "25217.17",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -305,7 +313,7 @@ def test_a_count_of_0_spouses_at_year_end_applies_part_a_even_with_the_spouse_fi
     # the credit.
     worksheet = compute(
         "25217.17",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -334,7 +342,7 @@ def test_with_a_spouse_the_greater_of_the_two_excesses_is_line_32_below_the_fami
     # and line 41 is 875 - 356.75 = 518.25, as for a single filer.
     worksheet = compute(
         "40000",
-        "0",
+        (),
         "0",
         "0",
         "7200",
@@ -360,7 +368,7 @@ def test_the_spouses_own_adjustments_make_line_28_as_the_filers_make_line_13() -
     # 9200.00, line 40 9200.00 x 5% = 460.00 and line 41 875 - 460.00 = 415.00.
     worksheet = compute(
         "25217.17",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -389,7 +397,7 @@ def test_a_negative_spouse_net_income_is_kept_on_line_21_and_floored_on_line_28(
     # line 24 and floored at zero on line 28, so the family income is the filer's alone.
     worksheet = compute(
         "25217.17",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -417,7 +425,7 @@ def test_the_filers_repayments_and_income_adjust_net_income_into_line_13() -> No
     # repayments back); line 12 is 2000 + 300 = 2300; line 13 is 27300.00 - 2300 = 25000.00.
     worksheet = compute(
         "25217.17",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -444,7 +452,7 @@ def test_a_negative_net_income_before_adjustments_is_floored_into_line_13() -> N
     # line 12 at zero: an other deduction of 30000 against employment income of 10000 gives net
     # income before adjustments of 10000 - 65 - 30000 = -20065.00 (the first additional CPP
     # contribution is 1% x 6500 = 65.00), line 9 is -20065.00 and line 13 is 0.
-    worksheet = compute("10000", "0", "0", "0", "0", "0", "0", other_deductions="30000")
+    worksheet = compute("10000", (), "0", "0", "0", "0", "0", other_deductions="30000")
 
     assert worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value == D("-20065.00")
     assert worksheet.get(NET_INCOME).value == D("0")

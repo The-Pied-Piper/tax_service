@@ -42,7 +42,7 @@ def test_return_ps_political_contribution_credit_is_1402_76_and_lowers_the_refun
     # 5,844.50 - 6,202.76 = -358.26, a refund.
     worksheet = compute(
         "48000",
-        "0",
+        (),
         "0",
         "0",
         "8640",
@@ -125,7 +125,7 @@ def test_the_credit_is_the_applicable_columns_line_7_at_most_1666_82(
     contributions: str, column: int, credit: str
 ) -> None:
     worksheet = compute(
-        "48000", "0", "0", "0", "8640", "0", "0", political_contributions=contributions
+        "48000", (), "0", "0", "8640", "0", "0", political_contributions=contributions
     )
 
     (picked,) = [
@@ -142,7 +142,7 @@ def test_the_credit_is_the_applicable_columns_line_7_at_most_1666_82(
 
 def test_no_contributions_leave_the_ontario_credits_at_zero() -> None:
     # The default of 0 contributions, as for Returns A to N: column 1 applies and line 16 is 0.
-    worksheet = compute("48000", "0", "0", "0", "8640", "0", "0")
+    worksheet = compute("48000", (), "0", "0", "8640", "0", "0")
 
     assert worksheet.get(ontario.POLITICAL_CONTRIBUTIONS).value == D("0")
     assert worksheet.get(ontario.POLITICAL_CREDIT).value == D("0")

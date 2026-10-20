@@ -1,6 +1,23 @@
 inputs:
   - ca/employment_income
-  - ca/capital_gain
+  # Schedule 3 Part 3 and Part 4: the ten property lists (lines 1 to 10), the unapplied
+  # listed personal property losses, line 13 (16100), line 15 (17400), line 16 (17600) and
+  # line 20 (19200); line 21 (19700) is computed.
+  - ca/qsbcs_dispositions
+  - ca/qffp_dispositions
+  - ca/qffp_foreclosure_dispositions
+  - ca/share_dispositions
+  - ca/real_estate_dispositions
+  - ca/bond_dispositions
+  - ca/crypto_asset_dispositions
+  - ca/other_foreclosure_dispositions
+  - ca/personal_use_property_dispositions
+  - ca/listed_personal_property_dispositions
+  - ca/unapplied_listed_personal_property_losses
+  - ca/capital_gains_deferral
+  - ca/slip_capital_gains_or_losses
+  - ca/t3_capital_gains_or_losses
+  - ca/capital_gains_reserves
   - ca/other_employment_income
   - ca/old_age_security
   - ca/cpp_or_qpp_benefits

@@ -140,7 +140,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 476
+    assert len(found.capabilities) == 494
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -150,5 +150,5 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 476
+    assert len(composition.order) == 494
     assert wiring == WIRING

@@ -44,7 +44,12 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
     CANADA_EMPLOYMENT_AMOUNT,
+    CAPITAL_GAINS_AFTER_DEFERRAL,
+    CAPITAL_GAINS_BEFORE_INVESTMENT_LOSS_REDUCTION,
+    CAPITAL_GAINS_BEFORE_RESERVES,
     CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024,
+    CAPITAL_GAINS_DEFERRAL,
+    CAPITAL_GAINS_OF_QUALIFIED_AND_OTHER_PROPERTIES,
     CAPITAL_GIFT_GAINS_DEDUCTION,
     CAPITAL_GIFT_TAXABLE_GAINS,
     CAPITAL_PROPERTY_GIFTS,
@@ -275,6 +280,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     gated = {line.output: line for line in trace if isinstance(line, ThresholdGateLine)}
     fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
     assert subtracted == {
+        # Schedule 3 line 14 "Line 12 minus line 13" and line 19 "Line 17 minus line 18": Return A
+        # has no deferral and no business investment loss, so line 18 is 0.
+        CAPITAL_GAINS_AFTER_DEFERRAL: SubtractedLine(
+            output=CAPITAL_GAINS_AFTER_DEFERRAL,
+            minuend=CAPITAL_GAINS_OF_QUALIFIED_AND_OTHER_PROPERTIES,
+            minuend_amount=D("20000"),
+            subtrahend=CAPITAL_GAINS_DEFERRAL,
+            subtrahend_amount=D("0"),
+            result=D("20000"),
+        ),
+        CAPITAL_GAINS_BEFORE_RESERVES: SubtractedLine(
+            output=CAPITAL_GAINS_BEFORE_RESERVES,
+            minuend=CAPITAL_GAINS_BEFORE_INVESTMENT_LOSS_REDUCTION,
+            minuend_amount=D("20000"),
+            subtrahend=BUSINESS_INVESTMENT_LOSS_REDUCTION,
+            subtrahend_amount=D("0"),
+            result=D("20000"),
+        ),
         # T776 Part 4 line 1 (amount A less line 9949, then less line 9366), line 9369, amounts 3,
         # 5 and 6 and the partnership's amount: Return A has none of these figures, so each is 0.
         RENTAL_EXPENSES_LESS_PERSONAL_PORTION: SubtractedLine(

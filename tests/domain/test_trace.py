@@ -48,6 +48,8 @@ from app.domain.trace import (
     ContributionTierLine,
     CreditAmountLine,
     DisabilityTransferLine,
+    DispositionGainLine,
+    DispositionGainOnlyLine,
     FractionAppliedLine,
     GreaterOfLine,
     ItemLesserOfLine,
@@ -140,6 +142,7 @@ THRESHOLD_LIMIT = ThresholdRate(Rate(D("0.0505")), D("52886"))
 NON_COMPLIANT = ArtifactKind("ex/non_compliant_expenses", Decimal)
 TRANSFERRED = ArtifactKind("ex/transferred_amount", Decimal)
 RESIDENCE_GAIN = ArtifactKind("ex/residence_gain", Decimal)
+DISPOSITION_GAIN = ArtifactKind("ex/disposition_gain", Decimal)
 COUNT_GATE = ArtifactKind("ex/gate", int)
 FLAG = ArtifactKind("ex/flag", int)
 REDUCTION_BASE = ArtifactKind("ex/reduction_base", Decimal)
@@ -353,6 +356,18 @@ def disability_transfer_line() -> DisabilityTransferLine:
     )
 
 
+def disposition_gain_line() -> DispositionGainLine:
+    return DispositionGainLine(
+        DISPOSITION_GAIN, 2, D("800.00"), D("1000.00"), D("30.00"), D("-230.00")
+    )
+
+
+def disposition_gain_only_line() -> DispositionGainOnlyLine:
+    return DispositionGainOnlyLine(
+        DISPOSITION_GAIN, 2, D("800.00"), D("1000.00"), D("30.00"), D("-230.00"), D("0")
+    )
+
+
 def principal_residence_gain_line() -> PrincipalResidenceGainLine:
     return PrincipalResidenceGainLine(
         RESIDENCE_GAIN,
@@ -437,6 +452,8 @@ ALL_LINES = [
     principal_residence_gain_line,
     item_sum_line,
     item_lesser_of_line,
+    disposition_gain_line,
+    disposition_gain_only_line,
     items_total_line,
     other_dependant_medical_line,
     short_term_rental_non_compliant_line,
@@ -3668,3 +3685,105 @@ def test_the_reasons_a_cca_row_closes_at_zero() -> None:
         "column_7_negative",
         "no_property_left",
     ]
+
+
+def test_disposition_gain_line_fields_in_order() -> None:
+    line = disposition_gain_line()
+
+    assert line == DispositionGainLine(
+        output=DISPOSITION_GAIN,
+        position=2,
+        proceeds=D("800.00"),
+        adjusted_cost_base=D("1000.00"),
+        outlays=D("30.00"),
+        result=D("-230.00"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "proceeds",
+        "adjusted_cost_base",
+        "outlays",
+        "result",
+    ]
+    assert line.output is DISPOSITION_GAIN
+    assert line.position == 2
+
+
+def test_disposition_gain_line_amount_is_the_signed_result() -> None:
+    line = disposition_gain_line()
+
+    assert line.amount == D("-230.00")
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_disposition_gain_lines_differ_by_each_field() -> None:
+    line = disposition_gain_line()
+    same = {f.name: getattr(line, f.name) for f in fields(line)}
+    changed: dict[str, Any] = {
+        "position": 1,
+        "proceeds": D("800.01"),
+        "adjusted_cost_base": D("1000.01"),
+        "outlays": D("30.01"),
+        "result": D("-230.01"),
+    }
+
+    assert set(changed) == set(same) - {"output"}
+    for name, value in changed.items():
+        assert line != DispositionGainLine(**{**same, name: value}), name
+    assert line != DispositionGainLine(**{**same, "output": CAREGIVER})
+
+
+def test_disposition_gain_only_line_fields_in_order() -> None:
+    line = disposition_gain_only_line()
+
+    assert line == DispositionGainOnlyLine(
+        output=DISPOSITION_GAIN,
+        position=2,
+        proceeds=D("800.00"),
+        adjusted_cost_base=D("1000.00"),
+        outlays=D("30.00"),
+        gain=D("-230.00"),
+        result=D("0"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "proceeds",
+        "adjusted_cost_base",
+        "outlays",
+        "gain",
+        "result",
+    ]
+
+
+def test_disposition_gain_only_line_amount_is_the_result_not_the_gain() -> None:
+    line = disposition_gain_only_line()
+
+    assert line.amount == D("0")
+    assert line.gain == D("-230.00")
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_disposition_gain_only_lines_differ_by_each_field() -> None:
+    line = disposition_gain_only_line()
+    same = {f.name: getattr(line, f.name) for f in fields(line)}
+    changed: dict[str, Any] = {
+        "position": 1,
+        "proceeds": D("800.01"),
+        "adjusted_cost_base": D("1000.01"),
+        "outlays": D("30.01"),
+        "gain": D("-230.01"),
+        "result": D("0.01"),
+    }
+
+    assert set(changed) == set(same) - {"output"}
+    for name, value in changed.items():
+        assert line != DispositionGainOnlyLine(**{**same, name: value}), name
+    assert line != DispositionGainOnlyLine(**{**same, "output": CAREGIVER})
+
+
+def test_the_two_disposition_lines_are_classes_of_their_own() -> None:
+    assert not isinstance(disposition_gain_line(), DispositionGainOnlyLine)
+    assert not isinstance(disposition_gain_only_line(), DispositionGainLine)
+    assert not isinstance(disposition_gain_line(), ItemsTotalLine)

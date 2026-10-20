@@ -31,7 +31,7 @@ def test_line_23300_adds_every_wired_deduction_once_in_the_forms_line_order() ->
     # (line 23200): 2047. Other income of 5000 is total income, so line 23400 is 2953.
     worksheet = compute(
         "0",
-        "0",
+        (),
         "0",
         "2",
         "2",
@@ -79,7 +79,7 @@ def test_line_23400_is_negative_when_the_deductions_exceed_total_income() -> Non
     # taxable income, until line 23500 is wired.
     worksheet = compute(
         "0",
-        "0",
+        (),
         "0",
         "2",
         "2",

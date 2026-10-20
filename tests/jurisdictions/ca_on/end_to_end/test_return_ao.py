@@ -42,7 +42,7 @@ def return_ao(**overrides: Any) -> Worksheet:
         "spouse_or_common_law_partner_on_december_31": 1,
         "spouse_net_income": "15000",
     }
-    return compute("22139.77", "0", "0", "0", "0", "0", "0", **{**inputs, **overrides})
+    return compute("22139.77", (), "0", "0", "0", "0", "0", **{**inputs, **overrides})
 
 
 def counted(worksheet: Worksheet, kind: Any) -> ConditionsCountLine:
