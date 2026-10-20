@@ -3351,3 +3351,50 @@ def test_an_input_that_is_also_an_output_is_carried_onto_the_worksheet_as_entere
     assert worksheet.get(EXTRA) == entered
     assert worksheet.producer_of(EXTRA) is None
     assert worksheet.get(RESULT).value == D("16")
+
+
+# `ex/business_number` is a made-up digits input of nine digits that the default manifest also
+# returns, so it is carried onto the return as entered: nothing computes it and nothing has to
+# consume it. Like `RecordListKind` above, `DigitsKind` is reached inside a cached factory so its
+# absence fails only the tests that use it.
+@cache
+def business_number_kind() -> Any:
+    """The made-up `ex/business_number` digits kind of nine digits, declared like any package's."""
+    from app.domain.digits import DigitsKind
+
+    return DigitsKind.declare(ArtifactCatalog(Namespace("ex")), "business_number", digits=9)
+
+
+def business_number_service() -> TaxComputationService:
+    """The default manifest, also carrying `ex/business_number` onto the return as entered."""
+    artifacts = artifact_registry()
+    artifacts.register(business_number_kind().identifier, business_number_kind())
+    return service(
+        manifest(
+            inputs=frozenset({"ex/base", "ex/business_number"}),
+            outputs=frozenset({"ex-on/result", "ex/business_number"}),
+        ),
+        artifacts=artifacts,
+    )
+
+
+@pytest.mark.parametrize("text", ["012345678", ""])
+def test_a_carried_digits_entry_is_returned_as_entered(text: str) -> None:
+    entered = Artifact(business_number_kind(), text)
+
+    worksheet = business_number_service().compute(EX_ON, 2025, Artifact(BASE, D("5")), entered)
+
+    assert worksheet.get(business_number_kind()) == entered
+    assert worksheet.producer_of(business_number_kind()) is None
+    assert worksheet.get(RESULT).value == D("16")
+
+
+def test_a_digits_kind_of_another_number_of_digits_is_not_the_carried_entry() -> None:
+    from app.domain.digits import DigitsKind
+
+    other = DigitsKind("ex/business_number", digits=5)
+
+    with pytest.raises(InvalidCompositionError, match="'business_number'"):
+        business_number_service().compute(
+            EX_ON, 2025, Artifact(BASE, D("5")), Artifact(other, "12345")
+        )

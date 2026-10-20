@@ -6,11 +6,14 @@ the `sources` its figures were checked against, and maps artifact identifiers to
 amount is a decimal string, and a count (an `int` kind, under `inputs` or `expected`) is a string
 of decimal digits with no sign and no leading zero, such as "0" or "3". A record list (only under
 `inputs`) is a list of mappings, one per record in order, each keyed by its fields'
-identifiers with figures spelled as above; `[]` is no records. `WorkedReturn.load` checks
-that shape and resolves each identifier through an artifact registry; every failure is a
+identifiers with figures spelled as above; `[]` is no records. Digits (a digits kind, under
+`inputs` or `expected`, as a carried entry is listed under both) are quoted text kept as
+entered, such as "012345678", or `""` for a box left blank. `WorkedReturn.load` checks that
+shape and resolves each identifier through an artifact registry; every failure is a
 WorkedReturnError naming the file and the key, except a value its kind refuses, such as a
-negative amount, which is the value type's own error. A line or input the file leaves out is
-blank: `with_blanks` fills it in against the manifest's declared inputs and outputs.
+negative amount or digits of the wrong length, which is the kind's own error. A line or input
+the file leaves out is blank: `with_blanks` fills it in against the manifest's declared inputs
+and outputs.
 """
 
 from __future__ import annotations
@@ -24,6 +27,7 @@ import yaml
 
 from app.adapters.outbound.yaml_support import YamlNode, YamlShapeError
 from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry
+from app.domain.digits import DigitsKind
 from app.domain.errors import (
     InvalidJurisdictionCodeError,
     InvalidRegistrationError,
@@ -83,9 +87,10 @@ class WorkedReturn:
 
         `inputs` and `outputs` are the identifiers the manifest declares. A declared input the
         file leaves out is entered as blank: 0 for an amount or a count, no records for a record
-        list. A declared output the file leaves out is expected to be 0, so a line that fires
-        on a return not meant to trigger it still fails. Raises WorkedReturnError naming the
-        file and the identifier for one `artifacts` does not know or that holds no blank.
+        list, the empty text for digits. A declared output the file leaves out is expected to be
+        0, or the empty text for digits, so a line that fires on a return not meant to trigger it
+        still fails. Raises WorkedReturnError naming the file and the identifier for one
+        `artifacts` does not know or that holds no blank.
         """
         given = {artifact.kind.identifier for artifact in self.inputs}
         listed = {artifact.kind.identifier for artifact in self.expected}
@@ -112,6 +117,8 @@ class WorkedReturn:
                 result.append(Artifact(kind, 0))
             elif section == "inputs" and isinstance(kind, RecordListKind):
                 result.append(Artifact(kind, RecordList(kind.fields, [])))
+            elif isinstance(kind, DigitsKind):
+                result.append(Artifact(kind, ""))
             else:
                 raise WorkedReturnError(
                     f"{self.path}: {section}: {identifier!r} holds a "
@@ -177,9 +184,13 @@ class WorkedReturn:
                 result.append(Artifact(kind, WorkedReturn._count(value)))
             elif inputs and isinstance(kind, RecordListKind):
                 result.append(Artifact(kind, WorkedReturn._records(value, kind)))
+            elif isinstance(kind, DigitsKind):
+                result.append(Artifact(kind, value.require_string()))
             else:
                 accepted = (
-                    "an amount, a count or a record list" if inputs else "an amount or a count"
+                    "an amount, a count, a record list or digits"
+                    if inputs
+                    else "an amount or a count or digits"
                 )
                 raise YamlShapeError(
                     f"{value.where}: {identifier!r} holds a {kind.value_type.__name__}, "
