@@ -747,10 +747,8 @@ def test_a_record_list_under_expected_names_the_file_and_key(
         WorkedReturn.load(path, records)
 
 
-# --- digits: a number the form asks for as a fixed count of digits, as quoted text -------------
-#
 # The made-up `ex/business_number` (the `digits` fixture) is a digits kind of nine digits, as a
-# carried entry is listed under `inputs`.
+# carried entry is listed under `inputs` and `expected`.
 
 
 def with_business_number(value: str) -> str:
