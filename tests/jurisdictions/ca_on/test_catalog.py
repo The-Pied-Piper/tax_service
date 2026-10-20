@@ -54,6 +54,7 @@ from app.jurisdictions.ca_on.catalog import (
     LIFT_CREDIT_BEFORE_MAXIMUM,
     LIFT_MAXIMUM_CREDIT,
     LIFT_REDUCTION,
+    NET_REFUND,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     ONTARIO_BASIC_TAX,
@@ -71,6 +72,7 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX_LESS_DIVIDEND_CREDIT,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
+    OPPORTUNITIES_FUND_DONATION,
     OTHER_DIVIDENDS_CREDIT,
     POLITICAL_CONTRIBUTIONS,
     POLITICAL_CREDIT,
@@ -90,6 +92,7 @@ from app.jurisdictions.ca_on.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_5,
     POLITICAL_CREDIT_COLUMN_3_LINE_6,
     POLITICAL_CREDIT_COLUMN_3_LINE_7,
+    REFUND_BEFORE_DONATION,
     SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
     SENIORS_TRANSIT_CREDIT,
     SENIORS_TRANSIT_PAID,
@@ -189,6 +192,9 @@ REGISTERED = frozenset(
         "ca-on/flow_through_share_credit",
         "ca-on/ontario_credits_subtotal",
         "ca-on/ontario_credits",
+        "ca-on/refund_before_donation",
+        "ca-on/opportunities_fund_donation",
+        "ca-on/net_refund",
     }
 )
 # ON428 lines 75 (line 60969) and 76 (line 60970): the numbers of dependent children and of
@@ -353,6 +359,9 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/flow_through_share_credit") is FLOW_THROUGH_SHARE_CREDIT
     assert registry.get("ca-on/ontario_credits_subtotal") is ONTARIO_CREDITS_SUBTOTAL
     assert registry.get("ca-on/ontario_credits") is ONTARIO_CREDITS
+    assert registry.get("ca-on/refund_before_donation") is REFUND_BEFORE_DONATION
+    assert registry.get("ca-on/opportunities_fund_donation") is OPPORTUNITIES_FUND_DONATION
+    assert registry.get("ca-on/net_refund") is NET_REFUND
 
 
 def test_every_registered_kind_but_the_counts_and_record_lists_is_money_in_the_package_namespace(
