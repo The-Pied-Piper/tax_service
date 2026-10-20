@@ -135,3 +135,9 @@ SPOUSE_RDSP_INCOME = CATALOG.declare("spouse_rdsp_income", Decimal, non_negative
 """Spouse's RDSP income, Federal Worksheet "Line 45200 - Refundable medical expense supplement" line
 4, column 2 "the RDSP income (line 12500 of the return)": the caller's amount for the spouse or
 common-law partner, 0 where their income is not included."""
+
+SPOUSE_OR_COMMON_LAW_PARTNER_ON_DECEMBER_31 = CATALOG.declare(
+    "spouse_or_common_law_partner_on_december_31", int, non_negative=True
+)
+"""Spouse or common-law partner on December 31, 2025, T1 "Marital status on December 31, 2025" Box 1
+Married, Box 2 Living common-law: the caller's count, 1 for box 1 or box 2 and 0 for any other."""

@@ -218,7 +218,9 @@ from app.jurisdictions.ca_on.catalog import (
     FERTILITY_CREDIT_BEFORE_MAXIMUM,
     LIFT_CREDIT_BEFORE_MAXIMUM,
     LIFT_MAXIMUM_CREDIT,
+    ONTARIO_TAX_BEFORE_REDUCTION,
     ONTARIO_TAX_REDUCTION,
+    ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS,
     SENIORS_CARE_AMOUNT,
     SENIORS_CARE_BASE_AMOUNT,
     SENIORS_CARE_BEFORE_CLAIM,
@@ -227,9 +229,13 @@ from app.jurisdictions.ca_on.catalog import (
     SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
     SENIORS_TRANSIT_PAID,
     TAX_REDUCTION_AMOUNTS,
+    TAX_REDUCTION_AMOUNTS_CLAIMABLE,
     TAX_REDUCTION_BASIC,
+    TAX_REDUCTION_CLAIMABLE,
     TAX_REDUCTION_FOR_CHILDREN,
+    TAX_REDUCTION_FOR_CHILDREN_BEFORE_SPOUSE_RULE,
     TAX_REDUCTION_FOR_DEPENDANTS,
+    TAX_REDUCTION_FOR_DEPENDANTS_BEFORE_SPOUSE_RULE,
 )
 from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, return_a
 
@@ -817,16 +823,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rounding=CENT,
             result=D("0"),
         ),
-        TAX_REDUCTION_FOR_CHILDREN: PerUnitAmountLine(
-            output=TAX_REDUCTION_FOR_CHILDREN,
+        TAX_REDUCTION_FOR_CHILDREN_BEFORE_SPOUSE_RULE: PerUnitAmountLine(
+            output=TAX_REDUCTION_FOR_CHILDREN_BEFORE_SPOUSE_RULE,
             count_kind=DEPENDENT_CHILDREN,
             count=0,
             per_unit=Amount(D("544")),
             rounding=CENT,
             result=D("0"),
         ),
-        TAX_REDUCTION_FOR_DEPENDANTS: PerUnitAmountLine(
-            output=TAX_REDUCTION_FOR_DEPENDANTS,
+        TAX_REDUCTION_FOR_DEPENDANTS_BEFORE_SPOUSE_RULE: PerUnitAmountLine(
+            output=TAX_REDUCTION_FOR_DEPENDANTS_BEFORE_SPOUSE_RULE,
             count_kind=DEPENDANTS,
             count=0,
             per_unit=Amount(D("544")),
@@ -975,6 +981,33 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert times == {
+        # ON428 line 75 and line 76: the amounts of the filer's dependent children and dependants,
+        # claimed once as the rule on lines 75 and 76 lets Return A's filer (no spouse or
+        # common-law partner), and line 80 once as none of the six conditions applies.
+        TAX_REDUCTION_FOR_CHILDREN: TimesCountLine(
+            output=TAX_REDUCTION_FOR_CHILDREN,
+            amount_kind=TAX_REDUCTION_FOR_CHILDREN_BEFORE_SPOUSE_RULE,
+            amount_value=D("0"),
+            count_kind=TAX_REDUCTION_AMOUNTS_CLAIMABLE,
+            count=1,
+            result=D("0"),
+        ),
+        TAX_REDUCTION_FOR_DEPENDANTS: TimesCountLine(
+            output=TAX_REDUCTION_FOR_DEPENDANTS,
+            amount_kind=TAX_REDUCTION_FOR_DEPENDANTS_BEFORE_SPOUSE_RULE,
+            amount_value=D("0"),
+            count_kind=TAX_REDUCTION_AMOUNTS_CLAIMABLE,
+            count=1,
+            result=D("0"),
+        ),
+        ONTARIO_TAX_REDUCTION: TimesCountLine(
+            output=ONTARIO_TAX_REDUCTION,
+            amount_kind=ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS,
+            amount_value=D("0"),
+            count_kind=TAX_REDUCTION_CLAIMABLE,
+            count=1,
+            result=D("0"),
+        ),
         ELIGIBLE_DEPENDANT_AMOUNT: TimesCountLine(
             output=ELIGIBLE_DEPENDANT_AMOUNT,
             amount_kind=ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
@@ -1066,12 +1099,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert multiples == {
-        ONTARIO_TAX_REDUCTION: MultipleOverLine(
-            output=ONTARIO_TAX_REDUCTION,
+        ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS: MultipleOverLine(
+            output=ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS,
             base=TAX_REDUCTION_AMOUNTS,
             base_amount=D("294.00"),
             factor=Factor(D("2")),
-            less=ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT,
+            less=ONTARIO_TAX_BEFORE_REDUCTION,
             less_amount=D("8195.77"),
             rounding=CENT,
             result=D("0"),

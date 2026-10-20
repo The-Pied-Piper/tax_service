@@ -293,8 +293,8 @@ ONTARIO_TAX_AFTER_DIVIDEND_CREDIT = CATALOG.declare(
     "ontario_tax_after_dividend_credit", Decimal, non_negative=True
 )
 """Ontario tax after the dividend tax credit, ON428 line 71 "Line 69 minus line 70 (if negative,
-enter "0")": the Ontario tax with surtax less the dividend tax credit, not below zero. It is line
-73, as line 72 (the additional tax for minimum tax purposes) is not triggered."""
+enter "0")": the Ontario tax with surtax less the dividend tax credit, not below zero. Line 73 adds
+line 72 to it."""
 
 TAX_REDUCTION_BASIC = CATALOG.declare("tax_reduction_basic", Decimal, non_negative=True)
 """Basic reduction, ON428 line 74 "Basic reduction 294.00": the amount claimed, the first part of
@@ -308,7 +308,9 @@ TAX_REDUCTION_FOR_CHILDREN = CATALOG.declare(
     "tax_reduction_for_children", Decimal, non_negative=True
 )
 """Reduction for dependent children, ON428 line 75 (line 60969) "Number of dependent children
-multiplied by $544"."""
+multiplied by $544": the amount claimed, 0 where the rule that "only the individual with the higher
+net income can claim the amounts on lines 75 and 76" leaves it to the spouse or common-law
+partner."""
 
 DEPENDANTS = CATALOG.declare("dependants", int, non_negative=True)
 """Number of dependants, ON428 line 76 (line 60970) "Number of dependants multiplied by $544", the
@@ -318,7 +320,8 @@ TAX_REDUCTION_FOR_DEPENDANTS = CATALOG.declare(
     "tax_reduction_for_dependants", Decimal, non_negative=True
 )
 """Reduction for dependants, ON428 line 76 (line 60970) "Number of dependants multiplied by
-$544"."""
+$544": the amount claimed, 0 where the rule that "only the individual with the higher net income
+can claim the amounts on lines 75 and 76" leaves it to the spouse or common-law partner."""
 
 TAX_REDUCTION_AMOUNTS = CATALOG.declare("tax_reduction_amounts", Decimal, non_negative=True)
 """Ontario tax reduction amounts, ON428 line 77 "Add lines 74 to 76.": the basic reduction plus
@@ -327,14 +330,97 @@ the reductions for dependent children and for dependants."""
 ONTARIO_TAX_REDUCTION = CATALOG.declare("ontario_tax_reduction", Decimal, non_negative=True)
 """Ontario tax reduction, ON428 line 80 "Line 78 minus line 79 (if negative, enter "0") Ontario
 tax reduction": line 78 "Amount from line 77 above multiplied by 2", less line 79 "Amount from
-line 73 above".
+line 73 above", or "0" where any of the six conditions after "Enter "0" on line 80 if any of the
+following applies to you" applies.
 
 Line 73 is "Line 71 plus line 72" and line 71 "Line 69 minus line 70 (if negative, enter "0")".
-The minimum tax (line 72) is not triggered, so line 73 is line 71, the Ontario tax after the
-dividend tax credit. The conditions under which the form enters "0" on line 80, and
-the rule that only the spouse or common-law partner with the higher net income claims lines 75
-and 76, are not modelled.
+The rule that only the spouse or common-law partner with the higher net income claims lines 75
+and 76 is applied in lines 75 and 76.
 """
+
+ONTARIO_MINIMUM_TAX = CATALOG.declare("ontario_minimum_tax", Decimal, non_negative=True)
+"""Ontario additional tax for minimum tax purposes, ON428 line 72 "If you entered an amount on line
+11 of Part 5 of Form T691, use Worksheet ON428 to calculate your additional tax for minimum tax
+purposes": a starting amount, as entered."""
+
+ONTARIO_TAX_BEFORE_REDUCTION = CATALOG.declare(
+    "ontario_tax_before_reduction", Decimal, non_negative=True
+)
+"""Ontario tax before the reduction, ON428 line 73 "Line 71 plus line 72 =": the Ontario tax after
+the dividend tax credit plus the additional tax for minimum tax purposes."""
+
+NOT_RESIDENT_OF_CANADA_AT_START_OF_YEAR = CATALOG.declare(
+    "not_resident_of_canada_at_start_of_year", int, non_negative=True
+)
+"""Not a resident of Canada at the beginning of the year, ON428 "Enter "0" on line 80 if any of the
+following applies to you" "You were not a resident of Canada at the beginning of the year": the
+caller's count, 1 when it applies and 0 when it does not."""
+
+NOT_RESIDENT_OF_ONTARIO_AT_YEAR_END = CATALOG.declare(
+    "not_resident_of_ontario_at_year_end", int, non_negative=True
+)
+"""Not a resident of Ontario on December 31, 2025, ON428 "Enter "0" on line 80 if any of the
+following applies to you" "You were not a resident of Ontario on December 31, 2025": the caller's
+count, 1 when it applies and 0 when it does not."""
+
+BANKRUPT_IN_YEAR = CATALOG.declare("bankrupt_in_year", int, non_negative=True)
+"""Bankrupt at any time in 2025, ON428 "Enter "0" on line 80 if any of the following applies to
+you" "You were bankrupt at any time in 2025": the caller's count, 1 when it applies and 0 when it
+does not."""
+
+RETURN_FILED_BY_TRUSTEE_IN_BANKRUPTCY = CATALOG.declare(
+    "return_filed_by_trustee_in_bankruptcy", int, non_negative=True
+)
+"""Return filed by a trustee in bankruptcy, ON428 "Enter "0" on line 80 if any of the following
+applies to you" "Your return is filed for you by a trustee in bankruptcy": the caller's count, 1
+when it applies and 0 when it does not."""
+
+NOT_CLAIMING_ONTARIO_TAX_REDUCTION = CATALOG.declare(
+    "not_claiming_ontario_tax_reduction", int, non_negative=True
+)
+"""Choosing not to claim an Ontario tax reduction, ON428 "Enter "0" on line 80 if any of the
+following applies to you" "You are choosing not to claim an Ontario tax reduction": the filer's
+election, the caller's count, 1 when it applies and 0 when it does not."""
+
+TAX_REDUCTION_CLAIMABLE = CATALOG.declare("tax_reduction_claimable", int, non_negative=True)
+"""Whether line 80 is completed, ON428 "Enter "0" on line 80 if any of the following applies to
+you" "If none of the above applies to you, complete lines 74 to 80": 0 when any of the six printed
+conditions applies, else 1."""
+
+CLAIMS_TAX_REDUCTION_AMOUNTS_AT_EQUAL_NET_INCOME = CATALOG.declare(
+    "claims_tax_reduction_amounts_at_equal_net_income", int, non_negative=True
+)
+"""Whether this return claims lines 75 and 76 when the two net incomes are equal, ON428 "only the
+individual with the higher net income can claim the amounts on lines 75 and 76": the form names no
+claimant at a tie, so the caller's count, 1 when this return claims them and 0 when it does not."""
+
+TAX_REDUCTION_AMOUNTS_CLAIMABLE = CATALOG.declare(
+    "tax_reduction_amounts_claimable", int, non_negative=True
+)
+"""Whether this return claims lines 75 and 76, ON428 "If you had a spouse or common-law partner on
+December 31, 2025, only the individual with the higher net income can claim the amounts on lines 75
+and 76": 1 or 0."""
+
+TAX_REDUCTION_FOR_CHILDREN_BEFORE_SPOUSE_RULE = CATALOG.declare(
+    "tax_reduction_for_children_before_spouse_rule", Decimal, non_negative=True
+)
+"""Reduction for dependent children before the spouse rule, ON428 line 75 (line 60969) "Number of
+dependent children multiplied by $544": the amount before the rule that "only the individual with
+the higher net income can claim the amounts on lines 75 and 76"."""
+
+TAX_REDUCTION_FOR_DEPENDANTS_BEFORE_SPOUSE_RULE = CATALOG.declare(
+    "tax_reduction_for_dependants_before_spouse_rule", Decimal, non_negative=True
+)
+"""Reduction for dependants before the spouse rule, ON428 line 76 (line 60970) "Number of
+dependants multiplied by $544": the amount before the rule that "only the individual with the
+higher net income can claim the amounts on lines 75 and 76"."""
+
+ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS = CATALOG.declare(
+    "ontario_tax_reduction_before_conditions", Decimal, non_negative=True
+)
+"""Ontario tax reduction before the conditions, ON428 line 80 "Line 78 minus line 79 (if negative,
+enter "0") Ontario tax reduction": line 78 less line 79, before the conditions on which the form
+enters "0" on line 80."""
 
 ONTARIO_TAX_AFTER_REDUCTION = CATALOG.declare(
     "ontario_tax_after_reduction", Decimal, non_negative=True

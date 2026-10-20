@@ -19,6 +19,7 @@ from app.jurisdictions.ca.catalog import (
     RESIDENT_IN_CANADA_THROUGHOUT_2025,
     RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
     SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS,
+    SPOUSE_OR_COMMON_LAW_PARTNER_ON_DECEMBER_31,
     SPOUSE_RDSP_INCOME,
     SPOUSE_RDSP_INCOME_REPAYMENT,
     SPOUSE_UCCB_REPAYMENT,
@@ -56,6 +57,10 @@ def test_the_other_inputs_kinds_are_the_registered_ones(registry: ArtifactRegist
         is SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT
     )
     assert registry.get("ca/spouse_rdsp_income") is SPOUSE_RDSP_INCOME
+    assert (
+        registry.get("ca/spouse_or_common_law_partner_on_december_31")
+        is SPOUSE_OR_COMMON_LAW_PARTNER_ON_DECEMBER_31
+    )
 
 
 def test_the_other_inputs_kinds_are_money() -> None:
@@ -78,3 +83,8 @@ def test_the_other_inputs_kinds_are_money() -> None:
         SPOUSE_RDSP_INCOME,
     ):
         assert kind.value_type is Decimal, kind.identifier
+
+
+def test_the_spouse_or_common_law_partner_on_december_31_is_a_non_negative_count() -> None:
+    assert SPOUSE_OR_COMMON_LAW_PARTNER_ON_DECEMBER_31.value_type is int
+    assert SPOUSE_OR_COMMON_LAW_PARTNER_ON_DECEMBER_31.non_negative is True

@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 395
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 401
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -467,6 +467,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/spouse_rdsp_income_repayment",
         "ca/spouse_universal_child_care_benefit",
         "ca/spouse_rdsp_income",
+        "ca/spouse_or_common_law_partner_on_december_31",
         "ca/itc_recapture_at_15_percent",
         "ca/itc_recapture_at_20_percent",
         "ca/itc_recapture",
@@ -645,6 +646,19 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca-on/tax_reduction_for_dependants",
         "ca-on/tax_reduction_amounts",
         "ca-on/ontario_tax_reduction",
+        "ca-on/ontario_minimum_tax",
+        "ca-on/ontario_tax_before_reduction",
+        "ca-on/not_resident_of_canada_at_start_of_year",
+        "ca-on/not_resident_of_ontario_at_year_end",
+        "ca-on/bankrupt_in_year",
+        "ca-on/return_filed_by_trustee_in_bankruptcy",
+        "ca-on/not_claiming_ontario_tax_reduction",
+        "ca-on/tax_reduction_claimable",
+        "ca-on/claims_tax_reduction_amounts_at_equal_net_income",
+        "ca-on/tax_reduction_amounts_claimable",
+        "ca-on/tax_reduction_for_children_before_spouse_rule",
+        "ca-on/tax_reduction_for_dependants_before_spouse_rule",
+        "ca-on/ontario_tax_reduction_before_conditions",
         "ca-on/ontario_tax_after_reduction",
         "ca-on/lift_credit_before_maximum",
         "ca-on/lift_maximum_credit",
@@ -756,13 +770,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 395
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 401
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 395
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 401
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

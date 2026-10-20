@@ -215,6 +215,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_CAREGIVER_ELIGIBLE,
     SPOUSE_NET_INCOME,
     SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS,
+    SPOUSE_OR_COMMON_LAW_PARTNER_ON_DECEMBER_31,
     SPOUSE_RDSP_INCOME,
     SPOUSE_RDSP_INCOME_REPAYMENT,
     SPOUSE_UCCB_REPAYMENT,
@@ -718,6 +719,14 @@ def compute(
     unapplied_net_capital_losses_2001_to_2024: str = "0",
     net_capital_losses_claimed: str = "0",
     lift_spouse_at_year_end: int = 0,
+    ontario_minimum_tax: str = "0",
+    not_resident_of_canada_at_start_of_year: int = 0,
+    not_resident_of_ontario_at_year_end: int = 0,
+    bankrupt_in_year: int = 0,
+    return_filed_by_trustee_in_bankruptcy: int = 0,
+    not_claiming_ontario_tax_reduction: int = 0,
+    spouse_or_common_law_partner_on_december_31: int = 0,
+    claims_tax_reduction_amounts_at_equal_net_income: int = 0,
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -1083,6 +1092,23 @@ def compute(
         ),
         Artifact(NET_CAPITAL_LOSSES_CLAIMED, D(net_capital_losses_claimed)),
         Artifact(ontario.LIFT_SPOUSE_AT_YEAR_END, lift_spouse_at_year_end),
+        Artifact(ontario.ONTARIO_MINIMUM_TAX, D(ontario_minimum_tax)),
+        Artifact(
+            ontario.NOT_RESIDENT_OF_CANADA_AT_START_OF_YEAR, not_resident_of_canada_at_start_of_year
+        ),
+        Artifact(ontario.NOT_RESIDENT_OF_ONTARIO_AT_YEAR_END, not_resident_of_ontario_at_year_end),
+        Artifact(ontario.BANKRUPT_IN_YEAR, bankrupt_in_year),
+        Artifact(
+            ontario.RETURN_FILED_BY_TRUSTEE_IN_BANKRUPTCY, return_filed_by_trustee_in_bankruptcy
+        ),
+        Artifact(ontario.NOT_CLAIMING_ONTARIO_TAX_REDUCTION, not_claiming_ontario_tax_reduction),
+        Artifact(
+            SPOUSE_OR_COMMON_LAW_PARTNER_ON_DECEMBER_31, spouse_or_common_law_partner_on_december_31
+        ),
+        Artifact(
+            ontario.CLAIMS_TAX_REDUCTION_AMOUNTS_AT_EQUAL_NET_INCOME,
+            claims_tax_reduction_amounts_at_equal_net_income,
+        ),
     )
 
 
