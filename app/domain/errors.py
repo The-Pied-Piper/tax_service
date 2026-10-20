@@ -96,6 +96,10 @@ class InvalidAmountError(DomainError):
     """An amount is not finite or is negative."""
 
 
+class InvalidClaimReductionError(DomainError):
+    """A claim reduction's ceiling or maximum is not finite or is negative."""
+
+
 class InvalidContributionTierError(DomainError):
     """A contribution tier's bounds or maximum are not finite, negative or out of order."""
 

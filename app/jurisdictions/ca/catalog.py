@@ -1347,6 +1347,30 @@ amount for other infirm dependants age 18 or older (complete Schedule 5)": "the 
 amounts claimed for all dependants", each line 3 "Line 1 minus line 2 (if negative, enter "0")
 (maximum $8,601)", a part of the total of the credit amounts."""
 
+OTHER_DEPENDANT_MEDICAL_EXPENSES = CATALOG.declare(
+    "other_dependant_medical_expenses", Decimal, non_negative=True
+)
+"""Medical expenses for an other dependant, Federal Worksheet for line 33199, line 1 "Medical
+expenses for other dependant": a field of each record of the other dependants, not an artifact of
+its own."""
+
+OTHER_DEPENDANTS = RecordListKind.declare(
+    CATALOG,
+    "other_dependants",
+    fields=(OTHER_DEPENDANT_MEDICAL_EXPENSES, DEPENDANT_NET_INCOME),
+)
+"""Other dependants, Federal Worksheet for line 33199 "Complete one column for each dependant": a
+starting list with one record for each dependant whose medical expenses are claimed, holding line 1
+"Medical expenses for other dependant" and the dependant's net income from line 23600 of their
+return, from which line 2 "amount from line 109 of the dependant's return" is worked out. A list
+of its own: the infirm dependants of line 30450 are a different set of people."""
+
+OTHER_DEPENDANTS_MEDICAL = CATALOG.declare("other_dependants_medical", Decimal, non_negative=True)
+"""Allowable amount of medical expenses for other dependants, T1 line 111 (line 33199) "Allowable
+amount of medical expenses for other dependants (use Federal Worksheet)": line 4 "Add the amounts
+from line 3 of columns 1, 2, and 3 (and others, if any)", each line 3 being "Line 1 minus line 2
+(if negative, enter "0")"."""
+
 DEPENDANT_UNDER_18 = CATALOG.declare("dependant_under_18", int, non_negative=True)
 """Dependant under 18, Federal Worksheet "Line 31800 - Disability amount transferred from a
 dependant" "If the dependant was under 18 years of age on December 31, 2025, complete lines 2 to

@@ -18,6 +18,7 @@ from pathlib import Path
 
 import yaml
 
+from app.adapters.outbound.parameter_parsers.parser import OptionalKeysParser
 from app.adapters.outbound.parameter_parsers.registry import ParameterParserRegistry
 from app.adapters.outbound.yaml_support import YamlNode, YamlShapeError
 from app.domain.errors import DomainError, InvalidParameterDataError, NotFoundError
@@ -57,7 +58,10 @@ class YamlParameterSource:
                 f"{path}: kind {declared_kind!r} does not match the requested {kind.name!r}"
             )
         try:
-            doc = document.require_mapping(_ENVELOPE_KEYS | parser.body_keys)
+            optional = (
+                parser.optional_keys if isinstance(parser, OptionalKeysParser) else frozenset()
+            )
+            doc = document.require_mapping(_ENVELOPE_KEYS | parser.body_keys, optional=optional)
             self._check_identity(doc, family, tax_year)
             return ParameterDataset(
                 family=family,

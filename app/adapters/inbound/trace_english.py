@@ -29,6 +29,7 @@ from app.domain.trace import (
     ItemsTotalLine,
     LesserOfLine,
     MultipleOverLine,
+    OtherDependantMedicalLine,
     PerUnitAmountLine,
     RateAppliedLine,
     RateByIncomeBandLine,
@@ -287,6 +288,26 @@ class EnglishTraceRenderer:
                     f"{output.label}: dependant {position}: {self._money(base.value)} less net "
                     f"income {self._money(net_income)}, at most {self._money(maximum.value)} = "
                     f"{self._money(result)} ({self._rounding(rule)})"
+                )
+            case OtherDependantMedicalLine(
+                output=output,
+                position=position,
+                expenses=expenses,
+                net_income=net_income,
+                reduction=reduction,
+                rounding=rule,
+                result=result,
+            ):
+                at_most = (
+                    ""
+                    if reduction.maximum is None
+                    else f", at most {self._money(reduction.maximum)}"
+                )
+                return (
+                    f"{output.label}: dependant {position}: expenses {self._money(expenses)} "
+                    f"less the lesser of {self._percent(reduction.rate.value)}% of net income "
+                    f"{self._money(net_income)} and {self._money(reduction.ceiling)} = "
+                    f"{self._money(result)}{at_most} ({self._rounding(rule)})"
                 )
             case CaregiverClaimLessClaimedLine(
                 output=output,

@@ -17,6 +17,7 @@ import pytest
 
 from app.domain.artifact import ArtifactKind
 from app.domain.parameters.amount import Amount
+from app.domain.parameters.claim_reduction import ClaimReduction
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
@@ -42,6 +43,7 @@ from app.domain.trace import (
     ItemsTotalLine,
     LesserOfLine,
     MultipleOverLine,
+    OtherDependantMedicalLine,
     PerUnitAmountLine,
     RateAppliedLine,
     RateByIncomeBandLine,
@@ -102,6 +104,8 @@ TOP_BAND = RateTableRow(D(150000), None, Rate(D(0)))
 CARE_EXPENSES = ArtifactKind("ex/care_expenses", Decimal)
 CARE_CREDIT = ArtifactKind("ex/care_credit", Decimal)
 CAREGIVER = ArtifactKind("ex/caregiver_amount", Decimal)
+MEDICAL = ArtifactKind("ex/dependants_medical", Decimal)
+MEDICAL_REDUCTION = ClaimReduction(Rate(D("0.03")), D("2834"), D("15551"))
 TRANSFERRED = ArtifactKind("ex/transferred_amount", Decimal)
 
 
@@ -223,6 +227,18 @@ def caregiver_claim_line() -> CaregiverClaimLine:
     )
 
 
+def other_dependant_medical_line() -> OtherDependantMedicalLine:
+    return OtherDependantMedicalLine(
+        MEDICAL,
+        2,
+        D("3000.00"),
+        D("10000"),
+        MEDICAL_REDUCTION,
+        CENT,
+        D("2700.00"),
+    )
+
+
 def caregiver_claim_less_claimed_line() -> CaregiverClaimLessClaimedLine:
     return CaregiverClaimLessClaimedLine(
         CAREGIVER,
@@ -292,6 +308,7 @@ ALL_LINES = [
     caregiver_claim_less_claimed_line,
     disability_transfer_line,
     items_total_line,
+    other_dependant_medical_line,
 ]
 
 
@@ -1781,6 +1798,81 @@ def test_caregiver_claim_lines_differ_by_each_field() -> None:
 
 def test_caregiver_claim_lines_are_hashable() -> None:
     assert hash(caregiver_claim_line()) == hash(caregiver_claim_line())
+
+
+def test_other_dependant_medical_line_fields_in_order() -> None:
+    line = other_dependant_medical_line()
+
+    assert line == OtherDependantMedicalLine(
+        output=MEDICAL,
+        position=2,
+        expenses=D("3000.00"),
+        net_income=D("10000"),
+        reduction=MEDICAL_REDUCTION,
+        rounding=CENT,
+        result=D("2700.00"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "expenses",
+        "net_income",
+        "reduction",
+        "rounding",
+        "result",
+    ]
+    assert line.output is MEDICAL
+    assert line.position == 2
+    assert line.expenses == D("3000.00")
+    assert line.net_income == D("10000")
+    assert line.reduction == MEDICAL_REDUCTION
+    assert line.rounding == CENT
+    assert line.result == D("2700.00")
+
+
+def test_other_dependant_medical_line_amount_is_the_result() -> None:
+    line = other_dependant_medical_line()
+
+    assert line.amount == D("2700.00")
+    assert str(line.amount) == "2700.00"
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_other_dependant_medical_line_is_frozen() -> None:
+    with pytest.raises(FrozenInstanceError):
+        cast(Any, other_dependant_medical_line()).result = D("1")
+
+
+def test_other_dependant_medical_lines_differ_by_each_field() -> None:
+    line = other_dependant_medical_line()
+    other = ClaimReduction(Rate(D("0.03")), D("2834"), None)
+
+    assert line != OtherDependantMedicalLine(
+        MEDICAL, 1, line.expenses, line.net_income, line.reduction, CENT, line.result
+    )
+    assert line != OtherDependantMedicalLine(
+        MEDICAL, 2, D("3001"), line.net_income, line.reduction, CENT, line.result
+    )
+    assert line != OtherDependantMedicalLine(
+        MEDICAL, 2, line.expenses, D("10001"), line.reduction, CENT, line.result
+    )
+    assert line != OtherDependantMedicalLine(
+        MEDICAL, 2, line.expenses, line.net_income, other, CENT, line.result
+    )
+    assert line != OtherDependantMedicalLine(
+        MEDICAL, 2, line.expenses, line.net_income, line.reduction, NO_ROUNDING, line.result
+    )
+    assert line != OtherDependantMedicalLine(
+        MEDICAL, 2, line.expenses, line.net_income, line.reduction, CENT, D("2700.01")
+    )
+
+
+def test_other_dependant_medical_lines_are_hashable() -> None:
+    assert hash(other_dependant_medical_line()) == hash(other_dependant_medical_line())
+
+
+def test_an_other_dependant_medical_line_is_not_a_caregiver_claim_line() -> None:
+    assert not isinstance(other_dependant_medical_line(), CaregiverClaimLine)
 
 
 def test_caregiver_claim_less_claimed_line_fields_in_order() -> None:

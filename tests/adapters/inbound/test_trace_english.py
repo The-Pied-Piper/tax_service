@@ -18,6 +18,7 @@ import pytest
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.domain.artifact import ArtifactKind
 from app.domain.parameters.amount import Amount
+from app.domain.parameters.claim_reduction import ClaimReduction
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
@@ -43,6 +44,7 @@ from app.domain.trace import (
     ItemsTotalLine,
     LesserOfLine,
     MultipleOverLine,
+    OtherDependantMedicalLine,
     PerUnitAmountLine,
     RateAppliedLine,
     RateByIncomeBandLine,
@@ -104,6 +106,7 @@ BAND_RATE = ArtifactKind("ex/band_rate", Rate)
 CARE_EXPENSES = ArtifactKind("ex/care_expenses", Decimal)
 CARE_CREDIT = ArtifactKind("ex/care_credit", Decimal)
 CAREGIVER_AMOUNT = ArtifactKind("ex/caregiver_amount", Decimal)
+DEPENDANTS_MEDICAL = ArtifactKind("ex/dependants_medical", Decimal)
 TRANSFERRED_AMOUNT = ArtifactKind("ex/transferred_amount", Decimal)
 
 
@@ -1272,6 +1275,100 @@ def test_renders_the_caregiver_amount_total_of_two_dependants() -> None:
     assert render(line) == "caregiver_amount: item 1 8601 + item 2 3798 = 12399"
 
 
+# --- a medical claim per dependant -----------------------------------------------------
+#
+# One sentence: the output's label, then "dependant <position>: expenses <expenses> less the
+# lesser of <rate>% of net income <income> and <ceiling> = <allowable amount>", then
+# ", at most <maximum>" when the reduction has a maximum, then the rounding rule in brackets.
+# Rates print as plain percentages and every money figure without trailing zeros.
+
+
+def medical_claim(
+    position: int,
+    expenses: str,
+    net_income: str,
+    result: str,
+    maximum: str | None = None,
+    rounding: RoundingRule = CENT,
+    rate: str = "0.03",
+    ceiling: str = "2834",
+) -> OtherDependantMedicalLine:
+    return OtherDependantMedicalLine(
+        DEPENDANTS_MEDICAL,
+        position,
+        D(expenses),
+        D(net_income),
+        ClaimReduction(Rate(D(rate)), D(ceiling), None if maximum is None else D(maximum)),
+        rounding,
+        D(result),
+    )
+
+
+def test_renders_one_dependants_medical_claim_by_position() -> None:
+    assert render(medical_claim(1, "3000", "10000", "2700.00")) == (
+        "dependants_medical: dependant 1: expenses 3000 less the lesser of 3% of net income "
+        "10000 and 2834 = 2700 (half-up to 0.01)"
+    )
+
+
+def test_renders_the_second_dependants_medical_claim_with_the_ceiling_applying() -> None:
+    assert render(medical_claim(2, "5000", "200000", "2166.00")) == (
+        "dependants_medical: dependant 2: expenses 5000 less the lesser of 3% of net income "
+        "200000 and 2834 = 2166 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_medical_claim_with_nothing_allowed() -> None:
+    assert render(medical_claim(2, "1000", "40000", "0.00")) == (
+        "dependants_medical: dependant 2: expenses 1000 less the lesser of 3% of net income "
+        "40000 and 2834 = 0 (half-up to 0.01)"
+    )
+
+
+def test_renders_the_maximum_after_the_result_when_there_is_one() -> None:
+    assert render(medical_claim(1, "20000", "10000", "15551.00", maximum="15551")) == (
+        "dependants_medical: dependant 1: expenses 20000 less the lesser of 3% of net income "
+        "10000 and 2834 = 15551, at most 15551 (half-up to 0.01)"
+    )
+
+
+def test_renders_no_maximum_clause_without_a_maximum() -> None:
+    assert "at most" not in render(medical_claim(1, "3000", "10000", "2700.00"))
+
+
+def test_renders_a_medical_claim_without_rounding() -> None:
+    line = medical_claim(3, "1000", "10000.50", "699.985", rounding=NO_ROUNDING)
+
+    assert render(line) == (
+        "dependants_medical: dependant 3: expenses 1000 less the lesser of 3% of net income "
+        "10000.5 and 2834 = 699.985 (no rounding)"
+    )
+
+
+@pytest.mark.parametrize(("rate", "percent"), [("0", "0"), ("0.125", "12.5"), ("1", "100")])
+def test_renders_the_medical_claims_rate_as_a_plain_percentage(rate: str, percent: str) -> None:
+    assert render(medical_claim(1, "100", "10", "90", rate=rate)) == (
+        f"dependants_medical: dependant 1: expenses 100 less the lesser of {percent}% of net "
+        "income 10 and 2834 = 90 (half-up to 0.01)"
+    )
+
+
+def test_renders_the_medical_claims_figures_without_trailing_zeros_or_an_exponent() -> None:
+    line = medical_claim(
+        1,
+        "3.00000E+3",
+        "1.0000E+4",
+        "2.70000E+3",
+        maximum="1.5551E+4",
+        ceiling="2.83400E+3",
+    )
+
+    assert render(line) == (
+        "dependants_medical: dependant 1: expenses 3000 less the lesser of 3% of net income "
+        "10000 and 2834 = 2700, at most 15551 (half-up to 0.01)"
+    )
+
+
 # --- an amount transferred per dependant ------------------------------------------
 #
 # One sentence: the output's label, then "dependant <position>: " (from 1), the age group
@@ -1754,6 +1851,7 @@ def test_render_all_renders_each_line_in_order() -> None:
             D("0.5"),
         ),
         ItemsTotalLine(CAREGIVER_AMOUNT, ((1, D("1")),), D("1")),
+        medical_claim(1, "5", "4", "3", maximum="2", rounding=NO_ROUNDING),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -1783,6 +1881,8 @@ def test_render_all_renders_each_line_in_order() -> None:
         "caregiver_amount: dependant 2: 5 less net income 4, at most 2 = 1, less claimed 0.5 = 0.5 "
         "(no rounding)",
         "caregiver_amount: item 1 1 = 1",
+        "dependants_medical: dependant 1: expenses 5 less the lesser of 3% of net income 4 and "
+        "2834 = 3, at most 2 (no rounding)",
     )
 
 

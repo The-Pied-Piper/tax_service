@@ -1,8 +1,8 @@
 """Unit tests for ParameterParserRegistry and `@parameter_parser`.
 
-Parsers are keyed by their kind's plain name (`amount`, `brackets`, `contribution_tier`,
-`credit`, `factor`, `fraction`, `rate`, `rate_table`, `rounding_only`, `surcharge_tiers`,
-`taper`), not namespaced yet.
+Parsers are keyed by their kind's plain name (`amount`, `brackets`, `claim_reduction`,
+`contribution_tier`, `credit`, `factor`, `fraction`, `rate`, `rate_table`, `rounding_only`,
+`surcharge_tiers`, `taper`), not namespaced yet.
 Lookups are typed: `for_kind(kind)` for a `ParameterKind[T]` gives a `ParameterParser[T]`; the
 `assert_type` checks below make `mypy .` fail if a lookup returned `Any` or another type.
 Made-up kinds and parsers are never registered in the shared registry: the decorator test
@@ -20,6 +20,7 @@ import app.registrations  # noqa: F401  (fills the capability and parser registr
 from app.adapters.outbound.parameter_parsers import ParameterParser
 from app.adapters.outbound.parameter_parsers.amount import AmountParser
 from app.adapters.outbound.parameter_parsers.brackets import BracketsParser
+from app.adapters.outbound.parameter_parsers.claim_reduction import ClaimReductionParser
 from app.adapters.outbound.parameter_parsers.contribution_tier import ContributionTierParser
 from app.adapters.outbound.parameter_parsers.credit import CreditParser
 from app.adapters.outbound.parameter_parsers.factor import FactorParser
@@ -38,6 +39,7 @@ from app.domain.capability import CapabilityRegistry
 from app.domain.errors import DuplicateRegistrationError, UnknownRegistrationError
 from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
+from app.domain.parameters.claim_reduction import CLAIM_REDUCTION
 from app.domain.parameters.contribution_tier import CONTRIBUTION_TIER, ContributionTier
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.factor import FACTOR, Factor
@@ -294,6 +296,7 @@ def test_decorating_a_second_parser_for_one_kind_fails(fresh: ParameterParserReg
     [
         (AMOUNT, AmountParser),
         (BRACKETS, BracketsParser),
+        (CLAIM_REDUCTION, ClaimReductionParser),
         (CONTRIBUTION_TIER, ContributionTierParser),
         (CREDIT, CreditParser),
         (FACTOR, FactorParser),
@@ -340,6 +343,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_parsers() -> None:
     assert ParameterParserRegistry.shared().identifiers() == {
         "amount",
         "brackets",
+        "claim_reduction",
         "contribution_tier",
         "credit",
         "factor",
