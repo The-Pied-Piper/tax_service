@@ -120,6 +120,8 @@
 # line 8 is line 6 less 33,294.00, $21,141.00; and line 16 and the supplement are $0,
 # because line 9 (line 21500, a chosen $0) and line 10 (line 33200, $0 with no medical
 # expenses) are 0.
+# Form ON-BEN (lines 61020 to 61230) is not applied for (a chosen 0 for each tick box and a
+# chosen $0 for each Part A amount), so its ten lines are carried as entered, all 0.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -1056,6 +1058,16 @@ inputs:
   ca-on/opportunities_fund_donation: "0"
   ca-on/fertility_expenses: "0"
   ca-on/claims_seniors_care_credit: "0"
+  ca-on/applies_for_energy_and_property_tax_credit: "0"
+  ca-on/applies_for_northern_energy_credit: "0"
+  ca-on/chooses_single_benefit_payment: "0"
+  ca-on/applies_for_senior_homeowners_grant: "0"
+  ca-on/separate_residences_for_medical_reasons: "0"
+  ca-on/lived_in_student_residence: "0"
+  ca-on/rent_paid: "0"
+  ca-on/property_tax_paid: "0"
+  ca-on/reserve_home_energy_costs: "0"
+  ca-on/public_long_term_care_paid: "0"
   ca-on/seniors_transit_paid: "0"
   ca-on/flow_through_share_slips: []
   ca-on/coop_education_payroll: "0"
@@ -1221,6 +1233,16 @@ expected:
   ca-on/seniors_care_reduction: "971.75"
   ca-on/seniors_care_before_claim: "0"
   ca-on/seniors_care_credit: "0"
+  ca-on/applies_for_energy_and_property_tax_credit: "0"
+  ca-on/applies_for_northern_energy_credit: "0"
+  ca-on/chooses_single_benefit_payment: "0"
+  ca-on/applies_for_senior_homeowners_grant: "0"
+  ca-on/separate_residences_for_medical_reasons: "0"
+  ca-on/lived_in_student_residence: "0"
+  ca-on/rent_paid: "0"
+  ca-on/property_tax_paid: "0"
+  ca-on/reserve_home_energy_costs: "0"
+  ca-on/public_long_term_care_paid: "0"
   ca-on/seniors_transit_amount_paid_at_most_maximum: "0"
   ca-on/seniors_transit_credit: "0"
   ca-on/political_credit_before_maximum: "0"

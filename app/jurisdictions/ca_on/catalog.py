@@ -1,4 +1,5 @@
-"""The Ontario artifact catalog: Ontario's own kinds, named from Forms ON428 (§2, §7), ON479, T1221.
+"""The Ontario artifact catalog: Ontario's own kinds, named from Forms ON428 (§2, §7), ON479,
+T1221, ON-BEN.
 
 Only the kinds in use are declared, each non-negative, as no ON428 or ON479 line here can be
 negative: amounts are Decimal, the counts of dependent children and dependants int, and the T1221
@@ -783,3 +784,68 @@ opportunities fund": the part of the refund the filer gives, as entered."""
 NET_REFUND = CATALOG.declare("net_refund", Decimal, non_negative=True)
 """Net refund, Ontario opportunities fund line 3 and line 46600 "Net refund (line 1 minus line
 2) =": line 1 less line 2."""
+
+
+APPLIES_FOR_ENERGY_AND_PROPERTY_TAX_CREDIT = CATALOG.declare(
+    "applies_for_energy_and_property_tax_credit", int, non_negative=True
+)
+"""Whether the filer applies for the 2026 Ontario energy and property tax credit, Form ON-BEN line
+61020 "If you met any of these conditions and are applying for the 2026 OEPTC, tick this box and
+complete Part A and Part B of this form.": a tick box, taken as a count, 0 or 1."""
+
+APPLIES_FOR_NORTHERN_ENERGY_CREDIT = CATALOG.declare(
+    "applies_for_northern_energy_credit", int, non_negative=True
+)
+"""Whether the filer applies for the 2026 Northern Ontario energy credit, Form ON-BEN line 61040 "If
+you met any of these conditions and are applying for the 2026 NOEC, tick this box and complete Part
+A and Part B of this form.": a tick box, taken as a count, 0 or 1."""
+
+CHOOSES_SINGLE_BENEFIT_PAYMENT = CATALOG.declare(
+    "chooses_single_benefit_payment", int, non_negative=True
+)
+"""Whether the filer chooses the delayed single payment, Form ON-BEN line 61060 "By ticking this
+box, you are choosing to wait until June 2027 to get your 2026 OTB entitlement.": a tick box, taken
+as a count, 0 or 1."""
+
+APPLIES_FOR_SENIOR_HOMEOWNERS_GRANT = CATALOG.declare(
+    "applies_for_senior_homeowners_grant", int, non_negative=True
+)
+"""Whether the filer applies for the 2026 Ontario senior homeowners' property tax grant, Form ON-BEN
+line 61070 "If you met the conditions above and are applying for the 2026 OSHPTG, tick this box.":
+a tick box, taken as a count, 0 or 1."""
+
+SEPARATE_RESIDENCES_FOR_MEDICAL_REASONS = CATALOG.declare(
+    "separate_residences_for_medical_reasons", int, non_negative=True
+)
+"""Whether the filer and the spouse or common-law partner occupied separate principal residences for
+medical reasons, Form ON-BEN line 61080 "If, on December 31, 2025, you and your spouse or
+common-law partner occupied separate principal residences for medical reasons and you are choosing
+to apply individually for the OEPTC, NOEC, or OSHPTG, tick this box ...": a tick box, taken as a
+count, 0 or 1."""
+
+RENT_PAID = CATALOG.declare("rent_paid", Decimal, non_negative=True)
+"""Rent paid for the principal residence, Form ON-BEN line 61100 "Enter the total amount of rent
+paid for your principal residence (including a private long-term care home) in Ontario for 2025.": a
+starting amount, as the form takes it."""
+
+PROPERTY_TAX_PAID = CATALOG.declare("property_tax_paid", Decimal, non_negative=True)
+"""Property tax paid for the principal residence, Form ON-BEN line 61120 "Enter the total amount of
+property tax paid for your principal residence in Ontario for 2025.": a starting amount, as the
+form takes it."""
+
+LIVED_IN_STUDENT_RESIDENCE = CATALOG.declare("lived_in_student_residence", int, non_negative=True)
+"""Whether the filer resided in a designated student residence, Form ON-BEN line 61140 "If you
+resided in a designated student residence in Ontario in 2025, tick this box.": a tick box, taken as
+a count, 0 or 1."""
+
+RESERVE_HOME_ENERGY_COSTS = CATALOG.declare("reserve_home_energy_costs", Decimal, non_negative=True)
+"""Home energy costs paid for the principal residence on a reserve, Form ON-BEN line 61210 "If you
+lived on a reserve, enter the total amount of home energy costs (like electricity and heat) paid
+for your principal residence in Ontario for 2025.": a starting amount, as the form takes it."""
+
+PUBLIC_LONG_TERM_CARE_PAID = CATALOG.declare(
+    "public_long_term_care_paid", Decimal, non_negative=True
+)
+"""Accommodation paid in a public or non-profit long-term care home, Form ON-BEN line 61230 "Enter
+the total amount paid for your accommodation in a public long-term care home or non-profit long-term
+care home in Ontario for 2025.": a starting amount, as the form takes it."""
