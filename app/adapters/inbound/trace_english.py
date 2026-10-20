@@ -16,12 +16,14 @@ from app.domain.trace import (
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
+    CaregiverClaimLine,
     ChosenByCountLine,
     ChosenByRangeLine,
     ChosenRateAppliedLine,
     ContributionTierLine,
     CreditAmountLine,
     FractionAppliedLine,
+    ItemsTotalLine,
     LesserOfLine,
     MultipleOverLine,
     PerUnitAmountLine,
@@ -264,6 +266,25 @@ class EnglishTraceRenderer:
                     f"{output.label}: {rate_kind.label} {self._percent(rate.value)}% of "
                     f"{base.label} {self._money(amount)} ({self._rounding(rule)})"
                 )
+            case CaregiverClaimLine(
+                output=output,
+                position=position,
+                base=base,
+                net_income=net_income,
+                maximum=maximum,
+                rounding=rule,
+                result=result,
+            ):
+                return (
+                    f"{output.label}: dependant {position}: {self._money(base.value)} less net "
+                    f"income {self._money(net_income)}, at most {self._money(maximum.value)} = "
+                    f"{self._money(result)} ({self._rounding(rule)})"
+                )
+            case ItemsTotalLine(output=output, items=items, total=total):
+                terms = " + ".join(
+                    f"item {position} {self._money(amount)}" for position, amount in items
+                )
+                return f"{output.label}: {terms or 'no items'} = {self._money(total)}"
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 
     def render_all(self, trace: Iterable[TraceLine]) -> tuple[str, ...]:

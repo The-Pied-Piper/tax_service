@@ -17,6 +17,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from app.domain.artifact import ArtifactCatalog
+from app.domain.record_list import RecordListKind
 from app.domain.registry import Namespace
 from app.jurisdictions.ca import NAMESPACE
 
@@ -1330,6 +1331,21 @@ SPOUSE_CAREGIVER_AMOUNT = CATALOG.declare("spouse_caregiver_amount", Decimal, no
 or common-law partner, or eligible dependant age 18 or older (complete Schedule 5)": Schedule 5 line
 5 once if the spouse is eligible for it (line 51090), else 0; a part of the total of the credit
 amounts."""
+
+INFIRM_DEPENDANTS = RecordListKind.declare(
+    CATALOG, "infirm_dependants", fields=(DEPENDANT_NET_INCOME,)
+)
+"""Infirm dependants, Schedule 5 "Line 30450 - Canada caregiver amount for other infirm dependants
+age 18 or older" "Complete the chart below for each dependant who meets the conditions above": a
+starting list with one record for each such dependant, holding line 2 "Infirm dependant's net
+income from line 23600 of their return". The caller lists only the dependants who meet the
+conditions."""
+
+CAREGIVER_AMOUNT = CATALOG.declare("caregiver_amount", Decimal, non_negative=True)
+"""Canada caregiver amount for other infirm dependants, T1 line 82 (line 30450) "Canada caregiver
+amount for other infirm dependants age 18 or older (complete Schedule 5)": "the total of allowable
+amounts claimed for all dependants", each line 3 "Line 1 minus line 2 (if negative, enter "0")
+(maximum $8,601)", a part of the total of the credit amounts."""
 
 INFIRM_CHILDREN = CATALOG.declare("infirm_children", int, non_negative=True)
 """Number of infirm children, T1 line 83 "Number of children you are claiming this amount for Line

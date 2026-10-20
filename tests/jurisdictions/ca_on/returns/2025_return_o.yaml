@@ -881,6 +881,7 @@ inputs:
   ca-on/dependants: "0"
   ca/eligible_dependants: "0"
   ca/dependant_net_income: "0"
+  ca/infirm_dependants: []
   ca/infirm_children: "0"
   ca/child_care_expenses_paid: "0"
   ca/children_under_seven: "0"

@@ -29,12 +29,14 @@ from app.domain.trace import (
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
+    CaregiverClaimLine,
     ChosenByCountLine,
     ChosenByRangeLine,
     ChosenRateAppliedLine,
     ContributionTierLine,
     CreditAmountLine,
     FractionAppliedLine,
+    ItemsTotalLine,
     LesserOfLine,
     MultipleOverLine,
     PerUnitAmountLine,
@@ -95,6 +97,7 @@ BAND = RateTableRow(D(45000), D(50000), Rate(D("0.55")))
 TOP_BAND = RateTableRow(D(150000), None, Rate(D(0)))
 CARE_EXPENSES = ArtifactKind("ex/care_expenses", Decimal)
 CARE_CREDIT = ArtifactKind("ex/care_credit", Decimal)
+CAREGIVER = ArtifactKind("ex/caregiver_amount", Decimal)
 
 
 def column_line() -> BracketColumnLine:
@@ -199,6 +202,22 @@ def chosen_rate_applied_line() -> ChosenRateAppliedLine:
     )
 
 
+def caregiver_claim_line() -> CaregiverClaimLine:
+    return CaregiverClaimLine(
+        CAREGIVER,
+        2,
+        Amount(D("28798.00")),
+        D("25000"),
+        Amount(D("8601")),
+        CENT,
+        D("3798.00"),
+    )
+
+
+def items_total_line() -> ItemsTotalLine:
+    return ItemsTotalLine(CAREGIVER, ((1, D("750.00")), (3, D("800"))), D("1550.00"))
+
+
 ALL_LINES = [
     column_line,
     total_line,
@@ -222,6 +241,8 @@ ALL_LINES = [
     chosen_by_range_line,
     rate_by_income_band_line,
     chosen_rate_applied_line,
+    caregiver_claim_line,
+    items_total_line,
 ]
 
 
@@ -1603,6 +1624,100 @@ def test_a_chosen_rate_applied_lines_amount_is_not_one_of_its_fields() -> None:
 
 def test_a_chosen_rate_applied_line_is_not_a_rate_applied_line() -> None:
     assert not isinstance(chosen_rate_applied_line(), RateAppliedLine)
+
+
+def test_caregiver_claim_line_fields_in_order() -> None:
+    line = caregiver_claim_line()
+
+    assert line == CaregiverClaimLine(
+        output=CAREGIVER,
+        position=2,
+        base=Amount(D("28798.00")),
+        net_income=D("25000"),
+        maximum=Amount(D("8601")),
+        rounding=CENT,
+        result=D("3798.00"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "base",
+        "net_income",
+        "maximum",
+        "rounding",
+        "result",
+    ]
+    assert line.output is CAREGIVER
+    assert line.position == 2
+    assert line.base == Amount(D("28798.00"))
+    assert line.net_income == D("25000")
+    assert line.maximum == Amount(D("8601"))
+    assert line.rounding == CENT
+    assert line.result == D("3798.00")
+
+
+def test_caregiver_claim_line_amount_is_the_result() -> None:
+    line = caregiver_claim_line()
+
+    assert line.amount == D("3798.00")
+    assert str(line.amount) == "3798.00"
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_caregiver_claim_lines_differ_by_each_field() -> None:
+    line = caregiver_claim_line()
+
+    assert line != CaregiverClaimLine(
+        CAREGIVER, 1, line.base, line.net_income, line.maximum, CENT, line.result
+    )
+    assert line != CaregiverClaimLine(
+        CAREGIVER, 2, Amount(D("28799.00")), line.net_income, line.maximum, CENT, line.result
+    )
+    assert line != CaregiverClaimLine(
+        CAREGIVER, 2, line.base, D("25001"), line.maximum, CENT, line.result
+    )
+    assert line != CaregiverClaimLine(
+        CAREGIVER, 2, line.base, line.net_income, Amount(D("8602")), CENT, line.result
+    )
+    assert line != CaregiverClaimLine(
+        CAREGIVER, 2, line.base, line.net_income, line.maximum, NO_ROUNDING, line.result
+    )
+    assert line != CaregiverClaimLine(
+        CAREGIVER, 2, line.base, line.net_income, line.maximum, CENT, D("3798.01")
+    )
+
+
+def test_caregiver_claim_lines_are_hashable() -> None:
+    assert hash(caregiver_claim_line()) == hash(caregiver_claim_line())
+
+
+def test_items_total_line_fields_in_order() -> None:
+    line = items_total_line()
+
+    assert line == ItemsTotalLine(
+        output=CAREGIVER, items=((1, D("750.00")), (3, D("800"))), total=D("1550.00")
+    )
+    assert [f.name for f in fields(line)] == ["output", "items", "total"]
+    assert line.items == ((1, D("750.00")), (3, D("800")))
+    assert line.total == D("1550.00")
+    assert str(line.amount) == "1550.00"
+
+
+def test_an_items_total_line_may_hold_no_items() -> None:
+    line = ItemsTotalLine(CAREGIVER, (), D("0"))
+
+    assert line.items == ()
+    assert line.amount == D("0")
+
+
+def test_items_total_lines_differ_by_items_and_total() -> None:
+    assert items_total_line() != ItemsTotalLine(CAREGIVER, ((1, D("750.00")),), D("1550.00"))
+    assert items_total_line() != ItemsTotalLine(
+        CAREGIVER, ((2, D("750.00")), (3, D("800"))), D("1550.00")
+    )
+    assert items_total_line() != ItemsTotalLine(
+        CAREGIVER, ((1, D("750.00")), (3, D("800"))), D("1551.00")
+    )
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:

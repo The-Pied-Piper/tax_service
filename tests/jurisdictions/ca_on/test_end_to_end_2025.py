@@ -56,8 +56,8 @@ eligible dependants (line 38100) choosing the first (T1 line 45300); less the to
 48200), here the chosen income tax deducted of 25000 (line 43700) plus that benefit, to the refund
 or balance owing (line 167), 897.15, positive so a balance owing; every line computed from a dataset
 rounded half-up to the cent) are checked from the files under `returns/` by
-`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H, I, J, K, L, M, N, O, P and T; this
-module pins which capability produces each line, the order, and the trace that explains them.
+`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q and T;
+this module pins which capability produces each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
@@ -103,11 +103,13 @@ from app.domain.trace import (
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
+    CaregiverClaimLine,
     ChosenByCountLine,
     ChosenByRangeLine,
     ContributionTierLine,
     CreditAmountLine,
     FractionAppliedLine,
+    ItemsTotalLine,
     LesserOfLine,
     MultipleOverLine,
     PerUnitAmountLine,
@@ -122,6 +124,7 @@ from app.domain.trace import (
     TimesCountLine,
 )
 from app.domain.worksheet import Worksheet
+from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADJUSTED_FAMILY_NET_INCOME,
@@ -156,6 +159,7 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GIFTS_LIMIT_ADDITION,
     CAPITAL_GIFTS_TOTAL,
     CAPITAL_PROPERTY_GIFTS,
+    CAREGIVER_AMOUNT,
     CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES,
     CHARITABLE_DONATIONS,
     CHARITABLE_DONATIONS_CLAIMED,
@@ -287,6 +291,7 @@ from app.jurisdictions.ca.catalog import (
     INCOME_TAX_DEDUCTED,
     INFIRM_CHILDREN,
     INFIRM_CHILDREN_AMOUNT,
+    INFIRM_DEPENDANTS,
     INTEREST_AND_OTHER_INVESTMENT_INCOME,
     INVESTMENT_INCOME_BEFORE_PRIOR_YEARS,
     INVESTMENT_INCOME_CREDITED_NOT_RECEIVED,
@@ -623,6 +628,7 @@ def compute(
     spouse_net_income: str = "0",
     spouses_claimed: int = 0,
     spouse_caregiver_eligible: int = 0,
+    infirm_dependants: tuple[str, ...] = (),
     child_care_expenses_paid: str = "0",
     children_under_seven: int = 0,
     children_with_disability: int = 0,
@@ -827,6 +833,13 @@ def compute(
         Artifact(DEPENDANTS, dependants),
         Artifact(ELIGIBLE_DEPENDANTS, eligible_dependants),
         Artifact(DEPENDANT_NET_INCOME, D(dependant_net_income)),
+        Artifact(
+            INFIRM_DEPENDANTS,
+            RecordList(
+                INFIRM_DEPENDANTS.fields,
+                [{DEPENDANT_NET_INCOME: D(income)} for income in infirm_dependants],
+            ),
+        ),
         Artifact(INFIRM_CHILDREN, infirm_children),
         Artifact(BORN_IN_1960_OR_EARLIER, born_in_1960_or_earlier),
         Artifact(SPOUSE_NET_INCOME, D(spouse_net_income)),
@@ -886,6 +899,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(DEPENDANTS) is None
     assert worksheet.producer_of(ELIGIBLE_DEPENDANTS) is None
     assert worksheet.producer_of(DEPENDANT_NET_INCOME) is None
+    assert worksheet.producer_of(INFIRM_DEPENDANTS) is None
     assert worksheet.producer_of(INFIRM_CHILDREN) is None
     assert worksheet.producer_of(BORN_IN_1960_OR_EARLIER) is None
     assert worksheet.producer_of(SPOUSE_NET_INCOME) is None
@@ -1241,6 +1255,8 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         worksheet.producer_of(INFIRM_CHILDREN_AMOUNT)
     )
     assert isinstance(worksheet.producer_of(INFIRM_CHILDREN_AMOUNT), PerUnitAmount)
+    # T1 line 30450, over the record list of infirm dependants.
+    assert isinstance(worksheet.producer_of(CAREGIVER_AMOUNT), CaregiverAmount)
     assert worksheet.producer_of(INFIRM_CHILDREN_AMOUNT) is not worksheet.producer_of(
         TAX_REDUCTION_FOR_CHILDREN
     )
@@ -1795,6 +1811,7 @@ def test_the_trace_explains_the_computation() -> None:
         "for each of 0 eligible_dependants = 0",
         "0",
     )
+    caregiver = position("caregiver_amount: no items = 0", "0")
     infirm_children = position(
         "infirm_children_amount: 2687 for each of 0 infirm_children = 0 (half-up to 0.01)", "0"
     )
@@ -1868,7 +1885,8 @@ def test_the_trace_explains_the_computation() -> None:
     federal_amounts = position(
         "non_refundable_credit_amounts: basic_personal_amount 16129 "
         "+ age_amount 0 + spouse_amount 0 "
-        "+ eligible_dependant_amount 0 + spouse_caregiver_amount 0 + infirm_children_amount 0 "
+        "+ eligible_dependant_amount 0 + spouse_caregiver_amount 0 + caregiver_amount 0 "
+        "+ infirm_children_amount 0 "
         "+ cpp_base_contributions 3356.1 + ei_premiums 1077.48 "
         "+ canada_employment_amount 1471 = 22033.58",
         "22033.58",
@@ -2369,6 +2387,7 @@ def test_the_trace_explains_the_computation() -> None:
     assert federal_credit < federal_credits < federal_after
     assert employment_amount < federal_amounts
     assert federal_amount < federal_dependant < federal_dependant_claimed < federal_amounts
+    assert caregiver < federal_amounts
     assert infirm_children < federal_amounts
     assert net < age_over_threshold < age_reduction < age_before_count < age < federal_amounts
     assert age_threshold < age_over_threshold
@@ -3022,6 +3041,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (SPOUSE_AMOUNT, D("0")),
                 (ELIGIBLE_DEPENDANT_AMOUNT, D("0")),
                 (SPOUSE_CAREGIVER_AMOUNT, D("0")),
+                (CAREGIVER_AMOUNT, D("0")),
                 (INFIRM_CHILDREN_AMOUNT, D("0")),
                 (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
                 (EI_PREMIUMS, D("1077.48")),
@@ -4574,7 +4594,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 233
+    assert len(order) == 234
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -4714,6 +4734,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[ELIGIBLE_DEPENDANT_AMOUNT]
         < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     )
+    assert position[CAREGIVER_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert position[INFIRM_CHILDREN_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     # T1 lines 30100, 30300 and 30425, each after the lines it reads (net income for the age
     # reduction, the basic personal amount for the spouse amount, the spouse amount for the Canada
@@ -5919,7 +5940,8 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
     assert (
         "non_refundable_credit_amounts: basic_personal_amount 16129 "
         "+ age_amount 0 + spouse_amount 0 "
-        "+ eligible_dependant_amount 16129 + spouse_caregiver_amount 0 + infirm_children_amount 0 "
+        "+ eligible_dependant_amount 16129 + spouse_caregiver_amount 0 + caregiver_amount 0 "
+        "+ infirm_children_amount 0 "
         "+ cpp_base_contributions 2796.75 + ei_premiums 984 "
         "+ canada_employment_amount 1471 = 37509.75"
     ) in rendered
@@ -6834,8 +6856,8 @@ def test_return_js_age_spouse_and_caregiver_amounts_come_off_net_income_and_the_
         "for each of 1 spouse_caregiver_eligible = 1785",
         "non_refundable_credit_amounts: basic_personal_amount 16129 + age_amount 8356.3 "
         "+ spouse_amount 6816 + eligible_dependant_amount 0 + spouse_caregiver_amount 1785 "
-        "+ infirm_children_amount 0 + cpp_base_contributions 2301.75 + ei_premiums 820 "
-        "+ canada_employment_amount 1471 = 37679.05",
+        "+ caregiver_amount 0 + infirm_children_amount 0 + cpp_base_contributions 2301.75 "
+        "+ ei_premiums 820 + canada_employment_amount 1471 = 37679.05",
         "age_income_over_threshold: net_income 50000 less age_income_threshold 46330, not below 0 "
         "= 3670",
         "age_reduction: 15% of age_income_over_threshold 3670 (half-up to 0.01)",
@@ -7689,6 +7711,138 @@ def test_an_ontario_dividend_credit_above_the_tax_leaves_zero_not_a_negative() -
     assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT).value == D("1310.14")
     assert worksheet.get(ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT).value == D("0")
     assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("0")
+
+
+def return_q() -> Worksheet:
+    """Return Q's inputs (`returns/2025_return_q.yaml`): Return I's and two infirm dependants."""
+    return compute(
+        "48000",
+        "0",
+        "0",
+        "0",
+        "8640",
+        "0",
+        "0",
+        income_tax_deducted="4800",
+        community_food_program_donations="1000",
+        infirm_dependants=("5000", "25000"),
+    )
+
+
+def test_return_qs_two_infirm_dependants_are_claimed_one_by_one_on_line_30450() -> None:
+    # Return Q is Return I (employment income of 48000, taxable income 47555.00, federal tax on
+    # it 6895.48, Ontario tax 1684.56 after the LIFT and food credits and the health premium)
+    # with two infirm dependants age 18 or older, of net incomes 5000 and 25000. Schedule 5 line
+    # 30450, per dependant: 28798.00 - 5000 = 23798.00, at most 8601: 8601; 28798.00 - 25000 =
+    # 3798.00; the total of the allowable amounts is 8601 + 3798.00 = 12399.00 (pooled, 28798.00
+    # - 30000 would be negative and give 0). The amount for an eligible dependant is not claimed
+    # for them (0 eligible dependants), the age, spouse and spouse caregiver amounts (lines 30100,
+    # 30300 and 30425) are 0 from inputs at their no-claim values, and the Ontario caregiver
+    # amount (ON428 line 58185) is not yet computed. The federal credit amounts are 16129 + 0 +
+    # 0 + 0 + 0 + 12399.00 + 0 + 2202.75 + 787.20 + 1471 = 32988.95; 14.5% of it is
+    # 4783.39775, rounded half-up to the cent: 4783.40, so the federal tax after credits is
+    # 6895.48 - 4783.40 = 2112.08. The Ontario total of credit amounts is unchanged, 15736.95.
+    # The total payable is 2112.08 + 1684.56 = 3796.64, and with the chosen tax deducted of 4800
+    # and no Canada workers benefit, line 167 is 3796.64 - 4800 = -1003.36, a refund.
+    worksheet = return_q()
+
+    assert worksheet.get(INFIRM_DEPENDANTS).value == RecordList(
+        INFIRM_DEPENDANTS.fields,
+        [{DEPENDANT_NET_INCOME: D("5000")}, {DEPENDANT_NET_INCOME: D("25000")}],
+    )
+    assert worksheet.producer_of(INFIRM_DEPENDANTS) is None
+    assert isinstance(worksheet.producer_of(CAREGIVER_AMOUNT), CaregiverAmount)
+    assert worksheet.get(CAREGIVER_AMOUNT).value == D("12399.00")
+    assert worksheet.get(ELIGIBLE_DEPENDANT_AMOUNT).value == D("0")
+    assert worksheet.get(INFIRM_CHILDREN_AMOUNT).value == D("0")
+    assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("32988.95")
+    assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("4783.40")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("2112.08")
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("15736.95")
+    assert worksheet.get(ONTARIO_TAX).value == D("1684.56")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("3796.64")
+    assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("0")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-1003.36")
+
+
+def test_return_qs_trace_names_each_dependant_and_totals_the_credit_amounts() -> None:
+    worksheet = return_q()
+
+    lines = [
+        line
+        for line in worksheet.trace
+        if isinstance(line, CaregiverClaimLine | ItemsTotalLine) and line.output == CAREGIVER_AMOUNT
+    ]
+    assert lines == [
+        CaregiverClaimLine(
+            output=CAREGIVER_AMOUNT,
+            position=1,
+            base=Amount(D("28798.00")),
+            net_income=D("5000"),
+            maximum=Amount(D("8601")),
+            rounding=CENT,
+            result=D("8601.00"),
+        ),
+        CaregiverClaimLine(
+            output=CAREGIVER_AMOUNT,
+            position=2,
+            base=Amount(D("28798.00")),
+            net_income=D("25000"),
+            maximum=Amount(D("8601")),
+            rounding=CENT,
+            result=D("3798.00"),
+        ),
+        ItemsTotalLine(
+            output=CAREGIVER_AMOUNT,
+            items=((1, D("8601.00")), (2, D("3798.00"))),
+            total=D("12399.00"),
+        ),
+    ]
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    first = rendered.index(
+        "caregiver_amount: dependant 1: 28798 less net income 5000, at most 8601 = 8601 "
+        "(half-up to 0.01)"
+    )
+    assert rendered[first : first + 3] == (
+        "caregiver_amount: dependant 1: 28798 less net income 5000, at most 8601 = 8601 "
+        "(half-up to 0.01)",
+        "caregiver_amount: dependant 2: 28798 less net income 25000, at most 8601 = 3798 "
+        "(half-up to 0.01)",
+        "caregiver_amount: item 1 8601 + item 2 3798 = 12399",
+    )
+    assert (
+        "non_refundable_credit_amounts: basic_personal_amount 16129 + age_amount 0 "
+        "+ spouse_amount 0 + eligible_dependant_amount 0 + spouse_caregiver_amount 0 "
+        "+ caregiver_amount 12399 + infirm_children_amount 0 + cpp_base_contributions 2202.75 "
+        "+ ei_premiums 787.2 + canada_employment_amount 1471 = 32988.95"
+    ) in rendered
+
+
+def test_infirm_dependants_pooled_would_give_the_wrong_line_30450() -> None:
+    separate = compute(
+        "48000", "0", "0", "0", "8640", "0", "0", infirm_dependants=("5000", "25000")
+    )
+    pooled = compute("48000", "0", "0", "0", "8640", "0", "0", infirm_dependants=("30000",))
+
+    assert separate.get(CAREGIVER_AMOUNT).value == D("12399.00")
+    assert pooled.get(CAREGIVER_AMOUNT).value == D("0")
+
+
+def test_no_infirm_dependants_claim_nothing_on_line_30450() -> None:
+    worksheet = compute("48000", "0", "0", "0", "8640", "0", "0")
+
+    assert worksheet.get(CAREGIVER_AMOUNT).value == D("0")
+    assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("20589.95")
+
+
+def test_infirm_dependants_do_not_change_the_ontario_credits() -> None:
+    # ON428 line 58185 (the Ontario caregiver amount) is not yet computed.
+    without = compute("48000", "0", "0", "0", "8640", "0", "0")
+    with_dependants = return_q()
+
+    assert with_dependants.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS) == (
+        without.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS)
+    )
 
 
 def step_3(**amounts: Any) -> Worksheet:

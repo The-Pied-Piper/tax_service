@@ -924,6 +924,7 @@ inputs:
   ca-on/dependants: "0"
   ca/eligible_dependants: "0"
   ca/dependant_net_income: "0"
+  ca/infirm_dependants: []
   ca/infirm_children: "0"
   ca/born_in_1960_or_earlier: "0"
   ca/spouse_net_income: "0"

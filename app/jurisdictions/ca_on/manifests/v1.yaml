@@ -109,6 +109,7 @@ inputs:
   - ca-on/dependants
   - ca/eligible_dependants
   - ca/dependant_net_income
+  - ca/infirm_dependants
   - ca/infirm_children
   - ca/born_in_1960_or_earlier
   - ca/spouse_net_income
@@ -1113,6 +1114,20 @@ capabilities:
       count: ca/spouse_caregiver_eligible
     produces:
       output: ca/spouse_caregiver_amount
+  # T1 line 82 (line 30450) "Canada caregiver amount for other infirm dependants age 18 or
+  # older (complete Schedule 5)", Schedule 5 "Line 30450 - Canada caregiver amount for other
+  # infirm dependants age 18 or older": for each dependant, line 1 "Base amount 28,798.00"
+  # less line 2 "Infirm dependant's net income from line 23600 of their return", line 3
+  # "Line 1 minus line 2 (if negative, enter "0") (maximum $8,601)", and "the total of
+  # allowable amounts claimed for all dependants".
+  - name: ca/caregiver_amount
+    params:
+      base: ca/caregiver_base_amount
+      maximum: ca/caregiver_maximum_amount
+    consumes:
+      dependants: ca/infirm_dependants
+    produces:
+      output: ca/caregiver_amount
   # T1 line 83 (line 30500) "Canada caregiver amount for infirm children under 18 years
   # of age (see Schedule 5) Number of children you are claiming this amount for Line
   # 30499" "multiplied by $2,687".
@@ -1230,10 +1245,10 @@ capabilities:
       count: ca/eligible_dependants
     produces:
       output: ca-on/eligible_dependant_amount
-  # T1 line 33500 (lines 30000, 30100, 30300, 30400, 30425, 30500, 30800, 31200, 31260)
-  # and ON428 line 58800 (lines 58040, 58080, 58120, 58160, 58240, 58300), in the forms'
-  # line order. ON428 lines 58240 and 58300 are "Amount from line 30800 / 31200 of your
-  # return", so the Ontario sum reads the federal kinds; it has no Canada employment
+  # T1 line 33500 (lines 30000, 30100, 30300, 30400, 30425, 30450, 30500, 30800, 31200,
+  # 31260) and ON428 line 58800 (lines 58040, 58080, 58120, 58160, 58240, 58300), in the
+  # forms' line order. ON428 lines 58240 and 58300 are "Amount from line 30800 / 31200 of
+  # your return", so the Ontario sum reads the federal kinds; it has no Canada employment
   # amount.
   - name: core/sum
     consumes:
@@ -1243,6 +1258,7 @@ capabilities:
         - ca/spouse_amount
         - ca/eligible_dependant_amount
         - ca/spouse_caregiver_amount
+        - ca/caregiver_amount
         - ca/infirm_children_amount
         - ca/cpp_base_contributions
         - ca/ei_premiums
