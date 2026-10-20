@@ -44,7 +44,7 @@ def test_return_hs_pension_and_benefit_income_is_all_of_its_total_income() -> No
     # 14700, 2000, so taxable income is 45400 - 2000 = 43400.
     worksheet = compute(
         "0",
-        "0",
+        (),
         "0",
         "0",
         "0",

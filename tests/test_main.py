@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 476
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 494
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -51,6 +51,41 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
     assert {i for i in shared.identifiers() if i.startswith("ca/")} == {
         "ca/employment_income",
         "ca/capital_gain",
+        "ca/qsbcs_dispositions",
+        "ca/qffp_dispositions",
+        "ca/qffp_foreclosure_dispositions",
+        "ca/share_dispositions",
+        "ca/real_estate_dispositions",
+        "ca/bond_dispositions",
+        "ca/crypto_asset_dispositions",
+        "ca/other_foreclosure_dispositions",
+        "ca/personal_use_property_dispositions",
+        "ca/listed_personal_property_dispositions",
+        "ca/disposition_proceeds",
+        "ca/disposition_adjusted_cost_base",
+        "ca/disposition_outlays",
+        "ca/qsbcs_gain_or_loss",
+        "ca/qffp_gain_or_loss",
+        "ca/qffp_foreclosure_gain_or_loss",
+        "ca/share_gain_or_loss",
+        "ca/real_estate_gain_or_loss",
+        "ca/bond_gain_or_loss",
+        "ca/crypto_asset_gain_or_loss",
+        "ca/other_foreclosure_gain_or_loss",
+        "ca/listed_personal_property_gain_or_loss",
+        "ca/capital_gains_of_qualified_and_other_properties",
+        "ca/capital_gains_after_deferral",
+        "ca/slip_capital_gains_or_losses",
+        "ca/t3_capital_gains_or_losses",
+        "ca/capital_gains_before_investment_loss_reduction",
+        "ca/capital_gains_before_reserves",
+        "ca/capital_gains_reserves",
+        "ca/included_capital_gain",
+        "ca/personal_use_property_gain_rows",
+        "ca/personal_use_property_gain",
+        "ca/unapplied_listed_personal_property_losses",
+        "ca/listed_personal_property_net_gain",
+        "ca/capital_gains_deferral",
         "ca/taxable_capital_gains",
         "ca/total_income",
         "ca/other_employment_income",
@@ -868,13 +903,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 476
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 494
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 476
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 494
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

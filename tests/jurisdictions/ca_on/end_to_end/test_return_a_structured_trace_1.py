@@ -55,6 +55,7 @@ from app.jurisdictions.ca.catalog import (
     FIRST_TIER_DONATION_CREDIT,
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
+    INCLUDED_CAPITAL_GAIN,
     ITC_RECAPTURE_AT_15_PERCENT,
     ITC_RECAPTURE_AT_20_PERCENT,
     ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT,
@@ -90,7 +91,6 @@ from app.jurisdictions.ca.catalog import (
     SPLIT_INCOME_LINE_18,
     SPLIT_INCOME_LINE_19,
     SPLIT_INCOME_LINE_20,
-    TAXABLE_CAPITAL_GAINS,
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
     TOTAL_SPLIT_INCOME,
@@ -304,8 +304,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CENT,
             D("0"),
         ),
-        TAXABLE_CAPITAL_GAINS: RateAppliedLine(
-            TAXABLE_CAPITAL_GAINS, CAPITAL_GAIN, D("20000"), Rate(D("0.5")), CENT, D("10000")
+        # Schedule 3 Part 5 line 24 "Line 22 multiplied by the percentage on line 23": Return A's
+        # line 22 (line 21, 19700) is the 20000 of its one share row.
+        INCLUDED_CAPITAL_GAIN: RateAppliedLine(
+            INCLUDED_CAPITAL_GAIN,
+            CAPITAL_GAIN,
+            D("20000"),
+            Rate(D("0.5")),
+            CENT,
+            D("10000"),
         ),
         CREDIT_AMOUNTS_AT_CREDIT_RATE: RateAppliedLine(
             CREDIT_AMOUNTS_AT_CREDIT_RATE,

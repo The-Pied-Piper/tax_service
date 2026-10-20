@@ -7,11 +7,14 @@ from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.at_most import AtMost
 from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.subtract import Subtract
+from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
 from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
+from app.jurisdictions.ca.capabilities.disposition_gains import DispositionGains
+from app.jurisdictions.ca.capabilities.disposition_gains_only import DispositionGainsOnly
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
 from app.jurisdictions.ca.capabilities.short_term_rental_gross_rents import (
@@ -22,11 +25,22 @@ from app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_expenses 
 )
 from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
 from app.jurisdictions.ca.catalog import (
+    BOND_DISPOSITIONS,
+    BOND_GAIN_OR_LOSS,
     BUSINESS_INCOME,
+    BUSINESS_INVESTMENT_LOSS_REDUCTION,
     CAPITAL_GAIN,
+    CAPITAL_GAINS_AFTER_DEFERRAL,
+    CAPITAL_GAINS_BEFORE_INVESTMENT_LOSS_REDUCTION,
+    CAPITAL_GAINS_BEFORE_RESERVES,
+    CAPITAL_GAINS_DEFERRAL,
+    CAPITAL_GAINS_OF_QUALIFIED_AND_OTHER_PROPERTIES,
+    CAPITAL_GAINS_RESERVES,
     COMMISSION_INCOME,
     CPP_OR_QPP_BENEFITS,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
+    CRYPTO_ASSET_DISPOSITIONS,
+    CRYPTO_ASSET_GAIN_OR_LOSS,
     DIVIDEND_TAX_CREDIT,
     DIVIDENDS_AMOUNT_A,
     DIVIDENDS_AMOUNT_A_LESS_B,
@@ -43,6 +57,7 @@ from app.jurisdictions.ca.catalog import (
     FISHING_INCOME,
     FOREIGN_INVESTMENT_INCOME,
     GROSS_RENTAL_INCOME,
+    INCLUDED_CAPITAL_GAIN,
     INCOME_SUPPORT_BENEFITS,
     INTEREST_AND_OTHER_INVESTMENT_INCOME,
     INVESTMENT_INCOME_BEFORE_PRIOR_YEARS,
@@ -50,6 +65,9 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
     INVESTMENT_INCOME_WITHOUT_A_SLIP,
     INVESTMENT_ROYALTIES,
+    LISTED_PERSONAL_PROPERTY_DISPOSITIONS,
+    LISTED_PERSONAL_PROPERTY_GAIN_OR_LOSS,
+    LISTED_PERSONAL_PROPERTY_NET_GAIN,
     NET_FEDERAL_SUPPLEMENTS,
     NET_PARTNERSHIP_INCOME,
     NET_RENTAL_INCOME,
@@ -62,10 +80,23 @@ from app.jurisdictions.ca.catalog import (
     OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     OTHER_EMPLOYMENT_INCOME,
     OTHER_FHSA_INCOME,
+    OTHER_FORECLOSURE_DISPOSITIONS,
+    OTHER_FORECLOSURE_GAIN_OR_LOSS,
     OTHER_INCOME,
     OTHER_PENSIONS_AND_SUPERANNUATION,
+    PERSONAL_USE_PROPERTY_DISPOSITIONS,
+    PERSONAL_USE_PROPERTY_GAIN,
+    PERSONAL_USE_PROPERTY_GAIN_ROWS,
     PROFESSIONAL_INCOME,
+    QFFP_DISPOSITIONS,
+    QFFP_FORECLOSURE_DISPOSITIONS,
+    QFFP_FORECLOSURE_GAIN_OR_LOSS,
+    QFFP_GAIN_OR_LOSS,
+    QSBCS_DISPOSITIONS,
+    QSBCS_GAIN_OR_LOSS,
     RDSP_INCOME,
+    REAL_ESTATE_DISPOSITIONS,
+    REAL_ESTATE_GAIN_OR_LOSS,
     RENTAL_ADVERTISING,
     RENTAL_ADVERTISING_PERSONAL_PORTION,
     RENTAL_ADVERTISING_SHORT_TERM_PORTION,
@@ -147,12 +178,16 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_UTILITIES_PERSONAL_PORTION,
     RENTAL_UTILITIES_SHORT_TERM_PORTION,
     RRSP_INCOME,
+    SHARE_DISPOSITIONS,
+    SHARE_GAIN_OR_LOSS,
     SHORT_TERM_RENTAL_GROSS_RENTS,
     SHORT_TERM_RENTAL_UNITS,
+    SLIP_CAPITAL_GAINS_OR_LOSSES,
     SLIP_DIVIDEND_TAX_CREDIT,
     SLIP_TAXABLE_DIVIDENDS,
     SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SOCIAL_ASSISTANCE_PAYMENTS,
+    T3_CAPITAL_GAINS_OR_LOSSES,
     T3_DIVIDEND_TAX_CREDIT,
     T3_INVESTMENT_INCOME,
     T3_TAXABLE_DIVIDENDS,
@@ -175,6 +210,7 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_SCHOLARSHIPS,
     TAXABLE_SUPPORT_PAYMENTS,
     TOTAL_INCOME,
+    UNAPPLIED_LISTED_PERSONAL_PROPERTY_LOSSES,
     UNIVERSAL_CHILD_CARE_BENEFIT,
     WORKERS_COMPENSATION_BENEFITS,
 )
@@ -182,7 +218,24 @@ from app.jurisdictions.ca.catalog import (
 INPUTS = frozenset(
     {
         "ca/employment_income",
-        "ca/capital_gain",
+        # Schedule 3 Part 3 and Part 4: the ten property lists (lines 1 to 10), the unapplied
+        # listed personal property losses, line 13 (16100), line 15 (17400), line 16 (17600) and
+        # line 20 (19200); line 21 (19700) is computed.
+        "ca/qsbcs_dispositions",
+        "ca/qffp_dispositions",
+        "ca/qffp_foreclosure_dispositions",
+        "ca/share_dispositions",
+        "ca/real_estate_dispositions",
+        "ca/bond_dispositions",
+        "ca/crypto_asset_dispositions",
+        "ca/other_foreclosure_dispositions",
+        "ca/personal_use_property_dispositions",
+        "ca/listed_personal_property_dispositions",
+        "ca/unapplied_listed_personal_property_losses",
+        "ca/capital_gains_deferral",
+        "ca/slip_capital_gains_or_losses",
+        "ca/t3_capital_gains_or_losses",
+        "ca/capital_gains_reserves",
         "ca/other_employment_income",
         "ca/old_age_security",
         "ca/cpp_or_qpp_benefits",
@@ -297,10 +350,171 @@ OUTPUTS = frozenset(
 )
 
 STEPS = {
+    # Schedule 3 (form 5000-S3) Part 3: "For each Gain or loss enter as many lines as necessary."
+    # Each property type lists one row per disposition: "(Column 2): Proceeds of disposition",
+    # "(Column 3): Adjusted cost base", "(Column 4): Outlays and expenses", "(Column 5): Gain or
+    # loss (column 2 minus columns 3 and 4)"; lines 1 to 8 (10700, 11000, 12400, 13200, 13800,
+    # 15300, 15301, 15500) are each "Total gain or loss (add all the amounts under column 5)",
+    # one step each.
+    CapabilitySelection(
+        name="ca/disposition_gains",
+        params={},
+        consumes={"dispositions": "ca/qsbcs_dispositions"},
+        produces={"output": "ca/qsbcs_gain_or_loss"},
+    ),
+    CapabilitySelection(
+        name="ca/disposition_gains",
+        params={},
+        consumes={"dispositions": "ca/qffp_dispositions"},
+        produces={"output": "ca/qffp_gain_or_loss"},
+    ),
+    CapabilitySelection(
+        name="ca/disposition_gains",
+        params={},
+        consumes={"dispositions": "ca/qffp_foreclosure_dispositions"},
+        produces={"output": "ca/qffp_foreclosure_gain_or_loss"},
+    ),
+    CapabilitySelection(
+        name="ca/disposition_gains",
+        params={},
+        consumes={"dispositions": "ca/share_dispositions"},
+        produces={"output": "ca/share_gain_or_loss"},
+    ),
+    CapabilitySelection(
+        name="ca/disposition_gains",
+        params={},
+        consumes={"dispositions": "ca/real_estate_dispositions"},
+        produces={"output": "ca/real_estate_gain_or_loss"},
+    ),
+    CapabilitySelection(
+        name="ca/disposition_gains",
+        params={},
+        consumes={"dispositions": "ca/bond_dispositions"},
+        produces={"output": "ca/bond_gain_or_loss"},
+    ),
+    CapabilitySelection(
+        name="ca/disposition_gains",
+        params={},
+        consumes={"dispositions": "ca/crypto_asset_dispositions"},
+        produces={"output": "ca/crypto_asset_gain_or_loss"},
+    ),
+    CapabilitySelection(
+        name="ca/disposition_gains",
+        params={},
+        consumes={"dispositions": "ca/other_foreclosure_dispositions"},
+        produces={"output": "ca/other_foreclosure_gain_or_loss"},
+    ),
+    # Part 3, Personal-use property: "Line 9 and line 15800: Total gain only (add all the amounts
+    # under column 5)": the rows' gains, a row's loss counting 0, then line 9 itself, a sum whose
+    # only part today is those rows.
+    CapabilitySelection(
+        name="ca/disposition_gains_only",
+        params={},
+        consumes={"dispositions": "ca/personal_use_property_dispositions"},
+        produces={"output": "ca/personal_use_property_gain_rows"},
+    ),
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/personal_use_property_gain_rows",)},
+        produces={"output": "ca/personal_use_property_gain"},
+    ),
+    # Part 3, Listed personal property: the rows' gains and losses (column 5) added, then line 10
+    # and line 15900 "Net gain only": that total less the unapplied listed personal property
+    # losses from other years, not below zero.
+    CapabilitySelection(
+        name="ca/disposition_gains",
+        params={},
+        consumes={"dispositions": "ca/listed_personal_property_dispositions"},
+        produces={"output": "ca/listed_personal_property_gain_or_loss"},
+    ),
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/listed_personal_property_gain_or_loss",
+            "less": "ca/unapplied_listed_personal_property_losses",
+        },
+        produces={"output": "ca/listed_personal_property_net_gain"},
+    ),
+    # Part 3 "Line 11: Add lines 1 to 10. Total gains or losses of qualified properties and
+    # other properties ="; Part 4 "Line 12: Amount from line 11 of the previous page" is the same
+    # artifact, so it has no step of its own.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/qsbcs_gain_or_loss",
+                "ca/qffp_gain_or_loss",
+                "ca/qffp_foreclosure_gain_or_loss",
+                "ca/share_gain_or_loss",
+                "ca/real_estate_gain_or_loss",
+                "ca/bond_gain_or_loss",
+                "ca/crypto_asset_gain_or_loss",
+                "ca/other_foreclosure_gain_or_loss",
+                "ca/personal_use_property_gain",
+                "ca/listed_personal_property_net_gain",
+            )
+        },
+        produces={"output": "ca/capital_gains_of_qualified_and_other_properties"},
+    ),
+    # Part 4 "Line 14: Line 12 minus line 13 =" (line 13 and line 16100 is an input).
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/capital_gains_of_qualified_and_other_properties",
+            "less": "ca/capital_gains_deferral",
+        },
+        produces={"output": "ca/capital_gains_after_deferral"},
+    ),
+    # Part 4 "Line 17: Add lines 14 to 16. =" (lines 15 and 16, 17400 and 17600, are inputs).
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/capital_gains_after_deferral",
+                "ca/slip_capital_gains_or_losses",
+                "ca/t3_capital_gains_or_losses",
+            )
+        },
+        produces={"output": "ca/capital_gains_before_investment_loss_reduction"},
+    ),
+    # Part 4 "Line 19 and line 19100: Total gains or losses before reserves: line 17 minus line
+    # 18 =" (line 18 and line 17800 is the business investment loss reduction already computed).
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/capital_gains_before_investment_loss_reduction",
+            "less": "ca/business_investment_loss_reduction",
+        },
+        produces={"output": "ca/capital_gains_before_reserves"},
+    ),
+    # Part 4 "Line 21 and line 19700: Line 19 plus line 20 Total capital gains or losses =" (line
+    # 20 and line 19200, the reserves, is an input).
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/capital_gains_before_reserves", "ca/capital_gains_reserves")},
+        produces={"output": "ca/capital_gain"},
+    ),
+    # Part 5 line 22 is the same artifact as line 21; line 24 "Line 22 multiplied by the
+    # percentage on line 23" (signed, the included capital gain), then line 26 and line 19900
+    # "If positive, enter the result on line 12700 of your return": line 24 as the single part of
+    # a sum not below zero, so the taxable capital gains stay non-negative.
     CapabilitySelection(
         name="core/apply_rate",
         params={"rate": "ca/capital_gains_inclusion_rate"},
         consumes={"base": "ca/capital_gain"},
+        produces={"output": "ca/included_capital_gain"},
+    ),
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={"parts": ("ca/included_capital_gain",)},
         produces={"output": "ca/taxable_capital_gains"},
     ),
     # T1 line 9 (12000) "Amount of dividends (eligible and other than eligible)" and line
@@ -919,7 +1133,96 @@ STEPS = {
 }
 
 WIRING = {
-    (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
+    (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({INCLUDED_CAPITAL_GAIN})),
+    (
+        SumNotBelowZero,
+        frozenset({INCLUDED_CAPITAL_GAIN}),
+        frozenset({TAXABLE_CAPITAL_GAINS}),
+    ),
+    (DispositionGains, frozenset({QSBCS_DISPOSITIONS}), frozenset({QSBCS_GAIN_OR_LOSS})),
+    (DispositionGains, frozenset({QFFP_DISPOSITIONS}), frozenset({QFFP_GAIN_OR_LOSS})),
+    (
+        DispositionGains,
+        frozenset({QFFP_FORECLOSURE_DISPOSITIONS}),
+        frozenset({QFFP_FORECLOSURE_GAIN_OR_LOSS}),
+    ),
+    (DispositionGains, frozenset({SHARE_DISPOSITIONS}), frozenset({SHARE_GAIN_OR_LOSS})),
+    (
+        DispositionGains,
+        frozenset({REAL_ESTATE_DISPOSITIONS}),
+        frozenset({REAL_ESTATE_GAIN_OR_LOSS}),
+    ),
+    (DispositionGains, frozenset({BOND_DISPOSITIONS}), frozenset({BOND_GAIN_OR_LOSS})),
+    (
+        DispositionGains,
+        frozenset({CRYPTO_ASSET_DISPOSITIONS}),
+        frozenset({CRYPTO_ASSET_GAIN_OR_LOSS}),
+    ),
+    (
+        DispositionGains,
+        frozenset({OTHER_FORECLOSURE_DISPOSITIONS}),
+        frozenset({OTHER_FORECLOSURE_GAIN_OR_LOSS}),
+    ),
+    (
+        DispositionGainsOnly,
+        frozenset({PERSONAL_USE_PROPERTY_DISPOSITIONS}),
+        frozenset({PERSONAL_USE_PROPERTY_GAIN_ROWS}),
+    ),
+    (Sum, frozenset({PERSONAL_USE_PROPERTY_GAIN_ROWS}), frozenset({PERSONAL_USE_PROPERTY_GAIN})),
+    (
+        DispositionGains,
+        frozenset({LISTED_PERSONAL_PROPERTY_DISPOSITIONS}),
+        frozenset({LISTED_PERSONAL_PROPERTY_GAIN_OR_LOSS}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset(
+            {LISTED_PERSONAL_PROPERTY_GAIN_OR_LOSS, UNAPPLIED_LISTED_PERSONAL_PROPERTY_LOSSES}
+        ),
+        frozenset({LISTED_PERSONAL_PROPERTY_NET_GAIN}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                QSBCS_GAIN_OR_LOSS,
+                QFFP_GAIN_OR_LOSS,
+                QFFP_FORECLOSURE_GAIN_OR_LOSS,
+                SHARE_GAIN_OR_LOSS,
+                REAL_ESTATE_GAIN_OR_LOSS,
+                BOND_GAIN_OR_LOSS,
+                CRYPTO_ASSET_GAIN_OR_LOSS,
+                OTHER_FORECLOSURE_GAIN_OR_LOSS,
+                PERSONAL_USE_PROPERTY_GAIN,
+                LISTED_PERSONAL_PROPERTY_NET_GAIN,
+            }
+        ),
+        frozenset({CAPITAL_GAINS_OF_QUALIFIED_AND_OTHER_PROPERTIES}),
+    ),
+    (
+        Subtract,
+        frozenset({CAPITAL_GAINS_OF_QUALIFIED_AND_OTHER_PROPERTIES, CAPITAL_GAINS_DEFERRAL}),
+        frozenset({CAPITAL_GAINS_AFTER_DEFERRAL}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {CAPITAL_GAINS_AFTER_DEFERRAL, SLIP_CAPITAL_GAINS_OR_LOSSES, T3_CAPITAL_GAINS_OR_LOSSES}
+        ),
+        frozenset({CAPITAL_GAINS_BEFORE_INVESTMENT_LOSS_REDUCTION}),
+    ),
+    (
+        Subtract,
+        frozenset(
+            {CAPITAL_GAINS_BEFORE_INVESTMENT_LOSS_REDUCTION, BUSINESS_INVESTMENT_LOSS_REDUCTION}
+        ),
+        frozenset({CAPITAL_GAINS_BEFORE_RESERVES}),
+    ),
+    (
+        Sum,
+        frozenset({CAPITAL_GAINS_BEFORE_RESERVES, CAPITAL_GAINS_RESERVES}),
+        frozenset({CAPITAL_GAIN}),
+    ),
     (
         Sum,
         frozenset(

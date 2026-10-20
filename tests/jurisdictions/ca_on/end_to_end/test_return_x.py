@@ -49,7 +49,7 @@ def return_x() -> Worksheet:
     other dependants."""
     return compute(
         "48000",
-        "0",
+        (),
         "0",
         "0",
         "8640",
@@ -197,7 +197,7 @@ def test_return_xs_trace_names_each_step_and_each_dependant() -> None:
 def test_other_dependants_pooled_would_give_the_wrong_line_33199() -> None:
     separate = compute(
         "48000",
-        "0",
+        (),
         "0",
         "0",
         "8640",
@@ -205,9 +205,7 @@ def test_other_dependants_pooled_would_give_the_wrong_line_33199() -> None:
         "0",
         other_dependants=(("3000", "10000"), ("1000", "40000")),
     )
-    pooled = compute(
-        "48000", "0", "0", "0", "8640", "0", "0", other_dependants=(("4000", "50000"),)
-    )
+    pooled = compute("48000", (), "0", "0", "8640", "0", "0", other_dependants=(("4000", "50000"),))
 
     assert separate.get(OTHER_DEPENDANTS_MEDICAL).value == D("2700.00")
     # 4000 - lesser(1500.00, 2834) = 2500.00, not 2700.00.
@@ -215,7 +213,7 @@ def test_other_dependants_pooled_would_give_the_wrong_line_33199() -> None:
 
 
 def test_no_medical_expenses_claim_nothing_on_line_33200() -> None:
-    worksheet = compute("48000", "0", "0", "0", "8640", "0", "0")
+    worksheet = compute("48000", (), "0", "0", "8640", "0", "0")
 
     assert worksheet.get(MEDICAL_EXPENSES_OVER_THRESHOLD).value == D("0")
     assert worksheet.get(OTHER_DEPENDANTS_MEDICAL).value == D("0")
@@ -225,8 +223,8 @@ def test_no_medical_expenses_claim_nothing_on_line_33200() -> None:
 
 def test_medical_expenses_below_the_threshold_claim_nothing_on_line_33099() -> None:
     # 3% of 47555.00 is 1426.65: expenses of 1426.65 or less give line 110 of 0.
-    at = compute("48000", "0", "0", "0", "8640", "0", "0", medical_expenses="1426.65")
-    over = compute("48000", "0", "0", "0", "8640", "0", "0", medical_expenses="1426.66")
+    at = compute("48000", (), "0", "0", "8640", "0", "0", medical_expenses="1426.65")
+    over = compute("48000", (), "0", "0", "8640", "0", "0", medical_expenses="1426.66")
 
     assert at.get(MEDICAL_EXPENSES_OVER_THRESHOLD).value == D("0")
     assert over.get(MEDICAL_EXPENSES_OVER_THRESHOLD).value == D("0.01")
@@ -235,7 +233,7 @@ def test_medical_expenses_below_the_threshold_claim_nothing_on_line_33099() -> N
 def test_the_threshold_on_line_109_stops_at_2834() -> None:
     # 3% of a net income above 94466.67 is above the 2834 ceiling, so expenses of 5000 leave
     # 5000 - 2834 = 2166 on line 110.
-    worksheet = compute("115000", "0", "0", "0", "0", "0", "0", medical_expenses="5000")
+    worksheet = compute("115000", (), "0", "0", "0", "0", "0", medical_expenses="5000")
 
     assert worksheet.get(MEDICAL_NET_INCOME_SHARE).value > D("2834")
     assert worksheet.get(MEDICAL_THRESHOLD).value == D("2834")
@@ -316,7 +314,7 @@ def test_ontario_shares_the_filers_expenses_and_the_dependants_with_the_t1() -> 
 
 
 def test_ontario_medical_expenses_change_only_the_ontario_credits_by_the_claim() -> None:
-    without = compute("48000", "0", "0", "0", "8640", "0", "0")
+    without = compute("48000", (), "0", "0", "8640", "0", "0")
     with_medical = return_x()
 
     assert without.get(ontario.MEDICAL_CLAIM).value == D("0")

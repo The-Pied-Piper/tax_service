@@ -1,8 +1,7 @@
 # Capital gains inclusion rate, 2025 tax year (T1-2025 Schedule 3, form 5000-S3):
 # line 23 "Inclusion rate 50%"; line 24 "Line 22 multiplied by the percentage from
 # line 23"; line 26 (line 19900) "If positive, enter the result on line 12700 of your
-# return". Schedule 3 applies the rate to the net of gains and losses (line 21); losses
-# are not modelled yet.
+# return". Schedule 3 applies the rate to the net of gains and losses (line 21), signed.
 # The 2024 proposal to raise the rate did not proceed: the Report on Federal Tax
 # Expenditures 2026, part 2, records that Budget 2025 confirmed the increase would not
 # go ahead.

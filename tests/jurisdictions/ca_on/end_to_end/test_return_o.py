@@ -37,7 +37,7 @@ def return_o() -> Worksheet:
     """Return O's inputs, as in `returns/2025_return_o.yaml`: a pension and the Step 3 lines."""
     return compute(
         "0",
-        "0",
+        (),
         "0",
         "0",
         "0",

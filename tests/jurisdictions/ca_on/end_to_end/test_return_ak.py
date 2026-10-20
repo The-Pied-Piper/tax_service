@@ -42,7 +42,7 @@ def return_ak(**overrides: Any) -> Worksheet:
         "coop_claimed_as_partnership_member": 1,
         "coop_partnership_business_number": "123456789",
     }
-    return compute("60000", "0", "0", "0", "10800", "0", "0", **{**inputs, **overrides})
+    return compute("60000", (), "0", "0", "10800", "0", "0", **{**inputs, **overrides})
 
 
 def test_return_aks_partnership_lines_are_carried_on_the_return_as_entered() -> None:

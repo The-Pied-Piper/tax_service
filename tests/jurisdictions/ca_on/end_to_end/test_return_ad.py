@@ -49,7 +49,7 @@ def return_ad(**overrides: Any) -> Worksheet:
     """
     inputs: dict[str, Any] = {
         "employment_income": "0",
-        "capital_gain": "0",
+        "share_dispositions": (),
         "unused_rrsp_contributions": "0",
         "rrsp_contributions": "0",
         "rrsp_deduction_limit": "0",

@@ -146,7 +146,7 @@ def test_the_dividend_tax_credit_comes_off_the_basic_federal_tax_with_the_other_
 def test_slip_credits_of_100_and_no_other_dividends_give_line_40425_of_100() -> None:
     # Line 5 of the credit chart is 100.00 and nothing is on line A or B: "Otherwise, enter the
     # amount from line 5 on line 40425 of your return."
-    worksheet = compute("50000", "0", "0", "0", "0", "0", "0", t5_dividend_tax_credit="100.00")
+    worksheet = compute("50000", (), "0", "0", "0", "0", "0", t5_dividend_tax_credit="100.00")
 
     assert worksheet.get(SLIP_DIVIDEND_TAX_CREDIT).value == D("100.00")
     assert worksheet.get(OTHER_DIVIDENDS_CREDIT).value == D("0")
@@ -165,7 +165,7 @@ def test_dividends_on_slips_alone_are_not_grossed_up_and_leave_lines_a_and_b_at_
     # slip, lines A and B and the credits computed from them are 0.
     worksheet = compute(
         "50000",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -191,7 +191,7 @@ def test_each_slip_box_adds_to_its_worksheet_line_once() -> None:
     # 128 = 240, and credit lines 1 to 4 256 + 512 + 1024 + 2048 = 3840.
     worksheet = compute(
         "0",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -220,7 +220,7 @@ def test_each_slip_box_adds_to_its_worksheet_line_once() -> None:
 def test_a_dividend_credit_above_the_basic_tax_leaves_zero_federal_tax_not_a_refund() -> None:
     # Low income, so a small basic tax: the credits against it (35000 and 40425) are more, and
     # the unused part is lost, as line 126 is "if negative, enter "0"".
-    worksheet = compute("10000", "0", "0", "0", "0", "0", "0", t5_dividend_tax_credit="5000")
+    worksheet = compute("10000", (), "0", "0", "0", "0", "0", t5_dividend_tax_credit="5000")
 
     assert (
         worksheet.get(CREDITS_AGAINST_BASIC_FEDERAL_TAX).value
@@ -241,7 +241,7 @@ def test_the_other_payments_deduction_is_line_14700_when_nothing_was_entered_on_
     # 32035.00 - 2300 = 29735.00.
     worksheet = compute(
         "30000",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -281,7 +281,7 @@ def test_the_worksheets_lines_4_5_8_and_9_with_supplements_uccb_rdsp_income_and_
     # taxable income is 53635.00 - 400 = 53235.00.
     worksheet = compute(
         "50000",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -339,7 +339,7 @@ def test_a_line_9_over_93454_takes_the_charts_amount_as_line_25000() -> None:
     # chosen 700, not line 14700, and taxable income is 100926.00 - 700 = 100226.00.
     worksheet = compute(
         "100000",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -375,7 +375,7 @@ def test_line_9_may_be_negative_as_the_form_prints_no_floor() -> None:
     # line 14600 of 0 entered as such (count 1) line 25000 is line 14700, 0.
     worksheet = compute(
         "0",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -402,7 +402,7 @@ def test_deductions_from_net_income_add_lines_58_to_63_66_and_67_once_each() -> 
     # income 1036.00 and taxable income 1036.00 - 255 = 781.00.
     worksheet = compute(
         "0",
-        "64",
+        (("64", "0", "0"),),
         "0",
         "0",
         "0",
@@ -445,7 +445,7 @@ def test_return_ls_deductions_from_net_income_are_8500_and_its_taxable_income_34
     # 34500.00.
     worksheet = compute(
         "40000",
-        "0",
+        (),
         "0",
         "0",
         "0",

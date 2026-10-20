@@ -76,7 +76,7 @@ def return_v(
     """
     return compute(
         "50000",
-        "0",
+        (),
         "0",
         "0",
         "9000",
@@ -228,7 +228,7 @@ def test_a_credit_above_the_federal_tax_with_the_recapture_leaves_zero_on_line_1
     # -650.00, and the unused credit is lost.
     worksheet = compute(
         "10000",
-        "0",
+        (),
         "0",
         "0",
         "1800",

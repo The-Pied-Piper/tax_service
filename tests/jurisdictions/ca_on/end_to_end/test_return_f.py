@@ -63,7 +63,7 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
     # refund.
     worksheet = compute(
         "60000",
-        "0",
+        (),
         "0",
         "0",
         "10800",
@@ -134,7 +134,7 @@ def test_return_fs_canada_workers_benefit_is_zero_with_an_eligible_dependant() -
     # Schedule 6 eligible dependant (line 38100) chooses the amounts with one for T1 line 45300.
     worksheet = compute(
         "60000",
-        "0",
+        (),
         "0",
         "0",
         "10800",

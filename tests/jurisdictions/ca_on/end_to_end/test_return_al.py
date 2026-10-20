@@ -83,7 +83,7 @@ def return_al(**overrides: Any) -> Worksheet:
         "split_income_dividends_other_than_eligible": "11500",
     }
     inputs.update(overrides)
-    return compute("0", "0", "0", "0", "0", "0", "0", **inputs)
+    return compute("0", (), "0", "0", "0", "0", "0", **inputs)
 
 
 def test_return_al_pays_the_tax_on_split_income_of_3795_on_line_40424() -> None:
@@ -258,7 +258,7 @@ def return_b_with_split_income_dividends(**overrides: Any) -> Worksheet:
         "disability_amount_for_self": "10138",
     }
     inputs.update(overrides)
-    return compute("30000", "0", "0", "0", "5400", "0", "0", **inputs)
+    return compute("30000", (), "0", "0", "5400", "0", "0", **inputs)
 
 
 def test_a_disability_amount_larger_than_the_tax_leaves_line_22_negative_and_line_24_at_zero() -> (
@@ -340,7 +340,7 @@ def test_a_negative_tosi_adjusted_net_income_is_zero_in_the_twin_and_negative_on
     # 1150 + (-5000.00) = -3850.00.
     worksheet = compute(
         "0",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -674,7 +674,7 @@ def test_the_ontario_surtax_applies_to_the_non_split_part_of_the_tax_only() -> N
     # A alone (20% of 1961.98 and 36% of 364.98), not that on 11777.98.
     worksheet = compute(
         "110000",
-        "20000",
+        (("20000", "0", "0"),),
         "0",
         "1926",
         "19800",

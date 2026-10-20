@@ -87,7 +87,7 @@ def test_dividends_received_with_no_slip_give_the_ontario_credit_of_155_17() -> 
     # 17.17 + 138.00 = 155.17.
     worksheet = compute(
         "50000",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -115,7 +115,7 @@ def test_dividends_on_slips_alone_are_the_whole_ontario_lines_a_and_b() -> None:
     # 3 is 58.96.
     worksheet = compute(
         "50000",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -139,7 +139,7 @@ def test_slip_credits_alone_give_no_ontario_dividend_tax_credit() -> None:
     # The Ontario credit is computed from lines 12000 and 12010, not taken from the slips'
     # credit boxes: with no dividends the federal line 40425 is the slip credit of 100.00 and
     # ON428 line 57 is 0.
-    worksheet = compute("50000", "0", "0", "0", "0", "0", "0", t5_dividend_tax_credit="100.00")
+    worksheet = compute("50000", (), "0", "0", "0", "0", "0", t5_dividend_tax_credit="100.00")
 
     assert worksheet.get(DIVIDEND_TAX_CREDIT).value == D("100.00")
     assert worksheet.get(ontario.DIVIDEND_TAX_CREDIT).value == D("0")
@@ -151,7 +151,7 @@ def test_slip_credits_alone_give_no_ontario_dividend_tax_credit() -> None:
 def test_the_dividend_credit_is_taken_off_line_69_after_the_surtax() -> None:
     # Line 70 comes off line 69, the tax plus the surtax (line 68), and the surtax is still
     # computed on line 65 before it: line 71 is line 69 less the credit.
-    worksheet = compute("100000", "0", "0", "0", "0", "0", "0", t5_taxable_dividends="100000")
+    worksheet = compute("100000", (), "0", "0", "0", "0", "0", t5_taxable_dividends="100000")
 
     credit = worksheet.get(ontario.DIVIDEND_TAX_CREDIT).value
     assert credit == D("10000.00")
@@ -167,7 +167,7 @@ def test_the_ontario_tax_reduction_is_set_against_line_71_not_line_69() -> None:
     # 57 being 100.00. Line 69 is 630.64, above twice the reduction amounts, 588.00; line 71,
     # and so line 73, is 630.64 - 100.00 = 530.64, so line 80 "Line 78 minus line 79" is 588.00
     # - 530.64 = 57.36 and line 81 is 530.64 - 57.36 = 473.28.
-    worksheet = compute("26000", "0", "0", "0", "0", "0", "0", t5_taxable_dividends="1000")
+    worksheet = compute("26000", (), "0", "0", "0", "0", "0", t5_taxable_dividends="1000")
 
     assert worksheet.get(ontario.DIVIDEND_TAX_CREDIT).value == D("100.00")
     assert worksheet.get(ONTARIO_TAX_WITH_SURTAX).value == D("630.64")
@@ -179,7 +179,7 @@ def test_the_ontario_tax_reduction_is_set_against_line_71_not_line_69() -> None:
 def test_an_ontario_dividend_credit_above_the_tax_leaves_zero_not_a_negative() -> None:
     # Employment income of 20000 and slip dividends of 20000: the credit (line 57) is 2000.00,
     # above the Ontario tax of 1310.14, so lines 58 and 71 are "0" (if negative, enter "0").
-    worksheet = compute("20000", "0", "0", "0", "0", "0", "0", t5_taxable_dividends="20000")
+    worksheet = compute("20000", (), "0", "0", "0", "0", "0", t5_taxable_dividends="20000")
 
     assert worksheet.get(ontario.DIVIDEND_TAX_CREDIT).value == D("2000.00")
     assert worksheet.get(ontario.ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT).value == D("1310.14")

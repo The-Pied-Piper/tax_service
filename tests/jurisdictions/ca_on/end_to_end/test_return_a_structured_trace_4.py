@@ -127,7 +127,10 @@ from app.jurisdictions.ca.catalog import (
     FHSA_TRANSFER_AMOUNT_AT_MOST_LIMIT,
     FHSA_VARIABLE_H_AMOUNT,
     HIGH_INCOME_DONATIONS,
+    INCLUDED_CAPITAL_GAIN,
     INCOME_SUPPORT_BENEFITS,
+    LISTED_PERSONAL_PROPERTY_GAIN_OR_LOSS,
+    LISTED_PERSONAL_PROPERTY_NET_GAIN,
     MEDICAL_EXPENSES,
     MEDICAL_EXPENSES_OVER_THRESHOLD,
     MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3,
@@ -237,6 +240,7 @@ from app.jurisdictions.ca.catalog import (
     TRAVEL_TOTAL_ZONE_A,
     TRAVEL_TOTAL_ZONE_B,
     UCCB_AND_RDSP_INCOME,
+    UNAPPLIED_LISTED_PERSONAL_PROPERTY_LOSSES,
     WORKING_INCOME,
     ZONE_A_RESIDENCY_AFTER_WORK_SITE,
     ZONE_A_RESIDENCY_AMOUNT,
@@ -769,6 +773,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             minuend=SPLIT_INCOME_DIVIDENDS,
             minuend_amount=D("0"),
             subtrahend=SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Schedule 3 line 10 (15900) "Net gain only": the listed personal property rows less the
+        # unapplied losses, from 0; Return A has none of either.
+        LISTED_PERSONAL_PROPERTY_NET_GAIN: SubtractedNotBelowZeroLine(
+            output=LISTED_PERSONAL_PROPERTY_NET_GAIN,
+            minuend=LISTED_PERSONAL_PROPERTY_GAIN_OR_LOSS,
+            minuend_amount=D("0"),
+            subtrahend=UNAPPLIED_LISTED_PERSONAL_PROPERTY_LOSSES,
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
@@ -1347,6 +1361,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         SPLIT_INCOME_LINE_24: SumNotBelowZeroLine(
             output=SPLIT_INCOME_LINE_24, parts=((SPLIT_INCOME_LINE_22, D("0")),), total=D("0")
+        ),
+        # T1 line 12700 (taxable capital gains): Schedule 3 line 24 as the single part, the included
+        # capital gain of 10000.00 (half of the 20000 gain), from 0.
+        TAXABLE_CAPITAL_GAINS: SumNotBelowZeroLine(
+            TAXABLE_CAPITAL_GAINS, ((INCLUDED_CAPITAL_GAIN, D("10000.00")),), D("10000.00")
         ),
         CPP_PENSIONABLE_EARNINGS: SumNotBelowZeroLine(
             CPP_PENSIONABLE_EARNINGS,

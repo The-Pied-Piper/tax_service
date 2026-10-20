@@ -102,7 +102,7 @@ def test_the_dependants_net_income_comes_off_both_amounts() -> None:
     # 984.00 = 26932.75.
     worksheet = compute(
         "60000",
-        "0",
+        (),
         "0",
         "0",
         "10800",
@@ -140,7 +140,7 @@ def test_a_dependant_with_more_income_than_the_amounts_adds_nothing() -> None:
     # 2796.75 + 984.00 = 16527.75.
     worksheet = compute(
         "60000",
-        "0",
+        (),
         "0",
         "0",
         "10800",
@@ -169,7 +169,7 @@ def test_no_eligible_dependant_claims_nothing_whatever_the_dependants_income() -
     # eligible dependants, so it is 0, and so is line 58160.
     worksheet = compute(
         "60000",
-        "0",
+        (),
         "0",
         "0",
         "10800",
@@ -197,7 +197,9 @@ def test_infirm_children_add_2687_each_to_the_federal_amounts_only() -> None:
     # 20146.25 - 3974.10 = 16172.15. ON428 has
     # no such line here (its caregiver amount, line 58185, is not triggered), so its total is
     # unchanged at 17180.58.
-    worksheet = compute("110000", "20000", "0", "1926", "19800", "1926", "2000", infirm_children=2)
+    worksheet = compute(
+        "110000", (("20000", "0", "0"),), "0", "1926", "19800", "1926", "2000", infirm_children=2
+    )
 
     assert worksheet.get(INFIRM_CHILDREN).value == 2
     assert worksheet.get(INFIRM_CHILDREN_AMOUNT).value == D("5374")

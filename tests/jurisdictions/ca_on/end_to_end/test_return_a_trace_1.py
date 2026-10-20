@@ -51,9 +51,14 @@ def test_the_trace_explains_the_computation() -> None:
         ]
         return found
 
-    taxable_gains = position(
-        "taxable_capital_gains: 50% of capital_gain 20000 (half-up to 0.01)", "10000"
+    included = position(
+        "included_capital_gain: 50% of capital_gain 20000 (half-up to 0.01)", "10000"
     )
+    taxable_gains = position(
+        "taxable_capital_gains: included_capital_gain 10000, not below 0 = 10000",
+        "10000",
+    )
+    assert included < taxable_gains
     investment_before = position(
         "investment_income_before_prior_years: t3_investment_income 0 + "
         "t5_investment_income 0 + t5013_investment_income 0 + "

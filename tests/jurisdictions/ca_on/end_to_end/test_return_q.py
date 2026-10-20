@@ -35,7 +35,7 @@ def return_q() -> Worksheet:
     """Return Q's inputs (`returns/2025_return_q.yaml`): Return I's and two infirm dependants."""
     return compute(
         "48000",
-        "0",
+        (),
         "0",
         "0",
         "8640",
@@ -140,17 +140,15 @@ def test_return_qs_trace_names_each_dependant_and_totals_the_credit_amounts() ->
 
 
 def test_infirm_dependants_pooled_would_give_the_wrong_line_30450() -> None:
-    separate = compute(
-        "48000", "0", "0", "0", "8640", "0", "0", infirm_dependants=("5000", "25000")
-    )
-    pooled = compute("48000", "0", "0", "0", "8640", "0", "0", infirm_dependants=("30000",))
+    separate = compute("48000", (), "0", "0", "8640", "0", "0", infirm_dependants=("5000", "25000"))
+    pooled = compute("48000", (), "0", "0", "8640", "0", "0", infirm_dependants=("30000",))
 
     assert separate.get(CAREGIVER_AMOUNT).value == D("12399.00")
     assert pooled.get(CAREGIVER_AMOUNT).value == D("0")
 
 
 def test_no_infirm_dependants_claim_nothing_on_line_30450() -> None:
-    worksheet = compute("48000", "0", "0", "0", "8640", "0", "0")
+    worksheet = compute("48000", (), "0", "0", "8640", "0", "0")
 
     assert worksheet.get(CAREGIVER_AMOUNT).value == D("0")
     assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("20589.95")
@@ -158,7 +156,7 @@ def test_no_infirm_dependants_claim_nothing_on_line_30450() -> None:
 
 def test_infirm_dependants_do_not_change_the_ontario_credits() -> None:
     # ON428 line 58185 (the Ontario caregiver amount) is computed from an empty list here: 0.
-    without = compute("48000", "0", "0", "0", "8640", "0", "0")
+    without = compute("48000", (), "0", "0", "8640", "0", "0")
     with_dependants = return_q()
 
     assert with_dependants.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS) == (

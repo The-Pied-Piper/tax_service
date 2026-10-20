@@ -249,6 +249,7 @@ from app.jurisdictions.ca.catalog import (
     GROSS_RENTAL_INCOME,
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
+    INCLUDED_CAPITAL_GAIN,
     INCOME_SUPPORT_BENEFITS,
     INCOME_TAX_DEDUCTED,
     INFIRM_CHILDREN,
@@ -602,7 +603,7 @@ from tests.jurisdictions.ca_on.end_to_end.support import return_a
 def test_each_amount_is_produced_by_its_capability() -> None:
     worksheet = return_a()
     assert worksheet.producer_of(EMPLOYMENT_INCOME) is None
-    assert worksheet.producer_of(CAPITAL_GAIN) is None
+    assert isinstance(worksheet.producer_of(CAPITAL_GAIN), Sum)
     assert worksheet.producer_of(UNUSED_RRSP_CONTRIBUTIONS) is None
     assert worksheet.producer_of(RRSP_CONTRIBUTIONS) is None
     assert worksheet.producer_of(RRSP_DEDUCTION_LIMIT) is None
@@ -1062,7 +1063,8 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     }
     assert len(claimed) == 5
     assert all(isinstance(producer, TimesCount) for producer in claimed)
-    assert isinstance(worksheet.producer_of(TAXABLE_CAPITAL_GAINS), ApplyRate)
+    assert isinstance(worksheet.producer_of(INCLUDED_CAPITAL_GAIN), ApplyRate)
+    assert isinstance(worksheet.producer_of(TAXABLE_CAPITAL_GAINS), SumNotBelowZero)
     assert isinstance(worksheet.producer_of(TOTAL_INCOME), Sum)
     child_care_limits = {
         worksheet.producer_of(kind)

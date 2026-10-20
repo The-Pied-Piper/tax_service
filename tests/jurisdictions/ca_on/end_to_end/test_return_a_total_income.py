@@ -23,7 +23,7 @@ def test_the_interest_and_other_investment_income_is_the_worksheets_line_9_less_
     # 12100, is 1400.
     worksheet = compute(
         "0",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -60,7 +60,7 @@ def test_prior_year_investment_income_above_line_9_is_refused_as_a_negative_line
     ):
         compute(
             "0",
-            "0",
+            (),
             "0",
             "0",
             "0",
@@ -76,7 +76,7 @@ def test_each_of_the_worksheets_lines_1_to_8_adds_to_line_9() -> None:
     # 4 + 8 + 16 + 32 + 64 + 128 = 255, and line 10 of 5 leaves 250.
     worksheet = compute(
         "0",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -103,7 +103,7 @@ def test_line_14700_adds_lines_29_to_31() -> None:
     # supplements (14600), 2000 + 300 + 40 = 2340, which line 15000 adds.
     worksheet = compute(
         "0",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -136,7 +136,7 @@ def test_total_income_adds_every_income_line_once() -> None:
     # (13000), scholarships 131072 (13010) and the lines 14400 to 14600 of 262144 (14700).
     worksheet = compute(
         "1",
-        "4096",
+        (("4096", "0", "0"),),
         "0",
         "0",
         "0",

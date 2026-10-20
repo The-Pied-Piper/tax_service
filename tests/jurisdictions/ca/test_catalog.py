@@ -514,8 +514,11 @@ def test_the_rrsp_amount_deducted_is_non_negative() -> None:
     assert RRSP_AMOUNT_DEDUCTED.non_negative is True
 
 
-def test_capital_gain_is_non_negative_while_losses_are_not_modelled() -> None:
-    assert CAPITAL_GAIN.non_negative is True
+def test_capital_gain_is_signed_as_schedule_3_line_21_prints_losses_in_brackets() -> None:
+    # Schedule 3: "Report all negative amounts (losses) using brackets." Line 21 / 19700
+    # "Total capital gains or losses" is computed from Parts 3 and 4, so it can be a loss.
+    assert CAPITAL_GAIN.non_negative is False
+    assert "ca/capital_gain" in SIGNED
 
 
 def test_the_step_6_credit_lines_are_non_negative(registry: ArtifactRegistry) -> None:

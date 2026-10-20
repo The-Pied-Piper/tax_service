@@ -53,7 +53,7 @@ def return_ag(**overrides: Any) -> Worksheet:
         "income_tax_deducted": "3000",
         "claims_seniors_care_credit": 1,
     }
-    return compute("0", "0", "0", "0", "0", "0", "0", **{**inputs, **overrides})
+    return compute("0", (), "0", "0", "0", "0", "0", **{**inputs, **overrides})
 
 
 def test_return_ags_seniors_care_at_home_credit_is_750_and_lowers_the_refund() -> None:

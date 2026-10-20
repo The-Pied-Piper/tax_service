@@ -46,12 +46,15 @@ from app.jurisdictions.ca_on.catalog import (
     LIFT_CREDIT,
     ONTARIO_TAX,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute
+from tests.jurisdictions.ca_on.end_to_end.support import D, Disposition, compute
 
 
-def return_af(capital_gain: str = "5000", **overrides: Any) -> Worksheet:
+def return_af(
+    share_dispositions: tuple[Disposition, ...] = (("5000", "0", "0"),), **overrides: Any
+) -> Worksheet:
     """Return AF's inputs, as in `returns/2025_return_af.yaml`: Return AE's filer, no political
-    contributions, with a capital gain and unapplied net capital losses of other years.
+    contributions, with a capital gain (one share row, proceeds 5000, a chosen figure) and
+    unapplied net capital losses of other years.
 
     Employment income of 48000, a capital gain of 5000 (taxable capital gains of 2500.00),
     4800 deducted, unapplied net capital losses of 3000 from 1990 to 1999 and 1000 from 2001 to
@@ -63,7 +66,9 @@ def return_af(capital_gain: str = "5000", **overrides: Any) -> Worksheet:
         "unapplied_net_capital_losses_2001_to_2024": "1000",
         "net_capital_losses_claimed": "2500",
     }
-    return compute("48000", capital_gain, "0", "0", "8640", "0", "0", **{**inputs, **overrides})
+    return compute(
+        "48000", share_dispositions, "0", "0", "8640", "0", "0", **{**inputs, **overrides}
+    )
 
 
 def test_return_afs_claim_is_applied_to_the_oldest_row_first_and_lowers_taxable_income() -> None:
@@ -204,7 +209,7 @@ def test_a_claim_with_no_taxable_capital_gains_is_refused_naming_both_kinds() ->
     with pytest.raises(InputAboveBoundError) as raised:
         compute(
             "48000",
-            "0",
+            (),
             "0",
             "0",
             "8640",
@@ -215,14 +220,14 @@ def test_a_claim_with_no_taxable_capital_gains_is_refused_naming_both_kinds() ->
         )
 
     assert str(raised.value) == (
-        "ca/net_capital_losses_claimed 1 is above ca/net_capital_losses_available_to_claim 0.00"
+        "ca/net_capital_losses_claimed 1 is above ca/net_capital_losses_available_to_claim 0"
     )
 
 
 def test_a_claim_of_zero_with_no_taxable_capital_gains_is_allowed() -> None:
     worksheet = compute(
         "48000",
-        "0",
+        (),
         "0",
         "0",
         "8640",
@@ -260,7 +265,9 @@ def test_line_6_is_the_taxable_capital_gains_when_the_losses_are_larger() -> Non
 def test_line_6_is_the_total_of_column_c_when_the_taxable_gains_are_larger() -> None:
     # A capital gain of 20000 (taxable capital gains of 10000.00) against column C of 3000.00: line
     # 6 is 3000.00, the whole of both rows is applied and nothing is left to carry forward.
-    worksheet = return_af(capital_gain="20000", net_capital_losses_claimed="3000")
+    worksheet = return_af(
+        share_dispositions=(("20000", "0", "0"),), net_capital_losses_claimed="3000"
+    )
 
     assert worksheet.get(TAXABLE_CAPITAL_GAINS).value == D("10000.00")
     assert worksheet.get(NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM).value == D("3000.00")
@@ -388,7 +395,7 @@ def test_columns_c_and_g_use_the_exact_fractions_rounded_half_up_to_the_cent(
     }
     column_c, column_g = kinds[row]
     losses: dict[str, Any] = {f"unapplied_net_capital_losses_{row}": loss}
-    worksheet = compute("48000", "20000", "0", "0", "8640", "0", "0", **losses)
+    worksheet = compute("48000", (("20000", "0", "0"),), "0", "0", "8640", "0", "0", **losses)
 
     assert worksheet.get(column_c).value == D(adjusted)
     assert worksheet.get(column_g).value == D(balance)

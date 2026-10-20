@@ -51,7 +51,7 @@ def return_ae(**overrides: Any) -> Worksheet:
         "political_contributions": "3000",
         "federal_political_contributions": "1000",
     }
-    return compute("48000", "0", "0", "0", "8640", "0", "0", **{**inputs, **overrides})
+    return compute("48000", (), "0", "0", "8640", "0", "0", **{**inputs, **overrides})
 
 
 def test_return_aes_federal_political_contribution_credit_is_558_33_and_lowers_the_refund() -> None:
@@ -197,7 +197,7 @@ def test_a_credit_above_the_federal_tax_leaves_zero_on_line_139() -> None:
     # Employment income of 10000 leaves the federal tax after credits at 0; contributions of 5000
     # give the credit of 650, which is more than that: line 139 is 0, not -650, and it is lost.
     worksheet = compute(
-        "10000", "0", "0", "0", "1800", "0", "0", federal_political_contributions="5000"
+        "10000", (), "0", "0", "1800", "0", "0", federal_political_contributions="5000"
     )
 
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("0")
