@@ -363,6 +363,32 @@ class FractionAppliedLine(TraceLine):
 
 
 @dataclass(frozen=True)
+class RatioAppliedLine(TraceLine):
+    """The `result` produced as `output` by `amount_kind` (worth `amount_value`) ×
+    `numerator_kind` (worth `numerator_value`) / `denominator_kind` (worth `denominator_value`),
+    rounded once with `rounding`.
+
+    Its own class, not a `FractionAppliedLine`: the ratio is two artifacts, not a dataset's
+    fraction, so the line names the kinds it came from.
+    """
+
+    output: Money
+    amount_kind: Money
+    amount_value: Decimal
+    numerator_kind: Money
+    numerator_value: Decimal
+    denominator_kind: Money
+    denominator_value: Decimal
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The rounded quotient."""
+        return self.result
+
+
+@dataclass(frozen=True)
 class TimesCountLine(TraceLine):
     """The `result` produced as `output`: `amount_kind` (worth `amount_value`) for each of
     `count` units of `count_kind`, exactly.

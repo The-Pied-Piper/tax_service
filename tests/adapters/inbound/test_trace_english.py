@@ -58,6 +58,7 @@ from app.domain.trace import (
     QuotientLine,
     RateAppliedLine,
     RateByIncomeBandLine,
+    RatioAppliedLine,
     RecapturedCcaLine,
     RecordCountLine,
     RecordTotalLine,
@@ -113,6 +114,10 @@ DEPENDANTS = ArtifactKind("ex/dependant_count", int)
 AMOUNT_ALONE = ArtifactKind("ex/amount_alone", Decimal)
 AMOUNT_WITH_FAMILY = ArtifactKind("ex/amount_with_family", Decimal)
 AMOUNT_CHOSEN = ArtifactKind("ex/amount_chosen", Decimal)
+TAX_PAYABLE = ArtifactKind("ex/tax_payable", Decimal)
+FOREIGN_INCOME = ArtifactKind("ex/foreign_income", Decimal)
+WORLD_INCOME = ArtifactKind("ex/worldwide_income", Decimal)
+CREDIT_SHARE = ArtifactKind("ex/credit_share", Decimal)
 ITEM_AMOUNT = ArtifactKind("ex/item_amount", Decimal)
 GATED_AMOUNT = ArtifactKind("ex/gated_amount", Decimal)
 GATE_AMOUNT = ArtifactKind("ex/gate_amount", Decimal)
@@ -1917,6 +1922,68 @@ def test_renders_a_condition_without_a_namespace_in_any_label() -> None:
     assert "ex/" not in render(line)
 
 
+# --- a ratio of two artifacts applied --------------------------------------------------
+#
+# The amount, the numerator and the denominator print with their labels and values, and the rounding
+# rule in parentheses; the result is the line's amount, not printed twice.
+
+
+def test_renders_a_ratio_applied_without_rounding() -> None:
+    line = RatioAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("14000"),
+        FOREIGN_INCOME,
+        D("10000"),
+        WORLD_INCOME,
+        D("100000"),
+        NO_ROUNDING,
+        D("1400"),
+    )
+
+    assert render(line) == (
+        "credit_share: tax_payable 14000 × foreign_income 10000 / worldwide_income 100000 "
+        "(no rounding)"
+    )
+
+
+def test_renders_a_rounded_ratio_applied() -> None:
+    line = RatioAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("1000"),
+        FOREIGN_INCOME,
+        D("1"),
+        WORLD_INCOME,
+        D("3"),
+        CENT,
+        D("333.33"),
+    )
+
+    assert render(line) == (
+        "credit_share: tax_payable 1000 × foreign_income 1 / worldwide_income 3 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_negative_ratio_applied_with_every_digit() -> None:
+    line = RatioAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("-250.75"),
+        FOREIGN_INCOME,
+        D("1.5"),
+        WORLD_INCOME,
+        D("0.5"),
+        NO_ROUNDING,
+        D("-752.25"),
+    )
+
+    assert render(line) == (
+        "credit_share: tax_payable -250.75 × foreign_income 1.5 / worldwide_income 0.5 "
+        "(no rounding)"
+    )
+
+
 # --- money figures ---------------------------------------------------------------
 
 
@@ -2200,6 +2267,9 @@ def test_render_all_renders_each_line_in_order() -> None:
         FractionAppliedLine(EARNED_PORTION, TOTAL, D("3"), Fraction(2, 3), NO_ROUNDING, D("2")),
         TimesCountLine(AMOUNT_CLAIMED, TOTAL, D("3"), PERSONS, 1, D("3")),
         ChosenByCountLine(AMOUNT_CHOSEN, PERSONS, 0, TOTAL, D("3")),
+        RatioAppliedLine(
+            CREDIT_SHARE, TOTAL, D("3"), EARNED_INCOME, D("2"), TOTAL, D("3"), NO_ROUNDING, D("2")
+        ),
         RecordTotalLine(TOTAL, ITEM_AMOUNT, (D("1"), D("2")), D("3")),
         ChosenByRangeLine(AMOUNT_CHOSEN, TOTAL, D("3"), AMOUNT_IN_RANGE, D("3")),
         CaregiverClaimLine(
@@ -2243,6 +2313,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         "earned_portion: 2/3 of total 3 (no rounding)",
         "amount_claimed: total 3 for each of 1 person_count = 3",
         "amount_chosen: total 3, chosen as person_count is 0",
+        "credit_share: total 3 × earned_income 2 / total 3 (no rounding)",
         "total: item 1 item_amount 1 + item 2 item_amount 2 = 3",
         "amount_chosen: amount_in_range 3, chosen as total is 3",
         "caregiver_amount: dependant 1: 5 less net income 4, at most 2 = 1 (no rounding)",

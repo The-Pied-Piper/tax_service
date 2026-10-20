@@ -42,6 +42,7 @@ from app.domain.trace import (
     QuotientLine,
     RateAppliedLine,
     RateByIncomeBandLine,
+    RatioAppliedLine,
     RecapturedCcaLine,
     RecordCountLine,
     RecordTotalLine,
@@ -236,6 +237,21 @@ class EnglishTraceRenderer:
                 return (
                     f"{output.label}: {fraction.numerator}/{fraction.denominator} of {base.label} "
                     f"{self._money(amount)} ({self._rounding(rule)})"
+                )
+            case RatioAppliedLine(
+                output=output,
+                amount_kind=amount_kind,
+                amount_value=amount,
+                numerator_kind=numerator_kind,
+                numerator_value=numerator,
+                denominator_kind=denominator_kind,
+                denominator_value=denominator,
+                rounding=rule,
+            ):
+                return (
+                    f"{output.label}: {amount_kind.label} {self._money(amount)} × "
+                    f"{numerator_kind.label} {self._money(numerator)} / "
+                    f"{denominator_kind.label} {self._money(denominator)} ({self._rounding(rule)})"
                 )
             case TimesCountLine(
                 output=output,

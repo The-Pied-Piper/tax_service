@@ -2373,6 +2373,155 @@ def test_core_apply_fraction_asks_for_its_dataset_as_a_fraction() -> None:
     assert ("ex/portion_fraction", 2025, FRACTION) in parameters.requests
 
 
+# --- core/apply_ratio: an amount times a ratio of two artifacts, by a made-up manifest ---------
+#
+# Like `ApplyFraction` above, `ApplyRatio` is imported inside a cached factory so its absence fails
+# only the tests that use it, and is registered in a private registry under its shared
+# identifier, `core/apply_ratio`. Its amount is a produced artifact, `ex/scaled` (base × 3), its
+# numerator is `ex/base` and its denominator is `ex/extra`, a made-up input. It reads a made-up
+# `rounding_only` dataset that rounds half-up to the cent, so the quotient is inexact.
+
+
+@cache
+def apply_ratio_class() -> Any:
+    from app.domain.capabilities.apply_ratio import ApplyRatio
+
+    return ApplyRatio
+
+
+def ratio_rounding_data(rounding: Any = None, tax_year: int = 2025) -> ParameterDataset[Any]:
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
+
+    return ParameterDataset(
+        family="ex/ratio_rounding",
+        tax_year=tax_year,
+        kind=ROUNDING_ONLY,
+        values=RoundingOnly(),
+        rounding=rounding or RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        sources=("https://example.org/ex/ratio_rounding",),
+    )
+
+
+APPLY_RATIO = CapabilitySelection(
+    name="core/apply_ratio",
+    params={"rounding": "ex/ratio_rounding"},
+    consumes={"amount": "ex/scaled", "numerator": "ex/base", "denominator": "ex/extra"},
+    produces={"output": "ex-on/result"},
+)
+
+
+def apply_ratio_service(
+    selection: CapabilitySelection = APPLY_RATIO, rounding: Any = None
+) -> tuple[TaxComputationService, FakeParameters]:
+    capabilities = capability_registry()
+    capabilities.register("core/apply_ratio", apply_ratio_class())
+    parameters = FakeParameters(factor_data(), offset_data(), ratio_rounding_data(rounding))
+    artifacts = artifact_registry()
+    artifacts.register(PERSON_COUNT.identifier, PERSON_COUNT)
+    built = service(
+        manifest(selection, SCALE, inputs=frozenset({"ex/base", "ex/extra"})),  # out of order
+        parameters=parameters,
+        capabilities=capabilities,
+        artifacts=artifacts,
+    )
+    return built, parameters
+
+
+def test_computes_core_apply_ratio_end_to_end() -> None:
+    from app.domain.parameters.rounding import RoundingMode, RoundTo
+    from app.domain.trace import RatioAppliedLine
+
+    built, _parameters = apply_ratio_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5")), Artifact(EXTRA, D("7")))
+
+    # scaled = 5 × 3 = 15; result = 15 × 5 / 7 = 10.714285..., rounded half-up to 10.71.
+    assert worksheet.get(SCALED).value == D("15")
+    assert worksheet.get(RESULT).value == D("10.71")
+    assert isinstance(worksheet.producer_of(RESULT), apply_ratio_class())
+    assert worksheet.trace[-1] == RatioAppliedLine(
+        RESULT,
+        SCALED,
+        D("15"),
+        BASE,
+        D("5"),
+        EXTRA,
+        D("7"),
+        RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        D("10.71"),
+    )
+    assert [type(line) for line in worksheet.trace].count(RatioAppliedLine) == 1
+
+
+def test_computes_core_apply_ratio_to_an_exact_quotient_end_to_end() -> None:
+    built, _parameters = apply_ratio_service()
+
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("7")), Artifact(EXTRA, D("3")))
+
+    # scaled = 21; result = 21 × 7 / 3 = 49 exactly, rounded to 49.00.
+    assert worksheet.get(RESULT).value == D("49")
+    assert str(worksheet.get(RESULT).value) == "49.00"
+
+
+def test_core_apply_ratio_with_an_inexact_quotient_and_no_rounding_names_the_capability() -> None:
+    from app.domain.errors import CapabilityContractError
+
+    built, _parameters = apply_ratio_service(rounding=NO_ROUNDING)
+
+    # scaled = 15; 15 × 5 / 7 has no finite expansion and the dataset states no rounding.
+    with pytest.raises(CapabilityContractError, match=r"ApplyRatio .*inexact") as raised:
+        built.compute(EX_ON, 2025, Artifact(BASE, D("5")), Artifact(EXTRA, D("7")))
+
+    assert isinstance(raised.value.__cause__, decimal.Inexact)
+
+
+def test_core_apply_ratio_with_a_zero_denominator_is_a_validation_error_end_to_end() -> None:
+    from app.domain.errors import ValidationError
+
+    built, _parameters = apply_ratio_service()
+
+    with pytest.raises(ValidationError) as raised:
+        built.compute(EX_ON, 2025, Artifact(BASE, D("5")), Artifact(EXTRA, D("0")))
+
+    message = str(raised.value)
+    assert "ex/scaled" in message
+    assert "ex/base" in message
+    assert "ex/extra" in message
+
+
+def test_core_apply_ratio_runs_after_what_it_consumes_is_produced() -> None:
+    built, _parameters = apply_ratio_service()
+
+    composition = built.compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is apply_ratio_class()
+    assert composition.order[-1].consumes == frozenset({SCALED, BASE, EXTRA})
+
+
+def test_core_apply_ratio_asks_for_its_dataset_as_rounding_only() -> None:
+    from app.domain.parameters.rounding_only import ROUNDING_ONLY
+
+    built, parameters = apply_ratio_service()
+
+    built.compose(EX_ON, 2025)
+
+    assert ("ex/ratio_rounding", 2025, ROUNDING_ONLY) in parameters.requests
+
+
+def test_core_apply_ratio_refuses_a_count_kind_for_its_amount_at_wiring() -> None:
+    selection = CapabilitySelection(
+        name="core/apply_ratio",
+        params={"rounding": "ex/ratio_rounding"},
+        consumes={"amount": "ex/person_count", "numerator": "ex/base", "denominator": "ex/extra"},
+        produces={"output": "ex-on/result"},
+    )
+    built, _parameters = apply_ratio_service(selection)
+
+    with pytest.raises(InvalidSelectionError, match="core/apply_ratio.*'amount'"):
+        built.compose(EX_ON, 2025)
+
+
 # --- core/times_count: an artifact's amount for each of a count, by a made-up manifest ---------
 #
 # Like `PerUnitAmount` above, `TimesCount` is imported inside a cached factory so its absence fails

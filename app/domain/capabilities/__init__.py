@@ -10,6 +10,7 @@ NAMESPACE = "core"
 from app.domain.capabilities import (  # noqa: E402
     apply_fraction,
     apply_rate,
+    apply_ratio,
     at_most,
     capped_amount,
     choose_by_count,
@@ -32,6 +33,7 @@ __all__ = [
     "NAMESPACE",
     "apply_fraction",
     "apply_rate",
+    "apply_ratio",
     "at_most",
     "capped_amount",
     "choose_by_count",
