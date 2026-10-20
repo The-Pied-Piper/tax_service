@@ -15,6 +15,7 @@ import pytest
 
 from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
 from app.domain.artifact import ArtifactRegistry
+from app.domain.parameters.rate import Rate
 from app.jurisdictions.ca.catalog import (
     DEPENDANT_CARE_EXPENSES,
     DEPENDANT_CREDIT_AMOUNTS,
@@ -805,6 +806,24 @@ def test_return_ag_claims_the_ontario_seniors_care_at_home_credit_on_line_63095(
     assert credits.value == Decimal("750.00")
     (refund,) = [a for a in worked.expected if a.kind.identifier == "ca/refund_or_balance_owing"]
     assert refund.value == Decimal("-3450.00")
+    check(path)
+
+
+def test_return_y_claims_the_care_credit_with_a_supporting_person_on_line_63050() -> None:
+    path = RETURNS / "2025_return_y.yaml"
+    build_tax_computation()  # registers the catalogs the loader resolves through
+    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+
+    inputs = {a.kind.identifier: a.value for a in worked.inputs}
+    assert inputs["ca-on/care_supporting_persons_adjusted_income"] == Decimal("30000")
+    expected = {a.kind.identifier: a.value for a in worked.expected}
+    # Schedule ON479-A: line 4 is 54,435.00 + 5,000, line 5 adds the supporting person's 30,000,
+    # line 7 is the 33% row, and line 8 is 5,000 x 33%.
+    assert expected["ca-on/care_adjusted_income"] == Decimal("59435.00")
+    assert expected["ca-on/care_family_adjusted_income"] == Decimal("89435.00")
+    assert expected["ca-on/care_credit_percentage"] == Rate(Decimal("0.33"))
+    assert expected["ca-on/care_credit"] == Decimal("1650.00")
+    assert expected["ca/refund_or_balance_owing"] == Decimal("-5409.31")
     check(path)
 
 
