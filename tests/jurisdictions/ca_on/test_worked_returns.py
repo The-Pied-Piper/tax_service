@@ -31,9 +31,8 @@ from tests.jurisdictions.ca_on.worked_return import WorkedReturn
 RETURNS = Path(__file__).parent / "returns"
 
 
-def check(path: Path) -> None:
-    """Load the worked return at `path`, compute it and assert every expected line."""
-    service = build_tax_computation()  # registers the catalogs the loader resolves through
+def load(path: Path) -> WorkedReturn:
+    """The worked return at `path` with its blank lines and inputs filled in."""
     artifacts = ArtifactRegistry.shared()
     worked = WorkedReturn.load(path, artifacts)
     manifest = (
@@ -41,7 +40,13 @@ def check(path: Path) -> None:
         .get_jurisdiction(worked.jurisdiction)
         .manifest_for(worked.tax_year)
     )
-    worked = worked.with_blanks(manifest.inputs, manifest.outputs, artifacts)
+    return worked.with_blanks(manifest.inputs, manifest.outputs, artifacts)
+
+
+def check(path: Path) -> None:
+    """Load the worked return at `path`, compute it and assert every expected line."""
+    service = build_tax_computation()  # registers the catalogs the loader resolves through
+    worked = load(path)
 
     worksheet = service.compute(worked.jurisdiction, worked.tax_year, *worked.inputs)
 
@@ -623,7 +628,7 @@ def test_return_x_claims_two_other_dependants_medical_expenses_on_line_33199() -
 def test_return_af_claims_net_capital_losses_of_other_years_on_line_25300() -> None:
     path = RETURNS / "2025_return_af.yaml"
     build_tax_computation()  # registers the catalogs the loader resolves through
-    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+    worked = load(path)
 
     inputs = {a.kind.identifier: a.value for a in worked.inputs}
     assert inputs["ca/capital_gain"] == Decimal("5000")
@@ -700,7 +705,7 @@ def test_return_ah_claims_the_refundable_medical_expense_supplement_on_line_4520
 def test_return_aj_applies_for_the_energy_and_property_tax_credit_on_form_on_ben() -> None:
     path = RETURNS / "2025_return_aj.yaml"
     build_tax_computation()  # registers the catalogs the loader resolves through
-    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+    worked = load(path)
 
     # Form ON-BEN line 61020 is ticked and line 61100 is the rent paid; the other tick boxes are
     # not ticked and the other Part A lines are $0. Each line is an input and, as entered, an
