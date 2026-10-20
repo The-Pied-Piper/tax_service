@@ -252,6 +252,10 @@ REGISTERED = frozenset(
         "ca/other_dependant_medical_expenses",
         "ca/other_dependants",
         "ca/other_dependants_medical",
+        "ca/short_term_rental_related_expenses",
+        "ca/short_term_rental_non_compliant_days",
+        "ca/short_term_rental_days",
+        "ca/short_term_rental_units",
         "ca/medical_expenses",
         "ca/medical_net_income_share",
         "ca/medical_threshold",
@@ -498,6 +502,8 @@ COUNTS = frozenset(
         "ca/resp_aips_part_a_applies",
         "ca/resident_in_canada_throughout_2025",
         "ca/aged_18_or_older_at_end_of_2025",
+        "ca/short_term_rental_non_compliant_days",
+        "ca/short_term_rental_days",
     }
 )
 
@@ -507,5 +513,6 @@ RECORD_LISTS = frozenset(
         "ca/disability_dependants",
         "ca/other_dependants",
         "ca/principal_residence_properties",
+        "ca/short_term_rental_units",
     }
 )

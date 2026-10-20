@@ -59,6 +59,7 @@ from app.domain.trace import (
     RecordCountLine,
     RecordTotalLine,
     RoundedTotalLine,
+    ShortTermRentalNonCompliantLine,
     SubtractedLine,
     SubtractedNotBelowZeroLine,
     SumLine,
@@ -120,6 +121,7 @@ CARE_CREDIT = ArtifactKind("ex/care_credit", Decimal)
 CAREGIVER = ArtifactKind("ex/caregiver_amount", Decimal)
 MEDICAL = ArtifactKind("ex/dependants_medical", Decimal)
 MEDICAL_REDUCTION = ClaimReduction(Rate(D("0.03")), D("2834"), D("15551"))
+NON_COMPLIANT = ArtifactKind("ex/non_compliant_expenses", Decimal)
 TRANSFERRED = ArtifactKind("ex/transferred_amount", Decimal)
 RESIDENCE_GAIN = ArtifactKind("ex/residence_gain", Decimal)
 
@@ -260,6 +262,10 @@ def other_dependant_medical_line() -> OtherDependantMedicalLine:
     )
 
 
+def short_term_rental_non_compliant_line() -> ShortTermRentalNonCompliantLine:
+    return ShortTermRentalNonCompliantLine(NON_COMPLIANT, 2, D("900.00"), 30, 90, CENT, D("300.00"))
+
+
 def caregiver_claim_less_claimed_line() -> CaregiverClaimLessClaimedLine:
     return CaregiverClaimLessClaimedLine(
         CAREGIVER,
@@ -355,6 +361,7 @@ ALL_LINES = [
     principal_residence_gain_line,
     items_total_line,
     other_dependant_medical_line,
+    short_term_rental_non_compliant_line,
 ]
 
 
@@ -1919,6 +1926,86 @@ def test_other_dependant_medical_lines_are_hashable() -> None:
 
 def test_an_other_dependant_medical_line_is_not_a_caregiver_claim_line() -> None:
     assert not isinstance(other_dependant_medical_line(), CaregiverClaimLine)
+
+
+def test_short_term_rental_non_compliant_line_fields_in_order() -> None:
+    line = short_term_rental_non_compliant_line()
+
+    assert line == ShortTermRentalNonCompliantLine(
+        output=NON_COMPLIANT,
+        position=2,
+        related_expenses=D("900.00"),
+        non_compliant_days=30,
+        days=90,
+        rounding=CENT,
+        result=D("300.00"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "related_expenses",
+        "non_compliant_days",
+        "days",
+        "rounding",
+        "result",
+    ]
+    assert line.output is NON_COMPLIANT
+    assert line.position == 2
+    assert line.related_expenses == D("900.00")
+    assert line.non_compliant_days == 30
+    assert line.days == 90
+    assert line.rounding == CENT
+    assert line.result == D("300.00")
+
+
+def test_short_term_rental_non_compliant_line_amount_is_the_result() -> None:
+    line = short_term_rental_non_compliant_line()
+
+    assert line.amount == D("300.00")
+    assert str(line.amount) == "300.00"
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_short_term_rental_non_compliant_line_is_frozen() -> None:
+    with pytest.raises(FrozenInstanceError):
+        cast(Any, short_term_rental_non_compliant_line()).result = D("1")
+
+
+def test_short_term_rental_non_compliant_lines_differ_by_each_field() -> None:
+    line = short_term_rental_non_compliant_line()
+    other_output = ArtifactKind("ex/other_expenses", Decimal)
+
+    assert line != ShortTermRentalNonCompliantLine(
+        other_output, 2, D("900.00"), 30, 90, CENT, D("300.00")
+    )
+    assert line != ShortTermRentalNonCompliantLine(
+        NON_COMPLIANT, 1, D("900.00"), 30, 90, CENT, D("300.00")
+    )
+    assert line != ShortTermRentalNonCompliantLine(
+        NON_COMPLIANT, 2, D("901.00"), 30, 90, CENT, D("300.00")
+    )
+    assert line != ShortTermRentalNonCompliantLine(
+        NON_COMPLIANT, 2, D("900.00"), 31, 90, CENT, D("300.00")
+    )
+    assert line != ShortTermRentalNonCompliantLine(
+        NON_COMPLIANT, 2, D("900.00"), 30, 91, CENT, D("300.00")
+    )
+    assert line != ShortTermRentalNonCompliantLine(
+        NON_COMPLIANT, 2, D("900.00"), 30, 90, NO_ROUNDING, D("300.00")
+    )
+    assert line != ShortTermRentalNonCompliantLine(
+        NON_COMPLIANT, 2, D("900.00"), 30, 90, CENT, D("300.01")
+    )
+
+
+def test_short_term_rental_non_compliant_lines_are_hashable() -> None:
+    assert hash(short_term_rental_non_compliant_line()) == hash(
+        short_term_rental_non_compliant_line()
+    )
+
+
+def test_a_short_term_rental_non_compliant_line_is_not_an_other_dependant_medical_line() -> None:
+    assert not isinstance(short_term_rental_non_compliant_line(), OtherDependantMedicalLine)
 
 
 def test_caregiver_claim_less_claimed_line_fields_in_order() -> None:

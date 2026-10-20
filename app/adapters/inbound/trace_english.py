@@ -44,6 +44,7 @@ from app.domain.trace import (
     RecordCountLine,
     RecordTotalLine,
     RoundedTotalLine,
+    ShortTermRentalNonCompliantLine,
     SubtractedLine,
     SubtractedNotBelowZeroLine,
     SumLine,
@@ -335,6 +336,20 @@ class EnglishTraceRenderer:
                     f"less the lesser of {self._percent(reduction.rate.value)}% of net income "
                     f"{self._money(net_income)} and {self._money(reduction.ceiling)} = "
                     f"{self._money(result)}{at_most} ({self._rounding(rule)})"
+                )
+            case ShortTermRentalNonCompliantLine(
+                output=output,
+                position=position,
+                related_expenses=related_expenses,
+                non_compliant_days=non_compliant_days,
+                days=days,
+                rounding=rule,
+                result=result,
+            ):
+                return (
+                    f"{output.label}: row {position}: expenses {self._money(related_expenses)} "
+                    f"for {non_compliant_days} non-compliant days of {days} short-term days = "
+                    f"{self._money(result)} ({self._rounding(rule)})"
                 )
             case CaregiverClaimLessClaimedLine(
                 output=output,

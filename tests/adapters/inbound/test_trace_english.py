@@ -60,6 +60,7 @@ from app.domain.trace import (
     RecordCountLine,
     RecordTotalLine,
     RoundedTotalLine,
+    ShortTermRentalNonCompliantLine,
     SubtractedLine,
     SubtractedNotBelowZeroLine,
     SumLine,
@@ -121,6 +122,7 @@ CARE_EXPENSES = ArtifactKind("ex/care_expenses", Decimal)
 CARE_CREDIT = ArtifactKind("ex/care_credit", Decimal)
 CAREGIVER_AMOUNT = ArtifactKind("ex/caregiver_amount", Decimal)
 DEPENDANTS_MEDICAL = ArtifactKind("ex/dependants_medical", Decimal)
+NON_COMPLIANT_EXPENSES = ArtifactKind("ex/non_compliant_expenses", Decimal)
 TRANSFERRED_AMOUNT = ArtifactKind("ex/transferred_amount", Decimal)
 RESIDENCE_GAIN = ArtifactKind("ex/residence_gain", Decimal)
 
@@ -1442,6 +1444,71 @@ def test_renders_the_medical_claims_figures_without_trailing_zeros_or_an_exponen
     )
 
 
+# --- a short-term rental row of Chart A ------------------------------------------------
+#
+# One sentence: the output's label, then "row <position>: expenses <column 3> for <column 4>
+# non-compliant days of <column 5> short-term days = <column 6>" and the rounding rule in
+# brackets. Every money figure prints without trailing zeros; the days print as plain counts.
+
+
+def non_compliant_row(
+    position: int,
+    expenses: str,
+    non_compliant_days: int,
+    days: int,
+    result: str,
+    rounding: RoundingRule = CENT,
+) -> ShortTermRentalNonCompliantLine:
+    return ShortTermRentalNonCompliantLine(
+        NON_COMPLIANT_EXPENSES,
+        position,
+        D(expenses),
+        non_compliant_days,
+        days,
+        rounding,
+        D(result),
+    )
+
+
+def test_renders_one_non_compliant_row_by_position() -> None:
+    assert render(non_compliant_row(1, "900", 30, 90, "300.00")) == (
+        "non_compliant_expenses: row 1: expenses 900 for 30 non-compliant days of 90 "
+        "short-term days = 300 (half-up to 0.01)"
+    )
+
+
+def test_renders_the_second_non_compliant_row() -> None:
+    assert render(non_compliant_row(2, "100", 2, 3, "66.67")) == (
+        "non_compliant_expenses: row 2: expenses 100 for 2 non-compliant days of 3 "
+        "short-term days = 66.67 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_non_compliant_row_with_no_non_compliant_days() -> None:
+    assert render(non_compliant_row(1, "900", 0, 90, "0.00")) == (
+        "non_compliant_expenses: row 1: expenses 900 for 0 non-compliant days of 90 "
+        "short-term days = 0 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_non_compliant_row_without_rounding() -> None:
+    line = non_compliant_row(3, "0.015", 1, 2, "0.0075", rounding=NO_ROUNDING)
+
+    assert render(line) == (
+        "non_compliant_expenses: row 3: expenses 0.015 for 1 non-compliant days of 2 "
+        "short-term days = 0.0075 (no rounding)"
+    )
+
+
+def test_renders_the_non_compliant_rows_figures_without_trailing_zeros_or_an_exponent() -> None:
+    line = non_compliant_row(1, "9.0000E+2", 30, 90, "3.00000E+2")
+
+    assert render(line) == (
+        "non_compliant_expenses: row 1: expenses 900 for 30 non-compliant days of 90 "
+        "short-term days = 300 (half-up to 0.01)"
+    )
+
+
 # --- an amount transferred per dependant ------------------------------------------
 #
 # One sentence: the output's label, then "dependant <position>: " (from 1), the age group
@@ -2066,6 +2133,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         ),
         ItemsTotalLine(CAREGIVER_AMOUNT, ((1, D("1")),), D("1")),
         medical_claim(1, "5", "4", "3", maximum="2", rounding=NO_ROUNDING),
+        non_compliant_row(1, "5", 4, 3, "2", rounding=NO_ROUNDING),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -2098,6 +2166,8 @@ def test_render_all_renders_each_line_in_order() -> None:
         "caregiver_amount: item 1 1 = 1",
         "dependants_medical: dependant 1: expenses 5 less the lesser of 3% of net income 4 and "
         "2834 = 3, at most 2 (no rounding)",
+        "non_compliant_expenses: row 1: expenses 5 for 4 non-compliant days of 3 short-term "
+        "days = 2 (no rounding)",
     )
 
 

@@ -56,6 +56,10 @@ from app.jurisdictions.ca.catalog import (
     RESIDENCE_YEARS_DESIGNATED_AFTER_1981,
     RESIDENCE_YEARS_OWNED_1972_TO_1981,
     RESIDENCE_YEARS_OWNED_AFTER_1981,
+    SHORT_TERM_RENTAL_DAYS,
+    SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
+    SHORT_TERM_RENTAL_RELATED_EXPENSES,
+    SHORT_TERM_RENTAL_UNITS,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BASIS,
     SPOUSE_AMOUNT_BEFORE_COUNT,
@@ -108,6 +112,15 @@ def test_the_personal_amounts_kinds_are_the_registered_ones(registry: ArtifactRe
     assert registry.get("ca/other_dependant_medical_expenses") is OTHER_DEPENDANT_MEDICAL_EXPENSES
     assert registry.get("ca/other_dependants") is OTHER_DEPENDANTS
     assert registry.get("ca/other_dependants_medical") is OTHER_DEPENDANTS_MEDICAL
+    assert (
+        registry.get("ca/short_term_rental_related_expenses") is SHORT_TERM_RENTAL_RELATED_EXPENSES
+    )
+    assert (
+        registry.get("ca/short_term_rental_non_compliant_days")
+        is SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS
+    )
+    assert registry.get("ca/short_term_rental_days") is SHORT_TERM_RENTAL_DAYS
+    assert registry.get("ca/short_term_rental_units") is SHORT_TERM_RENTAL_UNITS
     assert registry.get("ca/medical_expenses") is MEDICAL_EXPENSES
     assert registry.get("ca/medical_net_income_share") is MEDICAL_NET_INCOME_SHARE
     assert registry.get("ca/medical_threshold") is MEDICAL_THRESHOLD

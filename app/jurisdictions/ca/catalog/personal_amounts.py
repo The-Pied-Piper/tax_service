@@ -238,6 +238,41 @@ amount of medical expenses for other dependants (use Federal Worksheet)": line 4
 from line 3 of columns 1, 2, and 3 (and others, if any)", each line 3 being "Line 1 minus line 2
 (if negative, enter "0")"."""
 
+SHORT_TERM_RENTAL_RELATED_EXPENSES = CATALOG.declare(
+    "short_term_rental_related_expenses", Decimal, non_negative=True
+)
+"""Related expenses of a short-term rental, Form T776 Chart A, column 3 "Related portion of the
+total from line 9365 of Part 4": a field of each record of the short-term rental units, not an
+artifact of its own."""
+
+SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS = CATALOG.declare(
+    "short_term_rental_non_compliant_days", int, non_negative=True
+)
+"""Non-compliant days of a short-term rental, Form T776 Chart A, column 4 "Number of days the
+residential property was a non compliant short-term rental": a field of each record of the
+short-term rental units, not an artifact of its own."""
+
+SHORT_TERM_RENTAL_DAYS = CATALOG.declare("short_term_rental_days", int, non_negative=True)
+"""Days of a short-term rental, Form T776 Chart A, column 5 "Number of days the residential
+property was a short-term rental": a field of each record of the short-term rental units, not an
+artifact of its own."""
+
+SHORT_TERM_RENTAL_UNITS = RecordListKind.declare(
+    CATALOG,
+    "short_term_rental_units",
+    fields=(
+        SHORT_TERM_RENTAL_RELATED_EXPENSES,
+        SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
+        SHORT_TERM_RENTAL_DAYS,
+    ),
+)
+"""Short-term rental units, Form T776 Chart A "Enter each short-term rental or mixed rental
+property on a separate row": a starting list with one record for each row, holding column 3
+"Related portion of the total from line 9365 of Part 4", column 4 "Number of days the residential
+property was a non compliant short-term rental" and column 5 "Number of days the residential
+property was a short-term rental" (columns 1 and 2, the address and the unit number, are labels
+the engine does not use)."""
+
 MEDICAL_EXPENSES = CATALOG.declare("medical_expenses", Decimal, non_negative=True)
 """Medical expenses, T1 line 107 and line 33099 "Medical expenses for self, spouse or common-law
 partner and your dependent children under 18 years of age": a starting amount."""

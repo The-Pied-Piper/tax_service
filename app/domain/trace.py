@@ -544,6 +544,29 @@ class OtherDependantMedicalLine(TraceLine):
 
 
 @dataclass(frozen=True)
+class ShortTermRentalNonCompliantLine(TraceLine):
+    """The non-compliant amount `result` of one short-term rental row, by `position` (from 1),
+    for `output`.
+
+    It is the row's `related_expenses` times its `non_compliant_days` divided by its `days`, as an
+    exact fraction rounded once with `rounding`.
+    """
+
+    output: Money
+    position: int
+    related_expenses: Decimal
+    non_compliant_days: int
+    days: int
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The row's non-compliant amount."""
+        return self.result
+
+
+@dataclass(frozen=True)
 class CaregiverClaimLine(TraceLine):
     """The allowable amount `result` for one dependant, by `position` (from 1), for `output`.
 
