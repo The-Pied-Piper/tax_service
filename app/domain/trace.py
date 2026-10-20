@@ -908,3 +908,45 @@ class ClosingUccLine(TraceLine):
     def amount(self) -> Decimal:
         """The class's UCC at the end of the year."""
         return self.result
+
+
+@dataclass(frozen=True)
+class ConditionLine(TraceLine):
+    """One condition of a list, the `position` (from 1) of the printed `text`, for `output`.
+
+    `reads` holds each figure the condition's tests read, in the order read: the kind and its
+    value, a whole number for a count kind and a Decimal for an amount kind. `applies` is whether
+    the condition holds.
+
+    Its own class, not a `SumLine`: a condition is a comparison of figures, not a sum.
+    """
+
+    output: ArtifactKind[int]
+    position: int
+    text: str
+    reads: tuple[tuple[ArtifactKind[int] | Money, int | Decimal], ...]
+    applies: bool
+
+    @property
+    def amount(self) -> Decimal:
+        """1 when the condition applies, 0 when it does not."""
+        return Decimal(1 if self.applies else 0)
+
+
+@dataclass(frozen=True)
+class ConditionsCountLine(TraceLine):
+    """The `count` produced as `output` from a list of conditions: `applied` holds the positions
+    (from 1) of the conditions that applied, in order, none when no condition applied.
+
+    Its own class, not an `ItemsTotalLine`: the count is one of two whole numbers, chosen by
+    whether any condition applied, not a total of amounts.
+    """
+
+    output: ArtifactKind[int]
+    applied: tuple[int, ...]
+    count: int
+
+    @property
+    def amount(self) -> Decimal:
+        """The count."""
+        return Decimal(self.count)

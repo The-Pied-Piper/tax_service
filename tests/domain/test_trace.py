@@ -40,6 +40,8 @@ from app.domain.trace import (
     ChosenByRangeLine,
     ChosenRateAppliedLine,
     ClosingUccLine,
+    ConditionLine,
+    ConditionsCountLine,
     ContributionTierLine,
     CreditAmountLine,
     DisabilityTransferLine,
@@ -124,6 +126,10 @@ MEDICAL_REDUCTION = ClaimReduction(Rate(D("0.03")), D("2834"), D("15551"))
 NON_COMPLIANT = ArtifactKind("ex/non_compliant_expenses", Decimal)
 TRANSFERRED = ArtifactKind("ex/transferred_amount", Decimal)
 RESIDENCE_GAIN = ArtifactKind("ex/residence_gain", Decimal)
+COUNT_GATE = ArtifactKind("ex/gate", int)
+FLAG = ArtifactKind("ex/flag", int)
+REDUCTION_BASE = ArtifactKind("ex/reduction_base", Decimal)
+OTHER_BASE = ArtifactKind("ex/other_base", Decimal)
 
 
 def column_line() -> BracketColumnLine:
@@ -330,6 +336,20 @@ def items_total_line() -> ItemsTotalLine:
     return ItemsTotalLine(CAREGIVER, ((1, D("750.00")), (3, D("800"))), D("1550.00"))
 
 
+def condition_line() -> ConditionLine:
+    return ConditionLine(
+        COUNT_GATE,
+        2,
+        "There is an amount on line 72",
+        ((REDUCTION_BASE, D("120.00")),),
+        True,
+    )
+
+
+def conditions_count_line() -> ConditionsCountLine:
+    return ConditionsCountLine(COUNT_GATE, (2, 3), 0)
+
+
 ALL_LINES = [
     column_line,
     total_line,
@@ -362,6 +382,8 @@ ALL_LINES = [
     items_total_line,
     other_dependant_medical_line,
     short_term_rental_non_compliant_line,
+    condition_line,
+    conditions_count_line,
 ]
 
 
@@ -2402,6 +2424,108 @@ def test_items_total_lines_differ_by_items_and_total() -> None:
     assert items_total_line() != ItemsTotalLine(
         CAREGIVER, ((1, D("750.00")), (3, D("800"))), D("1551.00")
     )
+
+
+def test_condition_line_fields_in_order() -> None:
+    line = condition_line()
+
+    assert line == ConditionLine(
+        output=COUNT_GATE,
+        position=2,
+        text="There is an amount on line 72",
+        reads=((REDUCTION_BASE, D("120.00")),),
+        applies=True,
+    )
+    assert [f.name for f in fields(line)] == ["output", "position", "text", "reads", "applies"]
+    assert line.output is COUNT_GATE
+    assert line.position == 2
+    assert line.text == "There is an amount on line 72"
+    assert line.reads == ((REDUCTION_BASE, D("120.00")),)
+    assert line.applies is True
+
+
+def test_a_condition_line_amount_is_1_when_it_applies_and_0_when_it_does_not() -> None:
+    applies = condition_line()
+    does_not = ConditionLine(
+        COUNT_GATE, 2, "There is an amount on line 72", ((REDUCTION_BASE, D(0)),), False
+    )
+
+    assert applies.amount == D(1)
+    assert does_not.amount == D(0)
+    assert type(applies.amount) is Decimal
+
+
+def test_a_condition_line_reads_counts_and_amounts_in_the_order_read() -> None:
+    line = ConditionLine(
+        COUNT_GATE,
+        1,
+        "first",
+        ((FLAG, 1), (REDUCTION_BASE, D("82125.50")), (OTHER_BASE, D("0"))),
+        True,
+    )
+
+    assert [kind for kind, _value in line.reads] == [FLAG, REDUCTION_BASE, OTHER_BASE]
+    assert line.reads[0][1] == 1
+    assert type(line.reads[0][1]) is int
+    assert type(line.reads[1][1]) is Decimal
+
+
+def test_condition_lines_differ_by_each_field() -> None:
+    base = condition_line()
+
+    assert base != ConditionLine(FLAG, 2, base.text, base.reads, True)
+    assert base != ConditionLine(COUNT_GATE, 3, base.text, base.reads, True)
+    assert base != ConditionLine(COUNT_GATE, 2, "There is an amount on line 73", base.reads, True)
+    assert base != ConditionLine(COUNT_GATE, 2, base.text, ((REDUCTION_BASE, D("0")),), True)
+    assert base != ConditionLine(COUNT_GATE, 2, base.text, ((OTHER_BASE, D("120.00")),), True)
+    assert base != ConditionLine(COUNT_GATE, 2, base.text, base.reads, False)
+
+
+def test_condition_lines_are_hashable() -> None:
+    assert hash(condition_line()) == hash(condition_line())
+
+
+def test_a_condition_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(condition_line())]
+
+
+def test_conditions_count_line_fields_in_order() -> None:
+    line = conditions_count_line()
+
+    assert line == ConditionsCountLine(output=COUNT_GATE, applied=(2, 3), count=0)
+    assert [f.name for f in fields(line)] == ["output", "applied", "count"]
+    assert line.output is COUNT_GATE
+    assert line.applied == (2, 3)
+    assert line.count == 0
+
+
+def test_a_conditions_count_line_amount_is_the_count() -> None:
+    assert conditions_count_line().amount == D(0)
+    assert ConditionsCountLine(COUNT_GATE, (), 1).amount == D(1)
+    assert type(conditions_count_line().amount) is Decimal
+
+
+def test_a_conditions_count_line_may_name_no_position() -> None:
+    line = ConditionsCountLine(COUNT_GATE, (), 1)
+
+    assert line.applied == ()
+    assert line.count == 1
+
+
+def test_conditions_count_lines_differ_by_each_field() -> None:
+    base = conditions_count_line()
+
+    assert base != ConditionsCountLine(FLAG, (2, 3), 0)
+    assert base != ConditionsCountLine(COUNT_GATE, (2,), 0)
+    assert base != ConditionsCountLine(COUNT_GATE, (2, 3), 1)
+
+
+def test_conditions_count_lines_are_hashable() -> None:
+    assert hash(conditions_count_line()) == hash(conditions_count_line())
+
+
+def test_a_conditions_count_line_is_not_an_items_total_line() -> None:
+    assert not isinstance(conditions_count_line(), ItemsTotalLine)
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:
