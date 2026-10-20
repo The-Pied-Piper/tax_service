@@ -22,10 +22,16 @@
 # - 1,038.46 = 2,756.54 and line 24 the same (line 23, the foreign tax credit, is not
 # wired yet). Line 29 is the federal tax less credits of the T1 (line 41700, 417.83) plus
 # line 41500 (0), and line 30 is the greater of line 24 and line 29, 2,756.54, which, with
-# the special taxes (line 41800, 0), is the net federal tax (line 42000). Not yet
-# computed, so not in this file: lines 8A, 23 and 33C of T1206, Part 3 and Part 4 of the
-# form and ON428 line 54 (line 61510), so the Ontario tax shown here is the Ontario tax
-# without the Ontario tax on split income. Amounts are quoted decimal strings, never
+# the special taxes (line 41800, 0), is the net federal tax (line 42000). T1206 Part 3 is
+# the Ontario side: line 33 (ON428 line 54, line 61510) is 20.53% x 11,500 = 2,360.95;
+# lines 34 and 35 (the disability amounts of ON428 lines 58440 and 58480, a chosen 0 each)
+# make line 36 0.00 and line 38 0.00, so line 39 is 2,360.95; line 42 is 10% of the 0.00 of
+# line 18, and line 45 is 2.9863% of the 11,500 of line 2 = 343.4245, rounded half-up to
+# the cent, 343.42, so line 46 is 343.42 and line 47 is 2,360.95 - 343.42 = 2,017.53,
+# which is line 50 (line 49 is not wired). Line 51 is ON428 line 88, and line 52 the more
+# of lines 50 and 51, 2,017.53, which is the Ontario tax before the health premium. Not
+# yet computed, so not in this file: lines 8A, 23, 33C and 49 of T1206, line 1 of Schedule
+# ON479-A and the chart of line 23500. Amounts are quoted decimal strings, never
 # floats; counts are quoted digit strings. A line or input this return leaves out
 # is blank, 0, and is checked to compute to 0; intermediate lines that are listed are checked
 # too.
@@ -72,19 +78,33 @@ description: >-
   the dividend tax credit and the basic personal amount reduce the T1 tax below it. The
   Ontario side: the basic personal amount is $12,747 alone, at 5.05% (ON428 line 58840)
   $643.7235, rounded half-up to the cent: $643.72, off the Ontario basic tax of $0.00, so
-  the Ontario tax after credits (ON428 line 52) is $0 and the surtax and the Ontario tax
-  with surtax (line 69) are $0.00. The Ontario dividend tax credit (Worksheet ON428, line
+  the Ontario tax on taxable income less the credits (ON428 line 53) is $0. The Ontario tax
+  on split income (T1206 Part 3 line 33, ON428 line 54, line 61510) is 20.53% x the total
+  split income of $11,500.00 = $2,360.95; the Ontario disability amounts of lines 34 and 35
+  (ON428 lines 58440 and 58480) are a chosen $0 each, so line 36 and line 38 (5.05% of it)
+  are $0.00 and line 39 is $2,360.95 - $0.00 = $2,360.95; line 42 is 10% of the $0.00 of
+  line 18, $0.00, and line 45 is 2.9863% x the $11,500 of line 2 = $343.4245, rounded
+  half-up to the cent: $343.42, so line 46 is $343.42 and line 47 is $2,360.95 - $343.42 =
+  $2,017.53, as is line 50 (line 49 is not wired). The Ontario tax with the tax on split
+  income (ON428 line 55) is $0.00 + $2,360.95 = $2,360.95. The surtax base (line 65) is
+  line 63 (that $2,360.95) less line 64, the tax on split income (line 54, $2,360.95), not
+  below zero: $0.00, so the surtax (lines 66 to 68) is $0.00 and the Ontario tax with
+  surtax (line 69) is $2,360.95. The Ontario dividend tax credit (Worksheet ON428, line
   61520) reads the whole lines 12000 and 12010, $11,500.00 each: line 1 is $11,500.00 x
   2.9863% = $343.4245, rounded half-up to the cent: $343.42, line C is $0.00 and line 2 is
   $0.00, so line 61520 is $343.42, which comes off the Ontario tax with surtax, not below
-  zero: $0. The Ontario tax reduction amounts (line 77) are the basic reduction of $294.00;
-  twice them, $588.00, less $0 (line 79) is the reduction (line 80) of $588.00, and the
-  Ontario tax after it (line 81) is $0. The LIFT credit (ON428 line 85) is 5.05% of the
-  employment income of $0, $0.00, and the qualifying donations for line 87 are a chosen
-  $0.00, so lines 86 and 88 are $0. The Ontario health premium (line 89) is read from its
-  chart on taxable income: $0.00, so the Ontario tax (line 90) is $0.00. On the T1, the net
+  zero: $2,360.95 - $343.42 = $2,017.53. The Ontario tax reduction amounts (line 77) are
+  the basic reduction of $294.00; twice them, $588.00, less $2,017.53 (line 79) is below
+  zero, so the reduction (line 80) is $0.00 and the Ontario tax after it (line 81) is
+  $2,017.53. The LIFT credit (ON428 line 85) is 5.05% of the employment income of $0,
+  $0.00, and the qualifying donations for line 87 are a chosen $0.00, so lines 86 and 88
+  are $2,017.53. T1206 line 51 is that line 88, and line 52 is the more of line 50
+  ($2,017.53) and line 51 ($2,017.53): $2,017.53. The Ontario health premium (line 89) is
+  read from its chart on the taxable income plus the total split income (T1206 line 4),
+  $0.00 + $11,500.00 = $11,500.00, which is at or below $20,000: $0.00, so the Ontario tax
+  (line 90) is line 52 plus it, $2,017.53. On the T1, the net
   federal tax (line 42000) is $2,756.54 and the total payable (line 43500) is $2,756.54 +
-  $0.00 = $2,756.54. The refundable medical expense supplement (line 45200) is $0: the
+  $2,017.53 = $4,774.07. The refundable medical expense supplement (line 45200) is $0: the
   working income is $0 (employment income less lines 20700, 21200, 22900 and 23100 and the
   net self-employment income, each a chosen $0), under the $4,390 the worksheet asks for,
   and there is no amount on line 21500 or line 33200; its column 1 line 1 is the
@@ -93,8 +113,8 @@ description: >-
   income of $0, and the adjusted family net income (line 15) is the TOSI-adjusted net
   income, $11,500.00, under $26,855. The income tax deducted (line 43700) is a chosen $0:
   the corporation withholds nothing from the dividends. The total credits (line 48200) are
-  $0, and the refund or balance owing (line 167) is the total payable less them, $2,756.54 -
-  $0 = $2,756.54: positive, so a balance owing, and the refund (line 48400) and the net
+  $0, and the refund or balance owing (line 167) is the total payable less them, $4,774.07 -
+  $0 = $4,774.07: positive, so a balance owing, and the refund (line 48400) and the net
   refund (line 46600) are $0. Every amount computed from a rate, fraction, amount or chart
   on the forms is rounded half-up to the cent, each line being a dollars-and-cents box; here
   that changes the federal non-refundable tax credits, the federal and Ontario dividend tax
@@ -219,6 +239,26 @@ sources:
     417.83; T1206 line 22 3,795.00 - 1,038.46 = 2,756.54; Ontario credit amounts 12,747.00
     at 5.05% = 643.7235, rounded to 643.72; Ontario dividend tax credit 11,500.00 x 2.9863%
     = 343.4245, rounded to 343.42.
+  - >-
+    CRA, Form T1206 2025, Part 3 - Provincial or territorial tax payable by an individual with
+    split income, Ontario, and Form ON428 (docs/cra-forms-2025/5006-c-25e.txt): "Line 54 and
+    line 61510: Ontario tax on split income (complete Form T1206)"; "Line 55: Line 53 plus
+    line 54"; "Line 64: Ontario tax on split income from line 54"; "Line 65: Line 63 minus
+    line 64 (if negative, enter "0")"; "Line 69: Line 62 plus line 68"; "Line 90: Line 88
+    plus line 89 ... Ontario tax"; and the health premium chart's "Line 1: Enter your taxable
+    income from line 26000 of your return", with the total split income (line 4) added to it.
+    Chart C gives Ontario 20.53% (tax on split income), 5.05% (disability amount), 10%
+    (eligible dividends) and 2.9863% (other than eligible dividends). Line 33 is 11,500 x
+    20.53% = 2,360.95; line 36 is 0 + 0 and line 38 is 5.05% x 0 = 0.00; line 39 is 2,360.95
+    - 0.00; line 42 is 10% x 0.00 = 0.00; line 45 is 2.9863% x 11,500 = 343.4245, rounded
+    half-up to the cent, 343.42; line 46 is 0.00 + 343.42; line 47 is 2,360.95 - 343.42 =
+    2,017.53; line 50 is line 47 (line 49 is not wired); line 52 is the more of line 50
+    (2,017.53) and line 51 (ON428 line 88, 2,017.53). ON428 line 55 is 0.00 + 2,360.95,
+    line 65 is 2,360.95 - 2,360.95 = 0.00, line 69 is 2,360.95 + 0.00, line 71 is 2,360.95 -
+    343.42 = 2,017.53 and the Ontario tax reduction is 588.00 less 2,017.53, not below
+    zero: 0.00. The health premium income is 0.00 + 11,500.00. Lines 33, 38, 42 and 45 are
+    dollars-and-cents boxes, rounded half-up to the cent; the others take amounts already in
+    cents.
 inputs:
   ca/other_dividends_received_without_a_slip: "10000"
   ca/resident_in_canada_throughout_2025: "1"
@@ -276,7 +316,29 @@ expected:
   ca-on/dividend_credit_from_line_57: "343.42"
   ca-on/tax_reduction_basic: "294.00"
   ca-on/tax_reduction_amounts: "294.00"
-  ca-on/ontario_tax_reduction: "588.00"
+  ca-on/ontario_tax_on_split_income: "2360.95"
+  ca-on/split_income_line_36: "0.00"
+  ca-on/split_income_line_38: "0.00"
+  ca-on/split_income_line_39: "2360.95"
+  ca-on/split_income_line_42: "0.00"
+  ca-on/split_income_line_45: "343.42"
+  ca-on/split_income_line_46: "343.42"
+  ca-on/split_income_line_47: "2017.53"
+  ca-on/split_income_line_50: "2017.53"
+  ca-on/ontario_tax_with_split_income: "2360.95"
+  ca-on/ontario_tax_on_split_income_for_surtax: "2360.95"
+  ca-on/ontario_surtax_base: "0.00"
+  ca-on/ontario_tax_with_surtax: "2360.95"
+  ca-on/ontario_tax_after_dividend_credit: "2017.53"
+  ca-on/ontario_tax_reduction: "0.00"
+  ca-on/ontario_tax_after_reduction: "2017.53"
+  ca-on/ontario_tax_after_lift_credit: "2017.53"
+  ca-on/ontario_tax_after_food_credit: "2017.53"
+  ca-on/split_income_line_52: "2017.53"
+  ca-on/health_premium_income: "11500.00"
+  ca-on/ontario_health_premium: "0"
+  ca-on/ontario_tax: "2017.53"
+  ca-on/seniors_care_family_net_income: "11500.00"
   ca/federal_tax_with_itc_recapture: "417.83"
   ca/federal_tax_less_credits: "417.83"
   ca/resp_aips_lifetime_limit: "50000.00"
@@ -290,7 +352,7 @@ expected:
   ca/split_income_line_29: "417.83"
   ca/split_income_line_30: "2756.54"
   ca/net_federal_tax: "2756.54"
-  ca/total_payable: "2756.54"
+  ca/total_payable: "4774.07"
   ca/adjusted_family_net_income: "11500.00"
   ca-on/seniors_care_base_amount: "35000.00"
   ca-on/coop_education_payroll_threshold: "400000.00"
@@ -298,4 +360,4 @@ expected:
   ca-on/coop_education_full_share: "1.00"
   ca-on/coop_education_remaining_share: "1.00"
   ca/medical_supplement_line_6: "11500.00"
-  ca/refund_or_balance_owing: "2756.54"
+  ca/refund_or_balance_owing: "4774.07"

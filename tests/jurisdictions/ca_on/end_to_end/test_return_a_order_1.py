@@ -629,7 +629,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
     )
     assert (
-        position[NET_INCOME]
+        position[TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO]
         < position[ontario.AGE_INCOME_OVER_THRESHOLD]
         < position[ontario.AGE_REDUCTION]
         < position[ontario.AGE_AMOUNT_BEFORE_COUNT]
@@ -712,9 +712,47 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     )
     assert (
         position[ONTARIO_TAX_AFTER_CREDITS]
+        < position[ontario.ONTARIO_TAX_WITH_SPLIT_INCOME]
+        < position[ontario.ONTARIO_SURTAX_BASE]
         < position[ONTARIO_SURTAX]
         < position[ONTARIO_TAX_WITH_SURTAX]
     )
+    # Form T1206 Part 3 and ON428 lines 54, 55, 64 and 65: the tax on the split income (line 33)
+    # joins the tax before the surtax and leaves its base, and line 52 replaces line 88 in
+    # ON428 line 90.
+    assert (
+        position[TOTAL_SPLIT_INCOME]
+        < position[ontario.ONTARIO_TAX_ON_SPLIT_INCOME]
+        < position[ontario.SPLIT_INCOME_LINE_39]
+        < position[ontario.SPLIT_INCOME_LINE_47]
+        < position[ontario.SPLIT_INCOME_LINE_50]
+        < position[ontario.SPLIT_INCOME_LINE_52]
+        < position[ONTARIO_TAX]
+    )
+    assert (
+        position[ontario.SPLIT_INCOME_LINE_36]
+        < position[ontario.SPLIT_INCOME_LINE_38]
+        < position[ontario.SPLIT_INCOME_LINE_39]
+    )
+    assert position[ontario.DISABILITY_TRANSFERRED_AMOUNT] < position[ontario.SPLIT_INCOME_LINE_36]
+    assert (
+        position[SPLIT_INCOME_LINE_18]
+        < position[ontario.SPLIT_INCOME_LINE_42]
+        < position[ontario.SPLIT_INCOME_LINE_46]
+        < position[ontario.SPLIT_INCOME_LINE_47]
+    )
+    assert position[ontario.SPLIT_INCOME_LINE_45] < position[ontario.SPLIT_INCOME_LINE_46]
+    assert (
+        position[ontario.ONTARIO_TAX_ON_SPLIT_INCOME]
+        < position[ontario.ONTARIO_TAX_WITH_SPLIT_INCOME]
+    )
+    assert (
+        position[ontario.ONTARIO_TAX_ON_SPLIT_INCOME]
+        < position[ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX]
+        < position[ontario.ONTARIO_SURTAX_BASE]
+    )
+    assert position[ONTARIO_TAX_WITH_SURTAX] < position[ONTARIO_TAX_AFTER_FOOD_CREDIT]
+    assert position[ONTARIO_TAX_AFTER_FOOD_CREDIT] < position[ontario.SPLIT_INCOME_LINE_52]
     assert (
         position[TAXABLE_DIVIDENDS]
         < position[ontario.DIVIDENDS_AMOUNT_A]
@@ -755,11 +793,15 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[ONTARIO_TAX_AFTER_REDUCTION]
         < position[ONTARIO_TAX]
     )
-    assert position[TAXABLE_INCOME] < position[ONTARIO_HEALTH_PREMIUM] < position[ONTARIO_TAX]
-    assert position[LIFT_CREDIT_BEFORE_MAXIMUM] < position[LIFT_MAXIMUM_CREDIT]
     assert (
-        position[NET_INCOME_BEFORE_ADJUSTMENTS] < position[ontario.LIFT_NET_INCOME_AND_REPAYMENTS]
+        position[TAXABLE_INCOME]
+        < position[ontario.HEALTH_PREMIUM_INCOME]
+        < position[ONTARIO_HEALTH_PREMIUM]
+        < position[ONTARIO_TAX]
     )
+    assert position[TOTAL_SPLIT_INCOME] < position[ontario.HEALTH_PREMIUM_INCOME]
+    assert position[LIFT_CREDIT_BEFORE_MAXIMUM] < position[LIFT_MAXIMUM_CREDIT]
+    assert position[TOSI_ADJUSTED_NET_INCOME] < position[ontario.LIFT_NET_INCOME_AND_REPAYMENTS]
     assert (
         position[ontario.LIFT_NET_INCOME_AND_REPAYMENTS]
         < position[ontario.LIFT_ADJUSTED_NET_INCOME]
@@ -1014,7 +1056,9 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[FERTILITY_CREDIT_BEFORE_MAXIMUM] < position[FERTILITY_CREDIT]
     assert position[ontario.MEDICAL_CLAIM] < position[SENIORS_CARE_BEFORE_MAXIMUM]
     assert position[SENIORS_CARE_BEFORE_MAXIMUM] < position[SENIORS_CARE_AMOUNT]
-    assert position[NET_INCOME] < position[SENIORS_CARE_FAMILY_NET_INCOME]
+    assert (
+        position[TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO] < position[SENIORS_CARE_FAMILY_NET_INCOME]
+    )
     assert position[SENIORS_CARE_FAMILY_NET_INCOME] < position[SENIORS_CARE_INCOME_OVER_BASE]
     assert position[SENIORS_CARE_BASE_AMOUNT] < position[SENIORS_CARE_INCOME_OVER_BASE]
     assert position[SENIORS_CARE_INCOME_OVER_BASE] < position[SENIORS_CARE_REDUCTION]

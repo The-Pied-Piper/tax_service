@@ -562,6 +562,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         # Form T1206 Part 2 line 15 "Line 10 minus line 14" and line 22 "Line 15 minus line 21",
         # with no floor printed on either: all 0 for Return A.
+        # Form T1206 Part 3 line 39 "Line 33 minus line 38" and line 47 "Line 39 minus line 46",
+        # exact and signed: Return A has no split income, so each is 0.
+        ontario.SPLIT_INCOME_LINE_39: SubtractedLine(
+            output=ontario.SPLIT_INCOME_LINE_39,
+            minuend=ontario.ONTARIO_TAX_ON_SPLIT_INCOME,
+            minuend_amount=D("0"),
+            subtrahend=ontario.SPLIT_INCOME_LINE_38,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        ontario.SPLIT_INCOME_LINE_47: SubtractedLine(
+            output=ontario.SPLIT_INCOME_LINE_47,
+            minuend=ontario.SPLIT_INCOME_LINE_39,
+            minuend_amount=D("0"),
+            subtrahend=ontario.SPLIT_INCOME_LINE_46,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         SPLIT_INCOME_LINE_15: SubtractedLine(
             output=SPLIT_INCOME_LINE_15,
             minuend=SPLIT_INCOME_LINE_10,

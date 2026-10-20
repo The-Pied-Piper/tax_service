@@ -635,7 +635,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert surcharged == [
         SurchargeTierLine(
             output=ONTARIO_SURTAX,
-            base=ONTARIO_TAX_AFTER_CREDITS,
+            base=ontario.ONTARIO_SURTAX_BASE,
             base_amount=D("7671.98"),
             threshold=D("5710"),
             rate=Rate(D("0.20")),
@@ -644,7 +644,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         SurchargeTierLine(
             output=ONTARIO_SURTAX,
-            base=ONTARIO_TAX_AFTER_CREDITS,
+            base=ontario.ONTARIO_SURTAX_BASE,
             base_amount=D("7671.98"),
             threshold=D("7307"),
             rate=Rate(D("0.36")),
@@ -655,7 +655,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert premium_tiers == [
         SurchargeTierLine(
             output=ONTARIO_HEALTH_PREMIUM,
-            base=TAXABLE_INCOME,
+            base=ontario.HEALTH_PREMIUM_INCOME,
             base_amount=D("115000"),
             threshold=D("20000"),
             rate=Rate(D("0.06")),
@@ -665,7 +665,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         SurchargeTierLine(
             output=ONTARIO_HEALTH_PREMIUM,
-            base=TAXABLE_INCOME,
+            base=ontario.HEALTH_PREMIUM_INCOME,
             base_amount=D("115000"),
             threshold=D("36000"),
             rate=Rate(D("0.06")),
@@ -675,7 +675,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         SurchargeTierLine(
             output=ONTARIO_HEALTH_PREMIUM,
-            base=TAXABLE_INCOME,
+            base=ontario.HEALTH_PREMIUM_INCOME,
             base_amount=D("115000"),
             threshold=D("48000"),
             rate=Rate(D("0.25")),
@@ -685,7 +685,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         SurchargeTierLine(
             output=ONTARIO_HEALTH_PREMIUM,
-            base=TAXABLE_INCOME,
+            base=ontario.HEALTH_PREMIUM_INCOME,
             base_amount=D("115000"),
             threshold=D("72000"),
             rate=Rate(D("0.25")),
@@ -695,7 +695,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         SurchargeTierLine(
             output=ONTARIO_HEALTH_PREMIUM,
-            base=TAXABLE_INCOME,
+            base=ontario.HEALTH_PREMIUM_INCOME,
             base_amount=D("115000"),
             threshold=D("200000"),
             rate=Rate(D("0.25")),
@@ -966,6 +966,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("3194.87"),
             result=D("16951.38"),
         ),
+        # ON428 line 65 "Line 63 minus line 64 (if negative, enter "0")", the surtax base: the tax
+        # with the tax on split income, less that tax again (line 64 is line 54), here 0.
+        ontario.ONTARIO_SURTAX_BASE: SubtractedNotBelowZeroLine(
+            output=ontario.ONTARIO_SURTAX_BASE,
+            minuend=ontario.ONTARIO_TAX_WITH_SPLIT_INCOME,
+            minuend_amount=D("7671.98"),
+            subtrahend=ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX,
+            subtrahend_amount=D("0"),
+            result=D("7671.98"),
+        ),
         ONTARIO_TAX_AFTER_CREDITS: SubtractedNotBelowZeroLine(
             output=ONTARIO_TAX_AFTER_CREDITS,
             minuend=ONTARIO_BASIC_TAX,
@@ -1033,11 +1043,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("8601"),
         ),
-        # Worksheet ON428 line 4 "Line 2 minus line 3 (if negative, enter "0")": the net income
-        # 115000 less the income threshold 46330.00.
+        # Worksheet ON428 line 4 "Line 2 minus line 3 (if negative, enter "0")": the TOSI-adjusted
+        # net income, not below zero, 115000 less the income threshold 46330.00.
         ontario.AGE_INCOME_OVER_THRESHOLD: SubtractedNotBelowZeroLine(
             output=ontario.AGE_INCOME_OVER_THRESHOLD,
-            minuend=NET_INCOME,
+            minuend=TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
             minuend_amount=D("115000"),
             subtrahend=ontario.AGE_INCOME_THRESHOLD,
             subtrahend_amount=D("46330.00"),
@@ -1414,6 +1424,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             output=SPLIT_INCOME_LINE_30,
             parts=((SPLIT_INCOME_LINE_24, D("0")), (SPLIT_INCOME_LINE_29, D("16951.38"))),
             result=D("16951.38"),
+        ),
+        # Form T1206 Part 3 line 52 "Enter whichever is more: the amount from line 50 or line 51",
+        # line 51 being ON428 line 88: the 0 of line 50 is the less.
+        ontario.SPLIT_INCOME_LINE_52: GreaterOfLine(
+            output=ontario.SPLIT_INCOME_LINE_52,
+            parts=(
+                (ontario.SPLIT_INCOME_LINE_50, D("0")),
+                (ONTARIO_TAX_AFTER_FOOD_CREDIT, D("8195.77")),
+            ),
+            result=D("8195.77"),
         ),
         ontario.LIFT_GREATER_EXCESS: GreaterOfLine(
             ontario.LIFT_GREATER_EXCESS,

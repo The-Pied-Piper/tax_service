@@ -48,11 +48,23 @@ from app.jurisdictions.ca.catalog import (
     SPLIT_INCOME_LINE_24,
     SPLIT_INCOME_LINE_29,
     SPLIT_INCOME_LINE_30,
+    TAXABLE_INCOME,
     TOSI_ADJUSTED_NET_INCOME,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
     TOTAL_SPLIT_INCOME,
+)
+from app.jurisdictions.ca_on import catalog as ontario
+from app.jurisdictions.ca_on.catalog import (
+    LIFT_CREDIT,
+    ONTARIO_HEALTH_PREMIUM,
+    ONTARIO_SURTAX,
+    ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_AFTER_FOOD_CREDIT,
+    ONTARIO_TAX_REDUCTION,
+    ONTARIO_TAX_WITH_SURTAX,
+    SENIORS_CARE_FAMILY_NET_INCOME,
 )
 from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, compute, return_a
 
@@ -109,8 +121,11 @@ def test_return_al_pays_the_tax_on_split_income_of_3795_on_line_40424() -> None:
     assert worksheet.get(SPLIT_INCOME_LINE_29).value == D("417.83")
     assert worksheet.get(SPLIT_INCOME_LINE_30).value == D("2756.54")
     assert worksheet.get(NET_FEDERAL_TAX).value == D("2756.54")
-    assert worksheet.get(TOTAL_PAYABLE).value == D("2756.54")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("2756.54")
+    # The Ontario tax (ON428 line 90) is T1206 line 52, 2017.53, as the health premium is 0: the
+    # total payable is 2756.54 + 2017.53 = 4774.07.
+    assert worksheet.get(ontario.ONTARIO_TAX).value == D("2017.53")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("4774.07")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("4774.07")
 
 
 def test_return_als_trace_follows_form_t1206_line_by_line() -> None:
@@ -428,13 +443,14 @@ def test_the_advanced_canada_workers_benefit_joins_lines_10_and_29() -> None:
 
 
 def test_the_special_taxes_of_line_41800_are_added_to_line_30_of_form_t1206() -> None:
-    # Return AL with 7 from the RL-10 slip on line 41800: 2756.54 + 7 = 2763.54.
+    # Return AL with 7 from the RL-10 slip on line 41800: 2756.54 + 7 = 2763.54, and with the
+    # Ontario tax of 2017.53 the total payable is 4781.07.
     worksheet = return_al(rl_10_labour_sponsored_fund_amount="7")
 
     assert worksheet.get(SPECIAL_TAXES).value == D("7")
     assert worksheet.get(SPLIT_INCOME_LINE_30).value == D("2756.54")
     assert worksheet.get(NET_FEDERAL_TAX).value == D("2763.54")
-    assert worksheet.get(TOTAL_PAYABLE).value == D("2763.54")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("4781.07")
 
 
 def test_without_split_income_the_net_federal_tax_is_line_29_and_line_24_is_zero() -> None:
@@ -450,3 +466,268 @@ def test_without_split_income_the_net_federal_tax_is_line_29_and_line_24_is_zero
     assert worksheet.get(SPLIT_INCOME_LINE_29).value == D("16951.38")
     assert worksheet.get(SPLIT_INCOME_LINE_30).value == D("16951.38")
     assert worksheet.get(NET_FEDERAL_TAX).value == D("16951.38")
+
+
+def test_return_al_pays_the_ontario_tax_on_split_income_on_form_t1206_part_3() -> None:
+    worksheet = return_al()
+
+    # Line 33 (ON428 line 54, line 61510) is 20.53% of the total split income: 11500 x 20.53% =
+    # 2360.95. Lines 34 and 35 are 0, so lines 36 and 38 are 0 and line 39 is 2360.95.
+    assert worksheet.get(ontario.ONTARIO_TAX_ON_SPLIT_INCOME).value == D("2360.95")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_36).value == D("0")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_38).value == D("0.00")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_39).value == D("2360.95")
+    # Line 42 is 10% of line 18 (0.00); line 45 is 2.9863% of the 11500 of line 2 = 343.4245,
+    # rounded half-up to the cent: 343.42. Line 47 is 2360.95 - 343.42 = 2017.53, which line 50
+    # carries (line 49 is not wired).
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_42).value == D("0.00")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_45).value == D("343.42")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_46).value == D("343.42")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_47).value == D("2017.53")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_50).value == D("2017.53")
+    # ON428 line 55 is line 53 (0) plus line 54; line 64 is line 54, so the surtax base (line 65)
+    # is 0 and the surtax is 0; line 69 is 2360.95, less the dividend tax credit of 343.42 (line
+    # 70): 2017.53, which is more than twice the basic reduction (588), so the reduction is 0.
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SPLIT_INCOME).value == D("2360.95")
+    assert worksheet.get(ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX).value == D("2360.95")
+    assert worksheet.get(ontario.ONTARIO_SURTAX_BASE).value == D("0")
+    assert worksheet.get(ONTARIO_SURTAX).value == D("0")
+    assert worksheet.get(ONTARIO_TAX_WITH_SURTAX).value == D("2360.95")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("2017.53")
+    assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("0")
+    assert worksheet.get(ONTARIO_TAX_AFTER_FOOD_CREDIT).value == D("2017.53")
+    # Line 52 is the more of line 50 and line 51 (ON428 line 88), equal here; the health premium
+    # chart's line 1 is the taxable income 0.00 plus the total split income (T1206 line 4).
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_52).value == D("2017.53")
+    assert worksheet.get(ontario.HEALTH_PREMIUM_INCOME).value == D("11500.00")
+    assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("0")
+    # The seniors care family net income (ON479 line 8) and the LIFT (ON428-A line 6) start from
+    # the TOSI-adjusted net income, 11500.00, not the net income of 0.00.
+    assert worksheet.get(SENIORS_CARE_FAMILY_NET_INCOME).value == D("11500.00")
+    assert worksheet.get(ontario.LIFT_NET_INCOME_AND_REPAYMENTS).value == D("11500.00")
+
+
+def test_return_als_trace_follows_form_t1206_part_3_line_by_line() -> None:
+    rendered = EnglishTraceRenderer().render_all(return_al().trace)
+
+    for line in (
+        "ontario_tax_on_split_income: 20.53% of total_split_income 11500 (half-up to 0.01)",
+        "split_income_line_36: disability_amount_for_self 0 + disability_transferred_amount 0 = 0",
+        "split_income_line_38: 5.05% of split_income_line_36 0 (half-up to 0.01)",
+        "split_income_line_39: ontario_tax_on_split_income 2360.95 less split_income_line_38 0 "
+        "= 2360.95",
+        "split_income_line_42: 10% of split_income_line_18 0 (half-up to 0.01)",
+        "split_income_line_45: 2.9863% of split_income_dividends_other_than_eligible 11500 "
+        "(half-up to 0.01)",
+        "split_income_line_46: split_income_line_42 0 + split_income_line_45 343.42 = 343.42",
+        "split_income_line_47: split_income_line_39 2360.95 less split_income_line_46 343.42 "
+        "= 2017.53",
+        "split_income_line_50: split_income_line_47 2017.53 = 2017.53",
+        "ontario_tax_with_split_income: ontario_tax_after_credits 0 "
+        "+ ontario_tax_on_split_income 2360.95 = 2360.95",
+        "ontario_tax_on_split_income_for_surtax: ontario_tax_on_split_income 2360.95 = 2360.95",
+        "ontario_surtax_base: ontario_tax_with_split_income 2360.95 "
+        "less ontario_tax_on_split_income_for_surtax 2360.95, not below 0 = 0",
+        "ontario_tax_with_surtax: ontario_tax_with_split_income 2360.95 + ontario_surtax 0 "
+        "= 2360.95",
+        "split_income_line_52: greater of split_income_line_50 2017.53 "
+        "and ontario_tax_after_food_credit 2017.53 = 2017.53",
+        "health_premium_income: taxable_income 0 + total_split_income 11500 = 11500",
+        "ontario_tax: split_income_line_52 2017.53 + ontario_health_premium 0 = 2017.53",
+    ):
+        assert line in rendered, line
+
+
+def test_return_al_records_the_ontario_split_income_lines_as_structured_lines() -> None:
+    trace = return_al().trace
+
+    assert (
+        RateAppliedLine(
+            ontario.ONTARIO_TAX_ON_SPLIT_INCOME,
+            TOTAL_SPLIT_INCOME,
+            D("11500"),
+            Rate(D("0.2053")),
+            CENT,
+            D("2360.95"),
+        )
+        in trace
+    )
+    assert (
+        RateAppliedLine(
+            ontario.SPLIT_INCOME_LINE_45,
+            SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+            D("11500"),
+            Rate(D("0.029863")),
+            CENT,
+            D("343.42"),
+        )
+        in trace
+    )
+    assert (
+        SubtractedLine(
+            output=ontario.SPLIT_INCOME_LINE_47,
+            minuend=ontario.SPLIT_INCOME_LINE_39,
+            minuend_amount=D("2360.95"),
+            subtrahend=ontario.SPLIT_INCOME_LINE_46,
+            subtrahend_amount=D("343.42"),
+            result=D("2017.53"),
+        )
+        in trace
+    )
+    assert (
+        SubtractedNotBelowZeroLine(
+            output=ontario.ONTARIO_SURTAX_BASE,
+            minuend=ontario.ONTARIO_TAX_WITH_SPLIT_INCOME,
+            minuend_amount=D("2360.95"),
+            subtrahend=ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX,
+            subtrahend_amount=D("2360.95"),
+            result=D("0"),
+        )
+        in trace
+    )
+    assert (
+        GreaterOfLine(
+            output=ontario.SPLIT_INCOME_LINE_52,
+            parts=(
+                (ontario.SPLIT_INCOME_LINE_50, D("2017.53")),
+                (ONTARIO_TAX_AFTER_FOOD_CREDIT, D("2017.53")),
+            ),
+            result=D("2017.53"),
+        )
+        in trace
+    )
+
+
+def test_an_ontario_disability_amount_larger_than_the_tax_leaves_line_47_negative_and_line_88_is_line_52() -> (  # noqa: E501
+    None
+):
+    # Return B's filer (employment income 30000) with 1000 of split dividends (1150 grossed up) and
+    # the Ontario disability amount of ON428 line 58440, a chosen 10298. Line 33 is 1150 x 20.53%
+    # = 236.095, rounded half-up to the cent: 236.10. Line 36 is 10298 + 0 and line 38 is 5.05% of
+    # it, 520.049, 520.05, so line 39 is 236.10 - 520.05 = -283.95, negative and not floored. Line
+    # 45 is 2.9863% x 1150 = 34.34245, 34.34 (line 42 is 0), so line 47 is -283.95 - 34.34 =
+    # -318.29, which line 50 carries.
+    worksheet = return_b_with_split_income_dividends(ontario_disability_amount_for_self="10298")
+
+    assert worksheet.get(ontario.ONTARIO_TAX_ON_SPLIT_INCOME).value == D("236.10")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_36).value == D("10298")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_38).value == D("520.05")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_39).value == D("-283.95")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_42).value == D("0.00")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_45).value == D("34.34")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_46).value == D("34.34")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_47).value == D("-318.29")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_50).value == D("-318.29")
+    # Line 53 is 766.81 and line 55 is 766.81 + 236.10 = 1002.91, no surtax (the base, line 65, is
+    # 766.81); less the dividend tax credit of 34.34: 968.57, no reduction; the LIFT credit of
+    # 875 (the TOSI-adjusted net income, 29735.00 + 1150 = 30885.00, is under 32500) leaves
+    # 93.57 on line 88. Line 52 is the more of -318.29 and 93.57: line 88.
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SPLIT_INCOME).value == D("1002.91")
+    assert worksheet.get(ontario.ONTARIO_SURTAX_BASE).value == D("766.81")
+    assert worksheet.get(ONTARIO_SURTAX).value == D("0")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("968.57")
+    assert worksheet.get(LIFT_CREDIT).value == D("875")
+    assert worksheet.get(ONTARIO_TAX_AFTER_FOOD_CREDIT).value == D("93.57")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_52).value == D("93.57")
+    # The health premium chart's line 1 is the taxable income 29735.00 plus line 4 (1150): 30885.
+    assert worksheet.get(ontario.HEALTH_PREMIUM_INCOME).value == D("30885.00")
+    assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("300")
+    assert worksheet.get(ontario.ONTARIO_TAX).value == D("393.57")
+
+    trace = worksheet.trace
+    assert (
+        SubtractedLine(
+            output=ontario.SPLIT_INCOME_LINE_47,
+            minuend=ontario.SPLIT_INCOME_LINE_39,
+            minuend_amount=D("-283.95"),
+            subtrahend=ontario.SPLIT_INCOME_LINE_46,
+            subtrahend_amount=D("34.34"),
+            result=D("-318.29"),
+        )
+        in trace
+    )
+    assert (
+        GreaterOfLine(
+            output=ontario.SPLIT_INCOME_LINE_52,
+            parts=(
+                (ontario.SPLIT_INCOME_LINE_50, D("-318.29")),
+                (ONTARIO_TAX_AFTER_FOOD_CREDIT, D("93.57")),
+            ),
+            result=D("93.57"),
+        )
+        in trace
+    )
+    rendered = EnglishTraceRenderer().render_all(trace)
+    assert (
+        "split_income_line_39: ontario_tax_on_split_income 236.1 less split_income_line_38 520.05 "
+        "= -283.95"
+    ) in rendered
+    assert (
+        "split_income_line_52: greater of split_income_line_50 -318.29 "
+        "and ontario_tax_after_food_credit 93.57 = 93.57"
+    ) in rendered
+
+
+def test_the_ontario_surtax_applies_to_the_non_split_part_of_the_tax_only() -> None:
+    # Return A with 20000 more of income, all of it split income (a chosen figure): the net income
+    # and the taxable income stay 115000.00, so the Ontario tax after credits (line 53) is
+    # 7671.98. Line 54 is 20000 x 20.53% = 4106.00 and line 55 is 11777.98, but line 64 takes line
+    # 54 off again, so the surtax base (line 65) is 7671.98 and the surtax is the 523.79 of Return
+    # A alone (20% of 1961.98 and 36% of 364.98), not that on 11777.98.
+    worksheet = compute(
+        "110000",
+        "20000",
+        "0",
+        "1926",
+        "19800",
+        "1926",
+        "2000",
+        income_tax_deducted="25000",
+        other_income="20000",
+        other_split_income="20000",
+    )
+
+    assert worksheet.get(TAXABLE_INCOME).value == D("115000.00")
+    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("7671.98")
+    assert worksheet.get(ontario.ONTARIO_TAX_ON_SPLIT_INCOME).value == D("4106.00")
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SPLIT_INCOME).value == D("11777.98")
+    assert worksheet.get(ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX).value == D("4106.00")
+    assert worksheet.get(ontario.ONTARIO_SURTAX_BASE).value == D("7671.98")
+    assert worksheet.get(ONTARIO_SURTAX).value == D("523.79")
+    # Line 69 is line 62 (11777.98) plus the surtax: 12301.77; no credit, reduction or LIFT credit
+    # (the TOSI-adjusted net income, 135000, is far over the LIFT thresholds) comes off, so line
+    # 88 is 12301.77, which is more than line 50 (4106.00), so line 52 is line 88; the health
+    # premium chart's line 1 is 115000.00 + 20000 = 135000.00: 750.
+    assert worksheet.get(ONTARIO_TAX_WITH_SURTAX).value == D("12301.77")
+    assert worksheet.get(ONTARIO_TAX_AFTER_FOOD_CREDIT).value == D("12301.77")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_50).value == D("4106.00")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_52).value == D("12301.77")
+    assert worksheet.get(ontario.HEALTH_PREMIUM_INCOME).value == D("135000.00")
+    assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("750")
+    assert worksheet.get(ontario.ONTARIO_TAX).value == D("13051.77")
+
+
+def test_the_health_premium_chart_starts_from_the_taxable_income_plus_t1206_line_4() -> None:
+    # Return AL with 30000 of other income, all of it split income: the taxable income is 0.00 but
+    # line 4 of Form T1206 is 30000, so the chart's line 1 is 30000, in the row of more than 25000
+    # but not more than 36000: 300, where the taxable income alone (0.00) would give 0.
+    worksheet = return_al(
+        other_dividends_received_without_a_slip="0",
+        other_income="30000",
+        split_income_dividends="0",
+        split_income_dividends_other_than_eligible="0",
+        other_split_income="30000",
+    )
+
+    assert worksheet.get(TAXABLE_INCOME).value == D("0")
+    assert worksheet.get(TOTAL_SPLIT_INCOME).value == D("30000")
+    assert worksheet.get(ontario.HEALTH_PREMIUM_INCOME).value == D("30000")
+    assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("300")
+    # Line 33 is 30000 x 20.53% = 6159.00, line 47 and line 50 the same (no credits, no dividends),
+    # and line 88 the same (the surtax base is 0, no dividend credit, no reduction as 588.00 is
+    # less than 6159.00, no LIFT credit with no employment income), so line 52 is 6159.00 and the
+    # Ontario tax is 6159.00 + 300 = 6459.00.
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_50).value == D("6159.00")
+    assert worksheet.get(ONTARIO_TAX_AFTER_FOOD_CREDIT).value == D("6159.00")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_52).value == D("6159.00")
+    assert worksheet.get(ontario.ONTARIO_TAX).value == D("6459.00")

@@ -113,7 +113,7 @@ def test_return_is_community_food_program_credit_comes_off_the_tax_after_the_lif
         "less community_food_program_credit 250, not below 0 = 1234.56"
     ) in rendered
     assert (
-        "ontario_tax: ontario_tax_after_food_credit 1234.56 + ontario_health_premium 450 = 1684.56"
+        "ontario_tax: split_income_line_52 1234.56 + ontario_health_premium 450 = 1684.56"
     ) in rendered
 
 
@@ -282,7 +282,7 @@ def test_return_ns_donations_and_gifts_credit_and_top_up_come_off_the_federal_ta
         "less non_refundable_tax_credits 949.9, not below 0 = 1451.63"
     ) in rendered
     assert (
-        "ontario_tax: ontario_tax_after_food_credit 1079.38 + ontario_health_premium 450 = 1529.38"
+        "ontario_tax: split_income_line_52 1079.38 + ontario_health_premium 450 = 1529.38"
     ) in rendered
 
 

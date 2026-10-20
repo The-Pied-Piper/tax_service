@@ -283,8 +283,8 @@ def test_the_trace_explains_the_computation() -> None:
         "age_income_threshold: credit amount 46330 (half-up to 0.01)", "46330.00"
     )
     ontario_age_over_threshold = position(
-        "age_income_over_threshold: net_income 115000 less age_income_threshold 46330, not below 0 "
-        "= 68670",
+        "age_income_over_threshold: tosi_adjusted_net_income_not_below_zero 115000 "
+        "less age_income_threshold 46330, not below 0 = 68670",
         "68670",
     )
     ontario_age_reduction = position(
@@ -349,16 +349,26 @@ def test_the_trace_explains_the_computation() -> None:
         "less non_refundable_tax_credits 867.62, not below 0 = 7671.98",
         "7671.98",
     )
+    with_split_income = position(
+        "ontario_tax_with_split_income: ontario_tax_after_credits 7671.98 "
+        "+ ontario_tax_on_split_income 0 = 7671.98",
+        "7671.98",
+    )
+    surtax_base = position(
+        "ontario_surtax_base: ontario_tax_with_split_income 7671.98 "
+        "less ontario_tax_on_split_income_for_surtax 0, not below 0 = 7671.98",
+        "7671.98",
+    )
     surtax_first = position(
-        "ontario_surtax: 20% of ontario_tax_after_credits 7671.98 over 5710 (half-up to 0.01)",
+        "ontario_surtax: 20% of ontario_surtax_base 7671.98 over 5710 (half-up to 0.01)",
         "392.40",
     )
     surtax_second = position(
-        "ontario_surtax: 36% of ontario_tax_after_credits 7671.98 over 7307 (half-up to 0.01)",
+        "ontario_surtax: 36% of ontario_surtax_base 7671.98 over 7307 (half-up to 0.01)",
         "131.39",
     )
     with_surtax = position(
-        "ontario_tax_with_surtax: ontario_tax_after_credits 7671.98 "
+        "ontario_tax_with_surtax: ontario_tax_with_split_income 7671.98 "
         "+ ontario_surtax 523.79 = 8195.77",
         "8195.77",
     )
@@ -485,7 +495,7 @@ def test_the_trace_explains_the_computation() -> None:
         "875",
     )
     lift_net = position(
-        "lift_net_income_and_repayments: net_income_before_adjustments 115000 "
+        "lift_net_income_and_repayments: tosi_adjusted_net_income 115000 "
         "+ uccb_repayment 0 + rdsp_income_repayment 0 = 115000",
         "115000",
     )
@@ -572,33 +582,42 @@ def test_the_trace_explains_the_computation() -> None:
         "less community_food_program_credit 0, not below 0 = 8195.77",
         "8195.77",
     )
+    health_income = position(
+        "health_premium_income: taxable_income 115000 + total_split_income 0 = 115000",
+        "115000",
+    )
     premium_first = position(
-        "ontario_health_premium: 6% of taxable_income 115000 over 20000, at most 300 "
+        "ontario_health_premium: 6% of health_premium_income 115000 over 20000, at most 300 "
         "(half-up to 0.01)",
         "300",
     )
     premium_second = position(
-        "ontario_health_premium: 6% of taxable_income 115000 over 36000, at most 150 "
+        "ontario_health_premium: 6% of health_premium_income 115000 over 36000, at most 150 "
         "(half-up to 0.01)",
         "150",
     )
     premium_third = position(
-        "ontario_health_premium: 25% of taxable_income 115000 over 48000, at most 150 "
+        "ontario_health_premium: 25% of health_premium_income 115000 over 48000, at most 150 "
         "(half-up to 0.01)",
         "150",
     )
     premium_fourth = position(
-        "ontario_health_premium: 25% of taxable_income 115000 over 72000, at most 150 "
+        "ontario_health_premium: 25% of health_premium_income 115000 over 72000, at most 150 "
         "(half-up to 0.01)",
         "150",
     )
     premium_fifth = position(
-        "ontario_health_premium: 25% of taxable_income 115000 over 200000, at most 150 "
+        "ontario_health_premium: 25% of health_premium_income 115000 over 200000, at most 150 "
         "(half-up to 0.01)",
         "0",
     )
+    line_52 = position(
+        "split_income_line_52: greater of split_income_line_50 0 "
+        "and ontario_tax_after_food_credit 8195.77 = 8195.77",
+        "8195.77",
+    )
     ontario_tax = position(
-        "ontario_tax: ontario_tax_after_food_credit 8195.77 + ontario_health_premium 750 = 8945.77",
+        "ontario_tax: split_income_line_52 8195.77 + ontario_health_premium 750 = 8945.77",
         "8945.77",
     )
     recapture_at_15 = position(
@@ -750,7 +769,8 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     care_family_net_income = position(
-        "seniors_care_family_net_income: net_income 115000 + spouse_net_income 0 = 115000",
+        "seniors_care_family_net_income: tosi_adjusted_net_income_not_below_zero 115000 "
+        "+ spouse_net_income 0 = 115000",
         "115000",
     )
     care_base = position("seniors_care_base_amount: credit amount 35000 (half-up to 0.01)", "35000")
@@ -1020,7 +1040,8 @@ def test_the_trace_explains_the_computation() -> None:
     assert ontario_amount < ontario_amounts < ontario_credit < ontario_line_50 < ontario_after
     assert first_tier < ontario_first_tier_credit < ontario_donations_credit < ontario_line_50
     assert over_first_tier < ontario_over_first_tier_credit < ontario_donations_credit
-    assert ontario_after < surtax_first < surtax_second < with_surtax
+    assert ontario_after < with_split_income < surtax_base < surtax_first
+    assert surtax_first < surtax_second < with_surtax
     assert reduction_basic < reduction_amounts
     assert children_before_rule < reduction_children < reduction_amounts
     assert dependants_before_rule < reduction_dependants < reduction_amounts
@@ -1035,8 +1056,9 @@ def test_the_trace_explains_the_computation() -> None:
     assert reduction < after_reduction
     assert line_73 < after_reduction
     assert reduction_amounts < reduction_before_conditions
-    assert taxable < premium_first < premium_second < premium_third < premium_fourth
+    assert taxable < health_income < premium_first < premium_second < premium_third < premium_fourth
     assert premium_fourth < premium_fifth < ontario_tax
+    assert after_food < line_52 < ontario_tax
     assert lift_before_maximum < lift_maximum < lift < after_lift < after_food < ontario_tax
     assert lift_net < lift_adjusted < lift_reduction < lift_single < lift
     assert lift_uccb_and_rdsp < lift_adjusted

@@ -709,6 +709,7 @@ def compute(
     caregiver_dependants: tuple[tuple[str, int], ...] = (),
     disability_dependants: tuple[tuple[int, str, str, str], ...] = (),
     ontario_disability_dependants: tuple[tuple[int, str, str, str], ...] = (),
+    ontario_disability_amount_for_self: str = "0",
     child_care_expenses_paid: str = "0",
     children_under_seven: int = 0,
     children_with_disability: int = 0,
@@ -1045,6 +1046,7 @@ def compute(
                 ],
             ),
         ),
+        Artifact(ontario.DISABILITY_AMOUNT_FOR_SELF, D(ontario_disability_amount_for_self)),
         Artifact(
             ontario.DISABILITY_DEPENDANTS,
             RecordList(

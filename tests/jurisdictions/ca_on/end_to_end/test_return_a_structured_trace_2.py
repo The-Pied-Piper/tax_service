@@ -164,7 +164,6 @@ from app.jurisdictions.ca.catalog import (
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
     NET_FISHING_INCOME,
-    NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NET_PARTNERSHIP_INCOME,
@@ -328,6 +327,7 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_DIVIDENDS,
     TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    TAXABLE_INCOME,
     TAXABLE_SCHOLARSHIPS,
     TAXABLE_SUPPORT_PAYMENTS,
     TOP_UP_CREDITS_BASE,
@@ -381,7 +381,6 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
     ONTARIO_TAX_AFTER_DIVIDEND_CREDIT,
-    ONTARIO_TAX_AFTER_FOOD_CREDIT,
     ONTARIO_TAX_BEFORE_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
     SENIORS_CARE_CREDIT,
@@ -690,8 +689,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CHILD_CARE_EARNED_INCOME, ((EMPLOYMENT_INCOME, D("110000")),), D("110000")
         ),
         # T1 line 23300, in line order: 20700, 20800, 20805, 21000, 21200, 21300, 21400, 21700,
-        # 22000, 22100, 22200, 22215, 22400, 23200 (the caller's other deductions), then the total split
-        # income of Form T1206 Part 1 line 4, here 0.
+        # 22000, 22100, 22200, 22215, 22400, 23200 (the caller's other deductions), then the total
+        # split income of Form T1206 Part 1 line 4, here 0.
         DEDUCTIONS_FROM_TOTAL_INCOME: SumLine(
             DEDUCTIONS_FROM_TOTAL_INCOME,
             (
@@ -773,7 +772,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ontario.LIFT_NET_INCOME_AND_REPAYMENTS: SumLine(
             ontario.LIFT_NET_INCOME_AND_REPAYMENTS,
             (
-                (NET_INCOME_BEFORE_ADJUSTMENTS, D("115000")),
+                (TOSI_ADJUSTED_NET_INCOME, D("115000")),
                 (UCCB_REPAYMENT, D("0")),
                 (RDSP_INCOME_REPAYMENT, D("0")),
             ),
@@ -1004,10 +1003,53 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ((ontario.DIVIDEND_TAX_CREDIT, D("0")),),
             D("0"),
         ),
-        # ON428 line 69 "Line 62 plus line 68": the Ontario tax after credits plus the surtax.
+        # Form T1206 Part 3 line 36 "Add lines 34 and 35", line 46 "Add lines 42 and 45" and line
+        # 50 (line 47, as line 49 is not wired); ON428 line 55 "Line 53 plus line 54", line 64
+        # (line 54 carried), and the health premium chart's line 1 (the taxable income plus the
+        # total split income, T1206 line 4): Return A has no split income and no Ontario
+        # disability amount.
+        ontario.SPLIT_INCOME_LINE_36: SumLine(
+            ontario.SPLIT_INCOME_LINE_36,
+            (
+                (ontario.DISABILITY_AMOUNT_FOR_SELF, D("0")),
+                (ontario.DISABILITY_TRANSFERRED_AMOUNT, D("0")),
+            ),
+            D("0"),
+        ),
+        ontario.SPLIT_INCOME_LINE_46: SumLine(
+            ontario.SPLIT_INCOME_LINE_46,
+            ((ontario.SPLIT_INCOME_LINE_42, D("0")), (ontario.SPLIT_INCOME_LINE_45, D("0"))),
+            D("0"),
+        ),
+        ontario.SPLIT_INCOME_LINE_50: SumLine(
+            ontario.SPLIT_INCOME_LINE_50, ((ontario.SPLIT_INCOME_LINE_47, D("0")),), D("0")
+        ),
+        ontario.ONTARIO_TAX_WITH_SPLIT_INCOME: SumLine(
+            ontario.ONTARIO_TAX_WITH_SPLIT_INCOME,
+            (
+                (ONTARIO_TAX_AFTER_CREDITS, D("7671.98")),
+                (ontario.ONTARIO_TAX_ON_SPLIT_INCOME, D("0")),
+            ),
+            D("7671.98"),
+        ),
+        ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX: SumLine(
+            ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX,
+            ((ontario.ONTARIO_TAX_ON_SPLIT_INCOME, D("0")),),
+            D("0"),
+        ),
+        ontario.HEALTH_PREMIUM_INCOME: SumLine(
+            ontario.HEALTH_PREMIUM_INCOME,
+            ((TAXABLE_INCOME, D("115000")), (TOTAL_SPLIT_INCOME, D("0"))),
+            D("115000"),
+        ),
+        # ON428 line 69 "Line 62 plus line 68": line 62 (line 55, the tax with the tax on split
+        # income) plus the surtax.
         ONTARIO_TAX_WITH_SURTAX: SumLine(
             ONTARIO_TAX_WITH_SURTAX,
-            ((ONTARIO_TAX_AFTER_CREDITS, D("7671.98")), (ONTARIO_SURTAX, D("523.79"))),
+            (
+                (ontario.ONTARIO_TAX_WITH_SPLIT_INCOME, D("7671.98")),
+                (ONTARIO_SURTAX, D("523.79")),
+            ),
             D("8195.77"),
         ),
         # ON428 line 73 "Line 71 plus line 72 =": line 72 is 0, not triggered.
@@ -1027,11 +1069,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("294.00"),
         ),
         # ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your return.
-        # Ontario tax": line 88 is line 86, as line 87 is 0.
+        # Ontario tax": T1206 line 52 (the more of line 50 and line 88) in place of line 88.
         ONTARIO_TAX: SumLine(
             ONTARIO_TAX,
             (
-                (ONTARIO_TAX_AFTER_FOOD_CREDIT, D("8195.77")),
+                (ontario.SPLIT_INCOME_LINE_52, D("8195.77")),
                 (ONTARIO_HEALTH_PREMIUM, D("750")),
             ),
             D("8945.77"),
@@ -1158,11 +1200,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("958.41"),
         ),
-        # ON479 line 8 "Line 6 plus line 7 Family net income": the net income (line 6) and the
-        # spouse's (line 7, 0 with no spouse).
+        # ON479 line 8 "Line 6 plus line 7 Family net income": the TOSI-adjusted net income, not
+        # below zero (line 6), and the spouse's (line 7, 0 with no spouse).
         SENIORS_CARE_FAMILY_NET_INCOME: SumLine(
             SENIORS_CARE_FAMILY_NET_INCOME,
-            ((NET_INCOME, D("115000.00")), (SPOUSE_NET_INCOME, D("0"))),
+            (
+                (TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO, D("115000.00")),
+                (SPOUSE_NET_INCOME, D("0")),
+            ),
             D("115000.00"),
         ),
         # ON479 line 18 "Add lines 1, 2, 13, 14, 16, and 17.": lines 1, 2, 13, 14, 16 and 17, in

@@ -13,7 +13,6 @@ from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.catalog import (
     EMPLOYMENT_INCOME,
-    NET_INCOME_BEFORE_ADJUSTMENTS,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -21,6 +20,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_RDSP_INCOME_REPAYMENT,
     SPOUSE_UCCB_REPAYMENT,
     SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT,
+    TOSI_ADJUSTED_NET_INCOME,
     UCCB_REPAYMENT,
     UNIVERSAL_CHILD_CARE_BENEFIT,
 )
@@ -63,7 +63,8 @@ STEPS = {
     ),
     # Lines 6 to 9: line 6 "Net income from line 23600 of your return (or the amount you would
     # have entered if the instructions on line 23600 said "if negative, show in brackets")",
-    # the net income before adjustments, which is not floored at zero; line 7 "Amount from line
+    # the TOSI-adjusted net income of Form T1206 Part 1 line 6 in its place, which is not floored
+    # at zero; line 7 "Amount from line
     # 21300 of your return", the UCCB repayment; line 8 "Amount of registered disability
     # savings plan (RDSP) income repayment included on line 23200 of your return"; and line 9
     # "Add lines 6 to 8.", in line order.
@@ -72,7 +73,7 @@ STEPS = {
         params={},
         consumes={
             "parts": (
-                "ca/net_income_before_adjustments",
+                "ca/tosi_adjusted_net_income",
                 "ca/uccb_repayment",
                 "ca/rdsp_income_repayment",
             )
@@ -277,7 +278,7 @@ WIRING = {
     (CappedAmount, frozenset({LIFT_CREDIT_BEFORE_MAXIMUM}), frozenset({LIFT_MAXIMUM_CREDIT})),
     (
         Sum,
-        frozenset({NET_INCOME_BEFORE_ADJUSTMENTS, UCCB_REPAYMENT, RDSP_INCOME_REPAYMENT}),
+        frozenset({TOSI_ADJUSTED_NET_INCOME, UCCB_REPAYMENT, RDSP_INCOME_REPAYMENT}),
         frozenset({ontario.LIFT_NET_INCOME_AND_REPAYMENTS}),
     ),
     (

@@ -1565,6 +1565,28 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(ONTARIO_HEALTH_PREMIUM) is not worksheet.producer_of(
         LIFT_REDUCTION
     )
+    # The Ontario half of Form T1206 Part 3, one step per line: lines 33, 38, 42 and 45 rates,
+    # 36, 46 and 50 sums, 39 and 47 differences, 52 the greater of line 50 and ON428 line 88.
+    for kind in (
+        ontario.ONTARIO_TAX_ON_SPLIT_INCOME,
+        ontario.SPLIT_INCOME_LINE_38,
+        ontario.SPLIT_INCOME_LINE_42,
+        ontario.SPLIT_INCOME_LINE_45,
+    ):
+        assert isinstance(worksheet.producer_of(kind), ApplyRate), kind.identifier
+    for kind in (
+        ontario.SPLIT_INCOME_LINE_36,
+        ontario.SPLIT_INCOME_LINE_46,
+        ontario.SPLIT_INCOME_LINE_50,
+        ontario.ONTARIO_TAX_WITH_SPLIT_INCOME,
+        ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX,
+        ontario.HEALTH_PREMIUM_INCOME,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
+    for kind in (ontario.SPLIT_INCOME_LINE_39, ontario.SPLIT_INCOME_LINE_47):
+        assert isinstance(worksheet.producer_of(kind), Subtract), kind.identifier
+    assert isinstance(worksheet.producer_of(ontario.ONTARIO_SURTAX_BASE), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(ontario.SPLIT_INCOME_LINE_52), GreaterOf)
     assert isinstance(worksheet.producer_of(ONTARIO_TAX), Sum)
     assert worksheet.producer_of(ONTARIO_TAX) is not worksheet.producer_of(ONTARIO_TAX_WITH_SURTAX)
     assert isinstance(worksheet.producer_of(NET_FEDERAL_TAX), Sum)

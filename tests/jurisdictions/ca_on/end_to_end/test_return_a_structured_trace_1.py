@@ -270,6 +270,40 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CENT,
             D("0"),
         ),
+        # Form T1206 Part 3 lines 33 (20.53% of the total split income), 38 (5.05% of line 36),
+        # 42 (10% of the line 18 amount) and 45 (2.9863% of the line 2 amount), on no split income.
+        ontario.ONTARIO_TAX_ON_SPLIT_INCOME: RateAppliedLine(
+            ontario.ONTARIO_TAX_ON_SPLIT_INCOME,
+            TOTAL_SPLIT_INCOME,
+            D("0"),
+            Rate(D("0.2053")),
+            CENT,
+            D("0"),
+        ),
+        ontario.SPLIT_INCOME_LINE_38: RateAppliedLine(
+            ontario.SPLIT_INCOME_LINE_38,
+            ontario.SPLIT_INCOME_LINE_36,
+            D("0"),
+            Rate(D("0.0505")),
+            CENT,
+            D("0"),
+        ),
+        ontario.SPLIT_INCOME_LINE_42: RateAppliedLine(
+            ontario.SPLIT_INCOME_LINE_42,
+            SPLIT_INCOME_LINE_18,
+            D("0"),
+            Rate(D("0.1")),
+            CENT,
+            D("0"),
+        ),
+        ontario.SPLIT_INCOME_LINE_45: RateAppliedLine(
+            ontario.SPLIT_INCOME_LINE_45,
+            SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+            D("0"),
+            Rate(D("0.029863")),
+            CENT,
+            D("0"),
+        ),
         TAXABLE_CAPITAL_GAINS: RateAppliedLine(
             TAXABLE_CAPITAL_GAINS, CAPITAL_GAIN, D("20000"), Rate(D("0.5")), CENT, D("10000")
         ),

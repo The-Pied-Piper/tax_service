@@ -199,6 +199,7 @@ inputs:
   - ca-on/disability_dependants
   - ca/disability_dependants
   - ca/disability_amount_for_self
+  - ca-on/disability_amount_for_self
   - ca/infirm_children
   - ca/born_in_1960_or_earlier
   - ca/spouse_net_income
