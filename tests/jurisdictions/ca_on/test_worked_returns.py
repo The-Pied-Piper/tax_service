@@ -2,8 +2,8 @@
 
 One test runs per `*.yaml` file in `returns/` (the pytest id is the file stem): the file's inputs
 go through the service the composition root builds, and each expected line must equal the
-worksheet's artifact exactly. A file must list every output its manifest declares. Adding a
-return is adding a file.
+worksheet's artifact exactly. A line or input a file leaves out is blank: an absent line must
+compute to zero. Adding a return is adding a file.
 """
 
 from __future__ import annotations
@@ -26,21 +26,27 @@ from app.jurisdictions.ca.catalog import (
 from app.jurisdictions.ca_on.catalog import CLAIMED_AS_ELIGIBLE_DEPENDANT
 from app.main import build_tax_computation
 from app.registrations import JURISDICTIONS
-from tests.jurisdictions.ca_on.worked_return import WorkedReturn, WorkedReturnError
+from tests.jurisdictions.ca_on.worked_return import WorkedReturn
 
 RETURNS = Path(__file__).parent / "returns"
 
 
-def check(path: Path) -> None:
-    """Load the worked return at `path`, compute it and assert every expected line."""
-    service = build_tax_computation()  # registers the catalogs the loader resolves through
-    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+def load(path: Path) -> WorkedReturn:
+    """The worked return at `path` with its blank lines and inputs filled in."""
+    artifacts = ArtifactRegistry.shared()
+    worked = WorkedReturn.load(path, artifacts)
     manifest = (
         YamlJurisdictionSource(JURISDICTIONS.roots())
         .get_jurisdiction(worked.jurisdiction)
         .manifest_for(worked.tax_year)
     )
-    worked.require_outputs(manifest.outputs)
+    return worked.with_blanks(manifest.inputs, manifest.outputs, artifacts)
+
+
+def check(path: Path) -> None:
+    """Load the worked return at `path`, compute it and assert every expected line."""
+    service = build_tax_computation()  # registers the catalogs the loader resolves through
+    worked = load(path)
 
     worksheet = service.compute(worked.jurisdiction, worked.tax_year, *worked.inputs)
 
@@ -622,7 +628,7 @@ def test_return_x_claims_two_other_dependants_medical_expenses_on_line_33199() -
 def test_return_af_claims_net_capital_losses_of_other_years_on_line_25300() -> None:
     path = RETURNS / "2025_return_af.yaml"
     build_tax_computation()  # registers the catalogs the loader resolves through
-    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+    worked = load(path)
 
     inputs = {a.kind.identifier: a.value for a in worked.inputs}
     assert inputs["ca/capital_gain"] == Decimal("5000")
@@ -699,7 +705,7 @@ def test_return_ah_claims_the_refundable_medical_expense_supplement_on_line_4520
 def test_return_aj_applies_for_the_energy_and_property_tax_credit_on_form_on_ben() -> None:
     path = RETURNS / "2025_return_aj.yaml"
     build_tax_computation()  # registers the catalogs the loader resolves through
-    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+    worked = load(path)
 
     # Form ON-BEN line 61020 is ticked and line 61100 is the rent paid; the other tick boxes are
     # not ticked and the other Part A lines are $0. Each line is an input and, as entered, an
@@ -751,11 +757,20 @@ def test_a_wrong_expected_amount_fails_naming_the_file_and_line(tmp_path: Path) 
         check(path)
 
 
-def test_a_file_missing_a_declared_output_fails_naming_the_file_and_output(
-    tmp_path: Path,
-) -> None:
+def test_a_line_and_an_input_left_out_that_are_blank_pass(tmp_path: Path) -> None:
+    text = LOW_INCOME.replace('  ca/capital_gain: "0"\n', "").replace(
+        '  ca/taxable_capital_gains: "0"\n', ""
+    )
+    assert text != LOW_INCOME
+    path = tmp_path / "blank.yaml"
+    path.write_text(text)
+
+    check(path)
+
+
+def test_a_line_left_out_that_fires_fails_naming_the_file_and_line(tmp_path: Path) -> None:
     path = tmp_path / "partial.yaml"
     path.write_text(LOW_INCOME.replace('  ca/refund_or_balance_owing: "-2133"\n', ""))
 
-    with pytest.raises(WorkedReturnError, match=r"partial\.yaml.*ca/refund_or_balance_owing"):
+    with pytest.raises(AssertionError, match=r"partial\.yaml: ca/refund_or_balance_owing"):
         check(path)

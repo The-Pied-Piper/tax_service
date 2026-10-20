@@ -336,16 +336,17 @@ def test_a_count_under_expected_that_is_not_decimal_digits_names_the_file_and_ke
         WorkedReturn.load(path, counts)
 
 
-def test_a_count_under_expected_is_checked_when_the_outputs_are_required(
+def test_a_count_under_expected_is_kept_when_blanks_are_filled(
     tmp_path: Path, counts: ArtifactRegistry
 ) -> None:
     path = write(tmp_path, with_expected_count('"3"'), "ok.yaml")
     worked = WorkedReturn.load(path, counts)
 
-    worked.require_outputs(frozenset({"ca/federal_basic_tax", "ex/count"}))
+    filled = worked.with_blanks(
+        frozenset({"ex/count"}), frozenset({"ca/federal_basic_tax", "ex/count"}), counts
+    )
 
-    with pytest.raises(WorkedReturnError, match=r"ok\.yaml: expected: missing declared outputs"):
-        worked.require_outputs(frozenset({"ca/federal_basic_tax", "ex/count", "ex/other_count"}))
+    assert filled == worked
 
 
 def test_loads_the_ontario_counts_as_integers(tmp_path: Path, artifacts: ArtifactRegistry) -> None:
@@ -499,15 +500,82 @@ def test_a_file_that_is_not_yaml_names_the_file(
         WorkedReturn.load(path, artifacts)
 
 
-def test_requires_every_declared_output(tmp_path: Path, artifacts: ArtifactRegistry) -> None:
+def test_an_expected_line_left_out_is_expected_to_be_zero(
+    tmp_path: Path, artifacts: ArtifactRegistry
+) -> None:
     worked = WorkedReturn.load(write(tmp_path, VALID, "valid.yaml"), artifacts)
 
-    worked.require_outputs(frozenset({"ca/federal_basic_tax"}))
+    filled = worked.with_blanks(
+        frozenset({"ca/taxable_income"}),
+        frozenset({"ca/federal_basic_tax", "ca/taxable_capital_gains"}),
+        artifacts,
+    )
+
+    assert filled.inputs == worked.inputs
+    assert filled.expected == (
+        *worked.expected,
+        Artifact(artifacts.kind("ca/taxable_capital_gains"), D(0)),
+    )
+
+
+def test_an_input_left_out_is_blank_an_amount_a_count_or_no_records(
+    tmp_path: Path, records: ArtifactRegistry
+) -> None:
+    records.register(COUNT.identifier, COUNT)
+    text = with_section("inputs", 'inputs:\n  ex/count: "3"\n')
+    worked = WorkedReturn.load(write(tmp_path, text, "valid.yaml"), records)
+
+    filled = worked.with_blanks(
+        frozenset({"ex/count", "ex/dependants", "ex/months_resident", "ex/dependant_net_income"}),
+        frozenset(),
+        records,
+    )
+
+    blanks = {artifact.kind.identifier: artifact.value for artifact in filled.inputs}
+    assert blanks["ex/count"] == 3
+    assert blanks["ex/months_resident"] == 0
+    assert type(blanks["ex/months_resident"]) is int
+    assert blanks["ex/dependant_net_income"] == D(0)
+    kind = records.kind("ex/dependants")
+    assert isinstance(kind, RecordListKind)
+    assert blanks["ex/dependants"] == RecordList(kind.fields, [])
+    assert filled.expected == worked.expected
+
+
+def test_a_blank_never_replaces_a_line_the_file_gives(
+    tmp_path: Path, artifacts: ArtifactRegistry
+) -> None:
+    worked = WorkedReturn.load(write(tmp_path, VALID, "valid.yaml"), artifacts)
+
+    filled = worked.with_blanks(
+        frozenset({"ca/taxable_income"}), frozenset({"ca/federal_basic_tax"}), artifacts
+    )
+
+    assert filled == worked
+
+
+def test_a_declared_identifier_nothing_registers_fails_naming_the_file(
+    tmp_path: Path, artifacts: ArtifactRegistry
+) -> None:
+    worked = WorkedReturn.load(write(tmp_path, VALID, "valid.yaml"), artifacts)
+
     with pytest.raises(
-        WorkedReturnError,
-        match=r"valid\.yaml: expected: missing declared outputs \['ca-on/other'\]",
+        WorkedReturnError, match=r"valid\.yaml: inputs: unknown artifact identifier 'ca/nothing'"
     ):
-        worked.require_outputs(frozenset({"ca/federal_basic_tax", "ca-on/other"}))
+        worked.with_blanks(frozenset({"ca/nothing"}), frozenset(), artifacts)
+
+
+def test_a_record_list_has_no_blank_as_an_expected_line(
+    tmp_path: Path, records: ArtifactRegistry
+) -> None:
+    worked = WorkedReturn.load(
+        write(tmp_path, with_section("inputs", DEPENDANTS), "valid.yaml"), records
+    )
+
+    with pytest.raises(
+        WorkedReturnError, match=r"valid\.yaml: expected: 'ex/dependants' holds a RecordList"
+    ):
+        worked.with_blanks(frozenset(), frozenset({"ex/dependants"}), records)
 
 
 def test_discovers_every_yaml_file_in_name_order(tmp_path: Path) -> None:
