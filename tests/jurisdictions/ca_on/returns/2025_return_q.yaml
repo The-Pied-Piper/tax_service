@@ -67,9 +67,10 @@
 # Schedule 9 inputs of this return are $0 (a chosen figure), so its charitable donation
 # claim is not entered there, and lines 116 (34900) and 117 (34990) are $0 and line 35000
 # is line 33800. Not yet computed, so not in this file: any deduction from net income, the
-# social benefits repayment, capital losses and the Ontario caregiver amount (ON428 line
-# 58185), which the two infirm dependants would also give rise to, so this return's
-# Ontario tax is without it. The age amount (line 30100), the spouse or common-law partner
+# social benefits repayment and capital losses. The Ontario caregiver amount (ON428 line
+# 58185) is computed from an empty list of dependants, so it is $0 and this return's
+# Ontario tax is without it, though the two infirm dependants would also give rise to it.
+# The age amount (line 30100), the spouse or common-law partner
 # amount (line 30300) and the Canada caregiver amount for a spouse or common-law partner
 # (line 30425) are computed, from inputs this return leaves at their no-claim values, so
 # each is $0; the infirm dependants are not claimed there, nor as an eligible dependant
@@ -129,9 +130,10 @@ description: >-
   $3,798.00 = $12,399.00; pooling the net incomes instead ($28,798.00 - $30,000, negative)
   would give $0, the wrong figure. This return does not claim the amount for an eligible
   dependant (line 30400) for these dependants, so line 30400 and ON428 line 58160 stay $0.
-  The Ontario caregiver amount (ON428 line 58185) is not yet computed, so the Ontario
-  total is unchanged and the Ontario tax is without a caregiver amount for these
-  dependants. The rate is applied once to each total: 14.5% federally (line 33800) and
+  The Ontario caregiver amount (ON428 line 58185) is computed from an empty list of
+  dependants, so it is $0, the Ontario total is unchanged and the Ontario tax is without a
+  caregiver amount for these dependants. The rate is applied once to each total: 14.5%
+  federally (line 33800) and
   5.05% for Ontario (ON428 line 58840). Each product, rounded half-up to the cent, is its
   form's non-refundable tax credits: the total federal non-refundable tax credits (line
   35000) of $4,783.40 and the Ontario non-refundable tax credits (ON428 line 61500) of
@@ -451,7 +453,8 @@ sources:
     which changes none of them; lines 5, 30400 and 58160 take amounts already in cents. Not
     triggered by this return: Schedule 5 line 2. Line 30425 is computed, from inputs this
     return leaves at their no-claim values, so it is 0; the Ontario caregiver amount (ON428
-    line 58185) is not yet computed. Line 30450 is claimed for two infirm dependants,
+    line 58185) is computed from an empty list of dependants, so it is 0. Line 30450 is
+    claimed for two infirm dependants,
     derived in the next entry, and the amount for an eligible dependant (line 30400) is not
     claimed for them.
   - >-
@@ -873,6 +876,7 @@ inputs:
   ca/infirm_dependants:
     - ca/dependant_net_income: "5000"
     - ca/dependant_net_income: "25000"
+  ca-on/caregiver_dependants: []
   ca/infirm_children: "0"
   ca/born_in_1960_or_earlier: "0"
   ca/spouse_net_income: "0"

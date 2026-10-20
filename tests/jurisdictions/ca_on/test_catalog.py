@@ -15,7 +15,8 @@ import pytest
 import app.jurisdictions.ca_on
 import app.jurisdictions.ca_on.catalog
 from app.domain.artifact import ArtifactCatalog, ArtifactKind, ArtifactRegistry
-from app.domain.record_list import RecordListKind
+from app.domain.record_list import RecordList, RecordListKind
+from app.jurisdictions.ca.catalog import DEPENDANT_NET_INCOME, INFIRM_DEPENDANTS
 from app.jurisdictions.ca_on.catalog import (
     AGE_AMOUNT,
     AGE_AMOUNT_BEFORE_COUNT,
@@ -24,7 +25,10 @@ from app.jurisdictions.ca_on.catalog import (
     AGE_MAXIMUM,
     AGE_REDUCTION,
     BASIC_PERSONAL_AMOUNT,
+    CAREGIVER_AMOUNT,
+    CAREGIVER_DEPENDANTS,
     CATALOG,
+    CLAIMED_AS_ELIGIBLE_DEPENDANT,
     COMMUNITY_FOOD_PROGRAM_CREDIT,
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
@@ -125,6 +129,9 @@ REGISTERED = frozenset(
         "ca-on/eligible_dependant_amount_before_maximum",
         "ca-on/eligible_dependant_amount_before_count",
         "ca-on/eligible_dependant_amount",
+        "ca-on/claimed_as_eligible_dependant",
+        "ca-on/caregiver_dependants",
+        "ca-on/caregiver_amount",
         "ca-on/non_refundable_credit_amounts",
         "ca-on/credit_amounts_at_credit_rate",
         "ca-on/donations_first_tier_credit",
@@ -198,10 +205,15 @@ REGISTERED = frozenset(
     }
 )
 # ON428 lines 75 (line 60969) and 76 (line 60970): the numbers of dependent children and of
-# dependants, counted, not money.
-COUNTS = frozenset({"ca-on/dependent_children", "ca-on/dependants"})
-# Form T1221 lines 1 to 3, one line per corporation or slip: the record list of the slips.
-RECORD_LISTS = frozenset({"ca-on/flow_through_share_slips"})
+# dependants, counted, not money; and Worksheet ON428's "Line 58185 - Ontario caregiver amount"
+# line 4, whether a dependant is the one claimed on line 58160 (0 or 1), a field of each record.
+COUNTS = frozenset(
+    {"ca-on/dependent_children", "ca-on/dependants", "ca-on/claimed_as_eligible_dependant"}
+)
+# Form T1221 lines 1 to 3, one line per corporation or slip: the record list of the slips; and
+# Worksheet ON428's "Line 58185 - Ontario caregiver amount", "Complete one column for each
+# dependant": the record list of its dependants.
+RECORD_LISTS = frozenset({"ca-on/flow_through_share_slips", "ca-on/caregiver_dependants"})
 
 
 @pytest.fixture
@@ -247,6 +259,9 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
         is ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT
     )
     assert registry.get("ca-on/eligible_dependant_amount") is ELIGIBLE_DEPENDANT_AMOUNT
+    assert registry.get("ca-on/claimed_as_eligible_dependant") is CLAIMED_AS_ELIGIBLE_DEPENDANT
+    assert registry.get("ca-on/caregiver_dependants") is CAREGIVER_DEPENDANTS
+    assert registry.get("ca-on/caregiver_amount") is CAREGIVER_AMOUNT
     assert registry.get("ca-on/non_refundable_credit_amounts") is NON_REFUNDABLE_CREDIT_AMOUNTS
     assert registry.get("ca-on/credit_amounts_at_credit_rate") is CREDIT_AMOUNTS_AT_CREDIT_RATE
     assert registry.get("ca-on/donations_first_tier_credit") is DONATIONS_FIRST_TIER_CREDIT
@@ -393,6 +408,35 @@ def test_the_flow_through_share_slips_are_a_record_list_of_the_slip_expenses(
         assert kind.identifier.startswith(f"{app.jurisdictions.ca_on.NAMESPACE}/")
     assert FLOW_THROUGH_SHARE_SLIPS.fields == (FLOW_THROUGH_SHARE_SLIP_EXPENSES,)
     assert FLOW_THROUGH_SHARE_SLIP_EXPENSES.value_type is Decimal
+
+
+def test_the_caregiver_dependants_are_a_record_list_of_net_income_and_whether_claimed_on_58160(
+    registry: ArtifactRegistry,
+) -> None:
+    # Worksheet ON428 "Line 58185 - Ontario caregiver amount": per dependant, line 2 "Dependant's
+    # net income from line 23600 of their return" and line 4 "Amount claimed for this dependant
+    # on line 58160 of your Form ON428, if any", which the record holds as whether this is the
+    # dependant claimed there (0 or 1). Its own list: the Ontario sets differ from line 30450's.
+    assert "ca-on/caregiver_dependants" in RECORD_LISTS
+    assert isinstance(CAREGIVER_DEPENDANTS, RecordListKind)
+    assert CAREGIVER_DEPENDANTS.identifier == "ca-on/caregiver_dependants"
+    assert CAREGIVER_DEPENDANTS.value_type is RecordList
+    assert CAREGIVER_DEPENDANTS.fields == (DEPENDANT_NET_INCOME, CLAIMED_AS_ELIGIBLE_DEPENDANT)
+    assert registry.get("ca-on/caregiver_dependants") is CAREGIVER_DEPENDANTS
+    assert CAREGIVER_DEPENDANTS is not INFIRM_DEPENDANTS
+    assert CAREGIVER_DEPENDANTS.fields[0] is DEPENDANT_NET_INCOME
+    assert CLAIMED_AS_ELIGIBLE_DEPENDANT.identifier == "ca-on/claimed_as_eligible_dependant"
+    assert CLAIMED_AS_ELIGIBLE_DEPENDANT.value_type is int
+    assert CLAIMED_AS_ELIGIBLE_DEPENDANT.non_negative is True
+
+
+def test_the_caregiver_amount_is_a_non_negative_decimal(registry: ArtifactRegistry) -> None:
+    # ON428 line 17 and line 58185 "Ontario caregiver amount (use Worksheet ON428)": the total of
+    # the worksheet's line 5, each "if negative, enter "0"".
+    assert CAREGIVER_AMOUNT.identifier == "ca-on/caregiver_amount"
+    assert CAREGIVER_AMOUNT.value_type is Decimal
+    assert CAREGIVER_AMOUNT.non_negative is True
+    assert registry.kind("ca-on/caregiver_amount") is CAREGIVER_AMOUNT
 
 
 def test_every_kind_but_the_record_lists_is_declared_non_negative(

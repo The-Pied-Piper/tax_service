@@ -13,6 +13,7 @@ from decimal import Decimal
 from app.domain.artifact import ArtifactCatalog
 from app.domain.record_list import RecordListKind
 from app.domain.registry import Namespace
+from app.jurisdictions.ca.catalog import DEPENDANT_NET_INCOME
 from app.jurisdictions.ca_on import NAMESPACE
 
 CATALOG = ArtifactCatalog(Namespace(NAMESPACE))
@@ -96,14 +97,38 @@ ELIGIBLE_DEPENDANT_AMOUNT = CATALOG.declare("eligible_dependant_amount", Decimal
 eligible dependant claimed for, the T1 line 30400 count, a part of the total of the Ontario credit
 amounts."""
 
+CLAIMED_AS_ELIGIBLE_DEPENDANT = CATALOG.declare(
+    "claimed_as_eligible_dependant", int, non_negative=True
+)
+"""Whether a dependant is the one claimed on line 58160, Worksheet ON428 "Line 58185 - Ontario
+caregiver amount" line 4 "Amount claimed for this dependant on line 58160 of your Form ON428, if
+any": 1 for the dependant claimed there, 0 for any other (any other count is read as claimed), a
+field of each record of the caregiver dependants."""
+
+CAREGIVER_DEPENDANTS = RecordListKind.declare(
+    CATALOG, "caregiver_dependants", fields=(DEPENDANT_NET_INCOME, CLAIMED_AS_ELIGIBLE_DEPENDANT)
+)
+"""Dependants for the Ontario caregiver amount, Worksheet ON428 "Line 58185 - Ontario caregiver
+amount" "Complete one column for each dependant": a starting list with one record for each
+dependant, holding line 2 "Dependant's net income from line 23600 of their return" and whether it
+is the dependant claimed on line 58160 (line 4). The caller lists only the dependants who
+qualify."""
+
+CAREGIVER_AMOUNT = CATALOG.declare("caregiver_amount", Decimal, non_negative=True)
+"""Ontario caregiver amount, ON428 line 17 and line 58185 "Ontario caregiver amount (use Worksheet
+ON428)": Worksheet ON428 line 6 "Add the amounts from line 5 of columns 1, 2, and 3 (and others, if
+any)", each line 5 "Allowable amount for this dependant: line 3 minus line 4 (if negative, enter
+"0")", a part of the total of the Ontario credit amounts."""
+
 NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare(
     "non_refundable_credit_amounts", Decimal, non_negative=True
 )
 """Total of the Ontario non-refundable credit amounts, ON428 line 44 (line 58800) "Line 35 plus
 line 43": the sum of the credit amounts the rate is applied to once, here, in line order, the
 basic personal amount (line 58040), the age amount (line 58080), the spouse or common-law
-partner amount (line 58120), the amount for an eligible dependant (line 58160), the base CPP
-contributions (line 58240) and the EI premiums (line 58300)."""
+partner amount (line 58120), the amount for an eligible dependant (line 58160), the Ontario
+caregiver amount (line 58185), the base CPP contributions (line 58240) and the EI premiums
+(line 58300)."""
 
 CREDIT_AMOUNTS_AT_CREDIT_RATE = CATALOG.declare(
     "credit_amounts_at_credit_rate", Decimal, non_negative=True

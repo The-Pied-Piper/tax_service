@@ -9,6 +9,7 @@ NAMESPACE = "ca-on"
 
 from app.jurisdictions.ca_on.capabilities import (  # noqa: E402
     apply_chosen_rate,
+    caregiver_amount,
     choose_by_range,
     flow_through_share_expenses,
     rate_by_income_band,
@@ -17,6 +18,7 @@ from app.jurisdictions.ca_on.capabilities import (  # noqa: E402
 __all__ = [
     "NAMESPACE",
     "apply_chosen_rate",
+    "caregiver_amount",
     "choose_by_range",
     "flow_through_share_expenses",
     "rate_by_income_band",

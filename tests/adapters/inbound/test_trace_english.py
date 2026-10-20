@@ -30,6 +30,7 @@ from app.domain.trace import (
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
+    CaregiverClaimLessClaimedLine,
     CaregiverClaimLine,
     ChosenByCountLine,
     ChosenByRangeLine,
@@ -1135,6 +1136,71 @@ def test_renders_a_dependants_claim_without_rounding() -> None:
     )
 
 
+# --- an amount claimed per dependant, less what is claimed elsewhere ----------------------
+#
+# The same sentence with the allowable amount before the claimed amount and the claimed amount
+# after it: "dependant 1: <base> less net income <income>, at most <maximum> = <allowable amount>,
+# less claimed <claimed> = <result> (<rounding>)". Every figure prints without trailing zeros.
+
+
+def caregiver_claim_less_claimed(
+    position: int,
+    net_income: str,
+    allowable: str,
+    claimed: str,
+    result: str,
+    rounding: RoundingRule = CENT,
+) -> CaregiverClaimLessClaimedLine:
+    return CaregiverClaimLessClaimedLine(
+        CAREGIVER_AMOUNT,
+        position,
+        Amount(D("26562.00")),
+        D(net_income),
+        Amount(D("6008")),
+        D(allowable),
+        D(claimed),
+        rounding,
+        D(result),
+    )
+
+
+def test_renders_a_dependant_with_nothing_claimed_elsewhere() -> None:
+    assert render(caregiver_claim_less_claimed(1, "5000", "6008.00", "0", "6008.00")) == (
+        "caregiver_amount: dependant 1: 26562 less net income 5000, at most 6008 = 6008, "
+        "less claimed 0 = 6008 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_dependant_with_an_amount_claimed_elsewhere() -> None:
+    assert render(caregiver_claim_less_claimed(2, "5000", "6008.00", "2500.00", "3508.00")) == (
+        "caregiver_amount: dependant 2: 26562 less net income 5000, at most 6008 = 6008, "
+        "less claimed 2500 = 3508 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_dependant_whose_claimed_amount_is_more_than_the_allowable_amount() -> None:
+    assert render(caregiver_claim_less_claimed(1, "25000", "1562.00", "10823.00", "0.00")) == (
+        "caregiver_amount: dependant 1: 26562 less net income 25000, at most 6008 = 1562, "
+        "less claimed 10823 = 0 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_dependant_with_nothing_allowed_before_the_claimed_amount() -> None:
+    assert render(caregiver_claim_less_claimed(3, "30000", "0.00", "0", "0.00")) == (
+        "caregiver_amount: dependant 3: 26562 less net income 30000, at most 6008 = 0, "
+        "less claimed 0 = 0 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_dependant_without_rounding() -> None:
+    line = caregiver_claim_less_claimed(1, "26561.995", "0.005", "0.001", "0.004", NO_ROUNDING)
+
+    assert render(line) == (
+        "caregiver_amount: dependant 1: 26562 less net income 26561.995, at most 6008 = 0.005, "
+        "less claimed 0.001 = 0.004 (no rounding)"
+    )
+
+
 def test_renders_the_total_of_items_by_position() -> None:
     line = ItemsTotalLine(TOTAL, ((1, D("750")), (3, D("800.50"))), D("1550.50"))
 
@@ -1368,6 +1434,21 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
             "(half-up to 0.01)",
         ),
         (
+            CaregiverClaimLessClaimedLine(
+                CAREGIVER_AMOUNT,
+                1,
+                Amount(D("2.656200E+4")),
+                D("5.000E+3"),
+                Amount(D("6.008E+3")),
+                D("6.00800E+3"),
+                D("2.50000E+3"),
+                CENT,
+                D("3.50800E+3"),
+            ),
+            "caregiver_amount: dependant 1: 26562 less net income 5000, at most 6008 = 6008, "
+            "less claimed 2500 = 3508 (half-up to 0.01)",
+        ),
+        (
             ItemsTotalLine(CAREGIVER_AMOUNT, ((1, D("8.60100E+3")),), D("8.60100E+3")),
             "caregiver_amount: item 1 8601 = 8601",
         ),
@@ -1420,6 +1501,17 @@ def test_render_all_renders_each_line_in_order() -> None:
         CaregiverClaimLine(
             CAREGIVER_AMOUNT, 1, Amount(D("5")), D("4"), Amount(D("2")), NO_ROUNDING, D("1")
         ),
+        CaregiverClaimLessClaimedLine(
+            CAREGIVER_AMOUNT,
+            2,
+            Amount(D("5")),
+            D("4"),
+            Amount(D("2")),
+            D("1"),
+            D("0.5"),
+            NO_ROUNDING,
+            D("0.5"),
+        ),
         ItemsTotalLine(CAREGIVER_AMOUNT, ((1, D("1")),), D("1")),
     )
 
@@ -1446,6 +1538,8 @@ def test_render_all_renders_each_line_in_order() -> None:
         "total: item 1 item_amount 1 + item 2 item_amount 2 = 3",
         "amount_chosen: amount_in_range 3, chosen as total is 3",
         "caregiver_amount: dependant 1: 5 less net income 4, at most 2 = 1 (no rounding)",
+        "caregiver_amount: dependant 2: 5 less net income 4, at most 2 = 1, less claimed 0.5 = 0.5 "
+        "(no rounding)",
         "caregiver_amount: item 1 1 = 1",
     )
 
