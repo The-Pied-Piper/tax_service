@@ -636,6 +636,8 @@ inputs:
   ca-on/fertility_expenses: "0"
   ca-on/seniors_transit_paid: "0"
   ca-on/flow_through_share_slips: []
+  ca-on/coop_education_payroll: "0"
+  ca-on/coop_education_placements: []
   ca-on/community_food_program_donations: "0"
   ca-on/political_contributions: "0"
   ca/charitable_donations: "0"
@@ -788,6 +790,14 @@ expected:
   ca-on/flow_through_share_expenses: "0"
   ca-on/flow_through_share_credit: "0"
   ca-on/ontario_credits_subtotal: "0"
+  ca-on/coop_education_payroll_threshold: "400000.00"
+  ca-on/coop_education_payroll_over_threshold: "0"
+  ca-on/coop_education_payroll_range: "200000.00"
+  ca-on/coop_education_phase_out_share: "0"
+  ca-on/coop_education_full_share: "1.00"
+  ca-on/coop_education_remaining_share: "1.00"
+  ca-on/coop_education_placement_count: "0"
+  ca-on/coop_education_credit: "0"
   ca-on/ontario_credits: "0"
   ca/provincial_credits: "0"
   ca/total_credits: "3000"

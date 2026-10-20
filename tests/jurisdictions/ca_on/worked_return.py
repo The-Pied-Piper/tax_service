@@ -3,9 +3,9 @@
 A file under `returns/` names its `jurisdiction` and `tax_year`, describes the taxpayer, lists
 the `sources` its figures were checked against, and maps artifact identifiers to figures under
 `inputs` and `expected`. Every figure is a quoted string, so YAML never reads it as a number: an
-amount is a decimal string, and a count (an `int` kind, only under `inputs`) is a string of
-decimal digits with no sign and no leading zero, such as "0" or "3". A record list (also only
-under `inputs`) is a list of mappings, one per record in order, each keyed by its fields'
+amount is a decimal string, and a count (an `int` kind, under `inputs` or `expected`) is a string
+of decimal digits with no sign and no leading zero, such as "0" or "3". A record list (only under
+`inputs`) is a list of mappings, one per record in order, each keyed by its fields'
 identifiers with figures spelled as above; `[]` is no records. `WorkedReturn.load` checks
 that shape and resolves each identifier through an artifact registry; every failure is a
 WorkedReturnError naming the file and the key, except a value its kind refuses, such as a
@@ -140,12 +140,14 @@ class WorkedReturn:
                 ) from None
             if kind.value_type is Decimal:
                 result.append(Artifact(kind, value.parse_decimal()))
-            elif inputs and kind.value_type is int:
+            elif kind.value_type is int:
                 result.append(Artifact(kind, WorkedReturn._count(value)))
             elif inputs and isinstance(kind, RecordListKind):
                 result.append(Artifact(kind, WorkedReturn._records(value, kind)))
             else:
-                accepted = "an amount, a count or a record list" if inputs else "an amount"
+                accepted = (
+                    "an amount, a count or a record list" if inputs else "an amount or a count"
+                )
                 raise YamlShapeError(
                     f"{value.where}: {identifier!r} holds a {kind.value_type.__name__}, "
                     f"not {accepted}"

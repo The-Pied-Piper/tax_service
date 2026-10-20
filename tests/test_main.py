@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 253
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 261
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -456,6 +456,17 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca-on/flow_through_share_slips",
         "ca-on/flow_through_share_expenses",
         "ca-on/flow_through_share_credit",
+        "ca-on/coop_education_payroll",
+        "ca-on/coop_education_payroll_threshold",
+        "ca-on/coop_education_payroll_over_threshold",
+        "ca-on/coop_education_payroll_range",
+        "ca-on/coop_education_phase_out_share",
+        "ca-on/coop_education_full_share",
+        "ca-on/coop_education_remaining_share",
+        "ca-on/coop_education_placement_expenditures",
+        "ca-on/coop_education_placements",
+        "ca-on/coop_education_placement_count",
+        "ca-on/coop_education_credit",
         "ca-on/ontario_credits_subtotal",
         "ca-on/ontario_credits",
         "ca-on/refund_before_donation",
@@ -482,13 +493,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 253
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 261
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 253
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 261
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

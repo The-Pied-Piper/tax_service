@@ -27,6 +27,7 @@ from app.domain.parameters.rate import Rate
 from app.domain.parameters.rate_table import RateTableRow
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.parameters.taper import Taper
+from app.domain.record_list import RecordListKind
 from app.domain.trace import (
     AtMostLine,
     BracketColumnLine,
@@ -46,8 +47,11 @@ from app.domain.trace import (
     MultipleOverLine,
     OtherDependantMedicalLine,
     PerUnitAmountLine,
+    PlacementCreditLine,
+    QuotientLine,
     RateAppliedLine,
     RateByIncomeBandLine,
+    RecordCountLine,
     RecordTotalLine,
     RoundedTotalLine,
     SubtractedLine,
@@ -1909,3 +1913,138 @@ def test_rejects_a_line_class_it_does_not_know() -> None:
 def test_render_all_rejects_a_line_class_it_does_not_know() -> None:
     with pytest.raises(TypeError, match="MadeUpLine"):
         EnglishTraceRenderer().render_all((SumLine(TOTAL, (), D(1)), MadeUpLine(D(1))))
+
+
+DIVIDEND_AMOUNT = ArtifactKind("ex/dividend_amount", Decimal)
+
+
+DIVISOR_AMOUNT = ArtifactKind("ex/divisor_amount", Decimal)
+
+
+QUOTIENT_AMOUNT = ArtifactKind("ex/quotient_amount", Decimal)
+
+
+ITEM_COUNT = ArtifactKind("ex/item_count", int)
+
+
+ITEMS = RecordListKind("ex/items", fields=(ITEM_AMOUNT,))
+
+
+REMAINING_SHARE = ArtifactKind("ex/remaining_share", Decimal)
+
+
+def test_renders_a_quotient() -> None:
+    line = QuotientLine(
+        QUOTIENT_AMOUNT, DIVIDEND_AMOUNT, D("100000.00"), DIVISOR_AMOUNT, D("200000.00"), D("0.5")
+    )
+
+    assert render(line) == (
+        "quotient_amount: dividend_amount 100000 divided by divisor_amount 200000 = 0.5"
+    )
+
+
+def test_renders_a_quotient_of_zero() -> None:
+    line = QuotientLine(
+        QUOTIENT_AMOUNT, DIVIDEND_AMOUNT, D("0"), DIVISOR_AMOUNT, D("200000.00"), D("0")
+    )
+
+    assert render(line) == (
+        "quotient_amount: dividend_amount 0 divided by divisor_amount 200000 = 0"
+    )
+
+
+def test_renders_a_quotient_with_its_exact_decimal_expansion() -> None:
+    line = QuotientLine(
+        QUOTIENT_AMOUNT, DIVIDEND_AMOUNT, D("1"), DIVISOR_AMOUNT, D("8"), D("0.125")
+    )
+
+    assert render(line) == "quotient_amount: dividend_amount 1 divided by divisor_amount 8 = 0.125"
+
+
+def test_renders_the_count_of_two_records() -> None:
+    assert render(RecordCountLine(ITEM_COUNT, ITEMS, 2)) == "item_count: 2 items in items = 2"
+
+
+def test_renders_the_count_of_one_record_in_the_singular() -> None:
+    assert render(RecordCountLine(ITEM_COUNT, ITEMS, 1)) == "item_count: 1 item in items = 1"
+
+
+def test_renders_the_count_of_no_records() -> None:
+    assert render(RecordCountLine(ITEM_COUNT, ITEMS, 0)) == "item_count: no items in items = 0"
+
+
+def test_renders_the_count_of_twelve_records() -> None:
+    assert render(RecordCountLine(ITEM_COUNT, ITEMS, 12)) == "item_count: 12 items in items = 12"
+
+
+def placement_credit_line(
+    position: int,
+    expenditure: str,
+    line_1: str,
+    line_3: str,
+    line_12: str,
+    line_13: str,
+    rounding: RoundingRule = CENT,
+) -> PlacementCreditLine:
+    return PlacementCreditLine(
+        output=TOTAL,
+        position=position,
+        field=ITEM_AMOUNT,
+        expenditure=D(expenditure),
+        line_1=D(line_1),
+        line_3=D(line_3),
+        line_12=D(line_12),
+        line_13=D(line_13),
+        remaining_share=REMAINING_SHARE,
+        remaining_share_amount=D("0.5"),
+        expenditure_rate=Rate(D("0.25")),
+        supplement_rate=Rate(D("0.05")),
+        maximum=Amount(D("3000")),
+        rounding=rounding,
+    )
+
+
+def test_renders_the_credit_of_a_placement() -> None:
+    line = placement_credit_line(1, "8000", "2000.00", "400.00", "200.000", "2200.00")
+
+    assert render(line) == (
+        "total: item 1 item_amount 8000: line 1 2000, line 3 400, line 12 200, line 13 2200 "
+        "(half-up to 0.01)"
+    )
+
+
+def test_renders_the_credit_of_a_placement_at_a_later_position() -> None:
+    line = placement_credit_line(2, "15000", "3750.00", "750.00", "375.000", "3000.00")
+
+    assert render(line) == (
+        "total: item 2 item_amount 15000: line 1 3750, line 3 750, line 12 375, line 13 3000 "
+        "(half-up to 0.01)"
+    )
+
+
+def test_renders_the_credit_of_a_placement_with_a_zero_line_12() -> None:
+    line = placement_credit_line(1, "8000", "2400.00", "400.00", "0.00", "2400.00")
+
+    assert render(line) == (
+        "total: item 1 item_amount 8000: line 1 2400, line 3 400, line 12 0, line 13 2400 "
+        "(half-up to 0.01)"
+    )
+
+
+def test_renders_the_credit_of_a_placement_with_unrounded_lines_and_a_rounded_line_13() -> None:
+    # Lines 1, 3 and 12 are exact; only line 13 is rounded: 0.14 x 25% = 0.035, x 5% = 0.007.
+    line = placement_credit_line(1, "0.14", "0.0350", "0.0070", "0.0070", "0.04")
+
+    assert render(line) == (
+        "total: item 1 item_amount 0.14: line 1 0.035, line 3 0.007, line 12 0.007, line 13 0.04 "
+        "(half-up to 0.01)"
+    )
+
+
+def test_renders_the_credit_with_no_rounding_named_when_the_rule_is_none() -> None:
+    line = placement_credit_line(1, "8000", "2000", "400", "200", "2200", NO_ROUNDING)
+
+    assert render(line) == (
+        "total: item 1 item_amount 8000: line 1 2000, line 3 400, line 12 200, line 13 2200 "
+        "(no rounding)"
+    )

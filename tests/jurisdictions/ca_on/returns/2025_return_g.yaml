@@ -83,7 +83,7 @@
 # services of $1,200, a chosen figure, at most $3,000, x 15% is line 14, $180.00; with lines
 # 2, 13 and 16 not triggered and line 17 (the focused flow-through share credit, from Form
 # T1221) $0 as there are no T1221 slips, line 18 is $5,180.00, line 19 carries it, line 20
-# is not triggered and line 21, carried to T1 line 47900, is $5,180.00, which raises the
+# is 0 (no placements) and line 21, carried to T1 line 47900, is $5,180.00, which raises the
 # total credits and lowers the refund or balance owing by that amount. The taxpayer's
 # eligibility for these credits is to be confirmed. Amounts are quoted decimal strings,
 # never floats; counts are quoted digit strings. Every output the CA-ON manifest declares
@@ -172,7 +172,7 @@ description: >-
   focused flow-through share tax credit) is the total expenses of Form T1221 line 4, $0 as
   there are no T1221 slips, multiplied by 5%: $0. Lines 2, 13 and 16 are not triggered, so
   line 18 (lines 1, 14 and 17) is $5,000.00 + $180.00 + $0 = $5,180.00, line 19 carries it,
-  line 20 is not triggered and line 21, the Ontario credits, is $5,180.00, entered on T1
+  line 20 is 0 (no placements) and line 21, the Ontario credits, is $5,180.00, entered on T1
   line 47900 (line 165), the provincial credits. The taxpayer's
   eligibility for these credits is to be confirmed. The income tax deducted (line 43700) is
   a chosen $8,000, so the total credits (line 48200) are it plus the benefit plus the
@@ -776,7 +776,7 @@ sources:
     and 3,000 is 1,200, x 15% = 180.00 (an amount paid of 3,500 would be capped at 3,000 and
     give 450.00). Line 17: the total expenses of Form T1221 line 4, 0 as this return has no
     T1221 slips, x 5% = 0. Lines 2, 13 and 16 are not triggered, so line 18 is 5,000.00 +
-    180.00 + 0 = 5,180.00; line 19 carries it; line 20 is not triggered; line 21 is 5,180.00
+    180.00 + 0 = 5,180.00; line 19 carries it; line 20 is 0 (no placements); line 21 is 5,180.00
     + 0 = 5,180.00. The T1 (form 5000-R) line 165 and line 47900: "Provincial or territorial
     credits (complete Form 479, if it applies)" is that 5,180.00. Lines 1 and 14 are
     dollars-and-cents boxes, rounded half-up to the cent, which changes nothing here; lines
@@ -788,6 +788,27 @@ sources:
     this amount on line 63220 of your Form ON479." This return has no T1221 slips, so there
     is no amount of qualifying expenses on lines 1 to 3 and line 4 is 0.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t1221/t1221-25e.pdf
+  - >-
+    CRA, Form ON479 (form 5006-TC), "Ontario co-operative education tax credit": "Line 63260:
+    Number of eligible work placements your business or partnership is claiming under the
+    Ontario co-operative education tax credit program"; "Line 20 and line 63300: Enter the
+    total amount claimed for all qualifying work placements. (maximum $3,000 per student)";
+    "Line 21: Line 19 plus line 20 Enter this amount online 47900 of your return. Ontario
+    credits =" (confirmed 2026-10-19). This return claims no work placements, so its list of
+    placements is empty, line 63260 is 0 and line 20 is the total of no placements, 0, which
+    line 21 adds to line 19. Line 63265 (the answer on a partnership claim) and line 63270 (the
+    business number) are not modelled, to be confirmed.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-tc/5006-tc-25e.txt
+  - >-
+    CRA, Worksheet ON479 (form 5006-D1), "Line 20 - Ontario co-operative education tax
+    credit" (confirmed 2026-10-19): "Line 4: Total salaries and wages paid in the 2024 taxation
+    year"; "Line 5: 400,000.00"; "Line 6: Line 4 minus line 5 (if negative, enter "0") =";
+    "Line 7: 200,000.00"; "Line 8: Line 6 divided by line 7 ="; "Line 9: 1.00"; "Line 11: Line
+    9 minus line 10 (if negative, enter "0") =". The total salaries and wages paid in the 2024
+    taxation year is a chosen 0, which nothing on this return determines: line 6 is 0, line 8
+    is 0 divided by 200,000.00, 0, and line 11 is 1.00 less 0, 1.00. With no work placements
+    there is no chart to complete (lines 1, 3, 12 and 13), so line 20 is 0.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-d1/5006-d1-25e.txt
 inputs:
   ca/employment_income: "60000"
   ca/capital_gain: "0"
@@ -924,6 +945,8 @@ inputs:
   ca-on/fertility_expenses: "24000"
   ca-on/seniors_transit_paid: "1200"
   ca-on/flow_through_share_slips: []
+  ca-on/coop_education_payroll: "0"
+  ca-on/coop_education_placements: []
   ca-on/community_food_program_donations: "0"
   ca-on/political_contributions: "0"
   ca/charitable_donations: "0"
@@ -1074,6 +1097,14 @@ expected:
   ca-on/flow_through_share_expenses: "0"
   ca-on/flow_through_share_credit: "0"
   ca-on/ontario_credits_subtotal: "5180.00"
+  ca-on/coop_education_payroll_threshold: "400000.00"
+  ca-on/coop_education_payroll_over_threshold: "0"
+  ca-on/coop_education_payroll_range: "200000.00"
+  ca-on/coop_education_phase_out_share: "0"
+  ca-on/coop_education_full_share: "1.00"
+  ca-on/coop_education_remaining_share: "1.00"
+  ca-on/coop_education_placement_count: "0"
+  ca-on/coop_education_credit: "0"
   ca-on/ontario_credits: "5180.00"
   ca/provincial_credits: "5180.00"
   ca/total_credits: "13180.00"

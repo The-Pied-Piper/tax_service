@@ -350,13 +350,26 @@ from app.jurisdictions.ca.catalog import (
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.capabilities.caregiver_amount import OntarioCaregiverAmount
 from app.jurisdictions.ca_on.capabilities.choose_by_range import ChooseByRange
+from app.jurisdictions.ca_on.capabilities.coop_education_credit import CoopEducationCredit
 from app.jurisdictions.ca_on.capabilities.flow_through_share_expenses import (
     FlowThroughShareExpenses,
 )
+from app.jurisdictions.ca_on.capabilities.quotient import Quotient
+from app.jurisdictions.ca_on.capabilities.record_count import RecordCount
 from app.jurisdictions.ca_on.catalog import (
     CAREGIVER_DEPENDANTS,
     COMMUNITY_FOOD_PROGRAM_CREDIT,
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
+    COOP_EDUCATION_CREDIT,
+    COOP_EDUCATION_FULL_SHARE,
+    COOP_EDUCATION_PAYROLL,
+    COOP_EDUCATION_PAYROLL_OVER_THRESHOLD,
+    COOP_EDUCATION_PAYROLL_RANGE,
+    COOP_EDUCATION_PAYROLL_THRESHOLD,
+    COOP_EDUCATION_PHASE_OUT_SHARE,
+    COOP_EDUCATION_PLACEMENT_COUNT,
+    COOP_EDUCATION_PLACEMENTS,
+    COOP_EDUCATION_REMAINING_SHARE,
     DEPENDANTS,
     DEPENDENT_CHILDREN,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
@@ -570,6 +583,8 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca-on/fertility_expenses",
             "ca-on/seniors_transit_paid",
             "ca-on/flow_through_share_slips",
+            "ca-on/coop_education_payroll",
+            "ca-on/coop_education_placements",
             "ca-on/community_food_program_donations",
             "ca/charitable_donations",
             "ca/government_donations",
@@ -593,10 +608,11 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     # credit, which nothing else on the return reads (the surtax and line 69 read line 53; line
     # 60, the minimum tax carryover, is not modelled); T1 line 54 (line 23400) "Net income before
     # adjustments", which nothing reads while line 23500 is not wired (the floored net income of
-    # line 56 is the next line of the chain); and Schedule 15 line 58, what the return produces
-    # for the next year's line 52; and the Ontario opportunities fund's line 3 (line 46600) "Net
+    # line 56 is the next line of the chain); Schedule 15 line 58, what the return produces
+    # for the next year's line 52; the Ontario opportunities fund's line 3 (line 46600) "Net
     # refund (line 1 minus line 2)", which nothing reads (line 48400, the refund, is read by that
-    # page's line 1, so it is not a line the computation returns): the lines the computation
+    # page's line 1, so it is not a line the computation returns); and ON479 line 63260, the
+    # number of eligible work placements, which nothing else reads: the lines the computation
     # returns.
     assert found.outputs == frozenset(
         {
@@ -608,6 +624,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/taxable_dividends_other_than_eligible",
             "ca/other_payments_limit_income",
             "ca-on/ontario_tax_less_dividend_credit",
+            "ca-on/coop_education_placement_count",
         }
     )
     # List order carries no meaning: the composition derives the run order from the contracts.
@@ -3134,13 +3151,92 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca-on/ontario_credits_subtotal"},
         ),
+        # Worksheet ON479, "Line 20 - Ontario co-operative education tax credit", line 5
+        # "400,000.00", the dataset as an artifact of the same name.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca-on/coop_education_payroll_threshold"},
+            consumes={},
+            produces={"output": "ca-on/coop_education_payroll_threshold"},
+        ),
+        # Line 6 "Line 4 minus line 5 (if negative, enter "0")": line 4 "Total salaries and wages
+        # paid in the 2024 taxation year" less the threshold.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/coop_education_payroll",
+                "less": "ca-on/coop_education_payroll_threshold",
+            },
+            produces={"output": "ca-on/coop_education_payroll_over_threshold"},
+        ),
+        # Line 7 "200,000.00", the dataset as an artifact of the same name.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca-on/coop_education_payroll_range"},
+            consumes={},
+            produces={"output": "ca-on/coop_education_payroll_range"},
+        ),
+        # Line 8 "Line 6 divided by line 7".
+        CapabilitySelection(
+            name="ca-on/quotient",
+            params={},
+            consumes={
+                "dividend": "ca-on/coop_education_payroll_over_threshold",
+                "divisor": "ca-on/coop_education_payroll_range",
+            },
+            produces={"output": "ca-on/coop_education_phase_out_share"},
+        ),
+        # Line 9 "1.00", the dataset as an artifact of the same name.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca-on/coop_education_full_share"},
+            consumes={},
+            produces={"output": "ca-on/coop_education_full_share"},
+        ),
+        # Line 11 "Line 9 minus line 10 (if negative, enter "0")": line 10 is "Amount from line 8
+        # above", so line 8 itself is taken off line 9.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/coop_education_full_share",
+                "less": "ca-on/coop_education_phase_out_share",
+            },
+            produces={"output": "ca-on/coop_education_remaining_share"},
+        ),
+        # Lines 1, 3, 12 and 13 for each qualifying work placement, and ON479 line 20 and line
+        # 63300 "Enter the total amount claimed for all qualifying work placements. (maximum
+        # $3,000 per student)": the total of the placements' line 13.
+        CapabilitySelection(
+            name="ca-on/coop_education_credit",
+            params={
+                "expenditure_rate": "ca-on/coop_education_expenditure_rate",
+                "supplement_rate": "ca-on/coop_education_supplement_rate",
+                "maximum": "ca-on/coop_education_maximum",
+            },
+            consumes={
+                "placements": "ca-on/coop_education_placements",
+                "remaining_share": "ca-on/coop_education_remaining_share",
+            },
+            produces={"output": "ca-on/coop_education_credit"},
+        ),
+        # ON479 line 63260 "Number of eligible work placements your business or partnership is
+        # claiming under the Ontario co-operative education tax credit program": the number of
+        # placements in the list.
+        CapabilitySelection(
+            name="ca-on/record_count",
+            params={},
+            consumes={"records": "ca-on/coop_education_placements"},
+            produces={"output": "ca-on/coop_education_placement_count"},
+        ),
         # Line 21 "Line 19 plus line 20 Enter this amount online 47900 of your return. Ontario
         # credits =": line 19 "Amount from line 18 of the previous page" carries line 18, and
-        # line 20 (the co-operative education credit) is not triggered.
+        # line 20 is the co-operative education credit.
         CapabilitySelection(
             name="core/sum",
             params={},
-            consumes={"parts": ("ca-on/ontario_credits_subtotal",)},
+            consumes={"parts": ("ca-on/ontario_credits_subtotal", "ca-on/coop_education_credit")},
             produces={"output": "ca-on/ontario_credits"},
         ),
         # T1 line 165 and line 47900 "Provincial or territorial credits (complete Form 479, if it
@@ -3229,7 +3325,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca-on/net_refund"},
         ),
     }
-    assert len(found.capabilities) == 253
+    assert len(found.capabilities) == 261
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -3239,7 +3335,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 253
+    assert len(composition.order) == 261
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -4493,7 +4589,39 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             ),
             frozenset({ONTARIO_CREDITS_SUBTOTAL}),
         ),
-        (Sum, frozenset({ONTARIO_CREDITS_SUBTOTAL}), frozenset({ONTARIO_CREDITS})),
+        (CreditAmount, frozenset(), frozenset({COOP_EDUCATION_PAYROLL_THRESHOLD})),
+        (
+            SubtractNotBelowZero,
+            frozenset({COOP_EDUCATION_PAYROLL, COOP_EDUCATION_PAYROLL_THRESHOLD}),
+            frozenset({COOP_EDUCATION_PAYROLL_OVER_THRESHOLD}),
+        ),
+        (CreditAmount, frozenset(), frozenset({COOP_EDUCATION_PAYROLL_RANGE})),
+        (
+            Quotient,
+            frozenset({COOP_EDUCATION_PAYROLL_OVER_THRESHOLD, COOP_EDUCATION_PAYROLL_RANGE}),
+            frozenset({COOP_EDUCATION_PHASE_OUT_SHARE}),
+        ),
+        (CreditAmount, frozenset(), frozenset({COOP_EDUCATION_FULL_SHARE})),
+        (
+            SubtractNotBelowZero,
+            frozenset({COOP_EDUCATION_FULL_SHARE, COOP_EDUCATION_PHASE_OUT_SHARE}),
+            frozenset({COOP_EDUCATION_REMAINING_SHARE}),
+        ),
+        (
+            CoopEducationCredit,
+            frozenset({COOP_EDUCATION_PLACEMENTS, COOP_EDUCATION_REMAINING_SHARE}),
+            frozenset({COOP_EDUCATION_CREDIT}),
+        ),
+        (
+            RecordCount,
+            frozenset({COOP_EDUCATION_PLACEMENTS}),
+            frozenset({COOP_EDUCATION_PLACEMENT_COUNT}),
+        ),
+        (
+            Sum,
+            frozenset({ONTARIO_CREDITS_SUBTOTAL, COOP_EDUCATION_CREDIT}),
+            frozenset({ONTARIO_CREDITS}),
+        ),
         (Sum, frozenset({ONTARIO_CREDITS}), frozenset({PROVINCIAL_CREDITS})),
         (
             CappedAmount,
