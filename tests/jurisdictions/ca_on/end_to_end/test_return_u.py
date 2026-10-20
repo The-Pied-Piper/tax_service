@@ -236,14 +236,15 @@ def test_return_us_new_lines_join_the_deductions_the_credit_amounts_and_the_tota
     # (2301.75) and 31217 (820.00) are credit amounts of the T1 (line 33500): 16129.00 + 0 + 0 + 0
     # + 0 + 0 + 0 + 2301.75 + 0 + 820.00 + 0 = 19250.75, times 14.5% = 2791.358750, rounded
     # half-up to the cent: 2791.36, so the federal tax after credits is 5331.40 - 2791.36 =
-    # 2540.04. ON428's lines 58280 and 58305 are not wired, so its credit amounts
-    # are 12747 alone, 5.05% of which is 643.7235, rounded half-up to the cent: 643.72. Ontario's
-    # tax on 36768.25 is 1856.8 (rounded half-up to the cent: 36768.25 x 5.05% = 1856.80), less
-    # the credits: 1213.08; it is above twice the reduction amounts (588.00), so there is no
-    # reduction. The health premium row "more than $36,000 but not more than $38,500" is
-    # (36768.25 - 36000) x 6% + 300 = 346.095, rounded half-up to the cent: 346.10, so the
-    # Ontario tax is 1213.08 + 346.10 = 1559.18. Lines 42100 and 42120 join lines 42000 and 42800
-    # in line 43500: 2540.04 + 5533.50 + 820.00 + 1559.18 = 10452.72, with no tax deducted and no
+    # 2540.04. ON428's lines 58280 and 58305 copy lines 31000 and 31217, so its credit amounts
+    # (line 58800) are 12747 + 0 + 0 + 0 + 0 + 2301.75 + 0 + 820.00 = 15868.75, 5.05% of which is
+    # 801.371875, rounded half-up to the cent: 801.37. Ontario's tax on 36768.25 is 1856.8
+    # (rounded half-up to the cent: 36768.25 x 5.05% = 1856.80), less the credits: 1055.43; it is
+    # above twice the reduction amounts (588.00), so there is no reduction. The health premium
+    # row "more than $36,000 but not more than $38,500" is (36768.25 - 36000) x 6% + 300 =
+    # 346.095, rounded half-up to the cent: 346.10, so the
+    # Ontario tax is 1055.43 + 346.10 = 1401.53. Lines 42100 and 42120 join lines 42000 and 42800
+    # in line 43500: 2540.04 + 5533.50 + 820.00 + 1401.53 = 10295.07, with no tax deducted and no
     # credit, a balance owing.
     worksheet = return_u()
 
@@ -255,16 +256,16 @@ def test_return_us_new_lines_join_the_deductions_the_credit_amounts_and_the_tota
     assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("19250.75")
     assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("2791.36")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("2540.04")
-    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("12747")
-    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("643.72")
-    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1213.08")
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("15868.75")
+    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("801.37")
+    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1055.43")
     assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("0")
     assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("346.10")
-    assert worksheet.get(ONTARIO_TAX).value == D("1559.18")
+    assert worksheet.get(ONTARIO_TAX).value == D("1401.53")
     assert worksheet.get(NET_FEDERAL_TAX).value == D("2540.04")
-    assert worksheet.get(TOTAL_PAYABLE).value == D("10452.72")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("10295.07")
     assert worksheet.get(TOTAL_CREDITS).value == D("0")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("10452.72")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("10295.07")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     for line in (
         "deductions_from_total_income: rpp_deduction 0 + rrsp_deduction 0 + fhsa_deduction 0 "
@@ -273,7 +274,8 @@ def test_return_us_new_lines_join_the_deductions_the_credit_amounts_and_the_tota
         "+ support_payments_deduction 0 "
         "+ carrying_charges_interest_expenses_and_other_expenses 0 "
         "+ cpp_deduction_on_self_employment 3231.75 + cpp_enhanced_contributions 0 "
-        "+ exploration_and_development_expenses 0 + other_deductions 0 = 3231.75",
+        "+ exploration_and_development_expenses 0 + other_deductions 0 "
+        "+ total_split_income 0 = 3231.75",
         "non_refundable_credit_amounts: basic_personal_amount 16129 + age_amount 0 "
         "+ spouse_amount 0 + eligible_dependant_amount 0 + spouse_caregiver_amount 0 "
         "+ caregiver_amount 0 + infirm_children_amount 0 + cpp_base_contributions 0 "
@@ -282,10 +284,11 @@ def test_return_us_new_lines_join_the_deductions_the_credit_amounts_and_the_tota
         "+ disability_transferred_amount 0 + medical_claim 0 = 19250.75",
         "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 0 "
         "+ spouse_amount 0 + eligible_dependant_amount 0 + caregiver_amount 0 "
-        "+ cpp_base_contributions 0 + ei_premiums 0 + disability_transferred_amount 0 "
-        "+ medical_claim 0 = 12747",
+        "+ cpp_base_contributions 0 + cpp_base_contributions_on_self_employment 2301.75 "
+        "+ ei_premiums 0 + ei_premiums_on_self_employment 820 "
+        "+ disability_transferred_amount 0 + medical_claim 0 = 15868.75",
         "total_payable: net_federal_tax 2540.04 + cpp_payable_on_self_employment 5533.5 "
-        "+ ei_payable_on_self_employment 820 + ontario_tax 1559.18 = 10452.72",
+        "+ ei_payable_on_self_employment 820 + ontario_tax 1401.53 = 10295.07",
     ):
         assert line in rendered, line
 
@@ -512,7 +515,7 @@ def test_part_4_not_completed_leaves_lines_42100_31000_and_22200_at_zero() -> No
     assert worksheet.get(EI_PREMIUMS_ON_SELF_EMPLOYMENT).value == D("820.00")
     assert worksheet.get(EI_PAYABLE_ON_SELF_EMPLOYMENT).value == D("820.00")
     # No deduction of 3231.75: net income is the 40000.00 of total income, and the payable is the
-    # taxes (10452.72 above, less the 5533.50 of line 42100 and the tax saved by 22200).
+    # taxes (10295.07 above, less the 5533.50 of line 42100 and the tax saved by 22200).
     assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("0")
     assert worksheet.get(NET_INCOME).value == D("40000.00")
 

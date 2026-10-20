@@ -349,7 +349,28 @@ T1229 (the latest is 2023)."""
 OTHER_DEDUCTIONS = CATALOG.declare("other_deductions", Decimal, non_negative=True)
 """Other deductions, T1 line 52 and line 23200 "Other deductions": a starting amount, which
 includes the RDSP income repayment (a starting amount of its own, Federal Worksheet for line
-25000 line 7)."""
+25000 line 7).
+
+It excludes the split income, which Form T1206 Part 1 line 4 (`total_split_income`) adds to line
+23200 as a part of its own.
+"""
+
+SPLIT_INCOME_DIVIDENDS = CATALOG.declare("split_income_dividends", Decimal, non_negative=True)
+"""Split income dividends, Form T1206 Part 1 line 1 (68330) "Part of the taxable amount of
+dividends (eligible and other than eligible) described in the information section received from
+taxable Canadian corporations": a starting amount, the filer's classification under the form's
+pages 1 to 4."""
+
+SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE = CATALOG.declare(
+    "split_income_dividends_other_than_eligible", Decimal, non_negative=True
+)
+"""Split income dividends other than eligible, Form T1206 Part 1 line 2 (68340) "Part of the
+taxable amount of dividends other than eligible dividends, included on line 1, from taxable
+Canadian corporations": a starting amount."""
+
+OTHER_SPLIT_INCOME = CATALOG.declare("other_split_income", Decimal, non_negative=True)
+"""Other split income, Form T1206 Part 1 line 3 "All other split income (see "Split income" on page
+1)": a starting amount."""
 
 CPP_MAXIMUM_PENSIONABLE_EARNINGS = CATALOG.declare(
     "cpp_maximum_pensionable_earnings", Decimal, non_negative=True
@@ -546,6 +567,30 @@ income less total deductions, not below zero.
 
 Line 54 (23400, net income before adjustments) is its own kind, not floored; line 55 (23500,
 social benefits repayment) is not modelled.
+"""
+
+TOTAL_SPLIT_INCOME = CATALOG.declare("total_split_income", Decimal, non_negative=True)
+"""Total split income, Form T1206 Part 1 line 4 (68360) "Total split income: line 1 plus line 3
+Enter this amount on line 23200 of your return.": the dividends of line 1 plus the other split
+income of line 3, a part of the T1 line 23300 deductions and the tax base of line 8 (line 7)."""
+
+TOSI_ADJUSTED_NET_INCOME = CATALOG.declare("tosi_adjusted_net_income", Decimal)
+"""TOSI-adjusted net income, Form T1206 Part 1 line 6 "TOSI-adjusted net income: line 4 plus line 5
+If negative, enter the result in brackets": the total split income plus the net income before
+adjustments (line 5 "or the amount you would have entered if the instructions on line 23600 read
+"if negative, show in brackets""), signed.
+
+The form prints no "(if negative, enter "0")", so the kind is signed; it stands where the form's
+note says "use the negative value when it is part of an adjusted net income calculation".
+"""
+
+TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO = CATALOG.declare(
+    "tosi_adjusted_net_income_not_below_zero", Decimal, non_negative=True
+)
+"""TOSI-adjusted net income, not below zero, Form T1206 Part 1 line 6 "(If the TOSI-adjusted net
+income at line 6 is negative, use the negative value when it is part of an adjusted net income
+calculation, otherwise use zero.)": line 6 with a negative result replaced by zero, for the amounts
+that read it otherwise, the basic personal amount, the age amount and Schedule 6 line 7.
 """
 
 CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION = CATALOG.declare(

@@ -593,17 +593,20 @@ def test_a_declared_identifier_nothing_registers_fails_naming_the_file(
         worked.with_blanks(frozenset({"ca/nothing"}), frozenset(), artifacts)
 
 
-def test_a_record_list_has_no_blank_as_an_expected_line(
+def test_a_record_list_left_out_of_the_expected_lines_is_no_records(
     tmp_path: Path, records: ArtifactRegistry
 ) -> None:
+    # A line the return produces as a list (T776 Area A's closing UCC) is blank when it has no
+    # rows, as a record list input is.
     worked = WorkedReturn.load(
         write(tmp_path, with_section("inputs", DEPENDANTS), "valid.yaml"), records
     )
 
-    with pytest.raises(
-        WorkedReturnError, match=r"valid\.yaml: expected: 'ex/dependants' holds a RecordList"
-    ):
-        worked.with_blanks(frozenset(), frozenset({"ex/dependants"}), records)
+    filled = worked.with_blanks(frozenset(), frozenset({"ex/dependants"}), records)
+
+    kind = records.kind("ex/dependants")
+    assert isinstance(kind, RecordListKind)
+    assert Artifact(kind, RecordList(kind.fields, [])) in filled.expected
 
 
 def test_discovers_every_yaml_file_in_name_order(tmp_path: Path) -> None:
@@ -746,20 +749,31 @@ def test_a_negative_record_amount_fails_at_load_naming_the_item_and_field(
         WorkedReturn.load(path, records)
 
 
-def test_a_record_list_under_expected_names_the_file_and_key(
+def test_a_record_list_under_expected_loads_its_records_in_order(
     tmp_path: Path, records: ArtifactRegistry
 ) -> None:
-    # Record lists are what a return starts from, never a line it expects (unlike counts).
-    text = VALID.replace('  ca/federal_basic_tax: "20146.25"\n', "  ex/dependants: []\n").replace(
-        'inputs:\n  ca/taxable_income: "115000"\n', DEPENDANTS
+    # A return can expect a line it produces as a list (T776 Area A's closing UCC), in the same
+    # spelling as a record list input.
+    expected = DEPENDANTS.replace("inputs:", "expected:", 1)
+    text = with_section("inputs", DEPENDANTS).replace(
+        'expected:\n  ca/federal_basic_tax: "20146.25"\n', expected
     )
-    path = write(tmp_path, text)
+    path = write(tmp_path, text, "ok.yaml")
+    kind = records.kind("ex/dependants")
+    net_income = records.kind("ex/dependant_net_income")
+    months = records.kind("ex/months_resident")
 
-    with pytest.raises(
-        WorkedReturnError,
-        match=r"bad\.yaml: expected\.ex/dependants: .*not an amount, a count, a rate or digits",
-    ):
-        WorkedReturn.load(path, records)
+    worked = WorkedReturn.load(path, records)
+
+    assert worked.expected == (
+        Artifact(
+            kind,
+            RecordList(
+                (net_income, months),
+                [{net_income: D("25000"), months: 12}, {net_income: D("5000.50"), months: 6}],
+            ),
+        ),
+    )
 
 
 # The made-up `ex/business_number` (the `digits` fixture) is a digits kind of nine digits, as a

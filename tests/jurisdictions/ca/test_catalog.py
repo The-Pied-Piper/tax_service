@@ -189,10 +189,24 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_ADVERTISING,
     RENTAL_ADVERTISING_PERSONAL_PORTION,
     RENTAL_ADVERTISING_SHORT_TERM_PORTION,
+    RENTAL_CCA_BUSINESS_USE_OF_HOME,
     RENTAL_CCA_CLAIM,
+    RENTAL_CCA_CLAIM_BEFORE_LIMIT,
+    RENTAL_CCA_CLAIM_LESS_PERSONAL_PART,
+    RENTAL_CCA_CLAIM_SHARE,
+    RENTAL_CCA_CLASSES,
+    RENTAL_CCA_LIMIT,
+    RENTAL_CCA_PERSONAL_PART,
+    RENTAL_CCA_TABLE_CLAIM,
+    RENTAL_CCA_TABLE_RECAPTURE,
+    RENTAL_CCA_TABLE_TERMINAL_LOSS,
+    RENTAL_CLOSING_UCC,
     RENTAL_COOWNER,
+    RENTAL_COOWNER_CCA_CLAIM,
     RENTAL_COOWNER_OTHER_EXPENSES,
+    RENTAL_COOWNER_RECAPTURED_CCA,
     RENTAL_COOWNER_SHARE,
+    RENTAL_COOWNER_TERMINAL_LOSS,
     RENTAL_DEDUCTIBLE_EXPENSES,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
     RENTAL_GROSS_RENTS,
@@ -922,6 +936,18 @@ T776_NON_NEGATIVE_LINES = [
     ("ca/rental_recaptured_cca", RENTAL_RECAPTURED_CCA),
     ("ca/rental_terminal_loss", RENTAL_TERMINAL_LOSS),
     ("ca/rental_cca_claim", RENTAL_CCA_CLAIM),
+    ("ca/rental_cca_table_recapture", RENTAL_CCA_TABLE_RECAPTURE),
+    ("ca/rental_cca_table_terminal_loss", RENTAL_CCA_TABLE_TERMINAL_LOSS),
+    ("ca/rental_cca_table_claim", RENTAL_CCA_TABLE_CLAIM),
+    ("ca/rental_coowner_recaptured_cca", RENTAL_COOWNER_RECAPTURED_CCA),
+    ("ca/rental_coowner_terminal_loss", RENTAL_COOWNER_TERMINAL_LOSS),
+    ("ca/rental_coowner_cca_claim", RENTAL_COOWNER_CCA_CLAIM),
+    ("ca/rental_cca_claim_share", RENTAL_CCA_CLAIM_SHARE),
+    ("ca/rental_cca_personal_part", RENTAL_CCA_PERSONAL_PART),
+    ("ca/rental_cca_business_use_of_home", RENTAL_CCA_BUSINESS_USE_OF_HOME),
+    ("ca/rental_cca_claim_less_personal_part", RENTAL_CCA_CLAIM_LESS_PERSONAL_PART),
+    ("ca/rental_cca_claim_before_limit", RENTAL_CCA_CLAIM_BEFORE_LIMIT),
+    ("ca/rental_cca_limit", RENTAL_CCA_LIMIT),
     ("ca/rental_partner_gst_hst_rebate", RENTAL_PARTNER_GST_HST_REBATE),
     ("ca/rental_partner_other_expenses", RENTAL_PARTNER_OTHER_EXPENSES),
 ]
@@ -1737,6 +1763,43 @@ def test_the_other_medical_supplement_lines_are_non_negative_decimals(
         assert kind.value_type is Decimal, kind.identifier
         assert kind.non_negative is True, kind.identifier
         assert registry.kind(kind.identifier).non_negative is True, kind.identifier
+
+
+def test_the_rental_cca_classes_are_a_record_list_of_the_area_a_columns(
+    registry: ArtifactRegistry,
+) -> None:
+    # Form T776 Area A, "Calculation of capital cost allowance (CCA) claim": one row for each
+    # class, holding the columns the caller enters (the nine field kinds of the CCA table).
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(RENTAL_CCA_CLASSES, RecordListKind)
+    assert RENTAL_CCA_CLASSES.identifier == "ca/rental_cca_classes"
+    assert RENTAL_CCA_CLASSES.value_type is RecordList
+    assert RENTAL_CCA_CLASSES.non_negative is False
+    assert set(RENTAL_CCA_CLASSES.fields) == {
+        CCA_CLASS_NUMBER,
+        CCA_UCC_AT_START,
+        CCA_ADDITIONS,
+        CCA_PROCEEDS,
+        CCA_AIIP_ADDITIONS,
+        CCA_RIIP_ADDITIONS,
+        CCA_CLAIMED,
+        CCA_NO_PROPERTY_LEFT,
+    }
+    assert len(RENTAL_CCA_CLASSES.fields) == 8
+    assert registry.get("ca/rental_cca_classes") is RENTAL_CCA_CLASSES
+
+
+def test_the_rental_closing_ucc_is_a_record_list_of_the_class_and_its_closing_ucc(
+    registry: ArtifactRegistry,
+) -> None:
+    # Area A "Column 24: UCC at the end of the year (column 7 minus column 23)", for next year:
+    # the class number and column 24 of each row, which is what `ca/closing_ucc` produces.
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(RENTAL_CLOSING_UCC, RecordListKind)
+    assert RENTAL_CLOSING_UCC.identifier == "ca/rental_closing_ucc"
+    assert RENTAL_CLOSING_UCC.value_type is RecordList
+    assert RENTAL_CLOSING_UCC.fields == (CCA_CLASS_NUMBER, CCA_UCC_AT_END)
+    assert registry.get("ca/rental_closing_ucc") is RENTAL_CLOSING_UCC
 
 
 # --- Form T2222, Northern Residents Deductions (T1 line 66 and line 25500) ---------------------

@@ -36,7 +36,7 @@ CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT = CATALOG.declare(
 "on self-employment income and other earnings" under "Base CPP or QPP contributions (complete
 Schedule 8 or Form RC381, whichever applies)": Schedule 8 Part 4 line 15, entered once for each
 Part 4 completed (1 or 0), a part of the total of the credit amounts on the T1 (ON428 line 20,
-line 58280, is not wired)."""
+line 58280, copies it)."""
 
 EI_PREMIUMS = CATALOG.declare("ei_premiums", Decimal, non_negative=True)
 """EI premiums, T1 line 31200 "through employment (boxes 18 and 55 of all T4 slips) (maximum
@@ -55,8 +55,8 @@ EI_PREMIUMS_ON_SELF_EMPLOYMENT = CATALOG.declare(
 self-employment and other eligible earnings (complete Schedule 13)" under "Employment insurance
 premiums": Schedule 13 line 9 ("Enter the amount from line 9 or line 10, whichever applies, on
 line 31217 and line 42120 of your return."), entered once for each agreement with the Commission
-(1 or 0), a part of the total of the credit amounts on the T1 (ON428 line 22, line 58305, is not
-wired)."""
+(1 or 0), a part of the total of the credit amounts on the T1 (ON428 line 22, line 58305, copies
+it)."""
 
 CANADA_EMPLOYMENT_AMOUNT = CATALOG.declare("canada_employment_amount", Decimal, non_negative=True)
 """Canada employment amount, T1 line 31260 "Enter whichever is less: $1,471 or line 1 plus line
@@ -308,14 +308,29 @@ federal non-refundable tax credits": line 115 (line 33800, the total of the cred
 credit rate), line 116 (line 34900, the donations and gifts credit) and line 117 (line 34990, the
 top-up tax credit), in line order."""
 
+FEDERAL_TAX_ON_SPLIT_INCOME = CATALOG.declare(
+    "federal_tax_on_split_income", Decimal, non_negative=True
+)
+"""Federal tax on split income, Form T1206 Part 2 line 8 "Amount from line 7 multiplied by 33%
+Enter this amount on line 40424 of your return. Federal tax on split income", line 7 being "Total
+split income from line 4": T1 line 120 and line 40424 "Federal tax on split income (TOSI) (complete
+Form T1206)"."""
+
+FEDERAL_TAX_WITH_SPLIT_INCOME = CATALOG.declare(
+    "federal_tax_with_split_income", Decimal, non_negative=True
+)
+"""Federal tax with the tax on split income, T1 line 121 and line 40400 "Line 119 plus line 120 =":
+the federal basic tax (line 119 "Enter the amount from line 76.") plus the federal tax on split
+income (line 120), in line order."""
+
 FEDERAL_TAX_AFTER_CREDITS = CATALOG.declare("federal_tax_after_credits", Decimal, non_negative=True)
 """Basic federal tax, T1 line 126 (line 42900) "Line 121 minus line 125 (if negative, enter "0")
-Basic federal tax": the federal basic tax less the credits against it, not below zero.
+Basic federal tax": line 121 less the credits against it, not below zero.
 
-Line 121 (40400) is "Line 119 plus line 120", line 119 "Enter the amount from line 76."; line 125
-is "Add lines 122 to 124.", line 122 "Amount from line 35000" and line 123 "Federal dividend tax
-credit". Not modelled: line 120 (40424, tax on split income) and line 124 (minimum tax
-carryover).
+Line 121 (40400, `federal_tax_with_split_income`) is "Line 119 plus line 120", line 119 "Enter the
+amount from line 76." and line 120 (40424, `federal_tax_on_split_income`) the tax on split income;
+line 125 is "Add lines 122 to 124.", line 122 "Amount from line 35000" and line 123 "Federal
+dividend tax credit". Not modelled: line 124 (minimum tax carryover).
 """
 
 ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT = CATALOG.declare(

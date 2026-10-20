@@ -170,7 +170,7 @@ def test_the_trace_explains_the_computation() -> None:
         "+ carrying_charges_interest_expenses_and_other_expenses 0 "
         "+ cpp_deduction_on_self_employment 0 "
         "+ cpp_enhanced_contributions 1074 + exploration_and_development_expenses 0 "
-        "+ other_deductions 0 = 5000",
+        "+ other_deductions 0 + total_split_income 0 = 5000",
         "5000",
     )
     net = position(
@@ -237,7 +237,8 @@ def test_the_trace_explains_the_computation() -> None:
     position("26% on 250 over 114750 plus 20081.25", "20146.25")
     position("federal_basic_tax on taxable_income 115000 (half-up to 0.01)", "20146.25")
     position(
-        "basic_personal_amount: 14538 plus 1591 less 0 for net_income 115000 over 177882 "
+        "basic_personal_amount: 14538 plus 1591 less 0 for "
+        "tosi_adjusted_net_income_not_below_zero 115000 over 177882 "
         "(range 75532), not below 14538 (half-up to 0.01)",
         "16129",
     )
@@ -313,8 +314,8 @@ def test_the_trace_explains_the_computation() -> None:
     position("age_maximum: credit amount 9028 (half-up to 0.01)", "9028.00")
     position("age_income_threshold: credit amount 45522 (half-up to 0.01)", "45522.00")
     position(
-        "age_income_over_threshold: net_income 115000 less age_income_threshold 45522, not below 0 "
-        "= 69478",
+        "age_income_over_threshold: tosi_adjusted_net_income_not_below_zero 115000 "
+        "less age_income_threshold 45522, not below 0 = 69478",
         "69478",
     )
     position("age_reduction: 15% of age_income_over_threshold 69478 (half-up to 0.01)", "10421.70")
@@ -382,7 +383,7 @@ def test_the_trace_explains_the_computation() -> None:
         "3194.87",
     )
     position(
-        "federal_tax_after_credits: federal_basic_tax 20146.25 "
+        "federal_tax_after_credits: federal_tax_with_split_income 20146.25 "
         "less credits_against_basic_federal_tax 3194.87, not below 0 = 16951.38",
         "16951.38",
     )
@@ -408,8 +409,8 @@ def test_the_trace_explains_the_computation() -> None:
     position("age_maximum: credit amount 6223 (half-up to 0.01)", "6223.00")
     position("age_income_threshold: credit amount 46330 (half-up to 0.01)", "46330.00")
     position(
-        "age_income_over_threshold: net_income 115000 less age_income_threshold 46330, not below 0 "
-        "= 68670",
+        "age_income_over_threshold: tosi_adjusted_net_income_not_below_zero 115000 "
+        "less age_income_threshold 46330, not below 0 = 68670",
         "68670",
     )
     position("age_reduction: 15% of age_income_over_threshold 68670 (half-up to 0.01)", "10300.50")
@@ -439,8 +440,10 @@ def test_the_trace_explains_the_computation() -> None:
     ontario_amounts = position(
         "non_refundable_credit_amounts: basic_personal_amount 12747 "
         "+ age_amount 0 + spouse_amount 0 + eligible_dependant_amount 0 "
-        "+ caregiver_amount 0 + cpp_base_contributions 3356.1 + ei_premiums 1077.48 "
-        "+ disability_transferred_amount 0 + medical_claim 0 = 17180.58",
+        "+ caregiver_amount 0 + cpp_base_contributions 3356.1 "
+        "+ cpp_base_contributions_on_self_employment 0 + ei_premiums 1077.48 "
+        "+ ei_premiums_on_self_employment 0 + disability_transferred_amount 0 "
+        "+ medical_claim 0 = 17180.58",
         "17180.58",
     )
     position(
@@ -469,15 +472,25 @@ def test_the_trace_explains_the_computation() -> None:
         "7671.98",
     )
     position(
-        "ontario_surtax: 20% of ontario_tax_after_credits 7671.98 over 5710 (half-up to 0.01)",
+        "ontario_tax_with_split_income: ontario_tax_after_credits 7671.98 "
+        "+ ontario_tax_on_split_income 0 = 7671.98",
+        "7671.98",
+    )
+    position(
+        "ontario_surtax_base: ontario_tax_with_split_income 7671.98 "
+        "less ontario_tax_on_split_income_for_surtax 0, not below 0 = 7671.98",
+        "7671.98",
+    )
+    position(
+        "ontario_surtax: 20% of ontario_surtax_base 7671.98 over 5710 (half-up to 0.01)",
         "392.40",
     )
     position(
-        "ontario_surtax: 36% of ontario_tax_after_credits 7671.98 over 7307 (half-up to 0.01)",
+        "ontario_surtax: 36% of ontario_surtax_base 7671.98 over 7307 (half-up to 0.01)",
         "131.39",
     )
     position(
-        "ontario_tax_with_surtax: ontario_tax_after_credits 7671.98 "
+        "ontario_tax_with_surtax: ontario_tax_with_split_income 7671.98 "
         "+ ontario_surtax 523.79 = 8195.77",
         "8195.77",
     )
@@ -596,7 +609,7 @@ def test_the_trace_explains_the_computation() -> None:
         "875",
     )
     position(
-        "lift_net_income_and_repayments: net_income_before_adjustments 115000 "
+        "lift_net_income_and_repayments: tosi_adjusted_net_income 115000 "
         "+ uccb_repayment 0 + rdsp_income_repayment 0 = 115000",
         "115000",
     )
@@ -674,32 +687,41 @@ def test_the_trace_explains_the_computation() -> None:
         "8195.77",
     )
     position(
-        "ontario_health_premium: 6% of taxable_income 115000 over 20000, at most 300 "
+        "health_premium_income: taxable_income 115000 + total_split_income 0 = 115000",
+        "115000",
+    )
+    position(
+        "ontario_health_premium: 6% of health_premium_income 115000 over 20000, at most 300 "
         "(half-up to 0.01)",
         "300",
     )
     position(
-        "ontario_health_premium: 6% of taxable_income 115000 over 36000, at most 150 "
+        "ontario_health_premium: 6% of health_premium_income 115000 over 36000, at most 150 "
         "(half-up to 0.01)",
         "150",
     )
     position(
-        "ontario_health_premium: 25% of taxable_income 115000 over 48000, at most 150 "
+        "ontario_health_premium: 25% of health_premium_income 115000 over 48000, at most 150 "
         "(half-up to 0.01)",
         "150",
     )
     position(
-        "ontario_health_premium: 25% of taxable_income 115000 over 72000, at most 150 "
+        "ontario_health_premium: 25% of health_premium_income 115000 over 72000, at most 150 "
         "(half-up to 0.01)",
         "150",
     )
     position(
-        "ontario_health_premium: 25% of taxable_income 115000 over 200000, at most 150 "
+        "ontario_health_premium: 25% of health_premium_income 115000 over 200000, at most 150 "
         "(half-up to 0.01)",
         "0",
     )
     position(
-        "ontario_tax: ontario_tax_after_food_credit 8195.77 + ontario_health_premium 750 = 8945.77",
+        "split_income_line_52: greater of split_income_line_50 0 "
+        "and ontario_tax_after_food_credit 8195.77 = 8195.77",
+        "8195.77",
+    )
+    position(
+        "ontario_tax: split_income_line_52 8195.77 + ontario_health_premium 750 = 8945.77",
         "8945.77",
     )
     position(
@@ -767,8 +789,7 @@ def test_the_trace_explains_the_computation() -> None:
         "special_taxes: resp_aips_additional_tax 0 + rl_10_labour_sponsored_fund_amount 0 = 0", "0"
     )
     position(
-        "net_federal_tax: federal_tax_less_credits 16951.38 + advanced_canada_workers_benefit 0 "
-        "+ special_taxes 0 = 16951.38",
+        "net_federal_tax: split_income_line_30 16951.38 + special_taxes 0 = 16951.38",
         "16951.38",
     )
     position(
@@ -777,7 +798,10 @@ def test_the_trace_explains_the_computation() -> None:
         "25897.15",
     )
     position("working_income: employment_income 110000 = 110000", "110000")
-    position("adjusted_family_net_income: net_income 115000 = 115000", "115000")
+    position(
+        "adjusted_family_net_income: tosi_adjusted_net_income_not_below_zero 115000 = 115000",
+        "115000",
+    )
     position(
         "cwb_before_reduction_without_dependant: 27% of working_income 110000 over 3000, "
         "at most 1633 (half-up to 0.01)",
@@ -842,7 +866,8 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     position(
-        "seniors_care_family_net_income: net_income 115000 + spouse_net_income 0 = 115000",
+        "seniors_care_family_net_income: tosi_adjusted_net_income_not_below_zero 115000 "
+        "+ spouse_net_income 0 = 115000",
         "115000",
     )
     position("seniors_care_base_amount: credit amount 35000 (half-up to 0.01)", "35000")

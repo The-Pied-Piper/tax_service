@@ -46,7 +46,6 @@ from app.jurisdictions.ca.catalog import (
     NET_COMMISSION_INCOME,
     NET_FARMING_INCOME,
     NET_FISHING_INCOME,
-    NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_PROFESSIONAL_INCOME,
     OTHER_EMPLOYMENT_EXPENSES,
     OTHER_EMPLOYMENT_INCOME,
@@ -59,6 +58,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_RDSP_INCOME_REPAYMENT,
     SPOUSE_UCCB_REPAYMENT,
     SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT,
+    TOSI_ADJUSTED_NET_INCOME,
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
     UNION_DUES,
@@ -184,18 +184,20 @@ STEPS = {
         produces={"output": "ca/medical_supplement_working_income"},
     ),
     # Column 1 "You" line 1 "Net income amount from line 23600 of the return (or the amount you
-    # would have entered if the instructions on line 23600 said "if negative, show in
-    # brackets")" is line 23400, the net income before adjustments, as line 23500 is not
-    # wired yet; line 2 "Total of the universal child care benefit (UCCB) repayment (line 21300
-    # of the return) and the registered disability savings plan (RDSP) income repayment
-    # (included in the amount on line 23200 of the return)" is the UCCB and RDSP income
-    # repayments of the other payments worksheet; line 3 "Line 1 plus line 2".
+    # would have entered if the instructions on line 23600 said "if negative, show in brackets")" is
+    # the TOSI-adjusted net income of Form T1206 Part 1 line 6, signed ("use line 6 of this form at
+    # line 1 of column 1 of your Federal Worksheet for line 45200"), whose line 5 is line 23400, the
+    # net income before adjustments, as line 23500 is not wired yet; line 2 "Total of the universal
+    # child care benefit (UCCB) repayment (line 21300 of the return) and the registered disability
+    # savings plan (RDSP) income repayment (included in the amount on line 23200 of the return)" is
+    # the UCCB and RDSP income repayments of the other payments worksheet; line 3 "Line 1 plus line
+    # 2".
     CapabilitySelection(
         name="core/sum",
         params={},
         consumes={
             "parts": (
-                "ca/net_income_before_adjustments",
+                "ca/tosi_adjusted_net_income",
                 "ca/uccb_and_rdsp_income_repayments",
             ),
         },
@@ -420,7 +422,7 @@ WIRING = {
     ),
     (
         Sum,
-        frozenset({NET_INCOME_BEFORE_ADJUSTMENTS, UCCB_AND_RDSP_INCOME_REPAYMENTS}),
+        frozenset({TOSI_ADJUSTED_NET_INCOME, UCCB_AND_RDSP_INCOME_REPAYMENTS}),
         frozenset({MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3}),
     ),
     (

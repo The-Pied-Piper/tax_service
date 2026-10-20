@@ -29,6 +29,14 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GAINS_DEDUCTIONS_2001_TO_2024,
     CAPITAL_GIFT_GAINS_DEDUCTION,
     CAPITAL_GIFT_TAXABLE_GAINS,
+    CCA_ADDITIONS,
+    CCA_AIIP_ADDITIONS,
+    CCA_CLAIMED,
+    CCA_CLASS_NUMBER,
+    CCA_NO_PROPERTY_LEFT,
+    CCA_PROCEEDS,
+    CCA_RIIP_ADDITIONS,
+    CCA_UCC_AT_START,
     CHARITABLE_DONATIONS,
     CHILD_CARE_EXPENSES_PAID,
     CHILDREN_SEVEN_TO_SIXTEEN,
@@ -49,6 +57,7 @@ from app.jurisdictions.ca.catalog import (
     DEPRECIABLE_GIFT_CAPITAL_COST,
     DEPRECIABLE_GIFT_NET_PROCEEDS,
     DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
+    DISABILITY_AMOUNT_FOR_SELF,
     DISABILITY_DEPENDANTS,
     DISABILITY_SUPPORTS_DEDUCTION,
     ECOLOGICAL_AND_CULTURAL_GIFTS,
@@ -132,6 +141,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
     OTHER_PENSIONS_AND_SUPERANNUATION,
+    OTHER_SPLIT_INCOME,
     PART_XII_2_TAX_CREDIT,
     POLITICAL_CONTRIBUTIONS,
     POLITICAL_CREDIT_COLUMN_1_LINE_2,
@@ -155,10 +165,15 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_ADVERTISING,
     RENTAL_ADVERTISING_PERSONAL_PORTION,
     RENTAL_ADVERTISING_SHORT_TERM_PORTION,
-    RENTAL_CCA_CLAIM,
+    RENTAL_CCA_BUSINESS_USE_OF_HOME,
+    RENTAL_CCA_CLASSES,
+    RENTAL_CCA_PERSONAL_PART,
     RENTAL_COOWNER,
+    RENTAL_COOWNER_CCA_CLAIM,
     RENTAL_COOWNER_OTHER_EXPENSES,
+    RENTAL_COOWNER_RECAPTURED_CCA,
     RENTAL_COOWNER_SHARE,
+    RENTAL_COOWNER_TERMINAL_LOSS,
     RENTAL_INSURANCE,
     RENTAL_INSURANCE_PERSONAL_PORTION,
     RENTAL_INSURANCE_SHORT_TERM_PORTION,
@@ -192,14 +207,12 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_PROPERTY_TAXES_PERSONAL_PORTION,
     RENTAL_PROPERTY_TAXES_SHORT_TERM_PORTION,
     RENTAL_PROPERTY_UNITS,
-    RENTAL_RECAPTURED_CCA,
     RENTAL_REPAIRS_AND_MAINTENANCE,
     RENTAL_REPAIRS_AND_MAINTENANCE_PERSONAL_PORTION,
     RENTAL_REPAIRS_AND_MAINTENANCE_SHORT_TERM_PORTION,
     RENTAL_SALARIES_WAGES_AND_BENEFITS,
     RENTAL_SALARIES_WAGES_AND_BENEFITS_PERSONAL_PORTION,
     RENTAL_SALARIES_WAGES_AND_BENEFITS_SHORT_TERM_PORTION,
-    RENTAL_TERMINAL_LOSS,
     RENTAL_TRAVEL,
     RENTAL_TRAVEL_PERSONAL_PORTION,
     RENTAL_TRAVEL_SHORT_TERM_PORTION,
@@ -224,6 +237,8 @@ from app.jurisdictions.ca.catalog import (
     SHORT_TERM_RENTAL_RELATED_EXPENSES,
     SHORT_TERM_RENTAL_UNITS,
     SOCIAL_ASSISTANCE_PAYMENTS,
+    SPLIT_INCOME_DIVIDENDS,
+    SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SPOUSE_CAREGIVER_ELIGIBLE,
     SPOUSE_NET_INCOME,
     SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -407,6 +422,37 @@ def rental_properties_list(*rows: tuple[int, str, str]) -> Artifact[RecordList]:
     return Artifact(RENTAL_PROPERTIES, RecordList(RENTAL_PROPERTIES.fields, records))
 
 
+def rental_cca_classes(
+    *rows: tuple[str, str, str, str, str, str, str, int],
+) -> Artifact[RecordList]:
+    """The Form T776 Area A rows, one record per class: column 1 (class number), column 2, column
+    3, column 5, column 11, column 12, the CCA claimed (column 23) as decimal text, and 1 if no
+    property is left in the class, else 0 (Note 3)."""
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {
+            CCA_CLASS_NUMBER: D(class_number),
+            CCA_UCC_AT_START: D(ucc_at_start),
+            CCA_ADDITIONS: D(additions),
+            CCA_PROCEEDS: D(proceeds),
+            CCA_AIIP_ADDITIONS: D(aiip_additions),
+            CCA_RIIP_ADDITIONS: D(riip_additions),
+            CCA_CLAIMED: D(claimed),
+            CCA_NO_PROPERTY_LEFT: no_property_left,
+        }
+        for (
+            class_number,
+            ucc_at_start,
+            additions,
+            proceeds,
+            aiip_additions,
+            riip_additions,
+            claimed,
+            no_property_left,
+        ) in rows
+    ]
+    return Artifact(RENTAL_CCA_CLASSES, RecordList(RENTAL_CCA_CLASSES.fields, records))
+
+
 def short_term_rental_units(*rows: tuple[str, int, int]) -> Artifact[RecordList]:
     """The Form T776 Chart A rows, one record per (column 3, column 4, column 5)."""
     records: list[dict[ArtifactKind[Any], object]] = [
@@ -571,9 +617,12 @@ def compute(
     rental_coowner: int = 0,
     rental_coowner_share: str = "0",
     rental_coowner_other_expenses: str = "0",
-    rental_recaptured_cca: str = "0",
-    rental_terminal_loss: str = "0",
-    rental_cca_claim: str = "0",
+    rental_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    rental_coowner_recaptured_cca: str = "0",
+    rental_coowner_terminal_loss: str = "0",
+    rental_coowner_cca_claim: str = "0",
+    rental_cca_personal_part: str = "0",
+    rental_cca_business_use_of_home: str = "0",
     rental_partner: int = 0,
     rental_partner_share: str = "0",
     rental_partner_gst_hst_rebate: str = "0",
@@ -660,6 +709,7 @@ def compute(
     caregiver_dependants: tuple[tuple[str, int], ...] = (),
     disability_dependants: tuple[tuple[int, str, str, str], ...] = (),
     ontario_disability_dependants: tuple[tuple[int, str, str, str], ...] = (),
+    ontario_disability_amount_for_self: str = "0",
     child_care_expenses_paid: str = "0",
     children_under_seven: int = 0,
     children_with_disability: int = 0,
@@ -731,6 +781,10 @@ def compute(
     spouse_rdsp_income_repayment: str = "0",
     spouse_universal_child_care_benefit: str = "0",
     spouse_rdsp_income: str = "0",
+    split_income_dividends: str = "0",
+    split_income_dividends_other_than_eligible: str = "0",
+    other_split_income: str = "0",
+    disability_amount_for_self: str = "0",
     unapplied_net_capital_losses_1985_to_1987: str = "0",
     unapplied_net_capital_losses_1988_and_1989: str = "0",
     unapplied_net_capital_losses_1990_to_1999: str = "0",
@@ -822,9 +876,12 @@ def compute(
         Artifact(RENTAL_COOWNER, rental_coowner),
         Artifact(RENTAL_COOWNER_SHARE, D(rental_coowner_share)),
         Artifact(RENTAL_COOWNER_OTHER_EXPENSES, D(rental_coowner_other_expenses)),
-        Artifact(RENTAL_RECAPTURED_CCA, D(rental_recaptured_cca)),
-        Artifact(RENTAL_TERMINAL_LOSS, D(rental_terminal_loss)),
-        Artifact(RENTAL_CCA_CLAIM, D(rental_cca_claim)),
+        rental_cca_classes(*rental_cca_classes_rows),
+        Artifact(RENTAL_COOWNER_RECAPTURED_CCA, D(rental_coowner_recaptured_cca)),
+        Artifact(RENTAL_COOWNER_TERMINAL_LOSS, D(rental_coowner_terminal_loss)),
+        Artifact(RENTAL_COOWNER_CCA_CLAIM, D(rental_coowner_cca_claim)),
+        Artifact(RENTAL_CCA_PERSONAL_PART, D(rental_cca_personal_part)),
+        Artifact(RENTAL_CCA_BUSINESS_USE_OF_HOME, D(rental_cca_business_use_of_home)),
         Artifact(RENTAL_PARTNER, rental_partner),
         Artifact(RENTAL_PARTNER_SHARE, D(rental_partner_share)),
         Artifact(RENTAL_PARTNER_GST_HST_REBATE, D(rental_partner_gst_hst_rebate)),
@@ -989,6 +1046,7 @@ def compute(
                 ],
             ),
         ),
+        Artifact(ontario.DISABILITY_AMOUNT_FOR_SELF, D(ontario_disability_amount_for_self)),
         Artifact(
             ontario.DISABILITY_DEPENDANTS,
             RecordList(
@@ -1112,6 +1170,13 @@ def compute(
         Artifact(SPOUSE_RDSP_INCOME_REPAYMENT, D(spouse_rdsp_income_repayment)),
         Artifact(SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT, D(spouse_universal_child_care_benefit)),
         Artifact(SPOUSE_RDSP_INCOME, D(spouse_rdsp_income)),
+        Artifact(SPLIT_INCOME_DIVIDENDS, D(split_income_dividends)),
+        Artifact(
+            SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+            D(split_income_dividends_other_than_eligible),
+        ),
+        Artifact(OTHER_SPLIT_INCOME, D(other_split_income)),
+        Artifact(DISABILITY_AMOUNT_FOR_SELF, D(disability_amount_for_self)),
         Artifact(
             UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987, D(unapplied_net_capital_losses_1985_to_1987)
         ),

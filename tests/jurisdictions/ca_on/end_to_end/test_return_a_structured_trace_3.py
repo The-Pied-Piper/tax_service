@@ -156,7 +156,12 @@ from app.jurisdictions.ca.catalog import (
     REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
     REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
     REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
+    RENTAL_CCA_BUSINESS_USE_OF_HOME,
     RENTAL_CCA_CLAIM,
+    RENTAL_CCA_CLAIM_BEFORE_LIMIT,
+    RENTAL_CCA_CLAIM_LESS_PERSONAL_PART,
+    RENTAL_CCA_CLAIM_SHARE,
+    RENTAL_CCA_PERSONAL_PART,
     RENTAL_COOWNER_OTHER_EXPENSES,
     RENTAL_DEDUCTIBLE_EXPENSES,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
@@ -186,6 +191,11 @@ from app.jurisdictions.ca.catalog import (
     SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE,
     SELF_EMPLOYED_CPP_DEDUCTION,
     SELF_EMPLOYED_EI_PREMIUMS,
+    SPLIT_INCOME_LINE_10,
+    SPLIT_INCOME_LINE_14,
+    SPLIT_INCOME_LINE_15,
+    SPLIT_INCOME_LINE_21,
+    SPLIT_INCOME_LINE_22,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BEFORE_COUNT,
     SPOUSE_CAREGIVER_AMOUNT,
@@ -197,6 +207,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_INFIRMITY_SUPPLEMENT,
     SPOUSES_CLAIMED,
     TOP_UP_THRESHOLD,
+    TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOTAL_CREDITS,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
@@ -303,6 +314,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             minuend=RENTAL_NET_INCOME_WITH_RECAPTURE,
             minuend_amount=D("0"),
             subtrahend=RENTAL_TERMINAL_LOSS,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # T776 line 9936: amount ii less the personal part of CCA, then less the CCA for
+        # business-use-of-home expenses; with no classes each is 0.
+        RENTAL_CCA_CLAIM_LESS_PERSONAL_PART: SubtractedLine(
+            output=RENTAL_CCA_CLAIM_LESS_PERSONAL_PART,
+            minuend=RENTAL_CCA_CLAIM_SHARE,
+            minuend_amount=D("0"),
+            subtrahend=RENTAL_CCA_PERSONAL_PART,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        RENTAL_CCA_CLAIM_BEFORE_LIMIT: SubtractedLine(
+            output=RENTAL_CCA_CLAIM_BEFORE_LIMIT,
+            minuend=RENTAL_CCA_CLAIM_LESS_PERSONAL_PART,
+            minuend_amount=D("0"),
+            subtrahend=RENTAL_CCA_BUSINESS_USE_OF_HOME,
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
@@ -531,6 +560,42 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
+        # Form T1206 Part 2 line 15 "Line 10 minus line 14" and line 22 "Line 15 minus line 21",
+        # with no floor printed on either: all 0 for Return A.
+        # Form T1206 Part 3 line 39 "Line 33 minus line 38" and line 47 "Line 39 minus line 46",
+        # exact and signed: Return A has no split income, so each is 0.
+        ontario.SPLIT_INCOME_LINE_39: SubtractedLine(
+            output=ontario.SPLIT_INCOME_LINE_39,
+            minuend=ontario.ONTARIO_TAX_ON_SPLIT_INCOME,
+            minuend_amount=D("0"),
+            subtrahend=ontario.SPLIT_INCOME_LINE_38,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        ontario.SPLIT_INCOME_LINE_47: SubtractedLine(
+            output=ontario.SPLIT_INCOME_LINE_47,
+            minuend=ontario.SPLIT_INCOME_LINE_39,
+            minuend_amount=D("0"),
+            subtrahend=ontario.SPLIT_INCOME_LINE_46,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        SPLIT_INCOME_LINE_15: SubtractedLine(
+            output=SPLIT_INCOME_LINE_15,
+            minuend=SPLIT_INCOME_LINE_10,
+            minuend_amount=D("0"),
+            subtrahend=SPLIT_INCOME_LINE_14,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        SPLIT_INCOME_LINE_22: SubtractedLine(
+            output=SPLIT_INCOME_LINE_22,
+            minuend=SPLIT_INCOME_LINE_15,
+            minuend_amount=D("0"),
+            subtrahend=SPLIT_INCOME_LINE_21,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # T1 line 23400.
         NET_INCOME_BEFORE_ADJUSTMENTS: SubtractedLine(
             output=NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -613,7 +678,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert tapered == {
         BASIC_PERSONAL_AMOUNT: TaperedAmountLine(
             output=BASIC_PERSONAL_AMOUNT,
-            base=NET_INCOME,
+            base=TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
             base_amount=D("115000"),
             taper=Taper(
                 base=D("14538"), supplement=D("1591"), threshold=D("177882"), range=D("75532")

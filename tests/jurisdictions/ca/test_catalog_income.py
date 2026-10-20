@@ -52,10 +52,24 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_ADVERTISING,
     RENTAL_ADVERTISING_PERSONAL_PORTION,
     RENTAL_ADVERTISING_SHORT_TERM_PORTION,
+    RENTAL_CCA_BUSINESS_USE_OF_HOME,
     RENTAL_CCA_CLAIM,
+    RENTAL_CCA_CLAIM_BEFORE_LIMIT,
+    RENTAL_CCA_CLAIM_LESS_PERSONAL_PART,
+    RENTAL_CCA_CLAIM_SHARE,
+    RENTAL_CCA_CLASSES,
+    RENTAL_CCA_LIMIT,
+    RENTAL_CCA_PERSONAL_PART,
+    RENTAL_CCA_TABLE_CLAIM,
+    RENTAL_CCA_TABLE_RECAPTURE,
+    RENTAL_CCA_TABLE_TERMINAL_LOSS,
+    RENTAL_CLOSING_UCC,
     RENTAL_COOWNER,
+    RENTAL_COOWNER_CCA_CLAIM,
     RENTAL_COOWNER_OTHER_EXPENSES,
+    RENTAL_COOWNER_RECAPTURED_CCA,
     RENTAL_COOWNER_SHARE,
+    RENTAL_COOWNER_TERMINAL_LOSS,
     RENTAL_DEDUCTIBLE_EXPENSES,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
     RENTAL_GROSS_RENTS,
@@ -421,6 +435,23 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
         is RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS
     )
     assert registry.get("ca/rental_cca_claim") is RENTAL_CCA_CLAIM
+    assert registry.get("ca/rental_cca_classes") is RENTAL_CCA_CLASSES
+    assert registry.get("ca/rental_cca_table_recapture") is RENTAL_CCA_TABLE_RECAPTURE
+    assert registry.get("ca/rental_cca_table_terminal_loss") is RENTAL_CCA_TABLE_TERMINAL_LOSS
+    assert registry.get("ca/rental_cca_table_claim") is RENTAL_CCA_TABLE_CLAIM
+    assert registry.get("ca/rental_coowner_recaptured_cca") is RENTAL_COOWNER_RECAPTURED_CCA
+    assert registry.get("ca/rental_coowner_terminal_loss") is RENTAL_COOWNER_TERMINAL_LOSS
+    assert registry.get("ca/rental_coowner_cca_claim") is RENTAL_COOWNER_CCA_CLAIM
+    assert registry.get("ca/rental_cca_claim_share") is RENTAL_CCA_CLAIM_SHARE
+    assert registry.get("ca/rental_cca_personal_part") is RENTAL_CCA_PERSONAL_PART
+    assert registry.get("ca/rental_cca_business_use_of_home") is RENTAL_CCA_BUSINESS_USE_OF_HOME
+    assert (
+        registry.get("ca/rental_cca_claim_less_personal_part")
+        is RENTAL_CCA_CLAIM_LESS_PERSONAL_PART
+    )
+    assert registry.get("ca/rental_cca_claim_before_limit") is RENTAL_CCA_CLAIM_BEFORE_LIMIT
+    assert registry.get("ca/rental_cca_limit") is RENTAL_CCA_LIMIT
+    assert registry.get("ca/rental_closing_ucc") is RENTAL_CLOSING_UCC
     assert registry.get("ca/rental_net_income_after_cca") is RENTAL_NET_INCOME_AFTER_CCA
     assert registry.get("ca/rental_partner") is RENTAL_PARTNER
     assert registry.get("ca/rental_partner_share") is RENTAL_PARTNER_SHARE

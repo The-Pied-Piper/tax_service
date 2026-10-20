@@ -78,9 +78,12 @@ inputs:
   - ca/rental_coowner
   - ca/rental_coowner_share
   - ca/rental_coowner_other_expenses
-  - ca/rental_recaptured_cca
-  - ca/rental_terminal_loss
-  - ca/rental_cca_claim
+  - ca/rental_cca_classes
+  - ca/rental_coowner_recaptured_cca
+  - ca/rental_coowner_terminal_loss
+  - ca/rental_coowner_cca_claim
+  - ca/rental_cca_personal_part
+  - ca/rental_cca_business_use_of_home
   - ca/rental_partner
   - ca/rental_partner_share
   - ca/rental_partner_gst_hst_rebate
@@ -132,6 +135,9 @@ inputs:
   - ca/support_payments_deduction
   - ca/exploration_and_development_expenses
   - ca/other_deductions
+  - ca/split_income_dividends
+  - ca/split_income_dividends_other_than_eligible
+  - ca/other_split_income
   - ca/total_carrying_charges
   - ca/total_interest_expenses
   - ca/total_other_expenses
@@ -192,6 +198,8 @@ inputs:
   - ca-on/caregiver_dependants
   - ca-on/disability_dependants
   - ca/disability_dependants
+  - ca/disability_amount_for_self
+  - ca-on/disability_amount_for_self
   - ca/infirm_children
   - ca/born_in_1960_or_earlier
   - ca/spouse_net_income

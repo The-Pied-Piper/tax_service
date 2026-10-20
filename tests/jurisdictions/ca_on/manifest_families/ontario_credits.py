@@ -10,11 +10,16 @@ from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.catalog import (
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
     DONATIONS_FIRST_TIER,
     DONATIONS_OVER_FIRST_TIER,
     EI_PREMIUMS,
+    EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+    SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    SPLIT_INCOME_LINE_18,
     TAXABLE_DIVIDENDS,
     TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    TOTAL_SPLIT_INCOME,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
@@ -47,7 +52,9 @@ STEPS = {
                 "ca-on/eligible_dependant_amount",
                 "ca-on/caregiver_amount",
                 "ca/cpp_base_contributions",
+                "ca/cpp_base_contributions_on_self_employment",
                 "ca/ei_premiums",
+                "ca/ei_premiums_on_self_employment",
                 "ca-on/disability_transferred_amount",
                 "ca-on/medical_claim",
             )
@@ -111,18 +118,139 @@ STEPS = {
         },
         produces={"output": "ca-on/ontario_tax_after_credits"},
     ),
-    # ON428 lines 66 to 68: the surtax on line 65, which is the Ontario tax after credits
-    # while line 64 (tax on split income) is not modelled.
+    # Form T1206 Part 3 line 33 "The amount from line 31 multiplied by the tax rate you entered on
+    # line 32. Enter this amount on the line of your Form 428 shown in column 4 in Chart C on page
+    # 5.", line 31 being "Total split income from line 4" and the rate Chart C column 2 for Ontario,
+    # 20.53%, column 4 being ON428 line 54 and line 61510 "Ontario tax on split income (complete
+    # Form T1206)".
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca-on/split_income_rate"},
+        consumes={"base": "ca/total_split_income"},
+        produces={"output": "ca-on/ontario_tax_on_split_income"},
+    ),
+    # "Provincial or territorial disability tax credit (DTC)": line 34 "DTC from line 58440 of your
+    # provincial or territorial Form 428" (the caller's amount under its ON428 name, not yet
+    # computed) and line 35 "DTC transferred from a dependant from line 58480 of your provincial or
+    # territorial Form 428" (the Ontario disability amount transferred from a dependant), line 36
+    # "Line 34 plus line 35".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca-on/disability_amount_for_self",
+                "ca-on/disability_transferred_amount",
+            )
+        },
+        produces={"output": "ca-on/split_income_line_36"},
+    ),
+    # Line 38, line 36 multiplied by "the tax rate you entered on line 37" (Chart C column 3 for
+    # Ontario, 5.05%), and line 39 "Line 33 minus line 38", which prints no floor.
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca-on/split_income_disability_credit_rate"},
+        consumes={"base": "ca-on/split_income_line_36"},
+        produces={"output": "ca-on/split_income_line_38"},
+    ),
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca-on/ontario_tax_on_split_income",
+            "less": "ca-on/split_income_line_38",
+        },
+        produces={"output": "ca-on/split_income_line_39"},
+    ),
+    # "Provincial or territorial dividend tax credit on split income for eligible dividends and
+    # dividends other than eligible dividends": line 40 "Amount from line 18" (the federal line 18)
+    # times line 41, the eligible dividend tax credit rate (Chart C column 5 for Ontario, 10%), is
+    # line 42; line 43 "Amount from line 17" (the federal line 17, the caller's line 2 of Part 1)
+    # times line 44, the dividend other than eligible dividend tax credit rate (Chart C column 6 for
+    # Ontario, 2.9863%), is line 45.
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca-on/split_income_dividend_credit_rate_eligible"},
+        consumes={"base": "ca/split_income_line_18"},
+        produces={"output": "ca-on/split_income_line_42"},
+    ),
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca-on/split_income_dividend_credit_rate_other_than_eligible"},
+        consumes={"base": "ca/split_income_dividends_other_than_eligible"},
+        produces={"output": "ca-on/split_income_line_45"},
+    ),
+    # Line 46 "Line 42 plus line 45" and line 47 "Line 39 minus line 46", which prints no floor.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca-on/split_income_line_42",
+                "ca-on/split_income_line_45",
+            )
+        },
+        produces={"output": "ca-on/split_income_line_46"},
+    ),
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={"amount": "ca-on/split_income_line_39", "less": "ca-on/split_income_line_46"},
+        produces={"output": "ca-on/split_income_line_47"},
+    ),
+    # "Provincial or territorial foreign tax credit on split income": line 48 "Amount from line 47
+    # on the previous page" and line 50 "Line 48 minus line 49", line 49 (the foreign tax credit)
+    # not being wired yet, so line 50 is line 47 over one part, which prints no floor.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca-on/split_income_line_47",)},
+        produces={"output": "ca-on/split_income_line_50"},
+    ),
+    # ON428 line 55 "Line 53 plus line 54 =", line 54 being the Ontario tax on split income of Form
+    # T1206 line 33.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca-on/ontario_tax_after_credits",
+                "ca-on/ontario_tax_on_split_income",
+            )
+        },
+        produces={"output": "ca-on/ontario_tax_with_split_income"},
+    ),
+    # ON428 lines 56 to 63 carry as before: the Ontario minimum tax carryover (lines 59 to 61) is
+    # not triggered, so line 61 is line 55 and lines 62 and 63 are line 61. Line 64 "Ontario tax on
+    # split income from line 54" and line 65 "Line 63 minus line 64 (if negative, enter "0")", the
+    # base of the surtax.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca-on/ontario_tax_on_split_income",)},
+        produces={"output": "ca-on/ontario_tax_on_split_income_for_surtax"},
+    ),
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca-on/ontario_tax_with_split_income",
+            "less": "ca-on/ontario_tax_on_split_income_for_surtax",
+        },
+        produces={"output": "ca-on/ontario_surtax_base"},
+    ),
+    # ON428 lines 66 to 68: the surtax on line 65, the Ontario tax with the tax on split income
+    # taken out again (lines 63 and 64).
     CapabilitySelection(
         name="core/tiered_surcharge",
         params={"tiers": "ca-on/surtax"},
-        consumes={"base": "ca-on/ontario_tax_after_credits"},
+        consumes={"base": "ca-on/ontario_surtax_base"},
         produces={"output": "ca-on/ontario_surtax"},
     ),
     CapabilitySelection(
         name="core/sum",
         params={},
-        consumes={"parts": ("ca-on/ontario_tax_after_credits", "ca-on/ontario_surtax")},
+        consumes={"parts": ("ca-on/ontario_tax_with_split_income", "ca-on/ontario_surtax")},
         produces={"output": "ca-on/ontario_tax_with_surtax"},
     ),
     # ON428 line 56 "Enter the amount from line 53 above.", line 57 (printed "Line 57 and
@@ -215,7 +343,9 @@ WIRING = {
                 ontario.ELIGIBLE_DEPENDANT_AMOUNT,
                 ontario.CAREGIVER_AMOUNT,
                 CPP_BASE_CONTRIBUTIONS,
+                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
                 EI_PREMIUMS,
+                EI_PREMIUMS_ON_SELF_EMPLOYMENT,
                 ontario.DISABILITY_TRANSFERRED_AMOUNT,
                 ontario.MEDICAL_CLAIM,
             }
@@ -252,10 +382,60 @@ WIRING = {
         frozenset({ONTARIO_BASIC_TAX, ontario.NON_REFUNDABLE_TAX_CREDITS}),
         frozenset({ONTARIO_TAX_AFTER_CREDITS}),
     ),
-    (TieredSurcharge, frozenset({ONTARIO_TAX_AFTER_CREDITS}), frozenset({ONTARIO_SURTAX})),
+    (ApplyRate, frozenset({TOTAL_SPLIT_INCOME}), frozenset({ontario.ONTARIO_TAX_ON_SPLIT_INCOME})),
     (
         Sum,
-        frozenset({ONTARIO_TAX_AFTER_CREDITS, ONTARIO_SURTAX}),
+        frozenset({ontario.DISABILITY_AMOUNT_FOR_SELF, ontario.DISABILITY_TRANSFERRED_AMOUNT}),
+        frozenset({ontario.SPLIT_INCOME_LINE_36}),
+    ),
+    (
+        ApplyRate,
+        frozenset({ontario.SPLIT_INCOME_LINE_36}),
+        frozenset({ontario.SPLIT_INCOME_LINE_38}),
+    ),
+    (
+        Subtract,
+        frozenset({ontario.ONTARIO_TAX_ON_SPLIT_INCOME, ontario.SPLIT_INCOME_LINE_38}),
+        frozenset({ontario.SPLIT_INCOME_LINE_39}),
+    ),
+    (ApplyRate, frozenset({SPLIT_INCOME_LINE_18}), frozenset({ontario.SPLIT_INCOME_LINE_42})),
+    (
+        ApplyRate,
+        frozenset({SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE}),
+        frozenset({ontario.SPLIT_INCOME_LINE_45}),
+    ),
+    (
+        Sum,
+        frozenset({ontario.SPLIT_INCOME_LINE_42, ontario.SPLIT_INCOME_LINE_45}),
+        frozenset({ontario.SPLIT_INCOME_LINE_46}),
+    ),
+    (
+        Subtract,
+        frozenset({ontario.SPLIT_INCOME_LINE_39, ontario.SPLIT_INCOME_LINE_46}),
+        frozenset({ontario.SPLIT_INCOME_LINE_47}),
+    ),
+    (Sum, frozenset({ontario.SPLIT_INCOME_LINE_47}), frozenset({ontario.SPLIT_INCOME_LINE_50})),
+    (
+        Sum,
+        frozenset({ONTARIO_TAX_AFTER_CREDITS, ontario.ONTARIO_TAX_ON_SPLIT_INCOME}),
+        frozenset({ontario.ONTARIO_TAX_WITH_SPLIT_INCOME}),
+    ),
+    (
+        Sum,
+        frozenset({ontario.ONTARIO_TAX_ON_SPLIT_INCOME}),
+        frozenset({ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset(
+            {ontario.ONTARIO_TAX_WITH_SPLIT_INCOME, ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX}
+        ),
+        frozenset({ontario.ONTARIO_SURTAX_BASE}),
+    ),
+    (TieredSurcharge, frozenset({ontario.ONTARIO_SURTAX_BASE}), frozenset({ONTARIO_SURTAX})),
+    (
+        Sum,
+        frozenset({ontario.ONTARIO_TAX_WITH_SPLIT_INCOME, ONTARIO_SURTAX}),
         frozenset({ONTARIO_TAX_WITH_SURTAX}),
     ),
     (

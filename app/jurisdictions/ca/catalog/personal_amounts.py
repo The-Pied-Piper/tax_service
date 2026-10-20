@@ -311,6 +311,13 @@ all dependants who qualify for the disability tax credit", each line 13 "Enter w
 amount from line 8 or line 12. Allowable amount for this dependant", a part of the total of the
 credit amounts."""
 
+DISABILITY_AMOUNT_FOR_SELF = CATALOG.declare(
+    "disability_amount_for_self", Decimal, non_negative=True
+)
+"""Disability amount for self, T1 line 99 and line 31600 "Disability amount for self (if you were
+under 18 years of age, use Federal Worksheet; if not, claim $10,138)": a starting amount, read by
+Form T1206 Part 2 line 11 "Amount from line 31600 of your return" and not yet computed."""
+
 RESIDENCE_YEARS_DESIGNATED_AFTER_1981 = CATALOG.declare(
     "residence_years_designated_after_1981", int, non_negative=True
 )

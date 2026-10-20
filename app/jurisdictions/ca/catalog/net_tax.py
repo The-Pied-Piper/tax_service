@@ -15,18 +15,81 @@ income payments (`resp_aips_additional_tax`, Form T1172) and the tax for not pur
 shares in a Quebec labour-sponsored fund (`rl_10_labour_sponsored_fund_amount`). Not wired: the tax
 on excess employees profit sharing plan amounts (Form RC359)."""
 
+SPLIT_INCOME_LINE_10 = CATALOG.declare("split_income_line_10", Decimal, non_negative=True)
+"""Tax on split income with the advanced Canada workers benefit, Form T1206 Part 2 line 10 "Line 8
+plus line 9", line 9 being "Amount from line 41500 of your return": the federal tax on split income
+plus the advanced Canada workers benefit."""
+
+SPLIT_INCOME_LINE_13 = CATALOG.declare("split_income_line_13", Decimal, non_negative=True)
+"""Disability amounts on split income, Form T1206 Part 2 line 13 "Line 11 plus line 12", line 11
+being "Amount from line 31600 of your return" and line 12 "Amount from line 31800 of your return":
+the disability amount for self plus the disability amount transferred from a dependant, under
+"Federal disability tax credit"."""
+
+SPLIT_INCOME_LINE_14 = CATALOG.declare("split_income_line_14", Decimal, non_negative=True)
+"""Disability tax credit on split income, Form T1206 Part 2 line 14, line 13 "× 14.5%": the
+disability amounts at the credit rate."""
+
+SPLIT_INCOME_LINE_15 = CATALOG.declare("split_income_line_15", Decimal)
+"""Tax on split income less the disability credit, Form T1206 Part 2 line 15 "Line 10 minus line
+14": line 10 less the disability credit.
+
+The form prints no "(if negative, enter "0")", so the kind is signed.
+"""
+
+SPLIT_INCOME_LINE_18 = CATALOG.declare("split_income_line_18", Decimal, non_negative=True)
+"""Eligible dividends on split income, Form T1206 Part 2 line 18 "Line 16 minus line 17 (if
+negative, enter "0")": line 16 (the dividends of line 1 of Part 1) less line 17 (the dividends other
+than eligible of line 2), not below zero, under "Federal dividend tax credit on split income"."""
+
+SPLIT_INCOME_LINE_19 = CATALOG.declare("split_income_line_19", Decimal, non_negative=True)
+"""Dividend tax credit on split income, other than eligible, Form T1206 Part 2 line 19, line 17 "×
+9.0301%": line 17 at the dividend tax credit rate for dividends other than eligible."""
+
+SPLIT_INCOME_LINE_20 = CATALOG.declare("split_income_line_20", Decimal, non_negative=True)
+"""Dividend tax credit on split income, eligible, Form T1206 Part 2 line 20, line 18 "× 15.0198%":
+line 18 at the dividend tax credit rate for eligible dividends."""
+
+SPLIT_INCOME_LINE_21 = CATALOG.declare("split_income_line_21", Decimal, non_negative=True)
+"""Dividend tax credit on split income, Form T1206 Part 2 line 21 "Line 19 plus line 20": the
+federal dividend tax credit on split income."""
+
+SPLIT_INCOME_LINE_22 = CATALOG.declare("split_income_line_22", Decimal)
+"""Tax on split income after the credits, Form T1206 Part 2 line 22 "Line 15 minus line 21": line 15
+less the dividend tax credit.
+
+The form prints no "(if negative, enter "0")", so the kind is signed.
+"""
+
+SPLIT_INCOME_LINE_24 = CATALOG.declare("split_income_line_24", Decimal, non_negative=True)
+"""Tax on split income after the credits, not below zero, Form T1206 Part 2 line 24 "Line 22 minus
+line 23 (if negative, enter "0")": line 22 not below zero, line 23 (the federal foreign tax credit
+on split income) not being wired."""
+
+SPLIT_INCOME_LINE_29 = CATALOG.declare("split_income_line_29", Decimal, non_negative=True)
+"""Federal tax less credits with the advanced Canada workers benefit, Form T1206 Part 2 line 29
+"Line 27 plus line 28": the federal tax less credits (lines 25 to 27, the T1 line 139) plus the
+advanced Canada workers benefit of line 28."""
+
+SPLIT_INCOME_LINE_30 = CATALOG.declare("split_income_line_30", Decimal, non_negative=True)
+"""Federal tax on split income floor, Form T1206 Part 2 line 30 "Enter whichever is more: the amount
+from line 24 or line 29.": the greater of line 24 and line 29, the floor under the federal tax on
+split income."""
+
 NET_FEDERAL_TAX = CATALOG.declare("net_federal_tax", Decimal, non_negative=True)
-"""Net federal tax, T1 line 142 (line 42000) "Add lines 139 to 141. Net federal tax": the federal
-tax less the credits against it (`federal_tax_less_credits`, line 139), the advanced Canada workers
-benefit (`advanced_canada_workers_benefit`, line 140) and the special taxes (`special_taxes`, line
-141), in line order.
+"""Net federal tax, T1 line 142 (line 42000) "Add lines 139 to 141. Net federal tax": by Form T1206
+Part 2 "Add the amount from line 30 to the amount from line 41800 of your return, and enter the
+result on line 42000 of your return.", line 30 (`split_income_line_30`, the more of line 24 and line
+29, line 29 being line 139, `federal_tax_less_credits`, plus line 140, the advanced Canada workers
+benefit) plus the special taxes (`special_taxes`, line 141), in line order. With no split income,
+line 24 is at most line 29, so line 30 is line 29 and the sum is lines 139 to 141.
 
 Line 126 (42900) is "Line 121 minus line 125 (if negative, enter "0") Basic federal tax", line 121
 (40400) "Line 119 plus line 120" and line 125 "Add lines 122 to 124.", line 122 being "Amount from
 line 35000" and line 123 the federal dividend tax credit: the federal tax after credits. Line 131
 (`itc_recapture`) is added to it (line 132) and line 134 (40600) "Line 132 minus line 133 (if
-negative, enter "0") Federal tax" carries line 132, as line 133 is not wired. Not modelled: line 120
-(40424, tax on split income), line 124 (minimum tax carryover), line 127 (foreign surtax, not
+negative, enter "0") Federal tax" carries line 132, as line 133 is not wired. Not modelled: line 124
+(minimum tax carryover), line 127 (foreign surtax, not
 triggered on a return whose income is all allocated to Ontario), line 129 (foreign tax credit),
 line 133 (logging tax credit) and line 136 (investment tax credit).
 """

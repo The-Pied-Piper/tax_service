@@ -1,12 +1,13 @@
 """The Ontario artifact catalog: Ontario's own kinds, named from Forms ON428 (§2, §7), ON479,
-Schedule ON479-A, T1221, ON-BEN.
+Schedule ON479-A, T1221, ON-BEN and T1206 Part 3.
 
-Only the kinds in use are declared. Amounts are non-negative Decimal, as no ON428, ON479 or ON479-A
-amount here can be negative; the counts of dependent children and dependants are int, the T1221
-slips and the co-operative education work placements record lists, the ON479 line 63270 business
-number digits, and the ON479-A line 7 percentage a Rate. Federal kinds come from
-`app.jurisdictions.ca.catalog`. Identifiers are stable: `tests/jurisdictions/ca_on/test_catalog.py`
-snapshots them.
+Only the kinds in use are declared. Amounts are Decimal, non-negative except the Form T1206 Part 3
+lines that print no "(if negative, enter "0")" (lines 39, 47 and 50), which are signed, as no other
+ON428, ON479 or ON479-A amount here can be negative; the counts of dependent children and
+dependants are int, the T1221 slips and the co-operative education work placements record lists,
+the ON479 line 63270 business number digits, and the ON479-A line 7 percentage a Rate. Federal
+kinds come from `app.jurisdictions.ca.catalog`. Identifiers are stable:
+`tests/jurisdictions/ca_on/test_catalog.py` snapshots them.
 """
 
 from __future__ import annotations
@@ -186,6 +187,14 @@ amount transferred from a dependant (use Worksheet ON428)": "the total of allowa
 claimed for all dependants", each line 12 "Enter whichever is less: amount from line 7 or line
 11. Allowable amount for this dependant", a part of the total of the Ontario credit amounts."""
 
+DISABILITY_AMOUNT_FOR_SELF = CATALOG.declare(
+    "disability_amount_for_self", Decimal, non_negative=True
+)
+"""Ontario disability amount for self, ON428 line 58440 "Disability amount for self (if you were
+under 18 years of age, use Worksheet ON428; if not, claim $10,138)": a starting amount, read by
+Form T1206 Part 3 line 34 "DTC from line 58440 of your provincial or territorial Form 428" and not
+yet computed."""
+
 NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare(
     "non_refundable_credit_amounts", Decimal, non_negative=True
 )
@@ -193,9 +202,10 @@ NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare(
 line 43": the sum of the credit amounts the rate is applied to once, here, in line order, the
 basic personal amount (line 58040), the age amount (line 58080), the spouse or common-law
 partner amount (line 58120), the amount for an eligible dependant (line 58160), the Ontario
-caregiver amount (line 58185), the base CPP contributions (line 58240), the EI premiums
-(line 58300), the disability amount transferred from a dependant (line 58480) and the allowable
-medical expenses (line 58769)."""
+caregiver amount (line 58185), the base CPP contributions (line 58240), the base CPP
+contributions on self-employment income (line 58280), the EI premiums (line 58300), the EI
+premiums on self-employment (line 58305), the disability amount transferred from a dependant
+(line 58480) and the allowable medical expenses (line 58769)."""
 
 CREDIT_AMOUNTS_AT_CREDIT_RATE = CATALOG.declare(
     "credit_amounts_at_credit_rate", Decimal, non_negative=True
@@ -233,19 +243,91 @@ credit."""
 ONTARIO_TAX_AFTER_CREDITS = CATALOG.declare("ontario_tax_after_credits", Decimal, non_negative=True)
 """Ontario tax after non-refundable tax credits, not below zero: 2025 ON428 line 53."""
 
+ONTARIO_TAX_ON_SPLIT_INCOME = CATALOG.declare(
+    "ontario_tax_on_split_income", Decimal, non_negative=True
+)
+"""Ontario tax on split income, ON428 line 54 and line 61510 "Ontario tax on split income (complete
+Form T1206)", Form T1206 Part 3 line 33 "The amount from line 31 multiplied by the tax rate you
+entered on line 32": the total split income (line 31, the T1206 line 4) at the Ontario high tax rate
+of Chart C column 2."""
+
+SPLIT_INCOME_LINE_36 = CATALOG.declare("split_income_line_36", Decimal, non_negative=True)
+"""Disability amounts on split income, Form T1206 Part 3 line 36 "Line 34 plus line 35", line 34
+being "DTC from line 58440 of your provincial or territorial Form 428" and line 35 "DTC transferred
+from a dependant from line 58480 of your provincial or territorial Form 428": the Ontario disability
+amount for self plus the amount transferred from a dependant."""
+
+SPLIT_INCOME_LINE_38 = CATALOG.declare("split_income_line_38", Decimal, non_negative=True)
+"""Disability credit on split income, Form T1206 Part 3 line 38 "Amount from line 36 multiplied by
+the tax rate you entered on line 37": line 36 at the Ontario low tax rate of Chart C column 3."""
+
+SPLIT_INCOME_LINE_39 = CATALOG.declare("split_income_line_39", Decimal)
+"""Ontario tax on split income less the disability credit, Form T1206 Part 3 line 39 "Line 33 minus
+line 38": the Ontario tax on split income less the disability credit.
+
+The form prints no "(if negative, enter "0")", so the kind is signed.
+"""
+
+SPLIT_INCOME_LINE_42 = CATALOG.declare("split_income_line_42", Decimal, non_negative=True)
+"""Ontario dividend tax credit on split income, eligible, Form T1206 Part 3 line 42 "Amount from
+line 40 multiplied by the rate you entered on line 41", line 40 being "Amount from line 18": the
+eligible dividends on split income at the eligible dividend tax credit rate of Chart C column 5."""
+
+SPLIT_INCOME_LINE_45 = CATALOG.declare("split_income_line_45", Decimal, non_negative=True)
+"""Ontario dividend tax credit on split income, other than eligible, Form T1206 Part 3 line 45
+"Amount from line 43 multiplied by the rate you entered on line 44", line 43 being "Amount from line
+17": the dividends other than eligible on split income at the dividend other than eligible dividend
+tax credit rate of Chart C column 6."""
+
+SPLIT_INCOME_LINE_46 = CATALOG.declare("split_income_line_46", Decimal, non_negative=True)
+"""Ontario dividend tax credit on split income, Form T1206 Part 3 line 46 "Line 42 plus line 45":
+the Ontario dividend tax credit on split income."""
+
+SPLIT_INCOME_LINE_47 = CATALOG.declare("split_income_line_47", Decimal)
+"""Ontario tax on split income after the credits, Form T1206 Part 3 line 47 "Line 39 minus line
+46": line 39 less the dividend tax credit.
+
+The form prints no "(if negative, enter "0")", so the kind is signed.
+"""
+
+SPLIT_INCOME_LINE_50 = CATALOG.declare("split_income_line_50", Decimal)
+"""Ontario tax on split income after the foreign tax credit, Form T1206 Part 3 line 50 "Line 48
+minus line 49", line 48 being "Amount from line 47 on the previous page": line 47 less the
+provincial foreign tax credit of line 49, which is not wired, so line 50 carries line 47.
+
+The form prints no "(if negative, enter "0")", so the kind is signed.
+"""
+
+ONTARIO_TAX_WITH_SPLIT_INCOME = CATALOG.declare(
+    "ontario_tax_with_split_income", Decimal, non_negative=True
+)
+"""Ontario tax with the tax on split income, ON428 line 55 "Line 53 plus line 54": the Ontario tax
+after credits (line 53) plus the Ontario tax on split income (line 54)."""
+
+ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX = CATALOG.declare(
+    "ontario_tax_on_split_income_for_surtax", Decimal, non_negative=True
+)
+"""Ontario tax on split income taken out of the surtax base, ON428 line 64 "Ontario tax on split
+income from line 54": the Ontario tax on split income, carried."""
+
+ONTARIO_SURTAX_BASE = CATALOG.declare("ontario_surtax_base", Decimal, non_negative=True)
+"""Ontario surtax base, ON428 line 65 "Line 63 minus line 64 (if negative, enter "0")": line 63
+(the Ontario tax with the tax on split income, lines 55, 61 and 62 carrying line 55) less line 64
+(the Ontario tax on split income), not below zero."""
+
 ONTARIO_SURTAX = CATALOG.declare("ontario_surtax", Decimal, non_negative=True)
 """Ontario surtax, 2025 ON428 line 68 "Line 66 plus line 67": the 20% tier over $5,710 (line 66)
 plus the 36% tier over $7,307 (line 67), each on line 65, the surtax base.
 
 Line 65 is "Line 63 minus line 64 (if negative, enter "0")", with line 64 the Ontario tax on split
-income. Neither that tax (line 54) nor the minimum tax carryover (line 60) is modelled, so lines
-55, 61, 62 and 63 carry line 53 unchanged and line 65 is the Ontario tax after credits itself.
+income (`ontario_surtax_base`). The minimum tax carryover (line 60) is not modelled, so lines 61, 62
+and 63 carry line 55.
 """
 
 ONTARIO_TAX_WITH_SURTAX = CATALOG.declare("ontario_tax_with_surtax", Decimal, non_negative=True)
-"""Ontario tax with surtax, 2025 ON428 line 69 "Line 62 plus line 68": the Ontario tax after
-credits (line 62, which carries line 53 while neither the tax on split income nor the minimum tax
-carryover is modelled) plus the Ontario surtax."""
+"""Ontario tax with surtax, 2025 ON428 line 69 "Line 62 plus line 68": the Ontario tax with the tax
+on split income (line 62, which carries line 55 while the minimum tax carryover is not modelled)
+plus the Ontario surtax."""
 
 DIVIDENDS_AMOUNT_A = CATALOG.declare("dividends_amount_a", Decimal, non_negative=True)
 """Dividends amount A, Worksheet ON428 line 61520 line A "Amount from line 12000 of your
@@ -580,16 +662,30 @@ ONTARIO_TAX_AFTER_FOOD_CREDIT = CATALOG.declare(
 "Line 86 minus line 87 (if negative, enter "0")": the Ontario tax after the LIFT credit less the
 credit."""
 
+SPLIT_INCOME_LINE_52 = CATALOG.declare("split_income_line_52", Decimal, non_negative=True)
+"""Ontario tax after the split income floor, Form T1206 Part 3 line 52 "Enter whichever is more: the
+amount from line 50 or line 51", line 51 being "Amount from the line number of your Form 428 shown
+in column 8 of Chart C" (ON428 line 88): the more of line 50 and line 88, which the form enters on
+ON428 line 88 and which line 90 adds the health premium to."""
+
+HEALTH_PREMIUM_INCOME = CATALOG.declare("health_premium_income", Decimal, non_negative=True)
+"""Taxable income for the Ontario health premium, ON428 line 89 chart line 1 "Enter your taxable
+income from line 26000 of your return" with Form T1206 Part 1 "add the amount from line 4 of this
+form to your taxable income when calculating your Ontario health premium on Form ON428": the
+taxable income plus the total split income."""
+
 ONTARIO_HEALTH_PREMIUM = CATALOG.declare("ontario_health_premium", Decimal, non_negative=True)
 """Ontario health premium, ON428 line 89 "Ontario health premium (complete the chart below)": the
-chart on taxable income (its line 1 "Enter your taxable income from line 26000 of your return"),
+chart on the taxable income with the split income added (its line 1 "Enter your taxable income from
+line 26000 of your return"),
 each sloped row the previous plateau plus a rate on the income over the row's threshold, at most
 the next plateau."""
 
 ONTARIO_TAX = CATALOG.declare("ontario_tax", Decimal, non_negative=True)
 """Ontario tax, ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your
-return. Ontario tax": the Ontario tax after the community food program donation tax credit for
-farmers plus the Ontario health premium."""
+return. Ontario tax": line 88, which Form T1206 Part 3 line 52 sets to the more of its line 50 and
+the Ontario tax after the community food program donation tax credit for farmers, plus the Ontario
+health premium."""
 
 FERTILITY_EXPENSES = CATALOG.declare("fertility_expenses", Decimal, non_negative=True)
 """Eligible medical expenses for fertility treatment, Form ON479 line 1 and line 61268 "Eligible

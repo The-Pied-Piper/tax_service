@@ -26,11 +26,12 @@ capabilities:
       amount: ca-on/age_income_threshold
     produces:
       output: ca-on/age_income_threshold
-  # Line 2 "Amount from line 23600 of your return", the net income, and line 4 "Line 2
-  # minus line 3 (if negative, enter "0")".
+  # Line 2 "Amount from line 23600 of your return", the TOSI-adjusted net income of Form T1206
+  # Part 1 line 6 in its place, not below zero, and line 4 "Line 2 minus line 3 (if negative,
+  # enter "0")".
   - name: core/subtract_not_below_zero
     consumes:
-      amount: ca/net_income
+      amount: ca/tosi_adjusted_net_income_not_below_zero
       less: ca-on/age_income_threshold
     produces:
       output: ca-on/age_income_over_threshold

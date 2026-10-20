@@ -4,10 +4,15 @@ from __future__ import annotations
 
 from app.domain.capabilities.apply_fraction import ApplyFraction
 from app.domain.capabilities.apply_rate import ApplyRate
+from app.domain.capabilities.at_most import AtMost
 from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.sum import Sum
+from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
 from app.domain.manifest import CapabilitySelection
+from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
+from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
+from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
 from app.jurisdictions.ca.capabilities.short_term_rental_gross_rents import (
     ShortTermRentalGrossRents,
@@ -15,6 +20,7 @@ from app.jurisdictions.ca.capabilities.short_term_rental_gross_rents import (
 from app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_expenses import (
     ShortTermRentalNonCompliantExpenses,
 )
+from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
 from app.jurisdictions.ca.catalog import (
     BUSINESS_INCOME,
     CAPITAL_GAIN,
@@ -63,10 +69,24 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_ADVERTISING,
     RENTAL_ADVERTISING_PERSONAL_PORTION,
     RENTAL_ADVERTISING_SHORT_TERM_PORTION,
+    RENTAL_CCA_BUSINESS_USE_OF_HOME,
     RENTAL_CCA_CLAIM,
+    RENTAL_CCA_CLAIM_BEFORE_LIMIT,
+    RENTAL_CCA_CLAIM_LESS_PERSONAL_PART,
+    RENTAL_CCA_CLAIM_SHARE,
+    RENTAL_CCA_CLASSES,
+    RENTAL_CCA_LIMIT,
+    RENTAL_CCA_PERSONAL_PART,
+    RENTAL_CCA_TABLE_CLAIM,
+    RENTAL_CCA_TABLE_RECAPTURE,
+    RENTAL_CCA_TABLE_TERMINAL_LOSS,
+    RENTAL_CLOSING_UCC,
     RENTAL_COOWNER,
+    RENTAL_COOWNER_CCA_CLAIM,
     RENTAL_COOWNER_OTHER_EXPENSES,
+    RENTAL_COOWNER_RECAPTURED_CCA,
     RENTAL_COOWNER_SHARE,
+    RENTAL_COOWNER_TERMINAL_LOSS,
     RENTAL_DEDUCTIBLE_EXPENSES,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
     RENTAL_GROSS_RENTS,
@@ -240,9 +260,12 @@ INPUTS = frozenset(
         "ca/rental_coowner",
         "ca/rental_coowner_share",
         "ca/rental_coowner_other_expenses",
-        "ca/rental_recaptured_cca",
-        "ca/rental_terminal_loss",
-        "ca/rental_cca_claim",
+        "ca/rental_cca_classes",
+        "ca/rental_coowner_recaptured_cca",
+        "ca/rental_coowner_terminal_loss",
+        "ca/rental_coowner_cca_claim",
+        "ca/rental_cca_personal_part",
+        "ca/rental_cca_business_use_of_home",
         "ca/rental_partner",
         "ca/rental_partner_share",
         "ca/rental_partner_gst_hst_rebate",
@@ -269,6 +292,7 @@ OUTPUTS = frozenset(
         "ca/taxable_dividends_other_than_eligible",
         "ca/short_term_rental_gross_rents",
         "ca/rental_short_term_portion",
+        "ca/rental_closing_ucc",
     }
 )
 
@@ -568,7 +592,30 @@ STEPS = {
         },
         produces={"output": "ca/rental_net_income_after_coowner_expenses"},
     ),
-    # T776 "Line 4: Subtotal (amount 3 plus line 9947)": line 9947 is a caller input.
+    # T776 Area A "Line ii: Total CCA claim for the year *: Total of column 23" and Note 3 "If you
+    # have a negative amount in column 7, add it to income as a recapture under "Recaptured
+    # capital cost allowance" on line 9947": the recapture of each class of the Area A list
+    # (column 7 made positive when negative), totalled.
+    CapabilitySelection(
+        name="ca/recaptured_cca",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={"classes": "ca/rental_cca_classes"},
+        produces={"output": "ca/rental_cca_table_recapture"},
+    ),
+    # T776 "Line 9947: Recaptured capital cost allowance (co-owners: enter your share of the
+    # amount)": a count of 1 for a co-owner (a caller's 0 or 1) chooses the co-owner's share, as
+    # entered; with a count of 0 line 9947 is the recapture of Area A.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/rental_coowner",
+            "when_none": "ca/rental_cca_table_recapture",
+            "when_any": "ca/rental_coowner_recaptured_cca",
+        },
+        produces={"output": "ca/rental_recaptured_cca"},
+    ),
+    # T776 "Line 4: Subtotal (amount 3 plus line 9947)": line 9947 is computed from Area A.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -580,7 +627,30 @@ STEPS = {
         },
         produces={"output": "ca/rental_net_income_with_recapture"},
     ),
-    # T776 "Line 5: Subtotal (amount 4 minus line 9948)": line 9948 is a caller input.
+    # T776 Area A Note 3 "If no property is left in the class and there is a positive amount in
+    # this column, deduct the amount from your income as a terminal loss under "Terminal loss" on
+    # line 9948. Recapture and terminal loss do not apply to a Class 10.1 property unless it is a
+    # DIEP": the terminal loss of each class of the Area A list, totalled.
+    CapabilitySelection(
+        name="ca/terminal_loss",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={"classes": "ca/rental_cca_classes"},
+        produces={"output": "ca/rental_cca_table_terminal_loss"},
+    ),
+    # T776 "Line 9948: Terminal loss (co-owners: enter your share of the amount)": a count of 1
+    # for a co-owner chooses the co-owner's share, as entered; with a count of 0 line 9948 is the
+    # terminal loss of Area A.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/rental_coowner",
+            "when_none": "ca/rental_cca_table_terminal_loss",
+            "when_any": "ca/rental_coowner_terminal_loss",
+        },
+        produces={"output": "ca/rental_terminal_loss"},
+    ),
+    # T776 "Line 5: Subtotal (amount 4 minus line 9948)": line 9948 is computed from Area A.
     CapabilitySelection(
         name="core/subtract",
         params={},
@@ -590,8 +660,83 @@ STEPS = {
         },
         produces={"output": "ca/rental_net_income_after_terminal_loss"},
     ),
-    # T776 "Line 6: Net income (loss) (amount 5 minus line 9936)": line 9936 is a caller
-    # input.
+    # T776 Area A "Line ii: Total CCA claim for the year *: Total of column 23": the CCA claimed
+    # on each class of the Area A list, at most its maximum (column 19 multiplied by column 20),
+    # totalled.
+    CapabilitySelection(
+        name="ca/cca_claim",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={"classes": "ca/rental_cca_classes"},
+        produces={"output": "ca/rental_cca_table_claim"},
+    ),
+    # T776 Area A "* Sole proprietors and partnerships: Enter the total CCA claim for the year
+    # from amount ii on line 9936. Co-owners: Enter only your share of the total CCA claim for
+    # the year from amount ii on line 9936": a count of 1 for a co-owner chooses the co-owner's
+    # share, as entered; with a count of 0 it is amount ii.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/rental_coowner",
+            "when_none": "ca/rental_cca_table_claim",
+            "when_any": "ca/rental_coowner_cca_claim",
+        },
+        produces={"output": "ca/rental_cca_claim_share"},
+    ),
+    # T776 "Line 9936: Total CCA claim for the year (amount ii from Area A minus any personal
+    # part of CCA, and any CCA for business-use-of home expenses)", first step: amount ii minus
+    # the personal part of CCA, a caller input.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/rental_cca_claim_share",
+            "less": "ca/rental_cca_personal_part",
+        },
+        produces={"output": "ca/rental_cca_claim_less_personal_part"},
+    ),
+    # T776 "Line 9936: Total CCA claim for the year (amount ii from Area A minus any personal
+    # part of CCA, and any CCA for business-use-of home expenses)", second step: that result
+    # minus the CCA for business-use-of-home expenses, a caller input.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/rental_cca_claim_less_personal_part",
+            "less": "ca/rental_cca_business_use_of_home",
+        },
+        produces={"output": "ca/rental_cca_claim_before_limit"},
+    ),
+    # Guide T4036: "You cannot use CCA to create or increase a rental loss": the most line 9936
+    # may be is amount 5 ("Line 5: Subtotal (amount 4 minus line 9948)"), or 0 when amount 5 is
+    # negative.
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={"parts": ("ca/rental_net_income_after_terminal_loss",)},
+        produces={"output": "ca/rental_cca_limit"},
+    ),
+    # T776 "Line 9936: Total CCA claim for the year": the claim above, at most that limit. A claim
+    # above it is refused, not capped, which also covers Classes 31 and 32.
+    CapabilitySelection(
+        name="core/at_most",
+        params={},
+        consumes={
+            "amount": "ca/rental_cca_claim_before_limit",
+            "bound": "ca/rental_cca_limit",
+        },
+        produces={"output": "ca/rental_cca_claim"},
+    ),
+    # T776 Area A "Column 24: UCC at the end of the year (column 7 minus column 23)": the class
+    # number and column 24 of each class of the Area A list, a product of the return for next
+    # year's column 2.
+    CapabilitySelection(
+        name="ca/closing_ucc",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={"classes": "ca/rental_cca_classes"},
+        produces={"output": "ca/rental_closing_ucc"},
+    ),
+    # T776 "Line 6: Net income (loss) (amount 5 minus line 9936)": line 9936 is computed above.
     CapabilitySelection(
         name="core/subtract",
         params={},
@@ -958,6 +1103,45 @@ WIRING = {
         frozenset({RENTAL_NET_INCOME_SHARE, RENTAL_COOWNER_OTHER_EXPENSES}),
         frozenset({RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES}),
     ),
+    (RecapturedCca, frozenset({RENTAL_CCA_CLASSES}), frozenset({RENTAL_CCA_TABLE_RECAPTURE})),
+    (
+        ChooseByCount,
+        frozenset({RENTAL_COOWNER, RENTAL_CCA_TABLE_RECAPTURE, RENTAL_COOWNER_RECAPTURED_CCA}),
+        frozenset({RENTAL_RECAPTURED_CCA}),
+    ),
+    (TerminalLoss, frozenset({RENTAL_CCA_CLASSES}), frozenset({RENTAL_CCA_TABLE_TERMINAL_LOSS})),
+    (
+        ChooseByCount,
+        frozenset({RENTAL_COOWNER, RENTAL_CCA_TABLE_TERMINAL_LOSS, RENTAL_COOWNER_TERMINAL_LOSS}),
+        frozenset({RENTAL_TERMINAL_LOSS}),
+    ),
+    (CcaClaim, frozenset({RENTAL_CCA_CLASSES}), frozenset({RENTAL_CCA_TABLE_CLAIM})),
+    (
+        ChooseByCount,
+        frozenset({RENTAL_COOWNER, RENTAL_CCA_TABLE_CLAIM, RENTAL_COOWNER_CCA_CLAIM}),
+        frozenset({RENTAL_CCA_CLAIM_SHARE}),
+    ),
+    (
+        Subtract,
+        frozenset({RENTAL_CCA_CLAIM_SHARE, RENTAL_CCA_PERSONAL_PART}),
+        frozenset({RENTAL_CCA_CLAIM_LESS_PERSONAL_PART}),
+    ),
+    (
+        Subtract,
+        frozenset({RENTAL_CCA_CLAIM_LESS_PERSONAL_PART, RENTAL_CCA_BUSINESS_USE_OF_HOME}),
+        frozenset({RENTAL_CCA_CLAIM_BEFORE_LIMIT}),
+    ),
+    (
+        SumNotBelowZero,
+        frozenset({RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS}),
+        frozenset({RENTAL_CCA_LIMIT}),
+    ),
+    (
+        AtMost,
+        frozenset({RENTAL_CCA_CLAIM_BEFORE_LIMIT, RENTAL_CCA_LIMIT}),
+        frozenset({RENTAL_CCA_CLAIM}),
+    ),
+    (ClosingUcc, frozenset({RENTAL_CCA_CLASSES}), frozenset({RENTAL_CLOSING_UCC})),
     (
         Sum,
         frozenset({RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES, RENTAL_RECAPTURED_CCA}),
