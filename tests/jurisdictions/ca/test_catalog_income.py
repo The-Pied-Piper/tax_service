@@ -42,6 +42,10 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PENSIONS_AND_SUPERANNUATION,
     RDSP_INCOME,
     RRSP_INCOME,
+    SHORT_TERM_RENTAL_DAYS,
+    SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
+    SHORT_TERM_RENTAL_RELATED_EXPENSES,
+    SHORT_TERM_RENTAL_UNITS,
     SLIP_DIVIDEND_TAX_CREDIT,
     SLIP_TAXABLE_DIVIDENDS,
     SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
@@ -177,6 +181,15 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     assert registry.get("ca/social_assistance_payments") is SOCIAL_ASSISTANCE_PAYMENTS
     assert registry.get("ca/net_federal_supplements") is NET_FEDERAL_SUPPLEMENTS
     assert registry.get("ca/income_support_benefits") is INCOME_SUPPORT_BENEFITS
+    assert (
+        registry.get("ca/short_term_rental_related_expenses") is SHORT_TERM_RENTAL_RELATED_EXPENSES
+    )
+    assert (
+        registry.get("ca/short_term_rental_non_compliant_days")
+        is SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS
+    )
+    assert registry.get("ca/short_term_rental_days") is SHORT_TERM_RENTAL_DAYS
+    assert registry.get("ca/short_term_rental_units") is SHORT_TERM_RENTAL_UNITS
 
 
 def test_the_income_kinds_are_money() -> None:

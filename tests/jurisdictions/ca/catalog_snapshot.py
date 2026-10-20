@@ -72,6 +72,10 @@ REGISTERED = frozenset(
         "ca/social_assistance_payments",
         "ca/net_federal_supplements",
         "ca/income_support_benefits",
+        "ca/short_term_rental_related_expenses",
+        "ca/short_term_rental_non_compliant_days",
+        "ca/short_term_rental_days",
+        "ca/short_term_rental_units",
         "ca/rpp_deduction",
         "ca/canadian_armed_forces_and_police_deduction",
         "ca/security_options_deductions",
@@ -498,6 +502,8 @@ COUNTS = frozenset(
         "ca/resp_aips_part_a_applies",
         "ca/resident_in_canada_throughout_2025",
         "ca/aged_18_or_older_at_end_of_2025",
+        "ca/short_term_rental_non_compliant_days",
+        "ca/short_term_rental_days",
     }
 )
 
@@ -507,5 +513,6 @@ RECORD_LISTS = frozenset(
         "ca/disability_dependants",
         "ca/other_dependants",
         "ca/principal_residence_properties",
+        "ca/short_term_rental_units",
     }
 )

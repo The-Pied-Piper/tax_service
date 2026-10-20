@@ -106,6 +106,16 @@ def test_importing_the_federal_package_registers_the_closing_ucc_capability() ->
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.closing_ucc"
 
 
+def test_importing_the_federal_package_registers_the_short_term_rental_expenses_capability() -> (
+    None
+):
+    registered = CapabilityRegistry.shared().get("ca/short_term_rental_non_compliant_expenses")
+
+    assert registered.__module__ == (
+        "app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_expenses"
+    )
+
+
 def test_importing_the_federal_package_registers_the_disability_transfer_amount() -> None:
     registered = CapabilityRegistry.shared().get("ca/disability_transfer_amount")
 

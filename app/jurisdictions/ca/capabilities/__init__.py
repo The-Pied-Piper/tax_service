@@ -16,6 +16,7 @@ from app.jurisdictions.ca.capabilities import (  # noqa: E402
     other_dependants_medical,
     principal_residence_gain,
     recaptured_cca,
+    short_term_rental_non_compliant_expenses,
     terminal_loss,
     threshold_gate,
 )
@@ -30,6 +31,7 @@ __all__ = [
     "other_dependants_medical",
     "principal_residence_gain",
     "recaptured_cca",
+    "short_term_rental_non_compliant_expenses",
     "terminal_loss",
     "threshold_gate",
 ]

@@ -191,6 +191,10 @@ from app.jurisdictions.ca.catalog import (
     RESP_AIPS_SUBJECT_TO_TAX,
     RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
     RRSP_AMOUNT_DEDUCTED,
+    SHORT_TERM_RENTAL_DAYS,
+    SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
+    SHORT_TERM_RENTAL_RELATED_EXPENSES,
+    SHORT_TERM_RENTAL_UNITS,
     SPECIAL_TAXES,
     SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS,
     SPOUSE_RDSP_INCOME,
@@ -513,6 +517,112 @@ def test_the_other_dependants_medical_is_a_non_negative_decimal(registry: Artifa
     assert OTHER_DEPENDANTS_MEDICAL.value_type is Decimal
     assert OTHER_DEPENDANTS_MEDICAL.non_negative is True
     assert registry.kind("ca/other_dependants_medical") is OTHER_DEPENDANTS_MEDICAL
+
+
+def test_the_short_term_rental_units_are_a_record_list_of_chart_a_columns_3_to_5(
+    registry: ArtifactRegistry,
+) -> None:
+    # Form T776 Chart A, "Enter each short-term rental or mixed rental property on a separate
+    # row": column 3 "Related portion of the total from line 9365 of Part 4", column 4 "Number
+    # of days the residential property was a non compliant short-term rental" and column 5
+    # "Number of days the residential property was a short-term rental" (columns 1 and 2 are
+    # the address and unit number, labels the engine does not use).
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(SHORT_TERM_RENTAL_UNITS, RecordListKind)
+    assert SHORT_TERM_RENTAL_UNITS.identifier == "ca/short_term_rental_units"
+    assert SHORT_TERM_RENTAL_UNITS.value_type is RecordList
+    assert SHORT_TERM_RENTAL_UNITS.non_negative is False
+    assert SHORT_TERM_RENTAL_UNITS.fields == (
+        SHORT_TERM_RENTAL_RELATED_EXPENSES,
+        SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
+        SHORT_TERM_RENTAL_DAYS,
+    )
+    assert registry.get("ca/short_term_rental_units") is SHORT_TERM_RENTAL_UNITS
+
+
+def test_the_short_term_rental_related_expenses_are_a_non_negative_decimal(
+    registry: ArtifactRegistry,
+) -> None:
+    # Chart A, column 3 "Related portion of the total from line 9365 of Part 4".
+    assert SHORT_TERM_RENTAL_RELATED_EXPENSES.identifier == "ca/short_term_rental_related_expenses"
+    assert SHORT_TERM_RENTAL_RELATED_EXPENSES.value_type is Decimal
+    assert SHORT_TERM_RENTAL_RELATED_EXPENSES.non_negative is True
+    assert (
+        registry.kind("ca/short_term_rental_related_expenses") is SHORT_TERM_RENTAL_RELATED_EXPENSES
+    )
+
+
+@pytest.mark.parametrize(
+    ("kind", "identifier"),
+    [
+        (SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS, "ca/short_term_rental_non_compliant_days"),
+        (SHORT_TERM_RENTAL_DAYS, "ca/short_term_rental_days"),
+    ],
+)
+def test_the_short_term_rental_days_are_non_negative_int_counts(
+    kind: ArtifactKind[int], identifier: str, registry: ArtifactRegistry
+) -> None:
+    # Chart A, columns 4 and 5: "Number of days ...", whole days.
+    assert kind.identifier == identifier
+    assert kind.value_type is int
+    assert kind.non_negative is True
+    assert registry.kind(identifier) is kind
+
+
+def short_term_rental_record(**changes: object) -> dict[ArtifactKind[Any], object]:
+    """One row of the ticket's example (900, 30 of 90 days) with `changes` by field name."""
+    names: dict[str, ArtifactKind[Any]] = {
+        "related_expenses": SHORT_TERM_RENTAL_RELATED_EXPENSES,
+        "non_compliant_days": SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
+        "days": SHORT_TERM_RENTAL_DAYS,
+    }
+    record: dict[ArtifactKind[Any], object] = {
+        SHORT_TERM_RENTAL_RELATED_EXPENSES: Decimal("900"),
+        SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS: 30,
+        SHORT_TERM_RENTAL_DAYS: 90,
+    }
+    for name, value in changes.items():
+        record[names[name]] = value
+    return record
+
+
+def test_the_short_term_rental_units_hold_each_rows_columns_in_the_callers_order() -> None:
+    rows = RecordList(
+        SHORT_TERM_RENTAL_UNITS.fields,
+        [short_term_rental_record(), short_term_rental_record(related_expenses=Decimal("100"))],
+    )
+
+    assert [record[SHORT_TERM_RENTAL_RELATED_EXPENSES] for record in rows.records] == [
+        Decimal("900"),
+        Decimal("100"),
+    ]
+    assert rows.records[0][SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS] == 30
+    assert rows.records[0][SHORT_TERM_RENTAL_DAYS] == 90
+
+
+def test_the_short_term_rental_units_may_be_empty() -> None:
+    assert RecordList(SHORT_TERM_RENTAL_UNITS.fields, []).records == ()
+
+
+@pytest.mark.parametrize("field", ["related_expenses", "non_compliant_days", "days"])
+def test_a_short_term_rental_row_refuses_a_negative_column(field: str) -> None:
+    value: object = Decimal("-1") if field == "related_expenses" else -1
+
+    with pytest.raises(NegativeArtifactError, match="item 1"):
+        RecordList(SHORT_TERM_RENTAL_UNITS.fields, [short_term_rental_record(**{field: value})])
+
+
+def test_a_short_term_rental_row_refuses_a_fractional_number_of_days() -> None:
+    with pytest.raises(TypeError, match="item 1.*short_term_rental_days"):
+        RecordList(SHORT_TERM_RENTAL_UNITS.fields, [short_term_rental_record(days=Decimal("90"))])
+
+
+def test_a_short_term_rental_row_missing_a_column_is_refused_naming_the_row() -> None:
+    record = short_term_rental_record()
+    del record[SHORT_TERM_RENTAL_DAYS]
+
+    with pytest.raises(InvalidRecordError, match="item 1.*short_term_rental_days"):
+        RecordList(SHORT_TERM_RENTAL_UNITS.fields, [record])
 
 
 def test_medical_expenses_is_a_non_negative_decimal(registry: ArtifactRegistry) -> None:
