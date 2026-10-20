@@ -21,6 +21,17 @@ from app.domain.record_list import RecordList, RecordListKind
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADJUSTED_FAMILY_NET_INCOME,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+    ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
+    ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
+    ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
+    ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
+    ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
+    ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
+    ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
     ADVANCED_CANADA_WORKERS_BENEFIT,
     AGE_AMOUNT,
     AGE_AMOUNT_BEFORE_COUNT,
@@ -216,6 +227,13 @@ from app.jurisdictions.ca.catalog import (
     MEDICAL_EXPENSES_OVER_THRESHOLD,
     MEDICAL_NET_INCOME_SHARE,
     MEDICAL_THRESHOLD,
+    NET_CAPITAL_LOSS_BALANCE_1985_TO_1987,
+    NET_CAPITAL_LOSS_BALANCE_1988_AND_1989,
+    NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
+    NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
+    NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
+    NET_CAPITAL_LOSSES_CLAIMED,
+    NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
     NET_INCOME,
@@ -280,6 +298,10 @@ from app.jurisdictions.ca.catalog import (
     REFUND_OR_BALANCE_OWING,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
+    REMAINING_ADJUSTED_LOSSES_1985_TO_1987,
+    REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
+    REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
+    REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
     RESP_AIPS_ADDITIONAL_TAX,
     RESP_AIPS_CONTRIBUTIONS_COUNTED,
     RESP_AIPS_LIFETIME_LIMIT,
@@ -349,6 +371,7 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
     TOP_UP_THRESHOLD,
+    TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
     TOTAL_CARRYING_CHARGES,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
@@ -359,6 +382,10 @@ from app.jurisdictions.ca.catalog import (
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
     UCCB_REPAYMENT,
+    UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987,
+    UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989,
+    UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
+    UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024,
     UNION_DUES,
     UNIVERSAL_CHILD_CARE_BENEFIT,
     UNIVERSITY_DONATIONS_OUTSIDE_CANADA,
@@ -451,6 +478,33 @@ REGISTERED = frozenset(
         "ca/other_payments_deduction",
         "ca/limited_partnership_losses_of_other_years",
         "ca/non_capital_losses_of_other_years",
+        "ca/unapplied_net_capital_losses_1985_to_1987",
+        "ca/unapplied_net_capital_losses_1988_and_1989",
+        "ca/unapplied_net_capital_losses_1990_to_1999",
+        "ca/unapplied_net_capital_losses_2001_to_2024",
+        "ca/net_capital_losses_claimed",
+        "ca/adjusted_gross_capital_losses_1985_to_1987",
+        "ca/adjusted_gross_capital_losses_1988_and_1989",
+        "ca/adjusted_gross_capital_losses_1990_to_1999",
+        "ca/adjusted_gross_capital_losses_2001_to_2024",
+        "ca/total_adjusted_net_capital_losses",
+        "ca/net_capital_losses_available_to_claim",
+        "ca/net_capital_losses_of_other_years",
+        "ca/adjusted_losses_applied_1985_to_1987",
+        "ca/adjusted_losses_left_after_1985_to_1987",
+        "ca/remaining_adjusted_losses_1985_to_1987",
+        "ca/net_capital_loss_balance_1985_to_1987",
+        "ca/adjusted_losses_applied_1988_and_1989",
+        "ca/adjusted_losses_left_after_1988_and_1989",
+        "ca/remaining_adjusted_losses_1988_and_1989",
+        "ca/net_capital_loss_balance_1988_and_1989",
+        "ca/adjusted_losses_applied_1990_to_1999",
+        "ca/adjusted_losses_left_after_1990_to_1999",
+        "ca/remaining_adjusted_losses_1990_to_1999",
+        "ca/net_capital_loss_balance_1990_to_1999",
+        "ca/adjusted_losses_applied_2001_to_2024",
+        "ca/remaining_adjusted_losses_2001_to_2024",
+        "ca/net_capital_loss_balance_2001_to_2024",
         "ca/additional_deductions",
         "ca/unused_rrsp_contributions",
         "ca/rrsp_contributions",
@@ -963,6 +1017,105 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
         is LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS
     )
     assert registry.get("ca/non_capital_losses_of_other_years") is NON_CAPITAL_LOSSES_OF_OTHER_YEARS
+    assert (
+        registry.get("ca/unapplied_net_capital_losses_1985_to_1987")
+        is UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987
+    )
+    assert (
+        registry.get("ca/unapplied_net_capital_losses_1988_and_1989")
+        is UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989
+    )
+    assert (
+        registry.get("ca/unapplied_net_capital_losses_1990_to_1999")
+        is UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999
+    )
+    assert (
+        registry.get("ca/unapplied_net_capital_losses_2001_to_2024")
+        is UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024
+    )
+    assert registry.get("ca/net_capital_losses_claimed") is NET_CAPITAL_LOSSES_CLAIMED
+    assert (
+        registry.get("ca/adjusted_gross_capital_losses_1985_to_1987")
+        is ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987
+    )
+    assert (
+        registry.get("ca/adjusted_gross_capital_losses_1988_and_1989")
+        is ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989
+    )
+    assert (
+        registry.get("ca/adjusted_gross_capital_losses_1990_to_1999")
+        is ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999
+    )
+    assert (
+        registry.get("ca/adjusted_gross_capital_losses_2001_to_2024")
+        is ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024
+    )
+    assert registry.get("ca/total_adjusted_net_capital_losses") is TOTAL_ADJUSTED_NET_CAPITAL_LOSSES
+    assert (
+        registry.get("ca/net_capital_losses_available_to_claim")
+        is NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM
+    )
+    assert registry.get("ca/net_capital_losses_of_other_years") is NET_CAPITAL_LOSSES_OF_OTHER_YEARS
+    assert (
+        registry.get("ca/adjusted_losses_applied_1985_to_1987")
+        is ADJUSTED_LOSSES_APPLIED_1985_TO_1987
+    )
+    assert (
+        registry.get("ca/adjusted_losses_left_after_1985_to_1987")
+        is ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987
+    )
+    assert (
+        registry.get("ca/remaining_adjusted_losses_1985_to_1987")
+        is REMAINING_ADJUSTED_LOSSES_1985_TO_1987
+    )
+    assert (
+        registry.get("ca/net_capital_loss_balance_1985_to_1987")
+        is NET_CAPITAL_LOSS_BALANCE_1985_TO_1987
+    )
+    assert (
+        registry.get("ca/adjusted_losses_applied_1988_and_1989")
+        is ADJUSTED_LOSSES_APPLIED_1988_AND_1989
+    )
+    assert (
+        registry.get("ca/adjusted_losses_left_after_1988_and_1989")
+        is ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989
+    )
+    assert (
+        registry.get("ca/remaining_adjusted_losses_1988_and_1989")
+        is REMAINING_ADJUSTED_LOSSES_1988_AND_1989
+    )
+    assert (
+        registry.get("ca/net_capital_loss_balance_1988_and_1989")
+        is NET_CAPITAL_LOSS_BALANCE_1988_AND_1989
+    )
+    assert (
+        registry.get("ca/adjusted_losses_applied_1990_to_1999")
+        is ADJUSTED_LOSSES_APPLIED_1990_TO_1999
+    )
+    assert (
+        registry.get("ca/adjusted_losses_left_after_1990_to_1999")
+        is ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999
+    )
+    assert (
+        registry.get("ca/remaining_adjusted_losses_1990_to_1999")
+        is REMAINING_ADJUSTED_LOSSES_1990_TO_1999
+    )
+    assert (
+        registry.get("ca/net_capital_loss_balance_1990_to_1999")
+        is NET_CAPITAL_LOSS_BALANCE_1990_TO_1999
+    )
+    assert (
+        registry.get("ca/adjusted_losses_applied_2001_to_2024")
+        is ADJUSTED_LOSSES_APPLIED_2001_TO_2024
+    )
+    assert (
+        registry.get("ca/remaining_adjusted_losses_2001_to_2024")
+        is REMAINING_ADJUSTED_LOSSES_2001_TO_2024
+    )
+    assert (
+        registry.get("ca/net_capital_loss_balance_2001_to_2024")
+        is NET_CAPITAL_LOSS_BALANCE_2001_TO_2024
+    )
     assert registry.get("ca/additional_deductions") is ADDITIONAL_DEDUCTIONS
     assert registry.get("ca/unused_rrsp_contributions") is UNUSED_RRSP_CONTRIBUTIONS
     assert registry.get("ca/rrsp_contributions") is RRSP_CONTRIBUTIONS
@@ -1522,6 +1675,33 @@ def test_catalog_kinds_are_money() -> None:
         OTHER_PAYMENTS_DEDUCTION,
         LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
         NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
+        UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987,
+        UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989,
+        UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
+        UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024,
+        NET_CAPITAL_LOSSES_CLAIMED,
+        ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987,
+        ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
+        ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
+        ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+        TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
+        NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
+        NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+        ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
+        ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
+        REMAINING_ADJUSTED_LOSSES_1985_TO_1987,
+        NET_CAPITAL_LOSS_BALANCE_1985_TO_1987,
+        ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
+        ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
+        REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
+        NET_CAPITAL_LOSS_BALANCE_1988_AND_1989,
+        ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
+        ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
+        REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
+        NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
+        ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
+        REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
+        NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
         ADDITIONAL_DEDUCTIONS,
         UNUSED_RRSP_CONTRIBUTIONS,
         RRSP_CONTRIBUTIONS,

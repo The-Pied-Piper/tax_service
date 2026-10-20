@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 291
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 313
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -129,6 +129,33 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/other_payments_deduction",
         "ca/limited_partnership_losses_of_other_years",
         "ca/non_capital_losses_of_other_years",
+        "ca/unapplied_net_capital_losses_1985_to_1987",
+        "ca/unapplied_net_capital_losses_1988_and_1989",
+        "ca/unapplied_net_capital_losses_1990_to_1999",
+        "ca/unapplied_net_capital_losses_2001_to_2024",
+        "ca/net_capital_losses_claimed",
+        "ca/adjusted_gross_capital_losses_1985_to_1987",
+        "ca/adjusted_gross_capital_losses_1988_and_1989",
+        "ca/adjusted_gross_capital_losses_1990_to_1999",
+        "ca/adjusted_gross_capital_losses_2001_to_2024",
+        "ca/total_adjusted_net_capital_losses",
+        "ca/net_capital_losses_available_to_claim",
+        "ca/net_capital_losses_of_other_years",
+        "ca/adjusted_losses_applied_1985_to_1987",
+        "ca/adjusted_losses_left_after_1985_to_1987",
+        "ca/remaining_adjusted_losses_1985_to_1987",
+        "ca/net_capital_loss_balance_1985_to_1987",
+        "ca/adjusted_losses_applied_1988_and_1989",
+        "ca/adjusted_losses_left_after_1988_and_1989",
+        "ca/remaining_adjusted_losses_1988_and_1989",
+        "ca/net_capital_loss_balance_1988_and_1989",
+        "ca/adjusted_losses_applied_1990_to_1999",
+        "ca/adjusted_losses_left_after_1990_to_1999",
+        "ca/remaining_adjusted_losses_1990_to_1999",
+        "ca/net_capital_loss_balance_1990_to_1999",
+        "ca/adjusted_losses_applied_2001_to_2024",
+        "ca/remaining_adjusted_losses_2001_to_2024",
+        "ca/net_capital_loss_balance_2001_to_2024",
         "ca/additional_deductions",
         "ca/unused_rrsp_contributions",
         "ca/rrsp_contributions",
@@ -524,13 +551,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 291
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 313
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 291
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 313
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
