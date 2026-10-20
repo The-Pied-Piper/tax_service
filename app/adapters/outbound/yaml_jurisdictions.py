@@ -47,7 +47,6 @@ _OPTIONAL_CAPABILITY_KEYS = frozenset({"params", "consumes"})
 _SCALAR_KEYS = ("jurisdiction", "version", "valid_from_tax_year")
 _IDENTIFIER_LISTS = ("inputs", "outputs")
 _PATTERNS = ("*.yaml", "*.yml")
-_SUFFIXES = frozenset({".yaml", ".yml"})
 
 
 class YamlJurisdictionSource:
@@ -73,7 +72,8 @@ class YamlJurisdictionSource:
         paths = sorted(
             p
             for p in manifests.iterdir()
-            if (p.is_dir() and self._parts(p)) or (p.is_file() and p.suffix in _SUFFIXES)
+            if (p.is_dir() and self._parts(p))
+            or (p.is_file() and any(p.match(pattern) for pattern in _PATTERNS))
         )
         return [self._load_for(code, path) for path in paths]
 
