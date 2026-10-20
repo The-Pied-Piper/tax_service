@@ -29,6 +29,14 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GAINS_DEDUCTIONS_2001_TO_2024,
     CAPITAL_GIFT_GAINS_DEDUCTION,
     CAPITAL_GIFT_TAXABLE_GAINS,
+    CCA_ADDITIONS,
+    CCA_AIIP_ADDITIONS,
+    CCA_CLAIMED,
+    CCA_CLASS_NUMBER,
+    CCA_NO_PROPERTY_LEFT,
+    CCA_PROCEEDS,
+    CCA_RIIP_ADDITIONS,
+    CCA_UCC_AT_START,
     CHARITABLE_DONATIONS,
     CHILD_CARE_EXPENSES_PAID,
     CHILDREN_SEVEN_TO_SIXTEEN,
@@ -155,10 +163,15 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_ADVERTISING,
     RENTAL_ADVERTISING_PERSONAL_PORTION,
     RENTAL_ADVERTISING_SHORT_TERM_PORTION,
-    RENTAL_CCA_CLAIM,
+    RENTAL_CCA_BUSINESS_USE_OF_HOME,
+    RENTAL_CCA_CLASSES,
+    RENTAL_CCA_PERSONAL_PART,
     RENTAL_COOWNER,
+    RENTAL_COOWNER_CCA_CLAIM,
     RENTAL_COOWNER_OTHER_EXPENSES,
+    RENTAL_COOWNER_RECAPTURED_CCA,
     RENTAL_COOWNER_SHARE,
+    RENTAL_COOWNER_TERMINAL_LOSS,
     RENTAL_INSURANCE,
     RENTAL_INSURANCE_PERSONAL_PORTION,
     RENTAL_INSURANCE_SHORT_TERM_PORTION,
@@ -192,14 +205,12 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_PROPERTY_TAXES_PERSONAL_PORTION,
     RENTAL_PROPERTY_TAXES_SHORT_TERM_PORTION,
     RENTAL_PROPERTY_UNITS,
-    RENTAL_RECAPTURED_CCA,
     RENTAL_REPAIRS_AND_MAINTENANCE,
     RENTAL_REPAIRS_AND_MAINTENANCE_PERSONAL_PORTION,
     RENTAL_REPAIRS_AND_MAINTENANCE_SHORT_TERM_PORTION,
     RENTAL_SALARIES_WAGES_AND_BENEFITS,
     RENTAL_SALARIES_WAGES_AND_BENEFITS_PERSONAL_PORTION,
     RENTAL_SALARIES_WAGES_AND_BENEFITS_SHORT_TERM_PORTION,
-    RENTAL_TERMINAL_LOSS,
     RENTAL_TRAVEL,
     RENTAL_TRAVEL_PERSONAL_PORTION,
     RENTAL_TRAVEL_SHORT_TERM_PORTION,
@@ -407,6 +418,37 @@ def rental_properties_list(*rows: tuple[int, str, str]) -> Artifact[RecordList]:
     return Artifact(RENTAL_PROPERTIES, RecordList(RENTAL_PROPERTIES.fields, records))
 
 
+def rental_cca_classes(
+    *rows: tuple[str, str, str, str, str, str, str, int],
+) -> Artifact[RecordList]:
+    """The Form T776 Area A rows, one record per class: column 1 (class number), column 2, column
+    3, column 5, column 11, column 12, the CCA claimed (column 23) as decimal text, and 1 if no
+    property is left in the class, else 0 (Note 3)."""
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {
+            CCA_CLASS_NUMBER: D(class_number),
+            CCA_UCC_AT_START: D(ucc_at_start),
+            CCA_ADDITIONS: D(additions),
+            CCA_PROCEEDS: D(proceeds),
+            CCA_AIIP_ADDITIONS: D(aiip_additions),
+            CCA_RIIP_ADDITIONS: D(riip_additions),
+            CCA_CLAIMED: D(claimed),
+            CCA_NO_PROPERTY_LEFT: no_property_left,
+        }
+        for (
+            class_number,
+            ucc_at_start,
+            additions,
+            proceeds,
+            aiip_additions,
+            riip_additions,
+            claimed,
+            no_property_left,
+        ) in rows
+    ]
+    return Artifact(RENTAL_CCA_CLASSES, RecordList(RENTAL_CCA_CLASSES.fields, records))
+
+
 def short_term_rental_units(*rows: tuple[str, int, int]) -> Artifact[RecordList]:
     """The Form T776 Chart A rows, one record per (column 3, column 4, column 5)."""
     records: list[dict[ArtifactKind[Any], object]] = [
@@ -571,9 +613,12 @@ def compute(
     rental_coowner: int = 0,
     rental_coowner_share: str = "0",
     rental_coowner_other_expenses: str = "0",
-    rental_recaptured_cca: str = "0",
-    rental_terminal_loss: str = "0",
-    rental_cca_claim: str = "0",
+    rental_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    rental_coowner_recaptured_cca: str = "0",
+    rental_coowner_terminal_loss: str = "0",
+    rental_coowner_cca_claim: str = "0",
+    rental_cca_personal_part: str = "0",
+    rental_cca_business_use_of_home: str = "0",
     rental_partner: int = 0,
     rental_partner_share: str = "0",
     rental_partner_gst_hst_rebate: str = "0",
@@ -822,9 +867,12 @@ def compute(
         Artifact(RENTAL_COOWNER, rental_coowner),
         Artifact(RENTAL_COOWNER_SHARE, D(rental_coowner_share)),
         Artifact(RENTAL_COOWNER_OTHER_EXPENSES, D(rental_coowner_other_expenses)),
-        Artifact(RENTAL_RECAPTURED_CCA, D(rental_recaptured_cca)),
-        Artifact(RENTAL_TERMINAL_LOSS, D(rental_terminal_loss)),
-        Artifact(RENTAL_CCA_CLAIM, D(rental_cca_claim)),
+        rental_cca_classes(*rental_cca_classes_rows),
+        Artifact(RENTAL_COOWNER_RECAPTURED_CCA, D(rental_coowner_recaptured_cca)),
+        Artifact(RENTAL_COOWNER_TERMINAL_LOSS, D(rental_coowner_terminal_loss)),
+        Artifact(RENTAL_COOWNER_CCA_CLAIM, D(rental_coowner_cca_claim)),
+        Artifact(RENTAL_CCA_PERSONAL_PART, D(rental_cca_personal_part)),
+        Artifact(RENTAL_CCA_BUSINESS_USE_OF_HOME, D(rental_cca_business_use_of_home)),
         Artifact(RENTAL_PARTNER, rental_partner),
         Artifact(RENTAL_PARTNER_SHARE, D(rental_partner_share)),
         Artifact(RENTAL_PARTNER_GST_HST_REBATE, D(rental_partner_gst_hst_rebate)),

@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 434
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 445
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -406,6 +406,20 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/rental_terminal_loss",
         "ca/rental_net_income_after_terminal_loss",
         "ca/rental_cca_claim",
+        "ca/rental_cca_classes",
+        "ca/rental_cca_table_recapture",
+        "ca/rental_cca_table_terminal_loss",
+        "ca/rental_cca_table_claim",
+        "ca/rental_coowner_recaptured_cca",
+        "ca/rental_coowner_terminal_loss",
+        "ca/rental_coowner_cca_claim",
+        "ca/rental_cca_claim_share",
+        "ca/rental_cca_personal_part",
+        "ca/rental_cca_business_use_of_home",
+        "ca/rental_cca_claim_less_personal_part",
+        "ca/rental_cca_claim_before_limit",
+        "ca/rental_cca_limit",
+        "ca/rental_closing_ucc",
         "ca/rental_net_income_after_cca",
         "ca/rental_partner",
         "ca/rental_partner_share",
@@ -818,13 +832,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 434
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 445
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 434
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 445
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

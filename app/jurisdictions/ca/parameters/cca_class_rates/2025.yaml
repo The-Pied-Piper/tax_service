@@ -1,0 +1,177 @@
+# Capital cost allowance class rates, 2025 tax year (Form T776 Area A and Guides T4036 and
+# T4002): Area A "Column 20: CCA rate %"; Note 3: "Recapture and terminal loss do not apply to a
+# Class 10.1 property unless it is a DIEP"; Note 7: "The factor is 0 for any remaining AIIPs not
+# listed in this note"; Note 8: "The factor is one half for any remaining RIIPs not listed in this
+# note". The half-year rule does not apply to AIIPs, ZEVs, Class 56 properties (T4002), and the
+# owner decided it does not apply to Classes 12 and 52. A class with no printed rate is not
+# listed. The columns the form computes round half-up to the cent, the owner's decision, as the
+# forms state no rounding rule.
+family: ca/cca_class_rates
+tax_year: 2025
+kind: class_rates
+sources:
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t776/t776-25e.txt
+rounding: {increment: "0.01", mode: half_up}
+classes:
+  "1":
+    rate: "0.04"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "2":
+    rate: "0.06"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "3":
+    rate: "0.05"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "6":
+    rate: "0.10"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "7":
+    rate: "0.15"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "8":
+    rate: "0.20"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "9":
+    rate: "0.25"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "10":
+    rate: "0.30"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "10.1":
+    rate: "0.30"
+    half_year_rule: applies
+    recapture_and_terminal_loss: excluded
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "12":
+    rate: "1"
+    half_year_rule: exempt
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "0", denominator: "1"}
+  "14.1":
+    rate: "0.05"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "16":
+    rate: "0.40"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "17":
+    rate: "0.08"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "31":
+    rate: "0.05"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "32":
+    rate: "0.10"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "43":
+    rate: "0.30"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "43.1":
+    rate: "0.30"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "3", denominator: "2"}
+    riip_factor: {numerator: "7", denominator: "3"}
+  "43.2":
+    rate: "0.50"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "1", denominator: "2"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "44":
+    rate: "0.25"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "3", denominator: "1"}
+    riip_factor: {numerator: "3", denominator: "1"}
+  "45":
+    rate: "0.45"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "46":
+    rate: "0.30"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "7", denominator: "3"}
+    riip_factor: {numerator: "7", denominator: "3"}
+  "50":
+    rate: "0.55"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "9", denominator: "11"}
+    riip_factor: {numerator: "9", denominator: "11"}
+  "52":
+    rate: "1"
+    half_year_rule: exempt
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "0", denominator: "1"}
+    riip_factor: {numerator: "1", denominator: "2"}
+  "53":
+    rate: "0.50"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "1", denominator: "2"}
+    riip_factor: {numerator: "1", denominator: "1"}
+  "54":
+    rate: "0.30"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "3", denominator: "2"}
+    riip_factor: {numerator: "7", denominator: "3"}
+  "55":
+    rate: "0.40"
+    half_year_rule: applies
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "7", denominator: "8"}
+    riip_factor: {numerator: "3", denominator: "2"}
+  "56":
+    rate: "0.30"
+    half_year_rule: exempt
+    recapture_and_terminal_loss: applies
+    aiip_factor: {numerator: "3", denominator: "2"}
+    riip_factor: {numerator: "7", denominator: "3"}
