@@ -114,6 +114,9 @@ from app.jurisdictions.ca.catalog import (
     DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS,
     ECOLOGICAL_AND_CULTURAL_GIFTS,
     ECOLOGICAL_GIFTS_BEFORE_2016,
+    EDUCATOR_SCHOOL_SUPPLY_CREDIT,
+    EDUCATOR_SUPPLIES_EXPENSES,
+    EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
     EI_AND_OTHER_BENEFITS,
     EI_PREMIUMS,
     ELECTED_SPLIT_PENSION_AMOUNT,
@@ -124,6 +127,7 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_CREDIT,
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
+    EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
     EMPLOYMENT_INCOME,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
     FEDERAL_BASIC_TAX,
@@ -196,6 +200,7 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
     INVESTMENT_INCOME_WITHOUT_A_SLIP,
     INVESTMENT_ROYALTIES,
+    JOURNALISM_LABOUR_TAX_CREDIT,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
@@ -229,9 +234,11 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
     OTHER_PENSIONS_AND_SUPERANNUATION,
+    PART_XII_2_TAX_CREDIT,
     PROVINCIAL_CREDITS,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
+    REFUND,
     REFUND_OR_BALANCE_OWING,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
@@ -276,6 +283,7 @@ from app.jurisdictions.ca.catalog import (
     T5013_INVESTMENT_INCOME,
     T5013_TAXABLE_DIVIDENDS,
     T5013_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    TAX_PAID_BY_INSTALMENTS,
     TAX_REFUND_INTEREST,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_DIVIDENDS,
@@ -505,6 +513,12 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/children_seven_to_sixteen",
             "ca/cwb_eligible_dependants",
             "ca/income_tax_deducted",
+            "ca/part_xii_2_tax_credit",
+            "ca/employee_and_partner_gst_hst_rebate",
+            "ca/educator_supplies_expenses",
+            "ca/journalism_labour_tax_credit",
+            "ca/tax_paid_by_instalments",
+            "ca-on/opportunities_fund_donation",
             "ca-on/fertility_expenses",
             "ca-on/seniors_transit_paid",
             "ca-on/flow_through_share_slips",
@@ -532,10 +546,14 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     # 60, the minimum tax carryover, is not modelled); T1 line 54 (line 23400) "Net income before
     # adjustments", which nothing reads while line 23500 is not wired (the floored net income of
     # line 56 is the next line of the chain); and Schedule 15 line 58, what the return produces
-    # for the next year's line 52: the lines the computation returns.
+    # for the next year's line 52; and the Ontario opportunities fund's line 3 (line 46600) "Net
+    # refund (line 1 minus line 2)", which nothing reads (line 48400, the refund, is read by that
+    # page's line 1, so it is not a line the computation returns): the lines the computation
+    # returns.
     assert found.outputs == frozenset(
         {
             "ca/refund_or_balance_owing",
+            "ca-on/net_refund",
             "ca/unused_rrsp_contributions_carried_forward",
             "ca/net_income_before_adjustments",
             "ca/fhsa_unused_contributions_carried_forward",
@@ -2846,9 +2864,29 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"parts": ("ca-on/ontario_credits",)},
             produces={"output": "ca/provincial_credits"},
         ),
+        # T1 "Eligible educator school supply tax credit" line 161 and line 46900: "Supplies
+        # expenses (maximum $1,000) Line 46800 multiplied by 25% =": the "(maximum $1,000)" is
+        # printed before the percentage, so it caps the supplies expenses (line 46800).
+        CapabilitySelection(
+            name="core/capped_amount",
+            params={"cap": "ca/educator_supplies_maximum"},
+            consumes={"base": "ca/educator_supplies_expenses"},
+            produces={"output": "ca/educator_supplies_expenses_at_most_maximum"},
+        ),
+        # Line 161's "multiplied by 25% =", on the capped supplies expenses.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/educator_supplies_rate"},
+            consumes={"base": "ca/educator_supplies_expenses_at_most_maximum"},
+            produces={"output": "ca/educator_school_supply_credit"},
+        ),
         # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700), line
-        # 155 (45300) "Canada workers benefit (CWB) (complete Schedule 6)" and line 165 (47900), in
-        # line order, as the other lines are not triggered.
+        # 155 (45300) "Canada workers benefit (CWB) (complete Schedule 6)", line 159 (45600) "Part
+        # XII.2 tax credit (box 38 of all T3 slips and box 209 of all T5013 slips)", line 160
+        # (45700) "Employee and partner GST/HST rebate (complete Form GST370)", line 161 (46900),
+        # line 162 (47555) "Canadian journalism labour tax credit (box 236 of all T5013 slips)",
+        # line 164 (47600) "Tax paid by instalments" and line 165 (47900), in line order, as the
+        # other lines are not triggered or not yet wired.
         CapabilitySelection(
             name="core/sum",
             params={},
@@ -2856,6 +2894,11 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
                 "parts": (
                     "ca/income_tax_deducted",
                     "ca/canada_workers_benefit",
+                    "ca/part_xii_2_tax_credit",
+                    "ca/employee_and_partner_gst_hst_rebate",
+                    "ca/educator_school_supply_credit",
+                    "ca/journalism_labour_tax_credit",
+                    "ca/tax_paid_by_instalments",
                     "ca/provincial_credits",
                 )
             },
@@ -2871,8 +2914,35 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"amount": "ca/total_payable", "less": "ca/total_credits"},
             produces={"output": "ca/refund_or_balance_owing"},
         ),
+        # T1 line 48400 "Refund": line 167 is entered on line 48400 "If the amount is negative", so
+        # the total credits less the total payable, not below zero, a refund and never a negative.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca/total_credits", "less": "ca/total_payable"},
+            produces={"output": "ca/refund"},
+        ),
+        # The Ontario opportunities fund, on the T1 provincial pages, line 1 "Amount from line 48400
+        # above": the refund.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/refund",)},
+            produces={"output": "ca-on/refund_before_donation"},
+        ),
+        # Line 3 and line 46600 "Net refund (line 1 minus line 2) =": line 1 less line 2 and line
+        # 46500 "Your donation to the Ontario opportunities fund".
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={
+                "amount": "ca-on/refund_before_donation",
+                "less": "ca-on/opportunities_fund_donation",
+            },
+            produces={"output": "ca-on/net_refund"},
+        ),
     }
-    assert len(found.capabilities) == 228
+    assert len(found.capabilities) == 233
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -2882,7 +2952,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 228
+    assert len(composition.order) == 233
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -4052,13 +4122,41 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (Sum, frozenset({ONTARIO_CREDITS_SUBTOTAL}), frozenset({ONTARIO_CREDITS})),
         (Sum, frozenset({ONTARIO_CREDITS}), frozenset({PROVINCIAL_CREDITS})),
         (
+            CappedAmount,
+            frozenset({EDUCATOR_SUPPLIES_EXPENSES}),
+            frozenset({EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM}),
+        ),
+        (
+            ApplyRate,
+            frozenset({EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM}),
+            frozenset({EDUCATOR_SCHOOL_SUPPLY_CREDIT}),
+        ),
+        (
             Sum,
-            frozenset({INCOME_TAX_DEDUCTED, CANADA_WORKERS_BENEFIT, PROVINCIAL_CREDITS}),
+            frozenset(
+                {
+                    INCOME_TAX_DEDUCTED,
+                    CANADA_WORKERS_BENEFIT,
+                    PART_XII_2_TAX_CREDIT,
+                    EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
+                    EDUCATOR_SCHOOL_SUPPLY_CREDIT,
+                    JOURNALISM_LABOUR_TAX_CREDIT,
+                    TAX_PAID_BY_INSTALMENTS,
+                    PROVINCIAL_CREDITS,
+                }
+            ),
             frozenset({TOTAL_CREDITS}),
         ),
         (
             Subtract,
             frozenset({TOTAL_PAYABLE, TOTAL_CREDITS}),
             frozenset({REFUND_OR_BALANCE_OWING}),
+        ),
+        (SubtractNotBelowZero, frozenset({TOTAL_CREDITS, TOTAL_PAYABLE}), frozenset({REFUND})),
+        (Sum, frozenset({REFUND}), frozenset({ontario.REFUND_BEFORE_DONATION})),
+        (
+            Subtract,
+            frozenset({ontario.REFUND_BEFORE_DONATION, ontario.OPPORTUNITIES_FUND_DONATION}),
+            frozenset({ontario.NET_REFUND}),
         ),
     }

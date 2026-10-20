@@ -120,6 +120,12 @@ inputs:
   - ca/children_seven_to_sixteen
   - ca/cwb_eligible_dependants
   - ca/income_tax_deducted
+  - ca/part_xii_2_tax_credit
+  - ca/employee_and_partner_gst_hst_rebate
+  - ca/educator_supplies_expenses
+  - ca/journalism_labour_tax_credit
+  - ca/tax_paid_by_instalments
+  - ca-on/opportunities_fund_donation
   - ca-on/fertility_expenses
   - ca-on/seniors_transit_paid
   - ca-on/flow_through_share_slips
@@ -138,6 +144,7 @@ inputs:
   - ca-on/political_contributions
 outputs:
   - ca/refund_or_balance_owing
+  - ca-on/net_refund
   - ca/unused_rrsp_contributions_carried_forward
   - ca/net_income_before_adjustments
   - ca/fhsa_unused_contributions_carried_forward
@@ -2208,14 +2215,41 @@ capabilities:
         - ca-on/ontario_credits
     produces:
       output: ca/provincial_credits
+  # T1 "Eligible educator school supply tax credit" line 161 and line 46900: "Supplies
+  # expenses (maximum $1,000) Line 46800 multiplied by 25% =": the "(maximum $1,000)" is
+  # printed before the percentage, so it caps the supplies expenses (line 46800).
+  - name: core/capped_amount
+    params:
+      cap: ca/educator_supplies_maximum
+    consumes:
+      base: ca/educator_supplies_expenses
+    produces:
+      output: ca/educator_supplies_expenses_at_most_maximum
+  # Line 161's "multiplied by 25% =", on the capped supplies expenses.
+  - name: core/apply_rate
+    params:
+      rate: ca/educator_supplies_rate
+    consumes:
+      base: ca/educator_supplies_expenses_at_most_maximum
+    produces:
+      output: ca/educator_school_supply_credit
   # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700), line
-  # 155 (45300) "Canada workers benefit (CWB) (complete Schedule 6)" and line 165 (47900), in
-  # line order, as the other lines are not triggered.
+  # 155 (45300) "Canada workers benefit (CWB) (complete Schedule 6)", line 159 (45600) "Part
+  # XII.2 tax credit (box 38 of all T3 slips and box 209 of all T5013 slips)", line 160
+  # (45700) "Employee and partner GST/HST rebate (complete Form GST370)", line 161 (46900),
+  # line 162 (47555) "Canadian journalism labour tax credit (box 236 of all T5013 slips)",
+  # line 164 (47600) "Tax paid by instalments" and line 165 (47900), in line order, as the
+  # other lines are not triggered or not yet wired.
   - name: core/sum
     consumes:
       parts:
         - ca/income_tax_deducted
         - ca/canada_workers_benefit
+        - ca/part_xii_2_tax_credit
+        - ca/employee_and_partner_gst_hst_rebate
+        - ca/educator_school_supply_credit
+        - ca/journalism_labour_tax_credit
+        - ca/tax_paid_by_instalments
         - ca/provincial_credits
     produces:
       output: ca/total_credits
@@ -2229,3 +2263,27 @@ capabilities:
       less: ca/total_credits
     produces:
       output: ca/refund_or_balance_owing
+  # T1 line 48400 "Refund": line 167 is entered on line 48400 "If the amount is negative", so
+  # the total credits less the total payable, not below zero, a refund and never a negative.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/total_credits
+      less: ca/total_payable
+    produces:
+      output: ca/refund
+  # The Ontario opportunities fund, on the T1 provincial pages, line 1 "Amount from line 48400
+  # above": the refund.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/refund
+    produces:
+      output: ca-on/refund_before_donation
+  # Line 3 and line 46600 "Net refund (line 1 minus line 2) =": line 1 less line 2 and line
+  # 46500 "Your donation to the Ontario opportunities fund".
+  - name: core/subtract
+    consumes:
+      amount: ca-on/refund_before_donation
+      less: ca-on/opportunities_fund_donation
+    produces:
+      output: ca-on/net_refund

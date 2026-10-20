@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 228
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 233
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -283,8 +283,16 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/canada_workers_benefit_with_dependant",
         "ca/canada_workers_benefit",
         "ca/provincial_credits",
+        "ca/part_xii_2_tax_credit",
+        "ca/employee_and_partner_gst_hst_rebate",
+        "ca/educator_supplies_expenses",
+        "ca/educator_supplies_expenses_at_most_maximum",
+        "ca/educator_school_supply_credit",
+        "ca/journalism_labour_tax_credit",
+        "ca/tax_paid_by_instalments",
         "ca/total_credits",
         "ca/refund_or_balance_owing",
+        "ca/refund",
         "ca/charitable_donations",
         "ca/government_donations",
         "ca/university_donations_outside_canada",
@@ -409,6 +417,9 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca-on/flow_through_share_credit",
         "ca-on/ontario_credits_subtotal",
         "ca-on/ontario_credits",
+        "ca-on/refund_before_donation",
+        "ca-on/opportunities_fund_donation",
+        "ca-on/net_refund",
     }
     assert shared.get("ca/taxable_income") is TAXABLE_INCOME
     assert shared.get("ca/federal_basic_tax") is FEDERAL_BASIC_TAX
@@ -430,13 +441,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 228
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 233
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 228
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 233
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
