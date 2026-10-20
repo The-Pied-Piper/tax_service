@@ -8,7 +8,7 @@ short-term rental". Column 6, "Non-compliant amount (column 3 multiplied by colu
 column 5)", is computed as an exact fraction and rounded once with the `rounding` dataset's rule.
 The output, line B "Total of column 6", is the total of those rounded rows, 0 when there are no
 rows. Each row is worked on its own, never pooled with the others. A row whose column 5 is 0, or
-whose column 4 is above column 5, is refused with an InvalidRecordError naming the row. It records
+whose column 4 is above column 5, is refused with a ValidationError naming the row. It records
 one `ShortTermRentalNonCompliantLine` for each row, by position from 1, then an `ItemsTotalLine`.
 """
 
@@ -21,7 +21,7 @@ from typing import Any, ClassVar
 
 from app.domain.artifact import Artifact, ArtifactKind, Money
 from app.domain.capability import Capability, CapabilityResult, capability
-from app.domain.errors import InvalidRecordError
+from app.domain.errors import ValidationError
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
@@ -65,13 +65,13 @@ class ShortTermRentalNonCompliantExpenses(Capability):
             non_compliant_days = int(record[SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS])
             days = int(record[SHORT_TERM_RENTAL_DAYS])
             if days == 0:
-                raise InvalidRecordError(
-                    f"item {position}: {SHORT_TERM_RENTAL_DAYS.identifier} cannot be 0, "
+                raise ValidationError(
+                    f"row {position}: {SHORT_TERM_RENTAL_DAYS.identifier} cannot be 0, "
                     "column 6 divides by it"
                 )
             if non_compliant_days > days:
-                raise InvalidRecordError(
-                    f"item {position}: {SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS.identifier} "
+                raise ValidationError(
+                    f"row {position}: {SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS.identifier} "
                     f"({non_compliant_days}) cannot be above "
                     f"{SHORT_TERM_RENTAL_DAYS.identifier} ({days})"
                 )

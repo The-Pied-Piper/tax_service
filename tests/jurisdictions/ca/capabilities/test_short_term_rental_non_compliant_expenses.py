@@ -13,7 +13,7 @@ consumed slot `units` (a record list whose records hold each row's columns 3, 4 
 produced slot `output`. Each row is worked on its own: column 6 is column 3 times column 4 over
 column 5 as an exact fraction, rounded once with the dataset's rule, and the output is the total
 of the rounded rows, 0 for no rows. A row whose column 5 is 0, or whose column 4 is above column
-5, is an InvalidRecordError naming the row. It records one `ShortTermRentalNonCompliantLine` per
+5, is a ValidationError naming the row. It records one `ShortTermRentalNonCompliantLine` per
 row, then an `ItemsTotalLine`.
 """
 
@@ -32,9 +32,9 @@ from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry
 from app.domain.capability import CapabilityRegistry
 from app.domain.errors import (
     InvalidCapabilityError,
-    InvalidRecordError,
     MissingArtifactError,
     NotFoundError,
+    ValidationError,
 )
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
@@ -311,27 +311,27 @@ def test_a_large_figure_is_exact() -> None:
 
 
 def test_a_row_whose_column_5_is_zero_is_refused_naming_the_row() -> None:
-    with pytest.raises(InvalidRecordError, match="item 1.*short_term_rental_days"):
+    with pytest.raises(ValidationError, match="row 1.*short_term_rental_days"):
         total(("900", 0, 0))
 
 
 def test_a_second_row_whose_column_5_is_zero_is_refused_naming_that_row() -> None:
-    with pytest.raises(InvalidRecordError, match="item 2.*short_term_rental_days"):
+    with pytest.raises(ValidationError, match="row 2.*short_term_rental_days"):
         total(TICKET_ROW, ("900", 0, 0))
 
 
 def test_a_row_whose_column_4_is_above_column_5_is_refused_naming_the_row() -> None:
-    with pytest.raises(InvalidRecordError, match="item 1.*short_term_rental_non_compliant_days"):
+    with pytest.raises(ValidationError, match="row 1.*short_term_rental_non_compliant_days"):
         total(("900", 91, 90))
 
 
 def test_a_third_row_whose_column_4_is_above_column_5_is_refused_naming_that_row() -> None:
-    with pytest.raises(InvalidRecordError, match="item 3.*short_term_rental_non_compliant_days"):
+    with pytest.raises(ValidationError, match="row 3.*short_term_rental_non_compliant_days"):
         total(TICKET_ROW, QUARTER_ROW, ("900", 10, 9))
 
 
 def test_a_column_4_of_one_above_column_5_is_refused() -> None:
-    with pytest.raises(InvalidRecordError):
+    with pytest.raises(ValidationError):
         total(("900", 2, 1))
 
 
@@ -344,19 +344,19 @@ def test_a_column_4_one_below_column_5_is_not_refused() -> None:
 
 
 def test_a_refused_row_is_refused_though_the_others_are_fine() -> None:
-    with pytest.raises(InvalidRecordError, match="item 2"):
+    with pytest.raises(ValidationError, match="row 2"):
         total(TICKET_ROW, ("900", 91, 90), ALL_ROW)
 
 
 def test_the_first_refused_row_is_the_one_named() -> None:
-    with pytest.raises(InvalidRecordError, match="item 2"):
+    with pytest.raises(ValidationError, match="row 2"):
         total(TICKET_ROW, ("900", 0, 0), ("900", 91, 90))
 
 
 def test_a_refusal_is_raised_when_computing_not_when_wiring() -> None:
     wired = capability()
 
-    with pytest.raises(InvalidRecordError):
+    with pytest.raises(ValidationError):
         wired.compute((units(("900", 91, 90)),))
 
 
@@ -539,7 +539,7 @@ def test_the_total_is_the_sum_of_its_items() -> None:
 def test_a_refused_row_leaves_no_partial_result() -> None:
     wired = capability()
 
-    with pytest.raises(InvalidRecordError):
+    with pytest.raises(ValidationError):
         wired.compute((units(TICKET_ROW, ("900", 91, 90)),))
 
     assert wired.compute((units(TICKET_ROW),)).outputs == (Artifact(NON_COMPLIANT, D("300.00")),)
@@ -629,7 +629,7 @@ def test_a_computation_with_no_rows_gives_zero() -> None:
 
 
 def test_a_computation_refuses_a_row_with_more_non_compliant_days_than_days() -> None:
-    with pytest.raises(InvalidRecordError, match="item 1"):
+    with pytest.raises(ValidationError, match="row 1"):
         service().compute(JurisdictionCode("CA-ON"), 2025, units(("900", 91, 90)))
 
 
