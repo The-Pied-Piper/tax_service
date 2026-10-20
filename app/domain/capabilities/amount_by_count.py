@@ -48,7 +48,9 @@ class AmountForCount(Capability):
         rows = dict(self._table.values.rows)
         if count not in rows:
             raise NoAmountForCountError(
-                f"{self._table.family} has no amount for count {count} of {self._count.identifier}"
+                f"{self._table.family} has no amount for count {count} of {self._count.identifier}:"
+                " the count was supplied by the caller and the printed table has no row for it,"
+                " so the request is refused as invalid rather than answered with a guessed row"
             )
         row = rows[count]
         result = rounding.apply(row)
