@@ -51,7 +51,9 @@ from app.domain.trace import (
     DisabilityTransferLine,
     FractionAppliedLine,
     GreaterOfLine,
+    ItemLesserOfLine,
     ItemsTotalLine,
+    ItemSumLine,
     LesserOfLine,
     MultipleOverLine,
     OtherDependantMedicalLine,
@@ -1489,6 +1491,44 @@ def test_renders_a_dependant_without_rounding() -> None:
     )
 
 
+# --- the lines of a capability that loops over a record list ------------------------------
+#
+# Each names the item by its position from 1, "item 2", after the produced kind.
+
+
+def test_renders_an_item_sum() -> None:
+    line = ItemSumLine(TOTAL, 2, ((PART_ONE, D("400")), (PART_TWO, D("500"))), D("900"))
+
+    assert render(line) == "total: item 2: part_one 400 + part_two 500 = 900"
+
+
+def test_renders_an_item_sum_without_trailing_zeros() -> None:
+    line = ItemSumLine(TOTAL, 1, ((PART_ONE, D("400.00")), (PART_TWO, D("0.50"))), D("400.50"))
+
+    assert render(line) == "total: item 1: part_one 400 + part_two 0.5 = 400.5"
+
+
+def test_renders_an_item_lesser_of() -> None:
+    line = ItemLesserOfLine(
+        TOTAL,
+        1,
+        ((PART_ONE, D("1500")), (PART_TWO, D("1300")), (PART_THREE, D("750"))),
+        D("750"),
+    )
+
+    assert render(line) == (
+        "total: item 1: lesser of part_one 1500 and part_two 1300 and part_three 750 = 750"
+    )
+
+
+def test_renders_an_item_lesser_of_at_a_later_position_without_trailing_zeros() -> None:
+    line = ItemLesserOfLine(
+        TOTAL, 3, ((PART_ONE, D("1.50E+3")), (PART_TWO, D("750.50"))), D("750.50")
+    )
+
+    assert render(line) == "total: item 3: lesser of part_one 1500 and part_two 750.5 = 750.5"
+
+
 def test_renders_the_total_of_items_by_position() -> None:
     line = ItemsTotalLine(TOTAL, ((1, D("750")), (3, D("800.50"))), D("1550.50"))
 
@@ -2462,6 +2502,8 @@ def test_render_all_renders_each_line_in_order() -> None:
             NO_ROUNDING,
             D("0.5"),
         ),
+        ItemSumLine(TOTAL, 1, ((PART_ONE, D("1")), (PART_TWO, D("2"))), D("3")),
+        ItemLesserOfLine(TOTAL, 2, ((PART_ONE, D("1")), (PART_TWO, D("2"))), D("1")),
         ItemsTotalLine(CAREGIVER_AMOUNT, ((1, D("1")),), D("1")),
         medical_claim(1, "5", "4", "3", maximum="2", rounding=NO_ROUNDING),
         non_compliant_row(1, "5", 4, 3, "2", rounding=NO_ROUNDING),
@@ -2499,6 +2541,8 @@ def test_render_all_renders_each_line_in_order() -> None:
         "caregiver_amount: dependant 1: 5 less net income 4, at most 2 = 1 (no rounding)",
         "caregiver_amount: dependant 2: 5 less net income 4, at most 2 = 1, less claimed 0.5 = 0.5 "
         "(no rounding)",
+        "total: item 1: part_one 1 + part_two 2 = 3",
+        "total: item 2: lesser of part_one 1 and part_two 2 = 1",
         "caregiver_amount: item 1 1 = 1",
         "dependants_medical: dependant 1: expenses 5 less the lesser of 3% of net income 4 and "
         "2834 = 3, at most 2 (no rounding)",

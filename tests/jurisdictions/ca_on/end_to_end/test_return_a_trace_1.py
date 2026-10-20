@@ -202,8 +202,31 @@ def test_the_trace_explains_the_computation() -> None:
         "deductions_from_net_income: canadian_armed_forces_and_police_deduction 0 "
         "+ security_options_deductions 0 + other_payments_deduction 0 "
         "+ limited_partnership_losses_of_other_years 0 + non_capital_losses_of_other_years 0 "
-        "+ net_capital_losses_of_other_years 0 + additional_deductions 0 = 0",
+        "+ net_capital_losses_of_other_years 0 + northern_residents_deductions 0 "
+        "+ additional_deductions 0 = 0",
         "0",
+    )
+    # Form T2222 for Return A: no days, so no residency amount, the 20% limit on its net income
+    # of 115000 is 23000.00, line 13 is the lesser, 0, no trips and no individuals.
+    residency_limit = position(
+        "residency_net_income_limit: 20% of net_income 115000 (half-up to 0.01)", "23000"
+    )
+    residency_deduction = position(
+        "residency_deduction: lesser of residency_amount 0 and residency_net_income_limit 23000 "
+        "= 0",
+        "0",
+    )
+    zone_a_trips = position("travel_total_zone_a: no items = 0", "0")
+    zone_b_trips = position("travel_total_zone_b: no items = 0", "0")
+    chart_a = position("standard_amount_allocated: no items = 0", "0")
+    travel_b = position(
+        "travel_zone_b_deduction: 50% of travel_total_zone_b 0 (half-up to 0.01)", "0"
+    )
+    travel = position(
+        "travel_deduction: travel_total_zone_a 0 + travel_zone_b_deduction 0 = 0", "0"
+    )
+    northern = position(
+        "northern_residents_deductions: residency_deduction 0 + travel_deduction 0 = 0", "0"
     )
     taxable = position(
         "taxable_income: net_income 115000 less deductions_from_net_income 0, not below 0 = 115000",
@@ -932,3 +955,7 @@ def test_the_trace_explains_the_computation() -> None:
     assert net < taxable
     assert net < line_5 < line_9
     assert support < after_limit < other_payments < net_deductions < taxable
+    assert net < residency_limit < residency_deduction < northern < net_deductions
+    assert zone_a_trips < travel < northern
+    assert zone_b_trips < travel_b < travel
+    assert chart_a < taxable

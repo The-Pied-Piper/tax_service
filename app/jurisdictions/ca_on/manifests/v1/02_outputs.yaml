@@ -24,3 +24,4 @@ outputs:
   - ca-on/property_tax_paid
   - ca-on/reserve_home_energy_costs
   - ca-on/public_long_term_care_paid
+  - ca/standard_amount_allocated

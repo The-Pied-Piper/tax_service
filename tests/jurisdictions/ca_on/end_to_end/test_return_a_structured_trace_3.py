@@ -195,6 +195,14 @@ from app.jurisdictions.ca.catalog import (
     UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
     WAGE_LOSS_REPLACEMENT_PLAN_INCOME,
+    ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT,
+    ZONE_A_ADDITIONAL_RESIDENCY_DAYS,
+    ZONE_A_BASIC_RESIDENCY_AMOUNT,
+    ZONE_A_DAYS_LIVED,
+    ZONE_B_ADDITIONAL_RESIDENCY_AMOUNT,
+    ZONE_B_ADDITIONAL_RESIDENCY_DAYS,
+    ZONE_B_BASIC_RESIDENCY_AMOUNT,
+    ZONE_B_DAYS_LIVED,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
@@ -775,6 +783,40 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert per_unit == {
+        # Form T2222 lines 1, 2, 6 and 7 "multiplied by $11.00" and "multiplied by $5.50": Return A
+        # has no days.
+        ZONE_A_BASIC_RESIDENCY_AMOUNT: PerUnitAmountLine(
+            output=ZONE_A_BASIC_RESIDENCY_AMOUNT,
+            count_kind=ZONE_A_DAYS_LIVED,
+            count=0,
+            per_unit=Amount(D("11.00")),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT: PerUnitAmountLine(
+            output=ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT,
+            count_kind=ZONE_A_ADDITIONAL_RESIDENCY_DAYS,
+            count=0,
+            per_unit=Amount(D("11.00")),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        ZONE_B_BASIC_RESIDENCY_AMOUNT: PerUnitAmountLine(
+            output=ZONE_B_BASIC_RESIDENCY_AMOUNT,
+            count_kind=ZONE_B_DAYS_LIVED,
+            count=0,
+            per_unit=Amount(D("5.50")),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        ZONE_B_ADDITIONAL_RESIDENCY_AMOUNT: PerUnitAmountLine(
+            output=ZONE_B_ADDITIONAL_RESIDENCY_AMOUNT,
+            count_kind=ZONE_B_ADDITIONAL_RESIDENCY_DAYS,
+            count=0,
+            per_unit=Amount(D("5.50")),
+            rounding=CENT,
+            result=D("0"),
+        ),
         TAX_REDUCTION_FOR_CHILDREN: PerUnitAmountLine(
             output=TAX_REDUCTION_FOR_CHILDREN,
             count_kind=DEPENDENT_CHILDREN,

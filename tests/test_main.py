@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 377
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 394
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -157,6 +157,39 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/remaining_adjusted_losses_2001_to_2024",
         "ca/net_capital_loss_balance_2001_to_2024",
         "ca/additional_deductions",
+        "ca/zone_a_days_lived",
+        "ca/zone_a_additional_residency_days",
+        "ca/zone_a_basic_residency_amount",
+        "ca/zone_a_additional_residency_amount",
+        "ca/zone_a_residency_amount",
+        "ca/zone_a_special_work_site_benefits",
+        "ca/zone_a_residency_after_work_site",
+        "ca/zone_b_days_lived",
+        "ca/zone_b_additional_residency_days",
+        "ca/zone_b_basic_residency_amount",
+        "ca/zone_b_additional_residency_amount",
+        "ca/zone_b_residency_amount",
+        "ca/zone_b_special_work_site_benefits",
+        "ca/zone_b_residency_after_work_site",
+        "ca/residency_amount",
+        "ca/residency_net_income_limit",
+        "ca/residency_deduction",
+        "ca/travel_individual",
+        "ca/trip_zone",
+        "ca/trip_benefit_or_standard_amount",
+        "ca/trip_travel_expenses",
+        "ca/trip_lowest_return_airfare",
+        "ca/travel_trips",
+        "ca/standard_amount_allocated_1",
+        "ca/standard_amount_allocated_2",
+        "ca/standard_amount_allocated_3",
+        "ca/travel_individuals",
+        "ca/standard_amount_allocated",
+        "ca/travel_total_zone_a",
+        "ca/travel_total_zone_b",
+        "ca/travel_zone_b_deduction",
+        "ca/travel_deduction",
+        "ca/northern_residents_deductions",
         "ca/unused_rrsp_contributions",
         "ca/rrsp_contributions",
         "ca/rrsp_contributions_available",
@@ -720,13 +753,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 377
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 394
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 377
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 394
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

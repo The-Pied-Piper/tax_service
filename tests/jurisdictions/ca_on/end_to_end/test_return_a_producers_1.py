@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from app.domain.capabilities.apply_fraction import ApplyFraction
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.at_most import AtMost
@@ -21,6 +23,9 @@ from app.domain.capabilities.tapered_amount import TaperedAmount
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.capabilities.times_count import TimesCount
 from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
+from app.jurisdictions.ca.capabilities.chart_a_row_c_total import ChartARowCTotal
+from app.jurisdictions.ca.capabilities.chart_b_zone_a_total import ChartBZoneATotal
+from app.jurisdictions.ca.capabilities.chart_b_zone_b_total import ChartBZoneBTotal
 from app.jurisdictions.ca.capabilities.disability_transfer_amount import DisabilityTransferAmount
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
 from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
@@ -245,6 +250,7 @@ from app.jurisdictions.ca.catalog import (
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
+    NORTHERN_RESIDENTS_DEDUCTIONS,
     OLD_AGE_SECURITY,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_1994,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
@@ -346,6 +352,9 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_UTILITIES,
     RENTAL_UTILITIES_PERSONAL_PORTION,
     RENTAL_UTILITIES_SHORT_TERM_PORTION,
+    RESIDENCY_AMOUNT,
+    RESIDENCY_DEDUCTION,
+    RESIDENCY_NET_INCOME_LIMIT,
     RESIDENT_IN_CANADA_THROUGHOUT_2025,
     RPP_DEDUCTION,
     RRSP_AMOUNT_DEDUCTED,
@@ -379,6 +388,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_UCCB_REPAYMENT,
     SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT,
     SPOUSES_CLAIMED,
+    STANDARD_AMOUNT_ALLOCATED,
     SUPPORT_PAYMENTS_DEDUCTION,
     T3_DIVIDEND_TAX_CREDIT,
     T3_INVESTMENT_INCOME,
@@ -414,6 +424,12 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_INTEREST_EXPENSES,
     TOTAL_OTHER_EXPENSES,
     TOTAL_PAYABLE,
+    TRAVEL_DEDUCTION,
+    TRAVEL_INDIVIDUALS,
+    TRAVEL_TOTAL_ZONE_A,
+    TRAVEL_TOTAL_ZONE_B,
+    TRAVEL_TRIPS,
+    TRAVEL_ZONE_B_DEDUCTION,
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
     UCCB_REPAYMENT,
@@ -429,6 +445,20 @@ from app.jurisdictions.ca.catalog import (
     WAGE_LOSS_REPLACEMENT_PLAN_INCOME,
     WORKERS_COMPENSATION_BENEFITS,
     WORKING_INCOME,
+    ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT,
+    ZONE_A_ADDITIONAL_RESIDENCY_DAYS,
+    ZONE_A_BASIC_RESIDENCY_AMOUNT,
+    ZONE_A_DAYS_LIVED,
+    ZONE_A_RESIDENCY_AFTER_WORK_SITE,
+    ZONE_A_RESIDENCY_AMOUNT,
+    ZONE_A_SPECIAL_WORK_SITE_BENEFITS,
+    ZONE_B_ADDITIONAL_RESIDENCY_AMOUNT,
+    ZONE_B_ADDITIONAL_RESIDENCY_DAYS,
+    ZONE_B_BASIC_RESIDENCY_AMOUNT,
+    ZONE_B_DAYS_LIVED,
+    ZONE_B_RESIDENCY_AFTER_WORK_SITE,
+    ZONE_B_RESIDENCY_AMOUNT,
+    ZONE_B_SPECIAL_WORK_SITE_BENEFITS,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.capabilities.caregiver_amount import OntarioCaregiverAmount
@@ -690,6 +720,67 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(OTHER_PAYMENTS_DEDUCTION) is not (
         worksheet.producer_of(CANADA_WORKERS_BENEFIT)
     )
+    # Form T2222: the days, the special work site benefits and the two record lists are starting
+    # artifacts; every line of Steps 2 to 4 has a producer of its own.
+    t2222_start: Any
+    for t2222_start in (
+        ZONE_A_DAYS_LIVED,
+        ZONE_A_ADDITIONAL_RESIDENCY_DAYS,
+        ZONE_A_SPECIAL_WORK_SITE_BENEFITS,
+        ZONE_B_DAYS_LIVED,
+        ZONE_B_ADDITIONAL_RESIDENCY_DAYS,
+        ZONE_B_SPECIAL_WORK_SITE_BENEFITS,
+        TRAVEL_TRIPS,
+        TRAVEL_INDIVIDUALS,
+    ):
+        assert worksheet.producer_of(t2222_start) is None, t2222_start.identifier
+    for kind in (
+        ZONE_A_BASIC_RESIDENCY_AMOUNT,
+        ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT,
+        ZONE_B_BASIC_RESIDENCY_AMOUNT,
+        ZONE_B_ADDITIONAL_RESIDENCY_AMOUNT,
+    ):
+        assert isinstance(worksheet.producer_of(kind), PerUnitAmount), kind
+    for kind in (
+        ZONE_A_RESIDENCY_AMOUNT,
+        ZONE_B_RESIDENCY_AMOUNT,
+        RESIDENCY_AMOUNT,
+        TRAVEL_DEDUCTION,
+        NORTHERN_RESIDENTS_DEDUCTIONS,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Sum), kind
+    assert isinstance(worksheet.producer_of(ZONE_A_RESIDENCY_AFTER_WORK_SITE), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(ZONE_B_RESIDENCY_AFTER_WORK_SITE), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(RESIDENCY_NET_INCOME_LIMIT), ApplyRate)
+    assert isinstance(worksheet.producer_of(TRAVEL_ZONE_B_DEDUCTION), ApplyRate)
+    assert isinstance(worksheet.producer_of(RESIDENCY_DEDUCTION), LesserOf)
+    assert isinstance(worksheet.producer_of(TRAVEL_TOTAL_ZONE_A), ChartBZoneATotal)
+    assert isinstance(worksheet.producer_of(TRAVEL_TOTAL_ZONE_B), ChartBZoneBTotal)
+    assert isinstance(worksheet.producer_of(STANDARD_AMOUNT_ALLOCATED), ChartARowCTotal)
+    # One capability for each line: no two of these lines share one.
+    producers = [
+        worksheet.producer_of(kind)
+        for kind in (
+            ZONE_A_BASIC_RESIDENCY_AMOUNT,
+            ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT,
+            ZONE_B_BASIC_RESIDENCY_AMOUNT,
+            ZONE_B_ADDITIONAL_RESIDENCY_AMOUNT,
+            ZONE_A_RESIDENCY_AMOUNT,
+            ZONE_B_RESIDENCY_AMOUNT,
+            ZONE_A_RESIDENCY_AFTER_WORK_SITE,
+            ZONE_B_RESIDENCY_AFTER_WORK_SITE,
+            RESIDENCY_AMOUNT,
+            RESIDENCY_NET_INCOME_LIMIT,
+            RESIDENCY_DEDUCTION,
+            TRAVEL_TOTAL_ZONE_A,
+            TRAVEL_TOTAL_ZONE_B,
+            STANDARD_AMOUNT_ALLOCATED,
+            TRAVEL_ZONE_B_DEDUCTION,
+            TRAVEL_DEDUCTION,
+            NORTHERN_RESIDENTS_DEDUCTIONS,
+        )
+    ]
+    assert len({id(producer) for producer in producers}) == len(producers)
     assert isinstance(worksheet.producer_of(INVESTMENT_INCOME_BEFORE_PRIOR_YEARS), Sum)
     assert isinstance(worksheet.producer_of(INTEREST_AND_OTHER_INVESTMENT_INCOME), Subtract)
     assert isinstance(worksheet.producer_of(INCOME_SUPPORT_BENEFITS), Sum)

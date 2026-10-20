@@ -156,6 +156,7 @@ from app.jurisdictions.ca.catalog import (
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
+    NORTHERN_RESIDENTS_DEDUCTIONS,
     OLD_AGE_SECURITY,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_1994,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
@@ -242,6 +243,8 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_UTILITIES,
     RENTAL_UTILITIES_PERSONAL_PORTION,
     RENTAL_UTILITIES_SHORT_TERM_PORTION,
+    RESIDENCY_AMOUNT,
+    RESIDENCY_DEDUCTION,
     RESP_AIPS_ADDITIONAL_TAX,
     RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
     RPP_DEDUCTION,
@@ -298,6 +301,9 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_INTEREST_EXPENSES,
     TOTAL_OTHER_EXPENSES,
     TOTAL_PAYABLE,
+    TRAVEL_DEDUCTION,
+    TRAVEL_TOTAL_ZONE_A,
+    TRAVEL_ZONE_B_DEDUCTION,
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
     UCCB_REPAYMENT,
@@ -307,6 +313,14 @@ from app.jurisdictions.ca.catalog import (
     UNUSED_RRSP_CONTRIBUTIONS,
     WORKERS_COMPENSATION_BENEFITS,
     WORKING_INCOME,
+    ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT,
+    ZONE_A_BASIC_RESIDENCY_AMOUNT,
+    ZONE_A_RESIDENCY_AFTER_WORK_SITE,
+    ZONE_A_RESIDENCY_AMOUNT,
+    ZONE_B_ADDITIONAL_RESIDENCY_AMOUNT,
+    ZONE_B_BASIC_RESIDENCY_AMOUNT,
+    ZONE_B_RESIDENCY_AFTER_WORK_SITE,
+    ZONE_B_RESIDENCY_AMOUNT,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
@@ -417,6 +431,41 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (RENTAL_PARTNER_SHARE, D("0")),
                 (RENTAL_PARTNER_GST_HST_REBATE, D("0")),
             ),
+            D("0"),
+        ),
+        # Form T2222 lines 3, 8, 11, 16 and 19, each in line order.
+        ZONE_A_RESIDENCY_AMOUNT: SumLine(
+            ZONE_A_RESIDENCY_AMOUNT,
+            (
+                (ZONE_A_BASIC_RESIDENCY_AMOUNT, D("0")),
+                (ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT, D("0")),
+            ),
+            D("0"),
+        ),
+        ZONE_B_RESIDENCY_AMOUNT: SumLine(
+            ZONE_B_RESIDENCY_AMOUNT,
+            (
+                (ZONE_B_BASIC_RESIDENCY_AMOUNT, D("0")),
+                (ZONE_B_ADDITIONAL_RESIDENCY_AMOUNT, D("0")),
+            ),
+            D("0"),
+        ),
+        RESIDENCY_AMOUNT: SumLine(
+            RESIDENCY_AMOUNT,
+            (
+                (ZONE_A_RESIDENCY_AFTER_WORK_SITE, D("0")),
+                (ZONE_B_RESIDENCY_AFTER_WORK_SITE, D("0")),
+            ),
+            D("0"),
+        ),
+        TRAVEL_DEDUCTION: SumLine(
+            TRAVEL_DEDUCTION,
+            ((TRAVEL_TOTAL_ZONE_A, D("0")), (TRAVEL_ZONE_B_DEDUCTION, D("0"))),
+            D("0"),
+        ),
+        NORTHERN_RESIDENTS_DEDUCTIONS: SumLine(
+            NORTHERN_RESIDENTS_DEDUCTIONS,
+            ((RESIDENCY_DEDUCTION, D("0")), (TRAVEL_DEDUCTION, D("0"))),
             D("0"),
         ),
         # The Federal Worksheet's "Lines 12000 and 12010" lines 5 and 10, line 17 and, with the
@@ -674,7 +723,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("115000"),
         ),
-        # T1 line 68 and line 25700 "Add lines 58 to 67.", in line order, line 63 (25300) included.
+        # T1 line 68 and line 25700 "Add lines 58 to 67.", in line order, lines 63 (25300) and 66
+        # (25500) included.
         DEDUCTIONS_FROM_NET_INCOME: SumLine(
             DEDUCTIONS_FROM_NET_INCOME,
             (
@@ -684,6 +734,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS, D("0")),
                 (NON_CAPITAL_LOSSES_OF_OTHER_YEARS, D("0")),
                 (NET_CAPITAL_LOSSES_OF_OTHER_YEARS, D("0")),
+                (NORTHERN_RESIDENTS_DEDUCTIONS, D("0")),
                 (ADDITIONAL_DEDUCTIONS, D("0")),
             ),
             D("0"),

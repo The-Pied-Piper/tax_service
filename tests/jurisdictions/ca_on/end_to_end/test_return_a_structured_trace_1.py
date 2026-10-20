@@ -76,6 +76,7 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_5,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
+    RESIDENCY_NET_INCOME_LIMIT,
     RESP_AIPS_PART_A_TAX,
     RESP_AIPS_PART_B_TAX,
     RESP_AIPS_RECEIVED_PART_B,
@@ -83,6 +84,8 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_CAPITAL_GAINS,
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
+    TRAVEL_TOTAL_ZONE_B,
+    TRAVEL_ZONE_B_DEDUCTION,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
@@ -207,6 +210,19 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Rate(D("0.20")),
             CENT,
             D("0"),
+        ),
+        # Form T2222 line 12 "Enter your net income from line 23600 of your return. multiplied by
+        # 20%" and line 15 "Enter the total from box B. multiplied by 50%".
+        RESIDENCY_NET_INCOME_LIMIT: RateAppliedLine(
+            RESIDENCY_NET_INCOME_LIMIT,
+            NET_INCOME,
+            D("115000"),
+            Rate(D("0.20")),
+            CENT,
+            D("23000.00"),
+        ),
+        TRAVEL_ZONE_B_DEDUCTION: RateAppliedLine(
+            TRAVEL_ZONE_B_DEDUCTION, TRAVEL_TOTAL_ZONE_B, D("0"), Rate(D("0.50")), CENT, D("0")
         ),
         # The Federal Worksheet's "Line 40425" line 6 (line B x 9.0301%) and line 7 (line C x
         # 15.0198%), on no dividends with no slip.

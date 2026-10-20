@@ -220,6 +220,9 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_UCCB_REPAYMENT,
     SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT,
     SPOUSES_CLAIMED,
+    STANDARD_AMOUNT_ALLOCATED_1,
+    STANDARD_AMOUNT_ALLOCATED_2,
+    STANDARD_AMOUNT_ALLOCATED_3,
     SUPPORT_PAYMENTS_DEDUCTION,
     T3_DIVIDEND_TAX_CREDIT,
     T3_INVESTMENT_INCOME,
@@ -243,6 +246,13 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_CARRYING_CHARGES,
     TOTAL_INTEREST_EXPENSES,
     TOTAL_OTHER_EXPENSES,
+    TRAVEL_INDIVIDUAL,
+    TRAVEL_INDIVIDUALS,
+    TRAVEL_TRIPS,
+    TRIP_BENEFIT_OR_STANDARD_AMOUNT,
+    TRIP_LOWEST_RETURN_AIRFARE,
+    TRIP_TRAVEL_EXPENSES,
+    TRIP_ZONE,
     UCCB_REPAYMENT,
     UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987,
     UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989,
@@ -254,6 +264,12 @@ from app.jurisdictions.ca.catalog import (
     UNUSED_RRSP_CONTRIBUTIONS,
     WAGE_LOSS_REPLACEMENT_PLAN_INCOME,
     WORKERS_COMPENSATION_BENEFITS,
+    ZONE_A_ADDITIONAL_RESIDENCY_DAYS,
+    ZONE_A_DAYS_LIVED,
+    ZONE_A_SPECIAL_WORK_SITE_BENEFITS,
+    ZONE_B_ADDITIONAL_RESIDENCY_DAYS,
+    ZONE_B_DAYS_LIVED,
+    ZONE_B_SPECIAL_WORK_SITE_BENEFITS,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
@@ -468,6 +484,29 @@ def rental_expense_artifacts(
     return artifacts
 
 
+def trip(individual: int, zone: int, column_3: str, column_4: str, column_5: str) -> dict[Any, Any]:
+    """A Form T2222 Chart B record: the individual, the zone (1 for A, 2 for B), columns 3 to 5."""
+    return {
+        TRAVEL_INDIVIDUAL: individual,
+        TRIP_ZONE: zone,
+        TRIP_BENEFIT_OR_STANDARD_AMOUNT: D(column_3),
+        TRIP_TRAVEL_EXPENSES: D(column_4),
+        TRIP_LOWEST_RETURN_AIRFARE: D(column_5),
+    }
+
+
+def individual(
+    number: int, first: str = "0", second: str = "0", third: str = "0"
+) -> dict[Any, Any]:
+    """A Form T2222 Chart A record: the individual and the three row B amounts."""
+    return {
+        TRAVEL_INDIVIDUAL: number,
+        STANDARD_AMOUNT_ALLOCATED_1: D(first),
+        STANDARD_AMOUNT_ALLOCATED_2: D(second),
+        STANDARD_AMOUNT_ALLOCATED_3: D(third),
+    }
+
+
 def compute(
     employment_income: str,
     capital_gain: str,
@@ -582,6 +621,14 @@ def compute(
     fhsa_unused_contributions_brought_forward: str = "0",
     fhsa_contributions_deducted: str = "0",
     fhsa_maximum_participation_period_ended: int = 0,
+    zone_a_days_lived: int = 0,
+    zone_a_additional_residency_days: int = 0,
+    zone_a_special_work_site_benefits: str = "0",
+    zone_b_days_lived: int = 0,
+    zone_b_additional_residency_days: int = 0,
+    zone_b_special_work_site_benefits: str = "0",
+    travel_trips: tuple[dict[Any, Any], ...] = (),
+    travel_individuals: tuple[dict[Any, Any], ...] = (),
     dependent_children: int = 0,
     dependants: int = 0,
     eligible_dependants: int = 0,
@@ -851,6 +898,14 @@ def compute(
         ),
         Artifact(FHSA_CONTRIBUTIONS_DEDUCTED, D(fhsa_contributions_deducted)),
         Artifact(FHSA_MAXIMUM_PARTICIPATION_PERIOD_ENDED, fhsa_maximum_participation_period_ended),
+        Artifact(ZONE_A_DAYS_LIVED, zone_a_days_lived),
+        Artifact(ZONE_A_ADDITIONAL_RESIDENCY_DAYS, zone_a_additional_residency_days),
+        Artifact(ZONE_A_SPECIAL_WORK_SITE_BENEFITS, D(zone_a_special_work_site_benefits)),
+        Artifact(ZONE_B_DAYS_LIVED, zone_b_days_lived),
+        Artifact(ZONE_B_ADDITIONAL_RESIDENCY_DAYS, zone_b_additional_residency_days),
+        Artifact(ZONE_B_SPECIAL_WORK_SITE_BENEFITS, D(zone_b_special_work_site_benefits)),
+        Artifact(TRAVEL_TRIPS, RecordList(TRAVEL_TRIPS.fields, travel_trips)),
+        Artifact(TRAVEL_INDIVIDUALS, RecordList(TRAVEL_INDIVIDUALS.fields, travel_individuals)),
         Artifact(UNUSED_RRSP_CONTRIBUTIONS, D(unused_rrsp_contributions)),
         Artifact(RRSP_CONTRIBUTIONS, D(rrsp_contributions)),
         Artifact(RRSP_DEDUCTION_LIMIT, D(rrsp_deduction_limit)),
