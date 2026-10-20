@@ -160,16 +160,17 @@ STEPS = {
         },
         produces={"output": "ca/ei_premiums_on_self_employment"},
     ),
-    # T1 line 33500 (lines 30000, 30100, 30300, 30400, 30425, 30450, 30500, 30800, 31000, 31200,
-    # 31217, 31260, 31800, 33200) and ON428 line 58800 (lines 58040, 58080, 58120, 58160, 58185,
-    # 58240, 58300, 58769), in the forms' line order. T1 line 113 and line 33500 is "Line 106 plus
-    # line 112", and line 112 (line 33200) follows the lines that line 106 adds; ON428 line 44 and
-    # line 58800 is "Line 35 plus line 43", and line 43 (line 58769) follows the lines that line 35
-    # adds. ON428 lines 58240 and 58300 are "Amount from line 30800 / 31200 of your return", so the
+    # T1 line 33500 (lines 30000, 30100, 30300, 30400, 30425, 30450, 30500, 30800, 31000,
+    # 31200, 31217, 31260, 31800, 33200) and ON428 line 58800 (lines 58040, 58080, 58120,
+    # 58160, 58185, 58240, 58280, 58300, 58305, 58769), in the forms' line order. T1 line 113
+    # and line 33500 is "Line 106 plus line 112", and line 112 (line 33200) follows the lines
+    # that line 106 adds; ON428 line 44 and line 58800 is "Line 35 plus line 43", and line 43
+    # (line 58769) follows the lines that line 35 adds. ON428 lines 58240, 58280, 58300 and
+    # 58305 are "Amount from line 30800 / 31000 / 31200 / 31217 of your return", so the
     # Ontario sum reads the federal kinds; it has no Canada employment amount. Lines 31000 "on
-    # self-employment income and other earnings" and 31217 "on self-employment and other eligible
-    # earnings (complete Schedule 13)" follow lines 30800 and 31200; ON428's counterparts (lines
-    # 58280 and 58305) are not wired.
+    # self-employment income and other earnings" and 31217 "on self-employment and other
+    # eligible earnings (complete Schedule 13)" follow lines 30800 and 31200, as ON428's lines
+    # 58280 and 58305 follow its lines 58240 and 58300.
     CapabilitySelection(
         name="core/sum",
         params={},

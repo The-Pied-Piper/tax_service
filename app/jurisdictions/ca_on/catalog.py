@@ -193,9 +193,10 @@ NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare(
 line 43": the sum of the credit amounts the rate is applied to once, here, in line order, the
 basic personal amount (line 58040), the age amount (line 58080), the spouse or common-law
 partner amount (line 58120), the amount for an eligible dependant (line 58160), the Ontario
-caregiver amount (line 58185), the base CPP contributions (line 58240), the EI premiums
-(line 58300), the disability amount transferred from a dependant (line 58480) and the allowable
-medical expenses (line 58769)."""
+caregiver amount (line 58185), the base CPP contributions (line 58240), the base CPP
+contributions on self-employment income (line 58280), the EI premiums (line 58300), the EI
+premiums on self-employment (line 58305), the disability amount transferred from a dependant
+(line 58480) and the allowable medical expenses (line 58769)."""
 
 CREDIT_AMOUNTS_AT_CREDIT_RATE = CATALOG.declare(
     "credit_amounts_at_credit_rate", Decimal, non_negative=True

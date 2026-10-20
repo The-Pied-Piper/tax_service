@@ -315,8 +315,10 @@ def test_the_trace_explains_the_computation() -> None:
     ontario_amounts = position(
         "non_refundable_credit_amounts: basic_personal_amount 12747 "
         "+ age_amount 0 + spouse_amount 0 + eligible_dependant_amount 0 "
-        "+ caregiver_amount 0 + cpp_base_contributions 3356.1 + ei_premiums 1077.48 "
-        "+ disability_transferred_amount 0 + medical_claim 0 = 17180.58",
+        "+ caregiver_amount 0 + cpp_base_contributions 3356.1 "
+        "+ cpp_base_contributions_on_self_employment 0 + ei_premiums 1077.48 "
+        "+ ei_premiums_on_self_employment 0 + disability_transferred_amount 0 "
+        "+ medical_claim 0 = 17180.58",
         "17180.58",
     )
     ontario_credit = position(

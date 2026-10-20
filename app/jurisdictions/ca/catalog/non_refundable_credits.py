@@ -36,7 +36,7 @@ CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT = CATALOG.declare(
 "on self-employment income and other earnings" under "Base CPP or QPP contributions (complete
 Schedule 8 or Form RC381, whichever applies)": Schedule 8 Part 4 line 15, entered once for each
 Part 4 completed (1 or 0), a part of the total of the credit amounts on the T1 (ON428 line 20,
-line 58280, is not wired)."""
+line 58280, copies it)."""
 
 EI_PREMIUMS = CATALOG.declare("ei_premiums", Decimal, non_negative=True)
 """EI premiums, T1 line 31200 "through employment (boxes 18 and 55 of all T4 slips) (maximum
@@ -55,8 +55,8 @@ EI_PREMIUMS_ON_SELF_EMPLOYMENT = CATALOG.declare(
 self-employment and other eligible earnings (complete Schedule 13)" under "Employment insurance
 premiums": Schedule 13 line 9 ("Enter the amount from line 9 or line 10, whichever applies, on
 line 31217 and line 42120 of your return."), entered once for each agreement with the Commission
-(1 or 0), a part of the total of the credit amounts on the T1 (ON428 line 22, line 58305, is not
-wired)."""
+(1 or 0), a part of the total of the credit amounts on the T1 (ON428 line 22, line 58305, copies
+it)."""
 
 CANADA_EMPLOYMENT_AMOUNT = CATALOG.declare("canada_employment_amount", Decimal, non_negative=True)
 """Canada employment amount, T1 line 31260 "Enter whichever is less: $1,471 or line 1 plus line
