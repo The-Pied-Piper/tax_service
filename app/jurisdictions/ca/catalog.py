@@ -1760,6 +1760,139 @@ Line 127 "Federal surtax on income earned outside Canada (complete Form T2203)" 
 a return whose income is all allocated to Ontario and line 129 (40500) is not wired, so lines 128
 and 130 carry line 126 unchanged."""
 
+POLITICAL_CREDIT_COLUMN_1_LINE_2 = CATALOG.declare(
+    "political_credit_column_1_line_2", Decimal, non_negative=True
+)
+"""Federal political contribution credit column 1 line 2, Federal Worksheet "Column 1: Line 40900 is
+$400 or less", line 2 "0.00": a printed constant."""
+
+POLITICAL_CREDIT_COLUMN_1_LINE_3 = CATALOG.declare(
+    "political_credit_column_1_line_3", Decimal, non_negative=True
+)
+"""Federal political contribution credit column 1 line 3, Federal Worksheet "Column 1: Line 40900 is
+$400 or less", line 3 "Line 1 minus line 2 (if negative, enter "0") =": the contributions less line
+2, not below zero."""
+
+POLITICAL_CREDIT_COLUMN_1_LINE_5 = CATALOG.declare(
+    "political_credit_column_1_line_5", Decimal, non_negative=True
+)
+"""Federal political contribution credit column 1 line 5, Federal Worksheet "Column 1: Line 40900 is
+$400 or less", line 5 "Line 3 multiplied by the percentage from line 4 =": line 3 at the line 4 rate
+of 75%."""
+
+POLITICAL_CREDIT_COLUMN_1_LINE_6 = CATALOG.declare(
+    "political_credit_column_1_line_6", Decimal, non_negative=True
+)
+"""Federal political contribution credit column 1 line 6, Federal Worksheet "Column 1: Line 40900 is
+$400 or less", line 6 "0.00": a printed constant."""
+
+POLITICAL_CREDIT_COLUMN_1_LINE_7 = CATALOG.declare(
+    "political_credit_column_1_line_7", Decimal, non_negative=True
+)
+"""Federal political contribution credit column 1 line 7, Federal Worksheet "Column 1: Line 40900 is
+$400 or less", line 7 "Line 5 plus line 6 Enter this amount on line 41000 of your return. =": line 5
+plus line 6."""
+
+POLITICAL_CREDIT_COLUMN_2_LINE_2 = CATALOG.declare(
+    "political_credit_column_2_line_2", Decimal, non_negative=True
+)
+"""Federal political contribution credit column 2 line 2, Federal Worksheet "Column 2: Line 40900 is
+more than $400 but not more than $750", line 2 "400.00": a printed constant."""
+
+POLITICAL_CREDIT_COLUMN_2_LINE_3 = CATALOG.declare(
+    "political_credit_column_2_line_3", Decimal, non_negative=True
+)
+"""Federal political contribution credit column 2 line 3, Federal Worksheet "Column 2: Line 40900 is
+more than $400 but not more than $750", line 3 "Line 1 minus line 2 (if negative, enter "0") =": the
+contributions less line 2, not below zero."""
+
+POLITICAL_CREDIT_COLUMN_2_LINE_5 = CATALOG.declare(
+    "political_credit_column_2_line_5", Decimal, non_negative=True
+)
+"""Federal political contribution credit column 2 line 5, Federal Worksheet "Column 2: Line 40900 is
+more than $400 but not more than $750", line 5 "Line 3 multiplied by the percentage from line 4 =":
+line 3 at the line 4 rate of 50%."""
+
+POLITICAL_CREDIT_COLUMN_2_LINE_6 = CATALOG.declare(
+    "political_credit_column_2_line_6", Decimal, non_negative=True
+)
+"""Federal political contribution credit column 2 line 6, Federal Worksheet "Column 2: Line 40900 is
+more than $400 but not more than $750", line 6 "300.00": a printed constant."""
+
+POLITICAL_CREDIT_COLUMN_2_LINE_7 = CATALOG.declare(
+    "political_credit_column_2_line_7", Decimal, non_negative=True
+)
+"""Federal political contribution credit column 2 line 7, Federal Worksheet "Column 2: Line 40900 is
+more than $400 but not more than $750", line 7 "Line 5 plus line 6 Enter this amount on line 41000
+of your return. =": line 5 plus line 6."""
+
+POLITICAL_CREDIT_COLUMN_3_LINE_2 = CATALOG.declare(
+    "political_credit_column_3_line_2", Decimal, non_negative=True
+)
+"""Federal political contribution credit column 3 line 2, Federal Worksheet "Column 3: Line 40900 is
+more than more than $750", line 2 "750.00": a printed constant."""
+
+POLITICAL_CREDIT_COLUMN_3_LINE_3 = CATALOG.declare(
+    "political_credit_column_3_line_3", Decimal, non_negative=True
+)
+"""Federal political contribution credit column 3 line 3, Federal Worksheet "Column 3: Line 40900 is
+more than more than $750", line 3 "Line 1 minus line 2 (if negative, enter "0") =": the
+contributions less line 2, not below zero."""
+
+POLITICAL_CREDIT_COLUMN_3_LINE_5 = CATALOG.declare(
+    "political_credit_column_3_line_5", Decimal, non_negative=True
+)
+"""Federal political contribution credit column 3 line 5, Federal Worksheet "Column 3: Line 40900 is
+more than more than $750", line 5 "Line 3 multiplied by the percentage from line 4 =": line 3 at the
+line 4 rate of 33.33%."""
+
+POLITICAL_CREDIT_COLUMN_3_LINE_6 = CATALOG.declare(
+    "political_credit_column_3_line_6", Decimal, non_negative=True
+)
+"""Federal political contribution credit column 3 line 6, Federal Worksheet "Column 3: Line 40900 is
+more than more than $750", line 6 "475.00": a printed constant."""
+
+POLITICAL_CREDIT_COLUMN_3_LINE_7 = CATALOG.declare(
+    "political_credit_column_3_line_7", Decimal, non_negative=True
+)
+"""Federal political contribution credit column 3 line 7, Federal Worksheet "Column 3: Line 40900 is
+more than more than $750", line 7 "Line 5 plus line 6 Enter this amount on line 41000 of your
+return. =": line 5 plus line 6."""
+
+POLITICAL_CREDIT_CHOSEN_COLUMN = CATALOG.declare(
+    "political_credit_chosen_column", Decimal, non_negative=True
+)
+"""Federal political contribution credit, the column that applies, Federal Worksheet "Line 41000 -
+Federal political contribution tax credit": the line 7 of column 1 if line 40900 is $400 or less,
+of column 2 if it is more than $400 but not more than $750, of column 3 if it is more than $750."""
+
+POLITICAL_CREDIT_SHORTCUT_THRESHOLD = CATALOG.declare(
+    "political_credit_shortcut_threshold", Decimal, non_negative=True
+)
+"""Federal political contribution credit shortcut threshold, Federal Worksheet "Line 41000 -
+Federal political contribution tax credit": "If your total federal political contributions from
+line 40900 of your return were" "$1,275 or more, enter $650 on line 41000 of your return.": the
+printed $1,275, a constant."""
+
+POLITICAL_CREDIT_SHORTCUT_AMOUNT = CATALOG.declare(
+    "political_credit_shortcut_amount", Decimal, non_negative=True
+)
+"""Federal political contribution credit shortcut amount, Federal Worksheet "Line 41000 - Federal
+political contribution tax credit": "$1,275 or more, enter $650 on line 41000 of your return.": the
+printed $650, a constant."""
+
+POLITICAL_CREDIT_BEFORE_MAXIMUM = CATALOG.declare(
+    "political_credit_before_maximum", Decimal, non_negative=True
+)
+"""Federal political contribution credit before its maximum, Federal Worksheet "Line 41000 -
+Federal political contribution tax credit": the printed $650 when line 40900 is $1,275 or more,
+otherwise the line 7 of the column that applies."""
+
+POLITICAL_CREDIT = CATALOG.declare("political_credit", Decimal, non_negative=True)
+"""Federal political contribution tax credit, T1 line 135 and line 41000 "Total federal political
+contributions (attach receipts) Line 40900 (maximum $650)": the worksheet's result, at most
+$650."""
+
 LABOUR_SPONSORED_FUNDS_NET_COST = CATALOG.declare(
     "labour_sponsored_funds_net_cost", Decimal, non_negative=True
 )
@@ -1783,8 +1916,9 @@ reported on line 41300 of your return, to a maximum of $750."."""
 CREDITS_AGAINST_FEDERAL_TAX = CATALOG.declare(
     "credits_against_federal_tax", Decimal, non_negative=True
 )
-"""Credits against federal tax, T1 line 138 (line 41600) "Add lines 135 to 137.": here line 137
-(`labour_sponsored_funds_credit`) alone, as line 135 (41000) and line 136 (41200) are not wired."""
+"""Credits against federal tax, T1 line 138 (line 41600) "Add lines 135 to 137.": here line 135
+(`political_credit`, 41000) and line 137 (`labour_sponsored_funds_credit`), in line order, as line
+136 (41200) is not wired."""
 
 FEDERAL_TAX_LESS_CREDITS = CATALOG.declare("federal_tax_less_credits", Decimal, non_negative=True)
 """Federal tax less credits, T1 line 139 (line 41700) "Line 134 minus line 138 (if negative, enter
@@ -1879,6 +2013,16 @@ slip: Tax Credit for a Labour-Sponsored Fund (Revenu Québec)", the tax for not 
 replacement shares in a Quebec labour-sponsored fund. The caller's result, as entered: the guide's
 text ends the list at "75% of box"."""
 
+POLITICAL_CONTRIBUTIONS = CATALOG.declare("political_contributions", Decimal, non_negative=True)
+"""Total federal political contributions, T1 line 135 and line 41000 "Total federal political
+contributions (attach receipts) Line 40900": a starting amount, taken as the T1 takes it. The
+Federal Worksheet "Line 41000 - Federal political contribution tax credit" line 1 of each column
+"Total federal political contributions from line 40900 of your return" reads it.
+
+The worksheet's eligibility text ("contributions that you or your spouse or common-law partner made
+in the year to a registered federal political party, a registered association, or a candidate in a
+federal election", less any advantage received) is the caller's to apply."""
+
 SPECIAL_TAXES = CATALOG.declare("special_taxes", Decimal, non_negative=True)
 """Special taxes, T1 line 141 (line 41800) "Special taxes": the additional tax on RESP accumulated
 income payments (`resp_aips_additional_tax`, Form T1172) and the tax for not purchasing replacement
@@ -1898,8 +2042,7 @@ line 35000" and line 123 the federal dividend tax credit: the federal tax after 
 negative, enter "0") Federal tax" carries line 132, as line 133 is not wired. Not modelled: line 120
 (40424, tax on split income), line 124 (minimum tax carryover), line 127 (foreign surtax, not
 triggered on a return whose income is all allocated to Ontario), line 129 (foreign tax credit),
-line 133 (logging tax credit), line 135 (political contributions) and line 136 (investment tax
-credit).
+line 133 (logging tax credit) and line 136 (investment tax credit).
 """
 
 TOTAL_PAYABLE = CATALOG.declare("total_payable", Decimal, non_negative=True)

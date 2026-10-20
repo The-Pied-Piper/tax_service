@@ -111,9 +111,10 @@ description: >-
   nothing as 9935.00 is below it: 1633; with one it would be 1890, at most 2813, less
   nothing over 30639: 1890. With 0 Schedule 6 eligible dependants the first applies: 1633.
   With no fertility treatment expenses, no seniors' transit amount paid, no political
-  contributions, no Form T1221 slips and no co-operative education work placements (a chosen
-  payroll of 0), the Ontario credits (ON479 lines 1, 14, 16, 17, 18, 20 and 21) and the
-  provincial credits (T1 line 47900) are 0.
+  contributions (federal or Ontario), no Form T1221 slips and no co-operative education work
+  placements (a chosen payroll of 0), the Ontario credits (ON479 lines 1, 14, 16, 17, 18, 20
+  and 21) and the provincial credits (T1 line 47900) are 0, as is the federal political
+  contribution tax credit (T1 line 41000).
   The income tax deducted is a chosen 500, so the total credits are 500 plus the benefit
   plus the provincial credits, 2133, and the refund or balance owing is 0 less 2133: -2133,
   a refund. Every amount computed from a rate, fraction, amount or chart on the forms is
@@ -276,6 +277,7 @@ inputs:
   ca/capital_gift_taxable_gains: "0"
   ca/capital_gift_gains_deduction: "0"
   ca-on/political_contributions: "0"
+  ca/political_contributions: "0"
 expected:
   ca/taxable_capital_gains: "0"
   ca/taxable_dividends_other_than_eligible: "0"
@@ -370,6 +372,8 @@ expected:
   ca/itc_recapture_at_20_percent: "0"
   ca/itc_recapture: "0"
   ca/federal_tax_with_itc_recapture: "0"
+  ca/political_credit_before_maximum: "0"
+  ca/political_credit: "0"
   ca/labour_sponsored_funds_credit_before_maximum: "0"
   ca/labour_sponsored_funds_credit: "0"
   ca/credits_against_federal_tax: "0"
@@ -472,6 +476,20 @@ def test_return_x_claims_one_dependant_with_a_disability_on_line_31800() -> None
         a for a in worked.expected if a.kind.identifier == "ca/disability_transferred_amount"
     ]
     assert transferred.value == Decimal("6267.00")
+    check(path)
+
+
+def test_return_z_claims_the_federal_political_contribution_credit_on_line_41000() -> None:
+    path = RETURNS / "2025_return_z.yaml"
+    build_tax_computation()  # registers the catalogs the loader resolves through
+    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+
+    (contributions,) = [
+        a for a in worked.inputs if a.kind.identifier == "ca/political_contributions"
+    ]
+    assert contributions.value == Decimal("1000")
+    (credit,) = [a for a in worked.expected if a.kind.identifier == "ca/political_credit"]
+    assert credit.value == Decimal("558.33")
     check(path)
 
 

@@ -247,6 +247,27 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
     OTHER_PENSIONS_AND_SUPERANNUATION,
     PART_XII_2_TAX_CREDIT,
+    POLITICAL_CONTRIBUTIONS,
+    POLITICAL_CREDIT,
+    POLITICAL_CREDIT_BEFORE_MAXIMUM,
+    POLITICAL_CREDIT_CHOSEN_COLUMN,
+    POLITICAL_CREDIT_COLUMN_1_LINE_2,
+    POLITICAL_CREDIT_COLUMN_1_LINE_3,
+    POLITICAL_CREDIT_COLUMN_1_LINE_5,
+    POLITICAL_CREDIT_COLUMN_1_LINE_6,
+    POLITICAL_CREDIT_COLUMN_1_LINE_7,
+    POLITICAL_CREDIT_COLUMN_2_LINE_2,
+    POLITICAL_CREDIT_COLUMN_2_LINE_3,
+    POLITICAL_CREDIT_COLUMN_2_LINE_5,
+    POLITICAL_CREDIT_COLUMN_2_LINE_6,
+    POLITICAL_CREDIT_COLUMN_2_LINE_7,
+    POLITICAL_CREDIT_COLUMN_3_LINE_2,
+    POLITICAL_CREDIT_COLUMN_3_LINE_3,
+    POLITICAL_CREDIT_COLUMN_3_LINE_5,
+    POLITICAL_CREDIT_COLUMN_3_LINE_6,
+    POLITICAL_CREDIT_COLUMN_3_LINE_7,
+    POLITICAL_CREDIT_SHORTCUT_AMOUNT,
+    POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
     PROVINCIAL_CREDITS,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
@@ -586,10 +607,31 @@ REGISTERED = frozenset(
         "ca/resp_aips_received_part_b",
         "ca/resp_aips_part_a_applies",
         "ca/rl_10_labour_sponsored_fund_amount",
+        "ca/political_contributions",
         "ca/itc_recapture_at_15_percent",
         "ca/itc_recapture_at_20_percent",
         "ca/itc_recapture",
         "ca/federal_tax_with_itc_recapture",
+        "ca/political_credit_column_1_line_2",
+        "ca/political_credit_column_1_line_3",
+        "ca/political_credit_column_1_line_5",
+        "ca/political_credit_column_1_line_6",
+        "ca/political_credit_column_1_line_7",
+        "ca/political_credit_column_2_line_2",
+        "ca/political_credit_column_2_line_3",
+        "ca/political_credit_column_2_line_5",
+        "ca/political_credit_column_2_line_6",
+        "ca/political_credit_column_2_line_7",
+        "ca/political_credit_column_3_line_2",
+        "ca/political_credit_column_3_line_3",
+        "ca/political_credit_column_3_line_5",
+        "ca/political_credit_column_3_line_6",
+        "ca/political_credit_column_3_line_7",
+        "ca/political_credit_chosen_column",
+        "ca/political_credit_shortcut_threshold",
+        "ca/political_credit_shortcut_amount",
+        "ca/political_credit_before_maximum",
+        "ca/political_credit",
         "ca/labour_sponsored_funds_credit_before_maximum",
         "ca/labour_sponsored_funds_credit",
         "ca/credits_against_federal_tax",
@@ -1240,10 +1282,34 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert (
         registry.get("ca/rl_10_labour_sponsored_fund_amount") is RL_10_LABOUR_SPONSORED_FUND_AMOUNT
     )
+    assert registry.get("ca/political_contributions") is POLITICAL_CONTRIBUTIONS
     assert registry.get("ca/itc_recapture_at_15_percent") is ITC_RECAPTURE_AT_15_PERCENT
     assert registry.get("ca/itc_recapture_at_20_percent") is ITC_RECAPTURE_AT_20_PERCENT
     assert registry.get("ca/itc_recapture") is ITC_RECAPTURE
     assert registry.get("ca/federal_tax_with_itc_recapture") is FEDERAL_TAX_WITH_ITC_RECAPTURE
+    assert registry.get("ca/political_credit_column_1_line_2") is POLITICAL_CREDIT_COLUMN_1_LINE_2
+    assert registry.get("ca/political_credit_column_1_line_3") is POLITICAL_CREDIT_COLUMN_1_LINE_3
+    assert registry.get("ca/political_credit_column_1_line_5") is POLITICAL_CREDIT_COLUMN_1_LINE_5
+    assert registry.get("ca/political_credit_column_1_line_6") is POLITICAL_CREDIT_COLUMN_1_LINE_6
+    assert registry.get("ca/political_credit_column_1_line_7") is POLITICAL_CREDIT_COLUMN_1_LINE_7
+    assert registry.get("ca/political_credit_column_2_line_2") is POLITICAL_CREDIT_COLUMN_2_LINE_2
+    assert registry.get("ca/political_credit_column_2_line_3") is POLITICAL_CREDIT_COLUMN_2_LINE_3
+    assert registry.get("ca/political_credit_column_2_line_5") is POLITICAL_CREDIT_COLUMN_2_LINE_5
+    assert registry.get("ca/political_credit_column_2_line_6") is POLITICAL_CREDIT_COLUMN_2_LINE_6
+    assert registry.get("ca/political_credit_column_2_line_7") is POLITICAL_CREDIT_COLUMN_2_LINE_7
+    assert registry.get("ca/political_credit_column_3_line_2") is POLITICAL_CREDIT_COLUMN_3_LINE_2
+    assert registry.get("ca/political_credit_column_3_line_3") is POLITICAL_CREDIT_COLUMN_3_LINE_3
+    assert registry.get("ca/political_credit_column_3_line_5") is POLITICAL_CREDIT_COLUMN_3_LINE_5
+    assert registry.get("ca/political_credit_column_3_line_6") is POLITICAL_CREDIT_COLUMN_3_LINE_6
+    assert registry.get("ca/political_credit_column_3_line_7") is POLITICAL_CREDIT_COLUMN_3_LINE_7
+    assert registry.get("ca/political_credit_chosen_column") is POLITICAL_CREDIT_CHOSEN_COLUMN
+    assert (
+        registry.get("ca/political_credit_shortcut_threshold")
+        is POLITICAL_CREDIT_SHORTCUT_THRESHOLD
+    )
+    assert registry.get("ca/political_credit_shortcut_amount") is POLITICAL_CREDIT_SHORTCUT_AMOUNT
+    assert registry.get("ca/political_credit_before_maximum") is POLITICAL_CREDIT_BEFORE_MAXIMUM
+    assert registry.get("ca/political_credit") is POLITICAL_CREDIT
     assert (
         registry.get("ca/labour_sponsored_funds_credit_before_maximum")
         is LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM
@@ -1507,10 +1573,31 @@ def test_catalog_kinds_are_money() -> None:
         RESP_AIPS_REDUCTION_USED_IN_PREVIOUS_YEARS,
         RESP_AIPS_RECEIVED_PART_B,
         RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
+        POLITICAL_CONTRIBUTIONS,
         ITC_RECAPTURE_AT_15_PERCENT,
         ITC_RECAPTURE_AT_20_PERCENT,
         ITC_RECAPTURE,
         FEDERAL_TAX_WITH_ITC_RECAPTURE,
+        POLITICAL_CREDIT_COLUMN_1_LINE_2,
+        POLITICAL_CREDIT_COLUMN_1_LINE_3,
+        POLITICAL_CREDIT_COLUMN_1_LINE_5,
+        POLITICAL_CREDIT_COLUMN_1_LINE_6,
+        POLITICAL_CREDIT_COLUMN_1_LINE_7,
+        POLITICAL_CREDIT_COLUMN_2_LINE_2,
+        POLITICAL_CREDIT_COLUMN_2_LINE_3,
+        POLITICAL_CREDIT_COLUMN_2_LINE_5,
+        POLITICAL_CREDIT_COLUMN_2_LINE_6,
+        POLITICAL_CREDIT_COLUMN_2_LINE_7,
+        POLITICAL_CREDIT_COLUMN_3_LINE_2,
+        POLITICAL_CREDIT_COLUMN_3_LINE_3,
+        POLITICAL_CREDIT_COLUMN_3_LINE_5,
+        POLITICAL_CREDIT_COLUMN_3_LINE_6,
+        POLITICAL_CREDIT_COLUMN_3_LINE_7,
+        POLITICAL_CREDIT_CHOSEN_COLUMN,
+        POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
+        POLITICAL_CREDIT_SHORTCUT_AMOUNT,
+        POLITICAL_CREDIT_BEFORE_MAXIMUM,
+        POLITICAL_CREDIT,
         LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
         LABOUR_SPONSORED_FUNDS_CREDIT,
         CREDITS_AGAINST_FEDERAL_TAX,
@@ -2064,10 +2151,31 @@ def test_the_special_tax_and_credit_lines_are_non_negative(registry: ArtifactReg
         RESP_AIPS_REDUCTION_USED_IN_PREVIOUS_YEARS,
         RESP_AIPS_RECEIVED_PART_B,
         RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
+        POLITICAL_CONTRIBUTIONS,
         ITC_RECAPTURE_AT_15_PERCENT,
         ITC_RECAPTURE_AT_20_PERCENT,
         ITC_RECAPTURE,
         FEDERAL_TAX_WITH_ITC_RECAPTURE,
+        POLITICAL_CREDIT_COLUMN_1_LINE_2,
+        POLITICAL_CREDIT_COLUMN_1_LINE_3,
+        POLITICAL_CREDIT_COLUMN_1_LINE_5,
+        POLITICAL_CREDIT_COLUMN_1_LINE_6,
+        POLITICAL_CREDIT_COLUMN_1_LINE_7,
+        POLITICAL_CREDIT_COLUMN_2_LINE_2,
+        POLITICAL_CREDIT_COLUMN_2_LINE_3,
+        POLITICAL_CREDIT_COLUMN_2_LINE_5,
+        POLITICAL_CREDIT_COLUMN_2_LINE_6,
+        POLITICAL_CREDIT_COLUMN_2_LINE_7,
+        POLITICAL_CREDIT_COLUMN_3_LINE_2,
+        POLITICAL_CREDIT_COLUMN_3_LINE_3,
+        POLITICAL_CREDIT_COLUMN_3_LINE_5,
+        POLITICAL_CREDIT_COLUMN_3_LINE_6,
+        POLITICAL_CREDIT_COLUMN_3_LINE_7,
+        POLITICAL_CREDIT_CHOSEN_COLUMN,
+        POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
+        POLITICAL_CREDIT_SHORTCUT_AMOUNT,
+        POLITICAL_CREDIT_BEFORE_MAXIMUM,
+        POLITICAL_CREDIT,
         LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
         LABOUR_SPONSORED_FUNDS_CREDIT,
         CREDITS_AGAINST_FEDERAL_TAX,

@@ -84,6 +84,8 @@
 # and are then checked too.
 # Ontario political contributions (ON479 line 15, line 63100) are a chosen $0, so Worksheet
 # ON479's line 16 is $0 (column 1 applies).
+# Federal political contributions (T1 line 135 and line 40900) are a chosen $0, so the Federal
+# Worksheet's line 41000 is $0 (column 1 applies).
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -925,6 +927,7 @@ inputs:
   ca/resp_aips_received_part_b: "0"
   ca/resp_aips_part_a_applies: "0"
   ca/rl_10_labour_sponsored_fund_amount: "0"
+  ca/political_contributions: "0"
   ca-on/opportunities_fund_donation: "0"
   ca-on/fertility_expenses: "0"
   ca-on/seniors_transit_paid: "0"
@@ -1049,6 +1052,8 @@ expected:
   ca/itc_recapture_at_20_percent: "0"
   ca/itc_recapture: "0"
   ca/federal_tax_with_itc_recapture: "2112.08"
+  ca/political_credit_before_maximum: "0"
+  ca/political_credit: "0"
   ca/labour_sponsored_funds_credit_before_maximum: "0"
   ca/labour_sponsored_funds_credit: "0"
   ca/credits_against_federal_tax: "0"
