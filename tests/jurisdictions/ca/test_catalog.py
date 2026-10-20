@@ -9,12 +9,14 @@ as the composition root does, into a fresh registry.
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import Any
 
 import pytest
 
 import app.jurisdictions.ca
 import app.jurisdictions.ca.catalog
 from app.domain.artifact import ArtifactCatalog, ArtifactKind, ArtifactRegistry
+from app.domain.errors import InvalidRecordError, NegativeArtifactError
 from app.domain.record_list import RecordList, RecordListKind
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
@@ -83,12 +85,18 @@ from app.jurisdictions.ca.catalog import (
     CWB_REDUCTION_WITHOUT_DEPENDANT,
     DEDUCTIONS_FROM_NET_INCOME,
     DEDUCTIONS_FROM_TOTAL_INCOME,
+    DEPENDANT_CARE_EXPENSES,
+    DEPENDANT_CREDIT_AMOUNTS,
     DEPENDANT_NET_INCOME,
+    DEPENDANT_TAXABLE_INCOME,
+    DEPENDANT_UNDER_18,
     DEPRECIABLE_GIFT_CAPITAL_COST,
     DEPRECIABLE_GIFT_NET_PROCEEDS,
     DEPRECIABLE_GIFT_PROCEEDS_OR_COST,
     DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
     DEPRECIABLE_GIFTS,
+    DISABILITY_DEPENDANTS,
+    DISABILITY_TRANSFERRED_AMOUNT,
     DIVIDEND_TAX_CREDIT,
     DIVIDENDS_AMOUNT_A,
     DIVIDENDS_AMOUNT_A_LESS_B,
@@ -550,6 +558,12 @@ REGISTERED = frozenset(
         "ca/caregiver_amount",
         "ca/infirm_children",
         "ca/infirm_children_amount",
+        "ca/dependant_under_18",
+        "ca/dependant_care_expenses",
+        "ca/dependant_credit_amounts",
+        "ca/dependant_taxable_income",
+        "ca/disability_dependants",
+        "ca/disability_transferred_amount",
         "ca/cpp_base_contributions",
         "ca/ei_premiums",
         "ca/canada_employment_amount",
@@ -707,6 +721,7 @@ COUNTS = frozenset(
     {
         "ca/eligible_dependants",
         "ca/infirm_children",
+        "ca/dependant_under_18",
         "ca/born_in_1960_or_earlier",
         "ca/spouses_claimed",
         "ca/spouse_caregiver_eligible",
@@ -723,7 +738,10 @@ COUNTS = frozenset(
 # T1 line 82 (line 30450) and Schedule 5 "Line 30450 - Canada caregiver amount for other infirm
 # dependants age 18 or older": "Complete the chart below for each dependant who meets the
 # conditions above", so the infirm dependants are a list of records, not a number.
-RECORD_LISTS = frozenset({"ca/infirm_dependants"})
+# Federal Worksheet "Line 31800 - Disability amount transferred from a dependant": "Complete the
+# following calculation fore ach dependant who is eligible for the disability tax credit in 2025",
+# so the dependants who qualify are a list of records too.
+RECORD_LISTS = frozenset({"ca/infirm_dependants", "ca/disability_dependants"})
 
 
 @pytest.fixture
@@ -1177,6 +1195,12 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/spouse_caregiver_amount") is SPOUSE_CAREGIVER_AMOUNT
     assert registry.get("ca/infirm_dependants") is INFIRM_DEPENDANTS
     assert registry.get("ca/caregiver_amount") is CAREGIVER_AMOUNT
+    assert registry.get("ca/dependant_under_18") is DEPENDANT_UNDER_18
+    assert registry.get("ca/dependant_care_expenses") is DEPENDANT_CARE_EXPENSES
+    assert registry.get("ca/dependant_credit_amounts") is DEPENDANT_CREDIT_AMOUNTS
+    assert registry.get("ca/dependant_taxable_income") is DEPENDANT_TAXABLE_INCOME
+    assert registry.get("ca/disability_dependants") is DISABILITY_DEPENDANTS
+    assert registry.get("ca/disability_transferred_amount") is DISABILITY_TRANSFERRED_AMOUNT
     assert registry.get("ca/infirm_children") is INFIRM_CHILDREN
     assert registry.get("ca/infirm_children_amount") is INFIRM_CHILDREN_AMOUNT
     assert registry.get("ca/non_refundable_credit_amounts") is NON_REFUNDABLE_CREDIT_AMOUNTS
@@ -1451,6 +1475,10 @@ def test_catalog_kinds_are_money() -> None:
         SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT,
         SPOUSE_CAREGIVER_AMOUNT,
         CAREGIVER_AMOUNT,
+        DEPENDANT_CARE_EXPENSES,
+        DEPENDANT_CREDIT_AMOUNTS,
+        DEPENDANT_TAXABLE_INCOME,
+        DISABILITY_TRANSFERRED_AMOUNT,
         INFIRM_CHILDREN_AMOUNT,
         NON_REFUNDABLE_CREDIT_AMOUNTS,
         CPP_BASE_CONTRIBUTIONS,
@@ -1764,6 +1792,188 @@ def test_the_caregiver_amount_is_a_non_negative_decimal(registry: ArtifactRegist
     assert CAREGIVER_AMOUNT.value_type is Decimal
     assert CAREGIVER_AMOUNT.non_negative is True
     assert registry.kind("ca/caregiver_amount") is CAREGIVER_AMOUNT
+
+
+def test_the_disability_dependants_are_a_record_list_of_the_worksheets_figures(
+    registry: ArtifactRegistry,
+) -> None:
+    # Federal Worksheet "Line 31800", per dependant: whether they were "under 18 years of age on
+    # December 31, 2025", line 3 "Total of child care and attendant care expenses for your
+    # dependant that you or another person claimed", line 9 "amount from line 98 of your
+    # dependant's return" and line 11 "Dependant's taxable income from line 26000 of their
+    # return": the four fields a record holds, in the worksheet's line order (the caller lists
+    # only the dependants who qualify, so there are no eligibility fields).
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(DISABILITY_DEPENDANTS, RecordListKind)
+    assert DISABILITY_DEPENDANTS.identifier == "ca/disability_dependants"
+    assert DISABILITY_DEPENDANTS.value_type is RecordList
+    assert DISABILITY_DEPENDANTS.non_negative is False
+    assert DISABILITY_DEPENDANTS.fields == (
+        DEPENDANT_UNDER_18,
+        DEPENDANT_CARE_EXPENSES,
+        DEPENDANT_CREDIT_AMOUNTS,
+        DEPENDANT_TAXABLE_INCOME,
+    )
+    assert registry.get("ca/disability_dependants") is DISABILITY_DEPENDANTS
+
+
+def test_the_disability_dependants_fields_are_kinds_of_their_own() -> None:
+    assert DEPENDANT_UNDER_18.identifier == "ca/dependant_under_18"
+    assert DEPENDANT_CARE_EXPENSES.identifier == "ca/dependant_care_expenses"
+    assert DEPENDANT_CREDIT_AMOUNTS.identifier == "ca/dependant_credit_amounts"
+    assert DEPENDANT_TAXABLE_INCOME.identifier == "ca/dependant_taxable_income"
+    # Not the net income of line 30400's dependant: another figure of another return.
+    assert DEPENDANT_NET_INCOME not in DISABILITY_DEPENDANTS.fields
+    for kind in DISABILITY_DEPENDANTS.fields:
+        assert kind.non_negative is True, kind.identifier
+
+
+def test_the_dependant_under_18_is_a_non_negative_int_count(registry: ArtifactRegistry) -> None:
+    # "If the dependant was under 18 years of age on December 31, 2025, ...": a yes or no, taken
+    # as a count of 0 or 1 like the forms' other yes or no questions.
+    assert DEPENDANT_UNDER_18.value_type is int
+    assert DEPENDANT_UNDER_18.non_negative is True
+    assert registry.kind("ca/dependant_under_18") is DEPENDANT_UNDER_18
+
+
+@pytest.mark.parametrize(
+    "kind", [DEPENDANT_CARE_EXPENSES, DEPENDANT_CREDIT_AMOUNTS, DEPENDANT_TAXABLE_INCOME]
+)
+def test_the_disability_dependants_amounts_are_non_negative_decimals(
+    kind: ArtifactKind[Decimal], registry: ArtifactRegistry
+) -> None:
+    assert kind.value_type is Decimal
+    assert kind.non_negative is True
+    assert registry.kind(kind.identifier) is kind
+
+
+def disability_record(**changes: object) -> dict[ArtifactKind[Any], object]:
+    """One dependant aged 20 with the ticket's chosen figures, with `changes` by field name."""
+    record: dict[ArtifactKind[Any], object] = {
+        DEPENDANT_UNDER_18: 0,
+        DEPENDANT_CARE_EXPENSES: Decimal("0"),
+        DEPENDANT_CREDIT_AMOUNTS: Decimal("16129"),
+        DEPENDANT_TAXABLE_INCOME: Decimal("20000"),
+    }
+    names: dict[str, ArtifactKind[Any]] = {
+        "under_18": DEPENDANT_UNDER_18,
+        "care_expenses": DEPENDANT_CARE_EXPENSES,
+        "credit_amounts": DEPENDANT_CREDIT_AMOUNTS,
+        "taxable_income": DEPENDANT_TAXABLE_INCOME,
+    }
+    for name, value in changes.items():
+        record[names[name]] = value
+    return record
+
+
+def test_the_disability_dependants_hold_the_four_figures_each_in_the_callers_order() -> None:
+    dependants = RecordList(
+        DISABILITY_DEPENDANTS.fields,
+        [
+            disability_record(),
+            disability_record(under_18=1, care_expenses=Decimal("5000"), credit_amounts=Decimal(0)),
+        ],
+    )
+
+    assert [record[DEPENDANT_UNDER_18] for record in dependants.records] == [0, 1]
+    assert [record[DEPENDANT_CARE_EXPENSES] for record in dependants.records] == [
+        Decimal("0"),
+        Decimal("5000"),
+    ]
+    assert [record[DEPENDANT_CREDIT_AMOUNTS] for record in dependants.records] == [
+        Decimal("16129"),
+        Decimal("0"),
+    ]
+    assert [record[DEPENDANT_TAXABLE_INCOME] for record in dependants.records] == [
+        Decimal("20000"),
+        Decimal("20000"),
+    ]
+
+
+def test_there_may_be_no_disability_dependants() -> None:
+    assert RecordList(DISABILITY_DEPENDANTS.fields, []).records == ()
+
+
+@pytest.mark.parametrize(
+    "missing",
+    [
+        DEPENDANT_UNDER_18,
+        DEPENDANT_CARE_EXPENSES,
+        DEPENDANT_CREDIT_AMOUNTS,
+        DEPENDANT_TAXABLE_INCOME,
+    ],
+)
+def test_a_disability_dependant_missing_a_figure_is_an_invalid_record(
+    missing: ArtifactKind[Any],
+) -> None:
+    record = disability_record()
+    del record[missing]
+
+    with pytest.raises(InvalidRecordError, match=f"item 1: missing field {missing.identifier}"):
+        RecordList(DISABILITY_DEPENDANTS.fields, [record])
+
+
+def test_the_second_disability_dependant_is_named_by_its_position() -> None:
+    record = disability_record()
+    del record[DEPENDANT_TAXABLE_INCOME]
+
+    with pytest.raises(
+        InvalidRecordError, match="item 2: missing field ca/dependant_taxable_income"
+    ):
+        RecordList(DISABILITY_DEPENDANTS.fields, [disability_record(), record])
+
+
+def test_a_disability_dependant_with_another_figure_is_an_invalid_record() -> None:
+    record = disability_record()
+    record[DEPENDANT_NET_INCOME] = Decimal("5000")
+
+    with pytest.raises(InvalidRecordError, match="item 1: unknown field ca/dependant_net_income"):
+        RecordList(DISABILITY_DEPENDANTS.fields, [record])
+
+
+@pytest.mark.parametrize(
+    ("change", "identifier"),
+    [
+        ({"under_18": -1}, "ca/dependant_under_18"),
+        ({"care_expenses": Decimal("-0.01")}, "ca/dependant_care_expenses"),
+        ({"credit_amounts": Decimal("-1")}, "ca/dependant_credit_amounts"),
+        ({"taxable_income": Decimal("-1")}, "ca/dependant_taxable_income"),
+    ],
+)
+def test_a_negative_disability_dependant_figure_is_refused(
+    change: dict[str, object], identifier: str
+) -> None:
+    with pytest.raises(NegativeArtifactError, match=f"item 1: {identifier} cannot be negative"):
+        RecordList(DISABILITY_DEPENDANTS.fields, [disability_record(**change)])
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"under_18": Decimal("1")},
+        {"under_18": True},
+        {"care_expenses": 5000},
+        {"credit_amounts": "16129"},
+        {"taxable_income": 20000.0},
+    ],
+)
+def test_a_disability_dependant_figure_of_the_wrong_type_is_refused(
+    change: dict[str, object],
+) -> None:
+    with pytest.raises(TypeError):
+        RecordList(DISABILITY_DEPENDANTS.fields, [disability_record(**change)])
+
+
+def test_the_disability_transferred_amount_is_a_non_negative_decimal(
+    registry: ArtifactRegistry,
+) -> None:
+    # T1 line 100 (line 31800) "Disability amount transferred from a dependant (use Federal
+    # Worksheet)": the total of the worksheet's line 13 amounts, each the lesser of two amounts
+    # that are at least "0".
+    assert DISABILITY_TRANSFERRED_AMOUNT.identifier == "ca/disability_transferred_amount"
+    assert DISABILITY_TRANSFERRED_AMOUNT.value_type is Decimal
+    assert DISABILITY_TRANSFERRED_AMOUNT.non_negative is True
+    assert registry.kind("ca/disability_transferred_amount") is DISABILITY_TRANSFERRED_AMOUNT
 
 
 def test_the_special_tax_and_credit_lines_are_non_negative(registry: ArtifactRegistry) -> None:
