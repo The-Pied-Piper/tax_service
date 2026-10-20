@@ -414,6 +414,7 @@ from app.jurisdictions.ca_on.capabilities.quotient import Quotient
 from app.jurisdictions.ca_on.capabilities.record_count import RecordCount
 from app.jurisdictions.ca_on.catalog import (
     CAREGIVER_DEPENDANTS,
+    CLAIMS_SENIORS_CARE_CREDIT,
     COMMUNITY_FOOD_PROGRAM_CREDIT,
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
     COOP_EDUCATION_CREDIT,
@@ -455,6 +456,14 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX_LESS_DIVIDEND_CREDIT,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
+    SENIORS_CARE_AMOUNT,
+    SENIORS_CARE_BASE_AMOUNT,
+    SENIORS_CARE_BEFORE_CLAIM,
+    SENIORS_CARE_BEFORE_MAXIMUM,
+    SENIORS_CARE_CREDIT,
+    SENIORS_CARE_FAMILY_NET_INCOME,
+    SENIORS_CARE_INCOME_OVER_BASE,
+    SENIORS_CARE_REDUCTION,
     SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
     SENIORS_TRANSIT_CREDIT,
     SENIORS_TRANSIT_PAID,
@@ -627,6 +636,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/political_contributions",
             "ca-on/opportunities_fund_donation",
             "ca-on/fertility_expenses",
+            "ca-on/claims_seniors_care_credit",
             "ca-on/seniors_transit_paid",
             "ca-on/flow_through_share_slips",
             "ca-on/coop_education_payroll",
@@ -3537,6 +3547,83 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"base": "ca-on/fertility_credit_before_maximum"},
             produces={"output": "ca-on/fertility_credit"},
         ),
+        # Form ON479 line 3 "Medical expenses from line 58769 of your Form ON428" is the artifact
+        # ca-on/medical_claim (ON428 line 43), read directly. Line 4 "Allowable percentage 25%" and
+        # line 5 "Line 3 multiplied by the percentage from line 4 (maximum $1,500) =": the
+        # percentage on line 3, before the maximum.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/seniors_care_rate"},
+            consumes={"base": "ca-on/medical_claim"},
+            produces={"output": "ca-on/seniors_care_before_maximum"},
+        ),
+        # Line 5's "(maximum $1,500)", printed after the percentage, so it caps the result.
+        CapabilitySelection(
+            name="core/capped_amount",
+            params={"cap": "ca-on/seniors_care_maximum"},
+            consumes={"base": "ca-on/seniors_care_before_maximum"},
+            produces={"output": "ca-on/seniors_care_amount"},
+        ),
+        # Line 8 "Line 6 plus line 7 Family net income =", line 6 being "Your net income from line
+        # 23600 of your return" and line 7 "Your spouse's or common-law partner's net income from
+        # line 23600 of their return (if applicable)", the caller input shared with T1 line 30300
+        # and ON428 line 58120 (0 with no spouse).
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/net_income", "ca/spouse_net_income")},
+            produces={"output": "ca-on/seniors_care_family_net_income"},
+        ),
+        # Line 9 "Base amount 35,000.00", the dataset as an artifact of the same name.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca-on/seniors_care_base_amount"},
+            consumes={},
+            produces={"output": "ca-on/seniors_care_base_amount"},
+        ),
+        # Line 10 "Line 8 minus line 9 (if negative, enter "0") =".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/seniors_care_family_net_income",
+                "less": "ca-on/seniors_care_base_amount",
+            },
+            produces={"output": "ca-on/seniors_care_income_over_base"},
+        ),
+        # Line 11 "Applicable rate 5%" and line 12 "Line 10 multiplied by the percentage from
+        # line 11 =".
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/seniors_care_reduction_rate"},
+            consumes={"base": "ca-on/seniors_care_income_over_base"},
+            produces={"output": "ca-on/seniors_care_reduction"},
+        ),
+        # Line 13 and line 63095 "Line 5 minus line 12 (if negative, enter "0") =". The form's
+        # rules for a family net income of $35,000 or less (line 5 on line 13) and of more than
+        # $65,000 ("0" on line 13) follow from lines 9 to 12: line 10 is 0 up to $35,000, and at
+        # $65,000 line 12 is $1,500.00, the most line 5 can be.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/seniors_care_amount",
+                "less": "ca-on/seniors_care_reduction",
+            },
+            produces={"output": "ca-on/seniors_care_before_claim"},
+        ),
+        # The caller's 0/1 count "claims the Ontario seniors care at home tax credit": line 13
+        # once if the filer claims it, else 0. ON479 prints no eligibility text for the credit, so
+        # the caller claims it only for a filer who qualifies.
+        CapabilitySelection(
+            name="core/times_count",
+            params={},
+            consumes={
+                "amount": "ca-on/seniors_care_before_claim",
+                "count": "ca-on/claims_seniors_care_credit",
+            },
+            produces={"output": "ca-on/seniors_care_credit"},
+        ),
         # Line 14 "Amount paid in the year for eligible seniors' use of Ontario public transit
         # services (maximum $3,000) Line 63100 multiplied by 15% =": the "(maximum $3,000)" is
         # printed before the percentage, so it caps the amount paid.
@@ -3733,14 +3820,15 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"base": "ca-on/flow_through_share_expenses"},
             produces={"output": "ca-on/flow_through_share_credit"},
         ),
-        # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1, 14, 16 and 17, in line order, as
-        # lines 2 and 13 are not triggered.
+        # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1, 13, 14, 16 and 17, in line
+        # order, as line 2 is not triggered.
         CapabilitySelection(
             name="core/sum",
             params={},
             consumes={
                 "parts": (
                     "ca-on/fertility_credit",
+                    "ca-on/seniors_care_credit",
                     "ca-on/seniors_transit_credit",
                     "ca-on/political_credit",
                     "ca-on/flow_through_share_credit",
@@ -3922,7 +4010,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca-on/net_refund"},
         ),
     }
-    assert len(found.capabilities) == 313
+    assert len(found.capabilities) == 321
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -3932,7 +4020,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 313
+    assert len(composition.order) == 321
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -5361,6 +5449,34 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         ),
         (ApplyRate, frozenset({FERTILITY_EXPENSES}), frozenset({FERTILITY_CREDIT_BEFORE_MAXIMUM})),
         (CappedAmount, frozenset({FERTILITY_CREDIT_BEFORE_MAXIMUM}), frozenset({FERTILITY_CREDIT})),
+        (ApplyRate, frozenset({ontario.MEDICAL_CLAIM}), frozenset({SENIORS_CARE_BEFORE_MAXIMUM})),
+        (CappedAmount, frozenset({SENIORS_CARE_BEFORE_MAXIMUM}), frozenset({SENIORS_CARE_AMOUNT})),
+        (
+            Sum,
+            frozenset({NET_INCOME, SPOUSE_NET_INCOME}),
+            frozenset({SENIORS_CARE_FAMILY_NET_INCOME}),
+        ),
+        (CreditAmount, frozenset(), frozenset({SENIORS_CARE_BASE_AMOUNT})),
+        (
+            SubtractNotBelowZero,
+            frozenset({SENIORS_CARE_FAMILY_NET_INCOME, SENIORS_CARE_BASE_AMOUNT}),
+            frozenset({SENIORS_CARE_INCOME_OVER_BASE}),
+        ),
+        (
+            ApplyRate,
+            frozenset({SENIORS_CARE_INCOME_OVER_BASE}),
+            frozenset({SENIORS_CARE_REDUCTION}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({SENIORS_CARE_AMOUNT, SENIORS_CARE_REDUCTION}),
+            frozenset({SENIORS_CARE_BEFORE_CLAIM}),
+        ),
+        (
+            TimesCount,
+            frozenset({SENIORS_CARE_BEFORE_CLAIM, CLAIMS_SENIORS_CARE_CREDIT}),
+            frozenset({SENIORS_CARE_CREDIT}),
+        ),
         (
             CappedAmount,
             frozenset({SENIORS_TRANSIT_PAID}),
@@ -5462,6 +5578,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset(
                 {
                     FERTILITY_CREDIT,
+                    SENIORS_CARE_CREDIT,
                     SENIORS_TRANSIT_CREDIT,
                     ontario.POLITICAL_CREDIT,
                     FLOW_THROUGH_SHARE_CREDIT,

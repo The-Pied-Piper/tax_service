@@ -29,6 +29,7 @@ from app.jurisdictions.ca_on.catalog import (
     CAREGIVER_DEPENDANTS,
     CATALOG,
     CLAIMED_AS_ELIGIBLE_DEPENDANT,
+    CLAIMS_SENIORS_CARE_CREDIT,
     COMMUNITY_FOOD_PROGRAM_CREDIT,
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
     COOP_EDUCATION_CREDIT,
@@ -113,6 +114,14 @@ from app.jurisdictions.ca_on.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_6,
     POLITICAL_CREDIT_COLUMN_3_LINE_7,
     REFUND_BEFORE_DONATION,
+    SENIORS_CARE_AMOUNT,
+    SENIORS_CARE_BASE_AMOUNT,
+    SENIORS_CARE_BEFORE_CLAIM,
+    SENIORS_CARE_BEFORE_MAXIMUM,
+    SENIORS_CARE_CREDIT,
+    SENIORS_CARE_FAMILY_NET_INCOME,
+    SENIORS_CARE_INCOME_OVER_BASE,
+    SENIORS_CARE_REDUCTION,
     SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
     SENIORS_TRANSIT_CREDIT,
     SENIORS_TRANSIT_PAID,
@@ -193,6 +202,15 @@ REGISTERED = frozenset(
         "ca-on/fertility_expenses",
         "ca-on/fertility_credit_before_maximum",
         "ca-on/fertility_credit",
+        "ca-on/claims_seniors_care_credit",
+        "ca-on/seniors_care_before_maximum",
+        "ca-on/seniors_care_amount",
+        "ca-on/seniors_care_family_net_income",
+        "ca-on/seniors_care_base_amount",
+        "ca-on/seniors_care_income_over_base",
+        "ca-on/seniors_care_reduction",
+        "ca-on/seniors_care_before_claim",
+        "ca-on/seniors_care_credit",
         "ca-on/seniors_transit_paid",
         "ca-on/seniors_transit_amount_paid_at_most_maximum",
         "ca-on/seniors_transit_credit",
@@ -246,6 +264,7 @@ COUNTS = frozenset(
         "ca-on/dependants",
         "ca-on/claimed_as_eligible_dependant",
         "ca-on/coop_education_placement_count",
+        "ca-on/claims_seniors_care_credit",
     }
 )
 # Form T1221 lines 1 to 3, one line per corporation or slip: the record list of the slips;
@@ -362,6 +381,15 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/fertility_expenses") is FERTILITY_EXPENSES
     assert registry.get("ca-on/fertility_credit_before_maximum") is FERTILITY_CREDIT_BEFORE_MAXIMUM
     assert registry.get("ca-on/fertility_credit") is FERTILITY_CREDIT
+    assert registry.get("ca-on/claims_seniors_care_credit") is CLAIMS_SENIORS_CARE_CREDIT
+    assert registry.get("ca-on/seniors_care_before_maximum") is SENIORS_CARE_BEFORE_MAXIMUM
+    assert registry.get("ca-on/seniors_care_amount") is SENIORS_CARE_AMOUNT
+    assert registry.get("ca-on/seniors_care_family_net_income") is SENIORS_CARE_FAMILY_NET_INCOME
+    assert registry.get("ca-on/seniors_care_base_amount") is SENIORS_CARE_BASE_AMOUNT
+    assert registry.get("ca-on/seniors_care_income_over_base") is SENIORS_CARE_INCOME_OVER_BASE
+    assert registry.get("ca-on/seniors_care_reduction") is SENIORS_CARE_REDUCTION
+    assert registry.get("ca-on/seniors_care_before_claim") is SENIORS_CARE_BEFORE_CLAIM
+    assert registry.get("ca-on/seniors_care_credit") is SENIORS_CARE_CREDIT
     assert registry.get("ca-on/seniors_transit_paid") is SENIORS_TRANSIT_PAID
     assert (
         registry.get("ca-on/seniors_transit_amount_paid_at_most_maximum")
@@ -540,3 +568,24 @@ def test_every_kind_but_the_record_lists_is_declared_non_negative(
             assert kind.non_negative is True, kind.identifier
     for identifier in REGISTERED - RECORD_LISTS:
         assert registry.kind(identifier).non_negative is True, identifier
+
+
+def test_the_seniors_care_at_home_kinds_are_non_negative_amounts_and_a_claim_count() -> None:
+    # Form ON479 lines 3 to 13 (line 63095): line 5 before and after its maximum, line 8 (family
+    # net income), line 9 (the printed base amount), lines 10 and 12, line 13 before the claim and
+    # as claimed, and the caller's 0/1 count "claims the Ontario seniors care at home tax credit".
+    for kind in (
+        SENIORS_CARE_BEFORE_MAXIMUM,
+        SENIORS_CARE_AMOUNT,
+        SENIORS_CARE_FAMILY_NET_INCOME,
+        SENIORS_CARE_BASE_AMOUNT,
+        SENIORS_CARE_INCOME_OVER_BASE,
+        SENIORS_CARE_REDUCTION,
+        SENIORS_CARE_BEFORE_CLAIM,
+        SENIORS_CARE_CREDIT,
+    ):
+        assert kind.value_type is Decimal
+        assert kind.non_negative is True
+    assert CLAIMS_SENIORS_CARE_CREDIT.identifier == "ca-on/claims_seniors_care_credit"
+    assert CLAIMS_SENIORS_CARE_CREDIT.value_type is int
+    assert CLAIMS_SENIORS_CARE_CREDIT.non_negative is True

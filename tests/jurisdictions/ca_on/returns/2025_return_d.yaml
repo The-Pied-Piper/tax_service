@@ -94,6 +94,8 @@
 # ON479's line 16 is $0 (column 1 applies).
 # Federal political contributions (T1 line 135 and line 40900) are a chosen $0, so the Federal
 # Worksheet's line 41000 is $0 (column 1 applies).
+# The Ontario seniors care at home tax credit (ON479 line 13, line 63095) is not claimed (a
+# chosen count of 0), so ON479 line 13 is $0.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -975,6 +977,7 @@ inputs:
   ca/political_contributions: "0"
   ca-on/opportunities_fund_donation: "0"
   ca-on/fertility_expenses: "0"
+  ca-on/claims_seniors_care_credit: "0"
   ca-on/seniors_transit_paid: "0"
   ca-on/flow_through_share_slips: []
   ca-on/coop_education_payroll: "0"
@@ -1131,6 +1134,14 @@ expected:
   ca/canada_workers_benefit: "0"
   ca-on/fertility_credit_before_maximum: "0"
   ca-on/fertility_credit: "0"
+  ca-on/seniors_care_before_maximum: "0.00"
+  ca-on/seniors_care_amount: "0.00"
+  ca-on/seniors_care_family_net_income: "74174.00"
+  ca-on/seniors_care_base_amount: "35000.00"
+  ca-on/seniors_care_income_over_base: "39174.00"
+  ca-on/seniors_care_reduction: "1958.70"
+  ca-on/seniors_care_before_claim: "0"
+  ca-on/seniors_care_credit: "0"
   ca-on/seniors_transit_amount_paid_at_most_maximum: "0"
   ca-on/seniors_transit_credit: "0"
   ca-on/political_credit_before_maximum: "0"

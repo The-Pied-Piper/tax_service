@@ -392,6 +392,54 @@ FERTILITY_CREDIT = CATALOG.declare("fertility_credit", Decimal, non_negative=Tru
 fertility treatment multiplied by 25% (maximum $5,000) =": the 25% on the expenses, at most
 $5,000, the maximum being printed after the percentage."""
 
+CLAIMS_SENIORS_CARE_CREDIT = CATALOG.declare("claims_seniors_care_credit", int, non_negative=True)
+"""Whether the filer claims the Ontario seniors care at home tax credit, Form ON479 line 13 and line
+63095: a starting count, 0 or 1, that multiplies line 13, so 1 if the filer claims it, else 0.
+
+The form prints no eligibility rules for the credit; the caller claims it only for a filer who
+qualifies."""
+
+SENIORS_CARE_BEFORE_MAXIMUM = CATALOG.declare(
+    "seniors_care_before_maximum", Decimal, non_negative=True
+)
+"""Seniors care at home credit before its maximum, Form ON479 line 5 "Line 3 multiplied by the
+percentage from line 4 (maximum $1,500) =" before the maximum: line 4 "Allowable percentage 25%" on
+line 3 "Medical expenses from line 58769 of your Form ON428"."""
+
+SENIORS_CARE_AMOUNT = CATALOG.declare("seniors_care_amount", Decimal, non_negative=True)
+"""Seniors care at home credit amount, Form ON479 line 5 "Line 3 multiplied by the percentage from
+line 4 (maximum $1,500) =": the 25% on the medical expenses, at most $1,500, the maximum being
+printed after the percentage."""
+
+SENIORS_CARE_FAMILY_NET_INCOME = CATALOG.declare(
+    "seniors_care_family_net_income", Decimal, non_negative=True
+)
+"""Family net income, Form ON479 line 8 "Line 6 plus line 7 Family net income =": line 6 "Your net
+income from line 23600 of your return" plus line 7 "Your spouse's or common-law partner's net
+income from line 23600 of their return (if applicable)", 0 with no spouse."""
+
+SENIORS_CARE_BASE_AMOUNT = CATALOG.declare("seniors_care_base_amount", Decimal, non_negative=True)
+"""Form ON479 line 9 "Base amount 35,000.00": the dataset's amount as an artifact."""
+
+SENIORS_CARE_INCOME_OVER_BASE = CATALOG.declare(
+    "seniors_care_income_over_base", Decimal, non_negative=True
+)
+"""Family net income over the base amount, Form ON479 line 10 "Line 8 minus line 9 (if negative,
+enter "0") =": not below zero."""
+
+SENIORS_CARE_REDUCTION = CATALOG.declare("seniors_care_reduction", Decimal, non_negative=True)
+"""Seniors care at home credit reduction, Form ON479 line 12 "Line 10 multiplied by the percentage
+from line 11 =": line 11 "Applicable rate 5%" on the family net income over the base amount."""
+
+SENIORS_CARE_BEFORE_CLAIM = CATALOG.declare("seniors_care_before_claim", Decimal, non_negative=True)
+"""Seniors care at home credit before the claim, Form ON479 line 13 "Line 5 minus line 12 (if
+negative, enter "0") =": the amount less the reduction, not below zero. The form's rules for a
+family net income of $35,000 or less and of more than $65,000 follow from lines 9 to 12."""
+
+SENIORS_CARE_CREDIT = CATALOG.declare("seniors_care_credit", Decimal, non_negative=True)
+"""Ontario seniors care at home tax credit, Form ON479 line 13 and line 63095 "Line 5 minus line 12
+(if negative, enter "0") =": line 13 once if the filer claims the credit, else 0."""
+
 SENIORS_TRANSIT_PAID = CATALOG.declare("seniors_transit_paid", Decimal, non_negative=True)
 """Amount paid for eligible seniors' use of Ontario public transit services, Form ON479 line 14
 "Amount paid in the year for eligible seniors' use of Ontario public transit services (maximum

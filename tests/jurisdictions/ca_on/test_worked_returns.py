@@ -269,6 +269,7 @@ inputs:
   ca/rl_10_labour_sponsored_fund_amount: "0"
   ca-on/opportunities_fund_donation: "0"
   ca-on/fertility_expenses: "0"
+  ca-on/claims_seniors_care_credit: "0"
   ca-on/seniors_transit_paid: "0"
   ca-on/flow_through_share_slips: []
   ca-on/coop_education_payroll: "0"
@@ -416,6 +417,14 @@ expected:
   ca/canada_workers_benefit: "1633"
   ca-on/fertility_credit_before_maximum: "0"
   ca-on/fertility_credit: "0"
+  ca-on/seniors_care_before_maximum: "0.00"
+  ca-on/seniors_care_amount: "0.00"
+  ca-on/seniors_care_family_net_income: "9935.00"
+  ca-on/seniors_care_base_amount: "35000.00"
+  ca-on/seniors_care_income_over_base: "0"
+  ca-on/seniors_care_reduction: "0.00"
+  ca-on/seniors_care_before_claim: "0"
+  ca-on/seniors_care_credit: "0"
   ca-on/seniors_transit_amount_paid_at_most_maximum: "0"
   ca-on/seniors_transit_credit: "0"
   ca-on/political_credit_before_maximum: "0"
@@ -566,6 +575,37 @@ def test_return_af_claims_net_capital_losses_of_other_years_on_line_25300() -> N
     assert expected["ca/deductions_from_net_income"] == Decimal("2500")
     assert expected["ca/net_income"] == Decimal("50055.00")
     assert expected["ca/taxable_income"] == Decimal("47555.00")
+    check(path)
+
+
+def test_return_ag_claims_the_ontario_seniors_care_at_home_credit_on_line_63095() -> None:
+    path = RETURNS / "2025_return_ag.yaml"
+    build_tax_computation()  # registers the catalogs the loader resolves through
+    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+
+    (claims,) = [
+        a for a in worked.inputs if a.kind.identifier == "ca-on/claims_seniors_care_credit"
+    ]
+    assert claims.value == 1
+    (spouse,) = [a for a in worked.inputs if a.kind.identifier == "ca/spouse_net_income"]
+    assert spouse.value == Decimal("10000")
+    # ON479 line 3 is ON428 line 58769, 4000.00; lines 5, 8, 10, 12 and 13 follow from it.
+    (medical,) = [a for a in worked.expected if a.kind.identifier == "ca-on/medical_claim"]
+    assert medical.value == Decimal("4000.00")
+    (line_5,) = [a for a in worked.expected if a.kind.identifier == "ca-on/seniors_care_amount"]
+    assert line_5.value == Decimal("1000.00")
+    (line_8,) = [
+        a for a in worked.expected if a.kind.identifier == "ca-on/seniors_care_family_net_income"
+    ]
+    assert line_8.value == Decimal("40000.00")
+    (line_12,) = [a for a in worked.expected if a.kind.identifier == "ca-on/seniors_care_reduction"]
+    assert line_12.value == Decimal("250.00")
+    (line_13,) = [a for a in worked.expected if a.kind.identifier == "ca-on/seniors_care_credit"]
+    assert line_13.value == Decimal("750.00")
+    (credits,) = [a for a in worked.expected if a.kind.identifier == "ca-on/ontario_credits"]
+    assert credits.value == Decimal("750.00")
+    (refund,) = [a for a in worked.expected if a.kind.identifier == "ca/refund_or_balance_owing"]
+    assert refund.value == Decimal("-3450.00")
     check(path)
 
 
