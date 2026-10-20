@@ -61,9 +61,10 @@
 # eligible dependants (line 38100), the first when it is zero and the second otherwise, to
 # the Canada workers benefit (T1 line 45300); and on the T1, the federal tax after credits,
 # carried to the net federal tax, plus the Ontario tax to the total payable, less the total
-# credits, here the chosen income tax deducted plus the Canada workers benefit plus the
-# provincial credits (line 47900), to the refund or balance owing, negative for a refund and
-# positive for a balance owing. There is no capital gain, unused or new RRSP contribution or
+# credits, here the chosen income tax deducted plus the refundable medical expense
+# supplement (line 45200) plus the Canada workers benefit plus the provincial credits (line
+# 47900), to the refund or balance owing, negative for a refund and positive for a balance
+# owing. There is no capital gain, unused or new RRSP contribution or
 # union dues. There are no Ontario credits (Form ON479): no eligible medical expenses for
 # fertility treatment and no amount paid for seniors' use of Ontario public transit
 # services, so lines 1, 14, 18 and 21 and T1 line 47900 are $0 (to be confirmed). The ON428
@@ -179,13 +180,25 @@ description: >-
   $1,633, so the benefit is $0. With no eligible dependant, these are the amounts for a
   filer with no eligible spouse and no eligible dependant; with one, at most $2,813 less 15%
   over $30,639, $2,537.40, the benefit would be $275.60. The income tax deducted (line
-  43700) is a chosen $4,800, so the total credits (line 48200) are it plus the benefit plus
-  the provincial credits (line 47900, the Ontario credits of Form ON479 line 21, $0 with no
-  fertility treatment expenses and no seniors' transit amount paid), $4,800, and the refund
-  or balance owing (line 167) is the total payable less the total credits, -$334.19:
-  negative, so a refund (line 48400). The refund (line 48400) is that $334.19, and with no
-  donation to the Ontario opportunities fund (line 46500, $0) the net refund (line 46600) is
-  $334.19 too. Every amount computed from a rate, fraction, amount or chart on the forms is
+  43700) is a chosen $4,800. The refundable medical expense supplement (line 45200, Federal
+  Worksheet) is $730.29: the filer was resident in Canada throughout 2025 and 18 or older at
+  the end of 2025 (counts of 1, a chosen fact), the working income, the employment income of
+  $48,000 less the registered pension plan deduction and union dues of $0, with no other
+  employment expenses, clergy residence deduction, wage-loss replacement plan amounts or
+  net self-employment income, is $48,000, $4,390 or more, the adjusted family net income
+  (line 6) is the net income before adjustments, $47,555.00, with the spouse's column 0, so
+  line 8 is $47,555.00 - $33,294.00 = $14,261.00; the amounts of line 21500 (a chosen $0)
+  and line 33200 (the medical claim, $5,773.35) total $5,773.35 (line 11), 25% of it (line
+  13) is $1,443.3375, rounded half-up to the cent: $1,443.34, not more than $1,504 (line
+  14), line 15 is 5% of $14,261.00, $713.05, and line 16 is $1,443.34 - $713.05 = $730.29.
+  So the total credits (line 48200) are the income tax deducted plus the supplement plus the
+  benefit plus the provincial credits (line 47900, the Ontario credits of Form ON479 line
+  21, $0 with no fertility treatment expenses and no seniors' transit amount paid), $4,800
+  + $730.29 = $5,530.29, and the refund or balance owing (line 167) is the total payable
+  less the total credits, $4,465.81 - $5,530.29 = -$1,064.48: negative, so a refund (line
+  48400). The refund (line 48400) is that $1,064.48, and with no donation to the Ontario
+  opportunities fund (line 46500, $0) the net refund (line 46600) is $1,064.48 too. Every
+  amount computed from a rate, fraction, amount or chart on the forms is
   rounded half-up to the cent, each line being a dollars-and-cents box; here that changes
   Form T778 line 6, the federal tax on taxable income, the Ontario tax on taxable income and
   both forms' non-refundable tax credits, and the lines that follow from them. The lines
@@ -341,7 +354,7 @@ sources:
     (Schedule 7 line 20 is 0) and no union dues, and the child care expenses deduction is 0
     (as the T778 entry derives), so the enhanced CPP contributions are the only deduction:
     total deductions, which take amounts already in cents, are 0 + 0 + 0 + 445.00 = 445.00;
-    line 55 (line 23500, social benefits repayment) is not modelled, so net income, which
+    line 55 (line 23500, social benefits repayment) is not wired yet, so net income, which
     takes amounts already in cents, is total income less total deductions, not below zero:
     48,000 - 445.00 = 47,555.00.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
@@ -785,18 +798,68 @@ sources:
     Total payable": 3,072.80 + 1,393.01 = 4,465.81. Line 149 "Enter the amount from line 148
     of the previous page."; line 150 (line 43700) "Total income tax deducted (amounts from
     all Canadian slips)": 4,800, a chosen figure: it is the tax withheld on the taxpayer's
-    slips, which nothing on this return determines. Line 155 (line 45300) "Canada workers
-    benefit (CWB) (complete Schedule 6)" is the benefit of Schedule 6 line 28, 0; the other
-    lines 151 to 164 (lines 44000 to 47600) are not triggered by this return or not yet
-    computed; line 165 (line 47900) "Provincial or territorial credits (complete Form 479,
-    if it applies)" is the Ontario credits of ON479 line 21, 0 (see the ON479 source below),
-    so line 166 (line 48200) "Add lines 150 to 165. Total credits" is 4,800 + 0 + 0 = 4,800.
-    Line 167 "Line 149 minus line 166 If the amount is negative, enter it on line 48400
-    below. If the amount is positive, enter it on line 48500 below. Refund or balance
-    owing": 4,465.81 - 4,800 = -334.19, negative, so line 48400 "Refund", not line 48500
-    "Balance owing". These lines add and subtract amounts already in cents, so each is in
-    cents too.
+    slips, which nothing on this return determines. Line 154 (line 45200) "Refundable
+    medical expense supplement (use Federal Worksheet)" is the Federal Worksheet's line 16,
+    730.29 (see the Federal Worksheet "Line 45200" source below). Line 155 (line 45300)
+    "Canada workers benefit (CWB) (complete Schedule 6)" is the benefit of Schedule 6 line
+    28, 0; the other lines 151 to 164 (lines 44000 to 47600) are not triggered by this
+    return or not yet computed; line 165 (line 47900) "Provincial or territorial credits
+    (complete Form 479, if it applies)" is the Ontario credits of ON479 line 21, 0 (see the
+    ON479 source below), so line 166 (line 48200) "Add lines 150 to 165. Total credits" is
+    4,800 + 730.29 + 0 + 0 = 5,530.29. Line 167 "Line 149 minus line 166 If the amount is
+    negative, enter it on line 48400 below. If the amount is positive, enter it on line
+    48500 below. Refund or balance owing": 4,465.81 - 5,530.29 = -1,064.48, negative, so
+    line 48400 "Refund", not line 48500 "Balance owing". These lines add and subtract
+    amounts already in cents, so each is in cents too.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
+  - >-
+    CRA, the 2025 Federal Worksheet (form 5000-D1), "Line 45200 - Refundable medical expense
+    supplement": "You may be able to claim this supplement if all of the following apply:"
+    "You entered an amount on line 21500 or line 33200 of your return" "You were resident in
+    Canada throughout 2025" "You were 18 years of age or older at the end of 2025" "Your
+    adjusted family net income is less than $63,374"; "In addition, the total of the
+    following two amounts must be $4,390 or more:" "your employment income from lines 10100
+    and 10400 of your return (other than amounts received from a wage-loss replacement plan)
+    minus the amounts from lines 20700, 21200, 22900, and 23100 of your return (if the
+    result is negative, consider it as "0")" "your net self-employment income (not including
+    losses) from lines 13500, 13700, 13900, 14100, and 14300 of your return"; "If you were
+    separated because of a breakdown in your relationship for a period of 90 days or more
+    that included December 31, 2025, do not include your spouse's or common-law partner's
+    income when you calculate this supplement." "If your spouse or common-law partner died
+    on or before December 31, 2025, do not include their income when you calculate this
+    supplement." The table has "Column 1: You" and "Column 2: Your spouse or common-law
+    partner": "Line 1: Net income amount from line 23600 of the return (or the amount you
+    would have entered if the instructions on line 23600 said "if negative, show in
+    brackets")"; "Line 2: Total of the universal child care benefit (UCCB) repayment (line
+    21300 of the return) and the registered disability savings plan (RDSP) income repayment
+    (included in the amount on line 23200 of the return)"; "Line 3: Line 1 plus line 2";
+    "Line 4: Total of the UCCB income (line 11700 of the return) and the RDSP income (line
+    12500 of the return)"; "Line 5: Line 3 minus line 4 (if negative, enter "0")"; then
+    "Line 6: Add the amounts from line 5 of columns 1 and 2. Adjusted family net income";
+    "Line 7: Income threshold 33,294.00"; "Line 8: Line 6 minus line 7 (if negative, enter
+    "0") ="; "Line 9: Amount from line 21500 of your return"; "Line 10: Amount from line
+    33200 of your return"; "Line 11: Line 9 plus line 10"; "Line 12: Applicable rate 25%";
+    "Line 13: Line 11 multiplied by the percentage from line 12 ="; "Line 14: Enter
+    whichever is less: amount from line 13 or $1,504"; "Line 15: Amount from line 8"
+    "multiplied by 5% ="; "Line 16: Line 14 minus line 15 (if negative, enter "0") Enter
+    this amount on line 45200 of your return. =". T1 for Ontario (form 5006-R): "Line 154
+    and line 45200: Refundable medical expense supplement (use Federal Worksheet)"; "Line
+    166 and line 48200: Add lines 150 to 165. Total credits ="; "Line 54 and line 23400:
+    Line 34 minus line 53 (if negative, show in brackets) Net income before adjustments =".
+    Employment income of 48,000 less the registered pension plan deduction, union dues,
+    other employment expenses and clergy residence deduction (each 0) is 48,000, with no
+    wage-loss replacement plan amounts and no net self-employment income, so the working
+    income is 48,000, which is $4,390 or more. Column 1 line 1 is the net income before
+    adjustments, 47,555.00 (line 23500 is not wired yet), lines 2 and 4 are 0, so lines 3
+    and 5 are 47,555.00; column 2 is 0 (no spouse or common-law partner). Line 6 is
+    47,555.00; line 8 is 47,555.00 - 33,294.00 = 14,261.00; line 9 is 0 and line 10 is the
+    medical claim, 5,773.35, so line 11 is 5,773.35; line 13 is 5,773.35 x 25% = 1,443.3375,
+    rounded half-up to the cent: 1,443.34; line 14 is the lesser of 1,443.34 and 1,504:
+    1,443.34; line 15 is 14,261.00 x 5% = 713.05; line 16 is 1,443.34 - 713.05 = 730.29, and
+    with the residence and age counts both 1, line 45200 is 730.29. The adjusted family net
+    income of 47,555.00 is under 63,374 and an amount is entered on line 33200, so the other
+    conditions hold.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-d1/5000-d1-25e.txt
   - >-
     CRA, Form ON479 (form 5006-TC), "Ontario Credits": "Line 1 and line 61268: Eligible
     medical expenses for fertility treatment multiplied by 25% (maximum $5,000) ="; "Line
@@ -964,6 +1027,22 @@ inputs:
   ca/resp_aips_part_a_applies: "0"
   ca/rl_10_labour_sponsored_fund_amount: "0"
   ca/political_contributions: "0"
+  ca/disability_supports_deduction: "0"
+  ca/other_employment_expenses: "0"
+  ca/clergy_residence_deduction: "0"
+  ca/net_business_income: "0"
+  ca/net_professional_income: "0"
+  ca/net_commission_income: "0"
+  ca/net_farming_income: "0"
+  ca/net_fishing_income: "0"
+  ca/wage_loss_replacement_plan_income: "0"
+  ca/resident_in_canada_throughout_2025: "1"
+  ca/aged_18_or_older_at_end_of_2025: "1"
+  ca/spouse_net_income_before_adjustments: "0"
+  ca/spouse_uccb_repayment: "0"
+  ca/spouse_rdsp_income_repayment: "0"
+  ca/spouse_universal_child_care_benefit: "0"
+  ca/spouse_rdsp_income: "0"
   ca-on/opportunities_fund_donation: "0"
   ca-on/fertility_expenses: "0"
   ca-on/claims_seniors_care_credit: "0"
@@ -1158,10 +1237,19 @@ expected:
   ca-on/coop_education_credit: "0"
   ca-on/ontario_credits: "0"
   ca/provincial_credits: "0"
-  ca/total_credits: "4800"
-  ca/refund_or_balance_owing: "-334.19"
+  ca/medical_supplement_working_income: "48000"
+  ca/medical_supplement_line_6: "47555.00"
+  ca/medical_supplement_line_8: "14261.00"
+  ca/medical_supplement_line_11: "5773.35"
+  ca/medical_supplement_line_13: "1443.34"
+  ca/medical_supplement_line_14: "1443.34"
+  ca/medical_supplement_line_15: "713.05"
+  ca/medical_supplement_line_16: "730.29"
+  ca/refundable_medical_expense_supplement: "730.29"
+  ca/total_credits: "5530.29"
+  ca/refund_or_balance_owing: "-1064.48"
   ca/educator_supplies_expenses_at_most_maximum: "0"
   ca/educator_school_supply_credit: "0"
-  ca/refund: "334.19"
-  ca-on/refund_before_donation: "334.19"
-  ca-on/net_refund: "334.19"
+  ca/refund: "1064.48"
+  ca-on/refund_before_donation: "1064.48"
+  ca-on/net_refund: "1064.48"

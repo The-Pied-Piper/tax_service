@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 321
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 344
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -333,6 +333,22 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/resp_aips_part_a_applies",
         "ca/rl_10_labour_sponsored_fund_amount",
         "ca/political_contributions",
+        "ca/disability_supports_deduction",
+        "ca/other_employment_expenses",
+        "ca/clergy_residence_deduction",
+        "ca/net_business_income",
+        "ca/net_professional_income",
+        "ca/net_commission_income",
+        "ca/net_farming_income",
+        "ca/net_fishing_income",
+        "ca/wage_loss_replacement_plan_income",
+        "ca/resident_in_canada_throughout_2025",
+        "ca/aged_18_or_older_at_end_of_2025",
+        "ca/spouse_net_income_before_adjustments",
+        "ca/spouse_uccb_repayment",
+        "ca/spouse_rdsp_income_repayment",
+        "ca/spouse_universal_child_care_benefit",
+        "ca/spouse_rdsp_income",
         "ca/itc_recapture_at_15_percent",
         "ca/itc_recapture_at_20_percent",
         "ca/itc_recapture",
@@ -391,6 +407,29 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/educator_school_supply_credit",
         "ca/journalism_labour_tax_credit",
         "ca/tax_paid_by_instalments",
+        "ca/medical_supplement_employment_income",
+        "ca/medical_supplement_employment_income_less_wage_loss",
+        "ca/medical_supplement_employment_deductions",
+        "ca/medical_supplement_employment_working_income",
+        "ca/medical_supplement_self_employment_income",
+        "ca/medical_supplement_working_income",
+        "ca/medical_supplement_column_1_line_3",
+        "ca/medical_supplement_column_1_line_5",
+        "ca/medical_supplement_column_2_line_2",
+        "ca/medical_supplement_column_2_line_3",
+        "ca/medical_supplement_column_2_line_4",
+        "ca/medical_supplement_column_2_line_5",
+        "ca/medical_supplement_line_6",
+        "ca/medical_supplement_income_threshold",
+        "ca/medical_supplement_line_8",
+        "ca/medical_supplement_line_11",
+        "ca/medical_supplement_line_13",
+        "ca/medical_supplement_line_14",
+        "ca/medical_supplement_line_15",
+        "ca/medical_supplement_line_16",
+        "ca/medical_supplement_if_working_income_met",
+        "ca/medical_supplement_if_resident",
+        "ca/refundable_medical_expense_supplement",
         "ca/total_credits",
         "ca/refund_or_balance_owing",
         "ca/refund",
@@ -570,13 +609,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 321
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 344
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 321
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 344
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

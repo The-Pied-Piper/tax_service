@@ -18,6 +18,16 @@
 # Worksheet's line 41000 is $0 (column 1 applies).
 # The Ontario seniors care at home tax credit (ON479 line 13, line 63095) is not claimed (a
 # chosen count of 0), so ON479 line 13 is $0.
+# The refundable medical expense supplement (T1 line 154 and line 45200, Federal Worksheet)
+# takes chosen inputs: the counts of residence in Canada throughout 2025 and of age 18 or
+# older at the end of 2025 are 1 and its other new amounts (line 21500, lines 22900 and
+# 23100, the net self-employment lines, the wage-loss replacement plan amounts and the
+# spouse's column) are $0. The working income is $50,000 (employment income less lines
+# 20700, 21200, 22900 and 23100); line 6, the adjusted family net income, is the net income,
+# $49,535.00 (column 1 alone, as the spouse's column is 0 and line 23500 is not wired yet);
+# line 8 is line 6 less 33,294.00, $16,241.00; and line 16 and the supplement are $0,
+# because line 9 (line 21500, a chosen $0) and line 10 (line 33200, $0 with no medical
+# expenses) are 0.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -272,7 +282,7 @@ sources:
     (Schedule 7 line 20 is 0) and no union dues, and the child care expenses deduction is 0
     (as the T778 entry derives), so the enhanced CPP contributions are the only deduction:
     total deductions, which take amounts already in cents, are 0 + 0 + 0 + 465.00 = 465.00;
-    line 55 (line 23500, social benefits repayment) is not modelled, so net income, which
+    line 55 (line 23500, social benefits repayment) is not wired yet, so net income, which
     takes amounts already in cents, is total income less total deductions, not below zero:
     50,000 - 465.00 = 49,535.00.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
@@ -916,6 +926,22 @@ inputs:
   ca/resp_aips_part_a_applies: "0"
   ca/rl_10_labour_sponsored_fund_amount: "0"
   ca/political_contributions: "0"
+  ca/disability_supports_deduction: "0"
+  ca/other_employment_expenses: "0"
+  ca/clergy_residence_deduction: "0"
+  ca/net_business_income: "0"
+  ca/net_professional_income: "0"
+  ca/net_commission_income: "0"
+  ca/net_farming_income: "0"
+  ca/net_fishing_income: "0"
+  ca/wage_loss_replacement_plan_income: "0"
+  ca/resident_in_canada_throughout_2025: "1"
+  ca/aged_18_or_older_at_end_of_2025: "1"
+  ca/spouse_net_income_before_adjustments: "0"
+  ca/spouse_uccb_repayment: "0"
+  ca/spouse_rdsp_income_repayment: "0"
+  ca/spouse_universal_child_care_benefit: "0"
+  ca/spouse_rdsp_income: "0"
   ca-on/opportunities_fund_donation: "100"
   ca-on/political_contributions: "0"
   ca-on/fertility_expenses: "0"
@@ -1098,6 +1124,11 @@ expected:
   ca-on/coop_education_credit: "0"
   ca-on/ontario_credits: "0"
   ca/provincial_credits: "0"
+  ca/medical_supplement_working_income: "50000"
+  ca/medical_supplement_line_6: "49535.00"
+  ca/medical_supplement_line_8: "16241.00"
+  ca/medical_supplement_line_16: "0"
+  ca/refundable_medical_expense_supplement: "0"
   ca/total_credits: "7454.83"
   ca/refund_or_balance_owing: "-1000.00"
   ca/educator_supplies_expenses_at_most_maximum: "1000"
