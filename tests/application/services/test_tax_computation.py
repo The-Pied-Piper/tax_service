@@ -442,6 +442,12 @@ def test_a_selection_filling_the_wrong_slots_is_an_invalid_selection() -> None:
             id="input-also-produced",
         ),
         pytest.param(
+            frozenset({"ex/base", "ex/scaled"}),
+            frozenset({"ex-on/result", "ex/scaled"}),
+            "input 'scaled' is also produced by Scale",
+            id="input-also-produced-and-declared-output",
+        ),
+        pytest.param(
             frozenset({"ex/base"}),
             frozenset({"ex/scaled"}),
             "orphan output 'result'",
@@ -458,6 +464,12 @@ def test_a_selection_filling_the_wrong_slots_is_an_invalid_selection() -> None:
             frozenset({"ex-on/result", "ex/extra"}),
             "declared output 'extra' is produced by nothing",
             id="unproduced-output",
+        ),
+        pytest.param(
+            frozenset({"ex/base", "ex/extra"}),
+            frozenset({"ex-on/result", "ex/scaled"}),
+            "input 'extra' is consumed by nothing",
+            id="unused-input-another-kind-is-the-output",
         ),
     ],
 )
@@ -2956,3 +2968,17 @@ def test_ca_on_choose_by_range_refuses_a_count_kind_for_its_third_candidate_at_w
 
     with pytest.raises(InvalidSelectionError, match="ca-on/choose_by_range.*'third'"):
         built.compose(EX_ON, 2025)
+
+
+def test_an_input_that_is_also_an_output_is_carried_onto_the_worksheet_as_entered() -> None:
+    carried = manifest(
+        inputs=frozenset({"ex/base", "ex/extra"}),
+        outputs=frozenset({"ex-on/result", "ex/extra"}),
+    )
+    entered = Artifact(EXTRA, D("12.50"))
+
+    worksheet = service(carried).compute(EX_ON, 2025, Artifact(BASE, D("5")), entered)
+
+    assert worksheet.get(EXTRA) == entered
+    assert worksheet.producer_of(EXTRA) is None
+    assert worksheet.get(RESULT).value == D("16")
