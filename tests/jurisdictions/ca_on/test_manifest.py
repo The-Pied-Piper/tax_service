@@ -30,6 +30,7 @@ from app.domain.capabilities.times_count import TimesCount
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Manifest
 from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
+from app.jurisdictions.ca.capabilities.disability_transfer_amount import DisabilityTransferAmount
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADJUSTED_FAMILY_NET_INCOME,
@@ -102,6 +103,8 @@ from app.jurisdictions.ca.catalog import (
     DEPRECIABLE_GIFT_PROCEEDS_OR_COST,
     DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
     DEPRECIABLE_GIFTS,
+    DISABILITY_DEPENDANTS,
+    DISABILITY_TRANSFERRED_AMOUNT,
     DIVIDEND_TAX_CREDIT,
     DIVIDENDS_AMOUNT_A,
     DIVIDENDS_AMOUNT_A_LESS_B,
@@ -536,6 +539,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/dependant_net_income",
             "ca/infirm_dependants",
             "ca-on/caregiver_dependants",
+            "ca/disability_dependants",
             "ca/infirm_children",
             "ca/born_in_1960_or_earlier",
             "ca/spouse_net_income",
@@ -1567,6 +1571,25 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"base": "ca/employment_income"},
             produces={"output": "ca/canada_employment_amount"},
         ),
+        # T1 line 100 (line 31800) "Disability amount transferred from a dependant (use Federal
+        # Worksheet)", Federal Worksheet "Line 31800 - Disability amount transferred from a
+        # dependant": for each dependant who is eligible for the disability tax credit, line 1
+        # "Base amount 10,138.00", line 2 "Maximum supplement 5,914.00", line 4 "Threshold for
+        # child care and attendant care expenses 3,464.00", line 8 "Line 1 plus line 7 (maximum
+        # $16,052)", line 13 "Enter whichever is less: amount from line 8 or line 12. Allowable
+        # amount for this dependant", and "the total of allowable amounts claimed for all
+        # dependants who qualify for the disability tax credit".
+        CapabilitySelection(
+            name="ca/disability_transfer_amount",
+            params={
+                "base": "ca/disability_transfer_base_amount",
+                "supplement": "ca/disability_transfer_supplement_maximum",
+                "threshold": "ca/disability_transfer_care_threshold",
+                "maximum": "ca/disability_transfer_maximum",
+            },
+            consumes={"dependants": "ca/disability_dependants"},
+            produces={"output": "ca/disability_transferred_amount"},
+        ),
         # Federal Worksheet, "Line 30100 - Age amount": line 1 "Maximum amount 9,028.00", the
         # dataset as an artifact of the same name.
         CapabilitySelection(
@@ -1883,9 +1906,9 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca-on/caregiver_amount"},
         ),
-        # T1 line 33500 (lines 30000, 30100, 30300, 30400, 30425, 30450, 30500, 30800, 31200, 31260)
-        # and ON428 line 58800 (lines 58040, 58080, 58120, 58160, 58185, 58240, 58300), in the
-        # forms' line order. ON428 lines 58240 and 58300 are "Amount from line 30800 / 31200 of
+        # T1 line 33500 (lines 30000, 30100, 30300, 30400, 30425, 30450, 30500, 30800, 31200, 31260,
+        # 31800) and ON428 line 58800 (lines 58040, 58080, 58120, 58160, 58185, 58240, 58300), in
+        # the forms' line order. ON428 lines 58240 and 58300 are "Amount from line 30800 / 31200 of
         # your return", so the Ontario sum reads the federal kinds; it has no Canada employment
         # amount.
         CapabilitySelection(
@@ -1903,6 +1926,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
                     "ca/cpp_base_contributions",
                     "ca/ei_premiums",
                     "ca/canada_employment_amount",
+                    "ca/disability_transferred_amount",
                 )
             },
             produces={"output": "ca/non_refundable_credit_amounts"},
@@ -3205,7 +3229,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca-on/net_refund"},
         ),
     }
-    assert len(found.capabilities) == 252
+    assert len(found.capabilities) == 253
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -3215,7 +3239,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 252
+    assert len(composition.order) == 253
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -3842,6 +3866,11 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({SPOUSE_CAREGIVER_AMOUNT}),
         ),
         (CaregiverAmount, frozenset({INFIRM_DEPENDANTS}), frozenset({CAREGIVER_AMOUNT})),
+        (
+            DisabilityTransferAmount,
+            frozenset({DISABILITY_DEPENDANTS}),
+            frozenset({DISABILITY_TRANSFERRED_AMOUNT}),
+        ),
         (PerUnitAmount, frozenset({INFIRM_CHILDREN}), frozenset({INFIRM_CHILDREN_AMOUNT})),
         (CreditAmount, frozenset(), frozenset({ontario.AGE_MAXIMUM})),
         (CreditAmount, frozenset(), frozenset({ontario.AGE_INCOME_THRESHOLD})),
@@ -3916,6 +3945,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
                     CPP_BASE_CONTRIBUTIONS,
                     EI_PREMIUMS,
                     CANADA_EMPLOYMENT_AMOUNT,
+                    DISABILITY_TRANSFERRED_AMOUNT,
                 }
             ),
             frozenset({NON_REFUNDABLE_CREDIT_AMOUNTS}),

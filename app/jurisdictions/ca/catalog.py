@@ -1347,6 +1347,56 @@ amount for other infirm dependants age 18 or older (complete Schedule 5)": "the 
 amounts claimed for all dependants", each line 3 "Line 1 minus line 2 (if negative, enter "0")
 (maximum $8,601)", a part of the total of the credit amounts."""
 
+DEPENDANT_UNDER_18 = CATALOG.declare("dependant_under_18", int, non_negative=True)
+"""Dependant under 18, Federal Worksheet "Line 31800 - Disability amount transferred from a
+dependant" "If the dependant was under 18 years of age on December 31, 2025, complete lines 2 to
+13. If the dependant was 18 years of age or older, complete lines 7 to 13.": 1 if the dependant was
+under 18 on December 31, 2025, else 0, taken as a count like the forms' other yes or no questions;
+a starting count, a field of each record of the dependants with a disability."""
+
+DEPENDANT_CARE_EXPENSES = CATALOG.declare("dependant_care_expenses", Decimal, non_negative=True)
+"""Dependant's care expenses, Federal Worksheet for line 31800, line 3 "Total of child care and
+attendant care expenses for your dependant that you or another person claimed": a starting amount,
+a field of each record of the dependants with a disability. It matters only for a dependant under
+18."""
+
+DEPENDANT_CREDIT_AMOUNTS = CATALOG.declare("dependant_credit_amounts", Decimal, non_negative=True)
+"""Dependant's credit amounts, Federal Worksheet for line 31800, line 9 "For provinces and
+territories other than Quebec: amount from line 98 of your dependant's return", where 5000-R line
+98 is "Add lines 85, 96, and 97.": a starting amount from another person's return, a field of each
+record of the dependants with a disability."""
+
+DEPENDANT_TAXABLE_INCOME = CATALOG.declare("dependant_taxable_income", Decimal, non_negative=True)
+"""Dependant's taxable income, Federal Worksheet for line 31800, line 11 "Dependant's taxable
+income from line 26000 of their return": a starting amount from another person's return, a field
+of each record of the dependants with a disability."""
+
+DISABILITY_DEPENDANTS = RecordListKind.declare(
+    CATALOG,
+    "disability_dependants",
+    fields=(
+        DEPENDANT_UNDER_18,
+        DEPENDANT_CARE_EXPENSES,
+        DEPENDANT_CREDIT_AMOUNTS,
+        DEPENDANT_TAXABLE_INCOME,
+    ),
+)
+"""Dependants with a disability, Federal Worksheet "Line 31800 - Disability amount transferred from
+a dependant" "Complete the following calculation fore ach dependant who is eligible for the
+disability tax credit in 2025": a starting list with one record for each such dependant, holding
+whether they were under 18 on December 31, 2025, line 3 the child care and attendant care
+expenses, line 9 line 98 of their return and line 11 their taxable income. The caller lists only
+the dependants who meet the conditions."""
+
+DISABILITY_TRANSFERRED_AMOUNT = CATALOG.declare(
+    "disability_transferred_amount", Decimal, non_negative=True
+)
+"""Disability amount transferred from a dependant, T1 line 100 (line 31800) "Disability amount
+transferred from a dependant (use Federal Worksheet)": "the total of allowable amounts claimed for
+all dependants who qualify for the disability tax credit", each line 13 "Enter whichever is less:
+amount from line 8 or line 12. Allowable amount for this dependant", a part of the total of the
+credit amounts."""
+
 INFIRM_CHILDREN = CATALOG.declare("infirm_children", int, non_negative=True)
 """Number of infirm children, T1 line 83 "Number of children you are claiming this amount for Line
 30499": a starting count."""

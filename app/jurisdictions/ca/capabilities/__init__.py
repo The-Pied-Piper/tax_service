@@ -7,6 +7,9 @@ imports every one of them, so importing the package fills the shared CapabilityR
 
 NAMESPACE = "ca"
 
-from app.jurisdictions.ca.capabilities import caregiver_amount  # noqa: E402
+from app.jurisdictions.ca.capabilities import (  # noqa: E402
+    caregiver_amount,
+    disability_transfer_amount,
+)
 
-__all__ = ["NAMESPACE", "caregiver_amount"]
+__all__ = ["NAMESPACE", "caregiver_amount", "disability_transfer_amount"]

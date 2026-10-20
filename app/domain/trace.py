@@ -541,6 +541,48 @@ class CaregiverClaimLessClaimedLine(TraceLine):
 
 
 @dataclass(frozen=True)
+class DisabilityTransferLine(TraceLine):
+    """The allowable amount `result` for one dependant, by `position` (from 1), for `output`.
+
+    It follows the worksheet for the disability amount transferred from a dependant: `base`
+    (line 1), `supplement` (line 2) and `threshold` (line 4) with `maximum` (the cap on line 8);
+    the dependant's `under_18` (1 if under 18 on December 31, else 0) and `care_expenses` (line 3);
+    `line_5` the expenses over the threshold and `line_6` the supplement less that, each from 0;
+    `line_7` the supplement left, or 0 for a dependant 18 or older; `line_8` the base plus line 7,
+    at most `maximum`; `credit_amounts` (line 9) and `line_10` their sum with line 8;
+    `taxable_income` (line 11) and `line_12` line 10 less it, from 0; and `result` (line 13) the
+    lesser of lines 8 and 12, rounded with `rounding`. Lines 5 to 12 are exact.
+
+    Its own class, not a `CappedAmountLine`: the amount is worked on for one dependant, named by
+    position, in many steps that the English rendering shows one by one.
+    """
+
+    output: Money
+    position: int
+    base: Amount
+    supplement: Amount
+    threshold: Amount
+    maximum: Amount
+    under_18: int
+    care_expenses: Decimal
+    line_5: Decimal
+    line_6: Decimal
+    line_7: Decimal
+    line_8: Decimal
+    credit_amounts: Decimal
+    line_10: Decimal
+    taxable_income: Decimal
+    line_12: Decimal
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The dependant's allowable amount."""
+        return self.result
+
+
+@dataclass(frozen=True)
 class ItemsTotalLine(TraceLine):
     """The `total` produced as `output` by adding `items`, each the position (from 1) of an item
     of a record list and its amount, in order. No items is a total of 0.

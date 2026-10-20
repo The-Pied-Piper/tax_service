@@ -37,6 +37,7 @@ from app.domain.trace import (
     ChosenRateAppliedLine,
     ContributionTierLine,
     CreditAmountLine,
+    DisabilityTransferLine,
     FractionAppliedLine,
     GreaterOfLine,
     ItemsTotalLine,
@@ -103,6 +104,7 @@ BAND_RATE = ArtifactKind("ex/band_rate", Rate)
 CARE_EXPENSES = ArtifactKind("ex/care_expenses", Decimal)
 CARE_CREDIT = ArtifactKind("ex/care_credit", Decimal)
 CAREGIVER_AMOUNT = ArtifactKind("ex/caregiver_amount", Decimal)
+TRANSFERRED_AMOUNT = ArtifactKind("ex/transferred_amount", Decimal)
 
 
 def render(line: TraceLine) -> str:
@@ -1268,6 +1270,191 @@ def test_renders_the_caregiver_amount_total_of_two_dependants() -> None:
     line = ItemsTotalLine(CAREGIVER_AMOUNT, ((1, D("8601.00")), (2, D("3798.00"))), D("12399.00"))
 
     assert render(line) == "caregiver_amount: item 1 8601 + item 2 3798 = 12399"
+
+
+# --- an amount transferred per dependant ------------------------------------------
+#
+# One sentence: the output's label, then "dependant <position>: " (from 1), the age group
+# ("under 18" or "18 or older") and one clause per step of the worksheet, joined by "; ". A
+# dependant under 18 starts with "care expenses <line 3> less threshold <line 4> = <line 5>" and
+# "supplement <line 2> less <line 5> = <line 6>"; one 18 or older has those two clauses left out,
+# as the form completes only lines 7 to 13 for them. Then "base <line 1> + <line 7>, at most
+# <maximum> = <line 8>", "<line 8> + credit amounts <line 9> less taxable income <line 11> =
+# <line 12>" and "the lesser of <line 8> and <line 12> = <line 13>" with the rounding rule in
+# brackets. Every figure prints without trailing zeros.
+
+
+def disability_transfer(
+    position: int,
+    under_18: int,
+    figures: tuple[str, ...],
+    rounding: RoundingRule = CENT,
+) -> DisabilityTransferLine:
+    """`figures` are, in the order of the line's fields, line 3 (care expenses), lines 5 to 8,
+    line 9 (credit amounts), line 10, line 11 (taxable income), line 12 and the result."""
+    care, line_5, line_6, line_7, line_8, credits, line_10, taxable, line_12, result = figures
+    return DisabilityTransferLine(
+        TRANSFERRED_AMOUNT,
+        position,
+        Amount(D("10138.00")),
+        Amount(D("5914.00")),
+        Amount(D("3464.00")),
+        Amount(D("16052")),
+        under_18,
+        D(care),
+        D(line_5),
+        D(line_6),
+        D(line_7),
+        D(line_8),
+        D(credits),
+        D(line_10),
+        D(taxable),
+        D(line_12),
+        rounding,
+        D(result),
+    )
+
+
+def test_renders_the_transfer_for_a_dependant_aged_18_or_older() -> None:
+    # The ticket's worked example: line 8 10,138.00, line 12 = 10,138.00 + 16,129 - 20,000.
+    line = disability_transfer(
+        1,
+        0,
+        ("0", "0", "5914.00", "0", "10138.00", "16129", "26267.00", "20000", "6267.00", "6267.00"),
+    )
+
+    assert render(line) == (
+        "transferred_amount: dependant 1: 18 or older: base 10138 + 0, at most 16052 = 10138; "
+        "10138 + credit amounts 16129 less taxable income 20000 = 6267; "
+        "the lesser of 10138 and 6267 = 6267 (half-up to 0.01)"
+    )
+
+
+def test_renders_the_transfer_for_a_dependant_under_18() -> None:
+    line = disability_transfer(
+        2,
+        1,
+        (
+            "5000",
+            "1536.00",
+            "4378.00",
+            "4378.00",
+            "14516.00",
+            "0",
+            "14516.00",
+            "0",
+            "14516.00",
+            "14516.00",
+        ),
+    )
+
+    assert render(line) == (
+        "transferred_amount: dependant 2: under 18: care expenses 5000 less threshold 3464 = 1536; "
+        "supplement 5914 less 1536 = 4378; base 10138 + 4378, at most 16052 = 14516; "
+        "14516 + credit amounts 0 less taxable income 0 = 14516; "
+        "the lesser of 14516 and 14516 = 14516 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_dependant_under_18_whose_care_expenses_are_below_the_threshold() -> None:
+    # Line 5 is "0" (line 3 minus line 4 is negative), line 6 the whole supplement.
+    line = disability_transfer(
+        1,
+        1,
+        (
+            "1000",
+            "0",
+            "5914.00",
+            "5914.00",
+            "16052.00",
+            "0",
+            "16052.00",
+            "0",
+            "16052.00",
+            "16052.00",
+        ),
+    )
+
+    assert render(line) == (
+        "transferred_amount: dependant 1: under 18: care expenses 1000 less threshold 3464 = 0; "
+        "supplement 5914 less 0 = 5914; base 10138 + 5914, at most 16052 = 16052; "
+        "16052 + credit amounts 0 less taxable income 0 = 16052; "
+        "the lesser of 16052 and 16052 = 16052 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_dependant_with_nothing_transferable() -> None:
+    # Line 12 is "0" (line 10 minus line 11 is negative).
+    line = disability_transfer(
+        3, 0, ("0", "0", "5914.00", "0", "10138.00", "0", "10138.00", "20000", "0", "0.00")
+    )
+
+    assert render(line) == (
+        "transferred_amount: dependant 3: 18 or older: base 10138 + 0, at most 16052 = 10138; "
+        "10138 + credit amounts 0 less taxable income 20000 = 0; "
+        "the lesser of 10138 and 0 = 0 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_dependants_transfer_with_cents_and_the_rounding_rule() -> None:
+    line = disability_transfer(
+        1,
+        0,
+        (
+            "0",
+            "0",
+            "5914.00",
+            "0",
+            "10138.00",
+            "16129",
+            "26267.00",
+            "20000.005",
+            "6266.995",
+            "6267.00",
+        ),
+    )
+
+    assert render(line) == (
+        "transferred_amount: dependant 1: 18 or older: base 10138 + 0, at most 16052 = 10138; "
+        "10138 + credit amounts 16129 less taxable income 20000.005 = 6266.995; "
+        "the lesser of 10138 and 6266.995 = 6267 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_dependants_transfer_without_rounding() -> None:
+    line = disability_transfer(
+        1,
+        0,
+        (
+            "0",
+            "0",
+            "5914.00",
+            "0",
+            "10138.00",
+            "16129",
+            "26267.00",
+            "20000.005",
+            "6266.995",
+            "6266.995",
+        ),
+        NO_ROUNDING,
+    )
+
+    assert render(line).endswith("the lesser of 10138 and 6266.995 = 6266.995 (no rounding)")
+
+
+def test_renders_the_total_of_the_transfers_by_position() -> None:
+    line = ItemsTotalLine(
+        TRANSFERRED_AMOUNT, ((1, D("6267.00")), (2, D("14516.00"))), D("20783.00")
+    )
+
+    assert render(line) == "transferred_amount: item 1 6267 + item 2 14516 = 20783"
+
+
+def test_renders_the_total_of_no_dependants() -> None:
+    assert render(ItemsTotalLine(TRANSFERRED_AMOUNT, (), D("0"))) == (
+        "transferred_amount: no items = 0"
+    )
 
 
 # --- money figures ---------------------------------------------------------------

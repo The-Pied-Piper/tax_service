@@ -36,6 +36,7 @@ from app.domain.trace import (
     ChosenRateAppliedLine,
     ContributionTierLine,
     CreditAmountLine,
+    DisabilityTransferLine,
     FractionAppliedLine,
     GreaterOfLine,
     ItemsTotalLine,
@@ -101,6 +102,7 @@ TOP_BAND = RateTableRow(D(150000), None, Rate(D(0)))
 CARE_EXPENSES = ArtifactKind("ex/care_expenses", Decimal)
 CARE_CREDIT = ArtifactKind("ex/care_credit", Decimal)
 CAREGIVER = ArtifactKind("ex/caregiver_amount", Decimal)
+TRANSFERRED = ArtifactKind("ex/transferred_amount", Decimal)
 
 
 def column_line() -> BracketColumnLine:
@@ -235,6 +237,29 @@ def caregiver_claim_less_claimed_line() -> CaregiverClaimLessClaimedLine:
     )
 
 
+def disability_transfer_line() -> DisabilityTransferLine:
+    return DisabilityTransferLine(
+        TRANSFERRED,
+        2,
+        Amount(D("10138.00")),
+        Amount(D("5914.00")),
+        Amount(D("3464.00")),
+        Amount(D("16052")),
+        1,
+        D("5000"),
+        D("1536.00"),
+        D("4378.00"),
+        D("4378.00"),
+        D("14516.00"),
+        D("1000"),
+        D("15516.00"),
+        D("2000"),
+        D("13516.00"),
+        CENT,
+        D("13516.00"),
+    )
+
+
 def items_total_line() -> ItemsTotalLine:
     return ItemsTotalLine(CAREGIVER, ((1, D("750.00")), (3, D("800"))), D("1550.00"))
 
@@ -265,6 +290,7 @@ ALL_LINES = [
     chosen_rate_applied_line,
     caregiver_claim_line,
     caregiver_claim_less_claimed_line,
+    disability_transfer_line,
     items_total_line,
 ]
 
@@ -1901,6 +1927,120 @@ def test_caregiver_claim_less_claimed_lines_are_hashable() -> None:
 
 def test_a_caregiver_claim_less_claimed_line_is_not_a_caregiver_claim_line() -> None:
     assert not isinstance(caregiver_claim_less_claimed_line(), CaregiverClaimLine)
+
+
+def test_disability_transfer_line_fields_in_order() -> None:
+    line = disability_transfer_line()
+
+    assert line == DisabilityTransferLine(
+        output=TRANSFERRED,
+        position=2,
+        base=Amount(D("10138.00")),
+        supplement=Amount(D("5914.00")),
+        threshold=Amount(D("3464.00")),
+        maximum=Amount(D("16052")),
+        under_18=1,
+        care_expenses=D("5000"),
+        line_5=D("1536.00"),
+        line_6=D("4378.00"),
+        line_7=D("4378.00"),
+        line_8=D("14516.00"),
+        credit_amounts=D("1000"),
+        line_10=D("15516.00"),
+        taxable_income=D("2000"),
+        line_12=D("13516.00"),
+        rounding=CENT,
+        result=D("13516.00"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "base",
+        "supplement",
+        "threshold",
+        "maximum",
+        "under_18",
+        "care_expenses",
+        "line_5",
+        "line_6",
+        "line_7",
+        "line_8",
+        "credit_amounts",
+        "line_10",
+        "taxable_income",
+        "line_12",
+        "rounding",
+        "result",
+    ]
+    assert line.output is TRANSFERRED
+    assert line.position == 2
+    assert line.base == Amount(D("10138.00"))
+    assert line.supplement == Amount(D("5914.00"))
+    assert line.threshold == Amount(D("3464.00"))
+    assert line.maximum == Amount(D("16052"))
+    assert line.under_18 == 1
+    assert line.care_expenses == D("5000")
+    assert line.line_5 == D("1536.00")
+    assert line.line_6 == D("4378.00")
+    assert line.line_7 == D("4378.00")
+    assert line.line_8 == D("14516.00")
+    assert line.credit_amounts == D("1000")
+    assert line.line_10 == D("15516.00")
+    assert line.taxable_income == D("2000")
+    assert line.line_12 == D("13516.00")
+    assert line.rounding == CENT
+    assert line.result == D("13516.00")
+
+
+def test_disability_transfer_line_amount_is_the_result() -> None:
+    line = disability_transfer_line()
+
+    assert line.amount == D("13516.00")
+    assert str(line.amount) == "13516.00"
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_disability_transfer_lines_differ_by_each_field() -> None:
+    line = disability_transfer_line()
+    same = dict(
+        zip(
+            [f.name for f in fields(line)],
+            [getattr(line, f.name) for f in fields(line)],
+            strict=True,
+        )
+    )
+    changed: dict[str, Any] = {
+        "position": 1,
+        "base": Amount(D("10139.00")),
+        "supplement": Amount(D("5915.00")),
+        "threshold": Amount(D("3465.00")),
+        "maximum": Amount(D("16053")),
+        "under_18": 0,
+        "care_expenses": D("5001"),
+        "line_5": D("1537.00"),
+        "line_6": D("4379.00"),
+        "line_7": D("4379.00"),
+        "line_8": D("14517.00"),
+        "credit_amounts": D("1001"),
+        "line_10": D("15517.00"),
+        "taxable_income": D("2001"),
+        "line_12": D("13517.00"),
+        "rounding": NO_ROUNDING,
+        "result": D("13516.01"),
+    }
+
+    assert set(changed) == set(same) - {"output"}
+    for name, value in changed.items():
+        assert line != DisabilityTransferLine(**{**same, name: value}), name
+    assert line != DisabilityTransferLine(**{**same, "output": CAREGIVER})
+
+
+def test_disability_transfer_lines_are_hashable() -> None:
+    assert hash(disability_transfer_line()) == hash(disability_transfer_line())
+
+
+def test_a_disability_transfer_line_is_not_a_caregiver_claim_line() -> None:
+    assert not isinstance(disability_transfer_line(), CaregiverClaimLine)
 
 
 def test_items_total_line_fields_in_order() -> None:

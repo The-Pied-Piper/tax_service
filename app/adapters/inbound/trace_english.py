@@ -23,6 +23,7 @@ from app.domain.trace import (
     ChosenRateAppliedLine,
     ContributionTierLine,
     CreditAmountLine,
+    DisabilityTransferLine,
     FractionAppliedLine,
     GreaterOfLine,
     ItemsTotalLine,
@@ -304,6 +305,49 @@ class EnglishTraceRenderer:
                     f"{self._money(allowable)}, less claimed {self._money(claimed)} = "
                     f"{self._money(result)} ({self._rounding(rule)})"
                 )
+            case DisabilityTransferLine(
+                output=output,
+                position=position,
+                base=base,
+                supplement=supplement,
+                threshold=threshold,
+                maximum=maximum,
+                under_18=under_18,
+                care_expenses=care_expenses,
+                line_5=line_5,
+                line_6=line_6,
+                line_7=line_7,
+                line_8=line_8,
+                credit_amounts=credit_amounts,
+                taxable_income=taxable_income,
+                line_12=line_12,
+                rounding=rule,
+                result=result,
+            ):
+                steps = []
+                if under_18:
+                    steps.append(
+                        f"care expenses {self._money(care_expenses)} less threshold "
+                        f"{self._money(threshold.value)} = {self._money(line_5)}"
+                    )
+                    steps.append(
+                        f"supplement {self._money(supplement.value)} less {self._money(line_5)} "
+                        f"= {self._money(line_6)}"
+                    )
+                steps.append(
+                    f"base {self._money(base.value)} + {self._money(line_7)}, at most "
+                    f"{self._money(maximum.value)} = {self._money(line_8)}"
+                )
+                steps.append(
+                    f"{self._money(line_8)} + credit amounts {self._money(credit_amounts)} less "
+                    f"taxable income {self._money(taxable_income)} = {self._money(line_12)}"
+                )
+                steps.append(
+                    f"the lesser of {self._money(line_8)} and {self._money(line_12)} = "
+                    f"{self._money(result)} ({self._rounding(rule)})"
+                )
+                age = "under 18" if under_18 else "18 or older"
+                return f"{output.label}: dependant {position}: {age}: {'; '.join(steps)}"
             case ItemsTotalLine(output=output, items=items, total=total):
                 terms = " + ".join(
                     f"item {position} {self._money(amount)}" for position, amount in items
