@@ -799,7 +799,7 @@ sources:
     (column B, column F): "After May 22, 1985, and before 1988" 1, 1; "In 1988 and 1989"
     0.75, 1.33; "After 1989 and before 2000" 0.6667, 1.5; "After 2000 and before 2025" 1, 1.
     Note (4): "The total for column D must equal the amount from line 13." The rows "Before
-    May 23, 1985" (#157) and "In 2000" (factors "1/(IR x 2)" and "2 x IR", computed from the
+    May 23, 1985" and "In 2000" (factors "1/(IR x 2)" and "2 x IR", computed from the
     inclusion rate for 2000) are not computed. The form prints 0.75, 0.6667, 1.33 and 1.5
     for 3/4, 2/3, 4/3 and 3/2 rounded for print; the datasets hold the exact fractions (the
     owner's decision), so that column G is exact: with a column E of 500.00 at factor 1,
