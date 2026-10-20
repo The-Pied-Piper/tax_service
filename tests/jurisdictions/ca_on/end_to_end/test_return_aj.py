@@ -38,7 +38,7 @@ def return_aj(**overrides: Any) -> Worksheet:
         "applies_for_energy_and_property_tax_credit": 1,
         "rent_paid": "14400.00",
     }
-    return compute("30000", "0", "0", "0", "5400", "0", "0", **{**inputs, **overrides})
+    return compute("30000", (), "0", "0", "5400", "0", "0", **{**inputs, **overrides})
 
 
 def test_return_ajs_on_ben_lines_are_carried_on_the_return_as_entered() -> None:

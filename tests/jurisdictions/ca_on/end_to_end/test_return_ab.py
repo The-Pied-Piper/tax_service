@@ -166,7 +166,7 @@ def test_a_dependant_under_18_with_care_expenses_transfers_the_reduced_supplemen
     # 4378.00; line 7 = line 6; line 8 = 10138.00 + 4378.00 = 14516.00; with no credit amounts
     # and no taxable income line 12 = 14516.00, and line 13 is 14516.00.
     worksheet = compute(
-        "48000", "0", "0", "0", "8640", "0", "0", disability_dependants=((1, "5000", "0", "0"),)
+        "48000", (), "0", "0", "8640", "0", "0", disability_dependants=((1, "5000", "0", "0"),)
     )
 
     assert worksheet.get(DISABILITY_TRANSFERRED_AMOUNT).value == D("14516.00")
@@ -183,7 +183,7 @@ def test_a_dependant_under_18_with_care_expenses_transfers_the_reduced_supplemen
 def test_two_dependants_with_a_disability_are_transferred_one_by_one_on_line_31800() -> None:
     worksheet = compute(
         "48000",
-        "0",
+        (),
         "0",
         "0",
         "8640",
@@ -201,7 +201,7 @@ def test_two_dependants_with_a_disability_are_transferred_one_by_one_on_line_318
 def test_a_dependants_taxable_income_above_their_credits_transfers_nothing() -> None:
     # Line 10 = 10138.00 + 0; line 12 = 10138.00 - 20000 is negative, "0".
     worksheet = compute(
-        "48000", "0", "0", "0", "8640", "0", "0", disability_dependants=((0, "0", "0", "20000"),)
+        "48000", (), "0", "0", "8640", "0", "0", disability_dependants=((0, "0", "0", "20000"),)
     )
 
     assert worksheet.get(DISABILITY_TRANSFERRED_AMOUNT).value == D("0")
@@ -209,7 +209,7 @@ def test_a_dependants_taxable_income_above_their_credits_transfers_nothing() -> 
 
 
 def test_no_dependants_with_a_disability_transfer_nothing_on_line_31800() -> None:
-    worksheet = compute("48000", "0", "0", "0", "8640", "0", "0")
+    worksheet = compute("48000", (), "0", "0", "8640", "0", "0")
 
     assert worksheet.get(DISABILITY_TRANSFERRED_AMOUNT).value == D("0")
     assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("20589.95")
@@ -321,8 +321,9 @@ def test_return_abs_ontario_trace_names_the_dependant_and_totals_the_credit_amou
     assert (
         "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 0 "
         "+ spouse_amount 0 + eligible_dependant_amount 0 + caregiver_amount 7570 "
-        "+ cpp_base_contributions 2202.75 + ei_premiums 787.2 + disability_transferred_amount 5298 "
-        "+ medical_claim 0 = 28604.95"
+        "+ cpp_base_contributions 2202.75 + cpp_base_contributions_on_self_employment 0 "
+        "+ ei_premiums 787.2 + ei_premiums_on_self_employment 0 "
+        "+ disability_transferred_amount 5298 + medical_claim 0 = 28604.95"
     ) in rendered
     # The T1's own line is told apart by the amounts it works on.
     assert (
@@ -369,7 +370,7 @@ def test_an_ontario_dependant_under_18_with_care_expenses_transfers_the_reduced_
     # income line 11 = 14823.00, and line 12 is 14823.00.
     worksheet = compute(
         "48000",
-        "0",
+        (),
         "0",
         "0",
         "8640",
@@ -396,7 +397,7 @@ def test_two_ontario_dependants_with_a_disability_are_transferred_one_by_one_on_
 ):
     worksheet = compute(
         "48000",
-        "0",
+        (),
         "0",
         "0",
         "8640",
@@ -417,7 +418,7 @@ def test_an_ontario_dependants_taxable_income_above_their_credits_transfers_noth
     # Line 9 = 10298.00 + 0; line 11 = 10298.00 - 20000 is negative, "0".
     worksheet = compute(
         "48000",
-        "0",
+        (),
         "0",
         "0",
         "8640",
@@ -431,7 +432,7 @@ def test_an_ontario_dependants_taxable_income_above_their_credits_transfers_noth
 
 
 def test_no_ontario_dependants_with_a_disability_transfer_nothing_on_line_58480() -> None:
-    worksheet = compute("48000", "0", "0", "0", "8640", "0", "0")
+    worksheet = compute("48000", (), "0", "0", "8640", "0", "0")
 
     assert worksheet.get(ontario.DISABILITY_TRANSFERRED_AMOUNT).value == D("0")
     assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("15736.95")
@@ -441,7 +442,7 @@ def test_ontarios_ceiling_is_2885_not_the_federal_2834() -> None:
     # Employment income of 96000 gives a net income of 94926.00, and 3% of it is 2847.78: above
     # the federal ceiling of 2834 and below Ontario's 2885, so line 109 is 2834 and ON428 line
     # 40 is 2847.78.
-    worksheet = compute("96000", "0", "0", "0", "0", "0", "0", medical_expenses="5000")
+    worksheet = compute("96000", (), "0", "0", "0", "0", "0", medical_expenses="5000")
 
     assert worksheet.get(NET_INCOME).value == D("94926.00")
     assert worksheet.get(MEDICAL_THRESHOLD).value == D("2834")
@@ -451,7 +452,7 @@ def test_ontarios_ceiling_is_2885_not_the_federal_2834() -> None:
 
 
 def test_ontarios_threshold_on_line_40_stops_at_2885() -> None:
-    worksheet = compute("115000", "0", "0", "0", "0", "0", "0", medical_expenses="5000")
+    worksheet = compute("115000", (), "0", "0", "0", "0", "0", medical_expenses="5000")
 
     assert worksheet.get(ontario.MEDICAL_NET_INCOME_SHARE).value > D("2885")
     assert worksheet.get(ontario.MEDICAL_THRESHOLD).value == D("2885")
@@ -461,9 +462,7 @@ def test_ontarios_threshold_on_line_40_stops_at_2885() -> None:
 def test_ontario_caps_each_dependants_claim_at_15551_and_the_t1_does_not() -> None:
     # A dependant with no net income and expenses of 20000: the Federal Worksheet's line 3 is the
     # whole 20000, Worksheet ON428's line 3 is at most 15551.
-    worksheet = compute(
-        "48000", "0", "0", "0", "8640", "0", "0", other_dependants=(("20000", "0"),)
-    )
+    worksheet = compute("48000", (), "0", "0", "8640", "0", "0", other_dependants=(("20000", "0"),))
 
     assert worksheet.get(OTHER_DEPENDANTS_MEDICAL).value == D("20000.00")
     assert worksheet.get(ontario.OTHER_DEPENDANTS_MEDICAL).value == D("15551.00")
@@ -474,7 +473,7 @@ def test_ontario_caps_each_dependants_claim_at_15551_and_the_t1_does_not() -> No
 def test_ontario_pooled_dependants_would_give_the_wrong_line_58729() -> None:
     separate = compute(
         "48000",
-        "0",
+        (),
         "0",
         "0",
         "8640",
@@ -482,9 +481,7 @@ def test_ontario_pooled_dependants_would_give_the_wrong_line_58729() -> None:
         "0",
         other_dependants=(("3000", "10000"), ("1000", "40000")),
     )
-    pooled = compute(
-        "48000", "0", "0", "0", "8640", "0", "0", other_dependants=(("4000", "50000"),)
-    )
+    pooled = compute("48000", (), "0", "0", "8640", "0", "0", other_dependants=(("4000", "50000"),))
 
     assert separate.get(ontario.OTHER_DEPENDANTS_MEDICAL).value == D("2700.00")
     # 4000 - lesser(1500.00, 2885) = 2500.00, not 2700.00.
@@ -492,7 +489,7 @@ def test_ontario_pooled_dependants_would_give_the_wrong_line_58729() -> None:
 
 
 def test_no_medical_expenses_claim_nothing_on_line_58769() -> None:
-    worksheet = compute("48000", "0", "0", "0", "8640", "0", "0")
+    worksheet = compute("48000", (), "0", "0", "8640", "0", "0")
 
     assert worksheet.get(ontario.MEDICAL_EXPENSES_OVER_THRESHOLD).value == D("0")
     assert worksheet.get(ontario.OTHER_DEPENDANTS_MEDICAL).value == D("0")

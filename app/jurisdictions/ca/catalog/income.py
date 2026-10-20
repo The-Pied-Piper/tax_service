@@ -25,17 +25,254 @@ from app.jurisdictions.ca.catalog.personal_amounts import (
 EMPLOYMENT_INCOME = CATALOG.declare("employment_income", Decimal, non_negative=True)
 """Employment income, T1 line 10100: a starting amount that total income sums directly."""
 
-CAPITAL_GAIN = CATALOG.declare("capital_gain", Decimal, non_negative=True)
-"""The claimed capital gain before inclusion, mirroring Schedule 3 line 21 (total capital gains
-or losses).
+CAPITAL_GAIN = CATALOG.declare("capital_gain", Decimal)
+"""Total capital gains or losses, Schedule 3 line 21 and line 19700 "Line 19 plus line 20 Total
+capital gains or losses =": line 19 plus the reserves of line 20, worked out from Part 3 and Part 4.
+Signed, as the form reports "all negative amounts (losses) using brackets"; line 22 is the same
+figure and the inclusion rate applies to it."""
 
-Losses, and netting gains against them, are not modelled yet, so the kind is declared
-non-negative; net gains or losses, when modelled, will be a different kind.
-"""
+DISPOSITION_PROCEEDS = CATALOG.declare("disposition_proceeds", Decimal, non_negative=True)
+"""Proceeds of a disposition, Schedule 3 Part 3 "(Column 2): Proceeds of disposition": a field of
+each record of the property lists, not an artifact of its own."""
+
+DISPOSITION_ADJUSTED_COST_BASE = CATALOG.declare(
+    "disposition_adjusted_cost_base", Decimal, non_negative=True
+)
+"""Adjusted cost base of a disposition, Schedule 3 Part 3 "(Column 3): Adjusted cost base": a field
+of each record of the property lists, not an artifact of its own."""
+
+DISPOSITION_OUTLAYS = CATALOG.declare("disposition_outlays", Decimal, non_negative=True)
+"""Outlays and expenses of a disposition, Schedule 3 Part 3 "(Column 4): Outlays and expenses": a
+field of each record of the property lists, not an artifact of its own."""
+
+QSBCS_DISPOSITIONS = RecordListKind.declare(
+    CATALOG,
+    "qsbcs_dispositions",
+    fields=(DISPOSITION_PROCEEDS, DISPOSITION_ADJUSTED_COST_BASE, DISPOSITION_OUTLAYS),
+)
+"""Qualified small business corporation shares (QSBCS) dispositions, Schedule 3 Part 3 "Qualified
+small business corporation shares (QSBCS)" "For each Gain or loss enter as many lines as
+necessary.": a starting list with one record for each disposition, holding "(Column 2): Proceeds of
+disposition", "(Column 3): Adjusted cost base" and "(Column 4): Outlays and expenses" (column 1 and
+the narrative columns feed no line)."""
+
+QSBCS_GAIN_OR_LOSS = CATALOG.declare("qsbcs_gain_or_loss", Decimal)
+"""Qualified small business corporation shares (QSBCS) gain or loss, Schedule 3 line 1 and line
+10700 "Total gain or loss (add all the amounts under column 5)": the rows' column 5 "Gain or loss
+(column 2 minus columns 3 and 4)" added, a loss in brackets."""
+
+QFFP_DISPOSITIONS = RecordListKind.declare(
+    CATALOG,
+    "qffp_dispositions",
+    fields=(DISPOSITION_PROCEEDS, DISPOSITION_ADJUSTED_COST_BASE, DISPOSITION_OUTLAYS),
+)
+"""Qualified farm or fishing property (QFFP) dispositions, Schedule 3 Part 3 "Qualified farm or
+fishing property (QFFP)" "For each Gain or loss enter as many lines as necessary.": a starting list
+with one record for each disposition, holding "(Column 2): Proceeds of disposition", "(Column 3):
+Adjusted cost base" and "(Column 4): Outlays and expenses" (column 1 and the narrative columns feed
+no line)."""
+
+QFFP_GAIN_OR_LOSS = CATALOG.declare("qffp_gain_or_loss", Decimal)
+"""Qualified farm or fishing property (QFFP) gain or loss, Schedule 3 line 2 and line 11000 "Total
+gain or loss (add all the amounts under column 5)": the rows' column 5 "Gain or loss (column 2 minus
+columns 3 and 4)" added, a loss in brackets."""
+
+QFFP_FORECLOSURE_DISPOSITIONS = RecordListKind.declare(
+    CATALOG,
+    "qffp_foreclosure_dispositions",
+    fields=(DISPOSITION_PROCEEDS, DISPOSITION_ADJUSTED_COST_BASE, DISPOSITION_OUTLAYS),
+)
+"""QFFP: Mortgage foreclosures and conditional sales repossessions dispositions, Schedule 3 Part 3
+"QFFP: Mortgage foreclosures and conditional sales repossessions" "For each Gain or loss enter as
+many lines as necessary.": a starting list with one record for each disposition, holding "(Column
+2): Proceeds of disposition", "(Column 3): Adjusted cost base" and "(Column 4): Outlays and
+expenses" (column 1 and the narrative columns feed no line)."""
+
+QFFP_FORECLOSURE_GAIN_OR_LOSS = CATALOG.declare("qffp_foreclosure_gain_or_loss", Decimal)
+"""QFFP: Mortgage foreclosures and conditional sales repossessions gain or loss, Schedule 3 line 3
+and line 12400 "Total gain or loss (add all the amounts under column 5)": the rows' column 5 "Gain
+or loss (column 2 minus columns 3 and 4)" added, a loss in brackets."""
+
+SHARE_DISPOSITIONS = RecordListKind.declare(
+    CATALOG,
+    "share_dispositions",
+    fields=(DISPOSITION_PROCEEDS, DISPOSITION_ADJUSTED_COST_BASE, DISPOSITION_OUTLAYS),
+)
+"""Publicly traded shares, mutual fund units, deferral of eligible small business corporation shares
+and other shares dispositions, Schedule 3 Part 3 "Publicly traded shares, mutual fund units,
+deferral of eligible small business corporation shares and other shares" "For each Gain or loss
+enter as many lines as necessary.": a starting list with one record for each disposition, holding
+"(Column 2): Proceeds of disposition", "(Column 3): Adjusted cost base" and "(Column 4): Outlays and
+expenses" (column 1 and the narrative columns feed no line)."""
+
+SHARE_GAIN_OR_LOSS = CATALOG.declare("share_gain_or_loss", Decimal)
+"""Publicly traded shares, mutual fund units, deferral of eligible small business corporation shares
+and other shares gain or loss, Schedule 3 line 4 and line 13200 "Total gain or loss (add all the
+amounts under column 5)": the rows' column 5 "Gain or loss (column 2 minus columns 3 and 4)" added,
+a loss in brackets."""
+
+REAL_ESTATE_DISPOSITIONS = RecordListKind.declare(
+    CATALOG,
+    "real_estate_dispositions",
+    fields=(DISPOSITION_PROCEEDS, DISPOSITION_ADJUSTED_COST_BASE, DISPOSITION_OUTLAYS),
+)
+"""Real estate, depreciable property, and other properties (see parts 1 and 2) dispositions,
+Schedule 3 Part 3 "Real estate, depreciable property, and other properties (see parts 1 and 2)" "For
+each Gain or loss enter as many lines as necessary.": a starting list with one record for each
+disposition, holding "(Column 2): Proceeds of disposition", "(Column 3): Adjusted cost base" and
+"(Column 4): Outlays and expenses" (column 1 and the narrative columns feed no line)."""
+
+REAL_ESTATE_GAIN_OR_LOSS = CATALOG.declare("real_estate_gain_or_loss", Decimal)
+"""Real estate, depreciable property, and other properties (see parts 1 and 2) gain or loss,
+Schedule 3 line 5 and line 13800 "Total gain or loss (add all the amounts under column 5)": the
+rows' column 5 "Gain or loss (column 2 minus columns 3 and 4)" added, a loss in brackets."""
+
+BOND_DISPOSITIONS = RecordListKind.declare(
+    CATALOG,
+    "bond_dispositions",
+    fields=(DISPOSITION_PROCEEDS, DISPOSITION_ADJUSTED_COST_BASE, DISPOSITION_OUTLAYS),
+)
+"""Bonds, debentures, promissory notes, and other similar properties dispositions, Schedule 3 Part 3
+"Bonds, debentures, promissory notes, and other similar properties" "For each Gain or loss enter as
+many lines as necessary.": a starting list with one record for each disposition, holding "(Column
+2): Proceeds of disposition", "(Column 3): Adjusted cost base" and "(Column 4): Outlays and
+expenses" (column 1 and the narrative columns feed no line)."""
+
+BOND_GAIN_OR_LOSS = CATALOG.declare("bond_gain_or_loss", Decimal)
+"""Bonds, debentures, promissory notes, and other similar properties gain or loss, Schedule 3 line 6
+and line 15300 "Total gain or loss (add all the amounts under column 5)": the rows' column 5 "Gain
+or loss (column 2 minus columns 3 and 4)" added, a loss in brackets."""
+
+CRYPTO_ASSET_DISPOSITIONS = RecordListKind.declare(
+    CATALOG,
+    "crypto_asset_dispositions",
+    fields=(DISPOSITION_PROCEEDS, DISPOSITION_ADJUSTED_COST_BASE, DISPOSITION_OUTLAYS),
+)
+"""Crypto-assets dispositions, Schedule 3 Part 3 "Crypto-assets" "For each Gain or loss enter as
+many lines as necessary.": a starting list with one record for each disposition, holding "(Column
+2): Proceeds of disposition", "(Column 3): Adjusted cost base" and "(Column 4): Outlays and
+expenses" (column 1 and the narrative columns feed no line)."""
+
+CRYPTO_ASSET_GAIN_OR_LOSS = CATALOG.declare("crypto_asset_gain_or_loss", Decimal)
+"""Crypto-assets gain or loss, Schedule 3 line 7 and line 15301 "Total gain or loss (add all the
+amounts under column 5)": the rows' column 5 "Gain or loss (column 2 minus columns 3 and 4)" added,
+a loss in brackets."""
+
+OTHER_FORECLOSURE_DISPOSITIONS = RecordListKind.declare(
+    CATALOG,
+    "other_foreclosure_dispositions",
+    fields=(DISPOSITION_PROCEEDS, DISPOSITION_ADJUSTED_COST_BASE, DISPOSITION_OUTLAYS),
+)
+"""Other mortgage foreclosures and conditional sales repossessions dispositions, Schedule 3 Part 3
+"Other mortgage foreclosures and conditional sales repossessions" "For each Gain or loss enter as
+many lines as necessary.": a starting list with one record for each disposition, holding "(Column
+2): Proceeds of disposition", "(Column 3): Adjusted cost base" and "(Column 4): Outlays and
+expenses" (column 1 and the narrative columns feed no line)."""
+
+OTHER_FORECLOSURE_GAIN_OR_LOSS = CATALOG.declare("other_foreclosure_gain_or_loss", Decimal)
+"""Other mortgage foreclosures and conditional sales repossessions gain or loss, Schedule 3 line 8
+and line 15500 "Total gain (or loss) (add all the amounts under column 5)": the rows' column 5 "Gain
+or loss (column 2 minus columns 3 and 4)" added, a loss in brackets."""
+
+PERSONAL_USE_PROPERTY_DISPOSITIONS = RecordListKind.declare(
+    CATALOG,
+    "personal_use_property_dispositions",
+    fields=(DISPOSITION_PROCEEDS, DISPOSITION_ADJUSTED_COST_BASE, DISPOSITION_OUTLAYS),
+)
+"""Personal-use property dispositions, Schedule 3 Part 3 "Personal-use property (see parts 1 and 2)"
+"(provide a full description)": a starting list with one record for each disposition, holding
+"(Column 2): Proceeds of disposition", "(Column 3): Adjusted cost base" and "(Column 4): Outlays and
+expenses". The principal residence rows come from Form T2091(IND), not from this list."""
+
+PERSONAL_USE_PROPERTY_GAIN_ROWS = CATALOG.declare(
+    "personal_use_property_gain_rows", Decimal, non_negative=True
+)
+"""Gain on the personal-use property rows, Schedule 3 "Line 9 and line 15800: Total gain only (add
+all the amounts under column 5)": the rows' column 5 added, a row with a loss counting 0. A part of
+line 9."""
+
+PERSONAL_USE_PROPERTY_GAIN = CATALOG.declare(
+    "personal_use_property_gain", Decimal, non_negative=True
+)
+"""Personal-use property gain, Schedule 3 "Line 9 and line 15800: Total gain only (add all the
+amounts under column 5)": the sum of its parts, today only the rows listed on the form."""
+
+LISTED_PERSONAL_PROPERTY_DISPOSITIONS = RecordListKind.declare(
+    CATALOG,
+    "listed_personal_property_dispositions",
+    fields=(DISPOSITION_PROCEEDS, DISPOSITION_ADJUSTED_COST_BASE, DISPOSITION_OUTLAYS),
+)
+"""Listed personal property dispositions, Schedule 3 Part 3 "Listed personal property (LPP) (LPP
+losses can only be applied against LPP gains)" "(provide a full description)": a starting list with
+one record for each disposition, holding "(Column 2): Proceeds of disposition", "(Column 3):
+Adjusted cost base" and "(Column 4): Outlays and expenses"."""
+
+LISTED_PERSONAL_PROPERTY_GAIN_OR_LOSS = CATALOG.declare(
+    "listed_personal_property_gain_or_loss", Decimal
+)
+"""Listed personal property gain or loss, Schedule 3 Part 3 "Listed personal property (LPP) (LPP
+losses can only be applied against LPP gains)": the rows' column 5 "Gain or loss (column 2 minus
+columns 3 and 4)" added, a loss in brackets, before "Subtract: unapplied LPP losses from other
+years"."""
+
+UNAPPLIED_LISTED_PERSONAL_PROPERTY_LOSSES = CATALOG.declare(
+    "unapplied_listed_personal_property_losses", Decimal, non_negative=True
+)
+"""Unapplied listed personal property losses, Schedule 3 Part 3 "Subtract: unapplied LPP losses from
+other years": a starting amount."""
+
+LISTED_PERSONAL_PROPERTY_NET_GAIN = CATALOG.declare(
+    "listed_personal_property_net_gain", Decimal, non_negative=True
+)
+"""Listed personal property net gain, Schedule 3 "Line 10 and line 15900: Net gain only": the rows'
+gain or loss less the unapplied LPP losses from other years, not below 0."""
+
+CAPITAL_GAINS_OF_QUALIFIED_AND_OTHER_PROPERTIES = CATALOG.declare(
+    "capital_gains_of_qualified_and_other_properties", Decimal
+)
+"""Total gains or losses of qualified properties and other properties, Schedule 3 "Line 11: Add
+lines 1 to 10. Total gains or losses of qualified properties and other properties =", also Part 4
+"Line 12: Amount from line 11 of the previous page"."""
+
+CAPITAL_GAINS_DEFERRAL = CATALOG.declare("capital_gains_deferral", Decimal, non_negative=True)
+"""Capital gains deferral, Schedule 3 "Line 13 and line 16100: Capital gains deferral from
+qualifying dispositions of eligible small business corporation shares included on line 4": a
+starting amount."""
+
+CAPITAL_GAINS_AFTER_DEFERRAL = CATALOG.declare("capital_gains_after_deferral", Decimal)
+"""Gains or losses after the deferral, Schedule 3 "Line 14: Line 12 minus line 13 =", a loss in
+brackets."""
+
+SLIP_CAPITAL_GAINS_OR_LOSSES = CATALOG.declare("slip_capital_gains_or_losses", Decimal)
+"""Capital gains or losses from slips, Schedule 3 "Line 15 and line 17400: Capital gains or losses
+from your T5, T5013, and T4PS slips": a starting amount, a loss in brackets."""
+
+T3_CAPITAL_GAINS_OR_LOSSES = CATALOG.declare("t3_capital_gains_or_losses", Decimal)
+"""Capital gains or losses from T3 slips, Schedule 3 "Line 16 and line 17600: Capital gains or
+losses from your T3 slips": a starting amount, a loss in brackets."""
+
+CAPITAL_GAINS_BEFORE_INVESTMENT_LOSS_REDUCTION = CATALOG.declare(
+    "capital_gains_before_investment_loss_reduction", Decimal
+)
+"""Gains or losses before the business investment loss reduction, Schedule 3 "Line 17: Add lines 14
+to 16. =", a loss in brackets."""
+
+CAPITAL_GAINS_BEFORE_RESERVES = CATALOG.declare("capital_gains_before_reserves", Decimal)
+"""Gains or losses before reserves, Schedule 3 "Line 19 and line 19100: Total gains or losses before
+reserves: line 17 minus line 18 =", a loss in brackets."""
+
+CAPITAL_GAINS_RESERVES = CATALOG.declare("capital_gains_reserves", Decimal)
+"""Reserves, Schedule 3 "Line 20 and line 19200: Reserves to be included in (or deducted from)
+income from Form T2017": a starting amount, a deduction in brackets."""
+
+INCLUDED_CAPITAL_GAIN = CATALOG.declare("included_capital_gain", Decimal)
+"""Included capital gain, Schedule 3 "Line 24: Line 22 multiplied by the percentage from line 23
+=", a net capital loss in brackets."""
 
 TAXABLE_CAPITAL_GAINS = CATALOG.declare("taxable_capital_gains", Decimal, non_negative=True)
-"""Taxable capital gains, T1 line 12700: the capital gain times the inclusion rate (Schedule 3
-lines 23 to 26)."""
+"""Taxable capital gains, T1 line 12700: Schedule 3 line 26 "If positive, enter the result on line
+12700 of your return", the included capital gain (line 24), or 0 when that is negative (a net
+capital loss)."""
 
 TOTAL_INCOME = CATALOG.declare("total_income", Decimal)
 """Total income, T1 line 15000 "Line 28 plus line 32 Total income": the sum of the income lines

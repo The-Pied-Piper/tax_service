@@ -63,7 +63,7 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
     # refund.
     worksheet = compute(
         "60000",
-        "0",
+        (),
         "0",
         "0",
         "10800",
@@ -119,7 +119,8 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
     assert (
         "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 0 "
         "+ spouse_amount 0 + eligible_dependant_amount 10823 + caregiver_amount 0 "
-        "+ cpp_base_contributions 2796.75 + ei_premiums 984 "
+        "+ cpp_base_contributions 2796.75 + cpp_base_contributions_on_self_employment 0 "
+        "+ ei_premiums 984 + ei_premiums_on_self_employment 0 "
         "+ disability_transferred_amount 0 + medical_claim 0 = 27350.75"
     ) in rendered
 
@@ -133,7 +134,7 @@ def test_return_fs_canada_workers_benefit_is_zero_with_an_eligible_dependant() -
     # Schedule 6 eligible dependant (line 38100) chooses the amounts with one for T1 line 45300.
     worksheet = compute(
         "60000",
-        "0",
+        (),
         "0",
         "0",
         "10800",

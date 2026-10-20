@@ -39,7 +39,7 @@ def test_the_child_care_expenses_deduction_is_5000_for_one_child_and_lowers_net_
     # Ontario taxes on it are 7893.075 and 2812.4735, rounded half-up to the cent.
     worksheet = compute(
         "60000",
-        "0",
+        (),
         "0",
         "0",
         "10800",
@@ -91,7 +91,7 @@ def test_the_child_care_expenses_deduction_is_5000_for_one_child_and_lowers_net_
         "+ carrying_charges_interest_expenses_and_other_expenses 0 "
         "+ cpp_deduction_on_self_employment 0 "
         "+ cpp_enhanced_contributions 565 + exploration_and_development_expenses 0 "
-        "+ other_deductions 0 = 5565"
+        "+ other_deductions 0 + total_split_income 0 = 5565"
     ) in rendered
 
 
@@ -100,7 +100,7 @@ def test_expenses_paid_below_the_basic_limit_are_deducted_whole() -> None:
     # line 23300 is 3500 + 565.00 = 4065.00 and net income 60000 - 4065.00 = 55935.00.
     worksheet = compute(
         "60000",
-        "0",
+        (),
         "0",
         "0",
         "10800",
@@ -126,7 +126,7 @@ def test_the_limits_for_each_kind_of_eligible_child_add_up() -> None:
     # 24565.00 = 35435.00.
     worksheet = compute(
         "60000",
-        "0",
+        (),
         "0",
         "0",
         "10800",
@@ -158,7 +158,7 @@ def test_two_thirds_of_a_low_earned_income_caps_the_deduction() -> None:
     # T1 line 23300 is 6000 + 55.00 = 6055.00 and net income 9000 - 6055.00 = 2945.00.
     worksheet = compute(
         "9000",
-        "0",
+        (),
         "0",
         "0",
         "0",

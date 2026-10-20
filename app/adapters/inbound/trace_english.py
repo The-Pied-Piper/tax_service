@@ -32,6 +32,8 @@ from app.domain.trace import (
     ContributionTierLine,
     CreditAmountLine,
     DisabilityTransferLine,
+    DispositionGainLine,
+    DispositionGainOnlyLine,
     FractionAppliedLine,
     GreaterOfLine,
     ItemLesserOfLine,
@@ -482,6 +484,34 @@ class EnglishTraceRenderer:
                     f"{self._money(gain)} × ({designated} designated + {plus_one}) ÷ {owned} "
                     f"owned ({self._rounding(rule)}); taxable gain {self._money(result)} = "
                     f"{self._money(gain)} less {self._money(exempt)}, not below 0"
+                )
+            case DispositionGainLine(
+                output=output,
+                position=position,
+                proceeds=proceeds,
+                adjusted_cost_base=cost_base,
+                outlays=outlays,
+                result=result,
+            ):
+                return (
+                    f"{output.label}: disposition {position}: gain or loss {self._money(result)} "
+                    f"= proceeds {self._money(proceeds)} less adjusted cost base "
+                    f"{self._money(cost_base)} less outlays {self._money(outlays)}"
+                )
+            case DispositionGainOnlyLine(
+                output=output,
+                position=position,
+                proceeds=proceeds,
+                adjusted_cost_base=cost_base,
+                outlays=outlays,
+                gain=gain,
+                result=result,
+            ):
+                return (
+                    f"{output.label}: disposition {position}: gain {self._money(gain)} = "
+                    f"proceeds {self._money(proceeds)} less adjusted cost base "
+                    f"{self._money(cost_base)} less outlays {self._money(outlays)}; gain only "
+                    f"{self._money(result)}, not below 0"
                 )
             case QuotientLine(
                 output=output,

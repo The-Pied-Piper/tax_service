@@ -50,7 +50,7 @@ def return_j(
     """Return J's inputs, as in `returns/2025_return_j.yaml`, with the age and spouse ones given."""
     return compute(
         "50000",
-        "930",
+        (("930", "0", "0"),),
         "0",
         "0",
         "9000",
@@ -123,8 +123,8 @@ def test_return_js_age_spouse_and_caregiver_amounts_come_off_net_income_and_the_
     assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-2176.29")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     for line in (
-        "age_income_over_threshold: net_income 50000 less age_income_threshold 45522, not below 0 "
-        "= 4478",
+        "age_income_over_threshold: tosi_adjusted_net_income_not_below_zero 50000 "
+        "less age_income_threshold 45522, not below 0 = 4478",
         "age_reduction: 15% of age_income_over_threshold 4478 (half-up to 0.01)",
         "age_amount_before_count: age_maximum 9028 less age_reduction 671.7, not below 0 = 8356.3",
         "age_amount: age_amount_before_count 8356.3 for each of 1 born_in_1960_or_earlier = 8356.3",
@@ -149,8 +149,8 @@ def test_return_js_age_spouse_and_caregiver_amounts_come_off_net_income_and_the_
         "+ cpp_base_contributions_on_self_employment 0 + ei_premiums 820 "
         "+ ei_premiums_on_self_employment 0 + canada_employment_amount 1471 "
         "+ disability_transferred_amount 0 + medical_claim 0 = 37679.05",
-        "age_income_over_threshold: net_income 50000 less age_income_threshold 46330, not below 0 "
-        "= 3670",
+        "age_income_over_threshold: tosi_adjusted_net_income_not_below_zero 50000 "
+        "less age_income_threshold 46330, not below 0 = 3670",
         "age_reduction: 15% of age_income_over_threshold 3670 (half-up to 0.01)",
         "age_amount_before_count: age_maximum 6223 less age_reduction 550.5, not below 0 = 5672.5",
         "age_amount: age_amount_before_count 5672.5 for each of 1 born_in_1960_or_earlier = 5672.5",
@@ -161,7 +161,8 @@ def test_return_js_age_spouse_and_caregiver_amounts_come_off_net_income_and_the_
         "spouse_amount: spouse_amount_before_count 0 for each of 1 spouses_claimed = 0",
         "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 5672.5 "
         "+ spouse_amount 0 + eligible_dependant_amount 0 + caregiver_amount 0 "
-        "+ cpp_base_contributions 2301.75 + ei_premiums 820 "
+        "+ cpp_base_contributions 2301.75 + cpp_base_contributions_on_self_employment 0 "
+        "+ ei_premiums 820 + ei_premiums_on_self_employment 0 "
         "+ disability_transferred_amount 0 + medical_claim 0 = 21541.25",
     ):
         assert line in rendered
@@ -182,7 +183,7 @@ def test_the_ontario_age_amount_is_zero_at_net_income_87817() -> None:
     # Net income is employment income less the enhanced CPP contributions at their maximum
     # (1074.00): 88891 - 1074.00 = 87817.00. Worksheet ON428 line 6 is 15% x (87817.00 - 46330) =
     # 6223.05, more than the 6223.00 maximum, so line 7 "(if negative, enter "0")" is 0.
-    worksheet = compute("88891", "0", "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
+    worksheet = compute("88891", (), "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
 
     assert worksheet.get(NET_INCOME).value == D("87817.00")
     assert worksheet.get(ontario.AGE_REDUCTION).value == D("6223.05")
@@ -193,7 +194,7 @@ def test_the_ontario_age_amount_is_zero_at_net_income_87817() -> None:
 def test_the_ontario_age_amount_is_still_a_dollar_short_of_zero_at_net_income_87816() -> None:
     # 88890 - 1074.00 = 87816.00: line 6 is 15% x (87816.00 - 46330) = 6222.90, so line 7 is
     # 6223.00 - 6222.90 = 0.10.
-    worksheet = compute("88890", "0", "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
+    worksheet = compute("88890", (), "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
 
     assert worksheet.get(NET_INCOME).value == D("87816.00")
     assert worksheet.get(ontario.AGE_REDUCTION).value == D("6222.90")
@@ -203,7 +204,7 @@ def test_the_ontario_age_amount_is_still_a_dollar_short_of_zero_at_net_income_87
 def test_the_ontario_age_amount_is_the_whole_maximum_at_a_net_income_below_the_threshold() -> None:
     # Net income is 44585.00 (as for the federal case), below 46330: line 4 is negative, so 0,
     # line 6 is 0 and line 7 is 6223.00: "$46,330 or less, enter $6,223".
-    worksheet = compute("45000", "0", "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
+    worksheet = compute("45000", (), "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
 
     assert worksheet.get(ontario.AGE_INCOME_OVER_THRESHOLD).value == D("0")
     assert worksheet.get(ontario.AGE_AMOUNT).value == D("6223.00")
@@ -266,7 +267,7 @@ def test_the_age_amount_is_reduced_to_ten_cents_at_net_income_105708() -> None:
     # Net income is employment income less the enhanced CPP contributions at their maximum
     # (1074.00): 106782 - 1074.00 = 105708.00. The Federal Worksheet's line 6 is 15% x (105708.00
     # - 45522) = 9027.90, so line 7 is 9028.00 - 9027.90 = 0.10.
-    worksheet = compute("106782", "0", "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
+    worksheet = compute("106782", (), "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
 
     assert worksheet.get(NET_INCOME).value == D("105708.00")
     assert worksheet.get(AGE_REDUCTION).value == D("9027.90")
@@ -276,7 +277,7 @@ def test_the_age_amount_is_reduced_to_ten_cents_at_net_income_105708() -> None:
 def test_the_age_amount_is_zero_at_net_income_105709() -> None:
     # 106783 - 1074.00 = 105709.00: line 6 is 15% x (105709.00 - 45522) = 9028.05, more than the
     # maximum 9028.00, so line 7 "(if negative, enter "0")" is 0.
-    worksheet = compute("106783", "0", "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
+    worksheet = compute("106783", (), "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
 
     assert worksheet.get(NET_INCOME).value == D("105709.00")
     assert worksheet.get(AGE_REDUCTION).value == D("9028.05")
@@ -339,7 +340,7 @@ def test_the_age_amount_is_the_whole_maximum_at_a_net_income_below_the_threshold
     # Net income is 45000 - 415.00 (1% x (45000 - 3500), the enhanced CPP contributions) =
     # 44585.00. Federal Worksheet line 4 is 44585.00 - 45522.00, negative, so 0, line 6 is 0 and
     # line 7 is 9028.00 - 0.00: "$45,522 or less, enter $9,028".
-    worksheet = compute("45000", "0", "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
+    worksheet = compute("45000", (), "0", "0", "0", "0", "0", born_in_1960_or_earlier=1)
 
     assert worksheet.get(NET_INCOME).value == D("44585.00")
     assert worksheet.get(AGE_INCOME_OVER_THRESHOLD).value == D("0")

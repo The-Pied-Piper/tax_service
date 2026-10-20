@@ -103,7 +103,9 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
+    FEDERAL_TAX_WITH_SPLIT_INCOME,
     FHSA_ANNUAL_AMOUNT,
     FHSA_ANNUAL_AMOUNT_FOR_2024,
     FHSA_ANNUAL_AMOUNT_FOR_2024_WITH_CARRYFORWARD,
@@ -240,6 +242,18 @@ from app.jurisdictions.ca.catalog import (
     SLIP_TAXABLE_DIVIDENDS,
     SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SPECIAL_TAXES,
+    SPLIT_INCOME_LINE_10,
+    SPLIT_INCOME_LINE_13,
+    SPLIT_INCOME_LINE_14,
+    SPLIT_INCOME_LINE_15,
+    SPLIT_INCOME_LINE_18,
+    SPLIT_INCOME_LINE_19,
+    SPLIT_INCOME_LINE_20,
+    SPLIT_INCOME_LINE_21,
+    SPLIT_INCOME_LINE_22,
+    SPLIT_INCOME_LINE_24,
+    SPLIT_INCOME_LINE_29,
+    SPLIT_INCOME_LINE_30,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BASIS,
     SPOUSE_AMOUNT_BEFORE_COUNT,
@@ -258,11 +272,14 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
     TOP_UP_THRESHOLD,
+    TOSI_ADJUSTED_NET_INCOME,
+    TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
+    TOTAL_SPLIT_INCOME,
     TRAVEL_DEDUCTION,
     TRAVEL_TOTAL_ZONE_A,
     TRAVEL_TOTAL_ZONE_B,
@@ -341,7 +358,7 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 445
+    assert len(order) == 494
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -537,7 +554,20 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[TAXABLE_INCOME] < position[ONTARIO_BASIC_TAX]
     assert position[FEDERAL_BASIC_TAX] < position[FEDERAL_TAX_AFTER_CREDITS]
     assert position[ONTARIO_BASIC_TAX] < position[ONTARIO_TAX_AFTER_CREDITS]
-    assert position[NET_INCOME] < position[BASIC_PERSONAL_AMOUNT]
+    # Form T1206: line 4 is part of line 23300, line 6 adds it back to line 23400, and line 120
+    # (T1206 line 8) is part of line 121, from which the credits come.
+    assert position[TOTAL_SPLIT_INCOME] < position[DEDUCTIONS_FROM_TOTAL_INCOME]
+    assert position[NET_INCOME_BEFORE_ADJUSTMENTS] < position[TOSI_ADJUSTED_NET_INCOME]
+    assert position[TOTAL_SPLIT_INCOME] < position[TOSI_ADJUSTED_NET_INCOME]
+    assert (
+        position[NET_INCOME_BEFORE_ADJUSTMENTS] < position[TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO]
+    )
+    assert position[TOTAL_SPLIT_INCOME] < position[FEDERAL_TAX_ON_SPLIT_INCOME]
+    assert position[FEDERAL_BASIC_TAX] < position[FEDERAL_TAX_WITH_SPLIT_INCOME]
+    assert position[FEDERAL_TAX_ON_SPLIT_INCOME] < position[FEDERAL_TAX_WITH_SPLIT_INCOME]
+    assert position[FEDERAL_TAX_WITH_SPLIT_INCOME] < position[FEDERAL_TAX_AFTER_CREDITS]
+    assert position[TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO] < position[BASIC_PERSONAL_AMOUNT]
+    assert position[TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO] < position[AGE_INCOME_OVER_THRESHOLD]
     assert position[BASIC_PERSONAL_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert position[CANADA_EMPLOYMENT_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert (
@@ -599,7 +629,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
     )
     assert (
-        position[NET_INCOME]
+        position[TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO]
         < position[ontario.AGE_INCOME_OVER_THRESHOLD]
         < position[ontario.AGE_REDUCTION]
         < position[ontario.AGE_AMOUNT_BEFORE_COUNT]
@@ -682,9 +712,47 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     )
     assert (
         position[ONTARIO_TAX_AFTER_CREDITS]
+        < position[ontario.ONTARIO_TAX_WITH_SPLIT_INCOME]
+        < position[ontario.ONTARIO_SURTAX_BASE]
         < position[ONTARIO_SURTAX]
         < position[ONTARIO_TAX_WITH_SURTAX]
     )
+    # Form T1206 Part 3 and ON428 lines 54, 55, 64 and 65: the tax on the split income (line 33)
+    # joins the tax before the surtax and leaves its base, and line 52 replaces line 88 in
+    # ON428 line 90.
+    assert (
+        position[TOTAL_SPLIT_INCOME]
+        < position[ontario.ONTARIO_TAX_ON_SPLIT_INCOME]
+        < position[ontario.SPLIT_INCOME_LINE_39]
+        < position[ontario.SPLIT_INCOME_LINE_47]
+        < position[ontario.SPLIT_INCOME_LINE_50]
+        < position[ontario.SPLIT_INCOME_LINE_52]
+        < position[ONTARIO_TAX]
+    )
+    assert (
+        position[ontario.SPLIT_INCOME_LINE_36]
+        < position[ontario.SPLIT_INCOME_LINE_38]
+        < position[ontario.SPLIT_INCOME_LINE_39]
+    )
+    assert position[ontario.DISABILITY_TRANSFERRED_AMOUNT] < position[ontario.SPLIT_INCOME_LINE_36]
+    assert (
+        position[SPLIT_INCOME_LINE_18]
+        < position[ontario.SPLIT_INCOME_LINE_42]
+        < position[ontario.SPLIT_INCOME_LINE_46]
+        < position[ontario.SPLIT_INCOME_LINE_47]
+    )
+    assert position[ontario.SPLIT_INCOME_LINE_45] < position[ontario.SPLIT_INCOME_LINE_46]
+    assert (
+        position[ontario.ONTARIO_TAX_ON_SPLIT_INCOME]
+        < position[ontario.ONTARIO_TAX_WITH_SPLIT_INCOME]
+    )
+    assert (
+        position[ontario.ONTARIO_TAX_ON_SPLIT_INCOME]
+        < position[ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX]
+        < position[ontario.ONTARIO_SURTAX_BASE]
+    )
+    assert position[ONTARIO_TAX_WITH_SURTAX] < position[ONTARIO_TAX_AFTER_FOOD_CREDIT]
+    assert position[ONTARIO_TAX_AFTER_FOOD_CREDIT] < position[ontario.SPLIT_INCOME_LINE_52]
     assert (
         position[TAXABLE_DIVIDENDS]
         < position[ontario.DIVIDENDS_AMOUNT_A]
@@ -725,11 +793,15 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[ONTARIO_TAX_AFTER_REDUCTION]
         < position[ONTARIO_TAX]
     )
-    assert position[TAXABLE_INCOME] < position[ONTARIO_HEALTH_PREMIUM] < position[ONTARIO_TAX]
-    assert position[LIFT_CREDIT_BEFORE_MAXIMUM] < position[LIFT_MAXIMUM_CREDIT]
     assert (
-        position[NET_INCOME_BEFORE_ADJUSTMENTS] < position[ontario.LIFT_NET_INCOME_AND_REPAYMENTS]
+        position[TAXABLE_INCOME]
+        < position[ontario.HEALTH_PREMIUM_INCOME]
+        < position[ONTARIO_HEALTH_PREMIUM]
+        < position[ONTARIO_TAX]
     )
+    assert position[TOTAL_SPLIT_INCOME] < position[ontario.HEALTH_PREMIUM_INCOME]
+    assert position[LIFT_CREDIT_BEFORE_MAXIMUM] < position[LIFT_MAXIMUM_CREDIT]
+    assert position[TOSI_ADJUSTED_NET_INCOME] < position[ontario.LIFT_NET_INCOME_AND_REPAYMENTS]
     assert (
         position[ontario.LIFT_NET_INCOME_AND_REPAYMENTS]
         < position[ontario.LIFT_ADJUSTED_NET_INCOME]
@@ -772,6 +844,24 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[ONTARIO_TAX]
     )
     assert position[ONTARIO_TAX_AFTER_LIFT_CREDIT] < position[ONTARIO_TAX_AFTER_FOOD_CREDIT]
+    # Form T1206 Part 2, line by line: line 10 (line 8 and the advanced Canada workers benefit),
+    # line 13 and its credit on line 14, line 15, line 18 and the two dividend credits of lines 19
+    # and 20 added in line 21, line 22, line 24, line 29, then line 30, the more of lines 24 and
+    # 29, which with line 41800 is the net federal tax.
+    assert position[FEDERAL_TAX_ON_SPLIT_INCOME] < position[SPLIT_INCOME_LINE_10]
+    assert position[SPLIT_INCOME_LINE_13] < position[SPLIT_INCOME_LINE_14]
+    assert position[SPLIT_INCOME_LINE_10] < position[SPLIT_INCOME_LINE_15]
+    assert position[SPLIT_INCOME_LINE_14] < position[SPLIT_INCOME_LINE_15]
+    assert position[SPLIT_INCOME_LINE_18] < position[SPLIT_INCOME_LINE_20]
+    assert position[SPLIT_INCOME_LINE_19] < position[SPLIT_INCOME_LINE_21]
+    assert position[SPLIT_INCOME_LINE_20] < position[SPLIT_INCOME_LINE_21]
+    assert position[SPLIT_INCOME_LINE_15] < position[SPLIT_INCOME_LINE_22]
+    assert position[SPLIT_INCOME_LINE_21] < position[SPLIT_INCOME_LINE_22]
+    assert position[SPLIT_INCOME_LINE_22] < position[SPLIT_INCOME_LINE_24]
+    assert position[FEDERAL_TAX_LESS_CREDITS] < position[SPLIT_INCOME_LINE_29]
+    assert position[SPLIT_INCOME_LINE_24] < position[SPLIT_INCOME_LINE_30]
+    assert position[SPLIT_INCOME_LINE_29] < position[SPLIT_INCOME_LINE_30]
+    assert position[SPLIT_INCOME_LINE_30] < position[NET_FEDERAL_TAX]
     assert position[FEDERAL_TAX_AFTER_CREDITS] < position[NET_FEDERAL_TAX]
     assert position[ITC_RECAPTURE_AT_15_PERCENT] < position[ITC_RECAPTURE]
     assert position[ITC_RECAPTURE_AT_20_PERCENT] < position[ITC_RECAPTURE]
@@ -891,7 +981,11 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     ):
         basic, reduction, benefit = family_status
         assert position[WORKING_INCOME] < position[basic] < position[benefit]
-        assert position[NET_INCOME] < position[ADJUSTED_FAMILY_NET_INCOME] < position[reduction]
+        assert (
+            position[TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO]
+            < position[ADJUSTED_FAMILY_NET_INCOME]
+            < position[reduction]
+        )
         assert position[reduction] < position[benefit] < position[CANADA_WORKERS_BENEFIT]
     assert (
         position[MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME]
@@ -907,7 +1001,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         position[MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME]
         < position[MEDICAL_SUPPLEMENT_WORKING_INCOME]
     )
-    assert position[NET_INCOME_BEFORE_ADJUSTMENTS] < position[MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3]
+    assert position[TOSI_ADJUSTED_NET_INCOME] < position[MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3]
     assert position[UCCB_AND_RDSP_INCOME_REPAYMENTS] < position[MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3]
     assert (
         position[MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3]
@@ -962,7 +1056,9 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[FERTILITY_CREDIT_BEFORE_MAXIMUM] < position[FERTILITY_CREDIT]
     assert position[ontario.MEDICAL_CLAIM] < position[SENIORS_CARE_BEFORE_MAXIMUM]
     assert position[SENIORS_CARE_BEFORE_MAXIMUM] < position[SENIORS_CARE_AMOUNT]
-    assert position[NET_INCOME] < position[SENIORS_CARE_FAMILY_NET_INCOME]
+    assert (
+        position[TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO] < position[SENIORS_CARE_FAMILY_NET_INCOME]
+    )
     assert position[SENIORS_CARE_FAMILY_NET_INCOME] < position[SENIORS_CARE_INCOME_OVER_BASE]
     assert position[SENIORS_CARE_BASE_AMOUNT] < position[SENIORS_CARE_INCOME_OVER_BASE]
     assert position[SENIORS_CARE_INCOME_OVER_BASE] < position[SENIORS_CARE_REDUCTION]

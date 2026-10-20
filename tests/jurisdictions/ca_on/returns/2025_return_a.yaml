@@ -234,6 +234,11 @@ sources:
     (line 19900) "If positive, enter the result on line 12700 of your return". The capital
     gain of 20,000 times 50% is 10,000 of taxable capital gains, rounded half-up to the
     cent, which changes nothing.
+    The capital gain is one row of Schedule 3 Part 3 line 4 (shares), with proceeds of 20000, an
+    adjusted cost base of 0 and outlays of 0, a chosen figure: column 5 and line 4 are 20000, so
+    lines 11, 12, 14, 17, 19, 21 and 22 are 20000 (no deferral, no slip or T3 capital gains, no
+    business investment loss, no reserves), and line 24 is that times 50%, passed to line 12700
+    because it is 0 or more.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s3/5000-s3-25e.txt
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s3/5000-s3-25e.pdf
   - >-
@@ -909,7 +914,10 @@ sources:
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-d1/5006-d1-25e.txt
 inputs:
   ca/employment_income: "110000"
-  ca/capital_gain: "20000"
+  ca/share_dispositions:
+    - ca/disposition_proceeds: "20000"
+      ca/disposition_adjusted_cost_base: "0"
+      ca/disposition_outlays: "0"
   ca/rrsp_contributions: "1926"
   ca/rrsp_deduction_limit: "19800"
   ca/rrsp_amount_deducted: "1926"

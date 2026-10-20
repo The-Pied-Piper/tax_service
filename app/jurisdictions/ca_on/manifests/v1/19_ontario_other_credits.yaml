@@ -17,23 +17,46 @@ capabilities:
       less: ca-on/community_food_program_credit
     produces:
       output: ca-on/ontario_tax_after_food_credit
-  # ON428 line 89 "Ontario health premium (complete the chart below)": the chart's tiers
-  # on line 1 "Enter your taxable income from line 26000 of your return", each the
-  # previous plateau plus a rate on the income over its threshold, at most the next
-  # plateau.
+  # Form T1206 Part 3 line 51 "Amount from the line number of your Form 428 shown in column 8 of
+  # Chart C on page 5" (ON428 line 88, above) and line 52 "Enter whichever is more: the amount
+  # from line 50 or line 51. Enter the amount from line 52 on line 42800 of your return. (2) If
+  # you were a resident of Ontario, enter this amount on line 88 of Form ON428 and complete the
+  # remaining lines of that form.": the Ontario tax on split income never takes line 88 below line
+  # 50 (line 50 being line 47, the foreign tax credit of line 49 not being wired), and line 52 is
+  # the part ON428 line 90 adds the health premium to.
+  - name: core/greater_of
+    consumes:
+      amounts:
+        - ca-on/split_income_line_50
+        - ca-on/ontario_tax_after_food_credit
+    produces:
+      output: ca-on/split_income_line_52
+  # T1206 "Also, add the amount from line 4 of this form to your taxable income when calculating
+  # your Ontario health premium on Form ON428": ON428 line 89 chart line 1 "Enter your taxable
+  # income from line 26000 of your return" plus the total split income.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/taxable_income
+        - ca/total_split_income
+    produces:
+      output: ca-on/health_premium_income
+  # ON428 line 89 "Ontario health premium (complete the chart below)": the chart's tiers on line
+  # 1, the taxable income with the total split income added, each the previous plateau plus a rate
+  # on the income over its threshold, at most the next plateau.
   - name: core/tiered_surcharge
     params:
       tiers: ca-on/health_premium
     consumes:
-      base: ca/taxable_income
+      base: ca-on/health_premium_income
     produces:
       output: ca-on/ontario_health_premium
-  # ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your return.
-  # Ontario tax".
+  # ON428 line 90 "Line 88 plus line 89 Enter this amount on line 42800 of your return. Ontario
+  # tax", line 88 being line 52 of Form T1206 (the more of T1206 line 50 and line 88).
   - name: core/sum
     consumes:
       parts:
-        - ca-on/ontario_tax_after_food_credit
+        - ca-on/split_income_line_52
         - ca-on/ontario_health_premium
     produces:
       output: ca-on/ontario_tax
@@ -120,14 +143,16 @@ capabilities:
       base: ca-on/seniors_care_before_maximum
     produces:
       output: ca-on/seniors_care_amount
-  # Line 8 "Line 6 plus line 7 Family net income =", line 6 being "Your net income from line
-  # 23600 of your return" and line 7 "Your spouse's or common-law partner's net income from
-  # line 23600 of their return (if applicable)", the caller input shared with T1 line 30300
-  # and ON428 line 58120 (0 with no spouse).
+  # Line 8 "Line 6 plus line 7 Family net income =", line 6 being "Your net income from line 23600
+  # of your return", the TOSI-adjusted net income of Form T1206 Part 1 line 6 in its place, not
+  # below zero ("the Ontario seniors care at home tax credit (line 6 of Form ON479)"), and
+  # line 7 "Your spouse's or common-law partner's net income from line 23600 of their return (if
+  # applicable)", the caller input shared with T1 line 30300 and ON428 line 58120 (0 with no
+  # spouse).
   - name: core/sum
     consumes:
       parts:
-        - ca/net_income
+        - ca/tosi_adjusted_net_income_not_below_zero
         - ca/spouse_net_income
     produces:
       output: ca-on/seniors_care_family_net_income

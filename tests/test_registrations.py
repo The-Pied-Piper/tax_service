@@ -87,6 +87,18 @@ def test_importing_the_federal_package_registers_the_principal_residence_gain() 
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.principal_residence_gain"
 
 
+def test_importing_the_federal_package_registers_the_disposition_gains_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/disposition_gains")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.disposition_gains"
+
+
+def test_importing_the_federal_package_registers_the_disposition_gains_only_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/disposition_gains_only")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.disposition_gains_only"
+
+
 def test_importing_the_federal_package_registers_the_cca_claim_capability() -> None:
     registered = CapabilityRegistry.shared().get("ca/cca_claim")
 

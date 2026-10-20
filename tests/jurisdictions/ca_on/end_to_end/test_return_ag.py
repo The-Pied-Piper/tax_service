@@ -53,7 +53,7 @@ def return_ag(**overrides: Any) -> Worksheet:
         "income_tax_deducted": "3000",
         "claims_seniors_care_credit": 1,
     }
-    return compute("0", "0", "0", "0", "0", "0", "0", **{**inputs, **overrides})
+    return compute("0", (), "0", "0", "0", "0", "0", **{**inputs, **overrides})
 
 
 def test_return_ags_seniors_care_at_home_credit_is_750_and_lowers_the_refund() -> None:
@@ -101,7 +101,8 @@ def test_return_ags_trace_names_each_line_of_the_seniors_care_at_home_credit() -
         "seniors_care_before_maximum: 25% of medical_claim 4000 (half-up to 0.01)",
         "seniors_care_amount: lesser of seniors_care_before_maximum 1000 and 1500 "
         "(half-up to 0.01)",
-        "seniors_care_family_net_income: net_income 30000 + spouse_net_income 10000 = 40000",
+        "seniors_care_family_net_income: tosi_adjusted_net_income_not_below_zero 30000 "
+        "+ spouse_net_income 10000 = 40000",
         "seniors_care_base_amount: credit amount 35000 (half-up to 0.01)",
         "seniors_care_income_over_base: seniors_care_family_net_income 40000 "
         "less seniors_care_base_amount 35000, not below 0 = 5000",

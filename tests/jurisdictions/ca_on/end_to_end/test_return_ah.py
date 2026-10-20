@@ -58,7 +58,7 @@ def return_ah(employment: str = "4390", union_dues: str = "0", **overrides: Any)
         "income_tax_deducted": "500",
     }
     inputs.update(overrides)
-    return compute(employment, "0", "0", "0", "0", "0", union_dues, **inputs)
+    return compute(employment, (), "0", "0", "0", "0", union_dues, **inputs)
 
 
 def test_return_ah_claims_the_refundable_medical_expense_supplement_of_1500_on_line_45200() -> None:

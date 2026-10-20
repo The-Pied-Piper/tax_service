@@ -49,7 +49,7 @@ def return_t(
     """
     return compute(
         "50000",
-        "0",
+        (),
         "0",
         "0",
         "9000",

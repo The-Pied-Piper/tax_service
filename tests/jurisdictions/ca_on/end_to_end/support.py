@@ -10,23 +10,25 @@ from app.application.services.tax_computation import TaxComputationService
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.parameters.rounding import RoundingMode, RoundTo
-from app.domain.record_list import RecordList
+from app.domain.record_list import RecordList, RecordListKind
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADVANCED_CANADA_WORKERS_BENEFIT,
     AGED_18_OR_OLDER_AT_END_OF_2025,
+    BOND_DISPOSITIONS,
     BORN_IN_1960_OR_EARLIER,
     BUSINESS_INCOME,
     BUSINESS_INVESTMENT_LOSS,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
-    CAPITAL_GAIN,
     CAPITAL_GAINS_DEDUCTIONS_1985_TO_1987,
     CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_ELIGIBLE_CAPITAL_PROPERTY,
     CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_OTHER_THAN_ELIGIBLE_CAPITAL_PROPERTY,
     CAPITAL_GAINS_DEDUCTIONS_1990_TO_1999,
     CAPITAL_GAINS_DEDUCTIONS_2000,
     CAPITAL_GAINS_DEDUCTIONS_2001_TO_2024,
+    CAPITAL_GAINS_DEFERRAL,
+    CAPITAL_GAINS_RESERVES,
     CAPITAL_GIFT_GAINS_DEDUCTION,
     CAPITAL_GIFT_TAXABLE_GAINS,
     CCA_ADDITIONS,
@@ -48,6 +50,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_OR_QPP_BENEFITS,
     CPP_PART_4_COMPLETED,
     CPT20_EARNINGS,
+    CRYPTO_ASSET_DISPOSITIONS,
     CWB_ELIGIBLE_DEPENDANTS,
     DEPENDANT_CARE_EXPENSES,
     DEPENDANT_CREDIT_AMOUNTS,
@@ -57,8 +60,12 @@ from app.jurisdictions.ca.catalog import (
     DEPRECIABLE_GIFT_CAPITAL_COST,
     DEPRECIABLE_GIFT_NET_PROCEEDS,
     DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
+    DISABILITY_AMOUNT_FOR_SELF,
     DISABILITY_DEPENDANTS,
     DISABILITY_SUPPORTS_DEDUCTION,
+    DISPOSITION_ADJUSTED_COST_BASE,
+    DISPOSITION_OUTLAYS,
+    DISPOSITION_PROCEEDS,
     ECOLOGICAL_AND_CULTURAL_GIFTS,
     ECOLOGICAL_GIFTS_BEFORE_2016,
     EDUCATOR_SUPPLIES_EXPENSES,
@@ -111,6 +118,7 @@ from app.jurisdictions.ca.catalog import (
     JOURNALISM_LABOUR_TAX_CREDIT,
     LABOUR_SPONSORED_FUNDS_NET_COST,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
+    LISTED_PERSONAL_PROPERTY_DISPOSITIONS,
     MEDICAL_EXPENSES,
     NET_BUSINESS_INCOME,
     NET_CAPITAL_LOSSES_CLAIMED,
@@ -135,12 +143,15 @@ from app.jurisdictions.ca.catalog import (
     OTHER_EMPLOYMENT_EXPENSES,
     OTHER_EMPLOYMENT_INCOME,
     OTHER_FHSA_INCOME,
+    OTHER_FORECLOSURE_DISPOSITIONS,
     OTHER_INCOME,
     OTHER_PAYMENTS_DEDUCTION_ABOVE_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
     OTHER_PENSIONS_AND_SUPERANNUATION,
+    OTHER_SPLIT_INCOME,
     PART_XII_2_TAX_CREDIT,
+    PERSONAL_USE_PROPERTY_DISPOSITIONS,
     POLITICAL_CONTRIBUTIONS,
     POLITICAL_CREDIT_COLUMN_1_LINE_2,
     POLITICAL_CREDIT_COLUMN_1_LINE_3,
@@ -158,8 +169,12 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_6,
     POLITICAL_CREDIT_COLUMN_3_LINE_7,
     PROFESSIONAL_INCOME,
+    QFFP_DISPOSITIONS,
+    QFFP_FORECLOSURE_DISPOSITIONS,
+    QSBCS_DISPOSITIONS,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
+    REAL_ESTATE_DISPOSITIONS,
     RENTAL_ADVERTISING,
     RENTAL_ADVERTISING_PERSONAL_PORTION,
     RENTAL_ADVERTISING_SHORT_TERM_PORTION,
@@ -230,11 +245,15 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION_LIMIT,
     RRSP_INCOME,
     SECURITY_OPTIONS_DEDUCTIONS,
+    SHARE_DISPOSITIONS,
     SHORT_TERM_RENTAL_DAYS,
     SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
     SHORT_TERM_RENTAL_RELATED_EXPENSES,
     SHORT_TERM_RENTAL_UNITS,
+    SLIP_CAPITAL_GAINS_OR_LOSSES,
     SOCIAL_ASSISTANCE_PAYMENTS,
+    SPLIT_INCOME_DIVIDENDS,
+    SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SPOUSE_CAREGIVER_ELIGIBLE,
     SPOUSE_NET_INCOME,
     SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -248,6 +267,7 @@ from app.jurisdictions.ca.catalog import (
     STANDARD_AMOUNT_ALLOCATED_2,
     STANDARD_AMOUNT_ALLOCATED_3,
     SUPPORT_PAYMENTS_DEDUCTION,
+    T3_CAPITAL_GAINS_OR_LOSSES,
     T3_DIVIDEND_TAX_CREDIT,
     T3_INVESTMENT_INCOME,
     T3_TAXABLE_DIVIDENDS,
@@ -278,6 +298,7 @@ from app.jurisdictions.ca.catalog import (
     TRIP_TRAVEL_EXPENSES,
     TRIP_ZONE,
     UCCB_REPAYMENT,
+    UNAPPLIED_LISTED_PERSONAL_PROPERTY_LOSSES,
     UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987,
     UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989,
     UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
@@ -565,15 +586,47 @@ def individual(
     }
 
 
+Disposition = tuple[str, str, str]
+"""One disposition row of Schedule 3 Part 3: proceeds (column 2), adjusted cost base (column 3)
+and outlays and expenses (column 4)."""
+
+
+def dispositions(kind: RecordListKind, *rows: Disposition) -> Artifact[RecordList]:
+    """A Schedule 3 Part 3 record list of `kind` with one record per row, in the order given."""
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {
+            DISPOSITION_PROCEEDS: D(proceeds),
+            DISPOSITION_ADJUSTED_COST_BASE: D(cost_base),
+            DISPOSITION_OUTLAYS: D(outlays),
+        }
+        for proceeds, cost_base, outlays in rows
+    ]
+    return Artifact(kind, RecordList(kind.fields, records))
+
+
 def compute(
     employment_income: str,
-    capital_gain: str,
+    share_dispositions: tuple[Disposition, ...],
     unused_rrsp_contributions: str,
     rrsp_contributions: str,
     rrsp_deduction_limit: str,
     rrsp_amount_deducted: str,
     union_dues: str,
     *,
+    qsbcs_dispositions: tuple[Disposition, ...] = (),
+    qffp_dispositions: tuple[Disposition, ...] = (),
+    qffp_foreclosure_dispositions: tuple[Disposition, ...] = (),
+    real_estate_dispositions: tuple[Disposition, ...] = (),
+    bond_dispositions: tuple[Disposition, ...] = (),
+    crypto_asset_dispositions: tuple[Disposition, ...] = (),
+    other_foreclosure_dispositions: tuple[Disposition, ...] = (),
+    personal_use_property_dispositions: tuple[Disposition, ...] = (),
+    listed_personal_property_dispositions: tuple[Disposition, ...] = (),
+    unapplied_listed_personal_property_losses: str = "0",
+    capital_gains_deferral: str = "0",
+    slip_capital_gains_or_losses: str = "0",
+    t3_capital_gains_or_losses: str = "0",
+    capital_gains_reserves: str = "0",
     other_employment_income: str = "0",
     old_age_security: str = "0",
     cpp_or_qpp_benefits: str = "0",
@@ -705,6 +758,7 @@ def compute(
     caregiver_dependants: tuple[tuple[str, int], ...] = (),
     disability_dependants: tuple[tuple[int, str, str, str], ...] = (),
     ontario_disability_dependants: tuple[tuple[int, str, str, str], ...] = (),
+    ontario_disability_amount_for_self: str = "0",
     child_care_expenses_paid: str = "0",
     children_under_seven: int = 0,
     children_with_disability: int = 0,
@@ -776,6 +830,10 @@ def compute(
     spouse_rdsp_income_repayment: str = "0",
     spouse_universal_child_care_benefit: str = "0",
     spouse_rdsp_income: str = "0",
+    split_income_dividends: str = "0",
+    split_income_dividends_other_than_eligible: str = "0",
+    other_split_income: str = "0",
+    disability_amount_for_self: str = "0",
     unapplied_net_capital_losses_1985_to_1987: str = "0",
     unapplied_net_capital_losses_1988_and_1989: str = "0",
     unapplied_net_capital_losses_1990_to_1999: str = "0",
@@ -807,7 +865,23 @@ def compute(
         CA_ON,
         2025,
         Artifact(EMPLOYMENT_INCOME, D(employment_income)),
-        Artifact(CAPITAL_GAIN, D(capital_gain)),
+        dispositions(QSBCS_DISPOSITIONS, *qsbcs_dispositions),
+        dispositions(QFFP_DISPOSITIONS, *qffp_dispositions),
+        dispositions(QFFP_FORECLOSURE_DISPOSITIONS, *qffp_foreclosure_dispositions),
+        dispositions(SHARE_DISPOSITIONS, *share_dispositions),
+        dispositions(REAL_ESTATE_DISPOSITIONS, *real_estate_dispositions),
+        dispositions(BOND_DISPOSITIONS, *bond_dispositions),
+        dispositions(CRYPTO_ASSET_DISPOSITIONS, *crypto_asset_dispositions),
+        dispositions(OTHER_FORECLOSURE_DISPOSITIONS, *other_foreclosure_dispositions),
+        dispositions(PERSONAL_USE_PROPERTY_DISPOSITIONS, *personal_use_property_dispositions),
+        dispositions(LISTED_PERSONAL_PROPERTY_DISPOSITIONS, *listed_personal_property_dispositions),
+        Artifact(
+            UNAPPLIED_LISTED_PERSONAL_PROPERTY_LOSSES, D(unapplied_listed_personal_property_losses)
+        ),
+        Artifact(CAPITAL_GAINS_DEFERRAL, D(capital_gains_deferral)),
+        Artifact(SLIP_CAPITAL_GAINS_OR_LOSSES, D(slip_capital_gains_or_losses)),
+        Artifact(T3_CAPITAL_GAINS_OR_LOSSES, D(t3_capital_gains_or_losses)),
+        Artifact(CAPITAL_GAINS_RESERVES, D(capital_gains_reserves)),
         Artifact(OTHER_EMPLOYMENT_INCOME, D(other_employment_income)),
         Artifact(OLD_AGE_SECURITY, D(old_age_security)),
         Artifact(CPP_OR_QPP_BENEFITS, D(cpp_or_qpp_benefits)),
@@ -1037,6 +1111,7 @@ def compute(
                 ],
             ),
         ),
+        Artifact(ontario.DISABILITY_AMOUNT_FOR_SELF, D(ontario_disability_amount_for_self)),
         Artifact(
             ontario.DISABILITY_DEPENDANTS,
             RecordList(
@@ -1160,6 +1235,13 @@ def compute(
         Artifact(SPOUSE_RDSP_INCOME_REPAYMENT, D(spouse_rdsp_income_repayment)),
         Artifact(SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT, D(spouse_universal_child_care_benefit)),
         Artifact(SPOUSE_RDSP_INCOME, D(spouse_rdsp_income)),
+        Artifact(SPLIT_INCOME_DIVIDENDS, D(split_income_dividends)),
+        Artifact(
+            SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+            D(split_income_dividends_other_than_eligible),
+        ),
+        Artifact(OTHER_SPLIT_INCOME, D(other_split_income)),
+        Artifact(DISABILITY_AMOUNT_FOR_SELF, D(disability_amount_for_self)),
         Artifact(
             UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987, D(unapplied_net_capital_losses_1985_to_1987)
         ),
@@ -1210,7 +1292,14 @@ def compute(
 def return_a() -> Worksheet:
     """Return A's inputs, as in `returns/2025_return_a.yaml`, with its chosen tax deducted."""
     return compute(
-        "110000", "20000", "0", "1926", "19800", "1926", "2000", income_tax_deducted="25000"
+        "110000",
+        (("20000", "0", "0"),),
+        "0",
+        "1926",
+        "19800",
+        "1926",
+        "2000",
+        income_tax_deducted="25000",
     )
 
 
@@ -1224,7 +1313,7 @@ def return_f_with_credits(
     """Return F's inputs, as in `returns/2025_return_f.yaml`, with the ON479 amounts given."""
     return compute(
         "60000",
-        "0",
+        (),
         "0",
         "0",
         "10800",
@@ -1259,7 +1348,7 @@ def return_k() -> Worksheet:
     """Return K's inputs, as in `returns/2025_return_k.yaml`: slip and no-slip dividends."""
     return compute(
         "50000",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -1285,9 +1374,9 @@ def return_w(**overrides: Any) -> Worksheet:
         "infirm_dependants": ("5000", "25000"),
         "caregiver_dependants": (("5000", 0), ("25000", 0)),
     }
-    return compute("48000", "0", "0", "0", "8640", "0", "0", **{**given, **overrides})
+    return compute("48000", (), "0", "0", "8640", "0", "0", **{**given, **overrides})
 
 
 def step_3(**amounts: Any) -> Worksheet:
     """A return with no income, no CPP, no RRSP and no deductions but the keyword `amounts`."""
-    return compute("0", "0", "0", "0", "0", "0", "0", **amounts)
+    return compute("0", (), "0", "0", "0", "0", "0", **amounts)

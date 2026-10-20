@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 445
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 494
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -51,6 +51,41 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
     assert {i for i in shared.identifiers() if i.startswith("ca/")} == {
         "ca/employment_income",
         "ca/capital_gain",
+        "ca/qsbcs_dispositions",
+        "ca/qffp_dispositions",
+        "ca/qffp_foreclosure_dispositions",
+        "ca/share_dispositions",
+        "ca/real_estate_dispositions",
+        "ca/bond_dispositions",
+        "ca/crypto_asset_dispositions",
+        "ca/other_foreclosure_dispositions",
+        "ca/personal_use_property_dispositions",
+        "ca/listed_personal_property_dispositions",
+        "ca/disposition_proceeds",
+        "ca/disposition_adjusted_cost_base",
+        "ca/disposition_outlays",
+        "ca/qsbcs_gain_or_loss",
+        "ca/qffp_gain_or_loss",
+        "ca/qffp_foreclosure_gain_or_loss",
+        "ca/share_gain_or_loss",
+        "ca/real_estate_gain_or_loss",
+        "ca/bond_gain_or_loss",
+        "ca/crypto_asset_gain_or_loss",
+        "ca/other_foreclosure_gain_or_loss",
+        "ca/listed_personal_property_gain_or_loss",
+        "ca/capital_gains_of_qualified_and_other_properties",
+        "ca/capital_gains_after_deferral",
+        "ca/slip_capital_gains_or_losses",
+        "ca/t3_capital_gains_or_losses",
+        "ca/capital_gains_before_investment_loss_reduction",
+        "ca/capital_gains_before_reserves",
+        "ca/capital_gains_reserves",
+        "ca/included_capital_gain",
+        "ca/personal_use_property_gain_rows",
+        "ca/personal_use_property_gain",
+        "ca/unapplied_listed_personal_property_losses",
+        "ca/listed_personal_property_net_gain",
+        "ca/capital_gains_deferral",
         "ca/taxable_capital_gains",
         "ca/total_income",
         "ca/other_employment_income",
@@ -303,9 +338,15 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/cpp_enhanced_contributions",
         "ca/exploration_and_development_expenses",
         "ca/other_deductions",
+        "ca/split_income_dividends",
+        "ca/split_income_dividends_other_than_eligible",
+        "ca/other_split_income",
         "ca/deductions_from_total_income",
         "ca/net_income_before_adjustments",
         "ca/net_income",
+        "ca/total_split_income",
+        "ca/tosi_adjusted_net_income",
+        "ca/tosi_adjusted_net_income_not_below_zero",
         "ca/deductions_from_net_income",
         "ca/taxable_income",
         "ca/federal_basic_tax",
@@ -441,6 +482,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/dependant_taxable_income",
         "ca/disability_dependants",
         "ca/disability_transferred_amount",
+        "ca/disability_amount_for_self",
         "ca/residence_years_designated_after_1981",
         "ca/residence_years_designated_1972_to_1981",
         "ca/residence_years_owned_after_1981",
@@ -494,6 +536,8 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/canada_employment_amount",
         "ca/non_refundable_credit_amounts",
         "ca/non_refundable_tax_credits",
+        "ca/federal_tax_on_split_income",
+        "ca/federal_tax_with_split_income",
         "ca/federal_tax_after_credits",
         "ca/itc_recapture_expenditure_at_15_percent",
         "ca/itc_recapture_expenditure_at_20_percent",
@@ -560,6 +604,18 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/resp_aips_part_b_tax",
         "ca/resp_aips_additional_tax",
         "ca/special_taxes",
+        "ca/split_income_line_10",
+        "ca/split_income_line_13",
+        "ca/split_income_line_14",
+        "ca/split_income_line_15",
+        "ca/split_income_line_18",
+        "ca/split_income_line_19",
+        "ca/split_income_line_20",
+        "ca/split_income_line_21",
+        "ca/split_income_line_22",
+        "ca/split_income_line_24",
+        "ca/split_income_line_29",
+        "ca/split_income_line_30",
         "ca/net_federal_tax",
         "ca/total_payable",
         "ca/income_tax_deducted",
@@ -739,6 +795,21 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca-on/community_food_program_donations",
         "ca-on/community_food_program_credit",
         "ca-on/ontario_tax_after_food_credit",
+        "ca-on/disability_amount_for_self",
+        "ca-on/health_premium_income",
+        "ca-on/ontario_surtax_base",
+        "ca-on/ontario_tax_on_split_income",
+        "ca-on/ontario_tax_on_split_income_for_surtax",
+        "ca-on/ontario_tax_with_split_income",
+        "ca-on/split_income_line_36",
+        "ca-on/split_income_line_38",
+        "ca-on/split_income_line_39",
+        "ca-on/split_income_line_42",
+        "ca-on/split_income_line_45",
+        "ca-on/split_income_line_46",
+        "ca-on/split_income_line_47",
+        "ca-on/split_income_line_50",
+        "ca-on/split_income_line_52",
         "ca-on/ontario_health_premium",
         "ca-on/ontario_tax",
         "ca-on/fertility_expenses",
@@ -832,13 +903,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 445
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 494
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 445
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 494
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

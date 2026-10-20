@@ -233,7 +233,7 @@ def landlord(
         "rental_expenses": {"insurance": ("12000", "0", "0")},
         "rental_cca_classes_rows": classes,
     }
-    return compute("0", "0", "0", "0", "0", "0", "0", **{**inputs, **overrides})
+    return compute("0", (), "0", "0", "0", "0", "0", **{**inputs, **overrides})
 
 
 def test_a_recapture_row_adds_the_negative_column_7_to_line_9947() -> None:

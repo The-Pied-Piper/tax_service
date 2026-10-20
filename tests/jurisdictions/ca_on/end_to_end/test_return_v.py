@@ -36,6 +36,9 @@ from app.jurisdictions.ca.catalog import (
     RESP_AIPS_SUBJECT_TO_TAX,
     RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
     SPECIAL_TAXES,
+    SPLIT_INCOME_LINE_24,
+    SPLIT_INCOME_LINE_29,
+    SPLIT_INCOME_LINE_30,
     TOTAL_CREDITS,
     TOTAL_PAYABLE,
 )
@@ -73,7 +76,7 @@ def return_v(
     """
     return compute(
         "50000",
-        "0",
+        (),
         "0",
         "0",
         "9000",
@@ -225,7 +228,7 @@ def test_a_credit_above_the_federal_tax_with_the_recapture_leaves_zero_on_line_1
     # -650.00, and the unused credit is lost.
     worksheet = compute(
         "10000",
-        "0",
+        (),
         "0",
         "0",
         "1800",
@@ -409,8 +412,10 @@ def test_line_13_is_20_percent_of_line_11(aips: str, tax: str) -> None:
     assert worksheet.get(RESP_AIPS_PART_B_TAX).value == D(tax)
 
 
-def test_return_vs_net_federal_tax_adds_lines_139_140_and_141_in_line_order() -> None:
-    # 3977.93 (139) + 300 (140, the advanced Canada workers benefit) + 2150.00 (141) = 6427.93.
+def test_return_vs_net_federal_tax_adds_t1206_line_30_and_line_41800_in_that_order() -> None:
+    # Form T1206 Part 2 line 29 is 3977.93 (139) + 300 (140, the advanced Canada workers benefit)
+    # = 4277.93, which is more than line 24 (300.00, the benefit alone), so line 30 is 4277.93;
+    # adding line 41800, 2150.00 (141), gives 6427.93.
     worksheet = return_v()
 
     assert worksheet.get(ADVANCED_CANADA_WORKERS_BENEFIT).value == D("300")
@@ -421,14 +426,31 @@ def test_return_vs_net_federal_tax_adds_lines_139_140_and_141_in_line_order() ->
         if isinstance(line, SumLine) and line.output == NET_FEDERAL_TAX
     ]
     assert line.parts == (
+        (SPLIT_INCOME_LINE_30, D("4277.93")),
+        (SPECIAL_TAXES, D("2150.00")),
+    )
+    # Line 10 is 0.00 + 300, so line 22 and line 24 are 300.00, under line 29.
+    assert worksheet.get(SPLIT_INCOME_LINE_24).value == D("300.00")
+    (line_29,) = [
+        line
+        for line in worksheet.trace
+        if isinstance(line, SumLine) and line.output == SPLIT_INCOME_LINE_29
+    ]
+    assert line_29.parts == (
         (FEDERAL_TAX_LESS_CREDITS, D("3977.93")),
         (ADVANCED_CANADA_WORKERS_BENEFIT, D("300")),
-        (SPECIAL_TAXES, D("2150.00")),
     )
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
-        "net_federal_tax: federal_tax_less_credits 3977.93 + advanced_canada_workers_benefit 300 "
-        "+ special_taxes 2150 = 6427.93"
+        "split_income_line_29: federal_tax_less_credits 3977.93 "
+        "+ advanced_canada_workers_benefit 300 = 4277.93"
+    ) in rendered
+    assert (
+        "split_income_line_30: greater of split_income_line_24 300 "
+        "and split_income_line_29 4277.93 = 4277.93"
+    ) in rendered
+    assert (
+        "net_federal_tax: split_income_line_30 4277.93 + special_taxes 2150 = 6427.93"
     ) in rendered
 
 

@@ -32,7 +32,7 @@ def return_aa(**overrides: Any) -> Worksheet:
         "lift_spouse_at_year_end": 1,
         "spouse_net_income_before_adjustments": "50000",
     }
-    return compute("25217.17", "0", "0", "0", "4500", "0", "0", **{**given, **overrides})
+    return compute("25217.17", (), "0", "0", "4500", "0", "0", **{**given, **overrides})
 
 
 def test_return_aas_lift_credit_is_375_from_part_b_and_comes_off_the_ontario_tax() -> None:

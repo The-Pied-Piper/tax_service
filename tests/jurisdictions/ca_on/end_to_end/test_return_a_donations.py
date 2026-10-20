@@ -81,7 +81,7 @@ def test_return_is_community_food_program_credit_comes_off_the_tax_after_the_lif
     # = 794.50, a balance owing.
     worksheet = compute(
         "48000",
-        "0",
+        (),
         "0",
         "0",
         "8640",
@@ -113,7 +113,7 @@ def test_return_is_community_food_program_credit_comes_off_the_tax_after_the_lif
         "less community_food_program_credit 250, not below 0 = 1234.56"
     ) in rendered
     assert (
-        "ontario_tax: ontario_tax_after_food_credit 1234.56 + ontario_health_premium 450 = 1684.56"
+        "ontario_tax: split_income_line_52 1234.56 + ontario_health_premium 450 = 1684.56"
     ) in rendered
 
 
@@ -122,7 +122,7 @@ def test_donations_without_a_larger_line_86_leave_line_88_at_zero_not_negative()
     # donations of 4000 give line 87 = 25% x 4000 = 1000.00, more than line 86, so line 88 is 0,
     # not negative, and line 90 is the health premium of 450 alone.
     worksheet = compute(
-        "40000", "0", "0", "0", "7200", "0", "0", community_food_program_donations="4000"
+        "40000", (), "0", "0", "7200", "0", "0", community_food_program_donations="4000"
     )
 
     assert worksheet.get(ONTARIO_TAX_AFTER_LIFT_CREDIT).value == D("715.23")
@@ -139,7 +139,7 @@ def test_donations_without_a_larger_line_86_leave_line_88_at_zero_not_negative()
 
 def test_no_donations_leave_line_88_at_line_86() -> None:
     # The default of 0 donations, as for Returns A to H: line 87 is 0 and line 88 is line 86.
-    worksheet = compute("40000", "0", "0", "0", "7200", "0", "0")
+    worksheet = compute("40000", (), "0", "0", "7200", "0", "0")
 
     assert worksheet.get(COMMUNITY_FOOD_PROGRAM_DONATIONS).value == D("0")
     assert worksheet.get(COMMUNITY_FOOD_PROGRAM_CREDIT).value == D("0")
@@ -170,7 +170,7 @@ def test_return_ns_donations_and_gifts_credit_and_top_up_come_off_the_federal_ta
     # 233.32, a balance owing.
     worksheet = compute(
         "48000",
-        "0",
+        (),
         "0",
         "0",
         "8640",
@@ -259,7 +259,7 @@ def test_return_ns_donations_and_gifts_credit_and_top_up_come_off_the_federal_ta
         "+ dividend_tax_credit 0 = 3391.54"
     ) in rendered
     assert (
-        "federal_tax_after_credits: federal_basic_tax 6895.48 "
+        "federal_tax_after_credits: federal_tax_with_split_income 6895.48 "
         "less credits_against_basic_federal_tax 3391.54, not below 0 = 3503.94"
     ) in rendered
     assert (
@@ -282,7 +282,7 @@ def test_return_ns_donations_and_gifts_credit_and_top_up_come_off_the_federal_ta
         "less non_refundable_tax_credits 949.9, not below 0 = 1451.63"
     ) in rendered
     assert (
-        "ontario_tax: ontario_tax_after_food_credit 1079.38 + ontario_health_premium 450 = 1529.38"
+        "ontario_tax: split_income_line_52 1079.38 + ontario_health_premium 450 = 1529.38"
     ) in rendered
 
 
@@ -297,7 +297,7 @@ def test_taxable_income_over_the_threshold_is_charged_33_percent_up_to_line_16()
     # amount at or above 253,414) + 3356.10 + 1077.48 + 1471 = 20442.58, and line 33800 = 14.5% x
     # it = 2964.1741, rounded half-up to the cent: 2964.17; the top-up base 2964.17 + 29.00 is
     # below 8319.38, so line 34990 is 0; line 35000 = 2964.17 + 16349.48 + 0.00 = 19313.65.
-    worksheet = compute("300000", "0", "0", "0", "0", "0", "0", charitable_donations="50200")
+    worksheet = compute("300000", (), "0", "0", "0", "0", "0", charitable_donations="50200")
 
     assert worksheet.get(NET_INCOME).value == D("298926.00")
     assert worksheet.get(TAXABLE_INCOME).value == D("298926.00")
@@ -350,7 +350,7 @@ def test_the_top_up_tax_credit_is_3_45_percent_of_the_credits_over_8319_38() -> 
     # cent: 18.61 (line 34990). Line 35000 = 8829.77 + 406.00 + 18.61 = 9254.38, more than the
     # federal basic tax of 6895.48, so the federal tax after credits is 0.
     worksheet = compute(
-        "48000", "0", "0", "0", "8640", "0", "0", infirm_children=15, charitable_donations="1500"
+        "48000", (), "0", "0", "8640", "0", "0", infirm_children=15, charitable_donations="1500"
     )
 
     assert worksheet.get(INFIRM_CHILDREN_AMOUNT).value == D("40305.00")
@@ -390,7 +390,7 @@ def test_gifts_of_capital_property_raise_the_donation_limit_above_75_percent_of_
     # 23 = 10749.21.
     worksheet = compute(
         "48000",
-        "0",
+        (),
         "0",
         "0",
         "8640",
@@ -439,7 +439,7 @@ def test_ecological_and_cultural_gifts_join_line_12_and_those_before_2016_come_o
     # 23 = 19191.48. The 4000 made before 2016 is in line G, at 29%, not at 33%.
     worksheet = compute(
         "300000",
-        "0",
+        (),
         "0",
         "0",
         "0",
@@ -470,7 +470,7 @@ def test_ecological_and_cultural_gifts_join_line_12_and_those_before_2016_come_o
 def test_no_donations_leave_the_federal_credits_at_the_credit_rate() -> None:
     # The defaults of 0, as for Returns A to I: lines 34900 and 34990 are 0.00, so line 35000 is
     # line 33800 alone.
-    worksheet = compute("40000", "0", "0", "0", "7200", "0", "0")
+    worksheet = compute("40000", (), "0", "0", "7200", "0", "0")
 
     assert worksheet.get(DONATIONS_AND_GIFTS_CREDIT).value == D("0.00")
     assert worksheet.get(TOP_UP_TAX_CREDIT).value == D("0.00")
@@ -483,7 +483,7 @@ def test_no_donations_leave_the_federal_credits_at_the_credit_rate() -> None:
 def test_no_donations_leave_the_ontario_credits_at_the_credit_rate() -> None:
     # The defaults of 0, as for Returns A to M: lines 47 to 49 are 0.00, so line 50 is line 46
     # alone.
-    worksheet = compute("40000", "0", "0", "0", "7200", "0", "0")
+    worksheet = compute("40000", (), "0", "0", "7200", "0", "0")
 
     assert worksheet.get(ontario.DONATIONS_FIRST_TIER_CREDIT).value == D("0.00")
     assert worksheet.get(ontario.DONATIONS_OVER_FIRST_TIER_CREDIT).value == D("0.00")
@@ -513,7 +513,7 @@ def test_the_ontario_donations_credit_follows_schedule_9_lines_13_and_14(
     charitable_donations: str, line_47: str, line_48: str, line_49: str
 ) -> None:
     worksheet = compute(
-        "48000", "0", "0", "0", "8640", "0", "0", charitable_donations=charitable_donations
+        "48000", (), "0", "0", "8640", "0", "0", charitable_donations=charitable_donations
     )
 
     assert worksheet.get(ontario.DONATIONS_FIRST_TIER_CREDIT).value == D(line_47)

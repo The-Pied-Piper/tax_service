@@ -21,6 +21,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_NET_INCOME,
     SPOUSES_CLAIMED,
     TAXABLE_INCOME,
+    TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.capabilities.caregiver_amount import OntarioCaregiverAmount
@@ -37,6 +38,7 @@ from app.jurisdictions.ca_on.catalog import (
 INPUTS = frozenset(
     {
         "ca-on/caregiver_dependants",
+        "ca-on/disability_amount_for_self",
         "ca-on/disability_dependants",
     }
 )
@@ -73,12 +75,16 @@ STEPS = {
         consumes={},
         produces={"output": "ca-on/age_income_threshold"},
     ),
-    # Line 2 "Amount from line 23600 of your return", the net income, and line 4 "Line 2
-    # minus line 3 (if negative, enter "0")".
+    # Line 2 "Amount from line 23600 of your return", the TOSI-adjusted net income of Form T1206
+    # Part 1 line 6 in its place, not below zero, and line 4 "Line 2 minus line 3 (if negative,
+    # enter "0")".
     CapabilitySelection(
         name="core/subtract_not_below_zero",
         params={},
-        consumes={"amount": "ca/net_income", "less": "ca-on/age_income_threshold"},
+        consumes={
+            "amount": "ca/tosi_adjusted_net_income_not_below_zero",
+            "less": "ca-on/age_income_threshold",
+        },
         produces={"output": "ca-on/age_income_over_threshold"},
     ),
     # Line 5 "Applicable rate 15%" and line 6 "Line 4 multiplied by the percentage from line
@@ -290,7 +296,7 @@ WIRING = {
     (CreditAmount, frozenset(), frozenset({ontario.AGE_INCOME_THRESHOLD})),
     (
         SubtractNotBelowZero,
-        frozenset({NET_INCOME, ontario.AGE_INCOME_THRESHOLD}),
+        frozenset({TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO, ontario.AGE_INCOME_THRESHOLD}),
         frozenset({ontario.AGE_INCOME_OVER_THRESHOLD}),
     ),
     (

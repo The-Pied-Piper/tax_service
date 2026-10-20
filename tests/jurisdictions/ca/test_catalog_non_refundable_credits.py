@@ -36,7 +36,9 @@ from app.jurisdictions.ca.catalog import (
     ECOLOGICAL_GIFTS_BEFORE_2016,
     EI_PREMIUMS,
     EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+    FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
+    FEDERAL_TAX_WITH_SPLIT_INCOME,
     FIRST_TIER_DONATION_CREDIT,
     FOREIGN_CHARITY_DONATIONS,
     GOVERNMENT_DONATIONS,
@@ -137,6 +139,8 @@ def test_the_non_refundable_credits_kinds_are_the_registered_ones(
     assert registry.get("ca/top_up_threshold") is TOP_UP_THRESHOLD
     assert registry.get("ca/top_up_excess") is TOP_UP_EXCESS
     assert registry.get("ca/top_up_tax_credit") is TOP_UP_TAX_CREDIT
+    assert registry.get("ca/federal_tax_on_split_income") is FEDERAL_TAX_ON_SPLIT_INCOME
+    assert registry.get("ca/federal_tax_with_split_income") is FEDERAL_TAX_WITH_SPLIT_INCOME
 
 
 def test_the_non_refundable_credits_kinds_are_money() -> None:
@@ -193,5 +197,15 @@ def test_the_non_refundable_credits_kinds_are_money() -> None:
         TOP_UP_THRESHOLD,
         TOP_UP_EXCESS,
         TOP_UP_TAX_CREDIT,
+        FEDERAL_TAX_ON_SPLIT_INCOME,
+        FEDERAL_TAX_WITH_SPLIT_INCOME,
     ):
         assert kind.value_type is Decimal, kind.identifier
+
+
+def test_the_federal_tax_on_split_income_lines_are_non_negative(registry: ArtifactRegistry) -> None:
+    # T1 line 120 is 33% of a non-negative amount and line 121 "Line 119 plus line 120 =" adds two
+    # non-negative taxes.
+    for kind in (FEDERAL_TAX_ON_SPLIT_INCOME, FEDERAL_TAX_WITH_SPLIT_INCOME):
+        assert kind.non_negative is True, kind.identifier
+        assert registry.kind(kind.identifier) is kind

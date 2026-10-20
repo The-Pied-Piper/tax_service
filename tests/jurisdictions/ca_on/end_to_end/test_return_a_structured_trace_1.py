@@ -51,9 +51,11 @@ from app.jurisdictions.ca.catalog import (
     EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
     ELIGIBLE_DIVIDENDS_CREDIT,
     EMPLOYMENT_INCOME,
+    FEDERAL_TAX_ON_SPLIT_INCOME,
     FIRST_TIER_DONATION_CREDIT,
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
+    INCLUDED_CAPITAL_GAIN,
     ITC_RECAPTURE_AT_15_PERCENT,
     ITC_RECAPTURE_AT_20_PERCENT,
     ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT,
@@ -83,9 +85,15 @@ from app.jurisdictions.ca.catalog import (
     RESP_AIPS_SUBJECT_TO_TAX,
     SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS,
     SELF_EMPLOYED_CPP_BASE_CREDIT,
-    TAXABLE_CAPITAL_GAINS,
+    SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    SPLIT_INCOME_LINE_13,
+    SPLIT_INCOME_LINE_14,
+    SPLIT_INCOME_LINE_18,
+    SPLIT_INCOME_LINE_19,
+    SPLIT_INCOME_LINE_20,
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
+    TOTAL_SPLIT_INCOME,
     TRAVEL_TOTAL_ZONE_B,
     TRAVEL_ZONE_B_DEDUCTION,
 )
@@ -262,8 +270,49 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CENT,
             D("0"),
         ),
-        TAXABLE_CAPITAL_GAINS: RateAppliedLine(
-            TAXABLE_CAPITAL_GAINS, CAPITAL_GAIN, D("20000"), Rate(D("0.5")), CENT, D("10000")
+        # Form T1206 Part 3 lines 33 (20.53% of the total split income), 38 (5.05% of line 36),
+        # 42 (10% of the line 18 amount) and 45 (2.9863% of the line 2 amount), on no split income.
+        ontario.ONTARIO_TAX_ON_SPLIT_INCOME: RateAppliedLine(
+            ontario.ONTARIO_TAX_ON_SPLIT_INCOME,
+            TOTAL_SPLIT_INCOME,
+            D("0"),
+            Rate(D("0.2053")),
+            CENT,
+            D("0"),
+        ),
+        ontario.SPLIT_INCOME_LINE_38: RateAppliedLine(
+            ontario.SPLIT_INCOME_LINE_38,
+            ontario.SPLIT_INCOME_LINE_36,
+            D("0"),
+            Rate(D("0.0505")),
+            CENT,
+            D("0"),
+        ),
+        ontario.SPLIT_INCOME_LINE_42: RateAppliedLine(
+            ontario.SPLIT_INCOME_LINE_42,
+            SPLIT_INCOME_LINE_18,
+            D("0"),
+            Rate(D("0.1")),
+            CENT,
+            D("0"),
+        ),
+        ontario.SPLIT_INCOME_LINE_45: RateAppliedLine(
+            ontario.SPLIT_INCOME_LINE_45,
+            SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+            D("0"),
+            Rate(D("0.029863")),
+            CENT,
+            D("0"),
+        ),
+        # Schedule 3 Part 5 line 24 "Line 22 multiplied by the percentage on line 23": Return A's
+        # line 22 (line 21, 19700) is the 20000 of its one share row.
+        INCLUDED_CAPITAL_GAIN: RateAppliedLine(
+            INCLUDED_CAPITAL_GAIN,
+            CAPITAL_GAIN,
+            D("20000"),
+            Rate(D("0.5")),
+            CENT,
+            D("10000"),
         ),
         CREDIT_AMOUNTS_AT_CREDIT_RATE: RateAppliedLine(
             CREDIT_AMOUNTS_AT_CREDIT_RATE,
@@ -279,6 +328,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # "multiplied by 14.5%": Return A has donations of 0, so every line but line 6 is 0.
         DONATION_LIMIT_ON_NET_INCOME: RateAppliedLine(
             DONATION_LIMIT_ON_NET_INCOME, NET_INCOME, D("115000"), Rate(D("0.75")), CENT, D("86250")
+        ),
+        # Form T1206 Part 2 line 8 "Amount from line 7 multiplied by 33%" (line 7 being line 4),
+        # line 14 "Line 13" "× 14.5%", line 19 "Line 17" "× 9.0301%" and line 20 "Line 18"
+        # "× 15.0198%": all 0 for Return A, which has no split income.
+        FEDERAL_TAX_ON_SPLIT_INCOME: RateAppliedLine(
+            FEDERAL_TAX_ON_SPLIT_INCOME, TOTAL_SPLIT_INCOME, D("0"), Rate(D("0.33")), CENT, D("0")
+        ),
+        SPLIT_INCOME_LINE_14: RateAppliedLine(
+            SPLIT_INCOME_LINE_14, SPLIT_INCOME_LINE_13, D("0"), Rate(D("0.145")), CENT, D("0")
+        ),
+        SPLIT_INCOME_LINE_19: RateAppliedLine(
+            SPLIT_INCOME_LINE_19,
+            SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+            D("0"),
+            Rate(D("0.090301")),
+            CENT,
+            D("0"),
+        ),
+        SPLIT_INCOME_LINE_20: RateAppliedLine(
+            SPLIT_INCOME_LINE_20, SPLIT_INCOME_LINE_18, D("0"), Rate(D("0.150198")), CENT, D("0")
         ),
         # T1 line 108 "Amount from line 23600 multiplied by 3%".
         MEDICAL_NET_INCOME_SHARE: RateAppliedLine(
