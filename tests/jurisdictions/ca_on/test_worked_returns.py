@@ -512,6 +512,19 @@ def test_return_x_claims_two_other_dependants_medical_expenses_on_line_33199() -
     assert other.value == Decimal("2700.00")
     (claim,) = [a for a in worked.expected if a.kind.identifier == "ca/medical_claim"]
     assert claim.value == Decimal("5773.35")
+    # ON428 line 42 (line 58729) and line 43 (line 58769), over the same list and expenses.
+    (ontario_other,) = [
+        a for a in worked.expected if a.kind.identifier == "ca-on/other_dependants_medical"
+    ]
+    assert ontario_other.value == Decimal("2700.00")
+    (ontario_claim,) = [a for a in worked.expected if a.kind.identifier == "ca-on/medical_claim"]
+    assert ontario_claim.value == Decimal("5773.35")
+    (ontario_amounts,) = [
+        a for a in worked.expected if a.kind.identifier == "ca-on/non_refundable_credit_amounts"
+    ]
+    assert ontario_amounts.value == Decimal("21510.30")
+    (refund,) = [a for a in worked.expected if a.kind.identifier == "ca/refund_or_balance_owing"]
+    assert refund.value == Decimal("-334.19")
     check(path)
 
 
