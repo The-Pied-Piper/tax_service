@@ -94,6 +94,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_LIMIT_INCOME,
     OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
+    OTHER_SPLIT_INCOME,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
@@ -110,12 +111,16 @@ from app.jurisdictions.ca.catalog import (
     SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     SELF_EMPLOYED_EI_PREMIUMS,
+    SPLIT_INCOME_DIVIDENDS,
     STANDARD_AMOUNT_ALLOCATED,
     SUPPORT_PAYMENTS_DEDUCTION,
+    TOSI_ADJUSTED_NET_INCOME,
+    TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOTAL_CARRYING_CHARGES,
     TOTAL_INCOME,
     TOTAL_INTEREST_EXPENSES,
     TOTAL_OTHER_EXPENSES,
+    TOTAL_SPLIT_INCOME,
     TRAVEL_DEDUCTION,
     TRAVEL_INDIVIDUALS,
     TRAVEL_TOTAL_ZONE_A,
@@ -163,6 +168,9 @@ INPUTS = frozenset(
         "ca/support_payments_deduction",
         "ca/exploration_and_development_expenses",
         "ca/other_deductions",
+        "ca/split_income_dividends",
+        "ca/split_income_dividends_other_than_eligible",
+        "ca/other_split_income",
         "ca/total_carrying_charges",
         "ca/total_interest_expenses",
         "ca/total_other_expenses",
@@ -634,8 +642,10 @@ STEPS = {
     ),
     # T1 line 53 and line 23300 "Add lines 35 to 52.": the deductions wired so far in the form's
     # line order (20700, 20800, 20805, 21000, 21200, 21300, 21400, 21700, 22000, 22100, 22200,
-    # 22215, 22400, 23200). Not wired yet: 21500, 21900, 22900 and 23100; lines 20810 and 21999 have
-    # no line among lines 35 to 52 and nothing on this return reads them.
+    # 22215, 22400, 23200), line 23200 being the caller's other deductions and then the total split
+    # income of Form T1206 Part 1 line 4 ("Enter this amount on line 23200 of your return."). Not
+    # wired yet: 21500, 21900, 22900 and 23100; lines 20810 and 21999 have no line among lines 35
+    # to 52 and nothing on this return reads them.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -655,6 +665,7 @@ STEPS = {
                 "ca/cpp_enhanced_contributions",
                 "ca/exploration_and_development_expenses",
                 "ca/other_deductions",
+                "ca/total_split_income",
             )
         },
         produces={"output": "ca/deductions_from_total_income"},
@@ -674,6 +685,55 @@ STEPS = {
         params={},
         consumes={"amount": "ca/total_income", "less": "ca/deductions_from_total_income"},
         produces={"output": "ca/net_income"},
+    ),
+    # Form T1206 Part 1 "TOSI-adjusted net income", line 4 (68360) "Total split income: line 1 plus
+    # line 3 Enter this amount on line 23200 of your return.": line 1 (68330) "Part of the taxable
+    # amount of dividends (eligible and other than eligible) described in the information section
+    # received from taxable Canadian corporations" and line 3 "All other split income (see "Split
+    # income" on page 1)", the caller's amounts as the form takes them; line 2 (68340) "Part of the
+    # taxable amount of dividends other than eligible dividends, included on line 1, from taxable
+    # Canadian corporations" is the caller's too and is read by Part 2. Line 4 is a part of the T1
+    # line 23300 sum above.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/split_income_dividends",
+                "ca/other_split_income",
+            )
+        },
+        produces={"output": "ca/total_split_income"},
+    ),
+    # Line 5 "Net income from line 23600 of your tax return (or the amount you would have entered if
+    # the instructions on line 23600 read "if negative, show in brackets")" is the net income before
+    # adjustments (line 23400), and line 6 "TOSI-adjusted net income: line 4 plus line 5 If
+    # negative, enter the result in brackets" is their sum, signed.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/total_split_income",
+                "ca/net_income_before_adjustments",
+            )
+        },
+        produces={"output": "ca/tosi_adjusted_net_income"},
+    ),
+    # "(If the TOSI–adjusted net income at line 6 is negative, use the negative value when it is
+    # part of an adjusted net income calculation, otherwise use zero.)": the same sum, not below
+    # zero, for the federal amounts that read it otherwise (the basic personal amount on line 30000,
+    # the age amount on line 30100 and line 7 of Schedule 6).
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={
+            "parts": (
+                "ca/total_split_income",
+                "ca/net_income_before_adjustments",
+            )
+        },
+        produces={"output": "ca/tosi_adjusted_net_income_not_below_zero"},
     ),
     # Federal Worksheet "Line 25000 - Other payments deduction", "Complete the following
     # calculation if you reported net federal supplements on line 14600 of your return.":
@@ -1187,6 +1247,7 @@ WIRING = {
                 CPP_ENHANCED_CONTRIBUTIONS,
                 EXPLORATION_AND_DEVELOPMENT_EXPENSES,
                 OTHER_DEDUCTIONS,
+                TOTAL_SPLIT_INCOME,
             }
         ),
         frozenset({DEDUCTIONS_FROM_TOTAL_INCOME}),
@@ -1200,6 +1261,21 @@ WIRING = {
         SubtractNotBelowZero,
         frozenset({TOTAL_INCOME, DEDUCTIONS_FROM_TOTAL_INCOME}),
         frozenset({NET_INCOME}),
+    ),
+    (
+        Sum,
+        frozenset({SPLIT_INCOME_DIVIDENDS, OTHER_SPLIT_INCOME}),
+        frozenset({TOTAL_SPLIT_INCOME}),
+    ),
+    (
+        Sum,
+        frozenset({TOTAL_SPLIT_INCOME, NET_INCOME_BEFORE_ADJUSTMENTS}),
+        frozenset({TOSI_ADJUSTED_NET_INCOME}),
+    ),
+    (
+        SumNotBelowZero,
+        frozenset({TOTAL_SPLIT_INCOME, NET_INCOME_BEFORE_ADJUSTMENTS}),
+        frozenset({TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO}),
     ),
     (
         Sum,

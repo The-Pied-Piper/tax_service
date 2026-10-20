@@ -73,6 +73,7 @@ from app.jurisdictions.ca_on.catalog import (
     DEPENDANT_ON428_LINE_28,
     DEPENDANTS,
     DEPENDENT_CHILDREN,
+    DISABILITY_AMOUNT_FOR_SELF,
     DISABILITY_DEPENDANTS,
     DISABILITY_TRANSFERRED_AMOUNT,
     DIVIDEND_CREDIT_FROM_LINE_57,
@@ -95,6 +96,7 @@ from app.jurisdictions.ca_on.catalog import (
     FLOW_THROUGH_SHARE_EXPENSES,
     FLOW_THROUGH_SHARE_SLIP_EXPENSES,
     FLOW_THROUGH_SHARE_SLIPS,
+    HEALTH_PREMIUM_INCOME,
     LIFT_ADJUSTED_NET_INCOME,
     LIFT_CREDIT,
     LIFT_CREDIT_BEFORE_MAXIMUM,
@@ -132,6 +134,7 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_HEALTH_PREMIUM,
     ONTARIO_MINIMUM_TAX,
     ONTARIO_SURTAX,
+    ONTARIO_SURTAX_BASE,
     ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
     ONTARIO_TAX_AFTER_DIVIDEND_CREDIT,
@@ -141,8 +144,11 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT,
     ONTARIO_TAX_BEFORE_REDUCTION,
     ONTARIO_TAX_LESS_DIVIDEND_CREDIT,
+    ONTARIO_TAX_ON_SPLIT_INCOME,
+    ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS,
+    ONTARIO_TAX_WITH_SPLIT_INCOME,
     ONTARIO_TAX_WITH_SURTAX,
     OPPORTUNITIES_FUND_DONATION,
     OTHER_DEPENDANTS_MEDICAL,
@@ -183,6 +189,15 @@ from app.jurisdictions.ca_on.catalog import (
     SENIORS_TRANSIT_CREDIT,
     SENIORS_TRANSIT_PAID,
     SEPARATE_RESIDENCES_FOR_MEDICAL_REASONS,
+    SPLIT_INCOME_LINE_36,
+    SPLIT_INCOME_LINE_38,
+    SPLIT_INCOME_LINE_39,
+    SPLIT_INCOME_LINE_42,
+    SPLIT_INCOME_LINE_45,
+    SPLIT_INCOME_LINE_46,
+    SPLIT_INCOME_LINE_47,
+    SPLIT_INCOME_LINE_50,
+    SPLIT_INCOME_LINE_52,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BEFORE_COUNT,
     SPOUSE_AMOUNT_BEFORE_MAXIMUM,
@@ -291,6 +306,21 @@ REGISTERED = frozenset(
         "ca-on/community_food_program_donations",
         "ca-on/community_food_program_credit",
         "ca-on/ontario_tax_after_food_credit",
+        "ca-on/disability_amount_for_self",
+        "ca-on/health_premium_income",
+        "ca-on/ontario_surtax_base",
+        "ca-on/ontario_tax_on_split_income",
+        "ca-on/ontario_tax_on_split_income_for_surtax",
+        "ca-on/ontario_tax_with_split_income",
+        "ca-on/split_income_line_36",
+        "ca-on/split_income_line_38",
+        "ca-on/split_income_line_39",
+        "ca-on/split_income_line_42",
+        "ca-on/split_income_line_45",
+        "ca-on/split_income_line_46",
+        "ca-on/split_income_line_47",
+        "ca-on/split_income_line_50",
+        "ca-on/split_income_line_52",
         "ca-on/ontario_health_premium",
         "ca-on/ontario_tax",
         "ca-on/fertility_expenses",
@@ -420,11 +450,15 @@ RECORD_LISTS = frozenset(
 )
 # Schedule ON428-A lines 9, 21 and 24 print no "(if negative, enter "0")", and line 6 and line 21
 # take the net income "or the amount you would have entered if the instructions on line 23600
-# said "if negative, show in brackets"": signed kinds.
+# said "if negative, show in brackets"": signed kinds. So are Form T1206 Part 3 lines 39, 47 and 50
+# (line 47 "Line 39 minus line 46" may be negative: "Enter... amount from line 47 on line 50").
 SIGNED = frozenset(
     {
         "ca-on/lift_net_income_and_repayments",
         "ca-on/lift_spouse_net_income_and_repayments",
+        "ca-on/split_income_line_39",
+        "ca-on/split_income_line_47",
+        "ca-on/split_income_line_50",
     }
 )
 
@@ -593,6 +627,24 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     )
     assert registry.get("ca-on/community_food_program_credit") is COMMUNITY_FOOD_PROGRAM_CREDIT
     assert registry.get("ca-on/ontario_tax_after_food_credit") is ONTARIO_TAX_AFTER_FOOD_CREDIT
+    assert registry.get("ca-on/disability_amount_for_self") is DISABILITY_AMOUNT_FOR_SELF
+    assert registry.get("ca-on/health_premium_income") is HEALTH_PREMIUM_INCOME
+    assert registry.get("ca-on/ontario_surtax_base") is ONTARIO_SURTAX_BASE
+    assert registry.get("ca-on/ontario_tax_on_split_income") is ONTARIO_TAX_ON_SPLIT_INCOME
+    assert (
+        registry.get("ca-on/ontario_tax_on_split_income_for_surtax")
+        is ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX
+    )
+    assert registry.get("ca-on/ontario_tax_with_split_income") is ONTARIO_TAX_WITH_SPLIT_INCOME
+    assert registry.get("ca-on/split_income_line_36") is SPLIT_INCOME_LINE_36
+    assert registry.get("ca-on/split_income_line_38") is SPLIT_INCOME_LINE_38
+    assert registry.get("ca-on/split_income_line_39") is SPLIT_INCOME_LINE_39
+    assert registry.get("ca-on/split_income_line_42") is SPLIT_INCOME_LINE_42
+    assert registry.get("ca-on/split_income_line_45") is SPLIT_INCOME_LINE_45
+    assert registry.get("ca-on/split_income_line_46") is SPLIT_INCOME_LINE_46
+    assert registry.get("ca-on/split_income_line_47") is SPLIT_INCOME_LINE_47
+    assert registry.get("ca-on/split_income_line_50") is SPLIT_INCOME_LINE_50
+    assert registry.get("ca-on/split_income_line_52") is SPLIT_INCOME_LINE_52
     assert registry.get("ca-on/ontario_health_premium") is ONTARIO_HEALTH_PREMIUM
     assert registry.get("ca-on/ontario_tax") is ONTARIO_TAX
     assert registry.get("ca-on/fertility_expenses") is FERTILITY_EXPENSES
@@ -1134,3 +1186,42 @@ def test_the_co_operative_education_partnership_lines_are_a_yes_no_count_and_nin
     assert DIGITS <= REGISTERED
     for identifier in DIGITS:
         assert isinstance(registry.kind(identifier), DigitsKind), identifier
+
+
+def test_the_t1206_part_3_lines_that_may_be_negative_are_signed(registry: ArtifactRegistry) -> None:
+    # Form T1206 Part 3 line 39 "Line 33 minus line 38", line 47 "Line 39 minus line 46" and
+    # line 50 (line 49 is not wired, so line 50 carries line 47) print no "(if negative, enter
+    # "0")": a disability or dividend credit larger than the tax gives a negative line, which
+    # line 52 then compares with ON428 line 88.
+    for kind in (SPLIT_INCOME_LINE_39, SPLIT_INCOME_LINE_47, SPLIT_INCOME_LINE_50):
+        assert kind.value_type is Decimal
+        assert kind.non_negative is False, kind.identifier
+        assert registry.kind(kind.identifier) is kind
+
+
+def test_the_other_t1206_part_3_kinds_are_non_negative_amounts(registry: ArtifactRegistry) -> None:
+    # Lines 33, 36, 38, 42, 45, 46 and 52 are a rate times a non-negative base, a sum of
+    # non-negative amounts, or (line 52) the greater of a signed line and ON428 line 88, which is
+    # not below zero; ON428 lines 54, 64 and 55 and the health premium's taxable income are
+    # amounts too, and 58440 is the caller's disability amount for self.
+    for kind in (
+        SPLIT_INCOME_LINE_36,
+        SPLIT_INCOME_LINE_38,
+        SPLIT_INCOME_LINE_42,
+        SPLIT_INCOME_LINE_45,
+        SPLIT_INCOME_LINE_46,
+        SPLIT_INCOME_LINE_52,
+        ONTARIO_TAX_ON_SPLIT_INCOME,
+        ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX,
+        ONTARIO_TAX_WITH_SPLIT_INCOME,
+        ONTARIO_SURTAX_BASE,
+        HEALTH_PREMIUM_INCOME,
+        DISABILITY_AMOUNT_FOR_SELF,
+    ):
+        assert kind.value_type is Decimal
+        assert kind.non_negative is True, kind.identifier
+        assert registry.kind(kind.identifier) is kind
+
+
+def test_the_disability_amount_for_self_is_the_callers_on428_line_58440() -> None:
+    assert DISABILITY_AMOUNT_FOR_SELF.identifier == "ca-on/disability_amount_for_self"

@@ -18,7 +18,7 @@ from app.jurisdictions.ca.catalog import (
     CWB_REDUCTION_WITH_DEPENDANT,
     CWB_REDUCTION_WITHOUT_DEPENDANT,
     EMPLOYMENT_INCOME,
-    NET_INCOME,
+    TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     WORKING_INCOME,
 )
 
@@ -42,14 +42,15 @@ STEPS = {
         consumes={"parts": ("ca/employment_income",)},
         produces={"output": "ca/working_income"},
     ),
-    # Schedule 6 line 15 "Line 13 minus line 14 Enter this amount on line 23 and line 35.
-    # Adjusted family net income": line 7 "Net income from line 23600 of the return", through
-    # lines 10, 12 and 13 with lines 8, 9 and 11 not triggered and no eligible spouse (line
-    # 14 not triggered): one part.
+    # Schedule 6 line 15 "Line 13 minus line 14 Enter this amount on line 23 and line 35. Adjusted
+    # family net income": line 7 "Net income from line 23600 of the return", the TOSI-adjusted net
+    # income of Form T1206 Part 1 line 6 in its place, not below zero ("use line 6 of this form at
+    # line 7 of column 1 of Schedule 6"), through lines 10, 12 and 13 with lines 8, 9 and 11 not
+    # triggered and no eligible spouse (line 14 not triggered): one part.
     CapabilitySelection(
         name="core/sum",
         params={},
-        consumes={"parts": ("ca/net_income",)},
+        consumes={"parts": ("ca/tosi_adjusted_net_income_not_below_zero",)},
         produces={"output": "ca/adjusted_family_net_income"},
     ),
     # Schedule 6 lines 16 to 22: line 16 "Family working income from line 6"; line 17 "Base
@@ -129,7 +130,11 @@ STEPS = {
 
 WIRING = {
     (Sum, frozenset({EMPLOYMENT_INCOME}), frozenset({WORKING_INCOME})),
-    (Sum, frozenset({NET_INCOME}), frozenset({ADJUSTED_FAMILY_NET_INCOME})),
+    (
+        Sum,
+        frozenset({TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO}),
+        frozenset({ADJUSTED_FAMILY_NET_INCOME}),
+    ),
     (
         TieredSurcharge,
         frozenset({WORKING_INCOME}),

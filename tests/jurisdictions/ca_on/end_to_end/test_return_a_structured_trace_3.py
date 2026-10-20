@@ -191,6 +191,11 @@ from app.jurisdictions.ca.catalog import (
     SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE,
     SELF_EMPLOYED_CPP_DEDUCTION,
     SELF_EMPLOYED_EI_PREMIUMS,
+    SPLIT_INCOME_LINE_10,
+    SPLIT_INCOME_LINE_14,
+    SPLIT_INCOME_LINE_15,
+    SPLIT_INCOME_LINE_21,
+    SPLIT_INCOME_LINE_22,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BEFORE_COUNT,
     SPOUSE_CAREGIVER_AMOUNT,
@@ -202,6 +207,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_INFIRMITY_SUPPLEMENT,
     SPOUSES_CLAIMED,
     TOP_UP_THRESHOLD,
+    TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOTAL_CREDITS,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
@@ -554,6 +560,42 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
+        # Form T1206 Part 2 line 15 "Line 10 minus line 14" and line 22 "Line 15 minus line 21",
+        # with no floor printed on either: all 0 for Return A.
+        # Form T1206 Part 3 line 39 "Line 33 minus line 38" and line 47 "Line 39 minus line 46",
+        # exact and signed: Return A has no split income, so each is 0.
+        ontario.SPLIT_INCOME_LINE_39: SubtractedLine(
+            output=ontario.SPLIT_INCOME_LINE_39,
+            minuend=ontario.ONTARIO_TAX_ON_SPLIT_INCOME,
+            minuend_amount=D("0"),
+            subtrahend=ontario.SPLIT_INCOME_LINE_38,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        ontario.SPLIT_INCOME_LINE_47: SubtractedLine(
+            output=ontario.SPLIT_INCOME_LINE_47,
+            minuend=ontario.SPLIT_INCOME_LINE_39,
+            minuend_amount=D("0"),
+            subtrahend=ontario.SPLIT_INCOME_LINE_46,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        SPLIT_INCOME_LINE_15: SubtractedLine(
+            output=SPLIT_INCOME_LINE_15,
+            minuend=SPLIT_INCOME_LINE_10,
+            minuend_amount=D("0"),
+            subtrahend=SPLIT_INCOME_LINE_14,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        SPLIT_INCOME_LINE_22: SubtractedLine(
+            output=SPLIT_INCOME_LINE_22,
+            minuend=SPLIT_INCOME_LINE_15,
+            minuend_amount=D("0"),
+            subtrahend=SPLIT_INCOME_LINE_21,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # T1 line 23400.
         NET_INCOME_BEFORE_ADJUSTMENTS: SubtractedLine(
             output=NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -636,7 +678,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert tapered == {
         BASIC_PERSONAL_AMOUNT: TaperedAmountLine(
             output=BASIC_PERSONAL_AMOUNT,
-            base=NET_INCOME,
+            base=TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
             base_amount=D("115000"),
             taper=Taper(
                 base=D("14538"), supplement=D("1591"), threshold=D("177882"), range=D("75532")

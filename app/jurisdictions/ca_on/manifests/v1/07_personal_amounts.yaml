@@ -6,16 +6,17 @@ capabilities:
       base: ca/taxable_income
     produces:
       output: ca/federal_basic_tax
-  # T1 line 30000 "If the amount on line 23600 is $177,882 or less, enter $16,129. If
-  # the amount on line 23600 is $253,414 or more, enter $14,538. Otherwise, use the
-  # Federal Worksheet to calculate the amount to enter. (maximum $16,129)": the federal
-  # basic personal amount is the worksheet's taper on net income (line 23600), the first
-  # part of the T1's total of credit amounts.
+  # T1 line 30000 "If the amount on line 23600 is $177,882 or less, enter $16,129. If the amount
+  # on line 23600 is $253,414 or more, enter $14,538. Otherwise, use the Federal Worksheet to
+  # calculate the amount to enter. (maximum $16,129)": the federal basic personal amount is the
+  # worksheet's taper on the TOSI-adjusted net income of Form T1206 Part 1 line 6 in place of the
+  # net income (line 23600), not below zero ("use line 6 of this form at line 3 of your Federal
+  # Worksheet for line 30000"), the first part of the T1's total of credit amounts.
   - name: core/tapered_amount
     params:
       taper: ca/basic_personal_amount
     consumes:
-      base: ca/net_income
+      base: ca/tosi_adjusted_net_income_not_below_zero
     produces:
       output: ca/basic_personal_amount
   # T1 line 100 (line 31800) "Disability amount transferred from a dependant (use Federal
@@ -49,11 +50,12 @@ capabilities:
       amount: ca/age_income_threshold
     produces:
       output: ca/age_income_threshold
-  # Line 2 "Amount from line 23600 of your return", the net income, and line 4 "Line 2 minus
-  # line 3 (if negative, enter "0")".
+  # Line 2 "Amount from line 23600 of your return", the TOSI-adjusted net income of Form T1206
+  # Part 1 line 6 in its place, not below zero ("use line 6 of this form at line 2 of your Federal
+  # Worksheet for line 30100"), and line 4 "Line 2 minus line 3 (if negative, enter "0")".
   - name: core/subtract_not_below_zero
     consumes:
-      amount: ca/net_income
+      amount: ca/tosi_adjusted_net_income_not_below_zero
       less: ca/age_income_threshold
     produces:
       output: ca/age_income_over_threshold

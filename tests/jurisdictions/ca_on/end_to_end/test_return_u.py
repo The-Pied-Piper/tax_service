@@ -274,7 +274,8 @@ def test_return_us_new_lines_join_the_deductions_the_credit_amounts_and_the_tota
         "+ support_payments_deduction 0 "
         "+ carrying_charges_interest_expenses_and_other_expenses 0 "
         "+ cpp_deduction_on_self_employment 3231.75 + cpp_enhanced_contributions 0 "
-        "+ exploration_and_development_expenses 0 + other_deductions 0 = 3231.75",
+        "+ exploration_and_development_expenses 0 + other_deductions 0 "
+        "+ total_split_income 0 = 3231.75",
         "non_refundable_credit_amounts: basic_personal_amount 16129 + age_amount 0 "
         "+ spouse_amount 0 + eligible_dependant_amount 0 + spouse_caregiver_amount 0 "
         "+ caregiver_amount 0 + infirm_children_amount 0 + cpp_base_contributions 0 "

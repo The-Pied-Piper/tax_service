@@ -123,8 +123,8 @@ def test_return_js_age_spouse_and_caregiver_amounts_come_off_net_income_and_the_
     assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-2176.29")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     for line in (
-        "age_income_over_threshold: net_income 50000 less age_income_threshold 45522, not below 0 "
-        "= 4478",
+        "age_income_over_threshold: tosi_adjusted_net_income_not_below_zero 50000 "
+        "less age_income_threshold 45522, not below 0 = 4478",
         "age_reduction: 15% of age_income_over_threshold 4478 (half-up to 0.01)",
         "age_amount_before_count: age_maximum 9028 less age_reduction 671.7, not below 0 = 8356.3",
         "age_amount: age_amount_before_count 8356.3 for each of 1 born_in_1960_or_earlier = 8356.3",
@@ -149,8 +149,8 @@ def test_return_js_age_spouse_and_caregiver_amounts_come_off_net_income_and_the_
         "+ cpp_base_contributions_on_self_employment 0 + ei_premiums 820 "
         "+ ei_premiums_on_self_employment 0 + canada_employment_amount 1471 "
         "+ disability_transferred_amount 0 + medical_claim 0 = 37679.05",
-        "age_income_over_threshold: net_income 50000 less age_income_threshold 46330, not below 0 "
-        "= 3670",
+        "age_income_over_threshold: tosi_adjusted_net_income_not_below_zero 50000 "
+        "less age_income_threshold 46330, not below 0 = 3670",
         "age_reduction: 15% of age_income_over_threshold 3670 (half-up to 0.01)",
         "age_amount_before_count: age_maximum 6223 less age_reduction 550.5, not below 0 = 5672.5",
         "age_amount: age_amount_before_count 5672.5 for each of 1 born_in_1960_or_earlier = 5672.5",

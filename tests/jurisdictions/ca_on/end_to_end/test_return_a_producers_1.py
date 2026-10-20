@@ -141,6 +141,7 @@ from app.jurisdictions.ca.catalog import (
     DEPRECIABLE_GIFT_PROCEEDS_OR_COST,
     DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
     DEPRECIABLE_GIFTS,
+    DISABILITY_AMOUNT_FOR_SELF,
     DISABILITY_DEPENDANTS,
     DISABILITY_SUPPORTS_DEDUCTION,
     DISABILITY_TRANSFERRED_AMOUNT,
@@ -186,6 +187,8 @@ from app.jurisdictions.ca.catalog import (
     FARMING_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
+    FEDERAL_TAX_ON_SPLIT_INCOME,
+    FEDERAL_TAX_WITH_SPLIT_INCOME,
     FHSA_ANNUAL_AMOUNT,
     FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS,
     FHSA_ANNUAL_AMOUNT_FOR_2024,
@@ -313,6 +316,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
     OTHER_PENSIONS_AND_SUPERANNUATION,
+    OTHER_SPLIT_INCOME,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     POLITICAL_CONTRIBUTIONS,
     PROFESSIONAL_INCOME,
@@ -432,6 +436,20 @@ from app.jurisdictions.ca.catalog import (
     SLIP_TAXABLE_DIVIDENDS,
     SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SOCIAL_ASSISTANCE_PAYMENTS,
+    SPLIT_INCOME_DIVIDENDS,
+    SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    SPLIT_INCOME_LINE_10,
+    SPLIT_INCOME_LINE_13,
+    SPLIT_INCOME_LINE_14,
+    SPLIT_INCOME_LINE_15,
+    SPLIT_INCOME_LINE_18,
+    SPLIT_INCOME_LINE_19,
+    SPLIT_INCOME_LINE_20,
+    SPLIT_INCOME_LINE_21,
+    SPLIT_INCOME_LINE_22,
+    SPLIT_INCOME_LINE_24,
+    SPLIT_INCOME_LINE_29,
+    SPLIT_INCOME_LINE_30,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BASIS,
     SPOUSE_AMOUNT_BEFORE_COUNT,
@@ -478,6 +496,8 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
     TOP_UP_THRESHOLD,
+    TOSI_ADJUSTED_NET_INCOME,
+    TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
     TOTAL_CARRYING_CHARGES,
     TOTAL_CHARITABLE_DONATIONS,
@@ -485,6 +505,7 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_INTEREST_EXPENSES,
     TOTAL_OTHER_EXPENSES,
     TOTAL_PAYABLE,
+    TOTAL_SPLIT_INCOME,
     TRAVEL_DEDUCTION,
     TRAVEL_INDIVIDUALS,
     TRAVEL_TOTAL_ZONE_A,
@@ -644,6 +665,10 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(SPOUSE_RDSP_INCOME_REPAYMENT) is None
     assert worksheet.producer_of(SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT) is None
     assert worksheet.producer_of(SPOUSE_RDSP_INCOME) is None
+    assert worksheet.producer_of(SPLIT_INCOME_DIVIDENDS) is None
+    assert worksheet.producer_of(SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE) is None
+    assert worksheet.producer_of(OTHER_SPLIT_INCOME) is None
+    assert worksheet.producer_of(DISABILITY_AMOUNT_FOR_SELF) is None
     assert worksheet.producer_of(ontario.LIFT_SPOUSE_AT_YEAR_END) is None
     assert worksheet.producer_of(OTHER_EMPLOYMENT_INCOME) is None
     assert worksheet.producer_of(OLD_AGE_SECURITY) is None
@@ -875,6 +900,34 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         )
     ]
     assert len({id(producer) for producer in producers}) == len(producers)
+    # Form T1206 Part 1: lines 4 and 6 add, the not-below-zero twin of line 6 floors the same sum,
+    # and the whole of Part 2 follows the form's lines (line 24 floors line 22 alone, line 30 is
+    # the more of lines 24 and 29).
+    assert isinstance(worksheet.producer_of(TOTAL_SPLIT_INCOME), Sum)
+    assert isinstance(worksheet.producer_of(TOSI_ADJUSTED_NET_INCOME), Sum)
+    assert isinstance(
+        worksheet.producer_of(TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO), SumNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(FEDERAL_TAX_ON_SPLIT_INCOME), ApplyRate)
+    assert isinstance(worksheet.producer_of(FEDERAL_TAX_WITH_SPLIT_INCOME), Sum)
+    assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_10), Sum)
+    assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_13), Sum)
+    assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_14), ApplyRate)
+    assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_15), Subtract)
+    assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_18), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_19), ApplyRate)
+    assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_20), ApplyRate)
+    assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_21), Sum)
+    assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_22), Subtract)
+    assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_24), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_29), Sum)
+    assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_30), GreaterOf)
+    assert worksheet.producer_of(TOSI_ADJUSTED_NET_INCOME) is not (
+        worksheet.producer_of(TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO)
+    )
+    assert worksheet.producer_of(SPLIT_INCOME_LINE_19) is not worksheet.producer_of(
+        SPLIT_INCOME_LINE_20
+    )
     assert isinstance(worksheet.producer_of(INVESTMENT_INCOME_BEFORE_PRIOR_YEARS), Sum)
     assert isinstance(worksheet.producer_of(INTEREST_AND_OTHER_INVESTMENT_INCOME), Subtract)
     assert isinstance(worksheet.producer_of(INCOME_SUPPORT_BENEFITS), Sum)
@@ -1512,6 +1565,28 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(ONTARIO_HEALTH_PREMIUM) is not worksheet.producer_of(
         LIFT_REDUCTION
     )
+    # The Ontario half of Form T1206 Part 3, one step per line: lines 33, 38, 42 and 45 rates,
+    # 36, 46 and 50 sums, 39 and 47 differences, 52 the greater of line 50 and ON428 line 88.
+    for kind in (
+        ontario.ONTARIO_TAX_ON_SPLIT_INCOME,
+        ontario.SPLIT_INCOME_LINE_38,
+        ontario.SPLIT_INCOME_LINE_42,
+        ontario.SPLIT_INCOME_LINE_45,
+    ):
+        assert isinstance(worksheet.producer_of(kind), ApplyRate), kind.identifier
+    for kind in (
+        ontario.SPLIT_INCOME_LINE_36,
+        ontario.SPLIT_INCOME_LINE_46,
+        ontario.SPLIT_INCOME_LINE_50,
+        ontario.ONTARIO_TAX_WITH_SPLIT_INCOME,
+        ontario.ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX,
+        ontario.HEALTH_PREMIUM_INCOME,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
+    for kind in (ontario.SPLIT_INCOME_LINE_39, ontario.SPLIT_INCOME_LINE_47):
+        assert isinstance(worksheet.producer_of(kind), Subtract), kind.identifier
+    assert isinstance(worksheet.producer_of(ontario.ONTARIO_SURTAX_BASE), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(ontario.SPLIT_INCOME_LINE_52), GreaterOf)
     assert isinstance(worksheet.producer_of(ONTARIO_TAX), Sum)
     assert worksheet.producer_of(ONTARIO_TAX) is not worksheet.producer_of(ONTARIO_TAX_WITH_SURTAX)
     assert isinstance(worksheet.producer_of(NET_FEDERAL_TAX), Sum)

@@ -21,14 +21,14 @@ capabilities:
       output: ca-on/lift_maximum_credit
   # Lines 6 to 9: line 6 "Net income from line 23600 of your return (or the amount you
   # would have entered if the instructions on line 23600 said "if negative, show in
-  # brackets")", the net income before adjustments, which is not floored at zero; line 7
-  # "Amount from line 21300 of your return", the UCCB repayment; line 8 "Amount of
+  # brackets")", the TOSI-adjusted net income of Form T1206 Part 1 line 6 in its place, which is not floored
+  # at zero; line 7 "Amount from line 21300 of your return", the UCCB repayment; line 8 "Amount of
   # registered disability savings plan (RDSP) income repayment included on line 23200 of
   # your return"; and line 9 "Add lines 6 to 8.", in line order.
   - name: core/sum
     consumes:
       parts:
-        - ca/net_income_before_adjustments
+        - ca/tosi_adjusted_net_income
         - ca/uccb_repayment
         - ca/rdsp_income_repayment
     produces:

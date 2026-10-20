@@ -138,7 +138,7 @@ def test_the_dividend_tax_credit_comes_off_the_basic_federal_tax_with_the_other_
         "+ dividend_tax_credit 319.19 = 3323.84"
     ) in rendered
     assert (
-        "federal_tax_after_credits: federal_basic_tax 7538.55 "
+        "federal_tax_after_credits: federal_tax_with_split_income 7538.55 "
         "less credits_against_basic_federal_tax 3323.84, not below 0 = 4214.71"
     ) in rendered
 
