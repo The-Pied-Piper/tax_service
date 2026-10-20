@@ -47,6 +47,7 @@ from app.domain.trace import (
     OtherDependantMedicalLine,
     PerUnitAmountLine,
     PlacementCreditLine,
+    PrincipalResidenceGainLine,
     QuotientLine,
     RateAppliedLine,
     RateByIncomeBandLine,
@@ -114,6 +115,7 @@ CAREGIVER = ArtifactKind("ex/caregiver_amount", Decimal)
 MEDICAL = ArtifactKind("ex/dependants_medical", Decimal)
 MEDICAL_REDUCTION = ClaimReduction(Rate(D("0.03")), D("2834"), D("15551"))
 TRANSFERRED = ArtifactKind("ex/transferred_amount", Decimal)
+RESIDENCE_GAIN = ArtifactKind("ex/residence_gain", Decimal)
 
 
 def column_line() -> BracketColumnLine:
@@ -289,6 +291,29 @@ def disability_transfer_line() -> DisabilityTransferLine:
     )
 
 
+def principal_residence_gain_line() -> PrincipalResidenceGainLine:
+    return PrincipalResidenceGainLine(
+        RESIDENCE_GAIN,
+        2,
+        6,
+        0,
+        6,
+        10,
+        0,
+        10,
+        1,
+        D("400000.00"),
+        D("95000.00"),
+        D("5000.00"),
+        D("300000.00"),
+        7,
+        D("2100000.00"),
+        CENT,
+        D("210000.00"),
+        D("90000.00"),
+    )
+
+
 def items_total_line() -> ItemsTotalLine:
     return ItemsTotalLine(CAREGIVER, ((1, D("750.00")), (3, D("800"))), D("1550.00"))
 
@@ -321,6 +346,7 @@ ALL_LINES = [
     caregiver_claim_line,
     caregiver_claim_less_claimed_line,
     disability_transfer_line,
+    principal_residence_gain_line,
     items_total_line,
     other_dependant_medical_line,
 ]
@@ -2147,6 +2173,113 @@ def test_disability_transfer_lines_are_hashable() -> None:
 
 def test_a_disability_transfer_line_is_not_a_caregiver_claim_line() -> None:
     assert not isinstance(disability_transfer_line(), CaregiverClaimLine)
+
+
+def test_principal_residence_gain_line_fields_in_order() -> None:
+    line = principal_residence_gain_line()
+
+    assert line == PrincipalResidenceGainLine(
+        output=RESIDENCE_GAIN,
+        position=2,
+        years_designated_after_1981=6,
+        years_designated_1972_to_1981=0,
+        designated=6,
+        years_owned_after_1981=10,
+        years_owned_1972_to_1981=0,
+        owned=10,
+        plus_one=1,
+        proceeds=D("400000.00"),
+        adjusted_cost_base=D("95000.00"),
+        outlays=D("5000.00"),
+        gain=D("300000.00"),
+        line_20=7,
+        line_21=D("2100000.00"),
+        rounding=CENT,
+        exempt=D("210000.00"),
+        result=D("90000.00"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "years_designated_after_1981",
+        "years_designated_1972_to_1981",
+        "designated",
+        "years_owned_after_1981",
+        "years_owned_1972_to_1981",
+        "owned",
+        "plus_one",
+        "proceeds",
+        "adjusted_cost_base",
+        "outlays",
+        "gain",
+        "line_20",
+        "line_21",
+        "rounding",
+        "exempt",
+        "result",
+    ]
+    assert line.output is RESIDENCE_GAIN
+    assert line.position == 2
+    assert line.designated == 6
+    assert line.owned == 10
+    assert line.plus_one == 1
+    assert line.gain == D("300000.00")
+    assert line.line_20 == 7
+    assert line.line_21 == D("2100000.00")
+    assert line.rounding == CENT
+    assert line.exempt == D("210000.00")
+    assert line.result == D("90000.00")
+
+
+def test_principal_residence_gain_line_amount_is_the_result() -> None:
+    line = principal_residence_gain_line()
+
+    assert line.amount == D("90000.00")
+    assert str(line.amount) == "90000.00"
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_principal_residence_gain_lines_differ_by_each_field() -> None:
+    line = principal_residence_gain_line()
+    same = dict(
+        zip(
+            [f.name for f in fields(line)],
+            [getattr(line, f.name) for f in fields(line)],
+            strict=True,
+        )
+    )
+    changed: dict[str, Any] = {
+        "position": 1,
+        "years_designated_after_1981": 5,
+        "years_designated_1972_to_1981": 1,
+        "designated": 5,
+        "years_owned_after_1981": 9,
+        "years_owned_1972_to_1981": 1,
+        "owned": 9,
+        "plus_one": 0,
+        "proceeds": D("400000.01"),
+        "adjusted_cost_base": D("95000.01"),
+        "outlays": D("5000.01"),
+        "gain": D("300000.01"),
+        "line_20": 6,
+        "line_21": D("2100000.01"),
+        "rounding": NO_ROUNDING,
+        "exempt": D("210000.01"),
+        "result": D("90000.01"),
+    }
+
+    assert set(changed) == set(same) - {"output"}
+    for name, value in changed.items():
+        assert line != PrincipalResidenceGainLine(**{**same, name: value}), name
+    assert line != PrincipalResidenceGainLine(**{**same, "output": CAREGIVER})
+
+
+def test_principal_residence_gain_lines_are_hashable() -> None:
+    assert hash(principal_residence_gain_line()) == hash(principal_residence_gain_line())
+
+
+def test_a_principal_residence_gain_line_is_not_a_disability_transfer_line() -> None:
+    assert not isinstance(principal_residence_gain_line(), DisabilityTransferLine)
 
 
 def test_items_total_line_fields_in_order() -> None:
