@@ -345,11 +345,13 @@ from app.jurisdictions.ca.catalog import (
     WORKING_INCOME,
 )
 from app.jurisdictions.ca_on import catalog as ontario
+from app.jurisdictions.ca_on.capabilities.caregiver_amount import OntarioCaregiverAmount
 from app.jurisdictions.ca_on.capabilities.choose_by_range import ChooseByRange
 from app.jurisdictions.ca_on.capabilities.flow_through_share_expenses import (
     FlowThroughShareExpenses,
 )
 from app.jurisdictions.ca_on.catalog import (
+    CAREGIVER_DEPENDANTS,
     COMMUNITY_FOOD_PROGRAM_CREDIT,
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
     DEPENDANTS,
@@ -533,6 +535,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/eligible_dependants",
             "ca/dependant_net_income",
             "ca/infirm_dependants",
+            "ca-on/caregiver_dependants",
             "ca/infirm_children",
             "ca/born_in_1960_or_earlier",
             "ca/spouse_net_income",
@@ -1860,10 +1863,31 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca-on/eligible_dependant_amount"},
         ),
+        # ON428 line 17 and line 58185 "Ontario caregiver amount (use Worksheet ON428)", Worksheet
+        # ON428 "Line 58185 - Ontario caregiver amount": for each dependant, line 1 "Base amount
+        # 26,562.00" less line 2 "Dependant's net income from line 23600 of their return", line 3
+        # "Line 1 minus line 2 (if negative, enter "0") (maximum $6,008 per dependant)", line 4
+        # "Amount claimed for this dependant on line 58160 of your Form ON428, if any", line 5
+        # "Allowable amount for this dependant: line 3 minus line 4 (if negative, enter "0")" and
+        # line 6 "Add the amounts from line 5 of columns 1, 2, and 3 (and others, if any). Enter
+        # this amount on line 58185 of your Form ON428."
+        CapabilitySelection(
+            name="ca-on/caregiver_amount",
+            params={
+                "base": "ca-on/caregiver_base_amount",
+                "maximum": "ca-on/caregiver_maximum_amount",
+            },
+            consumes={
+                "dependants": "ca-on/caregiver_dependants",
+                "eligible_dependant_amount": "ca-on/eligible_dependant_amount",
+            },
+            produces={"output": "ca-on/caregiver_amount"},
+        ),
         # T1 line 33500 (lines 30000, 30100, 30300, 30400, 30425, 30450, 30500, 30800, 31200, 31260)
-        # and ON428 line 58800 (lines 58040, 58080, 58120, 58160, 58240, 58300), in the forms' line
-        # order. ON428 lines 58240 and 58300 are "Amount from line 30800 / 31200 of your return",
-        # so the Ontario sum reads the federal kinds; it has no Canada employment amount.
+        # and ON428 line 58800 (lines 58040, 58080, 58120, 58160, 58185, 58240, 58300), in the
+        # forms' line order. ON428 lines 58240 and 58300 are "Amount from line 30800 / 31200 of
+        # your return", so the Ontario sum reads the federal kinds; it has no Canada employment
+        # amount.
         CapabilitySelection(
             name="core/sum",
             params={},
@@ -1892,6 +1916,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
                     "ca-on/age_amount",
                     "ca-on/spouse_amount",
                     "ca-on/eligible_dependant_amount",
+                    "ca-on/caregiver_amount",
                     "ca/cpp_base_contributions",
                     "ca/ei_premiums",
                 )
@@ -3180,7 +3205,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca-on/net_refund"},
         ),
     }
-    assert len(found.capabilities) == 251
+    assert len(found.capabilities) == 252
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -3190,7 +3215,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 251
+    assert len(composition.order) == 252
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -3873,6 +3898,11 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({ontario.ELIGIBLE_DEPENDANT_AMOUNT}),
         ),
         (
+            OntarioCaregiverAmount,
+            frozenset({CAREGIVER_DEPENDANTS, ontario.ELIGIBLE_DEPENDANT_AMOUNT}),
+            frozenset({ontario.CAREGIVER_AMOUNT}),
+        ),
+        (
             Sum,
             frozenset(
                 {
@@ -3898,6 +3928,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
                     ontario.AGE_AMOUNT,
                     ontario.SPOUSE_AMOUNT,
                     ontario.ELIGIBLE_DEPENDANT_AMOUNT,
+                    ontario.CAREGIVER_AMOUNT,
                     CPP_BASE_CONTRIBUTIONS,
                     EI_PREMIUMS,
                 }

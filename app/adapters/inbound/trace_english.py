@@ -16,6 +16,7 @@ from app.domain.trace import (
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
+    CaregiverClaimLessClaimedLine,
     CaregiverClaimLine,
     ChosenByCountLine,
     ChosenByRangeLine,
@@ -278,6 +279,23 @@ class EnglishTraceRenderer:
                 return (
                     f"{output.label}: dependant {position}: {self._money(base.value)} less net "
                     f"income {self._money(net_income)}, at most {self._money(maximum.value)} = "
+                    f"{self._money(result)} ({self._rounding(rule)})"
+                )
+            case CaregiverClaimLessClaimedLine(
+                output=output,
+                position=position,
+                base=base,
+                net_income=net_income,
+                maximum=maximum,
+                allowable_before_claimed=allowable,
+                claimed=claimed,
+                rounding=rule,
+                result=result,
+            ):
+                return (
+                    f"{output.label}: dependant {position}: {self._money(base.value)} less net "
+                    f"income {self._money(net_income)}, at most {self._money(maximum.value)} = "
+                    f"{self._money(allowable)}, less claimed {self._money(claimed)} = "
                     f"{self._money(result)} ({self._rounding(rule)})"
                 )
             case ItemsTotalLine(output=output, items=items, total=total):

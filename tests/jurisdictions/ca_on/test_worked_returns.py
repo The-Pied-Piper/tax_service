@@ -16,6 +16,7 @@ import pytest
 from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
 from app.domain.artifact import ArtifactRegistry
 from app.jurisdictions.ca.catalog import DEPENDANT_NET_INCOME
+from app.jurisdictions.ca_on.catalog import CLAIMED_AS_ELIGIBLE_DEPENDANT
 from app.main import build_tax_computation
 from app.registrations import JURISDICTIONS
 from tests.jurisdictions.ca_on.worked_return import WorkedReturn, WorkedReturnError
@@ -221,6 +222,7 @@ inputs:
   ca/eligible_dependants: "0"
   ca/dependant_net_income: "0"
   ca/infirm_dependants: []
+  ca-on/caregiver_dependants: []
   ca/infirm_children: "0"
   ca/born_in_1960_or_earlier: "0"
   ca/spouse_net_income: "0"
@@ -419,6 +421,21 @@ def test_return_q_claims_two_infirm_dependants_on_line_30450() -> None:
     ]
     (caregiver,) = [a for a in worked.expected if a.kind.identifier == "ca/caregiver_amount"]
     assert caregiver.value == Decimal("12399.00")
+    check(path)
+
+
+def test_return_w_claims_two_ontario_caregiver_dependants_on_line_58185() -> None:
+    path = RETURNS / "2025_return_w.yaml"
+    build_tax_computation()  # registers the catalogs the loader resolves through
+    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+
+    (dependants,) = [a for a in worked.inputs if a.kind.identifier == "ca-on/caregiver_dependants"]
+    assert [
+        (record[DEPENDANT_NET_INCOME], record[CLAIMED_AS_ELIGIBLE_DEPENDANT])
+        for record in dependants.value.records
+    ] == [(Decimal("5000"), 0), (Decimal("25000"), 0)]
+    (caregiver,) = [a for a in worked.expected if a.kind.identifier == "ca-on/caregiver_amount"]
+    assert caregiver.value == Decimal("7570.00")
     check(path)
 
 

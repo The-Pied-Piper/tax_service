@@ -29,6 +29,7 @@ from app.domain.trace import (
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
+    CaregiverClaimLessClaimedLine,
     CaregiverClaimLine,
     ChosenByCountLine,
     ChosenByRangeLine,
@@ -214,6 +215,20 @@ def caregiver_claim_line() -> CaregiverClaimLine:
     )
 
 
+def caregiver_claim_less_claimed_line() -> CaregiverClaimLessClaimedLine:
+    return CaregiverClaimLessClaimedLine(
+        CAREGIVER,
+        2,
+        Amount(D("26562.00")),
+        D("5000"),
+        Amount(D("6008")),
+        D("6008.00"),
+        D("2500.00"),
+        CENT,
+        D("3508.00"),
+    )
+
+
 def items_total_line() -> ItemsTotalLine:
     return ItemsTotalLine(CAREGIVER, ((1, D("750.00")), (3, D("800"))), D("1550.00"))
 
@@ -242,6 +257,7 @@ ALL_LINES = [
     rate_by_income_band_line,
     chosen_rate_applied_line,
     caregiver_claim_line,
+    caregiver_claim_less_claimed_line,
     items_total_line,
 ]
 
@@ -1689,6 +1705,152 @@ def test_caregiver_claim_lines_differ_by_each_field() -> None:
 
 def test_caregiver_claim_lines_are_hashable() -> None:
     assert hash(caregiver_claim_line()) == hash(caregiver_claim_line())
+
+
+def test_caregiver_claim_less_claimed_line_fields_in_order() -> None:
+    line = caregiver_claim_less_claimed_line()
+
+    assert line == CaregiverClaimLessClaimedLine(
+        output=CAREGIVER,
+        position=2,
+        base=Amount(D("26562.00")),
+        net_income=D("5000"),
+        maximum=Amount(D("6008")),
+        allowable_before_claimed=D("6008.00"),
+        claimed=D("2500.00"),
+        rounding=CENT,
+        result=D("3508.00"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "base",
+        "net_income",
+        "maximum",
+        "allowable_before_claimed",
+        "claimed",
+        "rounding",
+        "result",
+    ]
+    assert line.output is CAREGIVER
+    assert line.position == 2
+    assert line.base == Amount(D("26562.00"))
+    assert line.net_income == D("5000")
+    assert line.maximum == Amount(D("6008"))
+    assert line.allowable_before_claimed == D("6008.00")
+    assert line.claimed == D("2500.00")
+    assert line.rounding == CENT
+    assert line.result == D("3508.00")
+
+
+def test_caregiver_claim_less_claimed_line_amount_is_the_result() -> None:
+    line = caregiver_claim_less_claimed_line()
+
+    assert line.amount == D("3508.00")
+    assert str(line.amount) == "3508.00"
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_caregiver_claim_less_claimed_lines_differ_by_each_field() -> None:
+    line = caregiver_claim_less_claimed_line()
+    other = CaregiverClaimLessClaimedLine
+
+    assert line != other(
+        CAREGIVER,
+        1,
+        line.base,
+        D("5000"),
+        line.maximum,
+        D("6008.00"),
+        D("2500.00"),
+        CENT,
+        D("3508.00"),
+    )
+    assert line != other(
+        CAREGIVER,
+        2,
+        Amount(D("26563.00")),
+        D("5000"),
+        line.maximum,
+        D("6008.00"),
+        D("2500.00"),
+        CENT,
+        D("3508.00"),
+    )
+    assert line != other(
+        CAREGIVER,
+        2,
+        line.base,
+        D("5001"),
+        line.maximum,
+        D("6008.00"),
+        D("2500.00"),
+        CENT,
+        D("3508.00"),
+    )
+    assert line != other(
+        CAREGIVER,
+        2,
+        line.base,
+        D("5000"),
+        Amount(D("6009")),
+        D("6008.00"),
+        D("2500.00"),
+        CENT,
+        D("3508.00"),
+    )
+    assert line != other(
+        CAREGIVER,
+        2,
+        line.base,
+        D("5000"),
+        line.maximum,
+        D("6007.00"),
+        D("2500.00"),
+        CENT,
+        D("3508.00"),
+    )
+    assert line != other(
+        CAREGIVER,
+        2,
+        line.base,
+        D("5000"),
+        line.maximum,
+        D("6008.00"),
+        D("2501.00"),
+        CENT,
+        D("3508.00"),
+    )
+    assert line != other(
+        CAREGIVER,
+        2,
+        line.base,
+        D("5000"),
+        line.maximum,
+        D("6008.00"),
+        D("2500.00"),
+        NO_ROUNDING,
+        D("3508.00"),
+    )
+    assert line != other(
+        CAREGIVER,
+        2,
+        line.base,
+        D("5000"),
+        line.maximum,
+        D("6008.00"),
+        D("2500.00"),
+        CENT,
+        D("3508.01"),
+    )
+
+
+def test_caregiver_claim_less_claimed_lines_are_hashable() -> None:
+    assert hash(caregiver_claim_less_claimed_line()) == hash(caregiver_claim_less_claimed_line())
+
+
+def test_a_caregiver_claim_less_claimed_line_is_not_a_caregiver_claim_line() -> None:
+    assert not isinstance(caregiver_claim_less_claimed_line(), CaregiverClaimLine)
 
 
 def test_items_total_line_fields_in_order() -> None:
