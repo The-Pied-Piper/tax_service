@@ -309,7 +309,7 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 394
+    assert len(order) == 395
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -526,6 +526,11 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
     )
     assert position[DISABILITY_TRANSFERRED_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    # ON428 line 30 (line 58480), before the Ontario total of credit amounts.
+    assert (
+        position[ontario.DISABILITY_TRANSFERRED_AMOUNT]
+        < (position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS])
+    )
     assert position[INFIRM_CHILDREN_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert (
         position[NET_INCOME]

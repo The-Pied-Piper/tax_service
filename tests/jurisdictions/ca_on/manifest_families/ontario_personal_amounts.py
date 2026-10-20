@@ -24,6 +24,9 @@ from app.jurisdictions.ca.catalog import (
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.capabilities.caregiver_amount import OntarioCaregiverAmount
+from app.jurisdictions.ca_on.capabilities.disability_transfer_amount import (
+    OntarioDisabilityTransferAmount,
+)
 from app.jurisdictions.ca_on.catalog import (
     CAREGIVER_DEPENDANTS,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_MAXIMUM,
@@ -34,6 +37,7 @@ from app.jurisdictions.ca_on.catalog import (
 INPUTS = frozenset(
     {
         "ca-on/caregiver_dependants",
+        "ca-on/disability_dependants",
     }
 )
 
@@ -237,6 +241,25 @@ STEPS = {
         },
         produces={"output": "ca-on/caregiver_amount"},
     ),
+    # ON428 line 30 and line 58480 "Disability amount transferred from a dependant (use
+    # Worksheet ON428)", Worksheet ON428 "Line 58480 - Disability amount transferred from a
+    # dependant": for each dependant, line 1 "Base amount 10,298.00", line 2 "Maximum amount
+    # 6,007.00", line 4 "Threshold for child and attendant care expenses 3,518.00", line 7
+    # "Line 1 plus line 6 (maximum $16,305) =", line 8 "Enter the amount from line 28 of the
+    # dependant's Form ON428.", line 12 "Enter whichever is less: amount from line 7 or line
+    # 11. Allowable amount for this dependant" and "Enter the total of allowable amounts
+    # claimed for all dependants on line 58480 of your Form ON428."
+    CapabilitySelection(
+        name="ca-on/disability_transfer_amount",
+        params={
+            "base": "ca-on/disability_transfer_base_amount",
+            "supplement": "ca-on/disability_transfer_supplement_maximum",
+            "threshold": "ca-on/disability_transfer_care_threshold",
+            "maximum": "ca-on/disability_transfer_maximum",
+        },
+        consumes={"dependants": "ca-on/disability_dependants"},
+        produces={"output": "ca-on/disability_transferred_amount"},
+    ),
 }
 
 WIRING = {
@@ -321,5 +344,10 @@ WIRING = {
         OntarioCaregiverAmount,
         frozenset({CAREGIVER_DEPENDANTS, ontario.ELIGIBLE_DEPENDANT_AMOUNT}),
         frozenset({ontario.CAREGIVER_AMOUNT}),
+    ),
+    (
+        OntarioDisabilityTransferAmount,
+        frozenset({ontario.DISABILITY_DEPENDANTS}),
+        frozenset({ontario.DISABILITY_TRANSFERRED_AMOUNT}),
     ),
 }

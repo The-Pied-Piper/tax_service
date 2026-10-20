@@ -23,7 +23,10 @@ from app.jurisdictions.ca.catalog import (
     DEPENDANT_UNDER_18,
     OTHER_DEPENDANT_MEDICAL_EXPENSES,
 )
-from app.jurisdictions.ca_on.catalog import CLAIMED_AS_ELIGIBLE_DEPENDANT
+from app.jurisdictions.ca_on.catalog import (
+    CLAIMED_AS_ELIGIBLE_DEPENDANT,
+    DEPENDANT_ON428_LINE_28,
+)
 from app.main import build_tax_computation
 from app.registrations import JURISDICTIONS
 from tests.jurisdictions.ca_on.worked_return import WorkedReturn
@@ -622,6 +625,24 @@ def test_return_x_claims_one_dependant_with_a_disability_on_line_31800() -> None
         a for a in worked.expected if a.kind.identifier == "ca/disability_transferred_amount"
     ]
     assert transferred.value == Decimal("6267.00")
+    check(path)
+
+
+def test_return_ab_claims_the_same_dependant_on_line_58480() -> None:
+    path = RETURNS / "2025_return_ab.yaml"
+    build_tax_computation()  # registers the catalogs the loader resolves through
+    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+
+    (dependants,) = [a for a in worked.inputs if a.kind.identifier == "ca-on/disability_dependants"]
+    (dependant,) = dependants.value.records
+    assert dependant[DEPENDANT_UNDER_18] == 0
+    assert dependant[DEPENDANT_CARE_EXPENSES] == Decimal("0")
+    assert dependant[DEPENDANT_ON428_LINE_28] == Decimal("15000")
+    assert dependant[DEPENDANT_TAXABLE_INCOME] == Decimal("20000")
+    (transferred,) = [
+        a for a in worked.expected if a.kind.identifier == "ca-on/disability_transferred_amount"
+    ]
+    assert transferred.value == Decimal("5298.00")
     check(path)
 
 

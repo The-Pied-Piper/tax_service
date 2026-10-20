@@ -294,7 +294,8 @@ def test_return_xs_ontario_trace_names_each_step_and_each_dependant() -> None:
         "not below 0 = 3073.35",
         "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 0 "
         "+ spouse_amount 0 + eligible_dependant_amount 0 + caregiver_amount 0 "
-        "+ cpp_base_contributions 2202.75 + ei_premiums 787.2 + medical_claim 5773.35 = 21510.3",
+        "+ cpp_base_contributions 2202.75 + ei_premiums 787.2 "
+        "+ disability_transferred_amount 0 + medical_claim 5773.35 = 21510.3",
         "credit_amounts_at_credit_rate: 5.05% of non_refundable_credit_amounts 21510.3 "
         "(half-up to 0.01)",
     ):

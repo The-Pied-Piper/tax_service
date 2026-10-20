@@ -15,7 +15,12 @@ from decimal import Decimal
 from app.domain.artifact import ArtifactCatalog
 from app.domain.record_list import RecordListKind
 from app.domain.registry import Namespace
-from app.jurisdictions.ca.catalog import DEPENDANT_NET_INCOME
+from app.jurisdictions.ca.catalog import (
+    DEPENDANT_CARE_EXPENSES,
+    DEPENDANT_NET_INCOME,
+    DEPENDANT_TAXABLE_INCOME,
+    DEPENDANT_UNDER_18,
+)
 from app.jurisdictions.ca_on import NAMESPACE
 
 CATALOG = ArtifactCatalog(Namespace(NAMESPACE))
@@ -148,6 +153,36 @@ ON428)": Worksheet ON428 line 6 "Add the amounts from line 5 of columns 1, 2, an
 any)", each line 5 "Allowable amount for this dependant: line 3 minus line 4 (if negative, enter
 "0")", a part of the total of the Ontario credit amounts."""
 
+DEPENDANT_ON428_LINE_28 = CATALOG.declare("dependant_on428_line_28", Decimal, non_negative=True)
+"""Amount from line 28 of the dependant's Form ON428, Worksheet ON428 "Line 58480 - Disability
+amount transferred from a dependant", line 8 "Enter the amount from line 28 of the dependant's
+Form ON428.", where ON428 line 28 is "Line 26 plus line 27 =": a starting amount from another
+person's return, a field of each record of the dependants with a disability."""
+
+DISABILITY_DEPENDANTS = RecordListKind.declare(
+    CATALOG,
+    "disability_dependants",
+    fields=(
+        DEPENDANT_UNDER_18,
+        DEPENDANT_CARE_EXPENSES,
+        DEPENDANT_ON428_LINE_28,
+        DEPENDANT_TAXABLE_INCOME,
+    ),
+)
+"""Dependants with a disability for the Ontario worksheet, Worksheet ON428 "Line 58480 - Disability
+amount transferred from a dependant" "Complete this calculation for each dependant": a starting
+list with one record for each such dependant, holding whether they were under 18 on December 31,
+2025, line 3 the child care and attendant care expenses, line 8 the amount from line 28 of their
+Form ON428 and line 10 their taxable income. The caller lists only the dependants who qualify."""
+
+DISABILITY_TRANSFERRED_AMOUNT = CATALOG.declare(
+    "disability_transferred_amount", Decimal, non_negative=True
+)
+"""Ontario disability amount transferred from a dependant, ON428 line 30 and line 58480 "Disability
+amount transferred from a dependant (use Worksheet ON428)": "the total of allowable amounts
+claimed for all dependants", each line 12 "Enter whichever is less: amount from line 7 or line
+11. Allowable amount for this dependant", a part of the total of the Ontario credit amounts."""
+
 NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare(
     "non_refundable_credit_amounts", Decimal, non_negative=True
 )
@@ -156,7 +191,8 @@ line 43": the sum of the credit amounts the rate is applied to once, here, in li
 basic personal amount (line 58040), the age amount (line 58080), the spouse or common-law
 partner amount (line 58120), the amount for an eligible dependant (line 58160), the Ontario
 caregiver amount (line 58185), the base CPP contributions (line 58240), the EI premiums
-(line 58300) and the allowable medical expenses (line 58769)."""
+(line 58300), the disability amount transferred from a dependant (line 58480) and the allowable
+medical expenses (line 58769)."""
 
 CREDIT_AMOUNTS_AT_CREDIT_RATE = CATALOG.declare(
     "credit_amounts_at_credit_rate", Decimal, non_negative=True

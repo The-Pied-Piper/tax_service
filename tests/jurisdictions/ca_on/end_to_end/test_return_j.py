@@ -161,7 +161,8 @@ def test_return_js_age_spouse_and_caregiver_amounts_come_off_net_income_and_the_
         "spouse_amount: spouse_amount_before_count 0 for each of 1 spouses_claimed = 0",
         "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 5672.5 "
         "+ spouse_amount 0 + eligible_dependant_amount 0 + caregiver_amount 0 "
-        "+ cpp_base_contributions 2301.75 + ei_premiums 820 + medical_claim 0 = 21541.25",
+        "+ cpp_base_contributions 2301.75 + ei_premiums 820 "
+        "+ disability_transferred_amount 0 + medical_claim 0 = 21541.25",
     ):
         assert line in rendered
 
