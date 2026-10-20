@@ -17,6 +17,7 @@ from app.adapters.inbound.trace_english import (
     dependants,
     figures,
     gains,
+    line_renderer,
     placement_credit,
     rate_tables,
     record_lists,
@@ -24,16 +25,19 @@ from app.adapters.inbound.trace_english import (
     renderer,
     rentals,
 )
+from app.adapters.inbound.trace_english.line_renderer import LineRenderer
 from app.adapters.inbound.trace_english.renderer import EnglishTraceRenderer
 
 __all__ = [
     "EnglishTraceRenderer",
+    "LineRenderer",
     "arithmetic",
     "capital_cost",
     "choices",
     "dependants",
     "figures",
     "gains",
+    "line_renderer",
     "placement_credit",
     "rate_tables",
     "record_lists",

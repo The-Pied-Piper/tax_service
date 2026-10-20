@@ -16,7 +16,7 @@ from app.domain.trace.record_lists import (
 
 
 @english_renderer
-class RecordTotalRenderer(EnglishFigures):
+class RecordTotalRenderer:
     """English text for RecordTotalLine."""
 
     line_class = RecordTotalLine
@@ -28,14 +28,14 @@ class RecordTotalRenderer(EnglishFigures):
         amounts = line.amounts
         total = line.total
         items = " + ".join(
-            f"item {position} {field.label} {self._money(amount)}"
+            f"item {position} {field.label} {EnglishFigures.money(amount)}"
             for position, amount in enumerate(amounts, start=1)
         )
-        return f"{output.label}: {items or 'no items'} = {self._money(total)}"
+        return f"{output.label}: {items or 'no items'} = {EnglishFigures.money(total)}"
 
 
 @english_renderer
-class RecordCountRenderer(EnglishFigures):
+class RecordCountRenderer:
     """English text for RecordCountLine."""
 
     line_class = RecordCountLine
@@ -51,7 +51,7 @@ class RecordCountRenderer(EnglishFigures):
 
 
 @english_renderer
-class ItemsTotalRenderer(EnglishFigures):
+class ItemsTotalRenderer:
     """English text for ItemsTotalLine."""
 
     line_class = ItemsTotalLine
@@ -61,12 +61,14 @@ class ItemsTotalRenderer(EnglishFigures):
         output = line.output
         items = line.items
         total = line.total
-        terms = " + ".join(f"item {position} {self._money(amount)}" for position, amount in items)
-        return f"{output.label}: {terms or 'no items'} = {self._money(total)}"
+        terms = " + ".join(
+            f"item {position} {EnglishFigures.money(amount)}" for position, amount in items
+        )
+        return f"{output.label}: {terms or 'no items'} = {EnglishFigures.money(total)}"
 
 
 @english_renderer
-class ItemSumRenderer(EnglishFigures):
+class ItemSumRenderer:
     """English text for ItemSumLine."""
 
     line_class = ItemSumLine
@@ -77,12 +79,12 @@ class ItemSumRenderer(EnglishFigures):
         position = line.position
         parts = line.parts
         total = line.total
-        terms = " + ".join(f"{kind.label} {self._money(amount)}" for kind, amount in parts)
-        return f"{output.label}: item {position}: {terms} = {self._money(total)}"
+        terms = " + ".join(f"{kind.label} {EnglishFigures.money(amount)}" for kind, amount in parts)
+        return f"{output.label}: item {position}: {terms} = {EnglishFigures.money(total)}"
 
 
 @english_renderer
-class ItemLesserOfRenderer(EnglishFigures):
+class ItemLesserOfRenderer:
     """English text for ItemLesserOfLine."""
 
     line_class = ItemLesserOfLine
@@ -93,5 +95,9 @@ class ItemLesserOfRenderer(EnglishFigures):
         position = line.position
         parts = line.parts
         result = line.result
-        terms = " and ".join(f"{kind.label} {self._money(amount)}" for kind, amount in parts)
-        return f"{output.label}: item {position}: lesser of {terms} = {self._money(result)}"
+        terms = " and ".join(
+            f"{kind.label} {EnglishFigures.money(amount)}" for kind, amount in parts
+        )
+        return (
+            f"{output.label}: item {position}: lesser of {terms} = {EnglishFigures.money(result)}"
+        )

@@ -17,7 +17,7 @@ from app.domain.trace.capital_cost import (
 
 
 @english_renderer
-class CcaClaimRenderer(EnglishFigures):
+class CcaClaimRenderer:
     """English text for CcaClaimLine."""
 
     line_class = CcaClaimLine
@@ -39,7 +39,7 @@ class CcaClaimRenderer(EnglishFigures):
         rule = line.rounding
         claim = line.claim
         columns = ", ".join(
-            f"column {number} {self._money(amount)}"
+            f"column {number} {EnglishFigures.money(amount)}"
             for number, amount in (
                 (7, column_7),
                 (14, column_14),
@@ -56,17 +56,17 @@ class CcaClaimRenderer(EnglishFigures):
             available = "maximum 0 as no property is left in the class"
         else:
             available = (
-                f"maximum {self._percent(class_rate.rate.value)}% of column 19 = "
-                f"{self._money(maximum)} ({self._rounding(rule)})"
+                f"maximum {EnglishFigures.percent(class_rate.rate.value)}% of column 19 = "
+                f"{EnglishFigures.money(maximum)} ({EnglishFigures.rounding(rule)})"
             )
         return (
-            f"{self._cca_class(output.label, position, class_rate)}: {columns}, "
-            f"{available}, claim {self._money(claim)}"
+            f"{EnglishFigures.cca_class(output.label, position, class_rate)}: {columns}, "
+            f"{available}, claim {EnglishFigures.money(claim)}"
         )
 
 
 @english_renderer
-class RecapturedCcaRenderer(EnglishFigures):
+class RecapturedCcaRenderer:
     """English text for RecapturedCcaLine."""
 
     line_class = RecapturedCcaLine
@@ -80,22 +80,22 @@ class RecapturedCcaRenderer(EnglishFigures):
         zero_reason = line.zero_reason
         result = line.result
         if zero_reason is not CcaZeroReason.COLUMN_7_NEGATIVE:
-            found = f"column 7 {self._money(column_7)} is not negative"
+            found = f"column 7 {EnglishFigures.money(column_7)} is not negative"
         elif class_rate.recapture_and_terminal_loss is RecaptureAndTerminalLoss.EXCLUDED:
             found = (
-                f"column 7 {self._money(column_7)} is negative, but recapture does not "
-                f"apply to class {self._money(class_rate.class_number)}"
+                f"column 7 {EnglishFigures.money(column_7)} is negative, but recapture does not "
+                f"apply to class {EnglishFigures.money(class_rate.class_number)}"
             )
         else:
-            found = f"column 7 {self._money(column_7)} is negative"
+            found = f"column 7 {EnglishFigures.money(column_7)} is negative"
         return (
-            f"{self._cca_class(output.label, position, class_rate)}: {found}: "
-            f"recapture {self._money(result)}"
+            f"{EnglishFigures.cca_class(output.label, position, class_rate)}: {found}: "
+            f"recapture {EnglishFigures.money(result)}"
         )
 
 
 @english_renderer
-class TerminalLossRenderer(EnglishFigures):
+class TerminalLossRenderer:
     """English text for TerminalLossLine."""
 
     line_class = TerminalLossLine
@@ -112,24 +112,24 @@ class TerminalLossRenderer(EnglishFigures):
         if zero_reason is CcaZeroReason.NO_PROPERTY_LEFT:
             if class_rate.recapture_and_terminal_loss is RecaptureAndTerminalLoss.EXCLUDED:
                 found = (
-                    f"column 7 {self._money(column_7)} with no property left, but a "
+                    f"column 7 {EnglishFigures.money(column_7)} with no property left, but a "
                     f"terminal loss does not apply to class "
-                    f"{self._money(class_rate.class_number)}"
+                    f"{EnglishFigures.money(class_rate.class_number)}"
                 )
             else:
-                found = f"column 7 {self._money(column_7)} with no property left"
+                found = f"column 7 {EnglishFigures.money(column_7)} with no property left"
         elif zero_reason is CcaZeroReason.NONE and column_7_positive:
-            found = f"column 7 {self._money(column_7)} with property left"
+            found = f"column 7 {EnglishFigures.money(column_7)} with property left"
         else:
-            found = f"column 7 {self._money(column_7)} is not positive"
+            found = f"column 7 {EnglishFigures.money(column_7)} is not positive"
         return (
-            f"{self._cca_class(output.label, position, class_rate)}: {found}: "
-            f"terminal loss {self._money(result)}"
+            f"{EnglishFigures.cca_class(output.label, position, class_rate)}: {found}: "
+            f"terminal loss {EnglishFigures.money(result)}"
         )
 
 
 @english_renderer
-class ClosingUccRenderer(EnglishFigures):
+class ClosingUccRenderer:
     """English text for ClosingUccLine."""
 
     line_class = ClosingUccLine
@@ -144,11 +144,15 @@ class ClosingUccRenderer(EnglishFigures):
         claim = line.claim
         result = line.result
         if zero_reason is CcaZeroReason.COLUMN_7_NEGATIVE:
-            found = f"column 7 {self._money(column_7)} is negative:"
+            found = f"column 7 {EnglishFigures.money(column_7)} is negative:"
         elif zero_reason is CcaZeroReason.NO_PROPERTY_LEFT:
-            found = f"column 7 {self._money(column_7)} with no property left:"
+            found = f"column 7 {EnglishFigures.money(column_7)} with no property left:"
         else:
-            found = f"column 7 {self._money(column_7)} less claim {self._money(claim)} ="
+            found = (
+                f"column 7 {EnglishFigures.money(column_7)} less claim "
+                f"{EnglishFigures.money(claim)} ="
+            )
         return (
-            f"{self._cca_class(output.label, position, class_rate)}: {found} {self._money(result)}"
+            f"{EnglishFigures.cca_class(output.label, position, class_rate)}: {found} "
+            f"{EnglishFigures.money(result)}"
         )

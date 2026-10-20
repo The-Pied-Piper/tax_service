@@ -10,7 +10,7 @@ from app.domain.trace.rentals import ShortTermRentalNonCompliantLine
 
 
 @english_renderer
-class ShortTermRentalNonCompliantRenderer(EnglishFigures):
+class ShortTermRentalNonCompliantRenderer:
     """English text for ShortTermRentalNonCompliantLine."""
 
     line_class = ShortTermRentalNonCompliantLine
@@ -25,7 +25,7 @@ class ShortTermRentalNonCompliantRenderer(EnglishFigures):
         rule = line.rounding
         result = line.result
         return (
-            f"{output.label}: row {position}: expenses {self._money(related_expenses)} "
+            f"{output.label}: row {position}: expenses {EnglishFigures.money(related_expenses)} "
             f"for {non_compliant_days} non-compliant days of {days} short-term days = "
-            f"{self._money(result)} ({self._rounding(rule)})"
+            f"{EnglishFigures.money(result)} ({EnglishFigures.rounding(rule)})"
         )

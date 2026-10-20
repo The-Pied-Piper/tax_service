@@ -23,10 +23,10 @@ class EnglishTraceRenderer:
     def render(self, line: TraceLine) -> str:
         """The English sentence for `line`; raises TypeError for a line class it does not know."""
         try:
-            rendering = self._renderers.rendering_for(type(line))
+            renderer = self._renderers.for_line_class(type(line))
         except UnknownRegistrationError:
             raise TypeError(f"no English rendering for trace line {type(line).__name__}") from None
-        return rendering.text(line)
+        return renderer.render(line)
 
     def render_all(self, trace: Iterable[TraceLine]) -> tuple[str, ...]:
         """The English sentence for each line of `trace`, in order."""

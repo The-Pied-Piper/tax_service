@@ -133,6 +133,16 @@ def test_a_subclass_of_a_registered_line_class_has_no_renderer() -> None:
         registry.for_line_class(ExampleSubLine)
 
 
+def test_a_non_renderer_stored_under_a_line_class_key_is_unknown() -> None:
+    # The inherited string-keyed `register` bypasses `register_class`; `for_line_class` must not
+    # trust what it finds there.
+    registry = EnglishRendererRegistry()
+    registry.register(f"{ExampleLine.__module__}.{ExampleLine.__qualname__}", 42)
+
+    with pytest.raises(UnknownRegistrationError, match="ExampleLine"):
+        registry.for_line_class(ExampleLine)
+
+
 # --- the shared registry ---------------------------------------------------------------------
 
 
@@ -151,6 +161,59 @@ def test_a_directly_constructed_registry_is_separate_and_empty() -> None:
 
 def test_shared_renderer_registry_is_not_the_shared_parser_registry() -> None:
     assert id(EnglishRendererRegistry.shared()) != id(ParameterParserRegistry.shared())
+
+
+def test_the_shared_registry_holds_exactly_the_built_in_renderers() -> None:
+    assert REAL_SHARED.identifiers() == {
+        "app.domain.trace.arithmetic.AmountOrDividedByRateLine",
+        "app.domain.trace.arithmetic.AtMostLine",
+        "app.domain.trace.arithmetic.CappedAmountLine",
+        "app.domain.trace.arithmetic.CreditAmountLine",
+        "app.domain.trace.arithmetic.FractionAppliedLine",
+        "app.domain.trace.arithmetic.GreaterOfLine",
+        "app.domain.trace.arithmetic.LesserOfLine",
+        "app.domain.trace.arithmetic.MultipleOverLine",
+        "app.domain.trace.arithmetic.PerUnitAmountLine",
+        "app.domain.trace.arithmetic.QuotientLine",
+        "app.domain.trace.arithmetic.RateAppliedLine",
+        "app.domain.trace.arithmetic.RatioAppliedLine",
+        "app.domain.trace.arithmetic.RoundedTotalLine",
+        "app.domain.trace.arithmetic.SubtractedLine",
+        "app.domain.trace.arithmetic.SubtractedNotBelowZeroLine",
+        "app.domain.trace.arithmetic.SumLine",
+        "app.domain.trace.arithmetic.SumNotBelowZeroLine",
+        "app.domain.trace.arithmetic.ThresholdGateLine",
+        "app.domain.trace.arithmetic.TimesCountLine",
+        "app.domain.trace.capital_cost.CcaClaimLine",
+        "app.domain.trace.capital_cost.ClosingUccLine",
+        "app.domain.trace.capital_cost.RecapturedCcaLine",
+        "app.domain.trace.capital_cost.TerminalLossLine",
+        "app.domain.trace.choices.ChosenByCountLine",
+        "app.domain.trace.choices.ChosenByRangeLine",
+        "app.domain.trace.choices.ConditionLine",
+        "app.domain.trace.choices.ConditionsCountLine",
+        "app.domain.trace.dependants.CaregiverClaimLessClaimedLine",
+        "app.domain.trace.dependants.CaregiverClaimLine",
+        "app.domain.trace.dependants.DisabilityTransferLine",
+        "app.domain.trace.dependants.OtherDependantMedicalLine",
+        "app.domain.trace.gains.DispositionGainLine",
+        "app.domain.trace.gains.DispositionGainOnlyLine",
+        "app.domain.trace.gains.PrincipalResidenceGainLine",
+        "app.domain.trace.placement_credit.PlacementCreditLine",
+        "app.domain.trace.rate_tables.AmountByCountLine",
+        "app.domain.trace.rate_tables.BracketColumnLine",
+        "app.domain.trace.rate_tables.ChosenRateAppliedLine",
+        "app.domain.trace.rate_tables.ContributionTierLine",
+        "app.domain.trace.rate_tables.RateByIncomeBandLine",
+        "app.domain.trace.rate_tables.SurchargeTierLine",
+        "app.domain.trace.rate_tables.TaperedAmountLine",
+        "app.domain.trace.record_lists.ItemLesserOfLine",
+        "app.domain.trace.record_lists.ItemSumLine",
+        "app.domain.trace.record_lists.ItemsTotalLine",
+        "app.domain.trace.record_lists.RecordCountLine",
+        "app.domain.trace.record_lists.RecordTotalLine",
+        "app.domain.trace.rentals.ShortTermRentalNonCompliantLine",
+    }
 
 
 # --- the decorator ---------------------------------------------------------------------------

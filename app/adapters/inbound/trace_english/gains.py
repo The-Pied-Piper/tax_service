@@ -14,7 +14,7 @@ from app.domain.trace.gains import (
 
 
 @english_renderer
-class PrincipalResidenceGainRenderer(EnglishFigures):
+class PrincipalResidenceGainRenderer:
     """English text for PrincipalResidenceGainLine."""
 
     line_class = PrincipalResidenceGainLine
@@ -34,17 +34,20 @@ class PrincipalResidenceGainRenderer(EnglishFigures):
         rule = line.rounding
         result = line.result
         return (
-            f"{output.label}: property {position}: gain {self._money(gain)} = proceeds "
-            f"{self._money(proceeds)} less adjusted cost base {self._money(cost_base)} "
-            f"less outlays {self._money(outlays)}; exempt {self._money(exempt)} = "
-            f"{self._money(gain)} × ({designated} designated + {plus_one}) ÷ {owned} "
-            f"owned ({self._rounding(rule)}); taxable gain {self._money(result)} = "
-            f"{self._money(gain)} less {self._money(exempt)}, not below 0"
+            f"{output.label}: property {position}: gain {EnglishFigures.money(gain)} = proceeds "
+            f"{EnglishFigures.money(proceeds)} less adjusted cost base "
+            f"{EnglishFigures.money(cost_base)} "
+            f"less outlays {EnglishFigures.money(outlays)}; exempt {EnglishFigures.money(exempt)} "
+            f"= "
+            f"{EnglishFigures.money(gain)} × ({designated} designated + {plus_one}) ÷ {owned} "
+            f"owned ({EnglishFigures.rounding(rule)}); taxable gain {EnglishFigures.money(result)} "
+            f"= "
+            f"{EnglishFigures.money(gain)} less {EnglishFigures.money(exempt)}, not below 0"
         )
 
 
 @english_renderer
-class DispositionGainRenderer(EnglishFigures):
+class DispositionGainRenderer:
     """English text for DispositionGainLine."""
 
     line_class = DispositionGainLine
@@ -58,14 +61,14 @@ class DispositionGainRenderer(EnglishFigures):
         outlays = line.outlays
         result = line.result
         return (
-            f"{output.label}: disposition {position}: gain or loss {self._money(result)} "
-            f"= proceeds {self._money(proceeds)} less adjusted cost base "
-            f"{self._money(cost_base)} less outlays {self._money(outlays)}"
+            f"{output.label}: disposition {position}: gain or loss {EnglishFigures.money(result)} "
+            f"= proceeds {EnglishFigures.money(proceeds)} less adjusted cost base "
+            f"{EnglishFigures.money(cost_base)} less outlays {EnglishFigures.money(outlays)}"
         )
 
 
 @english_renderer
-class DispositionGainOnlyRenderer(EnglishFigures):
+class DispositionGainOnlyRenderer:
     """English text for DispositionGainOnlyLine."""
 
     line_class = DispositionGainOnlyLine
@@ -80,8 +83,9 @@ class DispositionGainOnlyRenderer(EnglishFigures):
         gain = line.gain
         result = line.result
         return (
-            f"{output.label}: disposition {position}: gain {self._money(gain)} = "
-            f"proceeds {self._money(proceeds)} less adjusted cost base "
-            f"{self._money(cost_base)} less outlays {self._money(outlays)}; gain only "
-            f"{self._money(result)}, not below 0"
+            f"{output.label}: disposition {position}: gain {EnglishFigures.money(gain)} = "
+            f"proceeds {EnglishFigures.money(proceeds)} less adjusted cost base "
+            f"{EnglishFigures.money(cost_base)} less outlays {EnglishFigures.money(outlays)}; gain "
+            f"only "
+            f"{EnglishFigures.money(result)}, not below 0"
         )

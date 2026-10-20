@@ -15,7 +15,7 @@ from app.domain.trace.dependants import (
 
 
 @english_renderer
-class CaregiverClaimRenderer(EnglishFigures):
+class CaregiverClaimRenderer:
     """English text for CaregiverClaimLine."""
 
     line_class = CaregiverClaimLine
@@ -30,14 +30,15 @@ class CaregiverClaimRenderer(EnglishFigures):
         rule = line.rounding
         result = line.result
         return (
-            f"{output.label}: dependant {position}: {self._money(base.value)} less net "
-            f"income {self._money(net_income)}, at most {self._money(maximum.value)} = "
-            f"{self._money(result)} ({self._rounding(rule)})"
+            f"{output.label}: dependant {position}: {EnglishFigures.money(base.value)} less net "
+            f"income {EnglishFigures.money(net_income)}, at most "
+            f"{EnglishFigures.money(maximum.value)} = "
+            f"{EnglishFigures.money(result)} ({EnglishFigures.rounding(rule)})"
         )
 
 
 @english_renderer
-class CaregiverClaimLessClaimedRenderer(EnglishFigures):
+class CaregiverClaimLessClaimedRenderer:
     """English text for CaregiverClaimLessClaimedLine."""
 
     line_class = CaregiverClaimLessClaimedLine
@@ -54,15 +55,16 @@ class CaregiverClaimLessClaimedRenderer(EnglishFigures):
         rule = line.rounding
         result = line.result
         return (
-            f"{output.label}: dependant {position}: {self._money(base.value)} less net "
-            f"income {self._money(net_income)}, at most {self._money(maximum.value)} = "
-            f"{self._money(allowable)}, less claimed {self._money(claimed)} = "
-            f"{self._money(result)} ({self._rounding(rule)})"
+            f"{output.label}: dependant {position}: {EnglishFigures.money(base.value)} less net "
+            f"income {EnglishFigures.money(net_income)}, at most "
+            f"{EnglishFigures.money(maximum.value)} = "
+            f"{EnglishFigures.money(allowable)}, less claimed {EnglishFigures.money(claimed)} = "
+            f"{EnglishFigures.money(result)} ({EnglishFigures.rounding(rule)})"
         )
 
 
 @english_renderer
-class OtherDependantMedicalRenderer(EnglishFigures):
+class OtherDependantMedicalRenderer:
     """English text for OtherDependantMedicalLine."""
 
     line_class = OtherDependantMedicalLine
@@ -76,17 +78,21 @@ class OtherDependantMedicalRenderer(EnglishFigures):
         reduction = line.reduction
         rule = line.rounding
         result = line.result
-        at_most = "" if reduction.maximum is None else f", at most {self._money(reduction.maximum)}"
+        at_most = (
+            ""
+            if reduction.maximum is None
+            else f", at most {EnglishFigures.money(reduction.maximum)}"
+        )
         return (
-            f"{output.label}: dependant {position}: expenses {self._money(expenses)} "
-            f"less the lesser of {self._percent(reduction.rate.value)}% of net income "
-            f"{self._money(net_income)} and {self._money(reduction.ceiling)} = "
-            f"{self._money(result)}{at_most} ({self._rounding(rule)})"
+            f"{output.label}: dependant {position}: expenses {EnglishFigures.money(expenses)} "
+            f"less the lesser of {EnglishFigures.percent(reduction.rate.value)}% of net income "
+            f"{EnglishFigures.money(net_income)} and {EnglishFigures.money(reduction.ceiling)} = "
+            f"{EnglishFigures.money(result)}{at_most} ({EnglishFigures.rounding(rule)})"
         )
 
 
 @english_renderer
-class DisabilityTransferRenderer(EnglishFigures):
+class DisabilityTransferRenderer:
     """English text for DisabilityTransferLine."""
 
     line_class = DisabilityTransferLine
@@ -113,24 +119,27 @@ class DisabilityTransferRenderer(EnglishFigures):
         steps = []
         if under_18:
             steps.append(
-                f"care expenses {self._money(care_expenses)} less threshold "
-                f"{self._money(threshold.value)} = {self._money(line_5)}"
+                f"care expenses {EnglishFigures.money(care_expenses)} less threshold "
+                f"{EnglishFigures.money(threshold.value)} = {EnglishFigures.money(line_5)}"
             )
             steps.append(
-                f"supplement {self._money(supplement.value)} less {self._money(line_5)} "
-                f"= {self._money(line_6)}"
+                f"supplement {EnglishFigures.money(supplement.value)} less "
+                f"{EnglishFigures.money(line_5)} "
+                f"= {EnglishFigures.money(line_6)}"
             )
         steps.append(
-            f"base {self._money(base.value)} + {self._money(line_7)}, at most "
-            f"{self._money(maximum.value)} = {self._money(line_8)}"
+            f"base {EnglishFigures.money(base.value)} + {EnglishFigures.money(line_7)}, at most "
+            f"{EnglishFigures.money(maximum.value)} = {EnglishFigures.money(line_8)}"
         )
         steps.append(
-            f"{self._money(line_8)} + credit amounts {self._money(credit_amounts)} less "
-            f"taxable income {self._money(taxable_income)} = {self._money(line_12)}"
+            f"{EnglishFigures.money(line_8)} + credit amounts "
+            f"{EnglishFigures.money(credit_amounts)} less "
+            f"taxable income {EnglishFigures.money(taxable_income)} = "
+            f"{EnglishFigures.money(line_12)}"
         )
         steps.append(
-            f"the lesser of {self._money(line_8)} and {self._money(line_12)} = "
-            f"{self._money(result)} ({self._rounding(rule)})"
+            f"the lesser of {EnglishFigures.money(line_8)} and {EnglishFigures.money(line_12)} = "
+            f"{EnglishFigures.money(result)} ({EnglishFigures.rounding(rule)})"
         )
         age = "under 18" if under_18 else "18 or older"
         return f"{output.label}: dependant {position}: {age}: {'; '.join(steps)}"

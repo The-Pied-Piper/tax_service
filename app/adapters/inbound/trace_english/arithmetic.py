@@ -30,7 +30,7 @@ from app.domain.trace.arithmetic import (
 
 
 @english_renderer
-class RoundedTotalRenderer(EnglishFigures):
+class RoundedTotalRenderer:
     """English text for RoundedTotalLine."""
 
     line_class = RoundedTotalLine
@@ -41,11 +41,14 @@ class RoundedTotalRenderer(EnglishFigures):
         base = line.base
         amount = line.base_amount
         rule = line.rounding
-        return f"{output.label} on {base.label} {self._money(amount)} ({self._rounding(rule)})"
+        return (
+            f"{output.label} on {base.label} {EnglishFigures.money(amount)} "
+            f"({EnglishFigures.rounding(rule)})"
+        )
 
 
 @english_renderer
-class SumRenderer(EnglishFigures):
+class SumRenderer:
     """English text for SumLine."""
 
     line_class = SumLine
@@ -55,12 +58,12 @@ class SumRenderer(EnglishFigures):
         output = line.output
         parts = line.parts
         total = line.total
-        terms = " + ".join(f"{kind.label} {self._money(amount)}" for kind, amount in parts)
-        return f"{output.label}: {terms or 'no parts'} = {self._money(total)}"
+        terms = " + ".join(f"{kind.label} {EnglishFigures.money(amount)}" for kind, amount in parts)
+        return f"{output.label}: {terms or 'no parts'} = {EnglishFigures.money(total)}"
 
 
 @english_renderer
-class SumNotBelowZeroRenderer(EnglishFigures):
+class SumNotBelowZeroRenderer:
     """English text for SumNotBelowZeroLine."""
 
     line_class = SumNotBelowZeroLine
@@ -70,12 +73,12 @@ class SumNotBelowZeroRenderer(EnglishFigures):
         output = line.output
         parts = line.parts
         total = line.total
-        terms = " + ".join(f"{kind.label} {self._money(amount)}" for kind, amount in parts)
-        return f"{output.label}: {terms or 'no parts'}, not below 0 = {self._money(total)}"
+        terms = " + ".join(f"{kind.label} {EnglishFigures.money(amount)}" for kind, amount in parts)
+        return f"{output.label}: {terms or 'no parts'}, not below 0 = {EnglishFigures.money(total)}"
 
 
 @english_renderer
-class RateAppliedRenderer(EnglishFigures):
+class RateAppliedRenderer:
     """English text for RateAppliedLine."""
 
     line_class = RateAppliedLine
@@ -88,13 +91,13 @@ class RateAppliedRenderer(EnglishFigures):
         rate = line.rate
         rule = line.rounding
         return (
-            f"{output.label}: {self._percent(rate.value)}% of {base.label} "
-            f"{self._money(amount)} ({self._rounding(rule)})"
+            f"{output.label}: {EnglishFigures.percent(rate.value)}% of {base.label} "
+            f"{EnglishFigures.money(amount)} ({EnglishFigures.rounding(rule)})"
         )
 
 
 @english_renderer
-class SubtractedRenderer(EnglishFigures):
+class SubtractedRenderer:
     """English text for SubtractedLine."""
 
     line_class = SubtractedLine
@@ -108,14 +111,14 @@ class SubtractedRenderer(EnglishFigures):
         subtrahend_amount = line.subtrahend_amount
         result = line.result
         return (
-            f"{output.label}: {minuend.label} {self._money(minuend_amount)} "
-            f"less {subtrahend.label} {self._money(subtrahend_amount)} "
-            f"= {self._money(result)}"
+            f"{output.label}: {minuend.label} {EnglishFigures.money(minuend_amount)} "
+            f"less {subtrahend.label} {EnglishFigures.money(subtrahend_amount)} "
+            f"= {EnglishFigures.money(result)}"
         )
 
 
 @english_renderer
-class SubtractedNotBelowZeroRenderer(EnglishFigures):
+class SubtractedNotBelowZeroRenderer:
     """English text for SubtractedNotBelowZeroLine."""
 
     line_class = SubtractedNotBelowZeroLine
@@ -129,14 +132,14 @@ class SubtractedNotBelowZeroRenderer(EnglishFigures):
         subtrahend_amount = line.subtrahend_amount
         result = line.result
         return (
-            f"{output.label}: {minuend.label} {self._money(minuend_amount)} "
-            f"less {subtrahend.label} {self._money(subtrahend_amount)}, "
-            f"not below 0 = {self._money(result)}"
+            f"{output.label}: {minuend.label} {EnglishFigures.money(minuend_amount)} "
+            f"less {subtrahend.label} {EnglishFigures.money(subtrahend_amount)}, "
+            f"not below 0 = {EnglishFigures.money(result)}"
         )
 
 
 @english_renderer
-class CreditAmountRenderer(EnglishFigures):
+class CreditAmountRenderer:
     """English text for CreditAmountLine."""
 
     line_class = CreditAmountLine
@@ -146,11 +149,14 @@ class CreditAmountRenderer(EnglishFigures):
         output = line.output
         basis = line.basis
         rule = line.rounding
-        return f"{output.label}: credit amount {self._money(basis.amount)} ({self._rounding(rule)})"
+        return (
+            f"{output.label}: credit amount {EnglishFigures.money(basis.amount)} "
+            f"({EnglishFigures.rounding(rule)})"
+        )
 
 
 @english_renderer
-class CappedAmountRenderer(EnglishFigures):
+class CappedAmountRenderer:
     """English text for CappedAmountLine."""
 
     line_class = CappedAmountLine
@@ -163,13 +169,13 @@ class CappedAmountRenderer(EnglishFigures):
         cap = line.cap
         rule = line.rounding
         return (
-            f"{output.label}: lesser of {base.label} {self._money(amount)} "
-            f"and {self._money(cap.value)} ({self._rounding(rule)})"
+            f"{output.label}: lesser of {base.label} {EnglishFigures.money(amount)} "
+            f"and {EnglishFigures.money(cap.value)} ({EnglishFigures.rounding(rule)})"
         )
 
 
 @english_renderer
-class LesserOfRenderer(EnglishFigures):
+class LesserOfRenderer:
     """English text for LesserOfLine."""
 
     line_class = LesserOfLine
@@ -179,12 +185,14 @@ class LesserOfRenderer(EnglishFigures):
         output = line.output
         parts = line.parts
         result = line.result
-        terms = " and ".join(f"{kind.label} {self._money(amount)}" for kind, amount in parts)
-        return f"{output.label}: lesser of {terms} = {self._money(result)}"
+        terms = " and ".join(
+            f"{kind.label} {EnglishFigures.money(amount)}" for kind, amount in parts
+        )
+        return f"{output.label}: lesser of {terms} = {EnglishFigures.money(result)}"
 
 
 @english_renderer
-class GreaterOfRenderer(EnglishFigures):
+class GreaterOfRenderer:
     """English text for GreaterOfLine."""
 
     line_class = GreaterOfLine
@@ -194,12 +202,14 @@ class GreaterOfRenderer(EnglishFigures):
         output = line.output
         parts = line.parts
         result = line.result
-        terms = " and ".join(f"{kind.label} {self._money(amount)}" for kind, amount in parts)
-        return f"{output.label}: greater of {terms} = {self._money(result)}"
+        terms = " and ".join(
+            f"{kind.label} {EnglishFigures.money(amount)}" for kind, amount in parts
+        )
+        return f"{output.label}: greater of {terms} = {EnglishFigures.money(result)}"
 
 
 @english_renderer
-class PerUnitAmountRenderer(EnglishFigures):
+class PerUnitAmountRenderer:
     """English text for PerUnitAmountLine."""
 
     line_class = PerUnitAmountLine
@@ -213,13 +223,13 @@ class PerUnitAmountRenderer(EnglishFigures):
         rule = line.rounding
         result = line.result
         return (
-            f"{output.label}: {self._money(per_unit.value)} for each of {count} "
-            f"{count_kind.label} = {self._money(result)} ({self._rounding(rule)})"
+            f"{output.label}: {EnglishFigures.money(per_unit.value)} for each of {count} "
+            f"{count_kind.label} = {EnglishFigures.money(result)} ({EnglishFigures.rounding(rule)})"
         )
 
 
 @english_renderer
-class MultipleOverRenderer(EnglishFigures):
+class MultipleOverRenderer:
     """English text for MultipleOverLine."""
 
     line_class = MultipleOverLine
@@ -234,14 +244,15 @@ class MultipleOverRenderer(EnglishFigures):
         less_amount = line.less_amount
         rule = line.rounding
         return (
-            f"{output.label}: {self._money(factor.value)} × {base.label} "
-            f"{self._money(amount)} over {less.label} {self._money(less_amount)}, "
-            f"not below 0 ({self._rounding(rule)})"
+            f"{output.label}: {EnglishFigures.money(factor.value)} × {base.label} "
+            f"{EnglishFigures.money(amount)} over {less.label} "
+            f"{EnglishFigures.money(less_amount)}, "
+            f"not below 0 ({EnglishFigures.rounding(rule)})"
         )
 
 
 @english_renderer
-class AtMostRenderer(EnglishFigures):
+class AtMostRenderer:
     """English text for AtMostLine."""
 
     line_class = AtMostLine
@@ -254,13 +265,13 @@ class AtMostRenderer(EnglishFigures):
         bound = line.bound
         bound_value = line.bound_value
         return (
-            f"{output.label}: {amount_kind.label} {self._money(amount)}, "
-            f"at most {bound.label} {self._money(bound_value)}"
+            f"{output.label}: {amount_kind.label} {EnglishFigures.money(amount)}, "
+            f"at most {bound.label} {EnglishFigures.money(bound_value)}"
         )
 
 
 @english_renderer
-class FractionAppliedRenderer(EnglishFigures):
+class FractionAppliedRenderer:
     """English text for FractionAppliedLine."""
 
     line_class = FractionAppliedLine
@@ -274,12 +285,12 @@ class FractionAppliedRenderer(EnglishFigures):
         rule = line.rounding
         return (
             f"{output.label}: {fraction.numerator}/{fraction.denominator} of {base.label} "
-            f"{self._money(amount)} ({self._rounding(rule)})"
+            f"{EnglishFigures.money(amount)} ({EnglishFigures.rounding(rule)})"
         )
 
 
 @english_renderer
-class RatioAppliedRenderer(EnglishFigures):
+class RatioAppliedRenderer:
     """English text for RatioAppliedLine."""
 
     line_class = RatioAppliedLine
@@ -295,14 +306,15 @@ class RatioAppliedRenderer(EnglishFigures):
         denominator = line.denominator_value
         rule = line.rounding
         return (
-            f"{output.label}: {amount_kind.label} {self._money(amount)} × "
-            f"{numerator_kind.label} {self._money(numerator)} / "
-            f"{denominator_kind.label} {self._money(denominator)} ({self._rounding(rule)})"
+            f"{output.label}: {amount_kind.label} {EnglishFigures.money(amount)} × "
+            f"{numerator_kind.label} {EnglishFigures.money(numerator)} / "
+            f"{denominator_kind.label} {EnglishFigures.money(denominator)} "
+            f"({EnglishFigures.rounding(rule)})"
         )
 
 
 @english_renderer
-class TimesCountRenderer(EnglishFigures):
+class TimesCountRenderer:
     """English text for TimesCountLine."""
 
     line_class = TimesCountLine
@@ -316,13 +328,13 @@ class TimesCountRenderer(EnglishFigures):
         count = line.count
         result = line.result
         return (
-            f"{output.label}: {amount_kind.label} {self._money(amount)} for each of "
-            f"{count} {count_kind.label} = {self._money(result)}"
+            f"{output.label}: {amount_kind.label} {EnglishFigures.money(amount)} for each of "
+            f"{count} {count_kind.label} = {EnglishFigures.money(result)}"
         )
 
 
 @english_renderer
-class QuotientRenderer(EnglishFigures):
+class QuotientRenderer:
     """English text for QuotientLine."""
 
     line_class = QuotientLine
@@ -336,14 +348,14 @@ class QuotientRenderer(EnglishFigures):
         divisor_amount = line.divisor_amount
         result = line.result
         return (
-            f"{output.label}: {dividend.label} {self._money(dividend_amount)} "
-            f"divided by {divisor.label} {self._money(divisor_amount)} "
-            f"= {self._money(result)}"
+            f"{output.label}: {dividend.label} {EnglishFigures.money(dividend_amount)} "
+            f"divided by {divisor.label} {EnglishFigures.money(divisor_amount)} "
+            f"= {EnglishFigures.money(result)}"
         )
 
 
 @english_renderer
-class ThresholdGateRenderer(EnglishFigures):
+class ThresholdGateRenderer:
     """English text for ThresholdGateLine."""
 
     line_class = ThresholdGateLine
@@ -359,15 +371,15 @@ class ThresholdGateRenderer(EnglishFigures):
         rule = line.rounding
         result = line.result
         return (
-            f"{output.label}: {amount_kind.label} {self._money(amount)} "
-            f"if {gate_kind.label} {self._money(gate_value)} is at least "
-            f"{self._money(threshold.value)} ({self._rounding(rule)}) = "
-            f"{self._money(result)}"
+            f"{output.label}: {amount_kind.label} {EnglishFigures.money(amount)} "
+            f"if {gate_kind.label} {EnglishFigures.money(gate_value)} is at least "
+            f"{EnglishFigures.money(threshold.value)} ({EnglishFigures.rounding(rule)}) = "
+            f"{EnglishFigures.money(result)}"
         )
 
 
 @english_renderer
-class AmountOrDividedByRateRenderer(EnglishFigures):
+class AmountOrDividedByRateRenderer:
     """English text for AmountOrDividedByRateLine."""
 
     line_class = AmountOrDividedByRateLine
@@ -383,9 +395,9 @@ class AmountOrDividedByRateRenderer(EnglishFigures):
         rule = line.rounding
         result = line.result
         return (
-            f"{output.label}: {amount_kind.label} {self._money(amount_value)} "
-            f"if {self._money(limit.threshold)} or less, otherwise {dividend_kind.label} "
-            f"{self._money(dividend_value)} divided by "
-            f"{self._percent(limit.rate.value)}% ({self._rounding(rule)}) = "
-            f"{self._money(result)}"
+            f"{output.label}: {amount_kind.label} {EnglishFigures.money(amount_value)} "
+            f"if {EnglishFigures.money(limit.threshold)} or less, otherwise {dividend_kind.label} "
+            f"{EnglishFigures.money(dividend_value)} divided by "
+            f"{EnglishFigures.percent(limit.rate.value)}% ({EnglishFigures.rounding(rule)}) = "
+            f"{EnglishFigures.money(result)}"
         )

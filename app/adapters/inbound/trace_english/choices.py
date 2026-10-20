@@ -15,7 +15,7 @@ from app.domain.trace.choices import (
 
 
 @english_renderer
-class ChosenByCountRenderer(EnglishFigures):
+class ChosenByCountRenderer:
     """English text for ChosenByCountLine."""
 
     line_class = ChosenByCountLine
@@ -28,13 +28,13 @@ class ChosenByCountRenderer(EnglishFigures):
         chosen_kind = line.chosen_kind
         chosen = line.chosen_value
         return (
-            f"{output.label}: {chosen_kind.label} {self._money(chosen)}, "
+            f"{output.label}: {chosen_kind.label} {EnglishFigures.money(chosen)}, "
             f"chosen as {count_kind.label} is {count}"
         )
 
 
 @english_renderer
-class ChosenByRangeRenderer(EnglishFigures):
+class ChosenByRangeRenderer:
     """English text for ChosenByRangeLine."""
 
     line_class = ChosenByRangeLine
@@ -47,13 +47,13 @@ class ChosenByRangeRenderer(EnglishFigures):
         chosen_kind = line.chosen_kind
         chosen = line.chosen_value
         return (
-            f"{output.label}: {chosen_kind.label} {self._money(chosen)}, "
-            f"chosen as {tested_kind.label} is {self._money(tested)}"
+            f"{output.label}: {chosen_kind.label} {EnglishFigures.money(chosen)}, "
+            f"chosen as {tested_kind.label} is {EnglishFigures.money(tested)}"
         )
 
 
 @english_renderer
-class ConditionRenderer(EnglishFigures):
+class ConditionRenderer:
     """English text for ConditionLine."""
 
     line_class = ConditionLine
@@ -66,7 +66,7 @@ class ConditionRenderer(EnglishFigures):
         reads = line.reads
         applies = line.applies
         figures = ", ".join(
-            f"{kind.label} {value if isinstance(value, int) else self._money(value)}"
+            f"{kind.label} {value if isinstance(value, int) else EnglishFigures.money(value)}"
             for kind, value in reads
         )
         verdict = "applies" if applies else "does not apply"
@@ -74,7 +74,7 @@ class ConditionRenderer(EnglishFigures):
 
 
 @english_renderer
-class ConditionsCountRenderer(EnglishFigures):
+class ConditionsCountRenderer:
     """English text for ConditionsCountLine."""
 
     line_class = ConditionsCountLine

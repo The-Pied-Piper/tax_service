@@ -10,7 +10,7 @@ from app.domain.trace.placement_credit import PlacementCreditLine
 
 
 @english_renderer
-class PlacementCreditRenderer(EnglishFigures):
+class PlacementCreditRenderer:
     """English text for PlacementCreditLine."""
 
     line_class = PlacementCreditLine
@@ -27,8 +27,8 @@ class PlacementCreditRenderer(EnglishFigures):
         line_13 = line.line_13
         rule = line.rounding
         return (
-            f"{output.label}: item {position} {field.label} {self._money(expenditure)}: "
-            f"line 1 {self._money(line_1)}, line 3 {self._money(line_3)}, "
-            f"line 12 {self._money(line_12)}, line 13 {self._money(line_13)} "
-            f"({self._rounding(rule)})"
+            f"{output.label}: item {position} {field.label} {EnglishFigures.money(expenditure)}: "
+            f"line 1 {EnglishFigures.money(line_1)}, line 3 {EnglishFigures.money(line_3)}, "
+            f"line 12 {EnglishFigures.money(line_12)}, line 13 {EnglishFigures.money(line_13)} "
+            f"({EnglishFigures.rounding(rule)})"
         )

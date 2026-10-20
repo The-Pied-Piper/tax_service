@@ -18,7 +18,7 @@ from app.domain.trace.rate_tables import (
 
 
 @english_renderer
-class BracketColumnRenderer(EnglishFigures):
+class BracketColumnRenderer:
     """English text for BracketColumnLine."""
 
     line_class = BracketColumnLine
@@ -30,13 +30,13 @@ class BracketColumnRenderer(EnglishFigures):
         excess = line.excess
         tax_at_start = line.tax_at_start
         return (
-            f"{self._percent(rate)}% on {self._money(excess)} "
-            f"over {self._money(lower)} plus {self._money(tax_at_start)}"
+            f"{EnglishFigures.percent(rate)}% on {EnglishFigures.money(excess)} "
+            f"over {EnglishFigures.money(lower)} plus {EnglishFigures.money(tax_at_start)}"
         )
 
 
 @english_renderer
-class ContributionTierRenderer(EnglishFigures):
+class ContributionTierRenderer:
     """English text for ContributionTierLine."""
 
     line_class = ContributionTierLine
@@ -49,15 +49,15 @@ class ContributionTierRenderer(EnglishFigures):
         rule = line.rounding
         contributory = line.contributory
         return (
-            f"{output.label}: {self._percent(tier.rate.value)}% of {earnings.label} "
-            f"between {self._money(tier.lower)} and {self._money(tier.upper)} "
-            f"({self._money(contributory)}), "
-            f"at most {self._money(tier.maximum)} ({self._rounding(rule)})"
+            f"{output.label}: {EnglishFigures.percent(tier.rate.value)}% of {earnings.label} "
+            f"between {EnglishFigures.money(tier.lower)} and {EnglishFigures.money(tier.upper)} "
+            f"({EnglishFigures.money(contributory)}), "
+            f"at most {EnglishFigures.money(tier.maximum)} ({EnglishFigures.rounding(rule)})"
         )
 
 
 @english_renderer
-class SurchargeTierRenderer(EnglishFigures):
+class SurchargeTierRenderer:
     """English text for SurchargeTierLine."""
 
     line_class = SurchargeTierLine
@@ -71,16 +71,16 @@ class SurchargeTierRenderer(EnglishFigures):
         rate = line.rate
         rule = line.rounding
         maximum = line.maximum
-        at_most = "" if maximum is None else f", at most {self._money(maximum)}"
+        at_most = "" if maximum is None else f", at most {EnglishFigures.money(maximum)}"
         return (
-            f"{output.label}: {self._percent(rate.value)}% of {base.label} "
-            f"{self._money(amount)} over {self._money(threshold)}{at_most} "
-            f"({self._rounding(rule)})"
+            f"{output.label}: {EnglishFigures.percent(rate.value)}% of {base.label} "
+            f"{EnglishFigures.money(amount)} over {EnglishFigures.money(threshold)}{at_most} "
+            f"({EnglishFigures.rounding(rule)})"
         )
 
 
 @english_renderer
-class TaperedAmountRenderer(EnglishFigures):
+class TaperedAmountRenderer:
     """English text for TaperedAmountLine."""
 
     line_class = TaperedAmountLine
@@ -94,16 +94,17 @@ class TaperedAmountRenderer(EnglishFigures):
         rule = line.rounding
         reduction = line.reduction
         return (
-            f"{output.label}: {self._money(taper.base)} "
-            f"plus {self._money(taper.supplement)} less {self._exact(reduction)} "
-            f"for {base.label} {self._money(amount)} "
-            f"over {self._money(taper.threshold)} (range {self._money(taper.range)}), "
-            f"not below {self._money(taper.base)} ({self._rounding(rule)})"
+            f"{output.label}: {EnglishFigures.money(taper.base)} "
+            f"plus {EnglishFigures.money(taper.supplement)} less {EnglishFigures.exact(reduction)} "
+            f"for {base.label} {EnglishFigures.money(amount)} "
+            f"over {EnglishFigures.money(taper.threshold)} (range "
+            f"{EnglishFigures.money(taper.range)}), "
+            f"not below {EnglishFigures.money(taper.base)} ({EnglishFigures.rounding(rule)})"
         )
 
 
 @english_renderer
-class RateByIncomeBandRenderer(EnglishFigures):
+class RateByIncomeBandRenderer:
     """English text for RateByIncomeBandLine."""
 
     line_class = RateByIncomeBandLine
@@ -118,20 +119,20 @@ class RateByIncomeBandRenderer(EnglishFigures):
         if row is None:
             band = "which is 0"
         elif row.not_more_than is None:
-            band = f"more than {self._money(row.more_than)}"
+            band = f"more than {EnglishFigures.money(row.more_than)}"
         else:
             band = (
-                f"more than {self._money(row.more_than)} "
-                f"but not more than {self._money(row.not_more_than)}"
+                f"more than {EnglishFigures.money(row.more_than)} "
+                f"but not more than {EnglishFigures.money(row.not_more_than)}"
             )
         return (
-            f"{output.label}: {income.label} {self._money(amount)}, "
-            f"{band}: {self._percent(rate.value)}%"
+            f"{output.label}: {income.label} {EnglishFigures.money(amount)}, "
+            f"{band}: {EnglishFigures.percent(rate.value)}%"
         )
 
 
 @english_renderer
-class ChosenRateAppliedRenderer(EnglishFigures):
+class ChosenRateAppliedRenderer:
     """English text for ChosenRateAppliedLine."""
 
     line_class = ChosenRateAppliedLine
@@ -145,13 +146,13 @@ class ChosenRateAppliedRenderer(EnglishFigures):
         rate = line.rate
         rule = line.rounding
         return (
-            f"{output.label}: {rate_kind.label} {self._percent(rate.value)}% of "
-            f"{base.label} {self._money(amount)} ({self._rounding(rule)})"
+            f"{output.label}: {rate_kind.label} {EnglishFigures.percent(rate.value)}% of "
+            f"{base.label} {EnglishFigures.money(amount)} ({EnglishFigures.rounding(rule)})"
         )
 
 
 @english_renderer
-class AmountByCountRenderer(EnglishFigures):
+class AmountByCountRenderer:
     """English text for AmountByCountLine."""
 
     line_class = AmountByCountLine
@@ -164,6 +165,6 @@ class AmountByCountRenderer(EnglishFigures):
         row = line.row
         rule = line.rounding
         return (
-            f"{output.label}: {self._money(row)} for {count_kind.label} {count} "
-            f"({self._rounding(rule)})"
+            f"{output.label}: {EnglishFigures.money(row)} for {count_kind.label} {count} "
+            f"({EnglishFigures.rounding(rule)})"
         )

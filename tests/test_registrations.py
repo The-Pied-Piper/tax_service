@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 
 import app
+import app.adapters.inbound.trace_english
 import app.adapters.outbound.parameter_parsers
 import app.domain.capabilities
 import app.jurisdictions
@@ -47,6 +48,7 @@ def test_lists_the_core_packages() -> None:
     assert app.registrations.CORE_PACKAGES == (
         app.domain.capabilities,
         app.adapters.outbound.parameter_parsers,
+        app.adapters.inbound.trace_english,
     )
 
 
