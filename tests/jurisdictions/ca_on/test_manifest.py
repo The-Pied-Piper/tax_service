@@ -17,6 +17,7 @@ from app.domain.capabilities.capped_amount import CappedAmount
 from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.contribution_tier import TieredContribution
 from app.domain.capabilities.credit_amount import CreditAmount
+from app.domain.capabilities.greater_of import GreaterOf
 from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.multiple_over import MultipleOver
 from app.domain.capabilities.per_unit_amount import PerUnitAmount
@@ -710,6 +711,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/capital_gift_taxable_gains",
             "ca/capital_gift_gains_deduction",
             "ca-on/political_contributions",
+            "ca-on/lift_spouse_at_year_end",
         }
     )
     # T1 line 167, the refund or balance owing, Schedule 7 line 23, what the return produces for
@@ -3022,23 +3024,204 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"base": "ca-on/lift_credit_before_maximum"},
             produces={"output": "ca-on/lift_maximum_credit"},
         ),
-        # Lines 15 to 19: line 15 "Amount from line 13 above", the adjusted net income, which is
-        # net income (line 23600) while lines 7, 8, 10 and 11 are not triggered; line 16
+        # Lines 6 to 9: line 6 "Net income from line 23600 of your return (or the amount you would
+        # have entered if the instructions on line 23600 said "if negative, show in brackets")",
+        # the net income before adjustments, which is not floored at zero; line 7 "Amount from line
+        # 21300 of your return", the UCCB repayment; line 8 "Amount of registered disability
+        # savings plan (RDSP) income repayment included on line 23200 of your return"; and line 9
+        # "Add lines 6 to 8.", in line order.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/net_income_before_adjustments",
+                    "ca/uccb_repayment",
+                    "ca/rdsp_income_repayment",
+                )
+            },
+            produces={"output": "ca-on/lift_net_income_and_repayments"},
+        ),
+        # Lines 10 to 12: line 10 "Amount from line 11700 of your return", the universal child care
+        # benefit; line 11 "Amount of RDSP income included on line 12500 of your return"; and line
+        # 12 "Line 10 plus line 11", in line order.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/universal_child_care_benefit", "ca/rdsp_income")},
+            produces={"output": "ca-on/lift_uccb_and_rdsp_income"},
+        ),
+        # Line 13 "Line 9 minus line 12 (if negative, enter "0") Your adjusted net income".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/lift_net_income_and_repayments",
+                "less": "ca-on/lift_uccb_and_rdsp_income",
+            },
+            produces={"output": "ca-on/lift_adjusted_net_income"},
+        ),
+        # Lines 15 to 19: line 15 "Amount from line 13 above", the adjusted net income; line 16
         # "Individual income threshold 32,500.00"; line 17 "Line 15 minus line 16 (if negative,
         # enter "0")"; line 18 "Applicable rate 5%"; line 19 "Line 17 multiplied by the
         # percentage from line 18".
         CapabilitySelection(
             name="core/tiered_surcharge",
             params={"tiers": "ca-on/lift_reduction"},
-            consumes={"base": "ca/net_income"},
+            consumes={"base": "ca-on/lift_adjusted_net_income"},
             produces={"output": "ca-on/lift_reduction"},
         ),
         # Line 20 "Line 14 minus line 19 (if negative, enter "0") Enter this amount on line 62140
-        # of your Form ON428.", ON428 line 85.
+        # of your Form ON428.", the credit for a single individual (Part A).
         CapabilitySelection(
             name="core/subtract_not_below_zero",
             params={},
             consumes={"amount": "ca-on/lift_maximum_credit", "less": "ca-on/lift_reduction"},
+            produces={"output": "ca-on/lift_credit_single"},
+        ),
+        # Part B, lines 21 to 24: line 21 "Net income from line 23600 of your spouse's or common-law
+        # partner's return (or the amount they would have entered if the instructions on line
+        # 23600 said "if negative, show in brackets")", a caller's figure that may be negative;
+        # line 22 "Amount from line 21300 of your spouse's or common-law partner's return"; line 23
+        # "Amount of RDSP income repayment included on line 23200 of your spouse's or common-law
+        # partner's return"; and line 24 "Add lines 21 to 23.", in line order. Lines 21 to 23 are
+        # the caller's existing spouse inputs, the same figures the Federal Worksheet for line
+        # 45200 uses (one shared input, entered once).
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/spouse_net_income_before_adjustments",
+                    "ca/spouse_uccb_repayment",
+                    "ca/spouse_rdsp_income_repayment",
+                )
+            },
+            produces={"output": "ca-on/lift_spouse_net_income_and_repayments"},
+        ),
+        # Lines 25 to 27: line 25 "Amount from line 11700 of your spouse's or common-law partner's
+        # return"; line 26 "Amount of RDSP income included on line 12500 of your spouse's or
+        # common-law partner's return"; and line 27 "Line 25 plus line 26", in line order. Lines 25
+        # and 26 are likewise the caller's existing spouse inputs, shared with the Federal Worksheet
+        # for line 45200.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/spouse_universal_child_care_benefit",
+                    "ca/spouse_rdsp_income",
+                )
+            },
+            produces={"output": "ca-on/lift_spouse_uccb_and_rdsp_income"},
+        ),
+        # Line 28 "Line 24 minus line 27 (if negative, enter "0") Your spouse's or common-law
+        # partner's adjusted net income".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/lift_spouse_net_income_and_repayments",
+                "less": "ca-on/lift_spouse_uccb_and_rdsp_income",
+            },
+            produces={"output": "ca-on/lift_spouse_adjusted_net_income"},
+        ),
+        # Line 31 "Individual income threshold 32,500.00", the dataset as an artifact of the same
+        # name.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca-on/lift_individual_income_threshold"},
+            consumes={},
+            produces={"output": "ca-on/lift_individual_income_threshold"},
+        ),
+        # Lines 30 to 32: line 30 "Amount from line 13 of the previous page", the adjusted net
+        # income, and line 32 "Line 30 minus line 31 (if negative, enter "0")".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/lift_adjusted_net_income",
+                "less": "ca-on/lift_individual_income_threshold",
+            },
+            produces={"output": "ca-on/lift_excess_over_individual_threshold"},
+        ),
+        # Lines 33 to 35: line 33 "Amount from line 30 above" and line 34 "Amount from line 28
+        # above", and line 35 "Line 33 plus line 34 Adjusted family net income", in line order.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca-on/lift_adjusted_net_income",
+                    "ca-on/lift_spouse_adjusted_net_income",
+                )
+            },
+            produces={"output": "ca-on/lift_family_net_income"},
+        ),
+        # Line 36 "Family income threshold 65,0000.00", printed with a typo, which is 65,000.00: the
+        # dataset as an artifact of the same name.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca-on/lift_family_income_threshold"},
+            consumes={},
+            produces={"output": "ca-on/lift_family_income_threshold"},
+        ),
+        # Line 37 "Line 35 minus line 36 (if negative, enter "0")".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/lift_family_net_income",
+                "less": "ca-on/lift_family_income_threshold",
+            },
+            produces={"output": "ca-on/lift_excess_over_family_threshold"},
+        ),
+        # Line 38 "Enter whichever is more: amount from line 32 or line 37.", in line order.
+        CapabilitySelection(
+            name="core/greater_of",
+            params={},
+            consumes={
+                "amounts": (
+                    "ca-on/lift_excess_over_individual_threshold",
+                    "ca-on/lift_excess_over_family_threshold",
+                )
+            },
+            produces={"output": "ca-on/lift_greater_excess"},
+        ),
+        # Line 39 "Applicable rate 5%" and line 40 "Line 38 multiplied by the percentage from line
+        # 39", applied once to the greater excess.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/lift_family_rate"},
+            consumes={"base": "ca-on/lift_greater_excess"},
+            produces={"output": "ca-on/lift_family_reduction"},
+        ),
+        # Line 41 "Line 29 minus line 40 (if negative, enter "0") Enter this amount on line 62140
+        # of your Form ON428.", the credit for an individual with a spouse or common-law partner
+        # (Part B), where line 29 "Amount from line 5 of the previous page (maximum $875)" is the
+        # credit at most its maximum.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca-on/lift_maximum_credit",
+                "less": "ca-on/lift_family_reduction",
+            },
+            produces={"output": "ca-on/lift_credit_with_spouse"},
+        ),
+        # ON428 line 85 "Low-income individuals and families tax (LIFT) credit (complete Schedule
+        # ON428-A)": "If you were single at the end of the year, complete Part A" and "If you had a
+        # spouse or common-law partner at the end of the year, complete Part B", so a count of 1
+        # (a caller's 0 or 1, entered as 0 when the spouse or common-law partner died during the
+        # year, as "complete Part A as if you were single") chooses line 41 over line 20.
+        CapabilitySelection(
+            name="core/choose_by_count",
+            params={},
+            consumes={
+                "count": "ca-on/lift_spouse_at_year_end",
+                "when_none": "ca-on/lift_credit_single",
+                "when_any": "ca-on/lift_credit_with_spouse",
+            },
             produces={"output": "ca-on/lift_credit"},
         ),
         # ON428 line 86 "Line 84 minus line 85 (if negative, enter "0")": line 84 "Amount from line
@@ -4319,7 +4502,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca-on/net_refund"},
         ),
     }
-    assert len(found.capabilities) == 344
+    assert len(found.capabilities) == 359
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -4329,7 +4512,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 344
+    assert len(composition.order) == 359
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -5525,10 +5708,108 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         ),
         (ApplyRate, frozenset({EMPLOYMENT_INCOME}), frozenset({LIFT_CREDIT_BEFORE_MAXIMUM})),
         (CappedAmount, frozenset({LIFT_CREDIT_BEFORE_MAXIMUM}), frozenset({LIFT_MAXIMUM_CREDIT})),
-        (TieredSurcharge, frozenset({NET_INCOME}), frozenset({LIFT_REDUCTION})),
+        (
+            Sum,
+            frozenset({NET_INCOME_BEFORE_ADJUSTMENTS, UCCB_REPAYMENT, RDSP_INCOME_REPAYMENT}),
+            frozenset({ontario.LIFT_NET_INCOME_AND_REPAYMENTS}),
+        ),
+        (
+            Sum,
+            frozenset({UNIVERSAL_CHILD_CARE_BENEFIT, RDSP_INCOME}),
+            frozenset({ontario.LIFT_UCCB_AND_RDSP_INCOME}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({ontario.LIFT_NET_INCOME_AND_REPAYMENTS, ontario.LIFT_UCCB_AND_RDSP_INCOME}),
+            frozenset({ontario.LIFT_ADJUSTED_NET_INCOME}),
+        ),
+        (
+            TieredSurcharge,
+            frozenset({ontario.LIFT_ADJUSTED_NET_INCOME}),
+            frozenset({LIFT_REDUCTION}),
+        ),
         (
             SubtractNotBelowZero,
             frozenset({LIFT_MAXIMUM_CREDIT, LIFT_REDUCTION}),
+            frozenset({ontario.LIFT_CREDIT_SINGLE}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {
+                    SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS,
+                    SPOUSE_UCCB_REPAYMENT,
+                    SPOUSE_RDSP_INCOME_REPAYMENT,
+                }
+            ),
+            frozenset({ontario.LIFT_SPOUSE_NET_INCOME_AND_REPAYMENTS}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {
+                    SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT,
+                    SPOUSE_RDSP_INCOME,
+                }
+            ),
+            frozenset({ontario.LIFT_SPOUSE_UCCB_AND_RDSP_INCOME}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset(
+                {
+                    ontario.LIFT_SPOUSE_NET_INCOME_AND_REPAYMENTS,
+                    ontario.LIFT_SPOUSE_UCCB_AND_RDSP_INCOME,
+                }
+            ),
+            frozenset({ontario.LIFT_SPOUSE_ADJUSTED_NET_INCOME}),
+        ),
+        (CreditAmount, frozenset(), frozenset({ontario.LIFT_INDIVIDUAL_INCOME_THRESHOLD})),
+        (
+            SubtractNotBelowZero,
+            frozenset({ontario.LIFT_ADJUSTED_NET_INCOME, ontario.LIFT_INDIVIDUAL_INCOME_THRESHOLD}),
+            frozenset({ontario.LIFT_EXCESS_OVER_INDIVIDUAL_THRESHOLD}),
+        ),
+        (
+            Sum,
+            frozenset({ontario.LIFT_ADJUSTED_NET_INCOME, ontario.LIFT_SPOUSE_ADJUSTED_NET_INCOME}),
+            frozenset({ontario.LIFT_FAMILY_NET_INCOME}),
+        ),
+        (CreditAmount, frozenset(), frozenset({ontario.LIFT_FAMILY_INCOME_THRESHOLD})),
+        (
+            SubtractNotBelowZero,
+            frozenset({ontario.LIFT_FAMILY_NET_INCOME, ontario.LIFT_FAMILY_INCOME_THRESHOLD}),
+            frozenset({ontario.LIFT_EXCESS_OVER_FAMILY_THRESHOLD}),
+        ),
+        (
+            GreaterOf,
+            frozenset(
+                {
+                    ontario.LIFT_EXCESS_OVER_INDIVIDUAL_THRESHOLD,
+                    ontario.LIFT_EXCESS_OVER_FAMILY_THRESHOLD,
+                }
+            ),
+            frozenset({ontario.LIFT_GREATER_EXCESS}),
+        ),
+        (
+            ApplyRate,
+            frozenset({ontario.LIFT_GREATER_EXCESS}),
+            frozenset({ontario.LIFT_FAMILY_REDUCTION}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({LIFT_MAXIMUM_CREDIT, ontario.LIFT_FAMILY_REDUCTION}),
+            frozenset({ontario.LIFT_CREDIT_WITH_SPOUSE}),
+        ),
+        (
+            ChooseByCount,
+            frozenset(
+                {
+                    ontario.LIFT_SPOUSE_AT_YEAR_END,
+                    ontario.LIFT_CREDIT_SINGLE,
+                    ontario.LIFT_CREDIT_WITH_SPOUSE,
+                }
+            ),
             frozenset({LIFT_CREDIT}),
         ),
         (

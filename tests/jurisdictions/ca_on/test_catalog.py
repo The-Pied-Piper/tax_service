@@ -66,10 +66,26 @@ from app.jurisdictions.ca_on.catalog import (
     FLOW_THROUGH_SHARE_EXPENSES,
     FLOW_THROUGH_SHARE_SLIP_EXPENSES,
     FLOW_THROUGH_SHARE_SLIPS,
+    LIFT_ADJUSTED_NET_INCOME,
     LIFT_CREDIT,
     LIFT_CREDIT_BEFORE_MAXIMUM,
+    LIFT_CREDIT_SINGLE,
+    LIFT_CREDIT_WITH_SPOUSE,
+    LIFT_EXCESS_OVER_FAMILY_THRESHOLD,
+    LIFT_EXCESS_OVER_INDIVIDUAL_THRESHOLD,
+    LIFT_FAMILY_INCOME_THRESHOLD,
+    LIFT_FAMILY_NET_INCOME,
+    LIFT_FAMILY_REDUCTION,
+    LIFT_GREATER_EXCESS,
+    LIFT_INDIVIDUAL_INCOME_THRESHOLD,
     LIFT_MAXIMUM_CREDIT,
+    LIFT_NET_INCOME_AND_REPAYMENTS,
     LIFT_REDUCTION,
+    LIFT_SPOUSE_ADJUSTED_NET_INCOME,
+    LIFT_SPOUSE_AT_YEAR_END,
+    LIFT_SPOUSE_NET_INCOME_AND_REPAYMENTS,
+    LIFT_SPOUSE_UCCB_AND_RDSP_INCOME,
+    LIFT_UCCB_AND_RDSP_INCOME,
     MEDICAL_CLAIM,
     MEDICAL_EXPENSES_OVER_THRESHOLD,
     MEDICAL_NET_INCOME_SHARE,
@@ -192,6 +208,22 @@ REGISTERED = frozenset(
         "ca-on/lift_credit_before_maximum",
         "ca-on/lift_maximum_credit",
         "ca-on/lift_reduction",
+        "ca-on/lift_spouse_at_year_end",
+        "ca-on/lift_net_income_and_repayments",
+        "ca-on/lift_uccb_and_rdsp_income",
+        "ca-on/lift_adjusted_net_income",
+        "ca-on/lift_credit_single",
+        "ca-on/lift_spouse_net_income_and_repayments",
+        "ca-on/lift_spouse_uccb_and_rdsp_income",
+        "ca-on/lift_spouse_adjusted_net_income",
+        "ca-on/lift_individual_income_threshold",
+        "ca-on/lift_excess_over_individual_threshold",
+        "ca-on/lift_family_net_income",
+        "ca-on/lift_family_income_threshold",
+        "ca-on/lift_excess_over_family_threshold",
+        "ca-on/lift_greater_excess",
+        "ca-on/lift_family_reduction",
+        "ca-on/lift_credit_with_spouse",
         "ca-on/lift_credit",
         "ca-on/ontario_tax_after_lift_credit",
         "ca-on/community_food_program_donations",
@@ -256,8 +288,10 @@ REGISTERED = frozenset(
 )
 # ON428 lines 75 (line 60969) and 76 (line 60970): the numbers of dependent children and of
 # dependants, counted, not money; Worksheet ON428's "Line 58185 - Ontario caregiver amount"
-# line 4, whether a dependant is the one claimed on line 58160 (0 or 1), a field of each record; and
-# ON479 line 63260, the number of eligible work placements.
+# line 4, whether a dependant is the one claimed on line 58160 (0 or 1), a field of each record;
+# ON479 line 63260, the number of eligible work placements; and Schedule ON428-A's choice of
+# Part A or Part B, whether there was a spouse or common-law partner at the end of the year
+# (0 or 1).
 COUNTS = frozenset(
     {
         "ca-on/dependent_children",
@@ -265,6 +299,7 @@ COUNTS = frozenset(
         "ca-on/claimed_as_eligible_dependant",
         "ca-on/coop_education_placement_count",
         "ca-on/claims_seniors_care_credit",
+        "ca-on/lift_spouse_at_year_end",
     }
 )
 # Form T1221 lines 1 to 3, one line per corporation or slip: the record list of the slips;
@@ -276,6 +311,15 @@ RECORD_LISTS = frozenset(
         "ca-on/flow_through_share_slips",
         "ca-on/caregiver_dependants",
         "ca-on/coop_education_placements",
+    }
+)
+# Schedule ON428-A lines 9, 21 and 24 print no "(if negative, enter "0")", and line 6 and line 21
+# take the net income "or the amount you would have entered if the instructions on line 23600
+# said "if negative, show in brackets"": signed kinds.
+SIGNED = frozenset(
+    {
+        "ca-on/lift_net_income_and_repayments",
+        "ca-on/lift_spouse_net_income_and_repayments",
     }
 )
 
@@ -369,6 +413,34 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/lift_credit_before_maximum") is LIFT_CREDIT_BEFORE_MAXIMUM
     assert registry.get("ca-on/lift_maximum_credit") is LIFT_MAXIMUM_CREDIT
     assert registry.get("ca-on/lift_reduction") is LIFT_REDUCTION
+    assert registry.get("ca-on/lift_spouse_at_year_end") is LIFT_SPOUSE_AT_YEAR_END
+    assert registry.get("ca-on/lift_net_income_and_repayments") is LIFT_NET_INCOME_AND_REPAYMENTS
+    assert registry.get("ca-on/lift_uccb_and_rdsp_income") is LIFT_UCCB_AND_RDSP_INCOME
+    assert registry.get("ca-on/lift_adjusted_net_income") is LIFT_ADJUSTED_NET_INCOME
+    assert registry.get("ca-on/lift_credit_single") is LIFT_CREDIT_SINGLE
+    assert (
+        registry.get("ca-on/lift_spouse_net_income_and_repayments")
+        is LIFT_SPOUSE_NET_INCOME_AND_REPAYMENTS
+    )
+    assert (
+        registry.get("ca-on/lift_spouse_uccb_and_rdsp_income") is LIFT_SPOUSE_UCCB_AND_RDSP_INCOME
+    )
+    assert registry.get("ca-on/lift_spouse_adjusted_net_income") is LIFT_SPOUSE_ADJUSTED_NET_INCOME
+    assert (
+        registry.get("ca-on/lift_individual_income_threshold") is LIFT_INDIVIDUAL_INCOME_THRESHOLD
+    )
+    assert (
+        registry.get("ca-on/lift_excess_over_individual_threshold")
+        is LIFT_EXCESS_OVER_INDIVIDUAL_THRESHOLD
+    )
+    assert registry.get("ca-on/lift_family_net_income") is LIFT_FAMILY_NET_INCOME
+    assert registry.get("ca-on/lift_family_income_threshold") is LIFT_FAMILY_INCOME_THRESHOLD
+    assert (
+        registry.get("ca-on/lift_excess_over_family_threshold") is LIFT_EXCESS_OVER_FAMILY_THRESHOLD
+    )
+    assert registry.get("ca-on/lift_greater_excess") is LIFT_GREATER_EXCESS
+    assert registry.get("ca-on/lift_family_reduction") is LIFT_FAMILY_REDUCTION
+    assert registry.get("ca-on/lift_credit_with_spouse") is LIFT_CREDIT_WITH_SPOUSE
     assert registry.get("ca-on/lift_credit") is LIFT_CREDIT
     assert registry.get("ca-on/ontario_tax_after_lift_credit") is ONTARIO_TAX_AFTER_LIFT_CREDIT
     assert (
@@ -560,13 +632,39 @@ def test_the_co_operative_education_payroll_and_credit_are_non_negative_amounts(
         assert kind.non_negative is True
 
 
-def test_every_kind_but_the_record_lists_is_declared_non_negative(
+def test_the_lift_lines_that_print_no_floor_are_signed(registry: ArtifactRegistry) -> None:
+    # Schedule ON428-A line 9 "Add lines 6 to 8." and line 24 "Add lines 21 to 23." print no floor
+    # and add a figure that may be negative (line 21 is the caller's existing spouse net income,
+    # `ca/spouse_net_income_before_adjustments`, which is signed). Lines 13 and 28 are floored.
+    assert SIGNED <= REGISTERED
+    for kind in (
+        LIFT_NET_INCOME_AND_REPAYMENTS,
+        LIFT_SPOUSE_NET_INCOME_AND_REPAYMENTS,
+    ):
+        assert kind.value_type is Decimal
+        assert kind.non_negative is False, kind.identifier
+        assert registry.kind(kind.identifier) is kind
+    assert LIFT_ADJUSTED_NET_INCOME.non_negative is True
+    assert LIFT_SPOUSE_ADJUSTED_NET_INCOME.non_negative is True
+
+
+def test_the_lift_spouse_at_year_end_is_a_non_negative_count(registry: ArtifactRegistry) -> None:
+    # Schedule ON428-A: "If you had a spouse or common-law partner at the end of the year,
+    # complete Part B"; "If your spouse or common-law partner died at any time during the year,
+    # complete Part A as if you were single", so the caller enters 0 then.
+    assert LIFT_SPOUSE_AT_YEAR_END.identifier == "ca-on/lift_spouse_at_year_end"
+    assert LIFT_SPOUSE_AT_YEAR_END.value_type is int
+    assert LIFT_SPOUSE_AT_YEAR_END.non_negative is True
+    assert registry.kind("ca-on/lift_spouse_at_year_end") is LIFT_SPOUSE_AT_YEAR_END
+
+
+def test_every_kind_but_the_record_lists_and_the_signed_lines_is_declared_non_negative(
     registry: ArtifactRegistry,
 ) -> None:
     for kind in CATALOG.kinds:
-        if kind.identifier not in RECORD_LISTS:
+        if kind.identifier not in RECORD_LISTS | SIGNED:
             assert kind.non_negative is True, kind.identifier
-    for identifier in REGISTERED - RECORD_LISTS:
+    for identifier in REGISTERED - RECORD_LISTS - SIGNED:
         assert registry.kind(identifier).non_negative is True, identifier
 
 

@@ -307,6 +307,7 @@ inputs:
   ca/spouse_rdsp_income_repayment: "0"
   ca/spouse_universal_child_care_benefit: "0"
   ca/spouse_rdsp_income: "0"
+  ca-on/lift_spouse_at_year_end: "0"
 expected:
   ca/taxable_capital_gains: "0"
   ca/taxable_dividends_other_than_eligible: "0"
@@ -525,6 +526,24 @@ def test_return_x_claims_one_dependant_with_a_disability_on_line_31800() -> None
         a for a in worked.expected if a.kind.identifier == "ca/disability_transferred_amount"
     ]
     assert transferred.value == Decimal("6267.00")
+    check(path)
+
+
+def test_return_aa_has_a_spouse_at_year_end_and_takes_the_lift_credit_from_part_b() -> None:
+    path = RETURNS / "2025_return_aa.yaml"
+    build_tax_computation()  # registers the catalogs the loader resolves through
+    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+
+    (at_year_end,) = [
+        a for a in worked.inputs if a.kind.identifier == "ca-on/lift_spouse_at_year_end"
+    ]
+    assert at_year_end.value == 1
+    (spouse_income,) = [
+        a for a in worked.inputs if a.kind.identifier == "ca/spouse_net_income_before_adjustments"
+    ]
+    assert spouse_income.value == Decimal("50000")
+    (credit,) = [a for a in worked.expected if a.kind.identifier == "ca-on/lift_credit"]
+    assert credit.value == Decimal("375.00")
     check(path)
 
 

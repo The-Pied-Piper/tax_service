@@ -1066,6 +1066,7 @@ inputs:
   ca/spouse_rdsp_income: "0"
   ca-on/opportunities_fund_donation: "100"
   ca-on/political_contributions: "0"
+  ca-on/lift_spouse_at_year_end: "0"
   ca-on/fertility_expenses: "0"
   ca-on/claims_seniors_care_credit: "0"
   ca-on/seniors_transit_paid: "0"
