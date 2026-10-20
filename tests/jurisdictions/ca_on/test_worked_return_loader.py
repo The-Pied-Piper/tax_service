@@ -862,3 +862,21 @@ def test_digits_under_expected_that_are_not_quoted_text_name_the_file_and_key(
         match=r"bad\.yaml: expected\.ex/business_number must be a string, got int",
     ):
         WorkedReturn.load(path, digits)
+
+
+def test_digits_left_out_are_the_empty_text_as_an_input_and_an_expected_line(
+    tmp_path: Path, digits: ArtifactRegistry
+) -> None:
+    # A carried entry left out of a return is a box left blank, under both sections.
+    text = with_section("inputs", 'inputs:\n  ex/partnership_member: "0"\n')
+    worked = WorkedReturn.load(write(tmp_path, text, "valid.yaml"), digits)
+
+    filled = worked.with_blanks(
+        frozenset({"ex/partnership_member", "ex/business_number"}),
+        frozenset({"ca/federal_basic_tax", "ex/business_number"}),
+        digits,
+    )
+
+    kind = digits.kind("ex/business_number")
+    assert filled.inputs == (*worked.inputs, Artifact(kind, ""))
+    assert filled.expected == (*worked.expected, Artifact(kind, ""))

@@ -87,8 +87,9 @@ class WorkedReturn:
 
         `inputs` and `outputs` are the identifiers the manifest declares. A declared input the
         file leaves out is entered as blank: 0 for an amount or a count, no records for a record
-        list. A declared output the file leaves out is expected to be 0, so a line that fires
-        on a return not meant to trigger it still fails. Raises WorkedReturnError naming the
+        list, the empty text for digits. A declared output the file leaves out is expected to be
+        0, or the empty text for digits, so a line that fires on a return not meant to trigger it
+        still fails. Raises WorkedReturnError naming the
         file and the identifier for one `artifacts` does not know or that holds no blank.
         """
         given = {artifact.kind.identifier for artifact in self.inputs}
@@ -116,6 +117,8 @@ class WorkedReturn:
                 result.append(Artifact(kind, 0))
             elif section == "inputs" and isinstance(kind, RecordListKind):
                 result.append(Artifact(kind, RecordList(kind.fields, [])))
+            elif isinstance(kind, DigitsKind):
+                result.append(Artifact(kind, ""))
             else:
                 raise WorkedReturnError(
                     f"{self.path}: {section}: {identifier!r} holds a "
