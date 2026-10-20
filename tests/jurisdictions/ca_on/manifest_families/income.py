@@ -16,7 +16,9 @@ from app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_expenses 
     ShortTermRentalNonCompliantExpenses,
 )
 from app.jurisdictions.ca.catalog import (
+    BUSINESS_INCOME,
     CAPITAL_GAIN,
+    COMMISSION_INCOME,
     CPP_OR_QPP_BENEFITS,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     DIVIDEND_TAX_CREDIT,
@@ -30,7 +32,9 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     EMPLOYMENT_INCOME,
+    FARMING_INCOME,
     FHSA_INCOME,
+    FISHING_INCOME,
     FOREIGN_INVESTMENT_INCOME,
     GROSS_RENTAL_INCOME,
     INCOME_SUPPORT_BENEFITS,
@@ -43,6 +47,7 @@ from app.jurisdictions.ca.catalog import (
     NET_FEDERAL_SUPPLEMENTS,
     NET_PARTNERSHIP_INCOME,
     NET_RENTAL_INCOME,
+    NET_SELF_EMPLOYMENT_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
     NON_REFUNDABLE_TAX_CREDITS,
     OLD_AGE_SECURITY,
@@ -53,6 +58,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_FHSA_INCOME,
     OTHER_INCOME,
     OTHER_PENSIONS_AND_SUPERANNUATION,
+    PROFESSIONAL_INCOME,
     RDSP_INCOME,
     RENTAL_ADVERTISING,
     RENTAL_ADVERTISING_PERSONAL_PORTION,
@@ -247,6 +253,11 @@ INPUTS = frozenset(
         "ca/other_fhsa_income",
         "ca/other_income",
         "ca/taxable_scholarships",
+        "ca/business_income",
+        "ca/professional_income",
+        "ca/commission_income",
+        "ca/farming_income",
+        "ca/fishing_income",
         "ca/workers_compensation_benefits",
         "ca/social_assistance_payments",
         "ca/net_federal_supplements",
@@ -741,6 +752,25 @@ STEPS = {
         consumes={"parts": ("ca/non_refundable_tax_credits", "ca/dividend_tax_credit")},
         produces={"output": "ca/credits_against_basic_federal_tax"},
     ),
+    # T1 line 27 "Add lines 22 to 26. Net self-employment income": line 22 (13500) business
+    # income, line 23 (13700) professional income, line 24 (13900) commission income, line 25
+    # (14100) farming income and line 26 (14300) fishing income, the "Net" box of each, in line
+    # order. Line 28 "Line 21 plus line 27" and total income (line 15000) are not yet computed
+    # from it.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_income",
+                "ca/professional_income",
+                "ca/commission_income",
+                "ca/farming_income",
+                "ca/fishing_income",
+            ),
+        },
+        produces={"output": "ca/net_self_employment_income"},
+    ),
 }
 
 WIRING = {
@@ -1030,5 +1060,18 @@ WIRING = {
         Sum,
         frozenset({NON_REFUNDABLE_TAX_CREDITS, DIVIDEND_TAX_CREDIT}),
         frozenset({CREDITS_AGAINST_BASIC_FEDERAL_TAX}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                BUSINESS_INCOME,
+                PROFESSIONAL_INCOME,
+                COMMISSION_INCOME,
+                FARMING_INCOME,
+                FISHING_INCOME,
+            }
+        ),
+        frozenset({NET_SELF_EMPLOYMENT_INCOME}),
     ),
 }

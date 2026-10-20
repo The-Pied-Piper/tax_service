@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.domain.capabilities.amount_by_count import AmountForCount
 from app.domain.capabilities.apply_fraction import ApplyFraction
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.at_most import AtMost
@@ -19,6 +20,7 @@ from app.domain.capabilities.progressive_tax import ProgressiveTax
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
+from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
 from app.domain.capabilities.tapered_amount import TaperedAmount
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.capabilities.times_count import TimesCount
@@ -59,6 +61,7 @@ from app.jurisdictions.ca.catalog import (
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
+    BUSINESS_INCOME,
     BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
@@ -98,11 +101,27 @@ from app.jurisdictions.ca.catalog import (
     CHILDREN_UNDER_SEVEN,
     CHILDREN_WITH_DISABILITY,
     CLERGY_RESIDENCE_DEDUCTION,
+    COMMISSION_INCOME,
+    CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_BASIC_EXEMPTION,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
+    CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
+    CPP_EARNINGS_UP_TO_MAXIMUM,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_MAXIMUM_PENSIONABLE_EARNINGS,
+    CPP_MONTHS,
     CPP_OR_QPP_BENEFITS,
+    CPP_PART_4_COMPLETED,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+    CPP_PENSIONABLE_EARNINGS,
+    CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+    CPT20_EARNINGS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
@@ -138,7 +157,18 @@ from app.jurisdictions.ca.catalog import (
     ECOLOGICAL_AND_CULTURAL_GIFTS,
     ECOLOGICAL_GIFTS_BEFORE_2016,
     EI_AND_OTHER_BENEFITS,
+    EI_CONTROLLED_CORPORATION_EARNINGS,
+    EI_EARNINGS_SUBJECT_TO_PREMIUM,
+    EI_EXEMPT_SELF_EMPLOYMENT_INCOME,
+    EI_INSURABLE_EARNINGS,
+    EI_INSURABLE_EARNINGS_REMAINING,
+    EI_MAXIMUM_INSURABLE_EARNINGS,
+    EI_NET_SELF_EMPLOYMENT_INCOME,
+    EI_PAYABLE_ON_SELF_EMPLOYMENT,
     EI_PREMIUMS,
+    EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+    EI_SELF_EMPLOYMENT_EARNINGS,
+    EI_SPECIAL_BENEFITS_AGREEMENT,
     ELECTED_SPLIT_PENSION_AMOUNT,
     ELECTED_SPLIT_PENSION_DEDUCTION,
     ELIGIBLE_DEPENDANT_AMOUNT,
@@ -149,6 +179,7 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     EMPLOYMENT_INCOME,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
+    FARMING_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
     FHSA_ANNUAL_AMOUNT,
@@ -204,6 +235,7 @@ from app.jurisdictions.ca.catalog import (
     FHSA_VARIABLE_F_AMOUNT,
     FHSA_VARIABLE_H_AMOUNT,
     FIRST_TIER_DONATION_CREDIT,
+    FISHING_INCOME,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
     GOVERNMENT_DONATIONS,
@@ -246,6 +278,7 @@ from app.jurisdictions.ca.catalog import (
     NET_PARTNERSHIP_INCOME,
     NET_PROFESSIONAL_INCOME,
     NET_RENTAL_INCOME,
+    NET_SELF_EMPLOYMENT_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
@@ -276,7 +309,9 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
     OTHER_PENSIONS_AND_SUPERANNUATION,
+    PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     POLITICAL_CONTRIBUTIONS,
+    PROFESSIONAL_INCOME,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REFUND_OR_BALANCE_OWING,
@@ -365,6 +400,14 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION_MAXIMUM,
     RRSP_INCOME,
     SECURITY_OPTIONS_DEDUCTIONS,
+    SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS,
+    SELF_EMPLOYED_CPP_BASE_CREDIT,
+    SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE,
+    SELF_EMPLOYED_CPP_DEDUCTION,
+    SELF_EMPLOYED_CPP_ENHANCED_CONTRIBUTIONS,
+    SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    SELF_EMPLOYED_EI_PREMIUMS,
     SHORT_TERM_RENTAL_GROSS_RENTS,
     SHORT_TERM_RENTAL_UNITS,
     SLIP_DIVIDEND_TAX_CREDIT,
@@ -850,6 +893,82 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(EI_PREMIUMS), TieredContribution)
     assert worksheet.producer_of(EI_PREMIUMS) not in tiers
     assert isinstance(worksheet.producer_of(CPP_ENHANCED_CONTRIBUTIONS), Sum)
+    # The self-employment lines (T1 lines 22 to 27, Schedule 8 Parts 2 and 4, Schedule 13).
+    for starting in (
+        BUSINESS_INCOME,
+        PROFESSIONAL_INCOME,
+        COMMISSION_INCOME,
+        FARMING_INCOME,
+        FISHING_INCOME,
+        CPP_MONTHS,
+        CPT20_EARNINGS,
+        CPP_PART_4_COMPLETED,
+        EI_CONTROLLED_CORPORATION_EARNINGS,
+        EI_EXEMPT_SELF_EMPLOYMENT_INCOME,
+        EI_INSURABLE_EARNINGS,
+        EI_SPECIAL_BENEFITS_AGREEMENT,
+    ):
+        assert worksheet.producer_of(starting) is None, starting.identifier
+    assert isinstance(worksheet.producer_of(NET_SELF_EMPLOYMENT_INCOME), Sum)
+    months_tables = {
+        worksheet.producer_of(kind)
+        for kind in (
+            CPP_MAXIMUM_PENSIONABLE_EARNINGS,
+            CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+            CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
+            CPP_BASIC_EXEMPTION,
+        )
+    }
+    assert len(months_tables) == 4
+    assert all(isinstance(producer, AmountForCount) for producer in months_tables)
+    assert isinstance(worksheet.producer_of(PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS), Sum)
+    assert isinstance(worksheet.producer_of(CPP_PENSIONABLE_EARNINGS), SumNotBelowZero)
+    assert isinstance(
+        worksheet.producer_of(CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM), LesserOf
+    )
+    for floored_line in (
+        CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
+        CPP_EARNINGS_UP_TO_MAXIMUM,
+        CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
+        EI_INSURABLE_EARNINGS_REMAINING,
+    ):
+        assert isinstance(worksheet.producer_of(floored_line), SubtractNotBelowZero)
+    self_employed_tiers = {
+        worksheet.producer_of(kind)
+        for kind in (
+            SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS,
+            SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            SELF_EMPLOYED_EI_PREMIUMS,
+        )
+    }
+    assert len(self_employed_tiers) == 4
+    assert all(isinstance(producer, TieredContribution) for producer in self_employed_tiers)
+    assert not self_employed_tiers & tiers
+    for summed in (
+        SELF_EMPLOYED_CPP_ENHANCED_CONTRIBUTIONS,
+        SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE,
+        SELF_EMPLOYED_CPP_DEDUCTION,
+        EI_NET_SELF_EMPLOYMENT_INCOME,
+    ):
+        assert isinstance(worksheet.producer_of(summed), Sum)
+    assert isinstance(worksheet.producer_of(SELF_EMPLOYED_CPP_BASE_CREDIT), ApplyRate)
+    assert isinstance(worksheet.producer_of(EI_SELF_EMPLOYMENT_EARNINGS), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(EI_MAXIMUM_INSURABLE_EARNINGS), CreditAmount)
+    assert isinstance(worksheet.producer_of(EI_EARNINGS_SUBJECT_TO_PREMIUM), LesserOf)
+    # T1 lines 42100, 31000, 22200, 31217 and 42120: each a line of its form claimed once.
+    claimed = {
+        worksheet.producer_of(kind)
+        for kind in (
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+            EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+            EI_PAYABLE_ON_SELF_EMPLOYMENT,
+        )
+    }
+    assert len(claimed) == 5
+    assert all(isinstance(producer, TimesCount) for producer in claimed)
     assert isinstance(worksheet.producer_of(TAXABLE_CAPITAL_GAINS), ApplyRate)
     assert isinstance(worksheet.producer_of(TOTAL_INCOME), Sum)
     child_care_limits = {

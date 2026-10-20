@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 401
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 430
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -109,6 +109,11 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/other_fhsa_income",
         "ca/other_income",
         "ca/taxable_scholarships",
+        "ca/business_income",
+        "ca/professional_income",
+        "ca/commission_income",
+        "ca/farming_income",
+        "ca/fishing_income",
         "ca/workers_compensation_benefits",
         "ca/social_assistance_payments",
         "ca/net_federal_supplements",
@@ -251,6 +256,13 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/fhsa_unused_contributions_carried_forward",
         "ca/elected_split_pension_deduction",
         "ca/union_dues",
+        "ca/cpp_months",
+        "ca/cpt20_earnings",
+        "ca/cpp_part_4_completed",
+        "ca/ei_controlled_corporation_earnings",
+        "ca/ei_exempt_self_employment_income",
+        "ca/ei_insurable_earnings",
+        "ca/ei_special_benefits_agreement",
         "ca/child_care_expenses_paid",
         "ca/children_under_seven",
         "ca/children_with_disability",
@@ -436,6 +448,35 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/cca_ucc_at_end",
         "ca/cpp_base_contributions",
         "ca/ei_premiums",
+        "ca/net_self_employment_income",
+        "ca/cpp_maximum_pensionable_earnings",
+        "ca/cpp_second_additional_earnings_maximum",
+        "ca/cpp_additional_maximum_pensionable_earnings",
+        "ca/cpp_basic_exemption",
+        "ca/pensionable_net_self_employment_earnings",
+        "ca/cpp_pensionable_earnings",
+        "ca/cpp_pensionable_earnings_up_to_additional_maximum",
+        "ca/cpp_earnings_subject_to_second_additional",
+        "ca/cpp_earnings_up_to_maximum",
+        "ca/cpp_earnings_subject_to_base_and_first_additional",
+        "ca/self_employed_cpp_base_contributions",
+        "ca/self_employed_cpp_first_additional_contributions",
+        "ca/self_employed_cpp_second_additional_contributions",
+        "ca/self_employed_cpp_enhanced_contributions",
+        "ca/self_employed_cpp_contributions_payable",
+        "ca/self_employed_cpp_base_credit",
+        "ca/self_employed_cpp_deduction",
+        "ca/cpp_payable_on_self_employment",
+        "ca/cpp_base_contributions_on_self_employment",
+        "ca/cpp_deduction_on_self_employment",
+        "ca/ei_self_employment_earnings",
+        "ca/ei_net_self_employment_income",
+        "ca/ei_maximum_insurable_earnings",
+        "ca/ei_insurable_earnings_remaining",
+        "ca/ei_earnings_subject_to_premium",
+        "ca/self_employed_ei_premiums",
+        "ca/ei_premiums_on_self_employment",
+        "ca/ei_payable_on_self_employment",
         "ca/canada_employment_amount",
         "ca/non_refundable_credit_amounts",
         "ca/non_refundable_tax_credits",
@@ -770,13 +811,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 401
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 430
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 401
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 430
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

@@ -21,6 +21,14 @@ description: >-
   A single Ontario resident for all of 2025 whose only income is rental income: two units
   of one property with gross rents of $24,000 (T776 line 8141) and expenses of $12,000, so
   line 12599 is $24,000.00 and line 12600 is $12,000.00. A chosen set of figures.
+  No self-employment income: the net business, professional, commission, farming and fishing
+  income (T1 lines 13500, 13700, 13900, 14100 and 14300) are $0, so their sum (line 27) is
+  $0, and it is not yet in total income (line 15000, to be wired). The CPP months (Schedule
+  8 box A) are the 12 of a full year, Schedule 8 Part 4 is not completed (count 0) and there
+  is no agreement with the Canada Employment Insurance Commission (count 0), so the CPP
+  contributions payable (line 42100), the base CPP contributions (line 31000) and the
+  deduction (line 22200) on self-employment income, and the EI premiums on it (lines 31217
+  and 42120), are $0 and change no total.
 sources:
   - >-
     CRA, Form T776 (2025), Statement of Real Estate Rentals
@@ -362,6 +370,7 @@ inputs:
   ca/rental_interest_and_bank_charges: "6000"
   ca/rental_repairs_and_maintenance: "1300"
   ca/rental_property_taxes: "3500"
+  ca/cpp_months: "12"
 expected:
   ca/taxable_capital_gains: "0.00"
   ca/investment_income_before_prior_years: "0"
@@ -384,6 +393,7 @@ expected:
   ca/rental_partnership_net_income: "0"
   ca/net_rental_income: "12000"
   ca/total_income: "12000.00"
+  ca/cpp_second_additional_earnings_maximum: "9900.00"
   ca/cpp_base_contributions: "0.00"
   ca/cpp_first_additional_contributions: "0.00"
   ca/cpp_second_additional_contributions: "0.00"

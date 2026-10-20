@@ -91,6 +91,11 @@ inputs:
   - ca/other_fhsa_income
   - ca/other_income
   - ca/taxable_scholarships
+  - ca/business_income
+  - ca/professional_income
+  - ca/commission_income
+  - ca/farming_income
+  - ca/fishing_income
   - ca/workers_compensation_benefits
   - ca/social_assistance_payments
   - ca/net_federal_supplements
@@ -162,6 +167,13 @@ inputs:
   - ca/fhsa_unused_contributions_brought_forward
   - ca/fhsa_contributions_deducted
   - ca/fhsa_maximum_participation_period_ended
+  - ca/cpp_months
+  - ca/cpt20_earnings
+  - ca/cpp_part_4_completed
+  - ca/ei_controlled_corporation_earnings
+  - ca/ei_exempt_self_employment_income
+  - ca/ei_insurable_earnings
+  - ca/ei_special_benefits_agreement
   - ca-on/dependent_children
   - ca-on/dependants
   - ca-on/ontario_minimum_tax

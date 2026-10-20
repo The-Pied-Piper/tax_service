@@ -16,6 +16,7 @@ from app.jurisdictions.ca.catalog import (
     AGE_AMOUNT,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     BASIC_PERSONAL_AMOUNT,
+    BUSINESS_INCOME,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_WORKERS_BENEFIT,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
@@ -40,10 +41,14 @@ from app.jurisdictions.ca.catalog import (
     CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,
     CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
     CLERGY_RESIDENCE_DEDUCTION,
+    COMMISSION_INCOME,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_OR_QPP_BENEFITS,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
@@ -64,7 +69,13 @@ from app.jurisdictions.ca.catalog import (
     ECOLOGICAL_AND_CULTURAL_GIFTS,
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
     EI_AND_OTHER_BENEFITS,
+    EI_CONTROLLED_CORPORATION_EARNINGS,
+    EI_EXEMPT_SELF_EMPLOYMENT_INCOME,
+    EI_NET_SELF_EMPLOYMENT_INCOME,
+    EI_PAYABLE_ON_SELF_EMPLOYMENT,
     EI_PREMIUMS,
+    EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+    EI_SELF_EMPLOYMENT_EARNINGS,
     ELECTED_SPLIT_PENSION_AMOUNT,
     ELECTED_SPLIT_PENSION_DEDUCTION,
     ELIGIBLE_DEPENDANT_AMOUNT,
@@ -73,6 +84,7 @@ from app.jurisdictions.ca.catalog import (
     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
     EMPLOYMENT_INCOME,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
+    FARMING_INCOME,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
@@ -105,6 +117,7 @@ from app.jurisdictions.ca.catalog import (
     FHSA_VARIABLE_B_AMOUNT,
     FHSA_VARIABLE_F_AMOUNT,
     FIRST_TIER_DONATION_CREDIT,
+    FISHING_INCOME,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
     GOVERNMENT_DONATIONS,
@@ -152,6 +165,7 @@ from app.jurisdictions.ca.catalog import (
     NET_PARTNERSHIP_INCOME,
     NET_PROFESSIONAL_INCOME,
     NET_RENTAL_INCOME,
+    NET_SELF_EMPLOYMENT_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
@@ -177,6 +191,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_LIMIT_INCOME,
     OTHER_PENSIONS_AND_SUPERANNUATION,
     PART_XII_2_TAX_CREDIT,
+    PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     POLITICAL_CREDIT,
     POLITICAL_CREDIT_COLUMN_1_LINE_5,
     POLITICAL_CREDIT_COLUMN_1_LINE_6,
@@ -187,6 +202,7 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_5,
     POLITICAL_CREDIT_COLUMN_3_LINE_6,
     POLITICAL_CREDIT_COLUMN_3_LINE_7,
+    PROFESSIONAL_INCOME,
     PROVINCIAL_CREDITS,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
@@ -253,6 +269,13 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION,
     RRSP_INCOME,
     SECURITY_OPTIONS_DEDUCTIONS,
+    SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS,
+    SELF_EMPLOYED_CPP_BASE_CREDIT,
+    SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE,
+    SELF_EMPLOYED_CPP_DEDUCTION,
+    SELF_EMPLOYED_CPP_ENHANCED_CONTRIBUTIONS,
+    SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     SLIP_DIVIDEND_TAX_CREDIT,
     SLIP_TAXABLE_DIVIDENDS,
     SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
@@ -644,7 +667,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CHILD_CARE_EARNED_INCOME, ((EMPLOYMENT_INCOME, D("110000")),), D("110000")
         ),
         # T1 line 23300, in line order: 20700, 20800, 20805, 21000, 21200, 21300, 21400, 21700,
-        # 22000, 22100, 22215, 22400, 23200.
+        # 22000, 22100, 22200, 22215, 22400, 23200.
         DEDUCTIONS_FROM_TOTAL_INCOME: SumLine(
             DEDUCTIONS_FROM_TOTAL_INCOME,
             (
@@ -658,6 +681,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ALLOWABLE_BUSINESS_INVESTMENT_LOSS, D("0")),
                 (SUPPORT_PAYMENTS_DEDUCTION, D("0")),
                 (CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES, D("0")),
+                (CPP_DEDUCTION_ON_SELF_EMPLOYMENT, D("0")),
                 (CPP_ENHANCED_CONTRIBUTIONS, D("1074.00")),
                 (EXPLORATION_AND_DEVELOPMENT_EXPENSES, D("0")),
                 (OTHER_DEDUCTIONS, D("0")),
@@ -848,7 +872,9 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (CAREGIVER_AMOUNT, D("0")),
                 (INFIRM_CHILDREN_AMOUNT, D("0")),
                 (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
+                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
                 (EI_PREMIUMS, D("1077.48")),
+                (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
                 (CANADA_EMPLOYMENT_AMOUNT, D("1471")),
                 (DISABILITY_TRANSFERRED_AMOUNT, D("0")),
                 (MEDICAL_CLAIM, D("0")),
@@ -866,7 +892,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("16129.00"),
         ),
         # ON428 has no Canada employment amount; its lines 58240 and 58300 read the federal
-        # amounts (lines 30800 and 31200).
+        # amounts (lines 30800 and 31200); its lines 58280 and 58305 (31000 and 31217) are not
+        # wired yet.
         ontario.NON_REFUNDABLE_CREDIT_AMOUNTS: SumLine(
             ontario.NON_REFUNDABLE_CREDIT_AMOUNTS,
             (
@@ -1005,10 +1032,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("0"),
         ),
         # T1 line 148 (line 43500) "Add lines 143 to 147. Total payable", in line order: line
-        # 143 "Amount from line 42000" and line 147 (42800), the Ontario tax.
+        # 143 "Amount from line 42000", lines 144 (42100) and 145 (42120) and line 147 (42800), the
+        # Ontario tax.
         TOTAL_PAYABLE: SumLine(
             TOTAL_PAYABLE,
-            ((NET_FEDERAL_TAX, D("16951.38")), (ONTARIO_TAX, D("8945.77"))),
+            (
+                (NET_FEDERAL_TAX, D("16951.38")),
+                (CPP_PAYABLE_ON_SELF_EMPLOYMENT, D("0")),
+                (EI_PAYABLE_ON_SELF_EMPLOYMENT, D("0")),
+                (ONTARIO_TAX, D("8945.77")),
+            ),
             D("25897.15"),
         ),
         # Schedule 6 line 5 "Add lines 1 to 4. Enter the result, even if it is "0". Working
@@ -1376,5 +1409,61 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 ),
             ),
             total=D("115000.00"),
+        ),
+        # T1 line 27 "Add lines 22 to 26. Net self-employment income", in line order: 13500,
+        # 13700, 13900, 14100 and 14300.
+        NET_SELF_EMPLOYMENT_INCOME: SumLine(
+            NET_SELF_EMPLOYMENT_INCOME,
+            (
+                (BUSINESS_INCOME, D("0")),
+                (PROFESSIONAL_INCOME, D("0")),
+                (COMMISSION_INCOME, D("0")),
+                (FARMING_INCOME, D("0")),
+                (FISHING_INCOME, D("0")),
+            ),
+            D("0"),
+        ),
+        # Schedule 8 Part 4 line 1 "amount from line 12200 of your return plus line 27 of your
+        # return".
+        PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS: SumLine(
+            PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
+            ((NET_PARTNERSHIP_INCOME, D("0")), (NET_SELF_EMPLOYMENT_INCOME, D("0"))),
+            D("0"),
+        ),
+        # Part 4 line 13 "Line 11 plus line 12", line 14 "Line 10 plus line 13" and line 17 "Line
+        # 15 plus line 16", line 16 being "Amount from line 13".
+        SELF_EMPLOYED_CPP_ENHANCED_CONTRIBUTIONS: SumLine(
+            SELF_EMPLOYED_CPP_ENHANCED_CONTRIBUTIONS,
+            (
+                (SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS, D("0")),
+                (SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS, D("0")),
+            ),
+            D("0"),
+        ),
+        SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE: SumLine(
+            SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE,
+            (
+                (SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS, D("0")),
+                (SELF_EMPLOYED_CPP_ENHANCED_CONTRIBUTIONS, D("0")),
+            ),
+            D("0"),
+        ),
+        SELF_EMPLOYED_CPP_DEDUCTION: SumLine(
+            SELF_EMPLOYED_CPP_DEDUCTION,
+            (
+                (SELF_EMPLOYED_CPP_BASE_CREDIT, D("0")),
+                (SELF_EMPLOYED_CPP_ENHANCED_CONTRIBUTIONS, D("0")),
+            ),
+            D("0"),
+        ),
+        # Schedule 13 line 4 "Add lines 1 to 3. Net self-employment income".
+        EI_NET_SELF_EMPLOYMENT_INCOME: SumLine(
+            EI_NET_SELF_EMPLOYMENT_INCOME,
+            (
+                (EI_SELF_EMPLOYMENT_EARNINGS, D("0")),
+                (EI_CONTROLLED_CORPORATION_EARNINGS, D("0")),
+                (EI_EXEMPT_SELF_EMPLOYMENT_INCOME, D("0")),
+            ),
+            D("0"),
         ),
     }

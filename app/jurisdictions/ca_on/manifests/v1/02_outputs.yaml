@@ -14,6 +14,7 @@ outputs:
   - ca/net_capital_loss_balance_2001_to_2024
   - ca/rental_short_term_portion
   - ca/short_term_rental_gross_rents
+  - ca/cpp_second_additional_earnings_maximum
   - ca-on/applies_for_energy_and_property_tax_credit
   - ca-on/applies_for_northern_energy_credit
   - ca-on/chooses_single_benefit_payment

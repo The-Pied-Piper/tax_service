@@ -24,6 +24,64 @@ UNION_DUES = CATALOG.declare("union_dues", Decimal, non_negative=True)
 """Union dues, T1 line 21200 "Annual union, professional, or like dues (receipts and box 44 of all
 T4 slips)": the amount claimed, a starting amount."""
 
+CPP_MONTHS = CATALOG.declare("cpp_months", int, non_negative=True)
+"""Months that CPP applied, Schedule 8 Part 2 "Box A: Enter the number of months that CPP applied
+in 2025.": the key of the "Monthly proration for 2025" table, a count the filer enters ("Enter "12"
+on line A below unless any of the following conditions apply", conditions a) to h)).
+
+A starting count, not computed: the conditions are the filer's to apply. The table has a row for 1
+to 12 months only, so "0" (conditions b, d and g) and any other number is refused, not guessed.
+Part 1's election months (lines 50372 and 50374) only inform this count and feed no calculation
+line, so they are not inputs.
+"""
+
+CPT20_EARNINGS = CATALOG.declare("cpt20_earnings", Decimal, non_negative=True)
+"""CPT20 earnings, Schedule 8 Part 4 line 2 and line 50373 "Employment earnings not shown on a T4
+slip that you are electing to pay additional CPP contributions on (complete Form CPT20)": a
+starting amount."""
+
+CPP_PART_4_COMPLETED = CATALOG.declare("cpp_part_4_completed", int, non_negative=True)
+"""Schedule 8 Part 4 completed, "Part 4 - Complete this part if you are reporting only
+self-employment income or other earnings you are electing to pay CPP contributions on. If not,
+leave this part blank.": 1 when the filer completes Part 4, 0 when not, a count the filer states.
+
+It is the number of times Part 4's lines 14, 15 and 17 are entered on the return (lines 42100,
+31000 and 22200). Part 5, for a filer reporting employment income as well, is not wired.
+"""
+
+EI_CONTROLLED_CORPORATION_EARNINGS = CATALOG.declare(
+    "ei_controlled_corporation_earnings", Decimal, non_negative=True
+)
+"""Earnings from a controlled corporation, Schedule 13 line 2 and line 54493 "If you are not
+eligible to participate in the EI program as an employee of a corporation because you control more
+than 40% of the voting shares of that corporation, enter the amount from box 14 of all your T4
+slips from that corporation.": a starting amount."""
+
+EI_EXEMPT_SELF_EMPLOYMENT_INCOME = CATALOG.declare(
+    "ei_exempt_self_employment_income", Decimal, non_negative=True
+)
+"""Tax-exempt self-employment income, Schedule 13 line 3 and line 54494 "If you are registered or
+entitled to be registered under the Indian Act and you earned tax-exempt self-employment income on
+a reserve in Canada, enter your total tax-exempt self-employment income.": a starting amount."""
+
+EI_INSURABLE_EARNINGS = CATALOG.declare("ei_insurable_earnings", Decimal, non_negative=True)
+"""Total EI insurable earnings, Schedule 13 line 6 and line 54780 "Total EI insurable earnings
+(amount from box 24 of all your T4 slips; if box 24 is blank, enter the amount from box 14 unless
+box 28 shows that the T4 earnings are EI-exempt)": a starting amount, including the employment
+income that has no T4 slip (Note 3)."""
+
+EI_SPECIAL_BENEFITS_AGREEMENT = CATALOG.declare(
+    "ei_special_benefits_agreement", int, non_negative=True
+)
+"""Agreement with the Canada Employment Insurance Commission, Schedule 13 "Complete this schedule
+to calculate the amount of your employment insurance (EI) premiums on self-employment and other
+eligible earnings only if you have entered into an agreement with the Canada Employment Insurance
+Commission, through Service Canada, to participate in the EI program for access to EI special
+benefits.": 1 when the filer has the agreement, 0 when not, a count the filer states.
+
+It is the number of times Schedule 13's line 9 is entered on the return (lines 31217 and 42120).
+"""
+
 CHILD_CARE_EXPENSES_PAID = CATALOG.declare("child_care_expenses_paid", Decimal, non_negative=True)
 """Child care expenses paid, Form T778 Part A line 67950 "Total (add all entries for Child care
 expenses paid)": a starting amount, also Part B line 5 "Enter the amount from line 67950."."""
@@ -293,6 +351,177 @@ OTHER_DEDUCTIONS = CATALOG.declare("other_deductions", Decimal, non_negative=Tru
 includes the RDSP income repayment (a starting amount of its own, Federal Worksheet for line
 25000 line 7)."""
 
+CPP_MAXIMUM_PENSIONABLE_EARNINGS = CATALOG.declare(
+    "cpp_maximum_pensionable_earnings", Decimal, non_negative=True
+)
+"""Maximum pensionable earnings, Schedule 8 Part 2 line B "Your maximum pensionable earnings for
+2025 (maximum $71,300)": the "Maximum pensionable earnings" column of the "Monthly proration for
+2025" table, in the row for the months in box A. Part 4 line 5 is "Amount from line B of Part 2"."""
+
+CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM = CATALOG.declare(
+    "cpp_second_additional_earnings_maximum", Decimal, non_negative=True
+)
+"""Maximum amount subject to second additional contributions, Schedule 8 Part 2 line C "Your
+maximum amount subject to second additional contributions for 2025 (maximum $9,900)": the column of
+that name in the table, in the row for the months in box A. Nothing on the return reads it: Part 4
+line 12 takes its $9,900 limit from the rate dataset, and Part 5 is not wired."""
+
+CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS = CATALOG.declare(
+    "cpp_additional_maximum_pensionable_earnings", Decimal, non_negative=True
+)
+"""Additional maximum pensionable earnings, Schedule 8 Part 2 line D "Your additional maximum
+pensionable earnings for 2025 (maximum $81,200)": the "Additional maximum pensionable earnings"
+column of the table, in the row for the months in box A. Part 4 line 4 is the lesser of it and
+line 3."""
+
+CPP_BASIC_EXEMPTION = CATALOG.declare("cpp_basic_exemption", Decimal, non_negative=True)
+"""Basic exemption, Schedule 8 Part 2 line E "Your maximum basic exemption for 2025 (maximum
+$3,500)": the "Maximum basic exemption" column of the table, in the row for the months in box A.
+Part 4 line 8 is "Amount from line E of Part 2"."""
+
+PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS = CATALOG.declare(
+    "pensionable_net_self_employment_earnings", Decimal
+)
+"""Pensionable net self-employment earnings, Schedule 8 Part 4 line 1 "amount from line 12200 of
+your return plus line 27 of your return": the net partnership income plus the net self-employment
+income. Negative when line 27 is a loss, as line 1 prints no floor; line 3 is.
+
+Note 1 ("self-employment earnings should be prorated according to the number of months ... that the
+conditions a) to g) applied") gives no formula and is not modelled.
+"""
+
+CPP_PENSIONABLE_EARNINGS = CATALOG.declare("cpp_pensionable_earnings", Decimal, non_negative=True)
+"""CPP pensionable earnings, Schedule 8 Part 4 line 3 "Line 1 plus line 2 (if negative, enter "0")":
+the pensionable net self-employment earnings plus the CPT20 earnings (line 2), not below zero."""
+
+CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM = CATALOG.declare(
+    "cpp_pensionable_earnings_up_to_additional_maximum", Decimal, non_negative=True
+)
+"""Pensionable earnings up to the additional maximum, Schedule 8 Part 4 line 4 "Enter whichever is
+less: amount from line D of Part 2 or line 3.": the lesser of the additional maximum pensionable
+earnings and the pensionable earnings."""
+
+CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL = CATALOG.declare(
+    "cpp_earnings_subject_to_second_additional", Decimal, non_negative=True
+)
+"""Earnings subject to second additional contributions, Schedule 8 Part 4 line 6 "Line 4 minus line
+5 (if negative, enter "0")": line 4 less the maximum pensionable earnings (line 5, "Amount from
+line B of Part 2"), not below zero."""
+
+CPP_EARNINGS_UP_TO_MAXIMUM = CATALOG.declare(
+    "cpp_earnings_up_to_maximum", Decimal, non_negative=True
+)
+"""Earnings up to the maximum pensionable earnings, Schedule 8 Part 4 line 7 "Line 4 minus line 6
+(if negative, enter "0")": line 4 less the earnings subject to second additional contributions,
+not below zero."""
+
+CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL = CATALOG.declare(
+    "cpp_earnings_subject_to_base_and_first_additional", Decimal, non_negative=True
+)
+"""Earnings subject to base and first additional contributions, Schedule 8 Part 4 line 9 "Line 7
+minus line 8 (if negative, enter "0") (maximum $67,800)": line 7 less the basic exemption (line 8,
+"Amount from line E of Part 2"), not below zero."""
+
+SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS = CATALOG.declare(
+    "self_employed_cpp_base_contributions", Decimal, non_negative=True
+)
+"""Required base contributions on CPP pensionable earnings, Schedule 8 Part 4 line 10 "amount from
+line 9 multiplied by 9.9% (maximum $6,712.20)": a self-employed person pays both halves, so twice
+the employee's 4.95%."""
+
+SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS = CATALOG.declare(
+    "self_employed_cpp_first_additional_contributions", Decimal, non_negative=True
+)
+"""Required first additional contributions on CPP pensionable earnings, Schedule 8 Part 4 line 11
+"amount from line 9 multiplied by 2% (maximum $1,356.00)": twice the employee's 1%."""
+
+SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS = CATALOG.declare(
+    "self_employed_cpp_second_additional_contributions", Decimal, non_negative=True
+)
+"""Required second additional contributions on CPP pensionable earnings, Schedule 8 Part 4 line 12
+"amount from line 6 multiplied by 8% (maximum $792.00)": twice the employee's 4%, on the earnings
+of line 6, which Part 2 line C ($9,900 for 12 months) bounds."""
+
+SELF_EMPLOYED_CPP_ENHANCED_CONTRIBUTIONS = CATALOG.declare(
+    "self_employed_cpp_enhanced_contributions", Decimal, non_negative=True
+)
+"""Enhanced contributions on self-employment income, Schedule 8 Part 4 line 13 "Line 11 plus line
+12": the first and second additional contributions together; line 16 is "Amount from line 13"."""
+
+SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE = CATALOG.declare(
+    "self_employed_cpp_contributions_payable", Decimal, non_negative=True
+)
+"""CPP contributions payable on self-employment income and other earnings, Schedule 8 Part 4 line
+14 "Line 10 plus line 13 Enter this amount (in dollars and cents) on line 42100 of your return.":
+the base and enhanced contributions together."""
+
+SELF_EMPLOYED_CPP_BASE_CREDIT = CATALOG.declare(
+    "self_employed_cpp_base_credit", Decimal, non_negative=True
+)
+"""Base CPP contributions on self-employment income and other earnings, Schedule 8 Part 4 line 15
+"amount from line 10 multiplied by 50%" ("Enter the result of the following calculation (in dollars
+and cents) on line 31000 of your return"): the employee's half of the base contributions, which is
+the credit."""
+
+SELF_EMPLOYED_CPP_DEDUCTION = CATALOG.declare(
+    "self_employed_cpp_deduction", Decimal, non_negative=True
+)
+"""Deduction for CPP contributions on self-employment income and other earnings, Schedule 8 Part 4
+line 17 "Line 15 plus line 16 Enter this amount (in dollars and cents) on line 22200 of your
+return.": the employer's half of the base contributions (line 15) plus the enhanced contributions
+(line 16, "Amount from line 13")."""
+
+CPP_DEDUCTION_ON_SELF_EMPLOYMENT = CATALOG.declare(
+    "cpp_deduction_on_self_employment", Decimal, non_negative=True
+)
+"""Deduction for CPP contributions on self-employment income and other earnings, T1 line 47 and
+line 22200 "Deduction for CPP or QPP contributions on self-employment income and other earnings
+(complete Schedule 8 or Form RC381, whichever applies)": Schedule 8 Part 4 line 17, entered once
+for each Part 4 completed (1 or 0), a deduction from total income."""
+
+EI_SELF_EMPLOYMENT_EARNINGS = CATALOG.declare(
+    "ei_self_employment_earnings", Decimal, non_negative=True
+)
+"""Self-employment earnings for EI, Schedule 13 line 1 "Enter the total amount from line 1 1 plus
+line 27 of your return ... (if negative, enter "0")": the net partnership income (T1 line 11, line
+12200) plus the net self-employment income, not below zero. The form text reads "line 1 1", taken
+as line 11; to be confirmed.
+
+Not modelled: the exclusion of the net income on lines 13500, 13700, 13900, 14100 and 14300 for a T4
+slip for self-employment income with EI premiums in box 18 (Note 1).
+"""
+
+EI_NET_SELF_EMPLOYMENT_INCOME = CATALOG.declare(
+    "ei_net_self_employment_income", Decimal, non_negative=True
+)
+"""Net self-employment income for EI, Schedule 13 line 4 "Add lines 1 to 3. Net self-employment
+income": line 1, the earnings from a controlled corporation (line 2) and the tax-exempt
+self-employment income (line 3)."""
+
+EI_MAXIMUM_INSURABLE_EARNINGS = CATALOG.declare(
+    "ei_maximum_insurable_earnings", Decimal, non_negative=True
+)
+"""Maximum insurable earnings, Schedule 13 line 5 "Maximum insurable earnings 65,700.00": the
+printed figure, as an artifact of the same name."""
+
+EI_INSURABLE_EARNINGS_REMAINING = CATALOG.declare(
+    "ei_insurable_earnings_remaining", Decimal, non_negative=True
+)
+"""Insurable earnings remaining, Schedule 13 line 7 "Line 5 minus line 6 (if negative, enter "0")":
+the maximum insurable earnings less the EI insurable earnings already on T4 slips, not below
+zero."""
+
+EI_EARNINGS_SUBJECT_TO_PREMIUM = CATALOG.declare(
+    "ei_earnings_subject_to_premium", Decimal, non_negative=True
+)
+"""Earnings subject to EI premiums, Schedule 13 line 8 "Enter whichever is less: amount from line 4
+or line 7.": the lesser of the net self-employment income and the insurable earnings remaining."""
+
+SELF_EMPLOYED_EI_PREMIUMS = CATALOG.declare("self_employed_ei_premiums", Decimal, non_negative=True)
+"""EI premiums payable on self-employment and other eligible earnings, Schedule 13 line 9
+"Residents of a province or territory other than Quebec: Line 9: Amount from line 8 multiplied by
+1.64% (maximum $1,077.48)". Line 10, for Quebec residents, is not triggered."""
+
 DEDUCTIONS_FROM_TOTAL_INCOME = CATALOG.declare(
     "deductions_from_total_income", Decimal, non_negative=True
 )
@@ -301,10 +530,11 @@ income, here, in line order, the RPP deduction (line 20700), the RRSP deduction 
 FHSA deduction (line 20805), the elected split-pension deduction (line 21000), union dues (line
 21200), the UCCB repayment (line 21300), the child care expenses (line 21400), the allowable
 business investment loss (line 21700), the deductible support payments (line 22000), carrying
-charges, interest expenses and other expenses (line 22100), the enhanced CPP contributions (line
-22215), exploration and development expenses (line 22400) and other deductions (line 23200).
+charges, interest expenses and other expenses (line 22100), the CPP contributions on
+self-employment income (line 22200), the enhanced CPP contributions (line 22215), exploration
+and development expenses (line 22400) and other deductions (line 23200).
 
-Not wired yet: lines 21500, 21900, 22200, 22900 and 23100."""
+Not wired yet: lines 21500, 21900, 22900 and 23100."""
 
 NET_INCOME_BEFORE_ADJUSTMENTS = CATALOG.declare("net_income_before_adjustments", Decimal)
 """Net income before adjustments, T1 line 54 and line 23400 "Line 34 minus line 53 (if negative,

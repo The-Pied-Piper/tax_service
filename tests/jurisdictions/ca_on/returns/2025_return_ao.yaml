@@ -93,6 +93,14 @@ description: >-
   dollars-and-cents box. The seniors care at home credit, the Ontario energy and property
   tax credit, the political contribution, flow-through share and co-operative education
   credits and the other lines not mentioned are not triggered by this return, so each is 0.
+  No self-employment income: the net business, professional, commission, farming and fishing
+  income (T1 lines 13500, 13700, 13900, 14100 and 14300) are $0, so their sum (line 27) is
+  $0, and it is not yet in total income (line 15000, to be wired). The CPP months (Schedule
+  8 box A) are the 12 of a full year, Schedule 8 Part 4 is not completed (count 0) and there
+  is no agreement with the Canada Employment Insurance Commission (count 0), so the CPP
+  contributions payable (line 42100), the base CPP contributions (line 31000) and the
+  deduction (line 22200) on self-employment income, and the EI premiums on it (lines 31217
+  and 42120), are $0 and change no total.
 sources:
   - >-
     CRA, the 2025 Form ON428 (form 5006-C), "Ontario tax reduction": Line 72 "If you entered
@@ -152,6 +160,7 @@ sources:
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s6/5000-s6-25e.txt
 inputs:
   ca/employment_income: "22139.77"
+  ca/cpp_months: "12"
   ca-on/dependent_children: "2"
   ca/spouse_or_common_law_partner_on_december_31: "1"
   ca/spouse_net_income: "15000"
@@ -165,6 +174,7 @@ expected:
   ca/interest_and_other_investment_income: "0"
   ca/income_support_benefits: "0"
   ca/total_income: "22139.77"
+  ca/cpp_second_additional_earnings_maximum: "9900.00"
   ca/cpp_base_contributions: "922.67"
   ca/cpp_first_additional_contributions: "186.40"
   ca/cpp_second_additional_contributions: "0.00"

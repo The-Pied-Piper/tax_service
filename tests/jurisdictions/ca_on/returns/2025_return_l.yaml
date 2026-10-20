@@ -143,6 +143,14 @@ description: >-
   $0.00, and line 7 is $6,223.00; ON428 line 13 is the $11,905.00 base less the spouse's net
   income of $0, at most $10,823.00) and claimed for 0, so ON428's total of credit amounts is
   as without them.
+  No self-employment income: the net business, professional, commission, farming and fishing
+  income (T1 lines 13500, 13700, 13900, 14100 and 14300) are $0, so their sum (line 27) is
+  $0, and it is not yet in total income (line 15000, to be wired). The CPP months (Schedule
+  8 box A) are the 12 of a full year, Schedule 8 Part 4 is not completed (count 0) and there
+  is no agreement with the Canada Employment Insurance Commission (count 0), so the CPP
+  contributions payable (line 42100), the base CPP contributions (line 31000) and the
+  deduction (line 22200) on self-employment income, and the EI premiums on it (lines 31217
+  and 42120), are $0 and change no total.
 sources:
   - >-
     CRA, "T1-2025 Schedule 3 Capital Gains or Losses" (form 5000-S3): line 23 "Inclusion
@@ -758,6 +766,7 @@ inputs:
   ca/security_options_deductions: "1500"
   ca/non_capital_losses_of_other_years: "5000"
   ca/rrsp_deduction_limit: "7200"
+  ca/cpp_months: "12"
   ca/income_tax_deducted: "5000"
   ca/resident_in_canada_throughout_2025: "1"
   ca/aged_18_or_older_at_end_of_2025: "1"
@@ -789,6 +798,7 @@ expected:
   ca/other_payments_deduction_after_limit: "2000"
   ca/other_payments_deduction: "2000"
   ca/total_income: "43365"
+  ca/cpp_second_additional_earnings_maximum: "9900.00"
   ca/cpp_base_contributions: "1806.75"
   ca/cpp_first_additional_contributions: "365.00"
   ca/cpp_second_additional_contributions: "0"

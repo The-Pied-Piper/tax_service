@@ -5,6 +5,7 @@ from __future__ import annotations
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.rate import Rate
 from app.domain.trace import (
+    AmountByCountLine,
     AtMostLine,
     ChosenByCountLine,
     ContributionTierLine,
@@ -18,6 +19,7 @@ from app.domain.trace import (
     RecordCountLine,
     RecordTotalLine,
     SubtractedNotBelowZeroLine,
+    SumNotBelowZeroLine,
     SurchargeTierLine,
 )
 from app.jurisdictions.ca.catalog import (
@@ -51,9 +53,20 @@ from app.jurisdictions.ca.catalog import (
     CHILD_CARE_EARNED_INCOME_LIMIT,
     CHILD_CARE_EXPENSES,
     CHILD_CARE_EXPENSES_PAID,
+    CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASIC_EXEMPTION,
+    CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
+    CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
+    CPP_EARNINGS_UP_TO_MAXIMUM,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_MAXIMUM_PENSIONABLE_EARNINGS,
+    CPP_MONTHS,
+    CPP_PENSIONABLE_EARNINGS,
+    CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+    CPT20_EARNINGS,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     CREDITS_AGAINST_FEDERAL_TAX,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
@@ -77,7 +90,13 @@ from app.jurisdictions.ca.catalog import (
     DONATIONS_OVER_FIRST_TIER,
     DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS,
     ECOLOGICAL_GIFTS_BEFORE_2016,
+    EI_EARNINGS_SUBJECT_TO_PREMIUM,
+    EI_INSURABLE_EARNINGS,
+    EI_INSURABLE_EARNINGS_REMAINING,
+    EI_MAXIMUM_INSURABLE_EARNINGS,
+    EI_NET_SELF_EMPLOYMENT_INCOME,
     EI_PREMIUMS,
+    EI_SELF_EMPLOYMENT_EARNINGS,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     EMPLOYMENT_INCOME,
     FEDERAL_BASIC_TAX,
@@ -130,11 +149,14 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSSES_CLAIMED,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_INCOME,
+    NET_PARTNERSHIP_INCOME,
     NET_RENTAL_INCOME,
+    NET_SELF_EMPLOYMENT_INCOME,
     OTHER_PAYMENTS_DEDUCTION,
     OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
+    PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     POLITICAL_CONTRIBUTIONS,
     POLITICAL_CREDIT_COLUMN_1_LINE_2,
     POLITICAL_CREDIT_COLUMN_1_LINE_3,
@@ -167,6 +189,10 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION,
     RRSP_DEDUCTION_LIMIT,
     RRSP_DEDUCTION_MAXIMUM,
+    SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS,
+    SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    SELF_EMPLOYED_EI_PREMIUMS,
     SHORT_TERM_RENTAL_GROSS_RENTS,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BASIS,
@@ -242,6 +268,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, return_a
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     floored = {line.output: line for line in trace if isinstance(line, SubtractedNotBelowZeroLine)}
+    summed_floored = {line.output: line for line in trace if isinstance(line, SumNotBelowZeroLine)}
+    by_count = {line.output: line for line in trace if isinstance(line, AmountByCountLine)}
     tiers = {line.output: line for line in trace if isinstance(line, ContributionTierLine)}
     lesser = {line.output: line for line in trace if isinstance(line, LesserOfLine)}
     at_most = {line.output: line for line in trace if isinstance(line, AtMostLine)}
@@ -454,6 +482,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("0.00"),
         ),
+        # Schedule 8 Part 4 line 4 "Enter whichever is less: amount from line D of Part 2 or line
+        # 3.": line 3 is 0.
+        CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM: LesserOfLine(
+            CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
+            (
+                (CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS, D("81200.00")),
+                (CPP_PENSIONABLE_EARNINGS, D("0")),
+            ),
+            D("0"),
+        ),
+        # Schedule 13 line 8 "Enter whichever is less: amount from line 4 or line 7.": line 4 is 0.
+        EI_EARNINGS_SUBJECT_TO_PREMIUM: LesserOfLine(
+            EI_EARNINGS_SUBJECT_TO_PREMIUM,
+            (
+                (EI_NET_SELF_EMPLOYMENT_INCOME, D("0")),
+                (EI_INSURABLE_EARNINGS_REMAINING, D("65700.00")),
+            ),
+            D("0"),
+        ),
     }
     assert at_most == {
         RRSP_DEDUCTION: AtMostLine(
@@ -517,6 +564,45 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CENT,
             D("65700"),
             D("1077.48"),
+        ),
+        # Schedule 8 Part 4 lines 10, 11 and 12 on no pensionable earnings: 9.9% and 2% of line 9
+        # up to $67,800, 8% of line 6 up to $9,900. Schedule 13 line 9: 1.64% of line 8 up to
+        # $65,700.
+        SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS: ContributionTierLine(
+            SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS,
+            CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
+            D("0"),
+            ContributionTier(Rate(D("0.099")), D("0"), D("67800"), D("6712.20")),
+            CENT,
+            D("0"),
+            D("0"),
+        ),
+        SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS: ContributionTierLine(
+            SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
+            D("0"),
+            ContributionTier(Rate(D("0.02")), D("0"), D("67800"), D("1356.00")),
+            CENT,
+            D("0"),
+            D("0"),
+        ),
+        SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS: ContributionTierLine(
+            SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
+            D("0"),
+            ContributionTier(Rate(D("0.08")), D("0"), D("9900"), D("792.00")),
+            CENT,
+            D("0"),
+            D("0"),
+        ),
+        SELF_EMPLOYED_EI_PREMIUMS: ContributionTierLine(
+            SELF_EMPLOYED_EI_PREMIUMS,
+            EI_EARNINGS_SUBJECT_TO_PREMIUM,
+            D("0"),
+            ContributionTier(Rate(D("0.0164")), D("0"), D("65700"), D("1077.48")),
+            CENT,
+            D("0"),
+            D("0"),
         ),
     }
     assert surcharged == [
@@ -1163,6 +1249,76 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=MEDICAL_SUPPLEMENT_LINE_15,
             subtrahend_amount=D("4085.30"),
             result=D("0"),
+        ),
+        # Schedule 8 Part 4 lines 6, 7 and 9, each "(if negative, enter "0")", on line 4 of 0, and
+        # Schedule 13 line 7 "Line 5 minus line 6 (if negative, enter "0")" with no T4 insurable
+        # earnings.
+        CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL: SubtractedNotBelowZeroLine(
+            output=CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
+            minuend=CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
+            minuend_amount=D("0"),
+            subtrahend=CPP_MAXIMUM_PENSIONABLE_EARNINGS,
+            subtrahend_amount=D("71300.00"),
+            result=D("0"),
+        ),
+        CPP_EARNINGS_UP_TO_MAXIMUM: SubtractedNotBelowZeroLine(
+            output=CPP_EARNINGS_UP_TO_MAXIMUM,
+            minuend=CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
+            minuend_amount=D("0"),
+            subtrahend=CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL: SubtractedNotBelowZeroLine(
+            output=CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
+            minuend=CPP_EARNINGS_UP_TO_MAXIMUM,
+            minuend_amount=D("0"),
+            subtrahend=CPP_BASIC_EXEMPTION,
+            subtrahend_amount=D("3500.00"),
+            result=D("0"),
+        ),
+        EI_INSURABLE_EARNINGS_REMAINING: SubtractedNotBelowZeroLine(
+            output=EI_INSURABLE_EARNINGS_REMAINING,
+            minuend=EI_MAXIMUM_INSURABLE_EARNINGS,
+            minuend_amount=D("65700.00"),
+            subtrahend=EI_INSURABLE_EARNINGS,
+            subtrahend_amount=D("0"),
+            result=D("65700.00"),
+        ),
+    }
+    # Schedule 8 Part 4 line 3 "Line 1 plus line 2 (if negative, enter "0")" and Schedule 13 line 1
+    # "(if negative, enter "0")", on no self-employment income and no partnership income.
+    assert summed_floored == {
+        CPP_PENSIONABLE_EARNINGS: SumNotBelowZeroLine(
+            CPP_PENSIONABLE_EARNINGS,
+            ((PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS, D("0")), (CPT20_EARNINGS, D("0"))),
+            D("0"),
+        ),
+        EI_SELF_EMPLOYMENT_EARNINGS: SumNotBelowZeroLine(
+            EI_SELF_EMPLOYMENT_EARNINGS,
+            ((NET_PARTNERSHIP_INCOME, D("0")), (NET_SELF_EMPLOYMENT_INCOME, D("0"))),
+            D("0"),
+        ),
+    }
+    # Schedule 8 Part 2 lines B, C, D and E: the row of the monthly proration table for box A's 12
+    # months, each as printed.
+    assert by_count == {
+        CPP_MAXIMUM_PENSIONABLE_EARNINGS: AmountByCountLine(
+            CPP_MAXIMUM_PENSIONABLE_EARNINGS, CPP_MONTHS, 12, D("71300.00"), CENT, D("71300.00")
+        ),
+        CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM: AmountByCountLine(
+            CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM, CPP_MONTHS, 12, D("9900.00"), CENT, D("9900.00")
+        ),
+        CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS: AmountByCountLine(
+            CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
+            CPP_MONTHS,
+            12,
+            D("81200.00"),
+            CENT,
+            D("81200.00"),
+        ),
+        CPP_BASIC_EXEMPTION: AmountByCountLine(
+            CPP_BASIC_EXEMPTION, CPP_MONTHS, 12, D("3500.00"), CENT, D("3500.00")
         ),
     }
     assert record_totals == {

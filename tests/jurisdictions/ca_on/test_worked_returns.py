@@ -129,6 +129,11 @@ description: >-
   (line 33200), the refundable medical expense supplement (T1 line 45200, Federal Worksheet)
   is 0: its line 11 is 0, so its line 16 is 0, for a filer resident in Canada throughout 2025
   and 18 or older at the end of 2025 (counts of 1) with working income of 10000, $4,390 or more.
+  With no net business, professional, commission, farming or fishing income (T1 lines
+  13500 to 14300), line 27 is 0; the CPP months (Schedule 8 box A) are 12, so Part 2's
+  line C is 9900.00, and with Schedule 8 Part 4 not completed and no agreement for EI special
+  benefits, lines 22200, 31000, 31217, 42100 and 42120 are 0, whatever Part 4 and Schedule 13
+  work out.
   The income tax deducted is a chosen 500, so the total credits are 500 plus the benefit
   plus the provincial credits, 2133, and the refund or balance owing is 0 less 2133: -2133,
   a refund. Every amount computed from a rate, fraction, amount or chart on the forms is
@@ -233,6 +238,11 @@ inputs:
   ca/other_fhsa_income: "0"
   ca/other_income: "0"
   ca/taxable_scholarships: "0"
+  ca/business_income: "0"
+  ca/professional_income: "0"
+  ca/commission_income: "0"
+  ca/farming_income: "0"
+  ca/fishing_income: "0"
   ca/workers_compensation_benefits: "0"
   ca/social_assistance_payments: "0"
   ca/net_federal_supplements: "0"
@@ -296,6 +306,13 @@ inputs:
   ca/fhsa_unused_contributions_brought_forward: "0"
   ca/fhsa_contributions_deducted: "0"
   ca/fhsa_maximum_participation_period_ended: "0"
+  ca/cpp_months: "12"
+  ca/cpt20_earnings: "0"
+  ca/cpp_part_4_completed: "0"
+  ca/ei_controlled_corporation_earnings: "0"
+  ca/ei_exempt_self_employment_income: "0"
+  ca/ei_insurable_earnings: "0"
+  ca/ei_special_benefits_agreement: "0"
   ca-on/dependent_children: "0"
   ca-on/dependants: "0"
   ca/eligible_dependants: "0"
@@ -404,6 +421,13 @@ expected:
   ca/rental_partnership_net_income: "0"
   ca/net_rental_income: "0"
   ca/total_income: "10000"
+  ca/cpp_second_additional_earnings_maximum: "9900.00"
+  ca/net_self_employment_income: "0"
+  ca/cpp_payable_on_self_employment: "0"
+  ca/cpp_base_contributions_on_self_employment: "0"
+  ca/cpp_deduction_on_self_employment: "0"
+  ca/ei_premiums_on_self_employment: "0"
+  ca/ei_payable_on_self_employment: "0"
   ca/cpp_base_contributions: "321.75"
   ca/cpp_first_additional_contributions: "65.00"
   ca/cpp_second_additional_contributions: "0"

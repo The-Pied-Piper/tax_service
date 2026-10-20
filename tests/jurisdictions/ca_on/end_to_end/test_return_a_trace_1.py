@@ -168,6 +168,7 @@ def test_the_trace_explains_the_computation() -> None:
         "+ child_care_expenses 0 + allowable_business_investment_loss 0 "
         "+ support_payments_deduction 0 "
         "+ carrying_charges_interest_expenses_and_other_expenses 0 "
+        "+ cpp_deduction_on_self_employment 0 "
         "+ cpp_enhanced_contributions 1074 + exploration_and_development_expenses 0 "
         "+ other_deductions 0 = 5000",
         "5000",
@@ -369,7 +370,8 @@ def test_the_trace_explains_the_computation() -> None:
         "+ age_amount 0 + spouse_amount 0 "
         "+ eligible_dependant_amount 0 + spouse_caregiver_amount 0 + caregiver_amount 0 "
         "+ infirm_children_amount 0 "
-        "+ cpp_base_contributions 3356.1 + ei_premiums 1077.48 "
+        "+ cpp_base_contributions 3356.1 + cpp_base_contributions_on_self_employment 0 "
+        "+ ei_premiums 1077.48 + ei_premiums_on_self_employment 0 "
         "+ canada_employment_amount 1471 + disability_transferred_amount 0 "
         "+ medical_claim 0 = 22033.58",
         "22033.58",
@@ -770,7 +772,8 @@ def test_the_trace_explains_the_computation() -> None:
         "16951.38",
     )
     position(
-        "total_payable: net_federal_tax 16951.38 + ontario_tax 8945.77 = 25897.15",
+        "total_payable: net_federal_tax 16951.38 + cpp_payable_on_self_employment 0 "
+        "+ ei_payable_on_self_employment 0 + ontario_tax 8945.77 = 25897.15",
         "25897.15",
     )
     position("working_income: employment_income 110000 = 110000", "110000")

@@ -3,13 +3,20 @@
 from __future__ import annotations
 
 from app.domain.capabilities.sum import Sum
+from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.catalog import (
     ADVANCED_CANADA_WORKERS_BENEFIT,
+    CPP_PART_4_COMPLETED,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+    EI_PAYABLE_ON_SELF_EMPLOYMENT,
+    EI_SPECIAL_BENEFITS_AGREEMENT,
     FEDERAL_TAX_LESS_CREDITS,
     NET_FEDERAL_TAX,
     RESP_AIPS_ADDITIONAL_TAX,
     RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
+    SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE,
+    SELF_EMPLOYED_EI_PREMIUMS,
     SPECIAL_TAXES,
     TOTAL_PAYABLE,
 )
@@ -54,13 +61,45 @@ STEPS = {
         },
         produces={"output": "ca/net_federal_tax"},
     ),
-    # T1 line 148 (line 43500) "Add lines 143 to 147. Total payable": line 143 "Amount from
-    # line 42000" and line 147 (42800), the Ontario tax, in line order; lines 144 to 146 are
-    # not triggered.
+    # T1 line 144 and line 42100, entered from Schedule 8 Part 4 line 14: Part 4 is completed
+    # only when the filer reports self-employment income alone, so the amount is counted once
+    # for each Part 4 completed, 1 or 0.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/self_employed_cpp_contributions_payable",
+            "count": "ca/cpp_part_4_completed",
+        },
+        produces={"output": "ca/cpp_payable_on_self_employment"},
+    ),
+    # T1 line 145 and line 42120, entered from Schedule 13 line 9, counted once for each
+    # agreement with the Canada Employment Insurance Commission, 1 or 0.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/self_employed_ei_premiums",
+            "count": "ca/ei_special_benefits_agreement",
+        },
+        produces={"output": "ca/ei_payable_on_self_employment"},
+    ),
+    # T1 line 148 (line 43500) "Add lines 143 to 147. Total payable": line 143 "Amount from line
+    # 42000", line 144 (42100) "CPP contributions payable on self-employment income and other
+    # earnings", line 145 (42120) "Employment insurance premiums payable on self-employment and
+    # other eligible earnings" and line 147 (42800), the Ontario tax, in line order; line 146
+    # (42200), the social benefits repayment, is not yet computed.
     CapabilitySelection(
         name="core/sum",
         params={},
-        consumes={"parts": ("ca/net_federal_tax", "ca-on/ontario_tax")},
+        consumes={
+            "parts": (
+                "ca/net_federal_tax",
+                "ca/cpp_payable_on_self_employment",
+                "ca/ei_payable_on_self_employment",
+                "ca-on/ontario_tax",
+            )
+        },
         produces={"output": "ca/total_payable"},
     ),
 }
@@ -76,5 +115,26 @@ WIRING = {
         frozenset({FEDERAL_TAX_LESS_CREDITS, ADVANCED_CANADA_WORKERS_BENEFIT, SPECIAL_TAXES}),
         frozenset({NET_FEDERAL_TAX}),
     ),
-    (Sum, frozenset({NET_FEDERAL_TAX, ONTARIO_TAX}), frozenset({TOTAL_PAYABLE})),
+    (
+        TimesCount,
+        frozenset({SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE, CPP_PART_4_COMPLETED}),
+        frozenset({CPP_PAYABLE_ON_SELF_EMPLOYMENT}),
+    ),
+    (
+        TimesCount,
+        frozenset({SELF_EMPLOYED_EI_PREMIUMS, EI_SPECIAL_BENEFITS_AGREEMENT}),
+        frozenset({EI_PAYABLE_ON_SELF_EMPLOYMENT}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                NET_FEDERAL_TAX,
+                CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+                EI_PAYABLE_ON_SELF_EMPLOYMENT,
+                ONTARIO_TAX,
+            }
+        ),
+        frozenset({TOTAL_PAYABLE}),
+    ),
 }

@@ -171,6 +171,14 @@ description: >-
   x 5.05% = 1,256.1875) and the lines that follow from them. The lines that only add,
   subtract, compare or choose take amounts already in cents, so the refund or balance owing
   is in cents too.
+  No self-employment income: the net business, professional, commission, farming and fishing
+  income (T1 lines 13500, 13700, 13900, 14100 and 14300) are $0, so their sum (line 27) is
+  $0, and it is not yet in total income (line 15000, to be wired). The CPP months (Schedule
+  8 box A) are the 12 of a full year, Schedule 8 Part 4 is not completed (count 0) and there
+  is no agreement with the Canada Employment Insurance Commission (count 0), so the CPP
+  contributions payable (line 42100), the base CPP contributions (line 31000) and the
+  deduction (line 22200) on self-employment income, and the EI premiums on it (lines 31217
+  and 42120), are $0 and change no total.
 sources:
   - >-
     CRA, "T1-2025 Ontario edition" return (form 5006-R, docs/cra-forms-2025/5006-r-25e.txt,
@@ -701,6 +709,7 @@ sources:
     https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t1206/t1206-25e.pdf
 inputs:
   ca/other_pensions_and_superannuation: "30000"
+  ca/cpp_months: "12"
   ca/medical_expenses: "4900"
   ca/born_in_1960_or_earlier: "1"
   ca/spouse_net_income: "10000"
@@ -731,6 +740,7 @@ expected:
   ca/rental_partnership_net_income: "0"
   ca/net_rental_income: "0"
   ca/total_income: "30000.00"
+  ca/cpp_second_additional_earnings_maximum: "9900.00"
   ca/cpp_base_contributions: "0.00"
   ca/cpp_first_additional_contributions: "0.00"
   ca/cpp_second_additional_contributions: "0.00"

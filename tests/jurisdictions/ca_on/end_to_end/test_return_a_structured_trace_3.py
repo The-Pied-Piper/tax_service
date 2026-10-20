@@ -56,6 +56,10 @@ from app.jurisdictions.ca.catalog import (
     CHILDREN_SEVEN_TO_SIXTEEN,
     CHILDREN_UNDER_SEVEN,
     CHILDREN_WITH_DISABILITY,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_PART_4_COMPLETED,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DIVIDENDS_AMOUNT_A,
     DIVIDENDS_AMOUNT_A_LESS_B,
@@ -67,6 +71,10 @@ from app.jurisdictions.ca.catalog import (
     DONATIONS_OVER_FIRST_TIER,
     EDUCATOR_SUPPLIES_EXPENSES,
     EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
+    EI_MAXIMUM_INSURABLE_EARNINGS,
+    EI_PAYABLE_ON_SELF_EMPLOYMENT,
+    EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+    EI_SPECIAL_BENEFITS_AGREEMENT,
     ELIGIBLE_DEPENDANT_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANTS,
@@ -174,6 +182,10 @@ from app.jurisdictions.ca.catalog import (
     RESP_AIPS_SUBJECT_TO_TAX,
     RRSP_CONTRIBUTIONS_AVAILABLE,
     RRSP_DEDUCTION,
+    SELF_EMPLOYED_CPP_BASE_CREDIT,
+    SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE,
+    SELF_EMPLOYED_CPP_DEDUCTION,
+    SELF_EMPLOYED_EI_PREMIUMS,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BEFORE_COUNT,
     SPOUSE_CAREGIVER_AMOUNT,
@@ -787,6 +799,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rounding=CENT,
             value=D("33294.00"),
         ),
+        # Schedule 13 line 5 "Maximum insurable earnings 65,700.00".
+        EI_MAXIMUM_INSURABLE_EARNINGS: CreditAmountLine(
+            EI_MAXIMUM_INSURABLE_EARNINGS, Credit(amount=D("65700.00")), CENT, D("65700.00")
+        ),
     }
     assert per_unit == {
         # Form T2222 lines 1, 2, 6 and 7 "multiplied by $11.00" and "multiplied by $5.50": Return A
@@ -1096,6 +1112,50 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=AGED_18_OR_OLDER_AT_END_OF_2025,
             count=1,
             result=D("0.00"),
+        ),
+        # T1 lines 42100, 31000 and 22200: Schedule 8 Part 4 lines 14, 15 and 17, each for the 0
+        # "Part 4 completed" of Return A, a plain 0.
+        CPP_PAYABLE_ON_SELF_EMPLOYMENT: TimesCountLine(
+            output=CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+            amount_kind=SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE,
+            amount_value=D("0"),
+            count_kind=CPP_PART_4_COMPLETED,
+            count=0,
+            result=D("0"),
+        ),
+        CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT: TimesCountLine(
+            output=CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+            amount_kind=SELF_EMPLOYED_CPP_BASE_CREDIT,
+            amount_value=D("0"),
+            count_kind=CPP_PART_4_COMPLETED,
+            count=0,
+            result=D("0"),
+        ),
+        CPP_DEDUCTION_ON_SELF_EMPLOYMENT: TimesCountLine(
+            output=CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+            amount_kind=SELF_EMPLOYED_CPP_DEDUCTION,
+            amount_value=D("0"),
+            count_kind=CPP_PART_4_COMPLETED,
+            count=0,
+            result=D("0"),
+        ),
+        # T1 lines 31217 and 42120: Schedule 13 line 9, each for the 0 agreements with the
+        # Canada Employment Insurance Commission of Return A, a plain 0.
+        EI_PREMIUMS_ON_SELF_EMPLOYMENT: TimesCountLine(
+            output=EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+            amount_kind=SELF_EMPLOYED_EI_PREMIUMS,
+            amount_value=D("0"),
+            count_kind=EI_SPECIAL_BENEFITS_AGREEMENT,
+            count=0,
+            result=D("0"),
+        ),
+        EI_PAYABLE_ON_SELF_EMPLOYMENT: TimesCountLine(
+            output=EI_PAYABLE_ON_SELF_EMPLOYMENT,
+            amount_kind=SELF_EMPLOYED_EI_PREMIUMS,
+            amount_value=D("0"),
+            count_kind=EI_SPECIAL_BENEFITS_AGREEMENT,
+            count=0,
+            result=D("0"),
         ),
     }
     assert multiples == {

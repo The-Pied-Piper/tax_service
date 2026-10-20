@@ -81,6 +81,8 @@ from app.jurisdictions.ca.catalog import (
     RESP_AIPS_PART_B_TAX,
     RESP_AIPS_RECEIVED_PART_B,
     RESP_AIPS_SUBJECT_TO_TAX,
+    SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS,
+    SELF_EMPLOYED_CPP_BASE_CREDIT,
     TAXABLE_CAPITAL_GAINS,
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
@@ -549,5 +551,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rate=Rate(D("0.05")),
             rounding=CENT,
             result=D("4085.30"),
+        ),
+        # Schedule 8 Part 4 line 15 "amount from line 10 multiplied by 50%": no self-employment
+        # income, so line 10 is 0.
+        SELF_EMPLOYED_CPP_BASE_CREDIT: RateAppliedLine(
+            SELF_EMPLOYED_CPP_BASE_CREDIT,
+            SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS,
+            D("0"),
+            Rate(D("0.5")),
+            CENT,
+            D("0"),
         ),
     }

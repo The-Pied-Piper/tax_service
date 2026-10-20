@@ -10,6 +10,15 @@ capabilities:
       earnings: ca/employment_income
     produces:
       output: ca/cpp_base_contributions
+  # T1 line 87 and line 31000, entered from Schedule 8 Part 4 line 15: Part 4 is completed only
+  # when the filer reports self-employment income alone, so the amount is counted once for
+  # each Part 4 completed, 1 or 0.
+  - name: core/times_count
+    consumes:
+      amount: ca/self_employed_cpp_base_credit
+      count: ca/cpp_part_4_completed
+    produces:
+      output: ca/cpp_base_contributions_on_self_employment
   # T1 line 31200 "through employment (boxes 18 and 55 of all T4 slips) (maximum
   # $1,077.48)": the EI premiums, 1.64% of the employment income up to the $65,700
   # maximum insurable earnings, with no exemption (the EI premium rates and maximums,
@@ -21,6 +30,16 @@ capabilities:
       earnings: ca/employment_income
     produces:
       output: ca/ei_premiums
+  # "Enter the amount from line 9 or line 10, whichever applies, on line 31217 and line
+  # 42120 of your return.": Schedule 13 is completed only with an agreement with the Canada
+  # Employment Insurance Commission, so line 9 is counted once for each agreement, 1 or 0,
+  # on each of the two lines.
+  - name: core/times_count
+    consumes:
+      amount: ca/self_employed_ei_premiums
+      count: ca/ei_special_benefits_agreement
+    produces:
+      output: ca/ei_premiums_on_self_employment
   # The Canada employment amount: the lesser of the T1's cap and employment income.
   - name: core/capped_amount
     params:
@@ -29,13 +48,16 @@ capabilities:
       base: ca/employment_income
     produces:
       output: ca/canada_employment_amount
-  # T1 line 33500 (lines 30000, 30100, 30300, 30400, 30425, 30450, 30500, 30800, 31200,
-  # 31260, 31800, 33200) and ON428 line 58800 (lines 58040, 58080, 58120, 58160, 58185, 58240,
-  # 58300, 58769), in the forms' line order. T1 line 113 and line 33500 is "Line 106 plus line
-  # 112", and line 112 (line 33200) follows the lines that line 106 adds; ON428 line 44 and line
-  # 58800 is "Line 35 plus line 43", and line 43 (line 58769) follows the lines that line 35
+  # T1 line 33500 (lines 30000, 30100, 30300, 30400, 30425, 30450, 30500, 30800, 31000, 31200,
+  # 31217, 31260, 31800, 33200) and ON428 line 58800 (lines 58040, 58080, 58120, 58160, 58185,
+  # 58240, 58300, 58769), in the forms' line order. T1 line 113 and line 33500 is "Line 106 plus
+  # line 112", and line 112 (line 33200) follows the lines that line 106 adds; ON428 line 44 and
+  # line 58800 is "Line 35 plus line 43", and line 43 (line 58769) follows the lines that line 35
   # adds. ON428 lines 58240 and 58300 are "Amount from line 30800 / 31200 of your return", so the
-  # Ontario sum reads the federal kinds; it has no Canada employment amount.
+  # Ontario sum reads the federal kinds; it has no Canada employment amount. Lines 31000 "on
+  # self-employment income and other earnings" and 31217 "on self-employment and other eligible
+  # earnings (complete Schedule 13)" follow lines 30800 and 31200; ON428's counterparts (lines
+  # 58280 and 58305) are not wired.
   - name: core/sum
     consumes:
       parts:
@@ -47,7 +69,9 @@ capabilities:
         - ca/caregiver_amount
         - ca/infirm_children_amount
         - ca/cpp_base_contributions
+        - ca/cpp_base_contributions_on_self_employment
         - ca/ei_premiums
+        - ca/ei_premiums_on_self_employment
         - ca/canada_employment_amount
         - ca/disability_transferred_amount
         - ca/medical_claim
