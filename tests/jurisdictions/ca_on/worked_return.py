@@ -9,7 +9,8 @@ of decimal digits with no sign and no leading zero, such as "0" or "3". A record
 identifiers with figures spelled as above; `[]` is no records. `WorkedReturn.load` checks
 that shape and resolves each identifier through an artifact registry; every failure is a
 WorkedReturnError naming the file and the key, except a value its kind refuses, such as a
-negative amount, which is the value type's own error.
+negative amount, which is the value type's own error. A line or input the file leaves out is
+blank: `with_blanks` fills it in against the manifest's declared inputs and outputs.
 """
 
 from __future__ import annotations
@@ -35,7 +36,7 @@ _SECTIONS = frozenset({"jurisdiction", "tax_year", "description", "sources", "in
 
 
 class WorkedReturnError(ValueError):
-    """A worked-return file is malformed or does not cover what its manifest declares."""
+    """A worked-return file is malformed or names something its manifest cannot leave blank."""
 
 
 @dataclass(frozen=True)
