@@ -31,3 +31,4 @@ implicit_reexport = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+addopts = "-n auto"
