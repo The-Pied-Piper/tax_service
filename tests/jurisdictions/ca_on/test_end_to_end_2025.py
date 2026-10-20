@@ -56,8 +56,8 @@ eligible dependants (line 38100) choosing the first (T1 line 45300); less the to
 48200), here the chosen income tax deducted of 25000 (line 43700) plus that benefit, to the refund
 or balance owing (line 167), 897.15, positive so a balance owing; every line computed from a dataset
 rounded half-up to the cent) are checked from the files under `returns/` by
-`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, T and V; this
-module pins which capability produces each line, the order, and the trace that explains them.
+`test_worked_returns.py`, as are Returns B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, T and V;
+this module pins which capability produces each line, the order, and the trace that explains them.
 """
 
 from __future__ import annotations
