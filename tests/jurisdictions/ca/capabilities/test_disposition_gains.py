@@ -29,7 +29,7 @@ from app.domain.artifact import Artifact
 from app.domain.capability import Capability, CapabilityRegistry
 from app.domain.errors import InvalidCapabilityError, MissingArtifactError
 from app.domain.record_list import RecordList
-from app.domain.trace import DispositionGainLine, ItemsTotalLine
+from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.capabilities.disposition_gains import DispositionGains
 from app.jurisdictions.ca.capabilities.disposition_gains_only import DispositionGainsOnly
 from app.jurisdictions.ca.capabilities.disposition_rows import DispositionRows
@@ -40,6 +40,7 @@ from app.jurisdictions.ca.catalog import (
     SHARE_DISPOSITIONS,
     SHARE_GAIN_OR_LOSS,
 )
+from app.jurisdictions.ca.trace import DispositionGainLine
 from tests.jurisdictions.ca.capabilities.disposition_rows import (
     GAIN,
     LOSS,

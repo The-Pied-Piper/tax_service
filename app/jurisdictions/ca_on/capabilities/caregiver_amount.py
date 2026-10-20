@@ -25,9 +25,10 @@ from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.record_list import RecordList
-from app.domain.trace import CaregiverClaimLessClaimedLine, ItemsTotalLine
+from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.catalog import DEPENDANT_NET_INCOME
 from app.jurisdictions.ca_on.catalog import CLAIMED_AS_ELIGIBLE_DEPENDANT
+from app.jurisdictions.ca_on.trace import CaregiverClaimLessClaimedLine
 
 
 @capability(identifier="caregiver_amount")

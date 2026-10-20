@@ -1,5 +1,5 @@
-"""English text for the trace lines of `app.domain.trace.capital_cost`: one renderer class
-per line class, each registered with `@english_renderer`.
+"""English text for the trace lines of `app.jurisdictions.ca.trace.capital_cost`: one
+renderer class per line class, each registered with `@english_renderer`.
 """
 
 from __future__ import annotations
@@ -7,7 +7,7 @@ from __future__ import annotations
 from app.adapters.inbound.trace_english.figures import EnglishFigures
 from app.adapters.inbound.trace_english.registry import english_renderer
 from app.domain.parameters.class_rates import RecaptureAndTerminalLoss
-from app.domain.trace.capital_cost import (
+from app.jurisdictions.ca.trace.capital_cost import (
     CcaClaimLine,
     CcaZeroReason,
     ClosingUccLine,

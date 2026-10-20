@@ -5,10 +5,7 @@ from __future__ import annotations
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.domain.parameters.amount import Amount
 from app.domain.record_list import RecordList
-from app.domain.trace import (
-    CaregiverClaimLessClaimedLine,
-    ItemsTotalLine,
-)
+from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.catalog import (
     CANADA_WORKERS_BENEFIT,
     CAREGIVER_AMOUNT,
@@ -24,6 +21,7 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
 )
+from app.jurisdictions.ca_on.trace import CaregiverClaimLessClaimedLine
 from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, return_w
 
 

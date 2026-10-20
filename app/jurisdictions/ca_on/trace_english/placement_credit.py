@@ -1,12 +1,12 @@
-"""English text for the trace lines of `app.domain.trace.placement_credit`: one renderer class
-per line class, each registered with `@english_renderer`.
+"""English text for the trace lines of `app.jurisdictions.ca_on.trace.placement_credit`: one
+renderer class per line class, each registered with `@english_renderer`.
 """
 
 from __future__ import annotations
 
 from app.adapters.inbound.trace_english.figures import EnglishFigures
 from app.adapters.inbound.trace_english.registry import english_renderer
-from app.domain.trace.placement_credit import PlacementCreditLine
+from app.jurisdictions.ca_on.trace.placement_credit import PlacementCreditLine
 
 
 @english_renderer

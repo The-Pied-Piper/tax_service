@@ -8,12 +8,7 @@ from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.domain.errors import NegativeArtifactError
 from app.domain.parameters.amount import Amount
 from app.domain.parameters.rate import Rate
-from app.domain.trace import (
-    ItemsTotalLine,
-    PlacementCreditLine,
-    QuotientLine,
-    RecordCountLine,
-)
+from app.domain.trace import ItemsTotalLine, QuotientLine, RecordCountLine
 from app.jurisdictions.ca.catalog import (
     PROVINCIAL_CREDITS,
     REFUND_OR_BALANCE_OWING,
@@ -36,6 +31,7 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_CREDITS_SUBTOTAL,
     ONTARIO_TAX,
 )
+from app.jurisdictions.ca_on.trace import PlacementCreditLine
 from tests.jurisdictions.ca_on.end_to_end.support import (
     CENT,
     D,

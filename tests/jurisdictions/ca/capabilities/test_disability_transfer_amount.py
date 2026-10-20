@@ -43,7 +43,7 @@ from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.record_list import RecordList
-from app.domain.trace import DisabilityTransferLine, ItemsTotalLine
+from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.capabilities.disability_transfer_amount import DisabilityTransferAmount
 from app.jurisdictions.ca.catalog import (
     CAREGIVER_AMOUNT,
@@ -55,6 +55,7 @@ from app.jurisdictions.ca.catalog import (
     DISABILITY_DEPENDANTS,
     DISABILITY_TRANSFERRED_AMOUNT,
 )
+from app.jurisdictions.ca.trace import DisabilityTransferLine
 
 D = Decimal
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)

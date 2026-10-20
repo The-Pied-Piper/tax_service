@@ -40,7 +40,7 @@ from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.record_list import RecordList
-from app.domain.trace import ItemsTotalLine, OtherDependantMedicalLine
+from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
 from app.jurisdictions.ca.catalog import (
     DEPENDANT_NET_INCOME,
@@ -48,6 +48,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_DEPENDANTS,
     OTHER_DEPENDANTS_MEDICAL,
 )
+from app.jurisdictions.ca.trace import OtherDependantMedicalLine
 
 D = Decimal
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)

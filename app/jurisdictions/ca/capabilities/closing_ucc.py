@@ -22,9 +22,9 @@ from app.domain.capability import CapabilityResult, capability
 from app.domain.parameters.class_rates import ClassRates
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.record_list import RecordList
-from app.domain.trace import CcaZeroReason, ClosingUccLine
 from app.jurisdictions.ca.capabilities.cca_table import CcaTable
 from app.jurisdictions.ca.catalog import CCA_CLASS_NUMBER, CCA_UCC_AT_END
+from app.jurisdictions.ca.trace import CcaZeroReason, ClosingUccLine
 
 
 @capability(identifier="closing_ucc")

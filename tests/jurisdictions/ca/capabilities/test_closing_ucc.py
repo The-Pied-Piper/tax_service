@@ -39,9 +39,9 @@ from app.domain.parameters.class_rates import CLASS_RATES, ClassRate, ClassRates
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.record_list import RecordList, RecordListKind
-from app.domain.trace import CcaZeroReason, ClosingUccLine
 from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
 from app.jurisdictions.ca.catalog import CCA_CLASS_NUMBER, CCA_UCC_AT_END, CCA_UCC_AT_START
+from app.jurisdictions.ca.trace import CcaZeroReason, ClosingUccLine
 from tests.jurisdictions.ca.capabilities.cca_table import (
     CCA_CLAIM,
     CENT,

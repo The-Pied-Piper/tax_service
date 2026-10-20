@@ -48,7 +48,6 @@ from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import RoundingRule
 from app.domain.record_list import Record, RecordList
-from app.domain.trace import CcaZeroReason
 from app.jurisdictions.ca.catalog import (
     CCA_ADDITIONS,
     CCA_AIIP_ADDITIONS,
@@ -59,6 +58,7 @@ from app.jurisdictions.ca.catalog import (
     CCA_RIIP_ADDITIONS,
     CCA_UCC_AT_START,
 )
+from app.jurisdictions.ca.trace import CcaZeroReason
 
 _ZERO = Decimal(0)
 

@@ -25,8 +25,9 @@ from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.record_list import RecordList
-from app.domain.trace import ItemsTotalLine, PlacementCreditLine
+from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca_on.catalog import COOP_EDUCATION_PLACEMENT_EXPENDITURES
+from app.jurisdictions.ca_on.trace import PlacementCreditLine
 
 
 @capability(identifier="coop_education_credit")

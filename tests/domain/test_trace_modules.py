@@ -1,8 +1,10 @@
-"""Unit tests for the layout of the `app.domain.trace` package: each line class's home module.
+"""Unit tests for the layout of the trace packages: each line class's home module.
 
-The line classes live in one module per feature group, each with an `__all__`; the package
-`__init__` re-exports every module's `__all__`, so `from app.domain.trace import SumLine` keeps
-working. Every exported line class appears in `HOMES`, so a new one is placed deliberately.
+The generic line classes live in `app.domain.trace`, a jurisdiction's own in
+`app.jurisdictions.<package>.trace`; each package has one module per feature group, each with an
+`__all__`, and its `__init__` re-exports every module's `__all__`, so
+`from app.domain.trace import SumLine` keeps working. Every exported line class appears in
+`HOMES`, so a new one is placed deliberately.
 """
 
 from __future__ import annotations
@@ -15,7 +17,11 @@ import pytest
 import app.domain.trace
 from app.domain.trace import TraceLine
 
-HOMES: dict[str, tuple[str, ...]] = {
+CORE = "app.domain.trace"
+CA = "app.jurisdictions.ca.trace"
+CA_ON = "app.jurisdictions.ca_on.trace"
+
+CORE_HOMES: dict[str, tuple[str, ...]] = {
     "base": ("TraceLine",),
     "arithmetic": (
         "RoundedTotalLine",
@@ -55,62 +61,89 @@ HOMES: dict[str, tuple[str, ...]] = {
         "ItemSumLine",
         "ItemLesserOfLine",
     ),
-    "dependants": (
-        "CaregiverClaimLine",
-        "CaregiverClaimLessClaimedLine",
-        "OtherDependantMedicalLine",
-        "DisabilityTransferLine",
-    ),
-    "placement_credit": ("PlacementCreditLine",),
-    "rentals": ("ShortTermRentalNonCompliantLine",),
-    "gains": ("PrincipalResidenceGainLine", "DispositionGainLine", "DispositionGainOnlyLine"),
-    "capital_cost": (
-        "CcaZeroReason",
-        "CcaClaimLine",
-        "RecapturedCcaLine",
-        "TerminalLossLine",
-        "ClosingUccLine",
-    ),
 }
 
-PLACED = [(module, name) for module, names in HOMES.items() for name in names]
+HOMES: dict[str, dict[str, tuple[str, ...]]] = {
+    CORE: CORE_HOMES,
+    CA: {
+        "capital_cost": (
+            "CcaZeroReason",
+            "CcaClaimLine",
+            "RecapturedCcaLine",
+            "TerminalLossLine",
+            "ClosingUccLine",
+        ),
+        "dependants": (
+            "CaregiverClaimLine",
+            "OtherDependantMedicalLine",
+            "DisabilityTransferLine",
+        ),
+        "gains": ("PrincipalResidenceGainLine", "DispositionGainLine", "DispositionGainOnlyLine"),
+        "rentals": ("ShortTermRentalNonCompliantLine",),
+    },
+    CA_ON: {
+        "dependants": ("CaregiverClaimLessClaimedLine",),
+        "placement_credit": ("PlacementCreditLine",),
+    },
+}
+
+PLACED = [
+    (package, module, name)
+    for package, modules in HOMES.items()
+    for module, names in modules.items()
+    for name in names
+]
+MODULES = [(package, module) for package, modules in HOMES.items() for module in modules]
 
 
-def test_trace_is_a_package() -> None:
-    assert hasattr(app.domain.trace, "__path__")
+@pytest.mark.parametrize("package", list(HOMES))
+def test_trace_is_a_package(package: str) -> None:
+    assert hasattr(importlib.import_module(package), "__path__")
 
 
-@pytest.mark.parametrize(("module", "name"), PLACED, ids=[name for _, name in PLACED])
-def test_each_class_lives_in_its_feature_module(module: str, name: str) -> None:
-    home = importlib.import_module(f"app.domain.trace.{module}")
+@pytest.mark.parametrize(("package", "module", "name"), PLACED, ids=[name for *_, name in PLACED])
+def test_each_class_lives_in_its_feature_module(package: str, module: str, name: str) -> None:
+    home = importlib.import_module(f"{package}.{module}")
 
-    assert getattr(home, name).__module__ == f"app.domain.trace.{module}"
+    assert getattr(home, name).__module__ == f"{package}.{module}"
     assert name in home.__all__
 
 
-@pytest.mark.parametrize(("module", "name"), PLACED, ids=[name for _, name in PLACED])
-def test_the_package_re_exports_each_class(module: str, name: str) -> None:
-    home = importlib.import_module(f"app.domain.trace.{module}")
+@pytest.mark.parametrize(("package", "module", "name"), PLACED, ids=[name for *_, name in PLACED])
+def test_the_package_re_exports_each_class(package: str, module: str, name: str) -> None:
+    home = importlib.import_module(f"{package}.{module}")
 
-    assert getattr(app.domain.trace, name) is getattr(home, name)
-
-
-@pytest.mark.parametrize("module", list(HOMES))
-def test_each_feature_module_exports_exactly_its_classes(module: str) -> None:
-    home = importlib.import_module(f"app.domain.trace.{module}")
-
-    assert set(home.__all__) == set(HOMES[module])
+    assert getattr(importlib.import_module(package), name) is getattr(home, name)
 
 
-def test_every_exported_line_class_is_placed() -> None:
+@pytest.mark.parametrize(("package", "module"), MODULES, ids=[f"{p}.{m}" for p, m in MODULES])
+def test_each_feature_module_exports_exactly_its_classes(package: str, module: str) -> None:
+    home = importlib.import_module(f"{package}.{module}")
+
+    assert set(home.__all__) == set(HOMES[package][module])
+
+
+@pytest.mark.parametrize("package", list(HOMES))
+def test_every_exported_line_class_is_placed(package: str) -> None:
     exported = {
         name
-        for name, found in vars(app.domain.trace).items()
+        for name, found in vars(importlib.import_module(package)).items()
         if inspect.isclass(found) and issubclass(found, TraceLine)
     }
+    # A jurisdiction's package exports only its own lines, not TraceLine or the core lines.
+    placed = {name for home, _, name in PLACED if home == package and name != "CcaZeroReason"}
 
-    assert exported == {name for _, name in PLACED if name != "CcaZeroReason"}
+    assert exported - {"TraceLine"} == placed - {"TraceLine"}
 
 
-def test_the_package_exports_every_placed_name() -> None:
-    assert set(app.domain.trace.__all__) == {name for _, name in PLACED}
+@pytest.mark.parametrize("package", list(HOMES))
+def test_the_package_exports_every_placed_name(package: str) -> None:
+    placed = {name for home, _, name in PLACED if home == package}
+
+    assert set(importlib.import_module(package).__all__) == placed
+
+
+def test_core_exports_no_jurisdiction_line() -> None:
+    moved = {name for home, _, name in PLACED if home != CORE}
+
+    assert not moved & set(vars(app.domain.trace))

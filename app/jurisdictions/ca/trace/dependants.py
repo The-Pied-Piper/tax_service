@@ -13,12 +13,7 @@ from app.domain.parameters.claim_reduction import ClaimReduction
 from app.domain.parameters.rounding import RoundingRule
 from app.domain.trace.base import TraceLine
 
-__all__ = [
-    "CaregiverClaimLine",
-    "CaregiverClaimLessClaimedLine",
-    "OtherDependantMedicalLine",
-    "DisabilityTransferLine",
-]
+__all__ = ["CaregiverClaimLine", "OtherDependantMedicalLine", "DisabilityTransferLine"]
 
 
 @dataclass(frozen=True)
@@ -37,33 +32,6 @@ class CaregiverClaimLine(TraceLine):
     base: Amount
     net_income: Decimal
     maximum: Amount
-    rounding: RoundingRule
-    result: Decimal
-
-    @property
-    def amount(self) -> Decimal:
-        """The dependant's allowable amount."""
-        return self.result
-
-
-@dataclass(frozen=True)
-class CaregiverClaimLessClaimedLine(TraceLine):
-    """The allowable amount `result` for one dependant, by `position` (from 1), for `output`.
-
-    It is `base` less the dependant's `net_income`, from 0 up to `maximum`, rounded with
-    `rounding` to `allowable_before_claimed`, less the `claimed` amount, not below 0.
-
-    Its own class, not a `CaregiverClaimLine`: it also carries the amount claimed for this
-    dependant elsewhere, taken off the rounded amount.
-    """
-
-    output: Money
-    position: int
-    base: Amount
-    net_income: Decimal
-    maximum: Amount
-    allowable_before_claimed: Decimal
-    claimed: Decimal
     rounding: RoundingRule
     result: Decimal
 

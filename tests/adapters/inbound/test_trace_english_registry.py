@@ -21,10 +21,12 @@ from typing import assert_type
 
 import pytest
 
-# Imported first, so the core renderers fill the real shared registry before any test points
-# `shared` at a fresh one.
+# Imported first, so the core and jurisdiction renderers fill the real shared registry before any
+# test points `shared` at a fresh one.
 import app.adapters.inbound.trace_english
 import app.domain.trace
+import app.jurisdictions.ca.trace
+import app.jurisdictions.ca_on.trace
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.adapters.inbound.trace_english.registry import (
     EnglishRendererRegistry,
@@ -184,22 +186,10 @@ def test_the_shared_registry_holds_exactly_the_built_in_renderers() -> None:
         "app.domain.trace.arithmetic.SumNotBelowZeroLine",
         "app.domain.trace.arithmetic.ThresholdGateLine",
         "app.domain.trace.arithmetic.TimesCountLine",
-        "app.domain.trace.capital_cost.CcaClaimLine",
-        "app.domain.trace.capital_cost.ClosingUccLine",
-        "app.domain.trace.capital_cost.RecapturedCcaLine",
-        "app.domain.trace.capital_cost.TerminalLossLine",
         "app.domain.trace.choices.ChosenByCountLine",
         "app.domain.trace.choices.ChosenByRangeLine",
         "app.domain.trace.choices.ConditionLine",
         "app.domain.trace.choices.ConditionsCountLine",
-        "app.domain.trace.dependants.CaregiverClaimLessClaimedLine",
-        "app.domain.trace.dependants.CaregiverClaimLine",
-        "app.domain.trace.dependants.DisabilityTransferLine",
-        "app.domain.trace.dependants.OtherDependantMedicalLine",
-        "app.domain.trace.gains.DispositionGainLine",
-        "app.domain.trace.gains.DispositionGainOnlyLine",
-        "app.domain.trace.gains.PrincipalResidenceGainLine",
-        "app.domain.trace.placement_credit.PlacementCreditLine",
         "app.domain.trace.rate_tables.AmountByCountLine",
         "app.domain.trace.rate_tables.BracketColumnLine",
         "app.domain.trace.rate_tables.ChosenRateAppliedLine",
@@ -212,7 +202,19 @@ def test_the_shared_registry_holds_exactly_the_built_in_renderers() -> None:
         "app.domain.trace.record_lists.ItemsTotalLine",
         "app.domain.trace.record_lists.RecordCountLine",
         "app.domain.trace.record_lists.RecordTotalLine",
-        "app.domain.trace.rentals.ShortTermRentalNonCompliantLine",
+        "app.jurisdictions.ca.trace.capital_cost.CcaClaimLine",
+        "app.jurisdictions.ca.trace.capital_cost.ClosingUccLine",
+        "app.jurisdictions.ca.trace.capital_cost.RecapturedCcaLine",
+        "app.jurisdictions.ca.trace.capital_cost.TerminalLossLine",
+        "app.jurisdictions.ca.trace.dependants.CaregiverClaimLine",
+        "app.jurisdictions.ca.trace.dependants.DisabilityTransferLine",
+        "app.jurisdictions.ca.trace.dependants.OtherDependantMedicalLine",
+        "app.jurisdictions.ca.trace.gains.DispositionGainLine",
+        "app.jurisdictions.ca.trace.gains.DispositionGainOnlyLine",
+        "app.jurisdictions.ca.trace.gains.PrincipalResidenceGainLine",
+        "app.jurisdictions.ca.trace.rentals.ShortTermRentalNonCompliantLine",
+        "app.jurisdictions.ca_on.trace.dependants.CaregiverClaimLessClaimedLine",
+        "app.jurisdictions.ca_on.trace.placement_credit.PlacementCreditLine",
     }
 
 
@@ -287,17 +289,25 @@ def test_the_default_renderer_uses_the_shared_registry(fresh: EnglishRendererReg
     assert EnglishTraceRenderer().render(ExampleLine(D(4))) == "example of 4"
 
 
-# --- every core line class has English text, beside its feature module -----------------------
+# --- every core and jurisdiction line class has English text, beside its feature module ------
+
+# Each trace package and the package of its line classes' renderers.
+TRACE_PACKAGES: dict[ModuleType, str] = {
+    app.domain.trace: "app.adapters.inbound.trace_english",
+    app.jurisdictions.ca.trace: "app.jurisdictions.ca.trace_english",
+    app.jurisdictions.ca_on.trace: "app.jurisdictions.ca_on.trace_english",
+}
 
 
 def exported_line_classes() -> list[type[TraceLine]]:
-    """Every TraceLine subclass `app.domain.trace` exports, by name."""
+    """Every TraceLine subclass the core and jurisdiction trace packages export, by name."""
     return sorted(
-        (
+        {
             found
-            for found in vars(app.domain.trace).values()
+            for package in TRACE_PACKAGES
+            for found in vars(package).values()
             if inspect.isclass(found) and issubclass(found, TraceLine) and found is not TraceLine
-        ),
+        },
         key=lambda cls: cls.__name__,
     )
 
@@ -316,11 +326,15 @@ def test_every_exported_line_class_has_a_shared_english_renderer(
 def test_each_renderer_lives_in_the_adapter_module_matching_its_line_classs_module(
     line_class: type[TraceLine],
 ) -> None:
-    # SumLine in app.domain.trace.arithmetic -> its renderer in trace_english.arithmetic.
-    feature = line_class.__module__.removeprefix("app.domain.trace.")
+    # SumLine in app.domain.trace.arithmetic -> its renderer in trace_english.arithmetic;
+    # CcaClaimLine in app.jurisdictions.ca.trace.capital_cost -> ca.trace_english.capital_cost.
+    package, feature = line_class.__module__.rsplit(".", 1)
+    renderers = next(
+        adapter for trace, adapter in TRACE_PACKAGES.items() if trace.__name__ == package
+    )
     found = EnglishRendererRegistry.shared().for_line_class(line_class)
 
-    assert type(found).__module__ == f"app.adapters.inbound.trace_english.{feature}"
+    assert type(found).__module__ == f"{renderers}.{feature}"
 
 
 def test_the_adapter_is_a_package_with_registry_and_renderer_modules() -> None:

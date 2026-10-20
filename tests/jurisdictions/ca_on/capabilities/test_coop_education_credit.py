@@ -40,7 +40,7 @@ from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.record_list import RecordList
-from app.domain.trace import ItemsTotalLine, PlacementCreditLine
+from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca_on.capabilities.coop_education_credit import CoopEducationCredit
 from app.jurisdictions.ca_on.catalog import (
     COOP_EDUCATION_CREDIT,
@@ -48,6 +48,7 @@ from app.jurisdictions.ca_on.catalog import (
     COOP_EDUCATION_PLACEMENTS,
     COOP_EDUCATION_REMAINING_SHARE,
 )
+from app.jurisdictions.ca_on.trace import PlacementCreditLine
 
 D = Decimal
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
