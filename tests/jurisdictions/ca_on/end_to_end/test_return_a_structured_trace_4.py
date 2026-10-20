@@ -166,14 +166,24 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_2,
     POLITICAL_CREDIT_COLUMN_3_LINE_3,
     REFUND,
+    RENTAL_CCA_CLAIM,
+    RENTAL_CCA_CLAIM_BEFORE_LIMIT,
+    RENTAL_CCA_CLAIM_SHARE,
+    RENTAL_CCA_LIMIT,
+    RENTAL_CCA_TABLE_CLAIM,
+    RENTAL_CCA_TABLE_RECAPTURE,
+    RENTAL_CCA_TABLE_TERMINAL_LOSS,
     RENTAL_COOWNER,
     RENTAL_GROSS_RENTS,
     RENTAL_NET_INCOME_AFTER_CCA,
+    RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS,
     RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS,
     RENTAL_NET_INCOME_SHARE,
     RENTAL_PARTNER,
     RENTAL_PROPERTY_GROSS_RENTS,
     RENTAL_PROPERTY_SHORT_TERM_RENTS,
+    RENTAL_RECAPTURED_CCA,
+    RENTAL_TERMINAL_LOSS,
     RESIDENCY_AMOUNT,
     RESIDENCY_DEDUCTION,
     RESIDENCY_NET_INCOME_LIMIT,
@@ -518,6 +528,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             amount_kind=FHSA_CONTRIBUTIONS_DEDUCTED,
             amount_value=D("0"),
             bound=FHSA_MAXIMUM_DEDUCTION,
+            bound_value=D("0"),
+        ),
+        # T776 line 9936 "Total CCA claim for the year": a claim of 0 against amount 5, 0.
+        RENTAL_CCA_CLAIM: AtMostLine(
+            output=RENTAL_CCA_CLAIM,
+            amount_kind=RENTAL_CCA_CLAIM_BEFORE_LIMIT,
+            amount_value=D("0"),
+            bound=RENTAL_CCA_LIMIT,
             bound_value=D("0"),
         ),
         # Form T1436 line 7 "Enter the amount of losses you want to claim (3).", which is T1 line
@@ -1289,7 +1307,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     # Schedule 8 Part 4 line 3 "Line 1 plus line 2 (if negative, enter "0")" and Schedule 13 line 1
-    # "(if negative, enter "0")", on no self-employment income and no partnership income.
+    # "(if negative, enter "0")", on no self-employment income and no partnership income, and the
+    # rental CCA limit.
     assert summed_floored == {
         CPP_PENSIONABLE_EARNINGS: SumNotBelowZeroLine(
             CPP_PENSIONABLE_EARNINGS,
@@ -1306,6 +1325,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CARE_ADJUSTED_INCOME,
             ((NET_INCOME_BEFORE_ADJUSTMENTS, D("115000")), (CHILD_CARE_EXPENSES, D("0"))),
             D("115000"),
+        ),
+        # Guide T4036 "You cannot use CCA to create or increase a rental loss": the most line 9936
+        # may be, amount 5 of no rental income.
+        RENTAL_CCA_LIMIT: SumNotBelowZeroLine(
+            RENTAL_CCA_LIMIT, ((RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS, D("0")),), D("0")
         ),
     }
     # Schedule 8 Part 2 lines B, C, D and E: the row of the monthly proration table for box A's 12
@@ -1385,6 +1409,29 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=RENTAL_COOWNER,
             count=0,
             chosen_kind=RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS,
+            chosen_value=D("0"),
+        ),
+        # T776 lines 9947, 9948 and 9936 (amount ii): a count of 0 chooses Area A's figure, 0
+        # with no classes.
+        RENTAL_RECAPTURED_CCA: ChosenByCountLine(
+            output=RENTAL_RECAPTURED_CCA,
+            count_kind=RENTAL_COOWNER,
+            count=0,
+            chosen_kind=RENTAL_CCA_TABLE_RECAPTURE,
+            chosen_value=D("0"),
+        ),
+        RENTAL_TERMINAL_LOSS: ChosenByCountLine(
+            output=RENTAL_TERMINAL_LOSS,
+            count_kind=RENTAL_COOWNER,
+            count=0,
+            chosen_kind=RENTAL_CCA_TABLE_TERMINAL_LOSS,
+            chosen_value=D("0"),
+        ),
+        RENTAL_CCA_CLAIM_SHARE: ChosenByCountLine(
+            output=RENTAL_CCA_CLAIM_SHARE,
+            count_kind=RENTAL_COOWNER,
+            count=0,
+            chosen_kind=RENTAL_CCA_TABLE_CLAIM,
             chosen_value=D("0"),
         ),
         NET_RENTAL_INCOME: ChosenByCountLine(

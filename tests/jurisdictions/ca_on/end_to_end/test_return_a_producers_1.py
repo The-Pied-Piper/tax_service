@@ -25,11 +25,14 @@ from app.domain.capabilities.tapered_amount import TaperedAmount
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.capabilities.times_count import TimesCount
 from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
+from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
 from app.jurisdictions.ca.capabilities.chart_a_row_c_total import ChartARowCTotal
 from app.jurisdictions.ca.capabilities.chart_b_zone_a_total import ChartBZoneATotal
 from app.jurisdictions.ca.capabilities.chart_b_zone_b_total import ChartBZoneBTotal
+from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
 from app.jurisdictions.ca.capabilities.disability_transfer_amount import DisabilityTransferAmount
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
+from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
 from app.jurisdictions.ca.capabilities.short_term_rental_gross_rents import (
     ShortTermRentalGrossRents,
@@ -37,6 +40,7 @@ from app.jurisdictions.ca.capabilities.short_term_rental_gross_rents import (
 from app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_expenses import (
     ShortTermRentalNonCompliantExpenses,
 )
+from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADJUSTED_FAMILY_NET_INCOME,
@@ -324,10 +328,24 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_ADVERTISING,
     RENTAL_ADVERTISING_PERSONAL_PORTION,
     RENTAL_ADVERTISING_SHORT_TERM_PORTION,
+    RENTAL_CCA_BUSINESS_USE_OF_HOME,
     RENTAL_CCA_CLAIM,
+    RENTAL_CCA_CLAIM_BEFORE_LIMIT,
+    RENTAL_CCA_CLAIM_LESS_PERSONAL_PART,
+    RENTAL_CCA_CLAIM_SHARE,
+    RENTAL_CCA_CLASSES,
+    RENTAL_CCA_LIMIT,
+    RENTAL_CCA_PERSONAL_PART,
+    RENTAL_CCA_TABLE_CLAIM,
+    RENTAL_CCA_TABLE_RECAPTURE,
+    RENTAL_CCA_TABLE_TERMINAL_LOSS,
+    RENTAL_CLOSING_UCC,
     RENTAL_COOWNER,
+    RENTAL_COOWNER_CCA_CLAIM,
     RENTAL_COOWNER_OTHER_EXPENSES,
+    RENTAL_COOWNER_RECAPTURED_CCA,
     RENTAL_COOWNER_SHARE,
+    RENTAL_COOWNER_TERMINAL_LOSS,
     RENTAL_DEDUCTIBLE_EXPENSES,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
     RENTAL_GROSS_RENTS,
@@ -707,9 +725,12 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(RENTAL_COOWNER) is None
     assert worksheet.producer_of(RENTAL_COOWNER_SHARE) is None
     assert worksheet.producer_of(RENTAL_COOWNER_OTHER_EXPENSES) is None
-    assert worksheet.producer_of(RENTAL_RECAPTURED_CCA) is None
-    assert worksheet.producer_of(RENTAL_TERMINAL_LOSS) is None
-    assert worksheet.producer_of(RENTAL_CCA_CLAIM) is None
+    assert worksheet.producer_of(RENTAL_CCA_CLASSES) is None
+    assert worksheet.producer_of(RENTAL_COOWNER_RECAPTURED_CCA) is None
+    assert worksheet.producer_of(RENTAL_COOWNER_TERMINAL_LOSS) is None
+    assert worksheet.producer_of(RENTAL_COOWNER_CCA_CLAIM) is None
+    assert worksheet.producer_of(RENTAL_CCA_PERSONAL_PART) is None
+    assert worksheet.producer_of(RENTAL_CCA_BUSINESS_USE_OF_HOME) is None
     assert worksheet.producer_of(RENTAL_PARTNER) is None
     assert worksheet.producer_of(RENTAL_PARTNER_SHARE) is None
     assert worksheet.producer_of(RENTAL_PARTNER_GST_HST_REBATE) is None
@@ -731,8 +752,19 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS), Subtract)
     assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_SHARE), ChooseByCount)
     assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_CCA_TABLE_RECAPTURE), RecapturedCca)
+    assert isinstance(worksheet.producer_of(RENTAL_RECAPTURED_CCA), ChooseByCount)
     assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_WITH_RECAPTURE), Sum)
+    assert isinstance(worksheet.producer_of(RENTAL_CCA_TABLE_TERMINAL_LOSS), TerminalLoss)
+    assert isinstance(worksheet.producer_of(RENTAL_TERMINAL_LOSS), ChooseByCount)
     assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_CCA_TABLE_CLAIM), CcaClaim)
+    assert isinstance(worksheet.producer_of(RENTAL_CCA_CLAIM_SHARE), ChooseByCount)
+    assert isinstance(worksheet.producer_of(RENTAL_CCA_CLAIM_LESS_PERSONAL_PART), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_CCA_CLAIM_BEFORE_LIMIT), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_CCA_LIMIT), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(RENTAL_CCA_CLAIM), AtMost)
+    assert isinstance(worksheet.producer_of(RENTAL_CLOSING_UCC), ClosingUcc)
     assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_AFTER_CCA), Subtract)
     assert isinstance(worksheet.producer_of(RENTAL_PARTNER_SHARE_WITH_REBATE), Sum)
     assert isinstance(worksheet.producer_of(RENTAL_PARTNERSHIP_NET_INCOME), Subtract)

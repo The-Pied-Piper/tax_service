@@ -14,6 +14,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME,
     NET_RENTAL_INCOME,
     REFUND_OR_BALANCE_OWING,
+    RENTAL_CCA_CLAIM,
     RENTAL_DEDUCTIBLE_EXPENSES,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
     RENTAL_GROSS_RENTS,
@@ -27,7 +28,9 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_PARTNER_SHARE_WITH_REBATE,
     RENTAL_PARTNERSHIP_NET_INCOME,
     RENTAL_PERSONAL_PORTION,
+    RENTAL_RECAPTURED_CCA,
     RENTAL_SHORT_TERM_PORTION,
+    RENTAL_TERMINAL_LOSS,
     RENTAL_TOTAL_EXPENSES,
     SHORT_TERM_RENTAL_GROSS_RENTS,
     TAXABLE_INCOME,
@@ -252,9 +255,9 @@ def test_a_co_owners_share_replaces_line_9369_on_amount_2_and_runs_through_amoun
         rental_coowner=1,
         rental_coowner_share="6000",
         rental_coowner_other_expenses="500",
-        rental_recaptured_cca="200",
-        rental_terminal_loss="100",
-        rental_cca_claim="300",
+        rental_coowner_recaptured_cca="200",
+        rental_coowner_terminal_loss="100",
+        rental_coowner_cca_claim="300",
     )
 
     assert worksheet.get(RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("12000")
@@ -262,6 +265,9 @@ def test_a_co_owners_share_replaces_line_9369_on_amount_2_and_runs_through_amoun
     assert worksheet.get(RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES).value == D("5500")
     assert worksheet.get(RENTAL_NET_INCOME_WITH_RECAPTURE).value == D("5700")
     assert worksheet.get(RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS).value == D("5600")
+    assert worksheet.get(RENTAL_RECAPTURED_CCA).value == D("200")
+    assert worksheet.get(RENTAL_TERMINAL_LOSS).value == D("100")
+    assert worksheet.get(RENTAL_CCA_CLAIM).value == D("300")
     assert worksheet.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("5300")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("5300")
     assert worksheet.get(TOTAL_INCOME).value == D("5300")
@@ -272,20 +278,25 @@ def test_a_co_owners_share_replaces_line_9369_on_amount_2_and_runs_through_amoun
 
 
 def test_a_sole_proprietor_ignores_the_co_owners_share_and_carries_line_9369() -> None:
-    # The same figures with a count of 0: amount 2 is line 9369 (12000), so amount 6 is
-    # 12000 - 500 + 200 - 100 - 300 = 11300; the entered share of 6000 is not used.
+    # The same figures with a count of 0: amount 2 is line 9369 (12000), so amount 3 is
+    # 12000 - 500 = 11500; the entered share of 6000 and the co-owner's shares of lines 9947,
+    # 9948 and 9936 (200, 100 and 300) are not used, and with no Area A classes those three lines
+    # are 0, so amount 6 is 11500.
     worksheet = return_ad(
         rental_coowner=0,
         rental_coowner_share="6000",
         rental_coowner_other_expenses="500",
-        rental_recaptured_cca="200",
-        rental_terminal_loss="100",
-        rental_cca_claim="300",
+        rental_coowner_recaptured_cca="200",
+        rental_coowner_terminal_loss="100",
+        rental_coowner_cca_claim="300",
     )
 
     assert worksheet.get(RENTAL_NET_INCOME_SHARE).value == D("12000")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("11300")
-    assert worksheet.get(NET_RENTAL_INCOME).value == D("11300")
+    assert worksheet.get(RENTAL_RECAPTURED_CCA).value == D("0")
+    assert worksheet.get(RENTAL_TERMINAL_LOSS).value == D("0")
+    assert worksheet.get(RENTAL_CCA_CLAIM).value == D("0")
+    assert worksheet.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("11500")
+    assert worksheet.get(NET_RENTAL_INCOME).value == D("11500")
 
 
 def test_a_partners_line_9946_is_amount_7_plus_line_9974_minus_line_9943() -> None:

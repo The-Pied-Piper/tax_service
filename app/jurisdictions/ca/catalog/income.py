@@ -10,6 +10,17 @@ from decimal import Decimal
 
 from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.catalog.base import CATALOG
+from app.jurisdictions.ca.catalog.personal_amounts import (
+    CCA_ADDITIONS,
+    CCA_AIIP_ADDITIONS,
+    CCA_CLAIMED,
+    CCA_CLASS_NUMBER,
+    CCA_NO_PROPERTY_LEFT,
+    CCA_PROCEEDS,
+    CCA_RIIP_ADDITIONS,
+    CCA_UCC_AT_END,
+    CCA_UCC_AT_START,
+)
 
 EMPLOYMENT_INCOME = CATALOG.declare("employment_income", Decimal, non_negative=True)
 """Employment income, T1 line 10100: a starting amount that total income sums directly."""
@@ -813,3 +824,94 @@ co-owners, enter the result from amount 6. For partnerships, enter the result fr
 plus line 9974 minus line 9943. Enter this amount on line 12600 of your income tax and benefit
 return", T1 line 13 and line 12600 "Net": amount 6, or for a partner the partnership figure;
 signed, a loss is negative."""
+
+RENTAL_CCA_CLASSES = RecordListKind.declare(
+    CATALOG,
+    "rental_cca_classes",
+    fields=(
+        CCA_CLASS_NUMBER,
+        CCA_UCC_AT_START,
+        CCA_ADDITIONS,
+        CCA_PROCEEDS,
+        CCA_AIIP_ADDITIONS,
+        CCA_RIIP_ADDITIONS,
+        CCA_CLAIMED,
+        CCA_NO_PROPERTY_LEFT,
+    ),
+)
+"""Rental classes, Form T776 Area A "Calculation of capital cost allowance (CCA) claim": a
+starting list with one record for each class, holding the columns the filer enters (class
+number, UCC at the start of the year, additions, proceeds, the AIIP and RIIP parts of the
+additions, the CCA claimed) and whether any property is left in the class."""
+
+RENTAL_CLOSING_UCC = RecordListKind.declare(
+    CATALOG, "rental_closing_ucc", fields=(CCA_CLASS_NUMBER, CCA_UCC_AT_END)
+)
+"""Rental closing UCC, Form T776 Area A "Column 24: UCC at the end of the year (column 7 minus
+column 23)": one record for each class of the rental classes, holding its class number and
+column 24."""
+
+RENTAL_CCA_TABLE_RECAPTURE = CATALOG.declare(
+    "rental_cca_table_recapture", Decimal, non_negative=True
+)
+"""Recapture of the rental classes, Form T776 Area A Note 3 "If you have a negative amount in
+column 7, add it to income as a recapture under "Recaptured capital cost allowance" on line
+9947": the recapture of each class, totalled."""
+
+RENTAL_CCA_TABLE_TERMINAL_LOSS = CATALOG.declare(
+    "rental_cca_table_terminal_loss", Decimal, non_negative=True
+)
+"""Terminal loss of the rental classes, Form T776 Area A Note 3 "If no property is left in the
+class and there is a positive amount in this column, deduct the amount from your income as a
+terminal loss under "Terminal loss" on line 9948": the terminal loss of each class, totalled."""
+
+RENTAL_CCA_TABLE_CLAIM = CATALOG.declare("rental_cca_table_claim", Decimal, non_negative=True)
+"""Total CCA claim of the rental classes, Form T776 Area A "Line ii: Total CCA claim for the year
+*: Total of column 23": the CCA claimed on each class, at most its maximum, totalled."""
+
+RENTAL_COOWNER_RECAPTURED_CCA = CATALOG.declare(
+    "rental_coowner_recaptured_cca", Decimal, non_negative=True
+)
+"""Co-owner's share of the recapture, Form T776 line 9947 "Recaptured capital cost allowance
+(co-owners: enter your share of the amount)": a starting amount, used for a co-owner."""
+
+RENTAL_COOWNER_TERMINAL_LOSS = CATALOG.declare(
+    "rental_coowner_terminal_loss", Decimal, non_negative=True
+)
+"""Co-owner's share of the terminal loss, Form T776 line 9948 "Terminal loss (co-owners: enter
+your share of the amount)": a starting amount, used for a co-owner."""
+
+RENTAL_COOWNER_CCA_CLAIM = CATALOG.declare("rental_coowner_cca_claim", Decimal, non_negative=True)
+"""Co-owner's share of the CCA claim, Form T776 Area A "Co-owners: Enter only your share of the
+total CCA claim for the year from amount ii on line 9936": a starting amount, used for a
+co-owner."""
+
+RENTAL_CCA_CLAIM_SHARE = CATALOG.declare("rental_cca_claim_share", Decimal, non_negative=True)
+"""Rental CCA claim before deductions, Form T776 Area A amount ii: the co-owner's share for a
+co-owner, otherwise the total CCA claim of the rental classes."""
+
+RENTAL_CCA_PERSONAL_PART = CATALOG.declare("rental_cca_personal_part", Decimal, non_negative=True)
+"""Personal part of the rental CCA, Form T776 line 9936 "amount ii from Area A minus any personal
+part of CCA": a starting amount."""
+
+RENTAL_CCA_BUSINESS_USE_OF_HOME = CATALOG.declare(
+    "rental_cca_business_use_of_home", Decimal, non_negative=True
+)
+"""CCA for business-use-of-home expenses, Form T776 line 9936 "and any CCA for business-use-of
+home expenses": a starting amount."""
+
+RENTAL_CCA_CLAIM_LESS_PERSONAL_PART = CATALOG.declare(
+    "rental_cca_claim_less_personal_part", Decimal, non_negative=True
+)
+"""Rental CCA claim less the personal part, the first step of Form T776 line 9936: amount ii
+minus the personal part of CCA."""
+
+RENTAL_CCA_CLAIM_BEFORE_LIMIT = CATALOG.declare(
+    "rental_cca_claim_before_limit", Decimal, non_negative=True
+)
+"""Rental CCA claim before the loss limit, the second step of Form T776 line 9936: the first step
+minus the CCA for business-use-of-home expenses."""
+
+RENTAL_CCA_LIMIT = CATALOG.declare("rental_cca_limit", Decimal, non_negative=True)
+"""Most the rental CCA claim may be, Guide T4036 "You cannot use CCA to create or increase a
+rental loss": Form T776 amount 5, or 0 when amount 5 is negative."""
