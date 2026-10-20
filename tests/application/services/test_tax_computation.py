@@ -1296,6 +1296,115 @@ def test_core_lesser_of_with_no_amounts_is_an_invalid_selection() -> None:
         built.compose(EX_ON, 2025)
 
 
+# --- core/greater_of: the greatest of a list of amounts, wired by a made-up manifest ------------
+#
+# `GreaterOf` is imported inside a cached factory, like `Sum` above, so its absence fails only the
+# tests that use it. It is registered in a private registry under its shared identifier,
+# `core/greater_of`, and reads the parts the made-up producers of the list-slot section make.
+
+
+@cache
+def greater_of_class() -> Any:
+    from app.domain.capabilities.greater_of import GreaterOf
+
+    return GreaterOf
+
+
+def greater_of_manifest(amounts: tuple[str, ...]) -> Manifest:
+    """The made-up producers of the wired parts and `core/greater_of` over `amounts`.
+
+    Only producers whose part is wired are selected (part three is made from part one), so the
+    composition has no orphan output.
+    """
+    to_one = CapabilitySelection(
+        name="ex/scale",
+        params={"factor": "ex/factor"},
+        consumes={"source": "ex/base"},
+        produces={"target": "ex/part_one"},
+    )
+    to_two = CapabilitySelection(
+        name="ex/shift",
+        params={"offset": "ex-on/offset"},
+        consumes={"source": "ex/base"},
+        produces={"target": "ex/part_two"},
+    )
+    to_three = CapabilitySelection(
+        name="ex/shift",
+        params={"offset": "ex-on/offset"},
+        consumes={"source": "ex/part_one"},
+        produces={"target": "ex/part_three"},
+    )
+    greater = CapabilitySelection(
+        name="core/greater_of",
+        params={},
+        consumes={"amounts": amounts},
+        produces={"output": "ex-on/result"},
+    )
+    producers = {"ex/part_one": to_one, "ex/part_two": to_two, "ex/part_three": to_three}
+    wired = set(amounts) | ({"ex/part_one"} if "ex/part_three" in amounts else set())
+    selected = [selection for part, selection in producers.items() if part in wired]
+    return manifest(greater, *reversed(selected))
+
+
+def greater_of_service(*manifests: Manifest) -> TaxComputationService:
+    capabilities = capability_registry()
+    capabilities.register("core/greater_of", greater_of_class())
+    artifacts = artifact_registry()
+    for kind in (PART_ONE, PART_TWO, PART_THREE):
+        artifacts.register(kind.identifier, kind)
+    return service(*manifests, capabilities=capabilities, artifacts=artifacts)
+
+
+def test_computes_core_greater_of_three_amounts_end_to_end() -> None:
+    from app.domain.trace import GreaterOfLine
+
+    amounts = ("ex/part_three", "ex/part_two", "ex/part_one")
+
+    worksheet = greater_of_service(greater_of_manifest(amounts)).compute(
+        EX_ON, 2025, Artifact(BASE, D("5"))
+    )
+
+    # part_one = 5 × 3 = 15; part_two = 5 + 1 = 6; part_three = 15 + 1 = 16; the greatest is 16.
+    assert worksheet.get(RESULT).value == D("16")
+    assert isinstance(worksheet.producer_of(RESULT), greater_of_class())
+    assert worksheet.trace[-1] == GreaterOfLine(
+        RESULT, ((PART_THREE, D("16")), (PART_TWO, D("6")), (PART_ONE, D("15"))), D("16")
+    )
+    assert [type(line) for line in worksheet.trace].count(GreaterOfLine) == 1
+
+
+def test_computes_core_greater_of_two_amounts_end_to_end() -> None:
+    from app.domain.trace import GreaterOfLine
+
+    amounts = ("ex/part_three", "ex/part_one")
+
+    worksheet = greater_of_service(greater_of_manifest(amounts)).compute(
+        EX_ON, 2025, Artifact(BASE, D("5"))
+    )
+
+    # part_one = 15 and part_three = 16: the greater is part_three's 16.
+    assert worksheet.get(RESULT).value == D("16")
+    assert worksheet.trace[-1] == GreaterOfLine(
+        RESULT, ((PART_THREE, D("16")), (PART_ONE, D("15"))), D("16")
+    )
+
+
+def test_core_greater_of_runs_after_all_its_amounts() -> None:
+    amounts = ("ex/part_three", "ex/part_two", "ex/part_one")
+
+    composition = greater_of_service(greater_of_manifest(amounts)).compose(EX_ON, 2025)
+
+    assert type(composition.order[-1]) is greater_of_class()
+    assert composition.order[-1].consumes == frozenset({PART_ONE, PART_TWO, PART_THREE})
+
+
+def test_core_greater_of_with_no_amounts_is_an_invalid_selection() -> None:
+    built = greater_of_service(greater_of_manifest(()))
+
+    with pytest.raises(InvalidSelectionError, match="core/greater_of.*'amounts'"):
+        built.compose(EX_ON, 2025)
+
+
 # --- core/contribution_tier: a rate on a band of earnings, capped, by a made-up manifest -------
 #
 # `TieredContribution` is imported inside a cached factory, like `Sum` above, so its absence fails

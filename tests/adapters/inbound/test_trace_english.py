@@ -38,6 +38,7 @@ from app.domain.trace import (
     ContributionTierLine,
     CreditAmountLine,
     FractionAppliedLine,
+    GreaterOfLine,
     ItemsTotalLine,
     LesserOfLine,
     MultipleOverLine,
@@ -71,6 +72,7 @@ NET_AMOUNT = ArtifactKind("ex/net_amount", Decimal)
 PERSONAL_AMOUNT = ArtifactKind("ex/personal_amount", Decimal)
 CAPPED_AMOUNT = ArtifactKind("ex/capped_amount", Decimal)
 LESSER_AMOUNT = ArtifactKind("ex/lesser_amount", Decimal)
+GREATER_AMOUNT = ArtifactKind("ex/greater_amount", Decimal)
 EARNINGS = ArtifactKind("ex/earnings", Decimal)
 CONTRIBUTION = ArtifactKind("ex/contribution", Decimal)
 TIER = ContributionTier(Rate(D("0.05")), D("3000"), D("50000"), D("2350"))
@@ -389,6 +391,51 @@ def test_renders_the_lesser_of_one_amount() -> None:
     line = LesserOfLine(LESSER_AMOUNT, ((PART_TWO, D("40.5")),), D("40.5"))
 
     assert render(line) == "lesser_amount: lesser of part_two 40.5 = 40.5"
+
+
+# --- greater of amounts -------------------------------------------------------------------
+
+
+def test_renders_the_greater_of_two_amounts() -> None:
+    line = GreaterOfLine(
+        GREATER_AMOUNT, ((PART_ONE, D("1500.25")), (PART_TWO, D("1000"))), D("1500.25")
+    )
+
+    assert render(line) == "greater_amount: greater of part_one 1500.25 and part_two 1000 = 1500.25"
+
+
+def test_renders_the_greater_of_amounts_in_the_order_of_the_line() -> None:
+    line = GreaterOfLine(
+        GREATER_AMOUNT, ((PART_TWO, D("1000")), (PART_ONE, D("400.50"))), D("1000")
+    )
+
+    assert render(line) == "greater_amount: greater of part_two 1000 and part_one 400.5 = 1000"
+
+
+def test_renders_the_greater_of_three_amounts_with_and_between_each() -> None:
+    line = GreaterOfLine(
+        GREATER_AMOUNT,
+        ((PART_ONE, D("100.25")), (PART_TWO, D("40")), (PART_THREE, D("9.75"))),
+        D("100.25"),
+    )
+
+    assert render(line) == (
+        "greater_amount: greater of part_one 100.25 and part_two 40 and part_three 9.75 = 100.25"
+    )
+
+
+def test_renders_the_greater_of_equal_amounts() -> None:
+    line = GreaterOfLine(
+        GREATER_AMOUNT, ((PART_ONE, D("40.50")), (PART_TWO, D("40.5"))), D("40.50")
+    )
+
+    assert render(line) == "greater_amount: greater of part_one 40.5 and part_two 40.5 = 40.5"
+
+
+def test_renders_the_greater_of_one_amount() -> None:
+    line = GreaterOfLine(GREATER_AMOUNT, ((PART_TWO, D("40.5")),), D("40.5"))
+
+    assert render(line) == "greater_amount: greater of part_two 40.5 = 40.5"
 
 
 # --- contribution tiers ---------------------------------------------------------------
