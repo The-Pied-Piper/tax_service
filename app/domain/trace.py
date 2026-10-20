@@ -16,6 +16,7 @@ from fractions import Fraction as ExactFraction
 
 from app.domain.artifact import ArtifactKind, Money
 from app.domain.parameters.amount import Amount
+from app.domain.parameters.claim_reduction import ClaimReduction
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
@@ -485,6 +486,33 @@ class ChosenRateAppliedLine(TraceLine):
     @property
     def amount(self) -> Decimal:
         """The rounded product."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class OtherDependantMedicalLine(TraceLine):
+    """The allowable amount `result` of medical expenses for one dependant, by `position` (from
+    1), for `output`.
+
+    It is the dependant's `expenses` less the `reduction`'s lesser of its ceiling and its rate
+    times their `net_income`, from 0 up to the reduction's maximum when it has one, rounded with
+    `rounding`.
+
+    Its own class, not a `CaregiverClaimLine`: it is worked on from expenses and a reduction, not
+    from a base amount and a maximum.
+    """
+
+    output: Money
+    position: int
+    expenses: Decimal
+    net_income: Decimal
+    reduction: ClaimReduction
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The dependant's allowable amount."""
         return self.result
 
 

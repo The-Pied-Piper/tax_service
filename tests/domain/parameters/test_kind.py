@@ -8,6 +8,7 @@ import pytest
 
 from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.brackets import BRACKETS, BracketSchedule
+from app.domain.parameters.claim_reduction import CLAIM_REDUCTION, ClaimReduction
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
@@ -18,6 +19,7 @@ from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
 def test_built_in_kinds() -> None:
     assert AMOUNT == ParameterKind("amount", Amount)
     assert BRACKETS == ParameterKind("brackets", BracketSchedule)
+    assert CLAIM_REDUCTION == ParameterKind("claim_reduction", ClaimReduction)
     assert CREDIT == ParameterKind("credit", Credit)
     assert RATE == ParameterKind("rate", Rate)
     assert RATE_TABLE == ParameterKind("rate_table", RateTable)

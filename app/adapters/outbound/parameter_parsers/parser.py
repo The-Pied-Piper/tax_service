@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 from app.adapters.outbound.yaml_support import YamlNode
 from app.domain.parameters.kind import ParameterKind
@@ -31,4 +31,18 @@ class ParameterParser[T](Protocol):
 
         Raises YamlShapeError or a DomainError if they are malformed or invalid.
         """
+        ...
+
+
+@runtime_checkable
+class OptionalKeysParser(Protocol):
+    """A parser that also accepts keys a dataset file may leave out.
+
+    Declare `optional_keys` as a plain class attribute beside `body_keys`; a parser without it
+    accepts no optional keys. Its `parse` reads each of them with `optional_field`.
+    """
+
+    @property
+    def optional_keys(self) -> frozenset[str]:
+        """The keys this kind may add to a dataset file, beyond `body_keys`."""
         ...

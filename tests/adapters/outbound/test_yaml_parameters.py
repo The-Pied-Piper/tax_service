@@ -19,6 +19,7 @@ import pytest
 
 from app.adapters.outbound.parameter_parsers.amount import AmountParser
 from app.adapters.outbound.parameter_parsers.brackets import BracketsParser
+from app.adapters.outbound.parameter_parsers.claim_reduction import ClaimReductionParser
 from app.adapters.outbound.parameter_parsers.contribution_tier import ContributionTierParser
 from app.adapters.outbound.parameter_parsers.credit import CreditParser
 from app.adapters.outbound.parameter_parsers.factor import FactorParser
@@ -34,6 +35,7 @@ from app.adapters.outbound.yaml_support import YamlNode
 from app.domain.errors import (
     DomainError,
     InvalidAmountError,
+    InvalidClaimReductionError,
     InvalidContributionTierError,
     InvalidCreditError,
     InvalidFactorError,
@@ -48,6 +50,7 @@ from app.domain.errors import (
 )
 from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
+from app.domain.parameters.claim_reduction import CLAIM_REDUCTION, ClaimReduction
 from app.domain.parameters.contribution_tier import CONTRIBUTION_TIER, ContributionTier
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
@@ -110,6 +113,19 @@ sources:
 rounding: none
 amount: "1471"
 """
+
+CLAIM_REDUCTION_2025 = """\
+family: ex/claim_reduction
+tax_year: 2025
+kind: claim_reduction
+sources:
+  - https://example.org/claim-reduction-2025
+rounding: none
+rate: "0.03"
+ceiling: "2834"
+"""
+
+CLAIM_REDUCTION_WITH_MAXIMUM_2025 = CLAIM_REDUCTION_2025 + 'maximum: "15551"\n'
 
 CONTRIBUTION_TIER_2025 = """\
 family: ex/contribution_tier
@@ -213,6 +229,7 @@ def built_in_parsers() -> ParameterParserRegistry:
     registry.register_class(CreditParser)
     registry.register_class(RateParser)
     registry.register_class(AmountParser)
+    registry.register_class(ClaimReductionParser)
     registry.register_class(ContributionTierParser)
     registry.register_class(SurchargeTiersParser)
     registry.register_class(TaperParser)
@@ -1277,6 +1294,165 @@ def test_a_negative_amount_is_reported_as_an_amount_error(tmp_path: Path) -> Non
         source(tmp_path).get("ex/amount_cap", 2025, AMOUNT)
 
     assert isinstance(excinfo.value.__cause__, InvalidAmountError)
+
+
+def test_reads_a_claim_reduction_dataset_without_a_maximum(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/claim_reduction/2025.yaml", CLAIM_REDUCTION_2025)
+
+    result = source(tmp_path).get("ex/claim_reduction", 2025, CLAIM_REDUCTION)
+
+    assert result == ParameterDataset(
+        family="ex/claim_reduction",
+        tax_year=2025,
+        kind=CLAIM_REDUCTION,
+        values=ClaimReduction(Rate(D("0.03")), D("2834"), None),
+        rounding=NO_ROUNDING,
+        sources=("https://example.org/claim-reduction-2025",),
+    )
+    assert result.values.maximum is None
+
+
+def test_reads_a_claim_reduction_dataset_with_a_maximum(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/claim_reduction/2025.yaml", CLAIM_REDUCTION_WITH_MAXIMUM_2025)
+
+    values = source(tmp_path).get("ex/claim_reduction", 2025, CLAIM_REDUCTION).values
+
+    assert values == ClaimReduction(Rate(D("0.03")), D("2834"), D("15551"))
+
+
+def test_reads_a_claim_reductions_figures_exactly(tmp_path: Path) -> None:
+    content = (
+        CLAIM_REDUCTION_WITH_MAXIMUM_2025.replace('rate: "0.03"', 'rate: "0.0305"')
+        .replace('ceiling: "2834"', 'ceiling: "2834.50"')
+        .replace('maximum: "15551"', 'maximum: "15551.10"')
+    )
+    write(tmp_path, "ex/parameters/claim_reduction/2025.yaml", content)
+
+    values = source(tmp_path).get("ex/claim_reduction", 2025, CLAIM_REDUCTION).values
+
+    assert str(values.rate.value) == "0.0305"
+    assert str(values.ceiling) == "2834.50"
+    assert str(values.maximum) == "15551.10"  # exact, scale kept
+
+
+def test_reads_a_claim_reduction_datasets_rounding_rule(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/claim_reduction/2025.yaml",
+        CLAIM_REDUCTION_2025.replace(
+            "rounding: none", 'rounding: {increment: "0.01", mode: half_up}'
+        ),
+    )
+
+    result = source(tmp_path).get("ex/claim_reduction", 2025, CLAIM_REDUCTION)
+
+    assert result.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
+
+
+def test_by_default_the_claim_reduction_parser_comes_from_the_shared_registry(
+    tmp_path: Path,
+) -> None:
+    write(tmp_path, "ex/parameters/claim_reduction/2025.yaml", CLAIM_REDUCTION_WITH_MAXIMUM_2025)
+
+    result = YamlParameterSource(roots(tmp_path)).get("ex/claim_reduction", 2025, CLAIM_REDUCTION)
+
+    assert result.values == ClaimReduction(Rate(D("0.03")), D("2834"), D("15551"))
+
+
+def test_a_claim_reduction_dataset_is_not_a_rate_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/claim_reduction/2025.yaml", CLAIM_REDUCTION_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'claim_reduction' does not match"):
+        source(tmp_path).get("ex/claim_reduction", 2025, RATE)
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        pytest.param(
+            CLAIM_REDUCTION_2025.replace('rate: "0.03"', 'rate: "1.5"'),
+            "rate must be between 0 and 1",
+            id="rate-above-one",
+        ),
+        pytest.param(
+            CLAIM_REDUCTION_2025.replace('rate: "0.03"', "rate: 0.03"),
+            "rate must be a string, got float",
+            id="rate-as-yaml-number",
+        ),
+        pytest.param(
+            CLAIM_REDUCTION_2025.replace('ceiling: "2834"', "ceiling: 2834"),
+            "ceiling must be a string, got int",
+            id="ceiling-as-yaml-number",
+        ),
+        pytest.param(
+            CLAIM_REDUCTION_2025.replace('ceiling: "2834"', 'ceiling: "lots"'),
+            "ceiling is not a decimal: 'lots'",
+            id="ceiling-not-decimal",
+        ),
+        pytest.param(
+            CLAIM_REDUCTION_2025.replace('ceiling: "2834"', 'ceiling: "-1"'),
+            "ceiling must not be negative",
+            id="ceiling-negative",
+        ),
+        pytest.param(
+            CLAIM_REDUCTION_2025.replace('ceiling: "2834"', 'ceiling: "Infinity"'),
+            "ceiling is not a decimal",
+            id="ceiling-infinite",
+        ),
+        pytest.param(
+            CLAIM_REDUCTION_WITH_MAXIMUM_2025.replace('maximum: "15551"', "maximum: 15551"),
+            "maximum must be a string, got int",
+            id="maximum-as-yaml-number",
+        ),
+        pytest.param(
+            CLAIM_REDUCTION_WITH_MAXIMUM_2025.replace('maximum: "15551"', 'maximum: "-1"'),
+            "maximum must not be negative",
+            id="maximum-negative",
+        ),
+        pytest.param(
+            CLAIM_REDUCTION_WITH_MAXIMUM_2025.replace('maximum: "15551"', 'maximum: "lots"'),
+            "maximum is not a decimal: 'lots'",
+            id="maximum-not-decimal",
+        ),
+        pytest.param(
+            CLAIM_REDUCTION_2025.replace('rate: "0.03"\n', ""),
+            r"missing keys \['rate'\]",
+            id="rate-missing",
+        ),
+        pytest.param(
+            CLAIM_REDUCTION_2025.replace('ceiling: "2834"\n', ""),
+            r"missing keys \['ceiling'\]",
+            id="ceiling-missing",
+        ),
+        pytest.param(
+            CLAIM_REDUCTION_2025 + 'amount: "1"\n',
+            r"unknown keys \['amount'\]",
+            id="unknown-key",
+        ),
+    ],
+)
+def test_rejects_an_invalid_claim_reduction_dataset(
+    tmp_path: Path, content: str, message: str
+) -> None:
+    write(tmp_path, "ex/parameters/claim_reduction/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message):
+        source(tmp_path).get("ex/claim_reduction", 2025, CLAIM_REDUCTION)
+
+
+def test_an_invalid_claim_reduction_figure_is_reported_as_a_claim_reduction_error(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/claim_reduction/2025.yaml",
+        CLAIM_REDUCTION_2025.replace('ceiling: "2834"', 'ceiling: "-1"'),
+    )
+
+    with pytest.raises(InvalidParameterDataError) as raised:
+        source(tmp_path).get("ex/claim_reduction", 2025, CLAIM_REDUCTION)
+
+    assert isinstance(raised.value.__cause__, InvalidClaimReductionError)
 
 
 def test_an_amount_dataset_is_not_a_credit_dataset(tmp_path: Path) -> None:

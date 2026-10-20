@@ -10,6 +10,12 @@ NAMESPACE = "ca"
 from app.jurisdictions.ca.capabilities import (  # noqa: E402
     caregiver_amount,
     disability_transfer_amount,
+    other_dependants_medical,
 )
 
-__all__ = ["NAMESPACE", "caregiver_amount", "disability_transfer_amount"]
+__all__ = [
+    "NAMESPACE",
+    "caregiver_amount",
+    "disability_transfer_amount",
+    "other_dependants_medical",
+]

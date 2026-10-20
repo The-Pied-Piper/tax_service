@@ -64,6 +64,12 @@ def test_importing_the_federal_package_registers_its_capabilities() -> None:
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.caregiver_amount"
 
 
+def test_importing_the_federal_package_registers_the_other_dependants_medical_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/other_dependants_medical")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.other_dependants_medical"
+
+
 def test_importing_the_federal_package_registers_the_disability_transfer_amount() -> None:
     registered = CapabilityRegistry.shared().get("ca/disability_transfer_amount")
 

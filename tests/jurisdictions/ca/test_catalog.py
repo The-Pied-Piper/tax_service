@@ -230,6 +230,9 @@ from app.jurisdictions.ca.catalog import (
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2001_TO_2023,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_2024,
     OTHER_DEDUCTIONS,
+    OTHER_DEPENDANT_MEDICAL_EXPENSES,
+    OTHER_DEPENDANTS,
+    OTHER_DEPENDANTS_MEDICAL,
     OTHER_DIVIDENDS_CREDIT,
     OTHER_DIVIDENDS_GROSSED_UP,
     OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
@@ -556,6 +559,9 @@ REGISTERED = frozenset(
         "ca/spouse_caregiver_amount",
         "ca/infirm_dependants",
         "ca/caregiver_amount",
+        "ca/other_dependant_medical_expenses",
+        "ca/other_dependants",
+        "ca/other_dependants_medical",
         "ca/infirm_children",
         "ca/infirm_children_amount",
         "ca/dependant_under_18",
@@ -741,7 +747,9 @@ COUNTS = frozenset(
 # Federal Worksheet "Line 31800 - Disability amount transferred from a dependant": "Complete the
 # following calculation fore ach dependant who is eligible for the disability tax credit in 2025",
 # so the dependants who qualify are a list of records too.
-RECORD_LISTS = frozenset({"ca/infirm_dependants", "ca/disability_dependants"})
+RECORD_LISTS = frozenset(
+    {"ca/infirm_dependants", "ca/disability_dependants", "ca/other_dependants"}
+)
 
 
 @pytest.fixture
@@ -1195,6 +1203,9 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/spouse_caregiver_amount") is SPOUSE_CAREGIVER_AMOUNT
     assert registry.get("ca/infirm_dependants") is INFIRM_DEPENDANTS
     assert registry.get("ca/caregiver_amount") is CAREGIVER_AMOUNT
+    assert registry.get("ca/other_dependant_medical_expenses") is OTHER_DEPENDANT_MEDICAL_EXPENSES
+    assert registry.get("ca/other_dependants") is OTHER_DEPENDANTS
+    assert registry.get("ca/other_dependants_medical") is OTHER_DEPENDANTS_MEDICAL
     assert registry.get("ca/dependant_under_18") is DEPENDANT_UNDER_18
     assert registry.get("ca/dependant_care_expenses") is DEPENDANT_CARE_EXPENSES
     assert registry.get("ca/dependant_credit_amounts") is DEPENDANT_CREDIT_AMOUNTS
@@ -1475,6 +1486,8 @@ def test_catalog_kinds_are_money() -> None:
         SPOUSE_CAREGIVER_AMOUNT_BEFORE_COUNT,
         SPOUSE_CAREGIVER_AMOUNT,
         CAREGIVER_AMOUNT,
+        OTHER_DEPENDANT_MEDICAL_EXPENSES,
+        OTHER_DEPENDANTS_MEDICAL,
         DEPENDANT_CARE_EXPENSES,
         DEPENDANT_CREDIT_AMOUNTS,
         DEPENDANT_TAXABLE_INCOME,
@@ -1792,6 +1805,64 @@ def test_the_caregiver_amount_is_a_non_negative_decimal(registry: ArtifactRegist
     assert CAREGIVER_AMOUNT.value_type is Decimal
     assert CAREGIVER_AMOUNT.non_negative is True
     assert registry.kind("ca/caregiver_amount") is CAREGIVER_AMOUNT
+
+
+def test_the_other_dependants_are_a_record_list_of_expenses_and_net_income(
+    registry: ArtifactRegistry,
+) -> None:
+    # Federal Worksheet, line 33199, "Complete one column for each dependant": line 1 "Medical
+    # expenses for other dependant" and, for line 2, the dependant's net income. A list of its own:
+    # the infirm dependants of line 30450 are a different set of people.
+    assert isinstance(OTHER_DEPENDANTS, RecordListKind)
+    assert OTHER_DEPENDANTS.identifier == "ca/other_dependants"
+    assert OTHER_DEPENDANTS.value_type is RecordList
+    assert OTHER_DEPENDANTS.fields == (OTHER_DEPENDANT_MEDICAL_EXPENSES, DEPENDANT_NET_INCOME)
+    assert OTHER_DEPENDANTS is not INFIRM_DEPENDANTS
+    assert registry.get("ca/other_dependants") is OTHER_DEPENDANTS
+
+
+def test_the_other_dependants_list_reuses_the_dependants_net_income_kind() -> None:
+    assert OTHER_DEPENDANTS.fields[1] is DEPENDANT_NET_INCOME
+
+
+def test_the_other_dependants_hold_expenses_and_net_income_each_in_the_callers_order() -> None:
+    dependants = RecordList(
+        OTHER_DEPENDANTS.fields,
+        [
+            {
+                OTHER_DEPENDANT_MEDICAL_EXPENSES: Decimal("3000"),
+                DEPENDANT_NET_INCOME: Decimal("10000"),
+            },
+            {
+                OTHER_DEPENDANT_MEDICAL_EXPENSES: Decimal("1000"),
+                DEPENDANT_NET_INCOME: Decimal("40000"),
+            },
+        ],
+    )
+
+    assert [record[OTHER_DEPENDANT_MEDICAL_EXPENSES] for record in dependants.records] == [
+        Decimal("3000"),
+        Decimal("1000"),
+    ]
+
+
+def test_the_other_dependant_medical_expenses_are_a_non_negative_decimal(
+    registry: ArtifactRegistry,
+) -> None:
+    # Federal Worksheet, line 33199, line 1 "Medical expenses for other dependant".
+    assert OTHER_DEPENDANT_MEDICAL_EXPENSES.identifier == "ca/other_dependant_medical_expenses"
+    assert OTHER_DEPENDANT_MEDICAL_EXPENSES.value_type is Decimal
+    assert OTHER_DEPENDANT_MEDICAL_EXPENSES.non_negative is True
+    assert registry.kind("ca/other_dependant_medical_expenses") is OTHER_DEPENDANT_MEDICAL_EXPENSES
+
+
+def test_the_other_dependants_medical_is_a_non_negative_decimal(registry: ArtifactRegistry) -> None:
+    # T1 line 33199 "Allowable amount of medical expenses for other dependants": the total of
+    # each dependant's line 3, which is "0" when negative.
+    assert OTHER_DEPENDANTS_MEDICAL.identifier == "ca/other_dependants_medical"
+    assert OTHER_DEPENDANTS_MEDICAL.value_type is Decimal
+    assert OTHER_DEPENDANTS_MEDICAL.non_negative is True
+    assert registry.kind("ca/other_dependants_medical") is OTHER_DEPENDANTS_MEDICAL
 
 
 def test_the_disability_dependants_are_a_record_list_of_the_worksheets_figures(
