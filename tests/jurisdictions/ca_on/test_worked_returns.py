@@ -447,7 +447,7 @@ def test_return_w_claims_two_ontario_caregiver_dependants_on_line_58185() -> Non
 
 
 def test_return_x_claims_one_dependant_with_a_disability_on_line_31800() -> None:
-    path = RETURNS / "2025_return_x.yaml"
+    path = RETURNS / "2025_return_ab.yaml"
     build_tax_computation()  # registers the catalogs the loader resolves through
     worked = WorkedReturn.load(path, ArtifactRegistry.shared())
 

@@ -8534,8 +8534,8 @@ def test_an_unflagged_dependant_takes_nothing_off_line_58185_whatever_line_58160
     assert worksheet.get(ontario.CAREGIVER_AMOUNT).value == D("7570.00")
 
 
-def return_x(**overrides: Any) -> Worksheet:
-    """Return X's inputs (`returns/2025_return_x.yaml`): Return W's and a dependant aged 20.
+def return_ab(**overrides: Any) -> Worksheet:
+    """Return AB's inputs (`returns/2025_return_ab.yaml`): Return W's and a dependant aged 20.
 
     `overrides` replace any keyword of `return_w`, for the variants below.
     """
@@ -8543,8 +8543,8 @@ def return_x(**overrides: Any) -> Worksheet:
     return return_w(**{**given, **overrides})
 
 
-def test_return_xs_dependant_with_a_disability_transfers_6267_on_line_31800() -> None:
-    # Return X is Return W (employment income of 48000, taxable income 47555.00, federal tax on
+def test_return_abs_dependant_with_a_disability_transfers_6267_on_line_31800() -> None:
+    # Return AB is Return W (employment income of 48000, taxable income 47555.00, federal tax on
     # it 6895.48, the Ontario figures of Return W, the Canada caregiver amount for two infirm
     # dependants 12399.00) with one dependant with a disability, aged 20 (so worksheet line 7 is
     # "0"), no care expenses, line 98 of their return 16129 and their taxable income 20000, all
@@ -8558,7 +8558,7 @@ def test_return_xs_dependant_with_a_disability_transfers_6267_on_line_31800() ->
     # Ontario tax is 1302.28. The total payable is 1203.37 + 1302.28 = 2505.65, and with the
     # chosen tax deducted of 4800 and no Canada workers benefit, line 167 is 2505.65 - 4800 =
     # -2294.35, a refund.
-    worksheet = return_x()
+    worksheet = return_ab()
 
     assert worksheet.get(DISABILITY_DEPENDANTS).value == RecordList(
         DISABILITY_DEPENDANTS.fields,
@@ -8587,8 +8587,8 @@ def test_return_xs_dependant_with_a_disability_transfers_6267_on_line_31800() ->
     assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-2294.35")
 
 
-def test_return_xs_trace_names_the_dependant_and_totals_the_credit_amounts() -> None:
-    worksheet = return_x()
+def test_return_abs_trace_names_the_dependant_and_totals_the_credit_amounts() -> None:
+    worksheet = return_ab()
 
     lines = [
         line
@@ -8702,7 +8702,7 @@ def test_dependants_with_a_disability_do_not_change_the_ontario_credits() -> Non
     # ON428 line 58480 (the Ontario disability amount transferred from a dependant) is not yet
     # computed.
     without = return_w()
-    with_dependants = return_x()
+    with_dependants = return_ab()
 
     assert with_dependants.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS) == (
         without.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS)
