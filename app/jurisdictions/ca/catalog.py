@@ -1371,6 +1371,29 @@ amount of medical expenses for other dependants (use Federal Worksheet)": line 4
 from line 3 of columns 1, 2, and 3 (and others, if any)", each line 3 being "Line 1 minus line 2
 (if negative, enter "0")"."""
 
+MEDICAL_EXPENSES = CATALOG.declare("medical_expenses", Decimal, non_negative=True)
+"""Medical expenses, T1 line 107 and line 33099 "Medical expenses for self, spouse or common-law
+partner and your dependent children under 18 years of age": a starting amount."""
+
+MEDICAL_NET_INCOME_SHARE = CATALOG.declare("medical_net_income_share", Decimal, non_negative=True)
+"""Share of the net income for medical expenses, T1 line 108 "Amount from line 23600" "multiplied by
+3%": 3% of the net income."""
+
+MEDICAL_THRESHOLD = CATALOG.declare("medical_threshold", Decimal, non_negative=True)
+"""Threshold for medical expenses, T1 line 109 "Enter whichever is less: $2,834 or the amount from
+line 108.": the lesser of the ceiling and the share of the net income."""
+
+MEDICAL_EXPENSES_OVER_THRESHOLD = CATALOG.declare(
+    "medical_expenses_over_threshold", Decimal, non_negative=True
+)
+"""Medical expenses over the threshold, T1 line 110 "Line 107 minus line 109 (if negative, enter
+"0")": the filer's own group, not below zero."""
+
+MEDICAL_CLAIM = CATALOG.declare("medical_claim", Decimal, non_negative=True)
+"""Allowable medical expenses, T1 line 112 and line 33200 "Line 110 plus line 111": the filer's own
+group plus the allowable amount for other dependants, a part of the total of the credit amounts
+(line 33500)."""
+
 DEPENDANT_UNDER_18 = CATALOG.declare("dependant_under_18", int, non_negative=True)
 """Dependant under 18, Federal Worksheet "Line 31800 - Disability amount transferred from a
 dependant" "If the dependant was under 18 years of age on December 31, 2025, complete lines 2 to

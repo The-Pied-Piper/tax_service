@@ -1025,6 +1025,8 @@ inputs:
   ca/infirm_dependants:
     - ca/dependant_net_income: "5000"
     - ca/dependant_net_income: "25000"
+  ca/medical_expenses: "0"
+  ca/other_dependants: []
   ca-on/caregiver_dependants:
     - ca/dependant_net_income: "5000"
       ca-on/claimed_as_eligible_dependant: "0"

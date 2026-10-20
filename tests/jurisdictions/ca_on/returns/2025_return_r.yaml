@@ -968,6 +968,8 @@ inputs:
   ca/eligible_dependants: "1"
   ca/dependant_net_income: "0"
   ca/infirm_dependants: []
+  ca/medical_expenses: "0"
+  ca/other_dependants: []
   ca-on/caregiver_dependants: []
   ca/disability_dependants: []
   ca/infirm_children: "0"
