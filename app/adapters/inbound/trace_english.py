@@ -11,6 +11,7 @@ from collections.abc import Iterable
 from decimal import Decimal
 from fractions import Fraction as ExactFraction
 
+from app.domain.parameters.class_rates import ClassRate, RecaptureAndTerminalLoss
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingRule, RoundTo
 from app.domain.trace import (
     AtMostLine,
@@ -18,9 +19,12 @@ from app.domain.trace import (
     CappedAmountLine,
     CaregiverClaimLessClaimedLine,
     CaregiverClaimLine,
+    CcaClaimLine,
+    CcaZeroReason,
     ChosenByCountLine,
     ChosenByRangeLine,
     ChosenRateAppliedLine,
+    ClosingUccLine,
     ContributionTierLine,
     CreditAmountLine,
     DisabilityTransferLine,
@@ -36,6 +40,7 @@ from app.domain.trace import (
     QuotientLine,
     RateAppliedLine,
     RateByIncomeBandLine,
+    RecapturedCcaLine,
     RecordCountLine,
     RecordTotalLine,
     RoundedTotalLine,
@@ -44,6 +49,7 @@ from app.domain.trace import (
     SumLine,
     SurchargeTierLine,
     TaperedAmountLine,
+    TerminalLossLine,
     ThresholdGateLine,
     TimesCountLine,
     TraceLine,
@@ -446,6 +452,113 @@ class EnglishTraceRenderer:
                     f"line 12 {self._money(line_12)}, line 13 {self._money(line_13)} "
                     f"({self._rounding(rule)})"
                 )
+            case CcaClaimLine(
+                output=output,
+                position=position,
+                class_rate=class_rate,
+                column_7=column_7,
+                column_14=column_14,
+                column_15=column_15,
+                column_16=column_16,
+                column_17=column_17,
+                column_18=column_18,
+                column_19=column_19,
+                zero_reason=zero_reason,
+                maximum=maximum,
+                rounding=rule,
+                claim=claim,
+            ):
+                columns = ", ".join(
+                    f"column {number} {self._money(amount)}"
+                    for number, amount in (
+                        (7, column_7),
+                        (14, column_14),
+                        (15, column_15),
+                        (16, column_16),
+                        (17, column_17),
+                        (18, column_18),
+                        (19, column_19),
+                    )
+                )
+                if zero_reason is CcaZeroReason.COLUMN_7_NEGATIVE:
+                    available = "maximum 0 as column 7 is negative"
+                elif zero_reason is CcaZeroReason.NO_PROPERTY_LEFT:
+                    available = "maximum 0 as no property is left in the class"
+                else:
+                    available = (
+                        f"maximum {self._percent(class_rate.rate.value)}% of column 19 = "
+                        f"{self._money(maximum)} ({self._rounding(rule)})"
+                    )
+                return (
+                    f"{self._cca_class(output.label, position, class_rate)}: {columns}, "
+                    f"{available}, claim {self._money(claim)}"
+                )
+            case RecapturedCcaLine(
+                output=output,
+                position=position,
+                class_rate=class_rate,
+                column_7=column_7,
+                zero_reason=zero_reason,
+                result=result,
+            ):
+                if zero_reason is not CcaZeroReason.COLUMN_7_NEGATIVE:
+                    found = f"column 7 {self._money(column_7)} is not negative"
+                elif class_rate.recapture_and_terminal_loss is RecaptureAndTerminalLoss.EXCLUDED:
+                    found = (
+                        f"column 7 {self._money(column_7)} is negative, but recapture does not "
+                        f"apply to class {self._money(class_rate.class_number)}"
+                    )
+                else:
+                    found = f"column 7 {self._money(column_7)} is negative"
+                return (
+                    f"{self._cca_class(output.label, position, class_rate)}: {found}: "
+                    f"recapture {self._money(result)}"
+                )
+            case TerminalLossLine(
+                output=output,
+                position=position,
+                class_rate=class_rate,
+                column_7=column_7,
+                zero_reason=zero_reason,
+                column_7_positive=column_7_positive,
+                result=result,
+            ):
+                if zero_reason is CcaZeroReason.NO_PROPERTY_LEFT:
+                    if class_rate.recapture_and_terminal_loss is RecaptureAndTerminalLoss.EXCLUDED:
+                        found = (
+                            f"column 7 {self._money(column_7)} with no property left, but a "
+                            f"terminal loss does not apply to class "
+                            f"{self._money(class_rate.class_number)}"
+                        )
+                    else:
+                        found = f"column 7 {self._money(column_7)} with no property left"
+                elif zero_reason is CcaZeroReason.NONE and column_7_positive:
+                    found = f"column 7 {self._money(column_7)} with property left"
+                else:
+                    found = f"column 7 {self._money(column_7)} is not positive"
+                return (
+                    f"{self._cca_class(output.label, position, class_rate)}: {found}: "
+                    f"terminal loss {self._money(result)}"
+                )
+            case ClosingUccLine(
+                output=output,
+                position=position,
+                class_rate=class_rate,
+                column_7=column_7,
+                zero_reason=zero_reason,
+                claim=claim,
+                result=result,
+            ):
+                if zero_reason is CcaZeroReason.COLUMN_7_NEGATIVE:
+                    found = f"column 7 {self._money(column_7)} is negative:"
+                elif zero_reason is CcaZeroReason.NO_PROPERTY_LEFT:
+                    found = f"column 7 {self._money(column_7)} with no property left:"
+                else:
+                    found = f"column 7 {self._money(column_7)} less claim {self._money(claim)} ="
+                return (
+                    f"{self._cca_class(output.label, position, class_rate)}: {found} "
+                    f"{self._money(result)}"
+                )
             case ItemsTotalLine(output=output, items=items, total=total):
                 terms = " + ".join(
                     f"item {position} {self._money(amount)}" for position, amount in items
@@ -456,6 +569,11 @@ class EnglishTraceRenderer:
     def render_all(self, trace: Iterable[TraceLine]) -> tuple[str, ...]:
         """The English sentence for each line of `trace`, in order."""
         return tuple(self.render(line) for line in trace)
+
+    @classmethod
+    def _cca_class(cls, label: str, position: int, class_rate: ClassRate) -> str:
+        """The start of a CCA table line: its output, its item and its class number."""
+        return f"{label}: item {position} class {cls._money(class_rate.class_number)}"
 
     @staticmethod
     def _percent(rate: Decimal) -> str:

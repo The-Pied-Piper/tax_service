@@ -1,8 +1,8 @@
 """Unit tests for ParameterParserRegistry and `@parameter_parser`.
 
 Parsers are keyed by their kind's plain name (`amount`, `brackets`, `claim_reduction`,
-`contribution_tier`, `credit`, `factor`, `fraction`, `rate`, `rate_table`, `rounding_only`,
-`surcharge_tiers`, `taper`), not namespaced yet.
+`class_rates`, `contribution_tier`, `credit`, `factor`, `fraction`, `rate`, `rate_table`,
+`rounding_only`, `surcharge_tiers`, `taper`), not namespaced yet.
 Lookups are typed: `for_kind(kind)` for a `ParameterKind[T]` gives a `ParameterParser[T]`; the
 `assert_type` checks below make `mypy .` fail if a lookup returned `Any` or another type.
 Made-up kinds and parsers are never registered in the shared registry: the decorator test
@@ -21,6 +21,7 @@ from app.adapters.outbound.parameter_parsers import ParameterParser
 from app.adapters.outbound.parameter_parsers.amount import AmountParser
 from app.adapters.outbound.parameter_parsers.brackets import BracketsParser
 from app.adapters.outbound.parameter_parsers.claim_reduction import ClaimReductionParser
+from app.adapters.outbound.parameter_parsers.class_rates import ClassRatesParser
 from app.adapters.outbound.parameter_parsers.contribution_tier import ContributionTierParser
 from app.adapters.outbound.parameter_parsers.credit import CreditParser
 from app.adapters.outbound.parameter_parsers.factor import FactorParser
@@ -40,6 +41,13 @@ from app.domain.errors import DuplicateRegistrationError, UnknownRegistrationErr
 from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
 from app.domain.parameters.claim_reduction import CLAIM_REDUCTION
+from app.domain.parameters.class_rates import (
+    CLASS_RATES,
+    ClassRate,
+    ClassRates,
+    HalfYearRule,
+    RecaptureAndTerminalLoss,
+)
 from app.domain.parameters.contribution_tier import CONTRIBUTION_TIER, ContributionTier
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.factor import FACTOR, Factor
@@ -123,6 +131,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     registry.register_class(FractionParser)
     registry.register_class(RateTableParser)
     registry.register_class(RoundingOnlyParser)
+    registry.register_class(ClassRatesParser)
     registry.register_class(FlatRateParser)
 
     schedule = registry.for_kind(BRACKETS).parse(
@@ -164,6 +173,22 @@ def test_for_kind_is_typed_by_the_kind() -> None:
         )
     )
     rounding_only = registry.for_kind(ROUNDING_ONLY).parse(YamlNode.root({}, "dataset"))
+    class_rates = registry.for_kind(CLASS_RATES).parse(
+        YamlNode.root(
+            {
+                "classes": {
+                    "10.1": {
+                        "rate": "0.30",
+                        "half_year_rule": "applies",
+                        "recapture_and_terminal_loss": "excluded",
+                        "aiip_factor": {"numerator": "0", "denominator": "1"},
+                        "riip_factor": {"numerator": "1", "denominator": "2"},
+                    }
+                }
+            },
+            "dataset",
+        )
+    )
     flat_rate = registry.for_kind(FLAT_RATE).parse(YamlNode.root({"rate": "0.2"}, "dataset"))
 
     assert_type(schedule, BracketSchedule)
@@ -177,6 +202,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     assert_type(fraction, Fraction)
     assert_type(rate_table, RateTable)
     assert_type(rounding_only, RoundingOnly)
+    assert_type(class_rates, ClassRates)
     assert_type(flat_rate, Decimal)
 
     assert schedule == BracketSchedule((Bracket(D("0"), D("0.1")),))
@@ -196,6 +222,18 @@ def test_for_kind_is_typed_by_the_kind() -> None:
         ),
     )
     assert rounding_only == RoundingOnly()
+    assert class_rates == ClassRates(
+        (
+            ClassRate(
+                D("10.1"),
+                Rate(D("0.30")),
+                HalfYearRule.APPLIES,
+                RecaptureAndTerminalLoss.EXCLUDED,
+                Fraction(0, 1),
+                Fraction(1, 2),
+            ),
+        )
+    )
     assert flat_rate == D("0.2")
 
 
@@ -297,6 +335,7 @@ def test_decorating_a_second_parser_for_one_kind_fails(fresh: ParameterParserReg
         (AMOUNT, AmountParser),
         (BRACKETS, BracketsParser),
         (CLAIM_REDUCTION, ClaimReductionParser),
+        (CLASS_RATES, ClassRatesParser),
         (CONTRIBUTION_TIER, ContributionTierParser),
         (CREDIT, CreditParser),
         (FACTOR, FactorParser),
@@ -322,6 +361,7 @@ def test_built_in_parsers_are_registered_in_the_shared_registry(
     [
         (AmountParser, frozenset({"amount"})),
         (BracketsParser, frozenset({"brackets", "tax_at_start_rounding"})),
+        (ClassRatesParser, frozenset({"classes"})),
         (ContributionTierParser, frozenset({"rate", "lower", "upper", "maximum"})),
         (CreditParser, frozenset({"amount"})),
         (FactorParser, frozenset({"value"})),
@@ -344,6 +384,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_parsers() -> None:
         "amount",
         "brackets",
         "claim_reduction",
+        "class_rates",
         "contribution_tier",
         "credit",
         "factor",

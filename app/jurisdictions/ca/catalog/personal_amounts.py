@@ -1,7 +1,8 @@
 """The federal catalog: personal amounts.
 
 The basic personal, age, spouse, eligible dependant, caregiver, medical and disability amounts, the
-principal residence gain lines and the infirm children amount.
+principal residence gain lines, the fields of the capital cost allowance table and the infirm
+children amount.
 """
 
 from __future__ import annotations
@@ -385,6 +386,50 @@ PRINCIPAL_RESIDENCE_GAIN = CATALOG.declare("principal_residence_gain", Decimal, 
 """Capital gain left after the principal residence exemption, Form T2091(IND) Part 3 line 54 "Total
 capital gain": "Otherwise, enter the amount from line 24", each line 24 being "Line 18 minus line
 23 (if negative, enter "0")", totalled over the properties sold."""
+
+CCA_CLASS_NUMBER = CATALOG.declare("cca_class_number", Decimal, non_negative=True)
+"""Class number, T776 and T2125 Area A "Column 1: Class number": a number such as 8, 10.1 or 43.1,
+kept exact, a field of each record of a list of capital cost allowance classes."""
+
+CCA_UCC_AT_START = CATALOG.declare("cca_ucc_at_start", Decimal, non_negative=True)
+"""UCC at the start of the year, Area A "Column 2: Undepreciated capital cost (UCC) at the start of
+the year": a starting amount, a field of each record of a list of capital cost allowance
+classes."""
+
+CCA_ADDITIONS = CATALOG.declare("cca_additions", Decimal, non_negative=True)
+"""Cost of additions, Area A "Column 3: Cost of additions in the year (see Areas B and C below)": a
+starting amount, a field of each record of a list of capital cost allowance classes."""
+
+CCA_PROCEEDS = CATALOG.declare("cca_proceeds", Decimal, non_negative=True)
+"""Proceeds of dispositions, Area A "Column 5: Proceeds of dispositions in the year (see Areas D and
+E below)": a starting amount, a field of each record of a list of capital cost allowance
+classes."""
+
+CCA_AIIP_ADDITIONS = CATALOG.declare("cca_aiip_additions", Decimal, non_negative=True)
+"""AIIP additions, Area A "Column 11: Cost of remaining additions from column 10 that are AIIPs or
+ZEVs acquired before 2025": a starting amount, a field of each record of a list of capital cost
+allowance classes."""
+
+CCA_RIIP_ADDITIONS = CATALOG.declare("cca_riip_additions", Decimal, non_negative=True)
+"""RIIP additions, Area A "Column 12: Cost of remaining additions from column 10 that are RIIPs or
+ZEVs acquired after 2024": a starting amount, a field of each record of a list of capital cost
+allowance classes."""
+
+CCA_CLAIMED = CATALOG.declare("cca_claimed", Decimal, non_negative=True)
+"""CCA claimed, T776 Area A "Column 23: CCA claim for the year" (T2125 column 21): the caller's
+election, "any amount you like, from zero to the maximum allowed for the year" (Guide T4036), a
+field of each record of a list of capital cost allowance classes."""
+
+CCA_NO_PROPERTY_LEFT = CATALOG.declare("cca_no_property_left", int, non_negative=True)
+"""No property left in the class, Area A Note 3 "If no property is left in the class and there is a
+positive amount in this column, deduct the amount from your income as a terminal loss": 1 if no
+property is left in the class at the end of the year, else 0, taken as a count like the forms'
+other yes or no questions; a field of each record of a list of capital cost allowance classes."""
+
+CCA_UCC_AT_END = CATALOG.declare("cca_ucc_at_end", Decimal, non_negative=True)
+"""UCC at the end of the year, T776 Area A "Column 24: UCC at the end of the year (column 7 minus
+column 23)" (T2125 column 22): a field of each record of the closing list of capital cost
+allowance classes, for next year."""
 
 INFIRM_CHILDREN = CATALOG.declare("infirm_children", int, non_negative=True)
 """Number of infirm children, T1 line 83 "Number of children you are claiming this amount for Line

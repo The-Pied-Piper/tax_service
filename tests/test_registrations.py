@@ -82,6 +82,30 @@ def test_importing_the_federal_package_registers_the_principal_residence_gain() 
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.principal_residence_gain"
 
 
+def test_importing_the_federal_package_registers_the_cca_claim_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/cca_claim")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.cca_claim"
+
+
+def test_importing_the_federal_package_registers_the_recaptured_cca_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/recaptured_cca")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.recaptured_cca"
+
+
+def test_importing_the_federal_package_registers_the_terminal_loss_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/terminal_loss")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.terminal_loss"
+
+
+def test_importing_the_federal_package_registers_the_closing_ucc_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/closing_ucc")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.closing_ucc"
+
+
 def test_importing_the_federal_package_registers_the_disability_transfer_amount() -> None:
     registered = CapabilityRegistry.shared().get("ca/disability_transfer_amount")
 

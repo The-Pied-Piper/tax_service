@@ -18,6 +18,7 @@ import pytest
 from app.domain.artifact import ArtifactKind
 from app.domain.parameters.amount import Amount
 from app.domain.parameters.claim_reduction import ClaimReduction
+from app.domain.parameters.class_rates import ClassRate, HalfYearRule, RecaptureAndTerminalLoss
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
@@ -33,9 +34,12 @@ from app.domain.trace import (
     CappedAmountLine,
     CaregiverClaimLessClaimedLine,
     CaregiverClaimLine,
+    CcaClaimLine,
+    CcaZeroReason,
     ChosenByCountLine,
     ChosenByRangeLine,
     ChosenRateAppliedLine,
+    ClosingUccLine,
     ContributionTierLine,
     CreditAmountLine,
     DisabilityTransferLine,
@@ -51,6 +55,7 @@ from app.domain.trace import (
     QuotientLine,
     RateAppliedLine,
     RateByIncomeBandLine,
+    RecapturedCcaLine,
     RecordCountLine,
     RecordTotalLine,
     RoundedTotalLine,
@@ -59,6 +64,7 @@ from app.domain.trace import (
     SumLine,
     SurchargeTierLine,
     TaperedAmountLine,
+    TerminalLossLine,
     ThresholdGateLine,
     TimesCountLine,
     TraceLine,
@@ -2610,3 +2616,327 @@ def test_a_threshold_gate_line_is_not_a_capped_amount_or_at_most_line() -> None:
 
     assert not isinstance(line, CappedAmountLine)
     assert not isinstance(line, AtMostLine)
+
+
+# --- the capital cost allowance table, one line per class ---------------------------------------
+
+CLASS = ClassRate(
+    D("43.1"),
+    Rate(D("0.30")),
+    HalfYearRule.APPLIES,
+    RecaptureAndTerminalLoss.APPLIES,
+    Fraction(3, 2),
+    Fraction(7, 3),
+)
+OTHER_CLASS = ClassRate(
+    D("10.1"),
+    Rate(D("0.30")),
+    HalfYearRule.APPLIES,
+    RecaptureAndTerminalLoss.EXCLUDED,
+    Fraction(0, 1),
+    Fraction(1, 2),
+)
+CCA = ArtifactKind("ex/cca_claim", Decimal)
+RECAPTURE = ArtifactKind("ex/recaptured_cca", Decimal)
+TERMINAL_LOSS = ArtifactKind("ex/terminal_loss", Decimal)
+CLOSING_UCC = RecordListKind("ex/closing_ucc", fields=(ArtifactKind("ex/ucc_at_end", Decimal),))
+
+
+def cca_claim_line() -> CcaClaimLine:
+    return CcaClaimLine(
+        output=CCA,
+        position=2,
+        class_rate=CLASS,
+        no_property_left=0,
+        column_7=D("6000.00"),
+        column_14=D("400.00"),
+        column_15=D("900.00"),
+        column_16=D("0"),
+        column_17=D("0"),
+        column_18=D("0"),
+        column_19=D("6900.00"),
+        zero_reason=CcaZeroReason.NONE,
+        maximum=D("2070.00"),
+        rounding=CENT,
+        claim=D("2000.00"),
+    )
+
+
+def recaptured_cca_line() -> RecapturedCcaLine:
+    return RecapturedCcaLine(
+        RECAPTURE, 1, CLASS, D("-3000.00"), CcaZeroReason.COLUMN_7_NEGATIVE, D("3000.00")
+    )
+
+
+def terminal_loss_line() -> TerminalLossLine:
+    return TerminalLossLine(
+        TERMINAL_LOSS, 1, CLASS, 1, D("5000.00"), CcaZeroReason.NO_PROPERTY_LEFT, True, D("5000.00")
+    )
+
+
+def closing_ucc_line() -> ClosingUccLine:
+    return ClosingUccLine(
+        CLOSING_UCC, 2, CLASS, 0, D("6000.00"), CcaZeroReason.NONE, D("2000.00"), D("4000.00")
+    )
+
+
+CCA_LINES = [cca_claim_line, recaptured_cca_line, terminal_loss_line, closing_ucc_line]
+
+
+@pytest.mark.parametrize("make", CCA_LINES)
+def test_every_cca_line_is_a_frozen_trace_line_equal_by_value(make: Any) -> None:
+    line = make()
+
+    assert isinstance(line, TraceLine)
+    assert line == make()
+    assert line is not make()
+    assert hash(line) == hash(make())
+    with pytest.raises(FrozenInstanceError):
+        setattr(line, fields(line)[0].name, D(1))
+
+
+def test_the_cca_lines_are_classes_of_their_own() -> None:
+    lines = [make() for make in CCA_LINES]
+
+    assert len({type(line) for line in lines}) == 4
+    for line in lines:
+        assert not isinstance(
+            line, ItemsTotalLine | PlacementCreditLine | OtherDependantMedicalLine
+        )
+
+
+def test_cca_claim_line_fields_in_order() -> None:
+    line = cca_claim_line()
+
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "class_rate",
+        "no_property_left",
+        "column_7",
+        "column_14",
+        "column_15",
+        "column_16",
+        "column_17",
+        "column_18",
+        "column_19",
+        "zero_reason",
+        "maximum",
+        "rounding",
+        "claim",
+    ]
+    assert line == CcaClaimLine(
+        CCA,
+        2,
+        CLASS,
+        0,
+        D("6000.00"),
+        D("400.00"),
+        D("900.00"),
+        D("0"),
+        D("0"),
+        D("0"),
+        D("6900.00"),
+        CcaZeroReason.NONE,
+        D("2070.00"),
+        CENT,
+        D("2000.00"),
+    )
+    assert line.output is CCA
+    assert line.zero_reason is CcaZeroReason.NONE
+    assert line.class_rate == CLASS
+    assert line.maximum == D("2070.00")
+    assert line.claim == D("2000.00")
+
+
+def test_a_cca_claim_lines_amount_is_the_claim() -> None:
+    assert cca_claim_line().amount == D("2000.00")
+    assert str(cca_claim_line().amount) == "2000.00"
+    assert "amount" not in [f.name for f in fields(cca_claim_line())]
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"output": ArtifactKind("ex/other_cca_claim", Decimal)},
+        {"position": 1},
+        {"class_rate": OTHER_CLASS},
+        {"no_property_left": 1},
+        {"column_7": D("6000.01")},
+        {"column_14": D("400.01")},
+        {"column_15": D("900.01")},
+        {"column_16": D("0.01")},
+        {"column_17": D("0.01")},
+        {"column_18": D("0.01")},
+        {"column_19": D("6900.01")},
+        {"zero_reason": CcaZeroReason.NO_PROPERTY_LEFT},
+        {"maximum": D("2070.01")},
+        {"rounding": NO_ROUNDING},
+        {"claim": D("2000.01")},
+    ],
+)
+def test_cca_claim_lines_differ_by_each_field(change: dict[str, Any]) -> None:
+    line = cca_claim_line()
+    values = {f.name: getattr(line, f.name) for f in fields(line)}
+    values.update(change)
+
+    assert line != CcaClaimLine(**values)
+
+
+def test_recaptured_cca_line_fields_in_order() -> None:
+    line = recaptured_cca_line()
+
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "class_rate",
+        "column_7",
+        "zero_reason",
+        "result",
+    ]
+    assert line == RecapturedCcaLine(
+        output=RECAPTURE,
+        position=1,
+        class_rate=CLASS,
+        column_7=D("-3000.00"),
+        zero_reason=CcaZeroReason.COLUMN_7_NEGATIVE,
+        result=D("3000.00"),
+    )
+
+
+def test_a_recaptured_cca_lines_amount_is_the_result() -> None:
+    assert recaptured_cca_line().amount == D("3000.00")
+    assert "amount" not in [f.name for f in fields(recaptured_cca_line())]
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"output": ArtifactKind("ex/other_recapture", Decimal)},
+        {"position": 2},
+        {"class_rate": OTHER_CLASS},
+        {"column_7": D("-3000.01")},
+        {"zero_reason": CcaZeroReason.NONE},
+        {"result": D("0")},
+    ],
+)
+def test_recaptured_cca_lines_differ_by_each_field(change: dict[str, Any]) -> None:
+    line = recaptured_cca_line()
+    values = {f.name: getattr(line, f.name) for f in fields(line)}
+    values.update(change)
+
+    assert line != RecapturedCcaLine(**values)
+
+
+def test_terminal_loss_line_fields_in_order() -> None:
+    line = terminal_loss_line()
+
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "class_rate",
+        "no_property_left",
+        "column_7",
+        "zero_reason",
+        "column_7_positive",
+        "result",
+    ]
+    assert line == TerminalLossLine(
+        output=TERMINAL_LOSS,
+        position=1,
+        class_rate=CLASS,
+        no_property_left=1,
+        column_7=D("5000.00"),
+        zero_reason=CcaZeroReason.NO_PROPERTY_LEFT,
+        column_7_positive=True,
+        result=D("5000.00"),
+    )
+
+
+def test_a_terminal_loss_lines_amount_is_the_result() -> None:
+    assert terminal_loss_line().amount == D("5000.00")
+    assert "amount" not in [f.name for f in fields(terminal_loss_line())]
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"output": ArtifactKind("ex/other_terminal_loss", Decimal)},
+        {"position": 2},
+        {"class_rate": OTHER_CLASS},
+        {"no_property_left": 0},
+        {"column_7": D("5000.01")},
+        {"zero_reason": CcaZeroReason.NONE},
+        {"column_7_positive": False},
+        {"result": D("0")},
+    ],
+)
+def test_terminal_loss_lines_differ_by_each_field(change: dict[str, Any]) -> None:
+    line = terminal_loss_line()
+    values = {f.name: getattr(line, f.name) for f in fields(line)}
+    values.update(change)
+
+    assert line != TerminalLossLine(**values)
+
+
+def test_closing_ucc_line_fields_in_order() -> None:
+    line = closing_ucc_line()
+
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "class_rate",
+        "no_property_left",
+        "column_7",
+        "zero_reason",
+        "claim",
+        "result",
+    ]
+    assert line == ClosingUccLine(
+        output=CLOSING_UCC,
+        position=2,
+        class_rate=CLASS,
+        no_property_left=0,
+        column_7=D("6000.00"),
+        zero_reason=CcaZeroReason.NONE,
+        claim=D("2000.00"),
+        result=D("4000.00"),
+    )
+    assert line.output is CLOSING_UCC
+
+
+def test_a_closing_ucc_lines_amount_is_the_classs_ucc_at_the_end_of_the_year() -> None:
+    assert closing_ucc_line().amount == D("4000.00")
+    assert "amount" not in [f.name for f in fields(closing_ucc_line())]
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"output": RecordListKind("ex/other_closing_ucc", fields=(ITEM_AMOUNT,))},
+        {"position": 1},
+        {"class_rate": OTHER_CLASS},
+        {"no_property_left": 1},
+        {"column_7": D("6000.01")},
+        {"zero_reason": CcaZeroReason.COLUMN_7_NEGATIVE},
+        {"claim": D("2000.01")},
+        {"result": D("3999.99")},
+    ],
+)
+def test_closing_ucc_lines_differ_by_each_field(change: dict[str, Any]) -> None:
+    line = closing_ucc_line()
+    values = {f.name: getattr(line, f.name) for f in fields(line)}
+    values.update(change)
+
+    assert line != ClosingUccLine(**values)
+
+
+def test_the_reasons_a_cca_row_closes_at_zero() -> None:
+    # T4036 "Column 7": "You cannot claim CCA when the amount in column 7 is: negative ...
+    # positive and you do not have any property left in that class ... In either case, enter
+    # "0" in column 24". The line records which, so no reader re-derives it.
+    assert [reason.value for reason in CcaZeroReason] == [
+        "none",
+        "column_7_negative",
+        "no_property_left",
+    ]

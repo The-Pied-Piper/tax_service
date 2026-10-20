@@ -15,6 +15,15 @@ from app.jurisdictions.ca.catalog import (
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
     CAREGIVER_AMOUNT,
+    CCA_ADDITIONS,
+    CCA_AIIP_ADDITIONS,
+    CCA_CLAIMED,
+    CCA_CLASS_NUMBER,
+    CCA_NO_PROPERTY_LEFT,
+    CCA_PROCEEDS,
+    CCA_RIIP_ADDITIONS,
+    CCA_UCC_AT_END,
+    CCA_UCC_AT_START,
     DEPENDANT_CARE_EXPENSES,
     DEPENDANT_CREDIT_AMOUNTS,
     DEPENDANT_NET_INCOME,
@@ -128,6 +137,15 @@ def test_the_personal_amounts_kinds_are_the_registered_ones(registry: ArtifactRe
     assert registry.get("ca/residence_plus_one_year") is RESIDENCE_PLUS_ONE_YEAR
     assert registry.get("ca/principal_residence_properties") is PRINCIPAL_RESIDENCE_PROPERTIES
     assert registry.get("ca/principal_residence_gain") is PRINCIPAL_RESIDENCE_GAIN
+    assert registry.get("ca/cca_class_number") is CCA_CLASS_NUMBER
+    assert registry.get("ca/cca_ucc_at_start") is CCA_UCC_AT_START
+    assert registry.get("ca/cca_additions") is CCA_ADDITIONS
+    assert registry.get("ca/cca_proceeds") is CCA_PROCEEDS
+    assert registry.get("ca/cca_aiip_additions") is CCA_AIIP_ADDITIONS
+    assert registry.get("ca/cca_riip_additions") is CCA_RIIP_ADDITIONS
+    assert registry.get("ca/cca_claimed") is CCA_CLAIMED
+    assert registry.get("ca/cca_no_property_left") is CCA_NO_PROPERTY_LEFT
+    assert registry.get("ca/cca_ucc_at_end") is CCA_UCC_AT_END
     assert registry.get("ca/infirm_children") is INFIRM_CHILDREN
     assert registry.get("ca/infirm_children_amount") is INFIRM_CHILDREN_AMOUNT
 
@@ -170,6 +188,14 @@ def test_the_personal_amounts_kinds_are_money() -> None:
         RESIDENCE_OUTLAYS,
         RESIDENCE_ADJUSTED_COST_BASE,
         PRINCIPAL_RESIDENCE_GAIN,
+        CCA_CLASS_NUMBER,
+        CCA_UCC_AT_START,
+        CCA_ADDITIONS,
+        CCA_PROCEEDS,
+        CCA_AIIP_ADDITIONS,
+        CCA_RIIP_ADDITIONS,
+        CCA_CLAIMED,
+        CCA_UCC_AT_END,
         INFIRM_CHILDREN_AMOUNT,
     ):
         assert kind.value_type is Decimal, kind.identifier

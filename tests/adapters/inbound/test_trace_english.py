@@ -19,6 +19,7 @@ from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.domain.artifact import ArtifactKind
 from app.domain.parameters.amount import Amount
 from app.domain.parameters.claim_reduction import ClaimReduction
+from app.domain.parameters.class_rates import ClassRate, HalfYearRule, RecaptureAndTerminalLoss
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
@@ -34,9 +35,12 @@ from app.domain.trace import (
     CappedAmountLine,
     CaregiverClaimLessClaimedLine,
     CaregiverClaimLine,
+    CcaClaimLine,
+    CcaZeroReason,
     ChosenByCountLine,
     ChosenByRangeLine,
     ChosenRateAppliedLine,
+    ClosingUccLine,
     ContributionTierLine,
     CreditAmountLine,
     DisabilityTransferLine,
@@ -52,6 +56,7 @@ from app.domain.trace import (
     QuotientLine,
     RateAppliedLine,
     RateByIncomeBandLine,
+    RecapturedCcaLine,
     RecordCountLine,
     RecordTotalLine,
     RoundedTotalLine,
@@ -60,6 +65,7 @@ from app.domain.trace import (
     SumLine,
     SurchargeTierLine,
     TaperedAmountLine,
+    TerminalLossLine,
     ThresholdGateLine,
     TimesCountLine,
     TraceLine,
@@ -2253,3 +2259,417 @@ def test_renders_the_credit_with_no_rounding_named_when_the_rule_is_none() -> No
         "total: item 1 item_amount 8000: line 1 2000, line 3 400, line 12 200, line 13 2200 "
         "(no rounding)"
     )
+
+
+# --- the capital cost allowance table, one line per class ---------------------------------------
+
+
+def class_rate(
+    number: str,
+    rate: str = "0.30",
+    recapture_and_terminal_loss: RecaptureAndTerminalLoss = RecaptureAndTerminalLoss.APPLIES,
+) -> ClassRate:
+    return ClassRate(
+        D(number),
+        Rate(D(rate)),
+        HalfYearRule.APPLIES,
+        recapture_and_terminal_loss,
+        Fraction(3, 2),
+        Fraction(7, 3),
+    )
+
+
+CCA_CLAIM = ArtifactKind("ex/cca_claim", Decimal)
+RECAPTURED_CCA = ArtifactKind("ex/recaptured_cca", Decimal)
+TERMINAL_LOSS = ArtifactKind("ex/terminal_loss", Decimal)
+CLOSING_UCC = RecordListKind("ex/closing_ucc", fields=(ArtifactKind("ex/ucc_at_end", Decimal),))
+EXCLUDED = RecaptureAndTerminalLoss.EXCLUDED
+
+
+def cca_claim_line(
+    number: str,
+    rate: str,
+    no_property_left: int,
+    columns: tuple[str, str, str, str, str, str, str],
+    maximum: str,
+    claim: str,
+    rounding: RoundingRule = CENT,
+    position: int = 1,
+    zero_reason: CcaZeroReason = CcaZeroReason.NONE,
+) -> CcaClaimLine:
+    column_7, column_14, column_15, column_16, column_17, column_18, column_19 = columns
+    return CcaClaimLine(
+        output=CCA_CLAIM,
+        position=position,
+        class_rate=class_rate(number, rate),
+        no_property_left=no_property_left,
+        column_7=D(column_7),
+        column_14=D(column_14),
+        column_15=D(column_15),
+        column_16=D(column_16),
+        column_17=D(column_17),
+        column_18=D(column_18),
+        column_19=D(column_19),
+        zero_reason=zero_reason,
+        maximum=D(maximum),
+        rounding=rounding,
+        claim=D(claim),
+    )
+
+
+def test_renders_the_cca_claim_of_a_class() -> None:
+    line = cca_claim_line(
+        "43.1",
+        "0.30",
+        0,
+        ("6000.00", "400.00", "900.00", "0", "0", "0", "6900.00"),
+        "2070.00",
+        "2000.00",
+        position=2,
+    )
+
+    assert render(line) == (
+        "cca_claim: item 2 class 43.1: column 7 6000, column 14 400, column 15 900, "
+        "column 16 0, column 17 0, column 18 0, column 19 6900, "
+        "maximum 30% of column 19 = 2070 (half-up to 0.01), claim 2000"
+    )
+
+
+def test_renders_the_cca_claim_of_a_class_with_the_half_year_rule() -> None:
+    line = cca_claim_line(
+        "8",
+        "0.20",
+        0,
+        ("13000.00", "0", "0", "0", "0", "1500.00", "11500.00"),
+        "2300.00",
+        "2300.00",
+    )
+
+    assert render(line) == (
+        "cca_claim: item 1 class 8: column 7 13000, column 14 0, column 15 0, column 16 0, "
+        "column 17 0, column 18 1500, column 19 11500, "
+        "maximum 20% of column 19 = 2300 (half-up to 0.01), claim 2300"
+    )
+
+
+def test_renders_a_column_18_with_cents() -> None:
+    line = cca_claim_line(
+        "8", "0.20", 0, ("100.01", "0", "0", "0", "0", "50.01", "50.00"), "10.00", "10.00"
+    )
+
+    assert render(line) == (
+        "cca_claim: item 1 class 8: column 7 100.01, column 14 0, column 15 0, column 16 0, "
+        "column 17 0, column 18 50.01, column 19 50, "
+        "maximum 20% of column 19 = 10 (half-up to 0.01), claim 10"
+    )
+
+
+def test_renders_a_claim_below_the_maximum() -> None:
+    line = cca_claim_line(
+        "8", "0.20", 0, ("13000", "0", "0", "0", "0", "1500", "11500"), "2300.00", "0"
+    )
+
+    assert render(line).endswith("maximum 20% of column 19 = 2300 (half-up to 0.01), claim 0")
+
+
+def test_renders_no_cca_when_column_7_is_negative() -> None:
+    line = cca_claim_line(
+        "10",
+        "0.30",
+        0,
+        ("-3000.00", "8000.00", "0", "8000.00", "0", "0", "-3000.00"),
+        "0",
+        "0",
+        zero_reason=CcaZeroReason.COLUMN_7_NEGATIVE,
+    )
+
+    assert render(line) == (
+        "cca_claim: item 1 class 10: column 7 -3000, column 14 8000, column 15 0, "
+        "column 16 8000, column 17 0, column 18 0, column 19 -3000, "
+        "maximum 0 as column 7 is negative, claim 0"
+    )
+
+
+def test_renders_no_cca_when_no_property_is_left_in_the_class() -> None:
+    line = cca_claim_line(
+        "1",
+        "0.04",
+        1,
+        ("5000.00", "15000.00", "0", "15000.00", "0", "0", "5000.00"),
+        "0",
+        "0",
+        zero_reason=CcaZeroReason.NO_PROPERTY_LEFT,
+    )
+
+    assert render(line) == (
+        "cca_claim: item 1 class 1: column 7 5000, column 14 15000, column 15 0, "
+        "column 16 15000, column 17 0, column 18 0, column 19 5000, "
+        "maximum 0 as no property is left in the class, claim 0"
+    )
+
+
+def test_renders_the_rate_of_a_class_with_no_property_left_and_a_column_7_of_zero() -> None:
+    # Note 3's terminal loss needs a positive column 7: a class at 0 with no property left keeps
+    # the rate's maximum, which is 0.
+    line = cca_claim_line("8", "0.20", 1, ("0", "0", "0", "0", "0", "0", "0"), "0.00", "0")
+
+    assert render(line).endswith("maximum 20% of column 19 = 0 (half-up to 0.01), claim 0")
+
+
+def test_renders_the_cca_claim_with_no_rounding_named_when_the_rule_is_none() -> None:
+    line = cca_claim_line(
+        "8",
+        "0.20",
+        0,
+        ("100.01", "0", "0", "0", "0", "50.005", "50.005"),
+        "10.001",
+        "10",
+        rounding=NO_ROUNDING,
+    )
+
+    assert render(line).endswith("maximum 20% of column 19 = 10.001 (no rounding), claim 10")
+
+
+NEGATIVE = CcaZeroReason.COLUMN_7_NEGATIVE
+NONE_LEFT = CcaZeroReason.NO_PROPERTY_LEFT
+NO_REASON = CcaZeroReason.NONE
+
+
+def test_renders_a_recapture() -> None:
+    line = RecapturedCcaLine(
+        RECAPTURED_CCA, 1, class_rate("10"), D("-3000.00"), NEGATIVE, D("3000.00")
+    )
+
+    assert (
+        render(line)
+        == "recaptured_cca: item 1 class 10: column 7 -3000 is negative: recapture 3000"
+    )
+
+
+@pytest.mark.parametrize(
+    ("column_7", "zero_reason"),
+    [("13000.00", NO_REASON), ("0", NO_REASON), ("5000.00", NONE_LEFT)],
+)
+def test_renders_no_recapture_when_column_7_is_not_negative(
+    column_7: str, zero_reason: CcaZeroReason
+) -> None:
+    line = RecapturedCcaLine(RECAPTURED_CCA, 2, class_rate("8"), D(column_7), zero_reason, D("0"))
+
+    assert render(line) == (
+        f"recaptured_cca: item 2 class 8: column 7 {column_7.removesuffix('.00')} "
+        "is not negative: recapture 0"
+    )
+
+
+def test_renders_no_recapture_for_a_class_it_does_not_apply_to() -> None:
+    line = RecapturedCcaLine(
+        RECAPTURED_CCA,
+        1,
+        class_rate("10.1", recapture_and_terminal_loss=EXCLUDED),
+        D("-3000"),
+        NEGATIVE,
+        D("0"),
+    )
+
+    assert render(line) == (
+        "recaptured_cca: item 1 class 10.1: column 7 -3000 is negative, but recapture does not "
+        "apply to class 10.1: recapture 0"
+    )
+
+
+def test_renders_the_recapture_case_the_line_records_not_column_7s_sign() -> None:
+    # The wording follows `zero_reason`; column 7 is only shown.
+    recorded = RecapturedCcaLine(RECAPTURED_CCA, 1, class_rate("8"), D("100"), NEGATIVE, D("0"))
+    unrecorded = RecapturedCcaLine(RECAPTURED_CCA, 1, class_rate("8"), D("-100"), NO_REASON, D("0"))
+
+    assert (
+        render(recorded) == "recaptured_cca: item 1 class 8: column 7 100 is negative: recapture 0"
+    )
+    assert render(unrecorded) == (
+        "recaptured_cca: item 1 class 8: column 7 -100 is not negative: recapture 0"
+    )
+
+
+def terminal_loss_line(
+    number: str,
+    no_property_left: int,
+    column_7: str,
+    zero_reason: CcaZeroReason,
+    column_7_positive: bool,
+    result: str,
+    position: int = 1,
+    recapture_and_terminal_loss: RecaptureAndTerminalLoss = RecaptureAndTerminalLoss.APPLIES,
+) -> TerminalLossLine:
+    return TerminalLossLine(
+        TERMINAL_LOSS,
+        position,
+        class_rate(number, "0.04", recapture_and_terminal_loss),
+        no_property_left,
+        D(column_7),
+        zero_reason,
+        column_7_positive,
+        D(result),
+    )
+
+
+def test_renders_a_terminal_loss() -> None:
+    line = terminal_loss_line("1", 1, "5000.00", NONE_LEFT, True, "5000.00")
+
+    assert render(line) == (
+        "terminal_loss: item 1 class 1: column 7 5000 with no property left: terminal loss 5000"
+    )
+
+
+def test_renders_no_terminal_loss_while_property_is_left() -> None:
+    line = terminal_loss_line("1", 0, "5000.00", NO_REASON, True, "0")
+
+    assert render(line) == (
+        "terminal_loss: item 1 class 1: column 7 5000 with property left: terminal loss 0"
+    )
+
+
+@pytest.mark.parametrize(
+    ("column_7", "shown", "zero_reason"),
+    [("-3000.00", "-3000", NEGATIVE), ("0", "0", NO_REASON)],
+)
+@pytest.mark.parametrize("no_property_left", [0, 1])
+def test_renders_no_terminal_loss_when_column_7_is_not_positive(
+    column_7: str, shown: str, zero_reason: CcaZeroReason, no_property_left: int
+) -> None:
+    line = terminal_loss_line("1", no_property_left, column_7, zero_reason, False, "0", position=3)
+
+    assert render(line) == (
+        f"terminal_loss: item 3 class 1: column 7 {shown} is not positive: terminal loss 0"
+    )
+
+
+def test_renders_no_terminal_loss_for_a_class_it_does_not_apply_to() -> None:
+    line = terminal_loss_line(
+        "10.1", 1, "5000", NONE_LEFT, True, "0", recapture_and_terminal_loss=EXCLUDED
+    )
+
+    assert render(line) == (
+        "terminal_loss: item 1 class 10.1: column 7 5000 with no property left, but a terminal "
+        "loss does not apply to class 10.1: terminal loss 0"
+    )
+
+
+def test_renders_the_terminal_loss_case_the_line_records_not_column_7_or_the_flag() -> None:
+    # `zero_reason` picks the no-property-left case; with no reason, `column_7_positive` picks
+    # "with property left" over "is not positive". Column 7 and the flag are only shown.
+    no_property = terminal_loss_line("1", 0, "-5", NONE_LEFT, False, "0")
+    property_left = terminal_loss_line("1", 1, "0", NO_REASON, True, "0")
+    not_positive = terminal_loss_line("1", 0, "5", NO_REASON, False, "0")
+    negative = terminal_loss_line("1", 1, "5", NEGATIVE, True, "0")
+
+    assert render(no_property) == (
+        "terminal_loss: item 1 class 1: column 7 -5 with no property left: terminal loss 0"
+    )
+    assert render(property_left) == (
+        "terminal_loss: item 1 class 1: column 7 0 with property left: terminal loss 0"
+    )
+    assert render(not_positive) == (
+        "terminal_loss: item 1 class 1: column 7 5 is not positive: terminal loss 0"
+    )
+    assert render(negative) == (
+        "terminal_loss: item 1 class 1: column 7 5 is not positive: terminal loss 0"
+    )
+
+
+def test_renders_the_ucc_at_the_end_of_the_year() -> None:
+    line = ClosingUccLine(
+        CLOSING_UCC,
+        2,
+        class_rate("43.1"),
+        0,
+        D("6000.00"),
+        CcaZeroReason.NONE,
+        D("2000.00"),
+        D("4000.00"),
+    )
+
+    assert render(line) == "closing_ucc: item 2 class 43.1: column 7 6000 less claim 2000 = 4000"
+
+
+def test_renders_the_ucc_at_the_end_of_the_year_with_no_claim() -> None:
+    line = ClosingUccLine(
+        CLOSING_UCC, 1, class_rate("8"), 0, D("13000.00"), CcaZeroReason.NONE, D("0"), D("13000.00")
+    )
+
+    assert render(line) == "closing_ucc: item 1 class 8: column 7 13000 less claim 0 = 13000"
+
+
+def test_renders_a_ucc_of_zero_at_the_end_of_the_year_when_column_7_is_negative() -> None:
+    line = ClosingUccLine(
+        CLOSING_UCC,
+        1,
+        class_rate("10"),
+        0,
+        D("-3000.00"),
+        CcaZeroReason.COLUMN_7_NEGATIVE,
+        D("0"),
+        D("0"),
+    )
+
+    assert render(line) == "closing_ucc: item 1 class 10: column 7 -3000 is negative: 0"
+
+
+def test_renders_a_ucc_of_zero_at_the_end_of_the_year_when_no_property_is_left() -> None:
+    line = ClosingUccLine(
+        CLOSING_UCC,
+        1,
+        class_rate("1", "0.04"),
+        1,
+        D("5000.00"),
+        CcaZeroReason.NO_PROPERTY_LEFT,
+        D("0"),
+        D("0"),
+    )
+
+    assert render(line) == "closing_ucc: item 1 class 1: column 7 5000 with no property left: 0"
+
+
+def test_renders_the_reason_the_cca_line_records_without_working_it_out_again() -> None:
+    # The line says why its maximum is 0; the renderer reads that, not column 7 or the flag.
+    recorded = cca_claim_line(
+        "8",
+        "0.20",
+        0,
+        ("13000", "0", "0", "0", "0", "1500", "11500"),
+        "0",
+        "0",
+        zero_reason=CcaZeroReason.NO_PROPERTY_LEFT,
+    )
+    unrecorded = cca_claim_line(
+        "8",
+        "0.20",
+        1,
+        ("-1", "0", "0", "0", "0", "0", "-1"),
+        "0",
+        "0",
+        zero_reason=CcaZeroReason.NONE,
+    )
+
+    assert render(recorded).endswith("maximum 0 as no property is left in the class, claim 0")
+    assert render(unrecorded).endswith("maximum 20% of column 19 = 0 (half-up to 0.01), claim 0")
+
+
+def test_renders_the_reason_the_closing_line_records_without_working_it_out_again() -> None:
+    recorded = ClosingUccLine(
+        CLOSING_UCC,
+        1,
+        class_rate("8"),
+        0,
+        D("13000"),
+        CcaZeroReason.NO_PROPERTY_LEFT,
+        D("0"),
+        D("0"),
+    )
+    unrecorded = ClosingUccLine(
+        CLOSING_UCC, 1, class_rate("8"), 1, D("5000"), CcaZeroReason.NONE, D("0"), D("5000")
+    )
+
+    assert (
+        render(recorded) == "closing_ucc: item 1 class 8: column 7 13000 with no property left: 0"
+    )
+    assert render(unrecorded) == ("closing_ucc: item 1 class 8: column 7 5000 less claim 0 = 5000")
