@@ -12,7 +12,8 @@ from pathlib import Path
 import pytest
 
 from app.domain.artifact import Artifact, ArtifactCatalog, ArtifactKind, ArtifactRegistry
-from app.domain.errors import NegativeArtifactError
+from app.domain.digits import DigitsKind
+from app.domain.errors import InvalidTextError, NegativeArtifactError
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.record_list import RecordList, RecordListKind
 from app.domain.registry import Namespace
@@ -71,6 +72,19 @@ def records() -> ArtifactRegistry:
     net_income = catalog.declare("dependant_net_income", Decimal, non_negative=True)
     months = catalog.declare("months_resident", int, non_negative=True)
     RecordListKind.declare(catalog, "dependants", fields=(net_income, months))
+    artifacts = ArtifactRegistry()
+    artifacts.register_catalog(catalog)
+    artifacts.register(FEDERAL_BASIC_TAX.identifier, FEDERAL_BASIC_TAX)
+    return artifacts
+
+
+@pytest.fixture
+def digits() -> ArtifactRegistry:
+    """A registry of the made-up nine-digit `ex/business_number`, a count, and the federal basic
+    tax `VALID` expects."""
+    catalog = ArtifactCatalog(Namespace("ex"))
+    DigitsKind.declare(catalog, "business_number", digits=9)
+    catalog.declare("partnership_member", int, non_negative=True)
     artifacts = ArtifactRegistry()
     artifacts.register_catalog(catalog)
     artifacts.register(FEDERAL_BASIC_TAX.identifier, FEDERAL_BASIC_TAX)
@@ -731,3 +745,120 @@ def test_a_record_list_under_expected_names_the_file_and_key(
         WorkedReturnError, match=r"bad\.yaml: expected\.ex/dependants: .*not an amount or a count"
     ):
         WorkedReturn.load(path, records)
+
+
+# --- digits: a number the form asks for as a fixed count of digits, as quoted text -------------
+#
+# The made-up `ex/business_number` (the `digits` fixture) is a digits kind of nine digits, as a
+# carried entry is listed under `inputs`.
+
+
+def with_business_number(value: str) -> str:
+    """`VALID` whose only input is the made-up business number spelled `value`."""
+    return with_section("inputs", f"inputs:\n  ex/business_number: {value}\n")
+
+
+@pytest.mark.parametrize("text", ["123456789", "012345678", "000000000"])
+def test_a_digits_kind_takes_its_digits_as_quoted_text_as_entered(
+    tmp_path: Path, digits: ArtifactRegistry, text: str
+) -> None:
+    path = write(tmp_path, with_business_number(f'"{text}"'), "ok.yaml")
+    kind = digits.kind("ex/business_number")
+
+    worked = WorkedReturn.load(path, digits)
+
+    assert worked.inputs == (Artifact(kind, text),)
+    assert type(worked.inputs[0].value) is str
+
+
+def test_a_digits_kind_takes_the_empty_text_for_a_box_left_blank(
+    tmp_path: Path, digits: ArtifactRegistry
+) -> None:
+    path = write(tmp_path, with_business_number('""'), "ok.yaml")
+
+    worked = WorkedReturn.load(path, digits)
+
+    assert worked.inputs == (Artifact(digits.kind("ex/business_number"), ""),)
+
+
+def test_digits_load_beside_a_count_and_keep_the_files_order(
+    tmp_path: Path, digits: ArtifactRegistry
+) -> None:
+    # A yes or no answer stays a count (0 or 1); only the number is text.
+    text = with_section(
+        "inputs",
+        'inputs:\n  ex/partnership_member: "1"\n  ex/business_number: "123456789"\n',
+    )
+
+    worked = WorkedReturn.load(write(tmp_path, text, "ok.yaml"), digits)
+
+    assert worked.inputs == (
+        Artifact(digits.kind("ex/partnership_member"), 1),
+        Artifact(digits.kind("ex/business_number"), "123456789"),
+    )
+
+
+@pytest.mark.parametrize(
+    ("value", "got"),
+    [
+        # Unquoted, YAML reads these before the loader sees them, so digits must be quoted.
+        ("123456789", "int"),
+        ("1_234_567", "int"),
+        ("12345.678", "float"),
+        ("true", "bool"),
+        ("", "NoneType"),  # an empty box is `""`, never a missing value
+        ("[]", "list"),
+    ],
+)
+def test_digits_that_are_not_quoted_text_name_the_file_and_key(
+    tmp_path: Path, digits: ArtifactRegistry, value: str, got: str
+) -> None:
+    path = write(tmp_path, with_business_number(value))
+
+    with pytest.raises(
+        WorkedReturnError,
+        match=rf"bad\.yaml: inputs\.ex/business_number must be a string, got {got}",
+    ):
+        WorkedReturn.load(path, digits)
+
+
+@pytest.mark.parametrize("text", ["12345678", "1234567890", "123 456 789", "12345678a", " "])
+def test_text_a_digits_kind_refuses_fails_at_load_naming_the_kind(
+    tmp_path: Path, digits: ArtifactRegistry, text: str
+) -> None:
+    # Like a negative amount, the kind's own check refuses it, unwrapped.
+    path = write(tmp_path, with_business_number(f'"{text}"'))
+
+    with pytest.raises(
+        InvalidTextError, match=rf"ex/business_number.*9 digits.*{re.escape(repr(text))}"
+    ):
+        WorkedReturn.load(path, digits)
+
+
+def test_digits_under_expected_are_read_as_entered(
+    tmp_path: Path, digits: ArtifactRegistry
+) -> None:
+    # A carried entry is listed as an input and as an output, so a return expects it back.
+    text = with_business_number('"012345678"').replace(
+        'expected:\n  ca/federal_basic_tax: "20146.25"\n',
+        'expected:\n  ca/federal_basic_tax: "20146.25"\n  ex/business_number: "012345678"\n',
+    )
+
+    worked = WorkedReturn.load(write(tmp_path, text, "ok.yaml"), digits)
+
+    assert worked.expected[1] == Artifact(digits.kind("ex/business_number"), "012345678")
+
+
+def test_digits_under_expected_that_are_not_quoted_text_name_the_file_and_key(
+    tmp_path: Path, digits: ArtifactRegistry
+) -> None:
+    text = with_business_number('"123456789"').replace(
+        'expected:\n  ca/federal_basic_tax: "20146.25"\n',
+        'expected:\n  ca/federal_basic_tax: "20146.25"\n  ex/business_number: 123456789\n',
+    )
+
+    with pytest.raises(
+        WorkedReturnError,
+        match=r"bad\.yaml: expected\.ex/business_number must be a string, got int",
+    ):
+        WorkedReturn.load(write(tmp_path, text), digits)

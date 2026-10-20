@@ -8,8 +8,9 @@ declares its kinds through one `ArtifactCatalog`, which only records them; the c
 registers each catalog explicitly with `ArtifactRegistry.register_catalog`. A `Decimal` kind, or
 an `int` kind such as a count, may be declared non-negative, and then no artifact of it holds a
 value below zero. A kind that carries more than its value type, such as a record-list kind
-(record_list.py), is built by its own class and recorded with `ArtifactCatalog.add`. Names come
-from the jurisdiction's own law or return, never from another system's.
+(record_list.py) or a digits kind (digits.py), is built by its own class and recorded with
+`ArtifactCatalog.add`. Names come from the jurisdiction's own law or return, never from another
+system's.
 """
 
 from __future__ import annotations
@@ -71,7 +72,8 @@ class ArtifactKind(Generic[V]):  # noqa: UP046  (invariant V, see above)
         """Refuse `value`, already an instance of the value type, if this kind cannot hold it.
 
         Called by `Artifact`; a kind accepts every instance unless a subclass says otherwise, as
-        `RecordListKind` does for a record list of other fields.
+        `RecordListKind` does for a record list of other fields and `DigitsKind` for text that is
+        not its digits.
         """
 
 
@@ -179,7 +181,7 @@ class ArtifactCatalog:
         return kind
 
     def add(self, kind: ArtifactKind[Any]) -> None:
-        """Record `kind`, built by its own class, such as a record-list kind.
+        """Record `kind`, built by its own class, such as a record-list kind or a digits kind.
 
         A kind outside this catalog's namespace is an InvalidRegistrationError; a local id this
         catalog already declared is an error.
