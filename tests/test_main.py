@@ -19,7 +19,6 @@ from app.domain.errors import (
     InputAboveBoundError,
     InvalidCompositionError,
     NegativeArtifactError,
-    NoAmountForCountError,
     NotFoundError,
     ValidationError,
 )
@@ -677,7 +676,6 @@ def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         (ValidationError, 422),
         (NegativeArtifactError, 422),
         (InputAboveBoundError, 422),
-        (NoAmountForCountError, 422),
         (CapabilityContractError, 500),
         (InvalidCompositionError, 400),
         (DomainError, 400),

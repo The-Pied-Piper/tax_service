@@ -38,7 +38,6 @@ from app.domain.errors import (
     DomainError,
     InputAboveBoundError,
     NegativeArtifactError,
-    NoAmountForCountError,
     NotFoundError,
     ValidationError,
 )
@@ -55,7 +54,6 @@ _DOMAIN_ERROR_STATUS: dict[type[DomainError], int] = {
     ValidationError: 422,
     NegativeArtifactError: 422,
     InputAboveBoundError: 422,
-    NoAmountForCountError: 422,
     CapabilityContractError: 500,
     DomainError: 400,
 }

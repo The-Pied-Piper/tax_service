@@ -112,7 +112,7 @@ class InvalidAmountByCountError(DomainError):
     """A table of amounts by count is empty, repeats a count or has a bad figure."""
 
 
-class NoAmountForCountError(DomainError):
+class NoAmountForCountError(ValidationError):
     """A count was given that the table of amounts by count has no row for."""
 
 

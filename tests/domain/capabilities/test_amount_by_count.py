@@ -32,6 +32,7 @@ from app.domain.errors import (
     InvalidCapabilityError,
     MissingArtifactError,
     NoAmountForCountError,
+    ValidationError,
 )
 from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.amount_by_count import AMOUNT_BY_COUNT, AmountByCount
@@ -284,6 +285,8 @@ def test_the_refusal_names_the_count_kind() -> None:
 
 def test_the_refusal_is_an_input_error_of_its_own() -> None:
     assert issubclass(NoAmountForCountError, DomainError)
+    # A validation error is already a 422 problem response, so no status mapping is added.
+    assert issubclass(NoAmountForCountError, ValidationError)
     assert not issubclass(NoAmountForCountError, InvalidAmountByCountError)
     assert not issubclass(InvalidAmountByCountError, NoAmountForCountError)
 
