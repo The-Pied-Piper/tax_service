@@ -1,12 +1,14 @@
 """The federal catalog: income.
 
-The T1 income lines, total income, and the dividend and investment income lines that feed them.
+The T1 income lines, total income, the dividend and investment income lines that feed them, and
+the short-term rental rows of Form T776 Chart A.
 """
 
 from __future__ import annotations
 
 from decimal import Decimal
 
+from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.catalog.base import CATALOG
 
 EMPLOYMENT_INCOME = CATALOG.declare("employment_income", Decimal, non_negative=True)
@@ -336,3 +338,38 @@ slip)": a starting amount."""
 INCOME_SUPPORT_BENEFITS = CATALOG.declare("income_support_benefits", Decimal, non_negative=True)
 """Income support benefits, T1 line 14700 "Add lines 29 to 31 (see line 25000 in Step 4).": the
 workers' compensation benefits, social assistance payments and net federal supplements."""
+
+SHORT_TERM_RENTAL_RELATED_EXPENSES = CATALOG.declare(
+    "short_term_rental_related_expenses", Decimal, non_negative=True
+)
+"""Related expenses of a short-term rental, Form T776 Chart A, column 3 "Related portion of the
+total from line 9365 of Part 4": a field of each record of the short-term rental units, not an
+artifact of its own."""
+
+SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS = CATALOG.declare(
+    "short_term_rental_non_compliant_days", int, non_negative=True
+)
+"""Non-compliant days of a short-term rental, Form T776 Chart A, column 4 "Number of days the
+residential property was a non compliant short-term rental": a field of each record of the
+short-term rental units, not an artifact of its own."""
+
+SHORT_TERM_RENTAL_DAYS = CATALOG.declare("short_term_rental_days", int, non_negative=True)
+"""Days of a short-term rental, Form T776 Chart A, column 5 "Number of days the residential
+property was a short-term rental": a field of each record of the short-term rental units, not an
+artifact of its own."""
+
+SHORT_TERM_RENTAL_UNITS = RecordListKind.declare(
+    CATALOG,
+    "short_term_rental_units",
+    fields=(
+        SHORT_TERM_RENTAL_RELATED_EXPENSES,
+        SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
+        SHORT_TERM_RENTAL_DAYS,
+    ),
+)
+"""Short-term rental units, Form T776 Chart A "Enter each short-term rental or mixed rental
+property on a separate row": a starting list with one record for each row, holding column 3
+"Related portion of the total from line 9365 of Part 4", column 4 "Number of days the residential
+property was a non compliant short-term rental" and column 5 "Number of days the residential
+property was a short-term rental" (columns 1 and 2, the address and the unit number, are labels
+the engine does not use)."""
