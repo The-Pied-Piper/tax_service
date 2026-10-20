@@ -135,6 +135,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NET_PROFESSIONAL_INCOME,
     NET_RENTAL_INCOME,
+    NORTHERN_RESIDENTS_DEDUCTIONS,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
     OTHER_DEPENDANT_MEDICAL_EXPENSES,
     OTHER_DEPENDANTS,
@@ -246,6 +247,9 @@ from app.jurisdictions.ca.catalog import (
     RESIDENCE_YEARS_DESIGNATED_AFTER_1981,
     RESIDENCE_YEARS_OWNED_1972_TO_1981,
     RESIDENCE_YEARS_OWNED_AFTER_1981,
+    RESIDENCY_AMOUNT,
+    RESIDENCY_DEDUCTION,
+    RESIDENCY_NET_INCOME_LIMIT,
     RESIDENT_IN_CANADA_THROUGHOUT_2025,
     RESP_AIPS_ADDITIONAL_TAX,
     RESP_AIPS_CONTRIBUTIONS_COUNTED,
@@ -273,12 +277,25 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_RDSP_INCOME_REPAYMENT,
     SPOUSE_UCCB_REPAYMENT,
     SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT,
+    STANDARD_AMOUNT_ALLOCATED_1,
+    STANDARD_AMOUNT_ALLOCATED_2,
+    STANDARD_AMOUNT_ALLOCATED_3,
     TAX_PAID_BY_INSTALMENTS,
     TAXABLE_INCOME,
     TOTAL_INCOME,
+    TRAVEL_DEDUCTION,
+    TRAVEL_INDIVIDUAL,
+    TRAVEL_INDIVIDUALS,
+    TRAVEL_TRIPS,
+    TRIP_BENEFIT_OR_STANDARD_AMOUNT,
+    TRIP_LOWEST_RETURN_AIRFARE,
+    TRIP_TRAVEL_EXPENSES,
+    TRIP_ZONE,
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
     WAGE_LOSS_REPLACEMENT_PLAN_INCOME,
+    ZONE_A_RESIDENCY_AFTER_WORK_SITE,
+    ZONE_B_RESIDENCY_AFTER_WORK_SITE,
 )
 from tests.jurisdictions.ca.catalog_snapshot import COUNTS, RECORD_LISTS, REGISTERED, SIGNED
 
@@ -1703,3 +1720,63 @@ def test_the_other_medical_supplement_lines_are_non_negative_decimals(
         assert kind.value_type is Decimal, kind.identifier
         assert kind.non_negative is True, kind.identifier
         assert registry.kind(kind.identifier).non_negative is True, kind.identifier
+
+
+# --- Form T2222, Northern Residents Deductions (T1 line 66 and line 25500) ---------------------
+
+
+def test_the_record_lists_are_record_list_kinds_with_their_forms_fields(
+    registry: ArtifactRegistry,
+) -> None:
+    # Step 3 Chart B: "Column 1: Enter the name of the person who took the trip", the zone the
+    # trip's amount goes in (columns 6 and 7), and "Column 3", "Column 4" and "Column 5".
+    assert RECORD_LISTS <= REGISTERED
+    assert registry.get("ca/travel_trips") is TRAVEL_TRIPS
+    assert registry.get("ca/travel_individuals") is TRAVEL_INDIVIDUALS
+    assert isinstance(TRAVEL_TRIPS, RecordListKind)
+    assert isinstance(TRAVEL_INDIVIDUALS, RecordListKind)
+    assert TRAVEL_TRIPS.fields == (
+        TRAVEL_INDIVIDUAL,
+        TRIP_ZONE,
+        TRIP_BENEFIT_OR_STANDARD_AMOUNT,
+        TRIP_TRAVEL_EXPENSES,
+        TRIP_LOWEST_RETURN_AIRFARE,
+    )
+    # Chart A: "Row A: Enter the name of each individual" and the three amounts of "Row B".
+    assert TRAVEL_INDIVIDUALS.fields == (
+        TRAVEL_INDIVIDUAL,
+        STANDARD_AMOUNT_ALLOCATED_1,
+        STANDARD_AMOUNT_ALLOCATED_2,
+        STANDARD_AMOUNT_ALLOCATED_3,
+    )
+
+
+def test_the_chart_fields_are_non_negative_counts_and_amounts() -> None:
+    for kind in (TRAVEL_INDIVIDUAL, TRIP_ZONE):
+        assert kind.value_type is int, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+    for amount_kind in (
+        TRIP_BENEFIT_OR_STANDARD_AMOUNT,
+        TRIP_TRAVEL_EXPENSES,
+        TRIP_LOWEST_RETURN_AIRFARE,
+        STANDARD_AMOUNT_ALLOCATED_1,
+        STANDARD_AMOUNT_ALLOCATED_2,
+        STANDARD_AMOUNT_ALLOCATED_3,
+    ):
+        assert amount_kind.value_type is Decimal, amount_kind.identifier
+        assert amount_kind.non_negative is True, amount_kind.identifier
+
+
+def test_the_step_2_residency_lines_are_non_negative() -> None:
+    # Line 5 "Line 3 minus line 4 (if negative, enter "0")" and line 10 "Line 8 minus line 9 (if
+    # negative, enter "0")" print a floor, and no other line of Steps 2 to 4 can be below zero.
+    for kind in (
+        ZONE_A_RESIDENCY_AFTER_WORK_SITE,
+        ZONE_B_RESIDENCY_AFTER_WORK_SITE,
+        RESIDENCY_AMOUNT,
+        RESIDENCY_NET_INCOME_LIMIT,
+        RESIDENCY_DEDUCTION,
+        TRAVEL_DEDUCTION,
+        NORTHERN_RESIDENTS_DEDUCTIONS,
+    ):
+        assert kind.non_negative is True, kind.identifier

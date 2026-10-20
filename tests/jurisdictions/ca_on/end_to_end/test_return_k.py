@@ -23,6 +23,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
     NON_REFUNDABLE_TAX_CREDITS,
+    NORTHERN_RESIDENTS_DEDUCTIONS,
     OTHER_DIVIDENDS_CREDIT,
     OTHER_DIVIDENDS_GROSSED_UP,
     OTHER_PAYMENTS_DEDUCTION,
@@ -42,7 +43,7 @@ from app.jurisdictions.ca.catalog import (
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
 )
 from app.jurisdictions.ca_on import catalog as ontario
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute, return_k
+from tests.jurisdictions.ca_on.end_to_end.support import D, compute, return_k, trip
 
 
 def test_return_ks_taxable_dividends_are_the_federal_worksheets_lines_12000_and_12010() -> None:
@@ -390,14 +391,15 @@ def test_line_9_may_be_negative_as_the_form_prints_no_floor() -> None:
     assert worksheet.get(OTHER_PAYMENTS_DEDUCTION).value == D("0")
 
 
-def test_deductions_from_net_income_add_lines_58_to_63_and_67_once_each() -> None:
+def test_deductions_from_net_income_add_lines_58_to_63_66_and_67_once_each() -> None:
     # T1 line 68 and line 25700 "Add lines 58 to 67.": one distinct power of two for each of the
-    # seven lines wired: line 24400 1, line 24900 2, line 25000 4 (workers' compensation of 4, so
+    # eight lines wired: line 24400 1, line 24900 2, line 25000 4 (workers' compensation of 4, so
     # line 14700, with no amount on line 14600), line 25100 8, line 25200 16, line 25300 32 (a
     # capital gain of 64, taxable capital gains of 32.00, and unapplied net capital losses of 32
-    # claimed whole) and line 25600 64, so a line left out or added twice changes the sum: 127.
+    # claimed whole), line 25500 128 (one Zone A trip of 128, 200 and 200, so line 14 and line 19
+    # are 128) and line 25600 64, so a line left out or added twice changes the sum: 255.
     # Other income 1000 and workers' compensation 4 and taxable capital gains 32.00 give total
-    # income 1036.00 and taxable income 1036.00 - 127 = 909.00.
+    # income 1036.00 and taxable income 1036.00 - 255 = 781.00.
     worksheet = compute(
         "0",
         "64",
@@ -415,19 +417,22 @@ def test_deductions_from_net_income_add_lines_58_to_63_and_67_once_each() -> Non
         unapplied_net_capital_losses_2001_to_2024="32",
         net_capital_losses_claimed="32",
         additional_deductions="64",
+        travel_trips=(trip(1, 1, "128", "200", "200"),),
     )
 
     assert worksheet.get(TAXABLE_CAPITAL_GAINS).value == D("32.00")
     assert worksheet.get(OTHER_PAYMENTS_DEDUCTION).value == D("4")
     assert worksheet.get(NET_CAPITAL_LOSSES_OF_OTHER_YEARS).value == D("32")
-    assert worksheet.get(DEDUCTIONS_FROM_NET_INCOME).value == D("127")
-    assert worksheet.get(TAXABLE_INCOME).value == D("909.00")
+    assert worksheet.get(NORTHERN_RESIDENTS_DEDUCTIONS).value == D("128")
+    assert worksheet.get(DEDUCTIONS_FROM_NET_INCOME).value == D("255")
+    assert worksheet.get(TAXABLE_INCOME).value == D("781.00")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "deductions_from_net_income: canadian_armed_forces_and_police_deduction 1 "
         "+ security_options_deductions 2 + other_payments_deduction 4 "
         "+ limited_partnership_losses_of_other_years 8 + non_capital_losses_of_other_years 16 "
-        "+ net_capital_losses_of_other_years 32 + additional_deductions 64 = 127"
+        "+ net_capital_losses_of_other_years 32 + northern_residents_deductions 128 "
+        "+ additional_deductions 64 = 255"
     ) in rendered
 
 

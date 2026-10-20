@@ -50,7 +50,9 @@ from app.domain.trace import (
     DisabilityTransferLine,
     FractionAppliedLine,
     GreaterOfLine,
+    ItemLesserOfLine,
     ItemsTotalLine,
+    ItemSumLine,
     LesserOfLine,
     MultipleOverLine,
     OtherDependantMedicalLine,
@@ -392,6 +394,14 @@ def conditions_count_line() -> ConditionsCountLine:
     return ConditionsCountLine(COUNT_GATE, (2, 3), 0)
 
 
+def item_sum_line() -> ItemSumLine:
+    return ItemSumLine(TOTAL, 2, ((PART_ONE, D("400.00")), (PART_TWO, D("500"))), D("900.00"))
+
+
+def item_lesser_of_line() -> ItemLesserOfLine:
+    return ItemLesserOfLine(TOTAL, 1, ((PART_ONE, D("1500")), (PART_TWO, D("750.50"))), D("750.50"))
+
+
 ALL_LINES = [
     column_line,
     total_line,
@@ -425,6 +435,8 @@ ALL_LINES = [
     caregiver_claim_less_claimed_line,
     disability_transfer_line,
     principal_residence_gain_line,
+    item_sum_line,
+    item_lesser_of_line,
     items_total_line,
     other_dependant_medical_line,
     short_term_rental_non_compliant_line,
@@ -2574,6 +2586,88 @@ def test_a_principal_residence_gain_line_is_not_a_disability_transfer_line() -> 
     assert not isinstance(principal_residence_gain_line(), DisabilityTransferLine)
 
 
+def test_item_sum_line_fields_in_order() -> None:
+    line = item_sum_line()
+
+    assert line == ItemSumLine(
+        output=TOTAL,
+        position=2,
+        parts=((PART_ONE, D("400.00")), (PART_TWO, D("500"))),
+        total=D("900.00"),
+    )
+    assert [f.name for f in fields(line)] == ["output", "position", "parts", "total"]
+    assert line.output is TOTAL
+    assert line.position == 2
+    assert line.parts == ((PART_ONE, D("400.00")), (PART_TWO, D("500")))
+    assert line.total == D("900.00")
+    assert str(line.amount) == "900.00"
+
+
+def test_item_sum_line_amount_is_the_total() -> None:
+    line = item_sum_line()
+
+    assert line.amount == D("900.00")
+    assert str(line.amount) == "900.00"
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_item_sum_line_is_frozen() -> None:
+    with pytest.raises(FrozenInstanceError):
+        cast(Any, item_sum_line()).total = D("1")
+
+
+def test_item_sum_lines_are_hashable() -> None:
+    assert hash(item_sum_line()) == hash(item_sum_line())
+
+
+def test_item_sum_lines_differ_by_position_parts_and_total() -> None:
+    line = item_sum_line()
+    parts = ((PART_ONE, D("400.00")), (PART_TWO, D("500")))
+
+    assert line != ItemSumLine(TOTAL, 3, parts, D("900.00"))
+    assert line != ItemSumLine(TOTAL, 2, ((PART_TWO, D("400.00")), (PART_ONE, D("500"))), D("900"))
+    assert line != ItemSumLine(TOTAL, 2, parts, D("901.00"))
+    assert line != ItemSumLine(BASE, 2, parts, D("900.00"))
+
+
+def test_item_lesser_of_line_fields_in_order() -> None:
+    line = item_lesser_of_line()
+
+    assert line == ItemLesserOfLine(
+        output=TOTAL,
+        position=1,
+        parts=((PART_ONE, D("1500")), (PART_TWO, D("750.50"))),
+        result=D("750.50"),
+    )
+    assert [f.name for f in fields(line)] == ["output", "position", "parts", "result"]
+    assert line.position == 1
+    assert line.result == D("750.50")
+    assert line.amount == D("750.50")
+
+
+def test_item_lesser_of_line_amount_is_the_result() -> None:
+    line = item_lesser_of_line()
+
+    assert str(line.amount) == "750.50"
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_item_lesser_of_line_is_frozen() -> None:
+    with pytest.raises(FrozenInstanceError):
+        cast(Any, item_lesser_of_line()).result = D("1")
+
+
+def test_item_lesser_of_lines_are_hashable() -> None:
+    assert hash(item_lesser_of_line()) == hash(item_lesser_of_line())
+
+
+def test_item_lesser_of_lines_differ_by_position_and_result() -> None:
+    parts = ((PART_ONE, D("1500")), (PART_TWO, D("750.50")))
+
+    assert item_lesser_of_line() != ItemLesserOfLine(TOTAL, 2, parts, D("750.50"))
+    assert item_lesser_of_line() != ItemLesserOfLine(TOTAL, 1, parts, D("750.51"))
+
+
 def test_items_total_line_fields_in_order() -> None:
     line = items_total_line()
 
@@ -2863,6 +2957,11 @@ def test_a_ratio_applied_lines_amount_is_not_one_of_its_fields() -> None:
 def test_a_ratio_applied_line_is_not_a_fraction_applied_line() -> None:
     assert not isinstance(ratio_applied_line(), FractionAppliedLine)
     assert not isinstance(ratio_applied_line(), RateAppliedLine)
+
+
+def test_the_item_lines_are_not_their_whole_list_counterparts() -> None:
+    assert not isinstance(item_sum_line(), SumLine)
+    assert not isinstance(item_lesser_of_line(), LesserOfLine)
 
 
 def test_lines_of_different_classes_are_not_equal() -> None:

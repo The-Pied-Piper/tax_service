@@ -12,6 +12,9 @@ from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.manifest import CapabilitySelection
+from app.jurisdictions.ca.capabilities.chart_a_row_c_total import ChartARowCTotal
+from app.jurisdictions.ca.capabilities.chart_b_zone_a_total import ChartBZoneATotal
+from app.jurisdictions.ca.capabilities.chart_b_zone_b_total import ChartBZoneBTotal
 from app.jurisdictions.ca.catalog import (
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS,
@@ -49,6 +52,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
+    NORTHERN_RESIDENTS_DEDUCTIONS,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_1994,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1994_TO_1996,
@@ -65,18 +69,42 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
+    RESIDENCY_AMOUNT,
+    RESIDENCY_DEDUCTION,
+    RESIDENCY_NET_INCOME_LIMIT,
     RPP_DEDUCTION,
     RRSP_DEDUCTION,
+    STANDARD_AMOUNT_ALLOCATED,
     SUPPORT_PAYMENTS_DEDUCTION,
     TOTAL_CARRYING_CHARGES,
     TOTAL_INCOME,
     TOTAL_INTEREST_EXPENSES,
     TOTAL_OTHER_EXPENSES,
+    TRAVEL_DEDUCTION,
+    TRAVEL_INDIVIDUALS,
+    TRAVEL_TOTAL_ZONE_A,
+    TRAVEL_TOTAL_ZONE_B,
+    TRAVEL_TRIPS,
+    TRAVEL_ZONE_B_DEDUCTION,
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
     UCCB_REPAYMENT,
     UNION_DUES,
     UNIVERSAL_CHILD_CARE_BENEFIT,
+    ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT,
+    ZONE_A_ADDITIONAL_RESIDENCY_DAYS,
+    ZONE_A_BASIC_RESIDENCY_AMOUNT,
+    ZONE_A_DAYS_LIVED,
+    ZONE_A_RESIDENCY_AFTER_WORK_SITE,
+    ZONE_A_RESIDENCY_AMOUNT,
+    ZONE_A_SPECIAL_WORK_SITE_BENEFITS,
+    ZONE_B_ADDITIONAL_RESIDENCY_AMOUNT,
+    ZONE_B_ADDITIONAL_RESIDENCY_DAYS,
+    ZONE_B_BASIC_RESIDENCY_AMOUNT,
+    ZONE_B_DAYS_LIVED,
+    ZONE_B_RESIDENCY_AFTER_WORK_SITE,
+    ZONE_B_RESIDENCY_AMOUNT,
+    ZONE_B_SPECIAL_WORK_SITE_BENEFITS,
 )
 
 INPUTS = frozenset(
@@ -113,6 +141,14 @@ INPUTS = frozenset(
         "ca/children_under_seven",
         "ca/children_with_disability",
         "ca/children_seven_to_sixteen",
+        "ca/zone_a_days_lived",
+        "ca/zone_a_additional_residency_days",
+        "ca/zone_a_special_work_site_benefits",
+        "ca/zone_b_days_lived",
+        "ca/zone_b_additional_residency_days",
+        "ca/zone_b_special_work_site_benefits",
+        "ca/travel_trips",
+        "ca/travel_individuals",
     }
 )
 
@@ -120,6 +156,7 @@ OUTPUTS = frozenset(
     {
         "ca/net_income_before_adjustments",
         "ca/other_payments_limit_income",
+        "ca/standard_amount_allocated",
     }
 )
 
@@ -434,6 +471,172 @@ STEPS = {
         },
         produces={"output": "ca/other_payments_deduction"},
     ),
+    # Form T2222 (Northern Residents Deductions) Step 2, "Zone A - Residents of prescribed
+    # northern zones", "Basic residency amount" line 1 "Enter the number of days you lived in
+    # a prescribed northern zone in 2025. multiplied by $11.00 =" and "Additional residency
+    # amount" line 2 "Enter the number of days you qualify for the additional residency
+    # amount in 2025. multiplied by $11.00 =": each a count of days (a starting count, the
+    # form's) times the yearly $11.00 dataset.
+    CapabilitySelection(
+        name="core/per_unit_amount",
+        params={"amount": "ca/northern_zone_a_daily_amount"},
+        consumes={"count": "ca/zone_a_days_lived"},
+        produces={"output": "ca/zone_a_basic_residency_amount"},
+    ),
+    CapabilitySelection(
+        name="core/per_unit_amount",
+        params={"amount": "ca/northern_zone_a_daily_amount"},
+        consumes={"count": "ca/zone_a_additional_residency_days"},
+        produces={"output": "ca/zone_a_additional_residency_amount"},
+    ),
+    # Line 3 and line 67490 "Line 1 plus line 2 =", then line 4 and line 67507 (a starting
+    # amount, the non-taxable board and lodging benefits at a special work site, box 31 of
+    # the T4 slip or box 124 of the T4A slip) and line 5 "Line 3 minus line 4 (if negative,
+    # enter "0") =".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/zone_a_basic_residency_amount",
+                "ca/zone_a_additional_residency_amount",
+            )
+        },
+        produces={"output": "ca/zone_a_residency_amount"},
+    ),
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/zone_a_residency_amount",
+            "less": "ca/zone_a_special_work_site_benefits",
+        },
+        produces={"output": "ca/zone_a_residency_after_work_site"},
+    ),
+    # "Zone B - Residents of prescribed intermediate zones": line 6 "Enter the number of days
+    # you lived in an intermediate zone in 2025. multiplied by $5.50 =" and line 7 "Enter the
+    # number of days you qualify for the additional residency amount in 2025. multiplied by
+    # $5.50 =", line 8 and line 67520 "Line 6 plus line 7 =", line 9 and line 67529 (the
+    # special work site benefits) and line 10 "Line 8 minus line 9 (if negative, enter "0")
+    # =".
+    CapabilitySelection(
+        name="core/per_unit_amount",
+        params={"amount": "ca/northern_zone_b_daily_amount"},
+        consumes={"count": "ca/zone_b_days_lived"},
+        produces={"output": "ca/zone_b_basic_residency_amount"},
+    ),
+    CapabilitySelection(
+        name="core/per_unit_amount",
+        params={"amount": "ca/northern_zone_b_daily_amount"},
+        consumes={"count": "ca/zone_b_additional_residency_days"},
+        produces={"output": "ca/zone_b_additional_residency_amount"},
+    ),
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/zone_b_basic_residency_amount",
+                "ca/zone_b_additional_residency_amount",
+            )
+        },
+        produces={"output": "ca/zone_b_residency_amount"},
+    ),
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/zone_b_residency_amount",
+            "less": "ca/zone_b_special_work_site_benefits",
+        },
+        produces={"output": "ca/zone_b_residency_after_work_site"},
+    ),
+    # Line 11 "Line 5 plus line 10 =", line 12 "Enter your net income from line 23600 of your
+    # return. multiplied by 20% =" and line 13 "Enter whichever is less: amount from line 11
+    # or line 12. Residency deduction".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/zone_a_residency_after_work_site",
+                "ca/zone_b_residency_after_work_site",
+            )
+        },
+        produces={"output": "ca/residency_amount"},
+    ),
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/northern_residency_rate"},
+        consumes={"base": "ca/net_income"},
+        produces={"output": "ca/residency_net_income_limit"},
+    ),
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={"amounts": ("ca/residency_amount", "ca/residency_net_income_limit")},
+        produces={"output": "ca/residency_deduction"},
+    ),
+    # Step 3, Chart B: "Enter the lowest amount from column 3, 4, or 5 in the column for the
+    # prescribed zone(s) you resided in at the time of the trip.", one record for each trip,
+    # then "(A) Total (add all the amounts under Column 6)" and "(B) Total (add all the
+    # amounts under Column 7)", line 14 "Amount A of Chart B" being total A.
+    CapabilitySelection(
+        name="ca/chart_b_zone_a_total",
+        params={},
+        consumes={"trips": "ca/travel_trips"},
+        produces={"total": "ca/travel_total_zone_a"},
+    ),
+    CapabilitySelection(
+        name="ca/chart_b_zone_b_total",
+        params={},
+        consumes={"trips": "ca/travel_trips"},
+        produces={"total": "ca/travel_total_zone_b"},
+    ),
+    # Chart A, one record for each individual: "Row C: Enter the total of all amounts in row
+    # B. This total cannot be more than $1,200.", the $1,200 standard amount from a dataset;
+    # nothing else on the form reads it, so its total over the individuals is a manifest
+    # output.
+    CapabilitySelection(
+        name="ca/chart_a_row_c_total",
+        params={"maximum": "ca/northern_travel_standard_amount"},
+        consumes={"individuals": "ca/travel_individuals"},
+        produces={"total": "ca/standard_amount_allocated"},
+    ),
+    # Line 15 "Enter the total from box B. Line 67560 multiplied by 50% =", line 16 "Line 14
+    # plus line 15 Travel deduction =".
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/northern_travel_zone_b_rate"},
+        consumes={"base": "ca/travel_total_zone_b"},
+        produces={"output": "ca/travel_zone_b_deduction"},
+    ),
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/travel_total_zone_a",
+                "ca/travel_zone_b_deduction",
+            )
+        },
+        produces={"output": "ca/travel_deduction"},
+    ),
+    # Step 4: line 17 "Enter the amount from line 13 in Step 2. Residency deduction" and
+    # line 18 "Enter the amount from line 16 in Step 3. Travel deduction" are those lines,
+    # and line 19 "Line 17 plus line 18 Enter this amount on line 25500 of your return.
+    # Northern residents deductions =" adds them in line order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/residency_deduction",
+                "ca/travel_deduction",
+            )
+        },
+        produces={"output": "ca/northern_residents_deductions"},
+    ),
 }
 
 WIRING = {
@@ -621,5 +824,70 @@ WIRING = {
             }
         ),
         frozenset({OTHER_PAYMENTS_DEDUCTION}),
+    ),
+    (
+        PerUnitAmount,
+        frozenset({ZONE_A_DAYS_LIVED}),
+        frozenset({ZONE_A_BASIC_RESIDENCY_AMOUNT}),
+    ),
+    (
+        PerUnitAmount,
+        frozenset({ZONE_A_ADDITIONAL_RESIDENCY_DAYS}),
+        frozenset({ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT}),
+    ),
+    (
+        Sum,
+        frozenset({ZONE_A_BASIC_RESIDENCY_AMOUNT, ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT}),
+        frozenset({ZONE_A_RESIDENCY_AMOUNT}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({ZONE_A_RESIDENCY_AMOUNT, ZONE_A_SPECIAL_WORK_SITE_BENEFITS}),
+        frozenset({ZONE_A_RESIDENCY_AFTER_WORK_SITE}),
+    ),
+    (
+        PerUnitAmount,
+        frozenset({ZONE_B_DAYS_LIVED}),
+        frozenset({ZONE_B_BASIC_RESIDENCY_AMOUNT}),
+    ),
+    (
+        PerUnitAmount,
+        frozenset({ZONE_B_ADDITIONAL_RESIDENCY_DAYS}),
+        frozenset({ZONE_B_ADDITIONAL_RESIDENCY_AMOUNT}),
+    ),
+    (
+        Sum,
+        frozenset({ZONE_B_BASIC_RESIDENCY_AMOUNT, ZONE_B_ADDITIONAL_RESIDENCY_AMOUNT}),
+        frozenset({ZONE_B_RESIDENCY_AMOUNT}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({ZONE_B_RESIDENCY_AMOUNT, ZONE_B_SPECIAL_WORK_SITE_BENEFITS}),
+        frozenset({ZONE_B_RESIDENCY_AFTER_WORK_SITE}),
+    ),
+    (
+        Sum,
+        frozenset({ZONE_A_RESIDENCY_AFTER_WORK_SITE, ZONE_B_RESIDENCY_AFTER_WORK_SITE}),
+        frozenset({RESIDENCY_AMOUNT}),
+    ),
+    (ApplyRate, frozenset({NET_INCOME}), frozenset({RESIDENCY_NET_INCOME_LIMIT})),
+    (
+        LesserOf,
+        frozenset({RESIDENCY_AMOUNT, RESIDENCY_NET_INCOME_LIMIT}),
+        frozenset({RESIDENCY_DEDUCTION}),
+    ),
+    (ChartBZoneATotal, frozenset({TRAVEL_TRIPS}), frozenset({TRAVEL_TOTAL_ZONE_A})),
+    (ChartBZoneBTotal, frozenset({TRAVEL_TRIPS}), frozenset({TRAVEL_TOTAL_ZONE_B})),
+    (ChartARowCTotal, frozenset({TRAVEL_INDIVIDUALS}), frozenset({STANDARD_AMOUNT_ALLOCATED})),
+    (ApplyRate, frozenset({TRAVEL_TOTAL_ZONE_B}), frozenset({TRAVEL_ZONE_B_DEDUCTION})),
+    (
+        Sum,
+        frozenset({TRAVEL_TOTAL_ZONE_A, TRAVEL_ZONE_B_DEDUCTION}),
+        frozenset({TRAVEL_DEDUCTION}),
+    ),
+    (
+        Sum,
+        frozenset({RESIDENCY_DEDUCTION, TRAVEL_DEDUCTION}),
+        frozenset({NORTHERN_RESIDENTS_DEDUCTIONS}),
     ),
 }

@@ -213,9 +213,9 @@ DEDUCTIONS_FROM_NET_INCOME = CATALOG.declare(
     "deductions_from_net_income", Decimal, non_negative=True
 )
 """Deductions from net income, T1 line 68 and line 25700 "Add lines 58 to 67.": the sum of the
-deductions from net income, here, in line order, lines 58, 59, 60, 61, 62 and 67 (lines 24400,
-24900, 25000, 25100, 25200 and 25600); lines 63 to 66 (25300, 25395, 25400 and 25500) are not
-wired yet.
+deductions from net income, here, in line order, lines 58, 59, 60, 61, 62, 63, 66 and 67 (lines
+24400, 24900, 25000, 25100, 25200, 25300, 25500 and 25600); lines 64 and 65 (25395 and 25400) are
+not wired yet.
 """
 
 TAXABLE_INCOME = CATALOG.declare("taxable_income", Decimal, non_negative=True)

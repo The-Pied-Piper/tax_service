@@ -106,6 +106,14 @@ inputs:
   - ca/unapplied_net_capital_losses_2001_to_2024
   - ca/net_capital_losses_claimed
   - ca/additional_deductions
+  - ca/zone_a_days_lived
+  - ca/zone_a_additional_residency_days
+  - ca/zone_a_special_work_site_benefits
+  - ca/zone_b_days_lived
+  - ca/zone_b_additional_residency_days
+  - ca/zone_b_special_work_site_benefits
+  - ca/travel_trips
+  - ca/travel_individuals
   - ca/other_payments_deduction_above_limit
   - ca/other_payments_worksheet_required
   - ca/other_payments_worksheet_line_9_over_limit

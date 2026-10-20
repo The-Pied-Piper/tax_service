@@ -8,7 +8,9 @@ Schedule 15 that print no "(if negative, enter "0")". Amounts are Decimal; the c
 dependants, of infirm children, of the eligible children for child care (Form T778 Part B lines 1
 to 3), of the Schedule 6 eligible dependants (line 38100), the two starting counts of the Federal
 Worksheet for line 25000, the Schedule 15 count of a maximum participation period that ended in
-a prior year and the capital cost allowance count of no property left in a class are int.
+a prior year, the capital cost allowance count of no property left in a class, the day counts of
+Form T2222 Step 2 and the individual and the zone of a trip are int. Chart A and Chart B of Form
+T2222 are record lists, each a `RecordListKind` declared here.
 Identifiers are stable: `tests/jurisdictions/ca/test_catalog.py` snapshots them.
 """
 

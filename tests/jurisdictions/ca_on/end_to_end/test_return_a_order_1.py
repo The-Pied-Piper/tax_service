@@ -157,6 +157,7 @@ from app.jurisdictions.ca.catalog import (
     NO_SLIP_DIVIDEND_TAX_CREDIT,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
+    NORTHERN_RESIDENTS_DEDUCTIONS,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
     OTHER_DEPENDANTS_MEDICAL,
     OTHER_DIVIDENDS_CREDIT,
@@ -193,6 +194,9 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_PARTNERSHIP_NET_INCOME,
     RENTAL_PERSONAL_PORTION,
     RENTAL_TOTAL_EXPENSES,
+    RESIDENCY_AMOUNT,
+    RESIDENCY_DEDUCTION,
+    RESIDENCY_NET_INCOME_LIMIT,
     RESP_AIPS_ADDITIONAL_TAX,
     RESP_AIPS_CONTRIBUTIONS_COUNTED,
     RESP_AIPS_LIFETIME_LIMIT,
@@ -231,10 +235,22 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_CREDITS,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
+    TRAVEL_DEDUCTION,
+    TRAVEL_TOTAL_ZONE_A,
+    TRAVEL_TOTAL_ZONE_B,
+    TRAVEL_ZONE_B_DEDUCTION,
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
     WORKING_INCOME,
+    ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT,
+    ZONE_A_BASIC_RESIDENCY_AMOUNT,
+    ZONE_A_RESIDENCY_AFTER_WORK_SITE,
+    ZONE_A_RESIDENCY_AMOUNT,
+    ZONE_B_ADDITIONAL_RESIDENCY_AMOUNT,
+    ZONE_B_BASIC_RESIDENCY_AMOUNT,
+    ZONE_B_RESIDENCY_AFTER_WORK_SITE,
+    ZONE_B_RESIDENCY_AMOUNT,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
@@ -293,7 +309,7 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 377
+    assert len(order) == 394
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -465,6 +481,26 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[DEDUCTIONS_FROM_NET_INCOME]
     )
     assert position[UCCB_AND_RDSP_INCOME_REPAYMENTS] < position[OTHER_PAYMENTS_LIMIT_INCOME]
+    # Form T2222 Steps 2 to 4: the residency lines in line order, the limit on net income (line 12),
+    # the travel totals, lines 15 and 16, and line 19 (line 25500) before line 25700.
+    assert position[ZONE_A_BASIC_RESIDENCY_AMOUNT] < position[ZONE_A_RESIDENCY_AMOUNT]
+    assert position[ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT] < position[ZONE_A_RESIDENCY_AMOUNT]
+    assert position[ZONE_A_RESIDENCY_AMOUNT] < position[ZONE_A_RESIDENCY_AFTER_WORK_SITE]
+    assert position[ZONE_B_BASIC_RESIDENCY_AMOUNT] < position[ZONE_B_RESIDENCY_AMOUNT]
+    assert position[ZONE_B_ADDITIONAL_RESIDENCY_AMOUNT] < position[ZONE_B_RESIDENCY_AMOUNT]
+    assert position[ZONE_B_RESIDENCY_AMOUNT] < position[ZONE_B_RESIDENCY_AFTER_WORK_SITE]
+    assert position[ZONE_A_RESIDENCY_AFTER_WORK_SITE] < position[RESIDENCY_AMOUNT]
+    assert position[ZONE_B_RESIDENCY_AFTER_WORK_SITE] < position[RESIDENCY_AMOUNT]
+    assert position[RESIDENCY_AMOUNT] < position[RESIDENCY_DEDUCTION]
+    assert (
+        position[NET_INCOME] < position[RESIDENCY_NET_INCOME_LIMIT] < position[RESIDENCY_DEDUCTION]
+    )
+    assert position[TRAVEL_TOTAL_ZONE_B] < position[TRAVEL_ZONE_B_DEDUCTION]
+    assert position[TRAVEL_TOTAL_ZONE_A] < position[TRAVEL_DEDUCTION]
+    assert position[TRAVEL_ZONE_B_DEDUCTION] < position[TRAVEL_DEDUCTION]
+    assert position[RESIDENCY_DEDUCTION] < position[NORTHERN_RESIDENTS_DEDUCTIONS]
+    assert position[TRAVEL_DEDUCTION] < position[NORTHERN_RESIDENTS_DEDUCTIONS]
+    assert position[NORTHERN_RESIDENTS_DEDUCTIONS] < position[DEDUCTIONS_FROM_NET_INCOME]
     assert position[TAXABLE_INCOME] < position[FEDERAL_BASIC_TAX]
     assert position[TAXABLE_INCOME] < position[ONTARIO_BASIC_TAX]
     assert position[FEDERAL_BASIC_TAX] < position[FEDERAL_TAX_AFTER_CREDITS]

@@ -34,7 +34,9 @@ from app.domain.trace import (
     DisabilityTransferLine,
     FractionAppliedLine,
     GreaterOfLine,
+    ItemLesserOfLine,
     ItemsTotalLine,
+    ItemSumLine,
     LesserOfLine,
     MultipleOverLine,
     OtherDependantMedicalLine,
@@ -622,6 +624,14 @@ class EnglishTraceRenderer:
                     f"{self._cca_class(output.label, position, class_rate)}: {found} "
                     f"{self._money(result)}"
                 )
+            case ItemSumLine(output=output, position=position, parts=parts, total=total):
+                terms = " + ".join(f"{kind.label} {self._money(amount)}" for kind, amount in parts)
+                return f"{output.label}: item {position}: {terms} = {self._money(total)}"
+            case ItemLesserOfLine(output=output, position=position, parts=parts, result=result):
+                terms = " and ".join(
+                    f"{kind.label} {self._money(amount)}" for kind, amount in parts
+                )
+                return f"{output.label}: item {position}: lesser of {terms} = {self._money(result)}"
             case ItemsTotalLine(output=output, items=items, total=total):
                 terms = " + ".join(
                     f"item {position} {self._money(amount)}" for position, amount in items

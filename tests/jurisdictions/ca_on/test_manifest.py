@@ -127,14 +127,16 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     # number of eligible work placements, which nothing else reads; T776 line 8140 "Total of
     # your gross rents for short-term rentals", which nothing else reads; T776 line 9365 "Total
     # for short-term rental portion", which nothing else reads (Chart A's column 3 is a
-    # starting amount); and Form ON-BEN's ten lines (tick boxes 61020, 61040, 61060, 61070,
+    # starting amount); Form T2222 Chart A's row C "Enter the total of all amounts in row B.
+    # This total cannot be more than $1,200.", totalled over the individuals, which no line of
+    # the form reads; and Form ON-BEN's ten lines (tick boxes 61020, 61040, 61060, 61070,
     # 61080 and 61140, Part A lines 61100, 61120, 61210 and 61230), which the return carries as
     # entered, each also an input with nothing computing from it: the lines the computation
     # returns.
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 377
+    assert len(found.capabilities) == 394
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -144,5 +146,5 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 377
+    assert len(composition.order) == 394
     assert wiring == WIRING

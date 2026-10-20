@@ -40,6 +40,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
+    NORTHERN_RESIDENTS_DEDUCTIONS,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_1994,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1994_TO_1996,
@@ -55,15 +56,47 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
     RDSP_INCOME_REPAYMENT,
+    RESIDENCY_AMOUNT,
+    RESIDENCY_DEDUCTION,
+    RESIDENCY_NET_INCOME_LIMIT,
     SECURITY_OPTIONS_DEDUCTIONS,
+    STANDARD_AMOUNT_ALLOCATED,
+    STANDARD_AMOUNT_ALLOCATED_1,
+    STANDARD_AMOUNT_ALLOCATED_2,
+    STANDARD_AMOUNT_ALLOCATED_3,
     SUPPORT_PAYMENTS_DEDUCTION,
     TOTAL_CARRYING_CHARGES,
     TOTAL_INTEREST_EXPENSES,
     TOTAL_OTHER_EXPENSES,
+    TRAVEL_DEDUCTION,
+    TRAVEL_INDIVIDUAL,
+    TRAVEL_INDIVIDUALS,
+    TRAVEL_TOTAL_ZONE_A,
+    TRAVEL_TOTAL_ZONE_B,
+    TRAVEL_TRIPS,
+    TRAVEL_ZONE_B_DEDUCTION,
+    TRIP_BENEFIT_OR_STANDARD_AMOUNT,
+    TRIP_LOWEST_RETURN_AIRFARE,
+    TRIP_TRAVEL_EXPENSES,
+    TRIP_ZONE,
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
     UCCB_REPAYMENT,
     UNION_DUES,
+    ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT,
+    ZONE_A_ADDITIONAL_RESIDENCY_DAYS,
+    ZONE_A_BASIC_RESIDENCY_AMOUNT,
+    ZONE_A_DAYS_LIVED,
+    ZONE_A_RESIDENCY_AFTER_WORK_SITE,
+    ZONE_A_RESIDENCY_AMOUNT,
+    ZONE_A_SPECIAL_WORK_SITE_BENEFITS,
+    ZONE_B_ADDITIONAL_RESIDENCY_AMOUNT,
+    ZONE_B_ADDITIONAL_RESIDENCY_DAYS,
+    ZONE_B_BASIC_RESIDENCY_AMOUNT,
+    ZONE_B_DAYS_LIVED,
+    ZONE_B_RESIDENCY_AFTER_WORK_SITE,
+    ZONE_B_RESIDENCY_AMOUNT,
+    ZONE_B_SPECIAL_WORK_SITE_BENEFITS,
 )
 
 
@@ -96,6 +129,43 @@ def test_the_deductions_kinds_are_the_registered_ones(registry: ArtifactRegistry
         is OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT
     )
     assert registry.get("ca/other_payments_deduction") is OTHER_PAYMENTS_DEDUCTION
+    assert registry.get("ca/zone_a_days_lived") is ZONE_A_DAYS_LIVED
+    assert registry.get("ca/zone_a_additional_residency_days") is ZONE_A_ADDITIONAL_RESIDENCY_DAYS
+    assert registry.get("ca/zone_a_basic_residency_amount") is ZONE_A_BASIC_RESIDENCY_AMOUNT
+    assert (
+        registry.get("ca/zone_a_additional_residency_amount") is ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT
+    )
+    assert registry.get("ca/zone_a_residency_amount") is ZONE_A_RESIDENCY_AMOUNT
+    assert registry.get("ca/zone_a_special_work_site_benefits") is ZONE_A_SPECIAL_WORK_SITE_BENEFITS
+    assert registry.get("ca/zone_a_residency_after_work_site") is ZONE_A_RESIDENCY_AFTER_WORK_SITE
+    assert registry.get("ca/zone_b_days_lived") is ZONE_B_DAYS_LIVED
+    assert registry.get("ca/zone_b_additional_residency_days") is ZONE_B_ADDITIONAL_RESIDENCY_DAYS
+    assert registry.get("ca/zone_b_basic_residency_amount") is ZONE_B_BASIC_RESIDENCY_AMOUNT
+    assert (
+        registry.get("ca/zone_b_additional_residency_amount") is ZONE_B_ADDITIONAL_RESIDENCY_AMOUNT
+    )
+    assert registry.get("ca/zone_b_residency_amount") is ZONE_B_RESIDENCY_AMOUNT
+    assert registry.get("ca/zone_b_special_work_site_benefits") is ZONE_B_SPECIAL_WORK_SITE_BENEFITS
+    assert registry.get("ca/zone_b_residency_after_work_site") is ZONE_B_RESIDENCY_AFTER_WORK_SITE
+    assert registry.get("ca/residency_amount") is RESIDENCY_AMOUNT
+    assert registry.get("ca/residency_net_income_limit") is RESIDENCY_NET_INCOME_LIMIT
+    assert registry.get("ca/residency_deduction") is RESIDENCY_DEDUCTION
+    assert registry.get("ca/travel_individual") is TRAVEL_INDIVIDUAL
+    assert registry.get("ca/trip_zone") is TRIP_ZONE
+    assert registry.get("ca/trip_benefit_or_standard_amount") is TRIP_BENEFIT_OR_STANDARD_AMOUNT
+    assert registry.get("ca/trip_travel_expenses") is TRIP_TRAVEL_EXPENSES
+    assert registry.get("ca/trip_lowest_return_airfare") is TRIP_LOWEST_RETURN_AIRFARE
+    assert registry.get("ca/travel_trips") is TRAVEL_TRIPS
+    assert registry.get("ca/standard_amount_allocated_1") is STANDARD_AMOUNT_ALLOCATED_1
+    assert registry.get("ca/standard_amount_allocated_2") is STANDARD_AMOUNT_ALLOCATED_2
+    assert registry.get("ca/standard_amount_allocated_3") is STANDARD_AMOUNT_ALLOCATED_3
+    assert registry.get("ca/travel_individuals") is TRAVEL_INDIVIDUALS
+    assert registry.get("ca/standard_amount_allocated") is STANDARD_AMOUNT_ALLOCATED
+    assert registry.get("ca/travel_total_zone_a") is TRAVEL_TOTAL_ZONE_A
+    assert registry.get("ca/travel_total_zone_b") is TRAVEL_TOTAL_ZONE_B
+    assert registry.get("ca/travel_zone_b_deduction") is TRAVEL_ZONE_B_DEDUCTION
+    assert registry.get("ca/travel_deduction") is TRAVEL_DEDUCTION
+    assert registry.get("ca/northern_residents_deductions") is NORTHERN_RESIDENTS_DEDUCTIONS
     assert registry.get("ca/elected_split_pension_deduction") is ELECTED_SPLIT_PENSION_DEDUCTION
     assert registry.get("ca/union_dues") is UNION_DUES
     assert registry.get("ca/cpp_enhanced_contributions") is CPP_ENHANCED_CONTRIBUTIONS
@@ -227,6 +297,31 @@ def test_the_deductions_kinds_are_money() -> None:
         OTHER_PAYMENTS_DEDUCTION_ABOVE_LIMIT,
         OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT,
         OTHER_PAYMENTS_DEDUCTION,
+        ZONE_A_BASIC_RESIDENCY_AMOUNT,
+        ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT,
+        ZONE_A_RESIDENCY_AMOUNT,
+        ZONE_A_SPECIAL_WORK_SITE_BENEFITS,
+        ZONE_A_RESIDENCY_AFTER_WORK_SITE,
+        ZONE_B_BASIC_RESIDENCY_AMOUNT,
+        ZONE_B_ADDITIONAL_RESIDENCY_AMOUNT,
+        ZONE_B_RESIDENCY_AMOUNT,
+        ZONE_B_SPECIAL_WORK_SITE_BENEFITS,
+        ZONE_B_RESIDENCY_AFTER_WORK_SITE,
+        RESIDENCY_AMOUNT,
+        RESIDENCY_NET_INCOME_LIMIT,
+        RESIDENCY_DEDUCTION,
+        TRIP_BENEFIT_OR_STANDARD_AMOUNT,
+        TRIP_TRAVEL_EXPENSES,
+        TRIP_LOWEST_RETURN_AIRFARE,
+        STANDARD_AMOUNT_ALLOCATED_1,
+        STANDARD_AMOUNT_ALLOCATED_2,
+        STANDARD_AMOUNT_ALLOCATED_3,
+        STANDARD_AMOUNT_ALLOCATED,
+        TRAVEL_TOTAL_ZONE_A,
+        TRAVEL_TOTAL_ZONE_B,
+        TRAVEL_ZONE_B_DEDUCTION,
+        TRAVEL_DEDUCTION,
+        NORTHERN_RESIDENTS_DEDUCTIONS,
         UNION_DUES,
         CHILD_CARE_EXPENSES_PAID,
         CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,

@@ -136,6 +136,24 @@ def test_importing_the_federal_package_registers_the_amount_or_divided_by_rate_c
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.amount_or_divided_by_rate"
 
 
+def test_importing_the_federal_package_registers_the_chart_a_row_c_total_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/chart_a_row_c_total")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.chart_a_row_c_total"
+
+
+def test_importing_the_federal_package_registers_the_chart_b_zone_a_total_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/chart_b_zone_a_total")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.chart_b_zone_a_total"
+
+
+def test_importing_the_federal_package_registers_the_chart_b_zone_b_total_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/chart_b_zone_b_total")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.chart_b_zone_b_total"
+
+
 def test_importing_the_federal_package_registers_the_disability_transfer_amount() -> None:
     registered = CapabilityRegistry.shared().get("ca/disability_transfer_amount")
 

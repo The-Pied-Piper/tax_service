@@ -9,7 +9,9 @@ from app.domain.trace import (
     ChosenByCountLine,
     ContributionTierLine,
     GreaterOfLine,
+    ItemLesserOfLine,
     ItemsTotalLine,
+    ItemSumLine,
     LesserOfLine,
     PlacementCreditLine,
     QuotientLine,
@@ -149,6 +151,9 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_PARTNER,
     RENTAL_PROPERTY_GROSS_RENTS,
     RENTAL_PROPERTY_SHORT_TERM_RENTS,
+    RESIDENCY_AMOUNT,
+    RESIDENCY_DEDUCTION,
+    RESIDENCY_NET_INCOME_LIMIT,
     RESP_AIPS_ADDITIONAL_TAX,
     RESP_AIPS_CONTRIBUTIONS_COUNTED,
     RESP_AIPS_LIMIT_REMAINING,
@@ -171,6 +176,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_CAREGIVER_BEFORE_MAXIMUM,
     SPOUSE_CAREGIVER_LIMIT,
     SPOUSE_NET_INCOME,
+    STANDARD_AMOUNT_ALLOCATED,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
     TAXABLE_INCOME_OVER_DONATION_THRESHOLD,
@@ -182,8 +188,16 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_CREDITS,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
+    TRAVEL_TOTAL_ZONE_A,
+    TRAVEL_TOTAL_ZONE_B,
     UCCB_AND_RDSP_INCOME,
     WORKING_INCOME,
+    ZONE_A_RESIDENCY_AFTER_WORK_SITE,
+    ZONE_A_RESIDENCY_AMOUNT,
+    ZONE_A_SPECIAL_WORK_SITE_BENEFITS,
+    ZONE_B_RESIDENCY_AFTER_WORK_SITE,
+    ZONE_B_RESIDENCY_AMOUNT,
+    ZONE_B_SPECIAL_WORK_SITE_BENEFITS,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
@@ -263,10 +277,19 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     quotients = {line.output: line for line in trace if isinstance(line, QuotientLine)}
     record_counts = {line.output: line for line in trace if isinstance(line, RecordCountLine)}
     placement_credits = [line for line in trace if isinstance(line, PlacementCreditLine)]
+    item_sums = [line for line in trace if isinstance(line, ItemSumLine)]
+    item_lessers = [line for line in trace if isinstance(line, ItemLesserOfLine)]
     items_totals = {
         line.output: line
         for line in trace
-        if isinstance(line, ItemsTotalLine) and line.output is COOP_EDUCATION_CREDIT
+        if isinstance(line, ItemsTotalLine)
+        and line.output
+        in (
+            COOP_EDUCATION_CREDIT,
+            TRAVEL_TOTAL_ZONE_A,
+            TRAVEL_TOTAL_ZONE_B,
+            STANDARD_AMOUNT_ALLOCATED,
+        )
     }
     assert lesser == {
         # Form T1172 line 3 "Amount from line 1 or 2, whichever is less" and line 7 "Amount from
@@ -324,6 +347,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS, D("0")),
                 (TAXABLE_INCOME_OVER_DONATION_THRESHOLD, D("0")),
             ),
+            D("0"),
+        ),
+        # Form T2222 line 13 "Enter whichever is less: amount from line 11 or line 12.": line 11
+        # is 0 and line 12 is 20% of the net income of 115000.
+        RESIDENCY_DEDUCTION: LesserOfLine(
+            RESIDENCY_DEDUCTION,
+            ((RESIDENCY_AMOUNT, D("0")), (RESIDENCY_NET_INCOME_LIMIT, D("23000.00"))),
             D("0"),
         ),
         RRSP_DEDUCTION_MAXIMUM: LesserOfLine(
@@ -768,6 +798,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("750.00"),
             result=D("0"),
         ),
+        # Form T2222 line 5 "Line 3 minus line 4 (if negative, enter "0")" and line 10 "Line 8
+        # minus line 9 (if negative, enter "0")".
+        ZONE_A_RESIDENCY_AFTER_WORK_SITE: SubtractedNotBelowZeroLine(
+            output=ZONE_A_RESIDENCY_AFTER_WORK_SITE,
+            minuend=ZONE_A_RESIDENCY_AMOUNT,
+            minuend_amount=D("0"),
+            subtrahend=ZONE_A_SPECIAL_WORK_SITE_BENEFITS,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        ZONE_B_RESIDENCY_AFTER_WORK_SITE: SubtractedNotBelowZeroLine(
+            output=ZONE_B_RESIDENCY_AFTER_WORK_SITE,
+            minuend=ZONE_B_RESIDENCY_AMOUNT,
+            minuend_amount=D("0"),
+            subtrahend=ZONE_B_SPECIAL_WORK_SITE_BENEFITS,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         NET_INCOME: SubtractedNotBelowZeroLine(
             output=NET_INCOME,
             minuend=TOTAL_INCOME,
@@ -1144,8 +1192,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert placement_credits == []
+    # Form T2222 Chart A and Chart B for Return A: no trips and no individuals, so no item, and
+    # each total is of no items.
+    assert item_sums == []
+    assert item_lessers == []
     assert items_totals == {
-        COOP_EDUCATION_CREDIT: ItemsTotalLine(COOP_EDUCATION_CREDIT, (), D("0"))
+        COOP_EDUCATION_CREDIT: ItemsTotalLine(COOP_EDUCATION_CREDIT, (), D("0")),
+        TRAVEL_TOTAL_ZONE_A: ItemsTotalLine(TRAVEL_TOTAL_ZONE_A, (), D("0")),
+        TRAVEL_TOTAL_ZONE_B: ItemsTotalLine(TRAVEL_TOTAL_ZONE_B, (), D("0")),
+        STANDARD_AMOUNT_ALLOCATED: ItemsTotalLine(STANDARD_AMOUNT_ALLOCATED, (), D("0")),
     }
     assert {line.output: line for line in trace if isinstance(line, GreaterOfLine)} == {
         ontario.LIFT_GREATER_EXCESS: GreaterOfLine(

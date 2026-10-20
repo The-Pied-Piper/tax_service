@@ -34,6 +34,7 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_INCOME,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
+    NORTHERN_RESIDENTS_DEDUCTIONS,
     OTHER_PAYMENTS_DEDUCTION,
     REMAINING_ADJUSTED_LOSSES_1985_TO_1987,
     REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
@@ -323,9 +324,9 @@ STEPS = {
         consumes={"base": "ca/remaining_adjusted_losses_2001_to_2024"},
         produces={"output": "ca/net_capital_loss_balance_2001_to_2024"},
     ),
-    # T1 line 68 and line 25700 "Add lines 58 to 67.": lines 58, 59, 60, 61, 62, 63 and 67
-    # (lines 24400, 24900, 25000, 25100, 25200, 25300 and 25600), in line order; lines 64 to 66
-    # (25395, 25400 and 25500) are not wired yet.
+    # T1 line 68 and line 25700 "Add lines 58 to 67.": lines 58, 59, 60, 61, 62, 63, 66 and 67
+    # (lines 24400, 24900, 25000, 25100, 25200, 25300, 25500 and 25600), in line order; lines 64
+    # and 65 (25395 and 25400) are not wired yet.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -337,6 +338,7 @@ STEPS = {
                 "ca/limited_partnership_losses_of_other_years",
                 "ca/non_capital_losses_of_other_years",
                 "ca/net_capital_losses_of_other_years",
+                "ca/northern_residents_deductions",
                 "ca/additional_deductions",
             )
         },
@@ -501,6 +503,7 @@ WIRING = {
                 LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
                 NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
                 NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+                NORTHERN_RESIDENTS_DEDUCTIONS,
                 ADDITIONAL_DEDUCTIONS,
             }
         ),

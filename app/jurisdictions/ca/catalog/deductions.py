@@ -2,13 +2,15 @@
 
 The split pension, union dues, child care, capital gains deduction, business investment loss,
 support, carrying charges, CPP and other deduction lines, down to net income and the repayment lines
-that follow it.
+that follow it, and the lines of Form T2222 (northern residents deductions) with Chart A and Chart B
+of its Step 3, which are record lists.
 """
 
 from __future__ import annotations
 
 from decimal import Decimal
 
+from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.catalog.base import CATALOG
 
 ELECTED_SPLIT_PENSION_DEDUCTION = CATALOG.declare(
@@ -402,3 +404,205 @@ OTHER_PAYMENTS_DEDUCTION = CATALOG.declare("other_payments_deduction", Decimal, 
 """Other payments deduction, T1 line 60 and line 25000 "Other payments deduction (enter the amount
 from line 14700 if you did not enter an amount on line 14600; otherwise, use Federal Worksheet)":
 line 14700 when no amount was entered on line 14600, else the Federal Worksheet's result."""
+
+ZONE_A_DAYS_LIVED = CATALOG.declare("zone_a_days_lived", int, non_negative=True)
+"""Zone A days lived, Form T2222 Step 2 line 1 "Enter the number of days you lived in a prescribed
+northern zone in 2025.": a starting count of days."""
+
+ZONE_A_ADDITIONAL_RESIDENCY_DAYS = CATALOG.declare(
+    "zone_a_additional_residency_days", int, non_negative=True
+)
+"""Zone A days for the additional residency amount, Form T2222 Step 2 line 2 "Enter the number of
+days you qualify for the additional residency amount in 2025.": a starting count of days."""
+
+ZONE_A_BASIC_RESIDENCY_AMOUNT = CATALOG.declare(
+    "zone_a_basic_residency_amount", Decimal, non_negative=True
+)
+"""Zone A basic residency amount, Form T2222 Step 2 line 1 "Enter the number of days you lived in
+a prescribed northern zone in 2025. multiplied by $11.00 =": the days of line 1 times $11.00."""
+
+ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT = CATALOG.declare(
+    "zone_a_additional_residency_amount", Decimal, non_negative=True
+)
+"""Zone A additional residency amount, Form T2222 Step 2 line 2 "Enter the number of days you
+qualify for the additional residency amount in 2025. multiplied by $11.00 =": the days of line 2
+times $11.00."""
+
+ZONE_A_RESIDENCY_AMOUNT = CATALOG.declare("zone_a_residency_amount", Decimal, non_negative=True)
+"""Zone A residency amount, Form T2222 Step 2 line 3 and line 67490 "Line 1 plus line 2 =": the
+basic and the additional residency amounts of Zone A."""
+
+ZONE_A_SPECIAL_WORK_SITE_BENEFITS = CATALOG.declare(
+    "zone_a_special_work_site_benefits", Decimal, non_negative=True
+)
+"""Zone A special work site benefits, Form T2222 Step 2 line 4 and line 67507 "If you worked at a
+special work site, enter the amount from box 31 of your T4 slip or box 124 of your T4A slip that
+represents the non-taxable benefits for board and lodging at the special work site.": a starting
+amount. The site's location within 30 kilometres of a population centre is the filer's to apply."""
+
+ZONE_A_RESIDENCY_AFTER_WORK_SITE = CATALOG.declare(
+    "zone_a_residency_after_work_site", Decimal, non_negative=True
+)
+"""Zone A residency amount after the work site benefits, Form T2222 Step 2 line 5 "Line 3 minus
+line 4 (if negative, enter "0") =": line 3 less line 4, not below zero."""
+
+ZONE_B_DAYS_LIVED = CATALOG.declare("zone_b_days_lived", int, non_negative=True)
+"""Zone B days lived, Form T2222 Step 2 line 6 "Enter the number of days you lived in an
+intermediate zone in 2025.": a starting count of days."""
+
+ZONE_B_ADDITIONAL_RESIDENCY_DAYS = CATALOG.declare(
+    "zone_b_additional_residency_days", int, non_negative=True
+)
+"""Zone B days for the additional residency amount, Form T2222 Step 2 line 7 "Enter the number of
+days you qualify for the additional residency amount in 2025.": a starting count of days."""
+
+ZONE_B_BASIC_RESIDENCY_AMOUNT = CATALOG.declare(
+    "zone_b_basic_residency_amount", Decimal, non_negative=True
+)
+"""Zone B basic residency amount, Form T2222 Step 2 line 6 "Enter the number of days you lived in
+an intermediate zone in 2025. multiplied by $5.50 =": the days of line 6 times $5.50."""
+
+ZONE_B_ADDITIONAL_RESIDENCY_AMOUNT = CATALOG.declare(
+    "zone_b_additional_residency_amount", Decimal, non_negative=True
+)
+"""Zone B additional residency amount, Form T2222 Step 2 line 7 "Enter the number of days you
+qualify for the additional residency amount in 2025. multiplied by $5.50 =": the days of line 7
+times $5.50."""
+
+ZONE_B_RESIDENCY_AMOUNT = CATALOG.declare("zone_b_residency_amount", Decimal, non_negative=True)
+"""Zone B residency amount, Form T2222 Step 2 line 8 and line 67520 "Line 6 plus line 7 =": the
+basic and the additional residency amounts of Zone B."""
+
+ZONE_B_SPECIAL_WORK_SITE_BENEFITS = CATALOG.declare(
+    "zone_b_special_work_site_benefits", Decimal, non_negative=True
+)
+"""Zone B special work site benefits, Form T2222 Step 2 line 9 and line 67529 "If you worked at a
+special work site, enter the amount from box 31 of your T4 slip or box 124 of your T4A slip that
+represents the non-taxable benefits for board and lodging at the special work site.": a starting
+amount. The site's location within 30 kilometres of a population centre is the filer's to apply."""
+
+ZONE_B_RESIDENCY_AFTER_WORK_SITE = CATALOG.declare(
+    "zone_b_residency_after_work_site", Decimal, non_negative=True
+)
+"""Zone B residency amount after the work site benefits, Form T2222 Step 2 line 10 "Line 8 minus
+line 9 (if negative, enter "0") =": line 8 less line 9, not below zero."""
+
+RESIDENCY_AMOUNT = CATALOG.declare("residency_amount", Decimal, non_negative=True)
+"""Residency amount, Form T2222 Step 2 line 11 "Line 5 plus line 10 =": the Zone A and Zone B
+amounts after the work site benefits."""
+
+RESIDENCY_NET_INCOME_LIMIT = CATALOG.declare(
+    "residency_net_income_limit", Decimal, non_negative=True
+)
+"""Residency limit on net income, Form T2222 Step 2 line 12 "Enter your net income from line 23600
+of your return. multiplied by 20%  =": the net income times 20%."""
+
+RESIDENCY_DEDUCTION = CATALOG.declare("residency_deduction", Decimal, non_negative=True)
+"""Residency deduction, Form T2222 Step 2 line 13 "Enter whichever is less: amount from line 11 or
+line 12. Residency deduction": the lesser of lines 11 and 12; line 17 of Step 4 is this amount."""
+
+TRAVEL_INDIVIDUAL = CATALOG.declare("travel_individual", int, non_negative=True)
+"""Individual, Form T2222 Step 3 Chart A "Row A: Enter the name of each individual, including
+yourself, whose travel you are claiming." and Chart B "Column 1: Enter the name of the person who
+took the trip.": a count, the number the filer gives each individual, which only names the
+individual and which no capability reads."""
+
+TRIP_ZONE = CATALOG.declare("trip_zone", int, non_negative=True)
+"""Zone of a trip, Form T2222 Step 3 Chart B "Enter the lowest amount from column 3, 4, or 5 in the
+column for the prescribed zone(s) you resided in at the time of the trip.": a count, 1 for Zone A
+(column 6) and 2 for Zone B (column 7)."""
+
+TRIP_BENEFIT_OR_STANDARD_AMOUNT = CATALOG.declare(
+    "trip_benefit_or_standard_amount", Decimal, non_negative=True
+)
+"""Benefit or standard amount of a trip, Form T2222 Step 3 Chart B "Column 3: Enter either the
+taxable travel benefit or the portion of the individual's $1,200 standard amount for the trip.":
+an input for each trip."""
+
+TRIP_TRAVEL_EXPENSES = CATALOG.declare("trip_travel_expenses", Decimal, non_negative=True)
+"""Travel expenses of a trip, Form T2222 Step 3 Chart B "Column 4: Enter the amount of travel
+expenses for each trip taken.": an input for each trip."""
+
+TRIP_LOWEST_RETURN_AIRFARE = CATALOG.declare(
+    "trip_lowest_return_airfare", Decimal, non_negative=True
+)
+"""Lowest return airfare of a trip, Form T2222 Step 3 Chart B "Column 5: Enter the cost of the
+lowest return airfare.": an input for each trip."""
+
+TRAVEL_TRIPS = RecordListKind.declare(
+    CATALOG,
+    "travel_trips",
+    fields=(
+        TRAVEL_INDIVIDUAL,
+        TRIP_ZONE,
+        TRIP_BENEFIT_OR_STANDARD_AMOUNT,
+        TRIP_TRAVEL_EXPENSES,
+        TRIP_LOWEST_RETURN_AIRFARE,
+    ),
+)
+"""Trips, Form T2222 Step 3 Chart B, one record for each trip: the individual who took it ("Column
+1"), the zone whose column the amount goes in, and "Column 3", "Column 4" and "Column 5". A starting
+list, possibly empty."""
+
+STANDARD_AMOUNT_ALLOCATED_1 = CATALOG.declare(
+    "standard_amount_allocated_1", Decimal, non_negative=True
+)
+"""First allocation of the standard amount, Form T2222 Step 3 Chart A "Row B: Enter the name of
+everyone (including yourself) who is claiming a deduction for trips taken by the individual in row
+A and the total portion of the $1,200 standard amount allocated by each claimant for all trips
+taken by that individual.": the first claimant's portion, an input."""
+
+STANDARD_AMOUNT_ALLOCATED_2 = CATALOG.declare(
+    "standard_amount_allocated_2", Decimal, non_negative=True
+)
+"""Second allocation of the standard amount, Form T2222 Step 3 Chart A row B: the second
+claimant's portion, an input."""
+
+STANDARD_AMOUNT_ALLOCATED_3 = CATALOG.declare(
+    "standard_amount_allocated_3", Decimal, non_negative=True
+)
+"""Third allocation of the standard amount, Form T2222 Step 3 Chart A row B: the third claimant's
+portion, an input."""
+
+TRAVEL_INDIVIDUALS = RecordListKind.declare(
+    CATALOG,
+    "travel_individuals",
+    fields=(
+        TRAVEL_INDIVIDUAL,
+        STANDARD_AMOUNT_ALLOCATED_1,
+        STANDARD_AMOUNT_ALLOCATED_2,
+        STANDARD_AMOUNT_ALLOCATED_3,
+    ),
+)
+"""Individuals, Form T2222 Step 3 Chart A "Row A: Enter the name of each individual, including
+yourself, whose travel you are claiming.", one record for each individual with the three amounts of
+"Row B". A starting list, possibly empty."""
+
+STANDARD_AMOUNT_ALLOCATED = CATALOG.declare("standard_amount_allocated", Decimal, non_negative=True)
+"""Standard amount allocated, Form T2222 Step 3 Chart A "Row C: Enter the total of all amounts in
+row B. This total cannot be more than $1,200.": row C added over the individuals. No line of the
+form reads it, so the manifest returns it."""
+
+TRAVEL_TOTAL_ZONE_A = CATALOG.declare("travel_total_zone_a", Decimal, non_negative=True)
+"""Zone A total of the trips, Form T2222 Step 3 Chart B "(A) Total (add all the amounts under
+Column 6) =", line 14 and line 67540 "Amount A of Chart B"."""
+
+TRAVEL_TOTAL_ZONE_B = CATALOG.declare("travel_total_zone_b", Decimal, non_negative=True)
+"""Zone B total of the trips, Form T2222 Step 3 Chart B "(B) Total (add all the amounts under
+Column 7) =", read by line 15 "Enter the total from box B. Line 67560"."""
+
+TRAVEL_ZONE_B_DEDUCTION = CATALOG.declare("travel_zone_b_deduction", Decimal, non_negative=True)
+"""Zone B travel amount, Form T2222 Step 3 line 15 "Enter the total from box B. Line 67560
+multiplied by 50% =": the Zone B total times 50%."""
+
+TRAVEL_DEDUCTION = CATALOG.declare("travel_deduction", Decimal, non_negative=True)
+"""Travel deduction, Form T2222 Step 3 line 16 "Line 14 plus line 15 Travel deduction =": the Zone
+A total (line 14) and line 15; line 18 of Step 4 is this amount."""
+
+NORTHERN_RESIDENTS_DEDUCTIONS = CATALOG.declare(
+    "northern_residents_deductions", Decimal, non_negative=True
+)
+"""Northern residents deductions, Form T2222 Step 4 line 19 "Line 17 plus line 18 Enter this amount
+on line 25500 of your return. Northern residents deductions =" and T1 line 66 and line 25500
+"Northern residents deductions (complete Form T2222)": the residency deduction (line 17) and the
+travel deduction (line 18)."""
