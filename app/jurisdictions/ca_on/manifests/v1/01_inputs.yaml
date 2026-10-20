@@ -164,6 +164,14 @@ inputs:
   - ca/fhsa_maximum_participation_period_ended
   - ca-on/dependent_children
   - ca-on/dependants
+  - ca-on/ontario_minimum_tax
+  - ca-on/not_resident_of_canada_at_start_of_year
+  - ca-on/not_resident_of_ontario_at_year_end
+  - ca-on/bankrupt_in_year
+  - ca-on/return_filed_by_trustee_in_bankruptcy
+  - ca-on/not_claiming_ontario_tax_reduction
+  - ca/spouse_or_common_law_partner_on_december_31
+  - ca-on/claims_tax_reduction_amounts_at_equal_net_income
   - ca/eligible_dependants
   - ca/dependant_net_income
   - ca/infirm_dependants

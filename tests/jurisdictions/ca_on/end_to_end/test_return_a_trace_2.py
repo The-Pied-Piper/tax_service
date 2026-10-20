@@ -384,16 +384,73 @@ def test_the_trace_explains_the_computation() -> None:
         "less dividend_credit_from_line_57 0, not below 0 = 8195.77",
         "8195.77",
     )
+    gate_conditions = [
+        position(
+            f'tax_reduction_claimable: condition {number} "{text}": {kind} 0, does not apply', "0"
+        )
+        for number, text, kind in (
+            (
+                1,
+                "You were not a resident of Canada at the beginning of the year",
+                "not_resident_of_canada_at_start_of_year",
+            ),
+            (
+                2,
+                "You were not a resident of Ontario on December 31, 2025",
+                "not_resident_of_ontario_at_year_end",
+            ),
+            (3, "There is an amount on line 72", "ontario_minimum_tax"),
+            (4, "You were bankrupt at any time in 2025", "bankrupt_in_year"),
+            (
+                5,
+                "Your return is filed for you by a trustee in bankruptcy",
+                "return_filed_by_trustee_in_bankruptcy",
+            ),
+            (
+                6,
+                "You are choosing not to claim an Ontario tax reduction",
+                "not_claiming_ontario_tax_reduction",
+            ),
+        )
+    ]
+    gate = position("tax_reduction_claimable: no condition applies, so 1", "1")
     reduction_basic = position(
         "tax_reduction_basic: credit amount 294 (half-up to 0.01)",
         "294.00",
     )
+    children_before_rule = position(
+        "tax_reduction_for_children_before_spouse_rule: 544 for each of 0 dependent_children = 0 "
+        "(half-up to 0.01)",
+        "0",
+    )
+    dependants_before_rule = position(
+        "tax_reduction_for_dependants_before_spouse_rule: 544 for each of 0 dependants = 0 "
+        "(half-up to 0.01)",
+        "0",
+    )
+    spouse_rule_condition = position(
+        'tax_reduction_amounts_claimable: condition 1 "If you had a spouse or common-law partner '
+        "on December 31, 2025, only the individual with the higher net income can claim the "
+        'amounts on lines 75 and 76.": spouse_or_common_law_partner_on_december_31 0, '
+        "net_income 115000, spouse_net_income 0, net_income 115000, spouse_net_income 0, "
+        "spouse_or_common_law_partner_on_december_31 0, net_income 115000, spouse_net_income 0, "
+        "claims_tax_reduction_amounts_at_equal_net_income 0, applies",
+        "1",
+    )
+    spouse_rule = position("tax_reduction_amounts_claimable: condition 1 applies, so 1", "1")
+    line_73 = position(
+        "ontario_tax_before_reduction: ontario_tax_after_dividend_credit 8195.77 "
+        "+ ontario_minimum_tax 0 = 8195.77",
+        "8195.77",
+    )
     reduction_children = position(
-        "tax_reduction_for_children: 544 for each of 0 dependent_children = 0 (half-up to 0.01)",
+        "tax_reduction_for_children: tax_reduction_for_children_before_spouse_rule 0 "
+        "for each of 1 tax_reduction_amounts_claimable = 0",
         "0",
     )
     reduction_dependants = position(
-        "tax_reduction_for_dependants: 544 for each of 0 dependants = 0 (half-up to 0.01)",
+        "tax_reduction_for_dependants: tax_reduction_for_dependants_before_spouse_rule 0 "
+        "for each of 1 tax_reduction_amounts_claimable = 0",
         "0",
     )
     reduction_amounts = position(
@@ -401,13 +458,18 @@ def test_the_trace_explains_the_computation() -> None:
         "+ tax_reduction_for_dependants 0 = 294",
         "294.00",
     )
+    reduction_before_conditions = position(
+        "ontario_tax_reduction_before_conditions: 2 × tax_reduction_amounts 294 "
+        "over ontario_tax_before_reduction 8195.77, not below 0 (half-up to 0.01)",
+        "0",
+    )
     reduction = position(
-        "ontario_tax_reduction: 2 × tax_reduction_amounts 294 "
-        "over ontario_tax_after_dividend_credit 8195.77, not below 0 (half-up to 0.01)",
+        "ontario_tax_reduction: ontario_tax_reduction_before_conditions 0 "
+        "for each of 1 tax_reduction_claimable = 0",
         "0",
     )
     after_reduction = position(
-        "ontario_tax_after_reduction: ontario_tax_after_dividend_credit 8195.77 "
+        "ontario_tax_after_reduction: ontario_tax_before_reduction 8195.77 "
         "less ontario_tax_reduction 0, not below 0 = 8195.77",
         "8195.77",
     )
@@ -935,13 +997,19 @@ def test_the_trace_explains_the_computation() -> None:
     assert over_first_tier < ontario_over_first_tier_credit < ontario_donations_credit
     assert ontario_after < surtax_first < surtax_second < with_surtax
     assert reduction_basic < reduction_amounts
-    assert reduction_children < reduction_amounts
-    assert reduction_dependants < reduction_amounts
+    assert children_before_rule < reduction_children < reduction_amounts
+    assert dependants_before_rule < reduction_dependants < reduction_amounts
+    assert spouse_rule_condition < spouse_rule < reduction_children
+    assert spouse_rule < reduction_dependants
+    assert gate_conditions == sorted(gate_conditions)
+    assert gate_conditions[-1] < gate < reduction
     assert dividend_a < dividend_eligible < dividend_credit < line_70
     assert dividend_b < dividend_other < dividend_credit
     assert ontario_after < line_56 < line_58
-    assert with_surtax < line_71 < reduction < after_reduction
-    assert reduction_amounts < reduction
+    assert with_surtax < line_71 < line_73 < reduction_before_conditions < reduction
+    assert reduction < after_reduction
+    assert line_73 < after_reduction
+    assert reduction_amounts < reduction_before_conditions
     assert taxable < premium_first < premium_second < premium_third < premium_fourth
     assert premium_fourth < premium_fifth < ontario_tax
     assert lift_before_maximum < lift_maximum < lift < after_lift < after_food < ontario_tax

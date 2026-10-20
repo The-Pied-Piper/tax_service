@@ -330,10 +330,13 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_CREDITS,
     ONTARIO_CREDITS_SUBTOTAL,
     ONTARIO_HEALTH_PREMIUM,
+    ONTARIO_MINIMUM_TAX,
     ONTARIO_SURTAX,
     ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
+    ONTARIO_TAX_AFTER_DIVIDEND_CREDIT,
     ONTARIO_TAX_AFTER_FOOD_CREDIT,
+    ONTARIO_TAX_BEFORE_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
     SENIORS_CARE_CREDIT,
     SENIORS_CARE_FAMILY_NET_INCOME,
@@ -909,6 +912,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ONTARIO_TAX_WITH_SURTAX: SumLine(
             ONTARIO_TAX_WITH_SURTAX,
             ((ONTARIO_TAX_AFTER_CREDITS, D("7671.98")), (ONTARIO_SURTAX, D("523.79"))),
+            D("8195.77"),
+        ),
+        # ON428 line 73 "Line 71 plus line 72 =": line 72 is 0, not triggered.
+        ONTARIO_TAX_BEFORE_REDUCTION: SumLine(
+            ONTARIO_TAX_BEFORE_REDUCTION,
+            ((ONTARIO_TAX_AFTER_DIVIDEND_CREDIT, D("8195.77")), (ONTARIO_MINIMUM_TAX, D("0"))),
             D("8195.77"),
         ),
         # ON428 line 77 "Add lines 74 to 76.", in line order.

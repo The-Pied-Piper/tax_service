@@ -226,6 +226,7 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX_AFTER_FOOD_CREDIT,
     ONTARIO_TAX_AFTER_LIFT_CREDIT,
     ONTARIO_TAX_AFTER_REDUCTION,
+    ONTARIO_TAX_BEFORE_REDUCTION,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
     SENIORS_CARE_AMOUNT,
@@ -969,7 +970,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # ON428 line 81 "Line 73 minus line 80 (if negative, enter "0")".
         ONTARIO_TAX_AFTER_REDUCTION: SubtractedNotBelowZeroLine(
             output=ONTARIO_TAX_AFTER_REDUCTION,
-            minuend=ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT,
+            minuend=ONTARIO_TAX_BEFORE_REDUCTION,
             minuend_amount=D("8195.77"),
             subtrahend=ONTARIO_TAX_REDUCTION,
             subtrahend_amount=D("0"),

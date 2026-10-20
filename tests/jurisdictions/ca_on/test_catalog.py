@@ -38,6 +38,7 @@ from app.jurisdictions.ca_on.catalog import (
     APPLIES_FOR_ENERGY_AND_PROPERTY_TAX_CREDIT,
     APPLIES_FOR_NORTHERN_ENERGY_CREDIT,
     APPLIES_FOR_SENIOR_HOMEOWNERS_GRANT,
+    BANKRUPT_IN_YEAR,
     BASIC_PERSONAL_AMOUNT,
     CAREGIVER_AMOUNT,
     CAREGIVER_DEPENDANTS,
@@ -45,6 +46,7 @@ from app.jurisdictions.ca_on.catalog import (
     CHOOSES_SINGLE_BENEFIT_PAYMENT,
     CLAIMED_AS_ELIGIBLE_DEPENDANT,
     CLAIMS_SENIORS_CARE_CREDIT,
+    CLAIMS_TAX_REDUCTION_AMOUNTS_AT_EQUAL_NET_INCOME,
     COMMUNITY_FOOD_PROGRAM_CREDIT,
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
     COOP_EDUCATION_CREDIT,
@@ -112,10 +114,14 @@ from app.jurisdictions.ca_on.catalog import (
     NET_REFUND,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
+    NOT_CLAIMING_ONTARIO_TAX_REDUCTION,
+    NOT_RESIDENT_OF_CANADA_AT_START_OF_YEAR,
+    NOT_RESIDENT_OF_ONTARIO_AT_YEAR_END,
     ONTARIO_BASIC_TAX,
     ONTARIO_CREDITS,
     ONTARIO_CREDITS_SUBTOTAL,
     ONTARIO_HEALTH_PREMIUM,
+    ONTARIO_MINIMUM_TAX,
     ONTARIO_SURTAX,
     ONTARIO_TAX,
     ONTARIO_TAX_AFTER_CREDITS,
@@ -124,8 +130,10 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX_AFTER_LIFT_CREDIT,
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT,
+    ONTARIO_TAX_BEFORE_REDUCTION,
     ONTARIO_TAX_LESS_DIVIDEND_CREDIT,
     ONTARIO_TAX_REDUCTION,
+    ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS,
     ONTARIO_TAX_WITH_SURTAX,
     OPPORTUNITIES_FUND_DONATION,
     OTHER_DEPENDANTS_MEDICAL,
@@ -153,6 +161,7 @@ from app.jurisdictions.ca_on.catalog import (
     REFUND_BEFORE_DONATION,
     RENT_PAID,
     RESERVE_HOME_ENERGY_COSTS,
+    RETURN_FILED_BY_TRUSTEE_IN_BANKRUPTCY,
     SENIORS_CARE_AMOUNT,
     SENIORS_CARE_BASE_AMOUNT,
     SENIORS_CARE_BEFORE_CLAIM,
@@ -170,9 +179,13 @@ from app.jurisdictions.ca_on.catalog import (
     SPOUSE_AMOUNT_BEFORE_MAXIMUM,
     SPOUSE_BASE,
     TAX_REDUCTION_AMOUNTS,
+    TAX_REDUCTION_AMOUNTS_CLAIMABLE,
     TAX_REDUCTION_BASIC,
+    TAX_REDUCTION_CLAIMABLE,
     TAX_REDUCTION_FOR_CHILDREN,
+    TAX_REDUCTION_FOR_CHILDREN_BEFORE_SPOUSE_RULE,
     TAX_REDUCTION_FOR_DEPENDANTS,
+    TAX_REDUCTION_FOR_DEPENDANTS_BEFORE_SPOUSE_RULE,
 )
 from app.registrations import JURISDICTIONS
 
@@ -231,6 +244,19 @@ REGISTERED = frozenset(
         "ca-on/tax_reduction_for_dependants",
         "ca-on/tax_reduction_amounts",
         "ca-on/ontario_tax_reduction",
+        "ca-on/ontario_minimum_tax",
+        "ca-on/ontario_tax_before_reduction",
+        "ca-on/not_resident_of_canada_at_start_of_year",
+        "ca-on/not_resident_of_ontario_at_year_end",
+        "ca-on/bankrupt_in_year",
+        "ca-on/return_filed_by_trustee_in_bankruptcy",
+        "ca-on/not_claiming_ontario_tax_reduction",
+        "ca-on/tax_reduction_claimable",
+        "ca-on/claims_tax_reduction_amounts_at_equal_net_income",
+        "ca-on/tax_reduction_amounts_claimable",
+        "ca-on/tax_reduction_for_children_before_spouse_rule",
+        "ca-on/tax_reduction_for_dependants_before_spouse_rule",
+        "ca-on/ontario_tax_reduction_before_conditions",
         "ca-on/ontario_tax_after_reduction",
         "ca-on/lift_credit_before_maximum",
         "ca-on/lift_maximum_credit",
@@ -340,6 +366,14 @@ COUNTS = frozenset(
         "ca-on/coop_education_placement_count",
         "ca-on/claims_seniors_care_credit",
         "ca-on/lift_spouse_at_year_end",
+        "ca-on/not_resident_of_canada_at_start_of_year",
+        "ca-on/not_resident_of_ontario_at_year_end",
+        "ca-on/bankrupt_in_year",
+        "ca-on/return_filed_by_trustee_in_bankruptcy",
+        "ca-on/not_claiming_ontario_tax_reduction",
+        "ca-on/tax_reduction_claimable",
+        "ca-on/claims_tax_reduction_amounts_at_equal_net_income",
+        "ca-on/tax_reduction_amounts_claimable",
         "ca-on/applies_for_energy_and_property_tax_credit",
         "ca-on/applies_for_northern_energy_credit",
         "ca-on/chooses_single_benefit_payment",
@@ -461,6 +495,43 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/tax_reduction_for_dependants") is TAX_REDUCTION_FOR_DEPENDANTS
     assert registry.get("ca-on/tax_reduction_amounts") is TAX_REDUCTION_AMOUNTS
     assert registry.get("ca-on/ontario_tax_reduction") is ONTARIO_TAX_REDUCTION
+    assert registry.get("ca-on/ontario_minimum_tax") is ONTARIO_MINIMUM_TAX
+    assert registry.get("ca-on/ontario_tax_before_reduction") is ONTARIO_TAX_BEFORE_REDUCTION
+    assert (
+        registry.get("ca-on/not_resident_of_canada_at_start_of_year")
+        is NOT_RESIDENT_OF_CANADA_AT_START_OF_YEAR
+    )
+    assert (
+        registry.get("ca-on/not_resident_of_ontario_at_year_end")
+        is NOT_RESIDENT_OF_ONTARIO_AT_YEAR_END
+    )
+    assert registry.get("ca-on/bankrupt_in_year") is BANKRUPT_IN_YEAR
+    assert (
+        registry.get("ca-on/return_filed_by_trustee_in_bankruptcy")
+        is RETURN_FILED_BY_TRUSTEE_IN_BANKRUPTCY
+    )
+    assert (
+        registry.get("ca-on/not_claiming_ontario_tax_reduction")
+        is NOT_CLAIMING_ONTARIO_TAX_REDUCTION
+    )
+    assert registry.get("ca-on/tax_reduction_claimable") is TAX_REDUCTION_CLAIMABLE
+    assert (
+        registry.get("ca-on/claims_tax_reduction_amounts_at_equal_net_income")
+        is CLAIMS_TAX_REDUCTION_AMOUNTS_AT_EQUAL_NET_INCOME
+    )
+    assert registry.get("ca-on/tax_reduction_amounts_claimable") is TAX_REDUCTION_AMOUNTS_CLAIMABLE
+    assert (
+        registry.get("ca-on/tax_reduction_for_children_before_spouse_rule")
+        is TAX_REDUCTION_FOR_CHILDREN_BEFORE_SPOUSE_RULE
+    )
+    assert (
+        registry.get("ca-on/tax_reduction_for_dependants_before_spouse_rule")
+        is TAX_REDUCTION_FOR_DEPENDANTS_BEFORE_SPOUSE_RULE
+    )
+    assert (
+        registry.get("ca-on/ontario_tax_reduction_before_conditions")
+        is ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS
+    )
     assert registry.get("ca-on/ontario_tax_after_reduction") is ONTARIO_TAX_AFTER_REDUCTION
     assert registry.get("ca-on/lift_credit_before_maximum") is LIFT_CREDIT_BEFORE_MAXIMUM
     assert registry.get("ca-on/lift_maximum_credit") is LIFT_MAXIMUM_CREDIT
@@ -964,3 +1035,30 @@ def test_the_on_ben_tick_boxes_are_counts_and_its_part_a_lines_amounts() -> None
         assert amount_kind.identifier == f"ca-on/{identifier}"
         assert amount_kind.value_type is Decimal
         assert amount_kind.non_negative is True
+
+
+def test_the_tax_reduction_conditions_are_non_negative_counts() -> None:
+    # ON428 "Enter "0" on line 80 if any of the following applies to you": the five conditions
+    # other than line 72 are the caller's 0 or 1, and the two counts the conditions give, whether
+    # line 80 and lines 75 and 76 are completed, are 0 or 1; the caller's yes or no at a tie in
+    # the net incomes is a count too.
+    for kind in (
+        NOT_RESIDENT_OF_CANADA_AT_START_OF_YEAR,
+        NOT_RESIDENT_OF_ONTARIO_AT_YEAR_END,
+        BANKRUPT_IN_YEAR,
+        RETURN_FILED_BY_TRUSTEE_IN_BANKRUPTCY,
+        NOT_CLAIMING_ONTARIO_TAX_REDUCTION,
+        TAX_REDUCTION_CLAIMABLE,
+        CLAIMS_TAX_REDUCTION_AMOUNTS_AT_EQUAL_NET_INCOME,
+        TAX_REDUCTION_AMOUNTS_CLAIMABLE,
+    ):
+        assert kind.value_type is int, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+
+
+def test_line_72_and_line_73_are_non_negative_amounts() -> None:
+    # ON428 line 72 (additional tax for minimum tax purposes, as entered) and line 73 "Line 71
+    # plus line 72 =".
+    for kind in (ONTARIO_MINIMUM_TAX, ONTARIO_TAX_BEFORE_REDUCTION):
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is True, kind.identifier

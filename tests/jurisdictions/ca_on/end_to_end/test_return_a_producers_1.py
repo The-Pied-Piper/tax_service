@@ -462,6 +462,7 @@ from app.jurisdictions.ca.catalog import (
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.capabilities.caregiver_amount import OntarioCaregiverAmount
+from app.jurisdictions.ca_on.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca_on.capabilities.disability_transfer_amount import (
     OntarioDisabilityTransferAmount,
 )
@@ -490,15 +491,21 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX_AFTER_FOOD_CREDIT,
     ONTARIO_TAX_AFTER_LIFT_CREDIT,
     ONTARIO_TAX_AFTER_REDUCTION,
+    ONTARIO_TAX_BEFORE_REDUCTION,
     ONTARIO_TAX_REDUCTION,
+    ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS,
     ONTARIO_TAX_WITH_SURTAX,
     SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
     SENIORS_TRANSIT_CREDIT,
     SENIORS_TRANSIT_PAID,
     TAX_REDUCTION_AMOUNTS,
+    TAX_REDUCTION_AMOUNTS_CLAIMABLE,
     TAX_REDUCTION_BASIC,
+    TAX_REDUCTION_CLAIMABLE,
     TAX_REDUCTION_FOR_CHILDREN,
+    TAX_REDUCTION_FOR_CHILDREN_BEFORE_SPOUSE_RULE,
     TAX_REDUCTION_FOR_DEPENDANTS,
+    TAX_REDUCTION_FOR_DEPENDANTS_BEFORE_SPOUSE_RULE,
 )
 from tests.jurisdictions.ca_on.end_to_end.support import return_a
 
@@ -1262,13 +1269,29 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(TAX_REDUCTION_BASIC) is not worksheet.producer_of(
         ontario.BASIC_PERSONAL_AMOUNT
     )
-    assert isinstance(worksheet.producer_of(TAX_REDUCTION_FOR_CHILDREN), PerUnitAmount)
-    assert isinstance(worksheet.producer_of(TAX_REDUCTION_FOR_DEPENDANTS), PerUnitAmount)
+    assert isinstance(
+        worksheet.producer_of(TAX_REDUCTION_FOR_CHILDREN_BEFORE_SPOUSE_RULE), PerUnitAmount
+    )
+    assert isinstance(
+        worksheet.producer_of(TAX_REDUCTION_FOR_DEPENDANTS_BEFORE_SPOUSE_RULE), PerUnitAmount
+    )
+    assert worksheet.producer_of(
+        TAX_REDUCTION_FOR_CHILDREN_BEFORE_SPOUSE_RULE
+    ) is not worksheet.producer_of(TAX_REDUCTION_FOR_DEPENDANTS_BEFORE_SPOUSE_RULE)
+    assert isinstance(worksheet.producer_of(TAX_REDUCTION_AMOUNTS_CLAIMABLE), CountByConditions)
+    assert isinstance(worksheet.producer_of(TAX_REDUCTION_FOR_CHILDREN), TimesCount)
+    assert isinstance(worksheet.producer_of(TAX_REDUCTION_FOR_DEPENDANTS), TimesCount)
     assert worksheet.producer_of(TAX_REDUCTION_FOR_CHILDREN) is not worksheet.producer_of(
         TAX_REDUCTION_FOR_DEPENDANTS
     )
     assert isinstance(worksheet.producer_of(TAX_REDUCTION_AMOUNTS), Sum)
-    assert isinstance(worksheet.producer_of(ONTARIO_TAX_REDUCTION), MultipleOver)
+    assert isinstance(worksheet.producer_of(ONTARIO_TAX_BEFORE_REDUCTION), Sum)
+    assert isinstance(worksheet.producer_of(ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS), MultipleOver)
+    assert isinstance(worksheet.producer_of(TAX_REDUCTION_CLAIMABLE), CountByConditions)
+    assert worksheet.producer_of(TAX_REDUCTION_CLAIMABLE) is not worksheet.producer_of(
+        TAX_REDUCTION_AMOUNTS_CLAIMABLE
+    )
+    assert isinstance(worksheet.producer_of(ONTARIO_TAX_REDUCTION), TimesCount)
     assert isinstance(worksheet.producer_of(ONTARIO_TAX_AFTER_REDUCTION), SubtractNotBelowZero)
     assert worksheet.producer_of(ONTARIO_TAX_AFTER_REDUCTION) is not worksheet.producer_of(
         ONTARIO_TAX_AFTER_CREDITS

@@ -73,7 +73,7 @@ def test_the_ontario_dividend_tax_credit_comes_off_the_tax_at_lines_58_and_71() 
         "dividend_credit_from_line_57: dividend_tax_credit 191.14 = 191.14",
         "ontario_tax_after_dividend_credit: ontario_tax_with_surtax 1824.13 "
         "less dividend_credit_from_line_57 191.14, not below 0 = 1632.99",
-        "ontario_tax_after_reduction: ontario_tax_after_dividend_credit 1632.99 "
+        "ontario_tax_after_reduction: ontario_tax_before_reduction 1632.99 "
         "less ontario_tax_reduction 0, not below 0 = 1632.99",
     ):
         assert line in rendered, line
