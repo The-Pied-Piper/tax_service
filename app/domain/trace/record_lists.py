@@ -1,0 +1,111 @@
+"""Trace lines for record lists: a field's total and the records' count over a list, the
+items' total, and one item's sum or lesser of.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from decimal import Decimal
+
+from app.domain.artifact import ArtifactKind, Money
+from app.domain.record_list import RecordList
+from app.domain.trace.base import TraceLine
+
+__all__ = [
+    "RecordTotalLine",
+    "RecordCountLine",
+    "ItemsTotalLine",
+    "ItemSumLine",
+    "ItemLesserOfLine",
+]
+
+
+@dataclass(frozen=True)
+class RecordTotalLine(TraceLine):
+    """The `total` produced as `output`: `field` added over the items of a record list, in the
+    list's order, each item's `amounts` entry its value of `field`, exactly.
+
+    Its own class, not a `SumLine`: the parts are the items of one list, named by position, not
+    artifacts of their own.
+    """
+
+    output: Money
+    field: Money
+    amounts: tuple[Decimal, ...]
+    total: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The exact total."""
+        return self.total
+
+
+@dataclass(frozen=True)
+class RecordCountLine(TraceLine):
+    """The `count` of the records of the list `records`, produced as `output`."""
+
+    output: ArtifactKind[int]
+    records: ArtifactKind[RecordList]
+    count: int
+
+    @property
+    def amount(self) -> Decimal:
+        """The count, as an amount."""
+        return Decimal(self.count)
+
+
+@dataclass(frozen=True)
+class ItemsTotalLine(TraceLine):
+    """The `total` produced as `output` by adding `items`, each the position (from 1) of an item
+    of a record list and its amount, in order. No items is a total of 0.
+
+    Its own class, not a `SumLine`: the parts are items of one list, named by position, not
+    artifacts of their own.
+    """
+
+    output: Money
+    items: tuple[tuple[int, Decimal], ...]
+    total: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The exact total."""
+        return self.total
+
+
+@dataclass(frozen=True)
+class ItemSumLine(TraceLine):
+    """The `total` produced as `output` for the item at `position` (from 1) of a record list, by
+    adding `parts`, each a field kind and its value in that item, in order.
+
+    Its own class, not a `SumLine`: the parts are fields of one item, named by its position.
+    """
+
+    output: Money
+    position: int
+    parts: tuple[tuple[Money, Decimal], ...]
+    total: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The total of the item's parts."""
+        return self.total
+
+
+@dataclass(frozen=True)
+class ItemLesserOfLine(TraceLine):
+    """The `result` for the item at `position` (from 1) of a record list, produced as `output`:
+    the least of `parts`, each a field kind and its value in that item, in order.
+
+    Its own class, not a `LesserOfLine`: the parts are fields of one item, named by its position.
+    """
+
+    output: Money
+    position: int
+    parts: tuple[tuple[Money, Decimal], ...]
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The least of the item's parts."""
+        return self.result

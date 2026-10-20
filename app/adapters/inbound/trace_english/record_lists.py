@@ -1,0 +1,97 @@
+"""English text for the trace lines of `app.domain.trace.record_lists`: one renderer class
+per line class, each registered with `@english_renderer`.
+"""
+
+from __future__ import annotations
+
+from app.adapters.inbound.trace_english.figures import EnglishFigures
+from app.adapters.inbound.trace_english.registry import english_renderer
+from app.domain.trace.record_lists import (
+    ItemLesserOfLine,
+    ItemsTotalLine,
+    ItemSumLine,
+    RecordCountLine,
+    RecordTotalLine,
+)
+
+
+@english_renderer
+class RecordTotalRenderer(EnglishFigures):
+    """English text for RecordTotalLine."""
+
+    line_class = RecordTotalLine
+
+    def render(self, line: RecordTotalLine) -> str:
+        """The English sentence for `line`."""
+        output = line.output
+        field = line.field
+        amounts = line.amounts
+        total = line.total
+        items = " + ".join(
+            f"item {position} {field.label} {self._money(amount)}"
+            for position, amount in enumerate(amounts, start=1)
+        )
+        return f"{output.label}: {items or 'no items'} = {self._money(total)}"
+
+
+@english_renderer
+class RecordCountRenderer(EnglishFigures):
+    """English text for RecordCountLine."""
+
+    line_class = RecordCountLine
+
+    def render(self, line: RecordCountLine) -> str:
+        """The English sentence for `line`."""
+        output = line.output
+        records = line.records
+        count = line.count
+        noun = "item" if count == 1 else "items"
+        counted = "no items" if count == 0 else f"{count} {noun}"
+        return f"{output.label}: {counted} in {records.label} = {count}"
+
+
+@english_renderer
+class ItemsTotalRenderer(EnglishFigures):
+    """English text for ItemsTotalLine."""
+
+    line_class = ItemsTotalLine
+
+    def render(self, line: ItemsTotalLine) -> str:
+        """The English sentence for `line`."""
+        output = line.output
+        items = line.items
+        total = line.total
+        terms = " + ".join(f"item {position} {self._money(amount)}" for position, amount in items)
+        return f"{output.label}: {terms or 'no items'} = {self._money(total)}"
+
+
+@english_renderer
+class ItemSumRenderer(EnglishFigures):
+    """English text for ItemSumLine."""
+
+    line_class = ItemSumLine
+
+    def render(self, line: ItemSumLine) -> str:
+        """The English sentence for `line`."""
+        output = line.output
+        position = line.position
+        parts = line.parts
+        total = line.total
+        terms = " + ".join(f"{kind.label} {self._money(amount)}" for kind, amount in parts)
+        return f"{output.label}: item {position}: {terms} = {self._money(total)}"
+
+
+@english_renderer
+class ItemLesserOfRenderer(EnglishFigures):
+    """English text for ItemLesserOfLine."""
+
+    line_class = ItemLesserOfLine
+
+    def render(self, line: ItemLesserOfLine) -> str:
+        """The English sentence for `line`."""
+        output = line.output
+        position = line.position
+        parts = line.parts
+        result = line.result
+        terms = " and ".join(f"{kind.label} {self._money(amount)}" for kind, amount in parts)
+        return f"{output.label}: item {position}: lesser of {terms} = {self._money(result)}"

@@ -1,0 +1,34 @@
+"""English text for the trace lines of `app.domain.trace.placement_credit`: one renderer class
+per line class, each registered with `@english_renderer`.
+"""
+
+from __future__ import annotations
+
+from app.adapters.inbound.trace_english.figures import EnglishFigures
+from app.adapters.inbound.trace_english.registry import english_renderer
+from app.domain.trace.placement_credit import PlacementCreditLine
+
+
+@english_renderer
+class PlacementCreditRenderer(EnglishFigures):
+    """English text for PlacementCreditLine."""
+
+    line_class = PlacementCreditLine
+
+    def render(self, line: PlacementCreditLine) -> str:
+        """The English sentence for `line`."""
+        output = line.output
+        position = line.position
+        field = line.field
+        expenditure = line.expenditure
+        line_1 = line.line_1
+        line_3 = line.line_3
+        line_12 = line.line_12
+        line_13 = line.line_13
+        rule = line.rounding
+        return (
+            f"{output.label}: item {position} {field.label} {self._money(expenditure)}: "
+            f"line 1 {self._money(line_1)}, line 3 {self._money(line_3)}, "
+            f"line 12 {self._money(line_12)}, line 13 {self._money(line_13)} "
+            f"({self._rounding(rule)})"
+        )
