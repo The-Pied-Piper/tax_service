@@ -98,6 +98,32 @@ ELIGIBLE_DEPENDANT_AMOUNT = CATALOG.declare("eligible_dependant_amount", Decimal
 eligible dependant claimed for, the T1 line 30400 count, a part of the total of the Ontario credit
 amounts."""
 
+MEDICAL_NET_INCOME_SHARE = CATALOG.declare("medical_net_income_share", Decimal, non_negative=True)
+"""Share of the net income for medical expenses, ON428 line 39 "Line 37 multiplied by the percentage
+from line 38" (line 37 "Amount from line 23600 of your return", line 38 "Applicable rate 3%"): 3%
+of the net income."""
+
+MEDICAL_THRESHOLD = CATALOG.declare("medical_threshold", Decimal, non_negative=True)
+"""Threshold for medical expenses, ON428 line 40 "Enter whichever is less: $2,885 or the amount on
+line 39.": the lesser of the ceiling and the share of the net income."""
+
+MEDICAL_EXPENSES_OVER_THRESHOLD = CATALOG.declare(
+    "medical_expenses_over_threshold", Decimal, non_negative=True
+)
+"""Medical expenses over the threshold, ON428 line 41 "Line 36 minus line 40 (if negative, enter
+"0")": the filer's own group, not below zero."""
+
+OTHER_DEPENDANTS_MEDICAL = CATALOG.declare("other_dependants_medical", Decimal, non_negative=True)
+"""Allowable medical expenses for other dependants, ON428 line 42 and line 58729 "Allowable amount
+of medical expenses for other dependants (use Worksheet ON428)": line 4 "Add the amounts from
+line 3 of columns 1, 2, and 3 (and others, if any)", each line 3 being "Line 1 minus line 2 (if
+negative, enter "0") (maximum $15,551 per dependant)"."""
+
+MEDICAL_CLAIM = CATALOG.declare("medical_claim", Decimal, non_negative=True)
+"""Allowable medical expenses, ON428 line 43 and line 58769 "Line 41 plus line 42": the filer's own
+group plus the allowable amount for other dependants, a part of the total of the Ontario credit
+amounts (line 58800)."""
+
 CLAIMED_AS_ELIGIBLE_DEPENDANT = CATALOG.declare(
     "claimed_as_eligible_dependant", int, non_negative=True
 )
@@ -128,8 +154,8 @@ NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare(
 line 43": the sum of the credit amounts the rate is applied to once, here, in line order, the
 basic personal amount (line 58040), the age amount (line 58080), the spouse or common-law
 partner amount (line 58120), the amount for an eligible dependant (line 58160), the Ontario
-caregiver amount (line 58185), the base CPP contributions (line 58240) and the EI premiums
-(line 58300)."""
+caregiver amount (line 58185), the base CPP contributions (line 58240), the EI premiums
+(line 58300) and the allowable medical expenses (line 58769)."""
 
 CREDIT_AMOUNTS_AT_CREDIT_RATE = CATALOG.declare(
     "credit_amounts_at_credit_rate", Decimal, non_negative=True

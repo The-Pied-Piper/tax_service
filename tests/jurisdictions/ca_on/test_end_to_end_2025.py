@@ -1920,8 +1920,9 @@ def test_the_trace_explains_the_computation() -> None:
         """The index of the one rendered line reading `expected` whose line has `amount`.
 
         A claimed line (an amount times a count) reads the same federally and for Ontario when the
-        amounts are alike, so it is told apart by the kind of the amount it claims; a total of
-        items, by the kind it produces.
+        amounts are alike, so it is told apart by the kind of the amount it claims. Any other line
+        that reads the same federally and for Ontario, such as the medical lines and the totals of
+        items, is told apart by the kind it produces, `output`.
         """
         (found,) = [
             i
@@ -1932,7 +1933,7 @@ def test_the_trace_explains_the_computation() -> None:
                 claimed is None
                 or (isinstance(line, TimesCountLine) and line.amount_kind is claimed)
             )
-            and (output is None or (isinstance(line, ItemsTotalLine) and line.output is output))
+            and (output is None or getattr(line, "output", None) is output)
         ]
         return found
 
@@ -2139,7 +2140,9 @@ def test_the_trace_explains_the_computation() -> None:
     # T1 lines 108 to 112: 3% of the net income of 115000, at most 2834 (line 109), which the
     # medical expenses of 0 (line 107) do not reach (line 110), no other dependants (line 111).
     medical_share = position(
-        "medical_net_income_share: 3% of net_income 115000 (half-up to 0.01)", "3450"
+        "medical_net_income_share: 3% of net_income 115000 (half-up to 0.01)",
+        "3450",
+        output=MEDICAL_NET_INCOME_SHARE,
     )
     medical_threshold = position(
         "medical_threshold: lesser of medical_net_income_share 3450 and 2834 (half-up to 0.01)",
@@ -2150,9 +2153,37 @@ def test_the_trace_explains_the_computation() -> None:
         "not below 0 = 0",
         "0",
     )
-    other_medical = position("other_dependants_medical: no items = 0", "0")
+    other_medical = position(
+        "other_dependants_medical: no items = 0", "0", output=OTHER_DEPENDANTS_MEDICAL
+    )
     medical_claim = position(
-        "medical_claim: medical_expenses_over_threshold 0 + other_dependants_medical 0 = 0", "0"
+        "medical_claim: medical_expenses_over_threshold 0 + other_dependants_medical 0 = 0",
+        "0",
+        output=MEDICAL_CLAIM,
+    )
+    # ON428 lines 37 to 43: 3% of the same net income, at most 2885 (line 40), which the medical
+    # expenses of 0 (line 36) do not reach (line 41), no other dependants (line 42, line 58729).
+    ontario_medical_share = position(
+        "medical_net_income_share: 3% of net_income 115000 (half-up to 0.01)",
+        "3450",
+        output=ontario.MEDICAL_NET_INCOME_SHARE,
+    )
+    ontario_medical_threshold = position(
+        "medical_threshold: lesser of medical_net_income_share 3450 and 2885 (half-up to 0.01)",
+        "2885",
+    )
+    ontario_medical_over = position(
+        "medical_expenses_over_threshold: medical_expenses 0 less medical_threshold 2885, "
+        "not below 0 = 0",
+        "0",
+    )
+    ontario_other_medical = position(
+        "other_dependants_medical: no items = 0", "0", output=ontario.OTHER_DEPENDANTS_MEDICAL
+    )
+    ontario_medical_claim = position(
+        "medical_claim: medical_expenses_over_threshold 0 + other_dependants_medical 0 = 0",
+        "0",
+        output=ontario.MEDICAL_CLAIM,
     )
     # Federal Worksheet (5000-D1) lines 1 to 7 and T1 line 30100: 15% x (115000 - 45522) =
     # 10421.70 is more than the maximum 9028, so line 7 is 0, claimed for 0 filers born in 1960
@@ -2311,7 +2342,8 @@ def test_the_trace_explains_the_computation() -> None:
     ontario_amounts = position(
         "non_refundable_credit_amounts: basic_personal_amount 12747 "
         "+ age_amount 0 + spouse_amount 0 + eligible_dependant_amount 0 "
-        "+ caregiver_amount 0 + cpp_base_contributions 3356.1 + ei_premiums 1077.48 = 17180.58",
+        "+ caregiver_amount 0 + cpp_base_contributions 3356.1 + ei_premiums 1077.48 "
+        "+ medical_claim 0 = 17180.58",
         "17180.58",
     )
     # ON428 line 46 (line 58840); line 50 (line 61500) adds lines 46 and 49 further below.
@@ -2835,6 +2867,9 @@ def test_the_trace_explains_the_computation() -> None:
     assert infirm_children < federal_amounts
     assert net < medical_share < medical_threshold < medical_over < medical_claim < federal_amounts
     assert other_medical < medical_claim
+    assert net < ontario_medical_share < ontario_medical_threshold < ontario_medical_over
+    assert ontario_medical_over < ontario_medical_claim < ontario_amounts
+    assert ontario_other_medical < ontario_medical_claim
     assert net < age_over_threshold < age_reduction < age_before_count < age < federal_amounts
     assert age_threshold < age_over_threshold
     assert age_maximum < age_before_count
@@ -3061,6 +3096,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # T1 line 108 "Amount from line 23600 multiplied by 3%".
         MEDICAL_NET_INCOME_SHARE: RateAppliedLine(
             MEDICAL_NET_INCOME_SHARE, NET_INCOME, D("115000"), Rate(D("0.03")), CENT, D("3450.00")
+        ),
+        # ON428 line 39 "Line 37 multiplied by the percentage from line 38".
+        ontario.MEDICAL_NET_INCOME_SHARE: RateAppliedLine(
+            ontario.MEDICAL_NET_INCOME_SHARE,
+            NET_INCOME,
+            D("115000"),
+            Rate(D("0.03")),
+            CENT,
+            D("3450.00"),
         ),
         CAPITAL_GIFTS_LIMIT_ADDITION: RateAppliedLine(
             CAPITAL_GIFTS_LIMIT_ADDITION,
@@ -3555,6 +3599,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("0"),
         ),
+        # ON428 line 43 and line 58769 "Line 41 plus line 42".
+        ontario.MEDICAL_CLAIM: SumLine(
+            ontario.MEDICAL_CLAIM,
+            (
+                (ontario.MEDICAL_EXPENSES_OVER_THRESHOLD, D("0")),
+                (ontario.OTHER_DEPENDANTS_MEDICAL, D("0")),
+            ),
+            D("0"),
+        ),
         DONATION_LIMIT_WITH_CAPITAL_GIFTS: SumLine(
             DONATION_LIMIT_WITH_CAPITAL_GIFTS,
             (
@@ -3626,6 +3679,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ontario.CAREGIVER_AMOUNT, D("0")),
                 (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
                 (EI_PREMIUMS, D("1077.48")),
+                (ontario.MEDICAL_CLAIM, D("0")),
             ),
             D("17180.58"),
         ),
@@ -4518,6 +4572,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CENT,
             D("2834"),
         ),
+        # ON428 line 40 "Enter whichever is less: $2,885 or the amount on line 39."
+        ontario.MEDICAL_THRESHOLD: CappedAmountLine(
+            ontario.MEDICAL_THRESHOLD,
+            ontario.MEDICAL_NET_INCOME_SHARE,
+            D("3450.00"),
+            Amount(D("2885")),
+            CENT,
+            D("2885"),
+        ),
         # Schedule ON428-A line 5's "(maximum $875)" and line 14 "Amount from line 5 above
         # (maximum $875)": 5555.00 is above it.
         LIFT_MAXIMUM_CREDIT: CappedAmountLine(
@@ -4930,6 +4993,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             minuend_amount=D("0"),
             subtrahend=MEDICAL_THRESHOLD,
             subtrahend_amount=D("2834"),
+            result=D("0"),
+        ),
+        # ON428 line 41 "Line 36 minus line 40 (if negative, enter "0")".
+        ontario.MEDICAL_EXPENSES_OVER_THRESHOLD: SubtractedNotBelowZeroLine(
+            output=ontario.MEDICAL_EXPENSES_OVER_THRESHOLD,
+            minuend=MEDICAL_EXPENSES,
+            minuend_amount=D("0"),
+            subtrahend=ontario.MEDICAL_THRESHOLD,
+            subtrahend_amount=D("2885"),
             result=D("0"),
         ),
         # T1 line 139 (line 41700) "Line 134 minus line 138 (if negative, enter "0")", with line
@@ -5445,7 +5517,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 286
+    assert len(order) == 291
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -6874,7 +6946,7 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
     assert (
         "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 0 "
         "+ spouse_amount 0 + eligible_dependant_amount 10823 + caregiver_amount 0 "
-        "+ cpp_base_contributions 2796.75 + ei_premiums 984 = 27350.75"
+        "+ cpp_base_contributions 2796.75 + ei_premiums 984 + medical_claim 0 = 27350.75"
     ) in rendered
 
 
@@ -8155,7 +8227,7 @@ def test_return_js_age_spouse_and_caregiver_amounts_come_off_net_income_and_the_
         "spouse_amount: spouse_amount_before_count 0 for each of 1 spouses_claimed = 0",
         "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 5672.5 "
         "+ spouse_amount 0 + eligible_dependant_amount 0 + caregiver_amount 0 "
-        "+ cpp_base_contributions 2301.75 + ei_premiums 820 = 21541.25",
+        "+ cpp_base_contributions 2301.75 + ei_premiums 820 + medical_claim 0 = 21541.25",
     ):
         assert line in rendered
 
@@ -9153,7 +9225,7 @@ def return_x() -> Worksheet:
 
 def test_return_xs_medical_expenses_are_claimed_on_lines_33099_and_33199() -> None:
     # Return X is Return I (employment income of 48000, net income 47555.00, taxable income
-    # 47555.00, federal tax on it 6895.48, Ontario tax 1684.56) with medical expenses of 4500 for
+    # 47555.00, federal tax on it 6895.48) with medical expenses of 4500 for
     # the filer (a chosen figure, T1 line 107, line 33099) and two other dependants (a chosen
     # figure) with expenses 3000 and net income 10000, and expenses 1000 and net income 40000.
     # Line 108 is 3% of 47555.00 = 1426.65; line 109 is the lesser of 2834 and 1426.65 = 1426.65;
@@ -9163,11 +9235,19 @@ def test_return_xs_medical_expenses_are_claimed_on_lines_33099_and_33199() -> No
     # (line 33200) is 3073.35 + 2700.00 = 5773.35. The federal credit amounts are 16129 + 0 + 0 +
     # 0 + 0 + 0 + 0 + 2202.75 + 787.20 + 1471 = 20589.95, plus 5773.35 = 26363.30; 14.5% of it is
     # 3822.6785, rounded half-up to the cent: 3822.68, so the federal tax after credits is
-    # 6895.48 - 3822.68 = 3072.80. The Ontario total of credit amounts (15736.95) and the
-    # Ontario tax are unchanged, the Ontario medical line (ON428 line 58729) not yet being
-    # computed. The total payable is 3072.80 + 1684.56 = 4757.36, and with the chosen tax
-    # deducted of 4800 and no Canada workers benefit, line 167 is 4757.36 - 4800 = -42.64, a
-    # refund.
+    # 6895.48 - 3822.68 = 3072.80. ON428 has the same lines: line 39 is 3% of 47555.00 =
+    # 1426.65; line 40 is the lesser of 2885 and 1426.65 = 1426.65; line 41 is 4500 - 1426.65 =
+    # 3073.35. Line 58729, per dependant: 3000 - lesser(300.00, 2885) = 2700.00; 1000 -
+    # lesser(1200.00, 2885) is negative, so 0, neither near the maximum of 15551; the total,
+    # line 42, is 2700.00. Line 43 (line 58769) is 3073.35 + 2700.00 = 5773.35. The Ontario total
+    # of credit amounts (line 58800) is 12747 + 0 + 0 + 0 + 2202.75 + 787.20 + 5773.35 =
+    # 21510.30; 5.05% of it is 1086.27015, rounded half-up to the cent: 1086.27, so the Ontario
+    # tax after credits is 2401.53 - 1086.27 = 1315.26, below the surtax thresholds. The tax
+    # reduction is 0 (twice 294.00 is less than the tax), the LIFT credit is 122.25 and the food
+    # credit 250.00: 1315.26 - 122.25 - 250.00 = 943.01, and with the health premium of 450, the
+    # Ontario tax is 1393.01. The total payable is 3072.80 + 1393.01 = 4465.81, and with the
+    # chosen tax deducted of 4800 and no Canada workers benefit, line 167 is 4465.81 - 4800 =
+    # -334.19, a refund.
     worksheet = return_x()
 
     assert worksheet.get(MEDICAL_EXPENSES).value == D("4500")
@@ -9189,11 +9269,19 @@ def test_return_xs_medical_expenses_are_claimed_on_lines_33099_and_33199() -> No
     assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("26363.30")
     assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("3822.68")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("3072.80")
-    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("15736.95")
-    assert worksheet.get(ONTARIO_TAX).value == D("1684.56")
-    assert worksheet.get(TOTAL_PAYABLE).value == D("4757.36")
+    assert worksheet.producer_of(ontario.MEDICAL_NET_INCOME_SHARE) is not None
+    assert worksheet.get(ontario.MEDICAL_NET_INCOME_SHARE).value == D("1426.65")
+    assert worksheet.get(ontario.MEDICAL_THRESHOLD).value == D("1426.65")
+    assert worksheet.get(ontario.MEDICAL_EXPENSES_OVER_THRESHOLD).value == D("3073.35")
+    assert worksheet.get(ontario.OTHER_DEPENDANTS_MEDICAL).value == D("2700.00")
+    assert worksheet.get(ontario.MEDICAL_CLAIM).value == D("5773.35")
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("21510.30")
+    assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("1086.27")
+    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1315.26")
+    assert worksheet.get(ONTARIO_TAX).value == D("1393.01")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("4465.81")
     assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("0")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-42.64")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-334.19")
 
 
 def test_return_xs_trace_names_each_step_and_each_dependant() -> None:
@@ -9306,13 +9394,84 @@ def test_the_threshold_on_line_109_stops_at_2834() -> None:
     assert worksheet.get(MEDICAL_EXPENSES_OVER_THRESHOLD).value == D("2166")
 
 
-def test_medical_expenses_do_not_change_the_ontario_credits() -> None:
-    # ON428 line 58729 (the Ontario medical expenses) is not yet computed.
+def test_return_xs_ontario_trace_names_each_step_and_each_dependant() -> None:
+    worksheet = return_x()
+
+    lines = [
+        line
+        for line in worksheet.trace
+        if isinstance(line, OtherDependantMedicalLine | ItemsTotalLine)
+        and line.output == ontario.OTHER_DEPENDANTS_MEDICAL
+    ]
+    reduction = ClaimReduction(Rate(D("0.03")), D("2885"), D("15551"))
+    assert lines == [
+        OtherDependantMedicalLine(
+            output=ontario.OTHER_DEPENDANTS_MEDICAL,
+            position=1,
+            expenses=D("3000"),
+            net_income=D("10000"),
+            reduction=reduction,
+            rounding=CENT,
+            result=D("2700.00"),
+        ),
+        OtherDependantMedicalLine(
+            output=ontario.OTHER_DEPENDANTS_MEDICAL,
+            position=2,
+            expenses=D("1000"),
+            net_income=D("40000"),
+            reduction=reduction,
+            rounding=CENT,
+            result=D("0"),
+        ),
+        ItemsTotalLine(
+            output=ontario.OTHER_DEPENDANTS_MEDICAL,
+            items=((1, D("2700.00")), (2, D("0"))),
+            total=D("2700.00"),
+        ),
+    ]
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    first = rendered.index(
+        "other_dependants_medical: dependant 1: expenses 3000 less the lesser of 3% of net income "
+        "10000 and 2885 = 2700, at most 15551 (half-up to 0.01)"
+    )
+    assert rendered[first : first + 3] == (
+        "other_dependants_medical: dependant 1: expenses 3000 less the lesser of 3% of net income "
+        "10000 and 2885 = 2700, at most 15551 (half-up to 0.01)",
+        "other_dependants_medical: dependant 2: expenses 1000 less the lesser of 3% of net income "
+        "40000 and 2885 = 0, at most 15551 (half-up to 0.01)",
+        "other_dependants_medical: item 1 2700 + item 2 0 = 2700",
+    )
+    for sentence in (
+        "medical_threshold: lesser of medical_net_income_share 1426.65 and 2885 (half-up to 0.01)",
+        "medical_expenses_over_threshold: medical_expenses 4500 less medical_threshold 1426.65, "
+        "not below 0 = 3073.35",
+        "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 0 "
+        "+ spouse_amount 0 + eligible_dependant_amount 0 + caregiver_amount 0 "
+        "+ cpp_base_contributions 2202.75 + ei_premiums 787.2 + medical_claim 5773.35 = 21510.3",
+        "credit_amounts_at_credit_rate: 5.05% of non_refundable_credit_amounts 21510.3 "
+        "(half-up to 0.01)",
+    ):
+        assert sentence in rendered
+
+
+def test_ontario_shares_the_filers_expenses_and_the_dependants_with_the_t1() -> None:
+    worksheet = return_x()
+
+    assert worksheet.producer_of(ontario.MEDICAL_CLAIM) is not worksheet.producer_of(MEDICAL_CLAIM)
+    ontario_dependants = worksheet.producer_of(ontario.OTHER_DEPENDANTS_MEDICAL)
+    assert isinstance(ontario_dependants, OtherDependantsMedical)
+    assert ontario_dependants.consumes == frozenset({OTHER_DEPENDANTS})
+    assert worksheet.producer_of(MEDICAL_EXPENSES) is None
+    assert worksheet.get(ontario.MEDICAL_EXPENSES_OVER_THRESHOLD).value == D("3073.35")
+
+
+def test_ontario_medical_expenses_change_only_the_ontario_credits_by_the_claim() -> None:
     without = compute("48000", "0", "0", "0", "8640", "0", "0")
     with_medical = return_x()
 
-    assert with_medical.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS) == (
-        without.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS)
+    assert without.get(ontario.MEDICAL_CLAIM).value == D("0")
+    assert with_medical.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == (
+        without.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value + D("5773.35")
     )
 
 
@@ -9427,7 +9586,7 @@ def test_return_ws_trace_names_each_ontario_dependant_and_totals_the_credit_amou
     assert (
         "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 0 "
         "+ spouse_amount 0 + eligible_dependant_amount 0 + caregiver_amount 7570 "
-        "+ cpp_base_contributions 2202.75 + ei_premiums 787.2 = 23306.95"
+        "+ cpp_base_contributions 2202.75 + ei_premiums 787.2 + medical_claim 0 = 23306.95"
     ) in rendered
 
 
@@ -9522,7 +9681,7 @@ def test_the_dependant_claimed_on_line_58160_takes_it_off_line_58185() -> None:
     assert (
         "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 0 "
         "+ spouse_amount 0 + eligible_dependant_amount 2905 + caregiver_amount 4665 "
-        "+ cpp_base_contributions 2202.75 + ei_premiums 787.2 = 23306.95"
+        "+ cpp_base_contributions 2202.75 + ei_premiums 787.2 + medical_claim 0 = 23306.95"
     ) in rendered
 
 
@@ -9742,6 +9901,69 @@ def test_dependants_with_a_disability_do_not_change_the_ontario_credits() -> Non
         without.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS)
     )
     assert with_dependants.get(ONTARIO_TAX) == without.get(ONTARIO_TAX)
+
+
+def test_ontarios_ceiling_is_2885_not_the_federal_2834() -> None:
+    # Employment income of 96000 gives a net income of 94926.00, and 3% of it is 2847.78: above
+    # the federal ceiling of 2834 and below Ontario's 2885, so line 109 is 2834 and ON428 line
+    # 40 is 2847.78.
+    worksheet = compute("96000", "0", "0", "0", "0", "0", "0", medical_expenses="5000")
+
+    assert worksheet.get(NET_INCOME).value == D("94926.00")
+    assert worksheet.get(MEDICAL_THRESHOLD).value == D("2834")
+    assert worksheet.get(ontario.MEDICAL_THRESHOLD).value == D("2847.78")
+    assert worksheet.get(MEDICAL_EXPENSES_OVER_THRESHOLD).value == D("2166")
+    assert worksheet.get(ontario.MEDICAL_EXPENSES_OVER_THRESHOLD).value == D("2152.22")
+
+
+def test_ontarios_threshold_on_line_40_stops_at_2885() -> None:
+    worksheet = compute("115000", "0", "0", "0", "0", "0", "0", medical_expenses="5000")
+
+    assert worksheet.get(ontario.MEDICAL_NET_INCOME_SHARE).value > D("2885")
+    assert worksheet.get(ontario.MEDICAL_THRESHOLD).value == D("2885")
+    assert worksheet.get(ontario.MEDICAL_EXPENSES_OVER_THRESHOLD).value == D("2115")
+
+
+def test_ontario_caps_each_dependants_claim_at_15551_and_the_t1_does_not() -> None:
+    # A dependant with no net income and expenses of 20000: the Federal Worksheet's line 3 is the
+    # whole 20000, Worksheet ON428's line 3 is at most 15551.
+    worksheet = compute(
+        "48000", "0", "0", "0", "8640", "0", "0", other_dependants=(("20000", "0"),)
+    )
+
+    assert worksheet.get(OTHER_DEPENDANTS_MEDICAL).value == D("20000.00")
+    assert worksheet.get(ontario.OTHER_DEPENDANTS_MEDICAL).value == D("15551.00")
+    assert worksheet.get(ontario.MEDICAL_CLAIM).value == D("15551.00")
+    assert worksheet.get(MEDICAL_CLAIM).value == D("20000.00")
+
+
+def test_ontario_pooled_dependants_would_give_the_wrong_line_58729() -> None:
+    separate = compute(
+        "48000",
+        "0",
+        "0",
+        "0",
+        "8640",
+        "0",
+        "0",
+        other_dependants=(("3000", "10000"), ("1000", "40000")),
+    )
+    pooled = compute(
+        "48000", "0", "0", "0", "8640", "0", "0", other_dependants=(("4000", "50000"),)
+    )
+
+    assert separate.get(ontario.OTHER_DEPENDANTS_MEDICAL).value == D("2700.00")
+    # 4000 - lesser(1500.00, 2885) = 2500.00, not 2700.00.
+    assert pooled.get(ontario.OTHER_DEPENDANTS_MEDICAL).value == D("2500.00")
+
+
+def test_no_medical_expenses_claim_nothing_on_line_58769() -> None:
+    worksheet = compute("48000", "0", "0", "0", "8640", "0", "0")
+
+    assert worksheet.get(ontario.MEDICAL_EXPENSES_OVER_THRESHOLD).value == D("0")
+    assert worksheet.get(ontario.OTHER_DEPENDANTS_MEDICAL).value == D("0")
+    assert worksheet.get(ontario.MEDICAL_CLAIM).value == D("0")
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("15736.95")
 
 
 def step_3(**amounts: Any) -> Worksheet:

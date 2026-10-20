@@ -1917,6 +1917,51 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             },
             produces={"output": "ca-on/eligible_dependant_amount"},
         ),
+        # ON428 line 39 "Line 37 multiplied by the percentage from line 38" (line 37 "Amount from
+        # line 23600 of your return", line 38 "Applicable rate 3%"): 3% of the net income.
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca-on/medical_net_income_rate"},
+            consumes={"base": "ca/net_income"},
+            produces={"output": "ca-on/medical_net_income_share"},
+        ),
+        # ON428 line 40 "Enter whichever is less: $2,885 or the amount on line 39."
+        CapabilitySelection(
+            name="core/capped_amount",
+            params={"cap": "ca-on/medical_threshold_ceiling"},
+            consumes={"base": "ca-on/medical_net_income_share"},
+            produces={"output": "ca-on/medical_threshold"},
+        ),
+        # ON428 line 41 "Line 36 minus line 40 (if negative, enter "0")": line 36 is the filer's
+        # medical expenses, the caller input of T1 line 107 (line 33099), shared with the T1.
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={"amount": "ca/medical_expenses", "less": "ca-on/medical_threshold"},
+            produces={"output": "ca-on/medical_expenses_over_threshold"},
+        ),
+        # ON428 line 42 and line 58729 "Allowable amount of medical expenses for other dependants
+        # (use Worksheet ON428)"; Worksheet ON428, line 58729, for each dependant: line 1 "Medical
+        # expenses for other dependant", line 2 "Enter the amount from line 40 of the dependant's
+        # Form ON428.", line 3 "Line 1 minus line 2 (if negative, enter "0") (maximum $15,551 per
+        # dependant)", and line 4 "Add the amounts from line 3 of columns 1, 2, and 3 (and others,
+        # if any). Enter this amount on line 58729 of your Form ON428." The same people as T1 line
+        # 33199, so the same record list.
+        CapabilitySelection(
+            name="ca/other_dependants_medical",
+            params={"reduction": "ca-on/other_dependants_medical_reduction"},
+            consumes={"dependants": "ca/other_dependants"},
+            produces={"output": "ca-on/other_dependants_medical"},
+        ),
+        # ON428 line 43 and line 58769 "Line 41 plus line 42".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": ("ca-on/medical_expenses_over_threshold", "ca-on/other_dependants_medical")
+            },
+            produces={"output": "ca-on/medical_claim"},
+        ),
         # ON428 line 17 and line 58185 "Ontario caregiver amount (use Worksheet ON428)", Worksheet
         # ON428 "Line 58185 - Ontario caregiver amount": for each dependant, line 1 "Base amount
         # 26,562.00" less line 2 "Dependant's net income from line 23600 of their return", line 3
@@ -1983,10 +2028,12 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
         ),
         # T1 line 33500 (lines 30000, 30100, 30300, 30400, 30425, 30450, 30500, 30800, 31200, 31260,
         # 31800, 33200) and ON428 line 58800 (lines 58040, 58080, 58120, 58160, 58185, 58240,
-        # 58300), in the forms' line order. T1 line 113 and line 33500 is "Line 106 plus line 112",
-        # and line 112 (line 33200) follows the lines that line 106 adds. ON428 lines 58240 and
-        # 58300 are "Amount from line 30800 / 31200 of your return", so the Ontario sum reads the
-        # federal kinds; it has no Canada employment amount.
+        # 58300, 58769), in the forms' line order. T1 line 113 and line 33500 is "Line 106 plus
+        # line 112", and line 112 (line 33200) follows the lines that line 106 adds; ON428 line 44
+        # and line 58800 is "Line 35 plus line 43", and line 43 (line 58769) follows the lines
+        # that line 35 adds. ON428 lines 58240 and 58300 are "Amount from line 30800 / 31200 of
+        # your return", so the Ontario sum reads the federal kinds; it has no Canada employment
+        # amount.
         CapabilitySelection(
             name="core/sum",
             params={},
@@ -2020,6 +2067,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
                     "ca-on/caregiver_amount",
                     "ca/cpp_base_contributions",
                     "ca/ei_premiums",
+                    "ca-on/medical_claim",
                 )
             },
             produces={"output": "ca-on/non_refundable_credit_amounts"},
@@ -3586,7 +3634,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca-on/net_refund"},
         ),
     }
-    assert len(found.capabilities) == 286
+    assert len(found.capabilities) == 291
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -3596,7 +3644,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 286
+    assert len(composition.order) == 291
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -4240,6 +4288,27 @@ def test_its_first_tax_year_composes_every_selection() -> None:
             frozenset({MEDICAL_EXPENSES_OVER_THRESHOLD, OTHER_DEPENDANTS_MEDICAL}),
             frozenset({MEDICAL_CLAIM}),
         ),
+        (ApplyRate, frozenset({NET_INCOME}), frozenset({ontario.MEDICAL_NET_INCOME_SHARE})),
+        (
+            CappedAmount,
+            frozenset({ontario.MEDICAL_NET_INCOME_SHARE}),
+            frozenset({ontario.MEDICAL_THRESHOLD}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({MEDICAL_EXPENSES, ontario.MEDICAL_THRESHOLD}),
+            frozenset({ontario.MEDICAL_EXPENSES_OVER_THRESHOLD}),
+        ),
+        (
+            OtherDependantsMedical,
+            frozenset({OTHER_DEPENDANTS}),
+            frozenset({ontario.OTHER_DEPENDANTS_MEDICAL}),
+        ),
+        (
+            Sum,
+            frozenset({ontario.MEDICAL_EXPENSES_OVER_THRESHOLD, ontario.OTHER_DEPENDANTS_MEDICAL}),
+            frozenset({ontario.MEDICAL_CLAIM}),
+        ),
         (
             DisabilityTransferAmount,
             frozenset({DISABILITY_DEPENDANTS}),
@@ -4336,6 +4405,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
                     ontario.CAREGIVER_AMOUNT,
                     CPP_BASE_CONTRIBUTIONS,
                     EI_PREMIUMS,
+                    ontario.MEDICAL_CLAIM,
                 }
             ),
             frozenset({ontario.NON_REFUNDABLE_CREDIT_AMOUNTS}),

@@ -69,6 +69,10 @@ from app.jurisdictions.ca_on.catalog import (
     LIFT_CREDIT_BEFORE_MAXIMUM,
     LIFT_MAXIMUM_CREDIT,
     LIFT_REDUCTION,
+    MEDICAL_CLAIM,
+    MEDICAL_EXPENSES_OVER_THRESHOLD,
+    MEDICAL_NET_INCOME_SHARE,
+    MEDICAL_THRESHOLD,
     NET_REFUND,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
@@ -88,6 +92,7 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_WITH_SURTAX,
     OPPORTUNITIES_FUND_DONATION,
+    OTHER_DEPENDANTS_MEDICAL,
     OTHER_DIVIDENDS_CREDIT,
     POLITICAL_CONTRIBUTIONS,
     POLITICAL_CREDIT,
@@ -140,6 +145,11 @@ REGISTERED = frozenset(
         "ca-on/eligible_dependant_amount_before_maximum",
         "ca-on/eligible_dependant_amount_before_count",
         "ca-on/eligible_dependant_amount",
+        "ca-on/medical_net_income_share",
+        "ca-on/medical_threshold",
+        "ca-on/medical_expenses_over_threshold",
+        "ca-on/other_dependants_medical",
+        "ca-on/medical_claim",
         "ca-on/claimed_as_eligible_dependant",
         "ca-on/caregiver_dependants",
         "ca-on/caregiver_amount",
@@ -294,6 +304,11 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
         is ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT
     )
     assert registry.get("ca-on/eligible_dependant_amount") is ELIGIBLE_DEPENDANT_AMOUNT
+    assert registry.get("ca-on/medical_net_income_share") is MEDICAL_NET_INCOME_SHARE
+    assert registry.get("ca-on/medical_threshold") is MEDICAL_THRESHOLD
+    assert registry.get("ca-on/medical_expenses_over_threshold") is MEDICAL_EXPENSES_OVER_THRESHOLD
+    assert registry.get("ca-on/other_dependants_medical") is OTHER_DEPENDANTS_MEDICAL
+    assert registry.get("ca-on/medical_claim") is MEDICAL_CLAIM
     assert registry.get("ca-on/claimed_as_eligible_dependant") is CLAIMED_AS_ELIGIBLE_DEPENDANT
     assert registry.get("ca-on/caregiver_dependants") is CAREGIVER_DEPENDANTS
     assert registry.get("ca-on/caregiver_amount") is CAREGIVER_AMOUNT
