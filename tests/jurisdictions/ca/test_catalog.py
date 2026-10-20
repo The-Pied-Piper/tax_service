@@ -879,8 +879,8 @@ REGISTERED = frozenset(
 # negative, enter "0")": T1 line 54 (line 23400) "Line 34 minus line 53 (if negative, show in
 # brackets)", T1 line 15000 "Line 28 plus line 32 Total income" (no floor printed; the Guide says
 # "If you have a loss, show it on the applicable line using brackets"), the lines of Form T1436
-# (Capital Gains Worksheet) line 21700 that subtract with no
-# floor or take the lesser of such a line (lines 15 and 17), and the lines of Schedule 15 (FHSA)
+# (Capital Gains Worksheet) line 21700 that subtract with no floor or take the lesser of such a
+# line (lines 15 and 17), and the lines of Schedule 15 (FHSA)
 # Steps 2 and 3 that subtract or add such a line with no floor (lines 3, 5, 9, 11, 23, 27, 36, 45,
 # 48, 51, 54, 56 and 58); and Form T1172 (RESP additional tax) Part A line 6 "Line 4 minus line
 # 5" and line 7 "Amount from line 3 or 6, whichever is less", which print no "(if negative, enter
