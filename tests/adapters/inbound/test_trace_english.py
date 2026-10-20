@@ -23,6 +23,7 @@ from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
 from app.domain.parameters.fraction import Fraction
 from app.domain.parameters.rate import Rate
+from app.domain.parameters.rate_table import RateTableRow
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.parameters.taper import Taper
 from app.domain.trace import (
@@ -31,6 +32,7 @@ from app.domain.trace import (
     CappedAmountLine,
     ChosenByCountLine,
     ChosenByRangeLine,
+    ChosenRateAppliedLine,
     ContributionTierLine,
     CreditAmountLine,
     FractionAppliedLine,
@@ -38,6 +40,7 @@ from app.domain.trace import (
     MultipleOverLine,
     PerUnitAmountLine,
     RateAppliedLine,
+    RateByIncomeBandLine,
     RecordTotalLine,
     RoundedTotalLine,
     SubtractedLine,
@@ -90,6 +93,10 @@ AMOUNT_CHOSEN = ArtifactKind("ex/amount_chosen", Decimal)
 ITEM_AMOUNT = ArtifactKind("ex/item_amount", Decimal)
 AMOUNT_TESTED = ArtifactKind("ex/amount_tested", Decimal)
 AMOUNT_IN_RANGE = ArtifactKind("ex/amount_in_range", Decimal)
+FAMILY_INCOME = ArtifactKind("ex/family_income", Decimal)
+BAND_RATE = ArtifactKind("ex/band_rate", Rate)
+CARE_EXPENSES = ArtifactKind("ex/care_expenses", Decimal)
+CARE_CREDIT = ArtifactKind("ex/care_credit", Decimal)
 
 
 def render(line: TraceLine) -> str:
@@ -969,6 +976,109 @@ def test_renders_a_negative_chosen_candidate_and_a_negative_tested_amount() -> N
     assert render(line) == "amount_chosen: amount_in_range -250.75, chosen as amount_tested is -5"
 
 
+# --- a rate chosen by a band of income --------------------------------------------------
+#
+# Read like the form's table: the figure with its label, then the row it falls in, "more than
+# <lower> but not more than <upper>" (just "more than <lower>" on the unbounded last row), then
+# the row's rate as a percentage. A figure of exactly zero names no row: "which is 0". There is no
+# rounding rule to print.
+
+
+def test_renders_a_rate_chosen_by_a_bounded_band() -> None:
+    line = RateByIncomeBandLine(
+        BAND_RATE,
+        FAMILY_INCOME,
+        D("50000"),
+        RateTableRow(D("45000"), D("50000"), Rate(D("0.55"))),
+        Rate(D("0.55")),
+    )
+
+    assert render(line) == (
+        "band_rate: family_income 50000, more than 45000 but not more than 50000: 55%"
+    )
+
+
+def test_renders_a_rate_chosen_by_the_unbounded_last_band() -> None:
+    line = RateByIncomeBandLine(
+        BAND_RATE,
+        FAMILY_INCOME,
+        D("150001"),
+        RateTableRow(D("150000"), None, Rate(D("0"))),
+        Rate(D("0")),
+    )
+
+    assert render(line) == "band_rate: family_income 150001, more than 150000: 0%"
+
+
+def test_renders_the_rate_at_zero() -> None:
+    line = RateByIncomeBandLine(BAND_RATE, FAMILY_INCOME, D("0"), None, Rate(D("0.75")))
+
+    assert render(line) == "band_rate: family_income 0, which is 0: 75%"
+
+
+def test_renders_a_band_chosen_for_a_figure_with_cents() -> None:
+    line = RateByIncomeBandLine(
+        BAND_RATE,
+        FAMILY_INCOME,
+        D("20000.01"),
+        RateTableRow(D("20000"), D("22500"), Rate(D("0.73"))),
+        Rate(D("0.73")),
+    )
+
+    assert render(line) == (
+        "band_rate: family_income 20000.01, more than 20000 but not more than 22500: 73%"
+    )
+
+
+def test_renders_a_fractional_band_rate() -> None:
+    line = RateByIncomeBandLine(
+        BAND_RATE,
+        FAMILY_INCOME,
+        D("1500"),
+        RateTableRow(D("1000"), D("2000"), Rate(D("0.125"))),
+        Rate(D("0.125")),
+    )
+
+    assert render(line) == (
+        "band_rate: family_income 1500, more than 1000 but not more than 2000: 12.5%"
+    )
+
+
+# --- a chosen rate applied -----------------------------------------------------------------
+#
+# Like a rate applied, with the rate artifact's label before its percentage.
+
+
+def test_renders_a_chosen_rate_applied_with_rounding() -> None:
+    line = ChosenRateAppliedLine(
+        CARE_CREDIT, CARE_EXPENSES, D("5000"), BAND_RATE, Rate(D("0.55")), CENT, D("2750.00")
+    )
+
+    assert render(line) == "care_credit: band_rate 55% of care_expenses 5000 (half-up to 0.01)"
+
+
+def test_renders_a_chosen_rate_applied_without_rounding() -> None:
+    line = ChosenRateAppliedLine(
+        CARE_CREDIT,
+        CARE_EXPENSES,
+        D("5000.01"),
+        BAND_RATE,
+        Rate(D("0.55")),
+        NO_ROUNDING,
+        D("2750.0055"),
+    )
+
+    assert render(line) == "care_credit: band_rate 55% of care_expenses 5000.01 (no rounding)"
+
+
+def test_renders_a_chosen_rate_of_zero() -> None:
+    line = ChosenRateAppliedLine(
+        CARE_CREDIT, CARE_EXPENSES, D("5000"), BAND_RATE, Rate(D("0")), CENT, D("0.00")
+    )
+
+    assert render(line) == "care_credit: band_rate 0% of care_expenses 5000 (half-up to 0.01)"
+
+
 # --- money figures ---------------------------------------------------------------
 
 
@@ -1143,6 +1253,28 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
                 AMOUNT_CHOSEN, AMOUNT_TESTED, D("1.00000E+3"), AMOUNT_IN_RANGE, D("4.31940E+3")
             ),
             "amount_chosen: amount_in_range 4319.4, chosen as amount_tested is 1000",
+        ),
+        (
+            RateByIncomeBandLine(
+                BAND_RATE,
+                FAMILY_INCOME,
+                D("45500.00"),
+                RateTableRow(D("4.5E+4"), D("50000.00"), Rate(D("0.550"))),
+                Rate(D("0.550")),
+            ),
+            "band_rate: family_income 45500, more than 45000 but not more than 50000: 55%",
+        ),
+        (
+            ChosenRateAppliedLine(
+                CARE_CREDIT,
+                CARE_EXPENSES,
+                D("5.000E+3"),
+                BAND_RATE,
+                Rate(D("0.550")),
+                NO_ROUNDING,
+                D("2750.000"),
+            ),
+            "care_credit: band_rate 55% of care_expenses 5000 (no rounding)",
         ),
     ],
 )

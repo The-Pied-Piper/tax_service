@@ -1,7 +1,8 @@
 """Unit tests for ParameterParserRegistry and `@parameter_parser`.
 
 Parsers are keyed by their kind's plain name (`amount`, `brackets`, `contribution_tier`,
-`credit`, `factor`, `fraction`, `rate`, `surcharge_tiers`, `taper`), not namespaced yet.
+`credit`, `factor`, `fraction`, `rate`, `rate_table`, `rounding_only`, `surcharge_tiers`,
+`taper`), not namespaced yet.
 Lookups are typed: `for_kind(kind)` for a `ParameterKind[T]` gives a `ParameterParser[T]`; the
 `assert_type` checks below make `mypy .` fail if a lookup returned `Any` or another type.
 Made-up kinds and parsers are never registered in the shared registry: the decorator test
@@ -24,10 +25,12 @@ from app.adapters.outbound.parameter_parsers.credit import CreditParser
 from app.adapters.outbound.parameter_parsers.factor import FactorParser
 from app.adapters.outbound.parameter_parsers.fraction import FractionParser
 from app.adapters.outbound.parameter_parsers.rate import RateParser
+from app.adapters.outbound.parameter_parsers.rate_table import RateTableParser
 from app.adapters.outbound.parameter_parsers.registry import (
     ParameterParserRegistry,
     parameter_parser,
 )
+from app.adapters.outbound.parameter_parsers.rounding_only import RoundingOnlyParser
 from app.adapters.outbound.parameter_parsers.surcharge_tiers import SurchargeTiersParser
 from app.adapters.outbound.parameter_parsers.taper import TaperParser
 from app.adapters.outbound.yaml_support import YamlNode
@@ -41,6 +44,8 @@ from app.domain.parameters.factor import FACTOR, Factor
 from app.domain.parameters.fraction import FRACTION, Fraction
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
+from app.domain.parameters.rate_table import RATE_TABLE, RateTable, RateTableRow
+from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
 from app.domain.parameters.surcharge_tiers import (
     SURCHARGE_TIERS,
     SurchargeTier,
@@ -114,6 +119,8 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     registry.register_class(TaperParser)
     registry.register_class(FactorParser)
     registry.register_class(FractionParser)
+    registry.register_class(RateTableParser)
+    registry.register_class(RoundingOnlyParser)
     registry.register_class(FlatRateParser)
 
     schedule = registry.for_kind(BRACKETS).parse(
@@ -142,6 +149,19 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     fraction = registry.for_kind(FRACTION).parse(
         YamlNode.root({"numerator": "2", "denominator": "3"}, "dataset")
     )
+    rate_table = registry.for_kind(RATE_TABLE).parse(
+        YamlNode.root(
+            {
+                "rate_at_zero": "0.75",
+                "rows": [
+                    {"more_than": "0", "not_more_than": "100", "rate": "0.75"},
+                    {"more_than": "100", "rate": "0"},
+                ],
+            },
+            "dataset",
+        )
+    )
+    rounding_only = registry.for_kind(ROUNDING_ONLY).parse(YamlNode.root({}, "dataset"))
     flat_rate = registry.for_kind(FLAT_RATE).parse(YamlNode.root({"rate": "0.2"}, "dataset"))
 
     assert_type(schedule, BracketSchedule)
@@ -153,6 +173,8 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     assert_type(taper, Taper)
     assert_type(factor, Factor)
     assert_type(fraction, Fraction)
+    assert_type(rate_table, RateTable)
+    assert_type(rounding_only, RoundingOnly)
     assert_type(flat_rate, Decimal)
 
     assert schedule == BracketSchedule((Bracket(D("0"), D("0.1")),))
@@ -164,6 +186,14 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     assert taper == Taper(D("1000"), D("500"), D("20000"), D("10000"))
     assert factor == Factor(D("2"))
     assert fraction == Fraction(2, 3)
+    assert rate_table == RateTable(
+        Rate(D("0.75")),
+        (
+            RateTableRow(D("0"), D("100"), Rate(D("0.75"))),
+            RateTableRow(D("100"), None, Rate(D("0"))),
+        ),
+    )
+    assert rounding_only == RoundingOnly()
     assert flat_rate == D("0.2")
 
 
@@ -269,6 +299,8 @@ def test_decorating_a_second_parser_for_one_kind_fails(fresh: ParameterParserReg
         (FACTOR, FactorParser),
         (FRACTION, FractionParser),
         (RATE, RateParser),
+        (RATE_TABLE, RateTableParser),
+        (ROUNDING_ONLY, RoundingOnlyParser),
         (SURCHARGE_TIERS, SurchargeTiersParser),
         (TAPER, TaperParser),
     ],
@@ -292,6 +324,8 @@ def test_built_in_parsers_are_registered_in_the_shared_registry(
         (FactorParser, frozenset({"value"})),
         (FractionParser, frozenset({"numerator", "denominator"})),
         (RateParser, frozenset({"rate"})),
+        (RateTableParser, frozenset({"rate_at_zero", "rows"})),
+        (RoundingOnlyParser, frozenset()),
         (SurchargeTiersParser, frozenset({"tiers"})),
         (TaperParser, frozenset({"base", "supplement", "threshold", "range"})),
     ],
@@ -311,6 +345,8 @@ def test_the_shared_registry_holds_exactly_the_built_in_parsers() -> None:
         "factor",
         "fraction",
         "rate",
+        "rate_table",
+        "rounding_only",
         "surcharge_tiers",
         "taper",
     }

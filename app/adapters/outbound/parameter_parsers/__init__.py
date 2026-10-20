@@ -18,7 +18,9 @@ from app.adapters.outbound.parameter_parsers import (
     fraction,
     parser,
     rate,
+    rate_table,
     registry,
+    rounding_only,
     surcharge_tiers,
     taper,
 )
@@ -34,7 +36,9 @@ __all__ = [
     "fraction",
     "parser",
     "rate",
+    "rate_table",
     "registry",
+    "rounding_only",
     "surcharge_tiers",
     "taper",
 ]

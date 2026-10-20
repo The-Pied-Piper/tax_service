@@ -24,7 +24,9 @@ from app.adapters.outbound.parameter_parsers.credit import CreditParser
 from app.adapters.outbound.parameter_parsers.factor import FactorParser
 from app.adapters.outbound.parameter_parsers.fraction import FractionParser
 from app.adapters.outbound.parameter_parsers.rate import RateParser
+from app.adapters.outbound.parameter_parsers.rate_table import RateTableParser
 from app.adapters.outbound.parameter_parsers.registry import ParameterParserRegistry
+from app.adapters.outbound.parameter_parsers.rounding_only import RoundingOnlyParser
 from app.adapters.outbound.parameter_parsers.surcharge_tiers import SurchargeTiersParser
 from app.adapters.outbound.parameter_parsers.taper import TaperParser
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
@@ -38,6 +40,7 @@ from app.domain.errors import (
     InvalidFractionError,
     InvalidParameterDataError,
     InvalidRateError,
+    InvalidRateTableError,
     InvalidSurchargeTiersError,
     InvalidTaperError,
     NotFoundError,
@@ -52,7 +55,9 @@ from app.domain.parameters.factor import FACTOR, Factor
 from app.domain.parameters.fraction import FRACTION, Fraction
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
+from app.domain.parameters.rate_table import RATE_TABLE, RateTable, RateTableRow
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
+from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
 from app.domain.parameters.surcharge_tiers import (
     SURCHARGE_TIERS,
     SurchargeTier,
@@ -177,6 +182,29 @@ numerator: "2"
 denominator: "3"
 """
 
+RATE_TABLE_2025 = """\
+family: ex/rate_table
+tax_year: 2025
+kind: rate_table
+sources:
+  - https://example.org/rate-table-2025
+rounding: none
+rate_at_zero: "0.30"
+rows:
+  - {more_than: "0", not_more_than: "1000", rate: "0.30"}
+  - {more_than: "1000", not_more_than: "2500.50", rate: "0.20"}
+  - {more_than: "2500.50", rate: "0"}
+"""
+
+ROUNDING_ONLY_2025 = """\
+family: ex/rounding_only
+tax_year: 2025
+kind: rounding_only
+sources:
+  - https://example.org/rounding-only-2025
+rounding: {increment: "0.01", mode: half_up}
+"""
+
 
 def built_in_parsers() -> ParameterParserRegistry:
     """A fresh registry holding the built-in parsers, never the shared one."""
@@ -190,6 +218,8 @@ def built_in_parsers() -> ParameterParserRegistry:
     registry.register_class(TaperParser)
     registry.register_class(FactorParser)
     registry.register_class(FractionParser)
+    registry.register_class(RateTableParser)
+    registry.register_class(RoundingOnlyParser)
     return registry
 
 
@@ -2138,3 +2168,356 @@ def test_a_fraction_dataset_is_not_a_rate_dataset(tmp_path: Path) -> None:
 
     with pytest.raises(InvalidParameterDataError, match="kind 'fraction' does not match"):
         source(tmp_path).get("ex/fraction", 2025, RATE)
+
+
+# --- rate tables ------------------------------------------------------------------------------
+#
+# A `rate_table` dataset holds `rate_at_zero` and `rows`, each row a `more_than`, a `rate` and,
+# on every row but the last, a `not_more_than`, all quoted decimals.
+
+RATE_TABLE_ROWS = (
+    RateTableRow(D("0"), D("1000"), Rate(D("0.30"))),
+    RateTableRow(D("1000"), D("2500.50"), Rate(D("0.20"))),
+    RateTableRow(D("2500.50"), None, Rate(D("0"))),
+)
+
+
+def test_reads_a_rate_table_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/rate_table/2025.yaml", RATE_TABLE_2025)
+
+    result = source(tmp_path).get("ex/rate_table", 2025, RATE_TABLE)
+
+    assert result == ParameterDataset(
+        family="ex/rate_table",
+        tax_year=2025,
+        kind=RATE_TABLE,
+        values=RateTable(rate_at_zero=Rate(D("0.30")), rows=RATE_TABLE_ROWS),
+        rounding=NO_ROUNDING,
+        sources=("https://example.org/rate-table-2025",),
+    )
+
+
+def test_reads_a_rate_tables_figures_exactly(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/rate_table/2025.yaml", RATE_TABLE_2025)
+
+    table = source(tmp_path).get("ex/rate_table", 2025, RATE_TABLE).values
+
+    assert str(table.rate_at_zero.value) == "0.30"
+    assert [str(row.more_than) for row in table.rows] == ["0", "1000", "2500.50"]
+    assert [
+        None if row.not_more_than is None else str(row.not_more_than) for row in table.rows
+    ] == [
+        "1000",
+        "2500.50",
+        None,
+    ]
+    assert [str(row.rate.value) for row in table.rows] == ["0.30", "0.20", "0"]
+
+
+def test_reads_a_single_unbounded_row(tmp_path: Path) -> None:
+    content = RATE_TABLE_2025.replace(
+        '  - {more_than: "0", not_more_than: "1000", rate: "0.30"}\n'
+        '  - {more_than: "1000", not_more_than: "2500.50", rate: "0.20"}\n'
+        '  - {more_than: "2500.50", rate: "0"}\n',
+        '  - {more_than: "0", rate: "0.30"}\n',
+    )
+    write(tmp_path, "ex/parameters/rate_table/2025.yaml", content)
+
+    table = source(tmp_path).get("ex/rate_table", 2025, RATE_TABLE).values
+
+    assert table.rows == (RateTableRow(D("0"), None, Rate(D("0.30"))),)
+
+
+def test_reads_an_overlap_as_printed(tmp_path: Path) -> None:
+    content = RATE_TABLE_2025.replace('not_more_than: "2500.50"', 'not_more_than: "2600"')
+    write(tmp_path, "ex/parameters/rate_table/2025.yaml", content)
+
+    table = source(tmp_path).get("ex/rate_table", 2025, RATE_TABLE).values
+
+    assert table.rows[1] == RateTableRow(D("1000"), D("2600"), Rate(D("0.20")))
+
+
+def test_reads_a_rate_table_written_as_block_mappings(tmp_path: Path) -> None:
+    content = RATE_TABLE_2025.replace(
+        '  - {more_than: "2500.50", rate: "0"}\n',
+        '  - more_than: "2500.50"\n    rate: "0"\n',
+    )
+    write(tmp_path, "ex/parameters/rate_table/2025.yaml", content)
+
+    table = source(tmp_path).get("ex/rate_table", 2025, RATE_TABLE).values
+
+    assert table.rows == RATE_TABLE_ROWS
+
+
+def test_reads_a_rate_table_datasets_rounding_rule(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/rate_table/2025.yaml",
+        RATE_TABLE_2025.replace("rounding: none", 'rounding: {increment: "0.01", mode: half_up}'),
+    )
+
+    result = source(tmp_path).get("ex/rate_table", 2025, RATE_TABLE)
+
+    assert result.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
+
+
+def test_by_default_the_rate_table_parser_comes_from_the_shared_registry(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/rate_table/2025.yaml", RATE_TABLE_2025)
+
+    result = YamlParameterSource(roots(tmp_path)).get("ex/rate_table", 2025, RATE_TABLE)
+
+    assert result.values == RateTable(Rate(D("0.30")), RATE_TABLE_ROWS)
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        pytest.param(
+            RATE_TABLE_2025.replace('rate_at_zero: "0.30"', "rate_at_zero: 0.30"),
+            "rate_at_zero must be a string, got float",
+            id="rate-at-zero-as-yaml-number",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace('rate_at_zero: "0.30"', 'rate_at_zero: "1.5"'),
+            "rate must be between 0 and 1",
+            id="rate-at-zero-above-one",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace('rate_at_zero: "0.30"\n', ""),
+            r"missing keys \['rate_at_zero'\]",
+            id="rate-at-zero-missing",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace('rate: "0.20"', 'rate: "1.5"'),
+            r"rows\[1\].*rate must be between 0 and 1",
+            id="row-rate-above-one",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace('rate: "0.20"', "rate: 0.20"),
+            r"rows\[1\].rate must be a string, got float",
+            id="row-rate-as-yaml-number",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace('{more_than: "1000"', "{more_than: 1000"),
+            r"rows\[1\].more_than must be a string, got int",
+            id="more-than-as-yaml-number",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace('not_more_than: "1000"', 'not_more_than: "lots"'),
+            r"rows\[0\].not_more_than is not a decimal: 'lots'",
+            id="not-more-than-not-decimal",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace('{more_than: "0", not_more_than', "{not_more_than"),
+            r"rows\[0\]: missing keys \['more_than'\]",
+            id="more-than-missing",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace(', rate: "0.30"}', "}"),
+            r"rows\[0\]: missing keys \['rate'\]",
+            id="row-rate-missing",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace('rate: "0"}', 'rate: "0", threshold: "0"}'),
+            r"rows\[2\]: unknown keys \['threshold'\]",
+            id="unknown-row-key",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace(
+                '  - {more_than: "0", not_more_than: "1000", rate: "0.30"}', '  - "0"'
+            ),
+            r"rows\[0\] must be a mapping",
+            id="row-not-a-mapping",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.split("rows:\n")[0] + "rows: []\n",
+            "at least one row",
+            id="no-rows",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace('{more_than: "0",', '{more_than: "100",'),
+            "first row must be more than 0",
+            id="first-row-not-zero",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace('{more_than: "1000"', '{more_than: "0"'),
+            "strictly increasing",
+            id="more-than-not-increasing",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace('not_more_than: "1000"', 'not_more_than: "900"'),
+            "gap between 900 and 1000",
+            id="gap",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace('not_more_than: "2500.50", ', ""),
+            "every row but the last must have",
+            id="upper-bound-missing-before-the-last",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace(
+                '{more_than: "2500.50", rate', '{more_than: "2500.50", not_more_than: "5000", rate'
+            ),
+            "last row must have no not_more_than",
+            id="upper-bound-on-the-last",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace("rows:", "tiers:"),
+            r"unknown keys \['tiers'\]",
+            id="tiers-are-not-rows",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace("kind: rate_table", "kind: rate"),
+            "kind 'rate' does not match the requested 'rate_table'",
+            id="kind-mismatch",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace("rounding: none\n", ""),
+            r"missing keys \['rounding'\]",
+            id="rounding-missing",
+        ),
+        pytest.param(
+            RATE_TABLE_2025.replace(
+                "sources:\n  - https://example.org/rate-table-2025", "sources: []"
+            ),
+            "sources must list at least one",
+            id="sources-empty",
+        ),
+    ],
+)
+def test_rejects_malformed_rate_table_dataset(tmp_path: Path, content: str, message: str) -> None:
+    write(tmp_path, "ex/parameters/rate_table/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
+        source(tmp_path).get("ex/rate_table", 2025, RATE_TABLE)
+
+    assert "2025.yaml" in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [
+        ('{more_than: "0",', '{more_than: "100",'),
+        ('{more_than: "1000"', '{more_than: "0"'),
+        ('not_more_than: "1000"', 'not_more_than: "900"'),
+        ('not_more_than: "2500.50", ', ""),
+    ],
+)
+def test_an_invalid_rate_table_is_reported_as_a_rate_table_error(
+    tmp_path: Path, old: str, new: str
+) -> None:
+    write(tmp_path, "ex/parameters/rate_table/2025.yaml", RATE_TABLE_2025.replace(old, new))
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/rate_table", 2025, RATE_TABLE)
+
+    assert isinstance(excinfo.value.__cause__, InvalidRateTableError)
+
+
+def test_a_surcharge_tiers_dataset_is_not_a_rate_table_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/surcharge_tiers/2025.yaml", SURCHARGE_TIERS_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'surcharge_tiers' does not match"):
+        source(tmp_path).get("ex/surcharge_tiers", 2025, RATE_TABLE)
+
+
+def test_a_rate_table_dataset_is_not_a_rate_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/rate_table/2025.yaml", RATE_TABLE_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'rate_table' does not match"):
+        source(tmp_path).get("ex/rate_table", 2025, RATE)
+
+
+# --- rounding only ----------------------------------------------------------------------------
+#
+# A `rounding_only` dataset is the shared envelope alone: its `rounding` rule is all it carries.
+
+
+def test_reads_a_rounding_only_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/rounding_only/2025.yaml", ROUNDING_ONLY_2025)
+
+    result = source(tmp_path).get("ex/rounding_only", 2025, ROUNDING_ONLY)
+
+    assert result == ParameterDataset(
+        family="ex/rounding_only",
+        tax_year=2025,
+        kind=ROUNDING_ONLY,
+        values=RoundingOnly(),
+        rounding=RoundTo(D("0.01"), RoundingMode.HALF_UP),
+        sources=("https://example.org/rounding-only-2025",),
+    )
+
+
+def test_reads_a_rounding_only_dataset_without_rounding(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/rounding_only/2025.yaml",
+        ROUNDING_ONLY_2025.replace(
+            'rounding: {increment: "0.01", mode: half_up}', "rounding: none"
+        ),
+    )
+
+    result = source(tmp_path).get("ex/rounding_only", 2025, ROUNDING_ONLY)
+
+    assert result.rounding == NO_ROUNDING
+    assert result.values == RoundingOnly()
+
+
+def test_by_default_the_rounding_only_parser_comes_from_the_shared_registry(
+    tmp_path: Path,
+) -> None:
+    write(tmp_path, "ex/parameters/rounding_only/2025.yaml", ROUNDING_ONLY_2025)
+
+    result = YamlParameterSource(roots(tmp_path)).get("ex/rounding_only", 2025, ROUNDING_ONLY)
+
+    assert result.values == RoundingOnly()
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        pytest.param(
+            ROUNDING_ONLY_2025 + 'rate: "0.5"\n',
+            r"unknown keys \['rate'\]",
+            id="rate-is-not-a-rounding-only-key",
+        ),
+        pytest.param(
+            ROUNDING_ONLY_2025 + 'amount: "100"\n',
+            r"unknown keys \['amount'\]",
+            id="amount-is-not-a-rounding-only-key",
+        ),
+        pytest.param(
+            ROUNDING_ONLY_2025.replace('rounding: {increment: "0.01", mode: half_up}\n', ""),
+            r"missing keys \['rounding'\]",
+            id="rounding-missing",
+        ),
+        pytest.param(
+            ROUNDING_ONLY_2025.replace("kind: rounding_only", "kind: rate"),
+            "kind 'rate' does not match the requested 'rounding_only'",
+            id="kind-mismatch",
+        ),
+        pytest.param(
+            ROUNDING_ONLY_2025.replace(
+                "sources:\n  - https://example.org/rounding-only-2025", "sources: []"
+            ),
+            "sources must list at least one",
+            id="sources-empty",
+        ),
+    ],
+)
+def test_rejects_malformed_rounding_only_dataset(
+    tmp_path: Path, content: str, message: str
+) -> None:
+    write(tmp_path, "ex/parameters/rounding_only/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
+        source(tmp_path).get("ex/rounding_only", 2025, ROUNDING_ONLY)
+
+    assert "2025.yaml" in str(excinfo.value)
+
+
+def test_a_rate_dataset_is_not_a_rounding_only_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/credit_rate/2025.yaml", RATE_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'rate' does not match"):
+        source(tmp_path).get("ex/credit_rate", 2025, ROUNDING_ONLY)

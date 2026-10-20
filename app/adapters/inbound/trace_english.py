@@ -18,6 +18,7 @@ from app.domain.trace import (
     CappedAmountLine,
     ChosenByCountLine,
     ChosenByRangeLine,
+    ChosenRateAppliedLine,
     ContributionTierLine,
     CreditAmountLine,
     FractionAppliedLine,
@@ -25,6 +26,7 @@ from app.domain.trace import (
     MultipleOverLine,
     PerUnitAmountLine,
     RateAppliedLine,
+    RateByIncomeBandLine,
     RecordTotalLine,
     RoundedTotalLine,
     SubtractedLine,
@@ -233,6 +235,34 @@ class EnglishTraceRenderer:
                 return (
                     f"{output.label}: {chosen_kind.label} {self._money(chosen)}, "
                     f"chosen as {tested_kind.label} is {self._money(tested)}"
+                )
+            case RateByIncomeBandLine(
+                output=output, income=income, income_amount=amount, row=row, rate=rate
+            ):
+                if row is None:
+                    band = "which is 0"
+                elif row.not_more_than is None:
+                    band = f"more than {self._money(row.more_than)}"
+                else:
+                    band = (
+                        f"more than {self._money(row.more_than)} "
+                        f"but not more than {self._money(row.not_more_than)}"
+                    )
+                return (
+                    f"{output.label}: {income.label} {self._money(amount)}, "
+                    f"{band}: {self._percent(rate.value)}%"
+                )
+            case ChosenRateAppliedLine(
+                output=output,
+                base=base,
+                base_amount=amount,
+                rate_kind=rate_kind,
+                rate=rate,
+                rounding=rule,
+            ):
+                return (
+                    f"{output.label}: {rate_kind.label} {self._percent(rate.value)}% of "
+                    f"{base.label} {self._money(amount)} ({self._rounding(rule)})"
                 )
         raise TypeError(f"no English rendering for trace line {type(line).__name__}")
 
