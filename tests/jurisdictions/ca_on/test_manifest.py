@@ -32,6 +32,7 @@ from app.domain.manifest import CapabilitySelection, Manifest
 from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
 from app.jurisdictions.ca.capabilities.disability_transfer_amount import DisabilityTransferAmount
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
+from app.jurisdictions.ca.capabilities.threshold_gate import ThresholdGate
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADJUSTED_FAMILY_NET_INCOME,
@@ -53,6 +54,7 @@ from app.jurisdictions.ca.catalog import (
     AGE_INCOME_THRESHOLD,
     AGE_MAXIMUM,
     AGE_REDUCTION,
+    AGED_18_OR_OLDER_AT_END_OF_2025,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
@@ -94,6 +96,7 @@ from app.jurisdictions.ca.catalog import (
     CHILDREN_SEVEN_TO_SIXTEEN,
     CHILDREN_UNDER_SEVEN,
     CHILDREN_WITH_DISABILITY,
+    CLERGY_RESIDENCE_DEDUCTION,
     CPP_BASE_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
@@ -116,6 +119,7 @@ from app.jurisdictions.ca.catalog import (
     DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
     DEPRECIABLE_GIFTS,
     DISABILITY_DEPENDANTS,
+    DISABILITY_SUPPORTS_DEDUCTION,
     DISABILITY_TRANSFERRED_AMOUNT,
     DIVIDEND_TAX_CREDIT,
     DIVIDENDS_AMOUNT_A,
@@ -236,7 +240,30 @@ from app.jurisdictions.ca.catalog import (
     MEDICAL_EXPENSES,
     MEDICAL_EXPENSES_OVER_THRESHOLD,
     MEDICAL_NET_INCOME_SHARE,
+    MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3,
+    MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5,
+    MEDICAL_SUPPLEMENT_COLUMN_2_LINE_2,
+    MEDICAL_SUPPLEMENT_COLUMN_2_LINE_3,
+    MEDICAL_SUPPLEMENT_COLUMN_2_LINE_4,
+    MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5,
+    MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS,
+    MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME,
+    MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME_LESS_WAGE_LOSS,
+    MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME,
+    MEDICAL_SUPPLEMENT_IF_RESIDENT,
+    MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET,
+    MEDICAL_SUPPLEMENT_INCOME_THRESHOLD,
+    MEDICAL_SUPPLEMENT_LINE_6,
+    MEDICAL_SUPPLEMENT_LINE_8,
+    MEDICAL_SUPPLEMENT_LINE_11,
+    MEDICAL_SUPPLEMENT_LINE_13,
+    MEDICAL_SUPPLEMENT_LINE_14,
+    MEDICAL_SUPPLEMENT_LINE_15,
+    MEDICAL_SUPPLEMENT_LINE_16,
+    MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME,
+    MEDICAL_SUPPLEMENT_WORKING_INCOME,
     MEDICAL_THRESHOLD,
+    NET_BUSINESS_INCOME,
     NET_CAPITAL_LOSS_BALANCE_1985_TO_1987,
     NET_CAPITAL_LOSS_BALANCE_1988_AND_1989,
     NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
@@ -244,12 +271,16 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
     NET_CAPITAL_LOSSES_CLAIMED,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+    NET_COMMISSION_INCOME,
+    NET_FARMING_INCOME,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
+    NET_FISHING_INCOME,
     NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NET_PARTNERSHIP_INCOME,
+    NET_PROFESSIONAL_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
@@ -268,6 +299,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_DIVIDENDS_CREDIT,
     OTHER_DIVIDENDS_GROSSED_UP,
     OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
+    OTHER_EMPLOYMENT_EXPENSES,
     OTHER_EMPLOYMENT_INCOME,
     OTHER_FHSA_INCOME,
     OTHER_INCOME,
@@ -305,12 +337,14 @@ from app.jurisdictions.ca.catalog import (
     RDSP_INCOME_REPAYMENT,
     REFUND,
     REFUND_OR_BALANCE_OWING,
+    REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
     REMAINING_ADJUSTED_LOSSES_1985_TO_1987,
     REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
     REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
     REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
+    RESIDENT_IN_CANADA_THROUGHOUT_2025,
     RESP_AIPS_ADDITIONAL_TAX,
     RESP_AIPS_CONTRIBUTIONS_COUNTED,
     RESP_AIPS_LIFETIME_LIMIT,
@@ -350,6 +384,11 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_CAREGIVER_LIMIT,
     SPOUSE_INFIRMITY_SUPPLEMENT,
     SPOUSE_NET_INCOME,
+    SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS,
+    SPOUSE_RDSP_INCOME,
+    SPOUSE_RDSP_INCOME_REPAYMENT,
+    SPOUSE_UCCB_REPAYMENT,
+    SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT,
     SPOUSES_CLAIMED,
     SUPPORT_PAYMENTS_DEDUCTION,
     T3_DIVIDEND_TAX_CREDIT,
@@ -400,6 +439,7 @@ from app.jurisdictions.ca.catalog import (
     UNIVERSITY_DONATIONS_OUTSIDE_CANADA,
     UNUSED_RRSP_CONTRIBUTIONS,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
+    WAGE_LOSS_REPLACEMENT_PLAN_INCOME,
     WORKERS_COMPENSATION_BENEFITS,
     WORKING_INCOME,
 )
@@ -634,6 +674,22 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             "ca/resp_aips_part_a_applies",
             "ca/rl_10_labour_sponsored_fund_amount",
             "ca/political_contributions",
+            "ca/disability_supports_deduction",
+            "ca/other_employment_expenses",
+            "ca/clergy_residence_deduction",
+            "ca/net_business_income",
+            "ca/net_professional_income",
+            "ca/net_commission_income",
+            "ca/net_farming_income",
+            "ca/net_fishing_income",
+            "ca/wage_loss_replacement_plan_income",
+            "ca/resident_in_canada_throughout_2025",
+            "ca/aged_18_or_older_at_end_of_2025",
+            "ca/spouse_net_income_before_adjustments",
+            "ca/spouse_uccb_repayment",
+            "ca/spouse_rdsp_income_repayment",
+            "ca/spouse_universal_child_care_benefit",
+            "ca/spouse_rdsp_income",
             "ca-on/opportunities_fund_donation",
             "ca-on/fertility_expenses",
             "ca-on/claims_seniors_care_credit",
@@ -3948,19 +4004,272 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             consumes={"base": "ca/educator_supplies_expenses_at_most_maximum"},
             produces={"output": "ca/educator_school_supply_credit"},
         ),
-        # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700), line
-        # 155 (45300) "Canada workers benefit (CWB) (complete Schedule 6)", line 159 (45600) "Part
-        # XII.2 tax credit (box 38 of all T3 slips and box 209 of all T5013 slips)", line 160
-        # (45700) "Employee and partner GST/HST rebate (complete Form GST370)", line 161 (46900),
-        # line 162 (47555) "Canadian journalism labour tax credit (box 236 of all T5013 slips)",
-        # line 164 (47600) "Tax paid by instalments" and line 165 (47900), in line order, as the
-        # other lines are not triggered or not yet wired.
+        # T1 line 154 and line 45200 "Refundable medical expense supplement (use Federal
+        # Worksheet)"; Federal Worksheet "Line 45200 - Refundable medical expense supplement", one
+        # step per printed line, then the conditions it states. The T1 lines it reads that are not
+        # yet computed are caller inputs under their line names: 21500, 22900, 23100, and the
+        # self-employment lines 13500, 13700, 13900, 14100 and 14300, each the profits only as the
+        # worksheet's note asks. "In addition, the total of the following two amounts must be $4,390
+        # or more:" "your employment income from lines 10100 and 10400 of your return (other than
+        # amounts received from a wage-loss replacement plan) minus the amounts from lines 20700,
+        # 21200, 22900, and 23100 of your return (if the result is negative, consider it as "0")":
+        # lines 10100 and 10400.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/employment_income", "ca/other_employment_income")},
+            produces={"output": "ca/medical_supplement_employment_income"},
+        ),
+        # "(other than amounts received from a wage-loss replacement plan)": a caller input, which
+        # lines 10100 and 10400 include.
+        CapabilitySelection(
+            name="core/subtract",
+            params={},
+            consumes={
+                "amount": "ca/medical_supplement_employment_income",
+                "less": "ca/wage_loss_replacement_plan_income",
+            },
+            produces={"output": "ca/medical_supplement_employment_income_less_wage_loss"},
+        ),
+        # "minus the amounts from lines 20700, 21200, 22900, and 23100 of your return", in line
+        # order.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/rpp_deduction",
+                    "ca/union_dues",
+                    "ca/other_employment_expenses",
+                    "ca/clergy_residence_deduction",
+                ),
+            },
+            produces={"output": "ca/medical_supplement_employment_deductions"},
+        ),
+        # "(if the result is negative, consider it as "0")".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca/medical_supplement_employment_income_less_wage_loss",
+                "less": "ca/medical_supplement_employment_deductions",
+            },
+            produces={"output": "ca/medical_supplement_employment_working_income"},
+        ),
+        # "your net self-employment income (not including losses) from lines 13500, 13700, 13900,
+        # 14100, and 14300 of your return", in line order.
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/net_business_income",
+                    "ca/net_professional_income",
+                    "ca/net_commission_income",
+                    "ca/net_farming_income",
+                    "ca/net_fishing_income",
+                ),
+            },
+            produces={"output": "ca/medical_supplement_self_employment_income"},
+        ),
+        # "the total of the following two amounts".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/medical_supplement_employment_working_income",
+                    "ca/medical_supplement_self_employment_income",
+                ),
+            },
+            produces={"output": "ca/medical_supplement_working_income"},
+        ),
+        # Column 1 "You" line 1 "Net income amount from line 23600 of the return (or the amount you
+        # would have entered if the instructions on line 23600 said "if negative, show in
+        # brackets")" is line 23400, the net income before adjustments, as line 23500 is not
+        # wired yet; line 2 "Total of the universal child care benefit (UCCB) repayment (line 21300
+        # of the return) and the registered disability savings plan (RDSP) income repayment
+        # (included in the amount on line 23200 of the return)" is the UCCB and RDSP income
+        # repayments of the other payments worksheet; line 3 "Line 1 plus line 2".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/net_income_before_adjustments",
+                    "ca/uccb_and_rdsp_income_repayments",
+                ),
+            },
+            produces={"output": "ca/medical_supplement_column_1_line_3"},
+        ),
+        # Column 1 line 4 "Total of the UCCB income (line 11700 of the return) and the RDSP income
+        # (line 12500 of the return)" is the UCCB and RDSP income of the other payments worksheet;
+        # line 5 "Line 3 minus line 4 (if negative, enter "0")".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca/medical_supplement_column_1_line_3",
+                "less": "ca/uccb_and_rdsp_income",
+            },
+            produces={"output": "ca/medical_supplement_column_1_line_5"},
+        ),
+        # Column 2 "Your spouse or common-law partner" line 2, line 3 "Line 1 plus line 2", line 4
+        # and line 5, the same lines for the spouse's caller inputs: 0 when there is no spouse or
+        # common-law partner, and when "you were separated because of a breakdown in your
+        # relationship for a period of 90 days or more that included December 31, 2025" or "your
+        # spouse or common-law partner died on or before December 31, 2025", as the worksheet says
+        # "do not include their income".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/spouse_uccb_repayment", "ca/spouse_rdsp_income_repayment")},
+            produces={"output": "ca/medical_supplement_column_2_line_2"},
+        ),
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/spouse_net_income_before_adjustments",
+                    "ca/medical_supplement_column_2_line_2",
+                ),
+            },
+            produces={"output": "ca/medical_supplement_column_2_line_3"},
+        ),
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/spouse_universal_child_care_benefit", "ca/spouse_rdsp_income")},
+            produces={"output": "ca/medical_supplement_column_2_line_4"},
+        ),
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca/medical_supplement_column_2_line_3",
+                "less": "ca/medical_supplement_column_2_line_4",
+            },
+            produces={"output": "ca/medical_supplement_column_2_line_5"},
+        ),
+        # Line 6 "Add the amounts from line 5 of columns 1 and 2. Adjusted family net income".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={
+                "parts": (
+                    "ca/medical_supplement_column_1_line_5",
+                    "ca/medical_supplement_column_2_line_5",
+                ),
+            },
+            produces={"output": "ca/medical_supplement_line_6"},
+        ),
+        # Line 7 "Income threshold 33,294.00", a printed constant.
+        CapabilitySelection(
+            name="core/credit_amount",
+            params={"amount": "ca/medical_supplement_income_threshold"},
+            consumes={},
+            produces={"output": "ca/medical_supplement_income_threshold"},
+        ),
+        # Line 8 "Line 6 minus line 7 (if negative, enter "0") =".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca/medical_supplement_line_6",
+                "less": "ca/medical_supplement_income_threshold",
+            },
+            produces={"output": "ca/medical_supplement_line_8"},
+        ),
+        # Line 9 "Amount from line 21500 of your return" and line 10 "Amount from line 33200 of your
+        # return" are the disability supports deduction and the medical claim; line 11 "Line 9 plus
+        # line 10".
+        CapabilitySelection(
+            name="core/sum",
+            params={},
+            consumes={"parts": ("ca/disability_supports_deduction", "ca/medical_claim")},
+            produces={"output": "ca/medical_supplement_line_11"},
+        ),
+        # Line 12 "Applicable rate 25%" and line 13 "Line 11 multiplied by the percentage from line
+        # 12 =".
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/medical_supplement_rate"},
+            consumes={"base": "ca/medical_supplement_line_11"},
+            produces={"output": "ca/medical_supplement_line_13"},
+        ),
+        # Line 14 "Enter whichever is less: amount from line 13 or $1,504".
+        CapabilitySelection(
+            name="core/capped_amount",
+            params={"cap": "ca/medical_supplement_maximum"},
+            consumes={"base": "ca/medical_supplement_line_13"},
+            produces={"output": "ca/medical_supplement_line_14"},
+        ),
+        # Line 15 "Amount from line 8" "multiplied by 5% =".
+        CapabilitySelection(
+            name="core/apply_rate",
+            params={"rate": "ca/medical_supplement_reduction_rate"},
+            consumes={"base": "ca/medical_supplement_line_8"},
+            produces={"output": "ca/medical_supplement_line_15"},
+        ),
+        # Line 16 "Line 14 minus line 15 (if negative, enter "0") Enter this amount on line 45200 of
+        # your return. =".
+        CapabilitySelection(
+            name="core/subtract_not_below_zero",
+            params={},
+            consumes={
+                "amount": "ca/medical_supplement_line_14",
+                "less": "ca/medical_supplement_line_15",
+            },
+            produces={"output": "ca/medical_supplement_line_16"},
+        ),
+        # "In addition, the total of the following two amounts must be $4,390 or more:": line 16
+        # when the working income is at least the threshold, else 0.
+        CapabilitySelection(
+            name="ca/threshold_gate",
+            params={"threshold": "ca/medical_supplement_working_income_threshold"},
+            consumes={
+                "amount": "ca/medical_supplement_line_16",
+                "gate": "ca/medical_supplement_working_income",
+            },
+            produces={"output": "ca/medical_supplement_if_working_income_met"},
+        ),
+        # "You were resident in Canada throughout 2025", a count of 0 or 1.
+        CapabilitySelection(
+            name="core/times_count",
+            params={},
+            consumes={
+                "amount": "ca/medical_supplement_if_working_income_met",
+                "count": "ca/resident_in_canada_throughout_2025",
+            },
+            produces={"output": "ca/medical_supplement_if_resident"},
+        ),
+        # "You were 18 years of age or older at the end of 2025", a count of 0 or 1: T1 line 154 and
+        # line 45200.
+        CapabilitySelection(
+            name="core/times_count",
+            params={},
+            consumes={
+                "amount": "ca/medical_supplement_if_resident",
+                "count": "ca/aged_18_or_older_at_end_of_2025",
+            },
+            produces={"output": "ca/refundable_medical_expense_supplement"},
+        ),
+        # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700), line 154
+        # (45200) "Refundable medical expense supplement (use Federal Worksheet)", line 155 (45300)
+        # "Canada workers benefit (CWB) (complete Schedule 6)", line 159 (45600) "Part XII.2 tax
+        # credit (box 38 of all T3 slips and box 209 of all T5013 slips)", line 160 (45700)
+        # "Employee and partner GST/HST rebate (complete Form GST370)", line 161 (46900), line 162
+        # (47555) "Canadian journalism labour tax credit (box 236 of all T5013 slips)", line 164
+        # (47600) "Tax paid by instalments" and line 165 (47900), in line order, as the other lines
+        # are not triggered or not yet wired.
         CapabilitySelection(
             name="core/sum",
             params={},
             consumes={
                 "parts": (
                     "ca/income_tax_deducted",
+                    "ca/refundable_medical_expense_supplement",
                     "ca/canada_workers_benefit",
                     "ca/part_xii_2_tax_credit",
                     "ca/employee_and_partner_gst_hst_rebate",
@@ -4010,7 +4319,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
             produces={"output": "ca-on/net_refund"},
         ),
     }
-    assert len(found.capabilities) == 321
+    assert len(found.capabilities) == 344
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -4020,7 +4329,7 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 321
+    assert len(composition.order) == 344
     assert wiring == {
         (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({TAXABLE_CAPITAL_GAINS})),
         (
@@ -5632,9 +5941,143 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         ),
         (
             Sum,
+            frozenset({EMPLOYMENT_INCOME, OTHER_EMPLOYMENT_INCOME}),
+            frozenset({MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME}),
+        ),
+        (
+            Subtract,
+            frozenset({MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME, WAGE_LOSS_REPLACEMENT_PLAN_INCOME}),
+            frozenset({MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME_LESS_WAGE_LOSS}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {RPP_DEDUCTION, UNION_DUES, OTHER_EMPLOYMENT_EXPENSES, CLERGY_RESIDENCE_DEDUCTION}
+            ),
+            frozenset({MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset(
+                {
+                    MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME_LESS_WAGE_LOSS,
+                    MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS,
+                }
+            ),
+            frozenset({MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {
+                    NET_BUSINESS_INCOME,
+                    NET_PROFESSIONAL_INCOME,
+                    NET_COMMISSION_INCOME,
+                    NET_FARMING_INCOME,
+                    NET_FISHING_INCOME,
+                }
+            ),
+            frozenset({MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME}),
+        ),
+        (
+            Sum,
+            frozenset(
+                {
+                    MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME,
+                    MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME,
+                }
+            ),
+            frozenset({MEDICAL_SUPPLEMENT_WORKING_INCOME}),
+        ),
+        (
+            Sum,
+            frozenset({NET_INCOME_BEFORE_ADJUSTMENTS, UCCB_AND_RDSP_INCOME_REPAYMENTS}),
+            frozenset({MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3, UCCB_AND_RDSP_INCOME}),
+            frozenset({MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5}),
+        ),
+        (
+            Sum,
+            frozenset({SPOUSE_UCCB_REPAYMENT, SPOUSE_RDSP_INCOME_REPAYMENT}),
+            frozenset({MEDICAL_SUPPLEMENT_COLUMN_2_LINE_2}),
+        ),
+        (
+            Sum,
+            frozenset({SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS, MEDICAL_SUPPLEMENT_COLUMN_2_LINE_2}),
+            frozenset({MEDICAL_SUPPLEMENT_COLUMN_2_LINE_3}),
+        ),
+        (
+            Sum,
+            frozenset({SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT, SPOUSE_RDSP_INCOME}),
+            frozenset({MEDICAL_SUPPLEMENT_COLUMN_2_LINE_4}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({MEDICAL_SUPPLEMENT_COLUMN_2_LINE_3, MEDICAL_SUPPLEMENT_COLUMN_2_LINE_4}),
+            frozenset({MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5}),
+        ),
+        (
+            Sum,
+            frozenset({MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5, MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5}),
+            frozenset({MEDICAL_SUPPLEMENT_LINE_6}),
+        ),
+        (CreditAmount, frozenset(), frozenset({MEDICAL_SUPPLEMENT_INCOME_THRESHOLD})),
+        (
+            SubtractNotBelowZero,
+            frozenset({MEDICAL_SUPPLEMENT_LINE_6, MEDICAL_SUPPLEMENT_INCOME_THRESHOLD}),
+            frozenset({MEDICAL_SUPPLEMENT_LINE_8}),
+        ),
+        (
+            Sum,
+            frozenset({DISABILITY_SUPPORTS_DEDUCTION, MEDICAL_CLAIM}),
+            frozenset({MEDICAL_SUPPLEMENT_LINE_11}),
+        ),
+        (
+            ApplyRate,
+            frozenset({MEDICAL_SUPPLEMENT_LINE_11}),
+            frozenset({MEDICAL_SUPPLEMENT_LINE_13}),
+        ),
+        (
+            CappedAmount,
+            frozenset({MEDICAL_SUPPLEMENT_LINE_13}),
+            frozenset({MEDICAL_SUPPLEMENT_LINE_14}),
+        ),
+        (
+            ApplyRate,
+            frozenset({MEDICAL_SUPPLEMENT_LINE_8}),
+            frozenset({MEDICAL_SUPPLEMENT_LINE_15}),
+        ),
+        (
+            SubtractNotBelowZero,
+            frozenset({MEDICAL_SUPPLEMENT_LINE_14, MEDICAL_SUPPLEMENT_LINE_15}),
+            frozenset({MEDICAL_SUPPLEMENT_LINE_16}),
+        ),
+        (
+            ThresholdGate,
+            frozenset({MEDICAL_SUPPLEMENT_LINE_16, MEDICAL_SUPPLEMENT_WORKING_INCOME}),
+            frozenset({MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET}),
+        ),
+        (
+            TimesCount,
+            frozenset(
+                {MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET, RESIDENT_IN_CANADA_THROUGHOUT_2025}
+            ),
+            frozenset({MEDICAL_SUPPLEMENT_IF_RESIDENT}),
+        ),
+        (
+            TimesCount,
+            frozenset({MEDICAL_SUPPLEMENT_IF_RESIDENT, AGED_18_OR_OLDER_AT_END_OF_2025}),
+            frozenset({REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT}),
+        ),
+        (
+            Sum,
             frozenset(
                 {
                     INCOME_TAX_DEDUCTED,
+                    REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
                     CANADA_WORKERS_BENEFIT,
                     PART_XII_2_TAX_CREDIT,
                     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,

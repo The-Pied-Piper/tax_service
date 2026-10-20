@@ -129,12 +129,14 @@ from app.domain.trace import (
     SumLine,
     SurchargeTierLine,
     TaperedAmountLine,
+    ThresholdGateLine,
     TimesCountLine,
 )
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
 from app.jurisdictions.ca.capabilities.disability_transfer_amount import DisabilityTransferAmount
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
+from app.jurisdictions.ca.capabilities.threshold_gate import ThresholdGate
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADJUSTED_FAMILY_NET_INCOME,
@@ -156,6 +158,7 @@ from app.jurisdictions.ca.catalog import (
     AGE_INCOME_THRESHOLD,
     AGE_MAXIMUM,
     AGE_REDUCTION,
+    AGED_18_OR_OLDER_AT_END_OF_2025,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
@@ -197,6 +200,7 @@ from app.jurisdictions.ca.catalog import (
     CHILDREN_SEVEN_TO_SIXTEEN,
     CHILDREN_UNDER_SEVEN,
     CHILDREN_WITH_DISABILITY,
+    CLERGY_RESIDENCE_DEDUCTION,
     CPP_BASE_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
@@ -223,6 +227,7 @@ from app.jurisdictions.ca.catalog import (
     DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
     DEPRECIABLE_GIFTS,
     DISABILITY_DEPENDANTS,
+    DISABILITY_SUPPORTS_DEDUCTION,
     DISABILITY_TRANSFERRED_AMOUNT,
     DIVIDEND_TAX_CREDIT,
     DIVIDENDS_AMOUNT_A,
@@ -343,7 +348,30 @@ from app.jurisdictions.ca.catalog import (
     MEDICAL_EXPENSES,
     MEDICAL_EXPENSES_OVER_THRESHOLD,
     MEDICAL_NET_INCOME_SHARE,
+    MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3,
+    MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5,
+    MEDICAL_SUPPLEMENT_COLUMN_2_LINE_2,
+    MEDICAL_SUPPLEMENT_COLUMN_2_LINE_3,
+    MEDICAL_SUPPLEMENT_COLUMN_2_LINE_4,
+    MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5,
+    MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS,
+    MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME,
+    MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME_LESS_WAGE_LOSS,
+    MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME,
+    MEDICAL_SUPPLEMENT_IF_RESIDENT,
+    MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET,
+    MEDICAL_SUPPLEMENT_INCOME_THRESHOLD,
+    MEDICAL_SUPPLEMENT_LINE_6,
+    MEDICAL_SUPPLEMENT_LINE_8,
+    MEDICAL_SUPPLEMENT_LINE_11,
+    MEDICAL_SUPPLEMENT_LINE_13,
+    MEDICAL_SUPPLEMENT_LINE_14,
+    MEDICAL_SUPPLEMENT_LINE_15,
+    MEDICAL_SUPPLEMENT_LINE_16,
+    MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME,
+    MEDICAL_SUPPLEMENT_WORKING_INCOME,
     MEDICAL_THRESHOLD,
+    NET_BUSINESS_INCOME,
     NET_CAPITAL_LOSS_BALANCE_1985_TO_1987,
     NET_CAPITAL_LOSS_BALANCE_1988_AND_1989,
     NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
@@ -351,12 +379,16 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
     NET_CAPITAL_LOSSES_CLAIMED,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+    NET_COMMISSION_INCOME,
+    NET_FARMING_INCOME,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
+    NET_FISHING_INCOME,
     NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NET_PARTNERSHIP_INCOME,
+    NET_PROFESSIONAL_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
@@ -376,6 +408,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_DIVIDENDS_CREDIT,
     OTHER_DIVIDENDS_GROSSED_UP,
     OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
+    OTHER_EMPLOYMENT_EXPENSES,
     OTHER_EMPLOYMENT_INCOME,
     OTHER_FHSA_INCOME,
     OTHER_INCOME,
@@ -413,12 +446,14 @@ from app.jurisdictions.ca.catalog import (
     RDSP_INCOME_REPAYMENT,
     REFUND,
     REFUND_OR_BALANCE_OWING,
+    REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
     REMAINING_ADJUSTED_LOSSES_1985_TO_1987,
     REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
     REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
     REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
+    RESIDENT_IN_CANADA_THROUGHOUT_2025,
     RESP_AIPS_ADDITIONAL_TAX,
     RESP_AIPS_CONTRIBUTIONS_COUNTED,
     RESP_AIPS_LIFETIME_LIMIT,
@@ -458,6 +493,11 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_CAREGIVER_LIMIT,
     SPOUSE_INFIRMITY_SUPPLEMENT,
     SPOUSE_NET_INCOME,
+    SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS,
+    SPOUSE_RDSP_INCOME,
+    SPOUSE_RDSP_INCOME_REPAYMENT,
+    SPOUSE_UCCB_REPAYMENT,
+    SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT,
     SPOUSES_CLAIMED,
     SUPPORT_PAYMENTS_DEDUCTION,
     T3_DIVIDEND_TAX_CREDIT,
@@ -508,6 +548,7 @@ from app.jurisdictions.ca.catalog import (
     UNIVERSITY_DONATIONS_OUTSIDE_CANADA,
     UNUSED_RRSP_CONTRIBUTIONS,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
+    WAGE_LOSS_REPLACEMENT_PLAN_INCOME,
     WORKERS_COMPENSATION_BENEFITS,
     WORKING_INCOME,
 )
@@ -813,6 +854,22 @@ def compute(
     capital_gift_gains_deduction: str = "0",
     political_contributions: str = "0",
     federal_political_contributions: str = "0",
+    disability_supports_deduction: str = "0",
+    other_employment_expenses: str = "0",
+    clergy_residence_deduction: str = "0",
+    net_business_income: str = "0",
+    net_professional_income: str = "0",
+    net_commission_income: str = "0",
+    net_farming_income: str = "0",
+    net_fishing_income: str = "0",
+    wage_loss_replacement_plan_income: str = "0",
+    resident_in_canada_throughout_2025: int = 1,
+    aged_18_or_older_at_end_of_2025: int = 1,
+    spouse_net_income_before_adjustments: str = "0",
+    spouse_uccb_repayment: str = "0",
+    spouse_rdsp_income_repayment: str = "0",
+    spouse_universal_child_care_benefit: str = "0",
+    spouse_rdsp_income: str = "0",
     unapplied_net_capital_losses_1985_to_1987: str = "0",
     unapplied_net_capital_losses_1988_and_1989: str = "0",
     unapplied_net_capital_losses_1990_to_1999: str = "0",
@@ -1101,6 +1158,22 @@ def compute(
         Artifact(CAPITAL_GIFT_GAINS_DEDUCTION, D(capital_gift_gains_deduction)),
         Artifact(ontario.POLITICAL_CONTRIBUTIONS, D(political_contributions)),
         Artifact(POLITICAL_CONTRIBUTIONS, D(federal_political_contributions)),
+        Artifact(DISABILITY_SUPPORTS_DEDUCTION, D(disability_supports_deduction)),
+        Artifact(OTHER_EMPLOYMENT_EXPENSES, D(other_employment_expenses)),
+        Artifact(CLERGY_RESIDENCE_DEDUCTION, D(clergy_residence_deduction)),
+        Artifact(NET_BUSINESS_INCOME, D(net_business_income)),
+        Artifact(NET_PROFESSIONAL_INCOME, D(net_professional_income)),
+        Artifact(NET_COMMISSION_INCOME, D(net_commission_income)),
+        Artifact(NET_FARMING_INCOME, D(net_farming_income)),
+        Artifact(NET_FISHING_INCOME, D(net_fishing_income)),
+        Artifact(WAGE_LOSS_REPLACEMENT_PLAN_INCOME, D(wage_loss_replacement_plan_income)),
+        Artifact(RESIDENT_IN_CANADA_THROUGHOUT_2025, resident_in_canada_throughout_2025),
+        Artifact(AGED_18_OR_OLDER_AT_END_OF_2025, aged_18_or_older_at_end_of_2025),
+        Artifact(SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS, D(spouse_net_income_before_adjustments)),
+        Artifact(SPOUSE_UCCB_REPAYMENT, D(spouse_uccb_repayment)),
+        Artifact(SPOUSE_RDSP_INCOME_REPAYMENT, D(spouse_rdsp_income_repayment)),
+        Artifact(SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT, D(spouse_universal_child_care_benefit)),
+        Artifact(SPOUSE_RDSP_INCOME, D(spouse_rdsp_income)),
         Artifact(
             UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987, D(unapplied_net_capital_losses_1985_to_1987)
         ),
@@ -1174,6 +1247,22 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(CAPITAL_GIFT_GAINS_DEDUCTION) is None
     assert worksheet.producer_of(ontario.POLITICAL_CONTRIBUTIONS) is None
     assert worksheet.producer_of(POLITICAL_CONTRIBUTIONS) is None
+    assert worksheet.producer_of(DISABILITY_SUPPORTS_DEDUCTION) is None
+    assert worksheet.producer_of(OTHER_EMPLOYMENT_EXPENSES) is None
+    assert worksheet.producer_of(CLERGY_RESIDENCE_DEDUCTION) is None
+    assert worksheet.producer_of(NET_BUSINESS_INCOME) is None
+    assert worksheet.producer_of(NET_PROFESSIONAL_INCOME) is None
+    assert worksheet.producer_of(NET_COMMISSION_INCOME) is None
+    assert worksheet.producer_of(NET_FARMING_INCOME) is None
+    assert worksheet.producer_of(NET_FISHING_INCOME) is None
+    assert worksheet.producer_of(WAGE_LOSS_REPLACEMENT_PLAN_INCOME) is None
+    assert worksheet.producer_of(RESIDENT_IN_CANADA_THROUGHOUT_2025) is None
+    assert worksheet.producer_of(AGED_18_OR_OLDER_AT_END_OF_2025) is None
+    assert worksheet.producer_of(SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS) is None
+    assert worksheet.producer_of(SPOUSE_UCCB_REPAYMENT) is None
+    assert worksheet.producer_of(SPOUSE_RDSP_INCOME_REPAYMENT) is None
+    assert worksheet.producer_of(SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT) is None
+    assert worksheet.producer_of(SPOUSE_RDSP_INCOME) is None
     assert worksheet.producer_of(OTHER_EMPLOYMENT_INCOME) is None
     assert worksheet.producer_of(OLD_AGE_SECURITY) is None
     assert worksheet.producer_of(CPP_OR_QPP_BENEFITS) is None
@@ -1929,6 +2018,44 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         worksheet.producer_of(EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM), CappedAmount
     )
     assert isinstance(worksheet.producer_of(EDUCATOR_SCHOOL_SUPPLY_CREDIT), ApplyRate)
+    # Line 45200: the Federal Worksheet one step per printed line, then the working income
+    # condition ("$4,390 or more"), then the residence and age counts.
+    assert isinstance(worksheet.producer_of(MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME), Sum)
+    assert isinstance(
+        worksheet.producer_of(MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME_LESS_WAGE_LOSS), Subtract
+    )
+    assert isinstance(worksheet.producer_of(MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS), Sum)
+    assert isinstance(
+        worksheet.producer_of(MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME), SubtractNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME), Sum)
+    assert isinstance(worksheet.producer_of(MEDICAL_SUPPLEMENT_WORKING_INCOME), Sum)
+    assert isinstance(worksheet.producer_of(MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3), Sum)
+    assert isinstance(
+        worksheet.producer_of(MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5), SubtractNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(MEDICAL_SUPPLEMENT_COLUMN_2_LINE_2), Sum)
+    assert isinstance(worksheet.producer_of(MEDICAL_SUPPLEMENT_COLUMN_2_LINE_3), Sum)
+    assert isinstance(worksheet.producer_of(MEDICAL_SUPPLEMENT_COLUMN_2_LINE_4), Sum)
+    assert isinstance(
+        worksheet.producer_of(MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5), SubtractNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(MEDICAL_SUPPLEMENT_LINE_6), Sum)
+    assert isinstance(worksheet.producer_of(MEDICAL_SUPPLEMENT_INCOME_THRESHOLD), CreditAmount)
+    assert isinstance(worksheet.producer_of(MEDICAL_SUPPLEMENT_LINE_8), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(MEDICAL_SUPPLEMENT_LINE_11), Sum)
+    assert isinstance(worksheet.producer_of(MEDICAL_SUPPLEMENT_LINE_13), ApplyRate)
+    assert isinstance(worksheet.producer_of(MEDICAL_SUPPLEMENT_LINE_14), CappedAmount)
+    assert isinstance(worksheet.producer_of(MEDICAL_SUPPLEMENT_LINE_15), ApplyRate)
+    assert isinstance(worksheet.producer_of(MEDICAL_SUPPLEMENT_LINE_16), SubtractNotBelowZero)
+    assert isinstance(
+        worksheet.producer_of(MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET), ThresholdGate
+    )
+    assert isinstance(worksheet.producer_of(MEDICAL_SUPPLEMENT_IF_RESIDENT), TimesCount)
+    assert isinstance(worksheet.producer_of(REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT), TimesCount)
+    assert worksheet.producer_of(MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET) is not (
+        worksheet.producer_of(MEDICAL_SUPPLEMENT_LINE_16)
+    )
     # Lines 45600, 45700, 46800, 47555 and 47600 are inputs the return takes, not computed.
     for kind in (
         PART_XII_2_TAX_CREDIT,
@@ -2835,7 +2962,8 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     credits = position(
-        "total_credits: income_tax_deducted 25000 + canada_workers_benefit 0 "
+        "total_credits: income_tax_deducted 25000 + refundable_medical_expense_supplement 0 "
+        "+ canada_workers_benefit 0 "
         "+ part_xii_2_tax_credit 0 + employee_and_partner_gst_hst_rebate 0 "
         "+ educator_school_supply_credit 0 + journalism_labour_tax_credit 0 "
         "+ tax_paid_by_instalments 0 + provincial_credits 0 = 25000",
@@ -3133,6 +3261,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     per_unit = {line.output: line for line in trace if isinstance(line, PerUnitAmountLine)}
     multiples = {line.output: line for line in trace if isinstance(line, MultipleOverLine)}
     times = {line.output: line for line in trace if isinstance(line, TimesCountLine)}
+    gated = {line.output: line for line in trace if isinstance(line, ThresholdGateLine)}
     fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
     chosen = {line.output: line for line in trace if isinstance(line, ChosenByCountLine)}
     record_totals = {line.output: line for line in trace if isinstance(line, RecordTotalLine)}
@@ -3492,6 +3621,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Rate(D("0.5")),
             CENT,
             D("0.00"),
+        ),
+        # Federal Worksheet "Line 45200 - Refundable medical expense supplement" (T1 line 154),
+        # Return A: line 21500 and line 33200 are 0, so line 11 and line 13 are 0.
+        MEDICAL_SUPPLEMENT_LINE_13: RateAppliedLine(
+            output=MEDICAL_SUPPLEMENT_LINE_13,
+            base=MEDICAL_SUPPLEMENT_LINE_11,
+            base_amount=D("0"),
+            rate=Rate(D("0.25")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        MEDICAL_SUPPLEMENT_LINE_15: RateAppliedLine(
+            output=MEDICAL_SUPPLEMENT_LINE_15,
+            base=MEDICAL_SUPPLEMENT_LINE_8,
+            base_amount=D("81706.00"),
+            rate=Rate(D("0.05")),
+            rounding=CENT,
+            result=D("4085.30"),
         ),
     }
     assert sums == {
@@ -4053,6 +4200,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             TOTAL_CREDITS,
             (
                 (INCOME_TAX_DEDUCTED, D("25000")),
+                (REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT, D("0.00")),
                 (CANADA_WORKERS_BENEFIT, D("0")),
                 (PART_XII_2_TAX_CREDIT, D("0")),
                 (EMPLOYEE_AND_PARTNER_GST_HST_REBATE, D("0")),
@@ -4185,6 +4333,168 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024, D("0.00")),
             ),
             D("0.00"),
+        ),
+        # Federal Worksheet "Line 45200 - Refundable medical expense supplement" (T1 line 154),
+        # Return A: line 21500 and line 33200 are 0, so line 11 and line 13 are 0.
+        MEDICAL_SUPPLEMENT_COLUMN_2_LINE_2: SumLine(
+            output=MEDICAL_SUPPLEMENT_COLUMN_2_LINE_2,
+            parts=(
+                (
+                    SPOUSE_UCCB_REPAYMENT,
+                    D("0"),
+                ),
+                (
+                    SPOUSE_RDSP_INCOME_REPAYMENT,
+                    D("0"),
+                ),
+            ),
+            total=D("0"),
+        ),
+        MEDICAL_SUPPLEMENT_COLUMN_2_LINE_3: SumLine(
+            output=MEDICAL_SUPPLEMENT_COLUMN_2_LINE_3,
+            parts=(
+                (
+                    SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS,
+                    D("0"),
+                ),
+                (
+                    MEDICAL_SUPPLEMENT_COLUMN_2_LINE_2,
+                    D("0"),
+                ),
+            ),
+            total=D("0"),
+        ),
+        MEDICAL_SUPPLEMENT_COLUMN_2_LINE_4: SumLine(
+            output=MEDICAL_SUPPLEMENT_COLUMN_2_LINE_4,
+            parts=(
+                (
+                    SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT,
+                    D("0"),
+                ),
+                (
+                    SPOUSE_RDSP_INCOME,
+                    D("0"),
+                ),
+            ),
+            total=D("0"),
+        ),
+        MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS: SumLine(
+            output=MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS,
+            parts=(
+                (
+                    RPP_DEDUCTION,
+                    D("0"),
+                ),
+                (
+                    UNION_DUES,
+                    D("2000"),
+                ),
+                (
+                    OTHER_EMPLOYMENT_EXPENSES,
+                    D("0"),
+                ),
+                (
+                    CLERGY_RESIDENCE_DEDUCTION,
+                    D("0"),
+                ),
+            ),
+            total=D("2000"),
+        ),
+        MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME: SumLine(
+            output=MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME,
+            parts=(
+                (
+                    EMPLOYMENT_INCOME,
+                    D("110000"),
+                ),
+                (
+                    OTHER_EMPLOYMENT_INCOME,
+                    D("0"),
+                ),
+            ),
+            total=D("110000"),
+        ),
+        MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME: SumLine(
+            output=MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME,
+            parts=(
+                (
+                    NET_BUSINESS_INCOME,
+                    D("0"),
+                ),
+                (
+                    NET_PROFESSIONAL_INCOME,
+                    D("0"),
+                ),
+                (
+                    NET_COMMISSION_INCOME,
+                    D("0"),
+                ),
+                (
+                    NET_FARMING_INCOME,
+                    D("0"),
+                ),
+                (
+                    NET_FISHING_INCOME,
+                    D("0"),
+                ),
+            ),
+            total=D("0"),
+        ),
+        MEDICAL_SUPPLEMENT_WORKING_INCOME: SumLine(
+            output=MEDICAL_SUPPLEMENT_WORKING_INCOME,
+            parts=(
+                (
+                    MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME,
+                    D("108000"),
+                ),
+                (
+                    MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME,
+                    D("0"),
+                ),
+            ),
+            total=D("108000"),
+        ),
+        MEDICAL_SUPPLEMENT_LINE_11: SumLine(
+            output=MEDICAL_SUPPLEMENT_LINE_11,
+            parts=(
+                (
+                    DISABILITY_SUPPORTS_DEDUCTION,
+                    D("0"),
+                ),
+                (
+                    MEDICAL_CLAIM,
+                    D("0"),
+                ),
+            ),
+            total=D("0"),
+        ),
+        MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3: SumLine(
+            output=MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3,
+            parts=(
+                (
+                    NET_INCOME_BEFORE_ADJUSTMENTS,
+                    D("115000.00"),
+                ),
+                (
+                    UCCB_AND_RDSP_INCOME_REPAYMENTS,
+                    D("0"),
+                ),
+            ),
+            total=D("115000.00"),
+        ),
+        MEDICAL_SUPPLEMENT_LINE_6: SumLine(
+            output=MEDICAL_SUPPLEMENT_LINE_6,
+            parts=(
+                (
+                    MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5,
+                    D("115000.00"),
+                ),
+                (
+                    MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5,
+                    D("0"),
+                ),
+            ),
+            total=D("115000.00"),
         ),
     }
     assert subtracted == {
@@ -4465,6 +4775,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0.00"),
             result=D("0.00"),
         ),
+        # Federal Worksheet "Line 45200 - Refundable medical expense supplement" (T1 line 154),
+        # Return A: line 21500 and line 33200 are 0, so line 11 and line 13 are 0.
+        MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME_LESS_WAGE_LOSS: SubtractedLine(
+            output=MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME_LESS_WAGE_LOSS,
+            minuend=MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME,
+            minuend_amount=D("110000"),
+            subtrahend=WAGE_LOSS_REPLACEMENT_PLAN_INCOME,
+            subtrahend_amount=D("0"),
+            result=D("110000"),
+        ),
     }
     # T1 line 30000 and the Federal Worksheet (5000-D1): net income of 115000 is at or below
     # the 177882 threshold, so the reduction (line 9) is 0 and the amount is the base plus the
@@ -4484,6 +4804,21 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     # ON428 line 58040 has no reduction: the Ontario amount is the dataset's credit amount. ON428
     # line 74 "Basic reduction 294.00" is claimed whole too.
+    assert gated == {
+        # Federal Worksheet "Line 45200 - Refundable medical expense supplement" (T1 line 154),
+        # Return A: line 21500 and line 33200 are 0, so line 11 and line 13 are 0.
+        MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET: ThresholdGateLine(
+            output=MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET,
+            amount_kind=MEDICAL_SUPPLEMENT_LINE_16,
+            amount_value=D("0"),
+            gate_kind=MEDICAL_SUPPLEMENT_WORKING_INCOME,
+            gate_value=D("108000"),
+            threshold=Amount(D("4390")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+    }
+
     assert amounts == {
         # Form T1172 line 4 "Maximum lifetime RRSP contribution limit ... $ 50,000.00".
         RESP_AIPS_LIFETIME_LIMIT: CreditAmountLine(
@@ -4623,6 +4958,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         COOP_EDUCATION_FULL_SHARE: CreditAmountLine(
             COOP_EDUCATION_FULL_SHARE, Credit(amount=D("1.00")), CENT, D("1.00")
+        ),
+        # Federal Worksheet "Line 45200 - Refundable medical expense supplement" (T1 line 154),
+        # Return A: line 21500 and line 33200 are 0, so line 11 and line 13 are 0.
+        MEDICAL_SUPPLEMENT_INCOME_THRESHOLD: CreditAmountLine(
+            output=MEDICAL_SUPPLEMENT_INCOME_THRESHOLD,
+            basis=Credit(amount=D("33294.00")),
+            rounding=CENT,
+            value=D("33294.00"),
         ),
     }
     # ON428 line 75 (line 60969) "Number of dependent children multiplied by $544" and line 76
@@ -4861,6 +5204,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
             result=D("0"),
         ),
+        # Federal Worksheet "Line 45200 - Refundable medical expense supplement" (T1 line 154),
+        # Return A: line 21500 and line 33200 are 0, so line 11 and line 13 are 0.
+        MEDICAL_SUPPLEMENT_IF_RESIDENT: TimesCountLine(
+            output=MEDICAL_SUPPLEMENT_IF_RESIDENT,
+            amount_kind=MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET,
+            amount_value=D("0.00"),
+            count_kind=RESIDENT_IN_CANADA_THROUGHOUT_2025,
+            count=1,
+            result=D("0.00"),
+        ),
+        REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT: TimesCountLine(
+            output=REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
+            amount_kind=MEDICAL_SUPPLEMENT_IF_RESIDENT,
+            amount_value=D("0.00"),
+            count_kind=AGED_18_OR_OLDER_AT_END_OF_2025,
+            count=1,
+            result=D("0.00"),
+        ),
     }
     # ON428 line 78 "Amount from line 77 above multiplied by 2", line 79 "Amount from line 73
     # above" and line 80 "Line 78 minus line 79 (if negative, enter "0") Ontario tax reduction":
@@ -5009,6 +5370,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Amount(D("10823")),
             CENT,
             D("10823"),
+        ),
+        # Federal Worksheet "Line 45200 - Refundable medical expense supplement" (T1 line 154),
+        # Return A: line 21500 and line 33200 are 0, so line 11 and line 13 are 0.
+        MEDICAL_SUPPLEMENT_LINE_14: CappedAmountLine(
+            output=MEDICAL_SUPPLEMENT_LINE_14,
+            base=MEDICAL_SUPPLEMENT_LINE_13,
+            base_amount=D("0.00"),
+            cap=Amount(D("1504")),
+            rounding=CENT,
+            result=D("0.00"),
         ),
     }
     # Schedule 7 line 17 "Enter whichever is less: amount from line 13 or line 16.": the
@@ -5798,6 +6169,48 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("40000.00"),
         ),
+        # Federal Worksheet "Line 45200 - Refundable medical expense supplement" (T1 line 154),
+        # Return A: line 21500 and line 33200 are 0, so line 11 and line 13 are 0.
+        MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5: SubtractedNotBelowZeroLine(
+            output=MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5,
+            minuend=MEDICAL_SUPPLEMENT_COLUMN_2_LINE_3,
+            minuend_amount=D("0"),
+            subtrahend=MEDICAL_SUPPLEMENT_COLUMN_2_LINE_4,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME: SubtractedNotBelowZeroLine(
+            output=MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME,
+            minuend=MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME_LESS_WAGE_LOSS,
+            minuend_amount=D("110000"),
+            subtrahend=MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS,
+            subtrahend_amount=D("2000"),
+            result=D("108000"),
+        ),
+        MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5: SubtractedNotBelowZeroLine(
+            output=MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5,
+            minuend=MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3,
+            minuend_amount=D("115000.00"),
+            subtrahend=UCCB_AND_RDSP_INCOME,
+            subtrahend_amount=D("0"),
+            result=D("115000.00"),
+        ),
+        MEDICAL_SUPPLEMENT_LINE_8: SubtractedNotBelowZeroLine(
+            output=MEDICAL_SUPPLEMENT_LINE_8,
+            minuend=MEDICAL_SUPPLEMENT_LINE_6,
+            minuend_amount=D("115000.00"),
+            subtrahend=MEDICAL_SUPPLEMENT_INCOME_THRESHOLD,
+            subtrahend_amount=D("33294.00"),
+            result=D("81706.00"),
+        ),
+        MEDICAL_SUPPLEMENT_LINE_16: SubtractedNotBelowZeroLine(
+            output=MEDICAL_SUPPLEMENT_LINE_16,
+            minuend=MEDICAL_SUPPLEMENT_LINE_14,
+            minuend_amount=D("0.00"),
+            subtrahend=MEDICAL_SUPPLEMENT_LINE_15,
+            subtrahend_amount=D("4085.30"),
+            result=D("0"),
+        ),
     }
     # Form T1221 line 4 "Add lines 1 to 3.": Return A has no slips, so no items and a total of 0.
     assert record_totals == {
@@ -5936,7 +6349,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
 
-    assert len(order) == 321
+    assert len(order) == 344
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -6391,6 +6804,63 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         assert position[WORKING_INCOME] < position[basic] < position[benefit]
         assert position[NET_INCOME] < position[ADJUSTED_FAMILY_NET_INCOME] < position[reduction]
         assert position[reduction] < position[benefit] < position[CANADA_WORKERS_BENEFIT]
+    # Line 45200: the working income and the columns first, then lines 6 to 8 and 11 to 16 in line
+    # order, the working income gate, the residence count and the age count; line 166 adds it.
+    assert (
+        position[MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME]
+        < position[MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME_LESS_WAGE_LOSS]
+        < position[MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME]
+        < position[MEDICAL_SUPPLEMENT_WORKING_INCOME]
+    )
+    assert (
+        position[MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS]
+        < position[MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME]
+    )
+    assert (
+        position[MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME]
+        < position[MEDICAL_SUPPLEMENT_WORKING_INCOME]
+    )
+    assert position[NET_INCOME_BEFORE_ADJUSTMENTS] < position[MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3]
+    assert position[UCCB_AND_RDSP_INCOME_REPAYMENTS] < position[MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3]
+    assert (
+        position[MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3]
+        < position[MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5]
+        < position[MEDICAL_SUPPLEMENT_LINE_6]
+    )
+    assert (
+        position[MEDICAL_SUPPLEMENT_COLUMN_2_LINE_2]
+        < position[MEDICAL_SUPPLEMENT_COLUMN_2_LINE_3]
+        < position[MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5]
+        < position[MEDICAL_SUPPLEMENT_LINE_6]
+    )
+    assert (
+        position[MEDICAL_SUPPLEMENT_COLUMN_2_LINE_4] < position[MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5]
+    )
+    assert (
+        position[MEDICAL_SUPPLEMENT_LINE_6]
+        < position[MEDICAL_SUPPLEMENT_LINE_8]
+        < position[MEDICAL_SUPPLEMENT_LINE_15]
+        < position[MEDICAL_SUPPLEMENT_LINE_16]
+    )
+    assert position[MEDICAL_SUPPLEMENT_INCOME_THRESHOLD] < position[MEDICAL_SUPPLEMENT_LINE_8]
+    assert position[MEDICAL_CLAIM] < position[MEDICAL_SUPPLEMENT_LINE_11]
+    assert (
+        position[MEDICAL_SUPPLEMENT_LINE_11]
+        < position[MEDICAL_SUPPLEMENT_LINE_13]
+        < position[MEDICAL_SUPPLEMENT_LINE_14]
+        < position[MEDICAL_SUPPLEMENT_LINE_16]
+    )
+    assert (
+        position[MEDICAL_SUPPLEMENT_LINE_16]
+        < position[MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET]
+        < position[MEDICAL_SUPPLEMENT_IF_RESIDENT]
+        < position[REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT]
+        < position[TOTAL_CREDITS]
+    )
+    assert (
+        position[MEDICAL_SUPPLEMENT_WORKING_INCOME]
+        < position[MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET]
+    )
     assert position[CANADA_WORKERS_BENEFIT] < position[TOTAL_CREDITS]
     # Line 161 (46900): the cap on line 46800 first, then the rate; the total credits add it.
     assert (
@@ -7286,7 +7756,8 @@ def test_with_no_tax_payable_all_the_tax_deducted_is_refunded() -> None:
     assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-2133")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
-        "total_credits: income_tax_deducted 500 + canada_workers_benefit 1633 "
+        "total_credits: income_tax_deducted 500 + refundable_medical_expense_supplement 0 "
+        "+ canada_workers_benefit 1633 "
         "+ part_xii_2_tax_credit 0 + employee_and_partner_gst_hst_rebate 0 "
         "+ educator_school_supply_credit 0 + journalism_labour_tax_credit 0 "
         "+ tax_paid_by_instalments 0 + provincial_credits 0 = 2133"
@@ -7573,7 +8044,8 @@ def test_return_gs_ontario_credits_are_5180_and_lower_the_refund_by_that_much() 
     ) in rendered
     assert "provincial_credits: ontario_credits 5180 = 5180" in rendered
     assert (
-        "total_credits: income_tax_deducted 8000 + canada_workers_benefit 0 "
+        "total_credits: income_tax_deducted 8000 + refundable_medical_expense_supplement 0 "
+        "+ canada_workers_benefit 0 "
         "+ part_xii_2_tax_credit 0 + employee_and_partner_gst_hst_rebate 0 "
         "+ educator_school_supply_credit 0 + journalism_labour_tax_credit 0 "
         "+ tax_paid_by_instalments 0 + provincial_credits 5180 = 13180"
@@ -7633,7 +8105,8 @@ def test_return_ms_flow_through_share_credit_is_500_and_lowers_the_refund_by_tha
     ) in rendered
     assert "provincial_credits: ontario_credits 5680 = 5680" in rendered
     assert (
-        "total_credits: income_tax_deducted 8000 + canada_workers_benefit 0 "
+        "total_credits: income_tax_deducted 8000 + refundable_medical_expense_supplement 0 "
+        "+ canada_workers_benefit 0 "
         "+ part_xii_2_tax_credit 0 + employee_and_partner_gst_hst_rebate 0 "
         "+ educator_school_supply_credit 0 + journalism_labour_tax_credit 0 "
         "+ tax_paid_by_instalments 0 + provincial_credits 5680 = 13680"
@@ -7837,7 +8310,8 @@ def test_return_rs_co_operative_education_credit_is_5200_and_lowers_the_refund_b
     ) in rendered
     assert "provincial_credits: ontario_credits 10880 = 10880" in rendered
     assert (
-        "total_credits: income_tax_deducted 8000 + canada_workers_benefit 0 "
+        "total_credits: income_tax_deducted 8000 + refundable_medical_expense_supplement 0 "
+        "+ canada_workers_benefit 0 "
         "+ part_xii_2_tax_credit 0 + employee_and_partner_gst_hst_rebate 0 "
         "+ educator_school_supply_credit 0 + journalism_labour_tax_credit 0 "
         "+ tax_paid_by_instalments 0 + provincial_credits 10880 = 18880"
@@ -10120,7 +10594,15 @@ def test_return_xs_medical_expenses_are_claimed_on_lines_33099_and_33199() -> No
     assert worksheet.get(ONTARIO_TAX).value == D("1393.01")
     assert worksheet.get(TOTAL_PAYABLE).value == D("4465.81")
     assert worksheet.get(CANADA_WORKERS_BENEFIT).value == D("0")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-334.19")
+    # T1 line 154 (line 45200): line 16 of the Federal Worksheet, 25% of the medical claim of
+    # 5773.35 (1443.34) less 5% of the net income of 47555.00 over 33294.00 (713.05).
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_11).value == D("5773.35")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_13).value == D("1443.34")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_14).value == D("1443.34")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_15).value == D("713.05")
+    assert worksheet.get(REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT).value == D("730.29")
+    assert worksheet.get(TOTAL_CREDITS).value == D("5530.29")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-1064.48")
 
 
 def test_return_xs_trace_names_each_step_and_each_dependant() -> None:
@@ -11582,7 +12064,8 @@ def test_return_ps_political_contribution_credit_is_1402_76_and_lowers_the_refun
         "+ political_credit 1402.76 + flow_through_share_credit 0 = 1402.76"
     ) in rendered
     assert (
-        "total_credits: income_tax_deducted 4800 + canada_workers_benefit 0 "
+        "total_credits: income_tax_deducted 4800 + refundable_medical_expense_supplement 0 "
+        "+ canada_workers_benefit 0 "
         "+ part_xii_2_tax_credit 0 + employee_and_partner_gst_hst_rebate 0 "
         "+ educator_school_supply_credit 0 + journalism_labour_tax_credit 0 "
         "+ tax_paid_by_instalments 0 + provincial_credits 1402.76 = 6202.76"
@@ -11874,6 +12357,7 @@ def test_return_ts_total_credits_add_lines_150_to_165_in_line_order() -> None:
     ]
     assert line.parts == (
         (INCOME_TAX_DEDUCTED, D("4929.83")),
+        (REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT, D("0.00")),
         (CANADA_WORKERS_BENEFIT, D("0")),
         (PART_XII_2_TAX_CREDIT, D("50")),
         (EMPLOYEE_AND_PARTNER_GST_HST_REBATE, D("150")),
@@ -11884,7 +12368,8 @@ def test_return_ts_total_credits_add_lines_150_to_165_in_line_order() -> None:
     )
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
-        "total_credits: income_tax_deducted 4929.83 + canada_workers_benefit 0 "
+        "total_credits: income_tax_deducted 4929.83 + refundable_medical_expense_supplement 0 "
+        "+ canada_workers_benefit 0 "
         "+ part_xii_2_tax_credit 50 + employee_and_partner_gst_hst_rebate 150 "
         "+ educator_school_supply_credit 250 + journalism_labour_tax_credit 75 "
         "+ tax_paid_by_instalments 2000 + provincial_credits 0 = 7454.83"
@@ -12578,3 +13063,286 @@ def test_line_3_is_the_ontario_medical_claim_and_not_the_federal_one() -> None:
     assert worksheet.get(SENIORS_CARE_BEFORE_MAXIMUM).value == D("4887.75")
     assert worksheet.get(SENIORS_CARE_AMOUNT).value == D("1500")
     assert worksheet.get(SENIORS_CARE_BEFORE_CLAIM).value == D("1250.00")
+
+
+def return_ah(employment: str = "4390", union_dues: str = "0", **overrides: Any) -> Worksheet:
+    """Return AH's inputs, as in `returns/2025_return_ah.yaml`, over the keyword overrides given.
+
+    Lina, 30, resident in Canada throughout 2025: employment income of 4390 (the working income,
+    exactly the $4,390 the supplement asks), other income of 15618.90 so that the net income is
+    20000.00 after the enhanced CPP contributions of 8.90, and medical expenses of 6600, of which
+    3% of the net income, 600.00, comes off: a medical claim (line 33200) of 6000.00.
+    """
+    inputs: dict[str, Any] = {
+        "other_income": "15618.90",
+        "medical_expenses": "6600",
+        "income_tax_deducted": "500",
+    }
+    inputs.update(overrides)
+    return compute(employment, "0", "0", "0", "0", "0", union_dues, **inputs)
+
+
+def test_return_ah_claims_the_refundable_medical_expense_supplement_of_1500_on_line_45200() -> None:
+    worksheet = return_ah()
+
+    assert worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value == D("20000.00")
+    assert worksheet.get(MEDICAL_CLAIM).value == D("6000.00")
+    # "your employment income from lines 10100 and 10400" less lines 20700, 21200, 22900 and
+    # 23100: 4390 less 0; no net self-employment income: exactly the 4,390 the worksheet asks.
+    assert worksheet.get(MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME).value == D("4390")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME_LESS_WAGE_LOSS).value == D("4390")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS).value == D("0")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME).value == D("4390")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME).value == D("0")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_WORKING_INCOME).value == D("4390")
+    # Lines 1 to 5 of the two columns: the filer's net income, the spouse's column 0.
+    assert worksheet.get(MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3).value == D("20000.00")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5).value == D("20000.00")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5).value == D("0")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_6).value == D("20000.00")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_INCOME_THRESHOLD).value == D("33294.00")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_8).value == D("0")
+    # 21500 + 33200 = 0 + 6000.00, 25% = 1500.00, under the 1,504 maximum, no reduction.
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_11).value == D("6000.00")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_13).value == D("1500.00")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_14).value == D("1500.00")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_15).value == D("0")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_16).value == D("1500.00")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET).value == D("1500.00")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_IF_RESIDENT).value == D("1500.00")
+    assert worksheet.get(REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT).value == D("1500.00")
+    # Line 166 adds it to the income tax deducted of 500.
+    assert worksheet.get(TOTAL_CREDITS).value >= D("2000.00")
+    (total,) = [
+        line
+        for line in worksheet.trace
+        if isinstance(line, SumLine) and line.output == TOTAL_CREDITS
+    ]
+    assert total.parts[:2] == (
+        (INCOME_TAX_DEDUCTED, D("500")),
+        (REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT, D("1500.00")),
+    )
+
+
+def test_return_ahs_trace_names_the_gate_and_the_two_counts() -> None:
+    worksheet = return_ah()
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+
+    assert (
+        "medical_supplement_if_working_income_met: medical_supplement_line_16 1500 "
+        "if medical_supplement_working_income 4390 is at least 4390 (half-up to 0.01) = 1500"
+    ) in rendered
+    assert (
+        "medical_supplement_if_resident: medical_supplement_if_working_income_met 1500 "
+        "for each of 1 resident_in_canada_throughout_2025 = 1500"
+    ) in rendered
+    assert (
+        "refundable_medical_expense_supplement: medical_supplement_if_resident 1500 "
+        "for each of 1 aged_18_or_older_at_end_of_2025 = 1500"
+    ) in rendered
+    assert any(
+        isinstance(line, ThresholdGateLine)
+        and line.output == MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET
+        for line in worksheet.trace
+    )
+
+
+def supplement_only_if(worksheet: Worksheet, met: bool) -> None:
+    """Line 16 is positive; the supplement is it when the conditions are met and 0 otherwise."""
+    line_16 = worksheet.get(MEDICAL_SUPPLEMENT_LINE_16).value
+    assert line_16 > 0
+    expected = line_16 if met else D("0")
+    assert worksheet.get(REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT).value == expected
+
+
+@pytest.mark.parametrize(
+    ("net_business_income", "met"),
+    [("389.99", False), ("390", True), ("390.01", True)],
+)
+def test_the_working_income_of_4390_or_more_includes_the_net_self_employment_income(
+    net_business_income: str, met: bool
+) -> None:
+    # Employment income of 4000 plus net business income (line 13500): 4,389.99 does not meet
+    # "must be $4,390 or more", 4,390 and 4,390.01 do.
+    worksheet = return_ah("4000", net_business_income=net_business_income)
+
+    assert worksheet.get(MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME).value == D(net_business_income)
+    supplement_only_if(worksheet, met)
+
+
+def test_each_of_the_five_self_employment_lines_counts_toward_the_working_income() -> None:
+    worksheet = return_ah(
+        "4000",
+        net_business_income="100",
+        net_professional_income="90",
+        net_commission_income="80",
+        net_farming_income="70",
+        net_fishing_income="50",
+    )
+
+    assert worksheet.get(MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME).value == D("390")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_WORKING_INCOME).value == D("4390")
+    supplement_only_if(worksheet, True)
+
+
+@pytest.mark.parametrize(("wage_loss", "met"), [("0", True), ("0.01", False), ("4390", False)])
+def test_wage_loss_replacement_plan_amounts_do_not_count_toward_the_working_income(
+    wage_loss: str, met: bool
+) -> None:
+    worksheet = return_ah(wage_loss_replacement_plan_income=wage_loss)
+
+    assert worksheet.get(MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME_LESS_WAGE_LOSS).value == D(
+        "4390"
+    ) - D(wage_loss)
+    supplement_only_if(worksheet, met)
+
+
+@pytest.mark.parametrize(
+    "deduction",
+    ["other_employment_expenses", "clergy_residence_deduction"],
+)
+@pytest.mark.parametrize(("amount", "met"), [("100", True), ("100.01", False)])
+def test_lines_22900_and_23100_come_off_the_employment_income(
+    deduction: str, amount: str, met: bool
+) -> None:
+    # Employment income of 4490 less 100 is exactly 4390; a cent more comes off and it is short.
+    worksheet = return_ah("4490", **{deduction: amount})
+
+    assert worksheet.get(MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS).value == D(amount)
+    supplement_only_if(worksheet, met)
+
+
+def test_the_deductions_of_lines_20700_and_21200_come_off_the_employment_income() -> None:
+    # Union dues of 100 (line 21200) leave 4390 of 4490; the registered pension plan deduction
+    # (line 20700) of a cent more leaves 4389.99.
+    assert_met = return_ah("4490", union_dues="100")
+    assert assert_met.get(MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS).value == D("100")
+    supplement_only_if(assert_met, True)
+    short = return_ah("4490", union_dues="100", rpp_deduction="0.01")
+    assert short.get(MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME).value == D("4389.99")
+    supplement_only_if(short, False)
+
+
+def test_a_negative_employment_part_is_zero_and_does_not_reduce_the_self_employment_part() -> None:
+    # "(if the result is negative, consider it as "0")": 4000 less 5000 is 0, not -1000, so the
+    # 4390 of net business income alone meets the condition.
+    worksheet = return_ah("4000", other_employment_expenses="5000", net_business_income="4390")
+
+    assert worksheet.get(MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME).value == D("0")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_WORKING_INCOME).value == D("4390")
+    supplement_only_if(worksheet, True)
+
+
+@pytest.mark.parametrize(
+    ("resident", "aged_18_or_older", "met"),
+    [(1, 1, True), (0, 1, False), (1, 0, False), (0, 0, False)],
+)
+def test_the_residence_and_age_conditions_are_counts_of_one(
+    resident: int, aged_18_or_older: int, met: bool
+) -> None:
+    worksheet = return_ah(
+        resident_in_canada_throughout_2025=resident,
+        aged_18_or_older_at_end_of_2025=aged_18_or_older,
+    )
+
+    supplement_only_if(worksheet, met)
+
+
+def test_line_21500_alone_gives_the_supplement_without_a_medical_claim() -> None:
+    # "You entered an amount on line 21500 or line 33200": line 9 of 6000 with no line 33200.
+    worksheet = return_ah(medical_expenses="0", disability_supports_deduction="6000")
+
+    assert worksheet.get(MEDICAL_CLAIM).value == D("0")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_11).value == D("6000")
+    assert worksheet.get(REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT).value == D("1500.00")
+
+
+def test_lines_21500_and_33200_are_added_before_the_rate() -> None:
+    worksheet = return_ah(medical_expenses="1600", disability_supports_deduction="3000")
+
+    # Line 33200: 1600 less 3% of 20000.00 is 1000.00; line 11 is 4000.00, 25% is 1000.00.
+    assert worksheet.get(MEDICAL_CLAIM).value == D("1000.00")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_11).value == D("4000.00")
+    assert worksheet.get(REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT).value == D("1000.00")
+
+
+def test_no_amount_on_line_21500_or_line_33200_gives_no_supplement() -> None:
+    worksheet = return_ah(medical_expenses="0")
+
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_11).value == D("0")
+    assert worksheet.get(REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT).value == D("0")
+
+
+def test_the_supplement_is_at_most_1504() -> None:
+    # 25% of 8000 is 2000.00, line 14 is the 1,504 maximum.
+    worksheet = return_ah(medical_expenses="8600")
+
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_13).value == D("2000.00")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_14).value == D("1504")
+    assert worksheet.get(REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT).value == D("1504.00")
+
+
+@pytest.mark.parametrize(
+    ("spouse_net_income", "line_6", "supplement"),
+    [
+        # Line 6 adds the two columns' line 5; line 8 is line 6 over 33,294.00 and line 15 5% of it;
+        # with medical expenses of 6616 line 14 is the 1,504 maximum.
+        ("0", "20000.00", "1504.00"),
+        ("13294", "33294.00", "1504.00"),
+        ("13295", "33295.00", "1503.95"),
+        ("43373", "63373.00", "0.05"),
+        # "Your adjusted family net income is less than $63,374": no step of its own, as at 63,374
+        # line 15 is 5% x 30,080 = 1,504.00 and line 16 is 0.
+        ("43374", "63374.00", "0"),
+        ("43375", "63375.00", "0"),
+    ],
+)
+def test_the_spouses_column_is_added_to_the_adjusted_family_net_income(
+    spouse_net_income: str, line_6: str, supplement: str
+) -> None:
+    worksheet = return_ah(
+        medical_expenses="6616", spouse_net_income_before_adjustments=spouse_net_income
+    )
+
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_14).value == D("1504")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_6).value == D(line_6)
+    assert worksheet.get(REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT).value == D(supplement)
+
+
+def test_a_spouse_with_a_net_loss_shown_in_brackets_adds_nothing_to_line_6() -> None:
+    # Column 2 line 1 may be negative ("if negative, show in brackets"); line 5 is "0" then.
+    worksheet = return_ah(spouse_net_income_before_adjustments="-5000")
+
+    assert worksheet.get(MEDICAL_SUPPLEMENT_COLUMN_2_LINE_3).value == D("-5000")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5).value == D("0")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_6).value == D("20000.00")
+
+
+def test_the_spouses_repayments_are_added_and_the_spouses_uccb_and_rdsp_income_taken_off() -> None:
+    worksheet = return_ah(
+        spouse_net_income_before_adjustments="30000",
+        spouse_uccb_repayment="100",
+        spouse_rdsp_income_repayment="50",
+        spouse_universal_child_care_benefit="1000",
+        spouse_rdsp_income="200",
+    )
+
+    # Line 2 100 + 50, line 3 30000 + 150, line 4 1000 + 200, line 5 30150 - 1200.
+    assert worksheet.get(MEDICAL_SUPPLEMENT_COLUMN_2_LINE_2).value == D("150")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_COLUMN_2_LINE_3).value == D("30150")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_COLUMN_2_LINE_4).value == D("1200")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5).value == D("28950")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_6).value == D("48950.00")
+    # Line 8 = 48950.00 - 33294.00 = 15656.00, line 15 = 782.80, line 16 = 1500.00 - 782.80.
+    assert worksheet.get(MEDICAL_SUPPLEMENT_LINE_15).value == D("782.80")
+    assert worksheet.get(REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT).value == D("717.20")
+
+
+def test_the_filers_uccb_and_rdsp_amounts_adjust_column_1() -> None:
+    worksheet = return_ah(uccb_repayment="100", rdsp_income_repayment="50")
+
+    # The repayments are deductions of line 23300 (UCCB) and a part of line 23200 caller input;
+    # column 1 line 2 adds both to the net income before adjustments.
+    assert worksheet.get(MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3).value == (
+        worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value + D("150")
+    )

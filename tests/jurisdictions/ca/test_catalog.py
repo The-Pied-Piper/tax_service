@@ -39,6 +39,7 @@ from app.jurisdictions.ca.catalog import (
     AGE_INCOME_THRESHOLD,
     AGE_MAXIMUM,
     AGE_REDUCTION,
+    AGED_18_OR_OLDER_AT_END_OF_2025,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
@@ -81,6 +82,7 @@ from app.jurisdictions.ca.catalog import (
     CHILDREN_SEVEN_TO_SIXTEEN,
     CHILDREN_UNDER_SEVEN,
     CHILDREN_WITH_DISABILITY,
+    CLERGY_RESIDENCE_DEDUCTION,
     CPP_BASE_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
@@ -107,6 +109,7 @@ from app.jurisdictions.ca.catalog import (
     DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
     DEPRECIABLE_GIFTS,
     DISABILITY_DEPENDANTS,
+    DISABILITY_SUPPORTS_DEDUCTION,
     DISABILITY_TRANSFERRED_AMOUNT,
     DIVIDEND_TAX_CREDIT,
     DIVIDENDS_AMOUNT_A,
@@ -226,7 +229,30 @@ from app.jurisdictions.ca.catalog import (
     MEDICAL_EXPENSES,
     MEDICAL_EXPENSES_OVER_THRESHOLD,
     MEDICAL_NET_INCOME_SHARE,
+    MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3,
+    MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5,
+    MEDICAL_SUPPLEMENT_COLUMN_2_LINE_2,
+    MEDICAL_SUPPLEMENT_COLUMN_2_LINE_3,
+    MEDICAL_SUPPLEMENT_COLUMN_2_LINE_4,
+    MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5,
+    MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS,
+    MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME,
+    MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME_LESS_WAGE_LOSS,
+    MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME,
+    MEDICAL_SUPPLEMENT_IF_RESIDENT,
+    MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET,
+    MEDICAL_SUPPLEMENT_INCOME_THRESHOLD,
+    MEDICAL_SUPPLEMENT_LINE_6,
+    MEDICAL_SUPPLEMENT_LINE_8,
+    MEDICAL_SUPPLEMENT_LINE_11,
+    MEDICAL_SUPPLEMENT_LINE_13,
+    MEDICAL_SUPPLEMENT_LINE_14,
+    MEDICAL_SUPPLEMENT_LINE_15,
+    MEDICAL_SUPPLEMENT_LINE_16,
+    MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME,
+    MEDICAL_SUPPLEMENT_WORKING_INCOME,
     MEDICAL_THRESHOLD,
+    NET_BUSINESS_INCOME,
     NET_CAPITAL_LOSS_BALANCE_1985_TO_1987,
     NET_CAPITAL_LOSS_BALANCE_1988_AND_1989,
     NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
@@ -234,12 +260,16 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
     NET_CAPITAL_LOSSES_CLAIMED,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+    NET_COMMISSION_INCOME,
+    NET_FARMING_INCOME,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
+    NET_FISHING_INCOME,
     NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NET_PARTNERSHIP_INCOME,
+    NET_PROFESSIONAL_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
@@ -259,6 +289,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_DIVIDENDS_CREDIT,
     OTHER_DIVIDENDS_GROSSED_UP,
     OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
+    OTHER_EMPLOYMENT_EXPENSES,
     OTHER_EMPLOYMENT_INCOME,
     OTHER_FHSA_INCOME,
     OTHER_INCOME,
@@ -298,6 +329,7 @@ from app.jurisdictions.ca.catalog import (
     RDSP_INCOME_REPAYMENT,
     REFUND,
     REFUND_OR_BALANCE_OWING,
+    REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
     REMAINING_ADJUSTED_LOSSES_1985_TO_1987,
@@ -312,6 +344,7 @@ from app.jurisdictions.ca.catalog import (
     RESIDENCE_YEARS_DESIGNATED_AFTER_1981,
     RESIDENCE_YEARS_OWNED_1972_TO_1981,
     RESIDENCE_YEARS_OWNED_AFTER_1981,
+    RESIDENT_IN_CANADA_THROUGHOUT_2025,
     RESP_AIPS_ADDITIONAL_TAX,
     RESP_AIPS_CONTRIBUTIONS_COUNTED,
     RESP_AIPS_LIFETIME_LIMIT,
@@ -351,6 +384,11 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_CAREGIVER_LIMIT,
     SPOUSE_INFIRMITY_SUPPLEMENT,
     SPOUSE_NET_INCOME,
+    SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS,
+    SPOUSE_RDSP_INCOME,
+    SPOUSE_RDSP_INCOME_REPAYMENT,
+    SPOUSE_UCCB_REPAYMENT,
+    SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT,
     SPOUSES_CLAIMED,
     SUPPORT_PAYMENTS_DEDUCTION,
     T3_DIVIDEND_TAX_CREDIT,
@@ -401,6 +439,7 @@ from app.jurisdictions.ca.catalog import (
     UNIVERSITY_DONATIONS_OUTSIDE_CANADA,
     UNUSED_RRSP_CONTRIBUTIONS,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
+    WAGE_LOSS_REPLACEMENT_PLAN_INCOME,
     WORKERS_COMPENSATION_BENEFITS,
     WORKING_INCOME,
 )
@@ -692,6 +731,22 @@ REGISTERED = frozenset(
         "ca/resp_aips_part_a_applies",
         "ca/rl_10_labour_sponsored_fund_amount",
         "ca/political_contributions",
+        "ca/disability_supports_deduction",
+        "ca/other_employment_expenses",
+        "ca/clergy_residence_deduction",
+        "ca/net_business_income",
+        "ca/net_professional_income",
+        "ca/net_commission_income",
+        "ca/net_farming_income",
+        "ca/net_fishing_income",
+        "ca/wage_loss_replacement_plan_income",
+        "ca/resident_in_canada_throughout_2025",
+        "ca/aged_18_or_older_at_end_of_2025",
+        "ca/spouse_net_income_before_adjustments",
+        "ca/spouse_uccb_repayment",
+        "ca/spouse_rdsp_income_repayment",
+        "ca/spouse_universal_child_care_benefit",
+        "ca/spouse_rdsp_income",
         "ca/itc_recapture_at_15_percent",
         "ca/itc_recapture_at_20_percent",
         "ca/itc_recapture",
@@ -750,6 +805,29 @@ REGISTERED = frozenset(
         "ca/educator_school_supply_credit",
         "ca/journalism_labour_tax_credit",
         "ca/tax_paid_by_instalments",
+        "ca/medical_supplement_employment_income",
+        "ca/medical_supplement_employment_income_less_wage_loss",
+        "ca/medical_supplement_employment_deductions",
+        "ca/medical_supplement_employment_working_income",
+        "ca/medical_supplement_self_employment_income",
+        "ca/medical_supplement_working_income",
+        "ca/medical_supplement_column_1_line_3",
+        "ca/medical_supplement_column_1_line_5",
+        "ca/medical_supplement_column_2_line_2",
+        "ca/medical_supplement_column_2_line_3",
+        "ca/medical_supplement_column_2_line_4",
+        "ca/medical_supplement_column_2_line_5",
+        "ca/medical_supplement_line_6",
+        "ca/medical_supplement_income_threshold",
+        "ca/medical_supplement_line_8",
+        "ca/medical_supplement_line_11",
+        "ca/medical_supplement_line_13",
+        "ca/medical_supplement_line_14",
+        "ca/medical_supplement_line_15",
+        "ca/medical_supplement_line_16",
+        "ca/medical_supplement_if_working_income_met",
+        "ca/medical_supplement_if_resident",
+        "ca/refundable_medical_expense_supplement",
         "ca/total_credits",
         "ca/refund_or_balance_owing",
         "ca/refund",
@@ -828,6 +906,10 @@ SIGNED = frozenset(
         "ca/net_income_before_adjustments",
         "ca/resp_aips_limit_remaining",
         "ca/resp_aips_reduction",
+        "ca/spouse_net_income_before_adjustments",
+        "ca/medical_supplement_employment_income_less_wage_loss",
+        "ca/medical_supplement_column_1_line_3",
+        "ca/medical_supplement_column_2_line_3",
     }
 )
 # T1 line 30400 (Schedule 5, "Each household is allowed only one claim for this amount") and line
@@ -870,6 +952,8 @@ COUNTS = frozenset(
         "ca/other_payments_worksheet_line_9_over_limit",
         "ca/fhsa_maximum_participation_period_ended",
         "ca/resp_aips_part_a_applies",
+        "ca/resident_in_canada_throughout_2025",
+        "ca/aged_18_or_older_at_end_of_2025",
     }
 )
 # T1 line 82 (line 30450) and Schedule 5 "Line 30450 - Canada caregiver amount for other infirm
@@ -1501,6 +1585,30 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
         registry.get("ca/rl_10_labour_sponsored_fund_amount") is RL_10_LABOUR_SPONSORED_FUND_AMOUNT
     )
     assert registry.get("ca/political_contributions") is POLITICAL_CONTRIBUTIONS
+    assert registry.get("ca/disability_supports_deduction") is DISABILITY_SUPPORTS_DEDUCTION
+    assert registry.get("ca/other_employment_expenses") is OTHER_EMPLOYMENT_EXPENSES
+    assert registry.get("ca/clergy_residence_deduction") is CLERGY_RESIDENCE_DEDUCTION
+    assert registry.get("ca/net_business_income") is NET_BUSINESS_INCOME
+    assert registry.get("ca/net_professional_income") is NET_PROFESSIONAL_INCOME
+    assert registry.get("ca/net_commission_income") is NET_COMMISSION_INCOME
+    assert registry.get("ca/net_farming_income") is NET_FARMING_INCOME
+    assert registry.get("ca/net_fishing_income") is NET_FISHING_INCOME
+    assert registry.get("ca/wage_loss_replacement_plan_income") is WAGE_LOSS_REPLACEMENT_PLAN_INCOME
+    assert (
+        registry.get("ca/resident_in_canada_throughout_2025") is RESIDENT_IN_CANADA_THROUGHOUT_2025
+    )
+    assert registry.get("ca/aged_18_or_older_at_end_of_2025") is AGED_18_OR_OLDER_AT_END_OF_2025
+    assert (
+        registry.get("ca/spouse_net_income_before_adjustments")
+        is SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS
+    )
+    assert registry.get("ca/spouse_uccb_repayment") is SPOUSE_UCCB_REPAYMENT
+    assert registry.get("ca/spouse_rdsp_income_repayment") is SPOUSE_RDSP_INCOME_REPAYMENT
+    assert (
+        registry.get("ca/spouse_universal_child_care_benefit")
+        is SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT
+    )
+    assert registry.get("ca/spouse_rdsp_income") is SPOUSE_RDSP_INCOME
     assert registry.get("ca/itc_recapture_at_15_percent") is ITC_RECAPTURE_AT_15_PERCENT
     assert registry.get("ca/itc_recapture_at_20_percent") is ITC_RECAPTURE_AT_20_PERCENT
     assert registry.get("ca/itc_recapture") is ITC_RECAPTURE
@@ -1583,6 +1691,65 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/educator_school_supply_credit") is EDUCATOR_SCHOOL_SUPPLY_CREDIT
     assert registry.get("ca/journalism_labour_tax_credit") is JOURNALISM_LABOUR_TAX_CREDIT
     assert registry.get("ca/tax_paid_by_instalments") is TAX_PAID_BY_INSTALMENTS
+    assert (
+        registry.get("ca/medical_supplement_employment_income")
+        is MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME
+    )
+    assert (
+        registry.get("ca/medical_supplement_employment_income_less_wage_loss")
+        is MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME_LESS_WAGE_LOSS
+    )
+    assert (
+        registry.get("ca/medical_supplement_employment_deductions")
+        is MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS
+    )
+    assert (
+        registry.get("ca/medical_supplement_employment_working_income")
+        is MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME
+    )
+    assert (
+        registry.get("ca/medical_supplement_self_employment_income")
+        is MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME
+    )
+    assert registry.get("ca/medical_supplement_working_income") is MEDICAL_SUPPLEMENT_WORKING_INCOME
+    assert (
+        registry.get("ca/medical_supplement_column_1_line_3") is MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3
+    )
+    assert (
+        registry.get("ca/medical_supplement_column_1_line_5") is MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5
+    )
+    assert (
+        registry.get("ca/medical_supplement_column_2_line_2") is MEDICAL_SUPPLEMENT_COLUMN_2_LINE_2
+    )
+    assert (
+        registry.get("ca/medical_supplement_column_2_line_3") is MEDICAL_SUPPLEMENT_COLUMN_2_LINE_3
+    )
+    assert (
+        registry.get("ca/medical_supplement_column_2_line_4") is MEDICAL_SUPPLEMENT_COLUMN_2_LINE_4
+    )
+    assert (
+        registry.get("ca/medical_supplement_column_2_line_5") is MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5
+    )
+    assert registry.get("ca/medical_supplement_line_6") is MEDICAL_SUPPLEMENT_LINE_6
+    assert (
+        registry.get("ca/medical_supplement_income_threshold")
+        is MEDICAL_SUPPLEMENT_INCOME_THRESHOLD
+    )
+    assert registry.get("ca/medical_supplement_line_8") is MEDICAL_SUPPLEMENT_LINE_8
+    assert registry.get("ca/medical_supplement_line_11") is MEDICAL_SUPPLEMENT_LINE_11
+    assert registry.get("ca/medical_supplement_line_13") is MEDICAL_SUPPLEMENT_LINE_13
+    assert registry.get("ca/medical_supplement_line_14") is MEDICAL_SUPPLEMENT_LINE_14
+    assert registry.get("ca/medical_supplement_line_15") is MEDICAL_SUPPLEMENT_LINE_15
+    assert registry.get("ca/medical_supplement_line_16") is MEDICAL_SUPPLEMENT_LINE_16
+    assert (
+        registry.get("ca/medical_supplement_if_working_income_met")
+        is MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET
+    )
+    assert registry.get("ca/medical_supplement_if_resident") is MEDICAL_SUPPLEMENT_IF_RESIDENT
+    assert (
+        registry.get("ca/refundable_medical_expense_supplement")
+        is REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT
+    )
     assert registry.get("ca/total_credits") is TOTAL_CREDITS
     assert registry.get("ca/refund_or_balance_owing") is REFUND_OR_BALANCE_OWING
     assert registry.get("ca/refund") is REFUND
@@ -1885,6 +2052,43 @@ def test_catalog_kinds_are_money() -> None:
         EDUCATOR_SCHOOL_SUPPLY_CREDIT,
         JOURNALISM_LABOUR_TAX_CREDIT,
         TAX_PAID_BY_INSTALMENTS,
+        DISABILITY_SUPPORTS_DEDUCTION,
+        OTHER_EMPLOYMENT_EXPENSES,
+        CLERGY_RESIDENCE_DEDUCTION,
+        NET_BUSINESS_INCOME,
+        NET_PROFESSIONAL_INCOME,
+        NET_COMMISSION_INCOME,
+        NET_FARMING_INCOME,
+        NET_FISHING_INCOME,
+        WAGE_LOSS_REPLACEMENT_PLAN_INCOME,
+        SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS,
+        SPOUSE_UCCB_REPAYMENT,
+        SPOUSE_RDSP_INCOME_REPAYMENT,
+        SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT,
+        SPOUSE_RDSP_INCOME,
+        MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME,
+        MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME_LESS_WAGE_LOSS,
+        MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS,
+        MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME,
+        MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME,
+        MEDICAL_SUPPLEMENT_WORKING_INCOME,
+        MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3,
+        MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5,
+        MEDICAL_SUPPLEMENT_COLUMN_2_LINE_2,
+        MEDICAL_SUPPLEMENT_COLUMN_2_LINE_3,
+        MEDICAL_SUPPLEMENT_COLUMN_2_LINE_4,
+        MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5,
+        MEDICAL_SUPPLEMENT_LINE_6,
+        MEDICAL_SUPPLEMENT_INCOME_THRESHOLD,
+        MEDICAL_SUPPLEMENT_LINE_8,
+        MEDICAL_SUPPLEMENT_LINE_11,
+        MEDICAL_SUPPLEMENT_LINE_13,
+        MEDICAL_SUPPLEMENT_LINE_14,
+        MEDICAL_SUPPLEMENT_LINE_15,
+        MEDICAL_SUPPLEMENT_LINE_16,
+        MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET,
+        MEDICAL_SUPPLEMENT_IF_RESIDENT,
+        REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
         TOTAL_CREDITS,
         REFUND_OR_BALANCE_OWING,
         REFUND,
@@ -2730,3 +2934,90 @@ def test_the_t1172_part_a_count_is_a_non_negative_int() -> None:
     # (Part B) or 1 (Part A) count, as the other 0 or 1 counts of the forms.
     assert RESP_AIPS_PART_A_APPLIES.value_type is int
     assert RESP_AIPS_PART_A_APPLIES.non_negative is True
+
+
+def test_the_medical_supplement_counts_are_non_negative_int_counts(
+    registry: ArtifactRegistry,
+) -> None:
+    # Federal Worksheet "Line 45200 - Refundable medical expense supplement": "You were resident
+    # in Canada throughout 2025" and "You were 18 years of age or older at the end of 2025", each
+    # a caller's 0 or 1 count as the other 0 or 1 counts of the forms.
+    for kind in (RESIDENT_IN_CANADA_THROUGHOUT_2025, AGED_18_OR_OLDER_AT_END_OF_2025):
+        assert kind.value_type is int, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+        assert registry.kind(kind.identifier) is kind
+        assert kind.identifier in COUNTS
+
+
+def test_the_medical_supplement_lines_that_print_no_floor_are_signed(
+    registry: ArtifactRegistry,
+) -> None:
+    # Federal Worksheet "Line 45200 - Refundable medical expense supplement": column line 3 "Line 1
+    # plus line 2" prints no "(if negative, enter "0")" and line 1 may be negative ("the amount you
+    # would have entered if the instructions on line 23600 said "if negative, show in brackets""),
+    # so the spouse's line 1 and each column's line 3 are signed; so is the employment income less
+    # the wage-loss replacement plan amounts, which the worksheet floors only after the deductions
+    # ("if the result is negative, consider it as "0"").
+    for kind in (
+        SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS,
+        MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME_LESS_WAGE_LOSS,
+        MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3,
+        MEDICAL_SUPPLEMENT_COLUMN_2_LINE_3,
+    ):
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is False, kind.identifier
+        assert registry.kind(kind.identifier) is kind
+        assert kind.identifier in SIGNED
+
+
+def test_the_other_medical_supplement_lines_are_non_negative_decimals(
+    registry: ArtifactRegistry,
+) -> None:
+    # The lines that print "(if negative, enter "0")", add non-negative figures, take a lesser or
+    # are caller amounts the forms never print as negative.
+    signed = {
+        "ca/spouse_net_income_before_adjustments",
+        "ca/medical_supplement_employment_income_less_wage_loss",
+        "ca/medical_supplement_column_1_line_3",
+        "ca/medical_supplement_column_2_line_3",
+    }
+    kinds = (
+        DISABILITY_SUPPORTS_DEDUCTION,
+        OTHER_EMPLOYMENT_EXPENSES,
+        CLERGY_RESIDENCE_DEDUCTION,
+        NET_BUSINESS_INCOME,
+        NET_PROFESSIONAL_INCOME,
+        NET_COMMISSION_INCOME,
+        NET_FARMING_INCOME,
+        NET_FISHING_INCOME,
+        WAGE_LOSS_REPLACEMENT_PLAN_INCOME,
+        SPOUSE_UCCB_REPAYMENT,
+        SPOUSE_RDSP_INCOME_REPAYMENT,
+        SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT,
+        SPOUSE_RDSP_INCOME,
+        MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME,
+        MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS,
+        MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME,
+        MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME,
+        MEDICAL_SUPPLEMENT_WORKING_INCOME,
+        MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5,
+        MEDICAL_SUPPLEMENT_COLUMN_2_LINE_2,
+        MEDICAL_SUPPLEMENT_COLUMN_2_LINE_4,
+        MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5,
+        MEDICAL_SUPPLEMENT_LINE_6,
+        MEDICAL_SUPPLEMENT_INCOME_THRESHOLD,
+        MEDICAL_SUPPLEMENT_LINE_8,
+        MEDICAL_SUPPLEMENT_LINE_11,
+        MEDICAL_SUPPLEMENT_LINE_13,
+        MEDICAL_SUPPLEMENT_LINE_14,
+        MEDICAL_SUPPLEMENT_LINE_15,
+        MEDICAL_SUPPLEMENT_LINE_16,
+        MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET,
+        MEDICAL_SUPPLEMENT_IF_RESIDENT,
+        REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
+    )
+    for kind in kinds:
+        assert kind.identifier not in signed, kind.identifier
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+        assert registry.kind(kind.identifier).non_negative is True, kind.identifier

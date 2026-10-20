@@ -46,6 +46,18 @@
 # ON479's line 16 is $0 (column 1 applies).
 # Federal political contributions (T1 line 135 and line 40900) are a chosen $0, so the
 # Federal Worksheet's line 41000 is $0 (column 1 applies).
+# The refundable medical expense supplement (T1 line 154 and line 45200, Federal Worksheet)
+# takes chosen inputs: the counts of residence in Canada throughout 2025 and of age 18 or
+# older at the end of 2025 are 1 and its other new amounts (line 21500, lines 22900 and
+# 23100, the net self-employment lines, the wage-loss replacement plan amounts and the
+# spouse's column) are $0. The working income is $0 (no employment income, so less than the
+# $4,390 the line asks for); line 6, the adjusted family net income, is the net income,
+# $30,000.00 (column 1 alone, as the spouse's column is a chosen 0 and line 23500 is not
+# wired yet); line 8 is line 6 less 33,294.00, negative, so 0; line 9 (line 21500) is a
+# chosen $0 and line 10 (line 33200) is $4,000.00, so line 11 is $4,000.00, line 13 is 25%
+# of it, $1,000.00, line 14 is the same (not more than $1,504), line 15 is 5% of line 8,
+# $0, and line 16 is $1,000.00; but the working income is below $4,390, so the supplement
+# (line 45200) is $0 and the total credits and the refund do not change.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -821,6 +833,22 @@ inputs:
   ca/resp_aips_part_a_applies: "0"
   ca/rl_10_labour_sponsored_fund_amount: "0"
   ca/political_contributions: "0"
+  ca/disability_supports_deduction: "0"
+  ca/other_employment_expenses: "0"
+  ca/clergy_residence_deduction: "0"
+  ca/net_business_income: "0"
+  ca/net_professional_income: "0"
+  ca/net_commission_income: "0"
+  ca/net_farming_income: "0"
+  ca/net_fishing_income: "0"
+  ca/wage_loss_replacement_plan_income: "0"
+  ca/resident_in_canada_throughout_2025: "1"
+  ca/aged_18_or_older_at_end_of_2025: "1"
+  ca/spouse_net_income_before_adjustments: "0"
+  ca/spouse_uccb_repayment: "0"
+  ca/spouse_rdsp_income_repayment: "0"
+  ca/spouse_universal_child_care_benefit: "0"
+  ca/spouse_rdsp_income: "0"
   ca-on/opportunities_fund_donation: "0"
   ca-on/fertility_expenses: "0"
   ca-on/claims_seniors_care_credit: "1"
@@ -1017,6 +1045,11 @@ expected:
   ca-on/coop_education_credit: "0"
   ca-on/ontario_credits: "750.00"
   ca/provincial_credits: "750.00"
+  ca/medical_supplement_working_income: "0"
+  ca/medical_supplement_line_6: "30000.00"
+  ca/medical_supplement_line_8: "0"
+  ca/medical_supplement_line_16: "1000.00"
+  ca/refundable_medical_expense_supplement: "0"
   ca/total_credits: "3750.00"
   ca/refund_or_balance_owing: "-3450.00"
   ca/educator_supplies_expenses_at_most_maximum: "0.00"

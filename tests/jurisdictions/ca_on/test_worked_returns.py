@@ -116,7 +116,10 @@ description: >-
   contributions (federal or Ontario), no Form T1221 slips and no co-operative education work
   placements (a chosen payroll of 0), the Ontario credits (ON479 lines 1, 14, 16, 17, 18, 20
   and 21) and the provincial credits (T1 line 47900) are 0, as is the federal political
-  contribution tax credit (T1 line 41000).
+  contribution tax credit (T1 line 41000). With no amount on line 21500 and no medical claim
+  (line 33200), the refundable medical expense supplement (T1 line 45200, Federal Worksheet)
+  is 0: its line 11 is 0, so its line 16 is 0, for a filer resident in Canada throughout 2025
+  and 18 or older at the end of 2025 (counts of 1) with working income of 10000, $4,390 or more.
   The income tax deducted is a chosen 500, so the total credits are 500 plus the benefit
   plus the provincial credits, 2133, and the refund or balance owing is 0 less 2133: -2133,
   a refund. Every amount computed from a rate, fraction, amount or chart on the forms is
@@ -288,6 +291,22 @@ inputs:
   ca/capital_gift_gains_deduction: "0"
   ca-on/political_contributions: "0"
   ca/political_contributions: "0"
+  ca/disability_supports_deduction: "0"
+  ca/other_employment_expenses: "0"
+  ca/clergy_residence_deduction: "0"
+  ca/net_business_income: "0"
+  ca/net_professional_income: "0"
+  ca/net_commission_income: "0"
+  ca/net_farming_income: "0"
+  ca/net_fishing_income: "0"
+  ca/wage_loss_replacement_plan_income: "0"
+  ca/resident_in_canada_throughout_2025: "1"
+  ca/aged_18_or_older_at_end_of_2025: "1"
+  ca/spouse_net_income_before_adjustments: "0"
+  ca/spouse_uccb_repayment: "0"
+  ca/spouse_rdsp_income_repayment: "0"
+  ca/spouse_universal_child_care_benefit: "0"
+  ca/spouse_rdsp_income: "0"
 expected:
   ca/taxable_capital_gains: "0"
   ca/taxable_dividends_other_than_eligible: "0"
@@ -442,6 +461,11 @@ expected:
   ca-on/coop_education_credit: "0"
   ca-on/ontario_credits: "0"
   ca/provincial_credits: "0"
+  ca/medical_supplement_working_income: "10000"
+  ca/medical_supplement_line_6: "9935.00"
+  ca/medical_supplement_line_8: "0"
+  ca/medical_supplement_line_16: "0"
+  ca/refundable_medical_expense_supplement: "0"
   ca/total_credits: "2133"
   ca/refund_or_balance_owing: "-2133"
   ca/educator_supplies_expenses_at_most_maximum: "0"
@@ -546,7 +570,14 @@ def test_return_x_claims_two_other_dependants_medical_expenses_on_line_33199() -
     ]
     assert ontario_amounts.value == Decimal("21510.30")
     (refund,) = [a for a in worked.expected if a.kind.identifier == "ca/refund_or_balance_owing"]
-    assert refund.value == Decimal("-334.19")
+    assert refund.value == Decimal("-1064.48")
+    # T1 line 154 (line 45200): the Federal Worksheet's line 16 over the medical claim above.
+    (supplement,) = [
+        a
+        for a in worked.expected
+        if a.kind.identifier == "ca/refundable_medical_expense_supplement"
+    ]
+    assert supplement.value == Decimal("730.29")
 
 
 def test_return_af_claims_net_capital_losses_of_other_years_on_line_25300() -> None:
@@ -606,6 +637,24 @@ def test_return_ag_claims_the_ontario_seniors_care_at_home_credit_on_line_63095(
     assert credits.value == Decimal("750.00")
     (refund,) = [a for a in worked.expected if a.kind.identifier == "ca/refund_or_balance_owing"]
     assert refund.value == Decimal("-3450.00")
+    check(path)
+
+
+def test_return_ah_claims_the_refundable_medical_expense_supplement_on_line_45200() -> None:
+    path = RETURNS / "2025_return_ah.yaml"
+    build_tax_computation()  # registers the catalogs the loader resolves through
+    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+
+    inputs = {a.kind.identifier: a.value for a in worked.inputs}
+    assert inputs["ca/employment_income"] == Decimal("4390")
+    assert inputs["ca/medical_expenses"] == Decimal("6600")
+    expected = {a.kind.identifier: a.value for a in worked.expected}
+    # The working income is exactly the $4,390 the line asks for, so the gate passes line 16.
+    assert expected["ca/medical_supplement_working_income"] == Decimal("4390")
+    assert expected["ca/medical_supplement_line_8"] == Decimal("0")
+    assert expected["ca/medical_supplement_line_14"] == Decimal("1500.00")
+    assert expected["ca/medical_supplement_line_16"] == Decimal("1500.00")
+    assert expected["ca/refundable_medical_expense_supplement"] == Decimal("1500.00")
     check(path)
 
 

@@ -2306,6 +2306,113 @@ The worksheet's eligibility text ("contributions that you or your spouse or comm
 in the year to a registered federal political party, a registered association, or a candidate in a
 federal election", less any advantage received) is the caller's to apply."""
 
+DISABILITY_SUPPORTS_DEDUCTION = CATALOG.declare(
+    "disability_supports_deduction", Decimal, non_negative=True
+)
+"""Disability supports deduction, T1 line 42 and line 21500 "Disability supports deduction (complete
+Form T929)": a starting amount, taken as entered. The Federal Worksheet "Line 45200 - Refundable
+medical expense supplement" line 9 "Amount from line 21500 of your return" reads it. Only line 45200
+reads it until the deductions from total income compute it; it does not yet enter net income."""
+
+OTHER_EMPLOYMENT_EXPENSES = CATALOG.declare("other_employment_expenses", Decimal, non_negative=True)
+"""Other employment expenses, T1 line 50 and line 22900 "Other employment expenses (see Guide
+T4044)": a starting amount, taken as entered. The Federal Worksheet "Line 45200 - Refundable medical
+expense supplement" takes it off the employment income ("minus the amounts from lines 20700, 21200,
+22900, and 23100 of your return"). Only line 45200 reads it until the deductions from total income
+compute it; it does not yet enter net income."""
+
+CLERGY_RESIDENCE_DEDUCTION = CATALOG.declare(
+    "clergy_residence_deduction", Decimal, non_negative=True
+)
+"""Clergy residence deduction, T1 line 51 and line 23100 "Clergy residence deduction (complete Form
+T1223)": a starting amount, taken as entered. The Federal Worksheet "Line 45200 - Refundable medical
+expense supplement" takes it off the employment income, as line 22900. Only line 45200 reads it
+until the deductions from total income compute it; it does not yet enter net income."""
+
+NET_BUSINESS_INCOME = CATALOG.declare("net_business_income", Decimal, non_negative=True)
+"""Net business income, T1 line 22 and line 13500 "Business income" "Net": a starting amount. The
+Federal Worksheet "Line 45200 - Refundable medical expense supplement" counts "your net
+self-employment income (not including losses)" and notes that where one line reports a profit from
+one business and a loss from another, "use only the profit amounts", and that a loss from only one
+business is not included, so the amount is the line's profits only, the caller's to apply. Only line
+45200 reads it until the self-employment income is computed; it does not yet enter total income."""
+
+NET_PROFESSIONAL_INCOME = CATALOG.declare("net_professional_income", Decimal, non_negative=True)
+"""Net professional income, T1 line 23 and line 13700 "Professional income" "Net": a starting
+amount, the profits only as for `net_business_income`, and read only by line 45200 for now."""
+
+NET_COMMISSION_INCOME = CATALOG.declare("net_commission_income", Decimal, non_negative=True)
+"""Net commission income, T1 line 24 and line 13900 "Commission income" "Net": a starting amount,
+the profits only as for `net_business_income`, and read only by line 45200 for now."""
+
+NET_FARMING_INCOME = CATALOG.declare("net_farming_income", Decimal, non_negative=True)
+"""Net farming income, T1 line 25 and line 14100 "Farming income" "Net": a starting amount, the
+profits only as for `net_business_income`, and read only by line 45200 for now."""
+
+NET_FISHING_INCOME = CATALOG.declare("net_fishing_income", Decimal, non_negative=True)
+"""Net fishing income, T1 line 26 and line 14300 "Fishing income" "Net": a starting amount, the
+profits only as for `net_business_income`, and read only by line 45200 for now."""
+
+WAGE_LOSS_REPLACEMENT_PLAN_INCOME = CATALOG.declare(
+    "wage_loss_replacement_plan_income", Decimal, non_negative=True
+)
+"""Wage-loss replacement plan income, Federal Worksheet "Line 45200 - Refundable medical expense
+supplement" "your employment income from lines 10100 and 10400 of your return (other than amounts
+received from a wage-loss replacement plan)": the amounts received from such a plan that lines 10100
+and 10400 include, the caller's, as entered."""
+
+RESIDENT_IN_CANADA_THROUGHOUT_2025 = CATALOG.declare(
+    "resident_in_canada_throughout_2025", int, non_negative=True
+)
+"""Resident in Canada throughout 2025, Federal Worksheet "Line 45200 - Refundable medical expense
+supplement" "You were resident in Canada throughout 2025": the caller's count, 1 when it applies and
+0 when it does not."""
+
+AGED_18_OR_OLDER_AT_END_OF_2025 = CATALOG.declare(
+    "aged_18_or_older_at_end_of_2025", int, non_negative=True
+)
+"""18 years of age or older at the end of 2025, Federal Worksheet "Line 45200 - Refundable medical
+expense supplement" "You were 18 years of age or older at the end of 2025": the caller's count, 1
+when it applies and 0 when it does not."""
+
+SPOUSE_NET_INCOME_BEFORE_ADJUSTMENTS = CATALOG.declare(
+    "spouse_net_income_before_adjustments", Decimal
+)
+"""Spouse's net income amount, Federal Worksheet "Line 45200 - Refundable medical expense
+supplement" line 1, column 2 "Net income amount from line 23600 of the return (or the amount you
+would have entered if the instructions on line 23600 said "if negative, show in brackets")": the
+caller's amount for the spouse or common-law partner, signed as the worksheet allows brackets. 0
+when there is no spouse or common-law partner, and when "you were separated because of a breakdown
+in your relationship for a period of 90 days or more that included December 31, 2025" or "your
+spouse or common-law partner died on or before December 31, 2025", as the worksheet says "do not
+include their income"."""
+
+SPOUSE_UCCB_REPAYMENT = CATALOG.declare("spouse_uccb_repayment", Decimal, non_negative=True)
+"""Spouse's UCCB repayment, Federal Worksheet "Line 45200 - Refundable medical expense supplement"
+line 2, column 2 "Total of the universal child care benefit (UCCB) repayment (line 21300 of the
+return)": the caller's amount for the spouse or common-law partner, 0 where their income is not
+included."""
+
+SPOUSE_RDSP_INCOME_REPAYMENT = CATALOG.declare(
+    "spouse_rdsp_income_repayment", Decimal, non_negative=True
+)
+"""Spouse's RDSP income repayment, Federal Worksheet "Line 45200 - Refundable medical expense
+supplement" line 2, column 2 "the registered disability savings plan (RDSP) income repayment
+(included in the amount on line 23200 of the return)": the caller's amount for the spouse or
+common-law partner, 0 where their income is not included."""
+
+SPOUSE_UNIVERSAL_CHILD_CARE_BENEFIT = CATALOG.declare(
+    "spouse_universal_child_care_benefit", Decimal, non_negative=True
+)
+"""Spouse's UCCB income, Federal Worksheet "Line 45200 - Refundable medical expense supplement" line
+4, column 2 "Total of the UCCB income (line 11700 of the return)": the caller's amount for the
+spouse or common-law partner, 0 where their income is not included."""
+
+SPOUSE_RDSP_INCOME = CATALOG.declare("spouse_rdsp_income", Decimal, non_negative=True)
+"""Spouse's RDSP income, Federal Worksheet "Line 45200 - Refundable medical expense supplement" line
+4, column 2 "the RDSP income (line 12500 of the return)": the caller's amount for the spouse or
+common-law partner, 0 where their income is not included."""
+
 SPECIAL_TAXES = CATALOG.declare("special_taxes", Decimal, non_negative=True)
 """Special taxes, T1 line 141 (line 41800) "Special taxes": the additional tax on RESP accumulated
 income payments (`resp_aips_additional_tax`, Form T1172) and the tax for not purchasing replacement
@@ -2507,10 +2614,172 @@ TAX_PAID_BY_INSTALMENTS = CATALOG.declare("tax_paid_by_instalments", Decimal, no
 """Tax paid by instalments, T1 line 164 (47600) "Tax paid by instalments": the instalments paid
 for the year, as entered."""
 
+MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME = CATALOG.declare(
+    "medical_supplement_employment_income", Decimal, non_negative=True
+)
+"""Employment income for the supplement, Federal Worksheet "Line 45200 - Refundable medical expense
+supplement" "your employment income from lines 10100 and 10400 of your return": employment income
+(line 10100) plus other employment income (line 10400)."""
+
+MEDICAL_SUPPLEMENT_EMPLOYMENT_INCOME_LESS_WAGE_LOSS = CATALOG.declare(
+    "medical_supplement_employment_income_less_wage_loss", Decimal
+)
+"""Employment income other than wage-loss replacement plan amounts, Federal Worksheet "Line 45200 -
+Refundable medical expense supplement" "(other than amounts received from a wage-loss replacement
+plan)": the employment income less those amounts. The worksheet floors only the result after the
+deductions ("if the result is negative, consider it as "0""), so the kind is signed."""
+
+MEDICAL_SUPPLEMENT_EMPLOYMENT_DEDUCTIONS = CATALOG.declare(
+    "medical_supplement_employment_deductions", Decimal, non_negative=True
+)
+"""Employment deductions for the supplement, Federal Worksheet "Line 45200 - Refundable medical
+expense supplement" "minus the amounts from lines 20700, 21200, 22900, and 23100 of your return":
+the registered pension plan deduction, the union dues, the other employment expenses and the clergy
+residence deduction, in line order."""
+
+MEDICAL_SUPPLEMENT_EMPLOYMENT_WORKING_INCOME = CATALOG.declare(
+    "medical_supplement_employment_working_income", Decimal, non_negative=True
+)
+"""Employment part of the working income, Federal Worksheet "Line 45200 - Refundable medical expense
+supplement" "your employment income ... minus the amounts from lines 20700, 21200, 22900, and 23100
+of your return (if the result is negative, consider it as "0")"."""
+
+MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME = CATALOG.declare(
+    "medical_supplement_self_employment_income", Decimal, non_negative=True
+)
+"""Net self-employment income for the supplement, Federal Worksheet "Line 45200 - Refundable medical
+expense supplement" "your net self-employment income (not including losses) from lines 13500,
+13700, 13900, 14100, and 14300 of your return": the five lines, in line order."""
+
+MEDICAL_SUPPLEMENT_WORKING_INCOME = CATALOG.declare(
+    "medical_supplement_working_income", Decimal, non_negative=True
+)
+"""Working income for the supplement, Federal Worksheet "Line 45200 - Refundable medical expense
+supplement" "In addition, the total of the following two amounts must be $4,390 or more": the
+employment part and the net self-employment income. It is the gate of the supplement."""
+
+MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3 = CATALOG.declare("medical_supplement_column_1_line_3", Decimal)
+"""Your column, Federal Worksheet "Line 45200 - Refundable medical expense supplement" line 3
+"Line 1 plus line 2": line 1 is the net income before adjustments (line 23400), the "amount you
+would have entered if the instructions on line 23600 said "if negative, show in brackets"" (line
+23500 is not wired yet), and line 2 the UCCB and RDSP income repayments. The form prints no "(if
+negative, enter "0")" on line 3, so the kind is signed."""
+
+MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5 = CATALOG.declare(
+    "medical_supplement_column_1_line_5", Decimal, non_negative=True
+)
+"""Your column, Federal Worksheet "Line 45200 - Refundable medical expense supplement" line 5
+"Line 3 minus line 4 (if negative, enter "0")": line 4 is the UCCB income and RDSP income."""
+
+MEDICAL_SUPPLEMENT_COLUMN_2_LINE_2 = CATALOG.declare(
+    "medical_supplement_column_2_line_2", Decimal, non_negative=True
+)
+"""Your spouse or common-law partner's column, Federal Worksheet "Line 45200 - Refundable medical
+expense supplement" line 2: the total of their UCCB repayment and RDSP income repayment."""
+
+MEDICAL_SUPPLEMENT_COLUMN_2_LINE_3 = CATALOG.declare("medical_supplement_column_2_line_3", Decimal)
+"""Your spouse or common-law partner's column, Federal Worksheet "Line 45200 - Refundable medical
+expense supplement" line 3 "Line 1 plus line 2". The form prints no "(if negative, enter "0")" on
+line 3, so the kind is signed."""
+
+MEDICAL_SUPPLEMENT_COLUMN_2_LINE_4 = CATALOG.declare(
+    "medical_supplement_column_2_line_4", Decimal, non_negative=True
+)
+"""Your spouse or common-law partner's column, Federal Worksheet "Line 45200 - Refundable medical
+expense supplement" line 4 "Total of the UCCB income (line 11700 of the return) and the RDSP income
+(line 12500 of the return)"."""
+
+MEDICAL_SUPPLEMENT_COLUMN_2_LINE_5 = CATALOG.declare(
+    "medical_supplement_column_2_line_5", Decimal, non_negative=True
+)
+"""Your spouse or common-law partner's column, Federal Worksheet "Line 45200 - Refundable medical
+expense supplement" line 5 "Line 3 minus line 4 (if negative, enter "0")"."""
+
+MEDICAL_SUPPLEMENT_LINE_6 = CATALOG.declare("medical_supplement_line_6", Decimal, non_negative=True)
+"""Adjusted family net income, Federal Worksheet "Line 45200 - Refundable medical expense
+supplement" line 6 "Add the amounts from line 5 of columns 1 and 2. Adjusted family net income"."""
+
+MEDICAL_SUPPLEMENT_INCOME_THRESHOLD = CATALOG.declare(
+    "medical_supplement_income_threshold", Decimal, non_negative=True
+)
+"""Income threshold, Federal Worksheet "Line 45200 - Refundable medical expense supplement" line 7
+"Income threshold 33,294.00": the printed constant, claimed whole."""
+
+MEDICAL_SUPPLEMENT_LINE_8 = CATALOG.declare("medical_supplement_line_8", Decimal, non_negative=True)
+"""Refundable medical expense supplement line 8, Federal Worksheet "Line 45200 - Refundable
+medical expense supplement" line 8 "Line 6 minus line
+7 (if negative, enter "0") =": the adjusted family net income over the income threshold."""
+
+MEDICAL_SUPPLEMENT_LINE_11 = CATALOG.declare(
+    "medical_supplement_line_11", Decimal, non_negative=True
+)
+"""Refundable medical expense supplement line 11, Federal Worksheet "Line 45200 - Refundable
+medical expense supplement" line 11 "Line 9 plus line
+10": the amount from line 21500 (line 9) plus the amount from line 33200 (line 10). It is 0 when
+neither line has an amount, which is the worksheet's "You entered an amount on line 21500 or line
+33200 of your return"."""
+
+MEDICAL_SUPPLEMENT_LINE_13 = CATALOG.declare(
+    "medical_supplement_line_13", Decimal, non_negative=True
+)
+"""Refundable medical expense supplement line 13, Federal Worksheet "Line 45200 - Refundable
+medical expense supplement" line 13 "Line 11
+multiplied by the percentage from line 12 =", line 12 being "Applicable rate 25%"."""
+
+MEDICAL_SUPPLEMENT_LINE_14 = CATALOG.declare(
+    "medical_supplement_line_14", Decimal, non_negative=True
+)
+"""Refundable medical expense supplement line 14, Federal Worksheet "Line 45200 - Refundable
+medical expense supplement" line 14 "Enter whichever
+is less: amount from line 13 or $1,504"."""
+
+MEDICAL_SUPPLEMENT_LINE_15 = CATALOG.declare(
+    "medical_supplement_line_15", Decimal, non_negative=True
+)
+"""Refundable medical expense supplement line 15, Federal Worksheet "Line 45200 - Refundable
+medical expense supplement" line 15 "Amount from line
+8 multiplied by 5% =": the reduction for the income over the threshold."""
+
+MEDICAL_SUPPLEMENT_LINE_16 = CATALOG.declare(
+    "medical_supplement_line_16", Decimal, non_negative=True
+)
+"""Refundable medical expense supplement line 16, Federal Worksheet "Line 45200 - Refundable
+medical expense supplement" line 16 "Line 14 minus
+line 15 (if negative, enter "0") Enter this amount on line 45200 of your return. =", before the
+conditions the worksheet states.
+
+"Your adjusted family net income is less than $63,374" has no step of its own: at $63,374 line 15
+is 5% of 30,080, which is $1,504, so line 16 is already 0 there."""
+
+MEDICAL_SUPPLEMENT_IF_WORKING_INCOME_MET = CATALOG.declare(
+    "medical_supplement_if_working_income_met", Decimal, non_negative=True
+)
+"""Line 16 when the working income is enough, Federal Worksheet "Line 45200 - Refundable medical
+expense supplement" "In addition, the total of the following two amounts must be $4,390 or more":
+line 16 when the working income is $4,390 or more, else 0."""
+
+MEDICAL_SUPPLEMENT_IF_RESIDENT = CATALOG.declare(
+    "medical_supplement_if_resident", Decimal, non_negative=True
+)
+"""Line 16 when the filer was resident, Federal Worksheet "Line 45200 - Refundable medical expense
+supplement" "You were resident in Canada throughout 2025": the amount of the working income
+condition times the caller's count of 0 or 1."""
+
+REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT = CATALOG.declare(
+    "refundable_medical_expense_supplement", Decimal, non_negative=True
+)
+"""Refundable medical expense supplement, T1 line 154 and line 45200 "Refundable medical expense
+supplement (use Federal Worksheet)": line 16 of the Federal Worksheet "Line 45200 - Refundable
+medical expense supplement" when every condition it states holds, else 0: the working income of
+$4,390 or more, "You were resident in Canada throughout 2025" and "You were 18 years of age or older
+at the end of 2025" (each a caller's count of 0 or 1). "You entered an amount on line 21500 or line
+33200 of your return" and "Your adjusted family net income is less than $63,374" take no step, as
+lines 11 and 16 are already 0 there."""
+
 TOTAL_CREDITS = CATALOG.declare("total_credits", Decimal, non_negative=True)
 """Total credits, T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": here line 150
-(43700), line 155 (45300), line 159 (45600), line 160 (45700), line 161 (46900), line 162 (47555),
-line 164 (47600) and line 165 (47900), in line order.
+(43700), line 154 (45200), line 155 (45300), line 159 (45600), line 160 (45700), line 161 (46900),
+line 162 (47555), line 164 (47600) and line 165 (47900), in line order.
 
 Not triggered by the returns modelled, or left to later work: the other lines from 151 to 163
 (lines 44000 to 47556, among them 44800 CPP overpayment and 45000 EI overpayment).
