@@ -1,8 +1,9 @@
 inputs:
   - ca/employment_income
   # Schedule 3 Part 3 and Part 4: the ten property lists (lines 1 to 10), the unapplied
-  # listed personal property losses, line 13 (16100), line 15 (17400), line 16 (17600) and
-  # line 20 (19200); line 21 (19700) is computed.
+  # listed personal property losses, the properties sold (Form T2091(IND)), line 13
+  # (16100), line 15 (17400), line 16 (17600) and line 20 (19200); line 21 (19700) is
+  # computed.
   - ca/qsbcs_dispositions
   - ca/qffp_dispositions
   - ca/qffp_foreclosure_dispositions
@@ -14,6 +15,7 @@ inputs:
   - ca/personal_use_property_dispositions
   - ca/listed_personal_property_dispositions
   - ca/unapplied_listed_personal_property_losses
+  - ca/principal_residence_properties
   - ca/capital_gains_deferral
   - ca/slip_capital_gains_or_losses
   - ca/t3_capital_gains_or_losses
