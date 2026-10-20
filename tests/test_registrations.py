@@ -19,6 +19,7 @@ import app.jurisdictions
 import app.registrations
 from app.adapters.outbound.jurisdiction_packages import JurisdictionPackages
 from app.domain.artifact import ArtifactCatalog, ArtifactRegistry
+from app.domain.capability import CapabilityRegistry
 
 JURISDICTIONS_DIRECTORY = Path(app.jurisdictions.__file__).parent
 
@@ -43,15 +44,17 @@ def test_each_root_is_the_directory_of_the_package_declaring_its_namespace() -> 
 
 
 def test_lists_the_core_packages() -> None:
-    # Ontario's capability package registers capabilities under `ca-on/`, as a decorator-filled
-    # package, so it is listed with the core ones. Imported here, so its absence fails this test
-    # alone.
-    ca_on_capabilities = importlib.import_module("app.jurisdictions.ca_on.capabilities")
-
     assert app.registrations.CORE_PACKAGES == (
         app.domain.capabilities,
         app.adapters.outbound.parameter_parsers,
-        ca_on_capabilities,
+    )
+
+
+def test_importing_a_jurisdiction_package_registers_its_capabilities() -> None:
+    registered = CapabilityRegistry.shared().get("ca-on/flow_through_share_expenses")
+
+    assert (
+        registered.__module__ == "app.jurisdictions.ca_on.capabilities.flow_through_share_expenses"
     )
 
 
