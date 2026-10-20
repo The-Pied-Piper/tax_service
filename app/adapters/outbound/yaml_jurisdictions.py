@@ -1,9 +1,14 @@
 """Reads jurisdictions from YAML manifest files. Implements JurisdictionSource.
 
 The source takes a mapping of namespace -> jurisdiction package directory. A jurisdiction's
-namespace is its code lower-cased (`EX-ON` -> `ex-on`), and every `*.yaml` / `*.yml` file under
-`<roots[ex-on]>/manifests/` (recursively) is one of its manifests; a manifest there naming
-another jurisdiction is rejected.
+namespace is its code lower-cased (`EX-ON` -> `ex-on`). Each `*.yaml` / `*.yml` file directly in
+`<roots[ex-on]>/manifests/` is one whole manifest, and each subfolder there is one manifest too,
+merged from its parts: every `*.yaml` / `*.yml` file inside it (recursively), read in sorted path
+order. A part may carry any of the six manifest keys; the scalar keys (`jurisdiction`, `version`,
+`valid_from_tax_year`) must each be in exactly one part, and the lists (`inputs`, `outputs`,
+`capabilities`) are concatenated in part order, an identifier listed in two parts of `inputs` or of
+`outputs` being rejected. The merged mapping then goes through the same parse as a whole file. A
+manifest naming another jurisdiction is rejected.
 Each selection names a capability and fills its slots: `params` (slot -> family, optional),
 `consumes` (slot -> artifact identifier, or a list of them kept in order as a tuple, optional)
 and `produces` (slot -> artifact identifier, required, at least one). Slot names, and whether a
@@ -12,7 +17,8 @@ The top-level `inputs` and `outputs` list the computation's artifact identifiers
 non-empty lists of non-empty strings without duplicates, and no identifier in both.
 Parsing is strict because a manifest must stay selection plus slot bindings
 (design.md §4): unknown keys, duplicate keys and wrongly typed values are
-rejected with the offending file named, never coerced or ignored.
+rejected with the offending file (for a folder, the offending part) named, never coerced or
+ignored.
 """
 
 from __future__ import annotations
@@ -38,6 +44,9 @@ _MANIFEST_KEYS = frozenset(
 )
 _CAPABILITY_KEYS = frozenset({"name", "produces"})
 _OPTIONAL_CAPABILITY_KEYS = frozenset({"params", "consumes"})
+_SCALAR_KEYS = ("jurisdiction", "version", "valid_from_tax_year")
+_IDENTIFIER_LISTS = ("inputs", "outputs")
+_PATTERNS = ("*.yaml", "*.yml")
 
 
 class YamlJurisdictionSource:
@@ -60,7 +69,12 @@ class YamlJurisdictionSource:
             raise InvalidManifestError(f"package directory not found: {manifests.parent}")
         if not manifests.is_dir():
             return []
-        paths = sorted(p for pattern in ("*.yaml", "*.yml") for p in manifests.rglob(pattern))
+        paths = sorted(
+            p
+            for p in manifests.iterdir()
+            if (p.is_dir() and self._parts(p))
+            or (p.is_file() and any(p.match(pattern) for pattern in _PATTERNS))
+        )
         return [self._load_for(code, path) for path in paths]
 
     def _manifests(self, code: JurisdictionCode) -> Path:
@@ -83,6 +97,9 @@ class YamlJurisdictionSource:
 
     @classmethod
     def load(cls, path: Path) -> Manifest:
+        """The manifest in the file `path`, or merged from the parts in the folder `path`."""
+        if path.is_dir():
+            return cls._load_folder(path)
         try:
             document = YamlNode.load(path, "manifest")
         except (OSError, yaml.YAMLError) as exc:
@@ -91,6 +108,72 @@ class YamlJurisdictionSource:
             return cls._manifest(document)
         except (InvalidManifestError, YamlShapeError) as exc:
             raise InvalidManifestError(f"{path}: {exc}") from exc
+
+    @staticmethod
+    def _parts(folder: Path) -> list[Path]:
+        """The `*.yaml` / `*.yml` files under `folder`, in sorted path order."""
+        return sorted(p for pattern in _PATTERNS for p in folder.rglob(pattern) if p.is_file())
+
+    @classmethod
+    def _load_folder(cls, folder: Path) -> Manifest:
+        parts = cls._parts(folder)
+        merged: dict[str, object] = {}
+        scalar_owners: dict[str, Path] = {}
+        lists: dict[str, list[object]] = {}
+        identifier_owners: dict[str, dict[str, Path]] = {key: {} for key in _IDENTIFIER_LISTS}
+        for part in parts:
+            for key, node in cls._part(part).items():
+                if key in _SCALAR_KEYS:
+                    if key in scalar_owners:
+                        raise InvalidManifestError(
+                            f"{part}: key {key!r} is already set in {scalar_owners[key]}"
+                        )
+                    scalar_owners[key] = part
+                    merged[key] = node.value
+                else:
+                    cls._claim_identifiers(key, node, part, identifier_owners.get(key, {}))
+                    lists.setdefault(key, []).extend(item.value for item in node.items())
+        try:
+            return cls._manifest(YamlNode.root({**merged, **lists}, "manifest"))
+        except (InvalidManifestError, YamlShapeError) as exc:
+            raise InvalidManifestError(f"{folder}: {exc}") from exc
+
+    @classmethod
+    def _part(cls, part: Path) -> dict[str, YamlNode]:
+        """The keys a part carries, each checked on its own; errors name the part."""
+        try:
+            doc = YamlNode.load(part, "manifest").require_mapping(
+                frozenset(), optional=_MANIFEST_KEYS
+            )
+            contents = dict(doc.fields())
+            if "jurisdiction" in contents:
+                cls._code(contents["jurisdiction"])
+            for key in ("version", "valid_from_tax_year"):
+                if key in contents:
+                    contents[key].require_integer()
+            for key in _IDENTIFIER_LISTS:
+                if key in contents:
+                    cls._identifiers(contents[key])
+            if "capabilities" in contents:
+                for entry in contents["capabilities"].items():
+                    cls._selection(entry)
+        except (OSError, yaml.YAMLError, InvalidManifestError, YamlShapeError) as exc:
+            raise InvalidManifestError(f"{part}: {exc}") from exc
+        return contents
+
+    @staticmethod
+    def _claim_identifiers(key: str, node: YamlNode, part: Path, owners: dict[str, Path]) -> None:
+        """Record the part's identifiers under `key`, refusing one an earlier part listed."""
+        if key not in _IDENTIFIER_LISTS:
+            return
+        for index, item in enumerate(node.items()):
+            identifier = item.require_string()
+            if identifier in owners:
+                raise InvalidManifestError(
+                    f"{part}: {key}[{index}]: {identifier!r} is already listed in "
+                    f"{owners[identifier]}"
+                )
+            owners[identifier] = part
 
     @classmethod
     def _manifest(cls, document: YamlNode) -> Manifest:

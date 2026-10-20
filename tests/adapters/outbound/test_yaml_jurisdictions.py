@@ -2,7 +2,8 @@
 
 The source takes a mapping of namespace -> package directory. A jurisdiction's namespace is its
 code lower-cased (`EX-ON` -> `ex-on`, `EX` -> `ex`), and its manifests are every `*.yaml` /
-`*.yml` file under `roots[Namespace("ex-on")] / "manifests"`, recursively. Names are made up.
+`*.yml` file in `roots[Namespace("ex-on")] / "manifests"`, or a subfolder of such
+parts. Names are made up.
 
 Each selection names a capability and fills its slots: `params` (slot -> family, optional),
 `consumes` (slot -> artifact identifier, or a list of them kept in order as a tuple, optional)
@@ -627,3 +628,407 @@ def test_an_identifier_listed_as_both_input_and_output_is_carried_by_the_manifes
 
     assert manifest.inputs == frozenset({"ex/gross_income", "ex/taxable_base"})
     assert manifest.outputs == frozenset({"ex/savings_deduction", "ex-on/levy", "ex/taxable_base"})
+
+
+# --- A subfolder of manifests/ is one manifest, merged from its parts ---------------------
+#
+# Every `*.yaml` / `*.yml` file inside the subfolder (recursively) is a part, read in sorted path
+# order. A part may carry any subset of the six manifest keys. The scalar keys (`jurisdiction`,
+# `version`, `valid_from_tax_year`) must each be in exactly one part; the lists (`inputs`,
+# `outputs`, `capabilities`) are concatenated in part order. The merged mapping then goes through
+# the same strict parse as a flat file. Errors name the part file, except a key missing after the
+# merge, which no part can own and so names the folder.
+
+SCALARS = """\
+jurisdiction: EX-ON
+version: 1
+valid_from_tax_year: 2025
+"""
+
+INPUTS = """\
+inputs: [ex/x]
+"""
+
+OUTPUTS = """\
+outputs: [ex/y]
+"""
+
+CAPABILITIES_A = """\
+capabilities:
+  - {name: ex/a, produces: {output: ex/a}}
+  - {name: ex/b, produces: {output: ex/b}}
+"""
+
+CAPABILITIES_B = """\
+capabilities:
+  - {name: ex/c, produces: {output: ex/c}}
+"""
+
+
+def write_parts(directory: Path, parts: Mapping[str, str], folder: str = "v1") -> None:
+    for name, content in parts.items():
+        write(directory, f"ex-on/manifests/{folder}/{name}", content)
+
+
+def only_manifest(directory: Path) -> Manifest:
+    (manifest,) = source(directory).get_jurisdiction(EX_ON).manifests
+    return manifest
+
+
+def test_a_folder_is_one_manifest_merged_from_its_parts(tmp_path: Path) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": SCALARS,
+            "01-inputs.yaml": INPUTS,
+            "02-outputs.yaml": OUTPUTS,
+            "03-a.yaml": CAPABILITIES_A,
+            "04-b.yaml": CAPABILITIES_B,
+        },
+    )
+
+    assert only_manifest(tmp_path) == Manifest(
+        jurisdiction=EX_ON,
+        version=1,
+        valid_from_tax_year=2025,
+        inputs=frozenset({"ex/x"}),
+        outputs=frozenset({"ex/y"}),
+        capabilities=(
+            CapabilitySelection(name="ex/a", params={}, consumes={}, produces={"output": "ex/a"}),
+            CapabilitySelection(name="ex/b", params={}, consumes={}, produces={"output": "ex/b"}),
+            CapabilitySelection(name="ex/c", params={}, consumes={}, produces={"output": "ex/c"}),
+        ),
+    )
+
+
+def test_a_folder_loads_the_same_manifest_as_the_flat_file(tmp_path: Path) -> None:
+    write(tmp_path, "flat/ex-on/manifests/v1.yaml", EX_ON_V1)
+    head, _, rest = EX_ON_V1.partition("inputs:\n")
+    inputs, _, capabilities = ("inputs:\n" + rest).partition("capabilities:\n")
+    write_parts(
+        tmp_path / "split",
+        {"00.yaml": head, "01.yaml": inputs, "02.yaml": "capabilities:\n" + capabilities},
+    )
+
+    flat = YamlJurisdictionSource({Namespace("ex-on"): tmp_path / "flat" / "ex-on"})
+    split = YamlJurisdictionSource({Namespace("ex-on"): tmp_path / "split" / "ex-on"})
+
+    assert split.get_jurisdiction(EX_ON) == flat.get_jurisdiction(EX_ON)
+
+
+def test_lists_are_concatenated_in_sorted_path_order_whatever_the_write_order(
+    tmp_path: Path,
+) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "30-c.yaml": CAPABILITIES_B,
+            "10-a.yaml": CAPABILITIES_A,
+            "00-header.yaml": SCALARS + INPUTS + OUTPUTS,
+        },
+    )
+
+    assert [c.name for c in only_manifest(tmp_path).capabilities] == ["ex/a", "ex/b", "ex/c"]
+
+
+def test_parts_in_nested_folders_are_read_and_yml_sorts_with_yaml(tmp_path: Path) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": SCALARS + INPUTS + OUTPUTS,
+            "01-a.yml": "capabilities:\n  - {name: ex/first, produces: {output: ex/first}}\n",
+            "02-b.yaml": "capabilities:\n  - {name: ex/second, produces: {output: ex/second}}\n",
+            "03-c.yml": "capabilities:\n  - {name: ex/third, produces: {output: ex/third}}\n",
+            "sub/10-d.yaml": "capabilities:\n  - {name: ex/4, produces: {output: ex/4}}\n",
+        },
+    )
+
+    names = [c.name for c in only_manifest(tmp_path).capabilities]
+
+    assert names == ["ex/first", "ex/second", "ex/third", "ex/4"]
+
+
+def test_inputs_and_outputs_are_concatenated_across_parts(tmp_path: Path) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": SCALARS,
+            "01-a.yaml": "inputs: [ex/x1]\noutputs: [ex/y1]\n",
+            "02-b.yaml": "inputs: [ex/x2]\noutputs: [ex/y2]\ncapabilities: []\n",
+        },
+    )
+
+    manifest = only_manifest(tmp_path)
+
+    assert manifest.inputs == frozenset({"ex/x1", "ex/x2"})
+    assert manifest.outputs == frozenset({"ex/y1", "ex/y2"})
+
+
+def test_a_part_may_carry_any_subset_of_the_keys(tmp_path: Path) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-version.yaml": "version: 1\n",
+            "01-jurisdiction.yaml": "jurisdiction: EX-ON\ninputs: [ex/x]\n",
+            "02-year-and-outputs.yaml": "valid_from_tax_year: 2025\noutputs: [ex/y]\n",
+            "03-a.yaml": CAPABILITIES_A,
+        },
+    )
+
+    manifest = only_manifest(tmp_path)
+
+    assert (manifest.jurisdiction, manifest.version, manifest.valid_from_tax_year) == (
+        EX_ON,
+        1,
+        2025,
+    )
+    assert manifest.inputs == frozenset({"ex/x"})
+    assert [c.name for c in manifest.capabilities] == ["ex/a", "ex/b"]
+
+
+def test_a_flat_file_still_loads_as_one_whole_manifest(tmp_path: Path) -> None:
+    write(tmp_path, "ex-on/manifests/v1.yaml", SCALARS + INPUTS + OUTPUTS + CAPABILITIES_A)
+
+    assert [c.name for c in only_manifest(tmp_path).capabilities] == ["ex/a", "ex/b"]
+
+
+def test_a_flat_file_must_still_be_whole_on_its_own(tmp_path: Path) -> None:
+    write(tmp_path, "ex-on/manifests/v1.yaml", SCALARS + INPUTS)
+
+    with pytest.raises(InvalidManifestError, match=r"missing keys \['capabilities', 'outputs'\]"):
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+
+def test_a_flat_file_and_a_folder_side_by_side_are_two_manifests(tmp_path: Path) -> None:
+    write(tmp_path, "ex-on/manifests/v1.yaml", SCALARS + INPUTS + OUTPUTS + CAPABILITIES_A)
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": SCALARS.replace("version: 1", "version: 2"),
+            "01-rest.yaml": INPUTS + OUTPUTS + CAPABILITIES_B,
+        },
+        folder="v2",
+    )
+
+    manifests = source(tmp_path).get_jurisdiction(EX_ON).manifests
+
+    assert [m.version for m in manifests] == [1, 2]
+    assert [len(m.capabilities) for m in manifests] == [2, 1]
+
+
+@pytest.mark.parametrize(
+    ("parts", "message"),
+    [
+        pytest.param(
+            {"00-header.yaml": SCALARS, "01-bad.yaml": "inputs: [unclosed\n"},
+            "while parsing a flow sequence",
+            id="malformed-yaml",
+        ),
+        pytest.param(
+            {"00-header.yaml": SCALARS, "01-bad.yaml": ""},
+            "manifest must be a mapping",
+            id="empty-part",
+        ),
+        pytest.param(
+            {"00-header.yaml": SCALARS, "01-bad.yaml": "- a\n- b\n"},
+            "manifest must be a mapping",
+            id="part-is-a-list",
+        ),
+        pytest.param(
+            {"00-header.yaml": SCALARS, "01-bad.yaml": "inputs: [ex/x]\ninputs: [ex/z]\n"},
+            "duplicate key 'inputs'",
+            id="duplicate-key-inside-one-part",
+        ),
+        pytest.param(
+            {"00-header.yaml": SCALARS, "01-bad.yaml": "bogus: 1\n"},
+            r"unknown keys \['bogus'\]",
+            id="unknown-key",
+        ),
+        pytest.param(
+            {"00-header.yaml": SCALARS, "01-bad.yaml": "bogus: 1\nextra: 2\n"},
+            r"unknown keys \['bogus', 'extra'\]",
+            id="unknown-keys-all-named",
+        ),
+        pytest.param(
+            {"00-header.yaml": SCALARS, "01-bad.yaml": "inputs: ex/x\n"},
+            "inputs must be a list",
+            id="inputs-not-a-list",
+        ),
+        pytest.param(
+            {"00-header.yaml": SCALARS, "01-bad.yaml": "outputs: {a: b}\n"},
+            "outputs must be a list",
+            id="outputs-not-a-list",
+        ),
+        pytest.param(
+            {"00-header.yaml": SCALARS, "01-bad.yaml": "capabilities: ex/a\n"},
+            "capabilities must be a list",
+            id="capabilities-not-a-list",
+        ),
+        pytest.param(
+            {
+                "00-header.yaml": SCALARS.replace("version: 1\n", ""),
+                "01-bad.yaml": "version: '1'\n",
+            },
+            "version must be an integer, got str",
+            id="scalar-wrong-type",
+        ),
+        pytest.param(
+            {"00-header.yaml": SCALARS, "01-bad.yaml": "inputs: [ex/x, 7]\n"},
+            r"inputs\[1\] must be a string, got int",
+            id="input-element-wrong-type",
+        ),
+        pytest.param(
+            {"00-header.yaml": SCALARS, "01-bad.yaml": "capabilities:\n  - {name: ex/a}\n"},
+            r"capabilities\[0\]: missing keys \['produces'\]",
+            id="capability-missing-produces",
+        ),
+        pytest.param(
+            {"00-header.yaml": SCALARS, "01-bad.yaml": "inputs: ['']\n"},
+            r"inputs\[0\] must not be empty",
+            id="input-empty-string",
+        ),
+        pytest.param(
+            {"00-header.yaml": SCALARS, "01-bad.yaml": "inputs: [ex/x, ex/x]\n"},
+            r"inputs\[1\]: 'ex/x' is listed more than once",
+            id="input-repeated-inside-one-part",
+        ),
+    ],
+)
+def test_a_bad_part_is_rejected_naming_the_part_file(
+    tmp_path: Path, parts: Mapping[str, str], message: str
+) -> None:
+    write_parts(tmp_path, parts)
+
+    with pytest.raises(InvalidManifestError, match=message) as excinfo:
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+    assert str(tmp_path / "ex-on" / "manifests" / "v1" / "01-bad.yaml") in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    "scalar", ["jurisdiction: EX-ON", "version: 1", "valid_from_tax_year: 2025"]
+)
+def test_a_scalar_key_in_two_parts_is_rejected_naming_both_parts(
+    tmp_path: Path, scalar: str
+) -> None:
+    key = scalar.split(":")[0]
+    write_parts(
+        tmp_path,
+        {"00-header.yaml": SCALARS + INPUTS + OUTPUTS, "01-again.yaml": scalar + "\n"},
+    )
+    folder = tmp_path / "ex-on" / "manifests" / "v1"
+
+    with pytest.raises(InvalidManifestError) as excinfo:
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+    assert str(excinfo.value) == (
+        f"{folder / '01-again.yaml'}: key {key!r} is already set in {folder / '00-header.yaml'}"
+    )
+
+
+def test_a_scalar_key_repeated_with_a_different_value_is_still_rejected(tmp_path: Path) -> None:
+    write_parts(
+        tmp_path,
+        {"00-header.yaml": SCALARS + INPUTS + OUTPUTS, "01-again.yaml": "version: 2\n"},
+    )
+
+    with pytest.raises(InvalidManifestError, match="key 'version' is already set in"):
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+
+@pytest.mark.parametrize("key", ["inputs", "outputs"])
+def test_an_identifier_in_two_parts_is_rejected_naming_both_parts(tmp_path: Path, key: str) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": SCALARS + "inputs: [ex/x]\noutputs: [ex/y]\n",
+            "01-again.yaml": f"{key}: [ex/other, ex/{'x' if key == 'inputs' else 'y'}]\n",
+        },
+    )
+    folder = tmp_path / "ex-on" / "manifests" / "v1"
+    identifier = "ex/x" if key == "inputs" else "ex/y"
+
+    with pytest.raises(InvalidManifestError) as excinfo:
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+    assert str(excinfo.value) == (
+        f"{folder / '01-again.yaml'}: {key}[1]: {identifier!r} is already listed in "
+        f"{folder / '00-header.yaml'}"
+    )
+
+
+def test_the_same_identifier_as_input_in_one_part_and_output_in_another_is_not_a_repeat(
+    tmp_path: Path,
+) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": SCALARS + "inputs: [ex/x]\noutputs: [ex/y]\n",
+            "01-more.yaml": "outputs: [ex/x]\n",
+            "02-caps.yaml": CAPABILITIES_A,
+        },
+    )
+
+    manifest = only_manifest(tmp_path)
+
+    assert manifest.inputs == frozenset({"ex/x"})
+    assert manifest.outputs == frozenset({"ex/y", "ex/x"})
+
+
+@pytest.mark.parametrize(
+    "key",
+    ["jurisdiction", "version", "valid_from_tax_year", "inputs", "outputs", "capabilities"],
+)
+def test_a_key_in_no_part_is_still_missing_after_the_merge(tmp_path: Path, key: str) -> None:
+    whole = {
+        "jurisdiction": "jurisdiction: EX-ON\n",
+        "version": "version: 1\n",
+        "valid_from_tax_year": "valid_from_tax_year: 2025\n",
+        "inputs": INPUTS,
+        "outputs": OUTPUTS,
+        "capabilities": CAPABILITIES_A,
+    }
+    write_parts(
+        tmp_path,
+        {
+            f"{n:02}.yaml": text
+            for n, text in enumerate(text for name, text in whole.items() if name != key)
+        },
+    )
+
+    with pytest.raises(InvalidManifestError, match=rf"missing keys \['{key}'\]") as excinfo:
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+    assert str(tmp_path / "ex-on" / "manifests" / "v1") in str(excinfo.value)
+
+
+def test_one_bad_part_fails_the_whole_load(tmp_path: Path) -> None:
+    write(tmp_path, "ex-on/manifests/good.yaml", EX_ON_V1)
+    write_parts(tmp_path, {"00-header.yaml": SCALARS, "01-bad.yaml": "bogus: 1\n"}, folder="v2")
+
+    with pytest.raises(InvalidManifestError, match="01-bad.yaml"):
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+
+def test_a_folder_manifest_for_another_jurisdiction_is_rejected(tmp_path: Path) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": SCALARS.replace("EX-ON", "EX-BC") + INPUTS + OUTPUTS,
+            "01-a.yaml": CAPABILITIES_A,
+        },
+    )
+
+    with pytest.raises(InvalidManifestError, match="manifest is for EX-BC, but its package"):
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+
+def test_a_subfolder_without_yaml_files_is_not_a_manifest(tmp_path: Path) -> None:
+    write(tmp_path / "ex-on" / "manifests", "v1.yaml", EX_ON_V1)
+    (tmp_path / "ex-on" / "manifests" / "__pycache__").mkdir()
+    (tmp_path / "ex-on" / "manifests" / "notes").mkdir()
+    (tmp_path / "ex-on" / "manifests" / "notes" / "readme.txt").write_text("not a part")
+
+    (only,) = source(tmp_path).get_jurisdiction(EX_ON).manifests
+
+    assert only.version == 1

@@ -1,0 +1,24 @@
+outputs:
+  - ca/refund_or_balance_owing
+  - ca-on/net_refund
+  - ca/unused_rrsp_contributions_carried_forward
+  - ca/net_income_before_adjustments
+  - ca/fhsa_unused_contributions_carried_forward
+  - ca/taxable_dividends_other_than_eligible
+  - ca/other_payments_limit_income
+  - ca-on/ontario_tax_less_dividend_credit
+  - ca-on/coop_education_placement_count
+  - ca/net_capital_loss_balance_1985_to_1987
+  - ca/net_capital_loss_balance_1988_and_1989
+  - ca/net_capital_loss_balance_1990_to_1999
+  - ca/net_capital_loss_balance_2001_to_2024
+  - ca-on/applies_for_energy_and_property_tax_credit
+  - ca-on/applies_for_northern_energy_credit
+  - ca-on/chooses_single_benefit_payment
+  - ca-on/applies_for_senior_homeowners_grant
+  - ca-on/separate_residences_for_medical_reasons
+  - ca-on/lived_in_student_residence
+  - ca-on/rent_paid
+  - ca-on/property_tax_paid
+  - ca-on/reserve_home_energy_costs
+  - ca-on/public_long_term_care_paid
