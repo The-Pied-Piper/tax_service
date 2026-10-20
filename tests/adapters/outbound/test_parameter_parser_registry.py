@@ -1,8 +1,8 @@
 """Unit tests for ParameterParserRegistry and `@parameter_parser`.
 
-Parsers are keyed by their kind's plain name (`amount`, `brackets`, `claim_reduction`,
-`class_rates`, `conditions`, `contribution_tier`, `credit`, `factor`, `fraction`, `rate`,
-`rate_table`, `rounding_only`, `surcharge_tiers`, `taper`), not namespaced yet.
+Parsers are keyed by their kind's plain name (`amount`, `amount_by_count`, `brackets`,
+`claim_reduction`, `class_rates`, `conditions`, `contribution_tier`, `credit`, `factor`,
+`fraction`, `rate`, `rate_table`, `rounding_only`, `surcharge_tiers`, `taper`), not namespaced yet.
 Lookups are typed: `for_kind(kind)` for a `ParameterKind[T]` gives a `ParameterParser[T]`; the
 `assert_type` checks below make `mypy .` fail if a lookup returned `Any` or another type.
 Made-up kinds and parsers are never registered in the shared registry: the decorator test
@@ -19,6 +19,7 @@ import pytest
 import app.registrations  # noqa: F401  (fills the capability and parser registries)
 from app.adapters.outbound.parameter_parsers import ParameterParser
 from app.adapters.outbound.parameter_parsers.amount import AmountParser
+from app.adapters.outbound.parameter_parsers.amount_by_count import AmountByCountParser
 from app.adapters.outbound.parameter_parsers.brackets import BracketsParser
 from app.adapters.outbound.parameter_parsers.claim_reduction import ClaimReductionParser
 from app.adapters.outbound.parameter_parsers.class_rates import ClassRatesParser
@@ -40,6 +41,7 @@ from app.adapters.outbound.yaml_support import YamlNode
 from app.domain.capability import CapabilityRegistry
 from app.domain.errors import DuplicateRegistrationError, UnknownRegistrationError
 from app.domain.parameters.amount import AMOUNT, Amount
+from app.domain.parameters.amount_by_count import AMOUNT_BY_COUNT, AmountByCount
 from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
 from app.domain.parameters.claim_reduction import CLAIM_REDUCTION
 from app.domain.parameters.class_rates import (
@@ -141,6 +143,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     registry.register_class(RoundingOnlyParser)
     registry.register_class(ClassRatesParser)
     registry.register_class(ConditionsParser)
+    registry.register_class(AmountByCountParser)
     registry.register_class(FlatRateParser)
 
     schedule = registry.for_kind(BRACKETS).parse(
@@ -223,6 +226,9 @@ def test_for_kind_is_typed_by_the_kind() -> None:
             "dataset",
         )
     )
+    amount_by_count = registry.for_kind(AMOUNT_BY_COUNT).parse(
+        YamlNode.root({"amounts": {"1": "100", "2": "200.50"}}, "dataset")
+    )
     flat_rate = registry.for_kind(FLAT_RATE).parse(YamlNode.root({"rate": "0.2"}, "dataset"))
 
     assert_type(schedule, BracketSchedule)
@@ -238,6 +244,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     assert_type(rounding_only, RoundingOnly)
     assert_type(class_rates, ClassRates)
     assert_type(conditions, ConditionList)
+    assert_type(amount_by_count, AmountByCount)
     assert_type(flat_rate, Decimal)
 
     assert schedule == BracketSchedule((Bracket(D("0"), D("0.1")),))
@@ -278,6 +285,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
             ),
         ),
     )
+    assert amount_by_count == AmountByCount(((1, D("100")), (2, D("200.50"))))
     assert flat_rate == D("0.2")
 
 
@@ -377,6 +385,7 @@ def test_decorating_a_second_parser_for_one_kind_fails(fresh: ParameterParserReg
     ("kind", "parser_class"),
     [
         (AMOUNT, AmountParser),
+        (AMOUNT_BY_COUNT, AmountByCountParser),
         (BRACKETS, BracketsParser),
         (CLAIM_REDUCTION, ClaimReductionParser),
         (CLASS_RATES, ClassRatesParser),
@@ -405,6 +414,7 @@ def test_built_in_parsers_are_registered_in_the_shared_registry(
     ("parser_class", "body_keys"),
     [
         (AmountParser, frozenset({"amount"})),
+        (AmountByCountParser, frozenset({"amounts"})),
         (BracketsParser, frozenset({"brackets", "tax_at_start_rounding"})),
         (ClassRatesParser, frozenset({"classes"})),
         (ConditionsParser, frozenset({"count_when_any_applies", "conditions"})),
@@ -428,6 +438,7 @@ def test_built_in_parsers_read_their_body_keys(
 def test_the_shared_registry_holds_exactly_the_built_in_parsers() -> None:
     assert ParameterParserRegistry.shared().identifiers() == {
         "amount",
+        "amount_by_count",
         "brackets",
         "claim_reduction",
         "class_rates",

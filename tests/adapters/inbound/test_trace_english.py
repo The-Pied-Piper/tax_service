@@ -30,6 +30,7 @@ from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRu
 from app.domain.parameters.taper import Taper
 from app.domain.record_list import RecordListKind
 from app.domain.trace import (
+    AmountByCountLine,
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
@@ -67,6 +68,7 @@ from app.domain.trace import (
     SubtractedLine,
     SubtractedNotBelowZeroLine,
     SumLine,
+    SumNotBelowZeroLine,
     SurchargeTierLine,
     TaperedAmountLine,
     TerminalLossLine,
@@ -132,6 +134,8 @@ DEPENDANTS_MEDICAL = ArtifactKind("ex/dependants_medical", Decimal)
 NON_COMPLIANT_EXPENSES = ArtifactKind("ex/non_compliant_expenses", Decimal)
 TRANSFERRED_AMOUNT = ArtifactKind("ex/transferred_amount", Decimal)
 RESIDENCE_GAIN = ArtifactKind("ex/residence_gain", Decimal)
+MONTHS = ArtifactKind("ex/month_count", int)
+MONTHLY_AMOUNT = ArtifactKind("ex/monthly_amount", Decimal)
 
 
 def render(line: TraceLine) -> str:
@@ -245,6 +249,49 @@ def test_renders_a_sum_of_one_part() -> None:
 
 def test_renders_a_sum_of_no_parts() -> None:
     assert render(SumLine(TOTAL, (), D(0))) == "total: no parts = 0"
+
+
+# --- sums not below zero ---------------------------------------------------------
+
+
+def test_renders_a_sum_not_below_zero() -> None:
+    line = SumNotBelowZeroLine(
+        TOTAL, ((PART_ONE, D("100.25")), (PART_TWO, D("40")), (PART_THREE, D("9.75"))), D("150.00")
+    )
+
+    assert render(line) == (
+        "total: part_one 100.25 + part_two 40 + part_three 9.75, not below 0 = 150"
+    )
+
+
+def test_renders_a_sum_floored_at_zero() -> None:
+    line = SumNotBelowZeroLine(TOTAL, ((PART_ONE, D("10")), (PART_TWO, D("-25.5"))), D("0"))
+
+    assert render(line) == "total: part_one 10 + part_two -25.5, not below 0 = 0"
+
+
+def test_renders_a_sum_not_below_zero_to_exactly_zero() -> None:
+    line = SumNotBelowZeroLine(TOTAL, ((PART_ONE, D("40.50")), (PART_TWO, D("-40.50"))), D("0"))
+
+    assert render(line) == "total: part_one 40.5 + part_two -40.5, not below 0 = 0"
+
+
+def test_renders_the_parts_of_a_sum_not_below_zero_in_the_order_of_the_line() -> None:
+    line = SumNotBelowZeroLine(
+        TOTAL, ((PART_THREE, D("9.75")), (PART_ONE, D("100.25"))), D("110.00")
+    )
+
+    assert render(line) == "total: part_three 9.75 + part_one 100.25, not below 0 = 110"
+
+
+def test_renders_a_sum_not_below_zero_of_one_part() -> None:
+    line = SumNotBelowZeroLine(TOTAL, ((PART_TWO, D("40.5")),), D("40.5"))
+
+    assert render(line) == "total: part_two 40.5, not below 0 = 40.5"
+
+
+def test_renders_a_sum_not_below_zero_of_no_parts() -> None:
+    assert render(SumNotBelowZeroLine(TOTAL, (), D(0))) == "total: no parts, not below 0 = 0"
 
 
 # --- rates applied --------------------------------------------------------------
@@ -1035,6 +1082,30 @@ def test_renders_a_negative_count_as_given() -> None:
     assert render(line) == (
         "amount_chosen: amount_with_family 2813, chosen as dependant_count is -1"
     )
+
+
+# --- an amount read from a table by a count ----------------------------------------------
+#
+# The row's figure prints with the count's label and value, then the rounding rule; the result
+# is not repeated (the row and the rule give it).
+
+
+def test_renders_an_amount_by_count() -> None:
+    line = AmountByCountLine(MONTHLY_AMOUNT, MONTHS, 2, D("200.50"), NO_ROUNDING, D("200.50"))
+
+    assert render(line) == "monthly_amount: 200.5 for month_count 2 (no rounding)"
+
+
+def test_renders_a_rounded_amount_by_count() -> None:
+    line = AmountByCountLine(MONTHLY_AMOUNT, MONTHS, 4, D("400.255"), CENT, D("400.26"))
+
+    assert render(line) == "monthly_amount: 400.255 for month_count 4 (half-up to 0.01)"
+
+
+def test_renders_an_amount_by_count_of_zero_months() -> None:
+    line = AmountByCountLine(MONTHLY_AMOUNT, MONTHS, 0, D("0.00"), NO_ROUNDING, D("0.00"))
+
+    assert render(line) == "monthly_amount: 0 for month_count 0 (no rounding)"
 
 
 # --- the total of a field over a list of records ---------------------------------------
@@ -2156,6 +2227,16 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
             "amount_chosen: amount_with_family 4319.4, chosen as dependant_count is 1",
         ),
         (
+            SumNotBelowZeroLine(
+                TOTAL, ((PART_ONE, D("100.250")), (PART_TWO, D("4E+1"))), D("140.250")
+            ),
+            "total: part_one 100.25 + part_two 40, not below 0 = 140.25",
+        ),
+        (
+            AmountByCountLine(MONTHLY_AMOUNT, MONTHS, 2, D("200.5000"), NO_ROUNDING, D("2.005E+2")),
+            "monthly_amount: 200.5 for month_count 2 (no rounding)",
+        ),
+        (
             RecordTotalLine(TOTAL, ITEM_AMOUNT, (D("6000.00"), D("4E+3")), D("10000.00")),
             "total: item 1 item_amount 6000 + item 2 item_amount 4000 = 10000",
         ),
@@ -2270,6 +2351,8 @@ def test_render_all_renders_each_line_in_order() -> None:
         RatioAppliedLine(
             CREDIT_SHARE, TOTAL, D("3"), EARNED_INCOME, D("2"), TOTAL, D("3"), NO_ROUNDING, D("2")
         ),
+        SumNotBelowZeroLine(TOTAL, ((PART_ONE, D("1")), (PART_TWO, D("-2"))), D("0")),
+        AmountByCountLine(MONTHLY_AMOUNT, MONTHS, 3, D("300"), NO_ROUNDING, D("300")),
         RecordTotalLine(TOTAL, ITEM_AMOUNT, (D("1"), D("2")), D("3")),
         ChosenByRangeLine(AMOUNT_CHOSEN, TOTAL, D("3"), AMOUNT_IN_RANGE, D("3")),
         CaregiverClaimLine(
@@ -2314,6 +2397,8 @@ def test_render_all_renders_each_line_in_order() -> None:
         "amount_claimed: total 3 for each of 1 person_count = 3",
         "amount_chosen: total 3, chosen as person_count is 0",
         "credit_share: total 3 × earned_income 2 / total 3 (no rounding)",
+        "total: part_one 1 + part_two -2, not below 0 = 0",
+        "monthly_amount: 300 for month_count 3 (no rounding)",
         "total: item 1 item_amount 1 + item 2 item_amount 2 = 3",
         "amount_chosen: amount_in_range 3, chosen as total is 3",
         "caregiver_amount: dependant 1: 5 less net income 4, at most 2 = 1 (no rounding)",

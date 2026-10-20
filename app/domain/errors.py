@@ -108,6 +108,19 @@ class InvalidTaperError(DomainError):
     """A taper's figures are not finite, are negative, or its range is not above zero."""
 
 
+class InvalidAmountByCountError(DomainError):
+    """A table of amounts by count is empty, repeats a count or has a bad figure."""
+
+
+class NoAmountForCountError(ValidationError):
+    """A count was given that the table of amounts by count has no row for.
+
+    It is a ValidationError, not a DomainError of its own: the count is the caller's input and
+    the table is as printed, so the fault is the request's, and it maps to the same status as any
+    other invalid input.
+    """
+
+
 class InvalidFactorError(DomainError):
     """A factor is not finite or is negative."""
 

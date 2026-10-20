@@ -14,6 +14,7 @@ from fractions import Fraction as ExactFraction
 from app.domain.parameters.class_rates import ClassRate, RecaptureAndTerminalLoss
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingRule, RoundTo
 from app.domain.trace import (
+    AmountByCountLine,
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
@@ -51,6 +52,7 @@ from app.domain.trace import (
     SubtractedLine,
     SubtractedNotBelowZeroLine,
     SumLine,
+    SumNotBelowZeroLine,
     SurchargeTierLine,
     TaperedAmountLine,
     TerminalLossLine,
@@ -85,6 +87,9 @@ class EnglishTraceRenderer:
             case SumLine(output=output, parts=parts, total=total):
                 terms = " + ".join(f"{kind.label} {self._money(amount)}" for kind, amount in parts)
                 return f"{output.label}: {terms or 'no parts'} = {self._money(total)}"
+            case SumNotBelowZeroLine(output=output, parts=parts, total=total):
+                terms = " + ".join(f"{kind.label} {self._money(amount)}" for kind, amount in parts)
+                return f"{output.label}: {terms or 'no parts'}, not below 0 = {self._money(total)}"
             case RateAppliedLine(
                 output=output, base=base, base_amount=amount, rate=rate, rounding=rule
             ):
@@ -275,6 +280,13 @@ class EnglishTraceRenderer:
                 return (
                     f"{output.label}: {chosen_kind.label} {self._money(chosen)}, "
                     f"chosen as {count_kind.label} is {count}"
+                )
+            case AmountByCountLine(
+                output=output, count_kind=count_kind, count=count, row=row, rounding=rule
+            ):
+                return (
+                    f"{output.label}: {self._money(row)} for {count_kind.label} {count} "
+                    f"({self._rounding(rule)})"
                 )
             case RecordTotalLine(output=output, field=field, amounts=amounts, total=total):
                 items = " + ".join(

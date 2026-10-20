@@ -18,6 +18,7 @@ from textwrap import dedent
 import pytest
 
 from app.adapters.outbound.parameter_parsers.amount import AmountParser
+from app.adapters.outbound.parameter_parsers.amount_by_count import AmountByCountParser
 from app.adapters.outbound.parameter_parsers.brackets import BracketsParser
 from app.adapters.outbound.parameter_parsers.claim_reduction import ClaimReductionParser
 from app.adapters.outbound.parameter_parsers.class_rates import ClassRatesParser
@@ -36,6 +37,7 @@ from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.adapters.outbound.yaml_support import YamlNode
 from app.domain.errors import (
     DomainError,
+    InvalidAmountByCountError,
     InvalidAmountError,
     InvalidClaimReductionError,
     InvalidClassRatesError,
@@ -53,6 +55,7 @@ from app.domain.errors import (
     UnknownRegistrationError,
 )
 from app.domain.parameters.amount import AMOUNT, Amount
+from app.domain.parameters.amount_by_count import AMOUNT_BY_COUNT, AmountByCount
 from app.domain.parameters.brackets import BRACKETS, Bracket, BracketSchedule
 from app.domain.parameters.claim_reduction import CLAIM_REDUCTION, ClaimReduction
 from app.domain.parameters.class_rates import (
@@ -195,6 +198,20 @@ threshold: "20000"
 range: "10000"
 """
 
+AMOUNT_BY_COUNT_2025 = """\
+family: ex/amount_by_count
+tax_year: 2025
+kind: amount_by_count
+sources:
+  - https://example.org/amount-by-count-2025
+rounding: none
+amounts:
+  "1": "100"
+  "2": "200.50"
+  "3": "300"
+  "4": "400"
+"""
+
 FACTOR_2025 = """\
 family: ex/factor
 tax_year: 2025
@@ -321,6 +338,7 @@ def built_in_parsers() -> ParameterParserRegistry:
     registry.register_class(ConditionsParser)
     registry.register_class(RoundingOnlyParser)
     registry.register_class(ClassRatesParser)
+    registry.register_class(AmountByCountParser)
     return registry
 
 
@@ -652,6 +670,102 @@ def test_by_default_the_taper_parser_comes_from_the_shared_registry(tmp_path: Pa
     result = YamlParameterSource(roots(tmp_path)).get("ex/taper", 2025, TAPER)
 
     assert result.values == Taper(D("1000"), D("500"), D("20000"), D("10000"))
+
+
+def test_reads_an_amount_by_count_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/amount_by_count/2025.yaml", AMOUNT_BY_COUNT_2025)
+
+    result = source(tmp_path).get("ex/amount_by_count", 2025, AMOUNT_BY_COUNT)
+
+    assert result == ParameterDataset(
+        family="ex/amount_by_count",
+        tax_year=2025,
+        kind=AMOUNT_BY_COUNT,
+        values=AmountByCount(((1, D("100")), (2, D("200.50")), (3, D("300")), (4, D("400")))),
+        rounding=NO_ROUNDING,
+        sources=("https://example.org/amount-by-count-2025",),
+    )
+
+
+def test_reads_an_amount_by_counts_counts_as_ints_and_amounts_as_decimals(
+    tmp_path: Path,
+) -> None:
+    write(tmp_path, "ex/parameters/amount_by_count/2025.yaml", AMOUNT_BY_COUNT_2025)
+
+    table = source(tmp_path).get("ex/amount_by_count", 2025, AMOUNT_BY_COUNT).values
+
+    assert sorted(table.rows) == [(1, D("100")), (2, D("200.50")), (3, D("300")), (4, D("400"))]
+    for count, amount in table.rows:
+        assert type(count) is int
+        assert type(amount) is Decimal
+
+
+def test_reads_an_amount_by_counts_amounts_exactly(tmp_path: Path) -> None:
+    content = AMOUNT_BY_COUNT_2025.replace('"1": "100"', '"1": "100.10"').replace(
+        '"2": "200.50"', '"2": "200.500"'
+    )
+    write(tmp_path, "ex/parameters/amount_by_count/2025.yaml", content)
+
+    table = source(tmp_path).get("ex/amount_by_count", 2025, AMOUNT_BY_COUNT).values
+
+    assert {count: str(amount) for count, amount in table.rows}[1] == "100.10"
+    assert {count: str(amount) for count, amount in table.rows}[2] == "200.500"
+
+
+def test_reads_an_amount_by_count_with_a_count_of_zero_and_a_zero_amount(tmp_path: Path) -> None:
+    content = AMOUNT_BY_COUNT_2025.replace('"1": "100"', '"0": "0"')
+    write(tmp_path, "ex/parameters/amount_by_count/2025.yaml", content)
+
+    table = source(tmp_path).get("ex/amount_by_count", 2025, AMOUNT_BY_COUNT).values
+
+    assert (0, D("0")) in table.rows
+
+
+def test_reads_an_amount_by_count_with_a_single_row(tmp_path: Path) -> None:
+    content = AMOUNT_BY_COUNT_2025.replace('  "2": "200.50"\n  "3": "300"\n  "4": "400"\n', "")
+    write(tmp_path, "ex/parameters/amount_by_count/2025.yaml", content)
+
+    table = source(tmp_path).get("ex/amount_by_count", 2025, AMOUNT_BY_COUNT).values
+
+    assert table.rows == ((1, D("100")),)
+
+
+def test_reads_an_amount_by_counts_multi_digit_counts(tmp_path: Path) -> None:
+    content = AMOUNT_BY_COUNT_2025.replace('"4": "400"', '"12": "1200"')
+    write(tmp_path, "ex/parameters/amount_by_count/2025.yaml", content)
+
+    table = source(tmp_path).get("ex/amount_by_count", 2025, AMOUNT_BY_COUNT).values
+
+    assert (12, D("1200")) in table.rows
+
+
+def test_reads_an_amount_by_count_datasets_rounding_rule(tmp_path: Path) -> None:
+    write(
+        tmp_path,
+        "ex/parameters/amount_by_count/2025.yaml",
+        AMOUNT_BY_COUNT_2025.replace(
+            "rounding: none", 'rounding: {increment: "0.01", mode: half_up}'
+        ),
+    )
+
+    result = source(tmp_path).get("ex/amount_by_count", 2025, AMOUNT_BY_COUNT)
+
+    assert result.rounding == RoundTo(D("0.01"), RoundingMode.HALF_UP)
+
+
+def test_by_default_the_amount_by_count_parser_comes_from_the_shared_registry(
+    tmp_path: Path,
+) -> None:
+    write(tmp_path, "ex/parameters/amount_by_count/2025.yaml", AMOUNT_BY_COUNT_2025)
+
+    result = YamlParameterSource(roots(tmp_path)).get("ex/amount_by_count", 2025, AMOUNT_BY_COUNT)
+
+    assert sorted(result.values.rows) == [
+        (1, D("100")),
+        (2, D("200.50")),
+        (3, D("300")),
+        (4, D("400")),
+    ]
 
 
 def test_reads_a_factor_dataset(tmp_path: Path) -> None:
@@ -2140,6 +2254,186 @@ def test_a_taper_dataset_is_not_a_credit_dataset(tmp_path: Path) -> None:
 
     with pytest.raises(InvalidParameterDataError, match="kind 'taper' does not match"):
         source(tmp_path).get("ex/taper", 2025, CREDIT)
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace('"2": "200.50"', '"2": 200.50'),
+            "must be a string, got float",
+            id="amount-as-yaml-float",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace('"2": "200.50"', '"2": 200'),
+            "must be a string, got int",
+            id="amount-as-yaml-number",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace('"1": "100"', '1: "100"'),
+            "must be a string, got int",
+            id="count-as-yaml-number",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace('"1": "100"', '"one": "100"'),
+            "is not a whole number",
+            id="count-not-digits",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace('"1": "100"', '"01": "100"'),
+            "is not a whole number",
+            id="count-leading-zero",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace('"1": "100"', '"-1": "100"'),
+            "is not a whole number",
+            id="count-negative",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace('"1": "100"', '"+1": "100"'),
+            "is not a whole number",
+            id="count-signed",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace('"1": "100"', '"1.5": "100"'),
+            "is not a whole number",
+            id="count-fractional",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace('"1": "100"', '" 1": "100"'),
+            "is not a whole number",
+            id="count-padded",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace('"1": "100"', '"": "100"'),
+            "keys must not be empty|is not a whole number",
+            id="count-empty",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace('"2": "200.50"', '"2": "lots"'),
+            "is not a decimal: 'lots'",
+            id="amount-not-decimal",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace('"2": "200.50"', '"2": "Infinity"'),
+            "is not a decimal",
+            id="amount-infinite",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace('"2": "200.50"', '"2": "NaN"'),
+            "is not a decimal",
+            id="amount-nan",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace('"2": "200.50"', '"2": "-0.01"'),
+            "amount must not be negative",
+            id="amount-negative",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace('"2": "200.50"', '"2": "200.50"\n  "2": "300"'),
+            "duplicate key '2'",
+            id="count-duplicated",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace(
+                '  "1": "100"\n  "2": "200.50"\n  "3": "300"\n  "4": "400"\n', "  {}\n"
+            ),
+            "must not be empty",
+            id="amounts-empty",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace(
+                '  "1": "100"\n  "2": "200.50"\n  "3": "300"\n  "4": "400"\n', '  - "100"\n'
+            ),
+            "amounts must be a mapping",
+            id="amounts-as-a-list",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace(
+                'amounts:\n  "1": "100"\n  "2": "200.50"\n  "3": "300"\n  "4": "400"\n',
+                'amounts: "100"\n',
+            ),
+            "amounts must be a mapping",
+            id="amounts-as-a-string",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace(
+                'amounts:\n  "1": "100"\n  "2": "200.50"\n  "3": "300"\n  "4": "400"\n', ""
+            ),
+            r"missing keys \['amounts'\]",
+            id="amounts-missing",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025 + 'amount: "100"\n',
+            r"unknown keys \['amount'\]",
+            id="amount-is-not-an-amount-by-count-key",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace("kind: amount_by_count", "kind: amount"),
+            "kind 'amount' does not match the requested 'amount_by_count'",
+            id="kind-mismatch",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace("rounding: none\n", ""),
+            r"missing keys \['rounding'\]",
+            id="rounding-missing",
+        ),
+        pytest.param(
+            AMOUNT_BY_COUNT_2025.replace(
+                "sources:\n  - https://example.org/amount-by-count-2025", "sources: []"
+            ),
+            "sources must list at least one",
+            id="sources-empty",
+        ),
+    ],
+)
+def test_rejects_malformed_amount_by_count_dataset(
+    tmp_path: Path, content: str, message: str
+) -> None:
+    write(tmp_path, "ex/parameters/amount_by_count/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError, match=message) as excinfo:
+        source(tmp_path).get("ex/amount_by_count", 2025, AMOUNT_BY_COUNT)
+
+    assert "2025.yaml" in str(excinfo.value)
+
+
+def test_a_negative_amount_is_reported_as_an_amount_by_count_error(tmp_path: Path) -> None:
+    content = AMOUNT_BY_COUNT_2025.replace('"2": "200.50"', '"2": "-1"')
+    write(tmp_path, "ex/parameters/amount_by_count/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/amount_by_count", 2025, AMOUNT_BY_COUNT)
+
+    assert isinstance(excinfo.value.__cause__, InvalidAmountByCountError)
+
+
+def test_an_empty_amount_by_count_is_reported_as_an_amount_by_count_error(
+    tmp_path: Path,
+) -> None:
+    content = AMOUNT_BY_COUNT_2025.replace(
+        '  "1": "100"\n  "2": "200.50"\n  "3": "300"\n  "4": "400"\n', "  {}\n"
+    )
+    write(tmp_path, "ex/parameters/amount_by_count/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/amount_by_count", 2025, AMOUNT_BY_COUNT)
+
+    assert isinstance(excinfo.value.__cause__, InvalidAmountByCountError)
+
+
+def test_an_amount_dataset_is_not_an_amount_by_count_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/amount_cap/2025.yaml", AMOUNT_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'amount' does not match"):
+        source(tmp_path).get("ex/amount_cap", 2025, AMOUNT_BY_COUNT)
+
+
+def test_an_amount_by_count_dataset_is_not_an_amount_dataset(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/amount_by_count/2025.yaml", AMOUNT_BY_COUNT_2025)
+
+    with pytest.raises(InvalidParameterDataError, match="kind 'amount_by_count' does not match"):
+        source(tmp_path).get("ex/amount_by_count", 2025, AMOUNT)
 
 
 @pytest.mark.parametrize(
