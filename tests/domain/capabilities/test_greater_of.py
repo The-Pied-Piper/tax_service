@@ -1,6 +1,6 @@
 """Unit tests for the GreaterOf capability (`core/greater_of`), with made-up kinds and values.
 
-Its slots: one consumed list slot `amounts` (a tuple of money kinds, at greatest one, since there is
+Its slots: one consumed list slot `amounts` (a tuple of money kinds, at least one, since there is
 no greater of nothing), one produced slot `output`, no parameter slots. The output is the maximum
 of the amounts' values, exact, with no rounding (it has no dataset); when two amounts are equal
 the first listed is produced, keeping its scale. It records one `GreaterOfLine` holding each

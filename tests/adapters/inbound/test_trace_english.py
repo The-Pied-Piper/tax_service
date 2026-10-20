@@ -1354,6 +1354,12 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
             "lesser_amount: lesser of part_one 1500.25 and part_two 1000 = 1000",
         ),
         (
+            GreaterOfLine(
+                GREATER_AMOUNT, ((PART_ONE, D("1500.2500")), (PART_TWO, D("1E+3"))), D("1500.2500")
+            ),
+            "greater_amount: greater of part_one 1500.25 and part_two 1000 = 1500.25",
+        ),
+        (
             ContributionTierLine(
                 CONTRIBUTION,
                 EARNINGS,
@@ -1521,6 +1527,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         CreditAmountLine(PERSONAL_AMOUNT, Credit(D("1000")), NO_ROUNDING, D("1000")),
         CappedAmountLine(CAPPED_AMOUNT, TOTAL, D("3"), Amount(D("2")), NO_ROUNDING, D("2")),
         LesserOfLine(LESSER_AMOUNT, ((TOTAL, D("3")), (CAPPED_AMOUNT, D("2"))), D("2")),
+        GreaterOfLine(GREATER_AMOUNT, ((TOTAL, D("3")), (CAPPED_AMOUNT, D("2"))), D("3")),
         ContributionTierLine(
             CONTRIBUTION, EARNINGS, D("23000"), TIER, NO_ROUNDING, D("20000"), D("1000")
         ),
@@ -1572,6 +1579,7 @@ def test_render_all_renders_each_line_in_order() -> None:
         "personal_amount: credit amount 1000 (no rounding)",
         "capped_amount: lesser of total 3 and 2 (no rounding)",
         "lesser_amount: lesser of total 3 and capped_amount 2 = 2",
+        "greater_amount: greater of total 3 and capped_amount 2 = 3",
         "contribution: 5% of earnings between 3000 and 50000 (20000), at most 2350 (no rounding)",
         "surcharge: 50% of total 3 over 1 (no rounding)",
         "personal_amount: 1000 plus 500 less 100 for income 22000 over 20000 (range 10000), "
