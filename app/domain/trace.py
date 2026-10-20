@@ -636,6 +636,48 @@ class DisabilityTransferLine(TraceLine):
 
 
 @dataclass(frozen=True)
+class PrincipalResidenceGainLine(TraceLine):
+    """The taxable gain `result` of one property, by `position` (from 1), for `output`.
+
+    It follows Part 1 of the form designating a property as a principal residence: the years
+    designated after 1981 and from 1972 to 1981 (lines 1 and 2) and their total `designated` (line
+    3, carried to line 4), the years owned in the same periods (lines 5 and 6) and their total
+    `owned` (line 7), and `plus_one` (1 if the "plus one" applies, else 0); `proceeds`,
+    `adjusted_cost_base` and `outlays` (lines 8 to 10) and `gain` (line 18) the proceeds less the
+    other two; `line_20` the designated years plus the "plus one" and `line_21` the gain multiplied
+    by it; `exempt` (line 23) line 21 divided by the years owned, rounded with `rounding`; and
+    `result` (line 24) the gain less the exemption, not below 0. Lines 14 to 21 are exact.
+
+    Its own class, not a `DisabilityTransferLine`: the property is worked in steps of its own that
+    the English rendering shows one by one.
+    """
+
+    output: Money
+    position: int
+    years_designated_after_1981: int
+    years_designated_1972_to_1981: int
+    designated: int
+    years_owned_after_1981: int
+    years_owned_1972_to_1981: int
+    owned: int
+    plus_one: int
+    proceeds: Decimal
+    adjusted_cost_base: Decimal
+    outlays: Decimal
+    gain: Decimal
+    line_20: int
+    line_21: Decimal
+    rounding: RoundingRule
+    exempt: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The property's taxable gain."""
+        return self.result
+
+
+@dataclass(frozen=True)
 class QuotientLine(TraceLine):
     """The `result` produced as `output`: `dividend` (worth `dividend_amount`) divided by
     `divisor` (worth `divisor_amount`), exactly.

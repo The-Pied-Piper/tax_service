@@ -291,6 +291,8 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_7,
     POLITICAL_CREDIT_SHORTCUT_AMOUNT,
     POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
+    PRINCIPAL_RESIDENCE_GAIN,
+    PRINCIPAL_RESIDENCE_PROPERTIES,
     PROVINCIAL_CREDITS,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
@@ -302,6 +304,14 @@ from app.jurisdictions.ca.catalog import (
     REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
     REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
     REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
+    RESIDENCE_ADJUSTED_COST_BASE,
+    RESIDENCE_OUTLAYS,
+    RESIDENCE_PLUS_ONE_YEAR,
+    RESIDENCE_PROCEEDS,
+    RESIDENCE_YEARS_DESIGNATED_1972_TO_1981,
+    RESIDENCE_YEARS_DESIGNATED_AFTER_1981,
+    RESIDENCE_YEARS_OWNED_1972_TO_1981,
+    RESIDENCE_YEARS_OWNED_AFTER_1981,
     RESP_AIPS_ADDITIONAL_TAX,
     RESP_AIPS_CONTRIBUTIONS_COUNTED,
     RESP_AIPS_LIFETIME_LIMIT,
@@ -655,6 +665,16 @@ REGISTERED = frozenset(
         "ca/dependant_taxable_income",
         "ca/disability_dependants",
         "ca/disability_transferred_amount",
+        "ca/residence_years_designated_after_1981",
+        "ca/residence_years_designated_1972_to_1981",
+        "ca/residence_years_owned_after_1981",
+        "ca/residence_years_owned_1972_to_1981",
+        "ca/residence_proceeds",
+        "ca/residence_outlays",
+        "ca/residence_adjusted_cost_base",
+        "ca/residence_plus_one_year",
+        "ca/principal_residence_properties",
+        "ca/principal_residence_gain",
         "ca/cpp_base_contributions",
         "ca/ei_premiums",
         "ca/canada_employment_amount",
@@ -834,6 +854,11 @@ COUNTS = frozenset(
         "ca/eligible_dependants",
         "ca/infirm_children",
         "ca/dependant_under_18",
+        "ca/residence_years_designated_after_1981",
+        "ca/residence_years_designated_1972_to_1981",
+        "ca/residence_years_owned_after_1981",
+        "ca/residence_years_owned_1972_to_1981",
+        "ca/residence_plus_one_year",
         "ca/born_in_1960_or_earlier",
         "ca/spouses_claimed",
         "ca/spouse_caregiver_eligible",
@@ -853,8 +878,15 @@ COUNTS = frozenset(
 # Federal Worksheet "Line 31800 - Disability amount transferred from a dependant": "Complete the
 # following calculation fore ach dependant who is eligible for the disability tax credit in 2025",
 # so the dependants who qualify are a list of records too.
+# Form T2091(IND): "Complete a separate form for each property you sold.", so the properties sold
+# are a list of records as well.
 RECORD_LISTS = frozenset(
-    {"ca/infirm_dependants", "ca/disability_dependants", "ca/other_dependants"}
+    {
+        "ca/infirm_dependants",
+        "ca/disability_dependants",
+        "ca/other_dependants",
+        "ca/principal_residence_properties",
+    }
 )
 
 
@@ -1422,6 +1454,24 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/dependant_taxable_income") is DEPENDANT_TAXABLE_INCOME
     assert registry.get("ca/disability_dependants") is DISABILITY_DEPENDANTS
     assert registry.get("ca/disability_transferred_amount") is DISABILITY_TRANSFERRED_AMOUNT
+    assert (
+        registry.get("ca/residence_years_designated_after_1981")
+        is RESIDENCE_YEARS_DESIGNATED_AFTER_1981
+    )
+    assert (
+        registry.get("ca/residence_years_designated_1972_to_1981")
+        is RESIDENCE_YEARS_DESIGNATED_1972_TO_1981
+    )
+    assert registry.get("ca/residence_years_owned_after_1981") is RESIDENCE_YEARS_OWNED_AFTER_1981
+    assert (
+        registry.get("ca/residence_years_owned_1972_to_1981") is RESIDENCE_YEARS_OWNED_1972_TO_1981
+    )
+    assert registry.get("ca/residence_proceeds") is RESIDENCE_PROCEEDS
+    assert registry.get("ca/residence_outlays") is RESIDENCE_OUTLAYS
+    assert registry.get("ca/residence_adjusted_cost_base") is RESIDENCE_ADJUSTED_COST_BASE
+    assert registry.get("ca/residence_plus_one_year") is RESIDENCE_PLUS_ONE_YEAR
+    assert registry.get("ca/principal_residence_properties") is PRINCIPAL_RESIDENCE_PROPERTIES
+    assert registry.get("ca/principal_residence_gain") is PRINCIPAL_RESIDENCE_GAIN
     assert registry.get("ca/infirm_children") is INFIRM_CHILDREN
     assert registry.get("ca/infirm_children_amount") is INFIRM_CHILDREN_AMOUNT
     assert registry.get("ca/non_refundable_credit_amounts") is NON_REFUNDABLE_CREDIT_AMOUNTS
@@ -1758,6 +1808,10 @@ def test_catalog_kinds_are_money() -> None:
         DEPENDANT_CREDIT_AMOUNTS,
         DEPENDANT_TAXABLE_INCOME,
         DISABILITY_TRANSFERRED_AMOUNT,
+        RESIDENCE_PROCEEDS,
+        RESIDENCE_OUTLAYS,
+        RESIDENCE_ADJUSTED_COST_BASE,
+        PRINCIPAL_RESIDENCE_GAIN,
         INFIRM_CHILDREN_AMOUNT,
         NON_REFUNDABLE_CREDIT_AMOUNTS,
         CPP_BASE_CONTRIBUTIONS,
@@ -2375,6 +2429,228 @@ def test_the_disability_transferred_amount_is_a_non_negative_decimal(
     assert DISABILITY_TRANSFERRED_AMOUNT.value_type is Decimal
     assert DISABILITY_TRANSFERRED_AMOUNT.non_negative is True
     assert registry.kind("ca/disability_transferred_amount") is DISABILITY_TRANSFERRED_AMOUNT
+
+
+def test_the_principal_residence_properties_are_a_record_list_of_the_forms_input_lines(
+    registry: ArtifactRegistry,
+) -> None:
+    # Form T2091(IND), per property ("Complete a separate form for each property you sold."):
+    # line 1 and line 2 the years designated "After 1981" and "After 1971 and before 1982", line 5
+    # and line 6 the years owned in the same periods, line 8 "Proceeds of disposition or deemed
+    # disposition", line 9 "Outlays and expenses made or incurred related to the disposition",
+    # line 10 "Adjusted cost base at the time of disposition", and whether the "plus one" rule
+    # applies: the fields a record holds, in the form's line order (lines 3, 4, 7 and 14 onward
+    # are worked out).
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(PRINCIPAL_RESIDENCE_PROPERTIES, RecordListKind)
+    assert PRINCIPAL_RESIDENCE_PROPERTIES.identifier == "ca/principal_residence_properties"
+    assert PRINCIPAL_RESIDENCE_PROPERTIES.value_type is RecordList
+    assert PRINCIPAL_RESIDENCE_PROPERTIES.non_negative is False
+    assert PRINCIPAL_RESIDENCE_PROPERTIES.fields == (
+        RESIDENCE_YEARS_DESIGNATED_AFTER_1981,
+        RESIDENCE_YEARS_DESIGNATED_1972_TO_1981,
+        RESIDENCE_YEARS_OWNED_AFTER_1981,
+        RESIDENCE_YEARS_OWNED_1972_TO_1981,
+        RESIDENCE_PROCEEDS,
+        RESIDENCE_OUTLAYS,
+        RESIDENCE_ADJUSTED_COST_BASE,
+        RESIDENCE_PLUS_ONE_YEAR,
+    )
+    assert registry.get("ca/principal_residence_properties") is PRINCIPAL_RESIDENCE_PROPERTIES
+
+
+def test_the_principal_residence_properties_fields_are_kinds_of_their_own() -> None:
+    assert RESIDENCE_YEARS_DESIGNATED_AFTER_1981.identifier == (
+        "ca/residence_years_designated_after_1981"
+    )
+    assert RESIDENCE_YEARS_DESIGNATED_1972_TO_1981.identifier == (
+        "ca/residence_years_designated_1972_to_1981"
+    )
+    assert RESIDENCE_YEARS_OWNED_AFTER_1981.identifier == "ca/residence_years_owned_after_1981"
+    assert RESIDENCE_YEARS_OWNED_1972_TO_1981.identifier == (
+        "ca/residence_years_owned_1972_to_1981"
+    )
+    assert RESIDENCE_PROCEEDS.identifier == "ca/residence_proceeds"
+    assert RESIDENCE_OUTLAYS.identifier == "ca/residence_outlays"
+    assert RESIDENCE_ADJUSTED_COST_BASE.identifier == "ca/residence_adjusted_cost_base"
+    assert RESIDENCE_PLUS_ONE_YEAR.identifier == "ca/residence_plus_one_year"
+    for kind in PRINCIPAL_RESIDENCE_PROPERTIES.fields:
+        assert kind.non_negative is True, kind.identifier
+
+
+@pytest.mark.parametrize(
+    "kind",
+    [
+        RESIDENCE_YEARS_DESIGNATED_AFTER_1981,
+        RESIDENCE_YEARS_DESIGNATED_1972_TO_1981,
+        RESIDENCE_YEARS_OWNED_AFTER_1981,
+        RESIDENCE_YEARS_OWNED_1972_TO_1981,
+        RESIDENCE_PLUS_ONE_YEAR,
+    ],
+)
+def test_the_residence_years_and_the_plus_one_are_non_negative_int_counts(
+    kind: ArtifactKind[int], registry: ArtifactRegistry
+) -> None:
+    # Lines 1, 2, 5 and 6 are numbers of tax years; the "plus one" is a yes or no, taken as a count
+    # of 0 or 1 like the forms' other yes or no questions.
+    assert kind.value_type is int
+    assert kind.non_negative is True
+    assert registry.kind(kind.identifier) is kind
+
+
+@pytest.mark.parametrize(
+    "kind", [RESIDENCE_PROCEEDS, RESIDENCE_OUTLAYS, RESIDENCE_ADJUSTED_COST_BASE]
+)
+def test_the_residence_amounts_are_non_negative_decimals(
+    kind: ArtifactKind[Decimal], registry: ArtifactRegistry
+) -> None:
+    assert kind.value_type is Decimal
+    assert kind.non_negative is True
+    assert registry.kind(kind.identifier) is kind
+
+
+def residence_record(**changes: object) -> dict[ArtifactKind[Any], object]:
+    """One property with the ticket's example figures, with `changes` by field name."""
+    record: dict[ArtifactKind[Any], object] = {
+        RESIDENCE_YEARS_DESIGNATED_AFTER_1981: 6,
+        RESIDENCE_YEARS_DESIGNATED_1972_TO_1981: 0,
+        RESIDENCE_YEARS_OWNED_AFTER_1981: 10,
+        RESIDENCE_YEARS_OWNED_1972_TO_1981: 0,
+        RESIDENCE_PROCEEDS: Decimal("400000"),
+        RESIDENCE_OUTLAYS: Decimal("5000"),
+        RESIDENCE_ADJUSTED_COST_BASE: Decimal("95000"),
+        RESIDENCE_PLUS_ONE_YEAR: 1,
+    }
+    names: dict[str, ArtifactKind[Any]] = {
+        "designated_after_1981": RESIDENCE_YEARS_DESIGNATED_AFTER_1981,
+        "designated_1972_to_1981": RESIDENCE_YEARS_DESIGNATED_1972_TO_1981,
+        "owned_after_1981": RESIDENCE_YEARS_OWNED_AFTER_1981,
+        "owned_1972_to_1981": RESIDENCE_YEARS_OWNED_1972_TO_1981,
+        "proceeds": RESIDENCE_PROCEEDS,
+        "outlays": RESIDENCE_OUTLAYS,
+        "adjusted_cost_base": RESIDENCE_ADJUSTED_COST_BASE,
+        "plus_one": RESIDENCE_PLUS_ONE_YEAR,
+    }
+    for name, value in changes.items():
+        record[names[name]] = value
+    return record
+
+
+def test_the_principal_residence_properties_hold_the_eight_figures_each_in_the_callers_order() -> (
+    None
+):
+    properties = RecordList(
+        PRINCIPAL_RESIDENCE_PROPERTIES.fields,
+        [
+            residence_record(),
+            residence_record(
+                designated_after_1981=2,
+                designated_1972_to_1981=3,
+                owned_after_1981=6,
+                owned_1972_to_1981=4,
+                proceeds=Decimal("500000"),
+                outlays=Decimal("0"),
+                plus_one=0,
+            ),
+        ],
+    )
+
+    assert [record[RESIDENCE_YEARS_DESIGNATED_AFTER_1981] for record in properties.records] == [
+        6,
+        2,
+    ]
+    assert [record[RESIDENCE_YEARS_DESIGNATED_1972_TO_1981] for record in properties.records] == [
+        0,
+        3,
+    ]
+    assert [record[RESIDENCE_YEARS_OWNED_AFTER_1981] for record in properties.records] == [10, 6]
+    assert [record[RESIDENCE_YEARS_OWNED_1972_TO_1981] for record in properties.records] == [0, 4]
+    assert [record[RESIDENCE_PROCEEDS] for record in properties.records] == [
+        Decimal("400000"),
+        Decimal("500000"),
+    ]
+    assert [record[RESIDENCE_OUTLAYS] for record in properties.records] == [
+        Decimal("5000"),
+        Decimal("0"),
+    ]
+    assert [record[RESIDENCE_ADJUSTED_COST_BASE] for record in properties.records] == [
+        Decimal("95000"),
+        Decimal("95000"),
+    ]
+    assert [record[RESIDENCE_PLUS_ONE_YEAR] for record in properties.records] == [1, 0]
+
+
+def test_there_may_be_no_principal_residence_properties() -> None:
+    assert RecordList(PRINCIPAL_RESIDENCE_PROPERTIES.fields, []).records == ()
+
+
+@pytest.mark.parametrize("missing", PRINCIPAL_RESIDENCE_PROPERTIES.fields)
+def test_a_property_missing_a_figure_is_an_invalid_record(missing: ArtifactKind[Any]) -> None:
+    record = residence_record()
+    del record[missing]
+
+    with pytest.raises(InvalidRecordError, match=f"item 1: missing field {missing.identifier}"):
+        RecordList(PRINCIPAL_RESIDENCE_PROPERTIES.fields, [record])
+
+
+def test_the_second_property_is_named_by_its_position() -> None:
+    record = residence_record()
+    del record[RESIDENCE_PROCEEDS]
+
+    with pytest.raises(InvalidRecordError, match="item 2: missing field ca/residence_proceeds"):
+        RecordList(PRINCIPAL_RESIDENCE_PROPERTIES.fields, [residence_record(), record])
+
+
+def test_a_property_with_another_figure_is_an_invalid_record() -> None:
+    record = residence_record()
+    record[CAPITAL_GAIN] = Decimal("300000")
+
+    with pytest.raises(InvalidRecordError, match="item 1: unknown field ca/capital_gain"):
+        RecordList(PRINCIPAL_RESIDENCE_PROPERTIES.fields, [record])
+
+
+@pytest.mark.parametrize(
+    ("change", "identifier"),
+    [
+        ({"designated_after_1981": -1}, "ca/residence_years_designated_after_1981"),
+        ({"designated_1972_to_1981": -1}, "ca/residence_years_designated_1972_to_1981"),
+        ({"owned_after_1981": -1}, "ca/residence_years_owned_after_1981"),
+        ({"owned_1972_to_1981": -1}, "ca/residence_years_owned_1972_to_1981"),
+        ({"proceeds": Decimal("-0.01")}, "ca/residence_proceeds"),
+        ({"outlays": Decimal("-1")}, "ca/residence_outlays"),
+        ({"adjusted_cost_base": Decimal("-1")}, "ca/residence_adjusted_cost_base"),
+        ({"plus_one": -1}, "ca/residence_plus_one_year"),
+    ],
+)
+def test_a_negative_property_figure_is_refused(change: dict[str, object], identifier: str) -> None:
+    with pytest.raises(NegativeArtifactError, match=f"item 1: {identifier} cannot be negative"):
+        RecordList(PRINCIPAL_RESIDENCE_PROPERTIES.fields, [residence_record(**change)])
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"designated_after_1981": Decimal("6")},
+        {"owned_after_1981": True},
+        {"owned_1972_to_1981": 1.0},
+        {"plus_one": Decimal("1")},
+        {"proceeds": 400000},
+        {"outlays": "5000"},
+        {"adjusted_cost_base": 95000.0},
+    ],
+)
+def test_a_property_figure_of_the_wrong_type_is_refused(change: dict[str, object]) -> None:
+    with pytest.raises(TypeError):
+        RecordList(PRINCIPAL_RESIDENCE_PROPERTIES.fields, [residence_record(**change)])
+
+
+def test_the_principal_residence_gain_is_a_non_negative_decimal(registry: ArtifactRegistry) -> None:
+    # Form T2091(IND) Part 3 line 54 "Total capital gain": line 24 "Line 18 minus line 23 (if
+    # negative, enter "0")" for each property, totalled here.
+    assert PRINCIPAL_RESIDENCE_GAIN.identifier == "ca/principal_residence_gain"
+    assert PRINCIPAL_RESIDENCE_GAIN.value_type is Decimal
+    assert PRINCIPAL_RESIDENCE_GAIN.non_negative is True
+    assert registry.kind("ca/principal_residence_gain") is PRINCIPAL_RESIDENCE_GAIN
 
 
 def test_the_special_tax_and_credit_lines_are_non_negative(registry: ArtifactRegistry) -> None:

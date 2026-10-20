@@ -1628,6 +1628,82 @@ all dependants who qualify for the disability tax credit", each line 13 "Enter w
 amount from line 8 or line 12. Allowable amount for this dependant", a part of the total of the
 credit amounts."""
 
+RESIDENCE_YEARS_DESIGNATED_AFTER_1981 = CATALOG.declare(
+    "residence_years_designated_after_1981", int, non_negative=True
+)
+"""Years designated after 1981, Form T2091(IND) line 1 "Designation" "After 1981": the number of
+tax years after 1981 for which the property is designated as the principal residence; a starting
+count, a field of each record of the properties sold."""
+
+RESIDENCE_YEARS_DESIGNATED_1972_TO_1981 = CATALOG.declare(
+    "residence_years_designated_1972_to_1981", int, non_negative=True
+)
+"""Years designated from 1972 to 1981, Form T2091(IND) line 2 "Designation" "After 1971 and before
+1982": the number of tax years in that period for which the property is designated as the
+principal residence; a starting count, a field of each record of the properties sold."""
+
+RESIDENCE_YEARS_OWNED_AFTER_1981 = CATALOG.declare(
+    "residence_years_owned_after_1981", int, non_negative=True
+)
+"""Years owned after 1981, Form T2091(IND) line 5 "Number of tax years ending after the acquisition
+date in which you owned the property" "After 1981": a starting count, a field of each record of
+the properties sold."""
+
+RESIDENCE_YEARS_OWNED_1972_TO_1981 = CATALOG.declare(
+    "residence_years_owned_1972_to_1981", int, non_negative=True
+)
+"""Years owned from 1972 to 1981, Form T2091(IND) line 6 "Number of tax years ending after the
+acquisition date in which you owned the property" "After 1971 and before 1982": a starting count,
+a field of each record of the properties sold."""
+
+RESIDENCE_PROCEEDS = CATALOG.declare("residence_proceeds", Decimal, non_negative=True)
+"""Proceeds of disposition, Form T2091(IND) line 8 "Proceeds of disposition or deemed disposition"
+(carried to line 14): a starting amount, a field of each record of the properties sold."""
+
+RESIDENCE_OUTLAYS = CATALOG.declare("residence_outlays", Decimal, non_negative=True)
+"""Outlays and expenses, Form T2091(IND) line 9 "Outlays and expenses made or incurred related to
+the disposition" (carried to line 16): a starting amount, a field of each record of the properties
+sold."""
+
+RESIDENCE_ADJUSTED_COST_BASE = CATALOG.declare(
+    "residence_adjusted_cost_base", Decimal, non_negative=True
+)
+"""Adjusted cost base, Form T2091(IND) line 10 "Adjusted cost base at the time of disposition"
+(carried to line 15): a starting amount, a field of each record of the properties sold."""
+
+RESIDENCE_PLUS_ONE_YEAR = CATALOG.declare("residence_plus_one_year", int, non_negative=True)
+"""The "plus one" year, Form T2091(IND) line 20 "Line 4 plus 1 (see note on page 4)" with the note
+"One year is granted by law. If you disposed of your principal residence after October 2, 2016,
+and were a non-resident throughout the year of acquisition of the property, you are not eligible
+to use the "plus one" rule in this calculation.": 1 if the property may use it, else 0, taken as a
+count like the forms' other yes or no questions; a starting count, a field of each record of the
+properties sold."""
+
+PRINCIPAL_RESIDENCE_PROPERTIES = RecordListKind.declare(
+    CATALOG,
+    "principal_residence_properties",
+    fields=(
+        RESIDENCE_YEARS_DESIGNATED_AFTER_1981,
+        RESIDENCE_YEARS_DESIGNATED_1972_TO_1981,
+        RESIDENCE_YEARS_OWNED_AFTER_1981,
+        RESIDENCE_YEARS_OWNED_1972_TO_1981,
+        RESIDENCE_PROCEEDS,
+        RESIDENCE_OUTLAYS,
+        RESIDENCE_ADJUSTED_COST_BASE,
+        RESIDENCE_PLUS_ONE_YEAR,
+    ),
+)
+"""Properties sold and designated as a principal residence, Form T2091(IND) "Complete a separate
+form for each property you sold.": a starting list with one record for each such property, holding
+the form's input lines 1, 2, 5, 6, 8, 9 and 10 and whether the "plus one" applies (lines 3, 4, 7
+and 14 onward are worked out). The caller lists only the properties the form sends to Section 2
+(Schedule 3 box 2 or 3) that are not flipped properties."""
+
+PRINCIPAL_RESIDENCE_GAIN = CATALOG.declare("principal_residence_gain", Decimal, non_negative=True)
+"""Capital gain left after the principal residence exemption, Form T2091(IND) Part 3 line 54 "Total
+capital gain": "Otherwise, enter the amount from line 24", each line 24 being "Line 18 minus line
+23 (if negative, enter "0")", totalled over the properties sold."""
+
 INFIRM_CHILDREN = CATALOG.declare("infirm_children", int, non_negative=True)
 """Number of infirm children, T1 line 83 "Number of children you are claiming this amount for Line
 30499": a starting count."""

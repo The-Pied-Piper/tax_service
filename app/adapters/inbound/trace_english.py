@@ -32,6 +32,7 @@ from app.domain.trace import (
     OtherDependantMedicalLine,
     PerUnitAmountLine,
     PlacementCreditLine,
+    PrincipalResidenceGainLine,
     QuotientLine,
     RateAppliedLine,
     RateByIncomeBandLine,
@@ -389,6 +390,28 @@ class EnglishTraceRenderer:
                 )
                 age = "under 18" if under_18 else "18 or older"
                 return f"{output.label}: dependant {position}: {age}: {'; '.join(steps)}"
+            case PrincipalResidenceGainLine(
+                output=output,
+                position=position,
+                designated=designated,
+                owned=owned,
+                plus_one=plus_one,
+                proceeds=proceeds,
+                adjusted_cost_base=cost_base,
+                outlays=outlays,
+                gain=gain,
+                exempt=exempt,
+                rounding=rule,
+                result=result,
+            ):
+                return (
+                    f"{output.label}: property {position}: gain {self._money(gain)} = proceeds "
+                    f"{self._money(proceeds)} less adjusted cost base {self._money(cost_base)} "
+                    f"less outlays {self._money(outlays)}; exempt {self._money(exempt)} = "
+                    f"{self._money(gain)} × ({designated} designated + {plus_one}) ÷ {owned} "
+                    f"owned ({self._rounding(rule)}); taxable gain {self._money(result)} = "
+                    f"{self._money(gain)} less {self._money(exempt)}, not below 0"
+                )
             case QuotientLine(
                 output=output,
                 dividend=dividend,

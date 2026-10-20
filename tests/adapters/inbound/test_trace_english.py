@@ -48,6 +48,7 @@ from app.domain.trace import (
     OtherDependantMedicalLine,
     PerUnitAmountLine,
     PlacementCreditLine,
+    PrincipalResidenceGainLine,
     QuotientLine,
     RateAppliedLine,
     RateByIncomeBandLine,
@@ -115,6 +116,7 @@ CARE_CREDIT = ArtifactKind("ex/care_credit", Decimal)
 CAREGIVER_AMOUNT = ArtifactKind("ex/caregiver_amount", Decimal)
 DEPENDANTS_MEDICAL = ArtifactKind("ex/dependants_medical", Decimal)
 TRANSFERRED_AMOUNT = ArtifactKind("ex/transferred_amount", Decimal)
+RESIDENCE_GAIN = ArtifactKind("ex/residence_gain", Decimal)
 
 
 def render(line: TraceLine) -> str:
@@ -1617,6 +1619,144 @@ def test_renders_the_total_of_no_dependants() -> None:
     assert render(ItemsTotalLine(TRANSFERRED_AMOUNT, (), D("0"))) == (
         "transferred_amount: no items = 0"
     )
+
+
+# --- a residence gain per property -----------------------------------------------------
+#
+# One sentence: the output's label, then "property <position>: gain <gain> = proceeds <p> less
+# adjusted cost base <a> less outlays <o>; exempt <exempt> = <gain> × (<designated> designated +
+# <plus one>) ÷ <owned> owned (<rounding rule>); taxable gain <result> = <gain> less <exempt>, not
+# below 0". Every figure prints without trailing zeros.
+
+
+def residence_gain(
+    position: int,
+    designated: int,
+    owned: int,
+    plus_one: int,
+    figures: tuple[str, ...],
+    rounding: RoundingRule = CENT,
+) -> PrincipalResidenceGainLine:
+    """`figures` are, in the order of the line's fields, proceeds, adjusted cost base, outlays, the
+    gain, line 21, the exemption and the result."""
+    proceeds, cost_base, outlays, gain, line_21, exempt, result = figures
+    return PrincipalResidenceGainLine(
+        RESIDENCE_GAIN,
+        position,
+        designated,
+        0,
+        designated,
+        owned,
+        0,
+        owned,
+        plus_one,
+        D(proceeds),
+        D(cost_base),
+        D(outlays),
+        D(gain),
+        designated + plus_one,
+        D(line_21),
+        rounding,
+        D(exempt),
+        D(result),
+    )
+
+
+def test_renders_the_gain_left_on_a_property() -> None:
+    # The ticket's worked example.
+    line = residence_gain(
+        1,
+        6,
+        10,
+        1,
+        ("400000.00", "95000.00", "5000.00", "300000.00", "2100000.00", "210000.00", "90000.00"),
+    )
+
+    assert render(line) == (
+        "residence_gain: property 1: gain 300000 = proceeds 400000 less adjusted cost base 95000 "
+        "less outlays 5000; exempt 210000 = 300000 × (6 designated + 1) ÷ 10 owned "
+        "(half-up to 0.01); taxable gain 90000 = 300000 less 210000, not below 0"
+    )
+
+
+def test_renders_a_property_without_the_plus_one() -> None:
+    line = residence_gain(
+        2,
+        3,
+        5,
+        0,
+        ("250000.00", "200000.00", "10000.00", "40000.00", "120000.00", "24000.00", "16000.00"),
+    )
+
+    assert render(line) == (
+        "residence_gain: property 2: gain 40000 = proceeds 250000 less adjusted cost base 200000 "
+        "less outlays 10000; exempt 24000 = 40000 × (3 designated + 0) ÷ 5 owned "
+        "(half-up to 0.01); taxable gain 16000 = 40000 less 24000, not below 0"
+    )
+
+
+def test_renders_a_property_whose_exemption_exceeds_the_gain() -> None:
+    # The gain left is "0" (line 18 minus line 23 is negative).
+    line = residence_gain(
+        3,
+        10,
+        10,
+        1,
+        ("400000.00", "95000.00", "5000.00", "300000.00", "3300000.00", "330000.00", "0.00"),
+    )
+
+    assert render(line) == (
+        "residence_gain: property 3: gain 300000 = proceeds 400000 less adjusted cost base 95000 "
+        "less outlays 5000; exempt 330000 = 300000 × (10 designated + 1) ÷ 10 owned "
+        "(half-up to 0.01); taxable gain 0 = 300000 less 330000, not below 0"
+    )
+
+
+def test_renders_a_property_sold_at_a_loss() -> None:
+    line = residence_gain(
+        1,
+        6,
+        10,
+        1,
+        ("100000.00", "120000.00", "5000.00", "-25000.00", "-175000.00", "-17500.00", "0.00"),
+    )
+
+    assert render(line) == (
+        "residence_gain: property 1: gain -25000 = proceeds 100000 less adjusted cost base 120000 "
+        "less outlays 5000; exempt -17500 = -25000 × (6 designated + 1) ÷ 10 owned "
+        "(half-up to 0.01); taxable gain 0 = -25000 less -17500, not below 0"
+    )
+
+
+def test_renders_a_property_with_cents_and_the_rounding_rule() -> None:
+    line = residence_gain(1, 0, 8, 1, ("1.00", "0.00", "0.00", "1.00", "1.00", "0.13", "0.87"))
+
+    assert render(line) == (
+        "residence_gain: property 1: gain 1 = proceeds 1 less adjusted cost base 0 "
+        "less outlays 0; exempt 0.13 = 1 × (0 designated + 1) ÷ 8 owned "
+        "(half-up to 0.01); taxable gain 0.87 = 1 less 0.13, not below 0"
+    )
+
+
+def test_renders_a_property_without_rounding() -> None:
+    line = residence_gain(
+        1, 0, 8, 1, ("1.00", "0.00", "0.00", "1.00", "1.00", "0.125", "0.875"), NO_ROUNDING
+    )
+
+    assert render(line).endswith(
+        "exempt 0.125 = 1 × (0 designated + 1) ÷ 8 owned (no rounding); "
+        "taxable gain 0.875 = 1 less 0.125, not below 0"
+    )
+
+
+def test_renders_the_total_of_the_gains_by_position() -> None:
+    line = ItemsTotalLine(RESIDENCE_GAIN, ((1, D("90000.00")), (2, D("16000.00"))), D("106000.00"))
+
+    assert render(line) == "residence_gain: item 1 90000 + item 2 16000 = 106000"
+
+
+def test_renders_the_total_of_no_properties() -> None:
+    assert render(ItemsTotalLine(RESIDENCE_GAIN, (), D("0"))) == "residence_gain: no items = 0"
 
 
 # --- money figures ---------------------------------------------------------------
