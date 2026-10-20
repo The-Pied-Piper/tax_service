@@ -176,6 +176,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_COOWNER,
     RENTAL_GROSS_RENTS,
     RENTAL_NET_INCOME_AFTER_CCA,
+    RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS,
     RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS,
     RENTAL_NET_INCOME_SHARE,
     RENTAL_PARTNER,
@@ -1306,7 +1307,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     # Schedule 8 Part 4 line 3 "Line 1 plus line 2 (if negative, enter "0")" and Schedule 13 line 1
-    # "(if negative, enter "0")", on no self-employment income and no partnership income.
+    # "(if negative, enter "0")", on no self-employment income and no partnership income, and the
+    # rental CCA limit.
     assert summed_floored == {
         CPP_PENSIONABLE_EARNINGS: SumNotBelowZeroLine(
             CPP_PENSIONABLE_EARNINGS,
@@ -1323,6 +1325,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CARE_ADJUSTED_INCOME,
             ((NET_INCOME_BEFORE_ADJUSTMENTS, D("115000")), (CHILD_CARE_EXPENSES, D("0"))),
             D("115000"),
+        ),
+        # Guide T4036 "You cannot use CCA to create or increase a rental loss": the most line 9936
+        # may be, amount 5 of no rental income.
+        RENTAL_CCA_LIMIT: SumNotBelowZeroLine(
+            RENTAL_CCA_LIMIT, ((RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS, D("0")),), D("0")
         ),
     }
     # Schedule 8 Part 2 lines B, C, D and E: the row of the monthly proration table for box A's 12

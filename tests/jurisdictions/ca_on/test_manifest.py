@@ -131,7 +131,8 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     # starting amount); T776 Area A column 24 "UCC at the end of the year", a record list of each
     # class's closing UCC for next year, which nothing else reads; Form T2222 Chart A's row C
     # "Enter the total of all amounts in row B. This total cannot be more than $1,200.", totalled
-    # over the individuals, which no line of the form reads; and Form ON-BEN's ten lines (tick boxes 61020, 61040, 61060, 61070,
+    # over the individuals, which no line of the form reads; and Form ON-BEN's ten lines
+    # (tick boxes 61020, 61040, 61060, 61070,
     # 61080 and 61140, Part A lines 61100, 61120, 61210 and 61230), which the return carries as
     # entered, each also an input with nothing computing from it; and ON479 line 63265 (the
     # answer on a partnership claim) and line 63270 (the business number), likewise carried as
