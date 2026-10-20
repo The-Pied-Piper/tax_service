@@ -22,7 +22,7 @@ from app.domain.trace import (
     SumNotBelowZeroLine,
     SurchargeTierLine,
 )
-from app.jurisdictions.ca.catalog import (  # noqa: E402
+from app.jurisdictions.ca.catalog import (
     ADJUSTED_FAMILY_NET_INCOME,
     ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987,
     ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
