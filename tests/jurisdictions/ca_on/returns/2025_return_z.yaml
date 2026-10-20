@@ -709,6 +709,19 @@ sources:
     rounding rule; every line is a dollars-and-cents box, rounded half-up to the cent (the
     owner's decision). T1 line 138 "Add lines 135 to 137." is 558.33 + 0 = 558.33.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-d1/5000-d1-25e.txt
+  - >-
+    CRA, Form ON479 (form 5006-TC), "Ontario co-operative education tax credit": "Line 20 and
+    line 63300: Enter the total amount claimed for all qualifying work placements. (maximum
+    $3,000 per student)"; "Line 21: Line 19 plus line 20 Enter this amount online 47900 of your
+    return. Ontario credits =" (confirmed 2026-10-19). This return claims no work placements,
+    so its list of placements is empty and line 20 is the total of no placements, 0.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-tc/5006-tc-25e.txt
+  - >-
+    CRA, Worksheet ON479 (form 5006-D1), "Line 20 - Ontario co-operative education tax
+    credit" (confirmed 2026-10-19). The total salaries and wages paid in the 2024 taxation year
+    is a chosen 0, which nothing on this return determines; with no work placements there is no
+    chart to complete, so line 20 is 0.
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-d1/5006-d1-25e.txt
 inputs:
   ca/employment_income: "48000"
   ca/capital_gain: "0"
@@ -846,6 +859,8 @@ inputs:
   ca-on/fertility_expenses: "0"
   ca-on/seniors_transit_paid: "0"
   ca-on/flow_through_share_slips: []
+  ca-on/coop_education_payroll: "0"
+  ca-on/coop_education_placements: []
   ca-on/community_food_program_donations: "0"
   ca-on/political_contributions: "3000"
   ca/charitable_donations: "0"
@@ -1031,6 +1046,14 @@ expected:
   ca-on/flow_through_share_expenses: "0"
   ca-on/flow_through_share_credit: "0"
   ca-on/ontario_credits_subtotal: "1402.76"
+  ca-on/coop_education_payroll_threshold: "400000.00"
+  ca-on/coop_education_payroll_over_threshold: "0"
+  ca-on/coop_education_payroll_range: "200000.00"
+  ca-on/coop_education_phase_out_share: "0"
+  ca-on/coop_education_full_share: "1.00"
+  ca-on/coop_education_remaining_share: "1.00"
+  ca-on/coop_education_placement_count: "0"
+  ca-on/coop_education_credit: "0"
   ca-on/ontario_credits: "1402.76"
   ca/provincial_credits: "1402.76"
   ca/total_credits: "6202.76"
