@@ -6,9 +6,9 @@ record list), from 0 up to the `maximum` dataset's amount (line 3), less the amo
 that dependant on line 58160 (line 4), not below 0 (line 5). Line 4 is the consumed
 `eligible_dependant_amount` for a dependant whose record says it is the one claimed there, and 0
 for any other; the caller flags at most one dependant, and each one flagged takes the whole
-`eligible_dependant_amount`. The output is the total of those allowable amounts, 0 when there are no dependants.
-Each dependant is worked on its own, never pooled with the others, and its line 3 is rounded once,
-with the `maximum` dataset's rule, before line 4 is taken off and before the total. It records one
+`eligible_dependant_amount`. The output is the total of those allowable amounts, 0 when there are
+no dependants. Each dependant is worked on its own, never pooled with the others, and its line 3
+is rounded once, with the `maximum` dataset's rule, before line 4 is taken off and before the total. It records one
 `CaregiverClaimLessClaimedLine` for each dependant, by position from 1, then an `ItemsTotalLine`.
 """
 

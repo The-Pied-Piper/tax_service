@@ -102,8 +102,8 @@ CLAIMED_AS_ELIGIBLE_DEPENDANT = CATALOG.declare(
 )
 """Whether a dependant is the one claimed on line 58160, Worksheet ON428 "Line 58185 - Ontario
 caregiver amount" line 4 "Amount claimed for this dependant on line 58160 of your Form ON428, if
-any": 1 for the dependant claimed there, 0 for any other (any other count is read as claimed), a field of each record of the caregiver
-dependants."""
+any": 1 for the dependant claimed there, 0 for any other (any other count is read as claimed), a
+field of each record of the caregiver dependants."""
 
 CAREGIVER_DEPENDANTS = RecordListKind.declare(
     CATALOG, "caregiver_dependants", fields=(DEPENDANT_NET_INCOME, CLAIMED_AS_ELIGIBLE_DEPENDANT)
