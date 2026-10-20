@@ -21,6 +21,7 @@ from app.jurisdictions.ca.catalog import (
     DEPENDANT_NET_INCOME,
     DEPENDANT_TAXABLE_INCOME,
     DEPENDANT_UNDER_18,
+    OTHER_DEPENDANT_MEDICAL_EXPENSES,
 )
 from app.jurisdictions.ca_on.catalog import CLAIMED_AS_ELIGIBLE_DEPENDANT
 from app.main import build_tax_computation
@@ -230,6 +231,8 @@ inputs:
   ca/eligible_dependants: "0"
   ca/dependant_net_income: "0"
   ca/infirm_dependants: []
+  ca/medical_expenses: "0"
+  ca/other_dependants: []
   ca-on/caregiver_dependants: []
   ca/disability_dependants: []
   ca/infirm_children: "0"
@@ -490,6 +493,25 @@ def test_return_ae_claims_the_federal_political_contribution_credit_on_line_4100
     assert contributions.value == Decimal("1000")
     (credit,) = [a for a in worked.expected if a.kind.identifier == "ca/political_credit"]
     assert credit.value == Decimal("558.33")
+    check(path)
+
+
+def test_return_x_claims_two_other_dependants_medical_expenses_on_line_33199() -> None:
+    path = RETURNS / "2025_return_x.yaml"
+    build_tax_computation()  # registers the catalogs the loader resolves through
+    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+
+    (dependants,) = [a for a in worked.inputs if a.kind.identifier == "ca/other_dependants"]
+    assert [
+        (record[OTHER_DEPENDANT_MEDICAL_EXPENSES], record[DEPENDANT_NET_INCOME])
+        for record in dependants.value.records
+    ] == [(Decimal("3000"), Decimal("10000")), (Decimal("1000"), Decimal("40000"))]
+    (own,) = [a for a in worked.inputs if a.kind.identifier == "ca/medical_expenses"]
+    assert own.value == Decimal("4500")
+    (other,) = [a for a in worked.expected if a.kind.identifier == "ca/other_dependants_medical"]
+    assert other.value == Decimal("2700.00")
+    (claim,) = [a for a in worked.expected if a.kind.identifier == "ca/medical_claim"]
+    assert claim.value == Decimal("5773.35")
     check(path)
 
 

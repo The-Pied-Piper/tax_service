@@ -211,6 +211,11 @@ from app.jurisdictions.ca.catalog import (
     LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
     LABOUR_SPONSORED_FUNDS_NET_COST,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
+    MEDICAL_CLAIM,
+    MEDICAL_EXPENSES,
+    MEDICAL_EXPENSES_OVER_THRESHOLD,
+    MEDICAL_NET_INCOME_SHARE,
+    MEDICAL_THRESHOLD,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FEDERAL_TAX,
     NET_INCOME,
@@ -583,6 +588,11 @@ REGISTERED = frozenset(
         "ca/other_dependant_medical_expenses",
         "ca/other_dependants",
         "ca/other_dependants_medical",
+        "ca/medical_expenses",
+        "ca/medical_net_income_share",
+        "ca/medical_threshold",
+        "ca/medical_expenses_over_threshold",
+        "ca/medical_claim",
         "ca/infirm_children",
         "ca/infirm_children_amount",
         "ca/dependant_under_18",
@@ -1248,6 +1258,11 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca/other_dependant_medical_expenses") is OTHER_DEPENDANT_MEDICAL_EXPENSES
     assert registry.get("ca/other_dependants") is OTHER_DEPENDANTS
     assert registry.get("ca/other_dependants_medical") is OTHER_DEPENDANTS_MEDICAL
+    assert registry.get("ca/medical_expenses") is MEDICAL_EXPENSES
+    assert registry.get("ca/medical_net_income_share") is MEDICAL_NET_INCOME_SHARE
+    assert registry.get("ca/medical_threshold") is MEDICAL_THRESHOLD
+    assert registry.get("ca/medical_expenses_over_threshold") is MEDICAL_EXPENSES_OVER_THRESHOLD
+    assert registry.get("ca/medical_claim") is MEDICAL_CLAIM
     assert registry.get("ca/dependant_under_18") is DEPENDANT_UNDER_18
     assert registry.get("ca/dependant_care_expenses") is DEPENDANT_CARE_EXPENSES
     assert registry.get("ca/dependant_credit_amounts") is DEPENDANT_CREDIT_AMOUNTS
@@ -1554,6 +1569,11 @@ def test_catalog_kinds_are_money() -> None:
         CAREGIVER_AMOUNT,
         OTHER_DEPENDANT_MEDICAL_EXPENSES,
         OTHER_DEPENDANTS_MEDICAL,
+        MEDICAL_EXPENSES,
+        MEDICAL_NET_INCOME_SHARE,
+        MEDICAL_THRESHOLD,
+        MEDICAL_EXPENSES_OVER_THRESHOLD,
+        MEDICAL_CLAIM,
         DEPENDANT_CARE_EXPENSES,
         DEPENDANT_CREDIT_AMOUNTS,
         DEPENDANT_TAXABLE_INCOME,
@@ -1950,6 +1970,49 @@ def test_the_other_dependants_medical_is_a_non_negative_decimal(registry: Artifa
     assert OTHER_DEPENDANTS_MEDICAL.value_type is Decimal
     assert OTHER_DEPENDANTS_MEDICAL.non_negative is True
     assert registry.kind("ca/other_dependants_medical") is OTHER_DEPENDANTS_MEDICAL
+
+
+def test_medical_expenses_is_a_non_negative_decimal(registry: ArtifactRegistry) -> None:
+    # T1 line 107 and line 33099 "Medical expenses for self, spouse or common-law partner and
+    # your dependent children under 18 years of age": a starting amount.
+    assert MEDICAL_EXPENSES.identifier == "ca/medical_expenses"
+    assert MEDICAL_EXPENSES.value_type is Decimal
+    assert MEDICAL_EXPENSES.non_negative is True
+    assert registry.kind("ca/medical_expenses") is MEDICAL_EXPENSES
+
+
+def test_medical_net_income_share_is_a_non_negative_decimal(registry: ArtifactRegistry) -> None:
+    # T1 line 108 "Amount from line 23600" "multiplied by 3%".
+    assert MEDICAL_NET_INCOME_SHARE.identifier == "ca/medical_net_income_share"
+    assert MEDICAL_NET_INCOME_SHARE.value_type is Decimal
+    assert MEDICAL_NET_INCOME_SHARE.non_negative is True
+    assert registry.kind("ca/medical_net_income_share") is MEDICAL_NET_INCOME_SHARE
+
+
+def test_medical_threshold_is_a_non_negative_decimal(registry: ArtifactRegistry) -> None:
+    # T1 line 109 "Enter whichever is less: $2,834 or the amount from line 108."
+    assert MEDICAL_THRESHOLD.identifier == "ca/medical_threshold"
+    assert MEDICAL_THRESHOLD.value_type is Decimal
+    assert MEDICAL_THRESHOLD.non_negative is True
+    assert registry.kind("ca/medical_threshold") is MEDICAL_THRESHOLD
+
+
+def test_medical_expenses_over_threshold_is_a_non_negative_decimal(
+    registry: ArtifactRegistry,
+) -> None:
+    # T1 line 110 "Line 107 minus line 109 (if negative, enter "0")".
+    assert MEDICAL_EXPENSES_OVER_THRESHOLD.identifier == "ca/medical_expenses_over_threshold"
+    assert MEDICAL_EXPENSES_OVER_THRESHOLD.value_type is Decimal
+    assert MEDICAL_EXPENSES_OVER_THRESHOLD.non_negative is True
+    assert registry.kind("ca/medical_expenses_over_threshold") is MEDICAL_EXPENSES_OVER_THRESHOLD
+
+
+def test_medical_claim_is_a_non_negative_decimal(registry: ArtifactRegistry) -> None:
+    # T1 line 112 and line 33200 "Line 110 plus line 111".
+    assert MEDICAL_CLAIM.identifier == "ca/medical_claim"
+    assert MEDICAL_CLAIM.value_type is Decimal
+    assert MEDICAL_CLAIM.non_negative is True
+    assert registry.kind("ca/medical_claim") is MEDICAL_CLAIM
 
 
 def test_the_disability_dependants_are_a_record_list_of_the_worksheets_figures(
