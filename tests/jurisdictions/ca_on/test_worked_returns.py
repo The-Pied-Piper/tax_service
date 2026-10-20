@@ -15,6 +15,7 @@ import pytest
 
 from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
 from app.domain.artifact import ArtifactRegistry
+from app.domain.parameters.rate import Rate
 from app.jurisdictions.ca.catalog import (
     DEPENDANT_CARE_EXPENSES,
     DEPENDANT_CREDIT_AMOUNTS,
@@ -121,14 +122,17 @@ description: >-
   at most 1633, less 15% of the adjusted family net income, the net income, over 26855,
   nothing as 9935.00 is below it: 1633; with one it would be 1890, at most 2813, less
   nothing over 30639: 1890. With 0 Schedule 6 eligible dependants the first applies: 1633.
-  With no fertility treatment expenses, no seniors' transit amount paid, no political
-  contributions (federal or Ontario), no Form T1221 slips and no co-operative education work
-  placements (a chosen payroll of 0), the Ontario credits (ON479 lines 1, 14, 16, 17, 18, 20
-  and 21) and the provincial credits (T1 line 47900) are 0, as is the federal political
-  contribution tax credit (T1 line 41000). With no amount on line 21500 and no medical claim
-  (line 33200), the refundable medical expense supplement (T1 line 45200, Federal Worksheet)
-  is 0: its line 11 is 0, so its line 16 is 0, for a filer resident in Canada throughout 2025
-  and 18 or older at the end of 2025 (counts of 1) with working income of 10000, $4,390 or more.
+  With no fertility treatment expenses, no child care expenses deduction (so the Ontario CARE
+  credit, Schedule ON479-A, has a family adjusted income of 9935.00 + 0 + 0 = 9935.00, which
+  is at most 20000 and gives a rate of 75%, and line 8 is 0 x 75% = 0), no seniors' transit
+  amount paid, no political contributions (federal or Ontario), no Form T1221 slips and no
+  co-operative education work placements (a chosen payroll of 0), the Ontario credits (ON479
+  lines 1, 2, 14, 16, 17, 18, 20 and 21) and the provincial credits (T1 line 47900) are 0, as
+  is the federal political contribution tax credit (T1 line 41000). With no amount on line
+  21500 and no medical claim (line 33200), the refundable medical expense supplement (T1 line
+  45200, Federal Worksheet) is 0: its line 11 is 0, so its line 16 is 0, for a filer resident
+  in Canada throughout 2025 and 18 or older at the end of 2025 (counts of 1) with working
+  income of 10000, $4,390 or more.
   With no net business, professional, commission, farming or fishing income (T1 lines
   13500 to 14300), line 27 is 0; the CPP months (Schedule 8 box A) are 12, so Part 2's
   line C is 9900.00, and with Schedule 8 Part 4 not completed and no agreement for EI special
@@ -378,6 +382,7 @@ inputs:
   ca/capital_gift_taxable_gains: "0"
   ca/capital_gift_gains_deduction: "0"
   ca-on/political_contributions: "0"
+  ca-on/care_supporting_persons_adjusted_income: "0"
   ca/political_contributions: "0"
   ca/disability_supports_deduction: "0"
   ca/other_employment_expenses: "0"
@@ -550,6 +555,10 @@ expected:
   ca/canada_workers_benefit: "1633"
   ca-on/fertility_credit_before_maximum: "0"
   ca-on/fertility_credit: "0"
+  ca-on/care_adjusted_income: "9935.00"
+  ca-on/care_family_adjusted_income: "9935.00"
+  ca-on/care_credit_percentage: "0.75"
+  ca-on/care_credit: "0"
   ca-on/seniors_care_before_maximum: "0.00"
   ca-on/seniors_care_amount: "0.00"
   ca-on/seniors_care_family_net_income: "9935.00"
@@ -797,6 +806,24 @@ def test_return_ag_claims_the_ontario_seniors_care_at_home_credit_on_line_63095(
     assert credits.value == Decimal("750.00")
     (refund,) = [a for a in worked.expected if a.kind.identifier == "ca/refund_or_balance_owing"]
     assert refund.value == Decimal("-3450.00")
+    check(path)
+
+
+def test_return_y_claims_the_care_credit_with_a_supporting_person_on_line_63050() -> None:
+    path = RETURNS / "2025_return_y.yaml"
+    build_tax_computation()  # registers the catalogs the loader resolves through
+    worked = WorkedReturn.load(path, ArtifactRegistry.shared())
+
+    inputs = {a.kind.identifier: a.value for a in worked.inputs}
+    assert inputs["ca-on/care_supporting_persons_adjusted_income"] == Decimal("30000")
+    expected = {a.kind.identifier: a.value for a in worked.expected}
+    # Schedule ON479-A: line 4 is 54,435.00 + 5,000, line 5 adds the supporting person's 30,000,
+    # line 7 is the 33% row, and line 8 is 5,000 x 33%.
+    assert expected["ca-on/care_adjusted_income"] == Decimal("59435.00")
+    assert expected["ca-on/care_family_adjusted_income"] == Decimal("89435.00")
+    assert expected["ca-on/care_credit_percentage"] == Rate(Decimal("0.33"))
+    assert expected["ca-on/care_credit"] == Decimal("1650.00")
+    assert expected["ca/refund_or_balance_owing"] == Decimal("-5409.31")
     check(path)
 
 

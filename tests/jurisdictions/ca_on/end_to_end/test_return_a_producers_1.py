@@ -504,12 +504,19 @@ from app.jurisdictions.ca.catalog import (
     ZONE_B_SPECIAL_WORK_SITE_BENEFITS,
 )
 from app.jurisdictions.ca_on import catalog as ontario
+from app.jurisdictions.ca_on.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca_on.capabilities.caregiver_amount import OntarioCaregiverAmount
 from app.jurisdictions.ca_on.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca_on.capabilities.disability_transfer_amount import (
     OntarioDisabilityTransferAmount,
 )
+from app.jurisdictions.ca_on.capabilities.rate_by_income_band import RateByIncomeBand
 from app.jurisdictions.ca_on.catalog import (
+    CARE_ADJUSTED_INCOME,
+    CARE_CREDIT,
+    CARE_CREDIT_PERCENTAGE,
+    CARE_FAMILY_ADJUSTED_INCOME,
+    CARE_SUPPORTING_PERSONS_ADJUSTED_INCOME,
     COMMUNITY_FOOD_PROGRAM_CREDIT,
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
     COOP_EDUCATION_PAYROLL,
@@ -602,6 +609,7 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(CAPITAL_GIFT_GAINS_DEDUCTION) is None
     assert worksheet.producer_of(ontario.POLITICAL_CONTRIBUTIONS) is None
     assert worksheet.producer_of(POLITICAL_CONTRIBUTIONS) is None
+    assert worksheet.producer_of(CARE_SUPPORTING_PERSONS_ADJUSTED_INCOME) is None
     assert worksheet.producer_of(DISABILITY_SUPPORTS_DEDUCTION) is None
     assert worksheet.producer_of(OTHER_EMPLOYMENT_EXPENSES) is None
     assert worksheet.producer_of(CLERGY_RESIDENCE_DEDUCTION) is None
@@ -1512,4 +1520,14 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     )
     assert worksheet.producer_of(FERTILITY_CREDIT) is not worksheet.producer_of(
         SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM
+    )
+    # Schedule ON479-A: line 4 (lines 1 and 2 added, not below 0), line 5 (columns 1 and 2 added),
+    # line 7 (the rate from the table) and line 8 (line 6 multiplied by it), which ON479 line 18
+    # adds as line 2.
+    assert isinstance(worksheet.producer_of(CARE_ADJUSTED_INCOME), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(CARE_FAMILY_ADJUSTED_INCOME), Sum)
+    assert isinstance(worksheet.producer_of(CARE_CREDIT_PERCENTAGE), RateByIncomeBand)
+    assert isinstance(worksheet.producer_of(CARE_CREDIT), ApplyChosenRate)
+    assert worksheet.producer_of(CARE_ADJUSTED_INCOME) is not worksheet.producer_of(
+        CARE_FAMILY_ADJUSTED_INCOME
     )

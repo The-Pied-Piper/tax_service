@@ -8,19 +8,34 @@ from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
+from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
-from app.jurisdictions.ca.catalog import NET_INCOME, REFUND, SPOUSE_NET_INCOME, TAXABLE_INCOME
+from app.jurisdictions.ca.catalog import (
+    CHILD_CARE_EXPENSES,
+    NET_INCOME,
+    NET_INCOME_BEFORE_ADJUSTMENTS,
+    REFUND,
+    SPOUSE_NET_INCOME,
+    TAXABLE_INCOME,
+)
 from app.jurisdictions.ca_on import catalog as ontario
+from app.jurisdictions.ca_on.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca_on.capabilities.choose_by_range import ChooseByRange
 from app.jurisdictions.ca_on.capabilities.coop_education_credit import CoopEducationCredit
 from app.jurisdictions.ca_on.capabilities.flow_through_share_expenses import (
     FlowThroughShareExpenses,
 )
 from app.jurisdictions.ca_on.capabilities.quotient import Quotient
+from app.jurisdictions.ca_on.capabilities.rate_by_income_band import RateByIncomeBand
 from app.jurisdictions.ca_on.capabilities.record_count import RecordCount
 from app.jurisdictions.ca_on.catalog import (
+    CARE_ADJUSTED_INCOME,
+    CARE_CREDIT,
+    CARE_CREDIT_PERCENTAGE,
+    CARE_FAMILY_ADJUSTED_INCOME,
+    CARE_SUPPORTING_PERSONS_ADJUSTED_INCOME,
     CLAIMS_SENIORS_CARE_CREDIT,
     COMMUNITY_FOOD_PROGRAM_CREDIT,
     COMMUNITY_FOOD_PROGRAM_DONATIONS,
@@ -75,6 +90,7 @@ INPUTS = frozenset(
         "ca-on/coop_partnership_business_number",
         "ca-on/community_food_program_donations",
         "ca-on/political_contributions",
+        "ca-on/care_supporting_persons_adjusted_income",
     }
 )
 
@@ -139,6 +155,53 @@ STEPS = {
         params={"cap": "ca-on/fertility_credit_maximum"},
         consumes={"base": "ca-on/fertility_credit_before_maximum"},
         produces={"output": "ca-on/fertility_credit"},
+    ),
+    # Schedule ON479-A "Family adjusted income calculation for the tax credit", column 1 "You".
+    # Line 1 "Net income from line 23600 of the return (or the amount you would have entered if
+    # the instructions on line 23600 said "if negative, show in brackets")" is line 23600 before
+    # the floor at 0, which is line 23400 less line 23500; line 23500 is not wired yet, so line 1
+    # reads T1 line 54 (line 23400) "Net income before adjustments". Line 2 "Child care
+    # expenses deduction from line 21400 of the return". Line 3 "Social benefits repayment from
+    # line 23500 of the return" is not yet computed, so it is left out. Line 4 "Add lines 1 to 3
+    # (if negative, enter "0"). Adjusted income".
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={"parts": ("ca/net_income_before_adjustments", "ca/child_care_expenses")},
+        produces={"output": "ca-on/care_adjusted_income"},
+    ),
+    # Column 2 "Supporting person(s)", line 4 (line 63047) is the supporting persons' adjusted
+    # income, a caller input, ca-on/care_supporting_persons_adjusted_income, as it comes from
+    # other people's returns; line 5 "Add the amounts from line 4 of columns 1 and 2. Family
+    # adjusted income".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca-on/care_adjusted_income",
+                "ca-on/care_supporting_persons_adjusted_income",
+            )
+        },
+        produces={"output": "ca-on/care_family_adjusted_income"},
+    ),
+    # Line 7 "If your family adjusted income on line 5 is "0", enter 75%. If not, enter the tax
+    # credit rate that applies to your family adjusted income from the table below.": the table
+    # "Family adjusted income and Tax credit rate", as printed.
+    CapabilitySelection(
+        name="ca-on/rate_by_income_band",
+        params={"table": "ca-on/care_credit_rate"},
+        consumes={"income": "ca-on/care_family_adjusted_income"},
+        produces={"output": "ca-on/care_credit_percentage"},
+    ),
+    # Line 6 "Enter your child care expenses deduction from line 21400 of your return." and
+    # line 8 "Line 6 multiplied by the percentage from line 7 Enter this amount on line 63050
+    # of your Form ON479.": line 6 reads the child care expenses deduction, as line 2 does.
+    CapabilitySelection(
+        name="ca-on/apply_chosen_rate",
+        params={"rounding": "ca-on/care_credit_rounding"},
+        consumes={"base": "ca/child_care_expenses", "rate": "ca-on/care_credit_percentage"},
+        produces={"output": "ca-on/care_credit"},
     ),
     # Form ON479 line 3 "Medical expenses from line 58769 of your Form ON428" is the artifact
     # ca-on/medical_claim (ON428 line 43), read directly. Line 4 "Allowable percentage 25%" and
@@ -413,14 +476,15 @@ STEPS = {
         consumes={"base": "ca-on/flow_through_share_expenses"},
         produces={"output": "ca-on/flow_through_share_credit"},
     ),
-    # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1, 13, 14, 16 and 17, in line
-    # order, as line 2 is not triggered.
+    # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1, 2 (line 63050, Schedule
+    # ON479-A's line 8), 13, 14, 16 and 17, in line order.
     CapabilitySelection(
         name="core/sum",
         params={},
         consumes={
             "parts": (
                 "ca-on/fertility_credit",
+                "ca-on/care_credit",
                 "ca-on/seniors_care_credit",
                 "ca-on/seniors_transit_credit",
                 "ca-on/political_credit",
@@ -557,6 +621,26 @@ WIRING = {
     ),
     (ApplyRate, frozenset({FERTILITY_EXPENSES}), frozenset({FERTILITY_CREDIT_BEFORE_MAXIMUM})),
     (CappedAmount, frozenset({FERTILITY_CREDIT_BEFORE_MAXIMUM}), frozenset({FERTILITY_CREDIT})),
+    (
+        SumNotBelowZero,
+        frozenset({NET_INCOME_BEFORE_ADJUSTMENTS, CHILD_CARE_EXPENSES}),
+        frozenset({CARE_ADJUSTED_INCOME}),
+    ),
+    (
+        Sum,
+        frozenset({CARE_ADJUSTED_INCOME, CARE_SUPPORTING_PERSONS_ADJUSTED_INCOME}),
+        frozenset({CARE_FAMILY_ADJUSTED_INCOME}),
+    ),
+    (
+        RateByIncomeBand,
+        frozenset({CARE_FAMILY_ADJUSTED_INCOME}),
+        frozenset({CARE_CREDIT_PERCENTAGE}),
+    ),
+    (
+        ApplyChosenRate,
+        frozenset({CHILD_CARE_EXPENSES, CARE_CREDIT_PERCENTAGE}),
+        frozenset({CARE_CREDIT}),
+    ),
     (ApplyRate, frozenset({ontario.MEDICAL_CLAIM}), frozenset({SENIORS_CARE_BEFORE_MAXIMUM})),
     (CappedAmount, frozenset({SENIORS_CARE_BEFORE_MAXIMUM}), frozenset({SENIORS_CARE_AMOUNT})),
     (
@@ -686,6 +770,7 @@ WIRING = {
         frozenset(
             {
                 FERTILITY_CREDIT,
+                CARE_CREDIT,
                 SENIORS_CARE_CREDIT,
                 SENIORS_TRANSIT_CREDIT,
                 ontario.POLITICAL_CREDIT,

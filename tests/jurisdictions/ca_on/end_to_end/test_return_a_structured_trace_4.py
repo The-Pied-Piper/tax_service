@@ -149,6 +149,7 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSSES_CLAIMED,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_INCOME,
+    NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_PARTNERSHIP_INCOME,
     NET_RENTAL_INCOME,
     NET_SELF_EMPLOYMENT_INCOME,
@@ -227,6 +228,7 @@ from app.jurisdictions.ca.catalog import (
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
+    CARE_ADJUSTED_INCOME,
     COMMUNITY_FOOD_PROGRAM_CREDIT,
     COOP_EDUCATION_CREDIT,
     COOP_EDUCATION_FULL_SHARE,
@@ -1298,6 +1300,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             EI_SELF_EMPLOYMENT_EARNINGS,
             ((NET_PARTNERSHIP_INCOME, D("0")), (NET_SELF_EMPLOYMENT_INCOME, D("0"))),
             D("0"),
+        ),
+        # Schedule ON479-A line 4 "Add lines 1 to 3 (if negative, enter "0"). Adjusted income".
+        CARE_ADJUSTED_INCOME: SumNotBelowZeroLine(
+            CARE_ADJUSTED_INCOME,
+            ((NET_INCOME_BEFORE_ADJUSTMENTS, D("115000")), (CHILD_CARE_EXPENSES, D("0"))),
+            D("115000"),
         ),
     }
     # Schedule 8 Part 2 lines B, C, D and E: the row of the monthly proration table for box A's 12

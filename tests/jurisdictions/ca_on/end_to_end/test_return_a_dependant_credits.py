@@ -34,29 +34,30 @@ from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, compute, retur
 
 def test_the_fertility_credit_below_its_maximum_is_25_percent_of_the_expenses() -> None:
     # 12000 x 25% = 3000.00, below the maximum of 5000, so line 1 is 3000.00 and the credits are
-    # 3000.00 with no transit amount.
+    # 3000.00 with no transit amount; with the care credit of 2550.00 line 18 is 5550.00.
     worksheet = return_f_with_credits("12000", "0")
 
     assert worksheet.get(FERTILITY_CREDIT_BEFORE_MAXIMUM).value == D("3000.00")
     assert worksheet.get(FERTILITY_CREDIT).value == D("3000.00")
     assert worksheet.get(SENIORS_TRANSIT_CREDIT).value == D("0")
-    assert worksheet.get(ONTARIO_CREDITS).value == D("3000.00")
-    assert worksheet.get(PROVINCIAL_CREDITS).value == D("3000.00")
-    assert worksheet.get(TOTAL_CREDITS).value == D("11000.00")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-6759.31")
+    assert worksheet.get(ONTARIO_CREDITS).value == D("5550.00")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D("5550.00")
+    assert worksheet.get(TOTAL_CREDITS).value == D("13550.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-9309.31")
 
 
 def test_the_transit_amount_paid_is_capped_before_the_rate() -> None:
     # 3500 paid is capped at 3000 (ON479 line 14, "(maximum $3,000)" before the percentage), and
-    # 3000 x 15% = 450.00, not 3500 x 15% = 525.00.
+    # 3000 x 15% = 450.00, not 3500 x 15% = 525.00; with the care credit of 2550.00 line 18 is
+    # 3000.00.
     worksheet = return_f_with_credits("0", "3500")
 
     assert worksheet.get(SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM).value == D("3000")
     assert worksheet.get(SENIORS_TRANSIT_CREDIT).value == D("450.00")
     assert worksheet.get(FERTILITY_CREDIT).value == D("0")
-    assert worksheet.get(ONTARIO_CREDITS).value == D("450.00")
-    assert worksheet.get(PROVINCIAL_CREDITS).value == D("450.00")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-4209.31")
+    assert worksheet.get(ONTARIO_CREDITS).value == D("3000.00")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D("3000.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-6759.31")
     (capped_paid,) = [
         line
         for line in worksheet.trace

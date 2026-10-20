@@ -1,9 +1,10 @@
 """The Ontario artifact catalog: Ontario's own kinds, named from Forms ON428 (§2, §7), ON479,
-T1221, ON-BEN.
+Schedule ON479-A, T1221, ON-BEN.
 
-Only the kinds in use are declared, each non-negative, as no ON428 or ON479 line here can be
-negative: amounts are Decimal, the counts of dependent children and dependants int, and the T1221
-slips and the co-operative education work placements record lists. Federal kinds come from
+Only the kinds in use are declared. Amounts are non-negative Decimal, as no ON428, ON479 or ON479-A
+amount here can be negative; the counts of dependent children and dependants are int, the T1221
+slips and the co-operative education work placements record lists, the ON479 line 63270 business
+number digits, and the ON479-A line 7 percentage a Rate. Federal kinds come from
 `app.jurisdictions.ca.catalog`. Identifiers are stable: `tests/jurisdictions/ca_on/test_catalog.py`
 snapshots them.
 """
@@ -14,6 +15,7 @@ from decimal import Decimal
 
 from app.domain.artifact import ArtifactCatalog
 from app.domain.digits import DigitsKind
+from app.domain.parameters.rate import Rate
 from app.domain.record_list import RecordListKind
 from app.domain.registry import Namespace
 from app.jurisdictions.ca.catalog import (
@@ -607,6 +609,37 @@ FERTILITY_CREDIT = CATALOG.declare("fertility_credit", Decimal, non_negative=Tru
 fertility treatment multiplied by 25% (maximum $5,000) =": the 25% on the expenses, at most
 $5,000, the maximum being printed after the percentage."""
 
+CARE_ADJUSTED_INCOME = CATALOG.declare("care_adjusted_income", Decimal, non_negative=True)
+"""Ontario CARE credit adjusted income, Schedule ON479-A column 1 "You", line 4 "Add lines 1 to 3
+(if negative, enter "0"). Adjusted income": line 1 (net income from line 23600 of the return, before
+the floor at 0, or the amount you would have entered if the instructions on line 23600 said "if
+negative, show in brackets") plus line 2 (the child care expenses deduction from line 21400),
+not below zero; line 3 (the social benefits repayment) is not yet computed."""
+
+CARE_SUPPORTING_PERSONS_ADJUSTED_INCOME = CATALOG.declare(
+    "care_supporting_persons_adjusted_income", Decimal, non_negative=True
+)
+"""Ontario CARE credit supporting persons' adjusted income, Schedule ON479-A column 2 "Supporting
+person(s)", line 4 (line 63047) "Add lines 1 to 3 (if negative, enter "0"). Adjusted income": a
+starting amount, as it comes from other people's returns, not below zero as the form floors it."""
+
+CARE_FAMILY_ADJUSTED_INCOME = CATALOG.declare(
+    "care_family_adjusted_income", Decimal, non_negative=True
+)
+"""Ontario CARE credit family adjusted income, Schedule ON479-A line 5 "Add the amounts from line 4
+of columns 1 and 2. Family adjusted income": your adjusted income plus the supporting persons'."""
+
+CARE_CREDIT_PERCENTAGE = CATALOG.declare("care_credit_percentage", Rate)
+"""Ontario CARE credit rate, Schedule ON479-A line 7 "If your family adjusted income on line 5 is
+"0", enter 75%. If not, enter the tax credit rate that applies to your family adjusted income from
+the table below.": the rate of the table's row the family adjusted income falls in, a rate, not
+money."""
+
+CARE_CREDIT = CATALOG.declare("care_credit", Decimal, non_negative=True)
+"""Ontario CARE credit, Schedule ON479-A line 8 "Line 6 multiplied by the percentage from line 7
+Enter this amount on line 63050 of your Form ON479." and Form ON479 line 2 (line 63050): the child
+care expenses deduction (line 6) at the rate of line 7."""
+
 CLAIMS_SENIORS_CARE_CREDIT = CATALOG.declare("claims_seniors_care_credit", int, non_negative=True)
 """Whether the filer claims the Ontario seniors care at home tax credit, Form ON479 line 13 and line
 63095: a starting count, 0 or 1, that multiplies line 13, so 1 if the filer claims it, else 0.
@@ -896,10 +929,8 @@ Worksheet ON479 line 13, each at most $3,000."""
 
 ONTARIO_CREDITS_SUBTOTAL = CATALOG.declare("ontario_credits_subtotal", Decimal, non_negative=True)
 """Ontario credits subtotal, Form ON479 line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": here
-lines 1, 14, 16 and 17, in line order. Line 19 "Amount from line 18 of the previous page" carries
-it.
-
-Not triggered by the returns modelled, or left to later work: lines 2 and 13."""
+lines 1, 2, 13, 14, 16 and 17, in line order. Line 19 "Amount from line 18 of the previous page"
+carries it."""
 
 ONTARIO_CREDITS = CATALOG.declare("ontario_credits", Decimal, non_negative=True)
 """Ontario credits, Form ON479 line 21 "Line 19 plus line 20 Enter this amount online 47900 of

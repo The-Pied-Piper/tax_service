@@ -13,8 +13,9 @@ import pytest
 
 from app.domain.artifact import Artifact, ArtifactCatalog, ArtifactKind, ArtifactRegistry
 from app.domain.digits import DigitsKind
-from app.domain.errors import InvalidTextError, NegativeArtifactError
+from app.domain.errors import InvalidRateError, InvalidTextError, NegativeArtifactError
 from app.domain.jurisdiction_code import JurisdictionCode
+from app.domain.parameters.rate import Rate
 from app.domain.record_list import RecordList, RecordListKind
 from app.domain.registry import Namespace
 from app.jurisdictions.ca.catalog import (
@@ -37,6 +38,9 @@ SECTIONS = {
 VALID = "".join(SECTIONS.values())
 # Made up for the count tests and not registered with the application: a non-negative count.
 COUNT = ArtifactKind("ex/count", int, non_negative=True)
+# Made up for the rate tests and not registered with the application: a rate, which cannot be
+# declared non-negative as only a Decimal or int kind can.
+RATE_KIND = ArtifactKind("ex/rate", Rate)
 # Made up for the record-list tests: a YAML list of two records, each keyed by the identifiers
 # of its fields, an amount and a count, both quoted.
 DEPENDANTS = (
@@ -60,6 +64,16 @@ def counts() -> ArtifactRegistry:
     """A registry of the made-up count and the federal basic tax `VALID` expects."""
     artifacts = ArtifactRegistry()
     artifacts.register(COUNT.identifier, COUNT)
+    artifacts.register(FEDERAL_BASIC_TAX.identifier, FEDERAL_BASIC_TAX)
+    return artifacts
+
+
+@pytest.fixture
+def rates() -> ArtifactRegistry:
+    """A registry of the made-up rate and the taxable income and federal basic tax `VALID` has."""
+    artifacts = ArtifactRegistry()
+    artifacts.register(RATE_KIND.identifier, RATE_KIND)
+    artifacts.register(TAXABLE_INCOME.identifier, TAXABLE_INCOME)
     artifacts.register(FEDERAL_BASIC_TAX.identifier, FEDERAL_BASIC_TAX)
     return artifacts
 
@@ -742,7 +756,8 @@ def test_a_record_list_under_expected_names_the_file_and_key(
     path = write(tmp_path, text)
 
     with pytest.raises(
-        WorkedReturnError, match=r"bad\.yaml: expected\.ex/dependants: .*not an amount or a count"
+        WorkedReturnError,
+        match=r"bad\.yaml: expected\.ex/dependants: .*not an amount, a count, a rate or digits",
     ):
         WorkedReturn.load(path, records)
 
@@ -880,3 +895,81 @@ def test_digits_left_out_are_the_empty_text_as_an_input_and_an_expected_line(
     kind = digits.kind("ex/business_number")
     assert filled.inputs == (*worked.inputs, Artifact(kind, ""))
     assert filled.expected == (*worked.expected, Artifact(kind, ""))
+
+
+def expecting_rate(rate: str) -> str:
+    """`VALID` with a rate line, `ex/rate`, added under `expected`."""
+    return VALID + f"  ex/rate: {rate}\n"
+
+
+@pytest.mark.parametrize("rate", ["0.55", "0.75", "0", "1", "0.5", "0.0925"])
+def test_a_rate_kind_under_expected_takes_a_quoted_decimal(
+    tmp_path: Path, rates: ArtifactRegistry, rate: str
+) -> None:
+    path = write(tmp_path, expecting_rate(f'"{rate}"'), "ok.yaml")
+
+    worked = WorkedReturn.load(path, rates)
+
+    assert worked.expected == (
+        Artifact(FEDERAL_BASIC_TAX, D("20146.25")),
+        Artifact(RATE_KIND, Rate(D(rate))),
+    )
+    assert type(worked.expected[1].value) is Rate
+
+
+def test_loads_the_care_credit_percentage_as_a_rate(
+    tmp_path: Path, artifacts: ArtifactRegistry
+) -> None:
+    # Schedule ON479-A line 7: the rate the family adjusted income gives, a line a return
+    # expects.
+    text = with_section("expected", 'expected:\n  ca-on/care_credit_percentage: "0.55"\n')
+
+    worked = WorkedReturn.load(write(tmp_path, text, "ok.yaml"), artifacts)
+
+    assert worked.expected == (
+        Artifact(artifacts.kind("ca-on/care_credit_percentage"), Rate(D("0.55"))),
+    )
+
+
+@pytest.mark.parametrize(
+    ("rate", "problem"),
+    [
+        ('"lots"', "is not a decimal"),
+        ('"NaN"', "is not a decimal"),
+        ("0.55", "must be a string"),  # unquoted: YAML would make it a float
+        ("1", "must be a string"),
+    ],
+)
+def test_a_non_decimal_rate_names_the_file_and_key(
+    tmp_path: Path, rates: ArtifactRegistry, rate: str, problem: str
+) -> None:
+    path = write(tmp_path, expecting_rate(rate))
+
+    with pytest.raises(WorkedReturnError, match=rf"bad\.yaml: expected\.ex/rate {problem}"):
+        WorkedReturn.load(path, rates)
+
+
+@pytest.mark.parametrize("rate", ['"1.01"', '"-0.1"', '"55"'])
+def test_a_rate_outside_0_to_1_fails_at_load_as_an_invalid_rate(
+    tmp_path: Path, rates: ArtifactRegistry, rate: str
+) -> None:
+    # Like a negative amount, the value type's own check refuses it, unwrapped; "55" is the
+    # percentage spelled as a rate.
+    path = write(tmp_path, expecting_rate(rate))
+
+    with pytest.raises(InvalidRateError, match="rate must be between 0 and 1"):
+        WorkedReturn.load(path, rates)
+
+
+def test_a_rate_under_inputs_names_the_file_and_key(
+    tmp_path: Path, rates: ArtifactRegistry
+) -> None:
+    # Rates are lines a return expects, never what it starts from, like counts the other way round.
+    path = write(tmp_path, with_section("inputs", 'inputs:\n  ex/rate: "0.55"\n'))
+
+    with pytest.raises(
+        WorkedReturnError,
+        match=r"bad\.yaml: inputs\.ex/rate: 'ex/rate' holds a Rate, not an amount, a count, a "
+        r"record list or digits",
+    ):
+        WorkedReturn.load(path, rates)

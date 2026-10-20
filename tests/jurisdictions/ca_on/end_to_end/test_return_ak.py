@@ -85,7 +85,7 @@ def test_a_return_that_does_not_claim_as_a_partnership_member_carries_0_and_a_bl
 
 def test_the_partnership_lines_change_no_computed_line() -> None:
     # Nothing is computed from lines 63265 and 63270: Return AK has Return R's credit, 5200.00,
-    # Ontario credits, 10880.00, total credits, 18880.00, and refund, -14639.31, whatever they say.
+    # Ontario credits, 13430.00, total credits, 21430.00, and refund, -17189.31, whatever they say.
     member = return_ak()
     not_member = return_ak(
         coop_claimed_as_partnership_member=0, coop_partnership_business_number=""
@@ -94,9 +94,9 @@ def test_the_partnership_lines_change_no_computed_line() -> None:
     for worksheet in (member, not_member, return_r()):
         assert worksheet.get(COOP_EDUCATION_CREDIT).value == D("5200.00")
         assert worksheet.get(COOP_EDUCATION_PLACEMENT_COUNT).value == 2
-        assert worksheet.get(ONTARIO_CREDITS).value == D("10880.00")
-        assert worksheet.get(TOTAL_CREDITS).value == D("18880.00")
-        assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-14639.31")
+        assert worksheet.get(ONTARIO_CREDITS).value == D("13430.00")
+        assert worksheet.get(TOTAL_CREDITS).value == D("21430.00")
+        assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-17189.31")
 
 
 @pytest.mark.parametrize(

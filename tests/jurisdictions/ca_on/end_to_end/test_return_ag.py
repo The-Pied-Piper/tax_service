@@ -110,7 +110,7 @@ def test_return_ags_trace_names_each_line_of_the_seniors_care_at_home_credit() -
         "less seniors_care_reduction 250, not below 0 = 750",
         "seniors_care_credit: seniors_care_before_claim 750 "
         "for each of 1 claims_seniors_care_credit = 750",
-        "ontario_credits_subtotal: fertility_credit 0 + seniors_care_credit 750 "
+        "ontario_credits_subtotal: fertility_credit 0 + care_credit 0 + seniors_care_credit 750 "
         "+ seniors_transit_credit 0 + political_credit 0 + flow_through_share_credit 0 = 750",
         "ontario_credits: ontario_credits_subtotal 750 + coop_education_credit 0 = 750",
         "provincial_credits: ontario_credits 750 = 750",

@@ -347,6 +347,10 @@ from app.jurisdictions.ca.catalog import (
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
+    CARE_ADJUSTED_INCOME,
+    CARE_CREDIT,
+    CARE_FAMILY_ADJUSTED_INCOME,
+    CARE_SUPPORTING_PERSONS_ADJUSTED_INCOME,
     COOP_EDUCATION_CREDIT,
     FERTILITY_CREDIT,
     FLOW_THROUGH_SHARE_CREDIT,
@@ -1053,6 +1057,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ADJUSTED_FAMILY_NET_INCOME: SumLine(
             ADJUSTED_FAMILY_NET_INCOME, ((NET_INCOME, D("115000")),), D("115000")
         ),
+        # Schedule ON479-A line 5 "Add the amounts from line 4 of columns 1 and 2. Family adjusted
+        # income": column 1 (line 4) and column 2 (line 4, line 63047, no supporting person).
+        CARE_FAMILY_ADJUSTED_INCOME: SumLine(
+            CARE_FAMILY_ADJUSTED_INCOME,
+            (
+                (CARE_ADJUSTED_INCOME, D("115000")),
+                (CARE_SUPPORTING_PERSONS_ADJUSTED_INCOME, D("0")),
+            ),
+            D("115000"),
+        ),
         # Worksheet ON479 column 1 line 7 "Line 5 plus line 6": line 5 is 0.
         ontario.POLITICAL_CREDIT_COLUMN_1_LINE_7: SumLine(
             ontario.POLITICAL_CREDIT_COLUMN_1_LINE_7,
@@ -1087,11 +1101,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ((NET_INCOME, D("115000.00")), (SPOUSE_NET_INCOME, D("0"))),
             D("115000.00"),
         ),
-        # ON479 line 18 "Add lines 1, 2, 13, 14, 16, and 17.": lines 1, 13, 14, 16 and 17, in order.
+        # ON479 line 18 "Add lines 1, 2, 13, 14, 16, and 17.": lines 1, 2, 13, 14, 16 and 17, in
+        # order.
         ONTARIO_CREDITS_SUBTOTAL: SumLine(
             ONTARIO_CREDITS_SUBTOTAL,
             (
                 (FERTILITY_CREDIT, D("0")),
+                (CARE_CREDIT, D("0.00")),
                 (SENIORS_CARE_CREDIT, D("0")),
                 (SENIORS_TRANSIT_CREDIT, D("0")),
                 (ontario.POLITICAL_CREDIT, D("0.00")),

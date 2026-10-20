@@ -10,6 +10,7 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_PAYABLE,
 )
 from app.jurisdictions.ca_on.catalog import (
+    CARE_CREDIT,
     FERTILITY_CREDIT,
     FERTILITY_CREDIT_BEFORE_MAXIMUM,
     ONTARIO_CREDITS,
@@ -20,12 +21,13 @@ from app.jurisdictions.ca_on.catalog import (
 from tests.jurisdictions.ca_on.end_to_end.support import D, return_f_with_credits
 
 
-def test_return_gs_ontario_credits_are_5180_and_lower_the_refund_by_that_much() -> None:
+def test_return_gs_ontario_credits_are_7730_and_lower_the_refund_by_that_much() -> None:
     # Return G is Return F with fertility expenses of 24000 and 1200 paid for seniors' transit.
     # ON479 line 1: 24000 x 25% = 6000.00, at most 5000: 5000. Line 14: 1200, at most 3000, x 15%
-    # = 180.00. Line 18 is 5000 + 180.00 = 5180.00, line 19 carries it, line 21 and T1 line
-    # 47900 are 5180.00; the total credits are 8000 + 0 + 5180.00 = 13180.00 and line 167 is
-    # 4240.69 - 13180.00 = -8939.31, Return F's -3759.31 less 5180.00.
+    # = 180.00. Line 2 is Return F's care credit of 2550.00. Line 18 is 5000 + 2550.00 + 180.00 =
+    # 7730.00, line 19 carries it, line 21 and T1 line 47900 are 7730.00; the total credits are
+    # 8000 + 0 + 7730.00 = 15730.00 and line 167 is 4240.69 - 15730.00 = -11489.31, Return F's
+    # -6309.31 less 5180.00.
     without = return_f_with_credits("0", "0")
     worksheet = return_f_with_credits("24000", "1200")
 
@@ -33,14 +35,15 @@ def test_return_gs_ontario_credits_are_5180_and_lower_the_refund_by_that_much() 
     assert worksheet.get(FERTILITY_CREDIT).value == D("5000")
     assert worksheet.get(SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM).value == D("1200")
     assert worksheet.get(SENIORS_TRANSIT_CREDIT).value == D("180.00")
-    assert worksheet.get(ONTARIO_CREDITS_SUBTOTAL).value == D("5180.00")
-    assert worksheet.get(ONTARIO_CREDITS).value == D("5180.00")
-    assert worksheet.get(PROVINCIAL_CREDITS).value == D("5180.00")
+    assert worksheet.get(CARE_CREDIT).value == D("2550.00")
+    assert worksheet.get(ONTARIO_CREDITS_SUBTOTAL).value == D("7730.00")
+    assert worksheet.get(ONTARIO_CREDITS).value == D("7730.00")
+    assert worksheet.get(PROVINCIAL_CREDITS).value == D("7730.00")
     assert worksheet.get(TOTAL_PAYABLE).value == D("4240.69")
-    assert worksheet.get(TOTAL_CREDITS).value == D("13180.00")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-8939.31")
-    assert without.get(PROVINCIAL_CREDITS).value == D("0")
-    assert without.get(REFUND_OR_BALANCE_OWING).value == D("-3759.31")
+    assert worksheet.get(TOTAL_CREDITS).value == D("15730.00")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-11489.31")
+    assert without.get(PROVINCIAL_CREDITS).value == D("2550.00")
+    assert without.get(REFUND_OR_BALANCE_OWING).value == D("-6309.31")
     assert without.get(REFUND_OR_BALANCE_OWING).value - worksheet.get(
         REFUND_OR_BALANCE_OWING
     ).value == D("5180.00")
@@ -61,21 +64,21 @@ def test_return_gs_ontario_credits_are_5180_and_lower_the_refund_by_that_much() 
         "(half-up to 0.01)"
     ) in rendered
     assert (
-        "ontario_credits_subtotal: fertility_credit 5000 + seniors_care_credit 0 "
-        "+ seniors_transit_credit 180 "
-        "+ political_credit 0 + flow_through_share_credit 0 = 5180"
+        "ontario_credits_subtotal: fertility_credit 5000 + care_credit 2550 "
+        "+ seniors_care_credit 0 + seniors_transit_credit 180 "
+        "+ political_credit 0 + flow_through_share_credit 0 = 7730"
     ) in rendered
     assert (
-        "ontario_credits: ontario_credits_subtotal 5180 + coop_education_credit 0 = 5180"
+        "ontario_credits: ontario_credits_subtotal 7730 + coop_education_credit 0 = 7730"
     ) in rendered
-    assert "provincial_credits: ontario_credits 5180 = 5180" in rendered
+    assert "provincial_credits: ontario_credits 7730 = 7730" in rendered
     assert (
         "total_credits: income_tax_deducted 8000 + refundable_medical_expense_supplement 0 "
         "+ canada_workers_benefit 0 "
         "+ part_xii_2_tax_credit 0 + employee_and_partner_gst_hst_rebate 0 "
         "+ educator_school_supply_credit 0 + journalism_labour_tax_credit 0 "
-        "+ tax_paid_by_instalments 0 + provincial_credits 5180 = 13180"
+        "+ tax_paid_by_instalments 0 + provincial_credits 7730 = 15730"
     ) in rendered
     assert (
-        "refund_or_balance_owing: total_payable 4240.69 less total_credits 13180 = -8939.31"
+        "refund_or_balance_owing: total_payable 4240.69 less total_credits 15730 = -11489.31"
     ) in rendered
