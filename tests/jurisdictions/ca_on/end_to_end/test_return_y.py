@@ -108,9 +108,10 @@ def test_a_family_adjusted_income_on_a_row_limit_takes_that_rows_rate() -> None:
 
 
 def test_a_net_income_below_zero_is_floored_at_zero_on_line_4() -> None:
-    # Schedule ON479-A line 4 "Add lines 1 to 3 (if negative, enter "0")": line 1 is the TOSI-adjusted net
-    # income, the net income before adjustments with no split income, 0 - union dues 1000 = -1000.00, and line 2 is 0, so line 4 is 0, not
-    # -1000.00, and line 5 is 0 with no supporting person.
+    # Schedule ON479-A line 4 "Add lines 1 to 3 (if negative, enter "0")": line 1 is the
+    # TOSI-adjusted net income, the net income before adjustments with no split income,
+    # 0 - union dues 1000 = -1000.00, and line 2 is 0, so line 4 is 0, not -1000.00, and
+    # line 5 is 0 with no supporting person.
     worksheet = compute("0", (), "0", "0", "0", "0", "1000")
 
     assert worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value == D("-1000.00")
