@@ -213,7 +213,7 @@ CREDIT_AMOUNTS_THROUGH_DISABILITY_TRANSFER = CATALOG.declare(
     "credit_amounts_through_disability_transfer", Decimal, non_negative=True
 )
 """Ontario credit amounts through the disability transfer, ON428 line 31 "Line 31: Add lines 28 to
-30. =": the credit amounts before the medical expenses, the amounts on lines 1 to 25 (the basic
+30. =": the credit amounts before the medical expenses, the amounts on lines 9 to 25 (the basic
 personal, age, spouse, eligible dependant and caregiver amounts, and the base CPP and EI
 contributions) and line 30 "Disability amount transferred from a dependant (use Worksheet ON428)".
 Schedule ON(S11) line 3 "Enter the amount from line 31 of your Form ON428." takes it."""
