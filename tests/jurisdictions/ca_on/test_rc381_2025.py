@@ -8,10 +8,14 @@ above using the number of months from lines A and B.", lines G to J for the QPP.
 from line E of Part 2 multiplied by the rate at line 6" (lines 7 to 10); "amount from line 19 x
 83.1933%" (line 20); "amount from line 18 x 4.95% = (maximum $3,356.10)" (line 22), "amount from
 line 18 x 1% = (maximum $678.00)" (line 23) and "amount from line 15 x 4% = (maximum
-$396.00)" (line 26).
+$396.00)" (line 26). The QPP side of Part 3: "amount from line 39 x 84.375%" (line 40),
+"amount from line 38 x 5.4% = (maximum $3,661.20)" (line 42), "amount from line 38 x 1% =
+(maximum $678.00)" (line 43) and "amount from line 35 x 4% = (maximum $396.00)" (line 46).
 
-The form prints no "upper" of its own for lines 22, 23 and 26: the tiers run from 0 to the
-maximum the printed maximum implies (67,800.00 at 4.95% and 1% and 9,900.00 at 4%).
+The form prints no "upper" of its own for lines 22, 23, 26, 42, 43 and 46: the tiers run from 0
+to the maximum the printed maximum implies (67,800.00 at 4.95%, 5.4% and 1% and 9,900.00 at 4%).
+Lines 43 and 46 print the same rate and maximum as lines 23 and 26, so they read the same
+datasets.
 
 The dataset of each line is checked with the rounding rule or the capability that reads it, on
 made-up kinds; the lines together are in the `end_to_end` tests and
@@ -52,6 +56,8 @@ CPP_BASE_SHARE_RATE = "ca/rc381_cpp_base_share_rate"
 REQUIRED_CPP_BASE = "ca/rc381_required_cpp_base"
 REQUIRED_FIRST_ADDITIONAL = "ca/rc381_required_first_additional"
 REQUIRED_SECOND_ADDITIONAL = "ca/rc381_required_second_additional"
+QPP_BASE_SHARE_RATE = "ca/rc381_qpp_base_share_rate"
+REQUIRED_QPP_BASE = "ca/rc381_required_qpp_base"
 
 # Made up for this test and not registered.
 EARNINGS = ArtifactKind("ex/earnings", Decimal)
@@ -183,7 +189,37 @@ def test_line_20_is_83_1933_percent_of_line_19(line_19: str, line_20: str) -> No
     assert result.outputs == (Artifact(CONTRIBUTION, D(line_20)),)
 
 
-# Lines 22, 23 and 26.
+# Line 40.
+
+
+def test_2025_line_40_is_84_375_percent_to_the_cent() -> None:
+    data = SOURCE.get(QPP_BASE_SHARE_RATE, 2025, RATE)
+
+    assert data.values == Rate(D("0.84375"))
+    assert data.rounding == CENT
+
+
+@pytest.mark.parametrize(
+    ("line_39", "line_40"),
+    [
+        # The ticket's example: 2,500.00 x 84.375% = 2,109.375, a tie that rounds up.
+        ("2500.00", "2109.38"),
+        ("0", "0.00"),
+        ("1.00", "0.84"),
+        ("0.60", "0.51"),
+        # The maximum base and first additional contributions on 67,800.00 x 6.4%.
+        ("4339.20", "3661.20"),
+    ],
+)
+def test_line_40_is_84_375_percent_of_line_39(line_39: str, line_40: str) -> None:
+    capability = ApplyRate(SOURCE.get(QPP_BASE_SHARE_RATE, 2025, RATE), EARNINGS, CONTRIBUTION)
+
+    result = capability.compute((Artifact(EARNINGS, D(line_39)),))
+
+    assert result.outputs == (Artifact(CONTRIBUTION, D(line_40)),)
+
+
+# Lines 22, 23 and 26, and 42, 43 and 46.
 
 
 @pytest.mark.parametrize(
@@ -201,6 +237,9 @@ def test_line_20_is_83_1933_percent_of_line_19(line_19: str, line_20: str) -> No
             REQUIRED_SECOND_ADDITIONAL,
             ContributionTier(Rate(D("0.04")), D("0"), D("9900"), D("396.00")),
         ),
+        # Line 42: "x 5.4% = (maximum $3,661.20)"; 67,800.00 x 5.4% is 3,661.20. Lines 43 and 46
+        # print the figures of lines 23 and 26, so they read those two datasets.
+        (REQUIRED_QPP_BASE, ContributionTier(Rate(D("0.054")), D("0"), D("67800"), D("3661.20"))),
     ],
 )
 def test_2025_required_contribution_tiers_are_the_printed_rate_and_maximum(
@@ -209,10 +248,10 @@ def test_2025_required_contribution_tiers_are_the_printed_rate_and_maximum(
     data = SOURCE.get(family, 2025, CONTRIBUTION_TIER)
 
     assert data.values == tier
-    # The earnings on lines 18 and 15 are already net of the exemption, so the band starts at 0,
-    # and the printed maximum is the whole band at the rate.
+    # The earnings on lines 18, 15, 38 and 35 are already net of the exemption, so the band starts
+    # at 0, and the printed maximum is the whole band at the rate.
     assert (tier.upper - tier.lower) * tier.rate.value == tier.maximum
-    # Lines 22, 23 and 26 are dollars-and-cents boxes.
+    # Lines 22, 23, 26, 42, 43 and 46 are dollars-and-cents boxes.
     assert data.rounding == CENT
 
 
@@ -238,6 +277,18 @@ def test_2025_required_contribution_tiers_are_the_printed_rate_and_maximum(
         (REQUIRED_CPP_BASE, "0.10", "0.00"),
         (REQUIRED_CPP_BASE, "0.11", "0.01"),
         (REQUIRED_FIRST_ADDITIONAL, "0.50", "0.01"),
+        # Line 42: 5.4% of the QPP earnings on line 38, at most 3,661.20. The ticket's example:
+        # line 38 = 38,000.00, so line 42 = 2,052.00 and line 43 = 380.00.
+        (REQUIRED_QPP_BASE, "38000.00", "2052.00"),
+        (REQUIRED_QPP_BASE, "0", "0.00"),
+        (REQUIRED_QPP_BASE, "67800.00", "3661.20"),
+        (REQUIRED_QPP_BASE, "80000.00", "3661.20"),
+        # 5.4% of 0.09 is 0.00486, of 0.10 is 0.0054.
+        (REQUIRED_QPP_BASE, "0.09", "0.00"),
+        (REQUIRED_QPP_BASE, "0.10", "0.01"),
+        # Line 43 reads the dataset of line 23, and line 46 that of line 26.
+        (REQUIRED_FIRST_ADDITIONAL, "38000.00", "380.00"),
+        (REQUIRED_SECOND_ADDITIONAL, "4400.05", "176.00"),
     ],
 )
 def test_the_required_contributions_are_the_rate_of_the_earnings_up_to_the_maximum(
@@ -286,6 +337,8 @@ def test_the_monthly_proration_tables_cite_rc381_beside_schedule_8(family: str) 
         (REQUIRED_CPP_BASE, CONTRIBUTION_TIER),
         (REQUIRED_FIRST_ADDITIONAL, CONTRIBUTION_TIER),
         (REQUIRED_SECOND_ADDITIONAL, CONTRIBUTION_TIER),
+        (QPP_BASE_SHARE_RATE, RATE),
+        (REQUIRED_QPP_BASE, CONTRIBUTION_TIER),
     ],
 )
 def test_2025_rc381_datasets_cite_only_the_rc381_pdf(family: str, kind: ParameterKind[Any]) -> None:
@@ -307,6 +360,8 @@ def test_2025_rc381_datasets_cite_only_the_rc381_pdf(family: str, kind: Paramete
         (REQUIRED_CPP_BASE, ("amount from line 18", "4.95%", "(maximum $3,356.10)")),
         (REQUIRED_FIRST_ADDITIONAL, ("amount from line 18", "1%", "(maximum $678.00)")),
         (REQUIRED_SECOND_ADDITIONAL, ("amount from line 15", "4%", "(maximum $396.00)")),
+        (QPP_BASE_SHARE_RATE, ("amount from line 39", "84.375%")),
+        (REQUIRED_QPP_BASE, ("amount from line 38", "5.4%", "(maximum $3,661.20)")),
     ],
 )
 def test_the_dataset_header_quotes_rc381_as_the_form_prints_it(
@@ -320,6 +375,30 @@ def test_the_dataset_header_quotes_rc381_as_the_form_prints_it(
 
 
 @pytest.mark.parametrize(
+    ("family", "quotes"),
+    [
+        # Line 43 prints the figures of line 23, and line 46 those of line 26, so the header of
+        # the shared dataset quotes both lines.
+        (
+            REQUIRED_FIRST_ADDITIONAL,
+            ("line 43", "amount from line 38", "1%", "(maximum $678.00)"),
+        ),
+        (
+            REQUIRED_SECOND_ADDITIONAL,
+            ("line 46", "amount from line 35", "4%", "(maximum $396.00)"),
+        ),
+    ],
+)
+def test_the_shared_dataset_header_also_quotes_the_qpp_line(
+    family: str, quotes: tuple[str, ...]
+) -> None:
+    header = dataset_header(family)
+
+    for quote in quotes:
+        assert quote in header, quote
+
+
+@pytest.mark.parametrize(
     "family",
     [
         RATIO_TRUNCATION,
@@ -328,6 +407,8 @@ def test_the_dataset_header_quotes_rc381_as_the_form_prints_it(
         REQUIRED_CPP_BASE,
         REQUIRED_FIRST_ADDITIONAL,
         REQUIRED_SECOND_ADDITIONAL,
+        QPP_BASE_SHARE_RATE,
+        REQUIRED_QPP_BASE,
     ],
 )
 def test_the_dataset_header_states_its_rounding_decision(family: str) -> None:

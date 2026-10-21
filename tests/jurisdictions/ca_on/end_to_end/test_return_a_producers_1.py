@@ -601,6 +601,33 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_23,
     RC381_PART_3_LINE_24,
     RC381_PART_3_LINE_26,
+    RC381_PART_3_LINE_27,
+    RC381_PART_3_LINE_28,
+    RC381_PART_3_LINE_29,
+    RC381_PART_3_LINE_30,
+    RC381_PART_3_LINE_31,
+    RC381_PART_3_LINE_34,
+    RC381_PART_3_LINE_35,
+    RC381_PART_3_LINE_35_LESSER,
+    RC381_PART_3_LINE_36,
+    RC381_PART_3_LINE_38,
+    RC381_PART_3_LINE_40,
+    RC381_PART_3_LINE_41,
+    RC381_PART_3_LINE_42,
+    RC381_PART_3_LINE_43,
+    RC381_PART_3_LINE_44,
+    RC381_PART_3_LINE_46,
+    RC381_PART_3_LINE_49,
+    RC381_PART_3_LINE_52,
+    RC381_PART_3_LINE_53,
+    RC381_PART_3_LINE_56,
+    RC381_PART_3_LINE_59,
+    RC381_PART_3_LINE_60,
+    RC381_PART_3_LINE_61,
+    RC381_PART_3_LINE_64,
+    RC381_PART_3_LINE_67,
+    RC381_PART_3_LINE_68,
+    RC381_PART_3_LINE_69,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REFUND_OR_BALANCE_OWING,
@@ -984,6 +1011,33 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_23), TieredContribution)
     assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_24), Sum)
     assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_26), TieredContribution)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_27), Subtract)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_28), Subtract)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_29), Subtract)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_30), Subtract)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_31), LesserOf)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_34), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_35_LESSER), LesserOf)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_35), AmountWhenMore)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_36), Subtract)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_38), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_40), ApplyRate)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_41), Subtract)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_42), TieredContribution)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_43), TieredContribution)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_44), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_46), TieredContribution)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_49), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_52), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_53), Subtract)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_56), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_59), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_60), Subtract)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_61), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_64), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_67), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_68), Subtract)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_69), Sum)
     assert worksheet.producer_of(RC381_PART_3_LINE_7) is not None
     assert worksheet.producer_of(RC381_PART_3_LINE_8) is not None
     assert worksheet.producer_of(RC381_PART_3_LINE_9) is not None

@@ -129,6 +129,7 @@ from app.jurisdictions.ca.catalog import (
     QBT_TAXABLE_CAPITAL_GAINS,
     QBT_TOTAL_CAPITAL_GAINS,
     RC381_PART_3_LINE_20,
+    RC381_PART_3_LINE_40,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
     RESIDENCY_NET_INCOME_LIMIT,
@@ -146,6 +147,7 @@ from app.jurisdictions.ca.catalog import (
     SPLIT_INCOME_LINE_18,
     SPLIT_INCOME_LINE_19,
     SPLIT_INCOME_LINE_20,
+    T4_QPP_CONTRIBUTIONS_BOX_17,
     TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
@@ -255,6 +257,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert rated == {
+        # Form RC381 Part 3 line 40 "amount from line 39 x 84.375%": Return A enters no box 17
+        # contributions on line 39, so the base is 0 and so is the 84.375%.
+        RC381_PART_3_LINE_40: RateAppliedLine(
+            RC381_PART_3_LINE_40,
+            T4_QPP_CONTRIBUTIONS_BOX_17,
+            D("0"),
+            Rate(D("0.84375")),
+            CENT,
+            D("0.00"),
+        ),
         # Form RC381 Part 3 line 20 "amount from line 19 x 83.1933%": line 19 is the T4 box 16 total
         # of 4034.10 that Return A enters, 4034.10 x 0.831933 = 3356.1000..., 3356.10.
         RC381_PART_3_LINE_20: RateAppliedLine(

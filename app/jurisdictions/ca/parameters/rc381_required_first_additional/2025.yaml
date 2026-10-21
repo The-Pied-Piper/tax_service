@@ -1,7 +1,9 @@
 # Form RC381 (2025), Part 3 line 23
 # "Required first additional contributions on CPP pensionable earnings:
 # amount from line 18 x 1% = (maximum $678.00)"
-# The band starts at 0 because the earnings on line 18 are already net of the basic exemption.
+# Part 3 line 43 "Required first additional contributions on QPP pensionable earnings:
+# amount from line 38 x 1% = (maximum $678.00)" prints the same figures, so it reads this dataset.
+# The band starts at 0 because the earnings on lines 18 and 38 are already net of the basic exemption.
 # The form prints no rounding rule; the line is a dollars-and-cents amount, so the product
 # rounds half-up to the cent, the owner's decision.
 family: ca/rc381_required_first_additional

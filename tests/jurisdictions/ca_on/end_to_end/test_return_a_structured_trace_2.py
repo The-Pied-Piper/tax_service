@@ -798,9 +798,29 @@ from app.jurisdictions.ca.catalog import (
     QFFP_GAIN_OR_LOSS,
     QSBCS_GAIN_OR_LOSS,
     RC381_PART_3_LINE_3,
+    RC381_PART_3_LINE_20,
+    RC381_PART_3_LINE_21,
     RC381_PART_3_LINE_22,
     RC381_PART_3_LINE_23,
     RC381_PART_3_LINE_24,
+    RC381_PART_3_LINE_26,
+    RC381_PART_3_LINE_40,
+    RC381_PART_3_LINE_41,
+    RC381_PART_3_LINE_42,
+    RC381_PART_3_LINE_43,
+    RC381_PART_3_LINE_44,
+    RC381_PART_3_LINE_46,
+    RC381_PART_3_LINE_49,
+    RC381_PART_3_LINE_52,
+    RC381_PART_3_LINE_53,
+    RC381_PART_3_LINE_56,
+    RC381_PART_3_LINE_59,
+    RC381_PART_3_LINE_60,
+    RC381_PART_3_LINE_61,
+    RC381_PART_3_LINE_64,
+    RC381_PART_3_LINE_67,
+    RC381_PART_3_LINE_68,
+    RC381_PART_3_LINE_69,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REAL_ESTATE_GAIN_OR_LOSS,
@@ -928,7 +948,9 @@ from app.jurisdictions.ca.catalog import (
     T3_TAXABLE_DIVIDENDS,
     T3_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
+    T4_CPP_SECOND_ADDITIONAL_BOX_16A,
     T4_QPP_PENSIONABLE_EARNINGS_IN_QUEBEC,
+    T4_QPP_SECOND_ADDITIONAL_BOX_17A,
     T4PS_DIVIDEND_TAX_CREDIT,
     T4PS_TAXABLE_DIVIDENDS,
     T4PS_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
@@ -1042,6 +1064,58 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Form RC381 Part 3 lines 44, 49, 52, 56, 59, 61, 64, 67 and 69, each "Line N plus line M"
+        # (or "Total ...: line N plus line M"): Return A enters a T4 box 16 total of 4034.10
+        # (3356.10 base, 678.00 first additional) and no pensionable earnings, so the actual
+        # figures are those and the required, QPP and second additional parts are 0.
+        RC381_PART_3_LINE_44: SumLine(
+            RC381_PART_3_LINE_44,
+            ((RC381_PART_3_LINE_42, D("0.00")), (RC381_PART_3_LINE_43, D("0.00"))),
+            D("0.00"),
+        ),
+        RC381_PART_3_LINE_49: SumLine(
+            RC381_PART_3_LINE_49,
+            ((RC381_PART_3_LINE_20, D("3356.10")), (RC381_PART_3_LINE_40, D("0.00"))),
+            D("3356.10"),
+        ),
+        RC381_PART_3_LINE_52: SumLine(
+            RC381_PART_3_LINE_52,
+            ((RC381_PART_3_LINE_22, D("0.00")), (RC381_PART_3_LINE_42, D("0.00"))),
+            D("0.00"),
+        ),
+        RC381_PART_3_LINE_56: SumLine(
+            RC381_PART_3_LINE_56,
+            ((RC381_PART_3_LINE_21, D("678.00")), (RC381_PART_3_LINE_41, D("0.00"))),
+            D("678.00"),
+        ),
+        RC381_PART_3_LINE_59: SumLine(
+            RC381_PART_3_LINE_59,
+            ((RC381_PART_3_LINE_23, D("0.00")), (RC381_PART_3_LINE_43, D("0.00"))),
+            D("0.00"),
+        ),
+        RC381_PART_3_LINE_61: SumLine(
+            RC381_PART_3_LINE_61,
+            ((RC381_PART_3_LINE_53, D("3356.10")), (RC381_PART_3_LINE_60, D("678.00"))),
+            D("4034.10"),
+        ),
+        RC381_PART_3_LINE_64: SumLine(
+            RC381_PART_3_LINE_64,
+            (
+                (T4_CPP_SECOND_ADDITIONAL_BOX_16A, D("0")),
+                (T4_QPP_SECOND_ADDITIONAL_BOX_17A, D("0")),
+            ),
+            D("0"),
+        ),
+        RC381_PART_3_LINE_67: SumLine(
+            RC381_PART_3_LINE_67,
+            ((RC381_PART_3_LINE_26, D("0.00")), (RC381_PART_3_LINE_46, D("0.00"))),
+            D("0.00"),
+        ),
+        RC381_PART_3_LINE_69: SumLine(
+            RC381_PART_3_LINE_69,
+            ((RC381_PART_3_LINE_61, D("4034.10")), (RC381_PART_3_LINE_68, D("0.00"))),
+            D("4034.10"),
+        ),
         # Form RC381 Part 3 line 3 "Line 1 plus line 2 Total pensionable earnings": Return A has
         # no T4 pensionable earnings on lines 1 and 2.
         RC381_PART_3_LINE_3: SumLine(
