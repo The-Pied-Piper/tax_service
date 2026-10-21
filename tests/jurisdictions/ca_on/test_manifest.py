@@ -26,6 +26,7 @@ from tests.jurisdictions.ca_on.manifest_families import (
     alternative_minimum_tax,
     canada_workers_benefit,
     capital_gains_deduction_qbt,
+    capital_gains_deduction_t657,
     credits_against_federal_tax,
     deductions,
     income,
@@ -52,6 +53,7 @@ FAMILIES: tuple[ModuleType, ...] = (
     deductions,
     taxable_income,
     capital_gains_deduction_qbt,
+    capital_gains_deduction_t657,
     personal_amounts,
     non_refundable_credits,
     credits_against_federal_tax,
@@ -147,24 +149,26 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     # forward to a future year", the carryforward, which nothing else on the return reads.
     # Form T2048 Part 4 line 32 "Line 30 plus line 31", which nothing reads, and Part 5's totals A
     # 17211, B 17212, D 17215, E 17216 and (as lines 16, 41 and 42) C 17213, F 17217 and G 17218,
-    # which the return carries for Form T657 and the T1 slips.
+    # which the return carries for Form T657 and the T1 slips. Form T657 Chart 2025 Part 1 amount
+    # Q, "If you are not disposing of any other QFFP or QSBCS in 2025, this is the maximum amount
+    # you can claim on line 25400", which nothing reads (Part 2's amount Q caps line 25400).
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 647
+    assert len(found.capabilities) == 706
     # T2125 Area A column 22 "UCC at the end of the year", a record list of each class's closing UCC
     # for next year, and Part 7 line 7O "Business-use-of-home expenses available to carry forward",
     # which nothing else on the return reads.
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 647
+    assert len(found.capabilities) == 706
     # Form T691 Part 1 line 12 "Add lines 1, 4, 7, and 11.", the adjusted taxable income subtotal,
     # which nothing else on the return reads yet.
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 647
+    assert len(found.capabilities) == 706
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -174,6 +178,6 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 647
-    assert len(composition.order) == 647
+    assert len(composition.order) == 706
+    assert len(composition.order) == 706
     assert wiring == WIRING

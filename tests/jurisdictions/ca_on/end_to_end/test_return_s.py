@@ -543,7 +543,7 @@ def test_the_northern_residents_deductions_come_off_net_income_with_the_other_de
         "+ security_options_deductions 1000 + other_payments_deduction 0 "
         "+ limited_partnership_losses_of_other_years 0 + non_capital_losses_of_other_years 0 "
         "+ net_capital_losses_of_other_years 0 + qbt_capital_gains_deduction 0 "
-        "+ northern_residents_deductions 8030 "
+        "+ capital_gains_deduction 0 + northern_residents_deductions 8030 "
         "+ additional_deductions 500 = 9530"
     ) in rendered
 
