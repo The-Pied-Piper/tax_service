@@ -40,8 +40,8 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 783
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 783
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 805
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 805
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -186,6 +186,45 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/business_fuel_costs",
         "ca/business_delivery_freight_and_express",
         "ca/business_motor_vehicle_expenses",
+        "ca/business_vehicle_business_kilometres",
+        "ca/business_vehicle_total_kilometres",
+        "ca/business_vehicle_fuel_and_oil",
+        "ca/business_vehicle_insurance",
+        "ca/business_vehicle_licence_and_registration",
+        "ca/business_vehicle_maintenance_and_repairs",
+        "ca/business_vehicle_electricity_zev",
+        "ca/business_vehicle_other_expenses_10",
+        "ca/business_vehicle_other_expenses_11",
+        "ca/business_vehicle_parking_fees",
+        "ca/business_vehicle_supplementary_insurance",
+        "ca/business_vehicle_interest_payable",
+        "ca/business_vehicle_interest_days",
+        "ca/business_vehicle_lease_charges",
+        "ca/business_vehicle_lease_payments_before",
+        "ca/business_vehicle_lease_days",
+        "ca/business_vehicle_list_price",
+        "ca/business_vehicle_sales_tax_rate",
+        "ca/business_vehicle_interest_limit",
+        "ca/business_vehicle_days_divisor",
+        "ca/business_vehicle_list_price_limit",
+        "ca/business_vehicle_lease_charge_limit",
+        "ca/business_vehicle_lease_cost_limit",
+        "ca/business_vehicle_list_price_limit_tax",
+        "ca/business_vehicle_lease_charge_limit_tax",
+        "ca/business_vehicle_lease_cost_limit_tax",
+        "ca/business_vehicle_list_price_limit_with_tax",
+        "ca/business_vehicle_lease_charge_limit_with_tax",
+        "ca/business_vehicle_lease_cost_limit_with_tax",
+        "ca/business_vehicle_total_expenses",
+        "ca/business_vehicle_business_use_part",
+        "ca/business_vehicle_interest_for_period",
+        "ca/business_vehicle_available_interest",
+        "ca/business_vehicle_lease_price_base",
+        "ca/business_vehicle_lease_price_85_percent",
+        "ca/business_vehicle_lease_charge_portion",
+        "ca/business_vehicle_lease_charges_net",
+        "ca/business_vehicle_lease_cost_portion",
+        "ca/business_vehicle_leasing_cost",
         "ca/business_cca_personal_part",
         "ca/business_other_expenses",
         "ca/business_journalism_labour_tax_credit",
@@ -1496,15 +1535,15 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 783
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 783
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 805
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 805
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 783
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 783
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 805
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 805
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

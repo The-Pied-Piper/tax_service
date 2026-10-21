@@ -1,6 +1,6 @@
 # Return BB: a self-employed filer (a single sole proprietor, a 2025 Ontario resident)
 # whose only activity is a business, one Form T2125 (Statement of Business or Professional
-# Activities) with Part 3A, Part 3D, Part 4, Part 5, Part 7 and Area A: gross sales of
+# Activities) with Part 3A, Part 3D, Part 4, Part 5, Part 7, Area A and Charts A to C: gross sales of
 # $50,000 (line 8299, T1 line 13499), expenses of $16,000 on seven lines and capital cost
 # allowance of $2,000 on one class (Class 8, line 9936), $18,000 in all (line 9368), so
 # the net income before adjustments (line 9369) is $32,000.00; business-use-of-home
@@ -22,7 +22,9 @@ description: >-
   lines and capital cost allowance of $2,000 on Class 8 (Area A, line 9936), so line
   8299 and T1 line 13499 are $50,000.00, line 9369 is $32,000.00, and, after $2,000 of
   business-use-of-home expenses, line 9946 and T1 line 13500 are $30,000.00. A chosen
-  set of figures. The net self-employment income (T1 line 27, "Add lines 22 to 26") is
+  set of figures. The motor vehicle expenses (line 9281, $2,500) are Charts A to C for one
+  leased passenger vehicle used half for business (see the sources). The net self-employment
+  income (T1 line 27, "Add lines 22 to 26") is
   30,000 + 0 + 0 + 0 + 0 = $30,000; line 28 is line 21 (0) plus line 27 and total income
   (line 15000) adds line 27 to the other income lines, which are all 0, so total income
   is $30,000.00. The CPP months (Schedule 8 box A) are the 12 of a full year, Schedule 8
@@ -94,7 +96,8 @@ sources:
     lines are chosen figures: advertising (line 8521) 1,500, insurance (line 8690)
     1,200, office expenses (line 8810) 800, professional fees (line 8860) 2,500, rent
     (line 8910) 6,000, utilities (line 9220) 1,500 and motor vehicle expenses (line
-    9281) 2,500; the 19 expense lines (4B to 4T), in line order, add to 1,500 + 0 + 0 +
+    9281) 2,500, the Chart A total below; the 19 expense lines (4B to 4T), in line order, add
+    to 1,500 + 0 + 0 +
     1,200 + 0 + 0 + 800 + 0 + 2,500 + 0 + 6,000 + 0 + 0 + 0 + 0 + 1,500 + 0 + 0 + 2,500
     = 16,000. Area A has one class (below): amount ii is 2,000; the personal part of CCA
     and the CCA for business-use-of-home expenses (amount 7K) are a chosen $0 each, so
@@ -120,10 +123,44 @@ sources:
     no property left being a chosen 0. The columns the form computes (15, 17, 18 and the
     maximum) are dollars-and-cents boxes, rounded half-up to the cent, which changes
     none of them; the lines of Parts 3 to 7 add and subtract amounts already in cents.
+    Charts A to C, one leased passenger vehicle: amounts 1 (business kilometres) and 2 (total
+    kilometres) are chosen figures of 5,000 and 10,000; amount 3 (fuel and oil) 1,000, amount 5
+    (insurance) 600, amount 7 (maintenance and repairs) 200 and amount 10 (other expenses) 653 are
+    chosen figures; amounts 6, 9, 11, 14 and 15 are a chosen 0. Chart B: amount 17 (total interest
+    payable) is a chosen 400 and the number of days is a chosen 183, so line 18 is 350 ÷ 30 × 183
+    = 2,135.00 and amount 19, the lesser of 400 and 2,135.00, is 400. Chart C: amount 20 (total
+    lease charges) is a chosen 2,550, amount 21 (payments before the year) a chosen 0, amount 22
+    (days leased) a chosen 183, amount 23 (manufacturer's list price) a chosen 60,000 and the GST
+    or HST rate a chosen 13%: 44,706 + 13% = 50,517.78, 1,100 + 13% = 1,243.00 and 38,000 + 13%
+    = 42,940.00; amount 23 or 44,706 plus tax, whichever is more, is 60,000.00; amount 24 is
+    60,000.00 × 85% = 51,000.00; amount 25 is 1,243.00 × 183 ÷ 30 = 7,582.30; amount 26 is
+    7,582.30 - 0 = 7,582.30; amount 27 is 42,940.00 × 2,550 ÷ 51,000.00 = 2,147.00; and amount 28,
+    the lesser of 26 and 27, is 2,147.00. Chart A: amount 12 is 1,000 + 400 + 600 + 200 + 2,147
+    + 0 + 0 + 653 + 0 = 5,000.00 (amount 4 is amount 19 and amount 8 is amount 28); amount 13 is
+    5,000 × 5,000 ÷ 10,000 = 2,500.00; and line 9281 (amount 16) is 2,500 + 0 + 0 = 2,500.00. No
+    line is rounded, as every product and quotient here is exact to the cent.
     Not modelled: Part 2 (the Internet business activities), Part 8 (the other
-    partners), Part 9 (the equity), Areas B to G and Charts A to C (the motor vehicle
-    expenses are entered as amount 16 of Chart A would give them).
+    partners), Part 9 (the equity) and Areas B to G.
   - >-
+    https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t2125/t2125-25e.pdf
+  - >-
+    CRA, Form T2125 (2025), Charts A to C (text copy of the form, confirmed 2026-10-19):
+    Chart A "Total motor vehicle expenses: Add amounts 3 to 11." (12); "Business use part: amount 1 ÷ amount
+    2 × amount 12 = 13" (13); "Business parking fees" (14); "Supplementary business insurance" (15);
+    "Allowable motor vehicle expenses: Add amounts 13 to 15 (enter this total on line 9281 of Part
+    4)" (16). Chart B: "Total interest payable (accrual method) or paid (cash method) in the fiscal
+    period" (17); "($350*** ÷ 30) × the number of days in the fiscal period for which interest was
+    payable (accrual method) or paid (cash method) = 18" (18); "Available interest expense: Amount 17
+    or 18, whichever is less (include this in amount 4 of Chart A above)" (19). Chart C: "Total lease
+    charges incurred in your current fiscal period for the vehicle." (20); "Total lease payments
+    deducted before your current fiscal period for the vehicle" (21); "Total number of days the
+    vehicle was leased in your current and previous fiscal periods" (22); "Manufacturer's list
+    price" (23); "Use a GST rate of 5% or HST rate applicable to your province."; "Amount 23 or
+    ($44,706 + GST and PST, or $44,706 + HST), whichever is more" and "× 85%" (24); "[($1,100 + GST
+    and PST, or $1,100 + HST) × amount 22] ÷ 30" (25); "Amount 25: amount 21" (26, the subtraction
+    sign is not in the text copy); "[($38,000 + GST and PST, or $38,000 + HST) × amount 20] ÷ amount
+    24" (27); "Eligible leasing cost: Amount 26 or 27, whichever is less (enter in amount 8 of Chart A
+    above)" (28). The 2024 endnote figures (11 to 13) are not used.
     https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t2125/t2125-25e.pdf
   - >-
     CRA, "T1-2025 Ontario edition" return (form 5006-R,
@@ -181,7 +218,18 @@ inputs:
   ca/business_professional_fees: "2500"
   ca/business_rent: "6000"
   ca/business_utilities: "1500"
-  ca/business_motor_vehicle_expenses: "2500"
+  ca/business_vehicle_business_kilometres: "5000"
+  ca/business_vehicle_total_kilometres: "10000"
+  ca/business_vehicle_fuel_and_oil: "1000"
+  ca/business_vehicle_insurance: "600"
+  ca/business_vehicle_maintenance_and_repairs: "200"
+  ca/business_vehicle_other_expenses_10: "653"
+  ca/business_vehicle_interest_payable: "400"
+  ca/business_vehicle_interest_days: "183"
+  ca/business_vehicle_lease_charges: "2550"
+  ca/business_vehicle_lease_days: "183"
+  ca/business_vehicle_list_price: "60000"
+  ca/business_vehicle_sales_tax_rate: "13"
   ca/business_home_heat: "600"
   ca/business_home_electricity: "500"
   ca/business_home_insurance: "300"
@@ -218,6 +266,28 @@ expected:
   ca/business_closing_ucc:
     - ca/cca_class_number: "8"
       ca/cca_ucc_at_end: "8000"
+  ca/business_vehicle_interest_limit: "350.00"
+  ca/business_vehicle_days_divisor: "30.00"
+  ca/business_vehicle_list_price_limit: "44706.00"
+  ca/business_vehicle_lease_charge_limit: "1100.00"
+  ca/business_vehicle_lease_cost_limit: "38000.00"
+  ca/business_vehicle_list_price_limit_tax: "5811.78"
+  ca/business_vehicle_lease_charge_limit_tax: "143.00"
+  ca/business_vehicle_lease_cost_limit_tax: "4940.00"
+  ca/business_vehicle_list_price_limit_with_tax: "50517.78"
+  ca/business_vehicle_lease_charge_limit_with_tax: "1243.00"
+  ca/business_vehicle_lease_cost_limit_with_tax: "42940.00"
+  ca/business_vehicle_interest_for_period: "2135.00"
+  ca/business_vehicle_available_interest: "400.00"
+  ca/business_vehicle_lease_price_base: "60000.00"
+  ca/business_vehicle_lease_price_85_percent: "51000.00"
+  ca/business_vehicle_lease_charge_portion: "7582.30"
+  ca/business_vehicle_lease_charges_net: "7582.30"
+  ca/business_vehicle_lease_cost_portion: "2147.00"
+  ca/business_vehicle_leasing_cost: "2147.00"
+  ca/business_vehicle_total_expenses: "5000.00"
+  ca/business_vehicle_business_use_part: "2500.00"
+  ca/business_motor_vehicle_expenses: "2500.00"
   ca/business_total_expenses: "18000"
   ca/business_net_income_before_adjustments: "32000"
   ca/business_share_of_net_income: "32000"

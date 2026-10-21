@@ -90,6 +90,14 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_SALES_ADJUSTMENTS,
     BUSINESS_SALES_SUBTOTAL,
     BUSINESS_TOTAL_EXPENSES,
+    BUSINESS_VEHICLE_DAYS_DIVISOR,
+    BUSINESS_VEHICLE_INTEREST_LIMIT,
+    BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT,
+    BUSINESS_VEHICLE_LEASE_CHARGE_PORTION,
+    BUSINESS_VEHICLE_LEASE_CHARGES_NET,
+    BUSINESS_VEHICLE_LEASE_COST_LIMIT,
+    BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,
+    BUSINESS_VEHICLE_LIST_PRICE_LIMIT,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_TRAINING_CREDIT,
     CANADIAN_TUITION_AVAILABLE,
@@ -442,6 +450,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     gated = {line.output: line for line in trace if isinstance(line, ThresholdGateLine)}
     fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
     assert subtracted == {
+        # Form T2125 Chart C line 26 "Amount 25: amount 21" (printed with a subtraction sign): line
+        # 25 is 0 for Return A (no leased vehicle), and amount 21 is 0.
+        BUSINESS_VEHICLE_LEASE_CHARGES_NET: SubtractedLine(
+            output=BUSINESS_VEHICLE_LEASE_CHARGES_NET,
+            minuend=BUSINESS_VEHICLE_LEASE_CHARGE_PORTION,
+            minuend_amount=D("0"),
+            subtrahend=BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Form T691 Part 1 line 20 "Line 15 minus line 19 (if negative, show in brackets)": line 15
         # is Return A's 20000 of capital gains (line 19700) and line 19 is 0.
         AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS: SubtractedLine(
@@ -1268,6 +1286,23 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert amounts == {
+        # Form T2125 Chart B line 18 and Chart C line 25 "÷ 30": the printed constants, each a
+        # dataset of the same name, claimed whole to the cent.
+        BUSINESS_VEHICLE_INTEREST_LIMIT: CreditAmountLine(
+            BUSINESS_VEHICLE_INTEREST_LIMIT, Credit(amount=D("350.00")), CENT, D("350.00")
+        ),
+        BUSINESS_VEHICLE_DAYS_DIVISOR: CreditAmountLine(
+            BUSINESS_VEHICLE_DAYS_DIVISOR, Credit(amount=D("30.00")), CENT, D("30.00")
+        ),
+        BUSINESS_VEHICLE_LIST_PRICE_LIMIT: CreditAmountLine(
+            BUSINESS_VEHICLE_LIST_PRICE_LIMIT, Credit(amount=D("44706.00")), CENT, D("44706.00")
+        ),
+        BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT: CreditAmountLine(
+            BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT, Credit(amount=D("1100.00")), CENT, D("1100.00")
+        ),
+        BUSINESS_VEHICLE_LEASE_COST_LIMIT: CreditAmountLine(
+            BUSINESS_VEHICLE_LEASE_COST_LIMIT, Credit(amount=D("38000.00")), CENT, D("38000.00")
+        ),
         ontario.DISABILITY_SELF_BASE_AMOUNT: CreditAmountLine(
             ontario.DISABILITY_SELF_BASE_AMOUNT, Credit(amount=D("10298.00")), CENT, D("10298.00")
         ),

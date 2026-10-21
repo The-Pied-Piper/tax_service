@@ -12,6 +12,12 @@ from app.jurisdictions.ca.catalog import (
     BOND_GAIN_OR_LOSS,
     BOND_PROCEEDS,
     BUSINESS_INCOME,
+    BUSINESS_VEHICLE_BUSINESS_USE_PART,
+    BUSINESS_VEHICLE_INTEREST_LIMIT,
+    BUSINESS_VEHICLE_LEASE_CHARGES_NET,
+    BUSINESS_VEHICLE_LEASING_COST,
+    BUSINESS_VEHICLE_LIST_PRICE,
+    BUSINESS_VEHICLE_SALES_TAX_RATE,
     CAPITAL_GAIN,
     CAPITAL_GAINS_AFTER_DEFERRAL,
     CAPITAL_GAINS_BEFORE_INVESTMENT_LOSS_REDUCTION,
@@ -721,3 +727,27 @@ def test_the_taxable_capital_gains_stay_non_negative() -> None:
 
 def test_every_disposition_list_is_a_kind_of_its_own() -> None:
     assert len({id(kind) for _, kind in DISPOSITION_LISTS}) == 10
+
+
+def test_the_t2125_chart_kinds_are_registered_under_their_names(registry: ArtifactRegistry) -> None:
+    # Form T2125 Charts A to C: the caller's chart amounts, the printed constants (each a dataset of
+    # the same name) and the lines the charts compute, which line 9281 takes as its line 16.
+    assert registry.get("ca/business_vehicle_interest_limit") is BUSINESS_VEHICLE_INTEREST_LIMIT
+    assert registry.get("ca/business_vehicle_list_price") is BUSINESS_VEHICLE_LIST_PRICE
+    assert registry.get("ca/business_vehicle_sales_tax_rate") is BUSINESS_VEHICLE_SALES_TAX_RATE
+    assert registry.get("ca/business_vehicle_business_use_part") is (
+        BUSINESS_VEHICLE_BUSINESS_USE_PART
+    )
+    assert registry.get("ca/business_vehicle_leasing_cost") is BUSINESS_VEHICLE_LEASING_COST
+    assert registry.get("ca/business_vehicle_lease_charges_net") is (
+        BUSINESS_VEHICLE_LEASE_CHARGES_NET
+    )
+    # Amount 26 is printed without a floor, so it is the one signed chart line.
+    assert BUSINESS_VEHICLE_LEASE_CHARGES_NET.non_negative is False
+    assert BUSINESS_VEHICLE_INTEREST_LIMIT.non_negative is True
+    for kind in (
+        BUSINESS_VEHICLE_INTEREST_LIMIT,
+        BUSINESS_VEHICLE_LIST_PRICE,
+        BUSINESS_VEHICLE_LEASING_COST,
+    ):
+        assert kind.value_type is Decimal, kind.identifier

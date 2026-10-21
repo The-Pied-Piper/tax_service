@@ -72,6 +72,15 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
     BUSINESS_PARTNER,
     BUSINESS_SHARE_OF_NET_INCOME,
+    BUSINESS_VEHICLE_AVAILABLE_INTEREST,
+    BUSINESS_VEHICLE_INTEREST_FOR_PERIOD,
+    BUSINESS_VEHICLE_INTEREST_PAYABLE,
+    BUSINESS_VEHICLE_LEASE_CHARGES_NET,
+    BUSINESS_VEHICLE_LEASE_COST_PORTION,
+    BUSINESS_VEHICLE_LEASE_PRICE_BASE,
+    BUSINESS_VEHICLE_LEASING_COST,
+    BUSINESS_VEHICLE_LIST_PRICE,
+    BUSINESS_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
     CANADA_TRAINING_CREDIT,
     CANADA_TRAINING_CREDIT_BASIS,
     CANADA_TRAINING_CREDIT_CLAIMED,
@@ -516,6 +525,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     assert lesser == {
+        # Form T2125 Chart B line 19 "Amount 17 or 18, whichever is less": line 17 is 0 for Return
+        # A.
+        BUSINESS_VEHICLE_AVAILABLE_INTEREST: LesserOfLine(
+            BUSINESS_VEHICLE_AVAILABLE_INTEREST,
+            (
+                (BUSINESS_VEHICLE_INTEREST_PAYABLE, D("0")),
+                (BUSINESS_VEHICLE_INTEREST_FOR_PERIOD, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T2125 Chart C line 28 "Amount 26 or 27, whichever is less": both are 0 for Return A.
+        BUSINESS_VEHICLE_LEASING_COST: LesserOfLine(
+            BUSINESS_VEHICLE_LEASING_COST,
+            (
+                (BUSINESS_VEHICLE_LEASE_CHARGES_NET, D("0")),
+                (BUSINESS_VEHICLE_LEASE_COST_PORTION, D("0")),
+            ),
+            D("0"),
+        ),
         # Schedule ON(S11) line 5 "Enter whichever is less: amount from line 1 or line 4": 0 on
         # the return with nothing brought forward, against line 4 (the room, 151920.41).
         ontario.UNUSED_TUITION_CLAIMED: LesserOfLine(
@@ -2228,6 +2256,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert {line.output: line for line in trace if isinstance(line, GreaterOfLine)} == {
+        # Form T2125 Chart C line 23 "Amount 23 or ($44,706 + GST and PST, or $44,706 + HST),
+        # whichever is more": the list price is 0, so the printed 44,706 plus 0 tax is the greater.
+        BUSINESS_VEHICLE_LEASE_PRICE_BASE: GreaterOfLine(
+            output=BUSINESS_VEHICLE_LEASE_PRICE_BASE,
+            parts=(
+                (BUSINESS_VEHICLE_LIST_PRICE, D("0")),
+                (BUSINESS_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX, D("44706.00")),
+            ),
+            result=D("44706.00"),
+        ),
         # Form T1206 Part 2 line 30 "Enter whichever is more: the amount from line 24 or line 29."
         SPLIT_INCOME_LINE_30: GreaterOfLine(
             output=SPLIT_INCOME_LINE_30,

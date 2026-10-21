@@ -54,7 +54,6 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_INTEREST_AND_BANK_CHARGES,
     BUSINESS_MANAGEMENT_AND_ADMINISTRATION_FEES,
     BUSINESS_MEALS_AND_ENTERTAINMENT,
-    BUSINESS_MOTOR_VEHICLE_EXPENSES,
     BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,
     BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
     BUSINESS_OFFICE_EXPENSES,
@@ -83,7 +82,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import D, compute
 
 ROW_8 = ("8", "10000", "0", "0", "0", "0", "2000", 0)
 
-# The 19 expense lines of Part 4, amounts 4B to 4T.
+# The 18 expense lines of Part 4, amounts 4B to 4T except 4T (motor vehicle expenses, amount 16
+# of Chart A, see test_t2125_motor_vehicle_2025.py).
 EXPENSE_KINDS: tuple[ArtifactKind[Any], ...] = (
     BUSINESS_ADVERTISING,  # advertising
     BUSINESS_MEALS_AND_ENTERTAINMENT,  # meals_and_entertainment
@@ -103,7 +103,6 @@ EXPENSE_KINDS: tuple[ArtifactKind[Any], ...] = (
     BUSINESS_UTILITIES,  # utilities
     BUSINESS_FUEL_COSTS,  # fuel_costs
     BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,  # delivery_freight_and_express
-    BUSINESS_MOTOR_VEHICLE_EXPENSES,  # motor_vehicle_expenses
 )
 
 
@@ -238,20 +237,22 @@ def test_the_personal_part_and_the_business_use_of_home_cca_come_off_line_9936()
 
 
 def test_every_expense_line_from_4b_to_4t_adds_to_line_9368() -> None:
-    # 19 lines of 100, 200 ... 1900 (4B to 4T), plus 4U (line 9936) 2000 and 4V (line 9270) 50.
+    # 18 lines of 100, 200 ... 1800 (4B to 4T except 4T), which add to 17100; 4T is 0 with no
+    # Chart A amounts. Plus 4U (line 9936) 2000 and 4V (line 9270) 50: line 9368 is 19150, and line
+    # 9369 is 50000 - 19150 = 30850.
     amounts = {
         kind.identifier.removeprefix("ca/business_"): str(100 * (index + 1))
         for index, kind in enumerate(EXPENSE_KINDS)
     }
-    assert sum(D(amount) for amount in amounts.values()) == D("19000")
+    assert sum(D(amount) for amount in amounts.values()) == D("17100")
 
     worksheet = statement(
         {**amounts, "other_expenses": "50"},
         business_cca_classes_rows=(ROW_8,),
     )
 
-    assert line(worksheet, BUSINESS_TOTAL_EXPENSES) == D("21050")
-    assert line(worksheet, BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS) == D("28950")
+    assert line(worksheet, BUSINESS_TOTAL_EXPENSES) == D("19150")
+    assert line(worksheet, BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS) == D("30850")
 
 
 def test_the_cost_of_goods_sold_comes_off_the_gross_income_before_the_expenses() -> None:
