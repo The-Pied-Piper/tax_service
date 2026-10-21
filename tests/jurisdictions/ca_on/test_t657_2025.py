@@ -10,7 +10,12 @@ no .txt is published):
   from line 10 × 1/3" and line 16 "Amount from line 14 × [ 1 – ( 2 × IR )]", the 2 of "2 × IR", the
   1 over "( 2 × IR )" and the quotient, which prints no figure of its own;
 - Chart 2025 Part 1 and Part 2 "Add amounts F to J (if negative, enter "0") = × 1/2 = K";
-- Chart 2025 Part 1 amount A 522,145.00 and Part 2 amount A 625,000.00.
+- Chart 2025 Part 1 amount A 522,145.00 and Part 2 amount A 625,000.00;
+- Chart 2024 Period 1 amount A 508,418.00 and Period 2 amount A 625,000.00, and each period's
+  "Add amounts F to H (if negative, enter "0") = × 1/2 = I";
+- Charts 2021, 2022 and 2023 Part 1 amount A (446,109.00, 456,815.00, 485,595.00) and Part 2
+  amount A (500,000.00 each), and each chart's halving lines: Part 1 "× 1/2 = H" and "× 1/2 = +"
+  (box 30) I, and Part 2 "× 1/2 = F" and "× 1/2 = G".
 
 Every product or quotient is a dollars-and-cents box, so each rounds half-up to the cent, the
 owner's decision, as the form states no rounding rule. Each printed 1/2, 1/4 and 1/3 is one dataset,
@@ -79,6 +84,64 @@ HEADER_QUOTES = {
         "after june 24, 2024 and reported in 2025",
         "625,000.00",
     ),
+    "ca/chart_2024_period_1_amount_a": (
+        "maximum capital gains deduction for qffp and/or qsbcs disposed of in 2024 for period 1",
+        "508,418.00",
+    ),
+    "ca/chart_2024_period_2_amount_a": (
+        "maximum capital gains deduction for qffp and/or qsbcs disposed of in 2024 for period 2",
+        "625,000.00",
+    ),
+    "ca/t657_chart_2024_period_1_i_fraction": (
+        'add amounts f to h (if negative, enter "0")',
+        "× 1/2",
+    ),
+    "ca/t657_chart_2024_period_2_i_fraction": (
+        'add amounts f to h (if negative, enter "0")',
+        "× 1/2",
+    ),
+    "ca/chart_2021_part_1_amount_a": (
+        "maximum capital gains deduction for qffp and/or qsbcs disposed of in 2021",
+        "446,109.00",
+    ),
+    "ca/chart_2021_part_2_amount_a": (
+        "maximum capital gains deduction for qffp disposed of in 2021",
+        "500,000.00",
+    ),
+    "ca/chart_2022_part_1_amount_a": (
+        "maximum capital gains deduction for qffp and/or qsbcs disposed of in 2022",
+        "456,815.00",
+    ),
+    "ca/chart_2022_part_2_amount_a": (
+        "maximum capital gains deduction for qffp disposed of in 2022",
+        "500,000.00",
+    ),
+    "ca/chart_2023_part_1_amount_a": (
+        "maximum capital gains deduction for qffp and/or qsbcs disposed of in 2023",
+        "485,595.00",
+    ),
+    "ca/chart_2023_part_2_amount_a": (
+        "maximum capital gains deduction for qffp disposed of in 2023",
+        "500,000.00",
+    ),
+    "ca/t657_chart_2021_part_1_h_fraction": (
+        'amount f plus amount g (if negative, enter "0")',
+        "× 1/2",
+    ),
+    "ca/t657_chart_2021_part_1_i_fraction": (
+        "amount included in box 30 of a 2025 t3 slip and the footnote area indicates the property "
+        "was disposed of in 2021",
+        "× 1/2",
+    ),
+    "ca/t657_chart_2021_part_2_f_fraction": (
+        "amount from line 6 of form t2017",
+        "× 1/2",
+    ),
+    "ca/t657_chart_2021_part_2_g_fraction": (
+        "amount included in box 30 of a 2025 t3 slip and the footnote area indicates the qffp was "
+        "disposed of in 2021",
+        "× 1/2",
+    ),
     "ca/chart_2_numerator_one": (
         "adjustment of 2000 capital gains deduction",
         "amount from line 14 × [ 1 – ( 2 × ir )]",
@@ -97,10 +160,32 @@ FRACTIONS = {
     "ca/t657_chart_2_line_12_fraction": Fraction(1, 3),
     "ca/t657_part_1_k_fraction": Fraction(1, 2),
     "ca/t657_part_2_k_fraction": Fraction(1, 2),
+    "ca/t657_chart_2024_period_1_i_fraction": Fraction(1, 2),
+    "ca/t657_chart_2024_period_2_i_fraction": Fraction(1, 2),
+    "ca/t657_chart_2021_part_1_h_fraction": Fraction(1, 2),
+    "ca/t657_chart_2021_part_1_i_fraction": Fraction(1, 2),
+    "ca/t657_chart_2021_part_2_f_fraction": Fraction(1, 2),
+    "ca/t657_chart_2021_part_2_g_fraction": Fraction(1, 2),
+    "ca/t657_chart_2022_part_1_h_fraction": Fraction(1, 2),
+    "ca/t657_chart_2022_part_1_i_fraction": Fraction(1, 2),
+    "ca/t657_chart_2022_part_2_f_fraction": Fraction(1, 2),
+    "ca/t657_chart_2022_part_2_g_fraction": Fraction(1, 2),
+    "ca/t657_chart_2023_part_1_h_fraction": Fraction(1, 2),
+    "ca/t657_chart_2023_part_1_i_fraction": Fraction(1, 2),
+    "ca/t657_chart_2023_part_2_f_fraction": Fraction(1, 2),
+    "ca/t657_chart_2023_part_2_g_fraction": Fraction(1, 2),
 }
 CREDITS = {
     "ca/chart_2025_part_1_amount_a": D("522145"),
     "ca/chart_2025_part_2_amount_a": D("625000"),
+    "ca/chart_2024_period_1_amount_a": D("508418"),
+    "ca/chart_2024_period_2_amount_a": D("625000"),
+    "ca/chart_2021_part_1_amount_a": D("446109"),
+    "ca/chart_2021_part_2_amount_a": D("500000"),
+    "ca/chart_2022_part_1_amount_a": D("456815"),
+    "ca/chart_2022_part_2_amount_a": D("500000"),
+    "ca/chart_2023_part_1_amount_a": D("485595"),
+    "ca/chart_2023_part_2_amount_a": D("500000"),
     "ca/chart_2_numerator_one": D("1"),
 }
 ROUNDING_FAMILIES = ("ca/t657_chart_2_line_16_rounding",)

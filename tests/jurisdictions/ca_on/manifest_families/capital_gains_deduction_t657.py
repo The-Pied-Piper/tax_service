@@ -52,6 +52,7 @@ from app.jurisdictions.ca.catalog import (
     CHART_2_LINE_19,
     CHART_2_NUMERATOR_ONE,
     CHART_2_TWICE_IR,
+    CHART_2024_PERIOD_2_AMOUNT_N,
     CHART_2025_PART_1_AMOUNT_A,
     CHART_2025_PART_1_AMOUNT_C,
     CHART_2025_PART_1_AMOUNT_E,
@@ -111,7 +112,6 @@ from app.jurisdictions.ca.catalog import (
     T657_GAINS_2002_TO_2024,
     T657_INCLUSION_RATE_2000,
     T657_NET_NON_ELIGIBLE_TAXABLE_CAPITAL_GAINS,
-    T657_PART_1_AMOUNT_B,
     T657_PART_1_AMOUNT_F,
     T657_PART_1_AMOUNT_G,
     T657_PART_1_AMOUNT_H,
@@ -153,7 +153,6 @@ INPUTS = frozenset(
         "ca/t657_chart_2_line_14",
         "ca/t657_inclusion_rate_2000",
         "ca/t657_chart_2_line_18",
-        "ca/t657_part_1_amount_b",
         "ca/t657_part_1_amount_f",
         "ca/t657_part_1_amount_g",
         "ca/t657_part_1_amount_h",
@@ -626,13 +625,14 @@ STEPS = {
     ),
     # Chart 2025 Part 1 "Amount A minus amount B" C (B "Enter the last amount that you calculated
     # for "Total amount of capital gains included in 2025 income eligible for the capital gains
-    # deduction""). The form prints no floor; floored at 0 here, an assumption to be confirmed.
+    # deduction"" from 2016 to 2024: Chart 2024 Period 2's amount N). The form prints no floor;
+    # floored at 0 here, an assumption to be confirmed.
     CapabilitySelection(
         name="core/subtract_not_below_zero",
         params={},
         consumes={
             "amount": "ca/chart_2025_part_1_amount_a",
-            "less": "ca/t657_part_1_amount_b",
+            "less": "ca/chart_2024_period_2_amount_n",
         },
         produces={"output": "ca/chart_2025_part_1_amount_c"},
     ),
@@ -700,14 +700,15 @@ STEPS = {
         },
         produces={"output": "ca/chart_2025_part_1_amount_n"},
     ),
-    # Chart 2025 Part 1 "Amount N plus amount O" P (O "Enter amount B from above.").
+    # Chart 2025 Part 1 "Amount N plus amount O" P (O "Enter amount B from above.", Chart 2024
+    # Period 2's amount N).
     CapabilitySelection(
         name="core/sum",
         params={},
         consumes={
             "parts": (
                 "ca/chart_2025_part_1_amount_n",
-                "ca/t657_part_1_amount_b",
+                "ca/chart_2024_period_2_amount_n",
             ),
         },
         produces={"output": "ca/chart_2025_part_1_amount_p"},
@@ -1099,7 +1100,7 @@ WIRING = {
     ),
     (
         SubtractNotBelowZero,
-        frozenset({CHART_2025_PART_1_AMOUNT_A, T657_PART_1_AMOUNT_B}),
+        frozenset({CHART_2025_PART_1_AMOUNT_A, CHART_2024_PERIOD_2_AMOUNT_N}),
         frozenset({CHART_2025_PART_1_AMOUNT_C}),
     ),
     (
@@ -1137,7 +1138,7 @@ WIRING = {
     ),
     (
         Sum,
-        frozenset({CHART_2025_PART_1_AMOUNT_N, T657_PART_1_AMOUNT_B}),
+        frozenset({CHART_2025_PART_1_AMOUNT_N, CHART_2024_PERIOD_2_AMOUNT_N}),
         frozenset({CHART_2025_PART_1_AMOUNT_P}),
     ),
     (

@@ -40,8 +40,8 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 839
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 839
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 926
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 926
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -817,7 +817,36 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/t657_chart_2_line_14",
         "ca/t657_inclusion_rate_2000",
         "ca/t657_chart_2_line_18",
-        "ca/t657_part_1_amount_b",
+        "ca/t657_chart_2024_period_1_amount_f",
+        "ca/t657_chart_2024_period_1_amount_g",
+        "ca/t657_chart_2024_period_1_amount_h",
+        "ca/t657_chart_2024_period_1_amount_j",
+        "ca/t657_chart_2024_period_2_amount_f",
+        "ca/t657_chart_2024_period_2_amount_g",
+        "ca/t657_chart_2024_period_2_amount_h",
+        "ca/t657_chart_2024_period_2_amount_j",
+        "ca/t657_chart_2021_amount_b",
+        "ca/t657_chart_2021_uses_d_instead",
+        "ca/t657_chart_2021_amount_d_instead",
+        "ca/t657_chart_2021_amount_f",
+        "ca/t657_chart_2021_amount_g",
+        "ca/t657_chart_2021_amount_i",
+        "ca/t657_chart_2021_part_2_amount_g",
+        "ca/t657_chart_2021_claims_additional_deduction",
+        "ca/t657_chart_2022_uses_d_instead",
+        "ca/t657_chart_2022_amount_d_instead",
+        "ca/t657_chart_2022_amount_f",
+        "ca/t657_chart_2022_amount_g",
+        "ca/t657_chart_2022_amount_i",
+        "ca/t657_chart_2022_part_2_amount_g",
+        "ca/t657_chart_2022_claims_additional_deduction",
+        "ca/t657_chart_2023_uses_d_instead",
+        "ca/t657_chart_2023_amount_d_instead",
+        "ca/t657_chart_2023_amount_f",
+        "ca/t657_chart_2023_amount_g",
+        "ca/t657_chart_2023_amount_i",
+        "ca/t657_chart_2023_part_2_amount_g",
+        "ca/t657_chart_2023_claims_additional_deduction",
         "ca/t657_part_1_amount_f",
         "ca/t657_part_1_amount_g",
         "ca/t657_part_1_amount_h",
@@ -889,6 +918,93 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/chart_2025_part_2_amount_n",
         "ca/chart_2025_part_2_amount_p",
         "ca/chart_2025_part_2_amount_q",
+        "ca/chart_2024_period_1_amount_a",
+        "ca/chart_2024_period_1_amount_c",
+        "ca/chart_2024_period_1_amount_e",
+        "ca/chart_2024_period_1_amounts_f_to_h",
+        "ca/chart_2024_period_1_amount_i",
+        "ca/chart_2024_period_1_amount_k",
+        "ca/chart_2024_period_1_amount_l",
+        "ca/chart_2024_period_1_amount_n",
+        "ca/chart_2024_period_1_amount_o",
+        "ca/chart_2024_period_2_amount_a",
+        "ca/chart_2024_period_2_amount_c",
+        "ca/chart_2024_period_2_amount_e",
+        "ca/chart_2024_period_2_amounts_f_to_h",
+        "ca/chart_2024_period_2_amount_i",
+        "ca/chart_2024_period_2_amount_k",
+        "ca/chart_2024_period_2_amount_l",
+        "ca/chart_2024_period_2_amount_n",
+        "ca/chart_2024_period_2_amount_o",
+        "ca/chart_2021_part_1_amount_a",
+        "ca/chart_2021_part_1_amount_c",
+        "ca/chart_2021_amount_d",
+        "ca/chart_2021_part_1_amount_e",
+        "ca/chart_2021_part_1_amounts_f_and_g",
+        "ca/chart_2021_part_1_amount_h",
+        "ca/chart_2021_part_1_amount_i",
+        "ca/chart_2021_part_1_amount_j",
+        "ca/chart_2021_part_1_amount_k",
+        "ca/chart_2021_part_1_amount_m",
+        "ca/chart_2021_part_1_amount_n",
+        "ca/chart_2021_part_2_amount_a",
+        "ca/chart_2021_part_2_amount_c",
+        "ca/chart_2021_part_2_amount_e",
+        "ca/chart_2021_part_2_amount_f",
+        "ca/chart_2021_part_2_amount_g",
+        "ca/chart_2021_part_2_amount_h",
+        "ca/chart_2021_part_2_amount_i",
+        "ca/chart_2021_part_2_amount_k",
+        "ca/chart_2021_part_2_amount_l",
+        "ca/chart_2021_part_2_amount_m",
+        "ca/chart_2021_part_2_applies",
+        "ca/chart_2021_total_carried",
+        "ca/chart_2022_part_1_amount_a",
+        "ca/chart_2022_part_1_amount_c",
+        "ca/chart_2022_amount_d",
+        "ca/chart_2022_part_1_amount_e",
+        "ca/chart_2022_part_1_amounts_f_and_g",
+        "ca/chart_2022_part_1_amount_h",
+        "ca/chart_2022_part_1_amount_i",
+        "ca/chart_2022_part_1_amount_j",
+        "ca/chart_2022_part_1_amount_k",
+        "ca/chart_2022_part_1_amount_m",
+        "ca/chart_2022_part_1_amount_n",
+        "ca/chart_2022_part_2_amount_a",
+        "ca/chart_2022_part_2_amount_c",
+        "ca/chart_2022_part_2_amount_e",
+        "ca/chart_2022_part_2_amount_f",
+        "ca/chart_2022_part_2_amount_g",
+        "ca/chart_2022_part_2_amount_h",
+        "ca/chart_2022_part_2_amount_i",
+        "ca/chart_2022_part_2_amount_k",
+        "ca/chart_2022_part_2_amount_l",
+        "ca/chart_2022_part_2_amount_m",
+        "ca/chart_2022_part_2_applies",
+        "ca/chart_2022_total_carried",
+        "ca/chart_2023_part_1_amount_a",
+        "ca/chart_2023_part_1_amount_c",
+        "ca/chart_2023_amount_d",
+        "ca/chart_2023_part_1_amount_e",
+        "ca/chart_2023_part_1_amounts_f_and_g",
+        "ca/chart_2023_part_1_amount_h",
+        "ca/chart_2023_part_1_amount_i",
+        "ca/chart_2023_part_1_amount_j",
+        "ca/chart_2023_part_1_amount_k",
+        "ca/chart_2023_part_1_amount_m",
+        "ca/chart_2023_part_1_amount_n",
+        "ca/chart_2023_part_2_amount_a",
+        "ca/chart_2023_part_2_amount_c",
+        "ca/chart_2023_part_2_amount_e",
+        "ca/chart_2023_part_2_amount_f",
+        "ca/chart_2023_part_2_amount_g",
+        "ca/chart_2023_part_2_amount_h",
+        "ca/chart_2023_part_2_amount_i",
+        "ca/chart_2023_part_2_amount_k",
+        "ca/chart_2023_part_2_amount_l",
+        "ca/chart_2023_part_2_amount_m",
+        "ca/chart_2023_part_2_applies",
+        "ca/chart_2023_total_carried",
         "ca/capital_gains_deduction",
         "ca/t657_chart_1_column_a",
         "ca/t657_chart_1_column_b",
@@ -1603,15 +1719,15 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 839
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 839
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 926
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 926
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 839
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 839
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 926
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 926
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

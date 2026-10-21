@@ -667,7 +667,36 @@ inputs:
   - ca/t657_chart_2_line_14
   - ca/t657_inclusion_rate_2000
   - ca/t657_chart_2_line_18
-  - ca/t657_part_1_amount_b
+  - ca/t657_chart_2021_amount_b
+  - ca/t657_chart_2021_uses_d_instead
+  - ca/t657_chart_2021_amount_d_instead
+  - ca/t657_chart_2021_amount_f
+  - ca/t657_chart_2021_amount_g
+  - ca/t657_chart_2021_amount_i
+  - ca/t657_chart_2021_part_2_amount_g
+  - ca/t657_chart_2021_claims_additional_deduction
+  - ca/t657_chart_2022_uses_d_instead
+  - ca/t657_chart_2022_amount_d_instead
+  - ca/t657_chart_2022_amount_f
+  - ca/t657_chart_2022_amount_g
+  - ca/t657_chart_2022_amount_i
+  - ca/t657_chart_2022_part_2_amount_g
+  - ca/t657_chart_2022_claims_additional_deduction
+  - ca/t657_chart_2023_uses_d_instead
+  - ca/t657_chart_2023_amount_d_instead
+  - ca/t657_chart_2023_amount_f
+  - ca/t657_chart_2023_amount_g
+  - ca/t657_chart_2023_amount_i
+  - ca/t657_chart_2023_part_2_amount_g
+  - ca/t657_chart_2023_claims_additional_deduction
+  - ca/t657_chart_2024_period_1_amount_f
+  - ca/t657_chart_2024_period_1_amount_g
+  - ca/t657_chart_2024_period_1_amount_h
+  - ca/t657_chart_2024_period_1_amount_j
+  - ca/t657_chart_2024_period_2_amount_f
+  - ca/t657_chart_2024_period_2_amount_g
+  - ca/t657_chart_2024_period_2_amount_h
+  - ca/t657_chart_2024_period_2_amount_j
   - ca/t657_part_1_amount_f
   - ca/t657_part_1_amount_g
   - ca/t657_part_1_amount_h
