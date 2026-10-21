@@ -582,6 +582,8 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/current_year_tuition_available",
         "ca/total_tuition_available",
         "ca/tuition_income_base",
+        "ca/tosi_adjusted_taxable_income",
+        "ca/tuition_income_with_tosi",
         "ca/credit_amounts_subtotal",
         "ca/tuition_income_less_credits",
         "ca/unused_tuition_claimed",

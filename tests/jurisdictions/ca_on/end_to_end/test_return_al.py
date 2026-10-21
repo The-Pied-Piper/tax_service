@@ -7,6 +7,7 @@ from typing import Any
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.domain.parameters.rate import Rate
 from app.domain.trace import (
+    DividedByRateLine,
     GreaterOfLine,
     RateAppliedLine,
     SubtractedLine,
@@ -21,6 +22,7 @@ from app.jurisdictions.ca.catalog import (
     AGE_AMOUNT_BEFORE_COUNT,
     AGE_INCOME_OVER_THRESHOLD,
     BASIC_PERSONAL_AMOUNT,
+    CREDIT_AMOUNTS_SUBTOTAL,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     FEDERAL_BASIC_TAX,
@@ -51,9 +53,14 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_INCOME,
     TOSI_ADJUSTED_NET_INCOME,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
+    TOSI_ADJUSTED_TAXABLE_INCOME,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
     TOTAL_SPLIT_INCOME,
+    TUITION_INCOME_BASE,
+    TUITION_INCOME_LESS_CREDITS,
+    TUITION_INCOME_REMAINING,
+    TUITION_INCOME_WITH_TOSI,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
@@ -126,6 +133,73 @@ def test_return_al_pays_the_tax_on_split_income_of_3795_on_line_40424() -> None:
     assert worksheet.get(ontario.ONTARIO_TAX).value == D("2017.53")
     assert worksheet.get(TOTAL_PAYABLE).value == D("4774.07")
     assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("4774.07")
+
+
+def test_return_al_adds_t1206_line_8a_of_26172_41_to_schedule_11_line_11() -> None:
+    worksheet = return_al()
+
+    # T1206 Part 2 line 8A "Amount from line 8 ÷ 14.5%": 3795.00 / 0.145 = 26172.4137..., rounded
+    # half-up to the cent, 26172.41. "Calculate line 8A and add it to the amount on line 11 of
+    # Schedule 11": line 11 is the taxable income, 0.00 (at or below 57375), so the sum is 26172.41.
+    assert worksheet.get(TAXABLE_INCOME).value == D("0.00")
+    assert worksheet.get(TOSI_ADJUSTED_TAXABLE_INCOME).value == D("26172.41")
+    assert worksheet.get(TUITION_INCOME_BASE).value == D("0.00")
+    assert worksheet.get(TUITION_INCOME_WITH_TOSI).value == D("26172.41")
+    # Line 13 reads that sum: 26172.41 less line 12 (the basic personal amount, 16129.00) is
+    # 10043.41, and line 15 is the same as line 14 (the unused tuition from 2024) is 0.
+    assert worksheet.get(CREDIT_AMOUNTS_SUBTOTAL).value == D("16129.00")
+    assert worksheet.get(TUITION_INCOME_LESS_CREDITS).value == D("10043.41")
+    assert worksheet.get(TUITION_INCOME_REMAINING).value == D("10043.41")
+
+
+def test_return_als_trace_follows_line_8a_into_schedule_11_line_13() -> None:
+    worksheet = return_al()
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+
+    for line in (
+        "tosi_adjusted_taxable_income: federal_tax_on_split_income 3795 divided by 14.5% "
+        "(half-up to 0.01) = 26172.41",
+        "tuition_income_with_tosi: tuition_income_base 0 + tosi_adjusted_taxable_income 26172.41 "
+        "= 26172.41",
+        "tuition_income_less_credits: tuition_income_with_tosi 26172.41 "
+        "less credit_amounts_subtotal 16129, not below 0 = 10043.41",
+    ):
+        assert line in rendered, line
+
+
+def test_return_al_records_line_8a_and_its_sum_as_structured_lines() -> None:
+    trace = return_al().trace
+
+    assert (
+        DividedByRateLine(
+            TOSI_ADJUSTED_TAXABLE_INCOME,
+            FEDERAL_TAX_ON_SPLIT_INCOME,
+            D("3795.00"),
+            Rate(D("0.145")),
+            CENT,
+            D("26172.41"),
+        )
+        in trace
+    )
+    assert (
+        SumLine(
+            output=TUITION_INCOME_WITH_TOSI,
+            parts=((TUITION_INCOME_BASE, D("0.00")), (TOSI_ADJUSTED_TAXABLE_INCOME, D("26172.41"))),
+            total=D("26172.41"),
+        )
+        in trace
+    )
+    assert (
+        SubtractedNotBelowZeroLine(
+            output=TUITION_INCOME_LESS_CREDITS,
+            minuend=TUITION_INCOME_WITH_TOSI,
+            minuend_amount=D("26172.41"),
+            subtrahend=CREDIT_AMOUNTS_SUBTOTAL,
+            subtrahend_amount=D("16129.00"),
+            result=D("10043.41"),
+        )
+        in trace
+    )
 
 
 def test_return_als_trace_follows_form_t1206_line_by_line() -> None:

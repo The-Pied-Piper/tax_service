@@ -32,6 +32,7 @@ from app.jurisdictions.ca.capabilities.chart_b_zone_b_total import ChartBZoneBTo
 from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
 from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.capabilities.disability_transfer_amount import DisabilityTransferAmount
+from app.jurisdictions.ca.capabilities.divided_by_rate import DividedByRate
 from app.jurisdictions.ca.capabilities.ei_excluded_slips_net_income import (
     EiExcludedSlipsNetIncome,
 )
@@ -506,6 +507,7 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_THRESHOLD,
     TOSI_ADJUSTED_NET_INCOME,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
+    TOSI_ADJUSTED_TAXABLE_INCOME,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
     TOTAL_CARRYING_CHARGES,
     TOTAL_CHARITABLE_DONATIONS,
@@ -520,6 +522,7 @@ from app.jurisdictions.ca.catalog import (
     TRAVEL_TOTAL_ZONE_B,
     TRAVEL_TRIPS,
     TRAVEL_ZONE_B_DEDUCTION,
+    TUITION_INCOME_WITH_TOSI,
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
     UCCB_REPAYMENT,
@@ -916,6 +919,9 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         worksheet.producer_of(TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO), SumNotBelowZero
     )
     assert isinstance(worksheet.producer_of(FEDERAL_TAX_ON_SPLIT_INCOME), ApplyRate)
+    # Line 8A is line 8 divided by 14.5%, and Schedule 11 line 11 plus it is a plain sum.
+    assert isinstance(worksheet.producer_of(TOSI_ADJUSTED_TAXABLE_INCOME), DividedByRate)
+    assert isinstance(worksheet.producer_of(TUITION_INCOME_WITH_TOSI), Sum)
     assert isinstance(worksheet.producer_of(FEDERAL_TAX_WITH_SPLIT_INCOME), Sum)
     assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_10), Sum)
     assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_13), Sum)
