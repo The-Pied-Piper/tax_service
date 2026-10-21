@@ -16,6 +16,13 @@ from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADVANCED_CANADA_WORKERS_BENEFIT,
     AGED_18_OR_OLDER_AT_END_OF_2025,
+    AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
+    AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
+    AMT_LIMITED_PARTNER_CARRYING_CHARGES,
+    AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
+    AMT_RENTAL_PROPERTY_INCOME_BEFORE_CCA,
+    AMT_TAX_SHELTER_DEDUCTIBLE_AMOUNTS,
+    AMT_TAX_SHELTER_LOSSES,
     BOND_DISPOSITIONS,
     BORN_IN_1960_OR_EARLIER,
     BUSINESS_ADVERTISING,
@@ -1168,6 +1175,13 @@ def compute(
     qbt_other_investment_expenses: str = "0",
     qbt_other_property_income: str = "0",
     qbt_deduction_claimed: str = "0",
+    amt_film_property_cca_and_carrying_charges: str = "0",
+    amt_film_property_income_before_cca: str = "0",
+    amt_rental_property_cca_and_carrying_charges: str = "0",
+    amt_rental_property_income_before_cca: str = "0",
+    amt_tax_shelter_losses: str = "0",
+    amt_tax_shelter_deductible_amounts: str = "0",
+    amt_limited_partner_carrying_charges: str = "0",
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -1657,6 +1671,19 @@ def compute(
         Artifact(QBT_OTHER_INVESTMENT_EXPENSES, D(qbt_other_investment_expenses)),
         Artifact(QBT_OTHER_PROPERTY_INCOME, D(qbt_other_property_income)),
         Artifact(QBT_DEDUCTION_CLAIMED, D(qbt_deduction_claimed)),
+        Artifact(
+            AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
+            D(amt_film_property_cca_and_carrying_charges),
+        ),
+        Artifact(AMT_FILM_PROPERTY_INCOME_BEFORE_CCA, D(amt_film_property_income_before_cca)),
+        Artifact(
+            AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
+            D(amt_rental_property_cca_and_carrying_charges),
+        ),
+        Artifact(AMT_RENTAL_PROPERTY_INCOME_BEFORE_CCA, D(amt_rental_property_income_before_cca)),
+        Artifact(AMT_TAX_SHELTER_LOSSES, D(amt_tax_shelter_losses)),
+        Artifact(AMT_TAX_SHELTER_DEDUCTIBLE_AMOUNTS, D(amt_tax_shelter_deductible_amounts)),
+        Artifact(AMT_LIMITED_PARTNER_CARRYING_CHARGES, D(amt_limited_partner_carrying_charges)),
     )
 
 

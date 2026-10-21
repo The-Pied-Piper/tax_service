@@ -23,6 +23,7 @@ from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Manifest
 from app.main import build_tax_computation
 from tests.jurisdictions.ca_on.manifest_families import (
+    alternative_minimum_tax,
     canada_workers_benefit,
     capital_gains_deduction_qbt,
     credits_against_federal_tax,
@@ -57,6 +58,7 @@ FAMILIES: tuple[ModuleType, ...] = (
     resp_aips,
     other_inputs,
     net_tax,
+    alternative_minimum_tax,
     canada_workers_benefit,
     refundable_credits,
     refund,
@@ -149,14 +151,20 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 643
+    assert len(found.capabilities) == 647
     # T2125 Area A column 22 "UCC at the end of the year", a record list of each class's closing UCC
     # for next year, and Part 7 line 7O "Business-use-of-home expenses available to carry forward",
     # which nothing else on the return reads.
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 643
+    assert len(found.capabilities) == 647
+    # Form T691 Part 1 line 12 "Add lines 1, 4, 7, and 11.", the adjusted taxable income subtotal,
+    # which nothing else on the return reads yet.
+    assert found.outputs == OUTPUTS
+    # List order carries no meaning: the composition derives the run order from the contracts.
+    assert set(found.capabilities) == STEPS
+    assert len(found.capabilities) == 647
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -166,5 +174,6 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 643
+    assert len(composition.order) == 647
+    assert len(composition.order) == 647
     assert wiring == WIRING

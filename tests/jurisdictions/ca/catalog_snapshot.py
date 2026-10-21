@@ -883,6 +883,17 @@ REGISTERED = frozenset(
         "ca/top_up_threshold",
         "ca/top_up_excess",
         "ca/top_up_tax_credit",
+        "ca/amt_film_property_cca_and_carrying_charges",
+        "ca/amt_film_property_income_before_cca",
+        "ca/amt_film_property_adjustment",
+        "ca/amt_rental_property_cca_and_carrying_charges",
+        "ca/amt_rental_property_income_before_cca",
+        "ca/amt_rental_property_adjustment",
+        "ca/amt_tax_shelter_losses",
+        "ca/amt_tax_shelter_deductible_amounts",
+        "ca/amt_limited_partner_carrying_charges",
+        "ca/amt_tax_shelter_adjustments",
+        "ca/amt_part_1_subtotal",
     }
 )
 
