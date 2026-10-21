@@ -7,7 +7,7 @@ capabilities:
     produces:
       output: ca/chart_2024_period_1_amount_a
   # Chart 2024 Period 1 "Amount A minus amount B" C (B "Enter the last amount that you calculated for
-  # "Total amount of capital gains included in 2025 income eligible for capital gains deduction" from
+  # "Total amount of capital gains included in 2025 income eligible for the capital gains deduction" from
   # 2016 to 2023. If you did not complete charts for 2016 to 2023, enter "0"."). The form prints no
   # floor; floored at 0 here, an assumption to be confirmed.
   - name: core/subtract_not_below_zero
@@ -90,7 +90,7 @@ capabilities:
     produces:
       output: ca/chart_2024_period_2_amount_a
   # Chart 2024 Period 2 "Amount A minus amount B" C (B "Enter the last amount that you calculated for
-  # "Total amount of capital gains included in 2025 income eligible for capital gains deduction" from
+  # "Total amount of capital gains included in 2025 income eligible for the capital gains deduction" from
   # 2016 to 2024." is Period 1's amount N, the total carried into Period 2). The form prints no floor;
   # floored at 0 here, an assumption to be confirmed.
   - name: core/subtract_not_below_zero
