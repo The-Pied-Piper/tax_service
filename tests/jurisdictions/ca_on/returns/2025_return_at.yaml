@@ -168,6 +168,7 @@ inputs:
   ca-on/spouse_return_ontario_basic_tax: "1010.00"
   ca-on/spouse_return_ontario_basic_personal_amount: "12747"
   ca-on/spouse_return_ontario_line_24: "1500"
+  ca/unapplied_net_capital_losses_2000: "0"
 expected:
   ca/total_income: "40000"
   ca/cpp_base_contributions: "1806.75"
@@ -238,3 +239,4 @@ expected:
   ca/amt_other_years_losses_total: "0"
   ca/amt_security_options_d1_total: "0"
   ca/amt_security_options_net: "0"
+  ca/net_capital_loss_balance_2000: "0.00"

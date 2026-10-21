@@ -245,6 +245,7 @@ inputs:
       ca/cca_claimed: "2000"
       ca/cca_no_property_left: "0"
   ca/cpp_months: "12"
+  ca/unapplied_net_capital_losses_2000: "0"
 expected:
   ca/business_sales_subtotal: "50000"
   ca/business_quick_method_assistance: "0"
@@ -486,3 +487,4 @@ expected:
   ca/amt_other_years_losses_total: "0"
   ca/amt_security_options_d1_total: "0"
   ca/amt_security_options_net: "0"
+  ca/net_capital_loss_balance_2000: "0.00"

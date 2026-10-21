@@ -436,6 +436,7 @@ inputs:
       ca/cca_claimed: "1200"
       ca/cca_no_property_left: "0"
   ca/cpp_months: "12"
+  ca/unapplied_net_capital_losses_2000: "0"
 expected:
   ca/taxable_capital_gains: "0.00"
   ca/investment_income_before_prior_years: "0"
@@ -648,3 +649,4 @@ expected:
   ca/amt_other_years_losses_total: "0"
   ca/amt_security_options_d1_total: "0"
   ca/amt_security_options_net: "0"
+  ca/net_capital_loss_balance_2000: "0.00"

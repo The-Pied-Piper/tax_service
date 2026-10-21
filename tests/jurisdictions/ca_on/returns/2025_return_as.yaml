@@ -138,6 +138,7 @@ inputs:
   ca/cpp_months: "12"
   ca/resident_in_canada_throughout_2025: "1"
   ca/aged_18_or_older_at_end_of_2025: "1"
+  ca/unapplied_net_capital_losses_2000: "0"
 expected:
   ca/cpp_second_additional_earnings_maximum: "9900.00"
   ca/cpp_basic_exemption: "3500.00"
@@ -230,3 +231,4 @@ expected:
   ca/amt_other_years_losses_total: "0"
   ca/amt_security_options_d1_total: "0"
   ca/amt_security_options_net: "0"
+  ca/net_capital_loss_balance_2000: "0.00"
