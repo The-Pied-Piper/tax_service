@@ -108,6 +108,7 @@ PART_THREE = ArtifactKind("ex/part_three", Decimal)
 TOTAL = ArtifactKind("ex/total", Decimal)
 GROSS_AMOUNT = ArtifactKind("ex/gross_amount", Decimal)
 RATED_AMOUNT = ArtifactKind("ex/rated_amount", Decimal)
+RATED_AMOUNT_RATE = ArtifactKind("ex/rated_amount", Rate)
 REDUCTION = ArtifactKind("ex/reduction", Decimal)
 NET_AMOUNT = ArtifactKind("ex/net_amount", Decimal)
 PERSONAL_AMOUNT = ArtifactKind("ex/personal_amount", Decimal)
@@ -2688,7 +2689,7 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
         ),
         (
             RatioTruncatedLine(
-                RATED_AMOUNT,
+                RATED_AMOUNT_RATE,
                 GROSS_AMOUNT,
                 D("3.0000E+4"),
                 TOTAL,
@@ -3533,7 +3534,7 @@ def test_renders_a_zero_count_and_a_negative_minimum() -> None:
 
 def test_renders_a_ratio_truncated_to_five_decimals() -> None:
     line = RatioTruncatedLine(
-        RATED_AMOUNT,
+        RATED_AMOUNT_RATE,
         GROSS_AMOUNT,
         D("30000"),
         TOTAL,
@@ -3550,7 +3551,7 @@ def test_renders_a_ratio_truncated_to_five_decimals() -> None:
 
 def test_renders_a_ratio_with_a_zero_divisor() -> None:
     line = RatioTruncatedLine(
-        RATED_AMOUNT, GROSS_AMOUNT, D("5"), TOTAL, D("0"), FIVE_DECIMALS_DOWN, False, D("0")
+        RATED_AMOUNT_RATE, GROSS_AMOUNT, D("5"), TOTAL, D("0"), FIVE_DECIMALS_DOWN, False, D("0")
     )
 
     assert render(line) == "rated_amount: gross_amount 5 divided by total 0 (down to 0.00001) = 0"
@@ -3558,7 +3559,7 @@ def test_renders_a_ratio_with_a_zero_divisor() -> None:
 
 def test_renders_a_capped_ratio() -> None:
     line = RatioTruncatedLine(
-        RATED_AMOUNT,
+        RATED_AMOUNT_RATE,
         GROSS_AMOUNT,
         D("70000"),
         TOTAL,
@@ -3575,7 +3576,7 @@ def test_renders_a_capped_ratio() -> None:
 
 def test_renders_a_capped_ratio_that_was_not_reduced() -> None:
     line = RatioTruncatedLine(
-        RATED_AMOUNT,
+        RATED_AMOUNT_RATE,
         GROSS_AMOUNT,
         D("30000"),
         TOTAL,
@@ -3593,7 +3594,7 @@ def test_renders_a_capped_ratio_that_was_not_reduced() -> None:
 
 def test_renders_a_ratio_without_rounding() -> None:
     line = RatioTruncatedLine(
-        RATED_AMOUNT, GROSS_AMOUNT, D("1"), TOTAL, D("4"), NO_ROUNDING, False, D("0.25")
+        RATED_AMOUNT_RATE, GROSS_AMOUNT, D("1"), TOTAL, D("4"), NO_ROUNDING, False, D("0.25")
     )
 
     assert render(line) == "rated_amount: gross_amount 1 divided by total 4 (no rounding) = 0.25"

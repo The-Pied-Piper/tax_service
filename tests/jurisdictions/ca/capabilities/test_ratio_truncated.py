@@ -4,15 +4,18 @@ A ratio of two money figures, rounded once by a `rounding_only` dataset (a form 
 "line 4 divided by line 5, calculated to the fifth decimal place without rounding" is the dataset
 with increment 0.00001 and mode down). Its slots: one parameter slot `rounding` (a `rounding_only`
 dataset), two consumed slots `dividend` and `divisor` (`Decimal` kinds), one produced slot
-`output`. Two capabilities share one implementation and these slots: `ca/ratio_truncated`
-(`RatioTruncated`) and `ca/ratio_truncated_at_most_one` (`RatioTruncatedAtMostOne`), both in
-the module `ratio_truncated`.
+`output`, a `Rate` kind. Two capabilities share one implementation and these slots:
+`ca/ratio_truncated` (`RatioTruncated`) and `ca/ratio_truncated_at_most_one`
+(`RatioTruncatedAtMostOne`), both in the module `ratio_truncated`.
 
 The output is `rounding.apply(dividend / divisor)`, the quotient an exact fraction. A zero divisor
 gives 0, never an error. The `at_most_one` one: a dividend above the divisor gives 1, checked
 before the zero-divisor rule (a positive dividend over a zero divisor gives 1), else the rounded
 ratio. Each records one `RatioTruncatedLine`, its `cap_at_one` field set by which class
 records it.
+
+The output is a `Rate`: a ratio above 1 from the uncapped one (and any negative ratio) raises
+`InvalidRateError` from `Rate` itself.
 
 Worked example: 30,000 / 70,000 = 0.428571..., down to 0.00001 is 0.42857.
 """
@@ -35,6 +38,7 @@ from app.domain.capability import CapabilityRegistry
 from app.domain.errors import (
     CapabilityContractError,
     InvalidCapabilityError,
+    InvalidRateError,
     MissingArtifactError,
     NotFoundError,
 )
@@ -57,7 +61,7 @@ FIVE_DECIMALS_DOWN = RoundTo(D("0.00001"), RoundingMode.DOWN)
 
 DIVIDEND = ArtifactKind("ex/part_earned", Decimal)
 DIVISOR = ArtifactKind("ex/all_earned", Decimal)
-OUTPUT = ArtifactKind("ex/earned_share", Decimal)
+OUTPUT = ArtifactKind("ex/earned_share", Rate)
 
 
 def rounding(rule: RoundingRule = FIVE_DECIMALS_DOWN) -> ParameterDataset[RoundingOnly]:
@@ -114,7 +118,7 @@ def test_declares_its_slots() -> None:
     assert RatioTruncated.PARAMETERS == {"rounding": ROUNDING_ONLY}
     assert RatioTruncated.PARAMETERS["rounding"] is ROUNDING_ONLY
     assert RatioTruncated.CONSUMES == {"dividend": Decimal, "divisor": Decimal}
-    assert RatioTruncated.PRODUCES == {"output": Decimal}
+    assert RatioTruncated.PRODUCES == {"output": Rate}
     assert not RatioTruncated.is_list_slot("dividend")
     assert not RatioTruncated.is_list_slot("divisor")
 
@@ -123,7 +127,7 @@ def test_the_capped_one_has_the_same_slots_and_no_flag() -> None:
     for cls in (RatioTruncated, RatioTruncatedAtMostOne):
         assert cls.PARAMETERS == {"rounding": ROUNDING_ONLY}
         assert cls.CONSUMES == {"dividend": Decimal, "divisor": Decimal}
-        assert cls.PRODUCES == {"output": Decimal}
+        assert cls.PRODUCES == {"output": Rate}
 
 
 def test_takes_no_flag() -> None:
@@ -151,7 +155,7 @@ def test_its_slots_cannot_be_changed() -> None:
 def test_is_built_from_its_slot_names_as_keywords() -> None:
     wired = RatioTruncated(rounding=rounding(), dividend=DIVIDEND, divisor=DIVISOR, output=OUTPUT)
 
-    assert compute(wired, "30000", "70000") == Artifact(OUTPUT, D("0.42857"))
+    assert compute(wired, "30000", "70000") == Artifact(OUTPUT, Rate(D("0.42857")))
 
 
 def test_the_capped_one_is_built_from_its_slot_names_as_keywords() -> None:
@@ -159,19 +163,17 @@ def test_the_capped_one_is_built_from_its_slot_names_as_keywords() -> None:
         rounding=rounding(), dividend=DIVIDEND, divisor=DIVISOR, output=OUTPUT
     )
 
-    assert compute(wired, "3", "2") == Artifact(OUTPUT, D("1"))
+    assert compute(wired, "3", "2") == Artifact(OUTPUT, Rate(D("1")))
 
 
 @pytest.mark.parametrize(
     ("kinds", "slots"),
     [
         ((DIVIDEND, DIVIDEND, OUTPUT), ("'dividend'", "'divisor'")),
-        ((DIVIDEND, DIVISOR, DIVIDEND), ("'dividend'", "'output'")),
-        ((DIVIDEND, DIVISOR, DIVISOR), ("'divisor'", "'output'")),
     ],
 )
 def test_rejects_one_kind_in_two_slots(
-    kinds: tuple[ArtifactKind[Decimal], ArtifactKind[Decimal], ArtifactKind[Decimal]],
+    kinds: tuple[ArtifactKind[Any], ArtifactKind[Any], ArtifactKind[Any]],
     slots: tuple[str, str],
 ) -> None:
     with pytest.raises(InvalidCapabilityError, match="RatioTruncated") as raised:
@@ -179,6 +181,13 @@ def test_rejects_one_kind_in_two_slots(
 
     for slot in slots:
         assert slot in str(raised.value)
+
+
+@pytest.mark.parametrize("money", [DIVIDEND, DIVISOR])
+def test_rejects_a_money_kind_for_its_rate_output(money: ArtifactKind[Decimal]) -> None:
+    # The output slot takes a Rate kind, so a money kind (also one already used) is refused.
+    with pytest.raises(InvalidCapabilityError, match="RatioTruncated.*'output'.*Rate"):
+        RatioTruncated(rounding(), DIVIDEND, DIVISOR, money)  # type: ignore[arg-type]
 
 
 def test_rejects_a_list_of_kinds_for_its_dividend() -> None:
@@ -216,45 +225,50 @@ def test_a_rounding_only_dataset_of_increment_0_00001_mode_down_truncates_the_ra
     # 30,000 / 70,000 = 0.4285714285..., the worked example's line 6.
     output = compute(capability(), "30000", "70000")
 
-    assert output == Artifact(OUTPUT, D("0.42857"))
-    assert type(output.value) is Decimal
+    assert output == Artifact(OUTPUT, Rate(D("0.42857")))
+    assert type(output.value) is Rate
 
 
 def test_truncates_toward_zero_rather_than_rounding() -> None:
     # 2/3 = 0.666666...: half up to five decimals would give 0.66667.
-    assert compute(capability(), "2", "3") == Artifact(OUTPUT, D("0.66666"))
+    assert compute(capability(), "2", "3") == Artifact(OUTPUT, Rate(D("0.66666")))
 
 
 def test_the_ratio_is_exact_not_a_float_or_a_28_digit_decimal() -> None:
     # 1,000,000 / 999,999 = 1.000001000001...
-    assert compute(capability(), "1000000", "999999") == Artifact(OUTPUT, D("1.00000"))
-    assert compute(capability(), "999999", "1000000") == Artifact(OUTPUT, D("0.99999"))
+    assert compute(capability(), "1000000", "999999") == Artifact(OUTPUT, Rate(D("1.00000")))
+    assert compute(capability(), "999999", "1000000") == Artifact(OUTPUT, Rate(D("0.99999")))
 
 
 def test_a_ratio_with_a_finite_expansion_is_kept_exactly() -> None:
-    assert compute(capability(), "1", "8") == Artifact(OUTPUT, D("0.12500"))
+    assert compute(capability(), "1", "8") == Artifact(OUTPUT, Rate(D("0.12500")))
 
 
 def test_a_zero_dividend_gives_zero() -> None:
-    assert compute(capability(), "0", "70000") == Artifact(OUTPUT, D("0"))
+    assert compute(capability(), "0", "70000") == Artifact(OUTPUT, Rate(D("0")))
 
 
-def test_a_dividend_above_the_divisor_is_not_capped_by_default() -> None:
-    assert compute(capability(), "70000", "30000") == Artifact(OUTPUT, D("2.33333"))
+def test_a_dividend_above_the_divisor_is_not_a_rate_by_default() -> None:
+    # 70,000 / 30,000 = 2.33333 is no rate: Rate refuses it. A negative dividend or divisor gives a
+    # negative ratio, refused the same way.
+    with pytest.raises(InvalidRateError):
+        capability().compute(inputs("70000", "30000"))
+    with pytest.raises(InvalidRateError):
+        capability().compute(inputs("-1", "2"))
 
 
 def test_a_dividend_equal_to_the_divisor_gives_one() -> None:
-    assert compute(capability(), "70000", "70000") == Artifact(OUTPUT, D("1"))
+    assert compute(capability(), "70000", "70000") == Artifact(OUTPUT, Rate(D("1")))
 
 
 def test_the_output_carries_the_increments_scale() -> None:
-    assert str(compute(capability(), "1", "2").value) == "0.50000"
+    assert str(compute(capability(), "1", "2").value.value) == "0.50000"
 
 
 def test_rounds_with_another_rule_of_the_dataset() -> None:
     wired = capability(rounding(RoundTo(D("0.01"), RoundingMode.HALF_UP)))
 
-    assert compute(wired, "2", "3") == Artifact(OUTPUT, D("0.67"))
+    assert compute(wired, "2", "3") == Artifact(OUTPUT, Rate(D("0.67")))
 
 
 def test_an_inexact_ratio_under_no_rounding_raises_inexact() -> None:
@@ -263,7 +277,7 @@ def test_an_inexact_ratio_under_no_rounding_raises_inexact() -> None:
 
 
 def test_an_exact_ratio_under_no_rounding_is_kept_exactly() -> None:
-    assert compute(capability(rounding(NO_ROUNDING)), "1", "4") == Artifact(OUTPUT, D("0.25"))
+    assert compute(capability(rounding(NO_ROUNDING)), "1", "4") == Artifact(OUTPUT, Rate(D("0.25")))
 
 
 # --- computing: a zero divisor ------------------------------------------------------------------
@@ -272,16 +286,16 @@ def test_an_exact_ratio_under_no_rounding_is_kept_exactly() -> None:
 def test_a_zero_divisor_gives_zero_not_an_error() -> None:
     output = compute(capability(), "30000", "0")
 
-    assert output == Artifact(OUTPUT, D("0"))
-    assert type(output.value) is Decimal
+    assert output == Artifact(OUTPUT, Rate(D("0")))
+    assert type(output.value) is Rate
 
 
 def test_a_zero_dividend_over_a_zero_divisor_gives_zero() -> None:
-    assert compute(capability(), "0", "0") == Artifact(OUTPUT, D("0"))
+    assert compute(capability(), "0", "0") == Artifact(OUTPUT, Rate(D("0")))
 
 
 def test_a_zero_divisor_gives_zero_under_no_rounding() -> None:
-    assert compute(capability(rounding(NO_ROUNDING)), "5", "0") == Artifact(OUTPUT, D("0"))
+    assert compute(capability(rounding(NO_ROUNDING)), "5", "0") == Artifact(OUTPUT, Rate(D("0")))
 
 
 # --- computing: the at-most-one capability ---------------------------------------------------
@@ -290,33 +304,35 @@ def test_a_zero_divisor_gives_zero_under_no_rounding() -> None:
 def test_with_cap_at_one_a_dividend_above_the_divisor_gives_exactly_one() -> None:
     output = compute(capability(cap_at_one=True), "70000", "30000")
 
-    assert output == Artifact(OUTPUT, D("1"))
-    assert type(output.value) is Decimal
+    assert output == Artifact(OUTPUT, Rate(D("1")))
+    assert type(output.value) is Rate
 
 
 def test_with_cap_at_one_a_dividend_below_the_divisor_gives_the_truncated_ratio() -> None:
-    assert compute(capability(cap_at_one=True), "30000", "70000") == Artifact(OUTPUT, D("0.42857"))
+    assert compute(capability(cap_at_one=True), "30000", "70000") == Artifact(
+        OUTPUT, Rate(D("0.42857"))
+    )
 
 
 def test_with_cap_at_one_a_dividend_equal_to_the_divisor_gives_one() -> None:
-    assert compute(capability(cap_at_one=True), "70000", "70000") == Artifact(OUTPUT, D("1"))
+    assert compute(capability(cap_at_one=True), "70000", "70000") == Artifact(OUTPUT, Rate(D("1")))
 
 
 def test_with_cap_at_one_a_positive_dividend_over_a_zero_divisor_gives_one() -> None:
     # The cap is checked before the zero-divisor rule.
-    assert compute(capability(cap_at_one=True), "5", "0") == Artifact(OUTPUT, D("1"))
+    assert compute(capability(cap_at_one=True), "5", "0") == Artifact(OUTPUT, Rate(D("1")))
 
 
 def test_with_cap_at_one_a_zero_dividend_over_a_zero_divisor_gives_zero() -> None:
-    assert compute(capability(cap_at_one=True), "0", "0") == Artifact(OUTPUT, D("0"))
+    assert compute(capability(cap_at_one=True), "0", "0") == Artifact(OUTPUT, Rate(D("0")))
 
 
 def test_with_cap_at_one_a_zero_dividend_gives_zero() -> None:
-    assert compute(capability(cap_at_one=True), "0", "70000") == Artifact(OUTPUT, D("0"))
+    assert compute(capability(cap_at_one=True), "0", "70000") == Artifact(OUTPUT, Rate(D("0")))
 
 
 def test_without_cap_at_one_a_positive_dividend_over_a_zero_divisor_gives_zero() -> None:
-    assert compute(capability(cap_at_one=False), "5", "0") == Artifact(OUTPUT, D("0"))
+    assert compute(capability(cap_at_one=False), "5", "0") == Artifact(OUTPUT, Rate(D("0")))
 
 
 def test_cap_at_one_does_not_change_a_ratio_below_one() -> None:
@@ -333,7 +349,7 @@ def test_ignores_artifacts_it_does_not_consume() -> None:
 
     result = capability().compute((other, *inputs("1", "2")))
 
-    assert result.outputs == (Artifact(OUTPUT, D("0.5")),)
+    assert result.outputs == (Artifact(OUTPUT, Rate(D("0.5"))),)
 
 
 def test_a_missing_dividend_is_a_missing_artifact() -> None:
@@ -413,7 +429,7 @@ def test_trace_result_is_the_output() -> None:
     (line,) = result.trace
     (output,) = result.outputs
     assert isinstance(line, RatioTruncatedLine)
-    assert line.result == output.value
+    assert Rate(line.result) == output.value
 
 
 def test_trace_holds_no_text() -> None:
@@ -482,7 +498,7 @@ def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset()
 def test_a_computation_truncates_the_ratio_to_five_decimals() -> None:
     worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *inputs("30000", "70000"))
 
-    assert worksheet.get(OUTPUT).value == D("0.42857")
+    assert worksheet.get(OUTPUT).value == Rate(D("0.42857"))
     assert isinstance(worksheet.producer_of(OUTPUT), RatioTruncated)
 
 

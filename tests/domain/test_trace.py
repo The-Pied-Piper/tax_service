@@ -102,6 +102,7 @@ PART_ONE = ArtifactKind("ex/part_one", Decimal)
 PART_TWO = ArtifactKind("ex/part_two", Decimal)
 TOTAL = ArtifactKind("ex/total", Decimal)
 RATED = ArtifactKind("ex/rated", Decimal)
+RATED_RATE = ArtifactKind("ex/rated", Rate)
 GROSS = ArtifactKind("ex/gross", Decimal)
 REDUCTION = ArtifactKind("ex/reduction", Decimal)
 NET = ArtifactKind("ex/net", Decimal)
@@ -474,7 +475,7 @@ def count_at_least_line() -> CountAtLeastLine:
 
 def ratio_truncated_line() -> RatioTruncatedLine:
     return RatioTruncatedLine(
-        RATED,
+        RATED_RATE,
         BASE,
         D("30000"),
         TOTAL,
@@ -4188,7 +4189,7 @@ def test_ratio_truncated_line_fields_in_order() -> None:
     five_decimals_down = RoundTo(D("0.00001"), RoundingMode.DOWN)
 
     assert line == RatioTruncatedLine(
-        output=RATED,
+        output=RATED_RATE,
         dividend=BASE,
         dividend_amount=D("30000"),
         divisor=TOTAL,
@@ -4207,7 +4208,7 @@ def test_ratio_truncated_line_fields_in_order() -> None:
         "cap_at_one",
         "result",
     ]
-    assert line.output is RATED
+    assert line.output is RATED_RATE
     assert line.dividend is BASE
     assert line.divisor is TOTAL
     assert line.rounding == five_decimals_down
@@ -4220,10 +4221,10 @@ def test_ratio_truncated_lines_differ_by_cap_and_rounding() -> None:
     five_decimals_down = RoundTo(D("0.00001"), RoundingMode.DOWN)
 
     assert line != RatioTruncatedLine(
-        RATED, BASE, D("30000"), TOTAL, D("70000"), five_decimals_down, True, D("0.42857")
+        RATED_RATE, BASE, D("30000"), TOTAL, D("70000"), five_decimals_down, True, D("0.42857")
     )
     assert line != RatioTruncatedLine(
-        RATED, BASE, D("30000"), TOTAL, D("70000"), NO_ROUNDING, False, D("0.42857")
+        RATED_RATE, BASE, D("30000"), TOTAL, D("70000"), NO_ROUNDING, False, D("0.42857")
     )
 
 

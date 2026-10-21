@@ -511,14 +511,14 @@ class AmountWhenMoreLine(TraceLine):
 
 @dataclass(frozen=True)
 class RatioTruncatedLine(TraceLine):
-    """The `result` produced as `output` by `dividend` (worth `dividend_amount`) divided by
-    `divisor` (worth `divisor_amount`), rounded once with `rounding`.
+    """The `result` (a rate, 0 to 1) produced as `output` by `dividend` (worth `dividend_amount`)
+    divided by `divisor` (worth `divisor_amount`), rounded once with `rounding`.
 
     `cap_at_one` is whether a dividend above the divisor gives 1. Its own class, not a
     `QuotientLine`: the quotient is rounded by a rule, and a zero divisor gives 0.
     """
 
-    output: Money
+    output: ArtifactKind[Rate]
     dividend: Money
     dividend_amount: Decimal
     divisor: Money

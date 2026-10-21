@@ -6,6 +6,11 @@ the quotient, an exact fraction, is truncated by the rule and nothing else round
 divisor gives a plain `Decimal(0)`, never an error. `RatioTruncatedAtMostOne` shares the
 implementation for a ratio that "cannot be more than 1": a dividend above the divisor gives
 exactly 1, checked before the zero-divisor rule. Each records one `RatioTruncatedLine`.
+
+The output is a `Rate` artifact (0 to 1), so a later line can multiply an amount by it. The plain
+`RatioTruncated` is for a dividend not above the divisor: a ratio above 1 (or a negative one, from
+a negative figure) is refused by `Rate` itself with `InvalidRateError`. `RatioTruncatedAtMostOne`
+gives exactly 1 above the divisor; a negative dividend is refused the same way.
 """
 
 from __future__ import annotations
@@ -15,22 +20,23 @@ from decimal import Decimal
 from fractions import Fraction as ExactFraction
 from typing import Any, ClassVar
 
-from app.domain.artifact import Artifact, Money
+from app.domain.artifact import Artifact, ArtifactKind, Money
 from app.domain.capability import Capability, CapabilityResult, capability
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
+from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
 from app.domain.trace import RatioTruncatedLine
 
 
 @capability(identifier="ratio_truncated")
 class RatioTruncated(Capability):
-    """Produces `output`: the consumed `dividend` ÷ the consumed `divisor`, rounded by the
+    """Produces the rate `output`: the consumed `dividend` ÷ the consumed `divisor`, rounded by the
     `rounding` dataset's rule, and 0 for a zero divisor."""
 
     PARAMETERS: ClassVar[Mapping[str, ParameterKind[RoundingOnly]]] = {"rounding": ROUNDING_ONLY}
     CONSUMES: ClassVar[Mapping[str, type]] = {"dividend": Decimal, "divisor": Decimal}
-    PRODUCES: ClassVar[Mapping[str, type]] = {"output": Decimal}
+    PRODUCES: ClassVar[Mapping[str, type]] = {"output": Rate}
 
     _CAP_AT_ONE: ClassVar[bool] = False
 
@@ -39,10 +45,10 @@ class RatioTruncated(Capability):
         rounding: ParameterDataset[RoundingOnly],
         dividend: Money,
         divisor: Money,
-        output: Money,
+        output: ArtifactKind[Rate],
     ) -> None:
         """Wire the capability: its rounding dataset, the kind divided, the kind it is divided
-        by, the kind produced."""
+        by, the rate kind produced."""
         super().__init__(dividend=dividend, divisor=divisor, output=output)
         self._rounding = rounding
         self._dividend = dividend
@@ -59,8 +65,9 @@ class RatioTruncated(Capability):
             result = Decimal(0)
         else:
             result = rounding.apply(ExactFraction(dividend) / ExactFraction(divisor))
+        rate = Rate(result)
         return CapabilityResult(
-            outputs=(Artifact(self._output, result),),
+            outputs=(Artifact(self._output, rate),),
             trace=(
                 RatioTruncatedLine(
                     output=self._output,
