@@ -147,7 +147,14 @@ from app.jurisdictions.ca.catalog import (
     DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
     DEPRECIABLE_GIFTS,
     DISABILITY_AMOUNT_FOR_SELF,
+    DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
     DISABILITY_DEPENDANTS,
+    DISABILITY_SELF_BASE_AMOUNT,
+    DISABILITY_SELF_CARE_OVER_THRESHOLD,
+    DISABILITY_SELF_CARE_THRESHOLD,
+    DISABILITY_SELF_SUPPLEMENT,
+    DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
+    DISABILITY_SELF_WORKSHEET_AMOUNT,
     DISABILITY_SUPPORTS_DEDUCTION,
     DISABILITY_TRANSFERRED_AMOUNT,
     DIVIDEND_TAX_CREDIT,
@@ -678,7 +685,16 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(SPLIT_INCOME_DIVIDENDS) is None
     assert worksheet.producer_of(SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE) is None
     assert worksheet.producer_of(OTHER_SPLIT_INCOME) is None
-    assert worksheet.producer_of(DISABILITY_AMOUNT_FOR_SELF) is None
+    assert isinstance(worksheet.producer_of(DISABILITY_AMOUNT_FOR_SELF), TimesCount)
+    assert isinstance(worksheet.producer_of(DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE), ChooseByCount)
+    assert isinstance(worksheet.producer_of(DISABILITY_SELF_BASE_AMOUNT), CreditAmount)
+    assert isinstance(worksheet.producer_of(DISABILITY_SELF_SUPPLEMENT_MAXIMUM), CreditAmount)
+    assert isinstance(worksheet.producer_of(DISABILITY_SELF_CARE_THRESHOLD), CreditAmount)
+    assert isinstance(
+        worksheet.producer_of(DISABILITY_SELF_CARE_OVER_THRESHOLD), SubtractNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(DISABILITY_SELF_SUPPLEMENT), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(DISABILITY_SELF_WORKSHEET_AMOUNT), Sum)
     assert worksheet.producer_of(ontario.LIFT_SPOUSE_AT_YEAR_END) is None
     assert worksheet.producer_of(OTHER_EMPLOYMENT_INCOME) is None
     assert worksheet.producer_of(OLD_AGE_SECURITY) is None

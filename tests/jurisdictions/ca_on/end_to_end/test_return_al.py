@@ -329,7 +329,8 @@ def return_b_with_split_income_dividends(**overrides: Any) -> Worksheet:
         "other_dividends_received_without_a_slip": "1000",
         "split_income_dividends": "1150",
         "split_income_dividends_other_than_eligible": "1150",
-        "disability_amount_for_self": "10138",
+        "eligible_for_disability_amount": 1,
+        "under_18_on_december_31": 0,
     }
     inputs.update(overrides)
     return compute("30000", (), "0", "0", "5400", "0", "0", **inputs)
