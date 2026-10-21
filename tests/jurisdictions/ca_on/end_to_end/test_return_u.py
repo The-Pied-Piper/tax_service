@@ -94,14 +94,27 @@ def farm_statement(farming_income: str) -> dict[str, str]:
     return {"other_expenses": str(-amount)}
 
 
+def fish_statement(fishing_income: str) -> dict[str, str]:
+    """A T2121 whose line 9946, and so T1 line 14300, is `fishing_income`: all income (amount 3A,
+    fish products) for income, all other expenses (line 9270, 4P) for a loss."""
+    amount = D(fishing_income)
+    if amount >= 0:
+        return {"fish_products": fishing_income}
+    return {"other_expenses": str(-amount)}
+
+
 def self_employed(**changes: Any) -> Worksheet:
     """Return U's inputs, as in `returns/2025_return_u.yaml`, with `changes` to them;
-    `business_income` is the net business income the T2125 is entered to give and
-    `farming_income` the net farming income the T2042 is entered to give."""
+    `business_income` is the net business income the T2125 is entered to give,
+    `farming_income` the net farming income the T2042 is entered to give and `fishing_income`
+    the net fishing income the T2121 is entered to give."""
     inputs = {**RETURN_U, **changes}
     business = business_statement(inputs.pop("business_income"))
     farm = farm_statement(inputs.pop("farming_income", "0"))
-    return compute("0", (), "0", "0", "0", "0", "0", business=business, farm=farm, **inputs)
+    fish = fish_statement(inputs.pop("fishing_income", "0"))
+    return compute(
+        "0", (), "0", "0", "0", "0", "0", business=business, farm=farm, fish=fish, **inputs
+    )
 
 
 def return_u() -> Worksheet:
