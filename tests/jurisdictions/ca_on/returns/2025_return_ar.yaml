@@ -16,10 +16,9 @@ description: >-
   line 25 (19890), which is not multiplied by the inclusion rate: line 26 (19900) = line 24 plus
   line 25 = 20,000.00 + 10,000.00 = 30,000.00, positive, so line 12700 (taxable capital gains)
   is 30,000.00. Total income (line 15000) = 60,000.00 + 30,000.00 = 90,000.00. The enhanced CPP
-  contributions of 565.00 (the CPP rules in the repository on employment income of 60,000.00
-  for 12 months, to be confirmed) are deducted, so net income and taxable income are 89,435.00.
-  The income tax deducted
-  is a chosen 22,000.00. The federal tax and the Ontario tax are the engine's figures from the
+  contributions of 565.00 (1% of the employment income of 60,000.00 less the 3,500.00 basic
+  exemption) are deducted, so net income and taxable income are 89,435.00. The income tax
+  deducted is a chosen 22,000.00. The federal tax and the Ontario tax are the engine's figures from the
   2025 brackets and credits in the repository (federal tax 11,791.47, Ontario tax 5,930.32),
   giving a total payable of 17,721.79 and a refund of 4,278.21 (to be confirmed against CRA's
   calculator). Without line 25 the total payable would be 14,756.79. Not triggered: the
