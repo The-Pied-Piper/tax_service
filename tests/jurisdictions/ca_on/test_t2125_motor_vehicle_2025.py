@@ -214,6 +214,18 @@ def test_chart_c_leasing_cost_is_the_lesser_of_line_26_and_line_27() -> None:
     assert line(worksheet, BUSINESS_VEHICLE_LEASING_COST) == D("2147.00")
 
 
+def test_chart_c_leasing_cost_is_line_26_when_the_payments_before_make_it_the_lesser() -> None:
+    # Line 25 is 7582.30 and line 21 is 7000, so line 26 is 582.30, less than line 27 (2147.00):
+    # line 28 is 582.30, line 12 is 1000 + 400 + 600 + 200 + 582.30 + 653 = 3435.30 and line 13 is
+    # 3435.30 x 5000 / 10000 = 1717.65, line 9281.
+    worksheet = statement({**LEASED, "vehicle_lease_payments_before": "7000"})
+
+    assert line(worksheet, BUSINESS_VEHICLE_LEASE_CHARGES_NET) == D("582.30")
+    assert line(worksheet, BUSINESS_VEHICLE_LEASING_COST) == D("582.30")
+    assert line(worksheet, BUSINESS_VEHICLE_TOTAL_EXPENSES) == D("3435.30")
+    assert line(worksheet, BUSINESS_MOTOR_VEHICLE_EXPENSES) == D("1717.65")
+
+
 def test_chart_c_line_28_below_zero_is_refused() -> None:
     # Line 25 is 7582.30 and line 21 (payments before the year) is 9000, so line 26 is
     # 7582.30 - 9000 = -1417.70. The form prints no floor, but the eligible leasing cost (line 28)

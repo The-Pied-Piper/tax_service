@@ -1,6 +1,6 @@
 # Form T2125 (2025), Chart A line 13 "Business use part: amount 1 ÷ amount 2 × amount 12 = 13". The
 # form prints no figure and no rounding rule; the line is a dollars-and-cents box, so the quotient
-# or product rounds half-up to the cent, the owner's decision.
+# or product rounds half-up to the cent.
 family: ca/business_vehicle_business_use_rounding
 tax_year: 2025
 kind: rounding_only

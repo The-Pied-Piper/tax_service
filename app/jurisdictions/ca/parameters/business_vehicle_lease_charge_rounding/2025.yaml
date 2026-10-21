@@ -1,6 +1,6 @@
 # Form T2125 (2025), Chart C line 25 "[($1,100 + GST and PST, or $1,100 + HST) × amount 22] ÷ 30 =
 # 25". The form prints no figure and no rounding rule; the line is a dollars-and-cents box, so the
-# quotient or product rounds half-up to the cent, the owner's decision.
+# quotient or product rounds half-up to the cent.
 family: ca/business_vehicle_lease_charge_rounding
 tax_year: 2025
 kind: rounding_only

@@ -1,8 +1,7 @@
 # Form T2125 (2025), Chart C line 23: "Amount 23 or ($44,706 + GST and PST, or $44,706 + HST),
 # whichever is more". The printed $44,706 is the price limit of a passenger vehicle, to which the
 # sales tax of the province is added. It borrows the credit kind because it is a printed constant,
-# claimed whole. The tax on it is a dollars-and-cents box, rounded half-up to the cent, the owner's
-# decision, as the form states no rounding rule.
+# claimed whole. The tax on it is a dollars-and-cents box, rounded half-up to the cent, as the form states no rounding rule.
 family: ca/business_vehicle_list_price_limit
 tax_year: 2025
 kind: credit
