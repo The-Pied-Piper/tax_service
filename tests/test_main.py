@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 500
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 524
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -535,6 +535,47 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/ei_premiums_on_self_employment",
         "ca/ei_payable_on_self_employment",
         "ca/canada_employment_amount",
+        "ca/canadian_tuition_fees",
+        "ca/canada_training_credit_limit",
+        "ca/canada_training_credit_claimed",
+        "ca/foreign_tuition_fees",
+        "ca/unused_tuition_from_2024",
+        "ca/tuition_transfer_elected",
+        "ca/tuition_transferred_from_child",
+        "ca/canada_training_credit_basis",
+        "ca/canada_training_credit_maximum",
+        "ca/canadian_tuition_available",
+        "ca/current_year_tuition_available",
+        "ca/total_tuition_available",
+        "ca/tuition_income_base",
+        "ca/credit_amounts_subtotal",
+        "ca/tuition_income_less_credits",
+        "ca/unused_tuition_claimed",
+        "ca/tuition_income_remaining",
+        "ca/current_year_tuition_claimed",
+        "ca/federal_tuition_amount",
+        "ca/unused_federal_tuition",
+        "ca/tuition_transfer_limit",
+        "ca/tuition_available_to_transfer",
+        "ca/tuition_transferred",
+        "ca/tuition_carried_forward",
+        "ca/spouse_return_age_amount",
+        "ca/spouse_return_infirm_children_amount",
+        "ca/spouse_return_pension_income_amount",
+        "ca/spouse_return_disability_amount",
+        "ca/spouse_designated_tuition",
+        "ca/spouse_return_taxable_income",
+        "ca/spouse_return_federal_basic_tax",
+        "ca/spouse_return_basic_personal_amount",
+        "ca/spouse_return_line_96",
+        "ca/spouse_return_federal_tuition_amount",
+        "ca/spouse_not_separated_90_days",
+        "ca/spouse_transferable_amounts",
+        "ca/spouse_income_for_transfer",
+        "ca/spouse_credits_used",
+        "ca/spouse_adjusted_taxable_income",
+        "ca/spouse_unused_amounts",
+        "ca/amounts_transferred_from_spouse",
         "ca/non_refundable_credit_amounts",
         "ca/non_refundable_tax_credits",
         "ca/federal_tax_on_split_income",
@@ -630,6 +671,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/cwb_reduction_with_dependant",
         "ca/canada_workers_benefit_with_dependant",
         "ca/canada_workers_benefit",
+        "ca/canada_training_credit",
         "ca/provincial_credits",
         "ca/part_xii_2_tax_credit",
         "ca/employee_and_partner_gst_hst_rebate",
@@ -910,13 +952,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 500
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 524
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 500
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 524
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

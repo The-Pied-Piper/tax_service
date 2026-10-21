@@ -17,6 +17,7 @@ outputs:
   - ca/rental_short_term_portion
   - ca/rental_closing_ucc
   - ca/short_term_rental_gross_rents
+  - ca/tuition_carried_forward
   - ca/cpp_second_additional_earnings_maximum
   - ca-on/applies_for_energy_and_property_tax_credit
   - ca-on/applies_for_northern_energy_credit

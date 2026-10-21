@@ -14,6 +14,12 @@ PROVINCIAL_CREDITS = CATALOG.declare("provincial_credits", Decimal, non_negative
 """Provincial or territorial credits, T1 line 165 and line 47900 "Provincial or territorial credits
 (complete Form 479, if it applies)": the Ontario credits, Form ON479 line 21."""
 
+CANADA_TRAINING_CREDIT = CATALOG.declare("canada_training_credit", Decimal, non_negative=True)
+"""Canada training credit, Schedule 11 line 5 "Enter this amount on line 45350 of your return. Your
+Canada training credit", T1 line 156 and line 45350 "Canada training credit (CTC) (complete
+Schedule 11)": the amount claimed, at most line 4 (the lesser of 50% of the Canadian tuition fees
+and the limit on the notice)."""
+
 PART_XII_2_TAX_CREDIT = CATALOG.declare("part_xii_2_tax_credit", Decimal, non_negative=True)
 """Part XII.2 tax credit, T1 line 159 (45600) "Part XII.2 tax credit (box 38 of all T3 slips and
 box 209 of all T5013 slips)": the amount of those boxes, added by the filer."""

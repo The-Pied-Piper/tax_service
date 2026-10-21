@@ -6,7 +6,14 @@ from decimal import Decimal
 
 from app.domain.artifact import ArtifactRegistry
 from app.jurisdictions.ca.catalog import (
+    AMOUNTS_TRANSFERRED_FROM_SPOUSE,
     CANADA_EMPLOYMENT_AMOUNT,
+    CANADA_TRAINING_CREDIT_BASIS,
+    CANADA_TRAINING_CREDIT_CLAIMED,
+    CANADA_TRAINING_CREDIT_LIMIT,
+    CANADA_TRAINING_CREDIT_MAXIMUM,
+    CANADIAN_TUITION_AVAILABLE,
+    CANADIAN_TUITION_FEES,
     CAPITAL_GIFT_GAINS_DEDUCTION,
     CAPITAL_GIFT_TAXABLE_GAINS,
     CAPITAL_GIFTS_LIMIT_ADDITION,
@@ -18,6 +25,9 @@ from app.jurisdictions.ca.catalog import (
     CPP_BASE_CONTRIBUTIONS,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
+    CREDIT_AMOUNTS_SUBTOTAL,
+    CURRENT_YEAR_TUITION_AVAILABLE,
+    CURRENT_YEAR_TUITION_CLAIMED,
     DEPRECIABLE_GIFT_CAPITAL_COST,
     DEPRECIABLE_GIFT_NET_PROCEEDS,
     DEPRECIABLE_GIFT_PROCEEDS_OR_COST,
@@ -39,8 +49,10 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
+    FEDERAL_TUITION_AMOUNT,
     FIRST_TIER_DONATION_CREDIT,
     FOREIGN_CHARITY_DONATIONS,
+    FOREIGN_TUITION_FEES,
     GOVERNMENT_DONATIONS,
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
@@ -53,13 +65,42 @@ from app.jurisdictions.ca.catalog import (
     NON_REFUNDABLE_TAX_CREDITS,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
+    SPOUSE_ADJUSTED_TAXABLE_INCOME,
+    SPOUSE_CREDITS_USED,
+    SPOUSE_DESIGNATED_TUITION,
+    SPOUSE_INCOME_FOR_TRANSFER,
+    SPOUSE_NOT_SEPARATED_90_DAYS,
+    SPOUSE_RETURN_AGE_AMOUNT,
+    SPOUSE_RETURN_BASIC_PERSONAL_AMOUNT,
+    SPOUSE_RETURN_DISABILITY_AMOUNT,
+    SPOUSE_RETURN_FEDERAL_BASIC_TAX,
+    SPOUSE_RETURN_FEDERAL_TUITION_AMOUNT,
+    SPOUSE_RETURN_INFIRM_CHILDREN_AMOUNT,
+    SPOUSE_RETURN_LINE_96,
+    SPOUSE_RETURN_PENSION_INCOME_AMOUNT,
+    SPOUSE_RETURN_TAXABLE_INCOME,
+    SPOUSE_TRANSFERABLE_AMOUNTS,
+    SPOUSE_UNUSED_AMOUNTS,
     TAXABLE_INCOME_OVER_DONATION_THRESHOLD,
     TOP_UP_CREDITS_BASE,
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
     TOP_UP_THRESHOLD,
     TOTAL_CHARITABLE_DONATIONS,
+    TOTAL_TUITION_AVAILABLE,
+    TUITION_AVAILABLE_TO_TRANSFER,
+    TUITION_CARRIED_FORWARD,
+    TUITION_INCOME_BASE,
+    TUITION_INCOME_LESS_CREDITS,
+    TUITION_INCOME_REMAINING,
+    TUITION_TRANSFER_ELECTED,
+    TUITION_TRANSFER_LIMIT,
+    TUITION_TRANSFERRED,
+    TUITION_TRANSFERRED_FROM_CHILD,
     UNIVERSITY_DONATIONS_OUTSIDE_CANADA,
+    UNUSED_FEDERAL_TUITION,
+    UNUSED_TUITION_CLAIMED,
+    UNUSED_TUITION_FROM_2024,
 )
 
 
@@ -141,6 +182,59 @@ def test_the_non_refundable_credits_kinds_are_the_registered_ones(
     assert registry.get("ca/top_up_tax_credit") is TOP_UP_TAX_CREDIT
     assert registry.get("ca/federal_tax_on_split_income") is FEDERAL_TAX_ON_SPLIT_INCOME
     assert registry.get("ca/federal_tax_with_split_income") is FEDERAL_TAX_WITH_SPLIT_INCOME
+    assert registry.get("ca/canadian_tuition_fees") is CANADIAN_TUITION_FEES
+    assert registry.get("ca/canada_training_credit_limit") is CANADA_TRAINING_CREDIT_LIMIT
+    assert registry.get("ca/canada_training_credit_claimed") is CANADA_TRAINING_CREDIT_CLAIMED
+    assert registry.get("ca/foreign_tuition_fees") is FOREIGN_TUITION_FEES
+    assert registry.get("ca/unused_tuition_from_2024") is UNUSED_TUITION_FROM_2024
+    assert registry.get("ca/tuition_transfer_elected") is TUITION_TRANSFER_ELECTED
+    assert registry.get("ca/tuition_transferred_from_child") is TUITION_TRANSFERRED_FROM_CHILD
+    assert registry.get("ca/canada_training_credit_basis") is CANADA_TRAINING_CREDIT_BASIS
+    assert registry.get("ca/canada_training_credit_maximum") is CANADA_TRAINING_CREDIT_MAXIMUM
+    assert registry.get("ca/canadian_tuition_available") is CANADIAN_TUITION_AVAILABLE
+    assert registry.get("ca/current_year_tuition_available") is CURRENT_YEAR_TUITION_AVAILABLE
+    assert registry.get("ca/total_tuition_available") is TOTAL_TUITION_AVAILABLE
+    assert registry.get("ca/tuition_income_base") is TUITION_INCOME_BASE
+    assert registry.get("ca/credit_amounts_subtotal") is CREDIT_AMOUNTS_SUBTOTAL
+    assert registry.get("ca/tuition_income_less_credits") is TUITION_INCOME_LESS_CREDITS
+    assert registry.get("ca/unused_tuition_claimed") is UNUSED_TUITION_CLAIMED
+    assert registry.get("ca/tuition_income_remaining") is TUITION_INCOME_REMAINING
+    assert registry.get("ca/current_year_tuition_claimed") is CURRENT_YEAR_TUITION_CLAIMED
+    assert registry.get("ca/federal_tuition_amount") is FEDERAL_TUITION_AMOUNT
+    assert registry.get("ca/unused_federal_tuition") is UNUSED_FEDERAL_TUITION
+    assert registry.get("ca/tuition_transfer_limit") is TUITION_TRANSFER_LIMIT
+    assert registry.get("ca/tuition_available_to_transfer") is TUITION_AVAILABLE_TO_TRANSFER
+    assert registry.get("ca/tuition_transferred") is TUITION_TRANSFERRED
+    assert registry.get("ca/tuition_carried_forward") is TUITION_CARRIED_FORWARD
+    assert registry.get("ca/spouse_return_age_amount") is SPOUSE_RETURN_AGE_AMOUNT
+    assert (
+        registry.get("ca/spouse_return_infirm_children_amount")
+        is SPOUSE_RETURN_INFIRM_CHILDREN_AMOUNT
+    )
+    assert (
+        registry.get("ca/spouse_return_pension_income_amount")
+        is SPOUSE_RETURN_PENSION_INCOME_AMOUNT
+    )
+    assert registry.get("ca/spouse_return_disability_amount") is SPOUSE_RETURN_DISABILITY_AMOUNT
+    assert registry.get("ca/spouse_designated_tuition") is SPOUSE_DESIGNATED_TUITION
+    assert registry.get("ca/spouse_return_taxable_income") is SPOUSE_RETURN_TAXABLE_INCOME
+    assert registry.get("ca/spouse_return_federal_basic_tax") is SPOUSE_RETURN_FEDERAL_BASIC_TAX
+    assert (
+        registry.get("ca/spouse_return_basic_personal_amount")
+        is SPOUSE_RETURN_BASIC_PERSONAL_AMOUNT
+    )
+    assert registry.get("ca/spouse_return_line_96") is SPOUSE_RETURN_LINE_96
+    assert (
+        registry.get("ca/spouse_return_federal_tuition_amount")
+        is SPOUSE_RETURN_FEDERAL_TUITION_AMOUNT
+    )
+    assert registry.get("ca/spouse_transferable_amounts") is SPOUSE_TRANSFERABLE_AMOUNTS
+    assert registry.get("ca/spouse_income_for_transfer") is SPOUSE_INCOME_FOR_TRANSFER
+    assert registry.get("ca/spouse_credits_used") is SPOUSE_CREDITS_USED
+    assert registry.get("ca/spouse_adjusted_taxable_income") is SPOUSE_ADJUSTED_TAXABLE_INCOME
+    assert registry.get("ca/spouse_unused_amounts") is SPOUSE_UNUSED_AMOUNTS
+    assert registry.get("ca/amounts_transferred_from_spouse") is AMOUNTS_TRANSFERRED_FROM_SPOUSE
+    assert registry.get("ca/spouse_not_separated_90_days") is SPOUSE_NOT_SEPARATED_90_DAYS
 
 
 def test_the_non_refundable_credits_kinds_are_money() -> None:
@@ -199,6 +293,46 @@ def test_the_non_refundable_credits_kinds_are_money() -> None:
         TOP_UP_TAX_CREDIT,
         FEDERAL_TAX_ON_SPLIT_INCOME,
         FEDERAL_TAX_WITH_SPLIT_INCOME,
+        CANADIAN_TUITION_FEES,
+        CANADA_TRAINING_CREDIT_LIMIT,
+        CANADA_TRAINING_CREDIT_CLAIMED,
+        FOREIGN_TUITION_FEES,
+        UNUSED_TUITION_FROM_2024,
+        TUITION_TRANSFER_ELECTED,
+        TUITION_TRANSFERRED_FROM_CHILD,
+        CANADA_TRAINING_CREDIT_BASIS,
+        CANADA_TRAINING_CREDIT_MAXIMUM,
+        CANADIAN_TUITION_AVAILABLE,
+        CURRENT_YEAR_TUITION_AVAILABLE,
+        TOTAL_TUITION_AVAILABLE,
+        TUITION_INCOME_BASE,
+        CREDIT_AMOUNTS_SUBTOTAL,
+        TUITION_INCOME_LESS_CREDITS,
+        UNUSED_TUITION_CLAIMED,
+        TUITION_INCOME_REMAINING,
+        CURRENT_YEAR_TUITION_CLAIMED,
+        FEDERAL_TUITION_AMOUNT,
+        UNUSED_FEDERAL_TUITION,
+        TUITION_TRANSFER_LIMIT,
+        TUITION_AVAILABLE_TO_TRANSFER,
+        TUITION_TRANSFERRED,
+        TUITION_CARRIED_FORWARD,
+        SPOUSE_RETURN_AGE_AMOUNT,
+        SPOUSE_RETURN_INFIRM_CHILDREN_AMOUNT,
+        SPOUSE_RETURN_PENSION_INCOME_AMOUNT,
+        SPOUSE_RETURN_DISABILITY_AMOUNT,
+        SPOUSE_DESIGNATED_TUITION,
+        SPOUSE_RETURN_TAXABLE_INCOME,
+        SPOUSE_RETURN_FEDERAL_BASIC_TAX,
+        SPOUSE_RETURN_BASIC_PERSONAL_AMOUNT,
+        SPOUSE_RETURN_LINE_96,
+        SPOUSE_RETURN_FEDERAL_TUITION_AMOUNT,
+        SPOUSE_TRANSFERABLE_AMOUNTS,
+        SPOUSE_INCOME_FOR_TRANSFER,
+        SPOUSE_CREDITS_USED,
+        SPOUSE_ADJUSTED_TAXABLE_INCOME,
+        SPOUSE_UNUSED_AMOUNTS,
+        AMOUNTS_TRANSFERRED_FROM_SPOUSE,
     ):
         assert kind.value_type is Decimal, kind.identifier
 
@@ -209,3 +343,62 @@ def test_the_federal_tax_on_split_income_lines_are_non_negative(registry: Artifa
     for kind in (FEDERAL_TAX_ON_SPLIT_INCOME, FEDERAL_TAX_WITH_SPLIT_INCOME):
         assert kind.non_negative is True, kind.identifier
         assert registry.kind(kind.identifier) is kind
+
+
+def test_the_tuition_and_transfer_kinds_are_non_negative(registry: ArtifactRegistry) -> None:
+    # Schedule 11 and Schedule 2 take amounts the forms never show below zero: the lines that
+    # subtract say "(if negative, enter "0")" or are bounded by the line they come off.
+    for kind in (
+        CANADIAN_TUITION_FEES,
+        CANADA_TRAINING_CREDIT_LIMIT,
+        CANADA_TRAINING_CREDIT_CLAIMED,
+        FOREIGN_TUITION_FEES,
+        UNUSED_TUITION_FROM_2024,
+        TUITION_TRANSFER_ELECTED,
+        TUITION_TRANSFERRED_FROM_CHILD,
+        CANADA_TRAINING_CREDIT_BASIS,
+        CANADA_TRAINING_CREDIT_MAXIMUM,
+        CANADIAN_TUITION_AVAILABLE,
+        CURRENT_YEAR_TUITION_AVAILABLE,
+        TOTAL_TUITION_AVAILABLE,
+        TUITION_INCOME_BASE,
+        CREDIT_AMOUNTS_SUBTOTAL,
+        TUITION_INCOME_LESS_CREDITS,
+        UNUSED_TUITION_CLAIMED,
+        TUITION_INCOME_REMAINING,
+        CURRENT_YEAR_TUITION_CLAIMED,
+        FEDERAL_TUITION_AMOUNT,
+        UNUSED_FEDERAL_TUITION,
+        TUITION_TRANSFER_LIMIT,
+        TUITION_AVAILABLE_TO_TRANSFER,
+        TUITION_TRANSFERRED,
+        TUITION_CARRIED_FORWARD,
+        SPOUSE_RETURN_AGE_AMOUNT,
+        SPOUSE_RETURN_INFIRM_CHILDREN_AMOUNT,
+        SPOUSE_RETURN_PENSION_INCOME_AMOUNT,
+        SPOUSE_RETURN_DISABILITY_AMOUNT,
+        SPOUSE_DESIGNATED_TUITION,
+        SPOUSE_RETURN_TAXABLE_INCOME,
+        SPOUSE_RETURN_FEDERAL_BASIC_TAX,
+        SPOUSE_RETURN_BASIC_PERSONAL_AMOUNT,
+        SPOUSE_RETURN_LINE_96,
+        SPOUSE_RETURN_FEDERAL_TUITION_AMOUNT,
+        SPOUSE_TRANSFERABLE_AMOUNTS,
+        SPOUSE_INCOME_FOR_TRANSFER,
+        SPOUSE_CREDITS_USED,
+        SPOUSE_ADJUSTED_TAXABLE_INCOME,
+        SPOUSE_UNUSED_AMOUNTS,
+        AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    ):
+        assert kind.non_negative is True, kind.identifier
+        assert registry.kind(kind.identifier) is kind
+
+
+def test_the_separation_count_is_a_non_negative_int(registry: ArtifactRegistry) -> None:
+    # Schedule 2: "If you were separated because of a breakdown in your relationship for a period
+    # of 90 days or more including December 31, 2025, your spouse or common-law partner cannot
+    # transfer any unused amounts to you.": a caller's count, 1 when not separated and 0 when
+    # separated (to be confirmed on the ticket).
+    assert SPOUSE_NOT_SEPARATED_90_DAYS.value_type is int
+    assert SPOUSE_NOT_SEPARATED_90_DAYS.non_negative is True
+    assert registry.kind("ca/spouse_not_separated_90_days") is SPOUSE_NOT_SEPARATED_90_DAYS

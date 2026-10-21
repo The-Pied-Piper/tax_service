@@ -6,6 +6,7 @@ from decimal import Decimal
 
 from app.domain.artifact import ArtifactRegistry
 from app.jurisdictions.ca.catalog import (
+    CANADA_TRAINING_CREDIT,
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
     EDUCATOR_SUPPLIES_EXPENSES,
     EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
@@ -42,6 +43,7 @@ from app.jurisdictions.ca.catalog import (
 
 def test_the_refundable_credits_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
     assert registry.get("ca/provincial_credits") is PROVINCIAL_CREDITS
+    assert registry.get("ca/canada_training_credit") is CANADA_TRAINING_CREDIT
     assert registry.get("ca/part_xii_2_tax_credit") is PART_XII_2_TAX_CREDIT
     assert (
         registry.get("ca/employee_and_partner_gst_hst_rebate")
@@ -119,6 +121,7 @@ def test_the_refundable_credits_kinds_are_the_registered_ones(registry: Artifact
 def test_the_refundable_credits_kinds_are_money() -> None:
     for kind in (
         PROVINCIAL_CREDITS,
+        CANADA_TRAINING_CREDIT,
         PART_XII_2_TAX_CREDIT,
         EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
         EDUCATOR_SUPPLIES_EXPENSES,

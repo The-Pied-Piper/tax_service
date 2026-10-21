@@ -33,6 +33,8 @@ from app.jurisdictions.ca.catalog import (
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
+    CANADA_TRAINING_CREDIT_BASIS,
+    CANADIAN_TUITION_FEES,
     CAPITAL_GAIN,
     CAPITAL_GIFTS_LIMIT_ADDITION,
     CAPITAL_GIFTS_TOTAL,
@@ -630,5 +632,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Rate(D("0.5")),
             CENT,
             D("0"),
+        ),
+        # Schedule 11, Schedule 2 and line 45350 (Return A claims none: every figure is 0).
+        CANADA_TRAINING_CREDIT_BASIS: RateAppliedLine(
+            output=CANADA_TRAINING_CREDIT_BASIS,
+            base=CANADIAN_TUITION_FEES,
+            base_amount=D("0"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
         ),
     }
