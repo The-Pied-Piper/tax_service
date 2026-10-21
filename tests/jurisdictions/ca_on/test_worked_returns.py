@@ -270,7 +270,6 @@ inputs:
   ca/other_fhsa_income: "0"
   ca/other_income: "0"
   ca/taxable_scholarships: "0"
-  ca/business_income: "0"
   ca/professional_income: "0"
   ca/commission_income: "0"
   ca/farming_income: "0"

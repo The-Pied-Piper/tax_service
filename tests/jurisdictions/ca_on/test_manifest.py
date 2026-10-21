@@ -149,7 +149,14 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 610
+    assert len(found.capabilities) == 643
+    # T2125 Area A column 22 "UCC at the end of the year", a record list of each class's closing UCC
+    # for next year, and Part 7 line 7O "Business-use-of-home expenses available to carry forward",
+    # which nothing else on the return reads.
+    assert found.outputs == OUTPUTS
+    # List order carries no meaning: the composition derives the run order from the contracts.
+    assert set(found.capabilities) == STEPS
+    assert len(found.capabilities) == 643
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -159,5 +166,5 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 610
+    assert len(composition.order) == 643
     assert wiring == WIRING

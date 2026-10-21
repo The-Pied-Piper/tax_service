@@ -1017,7 +1017,6 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(CPP_ENHANCED_CONTRIBUTIONS), Sum)
     # The self-employment lines (T1 lines 22 to 27, Schedule 8 Parts 2 and 4, Schedule 13).
     for starting in (
-        BUSINESS_INCOME,
         PROFESSIONAL_INCOME,
         COMMISSION_INCOME,
         FARMING_INCOME,
@@ -1031,6 +1030,9 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         EI_SPECIAL_BENEFITS_AGREEMENT,
     ):
         assert worksheet.producer_of(starting) is None, starting.identifier
+    # T1 line 22 (line 13500) is T2125 line 9946, "Amount 5D minus line 9945", no longer a starting
+    # amount.
+    assert isinstance(worksheet.producer_of(BUSINESS_INCOME), Subtract)
     assert isinstance(worksheet.producer_of(NET_SELF_EMPLOYMENT_INCOME), Sum)
     months_tables = {
         worksheet.producer_of(kind)

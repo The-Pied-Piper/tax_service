@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 610
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 643
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -154,6 +154,91 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/other_income",
         "ca/taxable_scholarships",
         "ca/business_income",
+        "ca/business_gross_sales",
+        "ca/business_sales_adjustments",
+        "ca/business_quick_method_gst_hst",
+        "ca/business_quick_method_remitted",
+        "ca/business_reserves_deducted_last_year",
+        "ca/business_other_income",
+        "ca/business_opening_inventory",
+        "ca/business_purchases",
+        "ca/business_direct_wage_costs",
+        "ca/business_subcontracts",
+        "ca/business_other_costs",
+        "ca/business_closing_inventory",
+        "ca/business_advertising",
+        "ca/business_meals_and_entertainment",
+        "ca/business_bad_debts",
+        "ca/business_insurance",
+        "ca/business_interest_and_bank_charges",
+        "ca/business_business_taxes_licences_and_memberships",
+        "ca/business_office_expenses",
+        "ca/business_office_stationery_and_supplies",
+        "ca/business_professional_fees",
+        "ca/business_management_and_administration_fees",
+        "ca/business_rent",
+        "ca/business_repairs_and_maintenance",
+        "ca/business_salaries_wages_and_benefits",
+        "ca/business_property_taxes",
+        "ca/business_travel_expenses",
+        "ca/business_utilities",
+        "ca/business_fuel_costs",
+        "ca/business_delivery_freight_and_express",
+        "ca/business_motor_vehicle_expenses",
+        "ca/business_cca_personal_part",
+        "ca/business_other_expenses",
+        "ca/business_journalism_labour_tax_credit",
+        "ca/business_partner_gst_hst_rebate",
+        "ca/business_partner_other_amount_a",
+        "ca/business_partner_other_amount_b",
+        "ca/business_partner_other_amount_c",
+        "ca/business_partner_other_amount_d",
+        "ca/business_partner_other_amount_e",
+        "ca/business_home_heat",
+        "ca/business_home_electricity",
+        "ca/business_home_insurance",
+        "ca/business_home_maintenance",
+        "ca/business_home_mortgage_interest",
+        "ca/business_home_property_taxes",
+        "ca/business_home_other_expenses",
+        "ca/business_home_personal_use_part",
+        "ca/business_home_cca",
+        "ca/business_home_carried_forward",
+        "ca/business_partner_share",
+        "ca/business_partner",
+        "ca/business_cca_classes",
+        "ca/business_sales_subtotal",
+        "ca/business_recaptured_cca",
+        "ca/business_other_income_with_recapture",
+        "ca/business_reserves_and_other_income",
+        "ca/business_cost_of_goods_subtotal",
+        "ca/business_cost_of_goods_sold",
+        "ca/business_cca_table_claim",
+        "ca/business_cca_claim_less_personal_part",
+        "ca/business_cca_claim",
+        "ca/business_terminal_loss",
+        "ca/business_other_expenses_with_terminal_loss",
+        "ca/business_total_expenses",
+        "ca/business_partner_other_amounts_total",
+        "ca/business_partner_other_amounts",
+        "ca/business_home_expenses_subtotal",
+        "ca/business_home_expenses_business_part",
+        "ca/business_home_expenses_available",
+        "ca/business_home_income_limit",
+        "ca/business_home_carry_forward",
+        "ca/business_home_allowable_claim",
+        "ca/business_home_expenses",
+        "ca/business_quick_method_assistance",
+        "ca/business_adjusted_gross_sales",
+        "ca/business_gross_income",
+        "ca/business_gross_income_for_gross_profit",
+        "ca/business_gross_profit",
+        "ca/business_gross_income_before_expenses",
+        "ca/business_net_income_before_adjustments",
+        "ca/business_share_of_net_income",
+        "ca/business_partnership_total",
+        "ca/business_net_income_after_adjustments",
+        "ca/business_closing_ucc",
         "ca/professional_income",
         "ca/commission_income",
         "ca/farming_income",
@@ -1066,13 +1151,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 610
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 643
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 610
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 643
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

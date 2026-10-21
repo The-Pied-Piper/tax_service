@@ -18,8 +18,60 @@ from app.jurisdictions.ca.catalog import (
     AGED_18_OR_OLDER_AT_END_OF_2025,
     BOND_DISPOSITIONS,
     BORN_IN_1960_OR_EARLIER,
-    BUSINESS_INCOME,
+    BUSINESS_ADVERTISING,
+    BUSINESS_BAD_DEBTS,
+    BUSINESS_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,
+    BUSINESS_CCA_CLASSES,
+    BUSINESS_CCA_PERSONAL_PART,
+    BUSINESS_CLOSING_INVENTORY,
+    BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,
+    BUSINESS_DIRECT_WAGE_COSTS,
+    BUSINESS_FUEL_COSTS,
+    BUSINESS_GROSS_SALES,
+    BUSINESS_HOME_CARRIED_FORWARD,
+    BUSINESS_HOME_CCA,
+    BUSINESS_HOME_ELECTRICITY,
+    BUSINESS_HOME_HEAT,
+    BUSINESS_HOME_INSURANCE,
+    BUSINESS_HOME_MAINTENANCE,
+    BUSINESS_HOME_MORTGAGE_INTEREST,
+    BUSINESS_HOME_OTHER_EXPENSES,
+    BUSINESS_HOME_PERSONAL_USE_PART,
+    BUSINESS_HOME_PROPERTY_TAXES,
+    BUSINESS_INSURANCE,
+    BUSINESS_INTEREST_AND_BANK_CHARGES,
     BUSINESS_INVESTMENT_LOSS,
+    BUSINESS_JOURNALISM_LABOUR_TAX_CREDIT,
+    BUSINESS_MANAGEMENT_AND_ADMINISTRATION_FEES,
+    BUSINESS_MEALS_AND_ENTERTAINMENT,
+    BUSINESS_MOTOR_VEHICLE_EXPENSES,
+    BUSINESS_OFFICE_EXPENSES,
+    BUSINESS_OFFICE_STATIONERY_AND_SUPPLIES,
+    BUSINESS_OPENING_INVENTORY,
+    BUSINESS_OTHER_COSTS,
+    BUSINESS_OTHER_EXPENSES,
+    BUSINESS_OTHER_INCOME,
+    BUSINESS_PARTNER,
+    BUSINESS_PARTNER_GST_HST_REBATE,
+    BUSINESS_PARTNER_OTHER_AMOUNT_A,
+    BUSINESS_PARTNER_OTHER_AMOUNT_B,
+    BUSINESS_PARTNER_OTHER_AMOUNT_C,
+    BUSINESS_PARTNER_OTHER_AMOUNT_D,
+    BUSINESS_PARTNER_OTHER_AMOUNT_E,
+    BUSINESS_PARTNER_SHARE,
+    BUSINESS_PROFESSIONAL_FEES,
+    BUSINESS_PROPERTY_TAXES,
+    BUSINESS_PURCHASES,
+    BUSINESS_QUICK_METHOD_GST_HST,
+    BUSINESS_QUICK_METHOD_REMITTED,
+    BUSINESS_RENT,
+    BUSINESS_REPAIRS_AND_MAINTENANCE,
+    BUSINESS_RESERVES_DEDUCTED_LAST_YEAR,
+    BUSINESS_SALARIES_WAGES_AND_BENEFITS,
+    BUSINESS_SALES_ADJUSTMENTS,
+    BUSINESS_SUBCONTRACTS,
+    BUSINESS_TRAVEL_EXPENSES,
+    BUSINESS_UTILITIES,
     CANADA_TRAINING_CREDIT_CLAIMED,
     CANADA_TRAINING_CREDIT_LIMIT,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
@@ -636,6 +688,105 @@ def rental_expense_artifacts(
     return artifacts
 
 
+# The Form T2125 amounts the caller enters, in the form's order: the non-negative ones, then the
+# signed one (amount 5A, the T5013 amount or a share of a loss).
+BUSINESS_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
+    BUSINESS_GROSS_SALES,  # gross_sales
+    BUSINESS_SALES_ADJUSTMENTS,  # sales_adjustments
+    BUSINESS_QUICK_METHOD_GST_HST,  # quick_method_gst_hst
+    BUSINESS_QUICK_METHOD_REMITTED,  # quick_method_remitted
+    BUSINESS_RESERVES_DEDUCTED_LAST_YEAR,  # reserves_deducted_last_year
+    BUSINESS_OTHER_INCOME,  # other_income
+    BUSINESS_OPENING_INVENTORY,  # opening_inventory
+    BUSINESS_PURCHASES,  # purchases
+    BUSINESS_DIRECT_WAGE_COSTS,  # direct_wage_costs
+    BUSINESS_SUBCONTRACTS,  # subcontracts
+    BUSINESS_OTHER_COSTS,  # other_costs
+    BUSINESS_CLOSING_INVENTORY,  # closing_inventory
+    BUSINESS_ADVERTISING,  # advertising
+    BUSINESS_MEALS_AND_ENTERTAINMENT,  # meals_and_entertainment
+    BUSINESS_BAD_DEBTS,  # bad_debts
+    BUSINESS_INSURANCE,  # insurance
+    BUSINESS_INTEREST_AND_BANK_CHARGES,  # interest_and_bank_charges
+    BUSINESS_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,  # business_taxes_licences_and_memberships
+    BUSINESS_OFFICE_EXPENSES,  # office_expenses
+    BUSINESS_OFFICE_STATIONERY_AND_SUPPLIES,  # office_stationery_and_supplies
+    BUSINESS_PROFESSIONAL_FEES,  # professional_fees
+    BUSINESS_MANAGEMENT_AND_ADMINISTRATION_FEES,  # management_and_administration_fees
+    BUSINESS_RENT,  # rent
+    BUSINESS_REPAIRS_AND_MAINTENANCE,  # repairs_and_maintenance
+    BUSINESS_SALARIES_WAGES_AND_BENEFITS,  # salaries_wages_and_benefits
+    BUSINESS_PROPERTY_TAXES,  # property_taxes
+    BUSINESS_TRAVEL_EXPENSES,  # travel_expenses
+    BUSINESS_UTILITIES,  # utilities
+    BUSINESS_FUEL_COSTS,  # fuel_costs
+    BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,  # delivery_freight_and_express
+    BUSINESS_MOTOR_VEHICLE_EXPENSES,  # motor_vehicle_expenses
+    BUSINESS_CCA_PERSONAL_PART,  # cca_personal_part
+    BUSINESS_OTHER_EXPENSES,  # other_expenses
+    BUSINESS_JOURNALISM_LABOUR_TAX_CREDIT,  # journalism_labour_tax_credit
+    BUSINESS_PARTNER_GST_HST_REBATE,  # partner_gst_hst_rebate
+    BUSINESS_PARTNER_OTHER_AMOUNT_A,  # partner_other_amount_a
+    BUSINESS_PARTNER_OTHER_AMOUNT_B,  # partner_other_amount_b
+    BUSINESS_PARTNER_OTHER_AMOUNT_C,  # partner_other_amount_c
+    BUSINESS_PARTNER_OTHER_AMOUNT_D,  # partner_other_amount_d
+    BUSINESS_PARTNER_OTHER_AMOUNT_E,  # partner_other_amount_e
+    BUSINESS_HOME_HEAT,  # home_heat
+    BUSINESS_HOME_ELECTRICITY,  # home_electricity
+    BUSINESS_HOME_INSURANCE,  # home_insurance
+    BUSINESS_HOME_MAINTENANCE,  # home_maintenance
+    BUSINESS_HOME_MORTGAGE_INTEREST,  # home_mortgage_interest
+    BUSINESS_HOME_PROPERTY_TAXES,  # home_property_taxes
+    BUSINESS_HOME_OTHER_EXPENSES,  # home_other_expenses
+    BUSINESS_HOME_PERSONAL_USE_PART,  # home_personal_use_part
+    BUSINESS_HOME_CCA,  # home_cca
+    BUSINESS_HOME_CARRIED_FORWARD,  # home_carried_forward
+    BUSINESS_PARTNER_SHARE,  # partner_share
+)
+
+
+def business_amount_artifacts(amounts: Mapping[str, str]) -> list[Artifact[Decimal]]:
+    """The Form T2125 amounts the caller enters, keyed by the name after `ca/business_` (the
+    amounts not given are 0)."""
+    by_name = {kind.identifier.removeprefix("ca/business_"): kind for kind in BUSINESS_INPUT_KINDS}
+    assert set(amounts) <= set(by_name), set(amounts) - set(by_name)
+    return [Artifact(kind, D(amounts.get(name, "0"))) for name, kind in by_name.items()]
+
+
+def business_cca_classes(
+    *rows: tuple[str, str, str, str, str, str, str, int],
+) -> Artifact[RecordList]:
+    """The Form T2125 Area A rows, one record per class, with the columns of
+    `rental_cca_classes`: column 1 (class number), column 2, column 3, column 5, column 11,
+    column 12, the CCA claimed (column 21) as decimal text, and 1 if no property is left in the
+    class, else 0 (endnote 3)."""
+    kind = BUSINESS_CCA_CLASSES
+    assert isinstance(kind, RecordListKind)
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {
+            CCA_CLASS_NUMBER: D(class_number),
+            CCA_UCC_AT_START: D(ucc_at_start),
+            CCA_ADDITIONS: D(additions),
+            CCA_PROCEEDS: D(proceeds),
+            CCA_AIIP_ADDITIONS: D(aiip_additions),
+            CCA_RIIP_ADDITIONS: D(riip_additions),
+            CCA_CLAIMED: D(claimed),
+            CCA_NO_PROPERTY_LEFT: no_property_left,
+        }
+        for (
+            class_number,
+            ucc_at_start,
+            additions,
+            proceeds,
+            aiip_additions,
+            riip_additions,
+            claimed,
+            no_property_left,
+        ) in rows
+    ]
+    return Artifact(kind, RecordList(kind.fields, records))
+
+
 def trip(individual: int, zone: int, column_3: str, column_4: str, column_5: str) -> dict[Any, Any]:
     """A Form T2222 Chart B record: the individual, the zone (1 for A, 2 for B), columns 3 to 5."""
     return {
@@ -788,6 +939,9 @@ def compute(
     rental_partner_share: str = "0",
     rental_partner_gst_hst_rebate: str = "0",
     rental_partner_other_expenses: str = "0",
+    business: Mapping[str, str] | None = None,
+    business_partner: int = 0,
+    business_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
     taxable_support_payments: str = "0",
     rrsp_income: str = "0",
     fhsa_income: str = "0",
@@ -954,7 +1108,6 @@ def compute(
     unapplied_net_capital_losses_1990_to_1999: str = "0",
     unapplied_net_capital_losses_2001_to_2024: str = "0",
     net_capital_losses_claimed: str = "0",
-    business_income: str = "0",
     professional_income: str = "0",
     commission_income: str = "0",
     farming_income: str = "0",
@@ -1109,6 +1262,9 @@ def compute(
         Artifact(RENTAL_PARTNER_SHARE, D(rental_partner_share)),
         Artifact(RENTAL_PARTNER_GST_HST_REBATE, D(rental_partner_gst_hst_rebate)),
         Artifact(RENTAL_PARTNER_OTHER_EXPENSES, D(rental_partner_other_expenses)),
+        *business_amount_artifacts(business or {}),
+        Artifact(BUSINESS_PARTNER, business_partner),
+        business_cca_classes(*business_cca_classes_rows),
         Artifact(TAXABLE_SUPPORT_PAYMENTS, D(taxable_support_payments)),
         Artifact(RRSP_INCOME, D(rrsp_income)),
         Artifact(FHSA_INCOME, D(fhsa_income)),
@@ -1417,7 +1573,6 @@ def compute(
             UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024, D(unapplied_net_capital_losses_2001_to_2024)
         ),
         Artifact(NET_CAPITAL_LOSSES_CLAIMED, D(net_capital_losses_claimed)),
-        Artifact(BUSINESS_INCOME, D(business_income)),
         Artifact(PROFESSIONAL_INCOME, D(professional_income)),
         Artifact(COMMISSION_INCOME, D(commission_income)),
         Artifact(FARMING_INCOME, D(farming_income)),
