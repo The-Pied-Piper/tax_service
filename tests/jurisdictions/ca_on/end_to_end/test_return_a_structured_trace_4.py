@@ -202,6 +202,15 @@ from app.jurisdictions.ca.catalog import (
     FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
     FARM_PARTNER,
     FARM_SHARE_OF_NET_INCOME,
+    FARM_VEHICLE_AVAILABLE_INTEREST,
+    FARM_VEHICLE_INTEREST_FOR_PERIOD,
+    FARM_VEHICLE_INTEREST_PAYABLE,
+    FARM_VEHICLE_LEASE_CHARGES_NET,
+    FARM_VEHICLE_LEASE_COST_PORTION,
+    FARM_VEHICLE_LEASE_PRICE_BASE,
+    FARM_VEHICLE_LEASING_COST,
+    FARM_VEHICLE_LIST_PRICE,
+    FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
@@ -541,6 +550,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             (
                 (BUSINESS_VEHICLE_LEASE_CHARGES_NET, D("0")),
                 (BUSINESS_VEHICLE_LEASE_COST_PORTION, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T2042 Chart B line 19 "Amount 17 or 18, whichever is less": line 17 is 0 for Return
+        # A.
+        FARM_VEHICLE_AVAILABLE_INTEREST: LesserOfLine(
+            FARM_VEHICLE_AVAILABLE_INTEREST,
+            (
+                (FARM_VEHICLE_INTEREST_PAYABLE, D("0")),
+                (FARM_VEHICLE_INTEREST_FOR_PERIOD, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T2042 Chart C line 28 "Amount 26 or 27, whichever is less": both are 0 for Return A.
+        FARM_VEHICLE_LEASING_COST: LesserOfLine(
+            FARM_VEHICLE_LEASING_COST,
+            (
+                (FARM_VEHICLE_LEASE_CHARGES_NET, D("0")),
+                (FARM_VEHICLE_LEASE_COST_PORTION, D("0")),
             ),
             D("0"),
         ),
@@ -2263,6 +2291,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             parts=(
                 (BUSINESS_VEHICLE_LIST_PRICE, D("0")),
                 (BUSINESS_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX, D("44706.00")),
+            ),
+            result=D("44706.00"),
+        ),
+        # Form T2042 Chart C line 23 "Amount 23 or ($44,706 + GST and PST, or $44,706 + HST),
+        # whichever is more": the list price is 0, so the printed 44,706 plus 0 tax is the greater.
+        FARM_VEHICLE_LEASE_PRICE_BASE: GreaterOfLine(
+            output=FARM_VEHICLE_LEASE_PRICE_BASE,
+            parts=(
+                (FARM_VEHICLE_LIST_PRICE, D("0")),
+                (FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX, D("44706.00")),
             ),
             result=D("44706.00"),
         ),

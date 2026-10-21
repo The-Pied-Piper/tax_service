@@ -299,6 +299,40 @@ from app.jurisdictions.ca.catalog import (
     FARM_TOBACCO,
     FARM_TOTAL_EXPENSES,
     FARM_VEGETABLES,
+    FARM_VEHICLE_AVAILABLE_INTEREST,
+    FARM_VEHICLE_BUSINESS_KILOMETRES,
+    FARM_VEHICLE_BUSINESS_USE_PART,
+    FARM_VEHICLE_ELECTRICITY_ZEV,
+    FARM_VEHICLE_FUEL_AND_OIL,
+    FARM_VEHICLE_INSURANCE,
+    FARM_VEHICLE_INTEREST_DAYS,
+    FARM_VEHICLE_INTEREST_FOR_PERIOD,
+    FARM_VEHICLE_INTEREST_PAYABLE,
+    FARM_VEHICLE_LEASE_CHARGE_LIMIT_TAX,
+    FARM_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX,
+    FARM_VEHICLE_LEASE_CHARGE_PORTION,
+    FARM_VEHICLE_LEASE_CHARGES,
+    FARM_VEHICLE_LEASE_CHARGES_NET,
+    FARM_VEHICLE_LEASE_COST_LIMIT_TAX,
+    FARM_VEHICLE_LEASE_COST_LIMIT_WITH_TAX,
+    FARM_VEHICLE_LEASE_COST_PORTION,
+    FARM_VEHICLE_LEASE_DAYS,
+    FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,
+    FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
+    FARM_VEHICLE_LEASE_PRICE_BASE,
+    FARM_VEHICLE_LEASING_COST,
+    FARM_VEHICLE_LICENCE_AND_REGISTRATION,
+    FARM_VEHICLE_LIST_PRICE,
+    FARM_VEHICLE_LIST_PRICE_LIMIT_TAX,
+    FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
+    FARM_VEHICLE_MAINTENANCE_AND_REPAIRS,
+    FARM_VEHICLE_OTHER_EXPENSES_10,
+    FARM_VEHICLE_OTHER_EXPENSES_11,
+    FARM_VEHICLE_PARKING_FEES,
+    FARM_VEHICLE_SALES_TAX_RATE,
+    FARM_VEHICLE_SUPPLEMENTARY_INSURANCE,
+    FARM_VEHICLE_TOTAL_EXPENSES,
+    FARM_VEHICLE_TOTAL_KILOMETRES,
     FARM_VETERINARY_FEES,
     FARM_WHEAT,
     FARMING_INCOME,
@@ -794,7 +828,24 @@ INPUTS = frozenset(
         "ca/farm_property_taxes",
         "ca/farm_rent",
         "ca/farm_salaries_wages_and_benefits",
-        "ca/farm_motor_vehicle_expenses",
+        "ca/farm_vehicle_business_kilometres",
+        "ca/farm_vehicle_total_kilometres",
+        "ca/farm_vehicle_fuel_and_oil",
+        "ca/farm_vehicle_insurance",
+        "ca/farm_vehicle_licence_and_registration",
+        "ca/farm_vehicle_maintenance_and_repairs",
+        "ca/farm_vehicle_electricity_zev",
+        "ca/farm_vehicle_other_expenses_10",
+        "ca/farm_vehicle_other_expenses_11",
+        "ca/farm_vehicle_parking_fees",
+        "ca/farm_vehicle_supplementary_insurance",
+        "ca/farm_vehicle_interest_payable",
+        "ca/farm_vehicle_interest_days",
+        "ca/farm_vehicle_lease_charges",
+        "ca/farm_vehicle_lease_payments_before",
+        "ca/farm_vehicle_lease_days",
+        "ca/farm_vehicle_list_price",
+        "ca/farm_vehicle_sales_tax_rate",
         "ca/farm_small_tools",
         "ca/farm_mandatory_inventory_adjustment_previous_year",
         "ca/farm_optional_inventory_adjustment_previous_year",
@@ -2557,6 +2608,206 @@ STEPS = {
     # T2042 Part 4 "Subtotal of expenses" (4B), "Expenses (enter only the business part)": the
     # expense lines 9661 to 9820, the previous year's inventory adjustments 9937 and 9938, and
     # line 9790, in the form's order.
+    # Chart B line 18 "($350*** ÷ 30) × the number of days in the fiscal period for which interest
+    # was payable (accrual method) or paid (cash method)".
+    CapabilitySelection(
+        name="core/apply_ratio",
+        params={"rounding": "ca/business_vehicle_interest_rounding"},
+        consumes={
+            "amount": "ca/business_vehicle_interest_limit",
+            "numerator": "ca/farm_vehicle_interest_days",
+            "denominator": "ca/business_vehicle_days_divisor",
+        },
+        produces={"output": "ca/farm_vehicle_interest_for_period"},
+    ),
+    # Chart B line 19 "Available interest expense: Amount 17 or 18, whichever is less (include this
+    # in amount 4 of Chart A above)": the lesser of line 17 "Total interest payable (accrual method)
+    # or paid (cash method) in the fiscal period" and line 18.
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/farm_vehicle_interest_payable",
+                "ca/farm_vehicle_interest_for_period",
+            ),
+        },
+        produces={"output": "ca/farm_vehicle_available_interest"},
+    ),
+    # Chart C: the sales tax (GST and PST, or HST) on each printed amount at the rate of the
+    # caller's province, "Use a GST rate of 5% or HST rate applicable to your province.", then the
+    # printed amount plus that tax.
+    CapabilitySelection(
+        name="ca/apply_percentage",
+        params={"rounding": "ca/business_vehicle_sales_tax_rounding"},
+        consumes={
+            "amount": "ca/business_vehicle_list_price_limit",
+            "percentage": "ca/farm_vehicle_sales_tax_rate",
+        },
+        produces={"output": "ca/farm_vehicle_list_price_limit_tax"},
+    ),
+    CapabilitySelection(
+        name="ca/apply_percentage",
+        params={"rounding": "ca/business_vehicle_sales_tax_rounding"},
+        consumes={
+            "amount": "ca/business_vehicle_lease_charge_limit",
+            "percentage": "ca/farm_vehicle_sales_tax_rate",
+        },
+        produces={"output": "ca/farm_vehicle_lease_charge_limit_tax"},
+    ),
+    CapabilitySelection(
+        name="ca/apply_percentage",
+        params={"rounding": "ca/business_vehicle_sales_tax_rounding"},
+        consumes={
+            "amount": "ca/business_vehicle_lease_cost_limit",
+            "percentage": "ca/farm_vehicle_sales_tax_rate",
+        },
+        produces={"output": "ca/farm_vehicle_lease_cost_limit_tax"},
+    ),
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_vehicle_list_price_limit",
+                "ca/farm_vehicle_list_price_limit_tax",
+            ),
+        },
+        produces={"output": "ca/farm_vehicle_list_price_limit_with_tax"},
+    ),
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_vehicle_lease_charge_limit",
+                "ca/farm_vehicle_lease_charge_limit_tax",
+            ),
+        },
+        produces={"output": "ca/farm_vehicle_lease_charge_limit_with_tax"},
+    ),
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_vehicle_lease_cost_limit",
+                "ca/farm_vehicle_lease_cost_limit_tax",
+            ),
+        },
+        produces={"output": "ca/farm_vehicle_lease_cost_limit_with_tax"},
+    ),
+    # Chart C line 23 "Amount 23 or ($44,706 + GST and PST, or $44,706 + HST), whichever is more".
+    CapabilitySelection(
+        name="core/greater_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/farm_vehicle_list_price",
+                "ca/farm_vehicle_list_price_limit_with_tax",
+            ),
+        },
+        produces={"output": "ca/farm_vehicle_lease_price_base"},
+    ),
+    # Chart C line 24 "Amount 23 or ($44,706 + GST and PST, or $44,706 + HST), whichever is more ×
+    # 85%".
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/business_vehicle_lease_price_rate"},
+        consumes={"base": "ca/farm_vehicle_lease_price_base"},
+        produces={"output": "ca/farm_vehicle_lease_price_85_percent"},
+    ),
+    # Chart C line 25 "[($1,100 + GST and PST, or $1,100 + HST) × amount 22] ÷ 30".
+    CapabilitySelection(
+        name="core/apply_ratio",
+        params={"rounding": "ca/business_vehicle_lease_charge_rounding"},
+        consumes={
+            "amount": "ca/farm_vehicle_lease_charge_limit_with_tax",
+            "numerator": "ca/farm_vehicle_lease_days",
+            "denominator": "ca/business_vehicle_days_divisor",
+        },
+        produces={"output": "ca/farm_vehicle_lease_charge_portion"},
+    ),
+    # Chart C line 26, printed "Amount 25: amount 21" with a subtraction sign: amount 25 less amount
+    # 21, signed (a negative result is kept).
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/farm_vehicle_lease_charge_portion",
+            "less": "ca/farm_vehicle_lease_payments_before",
+        },
+        produces={"output": "ca/farm_vehicle_lease_charges_net"},
+    ),
+    # Chart C line 27 "[($38,000 + GST and PST, or $38,000 + HST) × amount 20] ÷ amount 24".
+    CapabilitySelection(
+        name="core/apply_ratio",
+        params={"rounding": "ca/business_vehicle_lease_cost_rounding"},
+        consumes={
+            "amount": "ca/farm_vehicle_lease_cost_limit_with_tax",
+            "numerator": "ca/farm_vehicle_lease_charges",
+            "denominator": "ca/farm_vehicle_lease_price_85_percent",
+        },
+        produces={"output": "ca/farm_vehicle_lease_cost_portion"},
+    ),
+    # Chart C line 28 "Eligible leasing cost: Amount 26 or 27, whichever is less (enter in amount 8
+    # of Chart A above)".
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/farm_vehicle_lease_charges_net",
+                "ca/farm_vehicle_lease_cost_portion",
+            ),
+        },
+        produces={"output": "ca/farm_vehicle_leasing_cost"},
+    ),
+    # Chart A line 12 "Total motor vehicle expenses: Add amounts 3 to 11.", amount 4 being line 19
+    # and amount 8 being line 28.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/farm_vehicle_fuel_and_oil",
+                "ca/farm_vehicle_available_interest",
+                "ca/farm_vehicle_insurance",
+                "ca/farm_vehicle_licence_and_registration",
+                "ca/farm_vehicle_maintenance_and_repairs",
+                "ca/farm_vehicle_leasing_cost",
+                "ca/farm_vehicle_electricity_zev",
+                "ca/farm_vehicle_other_expenses_10",
+                "ca/farm_vehicle_other_expenses_11",
+            ),
+        },
+        produces={"output": "ca/farm_vehicle_total_expenses"},
+    ),
+    # Chart A line 13 "Business use part: amount 1 ÷ amount 2 × amount 12 = 13".
+    CapabilitySelection(
+        name="ca/apply_ratio_or_zero",
+        params={"rounding": "ca/business_vehicle_business_use_rounding"},
+        consumes={
+            "amount": "ca/farm_vehicle_total_expenses",
+            "numerator": "ca/farm_vehicle_business_kilometres",
+            "denominator": "ca/farm_vehicle_total_kilometres",
+        },
+        produces={"output": "ca/farm_vehicle_business_use_part"},
+    ),
+    # Chart A line 16 "Allowable motor vehicle expenses: Add amounts 13 to 15 (enter this total on
+    # line 9819 of Part 4)": the line 9819 kind, produced here and no longer a caller input.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/farm_vehicle_business_use_part",
+                "ca/farm_vehicle_parking_fees",
+                "ca/farm_vehicle_supplementary_insurance",
+            ),
+        },
+        produces={"output": "ca/farm_motor_vehicle_expenses"},
+    ),
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -4303,6 +4554,133 @@ WIRING = {
         frozenset({FARMING_INCOME}),
     ),
     (ClosingUcc, frozenset({FARM_CCA_CLASSES}), frozenset({FARM_CLOSING_UCC})),
+    (
+        ApplyRatio,
+        frozenset(
+            {
+                BUSINESS_VEHICLE_INTEREST_LIMIT,
+                FARM_VEHICLE_INTEREST_DAYS,
+                BUSINESS_VEHICLE_DAYS_DIVISOR,
+            }
+        ),
+        frozenset({FARM_VEHICLE_INTEREST_FOR_PERIOD}),
+    ),
+    (
+        LesserOf,
+        frozenset({FARM_VEHICLE_INTEREST_PAYABLE, FARM_VEHICLE_INTEREST_FOR_PERIOD}),
+        frozenset({FARM_VEHICLE_AVAILABLE_INTEREST}),
+    ),
+    (
+        ApplyPercentage,
+        frozenset({BUSINESS_VEHICLE_LIST_PRICE_LIMIT, FARM_VEHICLE_SALES_TAX_RATE}),
+        frozenset({FARM_VEHICLE_LIST_PRICE_LIMIT_TAX}),
+    ),
+    (
+        ApplyPercentage,
+        frozenset({BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT, FARM_VEHICLE_SALES_TAX_RATE}),
+        frozenset({FARM_VEHICLE_LEASE_CHARGE_LIMIT_TAX}),
+    ),
+    (
+        ApplyPercentage,
+        frozenset({BUSINESS_VEHICLE_LEASE_COST_LIMIT, FARM_VEHICLE_SALES_TAX_RATE}),
+        frozenset({FARM_VEHICLE_LEASE_COST_LIMIT_TAX}),
+    ),
+    (
+        Sum,
+        frozenset({BUSINESS_VEHICLE_LIST_PRICE_LIMIT, FARM_VEHICLE_LIST_PRICE_LIMIT_TAX}),
+        frozenset({FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX}),
+    ),
+    (
+        Sum,
+        frozenset({BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT, FARM_VEHICLE_LEASE_CHARGE_LIMIT_TAX}),
+        frozenset({FARM_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX}),
+    ),
+    (
+        Sum,
+        frozenset({BUSINESS_VEHICLE_LEASE_COST_LIMIT, FARM_VEHICLE_LEASE_COST_LIMIT_TAX}),
+        frozenset({FARM_VEHICLE_LEASE_COST_LIMIT_WITH_TAX}),
+    ),
+    (
+        GreaterOf,
+        frozenset({FARM_VEHICLE_LIST_PRICE, FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX}),
+        frozenset({FARM_VEHICLE_LEASE_PRICE_BASE}),
+    ),
+    (
+        ApplyRate,
+        frozenset({FARM_VEHICLE_LEASE_PRICE_BASE}),
+        frozenset({FARM_VEHICLE_LEASE_PRICE_85_PERCENT}),
+    ),
+    (
+        ApplyRatio,
+        frozenset(
+            {
+                FARM_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX,
+                FARM_VEHICLE_LEASE_DAYS,
+                BUSINESS_VEHICLE_DAYS_DIVISOR,
+            }
+        ),
+        frozenset({FARM_VEHICLE_LEASE_CHARGE_PORTION}),
+    ),
+    (
+        Subtract,
+        frozenset({FARM_VEHICLE_LEASE_CHARGE_PORTION, FARM_VEHICLE_LEASE_PAYMENTS_BEFORE}),
+        frozenset({FARM_VEHICLE_LEASE_CHARGES_NET}),
+    ),
+    (
+        ApplyRatio,
+        frozenset(
+            {
+                FARM_VEHICLE_LEASE_COST_LIMIT_WITH_TAX,
+                FARM_VEHICLE_LEASE_CHARGES,
+                FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
+            }
+        ),
+        frozenset({FARM_VEHICLE_LEASE_COST_PORTION}),
+    ),
+    (
+        LesserOf,
+        frozenset({FARM_VEHICLE_LEASE_CHARGES_NET, FARM_VEHICLE_LEASE_COST_PORTION}),
+        frozenset({FARM_VEHICLE_LEASING_COST}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                FARM_VEHICLE_FUEL_AND_OIL,
+                FARM_VEHICLE_AVAILABLE_INTEREST,
+                FARM_VEHICLE_INSURANCE,
+                FARM_VEHICLE_LICENCE_AND_REGISTRATION,
+                FARM_VEHICLE_MAINTENANCE_AND_REPAIRS,
+                FARM_VEHICLE_LEASING_COST,
+                FARM_VEHICLE_ELECTRICITY_ZEV,
+                FARM_VEHICLE_OTHER_EXPENSES_10,
+                FARM_VEHICLE_OTHER_EXPENSES_11,
+            }
+        ),
+        frozenset({FARM_VEHICLE_TOTAL_EXPENSES}),
+    ),
+    (
+        ApplyRatioOrZero,
+        frozenset(
+            {
+                FARM_VEHICLE_TOTAL_EXPENSES,
+                FARM_VEHICLE_BUSINESS_KILOMETRES,
+                FARM_VEHICLE_TOTAL_KILOMETRES,
+            }
+        ),
+        frozenset({FARM_VEHICLE_BUSINESS_USE_PART}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                FARM_VEHICLE_BUSINESS_USE_PART,
+                FARM_VEHICLE_PARKING_FEES,
+                FARM_VEHICLE_SUPPLEMENTARY_INSURANCE,
+            }
+        ),
+        frozenset({FARM_MOTOR_VEHICLE_EXPENSES}),
+    ),
     # T2121 (Statement of Fishing Activities), Return BD: one tuple per step of the fishing block.
     (RecapturedCca, frozenset({FISH_CCA_CLASSES}), frozenset({FISH_RECAPTURED_CCA})),
     (

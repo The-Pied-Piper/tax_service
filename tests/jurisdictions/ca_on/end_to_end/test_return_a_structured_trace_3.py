@@ -183,6 +183,9 @@ from app.jurisdictions.ca.catalog import (
     FARM_PARTNER_OTHER_AMOUNTS,
     FARM_PARTNERSHIP_TOTAL,
     FARM_TOTAL_EXPENSES,
+    FARM_VEHICLE_LEASE_CHARGE_PORTION,
+    FARM_VEHICLE_LEASE_CHARGES_NET,
+    FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,
     FARMING_INCOME,
     FEDERAL_TUITION_AMOUNT,
     FHSA_ANNUAL_AMOUNT,
@@ -457,6 +460,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             minuend=BUSINESS_VEHICLE_LEASE_CHARGE_PORTION,
             minuend_amount=D("0"),
             subtrahend=BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T2042 Chart C line 26 "Amount 25: amount 21" (printed with a subtraction sign): line
+        # 25 is 0 for Return A (no leased vehicle), and amount 21 is 0.
+        FARM_VEHICLE_LEASE_CHARGES_NET: SubtractedLine(
+            output=FARM_VEHICLE_LEASE_CHARGES_NET,
+            minuend=FARM_VEHICLE_LEASE_CHARGE_PORTION,
+            minuend_amount=D("0"),
+            subtrahend=FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,
             subtrahend_amount=D("0"),
             result=D("0"),
         ),

@@ -61,6 +61,8 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_CREDIT,
     EMPLOYMENT_INCOME,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
+    FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
+    FARM_VEHICLE_LEASE_PRICE_BASE,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FIRST_TIER_DONATION_CREDIT,
     HIGH_INCOME_DONATION_CREDIT,
@@ -212,6 +214,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT: RateAppliedLine(
             BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
             BUSINESS_VEHICLE_LEASE_PRICE_BASE,
+            D("44706.00"),
+            Rate(D("0.85")),
+            CENT,
+            D("38000.10"),
+        ),
+        # Form T2042 Chart C line 24 "× 85%" of amount 23 or the list price limit with tax: Return A
+        # has no leased vehicle, so the base is 44706.00 and the 85% is 38000.10.
+        FARM_VEHICLE_LEASE_PRICE_85_PERCENT: RateAppliedLine(
+            FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
+            FARM_VEHICLE_LEASE_PRICE_BASE,
             D("44706.00"),
             Rate(D("0.85")),
             CENT,
