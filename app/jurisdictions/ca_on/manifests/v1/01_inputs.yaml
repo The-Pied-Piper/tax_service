@@ -20,6 +20,7 @@ inputs:
   - ca/slip_capital_gains_or_losses
   - ca/t3_capital_gains_or_losses
   - ca/capital_gains_reserves
+  - ca/partnership_gains_at_full_inclusion
   - ca/other_employment_income
   - ca/old_age_security
   - ca/cpp_or_qpp_benefits
