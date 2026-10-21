@@ -147,7 +147,89 @@ from app.jurisdictions.ca.catalog import (
     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
     EMPLOYMENT_INCOME,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
-    FARMING_INCOME,
+    FARM_BARLEY,
+    FARM_BUILDING_REPAIRS_AND_MAINTENANCE,
+    FARM_CANOLA,
+    FARM_CATTLE,
+    FARM_CCA_CLASSES,
+    FARM_CCA_PERSONAL_PART,
+    FARM_CLEARING_LEVELLING_AND_DRAINING,
+    FARM_CONTAINERS_AND_TWINE,
+    FARM_CORN,
+    FARM_CROP_INSURANCE,
+    FARM_CROP_INSURANCE_PREMIUMS,
+    FARM_CUSTOM_WORK,
+    FARM_CUSTOM_WORK_EXPENSES,
+    FARM_DAIRY_SUBSIDIES,
+    FARM_EGGS,
+    FARM_ELECTRICITY,
+    FARM_FEED_SUPPLEMENTS_STRAW_AND_BEDDING,
+    FARM_FERTILIZERS_AND_LIME,
+    FARM_FLAXSEED,
+    FARM_FORAGE_CROPS_OR_SEEDS,
+    FARM_FRUIT,
+    FARM_FUEL_CHARGE_CREDIT,
+    FARM_GASOLINE_DIESEL_AND_OIL,
+    FARM_GRAINS_AND_OILSEEDS,
+    FARM_GREENHOUSE_AND_NURSERY,
+    FARM_HEATING_AND_CURING_FUEL,
+    FARM_HOME_CARRIED_FORWARD,
+    FARM_HOME_CCA,
+    FARM_HOME_ELECTRICITY,
+    FARM_HOME_HEAT,
+    FARM_HOME_INSURANCE,
+    FARM_HOME_MAINTENANCE,
+    FARM_HOME_MORTGAGE_INTEREST,
+    FARM_HOME_OTHER_EXPENSES,
+    FARM_HOME_PERSONAL_USE_PART,
+    FARM_HOME_PROPERTY_TAXES,
+    FARM_INSURANCE,
+    FARM_INSURANCE_PROCEEDS,
+    FARM_INSURANCE_PROGRAM_OVERPAYMENT_RECAPTURE,
+    FARM_INTEREST_AND_BANK_CHARGES,
+    FARM_LIVESTOCK_AND_ANIMAL_PRODUCTS_REVENUE,
+    FARM_LIVESTOCK_PURCHASED,
+    FARM_MACHINERY_REPAIRS_LICENCES_AND_INSURANCE,
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_CURRENT_YEAR,
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
+    FARM_MILK_AND_CREAM,
+    FARM_MIXED_GRAINS,
+    FARM_MOTOR_VEHICLE_EXPENSES,
+    FARM_OATS,
+    FARM_OFFICE_EXPENSES,
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_CURRENT_YEAR,
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
+    FARM_OTHER_COMMODITIES,
+    FARM_OTHER_CROPS,
+    FARM_OTHER_EXPENSES,
+    FARM_OTHER_INCOME,
+    FARM_OTHER_PROGRAM_PAYMENTS,
+    FARM_PARTNER,
+    FARM_PARTNER_GST_HST_REBATE,
+    FARM_PARTNER_OTHER_AMOUNT_A,
+    FARM_PARTNER_OTHER_AMOUNT_B,
+    FARM_PARTNER_OTHER_AMOUNT_C,
+    FARM_PARTNER_OTHER_AMOUNT_D,
+    FARM_PARTNER_OTHER_AMOUNT_E,
+    FARM_PARTNER_SHARE,
+    FARM_PATRONAGE_DIVIDENDS,
+    FARM_PESTICIDES,
+    FARM_POTATOES,
+    FARM_POULTRY,
+    FARM_PROFESSIONAL_FEES,
+    FARM_PROPERTY_TAXES,
+    FARM_REBATES,
+    FARM_RENT,
+    FARM_SALARIES_WAGES_AND_BENEFITS,
+    FARM_SEEDS_AND_PLANTS,
+    FARM_SHEEP_AND_LAMBS,
+    FARM_SMALL_TOOLS,
+    FARM_SOYBEANS,
+    FARM_SWINE,
+    FARM_TOBACCO,
+    FARM_VEGETABLES,
+    FARM_VETERINARY_FEES,
+    FARM_WHEAT,
     FHSA_ANNUAL_LIMITS_FOR_2024_AND_PRIOR_YEARS,
     FHSA_CARRYFORWARD_FOR_2024,
     FHSA_CARRYFORWARD_FOR_2025,
@@ -794,6 +876,135 @@ def business_cca_classes(
     return Artifact(kind, RecordList(kind.fields, records))
 
 
+# The Form T2042 amounts the caller enters, in the form's order: the non-negative ones, then the
+# signed one (amount 5A, the T5013 amount or a share of a loss).
+FARM_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
+    FARM_WHEAT,  # wheat
+    FARM_OATS,  # oats
+    FARM_BARLEY,  # barley
+    FARM_MIXED_GRAINS,  # mixed_grains
+    FARM_CORN,  # corn
+    FARM_CANOLA,  # canola
+    FARM_FLAXSEED,  # flaxseed
+    FARM_SOYBEANS,  # soybeans
+    FARM_GRAINS_AND_OILSEEDS,  # grains_and_oilseeds
+    FARM_FRUIT,  # fruit
+    FARM_POTATOES,  # potatoes
+    FARM_VEGETABLES,  # vegetables
+    FARM_TOBACCO,  # tobacco
+    FARM_GREENHOUSE_AND_NURSERY,  # greenhouse_and_nursery
+    FARM_FORAGE_CROPS_OR_SEEDS,  # forage_crops_or_seeds
+    FARM_OTHER_CROPS,  # other_crops
+    FARM_CATTLE,  # cattle
+    FARM_SWINE,  # swine
+    FARM_POULTRY,  # poultry
+    FARM_SHEEP_AND_LAMBS,  # sheep_and_lambs
+    FARM_LIVESTOCK_AND_ANIMAL_PRODUCTS_REVENUE,  # livestock_and_animal_products_revenue
+    FARM_MILK_AND_CREAM,  # milk_and_cream
+    FARM_EGGS,  # eggs
+    FARM_OTHER_COMMODITIES,  # other_commodities
+    FARM_DAIRY_SUBSIDIES,  # dairy_subsidies
+    FARM_CROP_INSURANCE,  # crop_insurance
+    FARM_OTHER_PROGRAM_PAYMENTS,  # other_program_payments
+    FARM_REBATES,  # rebates
+    FARM_CUSTOM_WORK,  # custom_work
+    FARM_INSURANCE_PROCEEDS,  # insurance_proceeds
+    FARM_PATRONAGE_DIVIDENDS,  # patronage_dividends
+    FARM_OTHER_INCOME,  # other_income
+    FARM_CONTAINERS_AND_TWINE,  # containers_and_twine
+    FARM_FERTILIZERS_AND_LIME,  # fertilizers_and_lime
+    FARM_PESTICIDES,  # pesticides
+    FARM_SEEDS_AND_PLANTS,  # seeds_and_plants
+    FARM_FEED_SUPPLEMENTS_STRAW_AND_BEDDING,  # feed_supplements_straw_and_bedding
+    FARM_LIVESTOCK_PURCHASED,  # livestock_purchased
+    FARM_VETERINARY_FEES,  # veterinary_fees
+    FARM_MACHINERY_REPAIRS_LICENCES_AND_INSURANCE,  # machinery_repairs_licences_and_insurance
+    FARM_GASOLINE_DIESEL_AND_OIL,  # gasoline_diesel_and_oil
+    FARM_BUILDING_REPAIRS_AND_MAINTENANCE,  # building_repairs_and_maintenance
+    FARM_CLEARING_LEVELLING_AND_DRAINING,  # clearing_levelling_and_draining
+    FARM_CROP_INSURANCE_PREMIUMS,  # crop_insurance_premiums
+    FARM_CUSTOM_WORK_EXPENSES,  # custom_work_expenses
+    FARM_ELECTRICITY,  # electricity
+    FARM_HEATING_AND_CURING_FUEL,  # heating_and_curing_fuel
+    FARM_INSURANCE_PROGRAM_OVERPAYMENT_RECAPTURE,  # insurance_program_overpayment_recapture
+    FARM_INSURANCE,  # insurance
+    FARM_INTEREST_AND_BANK_CHARGES,  # interest_and_bank_charges
+    FARM_OFFICE_EXPENSES,  # office_expenses
+    FARM_PROFESSIONAL_FEES,  # professional_fees
+    FARM_PROPERTY_TAXES,  # property_taxes
+    FARM_RENT,  # rent
+    FARM_SALARIES_WAGES_AND_BENEFITS,  # salaries_wages_and_benefits
+    FARM_MOTOR_VEHICLE_EXPENSES,  # motor_vehicle_expenses
+    FARM_SMALL_TOOLS,  # small_tools
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,  # optional_inventory_adjustment_previous_year
+    FARM_OTHER_EXPENSES,  # other_expenses
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_CURRENT_YEAR,  # optional_inventory_adjustment_current_year
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_CURRENT_YEAR,  # mandatory_inventory_adjustment_current_year
+    FARM_CCA_PERSONAL_PART,  # cca_personal_part
+    FARM_PARTNER_SHARE,  # partner_share
+    FARM_FUEL_CHARGE_CREDIT,  # fuel_charge_credit
+    FARM_PARTNER_GST_HST_REBATE,  # partner_gst_hst_rebate
+    FARM_PARTNER_OTHER_AMOUNT_A,  # partner_other_amount_a
+    FARM_PARTNER_OTHER_AMOUNT_B,  # partner_other_amount_b
+    FARM_PARTNER_OTHER_AMOUNT_C,  # partner_other_amount_c
+    FARM_PARTNER_OTHER_AMOUNT_D,  # partner_other_amount_d
+    FARM_PARTNER_OTHER_AMOUNT_E,  # partner_other_amount_e
+    FARM_HOME_HEAT,  # home_heat
+    FARM_HOME_ELECTRICITY,  # home_electricity
+    FARM_HOME_INSURANCE,  # home_insurance
+    FARM_HOME_MAINTENANCE,  # home_maintenance
+    FARM_HOME_MORTGAGE_INTEREST,  # home_mortgage_interest
+    FARM_HOME_PROPERTY_TAXES,  # home_property_taxes
+    FARM_HOME_OTHER_EXPENSES,  # home_other_expenses
+    FARM_HOME_PERSONAL_USE_PART,  # home_personal_use_part
+    FARM_HOME_CCA,  # home_cca
+    FARM_HOME_CARRIED_FORWARD,  # home_carried_forward
+)
+
+
+def farm_amount_artifacts(amounts: Mapping[str, str]) -> list[Artifact[Decimal]]:
+    """The Form T2042 amounts the caller enters, keyed by the name after `ca/farm_` (the amounts not
+    given are 0)."""
+    by_name = {kind.identifier.removeprefix("ca/farm_"): kind for kind in FARM_INPUT_KINDS}
+    assert set(amounts) <= set(by_name), set(amounts) - set(by_name)
+    return [Artifact(kind, D(amounts.get(name, "0"))) for name, kind in by_name.items()]
+
+
+def farm_cca_classes(
+    *rows: tuple[str, str, str, str, str, str, str, int],
+) -> Artifact[RecordList]:
+    """The Form T2042 Area A rows, one record per class, with the columns of
+    `rental_cca_classes`: column 1 (class number), column 2, column 3, column 5, column 11,
+    column 12, the CCA claimed (column 21) as decimal text, and 1 if no property is left in the
+    class, else 0 (endnote 3)."""
+    kind = FARM_CCA_CLASSES
+    assert isinstance(kind, RecordListKind)
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {
+            CCA_CLASS_NUMBER: D(class_number),
+            CCA_UCC_AT_START: D(ucc_at_start),
+            CCA_ADDITIONS: D(additions),
+            CCA_PROCEEDS: D(proceeds),
+            CCA_AIIP_ADDITIONS: D(aiip_additions),
+            CCA_RIIP_ADDITIONS: D(riip_additions),
+            CCA_CLAIMED: D(claimed),
+            CCA_NO_PROPERTY_LEFT: no_property_left,
+        }
+        for (
+            class_number,
+            ucc_at_start,
+            additions,
+            proceeds,
+            aiip_additions,
+            riip_additions,
+            claimed,
+            no_property_left,
+        ) in rows
+    ]
+    return Artifact(kind, RecordList(kind.fields, records))
+
+
 def trip(individual: int, zone: int, column_3: str, column_4: str, column_5: str) -> dict[Any, Any]:
     """A Form T2222 Chart B record: the individual, the zone (1 for A, 2 for B), columns 3 to 5."""
     return {
@@ -949,6 +1160,9 @@ def compute(
     business: Mapping[str, str] | None = None,
     business_partner: int = 0,
     business_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    farm: Mapping[str, str] | None = None,
+    farm_partner: int = 0,
+    farm_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
     taxable_support_payments: str = "0",
     rrsp_income: str = "0",
     fhsa_income: str = "0",
@@ -1117,7 +1331,6 @@ def compute(
     net_capital_losses_claimed: str = "0",
     professional_income: str = "0",
     commission_income: str = "0",
-    farming_income: str = "0",
     fishing_income: str = "0",
     cpp_months: int = 12,
     cpt20_earnings: str = "0",
@@ -1279,6 +1492,9 @@ def compute(
         *business_amount_artifacts(business or {}),
         Artifact(BUSINESS_PARTNER, business_partner),
         business_cca_classes(*business_cca_classes_rows),
+        *farm_amount_artifacts(farm or {}),
+        Artifact(FARM_PARTNER, farm_partner),
+        farm_cca_classes(*farm_cca_classes_rows),
         Artifact(TAXABLE_SUPPORT_PAYMENTS, D(taxable_support_payments)),
         Artifact(RRSP_INCOME, D(rrsp_income)),
         Artifact(FHSA_INCOME, D(fhsa_income)),
@@ -1589,7 +1805,6 @@ def compute(
         Artifact(NET_CAPITAL_LOSSES_CLAIMED, D(net_capital_losses_claimed)),
         Artifact(PROFESSIONAL_INCOME, D(professional_income)),
         Artifact(COMMISSION_INCOME, D(commission_income)),
-        Artifact(FARMING_INCOME, D(farming_income)),
         Artifact(FISHING_INCOME, D(fishing_income)),
         Artifact(CPP_MONTHS, cpp_months),
         Artifact(CPT20_EARNINGS, D(cpt20_earnings)),

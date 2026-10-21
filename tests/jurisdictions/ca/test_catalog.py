@@ -151,6 +151,115 @@ from app.jurisdictions.ca.catalog import (
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     EI_SELF_EMPLOYMENT_EARNINGS,
     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
+    FARM_BARLEY,
+    FARM_BUILDING_REPAIRS_AND_MAINTENANCE,
+    FARM_CANOLA,
+    FARM_CATTLE,
+    FARM_CCA_CLAIM,
+    FARM_CCA_CLAIM_LESS_PERSONAL_PART,
+    FARM_CCA_CLASSES,
+    FARM_CCA_PERSONAL_PART,
+    FARM_CCA_TABLE_CLAIM,
+    FARM_CLEARING_LEVELLING_AND_DRAINING,
+    FARM_CLOSING_UCC,
+    FARM_CONTAINERS_AND_TWINE,
+    FARM_CORN,
+    FARM_CROP_INSURANCE,
+    FARM_CROP_INSURANCE_PREMIUMS,
+    FARM_CUSTOM_WORK,
+    FARM_CUSTOM_WORK_EXPENSES,
+    FARM_DAIRY_SUBSIDIES,
+    FARM_EGGS,
+    FARM_ELECTRICITY,
+    FARM_EXPENSES_SUBTOTAL,
+    FARM_FEED_SUPPLEMENTS_STRAW_AND_BEDDING,
+    FARM_FERTILIZERS_AND_LIME,
+    FARM_FLAXSEED,
+    FARM_FORAGE_CROPS_OR_SEEDS,
+    FARM_FRUIT,
+    FARM_FUEL_CHARGE_CREDIT,
+    FARM_GASOLINE_DIESEL_AND_OIL,
+    FARM_GRAINS_AND_OILSEEDS,
+    FARM_GREENHOUSE_AND_NURSERY,
+    FARM_GROSS_INCOME,
+    FARM_GROSS_INCOME_BEFORE_EXPENSES,
+    FARM_HEATING_AND_CURING_FUEL,
+    FARM_HOME_ALLOWABLE_CLAIM,
+    FARM_HOME_CARRIED_FORWARD,
+    FARM_HOME_CARRY_FORWARD,
+    FARM_HOME_CCA,
+    FARM_HOME_ELECTRICITY,
+    FARM_HOME_EXPENSES,
+    FARM_HOME_EXPENSES_AVAILABLE,
+    FARM_HOME_EXPENSES_BUSINESS_PART,
+    FARM_HOME_EXPENSES_SUBTOTAL,
+    FARM_HOME_HEAT,
+    FARM_HOME_INCOME_LIMIT,
+    FARM_HOME_INSURANCE,
+    FARM_HOME_MAINTENANCE,
+    FARM_HOME_MORTGAGE_INTEREST,
+    FARM_HOME_OTHER_EXPENSES,
+    FARM_HOME_PERSONAL_USE_PART,
+    FARM_HOME_PROPERTY_TAXES,
+    FARM_INSURANCE,
+    FARM_INSURANCE_PROCEEDS,
+    FARM_INSURANCE_PROGRAM_OVERPAYMENT_RECAPTURE,
+    FARM_INTEREST_AND_BANK_CHARGES,
+    FARM_LIVESTOCK_AND_ANIMAL_PRODUCTS_REVENUE,
+    FARM_LIVESTOCK_PURCHASED,
+    FARM_MACHINERY_REPAIRS_LICENCES_AND_INSURANCE,
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_CURRENT_YEAR,
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
+    FARM_MILK_AND_CREAM,
+    FARM_MIXED_GRAINS,
+    FARM_MOTOR_VEHICLE_EXPENSES,
+    FARM_NET_INCOME_AFTER_ADJUSTMENTS,
+    FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
+    FARM_NET_INCOME_BEFORE_ADJUSTMENTS,
+    FARM_OATS,
+    FARM_OFFICE_EXPENSES,
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_CURRENT_YEAR,
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
+    FARM_OTHER_COMMODITIES,
+    FARM_OTHER_CROPS,
+    FARM_OTHER_EXPENSES,
+    FARM_OTHER_EXPENSES_WITH_TERMINAL_LOSS,
+    FARM_OTHER_INCOME,
+    FARM_OTHER_INCOME_WITH_RECAPTURE,
+    FARM_OTHER_PROGRAM_PAYMENTS,
+    FARM_PARTNER,
+    FARM_PARTNER_GST_HST_REBATE,
+    FARM_PARTNER_OTHER_AMOUNT_A,
+    FARM_PARTNER_OTHER_AMOUNT_B,
+    FARM_PARTNER_OTHER_AMOUNT_C,
+    FARM_PARTNER_OTHER_AMOUNT_D,
+    FARM_PARTNER_OTHER_AMOUNT_E,
+    FARM_PARTNER_OTHER_AMOUNTS,
+    FARM_PARTNER_OTHER_AMOUNTS_TOTAL,
+    FARM_PARTNER_SHARE,
+    FARM_PARTNERSHIP_TOTAL,
+    FARM_PATRONAGE_DIVIDENDS,
+    FARM_PESTICIDES,
+    FARM_POTATOES,
+    FARM_POULTRY,
+    FARM_PROFESSIONAL_FEES,
+    FARM_PROPERTY_TAXES,
+    FARM_REBATES,
+    FARM_RECAPTURED_CCA,
+    FARM_RENT,
+    FARM_SALARIES_WAGES_AND_BENEFITS,
+    FARM_SEEDS_AND_PLANTS,
+    FARM_SHARE_OF_NET_INCOME,
+    FARM_SHEEP_AND_LAMBS,
+    FARM_SMALL_TOOLS,
+    FARM_SOYBEANS,
+    FARM_SWINE,
+    FARM_TERMINAL_LOSS,
+    FARM_TOBACCO,
+    FARM_TOTAL_EXPENSES,
+    FARM_VEGETABLES,
+    FARM_VETERINARY_FEES,
+    FARM_WHEAT,
     FARMING_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_LESS_CREDITS,
@@ -2145,6 +2254,177 @@ def test_the_business_closing_ucc_is_a_record_list_of_the_class_and_its_closing_
     assert BUSINESS_CLOSING_UCC.value_type is RecordList
     assert BUSINESS_CLOSING_UCC.fields == RENTAL_CLOSING_UCC.fields
     assert registry.get("ca/business_closing_ucc") is BUSINESS_CLOSING_UCC
+
+
+# --- Form T2042, Statement of Farming Activities (T1 lines 14099 and 14100) ---------------------
+
+# Every kind of the farming statement, the caller's amounts and the computed lines, in the form's
+# order: `ca/farm_<name>`, never the `ca/business_` names of the T2125.
+FARM_KINDS: tuple[ArtifactKind[Any], ...] = (
+    FARM_WHEAT,  # wheat
+    FARM_OATS,  # oats
+    FARM_BARLEY,  # barley
+    FARM_MIXED_GRAINS,  # mixed_grains
+    FARM_CORN,  # corn
+    FARM_CANOLA,  # canola
+    FARM_FLAXSEED,  # flaxseed
+    FARM_SOYBEANS,  # soybeans
+    FARM_GRAINS_AND_OILSEEDS,  # grains_and_oilseeds
+    FARM_FRUIT,  # fruit
+    FARM_POTATOES,  # potatoes
+    FARM_VEGETABLES,  # vegetables
+    FARM_TOBACCO,  # tobacco
+    FARM_GREENHOUSE_AND_NURSERY,  # greenhouse_and_nursery
+    FARM_FORAGE_CROPS_OR_SEEDS,  # forage_crops_or_seeds
+    FARM_OTHER_CROPS,  # other_crops
+    FARM_CATTLE,  # cattle
+    FARM_SWINE,  # swine
+    FARM_POULTRY,  # poultry
+    FARM_SHEEP_AND_LAMBS,  # sheep_and_lambs
+    FARM_LIVESTOCK_AND_ANIMAL_PRODUCTS_REVENUE,  # livestock_and_animal_products_revenue
+    FARM_MILK_AND_CREAM,  # milk_and_cream
+    FARM_EGGS,  # eggs
+    FARM_OTHER_COMMODITIES,  # other_commodities
+    FARM_DAIRY_SUBSIDIES,  # dairy_subsidies
+    FARM_CROP_INSURANCE,  # crop_insurance
+    FARM_OTHER_PROGRAM_PAYMENTS,  # other_program_payments
+    FARM_REBATES,  # rebates
+    FARM_CUSTOM_WORK,  # custom_work
+    FARM_INSURANCE_PROCEEDS,  # insurance_proceeds
+    FARM_PATRONAGE_DIVIDENDS,  # patronage_dividends
+    FARM_OTHER_INCOME,  # other_income
+    FARM_CONTAINERS_AND_TWINE,  # containers_and_twine
+    FARM_FERTILIZERS_AND_LIME,  # fertilizers_and_lime
+    FARM_PESTICIDES,  # pesticides
+    FARM_SEEDS_AND_PLANTS,  # seeds_and_plants
+    FARM_FEED_SUPPLEMENTS_STRAW_AND_BEDDING,  # feed_supplements_straw_and_bedding
+    FARM_LIVESTOCK_PURCHASED,  # livestock_purchased
+    FARM_VETERINARY_FEES,  # veterinary_fees
+    FARM_MACHINERY_REPAIRS_LICENCES_AND_INSURANCE,  # machinery_repairs_licences_and_insurance
+    FARM_GASOLINE_DIESEL_AND_OIL,  # gasoline_diesel_and_oil
+    FARM_BUILDING_REPAIRS_AND_MAINTENANCE,  # building_repairs_and_maintenance
+    FARM_CLEARING_LEVELLING_AND_DRAINING,  # clearing_levelling_and_draining
+    FARM_CROP_INSURANCE_PREMIUMS,  # crop_insurance_premiums
+    FARM_CUSTOM_WORK_EXPENSES,  # custom_work_expenses
+    FARM_ELECTRICITY,  # electricity
+    FARM_HEATING_AND_CURING_FUEL,  # heating_and_curing_fuel
+    FARM_INSURANCE_PROGRAM_OVERPAYMENT_RECAPTURE,  # insurance_program_overpayment_recapture
+    FARM_INSURANCE,  # insurance
+    FARM_INTEREST_AND_BANK_CHARGES,  # interest_and_bank_charges
+    FARM_OFFICE_EXPENSES,  # office_expenses
+    FARM_PROFESSIONAL_FEES,  # professional_fees
+    FARM_PROPERTY_TAXES,  # property_taxes
+    FARM_RENT,  # rent
+    FARM_SALARIES_WAGES_AND_BENEFITS,  # salaries_wages_and_benefits
+    FARM_MOTOR_VEHICLE_EXPENSES,  # motor_vehicle_expenses
+    FARM_SMALL_TOOLS,  # small_tools
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,  # optional_inventory_adjustment_previous_year
+    FARM_OTHER_EXPENSES,  # other_expenses
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_CURRENT_YEAR,  # optional_inventory_adjustment_current_year
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_CURRENT_YEAR,  # mandatory_inventory_adjustment_current_year
+    FARM_CCA_PERSONAL_PART,  # cca_personal_part
+    FARM_PARTNER,  # partner
+    FARM_PARTNER_SHARE,  # partner_share
+    FARM_FUEL_CHARGE_CREDIT,  # fuel_charge_credit
+    FARM_PARTNER_GST_HST_REBATE,  # partner_gst_hst_rebate
+    FARM_PARTNER_OTHER_AMOUNT_A,  # partner_other_amount_a
+    FARM_PARTNER_OTHER_AMOUNT_B,  # partner_other_amount_b
+    FARM_PARTNER_OTHER_AMOUNT_C,  # partner_other_amount_c
+    FARM_PARTNER_OTHER_AMOUNT_D,  # partner_other_amount_d
+    FARM_PARTNER_OTHER_AMOUNT_E,  # partner_other_amount_e
+    FARM_HOME_HEAT,  # home_heat
+    FARM_HOME_ELECTRICITY,  # home_electricity
+    FARM_HOME_INSURANCE,  # home_insurance
+    FARM_HOME_MAINTENANCE,  # home_maintenance
+    FARM_HOME_MORTGAGE_INTEREST,  # home_mortgage_interest
+    FARM_HOME_PROPERTY_TAXES,  # home_property_taxes
+    FARM_HOME_OTHER_EXPENSES,  # home_other_expenses
+    FARM_HOME_PERSONAL_USE_PART,  # home_personal_use_part
+    FARM_HOME_CCA,  # home_cca
+    FARM_HOME_CARRIED_FORWARD,  # home_carried_forward
+    FARM_CCA_CLASSES,  # cca_classes
+    FARM_RECAPTURED_CCA,  # recaptured_cca
+    FARM_OTHER_INCOME_WITH_RECAPTURE,  # other_income_with_recapture
+    FARM_GROSS_INCOME,  # gross_income
+    FARM_GROSS_INCOME_BEFORE_EXPENSES,  # gross_income_before_expenses
+    FARM_TERMINAL_LOSS,  # terminal_loss
+    FARM_OTHER_EXPENSES_WITH_TERMINAL_LOSS,  # other_expenses_with_terminal_loss
+    FARM_EXPENSES_SUBTOTAL,  # expenses_subtotal
+    FARM_CCA_TABLE_CLAIM,  # cca_table_claim
+    FARM_CCA_CLAIM_LESS_PERSONAL_PART,  # cca_claim_less_personal_part
+    FARM_CCA_CLAIM,  # cca_claim
+    FARM_TOTAL_EXPENSES,  # total_expenses
+    FARM_NET_INCOME_BEFORE_ADJUSTMENTS,  # net_income_before_adjustments
+    FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,  # net_income_after_inventory_adjustments
+    FARM_SHARE_OF_NET_INCOME,  # share_of_net_income
+    FARM_PARTNERSHIP_TOTAL,  # partnership_total
+    FARM_PARTNER_OTHER_AMOUNTS_TOTAL,  # partner_other_amounts_total
+    FARM_PARTNER_OTHER_AMOUNTS,  # partner_other_amounts
+    FARM_NET_INCOME_AFTER_ADJUSTMENTS,  # net_income_after_adjustments
+    FARM_HOME_EXPENSES_SUBTOTAL,  # home_expenses_subtotal
+    FARM_HOME_EXPENSES_BUSINESS_PART,  # home_expenses_business_part
+    FARM_HOME_EXPENSES_AVAILABLE,  # home_expenses_available
+    FARM_HOME_INCOME_LIMIT,  # home_income_limit
+    FARM_HOME_CARRY_FORWARD,  # home_carry_forward
+    FARM_HOME_ALLOWABLE_CLAIM,  # home_allowable_claim
+    FARM_HOME_EXPENSES,  # home_expenses
+    FARM_CLOSING_UCC,  # closing_ucc
+)
+
+
+def test_the_t2042_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    assert len({kind.identifier for kind in FARM_KINDS}) == len(FARM_KINDS)
+    for kind in FARM_KINDS:
+        assert kind.identifier.startswith("ca/farm_"), kind.identifier
+        assert registry.get(kind.identifier) is kind
+        assert kind.identifier in REGISTERED
+
+
+def test_the_t2042_amounts_are_decimals_that_cannot_be_negative_unless_the_form_prints_a_loss() -> (
+    None
+):
+    # The caller's amounts and the computed lines are Decimals with a floor of 0, except the lines
+    # the snapshot's SIGNED set names: "(loss)" lines, amount 5A, the share of a loss, and the T5013
+    # amount (amount 5A) the caller enters.
+    for kind in FARM_KINDS:
+        if kind.identifier in RECORD_LISTS or kind.identifier in COUNTS:
+            continue
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is (kind.identifier not in SIGNED), kind.identifier
+
+
+def test_the_t2042_partner_count_is_a_non_negative_int_count() -> None:
+    # Part 5 amount 5A "Your share of amount 4C or the amount from your T5013 slip, Statement of
+    # Partnership Income": 1 for a partner, else 0.
+    assert FARM_PARTNER.value_type is int
+    assert FARM_PARTNER.non_negative is True
+    assert FARM_PARTNER.identifier in COUNTS
+
+
+def test_the_farm_cca_classes_are_the_area_a_columns_the_caller_enters(
+    registry: ArtifactRegistry,
+) -> None:
+    # Area A of the T2042 has the columns of the T2125's (DIEP columns left out as on the T776):
+    # the same field kinds, one record per class.
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(FARM_CCA_CLASSES, RecordListKind)
+    assert FARM_CCA_CLASSES.value_type is RecordList
+    assert FARM_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
+    assert FARM_CCA_CLASSES is not BUSINESS_CCA_CLASSES
+    assert registry.get("ca/farm_cca_classes") is FARM_CCA_CLASSES
+
+
+def test_the_farm_closing_ucc_is_a_record_list_of_the_class_and_its_closing_ucc(
+    registry: ArtifactRegistry,
+) -> None:
+    # Area A column 22 "UCC at the end of the year (col. 7 minus col. 21)", which `ca/closing_ucc`
+    # produces.
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(FARM_CLOSING_UCC, RecordListKind)
+    assert FARM_CLOSING_UCC.value_type is RecordList
+    assert FARM_CLOSING_UCC.fields == RENTAL_CLOSING_UCC.fields
+    assert registry.get("ca/farm_closing_ucc") is FARM_CLOSING_UCC
 
 
 # --- Form T2222, Northern Residents Deductions (T1 line 66 and line 25500) ---------------------

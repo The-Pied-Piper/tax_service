@@ -21,6 +21,11 @@ outputs:
   - ca/short_term_rental_gross_rents
   - ca/business_closing_ucc
   - ca/business_home_carry_forward
+  # Form T2042 Area A column 22 "UCC at the end of the year" (for next year) and Part 7 line
+  # 7O "Business-use-of-home expenses available to carry forward": nothing else on the return
+  # reads them.
+  - ca/farm_closing_ucc
+  - ca/farm_home_carry_forward
   - ca/tuition_carried_forward
   - ca/qsbcs_proceeds
   - ca/qffp_proceeds
