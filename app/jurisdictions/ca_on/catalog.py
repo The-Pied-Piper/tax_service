@@ -730,9 +730,9 @@ payable": for a resident of Ontario, ON428 line 81 "Line 73 minus line 80 (if ne
 PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT = CATALOG.declare(
     "provincial_foreign_tax_credit_before_limit", Decimal, non_negative=True
 )
-"""Provincial foreign tax credit before its limit, Form T2036 "Enter the total from line 5 (for each
-country if applicable)" of line 5 "Provincial or territorial foreign tax credit": the total of the
-sheets' line 5, before "should not be more than" the tax otherwise payable."""
+"""Provincial foreign tax credit before its limit, Form T2036 line 5 "Provincial or territorial
+foreign tax credit" and "Enter the total from line 5 (for each country if applicable)": the total of
+the sheets' line 5, before "should not be more than" the tax otherwise payable."""
 
 PROVINCIAL_FOREIGN_TAX_CREDIT = CATALOG.declare(
     "provincial_foreign_tax_credit", Decimal, non_negative=True
