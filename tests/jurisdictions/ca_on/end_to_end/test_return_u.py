@@ -26,11 +26,13 @@ from app.jurisdictions.ca.catalog import (
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     EI_EARNINGS_SUBJECT_TO_PREMIUM,
+    EI_EXCLUDED_SLIPS_NET_INCOME,
     EI_INSURABLE_EARNINGS_REMAINING,
     EI_MAXIMUM_INSURABLE_EARNINGS,
     EI_NET_SELF_EMPLOYMENT_INCOME,
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+    EI_SELF_EMPLOYMENT_BEFORE_SLIPS,
     EI_SELF_EMPLOYMENT_EARNINGS,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
@@ -200,6 +202,8 @@ def test_return_us_schedule_13_is_the_cra_worked_example() -> None:
     # of 50000 and 65700.00; line 9 is 50000 x 1.64% = 820.00, lines 31217 and 42120.
     worksheet = return_u()
 
+    assert worksheet.get(EI_SELF_EMPLOYMENT_BEFORE_SLIPS).value == D("50000")
+    assert worksheet.get(EI_EXCLUDED_SLIPS_NET_INCOME).value == D("0")
     assert worksheet.get(EI_SELF_EMPLOYMENT_EARNINGS).value == D("50000")
     assert worksheet.get(EI_NET_SELF_EMPLOYMENT_INCOME).value == D("50000")
     assert worksheet.get(EI_MAXIMUM_INSURABLE_EARNINGS).value == D("65700.00")
@@ -210,8 +214,11 @@ def test_return_us_schedule_13_is_the_cra_worked_example() -> None:
     assert worksheet.get(EI_PAYABLE_ON_SELF_EMPLOYMENT).value == D("820.00")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     for line in (
-        "ei_self_employment_earnings: net_partnership_income 0 "
-        "+ net_self_employment_income 50000, not below 0 = 50000",
+        "ei_self_employment_before_slips: net_partnership_income 0 "
+        "+ net_self_employment_income 50000 = 50000",
+        "ei_excluded_slips_net_income: no items = 0",
+        "ei_self_employment_earnings: ei_self_employment_before_slips 50000 "
+        "less ei_excluded_slips_net_income 0, not below 0 = 50000",
         "ei_net_self_employment_income: ei_self_employment_earnings 50000 "
         "+ ei_controlled_corporation_earnings 0 + ei_exempt_self_employment_income 0 = 50000",
         "ei_maximum_insurable_earnings: credit amount 65700 (half-up to 0.01)",

@@ -97,11 +97,14 @@ from app.jurisdictions.ca.catalog import (
     DONATIONS_OVER_FIRST_TIER_AFTER_2016_GIFTS,
     ECOLOGICAL_GIFTS_BEFORE_2016,
     EI_EARNINGS_SUBJECT_TO_PREMIUM,
+    EI_EXCLUDED_SLIP_NET_INCOME,
+    EI_EXCLUDED_SLIPS_NET_INCOME,
     EI_INSURABLE_EARNINGS,
     EI_INSURABLE_EARNINGS_REMAINING,
     EI_MAXIMUM_INSURABLE_EARNINGS,
     EI_NET_SELF_EMPLOYMENT_INCOME,
     EI_PREMIUMS,
+    EI_SELF_EMPLOYMENT_BEFORE_SLIPS,
     EI_SELF_EMPLOYMENT_EARNINGS,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     EMPLOYMENT_INCOME,
@@ -160,9 +163,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
-    NET_PARTNERSHIP_INCOME,
     NET_RENTAL_INCOME,
-    NET_SELF_EMPLOYMENT_INCOME,
     OAS_AND_FEDERAL_SUPPLEMENTS,
     OAS_BENEFITS_BASE_AMOUNT,
     OAS_OVERPAYMENT_RECOVERED,
@@ -1468,6 +1469,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("65700.00"),
         ),
+        # Schedule 13 line 1, the total of lines 12200 and 27 less the net income of the T4 slips
+        # with EI premiums in box 18, "(if negative, enter "0")" (Return A has no such slip).
+        EI_SELF_EMPLOYMENT_EARNINGS: SubtractedNotBelowZeroLine(
+            output=EI_SELF_EMPLOYMENT_EARNINGS,
+            minuend=EI_SELF_EMPLOYMENT_BEFORE_SLIPS,
+            minuend_amount=D("0"),
+            subtrahend=EI_EXCLUDED_SLIPS_NET_INCOME,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Schedule 11, Schedule 2 and line 45350 (Return A claims none: every figure is 0).
         SPOUSE_ADJUSTED_TAXABLE_INCOME: SubtractedNotBelowZeroLine(
             output=SPOUSE_ADJUSTED_TAXABLE_INCOME,
@@ -1555,11 +1566,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ((PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS, D("0")), (CPT20_EARNINGS, D("0"))),
             D("0"),
         ),
-        EI_SELF_EMPLOYMENT_EARNINGS: SumNotBelowZeroLine(
-            EI_SELF_EMPLOYMENT_EARNINGS,
-            ((NET_PARTNERSHIP_INCOME, D("0")), (NET_SELF_EMPLOYMENT_INCOME, D("0"))),
-            D("0"),
-        ),
         # Schedule ON479-A line 4 "Add lines 1 to 3 (if negative, enter "0"). Adjusted income".
         CARE_ADJUSTED_INCOME: SumNotBelowZeroLine(
             CARE_ADJUSTED_INCOME,
@@ -1597,6 +1603,9 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # T776 Part 3 lines 8140 and 8141: Return A has no rental properties, so no items and 0.
         SHORT_TERM_RENTAL_GROSS_RENTS: RecordTotalLine(
             SHORT_TERM_RENTAL_GROSS_RENTS, RENTAL_PROPERTY_SHORT_TERM_RENTS, (), D("0")
+        ),
+        EI_EXCLUDED_SLIPS_NET_INCOME: RecordTotalLine(
+            EI_EXCLUDED_SLIPS_NET_INCOME, EI_EXCLUDED_SLIP_NET_INCOME, (), D("0")
         ),
         RENTAL_GROSS_RENTS: RecordTotalLine(
             RENTAL_GROSS_RENTS, RENTAL_PROPERTY_GROSS_RENTS, (), D("0")

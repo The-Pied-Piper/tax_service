@@ -89,12 +89,14 @@ from app.jurisdictions.ca.catalog import (
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
     EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
     EI_EARNINGS_SUBJECT_TO_PREMIUM,
+    EI_EXCLUDED_SLIPS_NET_INCOME,
     EI_INSURABLE_EARNINGS_REMAINING,
     EI_MAXIMUM_INSURABLE_EARNINGS,
     EI_NET_SELF_EMPLOYMENT_INCOME,
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     EI_PREMIUMS,
     EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+    EI_SELF_EMPLOYMENT_BEFORE_SLIPS,
     EI_SELF_EMPLOYMENT_EARNINGS,
     ELIGIBLE_DEPENDANT_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
@@ -374,7 +376,7 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 556
+    assert len(order) == 558
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -1004,8 +1006,10 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[CPP_DEDUCTION_ON_SELF_EMPLOYMENT]
         < position[DEDUCTIONS_FROM_TOTAL_INCOME]
     )
+    assert position[EI_EXCLUDED_SLIPS_NET_INCOME] < position[EI_SELF_EMPLOYMENT_EARNINGS]
     assert (
         position[NET_SELF_EMPLOYMENT_INCOME]
+        < position[EI_SELF_EMPLOYMENT_BEFORE_SLIPS]
         < position[EI_SELF_EMPLOYMENT_EARNINGS]
         < position[EI_NET_SELF_EMPLOYMENT_INCOME]
         < position[EI_EARNINGS_SUBJECT_TO_PREMIUM]
