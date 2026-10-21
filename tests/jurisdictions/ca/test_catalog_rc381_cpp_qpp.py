@@ -5,9 +5,12 @@ Form RC381 (2025), "Inter-Provincial Calculation for CPP and QPP Contributions a
 Part 3 lines 1 to 3, 6 to 11, 14 to 16, 18 to 24, 26 to 31, 34 to 36, 38, 40 to 44, 46, 49, 52, 53,
 56, 59 to 61, 64 and 67 to 69, and the entries on lines 19, 25, 39 and 45, then Part 3a and Part 3b
 (lines 73, 75 to 93, the helper under line 87 and the three results for lines 30800, 22215 and
-44800). The seven kinds a caller enters and the three results carry a docstring that quotes the
-form's own words. Lines 53, 60, 61, 68 and 69 are signed: "if negative, show in brackets". So is
-the helper under line 87, "the result of line 68 minus line 80".
+44800), then Part 4 lines 1 to 27 (the CPP side before the QPP gross-up: lines 4, 8, 11 to 14, 17,
+17A, 20 to 27, and the helpers printed inside lines 13, 21, 23 and 24). The eight kinds a caller
+enters and the three results carry a docstring that quotes the form's own words. Lines 53, 60, 61,
+68 and 69 are signed: "if negative, show in brackets". So is the helper under line 87, "the result
+of line 68 minus line 80". In Part 4 lines 8, 11, 12, 17 and 20 are signed for the same reason,
+and so are line 4 (line 1 is not floored), lines 21, 23 to 25A and 26 and 27.
 """
 
 from __future__ import annotations
@@ -99,6 +102,28 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_91,
     RC381_PART_3_LINE_92,
     RC381_PART_3_LINE_93,
+    RC381_PART_4_LINE_4,
+    RC381_PART_4_LINE_8,
+    RC381_PART_4_LINE_11,
+    RC381_PART_4_LINE_12,
+    RC381_PART_4_LINE_13,
+    RC381_PART_4_LINE_13_DIFFERENCE,
+    RC381_PART_4_LINE_14,
+    RC381_PART_4_LINE_17,
+    RC381_PART_4_LINE_17A,
+    RC381_PART_4_LINE_20,
+    RC381_PART_4_LINE_21,
+    RC381_PART_4_LINE_21_FROM_LINE_17,
+    RC381_PART_4_LINE_21_LESSER,
+    RC381_PART_4_LINE_22,
+    RC381_PART_4_LINE_23,
+    RC381_PART_4_LINE_23_LESSER,
+    RC381_PART_4_LINE_23_MULTIPLIED,
+    RC381_PART_4_LINE_24,
+    RC381_PART_4_LINE_24_LESSER,
+    RC381_PART_4_LINE_25A,
+    RC381_PART_4_LINE_26,
+    RC381_PART_4_LINE_27,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
     T4_CPP_SECOND_ADDITIONAL_BOX_16A,
     T4_QPP_CONTRIBUTIONS_BOX_17,
@@ -183,6 +208,18 @@ PART_3_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
     RC381_PART_3_LINE_93,
 )
 
+# Part 4 lines that cannot come out below zero: the lines that print no "if negative, show in
+# brackets" and are an amount less an amount that is never more (line 13 is line 5 less line 12,
+# which is line 5 less (line 19 less line 24), so line 24 of Part 3 or line 5 itself), a positive
+# part (lines 14 and 17A), or the lesser of two lines that are both above zero (line 21's).
+PART_4_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
+    RC381_PART_4_LINE_13_DIFFERENCE,
+    RC381_PART_4_LINE_13,
+    RC381_PART_4_LINE_14,
+    RC381_PART_4_LINE_17A,
+    RC381_PART_4_LINE_21_LESSER,
+)
+
 # The three results of Part 3a and Part 3b for "earnings subject to contributions ... from
 # employment income only": lines 30800, 22215 and 44800 of the return.
 RESULT_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
@@ -199,6 +236,22 @@ SIGNED_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
     RC381_PART_3_LINE_68,
     RC381_PART_3_LINE_69,
     RC381_PART_3_LINE_87_DIFFERENCE,
+    RC381_PART_4_LINE_4,
+    RC381_PART_4_LINE_8,
+    RC381_PART_4_LINE_11,
+    RC381_PART_4_LINE_12,
+    RC381_PART_4_LINE_17,
+    RC381_PART_4_LINE_20,
+    RC381_PART_4_LINE_21_FROM_LINE_17,
+    RC381_PART_4_LINE_21,
+    RC381_PART_4_LINE_23_LESSER,
+    RC381_PART_4_LINE_23_MULTIPLIED,
+    RC381_PART_4_LINE_23,
+    RC381_PART_4_LINE_24_LESSER,
+    RC381_PART_4_LINE_24,
+    RC381_PART_4_LINE_25A,
+    RC381_PART_4_LINE_26,
+    RC381_PART_4_LINE_27,
 )
 
 
@@ -306,11 +359,48 @@ def test_the_rc381_part_3_line_kinds_are_the_registered_ones(registry: ArtifactR
     assert registry.get("ca/rc381_cpp_overpayment") is RC381_CPP_OVERPAYMENT
 
 
+def test_the_rc381_part_4_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    # Line 3 and box 50399, the one input of Part 4 lines 1 to 27 that Schedule 8 does not have.
+    assert registry.get("ca/rc381_part_4_line_4") is RC381_PART_4_LINE_4
+    assert registry.get("ca/rc381_part_4_line_8") is RC381_PART_4_LINE_8
+    assert registry.get("ca/rc381_part_4_line_11") is RC381_PART_4_LINE_11
+    assert registry.get("ca/rc381_part_4_line_12") is RC381_PART_4_LINE_12
+    # Line 13 "Line 5 minus line 12", printed inside the line that enters it when line 61 of Part 3
+    # is positive: a step of its own.
+    assert registry.get("ca/rc381_part_4_line_13_difference") is RC381_PART_4_LINE_13_DIFFERENCE
+    assert registry.get("ca/rc381_part_4_line_13") is RC381_PART_4_LINE_13
+    assert registry.get("ca/rc381_part_4_line_14") is RC381_PART_4_LINE_14
+    assert registry.get("ca/rc381_part_4_line_17") is RC381_PART_4_LINE_17
+    assert registry.get("ca/rc381_part_4_line_17a") is RC381_PART_4_LINE_17A
+    assert registry.get("ca/rc381_part_4_line_20") is RC381_PART_4_LINE_20
+    # Line 21's "enter the amount from line 17 (show in brackets)" and "enter whichever is less:
+    # amount from line 20 or line 17A", each printed inside the line: a step of its own.
+    assert registry.get("ca/rc381_part_4_line_21_from_line_17") is (
+        RC381_PART_4_LINE_21_FROM_LINE_17
+    )
+    assert registry.get("ca/rc381_part_4_line_21_lesser") is RC381_PART_4_LINE_21_LESSER
+    assert registry.get("ca/rc381_part_4_line_21") is RC381_PART_4_LINE_21
+    assert registry.get("ca/rc381_part_4_line_22") is RC381_PART_4_LINE_22
+    # Line 23's "whichever is less: amount from line 68 of Part 3 or line 17A" and "line 68 of
+    # Part 3 multiplied by the rate at line 22", the two ways the line is entered.
+    assert registry.get("ca/rc381_part_4_line_23_lesser") is RC381_PART_4_LINE_23_LESSER
+    assert registry.get("ca/rc381_part_4_line_23_multiplied") is RC381_PART_4_LINE_23_MULTIPLIED
+    assert registry.get("ca/rc381_part_4_line_23") is RC381_PART_4_LINE_23
+    # Line 24's "Enter whichever is less: amount from line 17A or line 23.", before the block's
+    # "If line 61 of Part 3 is ... negative" decides whether line 24 takes it.
+    assert registry.get("ca/rc381_part_4_line_24_lesser") is RC381_PART_4_LINE_24_LESSER
+    assert registry.get("ca/rc381_part_4_line_24") is RC381_PART_4_LINE_24
+    assert registry.get("ca/rc381_part_4_line_25a") is RC381_PART_4_LINE_25A
+    assert registry.get("ca/rc381_part_4_line_26") is RC381_PART_4_LINE_26
+    assert registry.get("ca/rc381_part_4_line_27") is RC381_PART_4_LINE_27
+
+
 def test_the_rc381_amounts_are_money() -> None:
     for kind in (
         *INPUT_AMOUNTS,
         *PART_2_AMOUNTS,
         *PART_3_AMOUNTS,
+        *PART_4_AMOUNTS,
         *RESULT_AMOUNTS,
         *SIGNED_AMOUNTS,
     ):
@@ -321,6 +411,13 @@ def test_line_6_is_a_rate_kind() -> None:
     # Line 6 "Line 4 divided by line 5 (calculated to the fifth decimal place without rounding)" is
     # "the rate at line 6" that lines 7 to 10 multiply by: a `Rate` (0 to 1), not money.
     assert RC381_PART_3_LINE_6.value_type is Rate
+
+
+def test_part_4_line_22_is_a_rate_kind() -> None:
+    # Part 4 line 22 "If line 17A is more than line 14, enter "1". If not, enter the result of line
+    # 17A divided by line 14 (calculated to the fifth decimal place without rounding)." is "the
+    # rate at line 22" that line 23 multiplies line 68 by: a `Rate` (0 to 1), not money.
+    assert RC381_PART_4_LINE_22.value_type is Rate
 
 
 def test_the_rc381_months_are_counts() -> None:
@@ -337,6 +434,7 @@ def test_every_rc381_kind_is_non_negative() -> None:
         *INPUT_AMOUNTS,
         *PART_2_AMOUNTS,
         *PART_3_AMOUNTS,
+        *PART_4_AMOUNTS,
         *RESULT_AMOUNTS,
     )
     for kind in kinds:
@@ -352,6 +450,11 @@ def test_the_rc381_lines_that_may_be_negative_are_signed() -> None:
     # than the required ones, so these are not non-negative.
     # Line 87 helper "the result of line 68 minus line 80": line 68 may be negative while line
     # 80 is "0", so the difference can be below zero.
+    # Part 4 line 4 "Add lines 1 to 3." (line 1 prints no floor, as Schedule 8 Part 4 line 1 does
+    # not), lines 8, 11, 12, 17 and 20 "(if negative, show in brackets)", line 21 "(show in
+    # brackets)", lines 23 and 24 (line 68 of Part 3 may be negative, and "whichever is less" has
+    # no floor), line 25A (line 21), line 26 "Add lines 24 to 25A." and line 27 (line 26 times
+    # 16.80672).
     for kind in SIGNED_AMOUNTS:
         assert kind.non_negative is False, kind.identifier
 
