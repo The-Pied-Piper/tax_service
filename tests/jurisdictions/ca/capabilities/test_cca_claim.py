@@ -752,7 +752,7 @@ def test_a_claim_above_the_maximum_less_column_22_is_refused() -> None:
 
 
 def test_the_refusal_message_names_column_22_when_it_is_not_zero() -> None:
-    with pytest.raises(InputAboveBoundError, match=r"^item 2: .*less column 22 1\)$"):
+    with pytest.raises(InputAboveBoundError, match=r"^item 1: .*less column 22 1\)$"):
         compute(
             WITH_ADDITIONS,
             row("8", "10000", "3000", claimed="2300"),

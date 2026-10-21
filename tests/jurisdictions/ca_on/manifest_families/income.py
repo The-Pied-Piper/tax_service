@@ -3996,7 +3996,11 @@ WIRING = {
         frozenset({RENTAL_COOWNER, RENTAL_CCA_TABLE_TERMINAL_LOSS, RENTAL_COOWNER_TERMINAL_LOSS}),
         frozenset({RENTAL_TERMINAL_LOSS}),
     ),
-    (CcaClaim, frozenset({RENTAL_CCA_CLASSES}), frozenset({RENTAL_CCA_TABLE_CLAIM})),
+    (
+        CcaClaim,
+        frozenset({RENTAL_CCA_CLASSES, SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS}),
+        frozenset({RENTAL_CCA_TABLE_CLAIM}),
+    ),
     (
         ChooseByCount,
         frozenset({RENTAL_COOWNER, RENTAL_CCA_TABLE_CLAIM, RENTAL_COOWNER_CCA_CLAIM}),
@@ -4022,7 +4026,11 @@ WIRING = {
         frozenset({RENTAL_CCA_CLAIM_BEFORE_LIMIT, RENTAL_CCA_LIMIT}),
         frozenset({RENTAL_CCA_CLAIM}),
     ),
-    (ClosingUcc, frozenset({RENTAL_CCA_CLASSES}), frozenset({RENTAL_CLOSING_UCC})),
+    (
+        ClosingUcc,
+        frozenset({RENTAL_CCA_CLASSES, SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS}),
+        frozenset({RENTAL_CLOSING_UCC}),
+    ),
     (
         Sum,
         frozenset({RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES, RENTAL_RECAPTURED_CCA}),
