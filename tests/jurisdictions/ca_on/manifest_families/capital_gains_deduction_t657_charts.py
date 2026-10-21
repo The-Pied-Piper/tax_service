@@ -2,7 +2,8 @@
 
 The steps are in the manifest part `06c_capital_gains_deduction_t657_charts.yaml`. Each period's
 chart is chained into Chart 2025: Chart 2025 Part 1's amount B reads Period 2's amount N, which is
-in the `capital_gains_deduction_t657` family; Period 2's amount B reads Period 1's amount N.
+in the `capital_gains_deduction_t657` family; Period 2's amount B reads Period 1's amount N. Period
+1's amount B reads Chart 2023's total carried (`capital_gains_deduction_t657_charts_2021_to_2023`).
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.catalog import (
     ANNUAL_GAINS_LIMIT_2025,
     CHART_2_LINE_19,
+    CHART_2023_TOTAL_CARRIED,
     CHART_2024_PERIOD_1_AMOUNT_A,
     CHART_2024_PERIOD_1_AMOUNT_C,
     CHART_2024_PERIOD_1_AMOUNT_E,
@@ -36,7 +38,6 @@ from app.jurisdictions.ca.catalog import (
     CHART_2024_PERIOD_2_AMOUNT_O,
     CHART_2024_PERIOD_2_AMOUNTS_F_TO_H,
     CUMULATIVE_GAINS_LIMIT_2025,
-    T657_CHART_2024_PERIOD_1_AMOUNT_B,
     T657_CHART_2024_PERIOD_1_AMOUNT_F,
     T657_CHART_2024_PERIOD_1_AMOUNT_G,
     T657_CHART_2024_PERIOD_1_AMOUNT_H,
@@ -49,7 +50,6 @@ from app.jurisdictions.ca.catalog import (
 
 INPUTS = frozenset(
     {
-        "ca/t657_chart_2024_period_1_amount_b",
         "ca/t657_chart_2024_period_1_amount_f",
         "ca/t657_chart_2024_period_1_amount_g",
         "ca/t657_chart_2024_period_1_amount_h",
@@ -88,7 +88,7 @@ STEPS = {
         params={},
         consumes={
             "amount": "ca/chart_2024_period_1_amount_a",
-            "less": "ca/t657_chart_2024_period_1_amount_b",
+            "less": "ca/chart_2023_total_carried",
         },
         produces={"output": "ca/chart_2024_period_1_amount_c"},
     ),
@@ -155,14 +155,15 @@ STEPS = {
         },
         produces={"output": "ca/chart_2024_period_1_amount_l"},
     ),
-    # Chart 2024 Period 1 "Amount L plus amount M" N (M "Enter amount B from above.").
+    # Chart 2024 Period 1 "Amount L plus amount M" N (M "Enter amount B from above.", Chart 2023's
+    # total carried).
     CapabilitySelection(
         name="core/sum",
         params={},
         consumes={
             "parts": (
                 "ca/chart_2024_period_1_amount_l",
-                "ca/t657_chart_2024_period_1_amount_b",
+                "ca/chart_2023_total_carried",
             ),
         },
         produces={"output": "ca/chart_2024_period_1_amount_n"},
@@ -298,7 +299,7 @@ WIRING = {
     ),
     (
         SubtractNotBelowZero,
-        frozenset({CHART_2024_PERIOD_1_AMOUNT_A, T657_CHART_2024_PERIOD_1_AMOUNT_B}),
+        frozenset({CHART_2024_PERIOD_1_AMOUNT_A, CHART_2023_TOTAL_CARRIED}),
         frozenset({CHART_2024_PERIOD_1_AMOUNT_C}),
     ),
     (
@@ -334,7 +335,7 @@ WIRING = {
     ),
     (
         Sum,
-        frozenset({CHART_2024_PERIOD_1_AMOUNT_L, T657_CHART_2024_PERIOD_1_AMOUNT_B}),
+        frozenset({CHART_2024_PERIOD_1_AMOUNT_L, CHART_2023_TOTAL_CARRIED}),
         frozenset({CHART_2024_PERIOD_1_AMOUNT_N}),
     ),
     (

@@ -111,6 +111,27 @@ from app.jurisdictions.ca.catalog import (
     CHART_2_LINE_16,
     CHART_2_NUMERATOR_ONE,
     CHART_2_TWICE_IR,
+    CHART_2021_PART_1_AMOUNT_A,
+    CHART_2021_PART_1_AMOUNT_H,
+    CHART_2021_PART_1_AMOUNT_I,
+    CHART_2021_PART_1_AMOUNTS_F_AND_G,
+    CHART_2021_PART_2_AMOUNT_A,
+    CHART_2021_PART_2_AMOUNT_F,
+    CHART_2021_PART_2_AMOUNT_G,
+    CHART_2022_PART_1_AMOUNT_A,
+    CHART_2022_PART_1_AMOUNT_H,
+    CHART_2022_PART_1_AMOUNT_I,
+    CHART_2022_PART_1_AMOUNTS_F_AND_G,
+    CHART_2022_PART_2_AMOUNT_A,
+    CHART_2022_PART_2_AMOUNT_F,
+    CHART_2022_PART_2_AMOUNT_G,
+    CHART_2023_PART_1_AMOUNT_A,
+    CHART_2023_PART_1_AMOUNT_H,
+    CHART_2023_PART_1_AMOUNT_I,
+    CHART_2023_PART_1_AMOUNTS_F_AND_G,
+    CHART_2023_PART_2_AMOUNT_A,
+    CHART_2023_PART_2_AMOUNT_F,
+    CHART_2023_PART_2_AMOUNT_G,
     CHART_2024_PERIOD_1_AMOUNT_A,
     CHART_2024_PERIOD_1_AMOUNT_I,
     CHART_2024_PERIOD_1_AMOUNTS_F_TO_H,
@@ -367,6 +388,15 @@ from app.jurisdictions.ca.catalog import (
     T657_CHART_2_LINE_6,
     T657_CHART_2_LINE_10,
     T657_CHART_2_LINE_14,
+    T657_CHART_2021_AMOUNT_F,
+    T657_CHART_2021_AMOUNT_I,
+    T657_CHART_2021_PART_2_AMOUNT_G,
+    T657_CHART_2022_AMOUNT_F,
+    T657_CHART_2022_AMOUNT_I,
+    T657_CHART_2022_PART_2_AMOUNT_G,
+    T657_CHART_2023_AMOUNT_F,
+    T657_CHART_2023_AMOUNT_I,
+    T657_CHART_2023_PART_2_AMOUNT_G,
     T657_INCLUSION_RATE_2000,
     T657_PART_2_EXCLUDED_F,
     T657_PART_2_EXCLUDED_G,
@@ -1274,6 +1304,54 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert amounts == {
+        # Form T657 Chart 2021 Part 1 amount A: "Maximum capital gains deduction for QFFP and/or
+        # QSBCS disposed of in 2021" 446,109.00.
+        CHART_2021_PART_1_AMOUNT_A: CreditAmountLine(
+            output=CHART_2021_PART_1_AMOUNT_A,
+            basis=Credit(amount=D("446109")),
+            rounding=CENT,
+            value=D("446109.00"),
+        ),
+        # Form T657 Chart 2021 Part 2 amount A: "Maximum capital gains deduction for QFFP
+        # disposed of in 2021" 500,000.00.
+        CHART_2021_PART_2_AMOUNT_A: CreditAmountLine(
+            output=CHART_2021_PART_2_AMOUNT_A,
+            basis=Credit(amount=D("500000")),
+            rounding=CENT,
+            value=D("500000.00"),
+        ),
+        # Form T657 Chart 2022 Part 1 amount A: "Maximum capital gains deduction for QFFP and/or
+        # QSBCS disposed of in 2022" 456,815.00.
+        CHART_2022_PART_1_AMOUNT_A: CreditAmountLine(
+            output=CHART_2022_PART_1_AMOUNT_A,
+            basis=Credit(amount=D("456815")),
+            rounding=CENT,
+            value=D("456815.00"),
+        ),
+        # Form T657 Chart 2022 Part 2 amount A: "Maximum capital gains deduction for QFFP
+        # disposed of in 2022" 500,000.00.
+        CHART_2022_PART_2_AMOUNT_A: CreditAmountLine(
+            output=CHART_2022_PART_2_AMOUNT_A,
+            basis=Credit(amount=D("500000")),
+            rounding=CENT,
+            value=D("500000.00"),
+        ),
+        # Form T657 Chart 2023 Part 1 amount A: "Maximum capital gains deduction for QFFP and/or
+        # QSBCS disposed of in 2023" 485,595.00.
+        CHART_2023_PART_1_AMOUNT_A: CreditAmountLine(
+            output=CHART_2023_PART_1_AMOUNT_A,
+            basis=Credit(amount=D("485595")),
+            rounding=CENT,
+            value=D("485595.00"),
+        ),
+        # Form T657 Chart 2023 Part 2 amount A: "Maximum capital gains deduction for QFFP
+        # disposed of in 2023" 500,000.00.
+        CHART_2023_PART_2_AMOUNT_A: CreditAmountLine(
+            output=CHART_2023_PART_2_AMOUNT_A,
+            basis=Credit(amount=D("500000")),
+            rounding=CENT,
+            value=D("500000.00"),
+        ),
         # Form T657 Chart 2024 Period 1 amount A: "Maximum capital gains deduction for QFFP and/or
         # QSBCS disposed of in 2024 for Period 1" 508,418.00.
         CHART_2024_PERIOD_1_AMOUNT_A: CreditAmountLine(
@@ -1600,6 +1678,114 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert fractions == {
+        # Form T657 Chart 2021 Part 1 "× 1/2 = H": amounts F and G of 0, times 1/2.
+        CHART_2021_PART_1_AMOUNT_H: FractionAppliedLine(
+            output=CHART_2021_PART_1_AMOUNT_H,
+            base=CHART_2021_PART_1_AMOUNTS_F_AND_G,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Form T657 Chart 2021 Part 1 box 30 "× 1/2 = +" I: the amount of 0, times 1/2.
+        CHART_2021_PART_1_AMOUNT_I: FractionAppliedLine(
+            output=CHART_2021_PART_1_AMOUNT_I,
+            base=T657_CHART_2021_AMOUNT_I,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Form T657 Chart 2021 Part 2 "× 1/2 = F": the T2017 amount of 0, times 1/2.
+        CHART_2021_PART_2_AMOUNT_F: FractionAppliedLine(
+            output=CHART_2021_PART_2_AMOUNT_F,
+            base=T657_CHART_2021_AMOUNT_F,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Form T657 Chart 2021 Part 2 box 30 QFFP "× 1/2 = G": the amount of 0, times 1/2.
+        CHART_2021_PART_2_AMOUNT_G: FractionAppliedLine(
+            output=CHART_2021_PART_2_AMOUNT_G,
+            base=T657_CHART_2021_PART_2_AMOUNT_G,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Form T657 Chart 2022 Part 1 "× 1/2 = H": amounts F and G of 0, times 1/2.
+        CHART_2022_PART_1_AMOUNT_H: FractionAppliedLine(
+            output=CHART_2022_PART_1_AMOUNT_H,
+            base=CHART_2022_PART_1_AMOUNTS_F_AND_G,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Form T657 Chart 2022 Part 1 box 30 "× 1/2 = +" I: the amount of 0, times 1/2.
+        CHART_2022_PART_1_AMOUNT_I: FractionAppliedLine(
+            output=CHART_2022_PART_1_AMOUNT_I,
+            base=T657_CHART_2022_AMOUNT_I,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Form T657 Chart 2022 Part 2 "× 1/2 = F": the T2017 amount of 0, times 1/2.
+        CHART_2022_PART_2_AMOUNT_F: FractionAppliedLine(
+            output=CHART_2022_PART_2_AMOUNT_F,
+            base=T657_CHART_2022_AMOUNT_F,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Form T657 Chart 2022 Part 2 box 30 QFFP "× 1/2 = G": the amount of 0, times 1/2.
+        CHART_2022_PART_2_AMOUNT_G: FractionAppliedLine(
+            output=CHART_2022_PART_2_AMOUNT_G,
+            base=T657_CHART_2022_PART_2_AMOUNT_G,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Form T657 Chart 2023 Part 1 "× 1/2 = H": amounts F and G of 0, times 1/2.
+        CHART_2023_PART_1_AMOUNT_H: FractionAppliedLine(
+            output=CHART_2023_PART_1_AMOUNT_H,
+            base=CHART_2023_PART_1_AMOUNTS_F_AND_G,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Form T657 Chart 2023 Part 1 box 30 "× 1/2 = +" I: the amount of 0, times 1/2.
+        CHART_2023_PART_1_AMOUNT_I: FractionAppliedLine(
+            output=CHART_2023_PART_1_AMOUNT_I,
+            base=T657_CHART_2023_AMOUNT_I,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Form T657 Chart 2023 Part 2 "× 1/2 = F": the T2017 amount of 0, times 1/2.
+        CHART_2023_PART_2_AMOUNT_F: FractionAppliedLine(
+            output=CHART_2023_PART_2_AMOUNT_F,
+            base=T657_CHART_2023_AMOUNT_F,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Form T657 Chart 2023 Part 2 box 30 QFFP "× 1/2 = G": the amount of 0, times 1/2.
+        CHART_2023_PART_2_AMOUNT_G: FractionAppliedLine(
+            output=CHART_2023_PART_2_AMOUNT_G,
+            base=T657_CHART_2023_PART_2_AMOUNT_G,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
         # Form T657 Chart 2024 Period 1 "× 1/2 = I": the amounts F to H of 0, times 1/2.
         CHART_2024_PERIOD_1_AMOUNT_I: FractionAppliedLine(
             output=CHART_2024_PERIOD_1_AMOUNT_I,

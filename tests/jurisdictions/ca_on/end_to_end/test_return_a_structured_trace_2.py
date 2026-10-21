@@ -174,6 +174,39 @@ from app.jurisdictions.ca.catalog import (
     CHART_2_LINE_11,
     CHART_2_LINE_13,
     CHART_2_LINE_15,
+    CHART_2021_PART_1_AMOUNT_H,
+    CHART_2021_PART_1_AMOUNT_I,
+    CHART_2021_PART_1_AMOUNT_J,
+    CHART_2021_PART_1_AMOUNT_K,
+    CHART_2021_PART_1_AMOUNT_M,
+    CHART_2021_PART_2_AMOUNT_F,
+    CHART_2021_PART_2_AMOUNT_G,
+    CHART_2021_PART_2_AMOUNT_H,
+    CHART_2021_PART_2_AMOUNT_I,
+    CHART_2021_PART_2_AMOUNT_K,
+    CHART_2021_TOTAL_CARRIED,
+    CHART_2022_PART_1_AMOUNT_H,
+    CHART_2022_PART_1_AMOUNT_I,
+    CHART_2022_PART_1_AMOUNT_J,
+    CHART_2022_PART_1_AMOUNT_K,
+    CHART_2022_PART_1_AMOUNT_M,
+    CHART_2022_PART_2_AMOUNT_F,
+    CHART_2022_PART_2_AMOUNT_G,
+    CHART_2022_PART_2_AMOUNT_H,
+    CHART_2022_PART_2_AMOUNT_I,
+    CHART_2022_PART_2_AMOUNT_K,
+    CHART_2022_TOTAL_CARRIED,
+    CHART_2023_PART_1_AMOUNT_H,
+    CHART_2023_PART_1_AMOUNT_I,
+    CHART_2023_PART_1_AMOUNT_J,
+    CHART_2023_PART_1_AMOUNT_K,
+    CHART_2023_PART_1_AMOUNT_M,
+    CHART_2023_PART_2_AMOUNT_F,
+    CHART_2023_PART_2_AMOUNT_G,
+    CHART_2023_PART_2_AMOUNT_H,
+    CHART_2023_PART_2_AMOUNT_I,
+    CHART_2023_PART_2_AMOUNT_K,
+    CHART_2023_TOTAL_CARRIED,
     CHART_2024_PERIOD_1_AMOUNT_L,
     CHART_2024_PERIOD_1_AMOUNT_N,
     CHART_2024_PERIOD_2_AMOUNT_L,
@@ -702,7 +735,7 @@ from app.jurisdictions.ca.catalog import (
     T657_CHART_2_LINE_6,
     T657_CHART_2_LINE_10,
     T657_CHART_2_LINE_14,
-    T657_CHART_2024_PERIOD_1_AMOUNT_B,
+    T657_CHART_2021_AMOUNT_B,
     T657_CUMULATIVE_NET_INVESTMENT_LOSS,
     T657_DEDUCTIONS_CLAIMED_1985_TO_2024,
     T657_GAINS_1985_TO_1991,
@@ -802,6 +835,78 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Form T657 Chart 2021 Part 1 "Amount H plus amount I" J: H and I are 0.
+        CHART_2021_PART_1_AMOUNT_J: SumLine(
+            output=CHART_2021_PART_1_AMOUNT_J,
+            parts=((CHART_2021_PART_1_AMOUNT_H, D("0")), (CHART_2021_PART_1_AMOUNT_I, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2021 Part 1 "Amount K plus amount L" M: K is 0, and L (amount B) is 0.
+        CHART_2021_PART_1_AMOUNT_M: SumLine(
+            output=CHART_2021_PART_1_AMOUNT_M,
+            parts=((CHART_2021_PART_1_AMOUNT_K, D("0")), (T657_CHART_2021_AMOUNT_B, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2021 Part 2 "Amount F plus amount G" H: F and G are 0.
+        CHART_2021_PART_2_AMOUNT_H: SumLine(
+            output=CHART_2021_PART_2_AMOUNT_H,
+            parts=((CHART_2021_PART_2_AMOUNT_F, D("0")), (CHART_2021_PART_2_AMOUNT_G, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2021 Part 2 "Amount I plus amount J" K: I is 0, and J (Part 1's M) is 0.
+        CHART_2021_PART_2_AMOUNT_K: SumLine(
+            output=CHART_2021_PART_2_AMOUNT_K,
+            parts=((CHART_2021_PART_2_AMOUNT_I, D("0")), (CHART_2021_PART_1_AMOUNT_M, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2022 Part 1 "Amount H plus amount I" J: H and I are 0.
+        CHART_2022_PART_1_AMOUNT_J: SumLine(
+            output=CHART_2022_PART_1_AMOUNT_J,
+            parts=((CHART_2022_PART_1_AMOUNT_H, D("0")), (CHART_2022_PART_1_AMOUNT_I, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2022 Part 1 "Amount K plus amount L" M: K is 0, and L (amount B) is 0.
+        CHART_2022_PART_1_AMOUNT_M: SumLine(
+            output=CHART_2022_PART_1_AMOUNT_M,
+            parts=((CHART_2022_PART_1_AMOUNT_K, D("0")), (CHART_2021_TOTAL_CARRIED, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2022 Part 2 "Amount F plus amount G" H: F and G are 0.
+        CHART_2022_PART_2_AMOUNT_H: SumLine(
+            output=CHART_2022_PART_2_AMOUNT_H,
+            parts=((CHART_2022_PART_2_AMOUNT_F, D("0")), (CHART_2022_PART_2_AMOUNT_G, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2022 Part 2 "Amount I plus amount J" K: I is 0, and J (Part 1's M) is 0.
+        CHART_2022_PART_2_AMOUNT_K: SumLine(
+            output=CHART_2022_PART_2_AMOUNT_K,
+            parts=((CHART_2022_PART_2_AMOUNT_I, D("0")), (CHART_2022_PART_1_AMOUNT_M, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2023 Part 1 "Amount H plus amount I" J: H and I are 0.
+        CHART_2023_PART_1_AMOUNT_J: SumLine(
+            output=CHART_2023_PART_1_AMOUNT_J,
+            parts=((CHART_2023_PART_1_AMOUNT_H, D("0")), (CHART_2023_PART_1_AMOUNT_I, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2023 Part 1 "Amount K plus amount L" M: K is 0, and L (amount B) is 0.
+        CHART_2023_PART_1_AMOUNT_M: SumLine(
+            output=CHART_2023_PART_1_AMOUNT_M,
+            parts=((CHART_2023_PART_1_AMOUNT_K, D("0")), (CHART_2022_TOTAL_CARRIED, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2023 Part 2 "Amount F plus amount G" H: F and G are 0.
+        CHART_2023_PART_2_AMOUNT_H: SumLine(
+            output=CHART_2023_PART_2_AMOUNT_H,
+            parts=((CHART_2023_PART_2_AMOUNT_F, D("0")), (CHART_2023_PART_2_AMOUNT_G, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2023 Part 2 "Amount I plus amount J" K: I is 0, and J (Part 1's M) is 0.
+        CHART_2023_PART_2_AMOUNT_K: SumLine(
+            output=CHART_2023_PART_2_AMOUNT_K,
+            parts=((CHART_2023_PART_2_AMOUNT_I, D("0")), (CHART_2023_PART_1_AMOUNT_M, D("0"))),
+            total=D("0"),
+        ),
         ontario.DISABILITY_SELF_WORKSHEET_AMOUNT: SumLine(
             ontario.DISABILITY_SELF_WORKSHEET_AMOUNT,
             (
@@ -2793,7 +2898,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             output=CHART_2024_PERIOD_1_AMOUNT_N,
             parts=(
                 (CHART_2024_PERIOD_1_AMOUNT_L, D("0")),
-                (T657_CHART_2024_PERIOD_1_AMOUNT_B, D("0")),
+                (CHART_2023_TOTAL_CARRIED, D("0")),
             ),
             total=D("0"),
         ),
