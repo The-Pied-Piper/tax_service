@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.capped_amount import CappedAmount
+from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.per_unit_amount import PerUnitAmount
 from app.domain.capabilities.progressive_tax import ProgressiveTax
@@ -26,11 +27,21 @@ from app.jurisdictions.ca.catalog import (
     BORN_IN_1960_OR_EARLIER,
     CAREGIVER_AMOUNT,
     DEPENDANT_NET_INCOME,
+    DISABILITY_AMOUNT_FOR_SELF,
+    DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
     DISABILITY_DEPENDANTS,
+    DISABILITY_SELF_BASE_AMOUNT,
+    DISABILITY_SELF_CARE_EXPENSES,
+    DISABILITY_SELF_CARE_OVER_THRESHOLD,
+    DISABILITY_SELF_CARE_THRESHOLD,
+    DISABILITY_SELF_SUPPLEMENT,
+    DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
+    DISABILITY_SELF_WORKSHEET_AMOUNT,
     DISABILITY_TRANSFERRED_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANTS,
+    ELIGIBLE_FOR_DISABILITY_AMOUNT,
     FEDERAL_BASIC_TAX,
     INFIRM_CHILDREN,
     INFIRM_CHILDREN_AMOUNT,
@@ -57,6 +68,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSES_CLAIMED,
     TAXABLE_INCOME,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
+    UNDER_18_ON_DECEMBER_31,
 )
 
 INPUTS = frozenset(
@@ -72,7 +84,9 @@ INPUTS = frozenset(
         "ca/spouse_net_income",
         "ca/spouses_claimed",
         "ca/spouse_caregiver_eligible",
-        "ca/disability_amount_for_self",
+        "ca/eligible_for_disability_amount",
+        "ca/under_18_on_december_31",
+        "ca/disability_self_care_expenses",
     }
 )
 
@@ -96,6 +110,87 @@ STEPS = {
         params={"taper": "ca/basic_personal_amount"},
         consumes={"base": "ca/tosi_adjusted_net_income_not_below_zero"},
         produces={"output": "ca/basic_personal_amount"},
+    ),
+    # Federal Worksheet "Line 31600 - Disability amount for self", line 1 "Base amount 10,138.00",
+    # the dataset as an artifact of the same name.
+    CapabilitySelection(
+        name="core/credit_amount",
+        params={"amount": "ca/disability_self_base_amount"},
+        consumes={},
+        produces={"output": "ca/disability_self_base_amount"},
+    ),
+    # Line 2 "Maximum supplement 5,914.00", the dataset as an artifact of the same name.
+    CapabilitySelection(
+        name="core/credit_amount",
+        params={"amount": "ca/disability_self_supplement_maximum"},
+        consumes={},
+        produces={"output": "ca/disability_self_supplement_maximum"},
+    ),
+    # Line 4 "Threshold for child care and attendant care expenses 3,464.00", the dataset as an
+    # artifact of the same name. Line 3 "Total of child care and attendant care expenses for you
+    # that you or another person claimed" is the caller's input ca/disability_self_care_expenses.
+    CapabilitySelection(
+        name="core/credit_amount",
+        params={"amount": "ca/disability_self_care_threshold"},
+        consumes={},
+        produces={"output": "ca/disability_self_care_threshold"},
+    ),
+    # Line 5 "Line 3 minus line 4 (if negative, enter "0") =".
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/disability_self_care_expenses",
+            "less": "ca/disability_self_care_threshold",
+        },
+        produces={"output": "ca/disability_self_care_over_threshold"},
+    ),
+    # Line 6 "Line 2 minus line 5 (if negative, enter "0") =".
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/disability_self_supplement_maximum",
+            "less": "ca/disability_self_care_over_threshold",
+        },
+        produces={"output": "ca/disability_self_supplement"},
+    ),
+    # Line 7 "Line 1 plus line 6 Enter this amount on line 31600 of your return. (maximum $16,052)":
+    # the sum of lines 1 and 6 needs no cap, as line 6 is at most the maximum supplement 5,914.00.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/disability_self_base_amount",
+                "ca/disability_self_supplement",
+            )
+        },
+        produces={"output": "ca/disability_self_worksheet_amount"},
+    ),
+    # Line 31600 "If you qualify for the disability amount and, on December 31, 2025, you were: 18
+    # years of age or older, enter $10,138 on line 31600 of your return; under 18 years of age,
+    # complete the calculation below": line 1 when the filer is 18 or older, line 7 when under 18.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/under_18_on_december_31",
+            "when_none": "ca/disability_self_base_amount",
+            "when_any": "ca/disability_self_worksheet_amount",
+        },
+        produces={"output": "ca/disability_amount_for_self_if_eligible"},
+    ),
+    # "If you qualify for the disability amount" (the CRA approved Form T2201): the amount once if
+    # the filer qualifies, else 0.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/disability_amount_for_self_if_eligible",
+            "count": "ca/eligible_for_disability_amount",
+        },
+        produces={"output": "ca/disability_amount_for_self"},
     ),
     # T1 line 100 (line 31800) "Disability amount transferred from a dependant (use Federal
     # Worksheet)", Federal Worksheet "Line 31800 - Disability amount transferred from a
@@ -435,6 +530,36 @@ WIRING = {
         Sum,
         frozenset({MEDICAL_EXPENSES_OVER_THRESHOLD, OTHER_DEPENDANTS_MEDICAL}),
         frozenset({MEDICAL_CLAIM}),
+    ),
+    (CreditAmount, frozenset(), frozenset({DISABILITY_SELF_BASE_AMOUNT})),
+    (CreditAmount, frozenset(), frozenset({DISABILITY_SELF_SUPPLEMENT_MAXIMUM})),
+    (CreditAmount, frozenset(), frozenset({DISABILITY_SELF_CARE_THRESHOLD})),
+    (
+        SubtractNotBelowZero,
+        frozenset({DISABILITY_SELF_CARE_EXPENSES, DISABILITY_SELF_CARE_THRESHOLD}),
+        frozenset({DISABILITY_SELF_CARE_OVER_THRESHOLD}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({DISABILITY_SELF_SUPPLEMENT_MAXIMUM, DISABILITY_SELF_CARE_OVER_THRESHOLD}),
+        frozenset({DISABILITY_SELF_SUPPLEMENT}),
+    ),
+    (
+        Sum,
+        frozenset({DISABILITY_SELF_BASE_AMOUNT, DISABILITY_SELF_SUPPLEMENT}),
+        frozenset({DISABILITY_SELF_WORKSHEET_AMOUNT}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {UNDER_18_ON_DECEMBER_31, DISABILITY_SELF_BASE_AMOUNT, DISABILITY_SELF_WORKSHEET_AMOUNT}
+        ),
+        frozenset({DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE}),
+    ),
+    (
+        TimesCount,
+        frozenset({DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE, ELIGIBLE_FOR_DISABILITY_AMOUNT}),
+        frozenset({DISABILITY_AMOUNT_FOR_SELF}),
     ),
     (
         DisabilityTransferAmount,

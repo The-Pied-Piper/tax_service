@@ -71,6 +71,11 @@ from app.jurisdictions.ca.catalog import (
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CURRENT_YEAR_TUITION_AVAILABLE,
     DEDUCTIONS_FROM_TOTAL_INCOME,
+    DISABILITY_AMOUNT_FOR_SELF,
+    DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
+    DISABILITY_SELF_BASE_AMOUNT,
+    DISABILITY_SELF_CARE_THRESHOLD,
+    DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
     DIVIDENDS_AMOUNT_A,
     DIVIDENDS_AMOUNT_A_LESS_B,
     DIVIDENDS_AMOUNT_B,
@@ -90,6 +95,7 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DEPENDANTS,
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
+    ELIGIBLE_FOR_DISABILITY_AMOUNT,
     EMPLOYMENT_INCOME,
     FEDERAL_TUITION_AMOUNT,
     FHSA_ANNUAL_AMOUNT,
@@ -801,6 +807,27 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert amounts == {
+        ontario.DISABILITY_SELF_BASE_AMOUNT: CreditAmountLine(
+            ontario.DISABILITY_SELF_BASE_AMOUNT, Credit(amount=D("10298.00")), CENT, D("10298.00")
+        ),
+        ontario.DISABILITY_SELF_CARE_THRESHOLD: CreditAmountLine(
+            ontario.DISABILITY_SELF_CARE_THRESHOLD, Credit(amount=D("3518.00")), CENT, D("3518.00")
+        ),
+        ontario.DISABILITY_SELF_SUPPLEMENT_MAXIMUM: CreditAmountLine(
+            ontario.DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
+            Credit(amount=D("6007.00")),
+            CENT,
+            D("6007.00"),
+        ),
+        DISABILITY_SELF_BASE_AMOUNT: CreditAmountLine(
+            DISABILITY_SELF_BASE_AMOUNT, Credit(amount=D("10138.00")), CENT, D("10138.00")
+        ),
+        DISABILITY_SELF_CARE_THRESHOLD: CreditAmountLine(
+            DISABILITY_SELF_CARE_THRESHOLD, Credit(amount=D("3464.00")), CENT, D("3464.00")
+        ),
+        DISABILITY_SELF_SUPPLEMENT_MAXIMUM: CreditAmountLine(
+            DISABILITY_SELF_SUPPLEMENT_MAXIMUM, Credit(amount=D("5914.00")), CENT, D("5914.00")
+        ),
         # Federal Worksheet "Line 23500" line 16 "OAS benefits base amount 93,343.00".
         OAS_BENEFITS_BASE_AMOUNT: CreditAmountLine(
             OAS_BENEFITS_BASE_AMOUNT, Credit(amount=D("93343.00")), CENT, D("93343.00")
@@ -1164,6 +1191,22 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert times == {
+        ontario.DISABILITY_AMOUNT_FOR_SELF: TimesCountLine(
+            output=ontario.DISABILITY_AMOUNT_FOR_SELF,
+            amount_kind=ontario.DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
+            amount_value=D("10298.00"),
+            count_kind=ELIGIBLE_FOR_DISABILITY_AMOUNT,
+            count=0,
+            result=D("0"),
+        ),
+        DISABILITY_AMOUNT_FOR_SELF: TimesCountLine(
+            output=DISABILITY_AMOUNT_FOR_SELF,
+            amount_kind=DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
+            amount_value=D("10138.00"),
+            count_kind=ELIGIBLE_FOR_DISABILITY_AMOUNT,
+            count=0,
+            result=D("0"),
+        ),
         # T1 line 55 (line 23500): the chart's line 21 once if the chart applies, else 0; it does
         # not apply to Return A (no OAS, no net federal supplements and no EI benefits).
         SOCIAL_BENEFITS_REPAYMENT: TimesCountLine(

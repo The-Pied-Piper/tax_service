@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 560
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 576
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -513,6 +513,16 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/dependant_taxable_income",
         "ca/disability_dependants",
         "ca/disability_transferred_amount",
+        "ca/eligible_for_disability_amount",
+        "ca/under_18_on_december_31",
+        "ca/disability_self_care_expenses",
+        "ca/disability_self_base_amount",
+        "ca/disability_self_supplement_maximum",
+        "ca/disability_self_care_threshold",
+        "ca/disability_self_care_over_threshold",
+        "ca/disability_self_supplement",
+        "ca/disability_self_worksheet_amount",
+        "ca/disability_amount_for_self_if_eligible",
         "ca/disability_amount_for_self",
         "ca/residence_years_designated_after_1981",
         "ca/residence_years_designated_1972_to_1981",
@@ -894,6 +904,13 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca-on/community_food_program_donations",
         "ca-on/community_food_program_credit",
         "ca-on/ontario_tax_after_food_credit",
+        "ca-on/disability_self_base_amount",
+        "ca-on/disability_self_supplement_maximum",
+        "ca-on/disability_self_care_threshold",
+        "ca-on/disability_self_care_over_threshold",
+        "ca-on/disability_self_supplement",
+        "ca-on/disability_self_worksheet_amount",
+        "ca-on/disability_amount_for_self_if_eligible",
         "ca-on/disability_amount_for_self",
         "ca-on/health_premium_income",
         "ca-on/ontario_surtax_base",
@@ -1002,13 +1019,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 560
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 576
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 560
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 576
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

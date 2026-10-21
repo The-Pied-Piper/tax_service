@@ -82,9 +82,10 @@ STEPS = {
         },
         produces={"output": "ca/split_income_line_10"},
     ),
-    # "Federal disability tax credit": line 11 "Amount from line 31600 of your return" (the caller's
-    # amount under its T1 name, not yet computed) and line 12 "Amount from line 31800 of your
-    # return" (the disability amount transferred from a dependant), line 13 "Line 11 plus line 12".
+    # "Federal disability tax credit": line 11 "Amount from line 31600 of your return" (the
+    # disability amount for self, computed on the personal amounts steps) and line 12 "Amount from
+    # line 31800 of your return" (the disability amount transferred from a dependant), line 13
+    # "Line 11 plus line 12".
     CapabilitySelection(
         name="core/sum",
         params={},

@@ -30,11 +30,20 @@ from app.jurisdictions.ca.catalog import (
     DEPENDANT_TAXABLE_INCOME,
     DEPENDANT_UNDER_18,
     DISABILITY_AMOUNT_FOR_SELF,
+    DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
     DISABILITY_DEPENDANTS,
+    DISABILITY_SELF_BASE_AMOUNT,
+    DISABILITY_SELF_CARE_EXPENSES,
+    DISABILITY_SELF_CARE_OVER_THRESHOLD,
+    DISABILITY_SELF_CARE_THRESHOLD,
+    DISABILITY_SELF_SUPPLEMENT,
+    DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
+    DISABILITY_SELF_WORKSHEET_AMOUNT,
     DISABILITY_TRANSFERRED_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DEPENDANTS,
+    ELIGIBLE_FOR_DISABILITY_AMOUNT,
     FEDERAL_BASIC_TAX,
     INFIRM_CHILDREN,
     INFIRM_CHILDREN_AMOUNT,
@@ -69,6 +78,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_INFIRMITY_SUPPLEMENT,
     SPOUSE_NET_INCOME,
     SPOUSES_CLAIMED,
+    UNDER_18_ON_DECEMBER_31,
 )
 
 
@@ -150,6 +160,24 @@ def test_the_personal_amounts_kinds_are_the_registered_ones(registry: ArtifactRe
     assert registry.get("ca/infirm_children") is INFIRM_CHILDREN
     assert registry.get("ca/infirm_children_amount") is INFIRM_CHILDREN_AMOUNT
     assert registry.get("ca/disability_amount_for_self") is DISABILITY_AMOUNT_FOR_SELF
+    assert registry.get("ca/eligible_for_disability_amount") is ELIGIBLE_FOR_DISABILITY_AMOUNT
+    assert registry.get("ca/under_18_on_december_31") is UNDER_18_ON_DECEMBER_31
+    assert registry.get("ca/disability_self_care_expenses") is DISABILITY_SELF_CARE_EXPENSES
+    assert registry.get("ca/disability_self_base_amount") is DISABILITY_SELF_BASE_AMOUNT
+    assert (
+        registry.get("ca/disability_self_supplement_maximum") is DISABILITY_SELF_SUPPLEMENT_MAXIMUM
+    )
+    assert registry.get("ca/disability_self_care_threshold") is DISABILITY_SELF_CARE_THRESHOLD
+    assert (
+        registry.get("ca/disability_self_care_over_threshold")
+        is DISABILITY_SELF_CARE_OVER_THRESHOLD
+    )
+    assert registry.get("ca/disability_self_supplement") is DISABILITY_SELF_SUPPLEMENT
+    assert registry.get("ca/disability_self_worksheet_amount") is DISABILITY_SELF_WORKSHEET_AMOUNT
+    assert (
+        registry.get("ca/disability_amount_for_self_if_eligible")
+        is DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE
+    )
 
 
 def test_the_personal_amounts_kinds_are_money() -> None:
@@ -200,5 +228,23 @@ def test_the_personal_amounts_kinds_are_money() -> None:
         CCA_UCC_AT_END,
         INFIRM_CHILDREN_AMOUNT,
         DISABILITY_AMOUNT_FOR_SELF,
+        DISABILITY_SELF_CARE_EXPENSES,
+        DISABILITY_SELF_BASE_AMOUNT,
+        DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
+        DISABILITY_SELF_CARE_THRESHOLD,
+        DISABILITY_SELF_CARE_OVER_THRESHOLD,
+        DISABILITY_SELF_SUPPLEMENT,
+        DISABILITY_SELF_WORKSHEET_AMOUNT,
+        DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
     ):
         assert kind.value_type is Decimal, kind.identifier
+
+
+def test_the_disability_amount_for_self_callers_are_counts_and_the_care_expenses_are_money() -> (
+    None
+):
+    for count in (ELIGIBLE_FOR_DISABILITY_AMOUNT, UNDER_18_ON_DECEMBER_31):
+        assert count.value_type is int, count.identifier
+        assert count.non_negative is True, count.identifier
+    assert DISABILITY_SELF_CARE_EXPENSES.value_type is Decimal
+    assert DISABILITY_SELF_CARE_EXPENSES.non_negative is True

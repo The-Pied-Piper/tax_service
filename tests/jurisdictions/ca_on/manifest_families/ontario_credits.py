@@ -61,6 +61,7 @@ STEPS = {
                 "ca/cpp_base_contributions_on_self_employment",
                 "ca/ei_premiums",
                 "ca/ei_premiums_on_self_employment",
+                "ca-on/disability_amount_for_self",
                 "ca-on/disability_transferred_amount",
                 "ca-on/unused_tuition_claimed",
                 "ca-on/amounts_transferred_from_spouse",
@@ -138,10 +139,10 @@ STEPS = {
         produces={"output": "ca-on/ontario_tax_on_split_income"},
     ),
     # "Provincial or territorial disability tax credit (DTC)": line 34 "DTC from line 58440 of your
-    # provincial or territorial Form 428" (the caller's amount under its ON428 name, not yet
-    # computed) and line 35 "DTC transferred from a dependant from line 58480 of your provincial or
-    # territorial Form 428" (the Ontario disability amount transferred from a dependant), line 36
-    # "Line 34 plus line 35".
+    # provincial or territorial Form 428" (the Ontario amount for self, computed on the Ontario
+    # personal amounts steps) and line 35 "DTC transferred from a dependant from line 58480 of your
+    # provincial or territorial Form 428" (the Ontario disability amount transferred from a
+    # dependant), line 36 "Line 34 plus line 35".
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -354,6 +355,7 @@ WIRING = {
                 CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
                 EI_PREMIUMS,
                 EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+                ontario.DISABILITY_AMOUNT_FOR_SELF,
                 ontario.DISABILITY_TRANSFERRED_AMOUNT,
                 ontario.UNUSED_TUITION_CLAIMED,
                 ontario.AMOUNTS_TRANSFERRED_FROM_SPOUSE,

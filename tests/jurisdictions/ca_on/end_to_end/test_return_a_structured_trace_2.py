@@ -72,6 +72,9 @@ from app.jurisdictions.ca.catalog import (
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DEPRECIABLE_GIFTS,
     DISABILITY_AMOUNT_FOR_SELF,
+    DISABILITY_SELF_BASE_AMOUNT,
+    DISABILITY_SELF_SUPPLEMENT,
+    DISABILITY_SELF_WORKSHEET_AMOUNT,
     DISABILITY_SUPPORTS_DEDUCTION,
     DISABILITY_TRANSFERRED_AMOUNT,
     DIVIDEND_TAX_CREDIT,
@@ -455,6 +458,22 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        ontario.DISABILITY_SELF_WORKSHEET_AMOUNT: SumLine(
+            ontario.DISABILITY_SELF_WORKSHEET_AMOUNT,
+            (
+                (ontario.DISABILITY_SELF_BASE_AMOUNT, D("10298.00")),
+                (ontario.DISABILITY_SELF_SUPPLEMENT, D("6007.00")),
+            ),
+            D("16305.00"),
+        ),
+        DISABILITY_SELF_WORKSHEET_AMOUNT: SumLine(
+            DISABILITY_SELF_WORKSHEET_AMOUNT,
+            (
+                (DISABILITY_SELF_BASE_AMOUNT, D("10138.00")),
+                (DISABILITY_SELF_SUPPLEMENT, D("5914.00")),
+            ),
+            D("16052.00"),
+        ),
         # Federal Worksheet "Line 23500" for Return A, whose chart does not apply: line 3 "Line 1
         # plus line 2" (lines 11300 and 14600), line 6 (line 23400 plus the T1206 line 4), line 10
         # "Add lines 7 to 9", line 14 "Line 12 plus line 13", line 15 "Line 11 plus line 14" and
@@ -1078,6 +1097,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
                 (CANADA_EMPLOYMENT_AMOUNT, D("1471")),
+                (DISABILITY_AMOUNT_FOR_SELF, D("0")),
                 (DISABILITY_TRANSFERRED_AMOUNT, D("0")),
                 (FEDERAL_TUITION_AMOUNT, D("0")),
                 (TUITION_TRANSFERRED_FROM_CHILD, D("0")),
@@ -1110,6 +1130,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
+                (ontario.DISABILITY_AMOUNT_FOR_SELF, D("0")),
                 (ontario.DISABILITY_TRANSFERRED_AMOUNT, D("0")),
             ),
             D("17180.58"),
@@ -1129,6 +1150,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
+                (ontario.DISABILITY_AMOUNT_FOR_SELF, D("0")),
                 (ontario.DISABILITY_TRANSFERRED_AMOUNT, D("0")),
                 (ontario.UNUSED_TUITION_CLAIMED, D("0")),
                 (ontario.AMOUNTS_TRANSFERRED_FROM_SPOUSE, D("0")),
@@ -1840,6 +1862,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
                 (CANADA_EMPLOYMENT_AMOUNT, D("1471.00")),
+                (DISABILITY_AMOUNT_FOR_SELF, D("0")),
                 (DISABILITY_TRANSFERRED_AMOUNT, D("0")),
             ),
             total=D("22033.58"),
