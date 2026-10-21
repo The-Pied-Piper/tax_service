@@ -88,6 +88,13 @@ from app.jurisdictions.ca.catalog import (
     DEPRECIABLE_GIFT_PROCEEDS_OR_COST,
     DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
     DEPRECIABLE_GIFTS,
+    DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
+    DISABILITY_SELF_BASE_AMOUNT,
+    DISABILITY_SELF_CARE_EXPENSES,
+    DISABILITY_SELF_CARE_OVER_THRESHOLD,
+    DISABILITY_SELF_CARE_THRESHOLD,
+    DISABILITY_SELF_SUPPLEMENT,
+    DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
     DONATION_FIRST_TIER_MAXIMUM,
     DONATION_HIGH_INCOME_THRESHOLD,
     DONATION_LIMIT_WITH_CAPITAL_GIFTS,
@@ -266,14 +273,15 @@ from app.jurisdictions.ca.catalog import (
     TRAVEL_TOTAL_ZONE_A,
     TRAVEL_TOTAL_ZONE_B,
     TUITION_AVAILABLE_TO_TRANSFER,
-    TUITION_INCOME_BASE,
     TUITION_INCOME_LESS_CREDITS,
     TUITION_INCOME_REMAINING,
+    TUITION_INCOME_WITH_TOSI,
     TUITION_TRANSFER_ELECTED,
     TUITION_TRANSFER_LIMIT,
     TUITION_TRANSFERRED,
     UCCB_AND_RDSP_INCOME,
     UNAPPLIED_LISTED_PERSONAL_PROPERTY_LOSSES,
+    UNDER_18_ON_DECEMBER_31,
     UNUSED_TUITION_CLAIMED,
     UNUSED_TUITION_FROM_2024,
     WORKING_INCOME,
@@ -870,6 +878,38 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        ontario.DISABILITY_SELF_CARE_OVER_THRESHOLD: SubtractedNotBelowZeroLine(
+            output=ontario.DISABILITY_SELF_CARE_OVER_THRESHOLD,
+            minuend=DISABILITY_SELF_CARE_EXPENSES,
+            minuend_amount=D("0"),
+            subtrahend=ontario.DISABILITY_SELF_CARE_THRESHOLD,
+            subtrahend_amount=D("3518.00"),
+            result=D("0"),
+        ),
+        ontario.DISABILITY_SELF_SUPPLEMENT: SubtractedNotBelowZeroLine(
+            output=ontario.DISABILITY_SELF_SUPPLEMENT,
+            minuend=ontario.DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
+            minuend_amount=D("6007.00"),
+            subtrahend=ontario.DISABILITY_SELF_CARE_OVER_THRESHOLD,
+            subtrahend_amount=D("0"),
+            result=D("6007.00"),
+        ),
+        DISABILITY_SELF_CARE_OVER_THRESHOLD: SubtractedNotBelowZeroLine(
+            output=DISABILITY_SELF_CARE_OVER_THRESHOLD,
+            minuend=DISABILITY_SELF_CARE_EXPENSES,
+            minuend_amount=D("0"),
+            subtrahend=DISABILITY_SELF_CARE_THRESHOLD,
+            subtrahend_amount=D("3464.00"),
+            result=D("0"),
+        ),
+        DISABILITY_SELF_SUPPLEMENT: SubtractedNotBelowZeroLine(
+            output=DISABILITY_SELF_SUPPLEMENT,
+            minuend=DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
+            minuend_amount=D("5914.00"),
+            subtrahend=DISABILITY_SELF_CARE_OVER_THRESHOLD,
+            subtrahend_amount=D("0"),
+            result=D("5914.00"),
+        ),
         # T1 line 130 "Line 128 minus line 129": line 126 (line 127 is not wired) less line 129
         # (40500), which is 0 with no country.
         FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT: SubtractedNotBelowZeroLine(
@@ -1540,7 +1580,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         TUITION_INCOME_LESS_CREDITS: SubtractedNotBelowZeroLine(
             output=TUITION_INCOME_LESS_CREDITS,
-            minuend=TUITION_INCOME_BASE,
+            minuend=TUITION_INCOME_WITH_TOSI,
             minuend_amount=D("138939.66"),
             subtrahend=CREDIT_AMOUNTS_SUBTOTAL,
             subtrahend_amount=D("22033.58"),
@@ -1695,6 +1735,20 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert chosen == {
+        ontario.DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE: ChosenByCountLine(
+            output=ontario.DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
+            count_kind=UNDER_18_ON_DECEMBER_31,
+            count=0,
+            chosen_kind=ontario.DISABILITY_SELF_BASE_AMOUNT,
+            chosen_value=D("10298.00"),
+        ),
+        DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE: ChosenByCountLine(
+            output=DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
+            count_kind=UNDER_18_ON_DECEMBER_31,
+            count=0,
+            chosen_kind=DISABILITY_SELF_BASE_AMOUNT,
+            chosen_value=D("10138.00"),
+        ),
         # T776 Part 4 line 2 (the co-owner's share, amount 2): a count of 0 chooses line 9369. Line
         # 9946 (T1 line 12600): a count of 0 chooses amount 6.
         RENTAL_NET_INCOME_SHARE: ChosenByCountLine(
