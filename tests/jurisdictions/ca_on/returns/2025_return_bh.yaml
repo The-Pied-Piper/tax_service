@@ -1,0 +1,184 @@
+# Return BH: a 2025 Ontario resident with a 2024 Period 1 reserve and a 2024 Period 2 reserve reported
+# in 2025, and the 2025 QSBCS disposition of Return BF (a gain of $350,000, Schedule 3 line 10700).
+# Form T657 Chart 2024 Period 1 gives amount N of 20,000.00 and Period 2 gives 35,000.00 (Period 1's
+# total carried in as amount B); Chart 2025 Part 1 and Part 2 take that total as amount B. Line
+# 25400 stays at the $155,000.00 annual gains limit. Every other T657 line is blank, as in Return BF.
+# The worked derivation is in the description.
+jurisdiction: CA-ON
+tax_year: 2025
+description: >-
+  A single Ontario resident for all of 2025, resident in Canada throughout 2025, aged 18 or older
+  at the end of 2025, with other income (T1 line 13000) of $10,000, a chosen figure, one
+  disposition of qualified small business corporation shares (QSBCS) in 2025 after June 24, 2024,
+  proceeds $500,000, a chosen figure, adjusted cost base $150,000, a chosen figure, and outlays
+  nil, so the gain is 350,000.00 (Schedule 3 line 10700, column 5, "gain or loss" = column 2 minus
+  columns 3 and 4). Two reserves are reported in 2025 on Form T2017: line 12 (QSBCS) of 40,000.00
+  for a disposition in Period 1 of 2024 (a chosen figure), and line 6 (QFFP) of 30,000.00 for a
+  disposition in Period 2 of 2024 (a chosen figure). Form T2017 line 12 is entered on Chart 2024
+  Period 1 as amount G, and Form T2017 line 6 on Chart 2024 Period 2 as amount F. The derivation of
+  Return BF's lines is unchanged and is repeated here: Schedule 3 line 19700 is 350,000.00 and line
+  21 is 350,000.00, so line 24 is 175,000.00 (the inclusion rate on line 23 is 50%) and line 26
+  (line 19900) is 175,000.00, the taxable capital gains on line 12700 (no partnership gains at full
+  inclusion, no T3 slip). Net capital losses of other years: 20,000 are available (line 6 of Form
+  T1436, a chosen figure) and 20,000 are claimed (a chosen figure), so line 25300 is 20,000.00. Net
+  income (line 23600) is 175,000.00 + 10,000.00 = 185,000.00. Form T657 Step 1: line 1 is
+  350,000.00; line 3 is 350,000.00; line 4 is 1/2, so line 5 is 175,000.00; line 6 (Form T2048 line
+  17216) is 0; line 7 is 175,000.00; line 8 is 175,000.00; line 9 is 0; line 10 is 175,000.00; line
+  11 is 0; line 12 is 175,000.00; line 13 is 175,000.00. Step 1 line 14 is 20,000.00 (line 25300);
+  line 16 is 20,000.00; line 17 is 0; line 18 is 0; line 19 is 0; line 20 is 20,000.00; line 21 is
+  175,000.00 - 20,000.00 = 155,000.00, the annual gains limit for 2025. Step 2: line 8 is 100,000
+  (a chosen figure) + 175,000.00 = 275,000.00; line 9 is 275,000.00; line 15 is 20,000.00; line 18
+  is 20,000.00; line 19 is 275,000.00 - 20,000.00 = 255,000.00, the cumulative gains limit for 2025.
+  Chart 2 is all zeros, so line 19 of Chart 2 (D in every chart) is 0.
+  Chart 2024 Period 1: amount A is 508,418.00 (the maximum for Period 1); B is 0 (the form says to
+  enter "0" when no charts for 2016 to 2023 were completed), so C is 508,418.00 and E is 508,418.00
+  less D (0) = 508,418.00.
+  F is 0, G is 40,000.00 (a chosen figure), H is 0; F to H add to 40,000.00 and I is 40,000.00 x
+  1/2 = 20,000.00. J (the portion of Form T2048 line 17216 for a Period 1 reserve) is 0, so K is
+  20,000.00. L is the lesser of E (508,418.00) and K (20,000.00): 20,000.00. Amount M is B, 0, so N
+  is 20,000.00 + 0 = 20,000.00. O is the lesser of 155,000.00, 255,000.00 and N (20,000.00):
+  20,000.00, the maximum on line 25400 if nothing else is reported.
+  Chart 2024 Period 2: amount A is 625,000.00; B is Period 1's N, 20,000.00, so C is 625,000.00 -
+  20,000.00 = 605,000.00 and E is 605,000.00 less D (0) = 605,000.00. F is 30,000.00 (a chosen
+  figure), G and H are 0; F to H add to 30,000.00 and I is 30,000.00 x 1/2 = 15,000.00. J is 0, so
+  K is 15,000.00. L is the lesser of E (605,000.00) and K (15,000.00): 15,000.00. M is B,
+  20,000.00, so N is 15,000.00 + 20,000.00 = 35,000.00. O is the lesser of 155,000.00, 255,000.00
+  and N (35,000.00): 35,000.00.
+  Chart 2025 Part 1 (Period 1 of 2024): amount A is 522,145.00; B is Period 2's N, 35,000.00, so C
+  is 522,145.00 - 35,000.00 = 487,145.00 and E is 487,145.00 less D (0) = 487,145.00. Amounts F to J
+  are 0 (no slip amounts and no T2017 reserve reported on a T5013 slip, as the Period 1 reserve is
+  on Chart 2024), so K is 0 and M is 0 (L is 0), N is the lesser of E and M, 0. O is B, 35,000.00,
+  so P is 0 + 35,000.00 = 35,000.00. Q is the lesser of 155,000.00, 255,000.00 and P (35,000.00):
+  35,000.00, which nothing reads.
+  Chart 2025 Part 2: amount A is 625,000.00; B is Part 1's P, 35,000.00, so C is 625,000.00 -
+  35,000.00 = 590,000.00 and E is 590,000.00 less D (0) = 590,000.00. F is line 10700 less the
+  excluded slip amounts (none): 350,000.00; G, H, I and J are 0 (no Form T2017 amount is entered on
+  Part 2 for the 2024 reserves, which are charted on Chart 2024). F to J add to 350,000.00 and K is
+  175,000.00. L is 0, so M is 175,000.00. N is the lesser of E (590,000.00) and M (175,000.00):
+  175,000.00. O is B, 35,000.00, so P is 175,000.00 + 35,000.00 = 210,000.00. Q is the lesser of
+  155,000.00, 255,000.00 and P (210,000.00): 155,000.00, the maximum for line 25400.
+  The filer claims all of it, 155,000, a chosen figure, so line 25400 is 155,000.00 and line 25700
+  is 20,000.00 (line 25300) + 155,000.00 (line 25400) = 175,000.00. Line 26000 is 185,000.00 -
+  175,000.00 = 10,000.00, the taxable income. The other lines are blank and are the engine's
+  figures (to be confirmed against CRA's calculator).
+sources:
+  - >-
+    CRA, Form T657, Calculation of Capital Gains Deduction, 2025 edition (confirmed 2026-10-19
+    from the PDF; no .txt is published), Chart 2024 Period 1 and Period 2, amounts A to O: "Maximum
+    capital gains deduction for QFFP and/or QSBCS disposed of in 2024 for Period 1 508,418.00 A" and
+    "Maximum capital gains deduction for QFFP and/or QSBCS disposed of in 2024 for Period 2
+    625,000.00 A"; B "Enter the last amount that you calculated for "Total amount of capital gains
+    included in 2025 income eligible for capital gains deduction" from 2016 to 2023" (Period 1) and
+    "from 2016 to 2024" (Period 2); F "Amount from line 6 of Form T2017 (do not include reserves
+    from dispositions of QFFP in any year or period other than Period 2 of 2024)"; G "Amount from
+    line 12 of Form T2017 (do not include reserves from dispositions of QSBCS in any year or period
+    other than Period 1 of 2024)"; "Add amounts F to H (if negative, enter "0") = × 1/2 = I";
+    "Enter whichever is less: amount E or amount K."; "Amount L plus amount M"; "Enter whichever is
+    less: line 21 of Step 1, line 19 of Step 2 or amount N above."
+  - >-
+    CRA, Form T657, Step 1 lines 1 to 21 and Step 2 lines 8, 9, 15, 18 and 19, as in Return BF
+    (line 1 "Total of lines 10700, 11000, and 12400 of Schedule 3 (if negative, show in brackets)";
+    line 4 "Inclusion rate × 1/2"; line 21 "Line 13 minus line 20 (if negative, enter "0")
+    Annual gains limit for 2025").
+  - >-
+    CRA, Form T657, Chart 2025 Part 1 and Part 2, amounts A to Q: "Maximum capital gains deduction
+    for QFFP and/or QSBCS reported in 2025 but disposed of in Period 1 of 2024 522,145.00 A" and
+    "Maximum capital gains deduction for QFFP and/or QSBCS disposed of in 2025 or disposed of after
+    June 24, 2024 and reported in 2025 625,000.00 A"; Part 1 B and Part 2 B "Enter the last amount
+    that you calculated for "Total amount of capital gains included in 2025 income eligible for the
+    capital gains deduction" from 2016 to 2024" and "from 2016 to 2025" (Part 2's B is Part 1's P).
+  - >-
+    CRA, T1 General 2025, Ontario edition (form 5006-r), "Step 4 - Taxable income" (confirmed
+    2026-10-19): "Line 65 and line 25400: Capital gains deduction (complete Form T657)"; "Line 68
+    and line 25700: Add lines 58 to 67."; "Line 69 and line 26000: Line 57 minus line 68 (if
+    negative, enter "0") Taxable income".
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t657/t657-25e.pdf
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-r/5006-r-25e.txt
+inputs:
+  ca/other_income: "10000"
+  ca/cpp_months: "12"
+  ca/resident_in_canada_throughout_2025: "1"
+  ca/aged_18_or_older_at_end_of_2025: "1"
+  ca/qsbcs_dispositions:
+    - ca/disposition_proceeds: "500000"
+      ca/disposition_adjusted_cost_base: "150000"
+      ca/disposition_outlays: "0"
+  ca/unapplied_net_capital_losses_2001_to_2024: "20000"
+  ca/net_capital_losses_claimed: "20000"
+  ca/t657_gains_2002_to_2024: "100000"
+  ca/t657_chart_2024_period_1_amount_g: "40000"
+  ca/t657_chart_2024_period_2_amount_f: "30000"
+  ca/capital_gains_deduction_claimed: "155000"
+expected:
+  ca/capital_gain: "350000.00"
+  ca/included_capital_gain: "175000.00"
+  ca/schedule_3_line_19900: "175000.00"
+  ca/taxable_capital_gains: "175000.00"
+  ca/annual_gains_schedule_3_total: "350000.00"
+  ca/annual_gains_line_3: "350000.00"
+  ca/annual_gains_line_3_at_inclusion_rate: "175000.00"
+  ca/annual_gains_line_5: "175000.00"
+  ca/annual_gains_line_7: "175000.00"
+  ca/schedule_3_line_17600_not_below_zero: "0.00"
+  ca/annual_gains_line_9: "0.00"
+  ca/annual_gains_line_10: "175000.00"
+  ca/annual_gains_line_12: "175000.00"
+  ca/eligible_taxable_capital_gains_2025: "175000.00"
+  ca/net_capital_losses_of_other_years: "20000.00"
+  ca/adjusted_net_capital_losses_of_other_years: "20000.00"
+  ca/abil_after_qbt_reduction: "0.00"
+  ca/total_losses_for_annual_gains_limit: "20000.00"
+  ca/annual_gains_limit_2025: "155000.00"
+  ca/eligible_taxable_capital_gains_2002_to_2025: "275000.00"
+  ca/cumulative_eligible_taxable_capital_gains: "275000.00"
+  ca/abil_claimed_after_1984_and_before_2025: "0.00"
+  ca/chart_1_column_g_total: "0.00"
+  ca/cumulative_losses_and_deductions: "20000.00"
+  ca/cumulative_gains_limit_2025: "255000.00"
+  ca/chart_2_line_16: "0.00"
+  ca/chart_2_line_19: "0.00"
+  ca/chart_2024_period_1_amount_a: "508418.00"
+  ca/chart_2024_period_1_amount_c: "508418.00"
+  ca/chart_2024_period_1_amount_e: "508418.00"
+  ca/chart_2024_period_1_amounts_f_to_h: "40000.00"
+  ca/chart_2024_period_1_amount_i: "20000.00"
+  ca/chart_2024_period_1_amount_k: "20000.00"
+  ca/chart_2024_period_1_amount_l: "20000.00"
+  ca/chart_2024_period_1_amount_n: "20000.00"
+  ca/chart_2024_period_1_amount_o: "20000.00"
+  ca/chart_2024_period_2_amount_a: "625000.00"
+  ca/chart_2024_period_2_amount_c: "605000.00"
+  ca/chart_2024_period_2_amount_e: "605000.00"
+  ca/chart_2024_period_2_amounts_f_to_h: "30000.00"
+  ca/chart_2024_period_2_amount_i: "15000.00"
+  ca/chart_2024_period_2_amount_k: "15000.00"
+  ca/chart_2024_period_2_amount_l: "15000.00"
+  ca/chart_2024_period_2_amount_n: "35000.00"
+  ca/chart_2024_period_2_amount_o: "35000.00"
+  ca/chart_2025_part_1_amount_a: "522145.00"
+  ca/chart_2025_part_1_amount_c: "487145.00"
+  ca/chart_2025_part_1_amount_e: "487145.00"
+  ca/chart_2025_part_1_amount_k: "0.00"
+  ca/chart_2025_part_1_amount_n: "0.00"
+  ca/chart_2025_part_1_amount_p: "35000.00"
+  ca/chart_2025_part_1_amount_q: "35000.00"
+  ca/chart_2025_part_2_amount_a: "625000.00"
+  ca/chart_2025_part_2_amount_c: "590000.00"
+  ca/chart_2025_part_2_amount_e: "590000.00"
+  ca/chart_2025_part_2_amount_f: "350000.00"
+  ca/chart_2025_part_2_amounts_f_to_j: "350000.00"
+  ca/chart_2025_part_2_amount_k: "175000.00"
+  ca/chart_2025_part_2_amount_m: "175000.00"
+  ca/chart_2025_part_2_amount_n: "175000.00"
+  ca/chart_2025_part_2_amount_p: "210000.00"
+  ca/chart_2025_part_2_amount_q: "155000.00"
+  ca/capital_gains_deduction: "155000.00"
+  ca/deductions_from_net_income: "175000.00"
+  ca/net_income: "185000.00"
+  ca/net_income_before_adjustments: "185000.00"
+  ca/other_payments_limit_income: "185000.00"
+  ca/qsbcs_proceeds: "500000"
+  ca/cpp_second_additional_earnings_maximum: "9900.00"
+  ca/amt_part_1_subtotal: "10000.00"
+  ca/amt_net_capital_gains_after_adjustments: "350000"
+  ca/taxable_income: "10000.00"

@@ -40,8 +40,8 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 740
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 740
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 758
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 758
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -638,7 +638,15 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/t657_chart_2_line_14",
         "ca/t657_inclusion_rate_2000",
         "ca/t657_chart_2_line_18",
-        "ca/t657_part_1_amount_b",
+        "ca/t657_chart_2024_period_1_amount_b",
+        "ca/t657_chart_2024_period_1_amount_f",
+        "ca/t657_chart_2024_period_1_amount_g",
+        "ca/t657_chart_2024_period_1_amount_h",
+        "ca/t657_chart_2024_period_1_amount_j",
+        "ca/t657_chart_2024_period_2_amount_f",
+        "ca/t657_chart_2024_period_2_amount_g",
+        "ca/t657_chart_2024_period_2_amount_h",
+        "ca/t657_chart_2024_period_2_amount_j",
         "ca/t657_part_1_amount_f",
         "ca/t657_part_1_amount_g",
         "ca/t657_part_1_amount_h",
@@ -710,6 +718,24 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/chart_2025_part_2_amount_n",
         "ca/chart_2025_part_2_amount_p",
         "ca/chart_2025_part_2_amount_q",
+        "ca/chart_2024_period_1_amount_a",
+        "ca/chart_2024_period_1_amount_c",
+        "ca/chart_2024_period_1_amount_e",
+        "ca/chart_2024_period_1_amount_amounts_f_to_h",
+        "ca/chart_2024_period_1_amount_i",
+        "ca/chart_2024_period_1_amount_k",
+        "ca/chart_2024_period_1_amount_l",
+        "ca/chart_2024_period_1_amount_n",
+        "ca/chart_2024_period_1_amount_o",
+        "ca/chart_2024_period_2_amount_a",
+        "ca/chart_2024_period_2_amount_c",
+        "ca/chart_2024_period_2_amount_e",
+        "ca/chart_2024_period_2_amount_amounts_f_to_h",
+        "ca/chart_2024_period_2_amount_i",
+        "ca/chart_2024_period_2_amount_k",
+        "ca/chart_2024_period_2_amount_l",
+        "ca/chart_2024_period_2_amount_n",
+        "ca/chart_2024_period_2_amount_o",
         "ca/capital_gains_deduction",
         "ca/t657_chart_1_column_a",
         "ca/t657_chart_1_column_b",
@@ -1387,15 +1413,15 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 740
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 740
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 758
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 758
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 740
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 740
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 758
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 758
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

@@ -105,6 +105,12 @@ from app.jurisdictions.ca.catalog import (
     CHART_2_LINE_16,
     CHART_2_NUMERATOR_ONE,
     CHART_2_TWICE_IR,
+    CHART_2024_PERIOD_1_AMOUNT_A,
+    CHART_2024_PERIOD_1_AMOUNT_I,
+    CHART_2024_PERIOD_1_AMOUNTS_F_TO_H,
+    CHART_2024_PERIOD_2_AMOUNT_A,
+    CHART_2024_PERIOD_2_AMOUNT_I,
+    CHART_2024_PERIOD_2_AMOUNTS_F_TO_H,
     CHART_2025_PART_1_AMOUNT_A,
     CHART_2025_PART_1_AMOUNT_K,
     CHART_2025_PART_1_AMOUNTS_F_TO_J,
@@ -1151,6 +1157,22 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert amounts == {
+        # Form T657 Chart 2024 Period 1 amount A: "Maximum capital gains deduction for QFFP and/or
+        # QSBCS disposed of in 2024 for Period 1" 508,418.00.
+        CHART_2024_PERIOD_1_AMOUNT_A: CreditAmountLine(
+            output=CHART_2024_PERIOD_1_AMOUNT_A,
+            basis=Credit(amount=D("508418")),
+            rounding=CENT,
+            value=D("508418.00"),
+        ),
+        # Form T657 Chart 2024 Period 2 amount A: "Maximum capital gains deduction for QFFP and/or
+        # QSBCS disposed of in 2024 for Period 2" 625,000.00.
+        CHART_2024_PERIOD_2_AMOUNT_A: CreditAmountLine(
+            output=CHART_2024_PERIOD_2_AMOUNT_A,
+            basis=Credit(amount=D("625000")),
+            rounding=CENT,
+            value=D("625000.00"),
+        ),
         ontario.DISABILITY_SELF_BASE_AMOUNT: CreditAmountLine(
             ontario.DISABILITY_SELF_BASE_AMOUNT, Credit(amount=D("10298.00")), CENT, D("10298.00")
         ),
@@ -1461,6 +1483,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert fractions == {
+        # Form T657 Chart 2024 Period 1 "× 1/2 = I": the amounts F to H of 0, times 1/2.
+        CHART_2024_PERIOD_1_AMOUNT_I: FractionAppliedLine(
+            output=CHART_2024_PERIOD_1_AMOUNT_I,
+            base=CHART_2024_PERIOD_1_AMOUNTS_F_TO_H,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Form T657 Chart 2024 Period 2 "× 1/2 = I": the amounts F to H of 0, times 1/2.
+        CHART_2024_PERIOD_2_AMOUNT_I: FractionAppliedLine(
+            output=CHART_2024_PERIOD_2_AMOUNT_I,
+            base=CHART_2024_PERIOD_2_AMOUNTS_F_TO_H,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
         # The Federal Worksheet's lines 13 and 16: 138% and 115% of no dividends with no slip.
         ELIGIBLE_DIVIDENDS_GROSSED_UP: FractionAppliedLine(
             output=ELIGIBLE_DIVIDENDS_GROSSED_UP,
