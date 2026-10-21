@@ -85,6 +85,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_FORECLOSURE_GAIN_OR_LOSS,
     OTHER_INCOME,
     OTHER_PENSIONS_AND_SUPERANNUATION,
+    PARTNERSHIP_GAINS_AT_FULL_INCLUSION,
     PERSONAL_USE_PROPERTY_DISPOSITIONS,
     PERSONAL_USE_PROPERTY_GAIN,
     PERSONAL_USE_PROPERTY_GAIN_ROWS,
@@ -241,6 +242,10 @@ INPUTS = frozenset(
         "ca/slip_capital_gains_or_losses",
         "ca/t3_capital_gains_or_losses",
         "ca/capital_gains_reserves",
+        # Schedule 3 Part 5 line 25 and line 19890: "Capital gains from certain dispositions of an
+        # interest in a partnership subject to 100% inclusion rate (if negative, enter "0")", a
+        # starting amount.
+        "ca/partnership_gains_at_full_inclusion",
         "ca/other_employment_income",
         "ca/old_age_security",
         "ca/cpp_or_qpp_benefits",
@@ -519,8 +524,9 @@ STEPS = {
     ),
     # Part 5 line 22 is the same artifact as line 21; line 24 "Line 22 multiplied by the
     # percentage on line 23" (signed, the included capital gain), then line 26 and line 19900
-    # "If positive, enter the result on line 12700 of your return": line 24 as the single part of
-    # a sum not below zero, so the taxable capital gains stay non-negative.
+    # "Line 24 plus line 25 If positive, enter the result on line 12700 of your return": line 24
+    # and line 25 (the partnership gains at full inclusion, a caller input) as the parts of a sum
+    # not below zero, so the taxable capital gains stay non-negative.
     CapabilitySelection(
         name="core/apply_rate",
         params={"rate": "ca/capital_gains_inclusion_rate"},
@@ -530,7 +536,7 @@ STEPS = {
     CapabilitySelection(
         name="core/sum_not_below_zero",
         params={},
-        consumes={"parts": ("ca/included_capital_gain",)},
+        consumes={"parts": ("ca/included_capital_gain", "ca/partnership_gains_at_full_inclusion")},
         produces={"output": "ca/taxable_capital_gains"},
     ),
     # T1 line 9 (12000) "Amount of dividends (eligible and other than eligible)" and line
@@ -1152,7 +1158,7 @@ WIRING = {
     (ApplyRate, frozenset({CAPITAL_GAIN}), frozenset({INCLUDED_CAPITAL_GAIN})),
     (
         SumNotBelowZero,
-        frozenset({INCLUDED_CAPITAL_GAIN}),
+        frozenset({INCLUDED_CAPITAL_GAIN, PARTNERSHIP_GAINS_AT_FULL_INCLUSION}),
         frozenset({TAXABLE_CAPITAL_GAINS}),
     ),
     (DispositionGains, frozenset({QSBCS_DISPOSITIONS}), frozenset({QSBCS_GAIN_OR_LOSS})),

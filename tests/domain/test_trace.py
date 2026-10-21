@@ -42,6 +42,7 @@ from app.domain.trace import (
     ConditionsCountLine,
     ContributionTierLine,
     CreditAmountLine,
+    DividedByRateLine,
     FractionAppliedLine,
     GreaterOfLine,
     ItemLesserOfLine,
@@ -170,6 +171,10 @@ def sum_not_below_zero_line() -> SumNotBelowZeroLine:
 
 def rate_applied_line() -> RateAppliedLine:
     return RateAppliedLine(RATED, BASE, D("200.01"), Rate(D("0.5")), CENT, D("100.01"))
+
+
+def divided_by_rate_line() -> DividedByRateLine:
+    return DividedByRateLine(RATED, BASE, D("3795"), Rate(D("0.145")), CENT, D("26172.41"))
 
 
 def subtracted_line() -> SubtractedLine:
@@ -424,6 +429,7 @@ ALL_LINES = [
     sum_line,
     sum_not_below_zero_line,
     rate_applied_line,
+    divided_by_rate_line,
     subtracted_line,
     subtracted_not_below_zero_line,
     credit_amount_line,
@@ -646,6 +652,48 @@ def test_rate_applied_lines_differ_by_rounding() -> None:
 
 def test_rate_applied_lines_are_hashable() -> None:
     assert hash(rate_applied_line()) == hash(rate_applied_line())
+
+
+def test_divided_by_rate_line_fields_in_order() -> None:
+    line = divided_by_rate_line()
+
+    assert line == DividedByRateLine(
+        output=RATED,
+        dividend=BASE,
+        dividend_amount=D("3795"),
+        rate=Rate(D("0.145")),
+        rounding=CENT,
+        result=D("26172.41"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "dividend",
+        "dividend_amount",
+        "rate",
+        "rounding",
+        "result",
+    ]
+    assert line.output is RATED
+    assert line.dividend is BASE
+    assert line.dividend_amount == D("3795")
+    assert line.rate == Rate(D("0.145"))
+    assert line.rounding == CENT
+    assert line.result == D("26172.41")
+    assert line.amount == D("26172.41")
+
+
+def test_divided_by_rate_lines_differ_by_rounding() -> None:
+    assert divided_by_rate_line() != DividedByRateLine(
+        RATED, BASE, D("3795"), Rate(D("0.145")), NO_ROUNDING, D("26172.41")
+    )
+
+
+def test_divided_by_rate_lines_are_hashable() -> None:
+    assert hash(divided_by_rate_line()) == hash(divided_by_rate_line())
+
+
+def test_a_divided_by_rate_line_is_not_a_rate_applied_line() -> None:
+    assert not isinstance(divided_by_rate_line(), RateAppliedLine)
 
 
 def test_subtracted_line_fields_in_order() -> None:

@@ -40,6 +40,7 @@ REGISTERED = frozenset(
         "ca/capital_gains_before_reserves",
         "ca/capital_gains_reserves",
         "ca/included_capital_gain",
+        "ca/partnership_gains_at_full_inclusion",
         "ca/personal_use_property_gain_rows",
         "ca/personal_use_property_gain",
         "ca/unapplied_listed_personal_property_losses",
