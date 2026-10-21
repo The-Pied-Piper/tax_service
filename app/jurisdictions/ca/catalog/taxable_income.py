@@ -49,7 +49,8 @@ UNAPPLIED_NET_CAPITAL_LOSSES_2000 = CATALOG.declare(
 )
 """Unapplied net capital losses, Form T1436 "Line 25300 - Net capital loss of other years (if you
 have pre-1986 capital loss balance)", Chart A column (A) "Amount of your unapplied net capital
-losses", row "In 2000": a starting amount."""
+losses", row "In 2000": a starting amount. The 2000 inclusion rate (ca/t657_inclusion_rate_2000)
+must be entered when this is not 0; with that rate at 0 the row's adjusted amount is 0."""
 
 UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024 = CATALOG.declare(
     "unapplied_net_capital_losses_2001_to_2024", Decimal, non_negative=True
