@@ -141,8 +141,10 @@ from app.jurisdictions.ca.catalog import (
     CPP_BASE_CONTRIBUTIONS,
     CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_BASIC_EXEMPTION,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
     CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
     CPP_EARNINGS_UP_TO_MAXIMUM,
@@ -162,7 +164,10 @@ from app.jurisdictions.ca.catalog import (
     CPP_MONTHS,
     CPP_OR_QPP_BENEFITS,
     CPP_OVERPAYMENT,
+    CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_PART_3_LINE_2,
+    CPP_PART_3_OVERPAYMENT,
     CPP_PART_3B_LINE_23_LESS_LINE_35,
     CPP_PART_3B_LINE_30,
     CPP_PART_3B_LINE_31,
@@ -189,6 +194,8 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_3B_LINE_47,
     CPP_PART_3B_LINE_48,
     CPP_PART_4_COMPLETED,
+    CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
     CPP_PART_5_LINE_4,
     CPP_PART_5_LINE_6,
     CPP_PART_5_LINE_7,
@@ -231,6 +238,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_LINE_48,
     CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
     CPP_PART_5_LINE_49,
+    CPP_PART_5_LINE_49_IF_POSITIVE,
     CPP_PART_5_LINE_50,
     CPP_PART_5_LINE_50_LINE_49_POSITIVE,
     CPP_PART_5_LINE_51,
@@ -257,7 +265,23 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_LINE_67_LESSER,
     CPP_PART_5_LINE_68,
     CPP_PART_5_LINE_69,
+    CPP_PART_5_LINE_70,
+    CPP_PART_5_LINE_71,
+    CPP_PART_5_LINE_72,
+    CPP_PART_5_LINE_73,
+    CPP_PART_5_LINE_74,
+    CPP_PART_5_LINE_75,
+    CPP_PART_5_LINE_75_BASE,
+    CPP_PART_5_LINE_77,
+    CPP_PART_5_LINE_80,
+    CPP_PART_5_LINE_83,
+    CPP_PART_5_LINE_84,
+    CPP_PART_5_LINE_86,
+    CPP_PART_5_LINE_87,
+    CPP_PART_5_LINE_88,
+    CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_PENSIONABLE_EARNINGS,
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
@@ -1208,6 +1232,9 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CPP_PART_3B_LINE_42,
         CPP_PART_3B_LINE_44,
         CPP_PART_3B_LINE_46,
+        CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
+        CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        CPP_PART_3_OVERPAYMENT,
         CPP_BASE_CONTRIBUTIONS_ON_RETURN,
         CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
         CPP_OVERPAYMENT,
@@ -1335,6 +1362,42 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CPP_PART_5_LINE_69,
     ):
         assert isinstance(worksheet.producer_of(total), Sum), total.identifier
+    # Schedule 8 Part 5 lines 70 to 88: the halves of lines 43, 44 and 45 and line A's 83.1933% are
+    # rates, line 73 and lines 86 and 87 (and line 49 if positive, for line 42100) are floors,
+    # line 74 and lines 77, 80 and 83 are differences, line A is the lesser of lines 72 and 73,
+    # and lines 72 and 88 are sums.
+    for rate in (CPP_PART_5_LINE_70, CPP_PART_5_LINE_71, CPP_PART_5_LINE_75, CPP_PART_5_LINE_84):
+        assert isinstance(worksheet.producer_of(rate), ApplyRate), rate.identifier
+    for floored in (
+        CPP_PART_5_LINE_73,
+        CPP_PART_5_LINE_86,
+        CPP_PART_5_LINE_87,
+        CPP_PART_5_LINE_49_IF_POSITIVE,
+    ):
+        assert isinstance(worksheet.producer_of(floored), SubtractNotBelowZero), floored.identifier
+    for difference in (
+        CPP_PART_5_LINE_74,
+        CPP_PART_5_LINE_77,
+        CPP_PART_5_LINE_80,
+        CPP_PART_5_LINE_83,
+    ):
+        assert isinstance(worksheet.producer_of(difference), Subtract), difference.identifier
+    assert isinstance(worksheet.producer_of(CPP_PART_5_LINE_75_BASE), LesserOf)
+    for total in (
+        CPP_PART_5_LINE_72,
+        CPP_PART_5_LINE_88,
+        CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    ):
+        assert isinstance(worksheet.producer_of(total), Sum), total.identifier
+    # T1 lines 31000, 22200 and 42100 from Part 5 are counted once for each Part 5 completed.
+    for routed in (
+        CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+        CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
+        CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
+    ):
+        assert isinstance(worksheet.producer_of(routed), TimesCount), routed.identifier
     # The self-employment lines (T1 lines 22 to 27, Schedule 8 Parts 2 and 4, Schedule 13).
     for starting in (
         PROFESSIONAL_INCOME,

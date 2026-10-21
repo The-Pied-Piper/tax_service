@@ -89,7 +89,7 @@ def test_the_child_care_expenses_deduction_is_5000_for_one_child_and_lowers_net_
         "+ child_care_expenses 5000 + allowable_business_investment_loss 0 "
         "+ support_payments_deduction 0 "
         "+ carrying_charges_interest_expenses_and_other_expenses 0 "
-        "+ cpp_deduction_on_self_employment 0 "
+        "+ cpp_deduction_on_self_employment_and_other_earnings 0 "
         "+ cpp_enhanced_contributions_on_return 565 + exploration_and_development_expenses 0 "
         "+ other_deductions 0 + total_split_income 0 = 5565"
     ) in rendered

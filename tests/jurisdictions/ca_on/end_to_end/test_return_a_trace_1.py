@@ -175,7 +175,7 @@ def test_the_trace_explains_the_computation() -> None:
         "+ child_care_expenses 0 + allowable_business_investment_loss 0 "
         "+ support_payments_deduction 0 "
         "+ carrying_charges_interest_expenses_and_other_expenses 0 "
-        "+ cpp_deduction_on_self_employment 0 "
+        "+ cpp_deduction_on_self_employment_and_other_earnings 0 "
         "+ cpp_enhanced_contributions_on_return 1074 + exploration_and_development_expenses 0 "
         "+ other_deductions 0 + total_split_income 0 = 5000",
         "5000",
@@ -379,7 +379,8 @@ def test_the_trace_explains_the_computation() -> None:
         "+ age_amount 0 + spouse_amount 0 "
         "+ eligible_dependant_amount 0 + spouse_caregiver_amount 0 + caregiver_amount 0 "
         "+ infirm_children_amount 0 "
-        "+ cpp_base_contributions_on_return 3356.1 + cpp_base_contributions_on_self_employment 0 "
+        "+ cpp_base_contributions_on_return 3356.1 + "
+        "cpp_base_contributions_on_self_employment_and_other_earnings 0 "
         "+ ei_premiums 1077.48 + ei_premiums_on_self_employment 0 "
         "+ canada_employment_amount 1471 + disability_amount_for_self 0 "
         "+ disability_transferred_amount 0 "
@@ -451,7 +452,7 @@ def test_the_trace_explains_the_computation() -> None:
         "non_refundable_credit_amounts: basic_personal_amount 12747 "
         "+ age_amount 0 + spouse_amount 0 + eligible_dependant_amount 0 "
         "+ caregiver_amount 0 + cpp_base_contributions_on_return 3356.1 "
-        "+ cpp_base_contributions_on_self_employment 0 + ei_premiums 1077.48 "
+        "+ cpp_base_contributions_on_self_employment_and_other_earnings 0 + ei_premiums 1077.48 "
         "+ ei_premiums_on_self_employment 0 + disability_amount_for_self 0 "
         "+ disability_transferred_amount 0 "
         "+ unused_tuition_claimed 0 "
@@ -806,7 +807,8 @@ def test_the_trace_explains_the_computation() -> None:
         "16951.38",
     )
     position(
-        "total_payable: net_federal_tax 16951.38 + cpp_payable_on_self_employment 0 "
+        "total_payable: net_federal_tax 16951.38 + "
+        "cpp_payable_on_self_employment_and_other_earnings 0 "
         "+ ei_payable_on_self_employment 0 + social_benefits_repayment_payable 0 "
         "+ ontario_tax 8945.77 = 25897.15",
         "25897.15",
