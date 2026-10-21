@@ -68,8 +68,7 @@
 # refundable medical expense supplement (line 45200) plus the Canada workers benefit, to the
 # refund or balance owing, negative for a refund and positive for a balance owing. There is
 # no capital gain, unused or new RRSP contribution or union dues. Not yet computed, so not
-# in this file: any deduction from net income, the social benefits repayment and capital
-# losses. Line 82 (the provincial foreign tax credit) is not triggered by this return, and
+# in this file: any deduction from net income and capital losses (the social benefits repayment, line 23500, is 0, as the chart does not apply). Line 82 (the provincial foreign tax credit) is not triggered by this return, and
 # the qualifying donations for line 87 (the community food program donation tax credit for
 # farmers) are a chosen $0, so line 87 is $0 and line 88 is line 86. Schedule 9's inputs are
 # all a chosen $0, so lines 116 (34900) and 117 (34990) are $0 and line 35000 is line 33800.
@@ -375,9 +374,8 @@ sources:
     to calculate this amount." Under "No supporting person for any eligible children": "If
     none of the eligible children has a supporting person, calculate your adjusted income
     and enter it on line 4 of column 1". Line 23600 before the floor at 0 is line 23400
-    less line 23500, and line 23500 is not yet computed, so line 1 is the net income
-    before adjustments (line 23400), 20,000.00, which is not negative; line 2 is the child
-    care expenses deduction (line 21400), 0; line 3 is left out (not yet computed); so
+    less line 23500, and line 23500 is 0 (the chart does not apply), so line 1 is line 23600 before the floor, equal to line 23400, 20,000.00, which is not negative; line 2 is the child
+    care expenses deduction (line 21400), 0; line 3 (the social benefits repayment from line 23500) is 0; so
     line 4 is 20,000.00 + 0 = 20,000.00. No eligible child has a supporting person (to be
     confirmed), so only column 1 is completed, column 2 line 4 (line 63047) is 0 and line
     5 is 20,000.00 + 0 = 20,000.00. Line 7: 20,000.00 is in the table row "more than $0
@@ -451,7 +449,7 @@ sources:
     employment expenses and clergy residence deduction (each 0) is 4,390, with no wage-loss
     replacement plan amounts and no net self-employment income, so the working income is
     4,390, which is $4,390 or more (an inclusive condition: "or more"). Column 1 line 1 is
-    the net income before adjustments, 20,000.00 (line 23500 is not wired yet), lines 2 and
+    the net income before adjustments, 20,000.00 (line 23500 is 0, the chart not applying), lines 2 and
     4 are 0, so lines 3 and 5 are 20,000.00; column 2 is 0 (no spouse or common-law
     partner). Line 6 is 20,000.00; line 8 is 20,000.00 - 33,294.00, negative, so 0; line 9
     is 0 and line 10 is the medical claim, 6,000.00, so line 11 is 6,000.00; line 13 is
@@ -502,6 +500,7 @@ expected:
   ca/child_care_expenses: "0.00"
   ca/deductions_from_total_income: "8.90"
   ca/net_income: "20000.00"
+  ca/net_income_signed: "20000.00"
   ca/net_income_before_adjustments: "20000.00"
   ca/other_payments_limit_income: "20000.00"
   ca/total_adjusted_net_capital_losses: "0.00"

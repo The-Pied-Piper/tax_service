@@ -179,6 +179,11 @@ def test_the_trace_explains_the_computation() -> None:
         "+ other_deductions 0 + total_split_income 0 = 5000",
         "5000",
     )
+    position(
+        "net_income_signed: net_income_before_adjustments 115000 less social_benefits_repayment 0 "
+        "= 115000",
+        "115000",
+    )
     net = position(
         "net_income: net_income_before_adjustments 115000 less social_benefits_repayment 0, "
         "not below 0 = 115000",
@@ -853,8 +858,8 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     position(
-        "care_adjusted_income: net_income_before_adjustments 115000 + child_care_expenses 0, "
-        "not below 0 = 115000",
+        "care_adjusted_income: net_income_signed 115000 + child_care_expenses 0 "
+        "+ social_benefits_repayment 0, not below 0 = 115000",
         "115000",
     )
     position(

@@ -15,8 +15,9 @@ from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.catalog import (
     CHILD_CARE_EXPENSES,
-    NET_INCOME_BEFORE_ADJUSTMENTS,
+    NET_INCOME_SIGNED,
     REFUND,
+    SOCIAL_BENEFITS_REPAYMENT,
     SPOUSE_NET_INCOME,
     TAXABLE_INCOME,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
@@ -188,15 +189,20 @@ STEPS = {
     # Schedule ON479-A "Family adjusted income calculation for the tax credit", column 1 "You".
     # Line 1 "Net income from line 23600 of the return (or the amount you would have entered if
     # the instructions on line 23600 said "if negative, show in brackets")" is line 23600 before
-    # the floor at 0, which is line 23400 less line 23500; line 23500 is not wired yet, so line 1
-    # reads T1 line 54 (line 23400) "Net income before adjustments". Line 2 "Child care
-    # expenses deduction from line 21400 of the return". Line 3 "Social benefits repayment from
-    # line 23500 of the return" is not yet computed, so it is left out. Line 4 "Add lines 1 to 3
-    # (if negative, enter "0"). Adjusted income".
+    # the floor at 0, which is line 23400 less line 23500 (`ca/net_income_signed`). Line 2 "Child
+    # care expenses deduction from line 21400 of the return". Line 3 "Social benefits repayment
+    # from line 23500 of the return" is added, in line order. Line 4 "Add lines 1 to 3 (if
+    # negative, enter "0"). Adjusted income".
     CapabilitySelection(
         name="core/sum_not_below_zero",
         params={},
-        consumes={"parts": ("ca/net_income_before_adjustments", "ca/child_care_expenses")},
+        consumes={
+            "parts": (
+                "ca/net_income_signed",
+                "ca/child_care_expenses",
+                "ca/social_benefits_repayment",
+            )
+        },
         produces={"output": "ca-on/care_adjusted_income"},
     ),
     # Column 2 "Supporting person(s)", line 4 (line 63047) is the supporting persons' adjusted
@@ -668,7 +674,7 @@ WIRING = {
     (CappedAmount, frozenset({FERTILITY_CREDIT_BEFORE_MAXIMUM}), frozenset({FERTILITY_CREDIT})),
     (
         SumNotBelowZero,
-        frozenset({NET_INCOME_BEFORE_ADJUSTMENTS, CHILD_CARE_EXPENSES}),
+        frozenset({NET_INCOME_SIGNED, CHILD_CARE_EXPENSES, SOCIAL_BENEFITS_REPAYMENT}),
         frozenset({CARE_ADJUSTED_INCOME}),
     ),
     (

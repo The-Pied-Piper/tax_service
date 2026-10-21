@@ -20,9 +20,7 @@
 # premiums, and no Ontario credits (Form ON479). The qualifying donations for the community
 # food program donation tax credit for farmers (ON428 line 87) are a chosen $0. Schedule 9's
 # inputs are all a chosen $0, so lines 116 (34900) and 117 (34990) are $0 and line 35000 is
-# line 33800. Not yet computed, so not in this file: lines 21500, 21900, 22200, 22900 and
-# 23100 of Step 3, the social benefits repayment (line 23500) and lines 25300, 25395, 25400
-# and 25500 of Step 4. Lines 20810 (PRPP employer contributions) and 21999 (the total
+# line 33800. Not yet computed, so not in this file: lines 21500, 21900, 22200, 22900 and 23100 of Step 3 and lines 25300, 25395, 25400 and 25500 of Step 4 (the social benefits repayment, line 23500, is 0, as the chart does not apply). Lines 20810 (PRPP employer contributions) and 21999 (the total
 # support payments) are not modelled: no line of lines 35 to 52 reads them. Amounts are
 # quoted decimal strings, never floats; counts are quoted digit strings. Every output the
 # CA-ON manifest declares must appear under `expected`; intermediate lines may be listed and
@@ -45,8 +43,7 @@
 # 23100, the net self-employment lines, the wage-loss replacement plan amounts and the
 # spouse's column) are $0. The working income is $0 (employment income less lines 20700,
 # 21200, 22900 and 23100; under the $4,390 the line asks for); line 6, the adjusted family
-# net income, is the net income, $45,500.00 (column 1 alone, as the spouse's column is 0 and
-# line 23500 is not wired yet); line 8 is line 6 less 33,294.00, $12,206.00; and line 16 and
+# net income, is the net income, $45,500.00 (column 1 alone, as the spouse's column is 0 and line 23500 is 0, the chart not applying); line 8 is line 6 less 33,294.00, $12,206.00; and line 16 and
 # the supplement are $0, because line 9 (line 21500, a chosen $0) and line 10 (line 33200,
 # $0 with no medical expenses) are 0.
 # Form ON-BEN (lines 61020 to 61230) is not applied for (a chosen 0 for each tick box and a
@@ -95,7 +92,7 @@ description: >-
   support payments $6,000 + the carrying charges and interest $500 + the enhanced CPP
   contributions $0 + exploration and development $0 + other deductions $0 = $14,500.00. Net
   income before adjustments (line 23400) is $60,000 - $14,500.00 = $45,500.00, and net
-  income (line 23600) is the same, as line 23500 (social benefits repayment) is not computed
+  income (line 23600) is the same, as line 23500 (social benefits repayment) is 0 (the chart does not apply)
   and $45,500.00 is not negative. No amount was entered on line 14600, so the other payments
   deduction (line 25000) is line 14700, $0; there is no other deduction from net income, so
   line 25700 is $0 and taxable income (line 26000) is $45,500.00, in the lowest federal and
@@ -317,8 +314,7 @@ sources:
     "Line 53 and line 23300: Add lines 35 to 52. ="; "Line 54 and line 23400: Line 34 minus
     line 53 (if negative, show in brackets) Net income before adjustments ="; "Line 56 and
     line 23600: Line 54 minus line 55 (if negative, enter "0") ... Net income =". Line 23400
-    is $60,000 - $14,500.00 = $45,500.00, positive, so line 23600 is the same: line 55 (line
-    23500) is not computed. Not yet computed, so not modelled: lines 21500, 21900, 22200,
+    is $60,000 - $14,500.00 = $45,500.00, positive, so line 23600 is the same: line 55 (line 23500) is 0, the chart not applying. Not yet computed, so not modelled: lines 21500, 21900, 22200,
     22900 and 23100; line 20810 "Pooled registered pension plan (PRPP)employer
     contributions" and line 21999 have no line among lines 35 to 52 and nothing here reads
     them.
@@ -830,9 +826,8 @@ sources:
     to calculate this amount." Under "No supporting person for any eligible children": "If
     none of the eligible children has a supporting person, calculate your adjusted income
     and enter it on line 4 of column 1". Line 23600 before the floor at 0 is line 23400
-    less line 23500, and line 23500 is not yet computed, so line 1 is the net income
-    before adjustments (line 23400), 45,500.00, which is not negative; line 2 is the child
-    care expenses deduction (line 21400), 0; line 3 is left out (not yet computed); so
+    less line 23500, and line 23500 is 0 (the chart does not apply), so line 1 is line 23600 before the floor, equal to line 23400, 45,500.00, which is not negative; line 2 is the child
+    care expenses deduction (line 21400), 0; line 3 (the social benefits repayment from line 23500) is 0; so
     line 4 is 45,500.00 + 0 = 45,500.00. No eligible child has a supporting person (to be
     confirmed), so only column 1 is completed, column 2 line 4 (line 63047) is 0 and line
     5 is 45,500.00 + 0 = 45,500.00. Line 7: 45,500.00 is in the table row "more than
@@ -956,6 +951,7 @@ expected:
   ca/fhsa_deduction: "0"
   ca/deductions_from_total_income: "14500.00"
   ca/net_income: "45500.00"
+  ca/net_income_signed: "45500.00"
   ca/net_income_before_adjustments: "45500.00"
   ca/total_adjusted_net_capital_losses: "0.00"
   ca/net_capital_losses_available_to_claim: "0.00"

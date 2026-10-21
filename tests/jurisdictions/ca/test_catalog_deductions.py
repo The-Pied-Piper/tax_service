@@ -64,6 +64,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
+    NET_INCOME_SIGNED,
     NORTHERN_RESIDENTS_DEDUCTIONS,
     OAS_AND_FEDERAL_SUPPLEMENTS,
     OAS_BENEFITS_BASE_AMOUNT,
@@ -403,6 +404,7 @@ def test_the_deductions_kinds_are_the_registered_ones(registry: ArtifactRegistry
     assert registry.get("ca/deductions_from_total_income") is DEDUCTIONS_FROM_TOTAL_INCOME
     assert registry.get("ca/net_income_before_adjustments") is NET_INCOME_BEFORE_ADJUSTMENTS
     assert registry.get("ca/net_income") is NET_INCOME
+    assert registry.get("ca/net_income_signed") is NET_INCOME_SIGNED
     assert registry.get("ca/oas_overpayment_recovered") is OAS_OVERPAYMENT_RECOVERED
     assert registry.get("ca/ei_benefits_repayment") is EI_BENEFITS_REPAYMENT
     assert (
@@ -517,6 +519,7 @@ def test_the_deductions_kinds_are_money() -> None:
         SELF_EMPLOYED_EI_PREMIUMS,
         DEDUCTIONS_FROM_TOTAL_INCOME,
         NET_INCOME,
+        NET_INCOME_SIGNED,
         SPLIT_INCOME_DIVIDENDS,
         SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
         OTHER_SPLIT_INCOME,
@@ -541,6 +544,24 @@ def test_the_deductions_kinds_are_money() -> None:
         SOCIAL_BENEFITS_REPAYMENT,
     ):
         assert kind.value_type is Decimal, kind.identifier
+
+
+def test_the_net_income_signed_is_the_signed_twin_of_the_net_income(
+    registry: ArtifactRegistry,
+) -> None:
+    # T1 line 56 and line 23600 "Line 54 minus line 55 (if negative, enter "0")" stays the
+    # non-negative `ca/net_income`; Form T1206 Part 1 line 5 "Net income from line 23600 of your
+    # tax return (or the amount you would have entered if the instructions on line 23600 read "if
+    # negative, show in brackets")" and Schedule ON479-A column 1 line 1 read the amount before
+    # that floor, a kind of its own that is signed.
+    assert NET_INCOME_SIGNED is not NET_INCOME
+    assert NET_INCOME_SIGNED is not NET_INCOME_BEFORE_ADJUSTMENTS
+    assert NET_INCOME_SIGNED.identifier == "ca/net_income_signed"
+    assert NET_INCOME_SIGNED.non_negative is False
+    assert registry.kind("ca/net_income_signed") is NET_INCOME_SIGNED
+    assert "ca/net_income_signed" in SIGNED
+    assert NET_INCOME.non_negative is True
+    assert "ca/net_income" not in SIGNED
 
 
 def test_the_tosi_adjusted_net_income_is_signed(registry: ArtifactRegistry) -> None:

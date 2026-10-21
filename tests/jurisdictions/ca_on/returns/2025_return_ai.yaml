@@ -102,6 +102,7 @@ expected:
   ca/net_income_before_adjustments: "127768.34"
   ca/other_payments_limit_income: "127768.34"
   ca/net_income: "127768.34"
+  ca/net_income_signed: "127768.34"
   ca/taxable_income: "127768.34"
   ca/total_payable: "31585.93"
   ca/total_credits: "25000.00"

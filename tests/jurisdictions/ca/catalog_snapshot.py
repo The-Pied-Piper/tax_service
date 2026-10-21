@@ -432,6 +432,7 @@ REGISTERED = frozenset(
         "ca/deductions_from_total_income",
         "ca/net_income_before_adjustments",
         "ca/net_income",
+        "ca/net_income_signed",
         "ca/oas_overpayment_recovered",
         "ca/ei_benefits_repayment",
         "ca/net_income_before_adjustments_not_below_zero",
@@ -740,6 +741,7 @@ REGISTERED = frozenset(
 
 SIGNED = frozenset(
     {
+        "ca/net_income_signed",
         "ca/tosi_adjusted_net_income",
         "ca/split_income_line_15",
         "ca/split_income_line_22",

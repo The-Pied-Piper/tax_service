@@ -6,16 +6,18 @@
 # than $93,454), line 17 is 100,000.00 - 93,343.00 = 6,657.00, line 18 is 15% of it, 998.55,
 # line 19 is the lesser of that and line 5 (9,000.00), 998.55, and lines 23500 and 42200 are
 # 998.55. Line 23600 (net income) is 100,000.00 - 998.55 = 99,001.45, which the taxable income
-# (line 26000) and everything the forms take "from line 23600" read; line 42200 is added into
-# the total payable (line 43500). The Federal Worksheet for line 25000 still reads line 23400
-# (100,000.00). The employment income of 92,074 is chosen so that, with the enhanced CPP
-# contributions of 1,074.00 deducted, line 23400 is exactly 100,000.00. The
-# end-to-end test holds two further cases (line 23400 of 93,400.00 gives 0; OAS
-# of 3,000 with line 23400 of 150,000.00 gives 3,000.00). Not pinned here, as this return does not
-# subtract line 23500 from them: the figures that read line 23400 where the form says line 23600
-# (the TOSI-adjusted net income, Schedule 6, the LIFT credit, the medical supplement and
-# Schedule ON479-A). Amounts are quoted decimal strings, never floats; counts are quoted digit
-# strings. A line or input this return leaves out is blank, 0, and is checked to compute to 0;
+# (line 26000) and everything the forms take "from line 23600" read, among them Form T1206 Part
+# 1 line 5 (the TOSI-adjusted net income, 99,001.45) and Schedule ON479-A column 1 line 1; line
+# 42200 is added into the total payable (line 43500). The Federal Worksheet for line 25000 still
+# reads line 23400 (100,000.00). The employment income of 92,074 is chosen so that, with the
+# enhanced CPP contributions of 1,074.00 deducted, line 23400 is exactly 100,000.00. The
+# end-to-end test holds further cases (line 23400 of 93,400.00 gives 0; OAS of 3,000 with line
+# 23400 of 150,000.00 gives 3,000.00, and with 200,000.00 it lowers the basic personal amount to
+# 15,726.30). The figures that read line 23600 where the form says so (the TOSI-adjusted net
+# income, Schedule 6, the LIFT credit, the medical supplement and Schedule ON479-A) take
+# 99,001.45, line 23400 less line 23500, signed. Amounts are quoted decimal strings, never
+# floats; counts are quoted digit strings. A line or input this return leaves out is blank, 0,
+# and is checked to compute to 0;
 # intermediate lines that are listed are checked too.
 jurisdiction: CA-ON
 tax_year: 2025
@@ -43,6 +45,9 @@ description: >-
   the lesser of line 5 ($9,000.00) and line 18 ($998.55): $998.55. Line 20 is $0, so line 21,
   and so line 23500 and line 42200, is $998.55. Line 23600 is $100,000.00 - $998.55 =
   $99,001.45, and so is the taxable income (line 26000), with no deductions from net income.
+  Form T1206 Part 1 line 5 reads that line 23600, $99,001.45, so line 4 ($0) plus line 5, line 6,
+  the TOSI-adjusted net income, is $99,001.45; Schedule ON479-A column 1 line 1 is $99,001.45,
+  line 2 $0 and line 3 $998.55, so line 4, the adjusted income, is $100,000.00.
   Line 108 of the T1 and line 37 of ON428 take 3% of the net income, $2,970.0435, rounded
   half-up to the cent: $2,970.04; Schedule 9 line 6 takes 75% of it, $74,251.0875: $74,251.09,
   which is below the net income, so line 9 is $74,251.09; the northern residents worksheet's
@@ -51,7 +56,8 @@ description: >-
   the $99,001.45 of line 23600. The federal tax on $99,001.45 is 14.5% x 57,375 = $8,319.375,
   rounded half-up to the cent, $8,319.38, plus 20.5% x (99,001.45 - 57,375) = 20.5% x
   $41,626.45 = $8,533.42225, $8,533.42: $16,852.80. The basic personal amount (line 30000) is
-  $16,129.00 as the net income is $177,882 or less; the Canada employment amount (line 31260) is
+  $16,129.00 as the TOSI-adjusted net income (Form T1206 Part 1 line 6, 0 + $99,001.45) is
+  $177,882 or less; the Canada employment amount (line 31260) is
   $1,471.00; the CPP base contributions (line 30800) are $3,356.10 and the EI premiums (line
   31200) $1,077.48, so the federal credit amounts (line 35000 base) are $16,129.00 + $1,471.00
   + $3,356.10 + $1,077.48 = $22,033.58, at 14.5% (line 33800) $3,194.8691, rounded half-up to
@@ -114,6 +120,17 @@ sources:
     146 is 998.55 and line 148 is 13,657.93 + 0.00 + 0.00 + 998.55 + 6,835.22 = 21,491.70.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-r/5006-r-25e.txt
   - >-
+    CRA, Form T1206 (Tax on Split Income, docs/cra-forms-2025/t1206-25e.pdf), Part 1: line 5
+    "Net income from line 23600 of your tax return (or the amount you would have entered if the
+    instructions on line 23600 read "if negative, show in brackets")"; line 6 "TOSI-adjusted net
+    income: line 4 plus line 5 If negative, enter the result in brackets"; and the note "Use the
+    TOSI-adjusted net income from line 6 of this form in place of your net income from line
+    23600 to calculate the federal amounts you can claim". CRA, Schedule ON479-A (docs/cra-forms-2025/5006-tca-25e.txt):
+    "Line 2: Child care expenses deduction from line 21400 of the return"; "Line 3: Social
+    benefits repayment from line 23500 of the return"; "Line 4: Add lines 1 to 3 (if negative,
+    enter "0"). Adjusted income". Line 5 of T1206 is 99,001.45, so line 6 is 0 + 99,001.45 =
+    99,001.45; ON479-A lines 1 to 3 are 99,001.45, 0 and 998.55, and line 4 is 100,000.00.
+  - >-
     CRA, "CPP contribution rates, maximums and exemptions", 2025 row: maximum annual
     pensionable earnings $71,300; basic exemption $3,500; employee rate 5.95%. CRA, the 2025
     Schedule 8 (form 5000-S8), Part 3: line 7 "Line 5 minus line 6 (if negative, enter "0")
@@ -166,6 +183,10 @@ expected:
   ca/social_benefits_line_21: "998.55"
   ca/social_benefits_repayment: "998.55"
   ca/net_income: "99001.45"
+  ca/net_income_signed: "99001.45"
+  ca/tosi_adjusted_net_income: "99001.45"
+  ca/tosi_adjusted_net_income_not_below_zero: "99001.45"
+  ca-on/care_adjusted_income: "100000.00"
   ca/net_income_less_uccb_and_rdsp_income: "100000.00"
   ca/other_payments_limit_income: "100000.00"
   ca/taxable_income: "99001.45"

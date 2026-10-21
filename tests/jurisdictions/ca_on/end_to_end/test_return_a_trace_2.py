@@ -56,6 +56,11 @@ def test_the_trace_explains_the_computation() -> None:
         "social_assistance_payments 0 + net_federal_supplements 0 = 0",
         "0",
     )
+    net_signed = position(
+        "net_income_signed: net_income_before_adjustments 115000 less social_benefits_repayment 0 "
+        "= 115000",
+        "115000",
+    )
     net = position(
         "net_income: net_income_before_adjustments 115000 less social_benefits_repayment 0, "
         "not below 0 = 115000",
@@ -748,8 +753,8 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     child_care_adjusted = position(
-        "care_adjusted_income: net_income_before_adjustments 115000 + child_care_expenses 0, "
-        "not below 0 = 115000",
+        "care_adjusted_income: net_income_signed 115000 + child_care_expenses 0 "
+        "+ social_benefits_repayment 0, not below 0 = 115000",
         "115000",
     )
     child_care_family = position(
@@ -1089,6 +1094,8 @@ def test_the_trace_explains_the_computation() -> None:
     assert working < cwb_before_reduction_dependant < cwb_with < cwb
     assert family_net < cwb_reduction_dependant < cwb_with
     assert fertility_before_maximum < fertility < ontario_credits_subtotal
+    assert net_signed < net
+    assert net_signed < child_care_adjusted
     assert (
         child_care_adjusted
         < child_care_family

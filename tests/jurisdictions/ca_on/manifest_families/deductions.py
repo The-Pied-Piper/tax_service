@@ -82,6 +82,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
+    NET_INCOME_SIGNED,
     NET_PARTNERSHIP_INCOME,
     NET_SELF_EMPLOYMENT_INCOME,
     NORTHERN_RESIDENTS_DEDUCTIONS,
@@ -850,8 +851,20 @@ STEPS = {
     ),
     # T1 line 56 and line 23600 "Line 54 minus line 55 (if negative, enter "0") If negative, you
     # may have a non-capital loss (see Form T1A) and the negative amount is to be used for certain
-    # calculations (go to canada.ca/line-23600) Net income": line 23400 less line 23500, not below
-    # zero.
+    # calculations (go to canada.ca/line-23600) Net income" before its floor: Form T1206 Part 1
+    # line 5 reads "Net income from line 23600 of your tax return (or the amount you would have
+    # entered if the instructions on line 23600 read "if negative, show in brackets")", which is
+    # line 23400 less line 23500, signed.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/net_income_before_adjustments",
+            "less": "ca/social_benefits_repayment",
+        },
+        produces={"output": "ca/net_income_signed"},
+    ),
+    # Line 56 itself: line 23400 less line 23500, not below zero.
     CapabilitySelection(
         name="core/subtract_not_below_zero",
         params={},
@@ -881,16 +894,16 @@ STEPS = {
         produces={"output": "ca/total_split_income"},
     ),
     # Line 5 "Net income from line 23600 of your tax return (or the amount you would have entered if
-    # the instructions on line 23600 read "if negative, show in brackets")" is the net income before
-    # adjustments (line 23400), and line 6 "TOSI-adjusted net income: line 4 plus line 5 If
-    # negative, enter the result in brackets" is their sum, signed.
+    # the instructions on line 23600 read "if negative, show in brackets")" is line 23400 less line
+    # 23500, signed (`ca/net_income_signed`), and line 6 "TOSI-adjusted net income: line 4 plus
+    # line 5 If negative, enter the result in brackets" is their sum, signed.
     CapabilitySelection(
         name="core/sum",
         params={},
         consumes={
             "parts": (
                 "ca/total_split_income",
-                "ca/net_income_before_adjustments",
+                "ca/net_income_signed",
             )
         },
         produces={"output": "ca/tosi_adjusted_net_income"},
@@ -905,7 +918,7 @@ STEPS = {
         consumes={
             "parts": (
                 "ca/total_split_income",
-                "ca/net_income_before_adjustments",
+                "ca/net_income_signed",
             )
         },
         produces={"output": "ca/tosi_adjusted_net_income_not_below_zero"},
@@ -1510,6 +1523,11 @@ WIRING = {
         frozenset({SOCIAL_BENEFITS_REPAYMENT}),
     ),
     (
+        Subtract,
+        frozenset({NET_INCOME_BEFORE_ADJUSTMENTS, SOCIAL_BENEFITS_REPAYMENT}),
+        frozenset({NET_INCOME_SIGNED}),
+    ),
+    (
         SubtractNotBelowZero,
         frozenset({NET_INCOME_BEFORE_ADJUSTMENTS, SOCIAL_BENEFITS_REPAYMENT}),
         frozenset({NET_INCOME}),
@@ -1521,12 +1539,12 @@ WIRING = {
     ),
     (
         Sum,
-        frozenset({TOTAL_SPLIT_INCOME, NET_INCOME_BEFORE_ADJUSTMENTS}),
+        frozenset({TOTAL_SPLIT_INCOME, NET_INCOME_SIGNED}),
         frozenset({TOSI_ADJUSTED_NET_INCOME}),
     ),
     (
         SumNotBelowZero,
-        frozenset({TOTAL_SPLIT_INCOME, NET_INCOME_BEFORE_ADJUSTMENTS}),
+        frozenset({TOTAL_SPLIT_INCOME, NET_INCOME_SIGNED}),
         frozenset({TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO}),
     ),
     (
