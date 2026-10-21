@@ -37,6 +37,7 @@ CORE_HOMES: dict[str, tuple[str, ...]] = {
         "MultipleOverLine",
         "AtMostLine",
         "FractionAppliedLine",
+        "PercentageAppliedLine",
         "RatioAppliedLine",
         "TimesCountLine",
         "QuotientLine",

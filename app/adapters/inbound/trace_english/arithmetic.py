@@ -16,6 +16,7 @@ from app.domain.trace.arithmetic import (
     GreaterOfLine,
     LesserOfLine,
     MultipleOverLine,
+    PercentageAppliedLine,
     PerUnitAmountLine,
     QuotientLine,
     RateAppliedLine,
@@ -307,6 +308,22 @@ class FractionAppliedRenderer:
         return (
             f"{output.label}: {fraction.numerator}/{fraction.denominator} of {base.label} "
             f"{EnglishFigures.money(amount)} ({EnglishFigures.rounding(rule)})"
+        )
+
+
+@english_renderer
+class PercentageAppliedRenderer:
+    """English text for PercentageAppliedLine."""
+
+    line_class = PercentageAppliedLine
+
+    def render(self, line: PercentageAppliedLine) -> str:
+        """The English sentence for `line`."""
+        return (
+            f"{line.output.label}: {line.percentage_kind.label} "
+            f"{EnglishFigures.money(line.percentage_value)}% of {line.amount_kind.label} "
+            f"{EnglishFigures.money(line.amount_value)} = {EnglishFigures.money(line.result)} "
+            f"({EnglishFigures.rounding(line.rounding)})"
         )
 
 
