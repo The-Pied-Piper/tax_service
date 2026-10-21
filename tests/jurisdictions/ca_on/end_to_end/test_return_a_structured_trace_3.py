@@ -39,6 +39,11 @@ from app.jurisdictions.ca.catalog import (
     AGE_MAXIMUM,
     AGED_18_OR_OLDER_AT_END_OF_2025,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    AMT_CAPITAL_GAINS_ADJUSTMENTS,
+    AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
+    AMT_PUBLICLY_LISTED_GIFTS_NET,
+    AMT_PUBLICLY_LISTED_GIFTS_T1170_LINE_68231,
+    AMT_PUBLICLY_LISTED_GIFTS_TOTAL,
     ANNUAL_GAINS_LINE_3,
     ANNUAL_GAINS_LINE_3_AT_INCLUSION_RATE,
     ANNUAL_GAINS_LINE_5,
@@ -83,6 +88,7 @@ from app.jurisdictions.ca.catalog import (
     CANADA_TRAINING_CREDIT,
     CANADIAN_TUITION_AVAILABLE,
     CANADIAN_TUITION_FEES,
+    CAPITAL_GAIN,
     CAPITAL_GAINS_AFTER_DEFERRAL,
     CAPITAL_GAINS_BEFORE_INVESTMENT_LOSS_REDUCTION,
     CAPITAL_GAINS_BEFORE_RESERVES,
@@ -148,6 +154,22 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     ELIGIBLE_FOR_DISABILITY_AMOUNT,
     EMPLOYMENT_INCOME,
+    FARM_CCA_CLAIM,
+    FARM_CCA_CLAIM_LESS_PERSONAL_PART,
+    FARM_CCA_PERSONAL_PART,
+    FARM_CCA_TABLE_CLAIM,
+    FARM_GROSS_INCOME_BEFORE_EXPENSES,
+    FARM_HOME_CCA,
+    FARM_HOME_EXPENSES,
+    FARM_HOME_EXPENSES_BUSINESS_PART,
+    FARM_HOME_EXPENSES_SUBTOTAL,
+    FARM_HOME_PERSONAL_USE_PART,
+    FARM_NET_INCOME_AFTER_ADJUSTMENTS,
+    FARM_NET_INCOME_BEFORE_ADJUSTMENTS,
+    FARM_PARTNER_OTHER_AMOUNTS,
+    FARM_PARTNERSHIP_TOTAL,
+    FARM_TOTAL_EXPENSES,
+    FARMING_INCOME,
     FEDERAL_TUITION_AMOUNT,
     FHSA_ANNUAL_AMOUNT,
     FHSA_ANNUAL_AMOUNT_FOR_2024,
@@ -392,6 +414,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     gated = {line.output: line for line in trace if isinstance(line, ThresholdGateLine)}
     fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
     assert subtracted == {
+        # Form T691 Part 1 line 20 "Line 15 minus line 19 (if negative, show in brackets)": line 15
+        # is Return A's 20000 of capital gains (line 19700) and line 19 is 0.
+        AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS: SubtractedLine(
+            output=AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
+            minuend=CAPITAL_GAIN,
+            minuend_amount=D("20000"),
+            subtrahend=AMT_CAPITAL_GAINS_ADJUSTMENTS,
+            subtrahend_amount=D("0"),
+            result=D("20000"),
+        ),
+        # Form T691 Part 1 line 26 "Line 24 minus line 25": Return A has no gifts of publicly
+        # listed securities.
+        AMT_PUBLICLY_LISTED_GIFTS_NET: SubtractedLine(
+            output=AMT_PUBLICLY_LISTED_GIFTS_NET,
+            minuend=AMT_PUBLICLY_LISTED_GIFTS_TOTAL,
+            minuend_amount=D("0"),
+            subtrahend=AMT_PUBLICLY_LISTED_GIFTS_T1170_LINE_68231,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Schedule ON(S11) line 8 "Line 6 minus line 7": the unused balance, 0 on the return
         # with nothing brought forward, less the claim of line 5, 0.
         ontario.UNUSED_TUITION_CARRIED_FORWARD: SubtractedLine(
@@ -969,6 +1011,56 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             minuend=BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,
             minuend_amount=D("0"),
             subtrahend=BUSINESS_HOME_EXPENSES,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # T2042 Part 4, Part 5, Part 7 and T1 line 25 subtractions: Return A has no farming
+        # statement, so each is 0.
+        FARM_CCA_CLAIM_LESS_PERSONAL_PART: SubtractedLine(
+            output=FARM_CCA_CLAIM_LESS_PERSONAL_PART,
+            minuend=FARM_CCA_TABLE_CLAIM,
+            minuend_amount=D("0"),
+            subtrahend=FARM_CCA_PERSONAL_PART,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        FARM_CCA_CLAIM: SubtractedLine(
+            output=FARM_CCA_CLAIM,
+            minuend=FARM_CCA_CLAIM_LESS_PERSONAL_PART,
+            minuend_amount=D("0"),
+            subtrahend=FARM_HOME_CCA,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        FARM_NET_INCOME_BEFORE_ADJUSTMENTS: SubtractedLine(
+            output=FARM_NET_INCOME_BEFORE_ADJUSTMENTS,
+            minuend=FARM_GROSS_INCOME_BEFORE_EXPENSES,
+            minuend_amount=D("0"),
+            subtrahend=FARM_TOTAL_EXPENSES,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        FARM_NET_INCOME_AFTER_ADJUSTMENTS: SubtractedLine(
+            output=FARM_NET_INCOME_AFTER_ADJUSTMENTS,
+            minuend=FARM_PARTNERSHIP_TOTAL,
+            minuend_amount=D("0"),
+            subtrahend=FARM_PARTNER_OTHER_AMOUNTS,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        FARM_HOME_EXPENSES_BUSINESS_PART: SubtractedLine(
+            output=FARM_HOME_EXPENSES_BUSINESS_PART,
+            minuend=FARM_HOME_EXPENSES_SUBTOTAL,
+            minuend_amount=D("0"),
+            subtrahend=FARM_HOME_PERSONAL_USE_PART,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        FARMING_INCOME: SubtractedLine(
+            output=FARMING_INCOME,
+            minuend=FARM_NET_INCOME_AFTER_ADJUSTMENTS,
+            minuend_amount=D("0"),
+            subtrahend=FARM_HOME_EXPENSES,
             subtrahend_amount=D("0"),
             result=D("0"),
         ),

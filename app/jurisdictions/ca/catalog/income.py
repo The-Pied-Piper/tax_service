@@ -631,8 +631,10 @@ COMMISSION_INCOME = CATALOG.declare("commission_income", Decimal)
 a starting amount. Negative when the expenses are larger (a loss), as the form prints no floor."""
 
 FARMING_INCOME = CATALOG.declare("farming_income", Decimal)
-"""Farming income, T1 line 25 "Farming income", line 14100 "Net": the net farming income, a
-starting amount. Negative when the expenses are larger (a loss), as the form prints no floor."""
+"""Farming income, T1 line 25 "Farming income", line 14100 "Net", Form T2042 line 9946 "Your net
+income (loss): Amount 5C minus line 9945 (enter this amount on line 14100 of your income tax and
+benefit return)": the net farming income of the farming statement, signed, a loss is negative as
+the form prints no floor."""
 
 FISHING_INCOME = CATALOG.declare("fishing_income", Decimal)
 """Fishing income, T1 line 26 "Fishing income", line 14300 "Net": the net fishing income, a
@@ -1705,3 +1707,516 @@ BUSINESS_CLOSING_UCC = RecordListKind.declare(
 )
 """Business closing UCC, Form T2125 Area A "UCC at the end of the year (col. 7 minus col. 21)": one
 record for each class of the business classes, holding its class number and column 22."""
+
+FARM_WHEAT = CATALOG.declare("farm_wheat", Decimal, non_negative=True)
+"""Wheat income, Form T2042 line 9371 "Wheat": a starting amount."""
+
+FARM_OATS = CATALOG.declare("farm_oats", Decimal, non_negative=True)
+"""Oats income, Form T2042 line 9372 "Oats": a starting amount."""
+
+FARM_BARLEY = CATALOG.declare("farm_barley", Decimal, non_negative=True)
+"""Barley income, Form T2042 line 9373 "Barley": a starting amount."""
+
+FARM_MIXED_GRAINS = CATALOG.declare("farm_mixed_grains", Decimal, non_negative=True)
+"""Mixed grains income, Form T2042 line 9374 "Mixed grains": a starting amount."""
+
+FARM_CORN = CATALOG.declare("farm_corn", Decimal, non_negative=True)
+"""Corn income, Form T2042 line 9375 "Corn.": a starting amount."""
+
+FARM_CANOLA = CATALOG.declare("farm_canola", Decimal, non_negative=True)
+"""Canola income, Form T2042 line 9376 "Canola": a starting amount."""
+
+FARM_FLAXSEED = CATALOG.declare("farm_flaxseed", Decimal, non_negative=True)
+"""Flaxseed income, Form T2042 line 9377 "Flaxseed": a starting amount."""
+
+FARM_SOYBEANS = CATALOG.declare("farm_soybeans", Decimal, non_negative=True)
+"""Soybeans income, Form T2042 line 9378 "Soybeans.": a starting amount."""
+
+FARM_GRAINS_AND_OILSEEDS = CATALOG.declare("farm_grains_and_oilseeds", Decimal, non_negative=True)
+"""Grains and oilseeds income, Form T2042 line 9370 "Grains and oilseeds": a starting amount."""
+
+FARM_FRUIT = CATALOG.declare("farm_fruit", Decimal, non_negative=True)
+"""Fruit income, Form T2042 line 9421 "Fruit": a starting amount."""
+
+FARM_POTATOES = CATALOG.declare("farm_potatoes", Decimal, non_negative=True)
+"""Potato income, Form T2042 line 9422 "Potatoes": a starting amount."""
+
+FARM_VEGETABLES = CATALOG.declare("farm_vegetables", Decimal, non_negative=True)
+"""Vegetable income, Form T2042 line 9423 "Vegetables (not including potatoes).": a starting
+amount."""
+
+FARM_TOBACCO = CATALOG.declare("farm_tobacco", Decimal, non_negative=True)
+"""Tobacco income, Form T2042 line 9424 "Tobacco": a starting amount."""
+
+FARM_GREENHOUSE_AND_NURSERY = CATALOG.declare(
+    "farm_greenhouse_and_nursery", Decimal, non_negative=True
+)
+"""Greenhouse and nursery income, Form T2042 line 9425 "Greenhouse and nursery products.": a
+starting amount."""
+
+FARM_FORAGE_CROPS_OR_SEEDS = CATALOG.declare(
+    "farm_forage_crops_or_seeds", Decimal, non_negative=True
+)
+"""Forage crops or seeds income, Form T2042 line 9426 "Forage crops or seeds": a starting amount."""
+
+FARM_OTHER_CROPS = CATALOG.declare("farm_other_crops", Decimal, non_negative=True)
+"""Other crops income, Form T2042 line 9420 "Other crops": a starting amount."""
+
+FARM_CATTLE = CATALOG.declare("farm_cattle", Decimal, non_negative=True)
+"""Cattle income, Form T2042 line 9471 "Cattle": a starting amount."""
+
+FARM_SWINE = CATALOG.declare("farm_swine", Decimal, non_negative=True)
+"""Swine income, Form T2042 line 9472 "Swine": a starting amount."""
+
+FARM_POULTRY = CATALOG.declare("farm_poultry", Decimal, non_negative=True)
+"""Poultry income, Form T2042 line 9473 "Poultry": a starting amount."""
+
+FARM_SHEEP_AND_LAMBS = CATALOG.declare("farm_sheep_and_lambs", Decimal, non_negative=True)
+"""Sheep and lambs income, Form T2042 line 9474 "Sheep and lambs": a starting amount."""
+
+FARM_LIVESTOCK_AND_ANIMAL_PRODUCTS_REVENUE = CATALOG.declare(
+    "farm_livestock_and_animal_products_revenue", Decimal, non_negative=True
+)
+"""Livestock and animal products revenue income, Form T2042 line 9470 "Livestock and animal
+products revenue": a starting amount."""
+
+FARM_MILK_AND_CREAM = CATALOG.declare("farm_milk_and_cream", Decimal, non_negative=True)
+"""Milk and cream income, Form T2042 line 9476 "Milk and cream (not including dairy subsidies).": a
+starting amount."""
+
+FARM_EGGS = CATALOG.declare("farm_eggs", Decimal, non_negative=True)
+"""Eggs income, Form T2042 line 9477 "Eggs for consumption": a starting amount."""
+
+FARM_OTHER_COMMODITIES = CATALOG.declare("farm_other_commodities", Decimal, non_negative=True)
+"""Other commodities income, Form T2042 line 9520 "Other commodities.": a starting amount."""
+
+FARM_DAIRY_SUBSIDIES = CATALOG.declare("farm_dairy_subsidies", Decimal, non_negative=True)
+"""Dairy subsidies income, Form T2042 line 9541 "Dairy subsidies": a starting amount."""
+
+FARM_CROP_INSURANCE = CATALOG.declare("farm_crop_insurance", Decimal, non_negative=True)
+"""Crop insurance income, Form T2042 line 9542 "Crop insurance": a starting amount."""
+
+FARM_OTHER_PROGRAM_PAYMENTS = CATALOG.declare(
+    "farm_other_program_payments", Decimal, non_negative=True
+)
+"""Other program payments, Form T2042 line 9540 "Other program payments": a starting amount."""
+
+FARM_REBATES = CATALOG.declare("farm_rebates", Decimal, non_negative=True)
+"""Rebates income, Form T2042 line 9570 "Rebates": a starting amount."""
+
+FARM_CUSTOM_WORK = CATALOG.declare("farm_custom_work", Decimal, non_negative=True)
+"""Custom work income, Form T2042 line 9601 "Custom or contract work (includes machine rentals).":
+a starting amount."""
+
+FARM_INSURANCE_PROCEEDS = CATALOG.declare("farm_insurance_proceeds", Decimal, non_negative=True)
+"""Insurance proceeds income, Form T2042 line 9604 "Insurance proceeds": a starting amount."""
+
+FARM_PATRONAGE_DIVIDENDS = CATALOG.declare("farm_patronage_dividends", Decimal, non_negative=True)
+"""Patronage dividends income, Form T2042 line 9605 "Patronage dividends": a starting amount."""
+
+FARM_OTHER_INCOME = CATALOG.declare("farm_other_income", Decimal, non_negative=True)
+"""Other farming income, Form T2042 line 9600 "Other income (specify):": a starting amount, before
+the recapture of Area A."""
+
+FARM_CONTAINERS_AND_TWINE = CATALOG.declare("farm_containers_and_twine", Decimal, non_negative=True)
+"""Containers and twine of the farming business, Form T2042 line 9661 "Containers and twine": a
+starting amount."""
+
+FARM_FERTILIZERS_AND_LIME = CATALOG.declare("farm_fertilizers_and_lime", Decimal, non_negative=True)
+"""Fertilizers and lime of the farming business, Form T2042 line 9662 "Fertilizers and lime": a
+starting amount."""
+
+FARM_PESTICIDES = CATALOG.declare("farm_pesticides", Decimal, non_negative=True)
+"""Pesticides of the farming business, Form T2042 line 9663 "Pesticides (herbicides, insecticides,
+fungicides)": a starting amount."""
+
+FARM_SEEDS_AND_PLANTS = CATALOG.declare("farm_seeds_and_plants", Decimal, non_negative=True)
+"""Seeds and plants of the farming business, Form T2042 line 9664 "Seeds and plants": a starting
+amount."""
+
+FARM_FEED_SUPPLEMENTS_STRAW_AND_BEDDING = CATALOG.declare(
+    "farm_feed_supplements_straw_and_bedding", Decimal, non_negative=True
+)
+"""Feed, supplements, straw and bedding of the farming business, Form T2042 line 9711 "Feed,
+supplements, straw, and bedding": a starting amount."""
+
+FARM_LIVESTOCK_PURCHASED = CATALOG.declare("farm_livestock_purchased", Decimal, non_negative=True)
+"""Livestock purchased of the farming business, Form T2042 line 9712 "Livestock purchased": a
+starting amount."""
+
+FARM_VETERINARY_FEES = CATALOG.declare("farm_veterinary_fees", Decimal, non_negative=True)
+"""Veterinary fees of the farming business, Form T2042 line 9713 "Veterinary fees, medicine, and
+breeding fees": a starting amount."""
+
+FARM_MACHINERY_REPAIRS_LICENCES_AND_INSURANCE = CATALOG.declare(
+    "farm_machinery_repairs_licences_and_insurance", Decimal, non_negative=True
+)
+"""Machinery repairs, licences and insurance of the farming business, Form T2042 line 9760
+"Repairs, licences, and insurance": a starting amount."""
+
+FARM_GASOLINE_DIESEL_AND_OIL = CATALOG.declare(
+    "farm_gasoline_diesel_and_oil", Decimal, non_negative=True
+)
+"""Gasoline, diesel fuel and oil of the farming business, Form T2042 line 9764 "Gasoline, diesel
+fuel, and oil": a starting amount."""
+
+FARM_BUILDING_REPAIRS_AND_MAINTENANCE = CATALOG.declare(
+    "farm_building_repairs_and_maintenance", Decimal, non_negative=True
+)
+"""Building repairs and maintenance of the farming business, Form T2042 line 9795 "Building repairs
+and maintenance (includes fence repairs)": a starting amount."""
+
+FARM_CLEARING_LEVELLING_AND_DRAINING = CATALOG.declare(
+    "farm_clearing_levelling_and_draining", Decimal, non_negative=True
+)
+"""Clearing, levelling and draining of the farming business, Form T2042 line 9796 "Clearing,
+levelling, and draining land": a starting amount."""
+
+FARM_CROP_INSURANCE_PREMIUMS = CATALOG.declare(
+    "farm_crop_insurance_premiums", Decimal, non_negative=True
+)
+"""Crop insurance premiums of the farming business, Form T2042 line 9797 "Crop insurance, Revenue
+Protection Program, and stabilization premiums": a starting amount."""
+
+FARM_CUSTOM_WORK_EXPENSES = CATALOG.declare("farm_custom_work_expenses", Decimal, non_negative=True)
+"""Custom work of the farming business, Form T2042 line 9798 "Custom or contract work (includes
+machine rentals).": a starting amount."""
+
+FARM_ELECTRICITY = CATALOG.declare("farm_electricity", Decimal, non_negative=True)
+"""Electricity of the farming business, Form T2042 line 9799 "Electricity.": a starting amount."""
+
+FARM_HEATING_AND_CURING_FUEL = CATALOG.declare(
+    "farm_heating_and_curing_fuel", Decimal, non_negative=True
+)
+"""Heating and curing fuel of the farming business, Form T2042 line 9802 "Heating fuel and curing
+fuel.": a starting amount."""
+
+FARM_INSURANCE_PROGRAM_OVERPAYMENT_RECAPTURE = CATALOG.declare(
+    "farm_insurance_program_overpayment_recapture", Decimal, non_negative=True
+)
+"""Insurance program overpayment recapture of the farming business, Form T2042 line 9803 "Insurance
+program overpayment recapture": a starting amount."""
+
+FARM_INSURANCE = CATALOG.declare("farm_insurance", Decimal, non_negative=True)
+"""Insurance of the farming business, Form T2042 line 9804 "Insurance.": a starting amount."""
+
+FARM_INTEREST_AND_BANK_CHARGES = CATALOG.declare(
+    "farm_interest_and_bank_charges", Decimal, non_negative=True
+)
+"""Interest and bank charges of the farming business, Form T2042 line 9805 "Interest and bank
+charges.": a starting amount."""
+
+FARM_OFFICE_EXPENSES = CATALOG.declare("farm_office_expenses", Decimal, non_negative=True)
+"""Office expenses of the farming business, Form T2042 line 9808 "Office expenses": a starting
+amount."""
+
+FARM_PROFESSIONAL_FEES = CATALOG.declare("farm_professional_fees", Decimal, non_negative=True)
+"""Professional fees of the farming business, Form T2042 line 9809 "Professional fees (includes
+legal and accounting fees).": a starting amount."""
+
+FARM_PROPERTY_TAXES = CATALOG.declare("farm_property_taxes", Decimal, non_negative=True)
+"""Property taxes of the farming business, Form T2042 line 9810 "Property taxes": a starting
+amount."""
+
+FARM_RENT = CATALOG.declare("farm_rent", Decimal, non_negative=True)
+"""Rent of the farming business, Form T2042 line 9811 "Rent (land, buildings, and pasture)": a
+starting amount."""
+
+FARM_SALARIES_WAGES_AND_BENEFITS = CATALOG.declare(
+    "farm_salaries_wages_and_benefits", Decimal, non_negative=True
+)
+"""Salaries, wages and benefits of the farming business, Form T2042 line 9814 "Salaries, wages, and
+benefits (including employer's contributions).": a starting amount."""
+
+FARM_MOTOR_VEHICLE_EXPENSES = CATALOG.declare(
+    "farm_motor_vehicle_expenses", Decimal, non_negative=True
+)
+"""Motor vehicle expenses of the farming business, Form T2042 line 9819 "Motor vehicle expenses
+(not including CCA) (amount 16 of Chart A)": a starting amount."""
+
+FARM_SMALL_TOOLS = CATALOG.declare("farm_small_tools", Decimal, non_negative=True)
+"""Small tools of the farming business, Form T2042 line 9820 "Small tools": a starting amount."""
+
+FARM_MANDATORY_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR = CATALOG.declare(
+    "farm_mandatory_inventory_adjustment_previous_year", Decimal, non_negative=True
+)
+"""Mandatory inventory adjustment for the previous year of the farming business, Form T2042 line
+9937 "Mandatory inventory adjustment included in the previous year": a starting amount."""
+
+FARM_OPTIONAL_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR = CATALOG.declare(
+    "farm_optional_inventory_adjustment_previous_year", Decimal, non_negative=True
+)
+"""Optional inventory adjustment for the previous year of the farming business, Form T2042 line
+9938 "Optional inventory adjustment included in the previous year": a starting amount."""
+
+FARM_OTHER_EXPENSES = CATALOG.declare("farm_other_expenses", Decimal, non_negative=True)
+"""Other farming expenses, Form T2042 line 9790 "Other expenses (specify):": a starting amount,
+before the terminal loss of Area A."""
+
+FARM_RECAPTURED_CCA = CATALOG.declare("farm_recaptured_cca", Decimal, non_negative=True)
+"""Recapture of the farming classes, Form T2042 Area A endnote 3 "If you have a negative amount in
+column 7, add it to income as a recapture in Part 3 on line 9600": the recapture of each class
+of the Area A list, totalled."""
+
+FARM_OTHER_INCOME_WITH_RECAPTURE = CATALOG.declare(
+    "farm_other_income_with_recapture", Decimal, non_negative=True
+)
+"""Other farming income with the recapture, Form T2042 line 9600 "Other income (specify):": the
+other income plus the recapture of Area A."""
+
+FARM_GROSS_INCOME = CATALOG.declare("farm_gross_income", Decimal, non_negative=True)
+"""Gross farming income, Form T2042 line 9659 "Gross income: Total of the income lines (enter this
+amount on line 14099 of your income tax and benefit return)": the income lines of Part 3, with
+line 9600 and its recapture."""
+
+FARM_GROSS_INCOME_BEFORE_EXPENSES = CATALOG.declare(
+    "farm_gross_income_before_expenses", Decimal, non_negative=True
+)
+"""Gross farming income before expenses, Form T2042 amount 4A "Gross income (line 9659 of Part 3)":
+line 9659."""
+
+FARM_TERMINAL_LOSS = CATALOG.declare("farm_terminal_loss", Decimal, non_negative=True)
+"""Terminal loss of the farming classes, Form T2042 Area A endnote 3 "If no property is left in the
+class and there is a positive amount in this column, deduct the amount from income as a terminal
+loss in Part 4 on line 9790": the terminal loss of each class of the Area A list, totalled."""
+
+FARM_OTHER_EXPENSES_WITH_TERMINAL_LOSS = CATALOG.declare(
+    "farm_other_expenses_with_terminal_loss", Decimal, non_negative=True
+)
+"""Other farming expenses with the terminal loss, Form T2042 line 9790 "Total other expenses (see
+column 7 of Area A on page 5)": the other expenses plus the terminal loss of Area A."""
+
+FARM_EXPENSES_SUBTOTAL = CATALOG.declare("farm_expenses_subtotal", Decimal, non_negative=True)
+"""Subtotal of farming expenses, Form T2042 amount 4B "Subtotal of expenses": the expense lines
+9661 to 9820, the inventory adjustments of the previous year and line 9790, added."""
+
+FARM_CCA_TABLE_CLAIM = CATALOG.declare("farm_cca_table_claim", Decimal, non_negative=True)
+"""CCA claim of the farming classes, Form T2042 Area A amount ii "Total CCA claim for the year:
+Total of column 21 (enter on line 9936 of Part 4 amount ii minus any personal part and any CCA
+for business-use-of-home expenses)": the CCA claimed on each class, at most its maximum,
+totalled."""
+
+FARM_CCA_PERSONAL_PART = CATALOG.declare("farm_cca_personal_part", Decimal, non_negative=True)
+"""Personal part of the farming CCA, Form T2042 line 9936 "Capital cost allowance (CCA). Enter
+amount ii of Area A minus any personal part and any CCA for business-use-of-home expenses": a
+starting amount, the personal part."""
+
+FARM_CCA_CLAIM_LESS_PERSONAL_PART = CATALOG.declare(
+    "farm_cca_claim_less_personal_part", Decimal, non_negative=True
+)
+"""Farming CCA claim less the personal part, Form T2042 line 9936 "Capital cost allowance (CCA).
+Enter amount ii of Area A minus any personal part and any CCA for business-use-of-home
+expenses": the first step: amount ii less the personal part of CCA."""
+
+FARM_CCA_CLAIM = CATALOG.declare("farm_cca_claim", Decimal, non_negative=True)
+"""CCA claim of the farming business, Form T2042 line 9936 "Capital cost allowance (CCA). Enter
+amount ii of Area A minus any personal part and any CCA for business-use-of-home expenses": the
+second step: the first step less the CCA for business-use-of-home expenses (amount 7K)."""
+
+FARM_TOTAL_EXPENSES = CATALOG.declare("farm_total_expenses", Decimal, non_negative=True)
+"""Total farming expenses, Form T2042 line 9898 "Total farm expenses: Amount 4B plus line 9936":
+amount 4B plus line 9936."""
+
+FARM_NET_INCOME_BEFORE_ADJUSTMENTS = CATALOG.declare("farm_net_income_before_adjustments", Decimal)
+"""Farming net income before inventory adjustments, Form T2042 line 9899 "Net income (loss) before
+inventory adjustments: Amount 4A minus line 9898": amount 4A less line 9898, signed, a loss is
+negative."""
+
+FARM_OPTIONAL_INVENTORY_ADJUSTMENT_CURRENT_YEAR = CATALOG.declare(
+    "farm_optional_inventory_adjustment_current_year", Decimal, non_negative=True
+)
+"""Optional inventory adjustment for the current year, Form T2042 line 9941 "Optional inventory
+adjustment included in the current year": a starting amount."""
+
+FARM_MANDATORY_INVENTORY_ADJUSTMENT_CURRENT_YEAR = CATALOG.declare(
+    "farm_mandatory_inventory_adjustment_current_year", Decimal, non_negative=True
+)
+"""Mandatory inventory adjustment for the current year, Form T2042 line 9942 "Mandatory inventory
+adjustment included in the current year": a starting amount."""
+
+FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS = CATALOG.declare(
+    "farm_net_income_after_inventory_adjustments", Decimal
+)
+"""Farming net income after inventory adjustments, Form T2042 amount 4C "Net income (loss) after
+inventory adjustments: Total of lines 9899, 9941, and 9942": the three added, signed, a loss is
+negative."""
+
+FARM_PARTNER_SHARE = CATALOG.declare("farm_partner_share", Decimal)
+"""Partner's share of the farming net income, Form T2042 amount 5A "Your share of amount 4C or the
+amount from your T5013 slip, Statement of Partnership Income": a starting amount, signed."""
+
+FARM_PARTNER = CATALOG.declare("farm_partner", int, non_negative=True)
+"""Whether the filer is a partner in the farm, Form T2042 amount 5A "Your share of amount 4C or the
+amount from your T5013 slip, Statement of Partnership Income": 1 for a partner, 0 otherwise, a
+starting count."""
+
+FARM_SHARE_OF_NET_INCOME = CATALOG.declare("farm_share_of_net_income", Decimal)
+"""Filer's share of the farming net income, Form T2042 amount 5A "Your share of amount 4C or the
+amount from your T5013 slip, Statement of Partnership Income": amount 4C, or for a partner the
+T5013 amount; signed."""
+
+FARM_FUEL_CHARGE_CREDIT = CATALOG.declare("farm_fuel_charge_credit", Decimal, non_negative=True)
+"""Fuel charge proceeds to farmers tax credit, Form T2042 line 9951 "Return of fuel charge proceeds
+to farmers tax credit allocated to you in the year (amount 5C of Form T2043, Return of Fuel
+Charge Proceeds to Farmers Tax Credit)": a starting amount."""
+
+FARM_PARTNER_GST_HST_REBATE = CATALOG.declare(
+    "farm_partner_gst_hst_rebate", Decimal, non_negative=True
+)
+"""GST/HST rebate of the partner, Form T2042 line 9974 "GST/HST rebate for partners received in the
+year": a starting amount."""
+
+FARM_PARTNERSHIP_TOTAL = CATALOG.declare("farm_partnership_total", Decimal)
+"""Farming net income with the partner's credits, Form T2042 amount 5B "Total: Amount 5A plus line
+9951 plus line 9974": amount 5A plus line 9951 and line 9974, signed."""
+
+FARM_PARTNER_OTHER_AMOUNT_A = CATALOG.declare(
+    "farm_partner_other_amount_a", Decimal, non_negative=True
+)
+"""Partner expense 1, Form T2042 amount 6A "List details of expenses: Expense amounts": a starting
+amount among the five lines of Part 6."""
+
+FARM_PARTNER_OTHER_AMOUNT_B = CATALOG.declare(
+    "farm_partner_other_amount_b", Decimal, non_negative=True
+)
+"""Partner expense 2, Form T2042 amount 6B "List details of expenses: Expense amounts": a starting
+amount among the five lines of Part 6."""
+
+FARM_PARTNER_OTHER_AMOUNT_C = CATALOG.declare(
+    "farm_partner_other_amount_c", Decimal, non_negative=True
+)
+"""Partner expense 3, Form T2042 amount 6C "List details of expenses: Expense amounts": a starting
+amount among the five lines of Part 6."""
+
+FARM_PARTNER_OTHER_AMOUNT_D = CATALOG.declare(
+    "farm_partner_other_amount_d", Decimal, non_negative=True
+)
+"""Partner expense 4, Form T2042 amount 6D "List details of expenses: Expense amounts": a starting
+amount among the five lines of Part 6."""
+
+FARM_PARTNER_OTHER_AMOUNT_E = CATALOG.declare(
+    "farm_partner_other_amount_e", Decimal, non_negative=True
+)
+"""Partner expense 5, Form T2042 amount 6E "List details of expenses: Expense amounts": a starting
+amount among the five lines of Part 6."""
+
+FARM_PARTNER_OTHER_AMOUNTS_TOTAL = CATALOG.declare(
+    "farm_partner_other_amounts_total", Decimal, non_negative=True
+)
+"""Total of the partner's other amounts, Form T2042 amount 6F "Total other amounts deductible from
+your share of the net partnership income (loss): Add amounts 6A to 6E": amounts 6A to 6E added."""
+
+FARM_PARTNER_OTHER_AMOUNTS = CATALOG.declare(
+    "farm_partner_other_amounts", Decimal, non_negative=True
+)
+"""Partner's other amounts deductible, Form T2042 line 9943 "Other amounts deductible from your
+share of net partnership income (loss) (amount 6F)": amount 6F."""
+
+FARM_NET_INCOME_AFTER_ADJUSTMENTS = CATALOG.declare("farm_net_income_after_adjustments", Decimal)
+"""Farming net income after adjustments, Form T2042 amount 5C "Net income (loss) after adjustments:
+Amount 5B minus line 9943": amount 5B less line 9943, signed, a loss is negative."""
+
+FARM_HOME_HEAT = CATALOG.declare("farm_home_heat", Decimal, non_negative=True)
+"""Heat for the business use of the home, Form T2042 amount 7A "Heat": a starting amount."""
+
+FARM_HOME_ELECTRICITY = CATALOG.declare("farm_home_electricity", Decimal, non_negative=True)
+"""Electricity for the business use of the home, Form T2042 amount 7B "Electricity": a starting
+amount."""
+
+FARM_HOME_INSURANCE = CATALOG.declare("farm_home_insurance", Decimal, non_negative=True)
+"""Insurance for the business use of the home, Form T2042 amount 7C "Insurance": a starting
+amount."""
+
+FARM_HOME_MAINTENANCE = CATALOG.declare("farm_home_maintenance", Decimal, non_negative=True)
+"""Maintenance for the business use of the home, Form T2042 amount 7D "Maintenance": a starting
+amount."""
+
+FARM_HOME_MORTGAGE_INTEREST = CATALOG.declare(
+    "farm_home_mortgage_interest", Decimal, non_negative=True
+)
+"""Mortgage interest for the business use of the home, Form T2042 amount 7E "Mortgage interest": a
+starting amount."""
+
+FARM_HOME_PROPERTY_TAXES = CATALOG.declare("farm_home_property_taxes", Decimal, non_negative=True)
+"""Property taxes for the business use of the home, Form T2042 amount 7F "Property taxes": a
+starting amount."""
+
+FARM_HOME_OTHER_EXPENSES = CATALOG.declare("farm_home_other_expenses", Decimal, non_negative=True)
+"""Other expenses for the business use of the home, Form T2042 amount 7G "Other expenses
+(specify)": a starting amount."""
+
+FARM_HOME_EXPENSES_SUBTOTAL = CATALOG.declare(
+    "farm_home_expenses_subtotal", Decimal, non_negative=True
+)
+"""Home expenses subtotal, Form T2042 amount 7H "Subtotal: Add amounts 7A to 7G.": amounts 7A to 7G
+added."""
+
+FARM_HOME_PERSONAL_USE_PART = CATALOG.declare(
+    "farm_home_personal_use_part", Decimal, non_negative=True
+)
+"""Personal-use part of the home expenses, Form T2042 amount 7I "Personal-use part of the
+business-use-of-home expenses": a starting amount."""
+
+FARM_HOME_EXPENSES_BUSINESS_PART = CATALOG.declare(
+    "farm_home_expenses_business_part", Decimal, non_negative=True
+)
+"""Business part of the home expenses, Form T2042 amount 7J "Subtotal: Amount 7H minus amount 7I":
+amount 7H less amount 7I."""
+
+FARM_HOME_CCA = CATALOG.declare("farm_home_cca", Decimal, non_negative=True)
+"""CCA for the business use of the home, Form T2042 amount 7K "Capital cost allowance (business
+part only), which means amount ii of Area A minus any portion of capital cost allowance that is
+for personal use or entered on line 9936 of Part 4": a starting amount."""
+
+FARM_HOME_CARRIED_FORWARD = CATALOG.declare("farm_home_carried_forward", Decimal, non_negative=True)
+"""Home expenses carried forward from last year, Form T2042 amount 7L "Amount carried forward from
+previous year": a starting amount."""
+
+FARM_HOME_EXPENSES_AVAILABLE = CATALOG.declare(
+    "farm_home_expenses_available", Decimal, non_negative=True
+)
+"""Home expenses available, Form T2042 amount 7M "Subtotal: Add amounts 7J to 7L.": amounts 7J to
+7L added."""
+
+FARM_HOME_INCOME_LIMIT = CATALOG.declare("farm_home_income_limit", Decimal, non_negative=True)
+"""Net income limit on the home expenses, Form T2042 amount 7N "Net income (loss) after adjustments
+(amount 5C) (if negative, enter "0")": amount 5C, or 0 when it is negative."""
+
+FARM_HOME_CARRY_FORWARD = CATALOG.declare("farm_home_carry_forward", Decimal, non_negative=True)
+"""Home expenses to carry forward, Form T2042 amount 7O "Business-use-of-home expenses available to
+carry forward: Amount 7M minus amount 7N (if negative, enter "0")": amount 7M less amount 7N, or
+0 when it is negative."""
+
+FARM_HOME_ALLOWABLE_CLAIM = CATALOG.declare("farm_home_allowable_claim", Decimal, non_negative=True)
+"""Allowable home expenses claim, Form T2042 amount 7P "Allowable claim: Amount 7M or 7N above,
+whichever is less (enter your share of this amount on line 9945 of Part 5)": the lesser of
+amounts 7M and 7N."""
+
+FARM_HOME_EXPENSES = CATALOG.declare("farm_home_expenses", Decimal, non_negative=True)
+"""Farming business-use-of-home expenses, Form T2042 line 9945 "Business-use-of-home expenses
+(amount 7P)": amount 7P."""
+
+FARM_CCA_CLASSES = RecordListKind.declare(
+    CATALOG,
+    "farm_cca_classes",
+    fields=(
+        CCA_CLASS_NUMBER,
+        CCA_UCC_AT_START,
+        CCA_ADDITIONS,
+        CCA_PROCEEDS,
+        CCA_AIIP_ADDITIONS,
+        CCA_RIIP_ADDITIONS,
+        CCA_CLAIMED,
+        CCA_NO_PROPERTY_LEFT,
+    ),
+)
+"""Farming classes, Form T2042 Area A "Calculation of capital cost allowance (CCA) claim": a
+starting list with one record for each class, holding the columns the filer enters (class
+number, UCC at the start of the year, additions, proceeds, the AIIP and RIIP parts of the
+additions, the CCA claimed) and whether any property is left in the class."""
+
+FARM_CLOSING_UCC = RecordListKind.declare(
+    CATALOG, "farm_closing_ucc", fields=(CCA_CLASS_NUMBER, CCA_UCC_AT_END)
+)
+"""Farming closing UCC, Form T2042 Area A "UCC at the end of the year (col. 7 minus col. 21)": one
+record for each class of the farming classes, holding its class number and column 22."""

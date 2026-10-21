@@ -40,8 +40,8 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 706
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 706
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 740
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 740
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -243,6 +243,115 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/professional_income",
         "ca/commission_income",
         "ca/farming_income",
+        "ca/farm_wheat",
+        "ca/farm_oats",
+        "ca/farm_barley",
+        "ca/farm_mixed_grains",
+        "ca/farm_corn",
+        "ca/farm_canola",
+        "ca/farm_flaxseed",
+        "ca/farm_soybeans",
+        "ca/farm_grains_and_oilseeds",
+        "ca/farm_fruit",
+        "ca/farm_potatoes",
+        "ca/farm_vegetables",
+        "ca/farm_tobacco",
+        "ca/farm_greenhouse_and_nursery",
+        "ca/farm_forage_crops_or_seeds",
+        "ca/farm_other_crops",
+        "ca/farm_cattle",
+        "ca/farm_swine",
+        "ca/farm_poultry",
+        "ca/farm_sheep_and_lambs",
+        "ca/farm_livestock_and_animal_products_revenue",
+        "ca/farm_milk_and_cream",
+        "ca/farm_eggs",
+        "ca/farm_other_commodities",
+        "ca/farm_dairy_subsidies",
+        "ca/farm_crop_insurance",
+        "ca/farm_other_program_payments",
+        "ca/farm_rebates",
+        "ca/farm_custom_work",
+        "ca/farm_insurance_proceeds",
+        "ca/farm_patronage_dividends",
+        "ca/farm_other_income",
+        "ca/farm_containers_and_twine",
+        "ca/farm_fertilizers_and_lime",
+        "ca/farm_pesticides",
+        "ca/farm_seeds_and_plants",
+        "ca/farm_feed_supplements_straw_and_bedding",
+        "ca/farm_livestock_purchased",
+        "ca/farm_veterinary_fees",
+        "ca/farm_machinery_repairs_licences_and_insurance",
+        "ca/farm_gasoline_diesel_and_oil",
+        "ca/farm_building_repairs_and_maintenance",
+        "ca/farm_clearing_levelling_and_draining",
+        "ca/farm_crop_insurance_premiums",
+        "ca/farm_custom_work_expenses",
+        "ca/farm_electricity",
+        "ca/farm_heating_and_curing_fuel",
+        "ca/farm_insurance_program_overpayment_recapture",
+        "ca/farm_insurance",
+        "ca/farm_interest_and_bank_charges",
+        "ca/farm_office_expenses",
+        "ca/farm_professional_fees",
+        "ca/farm_property_taxes",
+        "ca/farm_rent",
+        "ca/farm_salaries_wages_and_benefits",
+        "ca/farm_motor_vehicle_expenses",
+        "ca/farm_small_tools",
+        "ca/farm_mandatory_inventory_adjustment_previous_year",
+        "ca/farm_optional_inventory_adjustment_previous_year",
+        "ca/farm_other_expenses",
+        "ca/farm_optional_inventory_adjustment_current_year",
+        "ca/farm_mandatory_inventory_adjustment_current_year",
+        "ca/farm_cca_personal_part",
+        "ca/farm_partner",
+        "ca/farm_partner_share",
+        "ca/farm_fuel_charge_credit",
+        "ca/farm_partner_gst_hst_rebate",
+        "ca/farm_partner_other_amount_a",
+        "ca/farm_partner_other_amount_b",
+        "ca/farm_partner_other_amount_c",
+        "ca/farm_partner_other_amount_d",
+        "ca/farm_partner_other_amount_e",
+        "ca/farm_home_heat",
+        "ca/farm_home_electricity",
+        "ca/farm_home_insurance",
+        "ca/farm_home_maintenance",
+        "ca/farm_home_mortgage_interest",
+        "ca/farm_home_property_taxes",
+        "ca/farm_home_other_expenses",
+        "ca/farm_home_personal_use_part",
+        "ca/farm_home_cca",
+        "ca/farm_home_carried_forward",
+        "ca/farm_cca_classes",
+        "ca/farm_recaptured_cca",
+        "ca/farm_other_income_with_recapture",
+        "ca/farm_gross_income",
+        "ca/farm_gross_income_before_expenses",
+        "ca/farm_terminal_loss",
+        "ca/farm_other_expenses_with_terminal_loss",
+        "ca/farm_expenses_subtotal",
+        "ca/farm_cca_table_claim",
+        "ca/farm_cca_claim_less_personal_part",
+        "ca/farm_cca_claim",
+        "ca/farm_total_expenses",
+        "ca/farm_net_income_before_adjustments",
+        "ca/farm_net_income_after_inventory_adjustments",
+        "ca/farm_share_of_net_income",
+        "ca/farm_partnership_total",
+        "ca/farm_partner_other_amounts_total",
+        "ca/farm_partner_other_amounts",
+        "ca/farm_net_income_after_adjustments",
+        "ca/farm_home_expenses_subtotal",
+        "ca/farm_home_expenses_business_part",
+        "ca/farm_home_expenses_available",
+        "ca/farm_home_income_limit",
+        "ca/farm_home_carry_forward",
+        "ca/farm_home_allowable_claim",
+        "ca/farm_home_expenses",
+        "ca/farm_closing_ucc",
         "ca/fishing_income",
         "ca/workers_compensation_benefits",
         "ca/social_assistance_payments",
@@ -951,6 +1060,21 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/amt_limited_partner_carrying_charges",
         "ca/amt_tax_shelter_adjustments",
         "ca/amt_part_1_subtotal",
+        "ca/amt_resource_expenditures",
+        "ca/amt_resource_production_income",
+        "ca/amt_resource_foreign_property_income",
+        "ca/amt_class_43_1_income",
+        "ca/amt_resource_income_total",
+        "ca/amt_resource_property_and_flow_through_shares",
+        "ca/amt_mortgage_foreclosure_capital_gains",
+        "ca/amt_treaty_exempt_capital_gains",
+        "ca/amt_graduated_rate_estate_capital_gains",
+        "ca/amt_capital_gains_adjustments",
+        "ca/amt_net_capital_gains_after_adjustments",
+        "ca/amt_publicly_listed_gifts_total",
+        "ca/amt_publicly_listed_gifts_t1170_line_68231",
+        "ca/amt_publicly_listed_gifts_net",
+        "ca/amt_publicly_listed_gifts_adjustment",
         "ca/income_tax_deducted",
         "ca/cwb_eligible_dependants",
         "ca/working_income",
@@ -1263,15 +1387,15 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 706
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 706
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 740
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 740
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 706
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 706
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 740
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 740
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

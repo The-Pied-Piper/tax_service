@@ -85,12 +85,23 @@ def business_statement(business_income: str) -> dict[str, str]:
     return {"advertising": str(-amount)}
 
 
+def farm_statement(farming_income: str) -> dict[str, str]:
+    """A T2042 whose line 9946, and so T1 line 14100, is `farming_income`: all income (line 9371)
+    for income, all other expenses for a loss."""
+    amount = D(farming_income)
+    if amount >= 0:
+        return {"wheat": farming_income}
+    return {"other_expenses": str(-amount)}
+
+
 def self_employed(**changes: Any) -> Worksheet:
     """Return U's inputs, as in `returns/2025_return_u.yaml`, with `changes` to them;
-    `business_income` is the net business income the T2125 is entered to give."""
+    `business_income` is the net business income the T2125 is entered to give and
+    `farming_income` the net farming income the T2042 is entered to give."""
     inputs = {**RETURN_U, **changes}
     business = business_statement(inputs.pop("business_income"))
-    return compute("0", (), "0", "0", "0", "0", "0", business=business, **inputs)
+    farm = farm_statement(inputs.pop("farming_income", "0"))
+    return compute("0", (), "0", "0", "0", "0", "0", business=business, farm=farm, **inputs)
 
 
 def return_u() -> Worksheet:

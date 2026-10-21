@@ -49,6 +49,9 @@ from app.jurisdictions.ca.catalog import (
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_RENTAL_PROPERTY_INCOME_BEFORE_CCA,
+    AMT_RESOURCE_EXPENDITURES,
+    AMT_RESOURCE_INCOME_TOTAL,
+    AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
     ANNUAL_GAINS_LIMIT_2025,
     ANNUAL_GAINS_LINE_3_AT_INCLUSION_RATE,
     ANNUAL_GAINS_LINE_5,
@@ -179,6 +182,14 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_TAXABLE_CAPITAL_GAINS_2025,
     EMPLOYMENT_INCOME,
+    FARM_HOME_ALLOWABLE_CLAIM,
+    FARM_HOME_CARRY_FORWARD,
+    FARM_HOME_EXPENSES_AVAILABLE,
+    FARM_HOME_INCOME_LIMIT,
+    FARM_NET_INCOME_AFTER_ADJUSTMENTS,
+    FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
+    FARM_PARTNER,
+    FARM_SHARE_OF_NET_INCOME,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
@@ -748,6 +759,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             result=D("0"),
         ),
+        # T2042 Part 7 amount 7P "Amount 7M or 7N above, whichever is less": 0 for no
+        # business-use-of-home expenses.
+        FARM_HOME_ALLOWABLE_CLAIM: LesserOfLine(
+            output=FARM_HOME_ALLOWABLE_CLAIM,
+            parts=((FARM_HOME_EXPENSES_AVAILABLE, D("0")), (FARM_HOME_INCOME_LIMIT, D("0"))),
+            result=D("0"),
+        ),
         # Form T657 (line 25400): Return A enters nothing on it, so its lines are 0 (or,
         # where they read another line, that line's figure).
         CHART_2025_PART_1_AMOUNT_N: LesserOfLine(
@@ -1062,6 +1080,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Form T691 Part 9 line 6 "Line 1 minus line 5 (if negative, enter "0")": Return A has no
+        # resource amounts, so line 1 and line 5 are 0.
+        AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES: SubtractedNotBelowZeroLine(
+            output=AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
+            minuend=AMT_RESOURCE_EXPENDITURES,
+            minuend_amount=D("0"),
+            subtrahend=AMT_RESOURCE_INCOME_TOTAL,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         ontario.DISABILITY_SELF_CARE_OVER_THRESHOLD: SubtractedNotBelowZeroLine(
             output=ontario.DISABILITY_SELF_CARE_OVER_THRESHOLD,
             minuend=DISABILITY_SELF_CARE_EXPENSES,
@@ -1852,6 +1880,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
+        # T2042 Part 7 amount 7O, floored at 0, as on the T2125.
+        FARM_HOME_CARRY_FORWARD: SubtractedNotBelowZeroLine(
+            output=FARM_HOME_CARRY_FORWARD,
+            minuend=FARM_HOME_EXPENSES_AVAILABLE,
+            minuend_amount=D("0"),
+            subtrahend=FARM_HOME_INCOME_LIMIT,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Form T657 (line 25400): Return A enters nothing on it, so its lines are 0 (or,
         # where they read another line, that line's figure).
         ABIL_CLAIMED_AFTER_1984_AND_BEFORE_2025: SubtractedNotBelowZeroLine(
@@ -2031,6 +2068,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         BUSINESS_HOME_INCOME_LIMIT: SumNotBelowZeroLine(
             output=BUSINESS_HOME_INCOME_LIMIT,
             parts=((BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS, D("0")),),
+            total=D("0"),
+        ),
+        # T2042 Part 7 amount 7N "Net income (loss) after adjustments (amount 5C) (if negative,
+        # enter "0")": amount 5C alone, floored, 0.
+        FARM_HOME_INCOME_LIMIT: SumNotBelowZeroLine(
+            output=FARM_HOME_INCOME_LIMIT,
+            parts=((FARM_NET_INCOME_AFTER_ADJUSTMENTS, D("0")),),
             total=D("0"),
         ),
         # Form T657 (line 25400): Return A enters nothing on it, so its lines are 0 (or,
@@ -2274,6 +2318,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=BUSINESS_PARTNER,
             count=0,
             chosen_kind=BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
+            chosen_value=D("0"),
+        ),
+        # T2042 Part 5 amount 5A: a partner count of 0 chooses amount 4C.
+        FARM_SHARE_OF_NET_INCOME: ChosenByCountLine(
+            output=FARM_SHARE_OF_NET_INCOME,
+            count_kind=FARM_PARTNER,
+            count=0,
+            chosen_kind=FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
             chosen_value=D("0"),
         ),
     }

@@ -68,9 +68,16 @@ from app.jurisdictions.ca.catalog import (
     AGE_REDUCTION,
     AGED_18_OR_OLDER_AT_END_OF_2025,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_FILM_PROPERTY_ADJUSTMENT,
+    AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
+    AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
     AMT_PART_1_SUBTOTAL,
+    AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
+    AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
+    AMT_RESOURCE_INCOME_TOTAL,
+    AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
     AMT_TAX_SHELTER_ADJUSTMENTS,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
@@ -702,6 +709,15 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(AMT_RENTAL_PROPERTY_ADJUSTMENT), SubtractNotBelowZero)
     assert isinstance(worksheet.producer_of(AMT_TAX_SHELTER_ADJUSTMENTS), Sum)
     assert isinstance(worksheet.producer_of(AMT_PART_1_SUBTOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_RESOURCE_INCOME_TOTAL), Sum)
+    assert isinstance(
+        worksheet.producer_of(AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES), SubtractNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS), Sum)
+    assert isinstance(worksheet.producer_of(AMT_CAPITAL_GAINS_ADJUSTMENTS), Sum)
+    assert isinstance(worksheet.producer_of(AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_PUBLICLY_LISTED_GIFTS_NET), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT), ApplyRate)
     assert isinstance(worksheet.producer_of(DISABILITY_SELF_WORKSHEET_AMOUNT), Sum)
     assert worksheet.producer_of(ontario.LIFT_SPOUSE_AT_YEAR_END) is None
     assert worksheet.producer_of(OTHER_EMPLOYMENT_INCOME) is None
@@ -1027,7 +1043,6 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     for starting in (
         PROFESSIONAL_INCOME,
         COMMISSION_INCOME,
-        FARMING_INCOME,
         FISHING_INCOME,
         CPP_MONTHS,
         CPT20_EARNINGS,
@@ -1041,6 +1056,9 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     # T1 line 22 (line 13500) is T2125 line 9946, "Amount 5D minus line 9945", no longer a starting
     # amount.
     assert isinstance(worksheet.producer_of(BUSINESS_INCOME), Subtract)
+    # T1 line 25 (line 14100) is T2042 line 9946, "Amount 5C minus line 9945", no longer a starting
+    # amount either.
+    assert isinstance(worksheet.producer_of(FARMING_INCOME), Subtract)
     assert isinstance(worksheet.producer_of(NET_SELF_EMPLOYMENT_INCOME), Sum)
     months_tables = {
         worksheet.producer_of(kind)

@@ -79,3 +79,6 @@ expected:
   ca-on/non_refundable_credit_amounts: "27570.00"
   ca/cpp_second_additional_earnings_maximum: "9900.00"
   ca/amt_part_1_subtotal: "0"
+  ca/amt_net_capital_gains_after_adjustments: "0"
+  ca/amt_publicly_listed_gifts_adjustment: "0.00"
+  ca/amt_resource_property_and_flow_through_shares: "0"
