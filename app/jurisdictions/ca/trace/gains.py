@@ -16,6 +16,7 @@ __all__ = [
     "DispositionGainLine",
     "DispositionGainOnlyLine",
     "DispositionProceedsLine",
+    "NetCapitalLossesRowLine",
 ]
 
 
@@ -129,3 +130,26 @@ class DispositionProceedsLine(TraceLine):
     def amount(self) -> Decimal:
         """The row's proceeds of disposition."""
         return self.proceeds
+
+
+@dataclass(frozen=True)
+class NetCapitalLossesRowLine(TraceLine):
+    """One year row of Form T657 Chart 1, "Calculate your net capital losses of other years (line 14
+    of Step 2)", by `position` (from 1), for `output`: the columns A to D the filer enters, column E
+    (C minus D, not below 0), column F (B plus E) and column G (A minus F, not below 0), which is
+    the amount added to line 14 of Step 2 for the row."""
+
+    output: Money
+    position: int
+    column_a: Decimal
+    column_b: Decimal
+    column_c: Decimal
+    column_d: Decimal
+    column_e: Decimal
+    column_f: Decimal
+    column_g: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """Column G."""
+        return self.column_g

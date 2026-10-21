@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.catalog.base import CATALOG
 
 LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS = CATALOG.declare(
@@ -460,3 +461,510 @@ QBT_CHART_A_NET_INVESTMENT_LOSS = CATALOG.declare(
 )
 """Net investment losses for the year, Form T2048 Chart A line 20 "Line 10 minus line 19 (if
 negative enter "0")": line 10 minus line 19, floored at zero."""
+
+T657_T2017_LINE_13 = CATALOG.declare("t657_t2017_line_13", Decimal)
+"""Amount from Form T2017 line 13, Form T657 Step 1 line 2 "Total amount from line 13 of Form T2017
+(if negative, show in brackets)": a starting amount, a loss in brackets."""
+
+T657_NET_NON_ELIGIBLE_TAXABLE_CAPITAL_GAINS = CATALOG.declare(
+    "t657_net_non_eligible_taxable_capital_gains", Decimal, non_negative=True
+)
+"""Net non-eligible taxable capital gains in 2025, Form T657 Step 1 line 15 "Net non-eligible
+taxable capital gains in 2025 (line 14 of Chart A of Form T936 for 2025)": a starting amount."""
+
+T657_GAINS_1985_TO_1991 = CATALOG.declare("t657_gains_1985_to_1991", Decimal, non_negative=True)
+"""Taxable capital gains reported after 1984 and before 1992, Form T657 Step 2 line 1 "Total taxable
+capital gains reported after 1984 and before 1992: Total amount from line 127 of your returns for
+these years": a starting amount."""
+
+T657_GAINS_1992_AND_1993 = CATALOG.declare("t657_gains_1992_and_1993", Decimal, non_negative=True)
+"""1992 and 1993 eligible taxable capital gains, Form T657 Step 2 line 2 "1992 and 1993 eligible
+taxable capital gains": a starting amount."""
+
+T657_GAINS_1994 = CATALOG.declare("t657_gains_1994", Decimal, non_negative=True)
+"""1994 eligible taxable capital gains, Form T657 Step 2 line 3 "1994 eligible taxable capital
+gains": a starting amount."""
+
+T657_GAINS_1995 = CATALOG.declare("t657_gains_1995", Decimal, non_negative=True)
+"""1995 eligible taxable capital gains, Form T657 Step 2 line 4 "1995 eligible taxable capital
+gains": a starting amount."""
+
+T657_GAINS_1996_TO_1999 = CATALOG.declare("t657_gains_1996_to_1999", Decimal, non_negative=True)
+"""1996 to 1999 eligible taxable capital gains, Form T657 Step 2 line 5 "1996 to 1999 eligible
+taxable capital gains": a starting amount."""
+
+T657_GAINS_2000 = CATALOG.declare("t657_gains_2000", Decimal, non_negative=True)
+"""2000 eligible taxable capital gains, Form T657 Step 2 line 6 "2000 eligible taxable capital
+gains": a starting amount."""
+
+T657_GAINS_2001 = CATALOG.declare("t657_gains_2001", Decimal, non_negative=True)
+"""2001 eligible taxable capital gains, Form T657 Step 2 line 7 "2001 eligible taxable capital
+gains": a starting amount."""
+
+T657_GAINS_2002_TO_2024 = CATALOG.declare("t657_gains_2002_to_2024", Decimal, non_negative=True)
+"""2002 to 2024 eligible taxable capital gains, Form T657 Step 2 line 8 "2002 to 2025 eligible
+taxable capital gains", the part for 2002 to 2024: a starting amount; 2025 is Step 1 line 13."""
+
+T657_CAPITAL_LOSSES_CLAIMED_1985 = CATALOG.declare(
+    "t657_capital_losses_claimed_1985", Decimal, non_negative=True
+)
+"""Allowable capital losses claimed in 1985, Form T657 Step 2 line 10 "Allowable capital losses
+claimed in 1985 shown in brackets on line 127 of your 1985 return (maximum $2,000)": a starting
+amount."""
+
+T657_ABIL_CLAIMED_1985_TO_2024 = CATALOG.declare(
+    "t657_abil_claimed_1985_to_2024", Decimal, non_negative=True
+)
+"""Allowable business investment losses claimed 1985 to 2024, Form T657 Step 2 line 11 "Total amount
+from line 217 of your returns for 1985 to 2018 and line 21700 of your returns for 2019 to 2024": a
+starting amount."""
+
+T657_T2048_LINE_17217_FOR_2024 = CATALOG.declare(
+    "t657_t2048_line_17217_for_2024", Decimal, non_negative=True
+)
+"""Form T2048 line 17217 for 2024, Form T657 Step 2 line 12 "Amount from line 17217 of Form T2048
+for 2024": a starting amount."""
+
+T657_CUMULATIVE_NET_INVESTMENT_LOSS = CATALOG.declare(
+    "t657_cumulative_net_investment_loss", Decimal, non_negative=True
+)
+"""Cumulative net investment loss to December 31, 2025, Form T657 Step 2 line 16 "Cumulative net
+investment loss to December 31, 2025: Amount from line C in Part 3 of Form T936 for 2025": a
+starting amount."""
+
+T657_DEDUCTIONS_CLAIMED_1985_TO_2024 = CATALOG.declare(
+    "t657_deductions_claimed_1985_to_2024", Decimal, non_negative=True
+)
+"""Total capital gains deductions claimed after 1984 and before 2025, Form T657 Step 2 line 17
+"Total capital gains deductions claimed after 1984 and before 2025": a starting amount."""
+
+T657_CHART_2_LINE_1 = CATALOG.declare("t657_chart_2_line_1", Decimal, non_negative=True)
+"""Amount from line 254 of your 1985 to 1987 returns, Form T657 Chart 2 line 1 "Amount from line 254
+of your 1985 to 1987 returns": a starting amount."""
+
+T657_CHART_2_LINE_2 = CATALOG.declare("t657_chart_2_line_2", Decimal, non_negative=True)
+"""Capital gains deductions claimed in 1988 and 1989, excluding eligible capital property, Form T657
+Chart 2 line 2 "Capital gains deductions claimed in 1988 and 1989 (excluding eligible capital
+property)": a starting amount."""
+
+T657_CHART_2_LINE_6 = CATALOG.declare("t657_chart_2_line_6", Decimal, non_negative=True)
+"""Capital gains deductions claimed in 1988 and 1989 for eligible capital property, Form T657 Chart
+2 line 6 "Capital gains deductions claimed in 1988 and 1989 for eligible capital property": a
+starting amount."""
+
+T657_CHART_2_LINE_10 = CATALOG.declare("t657_chart_2_line_10", Decimal, non_negative=True)
+"""Capital gains deductions claimed in 1990 to 1999, Form T657 Chart 2 line 10 "Total capital gains
+deductions claimed in 1990 to 1999: Amount from line 254 of your returns for 1990 to 1999": a
+starting amount."""
+
+T657_CHART_2_LINE_14 = CATALOG.declare("t657_chart_2_line_14", Decimal, non_negative=True)
+"""Capital gains deduction claimed in 2000, Form T657 Chart 2 line 14 "Total capital gains deduction
+claimed in 2000: Amount from line 254 of your 2000 return": a starting amount."""
+
+T657_INCLUSION_RATE_2000 = CATALOG.declare("t657_inclusion_rate_2000", Decimal, non_negative=True)
+"""Inclusion rate for 2000 (IR), Form T657 Chart 2 footnote (2) "Your "IR" is your inclusion rate
+for 2000": a starting rate, entered as a decimal."""
+
+T657_CHART_2_LINE_18 = CATALOG.declare("t657_chart_2_line_18", Decimal, non_negative=True)
+"""Capital gains deduction claimed in 2001 to 2024, Form T657 Chart 2 line 18 "Total capital gains
+deduction claimed in 2001 to 2024: Amount from line 254 of your 2001 to 2018 returns and line 25400
+of your 2019 and later returns": a starting amount."""
+
+T657_PART_1_AMOUNT_B = CATALOG.declare("t657_part_1_amount_b", Decimal, non_negative=True)
+"""Chart 2025 Part 1 amount B, Form T657 Chart 2025 Part 1 "Enter the last amount that you
+calculated for "Total amount of capital gains included in 2025 income eligible for the capital gains
+deduction"": a starting amount."""
+
+T657_PART_1_AMOUNT_F = CATALOG.declare("t657_part_1_amount_f", Decimal, non_negative=True)
+"""Chart 2025 Part 1 amount F, Form T657 Chart 2025 Part 1 "Add amounts F to J (if negative, enter
+"0")": the amount from box 57 of a T3 slip or box 153 of a T5013 slip, a starting amount."""
+
+T657_PART_1_AMOUNT_G = CATALOG.declare("t657_part_1_amount_g", Decimal, non_negative=True)
+"""Chart 2025 Part 1 amount G, Form T657 Chart 2025 Part 1 "Add amounts F to J (if negative, enter
+"0")": the amount from box 55 of a T3 slip or box 154 of a T5013 slip, a starting amount."""
+
+T657_PART_1_AMOUNT_H = CATALOG.declare("t657_part_1_amount_h", Decimal, non_negative=True)
+"""Chart 2025 Part 1 amount H, Form T657 Chart 2025 Part 1 "Add amounts F to J (if negative, enter
+"0")": the amount from box 155 of a T5013 slip, a starting amount."""
+
+T657_PART_1_AMOUNT_I = CATALOG.declare("t657_part_1_amount_i", Decimal)
+"""Chart 2025 Part 1 amount I, Form T657 Chart 2025 Part 1 "Add amounts F to J (if negative, enter
+"0")": "Amount from line 6 of Form T2017", a starting amount, a loss in brackets."""
+
+T657_PART_1_AMOUNT_J = CATALOG.declare("t657_part_1_amount_j", Decimal)
+"""Chart 2025 Part 1 amount J, Form T657 Chart 2025 Part 1 "Add amounts F to J (if negative, enter
+"0")": "Amount from line 12 of Form T2017", a starting amount, a loss in brackets."""
+
+T657_PART_1_AMOUNT_L = CATALOG.declare("t657_part_1_amount_l", Decimal, non_negative=True)
+"""Chart 2025 Part 1 amount L, Form T657 Chart 2025 Part 1 "Amount K minus amount L": the portion of
+the amount from line 17216 of Form T2048 for a QFFP or QSBCS disposed of in Period 1 of 2024, a
+starting amount."""
+
+T657_PART_2_EXCLUDED_F = CATALOG.declare("t657_part_2_excluded_f", Decimal, non_negative=True)
+"""Chart 2025 Part 2 amount F, Form T657 Chart 2025 Part 2 amount F "Amount from line 10700 of
+Schedule 3 (do not include ...)": the amount the filer enters as not to be included, a starting
+amount."""
+
+T657_PART_2_EXCLUDED_G = CATALOG.declare("t657_part_2_excluded_g", Decimal, non_negative=True)
+"""Chart 2025 Part 2 amount G, Form T657 Chart 2025 Part 2 amount G "Amount from line 11000 of
+Schedule 3 (do not include ...)": the amount the filer enters as not to be included, a starting
+amount."""
+
+T657_PART_2_EXCLUDED_H = CATALOG.declare("t657_part_2_excluded_h", Decimal, non_negative=True)
+"""Chart 2025 Part 2 amount H, Form T657 Chart 2025 Part 2 amount H "Amount from line 12400 of
+Schedule 3 (do not include ...)": the amount the filer enters as not to be included, a starting
+amount."""
+
+T657_PART_2_AMOUNT_I = CATALOG.declare("t657_part_2_amount_i", Decimal)
+"""Chart 2025 Part 2 amount I, Form T657 Chart 2025 Part 2 "Add amounts F to J (if negative, enter
+"0")": "Amount from line 6 of Form T2017 (do not include ...)", a starting amount, a loss in
+brackets."""
+
+T657_PART_2_AMOUNT_J = CATALOG.declare("t657_part_2_amount_j", Decimal)
+"""Chart 2025 Part 2 amount J, Form T657 Chart 2025 Part 2 "Add amounts F to J (if negative, enter
+"0")": "Amount from line 12 of Form T2017 (...)", a starting amount, a loss in brackets."""
+
+T657_PART_2_AMOUNT_L = CATALOG.declare("t657_part_2_amount_l", Decimal, non_negative=True)
+"""Chart 2025 Part 2 amount L, Form T657 Chart 2025 Part 2 "Amount K minus amount L": the portion of
+the amount from line 17216 of Form T2048 for a QFFP or QSBCS disposed of in 2025 or after June 24,
+2024, a starting amount."""
+
+CAPITAL_GAINS_DEDUCTION_CLAIMED = CATALOG.declare(
+    "capital_gains_deduction_claimed", Decimal, non_negative=True
+)
+"""Capital gains deduction the filer chooses to claim, T1 line 25400 "Capital gains deduction
+(complete Form T657)": a starting amount, which may not exceed Part 2 amount Q ("However, you can
+choose to claim less.")."""
+
+ANNUAL_GAINS_SCHEDULE_3_TOTAL = CATALOG.declare("annual_gains_schedule_3_total", Decimal)
+"""Total of Schedule 3 lines 10700, 11000 and 12400, Form T657 Step 1 line 1 "Total of lines 10700,
+11000, and 12400 of Schedule 3 (if negative, show in brackets)": the signed sum."""
+
+ANNUAL_GAINS_LINE_3 = CATALOG.declare("annual_gains_line_3", Decimal)
+"""Step 1 line 3, Form T657 Step 1 line 3 "Add lines 1 and 2 (if negative, show in brackets).": line
+1 plus line 2, signed."""
+
+ANNUAL_GAINS_LINE_3_AT_INCLUSION_RATE = CATALOG.declare(
+    "annual_gains_line_3_at_inclusion_rate", Decimal
+)
+"""Step 1 line 3 at the inclusion rate, Form T657 Step 1 line 4 "Inclusion rate × 1/2": line 3
+multiplied by 1/2, rounded half-up to the cent, before line 5 floors it at 0."""
+
+ANNUAL_GAINS_LINE_5 = CATALOG.declare("annual_gains_line_5", Decimal, non_negative=True)
+"""Step 1 line 5, Form T657 Step 1 line 5 "Line 3 multiplied by the inclusion rate on line 4 (if
+negative, enter "0")": line 4 floored at 0."""
+
+ANNUAL_GAINS_LINE_7 = CATALOG.declare("annual_gains_line_7", Decimal)
+"""Total taxable capital gains or losses for 2025 for qualifying property, Form T657 Step 1 line 7
+"Line 5 minus line 6": line 5 minus line 6, signed, not floored."""
+
+SCHEDULE_3_LINE_19900 = CATALOG.declare("schedule_3_line_19900", Decimal)
+"""Total taxable capital gains (or net capital losses) from Schedule 3 line 19900, Form T657 Step 1
+line 8 "Total taxable capital gains (or net capital losses) from line 19900 of Schedule 3 (if
+negative, show in brackets)": Schedule 3 line 24 plus line 25, signed."""
+
+SCHEDULE_3_LINE_17600_NOT_BELOW_ZERO = CATALOG.declare(
+    "schedule_3_line_17600_not_below_zero", Decimal, non_negative=True
+)
+"""Amount from Schedule 3 line 17600, Form T657 Step 1 line 9 "Amount from line 17600 of Schedule 3
+(if negative, enter "0")": the amount, floored at 0."""
+
+ANNUAL_GAINS_LINE_9 = CATALOG.declare("annual_gains_line_9", Decimal, non_negative=True)
+"""Step 1 line 9 at 1/2, Form T657 Step 1 line 9 "× 1/2 =": the line 17600 amount multiplied by 1/2,
+rounded half-up to the cent."""
+
+ANNUAL_GAINS_LINE_10 = CATALOG.declare("annual_gains_line_10", Decimal)
+"""Step 1 line 10, Form T657 Step 1 line 10 "Line 8 minus line 9": line 8 minus line 9, signed."""
+
+ANNUAL_GAINS_LINE_12 = CATALOG.declare("annual_gains_line_12", Decimal)
+"""Step 1 line 12, Form T657 Step 1 line 12 "Line 10 minus line 11": line 10 minus line 11,
+signed."""
+
+ELIGIBLE_TAXABLE_CAPITAL_GAINS_2025 = CATALOG.declare(
+    "eligible_taxable_capital_gains_2025", Decimal
+)
+"""Eligible taxable capital gains for 2025, Form T657 Step 1 line 13 "Enter whichever is less:
+amount from line 7 or line 12." "Eligible taxable capital gains for 2025": the lesser of line 7 and
+line 12."""
+
+ADJUSTED_NET_CAPITAL_LOSSES_OF_OTHER_YEARS = CATALOG.declare(
+    "adjusted_net_capital_losses_of_other_years", Decimal, non_negative=True
+)
+"""Adjusted net capital losses of other years, Form T657 Step 1 line 16 "Adjusted net capital losses
+of other years: Line 14 minus line 15 (if negative, enter "0")": line 14 minus line 15, not below
+0."""
+
+ABIL_AFTER_QBT_REDUCTION = CATALOG.declare("abil_after_qbt_reduction", Decimal, non_negative=True)
+"""Allowable business investment loss after the QBT reduction, Form T657 Step 1 line 19 "Line 17
+minus line 18": line 17 minus line 18, floored at 0 (the form prints no floor)."""
+
+TOTAL_LOSSES_FOR_ANNUAL_GAINS_LIMIT = CATALOG.declare(
+    "total_losses_for_annual_gains_limit", Decimal, non_negative=True
+)
+"""Total losses for annual gains limit, Form T657 Step 1 line 20 "Line 16 plus line 19" "Total
+losses for annual gains limit": line 16 plus line 19."""
+
+ANNUAL_GAINS_LIMIT_2025 = CATALOG.declare("annual_gains_limit_2025", Decimal, non_negative=True)
+"""Annual gains limit for 2025, Form T657 Step 1 line 21 "Line 13 minus line 20 (if negative, enter
+"0")" "Annual gains limit for 2025": line 13 minus line 20, not below 0."""
+
+ELIGIBLE_TAXABLE_CAPITAL_GAINS_2002_TO_2025 = CATALOG.declare(
+    "eligible_taxable_capital_gains_2002_to_2025", Decimal
+)
+"""Eligible taxable capital gains for 2002 to 2025, Form T657 Step 2 line 8 "2002 to 2025 eligible
+taxable capital gains": the 2002 to 2024 amount plus Step 1 line 13 for 2025."""
+
+CUMULATIVE_ELIGIBLE_TAXABLE_CAPITAL_GAINS = CATALOG.declare(
+    "cumulative_eligible_taxable_capital_gains", Decimal
+)
+"""Cumulative eligible taxable capital gains, Form T657 Step 2 line 9 "Add lines 1 to 8."
+"Cumulative eligible taxable capital gains": the sum of Step 2 lines 1 to 8."""
+
+ABIL_CLAIMED_AFTER_1984_AND_BEFORE_2025 = CATALOG.declare(
+    "abil_claimed_after_1984_and_before_2025", Decimal, non_negative=True
+)
+"""Total allowable business investment losses claimed after 1984 and before 2025, Form T657 Step 2
+line 13 "Total allowable business investment losses claimed after 1984 and before 2025: Line 11
+minus line 12": line 11 minus line 12, floored at 0 (the form prints no floor)."""
+
+CHART_1_COLUMN_G_TOTAL = CATALOG.declare("chart_1_column_g_total", Decimal, non_negative=True)
+"""Total of Chart 1 column G, Form T657 Step 2 line 14 "Total of amounts in column G in Chart 1":
+the sum of column G over every year row."""
+
+CUMULATIVE_LOSSES_AND_DEDUCTIONS = CATALOG.declare(
+    "cumulative_losses_and_deductions", Decimal, non_negative=True
+)
+"""Cumulative losses and deductions, Form T657 Step 2 line 18 "Add lines 10 and 13 to 17.": the sum
+of lines 10, 13 to 17."""
+
+CUMULATIVE_GAINS_LIMIT_2025 = CATALOG.declare(
+    "cumulative_gains_limit_2025", Decimal, non_negative=True
+)
+"""Cumulative gains limit for 2025, Form T657 Step 2 line 19 "Line 9 minus line 18 (if negative,
+enter "0")" "Cumulative gains limit for 2025": line 9 minus line 18, not below 0."""
+
+CHART_2_LINE_3 = CATALOG.declare("chart_2_line_3", Decimal, non_negative=True)
+"""Chart 2 line 3, Form T657 Chart 2 line 3 "Line 1 plus line 2": line 1 plus line 2."""
+
+CHART_2_LINE_4 = CATALOG.declare("chart_2_line_4", Decimal, non_negative=True)
+"""Adjustment of 1988 and 1989 capital gains deductions excluding eligible capital property, Form
+T657 Chart 2 line 4 "Amount from line 2 × 1/4": line 2 multiplied by 1/4, rounded half-up to the
+cent."""
+
+CHART_2_LINE_5 = CATALOG.declare("chart_2_line_5", Decimal, non_negative=True)
+"""Chart 2 line 5, Form T657 Chart 2 line 5 "Line 3 minus line 4 (if negative, enter "0")": line 3
+minus line 4, not below 0."""
+
+CHART_2_LINE_7 = CATALOG.declare("chart_2_line_7", Decimal, non_negative=True)
+"""Chart 2 line 7, Form T657 Chart 2 line 7 "Line 5 plus line 6": line 5 plus line 6."""
+
+CHART_2_LINE_8 = CATALOG.declare("chart_2_line_8", Decimal, non_negative=True)
+"""Adjustment of 1988 and 1989 capital gains deductions for eligible capital property, Form T657
+Chart 2 line 8 "Amount from line 6 × 1/3": line 6 multiplied by 1/3, rounded half-up to the cent."""
+
+CHART_2_LINE_9 = CATALOG.declare("chart_2_line_9", Decimal, non_negative=True)
+"""Chart 2 line 9, Form T657 Chart 2 line 9 "Line 7 minus line 8 (if negative, enter "0")": line 7
+minus line 8, not below 0."""
+
+CHART_2_LINE_11 = CATALOG.declare("chart_2_line_11", Decimal, non_negative=True)
+"""Chart 2 line 11, Form T657 Chart 2 line 11 "Line 9 plus line 10": line 9 plus line 10."""
+
+CHART_2_LINE_12 = CATALOG.declare("chart_2_line_12", Decimal, non_negative=True)
+"""Adjustment of 1990 to 1999 capital gains deductions, Form T657 Chart 2 line 12 "Amount from line
+10 × 1/3": line 10 multiplied by 1/3, rounded half-up to the cent."""
+
+CHART_2_LINE_13 = CATALOG.declare("chart_2_line_13", Decimal, non_negative=True)
+"""Chart 2 line 13, Form T657 Chart 2 line 13 "Line 11 minus line 12 (if negative, enter "0")": line
+11 minus line 12, not below 0."""
+
+CHART_2_LINE_15 = CATALOG.declare("chart_2_line_15", Decimal, non_negative=True)
+"""Chart 2 line 15, Form T657 Chart 2 line 15 "Line 13 plus line 14": line 13 plus line 14."""
+
+CHART_2_LINE_14_HALVED = CATALOG.declare("chart_2_line_14_halved", Decimal, non_negative=True)
+"""Line 14 multiplied by 1/2, Form T657 Chart 2 line 16 "Adjustment of 2000 capital gains deduction:
+Amount from line 14 × [ 1 – ( 2 × IR )]", the 2 of "2 × IR": line 14 multiplied by 1/2, rounded
+half-up to the cent."""
+
+CHART_2_LINE_14_OVER_TWICE_IR = CATALOG.declare(
+    "chart_2_line_14_over_twice_ir", Decimal, non_negative=True
+)
+"""Line 14 halved, divided by IR, Form T657 Chart 2 line 16 "Adjustment of 2000 capital gains
+deduction: Amount from line 14 × [ 1 – ( 2 × IR )]", the quotient of the 1 over ( 2 × IR ): the
+halved line 14 divided by IR, rounded half-up to the cent; 0 when IR is 0."""
+
+CHART_2_LINE_16 = CATALOG.declare("chart_2_line_16", Decimal, non_negative=True)
+"""Adjustment of 2000 capital gains deduction, Form T657 Chart 2 line 16 "Adjustment of 2000 capital
+gains deduction: Amount from line 14 × [ 1 – ( 2 × IR )] = (2)": line 14 minus line 14 multiplied by
+1 over ( 2 × IR ), which is line 14 minus the quotient."""
+
+CHART_2_LINE_17 = CATALOG.declare("chart_2_line_17", Decimal, non_negative=True)
+"""Chart 2 line 17, Form T657 Chart 2 line 17 "Line 15 minus line 16 (if negative, enter "0")": line
+15 minus line 16, not below 0."""
+
+CHART_2_LINE_19 = CATALOG.declare("chart_2_line_19", Decimal, non_negative=True)
+"""Capital gains deductions from previous years, Form T657 Chart 2 line 19 "Capital gains deductions
+from previous years: Line 17 plus line 18 (if negative, enter 0)": line 17 plus line 18, not below
+0."""
+
+CHART_2_NUMERATOR_ONE = CATALOG.declare("chart_2_numerator_one", Decimal, non_negative=True)
+"""The 1 of the Chart 2 line 16 quotient, Form T657 Chart 2 line 16 "Adjustment of 2000 capital
+gains deduction: Amount from line 14 × [ 1 – ( 2 × IR )]": the 1 printed in the bracket, a credit of
+1."""
+
+CHART_2025_PART_1_AMOUNT_A = CATALOG.declare(
+    "chart_2025_part_1_amount_a", Decimal, non_negative=True
+)
+"""Maximum capital gains deduction for QFFP and/or QSBCS reported in 2025 but disposed of in period
+1 of 2024, Form T657 Chart 2025 Part 1 amount A: 522,145.00, a dataset."""
+
+CHART_2025_PART_1_AMOUNT_C = CATALOG.declare(
+    "chart_2025_part_1_amount_c", Decimal, non_negative=True
+)
+"""Chart 2025 Part 1 amount C, Form T657 Chart 2025 Part 1 "Amount A minus amount B": amount A minus
+amount B, floored at 0 (the form prints no floor)."""
+
+CHART_2025_PART_1_AMOUNT_E = CATALOG.declare(
+    "chart_2025_part_1_amount_e", Decimal, non_negative=True
+)
+"""Chart 2025 Part 1 amount E, Form T657 Chart 2025 Part 1 amount E "amount C minus amount D (if
+negative, enter "0")": amount C minus amount D, not below 0."""
+
+CHART_2025_PART_1_AMOUNTS_F_TO_J = CATALOG.declare(
+    "chart_2025_part_1_amounts_f_to_j", Decimal, non_negative=True
+)
+"""Chart 2025 Part 1 amounts F to J, Form T657 Chart 2025 Part 1 "Add amounts F to J (if negative,
+enter "0")": the sum of amounts F to J, not below 0."""
+
+CHART_2025_PART_1_AMOUNT_K = CATALOG.declare(
+    "chart_2025_part_1_amount_k", Decimal, non_negative=True
+)
+"""Chart 2025 Part 1 amount K, Form T657 Chart 2025 Part 1 "= × 1/2 = K": amounts F to J multiplied
+by 1/2, rounded half-up to the cent."""
+
+CHART_2025_PART_1_AMOUNT_M = CATALOG.declare(
+    "chart_2025_part_1_amount_m", Decimal, non_negative=True
+)
+"""Chart 2025 Part 1 amount M, Form T657 Chart 2025 Part 1 "Amount K minus amount L": amount K minus
+amount L, floored at 0 (the form prints no floor)."""
+
+CHART_2025_PART_1_AMOUNT_N = CATALOG.declare(
+    "chart_2025_part_1_amount_n", Decimal, non_negative=True
+)
+"""Chart 2025 Part 1 amount N, Form T657 Chart 2025 Part 1 "Enter whichever is less: amount E or
+amount M.": the lesser of amount E and amount M."""
+
+CHART_2025_PART_1_AMOUNT_P = CATALOG.declare(
+    "chart_2025_part_1_amount_p", Decimal, non_negative=True
+)
+"""Chart 2025 Part 1 amount P, Form T657 Chart 2025 Part 1 "Amount N plus amount O": amount N plus
+amount B, where O is amount B."""
+
+CHART_2025_PART_1_AMOUNT_Q = CATALOG.declare(
+    "chart_2025_part_1_amount_q", Decimal, non_negative=True
+)
+"""Chart 2025 Part 1 amount Q, Form T657 Chart 2025 Part 1 "Enter whichever is less: line 21 of Step
+1, line 19 of Step 2 or amount P above.": the lesser of the annual gains limit, the cumulative gains
+limit and amount P."""
+
+CHART_2025_PART_2_AMOUNT_A = CATALOG.declare(
+    "chart_2025_part_2_amount_a", Decimal, non_negative=True
+)
+"""Maximum capital gains deduction for QFFP and/or QSBCS disposed of in 2025 or disposed of after
+June 24, 2024 and reported in 2025, Form T657 Chart 2025 Part 2 amount A: 625,000.00, a dataset."""
+
+CHART_2025_PART_2_AMOUNT_C = CATALOG.declare(
+    "chart_2025_part_2_amount_c", Decimal, non_negative=True
+)
+"""Chart 2025 Part 2 amount C, Form T657 Chart 2025 Part 2 "Amount A minus amount B": amount A minus
+amount B, floored at 0 (the form prints no floor)."""
+
+CHART_2025_PART_2_AMOUNT_E = CATALOG.declare(
+    "chart_2025_part_2_amount_e", Decimal, non_negative=True
+)
+"""Chart 2025 Part 2 amount E, Form T657 Chart 2025 Part 2 amount E "amount C minus amount D (if
+negative, enter "0")": amount C minus amount D, not below 0."""
+
+CHART_2025_PART_2_AMOUNT_F = CATALOG.declare("chart_2025_part_2_amount_f", Decimal)
+"""Chart 2025 Part 2 amount F, Form T657 Chart 2025 Part 2 amount F "Amount from line 10700 of
+Schedule 3 (do not include ...)": line 10700 of Schedule 3 less the excluded amount F."""
+
+CHART_2025_PART_2_AMOUNT_G = CATALOG.declare("chart_2025_part_2_amount_g", Decimal)
+"""Chart 2025 Part 2 amount G, Form T657 Chart 2025 Part 2 amount G "Amount from line 11000 of
+Schedule 3 (do not include ...)": line 11000 of Schedule 3 less the excluded amount G."""
+
+CHART_2025_PART_2_AMOUNT_H = CATALOG.declare("chart_2025_part_2_amount_h", Decimal)
+"""Chart 2025 Part 2 amount H, Form T657 Chart 2025 Part 2 amount H "Amount from line 12400 of
+Schedule 3 (do not include ...)": line 12400 of Schedule 3 less the excluded amount H."""
+
+CHART_2025_PART_2_AMOUNTS_F_TO_J = CATALOG.declare(
+    "chart_2025_part_2_amounts_f_to_j", Decimal, non_negative=True
+)
+"""Chart 2025 Part 2 amounts F to J, Form T657 Chart 2025 Part 2 "Add amounts F to J (if negative,
+enter "0")": the sum of amounts F to J, not below 0."""
+
+CHART_2025_PART_2_AMOUNT_K = CATALOG.declare(
+    "chart_2025_part_2_amount_k", Decimal, non_negative=True
+)
+"""Chart 2025 Part 2 amount K, Form T657 Chart 2025 Part 2 "= × 1/2 = K": amounts F to J multiplied
+by 1/2, rounded half-up to the cent."""
+
+CHART_2025_PART_2_AMOUNT_M = CATALOG.declare(
+    "chart_2025_part_2_amount_m", Decimal, non_negative=True
+)
+"""Chart 2025 Part 2 amount M, Form T657 Chart 2025 Part 2 "Amount K minus amount L": amount K minus
+amount L, floored at 0 (the form prints no floor)."""
+
+CHART_2025_PART_2_AMOUNT_N = CATALOG.declare(
+    "chart_2025_part_2_amount_n", Decimal, non_negative=True
+)
+"""Chart 2025 Part 2 amount N, Form T657 Chart 2025 Part 2 "Enter whichever is less: amount E or
+amount M.": the lesser of amount E and amount M."""
+
+CHART_2025_PART_2_AMOUNT_P = CATALOG.declare(
+    "chart_2025_part_2_amount_p", Decimal, non_negative=True
+)
+"""Chart 2025 Part 2 amount P, Form T657 Chart 2025 Part 2 "Amount N plus amount O": amount N plus
+amount B, where B is Part 1 amount P."""
+
+CHART_2025_PART_2_AMOUNT_Q = CATALOG.declare(
+    "chart_2025_part_2_amount_q", Decimal, non_negative=True
+)
+"""Chart 2025 Part 2 amount Q, Form T657 Chart 2025 Part 2 "Enter whichever is less: line 21 of Step
+1, line 19 of Step 2 or amount P above.": the maximum amount you can claim on line 25400 of your
+2025 return."""
+
+CAPITAL_GAINS_DEDUCTION = CATALOG.declare("capital_gains_deduction", Decimal, non_negative=True)
+"""Capital gains deduction, T1 line 25400 "Capital gains deduction (complete Form T657)": the amount
+claimed, at most Part 2 amount Q."""
+
+T657_CHART_1_COLUMN_A = CATALOG.declare("t657_chart_1_column_a", Decimal, non_negative=True)
+"""Net capital losses of other years claimed for the year, Form T657 Chart 1 column A "Enter the
+total amount of net capital losses of other years claimed for each year indicated from line 253 or
+25300 of each return": a starting amount per year row."""
+
+T657_CHART_1_COLUMN_B = CATALOG.declare("t657_chart_1_column_b", Decimal, non_negative=True)
+"""Reserves included in capital gains for property disposed of before 1985, Form T657 Chart 1 column
+B "For 1985, 1986, and 1987, enter 1/2 of the total reserves included in capital gains for capital
+property disposed of before 1985": a starting amount per year row."""
+
+T657_CHART_1_COLUMN_C = CATALOG.declare("t657_chart_1_column_c", Decimal, non_negative=True)
+"""Amount from the Form T936 line named for the year, Form T657 Chart 1 column C "For 1992, enter
+whichever amount is less: line 127 of your 1992 return or line (f) in Part A of Form T936 for 1992":
+a starting amount per year row."""
+
+T657_CHART_1_COLUMN_D = CATALOG.declare("t657_chart_1_column_d", Decimal, non_negative=True)
+"""Amount from the Form T936 line named for the year, Form T657 Chart 1 column D "For 1992, enter
+the amount from line (k) in Part B of Form T936 for 1992": a starting amount per year row."""
+
+T657_CHART_1_ROWS = RecordListKind.declare(
+    CATALOG,
+    "t657_chart_1_rows",
+    fields=(
+        T657_CHART_1_COLUMN_A,
+        T657_CHART_1_COLUMN_B,
+        T657_CHART_1_COLUMN_C,
+        T657_CHART_1_COLUMN_D,
+    ),
+)
+"""Chart 1 year rows, Form T657 Chart 1 "Chart 1 – Calculate your net capital losses of other years
+(line 14 of Step 2)": one record for each printed row, with columns A to D."""

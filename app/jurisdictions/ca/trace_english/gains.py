@@ -10,6 +10,7 @@ from app.jurisdictions.ca.trace.gains import (
     DispositionGainLine,
     DispositionGainOnlyLine,
     DispositionProceedsLine,
+    NetCapitalLossesRowLine,
     PrincipalResidenceGainLine,
 )
 
@@ -104,3 +105,21 @@ class DispositionProceedsRenderer:
         position = line.position
         proceeds = line.proceeds
         return f"{output.label}: disposition {position}: proceeds {EnglishFigures.money(proceeds)}"
+
+
+@english_renderer
+class NetCapitalLossesRowRenderer:
+    """English text for NetCapitalLossesRowLine."""
+
+    line_class = NetCapitalLossesRowLine
+
+    def render(self, line: NetCapitalLossesRowLine) -> str:
+        """The English sentence for `line`."""
+        money = EnglishFigures.money
+        return (
+            f"{line.output.label}: item {line.position}: column E {money(line.column_e)} = "
+            f"column C {money(line.column_c)} less column D {money(line.column_d)}, not below 0; "
+            f"column F {money(line.column_f)} = column B {money(line.column_b)} plus column E "
+            f"{money(line.column_e)}; column G {money(line.column_g)} = column A "
+            f"{money(line.column_a)} less column F {money(line.column_f)}, not below 0"
+        )
