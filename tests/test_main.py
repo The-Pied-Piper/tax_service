@@ -387,6 +387,8 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/foreign_non_business_tax_paid",
         "ca/net_foreign_non_business_income",
         "ca/foreign_tax_countries",
+        "ca/foreign_tax_credit_sheet_line_3",
+        "ca/foreign_tax_credit_sheets",
         "ca/spouses_claimed",
         "ca/spouse_caregiver_eligible",
         "ca/spouse_net_income",

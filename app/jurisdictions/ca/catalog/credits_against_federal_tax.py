@@ -200,3 +200,23 @@ FOREIGN_TAX_COUNTRIES = RecordListKind.declare(
 """Foreign tax countries, Form T2209 "do the applicable calculation shown on this form for
 non-business and business taxes paid to each country on a separate sheet": a starting list with one
 record for each country, holding line 1 (43100) and line 2 (43300). The list may be empty."""
+
+FOREIGN_TAX_CREDIT_SHEET_LINE_3 = CATALOG.declare(
+    "foreign_tax_credit_sheet_line_3", Decimal, non_negative=True
+)
+"""Federal non-business foreign tax credit of a sheet, Form T2209 line 3 "Enter whichever is less:
+the amount from line 1 or line 2.": the lesser of the tax paid and the rounded line 2 of that sheet;
+a field of each record of the foreign tax credit sheets, not an artifact of its own."""
+
+FOREIGN_TAX_CREDIT_SHEETS = RecordListKind.declare(
+    CATALOG,
+    "foreign_tax_credit_sheets",
+    fields=(
+        FOREIGN_NON_BUSINESS_TAX_PAID,
+        NET_FOREIGN_NON_BUSINESS_INCOME,
+        FOREIGN_TAX_CREDIT_SHEET_LINE_3,
+    ),
+)
+"""Foreign tax credit sheets, Form T2209 "on a separate sheet": one record for each sheet worked, in
+order, holding line 1 (43100), the net foreign income used on line 2 (43300, after the cap at net
+income) and line 3. The list may be empty."""

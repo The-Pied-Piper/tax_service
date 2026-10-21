@@ -121,6 +121,8 @@ REGISTERED = frozenset(
         "ca/foreign_non_business_tax_paid",
         "ca/net_foreign_non_business_income",
         "ca/foreign_tax_countries",
+        "ca/foreign_tax_credit_sheet_line_3",
+        "ca/foreign_tax_credit_sheets",
         "ca/workers_compensation_benefits",
         "ca/social_assistance_payments",
         "ca/net_federal_supplements",
@@ -883,5 +885,6 @@ RECORD_LISTS = frozenset(
         "ca/rental_cca_classes",
         "ca/rental_closing_ucc",
         "ca/foreign_tax_countries",
+        "ca/foreign_tax_credit_sheets",
     }
 )

@@ -12,7 +12,12 @@ this form."
 Its slots: two parameter slots, `rounding` (a `rounding_only` dataset: the rule for line 2) and
 `pooling_threshold` (an `amount` dataset: the printed $200); three consumed slots, `countries` (a
 record list whose records hold each country's line 1 and line 2 income), `net_income` and
-`basic_federal_tax` (Decimal); one produced slot `total` (Decimal), the sum of line 3.
+`basic_federal_tax` (Decimal); two produced slots, `total` (Decimal), the sum of line 3, and
+`sheets` (a record list of `ca/foreign_tax_credit_sheets`), one record per T2209 sheet: line 1 (tax
+paid), the income used
+on line 2 (after the cap at net income) and line 3. The sheets are one per country when worked
+one by one, one pooled record otherwise (also for a single country), and none without
+countries.
 
 Per country (more than one country and total tax paid above the threshold): income is capped at
 net income, line 2 is income x basic federal tax / net income through `ApplyRatio.ratio_of` (the
@@ -43,7 +48,7 @@ import app.jurisdictions.ca.capabilities as ca_capabilities
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry
 from app.domain.capabilities.apply_ratio import ApplyRatio
-from app.domain.capability import CapabilityRegistry
+from app.domain.capability import CapabilityRegistry, CapabilityResult
 from app.domain.errors import (
     InvalidCapabilityError,
     MissingArtifactError,
@@ -67,6 +72,8 @@ from app.jurisdictions.ca.capabilities.foreign_non_business_tax_credit import (
 from app.jurisdictions.ca.catalog import (
     FOREIGN_NON_BUSINESS_TAX_PAID,
     FOREIGN_TAX_COUNTRIES,
+    FOREIGN_TAX_CREDIT_SHEET_LINE_3,
+    FOREIGN_TAX_CREDIT_SHEETS,
     NET_FOREIGN_NON_BUSINESS_INCOME,
 )
 from app.jurisdictions.ca.trace import ForeignTaxCreditLine, PooledForeignTaxCreditLine
@@ -78,6 +85,7 @@ CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 NET_INCOME = ArtifactKind("ex/net_income", Decimal, non_negative=True)
 BASIC_TAX = ArtifactKind("ex/basic_federal_tax", Decimal, non_negative=True)
 CREDIT = ArtifactKind("ex/foreign_credit", Decimal, non_negative=True)
+SHEETS = FOREIGN_TAX_CREDIT_SHEETS
 
 # A country is (line 1 tax paid, net foreign non-business income).
 Country = tuple[str, str]
@@ -121,6 +129,7 @@ def capability(
         NET_INCOME,
         BASIC_TAX,
         CREDIT,
+        SHEETS,
     )
 
 
@@ -143,6 +152,38 @@ def given(
     )
 
 
+def totals(result: CapabilityResult) -> Decimal:
+    """The `total` output of a computation."""
+    (output,) = [a for a in result.outputs if a.kind == CREDIT]
+    assert isinstance(output.value, Decimal)
+    return output.value
+
+
+def sheet_rows(result: CapabilityResult) -> list[tuple[Decimal, Decimal, Decimal]]:
+    """The `sheets` output as (line 1, income used on line 2, line 3) per record, in order."""
+    (output,) = [a for a in result.outputs if a.kind == SHEETS]
+    assert isinstance(output.value, RecordList)
+    return [
+        (
+            Decimal(record[FOREIGN_NON_BUSINESS_TAX_PAID]),
+            Decimal(record[NET_FOREIGN_NON_BUSINESS_INCOME]),
+            Decimal(record[FOREIGN_TAX_CREDIT_SHEET_LINE_3]),
+        )
+        for record in output.value.records
+    ]
+
+
+def sheets(
+    *rows: Country,
+    net_income: str = "100000",
+    basic_tax: str = "14000",
+    dataset: ParameterDataset[RoundingOnly] | None = None,
+    pooling: ParameterDataset[Amount] | None = None,
+) -> list[tuple[Decimal, Decimal, Decimal]]:
+    wired = capability(dataset, pooling)
+    return sheet_rows(wired.compute(given(*rows, net_income=net_income, basic_tax=basic_tax)))
+
+
 def total(
     *rows: Country,
     net_income: str = "100000",
@@ -151,9 +192,7 @@ def total(
     pooling: ParameterDataset[Amount] | None = None,
 ) -> Decimal:
     wired = capability(dataset, pooling)
-    (output,) = wired.compute(given(*rows, net_income=net_income, basic_tax=basic_tax)).outputs
-    assert isinstance(output.value, Decimal)
-    return output.value
+    return totals(wired.compute(given(*rows, net_income=net_income, basic_tax=basic_tax)))
 
 
 # --- contract and wiring ------------------------------------------------------------------------
@@ -177,7 +216,7 @@ def test_is_exported_from_the_ca_capabilities_package() -> None:
 
 def test_declares_its_contract() -> None:
     assert capability().consumes == frozenset({FOREIGN_TAX_COUNTRIES, NET_INCOME, BASIC_TAX})
-    assert capability().produces == frozenset({CREDIT})
+    assert capability().produces == frozenset({CREDIT, SHEETS})
 
 
 def test_leaves_its_contract_to_the_base() -> None:
@@ -195,8 +234,9 @@ def test_declares_its_slots() -> None:
         "net_income": Decimal,
         "basic_federal_tax": Decimal,
     }
-    assert ForeignNonBusinessTaxCredit.PRODUCES == {"total": Decimal}
+    assert ForeignNonBusinessTaxCredit.PRODUCES == {"total": Decimal, "sheets": RecordList}
     assert not ForeignNonBusinessTaxCredit.is_list_slot("countries")
+    assert not ForeignNonBusinessTaxCredit.is_list_slot("sheets")
 
 
 def test_its_slots_are_read_only() -> None:
@@ -224,15 +264,24 @@ def test_is_built_from_its_slot_names_as_keywords() -> None:
         net_income=NET_INCOME,
         basic_federal_tax=BASIC_TAX,
         total=CREDIT,
+        sheets=SHEETS,
     )
 
-    assert wired.compute(given(US)).outputs == (Artifact(CREDIT, D("1400")),)
+    assert totals(wired.compute(given(US))) == D("1400")
+    assert sheet_rows(wired.compute(given(US))) == [(D("1500"), D("10000"), D("1400"))]
 
 
 def test_takes_no_separate_rounding_argument() -> None:
     with pytest.raises(TypeError):
         ForeignNonBusinessTaxCredit(  # type: ignore[call-arg]
-            rounding(), threshold(), FOREIGN_TAX_COUNTRIES, NET_INCOME, BASIC_TAX, CREDIT, CENT
+            rounding(),
+            threshold(),
+            FOREIGN_TAX_COUNTRIES,
+            NET_INCOME,
+            BASIC_TAX,
+            CREDIT,
+            SHEETS,
+            CENT,
         )
 
 
@@ -245,6 +294,7 @@ def test_rejects_a_money_kind_for_its_countries() -> None:
             NET_INCOME,
             BASIC_TAX,
             CREDIT,
+            SHEETS,
         )
 
 
@@ -260,6 +310,7 @@ def test_mypy_rejects_a_dataset_of_another_parameter_kind() -> None:
             NET_INCOME,
             BASIC_TAX,
             CREDIT,
+            SHEETS,
         )
         ForeignNonBusinessTaxCredit(
             rounding(),
@@ -268,6 +319,7 @@ def test_mypy_rejects_a_dataset_of_another_parameter_kind() -> None:
             NET_INCOME,
             BASIC_TAX,
             CREDIT,
+            SHEETS,
         )
 
     assert callable(wire)
@@ -323,7 +375,7 @@ def test_cents_in_the_tax_paid_are_kept() -> None:
 
 
 def test_no_countries_give_zero() -> None:
-    (output,) = capability().compute(given()).outputs
+    output = Artifact(CREDIT, totals(capability().compute(given())))
 
     assert output == Artifact(CREDIT, D("0"))
     assert type(output.value) is Decimal
@@ -419,7 +471,7 @@ def test_a_refusal_is_raised_when_computing_not_when_wiring() -> None:
     with pytest.raises(ValidationError):
         wired.compute(given(US, net_income="0"))
 
-    assert wired.compute(given(US)).outputs == (Artifact(CREDIT, D("1400")),)
+    assert totals(wired.compute(given(US))) == D("1400")
 
 
 # --- computing: rounding -------------------------------------------------------------------------
@@ -524,7 +576,7 @@ def test_ignores_artifacts_it_does_not_consume() -> None:
 
     result = capability().compute((other, *given(US)))
 
-    assert result.outputs == (Artifact(CREDIT, D("1400")),)
+    assert totals(result) == D("1400")
 
 
 @pytest.mark.parametrize("missing", ["foreign_tax_countries", "net_income", "basic_federal_tax"])
@@ -535,8 +587,127 @@ def test_a_missing_input_is_a_missing_artifact(missing: str) -> None:
         capability().compute(tuple(inputs))
 
 
-def test_has_one_output() -> None:
-    assert len(capability().compute(given(US, UK)).outputs) == 1
+def test_has_two_outputs_the_total_and_the_sheets() -> None:
+    result = capability().compute(given(US, UK))
+
+    assert [a.kind for a in result.outputs] == [CREDIT, SHEETS]
+    assert isinstance(result.outputs[1].value, RecordList)
+
+
+# --- computing: the sheets ----------------------------------------------------------------------
+
+
+def test_two_countries_over_200_have_one_sheet_each_in_order() -> None:
+    # Line 1, the income used on line 2, line 3 (the ticket's US and UK example).
+    assert sheets(US, UK) == [
+        (D("1500"), D("10000"), D("1400")),
+        (D("100"), D("5000"), D("100")),
+    ]
+
+
+def test_the_sheets_keep_the_callers_order() -> None:
+    assert sheets(UK, US) == [
+        (D("100"), D("5000"), D("100")),
+        (D("1500"), D("10000"), D("1400")),
+    ]
+
+
+def test_the_sheets_line_3_adds_up_to_the_total_when_worked_one_by_one() -> None:
+    result = capability().compute(given(US, UK, ("300", "10000")))
+
+    assert sum((line_3 for _, _, line_3 in sheet_rows(result)), D("0")) == totals(result)
+
+
+def test_two_countries_at_exactly_200_have_one_pooled_sheet() -> None:
+    # Pooled: tax 200, income 10,100, line 2 = 1,414, line 3 = 200.
+    assert sheets(BIG, SMALL) == [(D("200"), D("10100"), D("200"))]
+
+
+def test_two_countries_over_200_by_a_cent_have_two_sheets() -> None:
+    assert sheets(BIG, ("80.01", "100")) == [
+        (D("120"), D("10000"), D("120")),
+        (D("80.01"), D("100"), D("14")),
+    ]
+
+
+def test_a_single_country_has_one_pooled_sheet() -> None:
+    assert sheets(US) == [(D("1500"), D("10000"), D("1400"))]
+
+
+def test_a_single_countrys_sheet_with_less_tax_than_line_2_has_its_tax_as_line_3() -> None:
+    assert sheets(("300", "10000")) == [(D("300"), D("10000"), D("300"))]
+
+
+def test_the_pooling_threshold_decides_the_number_of_sheets() -> None:
+    assert len(sheets(US, UK, pooling=threshold("1000"))) == 2
+    assert sheets(US, UK, pooling=threshold("1600")) == [(D("1600"), D("15000"), D("1600"))]
+
+
+def test_no_countries_have_no_sheets() -> None:
+    assert sheets() == []
+    assert sheets(net_income="0") == []
+
+
+def test_a_sheet_counts_the_income_after_the_cap_at_net_income() -> None:
+    # One country: 150,000 of income is capped to the 100,000 of net income.
+    assert sheets(("20000", "150000")) == [(D("20000"), D("100000"), D("14000"))]
+
+
+def test_each_sheet_is_capped_when_worked_one_by_one() -> None:
+    assert sheets(("20000", "150000"), ("300", "5000")) == [
+        (D("20000"), D("100000"), D("14000")),
+        (D("300"), D("5000"), D("300")),
+    ]
+
+
+def test_a_pooled_sheet_caps_the_summed_income() -> None:
+    assert sheets(("100", "70000"), ("50", "60000"), basic_tax="100") == [
+        (D("150"), D("100000"), D("100"))
+    ]
+
+
+def test_a_sheets_line_3_is_the_lesser_of_line_1_and_the_rounded_line_2() -> None:
+    # 20 x 1 / 3 = 6.666... rounds to 6.67, below the 50 of tax.
+    assert sheets(("50", "20"), net_income="300", basic_tax="100") == [
+        (D("50"), D("20"), D("6.67"))
+    ]
+
+
+def test_sheets_are_rounded_country_by_country() -> None:
+    rows = (("300", "100"), ("300", "100"), ("300", "100"))
+
+    assert sheets(*rows, net_income="300", basic_tax="100") == [
+        (D("300"), D("100"), D("33.33")),
+        (D("300"), D("100"), D("33.33")),
+        (D("300"), D("100"), D("33.33")),
+    ]
+
+
+def test_the_sheets_come_out_as_a_record_list_of_the_sheet_kind() -> None:
+    result = capability().compute(given(US, UK))
+
+    (artifact,) = [a for a in result.outputs if a.kind == SHEETS]
+    assert isinstance(artifact.value, RecordList)
+    assert artifact.value.fields == FOREIGN_TAX_CREDIT_SHEETS.fields
+
+
+def test_the_sheets_of_no_countries_are_an_empty_record_list() -> None:
+    (artifact,) = [a for a in capability().compute(given()).outputs if a.kind == SHEETS]
+
+    assert isinstance(artifact.value, RecordList)
+    assert artifact.value.records == ()
+
+
+def test_a_zero_net_income_gives_no_sheets_only_a_refusal() -> None:
+    with pytest.raises(ValidationError, match="net_income"):
+        sheets(US, net_income="0")
+
+
+def test_the_sheets_do_not_change_the_trace() -> None:
+    trace = capability().compute(given(US, UK)).trace
+
+    assert len(trace) == 3
+    assert isinstance(trace[-1], ItemsTotalLine)
 
 
 # --- trace ---------------------------------------------------------------------------------------
@@ -660,8 +831,7 @@ def test_the_last_trace_line_amount_is_the_output() -> None:
     for rows in ((US, UK), (BIG, SMALL), (US,), ()):
         result = capability().compute(given(*rows))
 
-        (output,) = result.outputs
-        assert result.trace[-1].amount == output.value
+        assert result.trace[-1].amount == totals(result)
 
 
 def test_the_total_is_the_sum_of_its_items() -> None:
@@ -712,7 +882,7 @@ def service(
             "net_income": "ex/net_income",
             "basic_federal_tax": "ex/basic_federal_tax",
         },
-        produces={"total": "ex/foreign_credit"},
+        produces={"total": "ex/foreign_credit", "sheets": "ca/foreign_tax_credit_sheets"},
     )
     manifest = Manifest(
         jurisdiction=code,
@@ -720,10 +890,10 @@ def service(
         valid_from_tax_year=2025,
         capabilities=(selection,),
         inputs=frozenset({"ca/foreign_tax_countries", "ex/net_income", "ex/basic_federal_tax"}),
-        outputs=frozenset({"ex/foreign_credit"}),
+        outputs=frozenset({"ex/foreign_credit", "ca/foreign_tax_credit_sheets"}),
     )
     artifacts = ArtifactRegistry()
-    for kind in (FOREIGN_TAX_COUNTRIES, NET_INCOME, BASIC_TAX, CREDIT):
+    for kind in (FOREIGN_TAX_COUNTRIES, NET_INCOME, BASIC_TAX, CREDIT, SHEETS):
         artifacts.register(kind.identifier, kind)
     return TaxComputationService(
         _Jurisdictions(Jurisdiction(code=code, manifests=(manifest,))),
@@ -739,7 +909,7 @@ def test_a_computation_builds_the_capability_from_the_registry_and_its_datasets(
     (built,) = composition.order
     assert isinstance(built, ForeignNonBusinessTaxCredit)
     assert built.consumes == frozenset({FOREIGN_TAX_COUNTRIES, NET_INCOME, BASIC_TAX})
-    assert built.produces == frozenset({CREDIT})
+    assert built.produces == frozenset({CREDIT, SHEETS})
 
 
 def test_a_computation_gives_the_per_country_total() -> None:
@@ -752,6 +922,18 @@ def test_a_computation_gives_the_per_country_total() -> None:
         country_line(2, "100", "5000", "700.00", "100"),
         ItemsTotalLine(CREDIT, ((1, D("1400.00")), (2, D("100"))), D("1500.00")),
     )
+
+
+def test_a_computation_gives_the_sheets() -> None:
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *given(US, UK))
+
+    sheet_list = worksheet.get(SHEETS).value
+    assert isinstance(sheet_list, RecordList)
+    assert [
+        (r[FOREIGN_NON_BUSINESS_TAX_PAID], r[FOREIGN_TAX_CREDIT_SHEET_LINE_3])
+        for r in sheet_list.records
+    ] == [(D("1500"), D("1400")), (D("100"), D("100"))]
+    assert isinstance(worksheet.producer_of(SHEETS), ForeignNonBusinessTaxCredit)
 
 
 def test_a_computation_pools_two_countries_at_200_of_tax() -> None:
