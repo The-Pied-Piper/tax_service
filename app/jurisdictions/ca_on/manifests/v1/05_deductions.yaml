@@ -177,17 +177,19 @@ capabilities:
       count: ca/cpp_part_4_completed
     produces:
       output: ca/cpp_deduction_on_self_employment
-  # Schedule 13 line 1 "Enter the total amount from line 1 1 plus line 27 of your return ...
-  # (if negative, enter "0")", read as line 12200 plus line 27, and line 4 "Add lines 1 to
-  # 3. Net self-employment income": line 2 and line 54493 (a corporation controlled by the
-  # filer) and line 3 and line 54494 (tax-exempt self-employment income) follow line 1.
-  - name: core/sum_not_below_zero
+  # Schedule 13 line 1 "Enter the total amount from line 1 1 plus line 27 of your return", read
+  # as line 12200 plus line 27, before the slips of its second sentence and its floor, which
+  # 05b_schedule_13_ei_excluded_slips.yaml applies.
+  - name: core/sum
     consumes:
       parts:
         - ca/net_partnership_income
         - ca/net_self_employment_income
     produces:
-      output: ca/ei_self_employment_earnings
+      output: ca/ei_self_employment_before_slips
+  # Schedule 13 line 4 "Add lines 1 to 3. Net self-employment income": line 2 and line 54493 (a
+  # corporation controlled by the filer) and line 3 and line 54494 (tax-exempt self-employment
+  # income) follow line 1.
   - name: core/sum
     consumes:
       parts:
