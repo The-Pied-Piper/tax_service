@@ -86,6 +86,7 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
     TOP_UP_THRESHOLD,
+    TOSI_ADJUSTED_TAXABLE_INCOME,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_TUITION_AVAILABLE,
     TUITION_AVAILABLE_TO_TRANSFER,
@@ -93,6 +94,7 @@ from app.jurisdictions.ca.catalog import (
     TUITION_INCOME_BASE,
     TUITION_INCOME_LESS_CREDITS,
     TUITION_INCOME_REMAINING,
+    TUITION_INCOME_WITH_TOSI,
     TUITION_TRANSFER_ELECTED,
     TUITION_TRANSFER_LIMIT,
     TUITION_TRANSFERRED,
@@ -182,6 +184,7 @@ def test_the_non_refundable_credits_kinds_are_the_registered_ones(
     assert registry.get("ca/top_up_tax_credit") is TOP_UP_TAX_CREDIT
     assert registry.get("ca/federal_tax_on_split_income") is FEDERAL_TAX_ON_SPLIT_INCOME
     assert registry.get("ca/federal_tax_with_split_income") is FEDERAL_TAX_WITH_SPLIT_INCOME
+    assert registry.get("ca/tosi_adjusted_taxable_income") is TOSI_ADJUSTED_TAXABLE_INCOME
     assert registry.get("ca/canadian_tuition_fees") is CANADIAN_TUITION_FEES
     assert registry.get("ca/canada_training_credit_limit") is CANADA_TRAINING_CREDIT_LIMIT
     assert registry.get("ca/canada_training_credit_claimed") is CANADA_TRAINING_CREDIT_CLAIMED
@@ -195,6 +198,7 @@ def test_the_non_refundable_credits_kinds_are_the_registered_ones(
     assert registry.get("ca/current_year_tuition_available") is CURRENT_YEAR_TUITION_AVAILABLE
     assert registry.get("ca/total_tuition_available") is TOTAL_TUITION_AVAILABLE
     assert registry.get("ca/tuition_income_base") is TUITION_INCOME_BASE
+    assert registry.get("ca/tuition_income_with_tosi") is TUITION_INCOME_WITH_TOSI
     assert registry.get("ca/credit_amounts_subtotal") is CREDIT_AMOUNTS_SUBTOTAL
     assert registry.get("ca/tuition_income_less_credits") is TUITION_INCOME_LESS_CREDITS
     assert registry.get("ca/unused_tuition_claimed") is UNUSED_TUITION_CLAIMED
@@ -306,6 +310,8 @@ def test_the_non_refundable_credits_kinds_are_money() -> None:
         CURRENT_YEAR_TUITION_AVAILABLE,
         TOTAL_TUITION_AVAILABLE,
         TUITION_INCOME_BASE,
+        TOSI_ADJUSTED_TAXABLE_INCOME,
+        TUITION_INCOME_WITH_TOSI,
         CREDIT_AMOUNTS_SUBTOTAL,
         TUITION_INCOME_LESS_CREDITS,
         UNUSED_TUITION_CLAIMED,
@@ -362,6 +368,8 @@ def test_the_tuition_and_transfer_kinds_are_non_negative(registry: ArtifactRegis
         CURRENT_YEAR_TUITION_AVAILABLE,
         TOTAL_TUITION_AVAILABLE,
         TUITION_INCOME_BASE,
+        TOSI_ADJUSTED_TAXABLE_INCOME,
+        TUITION_INCOME_WITH_TOSI,
         CREDIT_AMOUNTS_SUBTOTAL,
         TUITION_INCOME_LESS_CREDITS,
         UNUSED_TUITION_CLAIMED,

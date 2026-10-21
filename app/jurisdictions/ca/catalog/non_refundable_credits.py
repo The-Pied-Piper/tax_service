@@ -143,6 +143,18 @@ your return on line 11 if it is $57,375 or less. If it is more than $57,375, ent
 the following calculation: Amount from line 76 of your return divided by 14.5% =": the taxable
 income, or the federal basic tax divided by 14.5% above the threshold."""
 
+TOSI_ADJUSTED_TAXABLE_INCOME = CATALOG.declare(
+    "tosi_adjusted_taxable_income", Decimal, non_negative=True
+)
+"""TOSI-adjusted taxable income, Form T1206 Part 2 line 8A "TOSI-adjusted taxable income Amount
+from line 8 ÷ 14.5% =": the federal tax on split income divided by 14.5%, which is added to the
+amount on line 11 of Schedule 11."""
+
+TUITION_INCOME_WITH_TOSI = CATALOG.declare("tuition_income_with_tosi", Decimal, non_negative=True)
+"""Income base for the tuition amount with the TOSI-adjusted taxable income, Schedule 11 line 11
+plus Form T1206 line 8A "If you are completing a federal Schedule 11, calculate line 8A and add it
+to the amount on line 11 of Schedule 11": the amount that line 13 "Line 11 minus line 12" reads."""
+
 CREDIT_AMOUNTS_SUBTOTAL = CATALOG.declare("credit_amounts_subtotal", Decimal, non_negative=True)
 """Credit amounts subtotal, T1 line 101 "Add lines 98 to 100. =", which Schedule 11 line 12 "Enter
 the amount from line 101 of your return" reads: the credit amounts of the lines wired up to line
