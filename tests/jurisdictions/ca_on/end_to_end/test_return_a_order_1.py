@@ -292,6 +292,7 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_THRESHOLD,
     TOSI_ADJUSTED_NET_INCOME,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
+    TOSI_ADJUSTED_TAXABLE_INCOME,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
@@ -302,6 +303,9 @@ from app.jurisdictions.ca.catalog import (
     TRAVEL_TOTAL_ZONE_A,
     TRAVEL_TOTAL_ZONE_B,
     TRAVEL_ZONE_B_DEDUCTION,
+    TUITION_INCOME_BASE,
+    TUITION_INCOME_LESS_CREDITS,
+    TUITION_INCOME_WITH_TOSI,
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
@@ -376,7 +380,7 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 558
+    assert len(order) == 576
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -609,6 +613,11 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[TOTAL_SPLIT_INCOME] < position[FEDERAL_TAX_ON_SPLIT_INCOME]
     assert position[FEDERAL_BASIC_TAX] < position[FEDERAL_TAX_WITH_SPLIT_INCOME]
     assert position[FEDERAL_TAX_ON_SPLIT_INCOME] < position[FEDERAL_TAX_WITH_SPLIT_INCOME]
+    # Line 8A divides line 8, and Schedule 11 line 11 plus it is what line 13 reads.
+    assert position[FEDERAL_TAX_ON_SPLIT_INCOME] < position[TOSI_ADJUSTED_TAXABLE_INCOME]
+    assert position[TOSI_ADJUSTED_TAXABLE_INCOME] < position[TUITION_INCOME_WITH_TOSI]
+    assert position[TUITION_INCOME_BASE] < position[TUITION_INCOME_WITH_TOSI]
+    assert position[TUITION_INCOME_WITH_TOSI] < position[TUITION_INCOME_LESS_CREDITS]
     assert position[FEDERAL_TAX_WITH_SPLIT_INCOME] < position[FEDERAL_TAX_AFTER_CREDITS]
     assert position[TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO] < position[BASIC_PERSONAL_AMOUNT]
     assert position[TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO] < position[AGE_INCOME_OVER_THRESHOLD]

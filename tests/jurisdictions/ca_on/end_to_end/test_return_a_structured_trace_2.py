@@ -72,6 +72,9 @@ from app.jurisdictions.ca.catalog import (
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DEPRECIABLE_GIFTS,
     DISABILITY_AMOUNT_FOR_SELF,
+    DISABILITY_SELF_BASE_AMOUNT,
+    DISABILITY_SELF_SUPPLEMENT,
+    DISABILITY_SELF_WORKSHEET_AMOUNT,
     DISABILITY_SUPPORTS_DEDUCTION,
     DISABILITY_TRANSFERRED_AMOUNT,
     DIVIDEND_TAX_CREDIT,
@@ -384,6 +387,7 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_TAX_CREDIT,
     TOSI_ADJUSTED_NET_INCOME,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
+    TOSI_ADJUSTED_TAXABLE_INCOME,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
     TOTAL_CARRYING_CHARGES,
     TOTAL_CHARITABLE_DONATIONS,
@@ -397,6 +401,8 @@ from app.jurisdictions.ca.catalog import (
     TRAVEL_DEDUCTION,
     TRAVEL_TOTAL_ZONE_A,
     TRAVEL_ZONE_B_DEDUCTION,
+    TUITION_INCOME_BASE,
+    TUITION_INCOME_WITH_TOSI,
     TUITION_TRANSFERRED_FROM_CHILD,
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
@@ -452,6 +458,22 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        ontario.DISABILITY_SELF_WORKSHEET_AMOUNT: SumLine(
+            ontario.DISABILITY_SELF_WORKSHEET_AMOUNT,
+            (
+                (ontario.DISABILITY_SELF_BASE_AMOUNT, D("10298.00")),
+                (ontario.DISABILITY_SELF_SUPPLEMENT, D("6007.00")),
+            ),
+            D("16305.00"),
+        ),
+        DISABILITY_SELF_WORKSHEET_AMOUNT: SumLine(
+            DISABILITY_SELF_WORKSHEET_AMOUNT,
+            (
+                (DISABILITY_SELF_BASE_AMOUNT, D("10138.00")),
+                (DISABILITY_SELF_SUPPLEMENT, D("5914.00")),
+            ),
+            D("16052.00"),
+        ),
         # Federal Worksheet "Line 23500" for Return A, whose chart does not apply: line 3 "Line 1
         # plus line 2" (lines 11300 and 14600), line 6 (line 23400 plus the T1206 line 4), line 10
         # "Add lines 7 to 9", line 14 "Line 12 plus line 13", line 15 "Line 11 plus line 14" and
@@ -1075,6 +1097,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
                 (CANADA_EMPLOYMENT_AMOUNT, D("1471")),
+                (DISABILITY_AMOUNT_FOR_SELF, D("0")),
                 (DISABILITY_TRANSFERRED_AMOUNT, D("0")),
                 (FEDERAL_TUITION_AMOUNT, D("0")),
                 (TUITION_TRANSFERRED_FROM_CHILD, D("0")),
@@ -1107,6 +1130,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
+                (ontario.DISABILITY_AMOUNT_FOR_SELF, D("0")),
                 (ontario.DISABILITY_TRANSFERRED_AMOUNT, D("0")),
             ),
             D("17180.58"),
@@ -1126,6 +1150,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
+                (ontario.DISABILITY_AMOUNT_FOR_SELF, D("0")),
                 (ontario.DISABILITY_TRANSFERRED_AMOUNT, D("0")),
                 (ontario.UNUSED_TUITION_CLAIMED, D("0")),
                 (ontario.AMOUNTS_TRANSFERRED_FROM_SPOUSE, D("0")),
@@ -1812,6 +1837,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             total=D("0"),
         ),
+        # Form T1206 "calculate line 8A and add it to the amount on line 11 of Schedule 11": Return
+        # A has no split income, so line 8A is 0.00 and line 11 stands (the tax divided by 14.5%).
+        TUITION_INCOME_WITH_TOSI: SumLine(
+            output=TUITION_INCOME_WITH_TOSI,
+            parts=(
+                (TUITION_INCOME_BASE, D("138939.66")),
+                (TOSI_ADJUSTED_TAXABLE_INCOME, D("0.00")),
+            ),
+            total=D("138939.66"),
+        ),
         CREDIT_AMOUNTS_SUBTOTAL: SumLine(
             output=CREDIT_AMOUNTS_SUBTOTAL,
             parts=(
@@ -1827,6 +1862,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
                 (CANADA_EMPLOYMENT_AMOUNT, D("1471.00")),
+                (DISABILITY_AMOUNT_FOR_SELF, D("0")),
                 (DISABILITY_TRANSFERRED_AMOUNT, D("0")),
             ),
             total=D("22033.58"),

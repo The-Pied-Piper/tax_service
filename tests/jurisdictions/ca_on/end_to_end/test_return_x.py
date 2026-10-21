@@ -187,6 +187,7 @@ def test_return_xs_trace_names_each_step_and_each_dependant() -> None:
         "+ caregiver_amount 0 + infirm_children_amount 0 + cpp_base_contributions 2202.75 "
         "+ cpp_base_contributions_on_self_employment 0 + ei_premiums 787.2 "
         "+ ei_premiums_on_self_employment 0 + canada_employment_amount 1471 "
+        "+ disability_amount_for_self 0 "
         "+ disability_transferred_amount 0 + federal_tuition_amount 0 + "
         "tuition_transferred_from_child 0 + amounts_transferred_from_spouse 0 + medical_claim "
         "5773.35 = 26363.3",
@@ -295,6 +296,7 @@ def test_return_xs_ontario_trace_names_each_step_and_each_dependant() -> None:
         "+ spouse_amount 0 + eligible_dependant_amount 0 + caregiver_amount 0 "
         "+ cpp_base_contributions 2202.75 + cpp_base_contributions_on_self_employment 0 "
         "+ ei_premiums 787.2 + ei_premiums_on_self_employment 0 "
+        "+ disability_amount_for_self 0 "
         "+ disability_transferred_amount 0 + unused_tuition_claimed 0 "
         "+ amounts_transferred_from_spouse 0 "
         "+ medical_claim 5773.35 = 21510.3",
