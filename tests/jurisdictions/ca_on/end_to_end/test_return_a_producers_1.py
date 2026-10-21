@@ -45,6 +45,7 @@ from app.jurisdictions.ca.capabilities.short_term_rental_gross_rents import (
 from app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_expenses import (
     ShortTermRentalNonCompliantExpenses,
 )
+from app.jurisdictions.ca.capabilities.sign_chosen_difference import SignChosenDifference
 from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
@@ -68,9 +69,12 @@ from app.jurisdictions.ca.catalog import (
     AGE_REDUCTION,
     AGED_18_OR_OLDER_AT_END_OF_2025,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_ADJUSTED_INCOME_WITH_GAINS,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
     AMT_APPLICABLE_RATE_AMOUNT,
+    AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
+    AMT_CAPITAL_GAINS_DIFFERENCE,
     AMT_DEDUCTIONS_TOTAL,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
@@ -862,6 +866,9 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS), Sum)
     assert isinstance(worksheet.producer_of(AMT_CAPITAL_GAINS_ADJUSTMENTS), Sum)
     assert isinstance(worksheet.producer_of(AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_CAPITAL_GAINS_DIFFERENCE), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_CAPITAL_GAINS_ADDED), SignChosenDifference)
+    assert isinstance(worksheet.producer_of(AMT_ADJUSTED_INCOME_WITH_GAINS), Sum)
     assert isinstance(worksheet.producer_of(AMT_PUBLICLY_LISTED_GIFTS_NET), Subtract)
     assert isinstance(worksheet.producer_of(AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT), ApplyRate)
     assert isinstance(worksheet.producer_of(AMT_SECURITY_OPTIONS_D_TOTAL), Sum)

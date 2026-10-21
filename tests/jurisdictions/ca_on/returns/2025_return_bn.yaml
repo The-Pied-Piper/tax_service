@@ -179,3 +179,7 @@ expected:
   ca/cpp_second_additional_earnings_maximum: "9900.00"
   ca-on/ontario_tax_less_dividend_credit: "2435.32"
   ca/refund_or_balance_owing: "8538.54"
+  ca/amt_adjusted_income_with_gains: "59435.00"
+  ca/amt_other_years_losses_total: "0"
+  ca/amt_security_options_d1_total: "0"
+  ca/amt_security_options_net: "0"

@@ -1718,6 +1718,9 @@ REGISTERED = frozenset(
         "ca/amt_office_expenses_adjustment",
         "ca/amt_adjustments_before_rate_total",
         "ca/amt_applicable_rate_amount",
+        "ca/amt_capital_gains_difference",
+        "ca/amt_capital_gains_added",
+        "ca/amt_adjusted_income_with_gains",
     }
 )
 
@@ -1957,6 +1960,9 @@ SIGNED = frozenset(
         "ca/amt_office_expenses_adjustment",
         "ca/amt_adjustments_before_rate_total",
         "ca/amt_applicable_rate_amount",
+        "ca/amt_capital_gains_difference",
+        "ca/amt_capital_gains_added",
+        "ca/amt_adjusted_income_with_gains",
     }
 )
 
