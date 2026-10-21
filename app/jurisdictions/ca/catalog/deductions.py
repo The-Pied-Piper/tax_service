@@ -372,6 +372,74 @@ OTHER_SPLIT_INCOME = CATALOG.declare("other_split_income", Decimal, non_negative
 """Other split income, Form T1206 Part 1 line 3 "All other split income (see "Split income" on page
 1)": a starting amount."""
 
+CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS = CATALOG.declare(
+    "cpp_t4_base_and_first_additional_contributions", Decimal, non_negative=True
+)
+"""Total actual base and first additional contributions, Schedule 8 Part 3 line 8 and line 50340
+"Total actual base and first additional contributions on CPP pensionable earnings from box 16 of
+all of your T4 slips": the amount the filer enters from the T4 slips, a starting amount.
+"""
+
+CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS = CATALOG.declare(
+    "cpp_t4_second_additional_contributions", Decimal, non_negative=True
+)
+"""Total actual second additional contributions, Schedule 8 Part 3 line 21 and line 50341 "Total
+actual second additional contributions on CPP pensionable earnings from box 16A of all of your T4
+slips": the amount the filer enters from the T4 slips, a starting amount.
+"""
+
+CPP_ACTUAL_BASE_CONTRIBUTIONS = CATALOG.declare(
+    "cpp_actual_base_contributions", Decimal, non_negative=True
+)
+"""Actual base contributions on CPP pensionable earnings, Schedule 8 Part 3 line 9 "amount from
+line 8 multiplied by 83.1933% =": the share of the T4 base and first additional contributions that
+is the base contributions, to the cent. Line 14 is "Amount from line 9"."""
+
+CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS = CATALOG.declare(
+    "cpp_actual_first_additional_contributions", Decimal, non_negative=True
+)
+"""Actual first additional contributions on CPP pensionable earnings, Schedule 8 Part 3 line 10
+"Line 8 minus line 9 =": the rest of the T4 base and first additional contributions. Line 17 is
+"Amount from line 10"."""
+
+CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS = CATALOG.declare(
+    "cpp_required_base_and_first_additional_contributions", Decimal, non_negative=True
+)
+"""Required base and first additional contributions on pensionable earnings, Schedule 8 Part 3
+line 13 "Line 11 plus line 12 =": the required base and first additional contributions on the
+employment income, the sum of the two required tiers."""
+
+CPP_BASE_CONTRIBUTIONS_DIFFERENCE = CATALOG.declare("cpp_base_contributions_difference", Decimal)
+"""Base contributions difference, Schedule 8 Part 3 line 16 "Line 14 minus line 15 (if negative,
+show in brackets) =": the actual base contributions (line 14, "Amount from line 9") less the
+required base contributions (line 15, "Amount from line 11"). A negative amount is a shortfall."""
+
+CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE = CATALOG.declare(
+    "cpp_first_additional_contributions_difference", Decimal
+)
+"""First additional contributions difference, Schedule 8 Part 3 line 19 "Line 17 minus line 18 (if
+negative, show in brackets) =": the actual first additional contributions (line 17, "Amount from
+line 10") less the required first additional contributions (line 18, "Amount from line 12")."""
+
+CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE = CATALOG.declare(
+    "cpp_base_and_first_additional_contributions_difference", Decimal
+)
+"""Base and first additional contributions difference, Schedule 8 Part 3 line 20 "Line 16 plus
+line 19 (if negative, show in brackets) =": the line 16 and line 19 differences together."""
+
+CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE = CATALOG.declare(
+    "cpp_second_additional_contributions_difference", Decimal
+)
+"""Second additional contributions difference, Schedule 8 Part 3 line 23 "Line 21 minus line 22
+(if negative, show in brackets) =": the actual second additional contributions (line 21, the T4
+box 16A total) less the required second additional contributions (line 22)."""
+
+CPP_CONTRIBUTIONS_DIFFERENCE = CATALOG.declare("cpp_contributions_difference", Decimal)
+"""Contributions difference, Schedule 8 Part 3 line 24 "Line 20 plus line 23 (if negative, show in
+brackets) =": the total of the contributions deducted above (positive) or below (negative) the
+required ones. When it is positive, Part 3a line 29 "Enter the amount from line 24." carries it to
+line 44800 of the return, the CPP overpayment."""
+
 CPP_MAXIMUM_PENSIONABLE_EARNINGS = CATALOG.declare(
     "cpp_maximum_pensionable_earnings", Decimal, non_negative=True
 )

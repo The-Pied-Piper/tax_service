@@ -191,10 +191,20 @@ from app.jurisdictions.ca.catalog import (
     CHILDREN_SEVEN_TO_SIXTEEN,
     CHILDREN_UNDER_SEVEN,
     CHILDREN_WITH_DISABILITY,
+    CPP_ACTUAL_BASE_CONTRIBUTIONS,
+    CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_PART_4_COMPLETED,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+    CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+    CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CURRENT_YEAR_TUITION_AVAILABLE,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DISABILITY_AMOUNT_FOR_SELF,
@@ -528,6 +538,42 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     gated = {line.output: line for line in trace if isinstance(line, ThresholdGateLine)}
     fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
     assert subtracted == {
+        # Schedule 8 Part 3 line 10 "Line 8 minus line 9".
+        CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS: SubtractedLine(
+            CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("4034.10"),
+            CPP_ACTUAL_BASE_CONTRIBUTIONS,
+            D("3356.10"),
+            D("678.00"),
+        ),
+        # Schedule 8 Part 3 line 16 "Line 14 minus line 15".
+        CPP_BASE_CONTRIBUTIONS_DIFFERENCE: SubtractedLine(
+            CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
+            CPP_ACTUAL_BASE_CONTRIBUTIONS,
+            D("3356.10"),
+            CPP_BASE_CONTRIBUTIONS,
+            D("3356.10"),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3 line 19 "Line 17 minus line 18".
+        CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE: SubtractedLine(
+            CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("678.00"),
+            CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("678.00"),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3 line 23 "Line 21 minus line 22".
+        CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE: SubtractedLine(
+            CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            D("396.00"),
+            CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            D("396.00"),
+            D("0.00"),
+        ),
         # Form T2125 Chart C line 26 "Amount 25: amount 21" (printed with a subtraction sign): line
         # 25 is 0 for Return A (no leased vehicle), and amount 21 is 0.
         BUSINESS_VEHICLE_LEASE_CHARGES_NET: SubtractedLine(

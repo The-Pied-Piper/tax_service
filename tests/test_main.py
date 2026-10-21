@@ -40,8 +40,8 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1026
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1026
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1034
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1034
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -727,6 +727,16 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/cpp_first_additional_contributions",
         "ca/cpp_second_additional_contributions",
         "ca/cpp_enhanced_contributions",
+        "ca/cpp_t4_base_and_first_additional_contributions",
+        "ca/cpp_t4_second_additional_contributions",
+        "ca/cpp_actual_base_contributions",
+        "ca/cpp_actual_first_additional_contributions",
+        "ca/cpp_required_base_and_first_additional_contributions",
+        "ca/cpp_base_contributions_difference",
+        "ca/cpp_first_additional_contributions_difference",
+        "ca/cpp_base_and_first_additional_contributions_difference",
+        "ca/cpp_second_additional_contributions_difference",
+        "ca/cpp_contributions_difference",
         "ca/exploration_and_development_expenses",
         "ca/other_deductions",
         "ca/split_income_dividends",
@@ -1844,15 +1854,15 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1026
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1026
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1034
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1034
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1026
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1026
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1034
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1034
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
