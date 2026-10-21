@@ -45,6 +45,8 @@ from app.jurisdictions.ca.catalog import (
     AGE_MAXIMUM,
     AGED_18_OR_OLDER_AT_END_OF_2025,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    AMT_AMOUNT_A_MINUS_AMOUNT_B,
+    AMT_BASIC_EXEMPTION,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DIFFERENCE,
@@ -58,6 +60,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_PUBLICLY_LISTED_GIFTS_T1170_LINE_68231,
     AMT_PUBLICLY_LISTED_GIFTS_TOTAL,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
     ANNUAL_GAINS_LINE_3,
     ANNUAL_GAINS_LINE_3_AT_INCLUSION_RATE,
     ANNUAL_GAINS_LINE_5,
@@ -519,6 +523,8 @@ from app.jurisdictions.ca.catalog import (
     T657_PART_2_EXCLUDED_G,
     T657_PART_2_EXCLUDED_H,
     TAXABLE_CAPITAL_GAINS,
+    TAXABLE_DIVIDENDS,
+    TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     TOP_UP_THRESHOLD,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOTAL_CREDITS,
@@ -1659,6 +1665,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
+        # Form T691 Part 1 "Amount A minus Amount B": A is line 12000 of the return, 0, and B is
+        # line 12010 of the return, 0.
+        AMT_AMOUNT_A_MINUS_AMOUNT_B: SubtractedLine(
+            output=AMT_AMOUNT_A_MINUS_AMOUNT_B,
+            minuend=TAXABLE_DIVIDENDS,
+            minuend_amount=D("0"),
+            subtrahend=TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T691 Part 1 line 91 "line 89 minus line 90": 0 less the amount from line 25395, 0.
+        AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE: SubtractedLine(
+            output=AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
+            minuend=AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
+            minuend_amount=D("0"),
+            subtrahend=QBT_CAPITAL_GAINS_DEDUCTION,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
     }
     assert tapered == {
         BASIC_PERSONAL_AMOUNT: TaperedAmountLine(
@@ -2077,6 +2102,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rounding=CENT,
             value=D("1.00"),
         ),
+        # Form T691 Part 1 line 94 "Basic exemption" 177,882.00, a printed amount.
+        AMT_BASIC_EXEMPTION: CreditAmountLine(
+            AMT_BASIC_EXEMPTION, Credit(amount=D("177882.00")), CENT, D("177882.00")
+        ),
     }
     assert per_unit == {
         # Form T2222 lines 1, 2, 6 and 7 "multiplied by $11.00" and "multiplied by $5.50": Return A
@@ -2426,6 +2455,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             base=OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
             base_amount=D("0"),
             fraction=Fraction(115, 100),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        # Form T691 Part 1 line 89 "× 2" of the amount from line 25395 of the return, 0.
+        AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED: FractionAppliedLine(
+            output=AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
+            base=QBT_CAPITAL_GAINS_DEDUCTION,
+            base_amount=D("0"),
+            fraction=Fraction(2, 1),
             rounding=CENT,
             result=D("0"),
         ),

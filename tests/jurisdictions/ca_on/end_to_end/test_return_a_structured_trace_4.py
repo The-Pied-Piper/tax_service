@@ -48,9 +48,17 @@ from app.jurisdictions.ca.catalog import (
     AGE_MAXIMUM,
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_ADJUSTED_TAXABLE_INCOME,
+    AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
+    AMT_BASIC_EXEMPTION,
+    AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
+    AMT_CREDITS_ADJUSTMENTS_TOTAL,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
+    AMT_GROSS_MINIMUM_AMOUNT,
+    AMT_MINIMUM_AMOUNT,
+    AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_RENTAL_PROPERTY_INCOME_BEFORE_CCA,
@@ -3597,6 +3605,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             minuend_amount=D("0"),
             subtrahend=FISH_HOME_INCOME_LIMIT,
             subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T691 Part 1 line 93 "Line 83 minus line 92 (if negative, enter "0")": 126537.00
+        # less 0.
+        AMT_ADJUSTED_TAXABLE_INCOME: SubtractedNotBelowZeroLine(
+            output=AMT_ADJUSTED_TAXABLE_INCOME,
+            minuend=AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
+            minuend_amount=D("126537.00"),
+            subtrahend=AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
+            subtrahend_amount=D("0"),
+            result=D("126537.00"),
+        ),
+        # Form T691 Part 1 line 95 "Line 93 minus line 94 (if negative, enter "0")": 126537.00
+        # less 177882.00 is below zero, so 0.
+        AMT_NET_ADJUSTED_TAXABLE_INCOME: SubtractedNotBelowZeroLine(
+            output=AMT_NET_ADJUSTED_TAXABLE_INCOME,
+            minuend=AMT_ADJUSTED_TAXABLE_INCOME,
+            minuend_amount=D("126537.00"),
+            subtrahend=AMT_BASIC_EXEMPTION,
+            subtrahend_amount=D("177882.00"),
+            result=D("0"),
+        ),
+        # Form T691 Part 1 line 103 "Line 97 minus line 102 (if negative, enter "0")": 0 less
+        # 1597.44 is below zero, so 0.
+        AMT_MINIMUM_AMOUNT: SubtractedNotBelowZeroLine(
+            output=AMT_MINIMUM_AMOUNT,
+            minuend=AMT_GROSS_MINIMUM_AMOUNT,
+            minuend_amount=D("0"),
+            subtrahend=AMT_CREDITS_ADJUSTMENTS_TOTAL,
+            subtrahend_amount=D("1597.44"),
             result=D("0"),
         ),
     }
