@@ -8,12 +8,12 @@ capabilities:
       output: ca/chart_2024_period_1_amount_a
   # Chart 2024 Period 1 "Amount A minus amount B" C (B "Enter the last amount that you calculated for
   # "Total amount of capital gains included in 2025 income eligible for the capital gains deduction" from
-  # 2016 to 2023. If you did not complete charts for 2016 to 2023, enter "0"."). The form prints no
+  # 2016 to 2023: Chart 2023's total carried, or "0" if no chart is completed. The form prints no
   # floor; floored at 0 here, an assumption to be confirmed.
   - name: core/subtract_not_below_zero
     consumes:
       amount: ca/chart_2024_period_1_amount_a
-      less: ca/t657_chart_2024_period_1_amount_b
+      less: ca/chart_2023_total_carried
     produces:
       output: ca/chart_2024_period_1_amount_c
   # Chart 2024 Period 1 "Capital gains deduction available for dispositions of QFFP and/or QSBCS:
@@ -64,12 +64,13 @@ capabilities:
         - ca/chart_2024_period_1_amount_k
     produces:
       output: ca/chart_2024_period_1_amount_l
-  # Chart 2024 Period 1 "Amount L plus amount M" N (M "Enter amount B from above.").
+  # Chart 2024 Period 1 "Amount L plus amount M" N (M "Enter amount B from above.", Chart 2023's total
+  # carried).
   - name: core/sum
     consumes:
       parts:
         - ca/chart_2024_period_1_amount_l
-        - ca/t657_chart_2024_period_1_amount_b
+        - ca/chart_2023_total_carried
     produces:
       output: ca/chart_2024_period_1_amount_n
   # Chart 2024 Period 1 "Enter whichever is less: line 21 of Step 1, line 19 of Step 2 or amount N
