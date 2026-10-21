@@ -12,7 +12,7 @@ from app.domain.capability import Capability, CapabilityResult, capability
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
-from app.jurisdictions.ca.trace.percentages import PercentageAppliedLine
+from app.domain.trace import PercentageAppliedLine
 
 
 @capability(identifier="apply_percentage")

@@ -39,7 +39,6 @@ HOMES: dict[str, tuple[str, ...]] = {
         "DispositionGainOnlyLine",
         "DispositionProceedsLine",
     ),
-    "percentages": ("PercentageAppliedLine",),
     "rentals": (
         "ShortTermRentalNonCompliantLine",
         "ShortTermRentalNonCompliantCcaLine",

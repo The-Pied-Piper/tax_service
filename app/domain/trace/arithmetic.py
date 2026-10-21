@@ -34,6 +34,7 @@ __all__ = [
     "MultipleOverLine",
     "AtMostLine",
     "FractionAppliedLine",
+    "PercentageAppliedLine",
     "RatioAppliedLine",
     "TimesCountLine",
     "QuotientLine",
@@ -312,6 +313,28 @@ class FractionAppliedLine(TraceLine):
     @property
     def amount(self) -> Decimal:
         """The rounded product."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class PercentageAppliedLine(TraceLine):
+    """The `result` produced as `output` by `amount_kind` (worth `amount_value`) ×
+    `percentage_kind` (worth `percentage_value`) / 100, rounded once with `rounding`.
+
+    Its own class, not a `RateAppliedLine`: the percentage is an artifact, not a dataset's rate,
+    so the line names the kind it came from.
+    """
+
+    output: Money
+    amount_kind: Money
+    amount_value: Decimal
+    percentage_kind: Money
+    percentage_value: Decimal
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
         return self.result
 
 

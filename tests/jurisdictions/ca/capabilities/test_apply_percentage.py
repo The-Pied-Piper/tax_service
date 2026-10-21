@@ -6,7 +6,7 @@ allocated to you" is a number the filer enters as printed (50 for 50%). It mirro
 `Decimal` slots, `amount` and `percentage`, and one produced slot `output`. The output is
 `rounding.apply(amount × percentage / 100)`, formed as an exact fraction and rounded once by the
 dataset's rule. A percentage above 100 is not capped. It records one `PercentageAppliedLine` (new;
-in `app.jurisdictions.ca.trace.percentages`) with the output, the amount's kind and value, the
+in `app.domain.trace`) with the output, the amount's kind and value, the
 percentage's kind and value, the rounding rule and the result, in that order.
 """
 
@@ -23,8 +23,8 @@ from app.domain.errors import InvalidCapabilityError, MissingArtifactError
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
+from app.domain.trace import PercentageAppliedLine
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
-from app.jurisdictions.ca.trace.percentages import PercentageAppliedLine
 
 D = Decimal
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
