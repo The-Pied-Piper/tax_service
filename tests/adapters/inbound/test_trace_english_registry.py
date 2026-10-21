@@ -214,6 +214,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_renderers() -> None:
         "app.jurisdictions.ca.trace.gains.DispositionGainOnlyLine",
         "app.jurisdictions.ca.trace.gains.DispositionProceedsLine",
         "app.jurisdictions.ca.trace.gains.PrincipalResidenceGainLine",
+        "app.domain.trace.arithmetic.PercentageAppliedLine",
         "app.jurisdictions.ca.trace.rentals.ShortTermRentalNonCompliantCcaByClassLine",
         "app.jurisdictions.ca.trace.rentals.ShortTermRentalNonCompliantCcaLine",
         "app.jurisdictions.ca.trace.rentals.ShortTermRentalNonCompliantLine",

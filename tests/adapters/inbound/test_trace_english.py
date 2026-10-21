@@ -51,6 +51,7 @@ from app.domain.trace import (
     ItemSumLine,
     LesserOfLine,
     MultipleOverLine,
+    PercentageAppliedLine,
     PerUnitAmountLine,
     QuotientLine,
     RateAppliedLine,
@@ -2335,6 +2336,63 @@ def test_renders_a_condition_without_a_namespace_in_any_label() -> None:
     line = ConditionLine(CONDITION_GATE, 1, "text", ((CONDITION_FLAG, 1),), False)
 
     assert "ex/" not in render(line)
+
+
+# --- a percentage of an artifact applied -----------------------------------------------
+#
+# The percentage prints as entered, with its label, then the amount, then the result and the
+# rounding rule in parentheses.
+
+
+ELECTED_PERCENTAGE = ArtifactKind("ex/elected_percentage", Decimal)
+
+
+def test_renders_a_percentage_applied_rounded() -> None:
+    line = PercentageAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("600000"),
+        ELECTED_PERCENTAGE,
+        D("50"),
+        CENT,
+        D("300000"),
+    )
+
+    assert render(line) == (
+        "credit_share: elected_percentage 50% of tax_payable 600000 = 300000 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_percentage_applied_without_rounding() -> None:
+    line = PercentageAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("14000"),
+        ELECTED_PERCENTAGE,
+        D("10"),
+        NO_ROUNDING,
+        D("1400"),
+    )
+
+    assert render(line) == (
+        "credit_share: elected_percentage 10% of tax_payable 14000 = 1400 (no rounding)"
+    )
+
+
+def test_renders_a_negative_percentage_applied_with_every_digit() -> None:
+    line = PercentageAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("-250.75"),
+        ELECTED_PERCENTAGE,
+        D("1.5"),
+        NO_ROUNDING,
+        D("-3.76125"),
+    )
+
+    assert render(line) == (
+        "credit_share: elected_percentage 1.5% of tax_payable -250.75 = -3.76125 (no rounding)"
+    )
 
 
 # --- a ratio of two artifacts applied --------------------------------------------------

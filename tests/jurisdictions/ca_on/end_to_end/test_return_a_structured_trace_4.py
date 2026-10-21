@@ -187,6 +187,30 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_2_LINE_3,
     POLITICAL_CREDIT_COLUMN_3_LINE_2,
     POLITICAL_CREDIT_COLUMN_3_LINE_3,
+    QBT_2025_RESERVE,
+    QBT_ABIL_AND_NET_INVESTMENT_LOSS,
+    QBT_ALLOCATION_LIMIT,
+    QBT_CAPITAL_GAINS_DEDUCTION,
+    QBT_CAPITAL_GAINS_WITH_2024_RESERVE,
+    QBT_CHART_A_NET_CAPITAL_LOSSES_USED,
+    QBT_CHART_A_NET_INVESTMENT_LOSS,
+    QBT_DEDUCTION_AVAILABLE,
+    QBT_DEDUCTION_BASE,
+    QBT_DEDUCTION_CLAIMED,
+    QBT_DEDUCTION_LIMIT,
+    QBT_INVESTMENT_EXPENSES,
+    QBT_INVESTMENT_INCOME,
+    QBT_MAXIMUM_DEDUCTION,
+    QBT_NET_CAPITAL_LOSSES_REMAINING,
+    QBT_NET_RENTAL_INCOME,
+    QBT_PRIOR_YEARS_CLAIMS,
+    QBT_REDUCTION_AMOUNT,
+    QBT_REDUCTIONS_FROM_LOSSES,
+    QBT_TAXABLE_AMOUNT_ALLOCATED,
+    QBT_TAXABLE_CAPITAL_GAINS,
+    QBT_TAXABLE_GAINS_LIMIT,
+    QBT_TAXABLE_GAINS_NOT_LIMITED,
+    QBT_TOTAL_CAPITAL_GAINS,
     REFUND,
     RENTAL_CCA_CLAIM,
     RENTAL_CCA_CLAIM_BEFORE_LIMIT,
@@ -609,6 +633,28 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             result=D("0"),
         ),
+        # Form T2048 (line 25395) and Chart A: Return A enters nothing on the form, so its lines
+        # are 0 (or, where they read another line, that line's figure).
+        QBT_TAXABLE_GAINS_LIMIT: LesserOfLine(
+            QBT_TAXABLE_GAINS_LIMIT,
+            ((TAXABLE_CAPITAL_GAINS, D("10000.00")), (QBT_TAXABLE_CAPITAL_GAINS, D("0.00"))),
+            D("0.00"),
+        ),
+        QBT_DEDUCTION_BASE: LesserOfLine(
+            QBT_DEDUCTION_BASE,
+            ((QBT_DEDUCTION_AVAILABLE, D("0")), (QBT_TAXABLE_GAINS_LIMIT, D("0.00"))),
+            D("0"),
+        ),
+        QBT_MAXIMUM_DEDUCTION: LesserOfLine(
+            QBT_MAXIMUM_DEDUCTION,
+            ((QBT_DEDUCTION_AVAILABLE, D("0")), (QBT_DEDUCTION_LIMIT, D("0"))),
+            D("0"),
+        ),
+        QBT_ALLOCATION_LIMIT: LesserOfLine(
+            QBT_ALLOCATION_LIMIT,
+            ((QBT_REDUCTION_AMOUNT, D("0")), (QBT_ABIL_AND_NET_INVESTMENT_LOSS, D("0.00"))),
+            D("0"),
+        ),
     }
     assert at_most == {
         RRSP_DEDUCTION: AtMostLine(
@@ -657,6 +703,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             amount_value=D("0"),
             bound=TUITION_AVAILABLE_TO_TRANSFER,
             bound_value=D("0"),
+        ),
+        # Form T2048 (line 25395) and Chart A: Return A enters nothing on the form, so its lines
+        # are 0 (or, where they read another line, that line's figure).
+        QBT_CAPITAL_GAINS_DEDUCTION: AtMostLine(
+            QBT_CAPITAL_GAINS_DEDUCTION,
+            QBT_DEDUCTION_CLAIMED,
+            D("0"),
+            QBT_MAXIMUM_DEDUCTION,
+            D("0"),
         ),
     }
     assert tiers == {
@@ -1570,6 +1625,64 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
+        # Form T2048 (line 25395) and Chart A: Return A enters nothing on the form, so its lines
+        # are 0 (or, where they read another line, that line's figure).
+        QBT_DEDUCTION_AVAILABLE: SubtractedNotBelowZeroLine(
+            QBT_DEDUCTION_AVAILABLE,
+            QBT_TAXABLE_AMOUNT_ALLOCATED,
+            D("0.00"),
+            QBT_PRIOR_YEARS_CLAIMS,
+            D("0"),
+            D("0"),
+        ),
+        QBT_TOTAL_CAPITAL_GAINS: SubtractedNotBelowZeroLine(
+            QBT_TOTAL_CAPITAL_GAINS,
+            QBT_CAPITAL_GAINS_WITH_2024_RESERVE,
+            D("0"),
+            QBT_2025_RESERVE,
+            D("0"),
+            D("0"),
+        ),
+        QBT_TAXABLE_GAINS_NOT_LIMITED: SubtractedNotBelowZeroLine(
+            QBT_TAXABLE_GAINS_NOT_LIMITED,
+            TAXABLE_CAPITAL_GAINS,
+            D("10000.00"),
+            QBT_TAXABLE_GAINS_LIMIT,
+            D("0.00"),
+            D("10000.00"),
+        ),
+        QBT_NET_CAPITAL_LOSSES_REMAINING: SubtractedNotBelowZeroLine(
+            QBT_NET_CAPITAL_LOSSES_REMAINING,
+            NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+            D("0"),
+            QBT_TAXABLE_GAINS_NOT_LIMITED,
+            D("10000.00"),
+            D("0"),
+        ),
+        QBT_CHART_A_NET_CAPITAL_LOSSES_USED: SubtractedNotBelowZeroLine(
+            QBT_CHART_A_NET_CAPITAL_LOSSES_USED,
+            NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+            D("0"),
+            QBT_NET_CAPITAL_LOSSES_REMAINING,
+            D("0"),
+            D("0"),
+        ),
+        QBT_CHART_A_NET_INVESTMENT_LOSS: SubtractedNotBelowZeroLine(
+            QBT_CHART_A_NET_INVESTMENT_LOSS,
+            QBT_INVESTMENT_EXPENSES,
+            D("0.00"),
+            QBT_INVESTMENT_INCOME,
+            D("10000.00"),
+            D("0"),
+        ),
+        QBT_DEDUCTION_LIMIT: SubtractedNotBelowZeroLine(
+            QBT_DEDUCTION_LIMIT,
+            QBT_TAXABLE_GAINS_LIMIT,
+            D("0.00"),
+            QBT_REDUCTIONS_FROM_LOSSES,
+            D("0.00"),
+            D("0"),
+        ),
     }
     # Schedule 8 Part 4 line 3 "Line 1 plus line 2 (if negative, enter "0")" and Schedule 13 line 1
     # "(if negative, enter "0")", on no self-employment income and no partnership income, and the
@@ -1616,6 +1729,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # may be, amount 5 of no rental income.
         RENTAL_CCA_LIMIT: SumNotBelowZeroLine(
             RENTAL_CCA_LIMIT, ((RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS, D("0")),), D("0")
+        ),
+        # Form T2048 (line 25395) and Chart A: Return A enters nothing on the form, so its lines
+        # are 0 (or, where they read another line, that line's figure).
+        QBT_NET_RENTAL_INCOME: SumNotBelowZeroLine(
+            QBT_NET_RENTAL_INCOME, ((NET_RENTAL_INCOME, D("0")),), D("0")
         ),
     }
     # Schedule 8 Part 2 lines B, C, D and E: the row of the monthly proration table for box A's 12
