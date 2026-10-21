@@ -26,6 +26,8 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME,
     OTHER_DEPENDANTS,
     SPOUSE_NET_INCOME,
+    SPOUSE_NOT_SEPARATED_90_DAYS,
+    SPOUSE_RETURN_TAXABLE_INCOME,
     SPOUSES_CLAIMED,
     TAXABLE_INCOME,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
@@ -51,6 +53,17 @@ INPUTS = frozenset(
         # 2024 notice of assessment or reassessment": a caller input, the figure on that notice, not
         # a calculation on this return (as Schedule 7 line 1 is for RRSPs).
         "ca-on/unused_tuition_amounts_brought_forward",
+        # Schedule ON(S2) lines 1 to 3, 6 to 8 and the Ontario tax on line 5: figures from another
+        # person's Form ON428, caller inputs (their lines 58080, 58360, 58440, 58040, 24, 58560
+        # and 8), one set for the one spouse. Their line 26000 and the separation count are the
+        # federal Schedule 2's inputs again.
+        "ca-on/spouse_return_ontario_age_amount",
+        "ca-on/spouse_return_ontario_pension_income_amount",
+        "ca-on/spouse_return_ontario_disability_amount",
+        "ca-on/spouse_return_ontario_basic_tax",
+        "ca-on/spouse_return_ontario_basic_personal_amount",
+        "ca-on/spouse_return_ontario_line_24",
+        "ca-on/spouse_return_ontario_unused_tuition_amount",
     }
 )
 
@@ -360,6 +373,86 @@ STEPS = {
         },
         produces={"output": "ca-on/unused_tuition_carried_forward"},
     ),
+    # Schedule ON(S2) line 4 "Add lines 1 to 3. =": line 1 and line 59020 "Enter the amount from
+    # line 58080 of their Form ON428.", line 2 and line 59050 "Enter the amount from line 58360 of
+    # their Form ON428. (maximum $1,762)" and line 3 and line 59070 "Enter the amount from line
+    # 58440 of their Form ON428.", all figures from another person's return, caller inputs.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca-on/spouse_return_ontario_age_amount",
+                "ca-on/spouse_return_ontario_pension_income_amount",
+                "ca-on/spouse_return_ontario_disability_amount",
+            )
+        },
+        produces={"output": "ca-on/spouse_transferable_amounts"},
+    ),
+    # Schedule ON(S2) line 5 "Enter the amount from line 26000 of their return on line 5 if it is
+    # $52,886 or less. If it is more than $52,886, enter the result of the following calculation:
+    # Amount from line 8 of their Form ON428 divided by 5.05% =": their line 26000 is the federal
+    # Schedule 2's input, their ON428 line 8 a caller input.
+    CapabilitySelection(
+        name="ca/amount_or_divided_by_rate",
+        params={"limit": "ca-on/spouse_transfer_income_limit"},
+        consumes={
+            "amount": "ca/spouse_return_taxable_income",
+            "dividend": "ca-on/spouse_return_ontario_basic_tax",
+        },
+        produces={"output": "ca-on/spouse_income_for_transfer"},
+    ),
+    # Schedule ON(S2) line 6 "Amount from line 58040 of their Form ON428", line 7 "Amount from
+    # line 24 of their Form ON428" and line 8 "Amount from line 58560 of their Form ON428", caller
+    # inputs, and line 9 "Add lines 6 to 8. =".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca-on/spouse_return_ontario_basic_personal_amount",
+                "ca-on/spouse_return_ontario_line_24",
+                "ca-on/spouse_return_ontario_unused_tuition_amount",
+            )
+        },
+        produces={"output": "ca-on/spouse_credits_used"},
+    ),
+    # Schedule ON(S2) line 10 and line 59120 "Line 5 minus line 9 (if negative, enter "0") =".
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca-on/spouse_income_for_transfer",
+            "less": "ca-on/spouse_credits_used",
+        },
+        produces={"output": "ca-on/spouse_adjusted_taxable_income"},
+    ),
+    # Schedule ON(S2) line 11 "Line 4 minus line 10 (if negative, enter "0")".
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca-on/spouse_transferable_amounts",
+            "less": "ca-on/spouse_adjusted_taxable_income",
+        },
+        produces={"output": "ca-on/spouse_unused_amounts"},
+    ),
+    # Schedule ON(S2) "You can claim these amounts if you are eligible to claim the equivalent
+    # federal amounts on your federal Schedule 2." and line 11 "Enter this amount on line 58640 of
+    # your Form ON428. Provincial amounts transferred from your spouse or common-law partner",
+    # ON428 line 34 and line 58640 "Amounts transferred from your spouse or common-law partner
+    # (attach Schedule ON(S2))": line 11 is counted once when the filer was not separated for 90
+    # days or more including December 31, 2025 and not at all when separated, the federal Schedule
+    # 2's caller count again.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca-on/spouse_unused_amounts",
+            "count": "ca/spouse_not_separated_90_days",
+        },
+        produces={"output": "ca-on/amounts_transferred_from_spouse"},
+    ),
 }
 
 WIRING = {
@@ -492,5 +585,47 @@ WIRING = {
         Subtract,
         frozenset({ontario.UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD, ontario.UNUSED_TUITION_CLAIMED}),
         frozenset({ontario.UNUSED_TUITION_CARRIED_FORWARD}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                ontario.SPOUSE_RETURN_ONTARIO_AGE_AMOUNT,
+                ontario.SPOUSE_RETURN_ONTARIO_PENSION_INCOME_AMOUNT,
+                ontario.SPOUSE_RETURN_ONTARIO_DISABILITY_AMOUNT,
+            }
+        ),
+        frozenset({ontario.SPOUSE_TRANSFERABLE_AMOUNTS}),
+    ),
+    (
+        AmountOrDividedByRate,
+        frozenset({SPOUSE_RETURN_TAXABLE_INCOME, ontario.SPOUSE_RETURN_ONTARIO_BASIC_TAX}),
+        frozenset({ontario.SPOUSE_INCOME_FOR_TRANSFER}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                ontario.SPOUSE_RETURN_ONTARIO_BASIC_PERSONAL_AMOUNT,
+                ontario.SPOUSE_RETURN_ONTARIO_LINE_24,
+                ontario.SPOUSE_RETURN_ONTARIO_UNUSED_TUITION_AMOUNT,
+            }
+        ),
+        frozenset({ontario.SPOUSE_CREDITS_USED}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({ontario.SPOUSE_INCOME_FOR_TRANSFER, ontario.SPOUSE_CREDITS_USED}),
+        frozenset({ontario.SPOUSE_ADJUSTED_TAXABLE_INCOME}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({ontario.SPOUSE_TRANSFERABLE_AMOUNTS, ontario.SPOUSE_ADJUSTED_TAXABLE_INCOME}),
+        frozenset({ontario.SPOUSE_UNUSED_AMOUNTS}),
+    ),
+    (
+        TimesCount,
+        frozenset({ontario.SPOUSE_UNUSED_AMOUNTS, SPOUSE_NOT_SEPARATED_90_DAYS}),
+        frozenset({ontario.AMOUNTS_TRANSFERRED_FROM_SPOUSE}),
     ),
 }

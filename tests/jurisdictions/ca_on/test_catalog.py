@@ -37,6 +37,7 @@ from app.jurisdictions.ca_on.catalog import (
     AGE_INCOME_THRESHOLD,
     AGE_MAXIMUM,
     AGE_REDUCTION,
+    AMOUNTS_TRANSFERRED_FROM_SPOUSE,
     APPLIES_FOR_ENERGY_AND_PROPERTY_TAX_CREDIT,
     APPLIES_FOR_NORTHERN_ENERGY_CREDIT,
     APPLIES_FOR_SENIOR_HOMEOWNERS_GRANT,
@@ -199,10 +200,22 @@ from app.jurisdictions.ca_on.catalog import (
     SPLIT_INCOME_LINE_47,
     SPLIT_INCOME_LINE_50,
     SPLIT_INCOME_LINE_52,
+    SPOUSE_ADJUSTED_TAXABLE_INCOME,
     SPOUSE_AMOUNT,
     SPOUSE_AMOUNT_BEFORE_COUNT,
     SPOUSE_AMOUNT_BEFORE_MAXIMUM,
     SPOUSE_BASE,
+    SPOUSE_CREDITS_USED,
+    SPOUSE_INCOME_FOR_TRANSFER,
+    SPOUSE_RETURN_ONTARIO_AGE_AMOUNT,
+    SPOUSE_RETURN_ONTARIO_BASIC_PERSONAL_AMOUNT,
+    SPOUSE_RETURN_ONTARIO_BASIC_TAX,
+    SPOUSE_RETURN_ONTARIO_DISABILITY_AMOUNT,
+    SPOUSE_RETURN_ONTARIO_LINE_24,
+    SPOUSE_RETURN_ONTARIO_PENSION_INCOME_AMOUNT,
+    SPOUSE_RETURN_ONTARIO_UNUSED_TUITION_AMOUNT,
+    SPOUSE_TRANSFERABLE_AMOUNTS,
+    SPOUSE_UNUSED_AMOUNTS,
     TAX_REDUCTION_AMOUNTS,
     TAX_REDUCTION_AMOUNTS_CLAIMABLE,
     TAX_REDUCTION_BASIC,
@@ -256,6 +269,19 @@ REGISTERED = frozenset(
         "ca-on/unused_tuition_room",
         "ca-on/unused_tuition_claimed",
         "ca-on/unused_tuition_carried_forward",
+        "ca-on/spouse_return_ontario_age_amount",
+        "ca-on/spouse_return_ontario_pension_income_amount",
+        "ca-on/spouse_return_ontario_disability_amount",
+        "ca-on/spouse_return_ontario_basic_tax",
+        "ca-on/spouse_return_ontario_basic_personal_amount",
+        "ca-on/spouse_return_ontario_line_24",
+        "ca-on/spouse_return_ontario_unused_tuition_amount",
+        "ca-on/spouse_transferable_amounts",
+        "ca-on/spouse_income_for_transfer",
+        "ca-on/spouse_credits_used",
+        "ca-on/spouse_adjusted_taxable_income",
+        "ca-on/spouse_unused_amounts",
+        "ca-on/amounts_transferred_from_spouse",
         "ca-on/donations_first_tier_credit",
         "ca-on/donations_over_first_tier_credit",
         "ca-on/donations_and_gifts_credit",
@@ -543,6 +569,33 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/unused_tuition_room") is UNUSED_TUITION_ROOM
     assert registry.get("ca-on/unused_tuition_claimed") is UNUSED_TUITION_CLAIMED
     assert registry.get("ca-on/unused_tuition_carried_forward") is UNUSED_TUITION_CARRIED_FORWARD
+    assert (
+        registry.get("ca-on/spouse_return_ontario_age_amount") is SPOUSE_RETURN_ONTARIO_AGE_AMOUNT
+    )
+    assert (
+        registry.get("ca-on/spouse_return_ontario_pension_income_amount")
+        is SPOUSE_RETURN_ONTARIO_PENSION_INCOME_AMOUNT
+    )
+    assert (
+        registry.get("ca-on/spouse_return_ontario_disability_amount")
+        is SPOUSE_RETURN_ONTARIO_DISABILITY_AMOUNT
+    )
+    assert registry.get("ca-on/spouse_return_ontario_basic_tax") is SPOUSE_RETURN_ONTARIO_BASIC_TAX
+    assert (
+        registry.get("ca-on/spouse_return_ontario_basic_personal_amount")
+        is SPOUSE_RETURN_ONTARIO_BASIC_PERSONAL_AMOUNT
+    )
+    assert registry.get("ca-on/spouse_return_ontario_line_24") is SPOUSE_RETURN_ONTARIO_LINE_24
+    assert (
+        registry.get("ca-on/spouse_return_ontario_unused_tuition_amount")
+        is SPOUSE_RETURN_ONTARIO_UNUSED_TUITION_AMOUNT
+    )
+    assert registry.get("ca-on/spouse_transferable_amounts") is SPOUSE_TRANSFERABLE_AMOUNTS
+    assert registry.get("ca-on/spouse_income_for_transfer") is SPOUSE_INCOME_FOR_TRANSFER
+    assert registry.get("ca-on/spouse_credits_used") is SPOUSE_CREDITS_USED
+    assert registry.get("ca-on/spouse_adjusted_taxable_income") is SPOUSE_ADJUSTED_TAXABLE_INCOME
+    assert registry.get("ca-on/spouse_unused_amounts") is SPOUSE_UNUSED_AMOUNTS
+    assert registry.get("ca-on/amounts_transferred_from_spouse") is AMOUNTS_TRANSFERRED_FROM_SPOUSE
     assert registry.get("ca-on/donations_first_tier_credit") is DONATIONS_FIRST_TIER_CREDIT
     assert (
         registry.get("ca-on/donations_over_first_tier_credit") is DONATIONS_OVER_FIRST_TIER_CREDIT
@@ -1266,6 +1319,34 @@ def test_the_unused_tuition_lines_are_non_negative_amounts(registry: ArtifactReg
         UNUSED_TUITION_ROOM,
         UNUSED_TUITION_CLAIMED,
         UNUSED_TUITION_CARRIED_FORWARD,
+    ):
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+        assert registry.kind(kind.identifier) is kind
+
+
+def test_the_schedule_on_s2_lines_are_non_negative_amounts(registry: ArtifactRegistry) -> None:
+    # Schedule ON(S2) lines 1 to 3 (lines 58080, 58360 and 58440 of their Form ON428), line 6
+    # (their line 58040), line 7 (their line 24), line 8 (their line 58560) and the tax of line 5
+    # (their line 8) are figures from another person's return, caller inputs; line 4 "Add lines 1
+    # to 3. =", line 5 (their line 26000, or "Amount from line 8 of their Form ON428" "divided by
+    # 5.05% ="), line 9 "Add lines 6 to 8. =", line 10 "Line 5 minus line 9 (if negative, enter
+    # "0") =", line 11 "Line 4 minus line 10 (if negative, enter "0")" and ON428 line 34 and line
+    # 58640 are computed. Each is a dollars-and-cents box, never below zero.
+    for kind in (
+        SPOUSE_RETURN_ONTARIO_AGE_AMOUNT,
+        SPOUSE_RETURN_ONTARIO_PENSION_INCOME_AMOUNT,
+        SPOUSE_RETURN_ONTARIO_DISABILITY_AMOUNT,
+        SPOUSE_RETURN_ONTARIO_BASIC_TAX,
+        SPOUSE_RETURN_ONTARIO_BASIC_PERSONAL_AMOUNT,
+        SPOUSE_RETURN_ONTARIO_LINE_24,
+        SPOUSE_RETURN_ONTARIO_UNUSED_TUITION_AMOUNT,
+        SPOUSE_TRANSFERABLE_AMOUNTS,
+        SPOUSE_INCOME_FOR_TRANSFER,
+        SPOUSE_CREDITS_USED,
+        SPOUSE_ADJUSTED_TAXABLE_INCOME,
+        SPOUSE_UNUSED_AMOUNTS,
+        AMOUNTS_TRANSFERRED_FROM_SPOUSE,
     ):
         assert kind.value_type is Decimal, kind.identifier
         assert kind.non_negative is True, kind.identifier

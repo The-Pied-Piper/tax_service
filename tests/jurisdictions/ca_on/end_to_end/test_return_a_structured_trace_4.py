@@ -1484,6 +1484,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
+        # Schedule ON(S2) line 10 "Line 5 minus line 9 (if negative, enter "0")" and line 11 "Line 4
+        # minus line 10 (if negative, enter "0")" (Return A claims none: every figure is 0).
+        ontario.SPOUSE_ADJUSTED_TAXABLE_INCOME: SubtractedNotBelowZeroLine(
+            output=ontario.SPOUSE_ADJUSTED_TAXABLE_INCOME,
+            minuend=ontario.SPOUSE_INCOME_FOR_TRANSFER,
+            minuend_amount=D("0.00"),
+            subtrahend=ontario.SPOUSE_CREDITS_USED,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        ontario.SPOUSE_UNUSED_AMOUNTS: SubtractedNotBelowZeroLine(
+            output=ontario.SPOUSE_UNUSED_AMOUNTS,
+            minuend=ontario.SPOUSE_TRANSFERABLE_AMOUNTS,
+            minuend_amount=D("0"),
+            subtrahend=ontario.SPOUSE_ADJUSTED_TAXABLE_INCOME,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         TUITION_INCOME_LESS_CREDITS: SubtractedNotBelowZeroLine(
             output=TUITION_INCOME_LESS_CREDITS,
             minuend=TUITION_INCOME_BASE,

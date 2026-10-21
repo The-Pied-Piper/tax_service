@@ -1127,6 +1127,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
                 (ontario.DISABILITY_TRANSFERRED_AMOUNT, D("0")),
                 (ontario.UNUSED_TUITION_CLAIMED, D("0")),
+                (ontario.AMOUNTS_TRANSFERRED_FROM_SPOUSE, D("0")),
                 (ontario.MEDICAL_CLAIM, D("0")),
             ),
             D("17180.58"),
@@ -1762,6 +1763,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (SPOUSE_RETURN_BASIC_PERSONAL_AMOUNT, D("0")),
                 (SPOUSE_RETURN_LINE_96, D("0")),
                 (SPOUSE_RETURN_FEDERAL_TUITION_AMOUNT, D("0")),
+            ),
+            total=D("0"),
+        ),
+        # Schedule ON(S2) line 9 "Add lines 6 to 8." and line 4 "Add lines 1 to 3." (Return A
+        # claims none: every figure is 0).
+        ontario.SPOUSE_CREDITS_USED: SumLine(
+            output=ontario.SPOUSE_CREDITS_USED,
+            parts=(
+                (ontario.SPOUSE_RETURN_ONTARIO_BASIC_PERSONAL_AMOUNT, D("0")),
+                (ontario.SPOUSE_RETURN_ONTARIO_LINE_24, D("0")),
+                (ontario.SPOUSE_RETURN_ONTARIO_UNUSED_TUITION_AMOUNT, D("0")),
+            ),
+            total=D("0"),
+        ),
+        ontario.SPOUSE_TRANSFERABLE_AMOUNTS: SumLine(
+            output=ontario.SPOUSE_TRANSFERABLE_AMOUNTS,
+            parts=(
+                (ontario.SPOUSE_RETURN_ONTARIO_AGE_AMOUNT, D("0")),
+                (ontario.SPOUSE_RETURN_ONTARIO_PENSION_INCOME_AMOUNT, D("0")),
+                (ontario.SPOUSE_RETURN_ONTARIO_DISABILITY_AMOUNT, D("0")),
             ),
             total=D("0"),
         ),

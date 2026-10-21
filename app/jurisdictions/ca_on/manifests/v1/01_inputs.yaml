@@ -245,6 +245,17 @@ inputs:
   # 2024 notice of assessment or reassessment": a caller input, the figure on that notice, not a
   # calculation on this return (as Schedule 7 line 1 is for RRSPs).
   - ca-on/unused_tuition_amounts_brought_forward
+  # Schedule ON(S2) lines 1 to 3, 6 to 8 and the Ontario tax on line 5: figures from another
+  # person's Form ON428, caller inputs (their lines 58080, 58360, 58440, 58040, 24, 58560 and 8),
+  # one set for the one spouse. Their line 26000 and the separation count are the federal
+  # Schedule 2's inputs again.
+  - ca-on/spouse_return_ontario_age_amount
+  - ca-on/spouse_return_ontario_pension_income_amount
+  - ca-on/spouse_return_ontario_disability_amount
+  - ca-on/spouse_return_ontario_basic_tax
+  - ca-on/spouse_return_ontario_basic_personal_amount
+  - ca-on/spouse_return_ontario_line_24
+  - ca-on/spouse_return_ontario_unused_tuition_amount
   - ca/infirm_children
   - ca/born_in_1960_or_earlier
   - ca/spouse_net_income

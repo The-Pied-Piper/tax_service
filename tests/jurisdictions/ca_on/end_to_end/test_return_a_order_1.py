@@ -374,7 +374,7 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 550
+    assert len(order) == 556
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -635,6 +635,17 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         position[ontario.DISABILITY_TRANSFERRED_AMOUNT]
         < (position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS])
     )
+    # Schedule ON(S2): line 5 reads the spouse's taxable income, line 10 line 9, line 11 line 10,
+    # and ON428 line 34 (line 58640) comes before the Ontario total of credit amounts.
+    assert (
+        position[ontario.SPOUSE_INCOME_FOR_TRANSFER]
+        < position[ontario.SPOUSE_ADJUSTED_TAXABLE_INCOME]
+        < position[ontario.SPOUSE_UNUSED_AMOUNTS]
+        < position[ontario.AMOUNTS_TRANSFERRED_FROM_SPOUSE]
+        < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
+    )
+    assert position[ontario.SPOUSE_CREDITS_USED] < position[ontario.SPOUSE_ADJUSTED_TAXABLE_INCOME]
+    assert position[ontario.SPOUSE_TRANSFERABLE_AMOUNTS] < position[ontario.SPOUSE_UNUSED_AMOUNTS]
     assert position[INFIRM_CHILDREN_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert (
         position[AGE_INCOME_OVER_THRESHOLD]
