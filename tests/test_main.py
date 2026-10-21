@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 524
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 526
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -384,6 +384,10 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/short_term_rental_non_compliant_days",
         "ca/short_term_rental_days",
         "ca/short_term_rental_units",
+        "ca/short_term_rental_related_cca",
+        "ca/short_term_rental_cca_units",
+        "ca/non_compliant_cca",
+        "ca/short_term_rental_non_compliant_cca_by_class",
         "ca/rental_property_units",
         "ca/rental_property_short_term_rents",
         "ca/rental_property_gross_rents",
@@ -435,6 +439,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/rental_personal_portion",
         "ca/rental_short_term_portion",
         "ca/rental_non_compliant_expenses",
+        "ca/rental_non_compliant_cca",
         "ca/rental_expenses_less_personal_portion",
         "ca/rental_deductible_expenses",
         "ca/rental_net_income_before_adjustments",
@@ -952,13 +957,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 524
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 526
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 524
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 526
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

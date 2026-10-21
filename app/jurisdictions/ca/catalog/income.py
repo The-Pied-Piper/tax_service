@@ -660,6 +660,44 @@ property was a non compliant short-term rental" and column 5 "Number of days the
 property was a short-term rental" (columns 1 and 2, the address and the unit number, are labels
 the engine does not use)."""
 
+SHORT_TERM_RENTAL_RELATED_CCA = CATALOG.declare(
+    "short_term_rental_related_cca", Decimal, non_negative=True
+)
+"""Related CCA of a short-term rental, Form T776 Chart B, column 4 "Related portion of the
+available CCA from column 21 in Area A": a field of each record of the short-term rental CCA
+units, not an artifact of its own."""
+
+SHORT_TERM_RENTAL_CCA_UNITS = RecordListKind.declare(
+    CATALOG,
+    "short_term_rental_cca_units",
+    fields=(
+        CCA_CLASS_NUMBER,
+        SHORT_TERM_RENTAL_RELATED_CCA,
+        SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
+        SHORT_TERM_RENTAL_DAYS,
+    ),
+)
+"""Short-term rental CCA units, Form T776 Chart B "Enter each short-term rental or mixed rental
+property on a separate row": a starting list with one record for each row, holding column 1 "Class
+number", column 4 "Related portion of the available CCA from column 21 in Area A", column 5
+"Number of days the residential property was a non-compliant short-term rental" and column 6
+"Number of days the residential property was a short-term rental" (columns 2 and 3, the address
+and the unit number, are labels the engine does not use)."""
+
+NON_COMPLIANT_CCA = CATALOG.declare("non_compliant_cca", Decimal, non_negative=True)
+"""Non-compliant amount of CCA of a class, Form T776 Area A "Column 22: Non-compliant amount of CCA
+(see Chart B below)": a field of each record of the non-compliant CCA by class, not an artifact of
+its own."""
+
+SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS = RecordListKind.declare(
+    CATALOG,
+    "short_term_rental_non_compliant_cca_by_class",
+    fields=(CCA_CLASS_NUMBER, NON_COMPLIANT_CCA),
+)
+"""Non-compliant CCA by class, Form T776 Chart B "*** For each class, add the amounts from column 7
+of Chart B and enter each total in column 22 of Area A, in the respective row.": one record for
+each class of the short-term rental CCA units, holding its class number and column 22."""
+
 
 RENTAL_PROPERTY_UNITS = CATALOG.declare("rental_property_units", int, non_negative=True)
 """Number of units of a rental property, Form T776 Part 3 "Number of units": a field of each
@@ -954,6 +992,11 @@ RENTAL_NON_COMPLIANT_EXPENSES = CATALOG.declare(
 """Non-compliant amount of the short-term rental expenses, Form T776 line 9366 "Non-compliant
 amount for short-term rentals (amount B from Chart A)": Chart A line B, the total of column 6
 over the short-term rental units."""
+
+RENTAL_NON_COMPLIANT_CCA = CATALOG.declare("rental_non_compliant_cca", Decimal, non_negative=True)
+"""Non-compliant amount of the short-term rental CCA, Form T776 Chart B "Line C: Total
+non-compliant amount of CCA for short-term rentals: Total of column 7 (enter on line 9367 of Part
+4)": the total of column 7 over the short-term rental CCA units."""
 
 RENTAL_EXPENSES_LESS_PERSONAL_PORTION = CATALOG.declare(
     "rental_expenses_less_personal_portion", Decimal, non_negative=True

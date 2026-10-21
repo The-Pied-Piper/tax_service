@@ -21,6 +21,12 @@ from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRent
 from app.jurisdictions.ca.capabilities.short_term_rental_gross_rents import (
     ShortTermRentalGrossRents,
 )
+from app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_cca import (
+    ShortTermRentalNonCompliantCca,
+)
+from app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_cca_by_class import (
+    ShortTermRentalNonCompliantCcaByClass,
+)
 from app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_expenses import (
     ShortTermRentalNonCompliantExpenses,
 )
@@ -143,6 +149,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS,
     RENTAL_NET_INCOME_SHARE,
     RENTAL_NET_INCOME_WITH_RECAPTURE,
+    RENTAL_NON_COMPLIANT_CCA,
     RENTAL_NON_COMPLIANT_EXPENSES,
     RENTAL_OFFICE_EXPENSES,
     RENTAL_OFFICE_EXPENSES_PERSONAL_PORTION,
@@ -184,7 +191,9 @@ from app.jurisdictions.ca.catalog import (
     RRSP_INCOME,
     SHARE_DISPOSITIONS,
     SHARE_GAIN_OR_LOSS,
+    SHORT_TERM_RENTAL_CCA_UNITS,
     SHORT_TERM_RENTAL_GROSS_RENTS,
+    SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS,
     SHORT_TERM_RENTAL_UNITS,
     SLIP_CAPITAL_GAINS_OR_LOSSES,
     SLIP_DIVIDEND_TAX_CREDIT,
@@ -320,6 +329,7 @@ INPUTS = frozenset(
         "ca/rental_other_expenses_personal_portion",
         "ca/rental_other_expenses_short_term_portion",
         "ca/short_term_rental_units",
+        "ca/short_term_rental_cca_units",
         "ca/rental_coowner",
         "ca/rental_coowner_share",
         "ca/rental_coowner_other_expenses",
@@ -356,6 +366,8 @@ OUTPUTS = frozenset(
         "ca/short_term_rental_gross_rents",
         "ca/rental_short_term_portion",
         "ca/rental_closing_ucc",
+        "ca/rental_non_compliant_cca",
+        "ca/short_term_rental_non_compliant_cca_by_class",
     }
 )
 
@@ -775,6 +787,25 @@ STEPS = {
         params={"rounding": "ca/short_term_rental_non_compliant_rounding"},
         consumes={"units": "ca/short_term_rental_units"},
         produces={"output": "ca/rental_non_compliant_expenses"},
+    ),
+    # T776 Chart B "Column 7 ***: Non-compliant amount (column 4 multiplied by column 5
+    # divided by column 6)" for each row of short-term rental CCA units, rounded to the cent,
+    # and "Line C: Total non-compliant amount of CCA for short-term rentals: Total of column 7
+    # (enter on line 9367 of Part 4)".
+    CapabilitySelection(
+        name="ca/short_term_rental_non_compliant_cca",
+        params={"rounding": "ca/short_term_rental_non_compliant_cca_rounding"},
+        consumes={"units": "ca/short_term_rental_cca_units"},
+        produces={"output": "ca/rental_non_compliant_cca"},
+    ),
+    # T776 Chart B "*** For each class, add the amounts from column 7 of Chart B and enter each
+    # total in column 22 of Area A, in the respective row.": one record for each class, the
+    # class number and column 22.
+    CapabilitySelection(
+        name="ca/short_term_rental_non_compliant_cca_by_class",
+        params={"rounding": "ca/short_term_rental_non_compliant_cca_rounding"},
+        consumes={"units": "ca/short_term_rental_cca_units"},
+        produces={"output": "ca/short_term_rental_non_compliant_cca_by_class"},
     ),
     # T776 "Line 1: Deductible expenses (amount A minus line 9949 minus line 9366)",
     # first step: amount A minus line 9949.
@@ -1411,6 +1442,16 @@ WIRING = {
         ShortTermRentalNonCompliantExpenses,
         frozenset({SHORT_TERM_RENTAL_UNITS}),
         frozenset({RENTAL_NON_COMPLIANT_EXPENSES}),
+    ),
+    (
+        ShortTermRentalNonCompliantCca,
+        frozenset({SHORT_TERM_RENTAL_CCA_UNITS}),
+        frozenset({RENTAL_NON_COMPLIANT_CCA}),
+    ),
+    (
+        ShortTermRentalNonCompliantCcaByClass,
+        frozenset({SHORT_TERM_RENTAL_CCA_UNITS}),
+        frozenset({SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS}),
     ),
     (
         Subtract,

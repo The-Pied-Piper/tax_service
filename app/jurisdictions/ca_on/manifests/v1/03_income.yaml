@@ -355,6 +355,27 @@ capabilities:
       units: ca/short_term_rental_units
     produces:
       output: ca/rental_non_compliant_expenses
+  # T776 Chart B "Column 7 ***: Non-compliant amount (column 4 multiplied by column 5
+  # divided by column 6)" for each row of short-term rental CCA units, rounded to the cent,
+  # and "Line C: Total non-compliant amount of CCA for short-term rentals: Total of column 7
+  # (enter on line 9367 of Part 4)".
+  - name: ca/short_term_rental_non_compliant_cca
+    params:
+      rounding: ca/short_term_rental_non_compliant_cca_rounding
+    consumes:
+      units: ca/short_term_rental_cca_units
+    produces:
+      output: ca/rental_non_compliant_cca
+  # T776 Chart B "*** For each class, add the amounts from column 7 of Chart B and enter each
+  # total in column 22 of Area A, in the respective row.": one record for each class, the
+  # class number and column 22.
+  - name: ca/short_term_rental_non_compliant_cca_by_class
+    params:
+      rounding: ca/short_term_rental_non_compliant_cca_rounding
+    consumes:
+      units: ca/short_term_rental_cca_units
+    produces:
+      output: ca/short_term_rental_non_compliant_cca_by_class
   # T776 "Line 1: Deductible expenses (amount A minus line 9949 minus line 9366)", first
   # step: amount A minus line 9949.
   - name: core/subtract

@@ -58,6 +58,7 @@ from app.jurisdictions.ca.catalog import (
     NET_RENTAL_INCOME,
     NET_SELF_EMPLOYMENT_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
+    NON_COMPLIANT_CCA,
     OLD_AGE_SECURITY,
     OTHER_DIVIDENDS_CREDIT,
     OTHER_DIVIDENDS_GROSSED_UP,
@@ -124,6 +125,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS,
     RENTAL_NET_INCOME_SHARE,
     RENTAL_NET_INCOME_WITH_RECAPTURE,
+    RENTAL_NON_COMPLIANT_CCA,
     RENTAL_NON_COMPLIANT_EXPENSES,
     RENTAL_OFFICE_EXPENSES,
     RENTAL_OFFICE_EXPENSES_PERSONAL_PORTION,
@@ -168,9 +170,12 @@ from app.jurisdictions.ca.catalog import (
     RRSP_INCOME,
     SHARE_DISPOSITIONS,
     SHARE_GAIN_OR_LOSS,
+    SHORT_TERM_RENTAL_CCA_UNITS,
     SHORT_TERM_RENTAL_DAYS,
     SHORT_TERM_RENTAL_GROSS_RENTS,
+    SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS,
     SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
+    SHORT_TERM_RENTAL_RELATED_CCA,
     SHORT_TERM_RENTAL_RELATED_EXPENSES,
     SHORT_TERM_RENTAL_UNITS,
     SLIP_CAPITAL_GAINS_OR_LOSSES,
@@ -327,6 +332,13 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     )
     assert registry.get("ca/short_term_rental_days") is SHORT_TERM_RENTAL_DAYS
     assert registry.get("ca/short_term_rental_units") is SHORT_TERM_RENTAL_UNITS
+    assert registry.get("ca/short_term_rental_related_cca") is SHORT_TERM_RENTAL_RELATED_CCA
+    assert registry.get("ca/short_term_rental_cca_units") is SHORT_TERM_RENTAL_CCA_UNITS
+    assert registry.get("ca/non_compliant_cca") is NON_COMPLIANT_CCA
+    assert (
+        registry.get("ca/short_term_rental_non_compliant_cca_by_class")
+        is SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS
+    )
     assert registry.get("ca/rental_property_units") is RENTAL_PROPERTY_UNITS
     assert registry.get("ca/rental_property_short_term_rents") is RENTAL_PROPERTY_SHORT_TERM_RENTS
     assert registry.get("ca/rental_property_gross_rents") is RENTAL_PROPERTY_GROSS_RENTS
@@ -449,6 +461,7 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     assert registry.get("ca/rental_personal_portion") is RENTAL_PERSONAL_PORTION
     assert registry.get("ca/rental_short_term_portion") is RENTAL_SHORT_TERM_PORTION
     assert registry.get("ca/rental_non_compliant_expenses") is RENTAL_NON_COMPLIANT_EXPENSES
+    assert registry.get("ca/rental_non_compliant_cca") is RENTAL_NON_COMPLIANT_CCA
     assert (
         registry.get("ca/rental_expenses_less_personal_portion")
         is RENTAL_EXPENSES_LESS_PERSONAL_PORTION
@@ -573,6 +586,9 @@ def test_the_income_kinds_are_money() -> None:
         SOCIAL_ASSISTANCE_PAYMENTS,
         NET_FEDERAL_SUPPLEMENTS,
         INCOME_SUPPORT_BENEFITS,
+        SHORT_TERM_RENTAL_RELATED_CCA,
+        NON_COMPLIANT_CCA,
+        RENTAL_NON_COMPLIANT_CCA,
     ):
         assert kind.value_type is Decimal, kind.identifier
 

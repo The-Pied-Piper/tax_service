@@ -34,7 +34,11 @@ HOMES: dict[str, tuple[str, ...]] = {
         "DisabilityTransferLine",
     ),
     "gains": ("PrincipalResidenceGainLine", "DispositionGainLine", "DispositionGainOnlyLine"),
-    "rentals": ("ShortTermRentalNonCompliantLine",),
+    "rentals": (
+        "ShortTermRentalNonCompliantLine",
+        "ShortTermRentalNonCompliantCcaLine",
+        "ShortTermRentalNonCompliantCcaByClassLine",
+    ),
 }
 
 PLACED = [(module, name) for module, names in HOMES.items() for name in names]

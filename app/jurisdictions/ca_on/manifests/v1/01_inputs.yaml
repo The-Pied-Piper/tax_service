@@ -95,6 +95,7 @@ inputs:
   - ca/rental_other_expenses_personal_portion
   - ca/rental_other_expenses_short_term_portion
   - ca/short_term_rental_units
+  - ca/short_term_rental_cca_units
   - ca/rental_coowner
   - ca/rental_coowner_share
   - ca/rental_coowner_other_expenses
