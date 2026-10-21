@@ -289,14 +289,15 @@ def test_the_default_renderer_uses_the_shared_registry(fresh: EnglishRendererReg
     assert EnglishTraceRenderer().render(ExampleLine(D(4))) == "example of 4"
 
 
-# --- every core and jurisdiction line class has English text, beside its feature module ------
+# --- every core and jurisdiction line class has English text; core's sits beside its module ----
 
-# Each trace package and the package of its line classes' renderers.
-TRACE_PACKAGES: dict[ModuleType, str] = {
-    app.domain.trace: "app.adapters.inbound.trace_english",
-    app.jurisdictions.ca.trace: "app.jurisdictions.ca.trace_english",
-    app.jurisdictions.ca_on.trace: "app.jurisdictions.ca_on.trace_english",
-}
+# The core and jurisdiction trace packages, imported above so that all their renderers are
+# registered; where each jurisdiction's renderers live is checked under tests/jurisdictions.
+TRACE_PACKAGES: tuple[ModuleType, ...] = (
+    app.domain.trace,
+    app.jurisdictions.ca.trace,
+    app.jurisdictions.ca_on.trace,
+)
 
 
 def exported_line_classes() -> list[type[TraceLine]]:
@@ -322,19 +323,22 @@ def test_every_exported_line_class_has_a_shared_english_renderer(
     assert callable(getattr(found, "render", None))
 
 
-@pytest.mark.parametrize("line_class", exported_line_classes(), ids=lambda cls: cls.__name__)
-def test_each_renderer_lives_in_the_adapter_module_matching_its_line_classs_module(
+def core_line_classes() -> list[type[TraceLine]]:
+    """Every TraceLine subclass the core trace package exports, by name."""
+    return [
+        cls for cls in exported_line_classes() if cls.__module__.startswith("app.domain.trace.")
+    ]
+
+
+@pytest.mark.parametrize("line_class", core_line_classes(), ids=lambda cls: cls.__name__)
+def test_each_core_renderer_lives_in_the_adapter_module_matching_its_line_classs_module(
     line_class: type[TraceLine],
 ) -> None:
-    # SumLine in app.domain.trace.arithmetic -> its renderer in trace_english.arithmetic;
-    # CcaClaimLine in app.jurisdictions.ca.trace.capital_cost -> ca.trace_english.capital_cost.
-    package, feature = line_class.__module__.rsplit(".", 1)
-    renderers = next(
-        adapter for trace, adapter in TRACE_PACKAGES.items() if trace.__name__ == package
-    )
+    # SumLine in app.domain.trace.arithmetic -> its renderer in trace_english.arithmetic.
+    feature = line_class.__module__.rsplit(".", 1)[1]
     found = EnglishRendererRegistry.shared().for_line_class(line_class)
 
-    assert type(found).__module__ == f"{renderers}.{feature}"
+    assert type(found).__module__ == f"app.adapters.inbound.trace_english.{feature}"
 
 
 def test_the_adapter_is_a_package_with_registry_and_renderer_modules() -> None:

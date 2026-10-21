@@ -1,10 +1,10 @@
 """Unit tests for the layout of the trace packages: each line class's home module.
 
-The generic line classes live in `app.domain.trace`, a jurisdiction's own in
-`app.jurisdictions.<package>.trace`; each package has one module per feature group, each with an
-`__all__`, and its `__init__` re-exports every module's `__all__`, so
+The generic line classes live in `app.domain.trace`, one module per feature group, each with an
+`__all__`; its `__init__` re-exports every module's `__all__`, so
 `from app.domain.trace import SumLine` keeps working. Every exported line class appears in
-`HOMES`, so a new one is placed deliberately.
+`HOMES`, so a new one is placed deliberately. A jurisdiction's own trace package is checked under
+`tests/jurisdictions/<package>/test_trace_modules.py`.
 """
 
 from __future__ import annotations
@@ -18,8 +18,6 @@ import app.domain.trace
 from app.domain.trace import TraceLine
 
 CORE = "app.domain.trace"
-CA = "app.jurisdictions.ca.trace"
-CA_ON = "app.jurisdictions.ca_on.trace"
 
 CORE_HOMES: dict[str, tuple[str, ...]] = {
     "base": ("TraceLine",),
@@ -65,26 +63,6 @@ CORE_HOMES: dict[str, tuple[str, ...]] = {
 
 HOMES: dict[str, dict[str, tuple[str, ...]]] = {
     CORE: CORE_HOMES,
-    CA: {
-        "capital_cost": (
-            "CcaZeroReason",
-            "CcaClaimLine",
-            "RecapturedCcaLine",
-            "TerminalLossLine",
-            "ClosingUccLine",
-        ),
-        "dependants": (
-            "CaregiverClaimLine",
-            "OtherDependantMedicalLine",
-            "DisabilityTransferLine",
-        ),
-        "gains": ("PrincipalResidenceGainLine", "DispositionGainLine", "DispositionGainOnlyLine"),
-        "rentals": ("ShortTermRentalNonCompliantLine",),
-    },
-    CA_ON: {
-        "dependants": ("CaregiverClaimLessClaimedLine",),
-        "placement_credit": ("PlacementCreditLine",),
-    },
 }
 
 PLACED = [
@@ -130,8 +108,7 @@ def test_every_exported_line_class_is_placed(package: str) -> None:
         for name, found in vars(importlib.import_module(package)).items()
         if inspect.isclass(found) and issubclass(found, TraceLine)
     }
-    # A jurisdiction's package exports only its own lines, not TraceLine or the core lines.
-    placed = {name for home, _, name in PLACED if home == package and name != "CcaZeroReason"}
+    placed = {name for home, _, name in PLACED if home == package}
 
     assert exported - {"TraceLine"} == placed - {"TraceLine"}
 
@@ -144,6 +121,11 @@ def test_the_package_exports_every_placed_name(package: str) -> None:
 
 
 def test_core_exports_no_jurisdiction_line() -> None:
-    moved = {name for home, _, name in PLACED if home != CORE}
+    moved = {
+        name
+        for package in ("app.jurisdictions.ca.trace", "app.jurisdictions.ca_on.trace")
+        for name in importlib.import_module(package).__all__
+    }
 
+    assert moved
     assert not moved & set(vars(app.domain.trace))
