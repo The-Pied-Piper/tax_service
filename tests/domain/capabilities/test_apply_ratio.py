@@ -460,7 +460,7 @@ def test_trace_holds_no_text() -> None:
 
 # --- the shared ratio method ----------------------------------------------------------------
 # `ApplyRatio.ratio_of(amount, numerator, denominator, rounding)` is the one place the arithmetic
-# lives; capabilities that work a ratio per item (ca/foreign_non_business_tax_credit) call it
+# lives; capabilities that work a ratio per item call it
 # instead of copying it. It is a static method: no instance, no artifacts, just the figures.
 
 

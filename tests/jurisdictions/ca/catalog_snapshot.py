@@ -212,7 +212,6 @@ REGISTERED = frozenset(
         "ca/rental_cca_claim_before_limit",
         "ca/rental_cca_limit",
         "ca/rental_closing_ucc",
-        "ca/foreign_tax_countries",
         "ca/rental_net_income_after_cca",
         "ca/rental_partner",
         "ca/rental_partner_share",
