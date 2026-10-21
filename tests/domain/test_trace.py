@@ -50,6 +50,7 @@ from app.domain.trace import (
     ItemSumLine,
     LesserOfLine,
     MultipleOverLine,
+    PercentageAppliedLine,
     PerUnitAmountLine,
     QuotientLine,
     RateAppliedLine,
@@ -126,6 +127,7 @@ TAX_PAYABLE = ArtifactKind("ex/tax_payable", Decimal)
 FOREIGN_INCOME = ArtifactKind("ex/foreign_income", Decimal)
 WORLD_INCOME = ArtifactKind("ex/worldwide_income", Decimal)
 CREDIT_SHARE = ArtifactKind("ex/credit_share", Decimal)
+PERCENTAGE = ArtifactKind("ex/allocated_percentage", Decimal)
 ITEM_AMOUNT = ArtifactKind("ex/item_amount", Decimal)
 GATED = ArtifactKind("ex/gated_amount", Decimal)
 GATE = ArtifactKind("ex/gate_amount", Decimal)
@@ -279,6 +281,18 @@ def ratio_applied_line() -> RatioAppliedLine:
         D("3"),
         CENT,
         D("333.33"),
+    )
+
+
+def percentage_applied_line() -> PercentageAppliedLine:
+    return PercentageAppliedLine(
+        CREDIT_SHARE,
+        TAX_PAYABLE,
+        D("1000"),
+        PERCENTAGE,
+        D("50"),
+        CENT,
+        D("500"),
     )
 
 
@@ -473,6 +487,7 @@ ALL_LINES = [
     times_count_line,
     chosen_by_count_line,
     ratio_applied_line,
+    percentage_applied_line,
     amount_by_count_line,
     record_total_line,
     chosen_by_range_line,
@@ -4010,3 +4025,73 @@ def test_the_two_disposition_lines_are_classes_of_their_own() -> None:
     assert not isinstance(disposition_gain_line(), DispositionGainOnlyLine)
     assert not isinstance(disposition_gain_only_line(), DispositionGainLine)
     assert not isinstance(disposition_gain_line(), ItemsTotalLine)
+
+
+def test_percentage_applied_line_fields_in_order() -> None:
+    line = percentage_applied_line()
+
+    assert line == PercentageAppliedLine(
+        output=CREDIT_SHARE,
+        amount_kind=TAX_PAYABLE,
+        amount_value=D("1000"),
+        percentage_kind=PERCENTAGE,
+        percentage_value=D("50"),
+        rounding=CENT,
+        result=D("500"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "amount_kind",
+        "amount_value",
+        "percentage_kind",
+        "percentage_value",
+        "rounding",
+        "result",
+    ]
+    assert line.output is CREDIT_SHARE
+    assert line.amount_kind is TAX_PAYABLE
+    assert line.amount_value == D("1000")
+    assert line.percentage_kind is PERCENTAGE
+    assert line.percentage_value == D("50")
+    assert line.rounding == CENT
+    assert line.result == D("500")
+    assert line.amount == D("500")
+
+
+def test_a_percentage_applied_lines_amount_is_not_one_of_its_fields() -> None:
+    assert "amount" not in [f.name for f in fields(percentage_applied_line())]
+
+
+def test_percentage_applied_lines_are_hashable() -> None:
+    assert hash(percentage_applied_line()) == hash(percentage_applied_line())
+
+
+def test_percentage_applied_lines_differ_by_amount_value() -> None:
+    assert percentage_applied_line() != PercentageAppliedLine(
+        CREDIT_SHARE, TAX_PAYABLE, D("1001"), PERCENTAGE, D("50"), CENT, D("500")
+    )
+
+
+def test_percentage_applied_lines_differ_by_percentage_value() -> None:
+    assert percentage_applied_line() != PercentageAppliedLine(
+        CREDIT_SHARE, TAX_PAYABLE, D("1000"), PERCENTAGE, D("51"), CENT, D("500")
+    )
+
+
+def test_percentage_applied_lines_differ_by_kind() -> None:
+    other = ArtifactKind("ex/other_percentage", Decimal)
+
+    assert percentage_applied_line() != PercentageAppliedLine(
+        CREDIT_SHARE, TAX_PAYABLE, D("1000"), other, D("50"), CENT, D("500")
+    )
+
+
+def test_percentage_applied_lines_differ_by_rounding() -> None:
+    assert percentage_applied_line() != PercentageAppliedLine(
+        CREDIT_SHARE, TAX_PAYABLE, D("1000"), PERCENTAGE, D("50"), NO_ROUNDING, D("500")
+    )
+
+
+def test_a_percentage_applied_line_is_not_a_ratio_or_rate_applied_line() -> None:
+    assert not isinstance(percentage_applied_line(), RatioAppliedLine)
+    assert not isinstance(percentage_applied_line(), RateAppliedLine)

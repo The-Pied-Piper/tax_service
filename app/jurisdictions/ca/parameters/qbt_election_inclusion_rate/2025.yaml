@@ -1,3 +1,6 @@
+# Form T2048 (2025), Part 2 line 4 "Inclusion rate × 50%" and line 5 "Line 3 multiplied by the
+# percentage from line 4". The form prints no rounding rule, so the repo convention applies: the
+# product on line 5 rounds half-up to the cent.
 family: ca/qbt_election_inclusion_rate
 tax_year: 2025
 kind: rate

@@ -1,4 +1,16 @@
-"""ApplyRatioOrZero: an amount times a ratio, zero when the denominator is zero."""
+"""ApplyRatioOrZero: an amount times a ratio, zero when the denominator is zero.
+
+For form lines such as Form T2048 line 41 ("Line 39 multiplied by line 40"), whose ratio is
+computed by earlier lines, and where the form says to enter "0" when the ratio's denominator is 0
+(line 36: "if the result is "0", enter "0" on lines 41 and 42"). The output is
+`rounding.apply(amount × numerator / denominator)`, the product formed first and divided once, as an
+exact fraction so nothing is rounded before the rule. It is rounded only with the `rounding_only`
+dataset's rule; under no rounding a quotient with no finite decimal expansion raises
+`decimal.Inexact`. A zero denominator gives an output of 0, rounded by the same rule, with no error
+raised. The trace holds one `RatioAppliedLine` naming the amount, numerator, denominator, rounding
+and result. A ratio above 1 is not capped here; where the law caps it, the manifest does with
+`lesser_of`.
+"""
 
 from __future__ import annotations
 
@@ -35,6 +47,8 @@ class ApplyRatioOrZero(Capability):
         denominator: Money,
         output: Money,
     ) -> None:
+        """Wire the capability: its rounding dataset, the amount, the numerator, the denominator,
+        the output."""
         super().__init__(amount=amount, numerator=numerator, denominator=denominator, output=output)
         self._rounding = rounding
         self._amount = amount

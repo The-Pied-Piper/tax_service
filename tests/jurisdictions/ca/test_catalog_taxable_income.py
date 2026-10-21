@@ -344,7 +344,7 @@ def test_the_form_t2048_kinds_are_money_and_counts() -> None:
         assert kind.value_type is Decimal, kind.identifier
         assert kind.non_negative is True, kind.identifier
     # "election is for a QBT", "gains are QSBCS/QFFP" and "you have investment expenses in 2025"
-    # are 0 or 1, the pattern of the other yes/no inputs (#122).
+    # are 0 or 1, the pattern of the other yes/no inputs.
     for count in (
         QBT_HAS_INVESTMENT_EXPENSES,
         QBT_ELECTION_IS_QBT,

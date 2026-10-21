@@ -1,4 +1,13 @@
-"""ApplyPercentage: an amount times a percentage, rounded once."""
+"""ApplyPercentage: an amount times a percentage, rounded once.
+
+For form lines such as Form T2048 line 3 ("Line 1 multiplied by the percentage from line 2"),
+where the percentage is entered as the form prints it: 50 means 50%. The output is
+`rounding.apply(amount × percentage / 100)`, the product formed first as an exact fraction and
+rounded once, with only the `rounding_only` dataset's rule. There is no denominator, so no
+zero-denominator case arises. The trace holds one `PercentageAppliedLine` naming the amount,
+percentage, rounding and result. A percentage is not capped here; where the law caps it, the
+manifest does with `lesser_of`.
+"""
 
 from __future__ import annotations
 
@@ -30,6 +39,7 @@ class ApplyPercentage(Capability):
         percentage: Money,
         output: Money,
     ) -> None:
+        """Wire the capability: its rounding dataset, the amount, the percentage, the output."""
         super().__init__(amount=amount, percentage=percentage, output=output)
         self._rounding = rounding
         self._amount = amount

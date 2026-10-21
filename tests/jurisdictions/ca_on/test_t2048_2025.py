@@ -20,6 +20,7 @@ because each is a printed figure of its own line.
 
 from __future__ import annotations
 
+import re
 from decimal import Decimal
 
 import pytest
@@ -31,6 +32,7 @@ from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
+from app.domain.registry import Namespace
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
 from app.jurisdictions.ca.capabilities.apply_ratio_or_zero import ApplyRatioOrZero
 
@@ -38,6 +40,35 @@ D = Decimal
 SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 T2048_PDF = "https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t2048/t2048-25e.pdf"
+
+# The form lines each dataset header quotes, lowercased as the header is compared. CRA publishes
+# no .txt of T2048, so the quotes are checked against the form lines as copied from the PDF.
+HEADER_QUOTES = {
+    "ca/qbt_abil_reduction_rounding": (
+        "line 39 multiplied by line 40",
+        "abil reduction",
+        "line 37 divided by line 38",
+    ),
+    "ca/qbt_amount_allocated_rounding": (
+        "line 1 multiplied by the percentage from line 2",
+        "percentage allocated to you",
+    ),
+    "ca/qbt_election_inclusion_rate": (
+        "inclusion rate × 50%",
+        "line 3 multiplied by the percentage from line 4",
+    ),
+    "ca/qbt_exploration_expenses_rate": (
+        "50% of exploration and development expenses (line 22400)",
+    ),
+    "ca/qbt_exploration_recovery_rate": (
+        "50% of income from the recovery of exploration and development expenses (line 13000)",
+    ),
+    "ca/qbt_gains_inclusion_rate": (
+        "inclusion rate × 50%",
+        "taxable capital gains for the qbt or qcc only: line 14 multiplied by the inclusion rate "
+        "on line 15",
+    ),
+}
 
 RATE_FAMILIES = (
     "ca/qbt_election_inclusion_rate",
@@ -155,3 +186,32 @@ def test_line_41_is_line_33_times_line_36_over_line_35(
     )
 
     assert result.outputs == (Artifact(PRODUCT, D(line_41)),)
+
+
+def squashed(text: str) -> str:
+    """`text` with the comment markers and line breaks gone and runs of blanks made one."""
+    return re.sub(r"\s+", " ", text.replace("#", " ")).strip()
+
+
+def dataset_header(family: str) -> str:
+    """The comment lines above the dataset's first key, squashed."""
+    root = app.registrations.JURISDICTIONS.roots()[Namespace("ca")]
+    name = family.removeprefix("ca/")
+    lines = (root / "parameters" / name / "2025.yaml").read_text().splitlines()
+    first_key = next(i for i, line in enumerate(lines) if line[:1] != "#")
+    return squashed("\n".join(lines[:first_key]))
+
+
+@pytest.mark.parametrize(("family", "quotes"), HEADER_QUOTES.items())
+def test_the_dataset_header_quotes_t2048_as_the_form_prints_it(
+    family: str, quotes: tuple[str, ...]
+) -> None:
+    header = dataset_header(family).lower()
+
+    for quoted in quotes:
+        assert quoted in header, quoted
+
+
+@pytest.mark.parametrize("family", HEADER_QUOTES)
+def test_the_dataset_header_states_the_half_up_cent_rule(family: str) -> None:
+    assert "half-up to the cent" in dataset_header(family)
