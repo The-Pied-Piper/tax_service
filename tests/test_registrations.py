@@ -155,6 +155,12 @@ def test_importing_the_federal_package_registers_the_amount_or_divided_by_rate_c
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.amount_or_divided_by_rate"
 
 
+def test_importing_the_federal_package_registers_the_divided_by_rate_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/divided_by_rate")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.divided_by_rate"
+
+
 def test_importing_the_federal_package_registers_the_chart_a_row_c_total_capability() -> None:
     registered = CapabilityRegistry.shared().get("ca/chart_a_row_c_total")
 

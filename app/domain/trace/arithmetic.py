@@ -23,6 +23,7 @@ __all__ = [
     "SumLine",
     "SumNotBelowZeroLine",
     "RateAppliedLine",
+    "DividedByRateLine",
     "SubtractedLine",
     "SubtractedNotBelowZeroLine",
     "CreditAmountLine",
@@ -104,6 +105,26 @@ class RateAppliedLine(TraceLine):
     @property
     def amount(self) -> Decimal:
         """The rounded product."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class DividedByRateLine(TraceLine):
+    """The `result` produced as `output` by `dividend` (worth `dividend_amount`) ÷ `rate`, rounded.
+
+    Its own class, not a `RateAppliedLine`: the figure is divided by the rate, not multiplied.
+    """
+
+    output: Money
+    dividend: Money
+    dividend_amount: Decimal
+    rate: Rate
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The rounded quotient."""
         return self.result
 
 

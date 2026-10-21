@@ -11,6 +11,7 @@ from app.domain.trace.arithmetic import (
     AtMostLine,
     CappedAmountLine,
     CreditAmountLine,
+    DividedByRateLine,
     FractionAppliedLine,
     GreaterOfLine,
     LesserOfLine,
@@ -93,6 +94,26 @@ class RateAppliedRenderer:
         return (
             f"{output.label}: {EnglishFigures.percent(rate.value)}% of {base.label} "
             f"{EnglishFigures.money(amount)} ({EnglishFigures.rounding(rule)})"
+        )
+
+
+@english_renderer
+class DividedByRateRenderer:
+    """English text for DividedByRateLine."""
+
+    line_class = DividedByRateLine
+
+    def render(self, line: DividedByRateLine) -> str:
+        """The English sentence for `line`."""
+        output = line.output
+        dividend = line.dividend
+        amount = line.dividend_amount
+        rate = line.rate
+        rule = line.rounding
+        return (
+            f"{output.label}: {dividend.label} {EnglishFigures.money(amount)} divided by "
+            f"{EnglishFigures.percent(rate.value)}% ({EnglishFigures.rounding(rule)}) "
+            f"= {EnglishFigures.money(line.result)}"
         )
 
 

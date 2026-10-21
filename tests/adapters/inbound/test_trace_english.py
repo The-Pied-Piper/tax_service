@@ -43,6 +43,7 @@ from app.domain.trace import (
     ConditionsCountLine,
     ContributionTierLine,
     CreditAmountLine,
+    DividedByRateLine,
     FractionAppliedLine,
     GreaterOfLine,
     ItemLesserOfLine,
@@ -327,6 +328,50 @@ def test_renders_the_applied_rate_as_a_plain_percentage(rate: str, percent: str)
     line = RateAppliedLine(RATED_AMOUNT, GROSS_AMOUNT, D("40"), Rate(D(rate)), NO_ROUNDING, D(0))
 
     assert render(line) == f"rated_amount: {percent}% of gross_amount 40 (no rounding)"
+
+
+# --- figures divided by a rate --------------------------------------------------
+#
+# "<output>: <dividend kind> <dividend> divided by <rate>% (<rule>) = <result>", every figure as
+# given without trailing zeros, the result last.
+
+
+def test_renders_a_figure_divided_by_a_rate() -> None:
+    line = DividedByRateLine(
+        RATED_AMOUNT, GROSS_AMOUNT, D("3795"), Rate(D("0.145")), CENT, D("26172.41")
+    )
+
+    assert render(line) == (
+        "rated_amount: gross_amount 3795 divided by 14.5% (half-up to 0.01) = 26172.41"
+    )
+
+
+def test_renders_a_second_figure_divided_by_a_rate() -> None:
+    line = DividedByRateLine(
+        RATED_AMOUNT, GROSS_AMOUNT, D("2360.95"), Rate(D("0.0505")), CENT, D("46751.49")
+    )
+
+    assert render(line) == (
+        "rated_amount: gross_amount 2360.95 divided by 5.05% (half-up to 0.01) = 46751.49"
+    )
+
+
+def test_renders_a_figure_divided_by_a_rate_without_rounding() -> None:
+    line = DividedByRateLine(
+        RATED_AMOUNT, GROSS_AMOUNT, D("5.05"), Rate(D("0.0505")), NO_ROUNDING, D("100")
+    )
+
+    assert render(line) == "rated_amount: gross_amount 5.05 divided by 5.05% (no rounding) = 100"
+
+
+def test_renders_the_divided_figures_without_trailing_zeros_or_an_exponent() -> None:
+    line = DividedByRateLine(
+        RATED_AMOUNT, GROSS_AMOUNT, D("3.795E+3"), Rate(D("0.1450")), CENT, D("26172.410")
+    )
+
+    assert render(line) == (
+        "rated_amount: gross_amount 3795 divided by 14.5% (half-up to 0.01) = 26172.41"
+    )
 
 
 # --- subtractions ---------------------------------------------------------------
@@ -2293,6 +2338,12 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
                 RATED_AMOUNT, GROSS_AMOUNT, D("1000.00"), Rate(D("0.5")), NO_ROUNDING, D("500.000")
             ),
             "rated_amount: 50% of gross_amount 1000 (no rounding)",
+        ),
+        (
+            DividedByRateLine(
+                RATED_AMOUNT, GROSS_AMOUNT, D("3795.00"), Rate(D("0.145")), CENT, D("26172.410")
+            ),
+            "rated_amount: gross_amount 3795 divided by 14.5% (half-up to 0.01) = 26172.41",
         ),
         (
             SubtractedLine(
