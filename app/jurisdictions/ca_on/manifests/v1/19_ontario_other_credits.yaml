@@ -80,16 +80,15 @@ capabilities:
   # Schedule ON479-A "Family adjusted income calculation for the tax credit", column 1 "You".
   # Line 1 "Net income from line 23600 of the return (or the amount you would have entered if
   # the instructions on line 23600 said "if negative, show in brackets")" is line 23600 before
-  # the floor at 0, which is line 23400 less line 23500; line 23500 is not applied here, so
-  # line 1 reads T1 line 54 (line 23400) "Net income before adjustments". Line 2 "Child care
-  # expenses deduction from line 21400 of the return". Line 3 "Social benefits repayment from
-  # line 23500 of the return" is not applied here, so it is left out. Line 4 "Add lines 1 to 3
-  # (if negative, enter "0"). Adjusted income".
+  # the floor at 0 (`ca/net_income_signed`). Line 2 "Child care expenses deduction from line
+  # 21400 of the return". Line 3 "Social benefits repayment from line 23500 of the return".
+  # Line 4 "Add lines 1 to 3 (if negative, enter "0"). Adjusted income".
   - name: core/sum_not_below_zero
     consumes:
       parts:
-        - ca/net_income_before_adjustments
+        - ca/net_income_signed
         - ca/child_care_expenses
+        - ca/social_benefits_repayment
     produces:
       output: ca-on/care_adjusted_income
   # Column 2 "Supporting person(s)", line 4 (line 63047) is the supporting persons' adjusted

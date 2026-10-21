@@ -565,8 +565,16 @@ NET_INCOME = CATALOG.declare("net_income", Decimal, non_negative=True)
 """Net income, T1 line 56 and line 23600 "Line 54 minus line 55 (if negative, enter "0") If
 negative, you may have a non-capital loss (see Form T1A) and the negative amount is to be used for
 certain calculations (go to canada.ca/line-23600) Net income": the net income before adjustments
-(line 23400) less the social benefits repayment (line 23500), not below zero.
+(line 23400) less the social benefits repayment (line 23500), not below zero. The amount before
+that floor is `NET_INCOME_SIGNED`.
 """
+
+NET_INCOME_SIGNED = CATALOG.declare("net_income_signed", Decimal)
+"""Net income before its floor, T1 line 56 and line 23600 "Line 54 minus line 55 (if negative,
+enter "0")" as Form T1206 Part 1 line 5 "Net income from line 23600 of your tax return (or the
+amount you would have entered if the instructions on line 23600 read "if negative, show in
+brackets")" and Schedule ON479-A column 1 line 1 read it: the net income before adjustments (line
+23400) less the social benefits repayment (line 23500), signed."""
 
 OAS_OVERPAYMENT_RECOVERED = CATALOG.declare("oas_overpayment_recovered", Decimal, non_negative=True)
 """Overpayment of OAS benefits recovered, Federal Worksheet "Line 23500 - Social benefits
@@ -672,10 +680,9 @@ income of line 3, a part of the T1 line 23300 deductions and the tax base of lin
 
 TOSI_ADJUSTED_NET_INCOME = CATALOG.declare("tosi_adjusted_net_income", Decimal)
 """TOSI-adjusted net income, Form T1206 Part 1 line 6 "TOSI-adjusted net income: line 4 plus line 5
-If negative, enter the result in brackets": the total split income plus the net income before
-adjustments (line 5 "or the amount you would have entered if the instructions on line 23600 read
-"if negative, show in brackets""), signed. Line 23500 is not subtracted from the net income
-before adjustments here.
+If negative, enter the result in brackets": the total split income plus the net income
+before its floor (line 5 "or the amount you would have entered if the instructions on
+line 23600 read "if negative, show in brackets""), which is line 23400 less line 23500, signed.
 
 The form prints no "(if negative, enter "0")", so the kind is signed; it stands where the form's
 note says "use the negative value when it is part of an adjusted net income calculation".

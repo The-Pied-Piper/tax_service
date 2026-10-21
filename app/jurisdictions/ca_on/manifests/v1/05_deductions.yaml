@@ -410,17 +410,23 @@ capabilities:
       output: ca/net_income_before_adjustments
   # Federal Worksheet "Line 25000 - Other payments deduction" line 1 "Amount from line 23400 of your
   # return (if negative, enter "0")": line 23400 not below zero, a kind of its own as the net income
-  # of line 23600 is now line 23400 less line 23500.
+  # of line 23600 is line 23400 less line 23500.
   - name: core/sum_not_below_zero
     consumes:
       parts:
         - ca/net_income_before_adjustments
     produces:
       output: ca/net_income_before_adjustments_not_below_zero
-  # T1 line 56 and line 23600 "Line 54 minus line 55 (if negative, enter "0") If negative, you may
-  # have a non-capital loss (see Form T1A) and the negative amount is to be used for certain
-  # calculations (go to canada.ca/line-23600) Net income": line 23400 less line 23500, not below
-  # zero.
+  # T1 line 56 and line 23600 "Line 54 minus line 55 (if negative, enter "0")" before its floor,
+  # which Form T1206 Part 1 line 5 and Schedule ON479-A line 1 read: line 23400 less line 23500,
+  # signed.
+  - name: core/subtract
+    consumes:
+      amount: ca/net_income_before_adjustments
+      less: ca/social_benefits_repayment
+    produces:
+      output: ca/net_income_signed
+  # Line 56 itself: line 23400 less line 23500, not below zero.
   - name: core/subtract_not_below_zero
     consumes:
       amount: ca/net_income_before_adjustments
@@ -443,14 +449,14 @@ capabilities:
     produces:
       output: ca/total_split_income
   # Line 5 "Net income from line 23600 of your tax return (or the amount you would have entered if
-  # the instructions on line 23600 read "if negative, show in brackets")" is the net income before
-  # adjustments (line 23400), and line 6 "TOSI-adjusted net income: line 4 plus line 5 If
+  # the instructions on line 23600 read "if negative, show in brackets")" is line 23400 less line
+  # 23500, signed (`ca/net_income_signed`), and line 6 "TOSI-adjusted net income: line 4 plus line 5 If
   # negative, enter the result in brackets" is their sum, signed.
   - name: core/sum
     consumes:
       parts:
         - ca/total_split_income
-        - ca/net_income_before_adjustments
+        - ca/net_income_signed
     produces:
       output: ca/tosi_adjusted_net_income
   # "(If the TOSI–adjusted net income at line 6 is negative, use the negative value when it is
@@ -461,7 +467,7 @@ capabilities:
     consumes:
       parts:
         - ca/total_split_income
-        - ca/net_income_before_adjustments
+        - ca/net_income_signed
     produces:
       output: ca/tosi_adjusted_net_income_not_below_zero
   # Federal Worksheet "Line 25000 - Other payments deduction", "Complete the following

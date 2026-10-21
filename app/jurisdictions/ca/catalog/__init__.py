@@ -4,8 +4,9 @@ Only the kinds in use are declared, each non-negative except the lines that prin
 these lines can be negative on the return as modelled except the refund or balance owing, where
 negative means a refund, lines 5 and 9 of the Federal Worksheet for line 25000, the five "Net"
 self-employment income lines (T1 lines 22 to 26), line 27, Schedule 8 Part 4 line 1, the net income
-before adjustments (line 23400, "if negative, show in brackets") and the lines of Form T1436 and of
-Schedule 15 that print no "(if negative, enter "0")". Amounts are Decimal; the counts of eligible
+before adjustments (line 23400, "if negative, show in brackets"), line 23600 before its floor and
+the lines of Form T1436 and of Schedule 15 that print no "(if negative, enter "0")". Amounts are
+Decimal; the counts of eligible
 dependants, of infirm children, of the eligible children for child care (Form T778 Part B lines 1
 to 3), of the Schedule 6 eligible dependants (line 38100), the two starting counts of the Federal
 Worksheet for line 25000, the Schedule 15 count of a maximum participation period that ended in

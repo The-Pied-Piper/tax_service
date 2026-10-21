@@ -91,12 +91,11 @@ capabilities:
   # Column 1 "You" line 1 "Net income amount from line 23600 of the return (or the amount you
   # would have entered if the instructions on line 23600 said "if negative, show in brackets")" is
   # the TOSI-adjusted net income of Form T1206 Part 1 line 6, signed ("use line 6 of this form at
-  # line 1 of column 1 of your Federal Worksheet for line 45200"), whose line 5 is line 23400, the
-  # net income before adjustments, to which line 23500 is not applied here; line 2 "Total of the
-  # universal child care benefit (UCCB) repayment (line 21300 of the return) and the registered
-  # disability savings plan (RDSP) income repayment (included in the amount on line 23200 of the
-  # return)" is the UCCB and RDSP income repayments of the other payments worksheet; line 3 "Line
-  # 1 plus line 2".
+  # line 1 of column 1 of your Federal Worksheet for line 45200"), whose line 5 is line 23400
+  # less line 23500, signed; line 2 "Total of the universal child care benefit (UCCB) repayment
+  # (line 21300 of the return) and the registered disability savings plan (RDSP) income repayment
+  # (included in the amount on line 23200 of the return)" is the UCCB and RDSP income repayments
+  # of the other payments worksheet; line 3 "Line 1 plus line 2".
   - name: core/sum
     consumes:
       parts:
