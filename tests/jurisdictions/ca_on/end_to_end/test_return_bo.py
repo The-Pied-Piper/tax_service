@@ -1,7 +1,8 @@
-"""CA-ON 2025 end to end: return bo (Form RC381 Part 2 and Part 3 lines 1 to 69)."""
+"""CA-ON 2025 end to end: return bo (Form RC381 Part 2 and Part 3 lines 1 to 93)."""
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Any
 
 import pytest
@@ -14,11 +15,15 @@ from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
+from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
 from app.domain.errors import InputBelowBoundError, NoAmountForCountError
 from app.domain.parameters.rate import Rate
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.capabilities.amount_when_more import AmountWhenMore
+from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
 from app.jurisdictions.ca.capabilities.count_at_least import CountAtLeast
+from app.jurisdictions.ca.capabilities.lesser_of_when_positive import LesserOfWhenPositive
+from app.jurisdictions.ca.capabilities.positive_part_of_negation import PositivePartOfNegation
 from app.jurisdictions.ca.capabilities.ratio_truncated import RatioTruncated
 from app.jurisdictions.ca.catalog import (
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
@@ -28,6 +33,9 @@ from app.jurisdictions.ca.catalog import (
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
     NET_INCOME,
+    RC381_CPP_OVERPAYMENT,
+    RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS,
+    RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS,
     RC381_PART_2_LINE_B,
     RC381_PART_2_LINE_G,
     RC381_PART_2_LINE_H,
@@ -78,6 +86,27 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_67,
     RC381_PART_3_LINE_68,
     RC381_PART_3_LINE_69,
+    RC381_PART_3_LINE_73,
+    RC381_PART_3_LINE_75,
+    RC381_PART_3_LINE_76,
+    RC381_PART_3_LINE_77,
+    RC381_PART_3_LINE_78,
+    RC381_PART_3_LINE_79,
+    RC381_PART_3_LINE_80,
+    RC381_PART_3_LINE_81,
+    RC381_PART_3_LINE_82,
+    RC381_PART_3_LINE_83,
+    RC381_PART_3_LINE_84,
+    RC381_PART_3_LINE_85,
+    RC381_PART_3_LINE_86,
+    RC381_PART_3_LINE_87,
+    RC381_PART_3_LINE_87_DIFFERENCE,
+    RC381_PART_3_LINE_88,
+    RC381_PART_3_LINE_89,
+    RC381_PART_3_LINE_90,
+    RC381_PART_3_LINE_91,
+    RC381_PART_3_LINE_92,
+    RC381_PART_3_LINE_93,
     TOTAL_PAYABLE,
 )
 from tests.jurisdictions.ca_on.end_to_end.support import D, compute
@@ -988,6 +1017,599 @@ def test_return_bo_with_6_and_12_months_lines_27_to_30_read_line_b() -> None:
     assert worksheet.get(RC381_PART_3_LINE_69).value == D("966.69")
 
 
+# Part 3a and Part 3b (lines 70 to 93, "If your earnings subject to contributions are from
+# employment income only and line 69 is: positive, complete Part 3a ... "0", complete Part 3b ...
+# negative ... If not, complete Part 3b").
+
+# Part 3b's lines by number ("87h" is the "result of line 68 minus line 80" inside line 87).
+PART_3B_KINDS: dict[str, ArtifactKind[Decimal]] = {
+    "75": RC381_PART_3_LINE_75,
+    "76": RC381_PART_3_LINE_76,
+    "77": RC381_PART_3_LINE_77,
+    "78": RC381_PART_3_LINE_78,
+    "79": RC381_PART_3_LINE_79,
+    "80": RC381_PART_3_LINE_80,
+    "81": RC381_PART_3_LINE_81,
+    "82": RC381_PART_3_LINE_82,
+    "83": RC381_PART_3_LINE_83,
+    "84": RC381_PART_3_LINE_84,
+    "85": RC381_PART_3_LINE_85,
+    "86": RC381_PART_3_LINE_86,
+    "87h": RC381_PART_3_LINE_87_DIFFERENCE,
+    "87": RC381_PART_3_LINE_87,
+    "88": RC381_PART_3_LINE_88,
+    "89": RC381_PART_3_LINE_89,
+    "90": RC381_PART_3_LINE_90,
+    "91": RC381_PART_3_LINE_91,
+    "92": RC381_PART_3_LINE_92,
+    "93": RC381_PART_3_LINE_93,
+}
+
+
+def part_3b(worksheet: Worksheet) -> dict[str, Decimal]:
+    """Part 3b's lines 75 to 93 of `worksheet`, by line number."""
+    return {line: worksheet.get(kind).value for line, kind in PART_3B_KINDS.items()}
+
+
+def results(worksheet: Worksheet) -> tuple[Decimal, Decimal, Decimal]:
+    """The amounts for line 30800, line 22215 and line 44800 of the return."""
+    return (
+        worksheet.get(RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS).value,
+        worksheet.get(RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS).value,
+        worksheet.get(RC381_CPP_OVERPAYMENT).value,
+    )
+
+
+def test_return_bo_part_3a_matches_the_tickets_example() -> None:
+    # The ticket's example: line 69 = 172.25 is positive, so Part 3a. Line 70 "Enter the amount
+    # from line 52" = 3,462.75, line 71 "Enter the amount from line 59" = 665.00, line 72 "Enter the
+    # amount from line 67 (if any)" = 0, line 73 "Line 71 plus line 72" = 665.00 and line 74
+    # "Enter the amount from line 69" = 172.25: line 30800 = 3,462.75, line 22215 = 665.00 and
+    # line 44800 = 172.25. Lines 70, 71, 72 and 74 only copy lines 52, 59, 67 and 69.
+    worksheet = return_bo()
+
+    assert worksheet.get(RC381_PART_3_LINE_52).value == D("3462.75")
+    assert worksheet.get(RC381_PART_3_LINE_59).value == D("665.00")
+    assert worksheet.get(RC381_PART_3_LINE_67).value == D("0")
+    assert worksheet.get(RC381_PART_3_LINE_73).value == D("665.00")
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D("172.25")
+    assert results(worksheet) == (D("3462.75"), D("665.00"), D("172.25"))
+
+
+def test_return_bo_line_73_is_line_71_plus_line_72() -> None:
+    # Line 40,000 and 40,000 with box 16 and box 17 of 3,000.00 each: line 52 = 1,678.05 + 1,830.60
+    # = 3,508.65, line 59 = 339.00 + 339.00 = 678.00, line 67 = 174.00 + 174.00 = 348.00 and line
+    # 64 = 0, so line 68 = -348.00 and line 61 = 1,518.40 + 294.95 = 1,813.35: line 69 = 1,465.35,
+    # positive. Part 3a: line 73 = 678.00 + 348.00 = 1,026.00, so line 30800 = 3,508.65, line 22215
+    # = 1,026.00 and line 44800 = 1,465.35.
+    worksheet = return_bo(line_1="40000", line_2="40000", line_19="3000.00", line_39="3000.00")
+
+    assert worksheet.get(RC381_PART_3_LINE_52).value == D("3508.65")
+    assert worksheet.get(RC381_PART_3_LINE_59).value == D("678.00")
+    assert worksheet.get(RC381_PART_3_LINE_67).value == D("348.00")
+    assert worksheet.get(RC381_PART_3_LINE_68).value == D("-348.00")
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D("1465.35")
+    assert worksheet.get(RC381_PART_3_LINE_73).value == D("1026.00")
+    assert results(worksheet) == (D("3508.65"), D("1026.00"), D("1465.35"))
+
+
+def test_return_bo_part_3a_with_second_additional_contributions_paid() -> None:
+    # The same T4 totals with box 16A of 200.00 and box 17A of 300.00: line 64 = 500.00, line 68 =
+    # 152.00, line 69 = 1,813.35 + 152.00 = 1,965.35. Line 73 is still 678.00 + 348.00 = 1,026.00.
+    worksheet = return_bo(
+        line_1="40000",
+        line_2="40000",
+        line_19="3000.00",
+        line_39="3000.00",
+        line_25="200.00",
+        line_45="300.00",
+    )
+
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D("1965.35")
+    assert results(worksheet) == (D("3508.65"), D("1026.00"), D("1965.35"))
+
+
+def test_return_bo_part_3a_ignores_a_negative_line_53() -> None:
+    # Line 1 = 0, line 2 = 40,000, box 16 = 2,300.00 (as in the line 53 test above): line 53 =
+    # -57.55, line 60 = 21.55, line 61 = -36.00. With box 16A of 500.00 line 64 = 500.00 and line 68
+    # = 500.00 less line 67 (0) = 500.00: line 69 = -36.00 + 500.00 = 464.00, positive, so Part 3a
+    # takes line 52 (1,971.00), line 59 + line 67 (365.00 + 0) and line 69 whatever line 53 is.
+    worksheet = return_bo(
+        line_1="0", line_2="40000", line_19="2300.00", line_39="0", line_25="500.00"
+    )
+
+    assert worksheet.get(RC381_PART_3_LINE_53).value == D("-57.55")
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D("464.00")
+    assert results(worksheet) == (D("1971.00"), D("365.00"), D("464.00"))
+
+
+def test_return_bo_a_line_69_of_one_cent_is_positive_and_takes_part_3a() -> None:
+    # Box 16 of 1,695.20 and box 17 of 2,432.56 (chosen figures): line 20 = 1,695.20 x 83.1933% =
+    # 1,410.29 (1,410.2886), line 40 = 2,432.56 x 84.375% = 2,052.47 (2,052.4725); line 49 =
+    # 3,462.76 against line 52 = 3,462.75, so line 53 = 0.01. Line 21 = 284.91 and line 41 =
+    # 380.09: line 56 = 665.00 = line 59, line 60 = 0 and line 68 = 0, so line 69 = 0.01.
+    worksheet = return_bo(line_19="1695.20", line_39="2432.56")
+
+    assert worksheet.get(RC381_PART_3_LINE_49).value == D("3462.76")
+    assert worksheet.get(RC381_PART_3_LINE_56).value == D("665.00")
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D("0.01")
+    assert results(worksheet) == (D("3462.75"), D("665.00"), D("0.01"))
+
+
+def test_return_bo_a_line_69_of_zero_takes_part_3b_with_lines_53_60_and_68_all_zero() -> None:
+    # Box 16 of 1,695.20 and box 17 of 2,432.55 (chosen figures): line 20 = 1,410.29, line 40 =
+    # 2,052.46 (2,052.4640), line 49 = 3,462.75 = line 52, line 53 = 0. Line 21 = 284.91 and line 41
+    # = 380.09: line 56 = 665.00 = line 59, line 60 = 0; line 64 = line 67 = 0, line 68 = 0, so
+    # line 69 = 0: Part 3b. Line 53 is "positive or 0": line 75 = line 52 = 3,462.75; line 76 = 0,
+    # lines 77, 78, 80 = 0, line 79 = 3,462.75 and line 81 = 3,462.75. Line 60 is "positive or 0":
+    # line 82 = line 59 = 665.00, lines 83, 84, 85, 87 = 0, line 86 = line 88 = 665.00. Line 68 is
+    # "positive or 0": line 89 = line 67 = 0, lines 90, 91 = 0, line 92 = 0, line 93 = 665.00.
+    # Part 3b has no overpayment, so line 44800 is 0.
+    worksheet = return_bo(line_19="1695.20", line_39="2432.55")
+
+    assert worksheet.get(RC381_PART_3_LINE_53).value == D("0.00")
+    assert worksheet.get(RC381_PART_3_LINE_60).value == D("0.00")
+    assert worksheet.get(RC381_PART_3_LINE_68).value == D("0.00")
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D("0.00")
+    assert part_3b(worksheet) == {
+        "75": D("3462.75"),
+        "76": D("0"),
+        "77": D("0"),
+        "78": D("0"),
+        "79": D("3462.75"),
+        "80": D("0"),
+        "81": D("3462.75"),
+        "82": D("665.00"),
+        "83": D("0"),
+        "84": D("0"),
+        "85": D("0"),
+        "86": D("665.00"),
+        "87h": D("0"),
+        "87": D("0"),
+        "88": D("665.00"),
+        "89": D("0"),
+        "90": D("0"),
+        "91": D("0"),
+        "92": D("0"),
+        "93": D("665.00"),
+    }
+    assert results(worksheet) == (D("3462.75"), D("665.00"), D("0"))
+
+
+def test_return_bo_part_3b_with_line_53_negative_and_line_60_positive_adds_line_77_to_line_75() -> (
+    None
+):
+    # Box 16 of 4,127.75 and no box 17: line 20 = 4,127.75 x 83.1933% = 3,434.01 (3,434.0116) and
+    # line 21 = 693.74, so line 49 = 3,434.01, line 53 = 3,434.01 less 3,462.75 = -28.74; line 56 =
+    # 693.74, line 60 = 693.74 less 665.00 = 28.74. Line 61 = 0 and line 68 = 0, so line 69 = 0:
+    # Part 3b. Line 53 is negative: line 75 = line 49 = 3,434.01, line 76 = 28.74. Line 60 is
+    # positive: line 77 = the lesser of 28.74 and 28.74 = 28.74, line 78 = 0, line 79 = 3,434.01 +
+    # 28.74 = 3,462.75, line 80 = 0 (line 68 is 0), line 81 = 3,462.75. Line 60 is positive: line
+    # 82 = line 59 = 665.00 and lines 83 to 85 = 0; line 88 = 665.00; line 89 = line 67 = 0 and line
+    # 93 = 665.00. The base is made up to the required base from the first additional.
+    worksheet = return_bo(line_19="4127.75", line_39="0")
+
+    assert worksheet.get(RC381_PART_3_LINE_49).value == D("3434.01")
+    assert worksheet.get(RC381_PART_3_LINE_53).value == D("-28.74")
+    assert worksheet.get(RC381_PART_3_LINE_56).value == D("693.74")
+    assert worksheet.get(RC381_PART_3_LINE_60).value == D("28.74")
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D("0.00")
+    assert part_3b(worksheet) == {
+        "75": D("3434.01"),
+        "76": D("28.74"),
+        "77": D("28.74"),
+        "78": D("0"),
+        "79": D("3462.75"),
+        "80": D("0"),
+        "81": D("3462.75"),
+        "82": D("665.00"),
+        "83": D("0"),
+        "84": D("0"),
+        "85": D("0"),
+        "86": D("665.00"),
+        "87h": D("0"),
+        "87": D("0"),
+        "88": D("665.00"),
+        "89": D("0"),
+        "90": D("0"),
+        "91": D("0"),
+        "92": D("0"),
+        "93": D("665.00"),
+    }
+    assert results(worksheet) == (D("3462.75"), D("665.00"), D("0"))
+
+
+def test_return_bo_part_3b_with_line_53_positive_and_line_60_negative_adds_line_84_to_line_82() -> (
+    None
+):
+    # No box 16 and box 17 of 4,127.75: line 40 = 4,127.75 x 84.375% = 3,482.79 (3,482.7890), line
+    # 41 = 644.96; line 53 = 3,482.79 less 3,462.75 = 20.04, line 60 = 644.96 less 665.00 = -20.04,
+    # line 61 = 0, line 69 = 0: Part 3b. Line 53 is positive: line 75 = line 52 = 3,462.75, lines
+    # 76 to 80 = 0, line 81 = 3,462.75. Line 60 is negative: line 82 = line 56 = 644.96, line 83 =
+    # 20.04, line 84 = the lesser of 20.04 and 20.04 = 20.04, line 85 = 0, line 86 = 644.96 +
+    # 20.04 = 665.00, line 87 = 0, line 88 = 665.00, line 93 = 665.00 + 0.
+    worksheet = return_bo(line_19="0", line_39="4127.75")
+
+    assert worksheet.get(RC381_PART_3_LINE_53).value == D("20.04")
+    assert worksheet.get(RC381_PART_3_LINE_56).value == D("644.96")
+    assert worksheet.get(RC381_PART_3_LINE_60).value == D("-20.04")
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D("0.00")
+    assert part_3b(worksheet) == {
+        "75": D("3462.75"),
+        "76": D("0"),
+        "77": D("0"),
+        "78": D("0"),
+        "79": D("3462.75"),
+        "80": D("0"),
+        "81": D("3462.75"),
+        "82": D("644.96"),
+        "83": D("20.04"),
+        "84": D("20.04"),
+        "85": D("0"),
+        "86": D("665.00"),
+        "87h": D("0"),
+        "87": D("0"),
+        "88": D("665.00"),
+        "89": D("0"),
+        "90": D("0"),
+        "91": D("0"),
+        "92": D("0"),
+        "93": D("665.00"),
+    }
+    assert results(worksheet) == (D("3462.75"), D("665.00"), D("0"))
+
+
+def test_return_bo_part_3b_with_no_contributions_paid_gives_zero_for_both_results() -> None:
+    # No box 16 or box 17: line 49 = 0, line 53 = -3,462.75; line 56 = 0, line 60 = -665.00; line 69
+    # = -4,127.75, negative, so Part 3b ("If not, complete Part 3b"). Line 53 is negative: line 75 =
+    # line 49 = 0; line 76 = 3,462.75; line 60 is negative, not positive, so line 77 = "0"; line 78
+    # = 3,462.75; line 79 = 0; line 68 is 0, so line 80 = "0"; line 81 = 0. Line 60 is negative:
+    # line 82 = line 56 = 0; line 83 = 665.00; line 53 is negative, not positive, so line 84 = "0";
+    # line 85 = 665.00; line 86 = 0; line 87 = 0 (line 68 is 0); line 88 = 0; line 93 = 0.
+    worksheet = return_bo(line_19="0", line_39="0")
+
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D("-4127.75")
+    assert part_3b(worksheet) == {
+        "75": D("0"),
+        "76": D("3462.75"),
+        "77": D("0"),
+        "78": D("3462.75"),
+        "79": D("0"),
+        "80": D("0"),
+        "81": D("0"),
+        "82": D("0"),
+        "83": D("665.00"),
+        "84": D("0"),
+        "85": D("665.00"),
+        "86": D("0"),
+        "87h": D("0"),
+        "87": D("0"),
+        "88": D("0"),
+        "89": D("0"),
+        "90": D("0"),
+        "91": D("0"),
+        "92": D("0"),
+        "93": D("0"),
+    }
+    assert results(worksheet) == (D("0"), D("0"), D("0"))
+
+
+def test_return_bo_part_3b_with_lines_53_and_60_both_negative_gives_the_actual_contributions() -> (
+    None
+):
+    # No box 16 and box 17 of 4,000.00: line 40 = 4,000.00 x 84.375% = 3,375.00, line 41 = 625.00;
+    # line 53 = 3,375.00 less 3,462.75 = -87.75, line 60 = 625.00 less 665.00 = -40.00, line 61 =
+    # -127.75, line 69 = -127.75. Line 75 = line 49 = 3,375.00, line 76 = 87.75, line 77 = "0" (line
+    # 60 is not positive), line 78 = 87.75, line 79 = 3,375.00, line 80 = "0" (line 68 is 0), line
+    # 81 = 3,375.00. Line 82 = line 56 = 625.00, line 83 = 40.00, line 84 = "0" (line 53 is not
+    # positive), line 85 = 40.00, line 86 = 625.00, line 87 = "0", line 88 = 625.00, line 93 =
+    # 625.00.
+    worksheet = return_bo(line_19="0", line_39="4000.00")
+
+    assert worksheet.get(RC381_PART_3_LINE_53).value == D("-87.75")
+    assert worksheet.get(RC381_PART_3_LINE_60).value == D("-40.00")
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D("-127.75")
+    assert part_3b(worksheet) == {
+        "75": D("3375.00"),
+        "76": D("87.75"),
+        "77": D("0"),
+        "78": D("87.75"),
+        "79": D("3375.00"),
+        "80": D("0"),
+        "81": D("3375.00"),
+        "82": D("625.00"),
+        "83": D("40.00"),
+        "84": D("0"),
+        "85": D("40.00"),
+        "86": D("625.00"),
+        "87h": D("0"),
+        "87": D("0"),
+        "88": D("625.00"),
+        "89": D("0"),
+        "90": D("0"),
+        "91": D("0"),
+        "92": D("0"),
+        "93": D("625.00"),
+    }
+    assert results(worksheet) == (D("3375.00"), D("625.00"), D("0"))
+
+
+def test_return_bo_part_3b_line_80_is_line_68_when_line_53_is_negative_and_line_60_positive() -> (
+    None
+):
+    # Box 16 of 4,100.00, no box 17, box 16A of 20.00: line 20 = 3,410.93 (3,410.9253), line 21 =
+    # 689.07; line 53 = 3,410.93 less 3,462.75 = -51.82, line 60 = 689.07 less 665.00 = 24.07, line
+    # 61 = -27.75; line 64 = 20.00, line 67 = 0, line 68 = 20.00, line 69 = -7.75: Part 3b. Line
+    # 75 = line 49 = 3,410.93, line 76 = 51.82, line 77 = the lesser of 24.07 and 51.82 = 24.07,
+    # line 78 = 27.75, line 79 = 3,435.00. Line 68 and line 78 are both positive: line 80 = the
+    # lesser of 20.00 and 27.75 = 20.00, line 81 = 3,455.00. Line 60 is positive: line 82 = line 59
+    # = 665.00, lines 83 to 85 = 0, line 86 = 665.00, line 87 = "0" (line 85 is 0), line 88 =
+    # 665.00. Line 68 is positive: line 89 = line 67 = 0, line 92 = 0, line 93 = 665.00.
+    worksheet = return_bo(line_19="4100.00", line_39="0", line_25="20.00")
+
+    assert worksheet.get(RC381_PART_3_LINE_53).value == D("-51.82")
+    assert worksheet.get(RC381_PART_3_LINE_60).value == D("24.07")
+    assert worksheet.get(RC381_PART_3_LINE_68).value == D("20.00")
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D("-7.75")
+    assert part_3b(worksheet) == {
+        "75": D("3410.93"),
+        "76": D("51.82"),
+        "77": D("24.07"),
+        "78": D("27.75"),
+        "79": D("3435.00"),
+        "80": D("20.00"),
+        "81": D("3455.00"),
+        "82": D("665.00"),
+        "83": D("0"),
+        "84": D("0"),
+        "85": D("0"),
+        "86": D("665.00"),
+        "87h": D("0"),
+        "87": D("0"),
+        "88": D("665.00"),
+        "89": D("0"),
+        "90": D("0"),
+        "91": D("0"),
+        "92": D("0"),
+        "93": D("665.00"),
+    }
+    assert results(worksheet) == (D("3455.00"), D("665.00"), D("0"))
+
+
+def test_return_bo_part_3b_line_87_is_line_68_less_line_80_when_that_is_less_than_line_85() -> None:
+    # No box 16, box 17 of 4,000.00 (lines 53 = -87.75, 60 = -40.00 as above) and box 16A of 100.00:
+    # line 68 = 100.00, line 69 = -127.75 + 100.00 = -27.75: Part 3b. Line 75 = 3,375.00, line 76 =
+    # 87.75, line 77 = "0", line 78 = 87.75, line 79 = 3,375.00; lines 68 and 78 both positive:
+    # line 80 = the lesser of 100.00 and 87.75 = 87.75, line 81 = 3,462.75. Line 82 = line 56 =
+    # 625.00, line 83 = 40.00, line 84 = "0", line 85 = 40.00, line 86 = 625.00; lines 68 and 85
+    # both positive: line 87 = the lesser of 40.00 and (100.00 less 87.75 = 12.25) = 12.25, line 88
+    # = 637.25. Line 89 = line 67 = 0, line 92 = 0, line 93 = 637.25.
+    worksheet = return_bo(line_19="0", line_39="4000.00", line_25="100.00")
+
+    assert worksheet.get(RC381_PART_3_LINE_68).value == D("100.00")
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D("-27.75")
+    assert part_3b(worksheet) == {
+        "75": D("3375.00"),
+        "76": D("87.75"),
+        "77": D("0"),
+        "78": D("87.75"),
+        "79": D("3375.00"),
+        "80": D("87.75"),
+        "81": D("3462.75"),
+        "82": D("625.00"),
+        "83": D("40.00"),
+        "84": D("0"),
+        "85": D("40.00"),
+        "86": D("625.00"),
+        "87h": D("12.25"),
+        "87": D("12.25"),
+        "88": D("637.25"),
+        "89": D("0"),
+        "90": D("0"),
+        "91": D("0"),
+        "92": D("0"),
+        "93": D("637.25"),
+    }
+    assert results(worksheet) == (D("3462.75"), D("637.25"), D("0"))
+
+
+def test_return_bo_part_3b_line_87_is_zero_when_line_80_takes_all_of_line_68() -> None:
+    # The same T4 totals with box 16A of 50.00: line 68 = 50.00, line 69 = -127.75 + 50.00 =
+    # -77.75. Lines 68 and 78 (87.75) are both positive: line 80 = the lesser of 50.00 and 87.75 =
+    # 50.00, line 81 = 3,375.00 + 50.00 = 3,425.00. Lines 68 and 85 (40.00) are both positive, but
+    # line 68 less line 80 is 0, so the lesser of 40.00 and 0 is 0: line 87 = 0, line 88 = 625.00.
+    worksheet = return_bo(line_19="0", line_39="4000.00", line_25="50.00")
+
+    assert worksheet.get(RC381_PART_3_LINE_68).value == D("50.00")
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D("-77.75")
+    assert part_3b(worksheet) == {
+        "75": D("3375.00"),
+        "76": D("87.75"),
+        "77": D("0"),
+        "78": D("87.75"),
+        "79": D("3375.00"),
+        "80": D("50.00"),
+        "81": D("3425.00"),
+        "82": D("625.00"),
+        "83": D("40.00"),
+        "84": D("0"),
+        "85": D("40.00"),
+        "86": D("625.00"),
+        "87h": D("0"),
+        "87": D("0"),
+        "88": D("625.00"),
+        "89": D("0"),
+        "90": D("0"),
+        "91": D("0"),
+        "92": D("0"),
+        "93": D("625.00"),
+    }
+    assert results(worksheet) == (D("3425.00"), D("625.00"), D("0"))
+
+
+def test_return_bo_part_3b_line_87_with_line_53_positive_is_all_of_line_68() -> None:
+    # No box 16, box 17 of 4,110.00 and box 16A of 10.00: line 40 = 3,467.81 (3,467.8125), line 41 =
+    # 642.19; line 53 = 3,467.81 less 3,462.75 = 5.06, line 60 = 642.19 less 665.00 = -22.81, line
+    # 61 = -17.75; line 68 = 10.00, line 69 = -7.75: Part 3b. Line 53 is positive: line 75 = line
+    # 52 = 3,462.75, line 76 = 0, line 77 = 0, line 78 = 0, line 79 = 3,462.75; line 78 is not
+    # positive, so line 80 = "0", line 81 = 3,462.75. Line 60 is negative: line 82 = line 56 =
+    # 642.19, line 83 = 22.81, line 84 = the lesser of 5.06 and 22.81 = 5.06, line 85 = 17.75, line
+    # 86 = 647.25; lines 68 and 85 both positive: line 87 = the lesser of 17.75 and (10.00 less 0
+    # = 10.00) = 10.00, line 88 = 657.25. Line 89 = line 67 = 0, line 93 = 657.25.
+    worksheet = return_bo(line_19="0", line_39="4110.00", line_25="10.00")
+
+    assert worksheet.get(RC381_PART_3_LINE_53).value == D("5.06")
+    assert worksheet.get(RC381_PART_3_LINE_60).value == D("-22.81")
+    assert worksheet.get(RC381_PART_3_LINE_68).value == D("10.00")
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D("-7.75")
+    assert part_3b(worksheet) == {
+        "75": D("3462.75"),
+        "76": D("0"),
+        "77": D("0"),
+        "78": D("0"),
+        "79": D("3462.75"),
+        "80": D("0"),
+        "81": D("3462.75"),
+        "82": D("642.19"),
+        "83": D("22.81"),
+        "84": D("5.06"),
+        "85": D("17.75"),
+        "86": D("647.25"),
+        "87h": D("10.00"),
+        "87": D("10.00"),
+        "88": D("657.25"),
+        "89": D("0"),
+        "90": D("0"),
+        "91": D("0"),
+        "92": D("0"),
+        "93": D("657.25"),
+    }
+    assert results(worksheet) == (D("3462.75"), D("657.25"), D("0"))
+
+
+def test_return_bo_part_3b_with_line_68_negative_and_line_61_positive_adds_line_91() -> None:
+    # Lines 1 and 2 of 40,000 (line 52 = 3,508.65, line 59 = 678.00, line 67 = 348.00), no box 16
+    # and box 17 of 4,300.00: line 40 = 3,628.13 (3,628.125), line 41 = 671.87; line 53 = 119.48,
+    # line 60 = 671.87 less 678.00 = -6.13, line 61 = 113.35; line 64 = 0, line 68 = -348.00, line
+    # 69 = 113.35 - 348.00 = -234.65: Part 3b. Line 53 is positive: line 75 = 3,508.65, lines 76 to
+    # 80 = 0, line 81 = 3,508.65. Line 60 is negative: line 82 = line 56 = 671.87, line 83 = 6.13,
+    # line 84 = the lesser of 119.48 and 6.13 = 6.13, line 85 = 0, line 86 = 678.00; line 68 is
+    # negative, so line 87 = "0"; line 88 = 678.00. Line 68 is negative: line 89 = line 64 = 0, line
+    # 90 = 348.00, line 61 is positive: line 91 = the lesser of 113.35 and 348.00 = 113.35, line 92
+    # = 113.35, line 93 = 678.00 + 113.35 = 791.35.
+    worksheet = return_bo(line_1="40000", line_2="40000", line_19="0", line_39="4300.00")
+
+    assert worksheet.get(RC381_PART_3_LINE_61).value == D("113.35")
+    assert worksheet.get(RC381_PART_3_LINE_68).value == D("-348.00")
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D("-234.65")
+    assert part_3b(worksheet) == {
+        "75": D("3508.65"),
+        "76": D("0"),
+        "77": D("0"),
+        "78": D("0"),
+        "79": D("3508.65"),
+        "80": D("0"),
+        "81": D("3508.65"),
+        "82": D("671.87"),
+        "83": D("6.13"),
+        "84": D("6.13"),
+        "85": D("0"),
+        "86": D("678.00"),
+        "87h": D("-348.00"),
+        "87": D("0"),
+        "88": D("678.00"),
+        "89": D("0"),
+        "90": D("348.00"),
+        "91": D("113.35"),
+        "92": D("113.35"),
+        "93": D("791.35"),
+    }
+    assert results(worksheet) == (D("3508.65"), D("791.35"), D("0"))
+
+
+def test_return_bo_part_3b_line_89_is_line_64_when_line_68_is_negative() -> None:
+    # The same lines 1 and 2 with box 17 of 4,386.65 and box 16A of 100.00: line 40 = 3,701.24
+    # (3,701.2397), line 41 = 685.41; line 53 = 192.59, line 60 = 7.41, line 61 = 200.00; line 64 =
+    # 100.00, line 67 = 348.00, line 68 = -248.00, line 69 = -48.00: Part 3b. Line 75 = line 52 =
+    # 3,508.65, line 81 = 3,508.65. Line 60 is positive: line 82 = line 59 = 678.00, line 88 =
+    # 678.00. Line 68 is negative: line 89 = line 64 = 100.00; line 90 = 248.00; line 61 is
+    # positive: line 91 = the lesser of 200.00 and 248.00 = 200.00; line 92 = 300.00; line 93 =
+    # 678.00 + 300.00 = 978.00.
+    worksheet = return_bo(
+        line_1="40000", line_2="40000", line_19="0", line_39="4386.65", line_25="100.00"
+    )
+
+    assert worksheet.get(RC381_PART_3_LINE_61).value == D("200.00")
+    assert worksheet.get(RC381_PART_3_LINE_64).value == D("100.00")
+    assert worksheet.get(RC381_PART_3_LINE_68).value == D("-248.00")
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D("-48.00")
+    assert part_3b(worksheet) == {
+        "75": D("3508.65"),
+        "76": D("0"),
+        "77": D("0"),
+        "78": D("0"),
+        "79": D("3508.65"),
+        "80": D("0"),
+        "81": D("3508.65"),
+        "82": D("678.00"),
+        "83": D("0"),
+        "84": D("0"),
+        "85": D("0"),
+        "86": D("678.00"),
+        "87h": D("-248.00"),
+        "87": D("0"),
+        "88": D("678.00"),
+        "89": D("100.00"),
+        "90": D("248.00"),
+        "91": D("200.00"),
+        "92": D("300.00"),
+        "93": D("978.00"),
+    }
+    assert results(worksheet) == (D("3508.65"), D("978.00"), D("0"))
+
+
+def test_return_bo_part_3a_and_3b_steps_are_the_form_capabilities() -> None:
+    worksheet = return_bo()
+
+    for kind in (
+        RC381_PART_3_LINE_73,
+        RC381_PART_3_LINE_79,
+        RC381_PART_3_LINE_81,
+        RC381_PART_3_LINE_86,
+        RC381_PART_3_LINE_88,
+        RC381_PART_3_LINE_92,
+        RC381_PART_3_LINE_93,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
+    for kind in (
+        RC381_PART_3_LINE_78,
+        RC381_PART_3_LINE_85,
+        RC381_PART_3_LINE_87_DIFFERENCE,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Subtract), kind.identifier
+    for kind in (RC381_PART_3_LINE_76, RC381_PART_3_LINE_83, RC381_PART_3_LINE_90):
+        assert isinstance(worksheet.producer_of(kind), PositivePartOfNegation), kind.identifier
+    for kind in (
+        RC381_PART_3_LINE_77,
+        RC381_PART_3_LINE_80,
+        RC381_PART_3_LINE_84,
+        RC381_PART_3_LINE_87,
+        RC381_PART_3_LINE_91,
+    ):
+        assert isinstance(worksheet.producer_of(kind), LesserOfWhenPositive), kind.identifier
+    for kind in (
+        RC381_PART_3_LINE_75,
+        RC381_PART_3_LINE_82,
+        RC381_PART_3_LINE_89,
+        RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS,
+        RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS,
+    ):
+        assert isinstance(worksheet.producer_of(kind), ChooseBySign), kind.identifier
+    # Line 74 "Enter the amount from line 69" is the sign's own amount, so line 44800 is line 69
+    # not below zero.
+    assert isinstance(worksheet.producer_of(RC381_CPP_OVERPAYMENT), SumNotBelowZero)
+
+
 # A return with no Quebec figures.
 
 
@@ -997,7 +1619,8 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
     # The T4 box 16 total is the Schedule 8 Part 3 line 8 input, here the required 3,361.75, so
     # line 20 (83.1933% of it) is the base contributions 2,796.75 and line 21 the enhanced 565.00;
     # lines 49, 53, 56, 60, 61 and 69 carry those actual figures (the required figures being 0, as
-    # no pensionable earnings are entered); every other Part 3 line is 0.
+    # no pensionable earnings are entered), as does line 44800's overpayment; every other Part 3
+    # line is 0.
     worksheet = compute("60000", (), "0", "0", "0", "0", "0")
 
     assert worksheet.get(CPP_BASE_CONTRIBUTIONS).value == D("2796.75")
@@ -1035,6 +1658,29 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
         RC381_PART_3_LINE_64,
         RC381_PART_3_LINE_67,
         RC381_PART_3_LINE_68,
+        RC381_PART_3_LINE_73,
+        RC381_PART_3_LINE_75,
+        RC381_PART_3_LINE_76,
+        RC381_PART_3_LINE_77,
+        RC381_PART_3_LINE_78,
+        RC381_PART_3_LINE_79,
+        RC381_PART_3_LINE_80,
+        RC381_PART_3_LINE_81,
+        RC381_PART_3_LINE_82,
+        RC381_PART_3_LINE_83,
+        RC381_PART_3_LINE_84,
+        RC381_PART_3_LINE_85,
+        RC381_PART_3_LINE_86,
+        RC381_PART_3_LINE_87_DIFFERENCE,
+        RC381_PART_3_LINE_87,
+        RC381_PART_3_LINE_88,
+        RC381_PART_3_LINE_89,
+        RC381_PART_3_LINE_90,
+        RC381_PART_3_LINE_91,
+        RC381_PART_3_LINE_92,
+        RC381_PART_3_LINE_93,
+        RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS,
+        RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS,
     )
     assert worksheet.get(RC381_PART_3_LINE_20).value == D("2796.75")
     assert worksheet.get(RC381_PART_3_LINE_21).value == D("565.00")
@@ -1045,6 +1691,9 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
     assert worksheet.get(RC381_PART_3_LINE_60).value == D("565.00")
     assert worksheet.get(RC381_PART_3_LINE_61).value == D("3361.75")
     assert worksheet.get(RC381_PART_3_LINE_69).value == D("3361.75")
+    # Line 69 is positive, so Part 3a's line 44800 result is it; the other two results are lines
+    # 52 and 73, which are 0 as no pensionable earnings are entered.
+    assert worksheet.get(RC381_CPP_OVERPAYMENT).value == D("3361.75")
     # Lines 27 to 30 are the QPP row of the table less lines 7 to 10, which are 0.
     assert worksheet.get(RC381_PART_3_LINE_27).value == D("81200.00")
     assert worksheet.get(RC381_PART_3_LINE_28).value == D("71300.00")

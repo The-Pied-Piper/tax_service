@@ -704,6 +704,7 @@ expected:
   ca/rc381_part_3_line_20: "321.75"
   ca/rc381_part_3_line_21: "65.00"
   ca/rc381_part_3_line_69: "386.75"
+  ca/rc381_cpp_overpayment: "386.75"
   ca/amt_basic_federal_tax: "-1181.85"
   ca/amt_federal_surtax_at_48_percent: "-567.29"
   ca/amt_regular_net_federal_tax_payable: "0"

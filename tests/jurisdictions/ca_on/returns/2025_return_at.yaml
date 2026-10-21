@@ -248,6 +248,7 @@ expected:
   ca/rc381_part_3_line_20: "1806.75"
   ca/rc381_part_3_line_21: "365.00"
   ca/rc381_part_3_line_69: "2171.75"
+  ca/rc381_cpp_overpayment: "2171.75"
   ca/cpp_contributions_difference: "0.00"
   ca/cpp_part_5_line_57: "1806.75"
   ca/cpp_part_5_line_69: "365.00"
