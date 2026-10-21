@@ -77,7 +77,9 @@ from app.jurisdictions.ca.trace import (
     DispositionGainLine,
     DispositionGainOnlyLine,
     DispositionProceedsLine,
+    ForeignTaxCreditLine,
     OtherDependantMedicalLine,
+    PooledForeignTaxCreditLine,
     PrincipalResidenceGainLine,
     RecapturedCcaLine,
     ShortTermRentalNonCompliantCcaByClassLine,
@@ -346,6 +348,35 @@ def short_term_rental_non_compliant_cca_by_class_line() -> (
     )
 
 
+def foreign_tax_credit_line() -> ForeignTaxCreditLine:
+    return ForeignTaxCreditLine(
+        NON_COMPLIANT,
+        2,
+        D("1500"),
+        D("10000"),
+        D("100000"),
+        D("14000"),
+        CENT,
+        D("1400.00"),
+        D("1400.00"),
+    )
+
+
+def pooled_foreign_tax_credit_line() -> PooledForeignTaxCreditLine:
+    return PooledForeignTaxCreditLine(
+        NON_COMPLIANT,
+        2,
+        D("200"),
+        D("10100"),
+        D("100000"),
+        D("14000"),
+        D("200"),
+        CENT,
+        D("1414.00"),
+        D("200"),
+    )
+
+
 def caregiver_claim_less_claimed_line() -> CaregiverClaimLessClaimedLine:
     return CaregiverClaimLessClaimedLine(
         CAREGIVER,
@@ -485,6 +516,8 @@ ALL_LINES = [
     item_sum_line,
     item_lesser_of_line,
     disposition_gain_line,
+    foreign_tax_credit_line,
+    pooled_foreign_tax_credit_line,
     disposition_gain_only_line,
     items_total_line,
     other_dependant_medical_line,
@@ -2424,6 +2457,152 @@ def test_short_term_rental_non_compliant_cca_by_class_lines_are_hashable() -> No
     assert hash(short_term_rental_non_compliant_cca_by_class_line()) == hash(
         short_term_rental_non_compliant_cca_by_class_line()
     )
+
+
+def test_foreign_tax_credit_line_fields_in_order() -> None:
+    line = foreign_tax_credit_line()
+
+    assert line == ForeignTaxCreditLine(
+        output=NON_COMPLIANT,
+        position=2,
+        tax_paid=D("1500"),
+        income=D("10000"),
+        net_income=D("100000"),
+        basic_federal_tax=D("14000"),
+        rounding=CENT,
+        line_2=D("1400.00"),
+        result=D("1400.00"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "tax_paid",
+        "income",
+        "net_income",
+        "basic_federal_tax",
+        "rounding",
+        "line_2",
+        "result",
+    ]
+    assert line.output is NON_COMPLIANT
+    assert line.position == 2
+    assert line.rounding == CENT
+
+
+def test_foreign_tax_credit_line_amount_is_the_result() -> None:
+    line = foreign_tax_credit_line()
+
+    assert line.amount == D("1400.00")
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_foreign_tax_credit_lines_differ_by_each_field() -> None:
+    line = foreign_tax_credit_line()
+    other_output = ArtifactKind("ex/other_expenses", Decimal)
+    args: list[Any] = [
+        NON_COMPLIANT,
+        2,
+        D("1500"),
+        D("10000"),
+        D("100000"),
+        D("14000"),
+        CENT,
+        D("1400.00"),
+        D("1400.00"),
+    ]
+    changes: list[Any] = [
+        other_output,
+        1,
+        D("1501"),
+        D("10001"),
+        D("100001"),
+        D("14001"),
+        NO_ROUNDING,
+        D("1400.01"),
+        D("1400.01"),
+    ]
+    for index, changed in enumerate(changes):
+        varied = [*args[:index], changed, *args[index + 1 :]]
+        assert line != ForeignTaxCreditLine(*varied)
+
+
+def test_foreign_tax_credit_lines_are_hashable() -> None:
+    assert hash(foreign_tax_credit_line()) == hash(foreign_tax_credit_line())
+
+
+def test_pooled_foreign_tax_credit_line_fields_in_order() -> None:
+    line = pooled_foreign_tax_credit_line()
+
+    assert line == PooledForeignTaxCreditLine(
+        output=NON_COMPLIANT,
+        countries=2,
+        tax_paid=D("200"),
+        income=D("10100"),
+        net_income=D("100000"),
+        basic_federal_tax=D("14000"),
+        threshold=D("200"),
+        rounding=CENT,
+        line_2=D("1414.00"),
+        result=D("200"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "countries",
+        "tax_paid",
+        "income",
+        "net_income",
+        "basic_federal_tax",
+        "threshold",
+        "rounding",
+        "line_2",
+        "result",
+    ]
+    assert line.countries == 2
+    assert type(line.countries) is int
+
+
+def test_pooled_foreign_tax_credit_line_amount_is_the_result() -> None:
+    line = pooled_foreign_tax_credit_line()
+
+    assert line.amount == D("200")
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_pooled_foreign_tax_credit_lines_differ_by_each_field() -> None:
+    line = pooled_foreign_tax_credit_line()
+    other_output = ArtifactKind("ex/other_expenses", Decimal)
+    args: list[Any] = [
+        NON_COMPLIANT,
+        2,
+        D("200"),
+        D("10100"),
+        D("100000"),
+        D("14000"),
+        D("200"),
+        CENT,
+        D("1414.00"),
+        D("200"),
+    ]
+    changes: list[Any] = [
+        other_output,
+        3,
+        D("201"),
+        D("10101"),
+        D("100001"),
+        D("14001"),
+        D("250"),
+        NO_ROUNDING,
+        D("1414.01"),
+        D("199"),
+    ]
+    for index, changed in enumerate(changes):
+        varied = [*args[:index], changed, *args[index + 1 :]]
+        assert line != PooledForeignTaxCreditLine(*varied)
+
+
+def test_a_pooled_foreign_tax_credit_line_is_not_a_foreign_tax_credit_line() -> None:
+    assert not isinstance(pooled_foreign_tax_credit_line(), ForeignTaxCreditLine)
+    assert not isinstance(foreign_tax_credit_line(), PooledForeignTaxCreditLine)
 
 
 def test_caregiver_claim_less_claimed_line_fields_in_order() -> None:

@@ -118,6 +118,9 @@ REGISTERED = frozenset(
         "ca/farming_income",
         "ca/fishing_income",
         "ca/net_self_employment_income",
+        "ca/foreign_non_business_tax_paid",
+        "ca/net_foreign_non_business_income",
+        "ca/foreign_tax_countries",
         "ca/workers_compensation_benefits",
         "ca/social_assistance_payments",
         "ca/net_federal_supplements",
@@ -209,6 +212,7 @@ REGISTERED = frozenset(
         "ca/rental_cca_claim_before_limit",
         "ca/rental_cca_limit",
         "ca/rental_closing_ucc",
+        "ca/foreign_tax_countries",
         "ca/rental_net_income_after_cca",
         "ca/rental_partner",
         "ca/rental_partner_share",
@@ -879,5 +883,6 @@ RECORD_LISTS = frozenset(
         "ca/travel_individuals",
         "ca/rental_cca_classes",
         "ca/rental_closing_ucc",
+        "ca/foreign_tax_countries",
     }
 )

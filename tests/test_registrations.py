@@ -197,6 +197,14 @@ def test_importing_the_federal_package_registers_the_chart_b_zone_b_total_capabi
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.chart_b_zone_b_total"
 
 
+def test_importing_the_federal_package_registers_the_foreign_non_business_tax_credit() -> None:
+    registered = CapabilityRegistry.shared().get("ca/foreign_non_business_tax_credit")
+
+    assert registered.__module__ == (
+        "app.jurisdictions.ca.capabilities.foreign_non_business_tax_credit"
+    )
+
+
 def test_importing_the_federal_package_registers_the_disability_transfer_amount() -> None:
     registered = CapabilityRegistry.shared().get("ca/disability_transfer_amount")
 

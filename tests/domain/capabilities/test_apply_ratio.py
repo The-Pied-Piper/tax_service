@@ -456,3 +456,53 @@ def test_trace_holds_no_text() -> None:
 
     for line in trace:
         assert not any(isinstance(getattr(line, f.name), str) for f in fields(line))
+
+
+# --- the shared ratio method ----------------------------------------------------------------
+# `ApplyRatio.ratio_of(amount, numerator, denominator, rounding)` is the one place the arithmetic
+# lives; capabilities that work a ratio per item (ca/foreign_non_business_tax_credit) call it
+# instead of copying it. It is a static method: no instance, no artifacts, just the figures.
+
+
+def test_ratio_of_multiplies_first_divides_once_and_rounds_once() -> None:
+    assert ApplyRatio.ratio_of(D("14000"), D("10000"), D("100000"), CENT) == D("1400.00")
+    assert ApplyRatio.ratio_of(D("1000"), D("1"), D("3"), CENT) == D("333.33")
+    # 0.015 x 1 / 3 is exactly 0.005; dividing first would round down.
+    assert ApplyRatio.ratio_of(D("0.015"), D("1"), D("3"), CENT) == D("0.01")
+
+
+def test_ratio_of_uses_the_rule_it_is_given() -> None:
+    half_even = RoundTo(D("0.01"), RoundingMode.HALF_EVEN)
+
+    assert ApplyRatio.ratio_of(D("1.005"), D("1"), D("1"), half_even) == D("1.00")
+
+
+def test_ratio_of_under_no_rounding_raises_inexact_on_an_infinite_expansion() -> None:
+    with pytest.raises(decimal.Inexact):
+        ApplyRatio.ratio_of(D("1000"), D("1"), D("3"), NO_ROUNDING)
+
+
+def test_ratio_of_refuses_a_zero_denominator() -> None:
+    with pytest.raises(ValidationError):
+        ApplyRatio.ratio_of(D("1"), D("1"), D("0"), CENT)
+
+
+def test_ratio_of_is_a_static_method() -> None:
+    assert isinstance(ApplyRatio.__dict__["ratio_of"], staticmethod)
+
+
+def test_compute_gives_what_ratio_of_gives(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[tuple[Decimal, Decimal, Decimal, RoundingRule]] = []
+
+    def spy(
+        amount: Decimal, numerator: Decimal, denominator: Decimal, rule: RoundingRule
+    ) -> Decimal:
+        calls.append((amount, numerator, denominator, rule))
+        return D("42")
+
+    monkeypatch.setattr(ApplyRatio, "ratio_of", staticmethod(spy))
+
+    output = compute(capability(rounding(CENT)), "14000", "10000", "100000")
+
+    assert calls == [(D("14000"), D("10000"), D("100000"), CENT)]
+    assert output.value == D("42")

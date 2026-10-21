@@ -78,7 +78,9 @@ from app.jurisdictions.ca.trace import (
     DispositionGainLine,
     DispositionGainOnlyLine,
     DispositionProceedsLine,
+    ForeignTaxCreditLine,
     OtherDependantMedicalLine,
+    PooledForeignTaxCreditLine,
     PrincipalResidenceGainLine,
     RecapturedCcaLine,
     ShortTermRentalNonCompliantCcaByClassLine,
@@ -3355,3 +3357,90 @@ def test_renders_the_reason_the_closing_line_records_without_working_it_out_agai
         render(recorded) == "closing_ucc: item 1 class 8: column 7 13000 with no property left: 0"
     )
     assert render(unrecorded) == ("closing_ucc: item 1 class 8: column 7 5000 less claim 0 = 5000")
+
+
+# --- foreign tax credit (Form T2209 lines 1 to 3) --------------------------------------------
+
+
+def foreign_country(
+    position: int,
+    tax_paid: str,
+    income: str,
+    line_2: str,
+    result: str,
+    rounding: RoundingRule = CENT,
+) -> ForeignTaxCreditLine:
+    return ForeignTaxCreditLine(
+        NON_COMPLIANT_EXPENSES,
+        position,
+        D(tax_paid),
+        D(income),
+        D("100000"),
+        D("14000"),
+        rounding,
+        D(line_2),
+        D(result),
+    )
+
+
+def test_renders_one_country_by_position() -> None:
+    line = foreign_country(1, "1500", "10000", "1400.00", "1400.00")
+
+    assert render(line) == (
+        "non_compliant_expenses: country 1: tax paid 1500, 10000 net foreign income x "
+        "14000 basic federal tax / 100000 net income = 1400 (half-up to 0.01); credit 1400"
+    )
+
+
+def test_renders_a_country_whose_tax_paid_is_the_lesser() -> None:
+    line = foreign_country(2, "100", "5000", "700.00", "100")
+
+    assert render(line) == (
+        "non_compliant_expenses: country 2: tax paid 100, 5000 net foreign income x "
+        "14000 basic federal tax / 100000 net income = 700 (half-up to 0.01); credit 100"
+    )
+
+
+def test_renders_a_country_without_rounding() -> None:
+    line = foreign_country(1, "100", "0.015", "0.0021", "0.0021", rounding=NO_ROUNDING)
+
+    assert render(line) == (
+        "non_compliant_expenses: country 1: tax paid 100, 0.015 net foreign income x "
+        "14000 basic federal tax / 100000 net income = 0.0021 (no rounding); credit 0.0021"
+    )
+
+
+def pooled_countries(
+    countries: int, tax_paid: str, income: str, line_2: str, result: str
+) -> PooledForeignTaxCreditLine:
+    return PooledForeignTaxCreditLine(
+        NON_COMPLIANT_EXPENSES,
+        countries,
+        D(tax_paid),
+        D(income),
+        D("100000"),
+        D("14000"),
+        D("200"),
+        CENT,
+        D(line_2),
+        D(result),
+    )
+
+
+def test_renders_a_pooled_calculation_naming_why_it_is_pooled() -> None:
+    line = pooled_countries(2, "200.00", "10100", "1414.00", "200.00")
+
+    assert render(line) == (
+        "non_compliant_expenses: all 2 countries pooled, total tax paid 200 is not more than 200: "
+        "10100 net foreign income x 14000 basic federal tax / 100000 net income = 1414 "
+        "(half-up to 0.01); credit 200"
+    )
+
+
+def test_renders_a_single_country_as_one_country_not_pooled_by_the_threshold() -> None:
+    line = pooled_countries(1, "1500", "10000", "1400.00", "1400.00")
+
+    assert render(line) == (
+        "non_compliant_expenses: one country: tax paid 1500, 10000 net foreign income x "
+        "14000 basic federal tax / 100000 net income = 1400 (half-up to 0.01); credit 1400"
+    )
