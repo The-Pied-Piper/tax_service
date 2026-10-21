@@ -78,6 +78,19 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_23_LESSER,
     RC381_PART_4_LINE_24,
     RC381_PART_4_LINE_25A,
+    RC381_PART_4_LINE_31,
+    RC381_PART_4_LINE_33,
+    RC381_PART_4_LINE_34,
+    RC381_PART_4_LINE_35,
+    RC381_PART_4_LINE_35AA,
+    RC381_PART_4_LINE_35AA_FROM_LINE_17,
+    RC381_PART_4_LINE_35AB,
+    RC381_PART_4_LINE_35AB_FROM_LINE_20,
+    RC381_PART_4_LINE_35AB_WHEN_LINE_35_ZERO,
+    RC381_PART_4_LINE_46,
+    RC381_PART_4_LINE_51,
+    RC381_PART_4_LINE_54,
+    RC381_PART_4_LINE_55,
     RENTAL_NON_COMPLIANT_EXPENSES,
     T4_CPP_CONTRIBUTIONS_BOX_16,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
@@ -121,6 +134,55 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # in the "positive or 0" branch (or, for the two results, the "0 or negative" branch of Part
     # 3b). The overpayment of line 44800 is line 69 not below zero, a floored sum of line 69.
     assert chosen_by_sign == {
+        # Form RC381 Part 4 line 31 (the difference "Line 29 minus line 30" when line 61 of Part 3
+        # is positive), line 35A's two sentences (line 35A takes line 17 when line 35 is positive,
+        # and line 20 in brackets when line 35 is "0" and then only when line 61 is negative) and
+        # lines 46 and 51 (the differences, when line 68 of Part 3 is positive): Return A's lines
+        # 61, 35 and 68 are all 0, so line 31, line 35aa, line 35ab, line 46 and line 51 have no
+        # candidate for "0", and line 35ab's choice for line 35 at "0" takes the amount from line
+        # 20 in brackets (0).
+        RC381_PART_4_LINE_31: ChosenBySignLine(
+            output=RC381_PART_4_LINE_31,
+            sign_kind=RC381_PART_3_LINE_61,
+            sign=D("0"),
+            chosen_kind=None,
+            chosen_value=D("0"),
+        ),
+        RC381_PART_4_LINE_35AA: ChosenBySignLine(
+            output=RC381_PART_4_LINE_35AA,
+            sign_kind=RC381_PART_4_LINE_35,
+            sign=D("0"),
+            chosen_kind=None,
+            chosen_value=D("0"),
+        ),
+        RC381_PART_4_LINE_35AB_WHEN_LINE_35_ZERO: ChosenBySignLine(
+            output=RC381_PART_4_LINE_35AB_WHEN_LINE_35_ZERO,
+            sign_kind=RC381_PART_4_LINE_35,
+            sign=D("0"),
+            chosen_kind=RC381_PART_4_LINE_35AB_FROM_LINE_20,
+            chosen_value=D("0"),
+        ),
+        RC381_PART_4_LINE_35AB: ChosenBySignLine(
+            output=RC381_PART_4_LINE_35AB,
+            sign_kind=RC381_PART_3_LINE_61,
+            sign=D("0"),
+            chosen_kind=None,
+            chosen_value=D("0"),
+        ),
+        RC381_PART_4_LINE_46: ChosenBySignLine(
+            output=RC381_PART_4_LINE_46,
+            sign_kind=RC381_PART_3_LINE_68,
+            sign=D("0"),
+            chosen_kind=None,
+            chosen_value=D("0"),
+        ),
+        RC381_PART_4_LINE_51: ChosenBySignLine(
+            output=RC381_PART_4_LINE_51,
+            sign_kind=RC381_PART_3_LINE_68,
+            sign=D("0"),
+            chosen_kind=None,
+            chosen_value=D("0"),
+        ),
         # Form RC381 Part 4 line 13 "Line 5 minus line 12" (line 61 of Part 3 positive; else line
         # 5), line 21 (by the sign of line 20), line 23 (by the sign of line 69 of Part 3), line
         # 24 and line 25A (line 61 negative): Return A's lines 61, 20 and 69 are all 0, so line 13
@@ -200,6 +262,21 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # Form RC381 Part 3b lines 76, 83 and 90 "Enter the amount from line 53 (60, 68) as a positive
     # amount": none is negative for Return A.
     assert positive_parts == {
+        # Form RC381 Part 4 line 33 "Enter the amount from line 61 of Part 3 as a positive amount."
+        # and line 54 "Enter the amount from line 68 of Part 3 as a positive amount.": neither is
+        # negative for Return A.
+        RC381_PART_4_LINE_33: PositivePartOfNegationLine(
+            output=RC381_PART_4_LINE_33,
+            amount_kind=RC381_PART_3_LINE_61,
+            amount_value=D("0"),
+            result=D("0"),
+        ),
+        RC381_PART_4_LINE_54: PositivePartOfNegationLine(
+            output=RC381_PART_4_LINE_54,
+            amount_kind=RC381_PART_3_LINE_68,
+            amount_value=D("0"),
+            result=D("0"),
+        ),
         # Form RC381 Part 4 line 14 "Enter the amount from line 61 of Part 3 as a positive
         # amount." and line 17A "If line 17 is negative, enter it as a positive amount.": neither
         # is negative for Return A.
@@ -237,6 +314,38 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # Form RC381 Part 3b lines 77, 80, 84, 87 and 91, "whichever is less" when the lines are
     # positive: none is positive for Return A, so each is "0".
     assert lesser_when_positive == {
+        # Form RC381 Part 4 line 34 "If line 17A is positive, enter whichever is less: amount from
+        # line 17A or line 33.", line 35A's amounts from line 17 and (in brackets) from line 20 and
+        # line 55 "If line 61 of Part 3 is positive, enter whichever is less: amount from line 61
+        # of Part 3 or line 54.": none is positive for Return A, so each is "0".
+        RC381_PART_4_LINE_34: LesserOfWhenPositiveLine(
+            output=RC381_PART_4_LINE_34,
+            parts=((RC381_PART_4_LINE_17A, D("0")), (RC381_PART_4_LINE_33, D("0"))),
+            all_positive=False,
+            bracket=False,
+            result=D("0"),
+        ),
+        RC381_PART_4_LINE_35AA_FROM_LINE_17: LesserOfWhenPositiveLine(
+            output=RC381_PART_4_LINE_35AA_FROM_LINE_17,
+            parts=((RC381_PART_4_LINE_17, D("0")),),
+            all_positive=False,
+            bracket=False,
+            result=D("0"),
+        ),
+        RC381_PART_4_LINE_35AB_FROM_LINE_20: LesserOfWhenPositiveLine(
+            output=RC381_PART_4_LINE_35AB_FROM_LINE_20,
+            parts=((RC381_PART_4_LINE_20, D("0")),),
+            all_positive=False,
+            bracket=True,
+            result=D("0"),
+        ),
+        RC381_PART_4_LINE_55: LesserOfWhenPositiveLine(
+            output=RC381_PART_4_LINE_55,
+            parts=((RC381_PART_3_LINE_61, D("0")), (RC381_PART_4_LINE_54, D("0"))),
+            all_positive=False,
+            bracket=False,
+            result=D("0"),
+        ),
         # Form RC381 Part 4 line 21, "If line 17 is positive, enter the amount from line 17 (show
         # in brackets)" and "If line 20 is positive, enter whichever is less: amount from line 20
         # or line 17A": none is positive for Return A, so each is "0".

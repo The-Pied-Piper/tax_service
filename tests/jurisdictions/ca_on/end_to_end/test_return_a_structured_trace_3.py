@@ -377,6 +377,7 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_22,
     RC381_PART_3_LINE_23,
     RC381_PART_3_LINE_24,
+    RC381_PART_3_LINE_26,
     RC381_PART_3_LINE_27,
     RC381_PART_3_LINE_28,
     RC381_PART_3_LINE_29,
@@ -393,6 +394,7 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_56,
     RC381_PART_3_LINE_59,
     RC381_PART_3_LINE_60,
+    RC381_PART_3_LINE_61,
     RC381_PART_3_LINE_64,
     RC381_PART_3_LINE_67,
     RC381_PART_3_LINE_68,
@@ -410,8 +412,25 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_13_DIFFERENCE,
     RC381_PART_4_LINE_17,
     RC381_PART_4_LINE_20,
+    RC381_PART_4_LINE_24,
     RC381_PART_4_LINE_26,
     RC381_PART_4_LINE_27,
+    RC381_PART_4_LINE_31,
+    RC381_PART_4_LINE_31_DIFFERENCE,
+    RC381_PART_4_LINE_32,
+    RC381_PART_4_LINE_33,
+    RC381_PART_4_LINE_34,
+    RC381_PART_4_LINE_35,
+    RC381_PART_4_LINE_36,
+    RC381_PART_4_LINE_38,
+    RC381_PART_4_LINE_40,
+    RC381_PART_4_LINE_41,
+    RC381_PART_4_LINE_46,
+    RC381_PART_4_LINE_46_DIFFERENCE,
+    RC381_PART_4_LINE_47,
+    RC381_PART_4_LINE_51,
+    RC381_PART_4_LINE_51_DIFFERENCE,
+    RC381_PART_4_LINE_52,
     REFUND_OR_BALANCE_OWING,
     REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
     REGULAR_RATE_DONATIONS,
@@ -481,7 +500,9 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_UNUSED_AMOUNTS,
     SPOUSES_CLAIMED,
     T4_CPP_CONTRIBUTIONS_BOX_16,
+    T4_CPP_SECOND_ADDITIONAL_BOX_16A,
     T4_QPP_CONTRIBUTIONS_BOX_17,
+    T4_QPP_SECOND_ADDITIONAL_BOX_17A,
     T657_CHART_2_LINE_2,
     T657_CHART_2_LINE_6,
     T657_CHART_2_LINE_10,
@@ -581,6 +602,76 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     gated = {line.output: line for line in trace if isinstance(line, ThresholdGateLine)}
     fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
     assert subtracted == {
+        # Form RC381 Part 4 lines 31 "Line 29 minus line 30" (the amount from line 61 of Part 3 less
+        # the amount from line 12), 32 "Line 28 minus line 31" (the QPP T4 contributions less line
+        # 31), 35 "Line 33 minus line 34", 38 "Line 36 minus line 37" (line 37 being line 24), 46
+        # "Line 44 minus line 45" (the second additional CPP contributions less line 26 of Part 3),
+        # 47 "Line 43 minus line 46", 51 "Line 49 minus line 50" (line 68 of Part 3 less line 46)
+        # and 52 "Line 48 minus line 51": all 0 for Return A, which has no T4 contributions.
+        RC381_PART_4_LINE_31_DIFFERENCE: SubtractedLine(
+            output=RC381_PART_4_LINE_31_DIFFERENCE,
+            minuend=RC381_PART_3_LINE_61,
+            minuend_amount=D("0.00"),
+            subtrahend=RC381_PART_4_LINE_12,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        RC381_PART_4_LINE_32: SubtractedLine(
+            output=RC381_PART_4_LINE_32,
+            minuend=T4_QPP_CONTRIBUTIONS_BOX_17,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_4_LINE_31,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        RC381_PART_4_LINE_35: SubtractedLine(
+            output=RC381_PART_4_LINE_35,
+            minuend=RC381_PART_4_LINE_33,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_4_LINE_34,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        RC381_PART_4_LINE_38: SubtractedLine(
+            output=RC381_PART_4_LINE_38,
+            minuend=RC381_PART_4_LINE_36,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_4_LINE_24,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        RC381_PART_4_LINE_46_DIFFERENCE: SubtractedLine(
+            output=RC381_PART_4_LINE_46_DIFFERENCE,
+            minuend=T4_CPP_SECOND_ADDITIONAL_BOX_16A,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_3_LINE_26,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        RC381_PART_4_LINE_47: SubtractedLine(
+            output=RC381_PART_4_LINE_47,
+            minuend=T4_CPP_SECOND_ADDITIONAL_BOX_16A,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_4_LINE_46,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        RC381_PART_4_LINE_51_DIFFERENCE: SubtractedLine(
+            output=RC381_PART_4_LINE_51_DIFFERENCE,
+            minuend=RC381_PART_3_LINE_68,
+            minuend_amount=D("0.00"),
+            subtrahend=RC381_PART_4_LINE_46,
+            subtrahend_amount=D("0"),
+            result=D("0.00"),
+        ),
+        RC381_PART_4_LINE_52: SubtractedLine(
+            output=RC381_PART_4_LINE_52,
+            minuend=T4_QPP_SECOND_ADDITIONAL_BOX_17A,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_4_LINE_51,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Form RC381 Part 4 lines 8 "Line 6 minus line 7" (the amounts from lines 20 and 22 of
         # Part 3), 11 "Line 9 minus line 10" (lines 21 and 23), 17 "Line 15 minus line 16" (the T4
         # contributions less line 24) and 20 "Line 18 minus line 19" (the QPP T4 contributions
@@ -2109,6 +2200,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert fractions == {
+        # Form RC381 Part 4 line 41 "Amount from line 40 × 15.625": line 40 is 0.
+        RC381_PART_4_LINE_41: FractionAppliedLine(
+            output=RC381_PART_4_LINE_41,
+            base=RC381_PART_4_LINE_40,
+            base_amount=D("0"),
+            fraction=Fraction(15625, 1000),
+            rounding=CENT,
+            result=D("0"),
+        ),
         # Form RC381 Part 4 line 27 "Amount from line 26 × 16.80672": line 26 is 0.
         RC381_PART_4_LINE_27: FractionAppliedLine(
             output=RC381_PART_4_LINE_27,
