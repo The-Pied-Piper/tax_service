@@ -75,8 +75,8 @@ def test_line_23300_adds_every_wired_deduction_once_in_the_forms_line_order() ->
 def test_line_23400_is_negative_when_the_deductions_exceed_total_income() -> None:
     # T1 line 54 and line 23400 "Line 34 minus line 53 (if negative, show in brackets)": total
     # income of 1000 less deductions of 2047 (the same lines as above) is -1047. The net income of
-    # line 56 (line 23600) "Line 54 minus line 55 (if negative, enter "0")" is 0, as is the
-    # taxable income, until line 23500 is wired.
+    # line 56 (line 23600) "Line 54 minus line 55 (if negative, enter "0")" is 0 (line 23500 being
+    # 0), as is the taxable income.
     worksheet = compute(
         "0",
         (),
@@ -111,7 +111,8 @@ def test_line_23400_is_negative_when_the_deductions_exceed_total_income() -> Non
         "less deductions_from_total_income 2047 = -1047"
     ) in rendered
     assert (
-        "net_income: total_income 1000 less deductions_from_total_income 2047, not below 0 = 0"
+        "net_income: net_income_before_adjustments -1047 less social_benefits_repayment 0, "
+        "not below 0 = 0"
     ) in rendered
 
 

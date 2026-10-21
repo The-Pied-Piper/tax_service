@@ -290,7 +290,8 @@ def test_return_us_new_lines_join_the_deductions_the_credit_amounts_and_the_tota
         "+ ei_premiums 0 + ei_premiums_on_self_employment 820 "
         "+ disability_transferred_amount 0 + unused_tuition_claimed 0 + medical_claim 0 = 15868.75",
         "total_payable: net_federal_tax 2540.04 + cpp_payable_on_self_employment 5533.5 "
-        "+ ei_payable_on_self_employment 820 + ontario_tax 1401.53 = 10295.07",
+        "+ ei_payable_on_self_employment 820 + social_benefits_repayment_payable 0 "
+        "+ ontario_tax 1401.53 = 10295.07",
     ):
         assert line in rendered, line
 

@@ -144,9 +144,10 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
     NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
-    NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
+    NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
+    OAS_BENEFITS_BASE_AMOUNT,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
     OTHER_DIVIDENDS_GROSSED_UP,
     OTHER_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
@@ -202,6 +203,12 @@ from app.jurisdictions.ca.catalog import (
     SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE,
     SELF_EMPLOYED_CPP_DEDUCTION,
     SELF_EMPLOYED_EI_PREMIUMS,
+    SOCIAL_BENEFITS_LINE_6,
+    SOCIAL_BENEFITS_LINE_10,
+    SOCIAL_BENEFITS_LINE_11,
+    SOCIAL_BENEFITS_LINE_21,
+    SOCIAL_BENEFITS_REPAYMENT,
+    SOCIAL_BENEFITS_REPAYMENT_APPLIES,
     SPLIT_INCOME_LINE_10,
     SPLIT_INCOME_LINE_14,
     SPLIT_INCOME_LINE_15,
@@ -305,6 +312,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=ontario.UNUSED_TUITION_CLAIMED,
             subtrahend_amount=D("0"),
             result=D("0"),
+        ),
+        # Federal Worksheet "Line 23500" line 11 "Line 6 minus line 10": no floor is printed.
+        SOCIAL_BENEFITS_LINE_11: SubtractedLine(
+            output=SOCIAL_BENEFITS_LINE_11,
+            minuend=SOCIAL_BENEFITS_LINE_6,
+            minuend_amount=D("115000"),
+            subtrahend=SOCIAL_BENEFITS_LINE_10,
+            subtrahend_amount=D("0"),
+            result=D("115000"),
         ),
         # Schedule 3 line 14 "Line 12 minus line 13" and line 19 "Line 17 minus line 18": Return A
         # has no deferral and no business investment loss, so line 18 is 0.
@@ -439,7 +455,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # The Federal Worksheet's line 5 "Line 1 minus line 4 =": no floor is printed.
         NET_INCOME_LESS_UCCB_AND_RDSP_INCOME: SubtractedLine(
             output=NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
-            minuend=NET_INCOME,
+            minuend=NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
             minuend_amount=D("115000"),
             subtrahend=UCCB_AND_RDSP_INCOME,
             subtrahend_amount=D("0"),
@@ -785,6 +801,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert amounts == {
+        # Federal Worksheet "Line 23500" line 16 "OAS benefits base amount 93,343.00".
+        OAS_BENEFITS_BASE_AMOUNT: CreditAmountLine(
+            OAS_BENEFITS_BASE_AMOUNT, Credit(amount=D("93343.00")), CENT, D("93343.00")
+        ),
         # Form T1172 line 4 "Maximum lifetime RRSP contribution limit ... $ 50,000.00".
         RESP_AIPS_LIFETIME_LIMIT: CreditAmountLine(
             RESP_AIPS_LIFETIME_LIMIT, Credit(amount=D("50000.00")), CENT, D("50000.00")
@@ -1144,6 +1164,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert times == {
+        # T1 line 55 (line 23500): the chart's line 21 once if the chart applies, else 0; it does
+        # not apply to Return A (no OAS, no net federal supplements and no EI benefits).
+        SOCIAL_BENEFITS_REPAYMENT: TimesCountLine(
+            output=SOCIAL_BENEFITS_REPAYMENT,
+            amount_kind=SOCIAL_BENEFITS_LINE_21,
+            amount_value=D("0"),
+            count_kind=SOCIAL_BENEFITS_REPAYMENT_APPLIES,
+            count=0,
+            result=D("0"),
+        ),
         # ON428 line 75 and line 76: the amounts of the filer's dependent children and dependants,
         # claimed once as the rule on lines 75 and 76 lets Return A's filer (no spouse or
         # common-law partner), and line 80 once as none of the six conditions applies.

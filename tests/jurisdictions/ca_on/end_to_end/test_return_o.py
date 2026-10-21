@@ -112,7 +112,7 @@ def test_return_os_deductions_are_14500_and_its_net_income_before_adjustments_45
         "less deductions_from_total_income 14500 = 45500"
     ) in rendered
     assert (
-        "net_income: total_income 60000 less deductions_from_total_income 14500, "
+        "net_income: net_income_before_adjustments 45500 less social_benefits_repayment 0, "
         "not below 0 = 45500"
     ) in rendered
 

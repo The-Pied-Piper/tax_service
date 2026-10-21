@@ -10,6 +10,7 @@ from app.jurisdictions.ca.catalog import (
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     INCOME_TAX_DEDUCTED,
     NET_FEDERAL_TAX,
+    SOCIAL_BENEFITS_REPAYMENT_PAYABLE,
     SPECIAL_TAXES,
     SPLIT_INCOME_LINE_10,
     SPLIT_INCOME_LINE_13,
@@ -33,6 +34,7 @@ def test_the_net_tax_kinds_are_the_registered_ones(registry: ArtifactRegistry) -
     assert registry.get("ca/net_federal_tax") is NET_FEDERAL_TAX
     assert registry.get("ca/cpp_payable_on_self_employment") is CPP_PAYABLE_ON_SELF_EMPLOYMENT
     assert registry.get("ca/ei_payable_on_self_employment") is EI_PAYABLE_ON_SELF_EMPLOYMENT
+    assert registry.get("ca/social_benefits_repayment_payable") is SOCIAL_BENEFITS_REPAYMENT_PAYABLE
     assert registry.get("ca/total_payable") is TOTAL_PAYABLE
     assert registry.get("ca/income_tax_deducted") is INCOME_TAX_DEDUCTED
     assert registry.get("ca/split_income_line_10") is SPLIT_INCOME_LINE_10
@@ -55,6 +57,7 @@ def test_the_net_tax_kinds_are_money() -> None:
         NET_FEDERAL_TAX,
         CPP_PAYABLE_ON_SELF_EMPLOYMENT,
         EI_PAYABLE_ON_SELF_EMPLOYMENT,
+        SOCIAL_BENEFITS_REPAYMENT_PAYABLE,
         TOTAL_PAYABLE,
         INCOME_TAX_DEDUCTED,
         SPLIT_INCOME_LINE_10,
@@ -102,3 +105,14 @@ def test_the_other_t1206_part_2_lines_are_non_negative(registry: ArtifactRegistr
         assert kind.identifier not in SIGNED, kind.identifier
         assert kind.non_negative is True, kind.identifier
         assert registry.kind(kind.identifier) is kind
+
+
+def test_the_social_benefits_repayment_payable_is_a_non_negative_decimal(
+    registry: ArtifactRegistry,
+) -> None:
+    # T1 line 146 and line 42200 "Social benefits repayment (amount from line 23500)" carries the
+    # non-negative line 23500.
+    assert SOCIAL_BENEFITS_REPAYMENT_PAYABLE.value_type is Decimal
+    assert SOCIAL_BENEFITS_REPAYMENT_PAYABLE.non_negative is True
+    assert registry.kind("ca/social_benefits_repayment_payable").non_negative is True
+    assert "ca/social_benefits_repayment_payable" not in SIGNED

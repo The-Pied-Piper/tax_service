@@ -57,7 +57,7 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     net = position(
-        "net_income: total_income 120000 less deductions_from_total_income 5000, "
+        "net_income: net_income_before_adjustments 115000 less social_benefits_repayment 0, "
         "not below 0 = 115000",
         "115000",
     )
@@ -65,8 +65,8 @@ def test_the_trace_explains_the_computation() -> None:
         "uccb_and_rdsp_income: universal_child_care_benefit 0 + rdsp_income 0 = 0", "0"
     )
     line_5 = position(
-        "net_income_less_uccb_and_rdsp_income: net_income 115000 less uccb_and_rdsp_income 0 "
-        "= 115000",
+        "net_income_less_uccb_and_rdsp_income: net_income_before_adjustments_not_below_zero "
+        "115000 less uccb_and_rdsp_income 0 = 115000",
         "115000",
     )
     repayments = position(
@@ -695,7 +695,8 @@ def test_the_trace_explains_the_computation() -> None:
     )
     payable = position(
         "total_payable: net_federal_tax 16951.38 + cpp_payable_on_self_employment 0 "
-        "+ ei_payable_on_self_employment 0 + ontario_tax 8945.77 = 25897.15",
+        "+ ei_payable_on_self_employment 0 + social_benefits_repayment_payable 0 "
+        "+ ontario_tax 8945.77 = 25897.15",
         "25897.15",
     )
     working = position("working_income: employment_income 110000 = 110000", "110000")
@@ -995,7 +996,7 @@ def test_the_trace_explains_the_computation() -> None:
     assert taxable < federal_column < federal_basic < federal_after
     assert taxable < ontario_column < ontario_basic
     assert ontario_basic < ontario_after
-    assert net < federal_amount < federal_amounts < federal_credit < federal_after
+    assert federal_amount < federal_amounts < federal_credit < federal_after
     assert depreciable_proceeds_or_cost < depreciable_gifts < capital_gifts_total
     assert capital_gifts < capital_gifts_total < capital_gifts_addition < limit_with_gifts
     assert net < limit_on_net_income < limit_with_gifts < donations_limit < donations_claimed
@@ -1024,7 +1025,7 @@ def test_the_trace_explains_the_computation() -> None:
     assert net < ontario_medical_share < ontario_medical_threshold < ontario_medical_over
     assert ontario_medical_over < ontario_medical_claim < ontario_amounts
     assert ontario_other_medical < ontario_medical_claim
-    assert net < age_over_threshold < age_reduction < age_before_count < age < federal_amounts
+    assert age_over_threshold < age_reduction < age_before_count < age < federal_amounts
     assert age_threshold < age_over_threshold
     assert age_maximum < age_before_count
     assert federal_amount < spouse_basis < spouse_before_count < spouse < federal_amounts
@@ -1034,7 +1035,7 @@ def test_the_trace_explains_the_computation() -> None:
     assert ontario_base < ontario_before_maximum < ontario_dependant
     assert ontario_dependant < ontario_dependant_claimed < ontario_caregiver < ontario_amounts
     assert ontario_disability_transfer < ontario_amounts
-    assert net < ontario_age_over_threshold < ontario_age_reduction < ontario_age_before_count
+    assert ontario_age_over_threshold < ontario_age_reduction < ontario_age_before_count
     assert ontario_age_before_count < ontario_age < ontario_amounts
     assert ontario_age_threshold < ontario_age_over_threshold
     assert ontario_age_maximum < ontario_age_before_count
@@ -1071,7 +1072,7 @@ def test_the_trace_explains_the_computation() -> None:
     assert lift_family_threshold < lift_excess_family < lift_greater
     assert lift_greater < lift_family_reduction < lift_with_spouse < lift
     assert food_credit < after_food
-    assert net < lift_net < lift_reduction < lift
+    assert lift_net < lift_reduction < lift
     assert after_reduction < after_lift
     assert federal_after < with_recapture < less_credits < net_federal < payable
     assert recapture_at_15 < recapture < with_recapture
@@ -1083,7 +1084,7 @@ def test_the_trace_explains_the_computation() -> None:
     assert special < net_federal
     assert ontario_tax < payable < balance
     assert working < cwb_before_reduction < cwb_without < cwb
-    assert net < family_net < cwb_reduction < cwb_without
+    assert family_net < cwb_reduction < cwb_without
     assert working < cwb_before_reduction_dependant < cwb_with < cwb
     assert family_net < cwb_reduction_dependant < cwb_with
     assert fertility_before_maximum < fertility < ontario_credits_subtotal
@@ -1095,7 +1096,7 @@ def test_the_trace_explains_the_computation() -> None:
         < ontario_credits_subtotal
     )
     assert care_before_maximum < care_amount < care_before_claim < care_credit
-    assert net < care_family_net_income < care_over_base < care_reduction < care_before_claim
+    assert care_family_net_income < care_over_base < care_reduction < care_before_claim
     assert care_base < care_over_base
     assert care_credit < ontario_credits_subtotal
     assert transit_paid < transit < ontario_credits_subtotal

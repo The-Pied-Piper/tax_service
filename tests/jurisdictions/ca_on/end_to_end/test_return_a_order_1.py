@@ -172,6 +172,7 @@ from app.jurisdictions.ca.catalog import (
     NET_FEDERAL_TAX,
     NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
+    NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NET_RENTAL_INCOME,
     NET_SELF_EMPLOYMENT_INCOME,
@@ -179,6 +180,8 @@ from app.jurisdictions.ca.catalog import (
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     NORTHERN_RESIDENTS_DEDUCTIONS,
+    OAS_AND_FEDERAL_SUPPLEMENTS,
+    OAS_BENEFITS_BASE_AMOUNT,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
     OTHER_DEPENDANTS_MEDICAL,
     OTHER_DIVIDENDS_CREDIT,
@@ -241,6 +244,19 @@ from app.jurisdictions.ca.catalog import (
     SLIP_DIVIDEND_TAX_CREDIT,
     SLIP_TAXABLE_DIVIDENDS,
     SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    SOCIAL_BENEFITS_LINE_5,
+    SOCIAL_BENEFITS_LINE_6,
+    SOCIAL_BENEFITS_LINE_10,
+    SOCIAL_BENEFITS_LINE_11,
+    SOCIAL_BENEFITS_LINE_14,
+    SOCIAL_BENEFITS_LINE_15,
+    SOCIAL_BENEFITS_LINE_17,
+    SOCIAL_BENEFITS_LINE_18,
+    SOCIAL_BENEFITS_LINE_19,
+    SOCIAL_BENEFITS_LINE_21,
+    SOCIAL_BENEFITS_REPAYMENT,
+    SOCIAL_BENEFITS_REPAYMENT_APPLIES,
+    SOCIAL_BENEFITS_REPAYMENT_PAYABLE,
     SPECIAL_TAXES,
     SPLIT_INCOME_LINE_10,
     SPLIT_INCOME_LINE_13,
@@ -358,7 +374,7 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 534
+    assert len(order) == 550
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -442,6 +458,25 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         position[FHSA_CONTRIBUTIONS_AVAILABLE] < position[FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD]
     )
     assert position[DEDUCTIONS_FROM_TOTAL_INCOME] < position[NET_INCOME]
+    # Federal Worksheet "Line 23500": the gate and lines 3, 5, 6, 10, 11, 14, 15, 16, 17, 18, 19
+    # and 21 in line order, then T1 line 55 (line 23500), which line 56 (line 23600) subtracts
+    # from line 54 (line 23400) and line 146 (line 42200) carries.
+    assert position[NET_INCOME_BEFORE_ADJUSTMENTS] < position[SOCIAL_BENEFITS_REPAYMENT_APPLIES]
+    assert position[OAS_AND_FEDERAL_SUPPLEMENTS] < position[SOCIAL_BENEFITS_LINE_5]
+    assert position[SOCIAL_BENEFITS_LINE_6] < position[SOCIAL_BENEFITS_LINE_11]
+    assert position[SOCIAL_BENEFITS_LINE_10] < position[SOCIAL_BENEFITS_LINE_11]
+    assert position[SOCIAL_BENEFITS_LINE_11] < position[SOCIAL_BENEFITS_LINE_15]
+    assert position[SOCIAL_BENEFITS_LINE_14] < position[SOCIAL_BENEFITS_LINE_15]
+    assert position[SOCIAL_BENEFITS_LINE_15] < position[SOCIAL_BENEFITS_LINE_17]
+    assert position[OAS_BENEFITS_BASE_AMOUNT] < position[SOCIAL_BENEFITS_LINE_17]
+    assert position[SOCIAL_BENEFITS_LINE_17] < position[SOCIAL_BENEFITS_LINE_18]
+    assert position[SOCIAL_BENEFITS_LINE_5] < position[SOCIAL_BENEFITS_LINE_19]
+    assert position[SOCIAL_BENEFITS_LINE_18] < position[SOCIAL_BENEFITS_LINE_19]
+    assert position[SOCIAL_BENEFITS_LINE_19] < position[SOCIAL_BENEFITS_LINE_21]
+    assert position[SOCIAL_BENEFITS_LINE_21] < position[SOCIAL_BENEFITS_REPAYMENT]
+    assert position[SOCIAL_BENEFITS_REPAYMENT_APPLIES] < position[SOCIAL_BENEFITS_REPAYMENT]
+    assert position[SOCIAL_BENEFITS_REPAYMENT] < position[NET_INCOME]
+    assert position[SOCIAL_BENEFITS_REPAYMENT] < position[SOCIAL_BENEFITS_REPAYMENT_PAYABLE]
     assert position[RRSP_CONTRIBUTIONS_AVAILABLE] < position[RRSP_DEDUCTION_MAXIMUM]
     assert position[RRSP_DEDUCTION_MAXIMUM] < position[RRSP_DEDUCTION]
     assert position[RRSP_DEDUCTION] < position[UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD]
@@ -520,7 +555,14 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[NET_CAPITAL_LOSS_BALANCE_2001_TO_2024]
     )
     assert position[NET_CAPITAL_LOSSES_OF_OTHER_YEARS] < position[DEDUCTIONS_FROM_NET_INCOME]
-    assert position[NET_INCOME] < position[NET_INCOME_LESS_UCCB_AND_RDSP_INCOME]
+    assert (
+        position[NET_INCOME_BEFORE_ADJUSTMENTS]
+        < position[NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO]
+    )
+    assert (
+        position[NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO]
+        < position[NET_INCOME_LESS_UCCB_AND_RDSP_INCOME]
+    )
     assert position[UCCB_AND_RDSP_INCOME] < position[NET_INCOME_LESS_UCCB_AND_RDSP_INCOME]
     assert position[NET_INCOME_LESS_UCCB_AND_RDSP_INCOME] < position[OTHER_PAYMENTS_LIMIT_INCOME]
     assert (
@@ -595,8 +637,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     )
     assert position[INFIRM_CHILDREN_AMOUNT] < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
     assert (
-        position[NET_INCOME]
-        < position[AGE_INCOME_OVER_THRESHOLD]
+        position[AGE_INCOME_OVER_THRESHOLD]
         < position[AGE_REDUCTION]
         < position[AGE_AMOUNT_BEFORE_COUNT]
         < position[AGE_AMOUNT]
@@ -901,6 +942,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[SPECIAL_TAXES] < position[NET_FEDERAL_TAX]
     assert position[NET_FEDERAL_TAX] < position[TOTAL_PAYABLE]
     assert position[ONTARIO_TAX] < position[TOTAL_PAYABLE]
+    assert position[SOCIAL_BENEFITS_REPAYMENT_PAYABLE] < position[TOTAL_PAYABLE]
     assert position[TOTAL_PAYABLE] < position[REFUND_OR_BALANCE_OWING]
     assert position[TOTAL_CREDITS] < position[REFUND_OR_BALANCE_OWING]
     # Schedule 8 Part 2 (lines B to E), Part 4 and Schedule 13 run in the forms' line order, ahead

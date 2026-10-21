@@ -48,6 +48,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
     CPT20_EARNINGS,
     DEDUCTIONS_FROM_TOTAL_INCOME,
+    EI_BENEFITS_REPAYMENT,
     EI_CONTROLLED_CORPORATION_EARNINGS,
     EI_EARNINGS_SUBJECT_TO_PREMIUM,
     EI_EXEMPT_SELF_EMPLOYMENT_INCOME,
@@ -61,8 +62,12 @@ from app.jurisdictions.ca.catalog import (
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
     NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
+    NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NORTHERN_RESIDENTS_DEDUCTIONS,
+    OAS_AND_FEDERAL_SUPPLEMENTS,
+    OAS_BENEFITS_BASE_AMOUNT,
+    OAS_OVERPAYMENT_RECOVERED,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_1994,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1994_TO_1996,
@@ -92,6 +97,18 @@ from app.jurisdictions.ca.catalog import (
     SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     SELF_EMPLOYED_EI_PREMIUMS,
+    SOCIAL_BENEFITS_LINE_5,
+    SOCIAL_BENEFITS_LINE_6,
+    SOCIAL_BENEFITS_LINE_10,
+    SOCIAL_BENEFITS_LINE_11,
+    SOCIAL_BENEFITS_LINE_14,
+    SOCIAL_BENEFITS_LINE_15,
+    SOCIAL_BENEFITS_LINE_17,
+    SOCIAL_BENEFITS_LINE_18,
+    SOCIAL_BENEFITS_LINE_19,
+    SOCIAL_BENEFITS_LINE_21,
+    SOCIAL_BENEFITS_REPAYMENT,
+    SOCIAL_BENEFITS_REPAYMENT_APPLIES,
     SPLIT_INCOME_DIVIDENDS,
     SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     STANDARD_AMOUNT_ALLOCATED,
@@ -135,7 +152,7 @@ from app.jurisdictions.ca.catalog import (
     ZONE_B_RESIDENCY_AMOUNT,
     ZONE_B_SPECIAL_WORK_SITE_BENEFITS,
 )
-from tests.jurisdictions.ca.catalog_snapshot import SIGNED
+from tests.jurisdictions.ca.catalog_snapshot import COUNTS, SIGNED
 
 
 def test_the_deductions_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
@@ -386,6 +403,26 @@ def test_the_deductions_kinds_are_the_registered_ones(registry: ArtifactRegistry
     assert registry.get("ca/deductions_from_total_income") is DEDUCTIONS_FROM_TOTAL_INCOME
     assert registry.get("ca/net_income_before_adjustments") is NET_INCOME_BEFORE_ADJUSTMENTS
     assert registry.get("ca/net_income") is NET_INCOME
+    assert registry.get("ca/oas_overpayment_recovered") is OAS_OVERPAYMENT_RECOVERED
+    assert registry.get("ca/ei_benefits_repayment") is EI_BENEFITS_REPAYMENT
+    assert (
+        registry.get("ca/net_income_before_adjustments_not_below_zero")
+        is NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO
+    )
+    assert registry.get("ca/social_benefits_repayment_applies") is SOCIAL_BENEFITS_REPAYMENT_APPLIES
+    assert registry.get("ca/oas_and_federal_supplements") is OAS_AND_FEDERAL_SUPPLEMENTS
+    assert registry.get("ca/social_benefits_line_5") is SOCIAL_BENEFITS_LINE_5
+    assert registry.get("ca/social_benefits_line_6") is SOCIAL_BENEFITS_LINE_6
+    assert registry.get("ca/social_benefits_line_10") is SOCIAL_BENEFITS_LINE_10
+    assert registry.get("ca/social_benefits_line_11") is SOCIAL_BENEFITS_LINE_11
+    assert registry.get("ca/social_benefits_line_14") is SOCIAL_BENEFITS_LINE_14
+    assert registry.get("ca/social_benefits_line_15") is SOCIAL_BENEFITS_LINE_15
+    assert registry.get("ca/oas_benefits_base_amount") is OAS_BENEFITS_BASE_AMOUNT
+    assert registry.get("ca/social_benefits_line_17") is SOCIAL_BENEFITS_LINE_17
+    assert registry.get("ca/social_benefits_line_18") is SOCIAL_BENEFITS_LINE_18
+    assert registry.get("ca/social_benefits_line_19") is SOCIAL_BENEFITS_LINE_19
+    assert registry.get("ca/social_benefits_line_21") is SOCIAL_BENEFITS_LINE_21
+    assert registry.get("ca/social_benefits_repayment") is SOCIAL_BENEFITS_REPAYMENT
     assert registry.get("ca/split_income_dividends") is SPLIT_INCOME_DIVIDENDS
     assert (
         registry.get("ca/split_income_dividends_other_than_eligible")
@@ -486,6 +523,22 @@ def test_the_deductions_kinds_are_money() -> None:
         TOTAL_SPLIT_INCOME,
         TOSI_ADJUSTED_NET_INCOME,
         TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
+        EI_BENEFITS_REPAYMENT,
+        NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
+        OAS_AND_FEDERAL_SUPPLEMENTS,
+        OAS_BENEFITS_BASE_AMOUNT,
+        OAS_OVERPAYMENT_RECOVERED,
+        SOCIAL_BENEFITS_LINE_5,
+        SOCIAL_BENEFITS_LINE_6,
+        SOCIAL_BENEFITS_LINE_10,
+        SOCIAL_BENEFITS_LINE_11,
+        SOCIAL_BENEFITS_LINE_14,
+        SOCIAL_BENEFITS_LINE_15,
+        SOCIAL_BENEFITS_LINE_17,
+        SOCIAL_BENEFITS_LINE_18,
+        SOCIAL_BENEFITS_LINE_19,
+        SOCIAL_BENEFITS_LINE_21,
+        SOCIAL_BENEFITS_REPAYMENT,
     ):
         assert kind.value_type is Decimal, kind.identifier
 
@@ -524,3 +577,62 @@ def test_the_t1206_part_1_amounts_are_non_negative_decimals(registry: ArtifactRe
         assert kind.value_type is Decimal, kind.identifier
         assert kind.non_negative is True, kind.identifier
         assert registry.kind(kind.identifier) is kind
+
+
+def test_the_net_income_before_adjustments_not_below_zero_is_its_non_negative_twin(
+    registry: ArtifactRegistry,
+) -> None:
+    # Federal Worksheet "Line 25000 - Other payments deduction" line 1 "Amount from line 23400 of
+    # your return (if negative, enter "0")": line 23400 stays signed ("show in brackets") and,
+    # once line 23500 reduces the net income of line 23600, this line needs its own floored kind.
+    assert NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO is not NET_INCOME_BEFORE_ADJUSTMENTS
+    assert NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO is not NET_INCOME
+    assert NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO.non_negative is True
+    assert registry.kind("ca/net_income_before_adjustments_not_below_zero").non_negative is True
+    assert "ca/net_income_before_adjustments_not_below_zero" not in SIGNED
+
+
+def test_the_social_benefits_chart_lines_that_print_no_floor_are_signed(
+    registry: ArtifactRegistry,
+) -> None:
+    # Federal Worksheet "Line 23500 - Social benefits repayment": line 6 "Net income before
+    # adjustments from line 23400 of your return" (line 23400 may be negative, and the T1206 line
+    # 4 is added), line 11 "Line 6 minus line 10 =" and line 15 "Line 11 plus line 14 Adjusted net
+    # income" print no "(if negative, enter "0")".
+    for kind in (SOCIAL_BENEFITS_LINE_6, SOCIAL_BENEFITS_LINE_11, SOCIAL_BENEFITS_LINE_15):
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is False, kind.identifier
+        assert registry.kind(kind.identifier) is kind
+        assert kind.identifier in SIGNED
+
+
+def test_the_other_social_benefits_chart_lines_are_non_negative(
+    registry: ArtifactRegistry,
+) -> None:
+    # Lines 5 and 17 print "(if negative, enter "0")"; the others add, take 15% of, or compare
+    # non-negative figures. The two caller inputs are slip boxes.
+    for kind in (
+        OAS_OVERPAYMENT_RECOVERED,
+        EI_BENEFITS_REPAYMENT,
+        OAS_AND_FEDERAL_SUPPLEMENTS,
+        SOCIAL_BENEFITS_LINE_5,
+        SOCIAL_BENEFITS_LINE_10,
+        SOCIAL_BENEFITS_LINE_14,
+        OAS_BENEFITS_BASE_AMOUNT,
+        SOCIAL_BENEFITS_LINE_17,
+        SOCIAL_BENEFITS_LINE_18,
+        SOCIAL_BENEFITS_LINE_19,
+        SOCIAL_BENEFITS_LINE_21,
+        SOCIAL_BENEFITS_REPAYMENT,
+    ):
+        assert kind.identifier not in SIGNED, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+        assert registry.kind(kind.identifier) is kind
+
+
+def test_the_social_benefits_chart_applies_count_is_an_int_kind(registry: ArtifactRegistry) -> None:
+    # The entry conditions of the chart ("Complete the chart below if one or both of the following
+    # applies:") give a count, 1 when the chart applies and 0 otherwise.
+    assert SOCIAL_BENEFITS_REPAYMENT_APPLIES.value_type is int
+    assert registry.kind("ca/social_benefits_repayment_applies").value_type is int
+    assert "ca/social_benefits_repayment_applies" in COUNTS

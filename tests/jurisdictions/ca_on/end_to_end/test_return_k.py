@@ -310,8 +310,8 @@ def test_the_worksheets_lines_4_5_8_and_9_with_supplements_uccb_rdsp_income_and_
         rendered
     )
     assert (
-        "net_income_less_uccb_and_rdsp_income: net_income 53635 less uccb_and_rdsp_income 4000 "
-        "= 49635"
+        "net_income_less_uccb_and_rdsp_income: net_income_before_adjustments_not_below_zero "
+        "53635 less uccb_and_rdsp_income 4000 = 49635"
     ) in rendered
     assert (
         "uccb_and_rdsp_income_repayments: uccb_repayment 200 + rdsp_income_repayment 100 = 300"
@@ -334,9 +334,12 @@ def test_a_line_9_over_93454_takes_the_charts_amount_as_line_25000() -> None:
     # "If the amount on line 9 is more than $93,454, go to canada.ca/line-25000 to find out how
     # much you can deduct": employment income 100000, workers' compensation 1500 and net federal
     # supplements 500 (line 14700 is 2000), total income 102000, enhanced CPP contributions
-    # 678.00 + 396.00 = 1074.00, net income 100926.00; with no UCCB, RDSP income or repayments
+    # 678.00 + 396.00 = 1074.00, line 23400 100926.00; with no UCCB, RDSP income or repayments
     # line 9 is 100926.00, over the limit (count 1), so line 25000 is the chart's amount, a
-    # chosen 700, not line 14700, and taxable income is 100926.00 - 700 = 100226.00.
+    # chosen 700, not line 14700. The social benefits repayment chart also applies (line 23400
+    # is over 93,454 and line 14600 has an amount): line 5 is 500, line 18 is 1137.45, line 19
+    # is 500, so line 23500 is 500, net income is 100926.00 - 500 = 100426.00 and taxable
+    # income is 100426.00 - 700 = 99726.00.
     worksheet = compute(
         "100000",
         (),
@@ -353,11 +356,11 @@ def test_a_line_9_over_93454_takes_the_charts_amount_as_line_25000() -> None:
     )
 
     assert worksheet.get(INCOME_SUPPORT_BENEFITS).value == D("2000")
-    assert worksheet.get(NET_INCOME).value == D("100926.00")
+    assert worksheet.get(NET_INCOME).value == D("100426.00")
     assert worksheet.get(OTHER_PAYMENTS_LIMIT_INCOME).value == D("100926.00")
     assert worksheet.get(OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT).value == D("700")
     assert worksheet.get(OTHER_PAYMENTS_DEDUCTION).value == D("700")
-    assert worksheet.get(TAXABLE_INCOME).value == D("100226.00")
+    assert worksheet.get(TAXABLE_INCOME).value == D("99726.00")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
         "other_payments_deduction_after_limit: other_payments_deduction_above_limit 700, "
