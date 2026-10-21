@@ -5,15 +5,22 @@ from __future__ import annotations
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.capped_amount import CappedAmount
 from app.domain.capabilities.credit_amount import CreditAmount
+from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.progressive_tax import ProgressiveTax
+from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
+from app.jurisdictions.ca.capabilities.amount_or_divided_by_rate import AmountOrDividedByRate
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
 from app.jurisdictions.ca.catalog import (
     BORN_IN_1960_OR_EARLIER,
+    CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
     DEPENDANT_NET_INCOME,
+    EI_PREMIUMS,
+    EI_PREMIUMS_ON_SELF_EMPLOYMENT,
     ELIGIBLE_DEPENDANTS,
     MEDICAL_EXPENSES,
     NET_INCOME,
@@ -40,10 +47,21 @@ INPUTS = frozenset(
         "ca-on/caregiver_dependants",
         "ca-on/disability_amount_for_self",
         "ca-on/disability_dependants",
+        # Schedule ON(S11) line 1 "Enter your unused Ontario tuition and education amounts from your
+        # 2024 notice of assessment or reassessment": a caller input, the figure on that notice, not
+        # a calculation on this return (as Schedule 7 line 1 is for RRSPs).
+        "ca-on/unused_tuition_amounts_brought_forward",
     }
 )
 
-OUTPUTS = frozenset[str]()
+# Schedule ON(S11) line 8 "Unused provincial tuition and education amounts available to carry
+# forward to a future year", which nothing else on the return reads (the carryforward is for a
+# future year).
+OUTPUTS = frozenset(
+    {
+        "ca-on/unused_tuition_carried_forward",
+    }
+)
 
 STEPS = {
     CapabilitySelection(
@@ -266,6 +284,82 @@ STEPS = {
         consumes={"dependants": "ca-on/disability_dependants"},
         produces={"output": "ca-on/disability_transferred_amount"},
     ),
+    # Schedule ON(S11) line 2 "Enter the amount from line 26000 of your return on line 2 if it is
+    # $52,886 or less. If it is more than $52,886, enter the result of the following calculation:"
+    # "Line 2: Amount from line 8 of your Form ON428" "divided by 5.05% =": the taxable income
+    # passes through at or below the dataset's threshold, and over it the Ontario tax on taxable
+    # income (ON428 line 8) is divided by the rate, rounded half-up to the cent.
+    CapabilitySelection(
+        name="ca/amount_or_divided_by_rate",
+        params={"limit": "ca-on/unused_tuition_limit"},
+        consumes={
+            "amount": "ca/taxable_income",
+            "dividend": "ca-on/ontario_basic_tax",
+        },
+        produces={"output": "ca-on/unused_tuition_income_cap"},
+    ),
+    # ON428 line 31 "Line 31: Add lines 28 to 30. =": the credit amounts the form totals before
+    # medical expenses, as its lines 1 to 25 carry them (the basic personal amount, the age, spouse,
+    # eligible dependant and caregiver amounts, the CPP and EI contributions), and line 30 (the
+    # disability amount transferred from a dependant). The pension amount (line 27), the disability
+    # amount for self (line 29) and the student loan interest (line 32) are not yet wired into it.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca-on/basic_personal_amount",
+                "ca-on/age_amount",
+                "ca-on/spouse_amount",
+                "ca-on/eligible_dependant_amount",
+                "ca-on/caregiver_amount",
+                "ca/cpp_base_contributions",
+                "ca/cpp_base_contributions_on_self_employment",
+                "ca/ei_premiums",
+                "ca/ei_premiums_on_self_employment",
+                "ca-on/disability_transferred_amount",
+            )
+        },
+        produces={"output": "ca-on/credit_amounts_through_disability_transfer"},
+    ),
+    # Schedule ON(S11) line 4 "Line 2 minus line 3 (if negative, enter "0") =", line 3 being
+    # "Enter the amount from line 31 of your Form ON428.", not below zero.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca-on/unused_tuition_income_cap",
+            "less": "ca-on/credit_amounts_through_disability_transfer",
+        },
+        produces={"output": "ca-on/unused_tuition_room"},
+    ),
+    # Schedule ON(S11) line 5 "Enter whichever is less: amount from line 1 or line 4. Enter this
+    # amount on line 58560 of your Form ON428. Your unused Ontario tuition and education amounts
+    # claimed for 2025": the lesser of line 1 and line 4. ON428 line 33 and line 58560 takes it, in
+    # the non-refundable credit amounts.
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca-on/unused_tuition_amounts_brought_forward",
+                "ca-on/unused_tuition_room",
+            ),
+        },
+        produces={"output": "ca-on/unused_tuition_claimed"},
+    ),
+    # Schedule ON(S11) line 8 "Line 6 minus line 7 Unused provincial tuition and education amounts
+    # available to carry forward to a future year =". Lines 6 and 7 are copies of line 1 and
+    # line 5 (the carryforward section), so they have no steps: line 8 is line 1 minus line 5.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca-on/unused_tuition_amounts_brought_forward",
+            "less": "ca-on/unused_tuition_claimed",
+        },
+        produces={"output": "ca-on/unused_tuition_carried_forward"},
+    ),
 }
 
 WIRING = {
@@ -355,5 +449,48 @@ WIRING = {
         OntarioDisabilityTransferAmount,
         frozenset({ontario.DISABILITY_DEPENDANTS}),
         frozenset({ontario.DISABILITY_TRANSFERRED_AMOUNT}),
+    ),
+    (
+        AmountOrDividedByRate,
+        frozenset({TAXABLE_INCOME, ONTARIO_BASIC_TAX}),
+        frozenset({ontario.UNUSED_TUITION_INCOME_CAP}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                ontario.BASIC_PERSONAL_AMOUNT,
+                ontario.AGE_AMOUNT,
+                ontario.SPOUSE_AMOUNT,
+                ontario.ELIGIBLE_DEPENDANT_AMOUNT,
+                ontario.CAREGIVER_AMOUNT,
+                CPP_BASE_CONTRIBUTIONS,
+                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+                EI_PREMIUMS,
+                EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+                ontario.DISABILITY_TRANSFERRED_AMOUNT,
+            }
+        ),
+        frozenset({ontario.CREDIT_AMOUNTS_THROUGH_DISABILITY_TRANSFER}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset(
+            {
+                ontario.UNUSED_TUITION_INCOME_CAP,
+                ontario.CREDIT_AMOUNTS_THROUGH_DISABILITY_TRANSFER,
+            }
+        ),
+        frozenset({ontario.UNUSED_TUITION_ROOM}),
+    ),
+    (
+        LesserOf,
+        frozenset({ontario.UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD, ontario.UNUSED_TUITION_ROOM}),
+        frozenset({ontario.UNUSED_TUITION_CLAIMED}),
+    ),
+    (
+        Subtract,
+        frozenset({ontario.UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD, ontario.UNUSED_TUITION_CLAIMED}),
+        frozenset({ontario.UNUSED_TUITION_CARRIED_FORWARD}),
     ),
 }

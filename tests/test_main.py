@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 495
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 500
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -733,6 +733,12 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca-on/disability_transferred_amount",
         "ca-on/non_refundable_credit_amounts",
         "ca-on/credit_amounts_at_credit_rate",
+        "ca-on/credit_amounts_through_disability_transfer",
+        "ca-on/unused_tuition_amounts_brought_forward",
+        "ca-on/unused_tuition_income_cap",
+        "ca-on/unused_tuition_room",
+        "ca-on/unused_tuition_claimed",
+        "ca-on/unused_tuition_carried_forward",
         "ca-on/donations_first_tier_credit",
         "ca-on/donations_over_first_tier_credit",
         "ca-on/donations_and_gifts_credit",
@@ -903,13 +909,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 495
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 500
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 495
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 500
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

@@ -906,6 +906,7 @@ def compute(
     not_claiming_ontario_tax_reduction: int = 0,
     spouse_or_common_law_partner_on_december_31: int = 0,
     claims_tax_reduction_amounts_at_equal_net_income: int = 0,
+    unused_tuition_amounts_brought_forward: str = "0",
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -1332,6 +1333,10 @@ def compute(
         Artifact(
             ontario.CLAIMS_TAX_REDUCTION_AMOUNTS_AT_EQUAL_NET_INCOME,
             claims_tax_reduction_amounts_at_equal_net_income,
+        ),
+        Artifact(
+            ontario.UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD,
+            D(unused_tuition_amounts_brought_forward),
         ),
     )
 

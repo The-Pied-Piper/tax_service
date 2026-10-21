@@ -321,7 +321,8 @@ def test_return_abs_ontario_trace_names_the_dependant_and_totals_the_credit_amou
         "+ spouse_amount 0 + eligible_dependant_amount 0 + caregiver_amount 7570 "
         "+ cpp_base_contributions 2202.75 + cpp_base_contributions_on_self_employment 0 "
         "+ ei_premiums 787.2 + ei_premiums_on_self_employment 0 "
-        "+ disability_transferred_amount 5298 + medical_claim 0 = 28604.95"
+        "+ disability_transferred_amount 5298 + unused_tuition_claimed 0 "
+        "+ medical_claim 0 = 28604.95"
     ) in rendered
     # The T1's own line is told apart by the amounts it works on.
     assert (

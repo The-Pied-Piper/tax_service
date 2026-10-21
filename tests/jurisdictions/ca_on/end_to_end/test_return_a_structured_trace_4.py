@@ -346,6 +346,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     assert lesser == {
+        # Schedule ON(S11) line 5 "Enter whichever is less: amount from line 1 or line 4": 0 on
+        # the return with nothing brought forward, against line 4 (the room, 151920.41).
+        ontario.UNUSED_TUITION_CLAIMED: LesserOfLine(
+            ontario.UNUSED_TUITION_CLAIMED,
+            (
+                (ontario.UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD, D("0")),
+                (ontario.UNUSED_TUITION_ROOM, D("151920.41")),
+            ),
+            D("0"),
+        ),
         # Form T1172 line 3 "Amount from line 1 or 2, whichever is less" and line 7 "Amount from
         # line 3 or 6, whichever is less", for no AIPs.
         RESP_AIPS_CONTRIBUTIONS_COUNTED: LesserOfLine(
@@ -766,6 +776,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Schedule ON(S11) line 4 "Line 2 minus line 3 (if negative, enter "0")": the income cap of
+        # line 2, 169100.99 (the Ontario tax of ON428 line 8 divided by 5.05%), less line 3, the
+        # credit amounts through the disability transfer, 17180.58.
+        ontario.UNUSED_TUITION_ROOM: SubtractedNotBelowZeroLine(
+            output=ontario.UNUSED_TUITION_ROOM,
+            minuend=ontario.UNUSED_TUITION_INCOME_CAP,
+            minuend_amount=D("169100.99"),
+            subtrahend=ontario.CREDIT_AMOUNTS_THROUGH_DISABILITY_TRANSFER,
+            subtrahend_amount=D("17180.58"),
+            result=D("151920.41"),
+        ),
         # Form T1206 Part 2 line 18 "Line 16 minus line 17 (if negative, enter "0")": no
         # dividends, so 0.
         SPLIT_INCOME_LINE_18: SubtractedNotBelowZeroLine(
