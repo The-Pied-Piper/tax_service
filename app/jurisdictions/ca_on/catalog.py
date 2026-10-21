@@ -238,6 +238,87 @@ Line 6 minus line 7 Unused provincial tuition and education amounts available to
 future year =": line 1 (line 6) less the amount claimed (line 7, from line 5), for a future year.
 Lines 6 and 7 are copies of lines 1 and 5."""
 
+SPOUSE_RETURN_ONTARIO_AGE_AMOUNT = CATALOG.declare(
+    "spouse_return_ontario_age_amount", Decimal, non_negative=True
+)
+"""Their Ontario age amount, Schedule ON(S2) line 1 and line 59020 "Enter the amount from line 58080
+of their Form ON428.": a figure from another person's return, a caller input, one for the one
+spouse."""
+
+SPOUSE_RETURN_ONTARIO_PENSION_INCOME_AMOUNT = CATALOG.declare(
+    "spouse_return_ontario_pension_income_amount", Decimal, non_negative=True
+)
+"""Their Ontario pension income amount, Schedule ON(S2) line 2 and line 59050 "Enter the amount from
+line 58360 of their Form ON428.": a figure from another person's return, a caller input."""
+
+SPOUSE_RETURN_ONTARIO_DISABILITY_AMOUNT = CATALOG.declare(
+    "spouse_return_ontario_disability_amount", Decimal, non_negative=True
+)
+"""Their Ontario disability amount, Schedule ON(S2) line 3 and line 59070 "Enter the amount from
+line 58440 of their Form ON428.": a figure from another person's return, a caller input."""
+
+SPOUSE_RETURN_ONTARIO_BASIC_TAX = CATALOG.declare(
+    "spouse_return_ontario_basic_tax", Decimal, non_negative=True
+)
+"""Their Ontario tax on taxable income, Schedule ON(S2) line 5 "Amount from line 8 of their Form
+ON428" "divided by 5.05% =": a figure from another person's return, a caller input."""
+
+SPOUSE_RETURN_ONTARIO_BASIC_PERSONAL_AMOUNT = CATALOG.declare(
+    "spouse_return_ontario_basic_personal_amount", Decimal, non_negative=True
+)
+"""Their Ontario basic personal amount, Schedule ON(S2) line 6 "Amount from line 58040 of their Form
+ON428": a figure from another person's return, a caller input."""
+
+SPOUSE_RETURN_ONTARIO_LINE_24 = CATALOG.declare(
+    "spouse_return_ontario_line_24", Decimal, non_negative=True
+)
+"""Their ON428 line 24, Schedule ON(S2) line 7 "Amount from line 24 of their Form ON428": a figure
+from another person's return, a caller input."""
+
+SPOUSE_RETURN_ONTARIO_UNUSED_TUITION_AMOUNT = CATALOG.declare(
+    "spouse_return_ontario_unused_tuition_amount", Decimal, non_negative=True
+)
+"""Their unused Ontario tuition and education amounts claimed, Schedule ON(S2) line 8 "Amount from
+line 58560 of their Form ON428": a figure from another person's return, a caller input."""
+
+SPOUSE_TRANSFERABLE_AMOUNTS = CATALOG.declare(
+    "spouse_transferable_amounts", Decimal, non_negative=True
+)
+"""Their transferable Ontario amounts, Schedule ON(S2) line 4 "Add lines 1 to 3. =": the sum of
+their age, pension income and disability amounts (lines 1 to 3)."""
+
+SPOUSE_INCOME_FOR_TRANSFER = CATALOG.declare(
+    "spouse_income_for_transfer", Decimal, non_negative=True
+)
+"""Their income for the transfer, Schedule ON(S2) line 5 "Enter the amount from line 26000 of their
+return on line 5 if it is $52,886 or less. If it is more than $52,886, enter the result of the
+following calculation: Amount from line 8 of their Form ON428 divided by 5.05% =": their taxable
+income at or below $52,886, else their Ontario tax (ON428 line 8) divided by 5.05%, rounded
+half-up to the cent."""
+
+SPOUSE_CREDITS_USED = CATALOG.declare("spouse_credits_used", Decimal, non_negative=True)
+"""Their credit amounts used, Schedule ON(S2) line 9 "Add lines 6 to 8. =": the sum of their basic
+personal amount, ON428 line 24 and unused tuition and education amounts claimed (lines 6 to 8)."""
+
+SPOUSE_ADJUSTED_TAXABLE_INCOME = CATALOG.declare(
+    "spouse_adjusted_taxable_income", Decimal, non_negative=True
+)
+"""Their taxable income left after their own credits, Schedule ON(S2) line 10 and line 59120 "Line 5
+minus line 9 (if negative, enter "0") =": line 5 less line 9, not below zero."""
+
+SPOUSE_UNUSED_AMOUNTS = CATALOG.declare("spouse_unused_amounts", Decimal, non_negative=True)
+"""Their unused amounts, Schedule ON(S2) line 11 "Line 4 minus line 10 (if negative, enter "0")":
+line 4 less line 10, not below zero."""
+
+AMOUNTS_TRANSFERRED_FROM_SPOUSE = CATALOG.declare(
+    "amounts_transferred_from_spouse", Decimal, non_negative=True
+)
+"""Provincial amounts transferred from your spouse or common-law partner, Schedule ON(S2) line 11
+"Enter this amount on line 58640 of your Form ON428. Provincial amounts transferred from your
+spouse or common-law partner", ON428 line 34 and line 58640 "Amounts transferred from your spouse
+or common-law partner (attach Schedule ON(S2))", a part of line 35 "Add lines 31 to 34. =": line 11,
+or zero when separated for 90 days or more including December 31, 2025."""
+
 NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare(
     "non_refundable_credit_amounts", Decimal, non_negative=True
 )

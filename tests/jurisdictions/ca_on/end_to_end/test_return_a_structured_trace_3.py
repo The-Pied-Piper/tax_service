@@ -1343,6 +1343,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
             result=D("0"),
         ),
+        # Schedule ON(S2) line 11 and ON428 line 34 (line 58640), the same count (Return A claims
+        # none: every figure is 0).
+        ontario.AMOUNTS_TRANSFERRED_FROM_SPOUSE: TimesCountLine(
+            output=ontario.AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+            amount_kind=ontario.SPOUSE_UNUSED_AMOUNTS,
+            amount_value=D("0"),
+            count_kind=SPOUSE_NOT_SEPARATED_90_DAYS,
+            count=0,
+            result=D("0"),
+        ),
     }
     assert multiples == {
         ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS: MultipleOverLine(

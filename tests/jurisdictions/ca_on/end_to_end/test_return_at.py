@@ -41,6 +41,7 @@ from app.jurisdictions.ca.catalog import (
     UNUSED_FEDERAL_TUITION,
     UNUSED_TUITION_CLAIMED,
 )
+from app.jurisdictions.ca_on import catalog as ontario
 from tests.jurisdictions.ca_on.end_to_end.support import D, compute
 
 
@@ -53,6 +54,8 @@ def return_at(**overrides: Any) -> Worksheet:
     child is 1500 and nothing is transferred to a designated individual. The spouse's age amount
     is 9028 and pension amount 2000, their taxable income 20000, their line 30000 16129 and their
     line 96 1500; the filer was not separated for 90 days or more including December 31, 2025.
+    On their Form ON428 the spouse's line 58080 is 6223, line 58360 1762, line 8 1010.00, line
+    58040 12747, line 24 1500 and line 58560 0 (Schedule ON(S2)).
     """
     inputs: dict[str, Any] = {
         "employment_income": "40000",
@@ -76,6 +79,11 @@ def return_at(**overrides: Any) -> Worksheet:
         "spouse_return_basic_personal_amount": "16129",
         "spouse_return_line_96": "1500",
         "spouse_not_separated_90_days": 1,
+        "spouse_return_ontario_age_amount": "6223",
+        "spouse_return_ontario_pension_income_amount": "1762",
+        "spouse_return_ontario_basic_tax": "1010.00",
+        "spouse_return_ontario_basic_personal_amount": "12747",
+        "spouse_return_ontario_line_24": "1500",
     }
     return compute(**{**inputs, **overrides})
 
@@ -145,15 +153,16 @@ def test_lines_32300_32400_and_32600_are_added_into_line_33500() -> None:
 
 def test_line_45350_is_added_into_the_total_credits_on_line_48200() -> None:
     # The federal tax after credits is 5747.08 - 5541.86 = 205.22; with the Ontario tax of
-    # 1165.23 the total payable is 1370.45. Line 48200 is the 5000 of income tax deducted plus
-    # 1250.00 on line 45350: 6250.00, so line 167 is 1370.45 - 6250.00 = -4879.55, a refund.
+    # 1052.51 (see the Schedule ON(S2) test) the total payable is 1257.73. Line 48200 is the 5000
+    # of income tax deducted plus 1250.00 on line 45350: 6250.00, so line 167 is 1257.73 -
+    # 6250.00 = -4992.27, a refund.
     worksheet = return_at()
 
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("205.22")
-    assert worksheet.get(TOTAL_PAYABLE).value == D("1370.45")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("1257.73")
     assert worksheet.get(TOTAL_CREDITS).value == D("6250.00")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-4879.55")
-    assert worksheet.get(REFUND).value == D("4879.55")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-4992.27")
+    assert worksheet.get(REFUND).value == D("4992.27")
 
 
 @pytest.mark.parametrize(("not_separated", "line_32600"), [(1, "8657.00"), (0, "0")])
@@ -172,12 +181,14 @@ def test_a_spouse_separated_for_90_days_transfers_nothing_on_line_32600() -> Non
     # The count is 0 for a filer separated for 90 days or more including December 31, 2025:
     # Schedule 2 line 13 is still 8657.00 but line 32600 is 8657.00 x 0 = 0, so line 33500 is
     # 20062.75 + 8000.00 + 1500 = 29562.75, line 33800 is 29562.75 x 14.5% = 4286.59875, half-up:
-    # 4286.60, the federal tax after credits 5747.08 - 4286.60 = 1460.48, the total payable
+    # 4286.60, the federal tax after credits 5747.08 - 4286.60 = 1460.48, the Ontario line 58640
+    # is 0 as well (the same count), so the Ontario tax is 1165.23, the total payable is
     # 1460.48 + 1165.23 = 2625.71 and line 167 is 2625.71 - 6250.00 = -3624.29.
     worksheet = return_at(spouse_not_separated_90_days=0)
 
     assert worksheet.get(SPOUSE_UNUSED_AMOUNTS).value == D("8657.00")
     assert worksheet.get(AMOUNTS_TRANSFERRED_FROM_SPOUSE).value == D("0")
+    assert worksheet.get(ontario.AMOUNTS_TRANSFERRED_FROM_SPOUSE).value == D("0")
     assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("29562.75")
     assert worksheet.get(CREDIT_AMOUNTS_AT_CREDIT_RATE).value == D("4286.60")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("1460.48")
@@ -300,3 +311,112 @@ def test_a_training_credit_below_line_4_leaves_more_tuition() -> None:
     assert worksheet.get(CURRENT_YEAR_TUITION_AVAILABLE).value == D("7000.00")
     assert worksheet.get(TUITION_TRANSFER_LIMIT).value == D("5000.00")
     assert worksheet.get(TUITION_AVAILABLE_TO_TRANSFER).value == D("0.00")
+
+
+def test_the_ontario_spouse_amounts_are_2232_on_line_58640() -> None:
+    # Schedule ON(S2). Line 4 is 6223 + 1762 + 0 = 7985.00; their taxable income of 20000 is
+    # under 52886, so line 5 is 20000.00 (their line 8, 1010.00, is not used); line 9 is 12747 +
+    # 1500 + 0 = 14247.00; line 10 is 20000.00 - 14247.00 = 5753.00 and line 11 is 7985.00 -
+    # 5753.00 = 2232.00; not separated, ON428 line 34 and line 58640 is 2232.00.
+    worksheet = return_at()
+
+    assert worksheet.get(ontario.SPOUSE_TRANSFERABLE_AMOUNTS).value == D("7985.00")
+    assert worksheet.get(ontario.SPOUSE_INCOME_FOR_TRANSFER).value == D("20000.00")
+    assert worksheet.get(ontario.SPOUSE_CREDITS_USED).value == D("14247.00")
+    assert worksheet.get(ontario.SPOUSE_ADJUSTED_TAXABLE_INCOME).value == D("5753.00")
+    assert worksheet.get(ontario.SPOUSE_UNUSED_AMOUNTS).value == D("2232.00")
+    assert worksheet.get(ontario.AMOUNTS_TRANSFERRED_FROM_SPOUSE).value == D("2232.00")
+
+
+def test_line_58640_is_added_into_the_ontario_credit_amounts_on_line_44() -> None:
+    # ON428 line 44 (line 58800) is 12747 + 1806.75 + 656.00 + 2232.00 = 17441.75, and line 46
+    # (line 58840) is 17441.75 x 5.05% = 880.808375, half-up to the cent: 880.81; the Ontario tax
+    # after credits is 2001.57 - 880.81 = 1120.76. The LIFT credit 518.25 and the health premium
+    # 450 give an Ontario tax of 1120.76 - 518.25 + 450 = 1052.51, so line 167 above is 205.22 +
+    # 1052.51 = 1257.73 less 6250.00.
+    worksheet = return_at()
+
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("17441.75")
+    assert worksheet.get(ontario.CREDIT_AMOUNTS_AT_CREDIT_RATE).value == D("880.81")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_CREDITS).value == D("1120.76")
+    assert worksheet.get(ontario.ONTARIO_TAX_LESS_DIVIDEND_CREDIT).value == D("1120.76")
+
+
+def test_the_federal_count_also_zeroes_line_58640_for_a_separated_spouse() -> None:
+    # The one count (ca/spouse_not_separated_90_days) is 0 for a filer separated for 90 days or
+    # more including December 31, 2025: Schedule ON(S2) line 11 is still 2232.00 but line 58640 is
+    # 2232.00 x 0 = 0, so ON428 line 44 is 12747 + 1806.75 + 656.00 = 15209.75, line 46 is
+    # 15209.75 x 5.05% = 768.088..., half-up: 768.09, and the Ontario tax after credits is
+    # 2001.57 - 768.09 = 1233.48.
+    worksheet = return_at(spouse_not_separated_90_days=0)
+
+    assert worksheet.get(ontario.SPOUSE_UNUSED_AMOUNTS).value == D("2232.00")
+    assert worksheet.get(ontario.AMOUNTS_TRANSFERRED_FROM_SPOUSE).value == D("0")
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("15209.75")
+    assert worksheet.get(ontario.CREDIT_AMOUNTS_AT_CREDIT_RATE).value == D("768.09")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_CREDITS).value == D("1233.48")
+
+
+@pytest.mark.parametrize(
+    ("taxable_income", "line_10", "line_11"),
+    [
+        # Line 10 is line 5 less 14247.00; line 11 is 7985.00 less line 10, not below zero.
+        ("20000", "5753.00", "2232.00"),
+        ("22000", "7753.00", "232.00"),
+        ("22232", "7985.00", "0.00"),
+        # Line 10 would be 15753.00, more than line 4: line 11 is 0, not negative.
+        ("30000", "15753.00", "0.00"),
+        # Their taxable income is under their credits: line 10 is 0, not negative.
+        ("10000", "0.00", "7985.00"),
+    ],
+)
+def test_the_spouses_taxable_income_reduces_what_they_can_transfer_in_ontario(
+    taxable_income: str, line_10: str, line_11: str
+) -> None:
+    # The same spouse taxable income (their line 26000) feeds line 5 and, on the federal
+    # Schedule 2, line 7.
+    worksheet = return_at(spouse_return_taxable_income=taxable_income)
+
+    assert worksheet.get(ontario.SPOUSE_ADJUSTED_TAXABLE_INCOME).value == D(line_10)
+    assert worksheet.get(ontario.SPOUSE_UNUSED_AMOUNTS).value == D(line_11)
+    assert worksheet.get(ontario.AMOUNTS_TRANSFERRED_FROM_SPOUSE).value == D(line_11)
+
+
+def test_a_spouse_with_taxable_income_over_52886_uses_their_ontario_tax_over_5_05_percent() -> None:
+    # Schedule ON(S2) line 5: their line 8 of 3500.00 divided by 5.05% = 69306.9306..., half-up to
+    # the cent: 69306.93 (their line 26000, 60000, is not used); line 10 is 69306.93 - 14247.00 =
+    # 55059.93, more than line 4 (7985.00), so line 11 and line 58640 are 0.
+    worksheet = return_at(
+        spouse_return_taxable_income="60000", spouse_return_ontario_basic_tax="3500.00"
+    )
+
+    assert worksheet.get(ontario.SPOUSE_INCOME_FOR_TRANSFER).value == D("69306.93")
+    assert worksheet.get(ontario.SPOUSE_ADJUSTED_TAXABLE_INCOME).value == D("55059.93")
+    assert worksheet.get(ontario.AMOUNTS_TRANSFERRED_FROM_SPOUSE).value == D("0")
+
+
+def test_the_spouses_taxable_income_at_52886_is_used_as_it_is() -> None:
+    # "$52,886 or less": at the threshold their line 26000 passes through, so line 5 is 52886.00
+    # whatever their line 8 is, and line 10 is 52886.00 - 14247.00 = 38639.00.
+    worksheet = return_at(
+        spouse_return_taxable_income="52886", spouse_return_ontario_basic_tax="9999.00"
+    )
+
+    assert worksheet.get(ontario.SPOUSE_INCOME_FOR_TRANSFER).value == D("52886.00")
+    assert worksheet.get(ontario.SPOUSE_ADJUSTED_TAXABLE_INCOME).value == D("38639.00")
+    assert worksheet.get(ontario.AMOUNTS_TRANSFERRED_FROM_SPOUSE).value == D("0")
+
+
+def test_the_spouses_disability_and_unused_tuition_change_lines_4_and_9() -> None:
+    # Their line 58440 of 4000 makes line 4 6223 + 1762 + 4000 = 11985.00; their line 58560 of
+    # 2000 makes line 9 12747 + 1500 + 2000 = 16247.00, so line 10 is 20000.00 - 16247.00 =
+    # 3753.00 and line 11 is 11985.00 - 3753.00 = 8232.00.
+    worksheet = return_at(
+        spouse_return_ontario_disability_amount="4000",
+        spouse_return_ontario_unused_tuition_amount="2000",
+    )
+
+    assert worksheet.get(ontario.SPOUSE_TRANSFERABLE_AMOUNTS).value == D("11985.00")
+    assert worksheet.get(ontario.SPOUSE_CREDITS_USED).value == D("16247.00")
+    assert worksheet.get(ontario.SPOUSE_ADJUSTED_TAXABLE_INCOME).value == D("3753.00")
+    assert worksheet.get(ontario.AMOUNTS_TRANSFERRED_FROM_SPOUSE).value == D("8232.00")

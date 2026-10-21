@@ -323,6 +323,7 @@ def test_return_abs_ontario_trace_names_the_dependant_and_totals_the_credit_amou
         "+ cpp_base_contributions 2202.75 + cpp_base_contributions_on_self_employment 0 "
         "+ ei_premiums 787.2 + ei_premiums_on_self_employment 0 "
         "+ disability_transferred_amount 5298 + unused_tuition_claimed 0 "
+        "+ amounts_transferred_from_spouse 0 "
         "+ medical_claim 0 = 28604.95"
     ) in rendered
     # The T1's own line is told apart by the amounts it works on.

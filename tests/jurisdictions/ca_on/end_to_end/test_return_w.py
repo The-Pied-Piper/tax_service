@@ -124,7 +124,8 @@ def test_return_ws_trace_names_each_ontario_dependant_and_totals_the_credit_amou
         "+ spouse_amount 0 + eligible_dependant_amount 0 + caregiver_amount 7570 "
         "+ cpp_base_contributions 2202.75 + cpp_base_contributions_on_self_employment 0 "
         "+ ei_premiums 787.2 + ei_premiums_on_self_employment 0 "
-        "+ disability_transferred_amount 0 + unused_tuition_claimed 0 + medical_claim 0 = 23306.95"
+        "+ disability_transferred_amount 0 + unused_tuition_claimed 0 "
+        "+ amounts_transferred_from_spouse 0 + medical_claim 0 = 23306.95"
     ) in rendered
 
 
@@ -221,7 +222,8 @@ def test_the_dependant_claimed_on_line_58160_takes_it_off_line_58185() -> None:
         "+ spouse_amount 0 + eligible_dependant_amount 2905 + caregiver_amount 4665 "
         "+ cpp_base_contributions 2202.75 + cpp_base_contributions_on_self_employment 0 "
         "+ ei_premiums 787.2 + ei_premiums_on_self_employment 0 "
-        "+ disability_transferred_amount 0 + unused_tuition_claimed 0 + medical_claim 0 = 23306.95"
+        "+ disability_transferred_amount 0 + unused_tuition_claimed 0 "
+        "+ amounts_transferred_from_spouse 0 + medical_claim 0 = 23306.95"
     ) in rendered
 
 

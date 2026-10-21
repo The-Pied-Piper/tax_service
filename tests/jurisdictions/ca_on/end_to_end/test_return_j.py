@@ -165,7 +165,8 @@ def test_return_js_age_spouse_and_caregiver_amounts_come_off_net_income_and_the_
         "+ spouse_amount 0 + eligible_dependant_amount 0 + caregiver_amount 0 "
         "+ cpp_base_contributions 2301.75 + cpp_base_contributions_on_self_employment 0 "
         "+ ei_premiums 820 + ei_premiums_on_self_employment 0 "
-        "+ disability_transferred_amount 0 + unused_tuition_claimed 0 + medical_claim 0 = 21541.25",
+        "+ disability_transferred_amount 0 + unused_tuition_claimed 0 "
+        "+ amounts_transferred_from_spouse 0 + medical_claim 0 = 21541.25",
     ):
         assert line in rendered
 

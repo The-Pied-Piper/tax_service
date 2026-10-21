@@ -296,6 +296,7 @@ def test_return_xs_ontario_trace_names_each_step_and_each_dependant() -> None:
         "+ cpp_base_contributions 2202.75 + cpp_base_contributions_on_self_employment 0 "
         "+ ei_premiums 787.2 + ei_premiums_on_self_employment 0 "
         "+ disability_transferred_amount 0 + unused_tuition_claimed 0 "
+        "+ amounts_transferred_from_spouse 0 "
         "+ medical_claim 5773.35 = 21510.3",
         "credit_amounts_at_credit_rate: 5.05% of non_refundable_credit_amounts 21510.3 "
         "(half-up to 0.01)",
