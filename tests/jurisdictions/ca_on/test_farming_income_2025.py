@@ -19,16 +19,27 @@ their own.
 
 The lines are tested here one rule at a time on the registered kinds; the lines together, from the
 income lines to T1 lines 14099 and 14100, are in `end_to_end/test_return_bc.py` and
-`returns/2025_return_bc.yaml`.
+`returns/2025_return_bc.yaml`. Form T2042 Charts A to C (the motor vehicle expenses, line 9819 of
+Part 4, and the Chart B and C figures of a leased passenger vehicle) are at the end of this module;
+the printed constants of the charts are the T2125's datasets, tested in
+`test_t2125_motor_vehicle_2025.py`.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+import pytest
+
 from app.domain.artifact import ArtifactKind
+from app.domain.errors import CapabilityContractError
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
+    BUSINESS_VEHICLE_DAYS_DIVISOR,
+    BUSINESS_VEHICLE_INTEREST_LIMIT,
+    BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT,
+    BUSINESS_VEHICLE_LEASE_COST_LIMIT,
+    BUSINESS_VEHICLE_LIST_PRICE_LIMIT,
     FARM_CCA_CLAIM,
     FARM_CCA_CLAIM_LESS_PERSONAL_PART,
     FARM_CCA_TABLE_CLAIM,
@@ -40,6 +51,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_HOME_EXPENSES,
     FARM_HOME_EXPENSES_AVAILABLE,
     FARM_HOME_INCOME_LIMIT,
+    FARM_MOTOR_VEHICLE_EXPENSES,
     FARM_NET_INCOME_AFTER_ADJUSTMENTS,
     FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
     FARM_NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -52,6 +64,16 @@ from app.jurisdictions.ca.catalog import (
     FARM_SHARE_OF_NET_INCOME,
     FARM_TERMINAL_LOSS,
     FARM_TOTAL_EXPENSES,
+    FARM_VEHICLE_AVAILABLE_INTEREST,
+    FARM_VEHICLE_BUSINESS_USE_PART,
+    FARM_VEHICLE_INTEREST_FOR_PERIOD,
+    FARM_VEHICLE_LEASE_CHARGE_PORTION,
+    FARM_VEHICLE_LEASE_CHARGES_NET,
+    FARM_VEHICLE_LEASE_COST_PORTION,
+    FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
+    FARM_VEHICLE_LEASE_PRICE_BASE,
+    FARM_VEHICLE_LEASING_COST,
+    FARM_VEHICLE_TOTAL_EXPENSES,
     FARMING_INCOME,
 )
 from tests.jurisdictions.ca_on.end_to_end.support import D, compute
@@ -61,8 +83,9 @@ from tests.jurisdictions.ca_on.end_to_end.support import D, compute
 # 9899 is 30000, and no CCA, partner or business-use-of-home amounts.
 DEFAULT_FARM = {"wheat": "50000", "cattle": "30000", "seeds_and_plants": "50000"}
 
-# The 28 expense amounts of Part 4 and Part 4's adjustments and other expenses, in the form's
-# order: lines 9661 to 9820, 9937 and 9938, and the other expenses that make up line 9790.
+# The 27 expense amounts of Part 4 and Part 4's adjustments and other expenses, in the form's
+# order: lines 9661 to 9820 (line 9819, the motor vehicle expenses, is the Chart A line below and
+# not an amount here), 9937 and 9938, and the other expenses that make up line 9790.
 EXPENSE_NAMES = (
     "containers_and_twine",
     "fertilizers_and_lime",
@@ -87,7 +110,6 @@ EXPENSE_NAMES = (
     "property_taxes",
     "rent",
     "salaries_wages_and_benefits",
-    "motor_vehicle_expenses",
     "small_tools",
     "mandatory_inventory_adjustment_previous_year",
     "optional_inventory_adjustment_previous_year",
@@ -248,15 +270,15 @@ def test_the_personal_part_and_the_business_use_of_home_cca_come_off_line_9936()
 
 
 def test_every_expense_line_and_adjustment_adds_to_4b() -> None:
-    # Each of the 28 amounts of Part 4 (lines 9661 to 9820, the previous year's inventory
-    # adjustments 9937 and 9938, and the other expenses of line 9790) is 100: 4B is 2800, and with
-    # the income of 80000 (none of it from seeds or cattle), line 9899 is 80000 - 2800 = 77200.
+    # Each of the 27 amounts of Part 4 (lines 9661 to 9820, the previous year's inventory
+    # adjustments 9937 and 9938, and the other expenses of line 9790) is 100: 4B is 2700, and with
+    # the income of 80000 (none of it from seeds or cattle), line 9899 is 80000 - 2700 = 77300.
     worksheet = statement(
         {**{name: "100" for name in EXPENSE_NAMES}, "wheat": "80000", "cattle": "0"}
     )
 
-    assert line(worksheet, FARM_EXPENSES_SUBTOTAL) == D("2800")
-    assert line(worksheet, FARM_NET_INCOME_BEFORE_ADJUSTMENTS) == D("77200")
+    assert line(worksheet, FARM_EXPENSES_SUBTOTAL) == D("2700")
+    assert line(worksheet, FARM_NET_INCOME_BEFORE_ADJUSTMENTS) == D("77300")
 
 
 def test_the_current_year_inventory_adjustments_add_to_line_4c() -> None:
@@ -361,3 +383,144 @@ def test_the_partner_other_amounts_come_off_at_line_9943() -> None:
     assert line(worksheet, FARM_PARTNER_OTHER_AMOUNTS) == D("300")
     assert line(worksheet, FARM_NET_INCOME_AFTER_ADJUSTMENTS) == D("29700")
     assert line(worksheet, FARMING_INCOME) == D("29700")
+
+
+# Form T2042 Charts A to C: one leased passenger vehicle used half for farming. The statement is
+# income of 50000 (wheat) and seeds and plants of 20000, so the other amounts are 0.
+LEASED: dict[str, str] = {
+    "vehicle_business_kilometres": "5000",
+    "vehicle_total_kilometres": "10000",
+    "vehicle_fuel_and_oil": "1000",
+    "vehicle_insurance": "600",
+    "vehicle_maintenance_and_repairs": "200",
+    "vehicle_other_expenses_10": "653",
+    "vehicle_interest_payable": "400",
+    "vehicle_interest_days": "183",
+    "vehicle_lease_charges": "2550",
+    "vehicle_lease_days": "183",
+    "vehicle_list_price": "60000",
+    "vehicle_sales_tax_rate": "13",
+}
+
+
+def vehicle_statement(vehicle: dict[str, str]) -> Worksheet:
+    """A T2042 of income of 50000 (wheat) and seeds and plants of 20000, with the Chart A to C
+    amounts in `vehicle` (the others 0)."""
+    return statement({"cattle": "0", "seeds_and_plants": "20000", **vehicle})
+
+
+def test_a_leased_vehicle_gives_line_9819_of_2500_and_the_expenses_of_22500() -> None:
+    # Chart A: line 12 is 1000 (3) + 400 (4, line 19) + 600 (5) + 200 (7) + 2147 (8, line 28)
+    # + 653 (10) = 5000; line 13 is 5000 x 5000 / 10000 = 2500; line 16 is 2500 + 0 + 0 = 2500,
+    # line 9819. Amount 4B is 20000 + 2500 = 22500 and line 9899 is 50000 - 22500 = 27500.
+    worksheet = vehicle_statement(LEASED)
+
+    assert line(worksheet, FARM_VEHICLE_TOTAL_EXPENSES) == D("5000")
+    assert line(worksheet, FARM_VEHICLE_BUSINESS_USE_PART) == D("2500")
+    assert line(worksheet, FARM_MOTOR_VEHICLE_EXPENSES) == D("2500")
+    assert line(worksheet, FARM_EXPENSES_SUBTOTAL) == D("22500")
+    assert line(worksheet, FARM_NET_INCOME_BEFORE_ADJUSTMENTS) == D("27500")
+
+
+def test_chart_b_interest_is_the_amount_payable_when_that_is_the_lesser() -> None:
+    # Chart B line 18: 350 ÷ 30 × 183 days = 64050 ÷ 30 = 2135.00; line 17 is 400, the lesser, so
+    # line 19, the available interest expense, is 400.
+    worksheet = vehicle_statement(LEASED)
+
+    assert line(worksheet, FARM_VEHICLE_INTEREST_FOR_PERIOD) == D("2135.00")
+    assert line(worksheet, FARM_VEHICLE_AVAILABLE_INTEREST) == D("400.00")
+
+
+def test_chart_b_interest_is_capped_at_the_350_over_30_a_day_amount() -> None:
+    # Line 17 is 3000, more than line 18 of 2135.00 (350 ÷ 30 × 183), so line 19 is 2135.00.
+    worksheet = vehicle_statement({**LEASED, "vehicle_interest_payable": "3000"})
+
+    assert line(worksheet, FARM_VEHICLE_AVAILABLE_INTEREST) == D("2135.00")
+
+
+def test_chart_c_takes_the_price_plus_tax_when_it_is_more_than_the_list_price() -> None:
+    # Line 23 is 40000; 44706 plus 13% (5811.78) is 50517.78, the greater, and 85% of it is
+    # 42940.113, which rounds to 42940.11 (line 24).
+    worksheet = vehicle_statement({**LEASED, "vehicle_list_price": "40000"})
+
+    assert line(worksheet, FARM_VEHICLE_LEASE_PRICE_BASE) == D("50517.78")
+    assert line(worksheet, FARM_VEHICLE_LEASE_PRICE_85_PERCENT) == D("42940.11")
+
+
+def test_chart_c_takes_the_list_price_when_it_is_more_than_the_price_plus_tax() -> None:
+    # Line 23 is 60000, more than 50517.78, so line 24 is 60000 x 85% = 51000.00.
+    worksheet = vehicle_statement(LEASED)
+
+    assert line(worksheet, FARM_VEHICLE_LEASE_PRICE_BASE) == D("60000")
+    assert line(worksheet, FARM_VEHICLE_LEASE_PRICE_85_PERCENT) == D("51000.00")
+
+
+def test_chart_c_line_25_is_the_1100_plus_tax_times_the_days_over_30() -> None:
+    # (1100 + 13% of 1100 = 1243.00) x 183 days = 227469.00 ÷ 30 = 7582.30.
+    worksheet = vehicle_statement(LEASED)
+
+    assert line(worksheet, BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT) == D("1100.00")
+    assert line(worksheet, FARM_VEHICLE_LEASE_CHARGE_PORTION) == D("7582.30")
+
+
+def test_chart_c_line_27_is_the_38000_plus_tax_times_the_charges_over_line_24() -> None:
+    # (38000 + 13% = 42940.00) x 2550 lease charges = 109497000 ÷ 51000.00 = 2147.00.
+    worksheet = vehicle_statement(LEASED)
+
+    assert line(worksheet, BUSINESS_VEHICLE_LEASE_COST_LIMIT) == D("38000.00")
+    assert line(worksheet, FARM_VEHICLE_LEASE_COST_PORTION) == D("2147.00")
+
+
+def test_chart_c_leasing_cost_is_the_lesser_of_line_26_and_line_27() -> None:
+    # Line 26 is 7582.30 - 0 = 7582.30 and line 27 is 2147.00, so line 28, the leasing cost, is
+    # 2147.00.
+    worksheet = vehicle_statement(LEASED)
+
+    assert line(worksheet, FARM_VEHICLE_LEASE_CHARGES_NET) == D("7582.30")
+    assert line(worksheet, FARM_VEHICLE_LEASING_COST) == D("2147.00")
+
+
+def test_chart_c_line_28_below_zero_is_refused() -> None:
+    # Line 25 is 7582.30 and line 21 (payments before the year) is 9000, so line 26 is
+    # 7582.30 - 9000 = -1417.70. The form prints no floor, but the eligible leasing cost (line 28)
+    # is a non-negative amount, so the computation refuses it rather than inventing a floor.
+    with pytest.raises(CapabilityContractError):
+        vehicle_statement({**LEASED, "vehicle_lease_payments_before": "9000"})
+
+
+def test_chart_a_business_use_part_is_rounded_half_up_to_the_cent() -> None:
+    # Amount 1 of 1 and amount 2 of 3: 100 x 1 ÷ 3 = 33.333..., which rounds to 33.33 (line 13),
+    # and line 16 is 33.33 + 0 + 0.
+    worksheet = vehicle_statement(
+        {
+            "vehicle_business_kilometres": "1",
+            "vehicle_total_kilometres": "3",
+            "vehicle_fuel_and_oil": "100",
+        }
+    )
+
+    assert line(worksheet, FARM_VEHICLE_BUSINESS_USE_PART) == D("33.33")
+    assert line(worksheet, FARM_MOTOR_VEHICLE_EXPENSES) == D("33.33")
+
+
+def test_chart_a_business_use_part_is_0_when_there_are_no_total_kilometres() -> None:
+    # A total of 0 kilometres gives a business use part of 0 (no division), so line 16 is only
+    # the parking fees of 300.
+    worksheet = vehicle_statement(
+        {
+            "vehicle_business_kilometres": "5000",
+            "vehicle_total_kilometres": "0",
+            "vehicle_parking_fees": "300",
+        }
+    )
+
+    assert line(worksheet, FARM_VEHICLE_BUSINESS_USE_PART) == D("0")
+    assert line(worksheet, FARM_MOTOR_VEHICLE_EXPENSES) == D("300")
+
+
+def test_the_chart_constant_for_the_days_divides_by_30_in_both_charts() -> None:
+    worksheet = vehicle_statement(LEASED)
+
+    assert line(worksheet, BUSINESS_VEHICLE_DAYS_DIVISOR) == D("30.00")
+    assert line(worksheet, BUSINESS_VEHICLE_INTEREST_LIMIT) == D("350.00")
+    assert line(worksheet, BUSINESS_VEHICLE_LIST_PRICE_LIMIT) == D("44706.00")

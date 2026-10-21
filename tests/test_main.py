@@ -40,8 +40,8 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 963
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 963
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1019
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1019
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -186,6 +186,45 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/business_fuel_costs",
         "ca/business_delivery_freight_and_express",
         "ca/business_motor_vehicle_expenses",
+        "ca/business_vehicle_business_kilometres",
+        "ca/business_vehicle_total_kilometres",
+        "ca/business_vehicle_fuel_and_oil",
+        "ca/business_vehicle_insurance",
+        "ca/business_vehicle_licence_and_registration",
+        "ca/business_vehicle_maintenance_and_repairs",
+        "ca/business_vehicle_electricity_zev",
+        "ca/business_vehicle_other_expenses_10",
+        "ca/business_vehicle_other_expenses_11",
+        "ca/business_vehicle_parking_fees",
+        "ca/business_vehicle_supplementary_insurance",
+        "ca/business_vehicle_interest_payable",
+        "ca/business_vehicle_interest_days",
+        "ca/business_vehicle_lease_charges",
+        "ca/business_vehicle_lease_payments_before",
+        "ca/business_vehicle_lease_days",
+        "ca/business_vehicle_list_price",
+        "ca/business_vehicle_sales_tax_rate",
+        "ca/business_vehicle_interest_limit",
+        "ca/business_vehicle_days_divisor",
+        "ca/business_vehicle_list_price_limit",
+        "ca/business_vehicle_lease_charge_limit",
+        "ca/business_vehicle_lease_cost_limit",
+        "ca/business_vehicle_list_price_limit_tax",
+        "ca/business_vehicle_lease_charge_limit_tax",
+        "ca/business_vehicle_lease_cost_limit_tax",
+        "ca/business_vehicle_list_price_limit_with_tax",
+        "ca/business_vehicle_lease_charge_limit_with_tax",
+        "ca/business_vehicle_lease_cost_limit_with_tax",
+        "ca/business_vehicle_total_expenses",
+        "ca/business_vehicle_business_use_part",
+        "ca/business_vehicle_interest_for_period",
+        "ca/business_vehicle_available_interest",
+        "ca/business_vehicle_lease_price_base",
+        "ca/business_vehicle_lease_price_85_percent",
+        "ca/business_vehicle_lease_charge_portion",
+        "ca/business_vehicle_lease_charges_net",
+        "ca/business_vehicle_lease_cost_portion",
+        "ca/business_vehicle_leasing_cost",
         "ca/business_cca_personal_part",
         "ca/business_other_expenses",
         "ca/business_journalism_labour_tax_credit",
@@ -299,6 +338,40 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/farm_rent",
         "ca/farm_salaries_wages_and_benefits",
         "ca/farm_motor_vehicle_expenses",
+        "ca/farm_vehicle_business_kilometres",
+        "ca/farm_vehicle_total_kilometres",
+        "ca/farm_vehicle_fuel_and_oil",
+        "ca/farm_vehicle_insurance",
+        "ca/farm_vehicle_licence_and_registration",
+        "ca/farm_vehicle_maintenance_and_repairs",
+        "ca/farm_vehicle_electricity_zev",
+        "ca/farm_vehicle_other_expenses_10",
+        "ca/farm_vehicle_other_expenses_11",
+        "ca/farm_vehicle_parking_fees",
+        "ca/farm_vehicle_supplementary_insurance",
+        "ca/farm_vehicle_interest_payable",
+        "ca/farm_vehicle_interest_days",
+        "ca/farm_vehicle_lease_charges",
+        "ca/farm_vehicle_lease_payments_before",
+        "ca/farm_vehicle_lease_days",
+        "ca/farm_vehicle_list_price",
+        "ca/farm_vehicle_sales_tax_rate",
+        "ca/farm_vehicle_list_price_limit_tax",
+        "ca/farm_vehicle_lease_charge_limit_tax",
+        "ca/farm_vehicle_lease_cost_limit_tax",
+        "ca/farm_vehicle_list_price_limit_with_tax",
+        "ca/farm_vehicle_lease_charge_limit_with_tax",
+        "ca/farm_vehicle_lease_cost_limit_with_tax",
+        "ca/farm_vehicle_total_expenses",
+        "ca/farm_vehicle_business_use_part",
+        "ca/farm_vehicle_interest_for_period",
+        "ca/farm_vehicle_available_interest",
+        "ca/farm_vehicle_lease_price_base",
+        "ca/farm_vehicle_lease_price_85_percent",
+        "ca/farm_vehicle_lease_charge_portion",
+        "ca/farm_vehicle_lease_charges_net",
+        "ca/farm_vehicle_lease_cost_portion",
+        "ca/farm_vehicle_leasing_cost",
         "ca/farm_small_tools",
         "ca/farm_mandatory_inventory_adjustment_previous_year",
         "ca/farm_optional_inventory_adjustment_previous_year",
@@ -368,6 +441,40 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/fish_meals_and_entertainment",
         "ca/fish_business_taxes_licences_and_memberships",
         "ca/fish_motor_vehicle_expenses",
+        "ca/fish_vehicle_business_kilometres",
+        "ca/fish_vehicle_total_kilometres",
+        "ca/fish_vehicle_fuel_and_oil",
+        "ca/fish_vehicle_insurance",
+        "ca/fish_vehicle_licence_and_registration",
+        "ca/fish_vehicle_maintenance_and_repairs",
+        "ca/fish_vehicle_electricity_zev",
+        "ca/fish_vehicle_other_expenses_10",
+        "ca/fish_vehicle_other_expenses_11",
+        "ca/fish_vehicle_parking_fees",
+        "ca/fish_vehicle_supplementary_insurance",
+        "ca/fish_vehicle_interest_payable",
+        "ca/fish_vehicle_interest_days",
+        "ca/fish_vehicle_lease_charges",
+        "ca/fish_vehicle_lease_payments_before",
+        "ca/fish_vehicle_lease_days",
+        "ca/fish_vehicle_list_price",
+        "ca/fish_vehicle_sales_tax_rate",
+        "ca/fish_vehicle_list_price_limit_tax",
+        "ca/fish_vehicle_lease_charge_limit_tax",
+        "ca/fish_vehicle_lease_cost_limit_tax",
+        "ca/fish_vehicle_list_price_limit_with_tax",
+        "ca/fish_vehicle_lease_charge_limit_with_tax",
+        "ca/fish_vehicle_lease_cost_limit_with_tax",
+        "ca/fish_vehicle_total_expenses",
+        "ca/fish_vehicle_business_use_part",
+        "ca/fish_vehicle_interest_for_period",
+        "ca/fish_vehicle_available_interest",
+        "ca/fish_vehicle_lease_price_base",
+        "ca/fish_vehicle_lease_price_85_percent",
+        "ca/fish_vehicle_lease_charge_portion",
+        "ca/fish_vehicle_lease_charges_net",
+        "ca/fish_vehicle_lease_cost_portion",
+        "ca/fish_vehicle_leasing_cost",
         "ca/fish_office_expenses",
         "ca/fish_nets_and_traps",
         "ca/fish_professional_fees",
@@ -1729,15 +1836,15 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 963
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 963
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1019
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1019
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 963
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 963
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1019
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1019
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
