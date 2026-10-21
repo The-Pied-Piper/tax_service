@@ -46,7 +46,8 @@ description: >-
   (lines 52 to 56 are $0), and line 57 is $2,796.75, the line 30800 of the return; line 58 is Part
   3 line 12, $565.00 (lines 59 to 63 are $0), line 64 is $565.00, line 65 is Part 3 line 22, $0
   (lines 66 and 67 are $0) and line 69 is $565.00 + $0 = $565.00, the line 22215 of the return.
-  The self-employment cases of Part 5 are in the end to end test. The last expected lines (net income, the AMT subtotal and rate
+  The self-employment cases of Part 5 are in the end to end test. The last expected lines (net income, the AMT subtotal and
+  rate
   amount, the Ontario tax after the dividend credit and the balance owing) are the worksheet's
   figures for this income, the balance owing being the $8,676.79 of the same return without
   the overpayment less the $138.25 on line 44800, $8,538.54; the CPP lines shown below are the
@@ -80,8 +81,8 @@ sources:
     "Line 36: Line 34 minus line 35".
   - >-
     CRA, T1-2025 Schedule 8 (form 5000-S8), Part 5, lines 43 to 69
-    (docs/cra-forms-2025/5000-s8-25e.txt): "Line 43: amount from line 30 multiplied by 9.9% (maximum $6,712.20)"; "Line 44: amount from
-    line 30 multiplied by 2% (maximum $1,356.00)"; "Line 45: amount from line 42 multiplied by 8%
+    (docs/cra-forms-2025/5000-s8-25e.txt): "Line 43: amount from line 30 multiplied by 9.9%
+    (maximum $6,712.20)"; "Line 44: amount from line 30 multiplied by 2% (maximum $1,356.00)"; "Line 45: amount from line 42 multiplied by 8%
     (maximum $792.00)"; "Line 48: Amount from line 24 of Part 3 (if positive) multiplied by 2";
     "Line 49: Line 47 minus line 48. If positive, enter the amount (in dollars and cents) on line
     42100 of your return and continue at line 51. If negative, show in brackets and continue at

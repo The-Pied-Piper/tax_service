@@ -92,6 +92,8 @@ capabilities:
       base: ca/cpp_part_5_line_50_line_49_positive
     produces:
       output: ca/cpp_part_5_line_50
+  # Lines 51 to 69 repeat Part 3b lines 30 to 48 with the same formulas, one step per Part 5 line,
+  # so for the same Part 3 figures their values equal the Part 3b ones.
   # Schedule 8 Part 5 line 51 "If line 16 of Part 3 is positive or "0", enter the amount from
   # line 11 of Part 3 at lines 51 and 57, and continue at line 58. If not, enter the amount from
   # line 9 of Part 3 and continue at line 52.": line 11 (the required base contributions) when
