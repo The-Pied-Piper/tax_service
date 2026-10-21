@@ -2723,8 +2723,201 @@ taxes, licences, and memberships": a starting amount."""
 FISH_MOTOR_VEHICLE_EXPENSES = CATALOG.declare(
     "fish_motor_vehicle_expenses", Decimal, non_negative=True
 )
-"""Motor vehicle expenses of the fishing business, Form T2121 line 9281 "Motor vehicle expenses
-(not including CCA) (amount 16 of Chart A)": a starting amount."""
+"""Motor vehicle expenses of the fishing business, Form T2121 line 9281 (amount 4J) "Motor vehicle
+expenses (not including CCA) (amount 16 of Chart A)": amount 16 of Chart A, "Allowable motor vehicle
+expenses: Add amounts 13 to 15 (enter this total on line 9281 of Part 4)"."""
+
+# Form T2121 Charts A to C, motor vehicle expenses: the caller's amounts, the printed constants
+# (each a dataset of the same name) and the lines the charts compute.
+FISH_VEHICLE_BUSINESS_KILOMETRES = CATALOG.declare(
+    "fish_vehicle_business_kilometres", Decimal, non_negative=True
+)
+"""Business kilometres, Form T2121 Chart A amount 1 "Kilometres you drove in the tax year to earn
+fishing income": a starting amount."""
+
+FISH_VEHICLE_TOTAL_KILOMETRES = CATALOG.declare(
+    "fish_vehicle_total_kilometres", Decimal, non_negative=True
+)
+"""Total kilometres, Form T2121 Chart A amount 2 "Total kilometres you drove in the tax year":
+a starting amount."""
+
+FISH_VEHICLE_FUEL_AND_OIL = CATALOG.declare("fish_vehicle_fuel_and_oil", Decimal, non_negative=True)
+"""Fuel and oil, Form T2121 Chart A amount 3 "Fuel and oil": a starting amount."""
+
+FISH_VEHICLE_INSURANCE = CATALOG.declare("fish_vehicle_insurance", Decimal, non_negative=True)
+"""Insurance, Form T2121 Chart A amount 5 "Insurance": a starting amount."""
+
+FISH_VEHICLE_LICENCE_AND_REGISTRATION = CATALOG.declare(
+    "fish_vehicle_licence_and_registration", Decimal, non_negative=True
+)
+"""Licence and registration, Form T2121 Chart A amount 6 "Licence and registration": a starting
+amount."""
+
+FISH_VEHICLE_MAINTENANCE_AND_REPAIRS = CATALOG.declare(
+    "fish_vehicle_maintenance_and_repairs", Decimal, non_negative=True
+)
+"""Maintenance and repairs, Form T2121 Chart A amount 7 "Maintenance and repairs": a starting
+amount."""
+
+FISH_VEHICLE_ELECTRICITY_ZEV = CATALOG.declare(
+    "fish_vehicle_electricity_zev", Decimal, non_negative=True
+)
+"""Electricity for zero-emission vehicles, Form T2121 Chart A amount 9 "Electricity for
+zero-emission vehicles": a starting amount."""
+
+FISH_VEHICLE_OTHER_EXPENSES_10 = CATALOG.declare(
+    "fish_vehicle_other_expenses_10", Decimal, non_negative=True
+)
+"""Other motor vehicle expenses, Form T2121 Chart A amount 10 "Other expenses (specify)": a starting
+amount."""
+
+FISH_VEHICLE_OTHER_EXPENSES_11 = CATALOG.declare(
+    "fish_vehicle_other_expenses_11", Decimal, non_negative=True
+)
+"""Other motor vehicle expenses, Form T2121 Chart A amount 11 "Other expenses (specify)": a starting
+amount."""
+
+FISH_VEHICLE_PARKING_FEES = CATALOG.declare("fish_vehicle_parking_fees", Decimal, non_negative=True)
+"""Business parking fees, Form T2121 Chart A amount 14 "Business parking fees": a starting
+amount."""
+
+FISH_VEHICLE_SUPPLEMENTARY_INSURANCE = CATALOG.declare(
+    "fish_vehicle_supplementary_insurance", Decimal, non_negative=True
+)
+"""Supplementary business insurance, Form T2121 Chart A amount 15 "Supplementary business
+insurance": a starting amount."""
+
+FISH_VEHICLE_INTEREST_PAYABLE = CATALOG.declare(
+    "fish_vehicle_interest_payable", Decimal, non_negative=True
+)
+"""Total interest payable, Form T2121 Chart B amount 17 "Total interest payable (accrual method) or
+paid (cash method) in the fiscal period": a starting amount."""
+
+FISH_VEHICLE_INTEREST_DAYS = CATALOG.declare(
+    "fish_vehicle_interest_days", Decimal, non_negative=True
+)
+"""Days of interest, Form T2121 Chart B line 18 "... the number of days in the fiscal period for
+which interest was payable (accrual method) or paid (cash method)": a starting count of days."""
+
+FISH_VEHICLE_LEASE_CHARGES = CATALOG.declare(
+    "fish_vehicle_lease_charges", Decimal, non_negative=True
+)
+"""Total lease charges, Form T2121 Chart C amount 20 "Total lease charges incurred in your current
+fiscal period for the vehicle": a starting amount."""
+
+FISH_VEHICLE_LEASE_PAYMENTS_BEFORE = CATALOG.declare(
+    "fish_vehicle_lease_payments_before", Decimal, non_negative=True
+)
+"""Lease payments before the fiscal period, Form T2121 Chart C amount 21 "Total lease payments
+deducted before your current fiscal period for the vehicle": a starting amount."""
+
+FISH_VEHICLE_LEASE_DAYS = CATALOG.declare("fish_vehicle_lease_days", Decimal, non_negative=True)
+"""Days leased, Form T2121 Chart C amount 22 "Total number of days the vehicle was leased in your
+current and previous fiscal periods": a starting count of days."""
+
+FISH_VEHICLE_LIST_PRICE = CATALOG.declare("fish_vehicle_list_price", Decimal, non_negative=True)
+"""Manufacturer's list price, Form T2121 Chart C amount 23 "Manufacturer's list price": a starting
+amount."""
+
+FISH_VEHICLE_SALES_TAX_RATE = CATALOG.declare(
+    "fish_vehicle_sales_tax_rate", Decimal, non_negative=True
+)
+"""GST or HST rate, Form T2121 Chart C "Use a GST rate of 5% or HST rate applicable to your
+province.": the rate in percent, so 13 is 13%, a starting amount."""
+
+FISH_VEHICLE_LIST_PRICE_LIMIT_TAX = CATALOG.declare(
+    "fish_vehicle_list_price_limit_tax", Decimal, non_negative=True
+)
+"""GST and PST, or HST, on the $44,706 price limit, Form T2121 Chart C line 23 "($44,706 + GST and
+PST, or $44,706 + HST)": the price limit times the sales tax rate."""
+
+FISH_VEHICLE_LEASE_CHARGE_LIMIT_TAX = CATALOG.declare(
+    "fish_vehicle_lease_charge_limit_tax", Decimal, non_negative=True
+)
+"""GST and PST, or HST, on the $1,100 lease charge limit, Form T2121 Chart C line 25 "[($1,100 +
+GST and PST, or $1,100 + HST) × amount 22] ÷ 30": the limit times the sales tax rate."""
+
+FISH_VEHICLE_LEASE_COST_LIMIT_TAX = CATALOG.declare(
+    "fish_vehicle_lease_cost_limit_tax", Decimal, non_negative=True
+)
+"""GST and PST, or HST, on the $38,000 lease cost limit, Form T2121 Chart C line 27 "[($38,000 +
+GST and PST, or $38,000 + HST) × amount 20] ÷ amount 24": the limit times the sales tax rate."""
+
+FISH_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX = CATALOG.declare(
+    "fish_vehicle_list_price_limit_with_tax", Decimal, non_negative=True
+)
+"""Price limit with tax, Form T2121 Chart C line 23 "($44,706 + GST and PST, or $44,706 + HST)": the
+printed $44,706 plus its tax."""
+
+FISH_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX = CATALOG.declare(
+    "fish_vehicle_lease_charge_limit_with_tax", Decimal, non_negative=True
+)
+"""Lease charge limit with tax, Form T2121 Chart C line 25 "($1,100 + GST and PST, or $1,100 +
+HST)": the printed $1,100 plus its tax."""
+
+FISH_VEHICLE_LEASE_COST_LIMIT_WITH_TAX = CATALOG.declare(
+    "fish_vehicle_lease_cost_limit_with_tax", Decimal, non_negative=True
+)
+"""Lease cost limit with tax, Form T2121 Chart C line 27 "($38,000 + GST and PST, or $38,000 +
+HST)": the printed $38,000 plus its tax."""
+
+FISH_VEHICLE_TOTAL_EXPENSES = CATALOG.declare(
+    "fish_vehicle_total_expenses", Decimal, non_negative=True
+)
+"""Total motor vehicle expenses, Form T2121 Chart A line 12 "Total motor vehicle expenses: Add
+amounts 3 to 11.": amounts 3 to 11, amount 4 being line 19 and amount 8 being line 28."""
+
+FISH_VEHICLE_BUSINESS_USE_PART = CATALOG.declare(
+    "fish_vehicle_business_use_part", Decimal, non_negative=True
+)
+"""Business use part, Form T2121 Chart A line 13 "Business use part: amount 1 ÷ amount 2 × amount
+12 = 13": amount 1 divided by amount 2, times amount 12, or 0 with no total kilometres."""
+
+FISH_VEHICLE_INTEREST_FOR_PERIOD = CATALOG.declare(
+    "fish_vehicle_interest_for_period", Decimal, non_negative=True
+)
+"""Interest for the fiscal period, Form T2121 Chart B line 18 "($350*** ÷ 30) × the number of days
+in the fiscal period for which interest was payable (accrual method) or paid (cash method) = 18":
+the interest limit divided by 30 and multiplied by the days of interest."""
+
+FISH_VEHICLE_AVAILABLE_INTEREST = CATALOG.declare(
+    "fish_vehicle_available_interest", Decimal, non_negative=True
+)
+"""Available interest expense, Form T2121 Chart B line 19 "Available interest expense: Amount 17 or
+18, whichever is less (include this in amount 4 of Chart A above)": the lesser of amounts 17 and
+18."""
+
+FISH_VEHICLE_LEASE_PRICE_BASE = CATALOG.declare(
+    "fish_vehicle_lease_price_base", Decimal, non_negative=True
+)
+"""Price for the leasing cost, Form T2121 Chart C line 23 "Amount 23 or ($44,706 + GST and PST, or
+$44,706 + HST), whichever is more": the greater of amount 23 and the price limit with tax."""
+
+FISH_VEHICLE_LEASE_PRICE_85_PERCENT = CATALOG.declare(
+    "fish_vehicle_lease_price_85_percent", Decimal, non_negative=True
+)
+"""Price for the leasing cost at 85%, Form T2121 Chart C line 24 "× 85% = 24": line 23 times 85%."""
+
+FISH_VEHICLE_LEASE_CHARGE_PORTION = CATALOG.declare(
+    "fish_vehicle_lease_charge_portion", Decimal, non_negative=True
+)
+"""Lease charge portion, Form T2121 Chart C line 25 "[($1,100 + GST and PST, or $1,100 + HST) ×
+amount 22] ÷ 30 = 25": the lease charge limit with tax times amount 22, divided by 30."""
+
+FISH_VEHICLE_LEASE_CHARGES_NET = CATALOG.declare("fish_vehicle_lease_charges_net", Decimal)
+"""Lease charges net of payments, Form T2121 Chart C line 26 "Amount 25: amount 21": amount 25 less
+amount 21, signed as the form prints no floor (a negative is kept)."""
+
+FISH_VEHICLE_LEASE_COST_PORTION = CATALOG.declare(
+    "fish_vehicle_lease_cost_portion", Decimal, non_negative=True
+)
+"""Lease cost portion, Form T2121 Chart C line 27 "[($38,000 + GST and PST, or $38,000 + HST) ×
+amount 20] ÷ amount 24 = 27": the lease cost limit with tax times amount 20, divided by amount
+24."""
+
+FISH_VEHICLE_LEASING_COST = CATALOG.declare("fish_vehicle_leasing_cost", Decimal, non_negative=True)
+"""Eligible leasing cost, Form T2121 Chart C line 28 "Eligible leasing cost: Amount 26 or 27,
+whichever is less (enter in amount 8 of Chart A above)": the lesser of amounts 26 and 27."""
 
 FISH_OFFICE_EXPENSES = CATALOG.declare("fish_office_expenses", Decimal, non_negative=True)
 """Office expenses of the fishing business, Form T2121 line 8810 "Office expenses": a starting
