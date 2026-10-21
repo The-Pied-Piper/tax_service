@@ -706,7 +706,7 @@ from app.jurisdictions.ca.catalog import (
     ZONE_A_RESIDENCY_AFTER_WORK_SITE,
     ZONE_B_RESIDENCY_AFTER_WORK_SITE,
 )
-from tests.jurisdictions.ca.catalog_snapshot import COUNTS, RECORD_LISTS, REGISTERED, SIGNED
+from tests.jurisdictions.ca.catalog_snapshot import COUNTS, RATES, RECORD_LISTS, REGISTERED, SIGNED
 
 
 def test_registered_identifiers_snapshot(registry: ArtifactRegistry) -> None:
@@ -734,7 +734,7 @@ def test_the_catalog_kinds_named_by_the_package_are_money() -> None:
 def test_every_registered_kind_but_the_counts_and_record_lists_is_money(
     registry: ArtifactRegistry,
 ) -> None:
-    for identifier in REGISTERED - COUNTS - RECORD_LISTS:
+    for identifier in REGISTERED - COUNTS - RECORD_LISTS - RATES:
         kind = registry.get(identifier)
         assert isinstance(kind, ArtifactKind)
         assert kind.value_type is Decimal, identifier
@@ -753,9 +753,9 @@ def test_every_kind_but_the_balance_is_declared_non_negative(registry: ArtifactR
     # No other `ca/` line can be negative on the forms as modelled.
     # A record list is not an amount: it is never declared non-negative, its fields are.
     for kind in CATALOG.kinds:
-        if kind.identifier not in SIGNED | RECORD_LISTS:
+        if kind.identifier not in SIGNED | RECORD_LISTS | RATES:
             assert kind.non_negative is True, kind.identifier
-    for identifier in REGISTERED - SIGNED - RECORD_LISTS:
+    for identifier in REGISTERED - SIGNED - RECORD_LISTS - RATES:
         assert registry.kind(identifier).non_negative is True, identifier
 
 

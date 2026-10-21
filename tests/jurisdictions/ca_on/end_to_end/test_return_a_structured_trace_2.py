@@ -681,6 +681,10 @@ from app.jurisdictions.ca.catalog import (
     QFFP_FORECLOSURE_GAIN_OR_LOSS,
     QFFP_GAIN_OR_LOSS,
     QSBCS_GAIN_OR_LOSS,
+    RC381_PART_3_LINE_3,
+    RC381_PART_3_LINE_22,
+    RC381_PART_3_LINE_23,
+    RC381_PART_3_LINE_24,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REAL_ESTATE_GAIN_OR_LOSS,
@@ -807,6 +811,8 @@ from app.jurisdictions.ca.catalog import (
     T3_INVESTMENT_INCOME,
     T3_TAXABLE_DIVIDENDS,
     T3_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
+    T4_QPP_PENSIONABLE_EARNINGS_IN_QUEBEC,
     T4PS_DIVIDEND_TAX_CREDIT,
     T4PS_TAXABLE_DIVIDENDS,
     T4PS_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
@@ -919,6 +925,22 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Form RC381 Part 3 line 3 "Line 1 plus line 2 Total pensionable earnings": Return A has
+        # no T4 pensionable earnings on lines 1 and 2.
+        RC381_PART_3_LINE_3: SumLine(
+            RC381_PART_3_LINE_3,
+            (
+                (T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC, D("0")),
+                (T4_QPP_PENSIONABLE_EARNINGS_IN_QUEBEC, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form RC381 Part 3 line 24 "Line 22 plus line 23": both are 0.
+        RC381_PART_3_LINE_24: SumLine(
+            RC381_PART_3_LINE_24,
+            ((RC381_PART_3_LINE_22, D("0.00")), (RC381_PART_3_LINE_23, D("0.00"))),
+            D("0.00"),
+        ),
         # Form T657 Chart 2016 Part 2 "Amount G plus amount H" I: G and Part 1 amount G are 0.
         CHART_2016_PART_2_AMOUNT_I: SumLine(
             output=CHART_2016_PART_2_AMOUNT_I,

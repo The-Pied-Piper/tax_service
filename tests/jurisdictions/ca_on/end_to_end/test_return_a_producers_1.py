@@ -24,6 +24,7 @@ from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
 from app.domain.capabilities.tapered_amount import TaperedAmount
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.capabilities.times_count import TimesCount
+from app.jurisdictions.ca.capabilities.amount_when_more import AmountWhenMore
 from app.jurisdictions.ca.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
 from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
@@ -31,6 +32,7 @@ from app.jurisdictions.ca.capabilities.chart_a_row_c_total import ChartARowCTota
 from app.jurisdictions.ca.capabilities.chart_b_zone_a_total import ChartBZoneATotal
 from app.jurisdictions.ca.capabilities.chart_b_zone_b_total import ChartBZoneBTotal
 from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
+from app.jurisdictions.ca.capabilities.count_at_least import CountAtLeast
 from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.capabilities.disability_transfer_amount import DisabilityTransferAmount
 from app.jurisdictions.ca.capabilities.divided_by_rate import DividedByRate
@@ -38,6 +40,7 @@ from app.jurisdictions.ca.capabilities.ei_excluded_slips_net_income import (
     EiExcludedSlipsNetIncome,
 )
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
+from app.jurisdictions.ca.capabilities.ratio_truncated import RatioTruncated
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
 from app.jurisdictions.ca.capabilities.short_term_rental_gross_rents import (
@@ -363,6 +366,29 @@ from app.jurisdictions.ca.catalog import (
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     POLITICAL_CONTRIBUTIONS,
     PROFESSIONAL_INCOME,
+    RC381_PART_2_LINE_B,
+    RC381_PART_2_LINE_G,
+    RC381_PART_2_LINE_H,
+    RC381_PART_2_LINE_I,
+    RC381_PART_2_LINE_J,
+    RC381_PART_3_LINE_3,
+    RC381_PART_3_LINE_6,
+    RC381_PART_3_LINE_7,
+    RC381_PART_3_LINE_8,
+    RC381_PART_3_LINE_9,
+    RC381_PART_3_LINE_10,
+    RC381_PART_3_LINE_11,
+    RC381_PART_3_LINE_14,
+    RC381_PART_3_LINE_15,
+    RC381_PART_3_LINE_15_LESSER,
+    RC381_PART_3_LINE_16,
+    RC381_PART_3_LINE_18,
+    RC381_PART_3_LINE_20,
+    RC381_PART_3_LINE_21,
+    RC381_PART_3_LINE_22,
+    RC381_PART_3_LINE_23,
+    RC381_PART_3_LINE_24,
+    RC381_PART_3_LINE_26,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REFUND_OR_BALANCE_OWING,
@@ -724,6 +750,29 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(AMT_RENTAL_PROPERTY_ADJUSTMENT), SubtractNotBelowZero)
     assert isinstance(worksheet.producer_of(AMT_TAX_SHELTER_ADJUSTMENTS), Sum)
     assert isinstance(worksheet.producer_of(AMT_PART_1_SUBTOTAL), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_2_LINE_B), CountAtLeast)
+    assert isinstance(worksheet.producer_of(RC381_PART_2_LINE_G), AmountForCount)
+    assert isinstance(worksheet.producer_of(RC381_PART_2_LINE_H), AmountForCount)
+    assert isinstance(worksheet.producer_of(RC381_PART_2_LINE_I), AmountForCount)
+    assert isinstance(worksheet.producer_of(RC381_PART_2_LINE_J), AmountForCount)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_3), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_6), RatioTruncated)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_11), LesserOf)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_14), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_15_LESSER), LesserOf)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_15), AmountWhenMore)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_16), Subtract)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_18), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_20), ApplyRate)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_21), Subtract)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_22), TieredContribution)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_23), TieredContribution)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_24), Sum)
+    assert isinstance(worksheet.producer_of(RC381_PART_3_LINE_26), TieredContribution)
+    assert worksheet.producer_of(RC381_PART_3_LINE_7) is not None
+    assert worksheet.producer_of(RC381_PART_3_LINE_8) is not None
+    assert worksheet.producer_of(RC381_PART_3_LINE_9) is not None
+    assert worksheet.producer_of(RC381_PART_3_LINE_10) is not None
     assert isinstance(worksheet.producer_of(AMT_RESOURCE_INCOME_TOTAL), Sum)
     assert isinstance(
         worksheet.producer_of(AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES), SubtractNotBelowZero

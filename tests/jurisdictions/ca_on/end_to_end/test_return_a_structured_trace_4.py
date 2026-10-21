@@ -498,6 +498,24 @@ from app.jurisdictions.ca.catalog import (
     QBT_TAXABLE_GAINS_LIMIT,
     QBT_TAXABLE_GAINS_NOT_LIMITED,
     QBT_TOTAL_CAPITAL_GAINS,
+    RC381_PART_2_LINE_B,
+    RC381_PART_2_LINE_G,
+    RC381_PART_2_LINE_H,
+    RC381_PART_2_LINE_I,
+    RC381_PART_2_LINE_J,
+    RC381_PART_3_LINE_7,
+    RC381_PART_3_LINE_8,
+    RC381_PART_3_LINE_9,
+    RC381_PART_3_LINE_10,
+    RC381_PART_3_LINE_11,
+    RC381_PART_3_LINE_14,
+    RC381_PART_3_LINE_15,
+    RC381_PART_3_LINE_15_LESSER,
+    RC381_PART_3_LINE_16,
+    RC381_PART_3_LINE_18,
+    RC381_PART_3_LINE_22,
+    RC381_PART_3_LINE_23,
+    RC381_PART_3_LINE_26,
     REFUND,
     RENTAL_CCA_CLAIM,
     RENTAL_CCA_CLAIM_BEFORE_LIMIT,
@@ -567,6 +585,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_UNUSED_AMOUNTS,
     STANDARD_AMOUNT_ALLOCATED,
     T3_CAPITAL_GAINS_OR_LOSSES,
+    T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
     T657_ABIL_CLAIMED_1985_TO_2024,
     T657_CHART_2_LINE_18,
     T657_CHART_2016_AMOUNT_D,
@@ -755,6 +774,23 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     assert lesser == {
+        # Form RC381 Part 3 line 11 "Enter whichever is less: amount from line 1 or line 7.": line
+        # 1 is 0.
+        RC381_PART_3_LINE_11: LesserOfLine(
+            output=RC381_PART_3_LINE_11,
+            parts=(
+                (T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC, D("0")),
+                (RC381_PART_3_LINE_7, D("0.00")),
+            ),
+            result=D("0"),
+        ),
+        # Form RC381 Part 3 line 15 "Enter whichever is less: amount from line 10 or line 14.":
+        # both are 0.
+        RC381_PART_3_LINE_15_LESSER: LesserOfLine(
+            output=RC381_PART_3_LINE_15_LESSER,
+            parts=((RC381_PART_3_LINE_10, D("0.00")), (RC381_PART_3_LINE_14, D("0"))),
+            result=D("0.00"),
+        ),
         # Form T657 Chart 2016 Part 1 "Enter whichever is less: amount C or amount F." G: F is 0.
         CHART_2016_PART_1_AMOUNT_G: LesserOfLine(
             output=CHART_2016_PART_1_AMOUNT_G,
@@ -1589,6 +1625,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert tiers == {
+        # Form RC381 Part 3 line 22 "amount from line 18 x 4.95% = (maximum $3,356.10)", line 23
+        # "amount from line 18 x 1% = (maximum $678.00)" and line 26 "amount from line 15 x 4% =
+        # (maximum $396.00)": line 18 and line 15 are 0.
+        RC381_PART_3_LINE_22: ContributionTierLine(
+            RC381_PART_3_LINE_22,
+            RC381_PART_3_LINE_18,
+            D("0"),
+            ContributionTier(Rate(D("0.0495")), D("0"), D("67800"), D("3356.10")),
+            CENT,
+            D("0"),
+            D("0.00"),
+        ),
+        RC381_PART_3_LINE_23: ContributionTierLine(
+            RC381_PART_3_LINE_23,
+            RC381_PART_3_LINE_18,
+            D("0"),
+            ContributionTier(Rate(D("0.01")), D("0"), D("67800"), D("678.00")),
+            CENT,
+            D("0"),
+            D("0.00"),
+        ),
+        RC381_PART_3_LINE_26: ContributionTierLine(
+            RC381_PART_3_LINE_26,
+            RC381_PART_3_LINE_15,
+            D("0"),
+            ContributionTier(Rate(D("0.04")), D("0"), D("9900"), D("396.00")),
+            CENT,
+            D("0"),
+            D("0.00"),
+        ),
         CPP_BASE_CONTRIBUTIONS: ContributionTierLine(
             CPP_BASE_CONTRIBUTIONS,
             EMPLOYMENT_INCOME,
@@ -1793,6 +1859,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Form RC381 Part 3 line 14 "Line 12 minus line 13 (if negative, enter "0")": line 12 is
+        # line 11 (0) and line 13 is line 8 (0.00).
+        RC381_PART_3_LINE_14: SubtractedNotBelowZeroLine(
+            output=RC381_PART_3_LINE_14,
+            minuend=RC381_PART_3_LINE_11,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_3_LINE_8,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Form RC381 Part 3 line 18 "Line 16 minus line 17 (if negative, enter "0")": line 17 is
+        # line 9 (0.00).
+        RC381_PART_3_LINE_18: SubtractedNotBelowZeroLine(
+            output=RC381_PART_3_LINE_18,
+            minuend=RC381_PART_3_LINE_16,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_3_LINE_9,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
         # Form T657 Chart 2016 Part 1 "Amount A minus amount B" C: 412088 less B of 0.
         CHART_2016_PART_1_AMOUNT_C: SubtractedNotBelowZeroLine(
             output=CHART_2016_PART_1_AMOUNT_C,
@@ -3288,6 +3374,20 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # Schedule 8 Part 2 lines B, C, D and E: the row of the monthly proration table for box A's 12
     # months, each as printed.
     assert by_count == {
+        # Form RC381 Part 2 lines G, H, I and J: the row of the monthly proration table for line B's
+        # 12 months.
+        RC381_PART_2_LINE_G: AmountByCountLine(
+            RC381_PART_2_LINE_G, RC381_PART_2_LINE_B, 12, D("71300.00"), CENT, D("71300.00")
+        ),
+        RC381_PART_2_LINE_H: AmountByCountLine(
+            RC381_PART_2_LINE_H, RC381_PART_2_LINE_B, 12, D("9900.00"), CENT, D("9900.00")
+        ),
+        RC381_PART_2_LINE_I: AmountByCountLine(
+            RC381_PART_2_LINE_I, RC381_PART_2_LINE_B, 12, D("81200.00"), CENT, D("81200.00")
+        ),
+        RC381_PART_2_LINE_J: AmountByCountLine(
+            RC381_PART_2_LINE_J, RC381_PART_2_LINE_B, 12, D("3500.00"), CENT, D("3500.00")
+        ),
         CPP_MAXIMUM_PENSIONABLE_EARNINGS: AmountByCountLine(
             CPP_MAXIMUM_PENSIONABLE_EARNINGS, CPP_MONTHS, 12, D("71300.00"), CENT, D("71300.00")
         ),

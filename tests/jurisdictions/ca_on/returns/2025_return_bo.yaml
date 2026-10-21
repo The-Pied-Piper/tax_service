@@ -1,0 +1,141 @@
+# Return BO: Bianca, a single 2025 Ontario resident with two T4 slips, one for Ontario
+# employment (box 26 of $30,000) and one for Quebec employment (box 26 of $40,000), so Form
+# RC381 replaces Schedule 8. This return carries Part 2 (the months and the QPP lines G to J) and
+# Part 3 lines 1 to 26 on the CPP side (lines 3, 6 to 11, 14 to 16, 18 and 20 to 24 and 26); the
+# QPP side of Part 3 (lines 27 onward), Parts 3a and 3b and Part 4 are not yet computed, so the
+# T1 lines 30800, 22215, 44800, 22200, 31000 and 42100 below are still Schedule 8's, from the
+# whole employment income. The other lines are blank.
+jurisdiction: CA-ON
+tax_year: 2025
+description: >-
+  A single Ontario resident for all of 2025, resident in Canada throughout 2025, aged 18 or
+  older at the end of 2025 (a chosen figure), with employment income (T1 line 10100) of
+  $70,000 (a chosen figure) on two T4 slips: a T4 for Ontario employment with box 26 of
+  $30,000 and box 16 of $1,800.00, and a T4 for Quebec employment with box 26 of $40,000 and
+  box 17 of $2,500.00 (chosen figures; no box 16A or 17A). Because a T4 slip has Quebec as its
+  province of employment, Form RC381 is completed in place of Schedule 8. Part 2: line A (the
+  months that CPP applied) and line B (the months that QPP applied) are 12 and 12 (chosen
+  figures; line A is not more than line B), so lines C to F (the CPP) and G to J (the QPP) are
+  the table's row for 12 months: 71,300.00, 9,900.00, 81,200.00 and 3,500.00. Part 3: line 1
+  (50339), the CPP pensionable earnings of the slips outside Quebec, is 30,000; line 2 (50329),
+  the QPP pensionable earnings of the slips in Quebec, is 40,000; line 3 = 30,000 + 40,000 =
+  70,000.00. Line 6 = line 4 (30,000) divided by line 5 (70,000) = 0.4285714..., cut at the
+  fifth decimal place without rounding: 0.42857. Line 7 = 81,200.00 x 0.42857 = 34,799.884,
+  34,799.88; line 8 = 71,300.00 x 0.42857 = 30,557.041, 30,557.04; line 9 = 3,500.00 x 0.42857
+  = 1,499.995, which rounds half up to 1,500.00; line 10 = 9,900.00 x 0.42857 = 4,242.843,
+  4,242.84. Line 11 is the lesser of line 1 (30,000) and line 7 (34,799.88): 30,000.00. Line 3
+  (70,000.00) is not more than line C (71,300.00), so lines 12 to 15 are not completed: line 15
+  is 0 (line 14, line 11 less line 8 = 30,000.00 less 30,557.04, is 0 as it is negative, and
+  the lesser of line 10 and line 14 is 0) and the amount from line 11 is entered on line 16:
+  line 16 = 30,000.00 less 0 = 30,000.00. Line 18 = line 16 less line 17 (the amount from line
+  9, 1,500.00) = 28,500.00. Line 19 (50340), the total of box 16 of the T4 slips, is
+  1,800.00 (a chosen figure; box 16A, line 25, is 0): line 20 = 1,800.00 x 83.1933% =
+  1,497.4794, 1,497.48; line 21 = 1,800.00 less 1,497.48 = 302.52. Line 22 = 28,500.00 x 4.95%
+  = 1,410.75 (not above the maximum of 3,356.10); line 23 = 28,500.00 x 1% = 285.00; line 24 =
+  1,410.75 + 285.00 = 1,695.75; line 26 = 0 x 4% = 0. The remaining lines of the T1 are
+  Schedule 8's, as the RC381 results are not yet carried to them: on employment income of
+  $70,000 the base CPP contributions (line 30800) are 4.95% x (70,000 less 3,500) = 3,291.75,
+  and the enhanced contributions (line 22215) are 1% x 66,500 = 665.00; the EI premiums are
+  the maximum 1,077.48. Total income (line 15000) is 70,000.00; net income and taxable income
+  are 70,000.00 less the enhanced contributions of 665.00 = 69,335.00. The income tax deducted
+  is a chosen 12,000.00. The federal tax and the Ontario tax are the engine's figures from the
+  2025 brackets and credits in the repository (net federal tax 7,585.64, Ontario tax 3,911.45),
+  giving a total payable of 11,497.09 and a refund of 502.91 (to be confirmed against CRA's
+  calculator). Not triggered: Part 3 lines 27 to 93, Part 4, the QPP contributions on lines
+  39 and 45 (box 17 of $2,500.00 is not carried yet), and every other credit and deduction not
+  named here.
+sources:
+  - >-
+    CRA, "Form RC381 (2025), Inter-Provincial Calculation for CPP and QPP Contributions and
+    Overpayments" (confirmed 2026-10-19 from the PDF, no .txt is published), "Find out if this
+    form is for you": "You earned employment income in the province of Quebec in 2025 and you
+    were a resident of a province or territory other than Quebec on December 31, 2025";
+    "Otherwise, complete Schedule 8, Canada Pension Plan Contributions and Overpayment
+    (5000-S8) or Schedule 8, Quebec Pension Plan Contributions (5005-S8), whichever applies.".
+  - >-
+    CRA, Form RC381 (2025), Part 2: "Enter the number of months that CPP applied in 2025.",
+    "Enter the number of months that QPP applied in 2025.", "The number you enter on line A
+    cannot be more than the number you enter on line B." and "Enter the corresponding amounts
+    from the monthly proration table above using the number of months from lines A and B.",
+    where line G is "Your maximum pensionable earnings for 2025 (maximum $71,300)", line H "Your
+    maximum amount subject to second additional contributions for 2025 (maximum $9,900)", line
+    I "Your additional maximum pensionable earnings for 2025 (maximum $81,200)" and line J
+    "Your maximum basic exemption for 2025 (maximum $3,500)".
+  - >-
+    CRA, Form RC381 (2025), Part 3: "Total CPP pensionable earnings from box 26 of all of your
+    T4 slips where the province of employment is not Quebec (if box 26 is blank, enter the
+    amount from box 14)" (50339, line 1); "Total QPP pensionable earnings from box 26 of all of
+    your T4 slips where the province of employment is Quebec (if box 26 is blank, enter the
+    amount from box 14)" (50329, line 2); "Line 1 plus line 2 Total pensionable earnings" (line
+    3); "Line 4 divided by line 5 (calculated to the fifth decimal place without rounding)"
+    (line 6); "Amount from line E of Part 2 multiplied by the rate at line 6" (line 7), "Amount
+    from line C ..." (line 8), "Amount from line F ..." (line 9), "Amount from line D ..."
+    (line 10); "Enter whichever is less: amount from line 1 or line 7." (line 11); "If the amount
+    from line 3 is more than the amount from line C of Part 2, complete lines 12 to 15. If not,
+    enter the amount from line 11 on line 16 and continue at line 17."; "Line 12 minus line 13
+    (if negative, enter "0")" (line 14); "Enter whichever is less: amount from line 10 or line
+    14." (line 15); "Line 11 minus line 15" (line 16); "Line 16 minus line 17 (if negative,
+    enter "0")" (line 18); "Total actual base and first additional contributions on CPP
+    pensionable earnings from box 16 of all of your T4 slips" (50340, line 19); "amount from
+    line 19 x 83.1933%" (line 20); "Line 19 minus line 20" (line 21); "amount from line 18 x
+    4.95% = (maximum $3,356.10)" (line 22); "amount from line 18 x 1% = (maximum $678.00)" (line
+    23); "Line 22 plus line 23" (line 24); "amount from line 15 x 4% = (maximum $396.00)" (line
+    26).
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/rc381/rc381-25e.pdf
+inputs:
+  ca/employment_income: "70000"
+  ca/cpp_months: "12"
+  ca/qpp_months: "12"
+  ca/t4_cpp_pensionable_earnings_outside_quebec: "30000"
+  ca/t4_qpp_pensionable_earnings_in_quebec: "40000"
+  ca/t4_cpp_contributions_box_16: "1800.00"
+  ca/income_tax_deducted: "12000"
+  ca/resident_in_canada_throughout_2025: "1"
+  ca/aged_18_or_older_at_end_of_2025: "1"
+  ca/unapplied_net_capital_losses_2000: "0"
+expected:
+  ca/total_income: "70000.00"
+  ca/cpp_maximum_pensionable_earnings: "71300.00"
+  ca/cpp_second_additional_earnings_maximum: "9900.00"
+  ca/cpp_additional_maximum_pensionable_earnings: "81200.00"
+  ca/cpp_basic_exemption: "3500.00"
+  ca/cpp_base_contributions: "3291.75"
+  ca/cpp_first_additional_contributions: "665.00"
+  ca/cpp_enhanced_contributions: "665.00"
+  ca/ei_premiums: "1077.48"
+  ca/net_income_before_adjustments: "69335.00"
+  ca/other_payments_limit_income: "69335.00"
+  ca/net_income: "69335.00"
+  ca/taxable_income: "69335.00"
+  ca/net_federal_tax: "7585.64"
+  ca-on/ontario_tax_less_dividend_credit: "3311.45"
+  ca-on/ontario_tax: "3911.45"
+  ca/total_payable: "11497.09"
+  ca/total_credits: "12000.00"
+  ca/refund_or_balance_owing: "-502.91"
+  ca-on/net_refund: "502.91"
+  ca/amt_part_1_subtotal: "69335.00"
+  ca/amt_applicable_rate_amount: "332.50"
+  ca/rc381_part_2_line_b: "12"
+  ca/rc381_part_2_line_g: "71300.00"
+  ca/rc381_part_2_line_h: "9900.00"
+  ca/rc381_part_2_line_i: "81200.00"
+  ca/rc381_part_2_line_j: "3500.00"
+  ca/rc381_part_3_line_3: "70000.00"
+  ca/rc381_part_3_line_6: "0.42857"
+  ca/rc381_part_3_line_7: "34799.88"
+  ca/rc381_part_3_line_8: "30557.04"
+  ca/rc381_part_3_line_9: "1500.00"
+  ca/rc381_part_3_line_10: "4242.84"
+  ca/rc381_part_3_line_11: "30000.00"
+  ca/rc381_part_3_line_14: "0.00"
+  ca/rc381_part_3_line_15_lesser: "0.00"
+  ca/rc381_part_3_line_15: "0.00"
+  ca/rc381_part_3_line_16: "30000.00"
+  ca/rc381_part_3_line_18: "28500.00"
+  ca/rc381_part_3_line_20: "1497.48"
+  ca/rc381_part_3_line_21: "302.52"
+  ca/rc381_part_3_line_22: "1410.75"
+  ca/rc381_part_3_line_23: "285.00"
+  ca/rc381_part_3_line_24: "1695.75"
+  ca/rc381_part_3_line_26: "0.00"

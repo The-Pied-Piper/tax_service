@@ -435,6 +435,10 @@ inputs:
   - ca/fhsa_contributions_deducted
   - ca/fhsa_maximum_participation_period_ended
   - ca/cpp_months
+  - ca/qpp_months
+  - ca/t4_cpp_pensionable_earnings_outside_quebec
+  - ca/t4_qpp_pensionable_earnings_in_quebec
+  - ca/t4_cpp_contributions_box_16
   - ca/cpt20_earnings
   - ca/cpp_part_4_completed
   - ca/ei_controlled_corporation_earnings

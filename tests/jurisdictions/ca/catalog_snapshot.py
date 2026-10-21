@@ -1575,6 +1575,33 @@ REGISTERED = frozenset(
         "ca/amt_office_expenses_adjustment",
         "ca/amt_adjustments_before_rate_total",
         "ca/amt_applicable_rate_amount",
+        "ca/qpp_months",
+        "ca/t4_cpp_pensionable_earnings_outside_quebec",
+        "ca/t4_qpp_pensionable_earnings_in_quebec",
+        "ca/t4_cpp_contributions_box_16",
+        "ca/rc381_part_2_line_b",
+        "ca/rc381_part_2_line_g",
+        "ca/rc381_part_2_line_h",
+        "ca/rc381_part_2_line_i",
+        "ca/rc381_part_2_line_j",
+        "ca/rc381_part_3_line_3",
+        "ca/rc381_part_3_line_6",
+        "ca/rc381_part_3_line_7",
+        "ca/rc381_part_3_line_8",
+        "ca/rc381_part_3_line_9",
+        "ca/rc381_part_3_line_10",
+        "ca/rc381_part_3_line_11",
+        "ca/rc381_part_3_line_14",
+        "ca/rc381_part_3_line_15_lesser",
+        "ca/rc381_part_3_line_15",
+        "ca/rc381_part_3_line_16",
+        "ca/rc381_part_3_line_18",
+        "ca/rc381_part_3_line_20",
+        "ca/rc381_part_3_line_21",
+        "ca/rc381_part_3_line_22",
+        "ca/rc381_part_3_line_23",
+        "ca/rc381_part_3_line_24",
+        "ca/rc381_part_3_line_26",
     }
 )
 
@@ -1854,8 +1881,13 @@ COUNTS = frozenset(
         "ca/qbt_has_investment_expenses",
         "ca/qbt_election_is_qbt",
         "ca/qbt_gains_are_qsbcs_or_qffp",
+        "ca/qpp_months",
+        "ca/rc381_part_2_line_b",
     }
 )
+
+# Kinds whose values are `Rate`s (0 to 1), not money.
+RATES = frozenset({"ca/rc381_part_3_line_6"})
 
 RECORD_LISTS = frozenset(
     {

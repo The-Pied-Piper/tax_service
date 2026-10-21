@@ -745,6 +745,7 @@ sources:
 inputs:
   ca/employment_income: "50000"
   ca/cpp_months: "12"
+  ca/qpp_months: "12"
   ca/zone_a_days_lived: "200"
   ca/zone_a_additional_residency_days: "200"
   ca/zone_b_days_lived: "165"
@@ -970,3 +971,7 @@ expected:
   ca/amt_security_options_d1_total: "0"
   ca/amt_security_options_net: "0"
   ca/net_capital_loss_balance_2000: "0.00"
+  ca/rc381_part_2_line_g: "71300.00"
+  ca/rc381_part_2_line_h: "9900.00"
+  ca/rc381_part_2_line_i: "81200.00"
+  ca/rc381_part_2_line_j: "3500.00"

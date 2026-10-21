@@ -361,6 +361,11 @@ from app.jurisdictions.ca.catalog import (
     QFFP_GAIN_OR_LOSS,
     QSBCS_GAIN_OR_LOSS,
     QSBCS_QFFP_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
+    RC381_PART_3_LINE_11,
+    RC381_PART_3_LINE_15,
+    RC381_PART_3_LINE_16,
+    RC381_PART_3_LINE_20,
+    RC381_PART_3_LINE_21,
     REFUND_OR_BALANCE_OWING,
     REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
     REGULAR_RATE_DONATIONS,
@@ -429,6 +434,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_NOT_SEPARATED_90_DAYS,
     SPOUSE_UNUSED_AMOUNTS,
     SPOUSES_CLAIMED,
+    T4_CPP_CONTRIBUTIONS_BOX_16,
     T657_CHART_2_LINE_2,
     T657_CHART_2_LINE_6,
     T657_CHART_2_LINE_10,
@@ -528,6 +534,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     gated = {line.output: line for line in trace if isinstance(line, ThresholdGateLine)}
     fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
     assert subtracted == {
+        # Form RC381 Part 3 line 16 "Line 11 minus line 15": both are 0.
+        RC381_PART_3_LINE_16: SubtractedLine(
+            output=RC381_PART_3_LINE_16,
+            minuend=RC381_PART_3_LINE_11,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_3_LINE_15,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form RC381 Part 3 line 21 "Line 19 minus line 20": both are 0.
+        RC381_PART_3_LINE_21: SubtractedLine(
+            output=RC381_PART_3_LINE_21,
+            minuend=T4_CPP_CONTRIBUTIONS_BOX_16,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_3_LINE_20,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
         # Form T2125 Chart C line 26 "Amount 25: amount 21" (printed with a subtraction sign): line
         # 25 is 0 for Return A (no leased vehicle), and amount 21 is 0.
         BUSINESS_VEHICLE_LEASE_CHARGES_NET: SubtractedLine(

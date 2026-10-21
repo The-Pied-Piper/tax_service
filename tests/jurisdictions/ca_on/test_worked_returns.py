@@ -337,6 +337,7 @@ inputs:
   ca/fhsa_contributions_deducted: "0"
   ca/fhsa_maximum_participation_period_ended: "0"
   ca/cpp_months: "12"
+  ca/qpp_months: "12"
   ca/cpt20_earnings: "0"
   ca/cpp_part_4_completed: "0"
   ca/ei_controlled_corporation_earnings: "0"
@@ -635,6 +636,10 @@ expected:
   ca/refund: "2133"
   ca-on/refund_before_donation: "2133"
   ca-on/net_refund: "2133"
+  ca/rc381_part_2_line_g: "71300.00"
+  ca/rc381_part_2_line_h: "9900.00"
+  ca/rc381_part_2_line_i: "81200.00"
+  ca/rc381_part_2_line_j: "3500.00"
 """
 
 
