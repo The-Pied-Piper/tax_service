@@ -23,11 +23,96 @@ from app.jurisdictions.ca.catalog import (
     ADVANCED_CANADA_WORKERS_BENEFIT,
     AGED_18_OR_OLDER_AT_END_OF_2025,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    BUSINESS_ADJUSTED_GROSS_SALES,
+    BUSINESS_ADVERTISING,
+    BUSINESS_BAD_DEBTS,
+    BUSINESS_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,
+    BUSINESS_CCA_CLAIM,
+    BUSINESS_CCA_CLAIM_LESS_PERSONAL_PART,
+    BUSINESS_CCA_CLASSES,
+    BUSINESS_CCA_PERSONAL_PART,
+    BUSINESS_CCA_TABLE_CLAIM,
+    BUSINESS_CLOSING_INVENTORY,
+    BUSINESS_CLOSING_UCC,
+    BUSINESS_COST_OF_GOODS_SOLD,
+    BUSINESS_COST_OF_GOODS_SUBTOTAL,
+    BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,
+    BUSINESS_DIRECT_WAGE_COSTS,
+    BUSINESS_FUEL_COSTS,
+    BUSINESS_GROSS_INCOME,
+    BUSINESS_GROSS_INCOME_BEFORE_EXPENSES,
+    BUSINESS_GROSS_INCOME_FOR_GROSS_PROFIT,
+    BUSINESS_GROSS_PROFIT,
+    BUSINESS_GROSS_SALES,
+    BUSINESS_HOME_ALLOWABLE_CLAIM,
+    BUSINESS_HOME_CARRIED_FORWARD,
+    BUSINESS_HOME_CARRY_FORWARD,
+    BUSINESS_HOME_CCA,
+    BUSINESS_HOME_ELECTRICITY,
+    BUSINESS_HOME_EXPENSES,
+    BUSINESS_HOME_EXPENSES_AVAILABLE,
+    BUSINESS_HOME_EXPENSES_BUSINESS_PART,
+    BUSINESS_HOME_EXPENSES_SUBTOTAL,
+    BUSINESS_HOME_HEAT,
+    BUSINESS_HOME_INCOME_LIMIT,
+    BUSINESS_HOME_INSURANCE,
+    BUSINESS_HOME_MAINTENANCE,
+    BUSINESS_HOME_MORTGAGE_INTEREST,
+    BUSINESS_HOME_OTHER_EXPENSES,
+    BUSINESS_HOME_PERSONAL_USE_PART,
+    BUSINESS_HOME_PROPERTY_TAXES,
     BUSINESS_INCOME,
+    BUSINESS_INSURANCE,
+    BUSINESS_INTEREST_AND_BANK_CHARGES,
     BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
+    BUSINESS_JOURNALISM_LABOUR_TAX_CREDIT,
+    BUSINESS_MANAGEMENT_AND_ADMINISTRATION_FEES,
+    BUSINESS_MEALS_AND_ENTERTAINMENT,
+    BUSINESS_MOTOR_VEHICLE_EXPENSES,
+    BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,
+    BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
+    BUSINESS_OFFICE_EXPENSES,
+    BUSINESS_OFFICE_STATIONERY_AND_SUPPLIES,
+    BUSINESS_OPENING_INVENTORY,
+    BUSINESS_OTHER_COSTS,
+    BUSINESS_OTHER_EXPENSES,
+    BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS,
+    BUSINESS_OTHER_INCOME,
+    BUSINESS_OTHER_INCOME_WITH_RECAPTURE,
+    BUSINESS_PARTNER,
+    BUSINESS_PARTNER_GST_HST_REBATE,
+    BUSINESS_PARTNER_OTHER_AMOUNT_A,
+    BUSINESS_PARTNER_OTHER_AMOUNT_B,
+    BUSINESS_PARTNER_OTHER_AMOUNT_C,
+    BUSINESS_PARTNER_OTHER_AMOUNT_D,
+    BUSINESS_PARTNER_OTHER_AMOUNT_E,
+    BUSINESS_PARTNER_OTHER_AMOUNTS,
+    BUSINESS_PARTNER_OTHER_AMOUNTS_TOTAL,
+    BUSINESS_PARTNER_SHARE,
+    BUSINESS_PARTNERSHIP_TOTAL,
+    BUSINESS_PROFESSIONAL_FEES,
+    BUSINESS_PROPERTY_TAXES,
+    BUSINESS_PURCHASES,
+    BUSINESS_QUICK_METHOD_ASSISTANCE,
+    BUSINESS_QUICK_METHOD_GST_HST,
+    BUSINESS_QUICK_METHOD_REMITTED,
+    BUSINESS_RECAPTURED_CCA,
+    BUSINESS_RENT,
+    BUSINESS_REPAIRS_AND_MAINTENANCE,
+    BUSINESS_RESERVES_AND_OTHER_INCOME,
+    BUSINESS_RESERVES_DEDUCTED_LAST_YEAR,
+    BUSINESS_SALARIES_WAGES_AND_BENEFITS,
+    BUSINESS_SALES_ADJUSTMENTS,
+    BUSINESS_SALES_SUBTOTAL,
+    BUSINESS_SHARE_OF_NET_INCOME,
+    BUSINESS_SUBCONTRACTS,
+    BUSINESS_TERMINAL_LOSS,
+    BUSINESS_TOTAL_EXPENSES,
+    BUSINESS_TRAVEL_EXPENSES,
+    BUSINESS_UTILITIES,
     CAPITAL_GAIN,
     CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024,
     CAREGIVER_AMOUNT,
@@ -1915,6 +2000,151 @@ def test_the_rental_closing_ucc_is_a_record_list_of_the_class_and_its_closing_uc
     assert RENTAL_CLOSING_UCC.value_type is RecordList
     assert RENTAL_CLOSING_UCC.fields == (CCA_CLASS_NUMBER, CCA_UCC_AT_END)
     assert registry.get("ca/rental_closing_ucc") is RENTAL_CLOSING_UCC
+
+
+# --- Form T2125, Statement of Business or Professional Activities (T1 lines 13499 and 13500) ---
+
+# Every kind of the business statement, the caller's amounts and the computed lines, in the form's
+# order: `ca/business_<name>`, never the `ca/rental_` names of the T776.
+T2125_KINDS: tuple[ArtifactKind[Any], ...] = (
+    BUSINESS_GROSS_SALES,  # gross_sales
+    BUSINESS_SALES_ADJUSTMENTS,  # sales_adjustments
+    BUSINESS_QUICK_METHOD_GST_HST,  # quick_method_gst_hst
+    BUSINESS_QUICK_METHOD_REMITTED,  # quick_method_remitted
+    BUSINESS_RESERVES_DEDUCTED_LAST_YEAR,  # reserves_deducted_last_year
+    BUSINESS_OTHER_INCOME,  # other_income
+    BUSINESS_OPENING_INVENTORY,  # opening_inventory
+    BUSINESS_PURCHASES,  # purchases
+    BUSINESS_DIRECT_WAGE_COSTS,  # direct_wage_costs
+    BUSINESS_SUBCONTRACTS,  # subcontracts
+    BUSINESS_OTHER_COSTS,  # other_costs
+    BUSINESS_CLOSING_INVENTORY,  # closing_inventory
+    BUSINESS_ADVERTISING,  # advertising
+    BUSINESS_MEALS_AND_ENTERTAINMENT,  # meals_and_entertainment
+    BUSINESS_BAD_DEBTS,  # bad_debts
+    BUSINESS_INSURANCE,  # insurance
+    BUSINESS_INTEREST_AND_BANK_CHARGES,  # interest_and_bank_charges
+    BUSINESS_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,  # business_taxes_licences_and_memberships
+    BUSINESS_OFFICE_EXPENSES,  # office_expenses
+    BUSINESS_OFFICE_STATIONERY_AND_SUPPLIES,  # office_stationery_and_supplies
+    BUSINESS_PROFESSIONAL_FEES,  # professional_fees
+    BUSINESS_MANAGEMENT_AND_ADMINISTRATION_FEES,  # management_and_administration_fees
+    BUSINESS_RENT,  # rent
+    BUSINESS_REPAIRS_AND_MAINTENANCE,  # repairs_and_maintenance
+    BUSINESS_SALARIES_WAGES_AND_BENEFITS,  # salaries_wages_and_benefits
+    BUSINESS_PROPERTY_TAXES,  # property_taxes
+    BUSINESS_TRAVEL_EXPENSES,  # travel_expenses
+    BUSINESS_UTILITIES,  # utilities
+    BUSINESS_FUEL_COSTS,  # fuel_costs
+    BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,  # delivery_freight_and_express
+    BUSINESS_MOTOR_VEHICLE_EXPENSES,  # motor_vehicle_expenses
+    BUSINESS_CCA_PERSONAL_PART,  # cca_personal_part
+    BUSINESS_OTHER_EXPENSES,  # other_expenses
+    BUSINESS_JOURNALISM_LABOUR_TAX_CREDIT,  # journalism_labour_tax_credit
+    BUSINESS_PARTNER_GST_HST_REBATE,  # partner_gst_hst_rebate
+    BUSINESS_PARTNER_OTHER_AMOUNT_A,  # partner_other_amount_a
+    BUSINESS_PARTNER_OTHER_AMOUNT_B,  # partner_other_amount_b
+    BUSINESS_PARTNER_OTHER_AMOUNT_C,  # partner_other_amount_c
+    BUSINESS_PARTNER_OTHER_AMOUNT_D,  # partner_other_amount_d
+    BUSINESS_PARTNER_OTHER_AMOUNT_E,  # partner_other_amount_e
+    BUSINESS_HOME_HEAT,  # home_heat
+    BUSINESS_HOME_ELECTRICITY,  # home_electricity
+    BUSINESS_HOME_INSURANCE,  # home_insurance
+    BUSINESS_HOME_MAINTENANCE,  # home_maintenance
+    BUSINESS_HOME_MORTGAGE_INTEREST,  # home_mortgage_interest
+    BUSINESS_HOME_PROPERTY_TAXES,  # home_property_taxes
+    BUSINESS_HOME_OTHER_EXPENSES,  # home_other_expenses
+    BUSINESS_HOME_PERSONAL_USE_PART,  # home_personal_use_part
+    BUSINESS_HOME_CCA,  # home_cca
+    BUSINESS_HOME_CARRIED_FORWARD,  # home_carried_forward
+    BUSINESS_PARTNER_SHARE,  # partner_share
+    BUSINESS_PARTNER,  # partner
+    BUSINESS_CCA_CLASSES,  # cca_classes
+    BUSINESS_SALES_SUBTOTAL,  # sales_subtotal
+    BUSINESS_RECAPTURED_CCA,  # recaptured_cca
+    BUSINESS_OTHER_INCOME_WITH_RECAPTURE,  # other_income_with_recapture
+    BUSINESS_RESERVES_AND_OTHER_INCOME,  # reserves_and_other_income
+    BUSINESS_COST_OF_GOODS_SUBTOTAL,  # cost_of_goods_subtotal
+    BUSINESS_COST_OF_GOODS_SOLD,  # cost_of_goods_sold
+    BUSINESS_CCA_TABLE_CLAIM,  # cca_table_claim
+    BUSINESS_CCA_CLAIM_LESS_PERSONAL_PART,  # cca_claim_less_personal_part
+    BUSINESS_CCA_CLAIM,  # cca_claim
+    BUSINESS_TERMINAL_LOSS,  # terminal_loss
+    BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS,  # other_expenses_with_terminal_loss
+    BUSINESS_TOTAL_EXPENSES,  # total_expenses
+    BUSINESS_PARTNER_OTHER_AMOUNTS_TOTAL,  # partner_other_amounts_total
+    BUSINESS_PARTNER_OTHER_AMOUNTS,  # partner_other_amounts
+    BUSINESS_HOME_EXPENSES_SUBTOTAL,  # home_expenses_subtotal
+    BUSINESS_HOME_EXPENSES_BUSINESS_PART,  # home_expenses_business_part
+    BUSINESS_HOME_EXPENSES_AVAILABLE,  # home_expenses_available
+    BUSINESS_HOME_INCOME_LIMIT,  # home_income_limit
+    BUSINESS_HOME_CARRY_FORWARD,  # home_carry_forward
+    BUSINESS_HOME_ALLOWABLE_CLAIM,  # home_allowable_claim
+    BUSINESS_HOME_EXPENSES,  # home_expenses
+    BUSINESS_QUICK_METHOD_ASSISTANCE,  # quick_method_assistance
+    BUSINESS_ADJUSTED_GROSS_SALES,  # adjusted_gross_sales
+    BUSINESS_GROSS_INCOME,  # gross_income
+    BUSINESS_GROSS_INCOME_FOR_GROSS_PROFIT,  # gross_income_for_gross_profit
+    BUSINESS_GROSS_PROFIT,  # gross_profit
+    BUSINESS_GROSS_INCOME_BEFORE_EXPENSES,  # gross_income_before_expenses
+    BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,  # net_income_before_adjustments
+    BUSINESS_SHARE_OF_NET_INCOME,  # share_of_net_income
+    BUSINESS_PARTNERSHIP_TOTAL,  # partnership_total
+    BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,  # net_income_after_adjustments
+    BUSINESS_CLOSING_UCC,  # closing_ucc
+)
+
+
+def test_the_t2125_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    assert len({kind.identifier for kind in T2125_KINDS}) == len(T2125_KINDS)
+    for kind in T2125_KINDS:
+        assert kind.identifier.startswith("ca/business_"), kind.identifier
+        assert registry.get(kind.identifier) is kind
+        assert kind.identifier in REGISTERED
+
+
+def test_the_t2125_amounts_are_decimals_that_cannot_be_negative_unless_the_form_prints_a_loss() -> (
+    None
+):
+    # The caller's amounts and the computed lines are Decimals with a floor of 0, except the lines
+    # the snapshot's SIGNED set names: "(loss)" lines and amount 5A, the share of a loss.
+    for kind in T2125_KINDS:
+        if kind.identifier in RECORD_LISTS or kind.identifier in COUNTS:
+            continue
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is (kind.identifier not in SIGNED), kind.identifier
+
+
+def test_the_t2125_partner_count_is_a_non_negative_int_count() -> None:
+    # Part 5 amount 5A "Your share of line 9369 or the amount from your T5013 slip": 1 for a
+    # partner, else 0.
+    assert BUSINESS_PARTNER.value_type is int
+    assert BUSINESS_PARTNER.non_negative is True
+    assert BUSINESS_PARTNER.identifier in COUNTS
+
+
+def test_the_business_cca_classes_are_the_area_a_columns_the_caller_enters(
+    registry: ArtifactRegistry,
+) -> None:
+    # Area A of the T2125 has the columns of the T776's (DIEP columns 4, 6, 8 and 9 left out as on
+    # the T776): the same eight field kinds, one record per class.
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(BUSINESS_CCA_CLASSES, RecordListKind)
+    assert BUSINESS_CCA_CLASSES.value_type is RecordList
+    assert BUSINESS_CCA_CLASSES.fields == RENTAL_CCA_CLASSES.fields
+    assert BUSINESS_CCA_CLASSES is not RENTAL_CCA_CLASSES
+    assert registry.get("ca/business_cca_classes") is BUSINESS_CCA_CLASSES
+
+
+def test_the_business_closing_ucc_is_a_record_list_of_the_class_and_its_closing_ucc(
+    registry: ArtifactRegistry,
+) -> None:
+    # Area A column 22 "UCC at the end of the year", which `ca/closing_ucc` produces.
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(BUSINESS_CLOSING_UCC, RecordListKind)
+    assert BUSINESS_CLOSING_UCC.value_type is RecordList
+    assert BUSINESS_CLOSING_UCC.fields == RENTAL_CLOSING_UCC.fields
+    assert registry.get("ca/business_closing_ucc") is BUSINESS_CLOSING_UCC
 
 
 # --- Form T2222, Northern Residents Deductions (T1 line 66 and line 25500) ---------------------

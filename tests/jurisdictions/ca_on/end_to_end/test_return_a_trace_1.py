@@ -88,7 +88,8 @@ def test_the_trace_explains_the_computation() -> None:
         "rdsp_income 0 + net_rental_income 0 + taxable_capital_gains 10000 "
         "+ taxable_support_payments 0 "
         "+ rrsp_income 0 + fhsa_income 0 + other_fhsa_income 0 + other_income 0 + "
-        "taxable_scholarships 0 + income_support_benefits 0 = 120000",
+        "taxable_scholarships 0 + net_self_employment_income 0 "
+        "+ income_support_benefits 0 = 120000",
         "120000",
     )
     cpp_base = position(

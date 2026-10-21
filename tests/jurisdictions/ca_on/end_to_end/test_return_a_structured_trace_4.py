@@ -40,9 +40,17 @@ from app.jurisdictions.ca.catalog import (
     AGE_MAXIMUM,
     AGE_REDUCTION,
     BASIC_PERSONAL_AMOUNT,
+    BUSINESS_HOME_ALLOWABLE_CLAIM,
+    BUSINESS_HOME_CARRY_FORWARD,
+    BUSINESS_HOME_EXPENSES_AVAILABLE,
+    BUSINESS_HOME_INCOME_LIMIT,
     BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
+    BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,
+    BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
+    BUSINESS_PARTNER,
+    BUSINESS_SHARE_OF_NET_INCOME,
     CANADA_TRAINING_CREDIT,
     CANADA_TRAINING_CREDIT_BASIS,
     CANADA_TRAINING_CREDIT_CLAIMED,
@@ -654,6 +662,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             QBT_ALLOCATION_LIMIT,
             ((QBT_REDUCTION_AMOUNT, D("0")), (QBT_ABIL_AND_NET_INVESTMENT_LOSS, D("0.00"))),
             D("0"),
+        # T2125 Part 7 amount 7P "Amount 7M or 7N above, whichever is less": 0 for no
+        # business-use-of-home expenses.
+        BUSINESS_HOME_ALLOWABLE_CLAIM: LesserOfLine(
+            output=BUSINESS_HOME_ALLOWABLE_CLAIM,
+            parts=(
+                (BUSINESS_HOME_EXPENSES_AVAILABLE, D("0")),
+                (BUSINESS_HOME_INCOME_LIMIT, D("0")),
+            ),
+            result=D("0"),
         ),
     }
     assert at_most == {
@@ -1682,6 +1699,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             QBT_REDUCTIONS_FROM_LOSSES,
             D("0.00"),
             D("0"),
+        # T2125 Part 7 amount 7O "Amount 7M minus amount 7N (if negative, enter "0")": Return A
+        # has no business-use-of-home expenses, so it is 0.
+        BUSINESS_HOME_CARRY_FORWARD: SubtractedNotBelowZeroLine(
+            output=BUSINESS_HOME_CARRY_FORWARD,
+            minuend=BUSINESS_HOME_EXPENSES_AVAILABLE,
+            minuend_amount=D("0"),
+            subtrahend=BUSINESS_HOME_INCOME_LIMIT,
+            subtrahend_amount=D("0"),
+            result=D("0"),
         ),
     }
     # Schedule 8 Part 4 line 3 "Line 1 plus line 2 (if negative, enter "0")" and Schedule 13 line 1
@@ -1734,6 +1760,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # are 0 (or, where they read another line, that line's figure).
         QBT_NET_RENTAL_INCOME: SumNotBelowZeroLine(
             QBT_NET_RENTAL_INCOME, ((NET_RENTAL_INCOME, D("0")),), D("0")
+        # T2125 Part 7 amount 7N "Net income (loss) after adjustments (amount 5D) (if negative,
+        # enter "0")": amount 5D alone, floored, 0.
+        BUSINESS_HOME_INCOME_LIMIT: SumNotBelowZeroLine(
+            output=BUSINESS_HOME_INCOME_LIMIT,
+            parts=((BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS, D("0")),),
+            total=D("0"),
         ),
     }
     # Schedule 8 Part 2 lines B, C, D and E: the row of the monthly proration table for box A's 12
@@ -1924,6 +1956,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=FHSA_MAXIMUM_PARTICIPATION_PERIOD_ENDED,
             count=0,
             chosen_kind=FHSA_ANNUAL_LIMIT_FROM_STEP_2,
+            chosen_value=D("0"),
+        ),
+        # T2125 Part 5 amount 5A: a partner count of 0 chooses line 9369.
+        BUSINESS_SHARE_OF_NET_INCOME: ChosenByCountLine(
+            output=BUSINESS_SHARE_OF_NET_INCOME,
+            count_kind=BUSINESS_PARTNER,
+            count=0,
+            chosen_kind=BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
             chosen_value=D("0"),
         ),
     }

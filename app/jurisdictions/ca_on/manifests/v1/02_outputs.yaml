@@ -19,6 +19,8 @@ outputs:
   - ca/rental_non_compliant_cca
   - ca/short_term_rental_non_compliant_cca_by_class
   - ca/short_term_rental_gross_rents
+  - ca/business_closing_ucc
+  - ca/business_home_carry_forward
   - ca/tuition_carried_forward
   - ca/qsbcs_proceeds
   - ca/qffp_proceeds

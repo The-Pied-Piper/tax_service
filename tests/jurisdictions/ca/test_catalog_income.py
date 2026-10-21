@@ -218,7 +218,11 @@ from app.jurisdictions.ca.catalog import (
     UNIVERSAL_CHILD_CARE_BENEFIT,
     WORKERS_COMPENSATION_BENEFITS,
 )
-from tests.jurisdictions.ca.catalog_snapshot import RECORD_LISTS, REGISTERED, SIGNED
+from tests.jurisdictions.ca.catalog_snapshot import (
+    RECORD_LISTS,
+    REGISTERED,
+    SIGNED,
+)
 
 
 def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
