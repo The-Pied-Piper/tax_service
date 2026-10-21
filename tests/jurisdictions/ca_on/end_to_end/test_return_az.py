@@ -148,3 +148,39 @@ def test_return_az_ontario_credit_amounts_include_the_disability_amount() -> Non
     assert worksheet.get(ontario.BASIC_PERSONAL_AMOUNT).value == D("12747.00")
     assert worksheet.get(ontario.CREDIT_AMOUNTS_THROUGH_DISABILITY_TRANSFER).value == D("27570.00")
     assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("27570.00")
+
+
+def test_return_az_ontario_who_does_not_qualify_claims_nothing() -> None:
+    worksheet = step_3(
+        eligible_for_disability_amount=0,
+        under_18_on_december_31=1,
+        disability_self_care_expenses="5000.00",
+    )
+
+    assert worksheet.get(ontario.DISABILITY_AMOUNT_FOR_SELF).value == D("0")
+
+
+def test_return_az_ontario_expenses_under_the_threshold_claim_the_maximum_16305() -> None:
+    # Expenses 3000.00 are under the threshold 3518.00, so line 5 is 0 and line 6 is the maximum
+    # amount 6007.00; line 7 is 10298.00 + 6007.00 = 16305.00.
+    worksheet = step_3(
+        eligible_for_disability_amount=1,
+        under_18_on_december_31=1,
+        disability_self_care_expenses="3000.00",
+    )
+
+    assert worksheet.get(ontario.DISABILITY_SELF_CARE_OVER_THRESHOLD).value == D("0")
+    assert worksheet.get(ontario.DISABILITY_SELF_SUPPLEMENT).value == D("6007.00")
+    assert worksheet.get(ontario.DISABILITY_AMOUNT_FOR_SELF).value == D("16305.00")
+
+
+def test_return_az_ontario_supplement_is_kept_at_zero_when_expenses_exceed_the_maximum() -> None:
+    # Expenses 20000.00: line 5 is 16482.00, line 6 is 6007.00 - 16482.00 floored at 0.
+    worksheet = step_3(
+        eligible_for_disability_amount=1,
+        under_18_on_december_31=1,
+        disability_self_care_expenses="20000.00",
+    )
+
+    assert worksheet.get(ontario.DISABILITY_SELF_SUPPLEMENT).value == D("0")
+    assert worksheet.get(ontario.DISABILITY_AMOUNT_FOR_SELF).value == D("10298.00")

@@ -88,6 +88,13 @@ from app.jurisdictions.ca.catalog import (
     DEPRECIABLE_GIFT_PROCEEDS_OR_COST,
     DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
     DEPRECIABLE_GIFTS,
+    DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
+    DISABILITY_SELF_BASE_AMOUNT,
+    DISABILITY_SELF_CARE_EXPENSES,
+    DISABILITY_SELF_CARE_OVER_THRESHOLD,
+    DISABILITY_SELF_CARE_THRESHOLD,
+    DISABILITY_SELF_SUPPLEMENT,
+    DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
     DONATION_FIRST_TIER_MAXIMUM,
     DONATION_HIGH_INCOME_THRESHOLD,
     DONATION_LIMIT_WITH_CAPITAL_GIFTS,
@@ -271,6 +278,7 @@ from app.jurisdictions.ca.catalog import (
     TUITION_TRANSFERRED,
     UCCB_AND_RDSP_INCOME,
     UNAPPLIED_LISTED_PERSONAL_PROPERTY_LOSSES,
+    UNDER_18_ON_DECEMBER_31,
     UNUSED_TUITION_CLAIMED,
     UNUSED_TUITION_FROM_2024,
     WORKING_INCOME,
@@ -856,6 +864,38 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        ontario.DISABILITY_SELF_CARE_OVER_THRESHOLD: SubtractedNotBelowZeroLine(
+            output=ontario.DISABILITY_SELF_CARE_OVER_THRESHOLD,
+            minuend=DISABILITY_SELF_CARE_EXPENSES,
+            minuend_amount=D("0"),
+            subtrahend=ontario.DISABILITY_SELF_CARE_THRESHOLD,
+            subtrahend_amount=D("3518.00"),
+            result=D("0"),
+        ),
+        ontario.DISABILITY_SELF_SUPPLEMENT: SubtractedNotBelowZeroLine(
+            output=ontario.DISABILITY_SELF_SUPPLEMENT,
+            minuend=ontario.DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
+            minuend_amount=D("6007.00"),
+            subtrahend=ontario.DISABILITY_SELF_CARE_OVER_THRESHOLD,
+            subtrahend_amount=D("0"),
+            result=D("6007.00"),
+        ),
+        DISABILITY_SELF_CARE_OVER_THRESHOLD: SubtractedNotBelowZeroLine(
+            output=DISABILITY_SELF_CARE_OVER_THRESHOLD,
+            minuend=DISABILITY_SELF_CARE_EXPENSES,
+            minuend_amount=D("0"),
+            subtrahend=DISABILITY_SELF_CARE_THRESHOLD,
+            subtrahend_amount=D("3464.00"),
+            result=D("0"),
+        ),
+        DISABILITY_SELF_SUPPLEMENT: SubtractedNotBelowZeroLine(
+            output=DISABILITY_SELF_SUPPLEMENT,
+            minuend=DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
+            minuend_amount=D("5914.00"),
+            subtrahend=DISABILITY_SELF_CARE_OVER_THRESHOLD,
+            subtrahend_amount=D("0"),
+            result=D("5914.00"),
+        ),
         # Schedule ON(S11) line 4 "Line 2 minus line 3 (if negative, enter "0")": the income cap of
         # line 2, 169100.99 (the Ontario tax of ON428 line 8 divided by 5.05%), less line 3, the
         # credit amounts through the disability transfer, 17180.58.
@@ -1667,6 +1707,20 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert chosen == {
+        ontario.DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE: ChosenByCountLine(
+            output=ontario.DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
+            count_kind=UNDER_18_ON_DECEMBER_31,
+            count=0,
+            chosen_kind=ontario.DISABILITY_SELF_BASE_AMOUNT,
+            chosen_value=D("10298.00"),
+        ),
+        DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE: ChosenByCountLine(
+            output=DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
+            count_kind=UNDER_18_ON_DECEMBER_31,
+            count=0,
+            chosen_kind=DISABILITY_SELF_BASE_AMOUNT,
+            chosen_value=D("10138.00"),
+        ),
         # T776 Part 4 line 2 (the co-owner's share, amount 2): a count of 0 chooses line 9369. Line
         # 9946 (T1 line 12600): a count of 0 chooses amount 6.
         RENTAL_NET_INCOME_SHARE: ChosenByCountLine(

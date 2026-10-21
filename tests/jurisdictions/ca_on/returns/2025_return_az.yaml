@@ -55,6 +55,7 @@ inputs:
   ca/eligible_for_disability_amount: "1"
   ca/under_18_on_december_31: "1"
   ca/disability_self_care_expenses: "5000.00"
+  ca/cpp_months: "12"
 expected:
   ca/disability_self_base_amount: "10138.00"
   ca/disability_self_supplement_maximum: "5914.00"
@@ -76,3 +77,4 @@ expected:
   ca-on/disability_amount_for_self: "14823.00"
   ca-on/credit_amounts_through_disability_transfer: "27570.00"
   ca-on/non_refundable_credit_amounts: "27570.00"
+  ca/cpp_second_additional_earnings_maximum: "9900.00"

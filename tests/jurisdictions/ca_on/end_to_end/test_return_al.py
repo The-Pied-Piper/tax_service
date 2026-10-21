@@ -357,15 +357,15 @@ def test_a_disability_amount_larger_than_the_tax_leaves_line_22_negative_and_lin
     assert worksheet.get(SPLIT_INCOME_LINE_22).value == D("-1194.36")
     assert worksheet.get(SPLIT_INCOME_LINE_24).value == D("0")
     # Line 29: the T1 tax of line 121, 4311.58 + 379.50 = 4691.08, less the credits of
-    # 2813.54 + 103.85 = 2917.39 (the federal dividend tax credit, line 40425, counts the same
-    # 1150), is 1773.69; the more of 0 and 1773.69 is line 29, which is not floored at line 24.
+    # 2813.54 + 1470.01 + 103.85 = 4387.40 (the federal dividend tax credit, line 40425, counts the
+    # same 1150), is 303.68; the more of 0 and 303.68 is line 29, which is not floored at line 24.
     assert worksheet.get(FEDERAL_BASIC_TAX).value == D("4311.58")
     assert worksheet.get(FEDERAL_TAX_WITH_SPLIT_INCOME).value == D("4691.08")
-    assert worksheet.get(CREDITS_AGAINST_BASIC_FEDERAL_TAX).value == D("2917.39")
-    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("1773.69")
-    assert worksheet.get(SPLIT_INCOME_LINE_29).value == D("1773.69")
-    assert worksheet.get(SPLIT_INCOME_LINE_30).value == D("1773.69")
-    assert worksheet.get(NET_FEDERAL_TAX).value == D("1773.69")
+    assert worksheet.get(CREDITS_AGAINST_BASIC_FEDERAL_TAX).value == D("4387.40")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("303.68")
+    assert worksheet.get(SPLIT_INCOME_LINE_29).value == D("303.68")
+    assert worksheet.get(SPLIT_INCOME_LINE_30).value == D("303.68")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("303.68")
 
 
 def test_a_negative_line_22_is_recorded_signed_and_floored_by_line_24_alone() -> None:
@@ -393,8 +393,8 @@ def test_a_negative_line_22_is_recorded_signed_and_floored_by_line_24_alone() ->
     assert (
         GreaterOfLine(
             output=SPLIT_INCOME_LINE_30,
-            parts=((SPLIT_INCOME_LINE_24, D("0")), (SPLIT_INCOME_LINE_29, D("1773.69"))),
-            result=D("1773.69"),
+            parts=((SPLIT_INCOME_LINE_24, D("0")), (SPLIT_INCOME_LINE_29, D("303.68"))),
+            result=D("303.68"),
         )
         in trace
     )
@@ -691,21 +691,22 @@ def test_an_ontario_disability_credit_above_the_tax_leaves_line_88_as_line_52() 
     assert worksheet.get(ontario.SPLIT_INCOME_LINE_46).value == D("34.34")
     assert worksheet.get(ontario.SPLIT_INCOME_LINE_47).value == D("-318.29")
     assert worksheet.get(ontario.SPLIT_INCOME_LINE_50).value == D("-318.29")
-    # Line 53 is 766.81 and line 55 is 766.81 + 236.10 = 1002.91, no surtax (the base, line 65, is
-    # 766.81); less the dividend tax credit of 34.34: 968.57, no reduction; the LIFT credit of
-    # 875 (the TOSI-adjusted net income, 29735.00 + 1150 = 30885.00, is under 32500) leaves
-    # 93.57 on line 88. Line 52 is the more of -318.29 and 93.57: line 88.
-    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SPLIT_INCOME).value == D("1002.91")
-    assert worksheet.get(ontario.ONTARIO_SURTAX_BASE).value == D("766.81")
+    # Line 53 is 246.76 (766.81 less the 520.05 of line 38 comes off through the credit amounts) and
+    # line 55 is 246.76 + 236.10 = 482.86, no surtax (the base, line 65, is 246.76); less the
+    # dividend tax credit of 34.34: 448.52, no reduction; the LIFT credit of 875 (the TOSI-adjusted
+    # net income, 29735.00 + 1150 = 30885.00, is under 32500) leaves 0 on line 88. Line 52 is the
+    # more of -318.29 and 0: line 88.
+    assert worksheet.get(ontario.ONTARIO_TAX_WITH_SPLIT_INCOME).value == D("482.86")
+    assert worksheet.get(ontario.ONTARIO_SURTAX_BASE).value == D("246.76")
     assert worksheet.get(ONTARIO_SURTAX).value == D("0")
-    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("968.57")
+    assert worksheet.get(ontario.ONTARIO_TAX_AFTER_DIVIDEND_CREDIT).value == D("448.52")
     assert worksheet.get(LIFT_CREDIT).value == D("875")
-    assert worksheet.get(ONTARIO_TAX_AFTER_FOOD_CREDIT).value == D("93.57")
-    assert worksheet.get(ontario.SPLIT_INCOME_LINE_52).value == D("93.57")
+    assert worksheet.get(ONTARIO_TAX_AFTER_FOOD_CREDIT).value == D("0")
+    assert worksheet.get(ontario.SPLIT_INCOME_LINE_52).value == D("0")
     # The health premium chart's line 1 is the taxable income 29735.00 plus line 4 (1150): 30885.
     assert worksheet.get(ontario.HEALTH_PREMIUM_INCOME).value == D("30885.00")
     assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("300")
-    assert worksheet.get(ontario.ONTARIO_TAX).value == D("393.57")
+    assert worksheet.get(ontario.ONTARIO_TAX).value == D("300")
 
     trace = worksheet.trace
     assert (
@@ -724,9 +725,9 @@ def test_an_ontario_disability_credit_above_the_tax_leaves_line_88_as_line_52() 
             output=ontario.SPLIT_INCOME_LINE_52,
             parts=(
                 (ontario.SPLIT_INCOME_LINE_50, D("-318.29")),
-                (ONTARIO_TAX_AFTER_FOOD_CREDIT, D("93.57")),
+                (ONTARIO_TAX_AFTER_FOOD_CREDIT, D("0")),
             ),
-            result=D("93.57"),
+            result=D("0"),
         )
         in trace
     )
@@ -737,7 +738,7 @@ def test_an_ontario_disability_credit_above_the_tax_leaves_line_88_as_line_52() 
     ) in rendered
     assert (
         "split_income_line_52: greater of split_income_line_50 -318.29 "
-        "and ontario_tax_after_food_credit 93.57 = 93.57"
+        "and ontario_tax_after_food_credit 0 = 0"
     ) in rendered
 
 
