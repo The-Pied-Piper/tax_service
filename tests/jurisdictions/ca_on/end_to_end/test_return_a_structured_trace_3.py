@@ -517,6 +517,7 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_84,
     RC381_PART_3_LINE_85,
     RC381_PART_3_LINE_87_DIFFERENCE,
+    RC381_PART_4_LINE_4,
     RC381_PART_4_LINE_8,
     RC381_PART_4_LINE_11,
     RC381_PART_4_LINE_12,
@@ -542,6 +543,16 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_51,
     RC381_PART_4_LINE_51_DIFFERENCE,
     RC381_PART_4_LINE_52,
+    RC381_PART_4_LINE_62,
+    RC381_PART_4_LINE_65,
+    RC381_PART_4_LINE_69,
+    RC381_PART_4_LINE_70,
+    RC381_PART_4_LINE_80,
+    RC381_PART_4_LINE_82,
+    RC381_PART_4_LINE_88,
+    RC381_PART_4_LINE_89,
+    RC381_PART_4_LINE_89_FROM_LINE_69,
+    RC381_PART_4_LINE_90,
     REFUND_OR_BALANCE_OWING,
     REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
     REGULAR_RATE_DONATIONS,
@@ -745,6 +756,44 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert subtracted == {
+        # Form RC381 Part 4 line 70 "Line 62 minus line 69", line 80 "Line 78 minus line 79" (the
+        # amount from line 4 less the amount from line 65), line 82 "Line 80 minus line 81" (line 81
+        # being line 70) and line 90 "Line 88 minus 89.": Return A has no T4 slips, so line 3 of
+        # Part 3 (0) is less than line 58 (3,500.00): line 65 and line 69 are 3,500.00 and lines 70
+        # and 80 are -3,500.00 (the form prints no floor), and line 82 is -3,500.00 less
+        # -3,500.00; lines 88 and 89 are 0.
+        RC381_PART_4_LINE_70: SubtractedLine(
+            output=RC381_PART_4_LINE_70,
+            minuend=RC381_PART_4_LINE_62,
+            minuend_amount=D("0.00"),
+            subtrahend=RC381_PART_4_LINE_69,
+            subtrahend_amount=D("3500.00"),
+            result=D("-3500.00"),
+        ),
+        RC381_PART_4_LINE_80: SubtractedLine(
+            output=RC381_PART_4_LINE_80,
+            minuend=RC381_PART_4_LINE_4,
+            minuend_amount=D("0.00"),
+            subtrahend=RC381_PART_4_LINE_65,
+            subtrahend_amount=D("3500.00"),
+            result=D("-3500.00"),
+        ),
+        RC381_PART_4_LINE_82: SubtractedLine(
+            output=RC381_PART_4_LINE_82,
+            minuend=RC381_PART_4_LINE_80,
+            minuend_amount=D("-3500.00"),
+            subtrahend=RC381_PART_4_LINE_70,
+            subtrahend_amount=D("-3500.00"),
+            result=D("0.00"),
+        ),
+        RC381_PART_4_LINE_90: SubtractedLine(
+            output=RC381_PART_4_LINE_90,
+            minuend=RC381_PART_4_LINE_88,
+            minuend_amount=D("0.00"),
+            subtrahend=RC381_PART_4_LINE_89,
+            subtrahend_amount=D("8068.20"),
+            result=D("-8068.20"),
+        ),
         # Form RC381 Part 4 lines 31 "Line 29 minus line 30" (the amount from line 61 of Part 3 less
         # the amount from line 12), 32 "Line 28 minus line 31" (the QPP T4 contributions less line
         # 31), 35 "Line 33 minus line 34", 38 "Line 36 minus line 37" (line 37 being line 24), 46
@@ -2737,6 +2786,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             fraction=Fraction(1680672, 100000),
             rounding=CENT,
             result=D("67799.99"),
+        ),
+        # Form RC381 Part 4 line 89 "Amount from line 69 of Part 3 (if positive) × 2": the amount
+        # is 0 for Return A.
+        RC381_PART_4_LINE_89: FractionAppliedLine(
+            output=RC381_PART_4_LINE_89,
+            base=RC381_PART_4_LINE_89_FROM_LINE_69,
+            base_amount=D("4034.10"),
+            fraction=Fraction(2, 1),
+            rounding=CENT,
+            result=D("8068.20"),
         ),
         # Form RC381 Part 4 line 41 "Amount from line 40 × 15.625": line 40 is 0.
         RC381_PART_4_LINE_41: FractionAppliedLine(
