@@ -17,6 +17,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_HOME_EXPENSES_BUSINESS_PART,
     FARM_HOME_EXPENSES_SUBTOTAL,
     FARM_HOME_INCOME_LIMIT,
+    FARM_MOTOR_VEHICLE_EXPENSES,
     FARM_NET_INCOME_AFTER_ADJUSTMENTS,
     FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
     FARM_NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -29,6 +30,16 @@ from app.jurisdictions.ca.catalog import (
     FARM_SHARE_OF_NET_INCOME,
     FARM_TERMINAL_LOSS,
     FARM_TOTAL_EXPENSES,
+    FARM_VEHICLE_AVAILABLE_INTEREST,
+    FARM_VEHICLE_BUSINESS_USE_PART,
+    FARM_VEHICLE_INTEREST_FOR_PERIOD,
+    FARM_VEHICLE_LEASE_CHARGE_PORTION,
+    FARM_VEHICLE_LEASE_COST_PORTION,
+    FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
+    FARM_VEHICLE_LEASE_PRICE_BASE,
+    FARM_VEHICLE_LEASING_COST,
+    FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
+    FARM_VEHICLE_TOTAL_EXPENSES,
     FARMING_INCOME,
     FEDERAL_BASIC_TAX,
     NET_INCOME,
@@ -49,6 +60,21 @@ FARM = {
     "cattle": "30000",
     "fertilizers_and_lime": "20000",
     "seeds_and_plants": "30000",
+    # Charts A to C for one leased passenger vehicle that is used for no farming: business
+    # kilometres 0 (amount 1), so line 9819 (amount 16 of Chart A) is 0, the same as before the
+    # charts; every Chart B and C line is still computed as printed.
+    "vehicle_business_kilometres": "0",
+    "vehicle_total_kilometres": "10000",
+    "vehicle_fuel_and_oil": "1000",
+    "vehicle_insurance": "600",
+    "vehicle_maintenance_and_repairs": "200",
+    "vehicle_other_expenses_10": "653",
+    "vehicle_interest_payable": "400",
+    "vehicle_interest_days": "183",
+    "vehicle_lease_charges": "2550",
+    "vehicle_lease_days": "183",
+    "vehicle_list_price": "60000",
+    "vehicle_sales_tax_rate": "13",
 }
 
 
@@ -175,3 +201,26 @@ def test_return_bcs_trace_names_each_line_of_the_farm_statement() -> None:
         "+ commission_income 0 + farming_income 30000 + fishing_income 0 = 30000",
     ):
         assert rendered_line in rendered, rendered_line
+
+
+def test_return_bcs_motor_vehicle_line_9819_is_0_from_charts_a_to_c() -> None:
+    # Chart B: 350 ÷ 30 × 183 days = 2135.00, and the lesser of that and the 400 payable is 400.
+    # Chart C: 44706 plus 13% is 50517.78, 1100 plus 13% is 1243.00 and 38000 plus 13% is 42940.00;
+    # 60000 is the greater of 60000 and 50517.78, 85% of it is 51000.00, 1243.00 x 183 ÷ 30 is
+    # 7582.30 and 42940.00 x 2550 ÷ 51000.00 is 2147.00, so the leasing cost is 2147.00. Chart A:
+    # 1000 + 400 + 600 + 200 + 2147 + 653 = 5000, and 0 kilometres for farming give a business use
+    # part of 0 x 5000 ÷ 10000 = 0, so line 9819 is 0 and the farm expenses are still 50000.
+    worksheet = return_bc()
+
+    assert worksheet.get(FARM_VEHICLE_INTEREST_FOR_PERIOD).value == D("2135.00")
+    assert worksheet.get(FARM_VEHICLE_AVAILABLE_INTEREST).value == D("400.00")
+    assert worksheet.get(FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX).value == D("50517.78")
+    assert worksheet.get(FARM_VEHICLE_LEASE_PRICE_BASE).value == D("60000.00")
+    assert worksheet.get(FARM_VEHICLE_LEASE_PRICE_85_PERCENT).value == D("51000.00")
+    assert worksheet.get(FARM_VEHICLE_LEASE_CHARGE_PORTION).value == D("7582.30")
+    assert worksheet.get(FARM_VEHICLE_LEASE_COST_PORTION).value == D("2147.00")
+    assert worksheet.get(FARM_VEHICLE_LEASING_COST).value == D("2147.00")
+    assert worksheet.get(FARM_VEHICLE_TOTAL_EXPENSES).value == D("5000.00")
+    assert worksheet.get(FARM_VEHICLE_BUSINESS_USE_PART).value == D("0.00")
+    assert worksheet.get(FARM_MOTOR_VEHICLE_EXPENSES).value == D("0.00")
+    assert worksheet.get(FARM_EXPENSES_SUBTOTAL).value == D("50000")

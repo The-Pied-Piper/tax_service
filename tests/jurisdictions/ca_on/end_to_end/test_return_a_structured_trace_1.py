@@ -39,6 +39,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
     AMT_SECURITY_OPTION_PUBLICLY_LISTED_GIFTS,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
+    BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
+    BUSINESS_VEHICLE_LEASE_PRICE_BASE,
     CANADA_TRAINING_CREDIT_BASIS,
     CANADIAN_TUITION_FEES,
     CAPITAL_GAIN,
@@ -59,8 +61,12 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_CREDIT,
     EMPLOYMENT_INCOME,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
+    FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
+    FARM_VEHICLE_LEASE_PRICE_BASE,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FIRST_TIER_DONATION_CREDIT,
+    FISH_VEHICLE_LEASE_PRICE_85_PERCENT,
+    FISH_VEHICLE_LEASE_PRICE_BASE,
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
     INCLUDED_CAPITAL_GAIN,
@@ -204,6 +210,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Rate(D("0.4")),
             CENT,
             D("0"),
+        ),
+        # Form T2125 Chart C line 24 "× 85%" of amount 23 or the list price limit with tax: Return A
+        # has no leased vehicle, so the base is 44706.00 and the 85% is 38000.10.
+        BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT: RateAppliedLine(
+            BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
+            BUSINESS_VEHICLE_LEASE_PRICE_BASE,
+            D("44706.00"),
+            Rate(D("0.85")),
+            CENT,
+            D("38000.10"),
+        ),
+        # Form T2042 Chart C line 24 "× 85%" of amount 23 or the list price limit with tax: Return A
+        # has no leased vehicle, so the base is 44706.00 and the 85% is 38000.10.
+        FARM_VEHICLE_LEASE_PRICE_85_PERCENT: RateAppliedLine(
+            FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
+            FARM_VEHICLE_LEASE_PRICE_BASE,
+            D("44706.00"),
+            Rate(D("0.85")),
+            CENT,
+            D("38000.10"),
+        ),
+        # Form T2121 Chart C line 24 "× 85%" of amount 23 or the list price limit with tax: Return A
+        # has no leased vehicle, so the base is 44706.00 and the 85% is 38000.10.
+        FISH_VEHICLE_LEASE_PRICE_85_PERCENT: RateAppliedLine(
+            FISH_VEHICLE_LEASE_PRICE_85_PERCENT,
+            FISH_VEHICLE_LEASE_PRICE_BASE,
+            D("44706.00"),
+            Rate(D("0.85")),
+            CENT,
+            D("38000.10"),
         ),
         # Form T691 Part 1 line 80 "Line 78 multiply by the percentage from line 79": line 78 is
         # 3074.00 (line 63: the union dues of line 21200, 2000.00, and the enhanced CPP

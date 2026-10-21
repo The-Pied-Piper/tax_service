@@ -22,7 +22,9 @@ description: >-
   $50,000 on two lines (fertilizers and lime, line 9662, $20,000, and seeds and plants,
   line 9664, $30,000), with no capital cost allowance, so line 9898 is $50,000.00 and
   line 9899 is $30,000.00; and, with no inventory adjustments and no partner, line 9946 and
-  T1 line 14100 are $30,000.00. A chosen set of figures. The net self-employment income
+  T1 line 14100 are $30,000.00. The motor vehicle expenses (line 9819) are Charts A to C for a
+  leased passenger vehicle used for no farming (business kilometres 0), so line 9819 is $0 and
+  changes no total. A chosen set of figures. The net self-employment income
   (T1 line 27, "Add lines 22 to 26") is 0 + 0 + 0 + 30,000 + 0 = $30,000; line 28 is line
   21 (0) plus line 27 and total income (line 15000) adds line 27 to the other income lines,
   which are all 0, so total income is $30,000.00. Every figure from line 27 on is the same
@@ -63,11 +65,44 @@ sources:
     loss in Part 4 on line 9790.". The income lines (Part 3), the expense lines (Part 4) and the
     caller's amounts are the chosen figures in the description; the lines not listed are not
     entered and are 0. Not modelled: Part 1 (identification), Part 2 (the Internet business
-    activities), Part 8 (the other partners), Part 9 (the equity), Areas B to G and Charts A to C
-    (the motor vehicle expenses are entered as the line 9819 amount). Area A's amount iii (the form
+    activities), Part 8 (the other partners), Part 9 (the equity), Areas B to G (Charts A to C are
+    modelled, see the sources below). Area A's amount iii (the form
     says to enter the total of amounts ii and iii on line 9936) is not modelled.
   - >-
     https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t2042/t2042-25e.pdf
+  - >-
+    CRA, Form T2042 (2025), Charts A to C (docs/cra-forms-2025/t2042-25e.pdf, the PDF text):
+    Chart A "Total motor vehicle expenses: Add amounts 3 to 11." (12); "Business use part: amount 1
+    ÷ amount 2 × amount 12 = 13" (13); "Business parking fees" (14); "Supplementary business
+    insurance" (15); "Allowable motor vehicle expenses: Add amounts 13 to 15 (enter this total on
+    line 9819 of Part 4)" (16). Chart B: "Total interest payable (accrual method) or paid (cash
+    method) in the fiscal period" (17); "($350*** ÷ 30) × the number of days in the fiscal period
+    for which interest was payable (accrual method) or paid (cash method)" (18); "Available
+    interest expense: Amount 17 or 18, whichever is less (include this in amount 4 of Chart A
+    above)" (19). Chart C: "Total lease charges incurred in your current fiscal period for the
+    vehicle." (20); "Total lease payments deducted before your current fiscal period for the
+    vehicle" (21); "Total number of days the vehicle was leased in your current and previous fiscal
+    periods" (22); "Manufacturer's list price" (23); "Use a GST rate of 5% or HST rate applicable to
+    your province."; "Amount 23 or ($44,706 + GST and PST, or $44,706 + HST), whichever is more" and
+    "× 85%" (24); "[($1,100 + GST and PST, or $1,100 + HST) × amount 22] ÷ 30" (25); "Amount 25:
+    amount 21" (26); "[($38,000 + GST and PST, or $38,000 + HST) × amount 20] ÷ amount 24" (27);
+    "Eligible leasing cost: Amount 26 or 27, whichever is less (enter in amount 8 of Chart A above)"
+    (28). The charts are the figures of Return BB's leased vehicle, with business kilometres 0
+    (amount 1), a chosen figure, so amount 13 and line 9819 are 0 and the other lines are the same.
+  - >-
+    CRA, Form T2042 (2025), Charts A to C: the chosen figures are amount 2 (total kilometres) 10,000;
+    amount 3 (fuel and oil) 1,000, amount 5 (insurance) 600, amount 7 (maintenance and repairs) 200
+    and amount 10 (other expenses) 653; amounts 6, 9, 11, 14 and 15 are 0; amount 17 (total interest
+    payable) 400 and the number of days 183, so line 18 is 350 ÷ 30 × 183 = 2,135.00 and amount 19 is
+    the lesser, 400.00; amount 20 (total lease charges) 2,550, amount 21 (payments before the year) 0,
+    amount 22 (days leased) 183, amount 23 (manufacturer's list price) 60,000 and the GST or HST rate
+    13%: 44,706 + 13% = 50,517.78, 1,100 + 13% = 1,243.00 and 38,000 + 13% = 42,940.00; amount 23 or
+    44,706 plus tax, whichever is more, is 60,000.00; amount 24 is 60,000.00 × 85% = 51,000.00; amount
+    25 is 1,243.00 × 183 ÷ 30 = 7,582.30; amount 26 is 7,582.30 - 0 = 7,582.30; amount 27 is 42,940.00
+    × 2,550 ÷ 51,000.00 = 2,147.00; and amount 28 is the lesser, 2,147.00. Chart A: amount 12 is 1,000
+    + 400 + 600 + 200 + 2,147 + 653 = 5,000.00; amount 13 is 0 × 5,000 ÷ 10,000 = 0.00; and line 9819
+    (amount 16) is 0.00 + 0 + 0 = 0.00. Every product and quotient here is exact to the cent, so no
+    line is rounded; line 9819 is $0, so the farm expenses of 50,000 do not change.
   - >-
     CRA, "T1-2025 Ontario edition" return (form 5006-R, docs/cra-forms-2025/5006-r-25e.txt,
     confirmed 2026-10-19), "Step 2 - Total income": "Line 25: Farming income"; "Line 14099:
@@ -119,6 +154,18 @@ inputs:
   ca/farm_cattle: "30000"
   ca/farm_fertilizers_and_lime: "20000"
   ca/farm_seeds_and_plants: "30000"
+  ca/farm_vehicle_business_kilometres: "0"
+  ca/farm_vehicle_total_kilometres: "10000"
+  ca/farm_vehicle_fuel_and_oil: "1000"
+  ca/farm_vehicle_insurance: "600"
+  ca/farm_vehicle_maintenance_and_repairs: "200"
+  ca/farm_vehicle_other_expenses_10: "653"
+  ca/farm_vehicle_interest_payable: "400"
+  ca/farm_vehicle_interest_days: "183"
+  ca/farm_vehicle_lease_charges: "2550"
+  ca/farm_vehicle_lease_days: "183"
+  ca/farm_vehicle_list_price: "60000"
+  ca/farm_vehicle_sales_tax_rate: "13"
   ca/cpp_months: "12"
 expected:
   ca/farm_recaptured_cca: "0"
@@ -148,6 +195,28 @@ expected:
   ca/farm_home_expenses: "0"
   ca/farming_income: "30000"
   ca/net_self_employment_income: "30000"
+  ca/business_vehicle_interest_limit: "350.00"
+  ca/business_vehicle_days_divisor: "30.00"
+  ca/business_vehicle_list_price_limit: "44706.00"
+  ca/business_vehicle_lease_charge_limit: "1100.00"
+  ca/business_vehicle_lease_cost_limit: "38000.00"
+  ca/farm_vehicle_list_price_limit_tax: "5811.78"
+  ca/farm_vehicle_lease_charge_limit_tax: "143.00"
+  ca/farm_vehicle_lease_cost_limit_tax: "4940.00"
+  ca/farm_vehicle_list_price_limit_with_tax: "50517.78"
+  ca/farm_vehicle_lease_charge_limit_with_tax: "1243.00"
+  ca/farm_vehicle_lease_cost_limit_with_tax: "42940.00"
+  ca/farm_vehicle_interest_for_period: "2135.00"
+  ca/farm_vehicle_available_interest: "400.00"
+  ca/farm_vehicle_lease_price_base: "60000.00"
+  ca/farm_vehicle_lease_price_85_percent: "51000.00"
+  ca/farm_vehicle_lease_charge_portion: "7582.30"
+  ca/farm_vehicle_lease_charges_net: "7582.30"
+  ca/farm_vehicle_lease_cost_portion: "2147.00"
+  ca/farm_vehicle_leasing_cost: "2147.00"
+  ca/farm_vehicle_total_expenses: "5000.00"
+  ca/farm_vehicle_business_use_part: "0.00"
+  ca/farm_motor_vehicle_expenses: "0.00"
   ca/taxable_capital_gains: "0"
   ca/investment_income_before_prior_years: "0"
   ca/interest_and_other_investment_income: "0"

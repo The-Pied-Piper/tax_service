@@ -16,6 +16,7 @@ from app.jurisdictions.ca.catalog import (
     FISH_HOME_EXPENSES,
     FISH_HOME_EXPENSES_AVAILABLE,
     FISH_HOME_INCOME_LIMIT,
+    FISH_MOTOR_VEHICLE_EXPENSES,
     FISH_NET_INCOME_AFTER_ADJUSTMENTS,
     FISH_NET_INCOME_BEFORE_ADJUSTMENTS,
     FISH_OTHER_EXPENSES_WITH_TERMINAL_LOSS,
@@ -25,6 +26,16 @@ from app.jurisdictions.ca.catalog import (
     FISH_SHARE_OF_NET_INCOME,
     FISH_TERMINAL_LOSS,
     FISH_TOTAL_EXPENSES,
+    FISH_VEHICLE_AVAILABLE_INTEREST,
+    FISH_VEHICLE_BUSINESS_USE_PART,
+    FISH_VEHICLE_INTEREST_FOR_PERIOD,
+    FISH_VEHICLE_LEASE_CHARGE_PORTION,
+    FISH_VEHICLE_LEASE_COST_PORTION,
+    FISH_VEHICLE_LEASE_PRICE_85_PERCENT,
+    FISH_VEHICLE_LEASE_PRICE_BASE,
+    FISH_VEHICLE_LEASING_COST,
+    FISH_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
+    FISH_VEHICLE_TOTAL_EXPENSES,
     FISHING_INCOME,
     NET_INCOME,
     NET_SELF_EMPLOYMENT_INCOME,
@@ -44,6 +55,21 @@ FISH = {
     "fish_products": "40000",
     "salt_bait_and_ice": "10000",
     "fishing_gear": "15000",
+    # Charts A to C for one leased passenger vehicle that is used for no fishing: business
+    # kilometres 0 (amount 1), so line 9281 (amount 16 of Chart A) is 0, the same as before the
+    # charts; every Chart B and C line is still computed as printed.
+    "vehicle_business_kilometres": "0",
+    "vehicle_total_kilometres": "10000",
+    "vehicle_fuel_and_oil": "1000",
+    "vehicle_insurance": "600",
+    "vehicle_maintenance_and_repairs": "200",
+    "vehicle_other_expenses_10": "653",
+    "vehicle_interest_payable": "400",
+    "vehicle_interest_days": "183",
+    "vehicle_lease_charges": "2550",
+    "vehicle_lease_days": "183",
+    "vehicle_list_price": "60000",
+    "vehicle_sales_tax_rate": "13",
 }
 
 
@@ -163,3 +189,26 @@ def test_return_bds_trace_names_each_line_of_the_fish_statement() -> None:
         "+ commission_income 0 + farming_income 0 + fishing_income 15000 = 15000",
     ):
         assert rendered_line in rendered, rendered_line
+
+
+def test_return_bds_motor_vehicle_line_9281_is_0_from_charts_a_to_c() -> None:
+    # Chart B: 350 ÷ 30 × 183 days = 2135.00, and the lesser of that and the 400 payable is 400.
+    # Chart C: 44706 plus 13% is 50517.78, 1100 plus 13% is 1243.00 and 38000 plus 13% is 42940.00;
+    # 60000 is the greater of 60000 and 50517.78, 85% of it is 51000.00, 1243.00 x 183 ÷ 30 is
+    # 7582.30 and 42940.00 x 2550 ÷ 51000.00 is 2147.00, so the leasing cost is 2147.00. Chart A:
+    # 1000 + 400 + 600 + 200 + 2147 + 653 = 5000, and 0 kilometres for fishing give a business use
+    # part of 0 x 5000 ÷ 10000 = 0, so line 9281 is 0 and the fishing expenses are still 25000.
+    worksheet = return_bd()
+
+    assert worksheet.get(FISH_VEHICLE_INTEREST_FOR_PERIOD).value == D("2135.00")
+    assert worksheet.get(FISH_VEHICLE_AVAILABLE_INTEREST).value == D("400.00")
+    assert worksheet.get(FISH_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX).value == D("50517.78")
+    assert worksheet.get(FISH_VEHICLE_LEASE_PRICE_BASE).value == D("60000.00")
+    assert worksheet.get(FISH_VEHICLE_LEASE_PRICE_85_PERCENT).value == D("51000.00")
+    assert worksheet.get(FISH_VEHICLE_LEASE_CHARGE_PORTION).value == D("7582.30")
+    assert worksheet.get(FISH_VEHICLE_LEASE_COST_PORTION).value == D("2147.00")
+    assert worksheet.get(FISH_VEHICLE_LEASING_COST).value == D("2147.00")
+    assert worksheet.get(FISH_VEHICLE_TOTAL_EXPENSES).value == D("5000.00")
+    assert worksheet.get(FISH_VEHICLE_BUSINESS_USE_PART).value == D("0.00")
+    assert worksheet.get(FISH_MOTOR_VEHICLE_EXPENSES).value == D("0.00")
+    assert worksheet.get(FISH_EXPENSES_SUBTOTAL).value == D("25000")
