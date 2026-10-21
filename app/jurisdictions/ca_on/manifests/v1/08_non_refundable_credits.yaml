@@ -162,6 +162,7 @@ capabilities:
         - ca/ei_premiums
         - ca/ei_premiums_on_self_employment
         - ca/canada_employment_amount
+        - ca/disability_amount_for_self
         - ca/disability_transferred_amount
     produces:
       output: ca/credit_amounts_subtotal
@@ -341,6 +342,7 @@ capabilities:
         - ca/ei_premiums
         - ca/ei_premiums_on_self_employment
         - ca/canada_employment_amount
+        - ca/disability_amount_for_self
         - ca/disability_transferred_amount
         - ca/federal_tuition_amount
         - ca/tuition_transferred_from_child
