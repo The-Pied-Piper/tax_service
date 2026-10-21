@@ -44,6 +44,13 @@ UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999 = CATALOG.declare(
 have pre-1986 capital loss balance)", Chart A column (A) "Amount of your unapplied net capital
 losses", row "After 1989 and before 2000": a starting amount."""
 
+UNAPPLIED_NET_CAPITAL_LOSSES_2000 = CATALOG.declare(
+    "unapplied_net_capital_losses_2000", Decimal, non_negative=True
+)
+"""Unapplied net capital losses, Form T1436 "Line 25300 - Net capital loss of other years (if you
+have pre-1986 capital loss balance)", Chart A column (A) "Amount of your unapplied net capital
+losses", row "In 2000": a starting amount."""
+
 UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024 = CATALOG.declare(
     "unapplied_net_capital_losses_2001_to_2024", Decimal, non_negative=True
 )
@@ -77,6 +84,13 @@ ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999 = CATALOG.declare(
 """Adjusted gross capital losses, Form T1436 Chart A column (C) "Adjusted gross capital losses
 (column A multiplied by column B)", row "After 1989 and before 2000": column A times the exact
 fraction of column B, rounded half-up to the cent, once."""
+
+ADJUSTED_GROSS_CAPITAL_LOSSES_2000 = CATALOG.declare(
+    "adjusted_gross_capital_losses_2000", Decimal, non_negative=True
+)
+"""Adjusted gross capital losses, Form T1436 Chart A column (C) "Adjusted gross capital losses
+(column A multiplied by column B)", row "In 2000": column A times the exact fraction of column B,
+rounded half-up to the cent, once; 0 when IR is 0."""
 
 ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024 = CATALOG.declare(
     "adjusted_gross_capital_losses_2001_to_2024", Decimal, non_negative=True
@@ -185,6 +199,45 @@ NET_CAPITAL_LOSS_BALANCE_1990_TO_1999 = CATALOG.declare(
 carry forward (column E multiplied by column F)", row "After 1989 and before 2000": column E times
 the exact fraction of column F, rounded half-up to the cent, once; what the return produces for next
 year's column A."""
+
+ADJUSTED_LOSSES_APPLIED_2000 = CATALOG.declare(
+    "adjusted_losses_applied_2000", Decimal, non_negative=True
+)
+"""Adjusted losses applied, Form T1436 Chart A column (D) "Total adjusted net capital losses applied
+against taxable capital gains in 2025", row "In 2000": the lesser of column C and what is left of
+line 13 after the older rows, as Guide T4037 applies the earlier years first."""
+
+ADJUSTED_LOSSES_LEFT_AFTER_2000 = CATALOG.declare(
+    "adjusted_losses_left_after_2000", Decimal, non_negative=True
+)
+"""Adjusted losses left after the row "In 2000": what is left of line 13, the amount claimed, once
+the row's column D is taken off, for the next row's column D."""
+
+REMAINING_ADJUSTED_LOSSES_2000 = CATALOG.declare(
+    "remaining_adjusted_losses_2000", Decimal, non_negative=True
+)
+"""Remaining adjusted losses, Form T1436 Chart A column (E) "Remaining adjusted net capital losses
+(column C minus column D)", row "In 2000": column C less column D."""
+
+NET_CAPITAL_LOSS_BALANCE_2000 = CATALOG.declare(
+    "net_capital_loss_balance_2000", Decimal, non_negative=True
+)
+"""Net capital loss balance, Form T1436 Chart A column (G) "Net capital loss balance available to
+carry forward (column E multiplied by column F)", row "In 2000": column E times the exact fraction
+of column F, rounded half-up to the cent, once; what the return produces for next year's
+column A."""
+
+NET_CAPITAL_LOSS_TWICE_IR_2000 = CATALOG.declare(
+    "net_capital_loss_twice_ir_2000", Decimal, non_negative=True
+)
+"""Twice IR, Form T1436 Chart A column (F) "2 × IR", row "In 2000" (footnote (2): "IR" is the
+inclusion rate for 2000): IR multiplied by 2, exact and not rounded."""
+
+NET_CAPITAL_LOSS_NUMERATOR_ONE_2000 = CATALOG.declare(
+    "net_capital_loss_numerator_one_2000", Decimal, non_negative=True
+)
+"""The 1 of the Chart A column (B) factor, Form T1436 Chart A column (B) "1/(IR × 2)", row
+"In 2000": the 1 printed in the factor, a credit of 1."""
 
 ADJUSTED_LOSSES_APPLIED_2001_TO_2024 = CATALOG.declare(
     "adjusted_losses_applied_2001_to_2024", Decimal, non_negative=True
@@ -564,7 +617,8 @@ T657_INCLUSION_RATE_2000 = CATALOG.declare("t657_inclusion_rate_2000", Decimal, 
 """Inclusion rate for 2000 (IR), Form T657 Chart 2 footnote (2) "Your "IR" is your inclusion rate
 for 2000": a starting rate, entered as a decimal. IR is the 2000 inclusion rate from line 16 of the
 filer's 2000 Schedule 3 Part 4. It must be entered when Chart 2 line 14 is not 0; 0 means not
-entered, and then the line 16 adjustment is 0 (line 16 equals line 14)."""
+entered, and then the line 16 adjustment is 0 (line 16 equals line 14). Form T1436 Chart A row
+"In 2000" reads the same figure, for its column (B) "1/(IR × 2)" and column (F) "2 × IR"."""
 
 T657_CHART_2_LINE_18 = CATALOG.declare("t657_chart_2_line_18", Decimal, non_negative=True)
 """Capital gains deduction claimed in 2001 to 2024, Form T657 Chart 2 line 18 "Total capital gains
