@@ -9,12 +9,12 @@ capabilities:
       output: ca/chart_2021_part_1_amount_a
   # Chart 2021 Part 1 "Amount A minus amount B" C (B "Enter the last amount that you calculated for
   # "Total amount of capital gains included in 2025 income eligible for the capital gains deduction"
-  # from 2016 to 2020. If you did not complete charts for 2016 to 2020, enter "0"."). The form
+  # from 2016 to 2020: Chart 2020's total carried, or "0" if no chart is completed. The form
   # prints no floor; floored at 0 here, an assumption to be confirmed.
   - name: core/subtract_not_below_zero
     consumes:
       amount: ca/chart_2021_part_1_amount_a
-      less: ca/t657_chart_2021_amount_b
+      less: ca/chart_2020_total_carried
     produces:
       output: ca/chart_2021_part_1_amount_c
   # Chart 2021 amount D: "Capital gains deductions from previous years from line 19 of Chart 2
@@ -78,13 +78,13 @@ capabilities:
         - ca/chart_2021_part_1_amount_j
     produces:
       output: ca/chart_2021_part_1_amount_k
-  # Chart 2021 Part 1 "Amount K plus amount L" M (L "Enter amount B from above.", the amount B of
-  # this chart).
+  # Chart 2021 Part 1 "Amount K plus amount L" M (L "Enter amount B from above.", Chart 2020's total
+  # carried).
   - name: core/sum
     consumes:
       parts:
         - ca/chart_2021_part_1_amount_k
-        - ca/t657_chart_2021_amount_b
+        - ca/chart_2020_total_carried
     produces:
       output: ca/chart_2021_part_1_amount_m
   # Chart 2021 Part 1 "Enter whichever is less: line 21 of Step 1, line 19 of Step 2 or amount M

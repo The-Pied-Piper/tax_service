@@ -616,7 +616,31 @@ inputs:
   - ca/t657_chart_2_line_14
   - ca/t657_inclusion_rate_2000
   - ca/t657_chart_2_line_18
-  - ca/t657_chart_2021_amount_b
+  - ca/t657_chart_2016_uses_d_instead
+  - ca/t657_chart_2016_amount_b_instead
+  - ca/t657_chart_2016_amount_d
+  - ca/t657_chart_2016_amount_e
+  - ca/t657_chart_2016_claims_additional_deduction
+  - ca/t657_chart_2017_uses_d_instead
+  - ca/t657_chart_2017_amount_d_instead
+  - ca/t657_chart_2017_amount_f
+  - ca/t657_chart_2017_amount_g
+  - ca/t657_chart_2017_claims_additional_deduction
+  - ca/t657_chart_2018_uses_d_instead
+  - ca/t657_chart_2018_amount_d_instead
+  - ca/t657_chart_2018_amount_f
+  - ca/t657_chart_2018_amount_g
+  - ca/t657_chart_2018_claims_additional_deduction
+  - ca/t657_chart_2019_uses_d_instead
+  - ca/t657_chart_2019_amount_d_instead
+  - ca/t657_chart_2019_amount_f
+  - ca/t657_chart_2019_amount_g
+  - ca/t657_chart_2019_claims_additional_deduction
+  - ca/t657_chart_2020_uses_d_instead
+  - ca/t657_chart_2020_amount_d_instead
+  - ca/t657_chart_2020_amount_f
+  - ca/t657_chart_2020_amount_g
+  - ca/t657_chart_2020_claims_additional_deduction
   - ca/t657_chart_2021_uses_d_instead
   - ca/t657_chart_2021_amount_d_instead
   - ca/t657_chart_2021_amount_f
