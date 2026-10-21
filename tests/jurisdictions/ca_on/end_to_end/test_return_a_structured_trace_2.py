@@ -174,6 +174,10 @@ from app.jurisdictions.ca.catalog import (
     CHART_2_LINE_11,
     CHART_2_LINE_13,
     CHART_2_LINE_15,
+    CHART_2024_PERIOD_1_AMOUNT_L,
+    CHART_2024_PERIOD_1_AMOUNT_N,
+    CHART_2024_PERIOD_2_AMOUNT_L,
+    CHART_2024_PERIOD_2_AMOUNT_N,
     CHART_2025_PART_1_AMOUNT_N,
     CHART_2025_PART_1_AMOUNT_P,
     CHART_2025_PART_2_AMOUNT_N,
@@ -698,6 +702,7 @@ from app.jurisdictions.ca.catalog import (
     T657_CHART_2_LINE_6,
     T657_CHART_2_LINE_10,
     T657_CHART_2_LINE_14,
+    T657_CHART_2024_PERIOD_1_AMOUNT_B,
     T657_CUMULATIVE_NET_INVESTMENT_LOSS,
     T657_DEDUCTIONS_CLAIMED_1985_TO_2024,
     T657_GAINS_1985_TO_1991,
@@ -708,7 +713,6 @@ from app.jurisdictions.ca.catalog import (
     T657_GAINS_2000,
     T657_GAINS_2001,
     T657_GAINS_2002_TO_2024,
-    T657_PART_1_AMOUNT_B,
     T657_T2017_LINE_13,
     T5013_DIVIDEND_TAX_CREDIT,
     T5013_INVESTMENT_INCOME,
@@ -2783,9 +2787,29 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             total=D("10000.00"),
         ),
+        # Form T657 Chart 2024 Period 1 "Amount L plus amount M" N: L is 0, and M (amount B of
+        # Period 1) is 0.
+        CHART_2024_PERIOD_1_AMOUNT_N: SumLine(
+            output=CHART_2024_PERIOD_1_AMOUNT_N,
+            parts=(
+                (CHART_2024_PERIOD_1_AMOUNT_L, D("0")),
+                (T657_CHART_2024_PERIOD_1_AMOUNT_B, D("0")),
+            ),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2024 Period 2 "Amount L plus amount M" N: L is 0, and M (Period 1's N,
+        # carried into Period 2) is 0.
+        CHART_2024_PERIOD_2_AMOUNT_N: SumLine(
+            output=CHART_2024_PERIOD_2_AMOUNT_N,
+            parts=(
+                (CHART_2024_PERIOD_2_AMOUNT_L, D("0")),
+                (CHART_2024_PERIOD_1_AMOUNT_N, D("0")),
+            ),
+            total=D("0"),
+        ),
         CHART_2025_PART_1_AMOUNT_P: SumLine(
             output=CHART_2025_PART_1_AMOUNT_P,
-            parts=((CHART_2025_PART_1_AMOUNT_N, D("0")), (T657_PART_1_AMOUNT_B, D("0"))),
+            parts=((CHART_2025_PART_1_AMOUNT_N, D("0")), (CHART_2024_PERIOD_2_AMOUNT_N, D("0"))),
             total=D("0"),
         ),
         CHART_2025_PART_2_AMOUNT_P: SumLine(

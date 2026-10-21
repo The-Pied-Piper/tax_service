@@ -616,7 +616,15 @@ inputs:
   - ca/t657_chart_2_line_14
   - ca/t657_inclusion_rate_2000
   - ca/t657_chart_2_line_18
-  - ca/t657_part_1_amount_b
+  - ca/t657_chart_2024_period_1_amount_b
+  - ca/t657_chart_2024_period_1_amount_f
+  - ca/t657_chart_2024_period_1_amount_g
+  - ca/t657_chart_2024_period_1_amount_h
+  - ca/t657_chart_2024_period_1_amount_j
+  - ca/t657_chart_2024_period_2_amount_f
+  - ca/t657_chart_2024_period_2_amount_g
+  - ca/t657_chart_2024_period_2_amount_h
+  - ca/t657_chart_2024_period_2_amount_j
   - ca/t657_part_1_amount_f
   - ca/t657_part_1_amount_g
   - ca/t657_part_1_amount_h

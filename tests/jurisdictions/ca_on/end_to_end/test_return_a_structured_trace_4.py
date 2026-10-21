@@ -98,6 +98,24 @@ from app.jurisdictions.ca.catalog import (
     CHART_2_LINE_16,
     CHART_2_LINE_17,
     CHART_2_LINE_19,
+    CHART_2024_PERIOD_1_AMOUNT_A,
+    CHART_2024_PERIOD_1_AMOUNT_C,
+    CHART_2024_PERIOD_1_AMOUNT_E,
+    CHART_2024_PERIOD_1_AMOUNT_I,
+    CHART_2024_PERIOD_1_AMOUNT_K,
+    CHART_2024_PERIOD_1_AMOUNT_L,
+    CHART_2024_PERIOD_1_AMOUNT_N,
+    CHART_2024_PERIOD_1_AMOUNT_O,
+    CHART_2024_PERIOD_1_AMOUNTS_F_TO_H,
+    CHART_2024_PERIOD_2_AMOUNT_A,
+    CHART_2024_PERIOD_2_AMOUNT_C,
+    CHART_2024_PERIOD_2_AMOUNT_E,
+    CHART_2024_PERIOD_2_AMOUNT_I,
+    CHART_2024_PERIOD_2_AMOUNT_K,
+    CHART_2024_PERIOD_2_AMOUNT_L,
+    CHART_2024_PERIOD_2_AMOUNT_N,
+    CHART_2024_PERIOD_2_AMOUNT_O,
+    CHART_2024_PERIOD_2_AMOUNTS_F_TO_H,
     CHART_2025_PART_1_AMOUNT_A,
     CHART_2025_PART_1_AMOUNT_C,
     CHART_2025_PART_1_AMOUNT_E,
@@ -369,8 +387,16 @@ from app.jurisdictions.ca.catalog import (
     T3_CAPITAL_GAINS_OR_LOSSES,
     T657_ABIL_CLAIMED_1985_TO_2024,
     T657_CHART_2_LINE_18,
+    T657_CHART_2024_PERIOD_1_AMOUNT_B,
+    T657_CHART_2024_PERIOD_1_AMOUNT_F,
+    T657_CHART_2024_PERIOD_1_AMOUNT_G,
+    T657_CHART_2024_PERIOD_1_AMOUNT_H,
+    T657_CHART_2024_PERIOD_1_AMOUNT_J,
+    T657_CHART_2024_PERIOD_2_AMOUNT_F,
+    T657_CHART_2024_PERIOD_2_AMOUNT_G,
+    T657_CHART_2024_PERIOD_2_AMOUNT_H,
+    T657_CHART_2024_PERIOD_2_AMOUNT_J,
     T657_NET_NON_ELIGIBLE_TAXABLE_CAPITAL_GAINS,
-    T657_PART_1_AMOUNT_B,
     T657_PART_1_AMOUNT_F,
     T657_PART_1_AMOUNT_G,
     T657_PART_1_AMOUNT_H,
@@ -516,6 +542,46 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     assert lesser == {
+        # Form T657 Chart 2024 Period 1 "Enter whichever is less: amount E or amount K." L: K is 0.
+        CHART_2024_PERIOD_1_AMOUNT_L: LesserOfLine(
+            output=CHART_2024_PERIOD_1_AMOUNT_L,
+            parts=(
+                (CHART_2024_PERIOD_1_AMOUNT_E, D("508418.00")),
+                (CHART_2024_PERIOD_1_AMOUNT_K, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2024 Period 1 amount O: the lesser of the two 2025 gains limits (0 on
+        # Return A) and amount N (0).
+        CHART_2024_PERIOD_1_AMOUNT_O: LesserOfLine(
+            output=CHART_2024_PERIOD_1_AMOUNT_O,
+            parts=(
+                (ANNUAL_GAINS_LIMIT_2025, D("0")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+                (CHART_2024_PERIOD_1_AMOUNT_N, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2024 Period 2 "Enter whichever is less: amount E or amount K." L: K is 0.
+        CHART_2024_PERIOD_2_AMOUNT_L: LesserOfLine(
+            output=CHART_2024_PERIOD_2_AMOUNT_L,
+            parts=(
+                (CHART_2024_PERIOD_2_AMOUNT_E, D("625000.00")),
+                (CHART_2024_PERIOD_2_AMOUNT_K, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2024 Period 2 amount O: the lesser of the two 2025 gains limits (0 on
+        # Return A) and amount N (0).
+        CHART_2024_PERIOD_2_AMOUNT_O: LesserOfLine(
+            output=CHART_2024_PERIOD_2_AMOUNT_O,
+            parts=(
+                (ANNUAL_GAINS_LIMIT_2025, D("0")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+                (CHART_2024_PERIOD_2_AMOUNT_N, D("0")),
+            ),
+            result=D("0"),
+        ),
         # Schedule ON(S11) line 5 "Enter whichever is less: amount from line 1 or line 4": 0 on
         # the return with nothing brought forward, against line 4 (the room, 151920.41).
         ontario.UNUSED_TUITION_CLAIMED: LesserOfLine(
@@ -1098,6 +1164,64 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Form T657 Chart 2024 Period 1 "Amount A minus amount B" C: Return A's Period 1 maximum
+        # of 508418.00, less B of 0 (no 2016 to 2023 charts).
+        CHART_2024_PERIOD_1_AMOUNT_C: SubtractedNotBelowZeroLine(
+            output=CHART_2024_PERIOD_1_AMOUNT_C,
+            minuend=CHART_2024_PERIOD_1_AMOUNT_A,
+            minuend_amount=D("508418.00"),
+            subtrahend=T657_CHART_2024_PERIOD_1_AMOUNT_B,
+            subtrahend_amount=D("0"),
+            result=D("508418.00"),
+        ),
+        # Form T657 Chart 2024 Period 1 amount E "amount C minus amount D", D from line 19 of
+        # Chart 2.
+        CHART_2024_PERIOD_1_AMOUNT_E: SubtractedNotBelowZeroLine(
+            output=CHART_2024_PERIOD_1_AMOUNT_E,
+            minuend=CHART_2024_PERIOD_1_AMOUNT_C,
+            minuend_amount=D("508418.00"),
+            subtrahend=CHART_2_LINE_19,
+            subtrahend_amount=D("0"),
+            result=D("508418.00"),
+        ),
+        # Form T657 Chart 2024 Period 1 "Amount I minus amount J" K: 0 less 0.
+        CHART_2024_PERIOD_1_AMOUNT_K: SubtractedNotBelowZeroLine(
+            output=CHART_2024_PERIOD_1_AMOUNT_K,
+            minuend=CHART_2024_PERIOD_1_AMOUNT_I,
+            minuend_amount=D("0.00"),
+            subtrahend=T657_CHART_2024_PERIOD_1_AMOUNT_J,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2024 Period 2 "Amount A minus amount B" C: 625000.00, less Period 1's
+        # amount N of 0.
+        CHART_2024_PERIOD_2_AMOUNT_C: SubtractedNotBelowZeroLine(
+            output=CHART_2024_PERIOD_2_AMOUNT_C,
+            minuend=CHART_2024_PERIOD_2_AMOUNT_A,
+            minuend_amount=D("625000.00"),
+            subtrahend=CHART_2024_PERIOD_1_AMOUNT_N,
+            subtrahend_amount=D("0"),
+            result=D("625000.00"),
+        ),
+        # Form T657 Chart 2024 Period 2 amount E "amount C minus amount D", D from line 19 of
+        # Chart 2.
+        CHART_2024_PERIOD_2_AMOUNT_E: SubtractedNotBelowZeroLine(
+            output=CHART_2024_PERIOD_2_AMOUNT_E,
+            minuend=CHART_2024_PERIOD_2_AMOUNT_C,
+            minuend_amount=D("625000.00"),
+            subtrahend=CHART_2_LINE_19,
+            subtrahend_amount=D("0"),
+            result=D("625000.00"),
+        ),
+        # Form T657 Chart 2024 Period 2 "Amount I minus amount J" K: 0 less 0.
+        CHART_2024_PERIOD_2_AMOUNT_K: SubtractedNotBelowZeroLine(
+            output=CHART_2024_PERIOD_2_AMOUNT_K,
+            minuend=CHART_2024_PERIOD_2_AMOUNT_I,
+            minuend_amount=D("0.00"),
+            subtrahend=T657_CHART_2024_PERIOD_2_AMOUNT_J,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Form T691 Part 1 line 32 "Line 30 minus line 31 (if negative, enter "0")": 0 on Return A.
         AMT_SECURITY_OPTIONS_NET: SubtractedNotBelowZeroLine(
             output=AMT_SECURITY_OPTIONS_NET,
@@ -1930,7 +2054,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             output=CHART_2025_PART_1_AMOUNT_C,
             minuend=CHART_2025_PART_1_AMOUNT_A,
             minuend_amount=D("522145.00"),
-            subtrahend=T657_PART_1_AMOUNT_B,
+            subtrahend=CHART_2024_PERIOD_2_AMOUNT_N,
             subtrahend_amount=D("0"),
             result=D("522145.00"),
         ),
@@ -2053,6 +2177,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # rental CCA limit, and the Form T1206 lines floored in Part 1 (the TOSI-adjusted net income)
     # and Part 2 (line 24, on line 22 alone) for a return without split income.
     assert summed_floored == {
+        # Form T657 Chart 2024 Period 1 "Add amounts F to H (if negative, enter "0")": 0 for each.
+        CHART_2024_PERIOD_1_AMOUNTS_F_TO_H: SumNotBelowZeroLine(
+            output=CHART_2024_PERIOD_1_AMOUNTS_F_TO_H,
+            parts=(
+                (T657_CHART_2024_PERIOD_1_AMOUNT_F, D("0")),
+                (T657_CHART_2024_PERIOD_1_AMOUNT_G, D("0")),
+                (T657_CHART_2024_PERIOD_1_AMOUNT_H, D("0")),
+            ),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2024 Period 2 "Add amounts F to H (if negative, enter "0")": 0 for each.
+        CHART_2024_PERIOD_2_AMOUNTS_F_TO_H: SumNotBelowZeroLine(
+            output=CHART_2024_PERIOD_2_AMOUNTS_F_TO_H,
+            parts=(
+                (T657_CHART_2024_PERIOD_2_AMOUNT_F, D("0")),
+                (T657_CHART_2024_PERIOD_2_AMOUNT_G, D("0")),
+                (T657_CHART_2024_PERIOD_2_AMOUNT_H, D("0")),
+            ),
+            total=D("0"),
+        ),
         # Federal Worksheet "Line 25000" line 1 "Amount from line 23400 of your return (if
         # negative, enter "0")": line 23400 alone, floored.
         NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO: SumNotBelowZeroLine(

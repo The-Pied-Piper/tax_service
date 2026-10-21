@@ -571,11 +571,6 @@ T657_CHART_2_LINE_18 = CATALOG.declare("t657_chart_2_line_18", Decimal, non_nega
 deduction claimed in 2001 to 2024: Amount from line 254 of your 2001 to 2018 returns and line 25400
 of your 2019 and later returns": a starting amount."""
 
-T657_PART_1_AMOUNT_B = CATALOG.declare("t657_part_1_amount_b", Decimal, non_negative=True)
-"""Chart 2025 Part 1 amount B, Form T657 Chart 2025 Part 1 "Enter the last amount that you
-calculated for "Total amount of capital gains included in 2025 income eligible for the capital gains
-deduction"": a starting amount."""
-
 T657_PART_1_AMOUNT_F = CATALOG.declare("t657_part_1_amount_f", Decimal, non_negative=True)
 """Chart 2025 Part 1 amount F, Form T657 Chart 2025 Part 1 "Add amounts F to J (if negative, enter
 "0")": the amount from box 57 of a T3 slip or box 153 of a T5013 slip, a starting amount."""
