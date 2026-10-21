@@ -637,8 +637,10 @@ benefit return)": the net farming income of the farming statement, signed, a los
 the form prints no floor."""
 
 FISHING_INCOME = CATALOG.declare("fishing_income", Decimal)
-"""Fishing income, T1 line 26 "Fishing income", line 14300 "Net": the net fishing income, a
-starting amount. Negative when the expenses are larger (a loss), as the form prints no floor."""
+"""Fishing income, T1 line 26 "Fishing income", line 14300 "Net", Form T2121 line 9946 "Your net
+income (loss): Amount 5C minus line 9945 (enter this amount on line 14300 of your income tax and
+benefit return)": the net fishing income of the fishing statement, signed, a loss is negative as
+the form prints no floor."""
 
 NET_SELF_EMPLOYMENT_INCOME = CATALOG.declare("net_self_employment_income", Decimal)
 """Net self-employment income, T1 line 27 "Add lines 22 to 26. Net self-employment income": the net
@@ -2220,3 +2222,370 @@ FARM_CLOSING_UCC = RecordListKind.declare(
 )
 """Farming closing UCC, Form T2042 Area A "UCC at the end of the year (col. 7 minus col. 21)": one
 record for each class of the farming classes, holding its class number and column 22."""
+
+# Form T2121 (Statement of Fishing Activities), Parts 3 to 7 and Area A (T1 lines 14299 and 14300).
+# Each kind is one line of the form; the caller's amounts are starting amounts, the rest are
+# computed by the T2121 steps of the manifest part `03d_t2121.yaml`.
+
+FISH_FISH_PRODUCTS = CATALOG.declare("fish_fish_products", Decimal, non_negative=True)
+"""Fish products, Form T2121 line 3A "Fish products": a starting amount."""
+
+FISH_OTHER_MARINE_PRODUCTS = CATALOG.declare(
+    "fish_other_marine_products", Decimal, non_negative=True
+)
+"""Other marine products, Form T2121 line 3B "Other marine products": a starting amount."""
+
+FISH_GRANTS_CREDITS_AND_REBATES = CATALOG.declare(
+    "fish_grants_credits_and_rebates", Decimal, non_negative=True
+)
+"""Grants, credits and rebates of the fishing business, Form T2121 line 3C "Grants, credits, and
+rebates": a starting amount."""
+
+FISH_SUBSIDIES = CATALOG.declare("fish_subsidies", Decimal, non_negative=True)
+"""Subsidies of the fishing business, Form T2121 line 3D "Subsidies": a starting amount."""
+
+FISH_COMPENSATION_FOR_LOSS = CATALOG.declare(
+    "fish_compensation_for_loss", Decimal, non_negative=True
+)
+"""Compensation for loss, Form T2121 line 3E "Compensation for loss of fishing income or
+property": a starting amount."""
+
+FISH_SHARESPERSON_INCOME = CATALOG.declare("fish_sharesperson_income", Decimal, non_negative=True)
+"""Sharesperson income, Form T2121 line 3F "Sharesperson income (specify name of fishing boat and
+captain below)": a starting amount."""
+
+FISH_OTHER_INCOME = CATALOG.declare("fish_other_income", Decimal, non_negative=True)
+"""Other fishing income, Form T2121 line 9600 "Other income (specify):": a starting amount, before
+the recapture of Area A."""
+
+FISH_SALT_BAIT_AND_ICE = CATALOG.declare("fish_salt_bait_and_ice", Decimal, non_negative=True)
+"""Salt, bait and ice of the fishing business, Form T2121 line 9138 "Salt, bait, and ice": a
+starting amount."""
+
+FISH_CREW_SHARES = CATALOG.declare("fish_crew_shares", Decimal, non_negative=True)
+"""Crew shares of the fishing business, Form T2121 line 9062 "Crew shares": a starting amount."""
+
+FISH_FUEL_COSTS = CATALOG.declare("fish_fuel_costs", Decimal, non_negative=True)
+"""Fuel costs of the fishing business, Form T2121 line 9224 "Fuel costs (except for motor
+vehicles)": a starting amount."""
+
+FISH_FISHING_GEAR = CATALOG.declare("fish_fishing_gear", Decimal, non_negative=True)
+"""Fishing gear of the fishing business, Form T2121 line 9136 "Fishing gear": a starting amount."""
+
+FISH_INSURANCE = CATALOG.declare("fish_insurance", Decimal, non_negative=True)
+"""Insurance of the fishing business, Form T2121 line 8690 "Insurance": a starting amount."""
+
+FISH_INTEREST_AND_BANK_CHARGES = CATALOG.declare(
+    "fish_interest_and_bank_charges", Decimal, non_negative=True
+)
+"""Interest and bank charges of the fishing business, Form T2121 line 8710 "Interest and bank
+charges": a starting amount."""
+
+FISH_MEALS_AND_ENTERTAINMENT = CATALOG.declare(
+    "fish_meals_and_entertainment", Decimal, non_negative=True
+)
+"""Meals and entertainment of the fishing business, Form T2121 line 8523 "Meals and
+entertainment": a starting amount."""
+
+FISH_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS = CATALOG.declare(
+    "fish_business_taxes_licences_and_memberships", Decimal, non_negative=True
+)
+"""Business taxes, licences and memberships of the fishing business, Form T2121 line 8760 "Business
+taxes, licences, and memberships": a starting amount."""
+
+FISH_MOTOR_VEHICLE_EXPENSES = CATALOG.declare(
+    "fish_motor_vehicle_expenses", Decimal, non_negative=True
+)
+"""Motor vehicle expenses of the fishing business, Form T2121 line 9281 "Motor vehicle expenses
+(not including CCA) (amount 16 of Chart A)": a starting amount."""
+
+FISH_OFFICE_EXPENSES = CATALOG.declare("fish_office_expenses", Decimal, non_negative=True)
+"""Office expenses of the fishing business, Form T2121 line 8810 "Office expenses": a starting
+amount."""
+
+FISH_NETS_AND_TRAPS = CATALOG.declare("fish_nets_and_traps", Decimal, non_negative=True)
+"""Nets and traps of the fishing business, Form T2121 line 9137 "Nets and traps": a starting
+amount."""
+
+FISH_PROFESSIONAL_FEES = CATALOG.declare("fish_professional_fees", Decimal, non_negative=True)
+"""Professional fees of the fishing business, Form T2121 line 8860 "Professional fees (includes
+legal and accounting fees)": a starting amount."""
+
+FISH_SALARIES_WAGES_AND_BENEFITS = CATALOG.declare(
+    "fish_salaries_wages_and_benefits", Decimal, non_negative=True
+)
+"""Salaries, wages and benefits of the fishing business, Form T2121 line 9060 "Salaries, wages, and
+benefits (including employer's contributions)": a starting amount."""
+
+FISH_REPAIRS_FISHING_BOAT = CATALOG.declare("fish_repairs_fishing_boat", Decimal, non_negative=True)
+"""Repairs and maintenance of the fishing boat, Form T2121 Part 4 amount 1 "Repairs and
+maintenance: Fishing boat": a starting amount."""
+
+FISH_REPAIRS_ENGINE = CATALOG.declare("fish_repairs_engine", Decimal, non_negative=True)
+"""Repairs and maintenance of the engine, Form T2121 Part 4 amount 2 "Engine": a starting amount."""
+
+FISH_REPAIRS_ELECTRICAL_EQUIPMENT = CATALOG.declare(
+    "fish_repairs_electrical_equipment", Decimal, non_negative=True
+)
+"""Repairs and maintenance of the electrical equipment, Form T2121 Part 4 amount 3 "Electrical
+equipment": a starting amount."""
+
+FISH_INSURANCE_RECOVERY = CATALOG.declare("fish_insurance_recovery", Decimal, non_negative=True)
+"""Insurance recovery of the repairs, Form T2121 Part 4 amount 5 "Insurance recovery": a starting
+amount."""
+
+FISH_OTHER_EXPENSES = CATALOG.declare("fish_other_expenses", Decimal, non_negative=True)
+"""Other fishing expenses, Form T2121 line 9270 "Other expenses (specify):": a starting amount,
+before the terminal loss of Area A."""
+
+FISH_CCA_PERSONAL_PART = CATALOG.declare("fish_cca_personal_part", Decimal, non_negative=True)
+"""Personal part of the fishing CCA, Form T2121 line 9936 "Capital cost allowance (CCA). Enter
+amount ii of Area A minus any personal part and any CCA for business-use-of-home expenses": a
+starting amount, the personal part."""
+
+FISH_CCA_CLASSES = RecordListKind.declare(
+    CATALOG,
+    "fish_cca_classes",
+    fields=(
+        CCA_CLASS_NUMBER,
+        CCA_UCC_AT_START,
+        CCA_ADDITIONS,
+        CCA_PROCEEDS,
+        CCA_AIIP_ADDITIONS,
+        CCA_RIIP_ADDITIONS,
+        CCA_CLAIMED,
+        CCA_NO_PROPERTY_LEFT,
+    ),
+)
+"""Fishing classes, Form T2121 Area A "Calculation of capital cost allowance (CCA) claim": a
+starting list with one record for each class, holding the columns the filer enters (class
+number, UCC at the start of the year, additions, proceeds, the AIIP and RIIP parts of the
+additions, the CCA claimed) and whether any property is left in the class."""
+
+FISH_PARTNER = CATALOG.declare("fish_partner", int, non_negative=True)
+"""Whether the filer is a partner in the fishing business, Form T2121 amount 5A "Your share of line
+9369 or the amount from your T5013 slip, Statement of Partnership Income": 1 for a partner, 0
+otherwise, a starting count."""
+
+FISH_PARTNER_SHARE = CATALOG.declare("fish_partner_share", Decimal)
+"""Partner's share of the fishing net income, Form T2121 amount 5A "Your share of line 9369 or the
+amount from your T5013 slip, Statement of Partnership Income": a starting amount, signed."""
+
+FISH_PARTNER_GST_HST_REBATE = CATALOG.declare(
+    "fish_partner_gst_hst_rebate", Decimal, non_negative=True
+)
+"""GST/HST rebate for partners, Form T2121 line 9974 "GST/HST rebate for partners received in the
+year": a starting amount."""
+
+FISH_PARTNER_OTHER_AMOUNT_A = CATALOG.declare(
+    "fish_partner_other_amount_a", Decimal, non_negative=True
+)
+"""Partner expense 1, Form T2121 amount 6A "List details of expenses: Expense amounts": a starting
+amount among the five lines of Part 6."""
+
+FISH_PARTNER_OTHER_AMOUNT_B = CATALOG.declare(
+    "fish_partner_other_amount_b", Decimal, non_negative=True
+)
+"""Partner expense 2, Form T2121 amount 6B "List details of expenses: Expense amounts": a starting
+amount among the five lines of Part 6."""
+
+FISH_PARTNER_OTHER_AMOUNT_C = CATALOG.declare(
+    "fish_partner_other_amount_c", Decimal, non_negative=True
+)
+"""Partner expense 3, Form T2121 amount 6C "List details of expenses: Expense amounts": a starting
+amount among the five lines of Part 6."""
+
+FISH_PARTNER_OTHER_AMOUNT_D = CATALOG.declare(
+    "fish_partner_other_amount_d", Decimal, non_negative=True
+)
+"""Partner expense 4, Form T2121 amount 6D "List details of expenses: Expense amounts": a starting
+amount among the five lines of Part 6."""
+
+FISH_PARTNER_OTHER_AMOUNT_E = CATALOG.declare(
+    "fish_partner_other_amount_e", Decimal, non_negative=True
+)
+"""Partner expense 5, Form T2121 amount 6E "List details of expenses: Expense amounts": a starting
+amount among the five lines of Part 6."""
+
+FISH_HOME_HEAT = CATALOG.declare("fish_home_heat", Decimal, non_negative=True)
+"""Heat for the business use of the home, Form T2121 amount 7A "Heat": a starting amount."""
+
+FISH_HOME_ELECTRICITY = CATALOG.declare("fish_home_electricity", Decimal, non_negative=True)
+"""Electricity for the business use of the home, Form T2121 amount 7B "Electricity": a starting
+amount."""
+
+FISH_HOME_INSURANCE = CATALOG.declare("fish_home_insurance", Decimal, non_negative=True)
+"""Insurance for the business use of the home, Form T2121 amount 7C "Insurance": a starting
+amount."""
+
+FISH_HOME_MAINTENANCE = CATALOG.declare("fish_home_maintenance", Decimal, non_negative=True)
+"""Maintenance for the business use of the home, Form T2121 amount 7D "Maintenance": a starting
+amount."""
+
+FISH_HOME_MORTGAGE_INTEREST = CATALOG.declare(
+    "fish_home_mortgage_interest", Decimal, non_negative=True
+)
+"""Mortgage interest for the business use of the home, Form T2121 amount 7E "Mortgage interest": a
+starting amount."""
+
+FISH_HOME_PROPERTY_TAXES = CATALOG.declare("fish_home_property_taxes", Decimal, non_negative=True)
+"""Property taxes for the business use of the home, Form T2121 amount 7F "Property taxes": a
+starting amount."""
+
+FISH_HOME_OTHER_EXPENSES = CATALOG.declare("fish_home_other_expenses", Decimal, non_negative=True)
+"""Other home expenses for the business use of the home, Form T2121 amount 7G "Other expenses
+(specify):": a starting amount."""
+
+FISH_HOME_PERSONAL_USE_PART = CATALOG.declare(
+    "fish_home_personal_use_part", Decimal, non_negative=True
+)
+"""Personal-use part of the business-use-of-home expenses, Form T2121 amount 7I "Personal-use part
+of the business-use-of-home expenses": a starting amount."""
+
+FISH_HOME_CCA = CATALOG.declare("fish_home_cca", Decimal, non_negative=True)
+"""Capital cost allowance for the business part of the home, Form T2121 amount 7K "Capital cost
+allowance (business part only), which means amount ii of Area A minus any portion of capital cost
+allowance that is for personal use or entered on line 9936 of Part 4": a starting amount."""
+
+FISH_HOME_CARRIED_FORWARD = CATALOG.declare("fish_home_carried_forward", Decimal, non_negative=True)
+"""Home expenses carried forward from last year, Form T2121 amount 7L "Amount carried forward from
+previous year": a starting amount."""
+
+FISH_RECAPTURED_CCA = CATALOG.declare("fish_recaptured_cca", Decimal, non_negative=True)
+"""Recapture of the fishing classes, Form T2121 Area A endnote 3 "If you have a negative amount in
+column 7, add it to income as a recapture in Part 3 on line 9600": the recapture of each class
+of the Area A list, totalled."""
+
+FISH_OTHER_INCOME_WITH_RECAPTURE = CATALOG.declare(
+    "fish_other_income_with_recapture", Decimal, non_negative=True
+)
+"""Other fishing income with the recapture, Form T2121 line 9600 "Other income (specify):": the
+other income plus the recapture of Area A."""
+
+FISH_GROSS_INCOME = CATALOG.declare("fish_gross_income", Decimal, non_negative=True)
+"""Gross fishing income, Form T2121 line 8299 "Gross income: Total of amounts 3A to 3F and line
+9600 (enter this amount on line 14299 of your income tax and benefit return)": the amounts 3A to
+3F, with line 9600 and its recapture."""
+
+FISH_GROSS_INCOME_BEFORE_EXPENSES = CATALOG.declare(
+    "fish_gross_income_before_expenses", Decimal, non_negative=True
+)
+"""Gross fishing income before expenses, Form T2121 amount 4A "Gross income (line 8299 of Part
+3)": line 8299."""
+
+FISH_TERMINAL_LOSS = CATALOG.declare("fish_terminal_loss", Decimal, non_negative=True)
+"""Terminal loss of the fishing classes, Form T2121 Area A endnote 3 "If no property is left in the
+class and there is a positive amount in this column, deduct the amount from income as a terminal
+loss in Part 4 on line 9270": the terminal loss of each class of the Area A list, totalled."""
+
+FISH_OTHER_EXPENSES_WITH_TERMINAL_LOSS = CATALOG.declare(
+    "fish_other_expenses_with_terminal_loss", Decimal, non_negative=True
+)
+"""Other fishing expenses with the terminal loss, Form T2121 line 9270 "Other expenses (specify):":
+the other expenses plus the terminal loss of Area A."""
+
+FISH_REPAIRS_TOTAL = CATALOG.declare("fish_repairs_total", Decimal, non_negative=True)
+"""Total of the repairs and maintenance, Form T2121 Part 4 amount 4 "Total of amounts 1 to 3": the
+three repairs amounts added."""
+
+FISH_REPAIRS_YOUR_COST = CATALOG.declare("fish_repairs_your_cost", Decimal)
+"""Your cost of the repairs, Form T2121 line 8963 "Your cost (amount 4 minus amount 5)", amount
+4O: amount 4 less amount 5, signed, as the form prints no floor."""
+
+FISH_EXPENSES_SUBTOTAL = CATALOG.declare("fish_expenses_subtotal", Decimal)
+"""Subtotal of fishing expenses, Form T2121 amount 4Q "Subtotal: Add amounts 4B to 4P.": the
+expense lines 4B to 4N, amount 4O and the other expenses of line 9270 with the terminal loss;
+signed, as amount 4O can be negative."""
+
+FISH_CCA_TABLE_CLAIM = CATALOG.declare("fish_cca_table_claim", Decimal, non_negative=True)
+"""CCA claim of the fishing classes, Form T2121 Area A amount ii "Total CCA claim for the year:
+Total of column 21 (enter on line 9936 of Part 4 amount ii minus any personal part and any CCA
+for business-use-of-home expenses)": the CCA claimed on each class, at most its maximum,
+totalled."""
+
+FISH_CCA_CLAIM_LESS_PERSONAL_PART = CATALOG.declare(
+    "fish_cca_claim_less_personal_part", Decimal, non_negative=True
+)
+"""Fishing CCA claim less the personal part, Form T2121 line 9936 "Capital cost allowance (CCA).
+Enter amount ii of Area A minus any personal part and any CCA for business-use-of-home
+expenses": the first step: amount ii less the personal part of CCA."""
+
+FISH_CCA_CLAIM = CATALOG.declare("fish_cca_claim", Decimal, non_negative=True)
+"""CCA claim of the fishing business, Form T2121 line 9936 "Capital cost allowance (CCA). Enter
+amount ii of Area A minus any personal part and any CCA for business-use-of-home expenses": the
+second step: the first step less the CCA for business-use-of-home expenses (amount 7K)."""
+
+FISH_TOTAL_EXPENSES = CATALOG.declare("fish_total_expenses", Decimal)
+"""Total fishing expenses, Form T2121 line 9368 "Total expenses: Amount 4Q plus line 9936": amount
+4Q plus line 9936."""
+
+FISH_NET_INCOME_BEFORE_ADJUSTMENTS = CATALOG.declare("fish_net_income_before_adjustments", Decimal)
+"""Fishing net income before adjustments, Form T2121 line 9369 "Net income (loss) before
+adjustments: Amount 4A minus line 9368": amount 4A less line 9368, signed, a loss is negative."""
+
+FISH_SHARE_OF_NET_INCOME = CATALOG.declare("fish_share_of_net_income", Decimal)
+"""Filer's share of the fishing net income, Form T2121 amount 5A "Your share of line 9369 or the
+amount from your T5013 slip, Statement of Partnership Income": line 9369, or for a partner the
+T5013 amount; signed."""
+
+FISH_PARTNERSHIP_TOTAL = CATALOG.declare("fish_partnership_total", Decimal)
+"""Partnership total, Form T2121 amount 5B "Total: Amount 5A plus line 9974": amount 5A plus line
+9974, signed."""
+
+FISH_PARTNER_OTHER_AMOUNTS_TOTAL = CATALOG.declare(
+    "fish_partner_other_amounts_total", Decimal, non_negative=True
+)
+"""Total of the partner's other amounts, Form T2121 amount 6F "Total other amounts deductible from
+your share of the net partnership income (loss): Add amounts 6A to 6E": amounts 6A to 6E added."""
+
+FISH_PARTNER_OTHER_AMOUNTS = CATALOG.declare(
+    "fish_partner_other_amounts", Decimal, non_negative=True
+)
+"""Partner's other amounts deductible, Form T2121 line 9943 "Other amounts deductible from your
+share of net partnership income (loss) (amount 6F)": amount 6F."""
+
+FISH_NET_INCOME_AFTER_ADJUSTMENTS = CATALOG.declare("fish_net_income_after_adjustments", Decimal)
+"""Fishing net income after adjustments, Form T2121 amount 5C "Net income (loss) after adjustments:
+Amount 5B minus line 9943": amount 5B less line 9943, signed, a loss is negative."""
+
+FISH_HOME_EXPENSES_SUBTOTAL = CATALOG.declare(
+    "fish_home_expenses_subtotal", Decimal, non_negative=True
+)
+"""Subtotal of the home expenses, Form T2121 amount 7H "Subtotal: Add amounts 7A to 7G.": amounts
+7A to 7G added."""
+
+FISH_HOME_EXPENSES_BUSINESS_PART = CATALOG.declare(
+    "fish_home_expenses_business_part", Decimal, non_negative=True
+)
+"""Business part of the home expenses, Form T2121 amount 7J "Subtotal: Amount 7H minus amount 7I":
+amount 7H less amount 7I."""
+
+FISH_HOME_EXPENSES_AVAILABLE = CATALOG.declare(
+    "fish_home_expenses_available", Decimal, non_negative=True
+)
+"""Home expenses available, Form T2121 amount 7M "Subtotal: Add amounts 7J to 7L.": amounts 7J to
+7L added."""
+
+FISH_HOME_INCOME_LIMIT = CATALOG.declare("fish_home_income_limit", Decimal, non_negative=True)
+"""Net income limit on the home expenses, Form T2121 amount 7N "Net income (loss) after adjustments
+(amount 5C) (if negative, enter "0")": amount 5C, or 0 when it is negative."""
+
+FISH_HOME_CARRY_FORWARD = CATALOG.declare("fish_home_carry_forward", Decimal, non_negative=True)
+"""Home expenses to carry forward, Form T2121 amount 7O "Business-use-of-home expenses available to
+carry forward: Amount 7M minus amount 7N (if negative, enter "0")": amount 7M less amount 7N, or
+0 when it is negative."""
+
+FISH_HOME_ALLOWABLE_CLAIM = CATALOG.declare("fish_home_allowable_claim", Decimal, non_negative=True)
+"""Allowable home expenses claim, Form T2121 amount 7P "Allowable claim: Amount 7M or 7N above,
+whichever is less (enter your share of this amount on line 9945 of Part 5)": the lesser of
+amounts 7M and 7N."""
+
+FISH_HOME_EXPENSES = CATALOG.declare("fish_home_expenses", Decimal, non_negative=True)
+"""Fishing business-use-of-home expenses, Form T2121 line 9945 "Business-use-of-home expenses
+(amount 7P)": amount 7P."""
+
+FISH_CLOSING_UCC = RecordListKind.declare(
+    CATALOG, "fish_closing_ucc", fields=(CCA_CLASS_NUMBER, CCA_UCC_AT_END)
+)
+"""Fishing closing UCC, Form T2121 Area A "UCC at the end of the year (col. 7 minus col. 21)": one
+record for each class of the fishing classes, holding its class number and column 22."""

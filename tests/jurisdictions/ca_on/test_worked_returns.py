@@ -272,7 +272,6 @@ inputs:
   ca/taxable_scholarships: "0"
   ca/professional_income: "0"
   ca/commission_income: "0"
-  ca/fishing_income: "0"
   ca/workers_compensation_benefits: "0"
   ca/social_assistance_payments: "0"
   ca/net_federal_supplements: "0"

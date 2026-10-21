@@ -40,8 +40,8 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 755
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 755
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 783
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 783
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -352,6 +352,78 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/farm_home_allowable_claim",
         "ca/farm_home_expenses",
         "ca/farm_closing_ucc",
+        "ca/fish_fish_products",
+        "ca/fish_other_marine_products",
+        "ca/fish_grants_credits_and_rebates",
+        "ca/fish_subsidies",
+        "ca/fish_compensation_for_loss",
+        "ca/fish_sharesperson_income",
+        "ca/fish_other_income",
+        "ca/fish_salt_bait_and_ice",
+        "ca/fish_crew_shares",
+        "ca/fish_fuel_costs",
+        "ca/fish_fishing_gear",
+        "ca/fish_insurance",
+        "ca/fish_interest_and_bank_charges",
+        "ca/fish_meals_and_entertainment",
+        "ca/fish_business_taxes_licences_and_memberships",
+        "ca/fish_motor_vehicle_expenses",
+        "ca/fish_office_expenses",
+        "ca/fish_nets_and_traps",
+        "ca/fish_professional_fees",
+        "ca/fish_salaries_wages_and_benefits",
+        "ca/fish_repairs_fishing_boat",
+        "ca/fish_repairs_engine",
+        "ca/fish_repairs_electrical_equipment",
+        "ca/fish_insurance_recovery",
+        "ca/fish_other_expenses",
+        "ca/fish_cca_personal_part",
+        "ca/fish_cca_classes",
+        "ca/fish_partner",
+        "ca/fish_partner_share",
+        "ca/fish_partner_gst_hst_rebate",
+        "ca/fish_partner_other_amount_a",
+        "ca/fish_partner_other_amount_b",
+        "ca/fish_partner_other_amount_c",
+        "ca/fish_partner_other_amount_d",
+        "ca/fish_partner_other_amount_e",
+        "ca/fish_home_heat",
+        "ca/fish_home_electricity",
+        "ca/fish_home_insurance",
+        "ca/fish_home_maintenance",
+        "ca/fish_home_mortgage_interest",
+        "ca/fish_home_property_taxes",
+        "ca/fish_home_other_expenses",
+        "ca/fish_home_personal_use_part",
+        "ca/fish_home_cca",
+        "ca/fish_home_carried_forward",
+        "ca/fish_recaptured_cca",
+        "ca/fish_other_income_with_recapture",
+        "ca/fish_gross_income",
+        "ca/fish_gross_income_before_expenses",
+        "ca/fish_terminal_loss",
+        "ca/fish_other_expenses_with_terminal_loss",
+        "ca/fish_repairs_total",
+        "ca/fish_repairs_your_cost",
+        "ca/fish_expenses_subtotal",
+        "ca/fish_cca_table_claim",
+        "ca/fish_cca_claim_less_personal_part",
+        "ca/fish_cca_claim",
+        "ca/fish_total_expenses",
+        "ca/fish_net_income_before_adjustments",
+        "ca/fish_share_of_net_income",
+        "ca/fish_partnership_total",
+        "ca/fish_partner_other_amounts_total",
+        "ca/fish_partner_other_amounts",
+        "ca/fish_net_income_after_adjustments",
+        "ca/fish_home_expenses_subtotal",
+        "ca/fish_home_expenses_business_part",
+        "ca/fish_home_expenses_available",
+        "ca/fish_home_income_limit",
+        "ca/fish_home_carry_forward",
+        "ca/fish_home_allowable_claim",
+        "ca/fish_home_expenses",
+        "ca/fish_closing_ucc",
         "ca/fishing_income",
         "ca/workers_compensation_benefits",
         "ca/social_assistance_payments",
@@ -1424,15 +1496,15 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 755
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 755
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 783
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 783
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 755
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 755
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 783
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 783
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

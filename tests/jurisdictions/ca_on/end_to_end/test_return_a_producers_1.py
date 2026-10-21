@@ -1073,7 +1073,6 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     for starting in (
         PROFESSIONAL_INCOME,
         COMMISSION_INCOME,
-        FISHING_INCOME,
         CPP_MONTHS,
         CPT20_EARNINGS,
         CPP_PART_4_COMPLETED,
@@ -1089,6 +1088,9 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     # T1 line 25 (line 14100) is T2042 line 9946, "Amount 5C minus line 9945", no longer a starting
     # amount either.
     assert isinstance(worksheet.producer_of(FARMING_INCOME), Subtract)
+    # T1 line 26 (line 14300) is T2121 line 9946, "Amount 5C minus line 9945", no longer a starting
+    # amount either.
+    assert isinstance(worksheet.producer_of(FISHING_INCOME), Subtract)
     assert isinstance(worksheet.producer_of(NET_SELF_EMPLOYMENT_INCOME), Sum)
     months_tables = {
         worksheet.producer_of(kind)
