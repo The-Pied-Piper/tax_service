@@ -1739,13 +1739,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("0"),
         ),
-        # Schedule 13 line 4 "Add lines 1 to 3. Net self-employment income".
         # Schedule 13 line 1 before the slips, "the total amount from line 12200 plus line 27".
         EI_SELF_EMPLOYMENT_BEFORE_SLIPS: SumLine(
             EI_SELF_EMPLOYMENT_BEFORE_SLIPS,
             ((NET_PARTNERSHIP_INCOME, D("0")), (NET_SELF_EMPLOYMENT_INCOME, D("0"))),
             D("0"),
         ),
+        # Schedule 13 line 4 "Add lines 1 to 3. Net self-employment income".
         EI_NET_SELF_EMPLOYMENT_INCOME: SumLine(
             EI_NET_SELF_EMPLOYMENT_INCOME,
             (
