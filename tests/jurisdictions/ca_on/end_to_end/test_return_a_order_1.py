@@ -74,6 +74,9 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_LINE_20,
     CPP_PART_5_LINE_21,
     CPP_PART_5_LINE_22,
+    CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE,
+    CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE,
+    CPP_PART_5_LINE_23_LESS_LINE_56,
     CPP_PART_5_LINE_30,
     CPP_PART_5_LINE_33,
     CPP_PART_5_LINE_33_MORE_THAN_LINE_17,
@@ -82,6 +85,40 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_LINE_41,
     CPP_PART_5_LINE_42,
     CPP_PART_5_LINE_42_LESSER,
+    CPP_PART_5_LINE_43,
+    CPP_PART_5_LINE_44,
+    CPP_PART_5_LINE_45,
+    CPP_PART_5_LINE_46,
+    CPP_PART_5_LINE_47,
+    CPP_PART_5_LINE_48,
+    CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
+    CPP_PART_5_LINE_49,
+    CPP_PART_5_LINE_50,
+    CPP_PART_5_LINE_50_LINE_49_POSITIVE,
+    CPP_PART_5_LINE_51,
+    CPP_PART_5_LINE_52,
+    CPP_PART_5_LINE_53,
+    CPP_PART_5_LINE_53_LESSER,
+    CPP_PART_5_LINE_54,
+    CPP_PART_5_LINE_55,
+    CPP_PART_5_LINE_56,
+    CPP_PART_5_LINE_56_LESSER,
+    CPP_PART_5_LINE_57,
+    CPP_PART_5_LINE_58,
+    CPP_PART_5_LINE_59,
+    CPP_PART_5_LINE_60,
+    CPP_PART_5_LINE_60_LESSER,
+    CPP_PART_5_LINE_61,
+    CPP_PART_5_LINE_62,
+    CPP_PART_5_LINE_63,
+    CPP_PART_5_LINE_63_LESSER,
+    CPP_PART_5_LINE_64,
+    CPP_PART_5_LINE_65,
+    CPP_PART_5_LINE_66,
+    CPP_PART_5_LINE_67,
+    CPP_PART_5_LINE_67_LESSER,
+    CPP_PART_5_LINE_68,
+    CPP_PART_5_LINE_69,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PENSIONABLE_EARNINGS,
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
@@ -406,8 +443,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 1104
-    assert len(order) == 1104
+    assert len(order) == 1141
+    assert len(order) == 1141
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -568,6 +605,71 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[CPP_PART_5_LINE_42]
     )
     assert position[CPP_PART_5_LINE_33_MORE_THAN_LINE_17] < position[CPP_PART_5_LINE_42]
+    # Schedule 8 Part 5 lines 43 to 69: the tiers of lines 43 to 45 follow lines 30 and 42, lines
+    # 46 and 47 sum them, line 48 doubles line 24 of Part 3 if positive, line 49 is line 47 less
+    # line 48 and line 50 halves it as a positive amount.
+    assert (
+        position[CPP_PART_5_LINE_30] < position[CPP_PART_5_LINE_43] < position[CPP_PART_5_LINE_47]
+    )
+    assert (
+        position[CPP_PART_5_LINE_42] < position[CPP_PART_5_LINE_45] < position[CPP_PART_5_LINE_46]
+    )
+    assert (
+        position[CPP_PART_5_LINE_44] < position[CPP_PART_5_LINE_46] < position[CPP_PART_5_LINE_47]
+    )
+    assert (
+        position[CPP_CONTRIBUTIONS_DIFFERENCE]
+        < position[CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE]
+        < position[CPP_PART_5_LINE_48]
+        < position[CPP_PART_5_LINE_49]
+        < position[CPP_PART_5_LINE_50_LINE_49_POSITIVE]
+        < position[CPP_PART_5_LINE_50]
+    )
+    assert position[CPP_PART_5_LINE_47] < position[CPP_PART_5_LINE_49]
+    # Lines 51 to 57 (base contributions on employment income): line 52 is line 16 as a positive
+    # amount, line 53 takes the lesser of line 19 and line 52, lines 54 and 55 follow, line 56
+    # follows the count of line 23 and line 54 both positive and line 57 adds it to line 55.
+    assert position[CPP_PART_5_LINE_52] < position[CPP_PART_5_LINE_53_LESSER]
+    assert position[CPP_PART_5_LINE_53_LESSER] < position[CPP_PART_5_LINE_53]
+    assert (
+        position[CPP_PART_5_LINE_53] < position[CPP_PART_5_LINE_54] < position[CPP_PART_5_LINE_55]
+    )
+    assert (
+        position[CPP_PART_5_LINE_51] < position[CPP_PART_5_LINE_55] < position[CPP_PART_5_LINE_57]
+    )
+    assert (
+        position[CPP_PART_5_LINE_54]
+        < position[CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE]
+        < position[CPP_PART_5_LINE_56]
+        < position[CPP_PART_5_LINE_57]
+    )
+    assert position[CPP_PART_5_LINE_54] < position[CPP_PART_5_LINE_56_LESSER]
+    assert position[CPP_PART_5_LINE_56_LESSER] < position[CPP_PART_5_LINE_56]
+    # Lines 58 to 69 (enhanced contributions): line 63 follows line 56, whose result its comparison
+    # amount subtracts from line 23, and line 69 adds lines 64 and 68.
+    assert position[CPP_PART_5_LINE_59] < position[CPP_PART_5_LINE_60_LESSER]
+    assert (
+        position[CPP_PART_5_LINE_60] < position[CPP_PART_5_LINE_61] < position[CPP_PART_5_LINE_63]
+    )
+    assert (
+        position[CPP_PART_5_LINE_58] < position[CPP_PART_5_LINE_62] < position[CPP_PART_5_LINE_64]
+    )
+    assert position[CPP_PART_5_LINE_56] < position[CPP_PART_5_LINE_23_LESS_LINE_56]
+    assert (
+        position[CPP_PART_5_LINE_23_LESS_LINE_56]
+        < position[CPP_PART_5_LINE_63_LESSER]
+        < position[CPP_PART_5_LINE_63]
+        < position[CPP_PART_5_LINE_64]
+        < position[CPP_PART_5_LINE_69]
+    )
+    assert position[CPP_PART_5_LINE_61] < position[CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE]
+    assert position[CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE] < position[CPP_PART_5_LINE_63]
+    assert (
+        position[CPP_PART_5_LINE_65] < position[CPP_PART_5_LINE_68] < position[CPP_PART_5_LINE_69]
+    )
+    assert position[CPP_PART_5_LINE_66] < position[CPP_PART_5_LINE_67_LESSER]
+    assert position[CPP_PART_5_LINE_67_LESSER] < position[CPP_PART_5_LINE_67]
+    assert position[CPP_PART_5_LINE_67] < position[CPP_PART_5_LINE_68]
     for limit in (
         CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,
         CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,

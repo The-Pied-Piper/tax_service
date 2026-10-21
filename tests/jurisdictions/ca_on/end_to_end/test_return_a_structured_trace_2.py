@@ -306,6 +306,25 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_LINE_15,
     CPP_PART_5_LINE_16,
     CPP_PART_5_LINE_33,
+    CPP_PART_5_LINE_43,
+    CPP_PART_5_LINE_44,
+    CPP_PART_5_LINE_45,
+    CPP_PART_5_LINE_46,
+    CPP_PART_5_LINE_47,
+    CPP_PART_5_LINE_51,
+    CPP_PART_5_LINE_53,
+    CPP_PART_5_LINE_55,
+    CPP_PART_5_LINE_56,
+    CPP_PART_5_LINE_57,
+    CPP_PART_5_LINE_58,
+    CPP_PART_5_LINE_60,
+    CPP_PART_5_LINE_62,
+    CPP_PART_5_LINE_63,
+    CPP_PART_5_LINE_64,
+    CPP_PART_5_LINE_65,
+    CPP_PART_5_LINE_67,
+    CPP_PART_5_LINE_68,
+    CPP_PART_5_LINE_69,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
@@ -953,6 +972,61 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Schedule 8 Part 5 line 55 "Line 51 plus line 53": line 51 is line 11 and line 53
+        # is 0 for Return A.
+        CPP_PART_5_LINE_55: SumLine(
+            output=CPP_PART_5_LINE_55,
+            parts=((CPP_PART_5_LINE_51, D("3356.10")), (CPP_PART_5_LINE_53, D("0.00"))),
+            total=D("3356.10"),
+        ),
+        # Schedule 8 Part 5 line 57 "Line 55 plus line 56": line 55 and line 56 (0) for
+        # Return A.
+        CPP_PART_5_LINE_57: SumLine(
+            output=CPP_PART_5_LINE_57,
+            parts=((CPP_PART_5_LINE_55, D("3356.10")), (CPP_PART_5_LINE_56, D("0.00"))),
+            total=D("3356.10"),
+        ),
+        # Schedule 8 Part 5 line 62 "Line 58 plus line 60": line 58 is line 12 and line 60
+        # is 0 for Return A.
+        CPP_PART_5_LINE_62: SumLine(
+            output=CPP_PART_5_LINE_62,
+            parts=((CPP_PART_5_LINE_58, D("678.00")), (CPP_PART_5_LINE_60, D("0.00"))),
+            total=D("678.00"),
+        ),
+        # Schedule 8 Part 5 line 64 "Line 62 plus line 63": line 62 and line 63 (0) for
+        # Return A.
+        CPP_PART_5_LINE_64: SumLine(
+            output=CPP_PART_5_LINE_64,
+            parts=((CPP_PART_5_LINE_62, D("678.00")), (CPP_PART_5_LINE_63, D("0.00"))),
+            total=D("678.00"),
+        ),
+        # Schedule 8 Part 5 line 68 "Line 65 plus line 67": line 65 is line 22 and line 67
+        # is 0 for Return A.
+        CPP_PART_5_LINE_68: SumLine(
+            output=CPP_PART_5_LINE_68,
+            parts=((CPP_PART_5_LINE_65, D("396.00")), (CPP_PART_5_LINE_67, D("0.00"))),
+            total=D("396.00"),
+        ),
+        # Schedule 8 Part 5 line 69 "Line 64 plus line 68": line 64 and line 68 for Return
+        # A.
+        CPP_PART_5_LINE_69: SumLine(
+            output=CPP_PART_5_LINE_69,
+            parts=((CPP_PART_5_LINE_64, D("678.00")), (CPP_PART_5_LINE_68, D("396.00"))),
+            total=D("1074.00"),
+        ),
+        # Schedule 8 Part 5 line 46 "Line 44 plus line 45": both tiers are 0.00 for Return
+        # A.
+        CPP_PART_5_LINE_46: SumLine(
+            output=CPP_PART_5_LINE_46,
+            parts=((CPP_PART_5_LINE_44, D("0.00")), (CPP_PART_5_LINE_45, D("0.00"))),
+            total=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 47 "Line 43 plus line 46": both are 0.00 for Return A.
+        CPP_PART_5_LINE_47: SumLine(
+            output=CPP_PART_5_LINE_47,
+            parts=((CPP_PART_5_LINE_43, D("0.00")), (CPP_PART_5_LINE_46, D("0.00"))),
+            total=D("0.00"),
+        ),
         # Schedule 8 Part 5 line 4 "Add lines 1 to 3.": line 1 is 0.00 and lines 2 and 3 are "0" for
         # Return A.
         CPP_PART_5_LINE_4: SumLine(

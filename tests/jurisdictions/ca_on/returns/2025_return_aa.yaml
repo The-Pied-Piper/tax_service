@@ -968,6 +968,8 @@ expected:
   ca/cpp_required_base_and_first_additional_contributions: "1292.17"
   ca/cpp_second_additional_contributions: "0"
   ca/cpp_contributions_difference: "0.00"
+  ca/cpp_part_5_line_57: "1075.00"
+  ca/cpp_part_5_line_69: "217.17"
   ca/cpp_enhanced_contributions: "217.17"
   ca/ei_premiums: "413.56"
   ca/rrsp_contributions_available: "0"

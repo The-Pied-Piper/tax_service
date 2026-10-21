@@ -466,6 +466,8 @@ expected:
   ca/cpp_second_additional_contributions: "0"
   ca/cpp_enhanced_contributions: "65.00"
   ca/cpp_required_base_and_first_additional_contributions: "386.75"
+  ca/cpp_part_5_line_57: "321.75"
+  ca/cpp_part_5_line_69: "65.00"
   ca/ei_premiums: "164.00"
   ca/rrsp_contributions_available: "0"
   ca/rrsp_deduction_maximum: "0"

@@ -83,3 +83,5 @@ expected:
   ca/net_capital_loss_balance_2000: "0.00"
   ca/cpp_required_base_and_first_additional_contributions: "3361.75"
   ca/cpp_contributions_difference: "0.00"
+  ca/cpp_part_5_line_57: "2796.75"
+  ca/cpp_part_5_line_69: "565.00"

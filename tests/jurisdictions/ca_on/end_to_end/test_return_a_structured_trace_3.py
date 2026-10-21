@@ -218,12 +218,24 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_LINE_13,
     CPP_PART_5_LINE_16,
     CPP_PART_5_LINE_20,
+    CPP_PART_5_LINE_23_LESS_LINE_56,
     CPP_PART_5_LINE_25,
     CPP_PART_5_LINE_30,
     CPP_PART_5_LINE_35,
     CPP_PART_5_LINE_36,
     CPP_PART_5_LINE_39,
     CPP_PART_5_LINE_41,
+    CPP_PART_5_LINE_47,
+    CPP_PART_5_LINE_48,
+    CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
+    CPP_PART_5_LINE_49,
+    CPP_PART_5_LINE_52,
+    CPP_PART_5_LINE_53,
+    CPP_PART_5_LINE_54,
+    CPP_PART_5_LINE_56,
+    CPP_PART_5_LINE_59,
+    CPP_PART_5_LINE_60,
+    CPP_PART_5_LINE_61,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
@@ -581,6 +593,45 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert subtracted == {
+        # Schedule 8 Part 5 line 54 "Line 52 minus line 53": line 52 and line 53 are both 0
+        # for Return A.
+        CPP_PART_5_LINE_54: SubtractedLine(
+            output=CPP_PART_5_LINE_54,
+            minuend=CPP_PART_5_LINE_52,
+            minuend_amount=D("0"),
+            subtrahend=CPP_PART_5_LINE_53,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 63 "the result of line 23 of Part 3 minus line 56": line 23
+        # of Part 3 and line 56 are both 0 for Return A.
+        CPP_PART_5_LINE_23_LESS_LINE_56: SubtractedLine(
+            output=CPP_PART_5_LINE_23_LESS_LINE_56,
+            minuend=CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_56,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 61 "Line 59 minus line 60": line 59 and line 60 are both 0
+        # for Return A.
+        CPP_PART_5_LINE_61: SubtractedLine(
+            output=CPP_PART_5_LINE_61,
+            minuend=CPP_PART_5_LINE_59,
+            minuend_amount=D("0"),
+            subtrahend=CPP_PART_5_LINE_60,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 49 "Line 47 minus line 48": both are 0.00 for Return A.
+        CPP_PART_5_LINE_49: SubtractedLine(
+            output=CPP_PART_5_LINE_49,
+            minuend=CPP_PART_5_LINE_47,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_48,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
         # Schedule 8 Part 5 line 7 "Line 5 minus line 6": line 5 is the T4 box 16 total and line 6
         # is "0" for Return A.
         CPP_PART_5_LINE_7: SubtractedLine(
@@ -2056,6 +2107,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert fractions == {
+        # Schedule 8 Part 5 line 48 "multiplied by 2": 0 x 2 for Return A.
+        CPP_PART_5_LINE_48: FractionAppliedLine(
+            output=CPP_PART_5_LINE_48,
+            base=CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
+            base_amount=D("0"),
+            fraction=Fraction(2, 1),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
         # Schedule 8 Part 5 line 20 "Amount from line 10 multiplied by 16.80672": 4,034.10 x
         # 16.80672 = 67,799.989152, to the cent 67,799.99 for Return A.
         CPP_PART_5_LINE_20: FractionAppliedLine(
