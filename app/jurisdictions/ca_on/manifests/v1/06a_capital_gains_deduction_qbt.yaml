@@ -1,0 +1,259 @@
+inputs:
+  - ca/qbt_election_eligible_amount
+  - ca/qbt_percentage_allocated
+  - ca/qbt_prior_years_claims
+  - ca/qbt_capital_gains
+  - ca/qbt_2024_reserve
+  - ca/qbt_2025_reserve
+  - ca/qbt_has_investment_expenses
+  - ca/qbt_deduction_claimed
+  - ca/qbt_election_is_qbt
+  - ca/qbt_gains_are_qsbcs_or_qffp
+  - ca/qbt_partnership_losses
+  - ca/qbt_other_investment_expenses
+  - ca/qbt_other_property_income
+outputs:
+  - ca/qbt_allocation_total
+  - ca/qcc_election_deduction
+  - ca/qbt_election_deduction
+  - ca/qbt_taxable_capital_gains
+  - ca/qbt_taxable_gains_related_to_deduction
+  - ca/qsbcs_qffp_taxable_gains_related_to_deduction
+  - ca/qbt_abil_reduction
+  - ca/qbt_net_investment_loss_reduction
+capabilities:
+  - name: ca/apply_percentage
+    params:
+      rounding: ca/qbt_amount_allocated_rounding
+    consumes:
+      amount: ca/qbt_election_eligible_amount
+      percentage: ca/qbt_percentage_allocated
+    produces:
+      output: ca/qbt_amount_allocated
+  - name: core/apply_rate
+    params:
+      rate: ca/qbt_election_inclusion_rate
+    consumes:
+      base: ca/qbt_amount_allocated
+    produces:
+      output: ca/qbt_taxable_amount_allocated
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/qbt_taxable_amount_allocated
+      less: ca/qbt_prior_years_claims
+    produces:
+      output: ca/qbt_deduction_available
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/qbt_capital_gains
+        - ca/qbt_2024_reserve
+    produces:
+      output: ca/qbt_capital_gains_with_2024_reserve
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/qbt_capital_gains_with_2024_reserve
+      less: ca/qbt_2025_reserve
+    produces:
+      output: ca/qbt_total_capital_gains
+  - name: core/apply_rate
+    params:
+      rate: ca/qbt_gains_inclusion_rate
+    consumes:
+      base: ca/qbt_total_capital_gains
+    produces:
+      output: ca/qbt_taxable_capital_gains
+  - name: core/lesser_of
+    consumes:
+      amounts:
+        - ca/taxable_capital_gains
+        - ca/qbt_taxable_capital_gains
+    produces:
+      output: ca/qbt_taxable_gains_limit
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/taxable_capital_gains
+      less: ca/qbt_taxable_gains_limit
+    produces:
+      output: ca/qbt_taxable_gains_not_limited
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/net_capital_losses_of_other_years
+      less: ca/qbt_taxable_gains_not_limited
+    produces:
+      output: ca/qbt_net_capital_losses_remaining
+  - name: core/times_count
+    consumes:
+      amount: ca/qbt_chart_a_net_investment_loss
+      count: ca/qbt_has_investment_expenses
+    produces:
+      output: ca/qbt_net_investment_loss
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/qbt_net_capital_losses_remaining
+        - ca/allowable_business_investment_loss
+        - ca/qbt_net_investment_loss
+    produces:
+      output: ca/qbt_reductions_from_losses
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/qbt_taxable_gains_limit
+      less: ca/qbt_reductions_from_losses
+    produces:
+      output: ca/qbt_deduction_limit
+  - name: core/lesser_of
+    consumes:
+      amounts:
+        - ca/qbt_deduction_available
+        - ca/qbt_deduction_limit
+    produces:
+      output: ca/qbt_maximum_deduction
+  - name: core/at_most
+    consumes:
+      amount: ca/qbt_deduction_claimed
+      bound: ca/qbt_maximum_deduction
+    produces:
+      output: ca/qbt_capital_gains_deduction
+  - name: core/lesser_of
+    consumes:
+      amounts:
+        - ca/qbt_deduction_available
+        - ca/qbt_taxable_gains_limit
+    produces:
+      output: ca/qbt_deduction_base
+  - name: core/subtract
+    consumes:
+      amount: ca/qbt_deduction_base
+      less: ca/qbt_capital_gains_deduction
+    produces:
+      output: ca/qbt_reduction_amount
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/qbt_reduction_amount
+        - ca/qbt_capital_gains_deduction
+    produces:
+      output: ca/qbt_allocation_total
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/allowable_business_investment_loss
+        - ca/qbt_net_investment_loss
+    produces:
+      output: ca/qbt_abil_and_net_investment_loss
+  - name: core/lesser_of
+    consumes:
+      amounts:
+        - ca/qbt_reduction_amount
+        - ca/qbt_abil_and_net_investment_loss
+    produces:
+      output: ca/qbt_allocation_limit
+  - name: ca/apply_ratio_or_zero
+    params:
+      rounding: ca/qbt_abil_reduction_rounding
+    consumes:
+      amount: ca/allowable_business_investment_loss
+      numerator: ca/qbt_allocation_limit
+      denominator: ca/qbt_abil_and_net_investment_loss
+    produces:
+      output: ca/qbt_abil_reduction
+  - name: core/subtract
+    consumes:
+      amount: ca/qbt_allocation_limit
+      less: ca/qbt_abil_reduction
+    produces:
+      output: ca/qbt_net_investment_loss_reduction
+  - name: core/times_count
+    consumes:
+      amount: ca/qbt_deduction_available
+      count: ca/qbt_election_is_qbt
+    produces:
+      output: ca/qbt_election_deduction
+  - name: core/subtract
+    consumes:
+      amount: ca/qbt_deduction_available
+      less: ca/qbt_election_deduction
+    produces:
+      output: ca/qcc_election_deduction
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/qbt_capital_gains_deduction
+        - ca/qbt_allocation_limit
+    produces:
+      output: ca/qbt_taxable_gains_related_to_deduction
+  - name: core/times_count
+    consumes:
+      amount: ca/qbt_taxable_gains_related_to_deduction
+      count: ca/qbt_gains_are_qsbcs_or_qffp
+    produces:
+      output: ca/qsbcs_qffp_taxable_gains_related_to_deduction
+  - name: core/sum_not_below_zero
+    consumes:
+      parts:
+        - ca/net_rental_income
+    produces:
+      output: ca/qbt_net_rental_income
+  - name: core/subtract
+    consumes:
+      amount: ca/qbt_net_rental_income
+      less: ca/net_rental_income
+    produces:
+      output: ca/qbt_net_rental_loss
+  - name: core/apply_rate
+    params:
+      rate: ca/qbt_exploration_expenses_rate
+    consumes:
+      base: ca/exploration_and_development_expenses
+    produces:
+      output: ca/qbt_exploration_expenses_at_half
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/net_capital_losses_of_other_years
+      less: ca/qbt_net_capital_losses_remaining
+    produces:
+      output: ca/qbt_chart_a_net_capital_losses_used
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/carrying_charges_interest_expenses_and_other_expenses
+        - ca/qbt_net_rental_loss
+        - ca/qbt_partnership_losses
+        - ca/limited_partnership_losses_of_other_years
+        - ca/qbt_exploration_expenses_at_half
+        - ca/qbt_other_investment_expenses
+        - ca/qbt_chart_a_net_capital_losses_used
+    produces:
+      output: ca/qbt_investment_expenses
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/taxable_dividends
+        - ca/interest_and_other_investment_income
+    produces:
+      output: ca/qbt_dividends_and_investment_income
+  - name: core/apply_rate
+    params:
+      rate: ca/qbt_exploration_recovery_rate
+    consumes:
+      base: ca/other_income
+    produces:
+      output: ca/qbt_recovery_of_exploration_expenses
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/qbt_dividends_and_investment_income
+        - ca/qbt_net_rental_income
+        - ca/net_partnership_income
+        - ca/qbt_other_property_income
+        - ca/qbt_recovery_of_exploration_expenses
+        - ca/qbt_taxable_gains_not_limited
+    produces:
+      output: ca/qbt_investment_income
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/qbt_investment_expenses
+      less: ca/qbt_investment_income
+    produces:
+      output: ca/qbt_chart_a_net_investment_loss

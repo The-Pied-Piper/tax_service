@@ -226,3 +226,178 @@ zero; the base the federal and Ontario brackets apply to.
 Line 57 is "Enter the amount from line 56 of the previous page" (net income); line 68 (25700) is
 "Add lines 58 to 67".
 """
+
+QBT_ELECTION_ELIGIBLE_AMOUNT = CATALOG.declare(
+    "qbt_election_eligible_amount", Decimal, non_negative=True
+)
+"""x."""
+
+QBT_PERCENTAGE_ALLOCATED = CATALOG.declare("qbt_percentage_allocated", Decimal, non_negative=True)
+"""x."""
+
+QBT_AMOUNT_ALLOCATED = CATALOG.declare("qbt_amount_allocated", Decimal, non_negative=True)
+"""x."""
+
+QBT_TAXABLE_AMOUNT_ALLOCATED = CATALOG.declare(
+    "qbt_taxable_amount_allocated", Decimal, non_negative=True
+)
+"""x."""
+
+QBT_PRIOR_YEARS_CLAIMS = CATALOG.declare("qbt_prior_years_claims", Decimal, non_negative=True)
+"""x."""
+
+QBT_DEDUCTION_AVAILABLE = CATALOG.declare("qbt_deduction_available", Decimal, non_negative=True)
+"""x."""
+
+QBT_CAPITAL_GAINS = CATALOG.declare("qbt_capital_gains", Decimal, non_negative=True)
+"""x."""
+
+QBT_2024_RESERVE = CATALOG.declare("qbt_2024_reserve", Decimal, non_negative=True)
+"""x."""
+
+QBT_CAPITAL_GAINS_WITH_2024_RESERVE = CATALOG.declare(
+    "qbt_capital_gains_with_2024_reserve", Decimal, non_negative=True
+)
+"""x."""
+
+QBT_2025_RESERVE = CATALOG.declare("qbt_2025_reserve", Decimal, non_negative=True)
+"""x."""
+
+QBT_TOTAL_CAPITAL_GAINS = CATALOG.declare("qbt_total_capital_gains", Decimal, non_negative=True)
+"""x."""
+
+QBT_TAXABLE_CAPITAL_GAINS = CATALOG.declare("qbt_taxable_capital_gains", Decimal, non_negative=True)
+"""x."""
+
+QBT_TAXABLE_GAINS_LIMIT = CATALOG.declare("qbt_taxable_gains_limit", Decimal, non_negative=True)
+"""x."""
+
+QBT_TAXABLE_GAINS_NOT_LIMITED = CATALOG.declare(
+    "qbt_taxable_gains_not_limited", Decimal, non_negative=True
+)
+"""x."""
+
+QBT_NET_CAPITAL_LOSSES_REMAINING = CATALOG.declare(
+    "qbt_net_capital_losses_remaining", Decimal, non_negative=True
+)
+"""x."""
+
+QBT_HAS_INVESTMENT_EXPENSES = CATALOG.declare("qbt_has_investment_expenses", int, non_negative=True)
+"""x."""
+
+QBT_NET_INVESTMENT_LOSS = CATALOG.declare("qbt_net_investment_loss", Decimal, non_negative=True)
+"""x."""
+
+QBT_REDUCTIONS_FROM_LOSSES = CATALOG.declare(
+    "qbt_reductions_from_losses", Decimal, non_negative=True
+)
+"""x."""
+
+QBT_DEDUCTION_LIMIT = CATALOG.declare("qbt_deduction_limit", Decimal, non_negative=True)
+"""x."""
+
+QBT_MAXIMUM_DEDUCTION = CATALOG.declare("qbt_maximum_deduction", Decimal, non_negative=True)
+"""x."""
+
+QBT_DEDUCTION_CLAIMED = CATALOG.declare("qbt_deduction_claimed", Decimal, non_negative=True)
+"""x."""
+
+QBT_CAPITAL_GAINS_DEDUCTION = CATALOG.declare(
+    "qbt_capital_gains_deduction", Decimal, non_negative=True
+)
+"""x."""
+
+QBT_DEDUCTION_BASE = CATALOG.declare("qbt_deduction_base", Decimal, non_negative=True)
+"""x."""
+
+QBT_REDUCTION_AMOUNT = CATALOG.declare("qbt_reduction_amount", Decimal, non_negative=True)
+"""x."""
+
+QBT_ALLOCATION_TOTAL = CATALOG.declare("qbt_allocation_total", Decimal, non_negative=True)
+"""x."""
+
+QBT_ABIL_AND_NET_INVESTMENT_LOSS = CATALOG.declare(
+    "qbt_abil_and_net_investment_loss", Decimal, non_negative=True
+)
+"""x."""
+
+QBT_ALLOCATION_LIMIT = CATALOG.declare("qbt_allocation_limit", Decimal, non_negative=True)
+"""x."""
+
+QBT_ABIL_REDUCTION = CATALOG.declare("qbt_abil_reduction", Decimal, non_negative=True)
+"""x."""
+
+QBT_NET_INVESTMENT_LOSS_REDUCTION = CATALOG.declare(
+    "qbt_net_investment_loss_reduction", Decimal, non_negative=True
+)
+"""x."""
+
+QBT_ELECTION_IS_QBT = CATALOG.declare("qbt_election_is_qbt", int, non_negative=True)
+"""x."""
+
+QBT_GAINS_ARE_QSBCS_OR_QFFP = CATALOG.declare("qbt_gains_are_qsbcs_or_qffp", int, non_negative=True)
+"""x."""
+
+QCC_ELECTION_DEDUCTION = CATALOG.declare("qcc_election_deduction", Decimal, non_negative=True)
+"""x."""
+
+QBT_ELECTION_DEDUCTION = CATALOG.declare("qbt_election_deduction", Decimal, non_negative=True)
+"""x."""
+
+QBT_TAXABLE_GAINS_RELATED_TO_DEDUCTION = CATALOG.declare(
+    "qbt_taxable_gains_related_to_deduction", Decimal, non_negative=True
+)
+"""x."""
+
+QSBCS_QFFP_TAXABLE_GAINS_RELATED_TO_DEDUCTION = CATALOG.declare(
+    "qsbcs_qffp_taxable_gains_related_to_deduction", Decimal, non_negative=True
+)
+"""x."""
+
+QBT_NET_RENTAL_INCOME = CATALOG.declare("qbt_net_rental_income", Decimal, non_negative=True)
+"""x."""
+
+QBT_NET_RENTAL_LOSS = CATALOG.declare("qbt_net_rental_loss", Decimal, non_negative=True)
+"""x."""
+
+QBT_PARTNERSHIP_LOSSES = CATALOG.declare("qbt_partnership_losses", Decimal, non_negative=True)
+"""x."""
+
+QBT_EXPLORATION_EXPENSES_AT_HALF = CATALOG.declare(
+    "qbt_exploration_expenses_at_half", Decimal, non_negative=True
+)
+"""x."""
+
+QBT_OTHER_INVESTMENT_EXPENSES = CATALOG.declare(
+    "qbt_other_investment_expenses", Decimal, non_negative=True
+)
+"""x."""
+
+QBT_CHART_A_NET_CAPITAL_LOSSES_USED = CATALOG.declare(
+    "qbt_chart_a_net_capital_losses_used", Decimal, non_negative=True
+)
+"""x."""
+
+QBT_INVESTMENT_EXPENSES = CATALOG.declare("qbt_investment_expenses", Decimal, non_negative=True)
+"""x."""
+
+QBT_DIVIDENDS_AND_INVESTMENT_INCOME = CATALOG.declare(
+    "qbt_dividends_and_investment_income", Decimal, non_negative=True
+)
+"""x."""
+
+QBT_OTHER_PROPERTY_INCOME = CATALOG.declare("qbt_other_property_income", Decimal, non_negative=True)
+"""x."""
+
+QBT_RECOVERY_OF_EXPLORATION_EXPENSES = CATALOG.declare(
+    "qbt_recovery_of_exploration_expenses", Decimal, non_negative=True
+)
+"""x."""
+
+QBT_INVESTMENT_INCOME = CATALOG.declare("qbt_investment_income", Decimal, non_negative=True)
+"""x."""
+
+QBT_CHART_A_NET_INVESTMENT_LOSS = CATALOG.declare(
+    "qbt_chart_a_net_investment_loss", Decimal, non_negative=True
+)
+"""x."""

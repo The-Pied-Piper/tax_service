@@ -207,9 +207,9 @@ capabilities:
       base: ca/remaining_adjusted_losses_2001_to_2024
     produces:
       output: ca/net_capital_loss_balance_2001_to_2024
-  # T1 line 68 and line 25700 "Add lines 58 to 67.": lines 58, 59, 60, 61, 62, 63, 66 and 67
-  # (lines 24400, 24900, 25000, 25100, 25200, 25300, 25500 and 25600), in line order; lines 64
-  # and 65 (25395 and 25400) are not wired yet.
+  # T1 line 68 and line 25700 "Add lines 58 to 67.": lines 58, 59, 60, 61, 62, 63, 64, 66 and 67
+  # (lines 24400, 24900, 25000, 25100, 25200, 25300, 25395, 25500 and 25600), in line order; line
+  # 65 (25400) is not wired yet.
   - name: core/sum
     consumes:
       parts:
@@ -219,6 +219,7 @@ capabilities:
         - ca/limited_partnership_losses_of_other_years
         - ca/non_capital_losses_of_other_years
         - ca/net_capital_losses_of_other_years
+        - ca/qbt_capital_gains_deduction
         - ca/northern_residents_deductions
         - ca/additional_deductions
     produces:
