@@ -27,6 +27,7 @@ from app.jurisdictions.ca.catalog.income import *  # noqa: F403
 from app.jurisdictions.ca.catalog.rrsp_fhsa import *  # noqa: F403
 from app.jurisdictions.ca.catalog.deductions import *  # noqa: F403
 from app.jurisdictions.ca.catalog.taxable_income import *  # noqa: F403
+from app.jurisdictions.ca.catalog.capital_gains_deduction_charts import *  # noqa: F403
 from app.jurisdictions.ca.catalog.personal_amounts import *  # noqa: F403
 from app.jurisdictions.ca.catalog.non_refundable_credits import *  # noqa: F403
 from app.jurisdictions.ca.catalog.credits_against_federal_tax import *  # noqa: F403
