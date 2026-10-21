@@ -2027,6 +2027,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         QBT_TAXABLE_GAINS_RELATED_TO_DEDUCTION: SumLine(
             QBT_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
             ((QBT_CAPITAL_GAINS_DEDUCTION, D("0")), (QBT_ALLOCATION_LIMIT, D("0"))),
+            D("0"),
+        ),
         # T2125 Parts 3A to 7, one step for each total (a single part for amounts 3P and 4A and
         # lines 9943 and 9945): Return A has no business, so each is a sum of zeros.
         BUSINESS_ADJUSTED_GROSS_SALES: SumLine(

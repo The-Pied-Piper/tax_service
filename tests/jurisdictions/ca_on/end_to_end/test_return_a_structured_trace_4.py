@@ -662,6 +662,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             QBT_ALLOCATION_LIMIT,
             ((QBT_REDUCTION_AMOUNT, D("0")), (QBT_ABIL_AND_NET_INVESTMENT_LOSS, D("0.00"))),
             D("0"),
+        ),
         # T2125 Part 7 amount 7P "Amount 7M or 7N above, whichever is less": 0 for no
         # business-use-of-home expenses.
         BUSINESS_HOME_ALLOWABLE_CLAIM: LesserOfLine(
@@ -1699,6 +1700,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             QBT_REDUCTIONS_FROM_LOSSES,
             D("0.00"),
             D("0"),
+        ),
         # T2125 Part 7 amount 7O "Amount 7M minus amount 7N (if negative, enter "0")": Return A
         # has no business-use-of-home expenses, so it is 0.
         BUSINESS_HOME_CARRY_FORWARD: SubtractedNotBelowZeroLine(
@@ -1760,6 +1762,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # are 0 (or, where they read another line, that line's figure).
         QBT_NET_RENTAL_INCOME: SumNotBelowZeroLine(
             QBT_NET_RENTAL_INCOME, ((NET_RENTAL_INCOME, D("0")),), D("0")
+        ),
         # T2125 Part 7 amount 7N "Net income (loss) after adjustments (amount 5D) (if negative,
         # enter "0")": amount 5D alone, floored, 0.
         BUSINESS_HOME_INCOME_LIMIT: SumNotBelowZeroLine(

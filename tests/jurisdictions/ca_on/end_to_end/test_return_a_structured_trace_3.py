@@ -852,6 +852,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             QBT_ABIL_REDUCTION,
             D("0"),
             D("0"),
+        ),
         # T2125 amounts 3C, 3F, 5D, 7J and 9369, lines 8518, 8519, 9936 (two steps) and 9946
         # (T1 line 13500): Return A has none of these figures, so each is 0.
         BUSINESS_SALES_SUBTOTAL: SubtractedLine(
