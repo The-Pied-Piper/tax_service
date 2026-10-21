@@ -18,7 +18,7 @@ capabilities:
         - ca/security_options_deductions
         - ca/other_payments_deduction
         - ca/net_capital_losses_of_other_years
-        - ca/qualifying_transfer_capital_gains_deduction
+        - ca/qbt_capital_gains_deduction
         - ca/capital_gains_deduction
         - ca/exempt_income_deductions
     produces:

@@ -210,7 +210,8 @@ def test_the_trace_explains_the_computation() -> None:
         "deductions_from_net_income: canadian_armed_forces_and_police_deduction 0 "
         "+ security_options_deductions 0 + other_payments_deduction 0 "
         "+ limited_partnership_losses_of_other_years 0 + non_capital_losses_of_other_years 0 "
-        "+ net_capital_losses_of_other_years 0 + northern_residents_deductions 0 "
+        "+ net_capital_losses_of_other_years 0 + qbt_capital_gains_deduction 0 "
+        "+ northern_residents_deductions 0 "
         "+ additional_deductions 0 = 0",
         "0",
     )

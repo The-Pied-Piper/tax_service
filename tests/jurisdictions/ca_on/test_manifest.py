@@ -24,6 +24,7 @@ from app.domain.manifest import CapabilitySelection, Manifest
 from app.main import build_tax_computation
 from tests.jurisdictions.ca_on.manifest_families import (
     canada_workers_benefit,
+    capital_gains_deduction_qbt,
     credits_against_federal_tax,
     deductions,
     income,
@@ -49,6 +50,7 @@ FAMILIES: tuple[ModuleType, ...] = (
     rrsp_fhsa,
     deductions,
     taxable_income,
+    capital_gains_deduction_qbt,
     personal_amounts,
     non_refundable_credits,
     credits_against_federal_tax,
@@ -141,10 +143,13 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     # entered: the lines the computation returns.
     # Schedule ON(S11) line 8, "Unused provincial tuition and education amounts available to carry
     # forward to a future year", the carryforward, which nothing else on the return reads.
+    # Form T2048 Part 4 line 32 "Line 30 plus line 31", which nothing reads, and Part 5's totals A
+    # 17211, B 17212, D 17215, E 17216 and (as lines 16, 41 and 42) C 17213, F 17217 and G 17218,
+    # which the return carries for Form T657 and the T1 slips.
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 585
+    assert len(found.capabilities) == 619
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -154,5 +159,5 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 585
+    assert len(composition.order) == 619
     assert wiring == WIRING

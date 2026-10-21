@@ -35,6 +35,7 @@ from app.jurisdictions.ca.catalog import (
 from app.jurisdictions.ca.trace import ForeignTaxCreditLine, PooledForeignTaxCreditLine
 from app.jurisdictions.ca_on import catalog as ontario
 from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, compute, return_k
+from tests.jurisdictions.ca_on.end_to_end.test_return_be import return_be
 
 US = ("1500", "10000")
 UK = ("100", "5000")
@@ -280,20 +281,20 @@ def test_the_deductions_of_note_3_come_off_net_income_in_the_basic_federal_tax_r
     # Income: 67455.00 + 800 of workers' compensation (line 14400) = 68255.00, less the 465.00
     # of enhanced CPP contributions: net income 67790.00. Note (3) subtracts: line 24400 1000,
     # line 24900 500, line 25000 800 (the other payments deduction, line 14700), line 25300 0,
-    # line 25395 300, line 25400 700 and the 200 of line 25600 that is exempt income: 3500, so
-    # its net income is 67790.00 - 3500 = 64290.00. Lines 24400, 24900, 25000 and 25600 (200
-    # entered as additional deductions) come off for taxable income, 67790.00 - 2500 = 65290.00;
-    # lines 25395 and 25400 are not wired there. The federal tax on it is 8319.38 + (65290.00 -
-    # 57375.00) x 20.5% = 8319.38 + 1622.575 = 9941.955, half-up 9941.96; less 3323.84, line
-    # 42900 is 6618.12 and the basic federal tax is 6618.12 + 319.19 = 6937.31. United States:
-    # line 2 = 10000 x 6937.31 / 64290.00 = 1079.0651..., half-up 1079.07, below 1500; United
-    # Kingdom: 5000 x 6937.31 / 64290.00 = 539.5325..., half-up 539.53, above 100. The credit is
-    # 1079.07 + 100 = 1179.07.
+    # line 25395 0 (the Form T2048 deduction, tested below), line 25400 700 and the 200 of line
+    # 25600 that is exempt income: 3200, so its net income is 67790.00 - 3200 = 64590.00. Lines
+    # 24400, 24900, 25000 and 25600 (200 entered as additional deductions) come off for taxable
+    # income, 67790.00 - 2500 = 65290.00; line 25400 is not wired there. The federal tax on it is
+    # 8319.38 + (65290.00 - 57375.00) x 20.5% = 8319.38 + 1622.575 = 9941.955, half-up 9941.96;
+    # less 3323.84, line 42900 is 6618.12 and the basic federal tax is 6618.12 + 319.19 =
+    # 6937.31. United States:
+    # line 2 = 10000 x 6937.31 / 64590.00 = 1074.0..., half-up 1074.05, below 1500; United
+    # Kingdom: 5000 x 6937.31 / 64590.00 = 537.0..., half-up 537.03, above 100. The credit is
+    # 1074.05 + 100 = 1174.05.
     worksheet = return_aw(
         workers_compensation_benefits="800",
         canadian_armed_forces_and_police_deduction="1000",
         security_options_deductions="500",
-        qualifying_transfer_capital_gains_deduction="300",
         capital_gains_deduction="700",
         additional_deductions="200",
         exempt_income_deductions="200",
@@ -301,12 +302,21 @@ def test_the_deductions_of_note_3_come_off_net_income_in_the_basic_federal_tax_r
 
     assert worksheet.get(NET_INCOME).value == D("67790.00")
     assert worksheet.get(TAXABLE_INCOME).value == D("65290.00")
-    assert worksheet.get(FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS).value == D("3500.00")
-    assert worksheet.get(FOREIGN_TAX_CREDIT_NET_INCOME).value == D("64290.00")
+    assert worksheet.get(FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS).value == D("3200.00")
+    assert worksheet.get(FOREIGN_TAX_CREDIT_NET_INCOME).value == D("64590.00")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("6618.12")
     assert worksheet.get(FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX).value == D("6937.31")
-    assert worksheet.get(FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT).value == D("1179.07")
-    assert worksheet.get(FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT).value == D("5439.05")
+    assert worksheet.get(FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT).value == D("1174.05")
+    assert worksheet.get(FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT).value == D("5444.07")
+
+
+def test_the_form_t2048_deduction_comes_off_net_income_in_the_basic_federal_tax_ratio() -> None:
+    # Line 25395 is Form T2048's line 27, 60500 for the Return BE filer (the deduction is
+    # computed, not entered); with the two countries of Return AW added, note (3) subtracts it and
+    # the 30000 of line 25300: 90500.00.
+    worksheet = return_be(foreign_tax_countries_rows=(US, UK))
+
+    assert worksheet.get(FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS).value == D("90500.00")
 
 
 def test_the_first_nations_abatement_comes_off_the_basic_federal_tax() -> None:

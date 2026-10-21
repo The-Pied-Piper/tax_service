@@ -40,7 +40,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 585
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 619
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -374,6 +374,53 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/tosi_adjusted_net_income",
         "ca/tosi_adjusted_net_income_not_below_zero",
         "ca/deductions_from_net_income",
+        "ca/qbt_election_eligible_amount",
+        "ca/qbt_percentage_allocated",
+        "ca/qbt_amount_allocated",
+        "ca/qbt_taxable_amount_allocated",
+        "ca/qbt_prior_years_claims",
+        "ca/qbt_deduction_available",
+        "ca/qbt_capital_gains",
+        "ca/qbt_2024_reserve",
+        "ca/qbt_capital_gains_with_2024_reserve",
+        "ca/qbt_2025_reserve",
+        "ca/qbt_total_capital_gains",
+        "ca/qbt_taxable_capital_gains",
+        "ca/qbt_taxable_gains_limit",
+        "ca/qbt_taxable_gains_not_limited",
+        "ca/qbt_net_capital_losses_remaining",
+        "ca/qbt_has_investment_expenses",
+        "ca/qbt_net_investment_loss",
+        "ca/qbt_reductions_from_losses",
+        "ca/qbt_deduction_limit",
+        "ca/qbt_maximum_deduction",
+        "ca/qbt_deduction_claimed",
+        "ca/qbt_capital_gains_deduction",
+        "ca/qbt_deduction_base",
+        "ca/qbt_reduction_amount",
+        "ca/qbt_allocation_total",
+        "ca/qbt_abil_and_net_investment_loss",
+        "ca/qbt_allocation_limit",
+        "ca/qbt_abil_reduction",
+        "ca/qbt_net_investment_loss_reduction",
+        "ca/qbt_election_is_qbt",
+        "ca/qbt_gains_are_qsbcs_or_qffp",
+        "ca/qcc_election_deduction",
+        "ca/qbt_election_deduction",
+        "ca/qbt_taxable_gains_related_to_deduction",
+        "ca/qsbcs_qffp_taxable_gains_related_to_deduction",
+        "ca/qbt_net_rental_income",
+        "ca/qbt_net_rental_loss",
+        "ca/qbt_partnership_losses",
+        "ca/qbt_exploration_expenses_at_half",
+        "ca/qbt_other_investment_expenses",
+        "ca/qbt_chart_a_net_capital_losses_used",
+        "ca/qbt_investment_expenses",
+        "ca/qbt_dividends_and_investment_income",
+        "ca/qbt_other_property_income",
+        "ca/qbt_recovery_of_exploration_expenses",
+        "ca/qbt_investment_income",
+        "ca/qbt_chart_a_net_investment_loss",
         "ca/taxable_income",
         "ca/federal_basic_tax",
         "ca/basic_personal_amount",
@@ -662,7 +709,6 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/spouse_or_common_law_partner_on_december_31",
         "ca/itc_recapture_at_15_percent",
         "ca/itc_recapture_at_20_percent",
-        "ca/qualifying_transfer_capital_gains_deduction",
         "ca/capital_gains_deduction",
         "ca/exempt_income_deductions",
         "ca/first_nations_abatement",
@@ -1037,13 +1083,13 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 585
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 619
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 585
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 619
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
