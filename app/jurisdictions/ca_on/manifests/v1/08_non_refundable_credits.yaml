@@ -26,14 +26,15 @@ capabilities:
       count: ca/cpp_part_5_completed
     produces:
       output: ca/cpp_part_5_base_contributions_on_self_employment
-  # T1 line 31000: the Part 4 amount plus the Part 5 amount.
+  # Schedule 8's T1 line 31000 (08i_rc381_final_selection.yaml switches to RC381): the Part 4 amount
+  # plus the Part 5 amount.
   - name: core/sum
     consumes:
       parts:
         - ca/cpp_base_contributions_on_self_employment
         - ca/cpp_part_5_base_contributions_on_self_employment
     produces:
-      output: ca/cpp_base_contributions_on_self_employment_and_other_earnings
+      output: ca/cpp_schedule_8_base_contributions_on_self_employment_and_other_earnings
   # T1 line 31200 "through employment (boxes 18 and 55 of all T4 slips) (maximum
   # $1,077.48)": the EI premiums, 1.64% of the employment income up to the $65,700
   # maximum insurable earnings, with no exemption (the EI premium rates and maximums,

@@ -38,9 +38,15 @@ from app.jurisdictions.ca.capabilities.ratio_truncated import (
 from app.jurisdictions.ca.catalog import (
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_BASIC_EXEMPTION,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_ENHANCED_CONTRIBUTIONS,
+    CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
+    CPP_OVERPAYMENT,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
     NET_INCOME,
     RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
@@ -254,6 +260,7 @@ def return_bo(
     cpt20_earnings: str = "10000",
     cpt20_t4_earnings: str = "2500",
     net_partnership_income: str = "0",
+    quebec_t4_slip_count: int = 1,
 ) -> Worksheet:
     """Return BO's inputs (`returns/2025_return_bo.yaml`): employment income of 70000 on a T4 for
     Ontario employment (box 26 `line_1`, box 16 `line_19`, box 16A `line_25`) and a T4 for Quebec
@@ -278,6 +285,7 @@ def return_bo(
         cpt20_earnings=cpt20_earnings,
         cpt20_t4_earnings=cpt20_t4_earnings,
         net_partnership_income=net_partnership_income,
+        quebec_t4_slip_count=quebec_t4_slip_count,
         income_tax_deducted="12000",
     )
 
@@ -2549,33 +2557,33 @@ def test_return_bo_part_4_steps_are_the_form_capabilities() -> None:
         assert isinstance(worksheet.producer_of(kind), ChooseBySign), kind.identifier
 
 
-def test_return_bo_the_cpt20_election_does_not_reach_the_t1_lines_yet() -> None:
-    # Part 4 line 4 is read by lines 62, 68, 74 and 80, which no T1 line reads yet, and Schedule 8
-    # Part 4's line 42100 is multiplied by "Part 4 completed" (0 here): the same return with and
-    # without lines 2 and 3 (50373 and 50399) gives the same Schedule 8 contributions, net income
-    # and total payable.
+def test_return_bo_the_cpt20_election_reaches_the_t1_lines_through_rc381() -> None:
+    # Part 4 line 4 is read by lines 62, 68, 74 and 80: the same return with and without lines 2
+    # and 3 (50373 and 50399) has the same Part 4 lines 5 to 56, and a different line 62 onward.
     with_election = return_bo()
     without_election = return_bo(cpt20_earnings="0", cpt20_t4_earnings="0")
 
-    for kind in (CPP_BASE_CONTRIBUTIONS, CPP_ENHANCED_CONTRIBUTIONS, NET_INCOME, TOTAL_PAYABLE):
+    # Schedule 8's required contributions do not read the election.
+    for kind in (CPP_BASE_CONTRIBUTIONS, CPP_ENHANCED_CONTRIBUTIONS):
         assert with_election.get(kind).value == without_election.get(kind).value, kind.identifier
-    # Part 4 lines 5 to 56 do not read line 4, so they are the same too; lines 62 and onward do:
-    # line 4 of 12,500 against 0 changes line 62 (1,300.00 against 0), line 74 and the lines after
-    # them, down to line 90 and line 91.
     assert part_4(with_election) == part_4(without_election)
     assert part_4_qpp(with_election) == part_4_qpp(without_election)
     assert part_4_earnings(with_election) != part_4_earnings(without_election)
     assert with_election.get(RC381_PART_4_LINE_62).value == D("1300.00")
     assert without_election.get(RC381_PART_4_LINE_62).value == D("0")
-    # The final selection's six results are not carried to the T1 lines yet: they differ with the
-    # election (lines 42100, 31000 and 22200 are "0" without it), the T1 lines do not.
+    # The final selection's six results are the T1 lines (Quebec T4 slip count 1): they differ with
+    # the election (lines 42100, 31000 and 22200 are "0" without it), and so do the net income and
+    # the total payable.
     assert final_selection(with_election) != final_selection(without_election)
     assert with_election.get(
-        RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS
+        CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS
     ).value == D("64.35")
     assert without_election.get(
-        RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS
+        CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS
     ).value == D("0")
+    assert with_election.get(NET_INCOME).value == D("68624.90")
+    assert with_election.get(NET_INCOME).value != without_election.get(NET_INCOME).value
+    assert with_election.get(TOTAL_PAYABLE).value != without_election.get(TOTAL_PAYABLE).value
 
 
 # Part 4, lines 31 to 56 (the QPP side before its gross-up, line 42 and the second additional
@@ -7809,13 +7817,46 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
     }
 
 
-def test_the_rc381_figures_do_not_change_the_t1_lines_yet() -> None:
-    # Form RC381 Part 3 reaches no line of the return yet: the same employment income with and
-    # without the RC381 totals gives the same Schedule 8 contributions, net income and total
-    # payable. The T4 box 16 total (line_19) is also Schedule 8's line 8, so it is the same in both
-    # returns; the totals left out are the pensionable earnings (boxes 26) and the QPP box 17.
-    with_totals = return_bo()
-    without_totals = return_bo(line_1="0", line_2="0", line_39="0")
+def test_the_t1_lines_are_rc381s_with_a_quebec_t4_slip_and_schedule_8s_without_one() -> None:
+    # With a Quebec T4 slip (count 1) the six T1 lines are Form RC381's results (Part 4); with
+    # none (count 0) they are Schedule 8's, from the whole employment income of 70,000, the same
+    # slips otherwise: the base contributions (line 30800) are 1,497.48, the enhanced
+    # contributions (line 22215) 302.52 (Part 3b takes the contributions actually paid), and
+    # lines 44800, 42100, 31000 and 22200 are 0.
+    quebec = return_bo()
+    schedule_8 = return_bo(quebec_t4_slip_count=0)
 
-    for kind in (CPP_BASE_CONTRIBUTIONS, CPP_ENHANCED_CONTRIBUTIONS, NET_INCOME, TOTAL_PAYABLE):
-        assert with_totals.get(kind).value == without_totals.get(kind).value, kind.identifier
+    assert t1_lines(quebec) == {
+        "line_30800": D("3462.75"),
+        "line_22215": D("665.00"),
+        "line_44800": D("0.00"),
+        "line_42100": D("602.20"),
+        "line_31000": D("64.35"),
+        "line_22200": D("710.10"),
+    }
+    assert t1_lines(schedule_8) == {
+        "line_30800": D("1497.48"),
+        "line_22215": D("302.52"),
+        "line_44800": D("0.00"),
+        "line_42100": D("0"),
+        "line_31000": D("0"),
+        "line_22200": D("0"),
+    }
+    assert quebec.get(NET_INCOME).value == D("68624.90")
+    assert schedule_8.get(NET_INCOME).value == D("69697.48")
+    assert quebec.get(TOTAL_PAYABLE).value == D("11842.75")
+    assert schedule_8.get(TOTAL_PAYABLE).value == D("11955.35")
+
+
+def t1_lines(worksheet: Worksheet) -> dict[str, Decimal]:
+    """The six T1 lines of `worksheet` that Schedule 8 or Form RC381 reaches."""
+    return {
+        "line_30800": worksheet.get(CPP_BASE_CONTRIBUTIONS_ON_RETURN).value,
+        "line_22215": worksheet.get(CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN).value,
+        "line_44800": worksheet.get(CPP_OVERPAYMENT).value,
+        "line_42100": worksheet.get(CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS).value,
+        "line_31000": worksheet.get(
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS
+        ).value,
+        "line_22200": worksheet.get(CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS).value,
+    }

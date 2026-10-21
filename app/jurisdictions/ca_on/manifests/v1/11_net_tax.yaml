@@ -149,14 +149,15 @@ capabilities:
       count: ca/cpp_part_5_completed
     produces:
       output: ca/cpp_part_5_payable_on_self_employment
-  # T1 line 42100: the Part 4 amount plus the Part 5 amount.
+  # Schedule 8's T1 line 42100 (08i_rc381_final_selection.yaml switches to RC381): the Part 4 amount
+  # plus the Part 5 amount.
   - name: core/sum
     consumes:
       parts:
         - ca/cpp_payable_on_self_employment
         - ca/cpp_part_5_payable_on_self_employment
     produces:
-      output: ca/cpp_payable_on_self_employment_and_other_earnings
+      output: ca/cpp_schedule_8_payable_on_self_employment_and_other_earnings
   # T1 line 145 and line 42120, entered from Schedule 13 line 9, counted once for each
   # agreement with the Canada Employment Insurance Commission, 1 or 0.
   - name: core/times_count

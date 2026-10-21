@@ -310,8 +310,10 @@ from app.jurisdictions.ca.catalog import (
     CPP_BASE_CONTRIBUTIONS,
     CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_BASIC_EXEMPTION,
     CPP_CONTRIBUTIONS_DIFFERENCE,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
     CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
     CPP_EARNINGS_UP_TO_MAXIMUM,
@@ -415,8 +417,15 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_LINE_84,
     CPP_PART_5_LINE_86,
     CPP_PART_5_LINE_87,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_PENSIONABLE_EARNINGS,
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
+    CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_SCHEDULE_8_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_SCHEDULE_8_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    CPP_SCHEDULE_8_OVERPAYMENT,
+    CPP_SCHEDULE_8_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
@@ -601,6 +610,7 @@ from app.jurisdictions.ca.catalog import (
     QBT_TAXABLE_GAINS_LIMIT,
     QBT_TAXABLE_GAINS_NOT_LIMITED,
     QBT_TOTAL_CAPITAL_GAINS,
+    QUEBEC_T4_SLIP_COUNT,
     RC381_CPP_OVERPAYMENT,
     RC381_PART_2_LINE_B,
     RC381_PART_2_LINE_G,
@@ -5038,28 +5048,77 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         # T1 line 30800 from Part 3b line 36: line 24 is 0.00 for Return A, so Part 3b applies (and
         # equals the required line 11).
-        CPP_BASE_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
-            output=CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+        CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
+            output=CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_RETURN,
             count_kind=CPP_PART_5_COMPLETED,
             count=0,
             chosen_kind=CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
             chosen_value=D("3356.10"),
         ),
         # T1 line 22215 from Part 3b line 48: 678.00 + 396.00 for Return A.
-        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
-            output=CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        CPP_SCHEDULE_8_ENHANCED_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
+            output=CPP_SCHEDULE_8_ENHANCED_CONTRIBUTIONS_ON_RETURN,
             count_kind=CPP_PART_5_COMPLETED,
             count=0,
             chosen_kind=CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
             chosen_value=D("1074.00"),
         ),
         # T1 line 44800 "CPP overpayment": "0" for Return A, as line 24 is not positive.
-        CPP_OVERPAYMENT: ChosenByCountLine(
-            output=CPP_OVERPAYMENT,
+        CPP_SCHEDULE_8_OVERPAYMENT: ChosenByCountLine(
+            output=CPP_SCHEDULE_8_OVERPAYMENT,
             count_kind=CPP_PART_5_COMPLETED,
             count=0,
             chosen_kind=CPP_PART_3_OVERPAYMENT,
             chosen_value=D("0.00"),
+        ),
+        # No Quebec T4 slip for Return A, so each line of the return is Schedule 8's result.
+        # T1 line 30800.
+        CPP_BASE_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
+            output=CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+            count_kind=QUEBEC_T4_SLIP_COUNT,
+            count=0,
+            chosen_kind=CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_RETURN,
+            chosen_value=D("3356.10"),
+        ),
+        # T1 line 22215.
+        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
+            output=CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            count_kind=QUEBEC_T4_SLIP_COUNT,
+            count=0,
+            chosen_kind=CPP_SCHEDULE_8_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            chosen_value=D("1074.00"),
+        ),
+        # T1 line 44800.
+        CPP_OVERPAYMENT: ChosenByCountLine(
+            output=CPP_OVERPAYMENT,
+            count_kind=QUEBEC_T4_SLIP_COUNT,
+            count=0,
+            chosen_kind=CPP_SCHEDULE_8_OVERPAYMENT,
+            chosen_value=D("0.00"),
+        ),
+        # T1 line 42100.
+        CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: ChosenByCountLine(
+            output=CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            count_kind=QUEBEC_T4_SLIP_COUNT,
+            count=0,
+            chosen_kind=CPP_SCHEDULE_8_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            chosen_value=D("0"),
+        ),
+        # T1 line 31000.
+        CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: ChosenByCountLine(
+            output=CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            count_kind=QUEBEC_T4_SLIP_COUNT,
+            count=0,
+            chosen_kind=CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            chosen_value=D("0"),
+        ),
+        # T1 line 22200.
+        CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: ChosenByCountLine(
+            output=CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            count_kind=QUEBEC_T4_SLIP_COUNT,
+            count=0,
+            chosen_kind=CPP_SCHEDULE_8_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            chosen_value=D("0"),
         ),
         CHART_2021_AMOUNT_D: ChosenByCountLine(
             output=CHART_2021_AMOUNT_D,

@@ -161,6 +161,12 @@ from app.jurisdictions.ca.catalog import (
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_SCHEDULE_8_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_SCHEDULE_8_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    CPP_SCHEDULE_8_OVERPAYMENT,
+    CPP_SCHEDULE_8_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
@@ -170,6 +176,7 @@ from app.jurisdictions.ca.catalog import (
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     NET_FEDERAL_TAX,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
+    QUEBEC_T4_SLIP_COUNT,
     REFUND_OR_BALANCE_OWING,
     SOCIAL_BENEFITS_REPAYMENT_PAYABLE,
     TOTAL_CREDITS,
@@ -3816,7 +3823,8 @@ def test_the_trace_names_part_5_or_part_3_for_lines_30800_22215_and_44800() -> N
     # Case (c) (Return BN as filed with line 27 of 20,000). Part 5 completed: line 30800 takes line
     # 57 (2,796.75), line 22215 line 69 (565.00) and line 44800 line 50 (0.00); the Part 3 route
     # (line 24 positive: lines 15, 18 plus 22 and 24) is kept under its own kinds. Part 5 not
-    # completed: they take the Part 3 route.
+    # completed: they take the Part 3 route. Either way the Schedule 8 kinds are what the count of
+    # Quebec T4 slips (0 here) then takes for the lines of the return.
     arguments: dict[str, Any] = {
         "professional_income": "20000",
         "cpp_t4_base_and_first_additional_contributions": "3500.00",
@@ -3826,9 +3834,9 @@ def test_the_trace_names_part_5_or_part_3_for_lines_30800_22215_and_44800() -> N
         compute("60000", (), "0", "0", "0", "0", "0", cpp_part_5_completed=1, **arguments)
     )
     for line, chosen_kind, chosen_value in (
-        (CPP_BASE_CONTRIBUTIONS_ON_RETURN, CPP_PART_5_LINE_57, "2796.75"),
-        (CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN, CPP_PART_5_LINE_69, "565.00"),
-        (CPP_OVERPAYMENT, CPP_PART_5_LINE_50, "0.00"),
+        (CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_RETURN, CPP_PART_5_LINE_57, "2796.75"),
+        (CPP_SCHEDULE_8_ENHANCED_CONTRIBUTIONS_ON_RETURN, CPP_PART_5_LINE_69, "565.00"),
+        (CPP_SCHEDULE_8_OVERPAYMENT, CPP_PART_5_LINE_50, "0.00"),
     ):
         assert routed[line] == ChosenByCountLine(
             output=line,
@@ -3851,17 +3859,38 @@ def test_the_trace_names_part_5_or_part_3_for_lines_30800_22215_and_44800() -> N
         ), line.identifier
     kept = chosen_lines(compute("60000", (), "0", "0", "0", "0", "0", **arguments))
     for line, chosen_kind, chosen_value in (
-        (CPP_BASE_CONTRIBUTIONS_ON_RETURN, CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN, "2796.75"),
         (
-            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_RETURN,
+            CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
+            "2796.75",
+        ),
+        (
+            CPP_SCHEDULE_8_ENHANCED_CONTRIBUTIONS_ON_RETURN,
             CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
             "565.00",
         ),
-        (CPP_OVERPAYMENT, CPP_PART_3_OVERPAYMENT, "138.25"),
+        (CPP_SCHEDULE_8_OVERPAYMENT, CPP_PART_3_OVERPAYMENT, "138.25"),
     ):
         assert kept[line] == ChosenByCountLine(
             output=line,
             count_kind=CPP_PART_5_COMPLETED,
+            count=0,
+            chosen_kind=chosen_kind,
+            chosen_value=D(chosen_value),
+        ), line.identifier
+
+    for line, chosen_kind, chosen_value in (
+        (CPP_BASE_CONTRIBUTIONS_ON_RETURN, CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_RETURN, "2796.75"),
+        (
+            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            CPP_SCHEDULE_8_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            "565.00",
+        ),
+        (CPP_OVERPAYMENT, CPP_SCHEDULE_8_OVERPAYMENT, "0.00"),
+    ):
+        assert routed[line] == ChosenByCountLine(
+            output=line,
+            count_kind=QUEBEC_T4_SLIP_COUNT,
             count=0,
             chosen_kind=chosen_kind,
             chosen_value=D(chosen_value),
@@ -3892,21 +3921,21 @@ def test_the_trace_counts_part_5_lines_49_70_and_88_once_for_each_part_5_complet
             CPP_PART_5_LINE_49_IF_POSITIVE,
             "1764.20",
             CPP_PAYABLE_ON_SELF_EMPLOYMENT,
-            CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            CPP_SCHEDULE_8_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
         ),
         (
             CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
             CPP_PART_5_LINE_70,
             "559.35",
             CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
-            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
         ),
         (
             CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
             CPP_PART_5_LINE_88,
             "1343.10",
             CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
-            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            CPP_SCHEDULE_8_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
         ),
     ):
         assert times[line] == TimesCountLine(

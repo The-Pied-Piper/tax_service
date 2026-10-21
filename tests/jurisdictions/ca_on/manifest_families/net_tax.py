@@ -19,6 +19,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_SCHEDULE_8_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_ZERO,
     DISABILITY_AMOUNT_FOR_SELF,
     DISABILITY_TRANSFERRED_AMOUNT,
@@ -252,7 +253,7 @@ STEPS = {
                 "ca/cpp_part_5_payable_on_self_employment",
             ),
         },
-        produces={"output": "ca/cpp_payable_on_self_employment_and_other_earnings"},
+        produces={"output": "ca/cpp_schedule_8_payable_on_self_employment_and_other_earnings"},
     ),
     # T1 line 145 and line 42120, entered from Schedule 13 line 9, counted once for each
     # agreement with the Canada Employment Insurance Commission, 1 or 0.
@@ -371,7 +372,7 @@ WIRING = {
     (
         Sum,
         frozenset({CPP_PAYABLE_ON_SELF_EMPLOYMENT, CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT}),
-        frozenset({CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
+        frozenset({CPP_SCHEDULE_8_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
     ),
     (
         TimesCount,

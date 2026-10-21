@@ -44,6 +44,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
     CPP_PART_5_COMPLETED,
     CPP_PART_5_LINE_70,
+    CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDIT_AMOUNTS_SUBTOTAL,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
@@ -243,7 +244,9 @@ STEPS = {
                 "ca/cpp_part_5_base_contributions_on_self_employment",
             ),
         },
-        produces={"output": "ca/cpp_base_contributions_on_self_employment_and_other_earnings"},
+        produces={
+            "output": "ca/cpp_schedule_8_base_contributions_on_self_employment_and_other_earnings"
+        },
     ),
     # "Enter the amount from line 9 or line 10, whichever applies, on line 31217 and line 42120
     # of your return.": Schedule 13 is completed only with an agreement with the Canada
@@ -950,7 +953,7 @@ WIRING = {
                 CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
             }
         ),
-        frozenset({CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
+        frozenset({CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
     ),
     (
         TimesCount,

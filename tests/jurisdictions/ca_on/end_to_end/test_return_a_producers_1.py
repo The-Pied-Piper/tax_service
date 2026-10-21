@@ -297,6 +297,12 @@ from app.jurisdictions.ca.catalog import (
     CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_PENSIONABLE_EARNINGS,
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
+    CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_SCHEDULE_8_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_SCHEDULE_8_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    CPP_SCHEDULE_8_OVERPAYMENT,
+    CPP_SCHEDULE_8_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
     CPP_ZERO,
@@ -1313,6 +1319,16 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     ):
         assert isinstance(worksheet.producer_of(kind), ChooseBySign), kind.identifier
+    # The count of Quebec T4 slips chooses between Schedule 8's result and RC381's for each line.
+    for kind in (
+        CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        CPP_OVERPAYMENT,
+        CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    ):
+        assert isinstance(worksheet.producer_of(kind), ChooseByCount), kind.identifier
     # Line 3 (box 50399) is a starting amount, so nothing produces it.
     assert worksheet.producer_of(CPT20_T4_EARNINGS) is None
     assert worksheet.producer_of(RC381_PART_3_LINE_7) is not None
@@ -1699,9 +1715,9 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
         CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
         CPP_PART_3_OVERPAYMENT,
-        CPP_BASE_CONTRIBUTIONS_ON_RETURN,
-        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
-        CPP_OVERPAYMENT,
+        CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_RETURN,
+        CPP_SCHEDULE_8_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        CPP_SCHEDULE_8_OVERPAYMENT,
     ):
         assert isinstance(worksheet.producer_of(chosen), ChooseByCount), chosen.identifier
     for floored in (CPP_PART_3B_LINE_31, CPP_PART_3B_LINE_38, CPP_PART_3B_LINE_45):
@@ -1850,9 +1866,9 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     for total in (
         CPP_PART_5_LINE_72,
         CPP_PART_5_LINE_88,
-        CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
-        CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
-        CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        CPP_SCHEDULE_8_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        CPP_SCHEDULE_8_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     ):
         assert isinstance(worksheet.producer_of(total), Sum), total.identifier
     # T1 lines 31000, 22200 and 42100 from Part 5 are counted once for each Part 5 completed.

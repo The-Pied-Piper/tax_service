@@ -27,6 +27,12 @@ QPP_MONTHS = CATALOG.declare("qpp_months", int, non_negative=True)
 in 2025.": a count the filer enters, as the months of line A are. "The number you enter on line A
 cannot be more than the number you enter on line B.", which `RC381_PART_2_LINE_B` checks."""
 
+QUEBEC_T4_SLIP_COUNT = CATALOG.declare("quebec_t4_slip_count", int, non_negative=True)
+"""T4 slips whose province of employment is Quebec, a count the filer enters. Form RC381 is for a
+filer with QPP contributions on a T4 slip, so a count above zero takes the lines of the return
+from the form and none takes them from Schedule 8. Nothing ties it to the QPP amounts the filer
+enters, so the count and those amounts agree only if the filer enters both."""
+
 RC381_PART_2_LINE_B = CATALOG.declare("rc381_part_2_line_b", int, non_negative=True)
 """QPP months, Form RC381 Part 2 line B "Enter the number of months that QPP applied in 2025.",
 after the check that "The number you enter on line A cannot be more than the number you enter on
@@ -891,3 +897,41 @@ RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS = CATALOG.declare(
 22200 of the return when Form RC381 is used: Part 4 line 129 "Enter this amount (in dollar and
 cents) on line 22200 of your return." when Part 4 has earnings subject to contributions, else
 "0" (Part 4 is not completed). A non-negative amount."""
+
+
+CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
+    "cpp_schedule_8_base_contributions_on_return", Decimal, non_negative=True
+)
+"""T1 line 30800 and ON428 line 58240 from Schedule 8 (Part 5 line 57 when Part 5 is completed,
+else Part 3a or Part 3b): what cpp_base_contributions_on_return takes with no Quebec T4 slip."""
+
+CPP_SCHEDULE_8_ENHANCED_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
+    "cpp_schedule_8_enhanced_contributions_on_return", Decimal, non_negative=True
+)
+"""T1 line 22215 from Schedule 8: what cpp_enhanced_contributions_on_return takes with no Quebec
+T4 slip."""
+
+CPP_SCHEDULE_8_OVERPAYMENT = CATALOG.declare(
+    "cpp_schedule_8_overpayment", Decimal, non_negative=True
+)
+"""T1 line 44800 from Schedule 8: what cpp_overpayment takes with no Quebec T4 slip."""
+
+CPP_SCHEDULE_8_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS = CATALOG.declare(
+    "cpp_schedule_8_payable_on_self_employment_and_other_earnings", Decimal, non_negative=True
+)
+"""T1 line 42100 from Schedule 8: what cpp_payable_on_self_employment_and_other_earnings takes with
+no Quebec T4 slip."""
+
+CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS = CATALOG.declare(
+    "cpp_schedule_8_base_contributions_on_self_employment_and_other_earnings",
+    Decimal,
+    non_negative=True,
+)
+"""T1 line 31000 from Schedule 8: what
+cpp_base_contributions_on_self_employment_and_other_earnings takes with no Quebec T4 slip."""
+
+CPP_SCHEDULE_8_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS = CATALOG.declare(
+    "cpp_schedule_8_deduction_on_self_employment_and_other_earnings", Decimal, non_negative=True
+)
+"""T1 line 22200 from Schedule 8: what cpp_deduction_on_self_employment_and_other_earnings takes
+with no Quebec T4 slip."""

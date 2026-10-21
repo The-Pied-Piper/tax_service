@@ -35,6 +35,7 @@ from __future__ import annotations
 from app.domain.capabilities.amount_by_count import AmountForCount
 from app.domain.capabilities.apply_fraction import ApplyFraction
 from app.domain.capabilities.apply_rate import ApplyRate
+from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.contribution_tier import TieredContribution
 from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.subtract import Subtract
@@ -58,9 +59,21 @@ from app.jurisdictions.ca.capabilities.ratio_truncated import (
 )
 from app.jurisdictions.ca.catalog import (
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_BASIC_EXEMPTION,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_MONTHS,
+    CPP_OVERPAYMENT,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_SCHEDULE_8_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_SCHEDULE_8_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    CPP_SCHEDULE_8_OVERPAYMENT,
+    CPP_SCHEDULE_8_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
     CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
@@ -68,6 +81,7 @@ from app.jurisdictions.ca.catalog import (
     CPT20_T4_EARNINGS,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     QPP_MONTHS,
+    QUEBEC_T4_SLIP_COUNT,
     RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
@@ -272,6 +286,7 @@ INPUTS = frozenset(
     {
         "ca/cpt20_t4_earnings",
         "ca/qpp_months",
+        "ca/quebec_t4_slip_count",
         "ca/t4_cpp_pensionable_earnings_outside_quebec",
         "ca/t4_qpp_pensionable_earnings_in_quebec",
         "ca/cpp_t4_base_and_first_additional_contributions",
@@ -281,9 +296,7 @@ INPUTS = frozenset(
     }
 )
 
-# Nothing reads these yet (a later PR, the one that routes the T1 lines between Schedule 8 and
-# these results by the count of Quebec T4 slips, reads them and removes them from this set): the
-# final selection's six results, the amounts RC381 gives for lines 30800, 22215, 44800, 42100,
+# The final selection's six results, the amounts RC381 gives for lines 30800, 22215, 44800, 42100,
 # 31000 and 22200 of the return, each chosen by the sign of lines 70 and 83 of Part 4 added: Part
 # 4's line 98 "Enter this amount (in dollars and cents) on line 30800 of your return.", line 110
 # "Enter this amount (in dollars and cents) on line 22215 of your return.", line 91 "Enter the
@@ -294,18 +307,11 @@ INPUTS = frozenset(
 # when they are above zero, else (lines 70 and 83 both "0": "return to Part 3") Part 3a's and Part
 # 3b's results for earnings from employment income only, "Enter this amount (in dollars and
 # cents) on line 30800 of your return.", "... on line 22215 of your return." and "... on line
-# 44800 of your return.", and "0" for lines 42100, 31000 and 22200. Part 4 lines 90, 91, 98 and 110
-# and the three results of Part 3a and Part 3b were outputs until the final selection read them.
-OUTPUTS = frozenset(
-    {
-        "ca/rc381_cpp_base_contributions_on_return",
-        "ca/rc381_cpp_enhanced_contributions_on_return",
-        "ca/rc381_cpp_overpayment_on_return",
-        "ca/rc381_cpp_payable_on_self_employment",
-        "ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings",
-        "ca/rc381_cpp_deduction_on_self_employment_and_other_earnings",
-    }
-)
+# 44800 of your return.", and "0" for lines 42100, 31000 and 22200. The count of Quebec T4 slips
+# then chooses between Schedule 8's result (none) and these (any) for each line of the return, so
+# they are read and are not outputs. Part 4 lines 90, 91, 98 and 110 and the three results of Part
+# 3a and Part 3b were outputs until the final selection read them.
+OUTPUTS = frozenset[str]()
 
 STEPS = {
     # Part 2 "The number you enter on line A cannot be more than the number you enter on line
@@ -2241,6 +2247,70 @@ STEPS = {
         },
         produces={"output": "ca/rc381_cpp_deduction_on_self_employment_and_other_earnings"},
     ),
+    # The count of Quebec T4 slips chooses, for each line of the return, between Schedule 8's
+    # result (none) and Form RC381's (any).
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/quebec_t4_slip_count",
+            "when_none": "ca/cpp_schedule_8_base_contributions_on_return",
+            "when_any": "ca/rc381_cpp_base_contributions_on_return",
+        },
+        produces={"output": "ca/cpp_base_contributions_on_return"},
+    ),
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/quebec_t4_slip_count",
+            "when_none": "ca/cpp_schedule_8_enhanced_contributions_on_return",
+            "when_any": "ca/rc381_cpp_enhanced_contributions_on_return",
+        },
+        produces={"output": "ca/cpp_enhanced_contributions_on_return"},
+    ),
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/quebec_t4_slip_count",
+            "when_none": "ca/cpp_schedule_8_overpayment",
+            "when_any": "ca/rc381_cpp_overpayment_on_return",
+        },
+        produces={"output": "ca/cpp_overpayment"},
+    ),
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/quebec_t4_slip_count",
+            "when_none": "ca/cpp_schedule_8_payable_on_self_employment_and_other_earnings",
+            "when_any": "ca/rc381_cpp_payable_on_self_employment",
+        },
+        produces={"output": "ca/cpp_payable_on_self_employment_and_other_earnings"},
+    ),
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/quebec_t4_slip_count",
+            "when_none": (
+                "ca/cpp_schedule_8_base_contributions_on_self_employment_and_other_earnings"
+            ),
+            "when_any": "ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings",
+        },
+        produces={"output": "ca/cpp_base_contributions_on_self_employment_and_other_earnings"},
+    ),
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/quebec_t4_slip_count",
+            "when_none": "ca/cpp_schedule_8_deduction_on_self_employment_and_other_earnings",
+            "when_any": "ca/rc381_cpp_deduction_on_self_employment_and_other_earnings",
+        },
+        produces={"output": "ca/cpp_deduction_on_self_employment_and_other_earnings"},
+    ),
 }
 
 WIRING = {
@@ -3160,5 +3230,67 @@ WIRING = {
         ChooseBySign,
         frozenset({RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS, RC381_PART_4_LINE_129}),
         frozenset({RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                QUEBEC_T4_SLIP_COUNT,
+                CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_RETURN,
+                RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+            }
+        ),
+        frozenset({CPP_BASE_CONTRIBUTIONS_ON_RETURN}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                QUEBEC_T4_SLIP_COUNT,
+                CPP_SCHEDULE_8_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+                RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            }
+        ),
+        frozenset({CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {QUEBEC_T4_SLIP_COUNT, CPP_SCHEDULE_8_OVERPAYMENT, RC381_CPP_OVERPAYMENT_ON_RETURN}
+        ),
+        frozenset({CPP_OVERPAYMENT}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                QUEBEC_T4_SLIP_COUNT,
+                CPP_SCHEDULE_8_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+                RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+            }
+        ),
+        frozenset({CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                QUEBEC_T4_SLIP_COUNT,
+                CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+                RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            }
+        ),
+        frozenset({CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                QUEBEC_T4_SLIP_COUNT,
+                CPP_SCHEDULE_8_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+                RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            }
+        ),
+        frozenset({CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
     ),
 }

@@ -1913,6 +1913,13 @@ REGISTERED = frozenset(
         "ca/rc381_cpp_payable_on_self_employment",
         "ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings",
         "ca/rc381_cpp_deduction_on_self_employment_and_other_earnings",
+        "ca/quebec_t4_slip_count",
+        "ca/cpp_schedule_8_base_contributions_on_return",
+        "ca/cpp_schedule_8_enhanced_contributions_on_return",
+        "ca/cpp_schedule_8_overpayment",
+        "ca/cpp_schedule_8_payable_on_self_employment_and_other_earnings",
+        "ca/cpp_schedule_8_base_contributions_on_self_employment_and_other_earnings",
+        "ca/cpp_schedule_8_deduction_on_self_employment_and_other_earnings",
     }
 )
 
@@ -2300,6 +2307,7 @@ COUNTS = frozenset(
         "ca/qbt_election_is_qbt",
         "ca/qbt_gains_are_qsbcs_or_qffp",
         "ca/qpp_months",
+        "ca/quebec_t4_slip_count",
         "ca/rc381_part_2_line_b",
     }
 )

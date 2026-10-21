@@ -470,6 +470,7 @@ from app.jurisdictions.ca.catalog import (
     QFFP_FORECLOSURE_DISPOSITIONS,
     QPP_MONTHS,
     QSBCS_DISPOSITIONS,
+    QUEBEC_T4_SLIP_COUNT,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REAL_ESTATE_DISPOSITIONS,
@@ -1750,6 +1751,7 @@ def compute(
     commission_income: str = "0",
     cpp_months: int = 12,
     qpp_months: int = 12,
+    quebec_t4_slip_count: int = 0,
     t4_cpp_pensionable_earnings_outside_quebec: str = "0",
     t4_qpp_pensionable_earnings_in_quebec: str = "0",
     t4_qpp_contributions_box_17: str = "0",
@@ -2371,6 +2373,7 @@ def compute(
         Artifact(COMMISSION_INCOME, D(commission_income)),
         Artifact(CPP_MONTHS, cpp_months),
         Artifact(QPP_MONTHS, qpp_months),
+        Artifact(QUEBEC_T4_SLIP_COUNT, quebec_t4_slip_count),
         Artifact(
             T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
             D(t4_cpp_pensionable_earnings_outside_quebec),

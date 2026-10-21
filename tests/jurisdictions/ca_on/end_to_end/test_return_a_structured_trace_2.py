@@ -341,6 +341,9 @@ from app.jurisdictions.ca.catalog import (
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_SCHEDULE_8_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_SCHEDULE_8_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
@@ -1353,9 +1356,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             total=D("0.00"),
         ),
-        # T1 line 31000, the Part 4 amount plus the Part 5 amount: both 0 for Return A.
-        CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: SumLine(
-            output=CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        # T1 line 31000 from Schedule 8, the Part 4 amount plus the Part 5 amount: both 0 for Return
+        # A.
+        CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: SumLine(
+            output=CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
             parts=(
                 (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
                 (CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
@@ -1363,8 +1367,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             total=D("0"),
         ),
         # T1 line 22200, the Part 4 amount plus the Part 5 amount: both 0 for Return A.
-        CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: SumLine(
-            output=CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        CPP_SCHEDULE_8_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: SumLine(
+            output=CPP_SCHEDULE_8_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
             parts=(
                 (CPP_DEDUCTION_ON_SELF_EMPLOYMENT, D("0")),
                 (CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT, D("0")),
@@ -1372,8 +1376,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             total=D("0"),
         ),
         # T1 line 42100, the Part 4 amount plus the Part 5 amount: both 0 for Return A.
-        CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: SumLine(
-            output=CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        CPP_SCHEDULE_8_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: SumLine(
+            output=CPP_SCHEDULE_8_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
             parts=(
                 (CPP_PAYABLE_ON_SELF_EMPLOYMENT, D("0")),
                 (CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT, D("0")),

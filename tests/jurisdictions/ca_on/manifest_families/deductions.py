@@ -54,7 +54,6 @@ from app.jurisdictions.ca.catalog import (
     CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS,
     CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
-    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASIC_EXEMPTION,
     CPP_CONTRIBUTIONS_DIFFERENCE,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
@@ -77,7 +76,6 @@ from app.jurisdictions.ca.catalog import (
     CPP_LINE_24_POSITIVE,
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_MONTHS,
-    CPP_OVERPAYMENT,
     CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_PART_3_OVERPAYMENT,
@@ -116,6 +114,10 @@ from app.jurisdictions.ca.catalog import (
     CPP_PENSIONABLE_EARNINGS,
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
     CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_SCHEDULE_8_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_SCHEDULE_8_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    CPP_SCHEDULE_8_OVERPAYMENT,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
@@ -525,7 +527,7 @@ STEPS = {
                 "ca/cpp_part_5_deduction_on_self_employment",
             ),
         },
-        produces={"output": "ca/cpp_deduction_on_self_employment_and_other_earnings"},
+        produces={"output": "ca/cpp_schedule_8_deduction_on_self_employment_and_other_earnings"},
     ),
     # Schedule 13 line 1 "Enter the total amount from line 1 1 plus line 27 of your return. If
     # you received a T4 slip for self-employment income with EI premiums in box 18, do not
@@ -1759,7 +1761,7 @@ STEPS = {
             "when_none": "ca/cpp_part_3_base_contributions_on_return",
             "when_any": "ca/cpp_part_5_line_57",
         },
-        produces={"output": "ca/cpp_base_contributions_on_return"},
+        produces={"output": "ca/cpp_schedule_8_base_contributions_on_return"},
     ),
     # T1 line 22215: Schedule 8 Part 5 line 69 when Part 5 is completed, else the Part 3a or
     # Part 3b amount.
@@ -1771,7 +1773,7 @@ STEPS = {
             "when_none": "ca/cpp_part_3_enhanced_contributions_on_return",
             "when_any": "ca/cpp_part_5_line_69",
         },
-        produces={"output": "ca/cpp_enhanced_contributions_on_return"},
+        produces={"output": "ca/cpp_schedule_8_enhanced_contributions_on_return"},
     ),
     # T1 line 44800: Schedule 8 Part 5 line 50 when Part 5 is completed, else the Part 3a line
     # 29 amount or 0.
@@ -1783,7 +1785,7 @@ STEPS = {
             "when_none": "ca/cpp_part_3_overpayment",
             "when_any": "ca/cpp_part_5_line_50",
         },
-        produces={"output": "ca/cpp_overpayment"},
+        produces={"output": "ca/cpp_schedule_8_overpayment"},
     ),
 }
 
@@ -1916,7 +1918,7 @@ WIRING = {
     (
         Sum,
         frozenset({CPP_DEDUCTION_ON_SELF_EMPLOYMENT, CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT}),
-        frozenset({CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
+        frozenset({CPP_SCHEDULE_8_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
     ),
     (
         Sum,
@@ -2546,18 +2548,18 @@ WIRING = {
         frozenset(
             {CPP_PART_5_COMPLETED, CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN, CPP_PART_5_LINE_57}
         ),
-        frozenset({CPP_BASE_CONTRIBUTIONS_ON_RETURN}),
+        frozenset({CPP_SCHEDULE_8_BASE_CONTRIBUTIONS_ON_RETURN}),
     ),
     (
         ChooseByCount,
         frozenset(
             {CPP_PART_5_COMPLETED, CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN, CPP_PART_5_LINE_69}
         ),
-        frozenset({CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN}),
+        frozenset({CPP_SCHEDULE_8_ENHANCED_CONTRIBUTIONS_ON_RETURN}),
     ),
     (
         ChooseByCount,
         frozenset({CPP_PART_5_COMPLETED, CPP_PART_3_OVERPAYMENT, CPP_PART_5_LINE_50}),
-        frozenset({CPP_OVERPAYMENT}),
+        frozenset({CPP_SCHEDULE_8_OVERPAYMENT}),
     ),
 }

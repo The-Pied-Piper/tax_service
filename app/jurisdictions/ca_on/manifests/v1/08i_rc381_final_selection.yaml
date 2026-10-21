@@ -104,3 +104,56 @@ capabilities:
       when_non_negative: []
     produces:
       output: ca/rc381_cpp_deduction_on_self_employment_and_other_earnings
+  # The switch between the two ways of working out the lines of the return that CPP contributions
+  # reach. Form RC381 is for a filer with QPP contributions on a T4 slip, so the count of Quebec
+  # T4 slips (ca/quebec_t4_slip_count) decides: none takes the Schedule 8 result, any takes the
+  # Form RC381 result. Each Schedule 8 result is the ca/cpp_schedule_8_* kind; the kinds below
+  # are the amounts the rest of the return reads.
+  # T1 line 30800 (also ON428 line 58240): Schedule 8's amount, else Form RC381's.
+  - name: core/choose_by_count
+    consumes:
+      count: ca/quebec_t4_slip_count
+      when_none: ca/cpp_schedule_8_base_contributions_on_return
+      when_any: ca/rc381_cpp_base_contributions_on_return
+    produces:
+      output: ca/cpp_base_contributions_on_return
+  # T1 line 22215: Schedule 8's amount, else Form RC381's.
+  - name: core/choose_by_count
+    consumes:
+      count: ca/quebec_t4_slip_count
+      when_none: ca/cpp_schedule_8_enhanced_contributions_on_return
+      when_any: ca/rc381_cpp_enhanced_contributions_on_return
+    produces:
+      output: ca/cpp_enhanced_contributions_on_return
+  # T1 line 44800: Schedule 8's amount, else Form RC381's.
+  - name: core/choose_by_count
+    consumes:
+      count: ca/quebec_t4_slip_count
+      when_none: ca/cpp_schedule_8_overpayment
+      when_any: ca/rc381_cpp_overpayment_on_return
+    produces:
+      output: ca/cpp_overpayment
+  # T1 line 42100: Schedule 8's amount, else Form RC381's.
+  - name: core/choose_by_count
+    consumes:
+      count: ca/quebec_t4_slip_count
+      when_none: ca/cpp_schedule_8_payable_on_self_employment_and_other_earnings
+      when_any: ca/rc381_cpp_payable_on_self_employment
+    produces:
+      output: ca/cpp_payable_on_self_employment_and_other_earnings
+  # T1 line 31000: Schedule 8's amount, else Form RC381's.
+  - name: core/choose_by_count
+    consumes:
+      count: ca/quebec_t4_slip_count
+      when_none: ca/cpp_schedule_8_base_contributions_on_self_employment_and_other_earnings
+      when_any: ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings
+    produces:
+      output: ca/cpp_base_contributions_on_self_employment_and_other_earnings
+  # T1 line 22200: Schedule 8's amount, else Form RC381's.
+  - name: core/choose_by_count
+    consumes:
+      count: ca/quebec_t4_slip_count
+      when_none: ca/cpp_schedule_8_deduction_on_self_employment_and_other_earnings
+      when_any: ca/rc381_cpp_deduction_on_self_employment_and_other_earnings
+    produces:
+      output: ca/cpp_deduction_on_self_employment_and_other_earnings

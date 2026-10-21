@@ -436,6 +436,7 @@ inputs:
   - ca/fhsa_maximum_participation_period_ended
   - ca/cpp_months
   - ca/qpp_months
+  - ca/quebec_t4_slip_count
   - ca/t4_cpp_pensionable_earnings_outside_quebec
   - ca/t4_qpp_pensionable_earnings_in_quebec
   - ca/t4_qpp_contributions_box_17

@@ -180,14 +180,14 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1355
+    assert len(found.capabilities) == 1361
     # T2125 Area A column 22 "UCC at the end of the year", a record list of each class's closing UCC
     # for next year, and Part 7 line 7O "Business-use-of-home expenses available to carry forward",
     # which nothing else on the return reads.
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1355
+    assert len(found.capabilities) == 1361
     # Form T691 Part 1 line 12 "Add lines 1, 4, 7, and 11.", the adjusted taxable income subtotal,
     # Part 9 line 6 "Enter this amount on line 14 of Part 1", Part 1 line 20 "Line 15 minus line 19"
     # and Part 1 line 26 "Line 24 minus line 25" times 30%, which nothing else on the return reads
@@ -195,16 +195,13 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1355
-    # The six results of the final selection after Form RC381 Part 3 and Part 4 (lines 70 and 83 of
-    # Part 4 added, "If lines 70 and 83 are both "0", return to Part 3") are the amounts for lines
-    # 30800, 22215, 44800, 42100, 31000 and 22200 of the return, which nothing else on the return
-    # reads yet; Part 4 lines 90, 91, 98 and 110 and the three results of Part 3a and Part 3b were
-    # outputs until the selection read them.
+    assert len(found.capabilities) == 1361
+    # The six results of the final selection after Form RC381 are read by the switch of
+    # 08i_rc381_final_selection.yaml, so they are not outputs.
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1355
+    assert len(found.capabilities) == 1361
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -214,6 +211,6 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 1355
-    assert len(composition.order) == 1355
+    assert len(composition.order) == 1361
+    assert len(composition.order) == 1361
     assert wiring == WIRING
