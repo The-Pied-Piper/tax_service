@@ -757,7 +757,7 @@ def test_the_form_t657_chart_2016_to_2020_amounts_are_money_counts_and_signed_li
     ):
         assert kind.value_type is Decimal, kind.identifier
         assert kind.non_negative is True, kind.identifier
-    for kind in (
+    for count_kind in (
         T657_CHART_2016_USES_D_INSTEAD,
         T657_CHART_2016_CLAIMS_ADDITIONAL_DEDUCTION,
         CHART_2016_PART_2_APPLIES,
@@ -774,8 +774,8 @@ def test_the_form_t657_chart_2016_to_2020_amounts_are_money_counts_and_signed_li
         T657_CHART_2020_CLAIMS_ADDITIONAL_DEDUCTION,
         CHART_2020_PART_2_APPLIES,
     ):
-        assert kind.value_type is int, kind.identifier
-        assert kind.non_negative is True, kind.identifier
+        assert count_kind.value_type is int, count_kind.identifier
+        assert count_kind.non_negative is True, count_kind.identifier
 
 
 def test_the_chart_2021_amount_b_is_no_longer_a_caller_input(

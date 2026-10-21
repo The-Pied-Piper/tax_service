@@ -3293,6 +3293,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         if isinstance(line, ConditionLine)
         and line.output
         in (
+            CHART_2016_PART_2_APPLIES,
+            CHART_2017_PART_2_APPLIES,
+            CHART_2018_PART_2_APPLIES,
+            CHART_2019_PART_2_APPLIES,
+            CHART_2020_PART_2_APPLIES,
             CHART_2021_PART_2_APPLIES,
             CHART_2022_PART_2_APPLIES,
             CHART_2023_PART_2_APPLIES,
@@ -3669,6 +3674,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         if isinstance(line, ConditionsCountLine)
         and line.output
         in (
+            CHART_2016_PART_2_APPLIES,
+            CHART_2017_PART_2_APPLIES,
+            CHART_2018_PART_2_APPLIES,
+            CHART_2019_PART_2_APPLIES,
+            CHART_2020_PART_2_APPLIES,
             CHART_2021_PART_2_APPLIES,
             CHART_2022_PART_2_APPLIES,
             CHART_2023_PART_2_APPLIES,
