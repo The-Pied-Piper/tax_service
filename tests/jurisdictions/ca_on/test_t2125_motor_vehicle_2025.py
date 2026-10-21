@@ -32,6 +32,7 @@ import pytest
 
 import app.registrations
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
+from app.domain.errors import CapabilityContractError
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import RoundingMode, RoundTo
@@ -213,17 +214,12 @@ def test_chart_c_leasing_cost_is_the_lesser_of_line_26_and_line_27() -> None:
     assert line(worksheet, BUSINESS_VEHICLE_LEASING_COST) == D("2147.00")
 
 
-def test_chart_c_line_26_is_signed_when_the_payments_before_exceed_line_25() -> None:
+def test_chart_c_line_28_below_zero_is_refused() -> None:
     # Line 25 is 7582.30 and line 21 (payments before the year) is 9000, so line 26 is
-    # 7582.30 - 9000 = -1417.70, kept negative as the form prints no floor. Line 28 is the lesser of
-    # -1417.70 and 2147.00, so -1417.70, and Chart A line 12 is 1000 + 400 + 600 + 200 - 1417.70
-    # + 653 = 1435.30; line 13 is 1435.30 x 5000 / 10000 = 717.65, line 9281.
-    worksheet = statement({**LEASED, "vehicle_lease_payments_before": "9000"})
-
-    assert line(worksheet, BUSINESS_VEHICLE_LEASE_CHARGES_NET) == D("-1417.70")
-    assert line(worksheet, BUSINESS_VEHICLE_LEASING_COST) == D("-1417.70")
-    assert line(worksheet, BUSINESS_VEHICLE_TOTAL_EXPENSES) == D("1435.30")
-    assert line(worksheet, BUSINESS_MOTOR_VEHICLE_EXPENSES) == D("717.65")
+    # 7582.30 - 9000 = -1417.70. The form prints no floor, but the eligible leasing cost (line 28)
+    # is a non-negative amount, so the computation refuses it rather than inventing a floor.
+    with pytest.raises(CapabilityContractError):
+        statement({**LEASED, "vehicle_lease_payments_before": "9000"})
 
 
 def test_chart_a_business_use_part_is_rounded_half_up_to_the_cent() -> None:
