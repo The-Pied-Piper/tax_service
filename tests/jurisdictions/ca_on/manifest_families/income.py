@@ -1630,12 +1630,15 @@ STEPS = {
         produces={"output": "ca/rental_net_income_after_terminal_loss"},
     ),
     # T776 Area A "Line ii: Total CCA claim for the year *: Total of column 23": the CCA claimed
-    # on each class of the Area A list, at most its maximum (column 19 multiplied by column 20),
-    # totalled.
+    # on each class of the Area A list, at most its maximum (column 19 multiplied by column 20)
+    # less its column 22 (the Chart B total of the class), totalled.
     CapabilitySelection(
         name="ca/cca_claim",
         params={"class_rates": "ca/cca_class_rates"},
-        consumes={"classes": "ca/rental_cca_classes"},
+        consumes={
+            "classes": "ca/rental_cca_classes",
+            "non_compliant": "ca/short_term_rental_non_compliant_cca_by_class",
+        },
         produces={"output": "ca/rental_cca_table_claim"},
     ),
     # T776 Area A "* Sole proprietors and partnerships: Enter the total CCA claim for the year
@@ -1702,7 +1705,10 @@ STEPS = {
     CapabilitySelection(
         name="ca/closing_ucc",
         params={"class_rates": "ca/cca_class_rates"},
-        consumes={"classes": "ca/rental_cca_classes"},
+        consumes={
+            "classes": "ca/rental_cca_classes",
+            "non_compliant": "ca/short_term_rental_non_compliant_cca_by_class",
+        },
         produces={"output": "ca/rental_closing_ucc"},
     ),
     # T776 "Line 6: Net income (loss) (amount 5 minus line 9936)": line 9936 is computed above.

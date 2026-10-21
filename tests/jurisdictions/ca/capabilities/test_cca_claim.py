@@ -70,11 +70,14 @@ from tests.jurisdictions.ca.capabilities.cca_table import (
     CLASS_10_1,
     CLASS_43_1,
     CLASSES,
+    NO_COLUMN_22,
+    NON_COMPLIANT,
     WITH_ADDITIONS,
     WITH_RECAPTURE,
     WITH_TERMINAL_LOSS,
     class_rates,
     classes,
+    non_compliant_cca,
     row,
     service,
 )
@@ -83,20 +86,24 @@ D = Decimal
 
 
 def capability(dataset: ParameterDataset[ClassRates] | None = None) -> CcaClaim:
-    return CcaClaim(dataset or class_rates(), CLASSES, CCA_CLAIM)
+    return CcaClaim(dataset or class_rates(), CLASSES, NON_COMPLIANT, CCA_CLAIM)
 
 
 def compute(
-    *rows: dict[Any, Decimal | int], dataset: ParameterDataset[ClassRates] | None = None
+    *rows: dict[Any, Decimal | int],
+    dataset: ParameterDataset[ClassRates] | None = None,
+    column_22: Artifact[Any] = NO_COLUMN_22,
 ) -> Artifact[Any]:
-    (output,) = capability(dataset).compute((classes(*rows),)).outputs
+    (output,) = capability(dataset).compute((column_22, classes(*rows))).outputs
     return output
 
 
 def total(
-    *rows: dict[Any, Decimal | int], dataset: ParameterDataset[ClassRates] | None = None
+    *rows: dict[Any, Decimal | int],
+    dataset: ParameterDataset[ClassRates] | None = None,
+    column_22: Artifact[Any] = NO_COLUMN_22,
 ) -> Decimal:
-    value = compute(*rows, dataset=dataset).value
+    value = compute(*rows, dataset=dataset, column_22=column_22).value
     assert isinstance(value, Decimal)
     return value
 
@@ -134,7 +141,7 @@ def claim_line(
 def only_line(
     *rows: dict[Any, Decimal | int], dataset: ParameterDataset[ClassRates] | None = None
 ) -> CcaClaimLine:
-    line, _total = capability(dataset).compute((classes(*rows),)).trace
+    line, _total = capability(dataset).compute((NO_COLUMN_22, classes(*rows))).trace
     assert isinstance(line, CcaClaimLine)
     return line
 
@@ -150,7 +157,7 @@ def test_is_exported_from_the_ca_capabilities_package() -> None:
 
 
 def test_declares_its_contract() -> None:
-    assert capability().consumes == frozenset({CLASSES})
+    assert capability().consumes == frozenset({CLASSES, NON_COMPLIANT})
     assert capability().produces == frozenset({CCA_CLAIM})
 
 
@@ -161,9 +168,10 @@ def test_leaves_its_contract_to_the_base() -> None:
 
 def test_declares_its_slots() -> None:
     assert CcaClaim.PARAMETERS == {"class_rates": CLASS_RATES}
-    assert CcaClaim.CONSUMES == {"classes": RecordList}
+    assert CcaClaim.CONSUMES == {"classes": RecordList, "non_compliant": RecordList}
     assert CcaClaim.PRODUCES == {"output": Decimal}
     assert not CcaClaim.is_list_slot("classes")
+    assert not CcaClaim.is_list_slot("non_compliant")
 
 
 def test_its_slots_are_read_only() -> None:
@@ -180,20 +188,27 @@ def test_its_slots_are_typed_as_read_only_mappings() -> None:
 
 
 def test_is_built_from_its_slot_names_as_keywords() -> None:
-    wired = CcaClaim(class_rates=class_rates(), classes=CLASSES, output=CCA_CLAIM)
+    wired = CcaClaim(
+        class_rates=class_rates(), classes=CLASSES, non_compliant=NON_COMPLIANT, output=CCA_CLAIM
+    )
 
-    (output,) = wired.compute((classes(WITH_ADDITIONS),)).outputs
+    (output,) = wired.compute((NO_COLUMN_22, classes(WITH_ADDITIONS))).outputs
     assert output == Artifact(CCA_CLAIM, D("2300.00"))
 
 
 def test_takes_no_separate_rounding_argument() -> None:
     with pytest.raises(TypeError):
-        CcaClaim(class_rates(), CLASSES, CCA_CLAIM, CENT)  # type: ignore[call-arg]
+        CcaClaim(class_rates(), CLASSES, NON_COMPLIANT, CCA_CLAIM, CENT)  # type: ignore[call-arg]
 
 
 def test_rejects_a_money_kind_for_its_classes() -> None:
     with pytest.raises(InvalidCapabilityError, match="CcaClaim.*'classes'"):
-        CcaClaim(class_rates(), CCA_CLAIM, CCA_CLAIM)  # type: ignore[arg-type]
+        CcaClaim(class_rates(), CCA_CLAIM, NON_COMPLIANT, CCA_CLAIM)  # type: ignore[arg-type]
+
+
+def test_rejects_a_money_kind_for_its_non_compliant_list() -> None:
+    with pytest.raises(InvalidCapabilityError, match="CcaClaim.*'non_compliant'"):
+        CcaClaim(class_rates(), CLASSES, CCA_CLAIM, CCA_CLAIM)  # type: ignore[arg-type]
 
 
 def test_is_not_generic_over_artifacts() -> None:
@@ -548,18 +563,26 @@ def test_a_different_years_rate_changes_the_maximum() -> None:
 def test_ignores_artifacts_it_does_not_consume() -> None:
     other = Artifact(CCA_CLAIM, D("9"))
 
-    result = capability().compute((other, classes(WITH_ADDITIONS)))
+    result = capability().compute((other, NO_COLUMN_22, classes(WITH_ADDITIONS)))
 
     assert result.outputs == (Artifact(CCA_CLAIM, D("2300.00")),)
 
 
 def test_missing_classes_is_a_missing_artifact() -> None:
     with pytest.raises(MissingArtifactError, match="cca_classes"):
-        capability().compute(())
+        capability().compute((NO_COLUMN_22,))
+
+
+def test_missing_non_compliant_list_is_a_missing_artifact() -> None:
+    with pytest.raises(MissingArtifactError, match="non_compliant_cca"):
+        capability().compute((classes(WITH_ADDITIONS),))
 
 
 def test_has_one_output() -> None:
-    assert len(capability().compute((classes(WITH_ADDITIONS, WITH_RECAPTURE),)).outputs) == 1
+    assert (
+        len(capability().compute((NO_COLUMN_22, classes(WITH_ADDITIONS, WITH_RECAPTURE))).outputs)
+        == 1
+    )
 
 
 # --- refused rows and signed zeros -------------------------------------------------------------
@@ -589,7 +612,7 @@ def test_columns_11_and_12_may_together_equal_column_3() -> None:
 
 
 def test_a_claim_of_minus_zero_is_traced_and_totalled_as_plain_zero() -> None:
-    result = capability().compute((classes(row("8", "10000", "3000", claimed="-0")),))
+    result = capability().compute((NO_COLUMN_22, classes(row("8", "10000", "3000", claimed="-0"))))
 
     line, total_line = result.trace
     assert isinstance(line, CcaClaimLine)
@@ -602,7 +625,9 @@ def test_a_claim_of_minus_zero_is_traced_and_totalled_as_plain_zero() -> None:
 
 
 def test_a_claim_of_minus_zero_renders_as_zero() -> None:
-    trace = capability().compute((classes(row("8", "10000", "3000", claimed="-0")),)).trace
+    trace = (
+        capability().compute((NO_COLUMN_22, classes(row("8", "10000", "3000", claimed="-0")))).trace
+    )
 
     claim_text, total_text = EnglishTraceRenderer().render_all(trace)
 
@@ -615,7 +640,9 @@ def test_a_claim_of_minus_zero_renders_as_zero() -> None:
 
 def test_traces_one_claim_line_per_class_then_the_total() -> None:
     trace = (
-        capability().compute((classes(WITH_ADDITIONS, WITH_RECAPTURE, WITH_TERMINAL_LOSS),)).trace
+        capability()
+        .compute((NO_COLUMN_22, classes(WITH_ADDITIONS, WITH_RECAPTURE, WITH_TERMINAL_LOSS)))
+        .trace
     )
 
     assert trace == (
@@ -642,11 +669,15 @@ def test_traces_one_claim_line_per_class_then_the_total() -> None:
 
 
 def test_traces_no_classes_as_only_an_empty_total() -> None:
-    assert capability().compute((classes(),)).trace == (ItemsTotalLine(CCA_CLAIM, (), D("0")),)
+    assert capability().compute((NO_COLUMN_22, classes())).trace == (
+        ItemsTotalLine(CCA_CLAIM, (), D("0")),
+    )
 
 
 def test_the_last_trace_line_amount_is_the_output() -> None:
-    result = capability().compute((classes(WITH_ADDITIONS, row("8", "0", "500", claimed="50")),))
+    result = capability().compute(
+        (NO_COLUMN_22, classes(WITH_ADDITIONS, row("8", "0", "500", claimed="50")))
+    )
 
     (output,) = result.outputs
     assert result.trace[-1].amount == output.value
@@ -655,7 +686,7 @@ def test_the_last_trace_line_amount_is_the_output() -> None:
 
 def test_compute_is_repeatable() -> None:
     wired = capability()
-    given = (classes(WITH_ADDITIONS, WITH_RECAPTURE),)
+    given = (NO_COLUMN_22, classes(WITH_ADDITIONS, WITH_RECAPTURE))
 
     assert wired.compute(given) == wired.compute(given)
 
@@ -664,18 +695,153 @@ def test_compute_is_repeatable() -> None:
 
 
 def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset() -> None:
-    composition = service("ca/cca_claim", CCA_CLAIM).compose(JurisdictionCode("CA-ON"), 2025)
+    composition = service("ca/cca_claim", CCA_CLAIM, checks_claim=True).compose(
+        JurisdictionCode("CA-ON"), 2025
+    )
 
     (built,) = composition.order
     assert isinstance(built, CcaClaim)
-    assert built.consumes == frozenset({CLASSES})
+    assert built.consumes == frozenset({CLASSES, NON_COMPLIANT})
     assert built.produces == frozenset({CCA_CLAIM})
 
 
 def test_a_computation_gives_the_total_claim() -> None:
-    worksheet = service("ca/cca_claim", CCA_CLAIM).compute(
-        JurisdictionCode("CA-ON"), 2025, classes(WITH_ADDITIONS, WITH_RECAPTURE, WITH_TERMINAL_LOSS)
+    worksheet = service("ca/cca_claim", CCA_CLAIM, checks_claim=True).compute(
+        JurisdictionCode("CA-ON"),
+        2025,
+        classes(WITH_ADDITIONS, WITH_RECAPTURE, WITH_TERMINAL_LOSS),
+        NO_COLUMN_22,
     )
 
     assert worksheet.get(CCA_CLAIM).value == D("2300.00")
     assert isinstance(worksheet.producer_of(CCA_CLAIM), CcaClaim)
+
+
+def test_a_computation_refuses_a_claim_above_the_maximum_less_column_22() -> None:
+    with pytest.raises(InputAboveBoundError, match=r"^item 1: ca/cca_claimed 2300 is above"):
+        service("ca/cca_claim", CCA_CLAIM, checks_claim=True).compute(
+            JurisdictionCode("CA-ON"),
+            2025,
+            classes(WITH_ADDITIONS),
+            non_compliant_cca(("8", "0.01")),
+        )
+
+
+# --- computing: column 22 (T776 Chart B) limits the claim ---------------------------------------
+# "Column 23: CCA claim for the year (column 21minus column 22)": the most a class may claim is its
+# maximum, column 21, less its column 22 ("Non-compliant amount of CCA (see Chart B below)"),
+# never below 0. WITH_ADDITIONS is Class 8 with a maximum of 2,300.00.
+
+
+def test_a_claim_of_the_maximum_less_column_22_is_allowed() -> None:
+    column_22 = non_compliant_cca(("8", "300.50"))
+
+    assert total(row("8", "10000", "3000", claimed="1999.50"), column_22=column_22) == D("1999.50")
+
+
+def test_a_claim_above_the_maximum_less_column_22_is_refused() -> None:
+    column_22 = non_compliant_cca(("8", "300.50"))
+
+    with pytest.raises(InputAboveBoundError) as raised:
+        compute(row("8", "10000", "3000", claimed="1999.51"), column_22=column_22)
+
+    assert str(raised.value) == (
+        f"item 1: {CCA_CLAIMED.identifier} 1999.51 is above the maximum 1999.50 "
+        "(2300.00 less column 22 300.50)"
+    )
+
+
+def test_the_refusal_message_names_column_22_when_it_is_not_zero() -> None:
+    with pytest.raises(InputAboveBoundError, match=r"^item 2: .*less column 22 1\)$"):
+        compute(
+            WITH_ADDITIONS,
+            row("8", "10000", "3000", claimed="2300"),
+            column_22=non_compliant_cca(("8", "1")),
+        )
+
+
+def test_the_refusal_message_does_not_name_column_22_when_it_is_zero() -> None:
+    with pytest.raises(InputAboveBoundError) as raised:
+        compute(
+            row("8", "10000", "3000", claimed="2300.01"), column_22=non_compliant_cca(("1", "9"))
+        )
+
+    assert "column 22" not in str(raised.value)
+
+
+def test_a_class_not_in_the_column_22_list_has_a_column_22_of_zero() -> None:
+    column_22 = non_compliant_cca(("1", "500"))
+
+    assert total(row("8", "10000", "3000", claimed="2300"), column_22=column_22) == D("2300.00")
+
+
+def test_a_column_22_of_zero_leaves_the_limit_at_the_maximum() -> None:
+    column_22 = non_compliant_cca(("8", "0"))
+
+    assert total(row("8", "10000", "3000", claimed="2300"), column_22=column_22) == D("2300.00")
+
+
+def test_a_column_22_above_the_maximum_limits_the_claim_to_zero() -> None:
+    column_22 = non_compliant_cca(("8", "2300.01"))
+
+    assert total(row("8", "10000", "3000", claimed="0"), column_22=column_22) == D("0")
+    with pytest.raises(InputAboveBoundError, match=r"ca/cca_claimed 0.01 is above the maximum 0 "):
+        compute(row("8", "10000", "3000", claimed="0.01"), column_22=column_22)
+
+
+def test_each_class_is_limited_by_its_own_column_22() -> None:
+    # Class 8: 2,300.00 - 300 = 2,000; Class 1: 4% of 10,000 = 400.00 - 100 = 300.
+    column_22 = non_compliant_cca(("8", "300"), ("1", "100"))
+
+    assert total(
+        row("8", "10000", "3000", claimed="2000"),
+        row("1", "10000", claimed="300"),
+        column_22=column_22,
+    ) == D("2300.00")
+    with pytest.raises(InputAboveBoundError, match=r"^item 2: ca/cca_claimed 301 is above"):
+        compute(
+            row("8", "10000", "3000", claimed="2000"),
+            row("1", "10000", claimed="301"),
+            column_22=column_22,
+        )
+
+
+def test_column_22_of_a_class_applies_to_each_row_of_that_class() -> None:
+    column_22 = non_compliant_cca(("8", "300"))
+
+    with pytest.raises(InputAboveBoundError, match=r"^item 2: "):
+        compute(
+            row("8", "10000", "3000", claimed="2000"),
+            row("8", "10000", "3000", claimed="2001"),
+            column_22=column_22,
+        )
+
+
+def test_a_decimal_class_number_in_the_column_22_list_finds_its_class() -> None:
+    # Class 10.1: 30% of 1,000 = 300.00 - 10 = 290.
+    column_22 = non_compliant_cca(("10.1", "10"))
+
+    assert total(row("10.1", "1000", claimed="290"), column_22=column_22) == D("290")
+    with pytest.raises(InputAboveBoundError, match=r"ca/cca_claimed 291 is above"):
+        compute(row("10.1", "1000", claimed="291"), column_22=column_22)
+
+
+def test_column_22_does_not_change_the_maximum_in_the_trace() -> None:
+    # Column 21 is the maximum; the trace line holds it as without a column 22.
+    column_22 = non_compliant_cca(("8", "300"))
+
+    line, _total = (
+        capability().compute((column_22, classes(row("8", "10000", "3000", claimed="2000")))).trace
+    )
+
+    assert isinstance(line, CcaClaimLine)
+    assert line.maximum == D("2300.00")
+    assert line.claim == D("2000")
+
+
+def test_a_row_with_a_zero_maximum_and_a_column_22_still_refuses_any_claim() -> None:
+    with pytest.raises(InputAboveBoundError, match=r"ca/cca_claimed 1 is above the maximum 0"):
+        compute(
+            row("10", "5000", proceeds="8000", claimed="1"),
+            column_22=non_compliant_cca(("10", "5")),
+        )

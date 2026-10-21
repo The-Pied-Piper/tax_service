@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
-from app.domain.errors import ValidationError
+from app.domain.errors import InputAboveBoundError, ValidationError
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_cca import (
     ShortTermRentalNonCompliantCca,
@@ -17,13 +17,29 @@ from app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_cca_by_cl
 )
 from app.jurisdictions.ca.catalog import (
     CCA_CLASS_NUMBER,
+    CCA_UCC_AT_END,
+    FEDERAL_BASIC_TAX,
+    NET_INCOME,
     NET_RENTAL_INCOME,
     NON_COMPLIANT_CCA,
+    REFUND_OR_BALANCE_OWING,
+    RENTAL_CCA_CLAIM,
+    RENTAL_CCA_CLAIM_BEFORE_LIMIT,
+    RENTAL_CCA_CLAIM_LESS_PERSONAL_PART,
+    RENTAL_CCA_CLAIM_SHARE,
+    RENTAL_CCA_LIMIT,
+    RENTAL_CCA_TABLE_CLAIM,
+    RENTAL_CLOSING_UCC,
+    RENTAL_NET_INCOME_AFTER_CCA,
+    RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS,
     RENTAL_NON_COMPLIANT_CCA,
     RENTAL_NON_COMPLIANT_EXPENSES,
     SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS,
+    TAXABLE_INCOME,
     TOTAL_INCOME,
+    TOTAL_PAYABLE,
 )
+from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX
 from tests.jurisdictions.ca_on.end_to_end.support import D, compute
 
 # Chart B rows as (column 1, column 4, column 5, column 6): class 1 with 900 and 30 days of 90,
@@ -34,13 +50,22 @@ ROWS: tuple[tuple[str, str, int, int], ...] = (
     ("8", "500", 45, 90),
 )
 
+# Area A rows as (column 1, column 2, column 3, column 5, column 11, column 12, the claim, no
+# property left): class 1 with a UCC of 10000 (maximum 10000 x 4% = 400.00, column 22 333.33, so
+# at most 66.67) and class 8 with a UCC of 2000 (maximum 2000 x 20% = 400.00, column 22 250.00, so
+# at most 150.00), each claiming the most.
+CLASS_1_ROW = ("1", "10000", "0", "0", "0", "0", "66.67", 0)
+CLASS_8_ROW = ("8", "2000", "0", "0", "0", "0", "150.00", 0)
+
 
 def return_av(**overrides: Any) -> Worksheet:
     """Return AV's inputs, as in `returns/2025_return_av.yaml`: Return AD's landlord with three
-    Chart B rows.
+    Chart B rows and two Area A classes whose claims are limited by column 22.
 
     Gross rents of 24000 (one property, two units) are the only income; the expenses are the
     insurance 1200, the interest 6000, the property taxes 3500 and the repairs 1300, 12000 in all.
+    The claims are 66.67 and 150.00, so line 9936 is 216.67 and line 9946 and T1 line 12600 are
+    12000 - 216.67 = 11783.33.
     """
     inputs: dict[str, Any] = {
         "employment_income": "0",
@@ -58,6 +83,7 @@ def return_av(**overrides: Any) -> Worksheet:
             "property_taxes": ("3500", "0", "0"),
         },
         "short_term_rental_cca_units_rows": ROWS,
+        "rental_cca_classes_rows": (CLASS_1_ROW, CLASS_8_ROW),
     }
     return compute(**{**inputs, **overrides})
 
@@ -90,14 +116,108 @@ def test_return_avs_column_22_is_333_33_for_class_1_and_250_for_class_8() -> Non
     )
 
 
-def test_return_avs_chart_b_does_not_change_the_rental_income() -> None:
-    # Nothing reads line 9367 or column 22 yet: Chart A's line 9366 is 0 and net rental income is
-    # Return AD's 12000.
+def test_return_avs_claims_are_limited_to_the_maximum_less_column_22() -> None:
+    # Area A, class 1: column 7 is 10000 + 0 - 0 = 10000, columns 10 and 18 are 0, column 19 is
+    # 10000 and the maximum (column 21) is 10000 x 4% = 400.00; column 22 is 333.33, so column 23
+    # is at most 400.00 - 333.33 = 66.67. Class 8: column 7 and column 19 are 2000 and the maximum
+    # is 2000 x 20% = 400.00; column 22 is 250.00, so column 23 is at most 400.00 - 250.00 =
+    # 150.00. Both claim the most; line ii (the total of column 23) is 66.67 + 150.00 = 216.67 and
+    # so is line 9936 (no personal part of CCA, no CCA for business-use-of-home expenses), within
+    # the 12000 of amount 5.
+    worksheet = return_av()
+
+    assert worksheet.get(RENTAL_CCA_TABLE_CLAIM).value == D("216.67")
+    assert worksheet.get(RENTAL_CCA_CLAIM_SHARE).value == D("216.67")
+    assert worksheet.get(RENTAL_CCA_CLAIM_LESS_PERSONAL_PART).value == D("216.67")
+    assert worksheet.get(RENTAL_CCA_CLAIM_BEFORE_LIMIT).value == D("216.67")
+    assert worksheet.get(RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS).value == D("12000")
+    assert worksheet.get(RENTAL_CCA_LIMIT).value == D("12000")
+    assert worksheet.get(RENTAL_CCA_CLAIM).value == D("216.67")
+
+
+def test_return_avs_net_rental_income_is_11783_33_on_line_12600() -> None:
+    # Amount 6 is amount 5 less line 9936: 12000 - 216.67 = 11783.33, which is line 9946 and T1
+    # line 12600; Chart A's line 9366 is 0. It is the whole of total income.
     worksheet = return_av()
 
     assert worksheet.get(RENTAL_NON_COMPLIANT_EXPENSES).value == D("0")
-    assert worksheet.get(NET_RENTAL_INCOME).value == D("12000")
-    assert worksheet.get(TOTAL_INCOME).value == D("12000")
+    assert worksheet.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("11783.33")
+    assert worksheet.get(NET_RENTAL_INCOME).value == D("11783.33")
+    assert worksheet.get(TOTAL_INCOME).value == D("11783.33")
+
+
+def test_return_avs_closing_ucc_is_9933_33_for_class_1_and_1850_for_class_8() -> None:
+    # Column 24 is column 7 less column 23: 10000 - 66.67 = 9933.33 and 2000 - 150.00 = 1850.00;
+    # column 22 only limits the claim, it does not change the column 7 minus claim rule.
+    worksheet = return_av()
+
+    records = worksheet.get(RENTAL_CLOSING_UCC).value.records
+    assert [(record[CCA_CLASS_NUMBER], record[CCA_UCC_AT_END]) for record in records] == [
+        (D("1"), D("9933.33")),
+        (D("8"), D("1850.00")),
+    ]
+
+
+def test_return_avs_figures_that_depend_on_income_are_return_ads_recomputed_for_11783_33() -> None:
+    # Net income and taxable income are 11783.33 (no deductions). The federal tax on it is
+    # 11783.33 x 14.5% = 1708.58285, 1708.58 to the cent, and the Ontario tax 11783.33 x 5.05% =
+    # 595.058165, 595.06; each is below its non-refundable credits (2338.71 and 643.72), so there
+    # is no tax payable and the refund or balance owing is 0.
+    worksheet = return_av()
+
+    assert worksheet.get(NET_INCOME).value == D("11783.33")
+    assert worksheet.get(TAXABLE_INCOME).value == D("11783.33")
+    assert worksheet.get(FEDERAL_BASIC_TAX).value == D("1708.58")
+    assert worksheet.get(ONTARIO_BASIC_TAX).value == D("595.06")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("0")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("0")
+
+
+def test_a_class_1_claim_above_400_less_333_33_is_refused() -> None:
+    with pytest.raises(InputAboveBoundError) as raised:
+        return_av(rental_cca_classes_rows=(("1", "10000", "0", "0", "0", "0", "66.68", 0),))
+
+    assert str(raised.value) == (
+        "item 1: ca/cca_claimed 66.68 is above the maximum 66.67 (400.00 less column 22 333.33)"
+    )
+
+
+def test_a_class_8_claim_above_400_less_250_is_refused() -> None:
+    with pytest.raises(InputAboveBoundError) as raised:
+        return_av(
+            rental_cca_classes_rows=(CLASS_1_ROW, ("8", "2000", "0", "0", "0", "0", "150.01", 0))
+        )
+
+    assert str(raised.value) == (
+        "item 2: ca/cca_claimed 150.01 is above the maximum 150.00 (400.00 less column 22 250.00)"
+    )
+
+
+def test_the_unlimited_maximum_is_claimable_when_chart_b_has_no_rows() -> None:
+    # Without Chart B rows column 22 is 0 for every class: the whole maximum, 400.00 each, may be
+    # claimed, so line 9936 is 800.00.
+    worksheet = return_av(
+        short_term_rental_cca_units_rows=(),
+        rental_cca_classes_rows=(
+            ("1", "10000", "0", "0", "0", "0", "400.00", 0),
+            ("8", "2000", "0", "0", "0", "0", "400.00", 0),
+        ),
+    )
+
+    assert worksheet.get(RENTAL_CCA_CLAIM).value == D("800.00")
+
+
+def test_a_class_without_a_chart_b_row_has_a_column_22_of_zero() -> None:
+    # Class 10: 30% of 1000 = 300.00, with no Chart B row, may claim all of it.
+    worksheet = return_av(
+        rental_cca_classes_rows=(CLASS_1_ROW, ("10", "1000", "0", "0", "0", "0", "300.00", 0))
+    )
+
+    assert worksheet.get(RENTAL_CCA_TABLE_CLAIM).value == D("366.67")
+    with pytest.raises(InputAboveBoundError, match=r"^item 2: ca/cca_claimed 300.01 is above the"):
+        return_av(
+            rental_cca_classes_rows=(CLASS_1_ROW, ("10", "1000", "0", "0", "0", "0", "300.01", 0))
+        )
 
 
 def test_return_avs_trace_shows_each_chart_b_row_and_class() -> None:
@@ -114,6 +234,16 @@ def test_return_avs_trace_shows_each_chart_b_row_and_class() -> None:
         "short_term_rental_non_compliant_cca_by_class: item 1 class 1: column 7 300 + 33.33 "
         "= 333.33",
         "short_term_rental_non_compliant_cca_by_class: item 2 class 8: column 7 250 = 250",
+        "rental_cca_table_claim: item 1 class 1: column 7 10000, column 14 0, column 15 0, "
+        "column 16 0, column 17 0, column 18 0, column 19 10000, "
+        "maximum 4% of column 19 = 400 (half-up to 0.01), claim 66.67",
+        "rental_cca_table_claim: item 2 class 8: column 7 2000, column 14 0, column 15 0, "
+        "column 16 0, column 17 0, column 18 0, column 19 2000, "
+        "maximum 20% of column 19 = 400 (half-up to 0.01), claim 150",
+        "rental_cca_table_claim: item 1 66.67 + item 2 150 = 216.67",
+        "rental_cca_claim: rental_cca_claim_before_limit 216.67, at most rental_cca_limit 12000",
+        "rental_closing_ucc: item 1 class 1: column 7 10000 less claim 66.67 = 9933.33",
+        "rental_closing_ucc: item 2 class 8: column 7 2000 less claim 150 = 1850",
     ):
         assert line in rendered, line
 
