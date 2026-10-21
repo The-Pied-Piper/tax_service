@@ -5,7 +5,6 @@ from __future__ import annotations
 from decimal import Decimal
 
 from app.domain.artifact import ArtifactRegistry
-from app.domain.parameters.rate import Rate
 from app.jurisdictions.ca.catalog import (
     ADDITIONAL_DEDUCTIONS,
     ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987,
@@ -294,8 +293,10 @@ def test_the_form_t2048_kinds_are_the_registered_ones(registry: ArtifactRegistry
         assert registry.get(identifier) is kind, identifier
 
 
-def test_the_form_t2048_kinds_are_money_counts_and_a_rate() -> None:
+def test_the_form_t2048_kinds_are_money_and_counts() -> None:
+    # Line 2 "Percentage allocated to you" is a number entered as printed (50 for 50%), so money.
     for kind in (
+        QBT_PERCENTAGE_ALLOCATED,
         QBT_ELECTION_ELIGIBLE_AMOUNT,
         QBT_AMOUNT_ALLOCATED,
         QBT_TAXABLE_AMOUNT_ALLOCATED,
@@ -350,5 +351,3 @@ def test_the_form_t2048_kinds_are_money_counts_and_a_rate() -> None:
         QBT_GAINS_ARE_QSBCS_OR_QFFP,
     ):
         assert count.value_type is int, count.identifier
-    # Line 2 "Percentage allocated to you": a rate (0 to 1), not an amount.
-    assert QBT_PERCENTAGE_ALLOCATED.value_type is Rate

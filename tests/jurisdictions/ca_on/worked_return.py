@@ -7,16 +7,16 @@ amount is a decimal string, and a count (an `int` kind, under `inputs` or `expec
 of decimal digits with no sign and no leading zero, such as "0" or "3". A record list (under
 `inputs`, or under `expected` for a line the return produces as a list, such as T776 Area A's
 closing UCC) is a list of mappings, one per record in order, each keyed by its fields'
-identifiers with figures spelled as above; `[]` is no records. A rate (a `Rate` kind, under
-`inputs` or `expected`) is a quoted decimal from 0 to 1, such as "0.55". Digits (a digits kind,
-under `inputs` or `expected`, as a carried entry is listed under both) are quoted text kept as
+identifiers with figures spelled as above; `[]` is no records. A rate (a `Rate` kind, only under
+`expected`) is a quoted decimal from 0 to 1, such as "0.55". Digits (a digits kind, under
+`inputs` or `expected`, as a carried entry is listed under both) are quoted text kept as
 entered, such as "012345678", or `""` for a box left blank. `WorkedReturn.load` checks that
 shape and resolves each identifier through an artifact registry; every failure is a
 WorkedReturnError naming the file and the key, except a value its kind refuses, such as a
 negative amount, a rate above 1 or digits of the wrong length, which is the kind's own error.
 A line or input the file leaves out is blank: `with_blanks` fills it in against the manifest's
 declared inputs and outputs (a record list left out is no records, as an input and as an
-expected line; a rate left out is a rate of 0 as an input, and has no blank as an expected line).
+expected line).
 """
 
 from __future__ import annotations
@@ -123,8 +123,6 @@ class WorkedReturn:
                 result.append(Artifact(kind, RecordList(kind.fields, [])))
             elif isinstance(kind, DigitsKind):
                 result.append(Artifact(kind, ""))
-            elif section == "inputs" and kind.value_type is Rate:
-                result.append(Artifact(kind, Rate(Decimal(0))))
             else:
                 raise WorkedReturnError(
                     f"{self.path}: {section}: {identifier!r} holds a "
@@ -192,11 +190,16 @@ class WorkedReturn:
                 result.append(Artifact(kind, WorkedReturn._records(value, kind)))
             elif isinstance(kind, DigitsKind):
                 result.append(Artifact(kind, value.require_string()))
-            elif kind.value_type is Rate:
+            elif not inputs and kind.value_type is Rate:
                 result.append(Artifact(kind, Rate(value.parse_decimal())))
             else:
+                accepted = (
+                    "an amount, a count, a record list or digits"
+                    if inputs
+                    else "an amount, a count, a record list, a rate or digits"
+                )
                 raise YamlShapeError(
                     f"{value.where}: {identifier!r} holds a {kind.value_type.__name__}, "
-                    "not an amount, a count, a record list, a rate or digits"
+                    f"not {accepted}"
                 )
         return tuple(result)

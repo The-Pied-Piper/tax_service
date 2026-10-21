@@ -82,7 +82,7 @@ def return_be(**overrides: Any) -> Worksheet:
         "other_income": "2000",
         "income_tax_deducted": "8000",
         "qbt_election_eligible_amount": "600000",
-        "qbt_percentage_allocated": "0.5",
+        "qbt_percentage_allocated": "50",
         "qbt_prior_years_claims": "20000",
         "qbt_capital_gains": "180000",
         "qbt_2024_reserve": "20000",

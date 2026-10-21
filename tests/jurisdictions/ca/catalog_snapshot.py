@@ -1,7 +1,7 @@
 """The snapshot of the `ca/` artifact kind identifiers, and the groups of them the tests check.
 
 `REGISTERED` is the snapshot (see `test_catalog.py`); the other sets name the kinds that are signed,
-counts, rates or record lists.
+counts or record lists.
 """
 
 from __future__ import annotations
@@ -923,12 +923,6 @@ COUNTS = frozenset(
         "ca/qbt_has_investment_expenses",
         "ca/qbt_election_is_qbt",
         "ca/qbt_gains_are_qsbcs_or_qffp",
-    }
-)
-
-RATES = frozenset(
-    {
-        "ca/qbt_percentage_allocated",
     }
 )
 

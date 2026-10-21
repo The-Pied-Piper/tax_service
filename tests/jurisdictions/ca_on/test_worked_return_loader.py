@@ -975,26 +975,15 @@ def test_a_rate_outside_0_to_1_fails_at_load_as_an_invalid_rate(
         WorkedReturn.load(path, rates)
 
 
-def test_a_rate_kind_under_inputs_takes_a_quoted_decimal(
+def test_a_rate_under_inputs_names_the_file_and_key(
     tmp_path: Path, rates: ArtifactRegistry
 ) -> None:
-    # A rate the filer enters (Form T2048 line 2, "Percentage allocated to you") is an input.
-    path = write(tmp_path, with_section("inputs", 'inputs:\n  ex/rate: "0.55"\n'), "ok.yaml")
+    # Rates are lines a return expects, never what it starts from, like counts the other way round.
+    path = write(tmp_path, with_section("inputs", 'inputs:\n  ex/rate: "0.55"\n'))
 
-    worked = WorkedReturn.load(path, rates)
-
-    assert Artifact(RATE_KIND, Rate(D("0.55"))) in worked.inputs
-
-
-def test_a_rate_input_left_out_is_blank_0_and_a_rate_expected_line_has_no_blank(
-    tmp_path: Path, rates: ArtifactRegistry
-) -> None:
-    worked = WorkedReturn.load(write(tmp_path, VALID, "ok.yaml"), rates)
-
-    filled = worked.with_blanks(frozenset({"ex/rate"}), frozenset(), rates)
-
-    assert Artifact(RATE_KIND, Rate(D(0))) in filled.inputs
     with pytest.raises(
-        WorkedReturnError, match=r"expected: 'ex/rate' holds a Rate, which has no blank"
+        WorkedReturnError,
+        match=r"bad\.yaml: inputs\.ex/rate: 'ex/rate' holds a Rate, not an amount, a count, a "
+        r"record list or digits",
     ):
-        worked.with_blanks(frozenset(), frozenset({"ex/rate"}), rates)
+        WorkedReturn.load(path, rates)

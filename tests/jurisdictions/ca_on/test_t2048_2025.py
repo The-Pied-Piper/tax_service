@@ -28,11 +28,11 @@ import app.registrations
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capabilities.apply_rate import ApplyRate
-from app.domain.capabilities.apply_ratio import ApplyRatio
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
-from app.jurisdictions.ca_on.capabilities.apply_chosen_rate import ApplyChosenRate
+from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
+from app.jurisdictions.ca.capabilities.apply_ratio_or_zero import ApplyRatioOrZero
 
 D = Decimal
 SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
@@ -55,7 +55,7 @@ BASE = ArtifactKind("ex/base", Decimal)
 PRODUCT = ArtifactKind("ex/product", Decimal)
 NUMERATOR = ArtifactKind("ex/numerator", Decimal)
 DENOMINATOR = ArtifactKind("ex/denominator", Decimal)
-PERCENTAGE = ArtifactKind("ex/percentage", Rate)
+PERCENTAGE = ArtifactKind("ex/percentage", Decimal)
 
 
 @pytest.mark.parametrize("family", RATE_FAMILIES)
@@ -102,25 +102,23 @@ def test_the_line_15_rate_gives_line_16(gains: str, taxable: str) -> None:
     ("line_1", "percentage", "line_3"),
     [
         # Return BE: 600000 allocated 50%.
-        ("600000", "0.5", "300000"),
-        # A tie rounds up: 1000.01 x 0.5 = 500.005, up to 500.01.
-        ("1000.01", "0.5", "500.01"),
+        ("600000", "50", "300000"),
+        # A tie rounds up: 1000.01 x 50% = 500.005, up to 500.01.
+        ("1000.01", "50", "500.01"),
         ("600000", "0", "0"),
     ],
 )
 def test_line_3_is_line_1_at_the_percentage_from_line_2(
     line_1: str, percentage: str, line_3: str
 ) -> None:
-    capability = ApplyChosenRate(
+    capability = ApplyPercentage(
         SOURCE.get("ca/qbt_amount_allocated_rounding", 2025, ROUNDING_ONLY),
         BASE,
         PERCENTAGE,
         PRODUCT,
     )
 
-    result = capability.compute(
-        (Artifact(BASE, D(line_1)), Artifact(PERCENTAGE, Rate(D(percentage))))
-    )
+    result = capability.compute((Artifact(BASE, D(line_1)), Artifact(PERCENTAGE, D(percentage))))
 
     assert result.outputs == (Artifact(PRODUCT, D(line_3)),)
 
@@ -133,12 +131,14 @@ def test_line_3_is_line_1_at_the_percentage_from_line_2(
         # 4000 x 5000 / 9500 = 2105.2631..., rounded half-up to the cent.
         ("4000", "5000", "9500", "2105.26"),
         ("4000", "0", "9500", "0"),
+        # Line 36 is 0 when line 35 is 0 ("enter 0 on lines 41 and 42"), not an error.
+        ("0", "0", "0", "0"),
     ],
 )
 def test_line_41_is_line_33_times_line_36_over_line_35(
     line_33: str, line_36: str, line_35: str, line_41: str
 ) -> None:
-    capability = ApplyRatio(
+    capability = ApplyRatioOrZero(
         SOURCE.get("ca/qbt_abil_reduction_rounding", 2025, ROUNDING_ONLY),
         BASE,
         NUMERATOR,

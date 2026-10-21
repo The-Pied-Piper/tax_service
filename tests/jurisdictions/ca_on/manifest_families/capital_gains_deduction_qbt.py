@@ -8,7 +8,6 @@ line 25700 in the `taxable_income` family.
 from __future__ import annotations
 
 from app.domain.capabilities.apply_rate import ApplyRate
-from app.domain.capabilities.apply_ratio import ApplyRatio
 from app.domain.capabilities.at_most import AtMost
 from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.subtract import Subtract
@@ -17,6 +16,8 @@ from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
 from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
+from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
+from app.jurisdictions.ca.capabilities.apply_ratio_or_zero import ApplyRatioOrZero
 from app.jurisdictions.ca.catalog import (
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES,
@@ -77,7 +78,6 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_DIVIDENDS,
 )
-from app.jurisdictions.ca_on.capabilities.apply_chosen_rate import ApplyChosenRate
 
 INPUTS = frozenset(
     {
@@ -115,14 +115,14 @@ OUTPUTS = frozenset(
 STEPS = {
     # Form T2048 Part 2 line 3 "Line 1 multiplied by the percentage from line 2" (line 1 "Total
     # eligible amount for the joint election (maximum of $10 million per election)", line 2
-    # "Percentage allocated to you"): the percentage is a rate the filer enters, so the product is
-    # `ca-on/apply_chosen_rate`.
+    # "Percentage allocated to you"): the percentage is entered as printed (50 for 50%), so the
+    # product is `ca/apply_percentage`.
     CapabilitySelection(
-        name="ca-on/apply_chosen_rate",
+        name="ca/apply_percentage",
         params={"rounding": "ca/qbt_amount_allocated_rounding"},
         consumes={
-            "base": "ca/qbt_election_eligible_amount",
-            "rate": "ca/qbt_percentage_allocated",
+            "amount": "ca/qbt_election_eligible_amount",
+            "percentage": "ca/qbt_percentage_allocated",
         },
         produces={"output": "ca/qbt_amount_allocated"},
     ),
@@ -348,9 +348,10 @@ STEPS = {
     ),
     # Part 4 line 41 "Line 39 multiplied by line 40" "ABIL reduction" (line 37 "Amount from line
     # 36", line 38 "Amount from line 35", line 39 "Line 37 divided by line 38", line 40 "Amount from
-    # line 33"): line 40 times line 37 over line 38.
+    # line 33"): line 40 times line 37 over line 38, 0 when line 38 is 0 ("if the result is "0",
+    # enter "0" on lines 41 and 42").
     CapabilitySelection(
-        name="core/apply_ratio",
+        name="ca/apply_ratio_or_zero",
         params={"rounding": "ca/qbt_abil_reduction_rounding"},
         consumes={
             "amount": "ca/allowable_business_investment_loss",
@@ -536,7 +537,7 @@ STEPS = {
 
 WIRING = {
     (
-        ApplyChosenRate,
+        ApplyPercentage,
         frozenset({QBT_ELECTION_ELIGIBLE_AMOUNT, QBT_PERCENTAGE_ALLOCATED}),
         frozenset({QBT_AMOUNT_ALLOCATED}),
     ),
@@ -637,7 +638,7 @@ WIRING = {
         frozenset({QBT_ALLOCATION_LIMIT}),
     ),
     (
-        ApplyRatio,
+        ApplyRatioOrZero,
         frozenset(
             {
                 ALLOWABLE_BUSINESS_INVESTMENT_LOSS,

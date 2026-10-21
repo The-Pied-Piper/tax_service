@@ -9,7 +9,6 @@ from typing import Any
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.record_list import RecordList, RecordListKind
 from app.domain.worksheet import Worksheet
@@ -1491,7 +1490,7 @@ def compute(
             D(unused_tuition_amounts_brought_forward),
         ),
         Artifact(QBT_ELECTION_ELIGIBLE_AMOUNT, D(qbt_election_eligible_amount)),
-        Artifact(QBT_PERCENTAGE_ALLOCATED, Rate(D(qbt_percentage_allocated))),
+        Artifact(QBT_PERCENTAGE_ALLOCATED, D(qbt_percentage_allocated)),
         Artifact(QBT_PRIOR_YEARS_CLAIMS, D(qbt_prior_years_claims)),
         Artifact(QBT_CAPITAL_GAINS, D(qbt_capital_gains)),
         Artifact(QBT_2024_RESERVE, D(qbt_2024_reserve)),
