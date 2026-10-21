@@ -146,6 +146,7 @@ inputs:
   ca/qbt_other_investment_expenses: "1000"
   ca/qbt_other_property_income: "500"
   ca/qbt_deduction_claimed: "60500"
+  ca/unapplied_net_capital_losses_2000: "0"
 expected:
   ca/taxable_capital_gains: "100000.00"
   ca/net_capital_losses_of_other_years: "30000"
@@ -200,3 +201,4 @@ expected:
   ca/amt_other_years_losses_total: "0"
   ca/amt_security_options_d1_total: "0"
   ca/amt_security_options_net: "0"
+  ca/net_capital_loss_balance_2000: "0.00"

@@ -283,6 +283,7 @@ inputs:
   ca/aged_18_or_older_at_end_of_2025: "1"
   ca/split_income_dividends: "11500"
   ca/split_income_dividends_other_than_eligible: "11500"
+  ca/unapplied_net_capital_losses_2000: "0"
 expected:
   ca/cpp_second_additional_earnings_maximum: "9900.00"
   ca/other_dividends_grossed_up: "11500.00"
@@ -394,3 +395,4 @@ expected:
   ca/amt_other_years_losses_total: "0"
   ca/amt_security_options_d1_total: "0"
   ca/amt_security_options_net: "0"
+  ca/net_capital_loss_balance_2000: "0.00"
