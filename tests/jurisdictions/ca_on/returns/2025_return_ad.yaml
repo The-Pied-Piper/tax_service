@@ -398,6 +398,8 @@ inputs:
   ca/rental_repairs_and_maintenance: "1300"
   ca/rental_property_taxes: "3500"
   ca/cpp_months: "12"
+  ca/cpp_t4_base_and_first_additional_contributions: "0"
+  ca/cpp_t4_second_additional_contributions: "0"
   ca/unapplied_net_capital_losses_2000: "0"
 expected:
   ca/taxable_capital_gains: "0.00"
@@ -424,7 +426,9 @@ expected:
   ca/cpp_second_additional_earnings_maximum: "9900.00"
   ca/cpp_base_contributions: "0.00"
   ca/cpp_first_additional_contributions: "0.00"
+  ca/cpp_required_base_and_first_additional_contributions: "0.00"
   ca/cpp_second_additional_contributions: "0.00"
+  ca/cpp_contributions_difference: "0.00"
   ca/cpp_enhanced_contributions: "0.00"
   ca/ei_premiums: "0.00"
   ca/rrsp_contributions_available: "0"

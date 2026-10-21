@@ -80,6 +80,8 @@ sources:
 inputs:
   ca/employment_income: "60000"
   ca/cpp_months: "12"
+  ca/cpp_t4_base_and_first_additional_contributions: "3361.75"
+  ca/cpp_t4_second_additional_contributions: "0"
   ca/share_dispositions:
     - ca/disposition_proceeds: "5000"
       ca/disposition_adjusted_cost_base: "3000"
@@ -151,3 +153,5 @@ expected:
   ca-on/ontario_tax_less_dividend_credit: "2526.82"
   ca/refund_or_balance_owing: "8973.29"
   ca/net_capital_loss_balance_2000: "0.00"
+  ca/cpp_required_base_and_first_additional_contributions: "3361.75"
+  ca/cpp_contributions_difference: "0.00"

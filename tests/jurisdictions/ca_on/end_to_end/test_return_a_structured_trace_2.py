@@ -270,14 +270,20 @@ from app.jurisdictions.ca.catalog import (
     CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
     CLERGY_RESIDENCE_DEDUCTION,
     COMMISSION_INCOME,
+    CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_CONTRIBUTIONS_DIFFERENCE,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_OR_QPP_BENEFITS,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+    CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDIT_AMOUNTS_SUBTOTAL,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
@@ -919,6 +925,33 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Schedule 8 Part 3 line 13 "Line 11 plus line 12".
+        CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS: SumLine(
+            CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            (
+                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
+                (CPP_FIRST_ADDITIONAL_CONTRIBUTIONS, D("678.00")),
+            ),
+            D("4034.10"),
+        ),
+        # Schedule 8 Part 3 line 20 "Line 16 plus line 19".
+        CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE: SumLine(
+            CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            (
+                (CPP_BASE_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+            ),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3 line 24 "Line 20 plus line 23".
+        CPP_CONTRIBUTIONS_DIFFERENCE: SumLine(
+            CPP_CONTRIBUTIONS_DIFFERENCE,
+            (
+                (CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+            ),
+            D("0.00"),
+        ),
         # Form T657 Chart 2016 Part 2 "Amount G plus amount H" I: G and Part 1 amount G are 0.
         CHART_2016_PART_2_AMOUNT_I: SumLine(
             output=CHART_2016_PART_2_AMOUNT_I,

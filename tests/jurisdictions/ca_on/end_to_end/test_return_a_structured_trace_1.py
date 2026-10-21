@@ -46,6 +46,8 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GAIN,
     CAPITAL_GIFTS_LIMIT_ADDITION,
     CAPITAL_GIFTS_TOTAL,
+    CPP_ACTUAL_BASE_CONTRIBUTIONS,
+    CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
@@ -201,6 +203,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         if isinstance(line, ItemsTotalLine) and line.output is COOP_EDUCATION_CREDIT
     }
     assert rated == {
+        # Schedule 8 Part 3 line 9 "amount from line 8 multiplied by 83.1933%": Return A's T4 box 16
+        # equals the required contributions (line 13), so the base share is line 11.
+        CPP_ACTUAL_BASE_CONTRIBUTIONS: RateAppliedLine(
+            CPP_ACTUAL_BASE_CONTRIBUTIONS,
+            CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("4034.10"),
+            Rate(D("0.831933")),
+            CENT,
+            D("3356.10"),
+        ),
         # Form T691 Part 1 line 31 "× 40%" of the gifts under a security option plan (67914): Return
         # A has none, so the base and the 40% are 0.
         AMT_SECURITY_OPTION_GIFTS_DEDUCTION: RateAppliedLine(

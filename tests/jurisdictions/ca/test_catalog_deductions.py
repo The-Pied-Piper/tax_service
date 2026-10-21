@@ -35,8 +35,10 @@ from app.jurisdictions.ca.catalog import (
     CHILDREN_SEVEN_TO_SIXTEEN,
     CHILDREN_UNDER_SEVEN,
     CHILDREN_WITH_DISABILITY,
+    CPP_ACTUAL_BASE_CONTRIBUTIONS,
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_BASIC_EXEMPTION,
+    CPP_CONTRIBUTIONS_DIFFERENCE,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
     CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
     CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
@@ -50,6 +52,8 @@ from app.jurisdictions.ca.catalog import (
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+    CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPT20_EARNINGS,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     EI_BENEFITS_REPAYMENT,
@@ -719,3 +723,68 @@ def test_schedule_13_line_1_stays_non_negative_after_the_slips(registry: Artifac
     assert EI_SELF_EMPLOYMENT_EARNINGS is not EI_SELF_EMPLOYMENT_BEFORE_SLIPS
     assert EI_SELF_EMPLOYMENT_EARNINGS.non_negative is True
     assert "ca/ei_self_employment_earnings" not in SIGNED
+
+
+# Schedule 8 Part 3 the box 16 and 16A totals the filer enters, and the lines
+# that compare them with the required contributions. The kinds are reached through the module
+# so that the rest of this file runs before they are declared.
+def test_the_cpp_t4_box_totals_are_non_negative_money_the_filer_enters(
+    registry: ArtifactRegistry,
+) -> None:
+    # Schedule 8 Part 3 line 8 and line 50340 "Total actual base and first additional
+    # contributions on CPP pensionable earnings from box 16 of all of your T4 slips", and line 21
+    # and line 50341 "Total actual second additional contributions on CPP pensionable earnings
+    # from box 16A of all of your T4 slips": amounts the filer enters, never below zero.
+    for identifier in (
+        "ca/cpp_t4_base_and_first_additional_contributions",
+        "ca/cpp_t4_second_additional_contributions",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is True, identifier
+        assert identifier not in SIGNED, identifier
+    assert (
+        registry.kind("ca/cpp_t4_base_and_first_additional_contributions")
+        is CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS
+    )
+    assert (
+        registry.kind("ca/cpp_t4_second_additional_contributions")
+        is CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS
+    )
+
+
+def test_the_cpp_part_3_lines_that_print_no_brackets_are_non_negative(
+    registry: ArtifactRegistry,
+) -> None:
+    # Line 9 is "amount from line 8 multiplied by 83.1933%", line 10 is "Line 8 minus line 9" (the
+    # factor is below 100%, so it is never below zero) and line 13 is "Line 11 plus line 12": none
+    # can be negative, and none prints "(if negative, show in brackets)".
+    for identifier in (
+        "ca/cpp_actual_base_contributions",
+        "ca/cpp_actual_first_additional_contributions",
+        "ca/cpp_required_base_and_first_additional_contributions",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is True, identifier
+        assert identifier not in SIGNED, identifier
+    assert registry.kind("ca/cpp_actual_base_contributions") is CPP_ACTUAL_BASE_CONTRIBUTIONS
+
+
+def test_the_cpp_part_3_difference_lines_are_signed_as_their_brackets_say(
+    registry: ArtifactRegistry,
+) -> None:
+    # Lines 16, 19, 20, 23 and 24 each print "(if negative, show in brackets)", so each is a
+    # signed Decimal, a loss of contributions over the required ones included.
+    for identifier in (
+        "ca/cpp_base_contributions_difference",
+        "ca/cpp_first_additional_contributions_difference",
+        "ca/cpp_base_and_first_additional_contributions_difference",
+        "ca/cpp_second_additional_contributions_difference",
+        "ca/cpp_contributions_difference",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is False, identifier
+        assert identifier in SIGNED, identifier
+    assert registry.kind("ca/cpp_contributions_difference") is CPP_CONTRIBUTIONS_DIFFERENCE

@@ -42,6 +42,11 @@ outputs:
   - ca/crypto_asset_proceeds
   - ca/other_foreclosure_proceeds
   - ca/cpp_second_additional_earnings_maximum
+  # Schedule 8 Part 3 line 13 "Line 11 plus line 12 =" and line 24 "Line 20 plus line 23 (if
+  # negative, show in brackets) =": nothing else on the return reads them yet (line 24 is not
+  # routed to Part 3a or Part 3b).
+  - ca/cpp_required_base_and_first_additional_contributions
+  - ca/cpp_contributions_difference
   - ca-on/applies_for_energy_and_property_tax_credit
   - ca-on/applies_for_northern_energy_credit
   - ca-on/chooses_single_benefit_payment

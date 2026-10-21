@@ -48,21 +48,32 @@ from app.jurisdictions.ca.catalog import (
     CHILDREN_SEVEN_TO_SIXTEEN,
     CHILDREN_UNDER_SEVEN,
     CHILDREN_WITH_DISABILITY,
+    CPP_ACTUAL_BASE_CONTRIBUTIONS,
+    CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
+    CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+    CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASIC_EXEMPTION,
+    CPP_CONTRIBUTIONS_DIFFERENCE,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
     CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
     CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
     CPP_EARNINGS_UP_TO_MAXIMUM,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_MONTHS,
     CPP_PART_4_COMPLETED,
     CPP_PENSIONABLE_EARNINGS,
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
+    CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+    CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPT20_EARNINGS,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     EI_AND_OTHER_BENEFITS,
@@ -229,6 +240,8 @@ INPUTS = frozenset(
         "ca/zone_b_special_work_site_benefits",
         "ca/travel_trips",
         "ca/travel_individuals",
+        "ca/cpp_t4_base_and_first_additional_contributions",
+        "ca/cpp_t4_second_additional_contributions",
     }
 )
 
@@ -238,6 +251,8 @@ OUTPUTS = frozenset(
         "ca/other_payments_limit_income",
         "ca/standard_amount_allocated",
         "ca/cpp_second_additional_earnings_maximum",
+        "ca/cpp_required_base_and_first_additional_contributions",
+        "ca/cpp_contributions_difference",
     }
 )
 
@@ -1177,6 +1192,95 @@ STEPS = {
         },
         produces={"output": "ca/northern_residents_deductions"},
     ),
+    # Schedule 8 Part 3 line 9 "amount from line 8 multiplied by 83.1933% =", the actual base
+    # contributions, of the T4 box 16 total (line 8 and line 50340).
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/cpp_actual_base_share"},
+        consumes={"base": "ca/cpp_t4_base_and_first_additional_contributions"},
+        produces={"output": "ca/cpp_actual_base_contributions"},
+    ),
+    # Schedule 8 Part 3 line 10 "Line 8 minus line 9 =", the actual first additional contributions.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/cpp_t4_base_and_first_additional_contributions",
+            "less": "ca/cpp_actual_base_contributions",
+        },
+        produces={"output": "ca/cpp_actual_first_additional_contributions"},
+    ),
+    # Schedule 8 Part 3 line 13 "Line 11 plus line 12 =", the required base and first additional
+    # contributions.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/cpp_base_contributions",
+                "ca/cpp_first_additional_contributions",
+            )
+        },
+        produces={"output": "ca/cpp_required_base_and_first_additional_contributions"},
+    ),
+    # Schedule 8 Part 3 line 16 "Line 14 minus line 15 (if negative, show in brackets) =", line 14
+    # being line 9 and line 15 line 11.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/cpp_actual_base_contributions",
+            "less": "ca/cpp_base_contributions",
+        },
+        produces={"output": "ca/cpp_base_contributions_difference"},
+    ),
+    # Schedule 8 Part 3 line 19 "Line 17 minus line 18 (if negative, show in brackets) =", line 17
+    # being line 10 and line 18 line 12.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/cpp_actual_first_additional_contributions",
+            "less": "ca/cpp_first_additional_contributions",
+        },
+        produces={"output": "ca/cpp_first_additional_contributions_difference"},
+    ),
+    # Schedule 8 Part 3 line 20 "Line 16 plus line 19 (if negative, show in brackets) =".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/cpp_base_contributions_difference",
+                "ca/cpp_first_additional_contributions_difference",
+            )
+        },
+        produces={"output": "ca/cpp_base_and_first_additional_contributions_difference"},
+    ),
+    # Schedule 8 Part 3 line 23 "Line 21 minus line 22 (if negative, show in brackets) =", line 21
+    # being the T4 box 16A total (line 21 and line 50341) and line 22 the required second
+    # additional contributions.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/cpp_t4_second_additional_contributions",
+            "less": "ca/cpp_second_additional_contributions",
+        },
+        produces={"output": "ca/cpp_second_additional_contributions_difference"},
+    ),
+    # Schedule 8 Part 3 line 24 "Line 20 plus line 23 (if negative, show in brackets) =".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/cpp_base_and_first_additional_contributions_difference",
+                "ca/cpp_second_additional_contributions_difference",
+            )
+        },
+        produces={"output": "ca/cpp_contributions_difference"},
+    ),
 }
 
 WIRING = {
@@ -1671,5 +1775,52 @@ WIRING = {
         Sum,
         frozenset({RESIDENCY_DEDUCTION, TRAVEL_DEDUCTION}),
         frozenset({NORTHERN_RESIDENTS_DEDUCTIONS}),
+    ),
+    (
+        ApplyRate,
+        frozenset({CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS}),
+        frozenset({CPP_ACTUAL_BASE_CONTRIBUTIONS}),
+    ),
+    (
+        Subtract,
+        frozenset({CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS, CPP_ACTUAL_BASE_CONTRIBUTIONS}),
+        frozenset({CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS}),
+    ),
+    (
+        Sum,
+        frozenset({CPP_BASE_CONTRIBUTIONS, CPP_FIRST_ADDITIONAL_CONTRIBUTIONS}),
+        frozenset({CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS}),
+    ),
+    (
+        Subtract,
+        frozenset({CPP_ACTUAL_BASE_CONTRIBUTIONS, CPP_BASE_CONTRIBUTIONS}),
+        frozenset({CPP_BASE_CONTRIBUTIONS_DIFFERENCE}),
+    ),
+    (
+        Subtract,
+        frozenset({CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS, CPP_FIRST_ADDITIONAL_CONTRIBUTIONS}),
+        frozenset({CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {CPP_BASE_CONTRIBUTIONS_DIFFERENCE, CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE}
+        ),
+        frozenset({CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE}),
+    ),
+    (
+        Subtract,
+        frozenset({CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS, CPP_SECOND_ADDITIONAL_CONTRIBUTIONS}),
+        frozenset({CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+                CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            }
+        ),
+        frozenset({CPP_CONTRIBUTIONS_DIFFERENCE}),
     ),
 }
