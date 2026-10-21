@@ -32,6 +32,9 @@ from app.jurisdictions.ca.capabilities.chart_b_zone_b_total import ChartBZoneBTo
 from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
 from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.capabilities.disability_transfer_amount import DisabilityTransferAmount
+from app.jurisdictions.ca.capabilities.ei_excluded_slips_net_income import (
+    EiExcludedSlipsNetIncome,
+)
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
@@ -165,6 +168,8 @@ from app.jurisdictions.ca.catalog import (
     EI_AND_OTHER_BENEFITS,
     EI_CONTROLLED_CORPORATION_EARNINGS,
     EI_EARNINGS_SUBJECT_TO_PREMIUM,
+    EI_EXCLUDED_SLIPS,
+    EI_EXCLUDED_SLIPS_NET_INCOME,
     EI_EXEMPT_SELF_EMPLOYMENT_INCOME,
     EI_INSURABLE_EARNINGS,
     EI_INSURABLE_EARNINGS_REMAINING,
@@ -173,6 +178,7 @@ from app.jurisdictions.ca.catalog import (
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     EI_PREMIUMS,
     EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+    EI_SELF_EMPLOYMENT_BEFORE_SLIPS,
     EI_SELF_EMPLOYMENT_EARNINGS,
     EI_SPECIAL_BENEFITS_AGREEMENT,
     ELECTED_SPLIT_PENSION_AMOUNT,
@@ -1047,7 +1053,10 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     ):
         assert isinstance(worksheet.producer_of(summed), Sum)
     assert isinstance(worksheet.producer_of(SELF_EMPLOYED_CPP_BASE_CREDIT), ApplyRate)
-    assert isinstance(worksheet.producer_of(EI_SELF_EMPLOYMENT_EARNINGS), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(EI_SELF_EMPLOYMENT_BEFORE_SLIPS), Sum)
+    assert isinstance(worksheet.producer_of(EI_EXCLUDED_SLIPS_NET_INCOME), EiExcludedSlipsNetIncome)
+    assert worksheet.producer_of(EI_EXCLUDED_SLIPS) is None
+    assert isinstance(worksheet.producer_of(EI_SELF_EMPLOYMENT_EARNINGS), SubtractNotBelowZero)
     assert isinstance(worksheet.producer_of(EI_MAXIMUM_INSURABLE_EARNINGS), CreditAmount)
     assert isinstance(worksheet.producer_of(EI_EARNINGS_SUBJECT_TO_PREMIUM), LesserOf)
     # T1 lines 42100, 31000, 22200, 31217 and 42120: each a line of its form claimed once.

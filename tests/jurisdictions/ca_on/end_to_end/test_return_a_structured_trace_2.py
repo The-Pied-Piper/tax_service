@@ -94,6 +94,7 @@ from app.jurisdictions.ca.catalog import (
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     EI_PREMIUMS,
     EI_PREMIUMS_ON_SELF_EMPLOYMENT,
+    EI_SELF_EMPLOYMENT_BEFORE_SLIPS,
     EI_SELF_EMPLOYMENT_EARNINGS,
     ELECTED_SPLIT_PENSION_AMOUNT,
     ELECTED_SPLIT_PENSION_DEDUCTION,
@@ -1777,6 +1778,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (SELF_EMPLOYED_CPP_BASE_CREDIT, D("0")),
                 (SELF_EMPLOYED_CPP_ENHANCED_CONTRIBUTIONS, D("0")),
             ),
+            D("0"),
+        ),
+        # Schedule 13 line 1 before the slips, "the total amount from line 12200 plus line 27".
+        EI_SELF_EMPLOYMENT_BEFORE_SLIPS: SumLine(
+            EI_SELF_EMPLOYMENT_BEFORE_SLIPS,
+            ((NET_PARTNERSHIP_INCOME, D("0")), (NET_SELF_EMPLOYMENT_INCOME, D("0"))),
             D("0"),
         ),
         # Schedule 13 line 4 "Add lines 1 to 3. Net self-employment income".

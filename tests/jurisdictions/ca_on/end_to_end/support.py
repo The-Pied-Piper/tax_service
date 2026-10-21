@@ -76,6 +76,8 @@ from app.jurisdictions.ca.catalog import (
     EI_AND_OTHER_BENEFITS,
     EI_BENEFITS_REPAYMENT,
     EI_CONTROLLED_CORPORATION_EARNINGS,
+    EI_EXCLUDED_SLIP_NET_INCOME,
+    EI_EXCLUDED_SLIPS,
     EI_EXEMPT_SELF_EMPLOYMENT_INCOME,
     EI_INSURABLE_EARNINGS,
     EI_SPECIAL_BENEFITS_AGREEMENT,
@@ -463,6 +465,14 @@ def placement_list(*expenditures: str) -> Artifact[RecordList]:
     return Artifact(
         COOP_EDUCATION_PLACEMENTS, RecordList(COOP_EDUCATION_PLACEMENTS.fields, records)
     )
+
+
+def ei_excluded_slips_list(*net_incomes: str) -> Artifact[RecordList]:
+    """The Schedule 13 line 1 slips, one record per net income (or net loss), in the order given."""
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {EI_EXCLUDED_SLIP_NET_INCOME: D(net_income)} for net_income in net_incomes
+    ]
+    return Artifact(EI_EXCLUDED_SLIPS, RecordList(EI_EXCLUDED_SLIPS.fields, records))
 
 
 def rental_properties_list(*rows: tuple[int, str, str]) -> Artifact[RecordList]:
@@ -954,6 +964,7 @@ def compute(
     cpp_part_4_completed: int = 0,
     ei_controlled_corporation_earnings: str = "0",
     ei_exempt_self_employment_income: str = "0",
+    ei_excluded_slips: tuple[str, ...] = (),
     ei_insurable_earnings: str = "0",
     ei_special_benefits_agreement: int = 0,
     canadian_tuition_fees: str = "0",
@@ -1407,6 +1418,7 @@ def compute(
         Artifact(CPP_PART_4_COMPLETED, cpp_part_4_completed),
         Artifact(EI_CONTROLLED_CORPORATION_EARNINGS, D(ei_controlled_corporation_earnings)),
         Artifact(EI_EXEMPT_SELF_EMPLOYMENT_INCOME, D(ei_exempt_self_employment_income)),
+        ei_excluded_slips_list(*ei_excluded_slips),
         Artifact(EI_INSURABLE_EARNINGS, D(ei_insurable_earnings)),
         Artifact(EI_SPECIAL_BENEFITS_AGREEMENT, ei_special_benefits_agreement),
         Artifact(CANADIAN_TUITION_FEES, D(canadian_tuition_fees)),

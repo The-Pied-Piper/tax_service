@@ -500,17 +500,44 @@ line 22200 "Deduction for CPP or QPP contributions on self-employment income and
 (complete Schedule 8 or Form RC381, whichever applies)": Schedule 8 Part 4 line 17, entered once
 for each Part 4 completed (1 or 0), a deduction from total income."""
 
+EI_EXCLUDED_SLIP_NET_INCOME = CATALOG.declare("ei_excluded_slip_net_income", Decimal)
+"""Net income (or net loss) reported for a T4 slip with EI premiums in box 18, Schedule 13 line 1
+"If you received a T4 slip for self-employment income with EI premiums in box 18, do not include any
+net income (or net loss) reported on lines 13500, 13700, 13900, 14100, and 14300 of your return for
+that slip (Note 1)": a field of each record of the slips, taken as the form takes it, on whichever
+of those lines the slip was reported. A net loss is negative, so the kind is signed."""
+
+EI_EXCLUDED_SLIPS = RecordListKind.declare(
+    CATALOG,
+    "ei_excluded_slips",
+    fields=(EI_EXCLUDED_SLIP_NET_INCOME,),
+)
+"""T4 slips with EI premiums in box 18, Schedule 13 line 1 "If you received a T4 slip for
+self-employment income with EI premiums in box 18, do not include any net income (or net loss)
+reported on lines 13500, 13700, 13900, 14100, and 14300 of your return for that slip (Note 1)": a
+starting list with one record for each such slip, holding the net income (or net loss) reported for
+it. Possibly empty."""
+
+EI_EXCLUDED_SLIPS_NET_INCOME = CATALOG.declare("ei_excluded_slips_net_income", Decimal)
+"""Net income of the T4 slips with EI premiums in box 18, Schedule 13 line 1 "do not include any net
+income (or net loss) reported on lines 13500, 13700, 13900, 14100, and 14300 of your return for that
+slip (Note 1)": the net income (or net loss) of every such slip, added. It may be a loss, so the
+kind is signed."""
+
+EI_SELF_EMPLOYMENT_BEFORE_SLIPS = CATALOG.declare("ei_self_employment_before_slips", Decimal)
+"""Schedule 13 line 1 before the slips "Enter the total amount from line 1 1 plus line 27 of your
+return": the net partnership income (T1 line 11, line 12200) plus the net self-employment income.
+The form text reads "line 1 1", taken as line 11; to be confirmed. It stands before the exclusion of
+the slips and the "(if negative, enter "0")" floor of the finished line 1, so the kind is signed."""
+
 EI_SELF_EMPLOYMENT_EARNINGS = CATALOG.declare(
     "ei_self_employment_earnings", Decimal, non_negative=True
 )
 """Self-employment earnings for EI, Schedule 13 line 1 "Enter the total amount from line 1 1 plus
-line 27 of your return ... (if negative, enter "0")": the net partnership income (T1 line 11, line
-12200) plus the net self-employment income, not below zero. The form text reads "line 1 1", taken
-as line 11; to be confirmed.
-
-Not modelled: the exclusion of the net income on lines 13500, 13700, 13900, 14100 and 14300 for a T4
-slip for self-employment income with EI premiums in box 18 (Note 1).
-"""
+line 27 of your return. If you received a T4 slip for self-employment income with EI premiums in box
+18, do not include any net income (or net loss) reported on lines 13500, 13700, 13900, 14100, and
+14300 of your return for that slip (Note 1) (if negative, enter "0")": the net partnership income
+plus the net self-employment income, less the net income of those slips, not below zero."""
 
 EI_NET_SELF_EMPLOYMENT_INCOME = CATALOG.declare(
     "ei_net_self_employment_income", Decimal, non_negative=True

@@ -107,6 +107,14 @@ def test_importing_the_federal_package_registers_the_disposition_proceeds_capabi
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.disposition_proceeds"
 
 
+def test_importing_the_federal_package_registers_the_ei_excluded_slips_net_income_capability() -> (
+    None
+):
+    registered = CapabilityRegistry.shared().get("ca/ei_excluded_slips_net_income")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.ei_excluded_slips_net_income"
+
+
 def test_importing_the_federal_package_registers_the_cca_claim_capability() -> None:
     registered = CapabilityRegistry.shared().get("ca/cca_claim")
 
