@@ -140,15 +140,21 @@ description: >-
   against the required contributions on lines 84 to 86 (line 89 is twice line 69, 344.50, less
   than line 88, 946.70), so line 90 is positive and nothing is left for line 91. The results are
   not carried to the T1 lines yet. The remaining lines of the T1 are Schedule 8's, as the RC381
-  results are not yet carried to them: on employment income of $70,000 the base CPP
-  contributions (line 30800) are 4.95% x (70,000 less 3,500) = 3,291.75,
-  and the enhanced contributions (line 22215) are 1% x 66,500 = 665.00; the EI premiums are
-  the maximum 1,077.48. Total income (line 15000) is 70,000.00; net income and taxable income
-  are 70,000.00 less the enhanced contributions of 665.00 = 69,335.00. The income tax deducted
+  results are not yet carried to them. Schedule 8 reads the same T4 box 16 total as RC381 (the
+  1,800.00 above, line 8): on employment income of $70,000 the required base contributions
+  (line 11) are 4.95% x (70,000 less 3,500) = 3,291.75 and the required first additional
+  contributions (line 12) 1% x 66,500 = 665.00, so line 13 is 3,956.75, and the contributions
+  the slip shows are less: line 9 is 1,800.00 x 83.1933% = 1,497.48 and line 10 is 302.52, so
+  lines 16 and 19 are negative (-1,794.27 and -362.48), line 24 is -2,156.75 and Part 3b
+  applies, taking the contributions actually paid: the base contributions (line 30800) are
+  1,497.48 and the enhanced contributions (line 22215) are 302.52. The EI premiums are the
+  maximum 1,077.48. Total income (line 15000) is 70,000.00; net income and taxable income
+  are 70,000.00 less the enhanced contributions of 302.52 = 69,697.48 (the AMT adds back half
+  of them, 151.26). The income tax deducted
   is a chosen 12,000.00. The federal tax and the Ontario tax are the engine's figures from the
-  2025 brackets and credits in the repository (net federal tax 7,585.64, Ontario tax 3,911.45),
-  giving a total payable of 11,497.09 and a refund of 502.91 (to be confirmed against CRA's
-  calculator). Not triggered: Part 3b's branches (line 69 is positive), the lines of Part 4's
+  2025 brackets and credits in the repository (net federal tax 7,920.12, Ontario tax 4,035.23),
+  giving a total payable of 11,955.35 and a refund of 44.65 (to be confirmed against CRA's
+  calculator). Not triggered: RC381 Part 3b's branches (line 69 is positive), the lines of Part 4's
   blocks for a negative or "0" line 61 and for a positive or negative line 68 of Part 3, lines
   63 to 69 of Part 4 (line 3 of Part 3 is not less than line 58), a negative line 90 (line 91),
   the lines of Part 4 lines 92 to 110 for a negative or "0" line 53, 60 or 68 of Part 3, the
@@ -387,7 +393,7 @@ inputs:
   ca/qpp_months: "12"
   ca/t4_cpp_pensionable_earnings_outside_quebec: "30000"
   ca/t4_qpp_pensionable_earnings_in_quebec: "40000"
-  ca/t4_cpp_contributions_box_16: "1800.00"
+  ca/cpp_t4_base_and_first_additional_contributions: "1800.00"
   ca/t4_qpp_contributions_box_17: "2500.00"
   ca/cpt20_earnings: "10000"
   ca/cpt20_t4_earnings: "2500"
@@ -404,20 +410,21 @@ expected:
   ca/cpp_base_contributions: "3291.75"
   ca/cpp_first_additional_contributions: "665.00"
   ca/cpp_enhanced_contributions: "665.00"
+  ca/cpp_required_base_and_first_additional_contributions: "3956.75"
   ca/ei_premiums: "1077.48"
-  ca/net_income_before_adjustments: "69335.00"
-  ca/other_payments_limit_income: "69335.00"
-  ca/net_income: "69335.00"
-  ca/taxable_income: "69335.00"
-  ca/net_federal_tax: "7585.64"
-  ca-on/ontario_tax_less_dividend_credit: "3311.45"
-  ca-on/ontario_tax: "3911.45"
-  ca/total_payable: "11497.09"
+  ca/net_income_before_adjustments: "69697.48"
+  ca/other_payments_limit_income: "69697.48"
+  ca/net_income: "69697.48"
+  ca/taxable_income: "69697.48"
+  ca/net_federal_tax: "7920.12"
+  ca-on/ontario_tax_less_dividend_credit: "3435.23"
+  ca-on/ontario_tax: "4035.23"
+  ca/total_payable: "11955.35"
   ca/total_credits: "12000.00"
-  ca/refund_or_balance_owing: "-502.91"
-  ca-on/net_refund: "502.91"
-  ca/amt_part_1_subtotal: "69335.00"
-  ca/amt_applicable_rate_amount: "332.50"
+  ca/refund_or_balance_owing: "-44.65"
+  ca-on/net_refund: "44.65"
+  ca/amt_part_1_subtotal: "69697.48"
+  ca/amt_applicable_rate_amount: "151.26"
   ca/rc381_part_2_line_b: "12"
   ca/rc381_part_2_line_g: "71300.00"
   ca/rc381_part_2_line_h: "9900.00"

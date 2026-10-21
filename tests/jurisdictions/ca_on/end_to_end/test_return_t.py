@@ -12,6 +12,7 @@ from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     CANADA_TRAINING_CREDIT,
     CANADA_WORKERS_BENEFIT,
+    CPP_OVERPAYMENT,
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
     EDUCATOR_SUPPLIES_EXPENSES,
     EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
@@ -104,6 +105,7 @@ def test_return_ts_total_credits_add_lines_150_to_165_in_line_order() -> None:
     ]
     assert line.parts == (
         (INCOME_TAX_DEDUCTED, D("4929.83")),
+        (CPP_OVERPAYMENT, D("0")),
         (REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT, D("0.00")),
         (CANADA_WORKERS_BENEFIT, D("0")),
         (CANADA_TRAINING_CREDIT, D("0")),
@@ -116,7 +118,8 @@ def test_return_ts_total_credits_add_lines_150_to_165_in_line_order() -> None:
     )
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
-        "total_credits: income_tax_deducted 4929.83 + refundable_medical_expense_supplement 0 "
+        "total_credits: income_tax_deducted 4929.83 + cpp_overpayment 0 "
+        "+ refundable_medical_expense_supplement 0 "
         "+ canada_workers_benefit 0 "
         "+ canada_training_credit 0 + part_xii_2_tax_credit 50 + "
         "employee_and_partner_gst_hst_rebate 150 "

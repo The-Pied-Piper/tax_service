@@ -48,20 +48,6 @@ pensionable earnings from box 26 of all of your T4 slips where the province of e
 Quebec": the amount the filer enters, a starting amount. The form's "(if box 26 is blank, enter the
 amount from box 14)" and "(maximum $81,200 per slip)" are the filer's to apply to each slip."""
 
-T4_CPP_CONTRIBUTIONS_BOX_16 = CATALOG.declare(
-    "t4_cpp_contributions_box_16", Decimal, non_negative=True
-)
-"""CPP contributions on T4 slips, Form RC381 Part 3 line 19 and line 50340 "Total actual base and
-first additional contributions on CPP pensionable earnings from box 16 of all of your T4 slips":
-the amount the filer enters, a starting amount."""
-
-T4_CPP_SECOND_ADDITIONAL_BOX_16A = CATALOG.declare(
-    "t4_cpp_second_additional_box_16a", Decimal, non_negative=True
-)
-"""CPP second additional contributions on T4 slips, Form RC381 Part 3 line 25 and line 50341 "Total
-actual second additional contributions on CPP pensionable earnings from box 16A of all of your T4
-slips": the total the filer enters, a starting amount."""
-
 T4_QPP_CONTRIBUTIONS_BOX_17 = CATALOG.declare(
     "t4_qpp_contributions_box_17", Decimal, non_negative=True
 )
@@ -383,11 +369,6 @@ RC381_CPP_OVERPAYMENT = CATALOG.declare("rc381_cpp_overpayment", Decimal, non_ne
 """Overpayment, Form RC381 Part 3a line 74 "Enter the amount from line 69.": "Enter this amount (in
 dollars and cents) on line 44800 of your return." Part 3b has no such line, so it is 0 when line 69
 is "0" or negative."""
-
-CPT20_T4_EARNINGS = CATALOG.declare("cpt20_t4_earnings", Decimal, non_negative=True)
-"""CPT20 earnings on a T4 slip, Form RC381 Part 4 line 3 and line 50399 "Employment earnings shown
-on a T4 slip that you elect to pay additional CPP contributions on (complete Form CPT20)": a
-starting amount."""
 
 RC381_PART_4_LINE_4 = CATALOG.declare("rc381_part_4_line_4", Decimal)
 """Form RC381 Part 4 line 4 "Add lines 1 to 3"."""

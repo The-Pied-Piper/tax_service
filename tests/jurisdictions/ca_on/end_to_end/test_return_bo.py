@@ -271,8 +271,8 @@ def return_bo(
         qpp_months=qpp_months,
         t4_cpp_pensionable_earnings_outside_quebec=line_1,
         t4_qpp_pensionable_earnings_in_quebec=line_2,
-        t4_cpp_contributions_box_16=line_19,
-        t4_cpp_second_additional_box_16a=line_25,
+        cpp_t4_base_and_first_additional_contributions=line_19,
+        cpp_t4_second_additional_contributions=line_25,
         t4_qpp_contributions_box_17=line_39,
         t4_qpp_second_additional_box_17a=line_45,
         cpt20_earnings=cpt20_earnings,
@@ -7593,8 +7593,6 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
         RC381_PART_3_LINE_15,
         RC381_PART_3_LINE_16,
         RC381_PART_3_LINE_18,
-        RC381_PART_3_LINE_20,
-        RC381_PART_3_LINE_21,
         RC381_PART_3_LINE_22,
         RC381_PART_3_LINE_23,
         RC381_PART_3_LINE_24,
@@ -7611,17 +7609,11 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
         RC381_PART_3_LINE_43,
         RC381_PART_3_LINE_44,
         RC381_PART_3_LINE_46,
-        RC381_PART_3_LINE_49,
         RC381_PART_3_LINE_52,
-        RC381_PART_3_LINE_53,
-        RC381_PART_3_LINE_56,
         RC381_PART_3_LINE_59,
-        RC381_PART_3_LINE_60,
-        RC381_PART_3_LINE_61,
         RC381_PART_3_LINE_64,
         RC381_PART_3_LINE_67,
         RC381_PART_3_LINE_68,
-        RC381_PART_3_LINE_69,
         RC381_PART_3_LINE_73,
         RC381_PART_3_LINE_75,
         RC381_PART_3_LINE_76,
@@ -7645,19 +7637,13 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
         RC381_PART_3_LINE_93,
         RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS,
         RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS,
-        RC381_CPP_OVERPAYMENT,
         RC381_PART_4_LINE_4,
-        RC381_PART_4_LINE_8,
-        RC381_PART_4_LINE_11,
-        RC381_PART_4_LINE_12,
         RC381_PART_4_LINE_13,
         RC381_PART_4_LINE_13_DIFFERENCE,
         RC381_PART_4_LINE_14,
-        RC381_PART_4_LINE_17,
         RC381_PART_4_LINE_17A,
         RC381_PART_4_LINE_20,
         RC381_PART_4_LINE_21,
-        RC381_PART_4_LINE_21_FROM_LINE_17,
         RC381_PART_4_LINE_21_LESSER,
         RC381_PART_4_LINE_23,
         RC381_PART_4_LINE_23_LESSER,
@@ -7673,7 +7659,6 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
         RC381_PART_4_LINE_33,
         RC381_PART_4_LINE_34,
         RC381_PART_4_LINE_35,
-        RC381_PART_4_LINE_35AA_FROM_LINE_17,
         RC381_PART_4_LINE_35AA,
         RC381_PART_4_LINE_35AB_FROM_LINE_20,
         RC381_PART_4_LINE_35AB_WHEN_LINE_35_ZERO,
@@ -7726,12 +7711,42 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
     assert worksheet.get(RC381_PART_3_LINE_30).value == D("9900.00")
     for kind in kinds:
         assert worksheet.get(kind).value == D("0"), kind.identifier
+    # The T4 box 16 total defaults to the required contributions for the employment income
+    # (3,361.75, Schedule 8 line 13), so the lines that read it are not 0 although there is no
+    # Quebec figure: line 20 is 83.1933% of it (2,796.75) and line 21 the rest (565.00); with no
+    # earnings on lines 1 to 3 nothing is required on Part 3, so line 49 and line 53 are the
+    # 2,796.75 of line 20, lines 56 and 60 the 565.00 of line 21, and lines 61 and 69 add up to
+    # 3,361.75
+    # (the RC381 overpayment, not used for the return as no T4 slip is for Quebec employment). Part
+    # 4 lines 8 and 11 are the same 2,796.75 and 565.00, lines 12 and 17 the 3,361.75 and the
+    # others follow from line 17.
+    box_16_figures: dict[ArtifactKind[Decimal], Decimal] = {
+        RC381_PART_3_LINE_20: D("2796.75"),
+        RC381_PART_3_LINE_21: D("565.00"),
+        RC381_PART_3_LINE_49: D("2796.75"),
+        RC381_PART_3_LINE_53: D("2796.75"),
+        RC381_PART_3_LINE_56: D("565.00"),
+        RC381_PART_3_LINE_60: D("565.00"),
+        RC381_PART_3_LINE_61: D("3361.75"),
+        RC381_PART_3_LINE_69: D("3361.75"),
+        RC381_CPP_OVERPAYMENT: D("3361.75"),
+        RC381_PART_4_LINE_8: D("2796.75"),
+        RC381_PART_4_LINE_11: D("565.00"),
+        RC381_PART_4_LINE_12: D("3361.75"),
+        RC381_PART_4_LINE_17: D("3361.75"),
+        RC381_PART_4_LINE_21_FROM_LINE_17: D("-3361.75"),
+        RC381_PART_4_LINE_35AA_FROM_LINE_17: D("3361.75"),
+    }
+    for kind, expected in box_16_figures.items():
+        assert worksheet.get(kind).value == expected, kind.identifier
     # Part 4 lines 57 to 91 are computed for every return: line 59 = 71,300.00 less 3,500.00 and
     # line 61 = line 59 less line 42 (0). Line 3 of Part 3 (0) is less than line 58, so line 65 =
     # line 69 = 3,500.00 (line 68 = 0 less line 59, entered as "0"), and line 70 = line 62 (the
     # lesser of line 4, 0, and line 61) less line 69 = -3,500.00 (no floor is printed): lines 80
     # and 82 follow (-3,500.00 and 0.00), line 77 = line D 9,900.00 less line 76 (0.00), and lines
-    # 84 to 91 are 0.
+    # 84 to 88 are 0; line 89 is twice the 3,361.75 of line 69 of Part 3 (6,723.50), line 90 is
+    # line 88 less line 89 (-6,723.50, so line 42100 stays 0) and line 91 is 50% of its positive
+    # amount (3,361.75).
     assert part_4_earnings(worksheet) == {
         "59": D("67800.00"),
         "61": D("67800.00"),
@@ -7752,38 +7767,42 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
         "86": D("0.00"),
         "87": D("0.00"),
         "88": D("0.00"),
-        "89_from_line_69": D("0.00"),
-        "89": D("0.00"),
-        "90": D("0.00"),
+        "89_from_line_69": D("3361.75"),
+        "89": D("6723.50"),
+        "90": D("-6723.50"),
         "42100": D("0.00"),
-        "91_from_line_90": D("0"),
-        "91": D("0.00"),
+        "91_from_line_90": D("6723.50"),
+        "91": D("3361.75"),
     }
     # Part 4 lines 111 to 129 are computed for every return: lines 84 to 86 are 0.00 and line 69 of
-    # Part 3 is 0, so every line is 0 (lines 114 and 127 are "0"). The earnings
-    # subject to contributions are lines 70 and 83 added, -3,500.00 + 0: not above zero, so the form
-    # returns to Part 3 and the six results are Part 3's (all 0.00 here) and "0".
+    # Part 3 is 3,361.75, so line 114 is 3,361.75, line 115 is 0.00 less that (-3,361.75), line 127
+    # is it as a positive amount, and line 128 (0.00 less 3,361.75, entered as 0) and the rest are
+    # 0. The earnings subject to contributions are lines 70 and 83 added, -3,500.00 + 0: not above
+    # zero, so the form returns to Part 3 and the six results are Part 3's (3,361.75 for line 44800,
+    # 0.00 or "0" for the others).
     assert part_4_self_employment(worksheet) == {
         "111": D("0.00"),
         "112": D("0.00"),
         "113": D("0.00"),
-        "114": D("0"),
-        "115": D("0.00"),
+        "114": D("3361.75"),
+        "115": D("-3361.75"),
         "116_lesser": D("0.00"),
         "116": D("0.00"),
         "118": D("0.00"),
         "121": D("0.00"),
         "124": D("0.00"),
         "125": D("0.00"),
-        "127": D("0"),
+        "127": D("3361.75"),
         "128": D("0.00"),
         "129": D("0.00"),
     }
+    # Line 69 of Part 3 (3,361.75) is positive, so Part 3a's line 44800 is that overpayment; the
+    # other results stay 0 as nothing is required on Part 3.
     assert final_selection(worksheet) == {
         "earnings_subject_to_contributions": D("-3500.00"),
         "line_30800": D("0.00"),
         "line_22215": D("0.00"),
-        "line_44800": D("0"),
+        "line_44800": D("3361.75"),
         "line_42100": D("0"),
         "line_31000": D("0"),
         "line_22200": D("0"),
@@ -7792,9 +7811,11 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
 
 def test_the_rc381_figures_do_not_change_the_t1_lines_yet() -> None:
     # Form RC381 Part 3 reaches no line of the return yet: the same employment income with and
-    # without the T4 totals gives the same Schedule 8 contributions, net income and total payable.
+    # without the RC381 totals gives the same Schedule 8 contributions, net income and total
+    # payable. The T4 box 16 total (line_19) is also Schedule 8's line 8, so it is the same in both
+    # returns; the totals left out are the pensionable earnings (boxes 26) and the QPP box 17.
     with_totals = return_bo()
-    without_totals = return_bo(line_1="0", line_2="0", line_19="0", line_39="0")
+    without_totals = return_bo(line_1="0", line_2="0", line_39="0")
 
     for kind in (CPP_BASE_CONTRIBUTIONS, CPP_ENHANCED_CONTRIBUTIONS, NET_INCOME, TOTAL_PAYABLE):
         assert with_totals.get(kind).value == without_totals.get(kind).value, kind.identifier

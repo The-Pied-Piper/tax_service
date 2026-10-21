@@ -46,6 +46,18 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GAIN,
     CAPITAL_GIFTS_LIMIT_ADDITION,
     CAPITAL_GIFTS_TOTAL,
+    CPP_ACTUAL_BASE_CONTRIBUTIONS,
+    CPP_PART_5_LINE_43,
+    CPP_PART_5_LINE_44,
+    CPP_PART_5_LINE_45,
+    CPP_PART_5_LINE_50,
+    CPP_PART_5_LINE_50_LINE_49_POSITIVE,
+    CPP_PART_5_LINE_70,
+    CPP_PART_5_LINE_71,
+    CPP_PART_5_LINE_75,
+    CPP_PART_5_LINE_75_BASE,
+    CPP_PART_5_LINE_84,
+    CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
@@ -126,7 +138,6 @@ from app.jurisdictions.ca.catalog import (
     SPLIT_INCOME_LINE_18,
     SPLIT_INCOME_LINE_19,
     SPLIT_INCOME_LINE_20,
-    T4_CPP_CONTRIBUTIONS_BOX_16,
     T4_QPP_CONTRIBUTIONS_BOX_17,
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
@@ -256,10 +267,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         RC381_PART_4_LINE_91: RateAppliedLine(
             RC381_PART_4_LINE_91,
             RC381_PART_4_LINE_91_FROM_LINE_90,
-            D("0"),
+            D("8860.20"),
             Rate(D("0.5")),
             CENT,
-            D("0.00"),
+            D("4430.10"),
         ),
         # Form RC381 Part 3 line 40 "amount from line 39 x 84.375%": Return A enters no box 17
         # contributions on line 39, so the base is 0 and so is the 84.375%.
@@ -275,11 +286,69 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # contributions on line 19, so the base is 0 and so is the 83.1933%.
         RC381_PART_3_LINE_20: RateAppliedLine(
             RC381_PART_3_LINE_20,
-            T4_CPP_CONTRIBUTIONS_BOX_16,
-            D("0"),
+            CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("4034.10"),
             Rate(D("0.831933")),
             CENT,
-            D("0.00"),
+            D("3356.10"),
+        ),
+        # Schedule 8 Part 5 line 70 "amount from line 43 multiplied by 50%": 0.00 x 50% for
+        # Return A (no self-employment income, so line 43 is 0.00).
+        CPP_PART_5_LINE_70: RateAppliedLine(
+            output=CPP_PART_5_LINE_70,
+            base=CPP_PART_5_LINE_43,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 71 "Amount from line 44 multiplied by 50%": 0.00 x 50% for
+        # Return A.
+        CPP_PART_5_LINE_71: RateAppliedLine(
+            output=CPP_PART_5_LINE_71,
+            base=CPP_PART_5_LINE_44,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 84 "Amount from line 45 multiplied by 50%": 0.00 x 50% for
+        # Return A.
+        CPP_PART_5_LINE_84: RateAppliedLine(
+            output=CPP_PART_5_LINE_84,
+            base=CPP_PART_5_LINE_45,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 75 "Line A multiply by 83.1933": 0.00 x 83.1933% for Return A.
+        CPP_PART_5_LINE_75: RateAppliedLine(
+            output=CPP_PART_5_LINE_75,
+            base=CPP_PART_5_LINE_75_BASE,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.831933")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 50 "multiplied by 50%": 0 x 50% for Return A.
+        CPP_PART_5_LINE_50: RateAppliedLine(
+            output=CPP_PART_5_LINE_50,
+            base=CPP_PART_5_LINE_50_LINE_49_POSITIVE,
+            base_amount=D("0"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 3 line 9 "amount from line 8 multiplied by 83.1933%": Return A's T4 box 16
+        # equals the required contributions (line 13), so the base share is line 11.
+        CPP_ACTUAL_BASE_CONTRIBUTIONS: RateAppliedLine(
+            CPP_ACTUAL_BASE_CONTRIBUTIONS,
+            CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("4034.10"),
+            Rate(D("0.831933")),
+            CENT,
+            D("3356.10"),
         ),
         # Form T691 Part 1 line 31 "× 40%" of the gifts under a security option plan (67914): Return
         # A has none, so the base and the 40% are 0.

@@ -8,11 +8,13 @@ from app.domain.parameters.amount import Amount
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
 from app.domain.parameters.fraction import Fraction
+from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING
 from app.domain.parameters.taper import Taper
 from app.domain.trace import (
     CappedAmountLine,
     CreditAmountLine,
+    DividedByRateLine,
     FractionAppliedLine,
     MultipleOverLine,
     PerUnitAmountLine,
@@ -191,10 +193,72 @@ from app.jurisdictions.ca.catalog import (
     CHILDREN_SEVEN_TO_SIXTEEN,
     CHILDREN_UNDER_SEVEN,
     CHILDREN_WITH_DISABILITY,
+    CPP_ACTUAL_BASE_CONTRIBUTIONS,
+    CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+    CPP_PART_3B_LINE_23_LESS_LINE_35,
+    CPP_PART_3B_LINE_31,
+    CPP_PART_3B_LINE_32,
+    CPP_PART_3B_LINE_33,
+    CPP_PART_3B_LINE_35,
+    CPP_PART_3B_LINE_38,
+    CPP_PART_3B_LINE_39,
+    CPP_PART_3B_LINE_40,
     CPP_PART_4_COMPLETED,
+    CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_COMPLETED,
+    CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_LINE_4,
+    CPP_PART_5_LINE_6,
+    CPP_PART_5_LINE_7,
+    CPP_PART_5_LINE_10,
+    CPP_PART_5_LINE_12,
+    CPP_PART_5_LINE_13,
+    CPP_PART_5_LINE_16,
+    CPP_PART_5_LINE_20,
+    CPP_PART_5_LINE_23_LESS_LINE_56,
+    CPP_PART_5_LINE_25,
+    CPP_PART_5_LINE_30,
+    CPP_PART_5_LINE_35,
+    CPP_PART_5_LINE_36,
+    CPP_PART_5_LINE_39,
+    CPP_PART_5_LINE_41,
+    CPP_PART_5_LINE_47,
+    CPP_PART_5_LINE_48,
+    CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
+    CPP_PART_5_LINE_49,
+    CPP_PART_5_LINE_49_IF_POSITIVE,
+    CPP_PART_5_LINE_52,
+    CPP_PART_5_LINE_53,
+    CPP_PART_5_LINE_54,
+    CPP_PART_5_LINE_56,
+    CPP_PART_5_LINE_59,
+    CPP_PART_5_LINE_60,
+    CPP_PART_5_LINE_61,
+    CPP_PART_5_LINE_70,
+    CPP_PART_5_LINE_71,
+    CPP_PART_5_LINE_72,
+    CPP_PART_5_LINE_73,
+    CPP_PART_5_LINE_74,
+    CPP_PART_5_LINE_75,
+    CPP_PART_5_LINE_75_BASE,
+    CPP_PART_5_LINE_77,
+    CPP_PART_5_LINE_80,
+    CPP_PART_5_LINE_83,
+    CPP_PART_5_LINE_88,
+    CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+    CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+    CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+    CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CPP_ZERO,
     CURRENT_YEAR_TUITION_AVAILABLE,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DISABILITY_AMOUNT_FOR_SELF,
@@ -528,8 +592,6 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_NOT_SEPARATED_90_DAYS,
     SPOUSE_UNUSED_AMOUNTS,
     SPOUSES_CLAIMED,
-    T4_CPP_CONTRIBUTIONS_BOX_16,
-    T4_CPP_SECOND_ADDITIONAL_BOX_16A,
     T4_QPP_CONTRIBUTIONS_BOX_17,
     T4_QPP_SECOND_ADDITIONAL_BOX_17A,
     T657_CHART_2_LINE_2,
@@ -630,6 +692,23 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     times = {line.output: line for line in trace if isinstance(line, TimesCountLine)}
     gated = {line.output: line for line in trace if isinstance(line, ThresholdGateLine)}
     fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
+    divided = {
+        line.output: line
+        for line in trace
+        if isinstance(line, DividedByRateLine) and line.output == CPP_PART_5_LINE_35
+    }
+    # Schedule 8 Part 5 line 35 "Amount from line 16 divided by 4%": 396.00 / 4% = 9,900.00 for
+    # Return A (the second additional contribution required on 110,000).
+    assert divided == {
+        CPP_PART_5_LINE_35: DividedByRateLine(
+            output=CPP_PART_5_LINE_35,
+            dividend=CPP_PART_5_LINE_16,
+            dividend_amount=D("396.00"),
+            rate=Rate(D("0.04")),
+            rounding=CENT,
+            result=D("9900.00"),
+        ),
+    }
     assert subtracted == {
         # Form RC381 Part 4 line 115 "Line 113 minus line 114", line 118 "Amount A minus line 117"
         # (line 117 being the amount from line 116), line 121 "Line 119 minus line 120" (the
@@ -640,8 +719,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             minuend=RC381_PART_4_LINE_113,
             minuend_amount=D("0.00"),
             subtrahend=RC381_PART_4_LINE_114,
-            subtrahend_amount=D("0"),
-            result=D("0.00"),
+            subtrahend_amount=D("4430.10"),
+            result=D("-4430.10"),
         ),
         RC381_PART_4_LINE_118: SubtractedLine(
             output=RC381_PART_4_LINE_118,
@@ -690,10 +769,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         RC381_PART_4_LINE_104_DIFFERENCE: SubtractedLine(
             output=RC381_PART_4_LINE_104_DIFFERENCE,
             minuend=RC381_PART_3_LINE_68,
-            minuend_amount=D("0.00"),
+            minuend_amount=D("396.00"),
             subtrahend=RC381_PART_4_LINE_97,
             subtrahend_amount=D("0"),
-            result=D("0.00"),
+            result=D("396.00"),
         ),
         # Form RC381 Part 4 line 70 "Line 62 minus line 69", line 80 "Line 78 minus line 79" (the
         # amount from line 4 less the amount from line 65), line 82 "Line 80 minus line 81" (line 81
@@ -730,8 +809,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             minuend=RC381_PART_4_LINE_88,
             minuend_amount=D("0.00"),
             subtrahend=RC381_PART_4_LINE_89,
-            subtrahend_amount=D("0.00"),
-            result=D("0.00"),
+            subtrahend_amount=D("8860.20"),
+            result=D("-8860.20"),
         ),
         # Form RC381 Part 4 lines 31 "Line 29 minus line 30" (the amount from line 61 of Part 3 less
         # the amount from line 12), 32 "Line 28 minus line 31" (the QPP T4 contributions less line
@@ -742,9 +821,9 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         RC381_PART_4_LINE_31_DIFFERENCE: SubtractedLine(
             output=RC381_PART_4_LINE_31_DIFFERENCE,
             minuend=RC381_PART_3_LINE_61,
-            minuend_amount=D("0.00"),
+            minuend_amount=D("4034.10"),
             subtrahend=RC381_PART_4_LINE_12,
-            subtrahend_amount=D("0.00"),
+            subtrahend_amount=D("4034.10"),
             result=D("0.00"),
         ),
         RC381_PART_4_LINE_32: SubtractedLine(
@@ -766,33 +845,33 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         RC381_PART_4_LINE_38: SubtractedLine(
             output=RC381_PART_4_LINE_38,
             minuend=RC381_PART_4_LINE_36,
-            minuend_amount=D("0"),
+            minuend_amount=D("396.00"),
             subtrahend=RC381_PART_4_LINE_24,
             subtrahend_amount=D("0"),
-            result=D("0"),
+            result=D("396.00"),
         ),
         RC381_PART_4_LINE_46_DIFFERENCE: SubtractedLine(
             output=RC381_PART_4_LINE_46_DIFFERENCE,
-            minuend=T4_CPP_SECOND_ADDITIONAL_BOX_16A,
-            minuend_amount=D("0"),
+            minuend=CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            minuend_amount=D("396.00"),
             subtrahend=RC381_PART_3_LINE_26,
             subtrahend_amount=D("0.00"),
-            result=D("0.00"),
+            result=D("396.00"),
         ),
         RC381_PART_4_LINE_47: SubtractedLine(
             output=RC381_PART_4_LINE_47,
-            minuend=T4_CPP_SECOND_ADDITIONAL_BOX_16A,
-            minuend_amount=D("0"),
+            minuend=CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            minuend_amount=D("396.00"),
             subtrahend=RC381_PART_4_LINE_46,
-            subtrahend_amount=D("0"),
+            subtrahend_amount=D("396.00"),
             result=D("0"),
         ),
         RC381_PART_4_LINE_51_DIFFERENCE: SubtractedLine(
             output=RC381_PART_4_LINE_51_DIFFERENCE,
             minuend=RC381_PART_3_LINE_68,
-            minuend_amount=D("0.00"),
+            minuend_amount=D("396.00"),
             subtrahend=RC381_PART_4_LINE_46,
-            subtrahend_amount=D("0"),
+            subtrahend_amount=D("396.00"),
             result=D("0.00"),
         ),
         RC381_PART_4_LINE_52: SubtractedLine(
@@ -811,34 +890,34 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         RC381_PART_4_LINE_8: SubtractedLine(
             output=RC381_PART_4_LINE_8,
             minuend=RC381_PART_3_LINE_20,
-            minuend_amount=D("0.00"),
+            minuend_amount=D("3356.10"),
             subtrahend=RC381_PART_3_LINE_22,
             subtrahend_amount=D("0.00"),
-            result=D("0.00"),
+            result=D("3356.10"),
         ),
         RC381_PART_4_LINE_11: SubtractedLine(
             output=RC381_PART_4_LINE_11,
             minuend=RC381_PART_3_LINE_21,
-            minuend_amount=D("0.00"),
+            minuend_amount=D("678.00"),
             subtrahend=RC381_PART_3_LINE_23,
             subtrahend_amount=D("0.00"),
-            result=D("0.00"),
+            result=D("678.00"),
         ),
         RC381_PART_4_LINE_13_DIFFERENCE: SubtractedLine(
             output=RC381_PART_4_LINE_13_DIFFERENCE,
-            minuend=T4_CPP_CONTRIBUTIONS_BOX_16,
-            minuend_amount=D("0"),
+            minuend=CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            minuend_amount=D("4034.10"),
             subtrahend=RC381_PART_4_LINE_12,
-            subtrahend_amount=D("0.00"),
+            subtrahend_amount=D("4034.10"),
             result=D("0.00"),
         ),
         RC381_PART_4_LINE_17: SubtractedLine(
             output=RC381_PART_4_LINE_17,
-            minuend=T4_CPP_CONTRIBUTIONS_BOX_16,
-            minuend_amount=D("0"),
+            minuend=CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            minuend_amount=D("4034.10"),
             subtrahend=RC381_PART_3_LINE_24,
             subtrahend_amount=D("0.00"),
-            result=D("0.00"),
+            result=D("4034.10"),
         ),
         RC381_PART_4_LINE_20: SubtractedLine(
             output=RC381_PART_4_LINE_20,
@@ -906,26 +985,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         RC381_PART_3_LINE_53: SubtractedLine(
             output=RC381_PART_3_LINE_53,
             minuend=RC381_PART_3_LINE_49,
-            minuend_amount=D("0.00"),
+            minuend_amount=D("3356.10"),
             subtrahend=RC381_PART_3_LINE_52,
             subtrahend_amount=D("0.00"),
-            result=D("0.00"),
+            result=D("3356.10"),
         ),
         RC381_PART_3_LINE_60: SubtractedLine(
             output=RC381_PART_3_LINE_60,
             minuend=RC381_PART_3_LINE_56,
-            minuend_amount=D("0.00"),
+            minuend_amount=D("678.00"),
             subtrahend=RC381_PART_3_LINE_59,
             subtrahend_amount=D("0.00"),
-            result=D("0.00"),
+            result=D("678.00"),
         ),
         RC381_PART_3_LINE_68: SubtractedLine(
             output=RC381_PART_3_LINE_68,
             minuend=RC381_PART_3_LINE_64,
-            minuend_amount=D("0"),
+            minuend_amount=D("396.00"),
             subtrahend=RC381_PART_3_LINE_67,
             subtrahend_amount=D("0.00"),
-            result=D("0.00"),
+            result=D("396.00"),
         ),
         # Form RC381 Part 3b lines 78 "Line 76 minus line 77" and 85 "Line 83 minus line 84", and
         # the result printed inside line 87, "the result of line 68 minus line 80": all 0 for
@@ -949,10 +1028,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         RC381_PART_3_LINE_87_DIFFERENCE: SubtractedLine(
             output=RC381_PART_3_LINE_87_DIFFERENCE,
             minuend=RC381_PART_3_LINE_68,
-            minuend_amount=D("0"),
+            minuend_amount=D("396.00"),
             subtrahend=RC381_PART_3_LINE_80,
             subtrahend_amount=D("0"),
-            result=D("0"),
+            result=D("396.00"),
         ),
         # Form RC381 Part 3 line 16 "Line 11 minus line 15": both are 0.
         RC381_PART_3_LINE_16: SubtractedLine(
@@ -966,11 +1045,204 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # Form RC381 Part 3 line 21 "Line 19 minus line 20": both are 0.
         RC381_PART_3_LINE_21: SubtractedLine(
             output=RC381_PART_3_LINE_21,
-            minuend=T4_CPP_CONTRIBUTIONS_BOX_16,
-            minuend_amount=D("0"),
+            minuend=CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            minuend_amount=D("4034.10"),
             subtrahend=RC381_PART_3_LINE_20,
+            subtrahend_amount=D("3356.10"),
+            result=D("678.00"),
+        ),
+        # Schedule 8 Part 5 line 74 "Line 72 minus line 73": 0.00 and line 73 ("0", line 24 of
+        # Part 3 is 0) for Return A.
+        CPP_PART_5_LINE_74: SubtractedLine(
+            output=CPP_PART_5_LINE_74,
+            minuend=CPP_PART_5_LINE_72,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_73,
+            subtrahend_amount=D("0"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 77 "Amount A minus line 76": line A and line 75 (line 76 is the
+        # amount from line 75) are both 0.00 for Return A.
+        CPP_PART_5_LINE_77: SubtractedLine(
+            output=CPP_PART_5_LINE_77,
+            minuend=CPP_PART_5_LINE_75_BASE,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_75,
             subtrahend_amount=D("0.00"),
             result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 80 "Line 78 minus line 79": line 78 is the amount from line 70
+        # and line 79 the amount from line 75, both 0.00 for Return A.
+        CPP_PART_5_LINE_80: SubtractedLine(
+            output=CPP_PART_5_LINE_80,
+            minuend=CPP_PART_5_LINE_70,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_75,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 83 "Line 81 minus line 82": line 81 is the amount from line 71
+        # and line 82 the amount from line 77, both 0.00 for Return A.
+        CPP_PART_5_LINE_83: SubtractedLine(
+            output=CPP_PART_5_LINE_83,
+            minuend=CPP_PART_5_LINE_71,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_77,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 54 "Line 52 minus line 53": line 52 and line 53 are both 0
+        # for Return A.
+        CPP_PART_5_LINE_54: SubtractedLine(
+            output=CPP_PART_5_LINE_54,
+            minuend=CPP_PART_5_LINE_52,
+            minuend_amount=D("0"),
+            subtrahend=CPP_PART_5_LINE_53,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 63 "the result of line 23 of Part 3 minus line 56": line 23
+        # of Part 3 and line 56 are both 0 for Return A.
+        CPP_PART_5_LINE_23_LESS_LINE_56: SubtractedLine(
+            output=CPP_PART_5_LINE_23_LESS_LINE_56,
+            minuend=CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_56,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 61 "Line 59 minus line 60": line 59 and line 60 are both 0
+        # for Return A.
+        CPP_PART_5_LINE_61: SubtractedLine(
+            output=CPP_PART_5_LINE_61,
+            minuend=CPP_PART_5_LINE_59,
+            minuend_amount=D("0"),
+            subtrahend=CPP_PART_5_LINE_60,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 49 "Line 47 minus line 48": both are 0.00 for Return A.
+        CPP_PART_5_LINE_49: SubtractedLine(
+            output=CPP_PART_5_LINE_49,
+            minuend=CPP_PART_5_LINE_47,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_48,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 7 "Line 5 minus line 6": line 5 is the T4 box 16 total and line 6
+        # is "0" for Return A.
+        CPP_PART_5_LINE_7: SubtractedLine(
+            CPP_PART_5_LINE_7,
+            CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("4034.10"),
+            CPP_PART_5_LINE_6,
+            D("0"),
+            D("4034.10"),
+        ),
+        # Schedule 8 Part 5 line 13 "Line 11 minus line 12": line 11 is the T4 box 16A total and
+        # line 12 is "0" for Return A.
+        CPP_PART_5_LINE_13: SubtractedLine(
+            CPP_PART_5_LINE_13,
+            CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            D("396.00"),
+            CPP_PART_5_LINE_12,
+            D("0"),
+            D("396.00"),
+        ),
+        # Schedule 8 Part 5 line 36 "Line 34 minus line 35": line C of Part 2 (9,900) less
+        # 396.00 / 4% (9,900.00) for Return A.
+        CPP_PART_5_LINE_36: SubtractedLine(
+            CPP_PART_5_LINE_36,
+            CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+            D("9900.00"),
+            CPP_PART_5_LINE_35,
+            D("9900.00"),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 39 "Line 37 minus line 38": line 4 and line 25 are both "0" for
+        # Return A.
+        CPP_PART_5_LINE_39: SubtractedLine(
+            CPP_PART_5_LINE_39,
+            CPP_PART_5_LINE_4,
+            D("0.00"),
+            CPP_PART_5_LINE_25,
+            D("0"),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 41 "Line 39 minus line 40": line 39 and line 30 are both "0" for
+        # Return A.
+        CPP_PART_5_LINE_41: SubtractedLine(
+            CPP_PART_5_LINE_41,
+            CPP_PART_5_LINE_39,
+            D("0.00"),
+            CPP_PART_5_LINE_30,
+            D("0"),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3b line 33 "Line 31 minus line 32": both are "0" for Return A.
+        CPP_PART_3B_LINE_33: SubtractedLine(
+            CPP_PART_3B_LINE_33,
+            CPP_PART_3B_LINE_31,
+            D("0"),
+            CPP_PART_3B_LINE_32,
+            D("0"),
+            D("0"),
+        ),
+        # Schedule 8 Part 3b line 40 "Line 38 minus line 39": both are "0" for Return A.
+        CPP_PART_3B_LINE_40: SubtractedLine(
+            CPP_PART_3B_LINE_40,
+            CPP_PART_3B_LINE_38,
+            D("0"),
+            CPP_PART_3B_LINE_39,
+            D("0"),
+            D("0"),
+        ),
+        # Schedule 8 Part 3b line 42 "the result of line 23 minus line 35": line 23 and line 35 are
+        # "0" for Return A.
+        CPP_PART_3B_LINE_23_LESS_LINE_35: SubtractedLine(
+            CPP_PART_3B_LINE_23_LESS_LINE_35,
+            CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            D("0.00"),
+            CPP_PART_3B_LINE_35,
+            D("0"),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3 line 10 "Line 8 minus line 9".
+        CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS: SubtractedLine(
+            CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("4034.10"),
+            CPP_ACTUAL_BASE_CONTRIBUTIONS,
+            D("3356.10"),
+            D("678.00"),
+        ),
+        # Schedule 8 Part 3 line 16 "Line 14 minus line 15".
+        CPP_BASE_CONTRIBUTIONS_DIFFERENCE: SubtractedLine(
+            CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
+            CPP_ACTUAL_BASE_CONTRIBUTIONS,
+            D("3356.10"),
+            CPP_BASE_CONTRIBUTIONS,
+            D("3356.10"),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3 line 19 "Line 17 minus line 18".
+        CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE: SubtractedLine(
+            CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("678.00"),
+            CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("678.00"),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3 line 23 "Line 21 minus line 22".
+        CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE: SubtractedLine(
+            CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            D("396.00"),
+            CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            D("396.00"),
+            D("0.00"),
         ),
         # Form T2125 Chart C line 26 "Amount 25: amount 21" (printed with a subtraction sign): line
         # 25 is 0 for Return A (no leased vehicle), and amount 21 is 0.
@@ -1934,6 +2206,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rounding=CENT,
             value=D("500000.00"),
         ),
+        # Schedule 8 Part 3b line 32 "enter "0"": the form's "0", claimed whole.
+        CPP_ZERO: CreditAmountLine(CPP_ZERO, Credit(amount=D("0")), CENT, D("0")),
         # Form T2125 Chart B line 18 and Chart C line 25 "÷ 30": the printed constants, each a
         # dataset of the same name, claimed whole to the cent.
         BUSINESS_VEHICLE_INTEREST_LIMIT: CreditAmountLine(
@@ -2336,6 +2610,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         RC381_PART_4_LINE_89: FractionAppliedLine(
             output=RC381_PART_4_LINE_89,
             base=RC381_PART_4_LINE_89_FROM_LINE_69,
+            base_amount=D("4430.10"),
+            fraction=Fraction(2, 1),
+            rounding=CENT,
+            result=D("8860.20"),
+        ),
+        # Schedule 8 Part 5 line 48 "multiplied by 2": 0 x 2 for Return A.
+        CPP_PART_5_LINE_48: FractionAppliedLine(
+            output=CPP_PART_5_LINE_48,
+            base=CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
             base_amount=D("0"),
             fraction=Fraction(2, 1),
             rounding=CENT,
@@ -2358,6 +2641,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             fraction=Fraction(1680672, 100000),
             rounding=CENT,
             result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 20 "Amount from line 10 multiplied by 16.80672": 4,034.10 x
+        # 16.80672 = 67,799.989152, to the cent 67,799.99 for Return A.
+        CPP_PART_5_LINE_20: FractionAppliedLine(
+            output=CPP_PART_5_LINE_20,
+            base=CPP_PART_5_LINE_10,
+            base_amount=D("4034.10"),
+            fraction=Fraction(1680672, 100000),
+            rounding=CENT,
+            result=D("67799.99"),
         ),
         # Form T657 Chart 2016 Part 1 "× 1/2 = F": amounts D and E of 0, times 1/2.
         CHART_2016_PART_1_AMOUNT_F: FractionAppliedLine(
@@ -2743,6 +3036,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert times == {
+        # T1 line 31000 from Schedule 8 Part 5 line 70, once for each Part 5 completed: 0 for
+        # Return A.
+        CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT: TimesCountLine(
+            output=CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+            amount_kind=CPP_PART_5_LINE_70,
+            amount_value=D("0.00"),
+            count_kind=CPP_PART_5_COMPLETED,
+            count=0,
+            result=D("0"),
+        ),
+        # T1 line 22200 from Schedule 8 Part 5 line 88, once for each Part 5 completed: 0 for
+        # Return A.
+        CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT: TimesCountLine(
+            output=CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
+            amount_kind=CPP_PART_5_LINE_88,
+            amount_value=D("0.00"),
+            count_kind=CPP_PART_5_COMPLETED,
+            count=0,
+            result=D("0"),
+        ),
+        # T1 line 42100 from Schedule 8 Part 5 line 49 if positive, once for each Part 5
+        # completed: 0 for Return A.
+        CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT: TimesCountLine(
+            output=CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
+            amount_kind=CPP_PART_5_LINE_49_IF_POSITIVE,
+            amount_value=D("0"),
+            count_kind=CPP_PART_5_COMPLETED,
+            count=0,
+            result=D("0"),
+        ),
         ontario.DISABILITY_AMOUNT_FOR_SELF: TimesCountLine(
             output=ontario.DISABILITY_AMOUNT_FOR_SELF,
             amount_kind=ontario.DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,

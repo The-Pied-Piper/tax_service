@@ -218,7 +218,8 @@ def test_with_no_tax_payable_all_the_tax_deducted_is_refunded() -> None:
     assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-2133")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
-        "total_credits: income_tax_deducted 500 + refundable_medical_expense_supplement 0 "
+        "total_credits: income_tax_deducted 500 + cpp_overpayment 0 "
+        "+ refundable_medical_expense_supplement 0 "
         "+ canada_workers_benefit 1633 "
         "+ canada_training_credit 0 + part_xii_2_tax_credit 0 + "
         "employee_and_partner_gst_hst_rebate 0 "

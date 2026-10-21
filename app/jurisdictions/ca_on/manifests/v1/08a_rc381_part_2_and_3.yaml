@@ -165,14 +165,14 @@ capabilities:
     params:
       rate: ca/rc381_cpp_base_share_rate
     consumes:
-      base: ca/t4_cpp_contributions_box_16
+      base: ca/cpp_t4_base_and_first_additional_contributions
     produces:
       output: ca/rc381_part_3_line_20
   # Line 21 "Actual first additional contributions on CPP pensionable earnings: Line 19 minus
   # line 20".
   - name: core/subtract
     consumes:
-      amount: ca/t4_cpp_contributions_box_16
+      amount: ca/cpp_t4_base_and_first_additional_contributions
       less: ca/rc381_part_3_line_20
     produces:
       output: ca/rc381_part_3_line_21

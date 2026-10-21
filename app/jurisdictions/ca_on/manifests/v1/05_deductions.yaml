@@ -14,7 +14,8 @@ capabilities:
     produces:
       output: ca/cpp_second_additional_contributions
   # Schedule 8 Part 3a line 28 "Line 26 plus line 27": the first and second additional
-  # contributions together, the T1 line 22215 deduction.
+  # contributions together. The T1 line 22215 deduction is routed from this and Part 3b line 48
+  # by ca/cpp_enhanced_contributions_on_return (05d_schedule_8_part_3b.yaml).
   - name: core/sum
     consumes:
       parts:
@@ -177,6 +178,21 @@ capabilities:
       count: ca/cpp_part_4_completed
     produces:
       output: ca/cpp_deduction_on_self_employment
+  # T1 line 22200 from Part 5 line 88, once for each Part 5 completed, 1 or 0.
+  - name: core/times_count
+    consumes:
+      amount: ca/cpp_part_5_line_88
+      count: ca/cpp_part_5_completed
+    produces:
+      output: ca/cpp_part_5_deduction_on_self_employment
+  # T1 line 22200: the Part 4 amount plus the Part 5 amount.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/cpp_deduction_on_self_employment
+        - ca/cpp_part_5_deduction_on_self_employment
+    produces:
+      output: ca/cpp_deduction_on_self_employment_and_other_earnings
   # Schedule 13 line 1 "Enter the total amount from line 1 1 plus line 27 of your return", read
   # as line 12200 plus line 27, before the slips of its second sentence and its floor, which
   # 05b_schedule_13_ei_excluded_slips.yaml applies.
@@ -394,8 +410,8 @@ capabilities:
         - ca/allowable_business_investment_loss
         - ca/support_payments_deduction
         - ca/carrying_charges_interest_expenses_and_other_expenses
-        - ca/cpp_deduction_on_self_employment
-        - ca/cpp_enhanced_contributions
+        - ca/cpp_deduction_on_self_employment_and_other_earnings
+        - ca/cpp_enhanced_contributions_on_return
         - ca/exploration_and_development_expenses
         - ca/other_deductions
         - ca/total_split_income

@@ -45,6 +45,8 @@ import app.jurisdictions.ca.catalog
 from app.domain.artifact import ArtifactKind, ArtifactRegistry
 from app.domain.parameters.rate import Rate
 from app.jurisdictions.ca.catalog import (
+    CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPT20_T4_EARNINGS,
     QPP_MONTHS,
     RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
@@ -237,9 +239,7 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_128,
     RC381_PART_4_LINE_129,
     RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS,
-    T4_CPP_CONTRIBUTIONS_BOX_16,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
-    T4_CPP_SECOND_ADDITIONAL_BOX_16A,
     T4_QPP_CONTRIBUTIONS_BOX_17,
     T4_QPP_PENSIONABLE_EARNINGS_IN_QUEBEC,
     T4_QPP_SECOND_ADDITIONAL_BOX_17A,
@@ -249,8 +249,8 @@ INPUT_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
     CPT20_T4_EARNINGS,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
     T4_QPP_PENSIONABLE_EARNINGS_IN_QUEBEC,
-    T4_CPP_CONTRIBUTIONS_BOX_16,
-    T4_CPP_SECOND_ADDITIONAL_BOX_16A,
+    CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
     T4_QPP_CONTRIBUTIONS_BOX_17,
     T4_QPP_SECOND_ADDITIONAL_BOX_17A,
 )
@@ -501,8 +501,14 @@ def test_the_rc381_part_3_input_kinds_are_the_registered_ones(registry: Artifact
         registry.get("ca/t4_qpp_pensionable_earnings_in_quebec")
         is T4_QPP_PENSIONABLE_EARNINGS_IN_QUEBEC
     )
-    assert registry.get("ca/t4_cpp_contributions_box_16") is T4_CPP_CONTRIBUTIONS_BOX_16
-    assert registry.get("ca/t4_cpp_second_additional_box_16a") is T4_CPP_SECOND_ADDITIONAL_BOX_16A
+    assert (
+        registry.get("ca/cpp_t4_base_and_first_additional_contributions")
+        is CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS
+    )
+    assert (
+        registry.get("ca/cpp_t4_second_additional_contributions")
+        is CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS
+    )
     assert registry.get("ca/t4_qpp_contributions_box_17") is T4_QPP_CONTRIBUTIONS_BOX_17
     assert registry.get("ca/t4_qpp_second_additional_box_17a") is T4_QPP_SECOND_ADDITIONAL_BOX_17A
 
@@ -1040,7 +1046,7 @@ INPUT_QUOTES: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "t4_cpp_contributions_box_16",
+        "cpp_t4_base_and_first_additional_contributions",
         (
             "Total actual base and first additional contributions on CPP pensionable earnings "
             "from box 16 of all of your T4 slips",
@@ -1049,7 +1055,7 @@ INPUT_QUOTES: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "t4_cpp_second_additional_box_16a",
+        "cpp_t4_second_additional_contributions",
         (
             "Total actual second additional contributions on CPP pensionable earnings from box "
             "16A of all of your T4 slips",

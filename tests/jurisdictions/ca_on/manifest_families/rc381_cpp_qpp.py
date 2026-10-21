@@ -62,6 +62,8 @@ from app.jurisdictions.ca.catalog import (
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_MONTHS,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+    CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPT20_EARNINGS,
     CPT20_T4_EARNINGS,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
@@ -256,9 +258,7 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_128,
     RC381_PART_4_LINE_129,
     RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS,
-    T4_CPP_CONTRIBUTIONS_BOX_16,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
-    T4_CPP_SECOND_ADDITIONAL_BOX_16A,
     T4_QPP_CONTRIBUTIONS_BOX_17,
     T4_QPP_PENSIONABLE_EARNINGS_IN_QUEBEC,
     T4_QPP_SECOND_ADDITIONAL_BOX_17A,
@@ -274,8 +274,8 @@ INPUTS = frozenset(
         "ca/qpp_months",
         "ca/t4_cpp_pensionable_earnings_outside_quebec",
         "ca/t4_qpp_pensionable_earnings_in_quebec",
-        "ca/t4_cpp_contributions_box_16",
-        "ca/t4_cpp_second_additional_box_16a",
+        "ca/cpp_t4_base_and_first_additional_contributions",
+        "ca/cpp_t4_second_additional_contributions",
         "ca/t4_qpp_contributions_box_17",
         "ca/t4_qpp_second_additional_box_17a",
     }
@@ -475,7 +475,7 @@ STEPS = {
     CapabilitySelection(
         name="core/apply_rate",
         params={"rate": "ca/rc381_cpp_base_share_rate"},
-        consumes={"base": "ca/t4_cpp_contributions_box_16"},
+        consumes={"base": "ca/cpp_t4_base_and_first_additional_contributions"},
         produces={"output": "ca/rc381_part_3_line_20"},
     ),
     # Line 21 "Actual first additional contributions on CPP pensionable earnings: Line 19 minus
@@ -483,7 +483,10 @@ STEPS = {
     CapabilitySelection(
         name="core/subtract",
         params={},
-        consumes={"amount": "ca/t4_cpp_contributions_box_16", "less": "ca/rc381_part_3_line_20"},
+        consumes={
+            "amount": "ca/cpp_t4_base_and_first_additional_contributions",
+            "less": "ca/rc381_part_3_line_20",
+        },
         produces={"output": "ca/rc381_part_3_line_21"},
     ),
     # Line 22 "Required base contributions on CPP pensionable earnings: amount from line 18 x
@@ -709,7 +712,10 @@ STEPS = {
         name="core/sum",
         params={},
         consumes={
-            "parts": ("ca/t4_cpp_second_additional_box_16a", "ca/t4_qpp_second_additional_box_17a")
+            "parts": (
+                "ca/cpp_t4_second_additional_contributions",
+                "ca/t4_qpp_second_additional_box_17a",
+            )
         },
         produces={"output": "ca/rc381_part_3_line_64"},
     ),
@@ -1016,7 +1022,10 @@ STEPS = {
     CapabilitySelection(
         name="core/subtract",
         params={},
-        consumes={"amount": "ca/t4_cpp_contributions_box_16", "less": "ca/rc381_part_4_line_12"},
+        consumes={
+            "amount": "ca/cpp_t4_base_and_first_additional_contributions",
+            "less": "ca/rc381_part_4_line_12",
+        },
         produces={"output": "ca/rc381_part_4_line_13_difference"},
     ),
     # Line 13 "Line 5 minus line 12", with the block "If line 61 of Part 3 is: "0", do not complete
@@ -1032,7 +1041,7 @@ STEPS = {
             "when_positive": ("ca/rc381_part_4_line_13_difference",),
             "when_zero": (),
             "when_negative": (),
-            "when_non_positive": ("ca/t4_cpp_contributions_box_16",),
+            "when_non_positive": ("ca/cpp_t4_base_and_first_additional_contributions",),
             "when_non_negative": (),
         },
         produces={"output": "ca/rc381_part_4_line_13"},
@@ -1051,7 +1060,7 @@ STEPS = {
         name="core/subtract",
         params={},
         consumes={
-            "amount": "ca/t4_cpp_contributions_box_16",
+            "amount": "ca/cpp_t4_base_and_first_additional_contributions",
             "less": "ca/rc381_part_3_line_24",
         },
         produces={"output": "ca/rc381_part_4_line_17"},
@@ -1421,7 +1430,7 @@ STEPS = {
         name="core/subtract",
         params={},
         consumes={
-            "amount": "ca/t4_cpp_second_additional_box_16a",
+            "amount": "ca/cpp_t4_second_additional_contributions",
             "less": "ca/rc381_part_3_line_26",
         },
         produces={"output": "ca/rc381_part_4_line_46_difference"},
@@ -1446,7 +1455,7 @@ STEPS = {
         name="core/subtract",
         params={},
         consumes={
-            "amount": "ca/t4_cpp_second_additional_box_16a",
+            "amount": "ca/cpp_t4_second_additional_contributions",
             "less": "ca/rc381_part_4_line_46",
         },
         produces={"output": "ca/rc381_part_4_line_47"},
@@ -2304,10 +2313,14 @@ WIRING = {
         frozenset({RC381_PART_3_LINE_16, RC381_PART_3_LINE_9}),
         frozenset({RC381_PART_3_LINE_18}),
     ),
-    (ApplyRate, frozenset({T4_CPP_CONTRIBUTIONS_BOX_16}), frozenset({RC381_PART_3_LINE_20})),
+    (
+        ApplyRate,
+        frozenset({CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS}),
+        frozenset({RC381_PART_3_LINE_20}),
+    ),
     (
         Subtract,
-        frozenset({T4_CPP_CONTRIBUTIONS_BOX_16, RC381_PART_3_LINE_20}),
+        frozenset({CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS, RC381_PART_3_LINE_20}),
         frozenset({RC381_PART_3_LINE_21}),
     ),
     (TieredContribution, frozenset({RC381_PART_3_LINE_18}), frozenset({RC381_PART_3_LINE_22})),
@@ -2419,7 +2432,7 @@ WIRING = {
     ),
     (
         Sum,
-        frozenset({T4_CPP_SECOND_ADDITIONAL_BOX_16A, T4_QPP_SECOND_ADDITIONAL_BOX_17A}),
+        frozenset({CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS, T4_QPP_SECOND_ADDITIONAL_BOX_17A}),
         frozenset({RC381_PART_3_LINE_64}),
     ),
     (
@@ -2579,13 +2592,17 @@ WIRING = {
     ),
     (
         Subtract,
-        frozenset({T4_CPP_CONTRIBUTIONS_BOX_16, RC381_PART_4_LINE_12}),
+        frozenset({CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS, RC381_PART_4_LINE_12}),
         frozenset({RC381_PART_4_LINE_13_DIFFERENCE}),
     ),
     (
         ChooseBySign,
         frozenset(
-            {RC381_PART_3_LINE_61, RC381_PART_4_LINE_13_DIFFERENCE, T4_CPP_CONTRIBUTIONS_BOX_16}
+            {
+                RC381_PART_3_LINE_61,
+                RC381_PART_4_LINE_13_DIFFERENCE,
+                CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            }
         ),
         frozenset({RC381_PART_4_LINE_13}),
     ),
@@ -2596,7 +2613,7 @@ WIRING = {
     ),
     (
         Subtract,
-        frozenset({T4_CPP_CONTRIBUTIONS_BOX_16, RC381_PART_3_LINE_24}),
+        frozenset({CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS, RC381_PART_3_LINE_24}),
         frozenset({RC381_PART_4_LINE_17}),
     ),
     (
@@ -2757,7 +2774,7 @@ WIRING = {
     ),
     (
         Subtract,
-        frozenset({T4_CPP_SECOND_ADDITIONAL_BOX_16A, RC381_PART_3_LINE_26}),
+        frozenset({CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS, RC381_PART_3_LINE_26}),
         frozenset({RC381_PART_4_LINE_46_DIFFERENCE}),
     ),
     (
@@ -2767,7 +2784,7 @@ WIRING = {
     ),
     (
         Subtract,
-        frozenset({T4_CPP_SECOND_ADDITIONAL_BOX_16A, RC381_PART_4_LINE_46}),
+        frozenset({CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS, RC381_PART_4_LINE_46}),
         frozenset({RC381_PART_4_LINE_47}),
     ),
     (

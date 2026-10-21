@@ -50,7 +50,7 @@ capabilities:
   # positive.
   - name: core/subtract
     consumes:
-      amount: ca/t4_cpp_contributions_box_16
+      amount: ca/cpp_t4_base_and_first_additional_contributions
       less: ca/rc381_part_4_line_12
     produces:
       output: ca/rc381_part_4_line_13_difference
@@ -67,7 +67,7 @@ capabilities:
       when_zero: []
       when_negative: []
       when_non_positive:
-        - ca/t4_cpp_contributions_box_16
+        - ca/cpp_t4_base_and_first_additional_contributions
       when_non_negative: []
     produces:
       output: ca/rc381_part_4_line_13
@@ -82,7 +82,7 @@ capabilities:
   # 19 of Part 3" and line 16 "Amount from line 24 of Part 3".
   - name: core/subtract
     consumes:
-      amount: ca/t4_cpp_contributions_box_16
+      amount: ca/cpp_t4_base_and_first_additional_contributions
       less: ca/rc381_part_3_line_24
     produces:
       output: ca/rc381_part_4_line_17

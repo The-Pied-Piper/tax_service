@@ -186,7 +186,7 @@ capabilities:
   # line 65 of Part 3" (the amount from line 26), completed when line 68 of Part 3 is positive.
   - name: core/subtract
     consumes:
-      amount: ca/t4_cpp_second_additional_box_16a
+      amount: ca/cpp_t4_second_additional_contributions
       less: ca/rc381_part_3_line_26
     produces:
       output: ca/rc381_part_4_line_46_difference
@@ -207,7 +207,7 @@ capabilities:
   # second additional CPP contributions from line 25 of Part 3".
   - name: core/subtract
     consumes:
-      amount: ca/t4_cpp_second_additional_box_16a
+      amount: ca/cpp_t4_second_additional_contributions
       less: ca/rc381_part_4_line_46
     produces:
       output: ca/rc381_part_4_line_47

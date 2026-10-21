@@ -201,7 +201,7 @@ capabilities:
   - name: core/sum
     consumes:
       parts:
-        - ca/t4_cpp_second_additional_box_16a
+        - ca/cpp_t4_second_additional_contributions
         - ca/t4_qpp_second_additional_box_17a
     produces:
       output: ca/rc381_part_3_line_64
