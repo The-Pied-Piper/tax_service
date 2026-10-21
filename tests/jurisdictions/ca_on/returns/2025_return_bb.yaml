@@ -489,3 +489,4 @@ expected:
   ca/amt_security_options_d1_total: "0"
   ca/amt_security_options_net: "0"
   ca/net_capital_loss_balance_2000: "0.00"
+  ca/rc381_part_4_line_4: "30000"

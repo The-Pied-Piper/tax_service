@@ -278,6 +278,8 @@ from app.jurisdictions.ca.catalog import (
     CPP_OR_QPP_BENEFITS,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CPT20_EARNINGS,
+    CPT20_T4_EARNINGS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDIT_AMOUNTS_SUBTOTAL,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
@@ -720,6 +722,14 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_91,
     RC381_PART_3_LINE_92,
     RC381_PART_3_LINE_93,
+    RC381_PART_4_LINE_4,
+    RC381_PART_4_LINE_8,
+    RC381_PART_4_LINE_11,
+    RC381_PART_4_LINE_12,
+    RC381_PART_4_LINE_13,
+    RC381_PART_4_LINE_24,
+    RC381_PART_4_LINE_25A,
+    RC381_PART_4_LINE_26,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REAL_ESTATE_GAIN_OR_LOSS,
@@ -962,6 +972,34 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Form RC381 Part 4 line 4 "Add lines 1 to 3." (the pensionable net self-employment
+        # earnings, the CPT20 earnings not on a T4 slip and the CPT20 earnings on a T4 slip),
+        # line 12 "Line 8 plus line 11 (if negative, show in brackets)" and line 26 "Add lines 24
+        # to 25A." (line 25 being the amount from line 13): every part is 0 for Return A, which
+        # has no self-employment earnings and no T4 contributions.
+        RC381_PART_4_LINE_4: SumLine(
+            RC381_PART_4_LINE_4,
+            (
+                (PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS, D("0")),
+                (CPT20_EARNINGS, D("0")),
+                (CPT20_T4_EARNINGS, D("0")),
+            ),
+            D("0"),
+        ),
+        RC381_PART_4_LINE_12: SumLine(
+            RC381_PART_4_LINE_12,
+            ((RC381_PART_4_LINE_8, D("0.00")), (RC381_PART_4_LINE_11, D("0.00"))),
+            D("0.00"),
+        ),
+        RC381_PART_4_LINE_26: SumLine(
+            RC381_PART_4_LINE_26,
+            (
+                (RC381_PART_4_LINE_24, D("0")),
+                (RC381_PART_4_LINE_13, D("0")),
+                (RC381_PART_4_LINE_25A, D("0")),
+            ),
+            D("0"),
+        ),
         # Form RC381 Part 3 lines 44, 49, 52, 56, 59, 61, 64, 67 and 69, each "Line N plus line M"
         # (or "Total ...: line N plus line M"): every part is 0 for Return A, which has no T4
         # pensionable earnings or contributions.

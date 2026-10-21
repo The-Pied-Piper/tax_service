@@ -65,7 +65,21 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_90,
     RC381_PART_3_LINE_91,
     RC381_PART_3_LINE_93,
+    RC381_PART_4_LINE_13,
+    RC381_PART_4_LINE_14,
+    RC381_PART_4_LINE_17,
+    RC381_PART_4_LINE_17A,
+    RC381_PART_4_LINE_20,
+    RC381_PART_4_LINE_21,
+    RC381_PART_4_LINE_21_FROM_LINE_17,
+    RC381_PART_4_LINE_21_LESSER,
+    RC381_PART_4_LINE_22,
+    RC381_PART_4_LINE_23,
+    RC381_PART_4_LINE_23_LESSER,
+    RC381_PART_4_LINE_24,
+    RC381_PART_4_LINE_25A,
     RENTAL_NON_COMPLIANT_EXPENSES,
+    T4_CPP_CONTRIBUTIONS_BOX_16,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
     TAXABLE_INCOME,
 )
@@ -107,6 +121,46 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # in the "positive or 0" branch (or, for the two results, the "0 or negative" branch of Part
     # 3b). The overpayment of line 44800 is line 69 not below zero, a floored sum of line 69.
     assert chosen_by_sign == {
+        # Form RC381 Part 4 line 13 "Line 5 minus line 12" (line 61 of Part 3 positive; else line
+        # 5), line 21 (by the sign of line 20), line 23 (by the sign of line 69 of Part 3), line
+        # 24 and line 25A (line 61 negative): Return A's lines 61, 20 and 69 are all 0, so line 13
+        # takes line 5 ("0" or negative), line 21 has no candidate for "0", line 23 takes the
+        # lesser ("positive or 0"), and lines 24 and 25A have none for "0".
+        RC381_PART_4_LINE_13: ChosenBySignLine(
+            output=RC381_PART_4_LINE_13,
+            sign_kind=RC381_PART_3_LINE_61,
+            sign=D("0"),
+            chosen_kind=T4_CPP_CONTRIBUTIONS_BOX_16,
+            chosen_value=D("0"),
+        ),
+        RC381_PART_4_LINE_21: ChosenBySignLine(
+            output=RC381_PART_4_LINE_21,
+            sign_kind=RC381_PART_4_LINE_20,
+            sign=D("0"),
+            chosen_kind=None,
+            chosen_value=D("0"),
+        ),
+        RC381_PART_4_LINE_23: ChosenBySignLine(
+            output=RC381_PART_4_LINE_23,
+            sign_kind=RC381_PART_3_LINE_69,
+            sign=D("0"),
+            chosen_kind=RC381_PART_4_LINE_23_LESSER,
+            chosen_value=D("0"),
+        ),
+        RC381_PART_4_LINE_24: ChosenBySignLine(
+            output=RC381_PART_4_LINE_24,
+            sign_kind=RC381_PART_3_LINE_61,
+            sign=D("0"),
+            chosen_kind=None,
+            chosen_value=D("0"),
+        ),
+        RC381_PART_4_LINE_25A: ChosenBySignLine(
+            output=RC381_PART_4_LINE_25A,
+            sign_kind=RC381_PART_3_LINE_61,
+            sign=D("0"),
+            chosen_kind=None,
+            chosen_value=D("0"),
+        ),
         RC381_PART_3_LINE_75: ChosenBySignLine(
             output=RC381_PART_3_LINE_75,
             sign_kind=RC381_PART_3_LINE_53,
@@ -146,6 +200,21 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # Form RC381 Part 3b lines 76, 83 and 90 "Enter the amount from line 53 (60, 68) as a positive
     # amount": none is negative for Return A.
     assert positive_parts == {
+        # Form RC381 Part 4 line 14 "Enter the amount from line 61 of Part 3 as a positive
+        # amount." and line 17A "If line 17 is negative, enter it as a positive amount.": neither
+        # is negative for Return A.
+        RC381_PART_4_LINE_14: PositivePartOfNegationLine(
+            output=RC381_PART_4_LINE_14,
+            amount_kind=RC381_PART_3_LINE_61,
+            amount_value=D("0"),
+            result=D("0"),
+        ),
+        RC381_PART_4_LINE_17A: PositivePartOfNegationLine(
+            output=RC381_PART_4_LINE_17A,
+            amount_kind=RC381_PART_4_LINE_17,
+            amount_value=D("0"),
+            result=D("0"),
+        ),
         RC381_PART_3_LINE_76: PositivePartOfNegationLine(
             output=RC381_PART_3_LINE_76,
             amount_kind=RC381_PART_3_LINE_53,
@@ -168,6 +237,23 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # Form RC381 Part 3b lines 77, 80, 84, 87 and 91, "whichever is less" when the lines are
     # positive: none is positive for Return A, so each is "0".
     assert lesser_when_positive == {
+        # Form RC381 Part 4 line 21, "If line 17 is positive, enter the amount from line 17 (show
+        # in brackets)" and "If line 20 is positive, enter whichever is less: amount from line 20
+        # or line 17A": none is positive for Return A, so each is "0".
+        RC381_PART_4_LINE_21_FROM_LINE_17: LesserOfWhenPositiveLine(
+            output=RC381_PART_4_LINE_21_FROM_LINE_17,
+            parts=((RC381_PART_4_LINE_17, D("0")),),
+            all_positive=False,
+            bracket=True,
+            result=D("0"),
+        ),
+        RC381_PART_4_LINE_21_LESSER: LesserOfWhenPositiveLine(
+            output=RC381_PART_4_LINE_21_LESSER,
+            parts=((RC381_PART_4_LINE_20, D("0")), (RC381_PART_4_LINE_17A, D("0"))),
+            all_positive=False,
+            bracket=False,
+            result=D("0"),
+        ),
         RC381_PART_3_LINE_77: LesserOfWhenPositiveLine(
             output=RC381_PART_3_LINE_77,
             parts=((RC381_PART_3_LINE_60, D("0")), (RC381_PART_3_LINE_76, D("0"))),
@@ -218,6 +304,20 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # Form RC381 Part 3 line 6 "Line 4 divided by line 5 (calculated to the fifth decimal place
     # without rounding)": Return A has no T4 pensionable earnings, so line 3 is 0 and line 6 is 0.
     assert truncated == {
+        # Form RC381 Part 4 line 22 "If line 17A is more than line 14, enter "1". If not, enter
+        # the result of line 17A divided by line 14 (calculated to the fifth decimal place
+        # without rounding).": lines 17A and 14 are both 0, so line 17A is not more and line 22 is
+        # 0 (a zero divisor gives 0).
+        RC381_PART_4_LINE_22: RatioTruncatedLine(
+            output=RC381_PART_4_LINE_22,
+            dividend=RC381_PART_4_LINE_17A,
+            dividend_amount=D("0"),
+            divisor=RC381_PART_4_LINE_14,
+            divisor_amount=D("0"),
+            rounding=RoundTo(D("0.00001"), RoundingMode.DOWN),
+            cap_at_one=True,
+            result=D("0"),
+        ),
         RC381_PART_3_LINE_6: RatioTruncatedLine(
             output=RC381_PART_3_LINE_6,
             dividend=T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
@@ -227,7 +327,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rounding=RoundTo(D("0.00001"), RoundingMode.DOWN),
             cap_at_one=False,
             result=D("0"),
-        )
+        ),
     }
     # Form RC381 Part 3 line 15, when "the amount from line 3 is more than the amount from line C
     # of Part 2": line 3 is 0, not more than line C (71,300.00), so line 15 is 0.

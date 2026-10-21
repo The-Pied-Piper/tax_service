@@ -40,10 +40,16 @@ from app.jurisdictions.ca.capabilities.divided_by_rate import DividedByRate
 from app.jurisdictions.ca.capabilities.ei_excluded_slips_net_income import (
     EiExcludedSlipsNetIncome,
 )
-from app.jurisdictions.ca.capabilities.lesser_of_when_positive import LesserOfWhenPositive
+from app.jurisdictions.ca.capabilities.lesser_of_when_positive import (
+    LesserOfWhenPositive,
+    LesserOfWhenPositiveInBrackets,
+)
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
 from app.jurisdictions.ca.capabilities.positive_part_of_negation import PositivePartOfNegation
-from app.jurisdictions.ca.capabilities.ratio_truncated import RatioTruncated
+from app.jurisdictions.ca.capabilities.ratio_truncated import (
+    RatioTruncated,
+    RatioTruncatedAtMostOne,
+)
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
 from app.jurisdictions.ca.capabilities.short_term_rental_gross_rents import (
@@ -164,6 +170,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
     CPT20_EARNINGS,
+    CPT20_T4_EARNINGS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
@@ -443,6 +450,28 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_91,
     RC381_PART_3_LINE_92,
     RC381_PART_3_LINE_93,
+    RC381_PART_4_LINE_4,
+    RC381_PART_4_LINE_8,
+    RC381_PART_4_LINE_11,
+    RC381_PART_4_LINE_12,
+    RC381_PART_4_LINE_13,
+    RC381_PART_4_LINE_13_DIFFERENCE,
+    RC381_PART_4_LINE_14,
+    RC381_PART_4_LINE_17,
+    RC381_PART_4_LINE_17A,
+    RC381_PART_4_LINE_20,
+    RC381_PART_4_LINE_21,
+    RC381_PART_4_LINE_21_FROM_LINE_17,
+    RC381_PART_4_LINE_21_LESSER,
+    RC381_PART_4_LINE_22,
+    RC381_PART_4_LINE_23,
+    RC381_PART_4_LINE_23_LESSER,
+    RC381_PART_4_LINE_23_MULTIPLIED,
+    RC381_PART_4_LINE_24,
+    RC381_PART_4_LINE_24_LESSER,
+    RC381_PART_4_LINE_25A,
+    RC381_PART_4_LINE_26,
+    RC381_PART_4_LINE_27,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REFUND_OR_BALANCE_OWING,
@@ -876,6 +905,40 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         worksheet.producer_of(RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS), ChooseBySign
     )
     assert isinstance(worksheet.producer_of(RC381_CPP_OVERPAYMENT), SumNotBelowZero)
+    # Form RC381 Part 4 lines 1 to 27: the sums and differences, the signs read by "If line 61 of
+    # Part 3 is ...", the helpers printed inside lines 13, 21 and 23, the truncated ratio of line
+    # 22 and the gross-up of line 27.
+    for kind in (RC381_PART_4_LINE_4, RC381_PART_4_LINE_12, RC381_PART_4_LINE_26):
+        assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
+    for kind in (
+        RC381_PART_4_LINE_8,
+        RC381_PART_4_LINE_11,
+        RC381_PART_4_LINE_13_DIFFERENCE,
+        RC381_PART_4_LINE_17,
+        RC381_PART_4_LINE_20,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Subtract), kind.identifier
+    for kind in (RC381_PART_4_LINE_14, RC381_PART_4_LINE_17A):
+        assert isinstance(worksheet.producer_of(kind), PositivePartOfNegation), kind.identifier
+    for kind in (
+        RC381_PART_4_LINE_13,
+        RC381_PART_4_LINE_21,
+        RC381_PART_4_LINE_23,
+        RC381_PART_4_LINE_24,
+        RC381_PART_4_LINE_25A,
+    ):
+        assert isinstance(worksheet.producer_of(kind), ChooseBySign), kind.identifier
+    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_21_LESSER), LesserOfWhenPositive)
+    assert isinstance(
+        worksheet.producer_of(RC381_PART_4_LINE_21_FROM_LINE_17), LesserOfWhenPositiveInBrackets
+    )
+    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_22), RatioTruncatedAtMostOne)
+    for kind in (RC381_PART_4_LINE_23_LESSER, RC381_PART_4_LINE_24_LESSER):
+        assert isinstance(worksheet.producer_of(kind), LesserOf), kind.identifier
+    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_23_MULTIPLIED), ApplyChosenRate)
+    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_27), ApplyFraction)
+    # Line 3 (box 50399) is a starting amount, so nothing produces it.
+    assert worksheet.producer_of(CPT20_T4_EARNINGS) is None
     assert worksheet.producer_of(RC381_PART_3_LINE_7) is not None
     assert worksheet.producer_of(RC381_PART_3_LINE_8) is not None
     assert worksheet.producer_of(RC381_PART_3_LINE_9) is not None

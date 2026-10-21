@@ -36,9 +36,9 @@ line, so they are not inputs.
 """
 
 CPT20_EARNINGS = CATALOG.declare("cpt20_earnings", Decimal, non_negative=True)
-"""CPT20 earnings, Schedule 8 Part 4 line 2 and line 50373 "Employment earnings not shown on a T4
-slip that you are electing to pay additional CPP contributions on (complete Form CPT20)": a
-starting amount."""
+"""CPT20 earnings, Schedule 8 Part 4 line 2, Form RC381 Part 4 line 2 and line 50373
+"Employment earnings not shown on a T4 slip that you are electing to pay additional CPP
+contributions on (complete Form CPT20)": a starting amount."""
 
 CPP_PART_4_COMPLETED = CATALOG.declare("cpp_part_4_completed", int, non_negative=True)
 """Schedule 8 Part 4 completed, "Part 4 - Complete this part if you are reporting only

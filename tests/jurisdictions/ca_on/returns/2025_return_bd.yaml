@@ -378,3 +378,4 @@ expected:
   ca/fish_vehicle_business_use_part: "0.00"
   ca/fish_motor_vehicle_expenses: "0.00"
   ca/net_capital_loss_balance_2000: "0.00"
+  ca/rc381_part_4_line_4: "15000"

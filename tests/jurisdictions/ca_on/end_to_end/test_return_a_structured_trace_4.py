@@ -530,7 +530,12 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_42,
     RC381_PART_3_LINE_43,
     RC381_PART_3_LINE_46,
+    RC381_PART_3_LINE_68,
     RC381_PART_3_LINE_69,
+    RC381_PART_4_LINE_17A,
+    RC381_PART_4_LINE_23,
+    RC381_PART_4_LINE_23_LESSER,
+    RC381_PART_4_LINE_24_LESSER,
     REFUND,
     RENTAL_CCA_CLAIM,
     RENTAL_CCA_CLAIM_BEFORE_LIMIT,
@@ -790,6 +795,19 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     assert lesser == {
+        # Form RC381 Part 4 line 23 "enter whichever is less: amount from line 68 of Part 3 or
+        # line 17A" and line 24 "Enter whichever is less: amount from line 17A or line 23.":
+        # every part is 0 for Return A.
+        RC381_PART_4_LINE_23_LESSER: LesserOfLine(
+            output=RC381_PART_4_LINE_23_LESSER,
+            parts=((RC381_PART_3_LINE_68, D("0.00")), (RC381_PART_4_LINE_17A, D("0"))),
+            result=D("0"),
+        ),
+        RC381_PART_4_LINE_24_LESSER: LesserOfLine(
+            output=RC381_PART_4_LINE_24_LESSER,
+            parts=((RC381_PART_4_LINE_17A, D("0")), (RC381_PART_4_LINE_23, D("0"))),
+            result=D("0"),
+        ),
         # Form RC381 Part 3 line 31 "Enter whichever is less: amount from line 2 or line 27.":
         # line 2 is 0.
         RC381_PART_3_LINE_31: LesserOfLine(
