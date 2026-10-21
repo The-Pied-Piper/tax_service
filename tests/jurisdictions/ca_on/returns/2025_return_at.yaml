@@ -1,8 +1,8 @@
 # Return AT: a single filer, a 2025 Ontario resident, a student with employment income of
 # $40,000 who claims the federal tuition amount (Schedule 11), the Canada training credit, a
 # tuition amount transferred from a child and the federal amounts transferred from a spouse
-# (Schedule 2). Nothing else is claimed. The chosen figures are the ticket's worked examples
-# (#181): Schedule 11 with $6,000 of Canadian fees, $1,250 of foreign fees and $2,000 unused
+# (Schedule 2). Nothing else is claimed. The figures are chosen so the ticket's results hold:
+# Schedule 11 with $6,000 of Canadian fees, $1,250 of foreign fees and $2,000 unused
 # from the 2024 notice, and Schedule 2 with the spouse's age amount $9,028, pension amount
 # $2,000 and taxable income $20,000.
 jurisdiction: CA-ON
@@ -45,9 +45,10 @@ description: >-
   The total of the credit amounts (line 33500) is 20062.75 + 8000.00 + 1500 + 8657.00 =
   38219.75 and line 33800 is 38219.75 x 14.5% = 5541.86375, rounded half-up to the cent:
   5541.86. With no donations the top-up tax credit is 0 (5541.86 is under 8319.38). The federal
-  tax after credits is 5747.08 - 5541.86 = 205.22. The Ontario tax is the engine's figure for
-  this net income, 1165.23, unchanged by these federal lines (not checked against ON428, to be
-  confirmed), so the total payable is 205.22 + 1165.23 = 1370.45. The total
+  tax after credits is 5747.08 - 5541.86 = 205.22. The Ontario tax is not changed by these
+  federal lines: 39635 x 5.05% = 2001.57, the credits (12747 + 1806.75 + 656) x 5.05% = 768.09
+  leave 1233.48, the LIFT credit is 875 - 5% x (39635 - 32500) = 518.25 and the health premium
+  is 450, giving 1165.23; so the total payable is 205.22 + 1165.23 = 1370.45. The total
   credits (line 48200) are 5000 + 1250.00 (line 45350) = 6250.00 and the refund is 6250.00 -
   1370.45 = 4879.55, a refund (line 48400). The Ontario net refund (line 3 of the opportunities
   fund) with no donation is the same 4879.55. Not triggered: lines 30100 to 31800 of the

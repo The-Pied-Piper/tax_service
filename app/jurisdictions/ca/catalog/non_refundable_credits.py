@@ -259,7 +259,7 @@ SPOUSE_NOT_SEPARATED_90_DAYS = CATALOG.declare(
 """Spouse not separated for 90 days, Schedule 2 "If you were separated because of a breakdown in
 your relationship for a period of 90 days or more including December 31, 2025, your spouse or
 common-law partner cannot transfer any unused amounts to you.": the caller's count, 1 when not
-separated and 0 when separated, which line 13 is counted by."""
+separated and 0 when separated (only 0 or 1 is valid), which line 13 is counted by."""
 
 SPOUSE_TRANSFERABLE_AMOUNTS = CATALOG.declare(
     "spouse_transferable_amounts", Decimal, non_negative=True

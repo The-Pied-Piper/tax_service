@@ -10,7 +10,7 @@ Three datasets, each the figure of one line: the Canada training credit rate (li
 kind, 50%), the line 11 threshold and rate (the `threshold_rate` kind, $57,375 and 14.5%) and the
 transfer maximum (line 21, the `amount` kind, $5,000, a bound the line takes the lesser of).
 The form states no rounding rule for these dollars-and-cents boxes, so each rounds half-up to the
-cent, the owner's decision (#143).
+cent, the owner's decision.
 """
 
 from __future__ import annotations

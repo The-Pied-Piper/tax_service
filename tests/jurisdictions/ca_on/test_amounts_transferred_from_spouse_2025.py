@@ -8,7 +8,7 @@ divided by 14.5% =".
 One dataset, the `threshold_rate` kind: $57,375 and 14.5%. It is Schedule 11 line 11's figures
 again, but a dataset of its own because it is another form's line, rounded by its own rule:
 Schedule 2 line 7 is a dollars-and-cents box and states no rounding rule, so it rounds half-up to
-the cent, the owner's decision (#143).
+the cent, the owner's decision.
 """
 
 from __future__ import annotations
