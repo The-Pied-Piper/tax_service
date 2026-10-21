@@ -331,12 +331,13 @@ maximum (line 2), less the maximum pensionable earnings (line 3).
 CPP_ENHANCED_CONTRIBUTIONS = CATALOG.declare(
     "cpp_enhanced_contributions", Decimal, non_negative=True
 )
-"""Enhanced CPP contributions, Schedule 8 Part 3b line 48 "Line 43 plus line 47 Enter this amount
+"""Enhanced CPP contributions, Schedule 8 Part 3a line 28 "Line 26 plus line 27 Enter this amount
 (in dollars and cents) on line 22215 of your return.": the first and second additional
-contributions together, the T1 line 22215 deduction from total income (not a credit).
+contributions together (lines 12 and 22).
 
-When line 24 is positive, Part 3a line 28 "Line 26 plus line 27 Enter this amount (in dollars and
-cents) on line 22215 of your return." carries the same sum.
+It is the figure Part 3a carries to T1 line 22215 when line 24 is positive. The deduction from
+total income is `cpp_enhanced_contributions_on_return`, which is this sum when line 24 is positive
+and Part 3b line 48 otherwise.
 """
 
 EXPLORATION_AND_DEVELOPMENT_EXPENSES = CATALOG.declare(
@@ -1073,3 +1074,184 @@ NORTHERN_RESIDENTS_DEDUCTIONS = CATALOG.declare(
 on line 25500 of your return. Northern residents deductions =" and T1 line 66 and line 25500
 "Northern residents deductions (complete Form T2222)": the residency deduction (line 17) and the
 travel deduction (line 18)."""
+
+CPP_ZERO = CATALOG.declare("cpp_zero", Decimal, non_negative=True)
+"""Schedule 8 zero, Part 3b "If not, enter "0"": the amount of the "enter "0"" alternatives of lines
+32, 35, 39, 42 and 46, and the base of lines 31, 38 and 45, which are "as a positive amount"."""
+
+CPP_LINE_24_POSITIVE = CATALOG.declare("cpp_line_24_positive", int, non_negative=True)
+"""Line 24 is positive, Schedule 8 Part 3 line 24 "Line 20 plus line 23 (if negative, show in
+brackets) =": 1 when the line is positive, the Part 3a branch ("positive, complete Part 3a
+below"), and 0 when it is "0" or negative, the Part 3b branch."""
+
+CPP_LINE_16_NOT_NEGATIVE = CATALOG.declare("cpp_line_16_not_negative", int, non_negative=True)
+"""Line 16 is positive or "0", Schedule 8 Part 3 line 16 "Line 14 minus line 15 (if negative, show
+in brackets) =": 1 when the line is not negative, the test of Part 3b line 30 "If line 16 is
+positive or "0"", and 0 when it is negative."""
+
+CPP_LINE_19_NOT_NEGATIVE = CATALOG.declare("cpp_line_19_not_negative", int, non_negative=True)
+"""Line 19 is positive or "0", Schedule 8 Part 3 line 19 "Line 17 minus line 18 (if negative, show
+in brackets) =": 1 when the line is not negative, the test of Part 3b line 37 (printed as line 36)
+"If line 19 is positive or "0"", and 0 when it is negative."""
+
+CPP_LINE_23_NOT_NEGATIVE = CATALOG.declare("cpp_line_23_not_negative", int, non_negative=True)
+"""Line 23 is positive or "0", Schedule 8 Part 3 line 23 "Line 21 minus line 22 (if negative, show
+in brackets) =": 1 when the line is not negative, the test of Part 3b line 44 "If line 23 is
+positive or "0"", and 0 when it is negative."""
+
+CPP_LINE_16_NEGATIVE_LINE_19_POSITIVE = CATALOG.declare(
+    "cpp_line_16_negative_line_19_positive", int, non_negative=True
+)
+"""Line 16 is negative and line 19 is positive, Schedule 8 Part 3b line 32 "If line 16 is negative
+and line 19 is positive, enter whichever is less": 1 when line 16 is negative (the count of line
+16 not negative is 0) and line 19 is positive, and 0 otherwise."""
+
+CPP_LINE_23_AND_LINE_33_POSITIVE = CATALOG.declare(
+    "cpp_line_23_and_line_33_positive", int, non_negative=True
+)
+"""Line 23 and line 33 are both positive, Schedule 8 Part 3b line 35 "If line 23 and line 33 are
+both positive, enter whichever is less. If not, enter "0"": 1 when both lines are positive, 0
+otherwise."""
+
+CPP_LINE_16_POSITIVE = CATALOG.declare("cpp_line_16_positive", int, non_negative=True)
+"""Line 16 is positive, Schedule 8 Part 3b line 39 "If line 16 is positive, enter whichever is
+less": 1 when the line is more than 0, 0 otherwise."""
+
+CPP_LINE_23_AND_LINE_40_POSITIVE = CATALOG.declare(
+    "cpp_line_23_and_line_40_positive", int, non_negative=True
+)
+"""Line 23 and line 40 are both positive, Schedule 8 Part 3b line 42 "If line 23 and line 40 are
+both positive, enter whichever is less: amount from line 40 or the result of line 23 minus line
+35": 1 when both lines are positive, 0 otherwise."""
+
+CPP_LINE_20_POSITIVE = CATALOG.declare("cpp_line_20_positive", int, non_negative=True)
+"""Line 20 is positive, Schedule 8 Part 3b line 46 "If line 20 is positive, enter whichever is
+less": 1 when the line is more than 0, 0 otherwise."""
+
+CPP_PART_3B_LINE_30 = CATALOG.declare("cpp_part_3b_line_30", Decimal, non_negative=True)
+"""Part 3b line 30 "If line 16 is positive or "0", enter the amount from line 15 at line 30 and
+line 36, and continue at line 37. If not, enter the amount from line 14 and continue at line 31.":
+the required base contributions (line 15) when line 16 is not negative, else the actual base
+contributions (line 14, from line 9)."""
+
+CPP_PART_3B_LINE_31 = CATALOG.declare("cpp_part_3b_line_31", Decimal, non_negative=True)
+"""Part 3b line 31 "Enter the amount from line 16 as a positive amount.", under "If line 16 is
+negative:": line 16 as a positive amount, and 0 when line 16 is positive or "0"."""
+
+CPP_PART_3B_LINE_32_LESSER = CATALOG.declare("cpp_part_3b_line_32_lesser", Decimal)
+"""Part 3b line 32 candidate, "If line 16 is negative and line 19 is positive, enter whichever is
+less: amount from line 19 or line 31": the lesser of line 19 and line 31, which line 32 takes only
+when the count of line 16 negative and line 19 positive applies."""
+
+CPP_PART_3B_LINE_32 = CATALOG.declare("cpp_part_3b_line_32", Decimal, non_negative=True)
+"""Part 3b line 32 "amount from line 19 or line 31. If not, enter "0".": the candidate above when
+line 16 is negative and line 19 is positive, else "0"."""
+
+CPP_PART_3B_LINE_33 = CATALOG.declare("cpp_part_3b_line_33", Decimal, non_negative=True)
+"""Part 3b line 33 "Line 31 minus line 32 =": the part of line 31 that line 32 does not take."""
+
+CPP_PART_3B_LINE_34 = CATALOG.declare("cpp_part_3b_line_34", Decimal, non_negative=True)
+"""Part 3b line 34 "Line 30 plus line 32 =": the sum of lines 30 and 32."""
+
+CPP_PART_3B_LINE_35_LESSER = CATALOG.declare("cpp_part_3b_line_35_lesser", Decimal)
+"""Part 3b line 35 candidate, "If line 23 and line 33 are both positive, enter whichever is less":
+the lesser of line 23 and line 33, which line 35 takes only when both are positive."""
+
+CPP_PART_3B_LINE_35 = CATALOG.declare("cpp_part_3b_line_35", Decimal, non_negative=True)
+"""Part 3b line 35 "If line 23 and line 33 are both positive, enter whichever is less. If not,
+enter "0".": the candidate above when both are positive, else "0"."""
+
+CPP_PART_3B_LINE_36 = CATALOG.declare("cpp_part_3b_line_36", Decimal, non_negative=True)
+"""Part 3b line 36 "Line 34 plus line 35. Enter this amount (in dollars and cents) on line 30800 of
+your return and line 58240 of your Form 428.": the base contributions of the Part 3b branch, which
+cpp_base_contributions_on_return carries to line 30800 when line 24 is "0" or negative."""
+
+CPP_PART_3B_LINE_37 = CATALOG.declare("cpp_part_3b_line_37", Decimal, non_negative=True)
+"""Part 3b line 37 (printed as "Line 36" on the form's second page), "If line 19 is positive or "0",
+enter the amount from line 18 at line 37 and line 43, and continue at line 44. If not, enter the
+amount from line 17 and continue at line 38.": the required first additional contributions (line
+18) when line 19 is not negative, else the actual first additional contributions (line 17)."""
+
+CPP_PART_3B_LINE_38 = CATALOG.declare("cpp_part_3b_line_38", Decimal, non_negative=True)
+"""Part 3b line 38 "If line 19 is negative: Enter the amount from line 19 as a positive amount.":
+line 19 as a positive amount, and 0 when line 19 is positive or "0"."""
+
+CPP_PART_3B_LINE_39_LESSER = CATALOG.declare("cpp_part_3b_line_39_lesser", Decimal)
+"""Part 3b line 39 candidate, "If line 16 is positive, enter whichever is less: amount from line 16
+or line 38": the lesser of line 16 and line 38, which line 39 takes only when line 16 is
+positive."""
+
+CPP_PART_3B_LINE_39 = CATALOG.declare("cpp_part_3b_line_39", Decimal, non_negative=True)
+"""Part 3b line 39 "amount from line 16 or line 38. If not, enter "0".": the candidate above when
+line 16 is positive, else "0"."""
+
+CPP_PART_3B_LINE_40 = CATALOG.declare("cpp_part_3b_line_40", Decimal, non_negative=True)
+"""Part 3b line 40 "Line 38 minus line 39 =": the part of line 38 that line 39 does not take."""
+
+CPP_PART_3B_LINE_41 = CATALOG.declare("cpp_part_3b_line_41", Decimal, non_negative=True)
+"""Part 3b line 41 "Line 37 plus line 39 =": the sum of lines 37 and 39."""
+
+CPP_PART_3B_LINE_23_LESS_LINE_35 = CATALOG.declare("cpp_part_3b_line_23_less_line_35", Decimal)
+"""Part 3b line 42, "the result of line 23 minus line 35": line 23 less line 35, signed, the
+comparison amount of the line 42 candidate."""
+
+CPP_PART_3B_LINE_42_LESSER = CATALOG.declare("cpp_part_3b_line_42_lesser", Decimal)
+"""Part 3b line 42 candidate, "If line 23 and line 40 are both positive, enter whichever is less:
+amount from line 40 or the result of line 23 minus line 35": the lesser of line 40 and line 23
+minus line 35, which line 42 takes only when both line 23 and line 40 are positive."""
+
+CPP_PART_3B_LINE_42 = CATALOG.declare("cpp_part_3b_line_42", Decimal, non_negative=True)
+"""Part 3b line 42 "... enter whichever is less ... If not, enter "0".": the candidate above when
+line 23 and line 40 are both positive, else "0"."""
+
+CPP_PART_3B_LINE_43 = CATALOG.declare("cpp_part_3b_line_43", Decimal, non_negative=True)
+"""Part 3b line 43 "Line 41 plus line 42 =": the sum of lines 41 and 42."""
+
+CPP_PART_3B_LINE_44 = CATALOG.declare("cpp_part_3b_line_44", Decimal, non_negative=True)
+"""Part 3b line 44 "If line 23 is positive or "0", enter the amount from line 22 on line 44 and
+line 47, and continue at line 48. If not, enter the amount from line 21 and continue at line 45.":
+the required second additional contributions (line 22) when line 23 is not negative, else the
+T4 box 16A total (line 21)."""
+
+CPP_PART_3B_LINE_45 = CATALOG.declare("cpp_part_3b_line_45", Decimal, non_negative=True)
+"""Part 3b line 45 "If line 23 is negative: Enter the amount from line 23 as a positive amount.":
+line 23 as a positive amount, and 0 when line 23 is positive or "0"."""
+
+CPP_PART_3B_LINE_46_LESSER = CATALOG.declare("cpp_part_3b_line_46_lesser", Decimal)
+"""Part 3b line 46 candidate, "If line 20 is positive, enter whichever is less: amount from line 20
+or line 45": the lesser of line 20 and line 45, which line 46 takes only when line 20 is
+positive."""
+
+CPP_PART_3B_LINE_46 = CATALOG.declare("cpp_part_3b_line_46", Decimal, non_negative=True)
+"""Part 3b line 46 "amount from line 20 or line 45. If not, enter "0".": the candidate above when
+line 20 is positive, else "0"."""
+
+CPP_PART_3B_LINE_47 = CATALOG.declare("cpp_part_3b_line_47", Decimal, non_negative=True)
+"""Part 3b line 47 "Line 44 plus line 46 =": the sum of lines 44 and 46."""
+
+CPP_PART_3B_LINE_48 = CATALOG.declare("cpp_part_3b_line_48", Decimal, non_negative=True)
+"""Part 3b line 48 "Line 43 plus line 47 Enter this amount (in dollars and cents) on line 22215 of
+your return.": the enhanced contributions of the Part 3b branch, which
+cpp_enhanced_contributions_on_return carries to line 22215 when line 24 is "0" or negative."""
+
+CPP_BASE_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
+    "cpp_base_contributions_on_return", Decimal, non_negative=True
+)
+"""Base CPP contributions on the return, T1 line 30800 and ON428 line 58240: Part 3a line 25 "Enter
+the amount from line 15. Enter this amount (in dollars and cents) on line 30800 of your return and
+line 58240 of your Form 428." when line 24 is positive (the required base contributions, line 11),
+else Part 3b line 36 (the same instruction), chosen by the count of line 24 being positive."""
+
+CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
+    "cpp_enhanced_contributions_on_return", Decimal, non_negative=True
+)
+"""Enhanced CPP contributions on the return, T1 line 22215: Part 3a line 28 "Line 26 plus line 27
+Enter this amount (in dollars and cents) on line 22215 of your return." when line 24 is positive,
+else Part 3b line 48 (the same instruction), chosen by the count of line 24 being positive. A
+deduction from total income, not a credit."""
+
+CPP_OVERPAYMENT = CATALOG.declare("cpp_overpayment", Decimal, non_negative=True)
+"""CPP overpayment, T1 line 44800: Part 3a line 29 "Enter the amount from line 24. Enter this amount
+(in dollars and cents) on line 44800 of your return." when line 24 is positive, else "0". The
+return's refund total reads it at line 152 "CPP or QPP overpayment" (Form 5006-R, line 152 and
+line 44800)."""

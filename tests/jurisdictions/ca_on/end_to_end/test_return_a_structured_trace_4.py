@@ -306,18 +306,56 @@ from app.jurisdictions.ca.catalog import (
     CHILD_CARE_EXPENSES,
     CHILD_CARE_EXPENSES_PAID,
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
+    CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASIC_EXEMPTION,
     CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
     CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
     CPP_EARNINGS_UP_TO_MAXIMUM,
+    CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+    CPP_LINE_16_NEGATIVE_LINE_19_POSITIVE,
+    CPP_LINE_16_NOT_NEGATIVE,
+    CPP_LINE_16_POSITIVE,
+    CPP_LINE_19_NOT_NEGATIVE,
+    CPP_LINE_20_POSITIVE,
+    CPP_LINE_23_AND_LINE_33_POSITIVE,
+    CPP_LINE_23_AND_LINE_40_POSITIVE,
+    CPP_LINE_23_NOT_NEGATIVE,
+    CPP_LINE_24_POSITIVE,
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_MONTHS,
+    CPP_OVERPAYMENT,
+    CPP_PART_3B_LINE_23_LESS_LINE_35,
+    CPP_PART_3B_LINE_30,
+    CPP_PART_3B_LINE_31,
+    CPP_PART_3B_LINE_32,
+    CPP_PART_3B_LINE_32_LESSER,
+    CPP_PART_3B_LINE_33,
+    CPP_PART_3B_LINE_35,
+    CPP_PART_3B_LINE_35_LESSER,
+    CPP_PART_3B_LINE_36,
+    CPP_PART_3B_LINE_37,
+    CPP_PART_3B_LINE_38,
+    CPP_PART_3B_LINE_39,
+    CPP_PART_3B_LINE_39_LESSER,
+    CPP_PART_3B_LINE_40,
+    CPP_PART_3B_LINE_42,
+    CPP_PART_3B_LINE_42_LESSER,
+    CPP_PART_3B_LINE_44,
+    CPP_PART_3B_LINE_45,
+    CPP_PART_3B_LINE_46,
+    CPP_PART_3B_LINE_46_LESSER,
+    CPP_PART_3B_LINE_48,
     CPP_PENSIONABLE_EARNINGS,
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+    CPP_ZERO,
     CPT20_EARNINGS,
     CREDIT_AMOUNTS_SUBTOTAL,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
@@ -985,6 +1023,55 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (CHART_2020_PART_2_AMOUNT_J, D("0")),
             ),
             result=D("0"),
+        ),
+        # Schedule 8 Part 3b line 32 "whichever is less: amount from line 19 or line 31": both are
+        # "0" for Return A, so the first listed is produced.
+        CPP_PART_3B_LINE_32_LESSER: LesserOfLine(
+            CPP_PART_3B_LINE_32_LESSER,
+            (
+                (CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_PART_3B_LINE_31, D("0")),
+            ),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3b line 35 "whichever is less": line 23 and line 33 are "0" for Return A.
+        CPP_PART_3B_LINE_35_LESSER: LesserOfLine(
+            CPP_PART_3B_LINE_35_LESSER,
+            (
+                (CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_PART_3B_LINE_33, D("0")),
+            ),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3b line 39 "whichever is less: amount from line 16 or line 38": both are
+        # "0" for Return A.
+        CPP_PART_3B_LINE_39_LESSER: LesserOfLine(
+            CPP_PART_3B_LINE_39_LESSER,
+            (
+                (CPP_BASE_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_PART_3B_LINE_38, D("0")),
+            ),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3b line 42 "whichever is less: amount from line 40 or the result of line
+        # 23 minus line 35": both are "0" for Return A.
+        CPP_PART_3B_LINE_42_LESSER: LesserOfLine(
+            CPP_PART_3B_LINE_42_LESSER,
+            (
+                (CPP_PART_3B_LINE_40, D("0")),
+                (CPP_PART_3B_LINE_23_LESS_LINE_35, D("0.00")),
+            ),
+            D("0"),
+        ),
+        # Schedule 8 Part 3b line 46 "whichever is less: amount from line 20 or line 45": both are
+        # "0" for Return A.
+        CPP_PART_3B_LINE_46_LESSER: LesserOfLine(
+            CPP_PART_3B_LINE_46_LESSER,
+            (
+                (CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_PART_3B_LINE_45, D("0")),
+            ),
+            D("0.00"),
         ),
         # Form T2125 Chart B line 19 "Amount 17 or 18, whichever is less": line 17 is 0 for Return
         # A.
@@ -1968,6 +2055,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=CHART_2020_AMOUNT_D,
             subtrahend_amount=D("0"),
             result=D("500000.00"),
+        ),
+        # Schedule 8 Part 3b line 31 "Enter the amount from line 16 as a positive amount": "0" less
+        # line 16 of 0.00 for Return A.
+        CPP_PART_3B_LINE_31: SubtractedNotBelowZeroLine(
+            output=CPP_PART_3B_LINE_31,
+            minuend=CPP_ZERO,
+            minuend_amount=D("0"),
+            subtrahend=CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 3b line 38 "Enter the amount from line 19 as a positive amount": "0" less
+        # line 19 of 0.00 for Return A.
+        CPP_PART_3B_LINE_38: SubtractedNotBelowZeroLine(
+            output=CPP_PART_3B_LINE_38,
+            minuend=CPP_ZERO,
+            minuend_amount=D("0"),
+            subtrahend=CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 3b line 45 "Enter the amount from line 23 as a positive amount": "0" less
+        # line 23 of 0.00 for Return A.
+        CPP_PART_3B_LINE_45: SubtractedNotBelowZeroLine(
+            output=CPP_PART_3B_LINE_45,
+            minuend=CPP_ZERO,
+            minuend_amount=D("0"),
+            subtrahend=CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
         ),
         # Form T657 Chart 2021 Part 1 "Amount A minus amount B" C: Return A's maximum of 446109.00,
         # less
@@ -3945,6 +4062,98 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=CHART_2020_PART_2_APPLIES,
             count=0,
             chosen_kind=CHART_2020_PART_1_AMOUNT_K,
+            chosen_value=D("0"),
+        ),
+        # Schedule 8 Part 3b line 30 "If line 16 is positive or "0", enter the amount from line 15":
+        # line 16 is 0.00 for Return A, so line 15 (line 11).
+        CPP_PART_3B_LINE_30: ChosenByCountLine(
+            output=CPP_PART_3B_LINE_30,
+            count_kind=CPP_LINE_16_NOT_NEGATIVE,
+            count=1,
+            chosen_kind=CPP_BASE_CONTRIBUTIONS,
+            chosen_value=D("3356.10"),
+        ),
+        # Schedule 8 Part 3b line 32 "If not, enter "0"": line 16 is not negative for Return A.
+        CPP_PART_3B_LINE_32: ChosenByCountLine(
+            output=CPP_PART_3B_LINE_32,
+            count_kind=CPP_LINE_16_NEGATIVE_LINE_19_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0"),
+        ),
+        # Schedule 8 Part 3b line 35 "If not, enter "0"": line 23 is 0.00 for Return A.
+        CPP_PART_3B_LINE_35: ChosenByCountLine(
+            output=CPP_PART_3B_LINE_35,
+            count_kind=CPP_LINE_23_AND_LINE_33_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0"),
+        ),
+        # Schedule 8 Part 3b line 37 "If line 19 is positive or "0", enter the amount from line 18":
+        # line 19 is 0.00 for Return A, so line 18 (line 12).
+        CPP_PART_3B_LINE_37: ChosenByCountLine(
+            output=CPP_PART_3B_LINE_37,
+            count_kind=CPP_LINE_19_NOT_NEGATIVE,
+            count=1,
+            chosen_kind=CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            chosen_value=D("678.00"),
+        ),
+        # Schedule 8 Part 3b line 39 "If not, enter "0"": line 16 is 0.00 for Return A.
+        CPP_PART_3B_LINE_39: ChosenByCountLine(
+            output=CPP_PART_3B_LINE_39,
+            count_kind=CPP_LINE_16_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0"),
+        ),
+        # Schedule 8 Part 3b line 42 "If not, enter "0"": line 23 is 0.00 for Return A.
+        CPP_PART_3B_LINE_42: ChosenByCountLine(
+            output=CPP_PART_3B_LINE_42,
+            count_kind=CPP_LINE_23_AND_LINE_40_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0"),
+        ),
+        # Schedule 8 Part 3b line 44 "If line 23 is positive or "0", enter the amount from line 22":
+        # line 23 is 0.00 for Return A.
+        CPP_PART_3B_LINE_44: ChosenByCountLine(
+            output=CPP_PART_3B_LINE_44,
+            count_kind=CPP_LINE_23_NOT_NEGATIVE,
+            count=1,
+            chosen_kind=CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            chosen_value=D("396.00"),
+        ),
+        # Schedule 8 Part 3b line 46 "If not, enter "0"": line 20 is 0.00 for Return A.
+        CPP_PART_3B_LINE_46: ChosenByCountLine(
+            output=CPP_PART_3B_LINE_46,
+            count_kind=CPP_LINE_20_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0"),
+        ),
+        # T1 line 30800 from Part 3b line 36: line 24 is 0.00 for Return A, so Part 3b applies (and
+        # equals the required line 11).
+        CPP_BASE_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
+            output=CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+            count_kind=CPP_LINE_24_POSITIVE,
+            count=0,
+            chosen_kind=CPP_PART_3B_LINE_36,
+            chosen_value=D("3356.10"),
+        ),
+        # T1 line 22215 from Part 3b line 48: 678.00 + 396.00 for Return A.
+        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
+            output=CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            count_kind=CPP_LINE_24_POSITIVE,
+            count=0,
+            chosen_kind=CPP_PART_3B_LINE_48,
+            chosen_value=D("1074.00"),
+        ),
+        # T1 line 44800 "CPP overpayment": "0" for Return A, as line 24 is not positive.
+        CPP_OVERPAYMENT: ChosenByCountLine(
+            output=CPP_OVERPAYMENT,
+            count_kind=CPP_LINE_24_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
             chosen_value=D("0"),
         ),
         CHART_2021_AMOUNT_D: ChosenByCountLine(

@@ -157,7 +157,7 @@ capabilities:
         - ca/spouse_caregiver_amount
         - ca/caregiver_amount
         - ca/infirm_children_amount
-        - ca/cpp_base_contributions
+        - ca/cpp_base_contributions_on_return
         - ca/cpp_base_contributions_on_self_employment
         - ca/ei_premiums
         - ca/ei_premiums_on_self_employment
@@ -337,7 +337,7 @@ capabilities:
         - ca/spouse_caregiver_amount
         - ca/caregiver_amount
         - ca/infirm_children_amount
-        - ca/cpp_base_contributions
+        - ca/cpp_base_contributions_on_return
         - ca/cpp_base_contributions_on_self_employment
         - ca/ei_premiums
         - ca/ei_premiums_on_self_employment

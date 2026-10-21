@@ -13,7 +13,7 @@ capabilities:
         - ca-on/spouse_amount
         - ca-on/eligible_dependant_amount
         - ca-on/caregiver_amount
-        - ca/cpp_base_contributions
+        - ca/cpp_base_contributions_on_return
         - ca/cpp_base_contributions_on_self_employment
         - ca/ei_premiums
         - ca/ei_premiums_on_self_employment

@@ -199,12 +199,21 @@ from app.jurisdictions.ca.catalog import (
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+    CPP_PART_3B_LINE_23_LESS_LINE_35,
+    CPP_PART_3B_LINE_31,
+    CPP_PART_3B_LINE_32,
+    CPP_PART_3B_LINE_33,
+    CPP_PART_3B_LINE_35,
+    CPP_PART_3B_LINE_38,
+    CPP_PART_3B_LINE_39,
+    CPP_PART_3B_LINE_40,
     CPP_PART_4_COMPLETED,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CPP_ZERO,
     CURRENT_YEAR_TUITION_AVAILABLE,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     DISABILITY_AMOUNT_FOR_SELF,
@@ -538,6 +547,34 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     gated = {line.output: line for line in trace if isinstance(line, ThresholdGateLine)}
     fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
     assert subtracted == {
+        # Schedule 8 Part 3b line 33 "Line 31 minus line 32": both are "0" for Return A.
+        CPP_PART_3B_LINE_33: SubtractedLine(
+            CPP_PART_3B_LINE_33,
+            CPP_PART_3B_LINE_31,
+            D("0"),
+            CPP_PART_3B_LINE_32,
+            D("0"),
+            D("0"),
+        ),
+        # Schedule 8 Part 3b line 40 "Line 38 minus line 39": both are "0" for Return A.
+        CPP_PART_3B_LINE_40: SubtractedLine(
+            CPP_PART_3B_LINE_40,
+            CPP_PART_3B_LINE_38,
+            D("0"),
+            CPP_PART_3B_LINE_39,
+            D("0"),
+            D("0"),
+        ),
+        # Schedule 8 Part 3b line 42 "the result of line 23 minus line 35": line 23 and line 35 are
+        # "0" for Return A.
+        CPP_PART_3B_LINE_23_LESS_LINE_35: SubtractedLine(
+            CPP_PART_3B_LINE_23_LESS_LINE_35,
+            CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            D("0.00"),
+            CPP_PART_3B_LINE_35,
+            D("0"),
+            D("0.00"),
+        ),
         # Schedule 8 Part 3 line 10 "Line 8 minus line 9".
         CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS: SubtractedLine(
             CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS,
@@ -1536,6 +1573,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rounding=CENT,
             value=D("500000.00"),
         ),
+        # Schedule 8 Part 3b line 32 "enter "0"": the form's "0", claimed whole.
+        CPP_ZERO: CreditAmountLine(CPP_ZERO, Credit(amount=D("0")), CENT, D("0")),
         # Form T2125 Chart B line 18 and Chart C line 25 "÷ 30": the printed constants, each a
         # dataset of the same name, claimed whole to the cent.
         BUSINESS_VEHICLE_INTEREST_LIMIT: CreditAmountLine(
