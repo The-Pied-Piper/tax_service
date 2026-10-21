@@ -32,8 +32,12 @@ from app.jurisdictions.ca.catalog import (
     AGE_INCOME_OVER_THRESHOLD,
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+    AMT_APPLICABLE_RATE_AMOUNT,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
+    AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
+    AMT_SECURITY_OPTION_PUBLICLY_LISTED_GIFTS,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     CANADA_TRAINING_CREDIT_BASIS,
     CANADIAN_TUITION_FEES,
@@ -191,6 +195,27 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         if isinstance(line, ItemsTotalLine) and line.output is COOP_EDUCATION_CREDIT
     }
     assert rated == {
+        # Form T691 Part 1 line 31 "× 40%" of the gifts under a security option plan (67914): Return
+        # A has none, so the base and the 40% are 0.
+        AMT_SECURITY_OPTION_GIFTS_DEDUCTION: RateAppliedLine(
+            AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
+            AMT_SECURITY_OPTION_PUBLICLY_LISTED_GIFTS,
+            D("0"),
+            Rate(D("0.4")),
+            CENT,
+            D("0"),
+        ),
+        # Form T691 Part 1 line 80 "Line 78 multiply by the percentage from line 79": line 78 is
+        # 3074.00 (line 63: the union dues of line 21200, 2000.00, and the enhanced CPP
+        # contributions of line 22215, 1074.00), and 50% of it is 1537.00.
+        AMT_APPLICABLE_RATE_AMOUNT: RateAppliedLine(
+            AMT_APPLICABLE_RATE_AMOUNT,
+            AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+            D("3074.00"),
+            Rate(D("0.5")),
+            CENT,
+            D("1537.00"),
+        ),
         # Form T691 Part 1 line 26 "× 30%" applied to "Line 24 minus line 25": Return A has no
         # gifts of publicly listed securities, so the net is 0 and so is the 30%.
         AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT: RateAppliedLine(

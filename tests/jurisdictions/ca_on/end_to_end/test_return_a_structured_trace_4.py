@@ -52,6 +52,9 @@ from app.jurisdictions.ca.catalog import (
     AMT_RESOURCE_EXPENDITURES,
     AMT_RESOURCE_INCOME_TOTAL,
     AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
+    AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
+    AMT_SECURITY_OPTIONS_D_TOTAL,
+    AMT_SECURITY_OPTIONS_NET,
     ANNUAL_GAINS_LIMIT_2025,
     ANNUAL_GAINS_LINE_3_AT_INCLUSION_RATE,
     ANNUAL_GAINS_LINE_5,
@@ -1080,6 +1083,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Form T691 Part 1 line 32 "Line 30 minus line 31 (if negative, enter "0")": 0 on Return A.
+        AMT_SECURITY_OPTIONS_NET: SubtractedNotBelowZeroLine(
+            output=AMT_SECURITY_OPTIONS_NET,
+            minuend=AMT_SECURITY_OPTIONS_D_TOTAL,
+            minuend_amount=D("0"),
+            subtrahend=AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Form T691 Part 9 line 6 "Line 1 minus line 5 (if negative, enter "0")": Return A has no
         # resource amounts, so line 1 and line 5 are 0.
         AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES: SubtractedNotBelowZeroLine(
