@@ -159,6 +159,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_REQUIRED,
+    PARTNERSHIP_GAINS_AT_FULL_INCLUSION,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     POLITICAL_CONTRIBUTIONS,
     POLITICAL_CREDIT_COLUMN_1_LINE_2,
@@ -1362,10 +1363,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         SPLIT_INCOME_LINE_24: SumNotBelowZeroLine(
             output=SPLIT_INCOME_LINE_24, parts=((SPLIT_INCOME_LINE_22, D("0")),), total=D("0")
         ),
-        # T1 line 12700 (taxable capital gains): Schedule 3 line 24 as the single part, the included
-        # capital gain of 10000.00 (half of the 20000 gain), from 0.
+        # T1 line 12700 (taxable capital gains): Schedule 3 line 26, line 24 (the included capital
+        # gain of 10000.00, half of the 20000 gain) plus line 25 (0).
         TAXABLE_CAPITAL_GAINS: SumNotBelowZeroLine(
-            TAXABLE_CAPITAL_GAINS, ((INCLUDED_CAPITAL_GAIN, D("10000.00")),), D("10000.00")
+            TAXABLE_CAPITAL_GAINS,
+            (
+                (INCLUDED_CAPITAL_GAIN, D("10000.00")),
+                (PARTNERSHIP_GAINS_AT_FULL_INCLUSION, D("0")),
+            ),
+            D("10000.00"),
         ),
         CPP_PENSIONABLE_EARNINGS: SumNotBelowZeroLine(
             CPP_PENSIONABLE_EARNINGS,

@@ -269,10 +269,16 @@ INCLUDED_CAPITAL_GAIN = CATALOG.declare("included_capital_gain", Decimal)
 """Included capital gain, Schedule 3 "Line 24: Line 22 multiplied by the percentage from line 23
 =", a net capital loss in brackets."""
 
+PARTNERSHIP_GAINS_AT_FULL_INCLUSION = CATALOG.declare(
+    "partnership_gains_at_full_inclusion", Decimal, non_negative=True
+)
+"""Partnership gains at full inclusion, Schedule 3 line 25 "Line 25 and line 19890: Capital gains
+from certain dispositions of an interest in a partnership subject to 100% inclusion rate (if
+negative, enter "0")": a starting amount, added to the included capital gain (line 24)."""
+
 TAXABLE_CAPITAL_GAINS = CATALOG.declare("taxable_capital_gains", Decimal, non_negative=True)
 """Taxable capital gains, T1 line 12700: Schedule 3 line 26 "If positive, enter the result on line
-12700 of your return", the included capital gain (line 24), or 0 when that is negative (a net
-capital loss)."""
+12700 of your return", line 24 plus line 25, or 0 when that is negative (a net capital loss)."""
 
 TOTAL_INCOME = CATALOG.declare("total_income", Decimal)
 """Total income, T1 line 15000 "Line 28 plus line 32 Total income": the sum of the income lines
