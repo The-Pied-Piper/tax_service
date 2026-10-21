@@ -829,6 +829,7 @@ inputs:
   ca/aged_18_or_older_at_end_of_2025: "1"
   ca-on/community_food_program_donations: "1000"
   ca/charitable_donations: "1500.00"
+  ca/unapplied_net_capital_losses_2000: "0"
 expected:
   ca/taxable_capital_gains: "0"
   ca/investment_income_before_prior_years: "0"
@@ -1047,3 +1048,4 @@ expected:
   ca/amt_other_years_losses_total: "0"
   ca/amt_security_options_d1_total: "0"
   ca/amt_security_options_net: "0"
+  ca/net_capital_loss_balance_2000: "0.00"

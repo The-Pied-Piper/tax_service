@@ -371,6 +371,7 @@ inputs:
   - ca/unapplied_net_capital_losses_1985_to_1987
   - ca/unapplied_net_capital_losses_1988_and_1989
   - ca/unapplied_net_capital_losses_1990_to_1999
+  - ca/unapplied_net_capital_losses_2000
   - ca/unapplied_net_capital_losses_2001_to_2024
   - ca/net_capital_losses_claimed
   - ca/additional_deductions

@@ -167,6 +167,7 @@ inputs:
   ca/farm_vehicle_list_price: "60000"
   ca/farm_vehicle_sales_tax_rate: "13"
   ca/cpp_months: "12"
+  ca/unapplied_net_capital_losses_2000: "0"
 expected:
   ca/farm_recaptured_cca: "0"
   ca/farm_other_income_with_recapture: "0"
@@ -399,3 +400,4 @@ expected:
   ca/amt_other_years_losses_total: "0"
   ca/amt_security_options_d1_total: "0"
   ca/amt_security_options_net: "0"
+  ca/net_capital_loss_balance_2000: "0.00"

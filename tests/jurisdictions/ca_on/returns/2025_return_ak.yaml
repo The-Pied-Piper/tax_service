@@ -951,6 +951,7 @@ inputs:
     - ca-on/coop_education_placement_expenditures: "15000"
   ca-on/coop_claimed_as_partnership_member: "1"
   ca-on/coop_partnership_business_number: "123456789"
+  ca/unapplied_net_capital_losses_2000: "0"
 expected:
   ca/taxable_capital_gains: "0"
   ca/investment_income_before_prior_years: "0"
@@ -1135,3 +1136,4 @@ expected:
   ca/amt_other_years_losses_total: "0"
   ca/amt_security_options_d1_total: "0"
   ca/amt_security_options_net: "0"
+  ca/net_capital_loss_balance_2000: "0.00"

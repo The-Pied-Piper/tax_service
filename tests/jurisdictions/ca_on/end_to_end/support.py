@@ -709,6 +709,7 @@ from app.jurisdictions.ca.catalog import (
     UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987,
     UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989,
     UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
+    UNAPPLIED_NET_CAPITAL_LOSSES_2000,
     UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024,
     UNDER_18_ON_DECEMBER_31,
     UNION_DUES,
@@ -1702,6 +1703,7 @@ def compute(
     unapplied_net_capital_losses_1985_to_1987: str = "0",
     unapplied_net_capital_losses_1988_and_1989: str = "0",
     unapplied_net_capital_losses_1990_to_1999: str = "0",
+    unapplied_net_capital_losses_2000: str = "0",
     unapplied_net_capital_losses_2001_to_2024: str = "0",
     net_capital_losses_claimed: str = "0",
     professional_income: str = "0",
@@ -2296,6 +2298,7 @@ def compute(
         Artifact(
             UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999, D(unapplied_net_capital_losses_1990_to_1999)
         ),
+        Artifact(UNAPPLIED_NET_CAPITAL_LOSSES_2000, D(unapplied_net_capital_losses_2000)),
         Artifact(
             UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024, D(unapplied_net_capital_losses_2001_to_2024)
         ),
