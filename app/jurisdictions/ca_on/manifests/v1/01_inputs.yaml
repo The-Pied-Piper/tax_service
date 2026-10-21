@@ -338,6 +338,17 @@ inputs:
   - ca/resp_aips_received_part_b
   - ca/resp_aips_part_a_applies
   - ca/rl_10_labour_sponsored_fund_amount
+  # Form T691 Part 1 lines 2, 3, 5, 6, 8, 9 and 10: the caller's figures, entered as the form takes
+  # them (the CCA and carrying charges, the net income before CCA of film and rental and leasing
+  # property, the tax shelter losses and amounts deductible, and the carrying charges of a limited
+  # or non-active partner).
+  - ca/amt_film_property_cca_and_carrying_charges
+  - ca/amt_film_property_income_before_cca
+  - ca/amt_rental_property_cca_and_carrying_charges
+  - ca/amt_rental_property_income_before_cca
+  - ca/amt_tax_shelter_losses
+  - ca/amt_tax_shelter_deductible_amounts
+  - ca/amt_limited_partner_carrying_charges
   - ca/political_contributions
   - ca/disability_supports_deduction
   - ca/other_employment_expenses

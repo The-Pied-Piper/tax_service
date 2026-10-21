@@ -40,7 +40,8 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 643
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 647
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 647
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -839,6 +840,17 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/net_federal_tax",
         "ca/social_benefits_repayment_payable",
         "ca/total_payable",
+        "ca/amt_film_property_cca_and_carrying_charges",
+        "ca/amt_film_property_income_before_cca",
+        "ca/amt_film_property_adjustment",
+        "ca/amt_rental_property_cca_and_carrying_charges",
+        "ca/amt_rental_property_income_before_cca",
+        "ca/amt_rental_property_adjustment",
+        "ca/amt_tax_shelter_losses",
+        "ca/amt_tax_shelter_deductible_amounts",
+        "ca/amt_limited_partner_carrying_charges",
+        "ca/amt_tax_shelter_adjustments",
+        "ca/amt_part_1_subtotal",
         "ca/income_tax_deducted",
         "ca/cwb_eligible_dependants",
         "ca/working_income",
@@ -1151,13 +1163,15 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 643
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 647
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 647
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 643
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 647
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 647
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

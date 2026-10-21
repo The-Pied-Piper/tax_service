@@ -386,3 +386,4 @@ expected:
   ca-on/coop_education_remaining_share: "1.00"
   ca/medical_supplement_line_6: "11500.00"
   ca/refund_or_balance_owing: "4774.07"
+  ca/amt_part_1_subtotal: "0"

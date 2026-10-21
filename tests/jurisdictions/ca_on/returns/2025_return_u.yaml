@@ -724,3 +724,4 @@ expected:
   ca/net_capital_loss_balance_1988_and_1989: "0.00"
   ca/net_capital_loss_balance_1990_to_1999: "0.00"
   ca/net_capital_loss_balance_2001_to_2024: "0.00"
+  ca/amt_part_1_subtotal: "46768.25"

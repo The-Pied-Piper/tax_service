@@ -68,6 +68,10 @@ from app.jurisdictions.ca.catalog import (
     AGE_REDUCTION,
     AGED_18_OR_OLDER_AT_END_OF_2025,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_FILM_PROPERTY_ADJUSTMENT,
+    AMT_PART_1_SUBTOTAL,
+    AMT_RENTAL_PROPERTY_ADJUSTMENT,
+    AMT_TAX_SHELTER_ADJUSTMENTS,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
     BUSINESS_INCOME,
@@ -694,6 +698,10 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         worksheet.producer_of(DISABILITY_SELF_CARE_OVER_THRESHOLD), SubtractNotBelowZero
     )
     assert isinstance(worksheet.producer_of(DISABILITY_SELF_SUPPLEMENT), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_FILM_PROPERTY_ADJUSTMENT), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_RENTAL_PROPERTY_ADJUSTMENT), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_TAX_SHELTER_ADJUSTMENTS), Sum)
+    assert isinstance(worksheet.producer_of(AMT_PART_1_SUBTOTAL), Sum)
     assert isinstance(worksheet.producer_of(DISABILITY_SELF_WORKSHEET_AMOUNT), Sum)
     assert worksheet.producer_of(ontario.LIFT_SPOUSE_AT_YEAR_END) is None
     assert worksheet.producer_of(OTHER_EMPLOYMENT_INCOME) is None

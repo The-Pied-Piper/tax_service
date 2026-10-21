@@ -169,3 +169,4 @@ expected:
   ca-on/ontario_health_premium: "600.00"
   ca-on/ontario_tax: "600.00"
   ca-on/net_refund: "0"
+  ca/amt_part_1_subtotal: "59435.00"

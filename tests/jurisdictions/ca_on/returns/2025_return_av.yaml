@@ -626,3 +626,4 @@ expected:
   ca/educator_school_supply_credit: "0.00"
   ca/refund: "0"
   ca-on/refund_before_donation: "0"
+  ca/amt_part_1_subtotal: "12000.00"

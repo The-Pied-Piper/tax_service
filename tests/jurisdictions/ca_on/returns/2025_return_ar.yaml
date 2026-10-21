@@ -69,3 +69,4 @@ expected:
   ca/total_credits: "22000.00"
   ca/refund_or_balance_owing: "-4278.21"
   ca-on/net_refund: "4278.21"
+  ca/amt_part_1_subtotal: "89435.00"
