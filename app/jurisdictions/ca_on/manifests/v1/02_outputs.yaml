@@ -49,14 +49,6 @@ outputs:
   # second additional contributions": nothing else on the return reads them yet.
   - ca/cpp_part_5_line_30
   - ca/cpp_part_5_line_42
-  # Schedule 8 Part 5 line 49 "CPP contributions payable on self-employment income and other
-  # earnings" (line 42100), line 50 "CPP overpayment" (line 44800), line 57 "Base CPP contributions
-  # through employment income" (line 30800) and line 69 "Deduction for CPP enhanced contributions
-  # on employment income" (line 22215): nothing else on the return reads them yet.
-  - ca/cpp_part_5_line_49
-  - ca/cpp_part_5_line_50
-  - ca/cpp_part_5_line_57
-  - ca/cpp_part_5_line_69
   - ca-on/applies_for_energy_and_property_tax_credit
   - ca-on/applies_for_northern_energy_credit
   - ca-on/chooses_single_benefit_payment

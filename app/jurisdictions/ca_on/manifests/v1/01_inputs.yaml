@@ -441,6 +441,10 @@ inputs:
   # the form takes it.
   - ca/cpt20_t4_earnings
   - ca/cpp_part_4_completed
+  # Schedule 8 Part 5 heading "Part 5 - Complete this part if you are reporting both: employment
+  # income (complete Part 3 first) / self-employment income or other earnings that you are electing
+  # to pay CPP contributions on. If not, leave this part blank.": the filer's choice, 1 or 0.
+  - ca/cpp_part_5_completed
   # Schedule 8 Part 3 line 8 and line 50340 "Total actual base and first additional contributions
   # on CPP pensionable earnings from box 16 of all of your T4 slips", and line 21 and line 50341
   # "Total actual second additional contributions on CPP pensionable earnings from box 16A of all
