@@ -104,7 +104,7 @@ def test_return_os_deductions_are_14500_and_its_net_income_before_adjustments_45
         "+ support_payments_deduction 6000 "
         "+ carrying_charges_interest_expenses_and_other_expenses 500 "
         "+ cpp_deduction_on_self_employment 0 "
-        "+ cpp_enhanced_contributions 0 + exploration_and_development_expenses 0 "
+        "+ cpp_enhanced_contributions_on_return 0 + exploration_and_development_expenses 0 "
         "+ other_deductions 0 + total_split_income 0 = 14500"
     ) in rendered
     assert (

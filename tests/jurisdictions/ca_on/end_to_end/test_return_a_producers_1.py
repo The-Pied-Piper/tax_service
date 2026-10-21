@@ -139,6 +139,7 @@ from app.jurisdictions.ca.catalog import (
     COMMISSION_INCOME,
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
     CPP_BASIC_EXEMPTION,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
@@ -146,16 +147,53 @@ from app.jurisdictions.ca.catalog import (
     CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
     CPP_EARNINGS_UP_TO_MAXIMUM,
     CPP_ENHANCED_CONTRIBUTIONS,
+    CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_LINE_16_NEGATIVE_LINE_19_POSITIVE,
+    CPP_LINE_16_NOT_NEGATIVE,
+    CPP_LINE_16_POSITIVE,
+    CPP_LINE_19_NOT_NEGATIVE,
+    CPP_LINE_20_POSITIVE,
+    CPP_LINE_23_AND_LINE_33_POSITIVE,
+    CPP_LINE_23_AND_LINE_40_POSITIVE,
+    CPP_LINE_23_NOT_NEGATIVE,
+    CPP_LINE_24_POSITIVE,
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_MONTHS,
     CPP_OR_QPP_BENEFITS,
+    CPP_OVERPAYMENT,
+    CPP_PART_3B_LINE_23_LESS_LINE_35,
+    CPP_PART_3B_LINE_30,
+    CPP_PART_3B_LINE_31,
+    CPP_PART_3B_LINE_32,
+    CPP_PART_3B_LINE_32_LESSER,
+    CPP_PART_3B_LINE_33,
+    CPP_PART_3B_LINE_34,
+    CPP_PART_3B_LINE_35,
+    CPP_PART_3B_LINE_35_LESSER,
+    CPP_PART_3B_LINE_36,
+    CPP_PART_3B_LINE_37,
+    CPP_PART_3B_LINE_38,
+    CPP_PART_3B_LINE_39,
+    CPP_PART_3B_LINE_39_LESSER,
+    CPP_PART_3B_LINE_40,
+    CPP_PART_3B_LINE_41,
+    CPP_PART_3B_LINE_42,
+    CPP_PART_3B_LINE_42_LESSER,
+    CPP_PART_3B_LINE_43,
+    CPP_PART_3B_LINE_44,
+    CPP_PART_3B_LINE_45,
+    CPP_PART_3B_LINE_46,
+    CPP_PART_3B_LINE_46_LESSER,
+    CPP_PART_3B_LINE_47,
+    CPP_PART_3B_LINE_48,
     CPP_PART_4_COMPLETED,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PENSIONABLE_EARNINGS,
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+    CPP_ZERO,
     CPT20_EARNINGS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
@@ -1069,6 +1107,60 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(EI_PREMIUMS), TieredContribution)
     assert worksheet.producer_of(EI_PREMIUMS) not in tiers
     assert isinstance(worksheet.producer_of(CPP_ENHANCED_CONTRIBUTIONS), Sum)
+    # Schedule 8 Parts 3a and 3b: the counts, the "whichever is less" candidates, the chosen lines
+    # and the three return lines that line 24 routes.
+    assert isinstance(worksheet.producer_of(CPP_ZERO), CreditAmount)
+    for count in (
+        CPP_LINE_24_POSITIVE,
+        CPP_LINE_16_NOT_NEGATIVE,
+        CPP_LINE_19_NOT_NEGATIVE,
+        CPP_LINE_23_NOT_NEGATIVE,
+        CPP_LINE_16_NEGATIVE_LINE_19_POSITIVE,
+        CPP_LINE_23_AND_LINE_33_POSITIVE,
+        CPP_LINE_16_POSITIVE,
+        CPP_LINE_23_AND_LINE_40_POSITIVE,
+        CPP_LINE_20_POSITIVE,
+    ):
+        assert isinstance(worksheet.producer_of(count), CountByConditions), count.identifier
+    for lesser in (
+        CPP_PART_3B_LINE_32_LESSER,
+        CPP_PART_3B_LINE_35_LESSER,
+        CPP_PART_3B_LINE_39_LESSER,
+        CPP_PART_3B_LINE_42_LESSER,
+        CPP_PART_3B_LINE_46_LESSER,
+    ):
+        assert isinstance(worksheet.producer_of(lesser), LesserOf), lesser.identifier
+    for chosen in (
+        CPP_PART_3B_LINE_30,
+        CPP_PART_3B_LINE_32,
+        CPP_PART_3B_LINE_35,
+        CPP_PART_3B_LINE_37,
+        CPP_PART_3B_LINE_39,
+        CPP_PART_3B_LINE_42,
+        CPP_PART_3B_LINE_44,
+        CPP_PART_3B_LINE_46,
+        CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        CPP_OVERPAYMENT,
+    ):
+        assert isinstance(worksheet.producer_of(chosen), ChooseByCount), chosen.identifier
+    for floored in (CPP_PART_3B_LINE_31, CPP_PART_3B_LINE_38, CPP_PART_3B_LINE_45):
+        assert isinstance(worksheet.producer_of(floored), SubtractNotBelowZero)
+    for difference in (
+        CPP_PART_3B_LINE_33,
+        CPP_PART_3B_LINE_40,
+        CPP_PART_3B_LINE_23_LESS_LINE_35,
+    ):
+        assert isinstance(worksheet.producer_of(difference), Subtract)
+    for total in (
+        CPP_PART_3B_LINE_34,
+        CPP_PART_3B_LINE_36,
+        CPP_PART_3B_LINE_41,
+        CPP_PART_3B_LINE_43,
+        CPP_PART_3B_LINE_47,
+        CPP_PART_3B_LINE_48,
+    ):
+        assert isinstance(worksheet.producer_of(total), Sum)
     # The self-employment lines (T1 lines 22 to 27, Schedule 8 Parts 2 and 4, Schedule 13).
     for starting in (
         PROFESSIONAL_INCOME,

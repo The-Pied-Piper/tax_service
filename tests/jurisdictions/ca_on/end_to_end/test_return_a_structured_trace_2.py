@@ -273,13 +273,30 @@ from app.jurisdictions.ca.catalog import (
     CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS,
     CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
     CPP_CONTRIBUTIONS_DIFFERENCE,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
     CPP_ENHANCED_CONTRIBUTIONS,
+    CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_OR_QPP_BENEFITS,
+    CPP_OVERPAYMENT,
+    CPP_PART_3B_LINE_30,
+    CPP_PART_3B_LINE_32,
+    CPP_PART_3B_LINE_34,
+    CPP_PART_3B_LINE_35,
+    CPP_PART_3B_LINE_36,
+    CPP_PART_3B_LINE_37,
+    CPP_PART_3B_LINE_39,
+    CPP_PART_3B_LINE_41,
+    CPP_PART_3B_LINE_42,
+    CPP_PART_3B_LINE_43,
+    CPP_PART_3B_LINE_44,
+    CPP_PART_3B_LINE_46,
+    CPP_PART_3B_LINE_47,
+    CPP_PART_3B_LINE_48,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
@@ -925,6 +942,61 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Schedule 8 Part 3b line 34 "Line 30 plus line 32": line 30 is line 11 (line 16 is "0") and
+        # line 32 is "0".
+        CPP_PART_3B_LINE_34: SumLine(
+            CPP_PART_3B_LINE_34,
+            (
+                (CPP_PART_3B_LINE_30, D("3356.10")),
+                (CPP_PART_3B_LINE_32, D("0")),
+            ),
+            D("3356.10"),
+        ),
+        # Schedule 8 Part 3b line 36 "Line 34 plus line 35".
+        CPP_PART_3B_LINE_36: SumLine(
+            CPP_PART_3B_LINE_36,
+            (
+                (CPP_PART_3B_LINE_34, D("3356.10")),
+                (CPP_PART_3B_LINE_35, D("0")),
+            ),
+            D("3356.10"),
+        ),
+        # Schedule 8 Part 3b line 41 "Line 37 plus line 39": line 37 is line 18 (line 19 is "0").
+        CPP_PART_3B_LINE_41: SumLine(
+            CPP_PART_3B_LINE_41,
+            (
+                (CPP_PART_3B_LINE_37, D("678.00")),
+                (CPP_PART_3B_LINE_39, D("0")),
+            ),
+            D("678.00"),
+        ),
+        # Schedule 8 Part 3b line 43 "Line 41 plus line 42".
+        CPP_PART_3B_LINE_43: SumLine(
+            CPP_PART_3B_LINE_43,
+            (
+                (CPP_PART_3B_LINE_41, D("678.00")),
+                (CPP_PART_3B_LINE_42, D("0")),
+            ),
+            D("678.00"),
+        ),
+        # Schedule 8 Part 3b line 47 "Line 44 plus line 46": line 44 is line 22 (line 23 is "0").
+        CPP_PART_3B_LINE_47: SumLine(
+            CPP_PART_3B_LINE_47,
+            (
+                (CPP_PART_3B_LINE_44, D("396.00")),
+                (CPP_PART_3B_LINE_46, D("0")),
+            ),
+            D("396.00"),
+        ),
+        # Schedule 8 Part 3b line 48 "Line 43 plus line 47".
+        CPP_PART_3B_LINE_48: SumLine(
+            CPP_PART_3B_LINE_48,
+            (
+                (CPP_PART_3B_LINE_43, D("678.00")),
+                (CPP_PART_3B_LINE_47, D("396.00")),
+            ),
+            D("1074.00"),
+        ),
         # Schedule 8 Part 3 line 13 "Line 11 plus line 12".
         CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS: SumLine(
             CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
@@ -1205,7 +1277,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (DISABILITY_SUPPORTS_DEDUCTION, D("0")),
                 (AMT_MOVING_EXPENSES_DEDUCTION, D("0")),
                 (CPP_DEDUCTION_ON_SELF_EMPLOYMENT, D("0")),
-                (CPP_ENHANCED_CONTRIBUTIONS, D("1074.00")),
+                (CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN, D("1074.00")),
                 (AMT_PPIP_PREMIUMS_DEDUCTION, D("0")),
                 (CLERGY_RESIDENCE_DEDUCTION, D("0")),
                 (CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION, D("0")),
@@ -1642,7 +1714,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (SUPPORT_PAYMENTS_DEDUCTION, D("0")),
                 (CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES, D("0")),
                 (CPP_DEDUCTION_ON_SELF_EMPLOYMENT, D("0")),
-                (CPP_ENHANCED_CONTRIBUTIONS, D("1074.00")),
+                (CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN, D("1074.00")),
                 (EXPLORATION_AND_DEVELOPMENT_EXPENSES, D("0")),
                 (OTHER_DEDUCTIONS, D("0")),
                 (TOTAL_SPLIT_INCOME, D("0")),
@@ -1876,7 +1948,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (SPOUSE_CAREGIVER_AMOUNT, D("0")),
                 (CAREGIVER_AMOUNT, D("0")),
                 (INFIRM_CHILDREN_AMOUNT, D("0")),
-                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
+                (CPP_BASE_CONTRIBUTIONS_ON_RETURN, D("3356.10")),
                 (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
@@ -1910,7 +1982,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ontario.SPOUSE_AMOUNT, D("0")),
                 (ontario.ELIGIBLE_DEPENDANT_AMOUNT, D("0")),
                 (ontario.CAREGIVER_AMOUNT, D("0")),
-                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
+                (CPP_BASE_CONTRIBUTIONS_ON_RETURN, D("3356.10")),
                 (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
@@ -1930,7 +2002,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ontario.SPOUSE_AMOUNT, D("0")),
                 (ontario.ELIGIBLE_DEPENDANT_AMOUNT, D("0")),
                 (ontario.CAREGIVER_AMOUNT, D("0")),
-                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
+                (CPP_BASE_CONTRIBUTIONS_ON_RETURN, D("3356.10")),
                 (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
@@ -2205,6 +2277,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             TOTAL_CREDITS,
             (
                 (INCOME_TAX_DEDUCTED, D("25000")),
+                (CPP_OVERPAYMENT, D("0")),
                 (REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT, D("0.00")),
                 (CANADA_WORKERS_BENEFIT, D("0")),
                 (CANADA_TRAINING_CREDIT, D("0")),
@@ -2642,7 +2715,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (SPOUSE_CAREGIVER_AMOUNT, D("0")),
                 (CAREGIVER_AMOUNT, D("0")),
                 (INFIRM_CHILDREN_AMOUNT, D("0.00")),
-                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
+                (CPP_BASE_CONTRIBUTIONS_ON_RETURN, D("3356.10")),
                 (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),

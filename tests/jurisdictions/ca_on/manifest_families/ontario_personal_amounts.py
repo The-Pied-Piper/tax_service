@@ -17,7 +17,7 @@ from app.jurisdictions.ca.capabilities.amount_or_divided_by_rate import AmountOr
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
 from app.jurisdictions.ca.catalog import (
     BORN_IN_1960_OR_EARLIER,
-    CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
     DEPENDANT_NET_INCOME,
     DISABILITY_SELF_CARE_EXPENSES,
@@ -412,7 +412,7 @@ STEPS = {
                 "ca-on/spouse_amount",
                 "ca-on/eligible_dependant_amount",
                 "ca-on/caregiver_amount",
-                "ca/cpp_base_contributions",
+                "ca/cpp_base_contributions_on_return",
                 "ca/cpp_base_contributions_on_self_employment",
                 "ca/ei_premiums",
                 "ca/ei_premiums_on_self_employment",
@@ -683,7 +683,7 @@ WIRING = {
                 ontario.SPOUSE_AMOUNT,
                 ontario.ELIGIBLE_DEPENDANT_AMOUNT,
                 ontario.CAREGIVER_AMOUNT,
-                CPP_BASE_CONTRIBUTIONS,
+                CPP_BASE_CONTRIBUTIONS_ON_RETURN,
                 CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
                 EI_PREMIUMS,
                 EI_PREMIUMS_ON_SELF_EMPLOYMENT,

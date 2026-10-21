@@ -47,15 +47,22 @@ from app.jurisdictions.ca.catalog import (
     CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
     CPP_BASIC_EXEMPTION,
+    CPP_CONTRIBUTIONS_DIFFERENCE,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
     CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
     CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
     CPP_EARNINGS_UP_TO_MAXIMUM,
     CPP_ENHANCED_CONTRIBUTIONS,
+    CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_LINE_24_POSITIVE,
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
+    CPP_OVERPAYMENT,
+    CPP_PART_3B_LINE_36,
+    CPP_PART_3B_LINE_48,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PENSIONABLE_EARNINGS,
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
@@ -380,8 +387,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 1034
-    assert len(order) == 1034
+    assert len(order) == 1072
+    assert len(order) == 1072
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -491,6 +498,24 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[CPP_FIRST_ADDITIONAL_CONTRIBUTIONS] < position[CPP_ENHANCED_CONTRIBUTIONS]
     assert position[CPP_SECOND_ADDITIONAL_CONTRIBUTIONS] < position[CPP_ENHANCED_CONTRIBUTIONS]
     assert position[CPP_ENHANCED_CONTRIBUTIONS] < position[DEDUCTIONS_FROM_TOTAL_INCOME]
+    # Schedule 8: line 24 chooses Part 3a or Part 3b, which route lines 30800, 22215 and 44800.
+    assert (
+        position[CPP_CONTRIBUTIONS_DIFFERENCE]
+        < position[CPP_LINE_24_POSITIVE]
+        < position[CPP_BASE_CONTRIBUTIONS_ON_RETURN]
+        < position[NON_REFUNDABLE_CREDIT_AMOUNTS]
+    )
+    assert position[CPP_PART_3B_LINE_36] < position[CPP_BASE_CONTRIBUTIONS_ON_RETURN]
+    assert (
+        position[CPP_BASE_CONTRIBUTIONS_ON_RETURN] < position[ontario.NON_REFUNDABLE_CREDIT_AMOUNTS]
+    )
+    assert (
+        position[CPP_PART_3B_LINE_48]
+        < position[CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN]
+        < position[DEDUCTIONS_FROM_TOTAL_INCOME]
+    )
+    assert position[CPP_ENHANCED_CONTRIBUTIONS] < position[CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN]
+    assert position[CPP_LINE_24_POSITIVE] < position[CPP_OVERPAYMENT] < position[TOTAL_CREDITS]
     for limit in (
         CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,
         CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,

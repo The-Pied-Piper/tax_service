@@ -188,7 +188,7 @@ capabilities:
         - ca/disability_supports_deduction
         - ca/amt_moving_expenses_deduction
         - ca/cpp_deduction_on_self_employment
-        - ca/cpp_enhanced_contributions
+        - ca/cpp_enhanced_contributions_on_return
         - ca/amt_ppip_premiums_deduction
         - ca/clergy_residence_deduction
         - ca/canadian_armed_forces_and_police_deduction

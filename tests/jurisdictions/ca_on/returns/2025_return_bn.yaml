@@ -1,11 +1,11 @@
 # Return BN: a single 2025 Ontario resident, over 19, with employment income of $60,000 whose
 # T4 slips show more CPP contributions than the required ones, so Schedule 8 Part 3 line 24
-# is positive. The T4 box 16 total (Schedule 8 line 8) is a chosen $3,500.00, $138.25 more
-# than the required base and first additional contributions (line 13, $3,361.75). The line
-# 24 difference is the Part 3 chain of lines 8 to 24, computed here from the two T4 inputs;
-# lines 25 to 88 (Parts 3a, 3b and 5, where a positive line 24 is routed to lines 30800,
-# 22215 and 44800) are not in this file. Return BN is the case
-# of a positive line 24; the negative and zero cases are in its end to end test.
+# is positive and Part 3a applies. The T4 box 16 total (Schedule 8 line 8) is a chosen
+# $3,500.00, $138.25 more than the required base and first additional contributions (line 13,
+# $3,361.75). The line 24 difference is the Part 3 chain of lines 8 to 24, computed here from
+# the two T4 inputs; Part 3a (lines 25 to 29) then routes line 15 to T1 line 30800, line 28 to
+# line 22215 and line 29 (line 24) to line 44800, the CPP overpayment. Return BN is the case of
+# a positive line 24; the zero and negative cases (Part 3b) are in its end to end test.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -22,16 +22,21 @@ description: >-
   $2,911.77, and line 10 is $3,500.00 - $2,911.77 = $588.23. Line 16 is line 9 less line 11,
   $2,911.77 - $2,796.75 = $115.02; line 19 is line 10 less line 12, $588.23 - $565.00 = $23.23;
   line 20 is $115.02 + $23.23 = $138.25. Line 23 is line 21 less line 22, $0 - $0 = $0.00, and
-  line 24 is line 20 plus line 23, $138.25 + $0.00 = $138.25, positive, so Part 3a applies
-  (not computed in this file). The T4 inputs are the only chosen figures: the required amounts
-  are the rates' arithmetic, not the printed maximums ($3,356.10 and $678.00 are not reached),
-  and there is no second additional contribution to bring in. Not wired: the
-  Schedule 8 Parts 3a, 3b and 5 lines 25 to 88. The last seven expected lines (net income, the
-  AMT subtotal and rate amount, the Ontario tax after the dividend credit and the balance
-  owing) are the worksheet's figures for this income; the CPP lines shown below are the ones
-  Schedule 8 feeds to the return (T1 line 30800 base, line 22215 enhanced, and the first and
-  second additional contributions), and the enhanced CPP contributions, $565.00 (line 22215),
-  are the first additional $565.00 plus the second additional $0.00.
+  line 24 is line 20 plus line 23, $138.25 + $0.00 = $138.25, positive, so Part 3a applies:
+  line 25 is the amount from line 15 (line 11), $2,796.75, which goes on T1 line 30800 and ON428
+  line 58240; line 26 is the amount from line 18 (line 12), $565.00, and line 27 the amount
+  from line 22 (if any), $0.00, so line 28 is $565.00, which goes on T1 line 22215; and line 29
+  is the amount from line 24, $138.25, which goes on T1 line 44800, the CPP overpayment, and
+  joins the total credits of T1 line 166. The T4 inputs are the only chosen figures: the
+  required amounts are the rates' arithmetic, not the printed maximums ($3,356.10 and $678.00
+  are not reached), and there is no second additional contribution to bring in. Not wired:
+  the Schedule 8 Part 5 lines. The last expected lines (net income, the AMT subtotal and rate
+  amount, the Ontario tax after the dividend credit and the balance owing) are the worksheet's
+  figures for this income, the balance owing being the $8,676.79 of the same return without
+  the overpayment less the $138.25 on line 44800, $8,538.54; the CPP lines shown below are the
+  ones Schedule 8 feeds to the return (T1 line 30800 base, line 22215 enhanced, line 44800 and
+  the first and second additional contributions), and the enhanced CPP contributions, $565.00
+  (line 22215), are the first additional $565.00 plus the second additional $0.00.
 sources:
   - >-
     CRA, T1-2025 Schedule 8 (form 5000-S8), Part 3, "Contributions and overpayment on employment
@@ -71,10 +76,14 @@ expected:
   ca/cpp_base_and_first_additional_contributions_difference: "138.25"
   ca/cpp_second_additional_contributions_difference: "0.00"
   ca/cpp_contributions_difference: "138.25"
+  ca/cpp_line_24_positive: "1"
+  ca/cpp_base_contributions_on_return: "2796.75"
+  ca/cpp_enhanced_contributions_on_return: "565.00"
+  ca/cpp_overpayment: "138.25"
   ca/net_income_before_adjustments: "59435.00"
   ca/other_payments_limit_income: "59435.00"
   ca/amt_part_1_subtotal: "59435.00"
   ca/amt_applicable_rate_amount: "282.50"
   ca/cpp_second_additional_earnings_maximum: "9900.00"
   ca-on/ontario_tax_less_dividend_credit: "2435.32"
-  ca/refund_or_balance_owing: "8676.79"
+  ca/refund_or_balance_owing: "8538.54"

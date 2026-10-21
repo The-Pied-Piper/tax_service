@@ -315,12 +315,12 @@ def test_return_us_new_lines_join_the_deductions_the_credit_amounts_and_the_tota
         "+ child_care_expenses 0 + allowable_business_investment_loss 0 "
         "+ support_payments_deduction 0 "
         "+ carrying_charges_interest_expenses_and_other_expenses 0 "
-        "+ cpp_deduction_on_self_employment 3231.75 + cpp_enhanced_contributions 0 "
+        "+ cpp_deduction_on_self_employment 3231.75 + cpp_enhanced_contributions_on_return 0 "
         "+ exploration_and_development_expenses 0 + other_deductions 0 "
         "+ total_split_income 0 = 3231.75",
         "non_refundable_credit_amounts: basic_personal_amount 16129 + age_amount 0 "
         "+ spouse_amount 0 + eligible_dependant_amount 0 + spouse_caregiver_amount 0 "
-        "+ caregiver_amount 0 + infirm_children_amount 0 + cpp_base_contributions 0 "
+        "+ caregiver_amount 0 + infirm_children_amount 0 + cpp_base_contributions_on_return 0 "
         "+ cpp_base_contributions_on_self_employment 2301.75 + ei_premiums 0 "
         "+ ei_premiums_on_self_employment 820 + canada_employment_amount 0 "
         "+ disability_amount_for_self 0 "
@@ -329,7 +329,7 @@ def test_return_us_new_lines_join_the_deductions_the_credit_amounts_and_the_tota
         "19250.75",
         "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 0 "
         "+ spouse_amount 0 + eligible_dependant_amount 0 + caregiver_amount 0 "
-        "+ cpp_base_contributions 0 + cpp_base_contributions_on_self_employment 2301.75 "
+        "+ cpp_base_contributions_on_return 0 + cpp_base_contributions_on_self_employment 2301.75 "
         "+ ei_premiums 0 + ei_premiums_on_self_employment 820 "
         "+ disability_amount_for_self 0 "
         "+ disability_transferred_amount 0 + unused_tuition_claimed 0 "

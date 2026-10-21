@@ -788,3 +788,89 @@ def test_the_cpp_part_3_difference_lines_are_signed_as_their_brackets_say(
         assert kind.non_negative is False, identifier
         assert identifier in SIGNED, identifier
     assert registry.kind("ca/cpp_contributions_difference") is CPP_CONTRIBUTIONS_DIFFERENCE
+
+
+# Schedule 8 Part 3a and Part 3b: the counts that carry the form's "if ... If not, enter "0""
+# instructions, the lines of Part 3b and the three return lines they route. The kinds are reached
+# through the registry so that the rest of this file runs before they are declared.
+def test_the_cpp_part_3_routing_counts_are_non_negative_int_kinds(
+    registry: ArtifactRegistry,
+) -> None:
+    # Each count is 1 when the form's condition holds and 0 otherwise: line 24 positive (the
+    # Part 3a / Part 3b choice), lines 16, 19 and 23 positive or "0", and the "both positive" or
+    # "negative and positive" conditions of lines 32, 35, 39, 42 and 46.
+    for identifier in (
+        "ca/cpp_line_24_positive",
+        "ca/cpp_line_16_not_negative",
+        "ca/cpp_line_19_not_negative",
+        "ca/cpp_line_23_not_negative",
+        "ca/cpp_line_16_negative_line_19_positive",
+        "ca/cpp_line_23_and_line_33_positive",
+        "ca/cpp_line_16_positive",
+        "ca/cpp_line_23_and_line_40_positive",
+        "ca/cpp_line_20_positive",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is int, identifier
+        assert kind.non_negative is True, identifier
+        assert identifier in COUNTS, identifier
+        assert identifier not in SIGNED, identifier
+
+
+def test_the_cpp_part_3b_whichever_is_less_candidates_are_signed(
+    registry: ArtifactRegistry,
+) -> None:
+    # The lesser of two amounts of which one may be negative (lines 19, 23, 16 and 20 print "(if
+    # negative, show in brackets)") is only used when its count says both are positive, but the
+    # step that computes it runs for every return, so its kind is signed. "The result of line 23
+    # minus line 35" (line 42) is negative when line 35 is more than line 23.
+    for identifier in (
+        "ca/cpp_part_3b_line_32_lesser",
+        "ca/cpp_part_3b_line_35_lesser",
+        "ca/cpp_part_3b_line_39_lesser",
+        "ca/cpp_part_3b_line_23_less_line_35",
+        "ca/cpp_part_3b_line_42_lesser",
+        "ca/cpp_part_3b_line_46_lesser",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is False, identifier
+        assert identifier in SIGNED, identifier
+
+
+def test_the_cpp_part_3b_lines_and_the_three_return_lines_are_non_negative_money(
+    registry: ArtifactRegistry,
+) -> None:
+    # The zero of "enter "0"", lines 30 to 48 of Part 3b (each is a chosen non-negative amount, a
+    # sum of them, or a difference that cannot go below zero) and T1 line 30800, line 22215 and
+    # line 44800 as the form routes them: none prints brackets.
+    for identifier in (
+        "ca/cpp_zero",
+        "ca/cpp_part_3b_line_30",
+        "ca/cpp_part_3b_line_31",
+        "ca/cpp_part_3b_line_32",
+        "ca/cpp_part_3b_line_33",
+        "ca/cpp_part_3b_line_34",
+        "ca/cpp_part_3b_line_35",
+        "ca/cpp_part_3b_line_36",
+        "ca/cpp_part_3b_line_37",
+        "ca/cpp_part_3b_line_38",
+        "ca/cpp_part_3b_line_39",
+        "ca/cpp_part_3b_line_40",
+        "ca/cpp_part_3b_line_41",
+        "ca/cpp_part_3b_line_42",
+        "ca/cpp_part_3b_line_43",
+        "ca/cpp_part_3b_line_44",
+        "ca/cpp_part_3b_line_45",
+        "ca/cpp_part_3b_line_46",
+        "ca/cpp_part_3b_line_47",
+        "ca/cpp_part_3b_line_48",
+        "ca/cpp_base_contributions_on_return",
+        "ca/cpp_enhanced_contributions_on_return",
+        "ca/cpp_overpayment",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is True, identifier
+        assert identifier not in SIGNED, identifier
+        assert identifier in REGISTERED, identifier

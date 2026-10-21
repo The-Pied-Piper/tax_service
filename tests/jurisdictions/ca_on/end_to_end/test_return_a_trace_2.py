@@ -237,7 +237,7 @@ def test_the_trace_explains_the_computation() -> None:
         "+ age_amount 0 + spouse_amount 0 "
         "+ eligible_dependant_amount 0 + spouse_caregiver_amount 0 + caregiver_amount 0 "
         "+ infirm_children_amount 0 "
-        "+ cpp_base_contributions 3356.1 + cpp_base_contributions_on_self_employment 0 "
+        "+ cpp_base_contributions_on_return 3356.1 + cpp_base_contributions_on_self_employment 0 "
         "+ ei_premiums 1077.48 + ei_premiums_on_self_employment 0 "
         "+ canada_employment_amount 1471 + disability_amount_for_self 0 "
         "+ disability_transferred_amount 0 "
@@ -318,7 +318,7 @@ def test_the_trace_explains_the_computation() -> None:
     ontario_amounts = position(
         "non_refundable_credit_amounts: basic_personal_amount 12747 "
         "+ age_amount 0 + spouse_amount 0 + eligible_dependant_amount 0 "
-        "+ caregiver_amount 0 + cpp_base_contributions 3356.1 "
+        "+ caregiver_amount 0 + cpp_base_contributions_on_return 3356.1 "
         "+ cpp_base_contributions_on_self_employment 0 + ei_premiums 1077.48 "
         "+ ei_premiums_on_self_employment 0 + disability_amount_for_self 0 "
         "+ disability_transferred_amount 0 "
@@ -859,7 +859,8 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     credits = position(
-        "total_credits: income_tax_deducted 25000 + refundable_medical_expense_supplement 0 "
+        "total_credits: income_tax_deducted 25000 + cpp_overpayment 0 "
+        "+ refundable_medical_expense_supplement 0 "
         "+ canada_workers_benefit 0 "
         "+ canada_training_credit 0 + part_xii_2_tax_credit 0 + "
         "employee_and_partner_gst_hst_rebate 0 "

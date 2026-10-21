@@ -122,7 +122,7 @@ def test_return_ws_trace_names_each_ontario_dependant_and_totals_the_credit_amou
     assert (
         "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 0 "
         "+ spouse_amount 0 + eligible_dependant_amount 0 + caregiver_amount 7570 "
-        "+ cpp_base_contributions 2202.75 + cpp_base_contributions_on_self_employment 0 "
+        "+ cpp_base_contributions_on_return 2202.75 + cpp_base_contributions_on_self_employment 0 "
         "+ ei_premiums 787.2 + ei_premiums_on_self_employment 0 "
         "+ disability_amount_for_self 0 "
         "+ disability_transferred_amount 0 + unused_tuition_claimed 0 "
@@ -221,7 +221,7 @@ def test_the_dependant_claimed_on_line_58160_takes_it_off_line_58185() -> None:
     assert (
         "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 0 "
         "+ spouse_amount 0 + eligible_dependant_amount 2905 + caregiver_amount 4665 "
-        "+ cpp_base_contributions 2202.75 + cpp_base_contributions_on_self_employment 0 "
+        "+ cpp_base_contributions_on_return 2202.75 + cpp_base_contributions_on_self_employment 0 "
         "+ ei_premiums 787.2 + ei_premiums_on_self_employment 0 "
         "+ disability_amount_for_self 0 "
         "+ disability_transferred_amount 0 + unused_tuition_claimed 0 "
