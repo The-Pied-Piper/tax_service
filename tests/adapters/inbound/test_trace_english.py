@@ -77,6 +77,7 @@ from app.jurisdictions.ca.trace import (
     DisabilityTransferLine,
     DispositionGainLine,
     DispositionGainOnlyLine,
+    DispositionProceedsLine,
     OtherDependantMedicalLine,
     PrincipalResidenceGainLine,
     RecapturedCcaLine,
@@ -2239,6 +2240,12 @@ def test_renders_a_gain_only_row_counting_a_loss_as_0() -> None:
         "share_gain_or_loss: disposition 2: gain -230 = proceeds 800 less adjusted cost base "
         "1000 less outlays 30; gain only 0, not below 0"
     )
+
+
+def test_renders_a_proceeds_row() -> None:
+    line = DispositionProceedsLine(DISPOSITION_GAINS, 2, D("800.00"))
+
+    assert render(line) == "share_gain_or_loss: disposition 2: proceeds 800"
 
 
 def test_renders_the_total_of_the_dispositions_by_position() -> None:

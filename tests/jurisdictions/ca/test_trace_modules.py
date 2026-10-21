@@ -33,7 +33,12 @@ HOMES: dict[str, tuple[str, ...]] = {
         "OtherDependantMedicalLine",
         "DisabilityTransferLine",
     ),
-    "gains": ("PrincipalResidenceGainLine", "DispositionGainLine", "DispositionGainOnlyLine"),
+    "gains": (
+        "PrincipalResidenceGainLine",
+        "DispositionGainLine",
+        "DispositionGainOnlyLine",
+        "DispositionProceedsLine",
+    ),
     "rentals": (
         "ShortTermRentalNonCompliantLine",
         "ShortTermRentalNonCompliantCcaLine",
