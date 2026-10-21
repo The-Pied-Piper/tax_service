@@ -68,7 +68,7 @@ INPUTS = frozenset({"ca/cpt20_t4_earnings"})
 
 # Part 5 line 30 and line 42: nothing on the return reads them yet (the lines that route them to
 # lines 30800, 22215, 31000, 22200, 42100 and 44800 follow), so they are declared outputs.
-OUTPUTS = frozenset({"ca/cpp_part_5_line_30", "ca/cpp_part_5_line_42"})
+OUTPUTS = frozenset[str]()
 
 STEPS = {
     # Schedule 8 Part 3 line 2 "Enter whichever is less: amount from line D of Part 2 or line

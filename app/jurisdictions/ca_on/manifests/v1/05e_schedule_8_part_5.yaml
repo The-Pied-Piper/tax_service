@@ -216,7 +216,7 @@ capabilities:
       output: ca/cpp_part_5_line_29
   # Schedule 8 Part 5 line 30 "Line 30: Self-employment income and other earnings subject to base
   # and first additional contributions: Line 22 minus line 29 (if negative, enter "0") =".
-  # Declared output: nothing on the return reads it yet.
+  # Read by line 43 (and line 44).
   - name: core/subtract_not_below_zero
     consumes:
       amount: ca/cpp_part_5_line_22
@@ -289,8 +289,8 @@ capabilities:
     produces:
       output: ca/cpp_part_5_line_42_lesser
   # Schedule 8 Part 5 line 42 "If not, enter "0" on line 42": the lesser when line 33 is more than
-  # line 17, else "0". Signed: the form prints no floor, so a negative lesser stays negative. This
-  # is a declared output: nothing on the return reads it yet.
+  # line 17, else "0". Signed: the form prints no floor, so a negative lesser stays negative. Read
+  # by line 45.
   - name: core/choose_by_count
     consumes:
       count: ca/cpp_part_5_line_33_more_than_line_17

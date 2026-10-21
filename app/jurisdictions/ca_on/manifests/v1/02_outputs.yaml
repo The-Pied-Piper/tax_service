@@ -44,11 +44,6 @@ outputs:
   - ca/cpp_second_additional_earnings_maximum
   # Schedule 8 Part 3 line 13 "Line 11 plus line 12 =": nothing else on the return reads it yet.
   - ca/cpp_required_base_and_first_additional_contributions
-  # Schedule 8 Part 5 line 30 "Self-employment income and other earnings subject to base and first
-  # additional contributions" and line 42 "Self-employment income and other earnings subject to
-  # second additional contributions": nothing else on the return reads them yet.
-  - ca/cpp_part_5_line_30
-  - ca/cpp_part_5_line_42
   - ca-on/applies_for_energy_and_property_tax_credit
   - ca-on/applies_for_northern_energy_credit
   - ca-on/chooses_single_benefit_payment

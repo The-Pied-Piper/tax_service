@@ -1390,7 +1390,7 @@ then 0."""
 CPP_PART_5_LINE_30 = CATALOG.declare("cpp_part_5_line_30", Decimal, non_negative=True)
 """Part 5 line 30 "Line 30: Self-employment income and other earnings subject to base and first
 additional contributions: Line 22 minus line 29 (if negative, enter "0") =": line 22 less line
-29, not below zero. Declared output: nothing on the return reads it yet."""
+29, not below zero. Read by lines 43 and 44."""
 
 CPP_PART_5_LINE_33 = CATALOG.declare("cpp_part_5_line_33", Decimal)
 """Part 5 line 33 "Line 33: Line 31 plus line 32 =": line 4 (line 31) plus the amount from line 2
@@ -1420,8 +1420,7 @@ the lesser of lines 36 and 41, which line 42 takes only when the count of line 3
 CPP_PART_5_LINE_42 = CATALOG.declare("cpp_part_5_line_42", Decimal)
 """Part 5 line 42 "Line 42: Enter whichever is less: amount from line 36 or line 41." "If not,
 enter "0" on line 42": the candidate above when line 33 is more than line 17, else "0". Signed:
-the form prints no floor, so a negative lesser stays negative. Declared output: nothing on the
-return reads it yet."""
+the form prints no floor, so a negative lesser stays negative. Read by line 45."""
 
 CPP_PART_5_LINE_43 = CATALOG.declare("cpp_part_5_line_43", Decimal, non_negative=True)
 """Part 5 line 43 "Required base contributions on CPP pensionable earnings: Line 43: amount from
@@ -1669,7 +1668,7 @@ CPP_PART_5_LINE_88 = CATALOG.declare("cpp_part_5_line_88", Decimal, non_negative
 """Part 5 line 88 "Deduction for CPP enhanced contributions on self-employment income and other
 earnings: Add lines 80, 81, 83, 84, and 87. Enter this amount (in dollar and cents) on line 22200
 of your return. =": the sum of lines 80, 81, 83, 84 and 87, as printed. When line 74 is not
-negative, line 87 equals line 84, so line 84 is counted twice."""
+negative, line 87 equals line 84, so lines 84 and 71 each enter twice."""
 
 CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT = CATALOG.declare(
     "cpp_part_5_deduction_on_self_employment", Decimal, non_negative=True
