@@ -434,7 +434,8 @@ def test_deductions_from_net_income_add_lines_58_to_63_66_and_67_once_each() -> 
         "deductions_from_net_income: canadian_armed_forces_and_police_deduction 1 "
         "+ security_options_deductions 2 + other_payments_deduction 4 "
         "+ limited_partnership_losses_of_other_years 8 + non_capital_losses_of_other_years 16 "
-        "+ net_capital_losses_of_other_years 32 + northern_residents_deductions 128 "
+        "+ net_capital_losses_of_other_years 32 + qbt_capital_gains_deduction 0 "
+        "+ northern_residents_deductions 128 "
         "+ additional_deductions 64 = 255"
     ) in rendered
 

@@ -9,6 +9,7 @@ from typing import Any
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.jurisdiction_code import JurisdictionCode
+from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.record_list import RecordList, RecordListKind
 from app.domain.worksheet import Worksheet
@@ -180,6 +181,19 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_7,
     PRINCIPAL_RESIDENCE_PROPERTIES,
     PROFESSIONAL_INCOME,
+    QBT_2024_RESERVE,
+    QBT_2025_RESERVE,
+    QBT_CAPITAL_GAINS,
+    QBT_DEDUCTION_CLAIMED,
+    QBT_ELECTION_ELIGIBLE_AMOUNT,
+    QBT_ELECTION_IS_QBT,
+    QBT_GAINS_ARE_QSBCS_OR_QFFP,
+    QBT_HAS_INVESTMENT_EXPENSES,
+    QBT_OTHER_INVESTMENT_EXPENSES,
+    QBT_OTHER_PROPERTY_INCOME,
+    QBT_PARTNERSHIP_LOSSES,
+    QBT_PERCENTAGE_ALLOCATED,
+    QBT_PRIOR_YEARS_CLAIMS,
     QFFP_DISPOSITIONS,
     QFFP_FORECLOSURE_DISPOSITIONS,
     QSBCS_DISPOSITIONS,
@@ -989,6 +1003,19 @@ def compute(
     spouse_or_common_law_partner_on_december_31: int = 0,
     claims_tax_reduction_amounts_at_equal_net_income: int = 0,
     unused_tuition_amounts_brought_forward: str = "0",
+    qbt_election_eligible_amount: str = "0",
+    qbt_percentage_allocated: str = "0",
+    qbt_prior_years_claims: str = "0",
+    qbt_capital_gains: str = "0",
+    qbt_2024_reserve: str = "0",
+    qbt_2025_reserve: str = "0",
+    qbt_election_is_qbt: int = 0,
+    qbt_gains_are_qsbcs_or_qffp: int = 0,
+    qbt_has_investment_expenses: int = 0,
+    qbt_partnership_losses: str = "0",
+    qbt_other_investment_expenses: str = "0",
+    qbt_other_property_income: str = "0",
+    qbt_deduction_claimed: str = "0",
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -1463,6 +1490,19 @@ def compute(
             ontario.UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD,
             D(unused_tuition_amounts_brought_forward),
         ),
+        Artifact(QBT_ELECTION_ELIGIBLE_AMOUNT, D(qbt_election_eligible_amount)),
+        Artifact(QBT_PERCENTAGE_ALLOCATED, Rate(D(qbt_percentage_allocated))),
+        Artifact(QBT_PRIOR_YEARS_CLAIMS, D(qbt_prior_years_claims)),
+        Artifact(QBT_CAPITAL_GAINS, D(qbt_capital_gains)),
+        Artifact(QBT_2024_RESERVE, D(qbt_2024_reserve)),
+        Artifact(QBT_2025_RESERVE, D(qbt_2025_reserve)),
+        Artifact(QBT_ELECTION_IS_QBT, qbt_election_is_qbt),
+        Artifact(QBT_GAINS_ARE_QSBCS_OR_QFFP, qbt_gains_are_qsbcs_or_qffp),
+        Artifact(QBT_HAS_INVESTMENT_EXPENSES, qbt_has_investment_expenses),
+        Artifact(QBT_PARTNERSHIP_LOSSES, D(qbt_partnership_losses)),
+        Artifact(QBT_OTHER_INVESTMENT_EXPENSES, D(qbt_other_investment_expenses)),
+        Artifact(QBT_OTHER_PROPERTY_INCOME, D(qbt_other_property_income)),
+        Artifact(QBT_DEDUCTION_CLAIMED, D(qbt_deduction_claimed)),
     )
 
 

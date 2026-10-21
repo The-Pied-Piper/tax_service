@@ -21,6 +21,9 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_CHOSEN_COLUMN,
     POLITICAL_CREDIT_COLUMN_1_LINE_7,
     POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
+    QBT_AMOUNT_ALLOCATED,
+    QBT_ELECTION_ELIGIBLE_AMOUNT,
+    QBT_PERCENTAGE_ALLOCATED,
     RENTAL_NON_COMPLIANT_EXPENSES,
     TAXABLE_INCOME,
 )
@@ -61,7 +64,18 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rate=Rate(D("0.19")),
             rounding=CENT,
             result=D("0.00"),
-        )
+        ),
+        # Form T2048 (line 25395) and Chart A: Return A enters nothing on the form, so its lines
+        # are 0 (or, where they read another line, that line's figure).
+        QBT_AMOUNT_ALLOCATED: ChosenRateAppliedLine(
+            QBT_AMOUNT_ALLOCATED,
+            QBT_ELECTION_ELIGIBLE_AMOUNT,
+            D("0"),
+            QBT_PERCENTAGE_ALLOCATED,
+            Rate(D("0")),
+            CENT,
+            D("0.00"),
+        ),
     }
     assert ranged == {
         ontario.POLITICAL_CREDIT_BEFORE_MAXIMUM: ChosenByRangeLine(

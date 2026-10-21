@@ -18,6 +18,7 @@ import app.jurisdictions.ca
 import app.jurisdictions.ca.catalog
 from app.domain.artifact import Artifact, ArtifactCatalog, ArtifactKind, ArtifactRegistry
 from app.domain.errors import InvalidRecordError, NegativeArtifactError
+from app.domain.parameters.rate import Rate
 from app.domain.record_list import RecordList, RecordListKind
 from app.jurisdictions.ca.catalog import (
     ADVANCED_CANADA_WORKERS_BENEFIT,
@@ -333,7 +334,13 @@ from app.jurisdictions.ca.catalog import (
     ZONE_A_RESIDENCY_AFTER_WORK_SITE,
     ZONE_B_RESIDENCY_AFTER_WORK_SITE,
 )
-from tests.jurisdictions.ca.catalog_snapshot import COUNTS, RECORD_LISTS, REGISTERED, SIGNED
+from tests.jurisdictions.ca.catalog_snapshot import (
+    COUNTS,
+    RATES,
+    RECORD_LISTS,
+    REGISTERED,
+    SIGNED,
+)
 
 
 def test_registered_identifiers_snapshot(registry: ArtifactRegistry) -> None:
@@ -358,10 +365,10 @@ def test_the_catalog_kinds_named_by_the_package_are_money() -> None:
     assert FEDERAL_BASIC_TAX.value_type is Decimal
 
 
-def test_every_registered_kind_but_the_counts_and_record_lists_is_money(
+def test_every_registered_kind_but_the_counts_rates_and_record_lists_is_money(
     registry: ArtifactRegistry,
 ) -> None:
-    for identifier in REGISTERED - COUNTS - RECORD_LISTS:
+    for identifier in REGISTERED - COUNTS - RATES - RECORD_LISTS:
         kind = registry.get(identifier)
         assert isinstance(kind, ArtifactKind)
         assert kind.value_type is Decimal, identifier
@@ -376,13 +383,25 @@ def test_the_counts_are_int_kinds_in_the_package_namespace(registry: ArtifactReg
         assert kind.value_type is int, identifier
 
 
+def test_the_rates_are_rate_kinds_in_the_package_namespace(registry: ArtifactRegistry) -> None:
+    # Form T2048 line 2 "Percentage allocated to you": a rate from 0 to 1, the input
+    # `ca-on/apply_chosen_rate` multiplies line 1 by.
+    assert RATES <= REGISTERED
+    for identifier in RATES:
+        kind = registry.get(identifier)
+        assert isinstance(kind, ArtifactKind)
+        assert kind.identifier.startswith(f"{app.jurisdictions.ca.NAMESPACE}/")
+        assert kind.value_type is Rate, identifier
+
+
 def test_every_kind_but_the_balance_is_declared_non_negative(registry: ArtifactRegistry) -> None:
     # No other `ca/` line can be negative on the forms as modelled.
     # A record list is not an amount: it is never declared non-negative, its fields are.
+    # A rate is not an amount either: its own kind keeps it between 0 and 1.
     for kind in CATALOG.kinds:
-        if kind.identifier not in SIGNED | RECORD_LISTS:
+        if kind.identifier not in SIGNED | RECORD_LISTS | RATES:
             assert kind.non_negative is True, kind.identifier
-    for identifier in REGISTERED - SIGNED - RECORD_LISTS:
+    for identifier in REGISTERED - SIGNED - RECORD_LISTS - RATES:
         assert registry.kind(identifier).non_negative is True, identifier
 
 

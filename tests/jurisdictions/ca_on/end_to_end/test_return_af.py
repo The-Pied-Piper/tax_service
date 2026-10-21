@@ -168,7 +168,8 @@ def test_return_afs_claim_is_applied_to_the_oldest_row_first_and_lowers_taxable_
         "deductions_from_net_income: canadian_armed_forces_and_police_deduction 0 "
         "+ security_options_deductions 0 + other_payments_deduction 0 "
         "+ limited_partnership_losses_of_other_years 0 + non_capital_losses_of_other_years 0 "
-        "+ net_capital_losses_of_other_years 2500 + northern_residents_deductions 0 "
+        "+ net_capital_losses_of_other_years 2500 + qbt_capital_gains_deduction 0 "
+        "+ northern_residents_deductions 0 "
         "+ additional_deductions 0 = 2500"
     ) in rendered
     assert (
