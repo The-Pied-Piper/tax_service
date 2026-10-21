@@ -436,6 +436,10 @@ inputs:
   - ca/fhsa_maximum_participation_period_ended
   - ca/cpp_months
   - ca/cpt20_earnings
+  # Schedule 8 Part 5 line 3 and line 50399 "Employment earnings shown on a T4 slip that you are
+  # electing to pay additional CPP contributions on (complete Form CPT20)": the caller's, taken as
+  # the form takes it.
+  - ca/cpt20_t4_earnings
   - ca/cpp_part_4_completed
   # Schedule 8 Part 3 line 8 and line 50340 "Total actual base and first additional contributions
   # on CPP pensionable earnings from box 16 of all of your T4 slips", and line 21 and line 50341

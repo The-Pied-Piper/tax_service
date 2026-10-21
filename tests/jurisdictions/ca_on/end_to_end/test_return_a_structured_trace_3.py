@@ -8,11 +8,13 @@ from app.domain.parameters.amount import Amount
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
 from app.domain.parameters.fraction import Fraction
+from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING
 from app.domain.parameters.taper import Taper
 from app.domain.trace import (
     CappedAmountLine,
     CreditAmountLine,
+    DividedByRateLine,
     FractionAppliedLine,
     MultipleOverLine,
     PerUnitAmountLine,
@@ -208,9 +210,24 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_3B_LINE_39,
     CPP_PART_3B_LINE_40,
     CPP_PART_4_COMPLETED,
+    CPP_PART_5_LINE_4,
+    CPP_PART_5_LINE_6,
+    CPP_PART_5_LINE_7,
+    CPP_PART_5_LINE_10,
+    CPP_PART_5_LINE_12,
+    CPP_PART_5_LINE_13,
+    CPP_PART_5_LINE_16,
+    CPP_PART_5_LINE_20,
+    CPP_PART_5_LINE_25,
+    CPP_PART_5_LINE_30,
+    CPP_PART_5_LINE_35,
+    CPP_PART_5_LINE_36,
+    CPP_PART_5_LINE_39,
+    CPP_PART_5_LINE_41,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+    CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
     CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_ZERO,
@@ -546,7 +563,74 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     times = {line.output: line for line in trace if isinstance(line, TimesCountLine)}
     gated = {line.output: line for line in trace if isinstance(line, ThresholdGateLine)}
     fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
+    divided = {
+        line.output: line
+        for line in trace
+        if isinstance(line, DividedByRateLine) and line.output == CPP_PART_5_LINE_35
+    }
+    # Schedule 8 Part 5 line 35 "Amount from line 16 divided by 4%": 396.00 / 4% = 9,900.00 for
+    # Return A (the second additional contribution required on 110,000).
+    assert divided == {
+        CPP_PART_5_LINE_35: DividedByRateLine(
+            output=CPP_PART_5_LINE_35,
+            dividend=CPP_PART_5_LINE_16,
+            dividend_amount=D("396.00"),
+            rate=Rate(D("0.04")),
+            rounding=CENT,
+            result=D("9900.00"),
+        ),
+    }
     assert subtracted == {
+        # Schedule 8 Part 5 line 7 "Line 5 minus line 6": line 5 is the T4 box 16 total and line 6
+        # is "0" for Return A.
+        CPP_PART_5_LINE_7: SubtractedLine(
+            CPP_PART_5_LINE_7,
+            CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("4034.10"),
+            CPP_PART_5_LINE_6,
+            D("0"),
+            D("4034.10"),
+        ),
+        # Schedule 8 Part 5 line 13 "Line 11 minus line 12": line 11 is the T4 box 16A total and
+        # line 12 is "0" for Return A.
+        CPP_PART_5_LINE_13: SubtractedLine(
+            CPP_PART_5_LINE_13,
+            CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            D("396.00"),
+            CPP_PART_5_LINE_12,
+            D("0"),
+            D("396.00"),
+        ),
+        # Schedule 8 Part 5 line 36 "Line 34 minus line 35": line C of Part 2 (9,900) less
+        # 396.00 / 4% (9,900.00) for Return A.
+        CPP_PART_5_LINE_36: SubtractedLine(
+            CPP_PART_5_LINE_36,
+            CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+            D("9900.00"),
+            CPP_PART_5_LINE_35,
+            D("9900.00"),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 39 "Line 37 minus line 38": line 4 and line 25 are both "0" for
+        # Return A.
+        CPP_PART_5_LINE_39: SubtractedLine(
+            CPP_PART_5_LINE_39,
+            CPP_PART_5_LINE_4,
+            D("0.00"),
+            CPP_PART_5_LINE_25,
+            D("0"),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 41 "Line 39 minus line 40": line 39 and line 30 are both "0" for
+        # Return A.
+        CPP_PART_5_LINE_41: SubtractedLine(
+            CPP_PART_5_LINE_41,
+            CPP_PART_5_LINE_39,
+            D("0.00"),
+            CPP_PART_5_LINE_30,
+            D("0"),
+            D("0.00"),
+        ),
         # Schedule 8 Part 3b line 33 "Line 31 minus line 32": both are "0" for Return A.
         CPP_PART_3B_LINE_33: SubtractedLine(
             CPP_PART_3B_LINE_33,
@@ -1972,6 +2056,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert fractions == {
+        # Schedule 8 Part 5 line 20 "Amount from line 10 multiplied by 16.80672": 4,034.10 x
+        # 16.80672 = 67,799.989152, to the cent 67,799.99 for Return A.
+        CPP_PART_5_LINE_20: FractionAppliedLine(
+            output=CPP_PART_5_LINE_20,
+            base=CPP_PART_5_LINE_10,
+            base_amount=D("4034.10"),
+            fraction=Fraction(1680672, 100000),
+            rounding=CENT,
+            result=D("67799.99"),
+        ),
         # Form T657 Chart 2016 Part 1 "× 1/2 = F": amounts D and E of 0, times 1/2.
         CHART_2016_PART_1_AMOUNT_F: FractionAppliedLine(
             output=CHART_2016_PART_1_AMOUNT_F,

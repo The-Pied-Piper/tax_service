@@ -162,6 +162,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_MONTHS,
     CPP_OR_QPP_BENEFITS,
     CPP_OVERPAYMENT,
+    CPP_PART_3_LINE_2,
     CPP_PART_3B_LINE_23_LESS_LINE_35,
     CPP_PART_3B_LINE_30,
     CPP_PART_3B_LINE_31,
@@ -188,6 +189,37 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_3B_LINE_47,
     CPP_PART_3B_LINE_48,
     CPP_PART_4_COMPLETED,
+    CPP_PART_5_LINE_4,
+    CPP_PART_5_LINE_6,
+    CPP_PART_5_LINE_7,
+    CPP_PART_5_LINE_8,
+    CPP_PART_5_LINE_9,
+    CPP_PART_5_LINE_9_LESSER,
+    CPP_PART_5_LINE_10,
+    CPP_PART_5_LINE_12,
+    CPP_PART_5_LINE_13,
+    CPP_PART_5_LINE_14,
+    CPP_PART_5_LINE_15,
+    CPP_PART_5_LINE_15_LESSER,
+    CPP_PART_5_LINE_16,
+    CPP_PART_5_LINE_19,
+    CPP_PART_5_LINE_20,
+    CPP_PART_5_LINE_20_NEGATIVE_LINE_23_POSITIVE,
+    CPP_PART_5_LINE_20_POSITIVE_LINE_23_NEGATIVE,
+    CPP_PART_5_LINE_21,
+    CPP_PART_5_LINE_22,
+    CPP_PART_5_LINE_25,
+    CPP_PART_5_LINE_28,
+    CPP_PART_5_LINE_29,
+    CPP_PART_5_LINE_30,
+    CPP_PART_5_LINE_33,
+    CPP_PART_5_LINE_33_MORE_THAN_LINE_17,
+    CPP_PART_5_LINE_35,
+    CPP_PART_5_LINE_36,
+    CPP_PART_5_LINE_39,
+    CPP_PART_5_LINE_41,
+    CPP_PART_5_LINE_42,
+    CPP_PART_5_LINE_42_LESSER,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PENSIONABLE_EARNINGS,
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
@@ -1161,6 +1193,50 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CPP_PART_3B_LINE_48,
     ):
         assert isinstance(worksheet.producer_of(total), Sum)
+    # Schedule 8 Part 3 line 2 and Part 5 lines 1 to 42: the counts, the "whichever is less"
+    # candidates, the lines chosen by count, the floors, the plain differences and sums, line 20 (a
+    # multiplication by a fraction) and line 35 (a division by a rate).
+    assert isinstance(worksheet.producer_of(CPP_PART_3_LINE_2), LesserOf)
+    for count in (
+        CPP_PART_5_LINE_20_NEGATIVE_LINE_23_POSITIVE,
+        CPP_PART_5_LINE_20_POSITIVE_LINE_23_NEGATIVE,
+        CPP_PART_5_LINE_33_MORE_THAN_LINE_17,
+    ):
+        assert isinstance(worksheet.producer_of(count), CountByConditions), count.identifier
+    for lesser in (
+        CPP_PART_5_LINE_9_LESSER,
+        CPP_PART_5_LINE_15_LESSER,
+        CPP_PART_5_LINE_22,
+        CPP_PART_5_LINE_42_LESSER,
+    ):
+        assert isinstance(worksheet.producer_of(lesser), LesserOf), lesser.identifier
+    for chosen in (CPP_PART_5_LINE_9, CPP_PART_5_LINE_15, CPP_PART_5_LINE_42):
+        assert isinstance(worksheet.producer_of(chosen), ChooseByCount), chosen.identifier
+    for floored in (
+        CPP_PART_5_LINE_6,
+        CPP_PART_5_LINE_8,
+        CPP_PART_5_LINE_12,
+        CPP_PART_5_LINE_14,
+        CPP_PART_5_LINE_19,
+        CPP_PART_5_LINE_21,
+        CPP_PART_5_LINE_25,
+        CPP_PART_5_LINE_28,
+        CPP_PART_5_LINE_29,
+        CPP_PART_5_LINE_30,
+    ):
+        assert isinstance(worksheet.producer_of(floored), SubtractNotBelowZero), floored.identifier
+    for difference in (
+        CPP_PART_5_LINE_7,
+        CPP_PART_5_LINE_13,
+        CPP_PART_5_LINE_36,
+        CPP_PART_5_LINE_39,
+        CPP_PART_5_LINE_41,
+    ):
+        assert isinstance(worksheet.producer_of(difference), Subtract), difference.identifier
+    for total in (CPP_PART_5_LINE_4, CPP_PART_5_LINE_10, CPP_PART_5_LINE_16, CPP_PART_5_LINE_33):
+        assert isinstance(worksheet.producer_of(total), Sum), total.identifier
+    assert isinstance(worksheet.producer_of(CPP_PART_5_LINE_20), ApplyFraction)
+    assert isinstance(worksheet.producer_of(CPP_PART_5_LINE_35), DividedByRate)
     # The self-employment lines (T1 lines 22 to 27, Schedule 8 Parts 2 and 4, Schedule 13).
     for starting in (
         PROFESSIONAL_INCOME,
