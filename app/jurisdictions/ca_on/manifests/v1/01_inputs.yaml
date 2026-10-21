@@ -439,6 +439,9 @@ inputs:
   - ca/t4_cpp_pensionable_earnings_outside_quebec
   - ca/t4_qpp_pensionable_earnings_in_quebec
   - ca/t4_cpp_contributions_box_16
+  - ca/t4_cpp_second_additional_box_16a
+  - ca/t4_qpp_contributions_box_17
+  - ca/t4_qpp_second_additional_box_17a
   - ca/cpt20_earnings
   - ca/cpp_part_4_completed
   - ca/ei_controlled_corporation_earnings

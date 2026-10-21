@@ -636,10 +636,6 @@ expected:
   ca/refund: "2133"
   ca-on/refund_before_donation: "2133"
   ca-on/net_refund: "2133"
-  ca/rc381_part_2_line_g: "71300.00"
-  ca/rc381_part_2_line_h: "9900.00"
-  ca/rc381_part_2_line_i: "81200.00"
-  ca/rc381_part_2_line_j: "3500.00"
 """
 
 

@@ -98,6 +98,7 @@ from app.jurisdictions.ca.catalog import (
     QBT_TAXABLE_CAPITAL_GAINS,
     QBT_TOTAL_CAPITAL_GAINS,
     RC381_PART_3_LINE_20,
+    RC381_PART_3_LINE_40,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
     RESIDENCY_NET_INCOME_LIMIT,
@@ -116,6 +117,7 @@ from app.jurisdictions.ca.catalog import (
     SPLIT_INCOME_LINE_19,
     SPLIT_INCOME_LINE_20,
     T4_CPP_CONTRIBUTIONS_BOX_16,
+    T4_QPP_CONTRIBUTIONS_BOX_17,
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
     TOTAL_SPLIT_INCOME,
@@ -203,6 +205,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         if isinstance(line, ItemsTotalLine) and line.output is COOP_EDUCATION_CREDIT
     }
     assert rated == {
+        # Form RC381 Part 3 line 40 "amount from line 39 x 84.375%": Return A enters no box 17
+        # contributions on line 39, so the base is 0 and so is the 84.375%.
+        RC381_PART_3_LINE_40: RateAppliedLine(
+            RC381_PART_3_LINE_40,
+            T4_QPP_CONTRIBUTIONS_BOX_17,
+            D("0"),
+            Rate(D("0.84375")),
+            CENT,
+            D("0.00"),
+        ),
         # Form RC381 Part 3 line 20 "amount from line 19 x 83.1933%": Return A enters no box 16
         # contributions on line 19, so the base is 0 and so is the 83.1933%.
         RC381_PART_3_LINE_20: RateAppliedLine(
