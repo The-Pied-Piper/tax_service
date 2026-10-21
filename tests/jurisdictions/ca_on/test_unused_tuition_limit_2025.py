@@ -5,8 +5,7 @@ line 2 if it is $52,886 or less. If it is more than $52,886, enter the result of
 calculation:" "Line 2: Amount from line 8 of your Form ON428" "divided by 5.05% =". So the taxable
 income passes through at or below $52,886 (an amount equal to the threshold passes), and over it the
 Ontario tax on taxable income (ON428 line 8) is divided by 5.05%. The form states no rounding rule
-for line 2; the quotient is rounded half-up to the cent, as every dollars-and-cents box is, as the figure is a
-dollars-and-cents box.
+for line 2; the quotient is rounded half-up to the cent, as every dollars-and-cents box is.
 """
 
 from __future__ import annotations
