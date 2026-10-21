@@ -239,7 +239,8 @@ def test_the_trace_explains_the_computation() -> None:
         "+ infirm_children_amount 0 "
         "+ cpp_base_contributions 3356.1 + cpp_base_contributions_on_self_employment 0 "
         "+ ei_premiums 1077.48 + ei_premiums_on_self_employment 0 "
-        "+ canada_employment_amount 1471 + disability_transferred_amount 0 "
+        "+ canada_employment_amount 1471 + disability_amount_for_self 0 "
+        "+ disability_transferred_amount 0 "
         "+ federal_tuition_amount 0 + tuition_transferred_from_child 0 + "
         "amounts_transferred_from_spouse 0 + medical_claim 0 = 22033.58",
         "22033.58",
@@ -319,7 +320,8 @@ def test_the_trace_explains_the_computation() -> None:
         "+ age_amount 0 + spouse_amount 0 + eligible_dependant_amount 0 "
         "+ caregiver_amount 0 + cpp_base_contributions 3356.1 "
         "+ cpp_base_contributions_on_self_employment 0 + ei_premiums 1077.48 "
-        "+ ei_premiums_on_self_employment 0 + disability_transferred_amount 0 "
+        "+ ei_premiums_on_self_employment 0 + disability_amount_for_self 0 "
+        "+ disability_transferred_amount 0 "
         "+ unused_tuition_claimed 0 "
         "+ amounts_transferred_from_spouse 0 "
         "+ medical_claim 0 = 17180.58",

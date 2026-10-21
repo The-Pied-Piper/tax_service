@@ -187,13 +187,62 @@ amount transferred from a dependant (use Worksheet ON428)": "the total of allowa
 claimed for all dependants", each line 12 "Enter whichever is less: amount from line 7 or line
 11. Allowable amount for this dependant", a part of the total of the Ontario credit amounts."""
 
+DISABILITY_SELF_BASE_AMOUNT = CATALOG.declare(
+    "disability_self_base_amount", Decimal, non_negative=True
+)
+"""Base amount for self, Worksheet ON428 (form 5006-D), "Line 58440 - Disability amount for self",
+line 1 "Base amount 10,298.00": the dataset as an artifact."""
+
+DISABILITY_SELF_SUPPLEMENT_MAXIMUM = CATALOG.declare(
+    "disability_self_supplement_maximum", Decimal, non_negative=True
+)
+"""Maximum amount for self, Worksheet ON428 (form 5006-D), "Line 58440 - Disability amount for
+self", line 2 "Maximum amount 6,007.00": the dataset as an artifact."""
+
+DISABILITY_SELF_CARE_THRESHOLD = CATALOG.declare(
+    "disability_self_care_threshold", Decimal, non_negative=True
+)
+"""Threshold for child and attendant care expenses for self, Worksheet ON428 (form 5006-D), "Line
+58440 - Disability amount for self", line 4 "Threshold for child and attendant care expenses
+3,518.00": the dataset as an artifact."""
+
+DISABILITY_SELF_CARE_OVER_THRESHOLD = CATALOG.declare(
+    "disability_self_care_over_threshold", Decimal, non_negative=True
+)
+"""Care expenses over the threshold for self, Worksheet ON428 (form 5006-D), "Line 58440 -
+Disability amount for self", line 5 "Line 3 minus line 4 (if negative, enter "0") =": line 3 less
+the threshold of line 4, not below zero."""
+
+DISABILITY_SELF_SUPPLEMENT = CATALOG.declare(
+    "disability_self_supplement", Decimal, non_negative=True
+)
+"""Supplement for self, Worksheet ON428 (form 5006-D), "Line 58440 - Disability amount for self",
+line 6 "Line 2 minus line 5 (if negative, enter "0") =": the maximum amount less the care expenses
+over the threshold, not below zero."""
+
+DISABILITY_SELF_WORKSHEET_AMOUNT = CATALOG.declare(
+    "disability_self_worksheet_amount", Decimal, non_negative=True
+)
+"""Disability amount for self under 18, Worksheet ON428 (form 5006-D), "Line 58440 - Disability
+amount for self", line 7 "Line 1 plus line 6 Enter this amount on line 58440 of your Form ON428.
+(maximum $16,305) =": the base amount plus the supplement; the printed maximum is met without a cap,
+as the supplement is at most the maximum amount."""
+
+DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE = CATALOG.declare(
+    "disability_amount_for_self_if_eligible", Decimal, non_negative=True
+)
+"""Disability amount for self before the qualification, ON428 line 29 and line 58440 "Disability
+amount for self (claim $10,298 or, if you were under 18 years of age, use Worksheet ON428)": the
+base amount for a filer 18 or older on December 31, 2025, and the worksheet amount of line 7 for a
+filer under 18."""
+
 DISABILITY_AMOUNT_FOR_SELF = CATALOG.declare(
     "disability_amount_for_self", Decimal, non_negative=True
 )
-"""Ontario disability amount for self, ON428 line 58440 "Disability amount for self (if you were
-under 18 years of age, use Worksheet ON428; if not, claim $10,138)": a starting amount, read by
-Form T1206 Part 3 line 34 "DTC from line 58440 of your provincial or territorial Form 428" and not
-yet computed."""
+"""Ontario disability amount for self, ON428 line 29 and line 58440 "Disability amount for self
+(claim $10,298 or, if you were under 18 years of age, use Worksheet ON428)": the amount once if the
+filer qualifies, else 0; a part of the total of the Ontario credit amounts. Read by Form T1206
+Part 3 line 34 "DTC from line 58440 of your provincial or territorial Form 428"."""
 
 UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD = CATALOG.declare(
     "unused_tuition_amounts_brought_forward", Decimal, non_negative=True

@@ -30,7 +30,10 @@
 # the cent, 343.42, so line 46 is 343.42 and line 47 is 2,360.95 - 343.42 = 2,017.53,
 # which is line 50 (line 49 is not wired). Line 51 is ON428 line 88, and line 52 the more
 # of lines 50 and 51, 2,017.53, which is the Ontario tax before the health premium. Not
-# yet computed, so not in this file: lines 8A, 23, 33C and 49 of T1206. Amounts are quoted decimal strings, never
+# yet computed, so not in this file: lines 23, 33C and 49 of T1206 (line 33C is not
+# wired: nothing in this return reads it), line 1 of Schedule ON479-A and the chart of
+# line 23500. T1206 line 8A is 3,795.00 / 14.5% = 26,172.41, added to the taxable income
+# on line 11 of Schedule 11. Amounts are quoted decimal strings, never
 # floats; counts are quoted digit strings. A line or input this return leaves out
 # is blank, 0, and is checked to compute to 0; intermediate lines that are listed are checked
 # too.
@@ -70,6 +73,11 @@ description: >-
   $3,795.00; line 16 is $11,500 and line 17 is $11,500, line 18 is $0.00, line 19 is $11,500
   x 9.0301% = $1,038.4615, rounded half-up to the cent: $1,038.46, line 20 is $0.00 x
   15.0198% = $0.00 and line 21 is $1,038.46; line 22 is $3,795.00 - $1,038.46 = $2,756.54;
+  line 8A is line 8 divided by 14.5%: $3,795.00 / 0.145 = $26,172.4137, rounded half-up to
+  the cent: $26,172.41, which Schedule 11 adds to the amount on its line 11 (the taxable
+  income of $0.00, at or below $57,375): $0.00 + $26,172.41 = $26,172.41, and line 13 is
+  that less the credit amounts of line 101 (the basic personal amount, $16,129.00) =
+  $10,043.41, line 14 (unused tuition from 2024, $0) is $0 and line 15 is $10,043.41;
   line 24 is line 22, $2,756.54 (line 23 is not wired); line 25 (line 40600) is $417.83,
   line 26 (line 41600) is $0.00, line 27 is $417.83, line 28 (line 41500) is $0 and line 29
   is $417.83; line 30 is the greater of $2,756.54 and $417.83: $2,756.54, and line 42000 is
@@ -258,6 +266,16 @@ sources:
     zero: 0.00. The health premium income is 0.00 + 11,500.00. Lines 33, 38, 42 and 45 are
     dollars-and-cents boxes, rounded half-up to the cent; the others take amounts already in
     cents.
+  - >-
+    CRA, Form T1206 2025, Part 2 and "TOSI-adjusted taxable income" on page 5, and Schedule 11
+    (docs/cra-forms-2025/5000-s11-25e.txt): "TOSI-adjusted taxable income Amount from line 8 ÷
+    14.5% = 8A"; "If you are completing a federal Schedule 11, calculate line 8A and add it to
+    the amount on line 11 of Schedule 11"; Schedule 11 "Line 11: Amount from line 76 of your
+    return divided by 14.5% =" (or the line 26000 amount if it is $57,375 or less); "Line 12:
+    Enter the amount from line 101 of your return"; "Line 13: Line 11 minus line 12 (if
+    negative, enter "0") =". Line 8A is 3,795.00 / 14.5% = 26,172.4137, rounded half-up to the
+    cent (a dollars-and-cents box, the owner's decision), 26,172.41; line 11 plus line 8A is
+    0.00 + 26,172.41; line 13 is 26,172.41 - 16,129.00 = 10,043.41.
 inputs:
   ca/other_dividends_received_without_a_slip: "10000"
   ca/resident_in_canada_throughout_2025: "1"
@@ -296,6 +314,12 @@ expected:
   ca/dividend_tax_credit: "1038.46"
   ca/credits_against_basic_federal_tax: "3377.17"
   ca/federal_tax_on_split_income: "3795.00"
+  ca/tosi_adjusted_taxable_income: "26172.41"
+  ca/tuition_income_base: "0.00"
+  ca/tuition_income_with_tosi: "26172.41"
+  ca/credit_amounts_subtotal: "16129.00"
+  ca/tuition_income_less_credits: "10043.41"
+  ca/tuition_income_remaining: "10043.41"
   ca/federal_tax_with_split_income: "3795.00"
   ca/federal_tax_after_credits: "417.83"
   ca-on/basic_personal_amount: "12747.00"

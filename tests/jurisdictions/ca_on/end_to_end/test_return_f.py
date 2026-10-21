@@ -113,7 +113,8 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
         "+ infirm_children_amount 0 "
         "+ cpp_base_contributions 2796.75 + cpp_base_contributions_on_self_employment 0 "
         "+ ei_premiums 984 + ei_premiums_on_self_employment 0 "
-        "+ canada_employment_amount 1471 + disability_transferred_amount 0 "
+        "+ canada_employment_amount 1471 + disability_amount_for_self 0 "
+        "+ disability_transferred_amount 0 "
         "+ federal_tuition_amount 0 + tuition_transferred_from_child 0 + "
         "amounts_transferred_from_spouse 0 + medical_claim 0 = 37509.75"
     ) in rendered
@@ -122,6 +123,7 @@ def test_an_eligible_dependant_with_no_income_adds_the_basic_personal_amount_and
         "+ spouse_amount 0 + eligible_dependant_amount 10823 + caregiver_amount 0 "
         "+ cpp_base_contributions 2796.75 + cpp_base_contributions_on_self_employment 0 "
         "+ ei_premiums 984 + ei_premiums_on_self_employment 0 "
+        "+ disability_amount_for_self 0 "
         "+ disability_transferred_amount 0 + unused_tuition_claimed 0 "
         "+ amounts_transferred_from_spouse 0 + medical_claim 0 = 27350.75"
     ) in rendered

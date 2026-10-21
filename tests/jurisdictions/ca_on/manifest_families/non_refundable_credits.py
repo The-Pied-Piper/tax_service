@@ -14,6 +14,7 @@ from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.amount_or_divided_by_rate import AmountOrDividedByRate
+from app.jurisdictions.ca.capabilities.divided_by_rate import DividedByRate
 from app.jurisdictions.ca.capabilities.foreign_non_business_tax_credit import (
     ForeignNonBusinessTaxCredit,
 )
@@ -54,6 +55,7 @@ from app.jurisdictions.ca.catalog import (
     DEPRECIABLE_GIFT_PROCEEDS_OR_COST,
     DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
     DEPRECIABLE_GIFTS,
+    DISABILITY_AMOUNT_FOR_SELF,
     DISABILITY_TRANSFERRED_AMOUNT,
     DIVIDEND_TAX_CREDIT,
     DONATION_FIRST_TIER_MAXIMUM,
@@ -140,6 +142,7 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
     TOP_UP_THRESHOLD,
+    TOSI_ADJUSTED_TAXABLE_INCOME,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_SPLIT_INCOME,
     TOTAL_TUITION_AVAILABLE,
@@ -148,6 +151,7 @@ from app.jurisdictions.ca.catalog import (
     TUITION_INCOME_BASE,
     TUITION_INCOME_LESS_CREDITS,
     TUITION_INCOME_REMAINING,
+    TUITION_INCOME_WITH_TOSI,
     TUITION_TRANSFER_ELECTED,
     TUITION_TRANSFER_LIMIT,
     TUITION_TRANSFERRED,
@@ -339,6 +343,7 @@ STEPS = {
                 "ca/ei_premiums",
                 "ca/ei_premiums_on_self_employment",
                 "ca/canada_employment_amount",
+                "ca/disability_amount_for_self",
                 "ca/disability_transferred_amount",
             )
         },
@@ -348,7 +353,7 @@ STEPS = {
     CapabilitySelection(
         name="core/subtract_not_below_zero",
         params={},
-        consumes={"amount": "ca/tuition_income_base", "less": "ca/credit_amounts_subtotal"},
+        consumes={"amount": "ca/tuition_income_with_tosi", "less": "ca/credit_amounts_subtotal"},
         produces={"output": "ca/tuition_income_less_credits"},
     ),
     # Schedule 11 line 14 "Enter whichever is less amount from line 9 or line 13."
@@ -540,6 +545,7 @@ STEPS = {
                 "ca/ei_premiums",
                 "ca/ei_premiums_on_self_employment",
                 "ca/canada_employment_amount",
+                "ca/disability_amount_for_self",
                 "ca/disability_transferred_amount",
                 "ca/federal_tuition_amount",
                 "ca/tuition_transferred_from_child",
@@ -836,6 +842,23 @@ STEPS = {
         consumes={"base": "ca/total_split_income"},
         produces={"output": "ca/federal_tax_on_split_income"},
     ),
+    # Form T1206 Part 2 line 8A "TOSI-adjusted taxable income: Amount from line 8 ÷ 14.5% =", line 8
+    # being the federal tax on split income.
+    CapabilitySelection(
+        name="ca/divided_by_rate",
+        params={"rate": "ca/tosi_taxable_income_rate"},
+        consumes={"dividend": "ca/federal_tax_on_split_income"},
+        produces={"output": "ca/tosi_adjusted_taxable_income"},
+    ),
+    # Form T1206 "If you are completing a federal Schedule 11, calculate line 8A and add it to the
+    # amount on line 11 of Schedule 11": the amount on line 11 (the taxable income, or the tax
+    # divided by 14.5%) plus line 8A.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/tuition_income_base", "ca/tosi_adjusted_taxable_income")},
+        produces={"output": "ca/tuition_income_with_tosi"},
+    ),
     # T1 line 121 and line 40400 "Line 119 plus line 120 =": line 119 "Enter the amount from line
     # 76." is the federal basic tax and line 120 is the federal tax on split income, in line order.
     CapabilitySelection(
@@ -1107,6 +1130,7 @@ WIRING = {
                 EI_PREMIUMS,
                 EI_PREMIUMS_ON_SELF_EMPLOYMENT,
                 CANADA_EMPLOYMENT_AMOUNT,
+                DISABILITY_AMOUNT_FOR_SELF,
                 DISABILITY_TRANSFERRED_AMOUNT,
             }
         ),
@@ -1114,7 +1138,7 @@ WIRING = {
     ),
     (
         SubtractNotBelowZero,
-        frozenset({TUITION_INCOME_BASE, CREDIT_AMOUNTS_SUBTOTAL}),
+        frozenset({TUITION_INCOME_WITH_TOSI, CREDIT_AMOUNTS_SUBTOTAL}),
         frozenset({TUITION_INCOME_LESS_CREDITS}),
     ),
     (
@@ -1223,6 +1247,7 @@ WIRING = {
                 EI_PREMIUMS_ON_SELF_EMPLOYMENT,
                 CANADA_EMPLOYMENT_AMOUNT,
                 MEDICAL_CLAIM,
+                DISABILITY_AMOUNT_FOR_SELF,
                 DISABILITY_TRANSFERRED_AMOUNT,
                 FEDERAL_TUITION_AMOUNT,
                 TUITION_TRANSFERRED_FROM_CHILD,
@@ -1356,6 +1381,16 @@ WIRING = {
         frozenset({NON_REFUNDABLE_TAX_CREDITS}),
     ),
     (ApplyRate, frozenset({TOTAL_SPLIT_INCOME}), frozenset({FEDERAL_TAX_ON_SPLIT_INCOME})),
+    (
+        DividedByRate,
+        frozenset({FEDERAL_TAX_ON_SPLIT_INCOME}),
+        frozenset({TOSI_ADJUSTED_TAXABLE_INCOME}),
+    ),
+    (
+        Sum,
+        frozenset({TUITION_INCOME_BASE, TOSI_ADJUSTED_TAXABLE_INCOME}),
+        frozenset({TUITION_INCOME_WITH_TOSI}),
+    ),
     (
         Sum,
         frozenset({FEDERAL_BASIC_TAX, FEDERAL_TAX_ON_SPLIT_INCOME}),

@@ -32,6 +32,7 @@ from app.jurisdictions.ca.capabilities.chart_b_zone_b_total import ChartBZoneBTo
 from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
 from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.capabilities.disability_transfer_amount import DisabilityTransferAmount
+from app.jurisdictions.ca.capabilities.divided_by_rate import DividedByRate
 from app.jurisdictions.ca.capabilities.ei_excluded_slips_net_income import (
     EiExcludedSlipsNetIncome,
 )
@@ -146,7 +147,14 @@ from app.jurisdictions.ca.catalog import (
     DEPRECIABLE_GIFT_RECAPTURED_DEPRECIATION,
     DEPRECIABLE_GIFTS,
     DISABILITY_AMOUNT_FOR_SELF,
+    DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
     DISABILITY_DEPENDANTS,
+    DISABILITY_SELF_BASE_AMOUNT,
+    DISABILITY_SELF_CARE_OVER_THRESHOLD,
+    DISABILITY_SELF_CARE_THRESHOLD,
+    DISABILITY_SELF_SUPPLEMENT,
+    DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
+    DISABILITY_SELF_WORKSHEET_AMOUNT,
     DISABILITY_SUPPORTS_DEDUCTION,
     DISABILITY_TRANSFERRED_AMOUNT,
     DIVIDEND_TAX_CREDIT,
@@ -506,6 +514,7 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_THRESHOLD,
     TOSI_ADJUSTED_NET_INCOME,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
+    TOSI_ADJUSTED_TAXABLE_INCOME,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
     TOTAL_CARRYING_CHARGES,
     TOTAL_CHARITABLE_DONATIONS,
@@ -520,6 +529,7 @@ from app.jurisdictions.ca.catalog import (
     TRAVEL_TOTAL_ZONE_B,
     TRAVEL_TRIPS,
     TRAVEL_ZONE_B_DEDUCTION,
+    TUITION_INCOME_WITH_TOSI,
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
     UCCB_REPAYMENT,
@@ -675,7 +685,16 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(SPLIT_INCOME_DIVIDENDS) is None
     assert worksheet.producer_of(SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE) is None
     assert worksheet.producer_of(OTHER_SPLIT_INCOME) is None
-    assert worksheet.producer_of(DISABILITY_AMOUNT_FOR_SELF) is None
+    assert isinstance(worksheet.producer_of(DISABILITY_AMOUNT_FOR_SELF), TimesCount)
+    assert isinstance(worksheet.producer_of(DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE), ChooseByCount)
+    assert isinstance(worksheet.producer_of(DISABILITY_SELF_BASE_AMOUNT), CreditAmount)
+    assert isinstance(worksheet.producer_of(DISABILITY_SELF_SUPPLEMENT_MAXIMUM), CreditAmount)
+    assert isinstance(worksheet.producer_of(DISABILITY_SELF_CARE_THRESHOLD), CreditAmount)
+    assert isinstance(
+        worksheet.producer_of(DISABILITY_SELF_CARE_OVER_THRESHOLD), SubtractNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(DISABILITY_SELF_SUPPLEMENT), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(DISABILITY_SELF_WORKSHEET_AMOUNT), Sum)
     assert worksheet.producer_of(ontario.LIFT_SPOUSE_AT_YEAR_END) is None
     assert worksheet.producer_of(OTHER_EMPLOYMENT_INCOME) is None
     assert worksheet.producer_of(OLD_AGE_SECURITY) is None
@@ -916,6 +935,9 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         worksheet.producer_of(TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO), SumNotBelowZero
     )
     assert isinstance(worksheet.producer_of(FEDERAL_TAX_ON_SPLIT_INCOME), ApplyRate)
+    # Line 8A is line 8 divided by 14.5%, and Schedule 11 line 11 plus it is a plain sum.
+    assert isinstance(worksheet.producer_of(TOSI_ADJUSTED_TAXABLE_INCOME), DividedByRate)
+    assert isinstance(worksheet.producer_of(TUITION_INCOME_WITH_TOSI), Sum)
     assert isinstance(worksheet.producer_of(FEDERAL_TAX_WITH_SPLIT_INCOME), Sum)
     assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_10), Sum)
     assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_13), Sum)
