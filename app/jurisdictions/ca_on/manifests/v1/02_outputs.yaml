@@ -28,4 +28,5 @@ outputs:
   - ca-on/property_tax_paid
   - ca-on/reserve_home_energy_costs
   - ca-on/public_long_term_care_paid
+  - ca-on/unused_tuition_carried_forward
   - ca/standard_amount_allocated

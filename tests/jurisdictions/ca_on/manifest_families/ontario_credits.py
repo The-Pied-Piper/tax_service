@@ -41,6 +41,10 @@ OUTPUTS = frozenset(
 )
 
 STEPS = {
+    # ON428 line 33 and line 58560 "Your unused tuition and education amounts (attach Schedule
+    # ON(S11))", a part of line 35 "Add lines 31 to 34. =". Line 44 (line 58800) "Line 35 plus line
+    # 43" adds the medical expenses after it, so the claim sits between the disability amount
+    # transferred and the medical claim, in the form's order.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -56,6 +60,7 @@ STEPS = {
                 "ca/ei_premiums",
                 "ca/ei_premiums_on_self_employment",
                 "ca-on/disability_transferred_amount",
+                "ca-on/unused_tuition_claimed",
                 "ca-on/medical_claim",
             )
         },
@@ -347,6 +352,7 @@ WIRING = {
                 EI_PREMIUMS,
                 EI_PREMIUMS_ON_SELF_EMPLOYMENT,
                 ontario.DISABILITY_TRANSFERRED_AMOUNT,
+                ontario.UNUSED_TUITION_CLAIMED,
                 ontario.MEDICAL_CLAIM,
             }
         ),

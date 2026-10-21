@@ -70,6 +70,7 @@ from app.jurisdictions.ca_on.catalog import (
     COOP_EDUCATION_REMAINING_SHARE,
     COOP_PARTNERSHIP_BUSINESS_NUMBER,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
+    CREDIT_AMOUNTS_THROUGH_DISABILITY_TRANSFER,
     DEPENDANT_ON428_LINE_28,
     DEPENDANTS,
     DEPENDENT_CHILDREN,
@@ -210,6 +211,11 @@ from app.jurisdictions.ca_on.catalog import (
     TAX_REDUCTION_FOR_CHILDREN_BEFORE_SPOUSE_RULE,
     TAX_REDUCTION_FOR_DEPENDANTS,
     TAX_REDUCTION_FOR_DEPENDANTS_BEFORE_SPOUSE_RULE,
+    UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD,
+    UNUSED_TUITION_CARRIED_FORWARD,
+    UNUSED_TUITION_CLAIMED,
+    UNUSED_TUITION_INCOME_CAP,
+    UNUSED_TUITION_ROOM,
 )
 from app.registrations import JURISDICTIONS
 
@@ -244,6 +250,12 @@ REGISTERED = frozenset(
         "ca-on/disability_transferred_amount",
         "ca-on/non_refundable_credit_amounts",
         "ca-on/credit_amounts_at_credit_rate",
+        "ca-on/credit_amounts_through_disability_transfer",
+        "ca-on/unused_tuition_amounts_brought_forward",
+        "ca-on/unused_tuition_income_cap",
+        "ca-on/unused_tuition_room",
+        "ca-on/unused_tuition_claimed",
+        "ca-on/unused_tuition_carried_forward",
         "ca-on/donations_first_tier_credit",
         "ca-on/donations_over_first_tier_credit",
         "ca-on/donations_and_gifts_credit",
@@ -519,6 +531,18 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/disability_transferred_amount") is DISABILITY_TRANSFERRED_AMOUNT
     assert registry.get("ca-on/non_refundable_credit_amounts") is NON_REFUNDABLE_CREDIT_AMOUNTS
     assert registry.get("ca-on/credit_amounts_at_credit_rate") is CREDIT_AMOUNTS_AT_CREDIT_RATE
+    assert (
+        registry.get("ca-on/credit_amounts_through_disability_transfer")
+        is CREDIT_AMOUNTS_THROUGH_DISABILITY_TRANSFER
+    )
+    assert (
+        registry.get("ca-on/unused_tuition_amounts_brought_forward")
+        is UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD
+    )
+    assert registry.get("ca-on/unused_tuition_income_cap") is UNUSED_TUITION_INCOME_CAP
+    assert registry.get("ca-on/unused_tuition_room") is UNUSED_TUITION_ROOM
+    assert registry.get("ca-on/unused_tuition_claimed") is UNUSED_TUITION_CLAIMED
+    assert registry.get("ca-on/unused_tuition_carried_forward") is UNUSED_TUITION_CARRIED_FORWARD
     assert registry.get("ca-on/donations_first_tier_credit") is DONATIONS_FIRST_TIER_CREDIT
     assert (
         registry.get("ca-on/donations_over_first_tier_credit") is DONATIONS_OVER_FIRST_TIER_CREDIT
@@ -1225,3 +1249,24 @@ def test_the_other_t1206_part_3_kinds_are_non_negative_amounts(registry: Artifac
 
 def test_the_disability_amount_for_self_is_the_callers_on428_line_58440() -> None:
     assert DISABILITY_AMOUNT_FOR_SELF.identifier == "ca-on/disability_amount_for_self"
+
+
+def test_the_unused_tuition_lines_are_non_negative_amounts(registry: ArtifactRegistry) -> None:
+    # Schedule ON(S11) line 1 "Enter your unused Ontario tuition and education amounts from your
+    # 2024 notice of assessment or reassessment", a caller input; line 2 "Amount from line 8 of
+    # your Form ON428" "divided by 5.05% =" (the other branch passes line 26000 through), line 4
+    # "Line 2 minus line 3 (if negative, enter "0") =", line 5 "Enter whichever is less: amount
+    # from line 1 or line 4", and line 8 "Line 6 minus line 7 Unused provincial tuition and
+    # education amounts available to carry forward to a future year ="; and ON428 line 31 "Add
+    # lines 28 to 30. =", the line 3 amount. Each is a dollars-and-cents box, never below zero.
+    for kind in (
+        UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD,
+        UNUSED_TUITION_INCOME_CAP,
+        CREDIT_AMOUNTS_THROUGH_DISABILITY_TRANSFER,
+        UNUSED_TUITION_ROOM,
+        UNUSED_TUITION_CLAIMED,
+        UNUSED_TUITION_CARRIED_FORWARD,
+    ):
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+        assert registry.kind(kind.identifier) is kind

@@ -286,7 +286,7 @@ def test_return_us_new_lines_join_the_deductions_the_credit_amounts_and_the_tota
         "+ spouse_amount 0 + eligible_dependant_amount 0 + caregiver_amount 0 "
         "+ cpp_base_contributions 0 + cpp_base_contributions_on_self_employment 2301.75 "
         "+ ei_premiums 0 + ei_premiums_on_self_employment 820 "
-        "+ disability_transferred_amount 0 + medical_claim 0 = 15868.75",
+        "+ disability_transferred_amount 0 + unused_tuition_claimed 0 + medical_claim 0 = 15868.75",
         "total_payable: net_federal_tax 2540.04 + cpp_payable_on_self_employment 5533.5 "
         "+ ei_payable_on_self_employment 820 + ontario_tax 1401.53 = 10295.07",
     ):

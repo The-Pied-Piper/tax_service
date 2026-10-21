@@ -1015,6 +1015,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("16129.00"),
         ),
+        # ON428 line 31 "Add lines 28 to 30. =": the basic personal amount and the CPP and EI
+        # contributions, the parts before the Schedule ON(S11) claim and medical expenses.
+        ontario.CREDIT_AMOUNTS_THROUGH_DISABILITY_TRANSFER: SumLine(
+            ontario.CREDIT_AMOUNTS_THROUGH_DISABILITY_TRANSFER,
+            (
+                (ontario.BASIC_PERSONAL_AMOUNT, D("12747")),
+                (ontario.AGE_AMOUNT, D("0")),
+                (ontario.SPOUSE_AMOUNT, D("0")),
+                (ontario.ELIGIBLE_DEPENDANT_AMOUNT, D("0")),
+                (ontario.CAREGIVER_AMOUNT, D("0")),
+                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
+                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
+                (EI_PREMIUMS, D("1077.48")),
+                (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
+                (ontario.DISABILITY_TRANSFERRED_AMOUNT, D("0")),
+            ),
+            D("17180.58"),
+        ),
         # ON428 has no Canada employment amount; its lines 58240 and 58300 read the federal
         # amounts (lines 30800 and 31200), and its lines 58280 and 58305 (31000 and 31217) the
         # self-employment amounts, 0 without self-employment income.
@@ -1031,6 +1049,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
                 (ontario.DISABILITY_TRANSFERRED_AMOUNT, D("0")),
+                (ontario.UNUSED_TUITION_CLAIMED, D("0")),
                 (ontario.MEDICAL_CLAIM, D("0")),
             ),
             D("17180.58"),

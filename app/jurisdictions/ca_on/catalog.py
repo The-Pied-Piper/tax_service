@@ -195,6 +195,49 @@ under 18 years of age, use Worksheet ON428; if not, claim $10,138)": a starting 
 Form T1206 Part 3 line 34 "DTC from line 58440 of your provincial or territorial Form 428" and not
 yet computed."""
 
+UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD = CATALOG.declare(
+    "unused_tuition_amounts_brought_forward", Decimal, non_negative=True
+)
+"""Unused Ontario tuition and education amounts, Schedule ON(S11) line 1 "Enter your unused Ontario
+tuition and education amounts from your 2024 notice of assessment or reassessment": a caller input,
+the figure on that notice, not a calculation on this return."""
+
+UNUSED_TUITION_INCOME_CAP = CATALOG.declare("unused_tuition_income_cap", Decimal, non_negative=True)
+"""Income for the unused tuition limit, Schedule ON(S11) line 2 "Enter the amount from line 26000 of
+your return on line 2 if it is $52,886 or less. If it is more than $52,886, enter the result of the
+following calculation:" "Line 2: Amount from line 8 of your Form ON428" "divided by 5.05% =": the
+taxable income at or below $52,886, else the Ontario tax on taxable income (ON428 line 8) divided by
+5.05%, rounded half-up to the cent."""
+
+CREDIT_AMOUNTS_THROUGH_DISABILITY_TRANSFER = CATALOG.declare(
+    "credit_amounts_through_disability_transfer", Decimal, non_negative=True
+)
+"""Ontario credit amounts through the disability transfer, ON428 line 31 "Line 31: Add lines 28 to
+30. =": the credit amounts before the medical expenses, the amounts on lines 9 to 25 (the basic
+personal, age, spouse, eligible dependant and caregiver amounts, and the base CPP and EI
+contributions) and line 30 "Disability amount transferred from a dependant (use Worksheet ON428)".
+Schedule ON(S11) line 3 "Enter the amount from line 31 of your Form ON428." takes it."""
+
+UNUSED_TUITION_ROOM = CATALOG.declare("unused_tuition_room", Decimal, non_negative=True)
+"""Room for the unused tuition and education amounts, Schedule ON(S11) line 4 "Line 4: Line 2 minus
+line 3 (if negative, enter "0") =": the income for the limit less the credit amounts through the
+disability transfer, not below zero."""
+
+UNUSED_TUITION_CLAIMED = CATALOG.declare("unused_tuition_claimed", Decimal, non_negative=True)
+"""Unused Ontario tuition and education amounts claimed for 2025, Schedule ON(S11) line 5 "Line 5:
+Enter whichever is less: amount from line 1 or line 4. Enter this amount on line 58560 of your Form
+ON428.": the lesser of line 1 and line 4, the amount of ON428 line 33 and line 58560 "Your unused
+tuition and education amounts (attach Schedule ON(S11))", a part of the total of the Ontario credit
+amounts."""
+
+UNUSED_TUITION_CARRIED_FORWARD = CATALOG.declare(
+    "unused_tuition_carried_forward", Decimal, non_negative=True
+)
+"""Unused Ontario tuition and education amounts carried forward, Schedule ON(S11) line 8 "Line 8:
+Line 6 minus line 7 Unused provincial tuition and education amounts available to carry forward to a
+future year =": line 1 (line 6) less the amount claimed (line 7, from line 5), for a future year.
+Lines 6 and 7 are copies of lines 1 and 5."""
+
 NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare(
     "non_refundable_credit_amounts", Decimal, non_negative=True
 )
@@ -205,7 +248,8 @@ partner amount (line 58120), the amount for an eligible dependant (line 58160), 
 caregiver amount (line 58185), the base CPP contributions (line 58240), the base CPP
 contributions on self-employment income (line 58280), the EI premiums (line 58300), the EI
 premiums on self-employment (line 58305), the disability amount transferred from a dependant
-(line 58480) and the allowable medical expenses (line 58769)."""
+(line 58480), the unused tuition and education amounts claimed (line 58560) and the allowable
+medical expenses (line 58769)."""
 
 CREDIT_AMOUNTS_AT_CREDIT_RATE = CATALOG.declare(
     "credit_amounts_at_credit_rate", Decimal, non_negative=True

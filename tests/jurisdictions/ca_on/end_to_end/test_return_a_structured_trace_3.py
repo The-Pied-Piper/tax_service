@@ -280,6 +280,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     gated = {line.output: line for line in trace if isinstance(line, ThresholdGateLine)}
     fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
     assert subtracted == {
+        # Schedule ON(S11) line 8 "Line 6 minus line 7": the unused balance, 0 on the return
+        # with nothing brought forward, less the claim of line 5, 0.
+        ontario.UNUSED_TUITION_CARRIED_FORWARD: SubtractedLine(
+            output=ontario.UNUSED_TUITION_CARRIED_FORWARD,
+            minuend=ontario.UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD,
+            minuend_amount=D("0"),
+            subtrahend=ontario.UNUSED_TUITION_CLAIMED,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Schedule 3 line 14 "Line 12 minus line 13" and line 19 "Line 17 minus line 18": Return A
         # has no deferral and no business investment loss, so line 18 is 0.
         CAPITAL_GAINS_AFTER_DEFERRAL: SubtractedLine(
