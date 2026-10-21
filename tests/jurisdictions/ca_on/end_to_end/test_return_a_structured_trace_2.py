@@ -860,6 +860,20 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_24,
     RC381_PART_4_LINE_25A,
     RC381_PART_4_LINE_26,
+    RC381_PART_4_LINE_27,
+    RC381_PART_4_LINE_32,
+    RC381_PART_4_LINE_35A,
+    RC381_PART_4_LINE_35AA,
+    RC381_PART_4_LINE_35AB,
+    RC381_PART_4_LINE_39,
+    RC381_PART_4_LINE_40,
+    RC381_PART_4_LINE_41,
+    RC381_PART_4_LINE_42,
+    RC381_PART_4_LINE_47,
+    RC381_PART_4_LINE_52,
+    RC381_PART_4_LINE_53,
+    RC381_PART_4_LINE_55,
+    RC381_PART_4_LINE_56,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REAL_ESTATE_GAIN_OR_LOSS,
@@ -1112,6 +1126,40 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     )
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Form RC381 Part 4 line 35A "If line 35 and line 17 are both positive, enter the amount
+        # from line 17. If line 35 is "0" and line 20 is positive, enter the amount from line 20
+        # (show in brackets)." (the two sentences added), line 40 "Add lines 32, 35A, and 39.",
+        # line 42 "Line 27 plus line 41", line 53 "Line 47 plus line 52" and line 56 "Line 53 plus
+        # line 55": every part is 0 for Return A, which has no T4 contributions.
+        RC381_PART_4_LINE_35A: SumLine(
+            RC381_PART_4_LINE_35A,
+            ((RC381_PART_4_LINE_35AA, D("0")), (RC381_PART_4_LINE_35AB, D("0"))),
+            D("0"),
+        ),
+        RC381_PART_4_LINE_40: SumLine(
+            RC381_PART_4_LINE_40,
+            (
+                (RC381_PART_4_LINE_32, D("0")),
+                (RC381_PART_4_LINE_35A, D("0")),
+                (RC381_PART_4_LINE_39, D("0")),
+            ),
+            D("0"),
+        ),
+        RC381_PART_4_LINE_42: SumLine(
+            RC381_PART_4_LINE_42,
+            ((RC381_PART_4_LINE_27, D("0")), (RC381_PART_4_LINE_41, D("0.00"))),
+            D("0.00"),
+        ),
+        RC381_PART_4_LINE_53: SumLine(
+            RC381_PART_4_LINE_53,
+            ((RC381_PART_4_LINE_47, D("0")), (RC381_PART_4_LINE_52, D("0"))),
+            D("0"),
+        ),
+        RC381_PART_4_LINE_56: SumLine(
+            RC381_PART_4_LINE_56,
+            ((RC381_PART_4_LINE_53, D("0")), (RC381_PART_4_LINE_55, D("0"))),
+            D("0"),
+        ),
         # Form RC381 Part 4 line 4 "Add lines 1 to 3." (the pensionable net self-employment
         # earnings, the CPT20 earnings not on a T4 slip and the CPT20 earnings on a T4 slip),
         # line 12 "Line 8 plus line 11 (if negative, show in brackets)" and line 26 "Add lines 24

@@ -1,10 +1,13 @@
-"""The federal catalog: Form RC381 Part 2 and Part 3 lines 1 to 93.
+"""The federal catalog: Form RC381 Part 2, Part 3 lines 1 to 93 and Part 4 lines 1 to 56.
 
 Form RC381 (2025), "Inter-Provincial Calculation for CPP and QPP Contributions and Overpayments":
 Part 2 (the months and the monthly proration table, lines G to J being the QPP side) and the CPP
 side of Part 3 on employment income (lines 1 to 26), then its QPP side and the totals (lines 27
-to 69), then Part 3a and Part 3b (lines 70 to 93) with their three results. Lines C to F of
-Part 2 are Schedule 8 Part 2's lines B to E, the existing artifacts read with the same months.
+to 69), then Part 3a and Part 3b (lines 70 to 93) with their three results, then Part 4 (for
+residents of a province or territory other than Quebec) through line 56: the CPP side (lines 1 to
+27) and the QPP side with the second additional contributions and the totals (lines 28 to 56).
+Lines C to F of Part 2 are Schedule 8 Part 2's lines B to E, the existing artifacts read with the
+same months.
 """
 
 from __future__ import annotations
@@ -456,3 +459,128 @@ RC381_PART_4_LINE_26 = CATALOG.declare("rc381_part_4_line_26", Decimal)
 
 RC381_PART_4_LINE_27 = CATALOG.declare("rc381_part_4_line_27", Decimal)
 """Form RC381 Part 4 line 27 "Amount from line 26 × 16.80672 ="."""
+
+RC381_PART_4_LINE_31_DIFFERENCE = CATALOG.declare("rc381_part_4_line_31_difference", Decimal)
+"""Form RC381 Part 4 line 31 "Line 29 minus line 30 (if negative, show in brackets)", line 29 being
+the amount from line 61 of Part 3 and line 30 the amount from line 12, entered when line 61 of
+Part 3 is positive."""
+
+RC381_PART_4_LINE_31 = CATALOG.declare("rc381_part_4_line_31", Decimal)
+"""Form RC381 Part 4 line 31: "Line 29 minus line 30" when line 61 of Part 3 is positive, and
+"enter "0" at line 31" when it is negative; with line 61 "0" lines 29 to 39 are not completed,
+so it is "0" too. Signed, as line 12 may be more than line 61."""
+
+RC381_PART_4_LINE_32 = CATALOG.declare("rc381_part_4_line_32", Decimal)
+"""Form RC381 Part 4 line 32 "Line 28 minus line 31", line 28 being the total actual base and first
+additional QPP contributions from line 39 of Part 3. The form prints no floor."""
+
+RC381_PART_4_LINE_33 = CATALOG.declare("rc381_part_4_line_33", Decimal, non_negative=True)
+"""Form RC381 Part 4 line 33 "Enter the amount from line 61 of Part 3 as a positive amount." (above
+zero only when line 61 is negative). A non-negative amount."""
+
+RC381_PART_4_LINE_34 = CATALOG.declare("rc381_part_4_line_34", Decimal, non_negative=True)
+"""Form RC381 Part 4 line 34 "If line 17A is positive, enter whichever is less: amount from line
+17A or line 33. If not, enter "0"." A non-negative amount."""
+
+RC381_PART_4_LINE_35 = CATALOG.declare("rc381_part_4_line_35", Decimal, non_negative=True)
+"""Form RC381 Part 4 line 35 "Line 33 minus line 34". A non-negative amount, as line 34 is never
+more than line 33."""
+
+RC381_PART_4_LINE_35AA_FROM_LINE_17 = CATALOG.declare(
+    "rc381_part_4_line_35aa_from_line_17", Decimal, non_negative=True
+)
+"""Form RC381 Part 4 line 35A "If line 35 and line 17 are both positive, enter the amount from line
+17.", before line 35 decides whether line 35A takes it: the amount from line 17 when it is above
+zero, else "0". A non-negative amount."""
+
+RC381_PART_4_LINE_35AA = CATALOG.declare("rc381_part_4_line_35aa", Decimal, non_negative=True)
+"""Form RC381 Part 4 line 35A "If line 35 and line 17 are both positive, enter the amount from line
+17.": the amount from line 17 when line 35 and line 17 are both above zero, else "0". A
+non-negative amount."""
+
+RC381_PART_4_LINE_35AB_FROM_LINE_20 = CATALOG.declare(
+    "rc381_part_4_line_35ab_from_line_20", Decimal
+)
+"""Form RC381 Part 4 line 35A "If line 35 is "0" and line 20 is positive, enter the amount from
+line 20 (show in brackets).", before line 35 decides whether line 35A takes it: the negative of
+line 20 when it is above zero, else "0"."""
+
+RC381_PART_4_LINE_35AB_WHEN_LINE_35_ZERO = CATALOG.declare(
+    "rc381_part_4_line_35ab_when_line_35_zero", Decimal
+)
+"""Form RC381 Part 4 line 35A "If line 35 is "0" and line 20 is positive, enter the amount from
+line 20 (show in brackets).": that amount when line 35 is "0", before the block "If line 61 of
+Part 3 is ... negative" decides whether line 35A takes it."""
+
+RC381_PART_4_LINE_35AB = CATALOG.declare("rc381_part_4_line_35ab", Decimal)
+"""Form RC381 Part 4 line 35A "If line 35 is "0" and line 20 is positive, enter the amount from
+line 20 (show in brackets).", which the form completes only when line 61 of Part 3 is negative
+(lines 33 to 39 are completed then); otherwise it is "0"."""
+
+RC381_PART_4_LINE_35A = CATALOG.declare("rc381_part_4_line_35a", Decimal)
+"""Form RC381 Part 4 line 35A, the two sentences printed on it added: line 17 when lines 35 and 17
+are both positive, or line 20 in brackets when line 35 is "0" and line 20 is positive, else "0".
+Signed."""
+
+RC381_PART_4_LINE_36 = CATALOG.declare("rc381_part_4_line_36", Decimal, non_negative=True)
+"""Form RC381 Part 4 line 36 "Enter the amount from line 68 of Part 3 if positive. If not, enter
+"0"." A non-negative amount."""
+
+RC381_PART_4_LINE_38 = CATALOG.declare("rc381_part_4_line_38", Decimal)
+"""Form RC381 Part 4 line 38 "Line 36 minus line 37", line 37 being the amount from line 24. The
+form prints no floor."""
+
+RC381_PART_4_LINE_39 = CATALOG.declare("rc381_part_4_line_39", Decimal)
+"""Form RC381 Part 4 line 39 "Enter whichever is less: amount from line 35 or line 38." The form
+prints no floor."""
+
+RC381_PART_4_LINE_40 = CATALOG.declare("rc381_part_4_line_40", Decimal)
+"""Form RC381 Part 4 line 40 "Add lines 32, 35A, and 39." (with line 61 of Part 3 at "0", line 28
+entered on line 40)."""
+
+RC381_PART_4_LINE_41 = CATALOG.declare("rc381_part_4_line_41", Decimal)
+"""Form RC381 Part 4 line 41 "Amount from line 40 × 15.625 ="."""
+
+RC381_PART_4_LINE_42 = CATALOG.declare("rc381_part_4_line_42", Decimal)
+"""Form RC381 Part 4 line 42 "Line 27 plus line 41"."""
+
+RC381_PART_4_LINE_46_DIFFERENCE = CATALOG.declare("rc381_part_4_line_46_difference", Decimal)
+"""Form RC381 Part 4 line 46 "Line 44 minus line 45 (if negative, show in brackets)", line 44 being
+the amount from line 62 of Part 3 and line 45 the amount from line 65 of Part 3, before the gate
+"If line 68 of Part 3 is positive, complete lines 44 to 46" decides whether line 46 takes it."""
+
+RC381_PART_4_LINE_46 = CATALOG.declare("rc381_part_4_line_46", Decimal)
+"""Form RC381 Part 4 line 46 "Line 44 minus line 45 (if negative, show in brackets)" when line 68
+of Part 3 is positive, else "enter "0" on line 46"."""
+
+RC381_PART_4_LINE_47 = CATALOG.declare("rc381_part_4_line_47", Decimal)
+"""Form RC381 Part 4 line 47 "Line 43 minus line 46 (if negative, show in brackets)", line 43 being
+the total actual second additional CPP contributions from line 25 of Part 3."""
+
+RC381_PART_4_LINE_51_DIFFERENCE = CATALOG.declare("rc381_part_4_line_51_difference", Decimal)
+"""Form RC381 Part 4 line 51 "Line 49 minus line 50 (if negative, show in brackets)", line 49 being
+the amount from line 68 of Part 3 and line 50 the amount from line 46, before the gate "If line
+68 of Part 3 is positive, complete lines 49 to 51" decides whether line 51 takes it."""
+
+RC381_PART_4_LINE_51 = CATALOG.declare("rc381_part_4_line_51", Decimal)
+"""Form RC381 Part 4 line 51 "Line 49 minus line 50 (if negative, show in brackets)" when line 68
+of Part 3 is positive, else "enter "0" on line 51"."""
+
+RC381_PART_4_LINE_52 = CATALOG.declare("rc381_part_4_line_52", Decimal)
+"""Form RC381 Part 4 line 52 "Line 48 minus line 51", line 48 being the total actual second
+additional QPP contributions from line 45 of Part 3. The form prints no floor."""
+
+RC381_PART_4_LINE_53 = CATALOG.declare("rc381_part_4_line_53", Decimal)
+"""Form RC381 Part 4 line 53 "Line 47 plus line 52"."""
+
+RC381_PART_4_LINE_54 = CATALOG.declare("rc381_part_4_line_54", Decimal, non_negative=True)
+"""Form RC381 Part 4 line 54 "Enter the amount from line 68 of Part 3 as a positive amount." (above
+zero only when line 68 is negative). A non-negative amount."""
+
+RC381_PART_4_LINE_55 = CATALOG.declare("rc381_part_4_line_55", Decimal, non_negative=True)
+"""Form RC381 Part 4 line 55 "If line 61 of Part 3 is positive, enter whichever is less: amount
+from line 61 of Part 3 or line 54.", when line 61 is positive and line 68 is negative, else "0".
+A non-negative amount."""
+
+RC381_PART_4_LINE_56 = CATALOG.declare("rc381_part_4_line_56", Decimal)
+"""Form RC381 Part 4 line 56 "Line 53 plus line 55"."""
