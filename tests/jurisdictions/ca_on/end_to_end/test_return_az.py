@@ -15,6 +15,7 @@ from app.jurisdictions.ca.catalog import (
     DISABILITY_SELF_WORKSHEET_AMOUNT,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
 )
+from app.jurisdictions.ca_on import catalog as ontario
 from tests.jurisdictions.ca_on.end_to_end.support import D, step_3
 
 
@@ -103,3 +104,47 @@ def test_return_az_supplement_is_kept_at_zero_when_expenses_exceed_the_maximum()
     assert worksheet.get(DISABILITY_SELF_CARE_OVER_THRESHOLD).value == D("16536.00")
     assert worksheet.get(DISABILITY_SELF_SUPPLEMENT).value == D("0")
     assert worksheet.get(DISABILITY_AMOUNT_FOR_SELF).value == D("10138.00")
+
+
+def test_return_az_ontario_under_18_qualifying_claims_line_58440_of_14823() -> None:
+    # Worksheet ON428 line 58440: the expenses 5000.00 less the threshold 3518.00 is 1482.00
+    # (line 5); the maximum amount 6007.00 less 1482.00 is 4525.00 (line 6); the base 10298.00 plus
+    # 4525.00 is 14823.00 (line 7), below the maximum 16305.00.
+    worksheet = step_3(
+        eligible_for_disability_amount=1,
+        under_18_on_december_31=1,
+        disability_self_care_expenses="5000.00",
+    )
+
+    assert worksheet.get(ontario.DISABILITY_SELF_BASE_AMOUNT).value == D("10298.00")
+    assert worksheet.get(ontario.DISABILITY_SELF_SUPPLEMENT_MAXIMUM).value == D("6007.00")
+    assert worksheet.get(ontario.DISABILITY_SELF_CARE_THRESHOLD).value == D("3518.00")
+    assert worksheet.get(ontario.DISABILITY_SELF_CARE_OVER_THRESHOLD).value == D("1482.00")
+    assert worksheet.get(ontario.DISABILITY_SELF_SUPPLEMENT).value == D("4525.00")
+    assert worksheet.get(ontario.DISABILITY_SELF_WORKSHEET_AMOUNT).value == D("14823.00")
+    assert worksheet.get(ontario.DISABILITY_AMOUNT_FOR_SELF).value == D("14823.00")
+
+
+def test_return_az_ontario_18_or_older_who_qualifies_claims_the_10298_amount() -> None:
+    # ON428 line 29 "claim $10,298" for a filer 18 or older on December 31, 2025.
+    worksheet = step_3(
+        eligible_for_disability_amount=1,
+        under_18_on_december_31=0,
+        disability_self_care_expenses="5000.00",
+    )
+
+    assert worksheet.get(ontario.DISABILITY_AMOUNT_FOR_SELF).value == D("10298.00")
+
+
+def test_return_az_ontario_credit_amounts_include_the_disability_amount() -> None:
+    # ON428 line 31 and line 44: the Ontario basic personal amount 12747.00 plus the disability
+    # amount 14823.00 is 27570.00, and nothing else is claimed.
+    worksheet = step_3(
+        eligible_for_disability_amount=1,
+        under_18_on_december_31=1,
+        disability_self_care_expenses="5000.00",
+    )
+
+    assert worksheet.get(ontario.BASIC_PERSONAL_AMOUNT).value == D("12747.00")
+    assert worksheet.get(ontario.CREDIT_AMOUNTS_THROUGH_DISABILITY_TRANSFER).value == D("27570.00")
+    assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("27570.00")

@@ -680,7 +680,7 @@ def test_an_ontario_disability_credit_above_the_tax_leaves_line_88_as_line_52() 
     # it, 520.049, 520.05, so line 39 is 236.10 - 520.05 = -283.95, negative and not floored. Line
     # 45 is 2.9863% x 1150 = 34.34245, 34.34 (line 42 is 0), so line 47 is -283.95 - 34.34 =
     # -318.29, which line 50 carries.
-    worksheet = return_b_with_split_income_dividends(ontario_disability_amount_for_self="10298")
+    worksheet = return_b_with_split_income_dividends()
 
     assert worksheet.get(ontario.ONTARIO_TAX_ON_SPLIT_INCOME).value == D("236.10")
     assert worksheet.get(ontario.SPLIT_INCOME_LINE_36).value == D("10298")

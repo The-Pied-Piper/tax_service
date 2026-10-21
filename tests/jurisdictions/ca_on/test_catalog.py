@@ -76,7 +76,14 @@ from app.jurisdictions.ca_on.catalog import (
     DEPENDANTS,
     DEPENDENT_CHILDREN,
     DISABILITY_AMOUNT_FOR_SELF,
+    DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
     DISABILITY_DEPENDANTS,
+    DISABILITY_SELF_BASE_AMOUNT,
+    DISABILITY_SELF_CARE_OVER_THRESHOLD,
+    DISABILITY_SELF_CARE_THRESHOLD,
+    DISABILITY_SELF_SUPPLEMENT,
+    DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
+    DISABILITY_SELF_WORKSHEET_AMOUNT,
     DISABILITY_TRANSFERRED_AMOUNT,
     DIVIDEND_CREDIT_FROM_LINE_57,
     DIVIDEND_TAX_CREDIT,
@@ -344,6 +351,13 @@ REGISTERED = frozenset(
         "ca-on/community_food_program_donations",
         "ca-on/community_food_program_credit",
         "ca-on/ontario_tax_after_food_credit",
+        "ca-on/disability_self_base_amount",
+        "ca-on/disability_self_supplement_maximum",
+        "ca-on/disability_self_care_threshold",
+        "ca-on/disability_self_care_over_threshold",
+        "ca-on/disability_self_supplement",
+        "ca-on/disability_self_worksheet_amount",
+        "ca-on/disability_amount_for_self_if_eligible",
         "ca-on/disability_amount_for_self",
         "ca-on/health_premium_income",
         "ca-on/ontario_surtax_base",
@@ -705,6 +719,24 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/community_food_program_credit") is COMMUNITY_FOOD_PROGRAM_CREDIT
     assert registry.get("ca-on/ontario_tax_after_food_credit") is ONTARIO_TAX_AFTER_FOOD_CREDIT
     assert registry.get("ca-on/disability_amount_for_self") is DISABILITY_AMOUNT_FOR_SELF
+    assert registry.get("ca-on/disability_self_base_amount") is DISABILITY_SELF_BASE_AMOUNT
+    assert (
+        registry.get("ca-on/disability_self_supplement_maximum")
+        is DISABILITY_SELF_SUPPLEMENT_MAXIMUM
+    )
+    assert registry.get("ca-on/disability_self_care_threshold") is DISABILITY_SELF_CARE_THRESHOLD
+    assert (
+        registry.get("ca-on/disability_self_care_over_threshold")
+        is DISABILITY_SELF_CARE_OVER_THRESHOLD
+    )
+    assert registry.get("ca-on/disability_self_supplement") is DISABILITY_SELF_SUPPLEMENT
+    assert (
+        registry.get("ca-on/disability_self_worksheet_amount") is DISABILITY_SELF_WORKSHEET_AMOUNT
+    )
+    assert (
+        registry.get("ca-on/disability_amount_for_self_if_eligible")
+        is DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE
+    )
     assert registry.get("ca-on/health_premium_income") is HEALTH_PREMIUM_INCOME
     assert registry.get("ca-on/ontario_surtax_base") is ONTARIO_SURTAX_BASE
     assert registry.get("ca-on/ontario_tax_on_split_income") is ONTARIO_TAX_ON_SPLIT_INCOME
@@ -1294,13 +1326,20 @@ def test_the_other_t1206_part_3_kinds_are_non_negative_amounts(registry: Artifac
         ONTARIO_SURTAX_BASE,
         HEALTH_PREMIUM_INCOME,
         DISABILITY_AMOUNT_FOR_SELF,
+        DISABILITY_SELF_BASE_AMOUNT,
+        DISABILITY_SELF_SUPPLEMENT_MAXIMUM,
+        DISABILITY_SELF_CARE_THRESHOLD,
+        DISABILITY_SELF_CARE_OVER_THRESHOLD,
+        DISABILITY_SELF_SUPPLEMENT,
+        DISABILITY_SELF_WORKSHEET_AMOUNT,
+        DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,
     ):
         assert kind.value_type is Decimal
         assert kind.non_negative is True, kind.identifier
         assert registry.kind(kind.identifier) is kind
 
 
-def test_the_disability_amount_for_self_is_the_callers_on428_line_58440() -> None:
+def test_the_disability_amount_for_self_is_on428_line_58440() -> None:
     assert DISABILITY_AMOUNT_FOR_SELF.identifier == "ca-on/disability_amount_for_self"
 
 
