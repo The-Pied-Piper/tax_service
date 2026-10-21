@@ -20,17 +20,50 @@ from app.jurisdictions.ca.catalog import (
     AGE_AMOUNT,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CLASS_43_1_INCOME,
+    AMT_COMMISSION_EMPLOYMENT_EXPENSES,
+    AMT_DEDUCTIONS_TOTAL,
+    AMT_DEFERRED_PROFIT_SHARING_PLAN_DEDUCTION,
+    AMT_EXCESS_EPSP_AMOUNTS,
     AMT_FILM_PROPERTY_ADJUSTMENT,
+    AMT_FINANCING_EXPENSES,
+    AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
     AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
+    AMT_INVESTMENT_COUNSEL_FEES,
+    AMT_LEGAL_AND_ACCOUNTING_EXPENSES,
+    AMT_LIFE_INSURANCE_PREMIUMS_AS_COLLATERAL,
     AMT_LIMITED_PARTNER_CARRYING_CHARGES,
+    AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
+    AMT_LIMITED_PARTNERSHIP_DIFFERENCE_ELECTION,
+    AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION,
+    AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
+    AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
+    AMT_MOVING_EXPENSES_DEDUCTION,
+    AMT_NET_CAPITAL_LOSSES_DIFFERENCE,
+    AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
+    AMT_NON_CAPITAL_LOSSES_DIFFERENCE,
+    AMT_NON_DEDUCTIBLE_INTEREST,
+    AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
+    AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES,
+    AMT_OFFICE_EXPENSES_ADJUSTMENT,
+    AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
+    AMT_PPIP_PREMIUMS_DEDUCTION,
+    AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
+    AMT_REPAYMENT_OF_SALARY_AND_WAGES,
+    AMT_REPAYMENT_OF_WAGE_LOSS_REPLACEMENT,
     AMT_RESOURCE_FOREIGN_PROPERTY_INCOME,
     AMT_RESOURCE_INCOME_TOTAL,
     AMT_RESOURCE_PRODUCTION_INCOME,
+    AMT_SECURITY_OPTIONS_D1_TOTAL,
+    AMT_SECURITY_OPTIONS_D_TOTAL,
+    AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
+    AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
+    AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
     AMT_TAX_SHELTER_ADJUSTMENTS,
     AMT_TAX_SHELTER_DEDUCTIBLE_AMOUNTS,
     AMT_TAX_SHELTER_LOSSES,
@@ -763,6 +796,109 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS, D("0")),
             ),
             D("0"),
+        ),
+        # Form T691 Part 1 line 30 "Line 28 plus line 29": Return A has no security options amounts.
+        AMT_SECURITY_OPTIONS_D_TOTAL: SumLine(
+            AMT_SECURITY_OPTIONS_D_TOTAL,
+            (
+                (AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91, D("0")),
+                (AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T691 Part 1 line 38 "Add lines 35 to 37.": Return A has none of these amounts.
+        AMT_SECURITY_OPTIONS_D1_TOTAL: SumLine(
+            AMT_SECURITY_OPTIONS_D1_TOTAL,
+            (
+                (AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92, D("0")),
+                (AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION, D("0")),
+                (AMT_DEFERRED_PROFIT_SHARING_PLAN_DEDUCTION, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T691 Part 1 line 43 "Line 39 or 40, as applicable, plus line 41 and 42": Return A
+        # has no losses of other years, so each line is 0.
+        AMT_OTHER_YEARS_LOSSES_TOTAL: SumLine(
+            AMT_OTHER_YEARS_LOSSES_TOTAL,
+            (
+                (AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION, D("0")),
+                (AMT_LIMITED_PARTNERSHIP_DIFFERENCE_ELECTION, D("0")),
+                (AMT_NON_CAPITAL_LOSSES_DIFFERENCE, D("0")),
+                (AMT_NET_CAPITAL_LOSSES_DIFFERENCE, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T691 Part 1 line 46 "Amount from line 39 or 40, as applicable": 0 on Return A.
+        AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED: SumLine(
+            AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
+            (
+                (AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION, D("0")),
+                (AMT_LIMITED_PARTNERSHIP_DIFFERENCE_ELECTION, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T691 Part 1 line 53 "Add lines 47, 50, 51, and 52.": line 51 is the union dues of
+        # line 21200 (2000.00), and lines 47, 50 and 52 are 0 on Return A.
+        AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL: SumLine(
+            AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
+            (
+                (AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT, D("0")),
+                (AMT_NON_CAPITAL_LOSSES_ADJUSTMENT, D("0")),
+                (UNION_DUES, D("2000")),
+                (CHILD_CARE_EXPENSES, D("0")),
+            ),
+            D("2000"),
+        ),
+        # Form T691 Part 1 line 63 "Add lines 54 to 62.": line 53 (2000.00) and lines 55 to 62, of
+        # which only the enhanced CPP contributions of line 22215 (1074.00) are not 0 on Return A.
+        AMT_DEDUCTIONS_TOTAL: SumLine(
+            AMT_DEDUCTIONS_TOTAL,
+            (
+                (AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL, D("2000")),
+                (DISABILITY_SUPPORTS_DEDUCTION, D("0")),
+                (AMT_MOVING_EXPENSES_DEDUCTION, D("0")),
+                (CPP_DEDUCTION_ON_SELF_EMPLOYMENT, D("0")),
+                (CPP_ENHANCED_CONTRIBUTIONS, D("1074.00")),
+                (AMT_PPIP_PREMIUMS_DEDUCTION, D("0")),
+                (CLERGY_RESIDENCE_DEDUCTION, D("0")),
+                (CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION, D("0")),
+                (NORTHERN_RESIDENTS_DEDUCTIONS, D("0")),
+            ),
+            D("3074.00"),
+        ),
+        # Form T691 Part 1 line 68 "Add lines 64 to 67 (11)": Return A has none of these expenses.
+        AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES: SumLine(
+            AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES,
+            (
+                (AMT_NON_DEDUCTIBLE_INTEREST, D("0")),
+                (AMT_LIFE_INSURANCE_PREMIUMS_AS_COLLATERAL, D("0")),
+                (AMT_FINANCING_EXPENSES, D("0")),
+                (AMT_INVESTMENT_COUNSEL_FEES, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T691 Part 1 line 76 "Add lines 70 to 75.": Return A has none of these amounts.
+        AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES: SumLine(
+            AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
+            (
+                (AMT_COMMISSION_EMPLOYMENT_EXPENSES, D("0")),
+                (AMT_LEGAL_AND_ACCOUNTING_EXPENSES, D("0")),
+                (AMT_REPAYMENT_OF_SALARY_AND_WAGES, D("0")),
+                (AMT_EXCESS_EPSP_AMOUNTS, D("0")),
+                (AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS, D("0")),
+                (AMT_REPAYMENT_OF_WAGE_LOSS_REPLACEMENT, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T691 Part 1 line 78 "Add lines 63, 68, and 77.": 3074.00 plus 0 plus 0.
+        AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL: SumLine(
+            AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+            (
+                (AMT_DEDUCTIONS_TOTAL, D("3074.00")),
+                (AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES, D("0")),
+                (AMT_OFFICE_EXPENSES_ADJUSTMENT, D("0")),
+            ),
+            D("3074.00"),
         ),
         DISABILITY_SELF_WORKSHEET_AMOUNT: SumLine(
             DISABILITY_SELF_WORKSHEET_AMOUNT,

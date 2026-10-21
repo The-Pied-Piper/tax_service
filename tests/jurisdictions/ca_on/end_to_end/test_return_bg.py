@@ -4,16 +4,31 @@ from __future__ import annotations
 
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
+    AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+    AMT_APPLICABLE_RATE_AMOUNT,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
+    AMT_DEDUCTIONS_TOTAL,
     AMT_FILM_PROPERTY_ADJUSTMENT,
+    AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
+    AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
+    AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
+    AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
+    AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
+    AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES,
+    AMT_OFFICE_EXPENSES_ADJUSTMENT,
+    AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RESOURCE_INCOME_TOTAL,
     AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
+    AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
+    AMT_SECURITY_OPTIONS_D1_TOTAL,
+    AMT_SECURITY_OPTIONS_D_TOTAL,
+    AMT_SECURITY_OPTIONS_NET,
     AMT_TAX_SHELTER_ADJUSTMENTS,
     CAPITAL_GAIN,
     TAXABLE_CAPITAL_GAINS,
@@ -41,6 +56,20 @@ def return_bg(
     graduated_rate_estate: str = "100.00",
     gifts_total: str = "3000.00",
     gifts_line_68231: str = "1000.00",
+    security_t4_39_and_91: str = "1000.00",
+    security_t1212: str = "400.00",
+    security_gifts: str = "500.00",
+    security_t4_41_and_92: str = "300.00",
+    prospector: str = "100.00",
+    deferred_profit_sharing: str = "50.00",
+    limited_partnership_no_election: str = "600.00",
+    non_capital_difference: str = "100.00",
+    net_capital_difference: str = "50.00",
+    moving_expenses: str = "200.00",
+    non_deductible_interest: str = "300.00",
+    life_insurance_premiums: str = "100.00",
+    investment_counsel_fees: str = "50.00",
+    commission_employment: str = "150.00",
 ) -> Worksheet:
     """Return BG's inputs (`returns/2025_return_bg.yaml`), with the Part 1 amounts given."""
     return compute(
@@ -67,6 +96,20 @@ def return_bg(
         amt_graduated_rate_estate_capital_gains=graduated_rate_estate,
         amt_publicly_listed_gifts_total=gifts_total,
         amt_publicly_listed_gifts_t1170_line_68231=gifts_line_68231,
+        amt_t4_security_options_boxes_39_and_91=security_t4_39_and_91,
+        amt_t1212_line_2_deferred_security_options=security_t1212,
+        amt_security_option_publicly_listed_gifts=security_gifts,
+        amt_t4_security_options_boxes_41_and_92=security_t4_41_and_92,
+        amt_prospector_or_grubstaker_deduction=prospector,
+        amt_deferred_profit_sharing_plan_deduction=deferred_profit_sharing,
+        amt_limited_partnership_difference_no_election=limited_partnership_no_election,
+        amt_non_capital_losses_difference=non_capital_difference,
+        amt_net_capital_losses_difference=net_capital_difference,
+        amt_moving_expenses_deduction=moving_expenses,
+        amt_non_deductible_interest=non_deductible_interest,
+        amt_life_insurance_premiums_as_collateral=life_insurance_premiums,
+        amt_investment_counsel_fees=investment_counsel_fees,
+        amt_commission_employment_expenses=commission_employment,
     )
 
 
@@ -228,3 +271,125 @@ def test_return_bg_line_26_is_negative_when_line_25_is_more_than_line_24() -> No
     worksheet = return_bg(gifts_total="500.00", gifts_line_68231="1000.00")
 
     assert worksheet.get(AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT).value == D("-150.00")
+
+
+def test_return_bg_line_30_adds_lines_28_and_29() -> None:
+    # The T4 slips' boxes 39 and 91 of 1000.00 plus the Form T1212 amount of 400.00 are 1400.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_SECURITY_OPTIONS_D_TOTAL).value == D("1400.00")
+
+
+def test_return_bg_line_31_is_40_percent_of_the_security_option_gifts() -> None:
+    # 40% of the gifts of 500.00 under a security option plan is 200.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_SECURITY_OPTION_GIFTS_DEDUCTION).value == D("200.00")
+
+
+def test_return_bg_line_32_is_line_30_less_line_31() -> None:
+    # Line 30 1400.00 minus line 31 200.00 is 1200.00, not below zero.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_SECURITY_OPTIONS_NET).value == D("1200.00")
+
+
+def test_return_bg_line_32_is_zero_when_the_gifts_are_more_than_line_30() -> None:
+    # 40% of the gifts of 4000.00 is 1600.00; line 30 of 1400.00 less 1600.00 is -200.00: "0".
+    worksheet = return_bg(security_gifts="4000.00")
+
+    assert worksheet.get(AMT_SECURITY_OPTIONS_NET).value == D("0")
+
+
+def test_return_bg_line_38_adds_lines_35_to_37() -> None:
+    # Lines 35, 36 and 37 of 300.00, 100.00 and 50.00 are 450.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_SECURITY_OPTIONS_D1_TOTAL).value == D("450.00")
+
+
+def test_return_bg_line_43_adds_line_39_or_40_and_lines_41_and_42() -> None:
+    # Line 39 600.00 (line 40 not applicable), plus line 41 100.00 and line 42 50.00, is 750.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_OTHER_YEARS_LOSSES_TOTAL).value == D("750.00")
+
+
+def test_return_bg_line_46_is_the_line_39_amount_as_applicable() -> None:
+    # Line 39 is 600.00 and line 40 is not applicable, so line 46 is 600.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED).value == D("600.00")
+
+
+def test_return_bg_line_47_is_line_45_less_line_46_and_shows_a_loss_in_brackets() -> None:
+    # Line 45, the limited partnership losses of other years, is 0 as none are claimed; 0 minus
+    # line 46 of 600.00 is -600.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT).value == D("-600.00")
+
+
+def test_return_bg_line_50_is_line_48_less_line_49_and_shows_a_loss_in_brackets() -> None:
+    # Line 48 is 0 as none are claimed; 0 minus line 49 of 100.00 is -100.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_NON_CAPITAL_LOSSES_ADJUSTMENT).value == D("-100.00")
+
+
+def test_return_bg_line_53_adds_lines_47_50_51_and_52() -> None:
+    # Lines 47 and 50 of -600.00 and -100.00, and lines 51 and 52 of 0, are -700.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL).value == D("-700.00")
+
+
+def test_return_bg_line_63_adds_line_53_and_lines_55_to_62() -> None:
+    # Line 53 of -700.00, the moving expenses of 200.00 (line 56) and the enhanced CPP
+    # contributions of 565.00 (line 58) are 65.00; the other lines are 0.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_DEDUCTIONS_TOTAL).value == D("65.00")
+
+
+def test_return_bg_line_68_adds_lines_64_to_67() -> None:
+    # Lines 64 to 67 of 300.00, 100.00, 0 and 50.00 are 450.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES).value == D("450.00")
+
+
+def test_return_bg_line_76_adds_lines_70_to_75() -> None:
+    # Line 70 of 150.00, and lines 71 to 75 not applicable, are 150.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES).value == D("150.00")
+
+
+def test_return_bg_line_77_is_line_69_less_line_76_and_shows_a_loss_in_brackets() -> None:
+    # Line 69 is 0 as none is claimed; 0 minus line 76 of 150.00 is -150.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_OFFICE_EXPENSES_ADJUSTMENT).value == D("-150.00")
+
+
+def test_return_bg_line_78_adds_lines_63_68_and_77() -> None:
+    # Lines 63, 68 and 77 of 65.00, 450.00 and -150.00 are 365.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL).value == D("365.00")
+
+
+def test_return_bg_line_80_is_50_percent_of_line_78() -> None:
+    # 50% of line 78 of 365.00 is 182.50.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_APPLICABLE_RATE_AMOUNT).value == D("182.50")
+
+
+def test_return_bg_line_80_is_negative_when_line_78_is_negative() -> None:
+    # Line 76 of 1000.00 makes line 77 -1000.00, so line 78 is 65.00 plus 450.00 less 1000.00,
+    # -485.00, and 50% of it is -242.50 (not floored).
+    worksheet = return_bg(commission_employment="1000.00")
+
+    assert worksheet.get(AMT_APPLICABLE_RATE_AMOUNT).value == D("-242.50")

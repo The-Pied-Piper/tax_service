@@ -446,6 +446,34 @@ inputs:
   - ca/amt_graduated_rate_estate_capital_gains
   - ca/amt_publicly_listed_gifts_total
   - ca/amt_publicly_listed_gifts_t1170_line_68231
+  # Form T691 Part 1 lines 28, 29 and 31, 35 to 37, 39 to 42, 56, 59, 64 to 67 and 70 to 75: the
+  # caller's figures, entered as the form takes them (the T4 slips' security options boxes, the
+  # T1212 amount, the gifts under a security option plan, the prospector and deferred profit-sharing
+  # deductions, the limited partnership and non-capital and net capital losses differences, the
+  # moving expenses and PPIP premiums deductions, the non-deductible property expenses and the
+  # employment expenses).
+  - ca/amt_t4_security_options_boxes_39_and_91
+  - ca/amt_t1212_line_2_deferred_security_options
+  - ca/amt_security_option_publicly_listed_gifts
+  - ca/amt_t4_security_options_boxes_41_and_92
+  - ca/amt_prospector_or_grubstaker_deduction
+  - ca/amt_deferred_profit_sharing_plan_deduction
+  - ca/amt_limited_partnership_difference_no_election
+  - ca/amt_limited_partnership_difference_election
+  - ca/amt_non_capital_losses_difference
+  - ca/amt_net_capital_losses_difference
+  - ca/amt_moving_expenses_deduction
+  - ca/amt_ppip_premiums_deduction
+  - ca/amt_non_deductible_interest
+  - ca/amt_life_insurance_premiums_as_collateral
+  - ca/amt_financing_expenses
+  - ca/amt_investment_counsel_fees
+  - ca/amt_commission_employment_expenses
+  - ca/amt_legal_and_accounting_expenses
+  - ca/amt_repayment_of_salary_and_wages
+  - ca/amt_excess_epsp_amounts
+  - ca/amt_forfeited_salary_deferral_amounts
+  - ca/amt_repayment_of_wage_loss_replacement
   - ca/political_contributions
   - ca/disability_supports_deduction
   - ca/other_employment_expenses
