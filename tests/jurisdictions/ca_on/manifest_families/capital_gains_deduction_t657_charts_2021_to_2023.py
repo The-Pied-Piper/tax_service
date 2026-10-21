@@ -3,7 +3,8 @@
 
 The steps are in the manifest part `06d_capital_gains_deduction_t657_charts_2021_to_2023.yaml`.
 The charts are computed in the form's year order: each chart's amount B is the last total carried
-in from the chart before it (Chart 2021 reads the input `ca/t657_chart_2021_amount_b`; Chart 2022
+in from the chart before it (Chart 2021 reads Chart 2020's total carried,
+`ca/chart_2020_total_carried`; Chart 2022
 reads Chart 2021's total; Chart 2023 reads Chart 2022's). Each chart's total carried is Part 2's
 amount L when Part 2 is completed, else Part 1's amount M. Chart 2024 Period 1 reads Chart 2023's
 total, and that family is `capital_gains_deduction_t657_charts`.
@@ -23,6 +24,7 @@ from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditi
 from app.jurisdictions.ca.catalog import (
     ANNUAL_GAINS_LIMIT_2025,
     CHART_2_LINE_19,
+    CHART_2020_TOTAL_CARRIED,
     CHART_2021_AMOUNT_D,
     CHART_2021_PART_1_AMOUNT_A,
     CHART_2021_PART_1_AMOUNT_C,
@@ -93,7 +95,6 @@ from app.jurisdictions.ca.catalog import (
     CHART_2023_PART_2_APPLIES,
     CHART_2023_TOTAL_CARRIED,
     CUMULATIVE_GAINS_LIMIT_2025,
-    T657_CHART_2021_AMOUNT_B,
     T657_CHART_2021_AMOUNT_D_INSTEAD,
     T657_CHART_2021_AMOUNT_F,
     T657_CHART_2021_AMOUNT_G,
@@ -119,7 +120,6 @@ from app.jurisdictions.ca.catalog import (
 
 INPUTS = frozenset(
     {
-        "ca/t657_chart_2021_amount_b",
         "ca/t657_chart_2021_uses_d_instead",
         "ca/t657_chart_2021_amount_d_instead",
         "ca/t657_chart_2021_amount_f",
@@ -178,7 +178,7 @@ STEPS = {
         params={},
         consumes={
             "amount": "ca/chart_2021_part_1_amount_a",
-            "less": "ca/t657_chart_2021_amount_b",
+            "less": "ca/chart_2020_total_carried",
         },
         produces={"output": "ca/chart_2021_part_1_amount_c"},
     ),
@@ -273,7 +273,7 @@ STEPS = {
         consumes={
             "parts": (
                 "ca/chart_2021_part_1_amount_k",
-                "ca/t657_chart_2021_amount_b",
+                "ca/chart_2020_total_carried",
             ),
         },
         produces={"output": "ca/chart_2021_part_1_amount_m"},
@@ -959,7 +959,7 @@ WIRING = {
     ),
     (
         SubtractNotBelowZero,
-        frozenset({CHART_2021_PART_1_AMOUNT_A, T657_CHART_2021_AMOUNT_B}),
+        frozenset({CHART_2021_PART_1_AMOUNT_A, CHART_2020_TOTAL_CARRIED}),
         frozenset({CHART_2021_PART_1_AMOUNT_C}),
     ),
     (
@@ -1001,7 +1001,7 @@ WIRING = {
     ),
     (
         Sum,
-        frozenset({CHART_2021_PART_1_AMOUNT_K, T657_CHART_2021_AMOUNT_B}),
+        frozenset({CHART_2021_PART_1_AMOUNT_K, CHART_2020_TOTAL_CARRIED}),
         frozenset({CHART_2021_PART_1_AMOUNT_M}),
     ),
     (

@@ -73,6 +73,20 @@ outputs:
   # line 19 of Step 2 or amount N above", which nothing reads (Chart 2025 reads Period 2's amount N).
   - ca/chart_2024_period_1_amount_o
   - ca/chart_2024_period_2_amount_o
+  # Form T657 Charts 2016 to 2020 Part 1 amount H (Chart 2016) or amount L (Charts 2017 to 2020) and
+  # Part 2 amount K, "Enter whichever is less: line 21 of Step 1, line 19 of Step 2 or amount G above"
+  # and "... or amount J above", the maximum for line 25400 when no later reserve is reported, which
+  # nothing reads (the total carried forward is what the next chart reads).
+  - ca/chart_2016_part_1_amount_h
+  - ca/chart_2016_part_2_amount_k
+  - ca/chart_2017_part_1_amount_l
+  - ca/chart_2018_part_1_amount_l
+  - ca/chart_2019_part_1_amount_l
+  - ca/chart_2020_part_1_amount_l
+  - ca/chart_2017_part_2_amount_k
+  - ca/chart_2018_part_2_amount_k
+  - ca/chart_2019_part_2_amount_k
+  - ca/chart_2020_part_2_amount_k
   # Form T657 Charts 2021, 2022 and 2023 Part 1 amount N and Part 2 amount M, "Enter whichever is
   # less: line 21 of Step 1, line 19 of Step 2 or amount M above" and "... or amount L above", the
   # maximum for line 25400 when no later reserve is reported, which nothing reads (the total carried

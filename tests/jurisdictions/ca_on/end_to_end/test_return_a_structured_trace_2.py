@@ -197,6 +197,30 @@ from app.jurisdictions.ca.catalog import (
     CHART_2_LINE_11,
     CHART_2_LINE_13,
     CHART_2_LINE_15,
+    CHART_2016_PART_1_AMOUNT_G,
+    CHART_2016_PART_2_AMOUNT_G,
+    CHART_2016_PART_2_AMOUNT_I,
+    CHART_2016_TOTAL_CARRIED,
+    CHART_2017_PART_1_AMOUNT_I,
+    CHART_2017_PART_1_AMOUNT_K,
+    CHART_2017_PART_2_AMOUNT_G,
+    CHART_2017_PART_2_AMOUNT_I,
+    CHART_2017_TOTAL_CARRIED,
+    CHART_2018_PART_1_AMOUNT_I,
+    CHART_2018_PART_1_AMOUNT_K,
+    CHART_2018_PART_2_AMOUNT_G,
+    CHART_2018_PART_2_AMOUNT_I,
+    CHART_2018_TOTAL_CARRIED,
+    CHART_2019_PART_1_AMOUNT_I,
+    CHART_2019_PART_1_AMOUNT_K,
+    CHART_2019_PART_2_AMOUNT_G,
+    CHART_2019_PART_2_AMOUNT_I,
+    CHART_2019_TOTAL_CARRIED,
+    CHART_2020_PART_1_AMOUNT_I,
+    CHART_2020_PART_1_AMOUNT_K,
+    CHART_2020_PART_2_AMOUNT_G,
+    CHART_2020_PART_2_AMOUNT_I,
+    CHART_2020_TOTAL_CARRIED,
     CHART_2021_PART_1_AMOUNT_H,
     CHART_2021_PART_1_AMOUNT_I,
     CHART_2021_PART_1_AMOUNT_J,
@@ -796,7 +820,6 @@ from app.jurisdictions.ca.catalog import (
     T657_CHART_2_LINE_6,
     T657_CHART_2_LINE_10,
     T657_CHART_2_LINE_14,
-    T657_CHART_2021_AMOUNT_B,
     T657_CUMULATIVE_NET_INVESTMENT_LOSS,
     T657_DEDUCTIONS_CLAIMED_1985_TO_2024,
     T657_GAINS_1985_TO_1991,
@@ -896,6 +919,68 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Form T657 Chart 2016 Part 2 "Amount G plus amount H" I: G and Part 1 amount G are 0.
+        CHART_2016_PART_2_AMOUNT_I: SumLine(
+            output=CHART_2016_PART_2_AMOUNT_I,
+            parts=((CHART_2016_PART_2_AMOUNT_G, D("0")), (CHART_2016_PART_1_AMOUNT_G, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2017 Part 1 "Amount I plus amount J" K: I is 0 and J (the last total
+        # carried, 0).
+        CHART_2017_PART_1_AMOUNT_K: SumLine(
+            output=CHART_2017_PART_1_AMOUNT_K,
+            parts=((CHART_2017_PART_1_AMOUNT_I, D("0")), (CHART_2016_TOTAL_CARRIED, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2017 Part 2 "Amount G plus amount H" I: G is 0 and H (Part 1 amount K) is
+        # 0.
+        CHART_2017_PART_2_AMOUNT_I: SumLine(
+            output=CHART_2017_PART_2_AMOUNT_I,
+            parts=((CHART_2017_PART_2_AMOUNT_G, D("0")), (CHART_2017_PART_1_AMOUNT_K, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2018 Part 1 "Amount I plus amount J" K: I is 0 and J (the last total
+        # carried, 0).
+        CHART_2018_PART_1_AMOUNT_K: SumLine(
+            output=CHART_2018_PART_1_AMOUNT_K,
+            parts=((CHART_2018_PART_1_AMOUNT_I, D("0")), (CHART_2017_TOTAL_CARRIED, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2018 Part 2 "Amount G plus amount H" I: G is 0 and H (Part 1 amount K) is
+        # 0.
+        CHART_2018_PART_2_AMOUNT_I: SumLine(
+            output=CHART_2018_PART_2_AMOUNT_I,
+            parts=((CHART_2018_PART_2_AMOUNT_G, D("0")), (CHART_2018_PART_1_AMOUNT_K, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2019 Part 1 "Amount I plus amount J" K: I is 0 and J (the last total
+        # carried, 0).
+        CHART_2019_PART_1_AMOUNT_K: SumLine(
+            output=CHART_2019_PART_1_AMOUNT_K,
+            parts=((CHART_2019_PART_1_AMOUNT_I, D("0")), (CHART_2018_TOTAL_CARRIED, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2019 Part 2 "Amount G plus amount H" I: G is 0 and H (Part 1 amount K) is
+        # 0.
+        CHART_2019_PART_2_AMOUNT_I: SumLine(
+            output=CHART_2019_PART_2_AMOUNT_I,
+            parts=((CHART_2019_PART_2_AMOUNT_G, D("0")), (CHART_2019_PART_1_AMOUNT_K, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2020 Part 1 "Amount I plus amount J" K: I is 0 and J (the last total
+        # carried, 0).
+        CHART_2020_PART_1_AMOUNT_K: SumLine(
+            output=CHART_2020_PART_1_AMOUNT_K,
+            parts=((CHART_2020_PART_1_AMOUNT_I, D("0")), (CHART_2019_TOTAL_CARRIED, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2020 Part 2 "Amount G plus amount H" I: G is 0 and H (Part 1 amount K) is
+        # 0.
+        CHART_2020_PART_2_AMOUNT_I: SumLine(
+            output=CHART_2020_PART_2_AMOUNT_I,
+            parts=((CHART_2020_PART_2_AMOUNT_G, D("0")), (CHART_2020_PART_1_AMOUNT_K, D("0"))),
+            total=D("0"),
+        ),
         # Form T657 Chart 2021 Part 1 "Amount H plus amount I" J: H and I are 0.
         CHART_2021_PART_1_AMOUNT_J: SumLine(
             output=CHART_2021_PART_1_AMOUNT_J,
@@ -905,7 +990,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # Form T657 Chart 2021 Part 1 "Amount K plus amount L" M: K is 0, and L (amount B) is 0.
         CHART_2021_PART_1_AMOUNT_M: SumLine(
             output=CHART_2021_PART_1_AMOUNT_M,
-            parts=((CHART_2021_PART_1_AMOUNT_K, D("0")), (T657_CHART_2021_AMOUNT_B, D("0"))),
+            parts=((CHART_2021_PART_1_AMOUNT_K, D("0")), (CHART_2020_TOTAL_CARRIED, D("0"))),
             total=D("0"),
         ),
         # Form T657 Chart 2021 Part 2 "Amount F plus amount G" H: F and G are 0.

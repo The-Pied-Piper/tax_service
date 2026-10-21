@@ -112,6 +112,99 @@ from app.jurisdictions.ca.catalog import (
     CHART_2_LINE_16,
     CHART_2_LINE_17,
     CHART_2_LINE_19,
+    CHART_2016_AMOUNT_B,
+    CHART_2016_PART_1_AMOUNT_A,
+    CHART_2016_PART_1_AMOUNT_C,
+    CHART_2016_PART_1_AMOUNT_F,
+    CHART_2016_PART_1_AMOUNT_G,
+    CHART_2016_PART_1_AMOUNT_H,
+    CHART_2016_PART_1_AMOUNTS_D_AND_E,
+    CHART_2016_PART_2_AMOUNT_A,
+    CHART_2016_PART_2_AMOUNT_C,
+    CHART_2016_PART_2_AMOUNT_E,
+    CHART_2016_PART_2_AMOUNT_F,
+    CHART_2016_PART_2_AMOUNT_G,
+    CHART_2016_PART_2_AMOUNT_I,
+    CHART_2016_PART_2_AMOUNT_J,
+    CHART_2016_PART_2_AMOUNT_K,
+    CHART_2016_PART_2_APPLIES,
+    CHART_2016_TOTAL_CARRIED,
+    CHART_2017_AMOUNT_D,
+    CHART_2017_PART_1_AMOUNT_A,
+    CHART_2017_PART_1_AMOUNT_C,
+    CHART_2017_PART_1_AMOUNT_E,
+    CHART_2017_PART_1_AMOUNT_H,
+    CHART_2017_PART_1_AMOUNT_I,
+    CHART_2017_PART_1_AMOUNT_K,
+    CHART_2017_PART_1_AMOUNT_L,
+    CHART_2017_PART_1_AMOUNTS_F_AND_G,
+    CHART_2017_PART_2_AMOUNT_A,
+    CHART_2017_PART_2_AMOUNT_C,
+    CHART_2017_PART_2_AMOUNT_E,
+    CHART_2017_PART_2_AMOUNT_F,
+    CHART_2017_PART_2_AMOUNT_G,
+    CHART_2017_PART_2_AMOUNT_I,
+    CHART_2017_PART_2_AMOUNT_J,
+    CHART_2017_PART_2_AMOUNT_K,
+    CHART_2017_PART_2_APPLIES,
+    CHART_2017_TOTAL_CARRIED,
+    CHART_2018_AMOUNT_D,
+    CHART_2018_PART_1_AMOUNT_A,
+    CHART_2018_PART_1_AMOUNT_C,
+    CHART_2018_PART_1_AMOUNT_E,
+    CHART_2018_PART_1_AMOUNT_H,
+    CHART_2018_PART_1_AMOUNT_I,
+    CHART_2018_PART_1_AMOUNT_K,
+    CHART_2018_PART_1_AMOUNT_L,
+    CHART_2018_PART_1_AMOUNTS_F_AND_G,
+    CHART_2018_PART_2_AMOUNT_A,
+    CHART_2018_PART_2_AMOUNT_C,
+    CHART_2018_PART_2_AMOUNT_E,
+    CHART_2018_PART_2_AMOUNT_F,
+    CHART_2018_PART_2_AMOUNT_G,
+    CHART_2018_PART_2_AMOUNT_I,
+    CHART_2018_PART_2_AMOUNT_J,
+    CHART_2018_PART_2_AMOUNT_K,
+    CHART_2018_PART_2_APPLIES,
+    CHART_2018_TOTAL_CARRIED,
+    CHART_2019_AMOUNT_D,
+    CHART_2019_PART_1_AMOUNT_A,
+    CHART_2019_PART_1_AMOUNT_C,
+    CHART_2019_PART_1_AMOUNT_E,
+    CHART_2019_PART_1_AMOUNT_H,
+    CHART_2019_PART_1_AMOUNT_I,
+    CHART_2019_PART_1_AMOUNT_K,
+    CHART_2019_PART_1_AMOUNT_L,
+    CHART_2019_PART_1_AMOUNTS_F_AND_G,
+    CHART_2019_PART_2_AMOUNT_A,
+    CHART_2019_PART_2_AMOUNT_C,
+    CHART_2019_PART_2_AMOUNT_E,
+    CHART_2019_PART_2_AMOUNT_F,
+    CHART_2019_PART_2_AMOUNT_G,
+    CHART_2019_PART_2_AMOUNT_I,
+    CHART_2019_PART_2_AMOUNT_J,
+    CHART_2019_PART_2_AMOUNT_K,
+    CHART_2019_PART_2_APPLIES,
+    CHART_2019_TOTAL_CARRIED,
+    CHART_2020_AMOUNT_D,
+    CHART_2020_PART_1_AMOUNT_A,
+    CHART_2020_PART_1_AMOUNT_C,
+    CHART_2020_PART_1_AMOUNT_E,
+    CHART_2020_PART_1_AMOUNT_H,
+    CHART_2020_PART_1_AMOUNT_I,
+    CHART_2020_PART_1_AMOUNT_K,
+    CHART_2020_PART_1_AMOUNT_L,
+    CHART_2020_PART_1_AMOUNTS_F_AND_G,
+    CHART_2020_PART_2_AMOUNT_A,
+    CHART_2020_PART_2_AMOUNT_C,
+    CHART_2020_PART_2_AMOUNT_E,
+    CHART_2020_PART_2_AMOUNT_F,
+    CHART_2020_PART_2_AMOUNT_G,
+    CHART_2020_PART_2_AMOUNT_I,
+    CHART_2020_PART_2_AMOUNT_J,
+    CHART_2020_PART_2_AMOUNT_K,
+    CHART_2020_PART_2_APPLIES,
+    CHART_2020_TOTAL_CARRIED,
     CHART_2021_AMOUNT_D,
     CHART_2021_PART_1_AMOUNT_A,
     CHART_2021_PART_1_AMOUNT_C,
@@ -476,7 +569,26 @@ from app.jurisdictions.ca.catalog import (
     T3_CAPITAL_GAINS_OR_LOSSES,
     T657_ABIL_CLAIMED_1985_TO_2024,
     T657_CHART_2_LINE_18,
-    T657_CHART_2021_AMOUNT_B,
+    T657_CHART_2016_AMOUNT_D,
+    T657_CHART_2016_AMOUNT_E,
+    T657_CHART_2016_CLAIMS_ADDITIONAL_DEDUCTION,
+    T657_CHART_2016_USES_D_INSTEAD,
+    T657_CHART_2017_AMOUNT_F,
+    T657_CHART_2017_AMOUNT_G,
+    T657_CHART_2017_CLAIMS_ADDITIONAL_DEDUCTION,
+    T657_CHART_2017_USES_D_INSTEAD,
+    T657_CHART_2018_AMOUNT_F,
+    T657_CHART_2018_AMOUNT_G,
+    T657_CHART_2018_CLAIMS_ADDITIONAL_DEDUCTION,
+    T657_CHART_2018_USES_D_INSTEAD,
+    T657_CHART_2019_AMOUNT_F,
+    T657_CHART_2019_AMOUNT_G,
+    T657_CHART_2019_CLAIMS_ADDITIONAL_DEDUCTION,
+    T657_CHART_2019_USES_D_INSTEAD,
+    T657_CHART_2020_AMOUNT_F,
+    T657_CHART_2020_AMOUNT_G,
+    T657_CHART_2020_CLAIMS_ADDITIONAL_DEDUCTION,
+    T657_CHART_2020_USES_D_INSTEAD,
     T657_CHART_2021_AMOUNT_F,
     T657_CHART_2021_AMOUNT_G,
     T657_CHART_2021_CLAIMS_ADDITIONAL_DEDUCTION,
@@ -643,6 +755,237 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     assert lesser == {
+        # Form T657 Chart 2016 Part 1 "Enter whichever is less: amount C or amount F." G: F is 0.
+        CHART_2016_PART_1_AMOUNT_G: LesserOfLine(
+            output=CHART_2016_PART_1_AMOUNT_G,
+            parts=(
+                (CHART_2016_PART_1_AMOUNT_C, D("412088.00")),
+                (CHART_2016_PART_1_AMOUNT_F, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2016 Part 1 amount H: the lesser of the two 2025 gains limits (0 on Return
+        # A) and
+        # amount G (0).
+        CHART_2016_PART_1_AMOUNT_H: LesserOfLine(
+            output=CHART_2016_PART_1_AMOUNT_H,
+            parts=(
+                (ANNUAL_GAINS_LIMIT_2025, D("0")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+                (CHART_2016_PART_1_AMOUNT_G, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2016 Part 2 "Enter whichever is less: amount E or amount F." G: F is 0.
+        CHART_2016_PART_2_AMOUNT_G: LesserOfLine(
+            output=CHART_2016_PART_2_AMOUNT_G,
+            parts=(
+                (CHART_2016_PART_2_AMOUNT_E, D("500000.00")),
+                (CHART_2016_PART_2_AMOUNT_F, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2016 Part 2 "Enter whichever is less: amount F or amount I." J: 0.
+        CHART_2016_PART_2_AMOUNT_J: LesserOfLine(
+            output=CHART_2016_PART_2_AMOUNT_J,
+            parts=((CHART_2016_PART_2_AMOUNT_F, D("0")), (CHART_2016_PART_2_AMOUNT_I, D("0"))),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2016 Part 2 amount K: the lesser of the two 2025 gains limits (0) and
+        # amount J (0).
+        CHART_2016_PART_2_AMOUNT_K: LesserOfLine(
+            output=CHART_2016_PART_2_AMOUNT_K,
+            parts=(
+                (ANNUAL_GAINS_LIMIT_2025, D("0")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+                (CHART_2016_PART_2_AMOUNT_J, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2017 Part 1 "Enter whichever is less: amount E or amount H." I: H is 0.
+        CHART_2017_PART_1_AMOUNT_I: LesserOfLine(
+            output=CHART_2017_PART_1_AMOUNT_I,
+            parts=(
+                (CHART_2017_PART_1_AMOUNT_E, D("417858.00")),
+                (CHART_2017_PART_1_AMOUNT_H, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2017 Part 1 "Enter whichever is less: line 21 of Step 1, line 19 of Step 2
+        # or
+        # amount K above." L: the two 2025 gains limits (0 on Return A) and K (0).
+        CHART_2017_PART_1_AMOUNT_L: LesserOfLine(
+            output=CHART_2017_PART_1_AMOUNT_L,
+            parts=(
+                (ANNUAL_GAINS_LIMIT_2025, D("0")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+                (CHART_2017_PART_1_AMOUNT_K, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2017 Part 2 "Enter whichever is less: amount E or amount F." G: F is 0.
+        CHART_2017_PART_2_AMOUNT_G: LesserOfLine(
+            output=CHART_2017_PART_2_AMOUNT_G,
+            parts=(
+                (CHART_2017_PART_2_AMOUNT_E, D("500000.00")),
+                (CHART_2017_PART_2_AMOUNT_F, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2017 Part 2 "Enter whichever is less: amount F or amount I." J: 0.
+        CHART_2017_PART_2_AMOUNT_J: LesserOfLine(
+            output=CHART_2017_PART_2_AMOUNT_J,
+            parts=((CHART_2017_PART_2_AMOUNT_F, D("0")), (CHART_2017_PART_2_AMOUNT_I, D("0"))),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2017 Part 2 amount K: the two 2025 gains limits (0) and J (0).
+        CHART_2017_PART_2_AMOUNT_K: LesserOfLine(
+            output=CHART_2017_PART_2_AMOUNT_K,
+            parts=(
+                (ANNUAL_GAINS_LIMIT_2025, D("0")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+                (CHART_2017_PART_2_AMOUNT_J, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2018 Part 1 "Enter whichever is less: amount E or amount H." I: H is 0.
+        CHART_2018_PART_1_AMOUNT_I: LesserOfLine(
+            output=CHART_2018_PART_1_AMOUNT_I,
+            parts=(
+                (CHART_2018_PART_1_AMOUNT_E, D("424126.00")),
+                (CHART_2018_PART_1_AMOUNT_H, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2018 Part 1 "Enter whichever is less: line 21 of Step 1, line 19 of Step 2
+        # or
+        # amount K above." L: the two 2025 gains limits (0 on Return A) and K (0).
+        CHART_2018_PART_1_AMOUNT_L: LesserOfLine(
+            output=CHART_2018_PART_1_AMOUNT_L,
+            parts=(
+                (ANNUAL_GAINS_LIMIT_2025, D("0")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+                (CHART_2018_PART_1_AMOUNT_K, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2018 Part 2 "Enter whichever is less: amount E or amount F." G: F is 0.
+        CHART_2018_PART_2_AMOUNT_G: LesserOfLine(
+            output=CHART_2018_PART_2_AMOUNT_G,
+            parts=(
+                (CHART_2018_PART_2_AMOUNT_E, D("500000.00")),
+                (CHART_2018_PART_2_AMOUNT_F, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2018 Part 2 "Enter whichever is less: amount F or amount I." J: 0.
+        CHART_2018_PART_2_AMOUNT_J: LesserOfLine(
+            output=CHART_2018_PART_2_AMOUNT_J,
+            parts=((CHART_2018_PART_2_AMOUNT_F, D("0")), (CHART_2018_PART_2_AMOUNT_I, D("0"))),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2018 Part 2 amount K: the two 2025 gains limits (0) and J (0).
+        CHART_2018_PART_2_AMOUNT_K: LesserOfLine(
+            output=CHART_2018_PART_2_AMOUNT_K,
+            parts=(
+                (ANNUAL_GAINS_LIMIT_2025, D("0")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+                (CHART_2018_PART_2_AMOUNT_J, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2019 Part 1 "Enter whichever is less: amount E or amount H." I: H is 0.
+        CHART_2019_PART_1_AMOUNT_I: LesserOfLine(
+            output=CHART_2019_PART_1_AMOUNT_I,
+            parts=(
+                (CHART_2019_PART_1_AMOUNT_E, D("433456.00")),
+                (CHART_2019_PART_1_AMOUNT_H, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2019 Part 1 "Enter whichever is less: line 21 of Step 1, line 19 of Step 2
+        # or
+        # amount K above." L: the two 2025 gains limits (0 on Return A) and K (0).
+        CHART_2019_PART_1_AMOUNT_L: LesserOfLine(
+            output=CHART_2019_PART_1_AMOUNT_L,
+            parts=(
+                (ANNUAL_GAINS_LIMIT_2025, D("0")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+                (CHART_2019_PART_1_AMOUNT_K, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2019 Part 2 "Enter whichever is less: amount E or amount F." G: F is 0.
+        CHART_2019_PART_2_AMOUNT_G: LesserOfLine(
+            output=CHART_2019_PART_2_AMOUNT_G,
+            parts=(
+                (CHART_2019_PART_2_AMOUNT_E, D("500000.00")),
+                (CHART_2019_PART_2_AMOUNT_F, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2019 Part 2 "Enter whichever is less: amount F or amount I." J: 0.
+        CHART_2019_PART_2_AMOUNT_J: LesserOfLine(
+            output=CHART_2019_PART_2_AMOUNT_J,
+            parts=((CHART_2019_PART_2_AMOUNT_F, D("0")), (CHART_2019_PART_2_AMOUNT_I, D("0"))),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2019 Part 2 amount K: the two 2025 gains limits (0) and J (0).
+        CHART_2019_PART_2_AMOUNT_K: LesserOfLine(
+            output=CHART_2019_PART_2_AMOUNT_K,
+            parts=(
+                (ANNUAL_GAINS_LIMIT_2025, D("0")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+                (CHART_2019_PART_2_AMOUNT_J, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2020 Part 1 "Enter whichever is less: amount E or amount H." I: H is 0.
+        CHART_2020_PART_1_AMOUNT_I: LesserOfLine(
+            output=CHART_2020_PART_1_AMOUNT_I,
+            parts=(
+                (CHART_2020_PART_1_AMOUNT_E, D("441692.00")),
+                (CHART_2020_PART_1_AMOUNT_H, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2020 Part 1 "Enter whichever is less: line 21 of Step 1, line 19 of Step 2
+        # or
+        # amount K above." L: the two 2025 gains limits (0 on Return A) and K (0).
+        CHART_2020_PART_1_AMOUNT_L: LesserOfLine(
+            output=CHART_2020_PART_1_AMOUNT_L,
+            parts=(
+                (ANNUAL_GAINS_LIMIT_2025, D("0")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+                (CHART_2020_PART_1_AMOUNT_K, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2020 Part 2 "Enter whichever is less: amount E or amount F." G: F is 0.
+        CHART_2020_PART_2_AMOUNT_G: LesserOfLine(
+            output=CHART_2020_PART_2_AMOUNT_G,
+            parts=(
+                (CHART_2020_PART_2_AMOUNT_E, D("500000.00")),
+                (CHART_2020_PART_2_AMOUNT_F, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2020 Part 2 "Enter whichever is less: amount F or amount I." J: 0.
+        CHART_2020_PART_2_AMOUNT_J: LesserOfLine(
+            output=CHART_2020_PART_2_AMOUNT_J,
+            parts=((CHART_2020_PART_2_AMOUNT_F, D("0")), (CHART_2020_PART_2_AMOUNT_I, D("0"))),
+            result=D("0"),
+        ),
+        # Form T657 Chart 2020 Part 2 amount K: the two 2025 gains limits (0) and J (0).
+        CHART_2020_PART_2_AMOUNT_K: LesserOfLine(
+            output=CHART_2020_PART_2_AMOUNT_K,
+            parts=(
+                (ANNUAL_GAINS_LIMIT_2025, D("0")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+                (CHART_2020_PART_2_AMOUNT_J, D("0")),
+            ),
+            result=D("0"),
+        ),
         # Form T2125 Chart B line 19 "Amount 17 or 18, whichever is less": line 17 is 0 for Return
         # A.
         BUSINESS_VEHICLE_AVAILABLE_INTEREST: LesserOfLine(
@@ -1450,6 +1793,182 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Form T657 Chart 2016 Part 1 "Amount A minus amount B" C: 412088 less B of 0.
+        CHART_2016_PART_1_AMOUNT_C: SubtractedNotBelowZeroLine(
+            output=CHART_2016_PART_1_AMOUNT_C,
+            minuend=CHART_2016_PART_1_AMOUNT_A,
+            minuend_amount=D("412088.00"),
+            subtrahend=CHART_2016_AMOUNT_B,
+            subtrahend_amount=D("0"),
+            result=D("412088.00"),
+        ),
+        # Form T657 Chart 2016 Part 2 "Amount A minus amount B" C: 500,000.00 less Part 1 amount G
+        # of 0.
+        CHART_2016_PART_2_AMOUNT_C: SubtractedNotBelowZeroLine(
+            output=CHART_2016_PART_2_AMOUNT_C,
+            minuend=CHART_2016_PART_2_AMOUNT_A,
+            minuend_amount=D("500000.00"),
+            subtrahend=CHART_2016_PART_1_AMOUNT_G,
+            subtrahend_amount=D("0"),
+            result=D("500000.00"),
+        ),
+        # Form T657 Chart 2016 Part 2 amount E "amount C minus amount D": D is 0.
+        CHART_2016_PART_2_AMOUNT_E: SubtractedNotBelowZeroLine(
+            output=CHART_2016_PART_2_AMOUNT_E,
+            minuend=CHART_2016_PART_2_AMOUNT_C,
+            minuend_amount=D("500000.00"),
+            subtrahend=CHART_2016_AMOUNT_B,
+            subtrahend_amount=D("0"),
+            result=D("500000.00"),
+        ),
+        # Form T657 Chart 2017 Part 1 "Amount A minus amount B" C: 417858 less B of 0.
+        CHART_2017_PART_1_AMOUNT_C: SubtractedNotBelowZeroLine(
+            output=CHART_2017_PART_1_AMOUNT_C,
+            minuend=CHART_2017_PART_1_AMOUNT_A,
+            minuend_amount=D("417858.00"),
+            subtrahend=CHART_2016_TOTAL_CARRIED,
+            subtrahend_amount=D("0"),
+            result=D("417858.00"),
+        ),
+        # Form T657 Chart 2017 Part 1 amount E "amount C minus amount D": D is 0.
+        CHART_2017_PART_1_AMOUNT_E: SubtractedNotBelowZeroLine(
+            output=CHART_2017_PART_1_AMOUNT_E,
+            minuend=CHART_2017_PART_1_AMOUNT_C,
+            minuend_amount=D("417858.00"),
+            subtrahend=CHART_2017_AMOUNT_D,
+            subtrahend_amount=D("0"),
+            result=D("417858.00"),
+        ),
+        # Form T657 Chart 2017 Part 2 "Amount A minus amount B" C: 500,000.00 less Part 1 amount K
+        # of 0.
+        CHART_2017_PART_2_AMOUNT_C: SubtractedNotBelowZeroLine(
+            output=CHART_2017_PART_2_AMOUNT_C,
+            minuend=CHART_2017_PART_2_AMOUNT_A,
+            minuend_amount=D("500000.00"),
+            subtrahend=CHART_2017_PART_1_AMOUNT_K,
+            subtrahend_amount=D("0"),
+            result=D("500000.00"),
+        ),
+        # Form T657 Chart 2017 Part 2 amount E "amount C minus amount D": D is 0.
+        CHART_2017_PART_2_AMOUNT_E: SubtractedNotBelowZeroLine(
+            output=CHART_2017_PART_2_AMOUNT_E,
+            minuend=CHART_2017_PART_2_AMOUNT_C,
+            minuend_amount=D("500000.00"),
+            subtrahend=CHART_2017_AMOUNT_D,
+            subtrahend_amount=D("0"),
+            result=D("500000.00"),
+        ),
+        # Form T657 Chart 2018 Part 1 "Amount A minus amount B" C: 424126 less B of 0.
+        CHART_2018_PART_1_AMOUNT_C: SubtractedNotBelowZeroLine(
+            output=CHART_2018_PART_1_AMOUNT_C,
+            minuend=CHART_2018_PART_1_AMOUNT_A,
+            minuend_amount=D("424126.00"),
+            subtrahend=CHART_2017_TOTAL_CARRIED,
+            subtrahend_amount=D("0"),
+            result=D("424126.00"),
+        ),
+        # Form T657 Chart 2018 Part 1 amount E "amount C minus amount D": D is 0.
+        CHART_2018_PART_1_AMOUNT_E: SubtractedNotBelowZeroLine(
+            output=CHART_2018_PART_1_AMOUNT_E,
+            minuend=CHART_2018_PART_1_AMOUNT_C,
+            minuend_amount=D("424126.00"),
+            subtrahend=CHART_2018_AMOUNT_D,
+            subtrahend_amount=D("0"),
+            result=D("424126.00"),
+        ),
+        # Form T657 Chart 2018 Part 2 "Amount A minus amount B" C: 500,000.00 less Part 1 amount K
+        # of 0.
+        CHART_2018_PART_2_AMOUNT_C: SubtractedNotBelowZeroLine(
+            output=CHART_2018_PART_2_AMOUNT_C,
+            minuend=CHART_2018_PART_2_AMOUNT_A,
+            minuend_amount=D("500000.00"),
+            subtrahend=CHART_2018_PART_1_AMOUNT_K,
+            subtrahend_amount=D("0"),
+            result=D("500000.00"),
+        ),
+        # Form T657 Chart 2018 Part 2 amount E "amount C minus amount D": D is 0.
+        CHART_2018_PART_2_AMOUNT_E: SubtractedNotBelowZeroLine(
+            output=CHART_2018_PART_2_AMOUNT_E,
+            minuend=CHART_2018_PART_2_AMOUNT_C,
+            minuend_amount=D("500000.00"),
+            subtrahend=CHART_2018_AMOUNT_D,
+            subtrahend_amount=D("0"),
+            result=D("500000.00"),
+        ),
+        # Form T657 Chart 2019 Part 1 "Amount A minus amount B" C: 433456 less B of 0.
+        CHART_2019_PART_1_AMOUNT_C: SubtractedNotBelowZeroLine(
+            output=CHART_2019_PART_1_AMOUNT_C,
+            minuend=CHART_2019_PART_1_AMOUNT_A,
+            minuend_amount=D("433456.00"),
+            subtrahend=CHART_2018_TOTAL_CARRIED,
+            subtrahend_amount=D("0"),
+            result=D("433456.00"),
+        ),
+        # Form T657 Chart 2019 Part 1 amount E "amount C minus amount D": D is 0.
+        CHART_2019_PART_1_AMOUNT_E: SubtractedNotBelowZeroLine(
+            output=CHART_2019_PART_1_AMOUNT_E,
+            minuend=CHART_2019_PART_1_AMOUNT_C,
+            minuend_amount=D("433456.00"),
+            subtrahend=CHART_2019_AMOUNT_D,
+            subtrahend_amount=D("0"),
+            result=D("433456.00"),
+        ),
+        # Form T657 Chart 2019 Part 2 "Amount A minus amount B" C: 500,000.00 less Part 1 amount K
+        # of 0.
+        CHART_2019_PART_2_AMOUNT_C: SubtractedNotBelowZeroLine(
+            output=CHART_2019_PART_2_AMOUNT_C,
+            minuend=CHART_2019_PART_2_AMOUNT_A,
+            minuend_amount=D("500000.00"),
+            subtrahend=CHART_2019_PART_1_AMOUNT_K,
+            subtrahend_amount=D("0"),
+            result=D("500000.00"),
+        ),
+        # Form T657 Chart 2019 Part 2 amount E "amount C minus amount D": D is 0.
+        CHART_2019_PART_2_AMOUNT_E: SubtractedNotBelowZeroLine(
+            output=CHART_2019_PART_2_AMOUNT_E,
+            minuend=CHART_2019_PART_2_AMOUNT_C,
+            minuend_amount=D("500000.00"),
+            subtrahend=CHART_2019_AMOUNT_D,
+            subtrahend_amount=D("0"),
+            result=D("500000.00"),
+        ),
+        # Form T657 Chart 2020 Part 1 "Amount A minus amount B" C: 441692 less B of 0.
+        CHART_2020_PART_1_AMOUNT_C: SubtractedNotBelowZeroLine(
+            output=CHART_2020_PART_1_AMOUNT_C,
+            minuend=CHART_2020_PART_1_AMOUNT_A,
+            minuend_amount=D("441692.00"),
+            subtrahend=CHART_2019_TOTAL_CARRIED,
+            subtrahend_amount=D("0"),
+            result=D("441692.00"),
+        ),
+        # Form T657 Chart 2020 Part 1 amount E "amount C minus amount D": D is 0.
+        CHART_2020_PART_1_AMOUNT_E: SubtractedNotBelowZeroLine(
+            output=CHART_2020_PART_1_AMOUNT_E,
+            minuend=CHART_2020_PART_1_AMOUNT_C,
+            minuend_amount=D("441692.00"),
+            subtrahend=CHART_2020_AMOUNT_D,
+            subtrahend_amount=D("0"),
+            result=D("441692.00"),
+        ),
+        # Form T657 Chart 2020 Part 2 "Amount A minus amount B" C: 500,000.00 less Part 1 amount K
+        # of 0.
+        CHART_2020_PART_2_AMOUNT_C: SubtractedNotBelowZeroLine(
+            output=CHART_2020_PART_2_AMOUNT_C,
+            minuend=CHART_2020_PART_2_AMOUNT_A,
+            minuend_amount=D("500000.00"),
+            subtrahend=CHART_2020_PART_1_AMOUNT_K,
+            subtrahend_amount=D("0"),
+            result=D("500000.00"),
+        ),
+        # Form T657 Chart 2020 Part 2 amount E "amount C minus amount D": D is 0.
+        CHART_2020_PART_2_AMOUNT_E: SubtractedNotBelowZeroLine(
+            output=CHART_2020_PART_2_AMOUNT_E,
+            minuend=CHART_2020_PART_2_AMOUNT_C,
+            minuend_amount=D("500000.00"),
+            subtrahend=CHART_2020_AMOUNT_D,
+            subtrahend_amount=D("0"),
+            result=D("500000.00"),
+        ),
         # Form T657 Chart 2021 Part 1 "Amount A minus amount B" C: Return A's maximum of 446109.00,
         # less
         # B of 0.
@@ -1457,7 +1976,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             output=CHART_2021_PART_1_AMOUNT_C,
             minuend=CHART_2021_PART_1_AMOUNT_A,
             minuend_amount=D("446109.00"),
-            subtrahend=T657_CHART_2021_AMOUNT_B,
+            subtrahend=CHART_2020_TOTAL_CARRIED,
             subtrahend_amount=D("0"),
             result=D("446109.00"),
         ),
@@ -2580,6 +3099,41 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # rental CCA limit, and the Form T1206 lines floored in Part 1 (the TOSI-adjusted net income)
     # and Part 2 (line 24, on line 22 alone) for a return without split income.
     assert summed_floored == {
+        # Form T657 Chart 2016 Part 1 "amount D plus amount E" (signed T2017 lines 6 and 12): 0 for
+        # each.
+        CHART_2016_PART_1_AMOUNTS_D_AND_E: SumNotBelowZeroLine(
+            output=CHART_2016_PART_1_AMOUNTS_D_AND_E,
+            parts=((T657_CHART_2016_AMOUNT_D, D("0")), (T657_CHART_2016_AMOUNT_E, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2017 Part 1 "Taxable capital gains ... amount F plus amount G": 0 for
+        # each.
+        CHART_2017_PART_1_AMOUNTS_F_AND_G: SumNotBelowZeroLine(
+            output=CHART_2017_PART_1_AMOUNTS_F_AND_G,
+            parts=((T657_CHART_2017_AMOUNT_F, D("0")), (T657_CHART_2017_AMOUNT_G, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2018 Part 1 "Taxable capital gains ... amount F plus amount G": 0 for
+        # each.
+        CHART_2018_PART_1_AMOUNTS_F_AND_G: SumNotBelowZeroLine(
+            output=CHART_2018_PART_1_AMOUNTS_F_AND_G,
+            parts=((T657_CHART_2018_AMOUNT_F, D("0")), (T657_CHART_2018_AMOUNT_G, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2019 Part 1 "Taxable capital gains ... amount F plus amount G": 0 for
+        # each.
+        CHART_2019_PART_1_AMOUNTS_F_AND_G: SumNotBelowZeroLine(
+            output=CHART_2019_PART_1_AMOUNTS_F_AND_G,
+            parts=((T657_CHART_2019_AMOUNT_F, D("0")), (T657_CHART_2019_AMOUNT_G, D("0"))),
+            total=D("0"),
+        ),
+        # Form T657 Chart 2020 Part 1 "Taxable capital gains ... amount F plus amount G": 0 for
+        # each.
+        CHART_2020_PART_1_AMOUNTS_F_AND_G: SumNotBelowZeroLine(
+            output=CHART_2020_PART_1_AMOUNTS_F_AND_G,
+            parts=((T657_CHART_2020_AMOUNT_F, D("0")), (T657_CHART_2020_AMOUNT_G, D("0"))),
+            total=D("0"),
+        ),
         # Form T657 Chart 2021 Part 1 "Taxable capital gains from a reserve ... amount F plus
         # amount G
         # (if negative, enter "0")": 0 for each.
@@ -2864,12 +3418,257 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         if isinstance(line, ConditionLine)
         and line.output
         in (
+            CHART_2016_PART_2_APPLIES,
+            CHART_2017_PART_2_APPLIES,
+            CHART_2018_PART_2_APPLIES,
+            CHART_2019_PART_2_APPLIES,
+            CHART_2020_PART_2_APPLIES,
             CHART_2021_PART_2_APPLIES,
             CHART_2022_PART_2_APPLIES,
             CHART_2023_PART_2_APPLIES,
         )
     }
     assert conditions == {
+        # Form T657 gate of CHART_2016_PART_2_APPLIES, condition 1: applies on Return A.
+        (CHART_2016_PART_2_APPLIES, 1): ConditionLine(
+            output=CHART_2016_PART_2_APPLIES,
+            position=1,
+            text="You do not want to claim the additional deduction",
+            reads=((T657_CHART_2016_CLAIMS_ADDITIONAL_DEDUCTION, 0),),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2016_PART_2_APPLIES, condition 2: applies on Return A.
+        (CHART_2016_PART_2_APPLIES, 2): ConditionLine(
+            output=CHART_2016_PART_2_APPLIES,
+            position=2,
+            text=(
+                "Amount C in Part 1 is more than your annual gains limit for 2025 from line 21 "
+                "in Step 1"
+            ),
+            reads=((CHART_2016_PART_1_AMOUNT_C, D("412088.00")), (ANNUAL_GAINS_LIMIT_2025, D("0"))),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2016_PART_2_APPLIES, condition 3: applies on Return A.
+        (CHART_2016_PART_2_APPLIES, 3): ConditionLine(
+            output=CHART_2016_PART_2_APPLIES,
+            position=3,
+            text=(
+                "Amount C in Part 1 is more than your cumulative gains limit for 2025 from line "
+                "19 in Step 2"
+            ),
+            reads=(
+                (CHART_2016_PART_1_AMOUNT_C, D("412088.00")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+            ),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2016_PART_2_APPLIES, condition 4: applies on Return A.
+        (CHART_2016_PART_2_APPLIES, 4): ConditionLine(
+            output=CHART_2016_PART_2_APPLIES,
+            position=4,
+            text=(
+                "Amount C in Part 1 is more than the total amount of capital gains included in "
+                "your 2025 income that is eligible for the capital gains deduction from amount "
+                "G in Part 1"
+            ),
+            reads=(
+                (CHART_2016_PART_1_AMOUNT_C, D("412088.00")),
+                (CHART_2016_PART_1_AMOUNT_G, D("0")),
+            ),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2017_PART_2_APPLIES, condition 1: applies on Return A.
+        (CHART_2017_PART_2_APPLIES, 1): ConditionLine(
+            output=CHART_2017_PART_2_APPLIES,
+            position=1,
+            text="You do not want to claim the additional deduction",
+            reads=((T657_CHART_2017_CLAIMS_ADDITIONAL_DEDUCTION, 0),),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2017_PART_2_APPLIES, condition 2: applies on Return A.
+        (CHART_2017_PART_2_APPLIES, 2): ConditionLine(
+            output=CHART_2017_PART_2_APPLIES,
+            position=2,
+            text=(
+                "Amount E in Part 1 is more than your annual gains limit for 2025 from line 21 "
+                "in Step 1"
+            ),
+            reads=((CHART_2017_PART_1_AMOUNT_E, D("417858.00")), (ANNUAL_GAINS_LIMIT_2025, D("0"))),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2017_PART_2_APPLIES, condition 3: applies on Return A.
+        (CHART_2017_PART_2_APPLIES, 3): ConditionLine(
+            output=CHART_2017_PART_2_APPLIES,
+            position=3,
+            text=(
+                "Amount E in Part 1 is more than your cumulative gains limit for 2025 from line "
+                "19 in Step 2"
+            ),
+            reads=(
+                (CHART_2017_PART_1_AMOUNT_E, D("417858.00")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+            ),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2017_PART_2_APPLIES, condition 4: applies on Return A.
+        (CHART_2017_PART_2_APPLIES, 4): ConditionLine(
+            output=CHART_2017_PART_2_APPLIES,
+            position=4,
+            text=(
+                "Amount E in Part 1 is more than the total amount of capital gains included in "
+                "your 2025 income that is eligible for the capital gains deduction from amount "
+                "K in Part 1"
+            ),
+            reads=(
+                (CHART_2017_PART_1_AMOUNT_E, D("417858.00")),
+                (CHART_2017_PART_1_AMOUNT_K, D("0")),
+            ),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2018_PART_2_APPLIES, condition 1: applies on Return A.
+        (CHART_2018_PART_2_APPLIES, 1): ConditionLine(
+            output=CHART_2018_PART_2_APPLIES,
+            position=1,
+            text="You do not want to claim the additional deduction",
+            reads=((T657_CHART_2018_CLAIMS_ADDITIONAL_DEDUCTION, 0),),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2018_PART_2_APPLIES, condition 2: applies on Return A.
+        (CHART_2018_PART_2_APPLIES, 2): ConditionLine(
+            output=CHART_2018_PART_2_APPLIES,
+            position=2,
+            text=(
+                "Amount E in Part 1 is more than your annual gains limit for 2025 from line 21 "
+                "in Step 1"
+            ),
+            reads=((CHART_2018_PART_1_AMOUNT_E, D("424126.00")), (ANNUAL_GAINS_LIMIT_2025, D("0"))),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2018_PART_2_APPLIES, condition 3: applies on Return A.
+        (CHART_2018_PART_2_APPLIES, 3): ConditionLine(
+            output=CHART_2018_PART_2_APPLIES,
+            position=3,
+            text=(
+                "Amount E in Part 1 is more than your cumulative gains limit for 2025 from line "
+                "19 in Step 2"
+            ),
+            reads=(
+                (CHART_2018_PART_1_AMOUNT_E, D("424126.00")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+            ),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2018_PART_2_APPLIES, condition 4: applies on Return A.
+        (CHART_2018_PART_2_APPLIES, 4): ConditionLine(
+            output=CHART_2018_PART_2_APPLIES,
+            position=4,
+            text=(
+                "Amount E in Part 1 is more than the total amount of capital gains included in "
+                "your 2025 income that is eligible for the capital gains deduction from amount "
+                "K in Part 1"
+            ),
+            reads=(
+                (CHART_2018_PART_1_AMOUNT_E, D("424126.00")),
+                (CHART_2018_PART_1_AMOUNT_K, D("0")),
+            ),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2019_PART_2_APPLIES, condition 1: applies on Return A.
+        (CHART_2019_PART_2_APPLIES, 1): ConditionLine(
+            output=CHART_2019_PART_2_APPLIES,
+            position=1,
+            text="You do not want to claim the additional deduction",
+            reads=((T657_CHART_2019_CLAIMS_ADDITIONAL_DEDUCTION, 0),),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2019_PART_2_APPLIES, condition 2: applies on Return A.
+        (CHART_2019_PART_2_APPLIES, 2): ConditionLine(
+            output=CHART_2019_PART_2_APPLIES,
+            position=2,
+            text=(
+                "Amount E in Part 1 is more than your annual gains limit for 2025 from line 21 "
+                "in Step 1"
+            ),
+            reads=((CHART_2019_PART_1_AMOUNT_E, D("433456.00")), (ANNUAL_GAINS_LIMIT_2025, D("0"))),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2019_PART_2_APPLIES, condition 3: applies on Return A.
+        (CHART_2019_PART_2_APPLIES, 3): ConditionLine(
+            output=CHART_2019_PART_2_APPLIES,
+            position=3,
+            text=(
+                "Amount E in Part 1 is more than your cumulative gains limit for 2025 from line "
+                "19 in Step 2"
+            ),
+            reads=(
+                (CHART_2019_PART_1_AMOUNT_E, D("433456.00")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+            ),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2019_PART_2_APPLIES, condition 4: applies on Return A.
+        (CHART_2019_PART_2_APPLIES, 4): ConditionLine(
+            output=CHART_2019_PART_2_APPLIES,
+            position=4,
+            text=(
+                "Amount E in Part 1 is more than the total amount of capital gains included in "
+                "your 2025 income that is eligible for the capital gains deduction from amount "
+                "K in Part 1"
+            ),
+            reads=(
+                (CHART_2019_PART_1_AMOUNT_E, D("433456.00")),
+                (CHART_2019_PART_1_AMOUNT_K, D("0")),
+            ),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2020_PART_2_APPLIES, condition 1: applies on Return A.
+        (CHART_2020_PART_2_APPLIES, 1): ConditionLine(
+            output=CHART_2020_PART_2_APPLIES,
+            position=1,
+            text="You do not want to claim the additional deduction",
+            reads=((T657_CHART_2020_CLAIMS_ADDITIONAL_DEDUCTION, 0),),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2020_PART_2_APPLIES, condition 2: applies on Return A.
+        (CHART_2020_PART_2_APPLIES, 2): ConditionLine(
+            output=CHART_2020_PART_2_APPLIES,
+            position=2,
+            text=(
+                "Amount E in Part 1 is more than your annual gains limit for 2025 from line 21 "
+                "in Step 1"
+            ),
+            reads=((CHART_2020_PART_1_AMOUNT_E, D("441692.00")), (ANNUAL_GAINS_LIMIT_2025, D("0"))),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2020_PART_2_APPLIES, condition 3: applies on Return A.
+        (CHART_2020_PART_2_APPLIES, 3): ConditionLine(
+            output=CHART_2020_PART_2_APPLIES,
+            position=3,
+            text=(
+                "Amount E in Part 1 is more than your cumulative gains limit for 2025 from line "
+                "19 in Step 2"
+            ),
+            reads=(
+                (CHART_2020_PART_1_AMOUNT_E, D("441692.00")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+            ),
+            applies=True,
+        ),
+        # Form T657 gate of CHART_2020_PART_2_APPLIES, condition 4: applies on Return A.
+        (CHART_2020_PART_2_APPLIES, 4): ConditionLine(
+            output=CHART_2020_PART_2_APPLIES,
+            position=4,
+            text=(
+                "Amount E in Part 1 is more than the total amount of capital gains included in "
+                "your 2025 income that is eligible for the capital gains deduction from amount "
+                "K in Part 1"
+            ),
+            reads=(
+                (CHART_2020_PART_1_AMOUNT_E, D("441692.00")),
+                (CHART_2020_PART_1_AMOUNT_K, D("0")),
+            ),
+            applies=True,
+        ),
         (CHART_2021_PART_2_APPLIES, 1): ConditionLine(
             output=CHART_2021_PART_2_APPLIES,
             position=1,
@@ -3000,12 +3799,52 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         if isinstance(line, ConditionsCountLine)
         and line.output
         in (
+            CHART_2016_PART_2_APPLIES,
+            CHART_2017_PART_2_APPLIES,
+            CHART_2018_PART_2_APPLIES,
+            CHART_2019_PART_2_APPLIES,
+            CHART_2020_PART_2_APPLIES,
             CHART_2021_PART_2_APPLIES,
             CHART_2022_PART_2_APPLIES,
             CHART_2023_PART_2_APPLIES,
         )
     }
     assert gates == {
+        # Form T657 gate CHART_2016_PART_2_APPLIES: conditions 1 to 4 apply on Return A, so the
+        # count is 0.
+        CHART_2016_PART_2_APPLIES: ConditionsCountLine(
+            output=CHART_2016_PART_2_APPLIES,
+            applied=(1, 2, 3, 4),
+            count=0,
+        ),
+        # Form T657 gate CHART_2017_PART_2_APPLIES: conditions 1 to 4 apply on Return A, so the
+        # count is 0.
+        CHART_2017_PART_2_APPLIES: ConditionsCountLine(
+            output=CHART_2017_PART_2_APPLIES,
+            applied=(1, 2, 3, 4),
+            count=0,
+        ),
+        # Form T657 gate CHART_2018_PART_2_APPLIES: conditions 1 to 4 apply on Return A, so the
+        # count is 0.
+        CHART_2018_PART_2_APPLIES: ConditionsCountLine(
+            output=CHART_2018_PART_2_APPLIES,
+            applied=(1, 2, 3, 4),
+            count=0,
+        ),
+        # Form T657 gate CHART_2019_PART_2_APPLIES: conditions 1 to 4 apply on Return A, so the
+        # count is 0.
+        CHART_2019_PART_2_APPLIES: ConditionsCountLine(
+            output=CHART_2019_PART_2_APPLIES,
+            applied=(1, 2, 3, 4),
+            count=0,
+        ),
+        # Form T657 gate CHART_2020_PART_2_APPLIES: conditions 1 to 4 apply on Return A, so the
+        # count is 0.
+        CHART_2020_PART_2_APPLIES: ConditionsCountLine(
+            output=CHART_2020_PART_2_APPLIES,
+            applied=(1, 2, 3, 4),
+            count=0,
+        ),
         CHART_2021_PART_2_APPLIES: ConditionsCountLine(
             output=CHART_2021_PART_2_APPLIES,
             applied=(1, 2, 3, 4),
@@ -3023,6 +3862,91 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert chosen == {
+        # Form T657 Chart 2016 amount B: the line 19 of Chart 2 (Return A's 0), the (2016-1)
+        # calculation not used.
+        CHART_2016_AMOUNT_B: ChosenByCountLine(
+            output=CHART_2016_AMOUNT_B,
+            count_kind=T657_CHART_2016_USES_D_INSTEAD,
+            count=0,
+            chosen_kind=CHART_2_LINE_19,
+            chosen_value=D("0"),
+        ),
+        # Form T657 Chart 2016 total carried: Part 1 amount G (0) when Part 2 is not completed.
+        CHART_2016_TOTAL_CARRIED: ChosenByCountLine(
+            output=CHART_2016_TOTAL_CARRIED,
+            count_kind=CHART_2016_PART_2_APPLIES,
+            count=0,
+            chosen_kind=CHART_2016_PART_1_AMOUNT_G,
+            chosen_value=D("0"),
+        ),
+        # Form T657 Chart 2017 amount D: Chart 2 line 19 (Return A's 0), the (…-1) calculation not
+        # used.
+        CHART_2017_AMOUNT_D: ChosenByCountLine(
+            output=CHART_2017_AMOUNT_D,
+            count_kind=T657_CHART_2017_USES_D_INSTEAD,
+            count=0,
+            chosen_kind=CHART_2_LINE_19,
+            chosen_value=D("0"),
+        ),
+        # Form T657 Chart 2017 total carried: Part 1 amount K (0) when Part 2 is not completed.
+        CHART_2017_TOTAL_CARRIED: ChosenByCountLine(
+            output=CHART_2017_TOTAL_CARRIED,
+            count_kind=CHART_2017_PART_2_APPLIES,
+            count=0,
+            chosen_kind=CHART_2017_PART_1_AMOUNT_K,
+            chosen_value=D("0"),
+        ),
+        # Form T657 Chart 2018 amount D: Chart 2 line 19 (Return A's 0), the (…-1) calculation not
+        # used.
+        CHART_2018_AMOUNT_D: ChosenByCountLine(
+            output=CHART_2018_AMOUNT_D,
+            count_kind=T657_CHART_2018_USES_D_INSTEAD,
+            count=0,
+            chosen_kind=CHART_2_LINE_19,
+            chosen_value=D("0"),
+        ),
+        # Form T657 Chart 2018 total carried: Part 1 amount K (0) when Part 2 is not completed.
+        CHART_2018_TOTAL_CARRIED: ChosenByCountLine(
+            output=CHART_2018_TOTAL_CARRIED,
+            count_kind=CHART_2018_PART_2_APPLIES,
+            count=0,
+            chosen_kind=CHART_2018_PART_1_AMOUNT_K,
+            chosen_value=D("0"),
+        ),
+        # Form T657 Chart 2019 amount D: Chart 2 line 19 (Return A's 0), the (…-1) calculation not
+        # used.
+        CHART_2019_AMOUNT_D: ChosenByCountLine(
+            output=CHART_2019_AMOUNT_D,
+            count_kind=T657_CHART_2019_USES_D_INSTEAD,
+            count=0,
+            chosen_kind=CHART_2_LINE_19,
+            chosen_value=D("0"),
+        ),
+        # Form T657 Chart 2019 total carried: Part 1 amount K (0) when Part 2 is not completed.
+        CHART_2019_TOTAL_CARRIED: ChosenByCountLine(
+            output=CHART_2019_TOTAL_CARRIED,
+            count_kind=CHART_2019_PART_2_APPLIES,
+            count=0,
+            chosen_kind=CHART_2019_PART_1_AMOUNT_K,
+            chosen_value=D("0"),
+        ),
+        # Form T657 Chart 2020 amount D: Chart 2 line 19 (Return A's 0), the (…-1) calculation not
+        # used.
+        CHART_2020_AMOUNT_D: ChosenByCountLine(
+            output=CHART_2020_AMOUNT_D,
+            count_kind=T657_CHART_2020_USES_D_INSTEAD,
+            count=0,
+            chosen_kind=CHART_2_LINE_19,
+            chosen_value=D("0"),
+        ),
+        # Form T657 Chart 2020 total carried: Part 1 amount K (0) when Part 2 is not completed.
+        CHART_2020_TOTAL_CARRIED: ChosenByCountLine(
+            output=CHART_2020_TOTAL_CARRIED,
+            count_kind=CHART_2020_PART_2_APPLIES,
+            count=0,
+            chosen_kind=CHART_2020_PART_1_AMOUNT_K,
+            chosen_value=D("0"),
+        ),
         CHART_2021_AMOUNT_D: ChosenByCountLine(
             output=CHART_2021_AMOUNT_D,
             count_kind=T657_CHART_2021_USES_D_INSTEAD,

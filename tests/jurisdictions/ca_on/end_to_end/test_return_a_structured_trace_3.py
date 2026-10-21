@@ -122,6 +122,31 @@ from app.jurisdictions.ca.catalog import (
     CHART_2_LINE_16,
     CHART_2_NUMERATOR_ONE,
     CHART_2_TWICE_IR,
+    CHART_2016_PART_1_AMOUNT_A,
+    CHART_2016_PART_1_AMOUNT_F,
+    CHART_2016_PART_1_AMOUNTS_D_AND_E,
+    CHART_2016_PART_2_AMOUNT_A,
+    CHART_2016_PART_2_AMOUNT_F,
+    CHART_2017_PART_1_AMOUNT_A,
+    CHART_2017_PART_1_AMOUNT_H,
+    CHART_2017_PART_1_AMOUNTS_F_AND_G,
+    CHART_2017_PART_2_AMOUNT_A,
+    CHART_2017_PART_2_AMOUNT_F,
+    CHART_2018_PART_1_AMOUNT_A,
+    CHART_2018_PART_1_AMOUNT_H,
+    CHART_2018_PART_1_AMOUNTS_F_AND_G,
+    CHART_2018_PART_2_AMOUNT_A,
+    CHART_2018_PART_2_AMOUNT_F,
+    CHART_2019_PART_1_AMOUNT_A,
+    CHART_2019_PART_1_AMOUNT_H,
+    CHART_2019_PART_1_AMOUNTS_F_AND_G,
+    CHART_2019_PART_2_AMOUNT_A,
+    CHART_2019_PART_2_AMOUNT_F,
+    CHART_2020_PART_1_AMOUNT_A,
+    CHART_2020_PART_1_AMOUNT_H,
+    CHART_2020_PART_1_AMOUNTS_F_AND_G,
+    CHART_2020_PART_2_AMOUNT_A,
+    CHART_2020_PART_2_AMOUNT_F,
     CHART_2021_PART_1_AMOUNT_A,
     CHART_2021_PART_1_AMOUNT_H,
     CHART_2021_PART_1_AMOUNT_I,
@@ -408,6 +433,11 @@ from app.jurisdictions.ca.catalog import (
     T657_CHART_2_LINE_6,
     T657_CHART_2_LINE_10,
     T657_CHART_2_LINE_14,
+    T657_CHART_2016_AMOUNT_D,
+    T657_CHART_2017_AMOUNT_F,
+    T657_CHART_2018_AMOUNT_F,
+    T657_CHART_2019_AMOUNT_F,
+    T657_CHART_2020_AMOUNT_F,
     T657_CHART_2021_AMOUNT_F,
     T657_CHART_2021_AMOUNT_I,
     T657_CHART_2021_PART_2_AMOUNT_G,
@@ -1370,6 +1400,96 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert amounts == {
+        # Form T657 Chart 2016 Part 1 amount A: "Maximum capital gains deduction for QFFP and/or
+        # QSBCS
+        # disposed of in 2016" 412,088.00.
+        CHART_2016_PART_1_AMOUNT_A: CreditAmountLine(
+            output=CHART_2016_PART_1_AMOUNT_A,
+            basis=Credit(amount=D("412088")),
+            rounding=CENT,
+            value=D("412088.00"),
+        ),
+        # Form T657 Chart 2016 Part 2 amount A: "Maximum capital gains deduction for QFFP disposed
+        # of in
+        # 2016" 500,000.00.
+        CHART_2016_PART_2_AMOUNT_A: CreditAmountLine(
+            output=CHART_2016_PART_2_AMOUNT_A,
+            basis=Credit(amount=D("500000")),
+            rounding=CENT,
+            value=D("500000.00"),
+        ),
+        # Form T657 Chart 2017 Part 1 amount A: "Maximum capital gains deduction for QFFP and/or
+        # QSBCS
+        # disposed of in 2017" 417,858.00.
+        CHART_2017_PART_1_AMOUNT_A: CreditAmountLine(
+            output=CHART_2017_PART_1_AMOUNT_A,
+            basis=Credit(amount=D("417858")),
+            rounding=CENT,
+            value=D("417858.00"),
+        ),
+        # Form T657 Chart 2017 Part 2 amount A: "Maximum capital gains deduction for QFFP disposed
+        # of in
+        # 2017" 500,000.00.
+        CHART_2017_PART_2_AMOUNT_A: CreditAmountLine(
+            output=CHART_2017_PART_2_AMOUNT_A,
+            basis=Credit(amount=D("500000")),
+            rounding=CENT,
+            value=D("500000.00"),
+        ),
+        # Form T657 Chart 2018 Part 1 amount A: "Maximum capital gains deduction for QFFP and/or
+        # QSBCS
+        # disposed of in 2018" 424,126.00.
+        CHART_2018_PART_1_AMOUNT_A: CreditAmountLine(
+            output=CHART_2018_PART_1_AMOUNT_A,
+            basis=Credit(amount=D("424126")),
+            rounding=CENT,
+            value=D("424126.00"),
+        ),
+        # Form T657 Chart 2018 Part 2 amount A: "Maximum capital gains deduction for QFFP disposed
+        # of in
+        # 2018" 500,000.00.
+        CHART_2018_PART_2_AMOUNT_A: CreditAmountLine(
+            output=CHART_2018_PART_2_AMOUNT_A,
+            basis=Credit(amount=D("500000")),
+            rounding=CENT,
+            value=D("500000.00"),
+        ),
+        # Form T657 Chart 2019 Part 1 amount A: "Maximum capital gains deduction for QFFP and/or
+        # QSBCS
+        # disposed of in 2019" 433,456.00.
+        CHART_2019_PART_1_AMOUNT_A: CreditAmountLine(
+            output=CHART_2019_PART_1_AMOUNT_A,
+            basis=Credit(amount=D("433456")),
+            rounding=CENT,
+            value=D("433456.00"),
+        ),
+        # Form T657 Chart 2019 Part 2 amount A: "Maximum capital gains deduction for QFFP disposed
+        # of in
+        # 2019" 500,000.00.
+        CHART_2019_PART_2_AMOUNT_A: CreditAmountLine(
+            output=CHART_2019_PART_2_AMOUNT_A,
+            basis=Credit(amount=D("500000")),
+            rounding=CENT,
+            value=D("500000.00"),
+        ),
+        # Form T657 Chart 2020 Part 1 amount A: "Maximum capital gains deduction for QFFP and/or
+        # QSBCS
+        # disposed of in 2020" 441,692.00.
+        CHART_2020_PART_1_AMOUNT_A: CreditAmountLine(
+            output=CHART_2020_PART_1_AMOUNT_A,
+            basis=Credit(amount=D("441692")),
+            rounding=CENT,
+            value=D("441692.00"),
+        ),
+        # Form T657 Chart 2020 Part 2 amount A: "Maximum capital gains deduction for QFFP disposed
+        # of in
+        # 2020" 500,000.00.
+        CHART_2020_PART_2_AMOUNT_A: CreditAmountLine(
+            output=CHART_2020_PART_2_AMOUNT_A,
+            basis=Credit(amount=D("500000")),
+            rounding=CENT,
+            value=D("500000.00"),
+        ),
         # Form T2125 Chart B line 18 and Chart C line 25 "÷ 30": the printed constants, each a
         # dataset of the same name, claimed whole to the cent.
         BUSINESS_VEHICLE_INTEREST_LIMIT: CreditAmountLine(
@@ -1767,6 +1887,96 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert fractions == {
+        # Form T657 Chart 2016 Part 1 "× 1/2 = F": amounts D and E of 0, times 1/2.
+        CHART_2016_PART_1_AMOUNT_F: FractionAppliedLine(
+            output=CHART_2016_PART_1_AMOUNT_F,
+            base=CHART_2016_PART_1_AMOUNTS_D_AND_E,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        # Form T657 Chart 2016 Part 2 "× 1/2 = F": the T2017 line 6 amount of 0, times 1/2.
+        CHART_2016_PART_2_AMOUNT_F: FractionAppliedLine(
+            output=CHART_2016_PART_2_AMOUNT_F,
+            base=T657_CHART_2016_AMOUNT_D,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        # Form T657 Chart 2017 Part 1 "× 1/2 = H": amounts F and G of 0, times 1/2.
+        CHART_2017_PART_1_AMOUNT_H: FractionAppliedLine(
+            output=CHART_2017_PART_1_AMOUNT_H,
+            base=CHART_2017_PART_1_AMOUNTS_F_AND_G,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        # Form T657 Chart 2017 Part 2 "× 1/2 = F": the T2017 line 6 amount of 0, times 1/2.
+        CHART_2017_PART_2_AMOUNT_F: FractionAppliedLine(
+            output=CHART_2017_PART_2_AMOUNT_F,
+            base=T657_CHART_2017_AMOUNT_F,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        # Form T657 Chart 2018 Part 1 "× 1/2 = H": amounts F and G of 0, times 1/2.
+        CHART_2018_PART_1_AMOUNT_H: FractionAppliedLine(
+            output=CHART_2018_PART_1_AMOUNT_H,
+            base=CHART_2018_PART_1_AMOUNTS_F_AND_G,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        # Form T657 Chart 2018 Part 2 "× 1/2 = F": the T2017 line 6 amount of 0, times 1/2.
+        CHART_2018_PART_2_AMOUNT_F: FractionAppliedLine(
+            output=CHART_2018_PART_2_AMOUNT_F,
+            base=T657_CHART_2018_AMOUNT_F,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        # Form T657 Chart 2019 Part 1 "× 1/2 = H": amounts F and G of 0, times 1/2.
+        CHART_2019_PART_1_AMOUNT_H: FractionAppliedLine(
+            output=CHART_2019_PART_1_AMOUNT_H,
+            base=CHART_2019_PART_1_AMOUNTS_F_AND_G,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        # Form T657 Chart 2019 Part 2 "× 1/2 = F": the T2017 line 6 amount of 0, times 1/2.
+        CHART_2019_PART_2_AMOUNT_F: FractionAppliedLine(
+            output=CHART_2019_PART_2_AMOUNT_F,
+            base=T657_CHART_2019_AMOUNT_F,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        # Form T657 Chart 2020 Part 1 "× 1/2 = H": amounts F and G of 0, times 1/2.
+        CHART_2020_PART_1_AMOUNT_H: FractionAppliedLine(
+            output=CHART_2020_PART_1_AMOUNT_H,
+            base=CHART_2020_PART_1_AMOUNTS_F_AND_G,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0"),
+        ),
+        # Form T657 Chart 2020 Part 2 "× 1/2 = F": the T2017 line 6 amount of 0, times 1/2.
+        CHART_2020_PART_2_AMOUNT_F: FractionAppliedLine(
+            output=CHART_2020_PART_2_AMOUNT_F,
+            base=T657_CHART_2020_AMOUNT_F,
+            base_amount=D("0"),
+            fraction=Fraction(1, 2),
+            rounding=CENT,
+            result=D("0"),
+        ),
         # Form T657 Chart 2021 Part 1 "× 1/2 = H": amounts F and G of 0, times 1/2.
         CHART_2021_PART_1_AMOUNT_H: FractionAppliedLine(
             output=CHART_2021_PART_1_AMOUNT_H,
