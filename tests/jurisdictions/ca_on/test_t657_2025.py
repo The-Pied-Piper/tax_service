@@ -13,6 +13,9 @@ no .txt is published):
 - Chart 2025 Part 1 amount A 522,145.00 and Part 2 amount A 625,000.00;
 - Chart 2024 Period 1 amount A 508,418.00 and Period 2 amount A 625,000.00, and each period's
   "Add amounts F to H (if negative, enter "0") = × 1/2 = I";
+- Charts 2016 to 2020 Part 1 amount A (412,088.00, 417,858.00, 424,126.00, 433,456.00,
+  441,692.00) and Part 2 amount A (500,000.00 each), and each chart's halving lines: Part 1
+  "× 1/2 = F" (Chart 2016) or "× 1/2 = H" (Charts 2017 to 2020) and Part 2 "× 1/2 = F";
 - Charts 2021, 2022 and 2023 Part 1 amount A (446,109.00, 456,815.00, 485,595.00) and Part 2
   amount A (500,000.00 each), and each chart's halving lines: Part 1 "× 1/2 = H" and "× 1/2 = +"
   (box 30) I, and Part 2 "× 1/2 = F" and "× 1/2 = G".
@@ -49,6 +52,86 @@ T657_PDF = "https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t657/t657-25
 # The form lines each dataset header quotes, lowercased as the header is compared. CRA publishes
 # no .txt of T657, so the quotes are checked against the form lines as copied from the PDF.
 HEADER_QUOTES = {
+    "ca/chart_2016_part_1_amount_a": (
+        "maximum capital gains deduction for qffp and/or qsbcs disposed of in 2016",
+        "412,088.00",
+    ),
+    "ca/chart_2016_part_2_amount_a": (
+        "maximum capital gains deduction for qffp disposed of in 2016",
+        "500,000.00",
+    ),
+    "ca/t657_chart_2016_part_1_f_fraction": (
+        'amount d plus amount e (if negative, enter "0")',
+        "× 1/2",
+    ),
+    "ca/t657_chart_2016_part_2_f_fraction": (
+        "amount from line 6 of form t2017",
+        "× 1/2",
+    ),
+    "ca/chart_2017_part_1_amount_a": (
+        "maximum capital gains deduction for qffp and/or qsbcs disposed of in 2017",
+        "417,858.00",
+    ),
+    "ca/chart_2017_part_2_amount_a": (
+        "maximum capital gains deduction for qffp disposed of in 2017",
+        "500,000.00",
+    ),
+    "ca/t657_chart_2017_part_1_h_fraction": (
+        'amount f plus amount g (if negative, enter "0")',
+        "× 1/2",
+    ),
+    "ca/t657_chart_2017_part_2_f_fraction": (
+        "amount from line 6 of form t2017",
+        "× 1/2",
+    ),
+    "ca/chart_2018_part_1_amount_a": (
+        "maximum capital gains deduction for qffp and/or qsbcs disposed of in 2018",
+        "424,126.00",
+    ),
+    "ca/chart_2018_part_2_amount_a": (
+        "maximum capital gains deduction for qffp disposed of in 2018",
+        "500,000.00",
+    ),
+    "ca/t657_chart_2018_part_1_h_fraction": (
+        'amount f plus amount g (if negative, enter "0")',
+        "× 1/2",
+    ),
+    "ca/t657_chart_2018_part_2_f_fraction": (
+        "amount from line 6 of form t2017",
+        "× 1/2",
+    ),
+    "ca/chart_2019_part_1_amount_a": (
+        "maximum capital gains deduction for qffp and/or qsbcs disposed of in 2019",
+        "433,456.00",
+    ),
+    "ca/chart_2019_part_2_amount_a": (
+        "maximum capital gains deduction for qffp disposed of in 2019",
+        "500,000.00",
+    ),
+    "ca/t657_chart_2019_part_1_h_fraction": (
+        'amount f plus amount g (if negative, enter "0")',
+        "× 1/2",
+    ),
+    "ca/t657_chart_2019_part_2_f_fraction": (
+        "amount from line 6 of form t2017",
+        "× 1/2",
+    ),
+    "ca/chart_2020_part_1_amount_a": (
+        "maximum capital gains deduction for qffp and/or qsbcs disposed of in 2020",
+        "441,692.00",
+    ),
+    "ca/chart_2020_part_2_amount_a": (
+        "maximum capital gains deduction for qffp disposed of in 2020",
+        "500,000.00",
+    ),
+    "ca/t657_chart_2020_part_1_h_fraction": (
+        'amount f plus amount g (if negative, enter "0")',
+        "× 1/2",
+    ),
+    "ca/t657_chart_2020_part_2_f_fraction": (
+        "amount from line 6 of form t2017",
+        "× 1/2",
+    ),
     "ca/t657_annual_gains_inclusion_rate": (
         "inclusion rate × 1/2",
         'line 3 multiplied by the inclusion rate on line 4 (if negative, enter "0")',
@@ -153,6 +236,16 @@ HEADER_QUOTES = {
 }
 
 FRACTIONS = {
+    "ca/t657_chart_2016_part_1_f_fraction": Fraction(1, 2),
+    "ca/t657_chart_2016_part_2_f_fraction": Fraction(1, 2),
+    "ca/t657_chart_2017_part_1_h_fraction": Fraction(1, 2),
+    "ca/t657_chart_2017_part_2_f_fraction": Fraction(1, 2),
+    "ca/t657_chart_2018_part_1_h_fraction": Fraction(1, 2),
+    "ca/t657_chart_2018_part_2_f_fraction": Fraction(1, 2),
+    "ca/t657_chart_2019_part_1_h_fraction": Fraction(1, 2),
+    "ca/t657_chart_2019_part_2_f_fraction": Fraction(1, 2),
+    "ca/t657_chart_2020_part_1_h_fraction": Fraction(1, 2),
+    "ca/t657_chart_2020_part_2_f_fraction": Fraction(1, 2),
     "ca/t657_annual_gains_inclusion_rate": Fraction(1, 2),
     "ca/t657_schedule_3_line_17600_fraction": Fraction(1, 2),
     "ca/t657_chart_2_line_4_fraction": Fraction(1, 4),
@@ -176,6 +269,16 @@ FRACTIONS = {
     "ca/t657_chart_2023_part_2_g_fraction": Fraction(1, 2),
 }
 CREDITS = {
+    "ca/chart_2016_part_1_amount_a": D("412088"),
+    "ca/chart_2016_part_2_amount_a": D("500000"),
+    "ca/chart_2017_part_1_amount_a": D("417858"),
+    "ca/chart_2017_part_2_amount_a": D("500000"),
+    "ca/chart_2018_part_1_amount_a": D("424126"),
+    "ca/chart_2018_part_2_amount_a": D("500000"),
+    "ca/chart_2019_part_1_amount_a": D("433456"),
+    "ca/chart_2019_part_2_amount_a": D("500000"),
+    "ca/chart_2020_part_1_amount_a": D("441692"),
+    "ca/chart_2020_part_2_amount_a": D("500000"),
     "ca/chart_2025_part_1_amount_a": D("522145"),
     "ca/chart_2025_part_2_amount_a": D("625000"),
     "ca/chart_2024_period_1_amount_a": D("508418"),
