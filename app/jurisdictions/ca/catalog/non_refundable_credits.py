@@ -68,6 +68,236 @@ employment income". The returns have no other employment income, so the cap appl
 employment income alone.
 """
 
+CANADIAN_TUITION_FEES = CATALOG.declare("canadian_tuition_fees", Decimal, non_negative=True)
+"""Canadian tuition fees, Schedule 11 line 1 and line 32000 "Eligible tuition fees paid to Canadian
+educational institutions for 2025 (fees for each institution must be more than $100)": the
+student's fees, taken as entered."""
+
+CANADA_TRAINING_CREDIT_LIMIT = CATALOG.declare(
+    "canada_training_credit_limit", Decimal, non_negative=True
+)
+"""Canada training credit limit, Schedule 11 line 3 "Your Canada training credit limit from your
+latest notice of assessment or reassessment": the limit on the notice, taken as entered."""
+
+CANADA_TRAINING_CREDIT_CLAIMED = CATALOG.declare(
+    "canada_training_credit_claimed", Decimal, non_negative=True
+)
+"""Canada training credit claimed, Schedule 11 "Enter the Canada training credit amount that you
+are claiming for 2025 (cannot be more than the amount on line 4).": the filer's election, taken as
+entered and held to line 4 when line 5 is computed."""
+
+FOREIGN_TUITION_FEES = CATALOG.declare("foreign_tuition_fees", Decimal, non_negative=True)
+"""Foreign tuition fees, Schedule 11 line 7 and line 32001 "Eligible tuition fees paid to foreign
+educational institutions for 2025": the student's fees, taken as entered."""
+
+UNUSED_TUITION_FROM_2024 = CATALOG.declare("unused_tuition_from_2024", Decimal, non_negative=True)
+"""Unused federal tuition from 2024, Schedule 11 line 9 "Unused federal tuition from your 2024
+notice of assessment or reassessment (note 1)": the amount on the notice, taken as entered."""
+
+TUITION_TRANSFER_ELECTED = CATALOG.declare("tuition_transfer_elected", Decimal, non_negative=True)
+"""Tuition transfer elected, Schedule 11 line 24 and line 32700 "Enter the amount you are
+transferring to a designated individual as shown on your Tuition and Enrolment Certificate (cannot
+be more than the amount on line 23).": the filer's election, taken as entered and held to line 23
+when line 24 is computed."""
+
+TUITION_TRANSFERRED_FROM_CHILD = CATALOG.declare(
+    "tuition_transferred_from_child", Decimal, non_negative=True
+)
+"""Tuition amount transferred from a child or grandchild, T1 line 104 and line 32400 "Tuition
+amount transferred from a child or grandchild": the amount the student designates (the guide's
+maximum is $5,000 minus the amount the student used), taken as entered, a part of the total of the
+credit amounts on the T1 (line 33500) with no further calculation here."""
+
+CANADA_TRAINING_CREDIT_BASIS = CATALOG.declare(
+    "canada_training_credit_basis", Decimal, non_negative=True
+)
+"""Canada training credit basis, Schedule 11 line 2 "Amount from line 1 multiplied by 50% =":
+line 1 (the Canadian tuition fees) times the credit rate."""
+
+CANADA_TRAINING_CREDIT_MAXIMUM = CATALOG.declare(
+    "canada_training_credit_maximum", Decimal, non_negative=True
+)
+"""Canada training credit maximum, Schedule 11 line 4 "Enter whichever is less: amount from line 2
+or line 3.": the lesser of the basis and the limit on the notice, which the credit claimed cannot
+exceed."""
+
+CANADIAN_TUITION_AVAILABLE = CATALOG.declare(
+    "canadian_tuition_available", Decimal, non_negative=True
+)
+"""Canadian tuition available, Schedule 11 line 6 "Line 1 minus line 5 =": the Canadian fees less
+the Canada training credit."""
+
+CURRENT_YEAR_TUITION_AVAILABLE = CATALOG.declare(
+    "current_year_tuition_available", Decimal, non_negative=True
+)
+"""Current-year tuition available, Schedule 11 line 8 "Line 6 plus line 7 =": the Canadian tuition
+available plus the foreign fees (line 7, line 32001)."""
+
+TOTAL_TUITION_AVAILABLE = CATALOG.declare("total_tuition_available", Decimal, non_negative=True)
+"""Total tuition available, Schedule 11 line 10 "Line 8 plus line 9 =": the current-year tuition
+available plus the unused federal tuition from the 2024 notice (line 9)."""
+
+TUITION_INCOME_BASE = CATALOG.declare("tuition_income_base", Decimal, non_negative=True)
+"""Income base for the tuition amount, Schedule 11 line 11 "Enter the amount from line 26000 of
+your return on line 11 if it is $57,375 or less. If it is more than $57,375, enter the result of
+the following calculation: Amount from line 76 of your return divided by 14.5% =": the taxable
+income, or the federal basic tax divided by 14.5% above the threshold."""
+
+CREDIT_AMOUNTS_SUBTOTAL = CATALOG.declare("credit_amounts_subtotal", Decimal, non_negative=True)
+"""Credit amounts subtotal, T1 line 101 "Add lines 98 to 100. =", which Schedule 11 line 12 "Enter
+the amount from line 101 of your return" reads: the credit amounts of the lines wired up to line
+100 (line 31800), in line order, before line 102 (the tuition amount)."""
+
+TUITION_INCOME_LESS_CREDITS = CATALOG.declare(
+    "tuition_income_less_credits", Decimal, non_negative=True
+)
+"""Income left for the tuition amount, Schedule 11 line 13 "Line 11 minus line 12 (if negative,
+enter "0") =": the income base less the credit amounts subtotal, not below zero."""
+
+UNUSED_TUITION_CLAIMED = CATALOG.declare("unused_tuition_claimed", Decimal, non_negative=True)
+"""Unused tuition claimed, Schedule 11 line 14 "Enter whichever is less amount from line 9 or line
+13.": the lesser of the unused federal tuition from 2024 and the income left."""
+
+TUITION_INCOME_REMAINING = CATALOG.declare("tuition_income_remaining", Decimal, non_negative=True)
+"""Income remaining for the tuition amount, Schedule 11 line 15 "Line 13 minus line 14 =": the
+income left less the unused tuition claimed."""
+
+CURRENT_YEAR_TUITION_CLAIMED = CATALOG.declare(
+    "current_year_tuition_claimed", Decimal, non_negative=True
+)
+"""Current-year tuition claimed, Schedule 11 line 16 "Enter whichever is less amount from line 8
+or line 15.": the lesser of the current-year tuition available and the income remaining."""
+
+FEDERAL_TUITION_AMOUNT = CATALOG.declare("federal_tuition_amount", Decimal, non_negative=True)
+"""Federal tuition amount, Schedule 11 line 17 "Line 14 plus line 16 Enter this amount on line
+32300 of your return. Your federal tuition amount =", T1 line 103 and line 32300 "Your federal
+tuition amount (complete Schedule 11)": a part of the total of the credit amounts on the T1 (line
+33500)."""
+
+UNUSED_FEDERAL_TUITION = CATALOG.declare("unused_federal_tuition", Decimal, non_negative=True)
+"""Unused federal tuition, Schedule 11 line 20 "Line 18 minus line 19 Total unused federal tuition
+amount =": line 18 (the total tuition available, line 10) less line 19 (the federal tuition
+amount, line 17)."""
+
+TUITION_TRANSFER_LIMIT = CATALOG.declare("tuition_transfer_limit", Decimal, non_negative=True)
+"""Tuition transfer limit, Schedule 11 line 21 "Amount from line 8 of the previous page (maximum
+$5,000)": the current-year tuition available, at most $5,000."""
+
+TUITION_AVAILABLE_TO_TRANSFER = CATALOG.declare(
+    "tuition_available_to_transfer", Decimal, non_negative=True
+)
+"""Tuition available to transfer, Schedule 11 line 23 "Unused federal tuition amount available to
+transfer": line 21 less line 22 (the current-year tuition claimed, line 16), not below zero."""
+
+TUITION_TRANSFERRED = CATALOG.declare("tuition_transferred", Decimal, non_negative=True)
+"""Federal tuition amount transferred, Schedule 11 line 24 and line 32700 "Federal tuition amount
+transferred": the amount elected, at most line 23."""
+
+TUITION_CARRIED_FORWARD = CATALOG.declare("tuition_carried_forward", Decimal, non_negative=True)
+"""Tuition carried forward, Schedule 11 line 25 "Line 20 minus line 24 Unused federal tuition
+amount available to carry forward to a future year =": the unused federal tuition less the amount
+transferred. An output of the return: nothing else reads it."""
+
+SPOUSE_RETURN_AGE_AMOUNT = CATALOG.declare("spouse_return_age_amount", Decimal, non_negative=True)
+"""Spouse's age amount, Schedule 2 line 1 and line 35200 "Enter the amount from line 30100 of
+their return.": a figure from the spouse's return, taken as entered."""
+
+SPOUSE_RETURN_INFIRM_CHILDREN_AMOUNT = CATALOG.declare(
+    "spouse_return_infirm_children_amount", Decimal, non_negative=True
+)
+"""Spouse's Canada caregiver amount for infirm children, Schedule 2 line 2 and line 35300 "Enter
+the amount from line 30500 of their return.": a figure from the spouse's return, taken as
+entered."""
+
+SPOUSE_RETURN_PENSION_INCOME_AMOUNT = CATALOG.declare(
+    "spouse_return_pension_income_amount", Decimal, non_negative=True
+)
+"""Spouse's pension income amount, Schedule 2 line 3 and line 35500 "Enter the amount from line
+31400 of their return. (maximum $2,000)": a figure from the spouse's return, taken as entered."""
+
+SPOUSE_RETURN_DISABILITY_AMOUNT = CATALOG.declare(
+    "spouse_return_disability_amount", Decimal, non_negative=True
+)
+"""Spouse's disability amount, Schedule 2 line 4 and line 35700 "Enter the amount from line 31600
+of their return. (Note 1)": a figure from the spouse's return, taken as entered."""
+
+SPOUSE_DESIGNATED_TUITION = CATALOG.declare("spouse_designated_tuition", Decimal, non_negative=True)
+"""Tuition designated by the spouse, Schedule 2 line 5 and line 36000 "Enter the federal amount
+designated to you from their forms T2202, TL11A, or TL11C. (Note 2)": taken as entered."""
+
+SPOUSE_RETURN_TAXABLE_INCOME = CATALOG.declare(
+    "spouse_return_taxable_income", Decimal, non_negative=True
+)
+"""Spouse's taxable income, Schedule 2 line 7 "Enter the amount from line 26000 of their return on
+line 7 if it is $57,375 or less.": a figure from the spouse's return, taken as entered."""
+
+SPOUSE_RETURN_FEDERAL_BASIC_TAX = CATALOG.declare(
+    "spouse_return_federal_basic_tax", Decimal, non_negative=True
+)
+"""Spouse's federal tax, Schedule 2 line 7 "amount from line 76 of their return divided by 14.5%
+=": a figure from the spouse's return, taken as entered."""
+
+SPOUSE_RETURN_BASIC_PERSONAL_AMOUNT = CATALOG.declare(
+    "spouse_return_basic_personal_amount", Decimal, non_negative=True
+)
+"""Spouse's basic personal amount, Schedule 2 line 8 "Amount from line 30000 of their return": a
+figure from the spouse's return, taken as entered."""
+
+SPOUSE_RETURN_LINE_96 = CATALOG.declare("spouse_return_line_96", Decimal, non_negative=True)
+"""Spouse's line 96, Schedule 2 line 9 "Amount from line 96 of their return": a figure from the
+spouse's return, taken as entered."""
+
+SPOUSE_RETURN_FEDERAL_TUITION_AMOUNT = CATALOG.declare(
+    "spouse_return_federal_tuition_amount", Decimal, non_negative=True
+)
+"""Spouse's federal tuition amount, Schedule 2 line 10 "Amount from line 32300 of their return": a
+figure from the spouse's return, taken as entered."""
+
+SPOUSE_NOT_SEPARATED_90_DAYS = CATALOG.declare(
+    "spouse_not_separated_90_days", int, non_negative=True
+)
+"""Spouse not separated for 90 days, Schedule 2 "If you were separated because of a breakdown in
+your relationship for a period of 90 days or more including December 31, 2025, your spouse or
+common-law partner cannot transfer any unused amounts to you.": the caller's count, 1 when not
+separated and 0 when separated (only 0 or 1 is valid), which line 13 is counted by."""
+
+SPOUSE_TRANSFERABLE_AMOUNTS = CATALOG.declare(
+    "spouse_transferable_amounts", Decimal, non_negative=True
+)
+"""Spouse's transferable amounts, Schedule 2 line 6 "Add lines 1 to 5. =": the spouse's age,
+infirm children, pension income and disability amounts and the designated tuition."""
+
+SPOUSE_INCOME_FOR_TRANSFER = CATALOG.declare(
+    "spouse_income_for_transfer", Decimal, non_negative=True
+)
+"""Spouse's income for the transfer, Schedule 2 line 7 "Enter the amount from line 26000 of their
+return on line 7 if it is $57,375 or less. If it is more than $57,375, enter the result of the
+following calculation: amount from line 76 of their return divided by 14.5% =": their taxable
+income, or their federal tax divided by 14.5% above the threshold."""
+
+SPOUSE_CREDITS_USED = CATALOG.declare("spouse_credits_used", Decimal, non_negative=True)
+"""Spouse's credits used, Schedule 2 line 11 "Add lines 8 to 10. =": the spouse's basic personal
+amount, line 96 and federal tuition amount."""
+
+SPOUSE_ADJUSTED_TAXABLE_INCOME = CATALOG.declare(
+    "spouse_adjusted_taxable_income", Decimal, non_negative=True
+)
+"""Spouse's income left, Schedule 2 line 12 and line 36100 "Line 7 minus line 11 (if negative,
+enter "0") =": line 7 less line 11, not below zero."""
+
+SPOUSE_UNUSED_AMOUNTS = CATALOG.declare("spouse_unused_amounts", Decimal, non_negative=True)
+"""Spouse's unused amounts, Schedule 2 line 13 "Line 6 minus line 12 (if negative, enter "0")":
+line 6 less line 12, not below zero, before the separation rule."""
+
+AMOUNTS_TRANSFERRED_FROM_SPOUSE = CATALOG.declare(
+    "amounts_transferred_from_spouse", Decimal, non_negative=True
+)
+"""Amounts transferred from a spouse, Schedule 2 line 13 "Enter this amount on line 32600 of your
+return. Federal amounts transferred from your spouse or common-law partner", T1 line 105 and line
+32600 "Amounts transferred from your spouse or common-law partner (complete Schedule 2)": line 13,
+or nothing when separated for 90 days or more including December 31, a part of the total of the
+credit amounts on the T1 (line 33500)."""
+
 NON_REFUNDABLE_CREDIT_AMOUNTS = CATALOG.declare(
     "non_refundable_credit_amounts", Decimal, non_negative=True
 )
@@ -78,7 +308,9 @@ of the credit amounts the rate is applied to once, here, in line order, the basi
 spouse or common-law partner (line 81, 30425), the Canada caregiver amount for infirm children
 (line 83, 30500), the base CPP contributions (line 30800), the base CPP contributions on
 self-employment income (line 31000), the EI premiums (line 31200), the EI premiums on
-self-employment income (line 31217) and the Canada employment amount (line 31260)."""
+self-employment income (line 31217), the Canada employment amount (line 31260), the federal
+tuition amount (line 32300), the tuition amount transferred from a child or grandchild (line
+32400) and the amounts transferred from a spouse or common-law partner (line 32600)."""
 
 CHARITABLE_DONATIONS = CATALOG.declare("charitable_donations", Decimal, non_negative=True)
 """Charitable donations, Schedule 9 line 1 "Donations to registered charities and similar

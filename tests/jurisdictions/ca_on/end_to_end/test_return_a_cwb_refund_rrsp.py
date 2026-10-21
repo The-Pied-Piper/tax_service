@@ -220,7 +220,8 @@ def test_with_no_tax_payable_all_the_tax_deducted_is_refunded() -> None:
     assert (
         "total_credits: income_tax_deducted 500 + refundable_medical_expense_supplement 0 "
         "+ canada_workers_benefit 1633 "
-        "+ part_xii_2_tax_credit 0 + employee_and_partner_gst_hst_rebate 0 "
+        "+ canada_training_credit 0 + part_xii_2_tax_credit 0 + "
+        "employee_and_partner_gst_hst_rebate 0 "
         "+ educator_school_supply_credit 0 + journalism_labour_tax_credit 0 "
         "+ tax_paid_by_instalments 0 + provincial_credits 0 = 2133"
     ) in rendered

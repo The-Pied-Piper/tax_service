@@ -148,7 +148,9 @@ def test_return_js_age_spouse_and_caregiver_amounts_come_off_net_income_and_the_
         "+ caregiver_amount 0 + infirm_children_amount 0 + cpp_base_contributions 2301.75 "
         "+ cpp_base_contributions_on_self_employment 0 + ei_premiums 820 "
         "+ ei_premiums_on_self_employment 0 + canada_employment_amount 1471 "
-        "+ disability_transferred_amount 0 + medical_claim 0 = 37679.05",
+        "+ disability_transferred_amount 0 + federal_tuition_amount 0 + "
+        "tuition_transferred_from_child 0 + amounts_transferred_from_spouse 0 + medical_claim 0 = "
+        "37679.05",
         "age_income_over_threshold: tosi_adjusted_net_income_not_below_zero 50000 "
         "less age_income_threshold 46330, not below 0 = 3670",
         "age_reduction: 15% of age_income_over_threshold 3670 (half-up to 0.01)",

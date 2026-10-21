@@ -7,6 +7,7 @@ from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.catalog import (
+    CANADA_TRAINING_CREDIT,
     CANADA_WORKERS_BENEFIT,
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
@@ -33,12 +34,13 @@ OUTPUTS = frozenset(
 STEPS = {
     # T1 line 166 (line 48200) "Add lines 150 to 165. Total credits": line 150 (43700), line 154
     # (45200) "Refundable medical expense supplement (use Federal Worksheet)", line 155 (45300)
-    # "Canada workers benefit (CWB) (complete Schedule 6)", line 159 (45600) "Part XII.2 tax
-    # credit (box 38 of all T3 slips and box 209 of all T5013 slips)", line 160 (45700)
-    # "Employee and partner GST/HST rebate (complete Form GST370)", line 161 (46900), line 162
-    # (47555) "Canadian journalism labour tax credit (box 236 of all T5013 slips)", line 164
-    # (47600) "Tax paid by instalments" and line 165 (47900), in line order, as the other lines
-    # are not triggered or not yet wired.
+    # "Canada workers benefit (CWB) (complete Schedule 6)", line 156 (45350) "Canada training
+    # credit (CTC) (complete Schedule 11)", line 159 (45600) "Part XII.2 tax credit (box 38 of
+    # all T3 slips and box 209 of all T5013 slips)", line 160 (45700) "Employee and partner
+    # GST/HST rebate (complete Form GST370)", line 161 (46900), line 162 (47555) "Canadian
+    # journalism labour tax credit (box 236 of all T5013 slips)", line 164 (47600) "Tax paid by
+    # instalments" and line 165 (47900), in line order, as the other lines are not triggered or
+    # not yet wired.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -47,6 +49,7 @@ STEPS = {
                 "ca/income_tax_deducted",
                 "ca/refundable_medical_expense_supplement",
                 "ca/canada_workers_benefit",
+                "ca/canada_training_credit",
                 "ca/part_xii_2_tax_credit",
                 "ca/employee_and_partner_gst_hst_rebate",
                 "ca/educator_school_supply_credit",
@@ -85,6 +88,7 @@ WIRING = {
                 INCOME_TAX_DEDUCTED,
                 REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
                 CANADA_WORKERS_BENEFIT,
+                CANADA_TRAINING_CREDIT,
                 PART_XII_2_TAX_CREDIT,
                 EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
                 EDUCATOR_SCHOOL_SUPPLY_CREDIT,

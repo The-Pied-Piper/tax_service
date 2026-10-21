@@ -200,6 +200,24 @@ inputs:
   - ca/ei_exempt_self_employment_income
   - ca/ei_insurable_earnings
   - ca/ei_special_benefits_agreement
+  - ca/canadian_tuition_fees
+  - ca/canada_training_credit_limit
+  - ca/canada_training_credit_claimed
+  - ca/foreign_tuition_fees
+  - ca/unused_tuition_from_2024
+  - ca/tuition_transfer_elected
+  - ca/tuition_transferred_from_child
+  - ca/spouse_return_age_amount
+  - ca/spouse_return_infirm_children_amount
+  - ca/spouse_return_pension_income_amount
+  - ca/spouse_return_disability_amount
+  - ca/spouse_designated_tuition
+  - ca/spouse_return_taxable_income
+  - ca/spouse_return_federal_basic_tax
+  - ca/spouse_return_basic_personal_amount
+  - ca/spouse_return_line_96
+  - ca/spouse_return_federal_tuition_amount
+  - ca/spouse_not_separated_90_days
   - ca-on/dependent_children
   - ca-on/dependants
   - ca-on/ontario_minimum_tax

@@ -240,7 +240,8 @@ def test_the_trace_explains_the_computation() -> None:
         "+ cpp_base_contributions 3356.1 + cpp_base_contributions_on_self_employment 0 "
         "+ ei_premiums 1077.48 + ei_premiums_on_self_employment 0 "
         "+ canada_employment_amount 1471 + disability_transferred_amount 0 "
-        "+ medical_claim 0 = 22033.58",
+        "+ federal_tuition_amount 0 + tuition_transferred_from_child 0 + "
+        "amounts_transferred_from_spouse 0 + medical_claim 0 = 22033.58",
         "22033.58",
     )
     federal_credit = position(
@@ -856,7 +857,8 @@ def test_the_trace_explains_the_computation() -> None:
     credits = position(
         "total_credits: income_tax_deducted 25000 + refundable_medical_expense_supplement 0 "
         "+ canada_workers_benefit 0 "
-        "+ part_xii_2_tax_credit 0 + employee_and_partner_gst_hst_rebate 0 "
+        "+ canada_training_credit 0 + part_xii_2_tax_credit 0 + "
+        "employee_and_partner_gst_hst_rebate 0 "
         "+ educator_school_supply_credit 0 + journalism_labour_tax_credit 0 "
         "+ tax_paid_by_instalments 0 + provincial_credits 0 = 25000",
         "25000",
