@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import app.jurisdictions.ca_on
@@ -28,3 +29,15 @@ def test_no_manifest_part_is_over_30_kb() -> None:
 
     assert parts
     assert [(p.name, p.stat().st_size) for p in parts if p.stat().st_size > 30 * 1024] == []
+
+
+def test_manifest_parts_are_named_by_number_letter_and_topic() -> None:
+    manifests = Path(app.jurisdictions.ca_on.__file__).parent / "manifests"
+    names = [p.name for p in manifests.rglob("*.yaml")]
+    pattern = re.compile(r"^(\d\d)([a-z]?)_[a-z0-9_]+\.yaml$")
+
+    matches = [pattern.match(name) for name in names]
+
+    assert all(matches)
+    numbers = [m.group(1) for m in matches if m and not m.group(2)]
+    assert len(numbers) == len(set(numbers))

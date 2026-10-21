@@ -66,7 +66,7 @@ code (`CA-QC` -> `ca_qc`), and change:
   slots with parameter families, artifact slots with artifact identifiers (a consumed list slot
   takes a YAML list of them, in order). Each manifest also requires `inputs:` and `outputs:`,
   the artifact identifiers a computation starts from and returns. A manifest is one YAML file, or
-  a subfolder of parts (named so they sort in order) that the loader merges into one: scalar keys
+  a subfolder of parts (named `<NN>_<topic>.yaml`; a part that outgrows the 30 KB cap gets a new file `<NN><letter>_<form or schedule>.yaml`, the first overflow of part 05 being `05a_…`, then `05b_…`, never a renumber) that the loader merges into one: scalar keys
   in exactly one part, `inputs`, `outputs` and `capabilities` concatenated in part order.
 - `parameters/`: one dataset per family and tax year, at `parameters/<family>/<year>.yaml`
   for family `<namespace>/<family>`.
