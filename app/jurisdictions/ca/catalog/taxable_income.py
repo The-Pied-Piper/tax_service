@@ -214,9 +214,8 @@ DEDUCTIONS_FROM_NET_INCOME = CATALOG.declare(
     "deductions_from_net_income", Decimal, non_negative=True
 )
 """Deductions from net income, T1 line 68 and line 25700 "Add lines 58 to 67.": the sum of the
-deductions from net income, here, in line order, lines 58, 59, 60, 61, 62, 63, 66 and 67 (lines
-24400, 24900, 25000, 25100, 25200, 25300, 25500 and 25600); lines 64 and 65 (25395 and 25400) are
-not wired yet.
+deductions from net income, here, in line order, lines 58, 59, 60, 61, 62, 63, 64, 65, 66 and 67
+(lines 24400, 24900, 25000, 25100, 25200, 25300, 25395, 25400, 25500 and 25600).
 """
 
 TAXABLE_INCOME = CATALOG.declare("taxable_income", Decimal, non_negative=True)
@@ -563,7 +562,9 @@ claimed in 2000: Amount from line 254 of your 2000 return": a starting amount.""
 
 T657_INCLUSION_RATE_2000 = CATALOG.declare("t657_inclusion_rate_2000", Decimal, non_negative=True)
 """Inclusion rate for 2000 (IR), Form T657 Chart 2 footnote (2) "Your "IR" is your inclusion rate
-for 2000": a starting rate, entered as a decimal."""
+for 2000": a starting rate, entered as a decimal. IR is the 2000 inclusion rate from line 16 of the
+filer's 2000 Schedule 3 Part 4. It must be entered when Chart 2 line 14 is not 0; 0 means not
+entered, and then the line 16 adjustment is 0 (line 16 equals line 14)."""
 
 T657_CHART_2_LINE_18 = CATALOG.declare("t657_chart_2_line_18", Decimal, non_negative=True)
 """Capital gains deduction claimed in 2001 to 2024, Form T657 Chart 2 line 18 "Total capital gains
@@ -780,17 +781,16 @@ CHART_2_LINE_13 = CATALOG.declare("chart_2_line_13", Decimal, non_negative=True)
 CHART_2_LINE_15 = CATALOG.declare("chart_2_line_15", Decimal, non_negative=True)
 """Chart 2 line 15, Form T657 Chart 2 line 15 "Line 13 plus line 14": line 13 plus line 14."""
 
-CHART_2_LINE_14_HALVED = CATALOG.declare("chart_2_line_14_halved", Decimal, non_negative=True)
-"""Line 14 multiplied by 1/2, Form T657 Chart 2 line 16 "Adjustment of 2000 capital gains deduction:
-Amount from line 14 × [ 1 – ( 2 × IR )]", the 2 of "2 × IR": line 14 multiplied by 1/2, rounded
-half-up to the cent."""
+CHART_2_TWICE_IR = CATALOG.declare("chart_2_twice_ir", Decimal, non_negative=True)
+"""Twice IR, Form T657 Chart 2 line 16 "Adjustment of 2000 capital gains deduction: Amount from line
+14 × [ 1 – ( 2 × IR )]", the "2 × IR": IR multiplied by 2, exact and not rounded."""
 
 CHART_2_LINE_14_OVER_TWICE_IR = CATALOG.declare(
     "chart_2_line_14_over_twice_ir", Decimal, non_negative=True
 )
-"""Line 14 halved, divided by IR, Form T657 Chart 2 line 16 "Adjustment of 2000 capital gains
-deduction: Amount from line 14 × [ 1 – ( 2 × IR )]", the quotient of the 1 over ( 2 × IR ): the
-halved line 14 divided by IR, rounded half-up to the cent; 0 when IR is 0."""
+"""Line 14 over twice IR, Form T657 Chart 2 line 16 "Adjustment of 2000 capital gains deduction:
+Amount from line 14 × [ 1 – ( 2 × IR )]", line 14 × 1 over ( 2 × IR ): line 14 divided by twice IR,
+rounded half-up to the cent once, the only rounding of the line; 0 when IR is 0."""
 
 CHART_2_LINE_16 = CATALOG.declare("chart_2_line_16", Decimal, non_negative=True)
 """Adjustment of 2000 capital gains deduction, Form T657 Chart 2 line 16 "Adjustment of 2000 capital
@@ -967,4 +967,6 @@ T657_CHART_1_ROWS = RecordListKind.declare(
     ),
 )
 """Chart 1 year rows, Form T657 Chart 1 "Chart 1 – Calculate your net capital losses of other years
-(line 14 of Step 2)": one record for each printed row, with columns A to D."""
+(line 14 of Step 2)": one record for each YEAR, with columns A to D (the form's own Note:
+"complete a separate calculation for each year that applies to you"; the printed rows combine years
+only for space). A single-year filer enters one record."""

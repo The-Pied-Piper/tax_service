@@ -127,7 +127,9 @@ capabilities:
   # Chart 1 "Calculate your net capital losses of other years (line 14 of Step 2)": for each year row,
   # column E "(C – D) (If negative, enter "0")", column F "(B + E)" and column G "(A – F) (If
   # negative, enter "0")"; "Add the amounts in column G and enter the result on line 14 of Step 2."
-  # One record for each printed row.
+  # One record for each YEAR (the form's own Note: "complete a separate calculation for each year
+  # that applies to you"; the printed rows combine years only for space); a single-year filer
+  # enters one record.
   - name: ca/chart_1_column_g_total
     consumes:
       rows: ca/t657_chart_1_rows
@@ -275,33 +277,35 @@ capabilities:
     produces:
       output: ca/chart_2_line_15
   # Chart 2 line 16 "Adjustment of 2000 capital gains deduction: Amount from line 14 × [ 1 – ( 2 × IR
-  # )]", first the "2" of "2 × IR": line 14 × 1/2.
+  # )]", first the "2 × IR" (footnote (2) "Your "IR" is your inclusion rate for 2000 from line 16 in
+  # Part 4 of your Schedule 3 for 2000 or on your notice of assessment or latest notice of
+  # reassessment for 2000."): IR times 2, exact and not rounded. IR must be entered when line 14 is
+  # not 0: it is the 2000 inclusion rate from the filer's 2000 Schedule 3 Part 4 line 16, and 0
+  # means not entered, which gives an adjustment of 0 (line 16 equals line 14).
   - name: core/apply_fraction
     params:
-      fraction: ca/t657_chart_2_line_16_fraction
+      fraction: ca/t657_chart_2_twice_ir_fraction
     consumes:
-      base: ca/t657_chart_2_line_14
+      base: ca/t657_inclusion_rate_2000
     produces:
-      output: ca/chart_2_line_14_halved
-  # Chart 2 line 16, the quotient "1 over ( 2 × IR )" applied to line 14: line 14 × 1/2 × 1 ÷ IR
-  # (footnote (2) "Your "IR" is your inclusion rate for 2000 from line 16 in Part 4 of your Schedule 3
-  # for 2000 or on your notice of assessment or latest notice of reassessment for 2000."); 0 when IR
-  # is 0.
-  - name: ca/apply_ratio_or_zero
-    params:
-      rounding: ca/t657_chart_2_line_16_rounding
-    consumes:
-      amount: ca/chart_2_line_14_halved
-      numerator: ca/chart_2_numerator_one
-      denominator: ca/t657_inclusion_rate_2000
-    produces:
-      output: ca/chart_2_line_14_over_twice_ir
+      output: ca/chart_2_twice_ir
   # Chart 2 line 16, the 1 of "1 over ( 2 × IR )": the printed 1 as an artifact.
   - name: core/credit_amount
     params:
       amount: ca/chart_2_numerator_one
     produces:
       output: ca/chart_2_numerator_one
+  # Chart 2 line 16, line 14 × 1 ÷ ( 2 × IR ), rounded half-up to the cent once, the only rounding
+  # of the line; 0 when IR is 0.
+  - name: ca/apply_ratio_or_zero
+    params:
+      rounding: ca/t657_chart_2_line_16_rounding
+    consumes:
+      amount: ca/t657_chart_2_line_14
+      numerator: ca/chart_2_numerator_one
+      denominator: ca/chart_2_twice_ir
+    produces:
+      output: ca/chart_2_line_14_over_twice_ir
   # Chart 2 line 16 "Amount from line 14 × [ 1 – ( 2 × IR )]": line 14 minus line 14 × 1/(2 × IR).
   - name: core/subtract
     consumes:

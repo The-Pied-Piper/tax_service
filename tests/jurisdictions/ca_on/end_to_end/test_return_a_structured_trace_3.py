@@ -8,6 +8,7 @@ from app.domain.parameters.amount import Amount
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
 from app.domain.parameters.fraction import Fraction
+from app.domain.parameters.rounding import NO_ROUNDING
 from app.domain.parameters.taper import Taper
 from app.domain.trace import (
     CappedAmountLine,
@@ -94,10 +95,10 @@ from app.jurisdictions.ca.catalog import (
     CHART_2_LINE_4,
     CHART_2_LINE_8,
     CHART_2_LINE_12,
-    CHART_2_LINE_14_HALVED,
     CHART_2_LINE_14_OVER_TWICE_IR,
     CHART_2_LINE_16,
     CHART_2_NUMERATOR_ONE,
+    CHART_2_TWICE_IR,
     CHART_2025_PART_1_AMOUNT_A,
     CHART_2025_PART_1_AMOUNT_K,
     CHART_2025_PART_1_AMOUNTS_F_TO_J,
@@ -310,6 +311,7 @@ from app.jurisdictions.ca.catalog import (
     T657_CHART_2_LINE_6,
     T657_CHART_2_LINE_10,
     T657_CHART_2_LINE_14,
+    T657_INCLUSION_RATE_2000,
     T657_PART_2_EXCLUDED_F,
     T657_PART_2_EXCLUDED_G,
     T657_PART_2_EXCLUDED_H,
@@ -1469,13 +1471,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             rounding=CENT,
             result=D("0.00"),
         ),
-        CHART_2_LINE_14_HALVED: FractionAppliedLine(
-            output=CHART_2_LINE_14_HALVED,
-            base=T657_CHART_2_LINE_14,
+        CHART_2_TWICE_IR: FractionAppliedLine(
+            output=CHART_2_TWICE_IR,
+            base=T657_INCLUSION_RATE_2000,
             base_amount=D("0"),
-            fraction=Fraction(1, 2),
-            rounding=CENT,
-            result=D("0.00"),
+            fraction=Fraction(2, 1),
+            rounding=NO_ROUNDING,
+            result=D("0"),
         ),
         CHART_2_LINE_4: FractionAppliedLine(
             output=CHART_2_LINE_4,

@@ -32,12 +32,12 @@ from app.jurisdictions.ca.catalog import (
     CHART_2_LINE_11,
     CHART_2_LINE_12,
     CHART_2_LINE_13,
-    CHART_2_LINE_14_HALVED,
     CHART_2_LINE_14_OVER_TWICE_IR,
     CHART_2_LINE_15,
     CHART_2_LINE_16,
     CHART_2_LINE_17,
     CHART_2_LINE_19,
+    CHART_2_TWICE_IR,
     CHART_2025_PART_1_AMOUNT_C,
     CHART_2025_PART_1_AMOUNT_E,
     CHART_2025_PART_1_AMOUNT_K,
@@ -82,8 +82,8 @@ def return_bf(**overrides: Any) -> Worksheet:
     Other income of 10000 and one disposition of QSBCS in 2025 after June 24, 2024: proceeds of
     500000, adjusted cost base of 150000 and no outlays, a gain of 350000 (Schedule 3 line 10700).
     Net capital losses of other years of 20000 are available and claimed. Taxable capital gains
-    of 175000 in earlier years (a chosen 100000 for 2002 to 2024 on Step 2 line 8); every other
-    Form T657 line is blank. All 155000, the annual gains limit, is claimed on line 25400.
+    for 2002 to 2024 of a chosen 100000 on Step 2 line 8; every other Form T657 line is blank. All
+    155000, the annual gains limit, is claimed on line 25400.
     """
     inputs: dict[str, Any] = {
         "employment_income": "0",
@@ -302,7 +302,8 @@ def test_chart_2_adjusts_each_period_and_gives_65000_for_amount_d() -> None:
     # is 50000 - 10000.00 = 40000.00. Line 6 is 6000: line 7 is 46000.00; line 8 is 6000 x 1/3 =
     # 2000.00 and line 9 is 44000.00. Line 10 is 9000: line 11 is 53000.00; line 12 is 9000 x 1/3
     # = 3000.00 and line 13 is 50000.00. Line 14 is 12000: line 15 is 62000.00; with IR 0.6, line
-    # 16 is 12000 x [1 - 1 / (2 x 0.6)] = 12000 - 12000 / 1.2 = 12000 - 10000.00 = 2000.00, so
+    # 16 is 12000 x [1 - 1 / (2 x 0.6)] = 12000 - 12000 / 1.2 = 12000 - 10000.00 = 2000.00 (2 x
+    # IR is exactly 1.2), so
     # line 17 is 60000.00. Line 18 is 5000: line 19 is 65000.00, amount D. Part 2's E is 625000 -
     # 65000.00 = 560000.00.
     worksheet = return_bf(
@@ -325,12 +326,54 @@ def test_chart_2_adjusts_each_period_and_gives_65000_for_amount_d() -> None:
     assert worksheet.get(CHART_2_LINE_12).value == D("3000.00")
     assert worksheet.get(CHART_2_LINE_13).value == D("50000.00")
     assert worksheet.get(CHART_2_LINE_15).value == D("62000.00")
-    assert worksheet.get(CHART_2_LINE_14_HALVED).value == D("6000.00")
+    assert worksheet.get(CHART_2_TWICE_IR).value == D("1.2")
     assert worksheet.get(CHART_2_LINE_14_OVER_TWICE_IR).value == D("10000.00")
     assert worksheet.get(CHART_2_LINE_16).value == D("2000.00")
     assert worksheet.get(CHART_2_LINE_17).value == D("60000.00")
     assert worksheet.get(CHART_2_LINE_19).value == D("65000.00")
     assert worksheet.get(CHART_2025_PART_2_AMOUNT_E).value == D("560000.00")
+
+
+def test_chart_1_takes_one_record_for_each_year() -> None:
+    # Year 1: A 100, C 300: E 300, F 300, G 0 (A - F is negative, so 0). Year 2: A 500, C 100: E
+    # 100, F 100, G 400. Total of column G: 400.
+    worksheet = return_bf(
+        t657_chart_1_rows=(
+            t657_chart_1_row(a="100", c="300"),
+            t657_chart_1_row(a="500", c="100"),
+        )
+    )
+
+    assert worksheet.get(CHART_1_COLUMN_G_TOTAL).value == D("400")
+
+
+def test_chart_2_line_16_rounds_once_so_a_line_14_of_1000_01_at_ir_half_gives_zero() -> None:
+    # 2 x IR is 1, so line 14 x 1/1 is 1000.01 and line 16 is 1000.01 - 1000.01 = 0.00. Halving
+    # line 14 first would round 500.005 up to 500.01 and make line 16 -0.01.
+    worksheet = return_bf(t657_chart_2_line_14="1000.01", t657_inclusion_rate_2000="0.5")
+
+    assert worksheet.get(CHART_2_TWICE_IR).value == D("1.0")
+    assert worksheet.get(CHART_2_LINE_14_OVER_TWICE_IR).value == D("1000.01")
+    assert worksheet.get(CHART_2_LINE_16).value == D("0.00")
+
+
+def test_chart_2_line_16_at_an_odd_ir_is_rounded_once() -> None:
+    # IR 0.6667: 2 x IR is 1.3334 and 1000.01 / 1.3334 = 749.97000..., rounded half-up once to
+    # 749.97, so line 16 is 1000.01 - 749.97 = 250.04.
+    worksheet = return_bf(t657_chart_2_line_14="1000.01", t657_inclusion_rate_2000="0.6667")
+
+    assert worksheet.get(CHART_2_TWICE_IR).value == D("1.3334")
+    assert worksheet.get(CHART_2_LINE_14_OVER_TWICE_IR).value == D("749.97")
+    assert worksheet.get(CHART_2_LINE_16).value == D("250.04")
+
+
+def test_chart_2_line_16_with_ir_not_entered_is_line_14() -> None:
+    # IR is required when line 14 is not 0; an IR of 0 means not entered, so the adjustment is 0
+    # and line 16 is line 14 (documented behaviour).
+    worksheet = return_bf(t657_chart_2_line_14="1000.01", t657_inclusion_rate_2000="0")
+
+    assert worksheet.get(CHART_2_LINE_14_OVER_TWICE_IR).value == D("0.00")
+    assert worksheet.get(CHART_2_LINE_16).value == D("1000.01")
 
 
 def test_a_period_1_of_2024_amount_feeds_part_2s_amounts_b_and_o() -> None:

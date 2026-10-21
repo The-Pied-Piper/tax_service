@@ -574,7 +574,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/chart_2_line_12",
         "ca/chart_2_line_13",
         "ca/chart_2_line_15",
-        "ca/chart_2_line_14_halved",
+        "ca/chart_2_twice_ir",
         "ca/chart_2_line_14_over_twice_ir",
         "ca/chart_2_line_16",
         "ca/chart_2_line_17",

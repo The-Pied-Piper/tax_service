@@ -3,7 +3,7 @@
 
 The steps are in the manifest part `06b_capital_gains_deduction_t657.yaml`; line 25400 is added to
 line 25700 in the `taxable_income` family. Step 3a (reserves on the 2016 to 2024 dispositions) is
-out of this family (#190).
+out of this family.
 """
 
 from __future__ import annotations
@@ -45,13 +45,13 @@ from app.jurisdictions.ca.catalog import (
     CHART_2_LINE_11,
     CHART_2_LINE_12,
     CHART_2_LINE_13,
-    CHART_2_LINE_14_HALVED,
     CHART_2_LINE_14_OVER_TWICE_IR,
     CHART_2_LINE_15,
     CHART_2_LINE_16,
     CHART_2_LINE_17,
     CHART_2_LINE_19,
     CHART_2_NUMERATOR_ONE,
+    CHART_2_TWICE_IR,
     CHART_2025_PART_1_AMOUNT_A,
     CHART_2025_PART_1_AMOUNT_C,
     CHART_2025_PART_1_AMOUNT_E,
@@ -553,28 +553,16 @@ STEPS = {
         produces={"output": "ca/chart_2_line_15"},
     ),
     # Chart 2 line 16 "Adjustment of 2000 capital gains deduction: Amount from line 14 × [ 1 – 1/(2
-    # × IR)]", first the "2" of "2 × IR": line 14 × 1/2.
+    # × IR)]", first the "2 × IR" (footnote (2) "Your "IR" is your inclusion rate for 2000 from line
+    # 16 in Part 4 of your Schedule 3 for 2000 or on your notice of assessment or latest notice of
+    # reassessment for 2000."): IR times 2, exact. IR must be entered when line 14 is not 0.
     CapabilitySelection(
         name="core/apply_fraction",
-        params={"fraction": "ca/t657_chart_2_line_16_fraction"},
+        params={"fraction": "ca/t657_chart_2_twice_ir_fraction"},
         consumes={
-            "base": "ca/t657_chart_2_line_14",
+            "base": "ca/t657_inclusion_rate_2000",
         },
-        produces={"output": "ca/chart_2_line_14_halved"},
-    ),
-    # Chart 2 line 16, the quotient "1/(2 × IR)" applied to line 14: line 14 × 1/2 × 1 ÷ IR
-    # (footnote (2) "Your "IR" is your inclusion rate for 2000 from line 16 in Part 4 of your
-    # Schedule 3 for 2000 or on your notice of assessment or latest notice of reassessment for
-    # 2000."); 0 when IR is 0.
-    CapabilitySelection(
-        name="ca/apply_ratio_or_zero",
-        params={"rounding": "ca/t657_chart_2_line_16_rounding"},
-        consumes={
-            "amount": "ca/chart_2_line_14_halved",
-            "numerator": "ca/chart_2_numerator_one",
-            "denominator": "ca/t657_inclusion_rate_2000",
-        },
-        produces={"output": "ca/chart_2_line_14_over_twice_ir"},
+        produces={"output": "ca/chart_2_twice_ir"},
     ),
     # Chart 2 line 16, the 1 of "1/(2 × IR)": the printed 1 as an artifact.
     CapabilitySelection(
@@ -582,6 +570,17 @@ STEPS = {
         params={"amount": "ca/chart_2_numerator_one"},
         consumes={},
         produces={"output": "ca/chart_2_numerator_one"},
+    ),
+    # Chart 2 line 16, line 14 × 1 ÷ (2 × IR), rounded once; 0 when IR is 0.
+    CapabilitySelection(
+        name="ca/apply_ratio_or_zero",
+        params={"rounding": "ca/t657_chart_2_line_16_rounding"},
+        consumes={
+            "amount": "ca/t657_chart_2_line_14",
+            "numerator": "ca/chart_2_numerator_one",
+            "denominator": "ca/chart_2_twice_ir",
+        },
+        produces={"output": "ca/chart_2_line_14_over_twice_ir"},
     ),
     # Chart 2 line 16 "Amount from line 14 × [ 1 – 1/(2 × IR)]": line 14 minus line 14 × 1/(2 × IR).
     CapabilitySelection(
@@ -1065,18 +1064,18 @@ WIRING = {
     ),
     (
         ApplyFraction,
-        frozenset({T657_CHART_2_LINE_14}),
-        frozenset({CHART_2_LINE_14_HALVED}),
-    ),
-    (
-        ApplyRatioOrZero,
-        frozenset({CHART_2_LINE_14_HALVED, CHART_2_NUMERATOR_ONE, T657_INCLUSION_RATE_2000}),
-        frozenset({CHART_2_LINE_14_OVER_TWICE_IR}),
+        frozenset({T657_INCLUSION_RATE_2000}),
+        frozenset({CHART_2_TWICE_IR}),
     ),
     (
         CreditAmount,
         frozenset({}),
         frozenset({CHART_2_NUMERATOR_ONE}),
+    ),
+    (
+        ApplyRatioOrZero,
+        frozenset({T657_CHART_2_LINE_14, CHART_2_NUMERATOR_ONE, CHART_2_TWICE_IR}),
+        frozenset({CHART_2_LINE_14_OVER_TWICE_IR}),
     ),
     (
         Subtract,
