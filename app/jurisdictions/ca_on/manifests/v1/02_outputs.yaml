@@ -61,6 +61,8 @@ outputs:
   # Form T691 Part 1 line 12 "Add lines 1, 4, 7, and 11.", the adjusted taxable income subtotal,
   # which nothing else on the return reads yet.
   - ca/amt_part_1_subtotal
+  # Form T657
+  - ca/chart_2025_part_1_amount_q
   # Form T691 Part 9 line 6 "Enter this amount on line 14 of Part 1", Part 1 line 20 "Line 15 minus
   # line 19" and Part 1 line 26 "Line 24 minus line 25" times 30%, which nothing else on the return
   # reads yet.

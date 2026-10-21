@@ -518,3 +518,41 @@ inputs:
   - ca/qbt_partnership_losses
   - ca/qbt_other_investment_expenses
   - ca/qbt_other_property_income
+  # Form T657 (line 25400)
+  - ca/t657_t2017_line_13
+  - ca/t657_net_non_eligible_taxable_capital_gains
+  - ca/t657_gains_1985_to_1991
+  - ca/t657_gains_1992_and_1993
+  - ca/t657_gains_1994
+  - ca/t657_gains_1995
+  - ca/t657_gains_1996_to_1999
+  - ca/t657_gains_2000
+  - ca/t657_gains_2001
+  - ca/t657_gains_2002_to_2024
+  - ca/t657_capital_losses_claimed_1985
+  - ca/t657_abil_claimed_1985_to_2024
+  - ca/t657_t2048_line_17217_for_2024
+  - ca/t657_cumulative_net_investment_loss
+  - ca/t657_deductions_claimed_1985_to_2024
+  - ca/t657_chart_2_line_1
+  - ca/t657_chart_2_line_2
+  - ca/t657_chart_2_line_6
+  - ca/t657_chart_2_line_10
+  - ca/t657_chart_2_line_14
+  - ca/t657_inclusion_rate_2000
+  - ca/t657_chart_2_line_18
+  - ca/t657_part_1_amount_b
+  - ca/t657_part_1_amount_f
+  - ca/t657_part_1_amount_g
+  - ca/t657_part_1_amount_h
+  - ca/t657_part_1_amount_i
+  - ca/t657_part_1_amount_j
+  - ca/t657_part_1_amount_l
+  - ca/t657_part_2_excluded_f
+  - ca/t657_part_2_excluded_g
+  - ca/t657_part_2_excluded_h
+  - ca/t657_part_2_amount_i
+  - ca/t657_part_2_amount_j
+  - ca/t657_part_2_amount_l
+  - ca/capital_gains_deduction_claimed
+  - ca/t657_chart_1_rows

@@ -212,7 +212,7 @@ def test_the_trace_explains_the_computation() -> None:
         "+ security_options_deductions 0 + other_payments_deduction 0 "
         "+ limited_partnership_losses_of_other_years 0 + non_capital_losses_of_other_years 0 "
         "+ net_capital_losses_of_other_years 0 + qbt_capital_gains_deduction 0 "
-        "+ northern_residents_deductions 0 "
+        "+ capital_gains_deduction 0 + northern_residents_deductions 0 "
         "+ additional_deductions 0 = 0",
         "0",
     )

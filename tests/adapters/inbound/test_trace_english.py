@@ -79,6 +79,7 @@ from app.jurisdictions.ca.trace import (
     DispositionGainLine,
     DispositionGainOnlyLine,
     DispositionProceedsLine,
+    NetCapitalLossesRowLine,
     OtherDependantMedicalLine,
     PrincipalResidenceGainLine,
     RecapturedCcaLine,
@@ -2247,6 +2248,50 @@ def test_renders_a_proceeds_row() -> None:
     line = DispositionProceedsLine(DISPOSITION_GAINS, 2, D("800.00"))
 
     assert render(line) == "share_gain_or_loss: disposition 2: proceeds 800"
+
+
+NET_CAPITAL_LOSSES_TOTAL = ArtifactKind("ex/chart_1_column_g_total", Decimal)
+
+
+def test_renders_a_chart_1_row_with_columns_e_f_and_g() -> None:
+    # Form T657 Chart 1, the 1992 row: column E is C less D, F is B plus E, G is A less F.
+    line = NetCapitalLossesRowLine(
+        NET_CAPITAL_LOSSES_TOTAL,
+        2,
+        D("5000.00"),
+        D("0"),
+        D("4000.00"),
+        D("1500.00"),
+        D("2500.00"),
+        D("2500.00"),
+        D("2500.00"),
+    )
+
+    assert render(line) == (
+        "chart_1_column_g_total: item 2: column E 2500 = column C 4000 less column D 1500, not "
+        "below 0; column F 2500 = column B 0 plus column E 2500; column G 2500 = column A 5000 "
+        "less column F 2500, not below 0"
+    )
+
+
+def test_renders_a_chart_1_row_whose_columns_floor_at_0() -> None:
+    line = NetCapitalLossesRowLine(
+        NET_CAPITAL_LOSSES_TOTAL,
+        1,
+        D("1000"),
+        D("0"),
+        D("300"),
+        D("500"),
+        D("0"),
+        D("0"),
+        D("1000"),
+    )
+
+    assert render(line) == (
+        "chart_1_column_g_total: item 1: column E 0 = column C 300 less column D 500, not below "
+        "0; column F 0 = column B 0 plus column E 0; column G 1000 = column A 1000 less column F "
+        "0, not below 0"
+    )
 
 
 def test_renders_the_total_of_the_dispositions_by_position() -> None:
