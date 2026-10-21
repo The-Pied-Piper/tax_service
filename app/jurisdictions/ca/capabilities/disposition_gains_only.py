@@ -12,8 +12,9 @@ from __future__ import annotations
 from decimal import Decimal
 
 from app.domain.capability import capability
-from app.domain.trace import DispositionGainOnlyLine, TraceLine
+from app.domain.trace import TraceLine
 from app.jurisdictions.ca.capabilities.disposition_rows import DispositionRows
+from app.jurisdictions.ca.trace import DispositionGainOnlyLine
 
 
 @capability(identifier="disposition_gains_only")

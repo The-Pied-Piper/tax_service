@@ -45,7 +45,7 @@ from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
 from app.domain.record_list import RecordList
-from app.domain.trace import ItemsTotalLine, ShortTermRentalNonCompliantLine
+from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_expenses import (
     ShortTermRentalNonCompliantExpenses,
 )
@@ -55,6 +55,7 @@ from app.jurisdictions.ca.catalog import (
     SHORT_TERM_RENTAL_RELATED_EXPENSES,
     SHORT_TERM_RENTAL_UNITS,
 )
+from app.jurisdictions.ca.trace import ShortTermRentalNonCompliantLine
 
 D = Decimal
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)

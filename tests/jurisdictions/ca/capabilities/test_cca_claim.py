@@ -57,9 +57,10 @@ from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.record_list import RecordList
-from app.domain.trace import CcaClaimLine, CcaZeroReason, ItemsTotalLine
+from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
 from app.jurisdictions.ca.catalog import CCA_CLAIMED
+from app.jurisdictions.ca.trace import CcaClaimLine, CcaZeroReason
 from tests.jurisdictions.ca.capabilities.cca_table import (
     CCA_CLAIM,
     CENT,

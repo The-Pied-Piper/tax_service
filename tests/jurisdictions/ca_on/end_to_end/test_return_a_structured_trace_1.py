@@ -15,7 +15,6 @@ from app.domain.trace import (
     LesserOfLine,
     MultipleOverLine,
     PerUnitAmountLine,
-    PlacementCreditLine,
     QuotientLine,
     RateAppliedLine,
     RecordCountLine,
@@ -116,6 +115,7 @@ from app.jurisdictions.ca_on.catalog import (
     SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM,
     SENIORS_TRANSIT_CREDIT,
 )
+from app.jurisdictions.ca_on.trace import PlacementCreditLine
 from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, return_a
 
 

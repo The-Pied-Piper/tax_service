@@ -29,12 +29,13 @@ from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.record_list import RecordList
-from app.domain.trace import DisabilityTransferLine, ItemsTotalLine
+from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.catalog import (
     DEPENDANT_CARE_EXPENSES,
     DEPENDANT_TAXABLE_INCOME,
     DEPENDANT_UNDER_18,
 )
+from app.jurisdictions.ca.trace import DisabilityTransferLine
 from app.jurisdictions.ca_on.catalog import DEPENDANT_ON428_LINE_28
 
 

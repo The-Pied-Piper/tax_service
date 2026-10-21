@@ -9,10 +9,8 @@ from app.domain.trace import (
     ChosenByRangeLine,
     ChosenRateAppliedLine,
     ItemsTotalLine,
-    OtherDependantMedicalLine,
     RateByIncomeBandLine,
     RoundedTotalLine,
-    ShortTermRentalNonCompliantLine,
 )
 from app.jurisdictions.ca.catalog import (
     CHILD_CARE_EXPENSES,
@@ -26,6 +24,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_NON_COMPLIANT_EXPENSES,
     TAXABLE_INCOME,
 )
+from app.jurisdictions.ca.trace import OtherDependantMedicalLine, ShortTermRentalNonCompliantLine
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
     CARE_CREDIT,

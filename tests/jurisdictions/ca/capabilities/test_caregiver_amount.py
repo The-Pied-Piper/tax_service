@@ -32,9 +32,10 @@ from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.record_list import RecordList
-from app.domain.trace import CaregiverClaimLine, ItemsTotalLine
+from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
 from app.jurisdictions.ca.catalog import CAREGIVER_AMOUNT, DEPENDANT_NET_INCOME, INFIRM_DEPENDANTS
+from app.jurisdictions.ca.trace import CaregiverClaimLine
 
 D = Decimal
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)

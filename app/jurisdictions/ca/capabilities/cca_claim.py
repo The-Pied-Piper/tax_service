@@ -21,8 +21,9 @@ from app.domain.capability import CapabilityResult, capability
 from app.domain.parameters.class_rates import ClassRates
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.record_list import RecordList
-from app.domain.trace import CcaClaimLine, ItemsTotalLine
+from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.capabilities.cca_table import CcaTable
+from app.jurisdictions.ca.trace import CcaClaimLine
 
 
 @capability(identifier="cca_claim")

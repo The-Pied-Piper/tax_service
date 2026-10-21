@@ -7,10 +7,7 @@ from typing import Any
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.domain.parameters.amount import Amount
 from app.domain.record_list import RecordList
-from app.domain.trace import (
-    DisabilityTransferLine,
-    ItemsTotalLine,
-)
+from app.domain.trace import ItemsTotalLine
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.capabilities.disability_transfer_amount import DisabilityTransferAmount
 from app.jurisdictions.ca.catalog import (
@@ -34,6 +31,7 @@ from app.jurisdictions.ca.catalog import (
     REFUND_OR_BALANCE_OWING,
     TOTAL_PAYABLE,
 )
+from app.jurisdictions.ca.trace import DisabilityTransferLine
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.capabilities.disability_transfer_amount import (
     OntarioDisabilityTransferAmount,

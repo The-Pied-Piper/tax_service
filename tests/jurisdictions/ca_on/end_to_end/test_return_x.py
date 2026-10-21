@@ -6,10 +6,7 @@ from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.domain.parameters.claim_reduction import ClaimReduction
 from app.domain.parameters.rate import Rate
 from app.domain.record_list import RecordList
-from app.domain.trace import (
-    ItemsTotalLine,
-    OtherDependantMedicalLine,
-)
+from app.domain.trace import ItemsTotalLine
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
 from app.jurisdictions.ca.catalog import (
@@ -36,6 +33,7 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_CREDITS,
     TOTAL_PAYABLE,
 )
+from app.jurisdictions.ca.trace import OtherDependantMedicalLine
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX,

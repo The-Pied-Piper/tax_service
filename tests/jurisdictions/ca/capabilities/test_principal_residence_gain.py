@@ -45,7 +45,7 @@ from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
 from app.domain.record_list import RecordList
-from app.domain.trace import ItemsTotalLine, PrincipalResidenceGainLine
+from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.capabilities.principal_residence_gain import PrincipalResidenceGain
 from app.jurisdictions.ca.catalog import (
     CAREGIVER_AMOUNT,
@@ -60,6 +60,7 @@ from app.jurisdictions.ca.catalog import (
     RESIDENCE_YEARS_OWNED_1972_TO_1981,
     RESIDENCE_YEARS_OWNED_AFTER_1981,
 )
+from app.jurisdictions.ca.trace import PrincipalResidenceGainLine
 
 D = Decimal
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)

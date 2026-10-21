@@ -28,7 +28,7 @@ from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
 from app.domain.record_list import RecordList
-from app.domain.trace import ItemsTotalLine, PrincipalResidenceGainLine
+from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.catalog import (
     RESIDENCE_ADJUSTED_COST_BASE,
     RESIDENCE_OUTLAYS,
@@ -39,6 +39,7 @@ from app.jurisdictions.ca.catalog import (
     RESIDENCE_YEARS_OWNED_1972_TO_1981,
     RESIDENCE_YEARS_OWNED_AFTER_1981,
 )
+from app.jurisdictions.ca.trace import PrincipalResidenceGainLine
 
 
 @capability(identifier="principal_residence_gain")

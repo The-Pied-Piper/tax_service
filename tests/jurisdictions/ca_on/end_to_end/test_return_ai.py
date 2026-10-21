@@ -6,7 +6,7 @@ from typing import Any
 
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.domain.record_list import RecordList
-from app.domain.trace import ItemsTotalLine, PrincipalResidenceGainLine
+from app.domain.trace import ItemsTotalLine
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.capabilities.principal_residence_gain import PrincipalResidenceGain
 from app.jurisdictions.ca.catalog import (
@@ -31,6 +31,7 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_INCOME,
     TOTAL_PAYABLE,
 )
+from app.jurisdictions.ca.trace import PrincipalResidenceGainLine
 from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, compute
 
 EXAMPLE = (6, 0, 10, 0, "400000.00", "5000.00", "95000.00", 1)

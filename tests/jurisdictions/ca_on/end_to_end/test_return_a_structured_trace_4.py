@@ -14,7 +14,6 @@ from app.domain.trace import (
     ItemsTotalLine,
     ItemSumLine,
     LesserOfLine,
-    PlacementCreditLine,
     QuotientLine,
     RecordCountLine,
     RecordTotalLine,
@@ -287,6 +286,7 @@ from app.jurisdictions.ca_on.catalog import (
     SENIORS_CARE_INCOME_OVER_BASE,
     SENIORS_CARE_REDUCTION,
 )
+from app.jurisdictions.ca_on.trace import PlacementCreditLine
 from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, return_a
 
 

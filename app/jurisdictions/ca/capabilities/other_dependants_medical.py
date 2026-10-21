@@ -24,8 +24,9 @@ from app.domain.parameters.claim_reduction import CLAIM_REDUCTION, ClaimReductio
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.record_list import RecordList
-from app.domain.trace import ItemsTotalLine, OtherDependantMedicalLine
+from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.catalog import DEPENDANT_NET_INCOME, OTHER_DEPENDANT_MEDICAL_EXPENSES
+from app.jurisdictions.ca.trace import OtherDependantMedicalLine
 
 
 @capability(identifier="other_dependants_medical")

@@ -33,8 +33,9 @@ from app.domain.parameters.class_rates import CLASS_RATES, ClassRate, ClassRates
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.record_list import RecordList
-from app.domain.trace import CcaZeroReason, ItemsTotalLine, TerminalLossLine
+from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
+from app.jurisdictions.ca.trace import CcaZeroReason, TerminalLossLine
 from tests.jurisdictions.ca.capabilities.cca_table import (
     CENT,
     CLASS_1,

@@ -26,12 +26,13 @@ from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
 from app.domain.record_list import RecordList
-from app.domain.trace import ItemsTotalLine, ShortTermRentalNonCompliantLine
+from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.catalog import (
     SHORT_TERM_RENTAL_DAYS,
     SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
     SHORT_TERM_RENTAL_RELATED_EXPENSES,
 )
+from app.jurisdictions.ca.trace import ShortTermRentalNonCompliantLine
 
 
 @capability(identifier="short_term_rental_non_compliant_expenses")
