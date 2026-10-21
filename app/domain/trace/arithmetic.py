@@ -40,6 +40,11 @@ __all__ = [
     "QuotientLine",
     "ThresholdGateLine",
     "AmountOrDividedByRateLine",
+    "CountAtLeastLine",
+    "AmountWhenMoreLine",
+    "RatioTruncatedLine",
+    "PositivePartOfNegationLine",
+    "LesserOfWhenPositiveLine",
 ]
 
 
@@ -456,4 +461,114 @@ class AmountOrDividedByRateLine(TraceLine):
     @property
     def amount(self) -> Decimal:
         """The figure chosen."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class CountAtLeastLine(TraceLine):
+    """`output` = `count_kind` (worth `count`), unchanged, being at least `minimum_kind` (worth
+    `minimum`).
+
+    Its own class, not an `AtMostLine`: the figures are whole numbers, and a count below its
+    minimum is an error, so no line is recorded for it.
+    """
+
+    output: ArtifactKind[int]
+    count_kind: ArtifactKind[int]
+    count: int
+    minimum_kind: ArtifactKind[int]
+    minimum: int
+
+    @property
+    def amount(self) -> Decimal:
+        """The count, as produced."""
+        return Decimal(self.count)
+
+
+@dataclass(frozen=True)
+class AmountWhenMoreLine(TraceLine):
+    """The `result` produced as `output`: `amount_kind` (worth `amount_value`) if `more_kind`
+    (worth `more_value`) is more than `than_kind` (worth `than_value`), else 0.
+
+    Its own class, not a `ThresholdGateLine`: the figure it is compared with is an artifact, not
+    a threshold dataset's amount, and nothing is rounded.
+    """
+
+    output: Money
+    amount_kind: Money
+    amount_value: Decimal
+    more_kind: Money
+    more_value: Decimal
+    than_kind: Money
+    than_value: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The amount passed through, or 0."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class RatioTruncatedLine(TraceLine):
+    """The `result` produced as `output` by `dividend` (worth `dividend_amount`) divided by
+    `divisor` (worth `divisor_amount`), rounded once with `rounding`.
+
+    `cap_at_one` is whether a dividend above the divisor gives 1. Its own class, not a
+    `QuotientLine`: the quotient is rounded by a rule, and a zero divisor gives 0.
+    """
+
+    output: Money
+    dividend: Money
+    dividend_amount: Decimal
+    divisor: Money
+    divisor_amount: Decimal
+    rounding: RoundingRule
+    cap_at_one: bool
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The rounded ratio."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class PositivePartOfNegationLine(TraceLine):
+    """The `result` produced as `output`: the negation of `amount_kind` (worth `amount_value`),
+    not below zero.
+
+    Its own class, not a `SubtractedNotBelowZeroLine`: nothing is taken off, the one figure is
+    negated.
+    """
+
+    output: Money
+    amount_kind: Money
+    amount_value: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The negation, or 0 when the amount is not negative."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class LesserOfWhenPositiveLine(TraceLine):
+    """The `result` produced as `output` by the least of `parts`, each a kind and its value, only
+    when every part is above zero (`all_positive`), else 0.
+
+    `bracket` is whether the least is shown negated ("in brackets"). Its own class, not a
+    `LesserOfLine`: the least is gated, and may be negated.
+    """
+
+    output: Money
+    parts: tuple[tuple[Money, Decimal], ...]
+    all_positive: bool
+    bracket: bool
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The least (negated when shown in brackets), or 0."""
         return self.result

@@ -286,3 +286,30 @@ def test_importing_the_packages_and_registrations_registers_no_artifact_kind() -
 
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "[]"
+
+
+def test_importing_the_federal_package_registers_the_ratio_and_choice_capabilities() -> None:
+    for name in (
+        "count_at_least",
+        "ratio_truncated",
+        "apply_chosen_rate",
+        "choose_by_sign",
+        "positive_part_of_negation",
+        "lesser_of_when_positive",
+        "amount_when_more",
+    ):
+        registered = CapabilityRegistry.shared().get(f"ca/{name}")
+
+        assert registered.__module__ == f"app.jurisdictions.ca.capabilities.{name}"
+
+
+def test_importing_the_federal_package_registers_the_sibling_capabilities_of_one_module() -> None:
+    registry = CapabilityRegistry.shared()
+
+    for identifier, module in (
+        ("ratio_truncated_at_most_one", "ratio_truncated"),
+        ("lesser_of_when_positive_in_brackets", "lesser_of_when_positive"),
+    ):
+        registered = registry.get(f"ca/{identifier}")
+
+        assert registered.__module__ == f"app.jurisdictions.ca.capabilities.{module}"

@@ -1,4 +1,4 @@
-"""Trace lines for choices: a figure chosen by a count or by a range, and the conditions
+"""Trace lines for choices: a figure chosen by a count, by a sign or by a range, and the conditions
 tested and counted to make a choice.
 """
 
@@ -10,7 +10,13 @@ from decimal import Decimal
 from app.domain.artifact import ArtifactKind, Money
 from app.domain.trace.base import TraceLine
 
-__all__ = ["ChosenByCountLine", "ChosenByRangeLine", "ConditionLine", "ConditionsCountLine"]
+__all__ = [
+    "ChosenByCountLine",
+    "ChosenByRangeLine",
+    "ChosenBySignLine",
+    "ConditionLine",
+    "ConditionsCountLine",
+]
 
 
 @dataclass(frozen=True)
@@ -48,6 +54,27 @@ class ChosenByRangeLine(TraceLine):
     tested_kind: Money
     tested_value: Decimal
     chosen_kind: Money
+    chosen_value: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The chosen value, unchanged."""
+        return self.chosen_value
+
+
+@dataclass(frozen=True)
+class ChosenBySignLine(TraceLine):
+    """`chosen_kind` (worth `chosen_value`) produced as `output`, chosen as `sign_kind` is `sign`:
+    the candidate of the branch the sign falls in (positive, zero or negative).
+
+    Its own class, not a `ChosenByCountLine`: the sign of an amount chooses, not a count. The
+    `chosen_kind` is None when no candidate covers the branch, and the value is then 0.
+    """
+
+    output: Money
+    sign_kind: Money
+    sign: Decimal
+    chosen_kind: Money | None
     chosen_value: Decimal
 
     @property

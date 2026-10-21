@@ -43,6 +43,11 @@ CORE_HOMES: dict[str, tuple[str, ...]] = {
         "QuotientLine",
         "ThresholdGateLine",
         "AmountOrDividedByRateLine",
+        "CountAtLeastLine",
+        "AmountWhenMoreLine",
+        "RatioTruncatedLine",
+        "PositivePartOfNegationLine",
+        "LesserOfWhenPositiveLine",
     ),
     "rate_tables": (
         "BracketColumnLine",
@@ -53,7 +58,13 @@ CORE_HOMES: dict[str, tuple[str, ...]] = {
         "ChosenRateAppliedLine",
         "AmountByCountLine",
     ),
-    "choices": ("ChosenByCountLine", "ChosenByRangeLine", "ConditionLine", "ConditionsCountLine"),
+    "choices": (
+        "ChosenByCountLine",
+        "ChosenByRangeLine",
+        "ChosenBySignLine",
+        "ConditionLine",
+        "ConditionsCountLine",
+    ),
     "record_lists": (
         "RecordTotalLine",
         "RecordCountLine",
