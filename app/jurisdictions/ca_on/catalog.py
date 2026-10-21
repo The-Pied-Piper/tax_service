@@ -834,8 +834,8 @@ CARE_ADJUSTED_INCOME = CATALOG.declare("care_adjusted_income", Decimal, non_nega
 """Ontario CARE credit adjusted income, Schedule ON479-A column 1 "You", line 4 "Add lines 1 to 3
 (if negative, enter "0"). Adjusted income": line 1 (net income from line 23600 of the return, before
 the floor at 0, or the amount you would have entered if the instructions on line 23600 said "if
-negative, show in brackets") plus line 2 (the child care expenses deduction from line 21400) plus line 3 (the social
-benefits repayment from line 23500), not below zero."""
+negative, show in brackets") plus line 2 (the child care expenses deduction from line 21400) plus
+line 3 (the social benefits repayment from line 23500), not below zero."""
 
 CARE_SUPPORTING_PERSONS_ADJUSTED_INCOME = CATALOG.declare(
     "care_supporting_persons_adjusted_income", Decimal, non_negative=True
