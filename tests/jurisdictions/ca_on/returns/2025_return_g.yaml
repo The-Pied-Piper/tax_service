@@ -1087,3 +1087,7 @@ expected:
   ca/amt_net_capital_gains_after_adjustments: "0"
   ca/amt_publicly_listed_gifts_adjustment: "0.00"
   ca/amt_resource_property_and_flow_through_shares: "0"
+  ca/amt_applicable_rate_amount: "2782.50"
+  ca/amt_other_years_losses_total: "0"
+  ca/amt_security_options_d1_total: "0"
+  ca/amt_security_options_net: "0"

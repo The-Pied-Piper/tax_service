@@ -52,6 +52,9 @@ from app.jurisdictions.ca.catalog import (
     AMT_RESOURCE_EXPENDITURES,
     AMT_RESOURCE_INCOME_TOTAL,
     AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
+    AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
+    AMT_SECURITY_OPTIONS_D_TOTAL,
+    AMT_SECURITY_OPTIONS_NET,
     ANNUAL_GAINS_LIMIT_2025,
     ANNUAL_GAINS_LINE_3_AT_INCLUSION_RATE,
     ANNUAL_GAINS_LINE_5,
@@ -235,6 +238,14 @@ from app.jurisdictions.ca.catalog import (
     FHSA_NET_TRANSFER_AMOUNT_LESS_VARIABLE_H_AMOUNT,
     FHSA_TRANSFER_AMOUNT_AT_MOST_LIMIT,
     FHSA_VARIABLE_H_AMOUNT,
+    FISH_HOME_ALLOWABLE_CLAIM,
+    FISH_HOME_CARRY_FORWARD,
+    FISH_HOME_EXPENSES_AVAILABLE,
+    FISH_HOME_INCOME_LIMIT,
+    FISH_NET_INCOME_AFTER_ADJUSTMENTS,
+    FISH_NET_INCOME_BEFORE_ADJUSTMENTS,
+    FISH_PARTNER,
+    FISH_SHARE_OF_NET_INCOME,
     HIGH_INCOME_DONATIONS,
     INCLUDED_CAPITAL_GAIN,
     INCOME_SUPPORT_BENEFITS,
@@ -873,6 +884,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             result=D("0"),
         ),
+        # T2121 Part 7 amount 7P "Amount 7M or 7N above, whichever is less": 0 for no
+        # business-use-of-home expenses.
+        FISH_HOME_ALLOWABLE_CLAIM: LesserOfLine(
+            output=FISH_HOME_ALLOWABLE_CLAIM,
+            parts=((FISH_HOME_EXPENSES_AVAILABLE, D("0")), (FISH_HOME_INCOME_LIMIT, D("0"))),
+            result=D("0"),
+        ),
     }
     assert at_most == {
         RRSP_DEDUCTION: AtMostLine(
@@ -1201,6 +1219,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             minuend=CHART_2024_PERIOD_2_AMOUNT_I,
             minuend_amount=D("0.00"),
             subtrahend=T657_CHART_2024_PERIOD_2_AMOUNT_J,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T691 Part 1 line 32 "Line 30 minus line 31 (if negative, enter "0")": 0 on Return A.
+        AMT_SECURITY_OPTIONS_NET: SubtractedNotBelowZeroLine(
+            output=AMT_SECURITY_OPTIONS_NET,
+            minuend=AMT_SECURITY_OPTIONS_D_TOTAL,
+            minuend_amount=D("0"),
+            subtrahend=AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
@@ -2135,6 +2162,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
+        # T2121 Part 7 amount 7O, floored at 0, as on the T2125.
+        FISH_HOME_CARRY_FORWARD: SubtractedNotBelowZeroLine(
+            output=FISH_HOME_CARRY_FORWARD,
+            minuend=FISH_HOME_EXPENSES_AVAILABLE,
+            minuend_amount=D("0"),
+            subtrahend=FISH_HOME_INCOME_LIMIT,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
     }
     # Schedule 8 Part 4 line 3 "Line 1 plus line 2 (if negative, enter "0")" and Schedule 13 line 1
     # "(if negative, enter "0")", on no self-employment income and no partnership income, and the
@@ -2258,6 +2294,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         SCHEDULE_3_LINE_17600_NOT_BELOW_ZERO: SumNotBelowZeroLine(
             output=SCHEDULE_3_LINE_17600_NOT_BELOW_ZERO,
             parts=((T3_CAPITAL_GAINS_OR_LOSSES, D("0")),),
+            total=D("0"),
+        ),
+        # T2121 Part 7 amount 7N "Net income (loss) after adjustments (amount 5C) (if negative,
+        # enter "0")": amount 5C alone, floored, 0.
+        FISH_HOME_INCOME_LIMIT: SumNotBelowZeroLine(
+            output=FISH_HOME_INCOME_LIMIT,
+            parts=((FISH_NET_INCOME_AFTER_ADJUSTMENTS, D("0")),),
             total=D("0"),
         ),
     }
@@ -2470,6 +2513,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=FARM_PARTNER,
             count=0,
             chosen_kind=FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
+            chosen_value=D("0"),
+        ),
+        # T2121 Part 5 amount 5A: a partner count of 0 chooses line 9369.
+        FISH_SHARE_OF_NET_INCOME: ChosenByCountLine(
+            output=FISH_SHARE_OF_NET_INCOME,
+            count_kind=FISH_PARTNER,
+            count=0,
+            chosen_kind=FISH_NET_INCOME_BEFORE_ADJUSTMENTS,
             chosen_value=D("0"),
         ),
     }

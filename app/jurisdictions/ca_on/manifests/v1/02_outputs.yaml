@@ -26,6 +26,11 @@ outputs:
   # reads them.
   - ca/farm_closing_ucc
   - ca/farm_home_carry_forward
+  # Form T2121 Area A column 22 "UCC at the end of the year" (for next year) and Part 7 line
+  # 7O "Business-use-of-home expenses available to carry forward": nothing else on the return
+  # reads them.
+  - ca/fish_closing_ucc
+  - ca/fish_home_carry_forward
   - ca/tuition_carried_forward
   - ca/qsbcs_proceeds
   - ca/qffp_proceeds
@@ -73,3 +78,10 @@ outputs:
   - ca/amt_resource_property_and_flow_through_shares
   - ca/amt_net_capital_gains_after_adjustments
   - ca/amt_publicly_listed_gifts_adjustment
+  # Form T691 Part 1 line 32 "Line 30 minus line 31 (if negative, enter "0")", line 38 "Add lines 35 to
+  # 37.", line 43 "Line 39 or 40, as applicable, plus line 41 and 42" and line 80 "Line 78 multiply by
+  # the percentage from line 79", which nothing else on the return reads yet.
+  - ca/amt_security_options_net
+  - ca/amt_security_options_d1_total
+  - ca/amt_other_years_losses_total
+  - ca/amt_applicable_rate_amount

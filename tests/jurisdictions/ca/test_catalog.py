@@ -293,6 +293,78 @@ from app.jurisdictions.ca.catalog import (
     FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT,
     FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
     FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS,
+    FISH_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,
+    FISH_CCA_CLAIM,
+    FISH_CCA_CLAIM_LESS_PERSONAL_PART,
+    FISH_CCA_CLASSES,
+    FISH_CCA_PERSONAL_PART,
+    FISH_CCA_TABLE_CLAIM,
+    FISH_CLOSING_UCC,
+    FISH_COMPENSATION_FOR_LOSS,
+    FISH_CREW_SHARES,
+    FISH_EXPENSES_SUBTOTAL,
+    FISH_FISH_PRODUCTS,
+    FISH_FISHING_GEAR,
+    FISH_FUEL_COSTS,
+    FISH_GRANTS_CREDITS_AND_REBATES,
+    FISH_GROSS_INCOME,
+    FISH_GROSS_INCOME_BEFORE_EXPENSES,
+    FISH_HOME_ALLOWABLE_CLAIM,
+    FISH_HOME_CARRIED_FORWARD,
+    FISH_HOME_CARRY_FORWARD,
+    FISH_HOME_CCA,
+    FISH_HOME_ELECTRICITY,
+    FISH_HOME_EXPENSES,
+    FISH_HOME_EXPENSES_AVAILABLE,
+    FISH_HOME_EXPENSES_BUSINESS_PART,
+    FISH_HOME_EXPENSES_SUBTOTAL,
+    FISH_HOME_HEAT,
+    FISH_HOME_INCOME_LIMIT,
+    FISH_HOME_INSURANCE,
+    FISH_HOME_MAINTENANCE,
+    FISH_HOME_MORTGAGE_INTEREST,
+    FISH_HOME_OTHER_EXPENSES,
+    FISH_HOME_PERSONAL_USE_PART,
+    FISH_HOME_PROPERTY_TAXES,
+    FISH_INSURANCE,
+    FISH_INSURANCE_RECOVERY,
+    FISH_INTEREST_AND_BANK_CHARGES,
+    FISH_MEALS_AND_ENTERTAINMENT,
+    FISH_MOTOR_VEHICLE_EXPENSES,
+    FISH_NET_INCOME_AFTER_ADJUSTMENTS,
+    FISH_NET_INCOME_BEFORE_ADJUSTMENTS,
+    FISH_NETS_AND_TRAPS,
+    FISH_OFFICE_EXPENSES,
+    FISH_OTHER_EXPENSES,
+    FISH_OTHER_EXPENSES_WITH_TERMINAL_LOSS,
+    FISH_OTHER_INCOME,
+    FISH_OTHER_INCOME_WITH_RECAPTURE,
+    FISH_OTHER_MARINE_PRODUCTS,
+    FISH_PARTNER,
+    FISH_PARTNER_GST_HST_REBATE,
+    FISH_PARTNER_OTHER_AMOUNT_A,
+    FISH_PARTNER_OTHER_AMOUNT_B,
+    FISH_PARTNER_OTHER_AMOUNT_C,
+    FISH_PARTNER_OTHER_AMOUNT_D,
+    FISH_PARTNER_OTHER_AMOUNT_E,
+    FISH_PARTNER_OTHER_AMOUNTS,
+    FISH_PARTNER_OTHER_AMOUNTS_TOTAL,
+    FISH_PARTNER_SHARE,
+    FISH_PARTNERSHIP_TOTAL,
+    FISH_PROFESSIONAL_FEES,
+    FISH_RECAPTURED_CCA,
+    FISH_REPAIRS_ELECTRICAL_EQUIPMENT,
+    FISH_REPAIRS_ENGINE,
+    FISH_REPAIRS_FISHING_BOAT,
+    FISH_REPAIRS_TOTAL,
+    FISH_REPAIRS_YOUR_COST,
+    FISH_SALARIES_WAGES_AND_BENEFITS,
+    FISH_SALT_BAIT_AND_ICE,
+    FISH_SHARE_OF_NET_INCOME,
+    FISH_SHARESPERSON_INCOME,
+    FISH_SUBSIDIES,
+    FISH_TERMINAL_LOSS,
+    FISH_TOTAL_EXPENSES,
     FISHING_INCOME,
     GROSS_RENTAL_INCOME,
     INCOME_TAX_DEDUCTED,
@@ -2425,6 +2497,141 @@ def test_the_farm_closing_ucc_is_a_record_list_of_the_class_and_its_closing_ucc(
     assert FARM_CLOSING_UCC.value_type is RecordList
     assert FARM_CLOSING_UCC.fields == RENTAL_CLOSING_UCC.fields
     assert registry.get("ca/farm_closing_ucc") is FARM_CLOSING_UCC
+
+
+# --- Form T2121, Statement of Fishing Activities (T1 lines 14299 and 14300) ----------------------
+
+# Every kind of the fishing statement, the caller's amounts and the computed lines, in the form's
+# order: `ca/fish_<name>`, never the `ca/farm_` names of the T2042 or the `ca/business_` names.
+FISH_KINDS: tuple[ArtifactKind[Any], ...] = (
+    FISH_FISH_PRODUCTS,  # fish_products
+    FISH_OTHER_MARINE_PRODUCTS,  # other_marine_products
+    FISH_GRANTS_CREDITS_AND_REBATES,  # grants_credits_and_rebates
+    FISH_SUBSIDIES,  # subsidies
+    FISH_COMPENSATION_FOR_LOSS,  # compensation_for_loss
+    FISH_SHARESPERSON_INCOME,  # sharesperson_income
+    FISH_OTHER_INCOME,  # other_income
+    FISH_SALT_BAIT_AND_ICE,  # salt_bait_and_ice
+    FISH_CREW_SHARES,  # crew_shares
+    FISH_FUEL_COSTS,  # fuel_costs
+    FISH_FISHING_GEAR,  # fishing_gear
+    FISH_INSURANCE,  # insurance
+    FISH_INTEREST_AND_BANK_CHARGES,  # interest_and_bank_charges
+    FISH_MEALS_AND_ENTERTAINMENT,  # meals_and_entertainment
+    FISH_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,  # business_taxes_licences_and_memberships
+    FISH_MOTOR_VEHICLE_EXPENSES,  # motor_vehicle_expenses
+    FISH_OFFICE_EXPENSES,  # office_expenses
+    FISH_NETS_AND_TRAPS,  # nets_and_traps
+    FISH_PROFESSIONAL_FEES,  # professional_fees
+    FISH_SALARIES_WAGES_AND_BENEFITS,  # salaries_wages_and_benefits
+    FISH_REPAIRS_FISHING_BOAT,  # repairs_fishing_boat
+    FISH_REPAIRS_ENGINE,  # repairs_engine
+    FISH_REPAIRS_ELECTRICAL_EQUIPMENT,  # repairs_electrical_equipment
+    FISH_INSURANCE_RECOVERY,  # insurance_recovery
+    FISH_OTHER_EXPENSES,  # other_expenses
+    FISH_CCA_PERSONAL_PART,  # cca_personal_part
+    FISH_CCA_CLASSES,  # cca_classes
+    FISH_PARTNER,  # partner
+    FISH_PARTNER_SHARE,  # partner_share
+    FISH_PARTNER_GST_HST_REBATE,  # partner_gst_hst_rebate
+    FISH_PARTNER_OTHER_AMOUNT_A,  # partner_other_amount_a
+    FISH_PARTNER_OTHER_AMOUNT_B,  # partner_other_amount_b
+    FISH_PARTNER_OTHER_AMOUNT_C,  # partner_other_amount_c
+    FISH_PARTNER_OTHER_AMOUNT_D,  # partner_other_amount_d
+    FISH_PARTNER_OTHER_AMOUNT_E,  # partner_other_amount_e
+    FISH_HOME_HEAT,  # home_heat
+    FISH_HOME_ELECTRICITY,  # home_electricity
+    FISH_HOME_INSURANCE,  # home_insurance
+    FISH_HOME_MAINTENANCE,  # home_maintenance
+    FISH_HOME_MORTGAGE_INTEREST,  # home_mortgage_interest
+    FISH_HOME_PROPERTY_TAXES,  # home_property_taxes
+    FISH_HOME_OTHER_EXPENSES,  # home_other_expenses
+    FISH_HOME_PERSONAL_USE_PART,  # home_personal_use_part
+    FISH_HOME_CCA,  # home_cca
+    FISH_HOME_CARRIED_FORWARD,  # home_carried_forward
+    FISH_RECAPTURED_CCA,  # recaptured_cca
+    FISH_OTHER_INCOME_WITH_RECAPTURE,  # other_income_with_recapture
+    FISH_GROSS_INCOME,  # gross_income
+    FISH_GROSS_INCOME_BEFORE_EXPENSES,  # gross_income_before_expenses
+    FISH_TERMINAL_LOSS,  # terminal_loss
+    FISH_OTHER_EXPENSES_WITH_TERMINAL_LOSS,  # other_expenses_with_terminal_loss
+    FISH_REPAIRS_TOTAL,  # repairs_total
+    FISH_REPAIRS_YOUR_COST,  # repairs_your_cost
+    FISH_EXPENSES_SUBTOTAL,  # expenses_subtotal
+    FISH_CCA_TABLE_CLAIM,  # cca_table_claim
+    FISH_CCA_CLAIM_LESS_PERSONAL_PART,  # cca_claim_less_personal_part
+    FISH_CCA_CLAIM,  # cca_claim
+    FISH_TOTAL_EXPENSES,  # total_expenses
+    FISH_NET_INCOME_BEFORE_ADJUSTMENTS,  # net_income_before_adjustments
+    FISH_SHARE_OF_NET_INCOME,  # share_of_net_income
+    FISH_PARTNERSHIP_TOTAL,  # partnership_total
+    FISH_PARTNER_OTHER_AMOUNTS_TOTAL,  # partner_other_amounts_total
+    FISH_PARTNER_OTHER_AMOUNTS,  # partner_other_amounts
+    FISH_NET_INCOME_AFTER_ADJUSTMENTS,  # net_income_after_adjustments
+    FISH_HOME_EXPENSES_SUBTOTAL,  # home_expenses_subtotal
+    FISH_HOME_EXPENSES_BUSINESS_PART,  # home_expenses_business_part
+    FISH_HOME_EXPENSES_AVAILABLE,  # home_expenses_available
+    FISH_HOME_INCOME_LIMIT,  # home_income_limit
+    FISH_HOME_CARRY_FORWARD,  # home_carry_forward
+    FISH_HOME_ALLOWABLE_CLAIM,  # home_allowable_claim
+    FISH_HOME_EXPENSES,  # home_expenses
+    FISH_CLOSING_UCC,  # closing_ucc
+)
+
+
+def test_the_t2121_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    assert len({kind.identifier for kind in FISH_KINDS}) == len(FISH_KINDS)
+    for kind in FISH_KINDS:
+        assert kind.identifier.startswith("ca/fish_"), kind.identifier
+        assert registry.get(kind.identifier) is kind
+        assert kind.identifier in REGISTERED
+
+
+def test_the_t2121_amounts_are_decimals_that_cannot_be_negative_unless_the_form_prints_a_loss() -> (
+    None
+):
+    # The caller's amounts and the computed lines are Decimals with a floor of 0, except the lines
+    # the snapshot's SIGNED set names: "(loss)" lines, amount 5A, the share of a loss, the T5013
+    # amount (amount 5A) the caller enters, and line 8963 (amount 4O), which the form prints with no
+    # floor.
+    for kind in FISH_KINDS:
+        if kind.identifier in RECORD_LISTS or kind.identifier in COUNTS:
+            continue
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is (kind.identifier not in SIGNED), kind.identifier
+
+
+def test_the_t2121_partner_count_is_a_non_negative_int_count() -> None:
+    # Part 5 amount 5A "Your share of line 9369 or the amount from your T5013 slip, Statement of
+    # Partnership Income": 1 for a partner, else 0.
+    assert FISH_PARTNER.value_type is int
+    assert FISH_PARTNER.non_negative is True
+    assert FISH_PARTNER.identifier in COUNTS
+
+
+def test_the_fish_cca_classes_are_the_area_a_columns_the_caller_enters(
+    registry: ArtifactRegistry,
+) -> None:
+    # Area A of the T2121 has the columns of the T2125's (DIEP columns left out as on the T776):
+    # the same field kinds, one record per class.
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(FISH_CCA_CLASSES, RecordListKind)
+    assert FISH_CCA_CLASSES.value_type is RecordList
+    assert FISH_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
+    assert FISH_CCA_CLASSES is not BUSINESS_CCA_CLASSES
+    assert registry.get("ca/fish_cca_classes") is FISH_CCA_CLASSES
+
+
+def test_the_fish_closing_ucc_is_a_record_list_of_the_class_and_its_closing_ucc(
+    registry: ArtifactRegistry,
+) -> None:
+    # Area A column 22 "UCC at the end of the year (col. 7 minus col. 21)", which `ca/closing_ucc`
+    # produces.
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(FISH_CLOSING_UCC, RecordListKind)
+    assert FISH_CLOSING_UCC.value_type is RecordList
+    assert FISH_CLOSING_UCC.fields == RENTAL_CLOSING_UCC.fields
+    assert registry.get("ca/fish_closing_ucc") is FISH_CLOSING_UCC
 
 
 # --- Form T2222, Northern Residents Deductions (T1 line 66 and line 25500) ---------------------

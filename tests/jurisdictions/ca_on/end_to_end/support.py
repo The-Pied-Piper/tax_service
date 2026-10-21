@@ -17,17 +17,39 @@ from app.jurisdictions.ca.catalog import (
     ADVANCED_CANADA_WORKERS_BENEFIT,
     AGED_18_OR_OLDER_AT_END_OF_2025,
     AMT_CLASS_43_1_INCOME,
+    AMT_COMMISSION_EMPLOYMENT_EXPENSES,
+    AMT_DEFERRED_PROFIT_SHARING_PLAN_DEDUCTION,
+    AMT_EXCESS_EPSP_AMOUNTS,
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
+    AMT_FINANCING_EXPENSES,
+    AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
     AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
+    AMT_INVESTMENT_COUNSEL_FEES,
+    AMT_LEGAL_AND_ACCOUNTING_EXPENSES,
+    AMT_LIFE_INSURANCE_PREMIUMS_AS_COLLATERAL,
     AMT_LIMITED_PARTNER_CARRYING_CHARGES,
+    AMT_LIMITED_PARTNERSHIP_DIFFERENCE_ELECTION,
+    AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION,
+    AMT_MOVING_EXPENSES_DEDUCTION,
+    AMT_NET_CAPITAL_LOSSES_DIFFERENCE,
+    AMT_NON_CAPITAL_LOSSES_DIFFERENCE,
+    AMT_NON_DEDUCTIBLE_INTEREST,
+    AMT_PPIP_PREMIUMS_DEDUCTION,
+    AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION,
     AMT_PUBLICLY_LISTED_GIFTS_T1170_LINE_68231,
     AMT_PUBLICLY_LISTED_GIFTS_TOTAL,
     AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_RENTAL_PROPERTY_INCOME_BEFORE_CCA,
+    AMT_REPAYMENT_OF_SALARY_AND_WAGES,
+    AMT_REPAYMENT_OF_WAGE_LOSS_REPLACEMENT,
     AMT_RESOURCE_EXPENDITURES,
     AMT_RESOURCE_FOREIGN_PROPERTY_INCOME,
     AMT_RESOURCE_PRODUCTION_INCOME,
+    AMT_SECURITY_OPTION_PUBLICLY_LISTED_GIFTS,
+    AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
+    AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
+    AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
     AMT_TAX_SHELTER_DEDUCTIBLE_AMOUNTS,
     AMT_TAX_SHELTER_LOSSES,
     AMT_TREATY_EXEMPT_CAPITAL_GAINS,
@@ -259,7 +281,51 @@ from app.jurisdictions.ca.catalog import (
     FHSA_VARIABLE_B_AMOUNT,
     FHSA_VARIABLE_F_AMOUNT,
     FHSA_VARIABLE_H_AMOUNT,
-    FISHING_INCOME,
+    FISH_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,
+    FISH_CCA_CLASSES,
+    FISH_CCA_PERSONAL_PART,
+    FISH_COMPENSATION_FOR_LOSS,
+    FISH_CREW_SHARES,
+    FISH_FISH_PRODUCTS,
+    FISH_FISHING_GEAR,
+    FISH_FUEL_COSTS,
+    FISH_GRANTS_CREDITS_AND_REBATES,
+    FISH_HOME_CARRIED_FORWARD,
+    FISH_HOME_CCA,
+    FISH_HOME_ELECTRICITY,
+    FISH_HOME_HEAT,
+    FISH_HOME_INSURANCE,
+    FISH_HOME_MAINTENANCE,
+    FISH_HOME_MORTGAGE_INTEREST,
+    FISH_HOME_OTHER_EXPENSES,
+    FISH_HOME_PERSONAL_USE_PART,
+    FISH_HOME_PROPERTY_TAXES,
+    FISH_INSURANCE,
+    FISH_INSURANCE_RECOVERY,
+    FISH_INTEREST_AND_BANK_CHARGES,
+    FISH_MEALS_AND_ENTERTAINMENT,
+    FISH_MOTOR_VEHICLE_EXPENSES,
+    FISH_NETS_AND_TRAPS,
+    FISH_OFFICE_EXPENSES,
+    FISH_OTHER_EXPENSES,
+    FISH_OTHER_INCOME,
+    FISH_OTHER_MARINE_PRODUCTS,
+    FISH_PARTNER,
+    FISH_PARTNER_GST_HST_REBATE,
+    FISH_PARTNER_OTHER_AMOUNT_A,
+    FISH_PARTNER_OTHER_AMOUNT_B,
+    FISH_PARTNER_OTHER_AMOUNT_C,
+    FISH_PARTNER_OTHER_AMOUNT_D,
+    FISH_PARTNER_OTHER_AMOUNT_E,
+    FISH_PARTNER_SHARE,
+    FISH_PROFESSIONAL_FEES,
+    FISH_REPAIRS_ELECTRICAL_EQUIPMENT,
+    FISH_REPAIRS_ENGINE,
+    FISH_REPAIRS_FISHING_BOAT,
+    FISH_SALARIES_WAGES_AND_BENEFITS,
+    FISH_SALT_BAIT_AND_ICE,
+    FISH_SHARESPERSON_INCOME,
+    FISH_SUBSIDIES,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
     FOREIGN_TUITION_FEES,
@@ -1062,6 +1128,98 @@ def farm_cca_classes(
     return Artifact(kind, RecordList(kind.fields, records))
 
 
+# The Form T2121 amounts the caller enters, in the form's order: the income lines 3A to 3F and
+# line 9600, the expense lines, the repairs, the partnership amounts, the business-use-of-home
+# amounts and the carry forward.
+FISH_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
+    FISH_FISH_PRODUCTS,  # fish_products
+    FISH_OTHER_MARINE_PRODUCTS,  # other_marine_products
+    FISH_GRANTS_CREDITS_AND_REBATES,  # grants_credits_and_rebates
+    FISH_SUBSIDIES,  # subsidies
+    FISH_COMPENSATION_FOR_LOSS,  # compensation_for_loss
+    FISH_SHARESPERSON_INCOME,  # sharesperson_income
+    FISH_OTHER_INCOME,  # other_income
+    FISH_SALT_BAIT_AND_ICE,  # salt_bait_and_ice
+    FISH_CREW_SHARES,  # crew_shares
+    FISH_FUEL_COSTS,  # fuel_costs
+    FISH_FISHING_GEAR,  # fishing_gear
+    FISH_INSURANCE,  # insurance
+    FISH_INTEREST_AND_BANK_CHARGES,  # interest_and_bank_charges
+    FISH_MEALS_AND_ENTERTAINMENT,  # meals_and_entertainment
+    FISH_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,  # business_taxes_licences_and_memberships
+    FISH_MOTOR_VEHICLE_EXPENSES,  # motor_vehicle_expenses
+    FISH_OFFICE_EXPENSES,  # office_expenses
+    FISH_NETS_AND_TRAPS,  # nets_and_traps
+    FISH_PROFESSIONAL_FEES,  # professional_fees
+    FISH_SALARIES_WAGES_AND_BENEFITS,  # salaries_wages_and_benefits
+    FISH_REPAIRS_FISHING_BOAT,  # repairs_fishing_boat
+    FISH_REPAIRS_ENGINE,  # repairs_engine
+    FISH_REPAIRS_ELECTRICAL_EQUIPMENT,  # repairs_electrical_equipment
+    FISH_INSURANCE_RECOVERY,  # insurance_recovery
+    FISH_OTHER_EXPENSES,  # other_expenses
+    FISH_CCA_PERSONAL_PART,  # cca_personal_part
+    FISH_PARTNER_SHARE,  # partner_share
+    FISH_PARTNER_GST_HST_REBATE,  # partner_gst_hst_rebate
+    FISH_PARTNER_OTHER_AMOUNT_A,  # partner_other_amount_a
+    FISH_PARTNER_OTHER_AMOUNT_B,  # partner_other_amount_b
+    FISH_PARTNER_OTHER_AMOUNT_C,  # partner_other_amount_c
+    FISH_PARTNER_OTHER_AMOUNT_D,  # partner_other_amount_d
+    FISH_PARTNER_OTHER_AMOUNT_E,  # partner_other_amount_e
+    FISH_HOME_HEAT,  # home_heat
+    FISH_HOME_ELECTRICITY,  # home_electricity
+    FISH_HOME_INSURANCE,  # home_insurance
+    FISH_HOME_MAINTENANCE,  # home_maintenance
+    FISH_HOME_MORTGAGE_INTEREST,  # home_mortgage_interest
+    FISH_HOME_PROPERTY_TAXES,  # home_property_taxes
+    FISH_HOME_OTHER_EXPENSES,  # home_other_expenses
+    FISH_HOME_PERSONAL_USE_PART,  # home_personal_use_part
+    FISH_HOME_CCA,  # home_cca
+    FISH_HOME_CARRIED_FORWARD,  # home_carried_forward
+)
+
+
+def fish_amount_artifacts(amounts: Mapping[str, str]) -> list[Artifact[Decimal]]:
+    """The Form T2121 amounts the caller enters, keyed by the name after `ca/fish_` (the amounts
+    not given are 0)."""
+    by_name = {kind.identifier.removeprefix("ca/fish_"): kind for kind in FISH_INPUT_KINDS}
+    assert set(amounts) <= set(by_name), set(amounts) - set(by_name)
+    return [Artifact(kind, D(amounts.get(name, "0"))) for name, kind in by_name.items()]
+
+
+def fish_cca_classes(
+    *rows: tuple[str, str, str, str, str, str, str, int],
+) -> Artifact[RecordList]:
+    """The Form T2121 Area A rows, one record per class, with the columns of
+    `farm_cca_classes`: column 1 (class number), column 2, column 3, column 5, column 11,
+    column 12, the CCA claimed (column 21) as decimal text, and 1 if no property is left in the
+    class, else 0 (endnote 3)."""
+    kind = FISH_CCA_CLASSES
+    assert isinstance(kind, RecordListKind)
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {
+            CCA_CLASS_NUMBER: D(class_number),
+            CCA_UCC_AT_START: D(ucc_at_start),
+            CCA_ADDITIONS: D(additions),
+            CCA_PROCEEDS: D(proceeds),
+            CCA_AIIP_ADDITIONS: D(aiip_additions),
+            CCA_RIIP_ADDITIONS: D(riip_additions),
+            CCA_CLAIMED: D(claimed),
+            CCA_NO_PROPERTY_LEFT: no_property_left,
+        }
+        for (
+            class_number,
+            ucc_at_start,
+            additions,
+            proceeds,
+            aiip_additions,
+            riip_additions,
+            claimed,
+            no_property_left,
+        ) in rows
+    ]
+    return Artifact(kind, RecordList(kind.fields, records))
+
+
 def trip(individual: int, zone: int, column_3: str, column_4: str, column_5: str) -> dict[Any, Any]:
     """A Form T2222 Chart B record: the individual, the zone (1 for A, 2 for B), columns 3 to 5."""
     return {
@@ -1230,6 +1388,9 @@ def compute(
     farm: Mapping[str, str] | None = None,
     farm_partner: int = 0,
     farm_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    fish: Mapping[str, str] | None = None,
+    fish_partner: int = 0,
+    fish_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
     taxable_support_payments: str = "0",
     rrsp_income: str = "0",
     fhsa_income: str = "0",
@@ -1398,7 +1559,6 @@ def compute(
     net_capital_losses_claimed: str = "0",
     professional_income: str = "0",
     commission_income: str = "0",
-    fishing_income: str = "0",
     cpp_months: int = 12,
     cpt20_earnings: str = "0",
     cpp_part_4_completed: int = 0,
@@ -1515,6 +1675,28 @@ def compute(
     amt_graduated_rate_estate_capital_gains: str = "0",
     amt_publicly_listed_gifts_total: str = "0",
     amt_publicly_listed_gifts_t1170_line_68231: str = "0",
+    amt_t4_security_options_boxes_39_and_91: str = "0",
+    amt_t1212_line_2_deferred_security_options: str = "0",
+    amt_security_option_publicly_listed_gifts: str = "0",
+    amt_t4_security_options_boxes_41_and_92: str = "0",
+    amt_prospector_or_grubstaker_deduction: str = "0",
+    amt_deferred_profit_sharing_plan_deduction: str = "0",
+    amt_limited_partnership_difference_no_election: str = "0",
+    amt_limited_partnership_difference_election: str = "0",
+    amt_non_capital_losses_difference: str = "0",
+    amt_net_capital_losses_difference: str = "0",
+    amt_moving_expenses_deduction: str = "0",
+    amt_ppip_premiums_deduction: str = "0",
+    amt_non_deductible_interest: str = "0",
+    amt_life_insurance_premiums_as_collateral: str = "0",
+    amt_financing_expenses: str = "0",
+    amt_investment_counsel_fees: str = "0",
+    amt_commission_employment_expenses: str = "0",
+    amt_legal_and_accounting_expenses: str = "0",
+    amt_repayment_of_salary_and_wages: str = "0",
+    amt_excess_epsp_amounts: str = "0",
+    amt_forfeited_salary_deferral_amounts: str = "0",
+    amt_repayment_of_wage_loss_replacement: str = "0",
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -1615,6 +1797,9 @@ def compute(
         *farm_amount_artifacts(farm or {}),
         Artifact(FARM_PARTNER, farm_partner),
         farm_cca_classes(*farm_cca_classes_rows),
+        *fish_amount_artifacts(fish or {}),
+        Artifact(FISH_PARTNER, fish_partner),
+        fish_cca_classes(*fish_cca_classes_rows),
         Artifact(TAXABLE_SUPPORT_PAYMENTS, D(taxable_support_payments)),
         Artifact(RRSP_INCOME, D(rrsp_income)),
         Artifact(FHSA_INCOME, D(fhsa_income)),
@@ -1925,7 +2110,6 @@ def compute(
         Artifact(NET_CAPITAL_LOSSES_CLAIMED, D(net_capital_losses_claimed)),
         Artifact(PROFESSIONAL_INCOME, D(professional_income)),
         Artifact(COMMISSION_INCOME, D(commission_income)),
-        Artifact(FISHING_INCOME, D(fishing_income)),
         Artifact(CPP_MONTHS, cpp_months),
         Artifact(CPT20_EARNINGS, D(cpt20_earnings)),
         Artifact(CPP_PART_4_COMPLETED, cpp_part_4_completed),
@@ -2080,6 +2264,53 @@ def compute(
         Artifact(
             AMT_PUBLICLY_LISTED_GIFTS_T1170_LINE_68231,
             D(amt_publicly_listed_gifts_t1170_line_68231),
+        ),
+        Artifact(
+            AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91, D(amt_t4_security_options_boxes_39_and_91)
+        ),
+        Artifact(
+            AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
+            D(amt_t1212_line_2_deferred_security_options),
+        ),
+        Artifact(
+            AMT_SECURITY_OPTION_PUBLICLY_LISTED_GIFTS,
+            D(amt_security_option_publicly_listed_gifts),
+        ),
+        Artifact(
+            AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92, D(amt_t4_security_options_boxes_41_and_92)
+        ),
+        Artifact(AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION, D(amt_prospector_or_grubstaker_deduction)),
+        Artifact(
+            AMT_DEFERRED_PROFIT_SHARING_PLAN_DEDUCTION,
+            D(amt_deferred_profit_sharing_plan_deduction),
+        ),
+        Artifact(
+            AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION,
+            D(amt_limited_partnership_difference_no_election),
+        ),
+        Artifact(
+            AMT_LIMITED_PARTNERSHIP_DIFFERENCE_ELECTION,
+            D(amt_limited_partnership_difference_election),
+        ),
+        Artifact(AMT_NON_CAPITAL_LOSSES_DIFFERENCE, D(amt_non_capital_losses_difference)),
+        Artifact(AMT_NET_CAPITAL_LOSSES_DIFFERENCE, D(amt_net_capital_losses_difference)),
+        Artifact(AMT_MOVING_EXPENSES_DEDUCTION, D(amt_moving_expenses_deduction)),
+        Artifact(AMT_PPIP_PREMIUMS_DEDUCTION, D(amt_ppip_premiums_deduction)),
+        Artifact(AMT_NON_DEDUCTIBLE_INTEREST, D(amt_non_deductible_interest)),
+        Artifact(
+            AMT_LIFE_INSURANCE_PREMIUMS_AS_COLLATERAL,
+            D(amt_life_insurance_premiums_as_collateral),
+        ),
+        Artifact(AMT_FINANCING_EXPENSES, D(amt_financing_expenses)),
+        Artifact(AMT_INVESTMENT_COUNSEL_FEES, D(amt_investment_counsel_fees)),
+        Artifact(AMT_COMMISSION_EMPLOYMENT_EXPENSES, D(amt_commission_employment_expenses)),
+        Artifact(AMT_LEGAL_AND_ACCOUNTING_EXPENSES, D(amt_legal_and_accounting_expenses)),
+        Artifact(AMT_REPAYMENT_OF_SALARY_AND_WAGES, D(amt_repayment_of_salary_and_wages)),
+        Artifact(AMT_EXCESS_EPSP_AMOUNTS, D(amt_excess_epsp_amounts)),
+        Artifact(AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS, D(amt_forfeited_salary_deferral_amounts)),
+        Artifact(
+            AMT_REPAYMENT_OF_WAGE_LOSS_REPLACEMENT,
+            D(amt_repayment_of_wage_loss_replacement),
         ),
     )
 
