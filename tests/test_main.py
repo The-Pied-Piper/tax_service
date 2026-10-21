@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1266
+        == 1286
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1266
+        == 1286
     )
 
 
@@ -1983,6 +1983,26 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/rc381_self_employment_cpp_contributions",
         "ca/rc381_part_4_line_91_from_line_90",
         "ca/rc381_part_4_line_91",
+        "ca/rc381_part_4_line_92",
+        "ca/rc381_part_4_line_93",
+        "ca/rc381_part_4_line_94",
+        "ca/rc381_part_4_line_95",
+        "ca/rc381_part_4_line_96",
+        "ca/rc381_part_4_line_97",
+        "ca/rc381_part_4_line_98",
+        "ca/rc381_part_4_line_99",
+        "ca/rc381_part_4_line_100",
+        "ca/rc381_part_4_line_101",
+        "ca/rc381_part_4_line_102",
+        "ca/rc381_part_4_line_103",
+        "ca/rc381_part_4_line_104_difference",
+        "ca/rc381_part_4_line_104",
+        "ca/rc381_part_4_line_105",
+        "ca/rc381_part_4_line_106",
+        "ca/rc381_part_4_line_107",
+        "ca/rc381_part_4_line_108",
+        "ca/rc381_part_4_line_109",
+        "ca/rc381_part_4_line_110",
         "ca/income_tax_deducted",
         "ca/cwb_eligible_dependants",
         "ca/working_income",
@@ -2320,7 +2340,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1266
+        == 1286
     )
     assert (
         len(
@@ -2328,7 +2348,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1266
+        == 1286
     )
 
 
@@ -2341,7 +2361,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1266
+        == 1286
     )
     assert (
         len(
@@ -2349,7 +2369,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1266
+        == 1286
     )
 
 

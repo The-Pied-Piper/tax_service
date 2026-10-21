@@ -15,8 +15,11 @@ and 50 only copy or enter other artifacts, so they have no step of their own), t
 to 91, the earnings subject to contributions, the self-employed contributions, the contributions
 payable and the overpayment (`08f_rc381_part_4_lines_59_to_91.yaml`, the sixth; lines 57, 58, 60,
 63, 64, 66, 67, 71, 72, 73, 75, 78, 79 and 81 only copy other artifacts, so they have no step of
-their own). Part 2 lines C to F are Schedule 8 Part 2's lines B to E, the same table read with
-the same months (line A), so they are the existing artifacts and no step is repeated for them.
+their own), then Part 4 lines 92 to 110, the base contributions and the enhanced contributions
+through employment income, the amounts for lines 30800 and 22215 of the return
+(`08g_rc381_part_4_lines_92_to_110.yaml`, the seventh; every line has a step of its own). Part 2
+lines C to F are Schedule 8 Part 2's lines B to E, the same table read with the same months (line
+A), so they are the existing artifacts and no step is repeated for them.
 Lines 43 and 46 print the figures of lines 23 and 26, so they read the same datasets.
 """
 
@@ -205,6 +208,26 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_90,
     RC381_PART_4_LINE_91,
     RC381_PART_4_LINE_91_FROM_LINE_90,
+    RC381_PART_4_LINE_92,
+    RC381_PART_4_LINE_93,
+    RC381_PART_4_LINE_94,
+    RC381_PART_4_LINE_95,
+    RC381_PART_4_LINE_96,
+    RC381_PART_4_LINE_97,
+    RC381_PART_4_LINE_98,
+    RC381_PART_4_LINE_99,
+    RC381_PART_4_LINE_100,
+    RC381_PART_4_LINE_101,
+    RC381_PART_4_LINE_102,
+    RC381_PART_4_LINE_103,
+    RC381_PART_4_LINE_104,
+    RC381_PART_4_LINE_104_DIFFERENCE,
+    RC381_PART_4_LINE_105,
+    RC381_PART_4_LINE_106,
+    RC381_PART_4_LINE_107,
+    RC381_PART_4_LINE_108,
+    RC381_PART_4_LINE_109,
+    RC381_PART_4_LINE_110,
     RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
     T4_CPP_SECOND_ADDITIONAL_BOX_16A,
@@ -228,19 +251,22 @@ INPUTS = frozenset(
     }
 )
 
-# Nothing reads these yet (the PR that routes the T1 lines reads them and removes them from this
-# set): Part 4 line 90 "Line 88 minus 89. If positive, enter the amount (in dollars and
-# cents) on line 42100 of your return", the amount for line 42100, and line 91 "amount from line 90
-# entered as a positive amount × 50%", which the T1 lines read later, and the three results
-# of Part 3a and Part 3b for earnings from employment income only, "Enter this amount (in dollars
-# and cents) on line 30800 of your return.", "... on line 22215 of your return." and "... on line
-# 44800 of your return.", which the T1 lines and Form ON428 line 19 and line 58240 read
-# later. Part 4 line 4 "Add lines 1 to 3.", line 42 "Line 27 plus line 41" and line 56 "Line 53 plus
-# line 55" are read by lines 62, 66, 71 and 78, line 60 and line 76 now.
+# Nothing reads these yet (a later PR, the one that routes the T1 lines, reads them and removes
+# them from this set): Part 4 line 90 "Line 88 minus 89. If positive, enter the amount (in dollars
+# and cents) on line 42100 of your return", the amount for line 42100, line 91 "amount from line 90
+# entered as a positive amount × 50%", line 98 "Line 96 plus line 97 Enter this amount (in dollars
+# and cents) on line 30800 of your return." and line 110 "Line 105 plus line 109 Enter this amount
+# (in dollars and cents) on line 22215 of your return.", which the T1 lines read later, and the
+# three results of Part 3a and Part 3b for earnings from employment income only, "Enter this
+# amount (in dollars and cents) on line 30800 of your return.", "... on line 22215 of your
+# return." and "... on line 44800 of your return.", which the T1 lines and Form ON428 line 19 and
+# line 58240 read later.
 OUTPUTS = frozenset(
     {
         "ca/rc381_self_employment_cpp_contributions",
         "ca/rc381_part_4_line_91",
+        "ca/rc381_part_4_line_98",
+        "ca/rc381_part_4_line_110",
         "ca/rc381_employment_cpp_base_contributions",
         "ca/rc381_employment_cpp_enhanced_contributions",
         "ca/rc381_cpp_overpayment",
@@ -1736,6 +1762,194 @@ STEPS = {
         },
         produces={"output": "ca/rc381_part_4_line_91"},
     ),
+    # Line 92 "If line 53 of Part 3 is positive or "0", enter the amount from line 52 of Part 3 at
+    # line 92 and line 98, and continue at line 99. If not, enter the amount from line 49 of Part
+    # 3 and continue at line 93." (The lines it skips come out the same by their own rules: line
+    # 93 is "0", so lines 94, 95 and 97 are "0" and line 98 is line 96, line 92.)
+    CapabilitySelection(
+        name="ca/choose_by_sign",
+        params={},
+        consumes={
+            "sign": "ca/rc381_part_3_line_53",
+            "when_positive": (),
+            "when_zero": (),
+            "when_negative": ("ca/rc381_part_3_line_49",),
+            "when_non_positive": (),
+            "when_non_negative": ("ca/rc381_part_3_line_52",),
+        },
+        produces={"output": "ca/rc381_part_4_line_92"},
+    ),
+    # Line 93 "If line 53 of Part 3 is negative: Enter the amount from line 53 of Part 3 as a
+    # positive amount." (above zero only when line 53 is negative).
+    CapabilitySelection(
+        name="ca/positive_part_of_negation",
+        params={},
+        consumes={"amount": "ca/rc381_part_3_line_53"},
+        produces={"output": "ca/rc381_part_4_line_93"},
+    ),
+    # Line 94 "If line 53 of Part 3 is negative and line 60 of Part 3 is positive, enter whichever
+    # is less: amount from line 60 of Part 3 or line 93. If not, enter "0"." Line 93 is above zero
+    # only when line 53 is negative, so the least of line 60 and line 93 when both are above zero
+    # is the form's rule.
+    CapabilitySelection(
+        name="ca/lesser_of_when_positive",
+        params={},
+        consumes={"amounts": ("ca/rc381_part_3_line_60", "ca/rc381_part_4_line_93")},
+        produces={"output": "ca/rc381_part_4_line_94"},
+    ),
+    # Line 95 "Line 93 minus line 94".
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={"amount": "ca/rc381_part_4_line_93", "less": "ca/rc381_part_4_line_94"},
+        produces={"output": "ca/rc381_part_4_line_95"},
+    ),
+    # Line 96 "Line 92 plus line 94".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/rc381_part_4_line_92", "ca/rc381_part_4_line_94")},
+        produces={"output": "ca/rc381_part_4_line_96"},
+    ),
+    # Line 97 "If line 68 of Part 3 and line 95 are both positive, enter whichever is less. If
+    # not, enter "0"." (the lesser of line 68 of Part 3 and line 95).
+    CapabilitySelection(
+        name="ca/lesser_of_when_positive",
+        params={},
+        consumes={"amounts": ("ca/rc381_part_3_line_68", "ca/rc381_part_4_line_95")},
+        produces={"output": "ca/rc381_part_4_line_97"},
+    ),
+    # Line 98 "Base CPP contributions through employment income: Line 96 plus line 97. Enter this
+    # amount (in dollars and cents) on line 30800 of your return."
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/rc381_part_4_line_96", "ca/rc381_part_4_line_97")},
+        produces={"output": "ca/rc381_part_4_line_98"},
+    ),
+    # Line 99 "If line 60 of Part 3 is positive or "0", enter the amount from line 59 of Part 3 at
+    # line 99 and line 105, and continue at line 106. If not, enter the amount from line 56 of
+    # Part 3 and continue at line 100." (The lines it skips come out the same by their own rules:
+    # line 100 is "0", so lines 101, 102 and 104 are "0" and line 105 is line 103, line 99.)
+    CapabilitySelection(
+        name="ca/choose_by_sign",
+        params={},
+        consumes={
+            "sign": "ca/rc381_part_3_line_60",
+            "when_positive": (),
+            "when_zero": (),
+            "when_negative": ("ca/rc381_part_3_line_56",),
+            "when_non_positive": (),
+            "when_non_negative": ("ca/rc381_part_3_line_59",),
+        },
+        produces={"output": "ca/rc381_part_4_line_99"},
+    ),
+    # Line 100 "If line 60 of Part 3 is negative: Enter the amount from line 60 of Part 3 as a
+    # positive amount." (above zero only when line 60 is negative).
+    CapabilitySelection(
+        name="ca/positive_part_of_negation",
+        params={},
+        consumes={"amount": "ca/rc381_part_3_line_60"},
+        produces={"output": "ca/rc381_part_4_line_100"},
+    ),
+    # Line 101 "If line 53 of Part 3 is positive, enter whichever is less: amount from line 53 of
+    # Part 3 or line 100. If not, enter "0"." Line 100 is above zero only when line 60 is
+    # negative.
+    CapabilitySelection(
+        name="ca/lesser_of_when_positive",
+        params={},
+        consumes={"amounts": ("ca/rc381_part_3_line_53", "ca/rc381_part_4_line_100")},
+        produces={"output": "ca/rc381_part_4_line_101"},
+    ),
+    # Line 102 "Line 100 minus line 101".
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={"amount": "ca/rc381_part_4_line_100", "less": "ca/rc381_part_4_line_101"},
+        produces={"output": "ca/rc381_part_4_line_102"},
+    ),
+    # Line 103 "Line 99 plus line 101".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/rc381_part_4_line_99", "ca/rc381_part_4_line_101")},
+        produces={"output": "ca/rc381_part_4_line_103"},
+    ),
+    # The result printed inside line 104, "the result of line 68 of Part 3 minus line 97", which
+    # is above zero only when line 68 is.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={"amount": "ca/rc381_part_3_line_68", "less": "ca/rc381_part_4_line_97"},
+        produces={"output": "ca/rc381_part_4_line_104_difference"},
+    ),
+    # Line 104 "If line 68 of Part 3 and line 102 are both positive, enter whichever is less:
+    # amount from line 102 or the result of line 68 of Part 3 minus line 97. If not, enter "0"."
+    # Line 97 is never more than a positive line 68, so the difference is above zero exactly when
+    # line 68 is more than line 97; when it is "0" or line 68 is not positive the lesser is not
+    # above zero and the line is "0" either way.
+    CapabilitySelection(
+        name="ca/lesser_of_when_positive",
+        params={},
+        consumes={"amounts": ("ca/rc381_part_4_line_102", "ca/rc381_part_4_line_104_difference")},
+        produces={"output": "ca/rc381_part_4_line_104"},
+    ),
+    # Line 105 "Line 103 plus line 104".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/rc381_part_4_line_103", "ca/rc381_part_4_line_104")},
+        produces={"output": "ca/rc381_part_4_line_105"},
+    ),
+    # Line 106 "If line 68 of Part 3 is positive or "0", enter the amount from line 67 of Part 3
+    # at line 106 and line 109, and continue at line 110. If not, enter the amount from line 64 of
+    # Part 3 and continue at line 107." (The lines it skips come out the same by their own rules:
+    # line 107 is "0", so line 108 is "0" and line 109 is line 106, line 67.)
+    CapabilitySelection(
+        name="ca/choose_by_sign",
+        params={},
+        consumes={
+            "sign": "ca/rc381_part_3_line_68",
+            "when_positive": (),
+            "when_zero": (),
+            "when_negative": ("ca/rc381_part_3_line_64",),
+            "when_non_positive": (),
+            "when_non_negative": ("ca/rc381_part_3_line_67",),
+        },
+        produces={"output": "ca/rc381_part_4_line_106"},
+    ),
+    # Line 107 "If line 68 of Part 3 is negative: Enter the amount from line 68 of Part 3 as a
+    # positive amount." (above zero only when line 68 is negative).
+    CapabilitySelection(
+        name="ca/positive_part_of_negation",
+        params={},
+        consumes={"amount": "ca/rc381_part_3_line_68"},
+        produces={"output": "ca/rc381_part_4_line_107"},
+    ),
+    # Line 108 "If line 61 of Part 3 is positive and line 68 of Part 3 is negative, enter
+    # whichever is less: amount from line 61 of Part 3 or line 107. If not, enter "0"." Line 107
+    # is above zero only when line 68 is negative.
+    CapabilitySelection(
+        name="ca/lesser_of_when_positive",
+        params={},
+        consumes={"amounts": ("ca/rc381_part_3_line_61", "ca/rc381_part_4_line_107")},
+        produces={"output": "ca/rc381_part_4_line_108"},
+    ),
+    # Line 109 "Line 106 plus line 108".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/rc381_part_4_line_106", "ca/rc381_part_4_line_108")},
+        produces={"output": "ca/rc381_part_4_line_109"},
+    ),
+    # Line 110 "Deduction for CPP enhanced contributions on employment income: Line 105 plus line
+    # 109. Enter this amount (in dollars and cents) on line 22215 of your return."
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/rc381_part_4_line_105", "ca/rc381_part_4_line_109")},
+        produces={"output": "ca/rc381_part_4_line_110"},
+    ),
 }
 
 WIRING = {
@@ -2420,4 +2634,104 @@ WIRING = {
         frozenset({RC381_PART_4_LINE_91_FROM_LINE_90}),
     ),
     (ApplyRate, frozenset({RC381_PART_4_LINE_91_FROM_LINE_90}), frozenset({RC381_PART_4_LINE_91})),
+    (
+        ChooseBySign,
+        frozenset({RC381_PART_3_LINE_49, RC381_PART_3_LINE_52, RC381_PART_3_LINE_53}),
+        frozenset({RC381_PART_4_LINE_92}),
+    ),
+    (
+        PositivePartOfNegation,
+        frozenset({RC381_PART_3_LINE_53}),
+        frozenset({RC381_PART_4_LINE_93}),
+    ),
+    (
+        LesserOfWhenPositive,
+        frozenset({RC381_PART_3_LINE_60, RC381_PART_4_LINE_93}),
+        frozenset({RC381_PART_4_LINE_94}),
+    ),
+    (
+        Subtract,
+        frozenset({RC381_PART_4_LINE_93, RC381_PART_4_LINE_94}),
+        frozenset({RC381_PART_4_LINE_95}),
+    ),
+    (
+        Sum,
+        frozenset({RC381_PART_4_LINE_92, RC381_PART_4_LINE_94}),
+        frozenset({RC381_PART_4_LINE_96}),
+    ),
+    (
+        LesserOfWhenPositive,
+        frozenset({RC381_PART_3_LINE_68, RC381_PART_4_LINE_95}),
+        frozenset({RC381_PART_4_LINE_97}),
+    ),
+    (
+        Sum,
+        frozenset({RC381_PART_4_LINE_96, RC381_PART_4_LINE_97}),
+        frozenset({RC381_PART_4_LINE_98}),
+    ),
+    (
+        ChooseBySign,
+        frozenset({RC381_PART_3_LINE_56, RC381_PART_3_LINE_59, RC381_PART_3_LINE_60}),
+        frozenset({RC381_PART_4_LINE_99}),
+    ),
+    (
+        PositivePartOfNegation,
+        frozenset({RC381_PART_3_LINE_60}),
+        frozenset({RC381_PART_4_LINE_100}),
+    ),
+    (
+        LesserOfWhenPositive,
+        frozenset({RC381_PART_3_LINE_53, RC381_PART_4_LINE_100}),
+        frozenset({RC381_PART_4_LINE_101}),
+    ),
+    (
+        Subtract,
+        frozenset({RC381_PART_4_LINE_100, RC381_PART_4_LINE_101}),
+        frozenset({RC381_PART_4_LINE_102}),
+    ),
+    (
+        Sum,
+        frozenset({RC381_PART_4_LINE_99, RC381_PART_4_LINE_101}),
+        frozenset({RC381_PART_4_LINE_103}),
+    ),
+    (
+        Subtract,
+        frozenset({RC381_PART_3_LINE_68, RC381_PART_4_LINE_97}),
+        frozenset({RC381_PART_4_LINE_104_DIFFERENCE}),
+    ),
+    (
+        LesserOfWhenPositive,
+        frozenset({RC381_PART_4_LINE_102, RC381_PART_4_LINE_104_DIFFERENCE}),
+        frozenset({RC381_PART_4_LINE_104}),
+    ),
+    (
+        Sum,
+        frozenset({RC381_PART_4_LINE_103, RC381_PART_4_LINE_104}),
+        frozenset({RC381_PART_4_LINE_105}),
+    ),
+    (
+        ChooseBySign,
+        frozenset({RC381_PART_3_LINE_64, RC381_PART_3_LINE_67, RC381_PART_3_LINE_68}),
+        frozenset({RC381_PART_4_LINE_106}),
+    ),
+    (
+        PositivePartOfNegation,
+        frozenset({RC381_PART_3_LINE_68}),
+        frozenset({RC381_PART_4_LINE_107}),
+    ),
+    (
+        LesserOfWhenPositive,
+        frozenset({RC381_PART_3_LINE_61, RC381_PART_4_LINE_107}),
+        frozenset({RC381_PART_4_LINE_108}),
+    ),
+    (
+        Sum,
+        frozenset({RC381_PART_4_LINE_106, RC381_PART_4_LINE_108}),
+        frozenset({RC381_PART_4_LINE_109}),
+    ),
+    (
+        Sum,
+        frozenset({RC381_PART_4_LINE_105, RC381_PART_4_LINE_109}),
+        frozenset({RC381_PART_4_LINE_110}),
+    ),
 }
