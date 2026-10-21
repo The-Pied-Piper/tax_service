@@ -9,9 +9,12 @@ from app.domain.trace import (
     AmountWhenMoreLine,
     BracketColumnLine,
     ChosenByRangeLine,
+    ChosenBySignLine,
     ChosenRateAppliedLine,
     CountAtLeastLine,
     ItemsTotalLine,
+    LesserOfWhenPositiveLine,
+    PositivePartOfNegationLine,
     RateByIncomeBandLine,
     RatioTruncatedLine,
     RoundedTotalLine,
@@ -28,6 +31,8 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_1_LINE_7,
     POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
     QPP_MONTHS,
+    RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS,
+    RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS,
     RC381_PART_2_LINE_B,
     RC381_PART_2_LINE_G,
     RC381_PART_3_LINE_3,
@@ -36,6 +41,30 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_15_LESSER,
     RC381_PART_3_LINE_35,
     RC381_PART_3_LINE_35_LESSER,
+    RC381_PART_3_LINE_52,
+    RC381_PART_3_LINE_53,
+    RC381_PART_3_LINE_59,
+    RC381_PART_3_LINE_60,
+    RC381_PART_3_LINE_61,
+    RC381_PART_3_LINE_67,
+    RC381_PART_3_LINE_68,
+    RC381_PART_3_LINE_69,
+    RC381_PART_3_LINE_75,
+    RC381_PART_3_LINE_76,
+    RC381_PART_3_LINE_77,
+    RC381_PART_3_LINE_78,
+    RC381_PART_3_LINE_80,
+    RC381_PART_3_LINE_81,
+    RC381_PART_3_LINE_82,
+    RC381_PART_3_LINE_83,
+    RC381_PART_3_LINE_84,
+    RC381_PART_3_LINE_85,
+    RC381_PART_3_LINE_87,
+    RC381_PART_3_LINE_87_DIFFERENCE,
+    RC381_PART_3_LINE_89,
+    RC381_PART_3_LINE_90,
+    RC381_PART_3_LINE_91,
+    RC381_PART_3_LINE_93,
     RENTAL_NON_COMPLIANT_EXPENSES,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
     TAXABLE_INCOME,
@@ -64,6 +93,117 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     counts_at_least = {line.output: line for line in trace if isinstance(line, CountAtLeastLine)}
     truncated = {line.output: line for line in trace if isinstance(line, RatioTruncatedLine)}
     when_more = {line.output: line for line in trace if isinstance(line, AmountWhenMoreLine)}
+    chosen_by_sign = {line.output: line for line in trace if isinstance(line, ChosenBySignLine)}
+    positive_parts = {
+        line.output: line for line in trace if isinstance(line, PositivePartOfNegationLine)
+    }
+    lesser_when_positive = {
+        line.output: line for line in trace if isinstance(line, LesserOfWhenPositiveLine)
+    }
+    # Form RC381 Part 3b lines 75 "If line 53 is positive or "0", enter the amount from line 52",
+    # 82 "If line 60 is positive or "0", enter the amount from line 59" and 89 "If line 68 is
+    # positive or "0", enter the amount from line 67", and the three results of Part 3a and Part
+    # 3b, chosen by the sign of line 69: Return A's lines 53, 60, 68 and 69 are all 0, so each is
+    # in the "positive or 0" branch (or, for the two results, the "0 or negative" branch of Part
+    # 3b). The overpayment of line 44800 is line 69 not below zero, a floored sum of line 69.
+    assert chosen_by_sign == {
+        RC381_PART_3_LINE_75: ChosenBySignLine(
+            output=RC381_PART_3_LINE_75,
+            sign_kind=RC381_PART_3_LINE_53,
+            sign=D("0"),
+            chosen_kind=RC381_PART_3_LINE_52,
+            chosen_value=D("0"),
+        ),
+        RC381_PART_3_LINE_82: ChosenBySignLine(
+            output=RC381_PART_3_LINE_82,
+            sign_kind=RC381_PART_3_LINE_60,
+            sign=D("0"),
+            chosen_kind=RC381_PART_3_LINE_59,
+            chosen_value=D("0"),
+        ),
+        RC381_PART_3_LINE_89: ChosenBySignLine(
+            output=RC381_PART_3_LINE_89,
+            sign_kind=RC381_PART_3_LINE_68,
+            sign=D("0"),
+            chosen_kind=RC381_PART_3_LINE_67,
+            chosen_value=D("0"),
+        ),
+        RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS: ChosenBySignLine(
+            output=RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS,
+            sign_kind=RC381_PART_3_LINE_69,
+            sign=D("0"),
+            chosen_kind=RC381_PART_3_LINE_81,
+            chosen_value=D("0"),
+        ),
+        RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS: ChosenBySignLine(
+            output=RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS,
+            sign_kind=RC381_PART_3_LINE_69,
+            sign=D("0"),
+            chosen_kind=RC381_PART_3_LINE_93,
+            chosen_value=D("0"),
+        ),
+    }
+    # Form RC381 Part 3b lines 76, 83 and 90 "Enter the amount from line 53 (60, 68) as a positive
+    # amount": none is negative for Return A.
+    assert positive_parts == {
+        RC381_PART_3_LINE_76: PositivePartOfNegationLine(
+            output=RC381_PART_3_LINE_76,
+            amount_kind=RC381_PART_3_LINE_53,
+            amount_value=D("0"),
+            result=D("0"),
+        ),
+        RC381_PART_3_LINE_83: PositivePartOfNegationLine(
+            output=RC381_PART_3_LINE_83,
+            amount_kind=RC381_PART_3_LINE_60,
+            amount_value=D("0"),
+            result=D("0"),
+        ),
+        RC381_PART_3_LINE_90: PositivePartOfNegationLine(
+            output=RC381_PART_3_LINE_90,
+            amount_kind=RC381_PART_3_LINE_68,
+            amount_value=D("0"),
+            result=D("0"),
+        ),
+    }
+    # Form RC381 Part 3b lines 77, 80, 84, 87 and 91, "whichever is less" when the lines are
+    # positive: none is positive for Return A, so each is "0".
+    assert lesser_when_positive == {
+        RC381_PART_3_LINE_77: LesserOfWhenPositiveLine(
+            output=RC381_PART_3_LINE_77,
+            parts=((RC381_PART_3_LINE_60, D("0")), (RC381_PART_3_LINE_76, D("0"))),
+            all_positive=False,
+            bracket=False,
+            result=D("0"),
+        ),
+        RC381_PART_3_LINE_80: LesserOfWhenPositiveLine(
+            output=RC381_PART_3_LINE_80,
+            parts=((RC381_PART_3_LINE_68, D("0")), (RC381_PART_3_LINE_78, D("0"))),
+            all_positive=False,
+            bracket=False,
+            result=D("0"),
+        ),
+        RC381_PART_3_LINE_84: LesserOfWhenPositiveLine(
+            output=RC381_PART_3_LINE_84,
+            parts=((RC381_PART_3_LINE_53, D("0")), (RC381_PART_3_LINE_83, D("0"))),
+            all_positive=False,
+            bracket=False,
+            result=D("0"),
+        ),
+        RC381_PART_3_LINE_87: LesserOfWhenPositiveLine(
+            output=RC381_PART_3_LINE_87,
+            parts=((RC381_PART_3_LINE_85, D("0")), (RC381_PART_3_LINE_87_DIFFERENCE, D("0"))),
+            all_positive=False,
+            bracket=False,
+            result=D("0"),
+        ),
+        RC381_PART_3_LINE_91: LesserOfWhenPositiveLine(
+            output=RC381_PART_3_LINE_91,
+            parts=((RC381_PART_3_LINE_61, D("0")), (RC381_PART_3_LINE_90, D("0"))),
+            all_positive=False,
+            bracket=False,
+            result=D("0"),
+        ),
+    }
     # Form RC381 Part 2 "The number you enter on line A cannot be more than the number you enter on
     # line B.": Return A's lines A and B are both 12.
     assert counts_at_least == {

@@ -174,14 +174,14 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1076
+    assert len(found.capabilities) == 1100
     # T2125 Area A column 22 "UCC at the end of the year", a record list of each class's closing UCC
     # for next year, and Part 7 line 7O "Business-use-of-home expenses available to carry forward",
     # which nothing else on the return reads.
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1076
+    assert len(found.capabilities) == 1100
     # Form T691 Part 1 line 12 "Add lines 1, 4, 7, and 11.", the adjusted taxable income subtotal,
     # Part 9 line 6 "Enter this amount on line 14 of Part 1", Part 1 line 20 "Line 15 minus line 19"
     # and Part 1 line 26 "Line 24 minus line 25" times 30%, which nothing else on the return reads
@@ -189,14 +189,15 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1076
-    # Form RC381 Part 3 line 24 "Line 22 plus line 23", line 44 "Line 42 plus line 43" and line 69
-    # "Line 61 plus line 68 (if negative, show in brackets)", which nothing else on the return
-    # reads yet (Part 2 lines G to J and Part 3 lines 21 and 26 are read by lines 27 to 69 now).
+    assert len(found.capabilities) == 1100
+    # Form RC381 Part 3 line 24 "Line 22 plus line 23" and line 44 "Line 42 plus line 43", and the
+    # three results of Part 3a and Part 3b for employment income only (lines 30800, 22215 and
+    # 44800 of the return), which nothing else on the return reads yet (line 69 is read by the
+    # three results now).
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1076
+    assert len(found.capabilities) == 1100
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -206,6 +207,6 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 1076
-    assert len(composition.order) == 1076
+    assert len(composition.order) == 1100
+    assert len(composition.order) == 1100
     assert wiring == WIRING
