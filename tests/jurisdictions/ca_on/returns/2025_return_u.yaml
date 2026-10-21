@@ -626,6 +626,8 @@ expected:
   ca/cpp_payable_on_self_employment: "5533.50"
   ca/cpp_base_contributions_on_self_employment: "2301.75"
   ca/cpp_deduction_on_self_employment: "3231.75"
+  ca/ei_self_employment_before_slips: "50000"
+  ca/ei_excluded_slips_net_income: "0"
   ca/ei_self_employment_earnings: "50000"
   ca/ei_net_self_employment_income: "50000"
   ca/ei_maximum_insurable_earnings: "65700.00"

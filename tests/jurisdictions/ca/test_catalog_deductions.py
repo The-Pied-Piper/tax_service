@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+import pytest
+
 from app.domain.artifact import ArtifactRegistry
+from app.domain.errors import InvalidRecordError
+from app.domain.record_list import RecordList, RecordListKind
 from app.jurisdictions.ca.catalog import (
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS,
@@ -51,11 +55,15 @@ from app.jurisdictions.ca.catalog import (
     EI_BENEFITS_REPAYMENT,
     EI_CONTROLLED_CORPORATION_EARNINGS,
     EI_EARNINGS_SUBJECT_TO_PREMIUM,
+    EI_EXCLUDED_SLIP_NET_INCOME,
+    EI_EXCLUDED_SLIPS,
+    EI_EXCLUDED_SLIPS_NET_INCOME,
     EI_EXEMPT_SELF_EMPLOYMENT_INCOME,
     EI_INSURABLE_EARNINGS,
     EI_INSURABLE_EARNINGS_REMAINING,
     EI_MAXIMUM_INSURABLE_EARNINGS,
     EI_NET_SELF_EMPLOYMENT_INCOME,
+    EI_SELF_EMPLOYMENT_BEFORE_SLIPS,
     EI_SELF_EMPLOYMENT_EARNINGS,
     EI_SPECIAL_BENEFITS_AGREEMENT,
     ELECTED_SPLIT_PENSION_DEDUCTION,
@@ -152,7 +160,7 @@ from app.jurisdictions.ca.catalog import (
     ZONE_B_RESIDENCY_AMOUNT,
     ZONE_B_SPECIAL_WORK_SITE_BENEFITS,
 )
-from tests.jurisdictions.ca.catalog_snapshot import COUNTS, SIGNED
+from tests.jurisdictions.ca.catalog_snapshot import COUNTS, RECORD_LISTS, REGISTERED, SIGNED
 
 
 def test_the_deductions_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
@@ -636,3 +644,78 @@ def test_the_social_benefits_chart_applies_count_is_an_int_kind(registry: Artifa
     assert SOCIAL_BENEFITS_REPAYMENT_APPLIES.value_type is int
     assert registry.kind("ca/social_benefits_repayment_applies").value_type is int
     assert "ca/social_benefits_repayment_applies" in COUNTS
+
+
+def test_the_ei_excluded_slips_are_a_record_list_of_the_net_income_of_each_slip(
+    registry: ArtifactRegistry,
+) -> None:
+    # Schedule 13 line 1: "If you received a T4 slip for self-employment income with EI premiums
+    # in box 18, do not include any net income (or net loss) reported on lines 13500, 13700,
+    # 13900, 14100, and 14300 of your return for that slip": one record per such slip, whose one
+    # field is the net income (or net loss) reported for it.
+    assert isinstance(EI_EXCLUDED_SLIPS, RecordListKind)
+    assert EI_EXCLUDED_SLIPS.identifier == "ca/ei_excluded_slips"
+    assert EI_EXCLUDED_SLIPS.value_type is RecordList
+    assert EI_EXCLUDED_SLIPS.non_negative is False
+    assert EI_EXCLUDED_SLIPS.fields == (EI_EXCLUDED_SLIP_NET_INCOME,)
+    assert registry.get("ca/ei_excluded_slips") is EI_EXCLUDED_SLIPS
+    assert "ca/ei_excluded_slips" in RECORD_LISTS
+    assert "ca/ei_excluded_slips" in REGISTERED
+
+
+def test_the_net_income_of_an_excluded_slip_is_a_signed_decimal(
+    registry: ArtifactRegistry,
+) -> None:
+    # "(or net loss)": a slip may report a loss, so the field is not declared non-negative.
+    assert EI_EXCLUDED_SLIP_NET_INCOME.identifier == "ca/ei_excluded_slip_net_income"
+    assert EI_EXCLUDED_SLIP_NET_INCOME.value_type is Decimal
+    assert EI_EXCLUDED_SLIP_NET_INCOME.non_negative is False
+    assert registry.kind("ca/ei_excluded_slip_net_income") is EI_EXCLUDED_SLIP_NET_INCOME
+    assert "ca/ei_excluded_slip_net_income" in SIGNED
+
+
+def test_the_ei_excluded_slips_hold_a_loss_and_may_be_empty() -> None:
+    rows = RecordList(
+        EI_EXCLUDED_SLIPS.fields,
+        [
+            {EI_EXCLUDED_SLIP_NET_INCOME: Decimal("20000")},
+            {EI_EXCLUDED_SLIP_NET_INCOME: Decimal("-1500")},
+        ],
+    )
+
+    assert [record[EI_EXCLUDED_SLIP_NET_INCOME] for record in rows.records] == [
+        Decimal("20000"),
+        Decimal("-1500"),
+    ]
+    assert RecordList(EI_EXCLUDED_SLIPS.fields, []).records == ()
+
+
+def test_an_excluded_slip_missing_its_net_income_is_refused_naming_the_row() -> None:
+    with pytest.raises(InvalidRecordError, match="item 1.*ei_excluded_slip_net_income"):
+        RecordList(EI_EXCLUDED_SLIPS.fields, [{}])
+
+
+def test_schedule_13_line_1_before_the_slips_is_signed(registry: ArtifactRegistry) -> None:
+    # Line 1 is "the total amount from line 12200 plus line 27": before the slips and the "(if
+    # negative, enter "0")" floor of the finished line 1, so it is not declared non-negative.
+    assert EI_SELF_EMPLOYMENT_BEFORE_SLIPS.identifier == "ca/ei_self_employment_before_slips"
+    assert EI_SELF_EMPLOYMENT_BEFORE_SLIPS.value_type is Decimal
+    assert EI_SELF_EMPLOYMENT_BEFORE_SLIPS.non_negative is False
+    assert registry.kind("ca/ei_self_employment_before_slips") is EI_SELF_EMPLOYMENT_BEFORE_SLIPS
+    assert "ca/ei_self_employment_before_slips" in SIGNED
+
+
+def test_the_net_income_of_all_the_excluded_slips_is_signed(registry: ArtifactRegistry) -> None:
+    # The total of the slips' net income (or net loss) may be a loss.
+    assert EI_EXCLUDED_SLIPS_NET_INCOME.identifier == "ca/ei_excluded_slips_net_income"
+    assert EI_EXCLUDED_SLIPS_NET_INCOME.value_type is Decimal
+    assert EI_EXCLUDED_SLIPS_NET_INCOME.non_negative is False
+    assert registry.kind("ca/ei_excluded_slips_net_income") is EI_EXCLUDED_SLIPS_NET_INCOME
+    assert "ca/ei_excluded_slips_net_income" in SIGNED
+
+
+def test_schedule_13_line_1_stays_non_negative_after_the_slips(registry: ArtifactRegistry) -> None:
+    # "(if negative, enter "0")" is on the finished line 1, ca/ei_self_employment_earnings.
+    assert EI_SELF_EMPLOYMENT_EARNINGS is not EI_SELF_EMPLOYMENT_BEFORE_SLIPS
+    assert EI_SELF_EMPLOYMENT_EARNINGS.non_negative is True
+    assert "ca/ei_self_employment_earnings" not in SIGNED
