@@ -73,8 +73,7 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_INCOME,
     TOTAL_LOSSES_FOR_ANNUAL_GAINS_LIMIT,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute, t657_chart_1_row
-from tests.jurisdictions.ca_on.end_to_end.test_return_be import return_be
+from tests.jurisdictions.ca_on.end_to_end.support import D, compute, return_be, t657_chart_1_row
 
 
 def return_bf(**overrides: Any) -> Worksheet:
