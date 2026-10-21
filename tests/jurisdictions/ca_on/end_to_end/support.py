@@ -260,8 +260,10 @@ from app.jurisdictions.ca.catalog import (
     RRSP_INCOME,
     SECURITY_OPTIONS_DEDUCTIONS,
     SHARE_DISPOSITIONS,
+    SHORT_TERM_RENTAL_CCA_UNITS,
     SHORT_TERM_RENTAL_DAYS,
     SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
+    SHORT_TERM_RENTAL_RELATED_CCA,
     SHORT_TERM_RENTAL_RELATED_EXPENSES,
     SHORT_TERM_RENTAL_UNITS,
     SLIP_CAPITAL_GAINS_OR_LOSSES,
@@ -511,6 +513,22 @@ def short_term_rental_units(*rows: tuple[str, int, int]) -> Artifact[RecordList]
     return Artifact(SHORT_TERM_RENTAL_UNITS, RecordList(SHORT_TERM_RENTAL_UNITS.fields, records))
 
 
+def short_term_rental_cca_units(*rows: tuple[str, str, int, int]) -> Artifact[RecordList]:
+    """The Form T776 Chart B rows, one record per (column 1, column 4, column 5, column 6)."""
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {
+            CCA_CLASS_NUMBER: D(class_number),
+            SHORT_TERM_RENTAL_RELATED_CCA: D(related_cca),
+            SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS: non_compliant_days,
+            SHORT_TERM_RENTAL_DAYS: days,
+        }
+        for class_number, related_cca, non_compliant_days, days in rows
+    ]
+    return Artifact(
+        SHORT_TERM_RENTAL_CCA_UNITS, RecordList(SHORT_TERM_RENTAL_CCA_UNITS.fields, records)
+    )
+
+
 # The Form T776 Part 4 expense lines by name, each with the kinds of its three boxes: "Total
 # expenses", "Personal portion of total expenses" and "Short-term rental portion of total
 # expenses".
@@ -729,6 +747,7 @@ def compute(
     rental_other_income: str = "0",
     rental_expenses: Mapping[str, tuple[str, str, str]] | None = None,
     short_term_rental_units_rows: tuple[tuple[str, int, int], ...] = (),
+    short_term_rental_cca_units_rows: tuple[tuple[str, str, int, int], ...] = (),
     rental_coowner: int = 0,
     rental_coowner_share: str = "0",
     rental_coowner_other_expenses: str = "0",
@@ -1025,6 +1044,7 @@ def compute(
         Artifact(RENTAL_OTHER_INCOME, D(rental_other_income)),
         *rental_expense_artifacts(rental_expenses or {}),
         short_term_rental_units(*short_term_rental_units_rows),
+        short_term_rental_cca_units(*short_term_rental_cca_units_rows),
         Artifact(RENTAL_COOWNER, rental_coowner),
         Artifact(RENTAL_COOWNER_SHARE, D(rental_coowner_share)),
         Artifact(RENTAL_COOWNER_OTHER_EXPENSES, D(rental_coowner_other_expenses)),

@@ -80,6 +80,8 @@ from app.jurisdictions.ca.trace import (
     OtherDependantMedicalLine,
     PrincipalResidenceGainLine,
     RecapturedCcaLine,
+    ShortTermRentalNonCompliantCcaByClassLine,
+    ShortTermRentalNonCompliantCcaLine,
     ShortTermRentalNonCompliantLine,
     TerminalLossLine,
 )
@@ -142,6 +144,7 @@ DEPENDANTS_MEDICAL = ArtifactKind("ex/dependants_medical", Decimal)
 LIMITED_AMOUNT = ArtifactKind("ex/limited_amount", Decimal)
 DIVIDED_AMOUNT = ArtifactKind("ex/divided_amount", Decimal)
 NON_COMPLIANT_EXPENSES = ArtifactKind("ex/non_compliant_expenses", Decimal)
+NON_COMPLIANT_CCA = ArtifactKind("ex/non_compliant_cca", Decimal)
 TRANSFERRED_AMOUNT = ArtifactKind("ex/transferred_amount", Decimal)
 RESIDENCE_GAIN = ArtifactKind("ex/residence_gain", Decimal)
 MONTHS = ArtifactKind("ex/month_count", int)
@@ -1758,6 +1761,110 @@ def test_renders_the_non_compliant_rows_figures_without_trailing_zeros_or_an_exp
     )
 
 
+# --- a short-term rental row of Chart B ------------------------------------------------
+#
+# One sentence: the output's label, then "row <position>: class <column 1> CCA <column 4> for
+# <column 5> non-compliant days of <column 6> short-term days = <column 7>" and the rounding rule
+# in brackets. Every money figure prints without trailing zeros; the days print as plain counts.
+
+
+def non_compliant_cca_row(
+    position: int,
+    class_number: str,
+    related_cca: str,
+    non_compliant_days: int,
+    days: int,
+    result: str,
+    rounding: RoundingRule = CENT,
+) -> ShortTermRentalNonCompliantCcaLine:
+    return ShortTermRentalNonCompliantCcaLine(
+        NON_COMPLIANT_CCA,
+        position,
+        D(class_number),
+        D(related_cca),
+        non_compliant_days,
+        days,
+        rounding,
+        D(result),
+    )
+
+
+def test_renders_one_non_compliant_cca_row_by_position() -> None:
+    assert render(non_compliant_cca_row(1, "1", "900", 30, 90, "300.00")) == (
+        "non_compliant_cca: row 1: class 1 CCA 900 for 30 non-compliant days of 90 "
+        "short-term days = 300 (half-up to 0.01)"
+    )
+
+
+def test_renders_the_second_non_compliant_cca_row_of_another_class() -> None:
+    assert render(non_compliant_cca_row(2, "10.1", "100", 1, 3, "33.33")) == (
+        "non_compliant_cca: row 2: class 10.1 CCA 100 for 1 non-compliant days of 3 "
+        "short-term days = 33.33 (half-up to 0.01)"
+    )
+
+
+def test_renders_a_non_compliant_cca_row_without_rounding() -> None:
+    line = non_compliant_cca_row(3, "8", "0.015", 1, 2, "0.0075", rounding=NO_ROUNDING)
+
+    assert render(line) == (
+        "non_compliant_cca: row 3: class 8 CCA 0.015 for 1 non-compliant days of 2 "
+        "short-term days = 0.0075 (no rounding)"
+    )
+
+
+def test_renders_the_non_compliant_cca_rows_figures_without_trailing_zeros_or_an_exponent() -> None:
+    line = non_compliant_cca_row(1, "1.0", "9.0000E+2", 30, 90, "3.00000E+2")
+
+    assert render(line) == (
+        "non_compliant_cca: row 1: class 1 CCA 900 for 30 non-compliant days of 90 "
+        "short-term days = 300 (half-up to 0.01)"
+    )
+
+
+# --- the column 22 total of one class of Chart B ---------------------------------------
+#
+# One sentence: the output's label, then "item <position> class <column 1>: column 7 " and the
+# class's rounded column 7 amounts joined by " + ", then " = " and column 22.
+
+NON_COMPLIANT_CCA_BY_CLASS = RecordListKind(
+    "ex/non_compliant_cca_by_class", fields=(ArtifactKind("ex/column_22", Decimal),)
+)
+
+
+def non_compliant_cca_class(
+    position: int, class_number: str, amounts: tuple[str, ...], result: str
+) -> ShortTermRentalNonCompliantCcaByClassLine:
+    return ShortTermRentalNonCompliantCcaByClassLine(
+        NON_COMPLIANT_CCA_BY_CLASS,
+        position,
+        D(class_number),
+        tuple(D(amount) for amount in amounts),
+        D(result),
+    )
+
+
+def test_renders_a_class_of_one_row() -> None:
+    line = non_compliant_cca_class(2, "8", ("250.00",), "250.00")
+
+    assert render(line) == "non_compliant_cca_by_class: item 2 class 8: column 7 250 = 250"
+
+
+def test_renders_a_class_of_two_rows_added() -> None:
+    line = non_compliant_cca_class(1, "1", ("300.00", "33.33"), "333.33")
+
+    assert render(line) == (
+        "non_compliant_cca_by_class: item 1 class 1: column 7 300 + 33.33 = 333.33"
+    )
+
+
+def test_renders_a_decimal_class_number_and_figures_without_trailing_zeros() -> None:
+    line = non_compliant_cca_class(1, "10.1", ("3.00000E+2", "0.50"), "3.005E+2")
+
+    assert render(line) == (
+        "non_compliant_cca_by_class: item 1 class 10.1: column 7 300 + 0.5 = 300.5"
+    )
+
+
 # --- an amount transferred per dependant ------------------------------------------
 #
 # One sentence: the output's label, then "dependant <position>: " (from 1), the age group
@@ -2620,6 +2727,8 @@ def test_render_all_renders_each_line_in_order() -> None:
         ItemsTotalLine(CAREGIVER_AMOUNT, ((1, D("1")),), D("1")),
         medical_claim(1, "5", "4", "3", maximum="2", rounding=NO_ROUNDING),
         non_compliant_row(1, "5", 4, 3, "2", rounding=NO_ROUNDING),
+        non_compliant_cca_row(1, "8", "5", 4, 3, "2", rounding=NO_ROUNDING),
+        non_compliant_cca_class(1, "8", ("2",), "2"),
     )
 
     assert EnglishTraceRenderer().render_all(trace) == (
@@ -2661,6 +2770,9 @@ def test_render_all_renders_each_line_in_order() -> None:
         "2834 = 3, at most 2 (no rounding)",
         "non_compliant_expenses: row 1: expenses 5 for 4 non-compliant days of 3 short-term "
         "days = 2 (no rounding)",
+        "non_compliant_cca: row 1: class 8 CCA 5 for 4 non-compliant days of 3 short-term "
+        "days = 2 (no rounding)",
+        "non_compliant_cca_by_class: item 1 class 8: column 7 2 = 2",
     )
 
 

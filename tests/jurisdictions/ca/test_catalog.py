@@ -149,6 +149,7 @@ from app.jurisdictions.ca.catalog import (
     NET_PROFESSIONAL_INCOME,
     NET_RENTAL_INCOME,
     NET_SELF_EMPLOYMENT_INCOME,
+    NON_COMPLIANT_CCA,
     NORTHERN_RESIDENTS_DEDUCTIONS,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
     OTHER_DEPENDANT_MEDICAL_EXPENSES,
@@ -228,6 +229,7 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS,
     RENTAL_NET_INCOME_SHARE,
     RENTAL_NET_INCOME_WITH_RECAPTURE,
+    RENTAL_NON_COMPLIANT_CCA,
     RENTAL_NON_COMPLIANT_EXPENSES,
     RENTAL_OFFICE_EXPENSES,
     RENTAL_OFFICE_EXPENSES_PERSONAL_PORTION,
@@ -297,9 +299,12 @@ from app.jurisdictions.ca.catalog import (
     RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
     RRSP_AMOUNT_DEDUCTED,
     SELF_EMPLOYED_CPP_DEDUCTION,
+    SHORT_TERM_RENTAL_CCA_UNITS,
     SHORT_TERM_RENTAL_DAYS,
     SHORT_TERM_RENTAL_GROSS_RENTS,
+    SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS,
     SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
+    SHORT_TERM_RENTAL_RELATED_CCA,
     SHORT_TERM_RENTAL_RELATED_EXPENSES,
     SHORT_TERM_RENTAL_UNITS,
     SPECIAL_TAXES,
@@ -748,6 +753,112 @@ def test_a_short_term_rental_row_missing_a_column_is_refused_naming_the_row() ->
         RecordList(SHORT_TERM_RENTAL_UNITS.fields, [record])
 
 
+# Form T776 Chart B, "Non-compliant amount of CCA for short-term rentals": "Column 1: Class number",
+# "Column 4: Related portion of the available CCA from column 21 in Area A", "Column 5: Number of
+# days the residential property was a non-compliant short-term rental" and "Column 6: Number of
+# days the residential property was a short-term rental" (columns 2 and 3, the address and the
+# unit number, are labels the engine does not use). Columns 5 and 6 are the days kinds of Chart A.
+
+
+def cca_unit(**changes: object) -> dict[ArtifactKind[Any], object]:
+    """One row of Return AV (class 1, 900, 30 of 90 days) with `changes` by field name."""
+    names: dict[str, ArtifactKind[Any]] = {
+        "class_number": CCA_CLASS_NUMBER,
+        "related_cca": SHORT_TERM_RENTAL_RELATED_CCA,
+        "non_compliant_days": SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
+        "days": SHORT_TERM_RENTAL_DAYS,
+    }
+    record: dict[ArtifactKind[Any], object] = {
+        CCA_CLASS_NUMBER: Decimal("1"),
+        SHORT_TERM_RENTAL_RELATED_CCA: Decimal("900"),
+        SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS: 30,
+        SHORT_TERM_RENTAL_DAYS: 90,
+    }
+    for name, value in changes.items():
+        record[names[name]] = value
+    return record
+
+
+def test_the_short_term_rental_cca_units_are_a_record_list_of_chart_b_columns_1_4_5_and_6(
+    registry: ArtifactRegistry,
+) -> None:
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(SHORT_TERM_RENTAL_CCA_UNITS, RecordListKind)
+    assert SHORT_TERM_RENTAL_CCA_UNITS.identifier == "ca/short_term_rental_cca_units"
+    assert SHORT_TERM_RENTAL_CCA_UNITS.value_type is RecordList
+    assert SHORT_TERM_RENTAL_CCA_UNITS.non_negative is False
+    assert SHORT_TERM_RENTAL_CCA_UNITS.fields == (
+        CCA_CLASS_NUMBER,
+        SHORT_TERM_RENTAL_RELATED_CCA,
+        SHORT_TERM_RENTAL_NON_COMPLIANT_DAYS,
+        SHORT_TERM_RENTAL_DAYS,
+    )
+    assert registry.get("ca/short_term_rental_cca_units") is SHORT_TERM_RENTAL_CCA_UNITS
+
+
+def test_the_short_term_rental_related_cca_is_a_non_negative_decimal(
+    registry: ArtifactRegistry,
+) -> None:
+    # Chart B, column 4 "Related portion of the available CCA from column 21 in Area A".
+    assert SHORT_TERM_RENTAL_RELATED_CCA.identifier == "ca/short_term_rental_related_cca"
+    assert SHORT_TERM_RENTAL_RELATED_CCA.value_type is Decimal
+    assert SHORT_TERM_RENTAL_RELATED_CCA.non_negative is True
+    assert registry.kind("ca/short_term_rental_related_cca") is SHORT_TERM_RENTAL_RELATED_CCA
+
+
+def test_the_non_compliant_cca_is_a_non_negative_decimal_field(registry: ArtifactRegistry) -> None:
+    # Area A, "Column 22: Non-compliant amount of CCA (see Chart B below)": a field of the
+    # by-class list, not an artifact of its own.
+    assert NON_COMPLIANT_CCA.identifier == "ca/non_compliant_cca"
+    assert NON_COMPLIANT_CCA.value_type is Decimal
+    assert NON_COMPLIANT_CCA.non_negative is True
+    assert registry.kind("ca/non_compliant_cca") is NON_COMPLIANT_CCA
+
+
+def test_the_short_term_rental_non_compliant_cca_by_class_is_a_list_of_class_and_column_22(
+    registry: ArtifactRegistry,
+) -> None:
+    # Chart B: "*** For each class, add the amounts from column 7 of Chart B and enter each
+    # total in column 22 of Area A, in the respective row."
+    kind = SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS
+    assert isinstance(kind, RecordListKind)
+    assert kind.identifier == "ca/short_term_rental_non_compliant_cca_by_class"
+    assert kind.value_type is RecordList
+    assert kind.fields == (CCA_CLASS_NUMBER, NON_COMPLIANT_CCA)
+    assert registry.get("ca/short_term_rental_non_compliant_cca_by_class") is kind
+    assert "ca/short_term_rental_non_compliant_cca_by_class" in RECORD_LISTS
+
+
+def test_the_short_term_rental_cca_units_hold_each_rows_columns_in_the_callers_order() -> None:
+    rows = RecordList(
+        SHORT_TERM_RENTAL_CCA_UNITS.fields,
+        [cca_unit(), cca_unit(class_number=Decimal("8"), related_cca=Decimal("500"))],
+    )
+
+    assert [record[CCA_CLASS_NUMBER] for record in rows.records] == [Decimal("1"), Decimal("8")]
+    assert rows.records[1][SHORT_TERM_RENTAL_RELATED_CCA] == Decimal("500")
+
+
+def test_the_short_term_rental_cca_units_may_be_empty() -> None:
+    assert RecordList(SHORT_TERM_RENTAL_CCA_UNITS.fields, []).records == ()
+
+
+@pytest.mark.parametrize("field", ["related_cca", "non_compliant_days", "days"])
+def test_a_short_term_rental_cca_row_refuses_a_negative_column(field: str) -> None:
+    value: object = Decimal("-1") if field == "related_cca" else -1
+
+    with pytest.raises(NegativeArtifactError, match="item 1"):
+        RecordList(SHORT_TERM_RENTAL_CCA_UNITS.fields, [cca_unit(**{field: value})])
+
+
+def test_a_short_term_rental_cca_row_missing_a_column_is_refused_naming_the_row() -> None:
+    record = cca_unit()
+    del record[SHORT_TERM_RENTAL_RELATED_CCA]
+
+    with pytest.raises(InvalidRecordError, match="item 1.*short_term_rental_related_cca"):
+        RecordList(SHORT_TERM_RENTAL_CCA_UNITS.fields, [record])
+
+
 def rental_property_record(**changes: object) -> dict[ArtifactKind[Any], object]:
     """One row of Return AD (2 units, no short-term rents, 24000) with `changes` by field name."""
     names: dict[str, ArtifactKind[Any]] = {
@@ -933,6 +1044,7 @@ T776_NON_NEGATIVE_LINES = [
     ("ca/rental_personal_portion", RENTAL_PERSONAL_PORTION),
     ("ca/rental_short_term_portion", RENTAL_SHORT_TERM_PORTION),
     ("ca/rental_non_compliant_expenses", RENTAL_NON_COMPLIANT_EXPENSES),
+    ("ca/rental_non_compliant_cca", RENTAL_NON_COMPLIANT_CCA),
     ("ca/rental_expenses_less_personal_portion", RENTAL_EXPENSES_LESS_PERSONAL_PORTION),
     ("ca/rental_deductible_expenses", RENTAL_DEDUCTIBLE_EXPENSES),
     ("ca/rental_coowner_other_expenses", RENTAL_COOWNER_OTHER_EXPENSES),

@@ -79,6 +79,8 @@ from app.jurisdictions.ca.trace import (
     OtherDependantMedicalLine,
     PrincipalResidenceGainLine,
     RecapturedCcaLine,
+    ShortTermRentalNonCompliantCcaByClassLine,
+    ShortTermRentalNonCompliantCcaLine,
     ShortTermRentalNonCompliantLine,
     TerminalLossLine,
 )
@@ -142,6 +144,10 @@ LIMITED = ArtifactKind("ex/limited_amount", Decimal)
 DIVIDED = ArtifactKind("ex/divided_amount", Decimal)
 THRESHOLD_LIMIT = ThresholdRate(Rate(D("0.0505")), D("52886"))
 NON_COMPLIANT = ArtifactKind("ex/non_compliant_expenses", Decimal)
+NON_COMPLIANT_CCA_TOTAL = ArtifactKind("ex/non_compliant_cca", Decimal)
+NON_COMPLIANT_CCA_BY_CLASS = RecordListKind(
+    "ex/non_compliant_cca_by_class", fields=(ArtifactKind("ex/column_22", Decimal),)
+)
 TRANSFERRED = ArtifactKind("ex/transferred_amount", Decimal)
 RESIDENCE_GAIN = ArtifactKind("ex/residence_gain", Decimal)
 DISPOSITION_GAIN = ArtifactKind("ex/disposition_gain", Decimal)
@@ -325,6 +331,20 @@ def short_term_rental_non_compliant_line() -> ShortTermRentalNonCompliantLine:
     return ShortTermRentalNonCompliantLine(NON_COMPLIANT, 2, D("900.00"), 30, 90, CENT, D("300.00"))
 
 
+def short_term_rental_non_compliant_cca_line() -> ShortTermRentalNonCompliantCcaLine:
+    return ShortTermRentalNonCompliantCcaLine(
+        NON_COMPLIANT_CCA_TOTAL, 2, D("10.1"), D("900.00"), 30, 90, CENT, D("300.00")
+    )
+
+
+def short_term_rental_non_compliant_cca_by_class_line() -> (
+    ShortTermRentalNonCompliantCcaByClassLine
+):
+    return ShortTermRentalNonCompliantCcaByClassLine(
+        NON_COMPLIANT_CCA_BY_CLASS, 2, D("10.1"), (D("300.00"), D("33.33")), D("333.33")
+    )
+
+
 def caregiver_claim_less_claimed_line() -> CaregiverClaimLessClaimedLine:
     return CaregiverClaimLessClaimedLine(
         CAREGIVER,
@@ -464,6 +484,8 @@ ALL_LINES = [
     items_total_line,
     other_dependant_medical_line,
     short_term_rental_non_compliant_line,
+    short_term_rental_non_compliant_cca_line,
+    short_term_rental_non_compliant_cca_by_class_line,
     condition_line,
     conditions_count_line,
 ]
@@ -2283,6 +2305,120 @@ def test_short_term_rental_non_compliant_lines_are_hashable() -> None:
 
 def test_a_short_term_rental_non_compliant_line_is_not_an_other_dependant_medical_line() -> None:
     assert not isinstance(short_term_rental_non_compliant_line(), OtherDependantMedicalLine)
+
+
+def test_short_term_rental_non_compliant_cca_line_fields_in_order() -> None:
+    line = short_term_rental_non_compliant_cca_line()
+
+    assert line == ShortTermRentalNonCompliantCcaLine(
+        output=NON_COMPLIANT_CCA_TOTAL,
+        position=2,
+        class_number=D("10.1"),
+        related_cca=D("900.00"),
+        non_compliant_days=30,
+        days=90,
+        rounding=CENT,
+        result=D("300.00"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "class_number",
+        "related_cca",
+        "non_compliant_days",
+        "days",
+        "rounding",
+        "result",
+    ]
+    assert line.amount == D("300.00")
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_short_term_rental_non_compliant_cca_line_is_frozen() -> None:
+    with pytest.raises(FrozenInstanceError):
+        cast(Any, short_term_rental_non_compliant_cca_line()).result = D("1")
+
+
+def test_short_term_rental_non_compliant_cca_lines_differ_by_each_field() -> None:
+    line = short_term_rental_non_compliant_cca_line()
+
+    assert line != ShortTermRentalNonCompliantCcaLine(
+        NON_COMPLIANT_CCA_TOTAL, 1, D("10.1"), D("900.00"), 30, 90, CENT, D("300.00")
+    )
+    assert line != ShortTermRentalNonCompliantCcaLine(
+        NON_COMPLIANT_CCA_TOTAL, 2, D("10"), D("900.00"), 30, 90, CENT, D("300.00")
+    )
+    assert line != ShortTermRentalNonCompliantCcaLine(
+        NON_COMPLIANT_CCA_TOTAL, 2, D("10.1"), D("901.00"), 30, 90, CENT, D("300.00")
+    )
+    assert line != ShortTermRentalNonCompliantCcaLine(
+        NON_COMPLIANT_CCA_TOTAL, 2, D("10.1"), D("900.00"), 31, 90, CENT, D("300.00")
+    )
+    assert line != ShortTermRentalNonCompliantCcaLine(
+        NON_COMPLIANT_CCA_TOTAL, 2, D("10.1"), D("900.00"), 30, 91, CENT, D("300.00")
+    )
+    assert line != ShortTermRentalNonCompliantCcaLine(
+        NON_COMPLIANT_CCA_TOTAL, 2, D("10.1"), D("900.00"), 30, 90, NO_ROUNDING, D("300.00")
+    )
+    assert line != ShortTermRentalNonCompliantCcaLine(
+        NON_COMPLIANT_CCA_TOTAL, 2, D("10.1"), D("900.00"), 30, 90, CENT, D("300.01")
+    )
+
+
+def test_short_term_rental_non_compliant_cca_lines_are_hashable() -> None:
+    assert hash(short_term_rental_non_compliant_cca_line()) == hash(
+        short_term_rental_non_compliant_cca_line()
+    )
+
+
+def test_short_term_rental_non_compliant_cca_by_class_line_fields_in_order() -> None:
+    line = short_term_rental_non_compliant_cca_by_class_line()
+
+    assert line == ShortTermRentalNonCompliantCcaByClassLine(
+        output=NON_COMPLIANT_CCA_BY_CLASS,
+        position=2,
+        class_number=D("10.1"),
+        amounts=(D("300.00"), D("33.33")),
+        result=D("333.33"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "class_number",
+        "amounts",
+        "result",
+    ]
+    assert line.amount == D("333.33")
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_short_term_rental_non_compliant_cca_by_class_line_is_frozen() -> None:
+    with pytest.raises(FrozenInstanceError):
+        cast(Any, short_term_rental_non_compliant_cca_by_class_line()).result = D("1")
+
+
+def test_short_term_rental_non_compliant_cca_by_class_lines_differ_by_each_field() -> None:
+    line = short_term_rental_non_compliant_cca_by_class_line()
+    kind = NON_COMPLIANT_CCA_BY_CLASS
+
+    assert line != ShortTermRentalNonCompliantCcaByClassLine(
+        kind, 1, D("10.1"), (D("300.00"), D("33.33")), D("333.33")
+    )
+    assert line != ShortTermRentalNonCompliantCcaByClassLine(
+        kind, 2, D("10"), (D("300.00"), D("33.33")), D("333.33")
+    )
+    assert line != ShortTermRentalNonCompliantCcaByClassLine(
+        kind, 2, D("10.1"), (D("300.00"),), D("333.33")
+    )
+    assert line != ShortTermRentalNonCompliantCcaByClassLine(
+        kind, 2, D("10.1"), (D("300.00"), D("33.33")), D("333.34")
+    )
+
+
+def test_short_term_rental_non_compliant_cca_by_class_lines_are_hashable() -> None:
+    assert hash(short_term_rental_non_compliant_cca_by_class_line()) == hash(
+        short_term_rental_non_compliant_cca_by_class_line()
+    )
 
 
 def test_caregiver_claim_less_claimed_line_fields_in_order() -> None:
