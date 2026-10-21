@@ -2,12 +2,14 @@
 
 A `RecordList` is the value of a kind such as `ex/dependants`: its `fields`, the artifact kinds
 every record has, and its `records` in the caller's order. A `Record` is a frozen mapping keyed by
-field kind, read by kind and never by position. Every field is a `Decimal` or `int` kind; a record
-holds each of them, an instance of its value type and, for a kind declared non-negative, never
-below zero, and nothing else. A list may be empty. Packages declare a record-list kind, a
-`RecordListKind`, on their own catalog with `RecordListKind.declare`; an `Artifact` of one holds
-only a list built with that kind's fields. A capability consuming one does the per-item work
-itself and names each item by its position from 1 ("item 2").
+field kind, read by kind and never by position. Every field is a `Decimal` or `int` kind or a
+`RecordListKind`; a record holds each of them, an instance of its value type and, for a kind
+declared non-negative, never below zero, and nothing else. A field of a record-list kind holds a
+nested `RecordList` of exactly that kind's fields, which may be empty. A list may be empty.
+Packages declare a record-list kind, a `RecordListKind`, on their own catalog with
+`RecordListKind.declare`; an `Artifact` of one holds only a list built with that kind's fields.
+A capability consuming one does the per-item work itself and names each item by its position
+from 1 ("item 2").
 """
 
 from __future__ import annotations
@@ -21,7 +23,7 @@ from app.domain.artifact import ArtifactCatalog, ArtifactKind
 from app.domain.errors import InvalidRecordError, InvalidRegistrationError, NegativeArtifactError
 
 
-class Record(Mapping[ArtifactKind[Any], Decimal | int]):
+class Record(Mapping[ArtifactKind[Any], Any]):
     """One record of a record list: a frozen mapping of its field kinds to their values.
 
     Built by `RecordList`, which checks it against the list's fields; equal to any mapping of the
@@ -30,10 +32,10 @@ class Record(Mapping[ArtifactKind[Any], Decimal | int]):
 
     __slots__ = ("_values",)
 
-    def __init__(self, values: Mapping[ArtifactKind[Any], Decimal | int]) -> None:
+    def __init__(self, values: Mapping[ArtifactKind[Any], Any]) -> None:
         self._values = dict(values)
 
-    def __getitem__(self, kind: ArtifactKind[Any]) -> Decimal | int:
+    def __getitem__(self, kind: ArtifactKind[Any]) -> Any:
         return self._values[kind]
 
     def __iter__(self) -> Iterator[ArtifactKind[Any]]:
@@ -54,12 +56,12 @@ class Record(Mapping[ArtifactKind[Any], Decimal | int]):
 class RecordList:
     """Records of the same `fields`, in the caller's order, each checked when the list is built.
 
-    The fields are `Decimal` or `int` artifact kinds, at least one and no identifier twice, else
-    an InvalidRecordError. A record that is not a mapping, misses a field or has a key that is
-    not one of the fields is an InvalidRecordError; a value that is not an instance of its field
-    kind's value type is a TypeError (a `bool` is not a count); a value below zero for a field
-    declared non-negative is a NegativeArtifactError. Each record error names the record by its
-    position from 1 and the field by its identifier.
+    The fields are `Decimal` or `int` artifact kinds or record-list kinds, at least one and no
+    identifier twice, else an InvalidRecordError. A record that is not a mapping, misses a field
+    or has a key that is not one of the fields is an InvalidRecordError; a value that is not an
+    instance of its field kind's value type is a TypeError (a `bool` is not a count); a value
+    below zero for a field declared non-negative is a NegativeArtifactError. Each record error
+    names the record by its position from 1 and the field by its identifier.
     """
 
     fields: tuple[ArtifactKind[Any], ...]
@@ -87,10 +89,14 @@ class RecordList:
                 raise InvalidRecordError(f"the field {kind.identifier!r} is named more than once")
             seen.add(kind.identifier)
             # `bool` is a subclass of `int` but not a count, so the int check is exact.
-            if not (issubclass(kind.value_type, Decimal) or kind.value_type is int):
+            if not (
+                issubclass(kind.value_type, Decimal)
+                or kind.value_type is int
+                or isinstance(kind, RecordListKind)
+            ):
                 raise InvalidRecordError(
                     f"the field {kind.identifier!r} holds a {kind.value_type.__name__}: "
-                    f"a field must be a Decimal or int kind"
+                    f"a field must be a Decimal, int or record-list kind"
                 )
         checked = tuple(
             self._checked(position, given) for position, given in enumerate(self.records, start=1)
@@ -111,7 +117,7 @@ class RecordList:
             if key not in self.fields:
                 name = key.identifier if isinstance(key, ArtifactKind) else repr(key)
                 raise InvalidRecordError(f"{item}: unknown field {name}")
-        values: dict[ArtifactKind[Any], Decimal | int] = {}
+        values: dict[ArtifactKind[Any], Any] = {}
         for kind in self.fields:
             value = given[kind]
             # `bool` is a subclass of `int` but not a count, so a count field refuses it.
@@ -120,6 +126,8 @@ class RecordList:
                     f"{item}: {kind.identifier} must be a {kind.value_type.__name__}, "
                     f"got {type(value).__name__}"
                 )
+            if isinstance(kind, RecordListKind):
+                kind.check_value(value)
             if kind.non_negative and value < 0:
                 raise NegativeArtifactError(
                     f"{item}: {kind.identifier} cannot be negative, got {value}",
@@ -134,7 +142,7 @@ class RecordList:
 class RecordListKind(ArtifactKind[RecordList]):
     """A record-list kind: its values are `RecordList`s of exactly its `fields`, in that order.
 
-    The fields are `Decimal` or `int` kinds, at least one, no identifier twice, else an
+    The fields are `Decimal`, `int` or record-list kinds, at least one, no identifier twice, else an
     InvalidRegistrationError naming the kind; they may come from any package's catalog. Two kinds
     of one identifier with other fields are not equal. Packages declare theirs with `declare`.
     """
