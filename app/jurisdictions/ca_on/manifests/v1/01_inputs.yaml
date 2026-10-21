@@ -125,6 +125,8 @@ inputs:
   - ca/net_federal_supplements
   - ca/uccb_repayment
   - ca/rdsp_income_repayment
+  - ca/oas_overpayment_recovered
+  - ca/ei_benefits_repayment
   - ca/canadian_armed_forces_and_police_deduction
   - ca/security_options_deductions
   - ca/limited_partnership_losses_of_other_years

@@ -141,17 +141,26 @@ capabilities:
       count: ca/ei_special_benefits_agreement
     produces:
       output: ca/ei_payable_on_self_employment
-  # T1 line 148 (line 43500) "Add lines 143 to 147. Total payable": line 143 "Amount
-  # from line 42000", line 144 (42100) "CPP contributions payable on self-employment income
-  # and other earnings", line 145 (42120) "Employment insurance premiums payable on
-  # self-employment and other eligible earnings" and line 147 (42800), the Ontario tax, in
-  # line order; line 146 (42200), the social benefits repayment, is not yet computed.
+  # T1 line 146 and line 42200 "Social benefits repayment (amount from line 23500)": the amount
+  # of line 23500, carried over one part.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/social_benefits_repayment
+    produces:
+      output: ca/social_benefits_repayment_payable
+  # T1 line 148 (line 43500) "Add lines 143 to 147. Total payable": line 143 "Amount from line
+  # 42000", line 144 (42100) "CPP contributions payable on self-employment income and other
+  # earnings", line 145 (42120) "Employment insurance premiums payable on self-employment and
+  # other eligible earnings", line 146 (42200) "Social benefits repayment (amount from line
+  # 23500)" and line 147 (42800), the Ontario tax, in line order.
   - name: core/sum
     consumes:
       parts:
         - ca/net_federal_tax
         - ca/cpp_payable_on_self_employment
         - ca/ei_payable_on_self_employment
+        - ca/social_benefits_repayment_payable
         - ca-on/ontario_tax
     produces:
       output: ca/total_payable

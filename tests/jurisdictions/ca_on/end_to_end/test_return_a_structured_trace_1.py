@@ -86,6 +86,8 @@ from app.jurisdictions.ca.catalog import (
     RESP_AIPS_SUBJECT_TO_TAX,
     SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS,
     SELF_EMPLOYED_CPP_BASE_CREDIT,
+    SOCIAL_BENEFITS_LINE_17,
+    SOCIAL_BENEFITS_LINE_18,
     SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SPLIT_INCOME_LINE_13,
     SPLIT_INCOME_LINE_14,
@@ -179,6 +181,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         if isinstance(line, ItemsTotalLine) and line.output is COOP_EDUCATION_CREDIT
     }
     assert rated == {
+        # Federal Worksheet "Line 23500" line 18 "Amount from line 17 multiplied by 15%": Return A's
+        # line 17 is 115000 - 93343.00 = 21657.00 (the chart does not apply, line 23500 is 0).
+        SOCIAL_BENEFITS_LINE_18: RateAppliedLine(
+            SOCIAL_BENEFITS_LINE_18,
+            SOCIAL_BENEFITS_LINE_17,
+            D("21657.00"),
+            Rate(D("0.15")),
+            CENT,
+            D("3248.55"),
+        ),
         # T2038(IND) Part C amounts 1 and 2: the expenditures on lines 67193 and 67195 at 15% and
         # 20%, here 0.
         ITC_RECAPTURE_AT_15_PERCENT: RateAppliedLine(

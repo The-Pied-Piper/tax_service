@@ -754,7 +754,7 @@ CARE_ADJUSTED_INCOME = CATALOG.declare("care_adjusted_income", Decimal, non_nega
 (if negative, enter "0"). Adjusted income": line 1 (net income from line 23600 of the return, before
 the floor at 0, or the amount you would have entered if the instructions on line 23600 said "if
 negative, show in brackets") plus line 2 (the child care expenses deduction from line 21400),
-not below zero; line 3 (the social benefits repayment) is not yet computed."""
+not below zero; line 3 (the social benefits repayment) is not applied here."""
 
 CARE_SUPPORTING_PERSONS_ADJUSTED_INCOME = CATALOG.declare(
     "care_supporting_persons_adjusted_income", Decimal, non_negative=True

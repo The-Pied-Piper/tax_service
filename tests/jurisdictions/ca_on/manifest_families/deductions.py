@@ -19,6 +19,7 @@ from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.chart_a_row_c_total import ChartARowCTotal
 from app.jurisdictions.ca.capabilities.chart_b_zone_a_total import ChartBZoneATotal
 from app.jurisdictions.ca.capabilities.chart_b_zone_b_total import ChartBZoneBTotal
+from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.catalog import (
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS,
@@ -61,6 +62,8 @@ from app.jurisdictions.ca.catalog import (
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
     CPT20_EARNINGS,
     DEDUCTIONS_FROM_TOTAL_INCOME,
+    EI_AND_OTHER_BENEFITS,
+    EI_BENEFITS_REPAYMENT,
     EI_CONTROLLED_CORPORATION_EARNINGS,
     EI_EARNINGS_SUBJECT_TO_PREMIUM,
     EI_EXEMPT_SELF_EMPLOYMENT_INCOME,
@@ -74,12 +77,18 @@ from app.jurisdictions.ca.catalog import (
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
     FHSA_DEDUCTION,
     INCOME_SUPPORT_BENEFITS,
+    NET_FEDERAL_SUPPLEMENTS,
     NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
+    NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
     NET_PARTNERSHIP_INCOME,
     NET_SELF_EMPLOYMENT_INCOME,
     NORTHERN_RESIDENTS_DEDUCTIONS,
+    OAS_AND_FEDERAL_SUPPLEMENTS,
+    OAS_BENEFITS_BASE_AMOUNT,
+    OAS_OVERPAYMENT_RECOVERED,
+    OLD_AGE_SECURITY,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_1994,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1994_TO_1996,
@@ -111,6 +120,18 @@ from app.jurisdictions.ca.catalog import (
     SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     SELF_EMPLOYED_EI_PREMIUMS,
+    SOCIAL_BENEFITS_LINE_5,
+    SOCIAL_BENEFITS_LINE_6,
+    SOCIAL_BENEFITS_LINE_10,
+    SOCIAL_BENEFITS_LINE_11,
+    SOCIAL_BENEFITS_LINE_14,
+    SOCIAL_BENEFITS_LINE_15,
+    SOCIAL_BENEFITS_LINE_17,
+    SOCIAL_BENEFITS_LINE_18,
+    SOCIAL_BENEFITS_LINE_19,
+    SOCIAL_BENEFITS_LINE_21,
+    SOCIAL_BENEFITS_REPAYMENT,
+    SOCIAL_BENEFITS_REPAYMENT_APPLIES,
     SPLIT_INCOME_DIVIDENDS,
     STANDARD_AMOUNT_ALLOCATED,
     SUPPORT_PAYMENTS_DEDUCTION,
@@ -150,6 +171,8 @@ from app.jurisdictions.ca.catalog import (
 
 INPUTS = frozenset(
     {
+        "ca/oas_overpayment_recovered",
+        "ca/ei_benefits_repayment",
         "ca/uccb_repayment",
         "ca/rdsp_income_repayment",
         "ca/canadian_armed_forces_and_police_deduction",
@@ -672,18 +695,170 @@ STEPS = {
     ),
     # T1 line 54 and line 23400 "Line 34 minus line 53 (if negative, show in brackets) Net
     # income before adjustments": total income less total deductions, not floored, so a negative
-    # result is shown in brackets. The net income of line 56 (line 23600) stays the floored
-    # result until line 23500 is wired.
+    # result is shown in brackets.
     CapabilitySelection(
         name="core/subtract",
         params={},
         consumes={"amount": "ca/total_income", "less": "ca/deductions_from_total_income"},
         produces={"output": "ca/net_income_before_adjustments"},
     ),
+    # Federal Worksheet "Line 25000 - Other payments deduction" line 1 "Amount from line 23400 of
+    # your return (if negative, enter "0")": line 23400 not below zero, a kind of its own as the
+    # net income of line 23600 is now line 23400 less line 23500.
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={"parts": ("ca/net_income_before_adjustments",)},
+        produces={"output": "ca/net_income_before_adjustments_not_below_zero"},
+    ),
+    # Federal Worksheet "Line 23500 - Social benefits repayment": "Complete the chart below if one
+    # or both of the following applies:" "You entered an amount on line 11900 of your return and
+    # the amount on line 23400 is more than $82,125" and "You entered an amount on line 11300 or
+    # line 14600 of your return and the amount on line 23400 is more than $93,454", and T1 line 55
+    # and line 23500 "If not, enter "0" on line 23500.": a count of 1 when either holds.
+    CapabilitySelection(
+        name="ca/count_by_conditions",
+        params={"conditions": "ca/social_benefits_repayment_conditions"},
+        consumes={
+            "counts": (),
+            "amounts": (
+                "ca/ei_and_other_benefits",
+                "ca/net_income_before_adjustments",
+                "ca/old_age_security",
+                "ca/net_federal_supplements",
+            ),
+        },
+        produces={"output": "ca/social_benefits_repayment_applies"},
+    ),
+    # Chart line 3 "Line 1 plus line 2 =": line 1 "Old age security (OAS) pension from line 11300
+    # of your return" and line 2 "Net federal supplements paid from line 14600 of your return".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/old_age_security", "ca/net_federal_supplements")},
+        produces={"output": "ca/oas_and_federal_supplements"},
+    ),
+    # Line 4 "Overpayment of OAS benefits recovered (box 20 of your T4A(OAS) slip)" is the caller's
+    # amount; line 5 "Line 3 minus line 4 (if negative, enter "0") =".
     CapabilitySelection(
         name="core/subtract_not_below_zero",
         params={},
-        consumes={"amount": "ca/total_income", "less": "ca/deductions_from_total_income"},
+        consumes={
+            "amount": "ca/oas_and_federal_supplements",
+            "less": "ca/oas_overpayment_recovered",
+        },
+        produces={"output": "ca/social_benefits_line_5"},
+    ),
+    # Line 6 "Net income before adjustments from line 23400 of your return", plus, as Form T1206
+    # Part 1 says, "add the amount from line 4 of this form to line 6 of your Federal Worksheet in
+    # the calculation of the social benefits repayment for the calculation of lines 23500 and
+    # 42200 of your tax return, if applicable": the total split income. It prints no "(if
+    # negative, enter "0")", so it is signed.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/net_income_before_adjustments", "ca/total_split_income")},
+        produces={"output": "ca/social_benefits_line_6"},
+    ),
+    # Line 7 "EI benefits repayment from line 4 of the repayment chart on your T4E slip, if any"
+    # is the caller's amount; line 8 "Universal child care benefit (UCCB) from line 11700 of your
+    # return"; line 9 "Registered disability savings plan (RDSP) income from line 12500 of your
+    # return"; line 10 "Add lines 7 to 9. =".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/ei_benefits_repayment",
+                "ca/universal_child_care_benefit",
+                "ca/rdsp_income",
+            )
+        },
+        produces={"output": "ca/social_benefits_line_10"},
+    ),
+    # Line 11 "Line 6 minus line 10 =" prints no "(if negative, enter "0")", so it is signed.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={"amount": "ca/social_benefits_line_6", "less": "ca/social_benefits_line_10"},
+        produces={"output": "ca/social_benefits_line_11"},
+    ),
+    # Line 12 "UCCB repayment from line 21300 of your return" and line 13 "RDSP income repayment
+    # (included in the amount on line 23200 of your return)"; line 14 "Line 12 plus line 13 =".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/uccb_repayment", "ca/rdsp_income_repayment")},
+        produces={"output": "ca/social_benefits_line_14"},
+    ),
+    # Line 15 "Line 11 plus line 14 Adjusted net income =", signed.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/social_benefits_line_11", "ca/social_benefits_line_14")},
+        produces={"output": "ca/social_benefits_line_15"},
+    ),
+    # Line 16 "OAS benefits base amount 93,343.00", claimed whole.
+    CapabilitySelection(
+        name="core/credit_amount",
+        params={"amount": "ca/oas_benefits_base_amount"},
+        consumes={},
+        produces={"output": "ca/oas_benefits_base_amount"},
+    ),
+    # Line 17 "Line 15 minus line 16 (if negative, enter "0")".
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/social_benefits_line_15",
+            "less": "ca/oas_benefits_base_amount",
+        },
+        produces={"output": "ca/social_benefits_line_17"},
+    ),
+    # Line 18 "Amount from line 17 multiplied by 15% =".
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/social_benefits_repayment_rate"},
+        consumes={"base": "ca/social_benefits_line_17"},
+        produces={"output": "ca/social_benefits_line_18"},
+    ),
+    # Line 19 "Enter whichever is less: amount from line 5 or line 18."
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={"amounts": ("ca/social_benefits_line_5", "ca/social_benefits_line_18")},
+        produces={"output": "ca/social_benefits_line_19"},
+    ),
+    # Line 20 "Amount from line 7, if any" and line 21 "Line 19 plus line 20. Enter this amount on
+    # line 23500 and line 42200 of your return. =".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/social_benefits_line_19", "ca/ei_benefits_repayment")},
+        produces={"output": "ca/social_benefits_line_21"},
+    ),
+    # T1 line 55 and line 23500 (the chart's line 21, or "0" "If not"): the chart's result counted
+    # once when the chart applies, else 0.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/social_benefits_line_21",
+            "count": "ca/social_benefits_repayment_applies",
+        },
+        produces={"output": "ca/social_benefits_repayment"},
+    ),
+    # T1 line 56 and line 23600 "Line 54 minus line 55 (if negative, enter "0") If negative, you
+    # may have a non-capital loss (see Form T1A) and the negative amount is to be used for certain
+    # calculations (go to canada.ca/line-23600) Net income": line 23400 less line 23500, not below
+    # zero.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/net_income_before_adjustments",
+            "less": "ca/social_benefits_repayment",
+        },
         produces={"output": "ca/net_income"},
     ),
     # Form T1206 Part 1 "TOSI-adjusted net income", line 4 (68360) "Total split income: line 1 plus
@@ -737,8 +912,8 @@ STEPS = {
     ),
     # Federal Worksheet "Line 25000 - Other payments deduction", "Complete the following
     # calculation if you reported net federal supplements on line 14600 of your return.":
-    # line 1 "Amount from line 23400 of your return (if negative, enter "0")" is the net
-    # income artifact (line 23400 floored at 0, as line 23500 is not wired yet); line 4 "Line
+    # line 1 "Amount from line 23400 of your return (if negative, enter "0")" is line 23400
+    # floored at 0, not the net income of line 23600; line 4 "Line
     # 2 plus line 3 =" adds line 2 "Amount from line 11700 of your return" (the universal
     # child care benefit) and line 3 "Amount from line 12500 of your return" (the RDSP
     # income), in line order.
@@ -753,7 +928,10 @@ STEPS = {
     CapabilitySelection(
         name="core/subtract",
         params={},
-        consumes={"amount": "ca/net_income", "less": "ca/uccb_and_rdsp_income"},
+        consumes={
+            "amount": "ca/net_income_before_adjustments_not_below_zero",
+            "less": "ca/uccb_and_rdsp_income",
+        },
         produces={"output": "ca/net_income_less_uccb_and_rdsp_income"},
     ),
     # Line 8 "Line 6 plus line 7 =": line 6 "Amount from line 21300 of your return" (the UCCB
@@ -1258,8 +1436,82 @@ WIRING = {
         frozenset({NET_INCOME_BEFORE_ADJUSTMENTS}),
     ),
     (
+        SumNotBelowZero,
+        frozenset({NET_INCOME_BEFORE_ADJUSTMENTS}),
+        frozenset({NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO}),
+    ),
+    (
+        CountByConditions,
+        frozenset(
+            {
+                EI_AND_OTHER_BENEFITS,
+                NET_INCOME_BEFORE_ADJUSTMENTS,
+                OLD_AGE_SECURITY,
+                NET_FEDERAL_SUPPLEMENTS,
+            }
+        ),
+        frozenset({SOCIAL_BENEFITS_REPAYMENT_APPLIES}),
+    ),
+    (
+        Sum,
+        frozenset({OLD_AGE_SECURITY, NET_FEDERAL_SUPPLEMENTS}),
+        frozenset({OAS_AND_FEDERAL_SUPPLEMENTS}),
+    ),
+    (
         SubtractNotBelowZero,
-        frozenset({TOTAL_INCOME, DEDUCTIONS_FROM_TOTAL_INCOME}),
+        frozenset({OAS_AND_FEDERAL_SUPPLEMENTS, OAS_OVERPAYMENT_RECOVERED}),
+        frozenset({SOCIAL_BENEFITS_LINE_5}),
+    ),
+    (
+        Sum,
+        frozenset({NET_INCOME_BEFORE_ADJUSTMENTS, TOTAL_SPLIT_INCOME}),
+        frozenset({SOCIAL_BENEFITS_LINE_6}),
+    ),
+    (
+        Sum,
+        frozenset({EI_BENEFITS_REPAYMENT, UNIVERSAL_CHILD_CARE_BENEFIT, RDSP_INCOME}),
+        frozenset({SOCIAL_BENEFITS_LINE_10}),
+    ),
+    (
+        Subtract,
+        frozenset({SOCIAL_BENEFITS_LINE_6, SOCIAL_BENEFITS_LINE_10}),
+        frozenset({SOCIAL_BENEFITS_LINE_11}),
+    ),
+    (
+        Sum,
+        frozenset({UCCB_REPAYMENT, RDSP_INCOME_REPAYMENT}),
+        frozenset({SOCIAL_BENEFITS_LINE_14}),
+    ),
+    (
+        Sum,
+        frozenset({SOCIAL_BENEFITS_LINE_11, SOCIAL_BENEFITS_LINE_14}),
+        frozenset({SOCIAL_BENEFITS_LINE_15}),
+    ),
+    (CreditAmount, frozenset(), frozenset({OAS_BENEFITS_BASE_AMOUNT})),
+    (
+        SubtractNotBelowZero,
+        frozenset({SOCIAL_BENEFITS_LINE_15, OAS_BENEFITS_BASE_AMOUNT}),
+        frozenset({SOCIAL_BENEFITS_LINE_17}),
+    ),
+    (ApplyRate, frozenset({SOCIAL_BENEFITS_LINE_17}), frozenset({SOCIAL_BENEFITS_LINE_18})),
+    (
+        LesserOf,
+        frozenset({SOCIAL_BENEFITS_LINE_5, SOCIAL_BENEFITS_LINE_18}),
+        frozenset({SOCIAL_BENEFITS_LINE_19}),
+    ),
+    (
+        Sum,
+        frozenset({SOCIAL_BENEFITS_LINE_19, EI_BENEFITS_REPAYMENT}),
+        frozenset({SOCIAL_BENEFITS_LINE_21}),
+    ),
+    (
+        TimesCount,
+        frozenset({SOCIAL_BENEFITS_LINE_21, SOCIAL_BENEFITS_REPAYMENT_APPLIES}),
+        frozenset({SOCIAL_BENEFITS_REPAYMENT}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({NET_INCOME_BEFORE_ADJUSTMENTS, SOCIAL_BENEFITS_REPAYMENT}),
         frozenset({NET_INCOME}),
     ),
     (
@@ -1284,7 +1536,7 @@ WIRING = {
     ),
     (
         Subtract,
-        frozenset({NET_INCOME, UCCB_AND_RDSP_INCOME}),
+        frozenset({NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO, UCCB_AND_RDSP_INCOME}),
         frozenset({NET_INCOME_LESS_UCCB_AND_RDSP_INCOME}),
     ),
     (

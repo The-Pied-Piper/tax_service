@@ -82,7 +82,6 @@ from app.jurisdictions.ca.catalog import (
     CWB_REDUCTION_WITH_DEPENDANT,
     CWB_REDUCTION_WITHOUT_DEPENDANT,
     DEDUCTIONS_FROM_NET_INCOME,
-    DEDUCTIONS_FROM_TOTAL_INCOME,
     DEPENDANT_NET_INCOME,
     DEPRECIABLE_GIFT_CAPITAL_COST,
     DEPRECIABLE_GIFT_NET_PROCEEDS,
@@ -160,9 +159,13 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
+    NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
     NET_PARTNERSHIP_INCOME,
     NET_RENTAL_INCOME,
     NET_SELF_EMPLOYMENT_INCOME,
+    OAS_AND_FEDERAL_SUPPLEMENTS,
+    OAS_BENEFITS_BASE_AMOUNT,
+    OAS_OVERPAYMENT_RECOVERED,
     OTHER_PAYMENTS_DEDUCTION,
     OTHER_PAYMENTS_DEDUCTION_AFTER_LIMIT,
     OTHER_PAYMENTS_WORKSHEET_LINE_9_OVER_LIMIT,
@@ -216,6 +219,12 @@ from app.jurisdictions.ca.catalog import (
     SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     SELF_EMPLOYED_EI_PREMIUMS,
     SHORT_TERM_RENTAL_GROSS_RENTS,
+    SOCIAL_BENEFITS_LINE_5,
+    SOCIAL_BENEFITS_LINE_15,
+    SOCIAL_BENEFITS_LINE_17,
+    SOCIAL_BENEFITS_LINE_18,
+    SOCIAL_BENEFITS_LINE_19,
+    SOCIAL_BENEFITS_REPAYMENT,
     SPLIT_INCOME_DIVIDENDS,
     SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SPLIT_INCOME_LINE_18,
@@ -247,7 +256,6 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
-    TOTAL_INCOME,
     TOTAL_PAYABLE,
     TOTAL_SPLIT_INCOME,
     TRAVEL_TOTAL_ZONE_A,
@@ -377,6 +385,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ontario.UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD, D("0")),
                 (ontario.UNUSED_TUITION_ROOM, D("151920.41")),
             ),
+            D("0"),
+        ),
+        # Federal Worksheet "Line 23500" line 19 "Enter whichever is less: amount from line 5 or
+        # line 18.": line 5 is 0 for Return A, line 18 is 3248.55.
+        SOCIAL_BENEFITS_LINE_19: LesserOfLine(
+            SOCIAL_BENEFITS_LINE_19,
+            ((SOCIAL_BENEFITS_LINE_5, D("0")), (SOCIAL_BENEFITS_LINE_18, D("3248.55"))),
             D("0"),
         ),
         # Form T1172 line 3 "Amount from line 1 or 2, whichever is less" and line 7 "Amount from
@@ -850,6 +865,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("17180.58"),
             result=D("151920.41"),
         ),
+        # Federal Worksheet "Line 23500" line 5 "Line 3 minus line 4 (if negative, enter "0")" and
+        # line 17 "Line 15 minus line 16 (if negative, enter "0")".
+        SOCIAL_BENEFITS_LINE_5: SubtractedNotBelowZeroLine(
+            output=SOCIAL_BENEFITS_LINE_5,
+            minuend=OAS_AND_FEDERAL_SUPPLEMENTS,
+            minuend_amount=D("0"),
+            subtrahend=OAS_OVERPAYMENT_RECOVERED,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        SOCIAL_BENEFITS_LINE_17: SubtractedNotBelowZeroLine(
+            output=SOCIAL_BENEFITS_LINE_17,
+            minuend=SOCIAL_BENEFITS_LINE_15,
+            minuend_amount=D("115000"),
+            subtrahend=OAS_BENEFITS_BASE_AMOUNT,
+            subtrahend_amount=D("93343.00"),
+            result=D("21657.00"),
+        ),
         # Form T1206 Part 2 line 18 "Line 16 minus line 17 (if negative, enter "0")": no
         # dividends, so 0.
         SPLIT_INCOME_LINE_18: SubtractedNotBelowZeroLine(
@@ -1040,12 +1073,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
+        # T1 line 56 (line 23600) "Line 54 minus line 55 (if negative, enter "0")": line 23400
+        # less line 23500, which is 0 for Return A.
         NET_INCOME: SubtractedNotBelowZeroLine(
             output=NET_INCOME,
-            minuend=TOTAL_INCOME,
-            minuend_amount=D("120000"),
-            subtrahend=DEDUCTIONS_FROM_TOTAL_INCOME,
-            subtrahend_amount=D("5000"),
+            minuend=NET_INCOME_BEFORE_ADJUSTMENTS,
+            minuend_amount=D("115000"),
+            subtrahend=SOCIAL_BENEFITS_REPAYMENT,
+            subtrahend_amount=D("0"),
             result=D("115000"),
         ),
         TAXABLE_INCOME: SubtractedNotBelowZeroLine(
@@ -1471,6 +1506,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # rental CCA limit, and the Form T1206 lines floored in Part 1 (the TOSI-adjusted net income)
     # and Part 2 (line 24, on line 22 alone) for a return without split income.
     assert summed_floored == {
+        # Federal Worksheet "Line 25000" line 1 "Amount from line 23400 of your return (if
+        # negative, enter "0")": line 23400 alone, floored.
+        NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO: SumNotBelowZeroLine(
+            output=NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
+            parts=((NET_INCOME_BEFORE_ADJUSTMENTS, D("115000")),),
+            total=D("115000"),
+        ),
         TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO: SumNotBelowZeroLine(
             output=TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
             parts=((TOTAL_SPLIT_INCOME, D("0")), (NET_INCOME_BEFORE_ADJUSTMENTS, D("115000"))),

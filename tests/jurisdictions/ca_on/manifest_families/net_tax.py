@@ -25,6 +25,8 @@ from app.jurisdictions.ca.catalog import (
     RL_10_LABOUR_SPONSORED_FUND_AMOUNT,
     SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE,
     SELF_EMPLOYED_EI_PREMIUMS,
+    SOCIAL_BENEFITS_REPAYMENT,
+    SOCIAL_BENEFITS_REPAYMENT_PAYABLE,
     SPECIAL_TAXES,
     SPLIT_INCOME_DIVIDENDS,
     SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
@@ -221,11 +223,19 @@ STEPS = {
         },
         produces={"output": "ca/ei_payable_on_self_employment"},
     ),
+    # T1 line 146 and line 42200 "Social benefits repayment (amount from line 23500)": the amount
+    # of line 23500, carried over one part.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/social_benefits_repayment",)},
+        produces={"output": "ca/social_benefits_repayment_payable"},
+    ),
     # T1 line 148 (line 43500) "Add lines 143 to 147. Total payable": line 143 "Amount from line
     # 42000", line 144 (42100) "CPP contributions payable on self-employment income and other
     # earnings", line 145 (42120) "Employment insurance premiums payable on self-employment and
-    # other eligible earnings" and line 147 (42800), the Ontario tax, in line order; line 146
-    # (42200), the social benefits repayment, is not yet computed.
+    # other eligible earnings", line 146 (42200) "Social benefits repayment (amount from line
+    # 23500)" and line 147 (42800), the Ontario tax, in line order.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -234,6 +244,7 @@ STEPS = {
                 "ca/net_federal_tax",
                 "ca/cpp_payable_on_self_employment",
                 "ca/ei_payable_on_self_employment",
+                "ca/social_benefits_repayment_payable",
                 "ca-on/ontario_tax",
             )
         },
@@ -310,6 +321,7 @@ WIRING = {
         frozenset({SELF_EMPLOYED_EI_PREMIUMS, EI_SPECIAL_BENEFITS_AGREEMENT}),
         frozenset({EI_PAYABLE_ON_SELF_EMPLOYMENT}),
     ),
+    (Sum, frozenset({SOCIAL_BENEFITS_REPAYMENT}), frozenset({SOCIAL_BENEFITS_REPAYMENT_PAYABLE})),
     (
         Sum,
         frozenset(
@@ -317,6 +329,7 @@ WIRING = {
                 NET_FEDERAL_TAX,
                 CPP_PAYABLE_ON_SELF_EMPLOYMENT,
                 EI_PAYABLE_ON_SELF_EMPLOYMENT,
+                SOCIAL_BENEFITS_REPAYMENT_PAYABLE,
                 ONTARIO_TAX,
             }
         ),

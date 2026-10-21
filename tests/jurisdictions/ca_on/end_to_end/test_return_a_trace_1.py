@@ -180,14 +180,14 @@ def test_the_trace_explains_the_computation() -> None:
         "5000",
     )
     net = position(
-        "net_income: total_income 120000 less deductions_from_total_income 5000, "
+        "net_income: net_income_before_adjustments 115000 less social_benefits_repayment 0, "
         "not below 0 = 115000",
         "115000",
     )
     position("uccb_and_rdsp_income: universal_child_care_benefit 0 + rdsp_income 0 = 0", "0")
     line_5 = position(
-        "net_income_less_uccb_and_rdsp_income: net_income 115000 less uccb_and_rdsp_income 0 "
-        "= 115000",
+        "net_income_less_uccb_and_rdsp_income: net_income_before_adjustments_not_below_zero "
+        "115000 less uccb_and_rdsp_income 0 = 115000",
         "115000",
     )
     position("uccb_and_rdsp_income_repayments: uccb_repayment 0 + rdsp_income_repayment 0 = 0", "0")
@@ -802,7 +802,8 @@ def test_the_trace_explains_the_computation() -> None:
     )
     position(
         "total_payable: net_federal_tax 16951.38 + cpp_payable_on_self_employment 0 "
-        "+ ei_payable_on_self_employment 0 + ontario_tax 8945.77 = 25897.15",
+        "+ ei_payable_on_self_employment 0 + social_benefits_repayment_payable 0 "
+        "+ ontario_tax 8945.77 = 25897.15",
         "25897.15",
     )
     position("working_income: employment_income 110000 = 110000", "110000")
@@ -1078,7 +1079,7 @@ def test_the_trace_explains_the_computation() -> None:
     assert ei < federal_amounts
     assert ei < ontario_amounts
     assert net < taxable
-    assert net < line_5 < line_9
+    assert line_5 < line_9
     assert support < after_limit < other_payments < net_deductions < taxable
     assert net < residency_limit < residency_deduction < northern < net_deductions
     assert zone_a_trips < travel < northern

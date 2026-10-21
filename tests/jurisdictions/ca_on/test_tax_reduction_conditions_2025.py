@@ -46,7 +46,7 @@ from app.domain.parameters.conditions import (
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.rounding import NO_ROUNDING
 from app.domain.trace import ConditionsCountLine
-from app.jurisdictions.ca_on.capabilities.count_by_conditions import CountByConditions
+from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 
 D = Decimal
 SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())

@@ -562,12 +562,108 @@ NET_INCOME_BEFORE_ADJUSTMENTS = CATALOG.declare("net_income_before_adjustments",
 show in brackets)": total income less total deductions, not floored, so the kind is signed."""
 
 NET_INCOME = CATALOG.declare("net_income", Decimal, non_negative=True)
-"""Net income, T1 line 23600 "Line 54 minus line 55 (if negative, enter "0") Net income": total
-income less total deductions, not below zero.
-
-Line 54 (23400, net income before adjustments) is its own kind, not floored; line 55 (23500,
-social benefits repayment) is not modelled.
+"""Net income, T1 line 56 and line 23600 "Line 54 minus line 55 (if negative, enter "0") If
+negative, you may have a non-capital loss (see Form T1A) and the negative amount is to be used for
+certain calculations (go to canada.ca/line-23600) Net income": the net income before adjustments
+(line 23400) less the social benefits repayment (line 23500), not below zero.
 """
+
+OAS_OVERPAYMENT_RECOVERED = CATALOG.declare("oas_overpayment_recovered", Decimal, non_negative=True)
+"""Overpayment of OAS benefits recovered, Federal Worksheet "Line 23500 - Social benefits
+repayment" line 4 "Overpayment of OAS benefits recovered (box 20 of your T4A(OAS) slip)": a
+starting amount from the slip."""
+
+EI_BENEFITS_REPAYMENT = CATALOG.declare("ei_benefits_repayment", Decimal, non_negative=True)
+"""EI benefits repayment, Federal Worksheet "Line 23500 - Social benefits repayment" line 7 "EI
+benefits repayment from line 4 of the repayment chart on your T4E slip, if any": a starting amount
+from the slip."""
+
+NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO = CATALOG.declare(
+    "net_income_before_adjustments_not_below_zero", Decimal, non_negative=True
+)
+"""Net income before adjustments, not below zero, Federal Worksheet "Line 25000 - Other payments
+deduction" line 1 "Amount from line 23400 of your return (if negative, enter "0")": line 23400
+with a negative result replaced by zero. It is not the net income of line 23600, which line 23500
+reduces."""
+
+SOCIAL_BENEFITS_REPAYMENT_APPLIES = CATALOG.declare(
+    "social_benefits_repayment_applies", int, non_negative=True
+)
+"""Social benefits repayment chart applies, Federal Worksheet "Line 23500 - Social benefits
+repayment" "Complete the chart below if one or both of the following applies:" "You entered an
+amount on line 11900 of your return and the amount on line 23400 is more than $82,125" and "You
+entered an amount on line 11300 or line 14600 of your return and the amount on line 23400 is more
+than $93,454": a count, 1 when either holds and 0 otherwise (T1 line 55 and line 23500 "If not,
+enter "0" on line 23500.")."""
+
+OAS_AND_FEDERAL_SUPPLEMENTS = CATALOG.declare(
+    "oas_and_federal_supplements", Decimal, non_negative=True
+)
+"""OAS and federal supplements, Federal Worksheet "Line 23500 - Social benefits repayment" line 3
+"Line 1 plus line 2 =": line 1 "Old age security (OAS) pension from line 11300 of your return" plus
+line 2 "Net federal supplements paid from line 14600 of your return"."""
+
+SOCIAL_BENEFITS_LINE_5 = CATALOG.declare("social_benefits_line_5", Decimal, non_negative=True)
+"""Social benefits chart line 5, Federal Worksheet "Line 23500 - Social benefits repayment" line 5
+"Line 3 minus line 4 (if negative, enter "0") =": line 3 less line 4 "Overpayment of OAS benefits
+recovered (box 20 of your T4A(OAS) slip)", not below zero."""
+
+SOCIAL_BENEFITS_LINE_6 = CATALOG.declare("social_benefits_line_6", Decimal)
+"""Social benefits chart line 6, Federal Worksheet "Line 23500 - Social benefits repayment" line 6
+"Net income before adjustments from line 23400 of your return", plus, as Form T1206 Part 1 says,
+"add the amount from line 4 of this form to line 6 of your Federal Worksheet in the calculation of
+the social benefits repayment for the calculation of lines 23500 and 42200 of your tax return, if
+applicable": the total split income. The form prints no "(if negative, enter "0")", so the kind is
+signed."""
+
+SOCIAL_BENEFITS_LINE_10 = CATALOG.declare("social_benefits_line_10", Decimal, non_negative=True)
+"""Social benefits chart line 10, Federal Worksheet "Line 23500 - Social benefits repayment" line
+10 "Add lines 7 to 9. =": line 7 (the EI benefits repayment), line 8 "Universal child care benefit
+(UCCB) from line 11700 of your return" and line 9 "Registered disability savings plan (RDSP)
+income from line 12500 of your return"."""
+
+SOCIAL_BENEFITS_LINE_11 = CATALOG.declare("social_benefits_line_11", Decimal)
+"""Social benefits chart line 11, Federal Worksheet "Line 23500 - Social benefits repayment" line
+11 "Line 6 minus line 10 =": line 6 less line 10. The form prints no "(if negative, enter "0")", so
+the kind is signed."""
+
+SOCIAL_BENEFITS_LINE_14 = CATALOG.declare("social_benefits_line_14", Decimal, non_negative=True)
+"""Social benefits chart line 14, Federal Worksheet "Line 23500 - Social benefits repayment" line
+14 "Line 12 plus line 13 =": line 12 "UCCB repayment from line 21300 of your return" plus line 13
+"RDSP income repayment (included in the amount on line 23200 of your return)"."""
+
+SOCIAL_BENEFITS_LINE_15 = CATALOG.declare("social_benefits_line_15", Decimal)
+"""Social benefits chart line 15, Federal Worksheet "Line 23500 - Social benefits repayment" line
+15 "Line 11 plus line 14 Adjusted net income =": the adjusted net income. The form prints no "(if
+negative, enter "0")", so the kind is signed."""
+
+OAS_BENEFITS_BASE_AMOUNT = CATALOG.declare("oas_benefits_base_amount", Decimal, non_negative=True)
+"""OAS benefits base amount, Federal Worksheet "Line 23500 - Social benefits repayment" line 16
+"OAS benefits base amount 93,343.00": a fixed amount, claimed whole."""
+
+SOCIAL_BENEFITS_LINE_17 = CATALOG.declare("social_benefits_line_17", Decimal, non_negative=True)
+"""Social benefits chart line 17, Federal Worksheet "Line 23500 - Social benefits repayment" line
+17 "Line 15 minus line 16 (if negative, enter "0") =": the adjusted net income over the OAS benefits
+base amount, not below zero."""
+
+SOCIAL_BENEFITS_LINE_18 = CATALOG.declare("social_benefits_line_18", Decimal, non_negative=True)
+"""Social benefits chart line 18, Federal Worksheet "Line 23500 - Social benefits repayment" line
+18 "Amount from line 17 multiplied by 15% =": the OAS recovery tax before its limit."""
+
+SOCIAL_BENEFITS_LINE_19 = CATALOG.declare("social_benefits_line_19", Decimal, non_negative=True)
+"""Social benefits chart line 19, Federal Worksheet "Line 23500 - Social benefits repayment" line
+19 "Enter whichever is less: amount from line 5 or line 18."."""
+
+SOCIAL_BENEFITS_LINE_21 = CATALOG.declare("social_benefits_line_21", Decimal, non_negative=True)
+"""Social benefits chart line 21, Federal Worksheet "Line 23500 - Social benefits repayment" line
+21 "Line 19 plus line 20. Enter this amount on line 23500 and line 42200 of your return. =": line
+19 plus line 20 "Amount from line 7, if any". It is the result of the chart whether or not the
+chart applies; line 23500 counts it once only when it does."""
+
+SOCIAL_BENEFITS_REPAYMENT = CATALOG.declare("social_benefits_repayment", Decimal, non_negative=True)
+"""Social benefits repayment, T1 line 55 and line 23500 "Line 55 and line 23500: If not, enter "0"
+on line 23500.": the result of the Federal Worksheet chart (line 21) when the chart applies, else
+0. Line 42200 carries it."""
 
 TOTAL_SPLIT_INCOME = CATALOG.declare("total_split_income", Decimal, non_negative=True)
 """Total split income, Form T1206 Part 1 line 4 (68360) "Total split income: line 1 plus line 3
@@ -578,7 +674,8 @@ TOSI_ADJUSTED_NET_INCOME = CATALOG.declare("tosi_adjusted_net_income", Decimal)
 """TOSI-adjusted net income, Form T1206 Part 1 line 6 "TOSI-adjusted net income: line 4 plus line 5
 If negative, enter the result in brackets": the total split income plus the net income before
 adjustments (line 5 "or the amount you would have entered if the instructions on line 23600 read
-"if negative, show in brackets""), signed.
+"if negative, show in brackets""), signed. Line 23500 is not subtracted from the net income
+before adjustments here.
 
 The form prints no "(if negative, enter "0")", so the kind is signed; it stands where the form's
 note says "use the negative value when it is part of an adjusted net income calculation".

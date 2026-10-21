@@ -401,18 +401,30 @@ capabilities:
       output: ca/deductions_from_total_income
   # T1 line 54 and line 23400 "Line 34 minus line 53 (if negative, show in brackets) Net income
   # before adjustments": total income less total deductions, not floored, so a negative result is
-  # shown in brackets. The net income of line 56 (line 23600) stays the floored result until line
-  # 23500 is wired.
+  # shown in brackets.
   - name: core/subtract
     consumes:
       amount: ca/total_income
       less: ca/deductions_from_total_income
     produces:
       output: ca/net_income_before_adjustments
+  # Federal Worksheet "Line 25000 - Other payments deduction" line 1 "Amount from line 23400 of your
+  # return (if negative, enter "0")": line 23400 not below zero, a kind of its own as the net income
+  # of line 23600 is now line 23400 less line 23500.
+  - name: core/sum_not_below_zero
+    consumes:
+      parts:
+        - ca/net_income_before_adjustments
+    produces:
+      output: ca/net_income_before_adjustments_not_below_zero
+  # T1 line 56 and line 23600 "Line 54 minus line 55 (if negative, enter "0") If negative, you may
+  # have a non-capital loss (see Form T1A) and the negative amount is to be used for certain
+  # calculations (go to canada.ca/line-23600) Net income": line 23400 less line 23500, not below
+  # zero.
   - name: core/subtract_not_below_zero
     consumes:
-      amount: ca/total_income
-      less: ca/deductions_from_total_income
+      amount: ca/net_income_before_adjustments
+      less: ca/social_benefits_repayment
     produces:
       output: ca/net_income
   # Form T1206 Part 1 "TOSI-adjusted net income", line 4 (68360) "Total split income: line 1 plus
@@ -454,8 +466,8 @@ capabilities:
       output: ca/tosi_adjusted_net_income_not_below_zero
   # Federal Worksheet "Line 25000 - Other payments deduction", "Complete the following
   # calculation if you reported net federal supplements on line 14600 of your return.":
-  # line 1 "Amount from line 23400 of your return (if negative, enter "0")" is the net
-  # income artifact (line 23400 floored at 0, as line 23500 is not wired yet); line 4 "Line
+  # line 1 "Amount from line 23400 of your return (if negative, enter "0")" is line 23400
+  # floored at 0, not the net income of line 23600; line 4 "Line
   # 2 plus line 3 =" adds line 2 "Amount from line 11700 of your return" (the universal
   # child care benefit) and line 3 "Amount from line 12500 of your return" (the RDSP
   # income), in line order.
@@ -470,7 +482,7 @@ capabilities:
   # it may be negative.
   - name: core/subtract
     consumes:
-      amount: ca/net_income
+      amount: ca/net_income_before_adjustments_not_below_zero
       less: ca/uccb_and_rdsp_income
     produces:
       output: ca/net_income_less_uccb_and_rdsp_income

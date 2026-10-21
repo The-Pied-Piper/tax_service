@@ -85,6 +85,7 @@ from app.jurisdictions.ca.catalog import (
     ECOLOGICAL_AND_CULTURAL_GIFTS,
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
     EI_AND_OTHER_BENEFITS,
+    EI_BENEFITS_REPAYMENT,
     EI_CONTROLLED_CORPORATION_EARNINGS,
     EI_EXEMPT_SELF_EMPLOYMENT_INCOME,
     EI_NET_SELF_EMPLOYMENT_INCOME,
@@ -192,6 +193,7 @@ from app.jurisdictions.ca.catalog import (
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     NORTHERN_RESIDENTS_DEDUCTIONS,
+    OAS_AND_FEDERAL_SUPPLEMENTS,
     OLD_AGE_SECURITY,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_1994,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
@@ -312,6 +314,15 @@ from app.jurisdictions.ca.catalog import (
     SLIP_TAXABLE_DIVIDENDS,
     SLIP_TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     SOCIAL_ASSISTANCE_PAYMENTS,
+    SOCIAL_BENEFITS_LINE_6,
+    SOCIAL_BENEFITS_LINE_10,
+    SOCIAL_BENEFITS_LINE_11,
+    SOCIAL_BENEFITS_LINE_14,
+    SOCIAL_BENEFITS_LINE_15,
+    SOCIAL_BENEFITS_LINE_19,
+    SOCIAL_BENEFITS_LINE_21,
+    SOCIAL_BENEFITS_REPAYMENT,
+    SOCIAL_BENEFITS_REPAYMENT_PAYABLE,
     SPECIAL_TAXES,
     SPLIT_INCOME_DIVIDENDS,
     SPLIT_INCOME_LINE_10,
@@ -440,6 +451,47 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Federal Worksheet "Line 23500" for Return A, whose chart does not apply: line 3 "Line 1
+        # plus line 2" (lines 11300 and 14600), line 6 (line 23400 plus the T1206 line 4), line 10
+        # "Add lines 7 to 9", line 14 "Line 12 plus line 13", line 15 "Line 11 plus line 14" and
+        # line 21 "Line 19 plus line 20", and T1 line 146 (line 42200) carrying line 23500.
+        OAS_AND_FEDERAL_SUPPLEMENTS: SumLine(
+            OAS_AND_FEDERAL_SUPPLEMENTS,
+            ((OLD_AGE_SECURITY, D("0")), (NET_FEDERAL_SUPPLEMENTS, D("0"))),
+            D("0"),
+        ),
+        SOCIAL_BENEFITS_LINE_6: SumLine(
+            SOCIAL_BENEFITS_LINE_6,
+            ((NET_INCOME_BEFORE_ADJUSTMENTS, D("115000")), (TOTAL_SPLIT_INCOME, D("0"))),
+            D("115000"),
+        ),
+        SOCIAL_BENEFITS_LINE_10: SumLine(
+            SOCIAL_BENEFITS_LINE_10,
+            (
+                (EI_BENEFITS_REPAYMENT, D("0")),
+                (UNIVERSAL_CHILD_CARE_BENEFIT, D("0")),
+                (RDSP_INCOME, D("0")),
+            ),
+            D("0"),
+        ),
+        SOCIAL_BENEFITS_LINE_14: SumLine(
+            SOCIAL_BENEFITS_LINE_14,
+            ((UCCB_REPAYMENT, D("0")), (RDSP_INCOME_REPAYMENT, D("0"))),
+            D("0"),
+        ),
+        SOCIAL_BENEFITS_LINE_15: SumLine(
+            SOCIAL_BENEFITS_LINE_15,
+            ((SOCIAL_BENEFITS_LINE_11, D("115000")), (SOCIAL_BENEFITS_LINE_14, D("0"))),
+            D("115000"),
+        ),
+        SOCIAL_BENEFITS_LINE_21: SumLine(
+            SOCIAL_BENEFITS_LINE_21,
+            ((SOCIAL_BENEFITS_LINE_19, D("0")), (EI_BENEFITS_REPAYMENT, D("0"))),
+            D("0"),
+        ),
+        SOCIAL_BENEFITS_REPAYMENT_PAYABLE: SumLine(
+            SOCIAL_BENEFITS_REPAYMENT_PAYABLE, ((SOCIAL_BENEFITS_REPAYMENT, D("0")),), D("0")
+        ),
         # Schedule 3 Part 3 line 9 (15800), line 11 "Add lines 1 to 10", Part 4 line 17 "Add lines
         # 14 to 16" and line 21 (19700) "Line 19 plus line 20": Return A's one share row of 20000
         # is line 4, so lines 11, 14, 17, 19 and 21 are 20000 and every other figure is 0.
@@ -1241,14 +1293,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("0"),
         ),
         # T1 line 148 (line 43500) "Add lines 143 to 147. Total payable", in line order: line
-        # 143 "Amount from line 42000", lines 144 (42100) and 145 (42120) and line 147 (42800), the
-        # Ontario tax.
+        # 143 "Amount from line 42000", lines 144 (42100), 145 (42120) and 146 (42200) and line 147
+        # (42800), the Ontario tax.
         TOTAL_PAYABLE: SumLine(
             TOTAL_PAYABLE,
             (
                 (NET_FEDERAL_TAX, D("16951.38")),
                 (CPP_PAYABLE_ON_SELF_EMPLOYMENT, D("0")),
                 (EI_PAYABLE_ON_SELF_EMPLOYMENT, D("0")),
+                (SOCIAL_BENEFITS_REPAYMENT_PAYABLE, D("0")),
                 (ONTARIO_TAX, D("8945.77")),
             ),
             D("25897.15"),
