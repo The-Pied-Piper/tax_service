@@ -1163,3 +1163,6 @@ expected:
   ca-on/refund_before_donation: "5409.31"
   ca-on/net_refund: "5409.31"
   ca/amt_part_1_subtotal: "54435.00"
+  ca/amt_net_capital_gains_after_adjustments: "0"
+  ca/amt_publicly_listed_gifts_adjustment: "0.00"
+  ca/amt_resource_property_and_flow_through_shares: "0"

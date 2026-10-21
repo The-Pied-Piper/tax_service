@@ -17,13 +17,21 @@ from app.jurisdictions.ca.catalog import (
     AGE_AMOUNT,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    AMT_CAPITAL_GAINS_ADJUSTMENTS,
+    AMT_CLASS_43_1_INCOME,
     AMT_FILM_PROPERTY_ADJUSTMENT,
+    AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
     AMT_LIMITED_PARTNER_CARRYING_CHARGES,
+    AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_PART_1_SUBTOTAL,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
+    AMT_RESOURCE_FOREIGN_PROPERTY_INCOME,
+    AMT_RESOURCE_INCOME_TOTAL,
+    AMT_RESOURCE_PRODUCTION_INCOME,
     AMT_TAX_SHELTER_ADJUSTMENTS,
     AMT_TAX_SHELTER_DEDUCTIBLE_AMOUNTS,
     AMT_TAX_SHELTER_LOSSES,
+    AMT_TREATY_EXEMPT_CAPITAL_GAINS,
     BASIC_PERSONAL_AMOUNT,
     BOND_GAIN_OR_LOSS,
     BUSINESS_ADJUSTED_GROSS_SALES,
@@ -680,6 +688,37 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (AMT_TAX_SHELTER_ADJUSTMENTS, D("0")),
             ),
             D("115000.00"),
+        ),
+        # Form T691 Part 9 line 5 "Add lines 2 to 4.": Return A has no resource amounts.
+        AMT_RESOURCE_INCOME_TOTAL: SumLine(
+            AMT_RESOURCE_INCOME_TOTAL,
+            (
+                (AMT_RESOURCE_PRODUCTION_INCOME, D("0")),
+                (AMT_RESOURCE_FOREIGN_PROPERTY_INCOME, D("0")),
+                (AMT_CLASS_43_1_INCOME, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T691 Part 1 line 16 "Capital gains or losses arising from mortgage foreclosures and
+        # conditional sales repossessions from lines 12400 and 15500 of Schedule 3": Return A has
+        # no foreclosure dispositions, so both are 0.
+        AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS: SumLine(
+            AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
+            (
+                (QFFP_FORECLOSURE_GAIN_OR_LOSS, D("0")),
+                (OTHER_FORECLOSURE_GAIN_OR_LOSS, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T691 Part 1 line 19 "Add lines 16 to 18.": lines 16, 17 and 18, all 0 on Return A.
+        AMT_CAPITAL_GAINS_ADJUSTMENTS: SumLine(
+            AMT_CAPITAL_GAINS_ADJUSTMENTS,
+            (
+                (AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS, D("0")),
+                (AMT_TREATY_EXEMPT_CAPITAL_GAINS, D("0")),
+                (AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS, D("0")),
+            ),
+            D("0"),
         ),
         DISABILITY_SELF_WORKSHEET_AMOUNT: SumLine(
             DISABILITY_SELF_WORKSHEET_AMOUNT,

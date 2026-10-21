@@ -434,6 +434,18 @@ inputs:
   - ca/amt_tax_shelter_losses
   - ca/amt_tax_shelter_deductible_amounts
   - ca/amt_limited_partner_carrying_charges
+  # Form T691 Part 9 lines 1 to 4 and Part 1 lines 17, 18, 24 and 25: the caller's figures, entered
+  # as the form takes them (the resource expenditures, the resource income lines, the capital gains
+  # exempt under a tax treaty and of graduated rate estates, and the gifts of publicly listed
+  # securities with the amount from line 68231 of Form T1170).
+  - ca/amt_resource_expenditures
+  - ca/amt_resource_production_income
+  - ca/amt_resource_foreign_property_income
+  - ca/amt_class_43_1_income
+  - ca/amt_treaty_exempt_capital_gains
+  - ca/amt_graduated_rate_estate_capital_gains
+  - ca/amt_publicly_listed_gifts_total
+  - ca/amt_publicly_listed_gifts_t1170_line_68231
   - ca/political_contributions
   - ca/disability_supports_deduction
   - ca/other_employment_expenses
