@@ -971,3 +971,95 @@ def test_the_cpp_part_5_lines_that_print_no_floor_are_signed(
         assert kind.non_negative is False, identifier
         assert identifier in SIGNED, identifier
         assert identifier in REGISTERED, identifier
+
+
+# Schedule 8 Part 5 lines 43 to 69 (the required contributions on the self-employment income and
+# other earnings, the overpayment, and the enhanced and base contributions on the employment
+# income). The kinds are reached through the registry so that the rest of this file runs before
+# they are declared.
+def test_the_cpp_part_5_lines_43_to_69_counts_are_non_negative_int_counts(
+    registry: ArtifactRegistry,
+) -> None:
+    # Each count is 1 when the form's condition holds and 0 otherwise: line 56's "If line 23 of Part
+    # 3 and line 54 are both positive, enter whichever is less" and line 63's "If line 23 of Part 3
+    # and line 61 are both positive, enter whichever is less".
+    for identifier in (
+        "ca/cpp_part_5_line_23_and_line_54_positive",
+        "ca/cpp_part_5_line_23_and_line_61_positive",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is int, identifier
+        assert kind.non_negative is True, identifier
+        assert identifier in COUNTS, identifier
+        assert identifier not in SIGNED, identifier
+
+
+def test_the_cpp_part_5_line_49_and_the_whichever_is_less_candidates_are_signed(
+    registry: ArtifactRegistry,
+) -> None:
+    # Line 49 "Line 47 minus line 48 ... If negative, show in brackets" is signed. The lesser of two
+    # amounts of which one may be negative (lines 19, 23 and 16 and 20 print "(if negative, show in
+    # brackets)") is only used when its count says both are positive, but the step that computes it
+    # runs for every return, so its kind is signed; "the result of line 23 minus line 56" (line 63)
+    # is negative when line 56 is more than line 23, as Part 3b's line 23 minus line 35.
+    for identifier in (
+        "ca/cpp_part_5_line_49",
+        "ca/cpp_part_5_line_53_lesser",
+        "ca/cpp_part_5_line_56_lesser",
+        "ca/cpp_part_5_line_60_lesser",
+        "ca/cpp_part_5_line_23_less_line_56",
+        "ca/cpp_part_5_line_63_lesser",
+        "ca/cpp_part_5_line_67_lesser",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is False, identifier
+        assert identifier in SIGNED, identifier
+        assert identifier in REGISTERED, identifier
+
+
+def test_the_cpp_part_5_lines_43_to_69_that_cannot_be_negative_are_non_negative_money(
+    registry: ArtifactRegistry,
+) -> None:
+    # Lines 43 to 45 are tiers (a band of 0 when line 42 is negative), lines 46 and 47 add them,
+    # line 48 doubles line 24 "if positive", line 50 is a positive amount times 50%, lines 51, 58
+    # and 65 choose between two non-negative contributions, lines 52, 59 and 66 are "as a positive
+    # amount", lines 53, 56, 60, 63 and 67 are the lesser of positive amounts or "0", lines 54 and
+    # 61 take a line off a line it is at most, and lines 55, 57, 62, 64, 68 and 69 add
+    # non-negative lines. The two helper amounts are the line 24 "if positive" and the line 49
+    # "as a positive amount".
+    for identifier in (
+        "ca/cpp_part_5_line_43",
+        "ca/cpp_part_5_line_44",
+        "ca/cpp_part_5_line_45",
+        "ca/cpp_part_5_line_46",
+        "ca/cpp_part_5_line_47",
+        "ca/cpp_part_5_line_48_line_24_if_positive",
+        "ca/cpp_part_5_line_48",
+        "ca/cpp_part_5_line_50_line_49_positive",
+        "ca/cpp_part_5_line_50",
+        "ca/cpp_part_5_line_51",
+        "ca/cpp_part_5_line_52",
+        "ca/cpp_part_5_line_53",
+        "ca/cpp_part_5_line_54",
+        "ca/cpp_part_5_line_55",
+        "ca/cpp_part_5_line_56",
+        "ca/cpp_part_5_line_57",
+        "ca/cpp_part_5_line_58",
+        "ca/cpp_part_5_line_59",
+        "ca/cpp_part_5_line_60",
+        "ca/cpp_part_5_line_61",
+        "ca/cpp_part_5_line_62",
+        "ca/cpp_part_5_line_63",
+        "ca/cpp_part_5_line_64",
+        "ca/cpp_part_5_line_65",
+        "ca/cpp_part_5_line_66",
+        "ca/cpp_part_5_line_67",
+        "ca/cpp_part_5_line_68",
+        "ca/cpp_part_5_line_69",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is True, identifier
+        assert identifier not in SIGNED, identifier
+        assert identifier in REGISTERED, identifier

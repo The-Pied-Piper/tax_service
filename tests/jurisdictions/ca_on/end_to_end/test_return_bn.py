@@ -6,11 +6,19 @@ from collections.abc import Mapping
 from decimal import Decimal
 from typing import Any
 
+import pytest
+
 from app.domain.artifact import ArtifactKind
 from app.domain.parameters.fraction import Fraction
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rounding import RoundingMode, RoundTo
-from app.domain.trace import ChosenByCountLine, DividedByRateLine, FractionAppliedLine
+from app.domain.trace import (
+    ChosenByCountLine,
+    ContributionTierLine,
+    DividedByRateLine,
+    FractionAppliedLine,
+    RateAppliedLine,
+)
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     AMT_DEDUCTIONS_TOTAL,
@@ -73,6 +81,9 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_LINE_20_POSITIVE_LINE_23_NEGATIVE,
     CPP_PART_5_LINE_21,
     CPP_PART_5_LINE_22,
+    CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE,
+    CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE,
+    CPP_PART_5_LINE_23_LESS_LINE_56,
     CPP_PART_5_LINE_25,
     CPP_PART_5_LINE_28,
     CPP_PART_5_LINE_29,
@@ -85,6 +96,38 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_LINE_41,
     CPP_PART_5_LINE_42,
     CPP_PART_5_LINE_42_LESSER,
+    CPP_PART_5_LINE_43,
+    CPP_PART_5_LINE_44,
+    CPP_PART_5_LINE_45,
+    CPP_PART_5_LINE_46,
+    CPP_PART_5_LINE_47,
+    CPP_PART_5_LINE_48,
+    CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
+    CPP_PART_5_LINE_49,
+    CPP_PART_5_LINE_50,
+    CPP_PART_5_LINE_50_LINE_49_POSITIVE,
+    CPP_PART_5_LINE_51,
+    CPP_PART_5_LINE_52,
+    CPP_PART_5_LINE_53,
+    CPP_PART_5_LINE_54,
+    CPP_PART_5_LINE_55,
+    CPP_PART_5_LINE_56,
+    CPP_PART_5_LINE_56_LESSER,
+    CPP_PART_5_LINE_57,
+    CPP_PART_5_LINE_58,
+    CPP_PART_5_LINE_59,
+    CPP_PART_5_LINE_60,
+    CPP_PART_5_LINE_61,
+    CPP_PART_5_LINE_62,
+    CPP_PART_5_LINE_63,
+    CPP_PART_5_LINE_63_LESSER,
+    CPP_PART_5_LINE_64,
+    CPP_PART_5_LINE_65,
+    CPP_PART_5_LINE_66,
+    CPP_PART_5_LINE_67,
+    CPP_PART_5_LINE_67_LESSER,
+    CPP_PART_5_LINE_68,
+    CPP_PART_5_LINE_69,
     CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
@@ -1677,3 +1720,1068 @@ def test_the_trace_names_the_candidate_lines_9_15_and_42_took_or_the_zero() -> N
         chosen_kind=CPP_ZERO,
         chosen_value=D("0"),
     )
+
+
+# Schedule 8 Part 5 lines 43 to 69 (no routing yet: lines 49, 50, 57 and 69 are declared outputs
+# that a later change routes to lines 42100, 44800, 30800 and 22215). Every figure below is derived
+# by hand from the form's lines, in order, from the employment income, the self-employment income
+# (T1 line 23, which is line 27 of the return) and the two T4 totals; the Part 3 lines and Part 5
+# lines 1 to 42 are those of the cases above. Lines 51 to 69 repeat Part 3b lines 30 to 48 with the
+# same formulas (line 51 is 3b line 30, line 57 is 3b line 36, line 69 is 3b line 48), so for the
+# same Part 3 figures they equal 3b's. Without a T4 total given, box 16 and 16A are the required
+# contributions, so lines 16, 19, 20, 23 and 24 of Part 3 are 0. The cases: (a) the ticket's
+# example, employment income 60,000 and line 27 of 20,000; (b) employment income above 71,300 (line
+# 45 not 0); (c) T4 contributions above the required ones (line 24 positive: line 48, and lines 66
+# and 67); (d) line 24 positive and line 49 negative, in brackets, with line 50; (e) the lines 51
+# to 69 branches for T4 contributions below the required ones (lines 16 and 19 negative, line 23
+# positive or negative); (f) no self-employment income; and a loss with employment income above
+# 71,300 (line 45 is 0). No case reaches line 16 negative with line 19 positive: line 19 is box 16
+# less line 13 minus line 16, and for every line 7 from 0 to 67,800.00 and box 16 from a cent
+# under line 13 to three cents over it, line 16 and line 19 are both negative, both non-negative,
+# or line 16 positive and line 19 negative, so line 53 is always 0 (the count
+# `ca/cpp_line_16_negative_line_19_positive` is 0 and line 54 is line 52); line 60 takes line 59
+# over line 16 only as a tie (0.01 each).
+
+
+def test_part_5_lines_43_to_69_for_employment_income_of_60000_and_line_27_of_20000() -> None:
+    # Case (a), the ticket's example. Part 3 for employment income of $60,000 with box 16 the
+    # required 3,361.75 and box 16A of 0: line 11 is 4.95% x 56,500 = 2,796.75, line 12 is 1% x
+    # 56,500 = 565.00, line 22 is 0, lines 16, 19, 20, 23 and 24 are 0 and line 9 is 2,796.75
+    # and line 10 565.00. Part 5 lines 1 to 42 (line 4 = 20,000): line 30 is 11,300.01 and line
+    # 42 is 8,699.99. Line 43 is 9.9% x 11,300.01 = 1,118.70099, to the cent 1,118.70; line 44
+    # is 2% x 11,300.01 = 226.0002, 226.00; line 45 is 8% x 8,699.99 = 695.9992, 696.00. Line 46
+    # is 226.00 + 696.00 = 922.00 and line 47 is 1,118.70 + 922.00 = 2,040.70. Line 48 is 2 x
+    # line 24 if positive, and line 24 is 0, so 0. Line 49 is 2,040.70 - 0 = 2,040.70, positive
+    # (line 42100 later), so line 50 (line 49 as a positive amount x 50%, and a positive line 49
+    # is not negative) is 0. Line 16 of Part 3 is 0, positive or "0", so line 51 is line 11,
+    # 2,796.75; line 52 is 0 and so are lines 53 and 54; line 55 is 2,796.75. Line 23 is 0, so
+    # line 56 is 0 and line 57 is 2,796.75. Line 19 is 0, so line 58 is line 12, 565.00; lines
+    # 59 to 61 are 0 (line 16 is not positive, so line 60 is 0), line 62 is 565.00, line 63 is 0
+    # and line 64 is 565.00. Line 23 is 0, so line 65 is line 22, 0; lines 66 to 68 are 0 and
+    # line 69 is 565.00 + 0 = 565.00.
+    worksheet = compute(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_30: D("11300.01"),
+            CPP_PART_5_LINE_42: D("8699.99"),
+            CPP_PART_5_LINE_43: D("1118.70"),
+            CPP_PART_5_LINE_44: D("226.00"),
+            CPP_PART_5_LINE_45: D("696.00"),
+            CPP_PART_5_LINE_46: D("922.00"),
+            CPP_PART_5_LINE_47: D("2040.70"),
+            CPP_PART_5_LINE_48: D("0.00"),
+            CPP_PART_5_LINE_49: D("2040.70"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_51: D("2796.75"),
+            CPP_PART_5_LINE_52: D("0.00"),
+            CPP_PART_5_LINE_53: D("0.00"),
+            CPP_PART_5_LINE_54: D("0.00"),
+            CPP_PART_5_LINE_55: D("2796.75"),
+            CPP_PART_5_LINE_56: D("0.00"),
+            CPP_PART_5_LINE_57: D("2796.75"),
+            CPP_PART_5_LINE_58: D("565.00"),
+            CPP_PART_5_LINE_59: D("0.00"),
+            CPP_PART_5_LINE_60: D("0.00"),
+            CPP_PART_5_LINE_61: D("0.00"),
+            CPP_PART_5_LINE_62: D("565.00"),
+            CPP_PART_5_LINE_63: D("0.00"),
+            CPP_PART_5_LINE_64: D("565.00"),
+            CPP_PART_5_LINE_65: D("0.00"),
+            CPP_PART_5_LINE_66: D("0.00"),
+            CPP_PART_5_LINE_67: D("0.00"),
+            CPP_PART_5_LINE_68: D("0.00"),
+            CPP_PART_5_LINE_69: D("565.00"),
+            CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE: 0,
+            CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE: 0,
+        },
+    )
+
+
+def test_part_5_line_45_is_8_percent_of_line_42_when_employment_income_is_above_71300() -> None:
+    # Case (b). Employment income of $80,000 and line 27 of 15,000, the T4 totals the required
+    # ones. Part 3: line 11 is 4.95% x 67,800 = 3,356.10 (the maximum), line 12 is 678.00 and
+    # line 22 is 4% x (80,000 - 71,300) = 348.00, so box 16A is 348.00 (line 45 reads line 42,
+    # not box 16A). Part 5 lines 1 to 42: line 30 is 0.01 and line 42 is 1,200.00. Line 43 is
+    # 9.9% x 0.01 = 0.00099, 0.00; line 44 is 2% x 0.01 = 0.0002, 0.00; line 45 is 8% x 1,200.00
+    # = 96.00; lines 46 and 47 are 96.00. Line 48 is 0 (line 24 is 0), line 49 is 96.00 and line
+    # 50 is 0. Line 51 is 3,356.10 and line 57 is 3,356.10 (lines 52 to 56 are 0); line 58 is
+    # 678.00 and line 64 is 678.00 (lines 59 to 63 are 0); line 65 is line 22, 348.00, so line
+    # 68 is 348.00 (lines 66 and 67 are 0) and line 69 is 678.00 + 348.00 = 1,026.00.
+    worksheet = compute(
+        "80000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="15000",
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_30: D("0.01"),
+            CPP_PART_5_LINE_42: D("1200.00"),
+            CPP_PART_5_LINE_43: D("0.00"),
+            CPP_PART_5_LINE_44: D("0.00"),
+            CPP_PART_5_LINE_45: D("96.00"),
+            CPP_PART_5_LINE_46: D("96.00"),
+            CPP_PART_5_LINE_47: D("96.00"),
+            CPP_PART_5_LINE_48: D("0.00"),
+            CPP_PART_5_LINE_49: D("96.00"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_51: D("3356.10"),
+            CPP_PART_5_LINE_52: D("0.00"),
+            CPP_PART_5_LINE_53: D("0.00"),
+            CPP_PART_5_LINE_54: D("0.00"),
+            CPP_PART_5_LINE_55: D("3356.10"),
+            CPP_PART_5_LINE_56: D("0.00"),
+            CPP_PART_5_LINE_57: D("3356.10"),
+            CPP_PART_5_LINE_58: D("678.00"),
+            CPP_PART_5_LINE_59: D("0.00"),
+            CPP_PART_5_LINE_60: D("0.00"),
+            CPP_PART_5_LINE_61: D("0.00"),
+            CPP_PART_5_LINE_62: D("678.00"),
+            CPP_PART_5_LINE_63: D("0.00"),
+            CPP_PART_5_LINE_64: D("678.00"),
+            CPP_PART_5_LINE_65: D("348.00"),
+            CPP_PART_5_LINE_66: D("0.00"),
+            CPP_PART_5_LINE_67: D("0.00"),
+            CPP_PART_5_LINE_68: D("348.00"),
+            CPP_PART_5_LINE_69: D("1026.00"),
+            CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE: 0,
+            CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE: 0,
+        },
+    )
+
+
+def test_part_5_line_48_doubles_a_positive_line_24_and_line_49_is_what_line_47_has_over_it() -> (
+    None
+):
+    # Case (c), contributions above the required ones: employment income of $60,000, line 27 of
+    # 20,000 and box 16 of 3,500.00 (138.25 more than line 13), as Return BN. Part 3: line 9 is
+    # 2,911.77, line 10 is 588.23, line 16 is 115.02, line 19 is 23.23, line 20 is 138.25, line
+    # 23 is 0 and line 24 is 138.25. Part 5 lines 30 and 42 are those of case (a) (line 5 less
+    # line 6 leaves the required 3,361.75 on line 10), so lines 43 to 47 are those of case (a):
+    # 1,118.70, 226.00, 696.00, 922.00 and 2,040.70. Line 48 is line 24 (138.25, positive) x 2 =
+    # 276.50 and line 49 is 2,040.70 - 276.50 = 1,764.20, positive, so line 50 is 0. Line 16 is
+    # positive, so line 51 is line 11, 2,796.75 (lines 52 to 56 are 0); line 19 is positive, so
+    # line 58 is line 12, 565.00. Line 60 counts line 16 as positive and takes the lesser of
+    # line 16 (115.02) and line 59 (0), 0, and line 67 counts line 20 as positive and takes the
+    # lesser of 138.25 and line 66 (0), 0. Lines 57, 64 and 69 are 2,796.75, 565.00 and 565.00
+    # as in case (a).
+    worksheet = compute(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        cpp_t4_base_and_first_additional_contributions="3500.00",
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_30: D("11300.01"),
+            CPP_PART_5_LINE_42: D("8699.99"),
+            CPP_PART_5_LINE_43: D("1118.70"),
+            CPP_PART_5_LINE_44: D("226.00"),
+            CPP_PART_5_LINE_45: D("696.00"),
+            CPP_PART_5_LINE_46: D("922.00"),
+            CPP_PART_5_LINE_47: D("2040.70"),
+            CPP_PART_5_LINE_48: D("276.50"),
+            CPP_PART_5_LINE_49: D("1764.20"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_51: D("2796.75"),
+            CPP_PART_5_LINE_52: D("0.00"),
+            CPP_PART_5_LINE_53: D("0.00"),
+            CPP_PART_5_LINE_54: D("0.00"),
+            CPP_PART_5_LINE_55: D("2796.75"),
+            CPP_PART_5_LINE_56: D("0.00"),
+            CPP_PART_5_LINE_57: D("2796.75"),
+            CPP_PART_5_LINE_58: D("565.00"),
+            CPP_PART_5_LINE_59: D("0.00"),
+            CPP_PART_5_LINE_60: D("0.00"),
+            CPP_PART_5_LINE_61: D("0.00"),
+            CPP_PART_5_LINE_62: D("565.00"),
+            CPP_PART_5_LINE_63: D("0.00"),
+            CPP_PART_5_LINE_64: D("565.00"),
+            CPP_PART_5_LINE_65: D("0.00"),
+            CPP_PART_5_LINE_66: D("0.00"),
+            CPP_PART_5_LINE_67: D("0.00"),
+            CPP_PART_5_LINE_68: D("0.00"),
+            CPP_PART_5_LINE_69: D("565.00"),
+            CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE: 0,
+            CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE: 0,
+            CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE: D("138.25"),
+        },
+    )
+
+
+def test_part_5_line_67_takes_line_66_when_line_23_is_negative_and_line_20_positive() -> None:
+    # Case (c), line 20 of Part 3 positive and line 23 negative. Employment income of $80,000
+    # and line 27 of 15,000, with box 16 of 4,100.00 and box 16A of 300.00 (required 4,034.10
+    # and 348.00). Part 3: line 9 is 3,410.93, line 10 is 689.07, line 16 is 3,410.93 - 3,356.10
+    # = 54.83, line 19 is 689.07 - 678.00 = 11.07, line 20 is 65.90, line 23 is 300.00 - 348.00
+    # = -48.00 and line 24 is 65.90 - 48.00 = 17.90. Part 5: lines 30 and 42 are those of case
+    # (b) (0.01 and 1,200.00), so lines 43 to 47 are 0.00, 0.00, 96.00, 96.00 and 96.00. Line 48
+    # is 17.90 x 2 = 35.80, line 49 is 96.00 - 35.80 = 60.20 and line 50 is 0. Lines 51 to 62
+    # are those of case (b) except line 60: line 16 is positive, so line 60 is the lesser of
+    # 54.83 and line 59 (0), 0; line 58 is line 12, 678.00 and line 64 is 678.00. Line 23 is
+    # negative, so line 65 is line 21, the box 16A of 300.00; line 66 is 48.00 and line 67, with
+    # line 20 positive, is the lesser of line 20 (65.90) and line 66 (48.00), 48.00; line 68 is
+    # 300.00 + 48.00 = 348.00 and line 69 is 678.00 + 348.00 = 1,026.00.
+    worksheet = compute(
+        "80000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="15000",
+        cpp_t4_base_and_first_additional_contributions="4100.00",
+        cpp_t4_second_additional_contributions="300.00",
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_30: D("0.01"),
+            CPP_PART_5_LINE_42: D("1200.00"),
+            CPP_PART_5_LINE_43: D("0.00"),
+            CPP_PART_5_LINE_44: D("0.00"),
+            CPP_PART_5_LINE_45: D("96.00"),
+            CPP_PART_5_LINE_46: D("96.00"),
+            CPP_PART_5_LINE_47: D("96.00"),
+            CPP_PART_5_LINE_48: D("35.80"),
+            CPP_PART_5_LINE_49: D("60.20"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_51: D("3356.10"),
+            CPP_PART_5_LINE_52: D("0.00"),
+            CPP_PART_5_LINE_53: D("0.00"),
+            CPP_PART_5_LINE_54: D("0.00"),
+            CPP_PART_5_LINE_55: D("3356.10"),
+            CPP_PART_5_LINE_56: D("0.00"),
+            CPP_PART_5_LINE_57: D("3356.10"),
+            CPP_PART_5_LINE_58: D("678.00"),
+            CPP_PART_5_LINE_59: D("0.00"),
+            CPP_PART_5_LINE_60: D("0.00"),
+            CPP_PART_5_LINE_61: D("0.00"),
+            CPP_PART_5_LINE_62: D("678.00"),
+            CPP_PART_5_LINE_63: D("0.00"),
+            CPP_PART_5_LINE_64: D("678.00"),
+            CPP_PART_5_LINE_65: D("300.00"),
+            CPP_PART_5_LINE_66: D("48.00"),
+            CPP_PART_5_LINE_67: D("48.00"),
+            CPP_PART_5_LINE_68: D("348.00"),
+            CPP_PART_5_LINE_69: D("1026.00"),
+            CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE: 0,
+            CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE: 0,
+        },
+    )
+
+
+def test_part_5_line_49_is_negative_when_line_48_is_more_than_line_47_and_line_50_halves_it() -> (
+    None
+):
+    # Case (d). Employment income of $90,000 and line 27 of 20,000, with box 16 the required
+    # 4,034.10 and box 16A of 500.00, which is 104.00 more than line 22 (4% x 9,900 = 396.00,
+    # the maximum). Part 3: line 16, 19 and 20 are 0, line 23 is 104.00 and line 24 is 104.00.
+    # Part 5: line 20 is 67,799.99 and line 21 is 0.01, so line 30 is 0.01; line 13 is 500.00 -
+    # 104.00 = 396.00 (line 12 is the 104.00 of line 23), so line 35 is 396.00 / 4% = 9,900.00,
+    # line 36 is 0.00 and line 42 is 0. Lines 43, 44 and 45 are 0.00 (9.9% and 2% of 0.01 round
+    # down, and line 42 is 0), so lines 46 and 47 are 0. Line 48 is 104.00 x 2 = 208.00, so line
+    # 49 is 0.00 - 208.00 = -208.00, in brackets (negative, continue at line 50), and line 50 is
+    # line 49 as a positive amount, 208.00, x 50% = 104.00 (the line 44800 overpayment of the
+    # self-employment lines, the same as line 24 here). Line 51 is line 11, 3,356.10, and line
+    # 58 is line 12, 678.00, as lines 16 and 19 are 0. Line 23 is positive but line 54 is 0, so
+    # line 56 is 0 (the count is 0) and line 57 is 3,356.10; line 61 is 0, so line 63 is 0 and
+    # line 64 is 678.00. Line 65 is line 22, 396.00 (line 23 positive), line 67 is 0 (line 20 is
+    # not positive), line 68 is 396.00 and line 69 is 678.00 + 396.00 = 1,074.00.
+    worksheet = compute(
+        "90000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        cpp_t4_base_and_first_additional_contributions="4034.10",
+        cpp_t4_second_additional_contributions="500",
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_30: D("0.01"),
+            CPP_PART_5_LINE_42: D("0.00"),
+            CPP_PART_5_LINE_43: D("0.00"),
+            CPP_PART_5_LINE_44: D("0.00"),
+            CPP_PART_5_LINE_45: D("0.00"),
+            CPP_PART_5_LINE_46: D("0.00"),
+            CPP_PART_5_LINE_47: D("0.00"),
+            CPP_PART_5_LINE_48: D("208.00"),
+            CPP_PART_5_LINE_49: D("-208.00"),
+            CPP_PART_5_LINE_50: D("104.00"),
+            CPP_PART_5_LINE_51: D("3356.10"),
+            CPP_PART_5_LINE_52: D("0.00"),
+            CPP_PART_5_LINE_53: D("0.00"),
+            CPP_PART_5_LINE_54: D("0.00"),
+            CPP_PART_5_LINE_55: D("3356.10"),
+            CPP_PART_5_LINE_56: D("0.00"),
+            CPP_PART_5_LINE_57: D("3356.10"),
+            CPP_PART_5_LINE_58: D("678.00"),
+            CPP_PART_5_LINE_59: D("0.00"),
+            CPP_PART_5_LINE_60: D("0.00"),
+            CPP_PART_5_LINE_61: D("0.00"),
+            CPP_PART_5_LINE_62: D("678.00"),
+            CPP_PART_5_LINE_63: D("0.00"),
+            CPP_PART_5_LINE_64: D("678.00"),
+            CPP_PART_5_LINE_65: D("396.00"),
+            CPP_PART_5_LINE_66: D("0.00"),
+            CPP_PART_5_LINE_67: D("0.00"),
+            CPP_PART_5_LINE_68: D("396.00"),
+            CPP_PART_5_LINE_69: D("1074.00"),
+            CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE: 0,
+            CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE: 0,
+            CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE: D("104.00"),
+            CPP_PART_5_LINE_50_LINE_49_POSITIVE: D("208.00"),
+        },
+    )
+
+
+def test_part_5_line_67_takes_line_20_when_it_is_less_than_line_66() -> None:
+    # Case (e), line 20 of Part 3 positive and less than line 66. Employment income of $75,000
+    # and line 27 of 20,000, with box 16 of 4,034.11 (a cent over the required 4,034.10) and box
+    # 16A of 0 (148.00 under line 22, 4% x (75,000 - 71,300)). Part 3: line 9 is 4,034.11 x
+    # 83.1933% = 3,356.10923, to the cent 3,356.11, line 10 is 678.00, line 16 is 0.01, line 19
+    # is 0.00, line 20 is 0.01, line 23 is -148.00 and line 24 is -147.99. Part 5: line 20 is
+    # 4,034.10 x 16.80672 = 67,799.99 (line 10 is 4,034.10 as line 5 less line 6), so line 30 is
+    # 0.01; line 35 is 0.01 / 4% = 0.25, line 36 is 9,900.00 - 0.25 = 9,899.75 and line 42 is
+    # the lesser of line 36 and line 41 (19,999.99), 9,899.75. Lines 43 and 44 are 0.00; line 45
+    # is 8% x 9,899.75 = 791.98, so lines 46 and 47 are 791.98. Line 24 is negative, so line 48
+    # is 0 and line 49 is 791.98 (positive). Line 16 is 0.01, positive, so line 51 is line 11
+    # (3,356.10); line 60 is the lesser of 0.01 and line 59 (0), 0; line 19 is 0.00, so line 58
+    # is line 12 (678.00). Line 23 is negative, so line 65 is line 21, 0.00; line 66 is 148.00
+    # and line 67, with line 20 (0.01) positive, is the lesser of 0.01 and 148.00, 0.01. Line 68
+    # is 0.01 and line 69 is 678.00 + 0.01 = 678.01.
+    worksheet = compute(
+        "75000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        cpp_t4_base_and_first_additional_contributions="4034.11",
+        cpp_t4_second_additional_contributions="0",
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_30: D("0.01"),
+            CPP_PART_5_LINE_42: D("9899.75"),
+            CPP_PART_5_LINE_43: D("0.00"),
+            CPP_PART_5_LINE_44: D("0.00"),
+            CPP_PART_5_LINE_45: D("791.98"),
+            CPP_PART_5_LINE_46: D("791.98"),
+            CPP_PART_5_LINE_47: D("791.98"),
+            CPP_PART_5_LINE_48: D("0.00"),
+            CPP_PART_5_LINE_49: D("791.98"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_51: D("3356.10"),
+            CPP_PART_5_LINE_52: D("0.00"),
+            CPP_PART_5_LINE_53: D("0.00"),
+            CPP_PART_5_LINE_54: D("0.00"),
+            CPP_PART_5_LINE_55: D("3356.10"),
+            CPP_PART_5_LINE_56: D("0.00"),
+            CPP_PART_5_LINE_57: D("3356.10"),
+            CPP_PART_5_LINE_58: D("678.00"),
+            CPP_PART_5_LINE_59: D("0.00"),
+            CPP_PART_5_LINE_60: D("0.00"),
+            CPP_PART_5_LINE_61: D("0.00"),
+            CPP_PART_5_LINE_62: D("678.00"),
+            CPP_PART_5_LINE_63: D("0.00"),
+            CPP_PART_5_LINE_64: D("678.00"),
+            CPP_PART_5_LINE_65: D("0.00"),
+            CPP_PART_5_LINE_66: D("148.00"),
+            CPP_PART_5_LINE_67: D("0.01"),
+            CPP_PART_5_LINE_68: D("0.01"),
+            CPP_PART_5_LINE_69: D("678.01"),
+            CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE: 0,
+            CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE: 0,
+        },
+    )
+
+
+def test_part_5_lines_52_to_64_when_lines_16_and_19_are_negative_and_line_23_positive() -> None:
+    # Case (e), lines 16 and 19 negative, line 23 positive. Employment income of $80,000 and
+    # line 27 of 15,000, with box 16 of 4,000.00 and box 16A of 400.00. Part 3: line 9 is
+    # 4,000.00 x 83.1933% = 3,327.732, to the cent 3,327.73, line 10 is 672.27, line 16 is
+    # 3,327.73 - 3,356.10 = -28.37, line 19 is 672.27 - 678.00 = -5.73, line 20 is -34.10, line
+    # 23 is 400.00 - 348.00 = 52.00 and line 24 is -34.10 + 52.00 = 17.90. Part 5: lines 30 and
+    # 42 are 0.01 and 1,200.00, so lines 43 to 47 are 0.00, 0.00, 96.00, 96.00 and 96.00; line
+    # 48 is 17.90 x 2 = 35.80 and line 49 is 96.00 - 35.80 = 60.20. Line 16 is negative, so line
+    # 51 is line 9, 3,327.73; line 52 is 28.37; line 19 is not positive, so line 53 is 0 and
+    # line 54 is 28.37; line 55 is 3,327.73. Line 23 (52.00) and line 54 (28.37) are both
+    # positive, so line 56 is the lesser, 28.37, and line 57 is 3,327.73 + 28.37 = 3,356.10, the
+    # maximum of line 11. Line 19 is negative, so line 58 is line 10, 672.27; line 59 is 5.73;
+    # line 16 is not positive, so line 60 is 0 and line 61 is 5.73; line 62 is 672.27. Line 23
+    # (52.00) and line 61 (5.73) are both positive, so line 63 is the lesser of line 61 (5.73)
+    # and line 23 less line 56 (52.00 - 28.37 = 23.63), 5.73, and line 64 is 672.27 + 5.73 =
+    # 678.00, the line 12 maximum. Line 23 is positive, so line 65 is line 22, 348.00; lines 66
+    # and 67 are 0 (line 20 is negative), line 68 is 348.00 and line 69 is 678.00 + 348.00 =
+    # 1,026.00.
+    worksheet = compute(
+        "80000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="15000",
+        cpp_t4_base_and_first_additional_contributions="4000.00",
+        cpp_t4_second_additional_contributions="400.00",
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_30: D("0.01"),
+            CPP_PART_5_LINE_42: D("1200.00"),
+            CPP_PART_5_LINE_43: D("0.00"),
+            CPP_PART_5_LINE_44: D("0.00"),
+            CPP_PART_5_LINE_45: D("96.00"),
+            CPP_PART_5_LINE_46: D("96.00"),
+            CPP_PART_5_LINE_47: D("96.00"),
+            CPP_PART_5_LINE_48: D("35.80"),
+            CPP_PART_5_LINE_49: D("60.20"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_51: D("3327.73"),
+            CPP_PART_5_LINE_52: D("28.37"),
+            CPP_PART_5_LINE_53: D("0.00"),
+            CPP_PART_5_LINE_54: D("28.37"),
+            CPP_PART_5_LINE_55: D("3327.73"),
+            CPP_PART_5_LINE_56: D("28.37"),
+            CPP_PART_5_LINE_57: D("3356.10"),
+            CPP_PART_5_LINE_58: D("672.27"),
+            CPP_PART_5_LINE_59: D("5.73"),
+            CPP_PART_5_LINE_60: D("0.00"),
+            CPP_PART_5_LINE_61: D("5.73"),
+            CPP_PART_5_LINE_62: D("672.27"),
+            CPP_PART_5_LINE_63: D("5.73"),
+            CPP_PART_5_LINE_64: D("678.00"),
+            CPP_PART_5_LINE_65: D("348.00"),
+            CPP_PART_5_LINE_66: D("0.00"),
+            CPP_PART_5_LINE_67: D("0.00"),
+            CPP_PART_5_LINE_68: D("348.00"),
+            CPP_PART_5_LINE_69: D("1026.00"),
+            CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE: 1,
+            CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE: 1,
+            CPP_PART_5_LINE_23_LESS_LINE_56: D("23.63"),
+        },
+    )
+
+
+def test_part_5_line_56_takes_line_23_when_it_is_less_than_line_54_and_line_63_is_then_0() -> None:
+    # Case (e), line 23 less than line 54. Employment income of $90,000 and line 27 of 20,000,
+    # with box 16 of 3,434.10 (600.00 under line 13) and box 16A of 401.00 (5.00 over line 22 of
+    # 396.00). Part 3: line 9 is 2,856.94 (2,856.9411), line 10 is 577.16, line 16 is 2,856.94 -
+    # 3,356.10 = -499.16, line 19 is 577.16 - 678.00 = -100.84, line 20 is -600.00, line 23 is
+    # 5.00 and line 24 is -595.00. Part 5: line 6 is 0 (line 20 is not positive), line 7 is
+    # 3,434.10, line 8 is 600.00 and line 9, the lesser of line 23 of Part 3 (5.00) and line 8,
+    # is 5.00, so line 10 is 3,439.10 and line 20 is 3,439.10 x 16.80672 = 57,799.99; line 21
+    # and line 30 are 10,000.01. Line 13 is 396.00 (box 16A less line 12, 5.00), so line 35 is
+    # 9,900.00, line 36 is 0.00 and line 42 is 0. Line 43 is 9.9% x 10,000.01 = 990.00099,
+    # 990.00; line 44 is 2% x 10,000.01 = 200.0002, 200.00; line 45 is 0.00; line 46 is 200.00
+    # and line 47 is 1,190.00. Line 24 is negative, so line 48 is 0 and line 49 is 1,190.00.
+    # Line 16 is negative, so line 51 is line 9, 2,856.94; line 52 is 499.16; line 53 is 0 (line
+    # 19 is negative); line 54 is 499.16; line 55 is 2,856.94. Line 56 is the lesser of line 23
+    # (5.00) and line 54 (499.16), 5.00; line 57 is 2,861.94. Line 58 is line 10, 577.16; line
+    # 59 is 100.84; line 60 is 0 (line 16 not positive); line 61 is 100.84; line 62 is 577.16.
+    # Line 23 and line 61 are positive: line 63 is the lesser of line 61 (100.84) and line 23
+    # less line 56 (5.00 - 5.00 = 0.00), 0.00; line 64 is 577.16. Line 65 is line 22, 396.00;
+    # lines 66 to 67 are 0 and line 69 is 577.16 + 396.00 = 973.16.
+    worksheet = compute(
+        "90000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        cpp_t4_base_and_first_additional_contributions="3434.10",
+        cpp_t4_second_additional_contributions="401.00",
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_30: D("10000.01"),
+            CPP_PART_5_LINE_42: D("0.00"),
+            CPP_PART_5_LINE_43: D("990.00"),
+            CPP_PART_5_LINE_44: D("200.00"),
+            CPP_PART_5_LINE_45: D("0.00"),
+            CPP_PART_5_LINE_46: D("200.00"),
+            CPP_PART_5_LINE_47: D("1190.00"),
+            CPP_PART_5_LINE_48: D("0.00"),
+            CPP_PART_5_LINE_49: D("1190.00"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_51: D("2856.94"),
+            CPP_PART_5_LINE_52: D("499.16"),
+            CPP_PART_5_LINE_53: D("0.00"),
+            CPP_PART_5_LINE_54: D("499.16"),
+            CPP_PART_5_LINE_55: D("2856.94"),
+            CPP_PART_5_LINE_56: D("5.00"),
+            CPP_PART_5_LINE_57: D("2861.94"),
+            CPP_PART_5_LINE_58: D("577.16"),
+            CPP_PART_5_LINE_59: D("100.84"),
+            CPP_PART_5_LINE_60: D("0.00"),
+            CPP_PART_5_LINE_61: D("100.84"),
+            CPP_PART_5_LINE_62: D("577.16"),
+            CPP_PART_5_LINE_63: D("0.00"),
+            CPP_PART_5_LINE_64: D("577.16"),
+            CPP_PART_5_LINE_65: D("396.00"),
+            CPP_PART_5_LINE_66: D("0.00"),
+            CPP_PART_5_LINE_67: D("0.00"),
+            CPP_PART_5_LINE_68: D("396.00"),
+            CPP_PART_5_LINE_69: D("973.16"),
+            CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE: 1,
+            CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE: 1,
+        },
+    )
+
+
+def test_part_5_line_56_takes_line_54_and_line_63_takes_what_is_left_of_line_23() -> None:
+    # Case (e), line 23 more than line 54. Employment income of $90,000 and line 27 of 20,000,
+    # with box 16 of 3,564.10 (470.00 under line 13) and box 16A of 791.00 (395.00 over line
+    # 22). Part 3: line 9 is 2,965.09 (2,965.0924), line 10 is 599.01, line 16 is -391.01, line
+    # 19 is 599.01 - 678.00 = -78.99, line 20 is -470.00, line 23 is 395.00 and line 24 is
+    # -75.00. Part 5: line 8 is 470.00, line 9 is the lesser of 395.00 and 470.00, 395.00, line
+    # 10 is 3,959.10 and line 20 is 3,959.10 x 16.80672 = 66,539.49; line 21 and line 30 are
+    # 1,260.51. Line 13 is 396.00 (791.00 - 395.00), so line 36 is 0.00 and line 42 is 0. Line
+    # 43 is 9.9% x 1,260.51 = 124.79049, 124.79; line 44 is 2% x 1,260.51 = 25.2102, 25.21; line
+    # 45 is 0.00; line 46 is 25.21 and line 47 is 150.00. Line 24 is negative, so line 48 is 0
+    # and line 49 is 150.00. Line 51 is line 9, 2,965.09; line 52 is 391.01; line 53 is 0; line
+    # 54 is 391.01; line 55 is 2,965.09. Line 56 is the lesser of line 23 (395.00) and line 54
+    # (391.01), 391.01, and line 57 is 3,356.10. Line 58 is line 10, 599.01; line 59 is 78.99;
+    # line 60 is 0; line 61 is 78.99; line 62 is 599.01. Line 63 is the lesser of line 61
+    # (78.99) and line 23 less line 56 (395.00 - 391.01 = 3.99), 3.99, and line 64 is 599.01 +
+    # 3.99 = 603.00. Line 65 is line 22, 396.00, and line 69 is 603.00 + 396.00 = 999.00.
+    worksheet = compute(
+        "90000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        cpp_t4_base_and_first_additional_contributions="3564.10",
+        cpp_t4_second_additional_contributions="791.00",
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_30: D("1260.51"),
+            CPP_PART_5_LINE_42: D("0.00"),
+            CPP_PART_5_LINE_43: D("124.79"),
+            CPP_PART_5_LINE_44: D("25.21"),
+            CPP_PART_5_LINE_45: D("0.00"),
+            CPP_PART_5_LINE_46: D("25.21"),
+            CPP_PART_5_LINE_47: D("150.00"),
+            CPP_PART_5_LINE_48: D("0.00"),
+            CPP_PART_5_LINE_49: D("150.00"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_51: D("2965.09"),
+            CPP_PART_5_LINE_52: D("391.01"),
+            CPP_PART_5_LINE_53: D("0.00"),
+            CPP_PART_5_LINE_54: D("391.01"),
+            CPP_PART_5_LINE_55: D("2965.09"),
+            CPP_PART_5_LINE_56: D("391.01"),
+            CPP_PART_5_LINE_57: D("3356.10"),
+            CPP_PART_5_LINE_58: D("599.01"),
+            CPP_PART_5_LINE_59: D("78.99"),
+            CPP_PART_5_LINE_60: D("0.00"),
+            CPP_PART_5_LINE_61: D("78.99"),
+            CPP_PART_5_LINE_62: D("599.01"),
+            CPP_PART_5_LINE_63: D("3.99"),
+            CPP_PART_5_LINE_64: D("603.00"),
+            CPP_PART_5_LINE_65: D("396.00"),
+            CPP_PART_5_LINE_66: D("0.00"),
+            CPP_PART_5_LINE_67: D("0.00"),
+            CPP_PART_5_LINE_68: D("396.00"),
+            CPP_PART_5_LINE_69: D("999.00"),
+            CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE: 1,
+            CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE: 1,
+            CPP_PART_5_LINE_23_LESS_LINE_56: D("3.99"),
+        },
+    )
+
+
+def test_part_5_line_60_adds_back_the_cent_line_16_is_over_when_line_19_is_a_cent_under() -> None:
+    # Case (e), a cent split between lines 16 and 19. Employment income of $6,900.50 and line 27
+    # of 3,000, box 16 the required 202.33: line 7 is 3,400.50, line 11 is 4.95% x 3,400.50 =
+    # 168.32 (168.31975), line 12 is 1% x 3,400.50 = 34.01 (34.005), line 13 is 202.33 and line
+    # 22 is 0. Part 3: line 9 is 202.33 x 83.1933% = 168.325..., to the cent 168.33, line 10 is
+    # 34.00, line 16 is 0.01, line 19 is 34.00 - 34.01 = -0.01, line 20 is 0.00, line 23 is 0
+    # and line 24 is 0.00. Part 5: line 30 is 3,000.00 and line 42 is 0 (line 33 is 3,000 +
+    # 6,900.50, not more than 71,300). Line 43 is 9.9% x 3,000 = 297.00, line 44 is 2% x 3,000 =
+    # 60.00, line 45 is 0.00, line 46 is 60.00, line 47 is 357.00; line 48 is 0 and line 49 is
+    # 357.00. Line 16 is positive, so line 51 is line 11, 168.32; lines 52 to 56 are 0 and line
+    # 57 is 168.32. Line 19 is negative, so line 58 is line 10, 34.00; line 59 is 0.01; line 16
+    # is positive, so line 60 is the lesser of line 16 (0.01) and line 59 (0.01), 0.01; line 61
+    # is 0.00 and line 62 is 34.01. Line 23 is 0, so line 63 is 0.00, line 64 is 34.01 (the
+    # required line 12), line 65 is line 22, 0, and line 69 is 34.01.
+    worksheet = compute(
+        "6900.50",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="3000",
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_30: D("3000.00"),
+            CPP_PART_5_LINE_42: D("0.00"),
+            CPP_PART_5_LINE_43: D("297.00"),
+            CPP_PART_5_LINE_44: D("60.00"),
+            CPP_PART_5_LINE_45: D("0.00"),
+            CPP_PART_5_LINE_46: D("60.00"),
+            CPP_PART_5_LINE_47: D("357.00"),
+            CPP_PART_5_LINE_48: D("0.00"),
+            CPP_PART_5_LINE_49: D("357.00"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_51: D("168.32"),
+            CPP_PART_5_LINE_52: D("0.00"),
+            CPP_PART_5_LINE_53: D("0.00"),
+            CPP_PART_5_LINE_54: D("0.00"),
+            CPP_PART_5_LINE_55: D("168.32"),
+            CPP_PART_5_LINE_56: D("0.00"),
+            CPP_PART_5_LINE_57: D("168.32"),
+            CPP_PART_5_LINE_58: D("34.00"),
+            CPP_PART_5_LINE_59: D("0.01"),
+            CPP_PART_5_LINE_60: D("0.01"),
+            CPP_PART_5_LINE_61: D("0.00"),
+            CPP_PART_5_LINE_62: D("34.01"),
+            CPP_PART_5_LINE_63: D("0.00"),
+            CPP_PART_5_LINE_64: D("34.01"),
+            CPP_PART_5_LINE_65: D("0.00"),
+            CPP_PART_5_LINE_66: D("0.00"),
+            CPP_PART_5_LINE_67: D("0.00"),
+            CPP_PART_5_LINE_68: D("0.00"),
+            CPP_PART_5_LINE_69: D("34.01"),
+            CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE: 0,
+            CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE: 0,
+        },
+    )
+
+
+def test_part_5_line_45_is_0_when_line_42_is_negative() -> None:
+    # A loss with employment income above $71,300: employment income of $80,000 and line 27 of
+    # -5,000 (professional income), the T4 totals the required ones (4,034.10 and 348.00). Part
+    # 5: line 4 is -5,000 (no floor) and line 30 is 0.00; line 33 is -5,000 + 80,000 = 75,000,
+    # more than 71,300, so line 42 is the lesser of 1,200.00 and line 41 (-5,000), -5,000.00.
+    # Line 43 and line 44 are 0.00 (0 of earnings), and line 45 is 8% of a negative line 42: a
+    # negative amount is below the band, so 0.00, not -400.00. Lines 46 and 47 are 0.00, line 48
+    # is 0 (line 24 is 0) and line 49 is 0.00. Lines 51 to 69 are those of case (b): 3,356.10,
+    # 3,356.10, 678.00, 678.00, 348.00 and 1,026.00 on lines 51, 57, 58, 64, 65 and 69.
+    worksheet = compute(
+        "80000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="-5000",
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_30: D("0.00"),
+            CPP_PART_5_LINE_42: D("-5000.00"),
+            CPP_PART_5_LINE_43: D("0.00"),
+            CPP_PART_5_LINE_44: D("0.00"),
+            CPP_PART_5_LINE_45: D("0.00"),
+            CPP_PART_5_LINE_46: D("0.00"),
+            CPP_PART_5_LINE_47: D("0.00"),
+            CPP_PART_5_LINE_48: D("0.00"),
+            CPP_PART_5_LINE_49: D("0.00"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_51: D("3356.10"),
+            CPP_PART_5_LINE_52: D("0.00"),
+            CPP_PART_5_LINE_53: D("0.00"),
+            CPP_PART_5_LINE_54: D("0.00"),
+            CPP_PART_5_LINE_55: D("3356.10"),
+            CPP_PART_5_LINE_56: D("0.00"),
+            CPP_PART_5_LINE_57: D("3356.10"),
+            CPP_PART_5_LINE_58: D("678.00"),
+            CPP_PART_5_LINE_59: D("0.00"),
+            CPP_PART_5_LINE_60: D("0.00"),
+            CPP_PART_5_LINE_61: D("0.00"),
+            CPP_PART_5_LINE_62: D("678.00"),
+            CPP_PART_5_LINE_63: D("0.00"),
+            CPP_PART_5_LINE_64: D("678.00"),
+            CPP_PART_5_LINE_65: D("348.00"),
+            CPP_PART_5_LINE_66: D("0.00"),
+            CPP_PART_5_LINE_67: D("0.00"),
+            CPP_PART_5_LINE_68: D("348.00"),
+            CPP_PART_5_LINE_69: D("1026.00"),
+            CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE: 0,
+            CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE: 0,
+        },
+    )
+
+
+def test_part_5_without_self_employment_income_lines_43_to_47_are_0() -> None:
+    # No self-employment income and no CPT20 earnings: employment income of $60,000 with box 16
+    # the required 3,361.75. Lines 4, 22, 30 and 42 are 0, so lines 43 to 47 are 0.00; line 48
+    # is 0 (line 24 is 0), line 49 is 0.00 and line 50 is 0. Lines 51 to 69 are those of case
+    # (a): 2,796.75, 2,796.75, 565.00, 565.00, 0.00 and 565.00 on lines 51, 57, 58, 64, 65 and
+    # 69.
+    worksheet = compute(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_30: D("0.00"),
+            CPP_PART_5_LINE_42: D("0.00"),
+            CPP_PART_5_LINE_43: D("0.00"),
+            CPP_PART_5_LINE_44: D("0.00"),
+            CPP_PART_5_LINE_45: D("0.00"),
+            CPP_PART_5_LINE_46: D("0.00"),
+            CPP_PART_5_LINE_47: D("0.00"),
+            CPP_PART_5_LINE_48: D("0.00"),
+            CPP_PART_5_LINE_49: D("0.00"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_51: D("2796.75"),
+            CPP_PART_5_LINE_52: D("0.00"),
+            CPP_PART_5_LINE_53: D("0.00"),
+            CPP_PART_5_LINE_54: D("0.00"),
+            CPP_PART_5_LINE_55: D("2796.75"),
+            CPP_PART_5_LINE_56: D("0.00"),
+            CPP_PART_5_LINE_57: D("2796.75"),
+            CPP_PART_5_LINE_58: D("565.00"),
+            CPP_PART_5_LINE_59: D("0.00"),
+            CPP_PART_5_LINE_60: D("0.00"),
+            CPP_PART_5_LINE_61: D("0.00"),
+            CPP_PART_5_LINE_62: D("565.00"),
+            CPP_PART_5_LINE_63: D("0.00"),
+            CPP_PART_5_LINE_64: D("565.00"),
+            CPP_PART_5_LINE_65: D("0.00"),
+            CPP_PART_5_LINE_66: D("0.00"),
+            CPP_PART_5_LINE_67: D("0.00"),
+            CPP_PART_5_LINE_68: D("0.00"),
+            CPP_PART_5_LINE_69: D("565.00"),
+            CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE: 0,
+            CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE: 0,
+        },
+    )
+
+
+def test_part_5_without_self_employment_income_line_49_is_minus_line_48() -> None:
+    # Return BN as filed: employment income of $60,000, no self-employment income and box 16 of
+    # 3,500.00 (138.25 more than line 13). Part 3 line 24 is 138.25 (lines 16 and 19 are 115.02
+    # and 23.23, line 20 138.25, line 23 0). Lines 4, 22, 30 and 42 are 0, so lines 43 to 47 are
+    # 0.00. Line 48 is 138.25 x 2 = 276.50 and line 49 is 0.00 - 276.50 = -276.50, in brackets,
+    # so line 50 is 276.50 x 50% = 138.25, the same as the 138.25 of line 44800 on the return
+    # (line 29 of Part 3a). Lines 51 to 69 are those of case (c): 2,796.75, 2,796.75, 565.00,
+    # 565.00, 0 and 565.00 on lines 51, 57, 58, 64, 65 and 69.
+    worksheet = compute(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        cpp_t4_base_and_first_additional_contributions="3500.00",
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_30: D("0.00"),
+            CPP_PART_5_LINE_42: D("0.00"),
+            CPP_PART_5_LINE_43: D("0.00"),
+            CPP_PART_5_LINE_44: D("0.00"),
+            CPP_PART_5_LINE_45: D("0.00"),
+            CPP_PART_5_LINE_46: D("0.00"),
+            CPP_PART_5_LINE_47: D("0.00"),
+            CPP_PART_5_LINE_48: D("276.50"),
+            CPP_PART_5_LINE_49: D("-276.50"),
+            CPP_PART_5_LINE_50: D("138.25"),
+            CPP_PART_5_LINE_51: D("2796.75"),
+            CPP_PART_5_LINE_52: D("0.00"),
+            CPP_PART_5_LINE_53: D("0.00"),
+            CPP_PART_5_LINE_54: D("0.00"),
+            CPP_PART_5_LINE_55: D("2796.75"),
+            CPP_PART_5_LINE_56: D("0.00"),
+            CPP_PART_5_LINE_57: D("2796.75"),
+            CPP_PART_5_LINE_58: D("565.00"),
+            CPP_PART_5_LINE_59: D("0.00"),
+            CPP_PART_5_LINE_60: D("0.00"),
+            CPP_PART_5_LINE_61: D("0.00"),
+            CPP_PART_5_LINE_62: D("565.00"),
+            CPP_PART_5_LINE_63: D("0.00"),
+            CPP_PART_5_LINE_64: D("565.00"),
+            CPP_PART_5_LINE_65: D("0.00"),
+            CPP_PART_5_LINE_66: D("0.00"),
+            CPP_PART_5_LINE_67: D("0.00"),
+            CPP_PART_5_LINE_68: D("0.00"),
+            CPP_PART_5_LINE_69: D("565.00"),
+            CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE: 0,
+            CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE: 0,
+            CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE: D("138.25"),
+            CPP_PART_5_LINE_50_LINE_49_POSITIVE: D("276.50"),
+        },
+    )
+
+
+def test_the_trace_records_line_48_as_a_fraction_and_line_50_as_a_rate() -> None:
+    # Return BN as filed: line 24 of Part 3 is 138.25, so line 48 is 138.25 x 2 = 276.50 (a
+    # fraction, 2 / 1, to the cent), line 49 is 0.00 - 276.50 = -276.50 and line 50 is line 49 as a
+    # positive amount, 276.50, x 50% = 138.25.
+    worksheet = compute(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        cpp_t4_base_and_first_additional_contributions="3500.00",
+    )
+    assert part_5_trace(worksheet, FractionAppliedLine)[CPP_PART_5_LINE_48] == FractionAppliedLine(
+        output=CPP_PART_5_LINE_48,
+        base=CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
+        base_amount=D("138.25"),
+        fraction=Fraction(2, 1),
+        rounding=CENT,
+        result=D("276.50"),
+    )
+    assert part_5_trace(worksheet, RateAppliedLine)[CPP_PART_5_LINE_50] == RateAppliedLine(
+        output=CPP_PART_5_LINE_50,
+        base=CPP_PART_5_LINE_50_LINE_49_POSITIVE,
+        base_amount=D("276.50"),
+        rate=Rate(D("0.5")),
+        rounding=CENT,
+        result=D("138.25"),
+    )
+
+
+def test_the_trace_records_lines_43_to_45_as_the_tier_on_the_earnings_of_their_line() -> None:
+    # Case (a): line 43 is the tier on line 30 (11,300.01), line 44 the tier on line 30 and line 45
+    # the tier on line 42 (8,699.99); the contributory earnings are the earnings themselves.
+    case_a = compute("60000", (), "0", "0", "0", "0", "0", professional_income="20000")
+    tiers = part_5_trace(case_a, ContributionTierLine)
+    for line, earnings, earnings_amount, result in (
+        (CPP_PART_5_LINE_43, CPP_PART_5_LINE_30, "11300.01", "1118.70"),
+        (CPP_PART_5_LINE_44, CPP_PART_5_LINE_30, "11300.01", "226.00"),
+        (CPP_PART_5_LINE_45, CPP_PART_5_LINE_42, "8699.99", "696.00"),
+    ):
+        assert tiers[line].earnings is earnings, line.identifier
+        assert tiers[line].earnings_amount == D(earnings_amount), line.identifier
+        assert tiers[line].contributory == D(earnings_amount), line.identifier
+        assert tiers[line].result == D(result), line.identifier
+    # A loss with employment income above 71,300: line 42 is -5,000.00, which the tier floors to
+    # contributory earnings of 0, so line 45 is 0.00.
+    loss = compute("80000", (), "0", "0", "0", "0", "0", professional_income="-5000")
+    tier = part_5_trace(loss, ContributionTierLine)[CPP_PART_5_LINE_45]
+    assert tier.earnings is CPP_PART_5_LINE_42
+    assert tier.earnings_amount == D("-5000.00")
+    assert tier.contributory == D("0")
+    assert tier.result == D("0.00")
+
+
+def test_the_trace_names_the_candidate_lines_51_to_67_took_or_the_zero() -> None:
+    # Case (e) with lines 16 and 19 negative and line 23 positive (box 16 of 4,000.00, box 16A of
+    # 400.00): lines 51 and 58 take the actual amounts (lines 9 and 10 of Part 3), line 53 and line
+    # 60 take "0", line 56 takes its lesser (28.37), line 63 takes its lesser (5.73), line 65 takes
+    # line 22 and line 67 takes "0".
+    case_e = compute(
+        "80000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="15000",
+        cpp_t4_base_and_first_additional_contributions="4000.00",
+        cpp_t4_second_additional_contributions="400.00",
+    )
+    chosen = part_5_trace(case_e, ChosenByCountLine)
+    for line, count_kind, count, chosen_kind, chosen_value in (
+        (CPP_PART_5_LINE_51, CPP_LINE_16_NOT_NEGATIVE, 0, CPP_ACTUAL_BASE_CONTRIBUTIONS, "3327.73"),
+        (
+            CPP_PART_5_LINE_53,
+            CPP_LINE_16_NEGATIVE_LINE_19_POSITIVE,
+            0,
+            CPP_ZERO,
+            "0",
+        ),
+        (
+            CPP_PART_5_LINE_56,
+            CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE,
+            1,
+            CPP_PART_5_LINE_56_LESSER,
+            "28.37",
+        ),
+        (
+            CPP_PART_5_LINE_58,
+            CPP_LINE_19_NOT_NEGATIVE,
+            0,
+            CPP_ACTUAL_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            "672.27",
+        ),
+        (CPP_PART_5_LINE_60, CPP_LINE_16_POSITIVE, 0, CPP_ZERO, "0"),
+        (
+            CPP_PART_5_LINE_63,
+            CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE,
+            1,
+            CPP_PART_5_LINE_63_LESSER,
+            "5.73",
+        ),
+        (
+            CPP_PART_5_LINE_65,
+            CPP_LINE_23_NOT_NEGATIVE,
+            1,
+            CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            "348.00",
+        ),
+        (CPP_PART_5_LINE_67, CPP_LINE_20_POSITIVE, 0, CPP_ZERO, "0"),
+    ):
+        assert chosen[line] == ChosenByCountLine(
+            output=line,
+            count_kind=count_kind,
+            count=count,
+            chosen_kind=chosen_kind,
+            chosen_value=D(chosen_value),
+        ), line.identifier
+    # Line 65 takes line 21 (box 16A, 300.00) when line 23 is negative, and line 67 then takes its
+    # lesser (48.00): box 16 of 4,100.00 and box 16A of 300.00 on employment income of 80,000.
+    case_c = compute(
+        "80000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="15000",
+        cpp_t4_base_and_first_additional_contributions="4100.00",
+        cpp_t4_second_additional_contributions="300.00",
+    )
+    chosen = part_5_trace(case_c, ChosenByCountLine)
+    assert chosen[CPP_PART_5_LINE_65] == ChosenByCountLine(
+        output=CPP_PART_5_LINE_65,
+        count_kind=CPP_LINE_23_NOT_NEGATIVE,
+        count=0,
+        chosen_kind=CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
+        chosen_value=D("300.00"),
+    )
+    assert chosen[CPP_PART_5_LINE_67] == ChosenByCountLine(
+        output=CPP_PART_5_LINE_67,
+        count_kind=CPP_LINE_20_POSITIVE,
+        count=1,
+        chosen_kind=CPP_PART_5_LINE_67_LESSER,
+        chosen_value=D("48.00"),
+    )
+
+
+@pytest.mark.parametrize(
+    ("employment", "box_16", "box_16a", "line_30800", "line_22215"),
+    [
+        # Cases (a) to (e) above: the Part 5 lines 57 and 69 repeat Part 3a and Part 3b's lines for
+        # the same Part 3 figures, so they equal the base and enhanced contributions on the return.
+        ("60000", None, None, "2796.75", "565.00"),
+        ("80000", None, None, "3356.10", "1026.00"),
+        ("60000", "3500.00", "0", "2796.75", "565.00"),
+        ("90000", "4034.10", "500", "3356.10", "1074.00"),
+        ("75000", "4034.11", "0", "3356.10", "678.01"),
+        ("90000", "3434.10", "401.00", "2861.94", "973.16"),
+        ("90000", "3564.10", "791.00", "3356.10", "999.00"),
+    ],
+)
+def test_part_5_lines_57_and_69_equal_the_base_and_enhanced_contributions_on_the_return(
+    employment: str,
+    box_16: str | None,
+    box_16a: str | None,
+    line_30800: str,
+    line_22215: str,
+) -> None:
+    worksheet = compute(
+        employment,
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        cpp_t4_base_and_first_additional_contributions=box_16,
+        cpp_t4_second_additional_contributions=box_16a,
+    )
+
+    assert worksheet.get(CPP_PART_5_LINE_57).value == D(line_30800)
+    assert worksheet.get(CPP_BASE_CONTRIBUTIONS_ON_RETURN).value == D(line_30800)
+    assert worksheet.get(CPP_PART_5_LINE_69).value == D(line_22215)
+    assert worksheet.get(CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN).value == D(line_22215)
+
+
+def test_part_5_lines_49_and_50_are_not_routed_to_lines_42100_and_44800_yet() -> None:
+    # Return BN with line 27 of 20,000: line 49 is 1,764.20 and line 50 is 0, but the overpayment on
+    # the return is still Part 3a's line 29, 138.25, and the self-employment income does not move
+    # the CPP lines of the return or the total credits of line 166 beyond what Part 4 does.
+    with_part_5 = compute(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        cpp_t4_base_and_first_additional_contributions="3500.00",
+    )
+    assert with_part_5.get(CPP_PART_5_LINE_49).value == D("1764.20")
+    assert with_part_5.get(CPP_PART_5_LINE_50).value == D("0.00")
+    assert with_part_5.get(CPP_OVERPAYMENT).value == D("138.25")

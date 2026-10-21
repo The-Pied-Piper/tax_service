@@ -1412,3 +1412,183 @@ CPP_PART_5_LINE_42 = CATALOG.declare("cpp_part_5_line_42", Decimal)
 enter "0" on line 42": the candidate above when line 33 is more than line 17, else "0". Signed:
 the form prints no floor, so a negative lesser stays negative. Declared output: nothing on the
 return reads it yet."""
+
+CPP_PART_5_LINE_43 = CATALOG.declare("cpp_part_5_line_43", Decimal, non_negative=True)
+"""Part 5 line 43 "Required base contributions on CPP pensionable earnings: Line 43: amount from
+line 30 multiplied by 9.9% (maximum $6,712.20) =": the base contribution tier on line 30, the
+same tier Part 4 line 10 takes, capped at the maximum."""
+
+CPP_PART_5_LINE_44 = CATALOG.declare("cpp_part_5_line_44", Decimal, non_negative=True)
+"""Part 5 line 44 "Required first additional contributions on CPP pensionable earnings: Line 44:
+amount from line 30 multiplied by 2% (maximum $1,356.00) =": the first additional contribution
+tier on line 30, capped at the maximum."""
+
+CPP_PART_5_LINE_45 = CATALOG.declare("cpp_part_5_line_45", Decimal, non_negative=True)
+"""Part 5 line 45 "Required second additional contributions on CPP pensionable earnings: Line 45:
+amount from line 42 multiplied by 8% (maximum $792.00) =": the second additional contribution
+tier on line 42. A negative line 42 (a loss with employment income above $71,300) floors the
+band at 0, so the line is 0."""
+
+CPP_PART_5_LINE_46 = CATALOG.declare("cpp_part_5_line_46", Decimal, non_negative=True)
+"""Part 5 line 46 "Line 44 plus line 45 =": the sum of lines 44 and 45."""
+
+CPP_PART_5_LINE_47 = CATALOG.declare("cpp_part_5_line_47", Decimal, non_negative=True)
+"""Part 5 line 47 "Line 47: Line 43 plus line 46 =": the sum of lines 43 and 46."""
+
+CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE = CATALOG.declare(
+    "cpp_part_5_line_48_line_24_if_positive", Decimal, non_negative=True
+)
+"""Part 5 line 48 "Amount from line 24 of Part 3 (if positive)": line 24 of Part 3 as a positive
+amount, 0 when line 24 is negative or "0". The base of line 48, before the multiplier."""
+
+CPP_PART_5_LINE_48 = CATALOG.declare("cpp_part_5_line_48", Decimal, non_negative=True)
+"""Part 5 line 48 "Amount from line 24 of Part 3 (if positive) multiplied by 2 =": the amount
+from line 24 of Part 3 if positive, multiplied by 2, rounded half-up to the cent by the dataset.
+The overpayment's offset, subtracted on line 49."""
+
+CPP_PART_5_LINE_49 = CATALOG.declare("cpp_part_5_line_49", Decimal)
+"""Part 5 line 49 "CPP contributions payable on self-employment income and other earnings: Line 47
+minus line 48. If positive, enter the amount (in dollars and cents) on line 42100 of your return
+and continue at line 51. If negative, show in brackets and continue at line 50. =": line 47 less
+line 48. Signed: a negative result is shown in brackets and line 50 takes it as a positive
+amount."""
+
+CPP_PART_5_LINE_50_LINE_49_POSITIVE = CATALOG.declare(
+    "cpp_part_5_line_50_line_49_positive", Decimal, non_negative=True
+)
+"""Part 5 line 50 "amount from line 49 entered as a positive amount": "0" less line 49, not below
+zero, so 0 when line 49 is positive or "0". The base of line 50, before the rate."""
+
+CPP_PART_5_LINE_50 = CATALOG.declare("cpp_part_5_line_50", Decimal, non_negative=True)
+"""Part 5 line 50 "CPP overpayment: Enter the result of the following calculation (in dollars and
+cents) on line 44800 of your return: amount from line 49 entered as a positive amount multiplied
+by 50% =": the overpayment, the amount from line 49 as a positive amount times 50%, rounded
+half-up to the cent by the dataset. Declared output: nothing on the return reads it yet."""
+
+CPP_PART_5_LINE_51 = CATALOG.declare("cpp_part_5_line_51", Decimal, non_negative=True)
+"""Part 5 line 51 "If line 16 of Part 3 is positive or "0", enter the amount from line 11 of Part 3
+at lines 51 and 57, and continue at line 58. If not, enter the amount from line 9 of Part 3 and
+continue at line 52.": the required base contributions (Part 3 line 11) when line 16 is not
+negative, else the actual base contributions (Part 3 line 9)."""
+
+CPP_PART_5_LINE_52 = CATALOG.declare("cpp_part_5_line_52", Decimal, non_negative=True)
+"""Part 5 line 52 "If line 16 of Part 3 is negative: Line 52: Enter the amount from line 16 of Part
+3 as a positive amount.": line 16 of Part 3 as a positive amount, 0 when line 16 is positive or
+"0"."""
+
+CPP_PART_5_LINE_53_LESSER = CATALOG.declare("cpp_part_5_line_53_lesser", Decimal)
+"""Part 5 line 53 candidate, "Line 53: If line 16 of Part 3 is negative and line 19 of Part 3 is
+positive, enter whichever is less: amount from line 19 of Part 3 or line 52.": the lesser of line
+19 of Part 3 and line 52, which line 53 takes only when line 16 of Part 3 is negative and line 19
+is positive. Signed, as line 19 of Part 3 is."""
+
+CPP_PART_5_LINE_53 = CATALOG.declare("cpp_part_5_line_53", Decimal, non_negative=True)
+"""Part 5 line 53 "If line 16 of Part 3 is negative and line 19 of Part 3 is positive, enter
+whichever is less: amount from line 19 of Part 3 or line 52. If not, enter "0".": the candidate
+above when line 16 of Part 3 is negative and line 19 is positive, else "0"."""
+
+CPP_PART_5_LINE_54 = CATALOG.declare("cpp_part_5_line_54", Decimal, non_negative=True)
+"""Part 5 line 54 "Line 52 minus line 53 =": line 52 less line 53. Line 53 is never more than line
+52 (it is the lesser of line 19 and line 52, or 0), so the result is not negative."""
+
+CPP_PART_5_LINE_55 = CATALOG.declare("cpp_part_5_line_55", Decimal, non_negative=True)
+"""Part 5 line 55 "Line 51 plus line 53 =": the sum of lines 51 and 53."""
+
+CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE = CATALOG.declare(
+    "cpp_part_5_line_23_and_line_54_positive", int, non_negative=True
+)
+"""Count, Schedule 8 Part 5 line 56 "If line 23 of Part 3 and line 54 are both positive, enter
+whichever is less. If not, enter "0"": 1 when line 23 of Part 3 and line 54 are both more than 0,
+0 otherwise."""
+
+CPP_PART_5_LINE_56_LESSER = CATALOG.declare("cpp_part_5_line_56_lesser", Decimal)
+"""Part 5 line 56 candidate, "enter whichever is less": the lesser of line 23 of Part 3 and line
+54, which line 56 takes only when both are positive. Signed, as line 23 of Part 3 is."""
+
+CPP_PART_5_LINE_56 = CATALOG.declare("cpp_part_5_line_56", Decimal, non_negative=True)
+"""Part 5 line 56 "If line 23 of Part 3 and line 54 are both positive, enter whichever is less. If
+not, enter "0".": the candidate above when line 23 of Part 3 and line 54 are both positive, else
+"0"."""
+
+CPP_PART_5_LINE_57 = CATALOG.declare("cpp_part_5_line_57", Decimal, non_negative=True)
+"""Part 5 line 57 "Base CPP contributions through employment income: Line 55 plus line 56 Enter
+this amount (in dollars and cents) on line 30800 of your return.": the sum of lines 55 and 56.
+Declared output: nothing on the return reads it yet."""
+
+CPP_PART_5_LINE_58 = CATALOG.declare("cpp_part_5_line_58", Decimal, non_negative=True)
+"""Part 5 line 58 "If line 19 of Part 3 is positive or "0", enter the amount from line 12 of Part 3
+at line 58 and line 64, and continue at line 65. If not, enter the amount from line 10 of Part 3
+and continue at line 59.": the required first additional contributions (Part 3 line 12) when line
+19 is not negative, else the actual first additional contributions (Part 3 line 10)."""
+
+CPP_PART_5_LINE_59 = CATALOG.declare("cpp_part_5_line_59", Decimal, non_negative=True)
+"""Part 5 line 59 "If line 19 of Part 3 is negative: Line 59: Enter the amount from line 19 of Part
+3 as a positive amount.": line 19 of Part 3 as a positive amount, 0 when line 19 is positive or
+"0"."""
+
+CPP_PART_5_LINE_60_LESSER = CATALOG.declare("cpp_part_5_line_60_lesser", Decimal)
+"""Part 5 line 60 candidate, "If line 16 of Part 3 is positive, enter whichever is less: Line 60:
+amount from line 16 of Part 3 or line 59.": the lesser of line 16 of Part 3 and line 59, which
+line 60 takes only when line 16 of Part 3 is positive. Signed, as line 16 of Part 3 is."""
+
+CPP_PART_5_LINE_60 = CATALOG.declare("cpp_part_5_line_60", Decimal, non_negative=True)
+"""Part 5 line 60 "If not, enter "0".": the candidate above when line 16 of Part 3 is positive,
+else "0"."""
+
+CPP_PART_5_LINE_61 = CATALOG.declare("cpp_part_5_line_61", Decimal, non_negative=True)
+"""Part 5 line 61 "Line 61: Line 59 minus line 60 =": line 59 less line 60. Line 60 is never more
+than line 59 (it is the lesser of line 16 and line 59, or 0), so the result is not negative."""
+
+CPP_PART_5_LINE_62 = CATALOG.declare("cpp_part_5_line_62", Decimal, non_negative=True)
+"""Part 5 line 62 "Line 62: Line 58 plus line 60 =": the sum of lines 58 and 60."""
+
+CPP_PART_5_LINE_23_LESS_LINE_56 = CATALOG.declare("cpp_part_5_line_23_less_line_56", Decimal)
+"""Part 5 line 63 candidate, "the result of line 23 of Part 3 minus line 56": line 23 of Part 3
+less line 56. Signed: the form prints no floor."""
+
+CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE = CATALOG.declare(
+    "cpp_part_5_line_23_and_line_61_positive", int, non_negative=True
+)
+"""Count, Schedule 8 Part 5 line 63 "If line 23 of Part 3 and line 61 are both positive, enter
+whichever is less": 1 when line 23 of Part 3 and line 61 are both more than 0, 0 otherwise."""
+
+CPP_PART_5_LINE_63_LESSER = CATALOG.declare("cpp_part_5_line_63_lesser", Decimal)
+"""Part 5 line 63 candidate, "Line 63: amount from line 61 or the result of line 23 of Part 3 minus
+line 56": the lesser of line 61 and line 23 of Part 3 less line 56, which line 63 takes only when
+line 23 of Part 3 and line 61 are both positive. Signed: the form prints no floor."""
+
+CPP_PART_5_LINE_63 = CATALOG.declare("cpp_part_5_line_63", Decimal, non_negative=True)
+"""Part 5 line 63 "If line 23 of Part 3 and line 61 are both positive, enter whichever is less:
+Line 63: amount from line 61 or the result of line 23 of Part 3 minus line 56. If not, enter
+"0".": the candidate above when line 23 of Part 3 and line 61 are both positive, else "0"."""
+
+CPP_PART_5_LINE_64 = CATALOG.declare("cpp_part_5_line_64", Decimal, non_negative=True)
+"""Part 5 line 64 "Line 64: Line 62 plus line 63 =": the sum of lines 62 and 63."""
+
+CPP_PART_5_LINE_65 = CATALOG.declare("cpp_part_5_line_65", Decimal, non_negative=True)
+"""Part 5 line 65 "If line 23 of Part 3 is positive or "0", enter the amount from line 22 of Part 3
+on line 65 and line 68, and continue at line 69. If not, enter the amount from line 21 of Part 3
+and continue at line 66.": the required second additional contributions (Part 3 line 22) when
+line 23 is not negative, else the T4 box 16A total (Part 3 line 21)."""
+
+CPP_PART_5_LINE_66 = CATALOG.declare("cpp_part_5_line_66", Decimal, non_negative=True)
+"""Part 5 line 66 "If line 23 of Part 3 is negative: Line 66: Enter the amount from line 23 of Part
+3 as a positive amount.": line 23 of Part 3 as a positive amount, 0 when line 23 is positive or
+"0"."""
+
+CPP_PART_5_LINE_67_LESSER = CATALOG.declare("cpp_part_5_line_67_lesser", Decimal)
+"""Part 5 line 67 candidate, "If line 20 of Part 3 is positive, enter whichever is less: Line 67:
+amount from line 20 of Part 3 or line 66.": the lesser of line 20 of Part 3 and line 66, which
+line 67 takes only when line 20 of Part 3 is positive. Signed, as line 20 of Part 3 is."""
+
+CPP_PART_5_LINE_67 = CATALOG.declare("cpp_part_5_line_67", Decimal, non_negative=True)
+"""Part 5 line 67 "If not, enter "0".": the candidate above when line 20 of Part 3 is positive,
+else "0"."""
+
+CPP_PART_5_LINE_68 = CATALOG.declare("cpp_part_5_line_68", Decimal, non_negative=True)
+"""Part 5 line 68 "Line 68: Line 65 plus line 67 =": the sum of lines 65 and 67."""
+
+CPP_PART_5_LINE_69 = CATALOG.declare("cpp_part_5_line_69", Decimal, non_negative=True)
+"""Part 5 line 69 "Deduction for CPP enhanced contributions on employment income: Line 69: Line 64
+plus line 68 Enter this amount (in dollars and cents) on line 22215 of your return.": the sum of
+lines 64 and 68. Declared output: nothing on the return reads it yet."""

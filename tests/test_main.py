@@ -40,8 +40,8 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1104
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1104
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1141
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1141
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -808,6 +808,43 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/cpp_part_5_line_41",
         "ca/cpp_part_5_line_42_lesser",
         "ca/cpp_part_5_line_42",
+        "ca/cpp_part_5_line_43",
+        "ca/cpp_part_5_line_44",
+        "ca/cpp_part_5_line_45",
+        "ca/cpp_part_5_line_46",
+        "ca/cpp_part_5_line_47",
+        "ca/cpp_part_5_line_48_line_24_if_positive",
+        "ca/cpp_part_5_line_48",
+        "ca/cpp_part_5_line_49",
+        "ca/cpp_part_5_line_50_line_49_positive",
+        "ca/cpp_part_5_line_50",
+        "ca/cpp_part_5_line_51",
+        "ca/cpp_part_5_line_52",
+        "ca/cpp_part_5_line_53_lesser",
+        "ca/cpp_part_5_line_53",
+        "ca/cpp_part_5_line_54",
+        "ca/cpp_part_5_line_55",
+        "ca/cpp_part_5_line_23_and_line_54_positive",
+        "ca/cpp_part_5_line_56_lesser",
+        "ca/cpp_part_5_line_56",
+        "ca/cpp_part_5_line_57",
+        "ca/cpp_part_5_line_58",
+        "ca/cpp_part_5_line_59",
+        "ca/cpp_part_5_line_60_lesser",
+        "ca/cpp_part_5_line_60",
+        "ca/cpp_part_5_line_61",
+        "ca/cpp_part_5_line_62",
+        "ca/cpp_part_5_line_23_less_line_56",
+        "ca/cpp_part_5_line_23_and_line_61_positive",
+        "ca/cpp_part_5_line_63_lesser",
+        "ca/cpp_part_5_line_63",
+        "ca/cpp_part_5_line_64",
+        "ca/cpp_part_5_line_65",
+        "ca/cpp_part_5_line_66",
+        "ca/cpp_part_5_line_67_lesser",
+        "ca/cpp_part_5_line_67",
+        "ca/cpp_part_5_line_68",
+        "ca/cpp_part_5_line_69",
         "ca/exploration_and_development_expenses",
         "ca/other_deductions",
         "ca/split_income_dividends",
@@ -1925,15 +1962,15 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1104
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1104
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1141
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1141
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1104
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1104
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1141
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1141
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

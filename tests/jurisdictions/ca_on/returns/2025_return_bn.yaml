@@ -37,8 +37,17 @@ description: >-
   (lines 8 and 9 are $0 as line 20 is not negative); line 19 is $71,300 - $3,500 = $67,800, line
   20 is $3,361.75 x 16.80672 = 56,499.99096, to the cent $56,499.99, line 21 is $67,800 -
   $56,499.99 = $11,300.01, line 33 is line 2 of Part 3, $60,000 (not more than $71,300, so line
-  42 is $0), and line 36 is $9,900 (line 35 is $0 as line 16 is $0). The self-employment cases
-  of Part 5 are in the end to end test. The last expected lines (net income, the AMT subtotal and rate
+  42 is $0), and line 36 is $9,900 (line 35 is $0 as line 16 is $0). Lines 43 to 69 are
+  computed but not routed either (lines 49, 50, 57 and 69 are declared outputs): lines 30 and 42
+  are $0, so lines 43 to 47 are $0.00. Line 48 is line 24 of Part 3 (if positive), $138.25, x 2 =
+  $276.50, and line 49 is line 47 less line 48, $0.00 - $276.50 = -$276.50, in brackets, so line
+  50 is line 49 as a positive amount x 50%, $276.50 x 50% = $138.25 (the same $138.25 as line
+  44800 here). Lines 16 and 19 of Part 3 are positive, so line 51 is Part 3 line 11, $2,796.75
+  (lines 52 to 56 are $0), and line 57 is $2,796.75, the line 30800 of the return; line 58 is Part
+  3 line 12, $565.00 (lines 59 to 63 are $0), line 64 is $565.00, line 65 is Part 3 line 22, $0
+  (lines 66 and 67 are $0) and line 69 is $565.00 + $0 = $565.00, the line 22215 of the return.
+  The self-employment cases of Part 5 are in the end to end test. The last expected lines (net income, the AMT subtotal and
+  rate
   amount, the Ontario tax after the dividend credit and the balance owing) are the worksheet's
   figures for this income, the balance owing being the $8,676.79 of the same return without
   the overpayment less the $138.25 on line 44800, $8,538.54; the CPP lines shown below are the
@@ -70,6 +79,20 @@ sources:
     10 multiplied by 16.80672"; "Line 21: Line 19 minus line 20 (if negative, enter "0")"; "Line
     22: Enter whichever is less: amount from line 4 or line 21."; "Line 33: Line 31 plus line 32";
     "Line 36: Line 34 minus line 35".
+  - >-
+    CRA, T1-2025 Schedule 8 (form 5000-S8), Part 5, lines 43 to 69
+    (docs/cra-forms-2025/5000-s8-25e.txt): "Line 43: amount from line 30 multiplied by 9.9%
+    (maximum $6,712.20)"; "Line 44: amount from line 30 multiplied by 2% (maximum $1,356.00)"; "Line 45: amount from line 42 multiplied by 8%
+    (maximum $792.00)"; "Line 48: Amount from line 24 of Part 3 (if positive) multiplied by 2";
+    "Line 49: Line 47 minus line 48. If positive, enter the amount (in dollars and cents) on line
+    42100 of your return and continue at line 51. If negative, show in brackets and continue at
+    line 50."; "Line 50: ... amount from line 49 entered as a positive amount multiplied by 50%";
+    "Line 51: If line 16 of Part 3 is positive or "0", enter the amount from line 11 of Part 3 at
+    lines 51 and 57, and continue at line 58."; "Line 57: Line 55 plus line 56"; "Line 58: If line
+    19 of Part 3 is positive or "0", enter the amount from line 12 of Part 3 at line 58 and line
+    64, and continue at line 65."; "Line 64: Line 62 plus line 63"; "Line 65: If line 23 of Part 3
+    is positive or "0", enter the amount from line 22 of Part 3 on line 65 and line 68, and
+    continue at line 69."; "Line 68: Line 65 plus line 67"; "Line 69: Line 64 plus line 68".
   - >-
     CRA, "CPP contribution rates, maximums and exemptions", 2025 row: maximum pensionable
     earnings $71,300; basic exemption $3,500; employee rates 4.95% (base) and 1% (first
@@ -105,6 +128,15 @@ expected:
   ca/cpp_part_5_line_21: "11300.01"
   ca/cpp_part_5_line_33: "60000"
   ca/cpp_part_5_line_36: "9900.00"
+  ca/cpp_part_5_line_48: "276.50"
+  ca/cpp_part_5_line_49: "-276.50"
+  ca/cpp_part_5_line_50: "138.25"
+  ca/cpp_part_5_line_51: "2796.75"
+  ca/cpp_part_5_line_57: "2796.75"
+  ca/cpp_part_5_line_58: "565.00"
+  ca/cpp_part_5_line_64: "565.00"
+  ca/cpp_part_5_line_65: "0.00"
+  ca/cpp_part_5_line_69: "565.00"
   ca/net_income_before_adjustments: "59435.00"
   ca/other_payments_limit_income: "59435.00"
   ca/amt_part_1_subtotal: "59435.00"
