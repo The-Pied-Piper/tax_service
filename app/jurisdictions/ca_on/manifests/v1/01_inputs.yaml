@@ -239,7 +239,24 @@ inputs:
   - ca/farm_property_taxes
   - ca/farm_rent
   - ca/farm_salaries_wages_and_benefits
-  - ca/farm_motor_vehicle_expenses
+  - ca/farm_vehicle_business_kilometres
+  - ca/farm_vehicle_total_kilometres
+  - ca/farm_vehicle_fuel_and_oil
+  - ca/farm_vehicle_insurance
+  - ca/farm_vehicle_licence_and_registration
+  - ca/farm_vehicle_maintenance_and_repairs
+  - ca/farm_vehicle_electricity_zev
+  - ca/farm_vehicle_other_expenses_10
+  - ca/farm_vehicle_other_expenses_11
+  - ca/farm_vehicle_parking_fees
+  - ca/farm_vehicle_supplementary_insurance
+  - ca/farm_vehicle_interest_payable
+  - ca/farm_vehicle_interest_days
+  - ca/farm_vehicle_lease_charges
+  - ca/farm_vehicle_lease_payments_before
+  - ca/farm_vehicle_lease_days
+  - ca/farm_vehicle_list_price
+  - ca/farm_vehicle_sales_tax_rate
   - ca/farm_small_tools
   - ca/farm_mandatory_inventory_adjustment_previous_year
   - ca/farm_optional_inventory_adjustment_previous_year
