@@ -91,6 +91,7 @@ from app.jurisdictions.ca.catalog import (
     FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
     FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
     FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
+    FOREIGN_TAX_CREDIT_SHEETS,
     FOREIGN_TUITION_FEES,
     GOVERNMENT_DONATIONS,
     HIGH_INCOME_DONATION_CREDIT,
@@ -198,7 +199,7 @@ INPUTS = frozenset(
     }
 )
 
-OUTPUTS = frozenset({"ca/tuition_carried_forward"})
+OUTPUTS = frozenset({"ca/tuition_carried_forward", "ca/foreign_tax_credit_sheets"})
 
 STEPS = {
     # Schedule 8 Part 3, each contribution on employment income: line 11 (base, 4.95% of the
@@ -992,7 +993,10 @@ STEPS = {
             "net_income": "ca/foreign_tax_credit_net_income",
             "basic_federal_tax": "ca/foreign_tax_credit_basic_federal_tax",
         },
-        produces={"total": "ca/federal_non_business_foreign_tax_credit"},
+        produces={
+            "total": "ca/federal_non_business_foreign_tax_credit",
+            "sheets": "ca/foreign_tax_credit_sheets",
+        },
     ),
     # T2209 line 13 "Federal foreign tax credit", which is line 3 while the business lines (lines
     # 4 to 12) are not wired, and T1 line 129 (line 40500) "Federal foreign tax credit (complete
@@ -1431,7 +1435,7 @@ WIRING = {
                 FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
             }
         ),
-        frozenset({FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT}),
+        frozenset({FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT, FOREIGN_TAX_CREDIT_SHEETS}),
     ),
     (
         LesserOf,

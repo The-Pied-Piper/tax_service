@@ -87,6 +87,7 @@ capabilities:
       basic_federal_tax: ca/foreign_tax_credit_basic_federal_tax
     produces:
       total: ca/federal_non_business_foreign_tax_credit
+      sheets: ca/foreign_tax_credit_sheets
   # T2209 line 13 "Federal foreign tax credit", which is line 3 while the business lines
   # (lines 4 to 12) are not wired, and T1 line 129 (line 40500) "Federal foreign tax credit
   # (complete Form T2209)": "The amount on line 3 should not be more than the total of the

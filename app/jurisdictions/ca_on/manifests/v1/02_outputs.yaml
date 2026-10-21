@@ -41,3 +41,4 @@ outputs:
   - ca-on/public_long_term_care_paid
   - ca-on/unused_tuition_carried_forward
   - ca/standard_amount_allocated
+  - ca/foreign_tax_credit_sheets

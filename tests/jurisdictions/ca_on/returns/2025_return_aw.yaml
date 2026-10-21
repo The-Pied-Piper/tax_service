@@ -377,6 +377,13 @@ inputs:
   ca/resident_in_canada_throughout_2025: "1"
   ca/aged_18_or_older_at_end_of_2025: "1"
 expected:
+  ca/foreign_tax_credit_sheets:
+    - ca/foreign_non_business_tax_paid: "1500"
+      ca/net_foreign_non_business_income: "10000"
+      ca/foreign_tax_credit_sheet_line_3: "1087.60"
+    - ca/foreign_non_business_tax_paid: "100"
+      ca/net_foreign_non_business_income: "5000"
+      ca/foreign_tax_credit_sheet_line_3: "100"
   ca/taxable_capital_gains: "0.00"
   ca/slip_taxable_dividends_other_than_eligible: "200"
   ca/slip_taxable_dividends: "500"

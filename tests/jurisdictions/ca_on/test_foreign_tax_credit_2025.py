@@ -38,6 +38,7 @@ from app.jurisdictions.ca.capabilities.foreign_non_business_tax_credit import (
 from app.jurisdictions.ca.catalog import (
     FOREIGN_NON_BUSINESS_TAX_PAID,
     FOREIGN_TAX_COUNTRIES,
+    FOREIGN_TAX_CREDIT_SHEETS,
     NET_FOREIGN_NON_BUSINESS_INCOME,
 )
 
@@ -144,12 +145,13 @@ def credit(*rows: tuple[str, str], net_income: str = "100000", basic_tax: str = 
         NET_INCOME,
         BASIC_TAX,
         CREDIT,
+        FOREIGN_TAX_CREDIT_SHEETS,
     )
     records: list[dict[ArtifactKind[Any], object]] = [
         {FOREIGN_NON_BUSINESS_TAX_PAID: D(tax), NET_FOREIGN_NON_BUSINESS_INCOME: D(income)}
         for tax, income in rows
     ]
-    (output,) = capability.compute(
+    output, _sheets = capability.compute(
         (
             Artifact(FOREIGN_TAX_COUNTRIES, RecordList(FOREIGN_TAX_COUNTRIES.fields, records)),
             Artifact(NET_INCOME, D(net_income)),
