@@ -129,6 +129,14 @@ from app.jurisdictions.ca.catalog import (
     EI_SELF_EMPLOYMENT_EARNINGS,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     EMPLOYMENT_INCOME,
+    FARM_HOME_ALLOWABLE_CLAIM,
+    FARM_HOME_CARRY_FORWARD,
+    FARM_HOME_EXPENSES_AVAILABLE,
+    FARM_HOME_INCOME_LIMIT,
+    FARM_NET_INCOME_AFTER_ADJUSTMENTS,
+    FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
+    FARM_PARTNER,
+    FARM_SHARE_OF_NET_INCOME,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
@@ -677,6 +685,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (BUSINESS_HOME_EXPENSES_AVAILABLE, D("0")),
                 (BUSINESS_HOME_INCOME_LIMIT, D("0")),
             ),
+            result=D("0"),
+        ),
+        # T2042 Part 7 amount 7P "Amount 7M or 7N above, whichever is less": 0 for no
+        # business-use-of-home expenses.
+        FARM_HOME_ALLOWABLE_CLAIM: LesserOfLine(
+            output=FARM_HOME_ALLOWABLE_CLAIM,
+            parts=((FARM_HOME_EXPENSES_AVAILABLE, D("0")), (FARM_HOME_INCOME_LIMIT, D("0"))),
             result=D("0"),
         ),
     }
@@ -1733,6 +1748,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
+        # T2042 Part 7 amount 7O, floored at 0, as on the T2125.
+        FARM_HOME_CARRY_FORWARD: SubtractedNotBelowZeroLine(
+            output=FARM_HOME_CARRY_FORWARD,
+            minuend=FARM_HOME_EXPENSES_AVAILABLE,
+            minuend_amount=D("0"),
+            subtrahend=FARM_HOME_INCOME_LIMIT,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
     }
     # Schedule 8 Part 4 line 3 "Line 1 plus line 2 (if negative, enter "0")" and Schedule 13 line 1
     # "(if negative, enter "0")", on no self-employment income and no partnership income, and the
@@ -1790,6 +1814,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         BUSINESS_HOME_INCOME_LIMIT: SumNotBelowZeroLine(
             output=BUSINESS_HOME_INCOME_LIMIT,
             parts=((BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS, D("0")),),
+            total=D("0"),
+        ),
+        # T2042 Part 7 amount 7N "Net income (loss) after adjustments (amount 5C) (if negative,
+        # enter "0")": amount 5C alone, floored, 0.
+        FARM_HOME_INCOME_LIMIT: SumNotBelowZeroLine(
+            output=FARM_HOME_INCOME_LIMIT,
+            parts=((FARM_NET_INCOME_AFTER_ADJUSTMENTS, D("0")),),
             total=D("0"),
         ),
     }
@@ -1989,6 +2020,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=BUSINESS_PARTNER,
             count=0,
             chosen_kind=BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
+            chosen_value=D("0"),
+        ),
+        # T2042 Part 5 amount 5A: a partner count of 0 chooses amount 4C.
+        FARM_SHARE_OF_NET_INCOME: ChosenByCountLine(
+            output=FARM_SHARE_OF_NET_INCOME,
+            count_kind=FARM_PARTNER,
+            count=0,
+            chosen_kind=FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
             chosen_value=D("0"),
         ),
     }
