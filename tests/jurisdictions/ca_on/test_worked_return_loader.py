@@ -987,3 +987,133 @@ def test_a_rate_under_inputs_names_the_file_and_key(
         r"record list or digits",
     ):
         WorkedReturn.load(path, rates)
+
+
+# Made up for the nested record-list tests: `ex/properties` records each hold a count and an
+# `ex/units` record list (one amount per record).
+PROPERTIES = (
+    "inputs:\n"
+    "  ex/properties:\n"
+    '    - ex/floor: "1"\n'
+    "      ex/units:\n"
+    '        - ex/unit_rent: "100"\n'
+    '        - ex/unit_rent: "250.50"\n'
+    '    - ex/floor: "2"\n'
+    "      ex/units: []\n"
+)
+
+
+@pytest.fixture
+def nested() -> ArtifactRegistry:
+    """A registry of the made-up `ex/properties`, whose records hold an `ex/units` list."""
+    catalog = ArtifactCatalog(Namespace("ex"))
+    rent = catalog.declare("unit_rent", Decimal, non_negative=True)
+    floor = catalog.declare("floor", int, non_negative=True)
+    units = RecordListKind.declare(catalog, "units", fields=(rent,))
+    RecordListKind.declare(catalog, "properties", fields=(floor, units))
+    artifacts = ArtifactRegistry()
+    artifacts.register_catalog(catalog)
+    artifacts.register(FEDERAL_BASIC_TAX.identifier, FEDERAL_BASIC_TAX)
+    return artifacts
+
+
+def test_a_nested_record_list_loads_recursively(tmp_path: Path, nested: ArtifactRegistry) -> None:
+    kind = nested.kind("ex/properties")
+    units = nested.kind("ex/units")
+    rent = nested.kind("ex/unit_rent")
+    floor = nested.kind("ex/floor")
+    assert isinstance(units, RecordListKind)
+
+    worked = WorkedReturn.load(
+        write(tmp_path, with_section("inputs", PROPERTIES), "ok.yaml"), nested
+    )
+
+    expected = RecordList(
+        (floor, units),
+        [
+            {floor: 1, units: RecordList((rent,), [{rent: D("100")}, {rent: D("250.50")}])},
+            {floor: 2, units: RecordList((rent,), [])},
+        ],
+    )
+    assert worked.inputs == (Artifact(kind, expected),)
+    first = worked.inputs[0].value.records[0][units]
+    assert isinstance(first, RecordList)
+    assert str(first.records[1][rent]) == "250.50"
+
+
+def test_an_empty_nested_list_loads_as_no_records(tmp_path: Path, nested: ArtifactRegistry) -> None:
+    worked = WorkedReturn.load(
+        write(tmp_path, with_section("inputs", PROPERTIES), "ok.yaml"), nested
+    )
+    units = nested.kind("ex/units")
+
+    second = worked.inputs[0].value.records[1][units]
+
+    assert isinstance(second, RecordList)
+    assert second.records == ()
+
+
+def test_a_nested_list_that_is_not_a_list_names_the_file_and_key(
+    tmp_path: Path, nested: ArtifactRegistry
+) -> None:
+    text = 'inputs:\n  ex/properties:\n    - ex/floor: "1"\n      ex/units: "2"\n'
+    path = write(tmp_path, with_section("inputs", text))
+
+    with pytest.raises(
+        WorkedReturnError,
+        match=r"bad\.yaml: inputs\.ex/properties\[0\]\.ex/units must be a list",
+    ):
+        WorkedReturn.load(path, nested)
+
+
+def test_a_nested_record_missing_a_field_names_the_file_and_both_items(
+    tmp_path: Path, nested: ArtifactRegistry
+) -> None:
+    text = PROPERTIES.replace('        - ex/unit_rent: "250.50"\n', "        - {}\n")
+    path = write(tmp_path, with_section("inputs", text))
+
+    with pytest.raises(
+        WorkedReturnError,
+        match=(
+            r"bad\.yaml: inputs\.ex/properties\[0\]\.ex/units\[1\]: "
+            r"missing keys \['ex/unit_rent'\]"
+        ),
+    ):
+        WorkedReturn.load(path, nested)
+
+
+def test_a_nested_list_left_out_of_a_record_names_the_file_and_field(
+    tmp_path: Path, nested: ArtifactRegistry
+) -> None:
+    text = 'inputs:\n  ex/properties:\n    - ex/floor: "1"\n'
+    path = write(tmp_path, with_section("inputs", text))
+
+    with pytest.raises(
+        WorkedReturnError,
+        match=r"bad\.yaml: inputs\.ex/properties\[0\]: missing keys \['ex/units'\]",
+    ):
+        WorkedReturn.load(path, nested)
+
+
+def test_a_nested_list_is_kept_when_blanks_are_filled(
+    tmp_path: Path, nested: ArtifactRegistry
+) -> None:
+    worked = WorkedReturn.load(
+        write(tmp_path, with_section("inputs", PROPERTIES), "valid.yaml"), nested
+    )
+
+    filled = worked.with_blanks(frozenset({"ex/properties"}), frozenset(), nested)
+
+    assert filled.inputs == worked.inputs
+
+
+def test_a_nested_record_list_left_out_of_the_inputs_is_no_records(
+    tmp_path: Path, nested: ArtifactRegistry
+) -> None:
+    worked = WorkedReturn.load(write(tmp_path, VALID, "valid.yaml"), nested)
+
+    filled = worked.with_blanks(frozenset({"ex/properties"}), frozenset(), nested)
+
+    kind = nested.kind("ex/properties")
+    assert isinstance(kind, RecordListKind)
+    assert Artifact(kind, RecordList(kind.fields, [])) in filled.inputs
