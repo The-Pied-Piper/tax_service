@@ -32,6 +32,8 @@ from app.jurisdictions.ca.catalog import (
     AGE_INCOME_OVER_THRESHOLD,
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
+    AMT_PUBLICLY_LISTED_GIFTS_NET,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     CANADA_TRAINING_CREDIT_BASIS,
     CANADIAN_TUITION_FEES,
@@ -189,6 +191,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         if isinstance(line, ItemsTotalLine) and line.output is COOP_EDUCATION_CREDIT
     }
     assert rated == {
+        # Form T691 Part 1 line 26 "× 30%" applied to "Line 24 minus line 25": Return A has no
+        # gifts of publicly listed securities, so the net is 0 and so is the 30%.
+        AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT: RateAppliedLine(
+            AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
+            AMT_PUBLICLY_LISTED_GIFTS_NET,
+            D("0"),
+            Rate(D("0.3")),
+            CENT,
+            D("0"),
+        ),
         # Federal Worksheet "Line 23500" line 18 "Amount from line 17 multiplied by 15%": Return A's
         # line 17 is 115000 - 93343.00 = 21657.00 (the chart does not apply, line 23500 is 0).
         SOCIAL_BENEFITS_LINE_18: RateAppliedLine(

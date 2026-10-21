@@ -1,33 +1,39 @@
-# Return AX: Return U's self-employed filer (net business income, T1 line 13500, of $50,000)
-# with one T4 slip for self-employment income with EI premiums in box 18 that reports $20,000
-# of that net business income. Schedule 13 line 1 leaves the slip's net income out, so it is
-# 50,000 - 20,000 = 30,000 and the EI premiums on self-employment (line 9) are 30,000 x 1.64%
-# = 492.00, not Return U's 820.00. The slip does not change Schedule 8 Part 4, which reads
-# line 27 of 50,000. Every other figure is Return U's, except the lines that read the premiums:
-# the credit amounts (lines 33500 of the T1 and ON428) and so the non-refundable credits, the
-# tax after credits, the total payable and the refund or balance owing.
+# Return AX: Return U's self-employed filer (net business income, T1 line 13500, of
+# $50,000) with one T4 slip for self-employment income with EI premiums in box 18 that
+# reports $20,000 of that net business income. Schedule 13 line 1 leaves the slip's net
+# income out, so it is 50,000 - 20,000 = 30,000 and the EI premiums on self-employment
+# (line 9) are 30,000 x 1.64% = 492.00, not Return U's 820.00. The slip does not change
+# Schedule 8 Part 4, which reads line 27 of 50,000. Every other figure is Return U's,
+# except the lines that read the premiums: the credit amounts (lines 33500 of the T1 and
+# ON428) and so the non-refundable credits, the tax after credits, the total payable and
+# the refund or balance owing.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
-  An Ontario resident for all of 2025, with no spouse or common-law partner and no dependant,
-  whose only income is self-employment income: net business income (T1 line 13500) of
-  $50,000, so the net self-employment income (line 27) is 50,000 (a chosen figure). Part of it,
-  $20,000 (a chosen figure), was reported on a T4 slip for self-employment income with EI
-  premiums in box 18 (for example a taxi driver not hired as an employee). Schedule 13 line 1
-  is the total of line 12200 (0) and line 27 (50,000), 50,000, less the net income reported
-  for that slip, 20,000, not below 0: 30,000. Lines 2 and 3 are 0, so line 4 is 30,000; line 5
-  is 65,700.00; line 6 is 0, so line 7 is 65,700.00; line 8 is the lesser of 30,000 and
-  65,700.00, 30,000; line 9 is 30,000 x 1.64% = 492.00 (below 1,077.48), lines 31217 and
-  42120, each entered once for the one agreement with the Commission. Schedule 8 Part 4 does
-  not exclude the slip (line 1 is 50,000), so the CPP figures are Return U's. The credit
-  amounts of the T1 (line 33500) are 16,129.00 + 2,301.75 + 492.00 = 18,922.75, of ON428
-  12,747.00 + 2,301.75 + 492.00 = 15,540.75, each times its credit rate (14.5% = 2,743.80;
-  5.05% = 784.81, each rounded half-up to the cent), taken off the federal basic tax of
-  5,331.40 (2,587.60) and the Ontario basic tax of 1,856.80 (1,071.99). The total payable is
-  the net federal tax 2,587.60 + the Ontario tax 1,418.09 (1,071.99 + the health premium
-  346.10) + the CPP contributions payable 5,533.50 + the EI premiums payable 492.00 =
-  10,031.19, with no income tax deducted, so the balance owing is 10,031.19. The other lines
-  are Return U's. The agreement with the Commission and the slip are to be confirmed.
+  An Ontario resident for all of 2025, with no spouse or common-law partner and no
+  dependant, whose only income is self-employment income: net business income (T1 line
+  13500, from T2125 line 9946) of $50,000, entered as a T2125 with gross sales (amount 3A)
+  of $50,000 and no expenses, so the net self-employment income (line 27) is 50,000 and
+  total income (line 15000) is $50,000.00. Part of it, $20,000 (a chosen figure), was
+  reported on a T4 slip for self-employment income with EI premiums in box 18 (for example
+  a taxi driver not hired as an employee). Schedule 13 line 1 is the total of line 12200
+  (0) and line 27 (50,000), 50,000, less the net income reported for that slip, 20,000,
+  not below 0: 30,000. Lines 2 and 3 are 0, so line 4 is 30,000; line 5 is 65,700.00; line
+  6 is 0, so line 7 is 65,700.00; line 8 is the lesser of 30,000 and 65,700.00, 30,000;
+  line 9 is 30,000 x 1.64% = 492.00 (below 1,077.48), lines 31217 and 42120, each entered
+  once for the one agreement with the Commission. Schedule 8 Part 4 does not exclude the
+  slip (line 1 is 50,000), so the CPP figures are Return U's. The taxable income is
+  50,000.00 - 3,231.75 = 46,768.25. The federal basic tax is 46,768.25 x 14.5% = 6,781.40.
+  The credit amounts of the T1 (line 33500) are 16,129.00 + 2,301.75 + 492.00 = 18,922.75,
+  times 14.5% = 2,743.80, so the federal tax after credits is 4,037.60. ON428's credit
+  amounts are 12,747.00 + 2,301.75 + 492.00 = 15,540.75, times 5.05% = 784.81; the Ontario
+  basic tax is 46,768.25 x 5.05% = 2,361.80, so the Ontario tax after credits is 1,576.99
+  (no reduction, as it is above 588.00). The health premium row "more than $38,500 but not
+  more than $48,000" is $450.00, so the Ontario tax is 2,026.99. The total payable is the
+  net federal tax 4,037.60 + the Ontario tax 2,026.99 + the CPP contributions payable
+  5,533.50 + the EI premiums payable 492.00 = 12,090.09, with no income tax deducted, so
+  the balance owing is 12,090.09. The other lines are Return U's. The agreement with the
+  Commission and the slip are to be confirmed.
 sources:
   - >-
     CRA, "T1-2025 Schedule 13 Employment Insurance Premiums on Self-Employment and Other
@@ -45,8 +51,7 @@ sources:
     The other lines are those of Return U (see 2025_return_u.yaml for the CRA forms and
     quotes each follows); only the EI premiums and the lines that read them differ.
 inputs:
-  ca/other_income: "40000"
-  ca/business_income: "50000"
+  ca/business_gross_sales: "50000"
   ca/cpp_months: "12"
   ca/cpp_part_4_completed: "1"
   ca/ei_special_benefits_agreement: "1"
@@ -57,7 +62,7 @@ inputs:
 expected:
   ca/taxable_capital_gains: "0.00"
   ca/taxable_dividends_other_than_eligible: "0.00"
-  ca/total_income: "40000.00"
+  ca/total_income: "50000.00"
   ca/net_self_employment_income: "50000"
   ca/cpp_maximum_pensionable_earnings: "71300.00"
   ca/cpp_second_additional_earnings_maximum: "9900.00"
@@ -100,16 +105,16 @@ expected:
   ca/child_care_earned_income_limit: "0.00"
   ca/child_care_expenses: "0.00"
   ca/deductions_from_total_income: "3231.75"
-  ca/net_income: "36768.25"
-  ca/net_income_before_adjustments: "36768.25"
-  ca/other_payments_limit_income: "36768.25"
-  ca/taxable_income: "36768.25"
-  ca/federal_basic_tax: "5331.40"
+  ca/net_income: "46768.25"
+  ca/net_income_before_adjustments: "46768.25"
+  ca/other_payments_limit_income: "46768.25"
+  ca/taxable_income: "46768.25"
+  ca/federal_basic_tax: "6781.40"
   ca/basic_personal_amount: "16129.00"
   ca/age_maximum: "9028.00"
   ca/age_income_threshold: "45522.00"
-  ca/age_reduction: "0.00"
-  ca/age_amount_before_count: "9028.00"
+  ca/age_reduction: "186.94"
+  ca/age_amount_before_count: "8841.06"
   ca/spouse_infirmity_supplement: "0.00"
   ca/spouse_amount_basis: "16129.00"
   ca/spouse_amount_before_count: "16129.00"
@@ -122,53 +127,53 @@ expected:
   ca/canada_employment_amount: "0.00"
   ca/non_refundable_credit_amounts: "18922.75"
   ca/non_refundable_tax_credits: "2743.80"
-  ca/federal_tax_after_credits: "2587.60"
-  ca-on/ontario_basic_tax: "1856.80"
+  ca/federal_tax_after_credits: "4037.60"
+  ca-on/ontario_basic_tax: "2361.80"
   ca-on/basic_personal_amount: "12747.00"
   ca-on/eligible_dependant_base: "11905.00"
   ca-on/eligible_dependant_amount_before_maximum: "11905.00"
   ca-on/eligible_dependant_amount_before_count: "10823.00"
   ca-on/non_refundable_credit_amounts: "15540.75"
   ca-on/non_refundable_tax_credits: "784.81"
-  ca-on/ontario_tax_after_credits: "1071.99"
+  ca-on/ontario_tax_after_credits: "1576.99"
   ca-on/ontario_surtax: "0.00"
-  ca-on/ontario_tax_with_surtax: "1071.99"
+  ca-on/ontario_tax_with_surtax: "1576.99"
   ca-on/dividends_amount_a: "0.00"
   ca-on/dividends_amount_b: "0.00"
   ca-on/other_dividends_credit: "0.00"
   ca-on/dividends_amount_a_less_b: "0.00"
   ca-on/eligible_dividends_credit: "0.00"
   ca-on/dividend_tax_credit: "0.00"
-  ca-on/ontario_tax_before_dividend_credit: "1071.99"
-  ca-on/ontario_tax_less_dividend_credit: "1071.99"
+  ca-on/ontario_tax_before_dividend_credit: "1576.99"
+  ca-on/ontario_tax_less_dividend_credit: "1576.99"
   ca-on/dividend_credit_from_line_57: "0.00"
-  ca-on/ontario_tax_after_dividend_credit: "1071.99"
+  ca-on/ontario_tax_after_dividend_credit: "1576.99"
   ca-on/tax_reduction_basic: "294.00"
   ca-on/tax_reduction_for_children: "0.00"
   ca-on/tax_reduction_for_dependants: "0.00"
   ca-on/tax_reduction_amounts: "294.00"
   ca-on/ontario_tax_reduction: "0.00"
-  ca-on/ontario_tax_after_reduction: "1071.99"
+  ca-on/ontario_tax_after_reduction: "1576.99"
   ca-on/lift_credit_before_maximum: "0.00"
   ca-on/lift_maximum_credit: "0.00"
-  ca-on/lift_reduction: "213.41"
-  ca-on/ontario_tax_after_lift_credit: "1071.99"
+  ca-on/lift_reduction: "713.41"
+  ca-on/ontario_tax_after_lift_credit: "1576.99"
   ca-on/community_food_program_credit: "0.00"
-  ca-on/ontario_tax_after_food_credit: "1071.99"
-  ca-on/ontario_health_premium: "346.10"
-  ca-on/ontario_tax: "1418.09"
-  ca/net_federal_tax: "2587.60"
-  ca/total_payable: "10031.19"
-  ca/adjusted_family_net_income: "36768.25"
+  ca-on/ontario_tax_after_food_credit: "1576.99"
+  ca-on/ontario_health_premium: "450.00"
+  ca-on/ontario_tax: "2026.99"
+  ca/net_federal_tax: "4037.60"
+  ca/total_payable: "12090.09"
+  ca/adjusted_family_net_income: "46768.25"
   ca/cwb_before_reduction_without_dependant: "0.00"
-  ca/cwb_reduction_without_dependant: "1486.99"
+  ca/cwb_reduction_without_dependant: "2986.99"
   ca/cwb_before_reduction_with_dependant: "0.00"
-  ca/cwb_reduction_with_dependant: "919.39"
+  ca/cwb_reduction_with_dependant: "2419.39"
   ca-on/fertility_credit_before_maximum: "0.00"
   ca-on/fertility_credit: "0.00"
-  ca-on/care_adjusted_income: "36768.25"
-  ca-on/care_family_adjusted_income: "36768.25"
-  ca-on/care_credit_percentage: "0.61"
+  ca-on/care_adjusted_income: "46768.25"
+  ca-on/care_family_adjusted_income: "46768.25"
+  ca-on/care_credit_percentage: "0.55"
   ca-on/care_credit: "0.00"
   ca-on/seniors_transit_amount_paid_at_most_maximum: "0.00"
   ca-on/seniors_transit_credit: "0.00"
@@ -177,8 +182,12 @@ expected:
   ca-on/ontario_credits: "0.00"
   ca/provincial_credits: "0.00"
   ca/total_credits: "0.00"
-  ca/refund_or_balance_owing: "10031.19"
+  ca/refund_or_balance_owing: "12090.09"
   ca/net_capital_loss_balance_1985_to_1987: "0.00"
   ca/net_capital_loss_balance_1988_and_1989: "0.00"
   ca/net_capital_loss_balance_1990_to_1999: "0.00"
   ca/net_capital_loss_balance_2001_to_2024: "0.00"
+  ca/amt_part_1_subtotal: "46768.25"
+  ca/amt_net_capital_gains_after_adjustments: "0"
+  ca/amt_publicly_listed_gifts_adjustment: "0.00"
+  ca/amt_resource_property_and_flow_through_shares: "0"

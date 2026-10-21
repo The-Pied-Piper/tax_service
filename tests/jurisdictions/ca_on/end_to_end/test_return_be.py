@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
 
 from app.domain.errors import InputAboveBoundError
-from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     DEDUCTIONS_FROM_NET_INCOME,
@@ -49,53 +46,7 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute
-
-
-def return_be(**overrides: Any) -> Worksheet:
-    """Return BE's inputs, as in `returns/2025_return_be.yaml`.
-
-    Employment income of 60000, capital gains of 200000 (taxable capital gains 100000), net
-    capital losses of other years of 40000 with 30000 claimed, a business investment loss of
-    8000 (4000.00 allowable), carrying charges of 5000, exploration and development expenses of
-    6000, interest of 4000 and other income of 2000. One QBT: line 1 600000 at 50%, prior claims
-    of 20000, gains of 180000, a 2024 reserve of 20000 and a 2025 reserve of 40000; an election
-    for a QBT of QSBCS shares; investment expenses in 2025, with 2000 of partnership losses,
-    1000 of other investment expenses and 500 of other property income in Chart A; all 60500 of
-    the most that can be claimed is claimed.
-    """
-    inputs: dict[str, Any] = {
-        "employment_income": "60000",
-        "share_dispositions": (),
-        "unused_rrsp_contributions": "0",
-        "rrsp_contributions": "0",
-        "rrsp_deduction_limit": "10800",
-        "rrsp_amount_deducted": "0",
-        "union_dues": "0",
-        "slip_capital_gains_or_losses": "200000",
-        "unapplied_net_capital_losses_2001_to_2024": "40000",
-        "net_capital_losses_claimed": "30000",
-        "business_investment_loss": "8000",
-        "total_carrying_charges": "5000",
-        "exploration_and_development_expenses": "6000",
-        "t5_investment_income": "4000",
-        "other_income": "2000",
-        "income_tax_deducted": "8000",
-        "qbt_election_eligible_amount": "600000",
-        "qbt_percentage_allocated": "50",
-        "qbt_prior_years_claims": "20000",
-        "qbt_capital_gains": "180000",
-        "qbt_2024_reserve": "20000",
-        "qbt_2025_reserve": "40000",
-        "qbt_election_is_qbt": 1,
-        "qbt_gains_are_qsbcs_or_qffp": 1,
-        "qbt_has_investment_expenses": 1,
-        "qbt_partnership_losses": "2000",
-        "qbt_other_investment_expenses": "1000",
-        "qbt_other_property_income": "500",
-        "qbt_deduction_claimed": "60500",
-    }
-    return compute(**{**inputs, **overrides})
+from tests.jurisdictions.ca_on.end_to_end.support import D, compute, return_be
 
 
 def test_part_2_gives_line_7_of_130000_from_a_600000_election_at_50_percent() -> None:
