@@ -409,6 +409,40 @@ from app.jurisdictions.ca.catalog import (
     FISH_SUBSIDIES,
     FISH_TERMINAL_LOSS,
     FISH_TOTAL_EXPENSES,
+    FISH_VEHICLE_AVAILABLE_INTEREST,
+    FISH_VEHICLE_BUSINESS_KILOMETRES,
+    FISH_VEHICLE_BUSINESS_USE_PART,
+    FISH_VEHICLE_ELECTRICITY_ZEV,
+    FISH_VEHICLE_FUEL_AND_OIL,
+    FISH_VEHICLE_INSURANCE,
+    FISH_VEHICLE_INTEREST_DAYS,
+    FISH_VEHICLE_INTEREST_FOR_PERIOD,
+    FISH_VEHICLE_INTEREST_PAYABLE,
+    FISH_VEHICLE_LEASE_CHARGE_LIMIT_TAX,
+    FISH_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX,
+    FISH_VEHICLE_LEASE_CHARGE_PORTION,
+    FISH_VEHICLE_LEASE_CHARGES,
+    FISH_VEHICLE_LEASE_CHARGES_NET,
+    FISH_VEHICLE_LEASE_COST_LIMIT_TAX,
+    FISH_VEHICLE_LEASE_COST_LIMIT_WITH_TAX,
+    FISH_VEHICLE_LEASE_COST_PORTION,
+    FISH_VEHICLE_LEASE_DAYS,
+    FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,
+    FISH_VEHICLE_LEASE_PRICE_85_PERCENT,
+    FISH_VEHICLE_LEASE_PRICE_BASE,
+    FISH_VEHICLE_LEASING_COST,
+    FISH_VEHICLE_LICENCE_AND_REGISTRATION,
+    FISH_VEHICLE_LIST_PRICE,
+    FISH_VEHICLE_LIST_PRICE_LIMIT_TAX,
+    FISH_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
+    FISH_VEHICLE_MAINTENANCE_AND_REPAIRS,
+    FISH_VEHICLE_OTHER_EXPENSES_10,
+    FISH_VEHICLE_OTHER_EXPENSES_11,
+    FISH_VEHICLE_PARKING_FEES,
+    FISH_VEHICLE_SALES_TAX_RATE,
+    FISH_VEHICLE_SUPPLEMENTARY_INSURANCE,
+    FISH_VEHICLE_TOTAL_EXPENSES,
+    FISH_VEHICLE_TOTAL_KILOMETRES,
     FISHING_INCOME,
     FOREIGN_INVESTMENT_INCOME,
     GROSS_RENTAL_INCOME,
@@ -891,7 +925,24 @@ INPUTS = frozenset(
         "ca/fish_interest_and_bank_charges",
         "ca/fish_meals_and_entertainment",
         "ca/fish_business_taxes_licences_and_memberships",
-        "ca/fish_motor_vehicle_expenses",
+        "ca/fish_vehicle_business_kilometres",
+        "ca/fish_vehicle_total_kilometres",
+        "ca/fish_vehicle_fuel_and_oil",
+        "ca/fish_vehicle_insurance",
+        "ca/fish_vehicle_licence_and_registration",
+        "ca/fish_vehicle_maintenance_and_repairs",
+        "ca/fish_vehicle_electricity_zev",
+        "ca/fish_vehicle_other_expenses_10",
+        "ca/fish_vehicle_other_expenses_11",
+        "ca/fish_vehicle_parking_fees",
+        "ca/fish_vehicle_supplementary_insurance",
+        "ca/fish_vehicle_interest_payable",
+        "ca/fish_vehicle_interest_days",
+        "ca/fish_vehicle_lease_charges",
+        "ca/fish_vehicle_lease_payments_before",
+        "ca/fish_vehicle_lease_days",
+        "ca/fish_vehicle_list_price",
+        "ca/fish_vehicle_sales_tax_rate",
         "ca/fish_office_expenses",
         "ca/fish_nets_and_traps",
         "ca/fish_professional_fees",
@@ -3151,6 +3202,206 @@ STEPS = {
     ),
     # T2121 Part 4 "Subtotal: Add amounts 4B to 4P." (4Q): the expense lines 4B to 4N, amount 4O and
     # the other expenses of line 9270 with the terminal loss.
+    # Chart B line 18 "($350*** ÷ 30) × the number of days in the fiscal period for which interest
+    # was payable (accrual method) or paid (cash method)".
+    CapabilitySelection(
+        name="core/apply_ratio",
+        params={"rounding": "ca/business_vehicle_interest_rounding"},
+        consumes={
+            "amount": "ca/business_vehicle_interest_limit",
+            "numerator": "ca/fish_vehicle_interest_days",
+            "denominator": "ca/business_vehicle_days_divisor",
+        },
+        produces={"output": "ca/fish_vehicle_interest_for_period"},
+    ),
+    # Chart B line 19 "Available interest expense: Amount 17 or 18, whichever is less (include this
+    # in amount 4 of Chart A above)": the lesser of line 17 "Total interest payable (accrual method)
+    # or paid (cash method) in the fiscal period" and line 18.
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/fish_vehicle_interest_payable",
+                "ca/fish_vehicle_interest_for_period",
+            ),
+        },
+        produces={"output": "ca/fish_vehicle_available_interest"},
+    ),
+    # Chart C: the sales tax (GST and PST, or HST) on each printed amount at the rate of the
+    # caller's province, "Use a GST rate of 5% or HST rate applicable to your province.", then the
+    # printed amount plus that tax.
+    CapabilitySelection(
+        name="ca/apply_percentage",
+        params={"rounding": "ca/business_vehicle_sales_tax_rounding"},
+        consumes={
+            "amount": "ca/business_vehicle_list_price_limit",
+            "percentage": "ca/fish_vehicle_sales_tax_rate",
+        },
+        produces={"output": "ca/fish_vehicle_list_price_limit_tax"},
+    ),
+    CapabilitySelection(
+        name="ca/apply_percentage",
+        params={"rounding": "ca/business_vehicle_sales_tax_rounding"},
+        consumes={
+            "amount": "ca/business_vehicle_lease_charge_limit",
+            "percentage": "ca/fish_vehicle_sales_tax_rate",
+        },
+        produces={"output": "ca/fish_vehicle_lease_charge_limit_tax"},
+    ),
+    CapabilitySelection(
+        name="ca/apply_percentage",
+        params={"rounding": "ca/business_vehicle_sales_tax_rounding"},
+        consumes={
+            "amount": "ca/business_vehicle_lease_cost_limit",
+            "percentage": "ca/fish_vehicle_sales_tax_rate",
+        },
+        produces={"output": "ca/fish_vehicle_lease_cost_limit_tax"},
+    ),
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_vehicle_list_price_limit",
+                "ca/fish_vehicle_list_price_limit_tax",
+            ),
+        },
+        produces={"output": "ca/fish_vehicle_list_price_limit_with_tax"},
+    ),
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_vehicle_lease_charge_limit",
+                "ca/fish_vehicle_lease_charge_limit_tax",
+            ),
+        },
+        produces={"output": "ca/fish_vehicle_lease_charge_limit_with_tax"},
+    ),
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_vehicle_lease_cost_limit",
+                "ca/fish_vehicle_lease_cost_limit_tax",
+            ),
+        },
+        produces={"output": "ca/fish_vehicle_lease_cost_limit_with_tax"},
+    ),
+    # Chart C line 23 "Amount 23 or ($44,706 + GST and PST, or $44,706 + HST), whichever is more".
+    CapabilitySelection(
+        name="core/greater_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/fish_vehicle_list_price",
+                "ca/fish_vehicle_list_price_limit_with_tax",
+            ),
+        },
+        produces={"output": "ca/fish_vehicle_lease_price_base"},
+    ),
+    # Chart C line 24 "Amount 23 or ($44,706 + GST and PST, or $44,706 + HST), whichever is more ×
+    # 85%".
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/business_vehicle_lease_price_rate"},
+        consumes={"base": "ca/fish_vehicle_lease_price_base"},
+        produces={"output": "ca/fish_vehicle_lease_price_85_percent"},
+    ),
+    # Chart C line 25 "[($1,100 + GST and PST, or $1,100 + HST) × amount 22] ÷ 30".
+    CapabilitySelection(
+        name="core/apply_ratio",
+        params={"rounding": "ca/business_vehicle_lease_charge_rounding"},
+        consumes={
+            "amount": "ca/fish_vehicle_lease_charge_limit_with_tax",
+            "numerator": "ca/fish_vehicle_lease_days",
+            "denominator": "ca/business_vehicle_days_divisor",
+        },
+        produces={"output": "ca/fish_vehicle_lease_charge_portion"},
+    ),
+    # Chart C line 26, printed "Amount 25: amount 21" with a subtraction sign: amount 25 less amount
+    # 21, signed (a negative result is kept).
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/fish_vehicle_lease_charge_portion",
+            "less": "ca/fish_vehicle_lease_payments_before",
+        },
+        produces={"output": "ca/fish_vehicle_lease_charges_net"},
+    ),
+    # Chart C line 27 "[($38,000 + GST and PST, or $38,000 + HST) × amount 20] ÷ amount 24".
+    CapabilitySelection(
+        name="core/apply_ratio",
+        params={"rounding": "ca/business_vehicle_lease_cost_rounding"},
+        consumes={
+            "amount": "ca/fish_vehicle_lease_cost_limit_with_tax",
+            "numerator": "ca/fish_vehicle_lease_charges",
+            "denominator": "ca/fish_vehicle_lease_price_85_percent",
+        },
+        produces={"output": "ca/fish_vehicle_lease_cost_portion"},
+    ),
+    # Chart C line 28 "Eligible leasing cost: Amount 26 or 27, whichever is less (enter in amount 8
+    # of Chart A above)".
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/fish_vehicle_lease_charges_net",
+                "ca/fish_vehicle_lease_cost_portion",
+            ),
+        },
+        produces={"output": "ca/fish_vehicle_leasing_cost"},
+    ),
+    # Chart A line 12 "Total motor vehicle expenses: Add amounts 3 to 11.", amount 4 being line 19
+    # and amount 8 being line 28.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/fish_vehicle_fuel_and_oil",
+                "ca/fish_vehicle_available_interest",
+                "ca/fish_vehicle_insurance",
+                "ca/fish_vehicle_licence_and_registration",
+                "ca/fish_vehicle_maintenance_and_repairs",
+                "ca/fish_vehicle_leasing_cost",
+                "ca/fish_vehicle_electricity_zev",
+                "ca/fish_vehicle_other_expenses_10",
+                "ca/fish_vehicle_other_expenses_11",
+            ),
+        },
+        produces={"output": "ca/fish_vehicle_total_expenses"},
+    ),
+    # Chart A line 13 "Business use part: amount 1 ÷ amount 2 × amount 12 = 13".
+    CapabilitySelection(
+        name="ca/apply_ratio_or_zero",
+        params={"rounding": "ca/business_vehicle_business_use_rounding"},
+        consumes={
+            "amount": "ca/fish_vehicle_total_expenses",
+            "numerator": "ca/fish_vehicle_business_kilometres",
+            "denominator": "ca/fish_vehicle_total_kilometres",
+        },
+        produces={"output": "ca/fish_vehicle_business_use_part"},
+    ),
+    # Chart A line 16 "Allowable motor vehicle expenses: Add amounts 13 to 15 (enter this total on
+    # line 9281 of Part 4)": the line 9281 kind, produced here and no longer a caller input.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/fish_vehicle_business_use_part",
+                "ca/fish_vehicle_parking_fees",
+                "ca/fish_vehicle_supplementary_insurance",
+            ),
+        },
+        produces={"output": "ca/fish_motor_vehicle_expenses"},
+    ),
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -4842,4 +5093,131 @@ WIRING = {
         frozenset({FISHING_INCOME}),
     ),
     (ClosingUcc, frozenset({FISH_CCA_CLASSES}), frozenset({FISH_CLOSING_UCC})),
+    (
+        ApplyRatio,
+        frozenset(
+            {
+                BUSINESS_VEHICLE_INTEREST_LIMIT,
+                FISH_VEHICLE_INTEREST_DAYS,
+                BUSINESS_VEHICLE_DAYS_DIVISOR,
+            }
+        ),
+        frozenset({FISH_VEHICLE_INTEREST_FOR_PERIOD}),
+    ),
+    (
+        LesserOf,
+        frozenset({FISH_VEHICLE_INTEREST_PAYABLE, FISH_VEHICLE_INTEREST_FOR_PERIOD}),
+        frozenset({FISH_VEHICLE_AVAILABLE_INTEREST}),
+    ),
+    (
+        ApplyPercentage,
+        frozenset({BUSINESS_VEHICLE_LIST_PRICE_LIMIT, FISH_VEHICLE_SALES_TAX_RATE}),
+        frozenset({FISH_VEHICLE_LIST_PRICE_LIMIT_TAX}),
+    ),
+    (
+        ApplyPercentage,
+        frozenset({BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT, FISH_VEHICLE_SALES_TAX_RATE}),
+        frozenset({FISH_VEHICLE_LEASE_CHARGE_LIMIT_TAX}),
+    ),
+    (
+        ApplyPercentage,
+        frozenset({BUSINESS_VEHICLE_LEASE_COST_LIMIT, FISH_VEHICLE_SALES_TAX_RATE}),
+        frozenset({FISH_VEHICLE_LEASE_COST_LIMIT_TAX}),
+    ),
+    (
+        Sum,
+        frozenset({BUSINESS_VEHICLE_LIST_PRICE_LIMIT, FISH_VEHICLE_LIST_PRICE_LIMIT_TAX}),
+        frozenset({FISH_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX}),
+    ),
+    (
+        Sum,
+        frozenset({BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT, FISH_VEHICLE_LEASE_CHARGE_LIMIT_TAX}),
+        frozenset({FISH_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX}),
+    ),
+    (
+        Sum,
+        frozenset({BUSINESS_VEHICLE_LEASE_COST_LIMIT, FISH_VEHICLE_LEASE_COST_LIMIT_TAX}),
+        frozenset({FISH_VEHICLE_LEASE_COST_LIMIT_WITH_TAX}),
+    ),
+    (
+        GreaterOf,
+        frozenset({FISH_VEHICLE_LIST_PRICE, FISH_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX}),
+        frozenset({FISH_VEHICLE_LEASE_PRICE_BASE}),
+    ),
+    (
+        ApplyRate,
+        frozenset({FISH_VEHICLE_LEASE_PRICE_BASE}),
+        frozenset({FISH_VEHICLE_LEASE_PRICE_85_PERCENT}),
+    ),
+    (
+        ApplyRatio,
+        frozenset(
+            {
+                FISH_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX,
+                FISH_VEHICLE_LEASE_DAYS,
+                BUSINESS_VEHICLE_DAYS_DIVISOR,
+            }
+        ),
+        frozenset({FISH_VEHICLE_LEASE_CHARGE_PORTION}),
+    ),
+    (
+        Subtract,
+        frozenset({FISH_VEHICLE_LEASE_CHARGE_PORTION, FISH_VEHICLE_LEASE_PAYMENTS_BEFORE}),
+        frozenset({FISH_VEHICLE_LEASE_CHARGES_NET}),
+    ),
+    (
+        ApplyRatio,
+        frozenset(
+            {
+                FISH_VEHICLE_LEASE_COST_LIMIT_WITH_TAX,
+                FISH_VEHICLE_LEASE_CHARGES,
+                FISH_VEHICLE_LEASE_PRICE_85_PERCENT,
+            }
+        ),
+        frozenset({FISH_VEHICLE_LEASE_COST_PORTION}),
+    ),
+    (
+        LesserOf,
+        frozenset({FISH_VEHICLE_LEASE_CHARGES_NET, FISH_VEHICLE_LEASE_COST_PORTION}),
+        frozenset({FISH_VEHICLE_LEASING_COST}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                FISH_VEHICLE_FUEL_AND_OIL,
+                FISH_VEHICLE_AVAILABLE_INTEREST,
+                FISH_VEHICLE_INSURANCE,
+                FISH_VEHICLE_LICENCE_AND_REGISTRATION,
+                FISH_VEHICLE_MAINTENANCE_AND_REPAIRS,
+                FISH_VEHICLE_LEASING_COST,
+                FISH_VEHICLE_ELECTRICITY_ZEV,
+                FISH_VEHICLE_OTHER_EXPENSES_10,
+                FISH_VEHICLE_OTHER_EXPENSES_11,
+            }
+        ),
+        frozenset({FISH_VEHICLE_TOTAL_EXPENSES}),
+    ),
+    (
+        ApplyRatioOrZero,
+        frozenset(
+            {
+                FISH_VEHICLE_TOTAL_EXPENSES,
+                FISH_VEHICLE_BUSINESS_KILOMETRES,
+                FISH_VEHICLE_TOTAL_KILOMETRES,
+            }
+        ),
+        frozenset({FISH_VEHICLE_BUSINESS_USE_PART}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                FISH_VEHICLE_BUSINESS_USE_PART,
+                FISH_VEHICLE_PARKING_FEES,
+                FISH_VEHICLE_SUPPLEMENTARY_INSURANCE,
+            }
+        ),
+        frozenset({FISH_MOTOR_VEHICLE_EXPENSES}),
+    ),
 }

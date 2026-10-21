@@ -233,6 +233,9 @@ from app.jurisdictions.ca.catalog import (
     FISH_REPAIRS_TOTAL,
     FISH_REPAIRS_YOUR_COST,
     FISH_TOTAL_EXPENSES,
+    FISH_VEHICLE_LEASE_CHARGE_PORTION,
+    FISH_VEHICLE_LEASE_CHARGES_NET,
+    FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,
     FISHING_INCOME,
     GROSS_RENTAL_INCOME,
     HIGH_INCOME_DONATIONS,
@@ -470,6 +473,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             minuend=FARM_VEHICLE_LEASE_CHARGE_PORTION,
             minuend_amount=D("0"),
             subtrahend=FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T2121 Chart C line 26 "Amount 25: amount 21" (printed with a subtraction sign): line
+        # 25 is 0 for Return A (no leased vehicle), and amount 21 is 0.
+        FISH_VEHICLE_LEASE_CHARGES_NET: SubtractedLine(
+            output=FISH_VEHICLE_LEASE_CHARGES_NET,
+            minuend=FISH_VEHICLE_LEASE_CHARGE_PORTION,
+            minuend_amount=D("0"),
+            subtrahend=FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,
             subtrahend_amount=D("0"),
             result=D("0"),
         ),

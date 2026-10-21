@@ -65,6 +65,8 @@ from app.jurisdictions.ca.catalog import (
     FARM_VEHICLE_LEASE_PRICE_BASE,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FIRST_TIER_DONATION_CREDIT,
+    FISH_VEHICLE_LEASE_PRICE_85_PERCENT,
+    FISH_VEHICLE_LEASE_PRICE_BASE,
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
     INCLUDED_CAPITAL_GAIN,
@@ -224,6 +226,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         FARM_VEHICLE_LEASE_PRICE_85_PERCENT: RateAppliedLine(
             FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
             FARM_VEHICLE_LEASE_PRICE_BASE,
+            D("44706.00"),
+            Rate(D("0.85")),
+            CENT,
+            D("38000.10"),
+        ),
+        # Form T2121 Chart C line 24 "× 85%" of amount 23 or the list price limit with tax: Return A
+        # has no leased vehicle, so the base is 44706.00 and the 85% is 38000.10.
+        FISH_VEHICLE_LEASE_PRICE_85_PERCENT: RateAppliedLine(
+            FISH_VEHICLE_LEASE_PRICE_85_PERCENT,
+            FISH_VEHICLE_LEASE_PRICE_BASE,
             D("44706.00"),
             Rate(D("0.85")),
             CENT,

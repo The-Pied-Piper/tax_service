@@ -53,6 +53,12 @@ from app.jurisdictions.ca.catalog import (
     FARM_VEHICLE_SALES_TAX_RATE,
     FARMING_INCOME,
     FHSA_INCOME,
+    FISH_VEHICLE_BUSINESS_USE_PART,
+    FISH_VEHICLE_INTEREST_PAYABLE,
+    FISH_VEHICLE_LEASE_CHARGES_NET,
+    FISH_VEHICLE_LEASING_COST,
+    FISH_VEHICLE_LIST_PRICE,
+    FISH_VEHICLE_SALES_TAX_RATE,
     FISHING_INCOME,
     FOREIGN_INVESTMENT_INCOME,
     GROSS_RENTAL_INCOME,
@@ -776,5 +782,26 @@ def test_the_t2042_chart_kinds_are_registered_under_their_names(registry: Artifa
         FARM_VEHICLE_INTEREST_PAYABLE,
         FARM_VEHICLE_LIST_PRICE,
         FARM_VEHICLE_LEASING_COST,
+    ):
+        assert kind.value_type is Decimal, kind.identifier
+
+
+def test_the_t2121_chart_kinds_are_registered_under_their_names(registry: ArtifactRegistry) -> None:
+    # Form T2121 Charts A to C: the caller's chart amounts and the lines the charts compute, which
+    # line 9281 takes as its line 16. The printed constants are the T2125's datasets, shared.
+    assert registry.get("ca/fish_vehicle_interest_payable") is FISH_VEHICLE_INTEREST_PAYABLE
+    assert registry.get("ca/fish_vehicle_list_price") is FISH_VEHICLE_LIST_PRICE
+    assert registry.get("ca/fish_vehicle_sales_tax_rate") is FISH_VEHICLE_SALES_TAX_RATE
+    assert registry.get("ca/fish_vehicle_business_use_part") is FISH_VEHICLE_BUSINESS_USE_PART
+    assert registry.get("ca/fish_vehicle_leasing_cost") is FISH_VEHICLE_LEASING_COST
+    assert registry.get("ca/fish_vehicle_lease_charges_net") is FISH_VEHICLE_LEASE_CHARGES_NET
+    # Amount 26 is printed without a floor, so it is the one signed chart line; the leasing cost
+    # (line 28) is a non-negative amount, so a negative one is refused.
+    assert FISH_VEHICLE_LEASE_CHARGES_NET.non_negative is False
+    assert FISH_VEHICLE_LEASING_COST.non_negative is True
+    for kind in (
+        FISH_VEHICLE_INTEREST_PAYABLE,
+        FISH_VEHICLE_LIST_PRICE,
+        FISH_VEHICLE_LEASING_COST,
     ):
         assert kind.value_type is Decimal, kind.identifier
