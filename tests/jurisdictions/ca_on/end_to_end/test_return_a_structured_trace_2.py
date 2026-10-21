@@ -2241,6 +2241,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             BUSINESS_HOME_EXPENSES,
             ((BUSINESS_HOME_ALLOWABLE_CLAIM, D("0")),),
             D("0"),
+        ),
         # Form T657 (line 25400): Return A enters nothing on it, so its lines are 0 (or,
         # where they read another line, that line's figure).
         ANNUAL_GAINS_SCHEDULE_3_TOTAL: SumLine(

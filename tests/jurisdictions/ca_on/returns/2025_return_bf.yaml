@@ -149,4 +149,5 @@ expected:
   ca/other_payments_limit_income: "185000.00"
   ca/qsbcs_proceeds: "500000"
   ca/cpp_second_additional_earnings_maximum: "9900.00"
+  ca/amt_part_1_subtotal: "10000.00"
   ca/taxable_income: "10000.00"

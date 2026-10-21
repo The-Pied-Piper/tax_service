@@ -42,13 +42,13 @@ from app.jurisdictions.ca.catalog import (
     AGE_INCOME_THRESHOLD,
     AGE_MAXIMUM,
     AGE_REDUCTION,
+    ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_RENTAL_PROPERTY_INCOME_BEFORE_CCA,
-    ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     ANNUAL_GAINS_LIMIT_2025,
     ANNUAL_GAINS_LINE_3_AT_INCLUSION_RATE,
     ANNUAL_GAINS_LINE_5,
@@ -745,6 +745,9 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             parts=(
                 (BUSINESS_HOME_EXPENSES_AVAILABLE, D("0")),
                 (BUSINESS_HOME_INCOME_LIMIT, D("0")),
+            ),
+            result=D("0"),
+        ),
         # Form T657 (line 25400): Return A enters nothing on it, so its lines are 0 (or,
         # where they read another line, that line's figure).
         CHART_2025_PART_1_AMOUNT_N: LesserOfLine(
@@ -1846,6 +1849,9 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             minuend=BUSINESS_HOME_EXPENSES_AVAILABLE,
             minuend_amount=D("0"),
             subtrahend=BUSINESS_HOME_INCOME_LIMIT,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Form T657 (line 25400): Return A enters nothing on it, so its lines are 0 (or,
         # where they read another line, that line's figure).
         ABIL_CLAIMED_AFTER_1984_AND_BEFORE_2025: SubtractedNotBelowZeroLine(
@@ -2025,6 +2031,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         BUSINESS_HOME_INCOME_LIMIT: SumNotBelowZeroLine(
             output=BUSINESS_HOME_INCOME_LIMIT,
             parts=((BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS, D("0")),),
+            total=D("0"),
+        ),
         # Form T657 (line 25400): Return A enters nothing on it, so its lines are 0 (or,
         # where they read another line, that line's figure).
         ANNUAL_GAINS_LINE_5: SumNotBelowZeroLine(

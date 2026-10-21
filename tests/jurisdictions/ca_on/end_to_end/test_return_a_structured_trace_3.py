@@ -967,6 +967,9 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             minuend=BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,
             minuend_amount=D("0"),
             subtrahend=BUSINESS_HOME_EXPENSES,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Form T657 (line 25400): Return A enters nothing on it, so its lines are 0 (or,
         # where they read another line, that line's figure).
         CHART_2025_PART_2_AMOUNT_F: SubtractedLine(
