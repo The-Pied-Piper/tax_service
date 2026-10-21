@@ -46,6 +46,7 @@ from app.jurisdictions.ca.catalog import (
     CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,
     CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
+    CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS,
     CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
@@ -61,8 +62,26 @@ from app.jurisdictions.ca.catalog import (
     CPP_LINE_24_POSITIVE,
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_OVERPAYMENT,
+    CPP_PART_3_LINE_2,
     CPP_PART_3B_LINE_36,
     CPP_PART_3B_LINE_48,
+    CPP_PART_5_LINE_4,
+    CPP_PART_5_LINE_6,
+    CPP_PART_5_LINE_7,
+    CPP_PART_5_LINE_10,
+    CPP_PART_5_LINE_13,
+    CPP_PART_5_LINE_16,
+    CPP_PART_5_LINE_20,
+    CPP_PART_5_LINE_21,
+    CPP_PART_5_LINE_22,
+    CPP_PART_5_LINE_30,
+    CPP_PART_5_LINE_33,
+    CPP_PART_5_LINE_33_MORE_THAN_LINE_17,
+    CPP_PART_5_LINE_35,
+    CPP_PART_5_LINE_36,
+    CPP_PART_5_LINE_41,
+    CPP_PART_5_LINE_42,
+    CPP_PART_5_LINE_42_LESSER,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PENSIONABLE_EARNINGS,
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
@@ -387,8 +406,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 1072
-    assert len(order) == 1072
+    assert len(order) == 1104
+    assert len(order) == 1104
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -516,6 +535,39 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     )
     assert position[CPP_ENHANCED_CONTRIBUTIONS] < position[CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN]
     assert position[CPP_LINE_24_POSITIVE] < position[CPP_OVERPAYMENT] < position[TOTAL_CREDITS]
+    # Schedule 8 Part 5: line 4 is summed before line 22 takes the lesser of it and line 21, which
+    # follows line 20 (line 10 times 16.80672); line 30 follows line 22 and line 29, and line 42
+    # follows the count of line 33 more than line 17, the lines 36 and 41 and the lesser of them.
+    assert (
+        position[CPP_PART_3_LINE_2]
+        < position[CPP_PART_5_LINE_33]
+        < position[CPP_PART_5_LINE_33_MORE_THAN_LINE_17]
+    )
+    assert position[CPP_PART_5_LINE_4] < position[CPP_PART_5_LINE_22] < position[CPP_PART_5_LINE_30]
+    assert (
+        position[CPP_PART_5_LINE_10]
+        < position[CPP_PART_5_LINE_20]
+        < position[CPP_PART_5_LINE_21]
+        < position[CPP_PART_5_LINE_22]
+    )
+    assert (
+        position[CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE]
+        < position[CPP_PART_5_LINE_6]
+    )
+    assert position[CPP_PART_5_LINE_6] < position[CPP_PART_5_LINE_7] < position[CPP_PART_5_LINE_10]
+    assert (
+        position[CPP_PART_5_LINE_13]
+        < position[CPP_PART_5_LINE_16]
+        < position[CPP_PART_5_LINE_35]
+        < position[CPP_PART_5_LINE_36]
+    )
+    assert (
+        position[CPP_PART_5_LINE_30]
+        < position[CPP_PART_5_LINE_41]
+        < position[CPP_PART_5_LINE_42_LESSER]
+        < position[CPP_PART_5_LINE_42]
+    )
+    assert position[CPP_PART_5_LINE_33_MORE_THAN_LINE_17] < position[CPP_PART_5_LINE_42]
     for limit in (
         CHILD_CARE_LIMIT_FOR_CHILDREN_UNDER_SEVEN,
         CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,

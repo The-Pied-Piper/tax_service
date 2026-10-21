@@ -283,6 +283,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_OR_QPP_BENEFITS,
     CPP_OVERPAYMENT,
+    CPP_PART_3_LINE_2,
     CPP_PART_3B_LINE_30,
     CPP_PART_3B_LINE_32,
     CPP_PART_3B_LINE_34,
@@ -297,10 +298,20 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_3B_LINE_46,
     CPP_PART_3B_LINE_47,
     CPP_PART_3B_LINE_48,
+    CPP_PART_5_LINE_4,
+    CPP_PART_5_LINE_7,
+    CPP_PART_5_LINE_9,
+    CPP_PART_5_LINE_10,
+    CPP_PART_5_LINE_13,
+    CPP_PART_5_LINE_15,
+    CPP_PART_5_LINE_16,
+    CPP_PART_5_LINE_33,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+    CPT20_EARNINGS,
+    CPT20_T4_EARNINGS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDIT_AMOUNTS_SUBTOTAL,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
@@ -942,6 +953,47 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Schedule 8 Part 5 line 4 "Add lines 1 to 3.": line 1 is 0.00 and lines 2 and 3 are "0" for
+        # Return A.
+        CPP_PART_5_LINE_4: SumLine(
+            CPP_PART_5_LINE_4,
+            (
+                (PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS, D("0.00")),
+                (CPT20_EARNINGS, D("0")),
+                (CPT20_T4_EARNINGS, D("0")),
+            ),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 10 "Line 7 plus line 9": line 7 is the T4 box 16 total and line 9
+        # is "0" for Return A.
+        CPP_PART_5_LINE_10: SumLine(
+            CPP_PART_5_LINE_10,
+            (
+                (CPP_PART_5_LINE_7, D("4034.10")),
+                (CPP_PART_5_LINE_9, D("0")),
+            ),
+            D("4034.10"),
+        ),
+        # Schedule 8 Part 5 line 16 "Line 13 plus line 15": line 13 is the T4 box 16A total and line
+        # 15 is "0" for Return A.
+        CPP_PART_5_LINE_16: SumLine(
+            CPP_PART_5_LINE_16,
+            (
+                (CPP_PART_5_LINE_13, D("396.00")),
+                (CPP_PART_5_LINE_15, D("0")),
+            ),
+            D("396.00"),
+        ),
+        # Schedule 8 Part 5 line 33 "Line 31 plus line 32": line 31 is line 4 (0.00) and line 32 is
+        # line 2 of Part 3, the lesser of 81,200 and the employment income of 110,000.
+        CPP_PART_5_LINE_33: SumLine(
+            CPP_PART_5_LINE_33,
+            (
+                (CPP_PART_5_LINE_4, D("0.00")),
+                (CPP_PART_3_LINE_2, D("81200.00")),
+            ),
+            D("81200.00"),
+        ),
         # Schedule 8 Part 3b line 34 "Line 30 plus line 32": line 30 is line 11 (line 16 is "0") and
         # line 32 is "0".
         CPP_PART_3B_LINE_34: SumLine(

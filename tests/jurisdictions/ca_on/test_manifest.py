@@ -32,6 +32,7 @@ from tests.jurisdictions.ca_on.manifest_families import (
     capital_gains_deduction_t657_charts_2021_to_2023,
     credits_against_federal_tax,
     deductions,
+    deductions_schedule_8_part_5,
     income,
     net_tax,
     non_refundable_credits,
@@ -54,6 +55,7 @@ FAMILIES: tuple[ModuleType, ...] = (
     income,
     rrsp_fhsa,
     deductions,
+    deductions_schedule_8_part_5,
     taxable_income,
     capital_gains_deduction_qbt,
     capital_gains_deduction_t657,
@@ -172,14 +174,14 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1072
+    assert len(found.capabilities) == 1104
     # T2125 Area A column 22 "UCC at the end of the year", a record list of each class's closing UCC
     # for next year, and Part 7 line 7O "Business-use-of-home expenses available to carry forward",
     # which nothing else on the return reads.
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1072
+    assert len(found.capabilities) == 1104
     # Form T691 Part 1 line 12 "Add lines 1, 4, 7, and 11.", the adjusted taxable income subtotal,
     # Part 9 line 6 "Enter this amount on line 14 of Part 1", Part 1 line 20 "Line 15 minus line 19"
     # and Part 1 line 26 "Line 24 minus line 25" times 30%, which nothing else on the return reads
@@ -187,7 +189,7 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1072
+    assert len(found.capabilities) == 1104
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -197,6 +199,6 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 1072
-    assert len(composition.order) == 1072
+    assert len(composition.order) == 1104
+    assert len(composition.order) == 1104
     assert wiring == WIRING
