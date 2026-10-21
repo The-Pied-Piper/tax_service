@@ -642,14 +642,12 @@ capabilities:
         - ca/itc_recapture_at_20_percent
     produces:
       output: ca/itc_recapture
-  # T1 line 132 "Line 130 plus line 131 =": line 126 (42900) "Basic federal tax" and line
-  # 131. Line 127 "Federal surtax on income earned outside Canada (complete Form T2203)" is
-  # not triggered on a return whose income is all allocated to Ontario and line 129 (40500)
-  # is not yet wired, so lines 128 and 130 carry line 126 unchanged.
+  # T1 line 132 "Line 130 plus line 131 =": line 130 and line 131 "Recapture of investment tax
+  # credit (complete Form T2038(IND))".
   - name: core/sum
     consumes:
       parts:
-        - ca/federal_tax_after_credits
+        - ca/federal_tax_less_foreign_tax_credit
         - ca/itc_recapture
     produces:
       output: ca/federal_tax_with_itc_recapture

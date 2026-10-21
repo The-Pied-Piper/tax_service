@@ -18,7 +18,9 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
     ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
     ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
+    CAPITAL_GAINS_DEDUCTION,
     DEDUCTIONS_FROM_NET_INCOME,
+    EXEMPT_INCOME_DEDUCTIONS,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     NET_CAPITAL_LOSS_BALANCE_1985_TO_1987,
     NET_CAPITAL_LOSS_BALANCE_1988_AND_1989,
@@ -28,6 +30,7 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSSES_CLAIMED,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
+    QUALIFYING_TRANSFER_CAPITAL_GAINS_DEDUCTION,
     REMAINING_ADJUSTED_LOSSES_1985_TO_1987,
     REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
     REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
@@ -186,3 +189,33 @@ def test_the_taxable_income_kinds_are_money() -> None:
         DEDUCTIONS_FROM_NET_INCOME,
     ):
         assert kind.value_type is Decimal, kind.identifier
+
+
+def test_the_deductions_the_foreign_tax_credit_subtracts_are_the_registered_ones(
+    registry: ArtifactRegistry,
+) -> None:
+    # Form T2209 note (3), net income, "minus any:" "capital gains deduction for qualifying
+    # business transfer or qualifying cooperative conversion you claimed (line 25395 of your
+    # return)", "capital gains deduction you claimed (line 25400 of your return)" and "amounts
+    # deductible as net employment income from a prescribed international organization, as
+    # foreign income exempt under a tax treaty, or as adult basic education tuition assistance
+    # (included on line 25600 of your return)". T1 lines 64 and 65 are not wired into line 68.
+    assert (
+        registry.get("ca/qualifying_transfer_capital_gains_deduction")
+        is QUALIFYING_TRANSFER_CAPITAL_GAINS_DEDUCTION
+    )
+    assert registry.get("ca/capital_gains_deduction") is CAPITAL_GAINS_DEDUCTION
+    assert registry.get("ca/exempt_income_deductions") is EXEMPT_INCOME_DEDUCTIONS
+
+
+def test_the_deductions_the_foreign_tax_credit_subtracts_are_non_negative_money(
+    registry: ArtifactRegistry,
+) -> None:
+    for kind in (
+        QUALIFYING_TRANSFER_CAPITAL_GAINS_DEDUCTION,
+        CAPITAL_GAINS_DEDUCTION,
+        EXEMPT_INCOME_DEDUCTIONS,
+    ):
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+        assert registry.kind(kind.identifier) is kind

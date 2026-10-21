@@ -177,8 +177,8 @@ def test_return_vs_recapture_is_300_plus_100_and_adds_to_the_federal_tax_on_line
         "itc_recapture: itc_recapture_at_15_percent 300 + itc_recapture_at_20_percent 100 = 400"
     ) in rendered
     assert (
-        "federal_tax_with_itc_recapture: federal_tax_after_credits 4177.93 + itc_recapture 400 "
-        "= 4577.93"
+        "federal_tax_with_itc_recapture: federal_tax_less_foreign_tax_credit 4177.93 "
+        "+ itc_recapture 400 = 4577.93"
     ) in rendered
 
 

@@ -137,6 +137,13 @@ inputs:
   - ca/unapplied_net_capital_losses_2001_to_2024
   - ca/net_capital_losses_claimed
   - ca/additional_deductions
+  # Form T2209 note (3), net income, "minus any:" lines 25395 and 25400 of the return and the
+  # part of line 25600 that is net employment income from a prescribed international
+  # organization, foreign income exempt under a tax treaty, or adult basic education
+  # tuition assistance; read by the foreign tax credit alone.
+  - ca/qualifying_transfer_capital_gains_deduction
+  - ca/capital_gains_deduction
+  - ca/exempt_income_deductions
   - ca/zone_a_days_lived
   - ca/zone_a_additional_residency_days
   - ca/zone_a_special_work_site_benefits
@@ -274,6 +281,10 @@ inputs:
   - ca/tax_paid_by_instalments
   - ca/itc_recapture_expenditure_at_15_percent
   - ca/itc_recapture_expenditure_at_20_percent
+  # Form T2209, "the federal refundable First Nations abatement (line 44100 of your return)"
+  # of note (4), and the countries of lines 1 and 2, each with lines 43100 and 43300.
+  - ca/first_nations_abatement
+  - ca/foreign_tax_countries
   - ca/labour_sponsored_funds_net_cost
   - ca/advanced_canada_workers_benefit
   - ca/resp_aips_received_part_a

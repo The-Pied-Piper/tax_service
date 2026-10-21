@@ -38,6 +38,7 @@ from app.jurisdictions.ca.catalog import (
     AGE_MAXIMUM,
     AGED_18_OR_OLDER_AT_END_OF_2025,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
     BUSINESS_INVESTMENT_LOSS,
@@ -119,6 +120,12 @@ from app.jurisdictions.ca.catalog import (
     FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT,
     FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
     FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS,
+    FIRST_NATIONS_ABATEMENT,
+    FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
+    FOREIGN_TAX_CREDIT_NET_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+    FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
     GROSS_RENTAL_INCOME,
     HIGH_INCOME_DONATIONS,
     INFIRM_CHILDREN,
@@ -303,6 +310,35 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     gated = {line.output: line for line in trace if isinstance(line, ThresholdGateLine)}
     fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
     assert subtracted == {
+        # Form T2209 note (3), net income: line 23400 less line 23500 (the line 23600 amount, here
+        # not floored), none repaid on Return A; then the deductions it lists, none on Return A,
+        # come off that amount plus line 68360 of Form T1206.
+        FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME: SubtractedLine(
+            output=FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
+            minuend=NET_INCOME_BEFORE_ADJUSTMENTS,
+            minuend_amount=D("115000"),
+            subtrahend=SOCIAL_BENEFITS_REPAYMENT,
+            subtrahend_amount=D("0"),
+            result=D("115000"),
+        ),
+        FOREIGN_TAX_CREDIT_NET_INCOME: SubtractedLine(
+            output=FOREIGN_TAX_CREDIT_NET_INCOME,
+            minuend=FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
+            minuend_amount=D("115000"),
+            subtrahend=FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+            subtrahend_amount=D("0"),
+            result=D("115000"),
+        ),
+        # Note (4), basic federal tax: line 42900 plus the dividend tax credit, less the federal
+        # refundable First Nations abatement (line 44100), none on Return A.
+        FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX: SubtractedLine(
+            output=FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
+            minuend=BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+            minuend_amount=D("16951.38"),
+            subtrahend=FIRST_NATIONS_ABATEMENT,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
         # Schedule ON(S11) line 8 "Line 6 minus line 7": the unused balance, 0 on the return
         # with nothing brought forward, less the claim of line 5, 0.
         ontario.UNUSED_TUITION_CARRIED_FORWARD: SubtractedLine(

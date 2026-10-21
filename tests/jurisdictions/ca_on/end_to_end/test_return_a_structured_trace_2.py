@@ -17,6 +17,7 @@ from app.jurisdictions.ca.catalog import (
     AGE_AMOUNT,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_PERSONAL_AMOUNT,
     BOND_GAIN_OR_LOSS,
     BUSINESS_INCOME,
@@ -29,6 +30,7 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GAINS_AFTER_DEFERRAL,
     CAPITAL_GAINS_BEFORE_INVESTMENT_LOSS_REDUCTION,
     CAPITAL_GAINS_BEFORE_RESERVES,
+    CAPITAL_GAINS_DEDUCTION,
     CAPITAL_GAINS_DEDUCTIONS_1985_TO_1987,
     CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_ELIGIBLE_CAPITAL_PROPERTY,
     CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_OTHER_THAN_ELIGIBLE_CAPITAL_PROPERTY,
@@ -100,11 +102,13 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
     EMPLOYMENT_INCOME,
+    EXEMPT_INCOME_DEDUCTIONS,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
     FARMING_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
@@ -141,6 +145,9 @@ from app.jurisdictions.ca.catalog import (
     FISHING_INCOME,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+    FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
     FOREIGN_TUITION_FEES,
     GOVERNMENT_DONATIONS,
     GROSS_RENTAL_INCOME,
@@ -235,6 +242,7 @@ from app.jurisdictions.ca.catalog import (
     QFFP_FORECLOSURE_GAIN_OR_LOSS,
     QFFP_GAIN_OR_LOSS,
     QSBCS_GAIN_OR_LOSS,
+    QUALIFYING_TRANSFER_CAPITAL_GAINS_DEDUCTION,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REAL_ESTATE_GAIN_OR_LOSS,
@@ -1251,7 +1259,40 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         FEDERAL_TAX_WITH_ITC_RECAPTURE: SumLine(
             FEDERAL_TAX_WITH_ITC_RECAPTURE,
-            ((FEDERAL_TAX_AFTER_CREDITS, D("16951.38")), (ITC_RECAPTURE, D("0"))),
+            ((FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT, D("16951.38")), (ITC_RECAPTURE, D("0"))),
+            D("16951.38"),
+        ),
+        # Form T2209 note (3), net income, "minus any:" the deductions of lines 24400, 24900,
+        # 25000, 25300, 25395, 25400 and the exempt part of 25600, in that order: Return A claims
+        # none of them.
+        FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS: SumLine(
+            FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+            (
+                (CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION, D("0")),
+                (SECURITY_OPTIONS_DEDUCTIONS, D("0")),
+                (OTHER_PAYMENTS_DEDUCTION, D("0")),
+                (NET_CAPITAL_LOSSES_OF_OTHER_YEARS, D("0")),
+                (QUALIFYING_TRANSFER_CAPITAL_GAINS_DEDUCTION, D("0")),
+                (CAPITAL_GAINS_DEDUCTION, D("0")),
+                (EXEMPT_INCOME_DEDUCTIONS, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T2209 note (3), net income, "plus the amount on line 68360 of Form T1206, Total split
+        # income": the line 23600 amount (not floored) plus it; Return A has no split income.
+        FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME: SumLine(
+            FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
+            (
+                (FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME, D("115000")),
+                (TOTAL_SPLIT_INCOME, D("0")),
+            ),
+            D("115000"),
+        ),
+        # Form T2209 note (4), basic federal tax: "Line 42900 of your return plus any federal
+        # dividend tax credit (line 40425 of your return)": Return A has no dividends.
+        BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT: SumLine(
+            BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+            ((FEDERAL_TAX_AFTER_CREDITS, D("16951.38")), (DIVIDEND_TAX_CREDIT, D("0"))),
             D("16951.38"),
         ),
         # T1 line 138 (line 41600) "Add lines 135 to 137.": lines 135 and 137, in line order.

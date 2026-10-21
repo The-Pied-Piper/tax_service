@@ -24,6 +24,7 @@ from app.jurisdictions.ca.catalog import (
     CANADA_TRAINING_CREDIT_LIMIT,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
     CANADIAN_TUITION_FEES,
+    CAPITAL_GAINS_DEDUCTION,
     CAPITAL_GAINS_DEDUCTIONS_1985_TO_1987,
     CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_ELIGIBLE_CAPITAL_PROPERTY,
     CAPITAL_GAINS_DEDUCTIONS_1988_AND_1989_OTHER_THAN_ELIGIBLE_CAPITAL_PROPERTY,
@@ -84,6 +85,7 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
     EMPLOYMENT_INCOME,
+    EXEMPT_INCOME_DEDUCTIONS,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
     FARMING_INCOME,
     FHSA_ANNUAL_LIMITS_FOR_2024_AND_PRIOR_YEARS,
@@ -106,9 +108,12 @@ from app.jurisdictions.ca.catalog import (
     FHSA_VARIABLE_B_AMOUNT,
     FHSA_VARIABLE_F_AMOUNT,
     FHSA_VARIABLE_H_AMOUNT,
+    FIRST_NATIONS_ABATEMENT,
     FISHING_INCOME,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
+    FOREIGN_NON_BUSINESS_TAX_PAID,
+    FOREIGN_TAX_COUNTRIES,
     FOREIGN_TUITION_FEES,
     GOVERNMENT_DONATIONS,
     INCOME_TAX_DEDUCTED,
@@ -131,6 +136,7 @@ from app.jurisdictions.ca.catalog import (
     NET_FARMING_INCOME,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FISHING_INCOME,
+    NET_FOREIGN_NON_BUSINESS_INCOME,
     NET_PARTNERSHIP_INCOME,
     NET_PROFESSIONAL_INCOME,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
@@ -180,6 +186,7 @@ from app.jurisdictions.ca.catalog import (
     QFFP_DISPOSITIONS,
     QFFP_FORECLOSURE_DISPOSITIONS,
     QSBCS_DISPOSITIONS,
+    QUALIFYING_TRANSFER_CAPITAL_GAINS_DEDUCTION,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REAL_ESTATE_DISPOSITIONS,
@@ -688,6 +695,15 @@ def principal_residence_properties(*rows: ResidenceProperty) -> Artifact[RecordL
     )
 
 
+def foreign_tax_countries(*rows: tuple[str, str]) -> Artifact[RecordList]:
+    """The Form T2209 countries, one record per (line 43100, line 43300) row, in the order given."""
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {FOREIGN_NON_BUSINESS_TAX_PAID: D(tax_paid), NET_FOREIGN_NON_BUSINESS_INCOME: D(income)}
+        for tax_paid, income in rows
+    ]
+    return Artifact(FOREIGN_TAX_COUNTRIES, RecordList(FOREIGN_TAX_COUNTRIES.fields, records))
+
+
 def compute(
     employment_income: str,
     share_dispositions: tuple[Disposition, ...],
@@ -975,6 +991,11 @@ def compute(
     spouse_or_common_law_partner_on_december_31: int = 0,
     claims_tax_reduction_amounts_at_equal_net_income: int = 0,
     unused_tuition_amounts_brought_forward: str = "0",
+    qualifying_transfer_capital_gains_deduction: str = "0",
+    capital_gains_deduction: str = "0",
+    exempt_income_deductions: str = "0",
+    first_nations_abatement: str = "0",
+    foreign_tax_countries_rows: tuple[tuple[str, str], ...] = (),
 ) -> Worksheet:
     return service().compute(
         CA_ON,
@@ -1447,6 +1468,14 @@ def compute(
             ontario.UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD,
             D(unused_tuition_amounts_brought_forward),
         ),
+        Artifact(
+            QUALIFYING_TRANSFER_CAPITAL_GAINS_DEDUCTION,
+            D(qualifying_transfer_capital_gains_deduction),
+        ),
+        Artifact(CAPITAL_GAINS_DEDUCTION, D(capital_gains_deduction)),
+        Artifact(EXEMPT_INCOME_DEDUCTIONS, D(exempt_income_deductions)),
+        Artifact(FIRST_NATIONS_ABATEMENT, D(first_nations_abatement)),
+        foreign_tax_countries(*foreign_tax_countries_rows),
     )
 
 

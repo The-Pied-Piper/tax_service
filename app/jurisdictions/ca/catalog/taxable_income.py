@@ -209,13 +209,35 @@ year's column A."""
 ADDITIONAL_DEDUCTIONS = CATALOG.declare("additional_deductions", Decimal, non_negative=True)
 """Additional deductions, T1 line 67 and line 25600 "Additional deductions": a starting amount."""
 
+QUALIFYING_TRANSFER_CAPITAL_GAINS_DEDUCTION = CATALOG.declare(
+    "qualifying_transfer_capital_gains_deduction", Decimal, non_negative=True
+)
+"""Capital gains deduction for qualifying transfers, T1 line 64 and line 25395 "Capital gains
+deduction for qualifying business transfers or qualifying cooperative conversions (complete Form
+T2048)": a starting amount, the figure Form T2209 note (3) subtracts as "capital gains deduction
+for qualifying business transfer or qualifying cooperative conversion you claimed (line 25395 of
+your return)". Only the foreign tax credit's net income reads it: line 68 does not add line 64."""
+
+CAPITAL_GAINS_DEDUCTION = CATALOG.declare("capital_gains_deduction", Decimal, non_negative=True)
+"""Capital gains deduction, T1 line 65 and line 25400 "Capital gains deduction (complete Form
+T657)": a starting amount, the figure Form T2209 note (3) subtracts as "capital gains deduction you
+claimed (line 25400 of your return)". Only the foreign tax credit's net income reads it: line 68
+does not add line 65."""
+
+EXEMPT_INCOME_DEDUCTIONS = CATALOG.declare("exempt_income_deductions", Decimal, non_negative=True)
+"""Exempt income deductions, Form T2209 note (3) "amounts deductible as net employment income from a
+prescribed international organization, as foreign income exempt under a tax treaty, or as adult
+basic education tuition assistance (included on line 25600 of your return)": a starting amount, the
+part of T1 line 67 and line 25600 "Additional deductions" that the note names. It is already inside
+`additional_deductions`; only the foreign tax credit's net income reads it on its own."""
+
 DEDUCTIONS_FROM_NET_INCOME = CATALOG.declare(
     "deductions_from_net_income", Decimal, non_negative=True
 )
 """Deductions from net income, T1 line 68 and line 25700 "Add lines 58 to 67.": the sum of the
 deductions from net income, here, in line order, lines 58, 59, 60, 61, 62, 63, 66 and 67 (lines
 24400, 24900, 25000, 25100, 25200, 25300, 25500 and 25600); lines 64 and 65 (25395 and 25400) are
-not wired yet.
+not added in, and their inputs are read only by the foreign tax credit's net income.
 """
 
 TAXABLE_INCOME = CATALOG.declare("taxable_income", Decimal, non_negative=True)

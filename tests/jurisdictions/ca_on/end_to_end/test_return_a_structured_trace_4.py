@@ -105,8 +105,11 @@ from app.jurisdictions.ca.catalog import (
     EI_SELF_EMPLOYMENT_EARNINGS,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     EMPLOYMENT_INCOME,
+    FEDERAL_FOREIGN_TAX_CREDIT,
+    FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
     FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS,
@@ -371,12 +374,23 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         and line.output
         in (
             COOP_EDUCATION_CREDIT,
+            FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
             TRAVEL_TOTAL_ZONE_A,
             TRAVEL_TOTAL_ZONE_B,
             STANDARD_AMOUNT_ALLOCATED,
         )
     }
     assert lesser == {
+        # Form T2209 line 13 "should not be more than" line 42900: the line 3 total, 0 with no
+        # country, against line 42900, 16951.38.
+        FEDERAL_FOREIGN_TAX_CREDIT: LesserOfLine(
+            FEDERAL_FOREIGN_TAX_CREDIT,
+            (
+                (FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT, D("0")),
+                (FEDERAL_TAX_AFTER_CREDITS, D("16951.38")),
+            ),
+            D("0"),
+        ),
         # Schedule ON(S11) line 5 "Enter whichever is less: amount from line 1 or line 4": 0 on
         # the return with nothing brought forward, against line 4 (the room, 151920.41).
         ontario.UNUSED_TUITION_CLAIMED: LesserOfLine(
@@ -854,6 +868,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # T1 line 130 "Line 128 minus line 129": line 126 (line 127 is not wired) less line 129
+        # (40500), which is 0 with no country.
+        FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT: SubtractedNotBelowZeroLine(
+            output=FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
+            minuend=FEDERAL_TAX_AFTER_CREDITS,
+            minuend_amount=D("16951.38"),
+            subtrahend=FEDERAL_FOREIGN_TAX_CREDIT,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
         # Schedule ON(S11) line 4 "Line 2 minus line 3 (if negative, enter "0")": the income cap of
         # line 2, 169100.99 (the Ontario tax of ON428 line 8 divided by 5.05%), less line 3, the
         # credit amounts through the disability transfer, 17180.58.
@@ -1625,6 +1649,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert item_sums == []
     assert item_lessers == []
     assert items_totals == {
+        # Form T2209 lines 1 to 3 over the countries: Return A lists none, so the total is 0.
+        FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT: ItemsTotalLine(
+            FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT, (), D("0")
+        ),
         COOP_EDUCATION_CREDIT: ItemsTotalLine(COOP_EDUCATION_CREDIT, (), D("0")),
         TRAVEL_TOTAL_ZONE_A: ItemsTotalLine(TRAVEL_TOTAL_ZONE_A, (), D("0")),
         TRAVEL_TOTAL_ZONE_B: ItemsTotalLine(TRAVEL_TOTAL_ZONE_B, (), D("0")),

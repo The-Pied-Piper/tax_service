@@ -60,6 +60,13 @@ INPUTS = frozenset(
         "ca/unapplied_net_capital_losses_2001_to_2024",
         "ca/net_capital_losses_claimed",
         "ca/additional_deductions",
+        # Form T2209 note (3), net income, "minus any:" lines 25395 and 25400 of the return and
+        # the part of line 25600 that is net employment income from a prescribed international
+        # organization, foreign income exempt under a tax treaty, or adult basic education
+        # tuition assistance; read by the foreign tax credit alone.
+        "ca/qualifying_transfer_capital_gains_deduction",
+        "ca/capital_gains_deduction",
+        "ca/exempt_income_deductions",
     }
 )
 
