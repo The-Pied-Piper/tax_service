@@ -252,6 +252,7 @@ from app.jurisdictions.ca.catalog import (
     TOP_UP_CREDITS_BASE,
     TOP_UP_EXCESS,
     TOP_UP_THRESHOLD,
+    TOSI_ADJUSTED_NET_INCOME,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
     TOTAL_CHARITABLE_DONATIONS,
@@ -1562,7 +1563,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # Schedule ON479-A line 4 "Add lines 1 to 3 (if negative, enter "0"). Adjusted income".
         CARE_ADJUSTED_INCOME: SumNotBelowZeroLine(
             CARE_ADJUSTED_INCOME,
-            ((NET_INCOME_BEFORE_ADJUSTMENTS, D("115000")), (CHILD_CARE_EXPENSES, D("0"))),
+            ((TOSI_ADJUSTED_NET_INCOME, D("115000")), (CHILD_CARE_EXPENSES, D("0"))),
             D("115000"),
         ),
         # Guide T4036 "You cannot use CCA to create or increase a rental loss": the most line 9936

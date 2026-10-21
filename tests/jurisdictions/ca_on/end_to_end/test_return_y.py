@@ -118,6 +118,6 @@ def test_a_net_income_below_zero_is_floored_at_zero_on_line_4() -> None:
     assert worksheet.get(CARE_FAMILY_ADJUSTED_INCOME).value == D("0")
     assert worksheet.get(CARE_CREDIT_PERCENTAGE).value == Rate(D("0.75"))
     assert (
-        "care_adjusted_income: net_income_before_adjustments -1000 + child_care_expenses 0, "
+        "care_adjusted_income: tosi_adjusted_net_income -1000 + child_care_expenses 0, "
         "not below 0 = 0"
     ) in EnglishTraceRenderer().render_all(worksheet.trace)
