@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
-from app.domain.artifact import ArtifactKind
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     BUSINESS_ADJUSTED_GROSS_SALES,
@@ -72,11 +71,6 @@ BUSINESS = {
 FURNITURE = ("8", "10000", "0", "0", "0", "0", "2000", 0)
 
 
-def line(worksheet: Worksheet, kind: ArtifactKind[Any]) -> Any:
-    """The value of the T2125 kind `kind` on `worksheet`."""
-    return worksheet.get(kind).value
-
-
 def return_bb(**overrides: Any) -> Worksheet:
     """Return BB's inputs, as in `returns/2025_return_bb.yaml`: a sole proprietor whose only
     activity is a business.
@@ -100,13 +94,13 @@ def test_return_bbs_gross_business_income_is_50000_on_line_8299_and_t1_line_1349
     # and line 8299, "Line 8000 plus amount 3O", is 50000. T1 line 13499 is line 8299.
     worksheet = return_bb()
 
-    assert line(worksheet, BUSINESS_SALES_SUBTOTAL) == D("50000")
-    assert line(worksheet, BUSINESS_QUICK_METHOD_ASSISTANCE) == D("0")
-    assert line(worksheet, BUSINESS_ADJUSTED_GROSS_SALES) == D("50000")
-    assert line(worksheet, BUSINESS_RECAPTURED_CCA) == D("0")
-    assert line(worksheet, BUSINESS_OTHER_INCOME_WITH_RECAPTURE) == D("0")
-    assert line(worksheet, BUSINESS_RESERVES_AND_OTHER_INCOME) == D("0")
-    assert line(worksheet, BUSINESS_GROSS_INCOME) == D("50000")
+    assert worksheet.get(BUSINESS_SALES_SUBTOTAL).value == D("50000")
+    assert worksheet.get(BUSINESS_QUICK_METHOD_ASSISTANCE).value == D("0")
+    assert worksheet.get(BUSINESS_ADJUSTED_GROSS_SALES).value == D("50000")
+    assert worksheet.get(BUSINESS_RECAPTURED_CCA).value == D("0")
+    assert worksheet.get(BUSINESS_OTHER_INCOME_WITH_RECAPTURE).value == D("0")
+    assert worksheet.get(BUSINESS_RESERVES_AND_OTHER_INCOME).value == D("0")
+    assert worksheet.get(BUSINESS_GROSS_INCOME).value == D("50000")
 
 
 def test_return_bbs_gross_profit_is_the_gross_income_with_no_cost_of_goods_sold() -> None:
@@ -114,11 +108,11 @@ def test_return_bbs_gross_profit_is_the_gross_income_with_no_cost_of_goods_sold(
     # and line 8518 are 0 and line 8519 is 50000 - 0, which is amount 4A.
     worksheet = return_bb()
 
-    assert line(worksheet, BUSINESS_GROSS_INCOME_FOR_GROSS_PROFIT) == D("50000")
-    assert line(worksheet, BUSINESS_COST_OF_GOODS_SUBTOTAL) == D("0")
-    assert line(worksheet, BUSINESS_COST_OF_GOODS_SOLD) == D("0")
-    assert line(worksheet, BUSINESS_GROSS_PROFIT) == D("50000")
-    assert line(worksheet, BUSINESS_GROSS_INCOME_BEFORE_EXPENSES) == D("50000")
+    assert worksheet.get(BUSINESS_GROSS_INCOME_FOR_GROSS_PROFIT).value == D("50000")
+    assert worksheet.get(BUSINESS_COST_OF_GOODS_SUBTOTAL).value == D("0")
+    assert worksheet.get(BUSINESS_COST_OF_GOODS_SOLD).value == D("0")
+    assert worksheet.get(BUSINESS_GROSS_PROFIT).value == D("50000")
+    assert worksheet.get(BUSINESS_GROSS_INCOME_BEFORE_EXPENSES).value == D("50000")
 
 
 def test_return_bbs_area_a_claims_2000_on_line_9936() -> None:
@@ -128,19 +122,19 @@ def test_return_bbs_area_a_claims_2000_on_line_9936() -> None:
     # No class has a negative column 7 or is empty, so there is no recapture and no terminal loss.
     worksheet = return_bb()
 
-    assert line(worksheet, BUSINESS_CCA_TABLE_CLAIM) == D("2000")
-    assert line(worksheet, BUSINESS_CCA_CLAIM_LESS_PERSONAL_PART) == D("2000")
-    assert line(worksheet, BUSINESS_CCA_CLAIM) == D("2000")
-    assert line(worksheet, BUSINESS_RECAPTURED_CCA) == D("0")
-    assert line(worksheet, BUSINESS_TERMINAL_LOSS) == D("0")
-    assert line(worksheet, BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS) == D("0")
+    assert worksheet.get(BUSINESS_CCA_TABLE_CLAIM).value == D("2000")
+    assert worksheet.get(BUSINESS_CCA_CLAIM_LESS_PERSONAL_PART).value == D("2000")
+    assert worksheet.get(BUSINESS_CCA_CLAIM).value == D("2000")
+    assert worksheet.get(BUSINESS_RECAPTURED_CCA).value == D("0")
+    assert worksheet.get(BUSINESS_TERMINAL_LOSS).value == D("0")
+    assert worksheet.get(BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS).value == D("0")
 
 
 def test_return_bbs_closing_ucc_is_8000_for_class_8() -> None:
     # Column 22 is column 7 less column 21: 10000 - 2000 = 8000, next year's column 2.
     worksheet = return_bb()
 
-    closing = line(worksheet, BUSINESS_CLOSING_UCC)
+    closing = worksheet.get(BUSINESS_CLOSING_UCC).value
     assert [list(record.values()) for record in closing.records] == [[D("8"), D("8000")]]
 
 
@@ -149,8 +143,8 @@ def test_return_bbs_total_expenses_are_18000_and_net_income_before_adjustments_3
     # amount 4V (line 9270) is 0: line 9368 is 18000. Line 9369 is 50000 - 18000 = 32000.
     worksheet = return_bb()
 
-    assert line(worksheet, BUSINESS_TOTAL_EXPENSES) == D("18000")
-    assert line(worksheet, BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS) == D("32000")
+    assert worksheet.get(BUSINESS_TOTAL_EXPENSES).value == D("18000")
+    assert worksheet.get(BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("32000")
 
 
 def test_return_bbs_sole_proprietor_has_no_partnership_amounts() -> None:
@@ -158,11 +152,11 @@ def test_return_bbs_sole_proprietor_has_no_partnership_amounts() -> None:
     # so amount 5C is 32000, line 9943 is 0 and amount 5D is 32000.
     worksheet = return_bb()
 
-    assert line(worksheet, BUSINESS_SHARE_OF_NET_INCOME) == D("32000")
-    assert line(worksheet, BUSINESS_PARTNER_OTHER_AMOUNTS_TOTAL) == D("0")
-    assert line(worksheet, BUSINESS_PARTNER_OTHER_AMOUNTS) == D("0")
-    assert line(worksheet, BUSINESS_PARTNERSHIP_TOTAL) == D("32000")
-    assert line(worksheet, BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS) == D("32000")
+    assert worksheet.get(BUSINESS_SHARE_OF_NET_INCOME).value == D("32000")
+    assert worksheet.get(BUSINESS_PARTNER_OTHER_AMOUNTS_TOTAL).value == D("0")
+    assert worksheet.get(BUSINESS_PARTNER_OTHER_AMOUNTS).value == D("0")
+    assert worksheet.get(BUSINESS_PARTNERSHIP_TOTAL).value == D("32000")
+    assert worksheet.get(BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS).value == D("32000")
 
 
 def test_return_bbs_business_use_of_home_claim_is_2000() -> None:
@@ -172,13 +166,13 @@ def test_return_bbs_business_use_of_home_claim_is_2000() -> None:
     # which is line 9945.
     worksheet = return_bb()
 
-    assert line(worksheet, BUSINESS_HOME_EXPENSES_SUBTOTAL) == D("2000")
-    assert line(worksheet, BUSINESS_HOME_EXPENSES_BUSINESS_PART) == D("2000")
-    assert line(worksheet, BUSINESS_HOME_EXPENSES_AVAILABLE) == D("2000")
-    assert line(worksheet, BUSINESS_HOME_INCOME_LIMIT) == D("32000")
-    assert line(worksheet, BUSINESS_HOME_CARRY_FORWARD) == D("0")
-    assert line(worksheet, BUSINESS_HOME_ALLOWABLE_CLAIM) == D("2000")
-    assert line(worksheet, BUSINESS_HOME_EXPENSES) == D("2000")
+    assert worksheet.get(BUSINESS_HOME_EXPENSES_SUBTOTAL).value == D("2000")
+    assert worksheet.get(BUSINESS_HOME_EXPENSES_BUSINESS_PART).value == D("2000")
+    assert worksheet.get(BUSINESS_HOME_EXPENSES_AVAILABLE).value == D("2000")
+    assert worksheet.get(BUSINESS_HOME_INCOME_LIMIT).value == D("32000")
+    assert worksheet.get(BUSINESS_HOME_CARRY_FORWARD).value == D("0")
+    assert worksheet.get(BUSINESS_HOME_ALLOWABLE_CLAIM).value == D("2000")
+    assert worksheet.get(BUSINESS_HOME_EXPENSES).value == D("2000")
 
 
 def test_return_bbs_net_business_income_is_30000_on_line_9946_and_t1_line_13500() -> None:
