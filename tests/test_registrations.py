@@ -101,6 +101,12 @@ def test_importing_the_federal_package_registers_the_disposition_gains_only_capa
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.disposition_gains_only"
 
 
+def test_importing_the_federal_package_registers_the_disposition_proceeds_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/disposition_proceeds")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.disposition_proceeds"
+
+
 def test_importing_the_federal_package_registers_the_cca_claim_capability() -> None:
     registered = CapabilityRegistry.shared().get("ca/cca_claim")
 

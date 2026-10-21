@@ -76,6 +76,7 @@ from app.jurisdictions.ca.trace import (
     DisabilityTransferLine,
     DispositionGainLine,
     DispositionGainOnlyLine,
+    DispositionProceedsLine,
     OtherDependantMedicalLine,
     PrincipalResidenceGainLine,
     RecapturedCcaLine,
@@ -392,6 +393,10 @@ def disposition_gain_only_line() -> DispositionGainOnlyLine:
     return DispositionGainOnlyLine(
         DISPOSITION_GAIN, 2, D("800.00"), D("1000.00"), D("30.00"), D("-230.00"), D("0")
     )
+
+
+def disposition_proceeds_line() -> DispositionProceedsLine:
+    return DispositionProceedsLine(DISPOSITION_GAIN, 2, D("800.00"))
 
 
 def principal_residence_gain_line() -> PrincipalResidenceGainLine:
@@ -3966,6 +3971,39 @@ def test_disposition_gain_only_lines_differ_by_each_field() -> None:
     for name, value in changed.items():
         assert line != DispositionGainOnlyLine(**{**same, name: value}), name
     assert line != DispositionGainOnlyLine(**{**same, "output": CAREGIVER})
+
+
+def test_disposition_proceeds_line_fields_in_order() -> None:
+    line = disposition_proceeds_line()
+
+    assert line == DispositionProceedsLine(
+        output=DISPOSITION_GAIN, position=2, proceeds=D("800.00")
+    )
+    assert [f.name for f in fields(line)] == ["output", "position", "proceeds"]
+
+
+def test_disposition_proceeds_line_amount_is_the_proceeds() -> None:
+    line = disposition_proceeds_line()
+
+    assert line.amount == D("800.00")
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+def test_disposition_proceeds_lines_differ_by_each_field() -> None:
+    line = disposition_proceeds_line()
+    same = {f.name: getattr(line, f.name) for f in fields(line)}
+    changed: dict[str, Any] = {"position": 1, "proceeds": D("800.01")}
+
+    assert set(changed) == set(same) - {"output"}
+    for name, value in changed.items():
+        assert line != DispositionProceedsLine(**{**same, name: value}), name
+    assert line != DispositionProceedsLine(**{**same, "output": CAREGIVER})
+
+
+def test_the_disposition_proceeds_line_is_a_class_of_its_own() -> None:
+    assert not isinstance(disposition_proceeds_line(), DispositionGainLine)
+    assert not isinstance(disposition_proceeds_line(), DispositionGainOnlyLine)
+    assert not isinstance(disposition_gain_line(), DispositionProceedsLine)
 
 
 def test_the_two_disposition_lines_are_classes_of_their_own() -> None:

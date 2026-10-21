@@ -9,6 +9,7 @@ from app.adapters.inbound.trace_english.registry import english_renderer
 from app.jurisdictions.ca.trace.gains import (
     DispositionGainLine,
     DispositionGainOnlyLine,
+    DispositionProceedsLine,
     PrincipalResidenceGainLine,
 )
 
@@ -89,3 +90,17 @@ class DispositionGainOnlyRenderer:
             f"only "
             f"{EnglishFigures.money(result)}, not below 0"
         )
+
+
+@english_renderer
+class DispositionProceedsRenderer:
+    """English text for DispositionProceedsLine."""
+
+    line_class = DispositionProceedsLine
+
+    def render(self, line: DispositionProceedsLine) -> str:
+        """The English sentence for `line`."""
+        output = line.output
+        position = line.position
+        proceeds = line.proceeds
+        return f"{output.label}: disposition {position}: proceeds {EnglishFigures.money(proceeds)}"

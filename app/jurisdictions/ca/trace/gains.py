@@ -11,7 +11,12 @@ from app.domain.artifact import Money
 from app.domain.parameters.rounding import RoundingRule
 from app.domain.trace.base import TraceLine
 
-__all__ = ["PrincipalResidenceGainLine", "DispositionGainLine", "DispositionGainOnlyLine"]
+__all__ = [
+    "PrincipalResidenceGainLine",
+    "DispositionGainLine",
+    "DispositionGainOnlyLine",
+    "DispositionProceedsLine",
+]
 
 
 @dataclass(frozen=True)
@@ -104,3 +109,23 @@ class DispositionGainOnlyLine(TraceLine):
     def amount(self) -> Decimal:
         """The figure counted, never negative."""
         return self.result
+
+
+@dataclass(frozen=True)
+class DispositionProceedsLine(TraceLine):
+    """The `proceeds` of one disposition, by `position` (from 1), for `output`.
+
+    It follows a row of Schedule 3 Part 3 whose line is "Total proceeds of disposition": column 2
+    "Proceeds of disposition", the figure the row adds. Exact.
+
+    Its own class, not a `DispositionGainLine`: it carries only the proceeds.
+    """
+
+    output: Money
+    position: int
+    proceeds: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The row's proceeds of disposition."""
+        return self.proceeds

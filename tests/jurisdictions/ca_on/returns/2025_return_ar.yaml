@@ -47,6 +47,7 @@ inputs:
   ca/resident_in_canada_throughout_2025: "1"
   ca/aged_18_or_older_at_end_of_2025: "1"
 expected:
+  ca/share_proceeds: "40000.00"
   ca/share_gain_or_loss: "40000.00"
   ca/capital_gains_of_qualified_and_other_properties: "40000.00"
   ca/capital_gains_after_deferral: "40000.00"

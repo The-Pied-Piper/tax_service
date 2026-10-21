@@ -61,6 +61,11 @@ QSBCS_GAIN_OR_LOSS = CATALOG.declare("qsbcs_gain_or_loss", Decimal)
 10700 "Total gain or loss (add all the amounts under column 5)": the rows' column 5 "Gain or loss
 (column 2 minus columns 3 and 4)" added, a loss in brackets."""
 
+QSBCS_PROCEEDS = CATALOG.declare("qsbcs_proceeds", Decimal, non_negative=True)
+"""Qualified small business corporation shares (QSBCS) total proceeds, Schedule 3 line 10699 "Total
+proceeds of disposition (add all the amounts under column 2)": the rows' column 2 "Proceeds of
+disposition" added."""
+
 QFFP_DISPOSITIONS = RecordListKind.declare(
     CATALOG,
     "qffp_dispositions",
@@ -77,6 +82,11 @@ QFFP_GAIN_OR_LOSS = CATALOG.declare("qffp_gain_or_loss", Decimal)
 gain or loss (add all the amounts under column 5)": the rows' column 5 "Gain or loss (column 2 minus
 columns 3 and 4)" added, a loss in brackets."""
 
+QFFP_PROCEEDS = CATALOG.declare("qffp_proceeds", Decimal, non_negative=True)
+"""Qualified farm or fishing property (QFFP) total proceeds, Schedule 3 line 10999 "Total proceeds
+of disposition (add all the amounts under column 2)": the rows' column 2 "Proceeds of disposition"
+added."""
+
 QFFP_FORECLOSURE_DISPOSITIONS = RecordListKind.declare(
     CATALOG,
     "qffp_foreclosure_dispositions",
@@ -92,6 +102,11 @@ QFFP_FORECLOSURE_GAIN_OR_LOSS = CATALOG.declare("qffp_foreclosure_gain_or_loss",
 """QFFP: Mortgage foreclosures and conditional sales repossessions gain or loss, Schedule 3 line 3
 and line 12400 "Total gain or loss (add all the amounts under column 5)": the rows' column 5 "Gain
 or loss (column 2 minus columns 3 and 4)" added, a loss in brackets."""
+
+QFFP_FORECLOSURE_PROCEEDS = CATALOG.declare("qffp_foreclosure_proceeds", Decimal, non_negative=True)
+"""QFFP: Mortgage foreclosures and conditional sales repossessions total proceeds, Schedule 3 line
+12399 "Total proceeds of disposition (add all the amounts under column 2)": the rows' column 2
+"Proceeds of disposition" added."""
 
 SHARE_DISPOSITIONS = RecordListKind.declare(
     CATALOG,
@@ -111,6 +126,11 @@ and other shares gain or loss, Schedule 3 line 4 and line 13200 "Total gain or l
 amounts under column 5)": the rows' column 5 "Gain or loss (column 2 minus columns 3 and 4)" added,
 a loss in brackets."""
 
+SHARE_PROCEEDS = CATALOG.declare("share_proceeds", Decimal, non_negative=True)
+"""Publicly traded shares, mutual fund units, deferral of eligible small business corporation shares
+and other shares total proceeds, Schedule 3 line 13199 "Total proceeds of disposition (add all the
+amounts under column 2)": the rows' column 2 "Proceeds of disposition" added."""
+
 REAL_ESTATE_DISPOSITIONS = RecordListKind.declare(
     CATALOG,
     "real_estate_dispositions",
@@ -126,6 +146,11 @@ REAL_ESTATE_GAIN_OR_LOSS = CATALOG.declare("real_estate_gain_or_loss", Decimal)
 """Real estate, depreciable property, and other properties (see parts 1 and 2) gain or loss,
 Schedule 3 line 5 and line 13800 "Total gain or loss (add all the amounts under column 5)": the
 rows' column 5 "Gain or loss (column 2 minus columns 3 and 4)" added, a loss in brackets."""
+
+REAL_ESTATE_PROCEEDS = CATALOG.declare("real_estate_proceeds", Decimal, non_negative=True)
+"""Real estate, depreciable property, and other properties (see parts 1 and 2) total proceeds,
+Schedule 3 line 13599 "Total proceeds of disposition (add all the amounts under column 2)": the
+rows' column 2 "Proceeds of disposition" added."""
 
 BOND_DISPOSITIONS = RecordListKind.declare(
     CATALOG,
@@ -143,6 +168,11 @@ BOND_GAIN_OR_LOSS = CATALOG.declare("bond_gain_or_loss", Decimal)
 and line 15300 "Total gain or loss (add all the amounts under column 5)": the rows' column 5 "Gain
 or loss (column 2 minus columns 3 and 4)" added, a loss in brackets."""
 
+BOND_PROCEEDS = CATALOG.declare("bond_proceeds", Decimal, non_negative=True)
+"""Bonds, debentures, promissory notes, and other similar properties total proceeds, Schedule 3 line
+15199 "Total proceeds of disposition (add all the amounts under column 2)": the rows' column 2
+"Proceeds of disposition" added."""
+
 CRYPTO_ASSET_DISPOSITIONS = RecordListKind.declare(
     CATALOG,
     "crypto_asset_dispositions",
@@ -157,6 +187,10 @@ CRYPTO_ASSET_GAIN_OR_LOSS = CATALOG.declare("crypto_asset_gain_or_loss", Decimal
 """Crypto-assets gain or loss, Schedule 3 line 7 and line 15301 "Total gain or loss (add all the
 amounts under column 5)": the rows' column 5 "Gain or loss (column 2 minus columns 3 and 4)" added,
 a loss in brackets."""
+
+CRYPTO_ASSET_PROCEEDS = CATALOG.declare("crypto_asset_proceeds", Decimal, non_negative=True)
+"""Crypto-assets total proceeds, Schedule 3 line 15200 "Total proceeds of disposition (add all the
+amounts under column 2)": the rows' column 2 "Proceeds of disposition" added."""
 
 OTHER_FORECLOSURE_DISPOSITIONS = RecordListKind.declare(
     CATALOG,
@@ -173,6 +207,13 @@ OTHER_FORECLOSURE_GAIN_OR_LOSS = CATALOG.declare("other_foreclosure_gain_or_loss
 """Other mortgage foreclosures and conditional sales repossessions gain or loss, Schedule 3 line 8
 and line 15500 "Total gain (or loss) (add all the amounts under column 5)": the rows' column 5 "Gain
 or loss (column 2 minus columns 3 and 4)" added, a loss in brackets."""
+
+OTHER_FORECLOSURE_PROCEEDS = CATALOG.declare(
+    "other_foreclosure_proceeds", Decimal, non_negative=True
+)
+"""Other mortgage foreclosures and conditional sales repossessions total proceeds, Schedule 3 line
+15499 "Total proceeds of disposition (add all the amounts under column 2)": the rows' column 2
+"Proceeds of disposition" added."""
 
 PERSONAL_USE_PROPERTY_DISPOSITIONS = RecordListKind.declare(
     CATALOG,
