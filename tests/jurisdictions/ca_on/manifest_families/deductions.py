@@ -20,6 +20,9 @@ from app.jurisdictions.ca.capabilities.chart_a_row_c_total import ChartARowCTota
 from app.jurisdictions.ca.capabilities.chart_b_zone_a_total import ChartBZoneATotal
 from app.jurisdictions.ca.capabilities.chart_b_zone_b_total import ChartBZoneBTotal
 from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
+from app.jurisdictions.ca.capabilities.ei_excluded_slips_net_income import (
+    EiExcludedSlipsNetIncome,
+)
 from app.jurisdictions.ca.catalog import (
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS,
@@ -66,11 +69,14 @@ from app.jurisdictions.ca.catalog import (
     EI_BENEFITS_REPAYMENT,
     EI_CONTROLLED_CORPORATION_EARNINGS,
     EI_EARNINGS_SUBJECT_TO_PREMIUM,
+    EI_EXCLUDED_SLIPS,
+    EI_EXCLUDED_SLIPS_NET_INCOME,
     EI_EXEMPT_SELF_EMPLOYMENT_INCOME,
     EI_INSURABLE_EARNINGS,
     EI_INSURABLE_EARNINGS_REMAINING,
     EI_MAXIMUM_INSURABLE_EARNINGS,
     EI_NET_SELF_EMPLOYMENT_INCOME,
+    EI_SELF_EMPLOYMENT_BEFORE_SLIPS,
     EI_SELF_EMPLOYMENT_EARNINGS,
     ELECTED_SPLIT_PENSION_DEDUCTION,
     EMPLOYMENT_INCOME,
@@ -186,6 +192,7 @@ INPUTS = frozenset(
         "ca/cpp_part_4_completed",
         "ca/ei_controlled_corporation_earnings",
         "ca/ei_exempt_self_employment_income",
+        "ca/ei_excluded_slips",
         "ca/ei_insurable_earnings",
         "ca/elected_split_pension_deduction",
         "ca/support_payments_deduction",
@@ -432,14 +439,33 @@ STEPS = {
         },
         produces={"output": "ca/cpp_deduction_on_self_employment"},
     ),
-    # Schedule 13 line 1 "Enter the total amount from line 1 1 plus line 27 of your return ...
-    # (if negative, enter "0")", read as line 12200 plus line 27, and line 4 "Add lines 1 to 3.
-    # Net self-employment income": line 2 and line 54493 (a corporation controlled by the
-    # filer) and line 3 and line 54494 (tax-exempt self-employment income) follow line 1.
+    # Schedule 13 line 1 "Enter the total amount from line 1 1 plus line 27 of your return. If
+    # you received a T4 slip for self-employment income with EI premiums in box 18, do not
+    # include any net income (or net loss) reported on lines 13500, 13700, 13900, 14100, and
+    # 14300 of your return for that slip (Note 1) (if negative, enter "0")", read as line 12200
+    # plus line 27 (before the slips), less the net income of those slips, not below zero, and
+    # line 4 "Add lines 1 to 3. Net self-employment income": line 2 and line 54493 (a
+    # corporation controlled by the filer) and line 3 and line 54494 (tax-exempt
+    # self-employment income) follow line 1.
     CapabilitySelection(
-        name="core/sum_not_below_zero",
+        name="core/sum",
         params={},
         consumes={"parts": ("ca/net_partnership_income", "ca/net_self_employment_income")},
+        produces={"output": "ca/ei_self_employment_before_slips"},
+    ),
+    CapabilitySelection(
+        name="ca/ei_excluded_slips_net_income",
+        params={},
+        consumes={"slips": "ca/ei_excluded_slips"},
+        produces={"output": "ca/ei_excluded_slips_net_income"},
+    ),
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/ei_self_employment_before_slips",
+            "less": "ca/ei_excluded_slips_net_income",
+        },
         produces={"output": "ca/ei_self_employment_earnings"},
     ),
     CapabilitySelection(
@@ -1275,8 +1301,18 @@ WIRING = {
         frozenset({CPP_DEDUCTION_ON_SELF_EMPLOYMENT}),
     ),
     (
-        SumNotBelowZero,
+        Sum,
         frozenset({NET_PARTNERSHIP_INCOME, NET_SELF_EMPLOYMENT_INCOME}),
+        frozenset({EI_SELF_EMPLOYMENT_BEFORE_SLIPS}),
+    ),
+    (
+        EiExcludedSlipsNetIncome,
+        frozenset({EI_EXCLUDED_SLIPS}),
+        frozenset({EI_EXCLUDED_SLIPS_NET_INCOME}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({EI_SELF_EMPLOYMENT_BEFORE_SLIPS, EI_EXCLUDED_SLIPS_NET_INCOME}),
         frozenset({EI_SELF_EMPLOYMENT_EARNINGS}),
     ),
     (

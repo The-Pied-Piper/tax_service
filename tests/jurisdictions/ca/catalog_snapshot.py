@@ -423,6 +423,10 @@ REGISTERED = frozenset(
         "ca/self_employed_cpp_base_credit",
         "ca/self_employed_cpp_deduction",
         "ca/cpp_deduction_on_self_employment",
+        "ca/ei_excluded_slip_net_income",
+        "ca/ei_excluded_slips",
+        "ca/ei_excluded_slips_net_income",
+        "ca/ei_self_employment_before_slips",
         "ca/ei_self_employment_earnings",
         "ca/ei_net_self_employment_income",
         "ca/ei_maximum_insurable_earnings",
@@ -745,6 +749,9 @@ REGISTERED = frozenset(
 
 SIGNED = frozenset(
     {
+        "ca/ei_excluded_slip_net_income",
+        "ca/ei_excluded_slips_net_income",
+        "ca/ei_self_employment_before_slips",
         "ca/tosi_adjusted_net_income",
         "ca/split_income_line_15",
         "ca/split_income_line_22",
@@ -884,6 +891,7 @@ RECORD_LISTS = frozenset(
         "ca/travel_individuals",
         "ca/rental_cca_classes",
         "ca/rental_closing_ucc",
+        "ca/ei_excluded_slips",
         "ca/foreign_tax_countries",
         "ca/foreign_tax_credit_sheets",
     }
