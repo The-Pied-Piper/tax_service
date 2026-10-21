@@ -80,16 +80,10 @@ from app.jurisdictions.ca.catalog import (
 
 INPUTS = frozenset[str]()
 
-# Part 5 line 49 (42100), line 50 (44800), line 57 (30800) and line 69 (22215): nothing on the
-# return reads them yet (a later change routes them), so they are declared outputs.
-OUTPUTS = frozenset(
-    {
-        "ca/cpp_part_5_line_49",
-        "ca/cpp_part_5_line_50",
-        "ca/cpp_part_5_line_57",
-        "ca/cpp_part_5_line_69",
-    }
-)
+# Part 5 line 49 (42100), line 50 (44800), line 57 (30800) and line 69 (22215) are read by the
+# routing steps (see `deductions_schedule_8_part_5_other_earnings.py` for lines 70 to 88), so
+# nothing here is a declared output.
+OUTPUTS = frozenset[str]()
 
 STEPS = {
     # Schedule 8 Part 5 line 43 "Required base contributions on CPP pensionable earnings: Line
@@ -279,8 +273,8 @@ STEPS = {
         produces={"output": "ca/cpp_part_5_line_56"},
     ),
     # Schedule 8 Part 5 line 57 "Base CPP contributions through employment income: Line 55 plus
-    # line 56 Enter this amount (in dollars and cents) on line 30800 of your return. =": nothing
-    # routes it to line 30800 yet, so it is a declared output.
+    # line 56 Enter this amount (in dollars and cents) on line 30800 of your return. =": the Part 5
+    # amount that the T1 line 30800 choice takes when Part 5 is completed.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -462,7 +456,7 @@ STEPS = {
     ),
     # Schedule 8 Part 5 line 69 "Deduction for CPP enhanced contributions on employment income:
     # Line 64 plus line 68 Enter this amount (in dollars and cents) on line 22215 of your
-    # return. =": nothing routes it to line 22215 yet, so it is a declared output.
+    # return. =": the Part 5 amount that the T1 line 22215 choice takes when Part 5 is completed.
     CapabilitySelection(
         name="core/sum",
         params={},

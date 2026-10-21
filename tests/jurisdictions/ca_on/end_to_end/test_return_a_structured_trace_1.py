@@ -47,8 +47,16 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GIFTS_LIMIT_ADDITION,
     CAPITAL_GIFTS_TOTAL,
     CPP_ACTUAL_BASE_CONTRIBUTIONS,
+    CPP_PART_5_LINE_43,
+    CPP_PART_5_LINE_44,
+    CPP_PART_5_LINE_45,
     CPP_PART_5_LINE_50,
     CPP_PART_5_LINE_50_LINE_49_POSITIVE,
+    CPP_PART_5_LINE_70,
+    CPP_PART_5_LINE_71,
+    CPP_PART_5_LINE_75,
+    CPP_PART_5_LINE_75_BASE,
+    CPP_PART_5_LINE_84,
     CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
@@ -205,6 +213,45 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         if isinstance(line, ItemsTotalLine) and line.output is COOP_EDUCATION_CREDIT
     }
     assert rated == {
+        # Schedule 8 Part 5 line 70 "amount from line 43 multiplied by 50%": 0.00 x 50% for
+        # Return A (no self-employment income, so line 43 is 0.00).
+        CPP_PART_5_LINE_70: RateAppliedLine(
+            output=CPP_PART_5_LINE_70,
+            base=CPP_PART_5_LINE_43,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 71 "Amount from line 44 multiplied by 50%": 0.00 x 50% for
+        # Return A.
+        CPP_PART_5_LINE_71: RateAppliedLine(
+            output=CPP_PART_5_LINE_71,
+            base=CPP_PART_5_LINE_44,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 84 "Amount from line 45 multiplied by 50%": 0.00 x 50% for
+        # Return A.
+        CPP_PART_5_LINE_84: RateAppliedLine(
+            output=CPP_PART_5_LINE_84,
+            base=CPP_PART_5_LINE_45,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 75 "Line A multiply by 83.1933": 0.00 x 83.1933% for Return A.
+        CPP_PART_5_LINE_75: RateAppliedLine(
+            output=CPP_PART_5_LINE_75,
+            base=CPP_PART_5_LINE_75_BASE,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.831933")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
         # Schedule 8 Part 5 line 50 "multiplied by 50%": 0 x 50% for Return A.
         CPP_PART_5_LINE_50: RateAppliedLine(
             output=CPP_PART_5_LINE_50,

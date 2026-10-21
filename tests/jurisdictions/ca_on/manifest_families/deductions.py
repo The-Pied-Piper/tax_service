@@ -58,6 +58,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_BASIC_EXEMPTION,
     CPP_CONTRIBUTIONS_DIFFERENCE,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
     CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
     CPP_EARNINGS_UP_TO_MAXIMUM,
@@ -77,6 +78,9 @@ from app.jurisdictions.ca.catalog import (
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_MONTHS,
     CPP_OVERPAYMENT,
+    CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    CPP_PART_3_OVERPAYMENT,
     CPP_PART_3B_LINE_23_LESS_LINE_35,
     CPP_PART_3B_LINE_30,
     CPP_PART_3B_LINE_31,
@@ -103,6 +107,12 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_3B_LINE_47,
     CPP_PART_3B_LINE_48,
     CPP_PART_4_COMPLETED,
+    CPP_PART_5_COMPLETED,
+    CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_LINE_50,
+    CPP_PART_5_LINE_57,
+    CPP_PART_5_LINE_69,
+    CPP_PART_5_LINE_88,
     CPP_PENSIONABLE_EARNINGS,
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
     CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
@@ -239,6 +249,7 @@ INPUTS = frozenset(
         "ca/cpp_months",
         "ca/cpt20_earnings",
         "ca/cpp_part_4_completed",
+        "ca/cpp_part_5_completed",
         "ca/ei_controlled_corporation_earnings",
         "ca/ei_exempt_self_employment_income",
         "ca/ei_excluded_slips",
@@ -490,6 +501,31 @@ STEPS = {
             "count": "ca/cpp_part_4_completed",
         },
         produces={"output": "ca/cpp_deduction_on_self_employment"},
+    ),
+    # T1 line 47 (22200), entered from Part 5 line 88: Part 5 is completed when the filer
+    # reports employment income and self-employment income or other earnings, so the amount is
+    # counted once for each Part 5 completed, 1 or 0.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/cpp_part_5_line_88",
+            "count": "ca/cpp_part_5_completed",
+        },
+        produces={"output": "ca/cpp_part_5_deduction_on_self_employment"},
+    ),
+    # T1 line 47 (22200): the Part 4 amount plus the Part 5 amount; both are added when both
+    # parts are marked completed, as the form leaves the choice to the filer.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/cpp_deduction_on_self_employment",
+                "ca/cpp_part_5_deduction_on_self_employment",
+            ),
+        },
+        produces={"output": "ca/cpp_deduction_on_self_employment_and_other_earnings"},
     ),
     # Schedule 13 line 1 "Enter the total amount from line 1 1 plus line 27 of your return. If
     # you received a T4 slip for self-employment income with EI premiums in box 18, do not
@@ -762,7 +798,7 @@ STEPS = {
                 "ca/allowable_business_investment_loss",
                 "ca/support_payments_deduction",
                 "ca/carrying_charges_interest_expenses_and_other_expenses",
-                "ca/cpp_deduction_on_self_employment",
+                "ca/cpp_deduction_on_self_employment_and_other_earnings",
                 "ca/cpp_enhanced_contributions_on_return",
                 "ca/exploration_and_development_expenses",
                 "ca/other_deductions",
@@ -1686,7 +1722,7 @@ STEPS = {
             "when_none": "ca/cpp_part_3b_line_36",
             "when_any": "ca/cpp_base_contributions",
         },
-        produces={"output": "ca/cpp_base_contributions_on_return"},
+        produces={"output": "ca/cpp_part_3_base_contributions_on_return"},
     ),
     # T1 line 22215, from Schedule 8 Part 3a line 28 "Line 26 plus line 27" (the existing line 28
     # step) when line 24 is positive, else Part 3b line 48:
@@ -1698,7 +1734,7 @@ STEPS = {
             "when_none": "ca/cpp_part_3b_line_48",
             "when_any": "ca/cpp_enhanced_contributions",
         },
-        produces={"output": "ca/cpp_enhanced_contributions_on_return"},
+        produces={"output": "ca/cpp_part_3_enhanced_contributions_on_return"},
     ),
     # T1 line 44800 "CPP overpayment", from Schedule 8 Part 3a line 29 "Enter the amount from line
     # 24." when line 24 is positive, else "0":
@@ -1709,6 +1745,43 @@ STEPS = {
             "count": "ca/cpp_line_24_positive",
             "when_none": "ca/cpp_zero",
             "when_any": "ca/cpp_contributions_difference",
+        },
+        produces={"output": "ca/cpp_part_3_overpayment"},
+    ),
+    # T1 line 30800 (also ON428 line 58240): Schedule 8 Part 5 line 57 when Part 5 is
+    # completed (it replaces Part 3a and Part 3b, the filer's choice on the form), else the
+    # Part 3a or Part 3b amount.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/cpp_part_5_completed",
+            "when_none": "ca/cpp_part_3_base_contributions_on_return",
+            "when_any": "ca/cpp_part_5_line_57",
+        },
+        produces={"output": "ca/cpp_base_contributions_on_return"},
+    ),
+    # T1 line 22215: Schedule 8 Part 5 line 69 when Part 5 is completed, else the Part 3a or
+    # Part 3b amount.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/cpp_part_5_completed",
+            "when_none": "ca/cpp_part_3_enhanced_contributions_on_return",
+            "when_any": "ca/cpp_part_5_line_69",
+        },
+        produces={"output": "ca/cpp_enhanced_contributions_on_return"},
+    ),
+    # T1 line 44800: Schedule 8 Part 5 line 50 when Part 5 is completed, else the Part 3a line
+    # 29 amount or 0.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/cpp_part_5_completed",
+            "when_none": "ca/cpp_part_3_overpayment",
+            "when_any": "ca/cpp_part_5_line_50",
         },
         produces={"output": "ca/cpp_overpayment"},
     ),
@@ -1834,6 +1907,16 @@ WIRING = {
         TimesCount,
         frozenset({SELF_EMPLOYED_CPP_DEDUCTION, CPP_PART_4_COMPLETED}),
         frozenset({CPP_DEDUCTION_ON_SELF_EMPLOYMENT}),
+    ),
+    (
+        TimesCount,
+        frozenset({CPP_PART_5_LINE_88, CPP_PART_5_COMPLETED}),
+        frozenset({CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT}),
+    ),
+    (
+        Sum,
+        frozenset({CPP_DEDUCTION_ON_SELF_EMPLOYMENT, CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT}),
+        frozenset({CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
     ),
     (
         Sum,
@@ -1992,7 +2075,7 @@ WIRING = {
                 ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
                 SUPPORT_PAYMENTS_DEDUCTION,
                 CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES,
-                CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+                CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
                 CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
                 EXPLORATION_AND_DEVELOPMENT_EXPENSES,
                 OTHER_DEDUCTIONS,
@@ -2446,16 +2529,35 @@ WIRING = {
     (
         ChooseByCount,
         frozenset({CPP_LINE_24_POSITIVE, CPP_PART_3B_LINE_36, CPP_BASE_CONTRIBUTIONS}),
-        frozenset({CPP_BASE_CONTRIBUTIONS_ON_RETURN}),
+        frozenset({CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN}),
     ),
     (
         ChooseByCount,
         frozenset({CPP_LINE_24_POSITIVE, CPP_PART_3B_LINE_48, CPP_ENHANCED_CONTRIBUTIONS}),
-        frozenset({CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN}),
+        frozenset({CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN}),
     ),
     (
         ChooseByCount,
         frozenset({CPP_LINE_24_POSITIVE, CPP_ZERO, CPP_CONTRIBUTIONS_DIFFERENCE}),
+        frozenset({CPP_PART_3_OVERPAYMENT}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {CPP_PART_5_COMPLETED, CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN, CPP_PART_5_LINE_57}
+        ),
+        frozenset({CPP_BASE_CONTRIBUTIONS_ON_RETURN}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {CPP_PART_5_COMPLETED, CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN, CPP_PART_5_LINE_69}
+        ),
+        frozenset({CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN}),
+    ),
+    (
+        ChooseByCount,
+        frozenset({CPP_PART_5_COMPLETED, CPP_PART_3_OVERPAYMENT, CPP_PART_5_LINE_50}),
         frozenset({CPP_OVERPAYMENT}),
     ),
 }

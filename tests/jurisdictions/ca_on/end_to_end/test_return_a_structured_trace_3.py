@@ -210,6 +210,9 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_3B_LINE_39,
     CPP_PART_3B_LINE_40,
     CPP_PART_4_COMPLETED,
+    CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_COMPLETED,
+    CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
     CPP_PART_5_LINE_4,
     CPP_PART_5_LINE_6,
     CPP_PART_5_LINE_7,
@@ -229,6 +232,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_LINE_48,
     CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
     CPP_PART_5_LINE_49,
+    CPP_PART_5_LINE_49_IF_POSITIVE,
     CPP_PART_5_LINE_52,
     CPP_PART_5_LINE_53,
     CPP_PART_5_LINE_54,
@@ -236,6 +240,18 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_LINE_59,
     CPP_PART_5_LINE_60,
     CPP_PART_5_LINE_61,
+    CPP_PART_5_LINE_70,
+    CPP_PART_5_LINE_71,
+    CPP_PART_5_LINE_72,
+    CPP_PART_5_LINE_73,
+    CPP_PART_5_LINE_74,
+    CPP_PART_5_LINE_75,
+    CPP_PART_5_LINE_75_BASE,
+    CPP_PART_5_LINE_77,
+    CPP_PART_5_LINE_80,
+    CPP_PART_5_LINE_83,
+    CPP_PART_5_LINE_88,
+    CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
@@ -593,6 +609,46 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert subtracted == {
+        # Schedule 8 Part 5 line 74 "Line 72 minus line 73": 0.00 and line 73 ("0", line 24 of
+        # Part 3 is 0) for Return A.
+        CPP_PART_5_LINE_74: SubtractedLine(
+            output=CPP_PART_5_LINE_74,
+            minuend=CPP_PART_5_LINE_72,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_73,
+            subtrahend_amount=D("0"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 77 "Amount A minus line 76": line A and line 75 (line 76 is the
+        # amount from line 75) are both 0.00 for Return A.
+        CPP_PART_5_LINE_77: SubtractedLine(
+            output=CPP_PART_5_LINE_77,
+            minuend=CPP_PART_5_LINE_75_BASE,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_75,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 80 "Line 78 minus line 79": line 78 is the amount from line 70
+        # and line 79 the amount from line 75, both 0.00 for Return A.
+        CPP_PART_5_LINE_80: SubtractedLine(
+            output=CPP_PART_5_LINE_80,
+            minuend=CPP_PART_5_LINE_70,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_75,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 83 "Line 81 minus line 82": line 81 is the amount from line 71
+        # and line 82 the amount from line 77, both 0.00 for Return A.
+        CPP_PART_5_LINE_83: SubtractedLine(
+            output=CPP_PART_5_LINE_83,
+            minuend=CPP_PART_5_LINE_71,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_77,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
         # Schedule 8 Part 5 line 54 "Line 52 minus line 53": line 52 and line 53 are both 0
         # for Return A.
         CPP_PART_5_LINE_54: SubtractedLine(
@@ -2510,6 +2566,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert times == {
+        # T1 line 31000 from Schedule 8 Part 5 line 70, once for each Part 5 completed: 0 for
+        # Return A.
+        CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT: TimesCountLine(
+            output=CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+            amount_kind=CPP_PART_5_LINE_70,
+            amount_value=D("0.00"),
+            count_kind=CPP_PART_5_COMPLETED,
+            count=0,
+            result=D("0"),
+        ),
+        # T1 line 22200 from Schedule 8 Part 5 line 88, once for each Part 5 completed: 0 for
+        # Return A.
+        CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT: TimesCountLine(
+            output=CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
+            amount_kind=CPP_PART_5_LINE_88,
+            amount_value=D("0.00"),
+            count_kind=CPP_PART_5_COMPLETED,
+            count=0,
+            result=D("0"),
+        ),
+        # T1 line 42100 from Schedule 8 Part 5 line 49 if positive, once for each Part 5
+        # completed: 0 for Return A.
+        CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT: TimesCountLine(
+            output=CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
+            amount_kind=CPP_PART_5_LINE_49_IF_POSITIVE,
+            amount_value=D("0"),
+            count_kind=CPP_PART_5_COMPLETED,
+            count=0,
+            result=D("0"),
+        ),
         ontario.DISABILITY_AMOUNT_FOR_SELF: TimesCountLine(
             output=ontario.DISABILITY_AMOUNT_FOR_SELF,
             amount_kind=ontario.DISABILITY_AMOUNT_FOR_SELF_IF_ELIGIBLE,

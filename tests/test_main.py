@@ -40,8 +40,8 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1141
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1141
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1165
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1165
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -686,6 +686,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/cpt20_earnings",
         "ca/cpt20_t4_earnings",
         "ca/cpp_part_4_completed",
+        "ca/cpp_part_5_completed",
         "ca/ei_controlled_corporation_earnings",
         "ca/ei_exempt_self_employment_income",
         "ca/ei_insurable_earnings",
@@ -776,6 +777,9 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/cpp_base_contributions_on_return",
         "ca/cpp_enhanced_contributions_on_return",
         "ca/cpp_overpayment",
+        "ca/cpp_part_3_base_contributions_on_return",
+        "ca/cpp_part_3_enhanced_contributions_on_return",
+        "ca/cpp_part_3_overpayment",
         "ca/cpp_part_3_line_2",
         "ca/cpp_part_5_line_20_negative_line_23_positive",
         "ca/cpp_part_5_line_20_positive_line_23_negative",
@@ -845,6 +849,21 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/cpp_part_5_line_67",
         "ca/cpp_part_5_line_68",
         "ca/cpp_part_5_line_69",
+        "ca/cpp_part_5_line_70",
+        "ca/cpp_part_5_line_71",
+        "ca/cpp_part_5_line_72",
+        "ca/cpp_part_5_line_73",
+        "ca/cpp_part_5_line_74",
+        "ca/cpp_part_5_line_75_base",
+        "ca/cpp_part_5_line_75",
+        "ca/cpp_part_5_line_77",
+        "ca/cpp_part_5_line_80",
+        "ca/cpp_part_5_line_83",
+        "ca/cpp_part_5_line_84",
+        "ca/cpp_part_5_line_86",
+        "ca/cpp_part_5_line_87",
+        "ca/cpp_part_5_line_88",
+        "ca/cpp_part_5_line_49_if_positive",
         "ca/exploration_and_development_expenses",
         "ca/other_deductions",
         "ca/split_income_dividends",
@@ -1444,8 +1463,14 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/self_employed_cpp_base_credit",
         "ca/self_employed_cpp_deduction",
         "ca/cpp_payable_on_self_employment",
+        "ca/cpp_part_5_payable_on_self_employment",
+        "ca/cpp_payable_on_self_employment_and_other_earnings",
         "ca/cpp_base_contributions_on_self_employment",
+        "ca/cpp_part_5_base_contributions_on_self_employment",
+        "ca/cpp_base_contributions_on_self_employment_and_other_earnings",
         "ca/cpp_deduction_on_self_employment",
+        "ca/cpp_part_5_deduction_on_self_employment",
+        "ca/cpp_deduction_on_self_employment_and_other_earnings",
         "ca/ei_excluded_slip_net_income",
         "ca/ei_excluded_slips",
         "ca/ei_excluded_slips_net_income",
@@ -1962,15 +1987,15 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1141
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1141
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1165
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1165
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1141
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1141
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1165
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1165
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

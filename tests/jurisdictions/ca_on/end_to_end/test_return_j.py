@@ -147,7 +147,7 @@ def test_return_js_age_spouse_and_caregiver_amounts_come_off_net_income_and_the_
         "+ spouse_amount 6816 + eligible_dependant_amount 0 + spouse_caregiver_amount 1785 "
         "+ caregiver_amount 0 + infirm_children_amount 0 "
         "+ cpp_base_contributions_on_return 2301.75 "
-        "+ cpp_base_contributions_on_self_employment 0 + ei_premiums 820 "
+        "+ cpp_base_contributions_on_self_employment_and_other_earnings 0 + ei_premiums 820 "
         "+ ei_premiums_on_self_employment 0 + canada_employment_amount 1471 "
         "+ disability_amount_for_self 0 "
         "+ disability_transferred_amount 0 + federal_tuition_amount 0 + "
@@ -165,7 +165,8 @@ def test_return_js_age_spouse_and_caregiver_amounts_come_off_net_income_and_the_
         "spouse_amount: spouse_amount_before_count 0 for each of 1 spouses_claimed = 0",
         "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 5672.5 "
         "+ spouse_amount 0 + eligible_dependant_amount 0 + caregiver_amount 0 "
-        "+ cpp_base_contributions_on_return 2301.75 + cpp_base_contributions_on_self_employment 0 "
+        "+ cpp_base_contributions_on_return 2301.75 + "
+        "cpp_base_contributions_on_self_employment_and_other_earnings 0 "
         "+ ei_premiums 820 + ei_premiums_on_self_employment 0 "
         "+ disability_amount_for_self 0 "
         "+ disability_transferred_amount 0 + unused_tuition_claimed 0 "

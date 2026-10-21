@@ -46,6 +46,15 @@ CPT20_EARNINGS = CATALOG.declare("cpt20_earnings", Decimal, non_negative=True)
 slip that you are electing to pay additional CPP contributions on (complete Form CPT20)": a
 starting amount."""
 
+CPP_PART_5_COMPLETED = CATALOG.declare("cpp_part_5_completed", int, non_negative=True)
+"""Schedule 8 Part 5 completed, "Part 5 - Complete this part if you are reporting both: employment
+income (complete Part 3 first) / self-employment income or other earnings that you are electing to
+pay CPP contributions on. If not, leave this part blank.": 1 when the filer completes Part 5, 0
+when not, a count the filer states. Part 3 and Part 5 are the filer's choice on the form, so 1
+replaces the Part 3 route on lines 30800, 22215 and 44800. Both counts at 1 add the Part 4 and
+Part 5 amounts on lines 31000, 22200 and 42100; there is no check, as the form leaves the choice to
+the filer."""
+
 CPP_PART_4_COMPLETED = CATALOG.declare("cpp_part_4_completed", int, non_negative=True)
 """Schedule 8 Part 4 completed, "Part 4 - Complete this part if you are reporting only
 self-employment income or other earnings you are electing to pay CPP contributions on. If not,
@@ -1240,27 +1249,28 @@ CPP_PART_3B_LINE_48 = CATALOG.declare("cpp_part_3b_line_48", Decimal, non_negati
 your return.": the enhanced contributions of the Part 3b branch, which
 cpp_enhanced_contributions_on_return carries to line 22215 when line 24 is "0" or negative."""
 
-CPP_BASE_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
-    "cpp_base_contributions_on_return", Decimal, non_negative=True
+CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
+    "cpp_part_3_base_contributions_on_return", Decimal, non_negative=True
 )
-"""Base CPP contributions on the return, T1 line 30800 and ON428 line 58240: Part 3a line 25 "Enter
-the amount from line 15. Enter this amount (in dollars and cents) on line 30800 of your return and
-line 58240 of your Form 428." when line 24 is positive (the required base contributions, line 11),
-else Part 3b line 36 (the same instruction), chosen by the count of line 24 being positive."""
+"""Part 3 route of the base CPP contributions, T1 line 30800 and ON428 line 58240: Part 3a line 25
+"Enter the amount from line 15. Enter this amount (in dollars and cents) on line 30800 of your
+return and line 58240 of your Form 428." when line 24 is positive (the required base contributions,
+line 11), else Part 3b line 36 (the same instruction), chosen by the count of line 24 being
+positive. cpp_base_contributions_on_return takes it on line 30800 unless Part 5 is completed."""
 
-CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
-    "cpp_enhanced_contributions_on_return", Decimal, non_negative=True
+CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
+    "cpp_part_3_enhanced_contributions_on_return", Decimal, non_negative=True
 )
-"""Enhanced CPP contributions on the return, T1 line 22215: Part 3a line 28 "Line 26 plus line 27
-Enter this amount (in dollars and cents) on line 22215 of your return." when line 24 is positive,
-else Part 3b line 48 (the same instruction), chosen by the count of line 24 being positive. A
-deduction from total income, not a credit."""
+"""Part 3 route of the enhanced CPP contributions, T1 line 22215: Part 3a line 28 "Line 26 plus line
+27 Enter this amount (in dollars and cents) on line 22215 of your return." when line 24 is positive,
+else Part 3b line 48 (the same instruction), chosen by the count of line 24 being positive.
+cpp_enhanced_contributions_on_return takes it on line 22215 unless Part 5 is completed. A deduction
+from total income, not a credit."""
 
-CPP_OVERPAYMENT = CATALOG.declare("cpp_overpayment", Decimal, non_negative=True)
-"""CPP overpayment, T1 line 44800: Part 3a line 29 "Enter the amount from line 24. Enter this amount
-(in dollars and cents) on line 44800 of your return." when line 24 is positive, else "0". The
-return's refund total reads it at line 152 "CPP or QPP overpayment" (Form 5006-R, line 152 and
-line 44800)."""
+CPP_PART_3_OVERPAYMENT = CATALOG.declare("cpp_part_3_overpayment", Decimal, non_negative=True)
+"""Part 3 route of the CPP overpayment, T1 line 44800: Part 3a line 29 "Enter the amount from line
+24. Enter this amount (in dollars and cents) on line 44800 of your return." when line 24 is
+positive, else "0". cpp_overpayment takes it on line 44800 unless Part 5 is completed."""
 
 CPP_PART_3_LINE_2 = CATALOG.declare("cpp_part_3_line_2", Decimal, non_negative=True)
 """Part 3 line 2 "Line 2: Enter whichever is less: amount from line D of Part 2 or line 1.": the
@@ -1380,7 +1390,7 @@ then 0."""
 CPP_PART_5_LINE_30 = CATALOG.declare("cpp_part_5_line_30", Decimal, non_negative=True)
 """Part 5 line 30 "Line 30: Self-employment income and other earnings subject to base and first
 additional contributions: Line 22 minus line 29 (if negative, enter "0") =": line 22 less line
-29, not below zero. Declared output: nothing on the return reads it yet."""
+29, not below zero. Read by lines 43 and 44."""
 
 CPP_PART_5_LINE_33 = CATALOG.declare("cpp_part_5_line_33", Decimal)
 """Part 5 line 33 "Line 33: Line 31 plus line 32 =": line 4 (line 31) plus the amount from line 2
@@ -1410,8 +1420,7 @@ the lesser of lines 36 and 41, which line 42 takes only when the count of line 3
 CPP_PART_5_LINE_42 = CATALOG.declare("cpp_part_5_line_42", Decimal)
 """Part 5 line 42 "Line 42: Enter whichever is less: amount from line 36 or line 41." "If not,
 enter "0" on line 42": the candidate above when line 33 is more than line 17, else "0". Signed:
-the form prints no floor, so a negative lesser stays negative. Declared output: nothing on the
-return reads it yet."""
+the form prints no floor, so a negative lesser stays negative. Read by line 45."""
 
 CPP_PART_5_LINE_43 = CATALOG.declare("cpp_part_5_line_43", Decimal, non_negative=True)
 """Part 5 line 43 "Required base contributions on CPP pensionable earnings: Line 43: amount from
@@ -1463,7 +1472,7 @@ CPP_PART_5_LINE_50 = CATALOG.declare("cpp_part_5_line_50", Decimal, non_negative
 """Part 5 line 50 "CPP overpayment: Enter the result of the following calculation (in dollars and
 cents) on line 44800 of your return: amount from line 49 entered as a positive amount multiplied
 by 50% =": the overpayment, the amount from line 49 as a positive amount times 50%, rounded
-half-up to the cent by the dataset. Declared output: nothing on the return reads it yet."""
+half-up to the cent by the dataset."""
 
 CPP_PART_5_LINE_51 = CATALOG.declare("cpp_part_5_line_51", Decimal, non_negative=True)
 """Part 5 line 51 "If line 16 of Part 3 is positive or "0", enter the amount from line 11 of Part 3
@@ -1512,8 +1521,7 @@ not, enter "0".": the candidate above when line 23 of Part 3 and line 54 are bot
 
 CPP_PART_5_LINE_57 = CATALOG.declare("cpp_part_5_line_57", Decimal, non_negative=True)
 """Part 5 line 57 "Base CPP contributions through employment income: Line 55 plus line 56 Enter
-this amount (in dollars and cents) on line 30800 of your return.": the sum of lines 55 and 56.
-Declared output: nothing on the return reads it yet."""
+this amount (in dollars and cents) on line 30800 of your return.": the sum of lines 55 and 56."""
 
 CPP_PART_5_LINE_58 = CATALOG.declare("cpp_part_5_line_58", Decimal, non_negative=True)
 """Part 5 line 58 "If line 19 of Part 3 is positive or "0", enter the amount from line 12 of Part 3
@@ -1591,4 +1599,108 @@ CPP_PART_5_LINE_68 = CATALOG.declare("cpp_part_5_line_68", Decimal, non_negative
 CPP_PART_5_LINE_69 = CATALOG.declare("cpp_part_5_line_69", Decimal, non_negative=True)
 """Part 5 line 69 "Deduction for CPP enhanced contributions on employment income: Line 69: Line 64
 plus line 68 Enter this amount (in dollars and cents) on line 22215 of your return.": the sum of
-lines 64 and 68. Declared output: nothing on the return reads it yet."""
+lines 64 and 68."""
+
+CPP_PART_5_LINE_49_IF_POSITIVE = CATALOG.declare(
+    "cpp_part_5_line_49_if_positive", Decimal, non_negative=True
+)
+"""Part 5 line 49 "If positive, enter the amount (in dollars and cents) on line 42100 of your
+return and continue at line 51.": line 49 when it is positive, else "0" (line 49 less "0", not
+below zero). 11_net_tax takes it once for each Part 5 completed, for line 42100."""
+
+CPP_PART_5_LINE_70 = CATALOG.declare("cpp_part_5_line_70", Decimal, non_negative=True)
+"""Part 5 line 70 "Base CPP contributions through self-employment income and other earnings: Line
+70: Enter the result of the following calculation (in dollars and cents) on line 31000 of your
+return. amount from line 43 multiplied by 50% =": line 43 times 0.5, rounded half-up to the cent.
+08_non_refundable_credits takes it once for each Part 5 completed, for line 31000."""
+
+CPP_PART_5_LINE_71 = CATALOG.declare("cpp_part_5_line_71", Decimal, non_negative=True)
+"""Part 5 line 71 "Line 71: Amount from line 44 multiplied by 50% =": line 44 times 0.5, rounded
+half-up to the cent. Line 72 adds it to line 70, and line 81 repeats it."""
+
+CPP_PART_5_LINE_72 = CATALOG.declare("cpp_part_5_line_72", Decimal, non_negative=True)
+"""Part 5 line 72 "Line 72: Line 70 plus line 71 =": the sum of lines 70 and 71."""
+
+CPP_PART_5_LINE_73 = CATALOG.declare("cpp_part_5_line_73", Decimal, non_negative=True)
+"""Part 5 line 73 "Enter the amount from line 24 of Part 3 if positive. If not, enter "0".": line 24
+of Part 3 when it is positive, else "0" (line 24 less "0", not below zero). Part 5 line 48 takes the
+same amount through its own step."""
+
+CPP_PART_5_LINE_74 = CATALOG.declare("cpp_part_5_line_74", Decimal)
+"""Part 5 line 74 "Line 74: Line 72 minus line 73 (if negative, show in brackets) =": line 72 less
+line 73, signed. Line 86 takes it as a positive amount when it is negative."""
+
+CPP_PART_5_LINE_75_BASE = CATALOG.declare("cpp_part_5_line_75_base", Decimal, non_negative=True)
+"""Part 5 line A, "Enter whichever is less: amount from line 72 or line 73 Line A": the lesser of
+lines 72 and 73. Line 75 multiplies it by 83.1933%, and line 77 takes line 76 off it."""
+
+CPP_PART_5_LINE_75 = CATALOG.declare("cpp_part_5_line_75", Decimal, non_negative=True)
+"""Part 5 line 75 "Line 75: amount from line 72 or line 73 Line A multiply by 83.1933 =": line A
+times 0.831933, rounded half-up to the cent. Line 76 is a copy of it, and line 79 copies it too."""
+
+CPP_PART_5_LINE_77 = CATALOG.declare("cpp_part_5_line_77", Decimal, non_negative=True)
+"""Part 5 line 77 "Line 77: Amount A minus line 76 =": line A less line 75 (line 76 is a copy of
+line 75). Line 82 takes it."""
+
+CPP_PART_5_LINE_80 = CATALOG.declare("cpp_part_5_line_80", Decimal)
+"""Part 5 line 80 "Line 80: Line 78 minus line 79 =": line 70 less line 75 (lines 78 and 79 are
+copies of them), signed, since line 75 can be a cent more than line 70 when the amounts are a few
+dollars or less."""
+
+CPP_PART_5_LINE_83 = CATALOG.declare("cpp_part_5_line_83", Decimal, non_negative=True)
+"""Part 5 line 83 "Line 83: Line 81 minus line 82 =": line 71 less line 77 (lines 81 and 82 are
+copies of lines 71 and 77). The form prints no brackets for it."""
+
+CPP_PART_5_LINE_84 = CATALOG.declare("cpp_part_5_line_84", Decimal, non_negative=True)
+"""Part 5 line 84 "Line 84: Amount from line 45 multiplied by 50% =": line 45 times 0.5, rounded
+half-up to the cent. Line 85 is a copy of it."""
+
+CPP_PART_5_LINE_86 = CATALOG.declare("cpp_part_5_line_86", Decimal, non_negative=True)
+"""Part 5 line 86 "If line 74 is negative, enter it as a positive amount. If line 74 is positive or
+"0", enter the amount from line 85 on line 87 and continue at line 88.": "0" less line 74, not
+below zero, so 0 when line 74 is positive or "0"."""
+
+CPP_PART_5_LINE_87 = CATALOG.declare("cpp_part_5_line_87", Decimal, non_negative=True)
+"""Part 5 line 87 "Line 87: Line 85 minus line 86 (if negative, enter "0") =": line 84 less line
+86, not below zero (line 85 is a copy of line 84)."""
+
+CPP_PART_5_LINE_88 = CATALOG.declare("cpp_part_5_line_88", Decimal, non_negative=True)
+"""Part 5 line 88 "Deduction for CPP enhanced contributions on self-employment income and other
+earnings: Add lines 80, 81, 83, 84, and 87. Enter this amount (in dollar and cents) on line 22200
+of your return. =": the sum of lines 80, 81, 83, 84 and 87, as printed. When line 74 is not
+negative, line 87 equals line 84, so lines 84 and 71 each enter twice."""
+
+CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT = CATALOG.declare(
+    "cpp_part_5_deduction_on_self_employment", Decimal, non_negative=True
+)
+"""Part 5 line 88 on T1 line 22200, once for each Part 5 completed (1 or 0). Summed with the Part 4
+deduction into cpp_deduction_on_self_employment_and_other_earnings."""
+
+CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS = CATALOG.declare(
+    "cpp_deduction_on_self_employment_and_other_earnings", Decimal, non_negative=True
+)
+"""T1 line 22200: the Part 4 deduction (cpp_deduction_on_self_employment) plus the Part 5 deduction
+(cpp_part_5_deduction_on_self_employment), read by 05_deductions and 20_alternative_minimum_tax."""
+
+CPP_BASE_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
+    "cpp_base_contributions_on_return", Decimal, non_negative=True
+)
+"""Base CPP contributions on the return, T1 line 30800 and ON428 line 58240: Part 5 line 57 "Base
+CPP contributions through employment income: Line 55 plus line 56 Enter this amount (in dollars and
+cents) on line 30800 of your return." when Part 5 is completed, else the Part 3 route,
+cpp_part_3_base_contributions_on_return. The choice is by the count of cpp_part_5_completed."""
+
+CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
+    "cpp_enhanced_contributions_on_return", Decimal, non_negative=True
+)
+"""Enhanced CPP contributions on the return, T1 line 22215: Part 5 line 69 "Deduction for CPP
+enhanced contributions on employment income: Line 69: Line 64 plus line 68 Enter this amount (in
+dollars and cents) on line 22215 of your return." when Part 5 is completed, else the Part 3 route,
+cpp_part_3_enhanced_contributions_on_return. A deduction from total income, not a credit."""
+
+CPP_OVERPAYMENT = CATALOG.declare("cpp_overpayment", Decimal, non_negative=True)
+"""CPP overpayment, T1 line 44800: Part 5 line 50 "CPP overpayment: Enter the result of the
+following calculation (in dollars and cents) on line 44800 of your return: amount from line 49
+entered as a positive amount multiplied by 50% =" when Part 5 is completed, else the Part 3 route,
+cpp_part_3_overpayment. The return's refund total reads it at line 152 "CPP or QPP overpayment"
+(Form 5006-R, line 152 and line 44800)."""

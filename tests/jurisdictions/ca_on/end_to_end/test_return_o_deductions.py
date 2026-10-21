@@ -66,7 +66,7 @@ def test_line_23300_adds_every_wired_deduction_once_in_the_forms_line_order() ->
         "+ child_care_expenses 0 + allowable_business_investment_loss 64 "
         "+ support_payments_deduction 128 "
         "+ carrying_charges_interest_expenses_and_other_expenses 256 "
-        "+ cpp_deduction_on_self_employment 0 "
+        "+ cpp_deduction_on_self_employment_and_other_earnings 0 "
         "+ cpp_enhanced_contributions_on_return 0 + exploration_and_development_expenses 512 "
         "+ other_deductions 1024 + total_split_income 0 = 2047"
     ) in rendered

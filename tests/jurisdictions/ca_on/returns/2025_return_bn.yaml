@@ -30,7 +30,7 @@ description: >-
   joins the total credits of T1 line 166. The T4 inputs are the only chosen figures: the
   required amounts are the rates' arithmetic, not the printed maximums ($3,356.10 and $678.00
   are not reached), and there is no second additional contribution to bring in. Schedule 8
-  Part 5 lines 1 to 42 are computed but not routed: with no self-employment income and no CPT20
+  Part 5 is not completed, so lines 1 to 42 stay on the Part 3 figures: with no self-employment income and no CPT20
   earnings, line 4 is $0 and so are lines 22, 25, 28, 29, 30, 39, 41 and 42. The lines fed by
   Part 3 alone are not zero: line 5 is the $3,500.00 box 16 total, line 6 the $138.25 of line 20
   of Part 3 if positive, so line 7 is $3,500.00 - $138.25 = $3,361.75 and line 10 is $3,361.75
@@ -38,15 +38,20 @@ description: >-
   20 is $3,361.75 x 16.80672 = 56,499.99096, to the cent $56,499.99, line 21 is $67,800 -
   $56,499.99 = $11,300.01, line 33 is line 2 of Part 3, $60,000 (not more than $71,300, so line
   42 is $0), and line 36 is $9,900 (line 35 is $0 as line 16 is $0). Lines 43 to 69 are
-  computed but not routed either (lines 49, 50, 57 and 69 are declared outputs): lines 30 and 42
-  are $0, so lines 43 to 47 are $0.00. Line 48 is line 24 of Part 3 (if positive), $138.25, x 2 =
+  computed but do not replace the Part 3a figures: lines 30 and 42 are $0, so lines 43 to 47 are $0.00. Line 48 is line 24 of Part 3 (if positive), $138.25, x 2 =
   $276.50, and line 49 is line 47 less line 48, $0.00 - $276.50 = -$276.50, in brackets, so line
   50 is line 49 as a positive amount x 50%, $276.50 x 50% = $138.25 (the same $138.25 as line
   44800 here). Lines 16 and 19 of Part 3 are positive, so line 51 is Part 3 line 11, $2,796.75
   (lines 52 to 56 are $0), and line 57 is $2,796.75, the line 30800 of the return; line 58 is Part
   3 line 12, $565.00 (lines 59 to 63 are $0), line 64 is $565.00, line 65 is Part 3 line 22, $0
   (lines 66 and 67 are $0) and line 69 is $565.00 + $0 = $565.00, the line 22215 of the return.
-  The self-employment cases of Part 5 are in the end to end test. The last expected lines (net income, the AMT subtotal and
+  Lines 70 to 88 are computed but, Part 5 not being completed, lines 31000, 22200 and 42100 stay $0: lines
+  43 to 45 are $0.00, so lines 70, 71, 72, 75, 77, 80, 83 and 84 are $0.00 (line A, the lesser of
+  line 72 and line 73, is $0.00). Line 73 is line 24 of Part 3 if positive, $138.25, so line 74 is
+  line 72 less line 73, $0.00 - $138.25 = -$138.25, in brackets, and line 86 is line 74 as a
+  positive amount, $138.25; line 87 is line 85 (the amount from line 84, $0.00) less line 86,
+  negative, so $0.00, and line 88 is $0.00. The self-employment cases of Part 5, and the routing
+  with Part 5 completed, are in the end to end test. The last expected lines (net income, the AMT subtotal and
   rate
   amount, the Ontario tax after the dividend credit and the balance owing) are the worksheet's
   figures for this income, the balance owing being the $8,676.79 of the same return without
@@ -94,6 +99,18 @@ sources:
     is positive or "0", enter the amount from line 22 of Part 3 on line 65 and line 68, and
     continue at line 69."; "Line 68: Line 65 plus line 67"; "Line 69: Line 64 plus line 68".
   - >-
+    CRA, T1-2025 Schedule 8 (form 5000-S8), Part 5, lines 70 to 88
+    (docs/cra-forms-2025/5000-s8-25e.txt): "Line 70: Enter the result of the following
+    calculation (in dollars and cents) on line 31000 of your return. amount from line 43
+    multiplied by 50%"; "Line 71: Amount from line 44 multiplied by 50%"; "Line 72: Line 70 plus
+    line 71"; "Line 73: Enter the amount from line 24 of Part 3 if positive. If not, enter "0"";
+    "Line 74: Line 72 minus line 73 (if negative, show in brackets)"; "Line 75: amount from line 72
+    or line 73 Line A multiply by 83.1933"; "Line 86: If line 74 is negative, enter it as a
+    positive amount. If line 74 is positive or "0", enter the amount from line 85 on line 87 and
+    continue at line 88."; "Line 87: Line 85 minus line 86 (if negative, enter "0")"; "Line 88:
+    Add lines 80, 81, 83, 84, and 87. Enter this amount (in dollar and cents) on line 22200 of
+    your return."
+  - >-
     CRA, "CPP contribution rates, maximums and exemptions", 2025 row: maximum pensionable
     earnings $71,300; basic exemption $3,500; employee rates 4.95% (base) and 1% (first
     additional), and the second additional rate of 4% on earnings between $71,300 and $81,200.
@@ -120,6 +137,9 @@ expected:
   ca/cpp_base_contributions_on_return: "2796.75"
   ca/cpp_enhanced_contributions_on_return: "565.00"
   ca/cpp_overpayment: "138.25"
+  ca/cpp_part_3_base_contributions_on_return: "2796.75"
+  ca/cpp_part_3_enhanced_contributions_on_return: "565.00"
+  ca/cpp_part_3_overpayment: "138.25"
   ca/cpp_part_5_line_6: "138.25"
   ca/cpp_part_5_line_7: "3361.75"
   ca/cpp_part_5_line_10: "3361.75"
@@ -137,6 +157,21 @@ expected:
   ca/cpp_part_5_line_64: "565.00"
   ca/cpp_part_5_line_65: "0.00"
   ca/cpp_part_5_line_69: "565.00"
+  ca/cpp_part_5_line_70: "0.00"
+  ca/cpp_part_5_line_71: "0.00"
+  ca/cpp_part_5_line_72: "0.00"
+  ca/cpp_part_5_line_73: "138.25"
+  ca/cpp_part_5_line_74: "-138.25"
+  ca/cpp_part_5_line_75_base: "0.00"
+  ca/cpp_part_5_line_75: "0.00"
+  ca/cpp_part_5_line_77: "0.00"
+  ca/cpp_part_5_line_80: "0.00"
+  ca/cpp_part_5_line_83: "0.00"
+  ca/cpp_part_5_line_84: "0.00"
+  ca/cpp_part_5_line_86: "138.25"
+  ca/cpp_part_5_line_87: "0.00"
+  ca/cpp_part_5_line_88: "0.00"
+  ca/cpp_part_5_line_49_if_positive: "0.00"
   ca/net_income_before_adjustments: "59435.00"
   ca/other_payments_limit_income: "59435.00"
   ca/amt_part_1_subtotal: "59435.00"

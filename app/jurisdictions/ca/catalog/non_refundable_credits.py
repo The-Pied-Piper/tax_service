@@ -618,3 +618,15 @@ tax after credits) and line 131 (`itc_recapture`).
 Line 127 "Federal surtax on income earned outside Canada (complete Form T2203)" is not triggered on
 a return whose income is all allocated to Ontario and line 129 (40500) is not wired, so lines 128
 and 130 carry line 126 unchanged."""
+
+CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT = CATALOG.declare(
+    "cpp_part_5_base_contributions_on_self_employment", Decimal, non_negative=True
+)
+"""T1 line 31000 from Part 5 line 70, once for each Part 5 completed (1 or 0)."""
+
+CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS = CATALOG.declare(
+    "cpp_base_contributions_on_self_employment_and_other_earnings", Decimal, non_negative=True
+)
+"""T1 line 31000: the Part 4 amount (cpp_base_contributions_on_self_employment) plus the Part 5
+amount, read by 08_non_refundable_credits (twice), 15_ontario_personal_amounts and
+16_ontario_credits."""

@@ -17,7 +17,11 @@ from app.domain.trace import (
     ContributionTierLine,
     DividedByRateLine,
     FractionAppliedLine,
+    LesserOfLine,
     RateAppliedLine,
+    SubtractedLine,
+    SumLine,
+    TimesCountLine,
 )
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
@@ -28,7 +32,11 @@ from app.jurisdictions.ca.catalog import (
     CPP_BASE_CONTRIBUTIONS,
     CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_CONTRIBUTIONS_DIFFERENCE,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_ENHANCED_CONTRIBUTIONS,
     CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
@@ -43,6 +51,9 @@ from app.jurisdictions.ca.catalog import (
     CPP_LINE_23_NOT_NEGATIVE,
     CPP_LINE_24_POSITIVE,
     CPP_OVERPAYMENT,
+    CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    CPP_PART_3_OVERPAYMENT,
     CPP_PART_3B_LINE_30,
     CPP_PART_3B_LINE_31,
     CPP_PART_3B_LINE_32,
@@ -62,6 +73,9 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_3B_LINE_46,
     CPP_PART_3B_LINE_47,
     CPP_PART_3B_LINE_48,
+    CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_COMPLETED,
+    CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
     CPP_PART_5_LINE_4,
     CPP_PART_5_LINE_6,
     CPP_PART_5_LINE_7,
@@ -104,6 +118,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_LINE_48,
     CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
     CPP_PART_5_LINE_49,
+    CPP_PART_5_LINE_49_IF_POSITIVE,
     CPP_PART_5_LINE_50,
     CPP_PART_5_LINE_50_LINE_49_POSITIVE,
     CPP_PART_5_LINE_51,
@@ -128,6 +143,23 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_LINE_67_LESSER,
     CPP_PART_5_LINE_68,
     CPP_PART_5_LINE_69,
+    CPP_PART_5_LINE_70,
+    CPP_PART_5_LINE_71,
+    CPP_PART_5_LINE_72,
+    CPP_PART_5_LINE_73,
+    CPP_PART_5_LINE_74,
+    CPP_PART_5_LINE_75,
+    CPP_PART_5_LINE_75_BASE,
+    CPP_PART_5_LINE_77,
+    CPP_PART_5_LINE_80,
+    CPP_PART_5_LINE_83,
+    CPP_PART_5_LINE_84,
+    CPP_PART_5_LINE_86,
+    CPP_PART_5_LINE_87,
+    CPP_PART_5_LINE_88,
+    CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
@@ -135,9 +167,13 @@ from app.jurisdictions.ca.catalog import (
     CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_ZERO,
     DEDUCTIONS_FROM_TOTAL_INCOME,
+    EI_PAYABLE_ON_SELF_EMPLOYMENT,
+    NET_FEDERAL_TAX,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     REFUND_OR_BALANCE_OWING,
+    SOCIAL_BENEFITS_REPAYMENT_PAYABLE,
     TOTAL_CREDITS,
+    TOTAL_PAYABLE,
 )
 from app.jurisdictions.ca_on import catalog as ontario
 from tests.jurisdictions.ca_on.end_to_end.support import D, compute
@@ -894,7 +930,8 @@ def chosen_lines(worksheet: Worksheet) -> dict[ArtifactKind[Any], ChosenByCountL
 
 
 def test_the_trace_names_the_part_the_three_return_lines_were_taken_from() -> None:
-    # Line 24 positive: Part 3a line 25 (line 15, the amount from line 11), line 28 and line 29.
+    # Line 24 positive: Part 3a line 25 (line 15, the amount from line 11), line 28 and line 29,
+    # the Part 3 route that Part 5 replaces when it is completed.
     positive = chosen_lines(
         compute(
             "60000",
@@ -908,22 +945,22 @@ def test_the_trace_names_the_part_the_three_return_lines_were_taken_from() -> No
             cpp_t4_second_additional_contributions="0",
         )
     )
-    assert positive[CPP_BASE_CONTRIBUTIONS_ON_RETURN] == ChosenByCountLine(
-        output=CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    assert positive[CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN] == ChosenByCountLine(
+        output=CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
         count_kind=CPP_LINE_24_POSITIVE,
         count=1,
         chosen_kind=CPP_BASE_CONTRIBUTIONS,
         chosen_value=D("2796.75"),
     )
-    assert positive[CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN] == ChosenByCountLine(
-        output=CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    assert positive[CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN] == ChosenByCountLine(
+        output=CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
         count_kind=CPP_LINE_24_POSITIVE,
         count=1,
         chosen_kind=CPP_ENHANCED_CONTRIBUTIONS,
         chosen_value=D("565.00"),
     )
-    assert positive[CPP_OVERPAYMENT] == ChosenByCountLine(
-        output=CPP_OVERPAYMENT,
+    assert positive[CPP_PART_3_OVERPAYMENT] == ChosenByCountLine(
+        output=CPP_PART_3_OVERPAYMENT,
         count_kind=CPP_LINE_24_POSITIVE,
         count=1,
         chosen_kind=CPP_CONTRIBUTIONS_DIFFERENCE,
@@ -931,22 +968,22 @@ def test_the_trace_names_the_part_the_three_return_lines_were_taken_from() -> No
     )
     # Line 24 "0" or negative: Part 3b line 36 and line 48, and "0" for the overpayment.
     zero = chosen_lines(compute("60000", (), "0", "0", "0", "0", "0"))
-    assert zero[CPP_BASE_CONTRIBUTIONS_ON_RETURN] == ChosenByCountLine(
-        output=CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    assert zero[CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN] == ChosenByCountLine(
+        output=CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
         count_kind=CPP_LINE_24_POSITIVE,
         count=0,
         chosen_kind=CPP_PART_3B_LINE_36,
         chosen_value=D("2796.75"),
     )
-    assert zero[CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN] == ChosenByCountLine(
-        output=CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    assert zero[CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN] == ChosenByCountLine(
+        output=CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
         count_kind=CPP_LINE_24_POSITIVE,
         count=0,
         chosen_kind=CPP_PART_3B_LINE_48,
         chosen_value=D("565.00"),
     )
-    assert zero[CPP_OVERPAYMENT] == ChosenByCountLine(
-        output=CPP_OVERPAYMENT,
+    assert zero[CPP_PART_3_OVERPAYMENT] == ChosenByCountLine(
+        output=CPP_PART_3_OVERPAYMENT,
         count_kind=CPP_LINE_24_POSITIVE,
         count=0,
         chosen_kind=CPP_ZERO,
@@ -982,8 +1019,8 @@ def test_the_trace_names_the_part_the_three_return_lines_were_taken_from() -> No
     )
 
 
-# Schedule 8 Part 5 lines 1 to 42 (no routing yet: lines 30 and 42 are declared outputs that the
-# lines 43 to 88 of a later change will read). Every figure below is derived by hand from the form's
+# Schedule 8 Part 5 lines 1 to 42 (lines 30 and 42 are read by lines 43 to 45 and declared outputs
+# as well). Every figure below is derived by hand from the form's
 # lines, in order, from the employment income, the self-employment income (T1 line 23, which is
 # line 27 of the return), the two T4 totals and the two CPT20 amounts. Without a T4 total given, box
 # 16 and 16A are the required contributions (see `required_cpp_contributions`), so lines 20 and 23
@@ -1603,8 +1640,9 @@ def test_part_5_line_42_is_negative_when_line_4_is_a_loss_and_line_33_is_above_7
 
 
 def test_part_5_changes_no_other_line_of_the_return() -> None:
-    # The Part 5 lines are only declared outputs: the CPT20 earnings shown on a T4 slip (line 3)
-    # feed Part 5 alone, so the deductions, the credits and the balance owing do not move.
+    # Part 5 is not completed, so none of its lines is routed to the return: the CPT20 earnings
+    # shown on a T4 slip (line 3) feed Part 5 alone, so the deductions, the credits and the balance
+    # owing do not move.
     without = compute("60000", (), "0", "0", "0", "0", "0", professional_income="20000")
     with_cpt20 = compute(
         "60000",
@@ -1722,8 +1760,8 @@ def test_the_trace_names_the_candidate_lines_9_15_and_42_took_or_the_zero() -> N
     )
 
 
-# Schedule 8 Part 5 lines 43 to 69 (no routing yet: lines 49, 50, 57 and 69 are declared outputs
-# that a later change routes to lines 42100, 44800, 30800 and 22215). Every figure below is derived
+# Schedule 8 Part 5 lines 43 to 69 (lines 49, 50, 57 and 69 are routed to lines 42100, 44800,
+# 30800 and 22215 by the cases at the end of this file). Every figure below is derived
 # by hand from the form's lines, in order, from the employment income, the self-employment income
 # (T1 line 23, which is line 27 of the return) and the two T4 totals; the Part 3 lines and Part 5
 # lines 1 to 42 are those of the cases above. Lines 51 to 69 repeat Part 3b lines 30 to 48 with the
@@ -2767,11 +2805,191 @@ def test_part_5_lines_57_and_69_equal_the_base_and_enhanced_contributions_on_the
     assert worksheet.get(CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN).value == D(line_22215)
 
 
-def test_part_5_lines_49_and_50_are_not_routed_to_lines_42100_and_44800_yet() -> None:
-    # Return BN with line 27 of 20,000: line 49 is 1,764.20 and line 50 is 0, but the overpayment on
-    # the return is still Part 3a's line 29, 138.25, and the self-employment income does not move
-    # the CPP lines of the return or the total credits of line 166 beyond what Part 4 does.
-    with_part_5 = compute(
+# Schedule 8 Part 5 lines 70 to 88 and the final routing of lines 30800, 22215, 44800, 22200, 31000
+# and 42100. Every figure below is derived by hand from the form's lines, in order, from the
+# employment income, line 27 and the two T4 totals; Part 3, Part 5 lines 1 to 42 and lines 43 to
+# 69 are those of the cases above. Line 70 is 50% of line 43 and line 71 50% of line 44 (line
+# 31000 is line 70); line 73 is line 24 of Part 3 if positive; line A is the lesser of lines 72 and
+# 73; line 75 is A x 83.1933%; line 84 is 50% of line 45; line 86 is line 74 as a positive amount;
+# line 87 is line 84 less line 86 (if negative, "0"); and line 88 (line 22200) adds lines 80, 81,
+# 83, 84 and 87 as printed, so line 71 (as line 81) and line 84 (as lines 84 and 87) are counted
+# twice when line 74 is not negative: with no employment income that is Part 4's line 17, as the
+# test of Part 4's lines 14, 15 and 17 below shows. With Part 5 completed the return takes line
+# 30800 from line 57, line 22215 from line 69, line 44800 from line 50, line 42100 from line 49
+# (if positive), line 31000 from line 70 and line 22200 from line 88, each replacing Part 3a and
+# Part 3b (30800, 22215 and 44800) or added to Part 4's line (42100, 31000 and 22200). The cases:
+# (a) the ticket's example; (b) employment income above 71,300 (line 84 not 0); (c) Return BN as
+# filed with line 27 of 20,000 (line A is line 73); (d) line 72 less than line 73 (line A is line
+# 72, line 74 negative); (e) line 86 more than line 84 (line 87 is 0) and line 49 negative (line 50
+# is line 44800); (f) line 73 equal to line 72; (h) line 80 a cent negative; (i) no self-employment
+# income; (j) a loss; (k) line 24 negative; (l) line 24 positive with line 23 negative. Line 83
+# is never negative (line 77 never exceeds line 71 for any line 30 from 0 to 67,800.00, checked cent
+# by cent), so no case reaches it. Lines 70 to 88 do not depend on the Part 5 completed count; only
+# the routing does, and the cases below it show the count at 0, Part 4 alone and both counts at 1.
+
+
+def test_part_5_lines_70_to_88_for_employment_income_of_60000_and_line_27_of_20000() -> None:
+    # Case (a), the ticket's example: employment income of $60,000, line 27 of 20,000 and the T4
+    # totals the required ones (box 16 of 3,361.75 and box 16A of 0), Part 5 completed. Part 3
+    # line 24 is 0.00; Part 5 lines 30 and 42 are 11,300.01 and 8,699.99, so lines 43 to 47 are
+    # 1,118.70, 226.00, 696.00, 922.00 and 2,040.70, line 48 is 0.00, line 49 is 2,040.70 and
+    # line 50 is 0.00, and lines 57 and 69 are 2,796.75 and 565.00 (see the cases above for
+    # lines 1 to 69). Line 70 is line 43 (1,118.70) x 50% = 559.35 and line 71 is line 44
+    # (226.00) x 50% = 113.00; line 72 is 559.35 + 113.00 = 672.35. Line 73 is "0" (line 24 of
+    # Part 3, 0.00, is not positive). Line 74 is 672.35 - 0.00 = 672.35. Line A is the lesser of
+    # line 72 (672.35) and line 73 (0.00): 0.00 (line 73). Line 75 is A x 83.1933% = 0.00 x
+    # 0.831933 = 0, to the cent 0.00; line 77 is A - line 76 (the amount from line 75) = 0.00 -
+    # 0.00 = 0.00. Line 80 is line 78 (the amount from line 70) less line 79 (the amount from
+    # line 75) = 559.35 - 0.00 = 559.35; line 83 is line 81 (the amount from line 71) less line
+    # 82 (the amount from line 77) = 113.00 - 0.00 = 113.00. Line 84 is line 45 (696.00) x 50% =
+    # 348, to the cent 348.00. Line 74 is positive or "0", so line 86 is "0" and line 85 (the
+    # amount from line 84) goes on line 87. Line 87 is line 85 (the amount from line 84) less
+    # line 86 = 348.00 - 0.00 = 348.00. Line 88 adds lines 80, 81 (the amount from line 71), 83,
+    # 84 and 87 as printed: 559.35 + 113.00 + 113.00 + 348.00 + 348.00 = 1,481.35. With Part 5
+    # completed the return takes line 30800 from line 57 (2,796.75), line 22215 from line 69
+    # (565.00), line 44800 from line 50 (0.00), line 42100 from line 49 if positive (2,040.70),
+    # line 31000 from line 70 (559.35) and line 22200 from line 88 (1,481.35).
+    worksheet = compute(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        cpp_part_5_completed=1,
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_43: D("1118.70"),
+            CPP_PART_5_LINE_44: D("226.00"),
+            CPP_PART_5_LINE_45: D("696.00"),
+            CPP_PART_5_LINE_49: D("2040.70"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_57: D("2796.75"),
+            CPP_PART_5_LINE_69: D("565.00"),
+            CPP_PART_5_LINE_70: D("559.35"),
+            CPP_PART_5_LINE_71: D("113.00"),
+            CPP_PART_5_LINE_72: D("672.35"),
+            CPP_PART_5_LINE_73: D("0.00"),
+            CPP_PART_5_LINE_74: D("672.35"),
+            CPP_PART_5_LINE_75_BASE: D("0.00"),
+            CPP_PART_5_LINE_75: D("0.00"),
+            CPP_PART_5_LINE_77: D("0.00"),
+            CPP_PART_5_LINE_80: D("559.35"),
+            CPP_PART_5_LINE_83: D("113.00"),
+            CPP_PART_5_LINE_84: D("348.00"),
+            CPP_PART_5_LINE_86: D("0.00"),
+            CPP_PART_5_LINE_87: D("348.00"),
+            CPP_PART_5_LINE_88: D("1481.35"),
+            CPP_PART_5_LINE_49_IF_POSITIVE: D("2040.70"),
+            CPP_PART_3_OVERPAYMENT: D("0.00"),
+            CPP_BASE_CONTRIBUTIONS_ON_RETURN: D("2796.75"),
+            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: D("565.00"),
+            CPP_OVERPAYMENT: D("0.00"),
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("2040.70"),
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("559.35"),
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("1481.35"),
+            CPP_PART_5_COMPLETED: 1,
+        },
+    )
+
+
+def test_part_5_line_84_halves_line_45_when_employment_income_is_above_71300() -> None:
+    # Case (b): employment income of $80,000 and line 27 of 15,000, the T4 totals the required
+    # ones (4,034.10 and 348.00), Part 5 completed. Part 3 line 24 is 0.00; Part 5 lines 30 and
+    # 42 are 0.01 and 1,200.00, so lines 43 to 47 are 0.00, 0.00, 96.00, 96.00 and 96.00, line
+    # 48 is 0.00, line 49 is 96.00 and line 50 is 0.00, and lines 57 and 69 are 3,356.10 and
+    # 1,026.00 (see the cases above for lines 1 to 69). Line 70 is line 43 (0.00) x 50% = 0.00
+    # and line 71 is line 44 (0.00) x 50% = 0.00; line 72 is 0.00 + 0.00 = 0.00. Line 73 is "0"
+    # (line 24 of Part 3, 0.00, is not positive). Line 74 is 0.00 - 0.00 = 0.00. Line A is the
+    # lesser of line 72 (0.00) and line 73 (0.00): 0.00 (equal, so either). Line 75 is A x
+    # 83.1933% = 0.00 x 0.831933 = 0, to the cent 0.00; line 77 is A - line 76 (the amount from
+    # line 75) = 0.00 - 0.00 = 0.00. Line 80 is line 78 (the amount from line 70) less line 79
+    # (the amount from line 75) = 0.00 - 0.00 = 0.00; line 83 is line 81 (the amount from line
+    # 71) less line 82 (the amount from line 77) = 0.00 - 0.00 = 0.00. Line 84 is line 45
+    # (96.00) x 50% = 48, to the cent 48.00. Line 74 is positive or "0", so line 86 is "0" and
+    # line 85 (the amount from line 84) goes on line 87. Line 87 is line 85 (the amount from
+    # line 84) less line 86 = 48.00 - 0.00 = 48.00. Line 88 adds lines 80, 81 (the amount from
+    # line 71), 83, 84 and 87 as printed: 0.00 + 0.00 + 0.00 + 48.00 + 48.00 = 96.00. With Part
+    # 5 completed the return takes line 30800 from line 57 (3,356.10), line 22215 from line 69
+    # (1,026.00), line 44800 from line 50 (0.00), line 42100 from line 49 if positive (96.00),
+    # line 31000 from line 70 (0.00) and line 22200 from line 88 (96.00).
+    worksheet = compute(
+        "80000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="15000",
+        cpp_part_5_completed=1,
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_43: D("0.00"),
+            CPP_PART_5_LINE_44: D("0.00"),
+            CPP_PART_5_LINE_45: D("96.00"),
+            CPP_PART_5_LINE_49: D("96.00"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_57: D("3356.10"),
+            CPP_PART_5_LINE_69: D("1026.00"),
+            CPP_PART_5_LINE_70: D("0.00"),
+            CPP_PART_5_LINE_71: D("0.00"),
+            CPP_PART_5_LINE_72: D("0.00"),
+            CPP_PART_5_LINE_73: D("0.00"),
+            CPP_PART_5_LINE_74: D("0.00"),
+            CPP_PART_5_LINE_75_BASE: D("0.00"),
+            CPP_PART_5_LINE_75: D("0.00"),
+            CPP_PART_5_LINE_77: D("0.00"),
+            CPP_PART_5_LINE_80: D("0.00"),
+            CPP_PART_5_LINE_83: D("0.00"),
+            CPP_PART_5_LINE_84: D("48.00"),
+            CPP_PART_5_LINE_86: D("0.00"),
+            CPP_PART_5_LINE_87: D("48.00"),
+            CPP_PART_5_LINE_88: D("96.00"),
+            CPP_PART_5_LINE_49_IF_POSITIVE: D("96.00"),
+            CPP_PART_3_OVERPAYMENT: D("0.00"),
+            CPP_BASE_CONTRIBUTIONS_ON_RETURN: D("3356.10"),
+            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: D("1026.00"),
+            CPP_OVERPAYMENT: D("0.00"),
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("96.00"),
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("0.00"),
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("96.00"),
+            CPP_PART_5_COMPLETED: 1,
+        },
+    )
+
+
+def test_part_5_line_a_is_line_73_when_line_24_of_part_3_is_less_than_line_72() -> None:
+    # Case (c): Return BN as filed with line 27 of 20,000, employment income of $60,000 and box
+    # 16 of 3,500.00 (138.25 more than line 13), Part 5 completed. Part 3 line 24 is 138.25;
+    # Part 5 lines 30 and 42 are 11,300.01 and 8,699.99, so lines 43 to 47 are 1,118.70, 226.00,
+    # 696.00, 922.00 and 2,040.70, line 48 is 276.50, line 49 is 1,764.20 and line 50 is 0.00,
+    # and lines 57 and 69 are 2,796.75 and 565.00 (see the cases above for lines 1 to 69). Line
+    # 70 is line 43 (1,118.70) x 50% = 559.35 and line 71 is line 44 (226.00) x 50% = 113.00;
+    # line 72 is 559.35 + 113.00 = 672.35. Line 73 is line 24 of Part 3, positive, 138.25. Line
+    # 74 is 672.35 - 138.25 = 534.10. Line A is the lesser of line 72 (672.35) and line 73
+    # (138.25): 138.25 (line 73). Line 75 is A x 83.1933% = 138.25 x 0.831933 = 115.01473725, to
+    # the cent 115.01; line 77 is A - line 76 (the amount from line 75) = 138.25 - 115.01 =
+    # 23.24. Line 80 is line 78 (the amount from line 70) less line 79 (the amount from line 75)
+    # = 559.35 - 115.01 = 444.34; line 83 is line 81 (the amount from line 71) less line 82 (the
+    # amount from line 77) = 113.00 - 23.24 = 89.76. Line 84 is line 45 (696.00) x 50% = 348, to
+    # the cent 348.00. Line 74 is positive or "0", so line 86 is "0" and line 85 (the amount
+    # from line 84) goes on line 87. Line 87 is line 85 (the amount from line 84) less line 86 =
+    # 348.00 - 0.00 = 348.00. Line 88 adds lines 80, 81 (the amount from line 71), 83, 84 and 87
+    # as printed: 444.34 + 113.00 + 89.76 + 348.00 + 348.00 = 1,343.10. With Part 5 completed
+    # the return takes line 30800 from line 57 (2,796.75), line 22215 from line 69 (565.00),
+    # line 44800 from line 50 (0.00), line 42100 from line 49 if positive (1,764.20), line 31000
+    # from line 70 (559.35) and line 22200 from line 88 (1,343.10); Part 3a's line 29 would be
+    # 138.25.
+    worksheet = compute(
         "60000",
         (),
         "0",
@@ -2781,7 +2999,998 @@ def test_part_5_lines_49_and_50_are_not_routed_to_lines_42100_and_44800_yet() ->
         "0",
         professional_income="20000",
         cpp_t4_base_and_first_additional_contributions="3500.00",
+        cpp_t4_second_additional_contributions="0",
+        cpp_part_5_completed=1,
     )
-    assert with_part_5.get(CPP_PART_5_LINE_49).value == D("1764.20")
-    assert with_part_5.get(CPP_PART_5_LINE_50).value == D("0.00")
-    assert with_part_5.get(CPP_OVERPAYMENT).value == D("138.25")
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_43: D("1118.70"),
+            CPP_PART_5_LINE_44: D("226.00"),
+            CPP_PART_5_LINE_45: D("696.00"),
+            CPP_PART_5_LINE_49: D("1764.20"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_57: D("2796.75"),
+            CPP_PART_5_LINE_69: D("565.00"),
+            CPP_PART_5_LINE_70: D("559.35"),
+            CPP_PART_5_LINE_71: D("113.00"),
+            CPP_PART_5_LINE_72: D("672.35"),
+            CPP_PART_5_LINE_73: D("138.25"),
+            CPP_PART_5_LINE_74: D("534.10"),
+            CPP_PART_5_LINE_75_BASE: D("138.25"),
+            CPP_PART_5_LINE_75: D("115.01"),
+            CPP_PART_5_LINE_77: D("23.24"),
+            CPP_PART_5_LINE_80: D("444.34"),
+            CPP_PART_5_LINE_83: D("89.76"),
+            CPP_PART_5_LINE_84: D("348.00"),
+            CPP_PART_5_LINE_86: D("0.00"),
+            CPP_PART_5_LINE_87: D("348.00"),
+            CPP_PART_5_LINE_88: D("1343.10"),
+            CPP_PART_5_LINE_49_IF_POSITIVE: D("1764.20"),
+            CPP_PART_3_OVERPAYMENT: D("138.25"),
+            CPP_BASE_CONTRIBUTIONS_ON_RETURN: D("2796.75"),
+            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: D("565.00"),
+            CPP_OVERPAYMENT: D("0.00"),
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("1764.20"),
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("559.35"),
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("1343.10"),
+            CPP_PART_5_COMPLETED: 1,
+        },
+    )
+
+
+def test_part_5_line_a_is_line_72_and_line_86_comes_off_line_84_when_line_74_is_negative() -> None:
+    # Case (d): employment income of $60,000, line 27 of 20,000 and box 16 of 4,100.00 (738.25
+    # more than line 13), Part 5 completed. Part 3 line 24 is 738.25; Part 5 lines 30 and 42 are
+    # 11,300.01 and 8,699.99, so lines 43 to 47 are 1,118.70, 226.00, 696.00, 922.00 and
+    # 2,040.70, line 48 is 1,476.50, line 49 is 564.20 and line 50 is 0.00, and lines 57 and 69
+    # are 2,796.75 and 565.00 (see the cases above for lines 1 to 69). Line 70 is line 43
+    # (1,118.70) x 50% = 559.35 and line 71 is line 44 (226.00) x 50% = 113.00; line 72 is
+    # 559.35 + 113.00 = 672.35. Line 73 is line 24 of Part 3, positive, 738.25. Line 74 is
+    # 672.35 - 738.25 = -65.90, in brackets. Line A is the lesser of line 72 (672.35) and line
+    # 73 (738.25): 672.35 (line 72). Line 75 is A x 83.1933% = 672.35 x 0.831933 = 559.35015255,
+    # to the cent 559.35; line 77 is A - line 76 (the amount from line 75) = 672.35 - 559.35 =
+    # 113.00. Line 80 is line 78 (the amount from line 70) less line 79 (the amount from line
+    # 75) = 559.35 - 559.35 = 0.00; line 83 is line 81 (the amount from line 71) less line 82
+    # (the amount from line 77) = 113.00 - 113.00 = 0.00. Line 84 is line 45 (696.00) x 50% =
+    # 348, to the cent 348.00. Line 74 is negative, so line 86 is 65.90 (line 74 as a positive
+    # amount). Line 87 is line 85 (the amount from line 84) less line 86 = 348.00 - 65.90 =
+    # 282.10. Line 88 adds lines 80, 81 (the amount from line 71), 83, 84 and 87 as printed:
+    # 0.00 + 113.00 + 0.00 + 348.00 + 282.10 = 743.10. With Part 5 completed the return takes
+    # line 30800 from line 57 (2,796.75), line 22215 from line 69 (565.00), line 44800 from line
+    # 50 (0.00), line 42100 from line 49 if positive (564.20), line 31000 from line 70 (559.35)
+    # and line 22200 from line 88 (743.10); Part 3a's line 29 would be 738.25.
+    worksheet = compute(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        cpp_t4_base_and_first_additional_contributions="4100.00",
+        cpp_part_5_completed=1,
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_43: D("1118.70"),
+            CPP_PART_5_LINE_44: D("226.00"),
+            CPP_PART_5_LINE_45: D("696.00"),
+            CPP_PART_5_LINE_49: D("564.20"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_57: D("2796.75"),
+            CPP_PART_5_LINE_69: D("565.00"),
+            CPP_PART_5_LINE_70: D("559.35"),
+            CPP_PART_5_LINE_71: D("113.00"),
+            CPP_PART_5_LINE_72: D("672.35"),
+            CPP_PART_5_LINE_73: D("738.25"),
+            CPP_PART_5_LINE_74: D("-65.90"),
+            CPP_PART_5_LINE_75_BASE: D("672.35"),
+            CPP_PART_5_LINE_75: D("559.35"),
+            CPP_PART_5_LINE_77: D("113.00"),
+            CPP_PART_5_LINE_80: D("0.00"),
+            CPP_PART_5_LINE_83: D("0.00"),
+            CPP_PART_5_LINE_84: D("348.00"),
+            CPP_PART_5_LINE_86: D("65.90"),
+            CPP_PART_5_LINE_87: D("282.10"),
+            CPP_PART_5_LINE_88: D("743.10"),
+            CPP_PART_5_LINE_49_IF_POSITIVE: D("564.20"),
+            CPP_PART_3_OVERPAYMENT: D("738.25"),
+            CPP_BASE_CONTRIBUTIONS_ON_RETURN: D("2796.75"),
+            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: D("565.00"),
+            CPP_OVERPAYMENT: D("0.00"),
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("564.20"),
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("559.35"),
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("743.10"),
+            CPP_PART_5_COMPLETED: 1,
+        },
+    )
+
+
+def test_part_5_line_87_is_0_when_line_86_is_more_than_line_84_and_line_49_is_negative() -> None:
+    # Case (e): employment income of $60,000, line 27 of 20,000 and box 16 of 4,600.00 (1,238.25
+    # more than line 13), Part 5 completed. Part 3 line 24 is 1,238.25; Part 5 lines 30 and 42
+    # are 11,300.01 and 8,699.99, so lines 43 to 47 are 1,118.70, 226.00, 696.00, 922.00 and
+    # 2,040.70, line 48 is 2,476.50, line 49 is -435.80, in brackets, and line 50 is 217.90, and
+    # lines 57 and 69 are 2,796.75 and 565.00 (see the cases above for lines 1 to 69). Line 70
+    # is line 43 (1,118.70) x 50% = 559.35 and line 71 is line 44 (226.00) x 50% = 113.00; line
+    # 72 is 559.35 + 113.00 = 672.35. Line 73 is line 24 of Part 3, positive, 1,238.25. Line 74
+    # is 672.35 - 1,238.25 = -565.90, in brackets. Line A is the lesser of line 72 (672.35) and
+    # line 73 (1,238.25): 672.35 (line 72). Line 75 is A x 83.1933% = 672.35 x 0.831933 =
+    # 559.35015255, to the cent 559.35; line 77 is A - line 76 (the amount from line 75) =
+    # 672.35 - 559.35 = 113.00. Line 80 is line 78 (the amount from line 70) less line 79 (the
+    # amount from line 75) = 559.35 - 559.35 = 0.00; line 83 is line 81 (the amount from line
+    # 71) less line 82 (the amount from line 77) = 113.00 - 113.00 = 0.00. Line 84 is line 45
+    # (696.00) x 50% = 348, to the cent 348.00. Line 74 is negative, so line 86 is 565.90 (line
+    # 74 as a positive amount). Line 87 is line 85 (the amount from line 84) less line 86 =
+    # 348.00 - 565.90 = -217.90, negative, so 0. Line 88 adds lines 80, 81 (the amount from line
+    # 71), 83, 84 and 87 as printed: 0.00 + 113.00 + 0.00 + 348.00 + 0.00 = 461.00. With Part 5
+    # completed the return takes line 30800 from line 57 (2,796.75), line 22215 from line 69
+    # (565.00), line 44800 from line 50 (217.90), line 42100 from line 49 if positive (0.00),
+    # line 31000 from line 70 (559.35) and line 22200 from line 88 (461.00); Part 3a's line 29
+    # would be 1,238.25.
+    worksheet = compute(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        cpp_t4_base_and_first_additional_contributions="4600.00",
+        cpp_part_5_completed=1,
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_43: D("1118.70"),
+            CPP_PART_5_LINE_44: D("226.00"),
+            CPP_PART_5_LINE_45: D("696.00"),
+            CPP_PART_5_LINE_49: D("-435.80"),
+            CPP_PART_5_LINE_50: D("217.90"),
+            CPP_PART_5_LINE_57: D("2796.75"),
+            CPP_PART_5_LINE_69: D("565.00"),
+            CPP_PART_5_LINE_70: D("559.35"),
+            CPP_PART_5_LINE_71: D("113.00"),
+            CPP_PART_5_LINE_72: D("672.35"),
+            CPP_PART_5_LINE_73: D("1238.25"),
+            CPP_PART_5_LINE_74: D("-565.90"),
+            CPP_PART_5_LINE_75_BASE: D("672.35"),
+            CPP_PART_5_LINE_75: D("559.35"),
+            CPP_PART_5_LINE_77: D("113.00"),
+            CPP_PART_5_LINE_80: D("0.00"),
+            CPP_PART_5_LINE_83: D("0.00"),
+            CPP_PART_5_LINE_84: D("348.00"),
+            CPP_PART_5_LINE_86: D("565.90"),
+            CPP_PART_5_LINE_87: D("0.00"),
+            CPP_PART_5_LINE_88: D("461.00"),
+            CPP_PART_5_LINE_49_IF_POSITIVE: D("0.00"),
+            CPP_PART_3_OVERPAYMENT: D("1238.25"),
+            CPP_BASE_CONTRIBUTIONS_ON_RETURN: D("2796.75"),
+            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: D("565.00"),
+            CPP_OVERPAYMENT: D("217.90"),
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("0.00"),
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("559.35"),
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("461.00"),
+            CPP_PART_5_COMPLETED: 1,
+        },
+    )
+
+
+def test_part_5_line_74_is_0_and_line_86_is_0_when_line_73_equals_line_72() -> None:
+    # Case (f): employment income of $60,000, line 27 of 20,000 and box 16 of 4,034.10 (672.35
+    # more than line 13, the same as line 72), Part 5 completed. Part 3 line 24 is 672.35; Part
+    # 5 lines 30 and 42 are 11,300.01 and 8,699.99, so lines 43 to 47 are 1,118.70, 226.00,
+    # 696.00, 922.00 and 2,040.70, line 48 is 1,344.70, line 49 is 696.00 and line 50 is 0.00,
+    # and lines 57 and 69 are 2,796.75 and 565.00 (see the cases above for lines 1 to 69). Line
+    # 70 is line 43 (1,118.70) x 50% = 559.35 and line 71 is line 44 (226.00) x 50% = 113.00;
+    # line 72 is 559.35 + 113.00 = 672.35. Line 73 is line 24 of Part 3, positive, 672.35. Line
+    # 74 is 672.35 - 672.35 = 0.00. Line A is the lesser of line 72 (672.35) and line 73
+    # (672.35): 672.35 (equal, so either). Line 75 is A x 83.1933% = 672.35 x 0.831933 =
+    # 559.35015255, to the cent 559.35; line 77 is A - line 76 (the amount from line 75) =
+    # 672.35 - 559.35 = 113.00. Line 80 is line 78 (the amount from line 70) less line 79 (the
+    # amount from line 75) = 559.35 - 559.35 = 0.00; line 83 is line 81 (the amount from line
+    # 71) less line 82 (the amount from line 77) = 113.00 - 113.00 = 0.00. Line 84 is line 45
+    # (696.00) x 50% = 348, to the cent 348.00. Line 74 is positive or "0", so line 86 is "0"
+    # and line 85 (the amount from line 84) goes on line 87. Line 87 is line 85 (the amount from
+    # line 84) less line 86 = 348.00 - 0.00 = 348.00. Line 88 adds lines 80, 81 (the amount from
+    # line 71), 83, 84 and 87 as printed: 0.00 + 113.00 + 0.00 + 348.00 + 348.00 = 809.00. With
+    # Part 5 completed the return takes line 30800 from line 57 (2,796.75), line 22215 from line
+    # 69 (565.00), line 44800 from line 50 (0.00), line 42100 from line 49 if positive (696.00),
+    # line 31000 from line 70 (559.35) and line 22200 from line 88 (809.00); Part 3a's line 29
+    # would be 672.35.
+    worksheet = compute(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        cpp_t4_base_and_first_additional_contributions="4034.10",
+        cpp_part_5_completed=1,
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_43: D("1118.70"),
+            CPP_PART_5_LINE_44: D("226.00"),
+            CPP_PART_5_LINE_45: D("696.00"),
+            CPP_PART_5_LINE_49: D("696.00"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_57: D("2796.75"),
+            CPP_PART_5_LINE_69: D("565.00"),
+            CPP_PART_5_LINE_70: D("559.35"),
+            CPP_PART_5_LINE_71: D("113.00"),
+            CPP_PART_5_LINE_72: D("672.35"),
+            CPP_PART_5_LINE_73: D("672.35"),
+            CPP_PART_5_LINE_74: D("0.00"),
+            CPP_PART_5_LINE_75_BASE: D("672.35"),
+            CPP_PART_5_LINE_75: D("559.35"),
+            CPP_PART_5_LINE_77: D("113.00"),
+            CPP_PART_5_LINE_80: D("0.00"),
+            CPP_PART_5_LINE_83: D("0.00"),
+            CPP_PART_5_LINE_84: D("348.00"),
+            CPP_PART_5_LINE_86: D("0.00"),
+            CPP_PART_5_LINE_87: D("348.00"),
+            CPP_PART_5_LINE_88: D("809.00"),
+            CPP_PART_5_LINE_49_IF_POSITIVE: D("696.00"),
+            CPP_PART_3_OVERPAYMENT: D("672.35"),
+            CPP_BASE_CONTRIBUTIONS_ON_RETURN: D("2796.75"),
+            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: D("565.00"),
+            CPP_OVERPAYMENT: D("0.00"),
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("696.00"),
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("559.35"),
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("809.00"),
+            CPP_PART_5_COMPLETED: 1,
+        },
+    )
+
+
+def test_part_5_line_80_is_a_cent_negative_when_line_75_is_a_cent_more_than_line_70() -> None:
+    # Case (h): employment income of $60,000, line 27 of 100.25 and box 16 of 3,500.00, Part 5
+    # completed. Part 3 line 24 is 138.25; Part 5 lines 30 and 42 are 100.25 and 0.00, so lines
+    # 43 to 47 are 9.92, 2.01, 0.00, 2.01 and 11.93, line 48 is 276.50, line 49 is -264.57, in
+    # brackets, and line 50 is 132.29, and lines 57 and 69 are 2,796.75 and 565.00 (see the
+    # cases above for lines 1 to 69). Line 70 is line 43 (9.92) x 50% = 4.96 and line 71 is line
+    # 44 (2.01) x 50% = 1.01; line 72 is 4.96 + 1.01 = 5.97. Line 73 is line 24 of Part 3,
+    # positive, 138.25. Line 74 is 5.97 - 138.25 = -132.28, in brackets. Line A is the lesser of
+    # line 72 (5.97) and line 73 (138.25): 5.97 (line 72). Line 75 is A x 83.1933% = 5.97 x
+    # 0.831933 = 4.96664001, to the cent 4.97; line 77 is A - line 76 (the amount from line 75)
+    # = 5.97 - 4.97 = 1.00. Line 80 is line 78 (the amount from line 70) less line 79 (the
+    # amount from line 75) = 4.96 - 4.97 = -0.01, a cent negative since line 75 rounds a cent
+    # over line 70; line 83 is line 81 (the amount from line 71) less line 82 (the amount from
+    # line 77) = 1.01 - 1.00 = 0.01. Line 84 is line 45 (0.00) x 50% = 0, to the cent 0.00. Line
+    # 74 is negative, so line 86 is 132.28 (line 74 as a positive amount). Line 87 is line 85
+    # (the amount from line 84) less line 86 = 0.00 - 132.28 = -132.28, negative, so 0. Line 88
+    # adds lines 80, 81 (the amount from line 71), 83, 84 and 87 as printed: -0.01 + 1.01 + 0.01
+    # + 0.00 + 0.00 = 1.01. With Part 5 completed the return takes line 30800 from line 57
+    # (2,796.75), line 22215 from line 69 (565.00), line 44800 from line 50 (132.29), line 42100
+    # from line 49 if positive (0.00), line 31000 from line 70 (4.96) and line 22200 from line
+    # 88 (1.01); Part 3a's line 29 would be 138.25.
+    worksheet = compute(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="100.25",
+        cpp_t4_base_and_first_additional_contributions="3500.00",
+        cpp_part_5_completed=1,
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_43: D("9.92"),
+            CPP_PART_5_LINE_44: D("2.01"),
+            CPP_PART_5_LINE_45: D("0.00"),
+            CPP_PART_5_LINE_49: D("-264.57"),
+            CPP_PART_5_LINE_50: D("132.29"),
+            CPP_PART_5_LINE_57: D("2796.75"),
+            CPP_PART_5_LINE_69: D("565.00"),
+            CPP_PART_5_LINE_70: D("4.96"),
+            CPP_PART_5_LINE_71: D("1.01"),
+            CPP_PART_5_LINE_72: D("5.97"),
+            CPP_PART_5_LINE_73: D("138.25"),
+            CPP_PART_5_LINE_74: D("-132.28"),
+            CPP_PART_5_LINE_75_BASE: D("5.97"),
+            CPP_PART_5_LINE_75: D("4.97"),
+            CPP_PART_5_LINE_77: D("1.00"),
+            CPP_PART_5_LINE_80: D("-0.01"),
+            CPP_PART_5_LINE_83: D("0.01"),
+            CPP_PART_5_LINE_84: D("0.00"),
+            CPP_PART_5_LINE_86: D("132.28"),
+            CPP_PART_5_LINE_87: D("0.00"),
+            CPP_PART_5_LINE_88: D("1.01"),
+            CPP_PART_5_LINE_49_IF_POSITIVE: D("0.00"),
+            CPP_PART_3_OVERPAYMENT: D("138.25"),
+            CPP_BASE_CONTRIBUTIONS_ON_RETURN: D("2796.75"),
+            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: D("565.00"),
+            CPP_OVERPAYMENT: D("132.29"),
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("0.00"),
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("4.96"),
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("1.01"),
+            CPP_PART_5_COMPLETED: 1,
+        },
+    )
+
+
+def test_part_5_without_self_employment_income_only_lines_73_74_and_86_are_not_0() -> None:
+    # Case (i): employment income of $60,000, no self-employment income and box 16 of 3,500.00,
+    # Part 5 completed. Part 3 line 24 is 138.25; Part 5 lines 30 and 42 are 0.00 and 0.00, so
+    # lines 43 to 47 are 0.00, 0.00, 0.00, 0.00 and 0.00, line 48 is 276.50, line 49 is -276.50,
+    # in brackets, and line 50 is 138.25, and lines 57 and 69 are 2,796.75 and 565.00 (see the
+    # cases above for lines 1 to 69). Line 70 is line 43 (0.00) x 50% = 0.00 and line 71 is line
+    # 44 (0.00) x 50% = 0.00; line 72 is 0.00 + 0.00 = 0.00. Line 73 is line 24 of Part 3,
+    # positive, 138.25. Line 74 is 0.00 - 138.25 = -138.25, in brackets. Line A is the lesser of
+    # line 72 (0.00) and line 73 (138.25): 0.00 (line 72). Line 75 is A x 83.1933% = 0.00 x
+    # 0.831933 = 0, to the cent 0.00; line 77 is A - line 76 (the amount from line 75) = 0.00 -
+    # 0.00 = 0.00. Line 80 is line 78 (the amount from line 70) less line 79 (the amount from
+    # line 75) = 0.00 - 0.00 = 0.00; line 83 is line 81 (the amount from line 71) less line 82
+    # (the amount from line 77) = 0.00 - 0.00 = 0.00. Line 84 is line 45 (0.00) x 50% = 0, to
+    # the cent 0.00. Line 74 is negative, so line 86 is 138.25 (line 74 as a positive amount).
+    # Line 87 is line 85 (the amount from line 84) less line 86 = 0.00 - 138.25 = -138.25,
+    # negative, so 0. Line 88 adds lines 80, 81 (the amount from line 71), 83, 84 and 87 as
+    # printed: 0.00 + 0.00 + 0.00 + 0.00 + 0.00 = 0.00. With Part 5 completed the return takes
+    # line 30800 from line 57 (2,796.75), line 22215 from line 69 (565.00), line 44800 from line
+    # 50 (138.25), line 42100 from line 49 if positive (0.00), line 31000 from line 70 (0.00)
+    # and line 22200 from line 88 (0.00); Part 3a's line 29 would be 138.25.
+    worksheet = compute(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        cpp_t4_base_and_first_additional_contributions="3500.00",
+        cpp_part_5_completed=1,
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_43: D("0.00"),
+            CPP_PART_5_LINE_44: D("0.00"),
+            CPP_PART_5_LINE_45: D("0.00"),
+            CPP_PART_5_LINE_49: D("-276.50"),
+            CPP_PART_5_LINE_50: D("138.25"),
+            CPP_PART_5_LINE_57: D("2796.75"),
+            CPP_PART_5_LINE_69: D("565.00"),
+            CPP_PART_5_LINE_70: D("0.00"),
+            CPP_PART_5_LINE_71: D("0.00"),
+            CPP_PART_5_LINE_72: D("0.00"),
+            CPP_PART_5_LINE_73: D("138.25"),
+            CPP_PART_5_LINE_74: D("-138.25"),
+            CPP_PART_5_LINE_75_BASE: D("0.00"),
+            CPP_PART_5_LINE_75: D("0.00"),
+            CPP_PART_5_LINE_77: D("0.00"),
+            CPP_PART_5_LINE_80: D("0.00"),
+            CPP_PART_5_LINE_83: D("0.00"),
+            CPP_PART_5_LINE_84: D("0.00"),
+            CPP_PART_5_LINE_86: D("138.25"),
+            CPP_PART_5_LINE_87: D("0.00"),
+            CPP_PART_5_LINE_88: D("0.00"),
+            CPP_PART_5_LINE_49_IF_POSITIVE: D("0.00"),
+            CPP_PART_3_OVERPAYMENT: D("138.25"),
+            CPP_BASE_CONTRIBUTIONS_ON_RETURN: D("2796.75"),
+            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: D("565.00"),
+            CPP_OVERPAYMENT: D("138.25"),
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("0.00"),
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("0.00"),
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("0.00"),
+            CPP_PART_5_COMPLETED: 1,
+        },
+    )
+
+
+def test_part_5_lines_70_to_88_are_0_for_a_loss_with_employment_income_above_71300() -> None:
+    # Case (j): employment income of $80,000 and line 27 of -5,000 (a loss), the T4 totals the
+    # required ones, Part 5 completed. Part 3 line 24 is 0.00; Part 5 lines 30 and 42 are 0.00
+    # and -5,000.00, so lines 43 to 47 are 0.00, 0.00, 0.00, 0.00 and 0.00, line 48 is 0.00,
+    # line 49 is 0.00 and line 50 is 0.00, and lines 57 and 69 are 3,356.10 and 1,026.00 (see
+    # the cases above for lines 1 to 69). Line 70 is line 43 (0.00) x 50% = 0.00 and line 71 is
+    # line 44 (0.00) x 50% = 0.00; line 72 is 0.00 + 0.00 = 0.00. Line 73 is "0" (line 24 of
+    # Part 3, 0.00, is not positive). Line 74 is 0.00 - 0.00 = 0.00. Line A is the lesser of
+    # line 72 (0.00) and line 73 (0.00): 0.00 (equal, so either). Line 75 is A x 83.1933% = 0.00
+    # x 0.831933 = 0, to the cent 0.00; line 77 is A - line 76 (the amount from line 75) = 0.00
+    # - 0.00 = 0.00. Line 80 is line 78 (the amount from line 70) less line 79 (the amount from
+    # line 75) = 0.00 - 0.00 = 0.00; line 83 is line 81 (the amount from line 71) less line 82
+    # (the amount from line 77) = 0.00 - 0.00 = 0.00. Line 84 is line 45 (0.00) x 50% = 0, to
+    # the cent 0.00. Line 74 is positive or "0", so line 86 is "0" and line 85 (the amount from
+    # line 84) goes on line 87. Line 87 is line 85 (the amount from line 84) less line 86 = 0.00
+    # - 0.00 = 0.00. Line 88 adds lines 80, 81 (the amount from line 71), 83, 84 and 87 as
+    # printed: 0.00 + 0.00 + 0.00 + 0.00 + 0.00 = 0.00. With Part 5 completed the return takes
+    # line 30800 from line 57 (3,356.10), line 22215 from line 69 (1,026.00), line 44800 from
+    # line 50 (0.00), line 42100 from line 49 if positive (0.00), line 31000 from line 70 (0.00)
+    # and line 22200 from line 88 (0.00).
+    worksheet = compute(
+        "80000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="-5000",
+        cpp_part_5_completed=1,
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_43: D("0.00"),
+            CPP_PART_5_LINE_44: D("0.00"),
+            CPP_PART_5_LINE_45: D("0.00"),
+            CPP_PART_5_LINE_49: D("0.00"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_57: D("3356.10"),
+            CPP_PART_5_LINE_69: D("1026.00"),
+            CPP_PART_5_LINE_70: D("0.00"),
+            CPP_PART_5_LINE_71: D("0.00"),
+            CPP_PART_5_LINE_72: D("0.00"),
+            CPP_PART_5_LINE_73: D("0.00"),
+            CPP_PART_5_LINE_74: D("0.00"),
+            CPP_PART_5_LINE_75_BASE: D("0.00"),
+            CPP_PART_5_LINE_75: D("0.00"),
+            CPP_PART_5_LINE_77: D("0.00"),
+            CPP_PART_5_LINE_80: D("0.00"),
+            CPP_PART_5_LINE_83: D("0.00"),
+            CPP_PART_5_LINE_84: D("0.00"),
+            CPP_PART_5_LINE_86: D("0.00"),
+            CPP_PART_5_LINE_87: D("0.00"),
+            CPP_PART_5_LINE_88: D("0.00"),
+            CPP_PART_5_LINE_49_IF_POSITIVE: D("0.00"),
+            CPP_PART_3_OVERPAYMENT: D("0.00"),
+            CPP_BASE_CONTRIBUTIONS_ON_RETURN: D("3356.10"),
+            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: D("1026.00"),
+            CPP_OVERPAYMENT: D("0.00"),
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("0.00"),
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("0.00"),
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("0.00"),
+            CPP_PART_5_COMPLETED: 1,
+        },
+    )
+
+
+def test_part_5_line_84_is_the_only_one_of_lines_70_to_88_not_0_when_line_24_is_negative() -> None:
+    # Case (k): employment income of $75,000, line 27 of 20,000, box 16 of 4,034.11 (a cent over
+    # the required 4,034.10) and box 16A of 0 (148.00 under line 22), Part 5 completed. Part 3
+    # line 24 is -147.99; Part 5 lines 30 and 42 are 0.01 and 9,899.75, so lines 43 to 47 are
+    # 0.00, 0.00, 791.98, 791.98 and 791.98, line 48 is 0.00, line 49 is 791.98 and line 50 is
+    # 0.00, and lines 57 and 69 are 3,356.10 and 678.01 (see the cases above for lines 1 to 69).
+    # Line 70 is line 43 (0.00) x 50% = 0.00 and line 71 is line 44 (0.00) x 50% = 0.00; line 72
+    # is 0.00 + 0.00 = 0.00. Line 73 is "0" (line 24 of Part 3, -147.99, is not positive). Line
+    # 74 is 0.00 - 0.00 = 0.00. Line A is the lesser of line 72 (0.00) and line 73 (0.00): 0.00
+    # (equal, so either). Line 75 is A x 83.1933% = 0.00 x 0.831933 = 0, to the cent 0.00; line
+    # 77 is A - line 76 (the amount from line 75) = 0.00 - 0.00 = 0.00. Line 80 is line 78 (the
+    # amount from line 70) less line 79 (the amount from line 75) = 0.00 - 0.00 = 0.00; line 83
+    # is line 81 (the amount from line 71) less line 82 (the amount from line 77) = 0.00 - 0.00
+    # = 0.00. Line 84 is line 45 (791.98) x 50% = 395.99, to the cent 395.99. Line 74 is
+    # positive or "0", so line 86 is "0" and line 85 (the amount from line 84) goes on line 87.
+    # Line 87 is line 85 (the amount from line 84) less line 86 = 395.99 - 0.00 = 395.99. Line
+    # 88 adds lines 80, 81 (the amount from line 71), 83, 84 and 87 as printed: 0.00 + 0.00 +
+    # 0.00 + 395.99 + 395.99 = 791.98. With Part 5 completed the return takes line 30800 from
+    # line 57 (3,356.10), line 22215 from line 69 (678.01), line 44800 from line 50 (0.00), line
+    # 42100 from line 49 if positive (791.98), line 31000 from line 70 (0.00) and line 22200
+    # from line 88 (791.98).
+    worksheet = compute(
+        "75000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        cpp_t4_base_and_first_additional_contributions="4034.11",
+        cpp_t4_second_additional_contributions="0",
+        cpp_part_5_completed=1,
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_43: D("0.00"),
+            CPP_PART_5_LINE_44: D("0.00"),
+            CPP_PART_5_LINE_45: D("791.98"),
+            CPP_PART_5_LINE_49: D("791.98"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_57: D("3356.10"),
+            CPP_PART_5_LINE_69: D("678.01"),
+            CPP_PART_5_LINE_70: D("0.00"),
+            CPP_PART_5_LINE_71: D("0.00"),
+            CPP_PART_5_LINE_72: D("0.00"),
+            CPP_PART_5_LINE_73: D("0.00"),
+            CPP_PART_5_LINE_74: D("0.00"),
+            CPP_PART_5_LINE_75_BASE: D("0.00"),
+            CPP_PART_5_LINE_75: D("0.00"),
+            CPP_PART_5_LINE_77: D("0.00"),
+            CPP_PART_5_LINE_80: D("0.00"),
+            CPP_PART_5_LINE_83: D("0.00"),
+            CPP_PART_5_LINE_84: D("395.99"),
+            CPP_PART_5_LINE_86: D("0.00"),
+            CPP_PART_5_LINE_87: D("395.99"),
+            CPP_PART_5_LINE_88: D("791.98"),
+            CPP_PART_5_LINE_49_IF_POSITIVE: D("791.98"),
+            CPP_PART_3_OVERPAYMENT: D("0.00"),
+            CPP_BASE_CONTRIBUTIONS_ON_RETURN: D("3356.10"),
+            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: D("678.01"),
+            CPP_OVERPAYMENT: D("0.00"),
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("791.98"),
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("0.00"),
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("791.98"),
+            CPP_PART_5_COMPLETED: 1,
+        },
+    )
+
+
+def test_part_5_line_87_is_30_10_when_line_24_is_positive_and_line_23_negative() -> None:
+    # Case (l): employment income of $80,000, line 27 of 15,000, box 16 of 4,100.00 and box 16A
+    # of 300.00 (required 4,034.10 and 348.00), Part 5 completed. Part 3 line 24 is 17.90; Part
+    # 5 lines 30 and 42 are 0.01 and 1,200.00, so lines 43 to 47 are 0.00, 0.00, 96.00, 96.00
+    # and 96.00, line 48 is 35.80, line 49 is 60.20 and line 50 is 0.00, and lines 57 and 69 are
+    # 3,356.10 and 1,026.00 (see the cases above for lines 1 to 69). Line 70 is line 43 (0.00) x
+    # 50% = 0.00 and line 71 is line 44 (0.00) x 50% = 0.00; line 72 is 0.00 + 0.00 = 0.00. Line
+    # 73 is line 24 of Part 3, positive, 17.90. Line 74 is 0.00 - 17.90 = -17.90, in brackets.
+    # Line A is the lesser of line 72 (0.00) and line 73 (17.90): 0.00 (line 72). Line 75 is A x
+    # 83.1933% = 0.00 x 0.831933 = 0, to the cent 0.00; line 77 is A - line 76 (the amount from
+    # line 75) = 0.00 - 0.00 = 0.00. Line 80 is line 78 (the amount from line 70) less line 79
+    # (the amount from line 75) = 0.00 - 0.00 = 0.00; line 83 is line 81 (the amount from line
+    # 71) less line 82 (the amount from line 77) = 0.00 - 0.00 = 0.00. Line 84 is line 45
+    # (96.00) x 50% = 48, to the cent 48.00. Line 74 is negative, so line 86 is 17.90 (line 74
+    # as a positive amount). Line 87 is line 85 (the amount from line 84) less line 86 = 48.00 -
+    # 17.90 = 30.10. Line 88 adds lines 80, 81 (the amount from line 71), 83, 84 and 87 as
+    # printed: 0.00 + 0.00 + 0.00 + 48.00 + 30.10 = 78.10. With Part 5 completed the return
+    # takes line 30800 from line 57 (3,356.10), line 22215 from line 69 (1,026.00), line 44800
+    # from line 50 (0.00), line 42100 from line 49 if positive (60.20), line 31000 from line 70
+    # (0.00) and line 22200 from line 88 (78.10); Part 3a's line 29 would be 17.90.
+    worksheet = compute(
+        "80000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="15000",
+        cpp_t4_base_and_first_additional_contributions="4100.00",
+        cpp_t4_second_additional_contributions="300.00",
+        cpp_part_5_completed=1,
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PART_5_LINE_43: D("0.00"),
+            CPP_PART_5_LINE_44: D("0.00"),
+            CPP_PART_5_LINE_45: D("96.00"),
+            CPP_PART_5_LINE_49: D("60.20"),
+            CPP_PART_5_LINE_50: D("0.00"),
+            CPP_PART_5_LINE_57: D("3356.10"),
+            CPP_PART_5_LINE_69: D("1026.00"),
+            CPP_PART_5_LINE_70: D("0.00"),
+            CPP_PART_5_LINE_71: D("0.00"),
+            CPP_PART_5_LINE_72: D("0.00"),
+            CPP_PART_5_LINE_73: D("17.90"),
+            CPP_PART_5_LINE_74: D("-17.90"),
+            CPP_PART_5_LINE_75_BASE: D("0.00"),
+            CPP_PART_5_LINE_75: D("0.00"),
+            CPP_PART_5_LINE_77: D("0.00"),
+            CPP_PART_5_LINE_80: D("0.00"),
+            CPP_PART_5_LINE_83: D("0.00"),
+            CPP_PART_5_LINE_84: D("48.00"),
+            CPP_PART_5_LINE_86: D("17.90"),
+            CPP_PART_5_LINE_87: D("30.10"),
+            CPP_PART_5_LINE_88: D("78.10"),
+            CPP_PART_5_LINE_49_IF_POSITIVE: D("60.20"),
+            CPP_PART_3_OVERPAYMENT: D("17.90"),
+            CPP_BASE_CONTRIBUTIONS_ON_RETURN: D("3356.10"),
+            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: D("1026.00"),
+            CPP_OVERPAYMENT: D("0.00"),
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("60.20"),
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("0.00"),
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("78.10"),
+            CPP_PART_5_COMPLETED: 1,
+        },
+    )
+
+
+@pytest.mark.parametrize(
+    ("employment", "line_27", "box_16", "overpayment"),
+    [
+        # Cases (a), (c), (e), (h) and (i): Part 5 is not completed, so lines 30800, 22215 and 44800
+        # are Part 3a's and Part 3b's (line 29 is the 138.25, 1,238.25 or 138.25 of line 24), and
+        # lines 42100, 31000 and 22200 are Part 4's, which is not completed either: 0.
+        ("60000", "20000", None, "0.00"),
+        ("60000", "20000", "3500.00", "138.25"),
+        ("60000", "20000", "4600.00", "1238.25"),
+        ("60000", "100.25", "3500.00", "138.25"),
+        ("60000", "0", "3500.00", "138.25"),
+    ],
+)
+def test_without_part_5_completed_the_return_lines_are_part_3s_and_part_4s_which_is_0(
+    employment: str, line_27: str, box_16: str | None, overpayment: str
+) -> None:
+    worksheet = compute(
+        employment,
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income=line_27,
+        cpp_t4_base_and_first_additional_contributions=box_16,
+    )
+
+    assert worksheet.get(CPP_PART_5_COMPLETED).value == 0
+    assert worksheet.get(CPP_BASE_CONTRIBUTIONS_ON_RETURN).value == D("2796.75")
+    assert worksheet.get(CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN).value == D("2796.75")
+    assert worksheet.get(CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN).value == D("565.00")
+    assert worksheet.get(CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN).value == D("565.00")
+    assert worksheet.get(CPP_OVERPAYMENT).value == D(overpayment)
+    assert worksheet.get(CPP_PART_3_OVERPAYMENT).value == D(overpayment)
+    assert worksheet.get(CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS).value == D("0")
+    assert worksheet.get(CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS).value == D(
+        "0"
+    )
+    assert worksheet.get(CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS).value == D("0")
+
+
+def test_part_5_without_employment_income_gives_part_4s_lines_14_15_and_17() -> None:
+    # No employment income and line 27 of 20,000. Part 4: line 9 is 20,000 - 3,500 = 16,500, line 10
+    # is 9.9% x 16,500 = 1,633.50, line 11 is 2% x 16,500 = 330.00, line 12 is 0, line 13 is
+    # 330.00, line 14 is 1,633.50 + 330.00 = 1,963.50 (line 42100), line 15 is 1,633.50 x 50% =
+    # 816.75 (line 31000), line 16 is 330.00 and line 17 is 816.75 + 330.00 = 1,146.75 (line
+    # 22200). Part 5 with no employment income: Part 3 lines 1 to 24 are 0, line 30 is 16,500.00,
+    # line 42 is 0 (line 33 is 20,000.00, not more than 71,300), lines 43 and 44 are those of
+    # Part 4 lines 10 and 11, line 49 is 1,963.50 (line 48 is 0), line 70 is 1,633.50 x 50% =
+    # 816.75, line 71 is 330.00 x 50% = 165.00, line 73 is "0" so line A and lines 75 and 77 are
+    # 0.00, line 80 is 816.75, line 83 is 165.00, line 84 is 0.00 and line 87 is 0.00, so line
+    # 88 is 816.75 + 165.00 + 165.00 + 0.00 + 0.00 = 1,146.75: the form's lines 49, 70 and 88
+    # are Part 4's lines 14, 15 and 17.
+    part_5 = compute(
+        "0", (), "0", "0", "0", "0", "0", professional_income="20000", cpp_part_5_completed=1
+    )
+    part_4 = compute(
+        "0", (), "0", "0", "0", "0", "0", professional_income="20000", cpp_part_4_completed=1
+    )
+
+    assert_values(
+        part_5,
+        {
+            CPP_PART_5_LINE_43: D("1633.50"),
+            CPP_PART_5_LINE_44: D("330.00"),
+            CPP_PART_5_LINE_70: D("816.75"),
+            CPP_PART_5_LINE_71: D("165.00"),
+            CPP_PART_5_LINE_80: D("816.75"),
+            CPP_PART_5_LINE_83: D("165.00"),
+            CPP_PART_5_LINE_88: D("1146.75"),
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("1963.50"),
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("816.75"),
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("1146.75"),
+        },
+    )
+    assert_values(
+        part_4,
+        {
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT: D("1963.50"),
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT: D("816.75"),
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT: D("1146.75"),
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("1963.50"),
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("816.75"),
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("1146.75"),
+            # Part 5 is computed but not routed when only Part 4 is completed.
+            CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT: D("0"),
+            CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT: D("0"),
+            CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT: D("0"),
+            CPP_PART_5_LINE_49: D("1963.50"),
+            CPP_PART_5_LINE_70: D("816.75"),
+            CPP_PART_5_LINE_88: D("1146.75"),
+        },
+    )
+
+
+def test_with_both_parts_completed_the_return_adds_part_4s_lines_and_part_5s() -> None:
+    # The form leaves Part 4 or Part 5 to the filer (Part 4 is for self-employment income alone),
+    # so both counts at 1 is not checked: the return adds both, as the form's lines 42100, 31000
+    # and 22200 would take both amounts. Employment income of $60,000 and line 27 of 20,000, the
+    # T4 totals the required ones. Part 4 (as the case above): lines 14, 15 and 17 are 1,963.50,
+    # 816.75 and 1,146.75. Part 5 (case (a)): line 49 is 2,040.70, line 70 is 559.35 and line 88 is
+    # 1,481.35. So line 42100 is 1,963.50 + 2,040.70 = 4,004.20, line 31000 is 816.75 + 559.35 =
+    # 1,376.10 and line 22200 is 1,146.75 + 1,481.35 = 2,628.10; lines 30800, 22215 and 44800 come
+    # from Part 5 (2,796.75, 565.00 and 0.00) and Part 4 does not touch them.
+    worksheet = compute(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        cpp_part_4_completed=1,
+        cpp_part_5_completed=1,
+    )
+
+    assert_values(
+        worksheet,
+        {
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT: D("1963.50"),
+            CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT: D("2040.70"),
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("4004.20"),
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT: D("816.75"),
+            CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT: D("559.35"),
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("1376.10"),
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT: D("1146.75"),
+            CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT: D("1481.35"),
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: D("2628.10"),
+            CPP_BASE_CONTRIBUTIONS_ON_RETURN: D("2796.75"),
+            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: D("565.00"),
+            CPP_OVERPAYMENT: D("0.00"),
+        },
+    )
+
+
+def test_part_5_completed_moves_the_credit_the_deductions_and_the_totals_by_the_routed_lines() -> (
+    None
+):
+    # Return BN as filed with line 27 of 20,000 (case (c)), without and with Part 5 completed: line
+    # 31000 (559.35) joins the federal and Ontario credit amounts (T1 line 87, ON428 line 58280),
+    # line 22200 (1,343.10) joins the deductions from total income (line 23300) and the minimum
+    # tax deductions (Form T691 Part 1), line 42100 (1,764.20) joins the total payable (line 148)
+    # and line 44800 is line 50, 0.00, not Part 3a's line 29, 138.25, so the total credits (line
+    # 166) are 138.25 less. Lines 30800 and 22215 are line 57 and line 69, which equal Part 3a's
+    # line 25 and line 28 here.
+    without = compute(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        income_tax_deducted="5000",
+        cpp_t4_base_and_first_additional_contributions="3500.00",
+        cpp_t4_second_additional_contributions="0",
+    )
+    routed = compute(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        income_tax_deducted="5000",
+        cpp_t4_base_and_first_additional_contributions="3500.00",
+        cpp_t4_second_additional_contributions="0",
+        cpp_part_5_completed=1,
+    )
+
+    assert routed.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value - without.get(
+        NON_REFUNDABLE_CREDIT_AMOUNTS
+    ).value == D("559.35")
+    assert routed.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value - without.get(
+        ontario.NON_REFUNDABLE_CREDIT_AMOUNTS
+    ).value == D("559.35")
+    assert routed.get(DEDUCTIONS_FROM_TOTAL_INCOME).value - without.get(
+        DEDUCTIONS_FROM_TOTAL_INCOME
+    ).value == D("1343.10")
+    assert routed.get(AMT_DEDUCTIONS_TOTAL).value - without.get(AMT_DEDUCTIONS_TOTAL).value == D(
+        "1343.10"
+    )
+    assert without.get(CPP_OVERPAYMENT).value == D("138.25")
+    assert routed.get(CPP_OVERPAYMENT).value == D("0.00")
+    assert routed.get(TOTAL_CREDITS).value - without.get(TOTAL_CREDITS).value == D("-138.25")
+    assert without.get(CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS).value == D("0")
+    assert routed.get(CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS).value == D("1764.20")
+    # Line 148 "Add lines 143 to 147": line 143 (net federal tax), line 144 (42100), line 145
+    # (42120), line 146 (42200) and line 147 (Ontario tax).
+    assert routed.get(TOTAL_PAYABLE).value == (
+        routed.get(NET_FEDERAL_TAX).value
+        + routed.get(CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS).value
+        + routed.get(EI_PAYABLE_ON_SELF_EMPLOYMENT).value
+        + routed.get(SOCIAL_BENEFITS_REPAYMENT_PAYABLE).value
+        + routed.get(ontario.ONTARIO_TAX).value
+    )
+    assert routed.get(CPP_BASE_CONTRIBUTIONS_ON_RETURN).value == D("2796.75")
+    assert routed.get(CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN).value == D("565.00")
+
+
+def test_the_trace_names_part_5_or_part_3_for_lines_30800_22215_and_44800() -> None:
+    # Case (c) (Return BN as filed with line 27 of 20,000). Part 5 completed: line 30800 takes line
+    # 57 (2,796.75), line 22215 line 69 (565.00) and line 44800 line 50 (0.00); the Part 3 route
+    # (line 24 positive: lines 15, 18 plus 22 and 24) is kept under its own kinds. Part 5 not
+    # completed: they take the Part 3 route.
+    arguments: dict[str, Any] = {
+        "professional_income": "20000",
+        "cpp_t4_base_and_first_additional_contributions": "3500.00",
+        "cpp_t4_second_additional_contributions": "0",
+    }
+    routed = chosen_lines(
+        compute("60000", (), "0", "0", "0", "0", "0", cpp_part_5_completed=1, **arguments)
+    )
+    for line, chosen_kind, chosen_value in (
+        (CPP_BASE_CONTRIBUTIONS_ON_RETURN, CPP_PART_5_LINE_57, "2796.75"),
+        (CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN, CPP_PART_5_LINE_69, "565.00"),
+        (CPP_OVERPAYMENT, CPP_PART_5_LINE_50, "0.00"),
+    ):
+        assert routed[line] == ChosenByCountLine(
+            output=line,
+            count_kind=CPP_PART_5_COMPLETED,
+            count=1,
+            chosen_kind=chosen_kind,
+            chosen_value=D(chosen_value),
+        ), line.identifier
+    for line, chosen_kind, chosen_value in (
+        (CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN, CPP_BASE_CONTRIBUTIONS, "2796.75"),
+        (CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN, CPP_ENHANCED_CONTRIBUTIONS, "565.00"),
+        (CPP_PART_3_OVERPAYMENT, CPP_CONTRIBUTIONS_DIFFERENCE, "138.25"),
+    ):
+        assert routed[line] == ChosenByCountLine(
+            output=line,
+            count_kind=CPP_LINE_24_POSITIVE,
+            count=1,
+            chosen_kind=chosen_kind,
+            chosen_value=D(chosen_value),
+        ), line.identifier
+    kept = chosen_lines(compute("60000", (), "0", "0", "0", "0", "0", **arguments))
+    for line, chosen_kind, chosen_value in (
+        (CPP_BASE_CONTRIBUTIONS_ON_RETURN, CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN, "2796.75"),
+        (
+            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            "565.00",
+        ),
+        (CPP_OVERPAYMENT, CPP_PART_3_OVERPAYMENT, "138.25"),
+    ):
+        assert kept[line] == ChosenByCountLine(
+            output=line,
+            count_kind=CPP_PART_5_COMPLETED,
+            count=0,
+            chosen_kind=chosen_kind,
+            chosen_value=D(chosen_value),
+        ), line.identifier
+
+
+def test_the_trace_counts_part_5_lines_49_70_and_88_once_for_each_part_5_completed() -> None:
+    # Case (c) with Part 5 completed: line 49 if positive (1,764.20), line 70 (559.35) and line 88
+    # (1,343.10) are each counted once, then added to the Part 4 route (0 here).
+    worksheet = compute(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        cpp_t4_base_and_first_additional_contributions="3500.00",
+        cpp_t4_second_additional_contributions="0",
+        cpp_part_5_completed=1,
+    )
+    times = part_5_trace(worksheet, TimesCountLine)
+    sums = part_5_trace(worksheet, SumLine)
+    for line, amount_kind, amount, part_4, total in (
+        (
+            CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
+            CPP_PART_5_LINE_49_IF_POSITIVE,
+            "1764.20",
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+            CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        ),
+        (
+            CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+            CPP_PART_5_LINE_70,
+            "559.35",
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        ),
+        (
+            CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
+            CPP_PART_5_LINE_88,
+            "1343.10",
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        ),
+    ):
+        assert times[line] == TimesCountLine(
+            output=line,
+            amount_kind=amount_kind,
+            amount_value=D(amount),
+            count_kind=CPP_PART_5_COMPLETED,
+            count=1,
+            result=D(amount),
+        ), line.identifier
+        assert sums[total] == SumLine(
+            output=total,
+            parts=((part_4, D("0")), (line, D(amount))),
+            total=D(amount),
+        ), total.identifier
+
+
+def test_the_trace_records_lines_70_to_88_as_rates_differences_and_a_lesser() -> None:
+    # Case (c): line 70 is 50% of 1,118.70, line 75 is line A (138.25, line 73) x 83.1933% =
+    # 115.0147, 115.01, line 77 is 138.25 - 115.01 = 23.24, line 80 is 559.35 - 115.01 = 444.34
+    # and line 83 is 113.00 - 23.24 = 89.76; line 74 is 672.35 - 138.25 = 534.10.
+    worksheet = compute(
+        "60000",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        professional_income="20000",
+        cpp_t4_base_and_first_additional_contributions="3500.00",
+        cpp_t4_second_additional_contributions="0",
+    )
+    rates = part_5_trace(worksheet, RateAppliedLine)
+    for line, base, base_amount, rate, result in (
+        (CPP_PART_5_LINE_70, CPP_PART_5_LINE_43, "1118.70", "0.5", "559.35"),
+        (CPP_PART_5_LINE_71, CPP_PART_5_LINE_44, "226.00", "0.5", "113.00"),
+        (CPP_PART_5_LINE_75, CPP_PART_5_LINE_75_BASE, "138.25", "0.831933", "115.01"),
+        (CPP_PART_5_LINE_84, CPP_PART_5_LINE_45, "696.00", "0.5", "348.00"),
+    ):
+        assert rates[line] == RateAppliedLine(
+            output=line,
+            base=base,
+            base_amount=D(base_amount),
+            rate=Rate(D(rate)),
+            rounding=CENT,
+            result=D(result),
+        ), line.identifier
+    differences = part_5_trace(worksheet, SubtractedLine)
+    for line, minuend, minuend_amount, subtrahend, subtrahend_amount, result in (
+        (CPP_PART_5_LINE_74, CPP_PART_5_LINE_72, "672.35", CPP_PART_5_LINE_73, "138.25", "534.10"),
+        (
+            CPP_PART_5_LINE_77,
+            CPP_PART_5_LINE_75_BASE,
+            "138.25",
+            CPP_PART_5_LINE_75,
+            "115.01",
+            "23.24",
+        ),
+        (CPP_PART_5_LINE_80, CPP_PART_5_LINE_70, "559.35", CPP_PART_5_LINE_75, "115.01", "444.34"),
+        (CPP_PART_5_LINE_83, CPP_PART_5_LINE_71, "113.00", CPP_PART_5_LINE_77, "23.24", "89.76"),
+    ):
+        assert differences[line] == SubtractedLine(
+            output=line,
+            minuend=minuend,
+            minuend_amount=D(minuend_amount),
+            subtrahend=subtrahend,
+            subtrahend_amount=D(subtrahend_amount),
+            result=D(result),
+        ), line.identifier
+    lesser = part_5_trace(worksheet, LesserOfLine)[CPP_PART_5_LINE_75_BASE]
+    assert lesser == LesserOfLine(
+        output=CPP_PART_5_LINE_75_BASE,
+        parts=((CPP_PART_5_LINE_72, D("672.35")), (CPP_PART_5_LINE_73, D("138.25"))),
+        result=D("138.25"),
+    )
+    assert part_5_trace(worksheet, SumLine)[CPP_PART_5_LINE_88] == SumLine(
+        output=CPP_PART_5_LINE_88,
+        parts=(
+            (CPP_PART_5_LINE_80, D("444.34")),
+            (CPP_PART_5_LINE_71, D("113.00")),
+            (CPP_PART_5_LINE_83, D("89.76")),
+            (CPP_PART_5_LINE_84, D("348.00")),
+            (CPP_PART_5_LINE_87, D("348.00")),
+        ),
+        total=D("1343.10"),
+    )

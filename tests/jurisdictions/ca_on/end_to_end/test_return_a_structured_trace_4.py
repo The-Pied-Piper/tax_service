@@ -330,7 +330,10 @@ from app.jurisdictions.ca.catalog import (
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_MONTHS,
     CPP_OVERPAYMENT,
+    CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_PART_3_LINE_2,
+    CPP_PART_3_OVERPAYMENT,
     CPP_PART_3B_LINE_23_LESS_LINE_35,
     CPP_PART_3B_LINE_30,
     CPP_PART_3B_LINE_31,
@@ -352,6 +355,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_3B_LINE_46,
     CPP_PART_3B_LINE_46_LESSER,
     CPP_PART_3B_LINE_48,
+    CPP_PART_5_COMPLETED,
     CPP_PART_5_LINE_4,
     CPP_PART_5_LINE_6,
     CPP_PART_5_LINE_8,
@@ -384,6 +388,7 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_LINE_45,
     CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
     CPP_PART_5_LINE_49,
+    CPP_PART_5_LINE_49_IF_POSITIVE,
     CPP_PART_5_LINE_50_LINE_49_POSITIVE,
     CPP_PART_5_LINE_51,
     CPP_PART_5_LINE_52,
@@ -403,6 +408,13 @@ from app.jurisdictions.ca.catalog import (
     CPP_PART_5_LINE_66,
     CPP_PART_5_LINE_67,
     CPP_PART_5_LINE_67_LESSER,
+    CPP_PART_5_LINE_72,
+    CPP_PART_5_LINE_73,
+    CPP_PART_5_LINE_74,
+    CPP_PART_5_LINE_75_BASE,
+    CPP_PART_5_LINE_84,
+    CPP_PART_5_LINE_86,
+    CPP_PART_5_LINE_87,
     CPP_PENSIONABLE_EARNINGS,
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
@@ -846,6 +858,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     assert lesser == {
+        # Schedule 8 Part 5 line 75 "Enter whichever is less: amount from line 72 or line 73"
+        # (line A): 0.00 and 0 for Return A.
+        CPP_PART_5_LINE_75_BASE: LesserOfLine(
+            output=CPP_PART_5_LINE_75_BASE,
+            parts=((CPP_PART_5_LINE_72, D("0.00")), (CPP_PART_5_LINE_73, D("0"))),
+            result=D("0.00"),
+        ),
         # Schedule 8 Part 5 line 53 "enter whichever is less: amount from line 19 of Part 3
         # or line 52": line 19 of Part 3 and line 52 are both 0.00 for Return A.
         CPP_PART_5_LINE_53_LESSER: LesserOfLine(
@@ -2060,6 +2079,46 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Schedule 8 Part 5 line 73 "Enter the amount from line 24 of Part 3 if positive. If
+        # not, enter "0"": line 24 is 0.00 for Return A.
+        CPP_PART_5_LINE_73: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_73,
+            minuend=CPP_CONTRIBUTIONS_DIFFERENCE,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_ZERO,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 49 "If positive, enter the amount on line 42100": line 49 is
+        # 0.00 for Return A.
+        CPP_PART_5_LINE_49_IF_POSITIVE: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_49_IF_POSITIVE,
+            minuend=CPP_PART_5_LINE_49,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_ZERO,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 86 "If line 74 is negative, enter it as a positive amount":
+        # line 74 is 0.00 for Return A.
+        CPP_PART_5_LINE_86: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_86,
+            minuend=CPP_ZERO,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_74,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 87 "Line 85 minus line 86 (if negative, enter "0")": line 85 is
+        # the amount from line 84; line 84 and line 86 are 0.00 for Return A.
+        CPP_PART_5_LINE_87: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_87,
+            minuend=CPP_PART_5_LINE_84,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_86,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Schedule 8 Part 5 line 52 "Enter the amount from line 16 of Part 3 as a positive
         # amount": "0" less line 16 of 0.00 for Return A.
         CPP_PART_5_LINE_52: SubtractedNotBelowZeroLine(
@@ -4309,6 +4368,32 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert chosen == {
+        # T1 line 44800 on the Part 3 route: line 24 is not positive for Return A, so "0".
+        CPP_PART_3_OVERPAYMENT: ChosenByCountLine(
+            output=CPP_PART_3_OVERPAYMENT,
+            count_kind=CPP_LINE_24_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0.00"),
+        ),
+        # T1 line 30800 on the Part 3 route: line 24 is not positive for Return A, so Part 3b
+        # line 36.
+        CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
+            output=CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
+            count_kind=CPP_LINE_24_POSITIVE,
+            count=0,
+            chosen_kind=CPP_PART_3B_LINE_36,
+            chosen_value=D("3356.10"),
+        ),
+        # T1 line 22215 on the Part 3 route: line 24 is not positive for Return A, so Part 3b
+        # line 48.
+        CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
+            output=CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            count_kind=CPP_LINE_24_POSITIVE,
+            count=0,
+            chosen_kind=CPP_PART_3B_LINE_48,
+            chosen_value=D("1074.00"),
+        ),
         # Schedule 8 Part 5 line 51 "If line 16 of Part 3 is positive or "0", enter the
         # amount from line 11 of Part 3": line 16 of Part 3 is 0.00 for Return A, so line
         # 11.
@@ -4567,26 +4652,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # equals the required line 11).
         CPP_BASE_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
             output=CPP_BASE_CONTRIBUTIONS_ON_RETURN,
-            count_kind=CPP_LINE_24_POSITIVE,
+            count_kind=CPP_PART_5_COMPLETED,
             count=0,
-            chosen_kind=CPP_PART_3B_LINE_36,
+            chosen_kind=CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
             chosen_value=D("3356.10"),
         ),
         # T1 line 22215 from Part 3b line 48: 678.00 + 396.00 for Return A.
         CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
             output=CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
-            count_kind=CPP_LINE_24_POSITIVE,
+            count_kind=CPP_PART_5_COMPLETED,
             count=0,
-            chosen_kind=CPP_PART_3B_LINE_48,
+            chosen_kind=CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
             chosen_value=D("1074.00"),
         ),
         # T1 line 44800 "CPP overpayment": "0" for Return A, as line 24 is not positive.
         CPP_OVERPAYMENT: ChosenByCountLine(
             output=CPP_OVERPAYMENT,
-            count_kind=CPP_LINE_24_POSITIVE,
+            count_kind=CPP_PART_5_COMPLETED,
             count=0,
-            chosen_kind=CPP_ZERO,
-            chosen_value=D("0"),
+            chosen_kind=CPP_PART_3_OVERPAYMENT,
+            chosen_value=D("0.00"),
         ),
         CHART_2021_AMOUNT_D: ChosenByCountLine(
             output=CHART_2021_AMOUNT_D,
