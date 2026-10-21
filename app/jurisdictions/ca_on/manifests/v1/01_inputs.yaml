@@ -219,6 +219,10 @@ inputs:
   - ca/disability_dependants
   - ca/disability_amount_for_self
   - ca-on/disability_amount_for_self
+  # Schedule ON(S11) line 1 "Enter your unused Ontario tuition and education amounts from your
+  # 2024 notice of assessment or reassessment": a caller input, the figure on that notice, not a
+  # calculation on this return (as Schedule 7 line 1 is for RRSPs).
+  - ca-on/unused_tuition_amounts_brought_forward
   - ca/infirm_children
   - ca/born_in_1960_or_earlier
   - ca/spouse_net_income

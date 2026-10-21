@@ -203,3 +203,64 @@ capabilities:
       dependants: ca-on/disability_dependants
     produces:
       output: ca-on/disability_transferred_amount
+  # Schedule ON(S11) line 2 "Enter the amount from line 26000 of your return on line 2 if it is
+  # $52,886 or less. If it is more than $52,886, enter the result of the following calculation:"
+  # "Line 2: Amount from line 8 of your Form ON428" "divided by 5.05% =": the taxable income passes
+  # through at or below the dataset's threshold, and over it the Ontario tax on taxable income
+  # (ON428 line 8) is divided by the rate, rounded half-up to the cent.
+  - name: ca/amount_or_divided_by_rate
+    params:
+      limit: ca-on/unused_tuition_limit
+    consumes:
+      amount: ca/taxable_income
+      dividend: ca-on/ontario_basic_tax
+    produces:
+      output: ca-on/unused_tuition_income_cap
+  # ON428 line 31 "Line 31: Add lines 28 to 30. =": the credit amounts the form totals before
+  # medical expenses, as its lines 1 to 25 carry them (the basic personal amount, the age, spouse,
+  # eligible dependant and caregiver amounts, the CPP and EI contributions), and line 30 (the
+  # disability amount transferred from a dependant). The pension amount (line 27), the disability
+  # amount for self (line 29) and the student loan interest (line 32) are not yet wired into it.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca-on/basic_personal_amount
+        - ca-on/age_amount
+        - ca-on/spouse_amount
+        - ca-on/eligible_dependant_amount
+        - ca-on/caregiver_amount
+        - ca/cpp_base_contributions
+        - ca/cpp_base_contributions_on_self_employment
+        - ca/ei_premiums
+        - ca/ei_premiums_on_self_employment
+        - ca-on/disability_transferred_amount
+    produces:
+      output: ca-on/credit_amounts_through_disability_transfer
+  # Schedule ON(S11) line 4 "Line 4: Line 2 minus line 3 (if negative, enter "0") =", line 3 being
+  # "Enter the amount from line 31 of your Form ON428.", not below zero.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca-on/unused_tuition_income_cap
+      less: ca-on/credit_amounts_through_disability_transfer
+    produces:
+      output: ca-on/unused_tuition_room
+  # Schedule ON(S11) line 5 "Enter whichever is less: amount from line 1 or line 4. Enter this
+  # amount on line 58560 of your Form ON428. Your unused Ontario tuition and education amounts
+  # claimed for 2025": the lesser of line 1 and line 4. ON428 line 33 and line 58560 takes it, in
+  # the non-refundable credit amounts.
+  - name: core/lesser_of
+    consumes:
+      amounts:
+        - ca-on/unused_tuition_amounts_brought_forward
+        - ca-on/unused_tuition_room
+    produces:
+      output: ca-on/unused_tuition_claimed
+  # Schedule ON(S11) line 8 "Line 6 minus line 7 Unused provincial tuition and education amounts
+  # available to carry forward to a future year =". Lines 6 and 7 are copies of line 1 and
+  # line 5 (the carryforward section), so they have no steps: line 8 is line 1 minus line 5.
+  - name: core/subtract
+    consumes:
+      amount: ca-on/unused_tuition_amounts_brought_forward
+      less: ca-on/unused_tuition_claimed
+    produces:
+      output: ca-on/unused_tuition_carried_forward
