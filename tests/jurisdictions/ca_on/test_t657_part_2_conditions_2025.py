@@ -1,9 +1,10 @@
 """The 2025 entry conditions of Form T657 Chart 2021, 2022 and 2023 Part 2, checked against the
 form.
 
-Form T657 (2025), Chart Y Part 1: "If you are reporting a reserve in 2025 from a disposition of QFFP
-in Y and amount E above is equal to or less than the amounts on line 21 of Step 1, line 19 of Step 2,
-and amount M above, and you want to claim the additional deduction, complete Part 2 of Chart Y on
+Form T657 (2025), Chart Y Part 1: "If you are reporting a reserve in 2025 from a disposition of
+QFFP in Y and amount E above is equal to or less than the amounts on line 21 of Step 1,
+line 19 of Step 2, and amount M above, and you want to claim the additional deduction, complete
+Part 2 of Chart Y on
 the next page." Each dataset `ca/t657_chart_Y_part_2_conditions` lists, in that order, the
 conditions under which Part 2 is not completed: the filer does not want the additional deduction
 (a 0/1 count), and Part 1 amount E is more than line 21, more than line 19 or more than Part 1
