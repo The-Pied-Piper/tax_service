@@ -66,20 +66,42 @@ from app.jurisdictions.ca_on.catalog import (
 from tests.jurisdictions.ca_on.end_to_end.support import D, compute
 
 # Return U's inputs beyond the all-zero ones `compute` defaults: net business income (T1 line
-# 13500) of 50000 and, because line 27 is not yet in total income (line 15000), a chosen other
-# income (line 13000) of 40000 as the only income total income reads; Schedule 8 Part 4
+# 13500, now T2125 line 9946) of 50000, entered as T2125 gross sales (amount 3A) of 50000 with no
+# expenses, which is all of total income (line 15000, through line 27); Schedule 8 Part 4
 # completed and the agreement for EI special benefits, each a count of 1.
 RETURN_U: dict[str, Any] = {
-    "other_income": "40000",
     "business_income": "50000",
     "cpp_part_4_completed": 1,
     "ei_special_benefits_agreement": 1,
 }
 
 
+def business_statement(business_income: str) -> dict[str, str]:
+    """A T2125 whose line 9946, and so T1 line 13500, is `business_income`: all gross sales (amount
+    3A) for income, all advertising (amount 4B) for a loss."""
+    amount = D(business_income)
+    if amount >= 0:
+        return {"gross_sales": business_income}
+    return {"advertising": str(-amount)}
+
+
+def farm_statement(farming_income: str) -> dict[str, str]:
+    """A T2042 whose line 9946, and so T1 line 14100, is `farming_income`: all income (line 9371)
+    for income, all other expenses for a loss."""
+    amount = D(farming_income)
+    if amount >= 0:
+        return {"wheat": farming_income}
+    return {"other_expenses": str(-amount)}
+
+
 def self_employed(**changes: Any) -> Worksheet:
-    """Return U's inputs, as in `returns/2025_return_u.yaml`, with `changes` to them."""
-    return compute("0", (), "0", "0", "0", "0", "0", **{**RETURN_U, **changes})
+    """Return U's inputs, as in `returns/2025_return_u.yaml`, with `changes` to them;
+    `business_income` is the net business income the T2125 is entered to give and
+    `farming_income` the net farming income the T2042 is entered to give."""
+    inputs = {**RETURN_U, **changes}
+    business = business_statement(inputs.pop("business_income"))
+    farm = farm_statement(inputs.pop("farming_income", "0"))
+    return compute("0", (), "0", "0", "0", "0", "0", business=business, farm=farm, **inputs)
 
 
 def return_u() -> Worksheet:
@@ -108,14 +130,14 @@ def test_return_us_part_2_reads_the_12_month_row_of_the_monthly_proration_table(
         assert line in rendered, line
 
 
-def test_return_us_line_27_is_the_sum_of_lines_22_to_26_but_is_not_yet_in_total_income() -> None:
+def test_return_us_line_27_is_the_sum_of_lines_22_to_26_and_all_of_total_income() -> None:
     # T1 line 27 "Add lines 22 to 26. Net self-employment income": 50000 + 0 + 0 + 0 + 0. Line 28
-    # (line 21 plus line 27) and line 15000 are not computed from it yet, so total income is the
-    # chosen other income alone.
+    # is line 21 (0) plus line 27, and line 15000 adds line 27 to the other income lines (all 0),
+    # so total income is 50000.00.
     worksheet = return_u()
 
     assert worksheet.get(NET_SELF_EMPLOYMENT_INCOME).value == D("50000")
-    assert worksheet.get(TOTAL_INCOME).value == D("40000.00")
+    assert worksheet.get(TOTAL_INCOME).value == D("50000.00")
     assert (
         "net_self_employment_income: business_income 50000 + professional_income 0 "
         "+ commission_income 0 + farming_income 0 + fishing_income 0 = 50000"
@@ -238,41 +260,41 @@ def test_return_us_schedule_13_is_the_cra_worked_example() -> None:
 
 def test_return_us_new_lines_join_the_deductions_the_credit_amounts_and_the_total_payable() -> None:
     # Line 22200 (3231.75) is a deduction from total income (line 23300 "Add lines 35 to 52"), so
-    # net income is 40000.00 - 3231.75 = 36768.25 and so is taxable income. The federal tax on it
-    # is 36768.25 x 14.5% = 5331.39625, rounded half-up to the cent: 5331.40. Lines 31000
+    # net income is 50000.00 - 3231.75 = 46768.25 and so is taxable income. The federal tax on it
+    # is 46768.25 x 14.5% = 6781.39625, rounded half-up to the cent: 6781.40. Lines 31000
     # (2301.75) and 31217 (820.00) are credit amounts of the T1 (line 33500): 16129.00 + 0 + 0 + 0
     # + 0 + 0 + 0 + 2301.75 + 0 + 820.00 + 0 = 19250.75, times 14.5% = 2791.358750, rounded
-    # half-up to the cent: 2791.36, so the federal tax after credits is 5331.40 - 2791.36 =
-    # 2540.04. ON428's lines 58280 and 58305 copy lines 31000 and 31217, so its credit amounts
+    # half-up to the cent: 2791.36, so the federal tax after credits is 6781.40 - 2791.36 =
+    # 3990.04. ON428's lines 58280 and 58305 copy lines 31000 and 31217, so its credit amounts
     # (line 58800) are 12747 + 0 + 0 + 0 + 0 + 2301.75 + 0 + 820.00 = 15868.75, 5.05% of which is
-    # 801.371875, rounded half-up to the cent: 801.37. Ontario's tax on 36768.25 is 1856.8
-    # (rounded half-up to the cent: 36768.25 x 5.05% = 1856.80), less the credits: 1055.43; it is
+    # 801.371875, rounded half-up to the cent: 801.37. Ontario's tax on 46768.25 is 2361.80
+    # (46768.25 x 5.05% = 2361.796625, rounded half-up to the cent: 2361.80), less the credits:
+    # 1560.43; it is
     # above twice the reduction amounts (588.00), so there is no reduction. The health premium
-    # row "more than $36,000 but not more than $38,500" is (36768.25 - 36000) x 6% + 300 =
-    # 346.095, rounded half-up to the cent: 346.10, so the
-    # Ontario tax is 1055.43 + 346.10 = 1401.53. Lines 42100 and 42120 join lines 42000 and 42800
-    # in line 43500: 2540.04 + 5533.50 + 820.00 + 1401.53 = 10295.07, with no tax deducted and no
+    # row "more than $38,500 but not more than $48,000" is $450, so the
+    # Ontario tax is 1560.43 + 450.00 = 2010.43. Lines 42100 and 42120 join lines 42000 and 42800
+    # in line 43500: 3990.04 + 5533.50 + 820.00 + 2010.43 = 12353.97, with no tax deducted and no
     # credit, a balance owing.
     worksheet = return_u()
 
     assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("3231.75")
-    assert worksheet.get(NET_INCOME).value == D("36768.25")
-    assert worksheet.get(TAXABLE_INCOME).value == D("36768.25")
-    assert worksheet.get(FEDERAL_BASIC_TAX).value == D("5331.40")
+    assert worksheet.get(NET_INCOME).value == D("46768.25")
+    assert worksheet.get(TAXABLE_INCOME).value == D("46768.25")
+    assert worksheet.get(FEDERAL_BASIC_TAX).value == D("6781.40")
     assert worksheet.get(CANADA_EMPLOYMENT_AMOUNT).value == D("0")
     assert worksheet.get(NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("19250.75")
     assert worksheet.get(NON_REFUNDABLE_TAX_CREDITS).value == D("2791.36")
-    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("2540.04")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("3990.04")
     assert worksheet.get(ontario.NON_REFUNDABLE_CREDIT_AMOUNTS).value == D("15868.75")
     assert worksheet.get(ontario.NON_REFUNDABLE_TAX_CREDITS).value == D("801.37")
-    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1055.43")
+    assert worksheet.get(ONTARIO_TAX_AFTER_CREDITS).value == D("1560.43")
     assert worksheet.get(ONTARIO_TAX_REDUCTION).value == D("0")
-    assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("346.10")
-    assert worksheet.get(ONTARIO_TAX).value == D("1401.53")
-    assert worksheet.get(NET_FEDERAL_TAX).value == D("2540.04")
-    assert worksheet.get(TOTAL_PAYABLE).value == D("10295.07")
+    assert worksheet.get(ONTARIO_HEALTH_PREMIUM).value == D("450.00")
+    assert worksheet.get(ONTARIO_TAX).value == D("2010.43")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("3990.04")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("12353.97")
     assert worksheet.get(TOTAL_CREDITS).value == D("0")
-    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("10295.07")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("12353.97")
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     for line in (
         "deductions_from_total_income: rpp_deduction 0 + rrsp_deduction 0 + fhsa_deduction 0 "
@@ -299,9 +321,9 @@ def test_return_us_new_lines_join_the_deductions_the_credit_amounts_and_the_tota
         "+ disability_amount_for_self 0 "
         "+ disability_transferred_amount 0 + unused_tuition_claimed 0 "
         "+ amounts_transferred_from_spouse 0 + medical_claim 0 = 15868.75",
-        "total_payable: net_federal_tax 2540.04 + cpp_payable_on_self_employment 5533.5 "
+        "total_payable: net_federal_tax 3990.04 + cpp_payable_on_self_employment 5533.5 "
         "+ ei_payable_on_self_employment 820 + social_benefits_repayment_payable 0 "
-        "+ ontario_tax 1401.53 = 10295.07",
+        "+ ontario_tax 2010.43 = 12353.97",
     ):
         assert line in rendered, line
 
@@ -527,10 +549,10 @@ def test_part_4_not_completed_leaves_lines_42100_31000_and_22200_at_zero() -> No
     assert worksheet.get(CPP_DEDUCTION_ON_SELF_EMPLOYMENT).value == D("0")
     assert worksheet.get(EI_PREMIUMS_ON_SELF_EMPLOYMENT).value == D("820.00")
     assert worksheet.get(EI_PAYABLE_ON_SELF_EMPLOYMENT).value == D("820.00")
-    # No deduction of 3231.75: net income is the 40000.00 of total income, and the payable is the
-    # taxes (10295.07 above, less the 5533.50 of line 42100 and the tax saved by 22200).
+    # No deduction of 3231.75: net income is the 50000.00 of total income, and the payable is the
+    # taxes (12353.97 above, less the 5533.50 of line 42100 and the tax saved by 22200).
     assert worksheet.get(DEDUCTIONS_FROM_TOTAL_INCOME).value == D("0")
-    assert worksheet.get(NET_INCOME).value == D("40000.00")
+    assert worksheet.get(NET_INCOME).value == D("50000.00")
 
 
 def test_no_agreement_with_the_commission_leaves_lines_31217_and_42120_at_zero() -> None:

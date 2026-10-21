@@ -22,6 +22,8 @@ from app.domain.trace import (
     SurchargeTierLine,
 )
 from app.jurisdictions.ca.catalog import (
+    ABIL_AFTER_QBT_REDUCTION,
+    ABIL_CLAIMED_AFTER_1984_AND_BEFORE_2025,
     ADJUSTED_FAMILY_NET_INCOME,
     ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987,
     ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
@@ -34,15 +36,39 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
     ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
     ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
+    ADJUSTED_NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     AGE_AMOUNT_BEFORE_COUNT,
     AGE_INCOME_OVER_THRESHOLD,
     AGE_INCOME_THRESHOLD,
     AGE_MAXIMUM,
     AGE_REDUCTION,
+    ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_FILM_PROPERTY_ADJUSTMENT,
+    AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
+    AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
+    AMT_RENTAL_PROPERTY_ADJUSTMENT,
+    AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
+    AMT_RENTAL_PROPERTY_INCOME_BEFORE_CCA,
+    AMT_RESOURCE_EXPENDITURES,
+    AMT_RESOURCE_INCOME_TOTAL,
+    AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
+    ANNUAL_GAINS_LIMIT_2025,
+    ANNUAL_GAINS_LINE_3_AT_INCLUSION_RATE,
+    ANNUAL_GAINS_LINE_5,
+    ANNUAL_GAINS_LINE_7,
+    ANNUAL_GAINS_LINE_12,
     BASIC_PERSONAL_AMOUNT,
+    BUSINESS_HOME_ALLOWABLE_CLAIM,
+    BUSINESS_HOME_CARRY_FORWARD,
+    BUSINESS_HOME_EXPENSES_AVAILABLE,
+    BUSINESS_HOME_INCOME_LIMIT,
     BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
+    BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,
+    BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
+    BUSINESS_PARTNER,
+    BUSINESS_SHARE_OF_NET_INCOME,
     CANADA_TRAINING_CREDIT,
     CANADA_TRAINING_CREDIT_BASIS,
     CANADA_TRAINING_CREDIT_CLAIMED,
@@ -51,8 +77,45 @@ from app.jurisdictions.ca.catalog import (
     CANADA_WORKERS_BENEFIT,
     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
     CANADA_WORKERS_BENEFIT_WITHOUT_DEPENDANT,
+    CAPITAL_GAINS_DEDUCTION,
+    CAPITAL_GAINS_DEDUCTION_CLAIMED,
     CHARITABLE_DONATIONS_CLAIMED,
     CHARITABLE_DONATIONS_LIMIT,
+    CHART_1_COLUMN_G_TOTAL,
+    CHART_2_LINE_3,
+    CHART_2_LINE_4,
+    CHART_2_LINE_5,
+    CHART_2_LINE_7,
+    CHART_2_LINE_8,
+    CHART_2_LINE_9,
+    CHART_2_LINE_11,
+    CHART_2_LINE_12,
+    CHART_2_LINE_13,
+    CHART_2_LINE_15,
+    CHART_2_LINE_16,
+    CHART_2_LINE_17,
+    CHART_2_LINE_19,
+    CHART_2025_PART_1_AMOUNT_A,
+    CHART_2025_PART_1_AMOUNT_C,
+    CHART_2025_PART_1_AMOUNT_E,
+    CHART_2025_PART_1_AMOUNT_K,
+    CHART_2025_PART_1_AMOUNT_M,
+    CHART_2025_PART_1_AMOUNT_N,
+    CHART_2025_PART_1_AMOUNT_P,
+    CHART_2025_PART_1_AMOUNT_Q,
+    CHART_2025_PART_1_AMOUNTS_F_TO_J,
+    CHART_2025_PART_2_AMOUNT_A,
+    CHART_2025_PART_2_AMOUNT_C,
+    CHART_2025_PART_2_AMOUNT_E,
+    CHART_2025_PART_2_AMOUNT_F,
+    CHART_2025_PART_2_AMOUNT_G,
+    CHART_2025_PART_2_AMOUNT_H,
+    CHART_2025_PART_2_AMOUNT_K,
+    CHART_2025_PART_2_AMOUNT_M,
+    CHART_2025_PART_2_AMOUNT_N,
+    CHART_2025_PART_2_AMOUNT_P,
+    CHART_2025_PART_2_AMOUNT_Q,
+    CHART_2025_PART_2_AMOUNTS_F_TO_J,
     CHILD_CARE_BASIC_LIMIT,
     CHILD_CARE_EARNED_INCOME_LIMIT,
     CHILD_CARE_EXPENSES,
@@ -74,6 +137,9 @@ from app.jurisdictions.ca.catalog import (
     CREDIT_AMOUNTS_SUBTOTAL,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     CREDITS_AGAINST_FEDERAL_TAX,
+    CUMULATIVE_ELIGIBLE_TAXABLE_CAPITAL_GAINS,
+    CUMULATIVE_GAINS_LIMIT_2025,
+    CUMULATIVE_LOSSES_AND_DEDUCTIONS,
     CURRENT_YEAR_TUITION_AVAILABLE,
     CURRENT_YEAR_TUITION_CLAIMED,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
@@ -114,7 +180,16 @@ from app.jurisdictions.ca.catalog import (
     EI_SELF_EMPLOYMENT_BEFORE_SLIPS,
     EI_SELF_EMPLOYMENT_EARNINGS,
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
+    ELIGIBLE_TAXABLE_CAPITAL_GAINS_2025,
     EMPLOYMENT_INCOME,
+    FARM_HOME_ALLOWABLE_CLAIM,
+    FARM_HOME_CARRY_FORWARD,
+    FARM_HOME_EXPENSES_AVAILABLE,
+    FARM_HOME_INCOME_LIMIT,
+    FARM_NET_INCOME_AFTER_ADJUSTMENTS,
+    FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
+    FARM_PARTNER,
+    FARM_SHARE_OF_NET_INCOME,
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
@@ -192,6 +267,7 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_3,
     QBT_2025_RESERVE,
     QBT_ABIL_AND_NET_INVESTMENT_LOSS,
+    QBT_ABIL_REDUCTION,
     QBT_ALLOCATION_LIMIT,
     QBT_CAPITAL_GAINS_DEDUCTION,
     QBT_CAPITAL_GAINS_WITH_2024_RESERVE,
@@ -249,6 +325,7 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION,
     RRSP_DEDUCTION_LIMIT,
     RRSP_DEDUCTION_MAXIMUM,
+    SCHEDULE_3_LINE_17600_NOT_BELOW_ZERO,
     SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS,
     SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
@@ -281,6 +358,21 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_TRANSFERABLE_AMOUNTS,
     SPOUSE_UNUSED_AMOUNTS,
     STANDARD_AMOUNT_ALLOCATED,
+    T3_CAPITAL_GAINS_OR_LOSSES,
+    T657_ABIL_CLAIMED_1985_TO_2024,
+    T657_CHART_2_LINE_18,
+    T657_NET_NON_ELIGIBLE_TAXABLE_CAPITAL_GAINS,
+    T657_PART_1_AMOUNT_B,
+    T657_PART_1_AMOUNT_F,
+    T657_PART_1_AMOUNT_G,
+    T657_PART_1_AMOUNT_H,
+    T657_PART_1_AMOUNT_I,
+    T657_PART_1_AMOUNT_J,
+    T657_PART_1_AMOUNT_L,
+    T657_PART_2_AMOUNT_I,
+    T657_PART_2_AMOUNT_J,
+    T657_PART_2_AMOUNT_L,
+    T657_T2048_LINE_17217_FOR_2024,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
     TAXABLE_INCOME_OVER_DONATION_THRESHOLD,
@@ -292,6 +384,7 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
+    TOTAL_LOSSES_FOR_ANNUAL_GAINS_LIMIT,
     TOTAL_PAYABLE,
     TOTAL_SPLIT_INCOME,
     TRAVEL_TOTAL_ZONE_A,
@@ -412,6 +505,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             TRAVEL_TOTAL_ZONE_A,
             TRAVEL_TOTAL_ZONE_B,
             STANDARD_AMOUNT_ALLOCATED,
+            CHART_1_COLUMN_G_TOTAL,
         )
     }
     assert lesser == {
@@ -669,6 +763,64 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ((QBT_REDUCTION_AMOUNT, D("0")), (QBT_ABIL_AND_NET_INVESTMENT_LOSS, D("0.00"))),
             D("0"),
         ),
+        # T2125 Part 7 amount 7P "Amount 7M or 7N above, whichever is less": 0 for no
+        # business-use-of-home expenses.
+        BUSINESS_HOME_ALLOWABLE_CLAIM: LesserOfLine(
+            output=BUSINESS_HOME_ALLOWABLE_CLAIM,
+            parts=(
+                (BUSINESS_HOME_EXPENSES_AVAILABLE, D("0")),
+                (BUSINESS_HOME_INCOME_LIMIT, D("0")),
+            ),
+            result=D("0"),
+        ),
+        # T2042 Part 7 amount 7P "Amount 7M or 7N above, whichever is less": 0 for no
+        # business-use-of-home expenses.
+        FARM_HOME_ALLOWABLE_CLAIM: LesserOfLine(
+            output=FARM_HOME_ALLOWABLE_CLAIM,
+            parts=((FARM_HOME_EXPENSES_AVAILABLE, D("0")), (FARM_HOME_INCOME_LIMIT, D("0"))),
+            result=D("0"),
+        ),
+        # Form T657 (line 25400): Return A enters nothing on it, so its lines are 0 (or,
+        # where they read another line, that line's figure).
+        CHART_2025_PART_1_AMOUNT_N: LesserOfLine(
+            output=CHART_2025_PART_1_AMOUNT_N,
+            parts=(
+                (CHART_2025_PART_1_AMOUNT_E, D("522145.00")),
+                (CHART_2025_PART_1_AMOUNT_M, D("0")),
+            ),
+            result=D("0"),
+        ),
+        CHART_2025_PART_2_AMOUNT_N: LesserOfLine(
+            output=CHART_2025_PART_2_AMOUNT_N,
+            parts=(
+                (CHART_2025_PART_2_AMOUNT_E, D("625000.00")),
+                (CHART_2025_PART_2_AMOUNT_M, D("0")),
+            ),
+            result=D("0"),
+        ),
+        ELIGIBLE_TAXABLE_CAPITAL_GAINS_2025: LesserOfLine(
+            output=ELIGIBLE_TAXABLE_CAPITAL_GAINS_2025,
+            parts=((ANNUAL_GAINS_LINE_7, D("0")), (ANNUAL_GAINS_LINE_12, D("10000.00"))),
+            result=D("0"),
+        ),
+        CHART_2025_PART_1_AMOUNT_Q: LesserOfLine(
+            output=CHART_2025_PART_1_AMOUNT_Q,
+            parts=(
+                (ANNUAL_GAINS_LIMIT_2025, D("0")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+                (CHART_2025_PART_1_AMOUNT_P, D("0")),
+            ),
+            result=D("0"),
+        ),
+        CHART_2025_PART_2_AMOUNT_Q: LesserOfLine(
+            output=CHART_2025_PART_2_AMOUNT_Q,
+            parts=(
+                (ANNUAL_GAINS_LIMIT_2025, D("0")),
+                (CUMULATIVE_GAINS_LIMIT_2025, D("0")),
+                (CHART_2025_PART_2_AMOUNT_P, D("0")),
+            ),
+            result=D("0"),
+        ),
     }
     assert at_most == {
         RRSP_DEDUCTION: AtMostLine(
@@ -726,6 +878,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("0"),
             QBT_MAXIMUM_DEDUCTION,
             D("0"),
+        ),
+        # Form T657 (line 25400): Return A enters nothing on it, so its lines are 0 (or,
+        # where they read another line, that line's figure).
+        CAPITAL_GAINS_DEDUCTION: AtMostLine(
+            output=CAPITAL_GAINS_DEDUCTION,
+            amount_kind=CAPITAL_GAINS_DEDUCTION_CLAIMED,
+            amount_value=D("0"),
+            bound=CHART_2025_PART_2_AMOUNT_Q,
+            bound_value=D("0"),
         ),
     }
     assert tiers == {
@@ -933,6 +1094,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Form T691 Part 9 line 6 "Line 1 minus line 5 (if negative, enter "0")": Return A has no
+        # resource amounts, so line 1 and line 5 are 0.
+        AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES: SubtractedNotBelowZeroLine(
+            output=AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
+            minuend=AMT_RESOURCE_EXPENDITURES,
+            minuend_amount=D("0"),
+            subtrahend=AMT_RESOURCE_INCOME_TOTAL,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         ontario.DISABILITY_SELF_CARE_OVER_THRESHOLD: SubtractedNotBelowZeroLine(
             output=ontario.DISABILITY_SELF_CARE_OVER_THRESHOLD,
             minuend=DISABILITY_SELF_CARE_EXPENSES,
@@ -948,6 +1119,22 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=ontario.DISABILITY_SELF_CARE_OVER_THRESHOLD,
             subtrahend_amount=D("0"),
             result=D("6007.00"),
+        ),
+        AMT_FILM_PROPERTY_ADJUSTMENT: SubtractedNotBelowZeroLine(
+            output=AMT_FILM_PROPERTY_ADJUSTMENT,
+            minuend=AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
+            minuend_amount=D("0"),
+            subtrahend=AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        AMT_RENTAL_PROPERTY_ADJUSTMENT: SubtractedNotBelowZeroLine(
+            output=AMT_RENTAL_PROPERTY_ADJUSTMENT,
+            minuend=AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
+            minuend_amount=D("0"),
+            subtrahend=AMT_RENTAL_PROPERTY_INCOME_BEFORE_CCA,
+            subtrahend_amount=D("0"),
+            result=D("0"),
         ),
         DISABILITY_SELF_CARE_OVER_THRESHOLD: SubtractedNotBelowZeroLine(
             output=DISABILITY_SELF_CARE_OVER_THRESHOLD,
@@ -1707,6 +1894,147 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             D("0.00"),
             D("0"),
         ),
+        # T2125 Part 7 amount 7O "Amount 7M minus amount 7N (if negative, enter "0")": Return A
+        # has no business-use-of-home expenses, so it is 0.
+        BUSINESS_HOME_CARRY_FORWARD: SubtractedNotBelowZeroLine(
+            output=BUSINESS_HOME_CARRY_FORWARD,
+            minuend=BUSINESS_HOME_EXPENSES_AVAILABLE,
+            minuend_amount=D("0"),
+            subtrahend=BUSINESS_HOME_INCOME_LIMIT,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # T2042 Part 7 amount 7O, floored at 0, as on the T2125.
+        FARM_HOME_CARRY_FORWARD: SubtractedNotBelowZeroLine(
+            output=FARM_HOME_CARRY_FORWARD,
+            minuend=FARM_HOME_EXPENSES_AVAILABLE,
+            minuend_amount=D("0"),
+            subtrahend=FARM_HOME_INCOME_LIMIT,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T657 (line 25400): Return A enters nothing on it, so its lines are 0 (or,
+        # where they read another line, that line's figure).
+        ABIL_CLAIMED_AFTER_1984_AND_BEFORE_2025: SubtractedNotBelowZeroLine(
+            output=ABIL_CLAIMED_AFTER_1984_AND_BEFORE_2025,
+            minuend=T657_ABIL_CLAIMED_1985_TO_2024,
+            minuend_amount=D("0"),
+            subtrahend=T657_T2048_LINE_17217_FOR_2024,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        CHART_2025_PART_1_AMOUNT_C: SubtractedNotBelowZeroLine(
+            output=CHART_2025_PART_1_AMOUNT_C,
+            minuend=CHART_2025_PART_1_AMOUNT_A,
+            minuend_amount=D("522145.00"),
+            subtrahend=T657_PART_1_AMOUNT_B,
+            subtrahend_amount=D("0"),
+            result=D("522145.00"),
+        ),
+        CHART_2_LINE_5: SubtractedNotBelowZeroLine(
+            output=CHART_2_LINE_5,
+            minuend=CHART_2_LINE_3,
+            minuend_amount=D("0"),
+            subtrahend=CHART_2_LINE_4,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        CHART_2_LINE_9: SubtractedNotBelowZeroLine(
+            output=CHART_2_LINE_9,
+            minuend=CHART_2_LINE_7,
+            minuend_amount=D("0"),
+            subtrahend=CHART_2_LINE_8,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        CHART_2_LINE_13: SubtractedNotBelowZeroLine(
+            output=CHART_2_LINE_13,
+            minuend=CHART_2_LINE_11,
+            minuend_amount=D("0"),
+            subtrahend=CHART_2_LINE_12,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        CHART_2_LINE_17: SubtractedNotBelowZeroLine(
+            output=CHART_2_LINE_17,
+            minuend=CHART_2_LINE_15,
+            minuend_amount=D("0"),
+            subtrahend=CHART_2_LINE_16,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        CHART_2025_PART_1_AMOUNT_M: SubtractedNotBelowZeroLine(
+            output=CHART_2025_PART_1_AMOUNT_M,
+            minuend=CHART_2025_PART_1_AMOUNT_K,
+            minuend_amount=D("0.00"),
+            subtrahend=T657_PART_1_AMOUNT_L,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        CHART_2025_PART_2_AMOUNT_M: SubtractedNotBelowZeroLine(
+            output=CHART_2025_PART_2_AMOUNT_M,
+            minuend=CHART_2025_PART_2_AMOUNT_K,
+            minuend_amount=D("0.00"),
+            subtrahend=T657_PART_2_AMOUNT_L,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        CHART_2025_PART_1_AMOUNT_E: SubtractedNotBelowZeroLine(
+            output=CHART_2025_PART_1_AMOUNT_E,
+            minuend=CHART_2025_PART_1_AMOUNT_C,
+            minuend_amount=D("522145.00"),
+            subtrahend=CHART_2_LINE_19,
+            subtrahend_amount=D("0"),
+            result=D("522145.00"),
+        ),
+        CHART_2025_PART_2_AMOUNT_C: SubtractedNotBelowZeroLine(
+            output=CHART_2025_PART_2_AMOUNT_C,
+            minuend=CHART_2025_PART_2_AMOUNT_A,
+            minuend_amount=D("625000.00"),
+            subtrahend=CHART_2025_PART_1_AMOUNT_P,
+            subtrahend_amount=D("0"),
+            result=D("625000.00"),
+        ),
+        CHART_2025_PART_2_AMOUNT_E: SubtractedNotBelowZeroLine(
+            output=CHART_2025_PART_2_AMOUNT_E,
+            minuend=CHART_2025_PART_2_AMOUNT_C,
+            minuend_amount=D("625000.00"),
+            subtrahend=CHART_2_LINE_19,
+            subtrahend_amount=D("0"),
+            result=D("625000.00"),
+        ),
+        ADJUSTED_NET_CAPITAL_LOSSES_OF_OTHER_YEARS: SubtractedNotBelowZeroLine(
+            output=ADJUSTED_NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+            minuend=NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+            minuend_amount=D("0"),
+            subtrahend=T657_NET_NON_ELIGIBLE_TAXABLE_CAPITAL_GAINS,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        ABIL_AFTER_QBT_REDUCTION: SubtractedNotBelowZeroLine(
+            output=ABIL_AFTER_QBT_REDUCTION,
+            minuend=ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+            minuend_amount=D("0.00"),
+            subtrahend=QBT_ABIL_REDUCTION,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        ANNUAL_GAINS_LIMIT_2025: SubtractedNotBelowZeroLine(
+            output=ANNUAL_GAINS_LIMIT_2025,
+            minuend=ELIGIBLE_TAXABLE_CAPITAL_GAINS_2025,
+            minuend_amount=D("0"),
+            subtrahend=TOTAL_LOSSES_FOR_ANNUAL_GAINS_LIMIT,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        CUMULATIVE_GAINS_LIMIT_2025: SubtractedNotBelowZeroLine(
+            output=CUMULATIVE_GAINS_LIMIT_2025,
+            minuend=CUMULATIVE_ELIGIBLE_TAXABLE_CAPITAL_GAINS,
+            minuend_amount=D("0"),
+            subtrahend=CUMULATIVE_LOSSES_AND_DEDUCTIONS,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
     }
     # Schedule 8 Part 4 line 3 "Line 1 plus line 2 (if negative, enter "0")" and Schedule 13 line 1
     # "(if negative, enter "0")", on no self-employment income and no partnership income, and the
@@ -1758,6 +2086,59 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # are 0 (or, where they read another line, that line's figure).
         QBT_NET_RENTAL_INCOME: SumNotBelowZeroLine(
             QBT_NET_RENTAL_INCOME, ((NET_RENTAL_INCOME, D("0")),), D("0")
+        ),
+        # T2125 Part 7 amount 7N "Net income (loss) after adjustments (amount 5D) (if negative,
+        # enter "0")": amount 5D alone, floored, 0.
+        BUSINESS_HOME_INCOME_LIMIT: SumNotBelowZeroLine(
+            output=BUSINESS_HOME_INCOME_LIMIT,
+            parts=((BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS, D("0")),),
+            total=D("0"),
+        ),
+        # T2042 Part 7 amount 7N "Net income (loss) after adjustments (amount 5C) (if negative,
+        # enter "0")": amount 5C alone, floored, 0.
+        FARM_HOME_INCOME_LIMIT: SumNotBelowZeroLine(
+            output=FARM_HOME_INCOME_LIMIT,
+            parts=((FARM_NET_INCOME_AFTER_ADJUSTMENTS, D("0")),),
+            total=D("0"),
+        ),
+        # Form T657 (line 25400): Return A enters nothing on it, so its lines are 0 (or,
+        # where they read another line, that line's figure).
+        ANNUAL_GAINS_LINE_5: SumNotBelowZeroLine(
+            output=ANNUAL_GAINS_LINE_5,
+            parts=((ANNUAL_GAINS_LINE_3_AT_INCLUSION_RATE, D("0.00")),),
+            total=D("0"),
+        ),
+        CHART_2025_PART_1_AMOUNTS_F_TO_J: SumNotBelowZeroLine(
+            output=CHART_2025_PART_1_AMOUNTS_F_TO_J,
+            parts=(
+                (T657_PART_1_AMOUNT_F, D("0")),
+                (T657_PART_1_AMOUNT_G, D("0")),
+                (T657_PART_1_AMOUNT_H, D("0")),
+                (T657_PART_1_AMOUNT_I, D("0")),
+                (T657_PART_1_AMOUNT_J, D("0")),
+            ),
+            total=D("0"),
+        ),
+        CHART_2025_PART_2_AMOUNTS_F_TO_J: SumNotBelowZeroLine(
+            output=CHART_2025_PART_2_AMOUNTS_F_TO_J,
+            parts=(
+                (CHART_2025_PART_2_AMOUNT_F, D("0")),
+                (CHART_2025_PART_2_AMOUNT_G, D("0")),
+                (CHART_2025_PART_2_AMOUNT_H, D("0")),
+                (T657_PART_2_AMOUNT_I, D("0")),
+                (T657_PART_2_AMOUNT_J, D("0")),
+            ),
+            total=D("0"),
+        ),
+        CHART_2_LINE_19: SumNotBelowZeroLine(
+            output=CHART_2_LINE_19,
+            parts=((CHART_2_LINE_17, D("0")), (T657_CHART_2_LINE_18, D("0"))),
+            total=D("0"),
+        ),
+        SCHEDULE_3_LINE_17600_NOT_BELOW_ZERO: SumNotBelowZeroLine(
+            output=SCHEDULE_3_LINE_17600_NOT_BELOW_ZERO,
+            parts=((T3_CAPITAL_GAINS_OR_LOSSES, D("0")),),
+            total=D("0"),
         ),
     }
     # Schedule 8 Part 2 lines B, C, D and E: the row of the monthly proration table for box A's 12
@@ -1825,6 +2206,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         TRAVEL_TOTAL_ZONE_A: ItemsTotalLine(TRAVEL_TOTAL_ZONE_A, (), D("0")),
         TRAVEL_TOTAL_ZONE_B: ItemsTotalLine(TRAVEL_TOTAL_ZONE_B, (), D("0")),
         STANDARD_AMOUNT_ALLOCATED: ItemsTotalLine(STANDARD_AMOUNT_ALLOCATED, (), D("0")),
+        # Form T657 (line 25400): Return A enters nothing on it, so its lines are 0 (or,
+        # where they read another line, that line's figure).
+        CHART_1_COLUMN_G_TOTAL: ItemsTotalLine(
+            output=CHART_1_COLUMN_G_TOTAL, items=(), total=D("0")
+        ),
     }
     assert {line.output: line for line in trace if isinstance(line, GreaterOfLine)} == {
         # Form T1206 Part 2 line 30 "Enter whichever is more: the amount from line 24 or line 29."
@@ -1952,6 +2338,22 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=FHSA_MAXIMUM_PARTICIPATION_PERIOD_ENDED,
             count=0,
             chosen_kind=FHSA_ANNUAL_LIMIT_FROM_STEP_2,
+            chosen_value=D("0"),
+        ),
+        # T2125 Part 5 amount 5A: a partner count of 0 chooses line 9369.
+        BUSINESS_SHARE_OF_NET_INCOME: ChosenByCountLine(
+            output=BUSINESS_SHARE_OF_NET_INCOME,
+            count_kind=BUSINESS_PARTNER,
+            count=0,
+            chosen_kind=BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
+            chosen_value=D("0"),
+        ),
+        # T2042 Part 5 amount 5A: a partner count of 0 chooses amount 4C.
+        FARM_SHARE_OF_NET_INCOME: ChosenByCountLine(
+            output=FARM_SHARE_OF_NET_INCOME,
+            count_kind=FARM_PARTNER,
+            count=0,
+            chosen_kind=FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
             chosen_value=D("0"),
         ),
     }

@@ -6,6 +6,7 @@ from app.domain.capabilities.apply_fraction import ApplyFraction
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.at_most import AtMost
 from app.domain.capabilities.choose_by_count import ChooseByCount
+from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
@@ -36,8 +37,93 @@ from app.jurisdictions.ca.catalog import (
     BOND_DISPOSITIONS,
     BOND_GAIN_OR_LOSS,
     BOND_PROCEEDS,
+    BUSINESS_ADJUSTED_GROSS_SALES,
+    BUSINESS_ADVERTISING,
+    BUSINESS_BAD_DEBTS,
+    BUSINESS_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,
+    BUSINESS_CCA_CLAIM,
+    BUSINESS_CCA_CLAIM_LESS_PERSONAL_PART,
+    BUSINESS_CCA_CLASSES,
+    BUSINESS_CCA_PERSONAL_PART,
+    BUSINESS_CCA_TABLE_CLAIM,
+    BUSINESS_CLOSING_INVENTORY,
+    BUSINESS_CLOSING_UCC,
+    BUSINESS_COST_OF_GOODS_SOLD,
+    BUSINESS_COST_OF_GOODS_SUBTOTAL,
+    BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,
+    BUSINESS_DIRECT_WAGE_COSTS,
+    BUSINESS_FUEL_COSTS,
+    BUSINESS_GROSS_INCOME,
+    BUSINESS_GROSS_INCOME_BEFORE_EXPENSES,
+    BUSINESS_GROSS_INCOME_FOR_GROSS_PROFIT,
+    BUSINESS_GROSS_PROFIT,
+    BUSINESS_GROSS_SALES,
+    BUSINESS_HOME_ALLOWABLE_CLAIM,
+    BUSINESS_HOME_CARRIED_FORWARD,
+    BUSINESS_HOME_CARRY_FORWARD,
+    BUSINESS_HOME_CCA,
+    BUSINESS_HOME_ELECTRICITY,
+    BUSINESS_HOME_EXPENSES,
+    BUSINESS_HOME_EXPENSES_AVAILABLE,
+    BUSINESS_HOME_EXPENSES_BUSINESS_PART,
+    BUSINESS_HOME_EXPENSES_SUBTOTAL,
+    BUSINESS_HOME_HEAT,
+    BUSINESS_HOME_INCOME_LIMIT,
+    BUSINESS_HOME_INSURANCE,
+    BUSINESS_HOME_MAINTENANCE,
+    BUSINESS_HOME_MORTGAGE_INTEREST,
+    BUSINESS_HOME_OTHER_EXPENSES,
+    BUSINESS_HOME_PERSONAL_USE_PART,
+    BUSINESS_HOME_PROPERTY_TAXES,
     BUSINESS_INCOME,
+    BUSINESS_INSURANCE,
+    BUSINESS_INTEREST_AND_BANK_CHARGES,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
+    BUSINESS_JOURNALISM_LABOUR_TAX_CREDIT,
+    BUSINESS_MANAGEMENT_AND_ADMINISTRATION_FEES,
+    BUSINESS_MEALS_AND_ENTERTAINMENT,
+    BUSINESS_MOTOR_VEHICLE_EXPENSES,
+    BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,
+    BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
+    BUSINESS_OFFICE_EXPENSES,
+    BUSINESS_OFFICE_STATIONERY_AND_SUPPLIES,
+    BUSINESS_OPENING_INVENTORY,
+    BUSINESS_OTHER_COSTS,
+    BUSINESS_OTHER_EXPENSES,
+    BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS,
+    BUSINESS_OTHER_INCOME,
+    BUSINESS_OTHER_INCOME_WITH_RECAPTURE,
+    BUSINESS_PARTNER,
+    BUSINESS_PARTNER_GST_HST_REBATE,
+    BUSINESS_PARTNER_OTHER_AMOUNT_A,
+    BUSINESS_PARTNER_OTHER_AMOUNT_B,
+    BUSINESS_PARTNER_OTHER_AMOUNT_C,
+    BUSINESS_PARTNER_OTHER_AMOUNT_D,
+    BUSINESS_PARTNER_OTHER_AMOUNT_E,
+    BUSINESS_PARTNER_OTHER_AMOUNTS,
+    BUSINESS_PARTNER_OTHER_AMOUNTS_TOTAL,
+    BUSINESS_PARTNER_SHARE,
+    BUSINESS_PARTNERSHIP_TOTAL,
+    BUSINESS_PROFESSIONAL_FEES,
+    BUSINESS_PROPERTY_TAXES,
+    BUSINESS_PURCHASES,
+    BUSINESS_QUICK_METHOD_ASSISTANCE,
+    BUSINESS_QUICK_METHOD_GST_HST,
+    BUSINESS_QUICK_METHOD_REMITTED,
+    BUSINESS_RECAPTURED_CCA,
+    BUSINESS_RENT,
+    BUSINESS_REPAIRS_AND_MAINTENANCE,
+    BUSINESS_RESERVES_AND_OTHER_INCOME,
+    BUSINESS_RESERVES_DEDUCTED_LAST_YEAR,
+    BUSINESS_SALARIES_WAGES_AND_BENEFITS,
+    BUSINESS_SALES_ADJUSTMENTS,
+    BUSINESS_SALES_SUBTOTAL,
+    BUSINESS_SHARE_OF_NET_INCOME,
+    BUSINESS_SUBCONTRACTS,
+    BUSINESS_TERMINAL_LOSS,
+    BUSINESS_TOTAL_EXPENSES,
+    BUSINESS_TRAVEL_EXPENSES,
+    BUSINESS_UTILITIES,
     CAPITAL_GAIN,
     CAPITAL_GAINS_AFTER_DEFERRAL,
     CAPITAL_GAINS_BEFORE_INVESTMENT_LOSS_REDUCTION,
@@ -62,6 +148,115 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     EMPLOYMENT_INCOME,
+    FARM_BARLEY,
+    FARM_BUILDING_REPAIRS_AND_MAINTENANCE,
+    FARM_CANOLA,
+    FARM_CATTLE,
+    FARM_CCA_CLAIM,
+    FARM_CCA_CLAIM_LESS_PERSONAL_PART,
+    FARM_CCA_CLASSES,
+    FARM_CCA_PERSONAL_PART,
+    FARM_CCA_TABLE_CLAIM,
+    FARM_CLEARING_LEVELLING_AND_DRAINING,
+    FARM_CLOSING_UCC,
+    FARM_CONTAINERS_AND_TWINE,
+    FARM_CORN,
+    FARM_CROP_INSURANCE,
+    FARM_CROP_INSURANCE_PREMIUMS,
+    FARM_CUSTOM_WORK,
+    FARM_CUSTOM_WORK_EXPENSES,
+    FARM_DAIRY_SUBSIDIES,
+    FARM_EGGS,
+    FARM_ELECTRICITY,
+    FARM_EXPENSES_SUBTOTAL,
+    FARM_FEED_SUPPLEMENTS_STRAW_AND_BEDDING,
+    FARM_FERTILIZERS_AND_LIME,
+    FARM_FLAXSEED,
+    FARM_FORAGE_CROPS_OR_SEEDS,
+    FARM_FRUIT,
+    FARM_FUEL_CHARGE_CREDIT,
+    FARM_GASOLINE_DIESEL_AND_OIL,
+    FARM_GRAINS_AND_OILSEEDS,
+    FARM_GREENHOUSE_AND_NURSERY,
+    FARM_GROSS_INCOME,
+    FARM_GROSS_INCOME_BEFORE_EXPENSES,
+    FARM_HEATING_AND_CURING_FUEL,
+    FARM_HOME_ALLOWABLE_CLAIM,
+    FARM_HOME_CARRIED_FORWARD,
+    FARM_HOME_CARRY_FORWARD,
+    FARM_HOME_CCA,
+    FARM_HOME_ELECTRICITY,
+    FARM_HOME_EXPENSES,
+    FARM_HOME_EXPENSES_AVAILABLE,
+    FARM_HOME_EXPENSES_BUSINESS_PART,
+    FARM_HOME_EXPENSES_SUBTOTAL,
+    FARM_HOME_HEAT,
+    FARM_HOME_INCOME_LIMIT,
+    FARM_HOME_INSURANCE,
+    FARM_HOME_MAINTENANCE,
+    FARM_HOME_MORTGAGE_INTEREST,
+    FARM_HOME_OTHER_EXPENSES,
+    FARM_HOME_PERSONAL_USE_PART,
+    FARM_HOME_PROPERTY_TAXES,
+    FARM_INSURANCE,
+    FARM_INSURANCE_PROCEEDS,
+    FARM_INSURANCE_PROGRAM_OVERPAYMENT_RECAPTURE,
+    FARM_INTEREST_AND_BANK_CHARGES,
+    FARM_LIVESTOCK_AND_ANIMAL_PRODUCTS_REVENUE,
+    FARM_LIVESTOCK_PURCHASED,
+    FARM_MACHINERY_REPAIRS_LICENCES_AND_INSURANCE,
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_CURRENT_YEAR,
+    FARM_MANDATORY_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
+    FARM_MILK_AND_CREAM,
+    FARM_MIXED_GRAINS,
+    FARM_MOTOR_VEHICLE_EXPENSES,
+    FARM_NET_INCOME_AFTER_ADJUSTMENTS,
+    FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
+    FARM_NET_INCOME_BEFORE_ADJUSTMENTS,
+    FARM_OATS,
+    FARM_OFFICE_EXPENSES,
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_CURRENT_YEAR,
+    FARM_OPTIONAL_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
+    FARM_OTHER_COMMODITIES,
+    FARM_OTHER_CROPS,
+    FARM_OTHER_EXPENSES,
+    FARM_OTHER_EXPENSES_WITH_TERMINAL_LOSS,
+    FARM_OTHER_INCOME,
+    FARM_OTHER_INCOME_WITH_RECAPTURE,
+    FARM_OTHER_PROGRAM_PAYMENTS,
+    FARM_PARTNER,
+    FARM_PARTNER_GST_HST_REBATE,
+    FARM_PARTNER_OTHER_AMOUNT_A,
+    FARM_PARTNER_OTHER_AMOUNT_B,
+    FARM_PARTNER_OTHER_AMOUNT_C,
+    FARM_PARTNER_OTHER_AMOUNT_D,
+    FARM_PARTNER_OTHER_AMOUNT_E,
+    FARM_PARTNER_OTHER_AMOUNTS,
+    FARM_PARTNER_OTHER_AMOUNTS_TOTAL,
+    FARM_PARTNER_SHARE,
+    FARM_PARTNERSHIP_TOTAL,
+    FARM_PATRONAGE_DIVIDENDS,
+    FARM_PESTICIDES,
+    FARM_POTATOES,
+    FARM_POULTRY,
+    FARM_PROFESSIONAL_FEES,
+    FARM_PROPERTY_TAXES,
+    FARM_REBATES,
+    FARM_RECAPTURED_CCA,
+    FARM_RENT,
+    FARM_SALARIES_WAGES_AND_BENEFITS,
+    FARM_SEEDS_AND_PLANTS,
+    FARM_SHARE_OF_NET_INCOME,
+    FARM_SHEEP_AND_LAMBS,
+    FARM_SMALL_TOOLS,
+    FARM_SOYBEANS,
+    FARM_SWINE,
+    FARM_TERMINAL_LOSS,
+    FARM_TOBACCO,
+    FARM_TOTAL_EXPENSES,
+    FARM_VEGETABLES,
+    FARM_VETERINARY_FEES,
+    FARM_WHEAT,
     FARMING_INCOME,
     FHSA_INCOME,
     FISHING_INCOME,
@@ -352,16 +547,156 @@ INPUTS = frozenset(
         "ca/rental_partner_share",
         "ca/rental_partner_gst_hst_rebate",
         "ca/rental_partner_other_expenses",
+        # Form T2125 (business statement) Part 3A to Part 7 and Area A: the caller's amounts, in the
+        # form's order; T1 line 22 (line 13500), `ca/business_income`, is no longer an input, it is
+        # T2125 line 9946.
+        "ca/business_gross_sales",
+        "ca/business_sales_adjustments",
+        "ca/business_quick_method_gst_hst",
+        "ca/business_quick_method_remitted",
+        "ca/business_reserves_deducted_last_year",
+        "ca/business_other_income",
+        "ca/business_opening_inventory",
+        "ca/business_purchases",
+        "ca/business_direct_wage_costs",
+        "ca/business_subcontracts",
+        "ca/business_other_costs",
+        "ca/business_closing_inventory",
+        "ca/business_advertising",
+        "ca/business_meals_and_entertainment",
+        "ca/business_bad_debts",
+        "ca/business_insurance",
+        "ca/business_interest_and_bank_charges",
+        "ca/business_business_taxes_licences_and_memberships",
+        "ca/business_office_expenses",
+        "ca/business_office_stationery_and_supplies",
+        "ca/business_professional_fees",
+        "ca/business_management_and_administration_fees",
+        "ca/business_rent",
+        "ca/business_repairs_and_maintenance",
+        "ca/business_salaries_wages_and_benefits",
+        "ca/business_property_taxes",
+        "ca/business_travel_expenses",
+        "ca/business_utilities",
+        "ca/business_fuel_costs",
+        "ca/business_delivery_freight_and_express",
+        "ca/business_motor_vehicle_expenses",
+        "ca/business_cca_personal_part",
+        "ca/business_other_expenses",
+        "ca/business_journalism_labour_tax_credit",
+        "ca/business_partner_gst_hst_rebate",
+        "ca/business_partner_other_amount_a",
+        "ca/business_partner_other_amount_b",
+        "ca/business_partner_other_amount_c",
+        "ca/business_partner_other_amount_d",
+        "ca/business_partner_other_amount_e",
+        "ca/business_home_heat",
+        "ca/business_home_electricity",
+        "ca/business_home_insurance",
+        "ca/business_home_maintenance",
+        "ca/business_home_mortgage_interest",
+        "ca/business_home_property_taxes",
+        "ca/business_home_other_expenses",
+        "ca/business_home_personal_use_part",
+        "ca/business_home_cca",
+        "ca/business_home_carried_forward",
+        "ca/business_partner_share",
+        "ca/business_partner",
+        "ca/business_cca_classes",
+        # Form T2042 (statement of farming) Parts 3 to 7 and Area A: the caller's amounts, in the
+        # form's order, and the Area A class list; T1 line 25 (line 14100) is T2042 line 9946,
+        # computed.
+        "ca/farm_wheat",
+        "ca/farm_oats",
+        "ca/farm_barley",
+        "ca/farm_mixed_grains",
+        "ca/farm_corn",
+        "ca/farm_canola",
+        "ca/farm_flaxseed",
+        "ca/farm_soybeans",
+        "ca/farm_grains_and_oilseeds",
+        "ca/farm_fruit",
+        "ca/farm_potatoes",
+        "ca/farm_vegetables",
+        "ca/farm_tobacco",
+        "ca/farm_greenhouse_and_nursery",
+        "ca/farm_forage_crops_or_seeds",
+        "ca/farm_other_crops",
+        "ca/farm_cattle",
+        "ca/farm_swine",
+        "ca/farm_poultry",
+        "ca/farm_sheep_and_lambs",
+        "ca/farm_livestock_and_animal_products_revenue",
+        "ca/farm_milk_and_cream",
+        "ca/farm_eggs",
+        "ca/farm_other_commodities",
+        "ca/farm_dairy_subsidies",
+        "ca/farm_crop_insurance",
+        "ca/farm_other_program_payments",
+        "ca/farm_rebates",
+        "ca/farm_custom_work",
+        "ca/farm_insurance_proceeds",
+        "ca/farm_patronage_dividends",
+        "ca/farm_other_income",
+        "ca/farm_containers_and_twine",
+        "ca/farm_fertilizers_and_lime",
+        "ca/farm_pesticides",
+        "ca/farm_seeds_and_plants",
+        "ca/farm_feed_supplements_straw_and_bedding",
+        "ca/farm_livestock_purchased",
+        "ca/farm_veterinary_fees",
+        "ca/farm_machinery_repairs_licences_and_insurance",
+        "ca/farm_gasoline_diesel_and_oil",
+        "ca/farm_building_repairs_and_maintenance",
+        "ca/farm_clearing_levelling_and_draining",
+        "ca/farm_crop_insurance_premiums",
+        "ca/farm_custom_work_expenses",
+        "ca/farm_electricity",
+        "ca/farm_heating_and_curing_fuel",
+        "ca/farm_insurance_program_overpayment_recapture",
+        "ca/farm_insurance",
+        "ca/farm_interest_and_bank_charges",
+        "ca/farm_office_expenses",
+        "ca/farm_professional_fees",
+        "ca/farm_property_taxes",
+        "ca/farm_rent",
+        "ca/farm_salaries_wages_and_benefits",
+        "ca/farm_motor_vehicle_expenses",
+        "ca/farm_small_tools",
+        "ca/farm_mandatory_inventory_adjustment_previous_year",
+        "ca/farm_optional_inventory_adjustment_previous_year",
+        "ca/farm_other_expenses",
+        "ca/farm_optional_inventory_adjustment_current_year",
+        "ca/farm_mandatory_inventory_adjustment_current_year",
+        "ca/farm_cca_personal_part",
+        "ca/farm_partner",
+        "ca/farm_partner_share",
+        "ca/farm_fuel_charge_credit",
+        "ca/farm_partner_gst_hst_rebate",
+        "ca/farm_partner_other_amount_a",
+        "ca/farm_partner_other_amount_b",
+        "ca/farm_partner_other_amount_c",
+        "ca/farm_partner_other_amount_d",
+        "ca/farm_partner_other_amount_e",
+        "ca/farm_home_heat",
+        "ca/farm_home_electricity",
+        "ca/farm_home_insurance",
+        "ca/farm_home_maintenance",
+        "ca/farm_home_mortgage_interest",
+        "ca/farm_home_property_taxes",
+        "ca/farm_home_other_expenses",
+        "ca/farm_home_personal_use_part",
+        "ca/farm_home_cca",
+        "ca/farm_home_carried_forward",
+        "ca/farm_cca_classes",
         "ca/taxable_support_payments",
         "ca/rrsp_income",
         "ca/fhsa_income",
         "ca/other_fhsa_income",
         "ca/other_income",
         "ca/taxable_scholarships",
-        "ca/business_income",
         "ca/professional_income",
         "ca/commission_income",
-        "ca/farming_income",
         "ca/fishing_income",
         "ca/workers_compensation_benefits",
         "ca/social_assistance_payments",
@@ -377,6 +712,16 @@ OUTPUTS = frozenset(
         "ca/rental_closing_ucc",
         "ca/rental_non_compliant_cca",
         "ca/short_term_rental_non_compliant_cca_by_class",
+        # T2125 Area A column 22 "UCC at the end of the year" (for next year) and Part 7 line 7O
+        # "Business-use-of-home expenses available to carry forward": nothing else on the return
+        # reads them.
+        "ca/business_closing_ucc",
+        "ca/business_home_carry_forward",
+        # Form T2042 Area A column 22 "UCC at the end of the year" (for next year) and Part 7 line
+        # 7O "Business-use-of-home expenses available to carry forward": nothing else on the return
+        # reads them.
+        "ca/farm_closing_ucc",
+        "ca/farm_home_carry_forward",
         # Schedule 3 Part 3: the eight "Total proceeds of disposition" lines feed no later line.
         "ca/qsbcs_proceeds",
         "ca/qffp_proceeds",
@@ -1129,7 +1474,8 @@ STEPS = {
     # the return lists, in line order (lines 1 to 20, line 13 being the net rental
     # income, line 12600 "Net"; here with the amount of dividends of line 9 (12000), the
     # taxable capital gains of line 14 and the taxable support payments of line 15, then
-    # line 32); self-employment income (lines 22 to 26) is not wired yet.
+    # line 32); line 27 "Add lines 22 to 26. Net self-employment income" (line 28 is line 21 plus
+    # line 27) comes after line 20, before lines 29 to 31 (line 32).
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -1155,6 +1501,7 @@ STEPS = {
                 "ca/other_fhsa_income",
                 "ca/other_income",
                 "ca/taxable_scholarships",
+                "ca/net_self_employment_income",
                 "ca/income_support_benefits",
             )
         },
@@ -1236,8 +1583,8 @@ STEPS = {
     # T1 line 27 "Add lines 22 to 26. Net self-employment income": line 22 (13500) business
     # income, line 23 (13700) professional income, line 24 (13900) commission income, line 25
     # (14100) farming income and line 26 (14300) fishing income, the "Net" box of each, in line
-    # order. Line 28 "Line 21 plus line 27" and total income (line 15000) are not yet computed
-    # from it.
+    # order. Line 28 "Line 21 plus line 27" is not a step of its own: total income (line 15000)
+    # adds line 27 to the lines 1 to 20, in line order.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -1251,6 +1598,801 @@ STEPS = {
             ),
         },
         produces={"output": "ca/net_self_employment_income"},
+    ),
+    # T2125 Part 3A "Subtotal: Amount 3A minus amount 3B 3C": amount 3A "Gross sales,
+    # commissions, or fees (include GST/HST collected or collectible)" less amount 3B
+    # "GST/HST, provincial sales tax, returns, allowances, discounts, and GST/HST
+    # adjustments (included in amount 3A)", both caller inputs.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/business_gross_sales",
+            "less": "ca/business_sales_adjustments",
+        },
+        produces={"output": "ca/business_sales_subtotal"},
+    ),
+    # T2125 Part 3A "If you are using the quick method for GST/HST - Government assistance
+    # calculated as follows:" "Subtotal: Amount 3D minus amount 3E 3F": amount 3D "GST/HST
+    # collected or collectible on sales, commissions, and fees eligible for the quick
+    # method" less amount 3E "GST/HST remitted: (sales, commissions, and fees eligible for
+    # the quick method plus GST/HST collected or collectible) multiplied by the applicable
+    # quick method remittance rate", both caller inputs (no capability multiplies by a rate
+    # the caller enters). Signed: 3F may be below zero.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/business_quick_method_gst_hst",
+            "less": "ca/business_quick_method_remitted",
+        },
+        produces={"output": "ca/business_quick_method_assistance"},
+    ),
+    # T2125 Part 3A "Adjusted gross sales: Amount 3C plus amount 3F (enter on line 8000 of
+    # Part 3C)"; Part 3C line 8000 "Adjusted gross sales (amount 3G) or adjusted
+    # professional fees (amount 3N)" is the same artifact, so it has no step of its own.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_sales_subtotal",
+                "ca/business_quick_method_assistance",
+            ),
+        },
+        produces={"output": "ca/business_adjusted_gross_sales"},
+    ),
+    # T2125 Area A endnote 3 "If you have a negative amount in column 7, add it to income as
+    # a recapture in Part 3C on line 8230. ... Recapture and terminal loss do not apply to a
+    # Class 10.1 property unless it is a DIEP.": the recapture of each class of the Area A
+    # list (column 7 made positive when negative), totalled.
+    CapabilitySelection(
+        name="ca/recaptured_cca",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={
+            "classes": "ca/business_cca_classes",
+        },
+        produces={"output": "ca/business_recaptured_cca"},
+    ),
+    # T2125 Part 3C line 8230 "Other income (specify):", which takes the recapture of Area A
+    # (endnote 3 "add it to income as a recapture in Part 3C on line 8230"): the other
+    # income the caller specifies plus the recapture.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_other_income",
+                "ca/business_recaptured_cca",
+            ),
+        },
+        produces={"output": "ca/business_other_income_with_recapture"},
+    ),
+    # T2125 Part 3C "Subtotal: Line 8290 plus line 8230 3O": line 8290 "Reserves deducted
+    # last year", a caller input, plus line 8230.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_reserves_deducted_last_year",
+                "ca/business_other_income_with_recapture",
+            ),
+        },
+        produces={"output": "ca/business_reserves_and_other_income"},
+    ),
+    # T2125 Part 3C "Gross business or professional income: Line 8000 plus amount 3O" (line
+    # 8299), "Report the gross business or professional income from line 8299 on the
+    # applicable line of your income tax and benefit return as indicated below: business
+    # income on line 13499"; line 8000 is amount 3G above.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_adjusted_gross_sales",
+                "ca/business_reserves_and_other_income",
+            ),
+        },
+        produces={"output": "ca/business_gross_income"},
+    ),
+    # T2125 Part 3D "Gross business income (line 8299 of Part 3C). 3P".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": ("ca/business_gross_income",),
+        },
+        produces={"output": "ca/business_gross_income_for_gross_profit"},
+    ),
+    # T2125 Part 3D "Subtotal: Add amounts 3Q to 3U. 3V": 3Q "Opening inventory (include raw
+    # materials, goods in process, and finished goods)", 3R "Purchases during the year (net
+    # of returns, allowances, and discounts)", 3S "Direct wage costs", 3T "Subcontracts" and
+    # 3U "Other costs", all caller inputs.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_opening_inventory",
+                "ca/business_purchases",
+                "ca/business_direct_wage_costs",
+                "ca/business_subcontracts",
+                "ca/business_other_costs",
+            ),
+        },
+        produces={"output": "ca/business_cost_of_goods_subtotal"},
+    ),
+    # T2125 Part 3D "Cost of goods sold: Amount 3V minus line 8500 8518": line 8500 "Closing
+    # inventory (include raw materials, goods in process, and finished goods)", a caller
+    # input.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/business_cost_of_goods_subtotal",
+            "less": "ca/business_closing_inventory",
+        },
+        produces={"output": "ca/business_cost_of_goods_sold"},
+    ),
+    # T2125 Part 3D "Gross profit (or loss): Amount 3P minus line 8518." (line 8519):
+    # signed, a loss is negative.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/business_gross_income_for_gross_profit",
+            "less": "ca/business_cost_of_goods_sold",
+        },
+        produces={"output": "ca/business_gross_profit"},
+    ),
+    # T2125 Part 4 "Gross business or professional income (line 8299 of Part 3C) or Gross
+    # profit (line 8519 of Part 3D). 4A": for a business statement, which has a Part 3D, it
+    # is line 8519.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": ("ca/business_gross_profit",),
+        },
+        produces={"output": "ca/business_gross_income_before_expenses"},
+    ),
+    # T2125 Area A "Total CCA claim for the year: Total of column 21 (enter on line 9936 of
+    # Part 4 amount ii minus any personal part and any CCA for business-use-of-home
+    # expenses)" (amount ii): the CCA claimed on each class of the Area A list, at most its
+    # maximum (column 19 multiplied by column 20), totalled.
+    CapabilitySelection(
+        name="ca/cca_claim",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={
+            "classes": "ca/business_cca_classes",
+        },
+        produces={"output": "ca/business_cca_table_claim"},
+    ),
+    # T2125 Part 4 "Capital cost allowance (CCA). Enter amount ii of Area A minus any
+    # personal part and any CCA for business-use-of-home expenses 9936 4U", first step:
+    # amount ii minus the personal part of CCA, a caller input.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/business_cca_table_claim",
+            "less": "ca/business_cca_personal_part",
+        },
+        produces={"output": "ca/business_cca_claim_less_personal_part"},
+    ),
+    # T2125 Part 4 line 9936 (amount 4U) "Capital cost allowance (CCA). Enter amount ii of
+    # Area A minus any personal part and any CCA for business-use-of-home expenses", second
+    # step: that result minus the CCA for business-use-of-home expenses, amount 7K "Capital
+    # cost allowance (business part only)", a caller input.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/business_cca_claim_less_personal_part",
+            "less": "ca/business_home_cca",
+        },
+        produces={"output": "ca/business_cca_claim"},
+    ),
+    # T2125 Area A endnote 3 "If no property is left in the class and there is a positive
+    # amount in this column, deduct the amount from income as a terminal loss in Part 4 on
+    # line 9270. Recapture and terminal loss do not apply to a Class 10.1 property unless it
+    # is a DIEP.": the terminal loss of each class of the Area A list, totalled.
+    CapabilitySelection(
+        name="ca/terminal_loss",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={
+            "classes": "ca/business_cca_classes",
+        },
+        produces={"output": "ca/business_terminal_loss"},
+    ),
+    # T2125 Part 4 "Other expenses (specify): 9270 4V", which takes the terminal loss of
+    # Area A (endnote 3 "deduct the amount from income as a terminal loss in Part 4 on line
+    # 9270"): the other expenses the caller specifies plus the terminal loss.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_other_expenses",
+                "ca/business_terminal_loss",
+            ),
+        },
+        produces={"output": "ca/business_other_expenses_with_terminal_loss"},
+    ),
+    # T2125 Area A column 22 "UCC at the end of the year (col. 7 minus col. 21)": the class
+    # number and column 22 of each class of the Area A list, a product of the return for
+    # next year's column 1.
+    CapabilitySelection(
+        name="ca/closing_ucc",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={
+            "classes": "ca/business_cca_classes",
+        },
+        produces={"output": "ca/business_closing_ucc"},
+    ),
+    # T2125 Part 4 "Total expenses: Total of amounts 4B to 4V 9368": the 19 expense lines 4B
+    # to 4T ("Advertising" to "Motor vehicle expenses (not including CCA) (amount 16 of
+    # Chart A)", each a caller input, amount 16 of Chart A entered as its line), then 4U
+    # (line 9936) and 4V (line 9270), in the form's order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_advertising",
+                "ca/business_meals_and_entertainment",
+                "ca/business_bad_debts",
+                "ca/business_insurance",
+                "ca/business_interest_and_bank_charges",
+                "ca/business_business_taxes_licences_and_memberships",
+                "ca/business_office_expenses",
+                "ca/business_office_stationery_and_supplies",
+                "ca/business_professional_fees",
+                "ca/business_management_and_administration_fees",
+                "ca/business_rent",
+                "ca/business_repairs_and_maintenance",
+                "ca/business_salaries_wages_and_benefits",
+                "ca/business_property_taxes",
+                "ca/business_travel_expenses",
+                "ca/business_utilities",
+                "ca/business_fuel_costs",
+                "ca/business_delivery_freight_and_express",
+                "ca/business_motor_vehicle_expenses",
+                "ca/business_cca_claim",
+                "ca/business_other_expenses_with_terminal_loss",
+            ),
+        },
+        produces={"output": "ca/business_total_expenses"},
+    ),
+    # T2125 Part 4 "Net income (loss) before adjustments: Amount 4A minus line 9368" (line
+    # 9369): signed, a loss is negative.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/business_gross_income_before_expenses",
+            "less": "ca/business_total_expenses",
+        },
+        produces={"output": "ca/business_net_income_before_adjustments"},
+    ),
+    # T2125 Part 5 "Your share of line 9369 or the amount from your T5013 slip, Statement of
+    # Partnership Income. 5A": a count of 1 for a partner (a caller's 0 or 1) chooses the
+    # amount from the T5013 slip, as entered; with a count of 0 it is line 9369.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/business_partner",
+            "when_none": "ca/business_net_income_before_adjustments",
+            "when_any": "ca/business_partner_share",
+        },
+        produces={"output": "ca/business_share_of_net_income"},
+    ),
+    # T2125 Part 6 "Total other amounts deductible from your share of the net partnership
+    # income (loss): Add amounts 6A to 6E (enter this on line 9943 of Part 5). 6F": 6A to 6E
+    # "List details of expenses: Expense amounts", caller inputs.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_partner_other_amount_a",
+                "ca/business_partner_other_amount_b",
+                "ca/business_partner_other_amount_c",
+                "ca/business_partner_other_amount_d",
+                "ca/business_partner_other_amount_e",
+            ),
+        },
+        produces={"output": "ca/business_partner_other_amounts_total"},
+    ),
+    # T2125 Part 5 "Other amounts deductible from your share of net partnership income
+    # (loss) (amount 6F)" (line 9943).
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": ("ca/business_partner_other_amounts_total",),
+        },
+        produces={"output": "ca/business_partner_other_amounts"},
+    ),
+    # T2125 Part 5 "Total: Amount 5A plus amount 5B plus line 9974 5C": amount 5B "Canadian
+    # journalism labour tax credit allocated to you in the year (box 236 of your T5013
+    # slip)" and line 9974 "GST/HST rebate for partners received in the year", caller
+    # inputs.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_share_of_net_income",
+                "ca/business_journalism_labour_tax_credit",
+                "ca/business_partner_gst_hst_rebate",
+            ),
+        },
+        produces={"output": "ca/business_partnership_total"},
+    ),
+    # T2125 Part 5 "Net income (loss) after adjustments: Amount 5C minus line 9943 5D":
+    # signed, a loss is negative.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/business_partnership_total",
+            "less": "ca/business_partner_other_amounts",
+        },
+        produces={"output": "ca/business_net_income_after_adjustments"},
+    ),
+    # T2125 Part 7 "Subtotal: Add amounts 7A to 7G. 7H": 7A "Heat", 7B "Electricity", 7C
+    # "Insurance", 7D "Maintenance", 7E "Mortgage interest", 7F "Property taxes" and 7G
+    # "Other expenses (specify)", caller inputs.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_home_heat",
+                "ca/business_home_electricity",
+                "ca/business_home_insurance",
+                "ca/business_home_maintenance",
+                "ca/business_home_mortgage_interest",
+                "ca/business_home_property_taxes",
+                "ca/business_home_other_expenses",
+            ),
+        },
+        produces={"output": "ca/business_home_expenses_subtotal"},
+    ),
+    # T2125 Part 7 "Subtotal: Amount 7H minus amount 7I 7J": amount 7I "Personal-use part of
+    # the business-use-of-home expenses", a caller input.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/business_home_expenses_subtotal",
+            "less": "ca/business_home_personal_use_part",
+        },
+        produces={"output": "ca/business_home_expenses_business_part"},
+    ),
+    # T2125 Part 7 "Subtotal: Add amounts 7J to 7L. 7M": 7K "Capital cost allowance
+    # (business part only), which means amount ii of Area A minus any portion of capital
+    # cost allowance that is for personal use or entered on line 9936 of Part 4" and 7L
+    # "Amount carried forward from previous year", caller inputs.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/business_home_expenses_business_part",
+                "ca/business_home_cca",
+                "ca/business_home_carried_forward",
+            ),
+        },
+        produces={"output": "ca/business_home_expenses_available"},
+    ),
+    # T2125 Part 7 "Net income (loss) after adjustments (amount 5D) (if negative, enter
+    # "0"). 7N": amount 5D, or 0 when it is negative.
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={
+            "parts": ("ca/business_net_income_after_adjustments",),
+        },
+        produces={"output": "ca/business_home_income_limit"},
+    ),
+    # T2125 Part 7 "Business-use-of-home expenses available to carry forward: Amount 7M
+    # minus amount 7N (if negative, enter "0") 7O": the claim left over, 0 when amount 7N is
+    # the larger.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/business_home_expenses_available",
+            "less": "ca/business_home_income_limit",
+        },
+        produces={"output": "ca/business_home_carry_forward"},
+    ),
+    # T2125 Part 7 "Allowable claim: Amount 7M or 7N above, whichever is less (enter your
+    # share of this amount on line 9945 of Part 5) 7P".
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/business_home_expenses_available",
+                "ca/business_home_income_limit",
+            ),
+        },
+        produces={"output": "ca/business_home_allowable_claim"},
+    ),
+    # T2125 Part 5 "Business-use-of-home expenses (amount 7P)" (line 9945).
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": ("ca/business_home_allowable_claim",),
+        },
+        produces={"output": "ca/business_home_expenses"},
+    ),
+    # T2125 Part 5 "Your net income (loss): Amount 5D minus line 9945" (line 9946), "Report
+    # the net income amount from line 9946 on the applicable line of your income tax and
+    # benefit return as indicated below: business income on line 13500"; T1 "Line 22:
+    # Business income" is the same artifact, signed: a loss is negative.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/business_net_income_after_adjustments",
+            "less": "ca/business_home_expenses",
+        },
+        produces={"output": "ca/business_income"},
+    ),
+    # T2042 Area A endnote 3 "If you have a negative amount in column 7, add it to income as a
+    # recapture in Part 3 on line 9600. If no property is left in the class and there is a
+    # positive amount in this column, deduct the amount from income as a terminal loss in Part 4
+    # on line 9790.": the recapture of each class of the Area A list (column 7 made positive when
+    # negative), totalled.
+    CapabilitySelection(
+        name="ca/recaptured_cca",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={"classes": "ca/farm_cca_classes"},
+        produces={"output": "ca/farm_recaptured_cca"},
+    ),
+    # T2042 Part 3 line 9600 "Other income (specify):", which takes the recapture of Area A (the
+    # Area A note "add it to income as a recapture in Part 3 on line 9600"): the other income the
+    # caller specifies plus the recapture.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/farm_other_income", "ca/farm_recaptured_cca")},
+        produces={"output": "ca/farm_other_income_with_recapture"},
+    ),
+    # T2042 Part 3 "Gross income: Total of the income lines (enter this amount on line 14099 of
+    # your income tax and benefit return)" (line 9659): the caller's income lines of Part 3, in
+    # the form's order, including the subtotal lines 9370 ("Grains and oilseeds"), 9420 ("Other
+    # crops") and 9470 ("Livestock and animal products revenue"), and line 9600 with its recapture.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/farm_wheat",
+                "ca/farm_oats",
+                "ca/farm_barley",
+                "ca/farm_mixed_grains",
+                "ca/farm_corn",
+                "ca/farm_canola",
+                "ca/farm_flaxseed",
+                "ca/farm_soybeans",
+                "ca/farm_grains_and_oilseeds",
+                "ca/farm_fruit",
+                "ca/farm_potatoes",
+                "ca/farm_vegetables",
+                "ca/farm_tobacco",
+                "ca/farm_greenhouse_and_nursery",
+                "ca/farm_forage_crops_or_seeds",
+                "ca/farm_other_crops",
+                "ca/farm_cattle",
+                "ca/farm_swine",
+                "ca/farm_poultry",
+                "ca/farm_sheep_and_lambs",
+                "ca/farm_livestock_and_animal_products_revenue",
+                "ca/farm_milk_and_cream",
+                "ca/farm_eggs",
+                "ca/farm_other_commodities",
+                "ca/farm_dairy_subsidies",
+                "ca/farm_crop_insurance",
+                "ca/farm_other_program_payments",
+                "ca/farm_rebates",
+                "ca/farm_custom_work",
+                "ca/farm_insurance_proceeds",
+                "ca/farm_patronage_dividends",
+                "ca/farm_other_income_with_recapture",
+            )
+        },
+        produces={"output": "ca/farm_gross_income"},
+    ),
+    # T2042 Part 4 "Gross income (line 9659 of Part 3)" (4A): line 9659 alone, the gross income
+    # that the expenses are taken from.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/farm_gross_income",)},
+        produces={"output": "ca/farm_gross_income_before_expenses"},
+    ),
+    # T2042 Area A endnote 3 "deduct the amount from income as a terminal loss in Part 4 on line
+    # 9790": the terminal loss of each class of the Area A list, totalled.
+    CapabilitySelection(
+        name="ca/terminal_loss",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={"classes": "ca/farm_cca_classes"},
+        produces={"output": "ca/farm_terminal_loss"},
+    ),
+    # T2042 Part 4 "Other expenses (specify):" and "Total other expenses (see column 7 of Area A on
+    # page 5)" (line 9790): the other expenses the caller specifies plus the terminal loss.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/farm_other_expenses", "ca/farm_terminal_loss")},
+        produces={"output": "ca/farm_other_expenses_with_terminal_loss"},
+    ),
+    # T2042 Part 4 "Subtotal of expenses" (4B), "Expenses (enter only the business part)": the
+    # expense lines 9661 to 9820, the previous year's inventory adjustments 9937 and 9938, and
+    # line 9790, in the form's order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/farm_containers_and_twine",
+                "ca/farm_fertilizers_and_lime",
+                "ca/farm_pesticides",
+                "ca/farm_seeds_and_plants",
+                "ca/farm_feed_supplements_straw_and_bedding",
+                "ca/farm_livestock_purchased",
+                "ca/farm_veterinary_fees",
+                "ca/farm_machinery_repairs_licences_and_insurance",
+                "ca/farm_gasoline_diesel_and_oil",
+                "ca/farm_building_repairs_and_maintenance",
+                "ca/farm_clearing_levelling_and_draining",
+                "ca/farm_crop_insurance_premiums",
+                "ca/farm_custom_work_expenses",
+                "ca/farm_electricity",
+                "ca/farm_heating_and_curing_fuel",
+                "ca/farm_insurance_program_overpayment_recapture",
+                "ca/farm_insurance",
+                "ca/farm_interest_and_bank_charges",
+                "ca/farm_office_expenses",
+                "ca/farm_professional_fees",
+                "ca/farm_property_taxes",
+                "ca/farm_rent",
+                "ca/farm_salaries_wages_and_benefits",
+                "ca/farm_motor_vehicle_expenses",
+                "ca/farm_small_tools",
+                "ca/farm_mandatory_inventory_adjustment_previous_year",
+                "ca/farm_optional_inventory_adjustment_previous_year",
+                "ca/farm_other_expenses_with_terminal_loss",
+            )
+        },
+        produces={"output": "ca/farm_expenses_subtotal"},
+    ),
+    # T2042 Area A "Total CCA claim for the year: Total of column 21 (enter on line 9936 of Part 4
+    # amount ii minus any personal part and any CCA for business-use-of-home expenses)" (amount
+    # ii): the CCA claimed on each class of the Area A list, at most its maximum (column 19
+    # multiplied by column 20), totalled.
+    CapabilitySelection(
+        name="ca/cca_claim",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={"classes": "ca/farm_cca_classes"},
+        produces={"output": "ca/farm_cca_table_claim"},
+    ),
+    # T2042 Part 4 "Capital cost allowance (CCA). Enter amount ii of Area A minus any personal part
+    # and any CCA for business-use-of-home expenses." (line 9936), first step: amount ii minus the
+    # personal part of CCA, a caller input.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={"amount": "ca/farm_cca_table_claim", "less": "ca/farm_cca_personal_part"},
+        produces={"output": "ca/farm_cca_claim_less_personal_part"},
+    ),
+    # T2042 Part 4 line 9936 (Capital cost allowance), second step: that result minus the CCA for
+    # business-use-of-home expenses, amount 7K "Capital cost allowance (business part only), which
+    # means amount ii of Area A minus any portion of capital cost allowance that is for personal use
+    # or entered on line 9936 of Part 4", a caller input.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={"amount": "ca/farm_cca_claim_less_personal_part", "less": "ca/farm_home_cca"},
+        produces={"output": "ca/farm_cca_claim"},
+    ),
+    # T2042 Part 4 "Total farm expenses: Amount 4B plus line 9936" (line 9898): the two added.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/farm_expenses_subtotal", "ca/farm_cca_claim")},
+        produces={"output": "ca/farm_total_expenses"},
+    ),
+    # T2042 Part 4 "Net income (loss) before inventory adjustments: Amount 4A minus line 9898"
+    # (line 9899): signed, a loss is negative.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/farm_gross_income_before_expenses",
+            "less": "ca/farm_total_expenses",
+        },
+        produces={"output": "ca/farm_net_income_before_adjustments"},
+    ),
+    # T2042 Part 4 "Net income (loss) after inventory adjustments: Total of lines 9899, 9941, and
+    # 9942" (4C), with line 9941 "Optional inventory adjustment included in the current year" and
+    # line 9942 "Mandatory inventory adjustment included in the current year", both caller inputs.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/farm_net_income_before_adjustments",
+                "ca/farm_optional_inventory_adjustment_current_year",
+                "ca/farm_mandatory_inventory_adjustment_current_year",
+            )
+        },
+        produces={"output": "ca/farm_net_income_after_inventory_adjustments"},
+    ),
+    # T2042 Part 5 "Your share of amount 4C or the amount from your T5013 slip, Statement of
+    # Partnership Income" (5A): a count of 1 for a partner chooses the amount from the T5013 slip,
+    # as entered; with a count of 0 it is amount 4C.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/farm_partner",
+            "when_none": "ca/farm_net_income_after_inventory_adjustments",
+            "when_any": "ca/farm_partner_share",
+        },
+        produces={"output": "ca/farm_share_of_net_income"},
+    ),
+    # T2042 Part 5 "Total: Amount 5A plus line 9951 plus line 9974" (5B): line 9951 "Return of fuel
+    # charge proceeds to farmers tax credit allocated to you in the year" and line 9974 "GST/HST
+    # rebate for partners received in the year", both caller inputs.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/farm_share_of_net_income",
+                "ca/farm_fuel_charge_credit",
+                "ca/farm_partner_gst_hst_rebate",
+            )
+        },
+        produces={"output": "ca/farm_partnership_total"},
+    ),
+    # T2042 Part 6 "Total other amounts deductible from your share of the net partnership income
+    # (loss): Add amounts 6A to 6E (enter this amount on line 9943 of Part 5)." (6F): 6A to 6E,
+    # caller inputs.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/farm_partner_other_amount_a",
+                "ca/farm_partner_other_amount_b",
+                "ca/farm_partner_other_amount_c",
+                "ca/farm_partner_other_amount_d",
+                "ca/farm_partner_other_amount_e",
+            )
+        },
+        produces={"output": "ca/farm_partner_other_amounts_total"},
+    ),
+    # T2042 Part 5 "Other amounts deductible from your share of net partnership income (loss)
+    # (amount 6F)" (line 9943).
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/farm_partner_other_amounts_total",)},
+        produces={"output": "ca/farm_partner_other_amounts"},
+    ),
+    # T2042 Part 5 "Net income (loss) after adjustments: Amount 5B minus line 9943" (5C): signed, a
+    # loss is negative.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={"amount": "ca/farm_partnership_total", "less": "ca/farm_partner_other_amounts"},
+        produces={"output": "ca/farm_net_income_after_adjustments"},
+    ),
+    # T2042 Part 7 "Subtotal: Add amounts 7A to 7G." (7H): 7A "Heat", 7B "Electricity", 7C
+    # "Insurance", 7D "Maintenance", 7E "Mortgage interest", 7F "Property taxes" and 7G "Other
+    # expenses (specify)", caller inputs.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/farm_home_heat",
+                "ca/farm_home_electricity",
+                "ca/farm_home_insurance",
+                "ca/farm_home_maintenance",
+                "ca/farm_home_mortgage_interest",
+                "ca/farm_home_property_taxes",
+                "ca/farm_home_other_expenses",
+            )
+        },
+        produces={"output": "ca/farm_home_expenses_subtotal"},
+    ),
+    # T2042 Part 7 "Subtotal: Amount 7H minus amount 7I" (7J): amount 7I "Personal-use part of the
+    # business-use-of-home expenses", a caller input.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/farm_home_expenses_subtotal",
+            "less": "ca/farm_home_personal_use_part",
+        },
+        produces={"output": "ca/farm_home_expenses_business_part"},
+    ),
+    # T2042 Part 7 "Subtotal: Add amounts 7J to 7L." (7M): amount 7K and 7L "Amount carried forward
+    # from previous year", a caller input.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/farm_home_expenses_business_part",
+                "ca/farm_home_cca",
+                "ca/farm_home_carried_forward",
+            )
+        },
+        produces={"output": "ca/farm_home_expenses_available"},
+    ),
+    # T2042 Part 7 "Net income (loss) after adjustments (amount 5C) (if negative, enter "0")." (7N):
+    # amount 5C, or 0 when it is negative.
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={"parts": ("ca/farm_net_income_after_adjustments",)},
+        produces={"output": "ca/farm_home_income_limit"},
+    ),
+    # T2042 Part 7 "Business-use-of-home expenses available to carry forward: Amount 7M minus amount
+    # 7N (if negative, enter "0")" (7O): the claim left over, 0 when amount 7N is the larger.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={"amount": "ca/farm_home_expenses_available", "less": "ca/farm_home_income_limit"},
+        produces={"output": "ca/farm_home_carry_forward"},
+    ),
+    # T2042 Part 7 "Allowable claim: Amount 7M or 7N above, whichever is less (enter your share of
+    # this amount on line 9945 of Part 5)" (7P).
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={"amounts": ("ca/farm_home_expenses_available", "ca/farm_home_income_limit")},
+        produces={"output": "ca/farm_home_allowable_claim"},
+    ),
+    # T2042 Part 5 "Business-use-of-home expenses (amount 7P)" (line 9945).
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/farm_home_allowable_claim",)},
+        produces={"output": "ca/farm_home_expenses"},
+    ),
+    # T2042 Part 5 "Your net income (loss): Amount 5C minus line 9945 (enter this amount on line
+    # 14100 of your income tax and benefit return)" (line 9946): T1 "Line 25: Farming income" and
+    # "Line 14100: Net" are the same artifact, signed: a loss is negative.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/farm_net_income_after_adjustments",
+            "less": "ca/farm_home_expenses",
+        },
+        produces={"output": "ca/farming_income"},
+    ),
+    # T2042 Area A column 22 "UCC at the end of the year (col. 7 minus col. 21)": the class number
+    # and column 22 of each class of the Area A list, a product of the return for next year's
+    # column 1.
+    CapabilitySelection(
+        name="ca/closing_ucc",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={"classes": "ca/farm_cca_classes"},
+        produces={"output": "ca/farm_closing_ucc"},
     ),
 }
 
@@ -1680,6 +2822,7 @@ WIRING = {
                 OTHER_FHSA_INCOME,
                 OTHER_INCOME,
                 TAXABLE_SCHOLARSHIPS,
+                NET_SELF_EMPLOYMENT_INCOME,
                 INCOME_SUPPORT_BENEFITS,
             }
         ),
@@ -1742,4 +2885,551 @@ WIRING = {
         ),
         frozenset({NET_SELF_EMPLOYMENT_INCOME}),
     ),
+    (
+        Subtract,
+        frozenset(
+            {
+                BUSINESS_GROSS_SALES,
+                BUSINESS_SALES_ADJUSTMENTS,
+            }
+        ),
+        frozenset({BUSINESS_SALES_SUBTOTAL}),
+    ),
+    (
+        Subtract,
+        frozenset(
+            {
+                BUSINESS_QUICK_METHOD_GST_HST,
+                BUSINESS_QUICK_METHOD_REMITTED,
+            }
+        ),
+        frozenset({BUSINESS_QUICK_METHOD_ASSISTANCE}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                BUSINESS_SALES_SUBTOTAL,
+                BUSINESS_QUICK_METHOD_ASSISTANCE,
+            }
+        ),
+        frozenset({BUSINESS_ADJUSTED_GROSS_SALES}),
+    ),
+    (
+        RecapturedCca,
+        frozenset(
+            {
+                BUSINESS_CCA_CLASSES,
+            }
+        ),
+        frozenset({BUSINESS_RECAPTURED_CCA}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                BUSINESS_OTHER_INCOME,
+                BUSINESS_RECAPTURED_CCA,
+            }
+        ),
+        frozenset({BUSINESS_OTHER_INCOME_WITH_RECAPTURE}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                BUSINESS_RESERVES_DEDUCTED_LAST_YEAR,
+                BUSINESS_OTHER_INCOME_WITH_RECAPTURE,
+            }
+        ),
+        frozenset({BUSINESS_RESERVES_AND_OTHER_INCOME}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                BUSINESS_ADJUSTED_GROSS_SALES,
+                BUSINESS_RESERVES_AND_OTHER_INCOME,
+            }
+        ),
+        frozenset({BUSINESS_GROSS_INCOME}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                BUSINESS_GROSS_INCOME,
+            }
+        ),
+        frozenset({BUSINESS_GROSS_INCOME_FOR_GROSS_PROFIT}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                BUSINESS_OPENING_INVENTORY,
+                BUSINESS_PURCHASES,
+                BUSINESS_DIRECT_WAGE_COSTS,
+                BUSINESS_SUBCONTRACTS,
+                BUSINESS_OTHER_COSTS,
+            }
+        ),
+        frozenset({BUSINESS_COST_OF_GOODS_SUBTOTAL}),
+    ),
+    (
+        Subtract,
+        frozenset(
+            {
+                BUSINESS_COST_OF_GOODS_SUBTOTAL,
+                BUSINESS_CLOSING_INVENTORY,
+            }
+        ),
+        frozenset({BUSINESS_COST_OF_GOODS_SOLD}),
+    ),
+    (
+        Subtract,
+        frozenset(
+            {
+                BUSINESS_GROSS_INCOME_FOR_GROSS_PROFIT,
+                BUSINESS_COST_OF_GOODS_SOLD,
+            }
+        ),
+        frozenset({BUSINESS_GROSS_PROFIT}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                BUSINESS_GROSS_PROFIT,
+            }
+        ),
+        frozenset({BUSINESS_GROSS_INCOME_BEFORE_EXPENSES}),
+    ),
+    (
+        CcaClaim,
+        frozenset(
+            {
+                BUSINESS_CCA_CLASSES,
+            }
+        ),
+        frozenset({BUSINESS_CCA_TABLE_CLAIM}),
+    ),
+    (
+        Subtract,
+        frozenset(
+            {
+                BUSINESS_CCA_TABLE_CLAIM,
+                BUSINESS_CCA_PERSONAL_PART,
+            }
+        ),
+        frozenset({BUSINESS_CCA_CLAIM_LESS_PERSONAL_PART}),
+    ),
+    (
+        Subtract,
+        frozenset(
+            {
+                BUSINESS_CCA_CLAIM_LESS_PERSONAL_PART,
+                BUSINESS_HOME_CCA,
+            }
+        ),
+        frozenset({BUSINESS_CCA_CLAIM}),
+    ),
+    (
+        TerminalLoss,
+        frozenset(
+            {
+                BUSINESS_CCA_CLASSES,
+            }
+        ),
+        frozenset({BUSINESS_TERMINAL_LOSS}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                BUSINESS_OTHER_EXPENSES,
+                BUSINESS_TERMINAL_LOSS,
+            }
+        ),
+        frozenset({BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS}),
+    ),
+    (
+        ClosingUcc,
+        frozenset(
+            {
+                BUSINESS_CCA_CLASSES,
+            }
+        ),
+        frozenset({BUSINESS_CLOSING_UCC}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                BUSINESS_ADVERTISING,
+                BUSINESS_MEALS_AND_ENTERTAINMENT,
+                BUSINESS_BAD_DEBTS,
+                BUSINESS_INSURANCE,
+                BUSINESS_INTEREST_AND_BANK_CHARGES,
+                BUSINESS_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,
+                BUSINESS_OFFICE_EXPENSES,
+                BUSINESS_OFFICE_STATIONERY_AND_SUPPLIES,
+                BUSINESS_PROFESSIONAL_FEES,
+                BUSINESS_MANAGEMENT_AND_ADMINISTRATION_FEES,
+                BUSINESS_RENT,
+                BUSINESS_REPAIRS_AND_MAINTENANCE,
+                BUSINESS_SALARIES_WAGES_AND_BENEFITS,
+                BUSINESS_PROPERTY_TAXES,
+                BUSINESS_TRAVEL_EXPENSES,
+                BUSINESS_UTILITIES,
+                BUSINESS_FUEL_COSTS,
+                BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,
+                BUSINESS_MOTOR_VEHICLE_EXPENSES,
+                BUSINESS_CCA_CLAIM,
+                BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS,
+            }
+        ),
+        frozenset({BUSINESS_TOTAL_EXPENSES}),
+    ),
+    (
+        Subtract,
+        frozenset(
+            {
+                BUSINESS_GROSS_INCOME_BEFORE_EXPENSES,
+                BUSINESS_TOTAL_EXPENSES,
+            }
+        ),
+        frozenset({BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                BUSINESS_PARTNER,
+                BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
+                BUSINESS_PARTNER_SHARE,
+            }
+        ),
+        frozenset({BUSINESS_SHARE_OF_NET_INCOME}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                BUSINESS_PARTNER_OTHER_AMOUNT_A,
+                BUSINESS_PARTNER_OTHER_AMOUNT_B,
+                BUSINESS_PARTNER_OTHER_AMOUNT_C,
+                BUSINESS_PARTNER_OTHER_AMOUNT_D,
+                BUSINESS_PARTNER_OTHER_AMOUNT_E,
+            }
+        ),
+        frozenset({BUSINESS_PARTNER_OTHER_AMOUNTS_TOTAL}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                BUSINESS_PARTNER_OTHER_AMOUNTS_TOTAL,
+            }
+        ),
+        frozenset({BUSINESS_PARTNER_OTHER_AMOUNTS}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                BUSINESS_SHARE_OF_NET_INCOME,
+                BUSINESS_JOURNALISM_LABOUR_TAX_CREDIT,
+                BUSINESS_PARTNER_GST_HST_REBATE,
+            }
+        ),
+        frozenset({BUSINESS_PARTNERSHIP_TOTAL}),
+    ),
+    (
+        Subtract,
+        frozenset(
+            {
+                BUSINESS_PARTNERSHIP_TOTAL,
+                BUSINESS_PARTNER_OTHER_AMOUNTS,
+            }
+        ),
+        frozenset({BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                BUSINESS_HOME_HEAT,
+                BUSINESS_HOME_ELECTRICITY,
+                BUSINESS_HOME_INSURANCE,
+                BUSINESS_HOME_MAINTENANCE,
+                BUSINESS_HOME_MORTGAGE_INTEREST,
+                BUSINESS_HOME_PROPERTY_TAXES,
+                BUSINESS_HOME_OTHER_EXPENSES,
+            }
+        ),
+        frozenset({BUSINESS_HOME_EXPENSES_SUBTOTAL}),
+    ),
+    (
+        Subtract,
+        frozenset(
+            {
+                BUSINESS_HOME_EXPENSES_SUBTOTAL,
+                BUSINESS_HOME_PERSONAL_USE_PART,
+            }
+        ),
+        frozenset({BUSINESS_HOME_EXPENSES_BUSINESS_PART}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                BUSINESS_HOME_EXPENSES_BUSINESS_PART,
+                BUSINESS_HOME_CCA,
+                BUSINESS_HOME_CARRIED_FORWARD,
+            }
+        ),
+        frozenset({BUSINESS_HOME_EXPENSES_AVAILABLE}),
+    ),
+    (
+        SumNotBelowZero,
+        frozenset(
+            {
+                BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,
+            }
+        ),
+        frozenset({BUSINESS_HOME_INCOME_LIMIT}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset(
+            {
+                BUSINESS_HOME_EXPENSES_AVAILABLE,
+                BUSINESS_HOME_INCOME_LIMIT,
+            }
+        ),
+        frozenset({BUSINESS_HOME_CARRY_FORWARD}),
+    ),
+    (
+        LesserOf,
+        frozenset(
+            {
+                BUSINESS_HOME_EXPENSES_AVAILABLE,
+                BUSINESS_HOME_INCOME_LIMIT,
+            }
+        ),
+        frozenset({BUSINESS_HOME_ALLOWABLE_CLAIM}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                BUSINESS_HOME_ALLOWABLE_CLAIM,
+            }
+        ),
+        frozenset({BUSINESS_HOME_EXPENSES}),
+    ),
+    (
+        Subtract,
+        frozenset(
+            {
+                BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,
+                BUSINESS_HOME_EXPENSES,
+            }
+        ),
+        frozenset({BUSINESS_INCOME}),
+    ),
+    (RecapturedCca, frozenset({FARM_CCA_CLASSES}), frozenset({FARM_RECAPTURED_CCA})),
+    (
+        Sum,
+        frozenset({FARM_OTHER_INCOME, FARM_RECAPTURED_CCA}),
+        frozenset({FARM_OTHER_INCOME_WITH_RECAPTURE}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                FARM_BARLEY,
+                FARM_CANOLA,
+                FARM_CATTLE,
+                FARM_CORN,
+                FARM_CROP_INSURANCE,
+                FARM_CUSTOM_WORK,
+                FARM_DAIRY_SUBSIDIES,
+                FARM_EGGS,
+                FARM_FLAXSEED,
+                FARM_FORAGE_CROPS_OR_SEEDS,
+                FARM_FRUIT,
+                FARM_GRAINS_AND_OILSEEDS,
+                FARM_GREENHOUSE_AND_NURSERY,
+                FARM_INSURANCE_PROCEEDS,
+                FARM_LIVESTOCK_AND_ANIMAL_PRODUCTS_REVENUE,
+                FARM_MILK_AND_CREAM,
+                FARM_MIXED_GRAINS,
+                FARM_OATS,
+                FARM_OTHER_COMMODITIES,
+                FARM_OTHER_CROPS,
+                FARM_OTHER_INCOME_WITH_RECAPTURE,
+                FARM_OTHER_PROGRAM_PAYMENTS,
+                FARM_PATRONAGE_DIVIDENDS,
+                FARM_POTATOES,
+                FARM_POULTRY,
+                FARM_REBATES,
+                FARM_SHEEP_AND_LAMBS,
+                FARM_SOYBEANS,
+                FARM_SWINE,
+                FARM_TOBACCO,
+                FARM_VEGETABLES,
+                FARM_WHEAT,
+            }
+        ),
+        frozenset({FARM_GROSS_INCOME}),
+    ),
+    (Sum, frozenset({FARM_GROSS_INCOME}), frozenset({FARM_GROSS_INCOME_BEFORE_EXPENSES})),
+    (TerminalLoss, frozenset({FARM_CCA_CLASSES}), frozenset({FARM_TERMINAL_LOSS})),
+    (
+        Sum,
+        frozenset({FARM_OTHER_EXPENSES, FARM_TERMINAL_LOSS}),
+        frozenset({FARM_OTHER_EXPENSES_WITH_TERMINAL_LOSS}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                FARM_BUILDING_REPAIRS_AND_MAINTENANCE,
+                FARM_CLEARING_LEVELLING_AND_DRAINING,
+                FARM_CONTAINERS_AND_TWINE,
+                FARM_CROP_INSURANCE_PREMIUMS,
+                FARM_CUSTOM_WORK_EXPENSES,
+                FARM_ELECTRICITY,
+                FARM_FEED_SUPPLEMENTS_STRAW_AND_BEDDING,
+                FARM_FERTILIZERS_AND_LIME,
+                FARM_GASOLINE_DIESEL_AND_OIL,
+                FARM_HEATING_AND_CURING_FUEL,
+                FARM_INSURANCE,
+                FARM_INSURANCE_PROGRAM_OVERPAYMENT_RECAPTURE,
+                FARM_INTEREST_AND_BANK_CHARGES,
+                FARM_LIVESTOCK_PURCHASED,
+                FARM_MACHINERY_REPAIRS_LICENCES_AND_INSURANCE,
+                FARM_MANDATORY_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
+                FARM_MOTOR_VEHICLE_EXPENSES,
+                FARM_OFFICE_EXPENSES,
+                FARM_OPTIONAL_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
+                FARM_OTHER_EXPENSES_WITH_TERMINAL_LOSS,
+                FARM_PESTICIDES,
+                FARM_PROFESSIONAL_FEES,
+                FARM_PROPERTY_TAXES,
+                FARM_RENT,
+                FARM_SALARIES_WAGES_AND_BENEFITS,
+                FARM_SEEDS_AND_PLANTS,
+                FARM_SMALL_TOOLS,
+                FARM_VETERINARY_FEES,
+            }
+        ),
+        frozenset({FARM_EXPENSES_SUBTOTAL}),
+    ),
+    (CcaClaim, frozenset({FARM_CCA_CLASSES}), frozenset({FARM_CCA_TABLE_CLAIM})),
+    (
+        Subtract,
+        frozenset({FARM_CCA_PERSONAL_PART, FARM_CCA_TABLE_CLAIM}),
+        frozenset({FARM_CCA_CLAIM_LESS_PERSONAL_PART}),
+    ),
+    (
+        Subtract,
+        frozenset({FARM_CCA_CLAIM_LESS_PERSONAL_PART, FARM_HOME_CCA}),
+        frozenset({FARM_CCA_CLAIM}),
+    ),
+    (Sum, frozenset({FARM_CCA_CLAIM, FARM_EXPENSES_SUBTOTAL}), frozenset({FARM_TOTAL_EXPENSES})),
+    (
+        Subtract,
+        frozenset({FARM_GROSS_INCOME_BEFORE_EXPENSES, FARM_TOTAL_EXPENSES}),
+        frozenset({FARM_NET_INCOME_BEFORE_ADJUSTMENTS}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                FARM_MANDATORY_INVENTORY_ADJUSTMENT_CURRENT_YEAR,
+                FARM_NET_INCOME_BEFORE_ADJUSTMENTS,
+                FARM_OPTIONAL_INVENTORY_ADJUSTMENT_CURRENT_YEAR,
+            }
+        ),
+        frozenset({FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS}),
+    ),
+    (
+        ChooseByCount,
+        frozenset({FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS, FARM_PARTNER, FARM_PARTNER_SHARE}),
+        frozenset({FARM_SHARE_OF_NET_INCOME}),
+    ),
+    (
+        Sum,
+        frozenset({FARM_FUEL_CHARGE_CREDIT, FARM_PARTNER_GST_HST_REBATE, FARM_SHARE_OF_NET_INCOME}),
+        frozenset({FARM_PARTNERSHIP_TOTAL}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                FARM_PARTNER_OTHER_AMOUNT_A,
+                FARM_PARTNER_OTHER_AMOUNT_B,
+                FARM_PARTNER_OTHER_AMOUNT_C,
+                FARM_PARTNER_OTHER_AMOUNT_D,
+                FARM_PARTNER_OTHER_AMOUNT_E,
+            }
+        ),
+        frozenset({FARM_PARTNER_OTHER_AMOUNTS_TOTAL}),
+    ),
+    (Sum, frozenset({FARM_PARTNER_OTHER_AMOUNTS_TOTAL}), frozenset({FARM_PARTNER_OTHER_AMOUNTS})),
+    (
+        Subtract,
+        frozenset({FARM_PARTNERSHIP_TOTAL, FARM_PARTNER_OTHER_AMOUNTS}),
+        frozenset({FARM_NET_INCOME_AFTER_ADJUSTMENTS}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                FARM_HOME_ELECTRICITY,
+                FARM_HOME_HEAT,
+                FARM_HOME_INSURANCE,
+                FARM_HOME_MAINTENANCE,
+                FARM_HOME_MORTGAGE_INTEREST,
+                FARM_HOME_OTHER_EXPENSES,
+                FARM_HOME_PROPERTY_TAXES,
+            }
+        ),
+        frozenset({FARM_HOME_EXPENSES_SUBTOTAL}),
+    ),
+    (
+        Subtract,
+        frozenset({FARM_HOME_EXPENSES_SUBTOTAL, FARM_HOME_PERSONAL_USE_PART}),
+        frozenset({FARM_HOME_EXPENSES_BUSINESS_PART}),
+    ),
+    (
+        Sum,
+        frozenset({FARM_HOME_CARRIED_FORWARD, FARM_HOME_CCA, FARM_HOME_EXPENSES_BUSINESS_PART}),
+        frozenset({FARM_HOME_EXPENSES_AVAILABLE}),
+    ),
+    (
+        SumNotBelowZero,
+        frozenset({FARM_NET_INCOME_AFTER_ADJUSTMENTS}),
+        frozenset({FARM_HOME_INCOME_LIMIT}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({FARM_HOME_EXPENSES_AVAILABLE, FARM_HOME_INCOME_LIMIT}),
+        frozenset({FARM_HOME_CARRY_FORWARD}),
+    ),
+    (
+        LesserOf,
+        frozenset({FARM_HOME_EXPENSES_AVAILABLE, FARM_HOME_INCOME_LIMIT}),
+        frozenset({FARM_HOME_ALLOWABLE_CLAIM}),
+    ),
+    (Sum, frozenset({FARM_HOME_ALLOWABLE_CLAIM}), frozenset({FARM_HOME_EXPENSES})),
+    (
+        Subtract,
+        frozenset({FARM_HOME_EXPENSES, FARM_NET_INCOME_AFTER_ADJUSTMENTS}),
+        frozenset({FARMING_INCOME}),
+    ),
+    (ClosingUcc, frozenset({FARM_CCA_CLASSES}), frozenset({FARM_CLOSING_UCC})),
 }

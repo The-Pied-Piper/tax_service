@@ -169,3 +169,7 @@ expected:
   ca-on/ontario_health_premium: "600.00"
   ca-on/ontario_tax: "600.00"
   ca-on/net_refund: "0"
+  ca/amt_part_1_subtotal: "59435.00"
+  ca/amt_net_capital_gains_after_adjustments: "0"
+  ca/amt_publicly_listed_gifts_adjustment: "0.00"
+  ca/amt_resource_property_and_flow_through_shares: "0"

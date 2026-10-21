@@ -597,3 +597,4 @@ expected:
   ca/refund: "0"
   ca-on/refund_before_donation: "0"
   ca-on/net_refund: "0"
+  ca/amt_part_1_subtotal: "66990.00"

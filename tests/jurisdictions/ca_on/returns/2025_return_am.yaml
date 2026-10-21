@@ -141,3 +141,7 @@ expected:
   ca/refund_or_balance_owing: "-506.46"
   ca-on/net_refund: "506.46"
   ca-on/ontario_tax_less_dividend_credit: "3304.57"
+  ca/amt_part_1_subtotal: "68935.00"
+  ca/amt_net_capital_gains_after_adjustments: "25000"
+  ca/amt_publicly_listed_gifts_adjustment: "0.00"
+  ca/amt_resource_property_and_flow_through_shares: "0"

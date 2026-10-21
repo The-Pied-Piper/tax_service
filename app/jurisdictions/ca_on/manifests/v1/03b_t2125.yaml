@@ -1,0 +1,350 @@
+capabilities:
+  # T2125 Part 3A "Subtotal: Amount 3A minus amount 3B 3C": amount 3A "Gross sales,
+  # commissions, or fees (include GST/HST collected or collectible)" less amount 3B
+  # "GST/HST, provincial sales tax, returns, allowances, discounts, and GST/HST
+  # adjustments (included in amount 3A)", both caller inputs.
+  - name: core/subtract
+    consumes:
+      amount: ca/business_gross_sales
+      less: ca/business_sales_adjustments
+    produces:
+      output: ca/business_sales_subtotal
+  # T2125 Part 3A "If you are using the quick method for GST/HST - Government assistance
+  # calculated as follows:" "Subtotal: Amount 3D minus amount 3E 3F": amount 3D "GST/HST
+  # collected or collectible on sales, commissions, and fees eligible for the quick
+  # method" less amount 3E "GST/HST remitted: (sales, commissions, and fees eligible for
+  # the quick method plus GST/HST collected or collectible) multiplied by the applicable
+  # quick method remittance rate", both caller inputs (no capability multiplies by a rate
+  # the caller enters). Signed: 3F may be below zero.
+  - name: core/subtract
+    consumes:
+      amount: ca/business_quick_method_gst_hst
+      less: ca/business_quick_method_remitted
+    produces:
+      output: ca/business_quick_method_assistance
+  # T2125 Part 3A "Adjusted gross sales: Amount 3C plus amount 3F (enter on line 8000 of
+  # Part 3C)"; Part 3C line 8000 "Adjusted gross sales (amount 3G) or adjusted
+  # professional fees (amount 3N)" is the same artifact, so it has no step of its own.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/business_sales_subtotal
+        - ca/business_quick_method_assistance
+    produces:
+      output: ca/business_adjusted_gross_sales
+  # T2125 Area A endnote 3 "If you have a negative amount in column 7, add it to income as
+  # a recapture in Part 3C on line 8230. ... Recapture and terminal loss do not apply to a
+  # Class 10.1 property unless it is a DIEP.": the recapture of each class of the Area A
+  # list (column 7 made positive when negative), totalled.
+  - name: ca/recaptured_cca
+    params:
+      class_rates: ca/cca_class_rates
+    consumes:
+      classes: ca/business_cca_classes
+    produces:
+      output: ca/business_recaptured_cca
+  # T2125 Part 3C line 8230 "Other income (specify):", which takes the recapture of Area A
+  # (endnote 3 "add it to income as a recapture in Part 3C on line 8230"): the other
+  # income the caller specifies plus the recapture.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/business_other_income
+        - ca/business_recaptured_cca
+    produces:
+      output: ca/business_other_income_with_recapture
+  # T2125 Part 3C "Subtotal: Line 8290 plus line 8230 3O": line 8290 "Reserves deducted
+  # last year", a caller input, plus line 8230.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/business_reserves_deducted_last_year
+        - ca/business_other_income_with_recapture
+    produces:
+      output: ca/business_reserves_and_other_income
+  # T2125 Part 3C "Gross business or professional income: Line 8000 plus amount 3O" (line
+  # 8299), "Report the gross business or professional income from line 8299 on the
+  # applicable line of your income tax and benefit return as indicated below: business
+  # income on line 13499"; line 8000 is amount 3G above.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/business_adjusted_gross_sales
+        - ca/business_reserves_and_other_income
+    produces:
+      output: ca/business_gross_income
+  # T2125 Part 3D "Gross business income (line 8299 of Part 3C). 3P".
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/business_gross_income
+    produces:
+      output: ca/business_gross_income_for_gross_profit
+  # T2125 Part 3D "Subtotal: Add amounts 3Q to 3U. 3V": 3Q "Opening inventory (include raw
+  # materials, goods in process, and finished goods)", 3R "Purchases during the year (net
+  # of returns, allowances, and discounts)", 3S "Direct wage costs", 3T "Subcontracts" and
+  # 3U "Other costs", all caller inputs.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/business_opening_inventory
+        - ca/business_purchases
+        - ca/business_direct_wage_costs
+        - ca/business_subcontracts
+        - ca/business_other_costs
+    produces:
+      output: ca/business_cost_of_goods_subtotal
+  # T2125 Part 3D "Cost of goods sold: Amount 3V minus line 8500 8518": line 8500 "Closing
+  # inventory (include raw materials, goods in process, and finished goods)", a caller
+  # input.
+  - name: core/subtract
+    consumes:
+      amount: ca/business_cost_of_goods_subtotal
+      less: ca/business_closing_inventory
+    produces:
+      output: ca/business_cost_of_goods_sold
+  # T2125 Part 3D "Gross profit (or loss): Amount 3P minus line 8518." (line 8519):
+  # signed, a loss is negative.
+  - name: core/subtract
+    consumes:
+      amount: ca/business_gross_income_for_gross_profit
+      less: ca/business_cost_of_goods_sold
+    produces:
+      output: ca/business_gross_profit
+  # T2125 Part 4 "Gross business or professional income (line 8299 of Part 3C) or Gross
+  # profit (line 8519 of Part 3D). 4A": for a business statement, which has a Part 3D, it
+  # is line 8519.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/business_gross_profit
+    produces:
+      output: ca/business_gross_income_before_expenses
+  # T2125 Area A "Total CCA claim for the year: Total of column 21 (enter on line 9936 of
+  # Part 4 amount ii minus any personal part and any CCA for business-use-of-home
+  # expenses)" (amount ii): the CCA claimed on each class of the Area A list, at most its
+  # maximum (column 19 multiplied by column 20), totalled.
+  - name: ca/cca_claim
+    params:
+      class_rates: ca/cca_class_rates
+    consumes:
+      classes: ca/business_cca_classes
+    produces:
+      output: ca/business_cca_table_claim
+  # T2125 Part 4 "Capital cost allowance (CCA). Enter amount ii of Area A minus any
+  # personal part and any CCA for business-use-of-home expenses 9936 4U", first step:
+  # amount ii minus the personal part of CCA, a caller input.
+  - name: core/subtract
+    consumes:
+      amount: ca/business_cca_table_claim
+      less: ca/business_cca_personal_part
+    produces:
+      output: ca/business_cca_claim_less_personal_part
+  # T2125 Part 4 line 9936 (amount 4U) "Capital cost allowance (CCA). Enter amount ii of
+  # Area A minus any personal part and any CCA for business-use-of-home expenses", second
+  # step: that result minus the CCA for business-use-of-home expenses, amount 7K "Capital
+  # cost allowance (business part only)", a caller input.
+  - name: core/subtract
+    consumes:
+      amount: ca/business_cca_claim_less_personal_part
+      less: ca/business_home_cca
+    produces:
+      output: ca/business_cca_claim
+  # T2125 Area A endnote 3 "If no property is left in the class and there is a positive
+  # amount in this column, deduct the amount from income as a terminal loss in Part 4 on
+  # line 9270. Recapture and terminal loss do not apply to a Class 10.1 property unless it
+  # is a DIEP.": the terminal loss of each class of the Area A list, totalled.
+  - name: ca/terminal_loss
+    params:
+      class_rates: ca/cca_class_rates
+    consumes:
+      classes: ca/business_cca_classes
+    produces:
+      output: ca/business_terminal_loss
+  # T2125 Part 4 "Other expenses (specify): 9270 4V", which takes the terminal loss of
+  # Area A (endnote 3 "deduct the amount from income as a terminal loss in Part 4 on line
+  # 9270"): the other expenses the caller specifies plus the terminal loss.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/business_other_expenses
+        - ca/business_terminal_loss
+    produces:
+      output: ca/business_other_expenses_with_terminal_loss
+  # T2125 Area A column 22 "UCC at the end of the year (col. 7 minus col. 21)": the class
+  # number and column 22 of each class of the Area A list, a product of the return for
+  # next year's column 1.
+  - name: ca/closing_ucc
+    params:
+      class_rates: ca/cca_class_rates
+    consumes:
+      classes: ca/business_cca_classes
+    produces:
+      output: ca/business_closing_ucc
+  # T2125 Part 4 "Total expenses: Total of amounts 4B to 4V 9368": the 19 expense lines 4B
+  # to 4T ("Advertising" to "Motor vehicle expenses (not including CCA) (amount 16 of
+  # Chart A)", each a caller input, amount 16 of Chart A entered as its line), then 4U
+  # (line 9936) and 4V (line 9270), in the form's order.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/business_advertising
+        - ca/business_meals_and_entertainment
+        - ca/business_bad_debts
+        - ca/business_insurance
+        - ca/business_interest_and_bank_charges
+        - ca/business_business_taxes_licences_and_memberships
+        - ca/business_office_expenses
+        - ca/business_office_stationery_and_supplies
+        - ca/business_professional_fees
+        - ca/business_management_and_administration_fees
+        - ca/business_rent
+        - ca/business_repairs_and_maintenance
+        - ca/business_salaries_wages_and_benefits
+        - ca/business_property_taxes
+        - ca/business_travel_expenses
+        - ca/business_utilities
+        - ca/business_fuel_costs
+        - ca/business_delivery_freight_and_express
+        - ca/business_motor_vehicle_expenses
+        - ca/business_cca_claim
+        - ca/business_other_expenses_with_terminal_loss
+    produces:
+      output: ca/business_total_expenses
+  # T2125 Part 4 "Net income (loss) before adjustments: Amount 4A minus line 9368" (line
+  # 9369): signed, a loss is negative.
+  - name: core/subtract
+    consumes:
+      amount: ca/business_gross_income_before_expenses
+      less: ca/business_total_expenses
+    produces:
+      output: ca/business_net_income_before_adjustments
+  # T2125 Part 5 "Your share of line 9369 or the amount from your T5013 slip, Statement of
+  # Partnership Income. 5A": a count of 1 for a partner (a caller's 0 or 1) chooses the
+  # amount from the T5013 slip, as entered; with a count of 0 it is line 9369.
+  - name: core/choose_by_count
+    consumes:
+      count: ca/business_partner
+      when_none: ca/business_net_income_before_adjustments
+      when_any: ca/business_partner_share
+    produces:
+      output: ca/business_share_of_net_income
+  # T2125 Part 6 "Total other amounts deductible from your share of the net partnership
+  # income (loss): Add amounts 6A to 6E (enter this on line 9943 of Part 5). 6F": 6A to 6E
+  # "List details of expenses: Expense amounts", caller inputs.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/business_partner_other_amount_a
+        - ca/business_partner_other_amount_b
+        - ca/business_partner_other_amount_c
+        - ca/business_partner_other_amount_d
+        - ca/business_partner_other_amount_e
+    produces:
+      output: ca/business_partner_other_amounts_total
+  # T2125 Part 5 "Other amounts deductible from your share of net partnership income
+  # (loss) (amount 6F)" (line 9943).
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/business_partner_other_amounts_total
+    produces:
+      output: ca/business_partner_other_amounts
+  # T2125 Part 5 "Total: Amount 5A plus amount 5B plus line 9974 5C": amount 5B "Canadian
+  # journalism labour tax credit allocated to you in the year (box 236 of your T5013
+  # slip)" and line 9974 "GST/HST rebate for partners received in the year", caller
+  # inputs.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/business_share_of_net_income
+        - ca/business_journalism_labour_tax_credit
+        - ca/business_partner_gst_hst_rebate
+    produces:
+      output: ca/business_partnership_total
+  # T2125 Part 5 "Net income (loss) after adjustments: Amount 5C minus line 9943 5D":
+  # signed, a loss is negative.
+  - name: core/subtract
+    consumes:
+      amount: ca/business_partnership_total
+      less: ca/business_partner_other_amounts
+    produces:
+      output: ca/business_net_income_after_adjustments
+  # T2125 Part 7 "Subtotal: Add amounts 7A to 7G. 7H": 7A "Heat", 7B "Electricity", 7C
+  # "Insurance", 7D "Maintenance", 7E "Mortgage interest", 7F "Property taxes" and 7G
+  # "Other expenses (specify)", caller inputs.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/business_home_heat
+        - ca/business_home_electricity
+        - ca/business_home_insurance
+        - ca/business_home_maintenance
+        - ca/business_home_mortgage_interest
+        - ca/business_home_property_taxes
+        - ca/business_home_other_expenses
+    produces:
+      output: ca/business_home_expenses_subtotal
+  # T2125 Part 7 "Subtotal: Amount 7H minus amount 7I 7J": amount 7I "Personal-use part of
+  # the business-use-of-home expenses", a caller input.
+  - name: core/subtract
+    consumes:
+      amount: ca/business_home_expenses_subtotal
+      less: ca/business_home_personal_use_part
+    produces:
+      output: ca/business_home_expenses_business_part
+  # T2125 Part 7 "Subtotal: Add amounts 7J to 7L. 7M": 7K "Capital cost allowance
+  # (business part only), which means amount ii of Area A minus any portion of capital
+  # cost allowance that is for personal use or entered on line 9936 of Part 4" and 7L
+  # "Amount carried forward from previous year", caller inputs.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/business_home_expenses_business_part
+        - ca/business_home_cca
+        - ca/business_home_carried_forward
+    produces:
+      output: ca/business_home_expenses_available
+  # T2125 Part 7 "Net income (loss) after adjustments (amount 5D) (if negative, enter
+  # "0"). 7N": amount 5D, or 0 when it is negative.
+  - name: core/sum_not_below_zero
+    consumes:
+      parts:
+        - ca/business_net_income_after_adjustments
+    produces:
+      output: ca/business_home_income_limit
+  # T2125 Part 7 "Business-use-of-home expenses available to carry forward: Amount 7M
+  # minus amount 7N (if negative, enter "0") 7O": the claim left over, 0 when amount 7N is
+  # the larger.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/business_home_expenses_available
+      less: ca/business_home_income_limit
+    produces:
+      output: ca/business_home_carry_forward
+  # T2125 Part 7 "Allowable claim: Amount 7M or 7N above, whichever is less (enter your
+  # share of this amount on line 9945 of Part 5) 7P".
+  - name: core/lesser_of
+    consumes:
+      amounts:
+        - ca/business_home_expenses_available
+        - ca/business_home_income_limit
+    produces:
+      output: ca/business_home_allowable_claim
+  # T2125 Part 5 "Business-use-of-home expenses (amount 7P)" (line 9945).
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/business_home_allowable_claim
+    produces:
+      output: ca/business_home_expenses
+  # T2125 Part 5 "Your net income (loss): Amount 5D minus line 9945" (line 9946), "Report
+  # the net income amount from line 9946 on the applicable line of your income tax and
+  # benefit return as indicated below: business income on line 13500"; T1 "Line 22:
+  # Business income" is the same artifact, signed: a loss is negative.
+  - name: core/subtract
+    consumes:
+      amount: ca/business_net_income_after_adjustments
+      less: ca/business_home_expenses
+    produces:
+      output: ca/business_income
