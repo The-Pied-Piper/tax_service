@@ -724,6 +724,7 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_91,
     RC381_PART_3_LINE_92,
     RC381_PART_3_LINE_93,
+    RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
     RC381_PART_4_LINE_4,
     RC381_PART_4_LINE_8,
     RC381_PART_4_LINE_11,
@@ -746,7 +747,9 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_53,
     RC381_PART_4_LINE_55,
     RC381_PART_4_LINE_56,
+    RC381_PART_4_LINE_70,
     RC381_PART_4_LINE_74,
+    RC381_PART_4_LINE_83,
     RC381_PART_4_LINE_84,
     RC381_PART_4_LINE_85,
     RC381_PART_4_LINE_86,
@@ -766,6 +769,14 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_108,
     RC381_PART_4_LINE_109,
     RC381_PART_4_LINE_110,
+    RC381_PART_4_LINE_111,
+    RC381_PART_4_LINE_112,
+    RC381_PART_4_LINE_113,
+    RC381_PART_4_LINE_121,
+    RC381_PART_4_LINE_124,
+    RC381_PART_4_LINE_125,
+    RC381_PART_4_LINE_128,
+    RC381_PART_4_LINE_129,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REAL_ESTATE_GAIN_OR_LOSS,
@@ -1008,6 +1019,31 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Form RC381 Part 4 line 113 "Line 111 plus line 112", line 129 "Add lines 121, 122, 124,
+        # 125, and 128." (the amount for line 22200; line 122 is the amount from line 112) and the
+        # earnings subject to contributions, lines 70 and 83 added: every contribution is 0.00 for
+        # Return A, whose line 70 is -3,500.00 (no T4 slips, nothing to set the exemption against).
+        RC381_PART_4_LINE_113: SumLine(
+            RC381_PART_4_LINE_113,
+            ((RC381_PART_4_LINE_111, D("0.00")), (RC381_PART_4_LINE_112, D("0.00"))),
+            D("0.00"),
+        ),
+        RC381_PART_4_LINE_129: SumLine(
+            RC381_PART_4_LINE_129,
+            (
+                (RC381_PART_4_LINE_121, D("0.00")),
+                (RC381_PART_4_LINE_112, D("0.00")),
+                (RC381_PART_4_LINE_124, D("0.00")),
+                (RC381_PART_4_LINE_125, D("0.00")),
+                (RC381_PART_4_LINE_128, D("0")),
+            ),
+            D("0.00"),
+        ),
+        RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS: SumLine(
+            RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
+            ((RC381_PART_4_LINE_70, D("-3500.00")), (RC381_PART_4_LINE_83, D("0"))),
+            D("-3500.00"),
+        ),
         # Form RC381 Part 4 line 96 "Line 92 plus line 94", line 98 "Line 96 plus line 97", line 103
         # "Line 99 plus line 101", line 105 "Line 103 plus line 104", line 109 "Line 106 plus line
         # 108" and line 110 "Line 105 plus line 109": every part is 0 for Return A, which has no T4

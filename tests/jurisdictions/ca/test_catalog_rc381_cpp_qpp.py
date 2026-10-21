@@ -13,15 +13,22 @@ subject to contributions: lines 59, 61, 62, 65, 68, 69, 70, 74, 76, 77, 80, 82 a
 helper printed inside line 83; the self-employed contributions: lines 84 to 88; the contributions
 payable and the overpayment: lines 89 to 91 with the helpers printed inside lines 89 and 91 and the
 amount for line 42100), then Part 4 lines 92 to 110 (the base and enhanced contributions through
-employment income: lines 92 to 110 with the helper printed inside line 104). The eight kinds a
-caller enters and the seven results carry a docstring that quotes the form's own words. Lines 53,
+employment income: lines 92 to 110 with the helper printed inside line 104), then Part 4 lines 111
+to 129 (the base and enhanced contributions through self-employment income and other earnings:
+lines 111 to 115, the amount lettered A, which is a helper printed inside line 116, and lines 116,
+118, 121, 124, 125, 127, 128 and 129), then the final selection (the earnings subject to
+contributions, lines 70 and 83 of Part 4 added, and the six results for lines 30800, 22215, 44800,
+42100, 31000 and 22200 of the return). The eight kinds a caller enters and the results carry a
+docstring that quotes the form's own words. Lines 53,
 60, 61, 68 and 69 are signed: "if negative, show in brackets". So is the helper under line 87, "the
 result of line 68 minus line 80". In Part 4 lines 8, 11, 12, 17 and 20 are signed for the same
 reason, and so are line 4 (line 1 is not floored), lines 21, 23 to 25A and 26 and 27, then lines 31
 and 32 (line 12 may be more than line 61), 35A, 38 to 42, 46, 47, 51 to 53 and 56, then lines 62 and
 70 to 83 (no floor is printed, and line 4 is not floored: lines 74 and 76, 80 and 82, the lesser of
 lines 77 and 82 before the gate) and line 90 "(if negative, show in brackets)", then the helper
-printed inside line 104 ("the result of line 68 of Part 3 minus line 97").
+printed inside line 104 ("the result of line 68 of Part 3 minus line 97"), then lines 115 ("if
+negative, show in brackets"), 121 and 124 (no floor is printed, and a cent of rounding can make
+them negative) and the earnings subject to contributions (line 70 has no floor).
 """
 
 from __future__ import annotations
@@ -40,7 +47,13 @@ from app.domain.parameters.rate import Rate
 from app.jurisdictions.ca.catalog import (
     CPT20_T4_EARNINGS,
     QPP_MONTHS,
+    RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     RC381_CPP_OVERPAYMENT,
+    RC381_CPP_OVERPAYMENT_ON_RETURN,
+    RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS,
     RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS,
     RC381_PART_2_LINE_B,
@@ -114,6 +127,7 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_91,
     RC381_PART_3_LINE_92,
     RC381_PART_3_LINE_93,
+    RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
     RC381_PART_4_LINE_4,
     RC381_PART_4_LINE_8,
     RC381_PART_4_LINE_11,
@@ -208,6 +222,20 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_108,
     RC381_PART_4_LINE_109,
     RC381_PART_4_LINE_110,
+    RC381_PART_4_LINE_111,
+    RC381_PART_4_LINE_112,
+    RC381_PART_4_LINE_113,
+    RC381_PART_4_LINE_114,
+    RC381_PART_4_LINE_115,
+    RC381_PART_4_LINE_116,
+    RC381_PART_4_LINE_116_LESSER,
+    RC381_PART_4_LINE_118,
+    RC381_PART_4_LINE_121,
+    RC381_PART_4_LINE_124,
+    RC381_PART_4_LINE_125,
+    RC381_PART_4_LINE_127,
+    RC381_PART_4_LINE_128,
+    RC381_PART_4_LINE_129,
     RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS,
     T4_CPP_CONTRIBUTIONS_BOX_16,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
@@ -308,7 +336,12 @@ PART_3_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
 # non-negative total of Part 3 either way, lines 93, 100 and 107 are positive parts, lines 94, 97,
 # 101, 104 and 108 are the lesser of two lines that are both above zero (else "0"), lines 95 and
 # 102 are a line less the lesser of it and another (never below zero), and lines 96, 98, 103, 105,
-# 109 and 110 add non-negative lines.
+# 109 and 110 add non-negative lines. Lines 111, 112 and 125 are 50% of a tier (never below zero),
+# line 113 adds two of them, line 114 is line 69 of Part 3 "if positive", A is the lesser of two
+# non-negative lines, line 116 is 83.1933% of it and line 118 the rest (never below zero, as line
+# 116 is less than A), line 127 is a positive part, line 128 prints "(if negative, enter "0")" and
+# line 129 is lines 121 and 124 (which together are line 113 less A, never below zero) added to
+# non-negative lines.
 PART_4_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
     RC381_PART_4_LINE_13_DIFFERENCE,
     RC381_PART_4_LINE_13,
@@ -354,11 +387,23 @@ PART_4_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
     RC381_PART_4_LINE_107,
     RC381_PART_4_LINE_108,
     RC381_PART_4_LINE_109,
+    RC381_PART_4_LINE_112,
+    RC381_PART_4_LINE_113,
+    RC381_PART_4_LINE_114,
+    RC381_PART_4_LINE_116_LESSER,
+    RC381_PART_4_LINE_116,
+    RC381_PART_4_LINE_118,
+    RC381_PART_4_LINE_125,
+    RC381_PART_4_LINE_127,
+    RC381_PART_4_LINE_128,
 )
 
 # The three results of Part 3a and Part 3b for "earnings subject to contributions ... from
 # employment income only": lines 30800, 22215 and 44800 of the return. Part 4's line 90 when it is
-# positive: line 42100, line 91: line 44800, line 98: line 30800 and line 110: line 22215.
+# positive: line 42100, line 91: line 44800, line 98: line 30800, line 110: line 22215, line 111:
+# line 31000 and line 129: line 22200. The final selection's six results are the same six lines of
+# the return, from Part 4 when the earnings subject to contributions are above zero, else from
+# Part 3 ("return to Part 3") or "0".
 RESULT_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
     RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS,
     RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS,
@@ -367,6 +412,14 @@ RESULT_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
     RC381_PART_4_LINE_91,
     RC381_PART_4_LINE_98,
     RC381_PART_4_LINE_110,
+    RC381_PART_4_LINE_111,
+    RC381_PART_4_LINE_129,
+    RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    RC381_CPP_OVERPAYMENT_ON_RETURN,
+    RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+    RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
 )
 
 # Lines whose difference or sum can come out below zero: "if negative, show in brackets".
@@ -423,6 +476,10 @@ SIGNED_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
     RC381_PART_4_LINE_83,
     RC381_PART_4_LINE_90,
     RC381_PART_4_LINE_104_DIFFERENCE,
+    RC381_PART_4_LINE_115,
+    RC381_PART_4_LINE_121,
+    RC381_PART_4_LINE_124,
+    RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
 )
 
 
@@ -687,6 +744,57 @@ def test_the_rc381_part_4_lines_92_to_110_kinds_are_the_registered_ones(
     assert registry.get("ca/rc381_part_4_line_110") is RC381_PART_4_LINE_110
 
 
+def test_the_rc381_part_4_lines_111_to_129_kinds_are_the_registered_ones(
+    registry: ArtifactRegistry,
+) -> None:
+    # Lines 111 to 115, the base contributions through self-employment income and other earnings
+    # (the amount for line 31000 of the return is line 111).
+    assert registry.get("ca/rc381_part_4_line_111") is RC381_PART_4_LINE_111
+    assert registry.get("ca/rc381_part_4_line_112") is RC381_PART_4_LINE_112
+    assert registry.get("ca/rc381_part_4_line_113") is RC381_PART_4_LINE_113
+    assert registry.get("ca/rc381_part_4_line_114") is RC381_PART_4_LINE_114
+    assert registry.get("ca/rc381_part_4_line_115") is RC381_PART_4_LINE_115
+    # The amount lettered A, "Enter whichever is less: amount from line 113 or line 114.", is
+    # printed in line 116's row, so it is a helper of line 116.
+    assert registry.get("ca/rc381_part_4_line_116_lesser") is RC381_PART_4_LINE_116_LESSER
+    assert registry.get("ca/rc381_part_4_line_116") is RC381_PART_4_LINE_116
+    assert registry.get("ca/rc381_part_4_line_118") is RC381_PART_4_LINE_118
+    assert registry.get("ca/rc381_part_4_line_121") is RC381_PART_4_LINE_121
+    assert registry.get("ca/rc381_part_4_line_124") is RC381_PART_4_LINE_124
+    # Lines 125 to 129, the deduction for the enhanced contributions on self-employment income and
+    # other earnings (the amount for line 22200 of the return is line 129).
+    assert registry.get("ca/rc381_part_4_line_125") is RC381_PART_4_LINE_125
+    assert registry.get("ca/rc381_part_4_line_127") is RC381_PART_4_LINE_127
+    assert registry.get("ca/rc381_part_4_line_128") is RC381_PART_4_LINE_128
+    assert registry.get("ca/rc381_part_4_line_129") is RC381_PART_4_LINE_129
+
+
+def test_the_rc381_final_selection_kinds_are_the_registered_ones(
+    registry: ArtifactRegistry,
+) -> None:
+    # "self-employment income and other earnings subject to contributions (lines 70 and 83 of Part
+    # 4 ...)" and the six results for lines 30800, 22215, 44800, 42100, 31000 and 22200.
+    assert registry.get("ca/rc381_part_4_earnings_subject_to_contributions") is (
+        RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS
+    )
+    assert registry.get("ca/rc381_cpp_base_contributions_on_return") is (
+        RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN
+    )
+    assert registry.get("ca/rc381_cpp_enhanced_contributions_on_return") is (
+        RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN
+    )
+    assert registry.get("ca/rc381_cpp_overpayment_on_return") is RC381_CPP_OVERPAYMENT_ON_RETURN
+    assert registry.get("ca/rc381_cpp_payable_on_self_employment") is (
+        RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT
+    )
+    assert registry.get(
+        "ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings"
+    ) is (RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS)
+    assert registry.get("ca/rc381_cpp_deduction_on_self_employment_and_other_earnings") is (
+        RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS
+    )
+
+
 def test_the_rc381_amounts_are_money() -> None:
     for kind in (
         *INPUT_AMOUNTS,
@@ -759,6 +867,9 @@ def test_the_rc381_lines_that_may_be_negative_are_signed() -> None:
     # and 82) and line 90 "(if negative, show in brackets)".
     # Part 4 line 104's helper "the result of line 68 of Part 3 minus line 97": line 68 may be
     # negative while line 97 is "0", so the difference can be below zero.
+    # Part 4 line 115 "Line 113 minus line 114 (if negative, show in brackets)", lines 121 and 124
+    # ("Line 119 minus line 120" and "Line 122 minus line 123", no floor: each can be a cent below
+    # zero when line 116 rounds up) and the earnings subject to contributions (line 70 is signed).
     for kind in SIGNED_AMOUNTS:
         assert kind.non_negative is False, kind.identifier
 
@@ -823,6 +934,76 @@ RESULT_QUOTES: tuple[tuple[str, tuple[str, ...]], ...] = (
             "Enter this amount (in dollars and cents) on line 22215 of your return.",
             "Line 105 plus line 109",
             "Part 4",
+        ),
+    ),
+    (
+        "rc381_part_4_line_111",
+        (
+            "Enter the result of the following calculation (in dollars and cents) on line 31000 of "
+            "your return: amount from line 84 × 50% =",
+            "Part 4",
+        ),
+    ),
+    (
+        "rc381_part_4_line_129",
+        (
+            "Add lines 121, 122, 124, 125, and 128. Enter this amount (in dollar and cents) on "
+            "line 22200 of your return.",
+            "Part 4",
+        ),
+    ),
+    (
+        "rc381_part_4_earnings_subject_to_contributions",
+        (
+            "self-employment income and other earnings subject to contributions (lines 70 and 83 "
+            "of Part 4 or lines 68 and 81 of Part 5)",
+            'are "0," follow the instructions below.',
+        ),
+    ),
+    (
+        "rc381_cpp_base_contributions_on_return",
+        (
+            "Enter this amount (in dollars and cents) on line 30800 of your return.",
+            "Part 4 line 98",
+            "Part 3a line 70 or Part 3b line 81",
+        ),
+    ),
+    (
+        "rc381_cpp_enhanced_contributions_on_return",
+        (
+            "Enter this amount (in dollars and cents) on line 22215 of your return.",
+            "Part 4 line 110",
+            "Part 3a line 73 or Part 3b line 93",
+        ),
+    ),
+    (
+        "rc381_cpp_overpayment_on_return",
+        (
+            "Enter this amount (in dollars and cents) on line 44800 of your return.",
+            "Part 4 line 91",
+            "Part 3a line 74",
+        ),
+    ),
+    (
+        "rc381_cpp_payable_on_self_employment",
+        (
+            "If positive, enter the amount (in dollars and cents) on line 42100 of your return",
+            "Part 4 line 90",
+        ),
+    ),
+    (
+        "rc381_cpp_base_contributions_on_self_employment_and_other_earnings",
+        (
+            "Enter the result of the following calculation (in dollars and cents) on line 31000 of "
+            "your return",
+            "Part 4 line 111",
+        ),
+    ),
+    (
+        "rc381_cpp_deduction_on_self_employment_and_other_earnings",
+        (
+            "Enter this amount (in dollar and cents) on line 22200 of your return.",
+            "Part 4 line 129",
         ),
     ),
 )

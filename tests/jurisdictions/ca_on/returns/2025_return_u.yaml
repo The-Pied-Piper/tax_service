@@ -737,3 +737,6 @@ expected:
   ca/net_capital_loss_balance_2000: "0.00"
   ca/rc381_part_4_line_4: "50000"
   ca/rc381_self_employment_cpp_contributions: "5533.50"
+  ca/rc381_cpp_payable_on_self_employment: "5533.50"
+  ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings: "2301.75"
+  ca/rc381_cpp_deduction_on_self_employment_and_other_earnings: "3231.75"

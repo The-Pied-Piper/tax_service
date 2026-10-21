@@ -450,6 +450,16 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_101,
     RC381_PART_4_LINE_102,
     RC381_PART_4_LINE_104_DIFFERENCE,
+    RC381_PART_4_LINE_111,
+    RC381_PART_4_LINE_112,
+    RC381_PART_4_LINE_113,
+    RC381_PART_4_LINE_114,
+    RC381_PART_4_LINE_115,
+    RC381_PART_4_LINE_116,
+    RC381_PART_4_LINE_116_LESSER,
+    RC381_PART_4_LINE_118,
+    RC381_PART_4_LINE_121,
+    RC381_PART_4_LINE_124,
     REFUND_OR_BALANCE_OWING,
     REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
     REGULAR_RATE_DONATIONS,
@@ -621,6 +631,42 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     gated = {line.output: line for line in trace if isinstance(line, ThresholdGateLine)}
     fractions = {line.output: line for line in trace if isinstance(line, FractionAppliedLine)}
     assert subtracted == {
+        # Form RC381 Part 4 line 115 "Line 113 minus line 114", line 118 "Amount A minus line 117"
+        # (line 117 being the amount from line 116), line 121 "Line 119 minus line 120" (the
+        # amounts from lines 111 and 116) and line 124 "Line 122 minus line 123" (the amounts from
+        # lines 112 and 118): every amount is 0 for Return A.
+        RC381_PART_4_LINE_115: SubtractedLine(
+            output=RC381_PART_4_LINE_115,
+            minuend=RC381_PART_4_LINE_113,
+            minuend_amount=D("0.00"),
+            subtrahend=RC381_PART_4_LINE_114,
+            subtrahend_amount=D("0"),
+            result=D("0.00"),
+        ),
+        RC381_PART_4_LINE_118: SubtractedLine(
+            output=RC381_PART_4_LINE_118,
+            minuend=RC381_PART_4_LINE_116_LESSER,
+            minuend_amount=D("0.00"),
+            subtrahend=RC381_PART_4_LINE_116,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        RC381_PART_4_LINE_121: SubtractedLine(
+            output=RC381_PART_4_LINE_121,
+            minuend=RC381_PART_4_LINE_111,
+            minuend_amount=D("0.00"),
+            subtrahend=RC381_PART_4_LINE_116,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        RC381_PART_4_LINE_124: SubtractedLine(
+            output=RC381_PART_4_LINE_124,
+            minuend=RC381_PART_4_LINE_112,
+            minuend_amount=D("0.00"),
+            subtrahend=RC381_PART_4_LINE_118,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
         # Form RC381 Part 4 line 95 "Line 93 minus line 94", line 102 "Line 100 minus line 101" and
         # the result printed inside line 104, "the result of line 68 of Part 3 minus line 97":
         # Return A has no T4 slips, so lines 93, 94, 97, 100 and 101 are 0 and so is line 68 of

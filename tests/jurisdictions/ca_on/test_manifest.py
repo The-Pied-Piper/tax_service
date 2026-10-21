@@ -174,14 +174,14 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1195
+    assert len(found.capabilities) == 1216
     # T2125 Area A column 22 "UCC at the end of the year", a record list of each class's closing UCC
     # for next year, and Part 7 line 7O "Business-use-of-home expenses available to carry forward",
     # which nothing else on the return reads.
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1195
+    assert len(found.capabilities) == 1216
     # Form T691 Part 1 line 12 "Add lines 1, 4, 7, and 11.", the adjusted taxable income subtotal,
     # Part 9 line 6 "Enter this amount on line 14 of Part 1", Part 1 line 20 "Line 15 minus line 19"
     # and Part 1 line 26 "Line 24 minus line 25" times 30%, which nothing else on the return reads
@@ -189,17 +189,16 @@ def test_ca_on_has_one_manifest_from_2025() -> None:
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1195
-    # Form RC381 Part 4 line 90 "Line 88 minus 89. If positive, enter the amount (in dollars and
-    # cents) on line 42100 of your return", line 91 "amount from line 90 entered as a positive
-    # amount × 50%", line 98 "Line 96 plus line 97" (the amount for line 30800 of the return) and
-    # line 110 "Line 105 plus line 109" (the amount for line 22215), and the three results of Part
-    # 3a and Part 3b for employment income only (lines 30800, 22215 and 44800 of the return),
-    # which nothing else on the return reads yet.
+    assert len(found.capabilities) == 1216
+    # The six results of the final selection after Form RC381 Part 3 and Part 4 (lines 70 and 83 of
+    # Part 4 added, "If lines 70 and 83 are both "0", return to Part 3") are the amounts for lines
+    # 30800, 22215, 44800, 42100, 31000 and 22200 of the return, which nothing else on the return
+    # reads yet; Part 4 lines 90, 91, 98 and 110 and the three results of Part 3a and Part 3b were
+    # outputs until the selection read them.
     assert found.outputs == OUTPUTS
     # List order carries no meaning: the composition derives the run order from the contracts.
     assert set(found.capabilities) == STEPS
-    assert len(found.capabilities) == 1195
+    assert len(found.capabilities) == 1216
 
 
 def test_its_first_tax_year_composes_every_selection() -> None:
@@ -209,6 +208,6 @@ def test_its_first_tax_year_composes_every_selection() -> None:
         (type(capability), capability.consumes, capability.produces)
         for capability in composition.order
     }
-    assert len(composition.order) == 1195
-    assert len(composition.order) == 1195
+    assert len(composition.order) == 1216
+    assert len(composition.order) == 1216
     assert wiring == WIRING

@@ -560,6 +560,12 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_86,
     RC381_PART_4_LINE_89_FROM_LINE_69,
     RC381_PART_4_LINE_90,
+    RC381_PART_4_LINE_113,
+    RC381_PART_4_LINE_114,
+    RC381_PART_4_LINE_116_LESSER,
+    RC381_PART_4_LINE_125,
+    RC381_PART_4_LINE_127,
+    RC381_PART_4_LINE_128,
     RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS,
     REFUND,
     RENTAL_CCA_CLAIM,
@@ -820,6 +826,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     assert lesser == {
+        # Form RC381 Part 4 the amount lettered A, "Enter whichever is less: amount from line 113 or
+        # line 114.": both are 0 for Return A.
+        RC381_PART_4_LINE_116_LESSER: LesserOfLine(
+            output=RC381_PART_4_LINE_116_LESSER,
+            parts=((RC381_PART_4_LINE_113, D("0.00")), (RC381_PART_4_LINE_114, D("0"))),
+            result=D("0.00"),
+        ),
         # Form RC381 Part 4 line 62 "Enter whichever is less: amount from line 4 or line 61." and
         # line 83 "Enter whichever is less: amount from line 77 or line 82." (before the gate
         # "If line 74 is more than line 57"): Return A's line 4 and line 82 are 0.
@@ -2016,6 +2029,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Form RC381 Part 4 line 128 "Line 126 minus line 127 (if negative, enter "0")", line 126
+        # being the amount from line 125: both are 0 for Return A.
+        RC381_PART_4_LINE_128: SubtractedNotBelowZeroLine(
+            output=RC381_PART_4_LINE_128,
+            minuend=RC381_PART_4_LINE_125,
+            minuend_amount=D("0.00"),
+            subtrahend=RC381_PART_4_LINE_127,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Form RC381 Part 4 line 59 "Line 57 minus line 58 (if negative, enter "0")" (the table's
         # amounts of lines C and F: 71,300.00 less 3,500.00), line 61 "Line 59 minus line 60" (line
         # 60 being line 42, 0 for Return A), line 65 "Line 63 minus line 64" (line 58 less line 3 of
@@ -3416,6 +3439,13 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # rental CCA limit, and the Form T1206 lines floored in Part 1 (the TOSI-adjusted net income)
     # and Part 2 (line 24, on line 22 alone) for a return without split income.
     assert summed_floored == {
+        # Form RC381 Part 4 line 114 "Enter the amount from line 69 of Part 3 if positive. If not,
+        # enter "0"." (Return A's line 69 is 0).
+        RC381_PART_4_LINE_114: SumNotBelowZeroLine(
+            output=RC381_PART_4_LINE_114,
+            parts=((RC381_PART_3_LINE_69, D("0.00")),),
+            total=D("0"),
+        ),
         # Form RC381 Part 4 line 89 "Amount from line 69 of Part 3 (if positive)" (Return A's
         # line 69 is 0) and line 90 "If positive, enter the amount ... on line 42100 of your return"
         # (Return A's line 90 is 0).

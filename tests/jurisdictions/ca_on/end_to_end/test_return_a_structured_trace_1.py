@@ -99,8 +99,16 @@ from app.jurisdictions.ca.catalog import (
     QBT_TOTAL_CAPITAL_GAINS,
     RC381_PART_3_LINE_20,
     RC381_PART_3_LINE_40,
+    RC381_PART_4_LINE_84,
+    RC381_PART_4_LINE_85,
+    RC381_PART_4_LINE_86,
     RC381_PART_4_LINE_91,
     RC381_PART_4_LINE_91_FROM_LINE_90,
+    RC381_PART_4_LINE_111,
+    RC381_PART_4_LINE_112,
+    RC381_PART_4_LINE_116,
+    RC381_PART_4_LINE_116_LESSER,
+    RC381_PART_4_LINE_125,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
     RESIDENCY_NET_INCOME_LIMIT,
@@ -207,6 +215,42 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         if isinstance(line, ItemsTotalLine) and line.output is COOP_EDUCATION_CREDIT
     }
     assert rated == {
+        # Form RC381 Part 4 line 111 "amount from line 84 × 50% =" (the amount for line 31000),
+        # line 112 "Amount from line 85 × 50% =", line 125 "Amount from line 86 × 50% =" and line
+        # 116 "A × 83.1933% =": Return A has no earnings subject to contributions to speak of (lines
+        # 84, 85 and 86 and the amount lettered A are 0.00), so every product is 0.00.
+        RC381_PART_4_LINE_111: RateAppliedLine(
+            RC381_PART_4_LINE_111,
+            RC381_PART_4_LINE_84,
+            D("0.00"),
+            Rate(D("0.5")),
+            CENT,
+            D("0.00"),
+        ),
+        RC381_PART_4_LINE_112: RateAppliedLine(
+            RC381_PART_4_LINE_112,
+            RC381_PART_4_LINE_85,
+            D("0.00"),
+            Rate(D("0.5")),
+            CENT,
+            D("0.00"),
+        ),
+        RC381_PART_4_LINE_125: RateAppliedLine(
+            RC381_PART_4_LINE_125,
+            RC381_PART_4_LINE_86,
+            D("0.00"),
+            Rate(D("0.5")),
+            CENT,
+            D("0.00"),
+        ),
+        RC381_PART_4_LINE_116: RateAppliedLine(
+            RC381_PART_4_LINE_116,
+            RC381_PART_4_LINE_116_LESSER,
+            D("0.00"),
+            Rate(D("0.831933")),
+            CENT,
+            D("0.00"),
+        ),
         # Form RC381 Part 4 line 91 "amount from line 90 entered as a positive amount × 50% =":
         # line 90 is 0 for Return A, so the base is 0 and so is the 50%.
         RC381_PART_4_LINE_91: RateAppliedLine(
