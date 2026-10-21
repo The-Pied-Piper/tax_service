@@ -214,7 +214,7 @@ CHART_2016_PART_1_AMOUNT_C = CATALOG.declare(
     "chart_2016_part_1_amount_c", Decimal, non_negative=True
 )
 """Chart 2016 Part 1 amount C, Form T657 Chart 2016 Part 1 "Amount A minus amount B": amount A minus
-amount B, floored at 0 (the form prints no floor)."""
+amount B (if negative, enter "0"), floored at 0."""
 
 CHART_2016_AMOUNT_B = CATALOG.declare("chart_2016_amount_b", Decimal, non_negative=True)
 """Chart 2016 amount B, Form T657 Chart 2016 Part 1 "Capital gains deductions from previous years
@@ -306,7 +306,7 @@ for the charts after it: Part 2's amount J when Part 2 is completed, else Part 1
 T657_CHART_2017_USES_D_INSTEAD = CATALOG.declare(
     "t657_chart_2017_uses_d_instead", int, non_negative=True
 )
-"""Chart 2017 uses the (2016-1) calculation, Form T657 Chart 2017 Part 1 "If you claimed a capital
+"""Chart 2017 uses the (2017-1) calculation, Form T657 Chart 2017 Part 1 "If you claimed a capital
 gains deduction for other eligible capital gains from 2017 to 2024, complete the following
 calculation instead:": 1 when the filer completes that calculation for amount D, 0 when amount D is
 line 19 of Chart 2; a starting count."""
@@ -314,8 +314,8 @@ line 19 of Chart 2; a starting count."""
 T657_CHART_2017_AMOUNT_D_INSTEAD = CATALOG.declare(
     "t657_chart_2017_amount_d_instead", Decimal, non_negative=True
 )
-"""Chart 2017 amount D from the (2016-1) calculation, Form T657 Chart 2017 Part 1 "Enter the result
-at amount D above.": the result of that calculation, which the caller enters when uses_d_instead is
+"""Chart 2017 amount D from the (2017-1) calculation, Form T657 Chart 2017 Part 1 "Enter the result
+at amount D.": the result of that calculation, which the caller enters when uses_d_instead is
 1; a starting amount."""
 
 T657_CHART_2017_AMOUNT_F = CATALOG.declare("t657_chart_2017_amount_f", Decimal)
@@ -348,7 +348,7 @@ amount B, floored at 0 (the form prints no floor)."""
 
 CHART_2017_AMOUNT_D = CATALOG.declare("chart_2017_amount_d", Decimal, non_negative=True)
 """Chart 2017 amount D, Form T657 Chart 2017 Part 1 "Capital gains deductions from previous years
-from line 19 of Chart 2 (2016-1)": line 19 of Chart 2, or the (2016-1) calculation's result when
+from line 19 of Chart 2 (2017-1)": line 19 of Chart 2, or the (2017-1) calculation's result when
 uses_d_instead is 1."""
 
 CHART_2017_PART_1_AMOUNT_E = CATALOG.declare(
@@ -447,7 +447,7 @@ for the charts after it: Part 2's amount J when Part 2 is completed, else Part 1
 T657_CHART_2018_USES_D_INSTEAD = CATALOG.declare(
     "t657_chart_2018_uses_d_instead", int, non_negative=True
 )
-"""Chart 2018 uses the (2017-1) calculation, Form T657 Chart 2018 Part 1 "If you claimed a capital
+"""Chart 2018 uses the (2018-1) calculation, Form T657 Chart 2018 Part 1 "If you claimed a capital
 gains deduction for other eligible capital gains from 2018 to 2024, complete the following
 calculation instead:": 1 when the filer completes that calculation for amount D, 0 when amount D is
 line 19 of Chart 2; a starting count."""
@@ -455,8 +455,8 @@ line 19 of Chart 2; a starting count."""
 T657_CHART_2018_AMOUNT_D_INSTEAD = CATALOG.declare(
     "t657_chart_2018_amount_d_instead", Decimal, non_negative=True
 )
-"""Chart 2018 amount D from the (2017-1) calculation, Form T657 Chart 2018 Part 1 "Enter the result
-at amount D above.": the result of that calculation, which the caller enters when uses_d_instead is
+"""Chart 2018 amount D from the (2018-1) calculation, Form T657 Chart 2018 Part 1 "Enter the result
+at amount D.": the result of that calculation, which the caller enters when uses_d_instead is
 1; a starting amount."""
 
 T657_CHART_2018_AMOUNT_F = CATALOG.declare("t657_chart_2018_amount_f", Decimal)
@@ -489,7 +489,7 @@ amount B, floored at 0 (the form prints no floor)."""
 
 CHART_2018_AMOUNT_D = CATALOG.declare("chart_2018_amount_d", Decimal, non_negative=True)
 """Chart 2018 amount D, Form T657 Chart 2018 Part 1 "Capital gains deductions from previous years
-from line 19 of Chart 2 (2017-1)": line 19 of Chart 2, or the (2017-1) calculation's result when
+from line 19 of Chart 2 (2018-1)": line 19 of Chart 2, or the (2018-1) calculation's result when
 uses_d_instead is 1."""
 
 CHART_2018_PART_1_AMOUNT_E = CATALOG.declare(
@@ -588,7 +588,7 @@ for the charts after it: Part 2's amount J when Part 2 is completed, else Part 1
 T657_CHART_2019_USES_D_INSTEAD = CATALOG.declare(
     "t657_chart_2019_uses_d_instead", int, non_negative=True
 )
-"""Chart 2019 uses the (2018-1) calculation, Form T657 Chart 2019 Part 1 "If you claimed a capital
+"""Chart 2019 uses the (2019-1) calculation, Form T657 Chart 2019 Part 1 "If you claimed a capital
 gains deduction for other eligible capital gains from 2019 to 2024, complete the following
 calculation instead:": 1 when the filer completes that calculation for amount D, 0 when amount D is
 line 19 of Chart 2; a starting count."""
@@ -596,8 +596,8 @@ line 19 of Chart 2; a starting count."""
 T657_CHART_2019_AMOUNT_D_INSTEAD = CATALOG.declare(
     "t657_chart_2019_amount_d_instead", Decimal, non_negative=True
 )
-"""Chart 2019 amount D from the (2018-1) calculation, Form T657 Chart 2019 Part 1 "Enter the result
-at amount D above.": the result of that calculation, which the caller enters when uses_d_instead is
+"""Chart 2019 amount D from the (2019-1) calculation, Form T657 Chart 2019 Part 1 "Enter the result
+at amount D.": the result of that calculation, which the caller enters when uses_d_instead is
 1; a starting amount."""
 
 T657_CHART_2019_AMOUNT_F = CATALOG.declare("t657_chart_2019_amount_f", Decimal)
@@ -630,7 +630,7 @@ amount B, floored at 0 (the form prints no floor)."""
 
 CHART_2019_AMOUNT_D = CATALOG.declare("chart_2019_amount_d", Decimal, non_negative=True)
 """Chart 2019 amount D, Form T657 Chart 2019 Part 1 "Capital gains deductions from previous years
-from line 19 of Chart 2 (2018-1)": line 19 of Chart 2, or the (2018-1) calculation's result when
+from line 19 of Chart 2 (2019-1)": line 19 of Chart 2, or the (2019-1) calculation's result when
 uses_d_instead is 1."""
 
 CHART_2019_PART_1_AMOUNT_E = CATALOG.declare(
@@ -729,7 +729,7 @@ for the charts after it: Part 2's amount J when Part 2 is completed, else Part 1
 T657_CHART_2020_USES_D_INSTEAD = CATALOG.declare(
     "t657_chart_2020_uses_d_instead", int, non_negative=True
 )
-"""Chart 2020 uses the (2019-1) calculation, Form T657 Chart 2020 Part 1 "If you claimed a capital
+"""Chart 2020 uses the (2020-1) calculation, Form T657 Chart 2020 Part 1 "If you claimed a capital
 gains deduction for other eligible capital gains from 2020 to 2024, complete the following
 calculation instead:": 1 when the filer completes that calculation for amount D, 0 when amount D is
 line 19 of Chart 2; a starting count."""
@@ -737,8 +737,8 @@ line 19 of Chart 2; a starting count."""
 T657_CHART_2020_AMOUNT_D_INSTEAD = CATALOG.declare(
     "t657_chart_2020_amount_d_instead", Decimal, non_negative=True
 )
-"""Chart 2020 amount D from the (2019-1) calculation, Form T657 Chart 2020 Part 1 "Enter the result
-at amount D above.": the result of that calculation, which the caller enters when uses_d_instead is
+"""Chart 2020 amount D from the (2020-1) calculation, Form T657 Chart 2020 Part 1 "Enter the result
+at amount D.": the result of that calculation, which the caller enters when uses_d_instead is
 1; a starting amount."""
 
 T657_CHART_2020_AMOUNT_F = CATALOG.declare("t657_chart_2020_amount_f", Decimal)
@@ -771,7 +771,7 @@ amount B, floored at 0 (the form prints no floor)."""
 
 CHART_2020_AMOUNT_D = CATALOG.declare("chart_2020_amount_d", Decimal, non_negative=True)
 """Chart 2020 amount D, Form T657 Chart 2020 Part 1 "Capital gains deductions from previous years
-from line 19 of Chart 2 (2019-1)": line 19 of Chart 2, or the (2019-1) calculation's result when
+from line 19 of Chart 2 (2020-1)": line 19 of Chart 2, or the (2020-1) calculation's result when
 uses_d_instead is 1."""
 
 CHART_2020_PART_1_AMOUNT_E = CATALOG.declare(

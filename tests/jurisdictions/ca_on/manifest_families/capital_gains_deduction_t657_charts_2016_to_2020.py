@@ -203,8 +203,8 @@ STEPS = {
         produces={"output": "ca/chart_2016_part_1_amount_a"},
     ),
     # Chart 2016 Part 1 "Amount A minus amount B" C (B: the amount from line 19 of
-    # Chart 2, 2016-1). The form prints no floor; floored at 0 here, an assumption to be
-    # confirmed.
+    # Chart 2, 2016-1). The form prints "(if negative, enter "0")", so the line is floored
+    # at 0.
     CapabilitySelection(
         name="core/subtract_not_below_zero",
         params={},
