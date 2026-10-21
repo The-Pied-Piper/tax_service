@@ -38,3 +38,62 @@ capabilities:
         - ca/amt_tax_shelter_adjustments
     produces:
       output: ca/amt_part_1_subtotal
+  # Form T691 Part 9 line 5 "Add lines 2 to 4.", the three income lines of Part 9 in line order.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/amt_resource_production_income
+        - ca/amt_resource_foreign_property_income
+        - ca/amt_class_43_1_income
+    produces:
+      output: ca/amt_resource_income_total
+  # Part 9 line 6 "Line 1 minus line 5 (if negative, enter "0")" and "Resource property and
+  # flow-through share 67860 =", the amount that goes to line 14 of Part 1.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/amt_resource_expenditures
+      less: ca/amt_resource_income_total
+    produces:
+      output: ca/amt_resource_property_and_flow_through_shares
+  # Part 1 line 16 "Capital gains or losses arising from mortgage foreclosures and conditional
+  # sales repossessions from lines 12400 and 15500 of Schedule 3", the two foreclosure totals of
+  # Schedule 3, a loss in brackets.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/qffp_foreclosure_gain_or_loss
+        - ca/other_foreclosure_gain_or_loss
+    produces:
+      output: ca/amt_mortgage_foreclosure_capital_gains
+  # Part 1 line 19 "Add lines 16 to 18.", lines 16, 17 and 18 in line order.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/amt_mortgage_foreclosure_capital_gains
+        - ca/amt_treaty_exempt_capital_gains
+        - ca/amt_graduated_rate_estate_capital_gains
+    produces:
+      output: ca/amt_capital_gains_adjustments
+  # Part 1 line 20 "Line 15 minus line 19 (if negative, show in brackets)", the capital gains of
+  # line 15 (`capital_gain`, from line 19700 of Schedule 3) less line 19.
+  - name: core/subtract
+    consumes:
+      amount: ca/capital_gain
+      less: ca/amt_capital_gains_adjustments
+    produces:
+      output: ca/amt_net_capital_gains_after_adjustments
+  # Part 1 line 26 "Line 24 minus line 25", the net of the gifts before the 30% of line 26.
+  - name: core/subtract
+    consumes:
+      amount: ca/amt_publicly_listed_gifts_total
+      less: ca/amt_publicly_listed_gifts_t1170_line_68231
+    produces:
+      output: ca/amt_publicly_listed_gifts_net
+  # Part 1 line 26 "× 30%" of "Line 24 minus line 25", the rate from its dataset.
+  - name: core/apply_rate
+    params:
+      rate: ca/publicly_listed_gifts_rate
+    consumes:
+      base: ca/amt_publicly_listed_gifts_net
+    produces:
+      output: ca/amt_publicly_listed_gifts_adjustment

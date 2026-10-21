@@ -1003,6 +1003,21 @@ REGISTERED = frozenset(
         "ca/amt_limited_partner_carrying_charges",
         "ca/amt_tax_shelter_adjustments",
         "ca/amt_part_1_subtotal",
+        "ca/amt_resource_expenditures",
+        "ca/amt_resource_production_income",
+        "ca/amt_resource_foreign_property_income",
+        "ca/amt_class_43_1_income",
+        "ca/amt_resource_income_total",
+        "ca/amt_resource_property_and_flow_through_shares",
+        "ca/amt_mortgage_foreclosure_capital_gains",
+        "ca/amt_treaty_exempt_capital_gains",
+        "ca/amt_graduated_rate_estate_capital_gains",
+        "ca/amt_capital_gains_adjustments",
+        "ca/amt_net_capital_gains_after_adjustments",
+        "ca/amt_publicly_listed_gifts_total",
+        "ca/amt_publicly_listed_gifts_t1170_line_68231",
+        "ca/amt_publicly_listed_gifts_net",
+        "ca/amt_publicly_listed_gifts_adjustment",
     }
 )
 
@@ -1096,6 +1111,11 @@ SIGNED = frozenset(
         "ca/fishing_income",
         "ca/net_self_employment_income",
         "ca/pensionable_net_self_employment_earnings",
+        "ca/amt_mortgage_foreclosure_capital_gains",
+        "ca/amt_capital_gains_adjustments",
+        "ca/amt_net_capital_gains_after_adjustments",
+        "ca/amt_publicly_listed_gifts_net",
+        "ca/amt_publicly_listed_gifts_adjustment",
     }
 )
 

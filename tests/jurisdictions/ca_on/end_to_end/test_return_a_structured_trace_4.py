@@ -45,6 +45,9 @@ from app.jurisdictions.ca.catalog import (
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_RENTAL_PROPERTY_INCOME_BEFORE_CCA,
+    AMT_RESOURCE_EXPENDITURES,
+    AMT_RESOURCE_INCOME_TOTAL,
+    AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
     BASIC_PERSONAL_AMOUNT,
     BUSINESS_HOME_ALLOWABLE_CLAIM,
     BUSINESS_HOME_CARRY_FORWARD,
@@ -958,6 +961,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Form T691 Part 9 line 6 "Line 1 minus line 5 (if negative, enter "0")": Return A has no
+        # resource amounts, so line 1 and line 5 are 0.
+        AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES: SubtractedNotBelowZeroLine(
+            output=AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
+            minuend=AMT_RESOURCE_EXPENDITURES,
+            minuend_amount=D("0"),
+            subtrahend=AMT_RESOURCE_INCOME_TOTAL,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         ontario.DISABILITY_SELF_CARE_OVER_THRESHOLD: SubtractedNotBelowZeroLine(
             output=ontario.DISABILITY_SELF_CARE_OVER_THRESHOLD,
             minuend=DISABILITY_SELF_CARE_EXPENSES,
