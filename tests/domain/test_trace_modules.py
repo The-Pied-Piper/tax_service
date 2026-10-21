@@ -26,6 +26,7 @@ CORE_HOMES: dict[str, tuple[str, ...]] = {
         "SumLine",
         "SumNotBelowZeroLine",
         "RateAppliedLine",
+        "DividedByRateLine",
         "SubtractedLine",
         "SubtractedNotBelowZeroLine",
         "CreditAmountLine",

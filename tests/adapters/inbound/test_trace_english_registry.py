@@ -171,6 +171,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_renderers() -> None:
         "app.domain.trace.arithmetic.AtMostLine",
         "app.domain.trace.arithmetic.CappedAmountLine",
         "app.domain.trace.arithmetic.CreditAmountLine",
+        "app.domain.trace.arithmetic.DividedByRateLine",
         "app.domain.trace.arithmetic.FractionAppliedLine",
         "app.domain.trace.arithmetic.GreaterOfLine",
         "app.domain.trace.arithmetic.LesserOfLine",
