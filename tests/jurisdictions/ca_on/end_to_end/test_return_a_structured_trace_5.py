@@ -32,6 +32,13 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_1_LINE_7,
     POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
     QPP_MONTHS,
+    RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    RC381_CPP_OVERPAYMENT,
+    RC381_CPP_OVERPAYMENT_ON_RETURN,
+    RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS,
     RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS,
     RC381_PART_2_LINE_B,
@@ -65,6 +72,7 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_89,
     RC381_PART_3_LINE_90,
     RC381_PART_3_LINE_91,
+    RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
     RC381_PART_4_LINE_13,
     RC381_PART_4_LINE_13_DIFFERENCE,
     RC381_PART_4_LINE_14,
@@ -114,6 +122,8 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_106,
     RC381_PART_4_LINE_107,
     RC381_PART_4_LINE_108,
+    RC381_PART_4_LINE_115,
+    RC381_PART_4_LINE_127,
     RENTAL_NON_COMPLIANT_EXPENSES,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
     TAXABLE_INCOME,
@@ -166,6 +176,52 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # two results are line 52 and line 73, both 0 as Return A enters no pensionable earnings. The
     # overpayment of line 44800 is line 69 not below zero, a floored sum of line 69.
     assert chosen_by_sign == {
+        # The final selection, by the sign of lines 70 and 83 of Part 4 added ("If lines 70 and
+        # 83 are both "0", return to Part 3"): Return A's are -3,500.00, not above zero, so lines
+        # 30800, 22215 and 44800 are Part 3's results (all 0 for Return A, which has no T4 slips)
+        # and lines 42100, 31000 and 22200 are "0".
+        RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN: ChosenBySignLine(
+            output=RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+            sign_kind=RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
+            sign=D("-3500.00"),
+            chosen_kind=RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS,
+            chosen_value=D("0.00"),
+        ),
+        RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: ChosenBySignLine(
+            output=RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            sign_kind=RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
+            sign=D("-3500.00"),
+            chosen_kind=RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS,
+            chosen_value=D("0.00"),
+        ),
+        RC381_CPP_OVERPAYMENT_ON_RETURN: ChosenBySignLine(
+            output=RC381_CPP_OVERPAYMENT_ON_RETURN,
+            sign_kind=RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
+            sign=D("-3500.00"),
+            chosen_kind=RC381_CPP_OVERPAYMENT,
+            chosen_value=D("4034.10"),
+        ),
+        RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT: ChosenBySignLine(
+            output=RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+            sign_kind=RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
+            sign=D("-3500.00"),
+            chosen_kind=None,
+            chosen_value=D("0"),
+        ),
+        RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: ChosenBySignLine(
+            output=RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            sign_kind=RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
+            sign=D("-3500.00"),
+            chosen_kind=None,
+            chosen_value=D("0"),
+        ),
+        RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: ChosenBySignLine(
+            output=RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            sign_kind=RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
+            sign=D("-3500.00"),
+            chosen_kind=None,
+            chosen_value=D("0"),
+        ),
         # Form RC381 Part 4 line 92 "If line 53 of Part 3 is positive or "0", enter the amount from
         # line 52", line 99 "If line 60 of Part 3 is positive or "0", enter the amount from line 59"
         # and line 106 "If line 68 of Part 3 is positive or "0", enter the amount from line 67":
@@ -320,6 +376,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # Form RC381 Part 3b lines 76, 83 and 90 "Enter the amount from line 53 (60, 68) as a positive
     # amount": none is negative for Return A.
     assert positive_parts == {
+        # Form RC381 Part 4 line 127 "If line 115 is negative, enter it as a positive amount.":
+        # Return A's line 115 is 0.00.
+        RC381_PART_4_LINE_127: PositivePartOfNegationLine(
+            output=RC381_PART_4_LINE_127,
+            amount_kind=RC381_PART_4_LINE_115,
+            amount_value=D("-4034.10"),
+            result=D("4034.10"),
+        ),
         # Form RC381 Part 4 lines 93, 100 and 107 "Enter the amount from line 53 (60, 68) of Part 3
         # as a positive amount": none is negative for Return A.
         RC381_PART_4_LINE_93: PositivePartOfNegationLine(

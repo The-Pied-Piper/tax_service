@@ -17,9 +17,16 @@ payable and the overpayment (`08f_rc381_part_4_lines_59_to_91.yaml`, the sixth; 
 63, 64, 66, 67, 71, 72, 73, 75, 78, 79 and 81 only copy other artifacts, so they have no step of
 their own), then Part 4 lines 92 to 110, the base contributions and the enhanced contributions
 through employment income, the amounts for lines 30800 and 22215 of the return
-(`08g_rc381_part_4_lines_92_to_110.yaml`, the seventh; every line has a step of its own). Part 2
-lines C to F are Schedule 8 Part 2's lines B to E, the same table read with the same months (line
-A), so they are the existing artifacts and no step is repeated for them.
+(`08g_rc381_part_4_lines_92_to_110.yaml`, the seventh; every line has a step of its own), then
+Part 4 lines 111 to 129, the base contributions and the enhanced contributions through
+self-employment income and other earnings, the amounts for lines 31000 and 22200 of the return
+(`08h_rc381_part_4_lines_111_to_129.yaml`, the eighth; lines 117, 119, 120, 122, 123 and 126 only
+copy another line, so they have no step of their own, and the amount lettered A has one), then the
+final selection (`08i_rc381_final_selection.yaml`, the ninth): the earnings subject to
+contributions (lines 70 and 83 of Part 4 added) and, by its sign, the six results for lines 30800,
+22215, 44800, 42100, 31000 and 22200 of the return, Part 4's or Part 3's. Part 2 lines C to F are
+Schedule 8 Part 2's lines B to E, the same table read with the same months (line A), so they are
+the existing artifacts and no step is repeated for them.
 Lines 43 and 46 print the figures of lines 23 and 26, so they read the same datasets.
 """
 
@@ -60,7 +67,13 @@ from app.jurisdictions.ca.catalog import (
     CPT20_T4_EARNINGS,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     QPP_MONTHS,
+    RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     RC381_CPP_OVERPAYMENT,
+    RC381_CPP_OVERPAYMENT_ON_RETURN,
+    RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS,
     RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS,
     RC381_PART_2_LINE_B,
@@ -134,6 +147,7 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_91,
     RC381_PART_3_LINE_92,
     RC381_PART_3_LINE_93,
+    RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
     RC381_PART_4_LINE_4,
     RC381_PART_4_LINE_8,
     RC381_PART_4_LINE_11,
@@ -228,6 +242,20 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_108,
     RC381_PART_4_LINE_109,
     RC381_PART_4_LINE_110,
+    RC381_PART_4_LINE_111,
+    RC381_PART_4_LINE_112,
+    RC381_PART_4_LINE_113,
+    RC381_PART_4_LINE_114,
+    RC381_PART_4_LINE_115,
+    RC381_PART_4_LINE_116,
+    RC381_PART_4_LINE_116_LESSER,
+    RC381_PART_4_LINE_118,
+    RC381_PART_4_LINE_121,
+    RC381_PART_4_LINE_124,
+    RC381_PART_4_LINE_125,
+    RC381_PART_4_LINE_127,
+    RC381_PART_4_LINE_128,
+    RC381_PART_4_LINE_129,
     RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
     T4_CPP_SECOND_ADDITIONAL_BOX_16A,
@@ -251,25 +279,29 @@ INPUTS = frozenset(
     }
 )
 
-# Nothing reads these yet (a later PR, the one that routes the T1 lines, reads them and removes
-# them from this set): Part 4 line 90 "Line 88 minus 89. If positive, enter the amount (in dollars
-# and cents) on line 42100 of your return", the amount for line 42100, line 91 "amount from line 90
-# entered as a positive amount × 50%", line 98 "Line 96 plus line 97 Enter this amount (in dollars
-# and cents) on line 30800 of your return." and line 110 "Line 105 plus line 109 Enter this amount
-# (in dollars and cents) on line 22215 of your return.", which the T1 lines read later, and the
-# three results of Part 3a and Part 3b for earnings from employment income only, "Enter this
-# amount (in dollars and cents) on line 30800 of your return.", "... on line 22215 of your
-# return." and "... on line 44800 of your return.", which the T1 lines and Form ON428 line 19 and
-# line 58240 read later.
+# Nothing reads these yet (a later PR, the one that routes the T1 lines between Schedule 8 and
+# these results by the count of Quebec T4 slips, reads them and removes them from this set): the
+# final selection's six results, the amounts RC381 gives for lines 30800, 22215, 44800, 42100,
+# 31000 and 22200 of the return, each chosen by the sign of lines 70 and 83 of Part 4 added: Part
+# 4's line 98 "Enter this amount (in dollars and cents) on line 30800 of your return.", line 110
+# "Enter this amount (in dollars and cents) on line 22215 of your return.", line 91 "Enter the
+# result of the following calculation (in dollars and cents) on line 44800 of your return", line
+# 90 "If positive, enter the amount (in dollars and cents) on line 42100 of your return", line 111
+# "Enter the result of the following calculation (in dollars and cents) on line 31000 of your
+# return" and line 129 "Enter this amount (in dollar and cents) on line 22200 of your return."
+# when they are above zero, else (lines 70 and 83 both "0": "return to Part 3") Part 3a's and Part
+# 3b's results for earnings from employment income only, "Enter this amount (in dollars and
+# cents) on line 30800 of your return.", "... on line 22215 of your return." and "... on line
+# 44800 of your return.", and "0" for lines 42100, 31000 and 22200. Part 4 lines 90, 91, 98 and 110
+# and the three results of Part 3a and Part 3b were outputs until the final selection read them.
 OUTPUTS = frozenset(
     {
-        "ca/rc381_self_employment_cpp_contributions",
-        "ca/rc381_part_4_line_91",
-        "ca/rc381_part_4_line_98",
-        "ca/rc381_part_4_line_110",
-        "ca/rc381_employment_cpp_base_contributions",
-        "ca/rc381_employment_cpp_enhanced_contributions",
-        "ca/rc381_cpp_overpayment",
+        "ca/rc381_cpp_base_contributions_on_return",
+        "ca/rc381_cpp_enhanced_contributions_on_return",
+        "ca/rc381_cpp_overpayment_on_return",
+        "ca/rc381_cpp_payable_on_self_employment",
+        "ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings",
+        "ca/rc381_cpp_deduction_on_self_employment_and_other_earnings",
     }
 )
 
@@ -1950,6 +1982,260 @@ STEPS = {
         consumes={"parts": ("ca/rc381_part_4_line_105", "ca/rc381_part_4_line_109")},
         produces={"output": "ca/rc381_part_4_line_110"},
     ),
+    # Line 111 "Base CPP contributions through self-employment income and other earnings: Enter
+    # the result of the following calculation (in dollars and cents) on line 31000 of your
+    # return: amount from line 84 x 50% =". The 50% is the base credit rate of Schedule 8 Part 4
+    # (line 15, "multiplied by 50%").
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/cpp_self_employed_base_credit_rate"},
+        consumes={
+            "base": "ca/rc381_part_4_line_84",
+        },
+        produces={"output": "ca/rc381_part_4_line_111"},
+    ),
+    # Line 112 "Amount from line 85 x 50% =".
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/cpp_self_employed_base_credit_rate"},
+        consumes={
+            "base": "ca/rc381_part_4_line_85",
+        },
+        produces={"output": "ca/rc381_part_4_line_112"},
+    ),
+    # Line 113 "Line 111 plus line 112".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": ("ca/rc381_part_4_line_111", "ca/rc381_part_4_line_112"),
+        },
+        produces={"output": "ca/rc381_part_4_line_113"},
+    ),
+    # Line 114 "Enter the amount from line 69 of Part 3 if positive. If not, enter "0"." (line
+    # 69 of Part 3 floored at zero).
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={
+            "parts": ("ca/rc381_part_3_line_69",),
+        },
+        produces={"output": "ca/rc381_part_4_line_114"},
+    ),
+    # Line 115 "Line 113 minus line 114 (if negative, show in brackets)".
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/rc381_part_4_line_113",
+            "less": "ca/rc381_part_4_line_114",
+        },
+        produces={"output": "ca/rc381_part_4_line_115"},
+    ),
+    # The amount lettered A, printed in line 116's row: "Enter whichever is less: amount from
+    # line 113 or line 114."
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": ("ca/rc381_part_4_line_113", "ca/rc381_part_4_line_114"),
+        },
+        produces={"output": "ca/rc381_part_4_line_116_lesser"},
+    ),
+    # Line 116 "A x 83.1933% =": the base share of the CPP contributions (the rate of Part 3
+    # line 20).
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/rc381_cpp_base_share_rate"},
+        consumes={
+            "base": "ca/rc381_part_4_line_116_lesser",
+        },
+        produces={"output": "ca/rc381_part_4_line_116"},
+    ),
+    # Line 118 "Amount A minus line 117", line 117 being the amount from line 116.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/rc381_part_4_line_116_lesser",
+            "less": "ca/rc381_part_4_line_116",
+        },
+        produces={"output": "ca/rc381_part_4_line_118"},
+    ),
+    # Line 121 "Line 119 minus line 120", line 119 being the amount from line 111 and line 120
+    # the amount from line 116. The form prints no floor.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/rc381_part_4_line_111",
+            "less": "ca/rc381_part_4_line_116",
+        },
+        produces={"output": "ca/rc381_part_4_line_121"},
+    ),
+    # Line 124 "Line 122 minus line 123", line 122 being the amount from line 112 and line 123
+    # the amount from line 118. The form prints no floor.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/rc381_part_4_line_112",
+            "less": "ca/rc381_part_4_line_118",
+        },
+        produces={"output": "ca/rc381_part_4_line_124"},
+    ),
+    # Line 125 "Amount from line 86 x 50% =".
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/cpp_self_employed_base_credit_rate"},
+        consumes={
+            "base": "ca/rc381_part_4_line_86",
+        },
+        produces={"output": "ca/rc381_part_4_line_125"},
+    ),
+    # Line 127 "If line 115 is negative, enter it as a positive amount." (above zero only when
+    # line 115 is negative; when it is positive or "0" the form enters the amount from line 126
+    # on line 128, which a line 127 of "0" gives).
+    CapabilitySelection(
+        name="ca/positive_part_of_negation",
+        params={},
+        consumes={
+            "amount": "ca/rc381_part_4_line_115",
+        },
+        produces={"output": "ca/rc381_part_4_line_127"},
+    ),
+    # Line 128 "Line 126 minus line 127 (if negative, enter "0")", line 126 being the amount
+    # from line 125.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/rc381_part_4_line_125",
+            "less": "ca/rc381_part_4_line_127",
+        },
+        produces={"output": "ca/rc381_part_4_line_128"},
+    ),
+    # Line 129 "Deduction for CPP enhanced contributions on self-employment income and other
+    # earnings: Add lines 121, 122, 124, 125, and 128. Enter this amount (in dollar and cents)
+    # on line 22200 of your return." Line 122 is the amount from line 112.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/rc381_part_4_line_121",
+                "ca/rc381_part_4_line_112",
+                "ca/rc381_part_4_line_124",
+                "ca/rc381_part_4_line_125",
+                "ca/rc381_part_4_line_128",
+            ),
+        },
+        produces={"output": "ca/rc381_part_4_line_129"},
+    ),
+    # The "self-employment income and other earnings subject to contributions" of the
+    # instruction above, lines 70 and 83 of Part 4 added: above zero when Part 4 has earnings to
+    # contribute on, and "0" when both lines are "0" (line 70 prints no floor, so it may be
+    # below zero).
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": ("ca/rc381_part_4_line_70", "ca/rc381_part_4_line_83"),
+        },
+        produces={"output": "ca/rc381_part_4_earnings_subject_to_contributions"},
+    ),
+    # Line 30800 "Base CPP contributions through employment income": Part 4 line 98 when Part 4
+    # is completed, else Part 3a line 70 or Part 3b line 81 (the instruction above).
+    CapabilitySelection(
+        name="ca/choose_by_sign",
+        params={},
+        consumes={
+            "sign": "ca/rc381_part_4_earnings_subject_to_contributions",
+            "when_positive": ("ca/rc381_part_4_line_98",),
+            "when_zero": (),
+            "when_negative": (),
+            "when_non_positive": ("ca/rc381_employment_cpp_base_contributions",),
+            "when_non_negative": (),
+        },
+        produces={"output": "ca/rc381_cpp_base_contributions_on_return"},
+    ),
+    # Line 22215 "Deduction for CPP enhanced contributions on employment income": Part 4 line
+    # 110 when Part 4 is completed, else Part 3a line 73 or Part 3b line 93.
+    CapabilitySelection(
+        name="ca/choose_by_sign",
+        params={},
+        consumes={
+            "sign": "ca/rc381_part_4_earnings_subject_to_contributions",
+            "when_positive": ("ca/rc381_part_4_line_110",),
+            "when_zero": (),
+            "when_negative": (),
+            "when_non_positive": ("ca/rc381_employment_cpp_enhanced_contributions",),
+            "when_non_negative": (),
+        },
+        produces={"output": "ca/rc381_cpp_enhanced_contributions_on_return"},
+    ),
+    # Line 44800 "CPP overpayment": Part 4 line 91 when Part 4 is completed, else Part 3a line
+    # 74 (Part 3b has none).
+    CapabilitySelection(
+        name="ca/choose_by_sign",
+        params={},
+        consumes={
+            "sign": "ca/rc381_part_4_earnings_subject_to_contributions",
+            "when_positive": ("ca/rc381_part_4_line_91",),
+            "when_zero": (),
+            "when_negative": (),
+            "when_non_positive": ("ca/rc381_cpp_overpayment",),
+            "when_non_negative": (),
+        },
+        produces={"output": "ca/rc381_cpp_overpayment_on_return"},
+    ),
+    # Line 42100 "CPP contributions payable on self-employment income and other earnings": Part
+    # 4 line 90 when it is positive, only when Part 4 is completed; otherwise "0".
+    CapabilitySelection(
+        name="ca/choose_by_sign",
+        params={},
+        consumes={
+            "sign": "ca/rc381_part_4_earnings_subject_to_contributions",
+            "when_positive": ("ca/rc381_self_employment_cpp_contributions",),
+            "when_zero": (),
+            "when_negative": (),
+            "when_non_positive": (),
+            "when_non_negative": (),
+        },
+        produces={"output": "ca/rc381_cpp_payable_on_self_employment"},
+    ),
+    # Line 31000 "Base CPP contributions through self-employment income and other earnings":
+    # Part 4 line 111 when Part 4 is completed; otherwise "0".
+    CapabilitySelection(
+        name="ca/choose_by_sign",
+        params={},
+        consumes={
+            "sign": "ca/rc381_part_4_earnings_subject_to_contributions",
+            "when_positive": ("ca/rc381_part_4_line_111",),
+            "when_zero": (),
+            "when_negative": (),
+            "when_non_positive": (),
+            "when_non_negative": (),
+        },
+        produces={
+            "output": "ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings"
+        },
+    ),
+    # Line 22200 "Deduction for CPP enhanced contributions on self-employment income and other
+    # earnings": Part 4 line 129 when Part 4 is completed; otherwise "0".
+    CapabilitySelection(
+        name="ca/choose_by_sign",
+        params={},
+        consumes={
+            "sign": "ca/rc381_part_4_earnings_subject_to_contributions",
+            "when_positive": ("ca/rc381_part_4_line_129",),
+            "when_zero": (),
+            "when_negative": (),
+            "when_non_positive": (),
+            "when_non_negative": (),
+        },
+        produces={"output": "ca/rc381_cpp_deduction_on_self_employment_and_other_earnings"},
+    ),
 }
 
 WIRING = {
@@ -2733,5 +3019,141 @@ WIRING = {
         Sum,
         frozenset({RC381_PART_4_LINE_105, RC381_PART_4_LINE_109}),
         frozenset({RC381_PART_4_LINE_110}),
+    ),
+    (
+        ApplyRate,
+        frozenset({RC381_PART_4_LINE_84}),
+        frozenset({RC381_PART_4_LINE_111}),
+    ),
+    (
+        ApplyRate,
+        frozenset({RC381_PART_4_LINE_85}),
+        frozenset({RC381_PART_4_LINE_112}),
+    ),
+    (
+        Sum,
+        frozenset({RC381_PART_4_LINE_111, RC381_PART_4_LINE_112}),
+        frozenset({RC381_PART_4_LINE_113}),
+    ),
+    (
+        SumNotBelowZero,
+        frozenset({RC381_PART_3_LINE_69}),
+        frozenset({RC381_PART_4_LINE_114}),
+    ),
+    (
+        Subtract,
+        frozenset({RC381_PART_4_LINE_113, RC381_PART_4_LINE_114}),
+        frozenset({RC381_PART_4_LINE_115}),
+    ),
+    (
+        LesserOf,
+        frozenset({RC381_PART_4_LINE_113, RC381_PART_4_LINE_114}),
+        frozenset({RC381_PART_4_LINE_116_LESSER}),
+    ),
+    (
+        ApplyRate,
+        frozenset({RC381_PART_4_LINE_116_LESSER}),
+        frozenset({RC381_PART_4_LINE_116}),
+    ),
+    (
+        Subtract,
+        frozenset({RC381_PART_4_LINE_116, RC381_PART_4_LINE_116_LESSER}),
+        frozenset({RC381_PART_4_LINE_118}),
+    ),
+    (
+        Subtract,
+        frozenset({RC381_PART_4_LINE_111, RC381_PART_4_LINE_116}),
+        frozenset({RC381_PART_4_LINE_121}),
+    ),
+    (
+        Subtract,
+        frozenset({RC381_PART_4_LINE_112, RC381_PART_4_LINE_118}),
+        frozenset({RC381_PART_4_LINE_124}),
+    ),
+    (
+        ApplyRate,
+        frozenset({RC381_PART_4_LINE_86}),
+        frozenset({RC381_PART_4_LINE_125}),
+    ),
+    (
+        PositivePartOfNegation,
+        frozenset({RC381_PART_4_LINE_115}),
+        frozenset({RC381_PART_4_LINE_127}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({RC381_PART_4_LINE_125, RC381_PART_4_LINE_127}),
+        frozenset({RC381_PART_4_LINE_128}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                RC381_PART_4_LINE_112,
+                RC381_PART_4_LINE_121,
+                RC381_PART_4_LINE_124,
+                RC381_PART_4_LINE_125,
+                RC381_PART_4_LINE_128,
+            }
+        ),
+        frozenset({RC381_PART_4_LINE_129}),
+    ),
+    (
+        Sum,
+        frozenset({RC381_PART_4_LINE_70, RC381_PART_4_LINE_83}),
+        frozenset({RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS}),
+    ),
+    (
+        ChooseBySign,
+        frozenset(
+            {
+                RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS,
+                RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
+                RC381_PART_4_LINE_98,
+            }
+        ),
+        frozenset({RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN}),
+    ),
+    (
+        ChooseBySign,
+        frozenset(
+            {
+                RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS,
+                RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
+                RC381_PART_4_LINE_110,
+            }
+        ),
+        frozenset({RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN}),
+    ),
+    (
+        ChooseBySign,
+        frozenset(
+            {
+                RC381_CPP_OVERPAYMENT,
+                RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
+                RC381_PART_4_LINE_91,
+            }
+        ),
+        frozenset({RC381_CPP_OVERPAYMENT_ON_RETURN}),
+    ),
+    (
+        ChooseBySign,
+        frozenset(
+            {
+                RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
+                RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS,
+            }
+        ),
+        frozenset({RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT}),
+    ),
+    (
+        ChooseBySign,
+        frozenset({RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS, RC381_PART_4_LINE_111}),
+        frozenset({RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
+    ),
+    (
+        ChooseBySign,
+        frozenset({RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS, RC381_PART_4_LINE_129}),
+        frozenset({RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
     ),
 }

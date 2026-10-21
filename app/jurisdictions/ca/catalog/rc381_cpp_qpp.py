@@ -1,13 +1,16 @@
-"""The federal catalog: Form RC381 Part 2, Part 3 lines 1 to 93 and Part 4 lines 1 to 110.
+"""The federal catalog: Form RC381 Part 2, Part 3 lines 1 to 93 and Part 4 lines 1 to 129.
 
 Form RC381 (2025), "Inter-Provincial Calculation for CPP and QPP Contributions and Overpayments":
 Part 2 (the months and the monthly proration table, lines G to J being the QPP side) and the CPP
 side of Part 3 on employment income (lines 1 to 26), then its QPP side and the totals (lines 27
 to 69), then Part 3a and Part 3b (lines 70 to 93) with their three results, then Part 4 (for
-residents of a province or territory other than Quebec) through line 110: the CPP side (lines 1 to
+residents of a province or territory other than Quebec) through line 129: the CPP side (lines 1 to
 27), the QPP side with the second additional contributions and the totals (lines 28 to 56), the
 earnings subject to contributions, the self-employed contributions and the overpayment (lines 57
-to 91), and the base and enhanced contributions through employment income (lines 92 to 110).
+to 91), the base and enhanced contributions through employment income (lines 92 to 110), and the
+base and enhanced contributions through self-employment income and other earnings (lines 111 to
+129), with the results for the return after Part 3 and Part 4: lines 30800, 22215, 44800, 42100,
+31000 and 22200.
 Lines C to F of Part 2 are Schedule 8 Part 2's lines B to E, the existing artifacts read with the
 same months.
 """
@@ -782,3 +785,116 @@ RC381_PART_4_LINE_110 = CATALOG.declare("rc381_part_4_line_110", Decimal, non_ne
 """Deduction for CPP enhanced contributions on employment income, Form RC381 Part 4 line 110 "Line
 105 plus line 109 Enter this amount (in dollars and cents) on line 22215 of your return." A non-
 negative amount."""
+
+RC381_PART_4_LINE_111 = CATALOG.declare("rc381_part_4_line_111", Decimal, non_negative=True)
+"""Base CPP contributions through self-employment income and other earnings, Form RC381 Part 4 line
+111 "Enter the result of the following calculation (in dollars and cents) on line 31000 of your
+return: amount from line 84 × 50% =". A non-negative amount."""
+
+RC381_PART_4_LINE_112 = CATALOG.declare("rc381_part_4_line_112", Decimal, non_negative=True)
+"""Form RC381 Part 4 line 112 "Amount from line 85 × 50% =". A non-negative amount."""
+
+RC381_PART_4_LINE_113 = CATALOG.declare("rc381_part_4_line_113", Decimal, non_negative=True)
+"""Form RC381 Part 4 line 113 "Line 111 plus line 112". A non-negative amount."""
+
+RC381_PART_4_LINE_114 = CATALOG.declare("rc381_part_4_line_114", Decimal, non_negative=True)
+"""Form RC381 Part 4 line 114 "Enter the amount from line 69 of Part 3 if positive. If not, enter
+"0"." A non-negative amount."""
+
+RC381_PART_4_LINE_115 = CATALOG.declare("rc381_part_4_line_115", Decimal)
+"""Form RC381 Part 4 line 115 "Line 113 minus line 114 (if negative, show in brackets)". Signed."""
+
+RC381_PART_4_LINE_116_LESSER = CATALOG.declare(
+    "rc381_part_4_line_116_lesser", Decimal, non_negative=True
+)
+"""Form RC381 Part 4 line 116, the amount lettered A: "Enter whichever is less: amount from line
+113 or line 114.", the amount that line 116 multiplies by 83.1933% and that line 118 takes line
+117 from. A non-negative amount."""
+
+RC381_PART_4_LINE_116 = CATALOG.declare("rc381_part_4_line_116", Decimal, non_negative=True)
+"""Form RC381 Part 4 line 116 "A × 83.1933% =". A non-negative amount."""
+
+RC381_PART_4_LINE_118 = CATALOG.declare("rc381_part_4_line_118", Decimal, non_negative=True)
+"""Form RC381 Part 4 line 118 "Amount A minus line 117", line 117 being the amount from line 116. A
+non-negative amount."""
+
+RC381_PART_4_LINE_121 = CATALOG.declare("rc381_part_4_line_121", Decimal)
+"""Form RC381 Part 4 line 121 "Line 119 minus line 120", line 119 being the amount from line 111
+and line 120 the amount from line 116. The form prints no floor, so it is signed."""
+
+RC381_PART_4_LINE_124 = CATALOG.declare("rc381_part_4_line_124", Decimal)
+"""Form RC381 Part 4 line 124 "Line 122 minus line 123", line 122 being the amount from line 112
+and line 123 the amount from line 118. The form prints no floor, so it is signed."""
+
+RC381_PART_4_LINE_125 = CATALOG.declare("rc381_part_4_line_125", Decimal, non_negative=True)
+"""Form RC381 Part 4 line 125 "Amount from line 86 × 50% =". A non-negative amount."""
+
+RC381_PART_4_LINE_127 = CATALOG.declare("rc381_part_4_line_127", Decimal, non_negative=True)
+"""Form RC381 Part 4 line 127 "If line 115 is negative, enter it as a positive amount." (above zero
+only when line 115 is negative). A non-negative amount."""
+
+RC381_PART_4_LINE_128 = CATALOG.declare("rc381_part_4_line_128", Decimal, non_negative=True)
+"""Form RC381 Part 4 line 128 "Line 126 minus line 127 (if negative, enter "0")", line 126 being
+the amount from line 125. A non-negative amount."""
+
+RC381_PART_4_LINE_129 = CATALOG.declare("rc381_part_4_line_129", Decimal, non_negative=True)
+"""Deduction for CPP enhanced contributions on self-employment income and other earnings, Form
+RC381 Part 4 line 129 "Add lines 121, 122, 124, 125, and 128. Enter this amount (in dollar and
+cents) on line 22200 of your return.", line 122 being the amount from line 112. A non-negative
+amount."""
+
+RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS = CATALOG.declare(
+    "rc381_part_4_earnings_subject_to_contributions", Decimal
+)
+"""Self-employment income and other earnings subject to contributions, Form RC381 Part 3 "If you
+are completing Part 4 or Part 5 and calculate that your self-employment income and other
+earnings subject to contributions (lines 70 and 83 of Part 4 or lines 68 and 81 of Part 5) are
+"0," follow the instructions below.": lines 70 and 83 of Part 4 added. Line 70 prints no floor,
+so it is signed; it is above zero exactly when Part 4 has earnings to contribute on."""
+
+RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
+    "rc381_cpp_base_contributions_on_return", Decimal, non_negative=True
+)
+"""Base CPP contributions through employment income for line 30800 of the return when Form RC381 is
+used: Part 4 line 98 when Part 4 has earnings subject to contributions, else (lines 70 and 83 of
+Part 4 "0") Part 3a line 70 or Part 3b line 81 "Enter this amount (in dollars and cents) on line
+30800 of your return." A non-negative amount."""
+
+RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN = CATALOG.declare(
+    "rc381_cpp_enhanced_contributions_on_return", Decimal, non_negative=True
+)
+"""Deduction for CPP enhanced contributions on employment income for line 22215 of the return when
+Form RC381 is used: Part 4 line 110 when Part 4 has earnings subject to contributions, else Part
+3a line 73 or Part 3b line 93 "Enter this amount (in dollars and cents) on line 22215 of your
+return." A non-negative amount."""
+
+RC381_CPP_OVERPAYMENT_ON_RETURN = CATALOG.declare(
+    "rc381_cpp_overpayment_on_return", Decimal, non_negative=True
+)
+"""CPP overpayment for line 44800 of the return when Form RC381 is used: Part 4 line 91 when Part 4
+has earnings subject to contributions, else Part 3a line 74 "Enter this amount (in dollars and
+cents) on line 44800 of your return." (0 for Part 3b). A non-negative amount."""
+
+RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT = CATALOG.declare(
+    "rc381_cpp_payable_on_self_employment", Decimal, non_negative=True
+)
+"""CPP contributions payable on self-employment income and other earnings for line 42100 of the
+return when Form RC381 is used: Part 4 line 90 "If positive, enter the amount (in dollars and
+cents) on line 42100 of your return" when Part 4 has earnings subject to contributions, else "0"
+(Part 4 is not completed). A non-negative amount."""
+
+RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS = CATALOG.declare(
+    "rc381_cpp_base_contributions_on_self_employment_and_other_earnings", Decimal, non_negative=True
+)
+"""Base CPP contributions through self-employment income and other earnings for line 31000 of the
+return when Form RC381 is used: Part 4 line 111 "Enter the result of the following calculation
+(in dollars and cents) on line 31000 of your return" when Part 4 has earnings subject to
+contributions, else "0" (Part 4 is not completed). A non-negative amount."""
+
+RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS = CATALOG.declare(
+    "rc381_cpp_deduction_on_self_employment_and_other_earnings", Decimal, non_negative=True
+)
+"""Deduction for CPP enhanced contributions on self-employment income and other earnings for line
+22200 of the return when Form RC381 is used: Part 4 line 129 "Enter this amount (in dollar and
+cents) on line 22200 of your return." when Part 4 has earnings subject to contributions, else
+"0" (Part 4 is not completed). A non-negative amount."""

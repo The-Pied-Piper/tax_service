@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1286
+        == 1307
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1286
+        == 1307
     )
 
 
@@ -2003,6 +2003,27 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/rc381_part_4_line_108",
         "ca/rc381_part_4_line_109",
         "ca/rc381_part_4_line_110",
+        "ca/rc381_part_4_line_111",
+        "ca/rc381_part_4_line_112",
+        "ca/rc381_part_4_line_113",
+        "ca/rc381_part_4_line_114",
+        "ca/rc381_part_4_line_115",
+        "ca/rc381_part_4_line_116_lesser",
+        "ca/rc381_part_4_line_116",
+        "ca/rc381_part_4_line_118",
+        "ca/rc381_part_4_line_121",
+        "ca/rc381_part_4_line_124",
+        "ca/rc381_part_4_line_125",
+        "ca/rc381_part_4_line_127",
+        "ca/rc381_part_4_line_128",
+        "ca/rc381_part_4_line_129",
+        "ca/rc381_part_4_earnings_subject_to_contributions",
+        "ca/rc381_cpp_base_contributions_on_return",
+        "ca/rc381_cpp_enhanced_contributions_on_return",
+        "ca/rc381_cpp_overpayment_on_return",
+        "ca/rc381_cpp_payable_on_self_employment",
+        "ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings",
+        "ca/rc381_cpp_deduction_on_self_employment_and_other_earnings",
         "ca/income_tax_deducted",
         "ca/cwb_eligible_dependants",
         "ca/working_income",
@@ -2340,7 +2361,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1286
+        == 1307
     )
     assert (
         len(
@@ -2348,7 +2369,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1286
+        == 1307
     )
 
 
@@ -2361,7 +2382,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1286
+        == 1307
     )
     assert (
         len(
@@ -2369,7 +2390,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1286
+        == 1307
     )
 
 

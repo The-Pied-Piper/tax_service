@@ -655,7 +655,13 @@ from app.jurisdictions.ca.catalog import (
     PRE_1986_DEDUCTIONS_BEFORE_1988,
     PRE_1986_DEDUCTIONS_TOTAL,
     PROFESSIONAL_INCOME,
+    RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     RC381_CPP_OVERPAYMENT,
+    RC381_CPP_OVERPAYMENT_ON_RETURN,
+    RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS,
     RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS,
     RC381_PART_2_LINE_B,
@@ -729,6 +735,7 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_91,
     RC381_PART_3_LINE_92,
     RC381_PART_3_LINE_93,
+    RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
     RC381_PART_4_LINE_4,
     RC381_PART_4_LINE_8,
     RC381_PART_4_LINE_11,
@@ -823,6 +830,20 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_108,
     RC381_PART_4_LINE_109,
     RC381_PART_4_LINE_110,
+    RC381_PART_4_LINE_111,
+    RC381_PART_4_LINE_112,
+    RC381_PART_4_LINE_113,
+    RC381_PART_4_LINE_114,
+    RC381_PART_4_LINE_115,
+    RC381_PART_4_LINE_116,
+    RC381_PART_4_LINE_116_LESSER,
+    RC381_PART_4_LINE_118,
+    RC381_PART_4_LINE_121,
+    RC381_PART_4_LINE_124,
+    RC381_PART_4_LINE_125,
+    RC381_PART_4_LINE_127,
+    RC381_PART_4_LINE_128,
+    RC381_PART_4_LINE_129,
     RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
@@ -1404,6 +1425,45 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         RC381_PART_4_LINE_110,
     ):
         assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
+    # Form RC381 Part 4 lines 111 to 129: "× 50%" of lines 84, 85 and 86 (lines 111, 112 and 125)
+    # and "A × 83.1933%" (line 116) are rates of an amount; line 114 is line 69 of Part 3 not below
+    # zero; A is the lesser of lines 113 and 114; lines 115, 118, 121 and 124 are differences; line
+    # 127 the positive amount of line 115; line 128 a difference not below zero; lines 113 and 129
+    # sums. The final selection adds lines 70 and 83 and chooses each of the six results for the
+    # return by the sign of that sum.
+    for kind in (
+        RC381_PART_4_LINE_111,
+        RC381_PART_4_LINE_112,
+        RC381_PART_4_LINE_116,
+        RC381_PART_4_LINE_125,
+    ):
+        assert isinstance(worksheet.producer_of(kind), ApplyRate), kind.identifier
+    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_114), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_116_LESSER), LesserOf)
+    for kind in (
+        RC381_PART_4_LINE_115,
+        RC381_PART_4_LINE_118,
+        RC381_PART_4_LINE_121,
+        RC381_PART_4_LINE_124,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Subtract), kind.identifier
+    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_127), PositivePartOfNegation)
+    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_128), SubtractNotBelowZero)
+    for kind in (
+        RC381_PART_4_LINE_113,
+        RC381_PART_4_LINE_129,
+        RC381_PART_4_EARNINGS_SUBJECT_TO_CONTRIBUTIONS,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
+    for kind in (
+        RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+        RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        RC381_CPP_OVERPAYMENT_ON_RETURN,
+        RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+        RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    ):
+        assert isinstance(worksheet.producer_of(kind), ChooseBySign), kind.identifier
     # Line 3 (box 50399) is a starting amount, so nothing produces it.
     assert worksheet.producer_of(CPT20_T4_EARNINGS) is None
     assert worksheet.producer_of(RC381_PART_3_LINE_7) is not None
