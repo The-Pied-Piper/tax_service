@@ -23,6 +23,7 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
     ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
+    CAPITAL_GAINS_DEDUCTION,
     DEDUCTIONS_FROM_NET_INCOME,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     NET_CAPITAL_LOSS_BALANCE_1985_TO_1987,
@@ -61,11 +62,10 @@ INPUTS = frozenset(
         "ca/unapplied_net_capital_losses_2001_to_2024",
         "ca/net_capital_losses_claimed",
         "ca/additional_deductions",
-        # Form T2209 note (3), net income, "minus any:" lines 25395 and 25400 of the return and
-        # the part of line 25600 that is net employment income from a prescribed international
-        # organization, foreign income exempt under a tax treaty, or adult basic education
-        # tuition assistance; read by the foreign tax credit alone.
-        "ca/capital_gains_deduction",
+        # Form T2209 note (3), net income, "minus any:" the part of line 25600 that is net
+        # employment income from a prescribed international organization, foreign income exempt
+        # under a tax treaty, or adult basic education tuition assistance; read by the foreign
+        # tax credit alone.
         "ca/exempt_income_deductions",
     }
 )
@@ -331,9 +331,9 @@ STEPS = {
         consumes={"base": "ca/remaining_adjusted_losses_2001_to_2024"},
         produces={"output": "ca/net_capital_loss_balance_2001_to_2024"},
     ),
-    # T1 line 68 and line 25700 "Add lines 58 to 67.": lines 58, 59, 60, 61, 62, 63, 64, 66 and 67
-    # (lines 24400, 24900, 25000, 25100, 25200, 25300, 25395, 25500 and 25600), in line order; line
-    # 65 (25400) is not wired yet.
+    # T1 line 68 and line 25700 "Add lines 58 to 67.": lines 58, 59, 60, 61, 62, 63, 64, 65, 66 and
+    # 67 (lines 24400, 24900, 25000, 25100, 25200, 25300, 25395, 25400, 25500 and 25600), in line
+    # order.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -346,6 +346,7 @@ STEPS = {
                 "ca/non_capital_losses_of_other_years",
                 "ca/net_capital_losses_of_other_years",
                 "ca/qbt_capital_gains_deduction",
+                "ca/capital_gains_deduction",
                 "ca/northern_residents_deductions",
                 "ca/additional_deductions",
             )
@@ -512,6 +513,7 @@ WIRING = {
                 NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
                 NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
                 QBT_CAPITAL_GAINS_DEDUCTION,
+                CAPITAL_GAINS_DEDUCTION,
                 NORTHERN_RESIDENTS_DEDUCTIONS,
                 ADDITIONAL_DEDUCTIONS,
             }

@@ -660,3 +660,4 @@ expected:
   ca/refund: "64.63"
   ca-on/refund_before_donation: "64.63"
   ca-on/net_refund: "64.63"
+  ca/amt_part_1_subtotal: "66990.00"

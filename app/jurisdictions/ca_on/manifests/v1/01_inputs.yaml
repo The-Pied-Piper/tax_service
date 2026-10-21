@@ -109,16 +109,155 @@ inputs:
   - ca/rental_partner_share
   - ca/rental_partner_gst_hst_rebate
   - ca/rental_partner_other_expenses
+  # Form T2125 (business statement) Part 3A to Part 7 and Area A: the caller's amounts, in the
+  # form's order, and the Area A class list; T1 line 22 (line 13500) is T2125 line 9946, computed.
+  - ca/business_gross_sales
+  - ca/business_sales_adjustments
+  - ca/business_quick_method_gst_hst
+  - ca/business_quick_method_remitted
+  - ca/business_reserves_deducted_last_year
+  - ca/business_other_income
+  - ca/business_opening_inventory
+  - ca/business_purchases
+  - ca/business_direct_wage_costs
+  - ca/business_subcontracts
+  - ca/business_other_costs
+  - ca/business_closing_inventory
+  - ca/business_advertising
+  - ca/business_meals_and_entertainment
+  - ca/business_bad_debts
+  - ca/business_insurance
+  - ca/business_interest_and_bank_charges
+  - ca/business_business_taxes_licences_and_memberships
+  - ca/business_office_expenses
+  - ca/business_office_stationery_and_supplies
+  - ca/business_professional_fees
+  - ca/business_management_and_administration_fees
+  - ca/business_rent
+  - ca/business_repairs_and_maintenance
+  - ca/business_salaries_wages_and_benefits
+  - ca/business_property_taxes
+  - ca/business_travel_expenses
+  - ca/business_utilities
+  - ca/business_fuel_costs
+  - ca/business_delivery_freight_and_express
+  - ca/business_motor_vehicle_expenses
+  - ca/business_cca_personal_part
+  - ca/business_other_expenses
+  - ca/business_journalism_labour_tax_credit
+  - ca/business_partner_gst_hst_rebate
+  - ca/business_partner_other_amount_a
+  - ca/business_partner_other_amount_b
+  - ca/business_partner_other_amount_c
+  - ca/business_partner_other_amount_d
+  - ca/business_partner_other_amount_e
+  - ca/business_home_heat
+  - ca/business_home_electricity
+  - ca/business_home_insurance
+  - ca/business_home_maintenance
+  - ca/business_home_mortgage_interest
+  - ca/business_home_property_taxes
+  - ca/business_home_other_expenses
+  - ca/business_home_personal_use_part
+  - ca/business_home_cca
+  - ca/business_home_carried_forward
+  - ca/business_partner_share
+  - ca/business_partner
+  - ca/business_cca_classes
+  # Form T2042 (statement of farming) Parts 3 to 7 and Area A: the caller's amounts, in the
+  # form's order, and the Area A class list; T1 line 25 (line 14100) is T2042 line 9946,
+  # computed.
+  - ca/farm_wheat
+  - ca/farm_oats
+  - ca/farm_barley
+  - ca/farm_mixed_grains
+  - ca/farm_corn
+  - ca/farm_canola
+  - ca/farm_flaxseed
+  - ca/farm_soybeans
+  - ca/farm_grains_and_oilseeds
+  - ca/farm_fruit
+  - ca/farm_potatoes
+  - ca/farm_vegetables
+  - ca/farm_tobacco
+  - ca/farm_greenhouse_and_nursery
+  - ca/farm_forage_crops_or_seeds
+  - ca/farm_other_crops
+  - ca/farm_cattle
+  - ca/farm_swine
+  - ca/farm_poultry
+  - ca/farm_sheep_and_lambs
+  - ca/farm_livestock_and_animal_products_revenue
+  - ca/farm_milk_and_cream
+  - ca/farm_eggs
+  - ca/farm_other_commodities
+  - ca/farm_dairy_subsidies
+  - ca/farm_crop_insurance
+  - ca/farm_other_program_payments
+  - ca/farm_rebates
+  - ca/farm_custom_work
+  - ca/farm_insurance_proceeds
+  - ca/farm_patronage_dividends
+  - ca/farm_other_income
+  - ca/farm_containers_and_twine
+  - ca/farm_fertilizers_and_lime
+  - ca/farm_pesticides
+  - ca/farm_seeds_and_plants
+  - ca/farm_feed_supplements_straw_and_bedding
+  - ca/farm_livestock_purchased
+  - ca/farm_veterinary_fees
+  - ca/farm_machinery_repairs_licences_and_insurance
+  - ca/farm_gasoline_diesel_and_oil
+  - ca/farm_building_repairs_and_maintenance
+  - ca/farm_clearing_levelling_and_draining
+  - ca/farm_crop_insurance_premiums
+  - ca/farm_custom_work_expenses
+  - ca/farm_electricity
+  - ca/farm_heating_and_curing_fuel
+  - ca/farm_insurance_program_overpayment_recapture
+  - ca/farm_insurance
+  - ca/farm_interest_and_bank_charges
+  - ca/farm_office_expenses
+  - ca/farm_professional_fees
+  - ca/farm_property_taxes
+  - ca/farm_rent
+  - ca/farm_salaries_wages_and_benefits
+  - ca/farm_motor_vehicle_expenses
+  - ca/farm_small_tools
+  - ca/farm_mandatory_inventory_adjustment_previous_year
+  - ca/farm_optional_inventory_adjustment_previous_year
+  - ca/farm_other_expenses
+  - ca/farm_optional_inventory_adjustment_current_year
+  - ca/farm_mandatory_inventory_adjustment_current_year
+  - ca/farm_cca_personal_part
+  - ca/farm_partner
+  - ca/farm_partner_share
+  - ca/farm_fuel_charge_credit
+  - ca/farm_partner_gst_hst_rebate
+  - ca/farm_partner_other_amount_a
+  - ca/farm_partner_other_amount_b
+  - ca/farm_partner_other_amount_c
+  - ca/farm_partner_other_amount_d
+  - ca/farm_partner_other_amount_e
+  - ca/farm_home_heat
+  - ca/farm_home_electricity
+  - ca/farm_home_insurance
+  - ca/farm_home_maintenance
+  - ca/farm_home_mortgage_interest
+  - ca/farm_home_property_taxes
+  - ca/farm_home_other_expenses
+  - ca/farm_home_personal_use_part
+  - ca/farm_home_cca
+  - ca/farm_home_carried_forward
+  - ca/farm_cca_classes
   - ca/taxable_support_payments
   - ca/rrsp_income
   - ca/fhsa_income
   - ca/other_fhsa_income
   - ca/other_income
   - ca/taxable_scholarships
-  - ca/business_income
   - ca/professional_income
   - ca/commission_income
-  - ca/farming_income
   - ca/fishing_income
   - ca/workers_compensation_benefits
   - ca/social_assistance_payments
@@ -137,11 +276,9 @@ inputs:
   - ca/unapplied_net_capital_losses_2001_to_2024
   - ca/net_capital_losses_claimed
   - ca/additional_deductions
-  # Form T2209 note (3), net income, "minus any:" lines 25395 and 25400 of the return and the
-  # part of line 25600 that is net employment income from a prescribed international
-  # organization, foreign income exempt under a tax treaty, or adult basic education
-  # tuition assistance; read by the foreign tax credit alone.
-  - ca/capital_gains_deduction
+  # Form T2209 note (3), net income, "minus any:" the part of line 25600 that is net employment
+  # income from a prescribed international organization, foreign income exempt under a tax
+  # treaty, or adult basic education tuition assistance; read by the foreign tax credit alone.
   - ca/exempt_income_deductions
   - ca/zone_a_days_lived
   - ca/zone_a_additional_residency_days
@@ -294,6 +431,29 @@ inputs:
   - ca/resp_aips_received_part_b
   - ca/resp_aips_part_a_applies
   - ca/rl_10_labour_sponsored_fund_amount
+  # Form T691 Part 1 lines 2, 3, 5, 6, 8, 9 and 10: the caller's figures, entered as the form takes
+  # them (the CCA and carrying charges, the net income before CCA of film and rental and leasing
+  # property, the tax shelter losses and amounts deductible, and the carrying charges of a limited
+  # or non-active partner).
+  - ca/amt_film_property_cca_and_carrying_charges
+  - ca/amt_film_property_income_before_cca
+  - ca/amt_rental_property_cca_and_carrying_charges
+  - ca/amt_rental_property_income_before_cca
+  - ca/amt_tax_shelter_losses
+  - ca/amt_tax_shelter_deductible_amounts
+  - ca/amt_limited_partner_carrying_charges
+  # Form T691 Part 9 lines 1 to 4 and Part 1 lines 17, 18, 24 and 25: the caller's figures, entered
+  # as the form takes them (the resource expenditures, the resource income lines, the capital gains
+  # exempt under a tax treaty and of graduated rate estates, and the gifts of publicly listed
+  # securities with the amount from line 68231 of Form T1170).
+  - ca/amt_resource_expenditures
+  - ca/amt_resource_production_income
+  - ca/amt_resource_foreign_property_income
+  - ca/amt_class_43_1_income
+  - ca/amt_treaty_exempt_capital_gains
+  - ca/amt_graduated_rate_estate_capital_gains
+  - ca/amt_publicly_listed_gifts_total
+  - ca/amt_publicly_listed_gifts_t1170_line_68231
   - ca/political_contributions
   - ca/disability_supports_deduction
   - ca/other_employment_expenses
@@ -366,3 +526,41 @@ inputs:
   - ca/qbt_partnership_losses
   - ca/qbt_other_investment_expenses
   - ca/qbt_other_property_income
+  # Form T657 (line 25400)
+  - ca/t657_t2017_line_13
+  - ca/t657_net_non_eligible_taxable_capital_gains
+  - ca/t657_gains_1985_to_1991
+  - ca/t657_gains_1992_and_1993
+  - ca/t657_gains_1994
+  - ca/t657_gains_1995
+  - ca/t657_gains_1996_to_1999
+  - ca/t657_gains_2000
+  - ca/t657_gains_2001
+  - ca/t657_gains_2002_to_2024
+  - ca/t657_capital_losses_claimed_1985
+  - ca/t657_abil_claimed_1985_to_2024
+  - ca/t657_t2048_line_17217_for_2024
+  - ca/t657_cumulative_net_investment_loss
+  - ca/t657_deductions_claimed_1985_to_2024
+  - ca/t657_chart_2_line_1
+  - ca/t657_chart_2_line_2
+  - ca/t657_chart_2_line_6
+  - ca/t657_chart_2_line_10
+  - ca/t657_chart_2_line_14
+  - ca/t657_inclusion_rate_2000
+  - ca/t657_chart_2_line_18
+  - ca/t657_part_1_amount_b
+  - ca/t657_part_1_amount_f
+  - ca/t657_part_1_amount_g
+  - ca/t657_part_1_amount_h
+  - ca/t657_part_1_amount_i
+  - ca/t657_part_1_amount_j
+  - ca/t657_part_1_amount_l
+  - ca/t657_part_2_excluded_f
+  - ca/t657_part_2_excluded_g
+  - ca/t657_part_2_excluded_h
+  - ca/t657_part_2_amount_i
+  - ca/t657_part_2_amount_j
+  - ca/t657_part_2_amount_l
+  - ca/capital_gains_deduction_claimed
+  - ca/t657_chart_1_rows

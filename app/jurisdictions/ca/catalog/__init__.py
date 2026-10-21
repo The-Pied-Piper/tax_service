@@ -33,6 +33,7 @@ from app.jurisdictions.ca.catalog.credits_against_federal_tax import *  # noqa: 
 from app.jurisdictions.ca.catalog.resp_aips import *  # noqa: F403
 from app.jurisdictions.ca.catalog.other_inputs import *  # noqa: F403
 from app.jurisdictions.ca.catalog.net_tax import *  # noqa: F403
+from app.jurisdictions.ca.catalog.alternative_minimum_tax import *  # noqa: F403
 from app.jurisdictions.ca.catalog.canada_workers_benefit import *  # noqa: F403
 from app.jurisdictions.ca.catalog.refundable_credits import *  # noqa: F403
 from app.jurisdictions.ca.catalog.refund import *  # noqa: F403
