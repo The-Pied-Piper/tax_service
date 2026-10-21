@@ -15,6 +15,7 @@ from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
 from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
 from app.jurisdictions.ca.capabilities.disposition_gains import DispositionGains
 from app.jurisdictions.ca.capabilities.disposition_gains_only import DispositionGainsOnly
+from app.jurisdictions.ca.capabilities.disposition_proceeds import DispositionProceeds
 from app.jurisdictions.ca.capabilities.principal_residence_gain import PrincipalResidenceGain
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
@@ -34,6 +35,7 @@ from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
 from app.jurisdictions.ca.catalog import (
     BOND_DISPOSITIONS,
     BOND_GAIN_OR_LOSS,
+    BOND_PROCEEDS,
     BUSINESS_INCOME,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
     CAPITAL_GAIN,
@@ -48,6 +50,7 @@ from app.jurisdictions.ca.catalog import (
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     CRYPTO_ASSET_DISPOSITIONS,
     CRYPTO_ASSET_GAIN_OR_LOSS,
+    CRYPTO_ASSET_PROCEEDS,
     DIVIDEND_TAX_CREDIT,
     DIVIDENDS_AMOUNT_A,
     DIVIDENDS_AMOUNT_A_LESS_B,
@@ -89,6 +92,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_FHSA_INCOME,
     OTHER_FORECLOSURE_DISPOSITIONS,
     OTHER_FORECLOSURE_GAIN_OR_LOSS,
+    OTHER_FORECLOSURE_PROCEEDS,
     OTHER_INCOME,
     OTHER_PENSIONS_AND_SUPERANNUATION,
     PARTNERSHIP_GAINS_AT_FULL_INCLUSION,
@@ -101,12 +105,16 @@ from app.jurisdictions.ca.catalog import (
     QFFP_DISPOSITIONS,
     QFFP_FORECLOSURE_DISPOSITIONS,
     QFFP_FORECLOSURE_GAIN_OR_LOSS,
+    QFFP_FORECLOSURE_PROCEEDS,
     QFFP_GAIN_OR_LOSS,
+    QFFP_PROCEEDS,
     QSBCS_DISPOSITIONS,
     QSBCS_GAIN_OR_LOSS,
+    QSBCS_PROCEEDS,
     RDSP_INCOME,
     REAL_ESTATE_DISPOSITIONS,
     REAL_ESTATE_GAIN_OR_LOSS,
+    REAL_ESTATE_PROCEEDS,
     RENTAL_ADVERTISING,
     RENTAL_ADVERTISING_PERSONAL_PORTION,
     RENTAL_ADVERTISING_SHORT_TERM_PORTION,
@@ -191,6 +199,7 @@ from app.jurisdictions.ca.catalog import (
     RRSP_INCOME,
     SHARE_DISPOSITIONS,
     SHARE_GAIN_OR_LOSS,
+    SHARE_PROCEEDS,
     SHORT_TERM_RENTAL_CCA_UNITS,
     SHORT_TERM_RENTAL_GROSS_RENTS,
     SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS,
@@ -368,6 +377,15 @@ OUTPUTS = frozenset(
         "ca/rental_closing_ucc",
         "ca/rental_non_compliant_cca",
         "ca/short_term_rental_non_compliant_cca_by_class",
+        # Schedule 3 Part 3: the eight "Total proceeds of disposition" lines feed no later line.
+        "ca/qsbcs_proceeds",
+        "ca/qffp_proceeds",
+        "ca/qffp_foreclosure_proceeds",
+        "ca/share_proceeds",
+        "ca/real_estate_proceeds",
+        "ca/bond_proceeds",
+        "ca/crypto_asset_proceeds",
+        "ca/other_foreclosure_proceeds",
     }
 )
 
@@ -425,6 +443,57 @@ STEPS = {
         params={},
         consumes={"dispositions": "ca/other_foreclosure_dispositions"},
         produces={"output": "ca/other_foreclosure_gain_or_loss"},
+    ),
+    # Schedule 3 Part 3: lines 1 to 8 (10699, 10999, 12399, 13199, 13599, 15199, 15200, 15499) are
+    # each "Total proceeds of disposition (add all the amounts under column 2)", one step each; the
+    # totals feed no later line.
+    CapabilitySelection(
+        name="ca/disposition_proceeds",
+        params={},
+        consumes={"dispositions": "ca/qsbcs_dispositions"},
+        produces={"output": "ca/qsbcs_proceeds"},
+    ),
+    CapabilitySelection(
+        name="ca/disposition_proceeds",
+        params={},
+        consumes={"dispositions": "ca/qffp_dispositions"},
+        produces={"output": "ca/qffp_proceeds"},
+    ),
+    CapabilitySelection(
+        name="ca/disposition_proceeds",
+        params={},
+        consumes={"dispositions": "ca/qffp_foreclosure_dispositions"},
+        produces={"output": "ca/qffp_foreclosure_proceeds"},
+    ),
+    CapabilitySelection(
+        name="ca/disposition_proceeds",
+        params={},
+        consumes={"dispositions": "ca/share_dispositions"},
+        produces={"output": "ca/share_proceeds"},
+    ),
+    CapabilitySelection(
+        name="ca/disposition_proceeds",
+        params={},
+        consumes={"dispositions": "ca/real_estate_dispositions"},
+        produces={"output": "ca/real_estate_proceeds"},
+    ),
+    CapabilitySelection(
+        name="ca/disposition_proceeds",
+        params={},
+        consumes={"dispositions": "ca/bond_dispositions"},
+        produces={"output": "ca/bond_proceeds"},
+    ),
+    CapabilitySelection(
+        name="ca/disposition_proceeds",
+        params={},
+        consumes={"dispositions": "ca/crypto_asset_dispositions"},
+        produces={"output": "ca/crypto_asset_proceeds"},
+    ),
+    CapabilitySelection(
+        name="ca/disposition_proceeds",
+        params={},
+        consumes={"dispositions": "ca/other_foreclosure_dispositions"},
+        produces={"output": "ca/other_foreclosure_proceeds"},
     ),
     # Form T2091(IND) Part 1 and Part 3, one form for each property sold: "Divide line 21 by line
     # 22." (line 23, the exempt part, rounded half up to the cent), "Line 18 minus line 23 (if
@@ -1215,6 +1284,46 @@ WIRING = {
         DispositionGains,
         frozenset({OTHER_FORECLOSURE_DISPOSITIONS}),
         frozenset({OTHER_FORECLOSURE_GAIN_OR_LOSS}),
+    ),
+    (
+        DispositionProceeds,
+        frozenset({QSBCS_DISPOSITIONS}),
+        frozenset({QSBCS_PROCEEDS}),
+    ),
+    (
+        DispositionProceeds,
+        frozenset({QFFP_DISPOSITIONS}),
+        frozenset({QFFP_PROCEEDS}),
+    ),
+    (
+        DispositionProceeds,
+        frozenset({QFFP_FORECLOSURE_DISPOSITIONS}),
+        frozenset({QFFP_FORECLOSURE_PROCEEDS}),
+    ),
+    (
+        DispositionProceeds,
+        frozenset({SHARE_DISPOSITIONS}),
+        frozenset({SHARE_PROCEEDS}),
+    ),
+    (
+        DispositionProceeds,
+        frozenset({REAL_ESTATE_DISPOSITIONS}),
+        frozenset({REAL_ESTATE_PROCEEDS}),
+    ),
+    (
+        DispositionProceeds,
+        frozenset({BOND_DISPOSITIONS}),
+        frozenset({BOND_PROCEEDS}),
+    ),
+    (
+        DispositionProceeds,
+        frozenset({CRYPTO_ASSET_DISPOSITIONS}),
+        frozenset({CRYPTO_ASSET_PROCEEDS}),
+    ),
+    (
+        DispositionProceeds,
+        frozenset({OTHER_FORECLOSURE_DISPOSITIONS}),
+        frozenset({OTHER_FORECLOSURE_PROCEEDS}),
     ),
     (
         DispositionGainsOnly,

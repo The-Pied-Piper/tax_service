@@ -1,11 +1,11 @@
 """DispositionRows: the rows of one Schedule 3 Part 3 property type, added into one line.
 
-The shared parent of `DispositionGains` and `DispositionGainsOnly`, not registered itself. Each
-row of the consumed record list is a disposition with the form's column 2 "Proceeds of
-disposition", column 3 "Adjusted cost base" and column 4 "Outlays and expenses"; column 5 "Gain
-or loss (column 2 minus columns 3 and 4)" is worked out here, exactly and signed. A subclass
-says which trace line a row records and what the row adds to the total. The total is 0 when
-there are no rows. It records one trace line for each row, by position from 1, then an
+The shared parent of `DispositionGains`, `DispositionGainsOnly` and `DispositionProceeds`, not
+registered itself. Each row of the consumed record list is a disposition with the form's column 2
+"Proceeds of disposition", column 3 "Adjusted cost base" and column 4 "Outlays and expenses"; column
+5 "Gain or loss (column 2 minus columns 3 and 4)" is worked out here, exactly and signed. A subclass
+says which trace line a row records and what the row adds to the total. The total is 0 when there
+are no rows. It records one trace line for each row, by position from 1, then an
 `ItemsTotalLine`.
 """
 

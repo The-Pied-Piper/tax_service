@@ -3,7 +3,7 @@
 
 Schedule 3, Part 3: "Total proceeds of disposition (add all the amounts under column 2)", column 2
 being "Proceeds of disposition" (lines 10699, 10999, 12399, 13199, 13599, 15199, 15200 and 15499;
-form text confirmed in the ticket, #261).
+form text confirmed 2026-10-19).
 
 It totals the same rows as `DispositionGains`, adding column 2 of each. Slots: no parameter slot,
 one consumed slot `dispositions` and one produced slot `output`. It records one
@@ -28,8 +28,8 @@ from app.jurisdictions.ca.capabilities.disposition_rows import DispositionRows
 from app.jurisdictions.ca.catalog import (
     CAREGIVER_AMOUNT,
     PERSONAL_USE_PROPERTY_DISPOSITIONS,
-    PERSONAL_USE_PROPERTY_GAIN_ROWS,
     SHARE_DISPOSITIONS,
+    SHARE_PROCEEDS,
 )
 from app.jurisdictions.ca.trace import DispositionProceedsLine
 from tests.jurisdictions.ca.capabilities.disposition_rows import (
@@ -44,8 +44,7 @@ from tests.jurisdictions.ca.capabilities.disposition_rows import (
 
 
 def proceeds() -> DispositionProceeds:
-    # The output kind is a stand-in: the catalog kinds of the eight lines come with the manifest.
-    return DispositionProceeds(SHARE_DISPOSITIONS, PERSONAL_USE_PROPERTY_GAIN_ROWS)
+    return DispositionProceeds(SHARE_DISPOSITIONS, SHARE_PROCEEDS)
 
 
 def total(*given: Row) -> Decimal:
@@ -71,14 +70,14 @@ def test_declares_its_slots_and_contract() -> None:
     assert DispositionProceeds.CONSUMES == {"dispositions": RecordList}
     assert DispositionProceeds.PRODUCES == {"output": Decimal}
     assert proceeds().consumes == frozenset({SHARE_DISPOSITIONS})
-    assert proceeds().produces == frozenset({PERSONAL_USE_PROPERTY_GAIN_ROWS})
+    assert proceeds().produces == frozenset({SHARE_PROCEEDS})
     assert "consumes" not in vars(DispositionProceeds)
     assert issubclass(DispositionProceeds, DispositionRows)
 
 
 def test_rejects_a_money_kind_for_its_dispositions() -> None:
     with pytest.raises(InvalidCapabilityError, match="DispositionProceeds.*'dispositions'"):
-        DispositionProceeds(CAREGIVER_AMOUNT, PERSONAL_USE_PROPERTY_GAIN_ROWS)  # type: ignore[arg-type]
+        DispositionProceeds(CAREGIVER_AMOUNT, SHARE_PROCEEDS)  # type: ignore[arg-type]
 
 
 # --- column 2 and the total --------------------------------------------------------------------
@@ -123,13 +122,13 @@ def test_ignores_artifacts_it_does_not_consume() -> None:
     other = Artifact(CAREGIVER_AMOUNT, D("9"))
 
     assert proceeds().compute((other, shares(GAIN))).outputs == (
-        Artifact(PERSONAL_USE_PROPERTY_GAIN_ROWS, D("1500.00")),
+        Artifact(SHARE_PROCEEDS, D("1500.00")),
     )
 
 
 def test_reads_only_the_list_it_is_wired_to() -> None:
     assert proceeds().compute((personal_use(LOSS), shares(GAIN))).outputs == (
-        Artifact(PERSONAL_USE_PROPERTY_GAIN_ROWS, D("1500.00")),
+        Artifact(SHARE_PROCEEDS, D("1500.00")),
     )
     assert SHARE_DISPOSITIONS is not PERSONAL_USE_PROPERTY_DISPOSITIONS
 
@@ -150,9 +149,7 @@ def test_compute_is_repeatable() -> None:
 
 
 def proceeds_line(position: int, row: Row) -> DispositionProceedsLine:
-    return DispositionProceedsLine(
-        output=PERSONAL_USE_PROPERTY_GAIN_ROWS, position=position, proceeds=D(row[0])
-    )
+    return DispositionProceedsLine(output=SHARE_PROCEEDS, position=position, proceeds=D(row[0]))
 
 
 def test_traces_one_line_per_row_then_the_total() -> None:
@@ -161,9 +158,7 @@ def test_traces_one_line_per_row_then_the_total() -> None:
     assert trace == (
         proceeds_line(1, GAIN),
         proceeds_line(2, LOSS),
-        ItemsTotalLine(
-            PERSONAL_USE_PROPERTY_GAIN_ROWS, ((1, D("1500.00")), (2, D("800.00"))), D("2300.00")
-        ),
+        ItemsTotalLine(SHARE_PROCEEDS, ((1, D("1500.00")), (2, D("800.00"))), D("2300.00")),
     )
 
 
@@ -175,9 +170,7 @@ def test_traces_the_callers_order_with_positions_from_one() -> None:
 
 
 def test_traces_no_rows_as_only_an_empty_total() -> None:
-    assert proceeds().compute((shares(),)).trace == (
-        ItemsTotalLine(PERSONAL_USE_PROPERTY_GAIN_ROWS, (), D("0")),
-    )
+    assert proceeds().compute((shares(),)).trace == (ItemsTotalLine(SHARE_PROCEEDS, (), D("0")),)
 
 
 def test_the_line_amount_is_the_proceeds() -> None:
