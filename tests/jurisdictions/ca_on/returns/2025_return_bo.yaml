@@ -3,13 +3,14 @@
 # RC381 replaces Schedule 8. This return carries Part 2 (the months and the QPP lines G to J),
 # Part 3 lines 1 to 93 (the CPP side on lines 3, 6 to 11, 14 to 16, 18 and 20 to 26, the QPP side
 # on lines 27 to 31, 34 to 36, 38 and 40 to 46, the totals on lines 49 to 69, and Parts 3a and 3b
-# on lines 70 to 93, with the three results for employment income only) and Part 4 lines 1 to 91
+# on lines 70 to 93, with the three results for employment income only) and Part 4 lines 1 to 110
 # (the CPP side before the QPP gross-up, the QPP side, line 42 and the second additional
 # contributions, the earnings subject to contributions, the self-employed contributions, the
-# contributions payable and the overpayment, with a chosen CPT20 election of $10,000 and $2,500);
-# the results (line 42100 and line 44800 of Part 4 too) are not yet carried to the T1 lines 30800,
-# 22215 and 44800, which below are still Schedule 8's, from the whole employment income, as are
-# 22200, 31000 and 42100. The other lines are blank.
+# contributions payable and the overpayment, and the base and enhanced contributions through
+# employment income, with a chosen CPT20 election of $10,000 and $2,500); the results (line 42100
+# and line 44800 of Part 4 too, and Part 4's line 98 for line 30800 and line 110 for line 22215)
+# are not yet carried to the T1 lines 30800, 22215 and 44800, which below are still Schedule 8's,
+# from the whole employment income, as are 22200, 31000 and 42100. The other lines are blank.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -110,9 +111,20 @@ description: >-
   1,300.00 x 2% = 26.00 (not above 1,356.00); line 86 = 9,900.00 x 8% = 792.00 (the maximum);
   line 87 = 26.00 + 792.00 = 818.00 and line 88 = 128.70 + 818.00 = 946.70. Line 89 = line 69 of
   Part 3 (172.25, positive) x 2 = 344.50; line 90 = 946.70 less 344.50 = 602.20, positive: the
-  amount for line 42100, 602.20; line 91 is not completed (it is "0"). The remaining lines
-  of the T1 are Schedule 8's, as the RC381 results are not yet carried to them: on employment income of
-  $70,000 the base CPP contributions (line 30800) are 4.95% x (70,000 less 3,500) = 3,291.75,
+  amount for line 42100, 602.20; line 91 is not completed (it is "0"). Part 4 (lines 92 to 110):
+  line 53 of Part 3 (144.11) is positive, so the amount from line 52 of Part 3 (3,462.75) is
+  entered at line 92 and line 98 and the form continues at line 99: lines 93 to 95 and 97 are "0"
+  (not completed), line 96 = 3,462.75 + 0 and line 98 = 3,462.75 + 0 = 3,462.75, the amount for
+  line 30800. Line 60 of Part 3 (28.14) is positive, so the amount from line 59 of Part 3 (665.00)
+  is entered at line 99 and line 105 and the form continues at line 106: lines 100 to 102 and 104
+  are "0" (not completed; the result printed inside line 104, line 68 of Part 3 less line 97, is
+  0.00), line 103 = 665.00 + 0 and line 105 = 665.00 + 0 = 665.00. Line 68 of Part 3 is 0, so the
+  amount from line 67 of Part 3 (0.00) is entered at line 106 and line 109 and the form continues
+  at line 110: lines 107 and 108 are "0" and line 110 = 665.00 + 0.00 = 665.00, the amount for
+  line 22215. These are the ticket's 3,462.75 and 665.00 again (Part 3a's lines 70 and 73), and
+  are not carried to the T1 lines yet. The remaining lines of the T1 are Schedule 8's, as the
+  RC381 results are not yet carried to them: on employment income of $70,000 the base CPP
+  contributions (line 30800) are 4.95% x (70,000 less 3,500) = 3,291.75,
   and the enhanced contributions (line 22215) are 1% x 66,500 = 665.00; the EI premiums are
   the maximum 1,077.48. Total income (line 15000) is 70,000.00; net income and taxable income
   are 70,000.00 less the enhanced contributions of 665.00 = 69,335.00. The income tax deducted
@@ -121,8 +133,9 @@ description: >-
   giving a total payable of 11,497.09 and a refund of 502.91 (to be confirmed against CRA's
   calculator). Not triggered: Part 3b's branches (line 69 is positive), the lines of Part 4's
   blocks for a negative or "0" line 61 and for a positive or negative line 68 of Part 3, lines
-  63 to 69 of Part 4 (line 3 of Part 3 is not less than line 58), a negative line 90 (line 91) and
-  the continuation at line 92 (the end-to-end tests have them), the effect of the CPT20 election on
+  63 to 69 of Part 4 (line 3 of Part 3 is not less than line 58), a negative line 90 (line 91),
+  the lines of Part 4 lines 92 to 110 for a negative or "0" line 53, 60 or 68 of Part 3 (the
+  end-to-end tests have them), the effect of the CPT20 election on
   Schedule 8 Part 4 (the count of Part 4 completed stays 0, so lines 42100, 31000 and 22200 are
   as without the election), the second additional contributions of lines 25 and 45 (boxes 16A
   and 17A, none), and every other credit and deduction not named here.
@@ -295,6 +308,33 @@ sources:
     show in brackets and continue at line 91." (line 90); "CPP overpayment: Enter the result of
     the following calculation (in dollars and cents) on line 44800 of your return: amount from
     line 90 entered as a positive amount × 50% =" (line 91).
+  - >-
+    CRA, Form RC381 (2025), Part 4 (continued): "If line 53 of Part 3 is positive or "0", enter
+    the amount from line 52 of Part 3 at line 92 and line 98, and continue at line 99. If not,
+    enter the amount from line 49 of Part 3 and continue at line 93." (line 92); "If line 53 of
+    Part 3 is negative: Enter the amount from line 53 of Part 3 as a positive amount." (line 93);
+    "If line 53 of Part 3 is negative and line 60 of Part 3 is positive, enter whichever is less:
+    amount from line 60 of Part 3 or line 93. If not, enter "0"." (line 94); "Line 93 minus line
+    94" (line 95); "Line 92 plus line 94" (line 96); "If line 68 of Part 3 and line 95 are both
+    positive, enter whichever is less. If not, enter "0"." (line 97); "Base CPP contributions
+    through employment income: Line 96 plus line 97 Enter this amount (in dollars and cents) on
+    line 30800 of your return." (line 98); "If line 60 of Part 3 is positive or "0", enter the
+    amount from line 59 of Part 3 at line 99 and line 105, and continue at line 106. If not,
+    enter the amount from line 56 of Part 3 and continue at line 100." (line 99); "If line 60 of
+    Part 3 is negative: Enter the amount from line 60 of Part 3 as a positive amount." (line
+    100); "If line 53 of Part 3 is positive, enter whichever is less: amount from line 53 of Part
+    3 or line 100. If not, enter "0"." (line 101); "Line 100 minus line 101" (line 102); "Line 99
+    plus line 101" (line 103); "If line 68 of Part 3 and line 102 are both positive, enter
+    whichever is less: amount from line 102 or the result of line 68 of Part 3 minus line 97. If
+    not, enter "0"." (line 104); "Line 103 plus line 104" (line 105); "If line 68 of Part 3 is
+    positive or "0", enter the amount from line 67 of Part 3 at line 106 and line 109, and
+    continue at line 110. If not, enter the amount from line 64 of Part 3 and continue at line
+    107." (line 106); "If line 68 of Part 3 is negative: Enter the amount from line 68 of Part 3
+    as a positive amount." (line 107); "If line 61 of Part 3 is positive and line 68 of Part 3 is
+    negative, enter whichever is less: amount from line 61 of Part 3 or line 107. If not, enter
+    "0"." (line 108); "Line 106 plus line 108" (line 109); "Deduction for CPP enhanced
+    contributions on employment income: Line 105 plus line 109 Enter this amount (in dollars and
+    cents) on line 22215 of your return." (line 110).
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/rc381/rc381-25e.pdf
 inputs:
   ca/employment_income: "70000"
@@ -482,3 +522,23 @@ expected:
   ca/rc381_self_employment_cpp_contributions: "602.20"
   ca/rc381_part_4_line_91_from_line_90: "0"
   ca/rc381_part_4_line_91: "0.00"
+  ca/rc381_part_4_line_92: "3462.75"
+  ca/rc381_part_4_line_93: "0"
+  ca/rc381_part_4_line_94: "0"
+  ca/rc381_part_4_line_95: "0"
+  ca/rc381_part_4_line_96: "3462.75"
+  ca/rc381_part_4_line_97: "0"
+  ca/rc381_part_4_line_98: "3462.75"
+  ca/rc381_part_4_line_99: "665.00"
+  ca/rc381_part_4_line_100: "0"
+  ca/rc381_part_4_line_101: "0"
+  ca/rc381_part_4_line_102: "0"
+  ca/rc381_part_4_line_103: "665.00"
+  ca/rc381_part_4_line_104_difference: "0.00"
+  ca/rc381_part_4_line_104: "0"
+  ca/rc381_part_4_line_105: "665.00"
+  ca/rc381_part_4_line_106: "0.00"
+  ca/rc381_part_4_line_107: "0"
+  ca/rc381_part_4_line_108: "0"
+  ca/rc381_part_4_line_109: "0.00"
+  ca/rc381_part_4_line_110: "665.00"

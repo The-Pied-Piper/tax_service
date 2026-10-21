@@ -111,14 +111,17 @@ outputs:
   - ca/amt_other_years_losses_total
   - ca/amt_applicable_rate_amount
   # Form RC381 Part 4 line 90 "Line 88 minus 89. If positive, enter the amount (in dollars and
-  # cents) on line 42100 of your return" and line 91 "amount from line 90 entered as a positive
-  # amount × 50%", which nothing else on the return reads yet (lines 4, 42 and 56 are read by lines
-  # 59 to 83 now, and Part 3 lines 3, 11, 31 and 69 and Part 2 lines C, D and F by them), and the
-  # three results of Part 3a and Part 3b for employment income only (lines 30800, 22215 and 44800
-  # of the return), which nothing else on the return reads yet (line 69 is read by Part 3a, Part 3b
-  # and Part 4 now).
+  # cents) on line 42100 of your return", line 91 "amount from line 90 entered as a positive
+  # amount × 50%", line 98 "Line 96 plus line 97 Enter this amount (in dollars and cents) on line
+  # 30800 of your return." and line 110 "Line 105 plus line 109 Enter this amount (in dollars and
+  # cents) on line 22215 of your return.", and the three results of Part 3a and Part 3b for
+  # employment income only (lines 30800, 22215 and 44800 of the return), which nothing else on
+  # the return reads yet (line 69 is read by Part 3a, Part 3b and Part 4 now, and Part 4 lines 4, 42
+  # and 56 by lines 59 to 83).
   - ca/rc381_self_employment_cpp_contributions
   - ca/rc381_part_4_line_91
+  - ca/rc381_part_4_line_98
+  - ca/rc381_part_4_line_110
   - ca/rc381_employment_cpp_base_contributions
   - ca/rc381_employment_cpp_enhanced_contributions
   - ca/rc381_cpp_overpayment

@@ -12,14 +12,16 @@ the helpers printed inside lines 31, 35A, 46 and 51), then Part 4 lines 57 to 91
 subject to contributions: lines 59, 61, 62, 65, 68, 69, 70, 74, 76, 77, 80, 82 and 83 with the
 helper printed inside line 83; the self-employed contributions: lines 84 to 88; the contributions
 payable and the overpayment: lines 89 to 91 with the helpers printed inside lines 89 and 91 and the
-amount for line 42100). The eight kinds a caller enters and the five results carry a docstring that
-quotes the form's own words. Lines 53, 60, 61, 68 and 69 are signed:
-"if negative, show in brackets". So is the helper under line 87, "the result of line 68 minus line
-80". In Part 4 lines 8, 11, 12, 17 and 20 are signed for the same reason, and so are line 4 (line 1
-is not floored), lines 21, 23 to 25A and 26 and 27, then lines 31 and 32 (line 12 may be more than
-line 61), 35A, 38 to 42, 46, 47, 51 to 53 and 56, then lines 62 and 70 to 83 (no floor is printed,
-and line 4 is not floored: lines 74 and 76, 80 and 82, the lesser of lines 77 and 82 before the
-gate) and line 90 "(if negative, show in brackets)".
+amount for line 42100), then Part 4 lines 92 to 110 (the base and enhanced contributions through
+employment income: lines 92 to 110 with the helper printed inside line 104). The eight kinds a
+caller enters and the seven results carry a docstring that quotes the form's own words. Lines 53,
+60, 61, 68 and 69 are signed: "if negative, show in brackets". So is the helper under line 87, "the
+result of line 68 minus line 80". In Part 4 lines 8, 11, 12, 17 and 20 are signed for the same
+reason, and so are line 4 (line 1 is not floored), lines 21, 23 to 25A and 26 and 27, then lines 31
+and 32 (line 12 may be more than line 61), 35A, 38 to 42, 46, 47, 51 to 53 and 56, then lines 62 and
+70 to 83 (no floor is printed, and line 4 is not floored: lines 74 and 76, 80 and 82, the lesser of
+lines 77 and 82 before the gate) and line 90 "(if negative, show in brackets)", then the helper
+printed inside line 104 ("the result of line 68 of Part 3 minus line 97").
 """
 
 from __future__ import annotations
@@ -186,6 +188,26 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_90,
     RC381_PART_4_LINE_91,
     RC381_PART_4_LINE_91_FROM_LINE_90,
+    RC381_PART_4_LINE_92,
+    RC381_PART_4_LINE_93,
+    RC381_PART_4_LINE_94,
+    RC381_PART_4_LINE_95,
+    RC381_PART_4_LINE_96,
+    RC381_PART_4_LINE_97,
+    RC381_PART_4_LINE_98,
+    RC381_PART_4_LINE_99,
+    RC381_PART_4_LINE_100,
+    RC381_PART_4_LINE_101,
+    RC381_PART_4_LINE_102,
+    RC381_PART_4_LINE_103,
+    RC381_PART_4_LINE_104,
+    RC381_PART_4_LINE_104_DIFFERENCE,
+    RC381_PART_4_LINE_105,
+    RC381_PART_4_LINE_106,
+    RC381_PART_4_LINE_107,
+    RC381_PART_4_LINE_108,
+    RC381_PART_4_LINE_109,
+    RC381_PART_4_LINE_110,
     RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS,
     T4_CPP_CONTRIBUTIONS_BOX_16,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
@@ -282,7 +304,11 @@ PART_3_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
 # more than line 33; line 35A's first sentence is line 17 or "0". Lines 59, 61, 65, 68, 69 and 77
 # print "(if negative, enter "0")", line 89's amount is line 69 "(if positive)" and line 91's is
 # line 90 "entered as a positive amount"; lines 84 to 86 are tiers (never below zero, whatever the
-# earnings) and lines 87, 88 and 89 add or double non-negative lines.
+# earnings) and lines 87, 88 and 89 add or double non-negative lines. Lines 92, 99 and 106 are a
+# non-negative total of Part 3 either way, lines 93, 100 and 107 are positive parts, lines 94, 97,
+# 101, 104 and 108 are the lesser of two lines that are both above zero (else "0"), lines 95 and
+# 102 are a line less the lesser of it and another (never below zero), and lines 96, 98, 103, 105,
+# 109 and 110 add non-negative lines.
 PART_4_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
     RC381_PART_4_LINE_13_DIFFERENCE,
     RC381_PART_4_LINE_13,
@@ -311,17 +337,36 @@ PART_4_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
     RC381_PART_4_LINE_89_FROM_LINE_69,
     RC381_PART_4_LINE_89,
     RC381_PART_4_LINE_91_FROM_LINE_90,
+    RC381_PART_4_LINE_92,
+    RC381_PART_4_LINE_93,
+    RC381_PART_4_LINE_94,
+    RC381_PART_4_LINE_95,
+    RC381_PART_4_LINE_96,
+    RC381_PART_4_LINE_97,
+    RC381_PART_4_LINE_99,
+    RC381_PART_4_LINE_100,
+    RC381_PART_4_LINE_101,
+    RC381_PART_4_LINE_102,
+    RC381_PART_4_LINE_103,
+    RC381_PART_4_LINE_104,
+    RC381_PART_4_LINE_105,
+    RC381_PART_4_LINE_106,
+    RC381_PART_4_LINE_107,
+    RC381_PART_4_LINE_108,
+    RC381_PART_4_LINE_109,
 )
 
 # The three results of Part 3a and Part 3b for "earnings subject to contributions ... from
 # employment income only": lines 30800, 22215 and 44800 of the return. Part 4's line 90 when it is
-# positive: line 42100, and line 91: line 44800.
+# positive: line 42100, line 91: line 44800, line 98: line 30800 and line 110: line 22215.
 RESULT_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
     RC381_EMPLOYMENT_CPP_BASE_CONTRIBUTIONS,
     RC381_EMPLOYMENT_CPP_ENHANCED_CONTRIBUTIONS,
     RC381_CPP_OVERPAYMENT,
     RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS,
     RC381_PART_4_LINE_91,
+    RC381_PART_4_LINE_98,
+    RC381_PART_4_LINE_110,
 )
 
 # Lines whose difference or sum can come out below zero: "if negative, show in brackets".
@@ -377,6 +422,7 @@ SIGNED_AMOUNTS: tuple[ArtifactKind[Decimal], ...] = (
     RC381_PART_4_LINE_83_LESSER,
     RC381_PART_4_LINE_83,
     RC381_PART_4_LINE_90,
+    RC381_PART_4_LINE_104_DIFFERENCE,
 )
 
 
@@ -611,6 +657,36 @@ def test_the_rc381_part_4_lines_57_to_91_kinds_are_the_registered_ones(
     assert registry.get("ca/rc381_part_4_line_91") is RC381_PART_4_LINE_91
 
 
+def test_the_rc381_part_4_lines_92_to_110_kinds_are_the_registered_ones(
+    registry: ArtifactRegistry,
+) -> None:
+    # Lines 92 to 98, the base contributions through employment income (the amount for line
+    # 30800 of the return is line 98).
+    assert registry.get("ca/rc381_part_4_line_92") is RC381_PART_4_LINE_92
+    assert registry.get("ca/rc381_part_4_line_93") is RC381_PART_4_LINE_93
+    assert registry.get("ca/rc381_part_4_line_94") is RC381_PART_4_LINE_94
+    assert registry.get("ca/rc381_part_4_line_95") is RC381_PART_4_LINE_95
+    assert registry.get("ca/rc381_part_4_line_96") is RC381_PART_4_LINE_96
+    assert registry.get("ca/rc381_part_4_line_97") is RC381_PART_4_LINE_97
+    assert registry.get("ca/rc381_part_4_line_98") is RC381_PART_4_LINE_98
+    # Lines 99 to 110, the deduction for the enhanced contributions on employment income (the
+    # amount for line 22215 of the return is line 110). Line 104 prints "the result of line 68
+    # of Part 3 minus line 97": the difference is a helper.
+    assert registry.get("ca/rc381_part_4_line_99") is RC381_PART_4_LINE_99
+    assert registry.get("ca/rc381_part_4_line_100") is RC381_PART_4_LINE_100
+    assert registry.get("ca/rc381_part_4_line_101") is RC381_PART_4_LINE_101
+    assert registry.get("ca/rc381_part_4_line_102") is RC381_PART_4_LINE_102
+    assert registry.get("ca/rc381_part_4_line_103") is RC381_PART_4_LINE_103
+    assert registry.get("ca/rc381_part_4_line_104_difference") is RC381_PART_4_LINE_104_DIFFERENCE
+    assert registry.get("ca/rc381_part_4_line_104") is RC381_PART_4_LINE_104
+    assert registry.get("ca/rc381_part_4_line_105") is RC381_PART_4_LINE_105
+    assert registry.get("ca/rc381_part_4_line_106") is RC381_PART_4_LINE_106
+    assert registry.get("ca/rc381_part_4_line_107") is RC381_PART_4_LINE_107
+    assert registry.get("ca/rc381_part_4_line_108") is RC381_PART_4_LINE_108
+    assert registry.get("ca/rc381_part_4_line_109") is RC381_PART_4_LINE_109
+    assert registry.get("ca/rc381_part_4_line_110") is RC381_PART_4_LINE_110
+
+
 def test_the_rc381_amounts_are_money() -> None:
     for kind in (
         *INPUT_AMOUNTS,
@@ -681,6 +757,8 @@ def test_the_rc381_lines_that_may_be_negative_are_signed() -> None:
     # printed), line 74 (line 4), line 76 (line 56 ÷ 4%), lines 80 and 82 ("Line 78 minus line 79"
     # and "Line 80 minus line 81", no floor), line 83 and the lesser printed inside it (lines 77
     # and 82) and line 90 "(if negative, show in brackets)".
+    # Part 4 line 104's helper "the result of line 68 of Part 3 minus line 97": line 68 may be
+    # negative while line 97 is "0", so the difference can be below zero.
     for kind in SIGNED_AMOUNTS:
         assert kind.non_negative is False, kind.identifier
 
@@ -728,6 +806,22 @@ RESULT_QUOTES: tuple[tuple[str, tuple[str, ...]], ...] = (
             "Enter the result of the following calculation (in dollars and cents) on line 44800 of "
             "your return: amount from line 90 entered as a positive amount",
             "50%",
+            "Part 4",
+        ),
+    ),
+    (
+        "rc381_part_4_line_98",
+        (
+            "Enter this amount (in dollars and cents) on line 30800 of your return.",
+            "Line 96 plus line 97",
+            "Part 4",
+        ),
+    ),
+    (
+        "rc381_part_4_line_110",
+        (
+            "Enter this amount (in dollars and cents) on line 22215 of your return.",
+            "Line 105 plus line 109",
             "Part 4",
         ),
     ),

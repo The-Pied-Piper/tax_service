@@ -1,5 +1,5 @@
 """CA-ON 2025 end to end: return bo (Form RC381 Part 2, Part 3 lines 1 to 93 and Part 4 lines 1
-to 91)."""
+to 110)."""
 
 from __future__ import annotations
 
@@ -191,6 +191,26 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_90,
     RC381_PART_4_LINE_91,
     RC381_PART_4_LINE_91_FROM_LINE_90,
+    RC381_PART_4_LINE_92,
+    RC381_PART_4_LINE_93,
+    RC381_PART_4_LINE_94,
+    RC381_PART_4_LINE_95,
+    RC381_PART_4_LINE_96,
+    RC381_PART_4_LINE_97,
+    RC381_PART_4_LINE_98,
+    RC381_PART_4_LINE_99,
+    RC381_PART_4_LINE_100,
+    RC381_PART_4_LINE_101,
+    RC381_PART_4_LINE_102,
+    RC381_PART_4_LINE_103,
+    RC381_PART_4_LINE_104,
+    RC381_PART_4_LINE_104_DIFFERENCE,
+    RC381_PART_4_LINE_105,
+    RC381_PART_4_LINE_106,
+    RC381_PART_4_LINE_107,
+    RC381_PART_4_LINE_108,
+    RC381_PART_4_LINE_109,
+    RC381_PART_4_LINE_110,
     RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS,
     TOTAL_PAYABLE,
 )
@@ -2433,6 +2453,38 @@ def test_return_bo_part_4_steps_are_the_form_capabilities() -> None:
         worksheet.producer_of(RC381_PART_4_LINE_91_FROM_LINE_90), PositivePartOfNegation
     )
     assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_91), ApplyRate)
+    # Form RC381 Part 4 lines 92 to 110: the choices by the sign of line 53, 60 and 68 of Part 3
+    # (lines 92, 99 and 106), the positive amounts of lines 93, 100 and 107, the "whichever is
+    # less" of lines 94, 97, 101, 104 and 108 when the lines are positive, the differences of
+    # lines 95 and 102 and the one printed inside line 104, and the sums of lines 96, 98, 103, 105,
+    # 109 and 110.
+    for kind in (RC381_PART_4_LINE_92, RC381_PART_4_LINE_99, RC381_PART_4_LINE_106):
+        assert isinstance(worksheet.producer_of(kind), ChooseBySign), kind.identifier
+    for kind in (RC381_PART_4_LINE_93, RC381_PART_4_LINE_100, RC381_PART_4_LINE_107):
+        assert isinstance(worksheet.producer_of(kind), PositivePartOfNegation), kind.identifier
+    for kind in (
+        RC381_PART_4_LINE_94,
+        RC381_PART_4_LINE_97,
+        RC381_PART_4_LINE_101,
+        RC381_PART_4_LINE_104,
+        RC381_PART_4_LINE_108,
+    ):
+        assert isinstance(worksheet.producer_of(kind), LesserOfWhenPositive), kind.identifier
+    for kind in (
+        RC381_PART_4_LINE_95,
+        RC381_PART_4_LINE_102,
+        RC381_PART_4_LINE_104_DIFFERENCE,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Subtract), kind.identifier
+    for kind in (
+        RC381_PART_4_LINE_96,
+        RC381_PART_4_LINE_98,
+        RC381_PART_4_LINE_103,
+        RC381_PART_4_LINE_105,
+        RC381_PART_4_LINE_109,
+        RC381_PART_4_LINE_110,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
 
 
 def test_return_bo_the_cpt20_election_does_not_reach_the_t1_lines_yet() -> None:
@@ -4827,6 +4879,1238 @@ def test_return_bo_part_4_lines_59_to_91(
     assert part_4_earnings(worksheet) == {line: D(value) for line, value in expected.items()}
 
 
+# Part 4, lines 92 to 110 (the base contributions through employment income, the amount for line
+# 30800 of the return, and the deduction for the enhanced contributions on employment income, the
+# amount for line 22215). Lines 92, 99 and 106 choose by the sign of lines 53, 60 and 68 of Part 3
+# ("If line 53 of Part 3 is positive or "0", enter the amount from line 52 of Part 3 at line 92
+# and line 98, and continue at line 99. If not, enter the amount from line 49 of Part 3 and
+# continue at line 93."), and the lines in between are completed only for the other sign. They are
+# computed whatever the signs are (as Part 4's earlier blocks are), each giving the "0" the form
+# enters where it is not completed, which the tests below pin. "104_difference" is the "result of
+# line 68 of Part 3 minus line 97" printed inside line 104. Lines 92 to 110 repeat Part 3b's lines
+# 75 to 93 on the same Part 3 totals ("PART_3B" maps them).
+PART_4_EMPLOYMENT_KINDS: dict[str, ArtifactKind[Decimal]] = {
+    "92": RC381_PART_4_LINE_92,
+    "93": RC381_PART_4_LINE_93,
+    "94": RC381_PART_4_LINE_94,
+    "95": RC381_PART_4_LINE_95,
+    "96": RC381_PART_4_LINE_96,
+    "97": RC381_PART_4_LINE_97,
+    "98": RC381_PART_4_LINE_98,
+    "99": RC381_PART_4_LINE_99,
+    "100": RC381_PART_4_LINE_100,
+    "101": RC381_PART_4_LINE_101,
+    "102": RC381_PART_4_LINE_102,
+    "103": RC381_PART_4_LINE_103,
+    "104_difference": RC381_PART_4_LINE_104_DIFFERENCE,
+    "104": RC381_PART_4_LINE_104,
+    "105": RC381_PART_4_LINE_105,
+    "106": RC381_PART_4_LINE_106,
+    "107": RC381_PART_4_LINE_107,
+    "108": RC381_PART_4_LINE_108,
+    "109": RC381_PART_4_LINE_109,
+    "110": RC381_PART_4_LINE_110,
+}
+
+# Part 4's line, Part 3b's line.
+PART_3B_OF_PART_4: dict[str, str] = {
+    "92": "75",
+    "93": "76",
+    "94": "77",
+    "95": "78",
+    "96": "79",
+    "97": "80",
+    "98": "81",
+    "99": "82",
+    "100": "83",
+    "101": "84",
+    "102": "85",
+    "103": "86",
+    "104_difference": "87h",
+    "104": "87",
+    "105": "88",
+    "106": "89",
+    "107": "90",
+    "108": "91",
+    "109": "92",
+    "110": "93",
+}
+
+
+def part_4_employment(worksheet: Worksheet) -> dict[str, Decimal]:
+    """Part 4's lines 92 to 110 of `worksheet`, by line number (see `PART_4_EMPLOYMENT_KINDS`)."""
+    return {line: worksheet.get(kind).value for line, kind in PART_4_EMPLOYMENT_KINDS.items()}
+
+
+def test_return_bo_part_4_lines_92_to_110_match_the_tickets_example() -> None:
+    # Return BO: line 53 of Part 3 = 144.11 and line 60 = 28.14 are positive and line 68 = 0, so
+    # the form enters line 52 (3,462.75) at lines 92 and 98 and line 59 (665.00) at lines 99 and
+    # 105, and line 67 (0) at lines 106 and 109. Lines 93 to 95, 97, 100 to 102, 104, 107 and 108
+    # are not completed: "0". Line 98 = 3,462.75 + 0 and line 110 = 665.00 + 0.00: the ticket's
+    # amounts for line 30800 and line 22215.
+    worksheet = return_bo()
+
+    assert worksheet.get(RC381_PART_3_LINE_53).value == D("144.11")
+    assert worksheet.get(RC381_PART_3_LINE_60).value == D("28.14")
+    assert worksheet.get(RC381_PART_3_LINE_68).value == D("0")
+    assert part_4_employment(worksheet) == {
+        "92": D("3462.75"),
+        "93": D("0"),
+        "94": D("0"),
+        "95": D("0"),
+        "96": D("3462.75"),
+        "97": D("0"),
+        "98": D("3462.75"),
+        "99": D("665.00"),
+        "100": D("0"),
+        "101": D("0"),
+        "102": D("0"),
+        "103": D("665.00"),
+        "104_difference": D("0.00"),
+        "104": D("0"),
+        "105": D("665.00"),
+        "106": D("0.00"),
+        "107": D("0"),
+        "108": D("0"),
+        "109": D("0.00"),
+        "110": D("665.00"),
+    }
+    assert worksheet.get(RC381_PART_4_LINE_98).value == worksheet.get(RC381_PART_3_LINE_52).value
+    assert worksheet.get(RC381_PART_4_LINE_110).value == worksheet.get(RC381_PART_3_LINE_59).value
+
+
+def test_return_bo_part_4_lines_92_to_110_with_lines_53_60_and_68_all_zero() -> None:
+    # Box 16 of 1,695.20 and box 17 of 2,432.55: lines 53, 60, 61 and 68 of Part 3 are 0, "positive
+    # or 0" each: line 92 = line 52 = 3,462.75, line 99 = line 59 = 665.00 and line 106 = line 67 =
+    # 0. Line 98 = 3,462.75 and line 110 = 665.00.
+    worksheet = return_bo(line_19="1695.20", line_39="2432.55")
+
+    assert worksheet.get(RC381_PART_3_LINE_53).value == D("0")
+    assert worksheet.get(RC381_PART_3_LINE_60).value == D("0")
+    assert worksheet.get(RC381_PART_3_LINE_68).value == D("0")
+    assert part_4_employment(worksheet) == {
+        "92": D("3462.75"),
+        "93": D("0"),
+        "94": D("0"),
+        "95": D("0"),
+        "96": D("3462.75"),
+        "97": D("0"),
+        "98": D("3462.75"),
+        "99": D("665.00"),
+        "100": D("0"),
+        "101": D("0"),
+        "102": D("0"),
+        "103": D("665.00"),
+        "104_difference": D("0.00"),
+        "104": D("0"),
+        "105": D("665.00"),
+        "106": D("0.00"),
+        "107": D("0"),
+        "108": D("0"),
+        "109": D("0.00"),
+        "110": D("665.00"),
+    }
+
+
+def test_return_bo_part_4_line_92_takes_line_52_at_a_line_53_of_zero_and_line_49_below_it() -> None:
+    # Line 53 of Part 3 of exactly 0 is "positive or "0"": line 92 = line 52 (3,462.75), line 93 =
+    # 0. A line 53 of -0.01 is negative: line 92 = line 49 (3,462.74), line 93 = 0.01, line 94 = 0
+    # (line 60 is 0, not positive), line 95 = 0.01 and, with line 68 at 0, line 97 = 0, so line 98
+    # = 3,462.74.
+    zero = return_bo(line_19="1695", line_39="2432.73")
+    negative = return_bo(line_19="1695.13", line_39="2432.61")
+
+    assert zero.get(RC381_PART_3_LINE_53).value == D("0")
+    assert zero.get(RC381_PART_4_LINE_92).value == D("3462.75")
+    assert zero.get(RC381_PART_4_LINE_93).value == D("0")
+    assert zero.get(RC381_PART_4_LINE_98).value == D("3462.75")
+    assert negative.get(RC381_PART_3_LINE_53).value == D("-0.01")
+    assert negative.get(RC381_PART_3_LINE_49).value == D("3462.74")
+    assert negative.get(RC381_PART_4_LINE_92).value == D("3462.74")
+    assert negative.get(RC381_PART_4_LINE_93).value == D("0.01")
+    assert negative.get(RC381_PART_4_LINE_94).value == D("0")
+    assert negative.get(RC381_PART_4_LINE_95).value == D("0.01")
+    assert negative.get(RC381_PART_4_LINE_97).value == D("0")
+    assert negative.get(RC381_PART_4_LINE_98).value == D("3462.74")
+
+
+def test_return_bo_part_4_line_99_takes_line_59_at_a_line_60_of_zero_and_line_56_below_it() -> None:
+    # Line 60 of Part 3 of exactly 0 (line 53 = 0.06) or of 0.01 is "positive or "0"": line 99 =
+    # line 59 (665.00) and line 100 = 0. A line 60 of -0.02 (line 53 = 0) is negative: line 99 =
+    # line 56 (664.98), line 100 = 0.02, line 101 = 0 (line 53 is not positive), line 102 = 0.02,
+    # line 103 = 664.98 and line 105 = 664.98 + 0.
+    zero = return_bo(line_19="1695", line_39="2432.81")
+    cent = return_bo(line_19="1695.79", line_39="2431.97")
+    negative = return_bo(line_19="1695", line_39="2432.73")
+
+    assert zero.get(RC381_PART_3_LINE_60).value == D("0")
+    assert zero.get(RC381_PART_4_LINE_99).value == D("665.00")
+    assert zero.get(RC381_PART_4_LINE_100).value == D("0")
+    assert zero.get(RC381_PART_4_LINE_105).value == D("665.00")
+    assert cent.get(RC381_PART_3_LINE_60).value == D("0.01")
+    assert cent.get(RC381_PART_4_LINE_99).value == D("665.00")
+    assert cent.get(RC381_PART_4_LINE_100).value == D("0")
+    assert cent.get(RC381_PART_4_LINE_105).value == D("665.00")
+    assert negative.get(RC381_PART_3_LINE_60).value == D("-0.02")
+    assert negative.get(RC381_PART_3_LINE_56).value == D("664.98")
+    assert negative.get(RC381_PART_4_LINE_99).value == D("664.98")
+    assert negative.get(RC381_PART_4_LINE_100).value == D("0.02")
+    assert negative.get(RC381_PART_4_LINE_101).value == D("0")
+    assert negative.get(RC381_PART_4_LINE_102).value == D("0.02")
+    assert negative.get(RC381_PART_4_LINE_103).value == D("664.98")
+    assert negative.get(RC381_PART_4_LINE_105).value == D("664.98")
+
+
+def test_return_bo_part_4_line_106_is_line_67_for_a_line_68_of_zero_or_more_and_line_64_below() -> (
+    None
+):
+    # Line 68 of Part 3 of 0 (the ticket's example) or positive (20.00): line 106 = line 67 (0.00
+    # and 396.00) and line 107 = 0. Negative (-296.00, line 64 = 100 and line 67 = 396.00): line 106
+    # = line 64 (100), line 107 = 296.00 and line 109 = 100 + line 108 (line 61 = 176.00 is the
+    # lesser) = 276.00.
+    zero = return_bo()
+    positive = return_bo(
+        line_1="60000", line_2="50000", line_19="3500", line_39="2432", line_25="396", line_45="20"
+    )
+    negative = return_bo(
+        line_1="30000", line_2="80000", line_19="2000", line_39="2432", line_25="100"
+    )
+
+    assert zero.get(RC381_PART_3_LINE_68).value == D("0")
+    assert zero.get(RC381_PART_4_LINE_106).value == D("0.00")
+    assert zero.get(RC381_PART_4_LINE_107).value == D("0")
+    assert positive.get(RC381_PART_3_LINE_68).value == D("20.00")
+    assert positive.get(RC381_PART_3_LINE_67).value == D("396.00")
+    assert positive.get(RC381_PART_4_LINE_106).value == D("396.00")
+    assert positive.get(RC381_PART_4_LINE_107).value == D("0")
+    assert positive.get(RC381_PART_4_LINE_108).value == D("0")
+    assert negative.get(RC381_PART_3_LINE_68).value == D("-296.00")
+    assert negative.get(RC381_PART_3_LINE_64).value == D("100")
+    assert negative.get(RC381_PART_4_LINE_106).value == D("100")
+    assert negative.get(RC381_PART_4_LINE_107).value == D("296.00")
+    assert negative.get(RC381_PART_4_LINE_108).value == D("176.00")
+    assert negative.get(RC381_PART_4_LINE_109).value == D("276.00")
+
+
+# Each case: box 26 outside and in Quebec (lines 1 and 2 of Part 3), box 16, box 17, box 16A and
+# box 17A (lines 19, 39, 25 and 45), then the lines of Part 3 that Part 4's lines 92 to 110 read
+# (49, 52, 53, 56, 59, 60, 61, 64, 67 and 68) and Part 4's lines 92 to 110. The figures are proved
+# by an independent Decimal model of the printed form (not by this engine). The cases vary the
+# signs of lines 53, 60, 61 and 68 of Part 3 and which of the two lines each "whichever is less"
+# takes. The CPT20 election and net self-employment income do not reach lines 92 to 110, so they
+# stay at their defaults.
+PART_4_EMPLOYMENT_CASES = [
+    # The example of Return BO: lines 53 and 60 of Part 3 are positive and line 68 is 0, so lines 92
+    # and 99 take lines 52 and 59 and line 106 takes line 67.
+    pytest.param(
+        "30000",
+        "40000",
+        "1800.00",
+        "2500.00",
+        "0",
+        "0",
+        {
+            "part_3_line_49": "3606.86",
+            "part_3_line_52": "3462.75",
+            "part_3_line_53": "144.11",
+            "part_3_line_56": "693.14",
+            "part_3_line_59": "665.00",
+            "part_3_line_60": "28.14",
+            "part_3_line_61": "172.25",
+            "part_3_line_64": "0",
+            "part_3_line_67": "0.00",
+            "part_3_line_68": "0.00",
+        },
+        {
+            "92": "3462.75",
+            "93": "0",
+            "94": "0",
+            "95": "0",
+            "96": "3462.75",
+            "97": "0",
+            "98": "3462.75",
+            "99": "665.00",
+            "100": "0",
+            "101": "0",
+            "102": "0",
+            "103": "665.00",
+            "104_difference": "0.00",
+            "104": "0",
+            "105": "665.00",
+            "106": "0.00",
+            "107": "0",
+            "108": "0",
+            "109": "0.00",
+            "110": "665.00",
+        },
+        id="ticket_example",
+    ),
+    # Lines 53, 60 and 68 of Part 3 are all 0, each in the "positive or 0" branch.
+    pytest.param(
+        "30000",
+        "40000",
+        "1695.20",
+        "2432.55",
+        "0",
+        "0",
+        {
+            "part_3_line_49": "3462.75",
+            "part_3_line_52": "3462.75",
+            "part_3_line_53": "0.00",
+            "part_3_line_56": "665.00",
+            "part_3_line_59": "665.00",
+            "part_3_line_60": "0.00",
+            "part_3_line_61": "0.00",
+            "part_3_line_64": "0",
+            "part_3_line_67": "0.00",
+            "part_3_line_68": "0.00",
+        },
+        {
+            "92": "3462.75",
+            "93": "0",
+            "94": "0",
+            "95": "0",
+            "96": "3462.75",
+            "97": "0",
+            "98": "3462.75",
+            "99": "665.00",
+            "100": "0",
+            "101": "0",
+            "102": "0",
+            "103": "665.00",
+            "104_difference": "0.00",
+            "104": "0",
+            "105": "665.00",
+            "106": "0.00",
+            "107": "0",
+            "108": "0",
+            "109": "0.00",
+            "110": "665.00",
+        },
+        id="lines_53_60_and_68_all_zero",
+    ),
+    # Line 53 of Part 3 is -28.74 and line 60 is 28.74: line 92 = line 49, line 93 = 28.74, line 94
+    # = the lesser of 28.74 and 28.74, line 95 = 0, and line 98 = 3,434.01 + 28.74 = line 52.
+    pytest.param(
+        "30000",
+        "40000",
+        "4127.75",
+        "0",
+        "0",
+        "0",
+        {
+            "part_3_line_49": "3434.01",
+            "part_3_line_52": "3462.75",
+            "part_3_line_53": "-28.74",
+            "part_3_line_56": "693.74",
+            "part_3_line_59": "665.00",
+            "part_3_line_60": "28.74",
+            "part_3_line_61": "0.00",
+            "part_3_line_64": "0",
+            "part_3_line_67": "0.00",
+            "part_3_line_68": "0.00",
+        },
+        {
+            "92": "3434.01",
+            "93": "28.74",
+            "94": "28.74",
+            "95": "0.00",
+            "96": "3462.75",
+            "97": "0",
+            "98": "3462.75",
+            "99": "665.00",
+            "100": "0",
+            "101": "0",
+            "102": "0",
+            "103": "665.00",
+            "104_difference": "0.00",
+            "104": "0",
+            "105": "665.00",
+            "106": "0.00",
+            "107": "0",
+            "108": "0",
+            "109": "0.00",
+            "110": "665.00",
+        },
+        id="lines_60_and_93_the_same_amount",
+    ),
+    # Line 60 of Part 3 (39.20) is more than line 93 (15.20): line 94 = line 93 and line 95 = 0.
+    pytest.param(
+        "0",
+        "50000",
+        "3000",
+        "0",
+        "0",
+        "0",
+        {
+            "part_3_line_49": "2495.80",
+            "part_3_line_52": "2511.00",
+            "part_3_line_53": "-15.20",
+            "part_3_line_56": "504.20",
+            "part_3_line_59": "465.00",
+            "part_3_line_60": "39.20",
+            "part_3_line_61": "24.00",
+            "part_3_line_64": "0",
+            "part_3_line_67": "0.00",
+            "part_3_line_68": "0.00",
+        },
+        {
+            "92": "2495.80",
+            "93": "15.20",
+            "94": "15.20",
+            "95": "0.00",
+            "96": "2511.00",
+            "97": "0",
+            "98": "2511.00",
+            "99": "465.00",
+            "100": "0",
+            "101": "0",
+            "102": "0",
+            "103": "465.00",
+            "104_difference": "0.00",
+            "104": "0",
+            "105": "465.00",
+            "106": "0.00",
+            "107": "0",
+            "108": "0",
+            "109": "0.00",
+            "110": "465.00",
+        },
+        id="line_94_is_line_93_when_line_60_is_more",
+    ),
+    # Line 60 of Part 3 (17.38) is less than line 93 (53.18): line 94 = line 60, line 95 = 35.80;
+    # line 68 of Part 3 (50.00, positive) is more than line 95, so line 97 = line 95.
+    pytest.param(
+        "1000",
+        "50000",
+        "2000",
+        "1000",
+        "50",
+        "0",
+        {
+            "part_3_line_49": "2507.62",
+            "part_3_line_52": "2560.80",
+            "part_3_line_53": "-53.18",
+            "part_3_line_56": "492.38",
+            "part_3_line_59": "475.00",
+            "part_3_line_60": "17.38",
+            "part_3_line_61": "-35.80",
+            "part_3_line_64": "50",
+            "part_3_line_67": "0.00",
+            "part_3_line_68": "50.00",
+        },
+        {
+            "92": "2507.62",
+            "93": "53.18",
+            "94": "17.38",
+            "95": "35.80",
+            "96": "2525.00",
+            "97": "35.80",
+            "98": "2560.80",
+            "99": "475.00",
+            "100": "0",
+            "101": "0",
+            "102": "0",
+            "103": "475.00",
+            "104_difference": "14.20",
+            "104": "0",
+            "105": "475.00",
+            "106": "0.00",
+            "107": "0",
+            "108": "0",
+            "109": "0.00",
+            "110": "475.00",
+        },
+        id="line_94_is_line_60_when_that_is_less_and_line_97_is_line_95",
+    ),
+    # Line 53 negative, line 60 positive and line 68 positive and less than line 95 (20.76): line 97
+    # = line 68.
+    pytest.param(
+        "50000",
+        "30000",
+        "4127.75",
+        "0",
+        "50",
+        "300",
+        {
+            "part_3_line_49": "3434.01",
+            "part_3_line_52": "3470.51",
+            "part_3_line_53": "-36.50",
+            "part_3_line_56": "693.74",
+            "part_3_line_59": "678.00",
+            "part_3_line_60": "15.74",
+            "part_3_line_61": "-20.76",
+            "part_3_line_64": "350",
+            "part_3_line_67": "348.00",
+            "part_3_line_68": "2.00",
+        },
+        {
+            "92": "3434.01",
+            "93": "36.50",
+            "94": "15.74",
+            "95": "20.76",
+            "96": "3449.75",
+            "97": "2.00",
+            "98": "3451.75",
+            "99": "678.00",
+            "100": "0",
+            "101": "0",
+            "102": "0",
+            "103": "678.00",
+            "104_difference": "0.00",
+            "104": "0",
+            "105": "678.00",
+            "106": "348.00",
+            "107": "0",
+            "108": "0",
+            "109": "348.00",
+            "110": "1026.00",
+        },
+        id="line_97_is_line_68_when_that_is_the_lesser",
+    ),
+    # Line 60 of Part 3 is negative and line 53 positive and more than line 100: line 99 = line 56,
+    # line 101 = line 100 and line 102 = 0.
+    pytest.param(
+        "50000",
+        "1500",
+        "500",
+        "2500",
+        "0",
+        "0",
+        {
+            "part_3_line_49": "2525.35",
+            "part_3_line_52": "2382.29",
+            "part_3_line_53": "143.06",
+            "part_3_line_56": "474.65",
+            "part_3_line_59": "480.00",
+            "part_3_line_60": "-5.35",
+            "part_3_line_61": "137.71",
+            "part_3_line_64": "0",
+            "part_3_line_67": "0.00",
+            "part_3_line_68": "0.00",
+        },
+        {
+            "92": "2382.29",
+            "93": "0",
+            "94": "0",
+            "95": "0",
+            "96": "2382.29",
+            "97": "0",
+            "98": "2382.29",
+            "99": "474.65",
+            "100": "5.35",
+            "101": "5.35",
+            "102": "0.00",
+            "103": "480.00",
+            "104_difference": "0.00",
+            "104": "0",
+            "105": "480.00",
+            "106": "0.00",
+            "107": "0",
+            "108": "0",
+            "109": "0.00",
+            "110": "480.00",
+        },
+        id="line_101_is_line_100_when_line_53_is_more",
+    ),
+    # Line 60 of Part 3 is negative and line 53 positive and less than line 100: line 101 = line 53,
+    # and line 102 is above 0 while line 68 is 0, so line 104 = 0.
+    pytest.param(
+        "70000",
+        "40000",
+        "0",
+        "4127.75",
+        "396",
+        "0",
+        {
+            "part_3_line_49": "3482.79",
+            "part_3_line_52": "3467.05",
+            "part_3_line_53": "15.74",
+            "part_3_line_56": "644.96",
+            "part_3_line_59": "678.00",
+            "part_3_line_60": "-33.04",
+            "part_3_line_61": "-17.30",
+            "part_3_line_64": "396",
+            "part_3_line_67": "396.00",
+            "part_3_line_68": "0.00",
+        },
+        {
+            "92": "3467.05",
+            "93": "0",
+            "94": "0",
+            "95": "0",
+            "96": "3467.05",
+            "97": "0",
+            "98": "3467.05",
+            "99": "644.96",
+            "100": "33.04",
+            "101": "15.74",
+            "102": "17.30",
+            "103": "660.70",
+            "104_difference": "0.00",
+            "104": "0",
+            "105": "660.70",
+            "106": "396.00",
+            "107": "0",
+            "108": "0",
+            "109": "396.00",
+            "110": "1056.70",
+        },
+        id="line_101_is_line_53_when_that_is_less",
+    ),
+    # Line 68 of Part 3 (68.00) is positive and line 97 is 0 (line 53 is positive): line 104 = the
+    # lesser of line 102 (20.76) and line 68 less line 97 (68.00).
+    pytest.param(
+        "50000",
+        "30000",
+        "0",
+        "4127.75",
+        "396",
+        "20",
+        {
+            "part_3_line_49": "3482.79",
+            "part_3_line_52": "3470.51",
+            "part_3_line_53": "12.28",
+            "part_3_line_56": "644.96",
+            "part_3_line_59": "678.00",
+            "part_3_line_60": "-33.04",
+            "part_3_line_61": "-20.76",
+            "part_3_line_64": "416",
+            "part_3_line_67": "348.00",
+            "part_3_line_68": "68.00",
+        },
+        {
+            "92": "3470.51",
+            "93": "0",
+            "94": "0",
+            "95": "0",
+            "96": "3470.51",
+            "97": "0",
+            "98": "3470.51",
+            "99": "644.96",
+            "100": "33.04",
+            "101": "12.28",
+            "102": "20.76",
+            "103": "657.24",
+            "104_difference": "68.00",
+            "104": "20.76",
+            "105": "678.00",
+            "106": "348.00",
+            "107": "0",
+            "108": "0",
+            "109": "348.00",
+            "110": "1026.00",
+        },
+        id="line_104_is_line_102_when_that_is_the_lesser",
+    ),
+    # Line 68 of Part 3 (4.00) is positive and line 97 is 0 (line 53 is positive): line 104 = line
+    # 68 less line 97 (4.00), less than line 102 (8.05).
+    pytest.param(
+        "60000",
+        "30000",
+        "1695.75",
+        "2432",
+        "100",
+        "300",
+        {
+            "part_3_line_49": "3462.75",
+            "part_3_line_52": "3457.80",
+            "part_3_line_53": "4.95",
+            "part_3_line_56": "665.00",
+            "part_3_line_59": "678.00",
+            "part_3_line_60": "-13.00",
+            "part_3_line_61": "-8.05",
+            "part_3_line_64": "400",
+            "part_3_line_67": "396.00",
+            "part_3_line_68": "4.00",
+        },
+        {
+            "92": "3457.80",
+            "93": "0",
+            "94": "0",
+            "95": "0",
+            "96": "3457.80",
+            "97": "0",
+            "98": "3457.80",
+            "99": "665.00",
+            "100": "13.00",
+            "101": "4.95",
+            "102": "8.05",
+            "103": "669.95",
+            "104_difference": "4.00",
+            "104": "4.00",
+            "105": "673.95",
+            "106": "396.00",
+            "107": "0",
+            "108": "0",
+            "109": "396.00",
+            "110": "1069.95",
+        },
+        id="line_104_is_line_68_less_line_97_when_line_53_is_positive",
+    ),
+    # Lines 53, 60 and 61 of Part 3 negative and line 68 positive: line 97 = line 95 (190.89, less
+    # than line 68), line 104 = the lesser of line 102 (17.55) and line 68 less line 97 (213.11).
+    pytest.param(
+        "60000",
+        "80000",
+        "3000",
+        "1000",
+        "500",
+        "300",
+        {
+            "part_3_line_49": "3339.55",
+            "part_3_line_52": "3530.44",
+            "part_3_line_53": "-190.89",
+            "part_3_line_56": "660.45",
+            "part_3_line_59": "678.00",
+            "part_3_line_60": "-17.55",
+            "part_3_line_61": "-208.44",
+            "part_3_line_64": "800",
+            "part_3_line_67": "396.00",
+            "part_3_line_68": "404.00",
+        },
+        {
+            "92": "3339.55",
+            "93": "190.89",
+            "94": "0",
+            "95": "190.89",
+            "96": "3339.55",
+            "97": "190.89",
+            "98": "3530.44",
+            "99": "660.45",
+            "100": "17.55",
+            "101": "0",
+            "102": "17.55",
+            "103": "660.45",
+            "104_difference": "213.11",
+            "104": "17.55",
+            "105": "678.00",
+            "106": "396.00",
+            "107": "0",
+            "108": "0",
+            "109": "396.00",
+            "110": "1074.00",
+        },
+        id="lines_53_and_60_negative_and_line_104_is_line_102",
+    ),
+    # Lines 53 and 60 of Part 3 negative and line 68 positive (500.00): line 97 = line 95 (435.00),
+    # line 104 = line 68 less line 97 (65.00), less than line 102 (96.25).
+    pytest.param(
+        "20000",
+        "40000",
+        "0",
+        "3000",
+        "500",
+        "0",
+        {
+            "part_3_line_49": "2531.25",
+            "part_3_line_52": "2966.25",
+            "part_3_line_53": "-435.00",
+            "part_3_line_56": "468.75",
+            "part_3_line_59": "565.00",
+            "part_3_line_60": "-96.25",
+            "part_3_line_61": "-531.25",
+            "part_3_line_64": "500",
+            "part_3_line_67": "0.00",
+            "part_3_line_68": "500.00",
+        },
+        {
+            "92": "2531.25",
+            "93": "435.00",
+            "94": "0",
+            "95": "435.00",
+            "96": "2531.25",
+            "97": "435.00",
+            "98": "2966.25",
+            "99": "468.75",
+            "100": "96.25",
+            "101": "0",
+            "102": "96.25",
+            "103": "468.75",
+            "104_difference": "65.00",
+            "104": "65.00",
+            "105": "533.75",
+            "106": "0.00",
+            "107": "0",
+            "108": "0",
+            "109": "0.00",
+            "110": "533.75",
+        },
+        id="lines_53_and_60_negative_and_line_104_is_line_68_less_line_97",
+    ),
+    # Line 97 = line 68 (20.00, less than line 95): line 68 less line 97 = 0, so line 104 = 0
+    # although line 102 (206.23) is above 0.
+    pytest.param(
+        "40000",
+        "30000",
+        "1800",
+        "1000",
+        "0",
+        "20",
+        {
+            "part_3_line_49": "2341.23",
+            "part_3_line_52": "3420.00",
+            "part_3_line_53": "-1078.77",
+            "part_3_line_56": "458.77",
+            "part_3_line_59": "665.00",
+            "part_3_line_60": "-206.23",
+            "part_3_line_61": "-1285.00",
+            "part_3_line_64": "20",
+            "part_3_line_67": "0.00",
+            "part_3_line_68": "20.00",
+        },
+        {
+            "92": "2341.23",
+            "93": "1078.77",
+            "94": "0",
+            "95": "1078.77",
+            "96": "2341.23",
+            "97": "20.00",
+            "98": "2361.23",
+            "99": "458.77",
+            "100": "206.23",
+            "101": "0",
+            "102": "206.23",
+            "103": "458.77",
+            "104_difference": "0.00",
+            "104": "0.00",
+            "105": "458.77",
+            "106": "0.00",
+            "107": "0",
+            "108": "0",
+            "109": "0.00",
+            "110": "458.77",
+        },
+        id="line_104_is_zero_when_line_97_takes_all_of_line_68",
+    ),
+    # Line 68 of Part 3 is negative (-278.00): line 106 = line 64, line 107 = 278.00 and line 108 =
+    # the lesser of line 61 (4,402.96) and line 107.
+    pytest.param(
+        "30000",
+        "50000",
+        "4127.75",
+        "4500",
+        "50",
+        "20",
+        {
+            "part_3_line_49": "7230.89",
+            "part_3_line_52": "3546.79",
+            "part_3_line_53": "3684.10",
+            "part_3_line_56": "1396.86",
+            "part_3_line_59": "678.00",
+            "part_3_line_60": "718.86",
+            "part_3_line_61": "4402.96",
+            "part_3_line_64": "70",
+            "part_3_line_67": "348.00",
+            "part_3_line_68": "-278.00",
+        },
+        {
+            "92": "3546.79",
+            "93": "0",
+            "94": "0",
+            "95": "0",
+            "96": "3546.79",
+            "97": "0",
+            "98": "3546.79",
+            "99": "678.00",
+            "100": "0",
+            "101": "0",
+            "102": "0",
+            "103": "678.00",
+            "104_difference": "-278.00",
+            "104": "0",
+            "105": "678.00",
+            "106": "70",
+            "107": "278.00",
+            "108": "278.00",
+            "109": "348.00",
+            "110": "1026.00",
+        },
+        id="line_108_is_line_107_when_that_is_the_lesser",
+    ),
+    # Line 68 of Part 3 is negative (-296.00) and line 61 positive and less than line 107: line 108
+    # = line 61 (176.00).
+    pytest.param(
+        "30000",
+        "80000",
+        "2000",
+        "2432",
+        "100",
+        "0",
+        {
+            "part_3_line_49": "3715.87",
+            "part_3_line_52": "3578.00",
+            "part_3_line_53": "137.87",
+            "part_3_line_56": "716.13",
+            "part_3_line_59": "678.00",
+            "part_3_line_60": "38.13",
+            "part_3_line_61": "176.00",
+            "part_3_line_64": "100",
+            "part_3_line_67": "396.00",
+            "part_3_line_68": "-296.00",
+        },
+        {
+            "92": "3578.00",
+            "93": "0",
+            "94": "0",
+            "95": "0",
+            "96": "3578.00",
+            "97": "0",
+            "98": "3578.00",
+            "99": "678.00",
+            "100": "0",
+            "101": "0",
+            "102": "0",
+            "103": "678.00",
+            "104_difference": "-296.00",
+            "104": "0",
+            "105": "678.00",
+            "106": "100",
+            "107": "296.00",
+            "108": "176.00",
+            "109": "276.00",
+            "110": "954.00",
+        },
+        id="line_108_is_line_61_when_that_is_the_lesser",
+    ),
+    # Line 68 of Part 3 is negative but line 61 is not positive: line 108 = 0.
+    pytest.param(
+        "0",
+        "80000",
+        "500",
+        "0",
+        "50",
+        "20",
+        {
+            "part_3_line_49": "415.97",
+            "part_3_line_52": "3661.20",
+            "part_3_line_53": "-3245.23",
+            "part_3_line_56": "84.03",
+            "part_3_line_59": "678.00",
+            "part_3_line_60": "-593.97",
+            "part_3_line_61": "-3839.20",
+            "part_3_line_64": "70",
+            "part_3_line_67": "348.00",
+            "part_3_line_68": "-278.00",
+        },
+        {
+            "92": "415.97",
+            "93": "3245.23",
+            "94": "0",
+            "95": "3245.23",
+            "96": "415.97",
+            "97": "0",
+            "98": "415.97",
+            "99": "84.03",
+            "100": "593.97",
+            "101": "0",
+            "102": "593.97",
+            "103": "84.03",
+            "104_difference": "-278.00",
+            "104": "0",
+            "105": "84.03",
+            "106": "70",
+            "107": "278.00",
+            "108": "0",
+            "109": "70",
+            "110": "154.03",
+        },
+        id="line_68_negative_and_line_61_negative",
+    ),
+    # Line 68 of Part 3 is positive: line 106 = line 67 and line 108 = 0.
+    pytest.param(
+        "60000",
+        "50000",
+        "3500",
+        "2432",
+        "396",
+        "20",
+        {
+            "part_3_line_49": "4963.77",
+            "part_3_line_52": "3494.78",
+            "part_3_line_53": "1468.99",
+            "part_3_line_56": "968.23",
+            "part_3_line_59": "678.01",
+            "part_3_line_60": "290.22",
+            "part_3_line_61": "1759.21",
+            "part_3_line_64": "416",
+            "part_3_line_67": "396.00",
+            "part_3_line_68": "20.00",
+        },
+        {
+            "92": "3494.78",
+            "93": "0",
+            "94": "0",
+            "95": "0",
+            "96": "3494.78",
+            "97": "0",
+            "98": "3494.78",
+            "99": "678.01",
+            "100": "0",
+            "101": "0",
+            "102": "0",
+            "103": "678.01",
+            "104_difference": "20.00",
+            "104": "0",
+            "105": "678.01",
+            "106": "396.00",
+            "107": "0",
+            "108": "0",
+            "109": "396.00",
+            "110": "1074.01",
+        },
+        id="line_68_positive_and_lines_53_and_60_positive",
+    ),
+    # Line 53 of Part 3 is exactly 0 ("positive or 0": line 92 = line 52) and line 60 is -0.02
+    # (negative): line 99 = line 56, line 100 = 0.02 and line 101 = 0 (line 53 is not positive).
+    pytest.param(
+        "30000",
+        "40000",
+        "1695",
+        "2432.73",
+        "0",
+        "0",
+        {
+            "part_3_line_49": "3462.75",
+            "part_3_line_52": "3462.75",
+            "part_3_line_53": "0.00",
+            "part_3_line_56": "664.98",
+            "part_3_line_59": "665.00",
+            "part_3_line_60": "-0.02",
+            "part_3_line_61": "-0.02",
+            "part_3_line_64": "0",
+            "part_3_line_67": "0.00",
+            "part_3_line_68": "0.00",
+        },
+        {
+            "92": "3462.75",
+            "93": "0",
+            "94": "0",
+            "95": "0",
+            "96": "3462.75",
+            "97": "0",
+            "98": "3462.75",
+            "99": "664.98",
+            "100": "0.02",
+            "101": "0",
+            "102": "0.02",
+            "103": "664.98",
+            "104_difference": "0.00",
+            "104": "0",
+            "105": "664.98",
+            "106": "0.00",
+            "107": "0",
+            "108": "0",
+            "109": "0.00",
+            "110": "664.98",
+        },
+        id="line_53_zero_and_line_60_negative",
+    ),
+    # Line 60 of Part 3 is exactly 0 ("positive or 0": line 99 = line 59) and line 53 is 0.06.
+    pytest.param(
+        "30000",
+        "40000",
+        "1695",
+        "2432.81",
+        "0",
+        "0",
+        {
+            "part_3_line_49": "3462.81",
+            "part_3_line_52": "3462.75",
+            "part_3_line_53": "0.06",
+            "part_3_line_56": "665.00",
+            "part_3_line_59": "665.00",
+            "part_3_line_60": "0.00",
+            "part_3_line_61": "0.06",
+            "part_3_line_64": "0",
+            "part_3_line_67": "0.00",
+            "part_3_line_68": "0.00",
+        },
+        {
+            "92": "3462.75",
+            "93": "0",
+            "94": "0",
+            "95": "0",
+            "96": "3462.75",
+            "97": "0",
+            "98": "3462.75",
+            "99": "665.00",
+            "100": "0",
+            "101": "0",
+            "102": "0",
+            "103": "665.00",
+            "104_difference": "0.00",
+            "104": "0",
+            "105": "665.00",
+            "106": "0.00",
+            "107": "0",
+            "108": "0",
+            "109": "0.00",
+            "110": "665.00",
+        },
+        id="line_53_positive_and_line_60_zero",
+    ),
+    # Line 53 of Part 3 is -0.01 (negative: line 92 = line 49, line 93 = 0.01 and line 95 = 0.01)
+    # and line 60 is exactly 0: line 94 = 0 (line 60 is not positive).
+    pytest.param(
+        "30000",
+        "40000",
+        "1695.13",
+        "2432.61",
+        "0",
+        "0",
+        {
+            "part_3_line_49": "3462.74",
+            "part_3_line_52": "3462.75",
+            "part_3_line_53": "-0.01",
+            "part_3_line_56": "665.00",
+            "part_3_line_59": "665.00",
+            "part_3_line_60": "0.00",
+            "part_3_line_61": "-0.01",
+            "part_3_line_64": "0",
+            "part_3_line_67": "0.00",
+            "part_3_line_68": "0.00",
+        },
+        {
+            "92": "3462.74",
+            "93": "0.01",
+            "94": "0",
+            "95": "0.01",
+            "96": "3462.74",
+            "97": "0",
+            "98": "3462.74",
+            "99": "665.00",
+            "100": "0",
+            "101": "0",
+            "102": "0",
+            "103": "665.00",
+            "104_difference": "0.00",
+            "104": "0",
+            "105": "665.00",
+            "106": "0.00",
+            "107": "0",
+            "108": "0",
+            "109": "0.00",
+            "110": "665.00",
+        },
+        id="line_53_negative_by_a_cent_and_line_60_zero",
+    ),
+    # Line 53 of Part 3 is exactly 0 and line 60 is 0.01 (positive): line 92 = line 52 and line 94 =
+    # 0 (line 53 is not negative).
+    pytest.param(
+        "30000",
+        "40000",
+        "1695.79",
+        "2431.97",
+        "0",
+        "0",
+        {
+            "part_3_line_49": "3462.75",
+            "part_3_line_52": "3462.75",
+            "part_3_line_53": "0.00",
+            "part_3_line_56": "665.01",
+            "part_3_line_59": "665.00",
+            "part_3_line_60": "0.01",
+            "part_3_line_61": "0.01",
+            "part_3_line_64": "0",
+            "part_3_line_67": "0.00",
+            "part_3_line_68": "0.00",
+        },
+        {
+            "92": "3462.75",
+            "93": "0",
+            "94": "0",
+            "95": "0",
+            "96": "3462.75",
+            "97": "0",
+            "98": "3462.75",
+            "99": "665.00",
+            "100": "0",
+            "101": "0",
+            "102": "0",
+            "103": "665.00",
+            "104_difference": "0.00",
+            "104": "0",
+            "105": "665.00",
+            "106": "0.00",
+            "107": "0",
+            "108": "0",
+            "109": "0.00",
+            "110": "665.00",
+        },
+        id="line_53_zero_and_line_60_positive_by_a_cent",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    (
+        "line_1",
+        "line_2",
+        "box_16",
+        "box_17",
+        "box_16a",
+        "box_17a",
+        "upstream",
+        "expected",
+    ),
+    PART_4_EMPLOYMENT_CASES,
+)
+def test_return_bo_part_4_lines_92_to_110(
+    line_1: str,
+    line_2: str,
+    box_16: str,
+    box_17: str,
+    box_16a: str,
+    box_17a: str,
+    upstream: dict[str, str],
+    expected: dict[str, str],
+) -> None:
+    worksheet = return_bo(line_1, line_2, box_16, box_17, line_25=box_16a, line_45=box_17a)
+
+    part_3_kinds = {
+        "part_3_line_49": RC381_PART_3_LINE_49,
+        "part_3_line_52": RC381_PART_3_LINE_52,
+        "part_3_line_53": RC381_PART_3_LINE_53,
+        "part_3_line_56": RC381_PART_3_LINE_56,
+        "part_3_line_59": RC381_PART_3_LINE_59,
+        "part_3_line_60": RC381_PART_3_LINE_60,
+        "part_3_line_61": RC381_PART_3_LINE_61,
+        "part_3_line_64": RC381_PART_3_LINE_64,
+        "part_3_line_67": RC381_PART_3_LINE_67,
+        "part_3_line_68": RC381_PART_3_LINE_68,
+    }
+    assert {key: worksheet.get(kind).value for key, kind in part_3_kinds.items()} == {
+        key: D(value) for key, value in upstream.items()
+    }
+    assert part_4_employment(worksheet) == {line: D(value) for line, value in expected.items()}
+
+
+@pytest.mark.parametrize(
+    ("line_1", "line_2", "box_16", "box_17", "box_16a", "box_17a", "upstream", "expected"),
+    PART_4_EMPLOYMENT_CASES,
+)
+def test_return_bo_part_4_lines_92_to_110_are_part_3b_lines_75_to_93(
+    line_1: str,
+    line_2: str,
+    box_16: str,
+    box_17: str,
+    box_16a: str,
+    box_17a: str,
+    upstream: dict[str, str],
+    expected: dict[str, str],
+) -> None:
+    # Part 4's lines 92 to 110 are the same procedure as Part 3b's lines 75 to 93 on the same Part 3
+    # totals (line 98 is line 81 and line 110 is line 93), whatever the sign of line 69 (Part 3b is
+    # computed for every return).
+    worksheet = return_bo(line_1, line_2, box_16, box_17, line_25=box_16a, line_45=box_17a)
+
+    part_3b_lines = part_3b(worksheet)
+    assert part_4_employment(worksheet) == {
+        line: part_3b_lines[PART_3B_OF_PART_4[line]] for line in PART_4_EMPLOYMENT_KINDS
+    }
+
+
 # A return with no Quebec figures.
 
 
@@ -4952,6 +6236,26 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
         RC381_PART_4_LINE_54,
         RC381_PART_4_LINE_55,
         RC381_PART_4_LINE_56,
+        RC381_PART_4_LINE_92,
+        RC381_PART_4_LINE_93,
+        RC381_PART_4_LINE_94,
+        RC381_PART_4_LINE_95,
+        RC381_PART_4_LINE_96,
+        RC381_PART_4_LINE_97,
+        RC381_PART_4_LINE_98,
+        RC381_PART_4_LINE_99,
+        RC381_PART_4_LINE_100,
+        RC381_PART_4_LINE_101,
+        RC381_PART_4_LINE_102,
+        RC381_PART_4_LINE_103,
+        RC381_PART_4_LINE_104_DIFFERENCE,
+        RC381_PART_4_LINE_104,
+        RC381_PART_4_LINE_105,
+        RC381_PART_4_LINE_106,
+        RC381_PART_4_LINE_107,
+        RC381_PART_4_LINE_108,
+        RC381_PART_4_LINE_109,
+        RC381_PART_4_LINE_110,
     )
     assert worksheet.get(RC381_PART_3_LINE_6).value == Rate(D("0"))
     # Part 4 line 22 is 0 over 0: a zero divisor gives 0.
