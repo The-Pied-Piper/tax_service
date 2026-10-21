@@ -12,6 +12,7 @@ from app.domain.trace import (
     ChosenBySignLine,
     ChosenRateAppliedLine,
     CountAtLeastLine,
+    DividedByRateLine,
     ItemsTotalLine,
     LesserOfWhenPositiveLine,
     PositivePartOfNegationLine,
@@ -91,6 +92,13 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_51,
     RC381_PART_4_LINE_54,
     RC381_PART_4_LINE_55,
+    RC381_PART_4_LINE_56,
+    RC381_PART_4_LINE_74,
+    RC381_PART_4_LINE_76,
+    RC381_PART_4_LINE_83,
+    RC381_PART_4_LINE_83_LESSER,
+    RC381_PART_4_LINE_90,
+    RC381_PART_4_LINE_91_FROM_LINE_90,
     RENTAL_NON_COMPLIANT_EXPENSES,
     T4_CPP_CONTRIBUTIONS_BOX_16,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
@@ -262,6 +270,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # Form RC381 Part 3b lines 76, 83 and 90 "Enter the amount from line 53 (60, 68) as a positive
     # amount": none is negative for Return A.
     assert positive_parts == {
+        # Form RC381 Part 4 line 91 "amount from line 90 entered as a positive amount": Return A's
+        # line 90 is not negative.
+        RC381_PART_4_LINE_91_FROM_LINE_90: PositivePartOfNegationLine(
+            output=RC381_PART_4_LINE_91_FROM_LINE_90,
+            amount_kind=RC381_PART_4_LINE_90,
+            amount_value=D("0.00"),
+            result=D("0"),
+        ),
         # Form RC381 Part 4 line 33 "Enter the amount from line 61 of Part 3 as a positive amount."
         # and line 54 "Enter the amount from line 68 of Part 3 as a positive amount.": neither is
         # negative for Return A.
@@ -441,6 +457,18 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # Form RC381 Part 3 line 15, when "the amount from line 3 is more than the amount from line C
     # of Part 2": line 3 is 0, not more than line C (71,300.00), so line 15 is 0.
     assert when_more == {
+        # Form RC381 Part 4 line 83, "If line 74 is more than line 57, complete lines 75 to 83. If
+        # not, enter "0" on line 83": Return A's line 74 is 0, not more than line C (71,300.00).
+        RC381_PART_4_LINE_83: AmountWhenMoreLine(
+            output=RC381_PART_4_LINE_83,
+            amount_kind=RC381_PART_4_LINE_83_LESSER,
+            amount_value=D("0.00"),
+            more_kind=RC381_PART_4_LINE_74,
+            more_value=D("0.00"),
+            than_kind=CPP_MAXIMUM_PENSIONABLE_EARNINGS,
+            than_value=D("71300.00"),
+            result=D("0"),
+        ),
         # Form RC381 Part 3 line 35, when "the amount from line 3 is more than the amount from line
         # G of Part 2": line 3 is 0, not more than line G (71,300.00), so line 35 is 0.
         RC381_PART_3_LINE_35: AmountWhenMoreLine(
@@ -546,3 +574,19 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         if isinstance(line, ShortTermRentalNonCompliantLine | ItemsTotalLine)
         and line.output == RENTAL_NON_COMPLIANT_EXPENSES
     ] == [ItemsTotalLine(output=RENTAL_NON_COMPLIANT_EXPENSES, items=(), total=D("0"))]
+    # Form RC381 Part 4 line 76 "Amount from line 56 ÷ 4% =": Return A's line 56 is 0, so the
+    # quotient is 0.00.
+    assert [
+        line
+        for line in trace
+        if isinstance(line, DividedByRateLine) and line.output == RC381_PART_4_LINE_76
+    ] == [
+        DividedByRateLine(
+            RC381_PART_4_LINE_76,
+            RC381_PART_4_LINE_56,
+            D("0"),
+            Rate(D("0.04")),
+            CENT,
+            D("0.00"),
+        )
+    ]

@@ -11,10 +11,13 @@ CPP side of the self-employment calculation before the QPP gross-up
 and 25 only copy or enter other artifacts, so they have no step of their own), then Part 4 lines 31
 to 56, the QPP side before its gross-up, line 42 and the second additional contributions and the
 totals (`08e_rc381_part_4_lines_31_to_56.yaml`, the fifth; lines 28, 29, 30, 37, 43, 44, 45, 48, 49
-and 50 only copy or enter other artifacts, so they have no step of their own). Part 2 lines C to
-F are Schedule 8 Part 2's lines B to E, the same table read with the same months (line A), so
-they are the existing artifacts and no step is repeated for them. Lines 43 and 46 print the figures
-of lines 23 and 26, so they read the same datasets.
+and 50 only copy or enter other artifacts, so they have no step of their own), then Part 4 lines 57
+to 91, the earnings subject to contributions, the self-employed contributions, the contributions
+payable and the overpayment (`08f_rc381_part_4_lines_59_to_91.yaml`, the sixth; lines 57, 58, 60,
+63, 64, 66, 67, 71, 72, 73, 75, 78, 79 and 81 only copy other artifacts, so they have no step of
+their own). Part 2 lines C to F are Schedule 8 Part 2's lines B to E, the same table read with
+the same months (line A), so they are the existing artifacts and no step is repeated for them.
+Lines 43 and 46 print the figures of lines 23 and 26, so they read the same datasets.
 """
 
 from __future__ import annotations
@@ -33,6 +36,7 @@ from app.jurisdictions.ca.capabilities.amount_when_more import AmountWhenMore
 from app.jurisdictions.ca.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
 from app.jurisdictions.ca.capabilities.count_at_least import CountAtLeast
+from app.jurisdictions.ca.capabilities.divided_by_rate import DividedByRate
 from app.jurisdictions.ca.capabilities.lesser_of_when_positive import (
     LesserOfWhenPositive,
     LesserOfWhenPositiveInBrackets,
@@ -176,6 +180,31 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_54,
     RC381_PART_4_LINE_55,
     RC381_PART_4_LINE_56,
+    RC381_PART_4_LINE_59,
+    RC381_PART_4_LINE_61,
+    RC381_PART_4_LINE_62,
+    RC381_PART_4_LINE_65,
+    RC381_PART_4_LINE_68,
+    RC381_PART_4_LINE_69,
+    RC381_PART_4_LINE_70,
+    RC381_PART_4_LINE_74,
+    RC381_PART_4_LINE_76,
+    RC381_PART_4_LINE_77,
+    RC381_PART_4_LINE_80,
+    RC381_PART_4_LINE_82,
+    RC381_PART_4_LINE_83,
+    RC381_PART_4_LINE_83_LESSER,
+    RC381_PART_4_LINE_84,
+    RC381_PART_4_LINE_85,
+    RC381_PART_4_LINE_86,
+    RC381_PART_4_LINE_87,
+    RC381_PART_4_LINE_88,
+    RC381_PART_4_LINE_89,
+    RC381_PART_4_LINE_89_FROM_LINE_69,
+    RC381_PART_4_LINE_90,
+    RC381_PART_4_LINE_91,
+    RC381_PART_4_LINE_91_FROM_LINE_90,
+    RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS,
     T4_CPP_CONTRIBUTIONS_BOX_16,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
     T4_CPP_SECOND_ADDITIONAL_BOX_16A,
@@ -201,19 +230,19 @@ INPUTS = frozenset(
     }
 )
 
-# Nothing reads these yet (the PRs that wire the rest of Part 4 read them, and each removes its own
-# from this set): Part 4 line 4 "Add lines 1 to 3.", which lines 62, 66, 71 and 78 read in a later
-# PR, line 42 "Line 27 plus line 41", which line 60 reads, and line 56 "Line 53 plus line 55",
-# which line 76 reads, and the three results of Part 3a and Part 3b for earnings from employment
-# income only, "Enter this amount (in dollars and cents) on line 30800 of your return.", "... on
-# line 22215 of your return." and "... on line 44800 of your return.", which the T1 lines and Form
-# ON428 line 19 and line 58240 read in a later PR. Part 4 line 27 "Amount from line 26 ×
-# 16.80672" is read by line 42 now.
+# Nothing reads these yet (the PR that routes the T1 lines reads them and removes them from this
+# set): Part 4 line 90 "Line 88 minus 89. If positive, enter the amount (in dollars and
+# cents) on line 42100 of your return", the amount for line 42100, and line 91 "amount from line 90
+# entered as a positive amount × 50%", which the T1 lines read later, and the three results
+# of Part 3a and Part 3b for earnings from employment income only, "Enter this amount (in dollars
+# and cents) on line 30800 of your return.", "... on line 22215 of your return." and "... on line
+# 44800 of your return.", which the T1 lines and Form ON428 line 19 and line 58240 read
+# later. Part 4 line 4 "Add lines 1 to 3.", line 42 "Line 27 plus line 41" and line 56 "Line 53 plus
+# line 55" are read by lines 62, 66, 71 and 78, line 60 and line 76 now.
 OUTPUTS = frozenset(
     {
-        "ca/rc381_part_4_line_4",
-        "ca/rc381_part_4_line_42",
-        "ca/rc381_part_4_line_56",
+        "ca/rc381_self_employment_cpp_contributions",
+        "ca/rc381_part_4_line_91",
         "ca/rc381_employment_cpp_base_contributions",
         "ca/rc381_employment_cpp_enhanced_contributions",
         "ca/rc381_cpp_overpayment",
@@ -1437,6 +1466,272 @@ STEPS = {
         },
         produces={"output": "ca/rc381_part_4_line_56"},
     ),
+    # Line 59 "Line 57 minus line 58 (if negative, enter "0") (maximum $67,800)", line 57
+    # "Amount from line C of Part 2" and line 58 "Amount from line F of Part 2".
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/cpp_maximum_pensionable_earnings",
+            "less": "ca/cpp_basic_exemption",
+        },
+        produces={"output": "ca/rc381_part_4_line_59"},
+    ),
+    # Line 61 "Line 59 minus line 60 (if negative, enter "0")", line 60 "Amount from line 42".
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/rc381_part_4_line_59",
+            "less": "ca/rc381_part_4_line_42",
+        },
+        produces={"output": "ca/rc381_part_4_line_61"},
+    ),
+    # Line 62 "Enter whichever is less: amount from line 4 or line 61."
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": ("ca/rc381_part_4_line_4", "ca/rc381_part_4_line_61"),
+        },
+        produces={"output": "ca/rc381_part_4_line_62"},
+    ),
+    # Line 65 "Line 63 minus line 64 (if negative, enter "0" on lines 65 and 69, and continue at
+    # line 70)", line 63 "Amount from line 58" and line 64 "Amount from line 3 of Part 3". The
+    # block "If line 3 of Part 3 is less than line 58, complete lines 63 to 69. If not, enter "0"
+    # on line 69" is met by this floor: line 3 is not less than line 58 exactly when this line
+    # is "0" (and then line 69 is "0" too).
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/cpp_basic_exemption",
+            "less": "ca/rc381_part_3_line_3",
+        },
+        produces={"output": "ca/rc381_part_4_line_65"},
+    ),
+    # Line 68 "Line 66 minus line 67 (if negative, enter "0")", line 66 "Amount from line 4" and
+    # line 67 "Amount from line 59".
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/rc381_part_4_line_4",
+            "less": "ca/rc381_part_4_line_59",
+        },
+        produces={"output": "ca/rc381_part_4_line_68"},
+    ),
+    # Line 69 "Line 65 minus line 68 (if negative, enter "0")".
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/rc381_part_4_line_65",
+            "less": "ca/rc381_part_4_line_68",
+        },
+        produces={"output": "ca/rc381_part_4_line_69"},
+    ),
+    # Line 70 "Self-employment income and other earnings subject to base and first additional
+    # contributions: Line 62 minus line 69". The form prints no floor.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/rc381_part_4_line_62",
+            "less": "ca/rc381_part_4_line_69",
+        },
+        produces={"output": "ca/rc381_part_4_line_70"},
+    ),
+    # Line 74 "Add lines 71 to 73.", line 71 "Amount from line 4", line 72 "Amount from line 11
+    # of Part 3" and line 73 "Amount from line 31 of Part 3".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/rc381_part_4_line_4",
+                "ca/rc381_part_3_line_11",
+                "ca/rc381_part_3_line_31",
+            ),
+        },
+        produces={"output": "ca/rc381_part_4_line_74"},
+    ),
+    # Line 76 "Amount from line 56 ÷ 4% =" (line 75, the amount from line D of Part 2, is read
+    # by line 77).
+    CapabilitySelection(
+        name="ca/divided_by_rate",
+        params={"rate": "ca/rc381_second_additional_rate"},
+        consumes={
+            "dividend": "ca/rc381_part_4_line_56",
+        },
+        produces={"output": "ca/rc381_part_4_line_76"},
+    ),
+    # Line 77 "Line 75 minus line 76 (if negative, enter "0")", line 75 "Amount from line D of
+    # Part 2".
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/cpp_second_additional_earnings_maximum",
+            "less": "ca/rc381_part_4_line_76",
+        },
+        produces={"output": "ca/rc381_part_4_line_77"},
+    ),
+    # Line 80 "Line 78 minus line 79", line 78 "Amount from line 4" and line 79 "Amount from
+    # line 65 (if any)".
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/rc381_part_4_line_4",
+            "less": "ca/rc381_part_4_line_65",
+        },
+        produces={"output": "ca/rc381_part_4_line_80"},
+    ),
+    # Line 82 "Line 80 minus line 81", line 81 "Amount from line 70".
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/rc381_part_4_line_80",
+            "less": "ca/rc381_part_4_line_70",
+        },
+        produces={"output": "ca/rc381_part_4_line_82"},
+    ),
+    # Line 83 "Self-employment income and other earnings subject to second additional
+    # contributions: Enter whichever is less: amount from line 77 or line 82." ...
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": ("ca/rc381_part_4_line_77", "ca/rc381_part_4_line_82"),
+        },
+        produces={"output": "ca/rc381_part_4_line_83_lesser"},
+    ),
+    # ... which the instruction "If line 74 is more than line 57, complete lines 75 to 83. If
+    # not, enter "0" on line 83 and continue at line 84." completes only when line 74 is more
+    # than line 57 (the amount from line C of Part 2).
+    CapabilitySelection(
+        name="ca/amount_when_more",
+        params={},
+        consumes={
+            "amount": "ca/rc381_part_4_line_83_lesser",
+            "more": "ca/rc381_part_4_line_74",
+            "than": "ca/cpp_maximum_pensionable_earnings",
+        },
+        produces={"output": "ca/rc381_part_4_line_83"},
+    ),
+    # Line 84 "Required base contributions on CPP pensionable earnings: amount from line 70 ×
+    # 9.9% = (maximum $6,712.20)", line 85 "Required first additional contributions on CPP
+    # pensionable earnings: amount from line 70 × 2% = (maximum $1,356.00)" and line 86 "Required
+    # second additional contributions on CPP pensionable earnings: amount from line 83 × 8% =
+    # (maximum $792.00)": the self-employed person's tiers of Schedule 8 Part 4 (the same
+    # figures), on the earnings of lines 70 and 83. A line 70 below zero contributes nothing.
+    CapabilitySelection(
+        name="core/contribution_tier",
+        params={"tier": "ca/cpp_self_employed_base_contribution"},
+        consumes={
+            "earnings": "ca/rc381_part_4_line_70",
+        },
+        produces={"output": "ca/rc381_part_4_line_84"},
+    ),
+    CapabilitySelection(
+        name="core/contribution_tier",
+        params={"tier": "ca/cpp_self_employed_first_additional_contribution"},
+        consumes={
+            "earnings": "ca/rc381_part_4_line_70",
+        },
+        produces={"output": "ca/rc381_part_4_line_85"},
+    ),
+    CapabilitySelection(
+        name="core/contribution_tier",
+        params={"tier": "ca/cpp_self_employed_second_additional_contribution"},
+        consumes={
+            "earnings": "ca/rc381_part_4_line_83",
+        },
+        produces={"output": "ca/rc381_part_4_line_86"},
+    ),
+    # Line 87 "Line 85 plus line 86".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": ("ca/rc381_part_4_line_85", "ca/rc381_part_4_line_86"),
+        },
+        produces={"output": "ca/rc381_part_4_line_87"},
+    ),
+    # Line 88 "Line 84 plus line 87".
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": ("ca/rc381_part_4_line_84", "ca/rc381_part_4_line_87"),
+        },
+        produces={"output": "ca/rc381_part_4_line_88"},
+    ),
+    # The amount printed inside line 89, "Amount from line 69 of Part 3 (if positive)": line 69
+    # of Part 3 floored at zero ...
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={
+            "parts": ("ca/rc381_part_3_line_69",),
+        },
+        produces={"output": "ca/rc381_part_4_line_89_from_line_69"},
+    ),
+    # ... and line 89 "× 2 =": twice that amount. 2 is above one, which a rate refuses, so it is
+    # a fraction, 2/1, kept as printed.
+    CapabilitySelection(
+        name="core/apply_fraction",
+        params={"fraction": "ca/rc381_double_fraction"},
+        consumes={
+            "base": "ca/rc381_part_4_line_89_from_line_69",
+        },
+        produces={"output": "ca/rc381_part_4_line_89"},
+    ),
+    # Line 90 "CPP contributions payable on self-employment income and other earnings: Line 88
+    # minus 89." (if negative, show in brackets).
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/rc381_part_4_line_88",
+            "less": "ca/rc381_part_4_line_89",
+        },
+        produces={"output": "ca/rc381_part_4_line_90"},
+    ),
+    # Line 90 "If positive, enter the amount (in dollars and cents) on line 42100 of your
+    # return": line 90 floored at zero.
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={
+            "parts": ("ca/rc381_part_4_line_90",),
+        },
+        produces={"output": "ca/rc381_self_employment_cpp_contributions"},
+    ),
+    # The amount printed inside line 91, "amount from line 90 entered as a positive amount":
+    # above zero only when line 90 is negative ("If negative, show in brackets and continue at
+    # line 91").
+    CapabilitySelection(
+        name="ca/positive_part_of_negation",
+        params={},
+        consumes={
+            "amount": "ca/rc381_part_4_line_90",
+        },
+        produces={"output": "ca/rc381_part_4_line_91_from_line_90"},
+    ),
+    # Line 91 "CPP overpayment: ... amount from line 90 entered as a positive amount × 50% =",
+    # the result for line 44800 of the return; the 50% is the base credit rate of Schedule 8 Part
+    # 4 (line 15, "multiplied by 50%").
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/cpp_self_employed_base_credit_rate"},
+        consumes={
+            "base": "ca/rc381_part_4_line_91_from_line_90",
+        },
+        produces={"output": "ca/rc381_part_4_line_91"},
+    ),
 }
 
 WIRING = {
@@ -2006,4 +2301,111 @@ WIRING = {
         frozenset({RC381_PART_4_LINE_53, RC381_PART_4_LINE_55}),
         frozenset({RC381_PART_4_LINE_56}),
     ),
+    (
+        SubtractNotBelowZero,
+        frozenset({CPP_MAXIMUM_PENSIONABLE_EARNINGS, CPP_BASIC_EXEMPTION}),
+        frozenset({RC381_PART_4_LINE_59}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({RC381_PART_4_LINE_59, RC381_PART_4_LINE_42}),
+        frozenset({RC381_PART_4_LINE_61}),
+    ),
+    (
+        LesserOf,
+        frozenset({RC381_PART_4_LINE_4, RC381_PART_4_LINE_61}),
+        frozenset({RC381_PART_4_LINE_62}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({CPP_BASIC_EXEMPTION, RC381_PART_3_LINE_3}),
+        frozenset({RC381_PART_4_LINE_65}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({RC381_PART_4_LINE_4, RC381_PART_4_LINE_59}),
+        frozenset({RC381_PART_4_LINE_68}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({RC381_PART_4_LINE_65, RC381_PART_4_LINE_68}),
+        frozenset({RC381_PART_4_LINE_69}),
+    ),
+    (
+        Subtract,
+        frozenset({RC381_PART_4_LINE_62, RC381_PART_4_LINE_69}),
+        frozenset({RC381_PART_4_LINE_70}),
+    ),
+    (
+        Sum,
+        frozenset({RC381_PART_4_LINE_4, RC381_PART_3_LINE_11, RC381_PART_3_LINE_31}),
+        frozenset({RC381_PART_4_LINE_74}),
+    ),
+    (DividedByRate, frozenset({RC381_PART_4_LINE_56}), frozenset({RC381_PART_4_LINE_76})),
+    (
+        SubtractNotBelowZero,
+        frozenset({CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM, RC381_PART_4_LINE_76}),
+        frozenset({RC381_PART_4_LINE_77}),
+    ),
+    (
+        Subtract,
+        frozenset({RC381_PART_4_LINE_4, RC381_PART_4_LINE_65}),
+        frozenset({RC381_PART_4_LINE_80}),
+    ),
+    (
+        Subtract,
+        frozenset({RC381_PART_4_LINE_80, RC381_PART_4_LINE_70}),
+        frozenset({RC381_PART_4_LINE_82}),
+    ),
+    (
+        LesserOf,
+        frozenset({RC381_PART_4_LINE_77, RC381_PART_4_LINE_82}),
+        frozenset({RC381_PART_4_LINE_83_LESSER}),
+    ),
+    (
+        AmountWhenMore,
+        frozenset(
+            {RC381_PART_4_LINE_83_LESSER, RC381_PART_4_LINE_74, CPP_MAXIMUM_PENSIONABLE_EARNINGS}
+        ),
+        frozenset({RC381_PART_4_LINE_83}),
+    ),
+    (TieredContribution, frozenset({RC381_PART_4_LINE_70}), frozenset({RC381_PART_4_LINE_84})),
+    (TieredContribution, frozenset({RC381_PART_4_LINE_70}), frozenset({RC381_PART_4_LINE_85})),
+    (TieredContribution, frozenset({RC381_PART_4_LINE_83}), frozenset({RC381_PART_4_LINE_86})),
+    (
+        Sum,
+        frozenset({RC381_PART_4_LINE_85, RC381_PART_4_LINE_86}),
+        frozenset({RC381_PART_4_LINE_87}),
+    ),
+    (
+        Sum,
+        frozenset({RC381_PART_4_LINE_84, RC381_PART_4_LINE_87}),
+        frozenset({RC381_PART_4_LINE_88}),
+    ),
+    (
+        SumNotBelowZero,
+        frozenset({RC381_PART_3_LINE_69}),
+        frozenset({RC381_PART_4_LINE_89_FROM_LINE_69}),
+    ),
+    (
+        ApplyFraction,
+        frozenset({RC381_PART_4_LINE_89_FROM_LINE_69}),
+        frozenset({RC381_PART_4_LINE_89}),
+    ),
+    (
+        Subtract,
+        frozenset({RC381_PART_4_LINE_88, RC381_PART_4_LINE_89}),
+        frozenset({RC381_PART_4_LINE_90}),
+    ),
+    (
+        SumNotBelowZero,
+        frozenset({RC381_PART_4_LINE_90}),
+        frozenset({RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS}),
+    ),
+    (
+        PositivePartOfNegation,
+        frozenset({RC381_PART_4_LINE_90}),
+        frozenset({RC381_PART_4_LINE_91_FROM_LINE_90}),
+    ),
+    (ApplyRate, frozenset({RC381_PART_4_LINE_91_FROM_LINE_90}), frozenset({RC381_PART_4_LINE_91})),
 }

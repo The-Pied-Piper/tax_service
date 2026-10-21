@@ -199,3 +199,4 @@ expected:
   ca/amt_security_options_net: "0"
   ca/net_capital_loss_balance_2000: "0.00"
   ca/rc381_part_4_line_4: "50000"
+  ca/rc381_self_employment_cpp_contributions: "5533.50"

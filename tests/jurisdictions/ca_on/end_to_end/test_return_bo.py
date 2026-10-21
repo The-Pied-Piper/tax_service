@@ -1,5 +1,5 @@
 """CA-ON 2025 end to end: return bo (Form RC381 Part 2, Part 3 lines 1 to 93 and Part 4 lines 1
-to 56)."""
+to 91)."""
 
 from __future__ import annotations
 
@@ -25,6 +25,7 @@ from app.jurisdictions.ca.capabilities.amount_when_more import AmountWhenMore
 from app.jurisdictions.ca.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
 from app.jurisdictions.ca.capabilities.count_at_least import CountAtLeast
+from app.jurisdictions.ca.capabilities.divided_by_rate import DividedByRate
 from app.jurisdictions.ca.capabilities.lesser_of_when_positive import (
     LesserOfWhenPositive,
     LesserOfWhenPositiveInBrackets,
@@ -166,6 +167,31 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_54,
     RC381_PART_4_LINE_55,
     RC381_PART_4_LINE_56,
+    RC381_PART_4_LINE_59,
+    RC381_PART_4_LINE_61,
+    RC381_PART_4_LINE_62,
+    RC381_PART_4_LINE_65,
+    RC381_PART_4_LINE_68,
+    RC381_PART_4_LINE_69,
+    RC381_PART_4_LINE_70,
+    RC381_PART_4_LINE_74,
+    RC381_PART_4_LINE_76,
+    RC381_PART_4_LINE_77,
+    RC381_PART_4_LINE_80,
+    RC381_PART_4_LINE_82,
+    RC381_PART_4_LINE_83,
+    RC381_PART_4_LINE_83_LESSER,
+    RC381_PART_4_LINE_84,
+    RC381_PART_4_LINE_85,
+    RC381_PART_4_LINE_86,
+    RC381_PART_4_LINE_87,
+    RC381_PART_4_LINE_88,
+    RC381_PART_4_LINE_89,
+    RC381_PART_4_LINE_89_FROM_LINE_69,
+    RC381_PART_4_LINE_90,
+    RC381_PART_4_LINE_91,
+    RC381_PART_4_LINE_91_FROM_LINE_90,
+    RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS,
     TOTAL_PAYABLE,
 )
 from tests.jurisdictions.ca_on.end_to_end.support import D, compute
@@ -2371,20 +2397,62 @@ def test_return_bo_part_4_steps_are_the_form_capabilities() -> None:
     assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_36), SumNotBelowZero)
     assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_39), LesserOf)
     assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_41), ApplyFraction)
+    # Form RC381 Part 4 lines 57 to 91: the floored differences of lines 59, 61, 65, 68, 69 and 77,
+    # the unfloored differences of lines 70, 80, 82 and 90, the sums of lines 74, 87 and 88, the
+    # "whichever is less" of lines 62 and 83 (the latter before "If line 74 is more than line 57"),
+    # line 76's division by 4%, the tiers of lines 84 to 86, the "if positive" amounts of line 89
+    # and line 42100 (floored sums), line 89's "x 2", the positive amount of line 91 and its 50%.
+    for kind in (
+        RC381_PART_4_LINE_59,
+        RC381_PART_4_LINE_61,
+        RC381_PART_4_LINE_65,
+        RC381_PART_4_LINE_68,
+        RC381_PART_4_LINE_69,
+        RC381_PART_4_LINE_77,
+    ):
+        assert isinstance(worksheet.producer_of(kind), SubtractNotBelowZero), kind.identifier
+    for kind in (
+        RC381_PART_4_LINE_70,
+        RC381_PART_4_LINE_80,
+        RC381_PART_4_LINE_82,
+        RC381_PART_4_LINE_90,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Subtract), kind.identifier
+    for kind in (RC381_PART_4_LINE_74, RC381_PART_4_LINE_87, RC381_PART_4_LINE_88):
+        assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
+    for kind in (RC381_PART_4_LINE_62, RC381_PART_4_LINE_83_LESSER):
+        assert isinstance(worksheet.producer_of(kind), LesserOf), kind.identifier
+    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_83), AmountWhenMore)
+    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_76), DividedByRate)
+    for kind in (RC381_PART_4_LINE_84, RC381_PART_4_LINE_85, RC381_PART_4_LINE_86):
+        assert isinstance(worksheet.producer_of(kind), TieredContribution), kind.identifier
+    for kind in (RC381_PART_4_LINE_89_FROM_LINE_69, RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS):
+        assert isinstance(worksheet.producer_of(kind), SumNotBelowZero), kind.identifier
+    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_89), ApplyFraction)
+    assert isinstance(
+        worksheet.producer_of(RC381_PART_4_LINE_91_FROM_LINE_90), PositivePartOfNegation
+    )
+    assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_91), ApplyRate)
 
 
 def test_return_bo_the_cpt20_election_does_not_reach_the_t1_lines_yet() -> None:
-    # Part 4 line 4 is not read by anything yet, and Schedule 8 Part 4's line 42100 is multiplied
-    # by "Part 4 completed" (0 here): the same return with and without lines 2 and 3 (50373 and
-    # 50399) gives the same Schedule 8 contributions, net income and total payable.
+    # Part 4 line 4 is read by lines 62, 68, 74 and 80, which no T1 line reads yet, and Schedule 8
+    # Part 4's line 42100 is multiplied by "Part 4 completed" (0 here): the same return with and
+    # without lines 2 and 3 (50373 and 50399) gives the same Schedule 8 contributions, net income
+    # and total payable.
     with_election = return_bo()
     without_election = return_bo(cpt20_earnings="0", cpt20_t4_earnings="0")
 
     for kind in (CPP_BASE_CONTRIBUTIONS, CPP_ENHANCED_CONTRIBUTIONS, NET_INCOME, TOTAL_PAYABLE):
         assert with_election.get(kind).value == without_election.get(kind).value, kind.identifier
-    # Part 4 lines 5 to 56 do not read line 4, so they are the same too.
+    # Part 4 lines 5 to 56 do not read line 4, so they are the same too; lines 62 and onward do:
+    # line 4 of 12,500 against 0 changes line 62 (1,300.00 against 0), line 74 and the lines after
+    # them, down to line 90 and line 91.
     assert part_4(with_election) == part_4(without_election)
     assert part_4_qpp(with_election) == part_4_qpp(without_election)
+    assert part_4_earnings(with_election) != part_4_earnings(without_election)
+    assert with_election.get(RC381_PART_4_LINE_62).value == D("1300.00")
+    assert without_election.get(RC381_PART_4_LINE_62).value == D("0")
 
 
 # Part 4, lines 31 to 56 (the QPP side before its gross-up, line 42 and the second additional
@@ -3323,6 +3391,1442 @@ def test_return_bo_part_4_lines_31_to_56(
     assert part_4_qpp(worksheet) == {line: D(value) for line, value in expected.items()}
 
 
+# Part 4, lines 57 to 91 (the earnings subject to contributions, the contributions through
+# self-employment income and other earnings, the contributions payable and the overpayment). Lines
+# 57 and 58 are lines C and F of Part 2, line 60 is line 42, lines 63 and 64 are line 58 and line 3
+# of Part 3, lines 66, 71, 78 and 79 are lines 4 and 65, line 67 is line 59, lines 72 and 73 are
+# lines 11 and 31 of Part 3, line 75 is line D and line 81 is line 70. "If line 3 of Part 3 is less
+# than line 58, complete lines 63 to 69. If not, enter "0" on line 69": line 65 "Line 63 minus line
+# 64 (if negative, enter "0" on lines 65 and 69 ...)" is "0" exactly when line 3 is not less than
+# line 58, and so is line 69, which the tests below pin; line 68 is still computed when the form
+# does not complete it. "If line 74 is more than line 57, complete lines 75 to 83. If not, enter
+# "0" on line 83": line 83 is the lesser of lines 77 and 82 only then, and "0" otherwise. The
+# helpers the form prints inside a line are computed whatever the signs are, so the dict below
+# lists them: "83_lesser" is "Enter whichever is less: amount from line 77 or line 82.", before
+# the gate, "89_from_line_69" the "Amount from line 69 of Part 3 (if positive)" and
+# "91_from_line_90" the "amount from line 90 entered as a positive amount". "42100" is line 90
+# when it is positive ("enter the amount on line 42100 of your return"), else "0".
+PART_4_EARNINGS_KINDS: dict[str, ArtifactKind[Decimal]] = {
+    "59": RC381_PART_4_LINE_59,
+    "61": RC381_PART_4_LINE_61,
+    "62": RC381_PART_4_LINE_62,
+    "65": RC381_PART_4_LINE_65,
+    "68": RC381_PART_4_LINE_68,
+    "69": RC381_PART_4_LINE_69,
+    "70": RC381_PART_4_LINE_70,
+    "74": RC381_PART_4_LINE_74,
+    "76": RC381_PART_4_LINE_76,
+    "77": RC381_PART_4_LINE_77,
+    "80": RC381_PART_4_LINE_80,
+    "82": RC381_PART_4_LINE_82,
+    "83_lesser": RC381_PART_4_LINE_83_LESSER,
+    "83": RC381_PART_4_LINE_83,
+    "84": RC381_PART_4_LINE_84,
+    "85": RC381_PART_4_LINE_85,
+    "86": RC381_PART_4_LINE_86,
+    "87": RC381_PART_4_LINE_87,
+    "88": RC381_PART_4_LINE_88,
+    "89_from_line_69": RC381_PART_4_LINE_89_FROM_LINE_69,
+    "89": RC381_PART_4_LINE_89,
+    "90": RC381_PART_4_LINE_90,
+    "42100": RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS,
+    "91_from_line_90": RC381_PART_4_LINE_91_FROM_LINE_90,
+    "91": RC381_PART_4_LINE_91,
+}
+
+
+def part_4_earnings(worksheet: Worksheet) -> dict[str, Decimal]:
+    """Part 4's lines 59 to 91 of `worksheet`, by line number (see `PART_4_EARNINGS_KINDS`)."""
+    return {line: worksheet.get(kind).value for line, kind in PART_4_EARNINGS_KINDS.items()}
+
+
+def test_return_bo_part_4_lines_59_to_91_match_the_tickets_example() -> None:
+    # Return BO: line 4 = 12,500 (the election), line 42 = 66,500.00 (line 27 plus line 41), line 3
+    # of Part 3 = 70,000.00 and line 69 of Part 3 = 172.25. Line 59 = line C 71,300.00 less line F
+    # 3,500.00 = 67,800.00; line 61 = 67,800.00 less 66,500.00 = 1,300.00; line 62 = the lesser of
+    # 12,500 and 1,300.00 = 1,300.00. Line 3 (70,000.00) is not less than line 58 (3,500.00), so
+    # line 65 (3,500.00 less 70,000.00, entered as "0") and line 69 are "0" (line 68 = 12,500 less
+    # 67,800.00 is "0" too); line 70 = 1,300.00. Line 74 = 12,500 + 30,000.00 + 40,000.00 =
+    # 82,500.00 is more than line 57 (71,300.00), so lines 75 to 83 are completed: line 76 = 0.00 /
+    # 4% = 0.00 (line 56 is 0), line 77 = 9,900.00 less 0.00 = 9,900.00, line 80 = 12,500 less 0 =
+    # 12,500, line 82 = 12,500 less 1,300.00 = 11,200.00 and line 83 = the lesser of 9,900.00 and
+    # 11,200.00 = 9,900.00. Line 84 = 1,300.00 x 9.9% = 128.70, line 85 = 1,300.00 x 2% = 26.00,
+    # line 86 = 9,900.00 x 8% = 792.00, line 87 = 818.00 and line 88 = 946.70. Line 89 = 172.25 x
+    # 2 = 344.50, line 90 = 946.70 less 344.50 = 602.20, positive: line 42100 = 602.20 and line 91
+    # is "0".
+    worksheet = return_bo()
+
+    assert worksheet.get(RC381_PART_4_LINE_4).value == D("12500")
+    assert worksheet.get(RC381_PART_4_LINE_42).value == D("66500.00")
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D("172.25")
+    assert part_4_earnings(worksheet) == {
+        "59": D("67800.00"),
+        "61": D("1300.00"),
+        "62": D("1300.00"),
+        "65": D("0"),
+        "68": D("0"),
+        "69": D("0"),
+        "70": D("1300.00"),
+        "74": D("82500"),
+        "76": D("0.00"),
+        "77": D("9900.00"),
+        "80": D("12500"),
+        "82": D("11200.00"),
+        "83_lesser": D("9900.00"),
+        "83": D("9900.00"),
+        "84": D("128.70"),
+        "85": D("26.00"),
+        "86": D("792.00"),
+        "87": D("818.00"),
+        "88": D("946.70"),
+        "89_from_line_69": D("172.25"),
+        "89": D("344.50"),
+        "90": D("602.20"),
+        "42100": D("602.20"),
+        "91_from_line_90": D("0"),
+        "91": D("0.00"),
+    }
+
+
+def test_return_bo_part_4_without_the_election_line_90_is_negative_and_line_91_is_half_of_it() -> (
+    None
+):
+    # No election and no self-employment income: line 4 = 0, so lines 62, 70, 80, 82 and 83 are 0
+    # and lines 84 to 88 are 0.00. Line 69 of Part 3 (172.25) is positive: line 89 = 172.25 x 2 =
+    # 344.50 and line 90 = 0.00 less 344.50 = -344.50, in brackets: line 42100 is "0" and
+    # line 91 = 344.50 x 50% = 172.25.
+    worksheet = return_bo(cpt20_earnings="0", cpt20_t4_earnings="0")
+
+    assert part_4_earnings(worksheet) == {
+        "59": D("67800.00"),
+        "61": D("1300.00"),
+        "62": D("0"),
+        "65": D("0"),
+        "68": D("0"),
+        "69": D("0"),
+        "70": D("0"),
+        "74": D("70000"),
+        "76": D("0.00"),
+        "77": D("9900.00"),
+        "80": D("0"),
+        "82": D("0"),
+        "83_lesser": D("0"),
+        "83": D("0"),
+        "84": D("0.00"),
+        "85": D("0.00"),
+        "86": D("0.00"),
+        "87": D("0.00"),
+        "88": D("0.00"),
+        "89_from_line_69": D("172.25"),
+        "89": D("344.50"),
+        "90": D("-344.50"),
+        "42100": D("0"),
+        "91_from_line_90": D("344.50"),
+        "91": D("172.25"),
+    }
+
+
+def test_return_bo_part_4_self_employment_income_and_no_t4_slips_reaches_the_printed_maximums() -> (
+    None
+):
+    # Net partnership income of 80,000 and no T4 slip: line 3 of Part 3 is 0, less than line 58, so
+    # lines 63 to 69 are completed: line 65 = 3,500.00 less 0 = 3,500.00 and line 68 = 80,000 less
+    # 67,800.00 = 12,200.00, so line 69 = 3,500.00 less 12,200.00, entered as "0". Line 61 =
+    # 67,800.00 (line 42 is 0) and line 62 = 67,800.00, so line 70 is the band of 67,800.00: line
+    # 84 = 67,800.00 x 9.9% = 6,712.20 and line 85 = 67,800.00 x 2% = 1,356.00 (the printed
+    # maximums). Line 74 = 80,000 is more than line 57: line 82 = (80,000 less 3,500.00) less
+    # 67,800.00 = 8,700.00 is less than line 77 (9,900.00), so line 83 = 8,700.00 and line 86 =
+    # 8,700.00 x 8% = 696.00. Line 69 of Part 3 is 0: line 90 = 8,764.20 = line 42100.
+    worksheet = return_bo(
+        line_1="0",
+        line_2="0",
+        line_19="0",
+        line_39="0",
+        cpt20_earnings="0",
+        cpt20_t4_earnings="0",
+        net_partnership_income="80000",
+    )
+
+    assert worksheet.get(RC381_PART_3_LINE_3).value == D("0")
+    assert part_4_earnings(worksheet) == {
+        "59": D("67800.00"),
+        "61": D("67800.00"),
+        "62": D("67800.00"),
+        "65": D("3500.00"),
+        "68": D("12200.00"),
+        "69": D("0"),
+        "70": D("67800.00"),
+        "74": D("80000"),
+        "76": D("0.00"),
+        "77": D("9900.00"),
+        "80": D("76500.00"),
+        "82": D("8700.00"),
+        "83_lesser": D("8700.00"),
+        "83": D("8700.00"),
+        "84": D("6712.20"),
+        "85": D("1356.00"),
+        "86": D("696.00"),
+        "87": D("2052.00"),
+        "88": D("8764.20"),
+        "89_from_line_69": D("0.00"),
+        "89": D("0.00"),
+        "90": D("8764.20"),
+        "42100": D("8764.20"),
+        "91_from_line_90": D("0"),
+        "91": D("0.00"),
+    }
+
+
+def test_return_bo_part_4_line_69_is_zero_when_line_3_is_exactly_line_58_and_not_when_less() -> (
+    None
+):
+    # Line 3 of Part 3 = 2,000 + 1,500 = 3,500.00 is not less than line 58 (3,500.00): line 65 is
+    # "0", so is line 69, and with net partnership income of 100 line 70 = line 62 = 100.00. One
+    # cent less (line 2 of 1,499.99): line 65 = 0.01, line 68 = 0 (100 is not more than
+    # 67,800.00), line 69 = 0.01 and line 70 = 100.00 less 0.01 = 99.99.
+    at_line_58 = return_bo(
+        "2000",
+        "1500",
+        "0",
+        "0",
+        net_partnership_income="100",
+        cpt20_earnings="0",
+        cpt20_t4_earnings="0",
+    )
+    below_line_58 = return_bo(
+        "2000",
+        "1499.99",
+        "0",
+        "0",
+        net_partnership_income="100",
+        cpt20_earnings="0",
+        cpt20_t4_earnings="0",
+    )
+
+    assert at_line_58.get(RC381_PART_3_LINE_3).value == D("3500.00")
+    assert at_line_58.get(RC381_PART_4_LINE_65).value == D("0")
+    assert at_line_58.get(RC381_PART_4_LINE_69).value == D("0")
+    assert at_line_58.get(RC381_PART_4_LINE_70).value == D("100")
+    assert below_line_58.get(RC381_PART_3_LINE_3).value == D("3499.99")
+    assert below_line_58.get(RC381_PART_4_LINE_65).value == D("0.01")
+    assert below_line_58.get(RC381_PART_4_LINE_68).value == D("0")
+    assert below_line_58.get(RC381_PART_4_LINE_69).value == D("0.01")
+    assert below_line_58.get(RC381_PART_4_LINE_70).value == D("99.99")
+    # Lines 84 and 85 are 9.9% and 2% of line 70: 99.99 x 9.9% = 9.89901 (9.90) and 99.99 x 2% =
+    # 1.9998 (2.00).
+    assert below_line_58.get(RC381_PART_4_LINE_84).value == D("9.90")
+    assert below_line_58.get(RC381_PART_4_LINE_85).value == D("2.00")
+
+
+def test_return_bo_part_4_line_83_needs_line_74_to_be_more_than_line_57() -> None:
+    # Lines 71 to 73 are line 4 (12,500) and lines 11 and 31 of Part 3 (30,000.00 and the whole of
+    # line 2): with line 2 of 28,800 line 74 = 71,300.00, which is line 57 (71,300.00), not more
+    # than it: line 83 is "0" although lines 77 (9,900.00) and 82 (12,500 less line 61,
+    # 12,499.94, is 0.06) give 0.06; with line 2 of 28,800.01 line 74 = 71,300.01 is more, and line
+    # 83 = 0.06.
+    equal = return_bo(line_2="28800")
+    one_cent_more = return_bo(line_2="28800.01")
+
+    assert equal.get(RC381_PART_4_LINE_74).value == D("71300.00")
+    assert equal.get(RC381_PART_4_LINE_83_LESSER).value == D("0.06")
+    assert equal.get(RC381_PART_4_LINE_83).value == D("0")
+    assert equal.get(RC381_PART_4_LINE_86).value == D("0")
+    assert one_cent_more.get(RC381_PART_4_LINE_74).value == D("71300.01")
+    assert one_cent_more.get(RC381_PART_4_LINE_83).value == D("0.06")
+    assert one_cent_more.get(RC381_PART_4_LINE_86).value == D("0.00")
+
+
+def test_return_bo_part_4_a_negative_line_70_contributes_nothing_and_is_not_floored() -> None:
+    # The form prints no floor on line 70 "Line 62 minus line 69": with line 3 of Part 3 of 2,500.00
+    # (1,000 + 1,500) line 65 = line 69 = 1,000.00 and net partnership income of 300 gives line 62 =
+    # 300, so line 70 = -700.00. Lines 84 and 85 take earnings below zero as nothing (0.00), line
+    # 80 = 300 less 1,000.00 = -700.00 and line 82 = -700.00 less -700.00 = 0.00.
+    worksheet = return_bo(
+        "1000",
+        "1500",
+        "0",
+        "0",
+        net_partnership_income="300",
+        cpt20_earnings="0",
+        cpt20_t4_earnings="0",
+    )
+
+    assert worksheet.get(RC381_PART_4_LINE_70).value == D("-700.00")
+    assert worksheet.get(RC381_PART_4_LINE_80).value == D("-700.00")
+    assert worksheet.get(RC381_PART_4_LINE_82).value == D("0.00")
+    assert worksheet.get(RC381_PART_4_LINE_84).value == D("0")
+    assert worksheet.get(RC381_PART_4_LINE_85).value == D("0")
+    assert worksheet.get(RC381_PART_4_LINE_90).value == D("0")
+
+
+def test_return_bo_part_4_line_89_is_twice_line_69_of_part_3_only_when_that_is_positive() -> None:
+    # Line 69 of Part 3 = 172.25 (positive): line 89 = 172.25 x 2 = 344.50. A negative line 69
+    # (line 2 of 80,000 with no T4 contributions: line 61 = -4,256.00 and line 68 = -396.00, line
+    # 69 = -4,652.00) and a line 69 of "0" give "0" ("if positive").
+    positive = return_bo()
+    negative = return_bo(line_2="80000", line_19="0", line_39="0")
+    zero = return_bo(line_19="1695.75", line_39="2432", cpt20_earnings="0", cpt20_t4_earnings="0")
+
+    assert positive.get(RC381_PART_4_LINE_89_FROM_LINE_69).value == D("172.25")
+    assert positive.get(RC381_PART_4_LINE_89).value == D("344.50")
+    assert negative.get(RC381_PART_3_LINE_69).value == D("-4652.00")
+    assert negative.get(RC381_PART_4_LINE_89_FROM_LINE_69).value == D("0")
+    assert negative.get(RC381_PART_4_LINE_89).value == D("0")
+    assert zero.get(RC381_PART_3_LINE_69).value == D("0")
+    assert zero.get(RC381_PART_4_LINE_89).value == D("0")
+
+
+def test_return_bo_part_4_line_90_positive_goes_to_line_42100_and_negative_to_line_91() -> None:
+    # Positive (the ticket's example): line 90 = 602.20, line 42100 = 602.20, line 91 = 0. Negative
+    # (no election): line 90 = -344.50, line 42100 = 0 and line 91 = 344.50 x 50% = 172.25 ("amount
+    # from line 90 entered as a positive amount"). Zero (no election, line 69 of Part 3 of 0): both
+    # are 0. A tie: line 90 of -344.37 gives 172.185, up to 172.19 (half even gives 172.18).
+    positive = return_bo()
+    negative = return_bo(cpt20_earnings="0", cpt20_t4_earnings="0")
+    zero = return_bo(line_19="1695.75", line_39="2432", cpt20_earnings="0", cpt20_t4_earnings="0")
+    tie = return_bo(cpt20_earnings="0", cpt20_t4_earnings="0", net_partnership_income="1.07")
+
+    assert positive.get(RC381_PART_4_LINE_90).value == D("602.20")
+    assert positive.get(RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS).value == D("602.20")
+    assert positive.get(RC381_PART_4_LINE_91_FROM_LINE_90).value == D("0")
+    assert positive.get(RC381_PART_4_LINE_91).value == D("0")
+    assert negative.get(RC381_PART_4_LINE_90).value == D("-344.50")
+    assert negative.get(RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS).value == D("0")
+    assert negative.get(RC381_PART_4_LINE_91_FROM_LINE_90).value == D("344.50")
+    assert negative.get(RC381_PART_4_LINE_91).value == D("172.25")
+    assert zero.get(RC381_PART_4_LINE_90).value == D("0")
+    assert zero.get(RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS).value == D("0")
+    assert zero.get(RC381_PART_4_LINE_91).value == D("0")
+    assert tie.get(RC381_PART_4_LINE_90).value == D("-344.37")
+    assert tie.get(RC381_PART_4_LINE_91).value == D("172.19")
+
+
+def test_return_bo_part_4_with_6_months_lines_57_and_58_are_the_6_month_row() -> None:
+    # Lines C and F for 6 months on line A are 35,650.00 and 1,750.00: line 59 = 33,900.00 (the
+    # most that line 59 prints for the year is 67,800). Line D is 4,950.00, which line 77 starts
+    # from (line 75): line 56 is 198.00, so line 76 = 198.00 / 4% = 4,950.00 and line 77 = 0.00.
+    worksheet = return_bo(cpp_months=6, qpp_months=6)
+
+    assert worksheet.get(RC381_PART_2_LINE_B).value == 6
+    assert worksheet.get(RC381_PART_4_LINE_56).value == D("198.00")
+    assert worksheet.get(RC381_PART_4_LINE_59).value == D("33900.00")
+    assert worksheet.get(RC381_PART_4_LINE_76).value == D("4950.00")
+    assert worksheet.get(RC381_PART_4_LINE_77).value == D("0.00")
+
+
+# Each case: box 26 outside and in Quebec (lines 1 and 2 of Part 3), box 16, box 17, box 16A and
+# box 17A (lines 19, 39, 25 and 45), net partnership income (T1 line 12200, Part 4 line 1) and the
+# election (lines 2 and 3, 50373 and 50399), the months, then the lines of the earlier parts it
+# rests on (lines 61 and 69 of Part 3, lines 4, 42 and 56 of Part 4) and Part 4's lines 59 to 91.
+# The figures are proved by an independent Decimal model of the printed form (not by this engine).
+PART_4_EARNINGS_CASES = [
+    # The example of Return BO: employment only on the T4 slips, the CPT20 election of 10,000 and
+    # 2,500 and no other self-employment income, so line 4 is 12,500; line 69 of Part 3 is
+    # positive.
+    pytest.param(
+        "30000",
+        "40000",
+        "1800.00",
+        "2500.00",
+        "0",
+        "0",
+        "0",
+        "10000",
+        "2500",
+        12,
+        12,
+        {
+            "part_3_line_61": "172.25",
+            "part_3_line_69": "172.25",
+            "line_4": "12500",
+            "line_42": "66500.00",
+            "line_56": "0",
+        },
+        {
+            "59": "67800.00",
+            "61": "1300.00",
+            "62": "1300.00",
+            "65": "0",
+            "68": "0",
+            "69": "0",
+            "70": "1300.00",
+            "74": "82500",
+            "76": "0.00",
+            "77": "9900.00",
+            "80": "12500",
+            "82": "11200.00",
+            "83_lesser": "9900.00",
+            "83": "9900.00",
+            "84": "128.70",
+            "85": "26.00",
+            "86": "792.00",
+            "87": "818.00",
+            "88": "946.70",
+            "89_from_line_69": "172.25",
+            "89": "344.50",
+            "90": "602.20",
+            "42100": "602.20",
+            "91_from_line_90": "0",
+            "91": "0.00",
+        },
+        id="ticket_example",
+    ),
+    # Line 4 is 0: lines 70 and 83 are 0, and line 89 (twice line 69 of Part 3) makes line 90
+    # negative, so line 42100 is 0 and line 91 is half of it.
+    pytest.param(
+        "30000",
+        "40000",
+        "1800.00",
+        "2500.00",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        12,
+        12,
+        {
+            "part_3_line_61": "172.25",
+            "part_3_line_69": "172.25",
+            "line_4": "0",
+            "line_42": "66500.00",
+            "line_56": "0",
+        },
+        {
+            "59": "67800.00",
+            "61": "1300.00",
+            "62": "0",
+            "65": "0",
+            "68": "0",
+            "69": "0",
+            "70": "0",
+            "74": "70000",
+            "76": "0.00",
+            "77": "9900.00",
+            "80": "0",
+            "82": "0",
+            "83_lesser": "0",
+            "83": "0",
+            "84": "0.00",
+            "85": "0.00",
+            "86": "0.00",
+            "87": "0.00",
+            "88": "0.00",
+            "89_from_line_69": "172.25",
+            "89": "344.50",
+            "90": "-344.50",
+            "42100": "0",
+            "91_from_line_90": "344.50",
+            "91": "172.25",
+        },
+        id="no_election_and_no_self_employment_income",
+    ),
+    # Line 70 is 15.00: 15.00 x 9.9% = 1.485 is a tie and rounds half up to 1.49 (half even gives
+    # 1.48).
+    pytest.param(
+        "30000",
+        "40000",
+        "1800.00",
+        "2500.00",
+        "0",
+        "0",
+        "15",
+        "0",
+        "0",
+        12,
+        12,
+        {
+            "part_3_line_61": "172.25",
+            "part_3_line_69": "172.25",
+            "line_4": "15",
+            "line_42": "66500.00",
+            "line_56": "0",
+        },
+        {
+            "59": "67800.00",
+            "61": "1300.00",
+            "62": "15",
+            "65": "0",
+            "68": "0",
+            "69": "0",
+            "70": "15",
+            "74": "70015",
+            "76": "0.00",
+            "77": "9900.00",
+            "80": "15",
+            "82": "0",
+            "83_lesser": "0",
+            "83": "0",
+            "84": "1.49",
+            "85": "0.30",
+            "86": "0.00",
+            "87": "0.30",
+            "88": "1.79",
+            "89_from_line_69": "172.25",
+            "89": "344.50",
+            "90": "-342.71",
+            "42100": "0",
+            "91_from_line_90": "342.71",
+            "91": "171.36",
+        },
+        id="net_self_employment_income_of_15",
+    ),
+    # Line 88 is 0.13 and line 90 is -344.37, so line 91 = 344.37 x 50% = 172.185, up to 172.19
+    # (half even gives 172.18).
+    pytest.param(
+        "30000",
+        "40000",
+        "1800.00",
+        "2500.00",
+        "0",
+        "0",
+        "1.07",
+        "0",
+        "0",
+        12,
+        12,
+        {
+            "part_3_line_61": "172.25",
+            "part_3_line_69": "172.25",
+            "line_4": "1.07",
+            "line_42": "66500.00",
+            "line_56": "0",
+        },
+        {
+            "59": "67800.00",
+            "61": "1300.00",
+            "62": "1.07",
+            "65": "0",
+            "68": "0",
+            "69": "0",
+            "70": "1.07",
+            "74": "70001.07",
+            "76": "0.00",
+            "77": "9900.00",
+            "80": "1.07",
+            "82": "0.00",
+            "83_lesser": "0.00",
+            "83": "0",
+            "84": "0.11",
+            "85": "0.02",
+            "86": "0.00",
+            "87": "0.02",
+            "88": "0.13",
+            "89_from_line_69": "172.25",
+            "89": "344.50",
+            "90": "-344.37",
+            "42100": "0",
+            "91_from_line_90": "344.37",
+            "91": "172.19",
+        },
+        id="line_91_rounds_half_up",
+    ),
+    # No T4 slips: line 3 of Part 3 is 0, less than line 58, so line 65 is 3,500.00; line 68
+    # (80,000.00 less 67,800.00) takes it all, line 69 is 0 and line 70 is the line 59 maximum of
+    # 67,800.00, where lines 84 and 85 stop at their printed maximums.
+    pytest.param(
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "80000",
+        "0",
+        "0",
+        12,
+        12,
+        {
+            "part_3_line_61": "0.00",
+            "part_3_line_69": "0.00",
+            "line_4": "80000",
+            "line_42": "0.00",
+            "line_56": "0",
+        },
+        {
+            "59": "67800.00",
+            "61": "67800.00",
+            "62": "67800.00",
+            "65": "3500.00",
+            "68": "12200.00",
+            "69": "0",
+            "70": "67800.00",
+            "74": "80000",
+            "76": "0.00",
+            "77": "9900.00",
+            "80": "76500.00",
+            "82": "8700.00",
+            "83_lesser": "8700.00",
+            "83": "8700.00",
+            "84": "6712.20",
+            "85": "1356.00",
+            "86": "696.00",
+            "87": "2052.00",
+            "88": "8764.20",
+            "89_from_line_69": "0.00",
+            "89": "0.00",
+            "90": "8764.20",
+            "42100": "8764.20",
+            "91_from_line_90": "0",
+            "91": "0.00",
+        },
+        id="self_employment_income_and_no_t4_slips",
+    ),
+    # Line 3 of Part 3 (2,500.00) is less than line 58 (3,500.00): line 65 = 1,000.00, line 68 =
+    # 0, so line 69 = 1,000.00 and line 70 = 2,500.00 less 1,000.00 = 1,500.00.
+    pytest.param(
+        "1000",
+        "1500",
+        "0",
+        "0",
+        "0",
+        "0",
+        "2500",
+        "0",
+        "0",
+        12,
+        12,
+        {
+            "part_3_line_61": "0.00",
+            "part_3_line_69": "0.00",
+            "line_4": "2500",
+            "line_42": "0.00",
+            "line_56": "0",
+        },
+        {
+            "59": "67800.00",
+            "61": "67800.00",
+            "62": "2500",
+            "65": "1000.00",
+            "68": "0",
+            "69": "1000.00",
+            "70": "1500.00",
+            "74": "5000",
+            "76": "0.00",
+            "77": "9900.00",
+            "80": "1500.00",
+            "82": "0.00",
+            "83_lesser": "0.00",
+            "83": "0",
+            "84": "148.50",
+            "85": "30.00",
+            "86": "0.00",
+            "87": "30.00",
+            "88": "178.50",
+            "89_from_line_69": "0.00",
+            "89": "0.00",
+            "90": "178.50",
+            "42100": "178.50",
+            "91_from_line_90": "0",
+            "91": "0.00",
+        },
+        id="earnings_below_the_basic_exemption",
+    ),
+    # As above with net self-employment income of 300: line 70 = 300.00 less 1,000.00 = -700.00
+    # (the form prints no floor), which the tiers of lines 84 and 85 take as no earnings, and line
+    # 82 = -700.00 less -700.00 = 0.
+    pytest.param(
+        "1000",
+        "1500",
+        "0",
+        "0",
+        "0",
+        "0",
+        "300",
+        "0",
+        "0",
+        12,
+        12,
+        {
+            "part_3_line_61": "0.00",
+            "part_3_line_69": "0.00",
+            "line_4": "300",
+            "line_42": "0.00",
+            "line_56": "0",
+        },
+        {
+            "59": "67800.00",
+            "61": "67800.00",
+            "62": "300",
+            "65": "1000.00",
+            "68": "0",
+            "69": "1000.00",
+            "70": "-700.00",
+            "74": "2800",
+            "76": "0.00",
+            "77": "9900.00",
+            "80": "-700.00",
+            "82": "0.00",
+            "83_lesser": "0.00",
+            "83": "0",
+            "84": "0.00",
+            "85": "0.00",
+            "86": "0.00",
+            "87": "0.00",
+            "88": "0.00",
+            "89_from_line_69": "0.00",
+            "89": "0.00",
+            "90": "0.00",
+            "42100": "0.00",
+            "91_from_line_90": "0",
+            "91": "0.00",
+        },
+        id="self_employment_income_less_than_the_unused_exemption",
+    ),
+    # Line 68 is 12,200.00 (80,000.00 less 67,800.00), more than line 65 (1,000.00): line 69 is 0
+    # (not below zero), and line 70 is line 62.
+    pytest.param(
+        "1000",
+        "1500",
+        "0",
+        "0",
+        "0",
+        "0",
+        "80000",
+        "0",
+        "0",
+        12,
+        12,
+        {
+            "part_3_line_61": "0.00",
+            "part_3_line_69": "0.00",
+            "line_4": "80000",
+            "line_42": "0.00",
+            "line_56": "0",
+        },
+        {
+            "59": "67800.00",
+            "61": "67800.00",
+            "62": "67800.00",
+            "65": "1000.00",
+            "68": "12200.00",
+            "69": "0",
+            "70": "67800.00",
+            "74": "82500",
+            "76": "0.00",
+            "77": "9900.00",
+            "80": "79000.00",
+            "82": "11200.00",
+            "83_lesser": "9900.00",
+            "83": "9900.00",
+            "84": "6712.20",
+            "85": "1356.00",
+            "86": "792.00",
+            "87": "2148.00",
+            "88": "8860.20",
+            "89_from_line_69": "0.00",
+            "89": "0.00",
+            "90": "8860.20",
+            "42100": "8860.20",
+            "91_from_line_90": "0",
+            "91": "0.00",
+        },
+        id="line_68_positive_and_line_3_less_than_line_58",
+    ),
+    # Line 3 of Part 3 (70,000.00) is not less than line 58, so the form does not complete lines
+    # 63 to 69 and line 69 is 0 (line 68 is still computed: 80,000.00 less 67,800.00 = 12,200.00).
+    pytest.param(
+        "30000",
+        "40000",
+        "1800.00",
+        "2500.00",
+        "0",
+        "0",
+        "80000",
+        "0",
+        "0",
+        12,
+        12,
+        {
+            "part_3_line_61": "172.25",
+            "part_3_line_69": "172.25",
+            "line_4": "80000",
+            "line_42": "66500.00",
+            "line_56": "0",
+        },
+        {
+            "59": "67800.00",
+            "61": "1300.00",
+            "62": "1300.00",
+            "65": "0",
+            "68": "12200.00",
+            "69": "0",
+            "70": "1300.00",
+            "74": "150000",
+            "76": "0.00",
+            "77": "9900.00",
+            "80": "80000",
+            "82": "78700.00",
+            "83_lesser": "9900.00",
+            "83": "9900.00",
+            "84": "128.70",
+            "85": "26.00",
+            "86": "792.00",
+            "87": "818.00",
+            "88": "946.70",
+            "89_from_line_69": "172.25",
+            "89": "344.50",
+            "90": "602.20",
+            "42100": "602.20",
+            "91_from_line_90": "0",
+            "91": "0.00",
+        },
+        id="line_68_positive_and_line_3_not_less_than_line_58",
+    ),
+    # Line 74 = 12,500 + 30,000.00 + 28,800.00 = 71,300.00, not more than line 57 (71,300.00):
+    # line 83 is 0 although lines 77 and 82 are positive.
+    pytest.param(
+        "30000",
+        "28800",
+        "1800.00",
+        "2500.00",
+        "0",
+        "0",
+        "0",
+        "10000",
+        "2500",
+        12,
+        12,
+        {
+            "part_3_line_61": "887.76",
+            "part_3_line_69": "887.76",
+            "line_4": "12500",
+            "line_42": "55300.06",
+            "line_56": "0",
+        },
+        {
+            "59": "67800.00",
+            "61": "12499.94",
+            "62": "12499.94",
+            "65": "0",
+            "68": "0",
+            "69": "0",
+            "70": "12499.94",
+            "74": "71300",
+            "76": "0.00",
+            "77": "9900.00",
+            "80": "12500",
+            "82": "0.06",
+            "83_lesser": "0.06",
+            "83": "0",
+            "84": "1237.49",
+            "85": "250.00",
+            "86": "0.00",
+            "87": "250.00",
+            "88": "1487.49",
+            "89_from_line_69": "887.76",
+            "89": "1775.52",
+            "90": "-288.03",
+            "42100": "0",
+            "91_from_line_90": "288.03",
+            "91": "144.02",
+        },
+        id="line_74_equal_to_line_c",
+    ),
+    # Line 74 = 71,300.01 is more than line 57: line 83 is the lesser of lines 77 and 82.
+    pytest.param(
+        "30000",
+        "28800.01",
+        "1800.00",
+        "2500.00",
+        "0",
+        "0",
+        "0",
+        "10000",
+        "2500",
+        12,
+        12,
+        {
+            "part_3_line_61": "887.76",
+            "part_3_line_69": "887.76",
+            "line_4": "12500",
+            "line_42": "55300.06",
+            "line_56": "0",
+        },
+        {
+            "59": "67800.00",
+            "61": "12499.94",
+            "62": "12499.94",
+            "65": "0",
+            "68": "0",
+            "69": "0",
+            "70": "12499.94",
+            "74": "71300.01",
+            "76": "0.00",
+            "77": "9900.00",
+            "80": "12500",
+            "82": "0.06",
+            "83_lesser": "0.06",
+            "83": "0.06",
+            "84": "1237.49",
+            "85": "250.00",
+            "86": "0.00",
+            "87": "250.00",
+            "88": "1487.49",
+            "89_from_line_69": "887.76",
+            "89": "1775.52",
+            "90": "-288.03",
+            "42100": "0",
+            "91_from_line_90": "288.03",
+            "91": "144.02",
+        },
+        id="line_74_one_cent_more_than_line_c",
+    ),
+    # Line 4 is 6,000, line 61 is 1,300.00: line 82 = 6,000 less 1,300.00 = 4,700.00 is less than
+    # line 77 (9,900.00), so line 83 = 4,700.00.
+    pytest.param(
+        "30000",
+        "40000",
+        "1800.00",
+        "2500.00",
+        "0",
+        "0",
+        "0",
+        "4000",
+        "2000",
+        12,
+        12,
+        {
+            "part_3_line_61": "172.25",
+            "part_3_line_69": "172.25",
+            "line_4": "6000",
+            "line_42": "66500.00",
+            "line_56": "0",
+        },
+        {
+            "59": "67800.00",
+            "61": "1300.00",
+            "62": "1300.00",
+            "65": "0",
+            "68": "0",
+            "69": "0",
+            "70": "1300.00",
+            "74": "76000",
+            "76": "0.00",
+            "77": "9900.00",
+            "80": "6000",
+            "82": "4700.00",
+            "83_lesser": "4700.00",
+            "83": "4700.00",
+            "84": "128.70",
+            "85": "26.00",
+            "86": "376.00",
+            "87": "402.00",
+            "88": "530.70",
+            "89_from_line_69": "172.25",
+            "89": "344.50",
+            "90": "186.20",
+            "42100": "186.20",
+            "91_from_line_90": "0",
+            "91": "0.00",
+        },
+        id="line_82_less_than_line_77",
+    ),
+    # Line 2 of 60,000 makes line 3 of Part 3 more than line C: line 56 = 62.50, line 76 = 62.50 /
+    # 4% = 1,562.50 and line 77 = 9,900.00 less 1,562.50 = 8,337.50.
+    pytest.param(
+        "30000",
+        "60000",
+        "1800.00",
+        "2500.00",
+        "0",
+        "0",
+        "0",
+        "10000",
+        "2500",
+        12,
+        12,
+        {
+            "part_3_line_61": "62.50",
+            "part_3_line_69": "-333.50",
+            "line_4": "12500",
+            "line_42": "67799.99",
+            "line_56": "62.50",
+        },
+        {
+            "59": "67800.00",
+            "61": "0.01",
+            "62": "0.01",
+            "65": "0",
+            "68": "0",
+            "69": "0",
+            "70": "0.01",
+            "74": "93700.00",
+            "76": "1562.50",
+            "77": "8337.50",
+            "80": "12500",
+            "82": "12499.99",
+            "83_lesser": "8337.50",
+            "83": "8337.50",
+            "84": "0.00",
+            "85": "0.00",
+            "86": "667.00",
+            "87": "667.00",
+            "88": "667.00",
+            "89_from_line_69": "0",
+            "89": "0",
+            "90": "667.00",
+            "42100": "667.00",
+            "91_from_line_90": "0",
+            "91": "0.00",
+        },
+        id="second_additional_contributions_reduce_line_77",
+    ),
+    # Line 56 is 396.00: line 76 = 396.00 / 4% = 9,900.00 is line D, so line 77 is 0.
+    pytest.param(
+        "30000",
+        "60000",
+        "1800.00",
+        "2500.00",
+        "500",
+        "0",
+        "0",
+        "10000",
+        "2500",
+        12,
+        12,
+        {
+            "part_3_line_61": "62.50",
+            "part_3_line_69": "166.50",
+            "line_4": "12500",
+            "line_42": "67799.99",
+            "line_56": "396.00",
+        },
+        {
+            "59": "67800.00",
+            "61": "0.01",
+            "62": "0.01",
+            "65": "0",
+            "68": "0",
+            "69": "0",
+            "70": "0.01",
+            "74": "93700.00",
+            "76": "9900.00",
+            "77": "0.00",
+            "80": "12500",
+            "82": "12499.99",
+            "83_lesser": "0.00",
+            "83": "0.00",
+            "84": "0.00",
+            "85": "0.00",
+            "86": "0.00",
+            "87": "0.00",
+            "88": "0.00",
+            "89_from_line_69": "166.50",
+            "89": "333.00",
+            "90": "-333.00",
+            "42100": "0",
+            "91_from_line_90": "333.00",
+            "91": "166.50",
+        },
+        id="line_76_equal_to_line_d",
+    ),
+    # 6 months on line A: line D is 4,950.00 and line 76 = 396.00 / 4% = 9,900.00 is more, so line
+    # 77 is 0 (negative, entered as 0).
+    pytest.param(
+        "30000",
+        "80000",
+        "500",
+        "0",
+        "396",
+        "0",
+        "300",
+        "10000",
+        "2500",
+        6,
+        12,
+        {
+            "part_3_line_61": "-3797.60",
+            "part_3_line_69": "-3797.60",
+            "line_4": "12800",
+            "line_42": "8403.36",
+            "line_56": "396",
+        },
+        {
+            "59": "33900.00",
+            "61": "25496.64",
+            "62": "12800",
+            "65": "0",
+            "68": "0",
+            "69": "0",
+            "70": "12800",
+            "74": "94000.00",
+            "76": "9900.00",
+            "77": "0",
+            "80": "12800",
+            "82": "0",
+            "83_lesser": "0",
+            "83": "0",
+            "84": "1267.20",
+            "85": "256.00",
+            "86": "0.00",
+            "87": "256.00",
+            "88": "1523.20",
+            "89_from_line_69": "0",
+            "89": "0",
+            "90": "1523.20",
+            "42100": "1523.20",
+            "91_from_line_90": "0",
+            "91": "0.00",
+        },
+        id="line_76_more_than_line_d_for_6_months",
+    ),
+    # Line 42 = 67,800.02 is more than line 59 (67,800.00): line 61 is 0 and so is line 62.
+    pytest.param(
+        "30000",
+        "41400",
+        "1800.00",
+        "2500.00",
+        "0",
+        "0",
+        "0",
+        "10000",
+        "2500",
+        12,
+        12,
+        {
+            "part_3_line_61": "88.99",
+            "part_3_line_69": "84.99",
+            "line_4": "12500",
+            "line_42": "67800.02",
+            "line_56": "4.00",
+        },
+        {
+            "59": "67800.00",
+            "61": "0",
+            "62": "0",
+            "65": "0",
+            "68": "0",
+            "69": "0",
+            "70": "0",
+            "74": "83900",
+            "76": "100.00",
+            "77": "9800.00",
+            "80": "12500",
+            "82": "12500",
+            "83_lesser": "9800.00",
+            "83": "9800.00",
+            "84": "0.00",
+            "85": "0.00",
+            "86": "784.00",
+            "87": "784.00",
+            "88": "784.00",
+            "89_from_line_69": "84.99",
+            "89": "169.98",
+            "90": "614.02",
+            "42100": "614.02",
+            "91_from_line_90": "0",
+            "91": "0.00",
+        },
+        id="line_42_more_than_line_59",
+    ),
+    # Line 42 is negative (line 35A takes line 20 in brackets), so line 61 is more than line 59
+    # and line 70 is more than the 67,800.00 band of lines 84 and 85, which stop at their printed
+    # maximums.
+    pytest.param(
+        "70000",
+        "30000",
+        "0",
+        "0",
+        "100",
+        "0",
+        "80000",
+        "10000",
+        "2500",
+        12,
+        12,
+        {
+            "part_3_line_61": "-4125.63",
+            "part_3_line_69": "-4421.63",
+            "line_4": "92500",
+            "line_42": "-239.41",
+            "line_56": "100",
+        },
+        {
+            "59": "67800.00",
+            "61": "68039.41",
+            "62": "68039.41",
+            "65": "0",
+            "68": "24700.00",
+            "69": "0",
+            "70": "68039.41",
+            "74": "173700.00",
+            "76": "2500.00",
+            "77": "7400.00",
+            "80": "92500",
+            "82": "24460.59",
+            "83_lesser": "7400.00",
+            "83": "7400.00",
+            "84": "6712.20",
+            "85": "1356.00",
+            "86": "592.00",
+            "87": "1948.00",
+            "88": "8660.20",
+            "89_from_line_69": "0",
+            "89": "0",
+            "90": "8660.20",
+            "42100": "8660.20",
+            "91_from_line_90": "0",
+            "91": "0.00",
+        },
+        id="line_42_negative",
+    ),
+    # 6 months for CPP and QPP: lines C, D and F are 35,650.00, 4,950.00 and 1,750.00.
+    pytest.param(
+        "30000",
+        "40000",
+        "1800.00",
+        "2500.00",
+        "0",
+        "0",
+        "0",
+        "10000",
+        "2500",
+        6,
+        6,
+        {
+            "part_3_line_61": "2195.78",
+            "part_3_line_69": "1997.78",
+            "line_4": "12500",
+            "line_42": "33899.98",
+            "line_56": "198.00",
+        },
+        {
+            "59": "33900.00",
+            "61": "0.02",
+            "62": "0.02",
+            "65": "0",
+            "68": "0",
+            "69": "0",
+            "70": "0.02",
+            "74": "53100.00",
+            "76": "4950.00",
+            "77": "0.00",
+            "80": "12500",
+            "82": "12499.98",
+            "83_lesser": "0.00",
+            "83": "0.00",
+            "84": "0.00",
+            "85": "0.00",
+            "86": "0.00",
+            "87": "0.00",
+            "88": "0.00",
+            "89_from_line_69": "1997.78",
+            "89": "3995.56",
+            "90": "-3995.56",
+            "42100": "0",
+            "91_from_line_90": "3995.56",
+            "91": "1997.78",
+        },
+        id="6_months_on_lines_a_and_b",
+    ),
+    # Line A of 6 (C = 35,650.00, D = 4,950.00, F = 1,750.00) and line B of 12 (G to J): net self-
+    # employment income of 30,000, so line 83 is line D (4,950.00), the lesser of lines 77 and 82.
+    pytest.param(
+        "20000",
+        "30000",
+        "500",
+        "1000",
+        "0",
+        "0",
+        "30000",
+        "0",
+        "0",
+        6,
+        12,
+        {
+            "part_3_line_61": "-1047.62",
+            "part_3_line_69": "-1126.82",
+            "line_4": "30000",
+            "line_42": "24000.94",
+            "line_56": "0",
+        },
+        {
+            "59": "33900.00",
+            "61": "9899.06",
+            "62": "9899.06",
+            "65": "0",
+            "68": "0",
+            "69": "0",
+            "70": "9899.06",
+            "74": "76240.00",
+            "76": "0.00",
+            "77": "4950.00",
+            "80": "30000",
+            "82": "20100.94",
+            "83_lesser": "4950.00",
+            "83": "4950.00",
+            "84": "980.01",
+            "85": "197.98",
+            "86": "396.00",
+            "87": "593.98",
+            "88": "1573.99",
+            "89_from_line_69": "0",
+            "89": "0",
+            "90": "1573.99",
+            "42100": "1573.99",
+            "91_from_line_90": "0",
+            "91": "0.00",
+        },
+        id="6_months_for_cpp_and_12_for_qpp",
+    ),
+    # Line 69 of Part 3 is negative, so the amount of line 89 is 0 and line 90 is line 88.
+    pytest.param(
+        "30000",
+        "80000",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "10000",
+        "2500",
+        12,
+        12,
+        {
+            "part_3_line_61": "-4256.00",
+            "part_3_line_69": "-4652.00",
+            "line_4": "12500",
+            "line_42": "-120.97",
+            "line_56": "0",
+        },
+        {
+            "59": "67800.00",
+            "61": "67920.97",
+            "62": "12500",
+            "65": "0",
+            "68": "0",
+            "69": "0",
+            "70": "12500",
+            "74": "93700.00",
+            "76": "0.00",
+            "77": "9900.00",
+            "80": "12500",
+            "82": "0",
+            "83_lesser": "0",
+            "83": "0",
+            "84": "1237.50",
+            "85": "250.00",
+            "86": "0.00",
+            "87": "250.00",
+            "88": "1487.50",
+            "89_from_line_69": "0",
+            "89": "0",
+            "90": "1487.50",
+            "42100": "1487.50",
+            "91_from_line_90": "0",
+            "91": "0.00",
+        },
+        id="line_69_of_part_3_negative",
+    ),
+    # Line 69 of Part 3 is 0 and no self-employment income: lines 88 and 89 are 0, so line 90 is
+    # 0, neither positive nor negative.
+    pytest.param(
+        "30000",
+        "40000",
+        "1695.75",
+        "2432",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        12,
+        12,
+        {
+            "part_3_line_61": "0.00",
+            "part_3_line_69": "0.00",
+            "line_4": "0",
+            "line_42": "66500.00",
+            "line_56": "0",
+        },
+        {
+            "59": "67800.00",
+            "61": "1300.00",
+            "62": "0",
+            "65": "0",
+            "68": "0",
+            "69": "0",
+            "70": "0",
+            "74": "70000",
+            "76": "0.00",
+            "77": "9900.00",
+            "80": "0",
+            "82": "0",
+            "83_lesser": "0",
+            "83": "0",
+            "84": "0.00",
+            "85": "0.00",
+            "86": "0.00",
+            "87": "0.00",
+            "88": "0.00",
+            "89_from_line_69": "0.00",
+            "89": "0.00",
+            "90": "0.00",
+            "42100": "0.00",
+            "91_from_line_90": "0",
+            "91": "0.00",
+        },
+        id="line_90_zero",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    (
+        "line_1",
+        "line_2",
+        "box_16",
+        "box_17",
+        "box_16a",
+        "box_17a",
+        "line_12200",
+        "line_2_of_part_4",
+        "line_3_of_part_4",
+        "months_a",
+        "months_b",
+        "upstream",
+        "expected",
+    ),
+    PART_4_EARNINGS_CASES,
+)
+def test_return_bo_part_4_lines_59_to_91(
+    line_1: str,
+    line_2: str,
+    box_16: str,
+    box_17: str,
+    box_16a: str,
+    box_17a: str,
+    line_12200: str,
+    line_2_of_part_4: str,
+    line_3_of_part_4: str,
+    months_a: int,
+    months_b: int,
+    upstream: dict[str, str],
+    expected: dict[str, str],
+) -> None:
+    worksheet = return_bo(
+        line_1,
+        line_2,
+        box_16,
+        box_17,
+        line_25=box_16a,
+        line_45=box_17a,
+        cpp_months=months_a,
+        qpp_months=months_b,
+        cpt20_earnings=line_2_of_part_4,
+        cpt20_t4_earnings=line_3_of_part_4,
+        net_partnership_income=line_12200,
+    )
+
+    assert worksheet.get(RC381_PART_3_LINE_61).value == D(upstream["part_3_line_61"])
+    assert worksheet.get(RC381_PART_3_LINE_69).value == D(upstream["part_3_line_69"])
+    assert worksheet.get(RC381_PART_4_LINE_4).value == D(upstream["line_4"])
+    assert worksheet.get(RC381_PART_4_LINE_42).value == D(upstream["line_42"])
+    assert worksheet.get(RC381_PART_4_LINE_56).value == D(upstream["line_56"])
+    assert part_4_earnings(worksheet) == {line: D(value) for line, value in expected.items()}
+
+
 # A return with no Quebec figures.
 
 
@@ -3459,6 +4963,39 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
     assert worksheet.get(RC381_PART_3_LINE_30).value == D("9900.00")
     for kind in kinds:
         assert worksheet.get(kind).value == D("0"), kind.identifier
+    # Part 4 lines 57 to 91 are computed for every return: line 59 = 71,300.00 less 3,500.00 and
+    # line 61 = line 59 less line 42 (0). Line 3 of Part 3 (0) is less than line 58, so line 65 =
+    # line 69 = 3,500.00 (line 68 = 0 less line 59, entered as "0"), and line 70 = line 62 (the
+    # lesser of line 4, 0, and line 61) less line 69 = -3,500.00 (no floor is printed): lines 80
+    # and 82 follow (-3,500.00 and 0.00), line 77 = line D 9,900.00 less line 76 (0.00), and lines
+    # 84 to 91 are 0.
+    assert part_4_earnings(worksheet) == {
+        "59": D("67800.00"),
+        "61": D("67800.00"),
+        "62": D("0"),
+        "65": D("3500.00"),
+        "68": D("0"),
+        "69": D("3500.00"),
+        "70": D("-3500.00"),
+        "74": D("0"),
+        "76": D("0.00"),
+        "77": D("9900.00"),
+        "80": D("-3500.00"),
+        "82": D("0.00"),
+        "83_lesser": D("0.00"),
+        "83": D("0"),
+        "84": D("0.00"),
+        "85": D("0.00"),
+        "86": D("0.00"),
+        "87": D("0.00"),
+        "88": D("0.00"),
+        "89_from_line_69": D("0.00"),
+        "89": D("0.00"),
+        "90": D("0.00"),
+        "42100": D("0.00"),
+        "91_from_line_90": D("0"),
+        "91": D("0.00"),
+    }
 
 
 def test_the_rc381_figures_do_not_change_the_t1_lines_yet() -> None:

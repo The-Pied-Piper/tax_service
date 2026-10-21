@@ -684,12 +684,14 @@ from app.jurisdictions.ca.catalog import (
     QFFP_GAIN_OR_LOSS,
     QSBCS_GAIN_OR_LOSS,
     RC381_PART_3_LINE_3,
+    RC381_PART_3_LINE_11,
     RC381_PART_3_LINE_20,
     RC381_PART_3_LINE_21,
     RC381_PART_3_LINE_22,
     RC381_PART_3_LINE_23,
     RC381_PART_3_LINE_24,
     RC381_PART_3_LINE_26,
+    RC381_PART_3_LINE_31,
     RC381_PART_3_LINE_40,
     RC381_PART_3_LINE_41,
     RC381_PART_3_LINE_42,
@@ -744,6 +746,12 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_53,
     RC381_PART_4_LINE_55,
     RC381_PART_4_LINE_56,
+    RC381_PART_4_LINE_74,
+    RC381_PART_4_LINE_84,
+    RC381_PART_4_LINE_85,
+    RC381_PART_4_LINE_86,
+    RC381_PART_4_LINE_87,
+    RC381_PART_4_LINE_88,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REAL_ESTATE_GAIN_OR_LOSS,
@@ -986,6 +994,29 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Form RC381 Part 4 line 74 "Add lines 71 to 73." (the amounts from line 4 and from lines
+        # 11 and 31 of Part 3), line 87 "Line 85 plus line 86" and line 88
+        # "Line 84 plus line 87": every part is 0 for Return A, which has no T4 slips and no
+        # election.
+        RC381_PART_4_LINE_74: SumLine(
+            RC381_PART_4_LINE_74,
+            (
+                (RC381_PART_4_LINE_4, D("0.00")),
+                (RC381_PART_3_LINE_11, D("0")),
+                (RC381_PART_3_LINE_31, D("0")),
+            ),
+            D("0.00"),
+        ),
+        RC381_PART_4_LINE_87: SumLine(
+            RC381_PART_4_LINE_87,
+            ((RC381_PART_4_LINE_85, D("0.00")), (RC381_PART_4_LINE_86, D("0.00"))),
+            D("0.00"),
+        ),
+        RC381_PART_4_LINE_88: SumLine(
+            RC381_PART_4_LINE_88,
+            ((RC381_PART_4_LINE_84, D("0.00")), (RC381_PART_4_LINE_87, D("0.00"))),
+            D("0.00"),
+        ),
         # Form RC381 Part 4 line 35A "If line 35 and line 17 are both positive, enter the amount
         # from line 17. If line 35 is "0" and line 20 is positive, enter the amount from line 20
         # (show in brackets)." (the two sentences added), line 40 "Add lines 32, 35A, and 39.",

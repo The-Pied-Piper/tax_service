@@ -14,12 +14,19 @@ $396.00)" (line 26). The QPP side of Part 3: "amount from line 39 x 84.375%" (li
 "Amount from line 26 × 16.80672 = 27" (line 27), the CPP contributions grossed up to the
 self-employed rate (twice the employee's 4.95% and 1%, 1 / 0.0595 to five decimal places), and
 "Amount from line 40 × 15.625 = 41" (line 41), the QPP contributions grossed up the same way
-(1 / 0.064, which is exactly 15.625: the QPP rate of 5.4% and 1% is 6.4%).
+(1 / 0.064, which is exactly 15.625: the QPP rate of 5.4% and 1% is 6.4%), "Amount from line 56 ÷
+4% =" (line 76), "amount from line 70 × 9.9% = (maximum $6,712.20)" (line 84), "amount from line
+70 × 2% = (maximum $1,356.00)" (line 85), "amount from line 83 × 8% = (maximum $792.00)" (line
+86), "Amount from line 69 of Part 3 (if positive) × 2 = 89" (line 89) and "amount from line 90
+entered as a positive amount × 50% = 91" (line 91).
 
 The form prints no "upper" of its own for lines 22, 23, 26, 42, 43 and 46: the tiers run from 0
 to the maximum the printed maximum implies (67,800.00 at 4.95%, 5.4% and 1% and 9,900.00 at 4%).
 Lines 43 and 46 print the same rate and maximum as lines 23 and 26, so they read the same
-datasets.
+datasets. Lines 84, 85 and 86 print the figures of Schedule 8 Part 4's lines 10, 11 and 12 (9.9%
+up to $6,712.20, 2% up to $1,356.00, 8% up to $792.00, on earnings that are already net of the
+basic exemption), and line 91 the 50% of its line 15, so they read those datasets
+(`cpp_self_employed_*`).
 
 The dataset of each line is checked with the rounding rule or the capability that reads it, on
 made-up kinds; the lines together are in the `end_to_end` tests and
@@ -49,6 +56,7 @@ from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
 from app.domain.registry import Namespace
+from app.jurisdictions.ca.capabilities.divided_by_rate import DividedByRate
 
 D = Decimal
 SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
@@ -66,6 +74,13 @@ QPP_BASE_SHARE_RATE = "ca/rc381_qpp_base_share_rate"
 REQUIRED_QPP_BASE = "ca/rc381_required_qpp_base"
 CPP_GROSS_UP_FRACTION = "ca/rc381_cpp_gross_up_fraction"
 QPP_GROSS_UP_FRACTION = "ca/rc381_qpp_gross_up_fraction"
+SECOND_ADDITIONAL_RATE = "ca/rc381_second_additional_rate"
+DOUBLE_FRACTION = "ca/rc381_double_fraction"
+# Schedule 8 Part 4's datasets, read by lines 84, 85, 86 and 91 of this form's Part 4.
+SELF_EMPLOYED_BASE = "ca/cpp_self_employed_base_contribution"
+SELF_EMPLOYED_FIRST_ADDITIONAL = "ca/cpp_self_employed_first_additional_contribution"
+SELF_EMPLOYED_SECOND_ADDITIONAL = "ca/cpp_self_employed_second_additional_contribution"
+SELF_EMPLOYED_CREDIT_RATE = "ca/cpp_self_employed_base_credit_rate"
 
 # Made up for this test and not registered.
 EARNINGS = ArtifactKind("ex/earnings", Decimal)
@@ -422,6 +437,155 @@ def test_part_4_line_41_is_line_40_times_15_625(line_40: str, line_41: str) -> N
     assert result.outputs == (Artifact(CONTRIBUTION, D(line_41)),)
 
 
+# Part 4 line 76.
+
+
+def test_2025_part_4_line_76_is_the_4_percent_rate_to_the_cent() -> None:
+    data = SOURCE.get(SECOND_ADDITIONAL_RATE, 2025, RATE)
+
+    assert data.values == Rate(D("0.04"))
+    assert data.rounding == CENT
+
+
+@pytest.mark.parametrize(
+    ("line_56", "line_76"),
+    [
+        # 396.00 (the maximum second additional contributions) / 4% = 9,900.00, line D.
+        ("396.00", "9900.00"),
+        ("0", "0.00"),
+        # Return BO-like figures: 62.50 / 4% = 1,562.50; 100.00 / 4% = 2,500.00.
+        ("62.50", "1562.50"),
+        ("100.00", "2500.00"),
+        # Every cent is 25 cents: 0.01 / 4% = 0.25, 1.07 / 4% = 26.75.
+        ("0.01", "0.25"),
+        ("1.07", "26.75"),
+        # Line 56 may be a negative amount: -1.00 / 4% = -25.00.
+        ("-1.00", "-25.00"),
+    ],
+)
+def test_part_4_line_76_is_line_56_divided_by_4_percent(line_56: str, line_76: str) -> None:
+    capability = DividedByRate(
+        SOURCE.get(SECOND_ADDITIONAL_RATE, 2025, RATE), CONTRIBUTION, EARNINGS
+    )
+
+    result = capability.compute((Artifact(CONTRIBUTION, D(line_56)),))
+
+    assert result.outputs == (Artifact(EARNINGS, D(line_76)),)
+
+
+# Part 4 line 89.
+
+
+def test_2025_part_4_line_89_is_2_over_1_to_the_cent() -> None:
+    data = SOURCE.get(DOUBLE_FRACTION, 2025, FRACTION)
+
+    # "× 2" kept as printed, not reduced and not turned into a rate: 2 is above 1, which a rate
+    # refuses.
+    assert data.values == Fraction(2, 1)
+    assert data.rounding == CENT
+
+
+@pytest.mark.parametrize(
+    ("line_69", "line_89"),
+    [
+        # Return BO's line 69 of Part 3 of 172.25 (if positive): twice it is 344.50.
+        ("172.25", "344.50"),
+        ("0", "0.00"),
+        ("0.01", "0.02"),
+        ("1234.56", "2469.12"),
+    ],
+)
+def test_part_4_line_89_is_twice_line_69_of_part_3(line_69: str, line_89: str) -> None:
+    capability = ApplyFraction(SOURCE.get(DOUBLE_FRACTION, 2025, FRACTION), EARNINGS, CONTRIBUTION)
+
+    result = capability.compute((Artifact(EARNINGS, D(line_69)),))
+
+    assert result.outputs == (Artifact(CONTRIBUTION, D(line_89)),)
+
+
+# Part 4 lines 84 to 86 and 91, which read Schedule 8 Part 4's datasets.
+
+
+@pytest.mark.parametrize(
+    ("family", "tier"),
+    [
+        # Line 84 "amount from line 70 × 9.9% = (maximum $6,712.20)": 67,800.00 x 9.9% = 6,712.20.
+        (
+            SELF_EMPLOYED_BASE,
+            ContributionTier(Rate(D("0.099")), D("0"), D("67800"), D("6712.20")),
+        ),
+        # Line 85 "amount from line 70 × 2% = (maximum $1,356.00)": 67,800.00 x 2% = 1,356.00.
+        (
+            SELF_EMPLOYED_FIRST_ADDITIONAL,
+            ContributionTier(Rate(D("0.02")), D("0"), D("67800"), D("1356.00")),
+        ),
+        # Line 86 "amount from line 83 × 8% = (maximum $792.00)": 9,900.00 x 8% = 792.00.
+        (
+            SELF_EMPLOYED_SECOND_ADDITIONAL,
+            ContributionTier(Rate(D("0.08")), D("0"), D("9900"), D("792.00")),
+        ),
+    ],
+)
+def test_part_4_lines_84_to_86_print_the_figures_of_schedule_8_part_4(
+    family: str, tier: ContributionTier
+) -> None:
+    data = SOURCE.get(family, 2025, CONTRIBUTION_TIER)
+
+    assert data.values == tier
+    assert data.rounding == CENT
+
+
+@pytest.mark.parametrize(
+    ("family", "line_70", "contribution"),
+    [
+        # Return BO's line 70 of 1,300.00: 9.9% = 128.70, 2% = 26.00; line 83 of 9,900.00: 792.00.
+        (SELF_EMPLOYED_BASE, "1300.00", "128.70"),
+        (SELF_EMPLOYED_FIRST_ADDITIONAL, "1300.00", "26.00"),
+        (SELF_EMPLOYED_SECOND_ADDITIONAL, "9900.00", "792.00"),
+        # A tie: 15.00 x 9.9% = 1.485 rounds half up to 1.49 (half even gives 1.48).
+        (SELF_EMPLOYED_BASE, "15.00", "1.49"),
+        # The printed maximums: 67,800.00 and more stop at 6,712.20 and 1,356.00, 9,900.00 and
+        # more at 792.00.
+        (SELF_EMPLOYED_BASE, "67800.00", "6712.20"),
+        (SELF_EMPLOYED_BASE, "68039.41", "6712.20"),
+        (SELF_EMPLOYED_FIRST_ADDITIONAL, "68039.41", "1356.00"),
+        (SELF_EMPLOYED_SECOND_ADDITIONAL, "12499.99", "792.00"),
+        # Earnings below zero (line 70 has no floor) contribute nothing.
+        (SELF_EMPLOYED_BASE, "-3500.00", "0.00"),
+        (SELF_EMPLOYED_SECOND_ADDITIONAL, "0", "0.00"),
+    ],
+)
+def test_part_4_lines_84_to_86_are_the_tiers_of_lines_70_and_83(
+    family: str, line_70: str, contribution: str
+) -> None:
+    capability = TieredContribution(
+        SOURCE.get(family, 2025, CONTRIBUTION_TIER), EARNINGS, CONTRIBUTION
+    )
+
+    result = capability.compute((Artifact(EARNINGS, D(line_70)),))
+
+    assert result.outputs == (Artifact(CONTRIBUTION, D(contribution)),)
+
+
+def test_part_4_line_91_is_50_percent_of_line_90_to_the_cent() -> None:
+    data = SOURCE.get(SELF_EMPLOYED_CREDIT_RATE, 2025, RATE)
+
+    assert data.values == Rate(D("0.5"))
+    assert data.rounding == CENT
+    for line_90, line_91 in (
+        ("344.50", "172.25"),
+        ("0", "0.00"),
+        # 344.37 x 50% = 172.185, up to 172.19 (half even gives 172.18).
+        ("344.37", "172.19"),
+        ("0.01", "0.01"),
+    ):
+        capability = ApplyRate(data, EARNINGS, CONTRIBUTION)
+
+        result = capability.compute((Artifact(EARNINGS, D(line_90)),))
+
+        assert result.outputs == (Artifact(CONTRIBUTION, D(line_91)),)
+
+
 # Sources and headers.
 
 
@@ -438,6 +602,8 @@ def test_part_4_line_41_is_line_40_times_15_625(line_40: str, line_41: str) -> N
         (REQUIRED_QPP_BASE, CONTRIBUTION_TIER),
         (CPP_GROSS_UP_FRACTION, FRACTION),
         (QPP_GROSS_UP_FRACTION, FRACTION),
+        (SECOND_ADDITIONAL_RATE, RATE),
+        (DOUBLE_FRACTION, FRACTION),
     ],
 )
 def test_2025_rc381_datasets_cite_only_the_rc381_pdf(family: str, kind: ParameterKind[Any]) -> None:
@@ -463,6 +629,11 @@ def test_2025_rc381_datasets_cite_only_the_rc381_pdf(family: str, kind: Paramete
         (REQUIRED_QPP_BASE, ("amount from line 38", "5.4%", "(maximum $3,661.20)")),
         (CPP_GROSS_UP_FRACTION, ("Amount from line 26", "16.80672", "Part 4", "line 27")),
         (QPP_GROSS_UP_FRACTION, ("Amount from line 40", "15.625", "Part 4", "line 41")),
+        (SECOND_ADDITIONAL_RATE, ("Amount from line 56", "÷ 4%", "Part 4", "line 76")),
+        (
+            DOUBLE_FRACTION,
+            ("Amount from line 69 of Part 3 (if positive)", "× 2", "Part 4", "line 89"),
+        ),
     ],
 )
 def test_the_dataset_header_quotes_rc381_as_the_form_prints_it(
@@ -512,6 +683,8 @@ def test_the_shared_dataset_header_also_quotes_the_qpp_line(
         REQUIRED_QPP_BASE,
         CPP_GROSS_UP_FRACTION,
         QPP_GROSS_UP_FRACTION,
+        SECOND_ADDITIONAL_RATE,
+        DOUBLE_FRACTION,
     ],
 )
 def test_the_dataset_header_states_its_rounding_decision(family: str) -> None:
