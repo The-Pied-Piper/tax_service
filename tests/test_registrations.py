@@ -135,6 +135,18 @@ def test_importing_the_federal_package_registers_the_short_term_rental_expenses_
     )
 
 
+def test_importing_the_federal_package_registers_the_short_term_rental_cca_capabilities() -> None:
+    total = CapabilityRegistry.shared().get("ca/short_term_rental_non_compliant_cca")
+    by_class = CapabilityRegistry.shared().get("ca/short_term_rental_non_compliant_cca_by_class")
+
+    assert total.__module__ == (
+        "app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_cca"
+    )
+    assert by_class.__module__ == (
+        "app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_cca_by_class"
+    )
+
+
 def test_importing_the_federal_package_registers_the_short_term_rental_gross_rents() -> None:
     registered = CapabilityRegistry.shared().get("ca/short_term_rental_gross_rents")
 

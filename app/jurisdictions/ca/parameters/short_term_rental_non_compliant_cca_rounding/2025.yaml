@@ -4,8 +4,7 @@
 # 7 of Chart B and enter each total in column 22 of Area A, in the respective row." and "Line C:
 # Total non-compliant amount of CCA for short-term rentals: Total of column 7 (enter on line 9367
 # of Part 4)". The form prints no figure and no rounding rule; line 9367 is a dollars-and-cents
-# box, so each column 7 amount rounds half-up to the cent, the owner's decision, as the form
-# states no rounding rule.
+# box, so each column 7 amount rounds half-up to the cent.
 family: ca/short_term_rental_non_compliant_cca_rounding
 tax_year: 2025
 kind: rounding_only

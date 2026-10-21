@@ -19,7 +19,7 @@ description: >-
   of one property with gross rents of $24,000 (T776 line 8141) and expenses of $12,000, so
   line 12599 is $24,000.00 and line 12600 is $12,000.00. A chosen set of figures. Chart B has
   three rows of short-term rental CCA, chosen figures: line 9367 is $583.33 and column 22 is
-  $333.33 for class 1 and $250.00 for class 8, which change no other total.
+  $333.33 for class 1 and $250.00 for class 8, as computed outputs.
   No self-employment income: the net business, professional, commission, farming and fishing
   income (T1 lines 13500, 13700, 13900, 14100 and 14300) are $0, so their sum (line 27) is
   $0, and it is not yet in total income (line 15000, to be wired). The CPP months (Schedule
@@ -83,7 +83,8 @@ sources:
     CRA, Form T776 (2025), Statement of Real Estate Rentals
     (docs/cra-forms-2025/t776-25e.txt, confirmed 2026-10-19), Chart B: "Enter each short-term
     rental or mixed rental property on a separate row"; "Column 1: Class number"; "Column 4:
-    Related portion of the available CCA from column 21 in Area A"; "Column 6: Number of days
+    Related portion of the available CCA from column 21 in Area A"; "Column 5: Number of days the
+    residential property was a non-compliant short-term rental"; "Column 6: Number of days
     the residential property was a short-term rental"; "Column 7 ***: Non-compliant amount
     (column 4 multiplied by column 5 divided by column 6)"; "*** For each class, add the
     amounts from column 7 of Chart B and enter each total in column 22 of Area A, in the
