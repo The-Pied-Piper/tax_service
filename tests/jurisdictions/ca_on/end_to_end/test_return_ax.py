@@ -29,11 +29,11 @@ from app.jurisdictions.ca.catalog import (
 from tests.jurisdictions.ca_on.end_to_end.support import D, compute
 
 # Return AX's inputs beyond the all-zero ones `compute` defaults: Return U's net business income
-# (T1 line 13500) of 50000 and chosen other income (line 13000) of 40000, Schedule 8 Part 4
-# completed and the agreement for EI special benefits, each a count of 1; and one T4 slip for
-# self-employment income with EI premiums in box 18 that reports 20000 of that net income.
+# (T1 line 13500, now T2125 line 9946) of 50000, entered as T2125 gross sales (amount 3A) of
+# 50000 with no expenses, which is all of total income (line 15000, through line 27); Schedule 8
+# Part 4 completed and the agreement for EI special benefits, each a count of 1; and one T4 slip
+# for self-employment income with EI premiums in box 18 that reports 20000 of that net income.
 RETURN_AX: dict[str, Any] = {
-    "other_income": "40000",
     "business_income": "50000",
     "cpp_part_4_completed": 1,
     "ei_special_benefits_agreement": 1,
@@ -41,9 +41,21 @@ RETURN_AX: dict[str, Any] = {
 }
 
 
+def business_statement(business_income: str) -> dict[str, str]:
+    """A T2125 whose line 9946, and so T1 line 13500, is `business_income`: all gross sales (amount
+    3A) for income, all advertising (amount 4B) for a loss."""
+    amount = D(business_income)
+    if amount >= 0:
+        return {"gross_sales": business_income}
+    return {"advertising": str(-amount)}
+
+
 def return_ax(**changes: Any) -> Worksheet:
-    """Return AX's inputs, as in `returns/2025_return_ax.yaml`, with `changes` to them."""
-    return compute("0", (), "0", "0", "0", "0", "0", **{**RETURN_AX, **changes})
+    """Return AX's inputs, as in `returns/2025_return_ax.yaml`, with `changes` to them;
+    `business_income` is the net business income the T2125 is entered to give."""
+    inputs = {**RETURN_AX, **changes}
+    business = business_statement(inputs.pop("business_income"))
+    return compute("0", (), "0", "0", "0", "0", "0", business=business, **inputs)
 
 
 def test_return_axs_schedule_13_line_1_leaves_out_the_slips_net_income() -> None:
@@ -81,8 +93,8 @@ def test_return_axs_slip_does_not_change_schedule_8_part_4() -> None:
 
 
 def test_return_axs_total_payable_reads_the_premiums_of_492_00() -> None:
-    # 2587.60 net federal tax + 1418.09 Ontario tax + 5533.50 CPP + 492.00 EI.
-    assert return_ax().get(TOTAL_PAYABLE).value == D("10031.19")
+    # 4037.60 net federal tax + 2026.99 Ontario tax + 5533.50 CPP + 492.00 EI.
+    assert return_ax().get(TOTAL_PAYABLE).value == D("12090.09")
 
 
 def test_return_axs_trace_shows_the_slip_and_the_subtraction() -> None:
