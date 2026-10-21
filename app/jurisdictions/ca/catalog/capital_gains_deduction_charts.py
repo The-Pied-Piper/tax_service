@@ -307,47 +307,33 @@ CHART_2021_PART_2_AMOUNT_E = CATALOG.declare(
 QFFP disposed of in ... amount C minus amount D (if negative, enter "0")": amount C minus amount
 D, not below 0."""
 
-CHART_2021_PART_2_AMOUNT_F = CATALOG.declare(
-    "chart_2021_part_2_amount_f", Decimal, non_negative=True
-)
+CHART_2021_PART_2_AMOUNT_F = CATALOG.declare("chart_2021_part_2_amount_f", Decimal)
 """Chart 2021 Part 2 amount F, Form T657 Chart 2021 Part 2 "Amount from line 6 of Form T2017 ... ×
 1/2 = F": the Part 1 amount F from line 6 of Form T2017 times 1/2, rounded half-up to the cent;
 signed as its input is, the form prints no floor."""
 
-CHART_2021_PART_2_AMOUNT_G = CATALOG.declare(
-    "chart_2021_part_2_amount_g", Decimal, non_negative=True
-)
+CHART_2021_PART_2_AMOUNT_G = CATALOG.declare("chart_2021_part_2_amount_g", Decimal)
 """Chart 2021 Part 2 amount G, Form T657 Chart 2021 Part 2 "Amount included in box 30 of a 2025 T3
 slip ... × 1/2 = G": the box 30 amount times 1/2, rounded half-up to the cent; signed as its
 input is, the form prints no floor."""
 
-CHART_2021_PART_2_AMOUNT_H = CATALOG.declare(
-    "chart_2021_part_2_amount_h", Decimal, non_negative=True
-)
+CHART_2021_PART_2_AMOUNT_H = CATALOG.declare("chart_2021_part_2_amount_h", Decimal)
 """Chart 2021 Part 2 amount H, Form T657 Chart 2021 Part 2 "Amount F plus amount G" H: amounts F
 and G added, with no floor (the form prints none)."""
 
-CHART_2021_PART_2_AMOUNT_I = CATALOG.declare(
-    "chart_2021_part_2_amount_i", Decimal, non_negative=True
-)
+CHART_2021_PART_2_AMOUNT_I = CATALOG.declare("chart_2021_part_2_amount_i", Decimal)
 """Chart 2021 Part 2 amount I, Form T657 Chart 2021 Part 2 "Enter whichever is less: amount E or
 amount H." I: the lesser of amount E and amount H."""
 
-CHART_2021_PART_2_AMOUNT_K = CATALOG.declare(
-    "chart_2021_part_2_amount_k", Decimal, non_negative=True
-)
+CHART_2021_PART_2_AMOUNT_K = CATALOG.declare("chart_2021_part_2_amount_k", Decimal)
 """Chart 2021 Part 2 amount K, Form T657 Chart 2021 Part 2 "Amount I plus amount J" K (J "Enter
 amount B from above.", Part 1 amount M): amount I plus Part 1's amount M."""
 
-CHART_2021_PART_2_AMOUNT_L = CATALOG.declare(
-    "chart_2021_part_2_amount_l", Decimal, non_negative=True
-)
+CHART_2021_PART_2_AMOUNT_L = CATALOG.declare("chart_2021_part_2_amount_l", Decimal)
 """Chart 2021 Part 2 amount L, Form T657 Chart 2021 Part 2 "Enter whichever is less: amount H or
 amount K." L: the lesser of amount H and amount K."""
 
-CHART_2021_PART_2_AMOUNT_M = CATALOG.declare(
-    "chart_2021_part_2_amount_m", Decimal, non_negative=True
-)
+CHART_2021_PART_2_AMOUNT_M = CATALOG.declare("chart_2021_part_2_amount_m", Decimal)
 """Chart 2021 Part 2 amount M, Form T657 Chart 2021 Part 2 "Enter whichever is less: line 21 of
 Step 1, line 19 of Step 2 or amount L above." M: the lesser of the annual gains limit, the
 cumulative gains limit and amount L, the maximum for line 25400 if no other disposition is
@@ -492,47 +478,33 @@ CHART_2022_PART_2_AMOUNT_E = CATALOG.declare(
 QFFP disposed of in ... amount C minus amount D (if negative, enter "0")": amount C minus amount
 D, not below 0."""
 
-CHART_2022_PART_2_AMOUNT_F = CATALOG.declare(
-    "chart_2022_part_2_amount_f", Decimal, non_negative=True
-)
+CHART_2022_PART_2_AMOUNT_F = CATALOG.declare("chart_2022_part_2_amount_f", Decimal)
 """Chart 2022 Part 2 amount F, Form T657 Chart 2022 Part 2 "Amount from line 6 of Form T2017 ... ×
 1/2 = F": the Part 1 amount F from line 6 of Form T2017 times 1/2, rounded half-up to the cent;
 signed as its input is, the form prints no floor."""
 
-CHART_2022_PART_2_AMOUNT_G = CATALOG.declare(
-    "chart_2022_part_2_amount_g", Decimal, non_negative=True
-)
+CHART_2022_PART_2_AMOUNT_G = CATALOG.declare("chart_2022_part_2_amount_g", Decimal)
 """Chart 2022 Part 2 amount G, Form T657 Chart 2022 Part 2 "Amount included in box 30 of a 2025 T3
 slip ... × 1/2 = G": the box 30 amount times 1/2, rounded half-up to the cent; signed as its
 input is, the form prints no floor."""
 
-CHART_2022_PART_2_AMOUNT_H = CATALOG.declare(
-    "chart_2022_part_2_amount_h", Decimal, non_negative=True
-)
+CHART_2022_PART_2_AMOUNT_H = CATALOG.declare("chart_2022_part_2_amount_h", Decimal)
 """Chart 2022 Part 2 amount H, Form T657 Chart 2022 Part 2 "Amount F plus amount G" H: amounts F
 and G added, with no floor (the form prints none)."""
 
-CHART_2022_PART_2_AMOUNT_I = CATALOG.declare(
-    "chart_2022_part_2_amount_i", Decimal, non_negative=True
-)
+CHART_2022_PART_2_AMOUNT_I = CATALOG.declare("chart_2022_part_2_amount_i", Decimal)
 """Chart 2022 Part 2 amount I, Form T657 Chart 2022 Part 2 "Enter whichever is less: amount E or
 amount H." I: the lesser of amount E and amount H."""
 
-CHART_2022_PART_2_AMOUNT_K = CATALOG.declare(
-    "chart_2022_part_2_amount_k", Decimal, non_negative=True
-)
+CHART_2022_PART_2_AMOUNT_K = CATALOG.declare("chart_2022_part_2_amount_k", Decimal)
 """Chart 2022 Part 2 amount K, Form T657 Chart 2022 Part 2 "Amount I plus amount J" K (J "Enter
 amount B from above.", Part 1 amount M): amount I plus Part 1's amount M."""
 
-CHART_2022_PART_2_AMOUNT_L = CATALOG.declare(
-    "chart_2022_part_2_amount_l", Decimal, non_negative=True
-)
+CHART_2022_PART_2_AMOUNT_L = CATALOG.declare("chart_2022_part_2_amount_l", Decimal)
 """Chart 2022 Part 2 amount L, Form T657 Chart 2022 Part 2 "Enter whichever is less: amount H or
 amount K." L: the lesser of amount H and amount K."""
 
-CHART_2022_PART_2_AMOUNT_M = CATALOG.declare(
-    "chart_2022_part_2_amount_m", Decimal, non_negative=True
-)
+CHART_2022_PART_2_AMOUNT_M = CATALOG.declare("chart_2022_part_2_amount_m", Decimal)
 """Chart 2022 Part 2 amount M, Form T657 Chart 2022 Part 2 "Enter whichever is less: line 21 of
 Step 1, line 19 of Step 2 or amount L above." M: the lesser of the annual gains limit, the
 cumulative gains limit and amount L, the maximum for line 25400 if no other disposition is
@@ -677,47 +649,33 @@ CHART_2023_PART_2_AMOUNT_E = CATALOG.declare(
 QFFP disposed of in ... amount C minus amount D (if negative, enter "0")": amount C minus amount
 D, not below 0."""
 
-CHART_2023_PART_2_AMOUNT_F = CATALOG.declare(
-    "chart_2023_part_2_amount_f", Decimal, non_negative=True
-)
+CHART_2023_PART_2_AMOUNT_F = CATALOG.declare("chart_2023_part_2_amount_f", Decimal)
 """Chart 2023 Part 2 amount F, Form T657 Chart 2023 Part 2 "Amount from line 6 of Form T2017 ... ×
 1/2 = F": the Part 1 amount F from line 6 of Form T2017 times 1/2, rounded half-up to the cent;
 signed as its input is, the form prints no floor."""
 
-CHART_2023_PART_2_AMOUNT_G = CATALOG.declare(
-    "chart_2023_part_2_amount_g", Decimal, non_negative=True
-)
+CHART_2023_PART_2_AMOUNT_G = CATALOG.declare("chart_2023_part_2_amount_g", Decimal)
 """Chart 2023 Part 2 amount G, Form T657 Chart 2023 Part 2 "Amount included in box 30 of a 2025 T3
 slip ... × 1/2 = G": the box 30 amount times 1/2, rounded half-up to the cent; signed as its
 input is, the form prints no floor."""
 
-CHART_2023_PART_2_AMOUNT_H = CATALOG.declare(
-    "chart_2023_part_2_amount_h", Decimal, non_negative=True
-)
+CHART_2023_PART_2_AMOUNT_H = CATALOG.declare("chart_2023_part_2_amount_h", Decimal)
 """Chart 2023 Part 2 amount H, Form T657 Chart 2023 Part 2 "Amount F plus amount G" H: amounts F
 and G added, with no floor (the form prints none)."""
 
-CHART_2023_PART_2_AMOUNT_I = CATALOG.declare(
-    "chart_2023_part_2_amount_i", Decimal, non_negative=True
-)
+CHART_2023_PART_2_AMOUNT_I = CATALOG.declare("chart_2023_part_2_amount_i", Decimal)
 """Chart 2023 Part 2 amount I, Form T657 Chart 2023 Part 2 "Enter whichever is less: amount E or
 amount H." I: the lesser of amount E and amount H."""
 
-CHART_2023_PART_2_AMOUNT_K = CATALOG.declare(
-    "chart_2023_part_2_amount_k", Decimal, non_negative=True
-)
+CHART_2023_PART_2_AMOUNT_K = CATALOG.declare("chart_2023_part_2_amount_k", Decimal)
 """Chart 2023 Part 2 amount K, Form T657 Chart 2023 Part 2 "Amount I plus amount J" K (J "Enter
 amount B from above.", Part 1 amount M): amount I plus Part 1's amount M."""
 
-CHART_2023_PART_2_AMOUNT_L = CATALOG.declare(
-    "chart_2023_part_2_amount_l", Decimal, non_negative=True
-)
+CHART_2023_PART_2_AMOUNT_L = CATALOG.declare("chart_2023_part_2_amount_l", Decimal)
 """Chart 2023 Part 2 amount L, Form T657 Chart 2023 Part 2 "Enter whichever is less: amount H or
 amount K." L: the lesser of amount H and amount K."""
 
-CHART_2023_PART_2_AMOUNT_M = CATALOG.declare(
-    "chart_2023_part_2_amount_m", Decimal, non_negative=True
-)
+CHART_2023_PART_2_AMOUNT_M = CATALOG.declare("chart_2023_part_2_amount_m", Decimal)
 """Chart 2023 Part 2 amount M, Form T657 Chart 2023 Part 2 "Enter whichever is less: line 21 of
 Step 1, line 19 of Step 2 or amount L above." M: the lesser of the annual gains limit, the
 cumulative gains limit and amount L, the maximum for line 25400 if no other disposition is

@@ -28,6 +28,7 @@ from app.jurisdictions.ca.catalog import (
     CHART_2022_PART_1_AMOUNT_M,
     CHART_2022_PART_2_AMOUNT_C,
     CHART_2022_PART_2_AMOUNT_E,
+    CHART_2022_PART_2_AMOUNT_F,
     CHART_2022_PART_2_AMOUNT_L,
     CHART_2022_PART_2_APPLIES,
     CHART_2022_TOTAL_CARRIED,
@@ -272,6 +273,17 @@ def test_part_2_of_2022_is_refused_when_part_1_e_exceeds_the_annual_limit() -> N
     assert worksheet.get(CHART_2022_PART_2_APPLIES).value == 0
     assert worksheet.get(CHART_2022_TOTAL_CARRIED).value == D("40000.00")
     assert worksheet.get(CHART_2023_PART_1_AMOUNT_M).value == D("40000.00")
+
+
+def test_a_negative_t2017_line_6_for_2022_is_signed_in_part_2_and_leaves_the_total_alone() -> None:
+    # A loss of 10000.00 on Form T2017 line 6 for 2022: Part 1 floors F plus G at 0 (H 0), so M
+    # stays at the 20000.00 carried in; Part 2 prints no floor, so its F is half the loss,
+    # -5000.00; the additional deduction is not claimed, so the total carried is Part 1's M.
+    worksheet = return_bh(t657_chart_2022_amount_f="-10000")
+
+    assert worksheet.get(CHART_2022_PART_1_AMOUNT_M).value == D("20000.00")
+    assert worksheet.get(CHART_2022_PART_2_AMOUNT_F).value == D("-5000.00")
+    assert worksheet.get(CHART_2022_TOTAL_CARRIED).value == D("20000.00")
 
 
 def test_uses_d_instead_takes_the_callers_amount_at_amount_d_of_chart_2021() -> None:
