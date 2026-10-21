@@ -1237,6 +1237,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=1,
             result=D("0"),
         ),
+        ontario.TAX_OTHERWISE_PAYABLE_REDUCTION: TimesCountLine(
+            output=ontario.TAX_OTHERWISE_PAYABLE_REDUCTION,
+            amount_kind=ontario.TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS,
+            amount_value=D("0"),
+            count_kind=ontario.TAX_OTHERWISE_PAYABLE_REDUCTION_CLAIMABLE,
+            count=1,
+            result=D("0"),
+        ),
         ELIGIBLE_DEPENDANT_AMOUNT: TimesCountLine(
             output=ELIGIBLE_DEPENDANT_AMOUNT,
             amount_kind=ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
@@ -1400,7 +1408,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             less_amount=D("8195.77"),
             rounding=CENT,
             result=D("0"),
-        )
+        ),
+        ontario.TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS: MultipleOverLine(
+            output=ontario.TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS,
+            base=TAX_REDUCTION_AMOUNTS,
+            base_amount=D("294.00"),
+            factor=Factor(D("2")),
+            less=ontario.TAX_OTHERWISE_PAYABLE_LINE_73,
+            less_amount=D("8195.77"),
+            rounding=CENT,
+            result=D("0"),
+        ),
     }
     assert capped == {
         # The guide's line 41400 "to a maximum of $750", after the 15%: 0 is below it.

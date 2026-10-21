@@ -141,6 +141,7 @@ from app.jurisdictions.ca_on.catalog import (
     ONTARIO_TAX_AFTER_CREDITS,
     ONTARIO_TAX_AFTER_DIVIDEND_CREDIT,
     ONTARIO_TAX_AFTER_FOOD_CREDIT,
+    ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT,
     ONTARIO_TAX_AFTER_LIFT_CREDIT,
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_BEFORE_DIVIDEND_CREDIT,
@@ -174,6 +175,8 @@ from app.jurisdictions.ca_on.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_6,
     POLITICAL_CREDIT_COLUMN_3_LINE_7,
     PROPERTY_TAX_PAID,
+    PROVINCIAL_FOREIGN_TAX_CREDIT,
+    PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
     PUBLIC_LONG_TERM_CARE_PAID,
     REFUND_BEFORE_DONATION,
     RENT_PAID,
@@ -216,6 +219,12 @@ from app.jurisdictions.ca_on.catalog import (
     SPOUSE_RETURN_ONTARIO_UNUSED_TUITION_AMOUNT,
     SPOUSE_TRANSFERABLE_AMOUNTS,
     SPOUSE_UNUSED_AMOUNTS,
+    TAX_OTHERWISE_PAYABLE,
+    TAX_OTHERWISE_PAYABLE_LINE_71,
+    TAX_OTHERWISE_PAYABLE_LINE_73,
+    TAX_OTHERWISE_PAYABLE_REDUCTION,
+    TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS,
+    TAX_OTHERWISE_PAYABLE_REDUCTION_CLAIMABLE,
     TAX_REDUCTION_AMOUNTS,
     TAX_REDUCTION_AMOUNTS_CLAIMABLE,
     TAX_REDUCTION_BASIC,
@@ -320,6 +329,15 @@ REGISTERED = frozenset(
         "ca-on/tax_reduction_for_dependants_before_spouse_rule",
         "ca-on/ontario_tax_reduction_before_conditions",
         "ca-on/ontario_tax_after_reduction",
+        "ca-on/tax_otherwise_payable_line_71",
+        "ca-on/tax_otherwise_payable_line_73",
+        "ca-on/tax_otherwise_payable_reduction_before_conditions",
+        "ca-on/tax_otherwise_payable_reduction_claimable",
+        "ca-on/tax_otherwise_payable_reduction",
+        "ca-on/tax_otherwise_payable",
+        "ca-on/provincial_foreign_tax_credit_before_limit",
+        "ca-on/provincial_foreign_tax_credit",
+        "ca-on/ontario_tax_after_foreign_tax_credit",
         "ca-on/lift_credit_before_maximum",
         "ca-on/lift_maximum_credit",
         "ca-on/lift_reduction",
@@ -445,6 +463,7 @@ REGISTERED = frozenset(
 # answer on a partnership claim, 0 or 1.
 COUNTS = frozenset(
     {
+        "ca-on/tax_otherwise_payable_reduction_claimable",
         "ca-on/dependent_children",
         "ca-on/dependants",
         "ca-on/claimed_as_eligible_dependant",
@@ -666,6 +685,27 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
         is ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS
     )
     assert registry.get("ca-on/ontario_tax_after_reduction") is ONTARIO_TAX_AFTER_REDUCTION
+    assert registry.get("ca-on/tax_otherwise_payable_line_71") is TAX_OTHERWISE_PAYABLE_LINE_71
+    assert registry.get("ca-on/tax_otherwise_payable_line_73") is TAX_OTHERWISE_PAYABLE_LINE_73
+    assert (
+        registry.get("ca-on/tax_otherwise_payable_reduction_before_conditions")
+        is TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS
+    )
+    assert (
+        registry.get("ca-on/tax_otherwise_payable_reduction_claimable")
+        is TAX_OTHERWISE_PAYABLE_REDUCTION_CLAIMABLE
+    )
+    assert registry.get("ca-on/tax_otherwise_payable_reduction") is TAX_OTHERWISE_PAYABLE_REDUCTION
+    assert registry.get("ca-on/tax_otherwise_payable") is TAX_OTHERWISE_PAYABLE
+    assert (
+        registry.get("ca-on/provincial_foreign_tax_credit_before_limit")
+        is PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT
+    )
+    assert registry.get("ca-on/provincial_foreign_tax_credit") is PROVINCIAL_FOREIGN_TAX_CREDIT
+    assert (
+        registry.get("ca-on/ontario_tax_after_foreign_tax_credit")
+        is ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT
+    )
     assert registry.get("ca-on/lift_credit_before_maximum") is LIFT_CREDIT_BEFORE_MAXIMUM
     assert registry.get("ca-on/lift_maximum_credit") is LIFT_MAXIMUM_CREDIT
     assert registry.get("ca-on/lift_reduction") is LIFT_REDUCTION
@@ -1239,6 +1279,32 @@ def test_line_72_and_line_73_are_non_negative_amounts() -> None:
     for kind in (ONTARIO_MINIMUM_TAX, ONTARIO_TAX_BEFORE_REDUCTION):
         assert kind.value_type is Decimal, kind.identifier
         assert kind.non_negative is True, kind.identifier
+
+
+def test_the_provincial_foreign_tax_credit_lines_are_non_negative_amounts() -> None:
+    # Form T2036 note (4): ON428 line 81 calculated with "0" on lines 70 and 72, one kind for each
+    # of lines 71, 73, 80 (before and after its conditions) and 81, then the credit before and after
+    # "should not be more than" the tax otherwise payable (ON428 line 82) and ON428 line 83 "Line
+    # 81 minus line 82 (if negative, enter "0")".
+    for kind in (
+        TAX_OTHERWISE_PAYABLE_LINE_71,
+        TAX_OTHERWISE_PAYABLE_LINE_73,
+        TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS,
+        TAX_OTHERWISE_PAYABLE_REDUCTION,
+        TAX_OTHERWISE_PAYABLE,
+        PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
+        PROVINCIAL_FOREIGN_TAX_CREDIT,
+        ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT,
+    ):
+        assert kind.value_type is Decimal, kind.identifier
+        assert kind.non_negative is True, kind.identifier
+
+
+def test_whether_the_tax_reduction_is_claimable_with_zero_on_line_72_is_a_non_negative_count() -> (
+    None
+):
+    assert TAX_OTHERWISE_PAYABLE_REDUCTION_CLAIMABLE.value_type is int
+    assert TAX_OTHERWISE_PAYABLE_REDUCTION_CLAIMABLE.non_negative is True
 
 
 def test_the_co_operative_education_partnership_lines_are_a_yes_no_count_and_nine_digits(

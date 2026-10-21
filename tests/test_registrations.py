@@ -60,6 +60,7 @@ def test_importing_a_jurisdiction_package_registers_its_capabilities() -> None:
         "choose_by_range",
         "disability_transfer_amount",
         "flow_through_share_expenses",
+        "provincial_foreign_tax_credit",
     ):
         registered = registry.get(f"ca-on/{name}")
         assert registered.__module__ == f"app.jurisdictions.ca_on.capabilities.{name}"

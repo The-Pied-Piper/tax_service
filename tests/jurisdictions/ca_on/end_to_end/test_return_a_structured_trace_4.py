@@ -385,6 +385,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert lesser == {
         # Form T2209 line 13 "should not be more than" line 42900: the line 3 total, 0 with no
         # country, against line 42900, 16951.38.
+        # ON428 line 82: no countries, so the credit before the limit is 0.
+        ontario.PROVINCIAL_FOREIGN_TAX_CREDIT: LesserOfLine(
+            ontario.PROVINCIAL_FOREIGN_TAX_CREDIT,
+            (
+                (ontario.PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT, D("0")),
+                (ontario.TAX_OTHERWISE_PAYABLE, D("8195.77")),
+            ),
+            D("0"),
+        ),
         FEDERAL_FOREIGN_TAX_CREDIT: LesserOfLine(
             FEDERAL_FOREIGN_TAX_CREDIT,
             (
@@ -1261,6 +1270,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("8195.77"),
         ),
+        # ON428 line 81 with "0" on lines 70 and 72 (the tax otherwise payable) and line 83
+        # "Line 81 minus line 82 (if negative, enter "0")".
+        ontario.TAX_OTHERWISE_PAYABLE: SubtractedNotBelowZeroLine(
+            output=ontario.TAX_OTHERWISE_PAYABLE,
+            minuend=ontario.TAX_OTHERWISE_PAYABLE_LINE_73,
+            minuend_amount=D("8195.77"),
+            subtrahend=ontario.TAX_OTHERWISE_PAYABLE_REDUCTION,
+            subtrahend_amount=D("0"),
+            result=D("8195.77"),
+        ),
+        ontario.ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT: SubtractedNotBelowZeroLine(
+            output=ontario.ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT,
+            minuend=ONTARIO_TAX_AFTER_REDUCTION,
+            minuend_amount=D("8195.77"),
+            subtrahend=ontario.PROVINCIAL_FOREIGN_TAX_CREDIT,
+            subtrahend_amount=D("0"),
+            result=D("8195.77"),
+        ),
         # ON428 line 81 "Line 73 minus line 80 (if negative, enter "0")".
         ONTARIO_TAX_AFTER_REDUCTION: SubtractedNotBelowZeroLine(
             output=ONTARIO_TAX_AFTER_REDUCTION,
@@ -1337,7 +1364,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # ON428 line 86 "Line 84 minus line 85 (if negative, enter "0")".
         ONTARIO_TAX_AFTER_LIFT_CREDIT: SubtractedNotBelowZeroLine(
             output=ONTARIO_TAX_AFTER_LIFT_CREDIT,
-            minuend=ONTARIO_TAX_AFTER_REDUCTION,
+            minuend=ontario.ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT,
             minuend_amount=D("8195.77"),
             subtrahend=LIFT_CREDIT,
             subtrahend_amount=D("0"),

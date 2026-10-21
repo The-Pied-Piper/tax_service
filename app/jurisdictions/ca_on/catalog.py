@@ -639,6 +639,66 @@ ONTARIO_TAX_AFTER_REDUCTION = CATALOG.declare(
 enter "0")": the Ontario tax after the dividend tax credit (line 73) less the Ontario tax
 reduction."""
 
+TAX_OTHERWISE_PAYABLE_LINE_71 = CATALOG.declare(
+    "tax_otherwise_payable_line_71", Decimal, non_negative=True
+)
+"""Line 71 for the tax otherwise payable, ON428 line 71 "Line 69 minus line 70 (if negative, enter
+"0")" with "0" on line 70, as Form T2036 note (4) directs: line 69."""
+
+TAX_OTHERWISE_PAYABLE_LINE_73 = CATALOG.declare(
+    "tax_otherwise_payable_line_73", Decimal, non_negative=True
+)
+"""Line 73 for the tax otherwise payable, ON428 line 73 "Line 71 plus line 72 =" with "0" on line
+72, as Form T2036 note (4) directs: line 71."""
+
+TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS = CATALOG.declare(
+    "tax_otherwise_payable_reduction_before_conditions", Decimal, non_negative=True
+)
+"""Ontario tax reduction before the conditions for the tax otherwise payable, ON428 line 80 "Line 78
+minus line 79 (if negative, enter "0") Ontario tax reduction": line 78 less line 79, the latter
+being the line 73 of the tax otherwise payable, before the conditions on which the form enters "0"
+on line 80."""
+
+TAX_OTHERWISE_PAYABLE_REDUCTION_CLAIMABLE = CATALOG.declare(
+    "tax_otherwise_payable_reduction_claimable", int, non_negative=True
+)
+"""Whether line 80 is completed for the tax otherwise payable, ON428 "Enter "0" on line 80 if any of
+the following applies to you" "If none of the above applies to you, complete lines 74 to 80", with
+"0" on line 72 so that "There is an amount on line 72" cannot apply: 0 when any of the other five
+printed conditions applies, else 1."""
+
+TAX_OTHERWISE_PAYABLE_REDUCTION = CATALOG.declare(
+    "tax_otherwise_payable_reduction", Decimal, non_negative=True
+)
+"""Ontario tax reduction for the tax otherwise payable, ON428 line 80 "Ontario tax reduction" with
+"0" on lines 70 and 72: line 78 less line 79 when none of the five conditions applies, else "0"."""
+
+TAX_OTHERWISE_PAYABLE = CATALOG.declare("tax_otherwise_payable", Decimal, non_negative=True)
+"""Provincial tax otherwise payable, Form T2036 note (4) "Provincial or territorial tax otherwise
+payable": for a resident of Ontario, ON428 line 81 "Line 73 minus line 80 (if negative, enter
+"0")" calculated by entering "0" on lines 70 and 72."""
+
+PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT = CATALOG.declare(
+    "provincial_foreign_tax_credit_before_limit", Decimal, non_negative=True
+)
+"""Provincial foreign tax credit before its limit, Form T2036 "Enter the total from line 5 (for each
+country if applicable)" of line 5 "Provincial or territorial foreign tax credit": the total of the
+sheets' line 5, before "should not be more than" the tax otherwise payable."""
+
+PROVINCIAL_FOREIGN_TAX_CREDIT = CATALOG.declare(
+    "provincial_foreign_tax_credit", Decimal, non_negative=True
+)
+"""Provincial foreign tax credit, ON428 line 82 "Provincial foreign tax credit (complete Form
+T2036)": the total of Form T2036 line 5, which "should not be more than the amount entered on the
+line for provincial or territorial tax otherwise payable"."""
+
+ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT = CATALOG.declare(
+    "ontario_tax_after_foreign_tax_credit", Decimal, non_negative=True
+)
+"""Ontario tax after the provincial foreign tax credit, ON428 line 83 "Line 81 minus line 82 (if
+negative, enter "0")": the Ontario tax after the Ontario tax reduction less the provincial foreign
+tax credit."""
+
 LIFT_CREDIT_BEFORE_MAXIMUM = CATALOG.declare(
     "lift_credit_before_maximum", Decimal, non_negative=True
 )

@@ -254,7 +254,7 @@ def test_the_lift_credit_between_the_thresholds_is_reduced_and_comes_off_the_tax
         rendered
     )
     assert (
-        "ontario_tax_after_lift_credit: ontario_tax_after_reduction 1233.48 "
+        "ontario_tax_after_lift_credit: ontario_tax_after_foreign_tax_credit 1233.48 "
         "less lift_credit 518.25, not below 0 = 715.23"
     ) in rendered
 

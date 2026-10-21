@@ -1216,6 +1216,18 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("8195.77"),
         ),
+        # Form T2036 note (4): ON428 line 71 and line 73 with "0" on lines 70 and 72, line 69 over
+        # one part.
+        ontario.TAX_OTHERWISE_PAYABLE_LINE_71: SumLine(
+            ontario.TAX_OTHERWISE_PAYABLE_LINE_71,
+            ((ONTARIO_TAX_WITH_SURTAX, D("8195.77")),),
+            D("8195.77"),
+        ),
+        ontario.TAX_OTHERWISE_PAYABLE_LINE_73: SumLine(
+            ontario.TAX_OTHERWISE_PAYABLE_LINE_73,
+            ((ontario.TAX_OTHERWISE_PAYABLE_LINE_71, D("8195.77")),),
+            D("8195.77"),
+        ),
         # ON428 line 73 "Line 71 plus line 72 =": line 72 is 0, not triggered.
         ONTARIO_TAX_BEFORE_REDUCTION: SumLine(
             ONTARIO_TAX_BEFORE_REDUCTION,

@@ -681,7 +681,7 @@ def test_the_trace_explains_the_computation() -> None:
     )
     position("lift_credit: lift_credit_single 0, chosen as lift_spouse_at_year_end is 0", "0")
     position(
-        "ontario_tax_after_lift_credit: ontario_tax_after_reduction 8195.77 "
+        "ontario_tax_after_lift_credit: ontario_tax_after_foreign_tax_credit 8195.77 "
         "less lift_credit 0, not below 0 = 8195.77",
         "8195.77",
     )

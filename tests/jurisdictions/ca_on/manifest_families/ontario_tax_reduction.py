@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from app.domain.capabilities.credit_amount import CreditAmount
+from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.multiple_over import MultipleOver
 from app.domain.capabilities.per_unit_amount import PerUnitAmount
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
@@ -11,9 +12,14 @@ from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.catalog import (
+    FOREIGN_TAX_CREDIT_NET_INCOME,
+    FOREIGN_TAX_CREDIT_SHEETS,
     NET_INCOME,
     SPOUSE_NET_INCOME,
     SPOUSE_OR_COMMON_LAW_PARTNER_ON_DECEMBER_31,
+)
+from app.jurisdictions.ca_on.capabilities.provincial_foreign_tax_credit import (
+    ProvincialForeignTaxCredit,
 )
 from app.jurisdictions.ca_on.catalog import (
     BANKRUPT_IN_YEAR,
@@ -25,11 +31,21 @@ from app.jurisdictions.ca_on.catalog import (
     NOT_RESIDENT_OF_ONTARIO_AT_YEAR_END,
     ONTARIO_MINIMUM_TAX,
     ONTARIO_TAX_AFTER_DIVIDEND_CREDIT,
+    ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT,
     ONTARIO_TAX_AFTER_REDUCTION,
     ONTARIO_TAX_BEFORE_REDUCTION,
     ONTARIO_TAX_REDUCTION,
     ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS,
+    ONTARIO_TAX_WITH_SURTAX,
+    PROVINCIAL_FOREIGN_TAX_CREDIT,
+    PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
     RETURN_FILED_BY_TRUSTEE_IN_BANKRUPTCY,
+    TAX_OTHERWISE_PAYABLE,
+    TAX_OTHERWISE_PAYABLE_LINE_71,
+    TAX_OTHERWISE_PAYABLE_LINE_73,
+    TAX_OTHERWISE_PAYABLE_REDUCTION,
+    TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS,
+    TAX_OTHERWISE_PAYABLE_REDUCTION_CLAIMABLE,
     TAX_REDUCTION_AMOUNTS,
     TAX_REDUCTION_AMOUNTS_CLAIMABLE,
     TAX_REDUCTION_BASIC,
@@ -198,6 +214,123 @@ STEPS = {
         },
         produces={"output": "ca-on/ontario_tax_after_reduction"},
     ),
+    # Form T2036 note (4): "If you were a resident of Ontario, calculate this amount by entering
+    # "0" on lines 70 and 72 of Form ON428 and continue the calculation. The result from line 81 is
+    # your provincial or territorial tax otherwise payable." ON428 line 71 "Line 69 minus line 70
+    # (if negative, enter "0")" with "0" on line 70: line 69 over one part.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca-on/ontario_tax_with_surtax",)},
+        produces={"output": "ca-on/tax_otherwise_payable_line_71"},
+    ),
+    # ON428 line 73 "Line 71 plus line 72 =" with "0" on line 72: line 71 over one part, for the
+    # tax otherwise payable.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca-on/tax_otherwise_payable_line_71",)},
+        produces={"output": "ca-on/tax_otherwise_payable_line_73"},
+    ),
+    # ON428 line 78 "Amount from line 77 above multiplied by 2", line 79 "Amount from line 73
+    # above" and line 80 "Line 78 minus line 79 (if negative, enter "0") Ontario tax reduction",
+    # for the tax otherwise payable: lines 74 to 77 are those above and line 79 is its line 73,
+    # before the conditions on which the form enters "0" on line 80.
+    CapabilitySelection(
+        name="core/multiple_over",
+        params={"factor": "ca-on/tax_reduction_factor"},
+        consumes={
+            "amount": "ca-on/tax_reduction_amounts",
+            "less": "ca-on/tax_otherwise_payable_line_73",
+        },
+        produces={"output": "ca-on/tax_otherwise_payable_reduction_before_conditions"},
+    ),
+    # ON428 "Enter "0" on line 80 if any of the following applies to you:" for the tax otherwise
+    # payable, whose line 72 is "0": the printed conditions other than "There is an amount on line
+    # 72", in the form's order, "You were not a resident of Canada at the beginning of the year",
+    # "You were not a resident of Ontario on December 31, 2025", "You were bankrupt at any time in
+    # 2025", "Your return is filed for you by a trustee in bankruptcy" and "You are choosing not
+    # to claim an Ontario tax reduction": 0 when any applies, else 1.
+    CapabilitySelection(
+        name="ca/count_by_conditions",
+        params={"conditions": "ca-on/tax_reduction_conditions_without_line_72"},
+        consumes={
+            "counts": (
+                "ca-on/not_resident_of_canada_at_start_of_year",
+                "ca-on/not_resident_of_ontario_at_year_end",
+                "ca-on/bankrupt_in_year",
+                "ca-on/return_filed_by_trustee_in_bankruptcy",
+                "ca-on/not_claiming_ontario_tax_reduction",
+            ),
+            "amounts": (),
+        },
+        produces={"output": "ca-on/tax_otherwise_payable_reduction_claimable"},
+    ),
+    # ON428 line 80 "Ontario tax reduction" for the tax otherwise payable: line 78 minus line 79
+    # once if none of the five conditions applies, else "0".
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca-on/tax_otherwise_payable_reduction_before_conditions",
+            "count": "ca-on/tax_otherwise_payable_reduction_claimable",
+        },
+        produces={"output": "ca-on/tax_otherwise_payable_reduction"},
+    ),
+    # ON428 line 81 "Line 73 minus line 80 (if negative, enter "0")" with "0" on lines 70 and 72:
+    # the provincial tax otherwise payable of Form T2036 note (4).
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca-on/tax_otherwise_payable_line_73",
+            "less": "ca-on/tax_otherwise_payable_reduction",
+        },
+        produces={"output": "ca-on/tax_otherwise_payable"},
+    ),
+    # Form T2036, Provincial or Territorial Foreign Tax Credit: line 1 "Enter the amount from line
+    # 1 of Form T2209.", line 2 "Enter the amount from line 3 of Form T2209, unless you have to
+    # pay minimum tax.(1)", line 3 "Line 1 minus line 2", line 4 "Net foreign non-business income
+    # (2)" "× Provincial or territorial tax otherwise payable (4)" over "Net income (3)" and line 5
+    # "Enter whichever amount is less: line 3 or line 4." "Provincial or territorial foreign tax
+    # credit", for each sheet of Form T2209 (a separate form for each country when "the total of
+    # the non-business income taxes that you paid to all foreign countries was more than $200"):
+    # "Enter the total from line 5 (for each country if applicable)" on ON428 line 82, before the
+    # limit below.
+    CapabilitySelection(
+        name="ca-on/provincial_foreign_tax_credit",
+        params={"rounding": "ca-on/provincial_foreign_tax_credit_rounding"},
+        consumes={
+            "sheets": "ca/foreign_tax_credit_sheets",
+            "net_income": "ca/foreign_tax_credit_net_income",
+            "provincial_tax": "ca-on/tax_otherwise_payable",
+        },
+        produces={"total": "ca-on/provincial_foreign_tax_credit_before_limit"},
+    ),
+    # ON428 line 82 "Provincial foreign tax credit (complete Form T2036)": Form T2036 line 5 "The
+    # amount on line 5 should not be more than the amount entered on the line for provincial or
+    # territorial tax otherwise payable." (note (4), ON428 line 81 with "0" on lines 70 and 72).
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca-on/provincial_foreign_tax_credit_before_limit",
+                "ca-on/tax_otherwise_payable",
+            )
+        },
+        produces={"output": "ca-on/provincial_foreign_tax_credit"},
+    ),
+    # ON428 line 83 "Line 81 minus line 82 (if negative, enter "0")".
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca-on/ontario_tax_after_reduction",
+            "less": "ca-on/provincial_foreign_tax_credit",
+        },
+        produces={"output": "ca-on/ontario_tax_after_foreign_tax_credit"},
+    ),
 }
 
 WIRING = {
@@ -274,5 +407,65 @@ WIRING = {
         SubtractNotBelowZero,
         frozenset({ONTARIO_TAX_BEFORE_REDUCTION, ONTARIO_TAX_REDUCTION}),
         frozenset({ONTARIO_TAX_AFTER_REDUCTION}),
+    ),
+    (
+        Sum,
+        frozenset({ONTARIO_TAX_WITH_SURTAX}),
+        frozenset({TAX_OTHERWISE_PAYABLE_LINE_71}),
+    ),
+    (
+        Sum,
+        frozenset({TAX_OTHERWISE_PAYABLE_LINE_71}),
+        frozenset({TAX_OTHERWISE_PAYABLE_LINE_73}),
+    ),
+    (
+        MultipleOver,
+        frozenset({TAX_REDUCTION_AMOUNTS, TAX_OTHERWISE_PAYABLE_LINE_73}),
+        frozenset({TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS}),
+    ),
+    (
+        CountByConditions,
+        frozenset(
+            {
+                NOT_RESIDENT_OF_CANADA_AT_START_OF_YEAR,
+                NOT_RESIDENT_OF_ONTARIO_AT_YEAR_END,
+                BANKRUPT_IN_YEAR,
+                RETURN_FILED_BY_TRUSTEE_IN_BANKRUPTCY,
+                NOT_CLAIMING_ONTARIO_TAX_REDUCTION,
+            }
+        ),
+        frozenset({TAX_OTHERWISE_PAYABLE_REDUCTION_CLAIMABLE}),
+    ),
+    (
+        TimesCount,
+        frozenset(
+            {
+                TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS,
+                TAX_OTHERWISE_PAYABLE_REDUCTION_CLAIMABLE,
+            }
+        ),
+        frozenset({TAX_OTHERWISE_PAYABLE_REDUCTION}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({TAX_OTHERWISE_PAYABLE_LINE_73, TAX_OTHERWISE_PAYABLE_REDUCTION}),
+        frozenset({TAX_OTHERWISE_PAYABLE}),
+    ),
+    (
+        ProvincialForeignTaxCredit,
+        frozenset(
+            {FOREIGN_TAX_CREDIT_SHEETS, FOREIGN_TAX_CREDIT_NET_INCOME, TAX_OTHERWISE_PAYABLE}
+        ),
+        frozenset({PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT}),
+    ),
+    (
+        LesserOf,
+        frozenset({PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT, TAX_OTHERWISE_PAYABLE}),
+        frozenset({PROVINCIAL_FOREIGN_TAX_CREDIT}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({ONTARIO_TAX_AFTER_REDUCTION, PROVINCIAL_FOREIGN_TAX_CREDIT}),
+        frozenset({ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT}),
     ),
 }
