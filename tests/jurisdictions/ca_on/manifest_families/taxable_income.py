@@ -36,6 +36,7 @@ from app.jurisdictions.ca.catalog import (
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NORTHERN_RESIDENTS_DEDUCTIONS,
     OTHER_PAYMENTS_DEDUCTION,
+    QBT_CAPITAL_GAINS_DEDUCTION,
     REMAINING_ADJUSTED_LOSSES_1985_TO_1987,
     REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
     REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
@@ -64,7 +65,6 @@ INPUTS = frozenset(
         # the part of line 25600 that is net employment income from a prescribed international
         # organization, foreign income exempt under a tax treaty, or adult basic education
         # tuition assistance; read by the foreign tax credit alone.
-        "ca/qualifying_transfer_capital_gains_deduction",
         "ca/capital_gains_deduction",
         "ca/exempt_income_deductions",
     }
@@ -331,9 +331,9 @@ STEPS = {
         consumes={"base": "ca/remaining_adjusted_losses_2001_to_2024"},
         produces={"output": "ca/net_capital_loss_balance_2001_to_2024"},
     ),
-    # T1 line 68 and line 25700 "Add lines 58 to 67.": lines 58, 59, 60, 61, 62, 63, 66 and 67
-    # (lines 24400, 24900, 25000, 25100, 25200, 25300, 25500 and 25600), in line order; lines 64
-    # and 65 (25395 and 25400) are not wired yet.
+    # T1 line 68 and line 25700 "Add lines 58 to 67.": lines 58, 59, 60, 61, 62, 63, 64, 66 and 67
+    # (lines 24400, 24900, 25000, 25100, 25200, 25300, 25395, 25500 and 25600), in line order; line
+    # 65 (25400) is not wired yet.
     CapabilitySelection(
         name="core/sum",
         params={},
@@ -345,6 +345,7 @@ STEPS = {
                 "ca/limited_partnership_losses_of_other_years",
                 "ca/non_capital_losses_of_other_years",
                 "ca/net_capital_losses_of_other_years",
+                "ca/qbt_capital_gains_deduction",
                 "ca/northern_residents_deductions",
                 "ca/additional_deductions",
             )
@@ -510,6 +511,7 @@ WIRING = {
                 LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
                 NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
                 NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+                QBT_CAPITAL_GAINS_DEDUCTION,
                 NORTHERN_RESIDENTS_DEDUCTIONS,
                 ADDITIONAL_DEDUCTIONS,
             }

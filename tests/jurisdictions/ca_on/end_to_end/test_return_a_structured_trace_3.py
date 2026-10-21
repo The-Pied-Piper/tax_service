@@ -160,6 +160,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
+    NET_RENTAL_INCOME,
     OAS_BENEFITS_BASE_AMOUNT,
     OTHER_BUSINESS_INVESTMENT_LOSS_REDUCTIONS_1986_TO_2024,
     OTHER_DIVIDENDS_GROSSED_UP,
@@ -174,6 +175,24 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_6,
     POLITICAL_CREDIT_SHORTCUT_AMOUNT,
     POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
+    QBT_ABIL_REDUCTION,
+    QBT_ALLOCATION_LIMIT,
+    QBT_CAPITAL_GAINS_DEDUCTION,
+    QBT_CHART_A_NET_INVESTMENT_LOSS,
+    QBT_DEDUCTION_AVAILABLE,
+    QBT_DEDUCTION_BASE,
+    QBT_ELECTION_DEDUCTION,
+    QBT_ELECTION_IS_QBT,
+    QBT_GAINS_ARE_QSBCS_OR_QFFP,
+    QBT_HAS_INVESTMENT_EXPENSES,
+    QBT_NET_INVESTMENT_LOSS,
+    QBT_NET_INVESTMENT_LOSS_REDUCTION,
+    QBT_NET_RENTAL_INCOME,
+    QBT_NET_RENTAL_LOSS,
+    QBT_REDUCTION_AMOUNT,
+    QBT_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
+    QCC_ELECTION_DEDUCTION,
+    QSBCS_QFFP_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
     REFUND_OR_BALANCE_OWING,
     REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
     REGULAR_RATE_DONATIONS,
@@ -814,6 +833,35 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
+        # Form T2048 (line 25395) and Chart A: Return A enters nothing on the form, so its lines
+        # are 0 (or, where they read another line, that line's figure).
+        QBT_NET_RENTAL_LOSS: SubtractedLine(
+            QBT_NET_RENTAL_LOSS, QBT_NET_RENTAL_INCOME, D("0"), NET_RENTAL_INCOME, D("0"), D("0")
+        ),
+        QCC_ELECTION_DEDUCTION: SubtractedLine(
+            QCC_ELECTION_DEDUCTION,
+            QBT_DEDUCTION_AVAILABLE,
+            D("0"),
+            QBT_ELECTION_DEDUCTION,
+            D("0"),
+            D("0"),
+        ),
+        QBT_REDUCTION_AMOUNT: SubtractedLine(
+            QBT_REDUCTION_AMOUNT,
+            QBT_DEDUCTION_BASE,
+            D("0"),
+            QBT_CAPITAL_GAINS_DEDUCTION,
+            D("0"),
+            D("0"),
+        ),
+        QBT_NET_INVESTMENT_LOSS_REDUCTION: SubtractedLine(
+            QBT_NET_INVESTMENT_LOSS_REDUCTION,
+            QBT_ALLOCATION_LIMIT,
+            D("0"),
+            QBT_ABIL_REDUCTION,
+            D("0"),
+            D("0"),
+        ),
     }
     assert tapered == {
         BASIC_PERSONAL_AMOUNT: TaperedAmountLine(
@@ -1439,6 +1487,27 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count_kind=SPOUSE_NOT_SEPARATED_90_DAYS,
             count=0,
             result=D("0"),
+        ),
+        # Form T2048 (line 25395) and Chart A: Return A enters nothing on the form, so its lines
+        # are 0 (or, where they read another line, that line's figure).
+        QBT_ELECTION_DEDUCTION: TimesCountLine(
+            QBT_ELECTION_DEDUCTION, QBT_DEDUCTION_AVAILABLE, D("0"), QBT_ELECTION_IS_QBT, 0, D("0")
+        ),
+        QBT_NET_INVESTMENT_LOSS: TimesCountLine(
+            QBT_NET_INVESTMENT_LOSS,
+            QBT_CHART_A_NET_INVESTMENT_LOSS,
+            D("0"),
+            QBT_HAS_INVESTMENT_EXPENSES,
+            0,
+            D("0"),
+        ),
+        QSBCS_QFFP_TAXABLE_GAINS_RELATED_TO_DEDUCTION: TimesCountLine(
+            QSBCS_QFFP_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
+            QBT_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
+            D("0"),
+            QBT_GAINS_ARE_QSBCS_OR_QFFP,
+            0,
+            D("0"),
         ),
     }
     assert multiples == {

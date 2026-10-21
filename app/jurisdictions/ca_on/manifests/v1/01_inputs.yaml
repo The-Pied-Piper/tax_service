@@ -141,7 +141,6 @@ inputs:
   # part of line 25600 that is net employment income from a prescribed international
   # organization, foreign income exempt under a tax treaty, or adult basic education
   # tuition assistance; read by the foreign tax credit alone.
-  - ca/qualifying_transfer_capital_gains_deduction
   - ca/capital_gains_deduction
   - ca/exempt_income_deductions
   - ca/zone_a_days_lived
@@ -352,3 +351,18 @@ inputs:
   - ca-on/property_tax_paid
   - ca-on/reserve_home_energy_costs
   - ca-on/public_long_term_care_paid
+  # Form T2048 (line 25395): the starting amounts and 0 or 1 answers of Parts 2 to 5 and Chart A,
+  # read by `06a_capital_gains_deduction_qbt.yaml`.
+  - ca/qbt_election_eligible_amount
+  - ca/qbt_percentage_allocated
+  - ca/qbt_prior_years_claims
+  - ca/qbt_capital_gains
+  - ca/qbt_2024_reserve
+  - ca/qbt_2025_reserve
+  - ca/qbt_has_investment_expenses
+  - ca/qbt_deduction_claimed
+  - ca/qbt_election_is_qbt
+  - ca/qbt_gains_are_qsbcs_or_qffp
+  - ca/qbt_partnership_losses
+  - ca/qbt_other_investment_expenses
+  - ca/qbt_other_property_income

@@ -111,7 +111,7 @@ from app.jurisdictions.ca.catalog import (
     NON_REFUNDABLE_CREDIT_AMOUNTS,
     NON_REFUNDABLE_TAX_CREDITS,
     OTHER_PAYMENTS_DEDUCTION,
-    QUALIFYING_TRANSFER_CAPITAL_GAINS_DEDUCTION,
+    QBT_CAPITAL_GAINS_DEDUCTION,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
     SECURITY_OPTIONS_DEDUCTIONS,
@@ -933,7 +933,7 @@ STEPS = {
                 "ca/security_options_deductions",
                 "ca/other_payments_deduction",
                 "ca/net_capital_losses_of_other_years",
-                "ca/qualifying_transfer_capital_gains_deduction",
+                "ca/qbt_capital_gains_deduction",
                 "ca/capital_gains_deduction",
                 "ca/exempt_income_deductions",
             )
@@ -1424,7 +1424,7 @@ WIRING = {
                 SECURITY_OPTIONS_DEDUCTIONS,
                 OTHER_PAYMENTS_DEDUCTION,
                 NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
-                QUALIFYING_TRANSFER_CAPITAL_GAINS_DEDUCTION,
+                QBT_CAPITAL_GAINS_DEDUCTION,
                 CAPITAL_GAINS_DEDUCTION,
                 EXEMPT_INCOME_DEDUCTIONS,
             }

@@ -9,6 +9,8 @@ NAMESPACE = "ca"
 
 from app.jurisdictions.ca.capabilities import (  # noqa: E402
     amount_or_divided_by_rate,
+    apply_percentage,
+    apply_ratio_or_zero,
     caregiver_amount,
     cca_claim,
     cca_table,
@@ -42,6 +44,8 @@ from app.jurisdictions.ca.capabilities import (  # noqa: E402
 __all__ = [
     "NAMESPACE",
     "amount_or_divided_by_rate",
+    "apply_percentage",
+    "apply_ratio_or_zero",
     "caregiver_amount",
     "cca_claim",
     "cca_table",
