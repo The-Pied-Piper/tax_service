@@ -1,4 +1,4 @@
-"""Unit tests for the CountByConditions capability (`ca-on/count_by_conditions`).
+"""Unit tests for the CountByConditions capability (`ca/count_by_conditions`).
 
 A count from comparisons: 1 or 0, so `core/times_count` can switch a line on or off. Its slots:
 one parameter slot `conditions` (a `conditions` dataset: the form's list of conditions, in the
@@ -30,7 +30,7 @@ from typing import Any, assert_type, cast
 
 import pytest
 
-import app.jurisdictions.ca_on.capabilities as ca_on_capabilities
+import app.jurisdictions.ca.capabilities as ca_capabilities
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capabilities.times_count import TimesCount
@@ -49,7 +49,7 @@ from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import NO_ROUNDING
 from app.domain.trace import ConditionLine, ConditionsCountLine
-from app.jurisdictions.ca_on.capabilities.count_by_conditions import CountByConditions
+from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 
 D = Decimal
 
@@ -222,18 +222,18 @@ def chart_count(flags: tuple[int, int, int], net_income: str) -> int:
 # --- the capability's shape ---------------------------------------------------------------------
 
 
-def test_is_registered_as_ca_on_count_by_conditions() -> None:
-    assert CapabilityRegistry.shared().get("ca-on/count_by_conditions") is CountByConditions
+def test_is_registered_as_ca_count_by_conditions() -> None:
+    assert CapabilityRegistry.shared().get("ca/count_by_conditions") is CountByConditions
 
 
-def test_is_exported_from_the_ca_on_capabilities_package() -> None:
-    assert "count_by_conditions" in ca_on_capabilities.__all__
-    assert ca_on_capabilities.count_by_conditions.CountByConditions is CountByConditions
+def test_is_exported_from_the_ca_capabilities_package() -> None:
+    assert "count_by_conditions" in ca_capabilities.__all__
+    assert ca_capabilities.count_by_conditions.CountByConditions is CountByConditions
 
 
-def test_its_package_declares_the_ca_on_namespace() -> None:
-    assert ca_on_capabilities.NAMESPACE == "ca-on"
-    assert ca_on_capabilities.__all__[0] == "NAMESPACE"
+def test_its_package_declares_the_ca_namespace() -> None:
+    assert ca_capabilities.NAMESPACE == "ca"
+    assert ca_capabilities.__all__[0] == "NAMESPACE"
 
 
 def test_declares_its_contract() -> None:

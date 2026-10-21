@@ -19,6 +19,7 @@ from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.chart_a_row_c_total import ChartARowCTotal
 from app.jurisdictions.ca.capabilities.chart_b_zone_a_total import ChartBZoneATotal
 from app.jurisdictions.ca.capabilities.chart_b_zone_b_total import ChartBZoneBTotal
+from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.catalog import (
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS,
@@ -167,7 +168,6 @@ from app.jurisdictions.ca.catalog import (
     ZONE_B_RESIDENCY_AMOUNT,
     ZONE_B_SPECIAL_WORK_SITE_BENEFITS,
 )
-from app.jurisdictions.ca_on.capabilities.count_by_conditions import CountByConditions
 
 INPUTS = frozenset(
     {
@@ -717,7 +717,7 @@ STEPS = {
     # line 14600 of your return and the amount on line 23400 is more than $93,454", and T1 line 55
     # and line 23500 "If not, enter "0" on line 23500.": a count of 1 when either holds.
     CapabilitySelection(
-        name="ca-on/count_by_conditions",
+        name="ca/count_by_conditions",
         params={"conditions": "ca/social_benefits_repayment_conditions"},
         consumes={
             "counts": (),

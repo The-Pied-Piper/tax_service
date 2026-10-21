@@ -4,7 +4,7 @@ capabilities:
   # amount on line 23400 is more than $82,125" and "You entered an amount on line 11300 or line
   # 14600 of your return and the amount on line 23400 is more than $93,454", and T1 line 55 and line
   # 23500 "If not, enter "0" on line 23500.": a count of 1 when either holds.
-  - name: ca-on/count_by_conditions
+  - name: ca/count_by_conditions
     params:
       conditions: ca/social_benefits_repayment_conditions
     consumes:

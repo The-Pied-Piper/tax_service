@@ -14,6 +14,7 @@ from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
 from app.domain.capabilities.times_count import TimesCount
 from app.domain.worksheet import Worksheet
+from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.catalog import (
     CHARITABLE_DONATIONS_LIMIT,
     DONATION_LIMIT_ON_NET_INCOME,
@@ -46,7 +47,6 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_PAYABLE,
 )
 from app.jurisdictions.ca_on import catalog as ontario
-from app.jurisdictions.ca_on.capabilities.count_by_conditions import CountByConditions
 from tests.jurisdictions.ca_on.end_to_end.support import D, compute
 
 

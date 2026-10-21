@@ -9,12 +9,12 @@ from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
+from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.catalog import (
     NET_INCOME,
     SPOUSE_NET_INCOME,
     SPOUSE_OR_COMMON_LAW_PARTNER_ON_DECEMBER_31,
 )
-from app.jurisdictions.ca_on.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca_on.catalog import (
     BANKRUPT_IN_YEAR,
     CLAIMS_TAX_REDUCTION_AMOUNTS_AT_EQUAL_NET_INCOME,
@@ -88,7 +88,7 @@ STEPS = {
     # the spouse's (ON428 line 12 "Your spouse's or common-law partner's net income from line
     # 23600 of their return"), or when the two are equal and the caller says this return claims.
     CapabilitySelection(
-        name="ca-on/count_by_conditions",
+        name="ca/count_by_conditions",
         params={"conditions": "ca-on/tax_reduction_spouse_rule"},
         consumes={
             "counts": (
@@ -163,7 +163,7 @@ STEPS = {
     # trustee in bankruptcy" and "You are choosing not to claim an Ontario tax reduction": 0 when
     # any applies, else 1.
     CapabilitySelection(
-        name="ca-on/count_by_conditions",
+        name="ca/count_by_conditions",
         params={"conditions": "ca-on/tax_reduction_conditions"},
         consumes={
             "counts": (
