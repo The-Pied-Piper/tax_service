@@ -63,7 +63,7 @@ def test_the_t776_part_declares_the_form_ca_t776_with_its_instances_and_exports(
     }
 
 
-def test_the_manifest_has_the_one_form_t776() -> None:
+def test_the_manifest_has_the_form_t776_beside_the_other_forms() -> None:
     found = form()
 
     assert found.name == "ca/t776"

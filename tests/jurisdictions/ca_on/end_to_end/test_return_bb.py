@@ -60,7 +60,7 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_PAYABLE,
 )
 from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute
+from tests.jurisdictions.ca_on.end_to_end.support import D, run
 
 # Return BB's T2125: gross sales 50000, the six expense lines 1500 + 1200 + 800 + 2500 + 6000 +
 # 1500 = 13500 and the motor vehicle expenses of 2500 from Charts A to C (the seven lines 16000),
@@ -96,13 +96,13 @@ BUSINESS = {
 FURNITURE = ("8", "10000", "0", "0", "0", "0", "2000", 0)
 
 
-def return_bb(**overrides: Any) -> Worksheet:
+def run_bb(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
     """Return BB's inputs, as in `returns/2025_return_bb.yaml`: a sole proprietor whose only
     activity is a business.
 
-    One T2125 for the business: gross sales of 50000 (amount 3A, and so line 8299 and T1 line
-    13499), expenses of 16000 on seven lines (the motor vehicle line, 2500, from Charts A to C) and
-    2000 of capital cost allowance (Class 8, opening UCC 10000, claim 2000), 18000 in all (line
+    One T2125 statement for the business: gross sales of 50000 (amount 3A, and so line 8299 and T1
+    line 13499), expenses of 16000 on seven lines (the motor vehicle line, 2500, from Charts A to C)
+    and 2000 of capital cost allowance (Class 8, opening UCC 10000, claim 2000), 18000 in all (line
     9368), so line 9369 is 32000; business-use-of-home
     expenses of 2000, so line 9945 is 2000 and line 9946 and T1 line 13500 are 30000.
     """
@@ -110,7 +110,17 @@ def return_bb(**overrides: Any) -> Worksheet:
         "business": BUSINESS,
         "business_cca_classes_rows": (FURNITURE,),
     }
-    return compute("0", (), "0", "0", "0", "0", "0", **{**inputs, **overrides})
+    return run("0", (), "0", "0", "0", "0", "0", **{**inputs, **overrides})
+
+
+def return_bb(**overrides: Any) -> Worksheet:
+    """The return form's worksheet of `run_bb`: T1 lines 13500, 27 and below."""
+    return run_bb(**overrides)["ca-on/return"][0]
+
+
+def statement_bb(**overrides: Any) -> Worksheet:
+    """The worksheet of Return BB's one T2125 statement: its lines, as the form computes them."""
+    return run_bb(**overrides)["ca/t2125"][0]
 
 
 def test_return_bbs_gross_business_income_is_50000_on_line_8299_and_t1_line_13499() -> None:
@@ -118,7 +128,7 @@ def test_return_bbs_gross_business_income_is_50000_on_line_8299_and_t1_line_1349
     # (amounts 3D and 3E 0), so amount 3F is 0 and amount 3G, which is line 8000, is 50000 + 0.
     # Line 8290 and line 8230 are 0 (no reserves, other income or recapture), so amount 3O is 0
     # and line 8299, "Line 8000 plus amount 3O", is 50000. T1 line 13499 is line 8299.
-    worksheet = return_bb()
+    worksheet = statement_bb()
 
     assert worksheet.get(BUSINESS_SALES_SUBTOTAL).value == D("50000")
     assert worksheet.get(BUSINESS_QUICK_METHOD_ASSISTANCE).value == D("0")
@@ -132,7 +142,7 @@ def test_return_bbs_gross_business_income_is_50000_on_line_8299_and_t1_line_1349
 def test_return_bbs_gross_profit_is_the_gross_income_with_no_cost_of_goods_sold() -> None:
     # Part 3D: amount 3P is line 8299, 50000; amounts 3Q to 3U and line 8500 are 0, so amount 3V
     # and line 8518 are 0 and line 8519 is 50000 - 0, which is amount 4A.
-    worksheet = return_bb()
+    worksheet = statement_bb()
 
     assert worksheet.get(BUSINESS_GROSS_INCOME_FOR_GROSS_PROFIT).value == D("50000")
     assert worksheet.get(BUSINESS_COST_OF_GOODS_SUBTOTAL).value == D("0")
@@ -146,7 +156,7 @@ def test_return_bbs_area_a_claims_2000_on_line_9936() -> None:
     # column 19 is 10000 and the maximum is 10000 x 20% = 2000.00; 2000 is claimed. Amount ii
     # is 2000; with no personal part or business-use-of-home CCA (amount 7K), line 9936 is 2000.
     # No class has a negative column 7 or is empty, so there is no recapture and no terminal loss.
-    worksheet = return_bb()
+    worksheet = statement_bb()
 
     assert worksheet.get(BUSINESS_CCA_TABLE_CLAIM).value == D("2000")
     assert worksheet.get(BUSINESS_CCA_CLAIM_LESS_PERSONAL_PART).value == D("2000")
@@ -158,7 +168,7 @@ def test_return_bbs_area_a_claims_2000_on_line_9936() -> None:
 
 def test_return_bbs_closing_ucc_is_8000_for_class_8() -> None:
     # Column 22 is column 7 less column 21: 10000 - 2000 = 8000, next year's column 2.
-    worksheet = return_bb()
+    worksheet = statement_bb()
 
     closing = worksheet.get(BUSINESS_CLOSING_UCC).value
     assert [list(record.values()) for record in closing.records] == [[D("8"), D("8000")]]
@@ -167,7 +177,7 @@ def test_return_bbs_closing_ucc_is_8000_for_class_8() -> None:
 def test_return_bbs_total_expenses_are_18000_and_net_income_before_adjustments_32000() -> None:
     # Amounts 4B to 4T add to 16000 (the seven lines entered), amount 4U (line 9936) is 2000 and
     # amount 4V (line 9270) is 0: line 9368 is 18000. Line 9369 is 50000 - 18000 = 32000.
-    worksheet = return_bb()
+    worksheet = statement_bb()
 
     assert worksheet.get(BUSINESS_TOTAL_EXPENSES).value == D("18000")
     assert worksheet.get(BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS).value == D("32000")
@@ -176,7 +186,7 @@ def test_return_bbs_total_expenses_are_18000_and_net_income_before_adjustments_3
 def test_return_bbs_sole_proprietor_has_no_partnership_amounts() -> None:
     # No partner (count 0): amount 5A is line 9369, 32000; amounts 5B and 9974 and 6A to 6E are 0,
     # so amount 5C is 32000, line 9943 is 0 and amount 5D is 32000.
-    worksheet = return_bb()
+    worksheet = statement_bb()
 
     assert worksheet.get(BUSINESS_SHARE_OF_NET_INCOME).value == D("32000")
     assert worksheet.get(BUSINESS_PARTNER_OTHER_AMOUNTS_TOTAL).value == D("0")
@@ -190,7 +200,7 @@ def test_return_bbs_business_use_of_home_claim_is_2000() -> None:
     # 7J is 2000; amounts 7K and 7L are 0, so amount 7M is 2000. Amount 7N is amount 5D, 32000.
     # Amount 7O is 2000 - 32000, negative, so 0. Amount 7P, the lesser of 2000 and 32000, is 2000,
     # which is line 9945.
-    worksheet = return_bb()
+    worksheet = statement_bb()
 
     assert worksheet.get(BUSINESS_HOME_EXPENSES_SUBTOTAL).value == D("2000")
     assert worksheet.get(BUSINESS_HOME_EXPENSES_BUSINESS_PART).value == D("2000")
@@ -204,8 +214,10 @@ def test_return_bbs_business_use_of_home_claim_is_2000() -> None:
 def test_return_bbs_net_business_income_is_30000_on_line_9946_and_t1_line_13500() -> None:
     # Line 9946 is amount 5D less line 9945: 32000 - 2000 = 30000, T1 line 22 and line 13500; the
     # net self-employment income (line 27) is 30000 + 0 + 0 + 0 + 0.
-    worksheet = return_bb()
+    result = run_bb()
+    worksheet = result["ca-on/return"][0]
 
+    assert result["ca/t2125"][0].get(BUSINESS_INCOME).value == D("30000")
     assert worksheet.get(BUSINESS_INCOME).value == D("30000")
     assert worksheet.get(NET_SELF_EMPLOYMENT_INCOME).value == D("30000")
 
@@ -231,7 +243,7 @@ def test_return_bbs_motor_vehicle_line_9281_is_2500_from_charts_a_to_c() -> None
     # greater of 60000 and 50517.78, 85% of it is 51000.00, 1243.00 x 183 ÷ 30 is 7582.30, and
     # 42940.00 x 2550 ÷ 51000.00 is 2147.00, so the leasing cost is the lesser of 7582.30 and
     # 2147.00. Chart A: 1000 + 400 + 600 + 200 + 2147 + 653 = 5000, and 5000 x 5000 ÷ 10000 = 2500.
-    worksheet = return_bb()
+    worksheet = statement_bb()
 
     assert worksheet.get(BUSINESS_VEHICLE_INTEREST_FOR_PERIOD).value == D("2135.00")
     assert worksheet.get(BUSINESS_VEHICLE_AVAILABLE_INTEREST).value == D("400.00")
@@ -247,7 +259,10 @@ def test_return_bbs_motor_vehicle_line_9281_is_2500_from_charts_a_to_c() -> None
 
 
 def test_return_bbs_trace_names_each_line_of_the_business_statement() -> None:
-    rendered = EnglishTraceRenderer().render_all(return_bb().trace)
+    # The lines of the one T2125 statement, then those of the return form.
+    result = run_bb()
+    trace = (*result["ca/t2125"][0].trace, *result["ca-on/return"][0].trace)
+    rendered = EnglishTraceRenderer().render_all(trace)
 
     for rendered_line in (
         "business_sales_subtotal: business_gross_sales 50000 less business_sales_adjustments 0 "

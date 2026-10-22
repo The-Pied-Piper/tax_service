@@ -201,11 +201,23 @@ from app.jurisdictions.ca.catalog import (
     AMT_UNAPPLIED_2018_CARRYOVER,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
+    BUSINESS_CCA_CLASSES,
+    BUSINESS_CCA_TABLE_CLAIM,
+    BUSINESS_CLOSING_UCC,
+    BUSINESS_GROSS_INCOME,
+    BUSINESS_GROSS_SALES,
+    BUSINESS_HOME_INCOME_LIMIT,
     BUSINESS_INCOME,
     BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
+    BUSINESS_PARTNER,
+    BUSINESS_RECAPTURED_CCA,
+    BUSINESS_SALES_SUBTOTAL,
+    BUSINESS_SHARE_OF_NET_INCOME,
+    BUSINESS_TERMINAL_LOSS,
+    BUSINESS_VEHICLE_INTEREST_LIMIT,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_WORKERS_BENEFIT,
     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
@@ -1512,9 +1524,10 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         EI_SPECIAL_BENEFITS_AGREEMENT,
     ):
         assert worksheet.producer_of(starting) is None, starting.identifier
-    # T1 line 22 (line 13500) is T2125 line 9946, "Amount 5D minus line 9945", no longer a starting
-    # amount.
-    assert isinstance(worksheet.producer_of(BUSINESS_INCOME), Subtract)
+    # T1 line 22 (line 13500) totals the lines 9946 of the T2125 statements, which the form exports.
+    assert isinstance(worksheet.producer_of(BUSINESS_INCOME), RecordTotal)
+    imported = ArtifactRegistry.shared().kind("ca/t2125.business_income")
+    assert worksheet.producer_of(imported) is None
     # T1 line 25 (line 14100) is T2042 line 9946, "Amount 5C minus line 9945", no longer a starting
     # amount either.
     assert isinstance(worksheet.producer_of(FARMING_INCOME), Subtract)
@@ -2478,3 +2491,24 @@ def test_each_t776_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(RENTAL_NET_INCOME_SHARE) is not worksheet.producer_of(
         NET_RENTAL_INCOME
     )
+
+
+def test_each_t2125_amount_is_produced_by_its_capability() -> None:
+    # The statement's worksheet: the form's own, where each T2125 line is produced and the
+    # statement's fields are starting artifacts.
+    worksheet = run_a()["ca/t2125"][0]
+    for starting in (BUSINESS_GROSS_SALES, BUSINESS_PARTNER, BUSINESS_CCA_CLASSES):
+        assert worksheet.producer_of(starting) is None, starting.identifier
+    assert isinstance(worksheet.producer_of(BUSINESS_SALES_SUBTOTAL), Subtract)
+    assert isinstance(worksheet.producer_of(BUSINESS_GROSS_INCOME), Sum)
+    assert isinstance(worksheet.producer_of(BUSINESS_RECAPTURED_CCA), RecapturedCca)
+    assert isinstance(worksheet.producer_of(BUSINESS_CCA_TABLE_CLAIM), CcaClaim)
+    assert isinstance(worksheet.producer_of(BUSINESS_TERMINAL_LOSS), TerminalLoss)
+    assert isinstance(worksheet.producer_of(BUSINESS_CLOSING_UCC), ClosingUcc)
+    assert isinstance(worksheet.producer_of(BUSINESS_SHARE_OF_NET_INCOME), ChooseByCount)
+    assert isinstance(worksheet.producer_of(BUSINESS_HOME_INCOME_LIMIT), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(BUSINESS_INCOME), Subtract)
+    # The form holds its own copy of the printed constants; the return form's is the one Forms
+    # T2042 and T2121 read.
+    assert isinstance(worksheet.producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
+    assert isinstance(return_a().producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
