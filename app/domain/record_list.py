@@ -131,7 +131,10 @@ class RecordList:
                     f"got {type(value).__name__}"
                 )
             if isinstance(kind, RecordListKind):
-                kind.check_value(value)
+                try:
+                    kind.check_value(value)
+                except TypeError as exc:
+                    raise TypeError(f"{item}: {exc}") from None
             if kind.non_negative and value < 0:
                 raise NegativeArtifactError(
                     f"{item}: {kind.identifier} cannot be negative, got {value}",

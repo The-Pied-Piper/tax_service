@@ -184,3 +184,10 @@ def test_the_trace_for_no_records_says_no_items() -> None:
     result = capability().compute((items(),))
 
     assert EnglishTraceRenderer().render_all(result.trace) == ("items_total: no items = 0",)
+
+
+def test_rejects_a_plain_kind_of_record_lists_as_records() -> None:
+    plain = ArtifactKind("ex/plain_list", RecordList)
+
+    with pytest.raises(InvalidCapabilityError, match=r"RecordTotal.*'records'"):
+        RecordTotal(records=plain, output=TOTAL)  # type: ignore[arg-type]

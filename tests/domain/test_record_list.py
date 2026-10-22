@@ -523,7 +523,7 @@ def test_declare_accepts_a_record_list_field(fresh: ArtifactRegistry) -> None:
 def test_a_nested_list_of_other_fields_is_refused_naming_the_item_and_field() -> None:
     other = RecordList((NET_INCOME,), [{NET_INCOME: D("1")}])
 
-    with pytest.raises(TypeError, match=r"ex/units"):
+    with pytest.raises(TypeError, match=r"item 2: ex/units"):
         RecordList(PROPERTY_FIELDS, [{FLOOR: 1, UNITS: units("1")}, {FLOOR: 2, UNITS: other}])
 
 

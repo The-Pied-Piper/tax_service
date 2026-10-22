@@ -32,6 +32,10 @@ class RecordTotal(Capability):
         amount.
         """
         super().__init__(records=records, output=output)
+        if not isinstance(records, RecordListKind):
+            raise InvalidCapabilityError(
+                f"{type(self).__name__}: CONSUMES slot 'records' must be a record-list kind"
+            )
         amount_fields = [kind for kind in records.fields if issubclass(kind.value_type, Decimal)]
         if len(records.fields) != 1 or not amount_fields:
             raise InvalidCapabilityError(
