@@ -191,6 +191,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_renderers() -> None:
         "app.domain.trace.choices.ChosenByRangeLine",
         "app.domain.trace.choices.ConditionLine",
         "app.domain.trace.choices.ConditionsCountLine",
+        "app.domain.trace.forms.FormInstanceLine",
         "app.domain.trace.rate_tables.AmountByCountLine",
         "app.domain.trace.rate_tables.BracketColumnLine",
         "app.domain.trace.rate_tables.ChosenRateAppliedLine",

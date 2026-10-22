@@ -549,3 +549,22 @@ def test_an_artifact_holds_a_record_list_with_a_nested_list(fresh: ArtifactRegis
     value = RecordList(PROPERTY_FIELDS, [{FLOOR: 1, UNITS: units("100")}])
 
     assert Artifact(kind, value).value == value
+
+
+def test_a_record_list_kind_may_carry_the_dotted_identifier_of_a_form_export() -> None:
+    # The engine derives `<form>.<export>` kinds as record-list kinds of the export's one field.
+    amount = ArtifactKind("ex/net_income", Decimal)
+
+    kind = RecordListKind("ex/rental.net_income", fields=(amount,))
+    value = RecordList(kind.fields, [{amount: Decimal("10000")}, {amount: Decimal("4000")}])
+
+    assert kind.identifier == "ex/rental.net_income"
+    assert Artifact(kind, value).value.records[1][amount] == Decimal("4000")
+    assert kind == RecordListKind("ex/rental.net_income", fields=(amount,))
+
+
+def test_a_catalog_cannot_declare_a_dotted_record_list_kind() -> None:
+    amount = ArtifactKind("ex/net_income", Decimal)
+
+    with pytest.raises(InvalidRegistrationError, match="invalid local id"):
+        RecordListKind.declare(ArtifactCatalog(Namespace("ex")), "rental.net_income", (amount,))
