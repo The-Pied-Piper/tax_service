@@ -18,7 +18,7 @@ from typing import Any
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capability import Capability, CapabilityResult
 from app.domain.composition import Composition
-from app.domain.errors import CapabilityContractError, InvalidCompositionError
+from app.domain.errors import DomainError, InvalidCompositionError
 from app.domain.record_list import RecordList, RecordListKind
 from app.domain.trace import FormInstanceLine, TraceLine
 
@@ -87,8 +87,9 @@ class FormRun(Capability):
             starting = (Artifact(kind, record[kind]) for kind in self._instances.fields)
             try:
                 worksheet = self._composition.compute(*starting)
-            except CapabilityContractError as exc:
-                raise CapabilityContractError(f"{self._name}, instance {position}: {exc}") from exc
+            except DomainError as exc:
+                exc.args = (f"{self._name}, instance {position}: {exc}",)
+                raise
             for export, listed in zip(self._exports, exported, strict=True):
                 listed.append({export: worksheet.get(export).value})
             trace.append(FormInstanceLine(self._name, position, worksheet.trace))
