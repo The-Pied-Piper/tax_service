@@ -121,7 +121,7 @@ class RecordList:
             if key not in self.fields:
                 name = key.identifier if isinstance(key, ArtifactKind) else repr(key)
                 raise InvalidRecordError(f"{item}: unknown field {name}")
-        values: dict[ArtifactKind[Any], Any] = {}
+        values: dict[ArtifactKind[Any], Decimal | int | RecordList] = {}
         for kind in self.fields:
             value = given[kind]
             # `bool` is a subclass of `int` but not a count, so a count field refuses it.
