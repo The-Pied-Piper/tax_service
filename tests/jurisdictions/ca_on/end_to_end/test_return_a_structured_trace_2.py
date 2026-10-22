@@ -16,6 +16,8 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2000,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
+    ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     ADJUSTED_NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     ADVANCED_CANADA_WORKERS_BENEFIT,
     AGE_AMOUNT,
@@ -691,6 +693,7 @@ from app.jurisdictions.ca.catalog import (
     MEDICAL_SUPPLEMENT_SELF_EMPLOYMENT_INCOME,
     MEDICAL_SUPPLEMENT_WORKING_INCOME,
     NET_BUSINESS_INCOME,
+    NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_COMMISSION_INCOME,
     NET_FARMING_INCOME,
@@ -745,6 +748,12 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_3_LINE_5,
     POLITICAL_CREDIT_COLUMN_3_LINE_6,
     POLITICAL_CREDIT_COLUMN_3_LINE_7,
+    PRE_1986_DEDUCTIONS_2001_TO_2024,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999,
+    PRE_1986_DEDUCTIONS_ADJUSTED_2000,
+    PRE_1986_DEDUCTIONS_BEFORE_1988,
+    PRE_1986_DEDUCTIONS_TOTAL,
     PRINCIPAL_RESIDENCE_GAIN,
     PROFESSIONAL_INCOME,
     PROVINCIAL_CREDITS,
@@ -943,6 +952,7 @@ from app.jurisdictions.ca.catalog import (
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOSI_ADJUSTED_TAXABLE_INCOME,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
+    TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     TOTAL_CARRYING_CHARGES,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
@@ -2661,10 +2671,43 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("0"),
         ),
+        # Form T1436 line 2 "Total capital gains deductions after adjustment: add amounts A to E."
+        # for no capital gains deductions.
+        PRE_1986_DEDUCTIONS_TOTAL: SumLine(
+            PRE_1986_DEDUCTIONS_TOTAL,
+            (
+                (PRE_1986_DEDUCTIONS_BEFORE_1988, D("0")),
+                (PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989, D("0.00")),
+                (PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999, D("0.00")),
+                (PRE_1986_DEDUCTIONS_ADJUSTED_2000, D("0.00")),
+                (PRE_1986_DEDUCTIONS_2001_TO_2024, D("0")),
+            ),
+            D("0.00"),
+        ),
+        # Form T1436 line 10 "Line 7 plus line 9" (T1 line 25300) and line 13 "Line 11 plus line
+        # 12" (line 11 is a copy of line 7 and line 12 of line 9), for no claim and no
+        # pre-1986 capital loss balance.
+        NET_CAPITAL_LOSSES_OF_OTHER_YEARS: SumLine(
+            NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+            (
+                (ADJUSTED_NET_CAPITAL_LOSSES_APPLIED, D("0")),
+                (NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION, D("0.00")),
+            ),
+            D("0.00"),
+        ),
+        TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED: SumLine(
+            TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
+            (
+                (ADJUSTED_NET_CAPITAL_LOSSES_APPLIED, D("0")),
+                (NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION, D("0.00")),
+            ),
+            D("0.00"),
+        ),
         # Form T1436 line 4 "Total of column C from Chart A", for no unapplied losses.
         TOTAL_ADJUSTED_NET_CAPITAL_LOSSES: SumLine(
             TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
             (
+                (ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985, D("0.00")),
                 (ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987, D("0.00")),
                 (ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989, D("0.00")),
                 (ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999, D("0.00")),

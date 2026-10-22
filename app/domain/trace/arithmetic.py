@@ -30,6 +30,7 @@ __all__ = [
     "CreditAmountLine",
     "CappedAmountLine",
     "LesserOfLine",
+    "LesserOfWithMaximumLine",
     "GreaterOfLine",
     "PerUnitAmountLine",
     "MultipleOverLine",
@@ -241,6 +242,27 @@ class LesserOfLine(TraceLine):
     @property
     def amount(self) -> Decimal:
         """The least of the parts."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class LesserOfWithMaximumLine(TraceLine):
+    """The `result` produced as `output`: the least of `parts`, each a kind and its value, and the
+    `maximum`, rounded with `rounding`.
+
+    Its own class, not a `LesserOfLine` or `CappedAmountLine`: it compares several amounts and a
+    dataset's figure.
+    """
+
+    output: Money
+    parts: tuple[tuple[Money, Decimal], ...]
+    maximum: Amount
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The rounded lesser."""
         return self.result
 
 
