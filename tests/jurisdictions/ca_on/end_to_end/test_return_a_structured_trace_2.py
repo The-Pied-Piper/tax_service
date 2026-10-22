@@ -21,7 +21,9 @@ from app.jurisdictions.ca.catalog import (
     AGE_AMOUNT,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    AMT_ADJUSTED_INCOME_WITH_GAINS,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+    AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CLASS_43_1_INCOME,
     AMT_COMMISSION_EMPLOYMENT_EXPENSES,
@@ -54,12 +56,14 @@ from app.jurisdictions.ca.catalog import (
     AMT_PART_1_SUBTOTAL,
     AMT_PPIP_PREMIUMS_DEDUCTION,
     AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION,
+    AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_REPAYMENT_OF_SALARY_AND_WAGES,
     AMT_REPAYMENT_OF_WAGE_LOSS_REPLACEMENT,
     AMT_RESOURCE_FOREIGN_PROPERTY_INCOME,
     AMT_RESOURCE_INCOME_TOTAL,
     AMT_RESOURCE_PRODUCTION_INCOME,
+    AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
     AMT_SECURITY_OPTIONS_D1_TOTAL,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
@@ -1370,6 +1374,19 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (AMT_TAX_SHELTER_ADJUSTMENTS, D("0")),
             ),
             D("115000.00"),
+        ),
+        # Form T691 Part 1 line 27 "Add lines 13, 14, 23, and 26.": line 13 is line 12, 115000.00;
+        # line 14 is 0 (no resource amounts); line 23 is line 22, 10000 (line 20 of 20000 less the
+        # taxable capital gains of 10000); line 26 is 0 (no gifts of publicly listed securities).
+        AMT_ADJUSTED_INCOME_WITH_GAINS: SumLine(
+            AMT_ADJUSTED_INCOME_WITH_GAINS,
+            (
+                (AMT_PART_1_SUBTOTAL, D("115000.00")),
+                (AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES, D("0")),
+                (AMT_CAPITAL_GAINS_ADDED, D("10000")),
+                (AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT, D("0")),
+            ),
+            D("125000.00"),
         ),
         # Form T691 Part 9 line 5 "Add lines 2 to 4.": Return A has no resource amounts.
         AMT_RESOURCE_INCOME_TOTAL: SumLine(

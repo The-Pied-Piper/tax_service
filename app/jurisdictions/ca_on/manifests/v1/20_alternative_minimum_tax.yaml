@@ -82,6 +82,24 @@ capabilities:
       less: ca/amt_capital_gains_adjustments
     produces:
       output: ca/amt_net_capital_gains_after_adjustments
+  # Part 1 line 22 "Line 20 minus line 21 (if negative, do not show in brackets.)", line 21 the
+  # amount from line 12700 of the return (the taxable capital gains), left signed here.
+  - name: core/subtract
+    consumes:
+      amount: ca/amt_net_capital_gains_after_adjustments
+      less: ca/taxable_capital_gains
+    produces:
+      output: ca/amt_capital_gains_difference
+  # Part 1 line 23 "If line 20 is positive, enter the amount from line 22. If line 20 is negative,
+  # enter whichever is less: the amount from line 21 or line 22 (show in brackets).", picked by
+  # the sign of line 20.
+  - name: ca/sign_chosen_difference
+    consumes:
+      sign_amount: ca/amt_net_capital_gains_after_adjustments
+      reference: ca/taxable_capital_gains
+      difference: ca/amt_capital_gains_difference
+    produces:
+      output: ca/amt_capital_gains_added
   # Part 1 line 26 "Line 24 minus line 25", the net of the gifts before the 30% of line 26.
   - name: core/subtract
     consumes:
@@ -97,6 +115,17 @@ capabilities:
       base: ca/amt_publicly_listed_gifts_net
     produces:
       output: ca/amt_publicly_listed_gifts_adjustment
+  # Part 1 line 27 "Add lines 13, 14, 23, and 26.", line 13 the amount from line 12 and line 14
+  # the amount from line 6 of Part 9, in line order.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/amt_part_1_subtotal
+        - ca/amt_resource_property_and_flow_through_shares
+        - ca/amt_capital_gains_added
+        - ca/amt_publicly_listed_gifts_adjustment
+    produces:
+      output: ca/amt_adjusted_income_with_gains
   # Part 1 line 30 "Line 28 plus line 29" and "67910 =", the security options deduction under
   # paragraph 110(1)(d): the T4 slips' boxes 39 and 91 (line 28) and the T1212 amount (line 29).
   - name: core/sum

@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
+    AMT_ADJUSTED_INCOME_WITH_GAINS,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
     AMT_APPLICABLE_RATE_AMOUNT,
+    AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
+    AMT_CAPITAL_GAINS_DIFFERENCE,
     AMT_DEDUCTIONS_TOTAL,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
@@ -250,6 +253,65 @@ def test_return_bg_line_20_shows_a_loss_in_brackets() -> None:
     worksheet = return_bg(share_dispositions=(("1000", "3000", "0"),))
 
     assert worksheet.get(AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS).value == D("-2300.00")
+
+
+def test_return_bg_line_22_is_line_20_less_line_21() -> None:
+    # Line 20 1700.00 minus line 21 1000.00 (the taxable capital gains, line 12700) is 700.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_CAPITAL_GAINS_DIFFERENCE).value == D("700.00")
+
+
+def test_return_bg_line_23_is_line_22_when_line_20_is_positive() -> None:
+    # Line 20 is 1700.00, positive, so line 23 is the amount from line 22, 700.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_CAPITAL_GAINS_ADDED).value == D("700.00")
+
+
+def test_return_bg_line_23_is_the_lesser_figure_in_brackets_when_line_20_is_negative() -> None:
+    # Lines 17 and 18 of 200.00 and 3000.00 make line 19 3200.00, so line 20 is 2000.00 minus
+    # 3200.00 = -1200.00; line 21 is 1000.00 and line 22 is -1200.00 minus 1000.00 = -2200.00
+    # (2200.00 without brackets); the lesser of 1000.00 and 2200.00 is 1000.00, in brackets.
+    worksheet = return_bg(graduated_rate_estate="3000.00")
+
+    assert worksheet.get(AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS).value == D("-1200.00")
+    assert worksheet.get(AMT_CAPITAL_GAINS_DIFFERENCE).value == D("-2200.00")
+    assert worksheet.get(AMT_CAPITAL_GAINS_ADDED).value == D("-1000.00")
+
+
+def test_return_bg_line_23_is_zero_when_line_20_and_line_21_are_zero() -> None:
+    # With no share disposition and lines 17 and 18 at 0, lines 15, 19, 20 and 21 are 0, and so
+    # are lines 22 and 23.
+    worksheet = return_bg(share_dispositions=(), treaty_exempt="0.00", graduated_rate_estate="0.00")
+
+    assert worksheet.get(AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS).value == D("0")
+    assert worksheet.get(TAXABLE_CAPITAL_GAINS).value == D("0")
+    assert worksheet.get(AMT_CAPITAL_GAINS_DIFFERENCE).value == D("0")
+    assert worksheet.get(AMT_CAPITAL_GAINS_ADDED).value == D("0")
+
+
+def test_return_bg_line_27_adds_lines_13_14_23_and_26() -> None:
+    # Line 13 67185.00 (line 12) plus line 14 1500.00 plus line 23 700.00 plus line 26 600.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_ADJUSTED_INCOME_WITH_GAINS).value == D("69985.00")
+
+
+def test_return_bg_line_27_takes_line_23_in_brackets_when_line_20_is_negative() -> None:
+    # 67185.00 plus 1500.00 plus -1000.00 plus 600.00 is 68285.00.
+    worksheet = return_bg(graduated_rate_estate="3000.00")
+
+    assert worksheet.get(AMT_ADJUSTED_INCOME_WITH_GAINS).value == D("68285.00")
+
+
+def test_return_bg_line_27_with_no_capital_gain() -> None:
+    # Taxable income is 59435.00 with no gain, so line 12 is 59435.00 + 5000.00 + 0.00 + 1750.00 =
+    # 66185.00; plus line 14 1500.00, line 23 0 and line 26 600.00 is 68285.00.
+    worksheet = return_bg(share_dispositions=(), treaty_exempt="0.00", graduated_rate_estate="0.00")
+
+    assert worksheet.get(AMT_PART_1_SUBTOTAL).value == D("66185.00")
+    assert worksheet.get(AMT_ADJUSTED_INCOME_WITH_GAINS).value == D("68285.00")
 
 
 def test_return_bg_line_24_less_line_25_is_the_gifts_net() -> None:
