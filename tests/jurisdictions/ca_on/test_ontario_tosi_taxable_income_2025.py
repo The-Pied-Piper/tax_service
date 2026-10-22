@@ -1,7 +1,7 @@
 """The 2025 Ontario TOSI-adjusted taxable income rate (Form T1206 line 33B), checked against CRA.
 
 Form T1206 2025 (docs/cra-forms-2025/t1206-25e.pdf, confirmed 2026-10-19 from the PDF; no .txt
-published), Part 3 "TOSI-adjusted taxable income": "Amount from line 33 = 33A", "Tax rate that
+published), Part 3 "TOSI-adjusted taxable income": "Amount from line 33 ... 33A", "Tax rate that
 applies to your province or territory from column 3 in Chart C on page 5 ÷ % 33B", "Amount from
 line 33A divided by the tax rate you entered on line 33B = 33C", and Chart C, Ontario's row: "ON
 20.53% 5.05% 10% 2.9863% Not applicable" (column 3, 5.05%).
