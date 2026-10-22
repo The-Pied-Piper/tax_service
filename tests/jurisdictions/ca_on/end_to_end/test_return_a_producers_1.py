@@ -37,6 +37,7 @@ from app.jurisdictions.ca.capabilities.divided_by_rate import DividedByRate
 from app.jurisdictions.ca.capabilities.ei_excluded_slips_net_income import (
     EiExcludedSlipsNetIncome,
 )
+from app.jurisdictions.ca.capabilities.lesser_of_with_maximum import LesserOfWithMaximum
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
@@ -55,13 +56,17 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
     ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
     ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
     ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
     ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
+    ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
     ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
     ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
+    ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985,
+    ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     AGE_AMOUNT,
     AGE_AMOUNT_BEFORE_COUNT,
     AGE_INCOME_OVER_THRESHOLD,
@@ -71,33 +76,64 @@ from app.jurisdictions.ca.catalog import (
     AGED_18_OR_OLDER_AT_END_OF_2025,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMT_ADJUSTED_INCOME_WITH_GAINS,
+    AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
+    AMT_ADJUSTED_TAXABLE_INCOME,
+    AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+    AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL,
+    AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_APPLICABLE_RATE_AMOUNT,
+    AMT_BASIC_EXEMPTION,
+    AMT_BASIC_FEDERAL_TAX,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
+    AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CAPITAL_GAINS_DIFFERENCE,
+    AMT_CREDITS_ADJUSTMENTS_TOTAL,
+    AMT_CREDITS_TOTAL,
     AMT_DEDUCTIONS_TOTAL,
+    AMT_DIVIDENDS_ADJUSTMENTS_TOTAL,
+    AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
+    AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
+    AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
     AMT_FILM_PROPERTY_ADJUSTMENT,
+    AMT_GROSS_MINIMUM_AMOUNT,
+    AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
     AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
+    AMT_MAXIMUM_CARRYOVER_APPLIED,
+    AMT_MAXIMUM_CARRYOVER_CLAIM,
+    AMT_MINIMUM_AMOUNT,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+    AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
+    AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
+    AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
     AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
     AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
     AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES,
+    AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RESOURCE_INCOME_TOTAL,
     AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
     AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
+    AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL,
     AMT_SECURITY_OPTIONS_D1_TOTAL,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
+    AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
+    AMT_TAX_PAYABLE_AFTER_CREDITS,
+    AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
+    AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
     AMT_TAX_SHELTER_ADJUSTMENTS,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
@@ -449,7 +485,10 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSS_BALANCE_1988_AND_1989,
     NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
     NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
+    NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985,
+    NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION,
     NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
+    NET_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     NET_CAPITAL_LOSSES_CLAIMED,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_COMMISSION_INCOME,
@@ -497,6 +536,14 @@ from app.jurisdictions.ca.catalog import (
     OTHER_SPLIT_INCOME,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     POLITICAL_CONTRIBUTIONS,
+    PRE_1986_CAPITAL_LOSS_BALANCE,
+    PRE_1986_DEDUCTIONS_1988_AND_1989,
+    PRE_1986_DEDUCTIONS_1990_TO_1999,
+    PRE_1986_DEDUCTIONS_2001_TO_2024,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999,
+    PRE_1986_DEDUCTIONS_BEFORE_1988,
+    PRE_1986_DEDUCTIONS_TOTAL,
     PROFESSIONAL_INCOME,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
@@ -507,6 +554,7 @@ from app.jurisdictions.ca.catalog import (
     REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
     REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
     REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
+    REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985,
     RENTAL_ADVERTISING,
     RENTAL_ADVERTISING_PERSONAL_PORTION,
     RENTAL_ADVERTISING_SHORT_TERM_PORTION,
@@ -678,6 +726,7 @@ from app.jurisdictions.ca.catalog import (
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOSI_ADJUSTED_TAXABLE_INCOME,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
+    TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     TOTAL_CARRYING_CHARGES,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_INCOME,
@@ -695,6 +744,7 @@ from app.jurisdictions.ca.catalog import (
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
     UCCB_REPAYMENT,
+    UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES,
     UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987,
     UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989,
     UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
@@ -869,6 +919,28 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(AMT_CAPITAL_GAINS_DIFFERENCE), Subtract)
     assert isinstance(worksheet.producer_of(AMT_CAPITAL_GAINS_ADDED), SignChosenDifference)
     assert isinstance(worksheet.producer_of(AMT_ADJUSTED_INCOME_WITH_GAINS), Sum)
+    assert isinstance(worksheet.producer_of(AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS), Sum)
+    assert isinstance(worksheet.producer_of(AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_ADJUSTMENTS_AFTER_RATE_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_AMOUNT_A_MINUS_AMOUNT_B), Subtract)
+    assert isinstance(
+        worksheet.producer_of(AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT), ApplyRate
+    )
+    assert isinstance(worksheet.producer_of(AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_DIVIDENDS_ADJUSTMENTS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_LIFETIME_EXEMPTION_ADJUSTMENT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED), ApplyFraction)
+    assert isinstance(worksheet.producer_of(AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_ADJUSTED_TAXABLE_INCOME), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_BASIC_EXEMPTION), CreditAmount)
+    assert isinstance(worksheet.producer_of(AMT_NET_ADJUSTED_TAXABLE_INCOME), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_GROSS_MINIMUM_AMOUNT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_DONATIONS_AND_GIFTS_ADJUSTMENT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_CREDITS_ADJUSTMENTS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_MINIMUM_AMOUNT), SubtractNotBelowZero)
     assert isinstance(worksheet.producer_of(AMT_PUBLICLY_LISTED_GIFTS_NET), Subtract)
     assert isinstance(worksheet.producer_of(AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT), ApplyRate)
     assert isinstance(worksheet.producer_of(AMT_SECURITY_OPTIONS_D_TOTAL), Sum)
@@ -1039,6 +1111,11 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
         UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024,
         NET_CAPITAL_LOSSES_CLAIMED,
+        NET_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
+        PRE_1986_DEDUCTIONS_BEFORE_1988,
+        PRE_1986_DEDUCTIONS_1988_AND_1989,
+        PRE_1986_DEDUCTIONS_1990_TO_1999,
+        PRE_1986_DEDUCTIONS_2001_TO_2024,
         ADDITIONAL_DEDUCTIONS,
         OTHER_PAYMENTS_DEDUCTION_ABOVE_LIMIT,
         OTHER_PAYMENTS_WORKSHEET_REQUIRED,
@@ -1643,7 +1720,36 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     )
     assert isinstance(worksheet.producer_of(TOTAL_ADJUSTED_NET_CAPITAL_LOSSES), Sum)
     assert isinstance(worksheet.producer_of(NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM), LesserOf)
-    assert isinstance(worksheet.producer_of(NET_CAPITAL_LOSSES_OF_OTHER_YEARS), AtMost)
+    assert isinstance(worksheet.producer_of(ADJUSTED_NET_CAPITAL_LOSSES_APPLIED), AtMost)
+    # Form T1436 line 10 "Line 7 plus line 9" is T1 line 25300; line 13 "Line 11 plus line 12".
+    assert isinstance(worksheet.producer_of(NET_CAPITAL_LOSSES_OF_OTHER_YEARS), Sum)
+    assert isinstance(worksheet.producer_of(TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED), Sum)
+    assert worksheet.producer_of(NET_CAPITAL_LOSSES_OF_OTHER_YEARS) is not worksheet.producer_of(
+        TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED
+    )
+    assert isinstance(
+        worksheet.producer_of(PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989), ApplyFraction
+    )
+    assert isinstance(
+        worksheet.producer_of(PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999), ApplyFraction
+    )
+    assert isinstance(worksheet.producer_of(PRE_1986_DEDUCTIONS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(PRE_1986_CAPITAL_LOSS_BALANCE), Subtract)
+    assert isinstance(worksheet.producer_of(UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES), Subtract)
+    assert isinstance(
+        worksheet.producer_of(NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION), LesserOfWithMaximum
+    )
+    assert isinstance(
+        worksheet.producer_of(ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985), ApplyFraction
+    )
+    assert isinstance(worksheet.producer_of(ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985), LesserOf)
+    assert isinstance(
+        worksheet.producer_of(ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985), Subtract
+    )
+    assert isinstance(worksheet.producer_of(REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985), Subtract)
+    assert isinstance(
+        worksheet.producer_of(NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985), ApplyFraction
+    )
     assert isinstance(worksheet.producer_of(ADJUSTED_LOSSES_APPLIED_1985_TO_1987), LesserOf)
     assert isinstance(worksheet.producer_of(ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987), Subtract)
     assert isinstance(worksheet.producer_of(REMAINING_ADJUSTED_LOSSES_1985_TO_1987), Subtract)
@@ -2003,6 +2109,8 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         ontario.SPLIT_INCOME_LINE_45,
     ):
         assert isinstance(worksheet.producer_of(kind), ApplyRate), kind.identifier
+    # Line 33C divides line 33A, the Ontario tax on split income, by the rate of line 33B.
+    assert isinstance(worksheet.producer_of(ontario.TOSI_ADJUSTED_TAXABLE_INCOME), DividedByRate)
     for kind in (
         ontario.SPLIT_INCOME_LINE_36,
         ontario.SPLIT_INCOME_LINE_46,
@@ -2067,3 +2175,24 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(CARE_ADJUSTED_INCOME) is not worksheet.producer_of(
         CARE_FAMILY_ADJUSTED_INCOME
     )
+
+
+def test_the_part_2_and_part_8_amounts_are_produced_by_their_capabilities() -> None:
+    worksheet = return_a()
+
+    # Part 2 line 4 "Line 2 plus line 3" and Part 8 lines 4 and 8 are sums; line 5, line 7 and
+    # line 9 are differences, and line 11 is the difference not below zero.
+    assert isinstance(worksheet.producer_of(AMT_CREDITS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_BASIC_FEDERAL_TAX), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE), Sum)
+    assert isinstance(worksheet.producer_of(AMT_SPLIT_INCOME_AND_CREDITS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_TAX_PAYABLE_AFTER_CREDITS), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_MAXIMUM_CARRYOVER_APPLIED), SubtractNotBelowZero)
+    # Line 12: the cap is the lesser of line 1 and line 11, and the claim is at most the cap.
+    assert isinstance(worksheet.producer_of(AMT_MAXIMUM_CARRYOVER_CLAIM), LesserOf)
+    assert isinstance(worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_APPLIED), AtMost)
+    # Line 1 and the claim on line 12 are the caller's amounts, and T1 line 125 sums line 124.
+    assert worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS) is None
+    assert worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_CLAIM) is None
+    assert isinstance(worksheet.producer_of(CREDITS_AGAINST_BASIC_FEDERAL_TAX), Sum)

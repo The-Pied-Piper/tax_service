@@ -1,13 +1,14 @@
 """The federal catalog: credits against federal tax.
 
-The political contribution credit, the labour-sponsored funds credit and the federal tax less
-credits.
+The political contribution credit, the labour-sponsored funds credit, the countries of the foreign
+tax credit and the federal tax less credits.
 """
 
 from __future__ import annotations
 
 from decimal import Decimal
 
+from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.catalog.base import CATALOG
 
 POLITICAL_CREDIT_COLUMN_1_LINE_2 = CATALOG.declare(
@@ -174,3 +175,48 @@ FEDERAL_TAX_LESS_CREDITS = CATALOG.declare("federal_tax_less_credits", Decimal, 
 """Federal tax less credits, T1 line 139 (line 41700) "Line 134 minus line 138 (if negative, enter
 "0")": line 134 (40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax", here line
 132 (`federal_tax_with_itc_recapture`) as line 133 is not wired, less line 138, not below zero."""
+
+FOREIGN_NON_BUSINESS_TAX_PAID = CATALOG.declare(
+    "foreign_non_business_tax_paid", Decimal, non_negative=True
+)
+"""Non-business income tax paid to a foreign country, Form T2209 line 1 "Non-business income tax
+paid to a foreign country (1) 43100": the total of the non-business income or profits tax paid to
+that country for the year, minus the part deductible under subsection 20(11) or deducted under
+subsection 20(12) of the ITA, as the caller enters it; a field of each record of the foreign tax
+countries, not an artifact of its own."""
+
+NET_FOREIGN_NON_BUSINESS_INCOME = CATALOG.declare(
+    "net_foreign_non_business_income", Decimal, non_negative=True
+)
+"""Net foreign non-business income, Form T2209 line 2 "Net foreign non-business income (2) 43300":
+the net income from that country; a field of each record of the foreign tax countries, not an
+artifact of its own."""
+
+FOREIGN_TAX_COUNTRIES = RecordListKind.declare(
+    CATALOG,
+    "foreign_tax_countries",
+    fields=(FOREIGN_NON_BUSINESS_TAX_PAID, NET_FOREIGN_NON_BUSINESS_INCOME),
+)
+"""Foreign tax countries, Form T2209 "do the applicable calculation shown on this form for
+non-business and business taxes paid to each country on a separate sheet": a starting list with one
+record for each country, holding line 1 (43100) and line 2 (43300). The list may be empty."""
+
+FOREIGN_TAX_CREDIT_SHEET_LINE_3 = CATALOG.declare(
+    "foreign_tax_credit_sheet_line_3", Decimal, non_negative=True
+)
+"""Federal non-business foreign tax credit of a sheet, Form T2209 line 3 "Enter whichever is less:
+the amount from line 1 or line 2.": the lesser of the tax paid and the rounded line 2 of that sheet;
+a field of each record of the foreign tax credit sheets, not an artifact of its own."""
+
+FOREIGN_TAX_CREDIT_SHEETS = RecordListKind.declare(
+    CATALOG,
+    "foreign_tax_credit_sheets",
+    fields=(
+        FOREIGN_NON_BUSINESS_TAX_PAID,
+        NET_FOREIGN_NON_BUSINESS_INCOME,
+        FOREIGN_TAX_CREDIT_SHEET_LINE_3,
+    ),
+)
+"""Foreign tax credit sheets, Form T2209 "on a separate sheet": one record for each sheet worked, in
+order, holding line 1 (43100), the net foreign income used on line 2 (43300, after the cap at net
+income) and line 3. The list may be empty."""

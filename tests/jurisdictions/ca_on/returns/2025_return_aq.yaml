@@ -186,3 +186,5 @@ expected:
   ca/cpp_part_5_line_57: "2796.75"
   ca/cpp_part_5_line_69: "565.00"
   ca/amt_adjusted_income_with_gains: "59435.00"
+  ca/amt_minimum_amount: "0"
+  ca/amt_basic_federal_tax: "5641.47"

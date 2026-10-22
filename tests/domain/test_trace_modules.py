@@ -33,6 +33,7 @@ CORE_HOMES: dict[str, tuple[str, ...]] = {
         "CreditAmountLine",
         "CappedAmountLine",
         "LesserOfLine",
+        "LesserOfWithMaximumLine",
         "GreaterOfLine",
         "PerUnitAmountLine",
         "MultipleOverLine",

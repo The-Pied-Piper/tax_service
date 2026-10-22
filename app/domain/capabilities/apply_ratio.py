@@ -6,7 +6,9 @@ computed by earlier lines, not stated by a dataset: the output is
 exact fraction so nothing is rounded before the rule. It is rounded only with the `rounding_only`
 dataset's rule; under no rounding a quotient with no finite decimal expansion raises
 `decimal.Inexact`. A zero denominator is refused with a `ValidationError`. A ratio above 1 is not
-capped here; where the law caps it, the manifest does with `lesser_of`.
+capped here; where the law caps it, the manifest does with `lesser_of`. The arithmetic is the static
+method `ApplyRatio.ratio_of`, which a capability that works a ratio per item calls instead of
+copying it.
 """
 
 from __future__ import annotations
@@ -21,6 +23,7 @@ from app.domain.capability import Capability, CapabilityResult, capability
 from app.domain.errors import ValidationError
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
+from app.domain.parameters.rounding import RoundingRule
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
 from app.domain.trace import RatioAppliedLine
 
@@ -53,6 +56,18 @@ class ApplyRatio(Capability):
         self._denominator = denominator
         self._output = output
 
+    @staticmethod
+    def ratio_of(
+        amount: Decimal, numerator: Decimal, denominator: Decimal, rounding: RoundingRule
+    ) -> Decimal:
+        """`rounding.apply(amount × numerator / denominator)`: the product formed first and
+        divided once, as an exact fraction. A zero `denominator` is a `ValidationError`."""
+        if denominator == 0:
+            raise ValidationError("the denominator is zero, so the ratio is undefined")
+        return rounding.apply(
+            ExactFraction(amount) * ExactFraction(numerator) / ExactFraction(denominator)
+        )
+
     def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
         amount = self._input(inputs, self._amount).value
         numerator = self._input(inputs, self._numerator).value
@@ -63,9 +78,7 @@ class ApplyRatio(Capability):
                 f"{self._numerator.identifier} / {self._denominator.identifier} is undefined"
             )
         rounding = self._rounding.rounding
-        result = rounding.apply(
-            ExactFraction(amount) * ExactFraction(numerator) / ExactFraction(denominator)
-        )
+        result = self.ratio_of(amount, numerator, denominator, rounding)
         return CapabilityResult(
             outputs=(Artifact(self._output, result),),
             trace=(

@@ -86,12 +86,12 @@ line 24 is at most line 29, so line 30 is line 29 and the sum is lines 139 to 14
 
 Line 126 (42900) is "Line 121 minus line 125 (if negative, enter "0") Basic federal tax", line 121
 (40400) "Line 119 plus line 120" and line 125 "Add lines 122 to 124.", line 122 being "Amount from
-line 35000" and line 123 the federal dividend tax credit: the federal tax after credits. Line 131
-(`itc_recapture`) is added to it (line 132) and line 134 (40600) "Line 132 minus line 133 (if
-negative, enter "0") Federal tax" carries line 132, as line 133 is not wired. Not modelled: line 124
-(minimum tax carryover), line 127 (foreign surtax, not
-triggered on a return whose income is all allocated to Ontario), line 129 (foreign tax credit),
-line 133 (logging tax credit) and line 136 (investment tax credit).
+line 35000", line 123 the federal dividend tax credit and line 124 the minimum tax carryover: the
+federal tax after credits. Line 131 (`itc_recapture`) is added to it (line 132) and line 134
+(40600) "Line 132 minus line 133 (if negative, enter "0") Federal tax" carries line 132, as line 133
+is not wired. Not modelled: line 127 (foreign surtax, not triggered on a return whose income is all
+allocated to Ontario), line 129 (foreign tax credit), line 133 (logging tax credit) and line 136
+(investment tax credit).
 """
 
 CPP_PAYABLE_ON_SELF_EMPLOYMENT = CATALOG.declare(

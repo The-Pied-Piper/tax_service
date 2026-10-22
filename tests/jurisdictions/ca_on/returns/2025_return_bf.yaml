@@ -195,3 +195,5 @@ expected:
   ca/cpp_required_base_and_first_additional_contributions: "0.00"
   ca/cpp_contributions_difference: "0.00"
   ca/amt_adjusted_income_with_gains: "185000.00"
+  ca/amt_minimum_amount: "0"
+  ca/amt_basic_federal_tax: "-866.97"

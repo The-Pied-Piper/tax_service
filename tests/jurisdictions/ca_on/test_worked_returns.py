@@ -283,6 +283,12 @@ inputs:
   ca/security_options_deductions: "0"
   ca/limited_partnership_losses_of_other_years: "0"
   ca/non_capital_losses_of_other_years: "0"
+  ca/net_capital_losses_before_may_23_1985: "0"
+  ca/pre_1986_deductions_before_1988: "0"
+  ca/pre_1986_deductions_1988_and_1989: "0"
+  ca/pre_1986_deductions_1990_to_1999: "0"
+  ca/pre_1986_deductions_2000: "0"
+  ca/pre_1986_deductions_2001_to_2024: "0"
   ca/unapplied_net_capital_losses_1985_to_1987: "0"
   ca/unapplied_net_capital_losses_1988_and_1989: "0"
   ca/unapplied_net_capital_losses_1990_to_1999: "0"
@@ -491,6 +497,7 @@ expected:
   ca/total_adjusted_net_capital_losses: "0.00"
   ca/net_capital_losses_available_to_claim: "0.00"
   ca/net_capital_losses_of_other_years: "0"
+  ca/net_capital_loss_balance_before_may_23_1985: "0.00"
   ca/net_capital_loss_balance_1985_to_1987: "0.00"
   ca/net_capital_loss_balance_1988_and_1989: "0.00"
   ca/net_capital_loss_balance_1990_to_1999: "0.00"
@@ -641,6 +648,7 @@ expected:
   ca/refund: "2133"
   ca-on/refund_before_donation: "2133"
   ca-on/net_refund: "2133"
+  ca/amt_basic_federal_tax: "-1181.85"
 """
 
 

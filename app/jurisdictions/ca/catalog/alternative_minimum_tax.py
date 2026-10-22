@@ -3,8 +3,11 @@
 Part 1 of the form: the adjusted taxable income, from the film property, the rental and leasing
 property, the tax shelter amounts, the resource property, the capital gains, the gifts of
 publicly listed securities, the security options deductions, the losses of other years, the
-deductions, the non-deductible expenses and the applicable rate. Part 9 of the form: the resource
-property and flow-through shares.
+deductions, the non-deductible expenses, the applicable rate, the dividends, the lifetime capital
+gains exemption, the capital gains deductions, the basic exemption, the federal tax rate and the
+credits. Part 9 of the form: the resource
+property and flow-through shares. Part 2 of the form: the basic federal tax. Part 8 of the form:
+the minimum tax carryover applied on line 40427.
 """
 
 from __future__ import annotations
@@ -414,3 +417,194 @@ AMT_APPLICABLE_RATE_AMOUNT = CATALOG.declare("amt_applicable_rate_amount", Decim
 """Applicable rate amount, Form T691 Part 1 line 80 "Line 78 multiply by the percentage from line
 79": line 78 times the applicable rate of line 79 "Applicable Rate" "× 50%" from its dataset,
 rounded to the cent, a loss in brackets when line 78 is one."""
+
+AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS = CATALOG.declare(
+    "amt_adjusted_income_with_security_options", Decimal
+)
+"""Adjusted taxable income with the security options, Form T691 Part 1 line 33 "Line 27 plus line
+32": line 27 and line 32 added, a loss in brackets."""
+
+AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL = CATALOG.declare(
+    "amt_security_options_and_losses_total", Decimal
+)
+"""Adjusted taxable income with the losses of other years, Form T691 Part 1 line 44 "Add lines 34,
+38, and 43.": line 34 (the amount from line 33), line 38 and line 43 in line order, a loss in
+brackets."""
+
+AMT_ADJUSTMENTS_AFTER_RATE_TOTAL = CATALOG.declare("amt_adjustments_after_rate_total", Decimal)
+"""Adjustments after the applicable rate, Form T691 Part 1 line 82 "Line 80 plus line 81": line 80
+and line 81 (the amount from line 44) added, a loss in brackets."""
+
+AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT = CATALOG.declare(
+    "amt_dividends_other_than_eligible_adjustment", Decimal, non_negative=True
+)
+"""Dividends other than eligible adjustment, Form T691 Part 1 line 84 "B × 13.0435%": B, the
+taxable dividends other than eligible of line 12010 of the return, at the 13.0435% of its dataset,
+rounded to the cent."""
+
+AMT_AMOUNT_A_MINUS_AMOUNT_B = CATALOG.declare("amt_amount_a_minus_amount_b", Decimal)
+"""Amount A minus amount B, Form T691 Part 1 line 85 "Amount A minus Amount B =": amount A, the
+taxable dividends of line 12000 of the return, less amount B, line 12010 of the return."""
+
+AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT = CATALOG.declare(
+    "amt_dividends_difference_adjustment", Decimal
+)
+"""Dividends difference adjustment, Form T691 Part 1 line 85 "C × 27.5362% =": C, amount A minus
+amount B, at the 27.5362% of its dataset, rounded to the cent."""
+
+AMT_DIVIDENDS_ADJUSTMENTS_TOTAL = CATALOG.declare("amt_dividends_adjustments_total", Decimal)
+"""Dividends adjustments, Form T691 Part 1 line 86 "Line 84 plus line 85": line 84 and line 85
+added."""
+
+AMT_LIFETIME_EXEMPTION_ADJUSTMENT = CATALOG.declare(
+    "amt_lifetime_exemption_adjustment", Decimal, non_negative=True
+)
+"""Lifetime capital gains exemption adjustment, Form T691 Part 1 line 87 "Enter the amount from line
+25400 of your return" "× 40% =": line 25400 at the 40% of its dataset, rounded to the cent."""
+
+AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL = CATALOG.declare(
+    "amt_adjustments_with_lifetime_exemption_total", Decimal
+)
+"""Adjustments with the lifetime capital gains exemption, Form T691 Part 1 line 88 "Line 86 plus
+line 87": line 86 and line 87 added."""
+
+AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED = CATALOG.declare(
+    "amt_qbt_capital_gains_deduction_doubled", Decimal, non_negative=True
+)
+"""Capital gains deduction on a qualifying business transfer doubled, Form T691 Part 1 line 89
+"Amount from line 25395 of your return" "× 2 =": line 25395 times 2, rounded to the cent."""
+
+AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE = CATALOG.declare(
+    "amt_qbt_capital_gains_deduction_difference", Decimal, non_negative=True
+)
+"""Capital gains deduction on a qualifying business transfer difference, Form T691 Part 1 line 91
+"line 89 minus line 90": line 89 less line 90, the amount from line 25395 of the return."""
+
+AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL = CATALOG.declare("amt_capital_gains_deductions_total", Decimal)
+"""Capital gains deductions, Form T691 Part 1 line 92 "Line 88 plus line 91": line 88 and line 91
+added."""
+
+AMT_ADJUSTED_TAXABLE_INCOME = CATALOG.declare(
+    "amt_adjusted_taxable_income", Decimal, non_negative=True
+)
+"""Adjusted taxable income, Form T691 Part 1 line 93 "Line 83 minus line 92 (if negative, enter
+"0")": line 83 (the amount from line 82) less line 92, not below zero."""
+
+AMT_BASIC_EXEMPTION = CATALOG.declare("amt_basic_exemption", Decimal, non_negative=True)
+"""Basic exemption, Form T691 Part 1 line 94 "Basic exemption" "177,882.00": the printed amount of
+its dataset, claimed whole."""
+
+AMT_NET_ADJUSTED_TAXABLE_INCOME = CATALOG.declare(
+    "amt_net_adjusted_taxable_income", Decimal, non_negative=True
+)
+"""Net adjusted taxable income, Form T691 Part 1 line 95 "Line 93 minus line 94 (if negative, enter
+"0")": line 93 less line 94, not below zero."""
+
+AMT_GROSS_MINIMUM_AMOUNT = CATALOG.declare("amt_gross_minimum_amount", Decimal, non_negative=True)
+"""Gross minimum amount, Form T691 Part 1 line 97 "Gross minimum amount: line 95 multiplied by the
+percentage on line 96.": line 95 at the 20.5% federal tax rate of line 96 from its dataset, rounded
+to the cent."""
+
+AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT = CATALOG.declare(
+    "amt_non_refundable_credits_adjustment", Decimal, non_negative=True
+)
+"""Net non-refundable tax credits adjustment, Form T691 Part 1 line 98 "Net non-refundable tax
+credits (line 33800 of your return)" "× 50% =": line 33800 at the 50% of its dataset, rounded to
+the cent."""
+
+AMT_DONATIONS_AND_GIFTS_ADJUSTMENT = CATALOG.declare(
+    "amt_donations_and_gifts_adjustment", Decimal, non_negative=True
+)
+"""Donations and gifts adjustment, Form T691 Part 1 line 99 "Donations and gifts (line 34900 of your
+return)" "× 80% =": line 34900 at the 80% of its dataset, rounded to the cent."""
+
+AMT_FEDERAL_LOGGING_TAX_CREDIT = CATALOG.declare(
+    "amt_federal_logging_tax_credit", Decimal, non_negative=True
+)
+"""Federal logging tax credit, Form T691 Part 1 line 100 "Federal logging tax credit (line 133 of
+your return for residents of a province or territory other than Quebec, or line 137 for residents
+of Quebec)": a starting amount, the caller's figure."""
+
+AMT_SECTION_119_FORMER_RESIDENT_CREDIT = CATALOG.declare(
+    "amt_section_119_former_resident_credit", Decimal, non_negative=True
+)
+"""Section 119 former resident credit, Form T691 Part 1 line 101 "Section 119 former resident
+credit": a starting amount, the caller's figure."""
+
+AMT_CREDITS_ADJUSTMENTS_TOTAL = CATALOG.declare(
+    "amt_credits_adjustments_total", Decimal, non_negative=True
+)
+"""Credits adjustments, Form T691 Part 1 line 102 "Add lines 98 to 101.": lines 98, 99, 100 and 101
+added."""
+
+AMT_MINIMUM_AMOUNT = CATALOG.declare("amt_minimum_amount", Decimal, non_negative=True)
+"""Minimum amount, Form T691 Part 1 line 103 "Line 97 minus line 102 (if negative, enter "0")":
+line 97 less line 102, not below zero."""
+
+
+AMT_CREDITS_TOTAL = CATALOG.declare("amt_credits_total", Decimal, non_negative=True)
+"""Total of the credits, Form T691 Part 2 line 4 "Line 2 plus line 3": line 2 "Total non-refundable
+tax credits (line 35000 of your return)" and line 3 "Dividend tax credit (line 40425 of your
+return)", in line order."""
+
+AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER = CATALOG.declare(
+    "amt_tax_payable_before_minimum_tax_carryover", Decimal
+)
+"""Tax payable before minimum tax carryover, Form T691 Part 2 line 5 "Line 1 minus line 4" "Tax
+payable before minimum tax carryover": line 1 "Enter the amount from line 40400 of your return"
+less line 4. The form prints no floor, so the difference may be negative."""
+
+AMT_BASIC_FEDERAL_TAX = CATALOG.declare("amt_basic_federal_tax", Decimal)
+"""Basic federal tax, Form T691 Part 2 line 7 "Line 5 minus line 6" "Basic federal tax": line 5
+less line 6, the minimum tax carryover applied in 2025 from line 12 of Part 8. The form prints no
+floor, so the difference may be negative."""
+
+AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS = CATALOG.declare(
+    "amt_minimum_tax_carryover_from_previous_years", Decimal, non_negative=True
+)
+"""Minimum tax carryover from previous years, Form T691 Part 8 line 1 "Minimum tax carryover from
+previous years (2018 to 2024)": a starting amount, the caller's figure from earlier returns."""
+
+AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE = CATALOG.declare("amt_tax_payable_with_itc_recapture", Decimal)
+"""Tax payable with the investment tax credit recapture, Form T691 Part 8 line 4 "Line 2 plus line
+3": line 2 "Tax payable before minimum tax carryover from line 5 of Part 2" and line 3 "Recapture of
+investment tax credit from line 3 of Part C of Form T2038(IND)" (`itc_recapture`), in line order."""
+
+AMT_SPLIT_INCOME_AND_CREDITS_TOTAL = CATALOG.declare(
+    "amt_split_income_and_credits_total", Decimal, non_negative=True
+)
+"""Split income tax and credits, Form T691 Part 8 line 8 "Add lines 5 to 7": line 5 "Federal tax on
+split income from line 8 of Form T1206", line 6 "Federal logging tax credit" (the caller's amount,
+as on Part 1 line 100) and line 7 "Amount from line 41600 of your return", in line order."""
+
+AMT_TAX_PAYABLE_AFTER_CREDITS = CATALOG.declare("amt_tax_payable_after_credits", Decimal)
+"""Tax payable after credits, Form T691 Part 8 line 9 "Line 4 minus line 8": line 4 less line 8.
+The form prints no floor, so the difference may be negative."""
+
+AMT_MAXIMUM_CARRYOVER_APPLIED = CATALOG.declare(
+    "amt_maximum_carryover_applied", Decimal, non_negative=True
+)
+"""Maximum carryover that can be applied in 2025, Form T691 Part 8 line 11 "Maximum carryover that
+can be applied in 2025: line 9 minus line 10 (if negative, enter "0")": line 9 less line 10, the
+minimum amount from line 103 of Part 1, not below zero."""
+
+AMT_MAXIMUM_CARRYOVER_CLAIM = CATALOG.declare(
+    "amt_maximum_carryover_claim", Decimal, non_negative=True
+)
+"""Largest claim on the minimum tax carryover, Form T691 Part 8 line 12 "Claim an amount that is not
+more than line 1 or 11, whichever is less.": the lesser of line 1 and line 11. The form does not
+print it; it is the bound the claim is checked against."""
+
+AMT_MINIMUM_TAX_CARRYOVER_CLAIM = CATALOG.declare(
+    "amt_minimum_tax_carryover_claim", Decimal, non_negative=True
+)
+"""Minimum tax carryover claimed, Form T691 Part 8 line 12 "Claim an amount that is not more than
+line 1 or 11, whichever is less.": the amount the filer chooses to claim, an input, which may not
+exceed the lesser of lines 1 and 11."""
+
+AMT_MINIMUM_TAX_CARRYOVER_APPLIED = CATALOG.declare(
+    "amt_minimum_tax_carryover_applied", Decimal, non_negative=True
+)
+"""Minimum tax carryover applied in 2025, Form T691 Part 8 line 12 "Enter this amount on line 40427
+of your return.": the claim, when it is not above the largest claim. Part 2 line 6 "Minimum tax
+carryover applied in 2025 from line 12 of Part 8" and T1 line 124 (line 40427) read it."""

@@ -8,13 +8,17 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
     ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
     ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
     ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
     ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
+    ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
     ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
     ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
+    ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985,
+    ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     AGE_AMOUNT,
     AGE_AMOUNT_BEFORE_COUNT,
     AGE_INCOME_OVER_THRESHOLD,
@@ -22,6 +26,10 @@ from app.jurisdictions.ca.catalog import (
     AGE_MAXIMUM,
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_BASIC_FEDERAL_TAX,
+    AMT_MAXIMUM_CARRYOVER_CLAIM,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_PERSONAL_AMOUNT,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
@@ -190,8 +198,11 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_CREDIT,
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     FEDERAL_BASIC_TAX,
+    FEDERAL_FOREIGN_TAX_CREDIT,
+    FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
@@ -214,6 +225,12 @@ from app.jurisdictions.ca.catalog import (
     FHSA_TOTAL_ANNUAL_LIMITS,
     FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
     FIRST_TIER_DONATION_CREDIT,
+    FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
+    FOREIGN_TAX_CREDIT_NET_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+    FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
+    FOREIGN_TAX_CREDIT_SHEETS,
     GROSS_RENTAL_INCOME,
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
@@ -256,6 +273,8 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSS_BALANCE_1988_AND_1989,
     NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
     NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
+    NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985,
+    NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION,
     NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_FEDERAL_TAX,
@@ -284,6 +303,10 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_CHOSEN_COLUMN,
     POLITICAL_CREDIT_SHORTCUT_AMOUNT,
     POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
+    PRE_1986_CAPITAL_LOSS_BALANCE,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999,
+    PRE_1986_DEDUCTIONS_TOTAL,
     PROVINCIAL_CREDITS,
     REFUND,
     REFUND_OR_BALANCE_OWING,
@@ -294,6 +317,7 @@ from app.jurisdictions.ca.catalog import (
     REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
     REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
     REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
+    REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985,
     RENTAL_DEDUCTIBLE_EXPENSES,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
     RENTAL_GROSS_RENTS,
@@ -381,6 +405,7 @@ from app.jurisdictions.ca.catalog import (
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOSI_ADJUSTED_TAXABLE_INCOME,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
+    TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
     TOTAL_INCOME,
@@ -395,6 +420,7 @@ from app.jurisdictions.ca.catalog import (
     TUITION_INCOME_WITH_TOSI,
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
+    UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES,
     UNUSED_RRSP_CONTRIBUTIONS_CARRIED_FORWARD,
     WORKING_INCOME,
     ZONE_A_ADDITIONAL_RESIDENCY_AMOUNT,
@@ -467,10 +493,13 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 1168
-    assert len(order) == 1168
+    assert len(order) == 1230
+    assert len(order) == 1230
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
+    assert position[AMT_MAXIMUM_CARRYOVER_CLAIM] < position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED]
+    assert position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED] < position[CREDITS_AGAINST_BASIC_FEDERAL_TAX]
+    assert position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED] < position[AMT_BASIC_FEDERAL_TAX]
     assert (
         position[INVESTMENT_INCOME_BEFORE_PRIOR_YEARS]
         < position[INTEREST_AND_OTHER_INVESTMENT_INCOME]
@@ -807,6 +836,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[TAXABLE_CAPITAL_GAINS] < position[NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM]
     assert (
         max(
+            position[ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985],
             position[ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987],
             position[ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989],
             position[ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999],
@@ -814,7 +844,12 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         )
         < position[TOTAL_ADJUSTED_NET_CAPITAL_LOSSES]
         < position[NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM]
-        < position[NET_CAPITAL_LOSSES_OF_OTHER_YEARS]
+        < position[ADJUSTED_NET_CAPITAL_LOSSES_APPLIED]
+        < position[UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES]
+        < position[NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION]
+        < position[TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED]
+        < position[ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985]
+        < position[ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985]
         < position[ADJUSTED_LOSSES_APPLIED_1985_TO_1987]
         < position[ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987]
         < position[ADJUSTED_LOSSES_APPLIED_1988_AND_1989]
@@ -856,6 +891,29 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[NET_CAPITAL_LOSS_BALANCE_2001_TO_2024]
     )
     assert position[NET_CAPITAL_LOSSES_OF_OTHER_YEARS] < position[DEDUCTIONS_FROM_NET_INCOME]
+    # Form T1436 lines 1 to 3, then the row "Before May 23, 1985" of Chart A (column A is line 3),
+    # the oldest row first; lines 9 and 10 read line 3, and line 10 is T1 line 25300.
+    assert (
+        max(
+            position[PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989],
+            position[PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999],
+        )
+        < position[PRE_1986_DEDUCTIONS_TOTAL]
+        < position[PRE_1986_CAPITAL_LOSS_BALANCE]
+        < position[ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985]
+    )
+    assert (
+        position[PRE_1986_CAPITAL_LOSS_BALANCE] < position[NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION]
+    )
+    assert (
+        position[NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION]
+        < position[NET_CAPITAL_LOSSES_OF_OTHER_YEARS]
+    )
+    assert (
+        position[ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985]
+        < position[REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985]
+        < position[NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985]
+    )
     assert (
         position[NET_INCOME_BEFORE_ADJUSTMENTS]
         < position[NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO]
@@ -1075,6 +1133,11 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[ONTARIO_SURTAX]
         < position[ONTARIO_TAX_WITH_SURTAX]
     )
+    # Form T1206 Part 3 line 33C divides line 33A, the Ontario tax on split income.
+    assert (
+        position[ontario.ONTARIO_TAX_ON_SPLIT_INCOME]
+        < position[ontario.TOSI_ADJUSTED_TAXABLE_INCOME]
+    )
     # Form T1206 Part 3 and ON428 lines 54, 55, 64 and 65: the tax on the split income (line 33)
     # joins the tax before the surtax and leaves its base, and line 52 replaces line 88 in
     # ON428 line 90.
@@ -1195,7 +1258,38 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[LIFT_MAXIMUM_CREDIT] < position[ontario.LIFT_CREDIT_SINGLE]
     assert position[LIFT_REDUCTION] < position[ontario.LIFT_CREDIT_SINGLE]
     assert position[LIFT_CREDIT] < position[ONTARIO_TAX_AFTER_LIFT_CREDIT] < position[ONTARIO_TAX]
-    assert position[ONTARIO_TAX_AFTER_REDUCTION] < position[ONTARIO_TAX_AFTER_LIFT_CREDIT]
+    assert (
+        position[ONTARIO_TAX_AFTER_REDUCTION]
+        < position[ontario.ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT]
+        < position[ONTARIO_TAX_AFTER_LIFT_CREDIT]
+    )
+    # ON428 line 82 is limited by the tax otherwise payable (line 81 with "0" on lines 70 and 72),
+    # which is worked from line 69 and the tax reduction amounts, and Form T2036 reads the sheets
+    # of Form T2209 and its net income.
+    assert (
+        position[ONTARIO_TAX_WITH_SURTAX]
+        < position[ontario.TAX_OTHERWISE_PAYABLE_LINE_71]
+        < position[ontario.TAX_OTHERWISE_PAYABLE_LINE_73]
+        < position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS]
+        < position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION]
+        < position[ontario.TAX_OTHERWISE_PAYABLE]
+        < position[ontario.PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT]
+        < position[ontario.PROVINCIAL_FOREIGN_TAX_CREDIT]
+        < position[ontario.ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT]
+    )
+    assert position[TAX_REDUCTION_AMOUNTS] < position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION]
+    assert (
+        position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION_CLAIMABLE]
+        < (position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION])
+    )
+    assert (
+        position[FOREIGN_TAX_CREDIT_SHEETS]
+        < position[ontario.PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT]
+    )
+    assert (
+        position[FOREIGN_TAX_CREDIT_NET_INCOME]
+        < position[ontario.PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT]
+    )
     assert (
         position[COMMUNITY_FOOD_PROGRAM_CREDIT]
         < position[ONTARIO_TAX_AFTER_FOOD_CREDIT]
@@ -1225,6 +1319,42 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[ITC_RECAPTURE_AT_20_PERCENT] < position[ITC_RECAPTURE]
     assert position[ITC_RECAPTURE] < position[FEDERAL_TAX_WITH_ITC_RECAPTURE]
     assert position[FEDERAL_TAX_AFTER_CREDITS] < position[FEDERAL_TAX_WITH_ITC_RECAPTURE]
+    # Form T2209 and T1 lines 128 to 132: the net income and the basic federal tax of notes (3)
+    # and (4) come before line 3, which comes before line 13 (40500), which comes off line 126
+    # (line 130) before the recapture is added (line 132).
+    assert (
+        position[NET_INCOME_BEFORE_ADJUSTMENTS]
+        < position[FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME]
+        < position[FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME]
+        < position[FOREIGN_TAX_CREDIT_NET_INCOME]
+        < position[FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT]
+    )
+    assert (
+        position[SOCIAL_BENEFITS_REPAYMENT]
+        < position[FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME]
+    )
+    assert position[TOTAL_SPLIT_INCOME] < position[FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME]
+    assert (
+        position[FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS] < position[FOREIGN_TAX_CREDIT_NET_INCOME]
+    )
+    assert position[OTHER_PAYMENTS_DEDUCTION] < position[FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS]
+    assert (
+        position[NET_CAPITAL_LOSSES_OF_OTHER_YEARS]
+        < position[FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS]
+    )
+    assert (
+        position[FEDERAL_TAX_AFTER_CREDITS]
+        < position[BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT]
+        < position[FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX]
+        < position[FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT]
+    )
+    assert position[DIVIDEND_TAX_CREDIT] < position[BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT]
+    assert (
+        position[FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT]
+        < position[FEDERAL_FOREIGN_TAX_CREDIT]
+        < position[FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT]
+        < position[FEDERAL_TAX_WITH_ITC_RECAPTURE]
+    )
     assert (
         position[LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM]
         < position[LABOUR_SPONSORED_FUNDS_CREDIT]

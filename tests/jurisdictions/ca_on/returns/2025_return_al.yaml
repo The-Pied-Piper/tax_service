@@ -30,9 +30,9 @@
 # the cent, 343.42, so line 46 is 343.42 and line 47 is 2,360.95 - 343.42 = 2,017.53,
 # which is line 50 (line 49 is not wired). Line 51 is ON428 line 88, and line 52 the more
 # of lines 50 and 51, 2,017.53, which is the Ontario tax before the health premium. Not
-# yet computed, so not in this file: lines 23, 33C and 49 of T1206 (line 33C is not
-# wired: nothing in this return reads it), line 1 of Schedule ON479-A and the chart of
-# line 23500. T1206 line 8A is 3,795.00 / 14.5% = 26,172.41, added to the taxable income
+# yet computed, so not in this file: lines 23 and 49 of T1206, line 1 of Schedule ON479-A
+# and the chart of line 23500. T1206 line 33C is 2,360.95 / 5.05% = 46,751.49 (a declared
+# output: nothing reads it). T1206 line 8A is 3,795.00 / 14.5% = 26,172.41, added to the taxable income
 # on line 11 of Schedule 11. Amounts are quoted decimal strings, never
 # floats; counts are quoted digit strings. A line or input this return leaves out
 # is blank, 0, and is checked to compute to 0; intermediate lines that are listed are checked
@@ -92,7 +92,10 @@ description: >-
   are $0.00 and line 39 is $2,360.95 - $0.00 = $2,360.95; line 42 is 10% of the $0.00 of
   line 18, $0.00, and line 45 is 2.9863% x the $11,500 of line 2 = $343.4245, rounded
   half-up to the cent: $343.42, so line 46 is $343.42 and line 47 is $2,360.95 - $343.42 =
-  $2,017.53, as is line 50 (line 49 is not wired). The Ontario tax with the tax on split
+  $2,017.53, as is line 50 (line 49 is not wired). Line 33C is line 33A (line 33, $2,360.95)
+  divided by the 5.05% of line 33B (Chart C column 3): $2,360.95 / 0.0505 = $46,751.4851,
+  rounded half-up to the cent: $46,751.49, a declared output that nothing on the return
+  reads. The Ontario tax with the tax on split
   income (ON428 line 55) is $0.00 + $2,360.95 = $2,360.95. The surtax base (line 65) is
   line 63 (that $2,360.95) less line 64, the tax on split income (line 54, $2,360.95), not
   below zero: $0.00, so the surtax (lines 66 to 68) is $0.00 and the Ontario tax with
@@ -276,6 +279,12 @@ sources:
     negative, enter "0") =". Line 8A is 3,795.00 / 14.5% = 26,172.4137, rounded half-up to the
     cent (a dollars-and-cents box, the owner's decision), 26,172.41; line 11 plus line 8A is
     0.00 + 26,172.41; line 13 is 26,172.41 - 16,129.00 = 10,043.41.
+  - >-
+    CRA, Form T1206 2025, Part 3 "TOSI-adjusted taxable income": "Amount from line 33 ... 33A";
+    "Tax rate that applies to your province or territory from column 3 in Chart C on page 5 ÷ %
+    33B" (Ontario's row: "ON 20.53% 5.05% 10% 2.9863%"); "Amount from line 33A divided by the
+    tax rate you entered on line 33B = 33C". Line 33C is 2,360.95 / 0.0505 = 46,751.4851,
+    rounded half-up to the cent (a dollars-and-cents box, the owner's decision), 46,751.49.
 inputs:
   ca/other_dividends_received_without_a_slip: "10000"
   ca/resident_in_canada_throughout_2025: "1"
@@ -345,6 +354,7 @@ expected:
   ca-on/tax_reduction_basic: "294.00"
   ca-on/tax_reduction_amounts: "294.00"
   ca-on/ontario_tax_on_split_income: "2360.95"
+  ca-on/tosi_adjusted_taxable_income: "46751.49"
   ca-on/split_income_line_36: "0.00"
   ca-on/split_income_line_38: "0.00"
   ca-on/split_income_line_39: "2360.95"
@@ -401,3 +411,5 @@ expected:
   ca/cpp_required_base_and_first_additional_contributions: "0.00"
   ca/cpp_contributions_difference: "0.00"
   ca/amt_adjusted_income_with_gains: "0.00"
+  ca/amt_minimum_amount: "0"
+  ca/amt_basic_federal_tax: "417.83"

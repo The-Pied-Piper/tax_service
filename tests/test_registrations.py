@@ -60,6 +60,7 @@ def test_importing_a_jurisdiction_package_registers_its_capabilities() -> None:
         "choose_by_range",
         "disability_transfer_amount",
         "flow_through_share_expenses",
+        "provincial_foreign_tax_credit",
     ):
         registered = registry.get(f"ca-on/{name}")
         assert registered.__module__ == f"app.jurisdictions.ca_on.capabilities.{name}"
@@ -193,6 +194,12 @@ def test_importing_the_federal_package_registers_the_sign_chosen_difference_capa
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.sign_chosen_difference"
 
 
+def test_importing_the_federal_package_registers_the_lesser_of_with_maximum_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/lesser_of_with_maximum")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.lesser_of_with_maximum"
+
+
 def test_importing_the_federal_package_registers_the_chart_a_row_c_total_capability() -> None:
     registered = CapabilityRegistry.shared().get("ca/chart_a_row_c_total")
 
@@ -209,6 +216,14 @@ def test_importing_the_federal_package_registers_the_chart_b_zone_b_total_capabi
     registered = CapabilityRegistry.shared().get("ca/chart_b_zone_b_total")
 
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.chart_b_zone_b_total"
+
+
+def test_importing_the_federal_package_registers_the_foreign_non_business_tax_credit() -> None:
+    registered = CapabilityRegistry.shared().get("ca/foreign_non_business_tax_credit")
+
+    assert registered.__module__ == (
+        "app.jurisdictions.ca.capabilities.foreign_non_business_tax_credit"
+    )
 
 
 def test_importing_the_federal_package_registers_the_disability_transfer_amount() -> None:

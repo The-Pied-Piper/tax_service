@@ -10,6 +10,7 @@ outputs:
   - ca-on/coop_education_placement_count
   - ca-on/coop_claimed_as_partnership_member
   - ca-on/coop_partnership_business_number
+  - ca/net_capital_loss_balance_before_may_23_1985
   - ca/net_capital_loss_balance_1985_to_1987
   - ca/net_capital_loss_balance_1988_and_1989
   - ca/net_capital_loss_balance_1990_to_1999
@@ -56,6 +57,7 @@ outputs:
   - ca-on/public_long_term_care_paid
   - ca-on/unused_tuition_carried_forward
   - ca/standard_amount_allocated
+  - ca/foreign_tax_credit_sheets
   # Form T2048 (line 25395): the Part 4 and Part 5 figures, and the line 41 and 42 reductions,
   # produced by `06a_capital_gains_deduction_qbt.yaml`.
   - ca/qbt_allocation_total
@@ -96,13 +98,9 @@ outputs:
   - ca/chart_2022_part_2_amount_m
   - ca/chart_2023_part_1_amount_n
   - ca/chart_2023_part_2_amount_m
-  # Form T691 Part 1 line 27 "Add lines 13, 14, 23, and 26.", which nothing else on the return
-  # reads yet.
-  - ca/amt_adjusted_income_with_gains
-  # Form T691 Part 1 line 32 "Line 30 minus line 31 (if negative, enter "0")", line 38 "Add lines 35 to
-  # 37.", line 43 "Line 39 or 40, as applicable, plus line 41 and 42" and line 80 "Line 78 multiply by
-  # the percentage from line 79", which nothing else on the return reads yet.
-  - ca/amt_security_options_net
-  - ca/amt_security_options_d1_total
-  - ca/amt_other_years_losses_total
-  - ca/amt_applicable_rate_amount
+  # Form T691 Part 2 line 7 "Line 5 minus line 6" "Basic federal tax", which nothing else on the
+  # return reads yet.
+  - ca/amt_basic_federal_tax
+  # Form T1206 Part 3 line 33C "Amount from line 33A divided by the tax rate you entered on line
+  # 33B": Ontario's provincial Schedule does not add it, so nothing on the return reads it.
+  - ca-on/tosi_adjusted_taxable_income

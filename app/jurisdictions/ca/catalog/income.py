@@ -524,9 +524,8 @@ CREDITS_AGAINST_BASIC_FEDERAL_TAX = CATALOG.declare(
     "credits_against_basic_federal_tax", Decimal, non_negative=True
 )
 """Credits against the basic federal tax, T1 line 125 "Add lines 122 to 124.": line 122 "Amount from
-line 35000" and line 123 (40425), the federal dividend tax credit, in line order.
-
-Line 124 (40427, minimum tax carryover) is not modelled."""
+line 35000", line 123 (40425), the federal dividend tax credit, and line 124 (40427), the minimum
+tax carryover applied on Form T691 Part 8 line 12, in line order."""
 
 T3_INVESTMENT_INCOME = CATALOG.declare("t3_investment_income", Decimal, non_negative=True)
 """T3 investment income, Federal Worksheet for line 12100 line 1 "Box 25 of all T3 slips": a

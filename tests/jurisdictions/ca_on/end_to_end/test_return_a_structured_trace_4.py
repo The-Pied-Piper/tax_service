@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from app.domain.parameters.amount import Amount
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.rate import Rate
 from app.domain.trace import (
@@ -16,6 +17,7 @@ from app.domain.trace import (
     ItemsTotalLine,
     ItemSumLine,
     LesserOfLine,
+    LesserOfWithMaximumLine,
     QuotientLine,
     RecordCountLine,
     RecordTotalLine,
@@ -32,15 +34,19 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2000,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
     ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
     ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
     ADJUSTED_LOSSES_APPLIED_2000,
     ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
+    ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
     ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
     ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
     ADJUSTED_LOSSES_LEFT_AFTER_2000,
+    ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985,
+    ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     ADJUSTED_NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     AGE_AMOUNT_BEFORE_COUNT,
     AGE_INCOME_OVER_THRESHOLD,
@@ -48,9 +54,22 @@ from app.jurisdictions.ca.catalog import (
     AGE_MAXIMUM,
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_ADJUSTED_TAXABLE_INCOME,
+    AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
+    AMT_BASIC_EXEMPTION,
+    AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
+    AMT_CREDITS_ADJUSTMENTS_TOTAL,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
+    AMT_GROSS_MINIMUM_AMOUNT,
+    AMT_MAXIMUM_CARRYOVER_APPLIED,
+    AMT_MAXIMUM_CARRYOVER_CLAIM,
+    AMT_MINIMUM_AMOUNT,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+    AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
+    AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
+    AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_RENTAL_PROPERTY_INCOME_BEFORE_CCA,
@@ -60,6 +79,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
+    AMT_TAX_PAYABLE_AFTER_CREDITS,
     ANNUAL_GAINS_LIMIT_2025,
     ANNUAL_GAINS_LINE_3_AT_INCLUSION_RATE,
     ANNUAL_GAINS_LINE_5,
@@ -487,8 +507,11 @@ from app.jurisdictions.ca.catalog import (
     FARM_VEHICLE_LEASING_COST,
     FARM_VEHICLE_LIST_PRICE,
     FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
+    FEDERAL_FOREIGN_TAX_CREDIT,
+    FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
     FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS,
@@ -553,6 +576,7 @@ from app.jurisdictions.ca.catalog import (
     MEDICAL_SUPPLEMENT_LINE_15,
     MEDICAL_SUPPLEMENT_LINE_16,
     MEDICAL_THRESHOLD,
+    NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION,
     NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
     NET_CAPITAL_LOSSES_CLAIMED,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
@@ -576,6 +600,7 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_2_LINE_3,
     POLITICAL_CREDIT_COLUMN_3_LINE_2,
     POLITICAL_CREDIT_COLUMN_3_LINE_3,
+    PRE_1986_CAPITAL_LOSS_BALANCE,
     QBT_2025_RESERVE,
     QBT_ABIL_AND_NET_INVESTMENT_LOSS,
     QBT_ABIL_REDUCTION,
@@ -732,6 +757,7 @@ from app.jurisdictions.ca.catalog import (
     TOSI_ADJUSTED_NET_INCOME,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
+    TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
     TOTAL_LOSSES_FOR_ANNUAL_GAINS_LIMIT,
@@ -747,6 +773,7 @@ from app.jurisdictions.ca.catalog import (
     TUITION_TRANSFER_LIMIT,
     TUITION_TRANSFERRED,
     UCCB_AND_RDSP_INCOME,
+    UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES,
     UNAPPLIED_LISTED_PERSONAL_PROPERTY_LOSSES,
     UNDER_18_ON_DECEMBER_31,
     UNUSED_TUITION_CLAIMED,
@@ -851,6 +878,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         and line.output
         in (
             COOP_EDUCATION_CREDIT,
+            FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
             TRAVEL_TOTAL_ZONE_A,
             TRAVEL_TOTAL_ZONE_B,
             STANDARD_AMOUNT_ALLOCATED,
@@ -858,6 +886,35 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     assert lesser == {
+        # Form T691 Part 8 line 12 "Claim an amount that is not more than line 1 or 11, whichever is
+        # less.": line 1 (0) and line 11 (16951.38), the lesser of them, 0.
+        AMT_MAXIMUM_CARRYOVER_CLAIM: LesserOfLine(
+            output=AMT_MAXIMUM_CARRYOVER_CLAIM,
+            parts=(
+                (AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS, D("0")),
+                (AMT_MAXIMUM_CARRYOVER_APPLIED, D("16951.38")),
+            ),
+            result=D("0"),
+        ),
+        # Form T2209 line 13 "should not be more than" line 42900: the line 3 total, 0 with no
+        # country, against line 42900, 16951.38.
+        # ON428 line 82: no countries, so the credit before the limit is 0.
+        ontario.PROVINCIAL_FOREIGN_TAX_CREDIT: LesserOfLine(
+            ontario.PROVINCIAL_FOREIGN_TAX_CREDIT,
+            (
+                (ontario.PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT, D("0")),
+                (ontario.TAX_OTHERWISE_PAYABLE, D("8195.77")),
+            ),
+            D("0"),
+        ),
+        FEDERAL_FOREIGN_TAX_CREDIT: LesserOfLine(
+            FEDERAL_FOREIGN_TAX_CREDIT,
+            (
+                (FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT, D("0")),
+                (FEDERAL_TAX_AFTER_CREDITS, D("16951.38")),
+            ),
+            D("0"),
+        ),
         # Schedule 8 Part 5 line 75 "Enter whichever is less: amount from line 72 or line 73"
         # (line A): 0.00 and 0 for Return A.
         CPP_PART_5_LINE_75_BASE: LesserOfLine(
@@ -1601,12 +1658,20 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         # Form T1436 Chart A column D "Total adjusted net capital losses applied against taxable
         # capital gains in 2025": the lesser of column C and what is left of line 13, 0 for no
-        # claim.
+        # claim; the row "Before May 23, 1985" takes line 13 itself, the oldest row first.
+        ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985: LesserOfLine(
+            ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985,
+            (
+                (ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985, D("0.00")),
+                (TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED, D("0.00")),
+            ),
+            D("0.00"),
+        ),
         ADJUSTED_LOSSES_APPLIED_1985_TO_1987: LesserOfLine(
             ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
             (
                 (ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987, D("0.00")),
-                (NET_CAPITAL_LOSSES_OF_OTHER_YEARS, D("0")),
+                (ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985, D("0.00")),
             ),
             D("0.00"),
         ),
@@ -1775,6 +1840,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert at_most == {
+        # Form T691 Part 8 line 12, the claim (0, the caller's election) at most the cap (0): 0.
+        AMT_MINIMUM_TAX_CARRYOVER_APPLIED: AtMostLine(
+            output=AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+            amount_kind=AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
+            amount_value=D("0"),
+            bound=AMT_MAXIMUM_CARRYOVER_CLAIM,
+            bound_value=D("0"),
+        ),
         RRSP_DEDUCTION: AtMostLine(
             output=RRSP_DEDUCTION,
             amount_kind=RRSP_AMOUNT_DEDUCTED,
@@ -1798,10 +1871,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             bound=RENTAL_CCA_LIMIT,
             bound_value=D("0"),
         ),
-        # Form T1436 line 7 "Enter the amount of losses you want to claim (3).", which is T1 line
-        # 25300 and line 13: a claim of 0 against a line 6 of 0.00.
-        NET_CAPITAL_LOSSES_OF_OTHER_YEARS: AtMostLine(
-            output=NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+        # Form T1436 line 7 "Enter the amount of losses you want to claim (3).": a claim of 0
+        # against a line 6 of 0.00.
+        ADJUSTED_NET_CAPITAL_LOSSES_APPLIED: AtMostLine(
+            output=ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
             amount_kind=NET_CAPITAL_LOSSES_CLAIMED,
             amount_value=D("0"),
             bound=NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
@@ -2079,6 +2152,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Form T691 Part 8 line 11 "Maximum carryover that can be applied in 2025: line 9 minus line
+        # 10 (if negative, enter "0")": 16951.38 less the minimum amount of 0, 16951.38.
+        AMT_MAXIMUM_CARRYOVER_APPLIED: SubtractedNotBelowZeroLine(
+            output=AMT_MAXIMUM_CARRYOVER_APPLIED,
+            minuend=AMT_TAX_PAYABLE_AFTER_CREDITS,
+            minuend_amount=D("16951.38"),
+            subtrahend=AMT_MINIMUM_AMOUNT,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
         # Schedule 8 Part 5 line 73 "Enter the amount from line 24 of Part 3 if positive. If
         # not, enter "0"": line 24 is 0.00 for Return A.
         CPP_PART_5_LINE_73: SubtractedNotBelowZeroLine(
@@ -2717,6 +2800,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("5914.00"),
         ),
+        # T1 line 130 "Line 128 minus line 129": line 126 (line 127 is not wired) less line 129
+        # (40500), which is 0 with no country.
+        FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT: SubtractedNotBelowZeroLine(
+            output=FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
+            minuend=FEDERAL_TAX_AFTER_CREDITS,
+            minuend_amount=D("16951.38"),
+            subtrahend=FEDERAL_FOREIGN_TAX_CREDIT,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
         # Schedule ON(S11) line 4 "Line 2 minus line 3 (if negative, enter "0")": the income cap of
         # line 2, 169100.99 (the Ontario tax of ON428 line 8 divided by 5.05%), less line 3, the
         # credit amounts through the disability transfer, 17180.58.
@@ -3098,6 +3191,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("8195.77"),
         ),
+        # ON428 line 81 with "0" on lines 70 and 72 (the tax otherwise payable) and line 83
+        # "Line 81 minus line 82 (if negative, enter "0")".
+        ontario.TAX_OTHERWISE_PAYABLE: SubtractedNotBelowZeroLine(
+            output=ontario.TAX_OTHERWISE_PAYABLE,
+            minuend=ontario.TAX_OTHERWISE_PAYABLE_LINE_73,
+            minuend_amount=D("8195.77"),
+            subtrahend=ontario.TAX_OTHERWISE_PAYABLE_REDUCTION,
+            subtrahend_amount=D("0"),
+            result=D("8195.77"),
+        ),
+        ontario.ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT: SubtractedNotBelowZeroLine(
+            output=ontario.ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT,
+            minuend=ONTARIO_TAX_AFTER_REDUCTION,
+            minuend_amount=D("8195.77"),
+            subtrahend=ontario.PROVINCIAL_FOREIGN_TAX_CREDIT,
+            subtrahend_amount=D("0"),
+            result=D("8195.77"),
+        ),
         # ON428 line 81 "Line 73 minus line 80 (if negative, enter "0")".
         ONTARIO_TAX_AFTER_REDUCTION: SubtractedNotBelowZeroLine(
             output=ONTARIO_TAX_AFTER_REDUCTION,
@@ -3174,7 +3285,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # ON428 line 86 "Line 84 minus line 85 (if negative, enter "0")".
         ONTARIO_TAX_AFTER_LIFT_CREDIT: SubtractedNotBelowZeroLine(
             output=ONTARIO_TAX_AFTER_LIFT_CREDIT,
-            minuend=ONTARIO_TAX_AFTER_REDUCTION,
+            minuend=ontario.ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT,
             minuend_amount=D("8195.77"),
             subtrahend=LIFT_CREDIT,
             subtrahend_amount=D("0"),
@@ -3599,6 +3710,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
+        # Form T691 Part 1 line 93 "Line 83 minus line 92 (if negative, enter "0")": 126537.00
+        # less 0.
+        AMT_ADJUSTED_TAXABLE_INCOME: SubtractedNotBelowZeroLine(
+            output=AMT_ADJUSTED_TAXABLE_INCOME,
+            minuend=AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
+            minuend_amount=D("126537.00"),
+            subtrahend=AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
+            subtrahend_amount=D("0"),
+            result=D("126537.00"),
+        ),
+        # Form T691 Part 1 line 95 "Line 93 minus line 94 (if negative, enter "0")": 126537.00
+        # less 177882.00 is below zero, so 0.
+        AMT_NET_ADJUSTED_TAXABLE_INCOME: SubtractedNotBelowZeroLine(
+            output=AMT_NET_ADJUSTED_TAXABLE_INCOME,
+            minuend=AMT_ADJUSTED_TAXABLE_INCOME,
+            minuend_amount=D("126537.00"),
+            subtrahend=AMT_BASIC_EXEMPTION,
+            subtrahend_amount=D("177882.00"),
+            result=D("0"),
+        ),
+        # Form T691 Part 1 line 103 "Line 97 minus line 102 (if negative, enter "0")": 0 less
+        # 1597.44 is below zero, so 0.
+        AMT_MINIMUM_AMOUNT: SubtractedNotBelowZeroLine(
+            output=AMT_MINIMUM_AMOUNT,
+            minuend=AMT_GROSS_MINIMUM_AMOUNT,
+            minuend_amount=D("0"),
+            subtrahend=AMT_CREDITS_ADJUSTMENTS_TOTAL,
+            subtrahend_amount=D("1597.44"),
+            result=D("0"),
+        ),
     }
     # Schedule 8 Part 4 line 3 "Line 1 plus line 2 (if negative, enter "0")" and Schedule 13 line 1
     # "(if negative, enter "0")", on no self-employment income and no partnership income, and the
@@ -3848,6 +3989,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert item_sums == []
     assert item_lessers == []
     assert items_totals == {
+        # Form T2209 lines 1 to 3 over the countries: Return A lists none, so the total is 0.
+        FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT: ItemsTotalLine(
+            FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT, (), D("0")
+        ),
         COOP_EDUCATION_CREDIT: ItemsTotalLine(COOP_EDUCATION_CREDIT, (), D("0")),
         TRAVEL_TOTAL_ZONE_A: ItemsTotalLine(TRAVEL_TOTAL_ZONE_A, (), D("0")),
         TRAVEL_TOTAL_ZONE_B: ItemsTotalLine(TRAVEL_TOTAL_ZONE_B, (), D("0")),
@@ -4841,3 +4986,23 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             chosen_value=D("0"),
         ),
     }
+
+
+def test_the_trace_records_line_9_of_the_pre_1986_calculation_as_a_structured_line() -> None:
+    # Form T1436 line 9 "Enter whichever is less: amount from line 3, line 8, or $2,000." (confirmed
+    # from the PDF; no .txt published): Return A has no pre-1986 capital loss balance (line 3 is
+    # 0.00) and nothing unapplied (line 8 is 0.00), so line 9 is 0.00.
+    lines = [line for line in return_a().trace if isinstance(line, LesserOfWithMaximumLine)]
+
+    assert lines == [
+        LesserOfWithMaximumLine(
+            output=NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION,
+            parts=(
+                (PRE_1986_CAPITAL_LOSS_BALANCE, D("0.00")),
+                (UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES, D("0.00")),
+            ),
+            maximum=Amount(D("2000")),
+            rounding=CENT,
+            result=D("0.00"),
+        )
+    ]
