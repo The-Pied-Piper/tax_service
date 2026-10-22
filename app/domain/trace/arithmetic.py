@@ -24,6 +24,7 @@ __all__ = [
     "SumNotBelowZeroLine",
     "RateAppliedLine",
     "DividedByRateLine",
+    "SignChosenDifferenceLine",
     "SubtractedLine",
     "SubtractedNotBelowZeroLine",
     "CreditAmountLine",
@@ -126,6 +127,30 @@ class DividedByRateLine(TraceLine):
     @property
     def amount(self) -> Decimal:
         """The rounded quotient."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class SignChosenDifferenceLine(TraceLine):
+    """The `result` produced as `output` from `difference` (worth `difference_amount`), picked by
+    the sign of `sign` (worth `sign_amount`) against `reference` (worth `reference_amount`).
+
+    A sign amount that is not negative gives the difference as it is; a negative one gives the
+    lesser of the reference and the magnitude of the difference, as a negative number.
+    """
+
+    output: Money
+    sign: Money
+    sign_amount: Decimal
+    reference: Money
+    reference_amount: Decimal
+    difference: Money
+    difference_amount: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The chosen, signed figure."""
         return self.result
 
 

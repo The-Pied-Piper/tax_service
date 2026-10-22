@@ -132,6 +132,7 @@ def test_return_afs_claim_is_applied_to_the_oldest_row_first_and_lowers_taxable_
         "total_adjusted_net_capital_losses: adjusted_gross_capital_losses_1985_to_1987 0 "
         "+ adjusted_gross_capital_losses_1988_and_1989 0 "
         "+ adjusted_gross_capital_losses_1990_to_1999 2000 "
+        "+ adjusted_gross_capital_losses_2000 0 "
         "+ adjusted_gross_capital_losses_2001_to_2024 1000 = 3000"
     ) in rendered
     assert (
@@ -154,7 +155,7 @@ def test_return_afs_claim_is_applied_to_the_oldest_row_first_and_lowers_taxable_
     assert (
         "adjusted_losses_applied_2001_to_2024: lesser of "
         "adjusted_gross_capital_losses_2001_to_2024 1000 "
-        "and adjusted_losses_left_after_1990_to_1999 500 = 500"
+        "and adjusted_losses_left_after_2000 500 = 500"
     ) in rendered
     assert (
         "remaining_adjusted_losses_2001_to_2024: adjusted_gross_capital_losses_2001_to_2024 1000 "

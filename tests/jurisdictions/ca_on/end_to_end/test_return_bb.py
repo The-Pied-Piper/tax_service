@@ -26,6 +26,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_HOME_EXPENSES_SUBTOTAL,
     BUSINESS_HOME_INCOME_LIMIT,
     BUSINESS_INCOME,
+    BUSINESS_MOTOR_VEHICLE_EXPENSES,
     BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,
     BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
     BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS,
@@ -40,6 +41,16 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_SHARE_OF_NET_INCOME,
     BUSINESS_TERMINAL_LOSS,
     BUSINESS_TOTAL_EXPENSES,
+    BUSINESS_VEHICLE_AVAILABLE_INTEREST,
+    BUSINESS_VEHICLE_BUSINESS_USE_PART,
+    BUSINESS_VEHICLE_INTEREST_FOR_PERIOD,
+    BUSINESS_VEHICLE_LEASE_CHARGE_PORTION,
+    BUSINESS_VEHICLE_LEASE_COST_PORTION,
+    BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
+    BUSINESS_VEHICLE_LEASE_PRICE_BASE,
+    BUSINESS_VEHICLE_LEASING_COST,
+    BUSINESS_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
+    BUSINESS_VEHICLE_TOTAL_EXPENSES,
     FEDERAL_BASIC_TAX,
     NET_INCOME,
     NET_SELF_EMPLOYMENT_INCOME,
@@ -51,8 +62,9 @@ from app.jurisdictions.ca.catalog import (
 from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX
 from tests.jurisdictions.ca_on.end_to_end.support import D, compute
 
-# Return BB's T2125: gross sales 50000, the seven expense lines 1500 + 1200 + 800 + 2500 + 6000 +
-# 1500 + 2500 = 16000, and the business-use-of-home expenses 600 + 500 + 300 + 200 + 400 = 2000.
+# Return BB's T2125: gross sales 50000, the six expense lines 1500 + 1200 + 800 + 2500 + 6000 +
+# 1500 = 13500 and the motor vehicle expenses of 2500 from Charts A to C (the seven lines 16000),
+# and the business-use-of-home expenses 600 + 500 + 300 + 200 + 400 = 2000.
 BUSINESS = {
     "gross_sales": "50000",
     "advertising": "1500",
@@ -61,7 +73,20 @@ BUSINESS = {
     "professional_fees": "2500",
     "rent": "6000",
     "utilities": "1500",
-    "motor_vehicle_expenses": "2500",
+    # Charts A to C for one leased passenger vehicle used half for business: Chart A line 16 (line
+    # 9281) is 2500, from the interest of Chart B (400) and the leasing cost of Chart C (2147).
+    "vehicle_business_kilometres": "5000",
+    "vehicle_total_kilometres": "10000",
+    "vehicle_fuel_and_oil": "1000",
+    "vehicle_insurance": "600",
+    "vehicle_maintenance_and_repairs": "200",
+    "vehicle_other_expenses_10": "653",
+    "vehicle_interest_payable": "400",
+    "vehicle_interest_days": "183",
+    "vehicle_lease_charges": "2550",
+    "vehicle_lease_days": "183",
+    "vehicle_list_price": "60000",
+    "vehicle_sales_tax_rate": "13",
     "home_heat": "600",
     "home_electricity": "500",
     "home_insurance": "300",
@@ -76,8 +101,9 @@ def return_bb(**overrides: Any) -> Worksheet:
     activity is a business.
 
     One T2125 for the business: gross sales of 50000 (amount 3A, and so line 8299 and T1 line
-    13499), expenses of 16000 on seven lines and 2000 of capital cost allowance (Class 8, opening
-    UCC 10000, claim 2000), 18000 in all (line 9368), so line 9369 is 32000; business-use-of-home
+    13499), expenses of 16000 on seven lines (the motor vehicle line, 2500, from Charts A to C) and
+    2000 of capital cost allowance (Class 8, opening UCC 10000, claim 2000), 18000 in all (line
+    9368), so line 9369 is 32000; business-use-of-home
     expenses of 2000, so line 9945 is 2000 and line 9946 and T1 line 13500 are 30000.
     """
     inputs: dict[str, Any] = {
@@ -197,6 +223,27 @@ def test_return_bbs_line_27_is_in_total_income_and_flows_down() -> None:
     assert worksheet.get(ONTARIO_BASIC_TAX).value == D("1515.00")
     assert worksheet.get(TOTAL_PAYABLE).value == D("3182.57")
     assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("3182.57")
+
+
+def test_return_bbs_motor_vehicle_line_9281_is_2500_from_charts_a_to_c() -> None:
+    # Chart B: 350 ÷ 30 × 183 days = 2135.00, and the lesser of that and 400 is 400. Chart C: 44706
+    # plus 13% is 50517.78 and 1100 plus 13% is 1243.00 (38000 plus 13% is 42940.00); 60000 is the
+    # greater of 60000 and 50517.78, 85% of it is 51000.00, 1243.00 x 183 ÷ 30 is 7582.30, and
+    # 42940.00 x 2550 ÷ 51000.00 is 2147.00, so the leasing cost is the lesser of 7582.30 and
+    # 2147.00. Chart A: 1000 + 400 + 600 + 200 + 2147 + 653 = 5000, and 5000 x 5000 ÷ 10000 = 2500.
+    worksheet = return_bb()
+
+    assert worksheet.get(BUSINESS_VEHICLE_INTEREST_FOR_PERIOD).value == D("2135.00")
+    assert worksheet.get(BUSINESS_VEHICLE_AVAILABLE_INTEREST).value == D("400.00")
+    assert worksheet.get(BUSINESS_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX).value == D("50517.78")
+    assert worksheet.get(BUSINESS_VEHICLE_LEASE_PRICE_BASE).value == D("60000.00")
+    assert worksheet.get(BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT).value == D("51000.00")
+    assert worksheet.get(BUSINESS_VEHICLE_LEASE_CHARGE_PORTION).value == D("7582.30")
+    assert worksheet.get(BUSINESS_VEHICLE_LEASE_COST_PORTION).value == D("2147.00")
+    assert worksheet.get(BUSINESS_VEHICLE_LEASING_COST).value == D("2147.00")
+    assert worksheet.get(BUSINESS_VEHICLE_TOTAL_EXPENSES).value == D("5000.00")
+    assert worksheet.get(BUSINESS_VEHICLE_BUSINESS_USE_PART).value == D("2500.00")
+    assert worksheet.get(BUSINESS_MOTOR_VEHICLE_EXPENSES).value == D("2500.00")
 
 
 def test_return_bbs_trace_names_each_line_of_the_business_statement() -> None:

@@ -8,6 +8,14 @@ from app.domain.errors import InputAboveBoundError
 from app.jurisdictions.ca.catalog import (
     ABIL_AFTER_QBT_REDUCTION,
     ABIL_CLAIMED_AFTER_1984_AND_BEFORE_2025,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_2000,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+    ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
+    ADJUSTED_LOSSES_APPLIED_2000,
+    ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
+    ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
+    ADJUSTED_LOSSES_LEFT_AFTER_2000,
     ADJUSTED_NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     ANNUAL_GAINS_LIMIT_2025,
     ANNUAL_GAINS_LINE_3,
@@ -59,15 +67,21 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_TAXABLE_CAPITAL_GAINS_2002_TO_2025,
     ELIGIBLE_TAXABLE_CAPITAL_GAINS_2025,
     INCLUDED_CAPITAL_GAIN,
+    NET_CAPITAL_LOSS_BALANCE_2000,
+    NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
+    NET_CAPITAL_LOSS_TWICE_IR_2000,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_INCOME,
     QBT_ABIL_REDUCTION,
     QBT_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
     QSBCS_QFFP_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
+    REMAINING_ADJUSTED_LOSSES_2000,
+    REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
     SCHEDULE_3_LINE_17600_NOT_BELOW_ZERO,
     SCHEDULE_3_LINE_19900,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
+    TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
     TOTAL_LOSSES_FOR_ANNUAL_GAINS_LIMIT,
 )
 from tests.jurisdictions.ca_on.end_to_end.support import (
@@ -500,3 +514,50 @@ def test_a_return_with_no_form_t657_has_every_line_at_zero() -> None:
     assert worksheet.get(CHART_2025_PART_2_AMOUNT_Q).value == D("0")
     assert worksheet.get(CAPITAL_GAINS_DEDUCTION).value == D("0")
     assert worksheet.get(DEDUCTIONS_FROM_NET_INCOME).value == D("0")
+
+
+def test_a_2000_loss_at_ir_06_is_adjusted_on_chart_a_and_line_4_and_the_claim_stays_20000() -> None:
+    # Chart A row "In 2000": 1000 at IR 0.6. Column F is 2 × 0.6 = 1.20; column C is 1000 ÷ 1.20 =
+    # 833.33; column D is 833.33 (the lesser of C and the 20000 left on line 13); column E and G are
+    # 0.00. The row "After 2000 and before 2025" then has 19166.67 left: column C 20000.00, D
+    # 19166.67, E 833.33 and G 833.33. Line 4 is 833.33 + 20000.00 = 20833.33, line 6 is 20833.33,
+    # and the 20000 claimed is line 7 and line 25300, so the claim does not change.
+    worksheet = return_bf(unapplied_net_capital_losses_2000="1000", t657_inclusion_rate_2000="0.6")
+
+    assert worksheet.get(NET_CAPITAL_LOSS_TWICE_IR_2000).value == D("1.20")
+    assert worksheet.get(ADJUSTED_GROSS_CAPITAL_LOSSES_2000).value == D("833.33")
+    assert worksheet.get(ADJUSTED_LOSSES_APPLIED_2000).value == D("833.33")
+    assert worksheet.get(ADJUSTED_LOSSES_LEFT_AFTER_2000).value == D("19166.67")
+    assert worksheet.get(REMAINING_ADJUSTED_LOSSES_2000).value == D("0.00")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_2000).value == D("0.00")
+    assert worksheet.get(ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024).value == D("20000.00")
+    assert worksheet.get(ADJUSTED_LOSSES_APPLIED_2001_TO_2024).value == D("19166.67")
+    assert worksheet.get(REMAINING_ADJUSTED_LOSSES_2001_TO_2024).value == D("833.33")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_2001_TO_2024).value == D("833.33")
+    assert worksheet.get(TOTAL_ADJUSTED_NET_CAPITAL_LOSSES).value == D("20833.33")
+    assert worksheet.get(NET_CAPITAL_LOSSES_OF_OTHER_YEARS).value == D("20000")
+    assert worksheet.get(ANNUAL_GAINS_LIMIT_2025).value == D("155000.00")
+
+
+def test_the_2000_row_takes_what_the_1990_to_1999_row_leaves_of_the_claim() -> None:
+    # The 1990 to 1999 row of 9000 at 2/3 is 6000.00 in column C and is applied first, so 14000.00
+    # is left on line 13 for the 2000 row. The 2000 row's C is 833.33 (1000 at IR 0.6), applied in
+    # full; 13166.67 is left for the 2001 to 2024 row, which takes 13166.67 of its 20000 and leaves
+    # 6833.33 in column E. The column D total is 6000.00 + 833.33 + 13166.67 = 20000.00, line 13.
+    worksheet = return_bf(
+        unapplied_net_capital_losses_1990_to_1999="9000",
+        unapplied_net_capital_losses_2000="1000",
+        t657_inclusion_rate_2000="0.6",
+    )
+
+    assert worksheet.get(ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999).value == D("6000.00")
+    assert worksheet.get(ADJUSTED_LOSSES_APPLIED_1990_TO_1999).value == D("6000.00")
+    assert worksheet.get(ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999).value == D("14000.00")
+    assert worksheet.get(ADJUSTED_GROSS_CAPITAL_LOSSES_2000).value == D("833.33")
+    assert worksheet.get(ADJUSTED_LOSSES_APPLIED_2000).value == D("833.33")
+    assert worksheet.get(ADJUSTED_LOSSES_LEFT_AFTER_2000).value == D("13166.67")
+    assert worksheet.get(ADJUSTED_LOSSES_APPLIED_2001_TO_2024).value == D("13166.67")
+    assert worksheet.get(REMAINING_ADJUSTED_LOSSES_2001_TO_2024).value == D("6833.33")
+    assert worksheet.get(NET_CAPITAL_LOSS_BALANCE_2001_TO_2024).value == D("6833.33")
+    assert worksheet.get(TOTAL_ADJUSTED_NET_CAPITAL_LOSSES).value == D("26833.33")
+    assert worksheet.get(NET_CAPITAL_LOSSES_OF_OTHER_YEARS).value == D("20000")

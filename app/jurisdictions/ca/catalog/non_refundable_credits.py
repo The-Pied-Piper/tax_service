@@ -20,14 +20,15 @@ T1 and, as ON428 line 19 (line 58240) "Amount from line 30800 of your return", o
 Line 15 is "Amount from line 11"; Part 3b line 30 "If line 16 is positive or "0", enter the amount
 from line 15 at line 30 and line 36, and continue at line 37." and line 36 "Line 34 plus line 35.
 Enter this amount (in dollars and cents) on line 30800 of your return and line 58240 of your Form
-428." carry it to T1 line 30800 and ON428 line 58240, lines 32 and 35 being 0. When line 24 is
-positive, Part 3a line 25 "Enter the amount from line 15." carries the same amount.
+428." carry it to T1 line 30800 and ON428 line 58240 when line 24 is "0" or negative
+(cpp_base_contributions_on_return). When line 24 is positive, Part 3a line 25 "Enter the amount
+from line 15." carries the same amount to the same lines.
 
 Line 1 (50339) is "Total CPP pensionable earnings from box 26 of all of your T4 slips (if box 26
 is blank, enter the amount from box 14)", so the three contributions read employment income.
-Not triggered by the returns modelled: Part 2's proration for fewer than 12 months, box 26
-differing from box 14, and the slips' deducted contributions differing from the required ones
-(so no overpayment on T1 line 44800).
+Not triggered by the returns modelled: Part 2's proration for fewer than 12 months, and box 26
+differing from box 14. The slips' contributions differing from the required ones are line 24, which
+routes to the T1 line 44800 overpayment when positive (cpp_overpayment).
 """
 
 CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT = CATALOG.declare(
@@ -692,3 +693,16 @@ FEDERAL_TAX_WITH_ITC_RECAPTURE = CATALOG.declare(
 )
 """Federal tax with the recapture, T1 line 132 "Line 130 plus line 131 =": line 130
 (`federal_tax_less_foreign_tax_credit`) and line 131 (`itc_recapture`)."""
+
+
+CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT = CATALOG.declare(
+    "cpp_part_5_base_contributions_on_self_employment", Decimal, non_negative=True
+)
+"""T1 line 31000 from Part 5 line 70, once for each Part 5 completed (1 or 0)."""
+
+CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS = CATALOG.declare(
+    "cpp_base_contributions_on_self_employment_and_other_earnings", Decimal, non_negative=True
+)
+"""T1 line 31000: the Part 4 amount (cpp_base_contributions_on_self_employment) plus the Part 5
+amount, read by 08_non_refundable_credits (twice), 15_ontario_personal_amounts and
+16_ontario_credits."""

@@ -1,0 +1,12 @@
+# Form T2125 (2025), Chart C line 25: "[($1,100 + GST and PST, or $1,100 + HST) × amount 22] ÷ 30".
+# The printed $1,100 is the monthly lease charge limit of a passenger vehicle, prorated by days over
+# 30, to which the sales tax of the province is added. It borrows the credit kind because it is a
+# printed constant, claimed whole. The tax on it is a dollars-and-cents box, rounded half-up to the
+# cent, as the form states no rounding rule.
+family: ca/business_vehicle_lease_charge_limit
+tax_year: 2025
+kind: credit
+sources:
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t2125/t2125-25e.pdf
+rounding: {increment: "0.01", mode: half_up}
+amount: "1100"
