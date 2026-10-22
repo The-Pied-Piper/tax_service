@@ -30,7 +30,7 @@ from app.domain.parameters.rate_table import RATE_TABLE
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundTo
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
 from app.domain.registry import Namespace
-from app.jurisdictions.ca_on.capabilities.apply_chosen_rate import ApplyChosenRate
+from app.jurisdictions.ca.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca_on.capabilities.rate_by_income_band import RateByIncomeBand
 from tests.jurisdictions.ca_on.capabilities.on479a_table import (
     FAMILY_INCOME,

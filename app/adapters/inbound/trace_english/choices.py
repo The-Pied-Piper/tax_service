@@ -9,6 +9,7 @@ from app.adapters.inbound.trace_english.registry import english_renderer
 from app.domain.trace.choices import (
     ChosenByCountLine,
     ChosenByRangeLine,
+    ChosenBySignLine,
     ConditionLine,
     ConditionsCountLine,
 )
@@ -30,6 +31,35 @@ class ChosenByCountRenderer:
         return (
             f"{output.label}: {chosen_kind.label} {EnglishFigures.money(chosen)}, "
             f"chosen as {count_kind.label} is {count}"
+        )
+
+
+@english_renderer
+class ChosenBySignRenderer:
+    """English text for ChosenBySignLine."""
+
+    line_class = ChosenBySignLine
+
+    def render(self, line: ChosenBySignLine) -> str:
+        """The English sentence for `line`."""
+        output = line.output
+        sign_kind = line.sign_kind
+        sign = line.sign
+        chosen_kind = line.chosen_kind
+        if sign > 0:
+            word = "positive"
+        elif sign < 0:
+            word = "negative"
+        else:
+            word = "zero"
+        if chosen_kind is None:
+            return (
+                f"{output.label}: 0, no amount when {sign_kind.label} "
+                f"{EnglishFigures.money(sign)} is {word}"
+            )
+        return (
+            f"{output.label}: {chosen_kind.label} {EnglishFigures.money(line.chosen_value)}, "
+            f"chosen as {sign_kind.label} {EnglishFigures.money(sign)} is {word}"
         )
 
 

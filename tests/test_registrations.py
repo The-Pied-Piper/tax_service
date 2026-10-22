@@ -307,3 +307,59 @@ def test_importing_the_packages_and_registrations_registers_no_artifact_kind() -
 
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "[]"
+
+
+def test_importing_the_federal_package_registers_the_count_at_least_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/count_at_least")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.count_at_least"
+
+
+def test_importing_the_federal_package_registers_the_ratio_truncated_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/ratio_truncated")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.ratio_truncated"
+
+
+def test_importing_the_federal_package_registers_the_ratio_truncated_at_most_one_capability() -> (
+    None
+):
+    registered = CapabilityRegistry.shared().get("ca/ratio_truncated_at_most_one")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.ratio_truncated"
+
+
+def test_importing_the_federal_package_registers_the_apply_chosen_rate_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/apply_chosen_rate")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.apply_chosen_rate"
+
+
+def test_importing_the_federal_package_registers_the_choose_by_sign_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/choose_by_sign")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.choose_by_sign"
+
+
+def test_importing_the_federal_package_registers_the_positive_part_of_negation_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/positive_part_of_negation")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.positive_part_of_negation"
+
+
+def test_importing_the_federal_package_registers_the_lesser_of_when_positive_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/lesser_of_when_positive")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.lesser_of_when_positive"
+
+
+def test_importing_the_federal_package_registers_the_in_brackets_lesser_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/lesser_of_when_positive_in_brackets")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.lesser_of_when_positive"
+
+
+def test_importing_the_federal_package_registers_the_amount_when_more_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/amount_when_more")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.amount_when_more"

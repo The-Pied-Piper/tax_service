@@ -8,20 +8,25 @@ from app.adapters.inbound.trace_english.figures import EnglishFigures
 from app.adapters.inbound.trace_english.registry import english_renderer
 from app.domain.trace.arithmetic import (
     AmountOrDividedByRateLine,
+    AmountWhenMoreLine,
     AtMostLine,
     CappedAmountLine,
+    CountAtLeastLine,
     CreditAmountLine,
     DividedByRateLine,
     FractionAppliedLine,
     GreaterOfLine,
     LesserOfLine,
+    LesserOfWhenPositiveLine,
     LesserOfWithMaximumLine,
     MultipleOverLine,
     PercentageAppliedLine,
     PerUnitAmountLine,
+    PositivePartOfNegationLine,
     QuotientLine,
     RateAppliedLine,
     RatioAppliedLine,
+    RatioTruncatedLine,
     RoundedTotalLine,
     SignChosenDifferenceLine,
     SubtractedLine,
@@ -487,4 +492,87 @@ class AmountOrDividedByRateRenderer:
             f"{EnglishFigures.money(dividend_value)} divided by "
             f"{EnglishFigures.percent(limit.rate.value)}% ({EnglishFigures.rounding(rule)}) = "
             f"{EnglishFigures.money(result)}"
+        )
+
+
+@english_renderer
+class CountAtLeastRenderer:
+    """English text for CountAtLeastLine."""
+
+    line_class = CountAtLeastLine
+
+    def render(self, line: CountAtLeastLine) -> str:
+        """The English sentence for `line`."""
+        return (
+            f"{line.output.label}: {line.count_kind.label} {line.count}, "
+            f"at least {line.minimum_kind.label} {line.minimum}"
+        )
+
+
+@english_renderer
+class RatioTruncatedRenderer:
+    """English text for RatioTruncatedLine."""
+
+    line_class = RatioTruncatedLine
+
+    def render(self, line: RatioTruncatedLine) -> str:
+        """The English sentence for `line`."""
+        output = line.output
+        dividend = line.dividend
+        divisor = line.divisor
+        cap = ", at most 1" if line.cap_at_one else ""
+        return (
+            f"{output.label}: {dividend.label} {EnglishFigures.money(line.dividend_amount)} "
+            f"divided by {divisor.label} {EnglishFigures.money(line.divisor_amount)} "
+            f"({EnglishFigures.rounding(line.rounding)}){cap} = {EnglishFigures.money(line.result)}"
+        )
+
+
+@english_renderer
+class PositivePartOfNegationRenderer:
+    """English text for PositivePartOfNegationLine."""
+
+    line_class = PositivePartOfNegationLine
+
+    def render(self, line: PositivePartOfNegationLine) -> str:
+        """The English sentence for `line`."""
+        return (
+            f"{line.output.label}: negation of {line.amount_kind.label} "
+            f"{EnglishFigures.money(line.amount_value)}, not below 0 = "
+            f"{EnglishFigures.money(line.result)}"
+        )
+
+
+@english_renderer
+class LesserOfWhenPositiveRenderer:
+    """English text for LesserOfWhenPositiveLine."""
+
+    line_class = LesserOfWhenPositiveLine
+
+    def render(self, line: LesserOfWhenPositiveLine) -> str:
+        """The English sentence for `line`."""
+        terms = " and ".join(
+            f"{kind.label} {EnglishFigures.money(amount)}" for kind, amount in line.parts
+        )
+        lesser = f"lesser of {terms}" if len(line.parts) > 1 else terms
+        brackets = ", shown in brackets" if line.bracket else ""
+        gate = "" if line.all_positive else ", not all positive"
+        return (
+            f"{line.output.label}: {lesser}{brackets}{gate} = {EnglishFigures.money(line.result)}"
+        )
+
+
+@english_renderer
+class AmountWhenMoreRenderer:
+    """English text for AmountWhenMoreLine."""
+
+    line_class = AmountWhenMoreLine
+
+    def render(self, line: AmountWhenMoreLine) -> str:
+        """The English sentence for `line`."""
+        return (
+            f"{line.output.label}: {line.amount_kind.label} "
+            f"{EnglishFigures.money(line.amount_value)} if {line.more_kind.label} "
+            f"{EnglishFigures.money(line.more_value)} is more than {line.than_kind.label} "
+            f"{EnglishFigures.money(line.than_value)} = {EnglishFigures.money(line.result)}"
         )

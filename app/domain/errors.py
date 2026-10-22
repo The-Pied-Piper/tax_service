@@ -72,6 +72,10 @@ class InputAboveBoundError(DomainError):
     """An amount was given above the bound it may not exceed."""
 
 
+class InputBelowBoundError(DomainError):
+    """An amount was given below the bound it may not fall under."""
+
+
 class CapabilityContractError(DomainError):
     """A capability's outputs break its contract.
 

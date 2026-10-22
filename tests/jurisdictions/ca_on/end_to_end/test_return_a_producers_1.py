@@ -24,6 +24,7 @@ from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
 from app.domain.capabilities.tapered_amount import TaperedAmount
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.capabilities.times_count import TimesCount
+from app.jurisdictions.ca.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
 from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
 from app.jurisdictions.ca.capabilities.chart_a_row_c_total import ChartARowCTotal
@@ -772,7 +773,6 @@ from app.jurisdictions.ca.catalog import (
     ZONE_B_SPECIAL_WORK_SITE_BENEFITS,
 )
 from app.jurisdictions.ca_on import catalog as ontario
-from app.jurisdictions.ca_on.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca_on.capabilities.caregiver_amount import OntarioCaregiverAmount
 from app.jurisdictions.ca_on.capabilities.disability_transfer_amount import (
     OntarioDisabilityTransferAmount,

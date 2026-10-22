@@ -32,15 +32,18 @@ from app.domain.record_list import RecordListKind
 from app.domain.trace import (
     AmountByCountLine,
     AmountOrDividedByRateLine,
+    AmountWhenMoreLine,
     AtMostLine,
     BracketColumnLine,
     CappedAmountLine,
     ChosenByCountLine,
     ChosenByRangeLine,
+    ChosenBySignLine,
     ChosenRateAppliedLine,
     ConditionLine,
     ConditionsCountLine,
     ContributionTierLine,
+    CountAtLeastLine,
     CreditAmountLine,
     DividedByRateLine,
     FractionAppliedLine,
@@ -49,14 +52,17 @@ from app.domain.trace import (
     ItemsTotalLine,
     ItemSumLine,
     LesserOfLine,
+    LesserOfWhenPositiveLine,
     LesserOfWithMaximumLine,
     MultipleOverLine,
     PercentageAppliedLine,
     PerUnitAmountLine,
+    PositivePartOfNegationLine,
     QuotientLine,
     RateAppliedLine,
     RateByIncomeBandLine,
     RatioAppliedLine,
+    RatioTruncatedLine,
     RecordCountLine,
     RecordTotalLine,
     RoundedTotalLine,
@@ -104,6 +110,7 @@ PART_ONE = ArtifactKind("ex/part_one", Decimal)
 PART_TWO = ArtifactKind("ex/part_two", Decimal)
 TOTAL = ArtifactKind("ex/total", Decimal)
 RATED = ArtifactKind("ex/rated", Decimal)
+RATED_RATE = ArtifactKind("ex/rated", Rate)
 GROSS = ArtifactKind("ex/gross", Decimal)
 REDUCTION = ArtifactKind("ex/reduction", Decimal)
 NET = ArtifactKind("ex/net", Decimal)
@@ -527,6 +534,43 @@ def item_lesser_of_line() -> ItemLesserOfLine:
     return ItemLesserOfLine(TOTAL, 1, ((PART_ONE, D("1500")), (PART_TWO, D("750.50"))), D("750.50"))
 
 
+def count_at_least_line() -> CountAtLeastLine:
+    return CountAtLeastLine(PERSONS, CHILDREN, 3, DEPENDANTS, 2)
+
+
+def ratio_truncated_line() -> RatioTruncatedLine:
+    return RatioTruncatedLine(
+        RATED_RATE,
+        BASE,
+        D("30000"),
+        TOTAL,
+        D("70000"),
+        RoundTo(D("0.00001"), RoundingMode.DOWN),
+        False,
+        D("0.42857"),
+    )
+
+
+def positive_part_of_negation_line() -> PositivePartOfNegationLine:
+    return PositivePartOfNegationLine(RATED, NET, D("-12.50"), D("12.50"))
+
+
+def lesser_of_when_positive_line() -> LesserOfWhenPositiveLine:
+    return LesserOfWhenPositiveLine(
+        TOTAL, ((PART_ONE, D("1500")), (PART_TWO, D("750.50"))), True, True, D("-750.50")
+    )
+
+
+def amount_when_more_line() -> AmountWhenMoreLine:
+    return AmountWhenMoreLine(
+        ALLOWED, CLAIMED, D("1500.25"), TESTED, D("70000.01"), LIMIT, D(70000), D("1500.25")
+    )
+
+
+def chosen_by_sign_line() -> ChosenBySignLine:
+    return ChosenBySignLine(CHOSEN, GATE, D("-3"), ALONE, D("1633.00"))
+
+
 ALL_LINES = [
     column_line,
     total_line,
@@ -577,6 +621,12 @@ ALL_LINES = [
     short_term_rental_non_compliant_cca_by_class_line,
     condition_line,
     conditions_count_line,
+    count_at_least_line,
+    ratio_truncated_line,
+    positive_part_of_negation_line,
+    lesser_of_when_positive_line,
+    chosen_by_sign_line,
+    amount_when_more_line,
 ]
 
 
@@ -4497,3 +4547,252 @@ def test_percentage_applied_lines_differ_by_rounding() -> None:
 def test_a_percentage_applied_line_is_not_a_ratio_or_rate_applied_line() -> None:
     assert not isinstance(percentage_applied_line(), RatioAppliedLine)
     assert not isinstance(percentage_applied_line(), RateAppliedLine)
+
+
+# --- lines for the engine capabilities of Form RC381 ----------------------------------------------
+
+
+def test_count_at_least_line_fields_in_order() -> None:
+    line = count_at_least_line()
+
+    assert line == CountAtLeastLine(
+        output=PERSONS, count_kind=CHILDREN, count=3, minimum_kind=DEPENDANTS, minimum=2
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "count_kind",
+        "count",
+        "minimum_kind",
+        "minimum",
+    ]
+    assert line.output is PERSONS
+    assert line.count_kind is CHILDREN
+    assert line.count == 3
+    assert line.minimum_kind is DEPENDANTS
+    assert line.minimum == 2
+    assert line.amount == D(3)
+
+
+def test_count_at_least_lines_differ_by_count_and_minimum() -> None:
+    assert count_at_least_line() != CountAtLeastLine(PERSONS, CHILDREN, 4, DEPENDANTS, 2)
+    assert count_at_least_line() != CountAtLeastLine(PERSONS, CHILDREN, 3, DEPENDANTS, 3)
+
+
+def test_count_at_least_lines_are_hashable() -> None:
+    assert hash(count_at_least_line()) == hash(count_at_least_line())
+
+
+def test_a_count_at_least_line_is_not_an_at_most_line() -> None:
+    assert not isinstance(count_at_least_line(), AtMostLine)
+
+
+def test_ratio_truncated_line_fields_in_order() -> None:
+    line = ratio_truncated_line()
+    five_decimals_down = RoundTo(D("0.00001"), RoundingMode.DOWN)
+
+    assert line == RatioTruncatedLine(
+        output=RATED_RATE,
+        dividend=BASE,
+        dividend_amount=D("30000"),
+        divisor=TOTAL,
+        divisor_amount=D("70000"),
+        rounding=five_decimals_down,
+        cap_at_one=False,
+        result=D("0.42857"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "dividend",
+        "dividend_amount",
+        "divisor",
+        "divisor_amount",
+        "rounding",
+        "cap_at_one",
+        "result",
+    ]
+    assert line.output is RATED_RATE
+    assert line.dividend is BASE
+    assert line.divisor is TOTAL
+    assert line.rounding == five_decimals_down
+    assert line.cap_at_one is False
+    assert line.amount == D("0.42857")
+
+
+def test_ratio_truncated_lines_differ_by_cap_and_rounding() -> None:
+    line = ratio_truncated_line()
+    five_decimals_down = RoundTo(D("0.00001"), RoundingMode.DOWN)
+
+    assert line != RatioTruncatedLine(
+        RATED_RATE, BASE, D("30000"), TOTAL, D("70000"), five_decimals_down, True, D("0.42857")
+    )
+    assert line != RatioTruncatedLine(
+        RATED_RATE, BASE, D("30000"), TOTAL, D("70000"), NO_ROUNDING, False, D("0.42857")
+    )
+
+
+def test_ratio_truncated_lines_are_hashable() -> None:
+    assert hash(ratio_truncated_line()) == hash(ratio_truncated_line())
+
+
+def test_a_ratio_truncated_line_is_not_a_quotient_line() -> None:
+    assert not isinstance(ratio_truncated_line(), QuotientLine)
+
+
+def test_positive_part_of_negation_line_fields_in_order() -> None:
+    line = positive_part_of_negation_line()
+
+    assert line == PositivePartOfNegationLine(
+        output=RATED, amount_kind=NET, amount_value=D("-12.50"), result=D("12.50")
+    )
+    assert [f.name for f in fields(line)] == ["output", "amount_kind", "amount_value", "result"]
+    assert line.output is RATED
+    assert line.amount_kind is NET
+    assert line.amount_value == D("-12.50")
+    assert line.amount == D("12.50")
+
+
+def test_positive_part_of_negation_lines_differ_by_value() -> None:
+    assert positive_part_of_negation_line() != PositivePartOfNegationLine(
+        RATED, NET, D("-13"), D("12.50")
+    )
+
+
+def test_positive_part_of_negation_lines_are_hashable() -> None:
+    assert hash(positive_part_of_negation_line()) == hash(positive_part_of_negation_line())
+
+
+def test_lesser_of_when_positive_line_fields_in_order() -> None:
+    line = lesser_of_when_positive_line()
+
+    assert line == LesserOfWhenPositiveLine(
+        output=TOTAL,
+        parts=((PART_ONE, D("1500")), (PART_TWO, D("750.50"))),
+        all_positive=True,
+        bracket=True,
+        result=D("-750.50"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "parts",
+        "all_positive",
+        "bracket",
+        "result",
+    ]
+    assert line.output is TOTAL
+    assert line.parts == ((PART_ONE, D("1500")), (PART_TWO, D("750.50")))
+    assert line.all_positive is True
+    assert line.bracket is True
+    assert line.amount == D("-750.50")
+
+
+def test_lesser_of_when_positive_lines_differ_by_condition_bracket_and_result() -> None:
+    parts = ((PART_ONE, D("1500")), (PART_TWO, D("750.50")))
+
+    assert lesser_of_when_positive_line() != LesserOfWhenPositiveLine(
+        TOTAL, parts, False, True, D("-750.50")
+    )
+    assert lesser_of_when_positive_line() != LesserOfWhenPositiveLine(
+        TOTAL, parts, True, False, D("-750.50")
+    )
+    assert lesser_of_when_positive_line() != LesserOfWhenPositiveLine(
+        TOTAL, parts, True, True, D("750.50")
+    )
+
+
+def test_lesser_of_when_positive_lines_are_hashable() -> None:
+    assert hash(lesser_of_when_positive_line()) == hash(lesser_of_when_positive_line())
+
+
+def test_a_lesser_of_when_positive_line_is_not_a_lesser_of_line() -> None:
+    assert not isinstance(lesser_of_when_positive_line(), LesserOfLine)
+
+
+def test_chosen_by_sign_line_fields_in_order() -> None:
+    line = chosen_by_sign_line()
+
+    assert line == ChosenBySignLine(
+        output=CHOSEN, sign_kind=GATE, sign=D("-3"), chosen_kind=ALONE, chosen_value=D("1633.00")
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "sign_kind",
+        "sign",
+        "chosen_kind",
+        "chosen_value",
+    ]
+    assert line.output is CHOSEN
+    assert line.sign_kind is GATE
+    assert line.sign == D("-3")
+    assert line.chosen_kind is ALONE
+    assert line.amount == D("1633.00")
+
+
+def test_a_chosen_by_sign_line_for_an_omitted_branch_names_no_kind() -> None:
+    line = ChosenBySignLine(CHOSEN, GATE, D("0"), None, D("0"))
+
+    assert line.chosen_kind is None
+    assert line.amount == D("0")
+
+
+def test_chosen_by_sign_lines_differ_by_sign_and_chosen_kind() -> None:
+    assert chosen_by_sign_line() != ChosenBySignLine(CHOSEN, GATE, D("3"), ALONE, D("1633.00"))
+    assert chosen_by_sign_line() != ChosenBySignLine(
+        CHOSEN, GATE, D("-3"), WITH_FAMILY, D("1633.00")
+    )
+
+
+def test_chosen_by_sign_lines_are_hashable() -> None:
+    assert hash(chosen_by_sign_line()) == hash(chosen_by_sign_line())
+
+
+def test_a_chosen_by_sign_line_is_not_a_chosen_by_count_line() -> None:
+    assert not isinstance(chosen_by_sign_line(), ChosenByCountLine)
+
+
+def test_amount_when_more_line_fields_in_order() -> None:
+    line = amount_when_more_line()
+
+    assert line == AmountWhenMoreLine(
+        output=ALLOWED,
+        amount_kind=CLAIMED,
+        amount_value=D("1500.25"),
+        more_kind=TESTED,
+        more_value=D("70000.01"),
+        than_kind=LIMIT,
+        than_value=D(70000),
+        result=D("1500.25"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "amount_kind",
+        "amount_value",
+        "more_kind",
+        "more_value",
+        "than_kind",
+        "than_value",
+        "result",
+    ]
+    assert line.output is ALLOWED
+    assert line.amount_kind is CLAIMED
+    assert line.more_kind is TESTED
+    assert line.than_kind is LIMIT
+    assert line.amount == D("1500.25")
+
+
+def test_amount_when_more_lines_differ_by_values_and_result() -> None:
+    line = amount_when_more_line()
+
+    assert line != AmountWhenMoreLine(
+        ALLOWED, CLAIMED, D("1500.25"), TESTED, D(70000), LIMIT, D(70000), D(0)
+    )
+    assert line != AmountWhenMoreLine(
+        ALLOWED, CLAIMED, D("1500.25"), TESTED, D("70000.01"), LIMIT, D(60000), D("1500.25")
+    )
+
+
+def test_amount_when_more_lines_are_hashable() -> None:
+    assert hash(amount_when_more_line()) == hash(amount_when_more_line())
+
+
+def test_an_amount_when_more_line_is_not_a_threshold_gate_line() -> None:
+    assert not isinstance(amount_when_more_line(), ThresholdGateLine)

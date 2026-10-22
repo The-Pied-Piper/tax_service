@@ -1,4 +1,4 @@
-"""Unit tests for the ApplyChosenRate capability (`ca-on/apply_chosen_rate`).
+"""Unit tests for the ApplyChosenRate capability (`ca/apply_chosen_rate`).
 
 Schedule ON479-A (2025, 5006-TCA), line 8: "Line 6 multiplied by the percentage from line 7".
 Unlike `core/apply_rate`, whose rate is a `rate` dataset's, the rate here is an artifact (line
@@ -16,6 +16,7 @@ $50,000: 55%", and 55% of a 5,000 child care deduction is 2,750.
 from __future__ import annotations
 
 import decimal
+import importlib.util
 from collections.abc import Mapping
 from dataclasses import fields
 from decimal import Decimal
@@ -24,19 +25,23 @@ from typing import Any, assert_type, cast
 
 import pytest
 
-import app.jurisdictions.ca_on.capabilities as ca_on_capabilities
+import app.jurisdictions.ca.capabilities as ca_capabilities
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capability import CapabilityRegistry
 from app.domain.composition import Composition
-from app.domain.errors import InvalidCapabilityError, MissingArtifactError
+from app.domain.errors import (
+    InvalidCapabilityError,
+    MissingArtifactError,
+    UnknownRegistrationError,
+)
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
 from app.domain.trace import ChosenRateAppliedLine, RateAppliedLine, RateByIncomeBandLine
-from app.jurisdictions.ca_on.capabilities.apply_chosen_rate import ApplyChosenRate
+from app.jurisdictions.ca.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca_on.capabilities.rate_by_income_band import RateByIncomeBand
 from tests.jurisdictions.ca_on.capabilities.on479a_table import (
     FAMILY_INCOME,
@@ -79,13 +84,13 @@ def compute(wired: ApplyChosenRate, base: str, rate: str) -> Artifact[Any]:
     return output
 
 
-def test_is_registered_as_ca_on_apply_chosen_rate() -> None:
-    assert CapabilityRegistry.shared().get("ca-on/apply_chosen_rate") is ApplyChosenRate
+def test_is_registered_as_ca_apply_chosen_rate() -> None:
+    assert CapabilityRegistry.shared().get("ca/apply_chosen_rate") is ApplyChosenRate
 
 
-def test_is_exported_from_the_ca_on_capabilities_package() -> None:
-    assert "apply_chosen_rate" in ca_on_capabilities.__all__
-    assert ca_on_capabilities.apply_chosen_rate.ApplyChosenRate is ApplyChosenRate
+def test_is_exported_from_the_federal_capabilities_package() -> None:
+    assert "apply_chosen_rate" in ca_capabilities.__all__
+    assert ca_capabilities.apply_chosen_rate.ApplyChosenRate is ApplyChosenRate
 
 
 def test_declares_its_contract() -> None:
@@ -392,3 +397,14 @@ def test_a_family_income_above_the_last_bound_gives_no_credit_through_both_lines
     )
 
     assert worksheet.get(CARE_CREDIT).value == D("0")
+
+
+def test_is_no_longer_registered_under_the_ontario_namespace() -> None:
+    with pytest.raises(UnknownRegistrationError):
+        CapabilityRegistry.shared().get("ca-on/apply_chosen_rate")
+
+
+def test_the_ontario_package_holds_no_module_for_it() -> None:
+    assert (
+        importlib.util.find_spec("app.jurisdictions.ca_on.capabilities.apply_chosen_rate") is None
+    )

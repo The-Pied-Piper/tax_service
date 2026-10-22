@@ -13,6 +13,7 @@ from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
+from app.jurisdictions.ca.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca.catalog import (
     CHILD_CARE_EXPENSES,
     REFUND,
@@ -23,7 +24,6 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_SPLIT_INCOME,
 )
 from app.jurisdictions.ca_on import catalog as ontario
-from app.jurisdictions.ca_on.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca_on.capabilities.choose_by_range import ChooseByRange
 from app.jurisdictions.ca_on.capabilities.coop_education_credit import CoopEducationCredit
 from app.jurisdictions.ca_on.capabilities.flow_through_share_expenses import (
@@ -228,7 +228,7 @@ STEPS = {
     # line 8 "Line 6 multiplied by the percentage from line 7 Enter this amount on line 63050
     # of your Form ON479.": line 6 reads the child care expenses deduction, as line 2 does.
     CapabilitySelection(
-        name="ca-on/apply_chosen_rate",
+        name="ca/apply_chosen_rate",
         params={"rounding": "ca-on/care_credit_rounding"},
         consumes={"base": "ca/child_care_expenses", "rate": "ca-on/care_credit_percentage"},
         produces={"output": "ca-on/care_credit"},
