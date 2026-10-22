@@ -6,15 +6,8 @@ from typing import Any
 
 import pytest
 
-from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.domain.errors import ValidationError
 from app.domain.worksheet import Worksheet
-from app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_cca import (
-    ShortTermRentalNonCompliantCca,
-)
-from app.jurisdictions.ca.capabilities.short_term_rental_non_compliant_cca_by_class import (
-    ShortTermRentalNonCompliantCcaByClass,
-)
 from app.jurisdictions.ca.catalog import (
     CCA_CLASS_NUMBER,
     NET_RENTAL_INCOME,
@@ -24,7 +17,13 @@ from app.jurisdictions.ca.catalog import (
     SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS,
     TOTAL_INCOME,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute
+from tests.jurisdictions.ca_on.end_to_end.support import (
+    D,
+    compute,
+    render_flat,
+    t776_export,
+    t776_line,
+)
 
 # Chart B rows as (column 1, column 4, column 5, column 6): class 1 with 900 and 30 days of 90,
 # class 1 with 100 and 1 day of 3, class 8 with 500 and 45 days of 90.
@@ -68,10 +67,7 @@ def test_return_avs_line_9367_is_583_33_from_three_chart_b_rows() -> None:
     # line 9367, is 300.00 + 33.33 + 250.00 = 583.33.
     worksheet = return_av()
 
-    assert worksheet.get(RENTAL_NON_COMPLIANT_CCA).value == D("583.33")
-    assert isinstance(
-        worksheet.producer_of(RENTAL_NON_COMPLIANT_CCA), ShortTermRentalNonCompliantCca
-    )
+    assert t776_line(worksheet, RENTAL_NON_COMPLIANT_CCA) == D("583.33")
 
 
 def test_return_avs_column_22_is_333_33_for_class_1_and_250_for_class_8() -> None:
@@ -79,15 +75,11 @@ def test_return_avs_column_22_is_333_33_for_class_1_and_250_for_class_8() -> Non
     # 22 of Area A": class 1 is 300.00 + 33.33, class 8 is 250.00, in the order the classes appear.
     worksheet = return_av()
 
-    records = worksheet.get(SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS).value.records
+    records = t776_export(worksheet, SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS).records
     assert [(record[CCA_CLASS_NUMBER], record[NON_COMPLIANT_CCA]) for record in records] == [
         (D("1"), D("333.33")),
         (D("8"), D("250.00")),
     ]
-    assert isinstance(
-        worksheet.producer_of(SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS),
-        ShortTermRentalNonCompliantCcaByClass,
-    )
 
 
 def test_return_avs_chart_b_does_not_change_the_rental_income() -> None:
@@ -95,13 +87,13 @@ def test_return_avs_chart_b_does_not_change_the_rental_income() -> None:
     # Return AD's 12000.
     worksheet = return_av()
 
-    assert worksheet.get(RENTAL_NON_COMPLIANT_EXPENSES).value == D("0")
+    assert t776_line(worksheet, RENTAL_NON_COMPLIANT_EXPENSES) == D("0")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("12000")
     assert worksheet.get(TOTAL_INCOME).value == D("12000")
 
 
 def test_return_avs_trace_shows_each_chart_b_row_and_class() -> None:
-    rendered = EnglishTraceRenderer().render_all(return_av().trace)
+    rendered = render_flat(return_av().trace)
 
     for line in (
         "rental_non_compliant_cca: row 1: class 1 CCA 900 for 30 non-compliant days of 90 "
@@ -121,16 +113,16 @@ def test_return_avs_trace_shows_each_chart_b_row_and_class() -> None:
 def test_no_chart_b_rows_give_zero_and_an_empty_list() -> None:
     worksheet = return_av(short_term_rental_cca_units_rows=())
 
-    assert worksheet.get(RENTAL_NON_COMPLIANT_CCA).value == D("0")
-    assert worksheet.get(SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS).value.records == ()
-    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert t776_line(worksheet, RENTAL_NON_COMPLIANT_CCA) == D("0")
+    assert t776_export(worksheet, SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS).records == ()
+    rendered = render_flat(worksheet.trace)
     assert "rental_non_compliant_cca: no items = 0" in rendered
 
 
 def test_a_row_with_900_of_cca_and_30_of_90_days_is_300_on_line_9367() -> None:
     worksheet = return_av(short_term_rental_cca_units_rows=(("1", "900", 30, 90),))
 
-    assert worksheet.get(RENTAL_NON_COMPLIANT_CCA).value == D("300.00")
+    assert t776_line(worksheet, RENTAL_NON_COMPLIANT_CCA) == D("300.00")
 
 
 def test_a_chart_b_row_with_no_short_term_days_is_refused_naming_the_row() -> None:

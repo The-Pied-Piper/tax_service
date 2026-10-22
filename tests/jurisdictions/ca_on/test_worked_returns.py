@@ -12,9 +12,11 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
+import yaml
 
 from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
 from app.domain.artifact import ArtifactRegistry
+from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.parameters.rate import Rate
 from app.jurisdictions.ca.catalog import (
     DEPENDANT_CARE_EXPENSES,
@@ -47,7 +49,15 @@ RETURNS = Path(__file__).parent / "returns"
 
 
 def load(path: Path) -> WorkedReturn:
-    """The worked return at `path` with its blank lines and inputs filled in."""
+    """The worked return at `path` with its blank lines and inputs filled in.
+
+    The manifest is composed first, which registers the kinds `<form>.<export>` of its forms, so
+    the file may expect them. A form's instance inputs given flat in the file become one instance
+    (`with_forms`), and a form's export the file leaves out is blank for each instance.
+    """
+    service = build_tax_computation()  # registers the catalogs the loader resolves through
+    head = yaml.safe_load(path.read_text())
+    service.compose(JurisdictionCode(head["jurisdiction"]), head["tax_year"])
     artifacts = ArtifactRegistry.shared()
     worked = WorkedReturn.load(path, artifacts)
     manifest = (
@@ -55,12 +65,14 @@ def load(path: Path) -> WorkedReturn:
         .get_jurisdiction(worked.jurisdiction)
         .manifest_for(worked.tax_year)
     )
-    return worked.with_blanks(manifest.inputs, manifest.outputs, artifacts)
+    return worked.with_forms(manifest.forms, artifacts).with_blanks(
+        manifest.inputs, manifest.outputs, artifacts, manifest.forms
+    )
 
 
 def check(path: Path) -> None:
     """Load the worked return at `path`, compute it and assert every expected line."""
-    service = build_tax_computation()  # registers the catalogs the loader resolves through
+    service = build_tax_computation()
     worked = load(path)
 
     worksheet = service.compute(worked.jurisdiction, worked.tax_year, *worked.inputs)
@@ -435,23 +447,10 @@ expected:
   ca/investment_income_before_prior_years: "0"
   ca/interest_and_other_investment_income: "0"
   ca/income_support_benefits: "0"
-  ca/short_term_rental_gross_rents: "0"
-  ca/rental_gross_rents: "0"
-  ca/gross_rental_income: "0"
-  ca/rental_total_expenses: "0"
-  ca/rental_personal_portion: "0"
-  ca/rental_short_term_portion: "0"
-  ca/rental_non_compliant_expenses: "0"
-  ca/rental_expenses_less_personal_portion: "0"
-  ca/rental_deductible_expenses: "0"
-  ca/rental_net_income_before_adjustments: "0"
-  ca/rental_net_income_share: "0"
-  ca/rental_net_income_after_coowner_expenses: "0"
-  ca/rental_net_income_with_recapture: "0"
-  ca/rental_net_income_after_terminal_loss: "0"
-  ca/rental_net_income_after_cca: "0"
-  ca/rental_partner_share_with_rebate: "0"
-  ca/rental_partnership_net_income: "0"
+  ca/t776.short_term_rental_gross_rents:
+    - ca/short_term_rental_gross_rents: "0"
+  ca/t776.rental_short_term_portion:
+    - ca/rental_short_term_portion: "0"
   ca/net_rental_income: "0"
   ca/total_income: "10000"
   ca/cpp_second_additional_earnings_maximum: "9900.00"
@@ -923,11 +922,13 @@ def test_return_ad_reports_rental_income_on_lines_12599_and_12600() -> None:
     build_tax_computation()  # registers the catalogs the loader resolves through
     worked = WorkedReturn.load(path, ArtifactRegistry.shared())
 
-    (properties,) = [a for a in worked.inputs if a.kind.identifier == "ca/rental_properties"]
-    assert len(properties.value.records) == 1
+    worked = load(path)  # the flat T776 inputs of the file are one statement
+    (statements,) = [a for a in worked.inputs if a.kind.identifier == "ca/t776_statements"]
+    (statement,) = statements.value.records
+    (properties,) = [v for k, v in statement.items() if k.identifier == "ca/rental_properties"]
+    assert len(properties.records) == 1
     expected = {a.kind.identifier: a.value for a in worked.expected}
-    # T776 line 8299 is T1 line 12599 and line 9946 is T1 line 12600.
-    assert expected["ca/gross_rental_income"] == Decimal("24000.00")
+    # T776 line 9946 is T1 line 12600 (line 8299, T1 line 12599, is inside the form).
     assert expected["ca/net_rental_income"] == Decimal("12000.00")
     assert expected["ca/total_income"] == Decimal("12000.00")
     check(path)

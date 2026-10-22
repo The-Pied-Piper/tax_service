@@ -21,10 +21,9 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_CHOSEN_COLUMN,
     POLITICAL_CREDIT_COLUMN_1_LINE_7,
     POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
-    RENTAL_NON_COMPLIANT_EXPENSES,
     TAXABLE_INCOME,
 )
-from app.jurisdictions.ca.trace import OtherDependantMedicalLine, ShortTermRentalNonCompliantLine
+from app.jurisdictions.ca.trace import OtherDependantMedicalLine
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.catalog import (
     CARE_CREDIT,
@@ -115,11 +114,3 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         if isinstance(line, OtherDependantMedicalLine | ItemsTotalLine)
         and line.output == OTHER_DEPENDANTS_MEDICAL
     ] == [ItemsTotalLine(output=OTHER_DEPENDANTS_MEDICAL, items=(), total=D("0"))]
-    # T776 line 9366 (Chart A line B): Return A has no short-term rental rows, so no per-row
-    # lines and a total of 0.
-    assert [
-        line
-        for line in trace
-        if isinstance(line, ShortTermRentalNonCompliantLine | ItemsTotalLine)
-        and line.output == RENTAL_NON_COMPLIANT_EXPENSES
-    ] == [ItemsTotalLine(output=RENTAL_NON_COMPLIANT_EXPENSES, items=(), total=D("0"))]

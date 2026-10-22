@@ -602,24 +602,6 @@ from app.jurisdictions.ca.catalog import (
     QBT_TAXABLE_GAINS_NOT_LIMITED,
     QBT_TOTAL_CAPITAL_GAINS,
     REFUND,
-    RENTAL_CCA_CLAIM,
-    RENTAL_CCA_CLAIM_BEFORE_LIMIT,
-    RENTAL_CCA_CLAIM_SHARE,
-    RENTAL_CCA_LIMIT,
-    RENTAL_CCA_TABLE_CLAIM,
-    RENTAL_CCA_TABLE_RECAPTURE,
-    RENTAL_CCA_TABLE_TERMINAL_LOSS,
-    RENTAL_COOWNER,
-    RENTAL_GROSS_RENTS,
-    RENTAL_NET_INCOME_AFTER_CCA,
-    RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS,
-    RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS,
-    RENTAL_NET_INCOME_SHARE,
-    RENTAL_PARTNER,
-    RENTAL_PROPERTY_GROSS_RENTS,
-    RENTAL_PROPERTY_SHORT_TERM_RENTS,
-    RENTAL_RECAPTURED_CCA,
-    RENTAL_TERMINAL_LOSS,
     RESIDENCY_AMOUNT,
     RESIDENCY_DEDUCTION,
     RESIDENCY_NET_INCOME_LIMIT,
@@ -641,7 +623,6 @@ from app.jurisdictions.ca.catalog import (
     SELF_EMPLOYED_CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
     SELF_EMPLOYED_CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     SELF_EMPLOYED_EI_PREMIUMS,
-    SHORT_TERM_RENTAL_GROSS_RENTS,
     SOCIAL_BENEFITS_LINE_5,
     SOCIAL_BENEFITS_LINE_15,
     SOCIAL_BENEFITS_LINE_17,
@@ -1788,14 +1769,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             amount_kind=FHSA_CONTRIBUTIONS_DEDUCTED,
             amount_value=D("0"),
             bound=FHSA_MAXIMUM_DEDUCTION,
-            bound_value=D("0"),
-        ),
-        # T776 line 9936 "Total CCA claim for the year": a claim of 0 against amount 5, 0.
-        RENTAL_CCA_CLAIM: AtMostLine(
-            output=RENTAL_CCA_CLAIM,
-            amount_kind=RENTAL_CCA_CLAIM_BEFORE_LIMIT,
-            amount_value=D("0"),
-            bound=RENTAL_CCA_LIMIT,
             bound_value=D("0"),
         ),
         # Form T1436 line 7 "Enter the amount of losses you want to claim (3).", which is T1 line
@@ -3720,11 +3693,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ((TOSI_ADJUSTED_NET_INCOME, D("115000")), (CHILD_CARE_EXPENSES, D("0"))),
             D("115000"),
         ),
-        # Guide T4036 "You cannot use CCA to create or increase a rental loss": the most line 9936
-        # may be, amount 5 of no rental income.
-        RENTAL_CCA_LIMIT: SumNotBelowZeroLine(
-            RENTAL_CCA_LIMIT, ((RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS, D("0")),), D("0")
-        ),
         # Form T2048 (line 25395) and Chart A: Return A enters nothing on the form, so its lines
         # are 0 (or, where they read another line, that line's figure).
         QBT_NET_RENTAL_INCOME: SumNotBelowZeroLine(
@@ -3813,15 +3781,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert record_totals == {
-        # T776 Part 3 lines 8140 and 8141: Return A has no rental properties, so no items and 0.
-        SHORT_TERM_RENTAL_GROSS_RENTS: RecordTotalLine(
-            SHORT_TERM_RENTAL_GROSS_RENTS, RENTAL_PROPERTY_SHORT_TERM_RENTS, (), D("0")
-        ),
+        # T1 line 12600 "Net": the lines 9946 of Return A's one T776 statement, a blank one.
+        NET_RENTAL_INCOME: RecordTotalLine(NET_RENTAL_INCOME, NET_RENTAL_INCOME, (D("0"),), D("0")),
         EI_EXCLUDED_SLIPS_NET_INCOME: RecordTotalLine(
             EI_EXCLUDED_SLIPS_NET_INCOME, EI_EXCLUDED_SLIP_NET_INCOME, (), D("0")
-        ),
-        RENTAL_GROSS_RENTS: RecordTotalLine(
-            RENTAL_GROSS_RENTS, RENTAL_PROPERTY_GROSS_RENTS, (), D("0")
         ),
         FLOW_THROUGH_SHARE_EXPENSES: RecordTotalLine(
             FLOW_THROUGH_SHARE_EXPENSES, FLOW_THROUGH_SHARE_SLIP_EXPENSES, (), D("0")
@@ -4728,45 +4691,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
             chosen_kind=DISABILITY_SELF_BASE_AMOUNT,
             chosen_value=D("10138.00"),
-        ),
-        # T776 Part 4 line 2 (the co-owner's share, amount 2): a count of 0 chooses line 9369. Line
-        # 9946 (T1 line 12600): a count of 0 chooses amount 6.
-        RENTAL_NET_INCOME_SHARE: ChosenByCountLine(
-            output=RENTAL_NET_INCOME_SHARE,
-            count_kind=RENTAL_COOWNER,
-            count=0,
-            chosen_kind=RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS,
-            chosen_value=D("0"),
-        ),
-        # T776 lines 9947, 9948 and 9936 (amount ii): a count of 0 chooses Area A's figure, 0
-        # with no classes.
-        RENTAL_RECAPTURED_CCA: ChosenByCountLine(
-            output=RENTAL_RECAPTURED_CCA,
-            count_kind=RENTAL_COOWNER,
-            count=0,
-            chosen_kind=RENTAL_CCA_TABLE_RECAPTURE,
-            chosen_value=D("0"),
-        ),
-        RENTAL_TERMINAL_LOSS: ChosenByCountLine(
-            output=RENTAL_TERMINAL_LOSS,
-            count_kind=RENTAL_COOWNER,
-            count=0,
-            chosen_kind=RENTAL_CCA_TABLE_TERMINAL_LOSS,
-            chosen_value=D("0"),
-        ),
-        RENTAL_CCA_CLAIM_SHARE: ChosenByCountLine(
-            output=RENTAL_CCA_CLAIM_SHARE,
-            count_kind=RENTAL_COOWNER,
-            count=0,
-            chosen_kind=RENTAL_CCA_TABLE_CLAIM,
-            chosen_value=D("0"),
-        ),
-        NET_RENTAL_INCOME: ChosenByCountLine(
-            output=NET_RENTAL_INCOME,
-            count_kind=RENTAL_PARTNER,
-            count=0,
-            chosen_kind=RENTAL_NET_INCOME_AFTER_CCA,
-            chosen_value=D("0"),
         ),
         # Form T1172: a count of 0 (Part A does not apply) chooses Part B's line 13.
         RESP_AIPS_ADDITIONAL_TAX: ChosenByCountLine(

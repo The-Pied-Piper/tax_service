@@ -31,7 +31,6 @@ from typing import Any
 import pytest
 
 import app.registrations
-from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.errors import InputAboveBoundError, InvalidRecordError
 from app.domain.parameters.class_rates import (
@@ -55,7 +54,13 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_RECAPTURED_CCA,
     RENTAL_TERMINAL_LOSS,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute
+from tests.jurisdictions.ca_on.end_to_end.support import (
+    D,
+    compute,
+    render_flat,
+    t776_export,
+    t776_line,
+)
 
 SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
@@ -243,11 +248,11 @@ def test_a_recapture_row_adds_the_negative_column_7_to_line_9947() -> None:
     # negative column 7, so line 9936 is 0 and amount 6, line 9946 and T1 line 12600 are 15000.
     worksheet = landlord(("8", "1000", "0", "4000", "0", "0", "0", 0))
 
-    assert worksheet.get(RENTAL_RECAPTURED_CCA).value == D("3000")
-    assert worksheet.get(RENTAL_NET_INCOME_WITH_RECAPTURE).value == D("15000")
-    assert worksheet.get(RENTAL_CCA_CLAIM).value == D("0")
+    assert t776_line(worksheet, RENTAL_RECAPTURED_CCA) == D("3000")
+    assert t776_line(worksheet, RENTAL_NET_INCOME_WITH_RECAPTURE) == D("15000")
+    assert t776_line(worksheet, RENTAL_CCA_CLAIM) == D("0")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("15000")
-    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    rendered = render_flat(worksheet.trace)
     assert (
         "rental_cca_table_recapture: item 1 class 8: column 7 -3000 is negative: recapture 3000"
     ) in rendered
@@ -262,11 +267,11 @@ def test_a_terminal_loss_row_takes_the_positive_column_7_off_on_line_9948() -> N
     # deducted as a terminal loss on line 9948. Amount 5 is 12000 - 2000 = 10000.
     worksheet = landlord(("1", "2000", "0", "0", "0", "0", "0", 1))
 
-    assert worksheet.get(RENTAL_TERMINAL_LOSS).value == D("2000")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS).value == D("10000")
-    assert worksheet.get(RENTAL_CCA_CLAIM).value == D("0")
+    assert t776_line(worksheet, RENTAL_TERMINAL_LOSS) == D("2000")
+    assert t776_line(worksheet, RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS) == D("10000")
+    assert t776_line(worksheet, RENTAL_CCA_CLAIM) == D("0")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("10000")
-    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    rendered = render_flat(worksheet.trace)
     assert (
         "rental_cca_table_terminal_loss: item 1 class 1: column 7 2000 with no property left: "
         "terminal loss 2000"
@@ -276,7 +281,7 @@ def test_a_terminal_loss_row_takes_the_positive_column_7_off_on_line_9948() -> N
 def test_a_class_with_property_left_has_no_terminal_loss() -> None:
     worksheet = landlord(("1", "2000", "0", "0", "0", "0", "0", 0))
 
-    assert worksheet.get(RENTAL_TERMINAL_LOSS).value == D("0")
+    assert t776_line(worksheet, RENTAL_TERMINAL_LOSS) == D("0")
 
 
 def test_class_10_1_has_no_recapture_or_terminal_loss() -> None:
@@ -285,8 +290,8 @@ def test_class_10_1_has_no_recapture_or_terminal_loss() -> None:
     recapture = landlord(("10.1", "1000", "0", "4000", "0", "0", "0", 0))
     terminal = landlord(("10.1", "2000", "0", "0", "0", "0", "0", 1))
 
-    assert recapture.get(RENTAL_RECAPTURED_CCA).value == D("0")
-    assert terminal.get(RENTAL_TERMINAL_LOSS).value == D("0")
+    assert t776_line(recapture, RENTAL_RECAPTURED_CCA) == D("0")
+    assert t776_line(terminal, RENTAL_TERMINAL_LOSS) == D("0")
 
 
 def test_the_closing_ucc_of_a_recapture_row_is_zero() -> None:
@@ -294,7 +299,7 @@ def test_the_closing_ucc_of_a_recapture_row_is_zero() -> None:
     # "In either case, enter "0" in column 24".
     worksheet = landlord(("8", "1000", "0", "4000", "0", "0", "0", 0))
 
-    (record,) = worksheet.get(RENTAL_CLOSING_UCC).value.records
+    (record,) = t776_export(worksheet, RENTAL_CLOSING_UCC).records
     assert [value for value in record.values()] == [D("8"), D("0")]
 
 
@@ -304,11 +309,11 @@ def test_a_claim_at_the_loss_limit_is_allowed_and_brings_the_rental_income_to_ze
     # 12000 is allowed, so amount 6 is 12000 - 12000 = 0.
     worksheet = landlord(("1", "400000", "0", "0", "0", "0", "12000", 0))
 
-    assert worksheet.get(RENTAL_CCA_TABLE_CLAIM).value == D("12000")
-    assert worksheet.get(RENTAL_CCA_LIMIT).value == D("12000")
-    assert worksheet.get(RENTAL_CCA_CLAIM).value == D("12000")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("0")
-    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert t776_line(worksheet, RENTAL_CCA_TABLE_CLAIM) == D("12000")
+    assert t776_line(worksheet, RENTAL_CCA_LIMIT) == D("12000")
+    assert t776_line(worksheet, RENTAL_CCA_CLAIM) == D("12000")
+    assert t776_line(worksheet, RENTAL_NET_INCOME_AFTER_CCA) == D("0")
+    rendered = render_flat(worksheet.trace)
     assert (
         "rental_cca_claim: rental_cca_claim_before_limit 12000, at most rental_cca_limit 12000"
     ) in rendered
@@ -331,9 +336,9 @@ def test_the_loss_limit_is_checked_on_line_9936_after_the_personal_part_and_busi
         rental_cca_business_use_of_home="500",
     )
 
-    assert worksheet.get(RENTAL_CCA_TABLE_CLAIM).value == D("13000")
-    assert worksheet.get(RENTAL_CCA_CLAIM).value == D("11500")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("500")
+    assert t776_line(worksheet, RENTAL_CCA_TABLE_CLAIM) == D("13000")
+    assert t776_line(worksheet, RENTAL_CCA_CLAIM) == D("11500")
+    assert t776_line(worksheet, RENTAL_NET_INCOME_AFTER_CCA) == D("500")
 
 
 def test_a_personal_part_that_leaves_the_claim_above_the_limit_is_still_refused() -> None:
@@ -350,7 +355,7 @@ def test_the_limit_is_zero_for_a_rental_loss_and_no_claim_is_allowed() -> None:
     loss = {"rental_expenses": {"insurance": ("26000", "0", "0")}}
 
     worksheet = landlord(("1", "400000", "0", "0", "0", "0", "0", 0), **loss)
-    assert worksheet.get(RENTAL_CCA_LIMIT).value == D("0")
+    assert t776_line(worksheet, RENTAL_CCA_LIMIT) == D("0")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("-2000")
     with pytest.raises(InputAboveBoundError, match="rental_cca_claim_before_limit 1 is above"):
         landlord(("1", "400000", "0", "0", "0", "0", "1", 0), **loss)
@@ -364,8 +369,8 @@ def test_a_recapture_in_the_class_list_raises_the_loss_limit() -> None:
         ("1", "400000", "0", "0", "0", "0", "15000", 0),
     )
 
-    assert worksheet.get(RENTAL_CCA_LIMIT).value == D("15000")
-    assert worksheet.get(RENTAL_CCA_CLAIM).value == D("15000")
+    assert t776_line(worksheet, RENTAL_CCA_LIMIT) == D("15000")
+    assert t776_line(worksheet, RENTAL_CCA_CLAIM) == D("15000")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("0")
 
 

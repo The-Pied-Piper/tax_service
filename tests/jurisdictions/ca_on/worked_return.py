@@ -87,7 +87,11 @@ class WorkedReturn:
             raise WorkedReturnError(f"{path}: {exc}") from None
 
     def with_blanks(
-        self, inputs: frozenset[str], outputs: frozenset[str], artifacts: ArtifactRegistry
+        self,
+        inputs: frozenset[str],
+        outputs: frozenset[str],
+        artifacts: ArtifactRegistry,
+        forms: Iterable[Form] = (),
     ) -> WorkedReturn:
         """This return with every blank line of the form filled in, as the filer left it blank.
 
@@ -97,14 +101,59 @@ class WorkedReturn:
         0, or the empty text for digits, so a line that fires on a return not meant to trigger it
         still fails. Raises WorkedReturnError naming the file and the identifier for one
         `artifacts` does not know or that holds no blank.
+
+        A declared output that is an export of one of the `forms` (`<form>.<export>`, a record per
+        instance) is blank for each instance: as many blank records as the instances list the file
+        gives has records (no records when the file gives none). The derived kinds are registered
+        when the manifest is composed, so compose it before asking for them.
         """
         given = {artifact.kind.identifier for artifact in self.inputs}
         listed = {artifact.kind.identifier for artifact in self.expected}
+        exported = self._export_counts(forms, self.inputs)
+        absent = sorted(outputs - listed)
         return replace(
             self,
             inputs=self.inputs + self._blanks(sorted(inputs - given), "inputs", artifacts),
-            expected=self.expected + self._blanks(sorted(outputs - listed), "expected", artifacts),
+            expected=self.expected
+            + self._blanks(
+                [identifier for identifier in absent if identifier not in exported],
+                "expected",
+                artifacts,
+            )
+            + self._export_blanks(
+                {i: exported[i] for i in absent if i in exported}, "expected", artifacts
+            ),
         )
+
+    def _export_counts(
+        self, forms: Iterable[Form], inputs: tuple[Artifact[Any], ...]
+    ) -> dict[str, int]:
+        """The identifier `<form>.<export>` of each export of `forms` and how many instances."""
+        counts: dict[str, int] = {}
+        for form in forms:
+            instances = [a for a in inputs if a.kind.identifier == form.instances]
+            count = len(instances[0].value.records) if instances else 0
+            namespace, _, form_id = form.name.partition("/")
+            for export in form.exports:
+                counts[f"{namespace}/{form_id}.{export.partition('/')[2]}"] = count
+        return counts
+
+    def _export_blanks(
+        self, counts: dict[str, int], section: str, artifacts: ArtifactRegistry
+    ) -> tuple[Artifact[Any], ...]:
+        """For each identifier of `counts`, a record list of that many blank records."""
+        result: list[Artifact[Any]] = []
+        for identifier, count in sorted(counts.items()):
+            (blank,) = self._blanks([identifier], section, artifacts)
+            kind = blank.kind
+            assert isinstance(kind, RecordListKind)
+            (field,) = kind.fields
+            (blank_field,) = self._blanks([field.identifier], section, artifacts)
+            records: list[dict[ArtifactKind[Any], object]] = [
+                {field: blank_field.value} for _ in range(count)
+            ]
+            result.append(Artifact(kind, RecordList(kind.fields, records)))
+        return tuple(result)
 
     def with_forms(self, forms: Iterable[Form], artifacts: ArtifactRegistry) -> WorkedReturn:
         """This return with the flat inputs of each form turned into its instances artifact.
