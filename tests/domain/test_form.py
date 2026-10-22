@@ -13,6 +13,11 @@ is an InvalidCompositionError), runs each form once per record of its instances 
 instances has one), keeps every form's exports in one store and hands the imports to each run as
 starting artifacts. It returns a plain mapping: form name to the worksheet of every instance, in
 instance order.
+
+A form may also limit its instances: `max_instances` (at least 1) is the most records the caller
+may give, and `exclusive_group` names a group of which at most one form may have instances. The
+`FormSet` refuses the input otherwise, naming the form or the group, with a ValidationError; a
+group that names only one form is an InvalidCompositionError when the set is built.
 """
 
 from __future__ import annotations
@@ -35,6 +40,7 @@ from app.domain.errors import (
     InvalidCompositionError,
     MissingArtifactError,
     NotFoundError,
+    ValidationError,
 )
 from app.domain.form import FormComposition, FormSet
 from app.domain.record_list import RecordList, RecordListKind
@@ -932,3 +938,191 @@ def test_two_starting_values_are_refused_even_when_the_kind_is_not_an_input() ->
         form_set(shop(), audit()).compute(
             TWO_SHOPS, TWO_AUDITS, Artifact(FEE, D(1)), Artifact(FEE, D(2))
         )
+
+
+# --- limits: a maximum instance count and exclusive groups --------------------------------------
+
+
+def side(name: str, *, maximum: int | None = None, group: str | None = None) -> FormComposition:
+    """A form of its own instances kind `<name>s` (sales and costs) that exports its profit."""
+    kind = RecordListKind(f"{name}s", fields=(SALES, COSTS))
+    return FormComposition(
+        name,
+        [Subtract(SALES, COSTS, PROFIT)],
+        instances=kind,
+        exports=[PROFIT],
+        max_instances=maximum,
+        exclusive_group=group,
+    )
+
+
+def sides(form: FormComposition, count: int) -> Artifact[Any]:
+    """`count` instances of `form`, each of sales 10 and costs 4."""
+    kind = form.instances
+    assert kind is not None
+    return Artifact(kind, RecordList(kind.fields, [{SALES: D(10), COSTS: D(4)}] * count))
+
+
+def side_set(*forms: FormComposition) -> FormSet:
+    """The forms with a form `ex-on/return` that totals the profit of the first."""
+    derived = RecordListKind(f"{forms[0].name}.profit", fields=(PROFIT,))
+    return flat(
+        [RecordTotal(derived, GRAND)],
+        inputs=frozenset(form.instances for form in forms if form.instances is not None),
+        outputs=frozenset({GRAND}),
+        forms=forms,
+    )
+
+
+def grand(found: dict[str, tuple[Worksheet, ...]]) -> Decimal:
+    (worksheet,) = found[RETURN]
+    return worksheet.get(GRAND).value
+
+
+def run_sides(*given: tuple[FormComposition, int], forms: tuple[FormComposition, ...]) -> Decimal:
+    return grand(side_set(*forms).compute(*(sides(form, count) for form, count in given)))
+
+
+def test_a_form_has_no_limits_by_default() -> None:
+    assert shop().max_instances is None
+    assert shop().exclusive_group is None
+
+
+def test_the_form_remembers_its_maximum_and_group() -> None:
+    found = side("ex/one", maximum=3, group="ex/either")
+
+    assert found.max_instances == 3
+    assert found.exclusive_group == "ex/either"
+
+
+@pytest.mark.parametrize("bad", [0, -1])
+def test_a_maximum_below_one_is_refused_naming_the_form(bad: int) -> None:
+    with pytest.raises(InvalidCompositionError, match=rf"form 'ex/one'.*max_instances.*{bad}"):
+        side("ex/one", maximum=bad)
+
+
+def test_the_default_form_is_an_ordinary_form_without_limits() -> None:
+    found = form_set(shop(), audit()).form(RETURN)
+
+    assert found.max_instances is None
+    assert found.exclusive_group is None
+
+
+@pytest.mark.parametrize("limit", [{"max_instances": 1}, {"exclusive_group": "ex/either"}])
+def test_a_limit_on_a_form_that_runs_once_is_refused_naming_the_form(limit: dict[str, Any]) -> None:
+    with pytest.raises(InvalidCompositionError, match="form 'ex/once'.*needs instances"):
+        FormComposition("ex/once", [], exports=[PROFIT], **limit)
+
+
+def test_more_instances_than_the_maximum_are_refused_naming_the_form() -> None:
+    only = side("ex/only", maximum=1)
+
+    with pytest.raises(
+        ValidationError, match=r"form 'ex/only' allows at most 1 instance\(s\), got 2"
+    ):
+        side_set(only).compute(sides(only, 2))
+
+
+def test_instances_up_to_the_maximum_are_computed() -> None:
+    three = side("ex/three", maximum=3)
+
+    assert run_sides((three, 3), forms=(three,)) == D(18)
+    assert run_sides((three, 1), forms=(three,)) == D(6)
+    assert run_sides((three, 0), forms=(three,)) == D(0)
+
+
+def test_the_maximum_applies_to_the_form_that_has_it_only() -> None:
+    one, free = side("ex/one", maximum=1), side("ex/free")
+
+    assert run_sides((one, 1), (free, 5), forms=(one, free)) == D(6)
+
+
+def test_the_form_over_its_maximum_is_the_one_named() -> None:
+    one, free = side("ex/one", maximum=1), side("ex/free")
+
+    with pytest.raises(ValidationError, match="form 'ex/one'"):
+        side_set(one, free).compute(sides(one, 2), sides(free, 9))
+
+
+def test_two_forms_of_a_group_that_both_have_instances_are_refused_naming_both_and_the_group() -> (
+    None
+):
+    first, second = side("ex/first", group="ex/either"), side("ex/second", group="ex/either")
+
+    with pytest.raises(ValidationError) as caught:
+        side_set(first, second).compute(sides(first, 1), sides(second, 2))
+
+    message = str(caught.value)
+    assert "'ex/first'" in message
+    assert "'ex/second'" in message
+    assert "exclusive group 'ex/either'" in message
+
+
+def test_one_form_of_a_group_with_instances_and_the_other_without_is_allowed() -> None:
+    first, second = side("ex/first", group="ex/either"), side("ex/second", group="ex/either")
+
+    assert run_sides((first, 2), (second, 0), forms=(first, second)) == D(12)
+    assert run_sides((first, 0), (second, 2), forms=(first, second)) == D(0)
+
+
+def test_no_instances_of_any_form_of_a_group_is_allowed_and_exports_nothing() -> None:
+    first, second = side("ex/first", group="ex/either"), side("ex/second", group="ex/either")
+
+    found = side_set(first, second).compute(sides(first, 0), sides(second, 0))
+
+    assert grand(found) == D(0)
+    (worksheet,) = found[RETURN]
+    assert values(worksheet, RecordListKind("ex/first.profit", fields=(PROFIT,))) == []
+    assert found["ex/first"] == ()
+    assert found["ex/second"] == ()
+
+
+def test_a_group_of_three_allows_one_form_with_instances() -> None:
+    a, b, c = (side(f"ex/{n}", group="ex/any") for n in "abc")
+
+    assert run_sides((a, 0), (b, 1), (c, 0), forms=(a, b, c)) == D(0)
+    with pytest.raises(ValidationError, match="exclusive group 'ex/any'"):
+        side_set(a, b, c).compute(sides(a, 0), sides(b, 1), sides(c, 1))
+
+
+def test_two_groups_are_independent() -> None:
+    a1, a2 = side("ex/a1", group="ex/left"), side("ex/a2", group="ex/left")
+    b1, b2 = side("ex/b1", group="ex/right"), side("ex/b2", group="ex/right")
+    both = side_set(a1, a2, b1, b2)
+
+    found = both.compute(sides(a1, 1), sides(a2, 0), sides(b1, 0), sides(b2, 1))
+    assert grand(found) == D(6)
+    with pytest.raises(ValidationError, match="exclusive group 'ex/right'"):
+        both.compute(sides(a1, 1), sides(a2, 0), sides(b1, 1), sides(b2, 1))
+
+
+def test_a_form_outside_every_group_is_free_beside_a_group() -> None:
+    first, second = side("ex/first", group="ex/either"), side("ex/second", group="ex/either")
+    free = side("ex/free")
+
+    assert run_sides((first, 1), (second, 0), (free, 3), forms=(first, second, free)) == D(6)
+
+
+def test_a_group_naming_one_form_is_refused_when_the_set_is_built() -> None:
+    with pytest.raises(InvalidCompositionError, match="exclusive group 'ex/alone'.*'ex/shop'"):
+        flat(
+            [RecordTotal(SHOP_PROFIT, GRAND)],
+            inputs=frozenset({SHOPS}),
+            outputs=frozenset({GRAND}),
+            forms=[
+                FormComposition(
+                    "ex/shop",
+                    [Subtract(SALES, COSTS, PROFIT)],
+                    instances=SHOPS,
+                    exports=[PROFIT],
+                    exclusive_group="ex/alone",
+                )
+            ],
+        )
+
+
+def test_the_limits_are_checked_after_the_instances_are_all_given() -> None:
+    only = side("ex/only", maximum=1)
+
+    with pytest.raises(InvalidCompositionError, match="missing input"):
+        side_set(only).compute()

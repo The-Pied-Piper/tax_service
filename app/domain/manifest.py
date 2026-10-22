@@ -60,12 +60,18 @@ class Form:
     `<namespace>/<snake_case>`: the dotted identifier is built by the engine, never written.
     `exports` and `capabilities` (the form's selections) are kept as tuples copied from what was
     given. The inputs of a form are not declared: they are derived from its selections.
+
+    `max_instances` is the most instances a caller may give (an integer of at least 1; `None` for
+    no maximum). `exclusive_group` is an identifier shared by forms of which at most one may have
+    instances (`None` for no group). Both need `instances`.
     """
 
     name: str
     instances: str | None
     exports: tuple[str, ...]
     capabilities: tuple[CapabilitySelection, ...]
+    max_instances: int | None = None
+    exclusive_group: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "exports", tuple(self.exports))
@@ -76,6 +82,21 @@ class Form:
         if not self.exports:
             raise InvalidManifestError("exports must name at least one artifact")
         self.check_exports("exports", self.exports)
+        if self.instances is None and (
+            self.max_instances is not None or self.exclusive_group is not None
+        ):
+            raise InvalidManifestError("max_instances and exclusive_group need instances")
+        if self.max_instances is not None:
+            if not isinstance(self.max_instances, int) or isinstance(self.max_instances, bool):
+                raise InvalidManifestError(
+                    f"max_instances must be an integer, got {type(self.max_instances).__name__}"
+                )
+            if self.max_instances < 1:
+                raise InvalidManifestError(
+                    f"max_instances must be at least 1, got {self.max_instances}"
+                )
+        if self.exclusive_group is not None:
+            self.check_identifier("exclusive_group", self.exclusive_group)
 
     @staticmethod
     def check_exports(field: str, exports: Iterable[str]) -> None:

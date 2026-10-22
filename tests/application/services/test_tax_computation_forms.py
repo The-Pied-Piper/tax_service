@@ -35,6 +35,7 @@ from app.domain.errors import (
     MissingArtifactError,
     NotFoundError,
     UnknownRegistrationError,
+    ValidationError,
 )
 from app.domain.form import FormSet
 from app.domain.jurisdiction import Jurisdiction
@@ -946,3 +947,42 @@ def test_instances_that_are_not_a_record_list_kind_are_refused_naming_the_form()
 
     assert "ex/rental" in str(caught.value)
     assert "ex/gross_rent" in str(caught.value)
+
+
+# --- limits: the manifest's maximum and exclusive group reach the form set ---------------------
+
+
+def test_a_forms_maximum_is_enforced_on_the_instances_given() -> None:
+    manifest = rental_manifest(replace(RENTAL, max_instances=1))
+
+    with pytest.raises(ValidationError, match=r"form 'ex/rental' allows at most 1 instance\(s\)"):
+        service(manifest).compute(EX_ON, 2025, TWO_RENTALS)
+
+
+def test_a_form_within_its_maximum_computes() -> None:
+    manifest = rental_manifest(replace(RENTAL, max_instances=2))
+
+    worksheet = service(manifest).compute(EX_ON, 2025, TWO_RENTALS)["ex-on/return"][0]
+
+    assert worksheet.get(TOTAL_NET_INCOME).value == D("14000")
+
+
+def test_two_forms_of_a_group_with_instances_are_refused_naming_both() -> None:
+    manifest = replace(
+        both_manifest(),
+        forms=(
+            replace(RENTAL, exclusive_group="ex/either"),
+            replace(SCALING, exclusive_group="ex/either"),
+        ),
+    )
+    bases = Artifact(BASES, RecordList(BASES.fields, [{BASE: D(1)}]))
+
+    with pytest.raises(ValidationError, match=r"'ex/rental'.*'ex/scaling'.*'ex/either'"):
+        service(manifest).compute(EX_ON, 2025, TWO_RENTALS, bases)
+
+
+def test_a_group_naming_one_form_is_refused_when_the_form_set_is_built() -> None:
+    manifest = rental_manifest(replace(RENTAL, exclusive_group="ex/alone"))
+
+    with pytest.raises(InvalidCompositionError, match="exclusive group 'ex/alone'.*'ex/rental'"):
+        service(manifest).compose(EX_ON, 2025)

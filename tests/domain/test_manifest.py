@@ -208,12 +208,14 @@ def form(
     instances: str | None = "ex/rentals",
     exports: Any = ("ex/net_income", "ex/unit_list"),
     capabilities: Any = None,
+    **limits: Any,
 ) -> Form:
     return Form(
         name=name,
         instances=instances,
         exports=exports,
         capabilities=(selection(),) if capabilities is None else capabilities,
+        **limits,
     )
 
 
@@ -232,6 +234,8 @@ def test_form_fields_in_order() -> None:
         "instances",
         "exports",
         "capabilities",
+        "max_instances",
+        "exclusive_group",
     ]
 
 
@@ -302,6 +306,48 @@ def test_two_exports_with_the_same_local_id_are_refused(exports: tuple[str, ...]
     # Both would be produced as `ex/rental.net_income`.
     with pytest.raises(InvalidManifestError, match=r"net_income.*more than once"):
         form(exports=exports)
+
+
+# A form may limit its instances: `max_instances` (at least 1; `None` for no maximum) and an
+# `exclusive_group` identifier `<namespace>/<snake_case>` (`None` for no group).
+
+
+def test_a_form_has_no_maximum_and_no_group_by_default() -> None:
+    assert form().max_instances is None
+    assert form().exclusive_group is None
+
+
+def test_a_form_holds_its_maximum_and_group() -> None:
+    found = form(max_instances=1, exclusive_group="ex/either")
+
+    assert found.max_instances == 1
+    assert found.exclusive_group == "ex/either"
+    assert found != form()
+    assert hash(found) == hash(form(max_instances=1, exclusive_group="ex/either"))
+
+
+@pytest.mark.parametrize("bad", [0, -1])
+def test_a_maximum_below_one_is_refused(bad: int) -> None:
+    with pytest.raises(InvalidManifestError, match=rf"max_instances must be at least 1, got {bad}"):
+        form(max_instances=bad)
+
+
+@pytest.mark.parametrize("bad", [1.5, "1", True])
+def test_a_maximum_that_is_not_an_integer_is_refused(bad: object) -> None:
+    with pytest.raises(InvalidManifestError, match="max_instances must be an integer"):
+        form(max_instances=bad)
+
+
+@pytest.mark.parametrize("bad", ["", "either", "ex/Either", "ex/a.b", "ex/a/b", "ex/"])
+def test_a_group_is_a_plain_namespaced_identifier(bad: str) -> None:
+    with pytest.raises(InvalidManifestError, match="exclusive_group"):
+        form(exclusive_group=bad)
+
+
+@pytest.mark.parametrize("limit", [{"max_instances": 1}, {"exclusive_group": "ex/either"}])
+def test_a_limit_needs_instances(limit: dict[str, Any]) -> None:
+    with pytest.raises(InvalidManifestError, match="need instances"):
+        form(instances=None, **limit)
 
 
 def test_manifest_fields_end_with_forms() -> None:
