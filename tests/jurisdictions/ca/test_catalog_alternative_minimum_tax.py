@@ -15,6 +15,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_APPLICABLE_RATE_AMOUNT,
     AMT_BASIC_EXEMPTION,
+    AMT_BASIC_FEDERAL_TAX,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
@@ -22,6 +23,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_CLASS_43_1_INCOME,
     AMT_COMMISSION_EMPLOYMENT_EXPENSES,
     AMT_CREDITS_ADJUSTMENTS_TOTAL,
+    AMT_CREDITS_TOTAL,
     AMT_DEDUCTIONS_TOTAL,
     AMT_DEFERRED_PROFIT_SHARING_PLAN_DEDUCTION,
     AMT_DIVIDENDS_ADJUSTMENTS_TOTAL,
@@ -47,7 +49,12 @@ from app.jurisdictions.ca.catalog import (
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
     AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
+    AMT_MAXIMUM_CARRYOVER_APPLIED,
+    AMT_MAXIMUM_CARRYOVER_CLAIM,
     AMT_MINIMUM_AMOUNT,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+    AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
+    AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_MOVING_EXPENSES_DEDUCTION,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
@@ -87,9 +94,13 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTIONS_D1_TOTAL,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
+    AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
     AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
     AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
+    AMT_TAX_PAYABLE_AFTER_CREDITS,
+    AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
+    AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
     AMT_TAX_SHELTER_ADJUSTMENTS,
     AMT_TAX_SHELTER_DEDUCTIBLE_AMOUNTS,
     AMT_TAX_SHELTER_LOSSES,
@@ -201,6 +212,22 @@ NON_DEDUCTIBLE_AND_RATE_KINDS: tuple[ArtifactKind[Decimal], ...] = (
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
     AMT_APPLICABLE_RATE_AMOUNT,
+)
+
+# Part 2 lines 1 to 7 and Part 8 lines 1 to 12: the basic federal tax and the minimum tax
+# carryover, with the carryover claim (line 12) and the cap on it.
+PART_2_AND_8_KINDS: tuple[ArtifactKind[Decimal], ...] = (
+    AMT_CREDITS_TOTAL,
+    AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
+    AMT_BASIC_FEDERAL_TAX,
+    AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
+    AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
+    AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
+    AMT_TAX_PAYABLE_AFTER_CREDITS,
+    AMT_MAXIMUM_CARRYOVER_APPLIED,
+    AMT_MAXIMUM_CARRYOVER_CLAIM,
+    AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
 )
 
 
@@ -458,6 +485,32 @@ def test_the_non_deductible_expenses_and_applicable_rate_kinds_are_the_registere
     assert registry.get("ca/amt_applicable_rate_amount") is AMT_APPLICABLE_RATE_AMOUNT
 
 
+def test_the_part_2_and_part_8_kinds_are_the_registered_ones(
+    registry: ArtifactRegistry,
+) -> None:
+    assert registry.get("ca/amt_credits_total") is AMT_CREDITS_TOTAL
+    assert (
+        registry.get("ca/amt_tax_payable_before_minimum_tax_carryover")
+        is AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER
+    )
+    assert registry.get("ca/amt_basic_federal_tax") is AMT_BASIC_FEDERAL_TAX
+    assert (
+        registry.get("ca/amt_minimum_tax_carryover_from_previous_years")
+        is AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS
+    )
+    assert (
+        registry.get("ca/amt_tax_payable_with_itc_recapture") is AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE
+    )
+    assert (
+        registry.get("ca/amt_split_income_and_credits_total") is AMT_SPLIT_INCOME_AND_CREDITS_TOTAL
+    )
+    assert registry.get("ca/amt_tax_payable_after_credits") is AMT_TAX_PAYABLE_AFTER_CREDITS
+    assert registry.get("ca/amt_maximum_carryover_applied") is AMT_MAXIMUM_CARRYOVER_APPLIED
+    assert registry.get("ca/amt_maximum_carryover_claim") is AMT_MAXIMUM_CARRYOVER_CLAIM
+    assert registry.get("ca/amt_minimum_tax_carryover_claim") is AMT_MINIMUM_TAX_CARRYOVER_CLAIM
+    assert registry.get("ca/amt_minimum_tax_carryover_applied") is AMT_MINIMUM_TAX_CARRYOVER_APPLIED
+
+
 def test_the_alternative_minimum_tax_kinds_are_money() -> None:
     for kind in (
         PART_1_KINDS
@@ -465,6 +518,7 @@ def test_the_alternative_minimum_tax_kinds_are_money() -> None:
         + SECURITY_OPTIONS_KINDS
         + LOSSES_AND_DEDUCTIONS_KINDS
         + NON_DEDUCTIBLE_AND_RATE_KINDS
+        + PART_2_AND_8_KINDS
     ):
         assert kind.value_type is Decimal, kind.identifier
 
@@ -476,5 +530,6 @@ def test_the_bracketed_lines_are_signed_and_the_rest_are_not_below_zero() -> Non
         + SECURITY_OPTIONS_KINDS
         + LOSSES_AND_DEDUCTIONS_KINDS
         + NON_DEDUCTIBLE_AND_RATE_KINDS
+        + PART_2_AND_8_KINDS
     ):
         assert kind.non_negative is (kind.identifier not in SIGNED), kind.identifier

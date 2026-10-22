@@ -26,6 +26,9 @@ from app.jurisdictions.ca.catalog import (
     AGE_MAXIMUM,
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_BASIC_FEDERAL_TAX,
+    AMT_MAXIMUM_CARRYOVER_CLAIM,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_PERSONAL_AMOUNT,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
@@ -490,10 +493,13 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 1220
-    assert len(order) == 1220
+    assert len(order) == 1229
+    assert len(order) == 1229
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
+    assert position[AMT_MAXIMUM_CARRYOVER_CLAIM] < position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED]
+    assert position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED] < position[CREDITS_AGAINST_BASIC_FEDERAL_TAX]
+    assert position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED] < position[AMT_BASIC_FEDERAL_TAX]
     assert (
         position[INVESTMENT_INCOME_BEFORE_PRIOR_YEARS]
         < position[INTEREST_AND_OTHER_INVESTMENT_INCOME]

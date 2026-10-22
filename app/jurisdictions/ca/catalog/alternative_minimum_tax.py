@@ -6,7 +6,8 @@ publicly listed securities, the security options deductions, the losses of other
 deductions, the non-deductible expenses, the applicable rate, the dividends, the lifetime capital
 gains exemption, the capital gains deductions, the basic exemption, the federal tax rate and the
 credits. Part 9 of the form: the resource
-property and flow-through shares.
+property and flow-through shares. Part 2 of the form: the basic federal tax. Part 8 of the form:
+the minimum tax carryover applied on line 40427.
 """
 
 from __future__ import annotations
@@ -539,3 +540,71 @@ added."""
 AMT_MINIMUM_AMOUNT = CATALOG.declare("amt_minimum_amount", Decimal, non_negative=True)
 """Minimum amount, Form T691 Part 1 line 103 "Line 97 minus line 102 (if negative, enter "0")":
 line 97 less line 102, not below zero."""
+
+
+AMT_CREDITS_TOTAL = CATALOG.declare("amt_credits_total", Decimal, non_negative=True)
+"""Total of the credits, Form T691 Part 2 line 4 "Line 2 plus line 3": line 2 "Total non-refundable
+tax credits (line 35000 of your return)" and line 3 "Dividend tax credit (line 40425 of your
+return)", in line order."""
+
+AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER = CATALOG.declare(
+    "amt_tax_payable_before_minimum_tax_carryover", Decimal
+)
+"""Tax payable before minimum tax carryover, Form T691 Part 2 line 5 "Line 1 minus line 4" "Tax
+payable before minimum tax carryover": line 1 "Enter the amount from line 40400 of your return"
+less line 4. The form prints no floor, so the difference may be negative."""
+
+AMT_BASIC_FEDERAL_TAX = CATALOG.declare("amt_basic_federal_tax", Decimal)
+"""Basic federal tax, Form T691 Part 2 line 7 "Line 5 minus line 6" "Basic federal tax": line 5
+less line 6, the minimum tax carryover applied in 2025 from line 12 of Part 8. The form prints no
+floor, so the difference may be negative."""
+
+AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS = CATALOG.declare(
+    "amt_minimum_tax_carryover_from_previous_years", Decimal, non_negative=True
+)
+"""Minimum tax carryover from previous years, Form T691 Part 8 line 1 "Minimum tax carryover from
+previous years (2018 to 2024)": a starting amount, the caller's figure from earlier returns."""
+
+AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE = CATALOG.declare("amt_tax_payable_with_itc_recapture", Decimal)
+"""Tax payable with the investment tax credit recapture, Form T691 Part 8 line 4 "Line 2 plus line
+3": line 2 "Tax payable before minimum tax carryover from line 5 of Part 2" and line 3 "Recapture of
+investment tax credit from line 3 of Part C of Form T2038(IND)" (`itc_recapture`), in line order."""
+
+AMT_SPLIT_INCOME_AND_CREDITS_TOTAL = CATALOG.declare(
+    "amt_split_income_and_credits_total", Decimal, non_negative=True
+)
+"""Split income tax and credits, Form T691 Part 8 line 8 "Add lines 5 to 7": line 5 "Federal tax on
+split income from line 8 of Form T1206", line 6 "Federal logging tax credit" (the caller's amount,
+as on Part 1 line 100) and line 7 "Amount from line 41600 of your return", in line order."""
+
+AMT_TAX_PAYABLE_AFTER_CREDITS = CATALOG.declare("amt_tax_payable_after_credits", Decimal)
+"""Tax payable after credits, Form T691 Part 8 line 9 "Line 4 minus line 8": line 4 less line 8.
+The form prints no floor, so the difference may be negative."""
+
+AMT_MAXIMUM_CARRYOVER_APPLIED = CATALOG.declare(
+    "amt_maximum_carryover_applied", Decimal, non_negative=True
+)
+"""Maximum carryover that can be applied in 2025, Form T691 Part 8 line 11 "Maximum carryover that
+can be applied in 2025: line 9 minus line 10 (if negative, enter "0")": line 9 less line 10, the
+minimum amount from line 103 of Part 1, not below zero."""
+
+AMT_MAXIMUM_CARRYOVER_CLAIM = CATALOG.declare(
+    "amt_maximum_carryover_claim", Decimal, non_negative=True
+)
+"""Largest claim on the minimum tax carryover, Form T691 Part 8 line 12 "Claim an amount that is not
+more than line 1 or 11, whichever is less.": the lesser of line 1 and line 11. The form does not
+print it; it is the bound the claim is checked against."""
+
+AMT_MINIMUM_TAX_CARRYOVER_CLAIM = CATALOG.declare(
+    "amt_minimum_tax_carryover_claim", Decimal, non_negative=True
+)
+"""Minimum tax carryover claimed, Form T691 Part 8 line 12 "Claim an amount that is not more than
+line 1 or 11, whichever is less.": the amount the filer chooses to claim, an input, which may not
+exceed the lesser of lines 1 and 11."""
+
+AMT_MINIMUM_TAX_CARRYOVER_APPLIED = CATALOG.declare(
+    "amt_minimum_tax_carryover_applied", Decimal, non_negative=True
+)
+"""Minimum tax carryover applied in 2025, Form T691 Part 8 line 12 "Enter this amount on line 40427
+of your return.": the claim, when it is not above the largest claim. Part 2 line 6 "Minimum tax
+carryover applied in 2025 from line 12 of Part 8" and T1 line 124 (line 40427) read it."""

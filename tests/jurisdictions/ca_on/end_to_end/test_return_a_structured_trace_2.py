@@ -35,6 +35,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_CLASS_43_1_INCOME,
     AMT_COMMISSION_EMPLOYMENT_EXPENSES,
     AMT_CREDITS_ADJUSTMENTS_TOTAL,
+    AMT_CREDITS_TOTAL,
     AMT_DEDUCTIONS_TOTAL,
     AMT_DEFERRED_PROFIT_SHARING_PLAN_DEDUCTION,
     AMT_DIVIDENDS_ADJUSTMENTS_TOTAL,
@@ -57,6 +58,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
     AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_MOVING_EXPENSES_DEDUCTION,
     AMT_NET_CAPITAL_LOSSES_DIFFERENCE,
@@ -85,9 +87,12 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTIONS_D1_TOTAL,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
+    AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
     AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
     AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
+    AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
+    AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
     AMT_TAX_SHELTER_ADJUSTMENTS,
     AMT_TAX_SHELTER_DEDUCTIBLE_AMOUNTS,
     AMT_TAX_SHELTER_LOSSES,
@@ -1023,6 +1028,35 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Form T691 Part 2 line 4 "Line 2 plus line 3": the non-refundable tax credits of line 35000
+        # (3194.87) and the dividend tax credit of line 40425 (0).
+        AMT_CREDITS_TOTAL: SumLine(
+            AMT_CREDITS_TOTAL,
+            ((NON_REFUNDABLE_TAX_CREDITS, D("3194.87")), (DIVIDEND_TAX_CREDIT, D("0"))),
+            D("3194.87"),
+        ),
+        # Form T691 Part 8 line 4 "Line 2 plus line 3": line 2 "Tax payable before minimum tax
+        # carryover from line 5 of Part 2" (16951.38) and line 3, the recapture of investment tax
+        # credit (0).
+        AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE: SumLine(
+            AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
+            (
+                (AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER, D("16951.38")),
+                (ITC_RECAPTURE, D("0")),
+            ),
+            D("16951.38"),
+        ),
+        # Form T691 Part 8 line 8 "Add lines 5 to 7": the federal tax on split income (0), the
+        # federal logging tax credit (0) and line 41600 (0) for Return A.
+        AMT_SPLIT_INCOME_AND_CREDITS_TOTAL: SumLine(
+            AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
+            (
+                (FEDERAL_TAX_ON_SPLIT_INCOME, D("0")),
+                (AMT_FEDERAL_LOGGING_TAX_CREDIT, D("0")),
+                (CREDITS_AGAINST_FEDERAL_TAX, D("0")),
+            ),
+            D("0"),
+        ),
         # Schedule 8 Part 5 line 72 "Line 70 plus line 71": 0.00 + 0.00 for Return A.
         CPP_PART_5_LINE_72: SumLine(
             output=CPP_PART_5_LINE_72,
@@ -1844,9 +1878,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("0"),
         ),
+        # T1 line 125 "Add lines 122 to 124.": line 122 (35000), line 123 (40425) and line 124
+        # (40427), the minimum tax carryover applied on Form T691 Part 8 line 12, 0 for Return A.
         CREDITS_AGAINST_BASIC_FEDERAL_TAX: SumLine(
             CREDITS_AGAINST_BASIC_FEDERAL_TAX,
-            ((NON_REFUNDABLE_TAX_CREDITS, D("3194.87")), (DIVIDEND_TAX_CREDIT, D("0"))),
+            (
+                (NON_REFUNDABLE_TAX_CREDITS, D("3194.87")),
+                (DIVIDEND_TAX_CREDIT, D("0")),
+                (AMT_MINIMUM_TAX_CARRYOVER_APPLIED, D("0")),
+            ),
             D("3194.87"),
         ),
         # T1 line 15000 "Line 28 plus line 32 Total income": the income lines, in line order.

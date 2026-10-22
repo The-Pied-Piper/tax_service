@@ -63,7 +63,12 @@ from app.jurisdictions.ca.catalog import (
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
     AMT_GROSS_MINIMUM_AMOUNT,
+    AMT_MAXIMUM_CARRYOVER_APPLIED,
+    AMT_MAXIMUM_CARRYOVER_CLAIM,
     AMT_MINIMUM_AMOUNT,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+    AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
+    AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
@@ -74,6 +79,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
+    AMT_TAX_PAYABLE_AFTER_CREDITS,
     ANNUAL_GAINS_LIMIT_2025,
     ANNUAL_GAINS_LINE_3_AT_INCLUSION_RATE,
     ANNUAL_GAINS_LINE_5,
@@ -880,6 +886,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     assert lesser == {
+        # Form T691 Part 8 line 12 "Claim an amount that is not more than line 1 or 11, whichever is
+        # less.": line 1 (0) and line 11 (16951.38), the lesser of them, 0.
+        AMT_MAXIMUM_CARRYOVER_CLAIM: LesserOfLine(
+            output=AMT_MAXIMUM_CARRYOVER_CLAIM,
+            parts=(
+                (AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS, D("0")),
+                (AMT_MAXIMUM_CARRYOVER_APPLIED, D("16951.38")),
+            ),
+            result=D("0"),
+        ),
         # Form T2209 line 13 "should not be more than" line 42900: the line 3 total, 0 with no
         # country, against line 42900, 16951.38.
         # ON428 line 82: no countries, so the credit before the limit is 0.
@@ -1824,6 +1840,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert at_most == {
+        # Form T691 Part 8 line 12, the claim (0, the caller's election) at most the cap (0): 0.
+        AMT_MINIMUM_TAX_CARRYOVER_APPLIED: AtMostLine(
+            output=AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+            amount_kind=AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
+            amount_value=D("0"),
+            bound=AMT_MAXIMUM_CARRYOVER_CLAIM,
+            bound_value=D("0"),
+        ),
         RRSP_DEDUCTION: AtMostLine(
             output=RRSP_DEDUCTION,
             amount_kind=RRSP_AMOUNT_DEDUCTED,
@@ -2128,6 +2152,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Form T691 Part 8 line 11 "Maximum carryover that can be applied in 2025: line 9 minus line
+        # 10 (if negative, enter "0")": 16951.38 less the minimum amount of 0, 16951.38.
+        AMT_MAXIMUM_CARRYOVER_APPLIED: SubtractedNotBelowZeroLine(
+            output=AMT_MAXIMUM_CARRYOVER_APPLIED,
+            minuend=AMT_TAX_PAYABLE_AFTER_CREDITS,
+            minuend_amount=D("16951.38"),
+            subtrahend=AMT_MINIMUM_AMOUNT,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
         # Schedule 8 Part 5 line 73 "Enter the amount from line 24 of Part 3 if positive. If
         # not, enter "0"": line 24 is 0.00 for Return A.
         CPP_PART_5_LINE_73: SubtractedNotBelowZeroLine(

@@ -83,11 +83,13 @@ from app.jurisdictions.ca.catalog import (
     AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_APPLICABLE_RATE_AMOUNT,
     AMT_BASIC_EXEMPTION,
+    AMT_BASIC_FEDERAL_TAX,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CAPITAL_GAINS_DIFFERENCE,
     AMT_CREDITS_ADJUSTMENTS_TOTAL,
+    AMT_CREDITS_TOTAL,
     AMT_DEDUCTIONS_TOTAL,
     AMT_DIVIDENDS_ADJUSTMENTS_TOTAL,
     AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
@@ -99,7 +101,12 @@ from app.jurisdictions.ca.catalog import (
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
     AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
+    AMT_MAXIMUM_CARRYOVER_APPLIED,
+    AMT_MAXIMUM_CARRYOVER_CLAIM,
     AMT_MINIMUM_AMOUNT,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+    AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
+    AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
@@ -122,6 +129,10 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTIONS_D1_TOTAL,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
+    AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
+    AMT_TAX_PAYABLE_AFTER_CREDITS,
+    AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
+    AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
     AMT_TAX_SHELTER_ADJUSTMENTS,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
@@ -2162,3 +2173,24 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(CARE_ADJUSTED_INCOME) is not worksheet.producer_of(
         CARE_FAMILY_ADJUSTED_INCOME
     )
+
+
+def test_the_part_2_and_part_8_amounts_are_produced_by_their_capabilities() -> None:
+    worksheet = return_a()
+
+    # Part 2 line 4 "Line 2 plus line 3" and Part 8 lines 4 and 8 are sums; line 5, line 7 and
+    # line 9 are differences, and line 11 is the difference not below zero.
+    assert isinstance(worksheet.producer_of(AMT_CREDITS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_BASIC_FEDERAL_TAX), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE), Sum)
+    assert isinstance(worksheet.producer_of(AMT_SPLIT_INCOME_AND_CREDITS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_TAX_PAYABLE_AFTER_CREDITS), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_MAXIMUM_CARRYOVER_APPLIED), SubtractNotBelowZero)
+    # Line 12: the cap is the lesser of line 1 and line 11, and the claim is at most the cap.
+    assert isinstance(worksheet.producer_of(AMT_MAXIMUM_CARRYOVER_CLAIM), LesserOf)
+    assert isinstance(worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_APPLIED), AtMost)
+    # Line 1 and the claim on line 12 are the caller's amounts, and T1 line 125 sums line 124.
+    assert worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS) is None
+    assert worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_CLAIM) is None
+    assert isinstance(worksheet.producer_of(CREDITS_AGAINST_BASIC_FEDERAL_TAX), Sum)

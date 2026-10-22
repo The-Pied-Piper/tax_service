@@ -575,8 +575,9 @@ Basic federal tax": line 121 less the credits against it, not below zero.
 
 Line 121 (40400, `federal_tax_with_split_income`) is "Line 119 plus line 120", line 119 "Enter the
 amount from line 76." and line 120 (40424, `federal_tax_on_split_income`) the tax on split income;
-line 125 is "Add lines 122 to 124.", line 122 "Amount from line 35000" and line 123 "Federal
-dividend tax credit". Not modelled: line 124 (minimum tax carryover).
+line 125 is "Add lines 122 to 124.", line 122 "Amount from line 35000", line 123 "Federal
+dividend tax credit" and line 124 (40427), the minimum tax carryover applied on Form T691 Part 8
+line 12.
 """
 
 ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT = CATALOG.declare(

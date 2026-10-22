@@ -439,3 +439,84 @@ capabilities:
       less: ca/amt_credits_adjustments_total
     produces:
       output: ca/amt_minimum_amount
+  # Part 2 line 4 "Line 2 plus line 3": line 2 "Total non-refundable tax credits (line 35000 of
+  # your return)" and line 3 "Dividend tax credit (line 40425 of your return)", in line order.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/non_refundable_tax_credits
+        - ca/dividend_tax_credit
+    produces:
+      output: ca/amt_credits_total
+  # Part 2 line 5 "Line 1 minus line 4" "Tax payable before minimum tax carryover": line 1 "Enter
+  # the amount from line 40400 of your return", the federal tax with split income, less line 4.
+  # The form prints no floor, so the difference may be negative.
+  - name: core/subtract
+    consumes:
+      amount: ca/federal_tax_with_split_income
+      less: ca/amt_credits_total
+    produces:
+      output: ca/amt_tax_payable_before_minimum_tax_carryover
+  # Part 2 line 7 "Line 5 minus line 6" "Basic federal tax": line 6 "Minimum tax carryover applied
+  # in 2025 from line 12 of Part 8", the claim of Part 8 line 12, less line 5.
+  - name: core/subtract
+    consumes:
+      amount: ca/amt_tax_payable_before_minimum_tax_carryover
+      less: ca/amt_minimum_tax_carryover_applied
+    produces:
+      output: ca/amt_basic_federal_tax
+  # Part 8 line 4 "Line 2 plus line 3": line 2 "Tax payable before minimum tax carryover from line
+  # 5 of Part 2" and line 3 "Recapture of investment tax credit from line 3 of Part C of Form
+  # T2038(IND)", in line order.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/amt_tax_payable_before_minimum_tax_carryover
+        - ca/itc_recapture
+    produces:
+      output: ca/amt_tax_payable_with_itc_recapture
+  # Part 8 line 8 "Add lines 5 to 7": line 5 "Federal tax on split income from line 8 of Form
+  # T1206", line 6 "Federal logging tax credit" (the caller's amount, as on Part 1 line 100) and
+  # line 7 "Amount from line 41600 of your return", in line order.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/federal_tax_on_split_income
+        - ca/amt_federal_logging_tax_credit
+        - ca/credits_against_federal_tax
+    produces:
+      output: ca/amt_split_income_and_credits_total
+  # Part 8 line 9 "Line 4 minus line 8": the form prints no floor, so the difference may be
+  # negative.
+  - name: core/subtract
+    consumes:
+      amount: ca/amt_tax_payable_with_itc_recapture
+      less: ca/amt_split_income_and_credits_total
+    produces:
+      output: ca/amt_tax_payable_after_credits
+  # Part 8 line 11 "Maximum carryover that can be applied in 2025: line 9 minus line 10 (if
+  # negative, enter "0")", line 10 "Minimum amount from line 103 of Part 1".
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/amt_tax_payable_after_credits
+      less: ca/amt_minimum_amount
+    produces:
+      output: ca/amt_maximum_carryover_applied
+  # Part 8 line 12 "Claim an amount that is not more than line 1 or 11, whichever is less.": the
+  # cap on the claim, the lesser of line 1 "Minimum tax carryover from previous years (2018 to
+  # 2024)" and line 11. The form does not print it; it is the bound of the claim below.
+  - name: core/lesser_of
+    consumes:
+      amounts:
+        - ca/amt_minimum_tax_carryover_from_previous_years
+        - ca/amt_maximum_carryover_applied
+    produces:
+      output: ca/amt_maximum_carryover_claim
+  # Part 8 line 12 "Enter this amount on line 40427 of your return.": the claim, an election the
+  # filer makes, which may not be more than the cap; a claim above it is refused, not capped.
+  - name: core/at_most
+    consumes:
+      amount: ca/amt_minimum_tax_carryover_claim
+      bound: ca/amt_maximum_carryover_claim
+    produces:
+      output: ca/amt_minimum_tax_carryover_applied

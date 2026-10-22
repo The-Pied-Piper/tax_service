@@ -402,3 +402,4 @@ expected:
   ca/cpp_contributions_difference: "0.00"
   ca/amt_adjusted_income_with_gains: "0.00"
   ca/amt_minimum_amount: "0"
+  ca/amt_basic_federal_tax: "417.83"
