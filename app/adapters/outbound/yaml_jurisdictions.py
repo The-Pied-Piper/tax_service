@@ -7,8 +7,8 @@ merged from its parts: every `*.yaml` / `*.yml` file inside it (recursively), re
 order. A part may carry any of the six manifest keys or a `form:` key; the scalar keys
 (`jurisdiction`, `version`, `valid_from_tax_year`) must each be in exactly one part, and the lists
 (`inputs`, `outputs`, `capabilities`) are concatenated in part order, an identifier listed in two
-parts of `inputs` or of `outputs` being rejected. The merged mapping then goes through the same parse as a whole file. A
-manifest naming another jurisdiction is rejected.
+parts of `inputs` or of `outputs` being rejected. The merged mapping then goes through the same
+parse as a whole file. A manifest naming another jurisdiction is rejected.
 A part with a `form:` key (`name`, and `instances` with `exports`, all identifiers
 `<namespace>/<snake_case>`) gives all its `capabilities` to that form, not to the return; a part
 without one is the return's. A form may span parts that carry the same `form.name`, in part order:
