@@ -6,9 +6,12 @@ from decimal import Decimal
 
 from app.domain.artifact import ArtifactKind, ArtifactRegistry
 from app.jurisdictions.ca.catalog import (
+    AMT_ADJUSTED_INCOME_WITH_GAINS,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
     AMT_APPLICABLE_RATE_AMOUNT,
+    AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
+    AMT_CAPITAL_GAINS_DIFFERENCE,
     AMT_CLASS_43_1_INCOME,
     AMT_COMMISSION_EMPLOYMENT_EXPENSES,
     AMT_DEDUCTIONS_TOTAL,
@@ -93,6 +96,9 @@ PART_1_KINDS: tuple[ArtifactKind[Decimal], ...] = (
     AMT_PUBLICLY_LISTED_GIFTS_T1170_LINE_68231,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
+    AMT_CAPITAL_GAINS_DIFFERENCE,
+    AMT_CAPITAL_GAINS_ADDED,
+    AMT_ADJUSTED_INCOME_WITH_GAINS,
 )
 
 PART_9_KINDS: tuple[ArtifactKind[Decimal], ...] = (
@@ -229,6 +235,14 @@ def test_the_part_1_capital_gains_and_gifts_kinds_are_the_registered_ones(
         registry.get("ca/amt_publicly_listed_gifts_adjustment")
         is AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT
     )
+
+
+def test_the_part_1_lines_22_23_and_27_kinds_are_the_registered_ones(
+    registry: ArtifactRegistry,
+) -> None:
+    assert registry.get("ca/amt_capital_gains_difference") is AMT_CAPITAL_GAINS_DIFFERENCE
+    assert registry.get("ca/amt_capital_gains_added") is AMT_CAPITAL_GAINS_ADDED
+    assert registry.get("ca/amt_adjusted_income_with_gains") is AMT_ADJUSTED_INCOME_WITH_GAINS
 
 
 def test_the_security_options_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:

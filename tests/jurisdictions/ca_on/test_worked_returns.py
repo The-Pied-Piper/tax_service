@@ -484,6 +484,7 @@ expected:
   ca/net_income: "9935.00"
   ca/amt_part_1_subtotal: "9935.00"
   ca/amt_applicable_rate_amount: "32.50"
+  ca/amt_adjusted_income_with_gains: "9935.00"
   ca/net_income_before_adjustments: "9935.00"
   ca/fhsa_unused_contributions_carried_forward: "0"
   ca/other_payments_limit_income: "9935.00"

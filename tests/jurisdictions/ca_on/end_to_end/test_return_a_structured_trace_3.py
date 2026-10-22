@@ -18,6 +18,7 @@ from app.domain.trace import (
     FractionAppliedLine,
     MultipleOverLine,
     PerUnitAmountLine,
+    SignChosenDifferenceLine,
     SubtractedLine,
     TaperedAmountLine,
     ThresholdGateLine,
@@ -44,7 +45,9 @@ from app.jurisdictions.ca.catalog import (
     AGE_MAXIMUM,
     AGED_18_OR_OLDER_AT_END_OF_2025,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
+    AMT_CAPITAL_GAINS_DIFFERENCE,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
@@ -515,6 +518,7 @@ from app.jurisdictions.ca.catalog import (
     T657_PART_2_EXCLUDED_F,
     T657_PART_2_EXCLUDED_G,
     T657_PART_2_EXCLUDED_H,
+    TAXABLE_CAPITAL_GAINS,
     TOP_UP_THRESHOLD,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOTAL_CREDITS,
@@ -841,6 +845,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=AMT_CAPITAL_GAINS_ADJUSTMENTS,
             subtrahend_amount=D("0"),
             result=D("20000"),
+        ),
+        # Form T691 Part 1 line 22 "Line 20 minus line 21": line 20 is 20000 and line 21 is the
+        # taxable capital gains of line 12700, 10000.
+        AMT_CAPITAL_GAINS_DIFFERENCE: SubtractedLine(
+            output=AMT_CAPITAL_GAINS_DIFFERENCE,
+            minuend=AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
+            minuend_amount=D("20000"),
+            subtrahend=TAXABLE_CAPITAL_GAINS,
+            subtrahend_amount=D("10000"),
+            result=D("10000"),
         ),
         # Form T691 Part 1 line 26 "Line 24 minus line 25": Return A has no gifts of publicly
         # listed securities.
@@ -2985,3 +2999,21 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             result=D("0.00"),
         ),
     }
+
+
+def test_the_trace_records_the_capital_gains_picked_by_the_sign_of_line_20() -> None:
+    chosen = [line for line in return_a().trace if isinstance(line, SignChosenDifferenceLine)]
+    # Form T691 Part 1 line 23 "If line 20 is positive, enter the amount from line 22.": Return
+    # A's line 20 is 20000 (positive), so line 23 is line 22, 10000.
+    assert chosen == [
+        SignChosenDifferenceLine(
+            output=AMT_CAPITAL_GAINS_ADDED,
+            sign=AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
+            sign_amount=D("20000"),
+            reference=TAXABLE_CAPITAL_GAINS,
+            reference_amount=D("10000"),
+            difference=AMT_CAPITAL_GAINS_DIFFERENCE,
+            difference_amount=D("10000"),
+            result=D("10000"),
+        )
+    ]
