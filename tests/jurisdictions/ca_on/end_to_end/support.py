@@ -34,6 +34,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_LIMITED_PARTNER_CARRYING_CHARGES,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_ELECTION,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION,
+    AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
+    AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
     AMT_MOVING_EXPENSES_DEDUCTION,
     AMT_NET_CAPITAL_LOSSES_DIFFERENCE,
     AMT_NON_CAPITAL_LOSSES_DIFFERENCE,
@@ -1963,6 +1965,8 @@ def compute(
     cpp_t4_second_additional_contributions: str | None = None,
     amt_federal_logging_tax_credit: str = "0",
     amt_section_119_former_resident_credit: str = "0",
+    amt_minimum_tax_carryover_from_previous_years: str = "0",
+    amt_minimum_tax_carryover_claim: str = "0",
 ) -> Worksheet:
     # The T4 box 16 and 16A amounts default to the required ones for the employment income given,
     # so line 24 is 0 unless a test gives its own.
@@ -2671,6 +2675,11 @@ def compute(
             AMT_SECTION_119_FORMER_RESIDENT_CREDIT,
             D(amt_section_119_former_resident_credit),
         ),
+        Artifact(
+            AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
+            D(amt_minimum_tax_carryover_from_previous_years),
+        ),
+        Artifact(AMT_MINIMUM_TAX_CARRYOVER_CLAIM, D(amt_minimum_tax_carryover_claim)),
     )
 
 

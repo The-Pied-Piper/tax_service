@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from app.domain.capabilities.apply_fraction import ApplyFraction
 from app.domain.capabilities.apply_rate import ApplyRate
+from app.domain.capabilities.at_most import AtMost
 from app.domain.capabilities.credit_amount import CreditAmount
+from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
@@ -20,6 +22,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_APPLICABLE_RATE_AMOUNT,
     AMT_BASIC_EXEMPTION,
+    AMT_BASIC_FEDERAL_TAX,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
@@ -27,6 +30,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_CLASS_43_1_INCOME,
     AMT_COMMISSION_EMPLOYMENT_EXPENSES,
     AMT_CREDITS_ADJUSTMENTS_TOTAL,
+    AMT_CREDITS_TOTAL,
     AMT_DEDUCTIONS_TOTAL,
     AMT_DEFERRED_PROFIT_SHARING_PLAN_DEDUCTION,
     AMT_DIVIDENDS_ADJUSTMENTS_TOTAL,
@@ -52,7 +56,12 @@ from app.jurisdictions.ca.catalog import (
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
     AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
+    AMT_MAXIMUM_CARRYOVER_APPLIED,
+    AMT_MAXIMUM_CARRYOVER_CLAIM,
     AMT_MINIMUM_AMOUNT,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+    AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
+    AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_MOVING_EXPENSES_DEDUCTION,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
@@ -92,9 +101,13 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTIONS_D1_TOTAL,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
+    AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
     AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
     AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
+    AMT_TAX_PAYABLE_AFTER_CREDITS,
+    AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
+    AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
     AMT_TAX_SHELTER_ADJUSTMENTS,
     AMT_TAX_SHELTER_DEDUCTIBLE_AMOUNTS,
     AMT_TAX_SHELTER_LOSSES,
@@ -107,10 +120,16 @@ from app.jurisdictions.ca.catalog import (
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
+    CREDITS_AGAINST_FEDERAL_TAX,
     DISABILITY_SUPPORTS_DEDUCTION,
+    DIVIDEND_TAX_CREDIT,
     DONATIONS_AND_GIFTS_CREDIT,
+    FEDERAL_TAX_ON_SPLIT_INCOME,
+    FEDERAL_TAX_WITH_SPLIT_INCOME,
+    ITC_RECAPTURE,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
+    NON_REFUNDABLE_TAX_CREDITS,
     NORTHERN_RESIDENTS_DEDUCTIONS,
     OTHER_EMPLOYMENT_EXPENSES,
     OTHER_FORECLOSURE_GAIN_OR_LOSS,
@@ -164,12 +183,14 @@ INPUTS = frozenset(
         "ca/amt_repayment_of_wage_loss_replacement",
         "ca/amt_federal_logging_tax_credit",
         "ca/amt_section_119_former_resident_credit",
+        "ca/amt_minimum_tax_carryover_from_previous_years",
+        "ca/amt_minimum_tax_carryover_claim",
     }
 )
 
 OUTPUTS = frozenset(
     {
-        "ca/amt_minimum_amount",
+        "ca/amt_basic_federal_tax",
     }
 )
 
@@ -742,6 +763,113 @@ STEPS = {
         },
         produces={"output": "ca/amt_minimum_amount"},
     ),
+    # Part 2 line 4 "Line 2 plus line 3": line 2 "Total non-refundable tax credits (line 35000 of
+    # your return)" and line 3 "Dividend tax credit (line 40425 of your return)", in line order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/non_refundable_tax_credits", "ca/dividend_tax_credit")},
+        produces={"output": "ca/amt_credits_total"},
+    ),
+    # Part 2 line 5 "Line 1 minus line 4" "Tax payable before minimum tax carryover": line 1 is
+    # "Enter the amount from line 40400 of your return", the federal tax with split income, less
+    # line 4. The form shows no floor, so the difference may be negative.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/federal_tax_with_split_income",
+            "less": "ca/amt_credits_total",
+        },
+        produces={"output": "ca/amt_tax_payable_before_minimum_tax_carryover"},
+    ),
+    # Part 2 line 7 "Line 5 minus line 6" "Basic federal tax": line 6 "Minimum tax carryover applied
+    # in 2025 from line 12 of Part 8", the claim of Part 8 line 12, less line 5.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/amt_tax_payable_before_minimum_tax_carryover",
+            "less": "ca/amt_minimum_tax_carryover_applied",
+        },
+        produces={"output": "ca/amt_basic_federal_tax"},
+    ),
+    # Part 8 line 4 "Line 2 plus line 3": line 2 "Tax payable before minimum tax carryover from line
+    # 5 of Part 2" and line 3 "Recapture of investment tax credit from line 3 of Part C of Form
+    # T2038(IND)", in line order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/amt_tax_payable_before_minimum_tax_carryover",
+                "ca/itc_recapture",
+            )
+        },
+        produces={"output": "ca/amt_tax_payable_with_itc_recapture"},
+    ),
+    # Part 8 line 8 "Add lines 5 to 7": line 5 "Federal tax on split income from line 8 of Form
+    # T1206", line 6 "Federal logging tax credit" (the caller's amount, as on Part 1 line 100) and
+    # line 7 "Amount from line 41600 of your return", in line order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/federal_tax_on_split_income",
+                "ca/amt_federal_logging_tax_credit",
+                "ca/credits_against_federal_tax",
+            )
+        },
+        produces={"output": "ca/amt_split_income_and_credits_total"},
+    ),
+    # Part 8 line 9 "Line 4 minus line 8": the form shows no floor, so the difference may be
+    # negative.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/amt_tax_payable_with_itc_recapture",
+            "less": "ca/amt_split_income_and_credits_total",
+        },
+        produces={"output": "ca/amt_tax_payable_after_credits"},
+    ),
+    # Part 8 line 11 "Maximum carryover that can be applied in 2025: line 9 minus line 10 (if
+    # negative, enter "0")", line 10 "Minimum amount from line 103 of Part 1".
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/amt_tax_payable_after_credits",
+            "less": "ca/amt_minimum_amount",
+        },
+        produces={"output": "ca/amt_maximum_carryover_applied"},
+    ),
+    # Part 8 line 12 "Claim an amount that is not more than line 1 or 11, whichever is less.": the
+    # cap on the claim, the lesser of line 1 "Minimum tax carryover from previous years (2018 to
+    # 2024)" and line 11. Not printed on the form, it is the bound of the claim below.
+    CapabilitySelection(
+        name="core/lesser_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/amt_minimum_tax_carryover_from_previous_years",
+                "ca/amt_maximum_carryover_applied",
+            )
+        },
+        produces={"output": "ca/amt_maximum_carryover_claim"},
+    ),
+    # Part 8 line 12 "Enter this amount on line 40427 of your return.": the claim, an election the
+    # filer makes, which may not be more than the cap; it is refused above it.
+    CapabilitySelection(
+        name="core/at_most",
+        params={},
+        consumes={
+            "amount": "ca/amt_minimum_tax_carryover_claim",
+            "bound": "ca/amt_maximum_carryover_claim",
+        },
+        produces={"output": "ca/amt_minimum_tax_carryover_applied"},
+    ),
 }
 
 WIRING = {
@@ -1114,5 +1242,58 @@ WIRING = {
         SubtractNotBelowZero,
         frozenset({AMT_GROSS_MINIMUM_AMOUNT, AMT_CREDITS_ADJUSTMENTS_TOTAL}),
         frozenset({AMT_MINIMUM_AMOUNT}),
+    ),
+    (
+        Sum,
+        frozenset({NON_REFUNDABLE_TAX_CREDITS, DIVIDEND_TAX_CREDIT}),
+        frozenset({AMT_CREDITS_TOTAL}),
+    ),
+    (
+        Subtract,
+        frozenset({FEDERAL_TAX_WITH_SPLIT_INCOME, AMT_CREDITS_TOTAL}),
+        frozenset({AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER}),
+    ),
+    (
+        Subtract,
+        frozenset(
+            {AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER, AMT_MINIMUM_TAX_CARRYOVER_APPLIED}
+        ),
+        frozenset({AMT_BASIC_FEDERAL_TAX}),
+    ),
+    (
+        Sum,
+        frozenset({AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER, ITC_RECAPTURE}),
+        frozenset({AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                FEDERAL_TAX_ON_SPLIT_INCOME,
+                AMT_FEDERAL_LOGGING_TAX_CREDIT,
+                CREDITS_AGAINST_FEDERAL_TAX,
+            }
+        ),
+        frozenset({AMT_SPLIT_INCOME_AND_CREDITS_TOTAL}),
+    ),
+    (
+        Subtract,
+        frozenset({AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE, AMT_SPLIT_INCOME_AND_CREDITS_TOTAL}),
+        frozenset({AMT_TAX_PAYABLE_AFTER_CREDITS}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({AMT_TAX_PAYABLE_AFTER_CREDITS, AMT_MINIMUM_AMOUNT}),
+        frozenset({AMT_MAXIMUM_CARRYOVER_APPLIED}),
+    ),
+    (
+        LesserOf,
+        frozenset({AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS, AMT_MAXIMUM_CARRYOVER_APPLIED}),
+        frozenset({AMT_MAXIMUM_CARRYOVER_CLAIM}),
+    ),
+    (
+        AtMost,
+        frozenset({AMT_MINIMUM_TAX_CARRYOVER_CLAIM, AMT_MAXIMUM_CARRYOVER_CLAIM}),
+        frozenset({AMT_MINIMUM_TAX_CARRYOVER_APPLIED}),
     ),
 }

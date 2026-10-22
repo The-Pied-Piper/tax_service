@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import pytest
+
+from app.domain.errors import InputAboveBoundError
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     AMT_ADJUSTED_INCOME_WITH_GAINS,
@@ -13,11 +16,13 @@ from app.jurisdictions.ca.catalog import (
     AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_APPLICABLE_RATE_AMOUNT,
     AMT_BASIC_EXEMPTION,
+    AMT_BASIC_FEDERAL_TAX,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CAPITAL_GAINS_DIFFERENCE,
     AMT_CREDITS_ADJUSTMENTS_TOTAL,
+    AMT_CREDITS_TOTAL,
     AMT_DEDUCTIONS_TOTAL,
     AMT_DIVIDENDS_ADJUSTMENTS_TOTAL,
     AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
@@ -29,7 +34,10 @@ from app.jurisdictions.ca.catalog import (
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
     AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
+    AMT_MAXIMUM_CARRYOVER_APPLIED,
+    AMT_MAXIMUM_CARRYOVER_CLAIM,
     AMT_MINIMUM_AMOUNT,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
@@ -52,8 +60,14 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTIONS_D1_TOTAL,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
+    AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
+    AMT_TAX_PAYABLE_AFTER_CREDITS,
+    AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
+    AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
     AMT_TAX_SHELTER_ADJUSTMENTS,
     CAPITAL_GAIN,
+    CREDITS_AGAINST_BASIC_FEDERAL_TAX,
+    FEDERAL_TAX_AFTER_CREDITS,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
 )
@@ -94,6 +108,8 @@ def return_bg(
     investment_counsel_fees: str = "50.00",
     commission_employment: str = "150.00",
     employment_income: str = "60000",
+    carryover_from_previous_years: str = "0",
+    carryover_claim: str = "0",
 ) -> Worksheet:
     """Return BG's inputs (`returns/2025_return_bg.yaml`), with the Part 1 amounts given."""
     return compute(
@@ -134,6 +150,8 @@ def return_bg(
         amt_life_insurance_premiums_as_collateral=life_insurance_premiums,
         amt_investment_counsel_fees=investment_counsel_fees,
         amt_commission_employment_expenses=commission_employment,
+        amt_minimum_tax_carryover_from_previous_years=carryover_from_previous_years,
+        amt_minimum_tax_carryover_claim=carryover_claim,
     )
 
 
@@ -627,3 +645,155 @@ def test_return_bg_with_200000_employment_income_line_103_is_line_97_less_line_1
 
     assert worksheet.get(AMT_CREDITS_ADJUSTMENTS_TOTAL).value == D("1563.77")
     assert worksheet.get(AMT_MINIMUM_AMOUNT).value == D("5494.59")
+
+
+def test_return_bg_part_2_line_4_adds_the_credits_of_lines_35000_and_40425() -> None:
+    # Line 2, the total non-refundable tax credits of line 35000, is 3100.21 (21380.75 at the credit
+    # rate, rounded half-up); line 3, the dividend tax credit of line 40425, is 0.00. Line 4 is
+    # 3100.21 plus 0.00, 3100.21.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_CREDITS_TOTAL).value == D("3100.21")
+
+
+def test_return_bg_part_2_line_5_is_the_federal_tax_less_line_4() -> None:
+    # Line 1, the federal tax of line 40400, is 8946.68 on taxable income of 60435.00; line 4 is
+    # 3100.21, so line 5 is 8946.68 minus 3100.21, 5846.47.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER).value == D("5846.47")
+
+
+def test_return_bg_part_2_line_7_is_the_basic_federal_tax() -> None:
+    # Line 5 of 5846.47 less line 6, the minimum tax carryover applied of 0.00, is 5846.47.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_BASIC_FEDERAL_TAX).value == D("5846.47")
+
+
+def test_return_bg_part_8_lines_4_and_8_add_their_lines() -> None:
+    # Line 4 is line 2, the tax payable of 5846.47, plus line 3, the recapture of 0.00: 5846.47.
+    # Line 8 adds lines 5 to 7, the split income tax, the logging tax credit and line 41600, all 0:
+    # 0.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE).value == D("5846.47")
+    assert worksheet.get(AMT_SPLIT_INCOME_AND_CREDITS_TOTAL).value == D("0")
+
+
+def test_return_bg_part_8_line_9_is_line_4_less_line_8_and_line_11_is_line_9_less_line_10() -> None:
+    # Line 9 is 5846.47 minus 0.00, 5846.47. Line 10 is the minimum amount of line 103 of Part 1,
+    # 0.00, so line 11 is 5846.47 minus 0.00, 5846.47, not below zero.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_TAX_PAYABLE_AFTER_CREDITS).value == D("5846.47")
+    assert worksheet.get(AMT_MAXIMUM_CARRYOVER_APPLIED).value == D("5846.47")
+
+
+def test_return_bg_part_8_line_12_claims_nothing_when_no_carryover_is_entered() -> None:
+    # The cap is the lesser of line 1, 0.00, and line 11, 5846.47: 0.00. The claim is 0.00, so
+    # nothing is applied on line 40427 and basic federal tax is unchanged.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_MAXIMUM_CARRYOVER_CLAIM).value == D("0")
+    assert worksheet.get(AMT_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("0")
+    assert worksheet.get(CREDITS_AGAINST_BASIC_FEDERAL_TAX).value == D("3100.21")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("5846.47")
+
+
+def test_return_bg_with_200000_part_2_line_5_is_the_federal_tax_less_line_4() -> None:
+    # Line 1, the federal tax of line 40400 on taxable income of 199926.00, is 42888.33; line 4 is
+    # 3127.54 (21569.25 at the credit rate), so line 5 is 42888.33 minus 3127.54, 39760.79.
+    worksheet = return_bg(employment_income="200000")
+
+    assert worksheet.get(AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER).value == D("39760.79")
+
+
+def test_return_bg_with_200000_part_8_line_11_is_line_9_less_the_minimum() -> None:
+    # Line 9, line 4 of 39760.79 less line 8 of 0.00, is 39760.79; line 10, the minimum amount of
+    # 5494.59, leaves line 11 at 39760.79 minus 5494.59, 34266.20.
+    worksheet = return_bg(employment_income="200000")
+
+    assert worksheet.get(AMT_MAXIMUM_CARRYOVER_APPLIED).value == D("34266.20")
+
+
+def test_return_bg_with_a_carryover_and_a_claim_within_the_cap_applies_the_claim() -> None:
+    # Line 1 is the carryover from 2018 to 2024 of 1000.00; line 11 is 34266.20. The cap is the
+    # lesser of them, 1000.00, and the claim of 400.00 is within it, so 400.00 is applied on line 12
+    # (line 40427).
+    worksheet = return_bg(
+        employment_income="200000",
+        carryover_from_previous_years="1000",
+        carryover_claim="400",
+    )
+
+    assert worksheet.get(AMT_MAXIMUM_CARRYOVER_CLAIM).value == D("1000")
+    assert worksheet.get(AMT_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("400")
+
+
+def test_return_bg_with_a_carryover_claim_lowers_basic_federal_tax_and_the_t1_line_126() -> None:
+    # Part 2 line 7 is line 5 of 39760.79 less line 6 of 400.00: 39360.79. T1 line 124 is 400.00, so
+    # line 125 is 3127.54 plus 0.00 plus 400.00, 3527.54, and line 126 is 42888.33 minus 3527.54,
+    # 39360.79.
+    worksheet = return_bg(
+        employment_income="200000",
+        carryover_from_previous_years="1000",
+        carryover_claim="400",
+    )
+
+    assert worksheet.get(AMT_BASIC_FEDERAL_TAX).value == D("39360.79")
+    assert worksheet.get(CREDITS_AGAINST_BASIC_FEDERAL_TAX).value == D("3527.54")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("39360.79")
+
+
+def test_return_bg_with_a_claim_at_the_cap_is_applied_in_full() -> None:
+    # The claim of 34266.20 is the line 11 cap when line 1 is larger, so it is applied in full.
+    worksheet = return_bg(
+        employment_income="200000",
+        carryover_from_previous_years="50000",
+        carryover_claim="34266.20",
+    )
+
+    assert worksheet.get(AMT_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("34266.20")
+
+
+def test_a_carryover_claim_above_line_1_is_refused_naming_both_kinds() -> None:
+    # Line 12 "not more than line 1 or 11, whichever is less": the cap is the carryover of 1000.00,
+    # and 1000.01 is above it, an input error, not capped.
+    with pytest.raises(InputAboveBoundError) as raised:
+        return_bg(
+            employment_income="200000",
+            carryover_from_previous_years="1000",
+            carryover_claim="1000.01",
+        )
+
+    assert str(raised.value).startswith(
+        "ca/amt_minimum_tax_carryover_claim 1000.01 is above ca/amt_maximum_carryover_claim 1000"
+    )
+
+
+def test_a_carryover_claim_above_line_11_is_refused_when_line_11_is_the_lesser() -> None:
+    # Line 1 of 50000.00 is more than line 11 of 34266.20, so the cap is line 11: 34266.21 is
+    # above it.
+    with pytest.raises(InputAboveBoundError) as raised:
+        return_bg(
+            employment_income="200000",
+            carryover_from_previous_years="50000",
+            carryover_claim="34266.21",
+        )
+
+    assert str(raised.value).startswith(
+        "ca/amt_minimum_tax_carryover_claim 34266.21 is above "
+        "ca/amt_maximum_carryover_claim 34266.2"
+    )
+
+
+def test_a_claim_is_refused_when_no_carryover_is_available() -> None:
+    # With no carryover from earlier years, line 1 is 0.00 and so is the cap: a claim of 0.01 is
+    # above it.
+    with pytest.raises(InputAboveBoundError) as raised:
+        return_bg(carryover_claim="0.01")
+
+    assert str(raised.value).startswith(
+        "ca/amt_minimum_tax_carryover_claim 0.01 is above ca/amt_maximum_carryover_claim 0"
+    )

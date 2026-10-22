@@ -51,11 +51,14 @@ from app.jurisdictions.ca.catalog import (
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
     AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_BASIC_EXEMPTION,
+    AMT_BASIC_FEDERAL_TAX,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DIFFERENCE,
+    AMT_CREDITS_TOTAL,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
     AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
     AMT_NON_CAPITAL_LOSSES_DIFFERENCE,
@@ -66,6 +69,10 @@ from app.jurisdictions.ca.catalog import (
     AMT_PUBLICLY_LISTED_GIFTS_TOTAL,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
+    AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
+    AMT_TAX_PAYABLE_AFTER_CREDITS,
+    AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
+    AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
     ANNUAL_GAINS_LINE_3,
     ANNUAL_GAINS_LINE_3_AT_INCLUSION_RATE,
     ANNUAL_GAINS_LINE_5,
@@ -318,6 +325,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_VEHICLE_LEASE_CHARGES_NET,
     FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,
     FARMING_INCOME,
+    FEDERAL_TAX_WITH_SPLIT_INCOME,
     FEDERAL_TUITION_AMOUNT,
     FHSA_ANNUAL_AMOUNT,
     FHSA_ANNUAL_AMOUNT_FOR_2024,
@@ -641,6 +649,35 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert subtracted == {
+        # Form T691 Part 2 line 5 "Line 1 minus line 4" "Tax payable before minimum tax carryover":
+        # 20146.25 less 3194.87, 16951.38.
+        AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER: SubtractedLine(
+            output=AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
+            minuend=FEDERAL_TAX_WITH_SPLIT_INCOME,
+            minuend_amount=D("20146.25"),
+            subtrahend=AMT_CREDITS_TOTAL,
+            subtrahend_amount=D("3194.87"),
+            result=D("16951.38"),
+        ),
+        # Form T691 Part 2 line 7 "Line 5 minus line 6" "Basic federal tax": 16951.38 less 0 (line
+        # 6, the carryover applied, is 0 for Return A), 16951.38.
+        AMT_BASIC_FEDERAL_TAX: SubtractedLine(
+            output=AMT_BASIC_FEDERAL_TAX,
+            minuend=AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
+            minuend_amount=D("16951.38"),
+            subtrahend=AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
+        # Form T691 Part 8 line 9 "Line 4 minus line 8": 16951.38 less 0, 16951.38.
+        AMT_TAX_PAYABLE_AFTER_CREDITS: SubtractedLine(
+            output=AMT_TAX_PAYABLE_AFTER_CREDITS,
+            minuend=AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
+            minuend_amount=D("16951.38"),
+            subtrahend=AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
         # Form T2209 note (3), net income: line 23400 less line 23500 (the line 23600 amount, here
         # not floored), none repaid on Return A; then the deductions it lists, none on Return A,
         # come off that amount plus line 68360 of Form T1206.

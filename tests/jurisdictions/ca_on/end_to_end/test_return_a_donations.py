@@ -256,7 +256,7 @@ def test_return_ns_donations_and_gifts_credit_and_top_up_come_off_the_federal_ta
     ) in rendered
     assert (
         "credits_against_basic_federal_tax: non_refundable_tax_credits 3391.54 "
-        "+ dividend_tax_credit 0 = 3391.54"
+        "+ dividend_tax_credit 0 + amt_minimum_tax_carryover_applied 0 = 3391.54"
     ) in rendered
     assert (
         "federal_tax_after_credits: federal_tax_with_split_income 6895.48 "

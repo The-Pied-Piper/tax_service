@@ -605,6 +605,11 @@ inputs:
   # section 119 credit for a former resident, entered as the form takes them.
   - ca/amt_federal_logging_tax_credit
   - ca/amt_section_119_former_resident_credit
+  # Form T691 Part 8 line 1 "Minimum tax carryover from previous years (2018 to 2024)" and line 12
+  # "Claim an amount that is not more than line 1 or 11, whichever is less.": the carryover from
+  # earlier returns, and the amount the filer claims on line 40427, entered as the form takes them.
+  - ca/amt_minimum_tax_carryover_from_previous_years
+  - ca/amt_minimum_tax_carryover_claim
   - ca/political_contributions
   - ca/disability_supports_deduction
   - ca/other_employment_expenses
