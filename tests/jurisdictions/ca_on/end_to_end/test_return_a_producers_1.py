@@ -2109,6 +2109,8 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         ontario.SPLIT_INCOME_LINE_45,
     ):
         assert isinstance(worksheet.producer_of(kind), ApplyRate), kind.identifier
+    # Line 33C divides line 33A, the Ontario tax on split income, by the rate of line 33B.
+    assert isinstance(worksheet.producer_of(ontario.TOSI_ADJUSTED_TAXABLE_INCOME), DividedByRate)
     for kind in (
         ontario.SPLIT_INCOME_LINE_36,
         ontario.SPLIT_INCOME_LINE_46,
