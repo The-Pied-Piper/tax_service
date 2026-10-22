@@ -46,8 +46,12 @@ class ArtifactKind(Generic[V]):  # noqa: UP046  (invariant V, see above)
 
     def __post_init__(self) -> None:
         namespace, _, local_id = self.identifier.partition("/")
+        # One dot is allowed, for the `<form>.<export>` kind the engine derives for a form export.
+        form_id, dot, export_id = local_id.partition(".")
         try:
-            Namespace(namespace).identifier(local_id)
+            Namespace(namespace).identifier(form_id)
+            if dot:
+                Namespace(namespace).identifier(export_id)
         except InvalidRegistrationError as exc:
             raise InvalidRegistrationError(
                 f"invalid artifact kind identifier {self.identifier!r}: {exc}"
@@ -67,6 +71,11 @@ class ArtifactKind(Generic[V]):  # noqa: UP046  (invariant V, see above)
     def label(self) -> str:
         """The local part of the identifier, for traces and messages."""
         return self.identifier.partition("/")[2]
+
+    @property
+    def is_form_export(self) -> bool:
+        """Whether this is the kind `<form>.<export>` the engine derives for a form's export."""
+        return "." in self.identifier
 
     def check_value(self, value: V) -> None:
         """Refuse `value`, already an instance of the value type, if this kind cannot hold it.

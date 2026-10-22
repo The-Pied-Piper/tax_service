@@ -26,7 +26,7 @@ from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
 from app.domain.errors import InvalidManifestError, NotFoundError
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.registry import Namespace
 
 EX_ON = JurisdictionCode("EX-ON")
@@ -1032,3 +1032,348 @@ def test_a_subfolder_without_yaml_files_is_not_a_manifest(tmp_path: Path) -> Non
     (only,) = source(tmp_path).get_jurisdiction(EX_ON).manifests
 
     assert only.version == 1
+
+
+# --- forms: the `form:` key of a part ------------------------------------------------------------
+#
+# A part may carry a `form:` mapping `{name, instances, exports}`, strict like the other keys, and
+# then ALL `capabilities` of that part belong to that form (not to the return). A form may span
+# several parts that carry the same `form.name`; only ONE of them declares `instances` and
+# `exports` (both together), the others carry the name alone. A part with no `form:` key is the
+# return's, as before. `inputs` and `outputs` stay top-level. Errors name the part file.
+
+FORM_RENTAL = """\
+form:
+  name: ex/rental
+  instances: ex/rentals
+  exports: [ex/net_income, ex/unit_list]
+capabilities:
+  - {name: ex/a, produces: {output: ex/net_income}}
+"""
+
+FORM_RENTAL_NAME_ONLY = """\
+form:
+  name: ex/rental
+capabilities:
+  - {name: ex/b, produces: {output: ex/unit_list}}
+"""
+
+FORM_BUSINESS = """\
+form:
+  name: ex/business
+  instances: ex/businesses
+  exports: [ex/profit]
+capabilities:
+  - {name: ex/c, produces: {output: ex/profit}}
+"""
+
+RETURN_PART = """\
+capabilities:
+  - {name: ex/r, produces: {output: ex/y}}
+"""
+
+HEADER_PART = SCALARS + INPUTS + OUTPUTS
+
+
+def selection_named(name: str, output: str) -> CapabilitySelection:
+    return CapabilitySelection(name=name, params={}, consumes={}, produces={"output": output})
+
+
+def part_path(directory: Path, name: str) -> Path:
+    return directory / "ex-on" / "manifests" / "v1" / name
+
+
+def test_a_manifest_without_a_form_key_has_no_forms(tmp_path: Path) -> None:
+    write(tmp_path, "ex-on/manifests/v1.yaml", EX_ON_V1)
+
+    assert only_manifest(tmp_path).forms == ()
+
+
+def test_a_part_with_a_form_key_gives_the_form_all_the_capabilities_of_that_part(
+    tmp_path: Path,
+) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": HEADER_PART,
+            "01-return.yaml": RETURN_PART,
+            "02-rental.yaml": FORM_RENTAL,
+        },
+    )
+
+    manifest = only_manifest(tmp_path)
+
+    assert manifest.forms == (
+        Form(
+            name="ex/rental",
+            instances="ex/rentals",
+            exports=("ex/net_income", "ex/unit_list"),
+            capabilities=(selection_named("ex/a", "ex/net_income"),),
+        ),
+    )
+    assert manifest.capabilities == (selection_named("ex/r", "ex/y"),)
+
+
+def test_a_part_without_a_form_key_is_the_returns_whatever_its_neighbours_are(
+    tmp_path: Path,
+) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": HEADER_PART,
+            "01-rental.yaml": FORM_RENTAL,
+            "02-return.yaml": RETURN_PART,
+        },
+    )
+
+    assert only_manifest(tmp_path).capabilities == (selection_named("ex/r", "ex/y"),)
+
+
+def test_a_form_may_span_parts_and_its_selections_follow_the_part_order(tmp_path: Path) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": HEADER_PART,
+            "01-rental.yaml": FORM_RENTAL,
+            "02-rental-more.yaml": FORM_RENTAL_NAME_ONLY,
+        },
+    )
+
+    (found,) = only_manifest(tmp_path).forms
+
+    assert found.instances == "ex/rentals"
+    assert found.exports == ("ex/net_income", "ex/unit_list")
+    assert found.capabilities == (
+        selection_named("ex/a", "ex/net_income"),
+        selection_named("ex/b", "ex/unit_list"),
+    )
+
+
+def test_the_part_that_declares_the_form_need_not_be_the_first_of_its_parts(
+    tmp_path: Path,
+) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": HEADER_PART,
+            "01-rental-more.yaml": FORM_RENTAL_NAME_ONLY,
+            "02-rental.yaml": FORM_RENTAL,
+        },
+    )
+
+    (found,) = only_manifest(tmp_path).forms
+
+    assert found.exports == ("ex/net_income", "ex/unit_list")
+    assert [c.name for c in found.capabilities] == ["ex/b", "ex/a"]
+
+
+def test_several_forms_are_kept_in_the_order_their_names_first_appear(tmp_path: Path) -> None:
+    more = (
+        "form:\n  name: ex/business\n"
+        "capabilities:\n  - {name: ex/d, produces: {output: ex/profit_more}}\n"
+    )
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": HEADER_PART,
+            "01-business.yaml": FORM_BUSINESS,
+            "02-rental.yaml": FORM_RENTAL,
+            "03-business-more.yaml": more,
+        },
+    )
+
+    business, rental = only_manifest(tmp_path).forms
+
+    assert (business.name, rental.name) == ("ex/business", "ex/rental")
+    assert [c.name for c in business.capabilities] == ["ex/c", "ex/d"]
+
+
+def test_a_form_part_may_carry_the_manifests_inputs_and_outputs(tmp_path: Path) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": SCALARS,
+            "01-rental.yaml": FORM_RENTAL + "inputs: [ex/rentals]\noutputs: [ex/y]\n",
+        },
+    )
+
+    manifest = only_manifest(tmp_path)
+
+    assert manifest.inputs == frozenset({"ex/rentals"})
+    assert manifest.outputs == frozenset({"ex/y"})
+
+
+def test_a_form_part_with_no_capabilities_is_allowed(tmp_path: Path) -> None:
+    declaration = FORM_RENTAL.partition("capabilities:")[0]
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": HEADER_PART,
+            "01-rental.yaml": declaration,
+            "02-rental-more.yaml": FORM_RENTAL_NAME_ONLY,
+        },
+    )
+
+    (found,) = only_manifest(tmp_path).forms
+
+    assert [c.name for c in found.capabilities] == ["ex/b"]
+
+
+@pytest.mark.parametrize(
+    ("form_text", "message"),
+    [
+        pytest.param(
+            "form: {name: ex/rental, instances: ex/rentals, exports: [ex/n], extra: 1}\n",
+            r"unknown keys \['extra'\]",
+            id="unknown-key",
+        ),
+        pytest.param("form: ex/rental\n", "form must be a mapping", id="not-a-mapping"),
+        pytest.param(
+            "form: {instances: ex/rentals, exports: [ex/n]}\n",
+            r"missing keys \['name'\]",
+            id="no-name",
+        ),
+        pytest.param("form: {name: 7}\n", "name must be a string, got int", id="name-not-text"),
+        pytest.param("form: {name: ''}\n", "name must not be empty", id="name-empty"),
+        pytest.param(
+            "form: {name: Rental, instances: ex/rentals, exports: [ex/n]}\n",
+            "Rental",
+            id="name-not-an-identifier",
+        ),
+        pytest.param(
+            "form: {name: ex/rental.n, instances: ex/rentals, exports: [ex/n]}\n",
+            r"ex/rental\.n",
+            id="name-dotted",
+        ),
+        pytest.param(
+            "form: {name: ex/rental, instances: [ex/rentals], exports: [ex/n]}\n",
+            "instances must be a string, got list",
+            id="instances-a-list",
+        ),
+        pytest.param(
+            "form: {name: ex/rental, instances: ex/Rentals, exports: [ex/n]}\n",
+            "ex/Rentals",
+            id="instances-not-an-identifier",
+        ),
+        pytest.param(
+            "form: {name: ex/rental, instances: ex/rentals, exports: ex/n}\n",
+            "exports must be a list",
+            id="exports-not-a-list",
+        ),
+        pytest.param(
+            "form: {name: ex/rental, instances: ex/rentals, exports: [ex/n, 7]}\n",
+            r"exports\[1\] must be a string, got int",
+            id="export-element-wrong-type",
+        ),
+        pytest.param(
+            "form: {name: ex/rental, instances: ex/rentals, exports: ['']}\n",
+            r"exports\[0\] must not be empty",
+            id="export-empty",
+        ),
+        pytest.param(
+            "form: {name: ex/rental, instances: ex/rentals, exports: [ex/n, ex/n]}\n",
+            r"exports\[1\]: 'ex/n' is listed more than once",
+            id="export-repeated",
+        ),
+        pytest.param(
+            "form: {name: ex/rental, instances: ex/rentals, exports: [ex/n, ca/n]}\n",
+            "more than once",
+            id="two-exports-of-one-local-id",
+        ),
+        pytest.param(
+            "form: {name: ex/rental, instances: ex/rentals, exports: [ex/rental.n]}\n",
+            r"ex/rental\.n",
+            id="export-dotted",
+        ),
+        pytest.param(
+            "form: {name: ex/rental, instances: ex/rentals, exports: []}\n",
+            "exports must name at least one artifact",
+            id="no-exports",
+        ),
+        pytest.param(
+            "form: {name: ex/rental, instances: ex/rentals}\n",
+            "form 'ex/rental'.*instances.*exports",
+            id="instances-without-exports",
+        ),
+        pytest.param(
+            "form: {name: ex/rental, exports: [ex/n]}\n",
+            "form 'ex/rental'.*instances.*exports",
+            id="exports-without-instances",
+        ),
+    ],
+)
+def test_a_bad_form_key_is_rejected_naming_the_part_file(
+    tmp_path: Path, form_text: str, message: str
+) -> None:
+    write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-bad.yaml": form_text})
+
+    with pytest.raises(InvalidManifestError, match=message) as excinfo:
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+    assert str(part_path(tmp_path, "01-bad.yaml")) in str(excinfo.value)
+
+
+@pytest.mark.parametrize(
+    "repeat",
+    [
+        "form: {name: ex/rental, instances: ex/rentals, exports: [ex/n]}\n",
+        "form: {name: ex/rental, instances: ex/other, exports: [ex/m]}\n",
+    ],
+    ids=["same-declaration", "another-declaration"],
+)
+def test_a_second_part_that_declares_the_forms_instances_and_exports_is_rejected(
+    tmp_path: Path, repeat: str
+) -> None:
+    write_parts(
+        tmp_path,
+        {"00-header.yaml": HEADER_PART, "01-rental.yaml": FORM_RENTAL, "02-again.yaml": repeat},
+    )
+
+    with pytest.raises(InvalidManifestError, match="form 'ex/rental'.*already") as caught:
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+    message = str(caught.value)
+    assert str(part_path(tmp_path, "02-again.yaml")) in message
+    assert str(part_path(tmp_path, "01-rental.yaml")) in message
+
+
+def test_a_form_no_part_declares_the_instances_of_is_rejected_naming_the_form(
+    tmp_path: Path,
+) -> None:
+    write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-rental.yaml": FORM_RENTAL_NAME_ONLY})
+
+    with pytest.raises(InvalidManifestError, match="form 'ex/rental'.*instances"):
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+
+def test_a_part_with_two_form_keys_is_rejected_naming_the_part_file(tmp_path: Path) -> None:
+    write_parts(
+        tmp_path,
+        {"00-header.yaml": HEADER_PART, "01-bad.yaml": FORM_RENTAL + "form: {name: ex/business}\n"},
+    )
+
+    with pytest.raises(InvalidManifestError, match="01-bad.yaml"):
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+
+def test_a_bad_selection_in_a_form_part_names_the_part_file(tmp_path: Path) -> None:
+    bad = (
+        "form: {name: ex/rental, instances: ex/rentals, exports: [ex/n]}\n"
+        "capabilities:\n  - {name: ex/a}\n"
+    )
+    write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-rental.yaml": bad})
+
+    with pytest.raises(InvalidManifestError, match=r"capabilities\[0\]: missing keys") as caught:
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+    assert str(part_path(tmp_path, "01-rental.yaml")) in str(caught.value)
+
+
+def test_a_part_naming_the_return_form_is_rejected_naming_the_folder(tmp_path: Path) -> None:
+    named = FORM_RENTAL.replace("name: ex/rental", "name: ex-on/return")
+    write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-return.yaml": named})
+
+    with pytest.raises(InvalidManifestError, match=r"ex-on/return.*return form") as caught:
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+    assert str(tmp_path / "ex-on" / "manifests" / "v1") in str(caught.value)

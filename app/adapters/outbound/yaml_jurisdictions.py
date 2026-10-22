@@ -4,11 +4,16 @@ The source takes a mapping of namespace -> jurisdiction package directory. A jur
 namespace is its code lower-cased (`EX-ON` -> `ex-on`). Each `*.yaml` / `*.yml` file directly in
 `<roots[ex-on]>/manifests/` is one whole manifest, and each subfolder there is one manifest too,
 merged from its parts: every `*.yaml` / `*.yml` file inside it (recursively), read in sorted path
-order. A part may carry any of the six manifest keys; the scalar keys (`jurisdiction`, `version`,
-`valid_from_tax_year`) must each be in exactly one part, and the lists (`inputs`, `outputs`,
-`capabilities`) are concatenated in part order, an identifier listed in two parts of `inputs` or of
-`outputs` being rejected. The merged mapping then goes through the same parse as a whole file. A
-manifest naming another jurisdiction is rejected.
+order. A part may carry any of the six manifest keys or a `form:` key; the scalar keys
+(`jurisdiction`, `version`, `valid_from_tax_year`) must each be in exactly one part, and the lists
+(`inputs`, `outputs`, `capabilities`) are concatenated in part order, an identifier listed in two
+parts of `inputs` or of `outputs` being rejected. The merged mapping then goes through the same
+parse as a whole file. A manifest naming another jurisdiction is rejected.
+A part with a `form:` key (`name`, and `instances` with `exports`, all identifiers
+`<namespace>/<snake_case>`) gives all its `capabilities` to that form, not to the return form; a
+part without one is the return form's (`<namespace>/return`). A form may span parts that carry the
+same `form.name`, in part order: exactly one of them declares `instances` and `exports` together,
+and a second that does is rejected. A single manifest file is not a part and takes no `form:` key.
 Each selection names a capability and fills its slots: `params` (slot -> family, optional),
 `consumes` (slot -> artifact identifier, or a list of them kept in order as a tuple, optional)
 and `produces` (slot -> artifact identifier, required, at least one). Slot names, and whether a
@@ -36,12 +41,15 @@ from app.domain.errors import (
 )
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.registry import Namespace
 
 _MANIFEST_KEYS = frozenset(
     {"jurisdiction", "version", "valid_from_tax_year", "inputs", "outputs", "capabilities"}
 )
+_PART_KEYS = _MANIFEST_KEYS | {"form"}
+_FORM_KEYS = frozenset({"name"})
+_OPTIONAL_FORM_KEYS = frozenset({"instances", "exports"})
 _CAPABILITY_KEYS = frozenset({"name", "produces"})
 _OPTIONAL_CAPABILITY_KEYS = frozenset({"params", "consumes"})
 _SCALAR_KEYS = ("jurisdiction", "version", "valid_from_tax_year")
@@ -120,9 +128,24 @@ class YamlJurisdictionSource:
         merged: dict[str, object] = {}
         scalar_owners: dict[str, Path] = {}
         lists: dict[str, list[object]] = {}
+        form_selections: dict[str, list[CapabilitySelection]] = {}
+        declarations: dict[str, tuple[Path, str, tuple[str, ...]]] = {}
         identifier_owners: dict[str, dict[str, Path]] = {key: {} for key in _IDENTIFIER_LISTS}
         for part in parts:
-            for key, node in cls._part(part).items():
+            contents = cls._part(part)
+            if "form" in contents:
+                name, declared = cls._form_header(contents.pop("form"))
+                chosen = form_selections.setdefault(name, [])
+                if declared is not None:
+                    if name in declarations:
+                        raise InvalidManifestError(
+                            f"{part}: form {name!r}: instances and exports are already declared "
+                            f"in {declarations[name][0]}"
+                        )
+                    declarations[name] = (part, *declared)
+                if "capabilities" in contents:
+                    chosen.extend(cls._selection(e) for e in contents.pop("capabilities").items())
+            for key, node in contents.items():
                 if key in _SCALAR_KEYS:
                     if key in scalar_owners:
                         raise InvalidManifestError(
@@ -133,19 +156,57 @@ class YamlJurisdictionSource:
                 else:
                     cls._claim_identifiers(key, node, part, identifier_owners.get(key, {}))
                     lists.setdefault(key, []).extend(item.value for item in node.items())
+        if form_selections:
+            lists.setdefault("capabilities", [])  # the return may have none beside its forms
         try:
-            return cls._manifest(YamlNode.root({**merged, **lists}, "manifest"))
+            forms = tuple(
+                cls._form(name, chosen, declarations) for name, chosen in form_selections.items()
+            )
+            return cls._manifest(YamlNode.root({**merged, **lists}, "manifest"), forms)
         except (InvalidManifestError, YamlShapeError) as exc:
             raise InvalidManifestError(f"{folder}: {exc}") from exc
+
+    @staticmethod
+    def _form(
+        name: str,
+        selections: list[CapabilitySelection],
+        declarations: dict[str, tuple[Path, str, tuple[str, ...]]],
+    ) -> Form:
+        """The form `name` with the selections of all its parts and the one declaration."""
+        if name not in declarations:
+            raise InvalidManifestError(f"form {name!r}: no part declares its instances and exports")
+        _, instances, exports = declarations[name]
+        return Form(name=name, instances=instances, exports=exports, capabilities=tuple(selections))
+
+    @classmethod
+    def _form_header(cls, node: YamlNode) -> tuple[str, tuple[str, tuple[str, ...]] | None]:
+        """The name of a part's form and, if it declares them, its instances and exports."""
+        node.require_mapping(_FORM_KEYS, optional=_OPTIONAL_FORM_KEYS)
+        name = node.field("name").require_non_empty_string()
+        Form.check_identifier("name", name)
+        instances = node.optional_field("instances")
+        exports = node.optional_field("exports")
+        if instances is None and exports is None:
+            return name, None
+        if instances is None or exports is None:
+            raise InvalidManifestError(
+                f"form {name!r}: instances and exports must be declared together"
+            )
+        cls._identifiers(exports)
+        listed = tuple(item.require_string() for item in exports.items())
+        declared = instances.require_non_empty_string()
+        # Built to check the declaration; the form's selections are added when the parts merge.
+        Form(name=name, instances=declared, exports=listed, capabilities=())
+        return name, (declared, listed)
 
     @classmethod
     def _part(cls, part: Path) -> dict[str, YamlNode]:
         """The keys a part carries, each checked on its own; errors name the part."""
         try:
-            doc = YamlNode.load(part, "manifest").require_mapping(
-                frozenset(), optional=_MANIFEST_KEYS
-            )
+            doc = YamlNode.load(part, "manifest").require_mapping(frozenset(), optional=_PART_KEYS)
             contents = dict(doc.fields())
+            if "form" in contents:
+                cls._form_header(contents["form"])
             if "jurisdiction" in contents:
                 cls._code(contents["jurisdiction"])
             for key in ("version", "valid_from_tax_year"):
@@ -176,7 +237,7 @@ class YamlJurisdictionSource:
             owners[identifier] = part
 
     @classmethod
-    def _manifest(cls, document: YamlNode) -> Manifest:
+    def _manifest(cls, document: YamlNode, forms: tuple[Form, ...] = ()) -> Manifest:
         doc = document.require_mapping(_MANIFEST_KEYS)
         return Manifest(
             jurisdiction=cls._code(doc.field("jurisdiction")),
@@ -187,6 +248,7 @@ class YamlJurisdictionSource:
             ),
             inputs=cls._identifiers(doc.field("inputs")),
             outputs=cls._identifiers(doc.field("outputs")),
+            forms=forms,
         )
 
     @staticmethod

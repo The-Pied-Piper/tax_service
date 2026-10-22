@@ -508,3 +508,78 @@ def test_a_directly_built_artifact_kind_is_not_registered(fresh: ArtifactRegistr
     with pytest.raises(UnknownRegistrationError):
         fresh.get("ex/taxable_base")
     assert fresh.identifiers() == frozenset()
+
+
+# --- the dotted identifier of a form export ------------------------------------------------------
+#
+# An export `X` of a form `B` is an artifact `B.X`, named `<namespace>/<form local id>.<export
+# local id>`. The grammar allows ONE dot in the local part, each side snake_case. Only the engine
+# builds such an identifier: a catalog's `declare` and `Namespace.identifier` still refuse a dot.
+
+
+@pytest.mark.parametrize(
+    "identifier",
+    ["ex/rental.net_income", "ca-on/t2125.business_income", "x1/a1.b2", "ex/a.b", "ex/a_b.c_d"],
+)
+def test_accepts_one_dot_between_two_snake_case_ids(identifier: str) -> None:
+    kind = ArtifactKind(identifier, Decimal)
+
+    assert kind.identifier == identifier
+
+
+@pytest.mark.parametrize(
+    "identifier",
+    [
+        "ex/rental.",
+        "ex/.net_income",
+        "ex/.",
+        "ex/a.b.c",
+        "ex/a..b",
+        "ex/Rental.net_income",
+        "ex/rental.Net_income",
+        "ex/rental.net-income",
+        "ex/rental._net",
+        "ex/rental.2net",
+        "ex/1rental.net",
+        "ex/rental.net_",
+        "ex/rental .net",
+        "ex.rental/net_income",
+        "ex/a/b.c",
+        "ex/a.b/c",
+    ],
+)
+def test_rejects_a_dot_that_is_not_between_two_snake_case_ids(identifier: str) -> None:
+    with pytest.raises(InvalidRegistrationError, match="invalid artifact kind identifier"):
+        ArtifactKind(identifier, Decimal)
+
+
+def test_the_label_of_a_dotted_identifier_is_its_whole_local_part() -> None:
+    assert ArtifactKind("ex/rental.net_income", Decimal).label == "rental.net_income"
+
+
+def test_a_dotted_kind_is_registered_and_found_by_its_identifier(fresh: ArtifactRegistry) -> None:
+    kind = ArtifactKind("ex/rental.net_income", Decimal)
+
+    fresh.register(kind.identifier, kind)
+
+    assert fresh.kind("ex/rental.net_income") is kind
+
+
+@pytest.mark.parametrize("local_id", ["rental.net_income", "a.b", "rental."])
+def test_a_catalog_still_refuses_a_dot_in_a_local_id(local_id: str) -> None:
+    catalog = ArtifactCatalog(Namespace("ex"))
+
+    with pytest.raises(InvalidRegistrationError, match="invalid local id"):
+        catalog.declare(local_id, Decimal)
+
+    assert catalog.kinds == ()
+
+
+def test_a_namespace_still_refuses_a_dot_in_a_local_id() -> None:
+    with pytest.raises(InvalidRegistrationError, match="invalid local id"):
+        Namespace("ex").identifier("rental.net_income")
+
+
+def test_only_a_dotted_kind_is_a_form_export() -> None:
+    assert ArtifactKind("ex/rental.net_income", Decimal).is_form_export
+    assert not ArtifactKind("ex/net_income", Decimal).is_form_export

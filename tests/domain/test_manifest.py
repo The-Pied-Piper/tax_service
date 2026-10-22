@@ -17,7 +17,7 @@ import pytest
 
 from app.domain.errors import InvalidManifestError
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 
 
 def selection() -> CapabilitySelection:
@@ -123,6 +123,7 @@ def test_manifest_fields_in_order() -> None:
         "capabilities",
         "inputs",
         "outputs",
+        "forms",
     ]
 
 
@@ -198,3 +199,161 @@ def test_selections_with_list_slots_compare_and_hash_by_value() -> None:
     assert listing(["ex/a", "ex/b"]) != listing(["ex/b", "ex/a"])
     assert hash(listing(["ex/a", "ex/b"])) == hash(listing(("ex/a", "ex/b")))
     assert len({listing(["ex/a", "ex/b"]), listing(("ex/a", "ex/b"))}) == 1
+
+
+# --- forms: a named group of selections with its instances kind and its exports ---------------
+#
+# A `Form` is manifest data beside `CapabilitySelection`, not a capability: its `name`, the
+# `instances` identifier of the record-list kind the caller supplies (one record per instance),
+# the `exports` it produces as `<form>.<export>` artifacts, and its `capabilities`. All of them
+# are plain identifiers `<namespace>/<snake_case>`: the dotted `<form>.<export>` is built by the
+# engine, never written in a manifest.
+
+
+def form(
+    name: str = "ex/rental",
+    instances: str = "ex/rentals",
+    exports: Any = ("ex/net_income", "ex/unit_list"),
+    capabilities: Any = None,
+) -> Form:
+    return Form(
+        name=name,
+        instances=instances,
+        exports=exports,
+        capabilities=(selection(),) if capabilities is None else capabilities,
+    )
+
+
+def test_a_form_holds_its_name_instances_exports_and_selections() -> None:
+    found = form()
+
+    assert found.name == "ex/rental"
+    assert found.instances == "ex/rentals"
+    assert found.exports == ("ex/net_income", "ex/unit_list")
+    assert found.capabilities == (selection(),)
+
+
+def test_form_fields_in_order() -> None:
+    assert [field.name for field in dataclasses.fields(Form)] == [
+        "name",
+        "instances",
+        "exports",
+        "capabilities",
+    ]
+
+
+def test_a_form_is_not_a_capability_selection() -> None:
+    assert not issubclass(Form, CapabilitySelection)
+
+
+def test_exports_and_capabilities_are_kept_as_tuples_copied_from_what_was_given() -> None:
+    exports = ["ex/net_income"]
+    chosen = [selection()]
+    found = form(exports=exports, capabilities=chosen)
+
+    exports.append("ex/other")
+    chosen.clear()
+
+    assert found.exports == ("ex/net_income",)
+    assert found.capabilities == (selection(),)
+    assert isinstance(found.exports, tuple)
+    assert isinstance(found.capabilities, tuple)
+
+
+def test_a_form_is_frozen() -> None:
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        cast(Any, form()).name = "ex/other"
+
+
+def test_equal_forms_are_equal_and_hash_alike() -> None:
+    assert form() == form()
+    assert hash(form()) == hash(form())
+    assert len({form(), form()}) == 1
+    assert form() != form(exports=("ex/net_income",))
+    assert form() != form(instances="ex/other")
+
+
+@pytest.mark.parametrize("field", ["name", "instances"])
+@pytest.mark.parametrize(
+    "bad", ["", "rental", "ex/Rental", "ex/rental.net_income", "ex/a/b", "ex/", "/rental"]
+)
+def test_a_form_name_and_instances_are_plain_namespaced_identifiers(field: str, bad: str) -> None:
+    with pytest.raises(InvalidManifestError, match=field):
+        form(**{field: bad})
+
+
+@pytest.mark.parametrize(
+    "bad", ["", "net_income", "ex/NetIncome", "ex/rental.net_income", "ex/a/b"]
+)
+def test_an_export_is_a_plain_namespaced_identifier(bad: str) -> None:
+    with pytest.raises(InvalidManifestError, match="exports"):
+        form(exports=("ex/net_income", bad))
+
+
+def test_a_form_must_export_something() -> None:
+    with pytest.raises(InvalidManifestError, match="exports must name at least one artifact"):
+        form(exports=())
+
+
+@pytest.mark.parametrize(
+    "exports", [("ex/net_income", "ex/net_income"), ("ex/net_income", "ca/net_income")]
+)
+def test_two_exports_with_the_same_local_id_are_refused(exports: tuple[str, ...]) -> None:
+    # Both would be produced as `ex/rental.net_income`.
+    with pytest.raises(InvalidManifestError, match=r"net_income.*more than once"):
+        form(exports=exports)
+
+
+def test_a_manifest_has_no_forms_by_default() -> None:
+    assert manifest().forms == ()
+
+
+def test_manifest_fields_end_with_forms() -> None:
+    assert [field.name for field in dataclasses.fields(Manifest)][-1] == "forms"
+
+
+def test_a_manifest_holds_its_forms_as_a_tuple_in_order() -> None:
+    other = form(name="ex/business", instances="ex/businesses", exports=("ex/profit",))
+    found = dataclasses.replace(manifest(), forms=cast(Any, [form(), other]))
+
+    assert found.forms == (form(), other)
+    assert isinstance(found.forms, tuple)
+
+
+def test_manifests_with_other_forms_differ_and_equal_ones_hash_alike() -> None:
+    with_form = dataclasses.replace(manifest(), forms=(form(),))
+
+    assert with_form != manifest()
+    assert with_form == dataclasses.replace(manifest(), forms=(form(),))
+    assert hash(with_form) == hash(dataclasses.replace(manifest(), forms=(form(),)))
+
+
+def test_a_manifest_refuses_two_forms_of_one_name() -> None:
+    again = form(instances="ex/others", exports=("ex/profit",))
+
+    with pytest.raises(InvalidManifestError, match="ex/rental.*more than once"):
+        dataclasses.replace(manifest(), forms=(form(), again))
+
+
+# --- the return form: the form of every selection of `capabilities` -----------------------------
+#
+# `Manifest.capabilities`, `inputs` and `outputs` are the selections and the starting and ending
+# artifacts of the RETURN form, named `<jurisdiction namespace>/return`; `forms` holds only the
+# other forms. A form of the return's name would be a second return, so it is refused.
+
+
+def test_the_return_form_is_named_return_in_the_namespace_of_the_jurisdiction() -> None:
+    assert manifest().return_form_name == "ex-on/return"
+
+
+def test_a_manifest_refuses_a_form_named_like_its_return_form() -> None:
+    clash = form(name="ex-on/return", instances="ex/rentals", exports=("ex/profit",))
+
+    with pytest.raises(InvalidManifestError, match="ex-on/return.*return form"):
+        dataclasses.replace(manifest(), forms=(clash,))
+
+
+def test_a_form_named_return_in_another_namespace_is_allowed() -> None:
+    other = form(name="ex/return", instances="ex/rentals", exports=("ex/profit",))
+
+    assert dataclasses.replace(manifest(), forms=(other,)).forms == (other,)
