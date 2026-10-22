@@ -17,6 +17,7 @@ import pytest
 from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.artifact import ArtifactRegistry
+from app.domain.manifest import Manifest
 from app.domain.parameters.rate import Rate
 from app.jurisdictions.ca.catalog import (
     DEPENDANT_CARE_EXPENSES,
@@ -53,15 +54,24 @@ from tests.jurisdictions.ca_on.worked_return import WorkedReturn, WorkedReturnEr
 RETURNS = Path(__file__).parent / "returns"
 
 
-def load(path: Path) -> WorkedReturn:
-    """The worked return at `path` with its blank lines and inputs filled in."""
-    artifacts = ArtifactRegistry.shared()
+def load(
+    path: Path,
+    manifest: Manifest | None = None,
+    artifacts: ArtifactRegistry | None = None,
+) -> WorkedReturn:
+    """The worked return at `path` with its blank lines and inputs filled in.
+
+    Against the manifest of the file's jurisdiction and tax year and the shared registry, unless a
+    `manifest` and `artifacts` are given.
+    """
+    artifacts = artifacts if artifacts is not None else ArtifactRegistry.shared()
     worked = WorkedReturn.load(path, artifacts)
-    manifest = (
-        YamlJurisdictionSource(JURISDICTIONS.roots())
-        .get_jurisdiction(worked.jurisdiction)
-        .manifest_for(worked.tax_year)
-    )
+    if manifest is None:
+        manifest = (
+            YamlJurisdictionSource(JURISDICTIONS.roots())
+            .get_jurisdiction(worked.jurisdiction)
+            .manifest_for(worked.tax_year)
+        )
     return worked.with_blanks(manifest.inputs, manifest.outputs, artifacts).with_forms(
         manifest.forms, artifacts
     )
@@ -1086,11 +1096,7 @@ def check_rentals(tmp_path: Path, text: str) -> None:
     manifest = replace(rental_manifest(), outputs=frozenset({"ex/total_net_income"}))
     path = tmp_path / "rentals.yaml"
     path.write_text(text)
-    worked = (
-        WorkedReturn.load(path, artifacts)
-        .with_blanks(manifest.inputs, manifest.outputs, artifacts)
-        .with_forms(manifest.forms, artifacts)
-    )
+    worked = load(path, manifest, artifacts)
 
     check_against(worked, service(manifest, artifacts))
 
@@ -1143,3 +1149,37 @@ def test_an_entry_for_each_instance_is_required(tmp_path: Path) -> None:
         WorkedReturnError, match=r"rentals\.yaml: expected: 'ex/rental' has 1 entry"
     ):
         check_rentals(tmp_path, text)
+
+
+FLAT_RENTAL_RETURN = """\
+jurisdiction: EX-ON
+tax_year: 2025
+description: One made-up rental given flat, as the old worked returns give a form's inputs.
+sources:
+  - Made up for the tests of the mechanism.
+inputs:
+  ex/gross_rent: "12000"
+  ex/expenses: "2000"
+  ex/units:
+    - ex/unit_amount: "1"
+expected:
+  ex/total_net_income: "10000"
+  ex/rental:
+    - ex/net_income: "10000"
+      ex/units_doubled:
+        - ex/unit_amount: "2"
+"""
+
+
+def test_a_flat_return_loads_as_one_instance_after_the_blanks_are_filled(tmp_path: Path) -> None:
+    artifacts = artifact_registry()
+    manifest = replace(rental_manifest(), outputs=frozenset({"ex/total_net_income"}))
+    path = tmp_path / "flat.yaml"
+    path.write_text(FLAT_RENTAL_RETURN)
+
+    worked = load(path, manifest, artifacts)
+
+    (instances,) = (a for a in worked.inputs if a.kind.identifier == "ex/rentals")
+    assert len(instances.value.records) == 1
+    assert [a.kind.identifier for a in worked.inputs] == ["ex/rentals"]
+    check_against(worked, service(manifest, artifacts))

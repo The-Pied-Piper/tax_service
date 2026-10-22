@@ -29,6 +29,7 @@ from app.domain.composition import Composition
 from app.domain.errors import (
     CapabilityContractError,
     DomainError,
+    DuplicateArtifactError,
     InvalidCompositionError,
     MissingArtifactError,
     NotFoundError,
@@ -706,3 +707,29 @@ def test_its_wiring_errors_are_those_of_the_composition_unprefixed() -> None:
 
 def test_the_return_composition_is_the_one_the_bare_wiring_would_give() -> None:
     assert [type(c) for c in lone_set().return_form.composition.order] == [Subtract]
+
+
+# --- two starting values of one kind -----------------------------------------------------------
+
+
+def test_two_starting_values_for_a_return_input_are_refused_as_the_worksheet_does() -> None:
+    twice = (Artifact(SALES, D(10)), Artifact(SALES, D(11)), Artifact(COSTS, D(4)))
+
+    with pytest.raises(DuplicateArtifactError, match="two starting values for 'sales'") as bare:
+        lone_composition().compute(*twice)
+    with pytest.raises(DuplicateArtifactError) as wrapped:
+        lone_set().compute(*twice)
+
+    assert str(wrapped.value) == str(bare.value)
+
+
+def test_two_starting_values_for_a_forms_instances_are_refused() -> None:
+    with pytest.raises(DuplicateArtifactError, match="two starting values for 'shops'"):
+        form_set(shop(), audit()).compute(TWO_SHOPS, shops(("1", "1")), TWO_AUDITS)
+
+
+def test_two_starting_values_are_refused_even_when_the_kind_is_not_an_input() -> None:
+    with pytest.raises(DuplicateArtifactError, match="two starting values for 'fee'"):
+        form_set(shop(), audit()).compute(
+            TWO_SHOPS, TWO_AUDITS, Artifact(FEE, D(1)), Artifact(FEE, D(2))
+        )

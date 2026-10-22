@@ -27,7 +27,12 @@ from typing import Any
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capability import Capability
 from app.domain.composition import Composition
-from app.domain.errors import DomainError, InvalidCompositionError, NotFoundError
+from app.domain.errors import (
+    DomainError,
+    DuplicateArtifactError,
+    InvalidCompositionError,
+    NotFoundError,
+)
 from app.domain.record_list import RecordList, RecordListKind
 from app.domain.trace import FormInstanceLine, TraceLine
 from app.domain.worksheet import Worksheet
@@ -260,8 +265,13 @@ class FormSet:
         record's fields and the form's imports; the return form runs last, once, on `artifacts`
         other than the instances and its imports. A DomainError from an instance is raised as
         itself with the form and the instance position at the front of its message. A kind given
-        that is a form's export is refused: the forms derive it.
+        that is a form's export is refused: the forms derive it, and two values for one kind are a
+        DuplicateArtifactError, as in a `Worksheet`.
         """
+        kinds = [artifact.kind for artifact in artifacts]
+        for kind in kinds:
+            if kinds.count(kind) > 1:
+                raise DuplicateArtifactError(f"two starting values for {kind.label!r}")
         given = {artifact.kind: artifact for artifact in artifacts}
         self._check_given(given)
         store: dict[ArtifactKind[Any], Artifact[Any]] = {}

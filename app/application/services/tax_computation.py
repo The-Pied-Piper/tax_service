@@ -68,11 +68,14 @@ class TaxComputationService:
         }
         for form in manifest.forms:
             self._register_derived(FormComposition.derive(form.name, exports[form.name]))
+        # Resolved before any capability is built, so a bad identifier is reported first.
+        inputs = frozenset(self._artifacts.kind(identifier) for identifier in manifest.inputs)
+        outputs = frozenset(self._artifacts.kind(identifier) for identifier in manifest.outputs)
         return FormSet(
             manifest.return_form_name,
             [self._capability(selection, tax_year) for selection in manifest.capabilities],
-            inputs=frozenset(self._artifacts.kind(identifier) for identifier in manifest.inputs),
-            outputs=frozenset(self._artifacts.kind(identifier) for identifier in manifest.outputs),
+            inputs=inputs,
+            outputs=outputs,
             forms=[
                 FormComposition(
                     form.name,

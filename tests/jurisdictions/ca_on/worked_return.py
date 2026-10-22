@@ -137,19 +137,22 @@ class WorkedReturn:
         level of `inputs:`, while the engine takes only the instances shape. The flat inputs that
         are fields of the form's instances kind become the one record of that artifact, the fields
         the file leaves out blank as in `with_blanks`; with none of them in the file the artifact
-        is an empty list. An instances artifact the file already gives is kept as it is. Raises
-        WorkedReturnError naming the file for an instances identifier that is not a record list,
-        for an expectation of a form not in `forms` and for one with other than an entry per
-        instance.
+        is an empty list. An instances artifact with records, given by the file, is kept as it is;
+        a blank one is replaced when flat inputs are present. Raises WorkedReturnError naming the
+        file for an instances identifier that is not a record list, for an expectation of a form
+        not in `forms` and for one with other than an entry per instance.
         """
         named = {form.name: form for form in forms}
         inputs = self.inputs
         for form in named.values():
             kind = self._instances_kind(form, artifacts)
-            if any(artifact.kind == kind for artifact in inputs):
-                continue
             flat = [artifact for artifact in inputs if artifact.kind in kind.fields]
-            inputs = tuple(artifact for artifact in inputs if artifact not in flat)
+            given = [artifact for artifact in inputs if artifact.kind == kind]
+            # An instances artifact with records is kept; a blank one (`with_blanks` ran first)
+            # gives way to the flat inputs.
+            if given and (given[0].value.records or not flat):
+                continue
+            inputs = tuple(a for a in inputs if a not in flat and a not in given)
             record: dict[ArtifactKind[Any], object] = {a.kind: a.value for a in flat}
             if flat:
                 missing = [field.identifier for field in kind.fields if field not in record]

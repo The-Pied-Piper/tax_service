@@ -1604,3 +1604,25 @@ def test_no_entry_for_a_form_with_no_instances_matches_an_empty_list(
     converted = worked.with_forms([rental_form()], lines)
 
     assert converted.form_expected == (FormExpectation("ex/rental", ()),)
+
+
+def test_flat_inputs_become_the_instance_though_the_blank_instances_came_first(
+    tmp_path: Path, rentals: ArtifactRegistry
+) -> None:
+    worked = flat_rental(tmp_path, rentals)
+
+    blanked = worked.with_blanks(frozenset({"ex/rentals", "ex/other_amount"}), frozenset(), rentals)
+    converted = blanked.with_forms([rental_form()], rentals)
+
+    assert values(converted) == values(worked.with_forms([rental_form()], rentals))
+    assert len(values(converted)["ex/rentals"].records) == 1
+
+
+def test_a_blank_instances_artifact_with_no_flat_inputs_stays_empty(
+    tmp_path: Path, rentals: ArtifactRegistry
+) -> None:
+    worked = flat_rental(tmp_path, rentals, 'inputs:\n  ex/other_amount: "7"\n')
+
+    blanked = worked.with_blanks(frozenset({"ex/rentals"}), frozenset(), rentals)
+
+    assert values(blanked.with_forms([rental_form()], rentals))["ex/rentals"].records == ()
