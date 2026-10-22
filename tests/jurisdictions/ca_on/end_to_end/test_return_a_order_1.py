@@ -227,6 +227,7 @@ from app.jurisdictions.ca.catalog import (
     FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
     FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
     FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
+    FOREIGN_TAX_CREDIT_SHEETS,
     GROSS_RENTAL_INCOME,
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
@@ -489,8 +490,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 1211
-    assert len(order) == 1211
+    assert len(order) == 1220
+    assert len(order) == 1220
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -1246,7 +1247,38 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[LIFT_MAXIMUM_CREDIT] < position[ontario.LIFT_CREDIT_SINGLE]
     assert position[LIFT_REDUCTION] < position[ontario.LIFT_CREDIT_SINGLE]
     assert position[LIFT_CREDIT] < position[ONTARIO_TAX_AFTER_LIFT_CREDIT] < position[ONTARIO_TAX]
-    assert position[ONTARIO_TAX_AFTER_REDUCTION] < position[ONTARIO_TAX_AFTER_LIFT_CREDIT]
+    assert (
+        position[ONTARIO_TAX_AFTER_REDUCTION]
+        < position[ontario.ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT]
+        < position[ONTARIO_TAX_AFTER_LIFT_CREDIT]
+    )
+    # ON428 line 82 is limited by the tax otherwise payable (line 81 with "0" on lines 70 and 72),
+    # which is worked from line 69 and the tax reduction amounts, and Form T2036 reads the sheets
+    # of Form T2209 and its net income.
+    assert (
+        position[ONTARIO_TAX_WITH_SURTAX]
+        < position[ontario.TAX_OTHERWISE_PAYABLE_LINE_71]
+        < position[ontario.TAX_OTHERWISE_PAYABLE_LINE_73]
+        < position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION_BEFORE_CONDITIONS]
+        < position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION]
+        < position[ontario.TAX_OTHERWISE_PAYABLE]
+        < position[ontario.PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT]
+        < position[ontario.PROVINCIAL_FOREIGN_TAX_CREDIT]
+        < position[ontario.ONTARIO_TAX_AFTER_FOREIGN_TAX_CREDIT]
+    )
+    assert position[TAX_REDUCTION_AMOUNTS] < position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION]
+    assert (
+        position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION_CLAIMABLE]
+        < (position[ontario.TAX_OTHERWISE_PAYABLE_REDUCTION])
+    )
+    assert (
+        position[FOREIGN_TAX_CREDIT_SHEETS]
+        < position[ontario.PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT]
+    )
+    assert (
+        position[FOREIGN_TAX_CREDIT_NET_INCOME]
+        < position[ontario.PROVINCIAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT]
+    )
     assert (
         position[COMMUNITY_FOOD_PROGRAM_CREDIT]
         < position[ONTARIO_TAX_AFTER_FOOD_CREDIT]

@@ -224,6 +224,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_renderers() -> None:
         "app.jurisdictions.ca.trace.rentals.ShortTermRentalNonCompliantCcaLine",
         "app.jurisdictions.ca.trace.rentals.ShortTermRentalNonCompliantLine",
         "app.jurisdictions.ca_on.trace.dependants.CaregiverClaimLessClaimedLine",
+        "app.jurisdictions.ca_on.trace.foreign_tax.ProvincialForeignTaxCreditLine",
         "app.jurisdictions.ca_on.trace.placement_credit.PlacementCreditLine",
     }
 

@@ -92,7 +92,11 @@ from app.jurisdictions.ca.trace import (
     ShortTermRentalNonCompliantLine,
     TerminalLossLine,
 )
-from app.jurisdictions.ca_on.trace import CaregiverClaimLessClaimedLine, PlacementCreditLine
+from app.jurisdictions.ca_on.trace import (
+    CaregiverClaimLessClaimedLine,
+    PlacementCreditLine,
+    ProvincialForeignTaxCreditLine,
+)
 
 D = Decimal
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
@@ -3683,4 +3687,62 @@ def test_renders_a_single_country_as_one_country_not_pooled_by_the_threshold() -
     assert render(line) == (
         "non_compliant_expenses: one country: tax paid 1500, 10000 net foreign income x "
         "14000 basic federal tax / 100000 net income = 1400 (half-up to 0.01); credit 1400"
+    )
+
+
+# --- provincial foreign tax credit (Form T2036 lines 1 to 5) ----------------------------------
+
+
+def provincial_sheet(
+    position: int,
+    tax_paid: str,
+    federal_credit: str,
+    line_3: str,
+    income: str,
+    line_4: str,
+    result: str,
+    rounding: RoundingRule = CENT,
+) -> ProvincialForeignTaxCreditLine:
+    return ProvincialForeignTaxCreditLine(
+        NON_COMPLIANT_EXPENSES,
+        position,
+        D(tax_paid),
+        D(federal_credit),
+        D(line_3),
+        D(income),
+        D("100000"),
+        D("5000"),
+        rounding,
+        D(line_4),
+        D(result),
+    )
+
+
+def test_renders_one_sheet_by_position() -> None:
+    line = provincial_sheet(1, "1500", "1400.00", "100.00", "10000", "500.00", "100.00")
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 1: tax paid 1500 less federal credit 1400 = 100; "
+        "10000 net foreign income x 5000 provincial tax / 100000 net income = 500 "
+        "(half-up to 0.01); credit 100"
+    )
+
+
+def test_renders_a_sheet_whose_line_4_is_the_lesser() -> None:
+    line = provincial_sheet(2, "1500", "0", "1500", "10000", "500.00", "500.00")
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 2: tax paid 1500 less federal credit 0 = 1500; "
+        "10000 net foreign income x 5000 provincial tax / 100000 net income = 500 "
+        "(half-up to 0.01); credit 500"
+    )
+
+
+def test_renders_a_sheet_without_rounding() -> None:
+    line = provincial_sheet(1, "5", "0", "5", "0.015", "0.00075", "0.00075", rounding=NO_ROUNDING)
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 1: tax paid 5 less federal credit 0 = 5; "
+        "0.015 net foreign income x 5000 provincial tax / 100000 net income = 0.00075 "
+        "(no rounding); credit 0.00075"
     )
