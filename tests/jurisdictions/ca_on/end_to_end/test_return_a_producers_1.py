@@ -70,30 +70,50 @@ from app.jurisdictions.ca.catalog import (
     AGED_18_OR_OLDER_AT_END_OF_2025,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMT_ADJUSTED_INCOME_WITH_GAINS,
+    AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
+    AMT_ADJUSTED_TAXABLE_INCOME,
+    AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+    AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL,
+    AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_APPLICABLE_RATE_AMOUNT,
+    AMT_BASIC_EXEMPTION,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
+    AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CAPITAL_GAINS_DIFFERENCE,
+    AMT_CREDITS_ADJUSTMENTS_TOTAL,
     AMT_DEDUCTIONS_TOTAL,
+    AMT_DIVIDENDS_ADJUSTMENTS_TOTAL,
+    AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
+    AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
+    AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
     AMT_FILM_PROPERTY_ADJUSTMENT,
+    AMT_GROSS_MINIMUM_AMOUNT,
+    AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
     AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
+    AMT_MINIMUM_AMOUNT,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
+    AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
     AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
     AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
     AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES,
+    AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RESOURCE_INCOME_TOTAL,
     AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
     AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
+    AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL,
     AMT_SECURITY_OPTIONS_D1_TOTAL,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
@@ -869,6 +889,28 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(AMT_CAPITAL_GAINS_DIFFERENCE), Subtract)
     assert isinstance(worksheet.producer_of(AMT_CAPITAL_GAINS_ADDED), SignChosenDifference)
     assert isinstance(worksheet.producer_of(AMT_ADJUSTED_INCOME_WITH_GAINS), Sum)
+    assert isinstance(worksheet.producer_of(AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS), Sum)
+    assert isinstance(worksheet.producer_of(AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_ADJUSTMENTS_AFTER_RATE_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_AMOUNT_A_MINUS_AMOUNT_B), Subtract)
+    assert isinstance(
+        worksheet.producer_of(AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT), ApplyRate
+    )
+    assert isinstance(worksheet.producer_of(AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_DIVIDENDS_ADJUSTMENTS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_LIFETIME_EXEMPTION_ADJUSTMENT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED), ApplyFraction)
+    assert isinstance(worksheet.producer_of(AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE), Subtract)
+    assert isinstance(worksheet.producer_of(AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_ADJUSTED_TAXABLE_INCOME), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_BASIC_EXEMPTION), CreditAmount)
+    assert isinstance(worksheet.producer_of(AMT_NET_ADJUSTED_TAXABLE_INCOME), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_GROSS_MINIMUM_AMOUNT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_DONATIONS_AND_GIFTS_ADJUSTMENT), ApplyRate)
+    assert isinstance(worksheet.producer_of(AMT_CREDITS_ADJUSTMENTS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_MINIMUM_AMOUNT), SubtractNotBelowZero)
     assert isinstance(worksheet.producer_of(AMT_PUBLICLY_LISTED_GIFTS_NET), Subtract)
     assert isinstance(worksheet.producer_of(AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT), ApplyRate)
     assert isinstance(worksheet.producer_of(AMT_SECURITY_OPTIONS_D_TOTAL), Sum)

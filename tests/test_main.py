@@ -40,8 +40,8 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1168
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1168
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1188
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1188
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -1680,6 +1680,28 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/amt_office_expenses_adjustment",
         "ca/amt_adjustments_before_rate_total",
         "ca/amt_applicable_rate_amount",
+        "ca/amt_adjusted_income_with_security_options",
+        "ca/amt_security_options_and_losses_total",
+        "ca/amt_adjustments_after_rate_total",
+        "ca/amt_dividends_other_than_eligible_adjustment",
+        "ca/amt_amount_a_minus_amount_b",
+        "ca/amt_dividends_difference_adjustment",
+        "ca/amt_dividends_adjustments_total",
+        "ca/amt_lifetime_exemption_adjustment",
+        "ca/amt_adjustments_with_lifetime_exemption_total",
+        "ca/amt_qbt_capital_gains_deduction_doubled",
+        "ca/amt_qbt_capital_gains_deduction_difference",
+        "ca/amt_capital_gains_deductions_total",
+        "ca/amt_adjusted_taxable_income",
+        "ca/amt_basic_exemption",
+        "ca/amt_net_adjusted_taxable_income",
+        "ca/amt_gross_minimum_amount",
+        "ca/amt_non_refundable_credits_adjustment",
+        "ca/amt_donations_and_gifts_adjustment",
+        "ca/amt_federal_logging_tax_credit",
+        "ca/amt_section_119_former_resident_credit",
+        "ca/amt_credits_adjustments_total",
+        "ca/amt_minimum_amount",
         "ca/amt_capital_gains_difference",
         "ca/amt_capital_gains_added",
         "ca/amt_adjusted_income_with_gains",
@@ -1995,15 +2017,15 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1168
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1168
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1188
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1188
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1168
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1168
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1188
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1188
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

@@ -587,6 +587,10 @@ inputs:
   - ca/amt_excess_epsp_amounts
   - ca/amt_forfeited_salary_deferral_amounts
   - ca/amt_repayment_of_wage_loss_replacement
+  # Form T691 Part 1 lines 100 and 101: the caller's figures, the federal logging tax credit and the
+  # section 119 credit for a former resident, entered as the form takes them.
+  - ca/amt_federal_logging_tax_credit
+  - ca/amt_section_119_former_resident_credit
   - ca/political_contributions
   - ca/disability_supports_deduction
   - ca/other_employment_expenses

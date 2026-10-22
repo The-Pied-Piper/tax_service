@@ -22,6 +22,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_COMMISSION_EMPLOYMENT_EXPENSES,
     AMT_DEFERRED_PROFIT_SHARING_PLAN_DEDUCTION,
     AMT_EXCESS_EPSP_AMOUNTS,
+    AMT_FEDERAL_LOGGING_TAX_CREDIT,
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
     AMT_FINANCING_EXPENSES,
@@ -48,6 +49,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_RESOURCE_EXPENDITURES,
     AMT_RESOURCE_FOREIGN_PROPERTY_INCOME,
     AMT_RESOURCE_PRODUCTION_INCOME,
+    AMT_SECTION_119_FORMER_RESIDENT_CREDIT,
     AMT_SECURITY_OPTION_PUBLICLY_LISTED_GIFTS,
     AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
@@ -1930,6 +1932,8 @@ def compute(
     amt_repayment_of_wage_loss_replacement: str = "0",
     cpp_t4_base_and_first_additional_contributions: str | None = None,
     cpp_t4_second_additional_contributions: str | None = None,
+    amt_federal_logging_tax_credit: str = "0",
+    amt_section_119_former_resident_credit: str = "0",
 ) -> Worksheet:
     # The T4 box 16 and 16A amounts default to the required ones for the employment income given,
     # so line 24 is 0 unless a test gives its own.
@@ -2623,6 +2627,11 @@ def compute(
         Artifact(
             AMT_REPAYMENT_OF_WAGE_LOSS_REPLACEMENT,
             D(amt_repayment_of_wage_loss_replacement),
+        ),
+        Artifact(AMT_FEDERAL_LOGGING_TAX_CREDIT, D(amt_federal_logging_tax_credit)),
+        Artifact(
+            AMT_SECTION_119_FORMER_RESIDENT_CREDIT,
+            D(amt_section_119_former_resident_credit),
         ),
     )
 
