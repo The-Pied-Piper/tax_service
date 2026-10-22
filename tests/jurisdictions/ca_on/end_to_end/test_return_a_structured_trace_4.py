@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from app.domain.parameters.amount import Amount
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.rate import Rate
 from app.domain.trace import (
@@ -16,6 +17,7 @@ from app.domain.trace import (
     ItemsTotalLine,
     ItemSumLine,
     LesserOfLine,
+    LesserOfWithMaximumLine,
     QuotientLine,
     RecordCountLine,
     RecordTotalLine,
@@ -32,15 +34,19 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2000,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
     ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
     ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
     ADJUSTED_LOSSES_APPLIED_2000,
     ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
+    ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
     ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
     ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
     ADJUSTED_LOSSES_LEFT_AFTER_2000,
+    ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985,
+    ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     ADJUSTED_NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     AGE_AMOUNT_BEFORE_COUNT,
     AGE_INCOME_OVER_THRESHOLD,
@@ -553,6 +559,7 @@ from app.jurisdictions.ca.catalog import (
     MEDICAL_SUPPLEMENT_LINE_15,
     MEDICAL_SUPPLEMENT_LINE_16,
     MEDICAL_THRESHOLD,
+    NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION,
     NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
     NET_CAPITAL_LOSSES_CLAIMED,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
@@ -576,6 +583,7 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_COLUMN_2_LINE_3,
     POLITICAL_CREDIT_COLUMN_3_LINE_2,
     POLITICAL_CREDIT_COLUMN_3_LINE_3,
+    PRE_1986_CAPITAL_LOSS_BALANCE,
     QBT_2025_RESERVE,
     QBT_ABIL_AND_NET_INVESTMENT_LOSS,
     QBT_ABIL_REDUCTION,
@@ -732,6 +740,7 @@ from app.jurisdictions.ca.catalog import (
     TOSI_ADJUSTED_NET_INCOME,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
+    TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_CREDITS,
     TOTAL_LOSSES_FOR_ANNUAL_GAINS_LIMIT,
@@ -747,6 +756,7 @@ from app.jurisdictions.ca.catalog import (
     TUITION_TRANSFER_LIMIT,
     TUITION_TRANSFERRED,
     UCCB_AND_RDSP_INCOME,
+    UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES,
     UNAPPLIED_LISTED_PERSONAL_PROPERTY_LOSSES,
     UNDER_18_ON_DECEMBER_31,
     UNUSED_TUITION_CLAIMED,
@@ -1601,12 +1611,20 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         # Form T1436 Chart A column D "Total adjusted net capital losses applied against taxable
         # capital gains in 2025": the lesser of column C and what is left of line 13, 0 for no
-        # claim.
+        # claim; the row "Before May 23, 1985" takes line 13 itself, the oldest row first.
+        ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985: LesserOfLine(
+            ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985,
+            (
+                (ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985, D("0.00")),
+                (TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED, D("0.00")),
+            ),
+            D("0.00"),
+        ),
         ADJUSTED_LOSSES_APPLIED_1985_TO_1987: LesserOfLine(
             ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
             (
                 (ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987, D("0.00")),
-                (NET_CAPITAL_LOSSES_OF_OTHER_YEARS, D("0")),
+                (ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985, D("0.00")),
             ),
             D("0.00"),
         ),
@@ -1798,10 +1816,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             bound=RENTAL_CCA_LIMIT,
             bound_value=D("0"),
         ),
-        # Form T1436 line 7 "Enter the amount of losses you want to claim (3).", which is T1 line
-        # 25300 and line 13: a claim of 0 against a line 6 of 0.00.
-        NET_CAPITAL_LOSSES_OF_OTHER_YEARS: AtMostLine(
-            output=NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
+        # Form T1436 line 7 "Enter the amount of losses you want to claim (3).": a claim of 0
+        # against a line 6 of 0.00.
+        ADJUSTED_NET_CAPITAL_LOSSES_APPLIED: AtMostLine(
+            output=ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
             amount_kind=NET_CAPITAL_LOSSES_CLAIMED,
             amount_value=D("0"),
             bound=NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
@@ -4841,3 +4859,23 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             chosen_value=D("0"),
         ),
     }
+
+
+def test_the_trace_records_line_9_of_the_pre_1986_calculation_as_a_structured_line() -> None:
+    # Form T1436 line 9 "Enter whichever is less: amount from line 3, line 8, or $2,000." (confirmed
+    # from the PDF; no .txt published): Return A has no pre-1986 capital loss balance (line 3 is
+    # 0.00) and nothing unapplied (line 8 is 0.00), so line 9 is 0.00.
+    lines = [line for line in return_a().trace if isinstance(line, LesserOfWithMaximumLine)]
+
+    assert lines == [
+        LesserOfWithMaximumLine(
+            output=NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION,
+            parts=(
+                (PRE_1986_CAPITAL_LOSS_BALANCE, D("0.00")),
+                (UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES, D("0.00")),
+            ),
+            maximum=Amount(D("2000")),
+            rounding=CENT,
+            result=D("0.00"),
+        )
+    ]

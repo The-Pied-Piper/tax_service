@@ -50,6 +50,7 @@ from app.domain.trace import (
     ItemsTotalLine,
     ItemSumLine,
     LesserOfLine,
+    LesserOfWithMaximumLine,
     MultipleOverLine,
     PercentageAppliedLine,
     PerUnitAmountLine,
@@ -581,6 +582,63 @@ def test_renders_the_lesser_of_one_amount() -> None:
     line = LesserOfLine(LESSER_AMOUNT, ((PART_TWO, D("40.5")),), D("40.5"))
 
     assert render(line) == "lesser_amount: lesser of part_two 40.5 = 40.5"
+
+
+# --- lesser of amounts and a maximum ---------------------------------------------------
+#
+# "<output>: lesser of <part> <amount> and <part> <amount> and <maximum> (<rule>) = <result>", every
+# figure as given without trailing zeros, the result last.
+
+
+def test_renders_the_lesser_of_two_amounts_and_a_maximum() -> None:
+    line = LesserOfWithMaximumLine(
+        LESSER_AMOUNT,
+        ((PART_ONE, D("2500")), (PART_TWO, D("3000"))),
+        Amount(D("2000")),
+        NO_ROUNDING,
+        D("2000"),
+    )
+
+    assert render(line) == (
+        "lesser_amount: lesser of part_one 2500 and part_two 3000 and 2000 (no rounding) = 2000"
+    )
+
+
+def test_renders_the_lesser_of_amounts_and_a_maximum_in_the_order_of_the_line() -> None:
+    line = LesserOfWithMaximumLine(
+        LESSER_AMOUNT,
+        ((PART_TWO, D("150")), (PART_ONE, D("80.50"))),
+        Amount(D("2000")),
+        NO_ROUNDING,
+        D("80.50"),
+    )
+
+    assert render(line) == (
+        "lesser_amount: lesser of part_two 150 and part_one 80.5 and 2000 (no rounding) = 80.5"
+    )
+
+
+def test_renders_the_lesser_of_one_amount_and_a_maximum() -> None:
+    line = LesserOfWithMaximumLine(
+        LESSER_AMOUNT, ((PART_TWO, D("40.5")),), Amount(D("2000")), NO_ROUNDING, D("40.5")
+    )
+
+    assert render(line) == "lesser_amount: lesser of part_two 40.5 and 2000 (no rounding) = 40.5"
+
+
+def test_renders_the_lesser_of_amounts_and_a_maximum_with_the_rounding_rule() -> None:
+    line = LesserOfWithMaximumLine(
+        LESSER_AMOUNT,
+        ((PART_ONE, D("80.005")), (PART_TWO, D("150"))),
+        Amount(D("2000.00")),
+        CENT,
+        D("80.01"),
+    )
+
+    assert render(line) == (
+        "lesser_amount: lesser of part_one 80.005 and part_two 150 and 2000 (half-up to 0.01)"
+        " = 80.01"
+    )
 
 
 # --- greater of amounts -------------------------------------------------------------------
@@ -2658,6 +2716,17 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
                 LESSER_AMOUNT, ((PART_ONE, D("1500.2500")), (PART_TWO, D("1E+3"))), D("1E+3")
             ),
             "lesser_amount: lesser of part_one 1500.25 and part_two 1000 = 1000",
+        ),
+        (
+            LesserOfWithMaximumLine(
+                LESSER_AMOUNT,
+                ((PART_ONE, D("2500.00")), (PART_TWO, D("3E+3"))),
+                Amount(D("2000.00")),
+                NO_ROUNDING,
+                D("2000.00"),
+            ),
+            "lesser_amount: lesser of part_one 2500 and part_two 3000 and 2000 (no rounding)"
+            " = 2000",
         ),
         (
             GreaterOfLine(

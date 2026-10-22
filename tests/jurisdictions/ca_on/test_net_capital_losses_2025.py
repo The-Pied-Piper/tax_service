@@ -4,9 +4,10 @@ Form T1436 (Capital Gains Worksheet, 2025; CRA publishes no .txt, so the quotes 
 extracted from the PDF), "Line 25300 - Net capital loss of other years (if you have pre-1986
 capital loss balance)", "Chart A - Adjustment calculation for carry-forward losses": a row for each
 printed period, with column (B) "Adjustment factor (for the inclusion rate)" and column (F)
-"Adjustment factor (for carry-forward losses)". The rows wired are "After May 22, 1985, and before
-1988" (1 and 1), "In 1988 and 1989" (0.75 and 1.33), "After 1989 and before 2000" (0.6667 and 1.5)
-and "After 2000 and before 2025" (1 and 1); "Before May 23, 1985" and "In 2000" are not wired. The
+"Adjustment factor (for carry-forward losses)". The rows wired are "Before May 23, 1985" (1 and
+1), "After May 22, 1985, and before 1988" (1 and 1), "In 1988 and 1989" (0.75 and 1.33), "After
+1989 and before 2000" (0.6667 and 1.5) and "After 2000 and before 2025" (1 and 1); "In 2000" is not
+wired. The
 form prints 0.75, 0.6667, 1.33 and 1.5 for 3/4, 2/3, 4/3 and 3/2 rounded for print, so each factor
 is a `fraction` dataset holding the exact fraction (3/4 times 4/3 is 1, where 0.75 times 1.33 is
 0.9975) and a factor of 1 is 1/1. Columns (C) and (G) are dollars-and-cents boxes, so each
@@ -46,7 +47,7 @@ D = Decimal
 SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 FORM = "https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t1436/t1436-25e.pdf"
-ROWS = ("1985_to_1987", "1988_and_1989", "1990_to_1999", "2001_to_2024")
+ROWS = ("before_may_23_1985", "1985_to_1987", "1988_and_1989", "1990_to_1999", "2001_to_2024")
 
 
 def factor(column: str, row: str) -> str:
@@ -128,6 +129,7 @@ def chart_a(losses: dict[str, str], taxable_gains: str, claim: str) -> dict[str,
 @pytest.mark.parametrize(
     ("row", "numerator", "denominator"),
     [
+        ("before_may_23_1985", 1, 1),
         ("1985_to_1987", 1, 1),
         ("1988_and_1989", 3, 4),
         ("1990_to_1999", 2, 3),
@@ -149,6 +151,7 @@ def test_2025_column_b_is_the_exact_fraction_of_the_printed_factor(
 @pytest.mark.parametrize(
     ("row", "numerator", "denominator"),
     [
+        ("before_may_23_1985", 1, 1),
         ("1985_to_1987", 1, 1),
         ("1988_and_1989", 4, 3),
         ("1990_to_1999", 3, 2),
@@ -204,7 +207,8 @@ def test_the_total_of_column_d_is_line_13_the_claim() -> None:
     )
 
     applied = [chart[f"d_{row}"] for row in ROWS]
-    assert applied == [D("100.00"), D("300.00"), D("300.00"), D("0.00")]
+    # The row "Before May 23, 1985" has no loss: 0.00.
+    assert applied == [D("0.00"), D("100.00"), D("300.00"), D("300.00"), D("0.00")]
     assert sum(applied) == chart["line_7"] == D("700")
 
 
@@ -219,6 +223,7 @@ def test_the_total_of_column_d_is_line_13_the_claim() -> None:
         ("1988_and_1989", "0.02", "0.02", "0.03"),
         # 1.01 x 2/3 is 0.67333..., down to 0.67; 0.67 x 3/2 is 1.005, up to 1.01.
         ("1990_to_1999", "1.01", "0.67", "1.01"),
+        ("before_may_23_1985", "1234.56", "1234.56", "1234.56"),
         ("1985_to_1987", "1234.56", "1234.56", "1234.56"),
         ("2001_to_2024", "1234.56", "1234.56", "1234.56"),
     ],

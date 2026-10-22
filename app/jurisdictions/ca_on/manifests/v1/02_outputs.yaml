@@ -10,6 +10,7 @@ outputs:
   - ca-on/coop_education_placement_count
   - ca-on/coop_claimed_as_partnership_member
   - ca-on/coop_partnership_business_number
+  - ca/net_capital_loss_balance_before_may_23_1985
   - ca/net_capital_loss_balance_1985_to_1987
   - ca/net_capital_loss_balance_1988_and_1989
   - ca/net_capital_loss_balance_1990_to_1999
