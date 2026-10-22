@@ -129,3 +129,15 @@ attach your provincial or territorial Form 428, even if the result is "0")". Lin
 INCOME_TAX_DEDUCTED = CATALOG.declare("income_tax_deducted", Decimal, non_negative=True)
 """Income tax deducted, T1 line 150 (line 43700) "Total income tax deducted (amounts from all
 Canadian slips)": a starting amount."""
+
+CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT = CATALOG.declare(
+    "cpp_part_5_payable_on_self_employment", Decimal, non_negative=True
+)
+"""T1 line 42100 from Part 5 line 49 (cpp_part_5_line_49_if_positive), once for each Part 5
+completed (1 or 0)."""
+
+CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS = CATALOG.declare(
+    "cpp_payable_on_self_employment_and_other_earnings", Decimal, non_negative=True
+)
+"""T1 line 42100: the Part 4 amount (cpp_payable_on_self_employment) plus the Part 5 amount,
+added into the total payable by 11_net_tax."""

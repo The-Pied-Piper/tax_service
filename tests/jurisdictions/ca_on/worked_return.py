@@ -154,16 +154,20 @@ class WorkedReturn:
 
     @staticmethod
     def _records(node: YamlNode, kind: RecordListKind) -> RecordList:
-        """`node` read as a list of records of `kind`'s fields, each field a count or an amount."""
+        """`node` read as a list of records of `kind`'s fields; a nested list reads the same."""
         keys = frozenset(field.identifier for field in kind.fields)
-        records: list[dict[ArtifactKind[Any], Decimal | int]] = []
+        records: list[dict[ArtifactKind[Any], Decimal | int | RecordList]] = []
         for item in node.items():
             item.require_mapping(keys)
-            record: dict[ArtifactKind[Any], Decimal | int] = {}
+            record: dict[ArtifactKind[Any], Decimal | int | RecordList] = {}
             for field in kind.fields:
                 value = item.field(field.identifier)
-                is_count = field.value_type is int
-                record[field] = WorkedReturn._count(value) if is_count else value.parse_decimal()
+                if isinstance(field, RecordListKind):
+                    record[field] = WorkedReturn._records(value, field)
+                elif field.value_type is int:
+                    record[field] = WorkedReturn._count(value)
+                else:
+                    record[field] = value.parse_decimal()
             records.append(record)
         return RecordList(kind.fields, records)
 

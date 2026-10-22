@@ -32,14 +32,32 @@ from app.jurisdictions.ca.catalog import (
     AGE_INCOME_OVER_THRESHOLD,
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+    AMT_APPLICABLE_RATE_AMOUNT,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
+    AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
+    AMT_SECURITY_OPTION_PUBLICLY_LISTED_GIFTS,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
+    BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
+    BUSINESS_VEHICLE_LEASE_PRICE_BASE,
     CANADA_TRAINING_CREDIT_BASIS,
     CANADIAN_TUITION_FEES,
     CAPITAL_GAIN,
     CAPITAL_GIFTS_LIMIT_ADDITION,
     CAPITAL_GIFTS_TOTAL,
+    CPP_ACTUAL_BASE_CONTRIBUTIONS,
+    CPP_PART_5_LINE_43,
+    CPP_PART_5_LINE_44,
+    CPP_PART_5_LINE_45,
+    CPP_PART_5_LINE_50,
+    CPP_PART_5_LINE_50_LINE_49_POSITIVE,
+    CPP_PART_5_LINE_70,
+    CPP_PART_5_LINE_71,
+    CPP_PART_5_LINE_75,
+    CPP_PART_5_LINE_75_BASE,
+    CPP_PART_5_LINE_84,
+    CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
@@ -55,8 +73,12 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_CREDIT,
     EMPLOYMENT_INCOME,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
+    FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
+    FARM_VEHICLE_LEASE_PRICE_BASE,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FIRST_TIER_DONATION_CREDIT,
+    FISH_VEHICLE_LEASE_PRICE_85_PERCENT,
+    FISH_VEHICLE_LEASE_PRICE_BASE,
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
     INCLUDED_CAPITAL_GAIN,
@@ -191,6 +213,115 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         if isinstance(line, ItemsTotalLine) and line.output is COOP_EDUCATION_CREDIT
     }
     assert rated == {
+        # Schedule 8 Part 5 line 70 "amount from line 43 multiplied by 50%": 0.00 x 50% for
+        # Return A (no self-employment income, so line 43 is 0.00).
+        CPP_PART_5_LINE_70: RateAppliedLine(
+            output=CPP_PART_5_LINE_70,
+            base=CPP_PART_5_LINE_43,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 71 "Amount from line 44 multiplied by 50%": 0.00 x 50% for
+        # Return A.
+        CPP_PART_5_LINE_71: RateAppliedLine(
+            output=CPP_PART_5_LINE_71,
+            base=CPP_PART_5_LINE_44,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 84 "Amount from line 45 multiplied by 50%": 0.00 x 50% for
+        # Return A.
+        CPP_PART_5_LINE_84: RateAppliedLine(
+            output=CPP_PART_5_LINE_84,
+            base=CPP_PART_5_LINE_45,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 75 "Line A multiply by 83.1933": 0.00 x 83.1933% for Return A.
+        CPP_PART_5_LINE_75: RateAppliedLine(
+            output=CPP_PART_5_LINE_75,
+            base=CPP_PART_5_LINE_75_BASE,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.831933")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 50 "multiplied by 50%": 0 x 50% for Return A.
+        CPP_PART_5_LINE_50: RateAppliedLine(
+            output=CPP_PART_5_LINE_50,
+            base=CPP_PART_5_LINE_50_LINE_49_POSITIVE,
+            base_amount=D("0"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 3 line 9 "amount from line 8 multiplied by 83.1933%": Return A's T4 box 16
+        # equals the required contributions (line 13), so the base share is line 11.
+        CPP_ACTUAL_BASE_CONTRIBUTIONS: RateAppliedLine(
+            CPP_ACTUAL_BASE_CONTRIBUTIONS,
+            CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("4034.10"),
+            Rate(D("0.831933")),
+            CENT,
+            D("3356.10"),
+        ),
+        # Form T691 Part 1 line 31 "× 40%" of the gifts under a security option plan (67914): Return
+        # A has none, so the base and the 40% are 0.
+        AMT_SECURITY_OPTION_GIFTS_DEDUCTION: RateAppliedLine(
+            AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
+            AMT_SECURITY_OPTION_PUBLICLY_LISTED_GIFTS,
+            D("0"),
+            Rate(D("0.4")),
+            CENT,
+            D("0"),
+        ),
+        # Form T2125 Chart C line 24 "× 85%" of amount 23 or the list price limit with tax: Return A
+        # has no leased vehicle, so the base is 44706.00 and the 85% is 38000.10.
+        BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT: RateAppliedLine(
+            BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
+            BUSINESS_VEHICLE_LEASE_PRICE_BASE,
+            D("44706.00"),
+            Rate(D("0.85")),
+            CENT,
+            D("38000.10"),
+        ),
+        # Form T2042 Chart C line 24 "× 85%" of amount 23 or the list price limit with tax: Return A
+        # has no leased vehicle, so the base is 44706.00 and the 85% is 38000.10.
+        FARM_VEHICLE_LEASE_PRICE_85_PERCENT: RateAppliedLine(
+            FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
+            FARM_VEHICLE_LEASE_PRICE_BASE,
+            D("44706.00"),
+            Rate(D("0.85")),
+            CENT,
+            D("38000.10"),
+        ),
+        # Form T2121 Chart C line 24 "× 85%" of amount 23 or the list price limit with tax: Return A
+        # has no leased vehicle, so the base is 44706.00 and the 85% is 38000.10.
+        FISH_VEHICLE_LEASE_PRICE_85_PERCENT: RateAppliedLine(
+            FISH_VEHICLE_LEASE_PRICE_85_PERCENT,
+            FISH_VEHICLE_LEASE_PRICE_BASE,
+            D("44706.00"),
+            Rate(D("0.85")),
+            CENT,
+            D("38000.10"),
+        ),
+        # Form T691 Part 1 line 80 "Line 78 multiply by the percentage from line 79": line 78 is
+        # 3074.00 (line 63: the union dues of line 21200, 2000.00, and the enhanced CPP
+        # contributions of line 22215, 1074.00), and 50% of it is 1537.00.
+        AMT_APPLICABLE_RATE_AMOUNT: RateAppliedLine(
+            AMT_APPLICABLE_RATE_AMOUNT,
+            AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+            D("3074.00"),
+            Rate(D("0.5")),
+            CENT,
+            D("1537.00"),
+        ),
         # Form T691 Part 1 line 26 "× 30%" applied to "Line 24 minus line 25": Return A has no
         # gifts of publicly listed securities, so the net is 0 and so is the 30%.
         AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT: RateAppliedLine(

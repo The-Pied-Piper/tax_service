@@ -35,8 +35,10 @@ from app.jurisdictions.ca.catalog import (
     CHILDREN_SEVEN_TO_SIXTEEN,
     CHILDREN_UNDER_SEVEN,
     CHILDREN_WITH_DISABILITY,
+    CPP_ACTUAL_BASE_CONTRIBUTIONS,
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_BASIC_EXEMPTION,
+    CPP_CONTRIBUTIONS_DIFFERENCE,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
     CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
     CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
@@ -50,6 +52,8 @@ from app.jurisdictions.ca.catalog import (
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+    CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPT20_EARNINGS,
     DEDUCTIONS_FROM_TOTAL_INCOME,
     EI_BENEFITS_REPAYMENT,
@@ -719,3 +723,437 @@ def test_schedule_13_line_1_stays_non_negative_after_the_slips(registry: Artifac
     assert EI_SELF_EMPLOYMENT_EARNINGS is not EI_SELF_EMPLOYMENT_BEFORE_SLIPS
     assert EI_SELF_EMPLOYMENT_EARNINGS.non_negative is True
     assert "ca/ei_self_employment_earnings" not in SIGNED
+
+
+# Schedule 8 Part 3 the box 16 and 16A totals the filer enters, and the lines
+# that compare them with the required contributions. The kinds are reached through the module
+# so that the rest of this file runs before they are declared.
+def test_the_cpp_t4_box_totals_are_non_negative_money_the_filer_enters(
+    registry: ArtifactRegistry,
+) -> None:
+    # Schedule 8 Part 3 line 8 and line 50340 "Total actual base and first additional
+    # contributions on CPP pensionable earnings from box 16 of all of your T4 slips", and line 21
+    # and line 50341 "Total actual second additional contributions on CPP pensionable earnings
+    # from box 16A of all of your T4 slips": amounts the filer enters, never below zero.
+    for identifier in (
+        "ca/cpp_t4_base_and_first_additional_contributions",
+        "ca/cpp_t4_second_additional_contributions",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is True, identifier
+        assert identifier not in SIGNED, identifier
+    assert (
+        registry.kind("ca/cpp_t4_base_and_first_additional_contributions")
+        is CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS
+    )
+    assert (
+        registry.kind("ca/cpp_t4_second_additional_contributions")
+        is CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS
+    )
+
+
+def test_the_cpp_part_3_lines_that_print_no_brackets_are_non_negative(
+    registry: ArtifactRegistry,
+) -> None:
+    # Line 9 is "amount from line 8 multiplied by 83.1933%", line 10 is "Line 8 minus line 9" (the
+    # factor is below 100%, so it is never below zero) and line 13 is "Line 11 plus line 12": none
+    # can be negative, and none prints "(if negative, show in brackets)".
+    for identifier in (
+        "ca/cpp_actual_base_contributions",
+        "ca/cpp_actual_first_additional_contributions",
+        "ca/cpp_required_base_and_first_additional_contributions",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is True, identifier
+        assert identifier not in SIGNED, identifier
+    assert registry.kind("ca/cpp_actual_base_contributions") is CPP_ACTUAL_BASE_CONTRIBUTIONS
+
+
+def test_the_cpp_part_3_difference_lines_are_signed_as_their_brackets_say(
+    registry: ArtifactRegistry,
+) -> None:
+    # Lines 16, 19, 20, 23 and 24 each print "(if negative, show in brackets)", so each is a
+    # signed Decimal, a loss of contributions over the required ones included.
+    for identifier in (
+        "ca/cpp_base_contributions_difference",
+        "ca/cpp_first_additional_contributions_difference",
+        "ca/cpp_base_and_first_additional_contributions_difference",
+        "ca/cpp_second_additional_contributions_difference",
+        "ca/cpp_contributions_difference",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is False, identifier
+        assert identifier in SIGNED, identifier
+    assert registry.kind("ca/cpp_contributions_difference") is CPP_CONTRIBUTIONS_DIFFERENCE
+
+
+# Schedule 8 Part 3a and Part 3b: the counts that carry the form's "if ... If not, enter "0""
+# instructions, the lines of Part 3b and the three return lines they route. The kinds are reached
+# through the registry so that the rest of this file runs before they are declared.
+def test_the_cpp_part_3_routing_counts_are_non_negative_int_kinds(
+    registry: ArtifactRegistry,
+) -> None:
+    # Each count is 1 when the form's condition holds and 0 otherwise: line 24 positive (the
+    # Part 3a / Part 3b choice), lines 16, 19 and 23 positive or "0", and the "both positive" or
+    # "negative and positive" conditions of lines 32, 35, 39, 42 and 46.
+    for identifier in (
+        "ca/cpp_line_24_positive",
+        "ca/cpp_line_16_not_negative",
+        "ca/cpp_line_19_not_negative",
+        "ca/cpp_line_23_not_negative",
+        "ca/cpp_line_16_negative_line_19_positive",
+        "ca/cpp_line_23_and_line_33_positive",
+        "ca/cpp_line_16_positive",
+        "ca/cpp_line_23_and_line_40_positive",
+        "ca/cpp_line_20_positive",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is int, identifier
+        assert kind.non_negative is True, identifier
+        assert identifier in COUNTS, identifier
+        assert identifier not in SIGNED, identifier
+
+
+def test_the_cpp_part_3b_whichever_is_less_candidates_are_signed(
+    registry: ArtifactRegistry,
+) -> None:
+    # The lesser of two amounts of which one may be negative (lines 19, 23, 16 and 20 print "(if
+    # negative, show in brackets)") is only used when its count says both are positive, but the
+    # step that computes it runs for every return, so its kind is signed. "The result of line 23
+    # minus line 35" (line 42) is negative when line 35 is more than line 23.
+    for identifier in (
+        "ca/cpp_part_3b_line_32_lesser",
+        "ca/cpp_part_3b_line_35_lesser",
+        "ca/cpp_part_3b_line_39_lesser",
+        "ca/cpp_part_3b_line_23_less_line_35",
+        "ca/cpp_part_3b_line_42_lesser",
+        "ca/cpp_part_3b_line_46_lesser",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is False, identifier
+        assert identifier in SIGNED, identifier
+
+
+def test_the_cpp_part_3b_lines_and_the_three_return_lines_are_non_negative_money(
+    registry: ArtifactRegistry,
+) -> None:
+    # The zero of "enter "0"", lines 30 to 48 of Part 3b (each is a chosen non-negative amount, a
+    # sum of them, or a difference that cannot go below zero) and T1 line 30800, line 22215 and
+    # line 44800 as the form routes them: none prints brackets.
+    for identifier in (
+        "ca/cpp_zero",
+        "ca/cpp_part_3b_line_30",
+        "ca/cpp_part_3b_line_31",
+        "ca/cpp_part_3b_line_32",
+        "ca/cpp_part_3b_line_33",
+        "ca/cpp_part_3b_line_34",
+        "ca/cpp_part_3b_line_35",
+        "ca/cpp_part_3b_line_36",
+        "ca/cpp_part_3b_line_37",
+        "ca/cpp_part_3b_line_38",
+        "ca/cpp_part_3b_line_39",
+        "ca/cpp_part_3b_line_40",
+        "ca/cpp_part_3b_line_41",
+        "ca/cpp_part_3b_line_42",
+        "ca/cpp_part_3b_line_43",
+        "ca/cpp_part_3b_line_44",
+        "ca/cpp_part_3b_line_45",
+        "ca/cpp_part_3b_line_46",
+        "ca/cpp_part_3b_line_47",
+        "ca/cpp_part_3b_line_48",
+        "ca/cpp_base_contributions_on_return",
+        "ca/cpp_enhanced_contributions_on_return",
+        "ca/cpp_overpayment",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is True, identifier
+        assert identifier not in SIGNED, identifier
+        assert identifier in REGISTERED, identifier
+
+
+# Schedule 8 Part 5 lines 1 to 42 (self-employment income and other earnings when the filer also
+# has employment income): the T4 CPT20 input, Part 3 line 2 and the lines of Part 5. The kinds are
+# reached through the registry so that the rest of this file runs before they are declared.
+def test_the_cpt20_earnings_shown_on_a_t4_slip_are_a_non_negative_input(
+    registry: ArtifactRegistry,
+) -> None:
+    # Part 5 line 3 and line 50399 "Employment earnings shown on a T4 slip that you are electing
+    # to pay additional CPP contributions on (complete Form CPT20)": an amount the filer enters,
+    # never below zero, like line 2 (CPT20 earnings not shown on a T4 slip).
+    kind = registry.kind("ca/cpt20_t4_earnings")
+    assert kind.value_type is Decimal
+    assert kind.non_negative is True
+    assert "ca/cpt20_t4_earnings" not in SIGNED
+    assert "ca/cpt20_t4_earnings" in REGISTERED
+    assert kind is not CPT20_EARNINGS
+
+
+def test_part_3_line_2_is_a_non_negative_amount_of_employment_earnings(
+    registry: ArtifactRegistry,
+) -> None:
+    # Part 3 line 2 "Enter whichever is less: amount from line D of Part 2 or line 1": the lesser
+    # of two non-negative amounts, read by Part 5 line 32 ("Amount from line 2 of Part 3").
+    kind = registry.kind("ca/cpp_part_3_line_2")
+    assert kind.value_type is Decimal
+    assert kind.non_negative is True
+    assert "ca/cpp_part_3_line_2" not in SIGNED
+    assert "ca/cpp_part_3_line_2" in REGISTERED
+
+
+def test_the_cpp_part_5_conditions_are_non_negative_int_counts(
+    registry: ArtifactRegistry,
+) -> None:
+    # Each count is 1 when the form's condition holds and 0 otherwise: line 9's "If the amount
+    # from line 20 of Part 3 is negative and line 23 of Part 3 is positive", line 15's "If the
+    # amount from line 20 of Part 3 is positive and line 23 of Part 3 is negative" and the "If the
+    # amount from line 33 is more than line 17" of lines 34 to 42.
+    for identifier in (
+        "ca/cpp_part_5_line_20_negative_line_23_positive",
+        "ca/cpp_part_5_line_20_positive_line_23_negative",
+        "ca/cpp_part_5_line_33_more_than_line_17",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is int, identifier
+        assert kind.non_negative is True, identifier
+        assert identifier in COUNTS, identifier
+        assert identifier not in SIGNED, identifier
+
+
+def test_the_cpp_part_5_lines_that_cannot_be_negative_are_non_negative_money(
+    registry: ArtifactRegistry,
+) -> None:
+    # Lines 6, 12, 8 and 14 are "if positive. If not, enter "0"" or "as a positive amount"; lines
+    # 9 and 15 are the lesser of two positive amounts or "0"; lines 19, 21, 28, 29 and 30 print
+    # "(if negative, enter "0")" and line 25 enters "0" when it is negative.
+    for number in (6, 8, 9, 12, 14, 15, 19, 21, 25, 28, 29, 30):
+        identifier = f"ca/cpp_part_5_line_{number}"
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is True, identifier
+        assert identifier not in SIGNED, identifier
+        assert identifier in REGISTERED, identifier
+
+
+def test_the_cpp_part_5_lines_that_print_no_floor_are_signed(
+    registry: ArtifactRegistry,
+) -> None:
+    # Line 4 "Add lines 1 to 3" (line 1 is a loss when line 27 is), lines 7, 13, 36, 39 and 41 are
+    # plain "minus" lines, line 10 and line 16 add a plain "minus" line, line 20 multiplies line 10,
+    # line 22 is the lesser of line 4 and line 21, line 33 adds line 4 and line 35 divides line
+    # 16; none prints "(if negative, enter "0")". Line 42 is the lesser of lines 36 and 41, so it
+    # is negative when line 41 is (a loss with employment income above $71,300): the form gives no
+    # floor, so it is signed. The candidates of lines 9, 15 and 42 are signed as in Part 3b.
+    for identifier in (
+        "ca/cpp_part_5_line_4",
+        "ca/cpp_part_5_line_7",
+        "ca/cpp_part_5_line_9_lesser",
+        "ca/cpp_part_5_line_10",
+        "ca/cpp_part_5_line_13",
+        "ca/cpp_part_5_line_15_lesser",
+        "ca/cpp_part_5_line_16",
+        "ca/cpp_part_5_line_20",
+        "ca/cpp_part_5_line_22",
+        "ca/cpp_part_5_line_33",
+        "ca/cpp_part_5_line_35",
+        "ca/cpp_part_5_line_36",
+        "ca/cpp_part_5_line_39",
+        "ca/cpp_part_5_line_41",
+        "ca/cpp_part_5_line_42_lesser",
+        "ca/cpp_part_5_line_42",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is False, identifier
+        assert identifier in SIGNED, identifier
+        assert identifier in REGISTERED, identifier
+
+
+# Schedule 8 Part 5 lines 43 to 69 (the required contributions on the self-employment income and
+# other earnings, the overpayment, and the enhanced and base contributions on the employment
+# income). The kinds are reached through the registry so that the rest of this file runs before
+# they are declared.
+def test_the_cpp_part_5_lines_43_to_69_counts_are_non_negative_int_counts(
+    registry: ArtifactRegistry,
+) -> None:
+    # Each count is 1 when the form's condition holds and 0 otherwise: line 56's "If line 23 of Part
+    # 3 and line 54 are both positive, enter whichever is less" and line 63's "If line 23 of Part 3
+    # and line 61 are both positive, enter whichever is less".
+    for identifier in (
+        "ca/cpp_part_5_line_23_and_line_54_positive",
+        "ca/cpp_part_5_line_23_and_line_61_positive",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is int, identifier
+        assert kind.non_negative is True, identifier
+        assert identifier in COUNTS, identifier
+        assert identifier not in SIGNED, identifier
+
+
+def test_the_cpp_part_5_line_49_and_the_whichever_is_less_candidates_are_signed(
+    registry: ArtifactRegistry,
+) -> None:
+    # Line 49 "Line 47 minus line 48 ... If negative, show in brackets" is signed. The lesser of two
+    # amounts of which one may be negative (lines 19, 23 and 16 and 20 print "(if negative, show in
+    # brackets)") is only used when its count says both are positive, but the step that computes it
+    # runs for every return, so its kind is signed; "the result of line 23 minus line 56" (line 63)
+    # is negative when line 56 is more than line 23, as Part 3b's line 23 minus line 35.
+    for identifier in (
+        "ca/cpp_part_5_line_49",
+        "ca/cpp_part_5_line_53_lesser",
+        "ca/cpp_part_5_line_56_lesser",
+        "ca/cpp_part_5_line_60_lesser",
+        "ca/cpp_part_5_line_23_less_line_56",
+        "ca/cpp_part_5_line_63_lesser",
+        "ca/cpp_part_5_line_67_lesser",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is False, identifier
+        assert identifier in SIGNED, identifier
+        assert identifier in REGISTERED, identifier
+
+
+def test_the_cpp_part_5_lines_43_to_69_that_cannot_be_negative_are_non_negative_money(
+    registry: ArtifactRegistry,
+) -> None:
+    # Lines 43 to 45 are tiers (a band of 0 when line 42 is negative), lines 46 and 47 add them,
+    # line 48 doubles line 24 "if positive", line 50 is a positive amount times 50%, lines 51, 58
+    # and 65 choose between two non-negative contributions, lines 52, 59 and 66 are "as a positive
+    # amount", lines 53, 56, 60, 63 and 67 are the lesser of positive amounts or "0", lines 54 and
+    # 61 take a line off a line it is at most, and lines 55, 57, 62, 64, 68 and 69 add
+    # non-negative lines. The two helper amounts are the line 24 "if positive" and the line 49
+    # "as a positive amount".
+    for identifier in (
+        "ca/cpp_part_5_line_43",
+        "ca/cpp_part_5_line_44",
+        "ca/cpp_part_5_line_45",
+        "ca/cpp_part_5_line_46",
+        "ca/cpp_part_5_line_47",
+        "ca/cpp_part_5_line_48_line_24_if_positive",
+        "ca/cpp_part_5_line_48",
+        "ca/cpp_part_5_line_50_line_49_positive",
+        "ca/cpp_part_5_line_50",
+        "ca/cpp_part_5_line_51",
+        "ca/cpp_part_5_line_52",
+        "ca/cpp_part_5_line_53",
+        "ca/cpp_part_5_line_54",
+        "ca/cpp_part_5_line_55",
+        "ca/cpp_part_5_line_56",
+        "ca/cpp_part_5_line_57",
+        "ca/cpp_part_5_line_58",
+        "ca/cpp_part_5_line_59",
+        "ca/cpp_part_5_line_60",
+        "ca/cpp_part_5_line_61",
+        "ca/cpp_part_5_line_62",
+        "ca/cpp_part_5_line_63",
+        "ca/cpp_part_5_line_64",
+        "ca/cpp_part_5_line_65",
+        "ca/cpp_part_5_line_66",
+        "ca/cpp_part_5_line_67",
+        "ca/cpp_part_5_line_68",
+        "ca/cpp_part_5_line_69",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is True, identifier
+        assert identifier not in SIGNED, identifier
+        assert identifier in REGISTERED, identifier
+
+
+# Schedule 8 Part 5 lines 70 to 88 (the base contributions and the deduction on the
+# self-employment income and other earnings) and the routing of lines 30800, 22215, 44800, 22200,
+# 31000 and 42100. The kinds are reached through the registry so that the rest of this file runs
+# before they are declared.
+def test_the_cpp_part_5_completed_input_is_a_non_negative_int_count(
+    registry: ArtifactRegistry,
+) -> None:
+    # Part 5's heading "Complete this part if you are reporting both: employment income (complete
+    # Part 3 first) / self-employment income or other earnings that you are electing to pay CPP
+    # contributions on": 1 when the filer completes Part 5, 0 when not, as Part 4's count.
+    kind = registry.kind("ca/cpp_part_5_completed")
+    assert kind.value_type is int
+    assert kind.non_negative is True
+    assert "ca/cpp_part_5_completed" in COUNTS
+    assert "ca/cpp_part_5_completed" not in SIGNED
+    assert "ca/cpp_part_5_completed" in REGISTERED
+
+
+def test_the_cpp_part_5_lines_74_and_80_are_signed(registry: ArtifactRegistry) -> None:
+    # Line 74 "Line 72 minus line 73 (if negative, show in brackets)" is signed. Line 80 "Line 78
+    # minus line 79" prints no floor and is a cent negative when line 75 (line A x 83.1933%, to the
+    # cent) is a cent more than line 70, as for line 30 of 1.25 (line 70 of 0.06, line 75 of 0.07).
+    for identifier in ("ca/cpp_part_5_line_74", "ca/cpp_part_5_line_80"):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is False, identifier
+        assert identifier in SIGNED, identifier
+        assert identifier in REGISTERED, identifier
+
+
+def test_the_cpp_part_5_lines_70_to_88_that_cannot_be_negative_are_non_negative_money(
+    registry: ArtifactRegistry,
+) -> None:
+    # Lines 70, 71 and 84 are 50% of a non-negative line, line 72 adds them, line 73 is line 24
+    # of Part 3 "if positive", line A (75_base) is the lesser of the two non-negative lines 72 and
+    # 73, line 75 is 83.1933% of it, line 77 is line A less line 75 (at most line A), line 83 is
+    # line 71 less line 77 (never more than line 71, checked for every cent of line 30), lines 86
+    # and 87 are "as a positive amount" and "if negative, enter 0", line 88 adds lines 80, 81,
+    # 83, 84 and 87 and is line 72 less line A plus lines 71, 84 and 87, so never negative, and
+    # line 49 "if positive" is the amount that goes on line 42100.
+    for identifier in (
+        "ca/cpp_part_5_line_70",
+        "ca/cpp_part_5_line_71",
+        "ca/cpp_part_5_line_72",
+        "ca/cpp_part_5_line_73",
+        "ca/cpp_part_5_line_75_base",
+        "ca/cpp_part_5_line_75",
+        "ca/cpp_part_5_line_77",
+        "ca/cpp_part_5_line_83",
+        "ca/cpp_part_5_line_84",
+        "ca/cpp_part_5_line_86",
+        "ca/cpp_part_5_line_87",
+        "ca/cpp_part_5_line_88",
+        "ca/cpp_part_5_line_49_if_positive",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is True, identifier
+        assert identifier not in SIGNED, identifier
+        assert identifier in REGISTERED, identifier
+
+
+def test_the_lines_the_part_5_routing_reads_are_non_negative_money(
+    registry: ArtifactRegistry,
+) -> None:
+    # The Part 3 route of lines 30800, 22215 and 44800 keeps the PR 2 steps under a name of its
+    # own; the kinds the readers (ON428, Schedule 8's credit, the deductions, the refund total)
+    # read keep their names and choose between the Part 3 route and Part 5 lines 57, 69 and 50 by
+    # the Part 5 completed count. Lines 31000, 22200 and 42100 are the Part 4 route plus the Part
+    # 5 route (Part 5 line 70, line 88 and line 49 if positive, once for each Part 5 completed).
+    for identifier in (
+        "ca/cpp_part_3_base_contributions_on_return",
+        "ca/cpp_part_3_enhanced_contributions_on_return",
+        "ca/cpp_part_3_overpayment",
+        "ca/cpp_base_contributions_on_return",
+        "ca/cpp_enhanced_contributions_on_return",
+        "ca/cpp_overpayment",
+        "ca/cpp_part_5_base_contributions_on_self_employment",
+        "ca/cpp_base_contributions_on_self_employment",
+        "ca/cpp_base_contributions_on_self_employment_and_other_earnings",
+        "ca/cpp_part_5_deduction_on_self_employment",
+        "ca/cpp_deduction_on_self_employment",
+        "ca/cpp_deduction_on_self_employment_and_other_earnings",
+        "ca/cpp_part_5_payable_on_self_employment",
+        "ca/cpp_payable_on_self_employment",
+        "ca/cpp_payable_on_self_employment_and_other_earnings",
+    ):
+        kind = registry.kind(identifier)
+        assert kind.value_type is Decimal, identifier
+        assert kind.non_negative is True, identifier
+        assert identifier not in SIGNED, identifier
+        assert identifier in REGISTERED, identifier

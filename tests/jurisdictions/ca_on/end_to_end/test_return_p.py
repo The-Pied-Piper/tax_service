@@ -98,7 +98,8 @@ def test_return_ps_political_contribution_credit_is_1402_76_and_lowers_the_refun
         "+ political_credit 1402.76 + flow_through_share_credit 0 = 1402.76"
     ) in rendered
     assert (
-        "total_credits: income_tax_deducted 4800 + refundable_medical_expense_supplement 0 "
+        "total_credits: income_tax_deducted 4800 + cpp_overpayment 0 "
+        "+ refundable_medical_expense_supplement 0 "
         "+ canada_workers_benefit 0 "
         "+ canada_training_credit 0 + part_xii_2_tax_credit 0 + "
         "employee_and_partner_gst_hst_rebate 0 "

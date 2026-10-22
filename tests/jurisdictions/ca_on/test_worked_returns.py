@@ -162,6 +162,8 @@ sources:
     Schedule ON428-A, T778 and EI table arithmetic on the 2025 figures.
 inputs:
   ca/employment_income: "10000"
+  ca/cpp_t4_base_and_first_additional_contributions: "386.75"
+  ca/cpp_t4_second_additional_contributions: "0"
   ca/qsbcs_dispositions: []
   ca/qffp_dispositions: []
   ca/qffp_foreclosure_dispositions: []
@@ -272,7 +274,6 @@ inputs:
   ca/taxable_scholarships: "0"
   ca/professional_income: "0"
   ca/commission_income: "0"
-  ca/fishing_income: "0"
   ca/workers_compensation_benefits: "0"
   ca/social_assistance_payments: "0"
   ca/net_federal_supplements: "0"
@@ -285,6 +286,7 @@ inputs:
   ca/unapplied_net_capital_losses_1985_to_1987: "0"
   ca/unapplied_net_capital_losses_1988_and_1989: "0"
   ca/unapplied_net_capital_losses_1990_to_1999: "0"
+  ca/unapplied_net_capital_losses_2000: "0"
   ca/unapplied_net_capital_losses_2001_to_2024: "0"
   ca/net_capital_losses_claimed: "0"
   ca/additional_deductions: "0"
@@ -463,6 +465,9 @@ expected:
   ca/cpp_first_additional_contributions: "65.00"
   ca/cpp_second_additional_contributions: "0"
   ca/cpp_enhanced_contributions: "65.00"
+  ca/cpp_required_base_and_first_additional_contributions: "386.75"
+  ca/cpp_part_5_line_57: "321.75"
+  ca/cpp_part_5_line_69: "65.00"
   ca/ei_premiums: "164.00"
   ca/rrsp_contributions_available: "0"
   ca/rrsp_deduction_maximum: "0"
@@ -478,6 +483,7 @@ expected:
   ca/deductions_from_total_income: "65.00"
   ca/net_income: "9935.00"
   ca/amt_part_1_subtotal: "9935.00"
+  ca/amt_applicable_rate_amount: "32.50"
   ca/net_income_before_adjustments: "9935.00"
   ca/fhsa_unused_contributions_carried_forward: "0"
   ca/other_payments_limit_income: "9935.00"
@@ -487,6 +493,7 @@ expected:
   ca/net_capital_loss_balance_1985_to_1987: "0.00"
   ca/net_capital_loss_balance_1988_and_1989: "0.00"
   ca/net_capital_loss_balance_1990_to_1999: "0.00"
+  ca/net_capital_loss_balance_2000: "0.00"
   ca/net_capital_loss_balance_2001_to_2024: "0.00"
   ca/deductions_from_net_income: "0"
   ca/taxable_income: "9935.00"

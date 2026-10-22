@@ -339,11 +339,12 @@ capabilities:
       output: ca/chart_2025_part_1_amount_a
   # Chart 2025 Part 1 "Amount A minus amount B" C (B "Enter the last amount that you calculated for
   # "Total amount of capital gains included in 2025 income eligible for the capital gains
-  # deduction""). The form prints no floor; floored at 0 here, an assumption to be confirmed.
+  # deduction"" from 2016 to 2024: Chart 2024 Period 2's amount N). The form prints no floor; floored
+  # at 0 here, an assumption to be confirmed.
   - name: core/subtract_not_below_zero
     consumes:
       amount: ca/chart_2025_part_1_amount_a
-      less: ca/t657_part_1_amount_b
+      less: ca/chart_2024_period_2_amount_n
     produces:
       output: ca/chart_2025_part_1_amount_c
   # Chart 2025 Part 1 amount E "Capital gains deduction available for QFFP and/or QSBCS ...: amount C
@@ -395,12 +396,13 @@ capabilities:
         - ca/chart_2025_part_1_amount_m
     produces:
       output: ca/chart_2025_part_1_amount_n
-  # Chart 2025 Part 1 "Amount N plus amount O" P (O "Enter amount B from above.").
+  # Chart 2025 Part 1 "Amount N plus amount O" P (O "Enter amount B from above.", Chart 2024 Period 2's
+  # amount N).
   - name: core/sum
     consumes:
       parts:
         - ca/chart_2025_part_1_amount_n
-        - ca/t657_part_1_amount_b
+        - ca/chart_2024_period_2_amount_n
     produces:
       output: ca/chart_2025_part_1_amount_p
   # Chart 2025 Part 1 amount Q "Enter whichever is less: line 21 of Step 1, line 19 of Step 2 or
