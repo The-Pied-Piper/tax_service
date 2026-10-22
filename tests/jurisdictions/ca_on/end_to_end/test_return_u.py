@@ -94,14 +94,27 @@ def farm_statement(farming_income: str) -> dict[str, str]:
     return {"other_expenses": str(-amount)}
 
 
+def fish_statement(fishing_income: str) -> dict[str, str]:
+    """A T2121 whose line 9946, and so T1 line 14300, is `fishing_income`: all income (amount 3A,
+    fish products) for income, all other expenses (line 9270, 4P) for a loss."""
+    amount = D(fishing_income)
+    if amount >= 0:
+        return {"fish_products": fishing_income}
+    return {"other_expenses": str(-amount)}
+
+
 def self_employed(**changes: Any) -> Worksheet:
     """Return U's inputs, as in `returns/2025_return_u.yaml`, with `changes` to them;
-    `business_income` is the net business income the T2125 is entered to give and
-    `farming_income` the net farming income the T2042 is entered to give."""
+    `business_income` is the net business income the T2125 is entered to give,
+    `farming_income` the net farming income the T2042 is entered to give and `fishing_income`
+    the net fishing income the T2121 is entered to give."""
     inputs = {**RETURN_U, **changes}
     business = business_statement(inputs.pop("business_income"))
     farm = farm_statement(inputs.pop("farming_income", "0"))
-    return compute("0", (), "0", "0", "0", "0", "0", business=business, farm=farm, **inputs)
+    fish = fish_statement(inputs.pop("fishing_income", "0"))
+    return compute(
+        "0", (), "0", "0", "0", "0", "0", business=business, farm=farm, fish=fish, **inputs
+    )
 
 
 def return_u() -> Worksheet:
@@ -302,13 +315,14 @@ def test_return_us_new_lines_join_the_deductions_the_credit_amounts_and_the_tota
         "+ child_care_expenses 0 + allowable_business_investment_loss 0 "
         "+ support_payments_deduction 0 "
         "+ carrying_charges_interest_expenses_and_other_expenses 0 "
-        "+ cpp_deduction_on_self_employment 3231.75 + cpp_enhanced_contributions 0 "
+        "+ cpp_deduction_on_self_employment_and_other_earnings 3231.75 + "
+        "cpp_enhanced_contributions_on_return 0 "
         "+ exploration_and_development_expenses 0 + other_deductions 0 "
         "+ total_split_income 0 = 3231.75",
         "non_refundable_credit_amounts: basic_personal_amount 16129 + age_amount 0 "
         "+ spouse_amount 0 + eligible_dependant_amount 0 + spouse_caregiver_amount 0 "
-        "+ caregiver_amount 0 + infirm_children_amount 0 + cpp_base_contributions 0 "
-        "+ cpp_base_contributions_on_self_employment 2301.75 + ei_premiums 0 "
+        "+ caregiver_amount 0 + infirm_children_amount 0 + cpp_base_contributions_on_return 0 "
+        "+ cpp_base_contributions_on_self_employment_and_other_earnings 2301.75 + ei_premiums 0 "
         "+ ei_premiums_on_self_employment 820 + canada_employment_amount 0 "
         "+ disability_amount_for_self 0 "
         "+ disability_transferred_amount 0 + federal_tuition_amount 0 + "
@@ -316,12 +330,14 @@ def test_return_us_new_lines_join_the_deductions_the_credit_amounts_and_the_tota
         "19250.75",
         "non_refundable_credit_amounts: basic_personal_amount 12747 + age_amount 0 "
         "+ spouse_amount 0 + eligible_dependant_amount 0 + caregiver_amount 0 "
-        "+ cpp_base_contributions 0 + cpp_base_contributions_on_self_employment 2301.75 "
+        "+ cpp_base_contributions_on_return 0 + "
+        "cpp_base_contributions_on_self_employment_and_other_earnings 2301.75 "
         "+ ei_premiums 0 + ei_premiums_on_self_employment 820 "
         "+ disability_amount_for_self 0 "
         "+ disability_transferred_amount 0 + unused_tuition_claimed 0 "
         "+ amounts_transferred_from_spouse 0 + medical_claim 0 = 15868.75",
-        "total_payable: net_federal_tax 3990.04 + cpp_payable_on_self_employment 5533.5 "
+        "total_payable: net_federal_tax 3990.04 + "
+        "cpp_payable_on_self_employment_and_other_earnings 5533.5 "
         "+ ei_payable_on_self_employment 820 + social_benefits_repayment_payable 0 "
         "+ ontario_tax 2010.43 = 12353.97",
     ):

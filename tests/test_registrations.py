@@ -188,6 +188,12 @@ def test_importing_the_federal_package_registers_the_divided_by_rate_capability(
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.divided_by_rate"
 
 
+def test_importing_the_federal_package_registers_the_sign_chosen_difference_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/sign_chosen_difference")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.sign_chosen_difference"
+
+
 def test_importing_the_federal_package_registers_the_chart_a_row_c_total_capability() -> None:
     registered = CapabilityRegistry.shared().get("ca/chart_a_row_c_total")
 

@@ -9,8 +9,8 @@ from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.catalog import (
-    CPP_BASE_CONTRIBUTIONS,
-    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     DONATIONS_FIRST_TIER,
     DONATIONS_OVER_FIRST_TIER,
     EI_PREMIUMS,
@@ -57,8 +57,8 @@ STEPS = {
                 "ca-on/spouse_amount",
                 "ca-on/eligible_dependant_amount",
                 "ca-on/caregiver_amount",
-                "ca/cpp_base_contributions",
-                "ca/cpp_base_contributions_on_self_employment",
+                "ca/cpp_base_contributions_on_return",
+                "ca/cpp_base_contributions_on_self_employment_and_other_earnings",
                 "ca/ei_premiums",
                 "ca/ei_premiums_on_self_employment",
                 "ca-on/disability_amount_for_self",
@@ -351,8 +351,8 @@ WIRING = {
                 ontario.SPOUSE_AMOUNT,
                 ontario.ELIGIBLE_DEPENDANT_AMOUNT,
                 ontario.CAREGIVER_AMOUNT,
-                CPP_BASE_CONTRIBUTIONS,
-                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+                CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
                 EI_PREMIUMS,
                 EI_PREMIUMS_ON_SELF_EMPLOYMENT,
                 ontario.DISABILITY_AMOUNT_FOR_SELF,

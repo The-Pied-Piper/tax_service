@@ -38,6 +38,7 @@ from app.jurisdictions.ca.capabilities import (  # noqa: E402
     short_term_rental_non_compliant_cca,
     short_term_rental_non_compliant_cca_by_class,
     short_term_rental_non_compliant_expenses,
+    sign_chosen_difference,
     terminal_loss,
     threshold_gate,
 )
@@ -74,6 +75,7 @@ __all__ = [
     "short_term_rental_non_compliant_cca",
     "short_term_rental_non_compliant_cca_by_class",
     "short_term_rental_non_compliant_expenses",
+    "sign_chosen_difference",
     "terminal_loss",
     "threshold_gate",
 ]

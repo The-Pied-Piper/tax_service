@@ -32,14 +32,41 @@ from app.jurisdictions.ca.catalog import (
     AGE_INCOME_OVER_THRESHOLD,
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+    AMT_AMOUNT_A_MINUS_AMOUNT_B,
+    AMT_APPLICABLE_RATE_AMOUNT,
+    AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
+    AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
+    AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
+    AMT_GROSS_MINIMUM_AMOUNT,
+    AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
+    AMT_NET_ADJUSTED_TAXABLE_INCOME,
+    AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
+    AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
+    AMT_SECURITY_OPTION_PUBLICLY_LISTED_GIFTS,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
+    BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
+    BUSINESS_VEHICLE_LEASE_PRICE_BASE,
     CANADA_TRAINING_CREDIT_BASIS,
     CANADIAN_TUITION_FEES,
     CAPITAL_GAIN,
+    CAPITAL_GAINS_DEDUCTION,
     CAPITAL_GIFTS_LIMIT_ADDITION,
     CAPITAL_GIFTS_TOTAL,
+    CPP_ACTUAL_BASE_CONTRIBUTIONS,
+    CPP_PART_5_LINE_43,
+    CPP_PART_5_LINE_44,
+    CPP_PART_5_LINE_45,
+    CPP_PART_5_LINE_50,
+    CPP_PART_5_LINE_50_LINE_49_POSITIVE,
+    CPP_PART_5_LINE_70,
+    CPP_PART_5_LINE_71,
+    CPP_PART_5_LINE_75,
+    CPP_PART_5_LINE_75_BASE,
+    CPP_PART_5_LINE_84,
+    CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CWB_BEFORE_REDUCTION_WITH_DEPENDANT,
     CWB_BEFORE_REDUCTION_WITHOUT_DEPENDANT,
@@ -48,6 +75,7 @@ from app.jurisdictions.ca.catalog import (
     DIVIDENDS_AMOUNT_A_LESS_B,
     DIVIDENDS_AMOUNT_B,
     DONATION_LIMIT_ON_NET_INCOME,
+    DONATIONS_AND_GIFTS_CREDIT,
     DONATIONS_FIRST_TIER,
     DONATIONS_OVER_FIRST_TIER,
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
@@ -55,8 +83,12 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_CREDIT,
     EMPLOYMENT_INCOME,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
+    FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
+    FARM_VEHICLE_LEASE_PRICE_BASE,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FIRST_TIER_DONATION_CREDIT,
+    FISH_VEHICLE_LEASE_PRICE_85_PERCENT,
+    FISH_VEHICLE_LEASE_PRICE_BASE,
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
     INCLUDED_CAPITAL_GAIN,
@@ -104,6 +136,7 @@ from app.jurisdictions.ca.catalog import (
     SPLIT_INCOME_LINE_18,
     SPLIT_INCOME_LINE_19,
     SPLIT_INCOME_LINE_20,
+    TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
     TOP_UP_EXCESS,
     TOP_UP_TAX_CREDIT,
     TOTAL_SPLIT_INCOME,
@@ -191,6 +224,115 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         if isinstance(line, ItemsTotalLine) and line.output is COOP_EDUCATION_CREDIT
     }
     assert rated == {
+        # Schedule 8 Part 5 line 70 "amount from line 43 multiplied by 50%": 0.00 x 50% for
+        # Return A (no self-employment income, so line 43 is 0.00).
+        CPP_PART_5_LINE_70: RateAppliedLine(
+            output=CPP_PART_5_LINE_70,
+            base=CPP_PART_5_LINE_43,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 71 "Amount from line 44 multiplied by 50%": 0.00 x 50% for
+        # Return A.
+        CPP_PART_5_LINE_71: RateAppliedLine(
+            output=CPP_PART_5_LINE_71,
+            base=CPP_PART_5_LINE_44,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 84 "Amount from line 45 multiplied by 50%": 0.00 x 50% for
+        # Return A.
+        CPP_PART_5_LINE_84: RateAppliedLine(
+            output=CPP_PART_5_LINE_84,
+            base=CPP_PART_5_LINE_45,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 75 "Line A multiply by 83.1933": 0.00 x 83.1933% for Return A.
+        CPP_PART_5_LINE_75: RateAppliedLine(
+            output=CPP_PART_5_LINE_75,
+            base=CPP_PART_5_LINE_75_BASE,
+            base_amount=D("0.00"),
+            rate=Rate(D("0.831933")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 50 "multiplied by 50%": 0 x 50% for Return A.
+        CPP_PART_5_LINE_50: RateAppliedLine(
+            output=CPP_PART_5_LINE_50,
+            base=CPP_PART_5_LINE_50_LINE_49_POSITIVE,
+            base_amount=D("0"),
+            rate=Rate(D("0.5")),
+            rounding=CENT,
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 3 line 9 "amount from line 8 multiplied by 83.1933%": Return A's T4 box 16
+        # equals the required contributions (line 13), so the base share is line 11.
+        CPP_ACTUAL_BASE_CONTRIBUTIONS: RateAppliedLine(
+            CPP_ACTUAL_BASE_CONTRIBUTIONS,
+            CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("4034.10"),
+            Rate(D("0.831933")),
+            CENT,
+            D("3356.10"),
+        ),
+        # Form T691 Part 1 line 31 "× 40%" of the gifts under a security option plan (67914): Return
+        # A has none, so the base and the 40% are 0.
+        AMT_SECURITY_OPTION_GIFTS_DEDUCTION: RateAppliedLine(
+            AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
+            AMT_SECURITY_OPTION_PUBLICLY_LISTED_GIFTS,
+            D("0"),
+            Rate(D("0.4")),
+            CENT,
+            D("0"),
+        ),
+        # Form T2125 Chart C line 24 "× 85%" of amount 23 or the list price limit with tax: Return A
+        # has no leased vehicle, so the base is 44706.00 and the 85% is 38000.10.
+        BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT: RateAppliedLine(
+            BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
+            BUSINESS_VEHICLE_LEASE_PRICE_BASE,
+            D("44706.00"),
+            Rate(D("0.85")),
+            CENT,
+            D("38000.10"),
+        ),
+        # Form T2042 Chart C line 24 "× 85%" of amount 23 or the list price limit with tax: Return A
+        # has no leased vehicle, so the base is 44706.00 and the 85% is 38000.10.
+        FARM_VEHICLE_LEASE_PRICE_85_PERCENT: RateAppliedLine(
+            FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
+            FARM_VEHICLE_LEASE_PRICE_BASE,
+            D("44706.00"),
+            Rate(D("0.85")),
+            CENT,
+            D("38000.10"),
+        ),
+        # Form T2121 Chart C line 24 "× 85%" of amount 23 or the list price limit with tax: Return A
+        # has no leased vehicle, so the base is 44706.00 and the 85% is 38000.10.
+        FISH_VEHICLE_LEASE_PRICE_85_PERCENT: RateAppliedLine(
+            FISH_VEHICLE_LEASE_PRICE_85_PERCENT,
+            FISH_VEHICLE_LEASE_PRICE_BASE,
+            D("44706.00"),
+            Rate(D("0.85")),
+            CENT,
+            D("38000.10"),
+        ),
+        # Form T691 Part 1 line 80 "Line 78 multiply by the percentage from line 79": line 78 is
+        # 3074.00 (line 63: the union dues of line 21200, 2000.00, and the enhanced CPP
+        # contributions of line 22215, 1074.00), and 50% of it is 1537.00.
+        AMT_APPLICABLE_RATE_AMOUNT: RateAppliedLine(
+            AMT_APPLICABLE_RATE_AMOUNT,
+            AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+            D("3074.00"),
+            Rate(D("0.5")),
+            CENT,
+            D("1537.00"),
+        ),
         # Form T691 Part 1 line 26 "× 30%" applied to "Line 24 minus line 25": Return A has no
         # gifts of publicly listed securities, so the net is 0 and so is the 30%.
         AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT: RateAppliedLine(
@@ -707,5 +849,61 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Rate(D("0.5")),
             CENT,
             D("0.00"),
+        ),
+        # Form T691 Part 1 line 84 "B × 13.0435%": B is the amount of line 12010 of the return, 0.
+        AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT: RateAppliedLine(
+            AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
+            TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+            D("0"),
+            Rate(D("0.130435")),
+            CENT,
+            D("0"),
+        ),
+        # Form T691 Part 1 line 85 "C × 27.5362%": C is amount A minus amount B, 0.
+        AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT: RateAppliedLine(
+            AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
+            AMT_AMOUNT_A_MINUS_AMOUNT_B,
+            D("0"),
+            Rate(D("0.275362")),
+            CENT,
+            D("0"),
+        ),
+        # Form T691 Part 1 line 87 "× 40%" of the amount from line 25400 of the return, 0.
+        AMT_LIFETIME_EXEMPTION_ADJUSTMENT: RateAppliedLine(
+            AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
+            CAPITAL_GAINS_DEDUCTION,
+            D("0"),
+            Rate(D("0.40")),
+            CENT,
+            D("0"),
+        ),
+        # Form T691 Part 1 line 97 "Gross minimum amount": line 95 multiplied by 20.5%. Return A's
+        # line 95 is 0, as line 93 (126537.00) is under the basic exemption.
+        AMT_GROSS_MINIMUM_AMOUNT: RateAppliedLine(
+            AMT_GROSS_MINIMUM_AMOUNT,
+            AMT_NET_ADJUSTED_TAXABLE_INCOME,
+            D("0"),
+            Rate(D("0.205")),
+            CENT,
+            D("0"),
+        ),
+        # Form T691 Part 1 line 98 "× 50%" of line 33800 of the return, 3194.87: 1597.435, a tie,
+        # rounded half-up to 1597.44.
+        AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT: RateAppliedLine(
+            AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
+            CREDIT_AMOUNTS_AT_CREDIT_RATE,
+            D("3194.87"),
+            Rate(D("0.5")),
+            CENT,
+            D("1597.44"),
+        ),
+        # Form T691 Part 1 line 99 "× 80%" of line 34900 of the return, 0.
+        AMT_DONATIONS_AND_GIFTS_ADJUSTMENT: RateAppliedLine(
+            AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
+            DONATIONS_AND_GIFTS_CREDIT,
+            D("0"),
+            Rate(D("0.8")),
+            CENT,
+            D("0"),
         ),
     }

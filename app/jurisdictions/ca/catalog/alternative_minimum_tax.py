@@ -1,8 +1,12 @@
 """The federal catalog: alternative minimum tax, Form T691.
 
 Part 1 of the form: the adjusted taxable income, from the film property, the rental and leasing
-property, the tax shelter amounts, the resource property, the capital gains and the gifts of
-publicly listed securities. Part 9 of the form: the resource property and flow-through shares.
+property, the tax shelter amounts, the resource property, the capital gains, the gifts of
+publicly listed securities, the security options deductions, the losses of other years, the
+deductions, the non-deductible expenses, the applicable rate, the dividends, the lifetime capital
+gains exemption, the capital gains deductions, the basic exemption, the federal tax rate and the
+credits. Part 9 of the form: the resource
+property and flow-through shares.
 """
 
 from __future__ import annotations
@@ -151,6 +155,17 @@ AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS = CATALOG.declare(
 show in brackets)": the capital gain of line 15 (`capital_gain`, from line 19700 of Schedule 3)
 less line 19, shown in brackets when negative."""
 
+AMT_CAPITAL_GAINS_DIFFERENCE = CATALOG.declare("amt_capital_gains_difference", Decimal)
+"""Capital gains after adjustments less the taxable capital gains, Form T691 Part 1 line 22 "Line 20
+minus line 21 (if negative, do not show in brackets.)": line 20 less line 21 (line 12700 of the
+return, the taxable capital gains), left signed."""
+
+AMT_CAPITAL_GAINS_ADDED = CATALOG.declare("amt_capital_gains_added", Decimal)
+"""Capital gains added, Form T691 Part 1 line 23 "If line 20 is positive, enter the amount from line
+22. If line 20 is negative, enter whichever is less: the amount from line 21 or line 22 (show in
+brackets).": line 22 when line 20 is not negative, otherwise the lesser of line 21 and line 22 as a
+negative amount."""
+
 AMT_PUBLICLY_LISTED_GIFTS_TOTAL = CATALOG.declare(
     "amt_publicly_listed_gifts_total", Decimal, non_negative=True
 )
@@ -173,3 +188,354 @@ AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT = CATALOG.declare(
 """Adjustment for gifts of publicly listed securities, Form T691 Part 1 line 26 "× 30%" of "Line 24
 minus line 25": the net of line 24 less line 25 at the 30% of its dataset, rounded to the cent,
 a loss in brackets."""
+
+AMT_ADJUSTED_INCOME_WITH_GAINS = CATALOG.declare("amt_adjusted_income_with_gains", Decimal)
+"""Adjusted taxable income with the gains, Form T691 Part 1 line 27 "Add lines 13, 14, 23, and 26.":
+line 13 (the amount from line 12), line 14 (the amount from line 6 of Part 9), line 23 and line 26
+in line order, a loss in brackets."""
+
+AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91 = CATALOG.declare(
+    "amt_t4_security_options_boxes_39_and_91", Decimal, non_negative=True
+)
+"""Security options deduction under paragraph 110(1)(d), Form T691 Part 1 line 28 "Total of all
+amounts in boxes 39 and 91 of your T4 slips": a starting amount, the caller's figure."""
+
+AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS = CATALOG.declare(
+    "amt_t1212_line_2_deferred_security_options", Decimal, non_negative=True
+)
+"""Deferred security options benefits, Form T691 Part 1 line 29 "Amount from line 2 of Form T1212,
+Statement of Deferred Security Options Benefits": a starting amount, the caller's figure."""
+
+AMT_SECURITY_OPTIONS_D_TOTAL = CATALOG.declare(
+    "amt_security_options_d_total", Decimal, non_negative=True
+)
+"""Security options deduction under paragraph 110(1)(d), Form T691 Part 1 line 30 "Line 28 plus
+line 29" "67910 =": lines 28 and 29 added."""
+
+AMT_SECURITY_OPTION_PUBLICLY_LISTED_GIFTS = CATALOG.declare(
+    "amt_security_option_publicly_listed_gifts", Decimal, non_negative=True
+)
+"""Gifts of publicly listed securities acquired under a security option plan, Form T691 Part 1
+line 31 "Gifts of publicly listed securities acquired under a security option plan included on line
+24900 of your return" "67914": a starting amount, the caller's figure."""
+
+AMT_SECURITY_OPTION_GIFTS_DEDUCTION = CATALOG.declare(
+    "amt_security_option_gifts_deduction", Decimal, non_negative=True
+)
+"""Security option gifts deduction, Form T691 Part 1 line 31 "× 40% =": the 40% of line 31's gifts,
+from its dataset, rounded to the cent."""
+
+AMT_SECURITY_OPTIONS_NET = CATALOG.declare("amt_security_options_net", Decimal, non_negative=True)
+"""Security options deduction net of the gifts deduction, Form T691 Part 1 line 32 "Line 30 minus
+line 31 (if negative, enter "0")": line 30 less line 31, not below zero."""
+
+AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92 = CATALOG.declare(
+    "amt_t4_security_options_boxes_41_and_92", Decimal, non_negative=True
+)
+"""Security options deduction under paragraph 110(1)(d.1), Form T691 Part 1 line 35 "total of all
+amounts in boxes 41 and 92 of your T4 slips": a starting amount, the caller's figure."""
+
+AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION = CATALOG.declare(
+    "amt_prospector_or_grubstaker_deduction", Decimal, non_negative=True
+)
+"""Deduction for a security received as a prospector or grubstaker, Form T691 Part 1 line 36
+"Deduction included on line 24900 of your return for a security received as a prospector or
+grubstaker": a starting amount, the caller's figure."""
+
+AMT_DEFERRED_PROFIT_SHARING_PLAN_DEDUCTION = CATALOG.declare(
+    "amt_deferred_profit_sharing_plan_deduction", Decimal, non_negative=True
+)
+"""Deduction for certain dispositions of securities from a deferred profit-sharing plan, Form T691
+Part 1 line 37 "Deduction included on line 24900 of your return for certain dispositions of
+securities received from a deferred profit-sharing plan": a starting amount, the caller's figure."""
+
+AMT_SECURITY_OPTIONS_D1_TOTAL = CATALOG.declare(
+    "amt_security_options_d1_total", Decimal, non_negative=True
+)
+"""Security options deductions under paragraph 110(1)(d.1), Form T691 Part 1 line 38 "Add lines 35
+to 37." "67918 =": lines 35, 36 and 37 added."""
+
+AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION = CATALOG.declare(
+    "amt_limited_partnership_difference_no_election", Decimal, non_negative=True
+)
+"""Limited partnership losses difference with no election, Form T691 Part 1 line 39 "If you have
+not filed an election (8), enter the difference between those losses and the amount of losses
+deductible (9) for AMT purposes": a starting amount, the caller's figure."""
+
+AMT_LIMITED_PARTNERSHIP_DIFFERENCE_ELECTION = CATALOG.declare(
+    "amt_limited_partnership_difference_election", Decimal, non_negative=True
+)
+"""Limited partnership losses difference with an election, Form T691 Part 1 line 40 "If you have
+filed an election (8), enter the difference between those losses and the amount of losses
+deductible (9) for AMT purposes": a starting amount, the caller's figure, from line 67920."""
+
+AMT_NON_CAPITAL_LOSSES_DIFFERENCE = CATALOG.declare(
+    "amt_non_capital_losses_difference", Decimal, non_negative=True
+)
+"""Non-capital losses difference, Form T691 Part 1 line 41 "If you claimed non-capital losses,
+including restricted farm losses or farm losses, incurred in another year on line 25200 of your
+2025 return, indicate the difference between those losses and the losses that are deductible for
+AMT purposes": a starting amount, the caller's figure."""
+
+AMT_NET_CAPITAL_LOSSES_DIFFERENCE = CATALOG.declare(
+    "amt_net_capital_losses_difference", Decimal, non_negative=True
+)
+"""Net capital losses difference, Form T691 Part 1 line 42 "If you claimed net capital losses,
+incurred in another year on line 25300 of your 2025 return, indicate the difference between those
+losses and the losses that are deductible for AMT purposes": a starting amount, the caller's
+figure, from line 67922."""
+
+AMT_OTHER_YEARS_LOSSES_TOTAL = CATALOG.declare(
+    "amt_other_years_losses_total", Decimal, non_negative=True
+)
+"""Losses of other years difference, Form T691 Part 1 line 43 "Line 39 or 40, as applicable, plus
+line 41 and 42": the one of lines 39 and 40 that applies, with lines 41 and 42, in line order."""
+
+AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED = CATALOG.declare(
+    "amt_limited_partnership_difference_applied", Decimal, non_negative=True
+)
+"""Limited partnership losses difference applied, Form T691 Part 1 line 46 "Amount from line 39 or
+40, as applicable": the one of lines 39 and 40 that applies."""
+
+AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT = CATALOG.declare(
+    "amt_limited_partnership_losses_adjustment", Decimal
+)
+"""Limited partnership losses of other years adjustment, Form T691 Part 1 line 47 "Line 45 minus
+line 46": the limited partnership losses of other years (line 25100 of the return) less line 46, a
+loss in brackets."""
+
+AMT_NON_CAPITAL_LOSSES_ADJUSTMENT = CATALOG.declare("amt_non_capital_losses_adjustment", Decimal)
+"""Non-capital losses of other years adjustment, Form T691 Part 1 line 50 "Line 48 minus line 49":
+the non-capital losses of other years (line 25200 of the return) less line 49, a loss in
+brackets."""
+
+AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL = CATALOG.declare("amt_losses_and_deductions_subtotal", Decimal)
+"""Losses and deductions subtotal, Form T691 Part 1 line 53 "Add lines 47, 50, 51, and 52.": lines
+47, 50, 51 (the union dues of line 21200) and 52 (the child care expenses of line 21400), a loss in
+brackets when line 47 or 50 is one."""
+
+AMT_MOVING_EXPENSES_DEDUCTION = CATALOG.declare(
+    "amt_moving_expenses_deduction", Decimal, non_negative=True
+)
+"""Moving expenses deduction, Form T691 Part 1 line 56 "Moving expenses deduction from line 21900 of
+your return": a starting amount, the caller's figure."""
+
+AMT_PPIP_PREMIUMS_DEDUCTION = CATALOG.declare(
+    "amt_ppip_premiums_deduction", Decimal, non_negative=True
+)
+"""Deduction for PPIP premiums on self-employment income, Form T691 Part 1 line 59 "Deduction for
+PPIP premiums on self-employment income from line 22300 of your return (Quebec only)": a starting
+amount, the caller's figure."""
+
+AMT_DEDUCTIONS_TOTAL = CATALOG.declare("amt_deductions_total", Decimal)
+"""Deductions total, Form T691 Part 1 line 63 "Add lines 54 to 62.": line 53 carried and lines 55
+to 62 in line order, a loss in brackets when line 53 is one."""
+
+AMT_NON_DEDUCTIBLE_INTEREST = CATALOG.declare(
+    "amt_non_deductible_interest", Decimal, non_negative=True
+)
+"""Interest expenses on money borrowed to earn income, Form T691 Part 1 line 64 "Interest expenses
+on money borrowed to earn income or to purchase an annuity contract (included on line 22100 of your
+return)": a starting amount, the caller's figure."""
+
+AMT_LIFE_INSURANCE_PREMIUMS_AS_COLLATERAL = CATALOG.declare(
+    "amt_life_insurance_premiums_as_collateral", Decimal, non_negative=True
+)
+"""Premiums on life insurance policies used as collateral, Form T691 Part 1 line 65 "Premiums on
+life insurance policies used as collateral for money borrowed to earn income from property
+(included on line 22100 of your return)": a starting amount, the caller's figure."""
+
+AMT_FINANCING_EXPENSES = CATALOG.declare("amt_financing_expenses", Decimal, non_negative=True)
+"""Financing expenses on money borrowed to earn income from property, Form T691 Part 1 line 66
+"Financing expenses on money borrowed to earn income from property (included on line 22100 of your
+return)": a starting amount, the caller's figure."""
+
+AMT_INVESTMENT_COUNSEL_FEES = CATALOG.declare(
+    "amt_investment_counsel_fees", Decimal, non_negative=True
+)
+"""Investment counsel fees, Form T691 Part 1 line 67 "Investment counsel fees (included on line
+22100 of your return)": a starting amount, the caller's figure."""
+
+AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES = CATALOG.declare(
+    "amt_non_deductible_property_expenses", Decimal, non_negative=True
+)
+"""Non-deductible property expenses, Form T691 Part 1 line 68 "Add lines 64 to 67" "67924 =": lines
+64 to 67 added."""
+
+AMT_COMMISSION_EMPLOYMENT_EXPENSES = CATALOG.declare(
+    "amt_commission_employment_expenses", Decimal, non_negative=True
+)
+"""Employment expenses of a commission employee, Form T691 Part 1 line 70 "Employment expenses
+claimed and calculated as a commission employee (excluding amounts claimed as a salaried
+employee)": a starting amount, the caller's figure."""
+
+AMT_LEGAL_AND_ACCOUNTING_EXPENSES = CATALOG.declare(
+    "amt_legal_and_accounting_expenses", Decimal, non_negative=True
+)
+"""Legal and accounting expenses, Form T691 Part 1 line 71 "Legal and accounting expenses": a
+starting amount, the caller's figure."""
+
+AMT_REPAYMENT_OF_SALARY_AND_WAGES = CATALOG.declare(
+    "amt_repayment_of_salary_and_wages", Decimal, non_negative=True
+)
+"""Repayment of salary and wages, Form T691 Part 1 line 72 "Repayment of salary and wages": a
+starting amount, the caller's figure."""
+
+AMT_EXCESS_EPSP_AMOUNTS = CATALOG.declare("amt_excess_epsp_amounts", Decimal, non_negative=True)
+"""Excess Employee Profits Share Plan amounts, Form T691 Part 1 line 73 "Excess Employee Profits
+Share Plan (EPSP) amounts": a starting amount, the caller's figure."""
+
+AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS = CATALOG.declare(
+    "amt_forfeited_salary_deferral_amounts", Decimal, non_negative=True
+)
+"""Forfeited amounts under a salary deferral arrangement or an EPSP, Form T691 Part 1 line 74
+"Forfeited amounts under a salary deferral arrangement or an EPSP": a starting amount, the caller's
+figure."""
+
+AMT_REPAYMENT_OF_WAGE_LOSS_REPLACEMENT = CATALOG.declare(
+    "amt_repayment_of_wage_loss_replacement", Decimal, non_negative=True
+)
+"""Repayment of a wage loss replacement, Form T691 Part 1 line 75 "Repayment of a wage loss
+replacement that was a top-up disability payment": a starting amount, the caller's figure."""
+
+AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES = CATALOG.declare(
+    "amt_non_deductible_office_expenses", Decimal, non_negative=True
+)
+"""Non-deductible office and employment expenses, Form T691 Part 1 line 76 "Add lines 70 to 75."
+"67926 =": lines 70 to 75 added."""
+
+AMT_OFFICE_EXPENSES_ADJUSTMENT = CATALOG.declare("amt_office_expenses_adjustment", Decimal)
+"""Office and employment expenses adjustment, Form T691 Part 1 line 77 "Line 69 minus line 76": the
+other employment expenses (line 22900 of the return) less line 76, a loss in brackets."""
+
+AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL = CATALOG.declare("amt_adjustments_before_rate_total", Decimal)
+"""Adjustments before the applicable rate, Form T691 Part 1 line 78 "Add lines 63, 68, and 77.":
+lines 63, 68 and 77 in line order, a loss in brackets when line 63 or 77 is one."""
+
+AMT_APPLICABLE_RATE_AMOUNT = CATALOG.declare("amt_applicable_rate_amount", Decimal)
+"""Applicable rate amount, Form T691 Part 1 line 80 "Line 78 multiply by the percentage from line
+79": line 78 times the applicable rate of line 79 "Applicable Rate" "× 50%" from its dataset,
+rounded to the cent, a loss in brackets when line 78 is one."""
+
+AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS = CATALOG.declare(
+    "amt_adjusted_income_with_security_options", Decimal
+)
+"""Adjusted taxable income with the security options, Form T691 Part 1 line 33 "Line 27 plus line
+32": line 27 and line 32 added, a loss in brackets."""
+
+AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL = CATALOG.declare(
+    "amt_security_options_and_losses_total", Decimal
+)
+"""Adjusted taxable income with the losses of other years, Form T691 Part 1 line 44 "Add lines 34,
+38, and 43.": line 34 (the amount from line 33), line 38 and line 43 in line order, a loss in
+brackets."""
+
+AMT_ADJUSTMENTS_AFTER_RATE_TOTAL = CATALOG.declare("amt_adjustments_after_rate_total", Decimal)
+"""Adjustments after the applicable rate, Form T691 Part 1 line 82 "Line 80 plus line 81": line 80
+and line 81 (the amount from line 44) added, a loss in brackets."""
+
+AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT = CATALOG.declare(
+    "amt_dividends_other_than_eligible_adjustment", Decimal, non_negative=True
+)
+"""Dividends other than eligible adjustment, Form T691 Part 1 line 84 "B × 13.0435%": B, the
+taxable dividends other than eligible of line 12010 of the return, at the 13.0435% of its dataset,
+rounded to the cent."""
+
+AMT_AMOUNT_A_MINUS_AMOUNT_B = CATALOG.declare("amt_amount_a_minus_amount_b", Decimal)
+"""Amount A minus amount B, Form T691 Part 1 line 85 "Amount A minus Amount B =": amount A, the
+taxable dividends of line 12000 of the return, less amount B, line 12010 of the return."""
+
+AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT = CATALOG.declare(
+    "amt_dividends_difference_adjustment", Decimal
+)
+"""Dividends difference adjustment, Form T691 Part 1 line 85 "C × 27.5362% =": C, amount A minus
+amount B, at the 27.5362% of its dataset, rounded to the cent."""
+
+AMT_DIVIDENDS_ADJUSTMENTS_TOTAL = CATALOG.declare("amt_dividends_adjustments_total", Decimal)
+"""Dividends adjustments, Form T691 Part 1 line 86 "Line 84 plus line 85": line 84 and line 85
+added."""
+
+AMT_LIFETIME_EXEMPTION_ADJUSTMENT = CATALOG.declare(
+    "amt_lifetime_exemption_adjustment", Decimal, non_negative=True
+)
+"""Lifetime capital gains exemption adjustment, Form T691 Part 1 line 87 "Enter the amount from line
+25400 of your return" "× 40% =": line 25400 at the 40% of its dataset, rounded to the cent."""
+
+AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL = CATALOG.declare(
+    "amt_adjustments_with_lifetime_exemption_total", Decimal
+)
+"""Adjustments with the lifetime capital gains exemption, Form T691 Part 1 line 88 "Line 86 plus
+line 87": line 86 and line 87 added."""
+
+AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED = CATALOG.declare(
+    "amt_qbt_capital_gains_deduction_doubled", Decimal, non_negative=True
+)
+"""Capital gains deduction on a qualifying business transfer doubled, Form T691 Part 1 line 89
+"Amount from line 25395 of your return" "× 2 =": line 25395 times 2, rounded to the cent."""
+
+AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE = CATALOG.declare(
+    "amt_qbt_capital_gains_deduction_difference", Decimal, non_negative=True
+)
+"""Capital gains deduction on a qualifying business transfer difference, Form T691 Part 1 line 91
+"line 89 minus line 90": line 89 less line 90, the amount from line 25395 of the return."""
+
+AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL = CATALOG.declare("amt_capital_gains_deductions_total", Decimal)
+"""Capital gains deductions, Form T691 Part 1 line 92 "Line 88 plus line 91": line 88 and line 91
+added."""
+
+AMT_ADJUSTED_TAXABLE_INCOME = CATALOG.declare(
+    "amt_adjusted_taxable_income", Decimal, non_negative=True
+)
+"""Adjusted taxable income, Form T691 Part 1 line 93 "Line 83 minus line 92 (if negative, enter
+"0")": line 83 (the amount from line 82) less line 92, not below zero."""
+
+AMT_BASIC_EXEMPTION = CATALOG.declare("amt_basic_exemption", Decimal, non_negative=True)
+"""Basic exemption, Form T691 Part 1 line 94 "Basic exemption" "177,882.00": the printed amount of
+its dataset, claimed whole."""
+
+AMT_NET_ADJUSTED_TAXABLE_INCOME = CATALOG.declare(
+    "amt_net_adjusted_taxable_income", Decimal, non_negative=True
+)
+"""Net adjusted taxable income, Form T691 Part 1 line 95 "Line 93 minus line 94 (if negative, enter
+"0")": line 93 less line 94, not below zero."""
+
+AMT_GROSS_MINIMUM_AMOUNT = CATALOG.declare("amt_gross_minimum_amount", Decimal, non_negative=True)
+"""Gross minimum amount, Form T691 Part 1 line 97 "Gross minimum amount: line 95 multiplied by the
+percentage on line 96.": line 95 at the 20.5% federal tax rate of line 96 from its dataset, rounded
+to the cent."""
+
+AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT = CATALOG.declare(
+    "amt_non_refundable_credits_adjustment", Decimal, non_negative=True
+)
+"""Net non-refundable tax credits adjustment, Form T691 Part 1 line 98 "Net non-refundable tax
+credits (line 33800 of your return)" "× 50% =": line 33800 at the 50% of its dataset, rounded to
+the cent."""
+
+AMT_DONATIONS_AND_GIFTS_ADJUSTMENT = CATALOG.declare(
+    "amt_donations_and_gifts_adjustment", Decimal, non_negative=True
+)
+"""Donations and gifts adjustment, Form T691 Part 1 line 99 "Donations and gifts (line 34900 of your
+return)" "× 80% =": line 34900 at the 80% of its dataset, rounded to the cent."""
+
+AMT_FEDERAL_LOGGING_TAX_CREDIT = CATALOG.declare(
+    "amt_federal_logging_tax_credit", Decimal, non_negative=True
+)
+"""Federal logging tax credit, Form T691 Part 1 line 100 "Federal logging tax credit (line 133 of
+your return for residents of a province or territory other than Quebec, or line 137 for residents
+of Quebec)": a starting amount, the caller's figure."""
+
+AMT_SECTION_119_FORMER_RESIDENT_CREDIT = CATALOG.declare(
+    "amt_section_119_former_resident_credit", Decimal, non_negative=True
+)
+"""Section 119 former resident credit, Form T691 Part 1 line 101 "Section 119 former resident
+credit": a starting amount, the caller's figure."""
+
+AMT_CREDITS_ADJUSTMENTS_TOTAL = CATALOG.declare(
+    "amt_credits_adjustments_total", Decimal, non_negative=True
+)
+"""Credits adjustments, Form T691 Part 1 line 102 "Add lines 98 to 101.": lines 98, 99, 100 and 101
+added."""
+
+AMT_MINIMUM_AMOUNT = CATALOG.declare("amt_minimum_amount", Decimal, non_negative=True)
+"""Minimum amount, Form T691 Part 1 line 103 "Line 97 minus line 102 (if negative, enter "0")":
+line 97 less line 102, not below zero."""

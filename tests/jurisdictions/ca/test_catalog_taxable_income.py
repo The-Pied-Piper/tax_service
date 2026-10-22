@@ -13,14 +13,17 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_GROSS_CAPITAL_LOSSES_1985_TO_1987,
     ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
     ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_2000,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
     ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
     ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
     ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
+    ADJUSTED_LOSSES_APPLIED_2000,
     ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
     ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
     ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
     ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
+    ADJUSTED_LOSSES_LEFT_AFTER_2000,
     ADJUSTED_NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     ANNUAL_GAINS_LIMIT_2025,
     ANNUAL_GAINS_LINE_3,
@@ -82,7 +85,10 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSS_BALANCE_1985_TO_1987,
     NET_CAPITAL_LOSS_BALANCE_1988_AND_1989,
     NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
+    NET_CAPITAL_LOSS_BALANCE_2000,
     NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
+    NET_CAPITAL_LOSS_NUMERATOR_ONE_2000,
+    NET_CAPITAL_LOSS_TWICE_IR_2000,
     NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
     NET_CAPITAL_LOSSES_CLAIMED,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
@@ -137,6 +143,7 @@ from app.jurisdictions.ca.catalog import (
     REMAINING_ADJUSTED_LOSSES_1985_TO_1987,
     REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
     REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
+    REMAINING_ADJUSTED_LOSSES_2000,
     REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
     SCHEDULE_3_LINE_17600_NOT_BELOW_ZERO,
     SCHEDULE_3_LINE_19900,
@@ -165,7 +172,6 @@ from app.jurisdictions.ca.catalog import (
     T657_GAINS_2002_TO_2024,
     T657_INCLUSION_RATE_2000,
     T657_NET_NON_ELIGIBLE_TAXABLE_CAPITAL_GAINS,
-    T657_PART_1_AMOUNT_B,
     T657_PART_1_AMOUNT_F,
     T657_PART_1_AMOUNT_G,
     T657_PART_1_AMOUNT_H,
@@ -186,6 +192,7 @@ from app.jurisdictions.ca.catalog import (
     UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987,
     UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989,
     UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
+    UNAPPLIED_NET_CAPITAL_LOSSES_2000,
     UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024,
 )
 
@@ -296,6 +303,19 @@ def test_the_taxable_income_kinds_are_the_registered_ones(registry: ArtifactRegi
         registry.get("ca/net_capital_loss_balance_2001_to_2024")
         is NET_CAPITAL_LOSS_BALANCE_2001_TO_2024
     )
+    assert registry.get("ca/unapplied_net_capital_losses_2000") is UNAPPLIED_NET_CAPITAL_LOSSES_2000
+    assert registry.get("ca/net_capital_loss_twice_ir_2000") is NET_CAPITAL_LOSS_TWICE_IR_2000
+    assert (
+        registry.get("ca/net_capital_loss_numerator_one_2000")
+        is NET_CAPITAL_LOSS_NUMERATOR_ONE_2000
+    )
+    assert (
+        registry.get("ca/adjusted_gross_capital_losses_2000") is ADJUSTED_GROSS_CAPITAL_LOSSES_2000
+    )
+    assert registry.get("ca/adjusted_losses_applied_2000") is ADJUSTED_LOSSES_APPLIED_2000
+    assert registry.get("ca/adjusted_losses_left_after_2000") is ADJUSTED_LOSSES_LEFT_AFTER_2000
+    assert registry.get("ca/remaining_adjusted_losses_2000") is REMAINING_ADJUSTED_LOSSES_2000
+    assert registry.get("ca/net_capital_loss_balance_2000") is NET_CAPITAL_LOSS_BALANCE_2000
     assert registry.get("ca/additional_deductions") is ADDITIONAL_DEDUCTIONS
     assert registry.get("ca/deductions_from_net_income") is DEDUCTIONS_FROM_NET_INCOME
 
@@ -331,6 +351,14 @@ def test_the_taxable_income_kinds_are_money() -> None:
         ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
         REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
         NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
+        UNAPPLIED_NET_CAPITAL_LOSSES_2000,
+        NET_CAPITAL_LOSS_TWICE_IR_2000,
+        NET_CAPITAL_LOSS_NUMERATOR_ONE_2000,
+        ADJUSTED_GROSS_CAPITAL_LOSSES_2000,
+        ADJUSTED_LOSSES_APPLIED_2000,
+        ADJUSTED_LOSSES_LEFT_AFTER_2000,
+        REMAINING_ADJUSTED_LOSSES_2000,
+        NET_CAPITAL_LOSS_BALANCE_2000,
         ADDITIONAL_DEDUCTIONS,
         DEDUCTIONS_FROM_NET_INCOME,
     ):
@@ -509,7 +537,6 @@ def test_the_form_t657_kinds_are_the_registered_ones(registry: ArtifactRegistry)
         ("ca/t657_chart_2_line_14", T657_CHART_2_LINE_14),
         ("ca/t657_inclusion_rate_2000", T657_INCLUSION_RATE_2000),
         ("ca/t657_chart_2_line_18", T657_CHART_2_LINE_18),
-        ("ca/t657_part_1_amount_b", T657_PART_1_AMOUNT_B),
         ("ca/t657_part_1_amount_f", T657_PART_1_AMOUNT_F),
         ("ca/t657_part_1_amount_g", T657_PART_1_AMOUNT_G),
         ("ca/t657_part_1_amount_h", T657_PART_1_AMOUNT_H),
@@ -645,7 +672,6 @@ def test_the_form_t657_amounts_are_money_non_negative_except_the_signed_lines() 
         T657_CHART_2_LINE_14,
         T657_INCLUSION_RATE_2000,
         T657_CHART_2_LINE_18,
-        T657_PART_1_AMOUNT_B,
         T657_PART_1_AMOUNT_F,
         T657_PART_1_AMOUNT_G,
         T657_PART_1_AMOUNT_H,

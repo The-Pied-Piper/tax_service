@@ -60,6 +60,7 @@ from app.domain.trace import (
     RecordCountLine,
     RecordTotalLine,
     RoundedTotalLine,
+    SignChosenDifferenceLine,
     SubtractedLine,
     SubtractedNotBelowZeroLine,
     SumLine,
@@ -383,6 +384,59 @@ def test_renders_the_divided_figures_without_trailing_zeros_or_an_exponent() -> 
 
     assert render(line) == (
         "rated_amount: gross_amount 3795 divided by 14.5% (half-up to 0.01) = 26172.41"
+    )
+
+
+# --- differences chosen by a sign -----------------------------------------------
+#
+# Not negative: "<output>: <difference kind> <difference> (<sign kind> <sign> is not negative) =
+# <result>". Negative: "<output>: <sign kind> <sign> is negative, lesser of <reference kind>
+# <reference> and <difference kind> <difference>, as a negative = <result>". Figures as given
+# without trailing zeros.
+
+
+def test_renders_the_difference_when_the_sign_amount_is_positive() -> None:
+    line = SignChosenDifferenceLine(
+        NET_AMOUNT, GROSS_AMOUNT, D("100"), REDUCTION, D("30"), RATED_AMOUNT, D("70"), D("70")
+    )
+
+    assert render(line) == "net_amount: rated_amount 70 (gross_amount 100 is not negative) = 70"
+
+
+def test_renders_the_difference_when_the_sign_amount_is_zero() -> None:
+    line = SignChosenDifferenceLine(
+        NET_AMOUNT, GROSS_AMOUNT, D("0.00"), REDUCTION, D("0.00"), RATED_AMOUNT, D("0.00"), D("0")
+    )
+
+    assert render(line) == "net_amount: rated_amount 0 (gross_amount 0 is not negative) = 0"
+
+
+def test_renders_the_lesser_figure_as_a_negative_when_the_sign_amount_is_negative() -> None:
+    line = SignChosenDifferenceLine(
+        NET_AMOUNT, GROSS_AMOUNT, D("-100"), REDUCTION, D("30"), RATED_AMOUNT, D("130"), D("-30")
+    )
+
+    assert render(line) == (
+        "net_amount: gross_amount -100 is negative, lesser of reduction 30 and "
+        "rated_amount 130, as a negative = -30"
+    )
+
+
+def test_renders_the_sign_chosen_figures_without_trailing_zeros_or_an_exponent() -> None:
+    line = SignChosenDifferenceLine(
+        NET_AMOUNT,
+        GROSS_AMOUNT,
+        D("-1.00E+2"),
+        REDUCTION,
+        D("30.500"),
+        RATED_AMOUNT,
+        D("130.50"),
+        D("-30.500"),
+    )
+
+    assert render(line) == (
+        "net_amount: gross_amount -100 is negative, lesser of reduction 30.5 and "
+        "rated_amount 130.5, as a negative = -30.5"
     )
 
 
@@ -2567,6 +2621,20 @@ def test_renders_a_money_figure_without_trailing_zeros_or_an_exponent(
                 RATED_AMOUNT, GROSS_AMOUNT, D("3795.00"), Rate(D("0.145")), CENT, D("26172.410")
             ),
             "rated_amount: gross_amount 3795 divided by 14.5% (half-up to 0.01) = 26172.41",
+        ),
+        (
+            SignChosenDifferenceLine(
+                NET_AMOUNT,
+                GROSS_AMOUNT,
+                D("-100.00"),
+                REDUCTION,
+                D("30.00"),
+                RATED_AMOUNT,
+                D("130.00"),
+                D("-30.00"),
+            ),
+            "net_amount: gross_amount -100 is negative, lesser of reduction 30 and "
+            "rated_amount 130, as a negative = -30",
         ),
         (
             SubtractedLine(
