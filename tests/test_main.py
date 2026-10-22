@@ -40,8 +40,8 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1206
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1206
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1220
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1220
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -587,6 +587,26 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/adjusted_losses_applied_2001_to_2024",
         "ca/remaining_adjusted_losses_2001_to_2024",
         "ca/net_capital_loss_balance_2001_to_2024",
+        "ca/net_capital_losses_before_may_23_1985",
+        "ca/pre_1986_deductions_before_1988",
+        "ca/pre_1986_deductions_1988_and_1989",
+        "ca/pre_1986_deductions_1990_to_1999",
+        "ca/pre_1986_deductions_2000",
+        "ca/pre_1986_deductions_2001_to_2024",
+        "ca/pre_1986_deductions_adjusted_1988_and_1989",
+        "ca/pre_1986_deductions_adjusted_1990_to_1999",
+        "ca/pre_1986_deductions_adjusted_2000",
+        "ca/pre_1986_deductions_total",
+        "ca/pre_1986_capital_loss_balance",
+        "ca/adjusted_gross_capital_losses_before_may_23_1985",
+        "ca/adjusted_losses_applied_before_may_23_1985",
+        "ca/adjusted_losses_left_after_before_may_23_1985",
+        "ca/remaining_adjusted_losses_before_may_23_1985",
+        "ca/net_capital_loss_balance_before_may_23_1985",
+        "ca/adjusted_net_capital_losses_applied",
+        "ca/unapplied_adjusted_net_capital_losses",
+        "ca/net_capital_losses_additional_deduction",
+        "ca/total_adjusted_net_capital_losses_applied",
         "ca/additional_deductions",
         "ca/zone_a_days_lived",
         "ca/zone_a_additional_residency_days",
@@ -2037,15 +2057,15 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1206
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1206
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1220
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1220
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1206
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1206
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1220
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1220
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

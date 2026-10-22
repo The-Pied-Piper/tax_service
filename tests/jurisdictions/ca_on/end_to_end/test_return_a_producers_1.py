@@ -36,6 +36,7 @@ from app.jurisdictions.ca.capabilities.divided_by_rate import DividedByRate
 from app.jurisdictions.ca.capabilities.ei_excluded_slips_net_income import (
     EiExcludedSlipsNetIncome,
 )
+from app.jurisdictions.ca.capabilities.lesser_of_with_maximum import LesserOfWithMaximum
 from app.jurisdictions.ca.capabilities.other_dependants_medical import OtherDependantsMedical
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
@@ -54,13 +55,17 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_GROSS_CAPITAL_LOSSES_1988_AND_1989,
     ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
     ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
     ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
     ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
+    ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
     ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
     ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
+    ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985,
+    ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     AGE_AMOUNT,
     AGE_AMOUNT_BEFORE_COUNT,
     AGE_INCOME_OVER_THRESHOLD,
@@ -468,7 +473,10 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSS_BALANCE_1988_AND_1989,
     NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
     NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
+    NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985,
+    NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION,
     NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
+    NET_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     NET_CAPITAL_LOSSES_CLAIMED,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_COMMISSION_INCOME,
@@ -516,6 +524,14 @@ from app.jurisdictions.ca.catalog import (
     OTHER_SPLIT_INCOME,
     PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS,
     POLITICAL_CONTRIBUTIONS,
+    PRE_1986_CAPITAL_LOSS_BALANCE,
+    PRE_1986_DEDUCTIONS_1988_AND_1989,
+    PRE_1986_DEDUCTIONS_1990_TO_1999,
+    PRE_1986_DEDUCTIONS_2001_TO_2024,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999,
+    PRE_1986_DEDUCTIONS_BEFORE_1988,
+    PRE_1986_DEDUCTIONS_TOTAL,
     PROFESSIONAL_INCOME,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
@@ -526,6 +542,7 @@ from app.jurisdictions.ca.catalog import (
     REMAINING_ADJUSTED_LOSSES_1988_AND_1989,
     REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
     REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
+    REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985,
     RENTAL_ADVERTISING,
     RENTAL_ADVERTISING_PERSONAL_PORTION,
     RENTAL_ADVERTISING_SHORT_TERM_PORTION,
@@ -697,6 +714,7 @@ from app.jurisdictions.ca.catalog import (
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOSI_ADJUSTED_TAXABLE_INCOME,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
+    TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     TOTAL_CARRYING_CHARGES,
     TOTAL_CHARITABLE_DONATIONS,
     TOTAL_INCOME,
@@ -714,6 +732,7 @@ from app.jurisdictions.ca.catalog import (
     UCCB_AND_RDSP_INCOME,
     UCCB_AND_RDSP_INCOME_REPAYMENTS,
     UCCB_REPAYMENT,
+    UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES,
     UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987,
     UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989,
     UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
@@ -1081,6 +1100,11 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
         UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024,
         NET_CAPITAL_LOSSES_CLAIMED,
+        NET_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
+        PRE_1986_DEDUCTIONS_BEFORE_1988,
+        PRE_1986_DEDUCTIONS_1988_AND_1989,
+        PRE_1986_DEDUCTIONS_1990_TO_1999,
+        PRE_1986_DEDUCTIONS_2001_TO_2024,
         ADDITIONAL_DEDUCTIONS,
         OTHER_PAYMENTS_DEDUCTION_ABOVE_LIMIT,
         OTHER_PAYMENTS_WORKSHEET_REQUIRED,
@@ -1685,7 +1709,36 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     )
     assert isinstance(worksheet.producer_of(TOTAL_ADJUSTED_NET_CAPITAL_LOSSES), Sum)
     assert isinstance(worksheet.producer_of(NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM), LesserOf)
-    assert isinstance(worksheet.producer_of(NET_CAPITAL_LOSSES_OF_OTHER_YEARS), AtMost)
+    assert isinstance(worksheet.producer_of(ADJUSTED_NET_CAPITAL_LOSSES_APPLIED), AtMost)
+    # Form T1436 line 10 "Line 7 plus line 9" is T1 line 25300; line 13 "Line 11 plus line 12".
+    assert isinstance(worksheet.producer_of(NET_CAPITAL_LOSSES_OF_OTHER_YEARS), Sum)
+    assert isinstance(worksheet.producer_of(TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED), Sum)
+    assert worksheet.producer_of(NET_CAPITAL_LOSSES_OF_OTHER_YEARS) is not worksheet.producer_of(
+        TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED
+    )
+    assert isinstance(
+        worksheet.producer_of(PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989), ApplyFraction
+    )
+    assert isinstance(
+        worksheet.producer_of(PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999), ApplyFraction
+    )
+    assert isinstance(worksheet.producer_of(PRE_1986_DEDUCTIONS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(PRE_1986_CAPITAL_LOSS_BALANCE), Subtract)
+    assert isinstance(worksheet.producer_of(UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES), Subtract)
+    assert isinstance(
+        worksheet.producer_of(NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION), LesserOfWithMaximum
+    )
+    assert isinstance(
+        worksheet.producer_of(ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985), ApplyFraction
+    )
+    assert isinstance(worksheet.producer_of(ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985), LesserOf)
+    assert isinstance(
+        worksheet.producer_of(ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985), Subtract
+    )
+    assert isinstance(worksheet.producer_of(REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985), Subtract)
+    assert isinstance(
+        worksheet.producer_of(NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985), ApplyFraction
+    )
     assert isinstance(worksheet.producer_of(ADJUSTED_LOSSES_APPLIED_1985_TO_1987), LesserOf)
     assert isinstance(worksheet.producer_of(ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987), Subtract)
     assert isinstance(worksheet.producer_of(REMAINING_ADJUSTED_LOSSES_1985_TO_1987), Subtract)

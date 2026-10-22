@@ -194,6 +194,12 @@ def test_importing_the_federal_package_registers_the_sign_chosen_difference_capa
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.sign_chosen_difference"
 
 
+def test_importing_the_federal_package_registers_the_lesser_of_with_maximum_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/lesser_of_with_maximum")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.lesser_of_with_maximum"
+
+
 def test_importing_the_federal_package_registers_the_chart_a_row_c_total_capability() -> None:
     registered = CapabilityRegistry.shared().get("ca/chart_a_row_c_total")
 

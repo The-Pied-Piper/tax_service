@@ -374,6 +374,12 @@ inputs:
   - ca/unapplied_net_capital_losses_2000
   - ca/unapplied_net_capital_losses_2001_to_2024
   - ca/net_capital_losses_claimed
+  - ca/net_capital_losses_before_may_23_1985
+  - ca/pre_1986_deductions_before_1988
+  - ca/pre_1986_deductions_1988_and_1989
+  - ca/pre_1986_deductions_1990_to_1999
+  - ca/pre_1986_deductions_2000
+  - ca/pre_1986_deductions_2001_to_2024
   - ca/additional_deductions
   # Form T2209 note (3), net income, "minus any:" the part of line 25600 that is net employment
   # income from a prescribed international organization, foreign income exempt under a tax

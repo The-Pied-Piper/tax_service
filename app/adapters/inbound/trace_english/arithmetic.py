@@ -15,6 +15,7 @@ from app.domain.trace.arithmetic import (
     FractionAppliedLine,
     GreaterOfLine,
     LesserOfLine,
+    LesserOfWithMaximumLine,
     MultipleOverLine,
     PercentageAppliedLine,
     PerUnitAmountLine,
@@ -239,6 +240,26 @@ class LesserOfRenderer:
             f"{kind.label} {EnglishFigures.money(amount)}" for kind, amount in parts
         )
         return f"{output.label}: lesser of {terms} = {EnglishFigures.money(result)}"
+
+
+@english_renderer
+class LesserOfWithMaximumRenderer:
+    """English text for LesserOfWithMaximumLine."""
+
+    line_class = LesserOfWithMaximumLine
+
+    def render(self, line: LesserOfWithMaximumLine) -> str:
+        """The English sentence for `line`."""
+        output = line.output
+        maximum = line.maximum
+        rule = line.rounding
+        terms = " and ".join(
+            f"{kind.label} {EnglishFigures.money(amount)}" for kind, amount in line.parts
+        )
+        return (
+            f"{output.label}: lesser of {terms} and {EnglishFigures.money(maximum.value)} "
+            f"({EnglishFigures.rounding(rule)}) = {EnglishFigures.money(line.result)}"
+        )
 
 
 @english_renderer

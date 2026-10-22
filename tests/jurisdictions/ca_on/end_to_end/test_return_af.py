@@ -22,11 +22,13 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
     ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
     ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
+    ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     DEDUCTIONS_FROM_NET_INCOME,
     NET_CAPITAL_LOSS_BALANCE_1985_TO_1987,
     NET_CAPITAL_LOSS_BALANCE_1988_AND_1989,
     NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
     NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
+    NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION,
     NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NET_INCOME,
@@ -39,8 +41,10 @@ from app.jurisdictions.ca.catalog import (
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
+    TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     TOTAL_CREDITS,
     TOTAL_PAYABLE,
+    UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES,
 )
 from app.jurisdictions.ca_on.catalog import (
     LIFT_CREDIT,
@@ -76,9 +80,11 @@ def test_return_afs_claim_is_applied_to_the_oldest_row_first_and_lowers_taxable_
     # column C 3000 x 2/3 = 2000.00; a 2010 loss of 1000 (row "After 2000 and before 2025", column B
     # 1) gives 1000 x 1 = 1000.00; the other two rows have no loss: 0.00. Line 4 is 3000.00 and line
     # 5, the taxable capital gains (line 12700), is 5000 x 50% = 2500.00, so line 6 is 2500.00. The
-    # claim of 2500 (line 7, which is also T1 line 25300 and line 13) is at most line 6. It is
-    # applied oldest row first: column D is 0.00 for each of the first two rows, 2000.00 for the
-    # 1990 to 1999 row (of the 2500 left, 500.00 remains) and 500.00 for the 2001 to 2024 row.
+    # claim of 2500 (line 7) is at most line 6; line 8 is 3000.00 - 2500 = 500.00 and line 9, the
+    # lesser of line 3 (0, lines 1 to 3 not completed), line 8 and $2,000, is 0, so line 10, T1 line
+    # 25300, and line 13 are 2500 + 0 = 2500. It is applied oldest row first: column D is 0.00
+    # for each of the first two rows, 2000.00 for the 1990 to 1999 row (of the 2500 left, 500.00
+    # remains) and 500.00 for the 2001 to 2024 row.
     # Column E is column C less column D: 0.00, 0.00, 0.00 and 500.00; column G is column E x
     # column F (1, 4/3, 3/2 and 1): 0.00, 0.00, 0.00 and 500.00. Net income is 50500.00 - 445.00 =
     # 50055.00 (the deduction is below net income); line 25700 is 2500 and taxable income is
@@ -94,7 +100,11 @@ def test_return_afs_claim_is_applied_to_the_oldest_row_first_and_lowers_taxable_
     assert worksheet.get(ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024).value == D("1000.00")
     assert worksheet.get(TOTAL_ADJUSTED_NET_CAPITAL_LOSSES).value == D("3000.00")
     assert worksheet.get(NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM).value == D("2500.00")
+    assert worksheet.get(ADJUSTED_NET_CAPITAL_LOSSES_APPLIED).value == D("2500")
+    assert worksheet.get(UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES).value == D("500.00")
+    assert worksheet.get(NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION).value == D("0")
     assert worksheet.get(NET_CAPITAL_LOSSES_OF_OTHER_YEARS).value == D("2500")
+    assert worksheet.get(TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED).value == D("2500")
     assert worksheet.get(ADJUSTED_LOSSES_APPLIED_1985_TO_1987).value == D("0.00")
     assert worksheet.get(ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987).value == D("2500.00")
     assert worksheet.get(ADJUSTED_LOSSES_APPLIED_1988_AND_1989).value == D("0.00")
@@ -129,7 +139,8 @@ def test_return_afs_claim_is_applied_to_the_oldest_row_first_and_lowers_taxable_
         "unapplied_net_capital_losses_2001_to_2024 1000 (half-up to 0.01)"
     ) in rendered
     assert (
-        "total_adjusted_net_capital_losses: adjusted_gross_capital_losses_1985_to_1987 0 "
+        "total_adjusted_net_capital_losses: adjusted_gross_capital_losses_before_may_23_1985 0 "
+        "+ adjusted_gross_capital_losses_1985_to_1987 0 "
         "+ adjusted_gross_capital_losses_1988_and_1989 0 "
         "+ adjusted_gross_capital_losses_1990_to_1999 2000 "
         "+ adjusted_gross_capital_losses_2000 0 "
@@ -140,13 +151,30 @@ def test_return_afs_claim_is_applied_to_the_oldest_row_first_and_lowers_taxable_
         "and taxable_capital_gains 2500 = 2500"
     ) in rendered
     assert (
-        "net_capital_losses_of_other_years: net_capital_losses_claimed 2500, "
+        "adjusted_net_capital_losses_applied: net_capital_losses_claimed 2500, "
         "at most net_capital_losses_available_to_claim 2500"
+    ) in rendered
+    assert (
+        "unapplied_adjusted_net_capital_losses: total_adjusted_net_capital_losses 3000 "
+        "less adjusted_net_capital_losses_applied 2500 = 500"
+    ) in rendered
+    assert (
+        "net_capital_losses_additional_deduction: lesser of pre_1986_capital_loss_balance 0 "
+        "and unapplied_adjusted_net_capital_losses 500 and 2000 (half-up to 0.01) = 0"
+    ) in rendered
+    assert (
+        "net_capital_losses_of_other_years: adjusted_net_capital_losses_applied 2500 "
+        "+ net_capital_losses_additional_deduction 0 = 2500"
     ) in rendered
     assert (
         "adjusted_losses_applied_1990_to_1999: lesser of "
         "adjusted_gross_capital_losses_1990_to_1999 2000 "
         "and adjusted_losses_left_after_1988_and_1989 2500 = 2000"
+    ) in rendered
+    assert (
+        "adjusted_losses_applied_1985_to_1987: lesser of "
+        "adjusted_gross_capital_losses_1985_to_1987 0 "
+        "and adjusted_losses_left_after_before_may_23_1985 2500 = 0"
     ) in rendered
     assert (
         "adjusted_losses_left_after_1990_to_1999: adjusted_losses_left_after_1988_and_1989 2500 "

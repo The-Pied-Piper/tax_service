@@ -49,6 +49,7 @@ from app.domain.trace import (
     ItemsTotalLine,
     ItemSumLine,
     LesserOfLine,
+    LesserOfWithMaximumLine,
     MultipleOverLine,
     PercentageAppliedLine,
     PerUnitAmountLine,
@@ -224,6 +225,12 @@ def threshold_gate_line() -> ThresholdGateLine:
 def amount_or_divided_by_rate_line() -> AmountOrDividedByRateLine:
     return AmountOrDividedByRateLine(
         LIMITED, TESTED, D("60000"), DIVIDED, D("3321.67"), THRESHOLD_LIMIT, CENT, D("65775.64")
+    )
+
+
+def lesser_of_with_maximum_line() -> LesserOfWithMaximumLine:
+    return LesserOfWithMaximumLine(
+        LESSER, ((PART_ONE, D("2500")), (PART_TWO, D("3000"))), Amount(D(2000)), CENT, D("2000.00")
     )
 
 
@@ -535,6 +542,7 @@ ALL_LINES = [
     threshold_gate_line,
     amount_or_divided_by_rate_line,
     lesser_of_line,
+    lesser_of_with_maximum_line,
     greater_of_line,
     contribution_tier_line,
     surcharge_tier_line,
@@ -1055,6 +1063,50 @@ def test_lesser_of_line_fields_in_order() -> None:
     assert line.parts == ((PART_ONE, D("100.25")), (PART_TWO, D(40)))
     assert line.result == D(40)
     assert line.amount == D(40)
+
+
+def test_lesser_of_with_maximum_line_fields_in_order() -> None:
+    line = lesser_of_with_maximum_line()
+
+    assert line == LesserOfWithMaximumLine(
+        output=LESSER,
+        parts=((PART_ONE, D("2500")), (PART_TWO, D("3000"))),
+        maximum=Amount(D(2000)),
+        rounding=CENT,
+        result=D("2000.00"),
+    )
+    assert [f.name for f in fields(line)] == ["output", "parts", "maximum", "rounding", "result"]
+    assert line.output is LESSER
+    assert line.parts == ((PART_ONE, D("2500")), (PART_TWO, D("3000")))
+    assert line.maximum == Amount(D(2000))
+    assert line.rounding == CENT
+    assert line.result == D("2000.00")
+    assert line.amount == D("2000.00")
+
+
+def test_lesser_of_with_maximum_lines_differ_by_maximum_rounding_and_the_order_of_parts() -> None:
+    parts = ((PART_ONE, D("2500")), (PART_TWO, D("3000")))
+    assert lesser_of_with_maximum_line() != LesserOfWithMaximumLine(
+        LESSER, parts, Amount(D(1000)), CENT, D("2000.00")
+    )
+    assert lesser_of_with_maximum_line() != LesserOfWithMaximumLine(
+        LESSER, parts, Amount(D(2000)), NO_ROUNDING, D("2000.00")
+    )
+    assert lesser_of_with_maximum_line() != LesserOfWithMaximumLine(
+        LESSER, parts[::-1], Amount(D(2000)), CENT, D("2000.00")
+    )
+
+
+def test_lesser_of_with_maximum_lines_are_hashable() -> None:
+    assert hash(lesser_of_with_maximum_line()) == hash(lesser_of_with_maximum_line())
+
+
+def test_a_lesser_of_with_maximum_line_is_not_a_lesser_of_or_capped_amount_line() -> None:
+    line = lesser_of_with_maximum_line()
+
+    assert not isinstance(line, LesserOfLine)
+    assert not isinstance(line, CappedAmountLine)
+    assert not isinstance(lesser_of_line(), LesserOfWithMaximumLine)
 
 
 def test_lesser_of_line_may_have_one_part() -> None:

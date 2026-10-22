@@ -15,15 +15,19 @@ from app.jurisdictions.ca.catalog import (
     ADJUSTED_GROSS_CAPITAL_LOSSES_1990_TO_1999,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2000,
     ADJUSTED_GROSS_CAPITAL_LOSSES_2001_TO_2024,
+    ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_APPLIED_1985_TO_1987,
     ADJUSTED_LOSSES_APPLIED_1988_AND_1989,
     ADJUSTED_LOSSES_APPLIED_1990_TO_1999,
     ADJUSTED_LOSSES_APPLIED_2000,
     ADJUSTED_LOSSES_APPLIED_2001_TO_2024,
+    ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985,
     ADJUSTED_LOSSES_LEFT_AFTER_1985_TO_1987,
     ADJUSTED_LOSSES_LEFT_AFTER_1988_AND_1989,
     ADJUSTED_LOSSES_LEFT_AFTER_1990_TO_1999,
     ADJUSTED_LOSSES_LEFT_AFTER_2000,
+    ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985,
+    ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     ADJUSTED_NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     ANNUAL_GAINS_LIMIT_2025,
     ANNUAL_GAINS_LINE_3,
@@ -87,12 +91,25 @@ from app.jurisdictions.ca.catalog import (
     NET_CAPITAL_LOSS_BALANCE_1990_TO_1999,
     NET_CAPITAL_LOSS_BALANCE_2000,
     NET_CAPITAL_LOSS_BALANCE_2001_TO_2024,
+    NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985,
     NET_CAPITAL_LOSS_NUMERATOR_ONE_2000,
     NET_CAPITAL_LOSS_TWICE_IR_2000,
+    NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION,
     NET_CAPITAL_LOSSES_AVAILABLE_TO_CLAIM,
+    NET_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
     NET_CAPITAL_LOSSES_CLAIMED,
     NET_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
+    PRE_1986_CAPITAL_LOSS_BALANCE,
+    PRE_1986_DEDUCTIONS_1988_AND_1989,
+    PRE_1986_DEDUCTIONS_1990_TO_1999,
+    PRE_1986_DEDUCTIONS_2000,
+    PRE_1986_DEDUCTIONS_2001_TO_2024,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989,
+    PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999,
+    PRE_1986_DEDUCTIONS_ADJUSTED_2000,
+    PRE_1986_DEDUCTIONS_BEFORE_1988,
+    PRE_1986_DEDUCTIONS_TOTAL,
     QBT_2024_RESERVE,
     QBT_2025_RESERVE,
     QBT_ABIL_AND_NET_INVESTMENT_LOSS,
@@ -145,6 +162,7 @@ from app.jurisdictions.ca.catalog import (
     REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
     REMAINING_ADJUSTED_LOSSES_2000,
     REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
+    REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985,
     SCHEDULE_3_LINE_17600_NOT_BELOW_ZERO,
     SCHEDULE_3_LINE_19900,
     T657_ABIL_CLAIMED_1985_TO_2024,
@@ -188,13 +206,16 @@ from app.jurisdictions.ca.catalog import (
     T657_T2048_LINE_17217_FOR_2024,
     TAXABLE_INCOME,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
+    TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
     TOTAL_LOSSES_FOR_ANNUAL_GAINS_LIMIT,
+    UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES,
     UNAPPLIED_NET_CAPITAL_LOSSES_1985_TO_1987,
     UNAPPLIED_NET_CAPITAL_LOSSES_1988_AND_1989,
     UNAPPLIED_NET_CAPITAL_LOSSES_1990_TO_1999,
     UNAPPLIED_NET_CAPITAL_LOSSES_2000,
     UNAPPLIED_NET_CAPITAL_LOSSES_2001_TO_2024,
 )
+from tests.jurisdictions.ca.catalog_snapshot import SIGNED
 
 
 def test_the_taxable_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
@@ -316,6 +337,62 @@ def test_the_taxable_income_kinds_are_the_registered_ones(registry: ArtifactRegi
     assert registry.get("ca/adjusted_losses_left_after_2000") is ADJUSTED_LOSSES_LEFT_AFTER_2000
     assert registry.get("ca/remaining_adjusted_losses_2000") is REMAINING_ADJUSTED_LOSSES_2000
     assert registry.get("ca/net_capital_loss_balance_2000") is NET_CAPITAL_LOSS_BALANCE_2000
+    assert (
+        registry.get("ca/net_capital_losses_before_may_23_1985")
+        is NET_CAPITAL_LOSSES_BEFORE_MAY_23_1985
+    )
+    assert registry.get("ca/pre_1986_deductions_before_1988") is PRE_1986_DEDUCTIONS_BEFORE_1988
+    assert registry.get("ca/pre_1986_deductions_1988_and_1989") is PRE_1986_DEDUCTIONS_1988_AND_1989
+    assert registry.get("ca/pre_1986_deductions_1990_to_1999") is PRE_1986_DEDUCTIONS_1990_TO_1999
+    assert registry.get("ca/pre_1986_deductions_2000") is PRE_1986_DEDUCTIONS_2000
+    assert registry.get("ca/pre_1986_deductions_2001_to_2024") is PRE_1986_DEDUCTIONS_2001_TO_2024
+    assert (
+        registry.get("ca/pre_1986_deductions_adjusted_1988_and_1989")
+        is PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989
+    )
+    assert (
+        registry.get("ca/pre_1986_deductions_adjusted_1990_to_1999")
+        is PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999
+    )
+    assert registry.get("ca/pre_1986_deductions_adjusted_2000") is PRE_1986_DEDUCTIONS_ADJUSTED_2000
+    assert registry.get("ca/pre_1986_deductions_total") is PRE_1986_DEDUCTIONS_TOTAL
+    assert registry.get("ca/pre_1986_capital_loss_balance") is PRE_1986_CAPITAL_LOSS_BALANCE
+    assert (
+        registry.get("ca/adjusted_gross_capital_losses_before_may_23_1985")
+        is ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985
+    )
+    assert (
+        registry.get("ca/adjusted_losses_applied_before_may_23_1985")
+        is ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985
+    )
+    assert (
+        registry.get("ca/adjusted_losses_left_after_before_may_23_1985")
+        is ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985
+    )
+    assert (
+        registry.get("ca/remaining_adjusted_losses_before_may_23_1985")
+        is REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985
+    )
+    assert (
+        registry.get("ca/net_capital_loss_balance_before_may_23_1985")
+        is NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985
+    )
+    assert (
+        registry.get("ca/adjusted_net_capital_losses_applied")
+        is ADJUSTED_NET_CAPITAL_LOSSES_APPLIED
+    )
+    assert (
+        registry.get("ca/unapplied_adjusted_net_capital_losses")
+        is UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES
+    )
+    assert (
+        registry.get("ca/net_capital_losses_additional_deduction")
+        is NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION
+    )
+    assert (
+        registry.get("ca/total_adjusted_net_capital_losses_applied")
+        is TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED
+    )
     assert registry.get("ca/additional_deductions") is ADDITIONAL_DEDUCTIONS
     assert registry.get("ca/deductions_from_net_income") is DEDUCTIONS_FROM_NET_INCOME
 
@@ -359,10 +436,54 @@ def test_the_taxable_income_kinds_are_money() -> None:
         ADJUSTED_LOSSES_LEFT_AFTER_2000,
         REMAINING_ADJUSTED_LOSSES_2000,
         NET_CAPITAL_LOSS_BALANCE_2000,
+        NET_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
+        PRE_1986_DEDUCTIONS_BEFORE_1988,
+        PRE_1986_DEDUCTIONS_1988_AND_1989,
+        PRE_1986_DEDUCTIONS_1990_TO_1999,
+        PRE_1986_DEDUCTIONS_2000,
+        PRE_1986_DEDUCTIONS_2001_TO_2024,
+        PRE_1986_DEDUCTIONS_ADJUSTED_1988_AND_1989,
+        PRE_1986_DEDUCTIONS_ADJUSTED_1990_TO_1999,
+        PRE_1986_DEDUCTIONS_ADJUSTED_2000,
+        PRE_1986_DEDUCTIONS_TOTAL,
+        PRE_1986_CAPITAL_LOSS_BALANCE,
+        ADJUSTED_GROSS_CAPITAL_LOSSES_BEFORE_MAY_23_1985,
+        ADJUSTED_LOSSES_APPLIED_BEFORE_MAY_23_1985,
+        ADJUSTED_LOSSES_LEFT_AFTER_BEFORE_MAY_23_1985,
+        REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985,
+        NET_CAPITAL_LOSS_BALANCE_BEFORE_MAY_23_1985,
+        ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
+        UNAPPLIED_ADJUSTED_NET_CAPITAL_LOSSES,
+        NET_CAPITAL_LOSSES_ADDITIONAL_DEDUCTION,
+        TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
         ADDITIONAL_DEDUCTIONS,
         DEDUCTIONS_FROM_NET_INCOME,
     ):
         assert kind.value_type is Decimal, kind.identifier
+
+
+def test_the_pre_1986_capital_loss_balance_is_signed_money(registry: ArtifactRegistry) -> None:
+    # Form T1436 (Capital Gains Worksheet, 2025), "Line 25300 - Net capital loss of other years (if
+    # you have pre-1986 capital loss balance)" line 3 "Pre-1986 capital loss balance available for
+    # 2025: line 1 minus line 2" (confirmed from the PDF; no .txt published) prints no floor, so
+    # the kind is not declared non-negative, as the Federal Worksheet's lines 5 and 9.
+    assert PRE_1986_CAPITAL_LOSS_BALANCE.value_type is Decimal
+    assert PRE_1986_CAPITAL_LOSS_BALANCE.non_negative is False
+    assert registry.kind("ca/pre_1986_capital_loss_balance").non_negative is False
+    assert "ca/pre_1986_capital_loss_balance" in SIGNED
+
+
+def test_the_pre_1986_chart_kinds_do_not_clash_with_the_business_investment_loss_kinds(
+    registry: ArtifactRegistry,
+) -> None:
+    # Line 21700's capital gains deductions are `ca/capital_gains_deductions_*`: the T1436
+    # chart's own lines carry another name.
+    abil = {i for i in registry.identifiers() if i.startswith("ca/capital_gains_deductions_")}
+    chart = {i for i in registry.identifiers() if i.startswith("ca/pre_1986_deductions")}
+
+    assert abil
+    assert chart
+    assert not abil & chart
 
 
 def test_the_deductions_the_foreign_tax_credit_subtracts_are_the_registered_ones(
