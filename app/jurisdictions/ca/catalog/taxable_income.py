@@ -264,6 +264,13 @@ year's column A."""
 ADDITIONAL_DEDUCTIONS = CATALOG.declare("additional_deductions", Decimal, non_negative=True)
 """Additional deductions, T1 line 67 and line 25600 "Additional deductions": a starting amount."""
 
+EXEMPT_INCOME_DEDUCTIONS = CATALOG.declare("exempt_income_deductions", Decimal, non_negative=True)
+"""Exempt income deductions, Form T2209 note (3) "amounts deductible as net employment income from a
+prescribed international organization, as foreign income exempt under a tax treaty, or as adult
+basic education tuition assistance (included on line 25600 of your return)": a starting amount, the
+part of T1 line 67 and line 25600 "Additional deductions" that the note names. It is already inside
+`additional_deductions`; only the foreign tax credit's net income reads it on its own."""
+
 DEDUCTIONS_FROM_NET_INCOME = CATALOG.declare(
     "deductions_from_net_income", Decimal, non_negative=True
 )

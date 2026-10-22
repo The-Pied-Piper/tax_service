@@ -202,6 +202,7 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_FOR_DISABILITY_AMOUNT,
     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
     EMPLOYMENT_INCOME,
+    EXEMPT_INCOME_DEDUCTIONS,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
     FARM_BARLEY,
     FARM_BUILDING_REPAIRS_AND_MAINTENANCE,
@@ -323,6 +324,7 @@ from app.jurisdictions.ca.catalog import (
     FHSA_VARIABLE_B_AMOUNT,
     FHSA_VARIABLE_F_AMOUNT,
     FHSA_VARIABLE_H_AMOUNT,
+    FIRST_NATIONS_ABATEMENT,
     FISH_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,
     FISH_CCA_CLASSES,
     FISH_CCA_PERSONAL_PART,
@@ -387,6 +389,8 @@ from app.jurisdictions.ca.catalog import (
     FISH_VEHICLE_TOTAL_KILOMETRES,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
+    FOREIGN_NON_BUSINESS_TAX_PAID,
+    FOREIGN_TAX_COUNTRIES,
     FOREIGN_TUITION_FEES,
     GOVERNMENT_DONATIONS,
     INCOME_TAX_DEDUCTED,
@@ -409,6 +413,7 @@ from app.jurisdictions.ca.catalog import (
     NET_FARMING_INCOME,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FISHING_INCOME,
+    NET_FOREIGN_NON_BUSINESS_INCOME,
     NET_PARTNERSHIP_INCOME,
     NET_PROFESSIONAL_INCOME,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
@@ -1464,6 +1469,15 @@ def principal_residence_properties(*rows: ResidenceProperty) -> Artifact[RecordL
     )
 
 
+def foreign_tax_countries(*rows: tuple[str, str]) -> Artifact[RecordList]:
+    """The Form T2209 countries, one record per (line 43100, line 43300) row, in the order given."""
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {FOREIGN_NON_BUSINESS_TAX_PAID: D(tax_paid), NET_FOREIGN_NON_BUSINESS_INCOME: D(income)}
+        for tax_paid, income in rows
+    ]
+    return Artifact(FOREIGN_TAX_COUNTRIES, RecordList(FOREIGN_TAX_COUNTRIES.fields, records))
+
+
 CPP_BASE_TIER = "ca/cpp_base_contribution"
 CPP_FIRST_ADDITIONAL_TIER = "ca/cpp_first_additional_contribution"
 CPP_SECOND_ADDITIONAL_TIER = "ca/cpp_second_additional_contribution"
@@ -1790,6 +1804,9 @@ def compute(
     spouse_or_common_law_partner_on_december_31: int = 0,
     claims_tax_reduction_amounts_at_equal_net_income: int = 0,
     unused_tuition_amounts_brought_forward: str = "0",
+    exempt_income_deductions: str = "0",
+    first_nations_abatement: str = "0",
+    foreign_tax_countries_rows: tuple[tuple[str, str], ...] = (),
     qbt_election_eligible_amount: str = "0",
     qbt_percentage_allocated: str = "0",
     qbt_prior_years_claims: str = "0",
@@ -2432,6 +2449,9 @@ def compute(
             ontario.UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD,
             D(unused_tuition_amounts_brought_forward),
         ),
+        Artifact(EXEMPT_INCOME_DEDUCTIONS, D(exempt_income_deductions)),
+        Artifact(FIRST_NATIONS_ABATEMENT, D(first_nations_abatement)),
+        foreign_tax_countries(*foreign_tax_countries_rows),
         Artifact(QBT_ELECTION_ELIGIBLE_AMOUNT, D(qbt_election_eligible_amount)),
         Artifact(QBT_PERCENTAGE_ALLOCATED, D(qbt_percentage_allocated)),
         Artifact(QBT_PRIOR_YEARS_CLAIMS, D(qbt_prior_years_claims)),
@@ -2771,5 +2791,32 @@ def return_be(**overrides: Any) -> Worksheet:
         "qbt_other_investment_expenses": "1000",
         "qbt_other_property_income": "500",
         "qbt_deduction_claimed": "60500",
+    }
+    return compute(**{**inputs, **overrides})
+
+
+def return_bf(**overrides: Any) -> Worksheet:
+    """Return BF's inputs, as in `returns/2025_return_bf.yaml`.
+
+    Other income of 10000 and one disposition of QSBCS in 2025 after June 24, 2024: proceeds of
+    500000, adjusted cost base of 150000 and no outlays, a gain of 350000 (Schedule 3 line 10700).
+    Net capital losses of other years of 20000 are available and claimed. Taxable capital gains
+    for 2002 to 2024 of a chosen 100000 on Step 2 line 8; every other Form T657 line is blank. All
+    155000, the annual gains limit, is claimed on line 25400.
+    """
+    inputs: dict[str, Any] = {
+        "employment_income": "0",
+        "share_dispositions": (),
+        "unused_rrsp_contributions": "0",
+        "rrsp_contributions": "0",
+        "rrsp_deduction_limit": "0",
+        "rrsp_amount_deducted": "0",
+        "union_dues": "0",
+        "other_income": "10000",
+        "qsbcs_dispositions": (("500000", "150000", "0"),),
+        "unapplied_net_capital_losses_2001_to_2024": "20000",
+        "net_capital_losses_claimed": "20000",
+        "t657_gains_2002_to_2024": "100000",
+        "capital_gains_deduction_claimed": "155000",
     }
     return compute(**{**inputs, **overrides})

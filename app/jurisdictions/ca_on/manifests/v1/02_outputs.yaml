@@ -56,6 +56,7 @@ outputs:
   - ca-on/public_long_term_care_paid
   - ca-on/unused_tuition_carried_forward
   - ca/standard_amount_allocated
+  - ca/foreign_tax_credit_sheets
   # Form T2048 (line 25395): the Part 4 and Part 5 figures, and the line 41 and 42 reductions,
   # produced by `06a_capital_gains_deduction_qbt.yaml`.
   - ca/qbt_allocation_total

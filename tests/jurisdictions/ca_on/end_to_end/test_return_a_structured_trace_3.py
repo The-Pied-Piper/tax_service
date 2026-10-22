@@ -69,6 +69,7 @@ from app.jurisdictions.ca.catalog import (
     ANNUAL_GAINS_LINE_9,
     ANNUAL_GAINS_LINE_10,
     ANNUAL_GAINS_LINE_12,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_PERSONAL_AMOUNT,
     BORN_IN_1960_OR_EARLIER,
     BUSINESS_CCA_CLAIM,
@@ -341,6 +342,7 @@ from app.jurisdictions.ca.catalog import (
     FHSA_TRANSFER_AMOUNT_PLUS_VARIABLE_F_AMOUNT,
     FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
     FHSA_UNUSED_CONTRIBUTIONS_PLUS_CONTRIBUTIONS,
+    FIRST_NATIONS_ABATEMENT,
     FISH_CCA_CLAIM,
     FISH_CCA_CLAIM_LESS_PERSONAL_PART,
     FISH_CCA_PERSONAL_PART,
@@ -363,6 +365,11 @@ from app.jurisdictions.ca.catalog import (
     FISH_VEHICLE_LEASE_CHARGES_NET,
     FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,
     FISHING_INCOME,
+    FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
+    FOREIGN_TAX_CREDIT_NET_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+    FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
     GROSS_RENTAL_INCOME,
     HIGH_INCOME_DONATIONS,
     INFIRM_CHILDREN,
@@ -619,6 +626,35 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert subtracted == {
+        # Form T2209 note (3), net income: line 23400 less line 23500 (the line 23600 amount, here
+        # not floored), none repaid on Return A; then the deductions it lists, none on Return A,
+        # come off that amount plus line 68360 of Form T1206.
+        FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME: SubtractedLine(
+            output=FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
+            minuend=NET_INCOME_BEFORE_ADJUSTMENTS,
+            minuend_amount=D("115000"),
+            subtrahend=SOCIAL_BENEFITS_REPAYMENT,
+            subtrahend_amount=D("0"),
+            result=D("115000"),
+        ),
+        FOREIGN_TAX_CREDIT_NET_INCOME: SubtractedLine(
+            output=FOREIGN_TAX_CREDIT_NET_INCOME,
+            minuend=FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
+            minuend_amount=D("115000"),
+            subtrahend=FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+            subtrahend_amount=D("0"),
+            result=D("115000"),
+        ),
+        # Note (4), basic federal tax: line 42900 plus the dividend tax credit, less the federal
+        # refundable First Nations abatement (line 44100), none on Return A.
+        FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX: SubtractedLine(
+            output=FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
+            minuend=BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+            minuend_amount=D("16951.38"),
+            subtrahend=FIRST_NATIONS_ABATEMENT,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
         # Schedule 8 Part 5 line 74 "Line 72 minus line 73": 0.00 and line 73 ("0", line 24 of
         # Part 3 is 0) for Return A.
         CPP_PART_5_LINE_74: SubtractedLine(

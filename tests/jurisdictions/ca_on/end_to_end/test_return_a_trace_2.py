@@ -640,8 +640,8 @@ def test_the_trace_explains_the_computation() -> None:
         "itc_recapture: itc_recapture_at_15_percent 0 + itc_recapture_at_20_percent 0 = 0", "0"
     )
     with_recapture = position(
-        "federal_tax_with_itc_recapture: federal_tax_after_credits 16951.38 + itc_recapture 0 "
-        "= 16951.38",
+        "federal_tax_with_itc_recapture: federal_tax_less_foreign_tax_credit 16951.38 "
+        "+ itc_recapture 0 = 16951.38",
         "16951.38",
     )
     labour_before_maximum = position(
