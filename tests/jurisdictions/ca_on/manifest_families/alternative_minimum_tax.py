@@ -7,10 +7,14 @@ from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.manifest import CapabilitySelection
+from app.jurisdictions.ca.capabilities.sign_chosen_difference import SignChosenDifference
 from app.jurisdictions.ca.catalog import (
+    AMT_ADJUSTED_INCOME_WITH_GAINS,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
     AMT_APPLICABLE_RATE_AMOUNT,
+    AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
+    AMT_CAPITAL_GAINS_DIFFERENCE,
     AMT_CLASS_43_1_INCOME,
     AMT_COMMISSION_EMPLOYMENT_EXPENSES,
     AMT_DEDUCTIONS_TOTAL,
@@ -75,8 +79,8 @@ from app.jurisdictions.ca.catalog import (
     CAPITAL_GAIN,
     CHILD_CARE_EXPENSES,
     CLERGY_RESIDENCE_DEDUCTION,
-    CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
-    CPP_ENHANCED_CONTRIBUTIONS,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     DISABILITY_SUPPORTS_DEDUCTION,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
@@ -84,6 +88,7 @@ from app.jurisdictions.ca.catalog import (
     OTHER_EMPLOYMENT_EXPENSES,
     OTHER_FORECLOSURE_GAIN_OR_LOSS,
     QFFP_FORECLOSURE_GAIN_OR_LOSS,
+    TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
     UNION_DUES,
 )
@@ -132,14 +137,11 @@ INPUTS = frozenset(
 
 OUTPUTS = frozenset(
     {
-        "ca/amt_part_1_subtotal",
-        "ca/amt_resource_property_and_flow_through_shares",
-        "ca/amt_net_capital_gains_after_adjustments",
-        "ca/amt_publicly_listed_gifts_adjustment",
         "ca/amt_security_options_net",
         "ca/amt_security_options_d1_total",
         "ca/amt_other_years_losses_total",
         "ca/amt_applicable_rate_amount",
+        "ca/amt_adjusted_income_with_gains",
     }
 )
 
@@ -259,6 +261,30 @@ STEPS = {
         },
         produces={"output": "ca/amt_net_capital_gains_after_adjustments"},
     ),
+    # Part 1 line 22 "Line 20 minus line 21 (if negative, do not show in brackets.)", line 21 the
+    # amount from line 12700 of the return (the taxable capital gains), left signed here.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/amt_net_capital_gains_after_adjustments",
+            "less": "ca/taxable_capital_gains",
+        },
+        produces={"output": "ca/amt_capital_gains_difference"},
+    ),
+    # Part 1 line 23 "If line 20 is positive, enter the amount from line 22. If line 20 is negative,
+    # enter whichever is less: the amount from line 21 or line 22 (show in brackets).", picked by
+    # the sign of line 20.
+    CapabilitySelection(
+        name="ca/sign_chosen_difference",
+        params={},
+        consumes={
+            "sign_amount": "ca/amt_net_capital_gains_after_adjustments",
+            "reference": "ca/taxable_capital_gains",
+            "difference": "ca/amt_capital_gains_difference",
+        },
+        produces={"output": "ca/amt_capital_gains_added"},
+    ),
     # Part 1 line 26 "Line 24 minus line 25", the net of the gifts before the 30% of line 26.
     CapabilitySelection(
         name="core/subtract",
@@ -275,6 +301,21 @@ STEPS = {
         params={"rate": "ca/publicly_listed_gifts_rate"},
         consumes={"base": "ca/amt_publicly_listed_gifts_net"},
         produces={"output": "ca/amt_publicly_listed_gifts_adjustment"},
+    ),
+    # Part 1 line 27 "Add lines 13, 14, 23, and 26.", line 13 the amount from line 12 and line 14
+    # the amount from line 6 of Part 9, in line order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/amt_part_1_subtotal",
+                "ca/amt_resource_property_and_flow_through_shares",
+                "ca/amt_capital_gains_added",
+                "ca/amt_publicly_listed_gifts_adjustment",
+            )
+        },
+        produces={"output": "ca/amt_adjusted_income_with_gains"},
     ),
     # Part 1 line 30 "Line 28 plus line 29" and "67910 =", the security options deduction under
     # paragraph 110(1)(d): the T4 slips' boxes 39 and 91 (line 28) and the T1212 amount (line 29).
@@ -396,8 +437,8 @@ STEPS = {
                 "ca/amt_losses_and_deductions_subtotal",
                 "ca/disability_supports_deduction",
                 "ca/amt_moving_expenses_deduction",
-                "ca/cpp_deduction_on_self_employment",
-                "ca/cpp_enhanced_contributions",
+                "ca/cpp_deduction_on_self_employment_and_other_earnings",
+                "ca/cpp_enhanced_contributions_on_return",
                 "ca/amt_ppip_premiums_deduction",
                 "ca/clergy_residence_deduction",
                 "ca/canadian_armed_forces_and_police_deduction",
@@ -549,6 +590,22 @@ WIRING = {
     ),
     (
         Subtract,
+        frozenset({AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS, TAXABLE_CAPITAL_GAINS}),
+        frozenset({AMT_CAPITAL_GAINS_DIFFERENCE}),
+    ),
+    (
+        SignChosenDifference,
+        frozenset(
+            {
+                AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
+                TAXABLE_CAPITAL_GAINS,
+                AMT_CAPITAL_GAINS_DIFFERENCE,
+            }
+        ),
+        frozenset({AMT_CAPITAL_GAINS_ADDED}),
+    ),
+    (
+        Subtract,
         frozenset({AMT_PUBLICLY_LISTED_GIFTS_TOTAL, AMT_PUBLICLY_LISTED_GIFTS_T1170_LINE_68231}),
         frozenset({AMT_PUBLICLY_LISTED_GIFTS_NET}),
     ),
@@ -556,6 +613,18 @@ WIRING = {
         ApplyRate,
         frozenset({AMT_PUBLICLY_LISTED_GIFTS_NET}),
         frozenset({AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                AMT_PART_1_SUBTOTAL,
+                AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
+                AMT_CAPITAL_GAINS_ADDED,
+                AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
+            }
+        ),
+        frozenset({AMT_ADJUSTED_INCOME_WITH_GAINS}),
     ),
     (
         Sum,
@@ -638,8 +707,8 @@ WIRING = {
                 AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
                 DISABILITY_SUPPORTS_DEDUCTION,
                 AMT_MOVING_EXPENSES_DEDUCTION,
-                CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
-                CPP_ENHANCED_CONTRIBUTIONS,
+                CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+                CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
                 AMT_PPIP_PREMIUMS_DEDUCTION,
                 CLERGY_RESIDENCE_DEDUCTION,
                 CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,

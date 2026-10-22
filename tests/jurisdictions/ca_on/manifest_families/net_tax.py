@@ -13,7 +13,13 @@ from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.catalog import (
     ADVANCED_CANADA_WORKERS_BENEFIT,
     CPP_PART_4_COMPLETED,
+    CPP_PART_5_COMPLETED,
+    CPP_PART_5_LINE_49,
+    CPP_PART_5_LINE_49_IF_POSITIVE,
+    CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_ZERO,
     DISABILITY_AMOUNT_FOR_SELF,
     DISABILITY_TRANSFERRED_AMOUNT,
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
@@ -213,6 +219,41 @@ STEPS = {
         },
         produces={"output": "ca/cpp_payable_on_self_employment"},
     ),
+    # Schedule 8 Part 5 line 49 "If positive, enter the amount (in dollars and cents) on line
+    # 42100 of your return": line 49 less 0, not below zero.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/cpp_part_5_line_49",
+            "less": "ca/cpp_zero",
+        },
+        produces={"output": "ca/cpp_part_5_line_49_if_positive"},
+    ),
+    # T1 line 144 and line 42100, entered from Part 5 line 49: counted once for each Part 5
+    # completed, 1 or 0.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/cpp_part_5_line_49_if_positive",
+            "count": "ca/cpp_part_5_completed",
+        },
+        produces={"output": "ca/cpp_part_5_payable_on_self_employment"},
+    ),
+    # T1 line 144 and line 42100: the Part 4 amount plus the Part 5 amount; both are added
+    # when both parts are marked completed, as the form leaves the choice to the filer.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/cpp_payable_on_self_employment",
+                "ca/cpp_part_5_payable_on_self_employment",
+            ),
+        },
+        produces={"output": "ca/cpp_payable_on_self_employment_and_other_earnings"},
+    ),
     # T1 line 145 and line 42120, entered from Schedule 13 line 9, counted once for each
     # agreement with the Canada Employment Insurance Commission, 1 or 0.
     CapabilitySelection(
@@ -243,7 +284,7 @@ STEPS = {
         consumes={
             "parts": (
                 "ca/net_federal_tax",
-                "ca/cpp_payable_on_self_employment",
+                "ca/cpp_payable_on_self_employment_and_other_earnings",
                 "ca/ei_payable_on_self_employment",
                 "ca/social_benefits_repayment_payable",
                 "ca-on/ontario_tax",
@@ -318,6 +359,21 @@ WIRING = {
         frozenset({CPP_PAYABLE_ON_SELF_EMPLOYMENT}),
     ),
     (
+        SubtractNotBelowZero,
+        frozenset({CPP_PART_5_LINE_49, CPP_ZERO}),
+        frozenset({CPP_PART_5_LINE_49_IF_POSITIVE}),
+    ),
+    (
+        TimesCount,
+        frozenset({CPP_PART_5_LINE_49_IF_POSITIVE, CPP_PART_5_COMPLETED}),
+        frozenset({CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT}),
+    ),
+    (
+        Sum,
+        frozenset({CPP_PAYABLE_ON_SELF_EMPLOYMENT, CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT}),
+        frozenset({CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
+    ),
+    (
         TimesCount,
         frozenset({SELF_EMPLOYED_EI_PREMIUMS, EI_SPECIAL_BENEFITS_AGREEMENT}),
         frozenset({EI_PAYABLE_ON_SELF_EMPLOYMENT}),
@@ -328,7 +384,7 @@ WIRING = {
         frozenset(
             {
                 NET_FEDERAL_TAX,
-                CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+                CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
                 EI_PAYABLE_ON_SELF_EMPLOYMENT,
                 SOCIAL_BENEFITS_REPAYMENT_PAYABLE,
                 ONTARIO_TAX,

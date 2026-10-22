@@ -21,7 +21,9 @@ from app.jurisdictions.ca.catalog import (
     AGE_AMOUNT,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    AMT_ADJUSTED_INCOME_WITH_GAINS,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+    AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CLASS_43_1_INCOME,
     AMT_COMMISSION_EMPLOYMENT_EXPENSES,
@@ -54,12 +56,14 @@ from app.jurisdictions.ca.catalog import (
     AMT_PART_1_SUBTOTAL,
     AMT_PPIP_PREMIUMS_DEDUCTION,
     AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION,
+    AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_REPAYMENT_OF_SALARY_AND_WAGES,
     AMT_REPAYMENT_OF_WAGE_LOSS_REPLACEMENT,
     AMT_RESOURCE_FOREIGN_PROPERTY_INCOME,
     AMT_RESOURCE_INCOME_TOTAL,
     AMT_RESOURCE_PRODUCTION_INCOME,
+    AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
     AMT_SECURITY_OPTIONS_D1_TOTAL,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
@@ -270,14 +274,81 @@ from app.jurisdictions.ca.catalog import (
     CHILD_CARE_LIMIT_FOR_CHILDREN_WITH_DISABILITY,
     CLERGY_RESIDENCE_DEDUCTION,
     COMMISSION_INCOME,
+    CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_CONTRIBUTIONS_DIFFERENCE,
     CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_ENHANCED_CONTRIBUTIONS,
+    CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_OR_QPP_BENEFITS,
+    CPP_OVERPAYMENT,
+    CPP_PART_3_LINE_2,
+    CPP_PART_3B_LINE_30,
+    CPP_PART_3B_LINE_32,
+    CPP_PART_3B_LINE_34,
+    CPP_PART_3B_LINE_35,
+    CPP_PART_3B_LINE_36,
+    CPP_PART_3B_LINE_37,
+    CPP_PART_3B_LINE_39,
+    CPP_PART_3B_LINE_41,
+    CPP_PART_3B_LINE_42,
+    CPP_PART_3B_LINE_43,
+    CPP_PART_3B_LINE_44,
+    CPP_PART_3B_LINE_46,
+    CPP_PART_3B_LINE_47,
+    CPP_PART_3B_LINE_48,
+    CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_LINE_4,
+    CPP_PART_5_LINE_7,
+    CPP_PART_5_LINE_9,
+    CPP_PART_5_LINE_10,
+    CPP_PART_5_LINE_13,
+    CPP_PART_5_LINE_15,
+    CPP_PART_5_LINE_16,
+    CPP_PART_5_LINE_33,
+    CPP_PART_5_LINE_43,
+    CPP_PART_5_LINE_44,
+    CPP_PART_5_LINE_45,
+    CPP_PART_5_LINE_46,
+    CPP_PART_5_LINE_47,
+    CPP_PART_5_LINE_51,
+    CPP_PART_5_LINE_53,
+    CPP_PART_5_LINE_55,
+    CPP_PART_5_LINE_56,
+    CPP_PART_5_LINE_57,
+    CPP_PART_5_LINE_58,
+    CPP_PART_5_LINE_60,
+    CPP_PART_5_LINE_62,
+    CPP_PART_5_LINE_63,
+    CPP_PART_5_LINE_64,
+    CPP_PART_5_LINE_65,
+    CPP_PART_5_LINE_67,
+    CPP_PART_5_LINE_68,
+    CPP_PART_5_LINE_69,
+    CPP_PART_5_LINE_70,
+    CPP_PART_5_LINE_71,
+    CPP_PART_5_LINE_72,
+    CPP_PART_5_LINE_80,
+    CPP_PART_5_LINE_83,
+    CPP_PART_5_LINE_84,
+    CPP_PART_5_LINE_87,
+    CPP_PART_5_LINE_88,
+    CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
     CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+    CPT20_EARNINGS,
+    CPT20_T4_EARNINGS,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDIT_AMOUNTS_SUBTOTAL,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
@@ -919,6 +990,230 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Schedule 8 Part 5 line 72 "Line 70 plus line 71": 0.00 + 0.00 for Return A.
+        CPP_PART_5_LINE_72: SumLine(
+            output=CPP_PART_5_LINE_72,
+            parts=((CPP_PART_5_LINE_70, D("0.00")), (CPP_PART_5_LINE_71, D("0.00"))),
+            total=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 88 "Add lines 80, 81, 83, 84, and 87": line 81 is the amount
+        # from line 71; all five are 0.00 for Return A.
+        CPP_PART_5_LINE_88: SumLine(
+            output=CPP_PART_5_LINE_88,
+            parts=(
+                (CPP_PART_5_LINE_80, D("0.00")),
+                (CPP_PART_5_LINE_71, D("0.00")),
+                (CPP_PART_5_LINE_83, D("0.00")),
+                (CPP_PART_5_LINE_84, D("0.00")),
+                (CPP_PART_5_LINE_87, D("0")),
+            ),
+            total=D("0.00"),
+        ),
+        # T1 line 31000, the Part 4 amount plus the Part 5 amount: both 0 for Return A.
+        CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: SumLine(
+            output=CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            parts=(
+                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
+                (CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
+            ),
+            total=D("0"),
+        ),
+        # T1 line 22200, the Part 4 amount plus the Part 5 amount: both 0 for Return A.
+        CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: SumLine(
+            output=CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            parts=(
+                (CPP_DEDUCTION_ON_SELF_EMPLOYMENT, D("0")),
+                (CPP_PART_5_DEDUCTION_ON_SELF_EMPLOYMENT, D("0")),
+            ),
+            total=D("0"),
+        ),
+        # T1 line 42100, the Part 4 amount plus the Part 5 amount: both 0 for Return A.
+        CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS: SumLine(
+            output=CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            parts=(
+                (CPP_PAYABLE_ON_SELF_EMPLOYMENT, D("0")),
+                (CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT, D("0")),
+            ),
+            total=D("0"),
+        ),
+        # Schedule 8 Part 5 line 55 "Line 51 plus line 53": line 51 is line 11 and line 53
+        # is 0 for Return A.
+        CPP_PART_5_LINE_55: SumLine(
+            output=CPP_PART_5_LINE_55,
+            parts=((CPP_PART_5_LINE_51, D("3356.10")), (CPP_PART_5_LINE_53, D("0.00"))),
+            total=D("3356.10"),
+        ),
+        # Schedule 8 Part 5 line 57 "Line 55 plus line 56": line 55 and line 56 (0) for
+        # Return A.
+        CPP_PART_5_LINE_57: SumLine(
+            output=CPP_PART_5_LINE_57,
+            parts=((CPP_PART_5_LINE_55, D("3356.10")), (CPP_PART_5_LINE_56, D("0.00"))),
+            total=D("3356.10"),
+        ),
+        # Schedule 8 Part 5 line 62 "Line 58 plus line 60": line 58 is line 12 and line 60
+        # is 0 for Return A.
+        CPP_PART_5_LINE_62: SumLine(
+            output=CPP_PART_5_LINE_62,
+            parts=((CPP_PART_5_LINE_58, D("678.00")), (CPP_PART_5_LINE_60, D("0.00"))),
+            total=D("678.00"),
+        ),
+        # Schedule 8 Part 5 line 64 "Line 62 plus line 63": line 62 and line 63 (0) for
+        # Return A.
+        CPP_PART_5_LINE_64: SumLine(
+            output=CPP_PART_5_LINE_64,
+            parts=((CPP_PART_5_LINE_62, D("678.00")), (CPP_PART_5_LINE_63, D("0.00"))),
+            total=D("678.00"),
+        ),
+        # Schedule 8 Part 5 line 68 "Line 65 plus line 67": line 65 is line 22 and line 67
+        # is 0 for Return A.
+        CPP_PART_5_LINE_68: SumLine(
+            output=CPP_PART_5_LINE_68,
+            parts=((CPP_PART_5_LINE_65, D("396.00")), (CPP_PART_5_LINE_67, D("0.00"))),
+            total=D("396.00"),
+        ),
+        # Schedule 8 Part 5 line 69 "Line 64 plus line 68": line 64 and line 68 for Return
+        # A.
+        CPP_PART_5_LINE_69: SumLine(
+            output=CPP_PART_5_LINE_69,
+            parts=((CPP_PART_5_LINE_64, D("678.00")), (CPP_PART_5_LINE_68, D("396.00"))),
+            total=D("1074.00"),
+        ),
+        # Schedule 8 Part 5 line 46 "Line 44 plus line 45": both tiers are 0.00 for Return
+        # A.
+        CPP_PART_5_LINE_46: SumLine(
+            output=CPP_PART_5_LINE_46,
+            parts=((CPP_PART_5_LINE_44, D("0.00")), (CPP_PART_5_LINE_45, D("0.00"))),
+            total=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 47 "Line 43 plus line 46": both are 0.00 for Return A.
+        CPP_PART_5_LINE_47: SumLine(
+            output=CPP_PART_5_LINE_47,
+            parts=((CPP_PART_5_LINE_43, D("0.00")), (CPP_PART_5_LINE_46, D("0.00"))),
+            total=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 4 "Add lines 1 to 3.": line 1 is 0.00 and lines 2 and 3 are "0" for
+        # Return A.
+        CPP_PART_5_LINE_4: SumLine(
+            CPP_PART_5_LINE_4,
+            (
+                (PENSIONABLE_NET_SELF_EMPLOYMENT_EARNINGS, D("0.00")),
+                (CPT20_EARNINGS, D("0")),
+                (CPT20_T4_EARNINGS, D("0")),
+            ),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 10 "Line 7 plus line 9": line 7 is the T4 box 16 total and line 9
+        # is "0" for Return A.
+        CPP_PART_5_LINE_10: SumLine(
+            CPP_PART_5_LINE_10,
+            (
+                (CPP_PART_5_LINE_7, D("4034.10")),
+                (CPP_PART_5_LINE_9, D("0")),
+            ),
+            D("4034.10"),
+        ),
+        # Schedule 8 Part 5 line 16 "Line 13 plus line 15": line 13 is the T4 box 16A total and line
+        # 15 is "0" for Return A.
+        CPP_PART_5_LINE_16: SumLine(
+            CPP_PART_5_LINE_16,
+            (
+                (CPP_PART_5_LINE_13, D("396.00")),
+                (CPP_PART_5_LINE_15, D("0")),
+            ),
+            D("396.00"),
+        ),
+        # Schedule 8 Part 5 line 33 "Line 31 plus line 32": line 31 is line 4 (0.00) and line 32 is
+        # line 2 of Part 3, the lesser of 81,200 and the employment income of 110,000.
+        CPP_PART_5_LINE_33: SumLine(
+            CPP_PART_5_LINE_33,
+            (
+                (CPP_PART_5_LINE_4, D("0.00")),
+                (CPP_PART_3_LINE_2, D("81200.00")),
+            ),
+            D("81200.00"),
+        ),
+        # Schedule 8 Part 3b line 34 "Line 30 plus line 32": line 30 is line 11 (line 16 is "0") and
+        # line 32 is "0".
+        CPP_PART_3B_LINE_34: SumLine(
+            CPP_PART_3B_LINE_34,
+            (
+                (CPP_PART_3B_LINE_30, D("3356.10")),
+                (CPP_PART_3B_LINE_32, D("0")),
+            ),
+            D("3356.10"),
+        ),
+        # Schedule 8 Part 3b line 36 "Line 34 plus line 35".
+        CPP_PART_3B_LINE_36: SumLine(
+            CPP_PART_3B_LINE_36,
+            (
+                (CPP_PART_3B_LINE_34, D("3356.10")),
+                (CPP_PART_3B_LINE_35, D("0")),
+            ),
+            D("3356.10"),
+        ),
+        # Schedule 8 Part 3b line 41 "Line 37 plus line 39": line 37 is line 18 (line 19 is "0").
+        CPP_PART_3B_LINE_41: SumLine(
+            CPP_PART_3B_LINE_41,
+            (
+                (CPP_PART_3B_LINE_37, D("678.00")),
+                (CPP_PART_3B_LINE_39, D("0")),
+            ),
+            D("678.00"),
+        ),
+        # Schedule 8 Part 3b line 43 "Line 41 plus line 42".
+        CPP_PART_3B_LINE_43: SumLine(
+            CPP_PART_3B_LINE_43,
+            (
+                (CPP_PART_3B_LINE_41, D("678.00")),
+                (CPP_PART_3B_LINE_42, D("0")),
+            ),
+            D("678.00"),
+        ),
+        # Schedule 8 Part 3b line 47 "Line 44 plus line 46": line 44 is line 22 (line 23 is "0").
+        CPP_PART_3B_LINE_47: SumLine(
+            CPP_PART_3B_LINE_47,
+            (
+                (CPP_PART_3B_LINE_44, D("396.00")),
+                (CPP_PART_3B_LINE_46, D("0")),
+            ),
+            D("396.00"),
+        ),
+        # Schedule 8 Part 3b line 48 "Line 43 plus line 47".
+        CPP_PART_3B_LINE_48: SumLine(
+            CPP_PART_3B_LINE_48,
+            (
+                (CPP_PART_3B_LINE_43, D("678.00")),
+                (CPP_PART_3B_LINE_47, D("396.00")),
+            ),
+            D("1074.00"),
+        ),
+        # Schedule 8 Part 3 line 13 "Line 11 plus line 12".
+        CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS: SumLine(
+            CPP_REQUIRED_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            (
+                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
+                (CPP_FIRST_ADDITIONAL_CONTRIBUTIONS, D("678.00")),
+            ),
+            D("4034.10"),
+        ),
+        # Schedule 8 Part 3 line 20 "Line 16 plus line 19".
+        CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE: SumLine(
+            CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            (
+                (CPP_BASE_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+            ),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3 line 24 "Line 20 plus line 23".
+        CPP_CONTRIBUTIONS_DIFFERENCE: SumLine(
+            CPP_CONTRIBUTIONS_DIFFERENCE,
+            (
+                (CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+            ),
+            D("0.00"),
+        ),
         # Form T657 Chart 2016 Part 2 "Amount G plus amount H" I: G and Part 1 amount G are 0.
         CHART_2016_PART_2_AMOUNT_I: SumLine(
             output=CHART_2016_PART_2_AMOUNT_I,
@@ -1080,6 +1375,19 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ),
             D("115000.00"),
         ),
+        # Form T691 Part 1 line 27 "Add lines 13, 14, 23, and 26.": line 13 is line 12, 115000.00;
+        # line 14 is 0 (no resource amounts); line 23 is line 22, 10000 (line 20 of 20000 less the
+        # taxable capital gains of 10000); line 26 is 0 (no gifts of publicly listed securities).
+        AMT_ADJUSTED_INCOME_WITH_GAINS: SumLine(
+            AMT_ADJUSTED_INCOME_WITH_GAINS,
+            (
+                (AMT_PART_1_SUBTOTAL, D("115000.00")),
+                (AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES, D("0")),
+                (AMT_CAPITAL_GAINS_ADDED, D("10000")),
+                (AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT, D("0")),
+            ),
+            D("125000.00"),
+        ),
         # Form T691 Part 9 line 5 "Add lines 2 to 4.": Return A has no resource amounts.
         AMT_RESOURCE_INCOME_TOTAL: SumLine(
             AMT_RESOURCE_INCOME_TOTAL,
@@ -1171,8 +1479,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL, D("2000")),
                 (DISABILITY_SUPPORTS_DEDUCTION, D("0")),
                 (AMT_MOVING_EXPENSES_DEDUCTION, D("0")),
-                (CPP_DEDUCTION_ON_SELF_EMPLOYMENT, D("0")),
-                (CPP_ENHANCED_CONTRIBUTIONS, D("1074.00")),
+                (CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
+                (CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN, D("1074.00")),
                 (AMT_PPIP_PREMIUMS_DEDUCTION, D("0")),
                 (CLERGY_RESIDENCE_DEDUCTION, D("0")),
                 (CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION, D("0")),
@@ -1608,8 +1916,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ALLOWABLE_BUSINESS_INVESTMENT_LOSS, D("0")),
                 (SUPPORT_PAYMENTS_DEDUCTION, D("0")),
                 (CARRYING_CHARGES_INTEREST_EXPENSES_AND_OTHER_EXPENSES, D("0")),
-                (CPP_DEDUCTION_ON_SELF_EMPLOYMENT, D("0")),
-                (CPP_ENHANCED_CONTRIBUTIONS, D("1074.00")),
+                (CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
+                (CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN, D("1074.00")),
                 (EXPLORATION_AND_DEVELOPMENT_EXPENSES, D("0")),
                 (OTHER_DEDUCTIONS, D("0")),
                 (TOTAL_SPLIT_INCOME, D("0")),
@@ -1843,8 +2151,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (SPOUSE_CAREGIVER_AMOUNT, D("0")),
                 (CAREGIVER_AMOUNT, D("0")),
                 (INFIRM_CHILDREN_AMOUNT, D("0")),
-                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
-                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
+                (CPP_BASE_CONTRIBUTIONS_ON_RETURN, D("3356.10")),
+                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
                 (CANADA_EMPLOYMENT_AMOUNT, D("1471")),
@@ -1877,8 +2185,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ontario.SPOUSE_AMOUNT, D("0")),
                 (ontario.ELIGIBLE_DEPENDANT_AMOUNT, D("0")),
                 (ontario.CAREGIVER_AMOUNT, D("0")),
-                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
-                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
+                (CPP_BASE_CONTRIBUTIONS_ON_RETURN, D("3356.10")),
+                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
                 (ontario.DISABILITY_AMOUNT_FOR_SELF, D("0")),
@@ -1897,8 +2205,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (ontario.SPOUSE_AMOUNT, D("0")),
                 (ontario.ELIGIBLE_DEPENDANT_AMOUNT, D("0")),
                 (ontario.CAREGIVER_AMOUNT, D("0")),
-                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
-                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
+                (CPP_BASE_CONTRIBUTIONS_ON_RETURN, D("3356.10")),
+                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
                 (ontario.DISABILITY_AMOUNT_FOR_SELF, D("0")),
@@ -2077,7 +2385,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             TOTAL_PAYABLE,
             (
                 (NET_FEDERAL_TAX, D("16951.38")),
-                (CPP_PAYABLE_ON_SELF_EMPLOYMENT, D("0")),
+                (CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
                 (EI_PAYABLE_ON_SELF_EMPLOYMENT, D("0")),
                 (SOCIAL_BENEFITS_REPAYMENT_PAYABLE, D("0")),
                 (ONTARIO_TAX, D("8945.77")),
@@ -2172,6 +2480,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             TOTAL_CREDITS,
             (
                 (INCOME_TAX_DEDUCTED, D("25000")),
+                (CPP_OVERPAYMENT, D("0")),
                 (REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT, D("0.00")),
                 (CANADA_WORKERS_BENEFIT, D("0")),
                 (CANADA_TRAINING_CREDIT, D("0")),
@@ -2609,8 +2918,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (SPOUSE_CAREGIVER_AMOUNT, D("0")),
                 (CAREGIVER_AMOUNT, D("0")),
                 (INFIRM_CHILDREN_AMOUNT, D("0.00")),
-                (CPP_BASE_CONTRIBUTIONS, D("3356.10")),
-                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT, D("0")),
+                (CPP_BASE_CONTRIBUTIONS_ON_RETURN, D("3356.10")),
+                (CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS, D("0")),
                 (EI_PREMIUMS, D("1077.48")),
                 (EI_PREMIUMS_ON_SELF_EMPLOYMENT, D("0")),
                 (CANADA_EMPLOYMENT_AMOUNT, D("1471.00")),

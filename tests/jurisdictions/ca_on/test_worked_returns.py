@@ -162,6 +162,8 @@ sources:
     Schedule ON428-A, T778 and EI table arithmetic on the 2025 figures.
 inputs:
   ca/employment_income: "10000"
+  ca/cpp_t4_base_and_first_additional_contributions: "386.75"
+  ca/cpp_t4_second_additional_contributions: "0"
   ca/qsbcs_dispositions: []
   ca/qffp_dispositions: []
   ca/qffp_foreclosure_dispositions: []
@@ -463,6 +465,9 @@ expected:
   ca/cpp_first_additional_contributions: "65.00"
   ca/cpp_second_additional_contributions: "0"
   ca/cpp_enhanced_contributions: "65.00"
+  ca/cpp_required_base_and_first_additional_contributions: "386.75"
+  ca/cpp_part_5_line_57: "321.75"
+  ca/cpp_part_5_line_69: "65.00"
   ca/ei_premiums: "164.00"
   ca/rrsp_contributions_available: "0"
   ca/rrsp_deduction_maximum: "0"
@@ -479,6 +484,7 @@ expected:
   ca/net_income: "9935.00"
   ca/amt_part_1_subtotal: "9935.00"
   ca/amt_applicable_rate_amount: "32.50"
+  ca/amt_adjusted_income_with_gains: "9935.00"
   ca/net_income_before_adjustments: "9935.00"
   ca/fhsa_unused_contributions_carried_forward: "0"
   ca/other_payments_limit_income: "9935.00"

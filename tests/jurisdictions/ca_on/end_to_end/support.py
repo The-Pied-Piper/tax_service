@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
+from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.jurisdiction_code import JurisdictionCode
+from app.domain.parameters.contribution_tier import CONTRIBUTION_TIER
 from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.record_list import RecordList, RecordListKind
 from app.domain.worksheet import Worksheet
@@ -159,7 +161,11 @@ from app.jurisdictions.ca.catalog import (
     CPP_MONTHS,
     CPP_OR_QPP_BENEFITS,
     CPP_PART_4_COMPLETED,
+    CPP_PART_5_COMPLETED,
+    CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS,
     CPT20_EARNINGS,
+    CPT20_T4_EARNINGS,
     CRYPTO_ASSET_DISPOSITIONS,
     CWB_ELIGIBLE_DEPENDANTS,
     DEPENDANT_CARE_EXPENSES,
@@ -754,6 +760,7 @@ from app.jurisdictions.ca_on.catalog import (
     SEPARATE_RESIDENCES_FOR_MEDICAL_REASONS,
 )
 from app.main import build_tax_computation
+from app.registrations import JURISDICTIONS
 
 D = Decimal
 
@@ -1455,6 +1462,34 @@ def principal_residence_properties(*rows: ResidenceProperty) -> Artifact[RecordL
     )
 
 
+CPP_BASE_TIER = "ca/cpp_base_contribution"
+CPP_FIRST_ADDITIONAL_TIER = "ca/cpp_first_additional_contribution"
+CPP_SECOND_ADDITIONAL_TIER = "ca/cpp_second_additional_contribution"
+_PARAMETERS = YamlParameterSource(JURISDICTIONS.roots())
+
+
+def _cpp_tier(family: str, employment_income: Decimal) -> Decimal:
+    """The 2025 contribution tier on employment income, from its dataset, rounded half-up."""
+    tier = _PARAMETERS.get(family, 2025, CONTRIBUTION_TIER).values
+    band = max(D(0), min(employment_income, tier.upper) - tier.lower)
+    amount = (band * tier.rate.value).quantize(D("0.01"), rounding=ROUND_HALF_UP)
+    return min(amount, tier.maximum)
+
+
+def required_cpp_contributions(employment_income: Decimal) -> tuple[Decimal, Decimal]:
+    """The T4 box 16 and 16A amounts that make Schedule 8 line 24 zero, for the earnings given.
+
+    Box 16 is the base and first additional contributions the form needs (line 13, lines 11 and
+    12) and box 16A the second additional contribution (line 22). Line 20 is line 9 plus line 10
+    less lines 11 and 12, that is line 8 less line 13, so box 16 equal to line 13 gives line 20
+    and line 24 zero whatever the cent rounding of line 9 does (lines 16 and 19 may then be one
+    cent each way, which cancel). No cent adjustment is made.
+    """
+    base = _cpp_tier(CPP_BASE_TIER, employment_income)
+    base_and_first = base + _cpp_tier(CPP_FIRST_ADDITIONAL_TIER, employment_income)
+    return base_and_first, _cpp_tier(CPP_SECOND_ADDITIONAL_TIER, employment_income)
+
+
 def compute(
     employment_income: str,
     share_dispositions: tuple[Disposition, ...],
@@ -1710,7 +1745,9 @@ def compute(
     commission_income: str = "0",
     cpp_months: int = 12,
     cpt20_earnings: str = "0",
+    cpt20_t4_earnings: str = "0",
     cpp_part_4_completed: int = 0,
+    cpp_part_5_completed: int = 0,
     ei_controlled_corporation_earnings: str = "0",
     ei_exempt_self_employment_income: str = "0",
     ei_excluded_slips: tuple[str, ...] = (),
@@ -1891,7 +1928,22 @@ def compute(
     amt_excess_epsp_amounts: str = "0",
     amt_forfeited_salary_deferral_amounts: str = "0",
     amt_repayment_of_wage_loss_replacement: str = "0",
+    cpp_t4_base_and_first_additional_contributions: str | None = None,
+    cpp_t4_second_additional_contributions: str | None = None,
 ) -> Worksheet:
+    # The T4 box 16 and 16A amounts default to the required ones for the employment income given,
+    # so line 24 is 0 unless a test gives its own.
+    required_base_and_first, required_second = required_cpp_contributions(D(employment_income))
+    t4_base_and_first = (
+        required_base_and_first
+        if cpp_t4_base_and_first_additional_contributions is None
+        else D(cpp_t4_base_and_first_additional_contributions)
+    )
+    t4_second = (
+        required_second
+        if cpp_t4_second_additional_contributions is None
+        else D(cpp_t4_second_additional_contributions)
+    )
     return service().compute(
         CA_ON,
         2025,
@@ -1918,6 +1970,8 @@ def compute(
         Artifact(OTHER_EMPLOYMENT_INCOME, D(other_employment_income)),
         Artifact(OLD_AGE_SECURITY, D(old_age_security)),
         Artifact(CPP_OR_QPP_BENEFITS, D(cpp_or_qpp_benefits)),
+        Artifact(CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS, t4_base_and_first),
+        Artifact(CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS, t4_second),
         Artifact(OTHER_PENSIONS_AND_SUPERANNUATION, D(other_pensions_and_superannuation)),
         Artifact(ELECTED_SPLIT_PENSION_AMOUNT, D(elected_split_pension_amount)),
         Artifact(UNIVERSAL_CHILD_CARE_BENEFIT, D(universal_child_care_benefit)),
@@ -2307,7 +2361,9 @@ def compute(
         Artifact(COMMISSION_INCOME, D(commission_income)),
         Artifact(CPP_MONTHS, cpp_months),
         Artifact(CPT20_EARNINGS, D(cpt20_earnings)),
+        Artifact(CPT20_T4_EARNINGS, D(cpt20_t4_earnings)),
         Artifact(CPP_PART_4_COMPLETED, cpp_part_4_completed),
+        Artifact(CPP_PART_5_COMPLETED, cpp_part_5_completed),
         Artifact(EI_CONTROLLED_CORPORATION_EARNINGS, D(ei_controlled_corporation_earnings)),
         Artifact(EI_EXEMPT_SELF_EMPLOYMENT_INCOME, D(ei_exempt_self_employment_income)),
         ei_excluded_slips_list(*ei_excluded_slips),

@@ -37,8 +37,13 @@ from app.jurisdictions.ca.catalog import (
     CHARITABLE_DONATIONS_CLAIMED,
     CHARITABLE_DONATIONS_LIMIT,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_PART_4_COMPLETED,
+    CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+    CPP_PART_5_COMPLETED,
+    CPP_PART_5_LINE_70,
     CREDIT_AMOUNTS_AT_CREDIT_RATE,
     CREDIT_AMOUNTS_SUBTOTAL,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
@@ -216,6 +221,30 @@ STEPS = {
         },
         produces={"output": "ca/cpp_base_contributions_on_self_employment"},
     ),
+    # T1 line 87 and line 31000, entered from Schedule 8 Part 5 line 70: counted once for each
+    # Part 5 completed, 1 or 0. The form prints line 70 as the amount for line 31000.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/cpp_part_5_line_70",
+            "count": "ca/cpp_part_5_completed",
+        },
+        produces={"output": "ca/cpp_part_5_base_contributions_on_self_employment"},
+    ),
+    # T1 line 87 and line 31000: the Part 4 amount plus the Part 5 amount; both are added when
+    # both parts are marked completed, as the form leaves the choice to the filer.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/cpp_base_contributions_on_self_employment",
+                "ca/cpp_part_5_base_contributions_on_self_employment",
+            ),
+        },
+        produces={"output": "ca/cpp_base_contributions_on_self_employment_and_other_earnings"},
+    ),
     # "Enter the amount from line 9 or line 10, whichever applies, on line 31217 and line 42120
     # of your return.": Schedule 13 is completed only with an agreement with the Canada
     # Employment Insurance Commission, so line 9 is counted once for each agreement, 1 or 0, on
@@ -309,8 +338,8 @@ STEPS = {
                 "ca/spouse_caregiver_amount",
                 "ca/caregiver_amount",
                 "ca/infirm_children_amount",
-                "ca/cpp_base_contributions",
-                "ca/cpp_base_contributions_on_self_employment",
+                "ca/cpp_base_contributions_on_return",
+                "ca/cpp_base_contributions_on_self_employment_and_other_earnings",
                 "ca/ei_premiums",
                 "ca/ei_premiums_on_self_employment",
                 "ca/canada_employment_amount",
@@ -511,8 +540,8 @@ STEPS = {
                 "ca/spouse_caregiver_amount",
                 "ca/caregiver_amount",
                 "ca/infirm_children_amount",
-                "ca/cpp_base_contributions",
-                "ca/cpp_base_contributions_on_self_employment",
+                "ca/cpp_base_contributions_on_return",
+                "ca/cpp_base_contributions_on_self_employment_and_other_earnings",
                 "ca/ei_premiums",
                 "ca/ei_premiums_on_self_employment",
                 "ca/canada_employment_amount",
@@ -910,6 +939,21 @@ WIRING = {
     ),
     (
         TimesCount,
+        frozenset({CPP_PART_5_LINE_70, CPP_PART_5_COMPLETED}),
+        frozenset({CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT}),
+    ),
+    (
+        Sum,
+        frozenset(
+            {
+                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+                CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+            }
+        ),
+        frozenset({CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS}),
+    ),
+    (
+        TimesCount,
         frozenset({SELF_EMPLOYED_EI_PREMIUMS, EI_SPECIAL_BENEFITS_AGREEMENT}),
         frozenset({EI_PREMIUMS_ON_SELF_EMPLOYMENT}),
     ),
@@ -959,8 +1003,8 @@ WIRING = {
                 SPOUSE_CAREGIVER_AMOUNT,
                 CAREGIVER_AMOUNT,
                 INFIRM_CHILDREN_AMOUNT,
-                CPP_BASE_CONTRIBUTIONS,
-                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+                CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
                 EI_PREMIUMS,
                 EI_PREMIUMS_ON_SELF_EMPLOYMENT,
                 CANADA_EMPLOYMENT_AMOUNT,
@@ -1075,8 +1119,8 @@ WIRING = {
                 SPOUSE_CAREGIVER_AMOUNT,
                 CAREGIVER_AMOUNT,
                 INFIRM_CHILDREN_AMOUNT,
-                CPP_BASE_CONTRIBUTIONS,
-                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+                CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+                CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
                 EI_PREMIUMS,
                 EI_PREMIUMS_ON_SELF_EMPLOYMENT,
                 CANADA_EMPLOYMENT_AMOUNT,

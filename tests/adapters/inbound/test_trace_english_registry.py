@@ -186,6 +186,7 @@ def test_the_shared_registry_holds_exactly_the_built_in_renderers() -> None:
         "app.domain.trace.arithmetic.RatioAppliedLine",
         "app.domain.trace.arithmetic.RatioTruncatedLine",
         "app.domain.trace.arithmetic.RoundedTotalLine",
+        "app.domain.trace.arithmetic.SignChosenDifferenceLine",
         "app.domain.trace.arithmetic.SubtractedLine",
         "app.domain.trace.arithmetic.SubtractedNotBelowZeroLine",
         "app.domain.trace.arithmetic.SumLine",

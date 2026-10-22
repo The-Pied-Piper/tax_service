@@ -153,6 +153,17 @@ AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS = CATALOG.declare(
 show in brackets)": the capital gain of line 15 (`capital_gain`, from line 19700 of Schedule 3)
 less line 19, shown in brackets when negative."""
 
+AMT_CAPITAL_GAINS_DIFFERENCE = CATALOG.declare("amt_capital_gains_difference", Decimal)
+"""Capital gains after adjustments less the taxable capital gains, Form T691 Part 1 line 22 "Line 20
+minus line 21 (if negative, do not show in brackets.)": line 20 less line 21 (line 12700 of the
+return, the taxable capital gains), left signed."""
+
+AMT_CAPITAL_GAINS_ADDED = CATALOG.declare("amt_capital_gains_added", Decimal)
+"""Capital gains added, Form T691 Part 1 line 23 "If line 20 is positive, enter the amount from line
+22. If line 20 is negative, enter whichever is less: the amount from line 21 or line 22 (show in
+brackets).": line 22 when line 20 is not negative, otherwise the lesser of line 21 and line 22 as a
+negative amount."""
+
 AMT_PUBLICLY_LISTED_GIFTS_TOTAL = CATALOG.declare(
     "amt_publicly_listed_gifts_total", Decimal, non_negative=True
 )
@@ -175,6 +186,11 @@ AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT = CATALOG.declare(
 """Adjustment for gifts of publicly listed securities, Form T691 Part 1 line 26 "× 30%" of "Line 24
 minus line 25": the net of line 24 less line 25 at the 30% of its dataset, rounded to the cent,
 a loss in brackets."""
+
+AMT_ADJUSTED_INCOME_WITH_GAINS = CATALOG.declare("amt_adjusted_income_with_gains", Decimal)
+"""Adjusted taxable income with the gains, Form T691 Part 1 line 27 "Add lines 13, 14, 23, and 26.":
+line 13 (the amount from line 12), line 14 (the amount from line 6 of Part 9), line 23 and line 26
+in line order, a loss in brackets."""
 
 AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91 = CATALOG.declare(
     "amt_t4_security_options_boxes_39_and_91", Decimal, non_negative=True

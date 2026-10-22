@@ -306,18 +306,121 @@ from app.jurisdictions.ca.catalog import (
     CHILD_CARE_EXPENSES,
     CHILD_CARE_EXPENSES_PAID,
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
+    CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
     CPP_BASIC_EXEMPTION,
+    CPP_CONTRIBUTIONS_DIFFERENCE,
     CPP_EARNINGS_SUBJECT_TO_BASE_AND_FIRST_ADDITIONAL,
     CPP_EARNINGS_SUBJECT_TO_SECOND_ADDITIONAL,
     CPP_EARNINGS_UP_TO_MAXIMUM,
+    CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+    CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+    CPP_LINE_16_NEGATIVE_LINE_19_POSITIVE,
+    CPP_LINE_16_NOT_NEGATIVE,
+    CPP_LINE_16_POSITIVE,
+    CPP_LINE_19_NOT_NEGATIVE,
+    CPP_LINE_20_POSITIVE,
+    CPP_LINE_23_AND_LINE_33_POSITIVE,
+    CPP_LINE_23_AND_LINE_40_POSITIVE,
+    CPP_LINE_23_NOT_NEGATIVE,
+    CPP_LINE_24_POSITIVE,
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_MONTHS,
+    CPP_OVERPAYMENT,
+    CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    CPP_PART_3_LINE_2,
+    CPP_PART_3_OVERPAYMENT,
+    CPP_PART_3B_LINE_23_LESS_LINE_35,
+    CPP_PART_3B_LINE_30,
+    CPP_PART_3B_LINE_31,
+    CPP_PART_3B_LINE_32,
+    CPP_PART_3B_LINE_32_LESSER,
+    CPP_PART_3B_LINE_33,
+    CPP_PART_3B_LINE_35,
+    CPP_PART_3B_LINE_35_LESSER,
+    CPP_PART_3B_LINE_36,
+    CPP_PART_3B_LINE_37,
+    CPP_PART_3B_LINE_38,
+    CPP_PART_3B_LINE_39,
+    CPP_PART_3B_LINE_39_LESSER,
+    CPP_PART_3B_LINE_40,
+    CPP_PART_3B_LINE_42,
+    CPP_PART_3B_LINE_42_LESSER,
+    CPP_PART_3B_LINE_44,
+    CPP_PART_3B_LINE_45,
+    CPP_PART_3B_LINE_46,
+    CPP_PART_3B_LINE_46_LESSER,
+    CPP_PART_3B_LINE_48,
+    CPP_PART_5_COMPLETED,
+    CPP_PART_5_LINE_4,
+    CPP_PART_5_LINE_6,
+    CPP_PART_5_LINE_8,
+    CPP_PART_5_LINE_9,
+    CPP_PART_5_LINE_9_LESSER,
+    CPP_PART_5_LINE_12,
+    CPP_PART_5_LINE_14,
+    CPP_PART_5_LINE_15,
+    CPP_PART_5_LINE_15_LESSER,
+    CPP_PART_5_LINE_19,
+    CPP_PART_5_LINE_20,
+    CPP_PART_5_LINE_20_NEGATIVE_LINE_23_POSITIVE,
+    CPP_PART_5_LINE_20_POSITIVE_LINE_23_NEGATIVE,
+    CPP_PART_5_LINE_21,
+    CPP_PART_5_LINE_22,
+    CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE,
+    CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE,
+    CPP_PART_5_LINE_23_LESS_LINE_56,
+    CPP_PART_5_LINE_25,
+    CPP_PART_5_LINE_28,
+    CPP_PART_5_LINE_29,
+    CPP_PART_5_LINE_30,
+    CPP_PART_5_LINE_33_MORE_THAN_LINE_17,
+    CPP_PART_5_LINE_36,
+    CPP_PART_5_LINE_41,
+    CPP_PART_5_LINE_42,
+    CPP_PART_5_LINE_42_LESSER,
+    CPP_PART_5_LINE_43,
+    CPP_PART_5_LINE_44,
+    CPP_PART_5_LINE_45,
+    CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
+    CPP_PART_5_LINE_49,
+    CPP_PART_5_LINE_49_IF_POSITIVE,
+    CPP_PART_5_LINE_50_LINE_49_POSITIVE,
+    CPP_PART_5_LINE_51,
+    CPP_PART_5_LINE_52,
+    CPP_PART_5_LINE_53,
+    CPP_PART_5_LINE_53_LESSER,
+    CPP_PART_5_LINE_54,
+    CPP_PART_5_LINE_56,
+    CPP_PART_5_LINE_56_LESSER,
+    CPP_PART_5_LINE_58,
+    CPP_PART_5_LINE_59,
+    CPP_PART_5_LINE_60,
+    CPP_PART_5_LINE_60_LESSER,
+    CPP_PART_5_LINE_61,
+    CPP_PART_5_LINE_63,
+    CPP_PART_5_LINE_63_LESSER,
+    CPP_PART_5_LINE_65,
+    CPP_PART_5_LINE_66,
+    CPP_PART_5_LINE_67,
+    CPP_PART_5_LINE_67_LESSER,
+    CPP_PART_5_LINE_72,
+    CPP_PART_5_LINE_73,
+    CPP_PART_5_LINE_74,
+    CPP_PART_5_LINE_75_BASE,
+    CPP_PART_5_LINE_84,
+    CPP_PART_5_LINE_86,
+    CPP_PART_5_LINE_87,
     CPP_PENSIONABLE_EARNINGS,
     CPP_PENSIONABLE_EARNINGS_UP_TO_ADDITIONAL_MAXIMUM,
     CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+    CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
+    CPP_ZERO,
     CPT20_EARNINGS,
     CREDIT_AMOUNTS_SUBTOTAL,
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
@@ -755,6 +858,107 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     assert lesser == {
+        # Schedule 8 Part 5 line 75 "Enter whichever is less: amount from line 72 or line 73"
+        # (line A): 0.00 and 0 for Return A.
+        CPP_PART_5_LINE_75_BASE: LesserOfLine(
+            output=CPP_PART_5_LINE_75_BASE,
+            parts=((CPP_PART_5_LINE_72, D("0.00")), (CPP_PART_5_LINE_73, D("0"))),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 53 "enter whichever is less: amount from line 19 of Part 3
+        # or line 52": line 19 of Part 3 and line 52 are both 0.00 for Return A.
+        CPP_PART_5_LINE_53_LESSER: LesserOfLine(
+            output=CPP_PART_5_LINE_53_LESSER,
+            parts=(
+                (CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_PART_5_LINE_52, D("0")),
+            ),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 56 "enter whichever is less": line 23 of Part 3 and line 54
+        # are both 0 for Return A.
+        CPP_PART_5_LINE_56_LESSER: LesserOfLine(
+            output=CPP_PART_5_LINE_56_LESSER,
+            parts=(
+                (CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_PART_5_LINE_54, D("0.00")),
+            ),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 60 "amount from line 16 of Part 3 or line 59": line 16 of
+        # Part 3 and line 59 are both 0 for Return A.
+        CPP_PART_5_LINE_60_LESSER: LesserOfLine(
+            output=CPP_PART_5_LINE_60_LESSER,
+            parts=((CPP_BASE_CONTRIBUTIONS_DIFFERENCE, D("0.00")), (CPP_PART_5_LINE_59, D("0"))),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 63 "amount from line 61 or the result of line 23 of Part 3
+        # minus line 56": line 61 and line 23 less line 56 are both 0 for Return A.
+        CPP_PART_5_LINE_63_LESSER: LesserOfLine(
+            output=CPP_PART_5_LINE_63_LESSER,
+            parts=((CPP_PART_5_LINE_61, D("0.00")), (CPP_PART_5_LINE_23_LESS_LINE_56, D("0.00"))),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 67 "amount from line 20 of Part 3 or line 66": line 20 of
+        # Part 3 and line 66 are both 0 for Return A.
+        CPP_PART_5_LINE_67_LESSER: LesserOfLine(
+            output=CPP_PART_5_LINE_67_LESSER,
+            parts=(
+                (CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_PART_5_LINE_66, D("0")),
+            ),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 3 line 2 "Enter whichever is less: amount from line D of Part 2 or line
+        # 1": 81,200 and the employment income of 110,000 for Return A.
+        CPP_PART_3_LINE_2: LesserOfLine(
+            CPP_PART_3_LINE_2,
+            (
+                (CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS, D("81200.00")),
+                (EMPLOYMENT_INCOME, D("110000")),
+            ),
+            D("81200.00"),
+        ),
+        # Schedule 8 Part 5 line 9 "whichever is less: amount from line 23 of Part 3 or line 8":
+        # both are "0" for Return A, so the first listed is produced.
+        CPP_PART_5_LINE_9_LESSER: LesserOfLine(
+            CPP_PART_5_LINE_9_LESSER,
+            (
+                (CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_PART_5_LINE_8, D("0")),
+            ),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 15 "whichever is less: amount from line 20 of Part 3 or line 14":
+        # both are "0" for Return A.
+        CPP_PART_5_LINE_15_LESSER: LesserOfLine(
+            CPP_PART_5_LINE_15_LESSER,
+            (
+                (CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_PART_5_LINE_14, D("0")),
+            ),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 22 "whichever is less: amount from line 4 or line 21": line 4 is
+        # 0.00 and line 21 is 0.01 for Return A.
+        CPP_PART_5_LINE_22: LesserOfLine(
+            CPP_PART_5_LINE_22,
+            (
+                (CPP_PART_5_LINE_4, D("0.00")),
+                (CPP_PART_5_LINE_21, D("0.01")),
+            ),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 42 "whichever is less: amount from line 36 or line 41": both are
+        # "0" for Return A.
+        CPP_PART_5_LINE_42_LESSER: LesserOfLine(
+            CPP_PART_5_LINE_42_LESSER,
+            (
+                (CPP_PART_5_LINE_36, D("0.00")),
+                (CPP_PART_5_LINE_41, D("0.00")),
+            ),
+            D("0.00"),
+        ),
         # Form T657 Chart 2016 Part 1 "Enter whichever is less: amount C or amount F." G: F is 0.
         CHART_2016_PART_1_AMOUNT_G: LesserOfLine(
             output=CHART_2016_PART_1_AMOUNT_G,
@@ -985,6 +1189,55 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (CHART_2020_PART_2_AMOUNT_J, D("0")),
             ),
             result=D("0"),
+        ),
+        # Schedule 8 Part 3b line 32 "whichever is less: amount from line 19 or line 31": both are
+        # "0" for Return A, so the first listed is produced.
+        CPP_PART_3B_LINE_32_LESSER: LesserOfLine(
+            CPP_PART_3B_LINE_32_LESSER,
+            (
+                (CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_PART_3B_LINE_31, D("0")),
+            ),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3b line 35 "whichever is less": line 23 and line 33 are "0" for Return A.
+        CPP_PART_3B_LINE_35_LESSER: LesserOfLine(
+            CPP_PART_3B_LINE_35_LESSER,
+            (
+                (CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_PART_3B_LINE_33, D("0")),
+            ),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3b line 39 "whichever is less: amount from line 16 or line 38": both are
+        # "0" for Return A.
+        CPP_PART_3B_LINE_39_LESSER: LesserOfLine(
+            CPP_PART_3B_LINE_39_LESSER,
+            (
+                (CPP_BASE_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_PART_3B_LINE_38, D("0")),
+            ),
+            D("0.00"),
+        ),
+        # Schedule 8 Part 3b line 42 "whichever is less: amount from line 40 or the result of line
+        # 23 minus line 35": both are "0" for Return A.
+        CPP_PART_3B_LINE_42_LESSER: LesserOfLine(
+            CPP_PART_3B_LINE_42_LESSER,
+            (
+                (CPP_PART_3B_LINE_40, D("0")),
+                (CPP_PART_3B_LINE_23_LESS_LINE_35, D("0.00")),
+            ),
+            D("0"),
+        ),
+        # Schedule 8 Part 3b line 46 "whichever is less: amount from line 20 or line 45": both are
+        # "0" for Return A.
+        CPP_PART_3B_LINE_46_LESSER: LesserOfLine(
+            CPP_PART_3B_LINE_46_LESSER,
+            (
+                (CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE, D("0.00")),
+                (CPP_PART_3B_LINE_45, D("0")),
+            ),
+            D("0.00"),
         ),
         # Form T2125 Chart B line 19 "Amount 17 or 18, whichever is less": line 17 is 0 for Return
         # A.
@@ -1589,6 +1842,39 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert tiers == {
+        # Schedule 8 Part 5 line 43 "amount from line 30 multiplied by 9.9% (maximum
+        # $6,712.20)": line 30 is 0.00 for Return A, so no contributory earnings.
+        CPP_PART_5_LINE_43: ContributionTierLine(
+            output=CPP_PART_5_LINE_43,
+            earnings=CPP_PART_5_LINE_30,
+            earnings_amount=D("0"),
+            tier=ContributionTier(Rate(D("0.099")), D("0"), D("67800"), D("6712.20")),
+            rounding=CENT,
+            contributory=D("0"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 44 "amount from line 30 multiplied by 2% (maximum
+        # $1,356.00)": line 30 is 0.00 for Return A.
+        CPP_PART_5_LINE_44: ContributionTierLine(
+            output=CPP_PART_5_LINE_44,
+            earnings=CPP_PART_5_LINE_30,
+            earnings_amount=D("0"),
+            tier=ContributionTier(Rate(D("0.02")), D("0"), D("67800"), D("1356.00")),
+            rounding=CENT,
+            contributory=D("0"),
+            result=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 45 "amount from line 42 multiplied by 8% (maximum
+        # $792.00)": line 42 is 0.00 for Return A.
+        CPP_PART_5_LINE_45: ContributionTierLine(
+            output=CPP_PART_5_LINE_45,
+            earnings=CPP_PART_5_LINE_42,
+            earnings_amount=D("0.00"),
+            tier=ContributionTier(Rate(D("0.08")), D("0"), D("9900"), D("792.00")),
+            rounding=CENT,
+            contributory=D("0"),
+            result=D("0.00"),
+        ),
         CPP_BASE_CONTRIBUTIONS: ContributionTierLine(
             CPP_BASE_CONTRIBUTIONS,
             EMPLOYMENT_INCOME,
@@ -1793,6 +2079,196 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Schedule 8 Part 5 line 73 "Enter the amount from line 24 of Part 3 if positive. If
+        # not, enter "0"": line 24 is 0.00 for Return A.
+        CPP_PART_5_LINE_73: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_73,
+            minuend=CPP_CONTRIBUTIONS_DIFFERENCE,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_ZERO,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 49 "If positive, enter the amount on line 42100": line 49 is
+        # 0.00 for Return A.
+        CPP_PART_5_LINE_49_IF_POSITIVE: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_49_IF_POSITIVE,
+            minuend=CPP_PART_5_LINE_49,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_ZERO,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 86 "If line 74 is negative, enter it as a positive amount":
+        # line 74 is 0.00 for Return A.
+        CPP_PART_5_LINE_86: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_86,
+            minuend=CPP_ZERO,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_74,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 87 "Line 85 minus line 86 (if negative, enter "0")": line 85 is
+        # the amount from line 84; line 84 and line 86 are 0.00 for Return A.
+        CPP_PART_5_LINE_87: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_87,
+            minuend=CPP_PART_5_LINE_84,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_86,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 52 "Enter the amount from line 16 of Part 3 as a positive
+        # amount": "0" less line 16 of 0.00 for Return A.
+        CPP_PART_5_LINE_52: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_52,
+            minuend=CPP_ZERO,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 59 "Enter the amount from line 19 of Part 3 as a positive
+        # amount": "0" less line 19 of 0.00 for Return A.
+        CPP_PART_5_LINE_59: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_59,
+            minuend=CPP_ZERO,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 66 "Enter the amount from line 23 of Part 3 as a positive
+        # amount": "0" less line 23 of 0.00 for Return A.
+        CPP_PART_5_LINE_66: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_66,
+            minuend=CPP_ZERO,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 48 "Amount from line 24 of Part 3 (if positive)": line 24
+        # of Part 3 is 0.00 for Return A.
+        CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_48_LINE_24_IF_POSITIVE,
+            minuend=CPP_CONTRIBUTIONS_DIFFERENCE,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_ZERO,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 50 "amount from line 49 entered as a positive amount": "0"
+        # less line 49 of 0.00 for Return A.
+        CPP_PART_5_LINE_50_LINE_49_POSITIVE: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_50_LINE_49_POSITIVE,
+            minuend=CPP_ZERO,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_49,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 6 "Enter the amount from line 20 of Part 3 if positive":
+        # line 20 of 0.00 for Return A.
+        CPP_PART_5_LINE_6: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_6,
+            minuend=CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_ZERO,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 8 "Enter the amount from line 20 of Part 3 as a positive
+        # amount": "0" less line 20 of 0.00 for Return A.
+        CPP_PART_5_LINE_8: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_8,
+            minuend=CPP_ZERO,
+            minuend_amount=D("0"),
+            subtrahend=CPP_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 12 "Enter the amount from line 23 of Part 3 if positive":
+        # line 23 of 0.00 for Return A.
+        CPP_PART_5_LINE_12: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_12,
+            minuend=CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_ZERO,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 14 "Enter the amount from line 23 of Part 3 as a positive
+        # amount": "0" less line 23 of 0.00 for Return A.
+        CPP_PART_5_LINE_14: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_14,
+            minuend=CPP_ZERO,
+            minuend_amount=D("0"),
+            subtrahend=CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 19 "Line 17 minus line 18 (if negative, enter "0")":
+        # 71,300 less 3,500.
+        CPP_PART_5_LINE_19: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_19,
+            minuend=CPP_MAXIMUM_PENSIONABLE_EARNINGS,
+            minuend_amount=D("71300.00"),
+            subtrahend=CPP_BASIC_EXEMPTION,
+            subtrahend_amount=D("3500.00"),
+            result=D("67800.00"),
+        ),
+        # Schedule 8 Part 5 line 21 "Line 19 minus line 20 (if negative, enter "0")": 67,800
+        # less 67,799.99.
+        CPP_PART_5_LINE_21: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_21,
+            minuend=CPP_PART_5_LINE_19,
+            minuend_amount=D("67800.00"),
+            subtrahend=CPP_PART_5_LINE_20,
+            subtrahend_amount=D("67799.99"),
+            result=D("0.01"),
+        ),
+        # Schedule 8 Part 5 line 25 "Line 23 minus line 24 (if negative, enter "0" on lines 25
+        # and 29...)": 3,500 less the employment income of 110,000, below zero.
+        CPP_PART_5_LINE_25: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_25,
+            minuend=CPP_BASIC_EXEMPTION,
+            minuend_amount=D("3500.00"),
+            subtrahend=EMPLOYMENT_INCOME,
+            subtrahend_amount=D("110000"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 28 "Line 26 minus line 27 (if negative, enter "0")": line 4 of
+        # 0.00 less 67,800.
+        CPP_PART_5_LINE_28: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_28,
+            minuend=CPP_PART_5_LINE_4,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_19,
+            subtrahend_amount=D("67800.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 29 "Line 25 minus line 28 (if negative, enter "0")": both
+        # are "0" for Return A.
+        CPP_PART_5_LINE_29: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_29,
+            minuend=CPP_PART_5_LINE_25,
+            minuend_amount=D("0"),
+            subtrahend=CPP_PART_5_LINE_28,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 5 line 30 "Line 22 minus line 29 (if negative, enter "0")": both
+        # are "0" for Return A.
+        CPP_PART_5_LINE_30: SubtractedNotBelowZeroLine(
+            output=CPP_PART_5_LINE_30,
+            minuend=CPP_PART_5_LINE_22,
+            minuend_amount=D("0.00"),
+            subtrahend=CPP_PART_5_LINE_29,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
         # Form T657 Chart 2016 Part 1 "Amount A minus amount B" C: 412088 less B of 0.
         CHART_2016_PART_1_AMOUNT_C: SubtractedNotBelowZeroLine(
             output=CHART_2016_PART_1_AMOUNT_C,
@@ -1968,6 +2444,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=CHART_2020_AMOUNT_D,
             subtrahend_amount=D("0"),
             result=D("500000.00"),
+        ),
+        # Schedule 8 Part 3b line 31 "Enter the amount from line 16 as a positive amount": "0" less
+        # line 16 of 0.00 for Return A.
+        CPP_PART_3B_LINE_31: SubtractedNotBelowZeroLine(
+            output=CPP_PART_3B_LINE_31,
+            minuend=CPP_ZERO,
+            minuend_amount=D("0"),
+            subtrahend=CPP_BASE_CONTRIBUTIONS_DIFFERENCE,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 3b line 38 "Enter the amount from line 19 as a positive amount": "0" less
+        # line 19 of 0.00 for Return A.
+        CPP_PART_3B_LINE_38: SubtractedNotBelowZeroLine(
+            output=CPP_PART_3B_LINE_38,
+            minuend=CPP_ZERO,
+            minuend_amount=D("0"),
+            subtrahend=CPP_FIRST_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
+        ),
+        # Schedule 8 Part 3b line 45 "Enter the amount from line 23 as a positive amount": "0" less
+        # line 23 of 0.00 for Return A.
+        CPP_PART_3B_LINE_45: SubtractedNotBelowZeroLine(
+            output=CPP_PART_3B_LINE_45,
+            minuend=CPP_ZERO,
+            minuend_amount=D("0"),
+            subtrahend=CPP_SECOND_ADDITIONAL_CONTRIBUTIONS_DIFFERENCE,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
         ),
         # Form T657 Chart 2021 Part 1 "Amount A minus amount B" C: Return A's maximum of 446109.00,
         # less
@@ -3862,6 +4368,134 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert chosen == {
+        # T1 line 44800 on the Part 3 route: line 24 is not positive for Return A, so "0".
+        CPP_PART_3_OVERPAYMENT: ChosenByCountLine(
+            output=CPP_PART_3_OVERPAYMENT,
+            count_kind=CPP_LINE_24_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0.00"),
+        ),
+        # T1 line 30800 on the Part 3 route: line 24 is not positive for Return A, so Part 3b
+        # line 36.
+        CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
+            output=CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
+            count_kind=CPP_LINE_24_POSITIVE,
+            count=0,
+            chosen_kind=CPP_PART_3B_LINE_36,
+            chosen_value=D("3356.10"),
+        ),
+        # T1 line 22215 on the Part 3 route: line 24 is not positive for Return A, so Part 3b
+        # line 48.
+        CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
+            output=CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            count_kind=CPP_LINE_24_POSITIVE,
+            count=0,
+            chosen_kind=CPP_PART_3B_LINE_48,
+            chosen_value=D("1074.00"),
+        ),
+        # Schedule 8 Part 5 line 51 "If line 16 of Part 3 is positive or "0", enter the
+        # amount from line 11 of Part 3": line 16 of Part 3 is 0.00 for Return A, so line
+        # 11.
+        CPP_PART_5_LINE_51: ChosenByCountLine(
+            output=CPP_PART_5_LINE_51,
+            count_kind=CPP_LINE_16_NOT_NEGATIVE,
+            count=1,
+            chosen_kind=CPP_BASE_CONTRIBUTIONS,
+            chosen_value=D("3356.10"),
+        ),
+        # Schedule 8 Part 5 line 58 "If line 19 of Part 3 is positive or "0", enter the
+        # amount from line 12 of Part 3": line 19 of Part 3 is 0.00 for Return A, so line
+        # 12.
+        CPP_PART_5_LINE_58: ChosenByCountLine(
+            output=CPP_PART_5_LINE_58,
+            count_kind=CPP_LINE_19_NOT_NEGATIVE,
+            count=1,
+            chosen_kind=CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            chosen_value=D("678.00"),
+        ),
+        # Schedule 8 Part 5 line 65 "If line 23 of Part 3 is positive or "0", enter the
+        # amount from line 22 of Part 3": line 23 of Part 3 is 0.00 for Return A, so line
+        # 22.
+        CPP_PART_5_LINE_65: ChosenByCountLine(
+            output=CPP_PART_5_LINE_65,
+            count_kind=CPP_LINE_23_NOT_NEGATIVE,
+            count=1,
+            chosen_kind=CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            chosen_value=D("396.00"),
+        ),
+        # Schedule 8 Part 5 line 53 "If not, enter "0"": line 16 is not negative for Return
+        # A.
+        CPP_PART_5_LINE_53: ChosenByCountLine(
+            output=CPP_PART_5_LINE_53,
+            count_kind=CPP_LINE_16_NEGATIVE_LINE_19_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 56 "If not, enter "0"": line 23 and line 54 are not both
+        # positive for Return A.
+        CPP_PART_5_LINE_56: ChosenByCountLine(
+            output=CPP_PART_5_LINE_56,
+            count_kind=CPP_PART_5_LINE_23_AND_LINE_54_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 60 "If not, enter "0"": line 16 is not positive for Return
+        # A.
+        CPP_PART_5_LINE_60: ChosenByCountLine(
+            output=CPP_PART_5_LINE_60,
+            count_kind=CPP_LINE_16_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 63 "If not, enter "0"": line 23 and line 61 are not both
+        # positive for Return A.
+        CPP_PART_5_LINE_63: ChosenByCountLine(
+            output=CPP_PART_5_LINE_63,
+            count_kind=CPP_PART_5_LINE_23_AND_LINE_61_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 67 "If not, enter "0"": line 20 of Part 3 is not positive
+        # for Return A.
+        CPP_PART_5_LINE_67: ChosenByCountLine(
+            output=CPP_PART_5_LINE_67,
+            count_kind=CPP_LINE_20_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0.00"),
+        ),
+        # Schedule 8 Part 5 line 9 "If not, enter "0" on line 9": line 20 of Part 3 is not
+        # negative for Return A.
+        CPP_PART_5_LINE_9: ChosenByCountLine(
+            output=CPP_PART_5_LINE_9,
+            count_kind=CPP_PART_5_LINE_20_NEGATIVE_LINE_23_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0"),
+        ),
+        # Schedule 8 Part 5 line 15 "If not, enter "0" on line 15": line 23 of Part 3 is not
+        # negative for Return A.
+        CPP_PART_5_LINE_15: ChosenByCountLine(
+            output=CPP_PART_5_LINE_15,
+            count_kind=CPP_PART_5_LINE_20_POSITIVE_LINE_23_NEGATIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0"),
+        ),
+        # Schedule 8 Part 5 line 42 "whichever is less": line 33 (81,200) is more than line 17
+        # (71,300) for Return A, and the lesser of lines 36 and 41 is 0.00.
+        CPP_PART_5_LINE_42: ChosenByCountLine(
+            output=CPP_PART_5_LINE_42,
+            count_kind=CPP_PART_5_LINE_33_MORE_THAN_LINE_17,
+            count=1,
+            chosen_kind=CPP_PART_5_LINE_42_LESSER,
+            chosen_value=D("0.00"),
+        ),
         # Form T657 Chart 2016 amount B: the line 19 of Chart 2 (Return A's 0), the (2016-1)
         # calculation not used.
         CHART_2016_AMOUNT_B: ChosenByCountLine(
@@ -3946,6 +4580,98 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
             chosen_kind=CHART_2020_PART_1_AMOUNT_K,
             chosen_value=D("0"),
+        ),
+        # Schedule 8 Part 3b line 30 "If line 16 is positive or "0", enter the amount from line 15":
+        # line 16 is 0.00 for Return A, so line 15 (line 11).
+        CPP_PART_3B_LINE_30: ChosenByCountLine(
+            output=CPP_PART_3B_LINE_30,
+            count_kind=CPP_LINE_16_NOT_NEGATIVE,
+            count=1,
+            chosen_kind=CPP_BASE_CONTRIBUTIONS,
+            chosen_value=D("3356.10"),
+        ),
+        # Schedule 8 Part 3b line 32 "If not, enter "0"": line 16 is not negative for Return A.
+        CPP_PART_3B_LINE_32: ChosenByCountLine(
+            output=CPP_PART_3B_LINE_32,
+            count_kind=CPP_LINE_16_NEGATIVE_LINE_19_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0"),
+        ),
+        # Schedule 8 Part 3b line 35 "If not, enter "0"": line 23 is 0.00 for Return A.
+        CPP_PART_3B_LINE_35: ChosenByCountLine(
+            output=CPP_PART_3B_LINE_35,
+            count_kind=CPP_LINE_23_AND_LINE_33_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0"),
+        ),
+        # Schedule 8 Part 3b line 37 "If line 19 is positive or "0", enter the amount from line 18":
+        # line 19 is 0.00 for Return A, so line 18 (line 12).
+        CPP_PART_3B_LINE_37: ChosenByCountLine(
+            output=CPP_PART_3B_LINE_37,
+            count_kind=CPP_LINE_19_NOT_NEGATIVE,
+            count=1,
+            chosen_kind=CPP_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            chosen_value=D("678.00"),
+        ),
+        # Schedule 8 Part 3b line 39 "If not, enter "0"": line 16 is 0.00 for Return A.
+        CPP_PART_3B_LINE_39: ChosenByCountLine(
+            output=CPP_PART_3B_LINE_39,
+            count_kind=CPP_LINE_16_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0"),
+        ),
+        # Schedule 8 Part 3b line 42 "If not, enter "0"": line 23 is 0.00 for Return A.
+        CPP_PART_3B_LINE_42: ChosenByCountLine(
+            output=CPP_PART_3B_LINE_42,
+            count_kind=CPP_LINE_23_AND_LINE_40_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0"),
+        ),
+        # Schedule 8 Part 3b line 44 "If line 23 is positive or "0", enter the amount from line 22":
+        # line 23 is 0.00 for Return A.
+        CPP_PART_3B_LINE_44: ChosenByCountLine(
+            output=CPP_PART_3B_LINE_44,
+            count_kind=CPP_LINE_23_NOT_NEGATIVE,
+            count=1,
+            chosen_kind=CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
+            chosen_value=D("396.00"),
+        ),
+        # Schedule 8 Part 3b line 46 "If not, enter "0"": line 20 is 0.00 for Return A.
+        CPP_PART_3B_LINE_46: ChosenByCountLine(
+            output=CPP_PART_3B_LINE_46,
+            count_kind=CPP_LINE_20_POSITIVE,
+            count=0,
+            chosen_kind=CPP_ZERO,
+            chosen_value=D("0"),
+        ),
+        # T1 line 30800 from Part 3b line 36: line 24 is 0.00 for Return A, so Part 3b applies (and
+        # equals the required line 11).
+        CPP_BASE_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
+            output=CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+            count_kind=CPP_PART_5_COMPLETED,
+            count=0,
+            chosen_kind=CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
+            chosen_value=D("3356.10"),
+        ),
+        # T1 line 22215 from Part 3b line 48: 678.00 + 396.00 for Return A.
+        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN: ChosenByCountLine(
+            output=CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            count_kind=CPP_PART_5_COMPLETED,
+            count=0,
+            chosen_kind=CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            chosen_value=D("1074.00"),
+        ),
+        # T1 line 44800 "CPP overpayment": "0" for Return A, as line 24 is not positive.
+        CPP_OVERPAYMENT: ChosenByCountLine(
+            output=CPP_OVERPAYMENT,
+            count_kind=CPP_PART_5_COMPLETED,
+            count=0,
+            chosen_kind=CPP_PART_3_OVERPAYMENT,
+            chosen_value=D("0.00"),
         ),
         CHART_2021_AMOUNT_D: ChosenByCountLine(
             output=CHART_2021_AMOUNT_D,
