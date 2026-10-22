@@ -240,6 +240,7 @@ from app.jurisdictions.ca_on.catalog import (
     TAX_REDUCTION_FOR_CHILDREN_BEFORE_SPOUSE_RULE,
     TAX_REDUCTION_FOR_DEPENDANTS,
     TAX_REDUCTION_FOR_DEPENDANTS_BEFORE_SPOUSE_RULE,
+    TOSI_ADJUSTED_TAXABLE_INCOME,
     UNUSED_TUITION_AMOUNTS_BROUGHT_FORWARD,
     UNUSED_TUITION_CARRIED_FORWARD,
     UNUSED_TUITION_CLAIMED,
@@ -380,6 +381,7 @@ REGISTERED = frozenset(
         "ca-on/health_premium_income",
         "ca-on/ontario_surtax_base",
         "ca-on/ontario_tax_on_split_income",
+        "ca-on/tosi_adjusted_taxable_income",
         "ca-on/ontario_tax_on_split_income_for_surtax",
         "ca-on/ontario_tax_with_split_income",
         "ca-on/split_income_line_36",
@@ -780,6 +782,7 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     assert registry.get("ca-on/health_premium_income") is HEALTH_PREMIUM_INCOME
     assert registry.get("ca-on/ontario_surtax_base") is ONTARIO_SURTAX_BASE
     assert registry.get("ca-on/ontario_tax_on_split_income") is ONTARIO_TAX_ON_SPLIT_INCOME
+    assert registry.get("ca-on/tosi_adjusted_taxable_income") is TOSI_ADJUSTED_TAXABLE_INCOME
     assert (
         registry.get("ca-on/ontario_tax_on_split_income_for_surtax")
         is ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX
@@ -1387,6 +1390,7 @@ def test_the_other_t1206_part_3_kinds_are_non_negative_amounts(registry: Artifac
         SPLIT_INCOME_LINE_46,
         SPLIT_INCOME_LINE_52,
         ONTARIO_TAX_ON_SPLIT_INCOME,
+        TOSI_ADJUSTED_TAXABLE_INCOME,
         ONTARIO_TAX_ON_SPLIT_INCOME_FOR_SURTAX,
         ONTARIO_TAX_WITH_SPLIT_INCOME,
         ONTARIO_SURTAX_BASE,

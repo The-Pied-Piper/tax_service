@@ -425,6 +425,14 @@ Form T1206)", Form T1206 Part 3 line 33 "The amount from line 31 multiplied by t
 entered on line 32": the total split income (line 31, the T1206 line 4) at the Ontario high tax rate
 of Chart C column 2."""
 
+TOSI_ADJUSTED_TAXABLE_INCOME = CATALOG.declare(
+    "tosi_adjusted_taxable_income", Decimal, non_negative=True
+)
+"""Ontario TOSI-adjusted taxable income, Form T1206 Part 3 line 33C "Amount from line 33A divided by
+the tax rate you entered on line 33B": the Ontario tax on split income (line 33A, the T1206 line
+33) divided by the Chart C column 3 rate, 5.05%. A declared output: with the exception of Ontario,
+a provincial Schedule adds it, and nothing else on the Ontario return reads it."""
+
 SPLIT_INCOME_LINE_36 = CATALOG.declare("split_income_line_36", Decimal, non_negative=True)
 """Disability amounts on split income, Form T1206 Part 3 line 36 "Line 34 plus line 35", line 34
 being "DTC from line 58440 of your provincial or territorial Form 428" and line 35 "DTC transferred
