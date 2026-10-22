@@ -520,3 +520,108 @@ capabilities:
       bound: ca/amt_maximum_carryover_claim
     produces:
       output: ca/amt_minimum_tax_carryover_applied
+  # Part 3 line 2 "Federal surtax on business income earned outside Canada" "Multiply the amount
+  # from line 1 by 48%.": line 1 is the basic federal tax of Part 2 line 7, the rate from its
+  # dataset. The form prints no floor, so a negative basic federal tax gives a negative surtax.
+  - name: core/apply_rate
+    params:
+      rate: ca/amt_federal_surtax_rate
+    consumes:
+      base: ca/amt_basic_federal_tax
+    produces:
+      output: ca/amt_federal_surtax_at_48_percent
+  # Part 3 line 3 "If you have to pay tax to multiple jurisdictions, multiply the amount from
+  # line 2 by the percentage in Column 5 of line 52220 on Form T2203.": the percentage as printed
+  # (50 for 50%), the caller's figure, rounded once by its dataset.
+  - name: ca/apply_percentage
+    params:
+      rounding: ca/amt_multiple_jurisdictions_rounding
+    consumes:
+      amount: ca/amt_federal_surtax_at_48_percent
+      percentage: ca/amt_t2203_column_5_percentage
+    produces:
+      output: ca/amt_federal_surtax_multiple_jurisdictions
+  # Part 3 line 4 "If you have an amount on line 3, enter that amount. If not, and you are a
+  # non-resident or deemed resident, enter the amount from line 2. Otherwise, enter "0".": the
+  # condition "you have an amount on line 3" counts 1 when line 3 is not 0.
+  - name: ca/count_by_conditions
+    params:
+      conditions: ca/amt_line_3_has_amount_conditions
+    consumes:
+      counts: []
+      amounts:
+        - ca/amt_federal_surtax_multiple_jurisdictions
+    produces:
+      output: ca/amt_line_3_has_amount
+  # Part 3 line 4, the second branch: line 2 when "you are a non-resident or deemed resident"
+  # (the caller's count, 1 for yes), and "0" otherwise.
+  - name: core/times_count
+    consumes:
+      amount: ca/amt_federal_surtax_at_48_percent
+      count: ca/amt_non_resident_or_deemed_resident
+    produces:
+      output: ca/amt_federal_surtax_if_non_resident
+  # Part 3 line 4, chosen by the condition above: line 3 when there is an amount on it, else the
+  # second branch.
+  - name: core/choose_by_count
+    consumes:
+      count: ca/amt_line_3_has_amount
+      when_none: ca/amt_federal_surtax_if_non_resident
+      when_any: ca/amt_federal_surtax_multiple_jurisdictions
+    produces:
+      output: ca/amt_federal_surtax
+  # Part 3 line 6 "Add lines 1, 4, and 5.": line 1 (the basic federal tax), line 4 (the surtax)
+  # and line 5 "Recapture of investment tax credit (from line 3 of Part C of Form T2038(IND))", in
+  # line order.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/amt_basic_federal_tax
+        - ca/amt_federal_surtax
+        - ca/itc_recapture
+    produces:
+      output: ca/amt_federal_tax_with_surtax_and_recapture
+  # Part 3 line 9 "Line 7 plus line 8": line 7 "Federal foreign tax credit from Form T2209" and
+  # line 8 "Federal logging tax credit", in line order.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/federal_foreign_tax_credit
+        - ca/amt_federal_logging_tax_credit
+    produces:
+      output: ca/amt_foreign_and_logging_credits_total
+  # Part 3 line 10 "Line 6 minus line 9 (if negative, enter "0")" "Federal tax payable".
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/amt_federal_tax_with_surtax_and_recapture
+      less: ca/amt_foreign_and_logging_credits_total
+    produces:
+      output: ca/amt_federal_tax_payable
+  # Part 3 line 12 "Investment tax credit amount up to, but not more than the amount I of Form
+  # T2038(IND)": the claim, the filer's figure, may not be more than amount I, and above it is
+  # refused, not capped.
+  - name: core/at_most
+    consumes:
+      amount: ca/amt_investment_tax_credit_claim
+      bound: ca/amt_t2038_amount_i
+    produces:
+      output: ca/amt_investment_tax_credit
+  # Part 3 line 14 "Add lines 11 to 13.": line 11 "Federal political contribution tax credit from
+  # line 41000 of your return", line 12 and line 13 "Labour-sponsored funds tax credit from line
+  # 41400 of your return", in line order.
+  - name: core/sum
+    consumes:
+      parts:
+        - ca/political_credit
+        - ca/amt_investment_tax_credit
+        - ca/labour_sponsored_funds_credit
+    produces:
+      output: ca/amt_regular_tax_credits_total
+  # Part 3 line 15 "Line 10 minus line 14 (if negative, enter "0")" "Regular net federal tax
+  # payable", which nothing reads until Part 5 lands.
+  - name: core/subtract_not_below_zero
+    consumes:
+      amount: ca/amt_federal_tax_payable
+      less: ca/amt_regular_tax_credits_total
+    produces:
+      output: ca/amt_regular_net_federal_tax_payable

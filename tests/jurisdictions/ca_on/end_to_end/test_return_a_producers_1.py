@@ -25,6 +25,7 @@ from app.domain.capabilities.tapered_amount import TaperedAmount
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.capabilities.times_count import TimesCount
 from app.jurisdictions.ca.capabilities.apply_chosen_rate import ApplyChosenRate
+from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
 from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
 from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
 from app.jurisdictions.ca.capabilities.chart_a_row_c_total import ChartARowCTotal
@@ -96,11 +97,21 @@ from app.jurisdictions.ca.catalog import (
     AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
     AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
     AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
+    AMT_FEDERAL_SURTAX,
+    AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+    AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
+    AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_FEDERAL_TAX_PAYABLE,
+    AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
+    AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
     AMT_GROSS_MINIMUM_AMOUNT,
+    AMT_INVESTMENT_TAX_CREDIT,
+    AMT_INVESTMENT_TAX_CREDIT_CLAIM,
     AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
+    AMT_LINE_3_HAS_AMOUNT,
     AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
     AMT_MAXIMUM_CARRYOVER_APPLIED,
     AMT_MAXIMUM_CARRYOVER_CLAIM,
@@ -115,6 +126,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
     AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES,
     AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
+    AMT_NON_RESIDENT_OR_DEEMED_RESIDENT,
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
@@ -122,6 +134,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
+    AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+    AMT_REGULAR_TAX_CREDITS_TOTAL,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RESOURCE_INCOME_TOTAL,
     AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
@@ -131,6 +145,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
     AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
+    AMT_T2038_AMOUNT_I,
+    AMT_T2203_COLUMN_5_PERCENTAGE,
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
     AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
@@ -2196,3 +2212,29 @@ def test_the_part_2_and_part_8_amounts_are_produced_by_their_capabilities() -> N
     assert worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS) is None
     assert worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_CLAIM) is None
     assert isinstance(worksheet.producer_of(CREDITS_AGAINST_BASIC_FEDERAL_TAX), Sum)
+    # Part 3 line 2 "Multiply the amount from line 1 by 48%." is a rate; line 3 is a percentage of
+    # line 2; line 4 is chosen by the count of its condition, from line 3 or the second branch,
+    # which is line 2 times a count; line 6 and line 9 are sums, line 10 a difference not below
+    # zero, line 12 an amount checked against its bound, line 14 a sum and line 15 a difference
+    # not below zero.
+    assert isinstance(worksheet.producer_of(AMT_FEDERAL_SURTAX_AT_48_PERCENT), ApplyRate)
+    assert isinstance(
+        worksheet.producer_of(AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS), ApplyPercentage
+    )
+    assert isinstance(worksheet.producer_of(AMT_LINE_3_HAS_AMOUNT), CountByConditions)
+    assert isinstance(worksheet.producer_of(AMT_FEDERAL_SURTAX_IF_NON_RESIDENT), TimesCount)
+    assert isinstance(worksheet.producer_of(AMT_FEDERAL_SURTAX), ChooseByCount)
+    assert isinstance(worksheet.producer_of(AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE), Sum)
+    assert isinstance(worksheet.producer_of(AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL), Sum)
+    assert isinstance(worksheet.producer_of(AMT_FEDERAL_TAX_PAYABLE), SubtractNotBelowZero)
+    assert isinstance(worksheet.producer_of(AMT_INVESTMENT_TAX_CREDIT), AtMost)
+    assert isinstance(worksheet.producer_of(AMT_REGULAR_TAX_CREDITS_TOTAL), Sum)
+    assert isinstance(
+        worksheet.producer_of(AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE), SubtractNotBelowZero
+    )
+    # The count of the condition is the caller's count, and the claim and amount I are the
+    # caller's amounts, as are the T2203 percentage and the non-resident count.
+    assert worksheet.producer_of(AMT_NON_RESIDENT_OR_DEEMED_RESIDENT) is None
+    assert worksheet.producer_of(AMT_T2203_COLUMN_5_PERCENTAGE) is None
+    assert worksheet.producer_of(AMT_INVESTMENT_TAX_CREDIT_CLAIM) is None
+    assert worksheet.producer_of(AMT_T2038_AMOUNT_I) is None

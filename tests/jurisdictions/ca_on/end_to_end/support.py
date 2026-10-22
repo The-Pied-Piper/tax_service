@@ -29,6 +29,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
     AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
     AMT_INVESTMENT_COUNSEL_FEES,
+    AMT_INVESTMENT_TAX_CREDIT_CLAIM,
     AMT_LEGAL_AND_ACCOUNTING_EXPENSES,
     AMT_LIFE_INSURANCE_PREMIUMS_AS_COLLATERAL,
     AMT_LIMITED_PARTNER_CARRYING_CHARGES,
@@ -40,6 +41,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_NET_CAPITAL_LOSSES_DIFFERENCE,
     AMT_NON_CAPITAL_LOSSES_DIFFERENCE,
     AMT_NON_DEDUCTIBLE_INTEREST,
+    AMT_NON_RESIDENT_OR_DEEMED_RESIDENT,
     AMT_PPIP_PREMIUMS_DEDUCTION,
     AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION,
     AMT_PUBLICLY_LISTED_GIFTS_T1170_LINE_68231,
@@ -56,6 +58,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
     AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
+    AMT_T2038_AMOUNT_I,
+    AMT_T2203_COLUMN_5_PERCENTAGE,
     AMT_TAX_SHELTER_DEDUCTIBLE_AMOUNTS,
     AMT_TAX_SHELTER_LOSSES,
     AMT_TREATY_EXEMPT_CAPITAL_GAINS,
@@ -1967,6 +1971,10 @@ def compute(
     amt_section_119_former_resident_credit: str = "0",
     amt_minimum_tax_carryover_from_previous_years: str = "0",
     amt_minimum_tax_carryover_claim: str = "0",
+    amt_t2203_column_5_percentage: str = "0",
+    amt_non_resident_or_deemed_resident: int = 0,
+    amt_investment_tax_credit_claim: str = "0",
+    amt_t2038_amount_i: str = "0",
 ) -> Worksheet:
     # The T4 box 16 and 16A amounts default to the required ones for the employment income given,
     # so line 24 is 0 unless a test gives its own.
@@ -2680,6 +2688,10 @@ def compute(
             D(amt_minimum_tax_carryover_from_previous_years),
         ),
         Artifact(AMT_MINIMUM_TAX_CARRYOVER_CLAIM, D(amt_minimum_tax_carryover_claim)),
+        Artifact(AMT_T2203_COLUMN_5_PERCENTAGE, D(amt_t2203_column_5_percentage)),
+        Artifact(AMT_NON_RESIDENT_OR_DEEMED_RESIDENT, amt_non_resident_or_deemed_resident),
+        Artifact(AMT_INVESTMENT_TAX_CREDIT_CLAIM, D(amt_investment_tax_credit_claim)),
+        Artifact(AMT_T2038_AMOUNT_I, D(amt_t2038_amount_i)),
     )
 
 

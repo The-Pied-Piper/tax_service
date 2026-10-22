@@ -1790,6 +1790,21 @@ REGISTERED = frozenset(
         "ca/amt_capital_gains_difference",
         "ca/amt_capital_gains_added",
         "ca/amt_adjusted_income_with_gains",
+        "ca/amt_federal_surtax_at_48_percent",
+        "ca/amt_t2203_column_5_percentage",
+        "ca/amt_federal_surtax_multiple_jurisdictions",
+        "ca/amt_non_resident_or_deemed_resident",
+        "ca/amt_line_3_has_amount",
+        "ca/amt_federal_surtax_if_non_resident",
+        "ca/amt_federal_surtax",
+        "ca/amt_federal_tax_with_surtax_and_recapture",
+        "ca/amt_foreign_and_logging_credits_total",
+        "ca/amt_federal_tax_payable",
+        "ca/amt_investment_tax_credit_claim",
+        "ca/amt_t2038_amount_i",
+        "ca/amt_investment_tax_credit",
+        "ca/amt_regular_tax_credits_total",
+        "ca/amt_regular_net_federal_tax_payable",
     }
 )
 
@@ -2048,6 +2063,11 @@ SIGNED = frozenset(
         "ca/amt_capital_gains_difference",
         "ca/amt_capital_gains_added",
         "ca/amt_adjusted_income_with_gains",
+        "ca/amt_federal_surtax_at_48_percent",
+        "ca/amt_federal_surtax_multiple_jurisdictions",
+        "ca/amt_federal_surtax_if_non_resident",
+        "ca/amt_federal_surtax",
+        "ca/amt_federal_tax_with_surtax_and_recapture",
     }
 )
 
@@ -2139,6 +2159,8 @@ COUNTS = frozenset(
         "ca/qbt_has_investment_expenses",
         "ca/qbt_election_is_qbt",
         "ca/qbt_gains_are_qsbcs_or_qffp",
+        "ca/amt_non_resident_or_deemed_resident",
+        "ca/amt_line_3_has_amount",
     }
 )
 

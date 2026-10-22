@@ -1,0 +1,67 @@
+"""The 2025 Form T691 Part 3 line 2 rate, 48%, checked against Form T691.
+
+Form T691 (2025) Part 3 line 2: "Federal surtax on business income earned outside Canada" "Multiply
+the amount from line 1 by 48%.", where line 1 is the amount from line 7 of Part 2 (the basic
+federal tax). The 48% is the printed percentage of the form, a rate of 0.48, applied to a
+dollars-and-cents line, so it is rounded half-up to the cent, the owner's decision, as the form
+states no rounding rule. The form prints no floor on line 2, so a negative basic federal tax gives
+a negative surtax, which the kind holds.
+"""
+
+from __future__ import annotations
+
+from decimal import Decimal
+
+import pytest
+
+import app.registrations
+from app.adapters.outbound.yaml_parameters import YamlParameterSource
+from app.domain.artifact import Artifact, ArtifactKind
+from app.domain.capabilities.apply_rate import ApplyRate
+from app.domain.parameters.rate import RATE, Rate
+from app.domain.parameters.rounding import RoundingMode, RoundTo
+
+D = Decimal
+SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
+T691_PDF = "https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t691/t691-25e.pdf"
+CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
+
+FAMILY = "ca/amt_federal_surtax_rate"
+
+# Made up for this test and not registered: the amount the rate is applied to, and the product.
+BASE = ArtifactKind("ex/amt_line_1", Decimal)
+AMOUNT = ArtifactKind("ex/amt_line_2", Decimal)
+
+
+def test_2025_amt_federal_surtax_rate_is_48_percent() -> None:
+    data = SOURCE.get(FAMILY, 2025, RATE)
+
+    assert data.values == Rate(D("0.48"))
+    # Part 3 line 2, a dollars-and-cents line: half-up to the cent.
+    assert data.rounding == CENT
+
+
+def test_2025_amt_federal_surtax_rate_cites_the_form_it_is_printed_on() -> None:
+    data = SOURCE.get(FAMILY, 2025, RATE)
+
+    assert T691_PDF in data.sources
+
+
+@pytest.mark.parametrize(
+    ("base", "result"),
+    [
+        # 5846.47 × 0.48 = 2806.3056, rounded half-up to 2806.31 (the Return BG basic federal tax).
+        ("5846.47", "2806.31"),
+        # 100 × 0.48 = 48.00.
+        ("100", "48.00"),
+        # -1181.85 × 0.48 = -567.288, rounded to the nearest cent, -567.29 (the low-income return,
+        # whose basic federal tax is negative); the form prints no floor, so it stays negative.
+        ("-1181.85", "-567.29"),
+    ],
+)
+def test_applies_to_the_base_and_keeps_a_negative_base_negative(base: str, result: str) -> None:
+    capability = ApplyRate(SOURCE.get(FAMILY, 2025, RATE), BASE, AMOUNT)
+
+    result_outputs = capability.compute((Artifact(BASE, D(base)),)).outputs
+
+    assert result_outputs == (Artifact(AMOUNT, D(result)),)

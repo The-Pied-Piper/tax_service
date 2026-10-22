@@ -668,3 +668,4 @@ expected:
   ca-on/net_refund: "64.63"
   ca/amt_part_1_subtotal: "66990.00"
   ca/amt_basic_federal_tax: "6966.62"
+  ca/amt_regular_net_federal_tax_payable: "5779.02"

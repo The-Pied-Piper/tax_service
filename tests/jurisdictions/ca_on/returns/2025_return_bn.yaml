@@ -184,3 +184,4 @@ expected:
   ca/amt_security_options_d1_total: "0"
   ca/amt_security_options_net: "0"
   ca/amt_basic_federal_tax: "5641.47"
+  ca/amt_regular_net_federal_tax_payable: "5641.47"

@@ -56,6 +56,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DIFFERENCE,
     AMT_CREDITS_TOTAL,
+    AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+    AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
@@ -63,6 +65,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
     AMT_NON_CAPITAL_LOSSES_DIFFERENCE,
     AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
+    AMT_NON_RESIDENT_OR_DEEMED_RESIDENT,
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_PUBLICLY_LISTED_GIFTS_T1170_LINE_68231,
@@ -2776,6 +2779,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert times == {
+        # Form T691 Part 3 line 4, the second branch, "enter the amount from line 2" when "you are a
+        # non-resident or deemed resident": line 2, 8136.66, times a count of 0 (Return A is not a
+        # non-resident), a plain 0.
+        AMT_FEDERAL_SURTAX_IF_NON_RESIDENT: TimesCountLine(
+            output=AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
+            amount_kind=AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+            amount_value=D("8136.66"),
+            count_kind=AMT_NON_RESIDENT_OR_DEEMED_RESIDENT,
+            count=0,
+            result=D("0"),
+        ),
         # T1 line 31000 from Schedule 8 Part 5 line 70, once for each Part 5 completed: 0 for
         # Return A.
         CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT: TimesCountLine(

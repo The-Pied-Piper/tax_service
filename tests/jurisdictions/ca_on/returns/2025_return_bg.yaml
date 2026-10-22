@@ -1,7 +1,8 @@
 # Return BG: a filer with employment income who has film property, rental and leasing
 # property, tax shelter amounts, resource property, a capital gain and gifts of publicly
 # listed securities, computed on Form T691 (alternative minimum tax) Parts 1 and 9 as far as
-# line 103, and Parts 2 and 8 as far as line 12 (no carryover is claimed). The Part 1 and
+# line 103, Parts 2 and 8 as far as line 12 (no carryover is claimed), and Part 3 lines 1 to 15
+# (no tax is payable to multiple jurisdictions). The Part 1 and
 # Part 9 amounts that are not lines of this return are chosen
 # figures, entered as the form takes them; the adjustments and the sums are computed from them.
 jurisdiction: CA-ON
@@ -90,7 +91,24 @@ description: >-
   negative, enter "0")", is 5846.47 minus 0.00, 5846.47. Line 12, "Claim an amount that is
   not more than line 1 or 11, whichever is less.", claims 0.00, and the most that may be
   claimed is the lesser of line 1, 0.00, and line 11, 5846.47, so the cap is 0.00 and "Enter
-  this amount on line 40427 of your return." is 0.00. Not yet computed: Parts 3 to 7 of Form
+  this amount on line 40427 of your return." is 0.00. Part 3,
+  regular net federal tax payable, lines 1 to 15: line 1, "Amount from line 7 of Part 2", is the
+  basic federal tax of 5846.47. Line 2, "Federal surtax on business income earned outside Canada",
+  is 48% of line 1: 5846.47 times 0.48 is 2806.3056, rounded half-up to 2806.31. Line 3, "If you
+  have to pay tax to multiple jurisdictions", is line 2 times the percentage in Column 5 of line
+  52220 on Form T2203, a chosen figure of 0 as no tax is payable to multiple jurisdictions: 2806.31
+  times 0, 0.00. Line 4, "If you have an amount on line 3, enter that amount. If not, and you are a
+  non-resident or deemed resident, enter the amount from line 2. Otherwise, enter "0".", is 0.00:
+  line 3 is 0.00, so there is no amount on it, and the filer is not a non-resident (a chosen figure
+  of 0), so the branch is "0". Line 5, the recapture of investment tax credit, is 0.00. "Add lines
+  1, 4, and 5." is 5846.47 plus 0.00 plus 0.00, 5846.47. Line 7, the federal foreign tax credit from
+  Form T2209, is 0.00 and line 8, the federal logging tax credit, is 0.00, so "Line 7 plus line 8"
+  is 0.00, and "Line 6 minus line 9 (if negative, enter "0")", the federal tax payable, is 5846.47
+  minus 0.00, 5846.47. Line 11, the federal political contribution tax credit, is 0.00; line 12, the
+  investment tax credit, is 0.00 (no claim, and amount I of Form T2038(IND) is 0.00), so it is 0.00;
+  line 13, the labour-sponsored funds tax credit, is 0.00. "Add lines 11 to 13." is 0.00, and "Line
+  10 minus line 14 (if negative, enter "0")", the regular net federal tax payable, is 5846.47 minus
+  0.00, 5846.47. Not yet computed: Parts 4 to 7 of Form
   T691 and Part 8 lines 13 to 17. Amounts are quoted decimals, and the count of CPP months
   is a quoted digit string.
 sources:
@@ -118,7 +136,7 @@ sources:
     "Federal tax rate" "× 20.5%"; "Gross minimum amount: line 95 multiplied by the percentage on
     line 96."; "Net non-refundable tax credits (line 33800 of your return)" "× 50% ="; "Donations and
     gifts (line 34900 of your return)" "× 80% ="; "Add lines 98 to 101."; "Line 97 minus line 102
-    (if negative, enter "0")"; "Minimum amount"; "Enter the amount from line 40400 of your return"; "Total non-refundable tax credits (line 35000 of your return)"; "Dividend tax credit (line 40425 of your return)"; "Line 2 plus line 3"; "Line 1 minus line 4"; "Tax payable before minimum tax carryover"; "Minimum tax carryover applied in 2025 from line 12 of Part 8"; "Line 5 minus line 6"; "Basic federal tax"; "Minimum tax carryover from previous years (2018 to 2024)"; "Tax payable before minimum tax carryover from line 5 of Part 2"; "Recapture of investment tax credit from line 3 of Part C of Form T2038(IND)"; "Federal tax on split income from line 8 of Form T1206"; "Amount from line 41600 of your return"; "Add lines 5 to 7"; "Line 4 minus line 8"; "Minimum amount from line 103 of Part 1"; "Maximum carryover that can be applied in 2025: line 9 minus line 10 (if negative, enter "0")"; "Claim an amount that is not more than line 1 or 11, whichever is less."; "Enter this amount on line 40427 of your return."
+    (if negative, enter "0")"; "Minimum amount"; "Enter the amount from line 40400 of your return"; "Total non-refundable tax credits (line 35000 of your return)"; "Dividend tax credit (line 40425 of your return)"; "Line 2 plus line 3"; "Line 1 minus line 4"; "Tax payable before minimum tax carryover"; "Minimum tax carryover applied in 2025 from line 12 of Part 8"; "Line 5 minus line 6"; "Basic federal tax"; "Minimum tax carryover from previous years (2018 to 2024)"; "Tax payable before minimum tax carryover from line 5 of Part 2"; "Recapture of investment tax credit from line 3 of Part C of Form T2038(IND)"; "Federal tax on split income from line 8 of Form T1206"; "Amount from line 41600 of your return"; "Add lines 5 to 7"; "Line 4 minus line 8"; "Minimum amount from line 103 of Part 1"; "Maximum carryover that can be applied in 2025: line 9 minus line 10 (if negative, enter "0")"; "Claim an amount that is not more than line 1 or 11, whichever is less."; "Enter this amount on line 40427 of your return." "Amount from line 7 of Part 2"; "Federal surtax on business income earned outside Canada" "Multiply the amount from line 1 by 48%."; "If you have to pay tax to multiple jurisdictions, multiply the amount from line 2 by the percentage in Column 5 of line 52220 on Form T2203."; "If you have an amount on line 3, enter that amount. If not, and you are a non-resident or deemed resident, enter the amount from line 2. Otherwise, enter "0"."; "Recapture of investment tax credit (from line 3 of Part C of Form T2038(IND))"; "Add lines 1, 4, and 5."; "Federal foreign tax credit from Form T2209"; "Federal logging tax credit"; "Line 7 plus line 8"; "Line 6 minus line 9 (if negative, enter "0")" "Federal tax payable"; "Federal political contribution tax credit from line 41000 of your return"; "Investment tax credit amount up to, but not more than the amount I of Form T2038(IND)"; "Labour-sponsored funds tax credit from line 41400 of your return"; "Add lines 11 to 13."; "Line 10 minus line 14 (if negative, enter "0")" "Regular net federal tax payable".
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t691/t691-25e.pdf
   - >-
     CRA, T1 (2025), docs/cra-forms-2025/5006-r-25e.txt: "Line 124 and line 40427: Minimum tax
@@ -241,3 +259,14 @@ expected:
   ca/cpp_contributions_difference: "0.00"
   ca/cpp_part_5_line_57: "2796.75"
   ca/cpp_part_5_line_69: "565.00"
+  ca/amt_federal_surtax_at_48_percent: "2806.31"
+  ca/amt_federal_surtax_multiple_jurisdictions: "0.00"
+  ca/amt_line_3_has_amount: "0"
+  ca/amt_federal_surtax_if_non_resident: "0.00"
+  ca/amt_federal_surtax: "0.00"
+  ca/amt_federal_tax_with_surtax_and_recapture: "5846.47"
+  ca/amt_foreign_and_logging_credits_total: "0.00"
+  ca/amt_federal_tax_payable: "5846.47"
+  ca/amt_investment_tax_credit: "0.00"
+  ca/amt_regular_tax_credits_total: "0.00"
+  ca/amt_regular_net_federal_tax_payable: "5846.47"

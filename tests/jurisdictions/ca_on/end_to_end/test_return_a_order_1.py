@@ -27,8 +27,19 @@ from app.jurisdictions.ca.catalog import (
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMT_BASIC_FEDERAL_TAX,
+    AMT_FEDERAL_SURTAX,
+    AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+    AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
+    AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_FEDERAL_TAX_PAYABLE,
+    AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
+    AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
+    AMT_INVESTMENT_TAX_CREDIT,
+    AMT_LINE_3_HAS_AMOUNT,
     AMT_MAXIMUM_CARRYOVER_CLAIM,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+    AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+    AMT_REGULAR_TAX_CREDITS_TOTAL,
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_PERSONAL_AMOUNT,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
@@ -493,13 +504,33 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 1230
-    assert len(order) == 1230
+    assert len(order) == 1241
+    assert len(order) == 1241
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[AMT_MAXIMUM_CARRYOVER_CLAIM] < position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED]
     assert position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED] < position[CREDITS_AGAINST_BASIC_FEDERAL_TAX]
     assert position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED] < position[AMT_BASIC_FEDERAL_TAX]
+    # Part 3 line 2 reads line 1 (the basic federal tax); line 3 reads line 2; line 4 is chosen
+    # from the condition on line 3 and the second branch; line 6 sums lines 1, 4 and 5.
+    assert position[AMT_BASIC_FEDERAL_TAX] < position[AMT_FEDERAL_SURTAX_AT_48_PERCENT]
+    assert (
+        position[AMT_FEDERAL_SURTAX_AT_48_PERCENT]
+        < position[AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS]
+    )
+    assert position[AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS] < position[AMT_LINE_3_HAS_AMOUNT]
+    assert position[AMT_LINE_3_HAS_AMOUNT] < position[AMT_FEDERAL_SURTAX]
+    assert position[AMT_FEDERAL_SURTAX_IF_NON_RESIDENT] < position[AMT_FEDERAL_SURTAX]
+    assert position[AMT_FEDERAL_SURTAX] < position[AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE]
+    assert position[ITC_RECAPTURE] < position[AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE]
+    # Line 9 needs the federal foreign tax credit, line 10 the sums of lines 6 and 9, and line 15
+    # the lines 10 and 14, which needs the investment tax credit of line 12.
+    assert position[FEDERAL_FOREIGN_TAX_CREDIT] < position[AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL]
+    assert position[AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE] < position[AMT_FEDERAL_TAX_PAYABLE]
+    assert position[AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL] < position[AMT_FEDERAL_TAX_PAYABLE]
+    assert position[AMT_INVESTMENT_TAX_CREDIT] < position[AMT_REGULAR_TAX_CREDITS_TOTAL]
+    assert position[AMT_FEDERAL_TAX_PAYABLE] < position[AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE]
+    assert position[AMT_REGULAR_TAX_CREDITS_TOTAL] < position[AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE]
     assert (
         position[INVESTMENT_INCOME_BEFORE_PRIOR_YEARS]
         < position[INTEREST_AND_OTHER_INVESTMENT_INCOME]

@@ -29,6 +29,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
     AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL,
     AMT_APPLICABLE_RATE_AMOUNT,
+    AMT_BASIC_FEDERAL_TAX,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
@@ -44,11 +45,15 @@ from app.jurisdictions.ca.catalog import (
     AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
     AMT_EXCESS_EPSP_AMOUNTS,
     AMT_FEDERAL_LOGGING_TAX_CREDIT,
+    AMT_FEDERAL_SURTAX,
+    AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FINANCING_EXPENSES,
+    AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
     AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
     AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
     AMT_INVESTMENT_COUNSEL_FEES,
+    AMT_INVESTMENT_TAX_CREDIT,
     AMT_LEGAL_AND_ACCOUNTING_EXPENSES,
     AMT_LIFE_INSURANCE_PREMIUMS_AS_COLLATERAL,
     AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
@@ -75,6 +80,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
+    AMT_REGULAR_TAX_CREDITS_TOTAL,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_REPAYMENT_OF_SALARY_AND_WAGES,
     AMT_REPAYMENT_OF_WAGE_LOSS_REPLACEMENT,
@@ -542,6 +548,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_WHEAT,
     FARMING_INCOME,
     FEDERAL_BASIC_TAX,
+    FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
@@ -1028,6 +1035,37 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Form T691 Part 3 line 6 "Add lines 1, 4, and 5.": line 1, the basic federal tax
+        # (16951.38), line 4, the surtax (0) and line 5, the recapture of investment tax credit (0):
+        # 16951.38.
+        AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE: SumLine(
+            AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
+            (
+                (AMT_BASIC_FEDERAL_TAX, D("16951.38")),
+                (AMT_FEDERAL_SURTAX, D("0")),
+                (ITC_RECAPTURE, D("0")),
+            ),
+            D("16951.38"),
+        ),
+        # Form T691 Part 3 line 9 "Line 7 plus line 8": line 7, the federal foreign tax credit (0),
+        # and line 8, the federal logging tax credit (0): 0.
+        AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL: SumLine(
+            AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
+            ((FEDERAL_FOREIGN_TAX_CREDIT, D("0")), (AMT_FEDERAL_LOGGING_TAX_CREDIT, D("0"))),
+            D("0"),
+        ),
+        # Form T691 Part 3 line 14 "Add lines 11 to 13.": line 11, the political contribution tax
+        # credit (0), line 12, the investment tax credit (0) and line 13, the labour-sponsored funds
+        # tax credit (0): 0.
+        AMT_REGULAR_TAX_CREDITS_TOTAL: SumLine(
+            AMT_REGULAR_TAX_CREDITS_TOTAL,
+            (
+                (POLITICAL_CREDIT, D("0")),
+                (AMT_INVESTMENT_TAX_CREDIT, D("0")),
+                (LABOUR_SPONSORED_FUNDS_CREDIT, D("0")),
+            ),
+            D("0"),
+        ),
         # Form T691 Part 2 line 4 "Line 2 plus line 3": the non-refundable tax credits of line 35000
         # (3194.87) and the dividend tax credit of line 40425 (0).
         AMT_CREDITS_TOTAL: SumLine(

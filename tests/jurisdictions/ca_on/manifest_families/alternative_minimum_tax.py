@@ -5,12 +5,16 @@ from __future__ import annotations
 from app.domain.capabilities.apply_fraction import ApplyFraction
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.at_most import AtMost
+from app.domain.capabilities.choose_by_count import ChooseByCount
 from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
+from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
+from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
+from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.capabilities.sign_chosen_difference import SignChosenDifference
 from app.jurisdictions.ca.catalog import (
     AMT_ADJUSTED_INCOME_WITH_GAINS,
@@ -39,14 +43,23 @@ from app.jurisdictions.ca.catalog import (
     AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
     AMT_EXCESS_EPSP_AMOUNTS,
     AMT_FEDERAL_LOGGING_TAX_CREDIT,
+    AMT_FEDERAL_SURTAX,
+    AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+    AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
+    AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_FEDERAL_TAX_PAYABLE,
+    AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
     AMT_FINANCING_EXPENSES,
+    AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
     AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
     AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_INVESTMENT_COUNSEL_FEES,
+    AMT_INVESTMENT_TAX_CREDIT,
+    AMT_INVESTMENT_TAX_CREDIT_CLAIM,
     AMT_LEGAL_AND_ACCOUNTING_EXPENSES,
     AMT_LIFE_INSURANCE_PREMIUMS_AS_COLLATERAL,
     AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
@@ -55,6 +68,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_ELECTION,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
+    AMT_LINE_3_HAS_AMOUNT,
     AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
     AMT_MAXIMUM_CARRYOVER_APPLIED,
     AMT_MAXIMUM_CARRYOVER_CLAIM,
@@ -73,6 +87,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
     AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES,
     AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
+    AMT_NON_RESIDENT_OR_DEEMED_RESIDENT,
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
@@ -84,6 +99,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_PUBLICLY_LISTED_GIFTS_TOTAL,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
+    AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+    AMT_REGULAR_TAX_CREDITS_TOTAL,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_RENTAL_PROPERTY_INCOME_BEFORE_CCA,
@@ -105,6 +122,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
     AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
+    AMT_T2038_AMOUNT_I,
+    AMT_T2203_COLUMN_5_PERCENTAGE,
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
     AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
@@ -124,15 +143,18 @@ from app.jurisdictions.ca.catalog import (
     DISABILITY_SUPPORTS_DEDUCTION,
     DIVIDEND_TAX_CREDIT,
     DONATIONS_AND_GIFTS_CREDIT,
+    FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
     ITC_RECAPTURE,
+    LABOUR_SPONSORED_FUNDS_CREDIT,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     NON_CAPITAL_LOSSES_OF_OTHER_YEARS,
     NON_REFUNDABLE_TAX_CREDITS,
     NORTHERN_RESIDENTS_DEDUCTIONS,
     OTHER_EMPLOYMENT_EXPENSES,
     OTHER_FORECLOSURE_GAIN_OR_LOSS,
+    POLITICAL_CREDIT,
     QBT_CAPITAL_GAINS_DEDUCTION,
     QFFP_FORECLOSURE_GAIN_OR_LOSS,
     TAXABLE_CAPITAL_GAINS,
@@ -185,12 +207,16 @@ INPUTS = frozenset(
         "ca/amt_section_119_former_resident_credit",
         "ca/amt_minimum_tax_carryover_from_previous_years",
         "ca/amt_minimum_tax_carryover_claim",
+        "ca/amt_t2203_column_5_percentage",
+        "ca/amt_non_resident_or_deemed_resident",
+        "ca/amt_investment_tax_credit_claim",
+        "ca/amt_t2038_amount_i",
     }
 )
 
 OUTPUTS = frozenset(
     {
-        "ca/amt_basic_federal_tax",
+        "ca/amt_regular_net_federal_tax_payable",
     }
 )
 
@@ -870,6 +896,138 @@ STEPS = {
         },
         produces={"output": "ca/amt_minimum_tax_carryover_applied"},
     ),
+    # Part 3 line 2 "Federal surtax on business income earned outside Canada" "Multiply the amount
+    # from line 1 by 48%.": line 1 is the basic federal tax of Part 2 line 7, the rate from its
+    # dataset. The form prints no floor, so a negative basic federal tax gives a negative surtax.
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/amt_federal_surtax_rate"},
+        consumes={"base": "ca/amt_basic_federal_tax"},
+        produces={"output": "ca/amt_federal_surtax_at_48_percent"},
+    ),
+    # Part 3 line 3 "If you have to pay tax to multiple jurisdictions, multiply the amount from
+    # line 2 by the percentage in Column 5 of line 52220 on Form T2203.": the percentage as printed
+    # (50 for 50%), the caller's figure, rounded once by its dataset.
+    CapabilitySelection(
+        name="ca/apply_percentage",
+        params={"rounding": "ca/amt_multiple_jurisdictions_rounding"},
+        consumes={
+            "amount": "ca/amt_federal_surtax_at_48_percent",
+            "percentage": "ca/amt_t2203_column_5_percentage",
+        },
+        produces={"output": "ca/amt_federal_surtax_multiple_jurisdictions"},
+    ),
+    # Part 3 line 4 "If you have an amount on line 3, enter that amount. If not, and you are a
+    # non-resident or deemed resident, enter the amount from line 2. Otherwise, enter "0".": the
+    # condition "you have an amount on line 3" counts 1 when line 3 is not 0.
+    CapabilitySelection(
+        name="ca/count_by_conditions",
+        params={"conditions": "ca/amt_line_3_has_amount_conditions"},
+        consumes={
+            "counts": (),
+            "amounts": ("ca/amt_federal_surtax_multiple_jurisdictions",),
+        },
+        produces={"output": "ca/amt_line_3_has_amount"},
+    ),
+    # Part 3 line 4, the second branch: line 2 when "you are a non-resident or deemed resident"
+    # (the caller's count, 1 for yes), and "0" otherwise.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/amt_federal_surtax_at_48_percent",
+            "count": "ca/amt_non_resident_or_deemed_resident",
+        },
+        produces={"output": "ca/amt_federal_surtax_if_non_resident"},
+    ),
+    # Part 3 line 4, chosen by the condition above: line 3 when there is an amount on it, else the
+    # second branch.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/amt_line_3_has_amount",
+            "when_none": "ca/amt_federal_surtax_if_non_resident",
+            "when_any": "ca/amt_federal_surtax_multiple_jurisdictions",
+        },
+        produces={"output": "ca/amt_federal_surtax"},
+    ),
+    # Part 3 line 6 "Add lines 1, 4, and 5.": line 1 (the basic federal tax), line 4 (the surtax)
+    # and line 5 "Recapture of investment tax credit (from line 3 of Part C of Form T2038(IND))", in
+    # line order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/amt_basic_federal_tax",
+                "ca/amt_federal_surtax",
+                "ca/itc_recapture",
+            )
+        },
+        produces={"output": "ca/amt_federal_tax_with_surtax_and_recapture"},
+    ),
+    # Part 3 line 9 "Line 7 plus line 8": line 7 "Federal foreign tax credit from Form T2209" and
+    # line 8 "Federal logging tax credit", in line order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/federal_foreign_tax_credit",
+                "ca/amt_federal_logging_tax_credit",
+            )
+        },
+        produces={"output": "ca/amt_foreign_and_logging_credits_total"},
+    ),
+    # Part 3 line 10 "Line 6 minus line 9 (if negative, enter "0")" "Federal tax payable".
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/amt_federal_tax_with_surtax_and_recapture",
+            "less": "ca/amt_foreign_and_logging_credits_total",
+        },
+        produces={"output": "ca/amt_federal_tax_payable"},
+    ),
+    # Part 3 line 12 "Investment tax credit amount up to, but not more than the amount I of Form
+    # T2038(IND)": the claim, the filer's figure, may not be more than amount I, and above it is
+    # refused, not capped.
+    CapabilitySelection(
+        name="core/at_most",
+        params={},
+        consumes={
+            "amount": "ca/amt_investment_tax_credit_claim",
+            "bound": "ca/amt_t2038_amount_i",
+        },
+        produces={"output": "ca/amt_investment_tax_credit"},
+    ),
+    # Part 3 line 14 "Add lines 11 to 13.": line 11 "Federal political contribution tax credit from
+    # line 41000 of your return", line 12 and line 13 "Labour-sponsored funds tax credit from line
+    # 41400 of your return", in line order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/political_credit",
+                "ca/amt_investment_tax_credit",
+                "ca/labour_sponsored_funds_credit",
+            )
+        },
+        produces={"output": "ca/amt_regular_tax_credits_total"},
+    ),
+    # Part 3 line 15 "Line 10 minus line 14 (if negative, enter "0")" "Regular net federal tax
+    # payable", which nothing reads until Part 5 lands.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/amt_federal_tax_payable",
+            "less": "ca/amt_regular_tax_credits_total",
+        },
+        produces={"output": "ca/amt_regular_net_federal_tax_payable"},
+    ),
 }
 
 WIRING = {
@@ -1295,5 +1453,68 @@ WIRING = {
         AtMost,
         frozenset({AMT_MINIMUM_TAX_CARRYOVER_CLAIM, AMT_MAXIMUM_CARRYOVER_CLAIM}),
         frozenset({AMT_MINIMUM_TAX_CARRYOVER_APPLIED}),
+    ),
+    (
+        ApplyRate,
+        frozenset({AMT_BASIC_FEDERAL_TAX}),
+        frozenset({AMT_FEDERAL_SURTAX_AT_48_PERCENT}),
+    ),
+    (
+        ApplyPercentage,
+        frozenset({AMT_FEDERAL_SURTAX_AT_48_PERCENT, AMT_T2203_COLUMN_5_PERCENTAGE}),
+        frozenset({AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS}),
+    ),
+    (
+        CountByConditions,
+        frozenset({AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS}),
+        frozenset({AMT_LINE_3_HAS_AMOUNT}),
+    ),
+    (
+        TimesCount,
+        frozenset({AMT_FEDERAL_SURTAX_AT_48_PERCENT, AMT_NON_RESIDENT_OR_DEEMED_RESIDENT}),
+        frozenset({AMT_FEDERAL_SURTAX_IF_NON_RESIDENT}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                AMT_LINE_3_HAS_AMOUNT,
+                AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
+                AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
+            }
+        ),
+        frozenset({AMT_FEDERAL_SURTAX}),
+    ),
+    (
+        Sum,
+        frozenset({AMT_BASIC_FEDERAL_TAX, AMT_FEDERAL_SURTAX, ITC_RECAPTURE}),
+        frozenset({AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE}),
+    ),
+    (
+        Sum,
+        frozenset({FEDERAL_FOREIGN_TAX_CREDIT, AMT_FEDERAL_LOGGING_TAX_CREDIT}),
+        frozenset({AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset(
+            {AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE, AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL}
+        ),
+        frozenset({AMT_FEDERAL_TAX_PAYABLE}),
+    ),
+    (
+        AtMost,
+        frozenset({AMT_INVESTMENT_TAX_CREDIT_CLAIM, AMT_T2038_AMOUNT_I}),
+        frozenset({AMT_INVESTMENT_TAX_CREDIT}),
+    ),
+    (
+        Sum,
+        frozenset({POLITICAL_CREDIT, LABOUR_SPONSORED_FUNDS_CREDIT, AMT_INVESTMENT_TAX_CREDIT}),
+        frozenset({AMT_REGULAR_TAX_CREDITS_TOTAL}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({AMT_FEDERAL_TAX_PAYABLE, AMT_REGULAR_TAX_CREDITS_TOTAL}),
+        frozenset({AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE}),
     ),
 }

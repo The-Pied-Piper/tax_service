@@ -14,6 +14,7 @@ from app.domain.trace import (
     ItemsTotalLine,
     LesserOfLine,
     MultipleOverLine,
+    PercentageAppliedLine,
     PerUnitAmountLine,
     QuotientLine,
     RateAppliedLine,
@@ -35,9 +36,12 @@ from app.jurisdictions.ca.catalog import (
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
     AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_APPLICABLE_RATE_AMOUNT,
+    AMT_BASIC_FEDERAL_TAX,
     AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
     AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
     AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
+    AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+    AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
@@ -46,6 +50,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
     AMT_SECURITY_OPTION_PUBLICLY_LISTED_GIFTS,
+    AMT_T2203_COLUMN_5_PERCENTAGE,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
     BUSINESS_VEHICLE_LEASE_PRICE_BASE,
@@ -223,7 +228,39 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         for line in trace
         if isinstance(line, ItemsTotalLine) and line.output is COOP_EDUCATION_CREDIT
     }
+    percentages = {
+        line.output: line
+        for line in trace
+        if isinstance(line, PercentageAppliedLine)
+        and line.output is AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS
+    }
+    assert percentages == {
+        # Form T691 Part 3 line 3 "If you have to pay tax to multiple jurisdictions, multiply the
+        # amount from line 2 by the percentage in Column 5 of line 52220 on Form T2203.": line 2,
+        # 8136.66, at the percentage "0" a caller gives for Return A (no multiple jurisdictions),
+        # 8136.66 x 0 / 100, 0.00.
+        AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS: PercentageAppliedLine(
+            output=AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
+            amount_kind=AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+            amount_value=D("8136.66"),
+            percentage_kind=AMT_T2203_COLUMN_5_PERCENTAGE,
+            percentage_value=D("0"),
+            rounding=CENT,
+            result=D("0"),
+        ),
+    }
     assert rated == {
+        # Form T691 Part 3 line 2 "Federal surtax on business income earned outside Canada"
+        # "Multiply the amount from line 1 by 48%.": line 1, the basic federal tax of 16951.38, at
+        # 48%, 16951.38 x 0.48 = 8136.6624, rounded half-up to 8136.66.
+        AMT_FEDERAL_SURTAX_AT_48_PERCENT: RateAppliedLine(
+            output=AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+            base=AMT_BASIC_FEDERAL_TAX,
+            base_amount=D("16951.38"),
+            rate=Rate(D("0.48")),
+            rounding=CENT,
+            result=D("8136.66"),
+        ),
         # Schedule 8 Part 5 line 70 "amount from line 43 multiplied by 50%": 0.00 x 50% for
         # Return A (no self-employment income, so line 43 is 0.00).
         CPP_PART_5_LINE_70: RateAppliedLine(
