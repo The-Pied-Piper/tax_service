@@ -18,8 +18,9 @@ from app.domain.artifact import Artifact, ArtifactRegistry
 from app.domain.capability import Capability, CapabilityRegistry
 from app.domain.capability_builder import CapabilityBuilder
 from app.domain.composition import Composition
+from app.domain.form import FormRun
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection
+from app.domain.manifest import CapabilitySelection, Form
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.worksheet import Worksheet
 
@@ -44,8 +45,12 @@ class TaxComputationService:
     def compose(self, code: JurisdictionCode, tax_year: int) -> Composition:
         """The composition of the manifest that applies to `tax_year` in jurisdiction `code`."""
         manifest = self._jurisdictions.get_jurisdiction(code).manifest_for(tax_year)
+        runs = [self._form_run(form, tax_year) for form in manifest.forms]
         return Composition(
-            (self._capability(selection, tax_year) for selection in manifest.capabilities),
+            [
+                *runs,
+                *(self._capability(selection, tax_year) for selection in manifest.capabilities),
+            ],
             inputs=frozenset(self._artifacts.kind(identifier) for identifier in manifest.inputs),
             outputs=frozenset(self._artifacts.kind(identifier) for identifier in manifest.outputs),
         )
@@ -55,6 +60,21 @@ class TaxComputationService:
     ) -> Worksheet:
         """The worksheet of `compose(code, tax_year)` computed from the starting `artifacts`."""
         return self.compose(code, tax_year).compute(*artifacts)
+
+    def _form_run(self, form: Form, tax_year: int) -> FormRun:
+        """The node for `form`, its derived export kinds registered so selections can read them."""
+        run = FormRun(
+            form.name,
+            self._artifacts.kind(form.instances),
+            [self._artifacts.kind(identifier) for identifier in form.exports],
+            [self._capability(selection, tax_year) for selection in form.capabilities],
+        )
+        for kind in run.derived:
+            # Idempotent: the same kind again is skipped, another kind under it is refused.
+            taken = kind.identifier in self._artifacts.identifiers()
+            if not taken or self._artifacts.kind(kind.identifier) != kind:
+                self._artifacts.register(kind.identifier, kind)
+        return run
 
     def _capability(self, selection: CapabilitySelection, tax_year: int) -> Capability:
         cls = self._capabilities.get(selection.name)

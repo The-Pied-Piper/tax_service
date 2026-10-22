@@ -123,6 +123,7 @@ def test_manifest_fields_in_order() -> None:
         "capabilities",
         "inputs",
         "outputs",
+        "forms",
     ]
 
 
@@ -313,7 +314,7 @@ def test_manifest_fields_end_with_forms() -> None:
 
 def test_a_manifest_holds_its_forms_as_a_tuple_in_order() -> None:
     other = form(name="ex/business", instances="ex/businesses", exports=("ex/profit",))
-    found = dataclasses.replace(manifest(), forms=[form(), other])
+    found = dataclasses.replace(manifest(), forms=cast(Any, [form(), other]))
 
     assert found.forms == (form(), other)
     assert isinstance(found.forms, tuple)

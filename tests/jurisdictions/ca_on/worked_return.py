@@ -21,6 +21,7 @@ expected line).
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, replace
 from decimal import Decimal
 from pathlib import Path
@@ -37,6 +38,7 @@ from app.domain.errors import (
     UnknownRegistrationError,
 )
 from app.domain.jurisdiction_code import JurisdictionCode
+from app.domain.manifest import Form
 from app.domain.parameters.rate import Rate
 from app.domain.record_list import RecordList, RecordListKind
 
@@ -103,6 +105,45 @@ class WorkedReturn:
             inputs=self.inputs + self._blanks(sorted(inputs - given), "inputs", artifacts),
             expected=self.expected + self._blanks(sorted(outputs - listed), "expected", artifacts),
         )
+
+    def with_forms(self, forms: Iterable[Form], artifacts: ArtifactRegistry) -> WorkedReturn:
+        """This return with the flat inputs of each form turned into its instances artifact.
+
+        Temporary test support: a worked return gives a form's instance inputs flat at the top
+        level of `inputs:`, while the engine takes only the instances shape. The flat inputs that
+        are fields of the form's instances kind become the one record of that artifact, the fields
+        the file leaves out blank as in `with_blanks`; with none of them in the file the artifact
+        is an empty list. An instances artifact the file already gives is kept as it is. Raises
+        WorkedReturnError naming the file for an instances identifier that is not a record list.
+        """
+        inputs = self.inputs
+        for form in forms:
+            kind = self._instances_kind(form, artifacts)
+            if any(artifact.kind == kind for artifact in inputs):
+                continue
+            flat = [artifact for artifact in inputs if artifact.kind in kind.fields]
+            inputs = tuple(artifact for artifact in inputs if artifact not in flat)
+            record: dict[ArtifactKind[Any], object] = {a.kind: a.value for a in flat}
+            if flat:
+                missing = [field.identifier for field in kind.fields if field not in record]
+                record.update({a.kind: a.value for a in self._blanks(missing, "inputs", artifacts)})
+            instances = RecordList(kind.fields, [record] if flat else [])
+            inputs += (Artifact(kind, instances),)
+        return replace(self, inputs=inputs)
+
+    def _instances_kind(self, form: Form, artifacts: ArtifactRegistry) -> RecordListKind:
+        try:
+            kind = artifacts.kind(form.instances)
+        except (UnknownRegistrationError, InvalidRegistrationError) as exc:
+            raise WorkedReturnError(
+                f"{self.path}: form {form.name!r}: unknown instances {form.instances!r} ({exc})"
+            ) from None
+        if not isinstance(kind, RecordListKind):
+            raise WorkedReturnError(
+                f"{self.path}: form {form.name!r}: instances {form.instances!r} "
+                "is not a record list"
+            )
+        return kind
 
     def _blanks(
         self, identifiers: list[str], section: str, artifacts: ArtifactRegistry

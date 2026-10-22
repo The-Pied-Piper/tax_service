@@ -12,8 +12,9 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
 
-from app.domain.errors import InvalidManifestError
+from app.domain.errors import InvalidManifestError, InvalidRegistrationError
 from app.domain.jurisdiction_code import JurisdictionCode
+from app.domain.registry import Namespace
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,12 +48,56 @@ class CapabilitySelection:
 
 
 @dataclass(frozen=True, slots=True)
+class Form:
+    """A named group of selections run once per instance, with the artifacts it exports.
+
+    `instances` is the identifier of the record-list kind the caller supplies, one record per
+    instance; `exports` are the identifiers of the artifacts the form produces, each reaching the
+    rest of the manifest as `<name>.<local id of the export>`. All are plain identifiers
+    `<namespace>/<snake_case>`: the dotted identifier is built by the engine, never written.
+    `exports` and `capabilities` are kept as tuples copied from what was given.
+    """
+
+    name: str
+    instances: str
+    exports: tuple[str, ...]
+    capabilities: tuple[CapabilitySelection, ...]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "exports", tuple(self.exports))
+        object.__setattr__(self, "capabilities", tuple(self.capabilities))
+        self.check_identifier("name", self.name)
+        self.check_identifier("instances", self.instances)
+        if not self.exports:
+            raise InvalidManifestError("exports must name at least one artifact")
+        local_ids: set[str] = set()
+        for export in self.exports:
+            self.check_identifier("exports", export)
+            local_id = export.partition("/")[2]
+            if local_id in local_ids:
+                raise InvalidManifestError(
+                    f"exports: local id {local_id!r} is listed more than once"
+                )
+            local_ids.add(local_id)
+
+    @staticmethod
+    def check_identifier(field: str, identifier: str) -> None:
+        """Refuse an identifier that is not `<namespace>/<snake_case>`, naming `field`."""
+        namespace, _, local_id = identifier.partition("/")
+        try:
+            Namespace(namespace).identifier(local_id)
+        except InvalidRegistrationError as exc:
+            raise InvalidManifestError(f"{field} {identifier!r}: {exc}") from None
+
+
+@dataclass(frozen=True, slots=True)
 class Manifest:
     """One structural version of a jurisdiction's composition.
 
     `capabilities` keeps the authored order, which is advisory only. `inputs` and `outputs` are
     the identifiers of the artifacts a computation starts from and returns: each non-empty. An
-    identifier in both is an input carried onto the return as entered.
+    identifier in both is an input carried onto the return as entered. `forms` are the manifest's
+    forms, each with its own selections, in a tuple of distinct names.
     """
 
     jurisdiction: JurisdictionCode
@@ -61,8 +106,14 @@ class Manifest:
     capabilities: tuple[CapabilitySelection, ...]
     inputs: frozenset[str]
     outputs: frozenset[str]
+    forms: tuple[Form, ...] = ()
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "forms", tuple(self.forms))
+        names = [found.name for found in self.forms]
+        for name in names:
+            if names.count(name) > 1:
+                raise InvalidManifestError(f"form {name!r} is listed more than once")
         for field in ("inputs", "outputs"):
             if not getattr(self, field):
                 raise InvalidManifestError(f"{field} must name at least one artifact")
