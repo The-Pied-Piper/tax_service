@@ -10,8 +10,10 @@
 # $2,000 to line 9; from lines 7 and 9, summed, to line 10 (T1 line 25300) and line 13; and from
 # line 13, applied to the oldest row first, to columns D, E and G of every row. Every other line
 # is Return AF's.
-# The figures are Guide T4037's Example 2: the guide's chart figures are printed as an image, so
-# none of its results is quoted here (to be confirmed).
+# The facts are Guide T4037's Example 2 (confirmed from the PDF). The guide's own prose results
+# ($6,000 applied from before May 23, 1985, and $2,000 carried forward) are not reproduced: the
+# form's lines 1 to 3 reduce that balance by the capital gains deductions, so only the total
+# applied, 12,000 on lines 10 and 13, agrees with the guide. Its chart is an image and is not quoted.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -34,8 +36,8 @@ description: >-
   0.666666): D is 300 x 1/(0.666666 x 2) = 300 x 1/1.333332 = 225.000225..., 225.00. Line 2 is
   500 + 0.00 + 0.00 + 225.00 + 0 = 725.00 and line 3, "Pre-1986 capital loss balance available
   for 2025: line 1 minus line 2", is 6,000 - 725.00 = 5,275.00. The unapplied
-  net capital losses of the other periods (Chart A column A, chosen figures taken from Guide
-  T4037's Example 2: to be confirmed) are 4,000 from 1988 and 6,000 from 1990, in the periods "In
+  net capital losses of the other periods (Chart A column A, figures from Guide
+  T4037's Example 2) are 4,000 from 1988 and 6,000 from 1990, in the periods "In
   1988 and 1989" and "After 1989 and before 2000", and none from "After May 22, 1985, and before
   1988" or "After 2000 and before 2025". Column A of the row "Before May 23, 1985" is line 3,
   5,275.00, and that of the row "In 2000" is 0. Column B, the adjustment factor for the
