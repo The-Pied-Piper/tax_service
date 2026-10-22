@@ -5,30 +5,50 @@ from __future__ import annotations
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     AMT_ADJUSTED_INCOME_WITH_GAINS,
+    AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
+    AMT_ADJUSTED_TAXABLE_INCOME,
+    AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+    AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL,
+    AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_APPLICABLE_RATE_AMOUNT,
+    AMT_BASIC_EXEMPTION,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
+    AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CAPITAL_GAINS_DIFFERENCE,
+    AMT_CREDITS_ADJUSTMENTS_TOTAL,
     AMT_DEDUCTIONS_TOTAL,
+    AMT_DIVIDENDS_ADJUSTMENTS_TOTAL,
+    AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
+    AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
+    AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
     AMT_FILM_PROPERTY_ADJUSTMENT,
+    AMT_GROSS_MINIMUM_AMOUNT,
+    AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
     AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
+    AMT_MINIMUM_AMOUNT,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
+    AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
     AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
     AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
     AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES,
+    AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RESOURCE_INCOME_TOTAL,
     AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
     AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
+    AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL,
     AMT_SECURITY_OPTIONS_D1_TOTAL,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
@@ -73,10 +93,11 @@ def return_bg(
     life_insurance_premiums: str = "100.00",
     investment_counsel_fees: str = "50.00",
     commission_employment: str = "150.00",
+    employment_income: str = "60000",
 ) -> Worksheet:
     """Return BG's inputs (`returns/2025_return_bg.yaml`), with the Part 1 amounts given."""
     return compute(
-        "60000",
+        employment_income,
         share_dispositions,
         "0",
         "0",
@@ -455,3 +476,154 @@ def test_return_bg_line_80_is_negative_when_line_78_is_negative() -> None:
     worksheet = return_bg(commission_employment="1000.00")
 
     assert worksheet.get(AMT_APPLICABLE_RATE_AMOUNT).value == D("-242.50")
+
+
+def test_return_bg_line_33_adds_line_27_and_line_32() -> None:
+    # Line 27 of 69985.00 and line 32 of 1200.00 are 71185.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS).value == D("71185.00")
+
+
+def test_return_bg_line_44_adds_lines_34_38_and_43() -> None:
+    # Line 34, the amount from line 33 of 71185.00, line 38 of 450.00 and line 43 of 750.00 are
+    # 72385.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL).value == D("72385.00")
+
+
+def test_return_bg_line_82_adds_line_80_and_line_44() -> None:
+    # Line 80 of 182.50 and line 81, the amount from line 44 of 72385.00, are 72567.50.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_ADJUSTMENTS_AFTER_RATE_TOTAL).value == D("72567.50")
+
+
+def test_return_bg_lines_84_to_92_are_zero_with_no_dividends_or_capital_gains_deduction() -> None:
+    # Return BG claims no dividends, so lines 12000 and 12010 are 0 and lines 84 to 86 are 0; it
+    # claims no capital gains deduction (lines 25400 and 25395), so lines 87 to 92 are 0 too.
+    worksheet = return_bg()
+
+    for kind in (
+        AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
+        AMT_AMOUNT_A_MINUS_AMOUNT_B,
+        AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
+        AMT_DIVIDENDS_ADJUSTMENTS_TOTAL,
+        AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
+        AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL,
+        AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
+        AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
+        AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
+    ):
+        assert worksheet.get(kind).value == D("0"), kind.identifier
+
+
+def test_return_bg_line_93_is_line_83_less_line_92() -> None:
+    # Line 83, the amount from line 82 of 72567.50, less line 92 of 0, is 72567.50.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_ADJUSTED_TAXABLE_INCOME).value == D("72567.50")
+
+
+def test_return_bg_line_94_is_the_basic_exemption_of_177882() -> None:
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_BASIC_EXEMPTION).value == D("177882.00")
+
+
+def test_return_bg_line_95_is_zero_when_line_93_is_under_the_basic_exemption() -> None:
+    # Line 93 of 72567.50 less 177882.00 is below zero, so line 95 is 0 and the filer is not
+    # subject to alternative minimum tax.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_NET_ADJUSTED_TAXABLE_INCOME).value == D("0")
+
+
+def test_return_bg_line_97_is_zero_when_line_95_is_zero() -> None:
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_GROSS_MINIMUM_AMOUNT).value == D("0")
+
+
+def test_return_bg_line_98_is_50_percent_of_line_33800_rounded_half_up() -> None:
+    # Line 33800 of 3100.21, the credit amounts at the credit rate, times 50% is 1550.105, a tie,
+    # rounded half-up to 1550.11.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT).value == D("1550.11")
+
+
+def test_return_bg_line_99_is_zero_with_no_donations_and_gifts() -> None:
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_DONATIONS_AND_GIFTS_ADJUSTMENT).value == D("0")
+
+
+def test_return_bg_line_102_adds_lines_98_to_101() -> None:
+    # Line 98 of 1550.11, line 99 of 0, and the caller's lines 100 and 101 not given (0), are
+    # 1550.11.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_CREDITS_ADJUSTMENTS_TOTAL).value == D("1550.11")
+
+
+def test_return_bg_line_103_is_zero_when_line_97_is_less_than_line_102() -> None:
+    # Line 97 of 0 less line 102 of 1550.11 is below zero, so the minimum amount is 0.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_MINIMUM_AMOUNT).value == D("0")
+
+
+def test_return_bg_with_200000_employment_income_line_1_is_the_taxable_income() -> None:
+    # 200000.00 less the enhanced CPP contributions of 1074.00 (678.00 first additional, the
+    # maximum, and 396.00 second additional, the maximum) is 198926.00; plus the 1000.00 taxable
+    # capital gains is 199926.00.
+    worksheet = return_bg(employment_income="200000")
+
+    assert worksheet.get(TAXABLE_INCOME).value == D("199926.00")
+
+
+def test_return_bg_with_200000_employment_income_line_63_adds_the_enhanced_cpp() -> None:
+    # Line 53 of -700.00, the moving expenses of 200.00 and the enhanced CPP contributions of
+    # 1074.00 are 574.00.
+    worksheet = return_bg(employment_income="200000")
+
+    assert worksheet.get(AMT_DEDUCTIONS_TOTAL).value == D("574.00")
+
+
+def test_return_bg_with_200000_employment_income_line_80_is_50_percent_of_line_78() -> None:
+    # Line 78 of 874.00 (574.00 plus 450.00 less 150.00) at 50% is 437.00.
+    worksheet = return_bg(employment_income="200000")
+
+    assert worksheet.get(AMT_APPLICABLE_RATE_AMOUNT).value == D("437.00")
+
+
+def test_return_bg_with_200000_employment_income_line_82_adds_lines_80_and_81() -> None:
+    # Line 80 of 437.00 and line 81, the amount from line 44 of 211876.00, are 212313.00.
+    worksheet = return_bg(employment_income="200000")
+
+    assert worksheet.get(AMT_ADJUSTMENTS_AFTER_RATE_TOTAL).value == D("212313.00")
+
+
+def test_return_bg_with_200000_employment_income_line_95_is_over_the_basic_exemption() -> None:
+    # Line 93 of 212313.00 less the basic exemption of 177882.00 is 34431.00.
+    worksheet = return_bg(employment_income="200000")
+
+    assert worksheet.get(AMT_NET_ADJUSTED_TAXABLE_INCOME).value == D("34431.00")
+
+
+def test_return_bg_with_200000_employment_income_line_97_is_20_5_percent_of_line_95() -> None:
+    # 20.5% of 34431.00 is 7058.355, a tie, rounded half-up to 7058.36.
+    worksheet = return_bg(employment_income="200000")
+
+    assert worksheet.get(AMT_GROSS_MINIMUM_AMOUNT).value == D("7058.36")
+
+
+def test_return_bg_with_200000_employment_income_line_103_is_line_97_less_line_102() -> None:
+    # Line 97 of 7058.36 less line 102 of 1563.77 (line 98, 50% of line 33800 of 3127.54, and lines
+    # 99 to 101 of 0) is 5494.59.
+    worksheet = return_bg(employment_income="200000")
+
+    assert worksheet.get(AMT_CREDITS_ADJUSTMENTS_TOTAL).value == D("1563.77")
+    assert worksheet.get(AMT_MINIMUM_AMOUNT).value == D("5494.59")

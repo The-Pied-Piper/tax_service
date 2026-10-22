@@ -7,33 +7,50 @@ from decimal import Decimal
 from app.domain.artifact import ArtifactKind, ArtifactRegistry
 from app.jurisdictions.ca.catalog import (
     AMT_ADJUSTED_INCOME_WITH_GAINS,
+    AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
+    AMT_ADJUSTED_TAXABLE_INCOME,
+    AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+    AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL,
+    AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_APPLICABLE_RATE_AMOUNT,
+    AMT_BASIC_EXEMPTION,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
+    AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CAPITAL_GAINS_DIFFERENCE,
     AMT_CLASS_43_1_INCOME,
     AMT_COMMISSION_EMPLOYMENT_EXPENSES,
+    AMT_CREDITS_ADJUSTMENTS_TOTAL,
     AMT_DEDUCTIONS_TOTAL,
     AMT_DEFERRED_PROFIT_SHARING_PLAN_DEDUCTION,
+    AMT_DIVIDENDS_ADJUSTMENTS_TOTAL,
+    AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
+    AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
+    AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
     AMT_EXCESS_EPSP_AMOUNTS,
+    AMT_FEDERAL_LOGGING_TAX_CREDIT,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
     AMT_FINANCING_EXPENSES,
     AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
     AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
+    AMT_GROSS_MINIMUM_AMOUNT,
     AMT_INVESTMENT_COUNSEL_FEES,
     AMT_LEGAL_AND_ACCOUNTING_EXPENSES,
     AMT_LIFE_INSURANCE_PREMIUMS_AS_COLLATERAL,
+    AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
     AMT_LIMITED_PARTNER_CARRYING_CHARGES,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_ELECTION,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
     AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
+    AMT_MINIMUM_AMOUNT,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_MOVING_EXPENSES_DEDUCTION,
+    AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
     AMT_NET_CAPITAL_LOSSES_DIFFERENCE,
     AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
@@ -41,6 +58,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_NON_DEDUCTIBLE_INTEREST,
     AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
     AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES,
+    AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
@@ -50,6 +68,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_PUBLICLY_LISTED_GIFTS_T1170_LINE_68231,
     AMT_PUBLICLY_LISTED_GIFTS_TOTAL,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_RENTAL_PROPERTY_INCOME_BEFORE_CCA,
@@ -60,8 +80,10 @@ from app.jurisdictions.ca.catalog import (
     AMT_RESOURCE_INCOME_TOTAL,
     AMT_RESOURCE_PRODUCTION_INCOME,
     AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
+    AMT_SECTION_119_FORMER_RESIDENT_CREDIT,
     AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
     AMT_SECURITY_OPTION_PUBLICLY_LISTED_GIFTS,
+    AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL,
     AMT_SECURITY_OPTIONS_D1_TOTAL,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
@@ -99,6 +121,28 @@ PART_1_KINDS: tuple[ArtifactKind[Decimal], ...] = (
     AMT_CAPITAL_GAINS_DIFFERENCE,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_ADJUSTED_INCOME_WITH_GAINS,
+    AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
+    AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL,
+    AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
+    AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
+    AMT_AMOUNT_A_MINUS_AMOUNT_B,
+    AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
+    AMT_DIVIDENDS_ADJUSTMENTS_TOTAL,
+    AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
+    AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
+    AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
+    AMT_ADJUSTED_TAXABLE_INCOME,
+    AMT_BASIC_EXEMPTION,
+    AMT_NET_ADJUSTED_TAXABLE_INCOME,
+    AMT_GROSS_MINIMUM_AMOUNT,
+    AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
+    AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
+    AMT_FEDERAL_LOGGING_TAX_CREDIT,
+    AMT_SECTION_119_FORMER_RESIDENT_CREDIT,
+    AMT_CREDITS_ADJUSTMENTS_TOTAL,
+    AMT_MINIMUM_AMOUNT,
 )
 
 PART_9_KINDS: tuple[ArtifactKind[Decimal], ...] = (
@@ -243,6 +287,74 @@ def test_the_part_1_lines_22_23_and_27_kinds_are_the_registered_ones(
     assert registry.get("ca/amt_capital_gains_difference") is AMT_CAPITAL_GAINS_DIFFERENCE
     assert registry.get("ca/amt_capital_gains_added") is AMT_CAPITAL_GAINS_ADDED
     assert registry.get("ca/amt_adjusted_income_with_gains") is AMT_ADJUSTED_INCOME_WITH_GAINS
+
+
+def test_the_part_1_lines_33_44_and_82_kinds_are_the_registered_ones(
+    registry: ArtifactRegistry,
+) -> None:
+    assert (
+        registry.get("ca/amt_adjusted_income_with_security_options")
+        is AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS
+    )
+    assert (
+        registry.get("ca/amt_security_options_and_losses_total")
+        is AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL
+    )
+    assert registry.get("ca/amt_adjustments_after_rate_total") is AMT_ADJUSTMENTS_AFTER_RATE_TOTAL
+
+
+def test_the_part_1_lines_84_to_89_kinds_are_the_registered_ones(
+    registry: ArtifactRegistry,
+) -> None:
+    assert (
+        registry.get("ca/amt_dividends_other_than_eligible_adjustment")
+        is AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT
+    )
+    assert registry.get("ca/amt_amount_a_minus_amount_b") is AMT_AMOUNT_A_MINUS_AMOUNT_B
+    assert (
+        registry.get("ca/amt_dividends_difference_adjustment")
+        is AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT
+    )
+    assert registry.get("ca/amt_dividends_adjustments_total") is AMT_DIVIDENDS_ADJUSTMENTS_TOTAL
+    assert registry.get("ca/amt_lifetime_exemption_adjustment") is AMT_LIFETIME_EXEMPTION_ADJUSTMENT
+    assert (
+        registry.get("ca/amt_adjustments_with_lifetime_exemption_total")
+        is AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL
+    )
+    assert (
+        registry.get("ca/amt_qbt_capital_gains_deduction_doubled")
+        is AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED
+    )
+
+
+def test_the_part_1_lines_91_to_103_kinds_are_the_registered_ones(
+    registry: ArtifactRegistry,
+) -> None:
+    assert (
+        registry.get("ca/amt_qbt_capital_gains_deduction_difference")
+        is AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE
+    )
+    assert (
+        registry.get("ca/amt_capital_gains_deductions_total") is AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL
+    )
+    assert registry.get("ca/amt_adjusted_taxable_income") is AMT_ADJUSTED_TAXABLE_INCOME
+    assert registry.get("ca/amt_basic_exemption") is AMT_BASIC_EXEMPTION
+    assert registry.get("ca/amt_net_adjusted_taxable_income") is AMT_NET_ADJUSTED_TAXABLE_INCOME
+    assert registry.get("ca/amt_gross_minimum_amount") is AMT_GROSS_MINIMUM_AMOUNT
+    assert (
+        registry.get("ca/amt_non_refundable_credits_adjustment")
+        is AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT
+    )
+    assert (
+        registry.get("ca/amt_donations_and_gifts_adjustment") is AMT_DONATIONS_AND_GIFTS_ADJUSTMENT
+    )
+    assert registry.get("ca/amt_federal_logging_tax_credit") is AMT_FEDERAL_LOGGING_TAX_CREDIT
+    assert (
+        registry.get("ca/amt_section_119_former_resident_credit")
+        is AMT_SECTION_119_FORMER_RESIDENT_CREDIT
+    )
+    assert registry.get("ca/amt_credits_adjustments_total") is AMT_CREDITS_ADJUSTMENTS_TOTAL
+    assert registry.get("ca/amt_minimum_amount") is AMT_MINIMUM_AMOUNT
 
 
 def test_the_security_options_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
