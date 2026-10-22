@@ -59,6 +59,7 @@ from app.domain.trace import (
     RecordCountLine,
     RecordTotalLine,
     RoundedTotalLine,
+    SignChosenDifferenceLine,
     SubtractedLine,
     SubtractedNotBelowZeroLine,
     SumLine,
@@ -184,6 +185,12 @@ def rate_applied_line() -> RateAppliedLine:
 
 def divided_by_rate_line() -> DividedByRateLine:
     return DividedByRateLine(RATED, BASE, D("3795"), Rate(D("0.145")), CENT, D("26172.41"))
+
+
+def sign_chosen_difference_line() -> SignChosenDifferenceLine:
+    return SignChosenDifferenceLine(
+        NET, GROSS, D("-100"), REDUCTION, D("30"), BASE, D("130"), D("-30")
+    )
 
 
 def subtracted_line() -> SubtractedLine:
@@ -469,6 +476,7 @@ ALL_LINES = [
     sum_not_below_zero_line,
     rate_applied_line,
     divided_by_rate_line,
+    sign_chosen_difference_line,
     subtracted_line,
     subtracted_not_below_zero_line,
     credit_amount_line,
@@ -736,6 +744,60 @@ def test_divided_by_rate_lines_are_hashable() -> None:
 
 def test_a_divided_by_rate_line_is_not_a_rate_applied_line() -> None:
     assert not isinstance(divided_by_rate_line(), RateAppliedLine)
+
+
+def test_sign_chosen_difference_line_fields_in_order() -> None:
+    line = sign_chosen_difference_line()
+
+    assert line == SignChosenDifferenceLine(
+        output=NET,
+        sign=GROSS,
+        sign_amount=D("-100"),
+        reference=REDUCTION,
+        reference_amount=D("30"),
+        difference=BASE,
+        difference_amount=D("130"),
+        result=D("-30"),
+    )
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "sign",
+        "sign_amount",
+        "reference",
+        "reference_amount",
+        "difference",
+        "difference_amount",
+        "result",
+    ]
+    assert line.output is NET
+    assert line.sign is GROSS
+    assert line.sign_amount == D("-100")
+    assert line.reference is REDUCTION
+    assert line.reference_amount == D("30")
+    assert line.difference is BASE
+    assert line.difference_amount == D("130")
+    assert line.result == D("-30")
+    assert line.amount == D("-30")
+
+
+def test_sign_chosen_difference_lines_differ_by_result() -> None:
+    assert sign_chosen_difference_line() != SignChosenDifferenceLine(
+        NET, GROSS, D("-100"), REDUCTION, D("30"), BASE, D("130"), D("30")
+    )
+
+
+def test_sign_chosen_difference_lines_differ_by_sign_amount() -> None:
+    assert sign_chosen_difference_line() != SignChosenDifferenceLine(
+        NET, GROSS, D("100"), REDUCTION, D("30"), BASE, D("130"), D("-30")
+    )
+
+
+def test_sign_chosen_difference_lines_are_hashable() -> None:
+    assert hash(sign_chosen_difference_line()) == hash(sign_chosen_difference_line())
+
+
+def test_a_sign_chosen_difference_line_is_not_a_subtracted_line() -> None:
+    assert not isinstance(sign_chosen_difference_line(), SubtractedLine)
 
 
 def test_subtracted_line_fields_in_order() -> None:

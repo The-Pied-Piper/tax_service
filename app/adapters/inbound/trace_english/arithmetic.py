@@ -22,6 +22,7 @@ from app.domain.trace.arithmetic import (
     RateAppliedLine,
     RatioAppliedLine,
     RoundedTotalLine,
+    SignChosenDifferenceLine,
     SubtractedLine,
     SubtractedNotBelowZeroLine,
     SumLine,
@@ -115,6 +116,33 @@ class DividedByRateRenderer:
             f"{output.label}: {dividend.label} {EnglishFigures.money(amount)} divided by "
             f"{EnglishFigures.percent(rate.value)}% ({EnglishFigures.rounding(rule)}) "
             f"= {EnglishFigures.money(line.result)}"
+        )
+
+
+@english_renderer
+class SignChosenDifferenceRenderer:
+    """English text for SignChosenDifferenceLine."""
+
+    line_class = SignChosenDifferenceLine
+
+    def render(self, line: SignChosenDifferenceLine) -> str:
+        """The English sentence for `line`."""
+        output = line.output
+        sign = line.sign
+        sign_amount = EnglishFigures.money(line.sign_amount)
+        reference = line.reference
+        difference = line.difference
+        difference_amount = EnglishFigures.money(line.difference_amount)
+        result = EnglishFigures.money(line.result)
+        if line.sign_amount >= 0:
+            return (
+                f"{output.label}: {difference.label} {difference_amount} "
+                f"({sign.label} {sign_amount} is not negative) = {result}"
+            )
+        return (
+            f"{output.label}: {sign.label} {sign_amount} is negative, lesser of "
+            f"{reference.label} {EnglishFigures.money(line.reference_amount)} and "
+            f"{difference.label} {difference_amount}, as a negative = {result}"
         )
 
 
