@@ -23,13 +23,26 @@ from app.jurisdictions.ca.catalog import (
     AGE_AMOUNT,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    AMT_ADJUSTED_INCOME_WITH_GAINS,
+    AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
+    AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
+    AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL,
+    AMT_APPLICABLE_RATE_AMOUNT,
+    AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
+    AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CLASS_43_1_INCOME,
     AMT_COMMISSION_EMPLOYMENT_EXPENSES,
+    AMT_CREDITS_ADJUSTMENTS_TOTAL,
     AMT_DEDUCTIONS_TOTAL,
     AMT_DEFERRED_PROFIT_SHARING_PLAN_DEDUCTION,
+    AMT_DIVIDENDS_ADJUSTMENTS_TOTAL,
+    AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
+    AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
+    AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
     AMT_EXCESS_EPSP_AMOUNTS,
+    AMT_FEDERAL_LOGGING_TAX_CREDIT,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FINANCING_EXPENSES,
     AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
@@ -37,6 +50,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_INVESTMENT_COUNSEL_FEES,
     AMT_LEGAL_AND_ACCOUNTING_EXPENSES,
     AMT_LIFE_INSURANCE_PREMIUMS_AS_COLLATERAL,
+    AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
     AMT_LIMITED_PARTNER_CARRYING_CHARGES,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_ELECTION,
@@ -51,19 +65,26 @@ from app.jurisdictions.ca.catalog import (
     AMT_NON_DEDUCTIBLE_INTEREST,
     AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
     AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES,
+    AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
     AMT_PPIP_PREMIUMS_DEDUCTION,
     AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION,
+    AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
+    AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_REPAYMENT_OF_SALARY_AND_WAGES,
     AMT_REPAYMENT_OF_WAGE_LOSS_REPLACEMENT,
     AMT_RESOURCE_FOREIGN_PROPERTY_INCOME,
     AMT_RESOURCE_INCOME_TOTAL,
     AMT_RESOURCE_PRODUCTION_INCOME,
+    AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
+    AMT_SECTION_119_FORMER_RESIDENT_CREDIT,
+    AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL,
     AMT_SECURITY_OPTIONS_D1_TOTAL,
     AMT_SECURITY_OPTIONS_D_TOTAL,
+    AMT_SECURITY_OPTIONS_NET,
     AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
     AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
@@ -73,6 +94,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_TREATY_EXEMPT_CAPITAL_GAINS,
     ANNUAL_GAINS_LINE_3,
     ANNUAL_GAINS_SCHEDULE_3_TOTAL,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_PERSONAL_AMOUNT,
     BOND_GAIN_OR_LOSS,
     BUSINESS_ADJUSTED_GROSS_SALES,
@@ -394,6 +416,7 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_TAXABLE_CAPITAL_GAINS_2025,
     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
     EMPLOYMENT_INCOME,
+    EXEMPT_INCOME_DEDUCTIONS,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
     FARM_BARLEY,
     FARM_BUILDING_REPAIRS_AND_MAINTENANCE,
@@ -516,6 +539,7 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_BASIC_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
@@ -630,6 +654,9 @@ from app.jurisdictions.ca.catalog import (
     FISHING_INCOME,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+    FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
     FOREIGN_TUITION_FEES,
     GOVERNMENT_DONATIONS,
     GROSS_RENTAL_INCOME,
@@ -1380,6 +1407,19 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (AMT_TAX_SHELTER_ADJUSTMENTS, D("0")),
             ),
             D("115000.00"),
+        ),
+        # Form T691 Part 1 line 27 "Add lines 13, 14, 23, and 26.": line 13 is line 12, 115000.00;
+        # line 14 is 0 (no resource amounts); line 23 is line 22, 10000 (line 20 of 20000 less the
+        # taxable capital gains of 10000); line 26 is 0 (no gifts of publicly listed securities).
+        AMT_ADJUSTED_INCOME_WITH_GAINS: SumLine(
+            AMT_ADJUSTED_INCOME_WITH_GAINS,
+            (
+                (AMT_PART_1_SUBTOTAL, D("115000.00")),
+                (AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES, D("0")),
+                (AMT_CAPITAL_GAINS_ADDED, D("10000")),
+                (AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT, D("0")),
+            ),
+            D("125000.00"),
         ),
         # Form T691 Part 9 line 5 "Add lines 2 to 4.": Return A has no resource amounts.
         AMT_RESOURCE_INCOME_TOTAL: SumLine(
@@ -2329,7 +2369,40 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         FEDERAL_TAX_WITH_ITC_RECAPTURE: SumLine(
             FEDERAL_TAX_WITH_ITC_RECAPTURE,
-            ((FEDERAL_TAX_AFTER_CREDITS, D("16951.38")), (ITC_RECAPTURE, D("0"))),
+            ((FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT, D("16951.38")), (ITC_RECAPTURE, D("0"))),
+            D("16951.38"),
+        ),
+        # Form T2209 note (3), net income, "minus any:" the deductions of lines 24400, 24900,
+        # 25000, 25300, 25395, 25400 and the exempt part of 25600, in that order: Return A claims
+        # none of them.
+        FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS: SumLine(
+            FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+            (
+                (CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION, D("0")),
+                (SECURITY_OPTIONS_DEDUCTIONS, D("0")),
+                (OTHER_PAYMENTS_DEDUCTION, D("0")),
+                (NET_CAPITAL_LOSSES_OF_OTHER_YEARS, D("0")),
+                (QBT_CAPITAL_GAINS_DEDUCTION, D("0")),
+                (CAPITAL_GAINS_DEDUCTION, D("0")),
+                (EXEMPT_INCOME_DEDUCTIONS, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T2209 note (3), net income, "plus the amount on line 68360 of Form T1206, Total split
+        # income": the line 23600 amount (not floored) plus it; Return A has no split income.
+        FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME: SumLine(
+            FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
+            (
+                (FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME, D("115000")),
+                (TOTAL_SPLIT_INCOME, D("0")),
+            ),
+            D("115000"),
+        ),
+        # Form T2209 note (4), basic federal tax: "Line 42900 of your return plus any federal
+        # dividend tax credit (line 40425 of your return)": Return A has no dividends.
+        BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT: SumLine(
+            BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
+            ((FEDERAL_TAX_AFTER_CREDITS, D("16951.38")), (DIVIDEND_TAX_CREDIT, D("0"))),
             D("16951.38"),
         ),
         # T1 line 138 (line 41600) "Add lines 135 to 137.": lines 135 and 137, in line order.
@@ -3702,6 +3775,73 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             FISH_HOME_EXPENSES,
             ((FISH_HOME_ALLOWABLE_CLAIM, D("0")),),
             D("0"),
+        ),
+        # Form T691 Part 1 line 33 "Line 27 plus line 32": 125000.00 and 0.
+        AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS: SumLine(
+            AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
+            (
+                (AMT_ADJUSTED_INCOME_WITH_GAINS, D("125000.00")),
+                (AMT_SECURITY_OPTIONS_NET, D("0")),
+            ),
+            D("125000.00"),
+        ),
+        # Form T691 Part 1 line 44 "Add lines 34, 38, and 43.": 125000.00, 0 and 0.
+        AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL: SumLine(
+            AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL,
+            (
+                (AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS, D("125000.00")),
+                (AMT_SECURITY_OPTIONS_D1_TOTAL, D("0")),
+                (AMT_OTHER_YEARS_LOSSES_TOTAL, D("0")),
+            ),
+            D("125000.00"),
+        ),
+        # Form T691 Part 1 line 82 "Line 80 plus line 81": 1537.00 and 125000.00.
+        AMT_ADJUSTMENTS_AFTER_RATE_TOTAL: SumLine(
+            AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
+            (
+                (AMT_APPLICABLE_RATE_AMOUNT, D("1537.00")),
+                (AMT_SECURITY_OPTIONS_AND_LOSSES_TOTAL, D("125000.00")),
+            ),
+            D("126537.00"),
+        ),
+        # Form T691 Part 1 line 86 "Line 84 plus line 85": 0 and 0.
+        AMT_DIVIDENDS_ADJUSTMENTS_TOTAL: SumLine(
+            AMT_DIVIDENDS_ADJUSTMENTS_TOTAL,
+            (
+                (AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT, D("0")),
+                (AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T691 Part 1 line 88 "Line 86 plus line 87": 0 and 0.
+        AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL: SumLine(
+            AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL,
+            (
+                (AMT_DIVIDENDS_ADJUSTMENTS_TOTAL, D("0")),
+                (AMT_LIFETIME_EXEMPTION_ADJUSTMENT, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T691 Part 1 line 92 "Line 88 plus line 91": 0 and 0.
+        AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL: SumLine(
+            AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
+            (
+                (AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL, D("0")),
+                (AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T691 Part 1 line 102 "Add lines 98 to 101.": 1597.44, and 0 for each of lines 99
+        # to 101 (no donations and gifts, and the caller's amounts are 0).
+        AMT_CREDITS_ADJUSTMENTS_TOTAL: SumLine(
+            AMT_CREDITS_ADJUSTMENTS_TOTAL,
+            (
+                (AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT, D("1597.44")),
+                (AMT_DONATIONS_AND_GIFTS_ADJUSTMENT, D("0")),
+                (AMT_FEDERAL_LOGGING_TAX_CREDIT, D("0")),
+                (AMT_SECTION_119_FORMER_RESIDENT_CREDIT, D("0")),
+            ),
+            D("1597.44"),
         ),
     }
     # Form T1206 Part 1 "(If the TOSI-adjusted net income at line 6 is negative, use the negative

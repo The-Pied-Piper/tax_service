@@ -11,17 +11,29 @@ from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.times_count import TimesCount
+from app.jurisdictions.ca.capabilities.foreign_non_business_tax_credit import (
+    ForeignNonBusinessTaxCredit,
+)
 from app.jurisdictions.ca.capabilities.threshold_gate import ThresholdGate
 from app.jurisdictions.ca.catalog import (
     ADVANCED_CANADA_WORKERS_BENEFIT,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     CREDITS_AGAINST_FEDERAL_TAX,
     EDUCATOR_SCHOOL_SUPPLY_CREDIT,
     EDUCATOR_SUPPLIES_EXPENSES,
     EDUCATOR_SUPPLIES_EXPENSES_AT_MOST_MAXIMUM,
     EMPLOYEE_AND_PARTNER_GST_HST_REBATE,
+    FEDERAL_FOREIGN_TAX_CREDIT,
+    FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
+    FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
+    FOREIGN_TAX_CREDIT_NET_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+    FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
     ITC_RECAPTURE,
     ITC_RECAPTURE_AT_15_PERCENT,
     ITC_RECAPTURE_AT_20_PERCENT,
@@ -261,6 +273,23 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     )
     assert isinstance(worksheet.producer_of(ITC_RECAPTURE), Sum)
     assert isinstance(worksheet.producer_of(FEDERAL_TAX_WITH_ITC_RECAPTURE), Sum)
+    # Form T2209 and T1 lines 128 to 130: net income (note 3) and basic federal tax (note 4), line 3
+    # over the countries, line 13 limited to line 42900, and line 130.
+    assert isinstance(worksheet.producer_of(FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS), Sum)
+    assert isinstance(
+        worksheet.producer_of(FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME), Subtract
+    )
+    assert isinstance(worksheet.producer_of(FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME), Sum)
+    assert isinstance(worksheet.producer_of(FOREIGN_TAX_CREDIT_NET_INCOME), Subtract)
+    assert isinstance(worksheet.producer_of(BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT), Sum)
+    assert isinstance(worksheet.producer_of(FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX), Subtract)
+    assert isinstance(
+        worksheet.producer_of(FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT), ForeignNonBusinessTaxCredit
+    )
+    assert isinstance(worksheet.producer_of(FEDERAL_FOREIGN_TAX_CREDIT), LesserOf)
+    assert isinstance(
+        worksheet.producer_of(FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT), SubtractNotBelowZero
+    )
     assert worksheet.producer_of(FEDERAL_TAX_WITH_ITC_RECAPTURE) is not worksheet.producer_of(
         NET_FEDERAL_TAX
     )

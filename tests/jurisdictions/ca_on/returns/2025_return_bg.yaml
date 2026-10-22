@@ -1,7 +1,7 @@
 # Return BG: a filer with employment income who has film property, rental and leasing
 # property, tax shelter amounts, resource property, a capital gain and gifts of publicly
 # listed securities, computed on Form T691 (alternative minimum tax) Parts 1 and 9 as far as
-# line 26. The Part 1 and Part 9 amounts that are not lines of this return are chosen
+# line 103. The Part 1 and Part 9 amounts that are not lines of this return are chosen
 # figures, entered as the form takes them; the adjustments and the sums are computed from them.
 jurisdiction: CA-ON
 tax_year: 2025
@@ -30,7 +30,9 @@ description: >-
   line 6 is 5000.00 minus 3500.00 = 1500.00, not below zero. Part 1 lines 15 to 20: line 15
   is the capital gain of 2000.00; line 16 is 0.00, as there is no foreclosure gain or loss;
   lines 17 and 18 are chosen figures, 200.00 and 100.00; line 19 is 300.00; line 20 is 2000.00
-  minus 300.00 = 1700.00. Part 1 lines 24 to 26: line 24 is 3000.00 and line 25 is 1000.00,
+  minus 300.00 = 1700.00. Line 21 is the taxable capital gains of 1000.00 (line 12700), and line
+  22 is 1700.00 minus 1000.00 = 700.00; line 20 is positive, so line 23 is the amount from
+  line 22, 700.00. Part 1 lines 24 to 26: line 24 is 3000.00 and line 25 is 1000.00,
   both chosen figures; the line 24 less line 25 amount is 2000.00, and 30% of it is 600.00 on
   line 26. Part 1 lines 28 to 32: line 28, the total of boxes 39 and 91 of the T4 slips, is
   1000.00 and line 29, the amount from line 2 of Form T1212, is 400.00, both chosen figures;
@@ -54,9 +56,21 @@ description: >-
   is 450.00. Lines 69 to 77: line 69, other employment expenses of line 22900, is 0 as none are
   claimed; line 70 is a chosen figure of 150.00 and lines 71 to 75 are not applicable; line 76
   is 150.00; line 77 is 0 minus 150.00, -150.00, a loss in brackets. Line 78 is 65.00 plus
-  450.00 plus -150.00, 365.00, and line 80 is 365.00 at the 50% of line 79, 182.50. Not yet
-  computed: Part 1 lines 14, 22, 23, 27, 33, 34, 44 and 81 onward, and Parts 2 to 8 of Form
-  T691. Amounts are quoted decimals, and the count of CPP months is a quoted digit string.
+  450.00 plus -150.00, 365.00, and line 80 is 365.00 at the 50% of line 79, 182.50. Line 13 is
+  the amount from line 12, 67185.00, and line 14 the amount from Part 9 line 6, 1500.00; line
+  27 is 67185.00 + 1500.00 + 700.00 + 600.00 = 69985.00. Line 33 is 69985.00 plus line 32,
+  1200.00, 71185.00, and line 34 is the amount from line 33. Line 44 is 71185.00 + 450.00 + 750.00 =
+  72385.00, the amounts of lines 38 and 43 being 450.00 and 750.00. Line 81 is the amount from line
+  44, and line 82 is 182.50 + 72385.00 = 72567.50; line 83 is the amount from line 82. Return BG
+  claims no dividends, so lines 12000 and 12010 are 0.00 (lines 84 and 85 are then 0.00), and it
+  claims no capital gains deduction (lines 25400 and 25395 are 0.00), so lines 86 to 92 are 0.00.
+  Line 93 is 72567.50 minus 0.00, 72567.50. Line 94 is the basic exemption, 177882.00, and line 95
+  is 72567.50 minus 177882.00, below zero, so 0.00: the filer is not subject to alternative minimum
+  tax, and line 97 is 0.00 at 20.5% of line 95. Line 98 is 50% of line 33800 of the return, 3100.21,
+  which is 1550.105, a tie, rounded half-up to 1550.11; line 99 is 0.00 as no donations and gifts
+  are claimed, and lines 100 and 101 are not claimed. Line 102 is 1550.11, and line 103 is 0.00
+  minus 1550.11, below zero, so 0.00. Not yet computed: Parts 2 to 8 of Form T691. Amounts are
+  quoted decimals, and the count of CPP months is a quoted digit string.
 sources:
   - >-
     CRA, Form T691 (2025), docs/cra-forms-2025/t691-25e.pdf: "Taxable income from line
@@ -70,7 +84,19 @@ sources:
     and 42"; "Line 45 minus line 46"; "Line 48 minus line 49"; "Add lines 47, 50, 51, and 52.";
     "Add lines 54 to 62."; "Add lines 64 to 67 (11)" "67924 ="; "Add lines 70 to 75." "67926 =";
     "Line 69 minus line 76"; "Add lines 63, 68, and 77."; "Applicable Rate" "× 50%"; "Line 78
-    multiply by the percentage from line 79"
+    multiply by the percentage from line 79"; "Line 20 minus line 21 (if negative, do not show
+    in brackets.)"; "If line 20 is positive, enter the amount from line 22."; "If line 20 is
+    negative, enter whichever is less: the amount from line 21 or line 22 (show in brackets).";
+    "Add lines 13, 14, 23, and 26."; "Line 27 plus line 32"; "Add lines 34, 38, and 43.";
+    "Line 80 plus line 81"; "Enter the amount from line 44."; "B × 13.0435%"; "Amount A minus
+    Amount B ="; "C × 27.5362% ="; "Line 84 plus line 85"; "Enter the amount from line 25400 of your
+    return" "× 40% ="; "Line 86 plus line 87"; "Amount from line 25395 of your return × 2 =";
+    "line 89 minus line 90"; "Line 88 plus line 91"; "Line 83 minus line 92 (if negative, enter
+    "0")"; "Basic exemption" "177,882.00"; "Line 93 minus line 94 (if negative, enter "0")";
+    "Federal tax rate" "× 20.5%"; "Gross minimum amount: line 95 multiplied by the percentage on
+    line 96."; "Net non-refundable tax credits (line 33800 of your return)" "× 50% ="; "Donations and
+    gifts (line 34900 of your return)" "× 80% ="; "Add lines 98 to 101."; "Line 97 minus line 102
+    (if negative, enter "0")"; "Minimum amount"
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t691/t691-25e.pdf
   - >-
     CRA, Schedule 8 (form 5000-S8, 2025), docs/cra-forms-2025/5000-s8-25e.txt: "Deduction
@@ -130,8 +156,11 @@ expected:
   ca/amt_mortgage_foreclosure_capital_gains: "0.00"
   ca/amt_capital_gains_adjustments: "300.00"
   ca/amt_net_capital_gains_after_adjustments: "1700.00"
+  ca/amt_capital_gains_difference: "700.00"
+  ca/amt_capital_gains_added: "700.00"
   ca/amt_publicly_listed_gifts_net: "2000.00"
   ca/amt_publicly_listed_gifts_adjustment: "600.00"
+  ca/amt_adjusted_income_with_gains: "69985.00"
   ca/amt_security_options_d_total: "1400.00"
   ca/amt_security_option_gifts_deduction: "200.00"
   ca/amt_security_options_net: "1200.00"
@@ -147,6 +176,26 @@ expected:
   ca/amt_office_expenses_adjustment: "-150.00"
   ca/amt_adjustments_before_rate_total: "365.00"
   ca/amt_applicable_rate_amount: "182.50"
+  ca/amt_adjusted_income_with_security_options: "71185.00"
+  ca/amt_security_options_and_losses_total: "72385.00"
+  ca/amt_adjustments_after_rate_total: "72567.50"
+  ca/amt_dividends_other_than_eligible_adjustment: "0.00"
+  ca/amt_amount_a_minus_amount_b: "0.00"
+  ca/amt_dividends_difference_adjustment: "0.00"
+  ca/amt_dividends_adjustments_total: "0.00"
+  ca/amt_lifetime_exemption_adjustment: "0.00"
+  ca/amt_adjustments_with_lifetime_exemption_total: "0.00"
+  ca/amt_qbt_capital_gains_deduction_doubled: "0.00"
+  ca/amt_qbt_capital_gains_deduction_difference: "0.00"
+  ca/amt_capital_gains_deductions_total: "0.00"
+  ca/amt_adjusted_taxable_income: "72567.50"
+  ca/amt_basic_exemption: "177882.00"
+  ca/amt_net_adjusted_taxable_income: "0.00"
+  ca/amt_gross_minimum_amount: "0.00"
+  ca/amt_non_refundable_credits_adjustment: "1550.11"
+  ca/amt_donations_and_gifts_adjustment: "0.00"
+  ca/amt_credits_adjustments_total: "1550.11"
+  ca/amt_minimum_amount: "0.00"
   ca/net_income_before_adjustments: "60435.00"
   ca/other_payments_limit_income: "60435.00"
   ca/cpp_second_additional_earnings_maximum: "9900.00"

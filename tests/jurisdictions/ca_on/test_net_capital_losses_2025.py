@@ -6,8 +6,7 @@ capital loss balance)", "Chart A - Adjustment calculation for carry-forward loss
 printed period, with column (B) "Adjustment factor (for the inclusion rate)" and column (F)
 "Adjustment factor (for carry-forward losses)". The rows wired are "Before May 23, 1985" (1 and
 1), "After May 22, 1985, and before 1988" (1 and 1), "In 1988 and 1989" (0.75 and 1.33), "After
-1989 and before 2000" (0.6667 and 1.5) and "After 2000 and before 2025" (1 and 1); the row "In 2000" is
-not wired here. The
+1989 and before 2000" (0.6667 and 1.5) and "After 2000 and before 2025" (1 and 1). The
 form prints 0.75, 0.6667, 1.33 and 1.5 for 3/4, 2/3, 4/3 and 3/2 rounded for print, so each factor
 is a `fraction` dataset holding the exact fraction (3/4 times 4/3 is 1, where 0.75 times 1.33 is
 0.9975) and a factor of 1 is 1/1. Columns (C) and (G) are dollars-and-cents boxes, so each

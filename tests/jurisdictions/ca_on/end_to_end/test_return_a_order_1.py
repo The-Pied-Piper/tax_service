@@ -26,6 +26,7 @@ from app.jurisdictions.ca.catalog import (
     AGE_MAXIMUM,
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_PERSONAL_AMOUNT,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
@@ -194,8 +195,11 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_CREDIT,
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     FEDERAL_BASIC_TAX,
+    FEDERAL_FOREIGN_TAX_CREDIT,
+    FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
@@ -218,6 +222,11 @@ from app.jurisdictions.ca.catalog import (
     FHSA_TOTAL_ANNUAL_LIMITS,
     FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
     FIRST_TIER_DONATION_CREDIT,
+    FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
+    FOREIGN_TAX_CREDIT_NET_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
+    FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS,
+    FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME,
     GROSS_RENTAL_INCOME,
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
@@ -480,7 +489,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 1179
+    assert len(order) == 1211
+    assert len(order) == 1211
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert (
@@ -1266,6 +1276,42 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[ITC_RECAPTURE_AT_20_PERCENT] < position[ITC_RECAPTURE]
     assert position[ITC_RECAPTURE] < position[FEDERAL_TAX_WITH_ITC_RECAPTURE]
     assert position[FEDERAL_TAX_AFTER_CREDITS] < position[FEDERAL_TAX_WITH_ITC_RECAPTURE]
+    # Form T2209 and T1 lines 128 to 132: the net income and the basic federal tax of notes (3)
+    # and (4) come before line 3, which comes before line 13 (40500), which comes off line 126
+    # (line 130) before the recapture is added (line 132).
+    assert (
+        position[NET_INCOME_BEFORE_ADJUSTMENTS]
+        < position[FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME]
+        < position[FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME]
+        < position[FOREIGN_TAX_CREDIT_NET_INCOME]
+        < position[FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT]
+    )
+    assert (
+        position[SOCIAL_BENEFITS_REPAYMENT]
+        < position[FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME]
+    )
+    assert position[TOTAL_SPLIT_INCOME] < position[FOREIGN_TAX_CREDIT_NET_INCOME_WITH_SPLIT_INCOME]
+    assert (
+        position[FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS] < position[FOREIGN_TAX_CREDIT_NET_INCOME]
+    )
+    assert position[OTHER_PAYMENTS_DEDUCTION] < position[FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS]
+    assert (
+        position[NET_CAPITAL_LOSSES_OF_OTHER_YEARS]
+        < position[FOREIGN_TAX_CREDIT_NET_INCOME_DEDUCTIONS]
+    )
+    assert (
+        position[FEDERAL_TAX_AFTER_CREDITS]
+        < position[BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT]
+        < position[FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX]
+        < position[FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT]
+    )
+    assert position[DIVIDEND_TAX_CREDIT] < position[BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT]
+    assert (
+        position[FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT]
+        < position[FEDERAL_FOREIGN_TAX_CREDIT]
+        < position[FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT]
+        < position[FEDERAL_TAX_WITH_ITC_RECAPTURE]
+    )
     assert (
         position[LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM]
         < position[LABOUR_SPONSORED_FUNDS_CREDIT]

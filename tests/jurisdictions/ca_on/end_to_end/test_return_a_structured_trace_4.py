@@ -54,9 +54,17 @@ from app.jurisdictions.ca.catalog import (
     AGE_MAXIMUM,
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_ADJUSTED_TAXABLE_INCOME,
+    AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
+    AMT_BASIC_EXEMPTION,
+    AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
+    AMT_CREDITS_ADJUSTMENTS_TOTAL,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
+    AMT_GROSS_MINIMUM_AMOUNT,
+    AMT_MINIMUM_AMOUNT,
+    AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_RENTAL_PROPERTY_INCOME_BEFORE_CCA,
@@ -493,8 +501,11 @@ from app.jurisdictions.ca.catalog import (
     FARM_VEHICLE_LEASING_COST,
     FARM_VEHICLE_LIST_PRICE,
     FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
+    FEDERAL_FOREIGN_TAX_CREDIT,
+    FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
     FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS,
@@ -861,6 +872,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         and line.output
         in (
             COOP_EDUCATION_CREDIT,
+            FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
             TRAVEL_TOTAL_ZONE_A,
             TRAVEL_TOTAL_ZONE_B,
             STANDARD_AMOUNT_ALLOCATED,
@@ -868,6 +880,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     assert lesser == {
+        # Form T2209 line 13 "should not be more than" line 42900: the line 3 total, 0 with no
+        # country, against line 42900, 16951.38.
+        FEDERAL_FOREIGN_TAX_CREDIT: LesserOfLine(
+            FEDERAL_FOREIGN_TAX_CREDIT,
+            (
+                (FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT, D("0")),
+                (FEDERAL_TAX_AFTER_CREDITS, D("16951.38")),
+            ),
+            D("0"),
+        ),
         # Schedule 8 Part 5 line 75 "Enter whichever is less: amount from line 72 or line 73"
         # (line A): 0.00 and 0 for Return A.
         CPP_PART_5_LINE_75_BASE: LesserOfLine(
@@ -2735,6 +2757,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("5914.00"),
         ),
+        # T1 line 130 "Line 128 minus line 129": line 126 (line 127 is not wired) less line 129
+        # (40500), which is 0 with no country.
+        FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT: SubtractedNotBelowZeroLine(
+            output=FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
+            minuend=FEDERAL_TAX_AFTER_CREDITS,
+            minuend_amount=D("16951.38"),
+            subtrahend=FEDERAL_FOREIGN_TAX_CREDIT,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
         # Schedule ON(S11) line 4 "Line 2 minus line 3 (if negative, enter "0")": the income cap of
         # line 2, 169100.99 (the Ontario tax of ON428 line 8 divided by 5.05%), less line 3, the
         # credit amounts through the disability transfer, 17180.58.
@@ -3617,6 +3649,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
+        # Form T691 Part 1 line 93 "Line 83 minus line 92 (if negative, enter "0")": 126537.00
+        # less 0.
+        AMT_ADJUSTED_TAXABLE_INCOME: SubtractedNotBelowZeroLine(
+            output=AMT_ADJUSTED_TAXABLE_INCOME,
+            minuend=AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
+            minuend_amount=D("126537.00"),
+            subtrahend=AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
+            subtrahend_amount=D("0"),
+            result=D("126537.00"),
+        ),
+        # Form T691 Part 1 line 95 "Line 93 minus line 94 (if negative, enter "0")": 126537.00
+        # less 177882.00 is below zero, so 0.
+        AMT_NET_ADJUSTED_TAXABLE_INCOME: SubtractedNotBelowZeroLine(
+            output=AMT_NET_ADJUSTED_TAXABLE_INCOME,
+            minuend=AMT_ADJUSTED_TAXABLE_INCOME,
+            minuend_amount=D("126537.00"),
+            subtrahend=AMT_BASIC_EXEMPTION,
+            subtrahend_amount=D("177882.00"),
+            result=D("0"),
+        ),
+        # Form T691 Part 1 line 103 "Line 97 minus line 102 (if negative, enter "0")": 0 less
+        # 1597.44 is below zero, so 0.
+        AMT_MINIMUM_AMOUNT: SubtractedNotBelowZeroLine(
+            output=AMT_MINIMUM_AMOUNT,
+            minuend=AMT_GROSS_MINIMUM_AMOUNT,
+            minuend_amount=D("0"),
+            subtrahend=AMT_CREDITS_ADJUSTMENTS_TOTAL,
+            subtrahend_amount=D("1597.44"),
+            result=D("0"),
+        ),
     }
     # Schedule 8 Part 4 line 3 "Line 1 plus line 2 (if negative, enter "0")" and Schedule 13 line 1
     # "(if negative, enter "0")", on no self-employment income and no partnership income, and the
@@ -3866,6 +3928,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert item_sums == []
     assert item_lessers == []
     assert items_totals == {
+        # Form T2209 lines 1 to 3 over the countries: Return A lists none, so the total is 0.
+        FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT: ItemsTotalLine(
+            FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT, (), D("0")
+        ),
         COOP_EDUCATION_CREDIT: ItemsTotalLine(COOP_EDUCATION_CREDIT, (), D("0")),
         TRAVEL_TOTAL_ZONE_A: ItemsTotalLine(TRAVEL_TOTAL_ZONE_A, (), D("0")),
         TRAVEL_TOTAL_ZONE_B: ItemsTotalLine(TRAVEL_TOTAL_ZONE_B, (), D("0")),

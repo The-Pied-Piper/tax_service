@@ -57,6 +57,7 @@ outputs:
   - ca-on/public_long_term_care_paid
   - ca-on/unused_tuition_carried_forward
   - ca/standard_amount_allocated
+  - ca/foreign_tax_credit_sheets
   # Form T2048 (line 25395): the Part 4 and Part 5 figures, and the line 41 and 42 reductions,
   # produced by `06a_capital_gains_deduction_qbt.yaml`.
   - ca/qbt_allocation_total
@@ -67,9 +68,6 @@ outputs:
   - ca/qsbcs_qffp_taxable_gains_related_to_deduction
   - ca/qbt_abil_reduction
   - ca/qbt_net_investment_loss_reduction
-  # Form T691 Part 1 line 12 "Add lines 1, 4, 7, and 11.", the adjusted taxable income subtotal,
-  # which nothing else on the return reads yet.
-  - ca/amt_part_1_subtotal
   # Form T657
   - ca/chart_2025_part_1_amount_q
   # Form T657 Chart 2024 Period 1 and Period 2 amount O, "Enter whichever is less: line 21 of Step 1,
@@ -100,16 +98,6 @@ outputs:
   - ca/chart_2022_part_2_amount_m
   - ca/chart_2023_part_1_amount_n
   - ca/chart_2023_part_2_amount_m
-  # Form T691 Part 9 line 6 "Enter this amount on line 14 of Part 1", Part 1 line 20 "Line 15 minus
-  # line 19" and Part 1 line 26 "Line 24 minus line 25" times 30%, which nothing else on the return
-  # reads yet.
-  - ca/amt_resource_property_and_flow_through_shares
-  - ca/amt_net_capital_gains_after_adjustments
-  - ca/amt_publicly_listed_gifts_adjustment
-  # Form T691 Part 1 line 32 "Line 30 minus line 31 (if negative, enter "0")", line 38 "Add lines 35 to
-  # 37.", line 43 "Line 39 or 40, as applicable, plus line 41 and 42" and line 80 "Line 78 multiply by
-  # the percentage from line 79", which nothing else on the return reads yet.
-  - ca/amt_security_options_net
-  - ca/amt_security_options_d1_total
-  - ca/amt_other_years_losses_total
-  - ca/amt_applicable_rate_amount
+  # Form T691 Part 1 line 103 "Line 97 minus line 102 (if negative, enter "0")", the minimum amount,
+  # which nothing else on the return reads yet.
+  - ca/amt_minimum_amount
