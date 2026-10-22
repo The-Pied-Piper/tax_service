@@ -582,6 +582,30 @@ def test_return_al_pays_the_ontario_tax_on_split_income_on_form_t1206_part_3() -
     assert worksheet.get(ontario.LIFT_NET_INCOME_AND_REPAYMENTS).value == D("11500.00")
 
 
+def test_return_al_divides_t1206_line_33a_by_the_5_05_percent_of_line_33b_into_line_33c() -> None:
+    worksheet = return_al()
+
+    # Line 33C "Amount from line 33A divided by the tax rate you entered on line 33B": line 33A is
+    # line 33, 2360.95, and line 33B is Chart C column 3 for Ontario, 5.05%: 2360.95 / 0.0505 =
+    # 46751.4851..., rounded half-up to the cent: 46751.49. Nothing reads it; it is an output.
+    assert worksheet.get(ontario.TOSI_ADJUSTED_TAXABLE_INCOME).value == D("46751.49")
+    assert (
+        "tosi_adjusted_taxable_income: ontario_tax_on_split_income 2360.95 divided by 5.05% "
+        "(half-up to 0.01) = 46751.49"
+    ) in EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        DividedByRateLine(
+            ontario.TOSI_ADJUSTED_TAXABLE_INCOME,
+            ontario.ONTARIO_TAX_ON_SPLIT_INCOME,
+            D("2360.95"),
+            Rate(D("0.0505")),
+            CENT,
+            D("46751.49"),
+        )
+        in worksheet.trace
+    )
+
+
 def test_return_als_trace_follows_form_t1206_part_3_line_by_line() -> None:
     rendered = EnglishTraceRenderer().render_all(return_al().trace)
 
