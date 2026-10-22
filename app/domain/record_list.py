@@ -23,7 +23,7 @@ from app.domain.artifact import ArtifactCatalog, ArtifactKind
 from app.domain.errors import InvalidRecordError, InvalidRegistrationError, NegativeArtifactError
 
 
-class Record(Mapping[ArtifactKind[Any], Any]):
+class Record(Mapping[ArtifactKind[Any], "Decimal | int | RecordList"]):
     """One record of a record list: a frozen mapping of its field kinds to their values.
 
     Built by `RecordList`, which checks it against the list's fields; equal to any mapping of the
@@ -32,11 +32,15 @@ class Record(Mapping[ArtifactKind[Any], Any]):
 
     __slots__ = ("_values",)
 
-    def __init__(self, values: Mapping[ArtifactKind[Any], Any]) -> None:
-        self._values = dict(values)
+    def __init__(self, values: Mapping[ArtifactKind[Any], Decimal | int | RecordList]) -> None:
+        self._values: dict[ArtifactKind[Any], object] = dict(values)
 
-    def __getitem__(self, kind: ArtifactKind[Any]) -> Any:
-        return self._values[kind]
+    def __getitem__[V](self, kind: ArtifactKind[V]) -> V:
+        value = self._values[kind]
+        # `RecordList` built the record with each value an instance of its kind's value type.
+        if not isinstance(value, kind.value_type):
+            raise TypeError(f"{kind.identifier} holds a {type(value).__name__}")
+        return value
 
     def __iter__(self) -> Iterator[ArtifactKind[Any]]:
         return iter(self._values)

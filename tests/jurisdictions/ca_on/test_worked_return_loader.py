@@ -1110,7 +1110,9 @@ def test_a_nested_list_is_kept_when_blanks_are_filled(
 def test_a_nested_record_list_left_out_of_the_inputs_is_no_records(
     tmp_path: Path, nested: ArtifactRegistry
 ) -> None:
-    worked = WorkedReturn.load(write(tmp_path, VALID, "valid.yaml"), nested)
+    worked = WorkedReturn.load(
+        write(tmp_path, with_section("inputs", 'inputs:\n  ex/floor: "1"\n'), "valid.yaml"), nested
+    )
 
     filled = worked.with_blanks(frozenset({"ex/properties"}), frozenset(), nested)
 
