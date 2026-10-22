@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from app.domain.artifact import ArtifactKind, ArtifactRegistry
+from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry
 from app.jurisdictions.ca.catalog import (
     AMT_ADJUSTED_INCOME_WITH_GAINS,
     AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
@@ -32,14 +32,23 @@ from app.jurisdictions.ca.catalog import (
     AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
     AMT_EXCESS_EPSP_AMOUNTS,
     AMT_FEDERAL_LOGGING_TAX_CREDIT,
+    AMT_FEDERAL_SURTAX,
+    AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+    AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
+    AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_FEDERAL_TAX_PAYABLE,
+    AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
     AMT_FINANCING_EXPENSES,
+    AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
     AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
     AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_INVESTMENT_COUNSEL_FEES,
+    AMT_INVESTMENT_TAX_CREDIT,
+    AMT_INVESTMENT_TAX_CREDIT_CLAIM,
     AMT_LEGAL_AND_ACCOUNTING_EXPENSES,
     AMT_LIFE_INSURANCE_PREMIUMS_AS_COLLATERAL,
     AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
@@ -48,6 +57,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_ELECTION,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
+    AMT_LINE_3_HAS_AMOUNT,
     AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
     AMT_MAXIMUM_CARRYOVER_APPLIED,
     AMT_MAXIMUM_CARRYOVER_CLAIM,
@@ -66,6 +76,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
     AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES,
     AMT_NON_REFUNDABLE_CREDITS_ADJUSTMENT,
+    AMT_NON_RESIDENT_OR_DEEMED_RESIDENT,
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
@@ -77,6 +88,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_PUBLICLY_LISTED_GIFTS_TOTAL,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
+    AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+    AMT_REGULAR_TAX_CREDITS_TOTAL,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_RENTAL_PROPERTY_INCOME_BEFORE_CCA,
@@ -98,6 +111,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_T4_SECURITY_OPTIONS_BOXES_39_AND_91,
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
     AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
+    AMT_T2038_AMOUNT_I,
+    AMT_T2203_COLUMN_5_PERCENTAGE,
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
     AMT_TAX_PAYABLE_WITH_ITC_RECAPTURE,
@@ -213,6 +228,29 @@ NON_DEDUCTIBLE_AND_RATE_KINDS: tuple[ArtifactKind[Decimal], ...] = (
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
     AMT_APPLICABLE_RATE_AMOUNT,
 )
+
+# Part 3 lines 1 to 15: the federal surtax, the credits and the regular net federal tax payable,
+# with the T2203 percentage and the two counts that choose the surtax line 4 takes.
+PART_3_KINDS: tuple[ArtifactKind[Decimal], ...] = (
+    AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+    AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
+    AMT_FEDERAL_SURTAX,
+    AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
+    AMT_T2203_COLUMN_5_PERCENTAGE,
+    AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
+    AMT_FEDERAL_TAX_PAYABLE,
+    AMT_INVESTMENT_TAX_CREDIT_CLAIM,
+    AMT_T2038_AMOUNT_I,
+    AMT_INVESTMENT_TAX_CREDIT,
+    AMT_REGULAR_TAX_CREDITS_TOTAL,
+    AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+)
+PART_3_COUNTS: tuple[ArtifactKind[int], ...] = (
+    AMT_NON_RESIDENT_OR_DEEMED_RESIDENT,
+    AMT_LINE_3_HAS_AMOUNT,
+)
+
 
 # Part 2 lines 1 to 7 and Part 8 lines 1 to 12: the basic federal tax and the minimum tax
 # carryover, with the carryover claim (line 12) and the cap on it.
@@ -511,6 +549,41 @@ def test_the_part_2_and_part_8_kinds_are_the_registered_ones(
     assert registry.get("ca/amt_minimum_tax_carryover_applied") is AMT_MINIMUM_TAX_CARRYOVER_APPLIED
 
 
+def test_the_part_3_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    assert registry.get("ca/amt_federal_surtax_at_48_percent") is AMT_FEDERAL_SURTAX_AT_48_PERCENT
+    assert registry.get("ca/amt_t2203_column_5_percentage") is AMT_T2203_COLUMN_5_PERCENTAGE
+    assert (
+        registry.get("ca/amt_federal_surtax_multiple_jurisdictions")
+        is AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS
+    )
+    assert (
+        registry.get("ca/amt_federal_surtax_if_non_resident") is AMT_FEDERAL_SURTAX_IF_NON_RESIDENT
+    )
+    assert registry.get("ca/amt_federal_surtax") is AMT_FEDERAL_SURTAX
+    assert (
+        registry.get("ca/amt_federal_tax_with_surtax_and_recapture")
+        is AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE
+    )
+    assert (
+        registry.get("ca/amt_foreign_and_logging_credits_total")
+        is AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL
+    )
+    assert registry.get("ca/amt_federal_tax_payable") is AMT_FEDERAL_TAX_PAYABLE
+    assert registry.get("ca/amt_investment_tax_credit_claim") is AMT_INVESTMENT_TAX_CREDIT_CLAIM
+    assert registry.get("ca/amt_t2038_amount_i") is AMT_T2038_AMOUNT_I
+    assert registry.get("ca/amt_investment_tax_credit") is AMT_INVESTMENT_TAX_CREDIT
+    assert registry.get("ca/amt_regular_tax_credits_total") is AMT_REGULAR_TAX_CREDITS_TOTAL
+    assert (
+        registry.get("ca/amt_regular_net_federal_tax_payable")
+        is AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE
+    )
+
+
+def test_the_part_3_counts_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    for kind in PART_3_COUNTS:
+        assert registry.get(kind.identifier) is kind
+
+
 def test_the_alternative_minimum_tax_kinds_are_money() -> None:
     for kind in (
         PART_1_KINDS
@@ -519,6 +592,7 @@ def test_the_alternative_minimum_tax_kinds_are_money() -> None:
         + LOSSES_AND_DEDUCTIONS_KINDS
         + NON_DEDUCTIBLE_AND_RATE_KINDS
         + PART_2_AND_8_KINDS
+        + PART_3_KINDS
     ):
         assert kind.value_type is Decimal, kind.identifier
 
@@ -531,5 +605,15 @@ def test_the_bracketed_lines_are_signed_and_the_rest_are_not_below_zero() -> Non
         + LOSSES_AND_DEDUCTIONS_KINDS
         + NON_DEDUCTIBLE_AND_RATE_KINDS
         + PART_2_AND_8_KINDS
+        + PART_3_KINDS
     ):
         assert kind.non_negative is (kind.identifier not in SIGNED), kind.identifier
+
+
+def test_the_federal_surtax_at_48_percent_holds_a_negative_base() -> None:
+    # Part 3 line 2, "Multiply the amount from line 1 by 48%.", with line 1 the basic federal tax,
+    # which is negative when the credits exceed the tax: 48% of a negative amount is negative,
+    # and the kind holds it, as the form prints no floor.
+    assert Artifact(AMT_FEDERAL_SURTAX_AT_48_PERCENT, Decimal("-567.29")).value == Decimal(
+        "-567.29"
+    )

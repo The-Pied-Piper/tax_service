@@ -59,10 +59,19 @@ from app.jurisdictions.ca.catalog import (
     AMT_BASIC_EXEMPTION,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CREDITS_ADJUSTMENTS_TOTAL,
+    AMT_FEDERAL_SURTAX,
+    AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
+    AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_FEDERAL_TAX_PAYABLE,
+    AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_FILM_PROPERTY_INCOME_BEFORE_CCA,
+    AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
     AMT_GROSS_MINIMUM_AMOUNT,
+    AMT_INVESTMENT_TAX_CREDIT,
+    AMT_INVESTMENT_TAX_CREDIT_CLAIM,
+    AMT_LINE_3_HAS_AMOUNT,
     AMT_MAXIMUM_CARRYOVER_APPLIED,
     AMT_MAXIMUM_CARRYOVER_CLAIM,
     AMT_MINIMUM_AMOUNT,
@@ -70,6 +79,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
     AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
+    AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+    AMT_REGULAR_TAX_CREDITS_TOTAL,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RENTAL_PROPERTY_CCA_AND_CARRYING_CHARGES,
     AMT_RENTAL_PROPERTY_INCOME_BEFORE_CCA,
@@ -79,6 +90,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTION_GIFTS_DEDUCTION,
     AMT_SECURITY_OPTIONS_D_TOTAL,
     AMT_SECURITY_OPTIONS_NET,
+    AMT_T2038_AMOUNT_I,
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     ANNUAL_GAINS_LIMIT_2025,
     ANNUAL_GAINS_LINE_3_AT_INCLUSION_RATE,
@@ -1840,6 +1852,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert at_most == {
+        # Form T691 Part 3 line 12, the investment tax credit claim (0) at most amount I of Form
+        # T2038(IND) (0): 0.
+        AMT_INVESTMENT_TAX_CREDIT: AtMostLine(
+            output=AMT_INVESTMENT_TAX_CREDIT,
+            amount_kind=AMT_INVESTMENT_TAX_CREDIT_CLAIM,
+            amount_value=D("0"),
+            bound=AMT_T2038_AMOUNT_I,
+            bound_value=D("0"),
+        ),
         # Form T691 Part 8 line 12, the claim (0, the caller's election) at most the cap (0): 0.
         AMT_MINIMUM_TAX_CARRYOVER_APPLIED: AtMostLine(
             output=AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
@@ -2152,6 +2173,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Form T691 Part 3 line 10 "Line 6 minus line 9 (if negative, enter "0")" "Federal tax
+        # payable": 16951.38 less 0, 16951.38.
+        AMT_FEDERAL_TAX_PAYABLE: SubtractedNotBelowZeroLine(
+            output=AMT_FEDERAL_TAX_PAYABLE,
+            minuend=AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
+            minuend_amount=D("16951.38"),
+            subtrahend=AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
+        # Form T691 Part 3 line 15 "Line 10 minus line 14 (if negative, enter "0")" "Regular net
+        # federal tax payable": 16951.38 less 0, 16951.38.
+        AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE: SubtractedNotBelowZeroLine(
+            output=AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+            minuend=AMT_FEDERAL_TAX_PAYABLE,
+            minuend_amount=D("16951.38"),
+            subtrahend=AMT_REGULAR_TAX_CREDITS_TOTAL,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
         # Form T691 Part 8 line 11 "Maximum carryover that can be applied in 2025: line 9 minus line
         # 10 (if negative, enter "0")": 16951.38 less the minimum amount of 0, 16951.38.
         AMT_MAXIMUM_CARRYOVER_APPLIED: SubtractedNotBelowZeroLine(
@@ -4512,7 +4553,46 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
         ),
     }
+    has_amount_conditions = {
+        (line.output, line.position): line
+        for line in trace
+        if isinstance(line, ConditionLine) and line.output is AMT_LINE_3_HAS_AMOUNT
+    }
+    has_amount_count = {
+        line.output: line
+        for line in trace
+        if isinstance(line, ConditionsCountLine) and line.output is AMT_LINE_3_HAS_AMOUNT
+    }
+    assert has_amount_conditions == {
+        # Form T691 Part 3 line 4 "If you have an amount on line 3, enter that amount.": the
+        # condition "you have an amount on line 3" reads line 3 (0): it does not apply.
+        (AMT_LINE_3_HAS_AMOUNT, 1): ConditionLine(
+            output=AMT_LINE_3_HAS_AMOUNT,
+            position=1,
+            text="you have an amount on line 3",
+            reads=((AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS, D("0")),),
+            applies=False,
+        ),
+    }
+    assert has_amount_count == {
+        # Form T691 Part 3 line 4: no condition applies, so the count is 0.
+        AMT_LINE_3_HAS_AMOUNT: ConditionsCountLine(
+            output=AMT_LINE_3_HAS_AMOUNT,
+            applied=(),
+            count=0,
+        ),
+    }
     assert chosen == {
+        # Form T691 Part 3 line 4 "If you have an amount on line 3, enter that amount. If not, ...
+        # enter the amount from line 2. Otherwise, enter "0".": no condition applies (line 3 is 0),
+        # so the second branch, 0.
+        AMT_FEDERAL_SURTAX: ChosenByCountLine(
+            output=AMT_FEDERAL_SURTAX,
+            count_kind=AMT_LINE_3_HAS_AMOUNT,
+            count=0,
+            chosen_kind=AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
+            chosen_value=D("0"),
+        ),
         # T1 line 44800 on the Part 3 route: line 24 is not positive for Return A, so "0".
         CPP_PART_3_OVERPAYMENT: ChosenByCountLine(
             output=CPP_PART_3_OVERPAYMENT,

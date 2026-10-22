@@ -1147,3 +1147,4 @@ expected:
   ca/amt_adjusted_income_with_gains: "25000.00"
   ca/amt_minimum_amount: "0"
   ca/amt_basic_federal_tax: "857.16"
+  ca/amt_regular_net_federal_tax_payable: "857.16"

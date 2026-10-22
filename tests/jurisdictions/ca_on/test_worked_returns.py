@@ -649,6 +649,8 @@ expected:
   ca-on/refund_before_donation: "2133"
   ca-on/net_refund: "2133"
   ca/amt_basic_federal_tax: "-1181.85"
+  ca/amt_federal_surtax_at_48_percent: "-567.29"
+  ca/amt_regular_net_federal_tax_payable: "0"
 """
 
 

@@ -28,11 +28,17 @@ from app.jurisdictions.ca.catalog import (
     AMT_DIVIDENDS_DIFFERENCE_ADJUSTMENT,
     AMT_DIVIDENDS_OTHER_THAN_ELIGIBLE_ADJUSTMENT,
     AMT_DONATIONS_AND_GIFTS_ADJUSTMENT,
+    AMT_FEDERAL_SURTAX,
+    AMT_FEDERAL_SURTAX_AT_48_PERCENT,
+    AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_GROSS_MINIMUM_AMOUNT,
+    AMT_INVESTMENT_TAX_CREDIT,
     AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
+    AMT_LINE_3_HAS_AMOUNT,
     AMT_LOSSES_AND_DEDUCTIONS_SUBTOTAL,
     AMT_MAXIMUM_CARRYOVER_APPLIED,
     AMT_MAXIMUM_CARRYOVER_CLAIM,
@@ -52,6 +58,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
+    AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+    AMT_REGULAR_TAX_CREDITS_TOTAL,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RESOURCE_INCOME_TOTAL,
     AMT_RESOURCE_PROPERTY_AND_FLOW_THROUGH_SHARES,
@@ -110,6 +118,10 @@ def return_bg(
     employment_income: str = "60000",
     carryover_from_previous_years: str = "0",
     carryover_claim: str = "0",
+    t2203_percentage: str = "0",
+    non_resident: int = 0,
+    itc_claim: str = "0",
+    amount_i: str = "0",
 ) -> Worksheet:
     """Return BG's inputs (`returns/2025_return_bg.yaml`), with the Part 1 amounts given."""
     return compute(
@@ -152,6 +164,10 @@ def return_bg(
         amt_commission_employment_expenses=commission_employment,
         amt_minimum_tax_carryover_from_previous_years=carryover_from_previous_years,
         amt_minimum_tax_carryover_claim=carryover_claim,
+        amt_t2203_column_5_percentage=t2203_percentage,
+        amt_non_resident_or_deemed_resident=non_resident,
+        amt_investment_tax_credit_claim=itc_claim,
+        amt_t2038_amount_i=amount_i,
     )
 
 
@@ -796,4 +812,87 @@ def test_a_claim_is_refused_when_no_carryover_is_available() -> None:
 
     assert str(raised.value).startswith(
         "ca/amt_minimum_tax_carryover_claim 0.01 is above ca/amt_maximum_carryover_claim 0"
+    )
+
+
+def test_return_bg_line_2_is_48_percent_of_the_basic_federal_tax() -> None:
+    # Line 2 is 48% of the basic federal tax of 5846.47 (Part 2 line 7): 5846.47 x 0.48 is
+    # 2806.3056, rounded to 2806.31.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_FEDERAL_SURTAX_AT_48_PERCENT).value == D("2806.31")
+
+
+def test_return_bg_line_3_and_line_4_are_zero_by_default() -> None:
+    # No T2203 percentage (line 3 is 0.00), so line 3 has no amount; the filer is not
+    # non-resident, so line 4 is the surtax if non-resident, 0.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS).value == D("0.00")
+    assert worksheet.get(AMT_LINE_3_HAS_AMOUNT).value == D("0")
+    assert worksheet.get(AMT_FEDERAL_SURTAX).value == D("0.00")
+
+
+def test_return_bg_line_4_is_line_2_for_a_non_resident_with_no_line_3_amount() -> None:
+    # No line 3 amount, so line 4 is the surtax if non-resident: line 2 of 2806.31 for a
+    # non-resident. Line 15 is line 1 of 5846.47 plus 2806.31, which is 8652.78.
+    worksheet = return_bg(non_resident=1)
+
+    assert worksheet.get(AMT_FEDERAL_SURTAX).value == D("2806.31")
+    assert worksheet.get(AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE).value == D("8652.78")
+
+
+def test_return_bg_line_3_is_half_of_line_2_when_the_t2203_percentage_is_50() -> None:
+    # Line 2 of 2806.31 at 50% is 1403.155, a tie, rounded half-up to 1403.16. Line 3 has an
+    # amount, so line 4 is line 3, 1403.16. Line 15 is 5846.47 plus 1403.16, 7249.63.
+    worksheet = return_bg(t2203_percentage="50")
+
+    assert worksheet.get(AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS).value == D("1403.16")
+    assert worksheet.get(AMT_LINE_3_HAS_AMOUNT).value == D("1")
+    assert worksheet.get(AMT_FEDERAL_SURTAX).value == D("1403.16")
+    assert worksheet.get(AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE).value == D("7249.63")
+
+
+def test_return_bg_line_4_takes_line_3_over_the_non_resident_surtax() -> None:
+    # A non-resident who also has a line 3 amount: line 3 has an amount, so line 4 is line 3,
+    # 1403.16, not line 2 of 2806.31. Line 15 is 5846.47 plus 1403.16, 7249.63.
+    worksheet = return_bg(t2203_percentage="50", non_resident=1)
+
+    assert worksheet.get(AMT_FEDERAL_SURTAX).value == D("1403.16")
+    assert worksheet.get(AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE).value == D("7249.63")
+
+
+def test_return_bg_line_6_is_the_basic_federal_tax_with_no_surtax() -> None:
+    # Line 6 is the basic federal tax (Part 2 line 7) of 5846.47 plus line 4 of 0.00 and the
+    # recapture of 0.00: 5846.47.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE).value == D("5846.47")
+
+
+def test_return_bg_line_15_is_line_6_with_no_regular_tax_credits() -> None:
+    # Line 15 is line 1 of 5846.47 less line 14, the regular tax credits total of 0.00: 5846.47.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE).value == D("5846.47")
+
+
+def test_return_bg_line_12_is_the_investment_tax_credit_claim_when_it_is_within_line_i() -> None:
+    # The investment tax credit claim of 100.00 is within the T2038 amount I of 150.00, so line 12
+    # is 100.00. Line 14 is line 12 of 100.00 plus line 13 of 0.00, 100.00. Line 15 is line 6 of
+    # 5846.47 less 100.00, 5746.47.
+    worksheet = return_bg(itc_claim="100", amount_i="150")
+
+    assert worksheet.get(AMT_INVESTMENT_TAX_CREDIT).value == D("100")
+    assert worksheet.get(AMT_REGULAR_TAX_CREDITS_TOTAL).value == D("100")
+    assert worksheet.get(AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE).value == D("5746.47")
+
+
+def test_an_investment_tax_credit_claim_above_t2038_amount_i_is_refused() -> None:
+    # The claim of 200.00 is above the T2038 amount I of 150.00, an input error, not capped.
+    with pytest.raises(InputAboveBoundError) as raised:
+        return_bg(itc_claim="200", amount_i="150")
+
+    assert str(raised.value).startswith(
+        "ca/amt_investment_tax_credit_claim 200 is above ca/amt_t2038_amount_i 150"
     )

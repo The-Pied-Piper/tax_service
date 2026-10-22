@@ -7,7 +7,8 @@ deductions, the non-deductible expenses, the applicable rate, the dividends, the
 gains exemption, the capital gains deductions, the basic exemption, the federal tax rate and the
 credits. Part 9 of the form: the resource
 property and flow-through shares. Part 2 of the form: the basic federal tax. Part 8 of the form:
-the minimum tax carryover applied on line 40427.
+the minimum tax carryover applied on line 40427. Part 3 of the form: the federal surtax, the
+federal tax payable and the regular net federal tax payable.
 """
 
 from __future__ import annotations
@@ -608,3 +609,96 @@ AMT_MINIMUM_TAX_CARRYOVER_APPLIED = CATALOG.declare(
 """Minimum tax carryover applied in 2025, Form T691 Part 8 line 12 "Enter this amount on line 40427
 of your return.": the claim, when it is not above the largest claim. Part 2 line 6 "Minimum tax
 carryover applied in 2025 from line 12 of Part 8" and T1 line 124 (line 40427) read it."""
+
+AMT_FEDERAL_SURTAX_AT_48_PERCENT = CATALOG.declare("amt_federal_surtax_at_48_percent", Decimal)
+"""Federal surtax at 48 percent, Form T691 Part 3 line 2 "Federal surtax on business income earned
+outside Canada" "Multiply the amount from line 1 by 48%.": line 1, the basic federal tax of Part 2
+line 7, times the 48% of its dataset, rounded to the cent. The form prints no floor, so a negative
+basic federal tax gives a negative surtax."""
+
+AMT_T2203_COLUMN_5_PERCENTAGE = CATALOG.declare(
+    "amt_t2203_column_5_percentage", Decimal, non_negative=True
+)
+"""Percentage in Column 5 of line 52220 of Form T2203, Form T691 Part 3 line 3 "If you have to pay
+tax to multiple jurisdictions, multiply the amount from line 2 by the percentage in Column 5 of line
+52220 on Form T2203.": a starting percentage, the caller's figure as the form prints it (50 for
+50%), 0 when there is no tax to multiple jurisdictions."""
+
+AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS = CATALOG.declare(
+    "amt_federal_surtax_multiple_jurisdictions", Decimal
+)
+"""Federal surtax for multiple jurisdictions, Form T691 Part 3 line 3 "If you have to pay tax to
+multiple jurisdictions, multiply the amount from line 2 by the percentage in Column 5 of line 52220
+on Form T2203.": line 2 times the percentage of Form T2203, rounded once to the cent. The form
+prints no floor, so the product may be negative."""
+
+AMT_NON_RESIDENT_OR_DEEMED_RESIDENT = CATALOG.declare(
+    "amt_non_resident_or_deemed_resident", int, non_negative=True
+)
+"""Non-resident or deemed resident, Form T691 Part 3 line 4 "If not, and you are a non-resident or
+deemed resident, enter the amount from line 2.": a yes or no count, 1 when you are a non-resident or
+deemed resident and 0 otherwise, a starting count."""
+
+AMT_LINE_3_HAS_AMOUNT = CATALOG.declare("amt_line_3_has_amount", int, non_negative=True)
+"""You have an amount on line 3, Form T691 Part 3 line 4 "If you have an amount on line 3, enter
+that amount.": 1 when line 3 is not 0, and 0 otherwise, the count of the condition."""
+
+AMT_FEDERAL_SURTAX_IF_NON_RESIDENT = CATALOG.declare("amt_federal_surtax_if_non_resident", Decimal)
+"""Federal surtax for a non-resident or deemed resident, Form T691 Part 3 line 4 "If not, and you
+are a non-resident or deemed resident, enter the amount from line 2.": line 2 when you are a
+non-resident or deemed resident, and 0 otherwise. The form prints no floor, so line 2 may be
+negative."""
+
+AMT_FEDERAL_SURTAX = CATALOG.declare("amt_federal_surtax", Decimal)
+"""Federal surtax, Form T691 Part 3 line 4 "If you have an amount on line 3, enter that amount. If
+not, and you are a non-resident or deemed resident, enter the amount from line 2. Otherwise, enter
+"0".": line 3 when it has an amount, else the surtax for a non-resident or deemed resident, in the
+form's order."""
+
+AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE = CATALOG.declare(
+    "amt_federal_tax_with_surtax_and_recapture", Decimal
+)
+"""Federal tax with the surtax and the recapture, Form T691 Part 3 line 6 "Add lines 1, 4, and 5.":
+line 1 (the basic federal tax of Part 2 line 7), line 4 (the federal surtax) and line 5 "Recapture
+of investment tax credit (from line 3 of Part C of Form T2038(IND))", in line order. The form prints
+no floor, so the sum may be negative."""
+
+AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL = CATALOG.declare(
+    "amt_foreign_and_logging_credits_total", Decimal, non_negative=True
+)
+"""Foreign and logging tax credits, Form T691 Part 3 line 9 "Line 7 plus line 8": line 7 "Federal
+foreign tax credit from Form T2209" and line 8 "Federal logging tax credit", in line order."""
+
+AMT_FEDERAL_TAX_PAYABLE = CATALOG.declare("amt_federal_tax_payable", Decimal, non_negative=True)
+"""Federal tax payable, Form T691 Part 3 line 10 "Line 6 minus line 9 (if negative, enter "0")"
+"Federal tax payable": line 6 less line 9, not below zero."""
+
+AMT_INVESTMENT_TAX_CREDIT_CLAIM = CATALOG.declare(
+    "amt_investment_tax_credit_claim", Decimal, non_negative=True
+)
+"""Investment tax credit claimed, Form T691 Part 3 line 12 "Investment tax credit amount up to, but
+not more than the amount I of Form T2038(IND)": the amount the filer claims, an election, entered as
+the form takes it; it may not be more than amount I."""
+
+AMT_T2038_AMOUNT_I = CATALOG.declare("amt_t2038_amount_i", Decimal, non_negative=True)
+"""Amount I of Form T2038(IND), Form T691 Part 3 line 12 "Investment tax credit amount up to, but
+not more than the amount I of Form T2038(IND)": the bound on the claim, the caller's figure from
+Form T2038(IND)."""
+
+AMT_INVESTMENT_TAX_CREDIT = CATALOG.declare("amt_investment_tax_credit", Decimal, non_negative=True)
+"""Investment tax credit amount, Form T691 Part 3 line 12 "Investment tax credit amount up to, but
+not more than the amount I of Form T2038(IND)": the claim, which may not be more than amount I; a
+claim above it is refused, not capped."""
+
+AMT_REGULAR_TAX_CREDITS_TOTAL = CATALOG.declare(
+    "amt_regular_tax_credits_total", Decimal, non_negative=True
+)
+"""Regular tax credits, Form T691 Part 3 line 14 "Add lines 11 to 13.": line 11 "Federal political
+contribution tax credit from line 41000 of your return", line 12 the investment tax credit and line
+13 "Labour-sponsored funds tax credit from line 41400 of your return", in line order."""
+
+AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE = CATALOG.declare(
+    "amt_regular_net_federal_tax_payable", Decimal, non_negative=True
+)
+"""Regular net federal tax payable, Form T691 Part 3 line 15 "Line 10 minus line 14 (if negative,
+enter "0")" "Regular net federal tax payable": line 10 less line 14, not below zero."""
