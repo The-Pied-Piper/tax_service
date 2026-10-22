@@ -463,3 +463,89 @@ def test_declare_refuses_a_field_that_is_not_an_artifact_kind(
         )
 
     assert catalog.kinds == ()
+
+
+# --- a field that is itself a record list ---------------------------------------------------
+
+RENT = ArtifactKind("ex/unit_rent", Decimal, non_negative=True)
+UNIT_FIELDS = (RENT,)
+UNITS = RecordListKind("ex/units", fields=UNIT_FIELDS)
+FLOOR = ArtifactKind("ex/floor", int)
+PROPERTY_FIELDS = (FLOOR, UNITS)
+
+
+def units(*rents: str) -> RecordList:
+    return RecordList(UNIT_FIELDS, [{RENT: D(rent)} for rent in rents])
+
+
+def test_a_field_may_be_a_record_list_kind() -> None:
+    properties = RecordList(
+        PROPERTY_FIELDS,
+        [{FLOOR: 1, UNITS: units("100", "250.50")}, {FLOOR: 2, UNITS: units()}],
+    )
+
+    assert properties.fields == PROPERTY_FIELDS
+    assert properties.records[0][UNITS] == units("100", "250.50")
+    assert properties.records[0][UNITS].records[1][RENT] == D("250.50")
+    assert properties.records[1][UNITS].records == ()
+
+
+def test_a_nested_list_may_be_empty() -> None:
+    properties = RecordList(PROPERTY_FIELDS, [{FLOOR: 1, UNITS: RecordList(UNIT_FIELDS, [])}])
+
+    assert properties.records[0][UNITS].records == ()
+
+
+def test_a_record_holding_a_nested_list_is_hashable_and_equal_by_value() -> None:
+    first = RecordList(PROPERTY_FIELDS, [{FLOOR: 1, UNITS: units("100")}])
+    second = RecordList(PROPERTY_FIELDS, [{FLOOR: 1, UNITS: units("100")}])
+    other = RecordList(PROPERTY_FIELDS, [{FLOOR: 1, UNITS: units("101")}])
+
+    assert first == second
+    assert first != other
+    assert hash(first.records[0]) == hash(second.records[0])
+
+
+def test_a_record_list_kind_accepts_a_record_list_field() -> None:
+    kind = RecordListKind("ex/properties", fields=PROPERTY_FIELDS)
+
+    assert kind.fields == PROPERTY_FIELDS
+
+
+def test_declare_accepts_a_record_list_field(fresh: ArtifactRegistry) -> None:
+    catalog = ArtifactCatalog(Namespace("ex"))
+
+    kind = RecordListKind.declare(catalog, "properties", fields=PROPERTY_FIELDS)
+
+    assert kind.fields == PROPERTY_FIELDS
+
+
+def test_a_nested_list_of_other_fields_is_refused_naming_the_item_and_field() -> None:
+    other = RecordList((NET_INCOME,), [{NET_INCOME: D("1")}])
+
+    with pytest.raises(TypeError, match=r"item 2: ex/units"):
+        RecordList(PROPERTY_FIELDS, [{FLOOR: 1, UNITS: units("1")}, {FLOOR: 2, UNITS: other}])
+
+
+@pytest.mark.parametrize(
+    ("value", "got"), [(D("5"), "Decimal"), ([], "list"), (None, "NoneType"), ("x", "str")]
+)
+def test_a_nested_field_that_is_not_a_record_list_is_refused_naming_the_item_and_field(
+    value: object, got: str
+) -> None:
+    bad: dict[ArtifactKind[Any], object] = {FLOOR: 1, UNITS: value}
+
+    with pytest.raises(TypeError, match=rf"item 2: ex/units must be a RecordList, got {got}"):
+        RecordList(PROPERTY_FIELDS, [{FLOOR: 1, UNITS: units()}, bad])
+
+
+def test_a_missing_nested_field_is_refused_naming_the_item_and_field() -> None:
+    with pytest.raises(InvalidRecordError, match=r"item 1: missing field ex/units"):
+        RecordList(PROPERTY_FIELDS, [{FLOOR: 1}])
+
+
+def test_an_artifact_holds_a_record_list_with_a_nested_list(fresh: ArtifactRegistry) -> None:
+    kind = RecordListKind("ex/properties", fields=PROPERTY_FIELDS)
+    value = RecordList(PROPERTY_FIELDS, [{FLOOR: 1, UNITS: units("100")}])
+
+    assert Artifact(kind, value).value == value
