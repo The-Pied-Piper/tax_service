@@ -5,16 +5,23 @@ manifest of the tax year, resolves each selection's capability class and dataset
 manifest's input and output kinds through the ports and registries it was given, and hands them
 with the artifact registry to the domain (`CapabilityBuilder`, which resolves the selection's
 artifact kinds, and `FormSet`, which wires every form), which decides. Resolution errors
-propagate unchanged. Built on demand per call.
+propagate unchanged. Composed on the first call for a jurisdiction and tax year, then shared.
 
 A manifest is a flat set of forms, peers that together are the return. Each form exports the
 `<form>.<export>` kinds that every form reads. Those kinds are registered into the artifact
 registry before any selection is built. `compose` returns the wired `FormSet`; `compute` runs it
 and returns each form's worksheets by form name: one per instance, in instance order.
+
+The composed `FormSet` is kept per (jurisdiction code, tax year). Sharing it is safe because
+`FormSet.compute` builds its own store and worksheets and never writes to the forms; nothing
+invalidates it because manifests and datasets are static files. A lock guards the cache because
+Connexion runs synchronous handlers in a thread pool. The lock is held for a whole compose, so a
+cold (jurisdiction, tax year) makes concurrent callers wait.
 """
 
 from __future__ import annotations
 
+from threading import Lock
 from typing import Any
 
 from app.application.ports.jurisdiction_source import JurisdictionSource
@@ -45,9 +52,21 @@ class TaxComputationService:
         self._capabilities = capabilities
         self._artifacts = artifacts
         self._builder = CapabilityBuilder()
+        self._composed: dict[tuple[JurisdictionCode, int], FormSet] = {}
+        self._lock = Lock()
 
     def compose(self, code: JurisdictionCode, tax_year: int) -> FormSet:
-        """The forms of the manifest that applies to `tax_year` in `code`, wired."""
+        """The forms of the manifest that applies to `tax_year` in `code`, wired.
+
+        The same `FormSet` is returned on every call for the same `code` and `tax_year`.
+        """
+        with self._lock:
+            key = (code, tax_year)
+            if key not in self._composed:
+                self._composed[key] = self._compose(code, tax_year)
+            return self._composed[key]
+
+    def _compose(self, code: JurisdictionCode, tax_year: int) -> FormSet:
         manifest = self._jurisdictions.get_jurisdiction(code).manifest_for(tax_year)
         exports = {
             form.name: [self._artifacts.kind(identifier) for identifier in form.exports]
