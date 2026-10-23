@@ -3466,6 +3466,80 @@ FISH_HOME_EXPENSES = CATALOG.declare("fish_home_expenses", Decimal, non_negative
 """Fishing business-use-of-home expenses, Form T2121 line 9945 "Business-use-of-home expenses
 (amount 7P)": amount 7P."""
 
+T2121_STATEMENTS = RecordListKind.declare(
+    CATALOG,
+    "t2121_statements",
+    fields=(
+        FISH_FISH_PRODUCTS,
+        FISH_OTHER_MARINE_PRODUCTS,
+        FISH_GRANTS_CREDITS_AND_REBATES,
+        FISH_SUBSIDIES,
+        FISH_COMPENSATION_FOR_LOSS,
+        FISH_SHARESPERSON_INCOME,
+        FISH_OTHER_INCOME,
+        FISH_SALT_BAIT_AND_ICE,
+        FISH_CREW_SHARES,
+        FISH_FUEL_COSTS,
+        FISH_FISHING_GEAR,
+        FISH_INSURANCE,
+        FISH_INTEREST_AND_BANK_CHARGES,
+        FISH_MEALS_AND_ENTERTAINMENT,
+        FISH_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,
+        FISH_VEHICLE_BUSINESS_KILOMETRES,
+        FISH_VEHICLE_TOTAL_KILOMETRES,
+        FISH_VEHICLE_FUEL_AND_OIL,
+        FISH_VEHICLE_INSURANCE,
+        FISH_VEHICLE_LICENCE_AND_REGISTRATION,
+        FISH_VEHICLE_MAINTENANCE_AND_REPAIRS,
+        FISH_VEHICLE_ELECTRICITY_ZEV,
+        FISH_VEHICLE_OTHER_EXPENSES_10,
+        FISH_VEHICLE_OTHER_EXPENSES_11,
+        FISH_VEHICLE_PARKING_FEES,
+        FISH_VEHICLE_SUPPLEMENTARY_INSURANCE,
+        FISH_VEHICLE_INTEREST_PAYABLE,
+        FISH_VEHICLE_INTEREST_DAYS,
+        FISH_VEHICLE_LEASE_CHARGES,
+        FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,
+        FISH_VEHICLE_LEASE_DAYS,
+        FISH_VEHICLE_LIST_PRICE,
+        FISH_VEHICLE_SALES_TAX_RATE,
+        FISH_OFFICE_EXPENSES,
+        FISH_NETS_AND_TRAPS,
+        FISH_PROFESSIONAL_FEES,
+        FISH_SALARIES_WAGES_AND_BENEFITS,
+        FISH_REPAIRS_FISHING_BOAT,
+        FISH_REPAIRS_ENGINE,
+        FISH_REPAIRS_ELECTRICAL_EQUIPMENT,
+        FISH_INSURANCE_RECOVERY,
+        FISH_OTHER_EXPENSES,
+        FISH_CCA_PERSONAL_PART,
+        FISH_CCA_CLASSES,
+        FISH_PARTNER,
+        FISH_PARTNER_SHARE,
+        FISH_PARTNER_GST_HST_REBATE,
+        FISH_PARTNER_OTHER_AMOUNT_A,
+        FISH_PARTNER_OTHER_AMOUNT_B,
+        FISH_PARTNER_OTHER_AMOUNT_C,
+        FISH_PARTNER_OTHER_AMOUNT_D,
+        FISH_PARTNER_OTHER_AMOUNT_E,
+        FISH_HOME_HEAT,
+        FISH_HOME_ELECTRICITY,
+        FISH_HOME_INSURANCE,
+        FISH_HOME_MAINTENANCE,
+        FISH_HOME_MORTGAGE_INTEREST,
+        FISH_HOME_PROPERTY_TAXES,
+        FISH_HOME_OTHER_EXPENSES,
+        FISH_HOME_PERSONAL_USE_PART,
+        FISH_HOME_CCA,
+        FISH_HOME_CARRIED_FORWARD,
+    ),
+)
+"""Statements of Form T2121, one record for each statement of fishing activities the return
+carries (one for each fishing business): its fields are the starting amounts and the Area A list
+of one statement, Parts 3 to 7, in the order of the form. The form `ca/t2121` runs once for each
+record; T1 line 14300 "Net" adds the lines 9946 of the records. A field is not an artifact of the
+return."""
+
 FISH_CLOSING_UCC = RecordListKind.declare(
     CATALOG, "fish_closing_ucc", fields=(CCA_CLASS_NUMBER, CCA_UCC_AT_END)
 )

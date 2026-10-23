@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+
 from app.domain.artifact import ArtifactRegistry
 from app.domain.capabilities.amount_by_count import AmountForCount
 from app.domain.capabilities.apply_fraction import ApplyFraction
@@ -26,6 +28,7 @@ from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
 from app.domain.capabilities.tapered_amount import TaperedAmount
 from app.domain.capabilities.tiered_surcharge import TieredSurcharge
 from app.domain.capabilities.times_count import TimesCount
+from app.domain.errors import MissingArtifactError
 from app.jurisdictions.ca.capabilities.amount_when_more import AmountWhenMore
 from app.jurisdictions.ca.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
@@ -541,6 +544,16 @@ from app.jurisdictions.ca.catalog import (
     FHSA_VARIABLE_F_AMOUNT,
     FHSA_VARIABLE_H_AMOUNT,
     FIRST_TIER_DONATION_CREDIT,
+    FISH_CCA_CLASSES,
+    FISH_CCA_TABLE_CLAIM,
+    FISH_CLOSING_UCC,
+    FISH_FISH_PRODUCTS,
+    FISH_GROSS_INCOME,
+    FISH_HOME_INCOME_LIMIT,
+    FISH_PARTNER,
+    FISH_RECAPTURED_CCA,
+    FISH_SHARE_OF_NET_INCOME,
+    FISH_TERMINAL_LOSS,
     FISHING_INCOME,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
@@ -1542,9 +1555,10 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(FARMING_INCOME), RecordTotal)
     imported_farming = ArtifactRegistry.shared().kind("ca/t2042.farming_income")
     assert worksheet.producer_of(imported_farming) is None
-    # T1 line 26 (line 14300) is T2121 line 9946, "Amount 5C minus line 9945", no longer a starting
-    # amount either.
-    assert isinstance(worksheet.producer_of(FISHING_INCOME), Subtract)
+    # T1 line 26 (line 14300) totals the lines 9946 of the T2121 statements, which the form exports.
+    assert isinstance(worksheet.producer_of(FISHING_INCOME), RecordTotal)
+    imported_fishing = ArtifactRegistry.shared().kind("ca/t2121.fishing_income")
+    assert worksheet.producer_of(imported_fishing) is None
     assert isinstance(worksheet.producer_of(NET_SELF_EMPLOYMENT_INCOME), Sum)
     months_tables = {
         worksheet.producer_of(kind)
@@ -2519,10 +2533,10 @@ def test_each_t2125_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(BUSINESS_SHARE_OF_NET_INCOME), ChooseByCount)
     assert isinstance(worksheet.producer_of(BUSINESS_HOME_INCOME_LIMIT), SumNotBelowZero)
     assert isinstance(worksheet.producer_of(BUSINESS_INCOME), Subtract)
-    # The form holds its own copy of the printed constants; the return form's is the one Form
-    # T2121 reads.
+    # The form holds its own copy of the printed constants; the return form has none.
     assert isinstance(worksheet.producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
-    assert isinstance(return_a().producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
+    with pytest.raises(MissingArtifactError):
+        return_a().producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT)
 
 
 def test_each_t2042_amount_is_produced_by_its_capability() -> None:
@@ -2539,7 +2553,27 @@ def test_each_t2042_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(FARM_SHARE_OF_NET_INCOME), ChooseByCount)
     assert isinstance(worksheet.producer_of(FARM_HOME_INCOME_LIMIT), SumNotBelowZero)
     assert isinstance(worksheet.producer_of(FARMING_INCOME), Subtract)
-    # The form holds its own copy of the printed constants; the return form's is the one Form T2121
-    # reads.
+    # The form holds its own copy of the printed constants; the return form has none.
     assert isinstance(worksheet.producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
-    assert isinstance(return_a().producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
+    with pytest.raises(MissingArtifactError):
+        return_a().producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT)
+
+
+def test_each_t2121_amount_is_produced_by_its_capability() -> None:
+    # The statement's worksheet: the form's own, where each T2121 line is produced and the
+    # statement's fields are starting artifacts.
+    worksheet = run_a()["ca/t2121"][0]
+    for starting in (FISH_FISH_PRODUCTS, FISH_PARTNER, FISH_CCA_CLASSES):
+        assert worksheet.producer_of(starting) is None, starting.identifier
+    assert isinstance(worksheet.producer_of(FISH_GROSS_INCOME), Sum)
+    assert isinstance(worksheet.producer_of(FISH_RECAPTURED_CCA), RecapturedCca)
+    assert isinstance(worksheet.producer_of(FISH_CCA_TABLE_CLAIM), CcaClaim)
+    assert isinstance(worksheet.producer_of(FISH_TERMINAL_LOSS), TerminalLoss)
+    assert isinstance(worksheet.producer_of(FISH_CLOSING_UCC), ClosingUcc)
+    assert isinstance(worksheet.producer_of(FISH_SHARE_OF_NET_INCOME), ChooseByCount)
+    assert isinstance(worksheet.producer_of(FISH_HOME_INCOME_LIMIT), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(FISHING_INCOME), Subtract)
+    # The form holds its own copy of the printed constants; the return form has none.
+    assert isinstance(worksheet.producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
+    with pytest.raises(MissingArtifactError):
+        return_a().producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT)

@@ -446,6 +446,7 @@ REGISTERED = frozenset(
         "ca/fish_other_expenses",
         "ca/fish_cca_personal_part",
         "ca/fish_cca_classes",
+        "ca/t2121_statements",
         "ca/fish_partner",
         "ca/fish_partner_share",
         "ca/fish_partner_gst_hst_rebate",
@@ -2296,6 +2297,7 @@ RECORD_LISTS = frozenset(
         "ca/t2042_statements",
         "ca/farm_closing_ucc",
         "ca/fish_cca_classes",
+        "ca/t2121_statements",
         "ca/fish_closing_ucc",
     }
 )

@@ -601,6 +601,7 @@ from app.jurisdictions.ca.catalog import (
     FISH_VEHICLE_LEASING_COST,
     FISH_VEHICLE_LIST_PRICE,
     FISH_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
+    FISHING_INCOME,
     HIGH_INCOME_DONATIONS,
     INCLUDED_CAPITAL_GAIN,
     INCOME_SUPPORT_BENEFITS,
@@ -896,12 +897,13 @@ from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, return_a, run_
 
 
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
-    # The lines of the one T2125, the one T2042 and the one T776 statement of Return A, then those
+    # The lines of the one T2125, T2042, T2121 and T776 statement of Return A, then those
     # of the return form.
     result = run_a()
     trace = (
         *result["ca/t2125"][0].trace,
         *result["ca/t2042"][0].trace,
+        *result["ca/t2121"][0].trace,
         *result["ca/t776"][0].trace,
         *result["ca-on/return"][0].trace,
     )
@@ -4335,6 +4337,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         BUSINESS_INCOME: RecordTotalLine(BUSINESS_INCOME, BUSINESS_INCOME, (D("0"),), D("0")),
         # T1 line 14100 "Net": the lines 9946 of Return A's one T2042 statement, a blank one.
         FARMING_INCOME: RecordTotalLine(FARMING_INCOME, FARMING_INCOME, (D("0"),), D("0")),
+        # T1 line 14300 "Net": the lines 9946 of Return A's one T2121 statement, a blank one.
+        FISHING_INCOME: RecordTotalLine(FISHING_INCOME, FISHING_INCOME, (D("0"),), D("0")),
     }
     assert quotients == {
         COOP_EDUCATION_PHASE_OUT_SHARE: QuotientLine(
