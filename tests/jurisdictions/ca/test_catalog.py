@@ -624,6 +624,7 @@ from app.jurisdictions.ca.catalog import (
     STANDARD_AMOUNT_ALLOCATED_1,
     STANDARD_AMOUNT_ALLOCATED_2,
     STANDARD_AMOUNT_ALLOCATED_3,
+    T776_STATEMENTS,
     T2042_STATEMENTS,
     T2121_STATEMENTS,
     T2125_STATEMENTS,
@@ -2235,7 +2236,9 @@ def test_the_rental_cca_classes_are_a_record_list_of_the_area_a_columns(
     assert RENTAL_CCA_CLASSES.identifier == "ca/rental_cca_classes"
     assert RENTAL_CCA_CLASSES.value_type is RecordList
     assert RENTAL_CCA_CLASSES.non_negative is False
-    assert set(RENTAL_CCA_CLASSES.fields) == {
+    # In the order of the columns (1, 2, 3, 4, 5, 6, 9, 11, 12, 23) and the no-property-left
+    # question of Note 3.
+    assert RENTAL_CCA_CLASSES.fields == (
         CCA_CLASS_NUMBER,
         CCA_UCC_AT_START,
         CCA_ADDITIONS,
@@ -2247,9 +2250,20 @@ def test_the_rental_cca_classes_are_a_record_list_of_the_area_a_columns(
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
-    }
-    assert len(RENTAL_CCA_CLASSES.fields) == 11
+    )
     assert registry.get("ca/rental_cca_classes") is RENTAL_CCA_CLASSES
+
+
+def test_the_t776_statements_list_the_area_g_and_note_5_inputs_after_the_partner_lines() -> None:
+    # Area G and Note 5 are answered once for each statement: the last inputs of the form.
+    assert T776_STATEMENTS.fields[-6:] == (
+        RENTAL_EPOP_ASSOCIATED,
+        RENTAL_EPOP_AGREEMENT_FILED,
+        RENTAL_EPOP_PERCENTAGE,
+        RENTAL_EPOP_PERCENTAGE_TOTAL,
+        RENTAL_MINISTER_ALLOCATION_GIVEN,
+        RENTAL_MINISTER_ALLOCATION,
+    )
 
 
 def test_the_rental_closing_ucc_is_a_record_list_of_the_class_and_its_closing_ucc(

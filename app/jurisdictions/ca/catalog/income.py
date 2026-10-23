@@ -1144,10 +1144,11 @@ RENTAL_PARTNER_OTHER_EXPENSES = CATALOG.declare(
 partner": a starting amount."""
 
 RENTAL_EPOP_ASSOCIATED = CATALOG.declare("rental_epop_associated", int, non_negative=True)
-"""Whether the filer is associated with an EPOP under an agreement, Form T776 Area G "Are you
-associated in the fiscal period with one or more EPOPs that you have entered into an agreement
-with under subsection 1104(3.3) of the Regulations? Yes or No": 1 for yes, 0 for no, a starting
-count."""
+"""Whether the filer is associated with an EPOP, Form T776 Area A Note 5 "$1.5 million, if you are
+not associated with any other eligible person or partnership (EPOP) in the tax year" and "amount
+iii of Area G, if you are associated with one or more EPOPs in the tax year": 1 if the filer is
+associated with one or more EPOPs in the tax year, 0 if not, a starting count. It is Note 5's
+association, whether or not an agreement was filed; Area G is filled in when one was."""
 
 RENTAL_EPOP_AGREEMENT_FILED = CATALOG.declare("rental_epop_agreement_filed", int, non_negative=True)
 """Whether the agreement was filed, Form T776 Area A Note 5 "zero, if you are associated with one

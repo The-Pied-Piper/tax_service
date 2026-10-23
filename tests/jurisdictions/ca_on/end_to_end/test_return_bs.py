@@ -45,7 +45,7 @@ from tests.jurisdictions.ca_on.end_to_end.support import D, rental_return
 # 400.00, claimed in full) and class 8 with a UCC of 2000 and additions of 5000, all DIEPs
 # (column 4 5000), of which 3000 is expensed at once (column 9): column 21 is 3000.00 x 20% =
 # 600.00 plus 3000, so 3600.00, claimed in full.
-CLASS_1_ROW = ("1", "10000", "0", "0", "0", "0", "400.00", 0)
+CLASS_1_ROW = ("1", "10000", "0", "0", "0", "0", "400.00", 0, "0", "0", "0")
 CLASS_8_ROW = ("8", "2000", "5000", "0", "0", "0", "3600.00", 0, "5000", "0", "3000")
 
 # Area G and Note 5: associated with one other EPOP (1) under an agreement that was filed (1), the
@@ -405,7 +405,7 @@ def test_a_return_with_no_diep_has_a_line_i_of_zero() -> None:
         {
             "rental_cca_classes_rows": (
                 CLASS_1_ROW,
-                ("8", "2000", "5000", "0", "0", "0", "900.00", 0),
+                ("8", "2000", "5000", "0", "0", "0", "900.00", 0, "0", "0", "0"),
             )
         }
     )["ca/t776"][0]

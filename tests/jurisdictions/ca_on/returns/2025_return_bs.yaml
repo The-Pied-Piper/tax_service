@@ -161,32 +161,33 @@ sources:
     CRA, Form T776 (2025), Statement of Real Estate Rentals
     (docs/cra-forms-2025/t776-25e.txt, confirmed 2026-10-19), Area A Note 5 "The immediate
     expensing applies to DIEPs included in column 8. The total immediate expensing amount
-    for the tax year (total of column 9) is limited to the lesser of: the immediate
-    expensing limit, which is equal to one of the following, whichever is applicable: $1.5
-    million, if you are not associated with any other eligible person or partnership (EPOP)
-    in the tax year; amount iii of Area G, if you are associated with one or more EPOPs in
-    the tax year; zero, if you are associated with one or more EPOPs and an agreement that
-    assigns a percentage to one or more of the associated EPOPs was not filed with the
-    minister in a prescribed form; any amount allocated by the minister under subsection
-    1104(3.4) of the Regulations; the UCC of DIEPs in column 8; the amount of income, if
-    any, earned from the source of income that is a property (before any CCA deductions) in
-    which the relevant DIEP is used for the tax year"; "Line i: Total immediate expensing
-    claim for the year: Total of column 9". Area G: "Are you associated in the fiscal period
-    with one or more EPOPs that you have entered into an agreement with under subsection
-    1104(3.3) of the Regulations? Yes or No"; "Enter the percentage assigned to each
-    associated EPOP (including yourself) as determined in the agreement. This percentage
-    will be used to allocate the immediate expensing limit. The total of all percentages
-    assigned under the agreement should not be more than 100%. If the total is more than
-    100%, then the associated group has an immediate expensing limit of zero."; "Column 3:
-    Percentage assigned under the agreement"; "Total of percentage assigned: Total of column
-    3"; "Line iii: Immediate expensing limit allocated to you: Multiply $1.5 million by the
-    percentage assigned to you in column 3 (see note 11)"; Note 11 "If the total of column 3
-    is more than 100%, enter "0."". Guide T4036 (docs/cra-forms-2025/t4036-25e.pdf, a PDF
-    quote accepted 2026-10-19), Area G: "Calculate the immediate expensing limit allocated
-    to you by multiplying $1.5 million by the percentage assigned to you in column 3. Enter
-    the result on amount iii of Form T776."; "If the total percentage assigned in column 3
-    exceeds 100%, the immediate expensing limit of the associated group is zero."; Column 9:
-    "The total immediate expensing amount must be equal to or less than the least of the
+    for the tax year (total of column 9) is limited to the lesser of: - the immediate
+    expensing limit, which is equal to one of the following, whichever is applicable: --
+    $1.5 million, if you are not associated with any other eligible person or partnership
+    (EPOP) in the tax year -- amount iii of Area G, if you are associated with one or more
+    EPOPs in the tax year -- zero, if you are associated with one or more EPOPs and an
+    agreement that assigns a percentage to one or more of the associated EPOPs was not filed
+    with the minister in a prescribed form -- any amount allocated by the minister under
+    subsection 1104(3.4) of the Regulations - the UCC of DIEPs in column 8 - the amount of
+    income, if any, earned from the source of income that is a property (before any CCA
+    deductions) in which the relevant DIEP is used for the tax year For more information,
+    see Guide T4036."; "Line i: Total immediate expensing claim for the year: Total of
+    column 9". Area G: "Are you associated in the fiscal period with one or more EPOPs that
+    you have entered into an agreement with under subsection 1104(3.3) of the Regulations?
+    Yes or No"; "Enter the percentage assigned to each associated EPOP (including yourself)
+    as determined in the agreement. This percentage will be used to allocate the immediate
+    expensing limit. The total of all percentages assigned under the agreement should not be
+    more than 100%. If the total is more than 100%, then the associated group has an
+    immediate expensing limit of zero."; "Column 3: Percentage assigned under the
+    agreement"; "Total of percentage assigned: Total of column 3"; "Line iii: Immediate
+    expensing limit allocated to you: Multiply $1.5 million by the percentage assigned to
+    you in column 3 (see note 11)"; Note 11 "If the total of column 3 is more than 100%,
+    enter "0."". Guide T4036 (docs/cra-forms-2025/t4036-25e.pdf, a PDF quote accepted
+    2026-10-19), Area G: "Calculate the immediate expensing limit allocated to you by
+    multiplying $1.5 million by the percentage assigned to you in column 3. Enter the result
+    on amount iii of Form T776."; "If the total percentage assigned in column 3 exceeds
+    100%, the immediate expensing limit of the associated group is zero."; Column 9: "The
+    total immediate expensing amount must be equal to or less than the least of the
     following amounts: $1.5 million, if you are not associated with any other EPOP in the
     year; the UCC of the DIEP before any CCA deductions in the year; the amount of income,
     if any, before any CCA deductions, earned from the source of income that is a property
@@ -303,13 +304,14 @@ sources:
     Taxable income" (line 26000). The child care expenses deduction (T778 line 7, the least
     of the basic limit, the expenses paid and two-thirds of the earned income, each 0) is 0,
     there is no RRSP deduction (0) and no union dues (0). Total deductions, which take
-    amounts already in cents, are 0 + 0 + 0 + 0 = 0; line 55 (line 23500, social benefits repayment) is 0 (the chart does not apply), so net income is total income less total deductions, not
-    below zero: 8,000.00 - 0 = 8,000.00. Step 4 (5006-R): "Line 60 and line 25000: Other
-    payments deduction (enter the amount from line 14700 if you did not enter an amount on
-    line 14600; otherwise, use Federal Worksheet)": nothing was entered on line 14600 and
-    line 14700 is 0, so line 25000 is 0; "Line 68 and line 25700: Add lines 58 to 67." is 0
-    (the lines of Step 4 being 0 or not wired); "Line 69 and line 26000: Line 57 minus line
-    68 (if negative, enter "0") Taxable income": 8,000.00 - 0 = 8,000.00.
+    amounts already in cents, are 0 + 0 + 0 + 0 = 0; line 55 (line 23500, social benefits
+    repayment) is 0 (the chart does not apply), so net income is total income less total
+    deductions, not below zero: 8,000.00 - 0 = 8,000.00. Step 4 (5006-R): "Line 60 and line
+    25000: Other payments deduction (enter the amount from line 14700 if you did not enter
+    an amount on line 14600; otherwise, use Federal Worksheet)": nothing was entered on line
+    14600 and line 14700 is 0, so line 25000 is 0; "Line 68 and line 25700: Add lines 58 to
+    67." is 0 (the lines of Step 4 being 0 or not wired); "Line 69 and line 26000: Line 57
+    minus line 68 (if negative, enter "0") Taxable income": 8,000.00 - 0 = 8,000.00.
   - >-
     https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - >-
@@ -331,8 +333,8 @@ sources:
     Schedule 5)"; line 113 (line 33500) "Line 106 plus line 112"; line 114 "Federal
     non-refundable tax credit rate 14.5%"; line 115 (line 33800) "Line 113 multiplied by the
     percentage from line 114"; line 118 (line 35000) "Add lines 115 to 117. Total federal
-    non-refundable tax credits". Net income of 8,000.00 is 177,882 or less, so line 30000
-    is 16,129, the Federal Worksheet's base amount plus the whole supplement. No age amount,
+    non-refundable tax credits". Net income of 8,000.00 is 177,882 or less, so line 30000 is
+    16,129, the Federal Worksheet's base amount plus the whole supplement. No age amount,
     spouse or common-law partner amount, eligible dependant, Canada caregiver amount,
     disability amount transferred or medical expense is claimed: the counts are a chosen 0
     (the filer is not born in 1960 or earlier and has no spouse or dependant) and the
@@ -340,14 +342,14 @@ sources:
     count keep the figures the forms print (the federal age maximum 9,028.00 and income
     threshold 45,522.00, the spouse amount basis 16,129.00 and the eligible dependant amount
     16,129.00, the Canada caregiver amount for a spouse 8,601.00, and the like) and the
-    medical share of net income, 3% of 8,000.00 = 240.00, rounded half-up to the cent 240.00, the lesser of that and
-    $2,834 on line 109, 240.00, less than which the 0 of medical expenses is 0. Line 33500, which
-    takes amounts already in cents, is 16,129 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 =
-    16,129.00 and line 33800 is 16,129.00 x 14.5% = 2,338.705, rounded half-up to the cent:
-    2,338.71; lines 116 (line 34900, Schedule 9) and 117 (line 34990) are $0 here because
-    this return's Schedule 9 inputs are all $0 (a chosen figure), so line 35000 is 2,338.71
-    + 0 + 0 = 2,338.71. The pension income amount (line 31400) is not computed in this
-    return.
+    medical share of net income, 3% of 8,000.00 = 240.00 (exact, so rounding half-up to the
+    cent changes nothing), the lesser of which and $2,834 on line 109 is 240.00, so the 0 of
+    medical expenses, less than that, gives 0. Line 33500, which takes amounts already in
+    cents, is 16,129 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 + 0 = 16,129.00 and line 33800
+    is 16,129.00 x 14.5% = 2,338.705, rounded half-up to the cent: 2,338.71; lines 116 (line
+    34900, Schedule 9) and 117 (line 34990) are $0 here because this return's Schedule 9
+    inputs are all $0 (a chosen figure), so line 35000 is 2,338.71 + 0 + 0 = 2,338.71. The
+    pension income amount (line 31400) is not computed in this return.
   - >-
     https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
   - >-
@@ -357,31 +359,33 @@ sources:
     "Federal tax on taxable income", lines 70 to 76: taxable income of 8,000.00 falls in
     column 1 "Line 26000 is $57,375 or less": line 70 "Amount from line 26000", 8,000.00;
     line 71 "0.00"; line 72 "Line 70 minus line 71 (cannot be negative)", 8,000.00; line 73
-    "Rate 14.5%"; line 74 "Line 72 multiplied by the percentage from line 73", 1,160.00 (8,000.00 x 14.5% = 1,160.00, exact);
-    line 75 "0.00"; line 76 "Line 74 plus line 75 Federal tax on taxable income", 1,160.00
-    (the lowest rate of 14.5% being the full-year blend of the cut from 15% to 14% on July
-    1, 2025). Less the 2,338.71 of federal non-refundable tax credits (line 35000), not
-    below zero, it is 0 (1,160.00 - 2,338.71 is negative), the federal tax after credits.
-    The Ontario brackets are those of the 2025 ON428 (form 5006-C), Part A "Ontario tax on
-    taxable income", lines 1 to 8: line 1 "Enter your taxable income from line 26000 of your
-    return.", 8,000.00, in column 1 "Line 1 is $52,886 or less": line 4 "Line 2 minus line
-    3 (cannot be negative)", 8,000.00; line 5 "Rate 5.05%"; line 6 "Line 4 multiplied by
-    the percentage from line 5", 404.00 (8,000.00 x 5.05% = 404.00, exact); line 8 "Line 6 plus line 7 Ontario tax on taxable income", 404.00. ON428 line 9 (line 58040) "Basic personal amount Claim $12,747"; line
-    44 (line 58800) "Line 35 plus line 43"; line 45 "Ontario non-refundable tax credit rate
-    5.05%"; line 46 (line 58840) "Line 44 multiplied by the percentage from line 45"; line
-    50 (line 61500) "Line 46 plus line 49 Enter this amount on line 52. Ontario
-    non-refundable tax credits"; line 53 "Line 51 minus line 52 (if negative, enter "0")".
-    No age amount, spouse amount, eligible dependant, Ontario caregiver amount or medical
-    expenses are claimed (the same counts of 0 and medical expenses of 0; the lines before
-    the count keep the figures the form prints, such as the Ontario age maximum 6,223.00 and
-    income threshold 46,330.00 and the spouse amount before the count 10,823.00, and the
-    medical share 240.00), so line 58800, which takes amounts already in cents, is 12,747 +
-    0 + 0 + 0 + 0 + 0 + 0 + 0 = 12,747.00 and line 58840 is 12,747.00 x 5.05% = 643.7235,
-    rounded half-up to the cent: 643.72; line 49 (line 58969) is $0 here because Schedule
-    9's inputs are all $0, so line 61500 is 643.72 + 0 = 643.72. Line 53 is 404.00 - 643.72,
-    negative, so 0, the Ontario tax after credits; tax on split income and the minimum tax
-    carryover are not modelled, so lines 61 to 65 carry it. The surtax lines are 0: lines 66
-    and 67 are negative and enter 0, line 68 is 0 and line 69 is 0 + 0 = 0.
+    "Rate 14.5%"; line 74 "Line 72 multiplied by the percentage from line 73", 1,160.00
+    (8,000.00 x 14.5% = 1,160.00, exact); line 75 "0.00"; line 76 "Line 74 plus line 75
+    Federal tax on taxable income", 1,160.00 (the lowest rate of 14.5% being the full-year
+    blend of the cut from 15% to 14% on July 1, 2025). Less the 2,338.71 of federal
+    non-refundable tax credits (line 35000), not below zero, it is 0 (1,160.00 - 2,338.71 is
+    negative), the federal tax after credits. The Ontario brackets are those of the 2025
+    ON428 (form 5006-C), Part A "Ontario tax on taxable income", lines 1 to 8: line 1 "Enter
+    your taxable income from line 26000 of your return.", 8,000.00, in column 1 "Line 1 is
+    $52,886 or less": line 4 "Line 2 minus line 3 (cannot be negative)", 8,000.00; line 5
+    "Rate 5.05%"; line 6 "Line 4 multiplied by the percentage from line 5", 404.00 (8,000.00
+    x 5.05% = 404.00, exact); line 8 "Line 6 plus line 7 Ontario tax on taxable income",
+    404.00. ON428 line 9 (line 58040) "Basic personal amount Claim $12,747"; line 44 (line
+    58800) "Line 35 plus line 43"; line 45 "Ontario non-refundable tax credit rate 5.05%";
+    line 46 (line 58840) "Line 44 multiplied by the percentage from line 45"; line 50 (line
+    61500) "Line 46 plus line 49 Enter this amount on line 52. Ontario non-refundable tax
+    credits"; line 53 "Line 51 minus line 52 (if negative, enter "0")". No age amount,
+    spouse amount, eligible dependant, Ontario caregiver amount or medical expenses are
+    claimed (the same counts of 0 and medical expenses of 0; the lines before the count keep
+    the figures the form prints, such as the Ontario age maximum 6,223.00 and income
+    threshold 46,330.00 and the spouse amount before the count 10,823.00, and the medical
+    share 240.00), so line 58800, which takes amounts already in cents, is 12,747 + 0 + 0 +
+    0 + 0 + 0 + 0 + 0 = 12,747.00 and line 58840 is 12,747.00 x 5.05% = 643.7235, rounded
+    half-up to the cent: 643.72; line 49 (line 58969) is $0 here because Schedule 9's inputs
+    are all $0, so line 61500 is 643.72 + 0 = 643.72. Line 53 is 404.00 - 643.72, negative,
+    so 0, the Ontario tax after credits; tax on split income and the minimum tax carryover
+    are not modelled, so lines 61 to 65 carry it. The surtax lines are 0: lines 66 and 67
+    are negative and enter 0, line 68 is 0 and line 69 is 0 + 0 = 0.
   - >-
     https://www.canada.ca/en/revenue-agency/services/tax/individuals/tax-rates-brackets/last-year.html
   - >-
@@ -483,8 +487,8 @@ sources:
     CRA, Schedule ON479-A (form 5006-TCA), "Ontario Childcare Access and Relief from
     Expenses (CARE) Tax Credit", "Family adjusted income calculation for the tax credit":
     line 1 "Net income from line 23600 of the return (or the amount you would have entered
-    if the instructions on line 23600 said "if negative, show in brackets")"; line 2
-    "Child care expenses deduction from line 21400 of the return"; line 3 "Social benefits
+    if the instructions on line 23600 said "if negative, show in brackets")"; line 2 "Child
+    care expenses deduction from line 21400 of the return"; line 3 "Social benefits
     repayment from line 23500 of the return"; line 4 "Add lines 1 to 3 (if negative, enter
     "0"). Adjusted income"; line 5 "Add the amounts from line 4 of columns 1 and 2. Family
     adjusted income"; line 6 "Enter your child care expenses deduction from line 21400 of
@@ -492,18 +496,19 @@ sources:
     not, enter the tax credit rate that applies to your family adjusted income from the
     table below." under "Family adjusted income and Tax credit rate"; line 8 "Line 6
     multiplied by the percentage from line 7 Enter this amount on line 63050 of your Form
-    ON479." Form ON479 (form 5006-TC): "Line 2 and line 63050: Complete Schedule ON479-A
-    to calculate this amount." Under "No supporting person for any eligible children": "If
-    none of the eligible children has a supporting person, calculate your adjusted income
-    and enter it on line 4 of column 1". Line 23600 before the floor at 0 is line 23400
-    less line 23500, and line 23500 is 0 (the chart does not apply), so line 1 is line 23600 before the floor, equal to line 23400, 8,000.00, which is not negative; line 2 is the child
-    care expenses deduction (line 21400), 0; line 3 (the social benefits repayment from line 23500) is 0; so
-    line 4 is 8,000.00 + 0 = 8,000.00. No eligible child has a supporting person (to be
-    confirmed), so only column 1 is completed, column 2 line 4 (line 63047) is 0 and line
-    5 is 8,000.00 + 0 = 8,000.00. Line 7: 8,000.00 is in the table row "more than $0
-    but not more than $20,000: 75%", so the rate is 75%. Line 6 is the child care expenses
-    deduction, 0, and line 8 is 0 x 75% = 0.00, rounded half-up to the cent, entered on
-    line 63050 of Form ON479, so ON479 line 2 is 0.00.
+    ON479." Form ON479 (form 5006-TC): "Line 2 and line 63050: Complete Schedule ON479-A to
+    calculate this amount." Under "No supporting person for any eligible children": "If none
+    of the eligible children has a supporting person, calculate your adjusted income and
+    enter it on line 4 of column 1". Line 23600 before the floor at 0 is line 23400 less
+    line 23500, and line 23500 is 0 (the chart does not apply), so line 1 is line 23600
+    before the floor, equal to line 23400, 8,000.00, which is not negative; line 2 is the
+    child care expenses deduction (line 21400), 0; line 3 (the social benefits repayment
+    from line 23500) is 0; so line 4 is 8,000.00 + 0 = 8,000.00. No eligible child has a
+    supporting person (to be confirmed), so only column 1 is completed, column 2 line 4
+    (line 63047) is 0 and line 5 is 8,000.00 + 0 = 8,000.00. Line 7: 8,000.00 is in the
+    table row "more than $0 but not more than $20,000: 75%", so the rate is 75%. Line 6 is
+    the child care expenses deduction, 0, and line 8 is 0 x 75% = 0.00, rounded half-up to
+    the cent, entered on line 63050 of Form ON479, so ON479 line 2 is 0.00.
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5006-tca/5006-tca-25e.txt
   - >-
     https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-r/5000-r-25e.txt
