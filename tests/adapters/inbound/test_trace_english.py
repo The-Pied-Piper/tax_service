@@ -96,6 +96,7 @@ from app.jurisdictions.ca.trace import (
     DispositionGainLine,
     DispositionGainOnlyLine,
     DispositionProceedsLine,
+    FiscalPeriodDaysLine,
     ForeignBusinessLine4,
     ForeignBusinessLine5,
     ForeignBusinessLine7,
@@ -5352,3 +5353,34 @@ def test_the_closing_line_of_a_366_day_dataset_names_the_proration_against_its_d
 
     assert "less claim 2052.05 (prorated 365/366) =" in render(prorated)
     assert "prorated" not in render(full)
+
+
+# Guide T4002 "You were asking?": "Since your fiscal period is less than 365 days, you have to
+# prorate your CCA claim. ... In this case, your fiscal period is 214 days." `FiscalPeriodDaysLine`
+# says the days the caller entered and the days of the fiscal period that the claim is prorated by;
+# no days entered is a full year of the dataset's days.
+FISCAL_PERIOD_DAYS = ArtifactKind("ex/fiscal_period_days", int)
+
+
+def test_renders_the_days_entered_as_the_fiscal_period() -> None:
+    line = FiscalPeriodDaysLine(FISCAL_PERIOD_DAYS, 214, 214, 365)
+
+    assert render(line) == "fiscal_period_days: entered 214, fiscal period 214 days"
+
+
+def test_renders_no_days_entered_as_a_full_year() -> None:
+    line = FiscalPeriodDaysLine(FISCAL_PERIOD_DAYS, 0, 365, 365)
+
+    assert render(line) == "fiscal_period_days: entered 0, a full year of 365 days"
+
+
+def test_renders_365_days_entered_as_the_fiscal_period() -> None:
+    line = FiscalPeriodDaysLine(FISCAL_PERIOD_DAYS, 365, 365, 365)
+
+    assert render(line) == "fiscal_period_days: entered 365, fiscal period 365 days"
+
+
+def test_renders_a_full_year_of_a_366_day_dataset() -> None:
+    line = FiscalPeriodDaysLine(FISCAL_PERIOD_DAYS, 0, 366, 366)
+
+    assert render(line) == "fiscal_period_days: entered 0, a full year of 366 days"

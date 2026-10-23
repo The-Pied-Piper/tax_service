@@ -258,6 +258,12 @@ def test_importing_the_federal_package_registers_the_closing_ucc_after_22_prorat
     )
 
 
+def test_importing_the_federal_package_registers_the_fiscal_period_days_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/fiscal_period_days")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.fiscal_period_days"
+
+
 def test_importing_the_federal_package_registers_the_short_term_rental_expenses_capability() -> (
     None
 ):

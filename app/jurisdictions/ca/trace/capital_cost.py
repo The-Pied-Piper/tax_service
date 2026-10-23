@@ -21,6 +21,7 @@ __all__ = [
     "TerminalLossLine",
     "ClosingUccLine",
     "ImmediateExpensingLine",
+    "FiscalPeriodDaysLine",
 ]
 
 
@@ -192,3 +193,21 @@ class ImmediateExpensingLine(TraceLine):
     def amount(self) -> Decimal:
         """The class's immediate expensing amount."""
         return self.column_9
+
+
+@dataclass(frozen=True)
+class FiscalPeriodDaysLine(TraceLine):
+    """The days of the fiscal period `fiscal_period_days` for `output`: the days `entered` when
+    above 0, else the `full_year_days` of a full year (0 entered is none entered). Guide T4002
+    "You were asking?": a fiscal period shorter than `full_year_days` prorates the CCA claim.
+    """
+
+    output: ArtifactKind[int]
+    entered: int
+    fiscal_period_days: int
+    full_year_days: int
+
+    @property
+    def amount(self) -> Decimal:
+        """The days of the fiscal period."""
+        return Decimal(self.fiscal_period_days)
