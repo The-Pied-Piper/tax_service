@@ -28,6 +28,7 @@ D = Decimal
 A = ArtifactKind("ex/a", Decimal)
 B = ArtifactKind("ex/b", Decimal)
 C = ArtifactKind("ex/c", Decimal)
+SUM = ArtifactKind("ex/sum", Decimal)
 
 
 @dataclass(frozen=True)
@@ -184,23 +185,20 @@ class Add(Capability):
 
 def test_apply_names_every_missing_input_in_label_order() -> None:
     with pytest.raises(MissingArtifactError, match="Add needs 'a', 'b'"):
-        Worksheet(Artifact(C, D(1))).apply(Add(B, A, ArtifactKind("ex/d", Decimal)))
+        Worksheet(Artifact(C, D(1))).apply(Add(B, A, SUM))
 
 
 def test_apply_names_only_the_missing_inputs_among_present_ones() -> None:
     with pytest.raises(MissingArtifactError, match="Add needs 'b'$"):
-        Worksheet(Artifact(A, D(1)), Artifact(C, D(1))).apply(
-            Add(A, B, ArtifactKind("ex/d", Decimal))
-        )
+        Worksheet(Artifact(A, D(1)), Artifact(C, D(1))).apply(Add(A, B, SUM))
 
 
 def test_apply_with_every_input_present_records_the_output_and_trace() -> None:
-    d = ArtifactKind("ex/d", Decimal)
     worksheet = Worksheet(Artifact(A, D(1)), Artifact(B, D(2)), Artifact(C, D(9)))
 
-    worksheet.apply(Add(A, B, d))
+    worksheet.apply(Add(A, B, SUM))
 
-    assert worksheet.get(d) == Artifact(d, D(3))
+    assert worksheet.get(SUM) == Artifact(SUM, D(3))
     assert worksheet.trace == (DoubledLine(D(3)),)
 
 
