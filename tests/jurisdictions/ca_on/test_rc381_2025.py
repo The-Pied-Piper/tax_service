@@ -26,7 +26,11 @@ Lines 43 and 46 print the same rate and maximum as lines 23 and 26, so they read
 datasets. Lines 84, 85 and 86 print the figures of Schedule 8 Part 4's lines 10, 11 and 12 (9.9%
 up to $6,712.20, 2% up to $1,356.00, 8% up to $792.00, on earnings that are already net of the
 basic exemption), and line 91 the 50% of its line 15, so they read those datasets
-(`cpp_self_employed_*`).
+(`cpp_self_employed_*`). Lines 111, 112 and 125 print "× 50%" as line 91 does, so they read the
+same dataset (`test_part_4_line_91_is_50_percent_of_line_90_to_the_cent` pins it, with a tie), and
+line 116 prints "× 83.1933%", the rate of line 20, so it reads that dataset
+(`test_line_20_is_83_1933_percent_of_line_19`); no dataset is added for lines 111 to 129 or for
+the final selection.
 
 The dataset of each line is checked with the rounding rule or the capability that reads it, on
 made-up kinds; the lines together are in the `end_to_end` tests and

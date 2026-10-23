@@ -1207,3 +1207,4 @@ expected:
   ca/amt_federal_tax_payable_under_minimum_tax: "0"
   ca/amt_carryover_available_for_2026: "0"
   ca/rc381_part_4_line_91: "2647.75"
+  ca/rc381_cpp_overpayment_on_return: "2647.75"
