@@ -535,6 +535,7 @@ def test_a_different_years_rate_changes_the_maximum() -> None:
         CLASS_8.recapture_and_terminal_loss,
         CLASS_8.aiip_factor,
         CLASS_8.riip_factor,
+        CLASS_8.half_year_rule_on_sale,
     )
 
     line = only_line(row("8", "10000", "3000"), dataset=class_rates(classes=(other,)))

@@ -3420,6 +3420,7 @@ def class_rate(
         recapture_and_terminal_loss,
         Fraction(3, 2),
         Fraction(7, 3),
+        HalfYearRuleOnSale.DOES_NOT_APPLY,
     )
 
 
@@ -4622,7 +4623,7 @@ def sale_class() -> ClassRate:
         EXCLUDED,
         Fraction(0, 1),
         Fraction(1, 2),
-        half_year_rule_on_sale=HalfYearRuleOnSale.APPLIES,
+        HalfYearRuleOnSale.APPLIES,
     )
 
 
@@ -4653,6 +4654,22 @@ def test_the_claim_line_names_the_half_year_rule_on_sale_at_column_19() -> None:
         "column 16 12000, column 17 0, column 18 0, column 19 10000 (half-year rule on sale), "
         "maximum 30% of column 19 = 3000 (half-up to 0.01), claim 3000"
     )
+
+
+def test_the_claim_line_shows_the_cap_at_column_7_when_it_bites() -> None:
+    line = replace(sale_claim_line(), column_7=D("10"), maximum=D("10"), claim=D("10"))
+
+    assert render(line) == (
+        "cca_claim: item 1 class 10.1: column 7 10, column 14 12000, column 15 0, "
+        "column 16 12000, column 17 0, column 18 0, column 19 10000 (half-year rule on sale), "
+        "maximum 30% of column 19 = 3000 (half-up to 0.01), limited to column 7 = 10, claim 10"
+    )
+
+
+def test_the_claim_line_does_not_show_a_cap_at_column_7_when_it_is_equal() -> None:
+    line = replace(sale_claim_line(), column_7=D("3000"))
+
+    assert "limited" not in render(line)
 
 
 def test_the_claim_line_is_unchanged_without_the_half_year_rule_on_sale() -> None:

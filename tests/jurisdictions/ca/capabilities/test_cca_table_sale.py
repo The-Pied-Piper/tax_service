@@ -211,6 +211,64 @@ def test_a_claim_after_column_22_is_limited_to_column_21_less_column_22() -> Non
         capability.compute((column_22, classes(sold("2500.01"))))
 
 
+# Column 7 below the sale's base amount: the maximum is the lesser of 30% of column 19 and column 7
+# (the UCC cannot go below 0). Column 2 10,000.00 gives column 19 5,000.00 and 1,500.00 at 30%.
+
+
+def test_the_maximum_is_at_most_column_7() -> None:
+    # Proceeds 9,990.00: column 7 10.00, so the maximum is 10.00, not 1,500.00.
+    nearly_all = sold("10.00", column_2="10000.00", proceeds="9990.00")
+
+    assert claim_total(nearly_all) == D("10.00")
+    (line, _total) = claim_trace(nearly_all)
+    assert (line.column_7, line.column_19, line.maximum) == (D("10.00"), D("5000.00"), D("10.00"))
+    assert closing(nearly_all) == [(D("10.1"), D("0.00"))]
+
+
+def test_a_claim_above_column_7_is_refused_for_a_sale_row() -> None:
+    nearly_all = sold("10.01", column_2="10000.00", proceeds="9990.00")
+
+    with pytest.raises(InputAboveBoundError, match=r"^item 1: ca/cca_claimed 10.01 is above the"):
+        claim_total(nearly_all)
+    with pytest.raises(InputAboveBoundError, match=r"above the maximum 10.00"):
+        closing(nearly_all)
+
+
+def test_a_column_7_of_zero_takes_no_rule_and_allows_no_claim() -> None:
+    all_sold = sold("0", column_2="10000.00", proceeds="10000.00")
+
+    assert claim_total(all_sold) == D("0")
+    assert closing(all_sold) == [(D("10.1"), D("0.00"))]
+    (line, _total) = claim_trace(all_sold)
+    assert line.half_year_rule_on_sale is False
+    assert line.maximum == D("0")
+    with pytest.raises(InputAboveBoundError):
+        claim_total(sold("0.01", column_2="10000.00", proceeds="10000.00"))
+
+
+def test_a_column_7_equal_to_the_uncapped_maximum_is_not_capped() -> None:
+    # Proceeds 8,500.00: column 7 1,500.00 and 30% of column 19 1,500.00.
+    equal = sold("1500.00", column_2="10000.00", proceeds="8500.00")
+
+    assert claim_total(equal) == D("1500.00")
+    assert claim_trace(equal)[0].maximum == D("1500.00")
+    assert closing(equal) == [(D("10.1"), D("0.00"))]
+    with pytest.raises(InputAboveBoundError):
+        claim_total(sold("1500.01", column_2="10000.00", proceeds="8500.00"))
+
+
+def test_a_claim_after_column_22_is_limited_by_the_capped_maximum() -> None:
+    # Maximum 10.00 less a column 22 of 4.00 leaves 6.00.
+    capability = CcaClaimAfterColumn22(sale_class_rates(), CLASSES, NON_COMPLIANT, CCA_CLAIM)
+    column_22 = non_compliant_cca(("10.1", "4.00"))
+    nearly_all = dict(column_2="10000.00", proceeds="9990.00")
+
+    (output,) = capability.compute((column_22, classes(sold("6.00", **nearly_all)))).outputs
+    assert output.value == D("6.00")
+    with pytest.raises(InputAboveBoundError, match=r"above the maximum 6.00"):
+        capability.compute((column_22, classes(sold("6.01", **nearly_all))))
+
+
 # --- the closing UCC ----------------------------------------------------------------------------
 
 

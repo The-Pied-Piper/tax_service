@@ -58,6 +58,16 @@ class CcaClaimRenderer:
             available = "maximum 0 as column 7 is negative"
         elif zero_reason is CcaZeroReason.NO_PROPERTY_LEFT:
             available = "maximum 0 as no property is left in the class"
+        elif (
+            line.half_year_rule_on_sale and rule.apply(column_19 * class_rate.rate.value) > maximum
+        ):
+            # The rate of column 19 is more than column 7 and the UCC cannot go below 0.
+            available = (
+                f"maximum {EnglishFigures.percent(class_rate.rate.value)}% of column 19 = "
+                f"{EnglishFigures.money(rule.apply(column_19 * class_rate.rate.value))} "
+                f"({EnglishFigures.rounding(rule)}), limited to column 7 = "
+                f"{EnglishFigures.money(maximum)}"
+            )
         else:
             available = (
                 f"maximum {EnglishFigures.percent(class_rate.rate.value)}% of column 19 = "

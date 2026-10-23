@@ -129,14 +129,9 @@ def test_a_class_holds_its_fields_in_order() -> None:
     ]
 
 
-def test_a_class_has_no_half_year_rule_on_sale_unless_it_is_given_it() -> None:
-    assert first().half_year_rule_on_sale is HalfYearRuleOnSale.DOES_NOT_APPLY
-    assert (
-        ClassRate(
-            D("8"), Rate(D("0.20")), APPLIES, INCLUDED, F(0, 1), F(1, 2)
-        ).half_year_rule_on_sale
-        is HalfYearRuleOnSale.DOES_NOT_APPLY
-    )
+def test_a_class_without_a_half_year_rule_on_sale_is_refused() -> None:
+    with pytest.raises(TypeError, match="half_year_rule_on_sale"):
+        ClassRate(D("8"), Rate(D("0.20")), APPLIES, INCLUDED, F(0, 1), F(1, 2))  # type: ignore[call-arg]
 
 
 def test_a_class_holds_the_half_year_rule_on_sale() -> None:
@@ -148,7 +143,10 @@ def test_a_class_holds_the_half_year_rule_on_sale() -> None:
 
 
 def test_a_class_is_built_positionally_in_field_order() -> None:
-    assert ClassRate(D("8"), Rate(D("0.20")), APPLIES, INCLUDED, F(0, 1), F(1, 2)) == first()
+    assert (
+        ClassRate(D("8"), Rate(D("0.20")), APPLIES, INCLUDED, F(0, 1), F(1, 2), NOT_ON_SALE)
+        == first()
+    )
 
 
 def test_a_class_keeps_its_number_exact() -> None:
@@ -205,7 +203,7 @@ def test_a_class_is_hashable() -> None:
 @pytest.mark.parametrize("value", [8, 8.0, "8", F(8, 1)])
 def test_rejects_a_class_number_that_is_not_a_decimal(value: object) -> None:
     with pytest.raises(TypeError, match="class_number must be a Decimal"):
-        ClassRate(value, Rate(D("0.2")), APPLIES, INCLUDED, F(0, 1), F(1, 2))  # type: ignore[arg-type]
+        ClassRate(value, Rate(D("0.2")), APPLIES, INCLUDED, F(0, 1), F(1, 2), NOT_ON_SALE)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("number", ["Infinity", "-Infinity", "NaN"])
@@ -223,13 +221,13 @@ def test_rejects_a_class_number_that_is_not_positive(number: str) -> None:
 @pytest.mark.parametrize("rate", [D("0.2"), 0.2, "0.2"])
 def test_rejects_a_rate_that_is_not_a_rate(rate: object) -> None:
     with pytest.raises(TypeError, match="rate must be a Rate"):
-        ClassRate(D("8"), rate, APPLIES, INCLUDED, F(0, 1), F(1, 2))  # type: ignore[arg-type]
+        ClassRate(D("8"), rate, APPLIES, INCLUDED, F(0, 1), F(1, 2), NOT_ON_SALE)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("rule", ["applies", True, RecaptureAndTerminalLoss.APPLIES])
 def test_rejects_a_half_year_rule_that_is_not_one(rule: object) -> None:
     with pytest.raises(TypeError, match="half_year_rule must be a HalfYearRule"):
-        ClassRate(D("8"), Rate(D("0.2")), rule, INCLUDED, F(0, 1), F(1, 2))  # type: ignore[arg-type]
+        ClassRate(D("8"), Rate(D("0.2")), rule, INCLUDED, F(0, 1), F(1, 2), NOT_ON_SALE)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("choice", ["applies", False, HalfYearRule.APPLIES])
@@ -237,7 +235,7 @@ def test_rejects_a_recapture_and_terminal_loss_choice_that_is_not_one(choice: ob
     with pytest.raises(
         TypeError, match="recapture_and_terminal_loss must be a RecaptureAndTerminalLoss"
     ):
-        ClassRate(D("8"), Rate(D("0.2")), APPLIES, choice, F(0, 1), F(1, 2))  # type: ignore[arg-type]
+        ClassRate(D("8"), Rate(D("0.2")), APPLIES, choice, F(0, 1), F(1, 2), NOT_ON_SALE)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("choice", ["applies", True, HalfYearRule.APPLIES, None])
@@ -264,7 +262,11 @@ def test_rejects_a_half_year_rule_on_sale_that_is_not_one(choice: object) -> Non
 def test_rejects_a_factor_that_is_not_a_fraction(
     factor: str, value: object, type_name: str
 ) -> None:
-    parts: dict[str, object] = {"aiip_factor": F(0, 1), "riip_factor": F(1, 2)}
+    parts: dict[str, object] = {
+        "aiip_factor": F(0, 1),
+        "riip_factor": F(1, 2),
+        "half_year_rule_on_sale": NOT_ON_SALE,
+    }
     parts[factor] = value
 
     with pytest.raises(TypeError, match=f"{factor} must be a Fraction, got {type_name}"):

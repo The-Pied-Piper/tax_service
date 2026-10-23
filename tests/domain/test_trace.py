@@ -19,7 +19,12 @@ import pytest
 from app.domain.artifact import ArtifactKind
 from app.domain.parameters.amount import Amount
 from app.domain.parameters.claim_reduction import ClaimReduction
-from app.domain.parameters.class_rates import ClassRate, HalfYearRule, RecaptureAndTerminalLoss
+from app.domain.parameters.class_rates import (
+    ClassRate,
+    HalfYearRule,
+    HalfYearRuleOnSale,
+    RecaptureAndTerminalLoss,
+)
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
@@ -4374,6 +4379,7 @@ CLASS = ClassRate(
     RecaptureAndTerminalLoss.APPLIES,
     Fraction(3, 2),
     Fraction(7, 3),
+    HalfYearRuleOnSale.DOES_NOT_APPLY,
 )
 OTHER_CLASS = ClassRate(
     D("10.1"),
@@ -4382,6 +4388,7 @@ OTHER_CLASS = ClassRate(
     RecaptureAndTerminalLoss.EXCLUDED,
     Fraction(0, 1),
     Fraction(1, 2),
+    HalfYearRuleOnSale.DOES_NOT_APPLY,
 )
 CCA = ArtifactKind("ex/cca_claim", Decimal)
 RECAPTURE = ArtifactKind("ex/recaptured_cca", Decimal)

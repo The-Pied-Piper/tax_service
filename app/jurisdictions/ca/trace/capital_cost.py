@@ -47,8 +47,9 @@ class CcaClaimLine(TraceLine):
     if no property is left, else 0). Columns 15, 17 and 18 and the maximum are each rounded once
     with `rounding`; the claim is the caller's, at most the maximum plus `column_9` (the immediate
     expensing amount, 0 unless the class has a DIEP) and at least `column_9`. Under the
-    `half_year_rule_on_sale` (Class 10.1, column 2 above 0, no property left) column 19 is one half
-    of column 2 and the positive-column-7 zero for no property left does not apply.
+    `half_year_rule_on_sale` (Class 10.1, column 2 and column 7 above 0, no property left) column 19
+    is one half of column 2, the positive-column-7 zero for no property left does not apply and the
+    maximum is at most column 7.
 
     Its own class, not a `CappedAmountLine`: the amount is worked on for one class, named by
     position, in many columns that the English rendering shows one by one.

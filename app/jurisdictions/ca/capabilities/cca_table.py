@@ -33,11 +33,14 @@ owned the Class 10.1 vehicle you disposed of in 2025. If this applies to you, en
 amount from column 2 (for Class 10.1 vehicles) in column 19." A row uses it when its class has
 the rule (`half_year_rule_on_sale` of the class rates), column 2 is above 0, no property is left
 in the class and recapture and a terminal loss are excluded for the row (Note 3, so not with DIEP
-additions), and column 7 is not negative: column 19 is then one half of column 2, the exact half
+additions), and column 7 is above 0: column 19 is then one half of column 2, the exact half
 rounded once with the dataset's rule, and the zero for a positive column 7 with no property left
-does not apply, so the maximum is column 19 times the rate and column 24 is column 7 less the
-claim. A negative column 7 still gives a maximum and column 24 of 0.
- Guide T4036 "Column 7": "You cannot claim CCA when the amount in column 7 is:
+does not apply, so the maximum is column 19 times the rate, but at most column 7 (the UCC cannot
+go below 0 when column 7 is less than the sale's base amount, as when the proceeds are nearly all
+of column 2), and column 24 is column 7 less the claim. A row whose column 7 is 0 or negative does
+not take the rule and is worked as without it: a negative column 7 is a zero for the recorded
+reason, and a column 7 of 0 gives no claim as before.
+Guide T4036 "Column 7": "You cannot claim CCA when the amount in column 7 is:
 negative ... positive and you do not have any property left in that class ... In either case,
 enter "0" in column 24", so the maximum and column 24 are 0 for those rows, for the recorded
 `CcaZeroReason`. The claim (column 23) is the caller's election, which includes column 9: it is
@@ -154,13 +157,13 @@ class CcaRow:
     def half_year_rule_on_sale(self) -> bool:
         """Whether the row uses the half-year rule on sale: its class has it, column 2 is above 0,
         no property is left in the class and recapture and a terminal loss are excluded for the
-        row (Note 3), and column 7 is not negative."""
+        row (Note 3), and column 7 is above 0."""
         return (
             self.class_rate.half_year_rule_on_sale is HalfYearRuleOnSale.APPLIES
             and self.ucc_at_start > 0
             and bool(self.no_property_left)
             and not self.note_3_applies
-            and self.column_7 >= 0
+            and self.column_7 > 0
         )
 
     @property
@@ -322,6 +325,10 @@ class CcaTable(Capability):
             if row.zero_reason is not CcaZeroReason.NONE
             else rounding.apply(column_19 * rate.rate.value)
         )
+        if row.half_year_rule_on_sale:
+            # The sale's base amount can exceed what is left of the class (column 7), and the UCC
+            # cannot go below 0.
+            maximum = min(maximum, row.column_7)
         least = max(_ZERO, row.immediate_expensing - row.column_22)
         if row.claimed < least:
             raise InputBelowBoundError(

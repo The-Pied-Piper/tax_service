@@ -292,6 +292,7 @@ classes:
     rate: "0.20"
     half_year_rule: applies
     recapture_and_terminal_loss: applies
+    half_year_rule_on_sale: does_not_apply
     aiip_factor: {numerator: "0", denominator: "1"}
     riip_factor: {numerator: "1", denominator: "2"}
   "10.1":
@@ -305,12 +306,14 @@ classes:
     rate: "0.30"
     half_year_rule: applies
     recapture_and_terminal_loss: applies
+    half_year_rule_on_sale: does_not_apply
     aiip_factor: {numerator: "3", denominator: "2"}
     riip_factor: {numerator: "7", denominator: "3"}
   "12":
     rate: "1"
     half_year_rule: exempt
     recapture_and_terminal_loss: applies
+    half_year_rule_on_sale: does_not_apply
     aiip_factor: {numerator: "0", denominator: "1"}
     riip_factor: {numerator: "0", denominator: "1"}
 """
@@ -3394,30 +3397,23 @@ def test_a_rate_table_dataset_is_not_a_rate_dataset(tmp_path: Path) -> None:
 #
 # A `class_rates` dataset holds `classes`, a mapping keyed by each class number as printed (a
 # quoted decimal), each class a quoted decimal `rate`, a `half_year_rule` of `applies` or
-# `exempt`, a `recapture_and_terminal_loss` of `applies` or `excluded`, and an `aiip_factor` and a
-# `riip_factor`, each a quoted whole `numerator` (0 or more) and `denominator` (above 0). A class
-# may also have a `half_year_rule_on_sale` of `applies` or `does_not_apply`; one that leaves it out
-# does not have the rule.
+# `exempt`, a `recapture_and_terminal_loss` of `applies` or `excluded`, a `half_year_rule_on_sale`
+# of `applies` or `does_not_apply`, and an `aiip_factor` and a `riip_factor`, each a quoted whole
+# `numerator` (0 or more) and `denominator` (above 0).
 
 APPLIES = HalfYearRule.APPLIES
 EXEMPT = HalfYearRule.EXEMPT
 INCLUDED = RecaptureAndTerminalLoss.APPLIES
 EXCLUDED = RecaptureAndTerminalLoss.EXCLUDED
+ON_SALE = HalfYearRuleOnSale.APPLIES
+NOT_ON_SALE = HalfYearRuleOnSale.DOES_NOT_APPLY
 F = Fraction
 
 CLASS_RATES_CLASSES = (
-    ClassRate(D("8"), Rate(D("0.20")), APPLIES, INCLUDED, F(0, 1), F(1, 2)),
-    ClassRate(
-        D("10.1"),
-        Rate(D("0.30")),
-        APPLIES,
-        EXCLUDED,
-        F(0, 1),
-        F(1, 2),
-        half_year_rule_on_sale=HalfYearRuleOnSale.APPLIES,
-    ),
-    ClassRate(D("43.1"), Rate(D("0.30")), APPLIES, INCLUDED, F(3, 2), F(7, 3)),
-    ClassRate(D("12"), Rate(D("1")), EXEMPT, INCLUDED, F(0, 1), F(0, 1)),
+    ClassRate(D("8"), Rate(D("0.20")), APPLIES, INCLUDED, F(0, 1), F(1, 2), NOT_ON_SALE),
+    ClassRate(D("10.1"), Rate(D("0.30")), APPLIES, EXCLUDED, F(0, 1), F(1, 2), ON_SALE),
+    ClassRate(D("43.1"), Rate(D("0.30")), APPLIES, INCLUDED, F(3, 2), F(7, 3), NOT_ON_SALE),
+    ClassRate(D("12"), Rate(D("1")), EXEMPT, INCLUDED, F(0, 1), F(0, 1), NOT_ON_SALE),
 )
 
 
@@ -3492,18 +3488,16 @@ def test_reads_a_whole_factor(tmp_path: Path) -> None:
     assert table.classes[2].aiip_factor == F(3, 1)
 
 
-def test_a_class_that_leaves_out_the_half_year_rule_on_sale_does_not_have_it(
-    tmp_path: Path,
-) -> None:
+def test_a_class_states_whether_it_has_the_half_year_rule_on_sale(tmp_path: Path) -> None:
     write(tmp_path, "ex/parameters/class_rates/2025.yaml", CLASS_RATES_2025)
 
     table = source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES).values
 
     assert [entry.half_year_rule_on_sale for entry in table.classes] == [
-        HalfYearRuleOnSale.DOES_NOT_APPLY,
-        HalfYearRuleOnSale.APPLIES,
-        HalfYearRuleOnSale.DOES_NOT_APPLY,
-        HalfYearRuleOnSale.DOES_NOT_APPLY,
+        NOT_ON_SALE,
+        ON_SALE,
+        NOT_ON_SALE,
+        NOT_ON_SALE,
     ]
 
 
@@ -3524,7 +3518,7 @@ def test_reads_a_class_that_says_the_half_year_rule_on_sale_does_not_apply(
         EXCLUDED,
         F(0, 1),
         F(1, 2),
-        half_year_rule_on_sale=HalfYearRuleOnSale.DOES_NOT_APPLY,
+        NOT_ON_SALE,
     )
 
 
@@ -3543,9 +3537,11 @@ def test_reads_a_class_written_as_a_flow_mapping(tmp_path: Path) -> None:
         '    rate: "0.20"\n'
         "    half_year_rule: applies\n"
         "    recapture_and_terminal_loss: applies\n"
+        "    half_year_rule_on_sale: does_not_apply\n"
         '    aiip_factor: {numerator: "0", denominator: "1"}\n'
         '    riip_factor: {numerator: "1", denominator: "2"}\n',
         '  "8": {rate: "0.20", half_year_rule: applies, recapture_and_terminal_loss: applies, '
+        "half_year_rule_on_sale: does_not_apply, "
         'aiip_factor: {numerator: "0", denominator: "1"}, '
         'riip_factor: {numerator: "1", denominator: "2"}}\n',
     )
@@ -3636,6 +3632,11 @@ def test_by_default_the_class_rates_parser_comes_from_the_shared_registry(tmp_pa
             CLASS_RATES_2025.replace("    recapture_and_terminal_loss: excluded\n", ""),
             r"classes\.10\.1: missing keys \['recapture_and_terminal_loss'\]",
             id="recapture-and-terminal-loss-missing",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace("    half_year_rule_on_sale: applies\n", ""),
+            r"classes\.10\.1: missing keys \['half_year_rule_on_sale'\]",
+            id="half-year-rule-on-sale-missing",
         ),
         pytest.param(
             CLASS_RATES_2025.replace(

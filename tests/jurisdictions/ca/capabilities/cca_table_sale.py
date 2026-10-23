@@ -1,9 +1,9 @@
 """Shared test data for the half-year rule on sale, T776 and T2125 Area A column 19.
 
-The rows and helpers are those of `cca_table`. Its Class 10.1 has no flag, so a Class 10.1 row
-there is worked as before; the class-rate dataset here lists Class 10.1 with the flag that names
-the half-year rule on sale (`HalfYearRuleOnSale.APPLIES`), as the 2025 dataset does, beside Class
-1 and Class 8, which do not have it. Guides T4036 and T4002, "Column 19 - Base amount for CCA":
+The rows and helpers are those of `cca_table`. Its Class 10.1 does not have the rule, so a
+Class 10.1 row there is worked as before; the class-rate dataset here lists Class 10.1 with the
+half-year rule on sale (`HalfYearRuleOnSale.APPLIES`), as the 2025 dataset does, beside Class 1 and
+Class 8, which do not have it. Guides T4036 and T4002, "Column 19 - Base amount for CCA":
 "For a Class 10.1 vehicle you disposed of in your 2025 fiscal period, you may be able to claim 50%
 of the CCA that would be allowed if you still owned the vehicle at the end of your 2025 fiscal
 period. This is known as the half-year rule on sale. You can use the half-year rule on sale if, at
@@ -37,7 +37,7 @@ CLASS_10_1_ON_SALE = ClassRate(
     EXCLUDED,
     F(0, 1),
     F(1, 2),
-    half_year_rule_on_sale=ON_SALE,
+    ON_SALE,
 )
 
 
