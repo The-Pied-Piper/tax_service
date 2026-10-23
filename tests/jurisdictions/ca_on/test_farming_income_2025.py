@@ -102,7 +102,7 @@ EXPENSE_NAMES = (
     "other_expenses",
 )
 
-CcaRow = tuple[str, str, str, str, str, str, str, int]
+CcaRow = tuple[str, str, str, str, str, str, str, int, str, str, str]
 
 
 def statement(
@@ -176,7 +176,7 @@ def test_a_recapture_row_adds_the_negative_column_7_to_line_9600() -> None:
     # negative column 7.
     worksheet = statement(
         {"other_income": "500"},
-        cca_classes=(("8", "1000", "0", "4000", "0", "0", "0", 0),),
+        cca_classes=(("8", "1000", "0", "4000", "0", "0", "0", 0, "0", "0", "0"),),
     )
 
     assert line(worksheet, FARM_RECAPTURED_CCA) == D("3000")
@@ -191,7 +191,7 @@ def test_a_terminal_loss_row_takes_the_positive_column_7_off_on_line_9790() -> N
     # from income as a terminal loss in Part 4 on line 9790, with no CCA claimed on the class. Line
     # 9790 is 0 + 1000 = 1000, so 4B is 50000 + 1000 = 51000 and line 9899 is 80000 - 51000 = 29000.
     worksheet = statement(
-        cca_classes=(("8", "1000", "0", "0", "0", "0", "0", 1),),
+        cca_classes=(("8", "1000", "0", "0", "0", "0", "0", 1, "0", "0", "0"),),
     )
 
     assert line(worksheet, FARM_TERMINAL_LOSS) == D("1000")
@@ -203,7 +203,7 @@ def test_a_terminal_loss_row_takes_the_positive_column_7_off_on_line_9790() -> N
 
 def test_a_class_with_property_left_has_no_terminal_loss() -> None:
     # Column 7 is positive but property is left in the class, so no terminal loss: line 9790 is 0.
-    worksheet = statement(cca_classes=(("8", "1000", "0", "0", "0", "0", "0", 0),))
+    worksheet = statement(cca_classes=(("8", "1000", "0", "0", "0", "0", "0", 0, "0", "0", "0"),))
 
     assert line(worksheet, FARM_TERMINAL_LOSS) == D("0")
     assert line(worksheet, FARM_OTHER_EXPENSES_WITH_TERMINAL_LOSS) == D("0")
@@ -213,7 +213,9 @@ def test_a_class_with_property_left_has_no_terminal_loss() -> None:
 def test_class_10_1_has_no_recapture_or_terminal_loss() -> None:
     # Class 10.1, column 7 is 1000 + 0 - 4000 = -3000 and no property is left: "Recapture and
     # terminal loss do not apply to a Class 10.1 property unless it is a DIEP", so both are 0.
-    worksheet = statement(cca_classes=(("10.1", "1000", "0", "4000", "0", "0", "0", 1),))
+    worksheet = statement(
+        cca_classes=(("10.1", "1000", "0", "4000", "0", "0", "0", 1, "0", "0", "0"),)
+    )
 
     assert line(worksheet, FARM_RECAPTURED_CCA) == D("0")
     assert line(worksheet, FARM_TERMINAL_LOSS) == D("0")
@@ -228,9 +230,9 @@ def test_one_class_list_gives_a_claim_a_recapture_and_a_terminal_loss_together()
     # 83000 - 52500 = 30500.
     worksheet = statement(
         cca_classes=(
-            ("8", "10000", "0", "0", "0", "0", "2000", 0),
-            ("10", "1000", "0", "4000", "0", "0", "0", 0),
-            ("6", "500", "0", "0", "0", "0", "0", 1),
+            ("8", "10000", "0", "0", "0", "0", "2000", 0, "0", "0", "0"),
+            ("10", "1000", "0", "4000", "0", "0", "0", 0, "0", "0", "0"),
+            ("6", "500", "0", "0", "0", "0", "0", 1, "0", "0", "0"),
         ),
     )
 
@@ -250,7 +252,7 @@ def test_the_personal_part_and_the_business_use_of_home_cca_come_off_line_9936()
     # 0 + 300 + 0 = 300 and line 9945 is 300, so line 9946 is 28800 - 300 = 28500.
     worksheet = statement(
         {"cca_personal_part": "500", "home_cca": "300"},
-        cca_classes=(("8", "10000", "0", "0", "0", "0", "2000", 0),),
+        cca_classes=(("8", "10000", "0", "0", "0", "0", "2000", 0, "0", "0", "0"),),
     )
 
     assert line(worksheet, FARM_CCA_CLAIM_LESS_PERSONAL_PART) == D("1500")

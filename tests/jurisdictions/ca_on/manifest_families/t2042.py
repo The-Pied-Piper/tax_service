@@ -1,9 +1,9 @@
 """The CA-ON manifest entries of Form T2042 (see `test_manifest.py` and `test_manifest_t2042.py`).
 
-T2042 is a form of the manifest: its 28 selections belong to the form `ca/t2042` (`FORM_STEPS`),
+T2042 is a form of the manifest: its 38 selections belong to the form `ca/t2042` (`FORM_STEPS`),
 run once for each statement of `ca/t2042_statements`, whose fields are the T2042 inputs
-(`FORM_INPUTS`). The form exports three artifacts, each readable by the other forms as
-`ca/t2042.<export>` (`FORM_EXPORTS`); the return reads one and declares no output for the two
+(`FORM_INPUTS`). The form exports four artifacts, each readable by the other forms as
+`ca/t2042.<export>` (`FORM_EXPORTS`); the return reads one and declares no output for the three
 nothing reads (`OUTPUTS` is empty). The return's own entries are the instances input and the total
 of the net income over the statements that is T1 line 14100 (`STEPS` and `WIRING`); the form selects
 one step over the statement's vehicles, whose printed constants of Charts B and C are datasets.
@@ -12,17 +12,22 @@ one step over the statement's vehicles, whose printed constants of Charts B and 
 from __future__ import annotations
 
 from app.domain.capabilities.choose_by_count import ChooseByCount
+from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.record_total import RecordTotal
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
+from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.domain.record_list import RecordListKind
+from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
 from app.jurisdictions.ca.capabilities.business_vehicle_expenses import BusinessVehicleExpenses
 from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
+from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
 from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
+from app.jurisdictions.ca.capabilities.immediate_expensing_claim import ImmediateExpensingClaim
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
 from app.jurisdictions.ca.catalog import (
@@ -47,6 +52,12 @@ from app.jurisdictions.ca.catalog import (
     FARM_DAIRY_SUBSIDIES,
     FARM_EGGS,
     FARM_ELECTRICITY,
+    FARM_EPOP_AGREEMENT_FILED,
+    FARM_EPOP_ASSOCIATED,
+    FARM_EPOP_PERCENTAGE,
+    FARM_EPOP_PERCENTAGE_MAXIMUM,
+    FARM_EPOP_PERCENTAGE_ROOM,
+    FARM_EPOP_PERCENTAGE_TOTAL,
     FARM_EXPENSES_SUBTOTAL,
     FARM_FEED_SUPPLEMENTS_STRAW_AND_BEDDING,
     FARM_FERTILIZERS_AND_LIME,
@@ -77,6 +88,14 @@ from app.jurisdictions.ca.catalog import (
     FARM_HOME_OTHER_EXPENSES,
     FARM_HOME_PERSONAL_USE_PART,
     FARM_HOME_PROPERTY_TAXES,
+    FARM_IMMEDIATE_EXPENSING_ALLOCATED,
+    FARM_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    FARM_IMMEDIATE_EXPENSING_CAP,
+    FARM_IMMEDIATE_EXPENSING_CLAIM,
+    FARM_IMMEDIATE_EXPENSING_LIMIT,
+    FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    FARM_IMMEDIATE_EXPENSING_SHARE,
+    FARM_INCOME_BEFORE_CCA,
     FARM_INSURANCE,
     FARM_INSURANCE_PROCEEDS,
     FARM_INSURANCE_PROGRAM_OVERPAYMENT_RECAPTURE,
@@ -87,6 +106,8 @@ from app.jurisdictions.ca.catalog import (
     FARM_MANDATORY_INVENTORY_ADJUSTMENT_CURRENT_YEAR,
     FARM_MANDATORY_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
     FARM_MILK_AND_CREAM,
+    FARM_MINISTER_ALLOCATION,
+    FARM_MINISTER_ALLOCATION_GIVEN,
     FARM_MIXED_GRAINS,
     FARM_MOTOR_VEHICLE_EXPENSES,
     FARM_NET_INCOME_AFTER_ADJUSTMENTS,
@@ -146,6 +167,10 @@ FARM_CLOSING_UCC_PER_STATEMENT = RecordListKind(
 )
 FARM_HOME_CARRY_FORWARD_PER_STATEMENT = RecordListKind(
     "ca/t2042.farm_home_carry_forward", fields=(FARM_HOME_CARRY_FORWARD,)
+)
+
+FARM_IMMEDIATE_EXPENSING_CLAIM_PER_STATEMENT = RecordListKind(
+    "ca/t2042.farm_immediate_expensing_claim", fields=(FARM_IMMEDIATE_EXPENSING_CLAIM,)
 )
 
 FORM_INPUTS = frozenset(
@@ -234,6 +259,12 @@ FORM_INPUTS = frozenset(
         "ca/farm_home_cca",
         "ca/farm_home_carried_forward",
         "ca/farm_cca_classes",
+        "ca/farm_epop_associated",
+        "ca/farm_epop_agreement_filed",
+        "ca/farm_epop_percentage",
+        "ca/farm_epop_percentage_total",
+        "ca/farm_minister_allocation_given",
+        "ca/farm_minister_allocation",
     }
 )
 
@@ -606,6 +637,144 @@ FORM_STEPS = {
         consumes={"classes": "ca/farm_cca_classes"},
         produces={"output": "ca/farm_closing_ucc"},
     ),
+    # T2042 Area A endnote 5 "the immediate expensing limit, which is equal to one of the
+    # following, whichever is applicable: $1.5 million, if you are not associated with any other
+    # eligible person or partnership (EPOP) in the tax year" and Area G "Immediate expensing limit
+    # allocated to your business: Multiply $1.5 million by the percentage assigned to your
+    # business in column 3**" (amount iv): the printed $1.5 million, a dataset.
+    CapabilitySelection(
+        name="core/credit_amount",
+        params={"amount": "ca/farm_immediate_expensing_cap"},
+        consumes={},
+        produces={"output": "ca/farm_immediate_expensing_cap"},
+    ),
+    # T2042 Area G "The total of all percentages assigned under the agreement should not be more
+    # than 100%. If the total is more than 100%, then the associated group has an immediate
+    # expensing limit of zero." and "** If the total of column 3 is more than 100%, enter "0."":
+    # the printed 100%, a dataset, as the form prints a percentage (100 for 100%).
+    CapabilitySelection(
+        name="core/credit_amount",
+        params={"amount": "ca/farm_epop_percentage_maximum"},
+        consumes={},
+        produces={"output": "ca/farm_epop_percentage_maximum"},
+    ),
+    # T2042 Area G "Immediate expensing limit allocated to your business: Multiply $1.5 million by
+    # the percentage assigned to your business in column 3**" (amount iv), first step: $1.5
+    # million times the percentage assigned to your business in column 3, a caller input as the
+    # form prints it (40 for 40%).
+    CapabilitySelection(
+        name="ca/apply_percentage",
+        params={"rounding": "ca/farm_immediate_expensing_rounding"},
+        consumes={
+            "amount": "ca/farm_immediate_expensing_cap",
+            "percentage": "ca/farm_epop_percentage",
+        },
+        produces={"output": "ca/farm_immediate_expensing_share"},
+    ),
+    # T2042 Area G "** If the total of column 3 is more than 100%, enter "0."", first step: 100%
+    # less "Total of percentage assigned: Total of column 3", a caller input; negative when the
+    # total is more than 100%.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/farm_epop_percentage_maximum",
+            "less": "ca/farm_epop_percentage_total",
+        },
+        produces={"output": "ca/farm_epop_percentage_room"},
+    ),
+    # T2042 Area G "Immediate expensing limit allocated to your business: Multiply $1.5 million by
+    # the percentage assigned to your business in column 3**" (amount iv) and "** If the total of
+    # column 3 is more than 100%, enter "0."": the multiple above when 100% less the total of
+    # column 3 is zero or positive, else 0.
+    CapabilitySelection(
+        name="ca/choose_by_sign",
+        params={},
+        consumes={
+            "sign": "ca/farm_epop_percentage_room",
+            "when_positive": (),
+            "when_zero": (),
+            "when_negative": (),
+            "when_non_positive": (),
+            "when_non_negative": ("ca/farm_immediate_expensing_share",),
+        },
+        produces={"output": "ca/farm_immediate_expensing_allocated"},
+    ),
+    # T2042 Area A endnote 5 "amount iv of Area G, if you are associated with one or more EPOPs
+    # in the tax year" and "zero, if you are associated with one or more EPOPs and an agreement
+    # that assigns a percentage to one or more of the associated EPOPs was not filed with the
+    # minister in a prescribed form": amount iv times the count of agreements filed (a caller's 0
+    # or 1), so 0 when none was filed.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/farm_immediate_expensing_allocated",
+            "count": "ca/farm_epop_agreement_filed",
+        },
+        produces={"output": "ca/farm_immediate_expensing_associated_limit"},
+    ),
+    # T2042 Area A endnote 5 "the immediate expensing limit, which is equal to one of the
+    # following, whichever is applicable": a count of 1 for associated with one or more EPOPs (a
+    # caller's 0 or 1) chooses the limit above ("amount iv of Area G" or "zero"); with a count of
+    # 0 it is the $1.5 million ("if you are not associated with any other eligible person or
+    # partnership (EPOP) in the tax year").
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/farm_epop_associated",
+            "when_none": "ca/farm_immediate_expensing_cap",
+            "when_any": "ca/farm_immediate_expensing_associated_limit",
+        },
+        produces={"output": "ca/farm_immediate_expensing_limit_before_minister"},
+    ),
+    # T2042 Area A endnote 5 "any amount allocated by the minister under subsection 1104(3.4) of
+    # the Regulations": a count of 1 (a caller's 0 or 1) chooses the amount allocated by the
+    # minister, as entered, in place of the limit above; with a count of 0 the limit above stands.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/farm_minister_allocation_given",
+            "when_none": "ca/farm_immediate_expensing_limit_before_minister",
+            "when_any": "ca/farm_minister_allocation",
+        },
+        produces={"output": "ca/farm_immediate_expensing_limit"},
+    ),
+    # T2042 Area A endnote 5 "the amount of income, if any, earned from the source of income that
+    # is a business (before any CCA deductions) in which the relevant DIEP is used for the tax
+    # year": amount 4C "Net income (loss) after inventory adjustments" (the farm's final net
+    # income; the form names no line for this) plus line 9936, the CCA it deducted (the recapture
+    # on line 9600 is already in gross income and the terminal loss on line 9790 an expense), not
+    # below zero.
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={
+            "parts": (
+                "ca/farm_net_income_after_inventory_adjustments",
+                "ca/farm_cca_claim",
+            ),
+        },
+        produces={"output": "ca/farm_income_before_cca"},
+    ),
+    # T2042 Area A "Total immediate expensing claim for the year: Total of column 9" (line i) and
+    # endnote 5 "The total immediate expensing amount for the tax year (total of column 9) is
+    # limited to the lesser of: the immediate expensing limit"; "the UCC of DIEPs in column 8";
+    # "the amount of income, if any, earned from the source of income that is a business (before
+    # any CCA deductions) in which the relevant DIEP is used for the tax year": the total of
+    # column 9 of the Area A list, refused when above the limit or above the income before CCA.
+    CapabilitySelection(
+        name="ca/immediate_expensing_claim",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={
+            "classes": "ca/farm_cca_classes",
+            "immediate_expensing_limit": "ca/farm_immediate_expensing_limit",
+            "income_before_cca": "ca/farm_income_before_cca",
+        },
+        produces={"output": "ca/farm_immediate_expensing_claim"},
+    ),
 }
 
 INPUTS = frozenset({"ca/t2042_statements"})
@@ -614,11 +783,13 @@ FORM_EXPORTS = (
     "ca/farming_income",
     "ca/farm_closing_ucc",
     "ca/farm_home_carry_forward",
+    "ca/farm_immediate_expensing_claim",
 )
 
-# The form exports Area A column 22 "UCC at the end of the year" (for next year) and Part 7 line 7O
-# "Business-use-of-home expenses available to carry forward", which no line of the return reads: an
-# export nobody reads is fine, so the return declares no output for them.
+# The form exports Area A column 22 "UCC at the end of the year" (for next year), Part 7 line 7O
+# "Business-use-of-home expenses available to carry forward" and Area A line i "Total immediate
+# expensing claim for the year", which no line of the return reads: an export nobody reads is
+# fine, so the return declares no output for them.
 OUTPUTS: frozenset[str] = frozenset()
 
 # T1 line 14100 "Net": the total of T2042 line 9946 over the statements.
@@ -825,6 +996,60 @@ FORM_WIRING = {
         frozenset({FARMING_INCOME}),
     ),
     (ClosingUcc, frozenset({FARM_CCA_CLASSES}), frozenset({FARM_CLOSING_UCC})),
+    (CreditAmount, frozenset(), frozenset({FARM_IMMEDIATE_EXPENSING_CAP})),
+    (CreditAmount, frozenset(), frozenset({FARM_EPOP_PERCENTAGE_MAXIMUM})),
+    (
+        ApplyPercentage,
+        frozenset({FARM_IMMEDIATE_EXPENSING_CAP, FARM_EPOP_PERCENTAGE}),
+        frozenset({FARM_IMMEDIATE_EXPENSING_SHARE}),
+    ),
+    (
+        Subtract,
+        frozenset({FARM_EPOP_PERCENTAGE_MAXIMUM, FARM_EPOP_PERCENTAGE_TOTAL}),
+        frozenset({FARM_EPOP_PERCENTAGE_ROOM}),
+    ),
+    (
+        ChooseBySign,
+        frozenset({FARM_EPOP_PERCENTAGE_ROOM, FARM_IMMEDIATE_EXPENSING_SHARE}),
+        frozenset({FARM_IMMEDIATE_EXPENSING_ALLOCATED}),
+    ),
+    (
+        TimesCount,
+        frozenset({FARM_IMMEDIATE_EXPENSING_ALLOCATED, FARM_EPOP_AGREEMENT_FILED}),
+        frozenset({FARM_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                FARM_EPOP_ASSOCIATED,
+                FARM_IMMEDIATE_EXPENSING_CAP,
+                FARM_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+            }
+        ),
+        frozenset({FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                FARM_MINISTER_ALLOCATION_GIVEN,
+                FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+                FARM_MINISTER_ALLOCATION,
+            }
+        ),
+        frozenset({FARM_IMMEDIATE_EXPENSING_LIMIT}),
+    ),
+    (
+        SumNotBelowZero,
+        frozenset({FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS, FARM_CCA_CLAIM}),
+        frozenset({FARM_INCOME_BEFORE_CCA}),
+    ),
+    (
+        ImmediateExpensingClaim,
+        frozenset({FARM_CCA_CLASSES, FARM_IMMEDIATE_EXPENSING_LIMIT, FARM_INCOME_BEFORE_CCA}),
+        frozenset({FARM_IMMEDIATE_EXPENSING_CLAIM}),
+    ),
     (
         BusinessVehicleExpenses,
         frozenset({BUSINESS_VEHICLES, FARM_VEHICLE_SALES_TAX_RATE}),

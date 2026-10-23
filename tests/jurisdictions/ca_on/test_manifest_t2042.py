@@ -78,12 +78,12 @@ def test_the_manifest_has_the_form_t2042_beside_the_other_forms() -> None:
     assert found.exports == t2042.FORM_EXPORTS
 
 
-def test_the_form_holds_the_28_t2042_selections() -> None:
+def test_the_form_holds_the_38_t2042_selections() -> None:
     # The selections of Charts A to C of one vehicle and the five printed constants are now one
     # step over the statement's vehicles, the form's only selection for them.
     found = form()
 
-    assert len(found.capabilities) == 28
+    assert len(found.capabilities) == 38
     assert set(found.capabilities) == t2042.FORM_STEPS
 
 
@@ -145,7 +145,7 @@ def test_the_statements_kind_is_a_record_list_of_every_t2042_input_in_order() ->
     assert isinstance(T2042_STATEMENTS, RecordListKind)
     assert T2042_STATEMENTS.identifier == "ca/t2042_statements"
     assert frozenset(field.identifier for field in T2042_STATEMENTS.fields) == t2042.FORM_INPUTS
-    assert len(T2042_STATEMENTS.fields) == len(t2042.FORM_INPUTS) == 84
+    assert len(T2042_STATEMENTS.fields) == len(t2042.FORM_INPUTS) == 90
 
 
 def test_the_area_a_list_and_the_vehicles_of_a_statement_are_nested_record_lists() -> None:
@@ -170,11 +170,18 @@ def test_the_return_declares_no_output_for_the_exports_nothing_reads() -> None:
     exports = set(default.exports)
 
     assert t2042.OUTPUTS <= exports
-    assert not {"ca/farm_closing_ucc", "ca/farm_home_carry_forward"} & exports
+    assert (
+        not {
+            "ca/farm_closing_ucc",
+            "ca/farm_home_carry_forward",
+            "ca/farm_immediate_expensing_claim",
+        }
+        & exports
+    )
     assert not {export for export in exports if "." in export}
 
 
-def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_three_kinds() -> None:
+def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_four_kinds() -> None:
     found = composed()
 
     assert found.instances == T2042_STATEMENTS
@@ -183,6 +190,7 @@ def test_the_form_set_runs_the_form_on_the_statements_and_derives_its_three_kind
         t2042.NET_INCOME_PER_STATEMENT,
         t2042.FARM_CLOSING_UCC_PER_STATEMENT,
         t2042.FARM_HOME_CARRY_FORWARD_PER_STATEMENT,
+        t2042.FARM_IMMEDIATE_EXPENSING_CLAIM_PER_STATEMENT,
     )
 
 

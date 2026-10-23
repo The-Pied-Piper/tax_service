@@ -212,6 +212,12 @@ from app.jurisdictions.ca.catalog import (
     FARM_DAIRY_SUBSIDIES,
     FARM_EGGS,
     FARM_ELECTRICITY,
+    FARM_EPOP_AGREEMENT_FILED,
+    FARM_EPOP_ASSOCIATED,
+    FARM_EPOP_PERCENTAGE,
+    FARM_EPOP_PERCENTAGE_MAXIMUM,
+    FARM_EPOP_PERCENTAGE_ROOM,
+    FARM_EPOP_PERCENTAGE_TOTAL,
     FARM_EXPENSES_SUBTOTAL,
     FARM_FEED_SUPPLEMENTS_STRAW_AND_BEDDING,
     FARM_FERTILIZERS_AND_LIME,
@@ -242,6 +248,14 @@ from app.jurisdictions.ca.catalog import (
     FARM_HOME_OTHER_EXPENSES,
     FARM_HOME_PERSONAL_USE_PART,
     FARM_HOME_PROPERTY_TAXES,
+    FARM_IMMEDIATE_EXPENSING_ALLOCATED,
+    FARM_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    FARM_IMMEDIATE_EXPENSING_CAP,
+    FARM_IMMEDIATE_EXPENSING_CLAIM,
+    FARM_IMMEDIATE_EXPENSING_LIMIT,
+    FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    FARM_IMMEDIATE_EXPENSING_SHARE,
+    FARM_INCOME_BEFORE_CCA,
     FARM_INSURANCE,
     FARM_INSURANCE_PROCEEDS,
     FARM_INSURANCE_PROGRAM_OVERPAYMENT_RECAPTURE,
@@ -252,6 +266,8 @@ from app.jurisdictions.ca.catalog import (
     FARM_MANDATORY_INVENTORY_ADJUSTMENT_CURRENT_YEAR,
     FARM_MANDATORY_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
     FARM_MILK_AND_CREAM,
+    FARM_MINISTER_ALLOCATION,
+    FARM_MINISTER_ALLOCATION_GIVEN,
     FARM_MIXED_GRAINS,
     FARM_MOTOR_VEHICLE_EXPENSES,
     FARM_NET_INCOME_AFTER_ADJUSTMENTS,
@@ -2714,6 +2730,12 @@ FARM_KINDS: tuple[ArtifactKind[Any], ...] = (
     FARM_HOME_CCA,  # home_cca
     FARM_HOME_CARRIED_FORWARD,  # home_carried_forward
     FARM_CCA_CLASSES,  # cca_classes
+    FARM_EPOP_ASSOCIATED,  # epop_associated
+    FARM_EPOP_AGREEMENT_FILED,  # epop_agreement_filed
+    FARM_EPOP_PERCENTAGE,  # epop_percentage
+    FARM_EPOP_PERCENTAGE_TOTAL,  # epop_percentage_total
+    FARM_MINISTER_ALLOCATION_GIVEN,  # minister_allocation_given
+    FARM_MINISTER_ALLOCATION,  # minister_allocation
     FARM_RECAPTURED_CCA,  # recaptured_cca
     FARM_OTHER_INCOME_WITH_RECAPTURE,  # other_income_with_recapture
     FARM_GROSS_INCOME,  # gross_income
@@ -2740,6 +2762,16 @@ FARM_KINDS: tuple[ArtifactKind[Any], ...] = (
     FARM_HOME_ALLOWABLE_CLAIM,  # home_allowable_claim
     FARM_HOME_EXPENSES,  # home_expenses
     FARM_CLOSING_UCC,  # closing_ucc
+    FARM_IMMEDIATE_EXPENSING_CAP,  # immediate_expensing_cap
+    FARM_EPOP_PERCENTAGE_MAXIMUM,  # epop_percentage_maximum
+    FARM_IMMEDIATE_EXPENSING_SHARE,  # immediate_expensing_share
+    FARM_EPOP_PERCENTAGE_ROOM,  # epop_percentage_room
+    FARM_IMMEDIATE_EXPENSING_ALLOCATED,  # immediate_expensing_allocated
+    FARM_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,  # immediate_expensing_associated_limit
+    FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,  # immediate_expensing_limit_before_minister
+    FARM_IMMEDIATE_EXPENSING_LIMIT,  # immediate_expensing_limit
+    FARM_IMMEDIATE_EXPENSING_CLAIM,  # immediate_expensing_claim
+    FARM_INCOME_BEFORE_CCA,  # income_before_cca
 )
 
 
@@ -2776,9 +2808,9 @@ def test_the_t2042_partner_count_is_a_non_negative_int_count() -> None:
 def test_the_farm_cca_classes_are_the_area_a_columns_the_caller_enters(
     registry: ArtifactRegistry,
 ) -> None:
-    # Area A of the T2042 keeps the eight columns the T2125's list had before its DIEP columns 4, 6
-    # and 9 (the T2042 takes them in a later change): the same eight field kinds, one record per
-    # class.
+    # Area A of the T2042 has the columns of the T2125's, the DIEP columns 4, 6 and 9 among them:
+    # the same eleven field kinds, in the order of the columns (1, 2, 3, 4, 5, 6, 9, 11, 12, 21)
+    # and the no-property-left question of endnote 3, one record per class.
     assert RECORD_LISTS <= REGISTERED
     assert isinstance(FARM_CCA_CLASSES, RecordListKind)
     assert FARM_CCA_CLASSES.value_type is RecordList
@@ -2786,14 +2818,58 @@ def test_the_farm_cca_classes_are_the_area_a_columns_the_caller_enters(
         CCA_CLASS_NUMBER,
         CCA_UCC_AT_START,
         CCA_ADDITIONS,
+        CCA_DIEP_ADDITIONS,
         CCA_PROCEEDS,
+        CCA_DIEP_PROCEEDS,
+        CCA_IMMEDIATE_EXPENSING,
         CCA_AIIP_ADDITIONS,
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
     )
+    assert len(FARM_CCA_CLASSES.fields) == 11
+    assert FARM_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
     assert FARM_CCA_CLASSES is not BUSINESS_CCA_CLASSES
     assert registry.get("ca/farm_cca_classes") is FARM_CCA_CLASSES
+
+
+@pytest.mark.parametrize(
+    ("kind", "identifier"),
+    [
+        (FARM_EPOP_ASSOCIATED, "ca/farm_epop_associated"),
+        (FARM_EPOP_AGREEMENT_FILED, "ca/farm_epop_agreement_filed"),
+        (FARM_MINISTER_ALLOCATION_GIVEN, "ca/farm_minister_allocation_given"),
+    ],
+)
+def test_the_t2042_area_g_counts_are_non_negative_int_counts(
+    kind: ArtifactKind[int], identifier: str, registry: ArtifactRegistry
+) -> None:
+    # Area A endnote 5 "$1.5 million, if you are not associated with any other eligible person or
+    # partnership (EPOP) in the tax year", "zero, if you are associated with one or more EPOPs and
+    # an agreement ... was not filed with the minister in a prescribed form" and "any amount
+    # allocated by the minister under subsection 1104(3.4) of the Regulations": 1 if so, else 0,
+    # as the form takes it.
+    assert kind.identifier == identifier
+    assert kind.value_type is int
+    assert kind.non_negative is True
+    assert registry.kind(identifier) is kind
+    assert identifier in COUNTS
+
+
+def test_the_t2042_statements_list_the_area_g_and_endnote_5_inputs_after_the_area_a_list() -> None:
+    # Area G follows Area A on the form: its answers are the six inputs right after the Area A
+    # list, the last fields of the statement.
+    fields = T2042_STATEMENTS.fields
+
+    assert fields[-7:] == (
+        FARM_CCA_CLASSES,
+        FARM_EPOP_ASSOCIATED,
+        FARM_EPOP_AGREEMENT_FILED,
+        FARM_EPOP_PERCENTAGE,
+        FARM_EPOP_PERCENTAGE_TOTAL,
+        FARM_MINISTER_ALLOCATION_GIVEN,
+        FARM_MINISTER_ALLOCATION,
+    )
 
 
 def test_the_farm_closing_ucc_is_a_record_list_of_the_class_and_its_closing_ucc(

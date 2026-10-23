@@ -59,6 +59,22 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
     ELIGIBLE_DIVIDENDS_RECEIVED_WITHOUT_A_SLIP,
     EMPLOYMENT_INCOME,
+    FARM_EPOP_AGREEMENT_FILED,
+    FARM_EPOP_ASSOCIATED,
+    FARM_EPOP_PERCENTAGE,
+    FARM_EPOP_PERCENTAGE_MAXIMUM,
+    FARM_EPOP_PERCENTAGE_ROOM,
+    FARM_EPOP_PERCENTAGE_TOTAL,
+    FARM_IMMEDIATE_EXPENSING_ALLOCATED,
+    FARM_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    FARM_IMMEDIATE_EXPENSING_CAP,
+    FARM_IMMEDIATE_EXPENSING_CLAIM,
+    FARM_IMMEDIATE_EXPENSING_LIMIT,
+    FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    FARM_IMMEDIATE_EXPENSING_SHARE,
+    FARM_INCOME_BEFORE_CCA,
+    FARM_MINISTER_ALLOCATION,
+    FARM_MINISTER_ALLOCATION_GIVEN,
     FARM_MOTOR_VEHICLE_EXPENSES,
     FARM_VEHICLE_SALES_TAX_RATE,
     FARMING_INCOME,
@@ -405,6 +421,30 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     assert registry.get("ca/professional_income") is PROFESSIONAL_INCOME
     assert registry.get("ca/commission_income") is COMMISSION_INCOME
     assert registry.get("ca/farming_income") is FARMING_INCOME
+    assert registry.get("ca/farm_epop_associated") is FARM_EPOP_ASSOCIATED
+    assert registry.get("ca/farm_epop_agreement_filed") is FARM_EPOP_AGREEMENT_FILED
+    assert registry.get("ca/farm_epop_percentage") is FARM_EPOP_PERCENTAGE
+    assert registry.get("ca/farm_epop_percentage_total") is FARM_EPOP_PERCENTAGE_TOTAL
+    assert registry.get("ca/farm_minister_allocation_given") is FARM_MINISTER_ALLOCATION_GIVEN
+    assert registry.get("ca/farm_minister_allocation") is FARM_MINISTER_ALLOCATION
+    assert registry.get("ca/farm_immediate_expensing_cap") is FARM_IMMEDIATE_EXPENSING_CAP
+    assert registry.get("ca/farm_epop_percentage_maximum") is FARM_EPOP_PERCENTAGE_MAXIMUM
+    assert registry.get("ca/farm_immediate_expensing_share") is FARM_IMMEDIATE_EXPENSING_SHARE
+    assert registry.get("ca/farm_epop_percentage_room") is FARM_EPOP_PERCENTAGE_ROOM
+    assert (
+        registry.get("ca/farm_immediate_expensing_allocated") is FARM_IMMEDIATE_EXPENSING_ALLOCATED
+    )
+    assert (
+        registry.get("ca/farm_immediate_expensing_associated_limit")
+        is FARM_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT
+    )
+    assert (
+        registry.get("ca/farm_immediate_expensing_limit_before_minister")
+        is FARM_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER
+    )
+    assert registry.get("ca/farm_immediate_expensing_limit") is FARM_IMMEDIATE_EXPENSING_LIMIT
+    assert registry.get("ca/farm_immediate_expensing_claim") is FARM_IMMEDIATE_EXPENSING_CLAIM
+    assert registry.get("ca/farm_income_before_cca") is FARM_INCOME_BEFORE_CCA
     assert registry.get("ca/fishing_income") is FISHING_INCOME
     assert registry.get("ca/workers_compensation_benefits") is WORKERS_COMPENSATION_BENEFITS
     assert registry.get("ca/social_assistance_payments") is SOCIAL_ASSISTANCE_PAYMENTS
