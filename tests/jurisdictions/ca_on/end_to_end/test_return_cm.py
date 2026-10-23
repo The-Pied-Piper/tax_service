@@ -144,8 +144,8 @@ def test_return_cms_non_arms_length_class_8_property_is_exempt_though_its_class_
 
     assert (
         "business_cca_table_claim: item 4 class 8: column 7 10000, column 14 0, column 15 0, "
-        "column 16 0, column 17 0, column 18 0, column 19 10000, maximum 20% of column 19 = 2000 (half-up to 0.01), "
-        "claim 2000"
+        "column 16 0, column 17 0, column 18 0, column 19 10000, "
+        "maximum 20% of column 19 = 2000 (half-up to 0.01), claim 2000"
     ) in rendered
 
 
