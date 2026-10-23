@@ -60,6 +60,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_MINIMUM_AMOUNT,
     AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+    AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
@@ -219,7 +220,7 @@ def return_bg(
         amt_investment_counsel_fees=investment_counsel_fees,
         amt_commission_employment_expenses=commission_employment,
         amt_minimum_tax_carryover_from_previous_years=carryover_from_previous_years,
-        amt_minimum_tax_carryover_claim=carryover_claim,
+        amt_minimum_tax_carryover_applied=carryover_claim,
         amt_t2203_column_5_percentage=t2203_percentage,
         amt_non_resident_or_deemed_resident=non_resident,
         amt_investment_tax_credit_claim=itc_claim,
@@ -780,6 +781,7 @@ def test_return_bg_part_8_line_12_claims_nothing_when_no_carryover_is_entered() 
     worksheet = return_bg()
 
     assert worksheet.get(AMT_MAXIMUM_CARRYOVER_CLAIM).value == D("0")
+    assert worksheet.get(AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM).value == D("0")
     assert worksheet.get(AMT_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("0")
     assert worksheet.get(CREDITS_AGAINST_BASIC_FEDERAL_TAX).value == D("3100.21")
     assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("5846.47")
@@ -812,6 +814,7 @@ def test_return_bg_with_a_carryover_and_a_claim_within_the_cap_applies_the_claim
     )
 
     assert worksheet.get(AMT_MAXIMUM_CARRYOVER_CLAIM).value == D("1000")
+    assert worksheet.get(AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM).value == D("400")
     assert worksheet.get(AMT_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("400")
 
 
@@ -853,7 +856,7 @@ def test_a_carryover_claim_above_line_1_is_refused_naming_both_kinds() -> None:
 
     assert str(raised.value).startswith(
         "ca-on/return, instance 1: "
-        "ca/amt_minimum_tax_carryover_claim 1000.01 is above ca/amt_maximum_carryover_claim 1000"
+        "ca/amt_minimum_tax_carryover_applied 1000.01 is above ca/amt_maximum_carryover_claim 1000"
     )
 
 
@@ -868,7 +871,7 @@ def test_a_carryover_claim_above_line_11_is_refused_when_line_11_is_the_lesser()
         )
 
     assert str(raised.value).startswith(
-        "ca-on/return, instance 1: ca/amt_minimum_tax_carryover_claim 34266.21 is above "
+        "ca-on/return, instance 1: ca/amt_minimum_tax_carryover_applied 34266.21 is above "
         "ca/amt_maximum_carryover_claim 34266.2"
     )
 
@@ -881,8 +884,28 @@ def test_a_claim_is_refused_when_no_carryover_is_available() -> None:
 
     assert str(raised.value).startswith(
         "ca-on/return, instance 1: "
-        "ca/amt_minimum_tax_carryover_claim 0.01 is above ca/amt_maximum_carryover_claim 0"
+        "ca/amt_minimum_tax_carryover_applied 0.01 is above ca/amt_maximum_carryover_claim 0"
     )
+
+
+def test_return_bg_a_carryover_claim_at_the_cap_flows_to_t1_line_124() -> None:
+    # Line 1 is the carryover from 2018 to 2024 of 1000.00 and line 11 is 34266.20, so the cap is
+    # 1000.00. The claim of 1000.00 is at the cap, not above it, so it is kept and applied in full
+    # on line 40427, T1 line 124. T1 line 125 is 3127.54 plus 0.00 plus 1000.00, 4127.54, and Part 2
+    # line 7 is line 5 of 39760.79 less 1000.00, 38760.79; T1 line 126 is 42888.33 minus 4127.54,
+    # 38760.79.
+    worksheet = return_bg(
+        employment_income="200000",
+        carryover_from_previous_years="1000",
+        carryover_claim="1000",
+    )
+
+    assert worksheet.get(AMT_MAXIMUM_CARRYOVER_CLAIM).value == D("1000")
+    assert worksheet.get(AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM).value == D("1000")
+    assert worksheet.get(AMT_MINIMUM_TAX_CARRYOVER_APPLIED).value == D("1000")
+    assert worksheet.get(CREDITS_AGAINST_BASIC_FEDERAL_TAX).value == D("4127.54")
+    assert worksheet.get(AMT_BASIC_FEDERAL_TAX).value == D("38760.79")
+    assert worksheet.get(FEDERAL_TAX_AFTER_CREDITS).value == D("38760.79")
 
 
 def test_return_bg_line_2_is_48_percent_of_the_basic_federal_tax() -> None:

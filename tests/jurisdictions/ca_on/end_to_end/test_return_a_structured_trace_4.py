@@ -95,8 +95,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_MINIMUM_AMOUNT,
     AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
-    AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
     AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
+    AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_MINIMUM_TAX_PAYABLE,
     AMT_PART_5_LINE_11_IS_POSITIVE,
@@ -2009,9 +2009,9 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             bound_value=D("0"),
         ),
         # Form T691 Part 8 line 12, the claim (0, the caller's election) at most the cap (0): 0.
-        AMT_MINIMUM_TAX_CARRYOVER_APPLIED: AtMostLine(
-            output=AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
-            amount_kind=AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
+        AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM: AtMostLine(
+            output=AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM,
+            amount_kind=AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
             amount_value=D("0"),
             bound=AMT_MAXIMUM_CARRYOVER_CLAIM,
             bound_value=D("0"),
