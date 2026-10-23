@@ -8,9 +8,10 @@ artifact kind and its `int` value; a chosen rate is a `Rate` artifact kind and i
 
 from __future__ import annotations
 
-from dataclasses import FrozenInstanceError, fields
+from dataclasses import FrozenInstanceError, fields, replace
 from decimal import Decimal
 from fractions import Fraction as ExactFraction
+from functools import partial
 from typing import Any, cast
 
 import pytest
@@ -98,6 +99,19 @@ from app.jurisdictions.ca.trace import (
     OtherDependantMedicalLine,
     PooledForeignTaxCreditLine,
     PrincipalResidenceGainLine,
+    PrincipalResidenceLine27,
+    PrincipalResidenceLine29,
+    PrincipalResidenceLine30,
+    PrincipalResidenceLine32,
+    PrincipalResidenceLine33,
+    PrincipalResidenceLine38,
+    PrincipalResidenceLine39,
+    PrincipalResidenceLine42,
+    PrincipalResidenceLine44,
+    PrincipalResidenceLine45,
+    PrincipalResidenceLine48,
+    PrincipalResidenceLine51,
+    PrincipalResidenceLine53,
     RecapturedCcaLine,
     ShortTermRentalNonCompliantCcaByClassLine,
     ShortTermRentalNonCompliantCcaLine,
@@ -529,24 +543,27 @@ def disposition_proceeds_line() -> DispositionProceedsLine:
 
 def principal_residence_gain_line() -> PrincipalResidenceGainLine:
     return PrincipalResidenceGainLine(
-        RESIDENCE_GAIN,
-        2,
-        6,
-        0,
-        6,
-        10,
-        0,
-        10,
-        1,
-        D("400000.00"),
-        D("95000.00"),
-        D("5000.00"),
-        D("300000.00"),
-        7,
-        D("2100000.00"),
-        CENT,
-        D("210000.00"),
-        D("90000.00"),
+        output=RESIDENCE_GAIN,
+        position=2,
+        years_designated_after_1981=6,
+        years_designated_1972_to_1981=0,
+        designated=6,
+        years_owned_after_1981=10,
+        years_owned_1972_to_1981=0,
+        owned=10,
+        plus_one=1,
+        proceeds=D("400000.00"),
+        adjusted_cost_base=D("95000.00"),
+        outlays=D("5000.00"),
+        gain=D("300000.00"),
+        line_20=7,
+        line_21=D("2100000.00"),
+        rounding=CENT,
+        exempt=D("210000.00"),
+        part_2_applies=0,
+        line_53=D("0"),
+        line_24=D("90000.00"),
+        result=D("90000.00"),
     )
 
 
@@ -3357,6 +3374,9 @@ def test_principal_residence_gain_line_fields_in_order() -> None:
         line_21=D("2100000.00"),
         rounding=CENT,
         exempt=D("210000.00"),
+        part_2_applies=0,
+        line_53=D("0"),
+        line_24=D("90000.00"),
         result=D("90000.00"),
     )
     assert [f.name for f in fields(line)] == [
@@ -3377,6 +3397,9 @@ def test_principal_residence_gain_line_fields_in_order() -> None:
         "line_21",
         "rounding",
         "exempt",
+        "part_2_applies",
+        "line_53",
+        "line_24",
         "result",
     ]
     assert line.output is RESIDENCE_GAIN
@@ -3389,6 +3412,9 @@ def test_principal_residence_gain_line_fields_in_order() -> None:
     assert line.line_21 == D("2100000.00")
     assert line.rounding == CENT
     assert line.exempt == D("210000.00")
+    assert line.part_2_applies == 0
+    assert line.line_53 == D("0")
+    assert line.line_24 == D("90000.00")
     assert line.result == D("90000.00")
 
 
@@ -3426,6 +3452,9 @@ def test_principal_residence_gain_lines_differ_by_each_field() -> None:
         "line_21": D("2100000.01"),
         "rounding": NO_ROUNDING,
         "exempt": D("210000.01"),
+        "part_2_applies": 1,
+        "line_53": D("0.01"),
+        "line_24": D("90000.02"),
         "result": D("90000.01"),
     }
 
@@ -3441,6 +3470,139 @@ def test_principal_residence_gain_lines_are_hashable() -> None:
 
 def test_a_principal_residence_gain_line_is_not_a_disability_transfer_line() -> None:
     assert not isinstance(principal_residence_gain_line(), DisabilityTransferLine)
+
+
+# --- Form T2091(IND) Part 2: one line per computed line, 27 to 53 ---------------------------------
+#
+# Each records one property's figures for its line, named after the form lines it takes, then
+# `result`, the line's figure. The areas the form says not to complete carry `completed` False.
+
+PART_2_LINES: list[tuple[type, list[str], list[Any]]] = [
+    (
+        PrincipalResidenceLine27,
+        ["completed", "line_12", "line_11", "result"],
+        [True, D("90000.00"), D("40000.00"), D("50000.00")],
+    ),
+    (
+        PrincipalResidenceLine29,
+        ["completed", "line_2", "plus_one", "result"],
+        [True, 1, 1, D("2")],
+    ),
+    (
+        PrincipalResidenceLine30,
+        ["completed", "line_27", "line_29", "result"],
+        [True, D("50000.00"), D("2"), D("100000.00")],
+    ),
+    (
+        PrincipalResidenceLine32,
+        ["completed", "line_30", "line_6", "rounding", "result"],
+        [True, D("100000.00"), 4, CENT, D("25000.00")],
+    ),
+    (
+        PrincipalResidenceLine33,
+        ["completed", "line_27", "line_32", "result"],
+        [True, D("50000.00"), D("25000.00"), D("25000.00")],
+    ),
+    (
+        PrincipalResidenceLine38,
+        ["completed", "line_12", "line_13", "line_9", "result"],
+        [True, D("90000.00"), D("10000.00"), D("5000.00"), D("105000.00")],
+    ),
+    (
+        PrincipalResidenceLine39,
+        ["completed", "line_8", "line_38", "result"],
+        [True, D("300000.00"), D("105000.00"), D("195000.00")],
+    ),
+    (
+        PrincipalResidenceLine42,
+        ["completed", "line_39", "line_1", "result"],
+        [True, D("195000.00"), 6, D("1170000.00")],
+    ),
+    (
+        PrincipalResidenceLine44,
+        ["completed", "line_42", "line_5", "rounding", "result"],
+        [True, D("1170000.00"), 10, CENT, D("117000.00")],
+    ),
+    (
+        PrincipalResidenceLine45,
+        ["completed", "line_39", "line_44", "result"],
+        [True, D("195000.00"), D("117000.00"), D("78000.00")],
+    ),
+    (
+        PrincipalResidenceLine48,
+        ["completed", "line_12", "line_8", "result"],
+        [True, D("90000.00"), D("300000.00"), D("0")],
+    ),
+    (
+        PrincipalResidenceLine51,
+        ["line_33", "line_45", "result"],
+        [D("25000.00"), D("78000.00"), D("103000.00")],
+    ),
+    (
+        PrincipalResidenceLine53,
+        ["line_51", "line_48", "result"],
+        [D("103000.00"), D("0"), D("103000.00")],
+    ),
+]
+PART_2_IDS = [cls.__name__ for cls, *_ in PART_2_LINES]
+ALL_LINES.extend(partial(cls, RESIDENCE_GAIN, 2, *values) for cls, _, values in PART_2_LINES)
+
+
+@pytest.mark.parametrize(("cls", "names", "values"), PART_2_LINES, ids=PART_2_IDS)
+def test_part_2_lines_have_their_fields_in_order(
+    cls: type, names: list[str], values: list[Any]
+) -> None:
+    line = cls(RESIDENCE_GAIN, 2, *values)
+
+    assert [f.name for f in fields(line)] == ["output", "position", *names]
+    assert line.output is RESIDENCE_GAIN
+    assert line.position == 2
+    assert type(line.position) is int
+    for name, value in zip(names, values, strict=True):
+        assert getattr(line, name) == value, name
+
+
+@pytest.mark.parametrize(("cls", "names", "values"), PART_2_LINES, ids=PART_2_IDS)
+def test_part_2_line_amount_is_the_result(cls: type, names: list[str], values: list[Any]) -> None:
+    line = cls(RESIDENCE_GAIN, 2, *values)
+
+    assert line.amount == values[-1]
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+@pytest.mark.parametrize(("cls", "names", "values"), PART_2_LINES, ids=PART_2_IDS)
+def test_part_2_lines_differ_by_each_field(cls: type, names: list[str], values: list[Any]) -> None:
+    line = cls(RESIDENCE_GAIN, 2, *values)
+    args = [RESIDENCE_GAIN, 2, *values]
+    for name, value in zip(["output", "position", *names], args, strict=True):
+        changed: Any
+        if name == "output":
+            changed = ArtifactKind("ex/other_residence_line", Decimal)
+        elif name == "position":
+            changed = 3
+        elif isinstance(value, bool):
+            changed = not value
+        elif value == CENT:
+            changed = NO_ROUNDING
+        elif isinstance(value, int):
+            changed = value + 1
+        else:
+            changed = value + D("1")
+        assert line != replace(line, **{name: changed}), name
+
+
+@pytest.mark.parametrize(("cls", "names", "values"), PART_2_LINES, ids=PART_2_IDS)
+def test_part_2_lines_are_hashable(cls: type, names: list[str], values: list[Any]) -> None:
+    assert hash(cls(RESIDENCE_GAIN, 2, *values)) == hash(cls(RESIDENCE_GAIN, 2, *values))
+
+
+def test_part_2_lines_are_not_each_other_nor_the_gain_line() -> None:
+    classes = [cls for cls, *_ in PART_2_LINES]
+    for cls, _names, values in PART_2_LINES:
+        made = cls(RESIDENCE_GAIN, 2, *values)
+        for other in [*classes, PrincipalResidenceGainLine]:
+            assert isinstance(made, other) is (other is cls), (cls.__name__, other.__name__)
+        assert not isinstance(made, DisabilityTransferLine)
 
 
 def test_item_sum_line_fields_in_order() -> None:

@@ -13,18 +13,23 @@ related to the disposition", line 10 "Adjusted cost base at the time of disposit
 exemption"), line 19 "Amount from line 18", line 20 "Line 4 plus 1 (see note on page 4)", line 21
 "Multiply line 19 by line 20.", line 22 "Total number of years from line 7", line 23 "Divide line
 21 by line 22.", line 24 "Line 18 minus line 23 (if negative, enter "0")" ("Net capital gain").
-Part 3, line 54: "If you completed Part 2, enter whichever amount is less: line 53 above or line 24
-of Part 1. Otherwise, enter the amount from line 24." (Part 2 is not modelled.) Note: "One year is
+Part 2, for a property that is one of two or more principal residences a family member owned on
+December 31, 1981, and continuously until its disposition: the pre-1982 gain and the post-1981 gain
+are worked in areas A to D, the lines of which are the capabilities `principal_residence_line_N`
+(their tests are in `test_principal_residence_lines.py`); line 53 "Line 51 minus line 52 (if
+negative, enter "0")" is the net capital gain, and line 54 "If you completed Part 2, enter whichever
+amount is less: line 53 above or line 24 of Part 1. Otherwise, enter the amount from line 24." is
+the lesser of line 53 and line 24 for such a property, and line 24 for any other. Note: "One year is
 granted by law. If you disposed of your principal residence after October 2, 2016, and were a
 non-resident throughout the year of acquisition of the property, you are not eligible to use the
 "plus one" rule in this calculation."
 
 Its slots: one parameter slot `rounding` (a `rounding_only` dataset: line 23 divides), one consumed
-slot `properties` (a record list whose records hold each property's lines 1, 2, 5, 6, 8, 9 and 10
-and whether the "plus one" applies) and one produced slot `output`. Each property is worked on its
-own, never pooled: line 23 is the exact fraction rounded once with the dataset's rule, and the
-output is the total of line 54. It records one `PrincipalResidenceGainLine` per property, then an
-`ItemsTotalLine`.
+slot `properties` (a record list whose records hold each property's lines 1, 2, 5, 6, 8, 9 and 10,
+whether the "plus one" applies, whether Part 2 applies and lines 11, 12 and 13) and one produced
+slot `output`. Each property is worked on its own, never pooled: line 23 is the exact fraction
+rounded once with the dataset's rule, and the output is the total of line 54. It records one
+`PrincipalResidenceGainLine` per property, then an `ItemsTotalLine`.
 """
 
 from __future__ import annotations
@@ -37,57 +42,53 @@ from typing import Any, assert_type, cast
 import pytest
 
 import app.jurisdictions.ca.capabilities as ca_capabilities
-from app.domain.artifact import Artifact, ArtifactKind
+from app.domain.artifact import Artifact
 from app.domain.capability import CapabilityRegistry
-from app.domain.errors import InvalidCapabilityError, MissingArtifactError, ValidationError
+from app.domain.errors import (
+    InvalidCapabilityError,
+    MissingArtifactError,
+    ValidationError,
+)
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
-from app.domain.parameters.rounding import NO_ROUNDING, RoundingMode, RoundingRule, RoundTo
+from app.domain.parameters.rounding import NO_ROUNDING, RoundingRule
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
 from app.domain.record_list import RecordList
 from app.domain.trace import ItemsTotalLine
 from app.jurisdictions.ca.capabilities.principal_residence_gain import PrincipalResidenceGain
+from app.jurisdictions.ca.capabilities.principal_residence_rows import PrincipalResidenceRows
 from app.jurisdictions.ca.catalog import (
     CAREGIVER_AMOUNT,
     PRINCIPAL_RESIDENCE_GAIN,
     PRINCIPAL_RESIDENCE_PROPERTIES,
-    RESIDENCE_ADJUSTED_COST_BASE,
-    RESIDENCE_OUTLAYS,
-    RESIDENCE_PLUS_ONE_YEAR,
-    RESIDENCE_PROCEEDS,
-    RESIDENCE_YEARS_DESIGNATED_1972_TO_1981,
-    RESIDENCE_YEARS_DESIGNATED_AFTER_1981,
-    RESIDENCE_YEARS_OWNED_1972_TO_1981,
-    RESIDENCE_YEARS_OWNED_AFTER_1981,
 )
 from app.jurisdictions.ca.trace import PrincipalResidenceGainLine
+from tests.jurisdictions.ca.capabilities.principal_residence_figures import (
+    CENT,
+    DOLLAR_FLOOR,
+    PART_2_ALL_YEARS_AFTER_1981,
+    PART_2_ALL_YEARS_BEFORE_1982,
+    PART_2_LESSER_IS_LINE_53,
+    PART_2_LOSS,
+    PART_2_NO_YEARS_OWNED,
+    PART_2_NOT_APPLYING,
+    PART_2_WORKED,
+    Figures,
+    Part2Figures,
+    properties,
+    rounding,
+)
 
 D = Decimal
-CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
-DOLLAR_FLOOR = RoundTo(D("1"), RoundingMode.FLOOR)
 
-# One property's figures, as the form asks for them: years designated after 1981 (line 1) and
-# after 1971 and before 1982 (line 2), years owned after 1981 (line 5) and after 1971 and before
-# 1982 (line 6), proceeds (line 8), outlays (line 9), adjusted cost base (line 10), and the "plus
-# one" (1 if the property may use it, else 0).
-Figures = tuple[int, int, int, int, str, str, str, int]
+# Each property's figures are read from `principal_residence_figures`: a property of eight figures
+# does not use Part 2, a property of twelve gives its Part 2 figures as well.
 # Gain 300,000.00; 6 years designated plus 1 over 10 owned: 210,000.00 exempt, 90,000.00 left.
 EXAMPLE: Figures = (6, 0, 10, 0, "400000.00", "5000.00", "95000.00", 1)
 # Gain 40,000.00; 3 years designated, no "plus one", over 5 owned: 24,000.00 exempt, 16,000.00 left.
 NO_PLUS_ONE: Figures = (3, 0, 5, 0, "250000.00", "10000.00", "200000.00", 0)
 # Gain 300,000.00; 2 + 3 years designated plus 1 over 6 + 4 owned: 180,000.00 exempt, 120,000.00.
 BOTH_PERIODS: Figures = (2, 3, 6, 4, "500000.00", "0.00", "200000.00", 1)
-
-
-def rounding(rule: RoundingRule = CENT) -> ParameterDataset[RoundingOnly]:
-    return ParameterDataset(
-        "ca/principal_residence_gain_rounding",
-        2025,
-        ROUNDING_ONLY,
-        RoundingOnly(),
-        rule,
-        ("https://example.org/t2091",),
-    )
 
 
 def capability(
@@ -99,43 +100,12 @@ def capability(
     )
 
 
-def properties(*given: Figures) -> Artifact[Any]:
-    """A `ca/principal_residence_properties` artifact of one record per property, in the order
-    given."""
-    records: list[dict[ArtifactKind[Any], object]] = [
-        {
-            RESIDENCE_YEARS_DESIGNATED_AFTER_1981: designated_after,
-            RESIDENCE_YEARS_DESIGNATED_1972_TO_1981: designated_before,
-            RESIDENCE_YEARS_OWNED_AFTER_1981: owned_after,
-            RESIDENCE_YEARS_OWNED_1972_TO_1981: owned_before,
-            RESIDENCE_PROCEEDS: D(proceeds),
-            RESIDENCE_OUTLAYS: D(outlays),
-            RESIDENCE_ADJUSTED_COST_BASE: D(cost_base),
-            RESIDENCE_PLUS_ONE_YEAR: plus_one,
-        }
-        for (
-            designated_after,
-            designated_before,
-            owned_after,
-            owned_before,
-            proceeds,
-            outlays,
-            cost_base,
-            plus_one,
-        ) in given
-    ]
-    return Artifact(
-        PRINCIPAL_RESIDENCE_PROPERTIES,
-        RecordList(PRINCIPAL_RESIDENCE_PROPERTIES.fields, records),
-    )
-
-
-def compute(wired: PrincipalResidenceGain, *given: Figures) -> Artifact[Any]:
+def compute(wired: PrincipalResidenceGain, *given: Figures | Part2Figures) -> Artifact[Any]:
     (output,) = wired.compute((properties(*given),)).outputs
     return output
 
 
-def total(*given: Figures) -> Decimal:
+def total(*given: Figures | Part2Figures) -> Decimal:
     value = compute(capability(), *given).value
     assert isinstance(value, Decimal)
     return value
@@ -159,6 +129,11 @@ def test_declares_its_contract() -> None:
 def test_leaves_its_contract_to_the_base() -> None:
     assert "consumes" not in vars(PrincipalResidenceGain)
     assert "produces" not in vars(PrincipalResidenceGain)
+
+
+def test_is_a_subclass_of_the_shared_rows_base() -> None:
+    # The rows base works lines 18 to 24 and Part 2 for each property, as the line capabilities do.
+    assert issubclass(PrincipalResidenceGain, PrincipalResidenceRows)
 
 
 def test_declares_its_slots() -> None:
@@ -483,6 +458,9 @@ def example_line(position: int = 1, rule: RoundingRule = CENT) -> PrincipalResid
         line_21=D("2100000.00"),
         rounding=rule,
         exempt=D("210000.00"),
+        part_2_applies=0,
+        line_53=D("0"),
+        line_24=D("90000.00"),
         result=D("90000.00"),
     )
 
@@ -507,6 +485,9 @@ def no_plus_one_line(position: int = 1) -> PrincipalResidenceGainLine:
         line_21=D("120000.00"),
         rounding=CENT,
         exempt=D("24000.00"),
+        part_2_applies=0,
+        line_53=D("0"),
+        line_24=D("16000.00"),
         result=D("16000.00"),
     )
 
@@ -661,3 +642,79 @@ def test_compute_is_repeatable() -> None:
     given = (properties(EXAMPLE, NO_PLUS_ONE),)
 
     assert wired.compute(given) == wired.compute(given)
+
+
+# --- Part 2 and line 54: the lesser of line 53 and line 24 --------------------------------------
+#
+# Each property's Part 2 lines are worked in `principal_residence_figures` (the comments there hold
+# the hand computation). Line 54 is line 53 when Part 2 applies and line 53 is less than line 24,
+# else line 24; a property that does not use Part 2 gives line 24 whatever its Part 2 figures.
+
+
+def test_a_property_that_does_not_use_part_2_gives_line_24_whatever_its_part_2_figures() -> None:
+    # Gain 195,000.00 less the exemption 111,428.57 (line 24 = 83,571.43), with the figures of the
+    # worked example but Part 2 not applying: line 54 is line 24.
+    assert total(PART_2_NOT_APPLYING) == D("83571.43")
+
+
+def test_part_2_gives_line_24_when_line_24_is_the_lesser() -> None:
+    # Line 53 is 103,000.00 and line 24 is 83,571.43: line 54 = 83,571.43.
+    assert total(PART_2_WORKED) == D("83571.43")
+
+
+def test_part_2_gives_line_53_when_line_53_is_the_lesser() -> None:
+    # Line 24 is 133,333.33 and line 53 is 16,000.00: line 54 = 16,000.00.
+    assert total(PART_2_LESSER_IS_LINE_53) == D("16000.00")
+
+
+def test_part_2_gives_line_53_for_a_post_1981_loss_that_leaves_a_net_gain() -> None:
+    # Line 53 is 10,000.00 and line 24 is 16,666.67: line 54 = 10,000.00.
+    assert total(PART_2_LOSS) == D("10000.00")
+
+
+def test_part_2_with_every_year_after_1981_designated_takes_line_24() -> None:
+    # Line 53 is 30,000.00 and line 24 is 8,333.33: line 54 = 8,333.33.
+    assert total(PART_2_ALL_YEARS_AFTER_1981) == D("8333.33")
+
+
+def test_part_2_with_every_year_before_1982_designated_takes_line_24() -> None:
+    # Line 53 is 40,000.00 and line 24 is 20,000.00: line 54 = 20,000.00.
+    assert total(PART_2_ALL_YEARS_BEFORE_1982) == D("20000.00")
+
+
+def test_line_54_is_taken_per_property_before_the_total() -> None:
+    # 83,571.43 (worked, line 24) + 10,000.00 (loss, line 53) + 90,000.00 (no Part 2, line 24).
+    assert total(PART_2_WORKED, PART_2_LOSS, EXAMPLE) == D("183571.43")
+
+
+def test_the_trace_records_part_2_applying_with_lines_53_and_24() -> None:
+    (line,) = capability().compute((properties(PART_2_WORKED),)).trace[:1]
+
+    assert line == PrincipalResidenceGainLine(
+        output=PRINCIPAL_RESIDENCE_GAIN,
+        position=1,
+        years_designated_after_1981=6,
+        years_designated_1972_to_1981=1,
+        designated=7,
+        years_owned_after_1981=10,
+        years_owned_1972_to_1981=4,
+        owned=14,
+        plus_one=1,
+        proceeds=D("300000.00"),
+        adjusted_cost_base=D("100000.00"),
+        outlays=D("5000.00"),
+        gain=D("195000.00"),
+        line_20=8,
+        line_21=D("1560000.00"),
+        rounding=CENT,
+        exempt=D("111428.57"),
+        part_2_applies=1,
+        line_53=D("103000.00"),
+        line_24=D("83571.43"),
+        result=D("83571.43"),
+    )
+
+
+def test_part_2_refused_with_no_years_owned_as_part_1_is() -> None:
+    with pytest.raises(ValidationError, match="the years owned \\(lines 5 and 6\\) are 0"):
+        total(PART_2_NO_YEARS_OWNED)

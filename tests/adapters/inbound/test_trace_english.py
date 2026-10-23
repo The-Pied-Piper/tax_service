@@ -9,9 +9,10 @@ only its text changes); rounding rules print as "no rounding" or "<mode> to <inc
 
 from __future__ import annotations
 
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, replace
 from decimal import Decimal
 from fractions import Fraction as ExactFraction
+from typing import Any, cast
 
 import pytest
 
@@ -102,6 +103,19 @@ from app.jurisdictions.ca.trace import (
     OtherDependantMedicalLine,
     PooledForeignTaxCreditLine,
     PrincipalResidenceGainLine,
+    PrincipalResidenceLine27,
+    PrincipalResidenceLine29,
+    PrincipalResidenceLine30,
+    PrincipalResidenceLine32,
+    PrincipalResidenceLine33,
+    PrincipalResidenceLine38,
+    PrincipalResidenceLine39,
+    PrincipalResidenceLine42,
+    PrincipalResidenceLine44,
+    PrincipalResidenceLine45,
+    PrincipalResidenceLine48,
+    PrincipalResidenceLine51,
+    PrincipalResidenceLine53,
     RecapturedCcaLine,
     ShortTermRentalNonCompliantCcaByClassLine,
     ShortTermRentalNonCompliantCcaLine,
@@ -2255,27 +2269,65 @@ def residence_gain(
     rounding: RoundingRule = CENT,
 ) -> PrincipalResidenceGainLine:
     """`figures` are, in the order of the line's fields, proceeds, adjusted cost base, outlays, the
-    gain, line 21, the exemption and the result."""
+    gain, line 21, the exemption and the result; the property does not use Part 2."""
     proceeds, cost_base, outlays, gain, line_21, exempt, result = figures
     return PrincipalResidenceGainLine(
-        RESIDENCE_GAIN,
-        position,
-        designated,
-        0,
-        designated,
-        owned,
-        0,
-        owned,
-        plus_one,
-        D(proceeds),
-        D(cost_base),
-        D(outlays),
-        D(gain),
-        designated + plus_one,
-        D(line_21),
-        rounding,
-        D(exempt),
-        D(result),
+        output=RESIDENCE_GAIN,
+        position=position,
+        years_designated_after_1981=designated,
+        years_designated_1972_to_1981=0,
+        designated=designated,
+        years_owned_after_1981=owned,
+        years_owned_1972_to_1981=0,
+        owned=owned,
+        plus_one=plus_one,
+        proceeds=D(proceeds),
+        adjusted_cost_base=D(cost_base),
+        outlays=D(outlays),
+        gain=D(gain),
+        line_20=designated + plus_one,
+        line_21=D(line_21),
+        rounding=rounding,
+        exempt=D(exempt),
+        part_2_applies=0,
+        line_53=D("0"),
+        line_24=D(result),
+        result=D(result),
+    )
+
+
+def residence_gain_part_2(
+    position: int,
+    designated: int,
+    owned: int,
+    plus_one: int,
+    figures: tuple[str, ...],
+) -> PrincipalResidenceGainLine:
+    """A property that uses Part 2. `figures` are the gain-line figures of `residence_gain`, then
+    line 24, line 53 and the result (line 54)."""
+    proceeds, cost_base, outlays, gain, line_21, exempt, line_24, line_53, result = figures
+    return PrincipalResidenceGainLine(
+        output=RESIDENCE_GAIN,
+        position=position,
+        years_designated_after_1981=designated,
+        years_designated_1972_to_1981=0,
+        designated=designated,
+        years_owned_after_1981=owned,
+        years_owned_1972_to_1981=0,
+        owned=owned,
+        plus_one=plus_one,
+        proceeds=D(proceeds),
+        adjusted_cost_base=D(cost_base),
+        outlays=D(outlays),
+        gain=D(gain),
+        line_20=designated + plus_one,
+        line_21=D(line_21),
+        rounding=CENT,
+        exempt=D(exempt),
+        part_2_applies=1,
+        line_53=D(line_53),
+        line_24=D(line_24),
+        result=D(result),
     )
 
 
@@ -2309,6 +2361,63 @@ def test_renders_a_property_without_the_plus_one() -> None:
         "residence_gain: property 2: gain 40000 = proceeds 250000 less adjusted cost base 200000 "
         "less outlays 10000; exempt 24000 = 40000 × (3 designated + 0) ÷ 5 owned "
         "(half-up to 0.01); taxable gain 16000 = 40000 less 24000, not below 0"
+    )
+
+
+def test_renders_a_part_2_property_taking_line_24_as_the_lesser() -> None:
+    # The worked example: line 53 is 103,000.00 and line 24 is 83,571.43, so line 54 is line 24.
+    line = residence_gain_part_2(
+        1,
+        7,
+        14,
+        1,
+        (
+            "300000.00",
+            "100000.00",
+            "5000.00",
+            "195000.00",
+            "1560000.00",
+            "111428.57",
+            "83571.43",
+            "103000.00",
+            "83571.43",
+        ),
+    )
+
+    assert render(line) == (
+        "residence_gain: property 1: gain 195000 = proceeds 300000 less adjusted cost base 100000 "
+        "less outlays 5000; exempt 111428.57 = 195000 × (7 designated + 1) ÷ 14 owned "
+        "(half-up to 0.01); taxable gain 83571.43 = 195000 less 111428.57, not below 0; "
+        "Part 2 net capital gain 103000; total capital gain 83571.43 = lesser of 103000 and "
+        "83571.43"
+    )
+
+
+def test_renders_a_part_2_property_taking_line_53_as_the_lesser() -> None:
+    line = residence_gain_part_2(
+        2,
+        4,
+        12,
+        0,
+        (
+            "300000.00",
+            "100000.00",
+            "0.00",
+            "200000.00",
+            "800000.00",
+            "66666.67",
+            "133333.33",
+            "16000.00",
+            "16000.00",
+        ),
+    )
+
+    assert render(line) == (
+        "residence_gain: property 2: gain 200000 = proceeds 300000 less adjusted cost base 100000 "
+        "less outlays 0; exempt 66666.67 = 200000 × (4 designated + 0) ÷ 12 owned "
+        "(half-up to 0.01); taxable gain 133333.33 = 200000 less 66666.67, not below 0; "
+        "Part 2 net capital gain 16000; total capital gain 16000 = lesser of 16000 and "
+        "133333.33"
     )
 
 
@@ -4493,3 +4602,206 @@ def test_renders_a_terminal_loss_for_an_excluded_class_with_a_diep() -> None:
     assert render(line) == (
         "terminal_loss: item 1 class 10.1: column 7 6000 with no property left: terminal loss 6000"
     )
+
+
+# --- Form T2091(IND) Part 2: one sentence per computed line, 27 to 53 ----------------------------
+#
+# Each sentence: the output's label, "property <position>: line <n> <result> = <the figures named
+# after the form lines>". A step the form says not to complete reads "line <n> not completed, 0".
+
+
+def part_2_line_examples() -> list[tuple[object, str]]:
+    """Each Part 2 line class with an example figure, and its English sentence."""
+    return [
+        (
+            PrincipalResidenceLine27(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_12=D("90000.00"),
+                line_11=D("40000.00"),
+                result=D("50000.00"),
+            ),
+            "residence_gain: property 1: line 27 50000 = line 12 90000 less line 11 40000",
+        ),
+        (
+            PrincipalResidenceLine27(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_12=D("30000.00"),
+                line_11=D("40000.00"),
+                result=D("-10000.00"),
+            ),
+            "residence_gain: property 1: line 27 -10000 = line 12 30000 less line 11 40000",
+        ),
+        (
+            PrincipalResidenceLine29(
+                RESIDENCE_GAIN, 1, completed=True, line_2=1, plus_one=1, result=D("2")
+            ),
+            "residence_gain: property 1: line 29 2 = line 2 1 plus 1",
+        ),
+        (
+            PrincipalResidenceLine30(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_27=D("50000.00"),
+                line_29=D("2"),
+                result=D("100000.00"),
+            ),
+            "residence_gain: property 1: line 30 100000 = line 27 50000 times line 29 2",
+        ),
+        (
+            PrincipalResidenceLine32(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_30=D("100000.00"),
+                line_6=4,
+                rounding=CENT,
+                result=D("25000.00"),
+            ),
+            "residence_gain: property 1: line 32 25000 = line 30 100000 divided by line 6 4 "
+            "(half-up to 0.01)",
+        ),
+        (
+            PrincipalResidenceLine33(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_27=D("50000.00"),
+                line_32=D("25000.00"),
+                result=D("25000.00"),
+            ),
+            "residence_gain: property 1: line 33 25000 = line 27 50000 less line 32 25000, not "
+            "below 0",
+        ),
+        (
+            PrincipalResidenceLine38(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_12=D("90000.00"),
+                line_13=D("10000.00"),
+                line_9=D("5000.00"),
+                result=D("105000.00"),
+            ),
+            "residence_gain: property 1: line 38 105000 = line 12 90000 plus line 13 10000 plus "
+            "line 9 5000",
+        ),
+        (
+            PrincipalResidenceLine39(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_8=D("300000.00"),
+                line_38=D("105000.00"),
+                result=D("195000.00"),
+            ),
+            "residence_gain: property 1: line 39 195000 = line 8 300000 less line 38 105000",
+        ),
+        (
+            PrincipalResidenceLine42(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_39=D("195000.00"),
+                line_1=6,
+                result=D("1170000.00"),
+            ),
+            "residence_gain: property 1: line 42 1170000 = line 39 195000 times line 1 6",
+        ),
+        (
+            PrincipalResidenceLine44(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_42=D("1170000.00"),
+                line_5=10,
+                rounding=NO_ROUNDING,
+                result=D("117000.00"),
+            ),
+            "residence_gain: property 1: line 44 117000 = line 42 1170000 divided by line 5 10 "
+            "(no rounding)",
+        ),
+        (
+            PrincipalResidenceLine45(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_39=D("195000.00"),
+                line_44=D("117000.00"),
+                result=D("78000.00"),
+            ),
+            "residence_gain: property 1: line 45 78000 = line 39 195000 less line 44 117000, not "
+            "below 0",
+        ),
+        (
+            PrincipalResidenceLine48(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_12=D("90000.00"),
+                line_8=D("300000.00"),
+                result=D("0"),
+            ),
+            "residence_gain: property 1: line 48 0 = line 12 90000 less line 8 300000, not below 0",
+        ),
+        (
+            PrincipalResidenceLine51(
+                RESIDENCE_GAIN,
+                1,
+                line_33=D("25000.00"),
+                line_45=D("78000.00"),
+                result=D("103000.00"),
+            ),
+            "residence_gain: property 1: line 51 103000 = line 33 25000 plus line 45 78000",
+        ),
+        (
+            PrincipalResidenceLine53(
+                RESIDENCE_GAIN,
+                1,
+                line_51=D("103000.00"),
+                line_48=D("0"),
+                result=D("103000.00"),
+            ),
+            "residence_gain: property 1: line 53 103000 = line 51 103000 less line 48 0, not "
+            "below 0",
+        ),
+    ]
+
+
+PART_2_EXAMPLES = part_2_line_examples()
+
+
+@pytest.mark.parametrize(("line", "text"), PART_2_EXAMPLES)
+def test_renders_each_part_2_line_in_its_form_words(line: object, text: str) -> None:
+    assert render(cast(TraceLine, line)) == text
+
+
+def _has_completed_flag(line: object) -> bool:
+    return "completed" in [f.name for f in fields(cast(Any, line))]
+
+
+@pytest.mark.parametrize(
+    "line",
+    [example for example, _text in PART_2_EXAMPLES if _has_completed_flag(example)],
+)
+def test_renders_a_step_not_completed_as_zero_whatever_its_figures(line: object) -> None:
+    # The figures the line names are still on the line, but the form's step is not completed.
+    skipped = replace(cast(Any, line), completed=False, result=D("0"), position=2)
+
+    assert render(skipped) == (
+        f"residence_gain: property 2: line {_line_number(skipped)} not completed, 0"
+    )
+
+
+def _line_number(line: object) -> int:
+    return int(type(line).__name__.removeprefix("PrincipalResidenceLine"))
+
+
+def test_renders_the_part_2_total_of_the_properties_by_position() -> None:
+    line = ItemsTotalLine(RESIDENCE_GAIN, ((1, D("25000.00")), (2, D("0"))), D("25000.00"))
+
+    assert render(line) == "residence_gain: item 1 25000 + item 2 0 = 25000"
