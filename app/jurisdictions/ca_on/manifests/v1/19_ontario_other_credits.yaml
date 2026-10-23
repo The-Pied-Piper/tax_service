@@ -79,14 +79,16 @@ capabilities:
       output: ca-on/fertility_credit
   # Schedule ON479-A "Family adjusted income calculation for the tax credit", column 1 "You".
   # Line 1 "Net income from line 23600 of the return (or the amount you would have entered if
-  # the instructions on line 23600 said "if negative, show in brackets")" is line 23600 before
-  # the floor at 0 (`ca/net_income_signed`). Line 2 "Child care expenses deduction from line
+  # the instructions on line 23600 said "if negative, show in brackets")" is the TOSI-adjusted net
+  # income of Form T1206 Part 1 line 6, signed ("use line 6 of this form at column 1 of line 1 of
+  # Schedule ON479-A"), the split income plus line 23600 before the floor at 0
+  # (`ca/net_income_signed`). Line 2 "Child care expenses deduction from line
   # 21400 of the return". Line 3 "Social benefits repayment from line 23500 of the return".
   # Line 4 "Add lines 1 to 3 (if negative, enter "0"). Adjusted income".
   - name: core/sum_not_below_zero
     consumes:
       parts:
-        - ca/net_income_signed
+        - ca/tosi_adjusted_net_income
         - ca/child_care_expenses
         - ca/social_benefits_repayment
     produces:

@@ -684,8 +684,9 @@ NET_INCOME_SIGNED = CATALOG.declare("net_income_signed", Decimal)
 """Net income before its floor, T1 line 56 and line 23600 "Line 54 minus line 55 (if negative,
 enter "0")" as Form T1206 Part 1 line 5 "Net income from line 23600 of your tax return (or the
 amount you would have entered if the instructions on line 23600 read "if negative, show in
-brackets")" and Schedule ON479-A column 1 line 1 read it: the net income before adjustments (line
-23400) less the social benefits repayment (line 23500), signed."""
+brackets")" reads it, and so does the TOSI-adjusted net income, which Schedule ON479-A column 1
+line 1 reads: the net income before adjustments (line 23400) less the social benefits repayment
+(line 23500), signed."""
 
 OAS_OVERPAYMENT_RECOVERED = CATALOG.declare("oas_overpayment_recovered", Decimal, non_negative=True)
 """Overpayment of OAS benefits recovered, Federal Worksheet "Line 23500 - Social benefits

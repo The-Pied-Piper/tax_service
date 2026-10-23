@@ -7,7 +7,6 @@ from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
     CHILD_CARE_EXPENSES,
     NET_INCOME_BEFORE_ADJUSTMENTS,
-    NET_INCOME_SIGNED,
     TOSI_ADJUSTED_NET_INCOME,
     TOTAL_SPLIT_INCOME,
 )
@@ -44,21 +43,20 @@ def return_ay() -> Worksheet:
     )
 
 
-def test_return_ays_care_credit_reads_line_23600_before_its_floor_on_line_1() -> None:
+def test_return_ays_care_credit_reads_the_tosi_adjusted_net_income_on_line_1() -> None:
     # Form T1206 Part 1: line 4 is the split income, 11500, and line 5 is the net income before
     # adjustments, 54435.00 (line 23200 takes the split income out again), so line 6 is
-    # 11500 + 54435.00 = 65935.00. Schedule ON479-A column 1: line 1 is line 23600 before its
-    # floor, 54435.00 (line 23500 is 0), not that 65935.00, line 2 the child care expenses
-    # deduction, 5000, line 3 is 0 and line 4 is 59435.00; line 5 adds the supporting person's
-    # 30000: 89435.00, in the 33% row (as Return Y's); line 8 is 5000 x 33% = 1650.00.
+    # 11500 + 54435.00 = 65935.00. Schedule ON479-A column 1: line 1 is that 65935.00, line 2 the
+    # child care expenses deduction, 5000, and line 4 is 70935.00; line 5 adds the supporting
+    # person's 30000: 100935.00, in "more than $99,600 but not more than $103,200: 27%" (Return
+    # Y's 89435.00 is 33%); line 8 is 5000 x 27% = 1350.00.
     worksheet = return_ay()
 
     assert worksheet.get(TOTAL_SPLIT_INCOME).value == D("11500")
     assert worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value == D("54435.00")
     assert worksheet.get(TOSI_ADJUSTED_NET_INCOME).value == D("65935.00")
     assert worksheet.get(CHILD_CARE_EXPENSES).value == D("5000.00")
-    assert worksheet.get(NET_INCOME_SIGNED).value == D("54435.00")
-    assert worksheet.get(CARE_ADJUSTED_INCOME).value == D("59435.00")
-    assert worksheet.get(CARE_FAMILY_ADJUSTED_INCOME).value == D("89435.00")
-    assert worksheet.get(CARE_CREDIT_PERCENTAGE).value == Rate(D("0.33"))
-    assert worksheet.get(CARE_CREDIT).value == D("1650.00")
+    assert worksheet.get(CARE_ADJUSTED_INCOME).value == D("70935.00")
+    assert worksheet.get(CARE_FAMILY_ADJUSTED_INCOME).value == D("100935.00")
+    assert worksheet.get(CARE_CREDIT_PERCENTAGE).value == Rate(D("0.27"))
+    assert worksheet.get(CARE_CREDIT).value == D("1350.00")

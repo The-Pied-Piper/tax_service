@@ -110,8 +110,9 @@ def test_a_family_adjusted_income_on_a_row_limit_takes_that_rows_rate() -> None:
 
 
 def test_a_net_income_below_zero_is_floored_at_zero_on_line_4() -> None:
-    # Schedule ON479-A line 4 "Add lines 1 to 3 (if negative, enter "0")": line 1 is line 23600
-    # before its floor, 0 - union dues 1000 = -1000.00 (line 23500 is 0), line 2 is 0 and line 3
+    # Schedule ON479-A line 4 "Add lines 1 to 3 (if negative, enter "0")": line 1 is the
+    # TOSI-adjusted net income, 0 + line 23600 before its floor, 0 - union dues 1000 = -1000.00
+    # (line 23500 is 0), line 2 is 0 and line 3
     # is 0, so line 4 is 0, not -1000.00, and line 5 is 0 with no supporting person.
     worksheet = compute("0", (), "0", "0", "0", "0", "1000")
 
@@ -122,6 +123,6 @@ def test_a_net_income_below_zero_is_floored_at_zero_on_line_4() -> None:
     assert worksheet.get(CARE_FAMILY_ADJUSTED_INCOME).value == D("0")
     assert worksheet.get(CARE_CREDIT_PERCENTAGE).value == Rate(D("0.75"))
     assert (
-        "care_adjusted_income: net_income_signed -1000 + child_care_expenses 0 "
+        "care_adjusted_income: tosi_adjusted_net_income -1000 + child_care_expenses 0 "
         "+ social_benefits_repayment 0, not below 0 = 0"
     ) in EnglishTraceRenderer().render_all(worksheet.trace)

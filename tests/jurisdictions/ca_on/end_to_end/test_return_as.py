@@ -240,7 +240,7 @@ def test_return_as_trace_names_each_line_of_the_chart() -> None:
         "tosi_adjusted_net_income: total_split_income 0 + net_income_signed 99001.45 = 99001.45",
         "tosi_adjusted_net_income_not_below_zero: total_split_income 0 "
         "+ net_income_signed 99001.45, not below 0 = 99001.45",
-        "care_adjusted_income: net_income_signed 99001.45 + child_care_expenses 0 "
+        "care_adjusted_income: tosi_adjusted_net_income 99001.45 + child_care_expenses 0 "
         "+ social_benefits_repayment 998.55, not below 0 = 100000",
     ):
         assert line in rendered, line

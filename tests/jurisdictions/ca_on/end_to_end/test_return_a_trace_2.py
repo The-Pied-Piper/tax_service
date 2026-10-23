@@ -757,7 +757,7 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     child_care_adjusted = position(
-        "care_adjusted_income: net_income_signed 115000 + child_care_expenses 0 "
+        "care_adjusted_income: tosi_adjusted_net_income 115000 + child_care_expenses 0 "
         "+ social_benefits_repayment 0, not below 0 = 115000",
         "115000",
     )
