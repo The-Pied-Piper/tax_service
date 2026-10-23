@@ -90,6 +90,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_APPLICABLE_RATE_AMOUNT,
     AMT_BASIC_EXEMPTION,
     AMT_BASIC_FEDERAL_TAX,
+    AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
@@ -107,6 +108,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
     AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
     AMT_FEDERAL_TAX_PAYABLE,
+    AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX,
+    AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX,
     AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
@@ -120,6 +123,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
     AMT_FOREIGN_TAX_CREDIT_LESSER,
     AMT_FOREIGN_TAXES_PAID,
+    AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT,
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_INVESTMENT_TAX_CREDIT,
     AMT_INVESTMENT_TAX_CREDIT_CLAIM,
@@ -148,6 +152,12 @@ from app.jurisdictions.ca.catalog import (
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
+    AMT_PART_6_FEDERAL_SURTAX,
+    AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
+    AMT_PART_6_SURTAX_AT_48_PERCENT,
+    AMT_PART_6_SURTAX_IF_NON_RESIDENT,
+    AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_PART_6_TAX_WITH_SURTAX,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
@@ -2356,3 +2366,28 @@ def test_the_part_5_amounts_are_produced_by_their_capabilities() -> None:
         worksheet.producer_of(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE), SubtractNotBelowZero
     )
     assert worksheet.producer_of(AMT_T2038_PART_D_AMOUNT_15) is None
+
+
+def test_the_part_6_amounts_are_produced_by_their_capabilities() -> None:
+    worksheet = return_a()
+
+    # Part 6 line 3 is a difference not below zero, line 5 the greater of two amounts, lines 7 and
+    # 12 sums, line 9 a rate, line 10 a percentage, line 11 a count of its condition, then the
+    # choice and the times-count of its second branch, and line 14 the greater of two amounts.
+    assert isinstance(
+        worksheet.producer_of(AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX), SubtractNotBelowZero
+    )
+    assert isinstance(worksheet.producer_of(AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT), GreaterOf)
+    assert isinstance(worksheet.producer_of(AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX), Sum)
+    assert isinstance(worksheet.producer_of(AMT_PART_6_SURTAX_AT_48_PERCENT), ApplyRate)
+    assert isinstance(
+        worksheet.producer_of(AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS), ApplyPercentage
+    )
+    assert isinstance(worksheet.producer_of(AMT_PART_6_HAS_AMOUNT_ON_LINE_10), CountByConditions)
+    assert isinstance(worksheet.producer_of(AMT_PART_6_SURTAX_IF_NON_RESIDENT), TimesCount)
+    assert isinstance(worksheet.producer_of(AMT_PART_6_FEDERAL_SURTAX), ChooseByCount)
+    assert isinstance(worksheet.producer_of(AMT_PART_6_TAX_WITH_SURTAX), Sum)
+    assert isinstance(worksheet.producer_of(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX), GreaterOf)
+    # The T2203 percentage and the non-resident count are the caller's figures.
+    assert worksheet.producer_of(AMT_T2203_COLUMN_5_PERCENTAGE) is None
+    assert worksheet.producer_of(AMT_NON_RESIDENT_OR_DEEMED_RESIDENT) is None

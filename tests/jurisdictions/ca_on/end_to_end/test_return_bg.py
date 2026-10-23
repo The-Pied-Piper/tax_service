@@ -18,6 +18,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_APPLICABLE_RATE_AMOUNT,
     AMT_BASIC_EXEMPTION,
     AMT_BASIC_FEDERAL_TAX,
+    AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
@@ -32,6 +33,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_FEDERAL_SURTAX,
     AMT_FEDERAL_SURTAX_AT_48_PERCENT,
     AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX,
+    AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX,
     AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE,
@@ -39,6 +42,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
     AMT_FOREIGN_TAX_CREDIT_LESSER,
     AMT_FOREIGN_TAXES_PAID,
+    AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT,
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_INVESTMENT_TAX_CREDIT,
     AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
@@ -63,6 +67,12 @@ from app.jurisdictions.ca.catalog import (
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
+    AMT_PART_6_FEDERAL_SURTAX,
+    AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
+    AMT_PART_6_SURTAX_AT_48_PERCENT,
+    AMT_PART_6_SURTAX_IF_NON_RESIDENT,
+    AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_PART_6_TAX_WITH_SURTAX,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
@@ -89,6 +99,8 @@ from app.jurisdictions.ca.catalog import (
     CREDITS_AGAINST_BASIC_FEDERAL_TAX,
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
+    SPLIT_INCOME_LINE_22,
+    SPLIT_INCOME_LINE_24,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_INCOME,
 )
@@ -142,6 +154,8 @@ def return_bg(
     foreign_business_tax: str = "0",
     foreign_tax_countries: tuple[tuple[str, str], ...] = (),
     part_d_amount_15: str = "0",
+    split_income_dividends: str = "0",
+    split_income_dividends_other_than_eligible: str = "0",
 ) -> Worksheet:
     """Return BG's inputs (`returns/2025_return_bg.yaml`), with the Part 1 amounts given."""
     return compute(
@@ -195,6 +209,8 @@ def return_bg(
         amt_foreign_non_business_tax_paid=foreign_non_business_tax,
         amt_foreign_business_tax_paid=foreign_business_tax,
         foreign_tax_countries_rows=foreign_tax_countries,
+        split_income_dividends=split_income_dividends,
+        split_income_dividends_other_than_eligible=split_income_dividends_other_than_eligible,
     )
 
 
@@ -1167,3 +1183,130 @@ def test_return_bg_part_5_line_10_is_zero_when_amount_15_of_part_d_is_more_than_
 
     assert worksheet.get(AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D).value == D("0")
     assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1658.95")
+
+
+def test_return_bg_part_6_line_9_is_the_surtax_on_line_7_and_line_14_is_zero_by_default() -> None:
+    # Line 1 is the basic federal tax of 5846.47 and line 2 is 0.00 (no split income), so line 3 is
+    # 5846.47. Line 4 is 0.00, so line 5 is 5846.47, and line 7 is 5846.47 plus 0.00. Line 8 is
+    # 0.00. Line 9 is 48% of line 7: 5846.47 times 0.48 is 2806.3056, rounded half-up to 2806.31.
+    # Line 10 is 0.00 (a chosen percentage of 0, as no tax is payable to multiple jurisdictions).
+    # Line 11 is 0.00: no amount is on line 10, and the filer is not a non-resident. Line 12 is 0.00
+    # and line 13 is 0.00, so line 14 is 0.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX).value == D("5846.47")
+    assert worksheet.get(AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT).value == D("5846.47")
+    assert worksheet.get(AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX).value == D("5846.47")
+    assert worksheet.get(AMT_PART_6_SURTAX_AT_48_PERCENT).value == D("2806.31")
+    assert worksheet.get(AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS).value == D("0")
+    assert worksheet.get(AMT_PART_6_HAS_AMOUNT_ON_LINE_10).value == 0
+    assert worksheet.get(AMT_PART_6_FEDERAL_SURTAX).value == D("0")
+    assert worksheet.get(AMT_PART_6_TAX_WITH_SURTAX).value == D("0")
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("0")
+
+
+def test_return_bg_part_6_line_5_is_the_minimum_amount_when_it_is_more_than_line_3() -> None:
+    # With the security options of boxes 39 and 91 at 150000.00 and no foreign figures, line 3 is
+    # 5846.47 less 0.00, and line 4, the minimum amount, is 7405.42, so line 5 is 7405.42 and line 7
+    # is 7405.42 plus 0.00. Line 9 is 48% of 7405.42, 3554.6016, rounded to 3554.60. Line 8 is
+    # 7405.42 (no special foreign tax credit), so line 12 is 7405.42 with no amount on line 11, and
+    # line 14 is 7405.42.
+    worksheet = return_bg(security_t4_39_and_91="150000")
+
+    assert worksheet.get(AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX).value == D("5846.47")
+    assert worksheet.get(AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT).value == D("7405.42")
+    assert worksheet.get(AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX).value == D("7405.42")
+    assert worksheet.get(AMT_PART_6_SURTAX_AT_48_PERCENT).value == D("3554.60")
+    assert worksheet.get(AMT_NET_MINIMUM_TAX_PAYABLE).value == D("7405.42")
+    assert worksheet.get(AMT_PART_6_TAX_WITH_SURTAX).value == D("7405.42")
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("7405.42")
+
+
+def test_return_bg_part_6_line_12_is_line_8_when_line_11_is_zero() -> None:
+    # The security options of 150000.00 with the foreign figures of the Part 5 case above: line 5 is
+    # the minimum amount of 7405.42 and line 7 is the same. Line 8 is the net minimum tax payable of
+    # 6933.92 (7405.42 less the special foreign tax credit of 471.50), line 9 is 3554.60, and line
+    # 10 and line 11 are 0.00, so line 12 is 6933.92 and line 14 is 6933.92.
+    worksheet = return_bg(
+        security_t4_39_and_91="150000",
+        foreign_business_income="1500",
+        foreign_non_business_income="500",
+        foreign_capital_gains_claim="300",
+        foreign_non_business_tax="600",
+        foreign_business_tax="100",
+    )
+
+    assert worksheet.get(AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX).value == D("7405.42")
+    assert worksheet.get(AMT_NET_MINIMUM_TAX_PAYABLE).value == D("6933.92")
+    assert worksheet.get(AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS).value == D("0")
+    assert worksheet.get(AMT_PART_6_FEDERAL_SURTAX).value == D("0")
+    assert worksheet.get(AMT_PART_6_TAX_WITH_SURTAX).value == D("6933.92")
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("6933.92")
+
+
+def test_return_bg_part_6_line_11_is_line_9_for_a_non_resident_with_no_amount_on_line_10() -> None:
+    # With the security options at 150000.00 and a non-resident (a count of 1), line 10 is 0.00, so
+    # the condition on line 10 does not apply, and line 11 is line 9, 3554.60, times the count. Line
+    # 12 is 7405.42 plus 3554.60, 10960.02, and line 14 is the same. Line 9 is the surtax on line 7
+    # of Part 6, 3554.60, not the surtax on line 2 of Part 3 (2806.31) that Part 3 takes for a
+    # non-resident.
+    worksheet = return_bg(security_t4_39_and_91="150000", non_resident=1)
+
+    assert worksheet.get(AMT_PART_6_SURTAX_AT_48_PERCENT).value == D("3554.60")
+    assert worksheet.get(AMT_PART_6_HAS_AMOUNT_ON_LINE_10).value == 0
+    assert worksheet.get(AMT_PART_6_SURTAX_IF_NON_RESIDENT).value == D("3554.60")
+    assert worksheet.get(AMT_PART_6_FEDERAL_SURTAX).value == D("3554.60")
+    assert worksheet.get(AMT_PART_6_TAX_WITH_SURTAX).value == D("10960.02")
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("10960.02")
+
+
+def test_return_bg_part_6_line_11_is_line_10_when_line_10_has_an_amount() -> None:
+    # With the security options at 150000.00 and 50 as the percentage of Column 5 of line 52220 on
+    # Form T2203 (a figure the caller gives), line 10 is 3554.60 times 50%, 1777.30, which is an
+    # amount, so line 11 is line 10, 1777.30. Line 12 is 7405.42 plus 1777.30, 9182.72, and line 14
+    # is the same.
+    worksheet = return_bg(security_t4_39_and_91="150000", t2203_percentage="50")
+
+    assert worksheet.get(AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS).value == D("1777.30")
+    assert worksheet.get(AMT_PART_6_HAS_AMOUNT_ON_LINE_10).value == 1
+    assert worksheet.get(AMT_PART_6_FEDERAL_SURTAX).value == D("1777.30")
+    assert worksheet.get(AMT_PART_6_TAX_WITH_SURTAX).value == D("9182.72")
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("9182.72")
+
+
+def test_return_bg_part_6_line_14_is_line_13_when_the_split_income_tax_is_more_than_line_12() -> (
+    None
+):
+    # Split dividends of 11500.00, as on Return AL: Form T1206 line 22 is 2756.54 (3795.00 less
+    # 1038.46) and line 24 is the same. Line 3 is the basic federal tax of line 1 less 2756.54, and
+    # line 5 is line 3, as the minimum amount is 0.00, and line 7 is line 5 plus line 6, the basic
+    # federal tax again. Line 8 is 0.00 and line 11
+    # is 0.00 (a resident, with no tax to multiple jurisdictions), so line 12 is 0.00 and line 14
+    # is line 13, 2756.54.
+    worksheet = return_bg(
+        split_income_dividends="11500",
+        split_income_dividends_other_than_eligible="11500",
+    )
+    basic = worksheet.get(AMT_BASIC_FEDERAL_TAX).value
+
+    assert worksheet.get(SPLIT_INCOME_LINE_22).value == D("2756.54")
+    assert worksheet.get(AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX).value == basic - D("2756.54")
+    assert worksheet.get(AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX).value == basic
+    assert worksheet.get(SPLIT_INCOME_LINE_24).value == D("2756.54")
+    assert worksheet.get(AMT_PART_6_TAX_WITH_SURTAX).value == D("0")
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("2756.54")
+
+
+def test_return_bg_part_6_line_3_is_floored_for_a_non_resident_with_negative_basic_tax() -> None:
+    # A non-resident with employment income of 8000.00, whose basic federal tax is -1304.84 (as the
+    # Part 5 case above): line 3 is -1304.84 less 0.00, not below zero, so 0.00, and line 5 is 0.00.
+    # Line 7 is 0.00 plus 0.00, so line 9 is 0.00 and line 11, the non-resident's amount, is 0.00
+    # too. Part 3 line 2 is -626.32 for this return, but Part 6 does not take that: line 5, the
+    # greater of line 3 and the minimum amount, is 0.00.
+    worksheet = return_bg(employment_income="8000", non_resident=1)
+
+    assert worksheet.get(AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX).value == D("0")
+    assert worksheet.get(AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX).value == D("0")
+    assert worksheet.get(AMT_PART_6_SURTAX_AT_48_PERCENT).value == D("0")
+    assert worksheet.get(AMT_PART_6_FEDERAL_SURTAX).value == D("0")
+    assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("0")

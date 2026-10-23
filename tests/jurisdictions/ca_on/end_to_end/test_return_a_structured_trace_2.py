@@ -46,12 +46,14 @@ from app.jurisdictions.ca.catalog import (
     AMT_EXCESS_EPSP_AMOUNTS,
     AMT_FEDERAL_LOGGING_TAX_CREDIT,
     AMT_FEDERAL_SURTAX,
+    AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX,
     AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FINANCING_EXPENSES,
     AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
     AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
     AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
+    AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT,
     AMT_INVESTMENT_COUNSEL_FEES,
     AMT_INVESTMENT_TAX_CREDIT,
     AMT_LEGAL_AND_ACCOUNTING_EXPENSES,
@@ -67,6 +69,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_MOVING_EXPENSES_DEDUCTION,
     AMT_NET_CAPITAL_LOSSES_DIFFERENCE,
+    AMT_NET_MINIMUM_TAX_PAYABLE,
     AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
     AMT_NON_CAPITAL_LOSSES_DIFFERENCE,
     AMT_NON_DEDUCTIBLE_INTEREST,
@@ -76,6 +79,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
+    AMT_PART_6_FEDERAL_SURTAX,
+    AMT_PART_6_TAX_WITH_SURTAX,
     AMT_PPIP_PREMIUMS_DEDUCTION,
     AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
@@ -1042,6 +1047,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Form T691 Part 6 line 7 "Line 5 plus line 6 (14)": line 5, the greater of line 3
+        # (16951.38) and line 4 (the minimum amount, 0), 16951.38, and line 6, the amount from line
+        # 22 of Form T1206 (0): 16951.38.
+        AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX: SumLine(
+            AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX,
+            (
+                (AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT, D("16951.38")),
+                (SPLIT_INCOME_LINE_22, D("0")),
+            ),
+            D("16951.38"),
+        ),
+        # Form T691 Part 6 line 12 "Line 8 plus line 11": line 8, the net minimum tax payable (0),
+        # and line 11, the federal surtax (0): 0.
+        AMT_PART_6_TAX_WITH_SURTAX: SumLine(
+            AMT_PART_6_TAX_WITH_SURTAX,
+            ((AMT_NET_MINIMUM_TAX_PAYABLE, D("0")), (AMT_PART_6_FEDERAL_SURTAX, D("0"))),
+            D("0"),
+        ),
         # Form RC381 Part 3 line 3 "Line 1 plus line 2 Total pensionable earnings": Return A has
         # no T4 pensionable earnings on lines 1 and 2.
         RC381_PART_3_LINE_3: SumLine(

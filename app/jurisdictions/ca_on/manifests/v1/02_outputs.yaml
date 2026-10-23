@@ -118,3 +118,7 @@ outputs:
   # line 15 and Part 4 line 11 are read by Part 5 lines 4 and 2, so they are no longer declared
   # outputs.
   - ca/amt_alternative_minimum_tax_payable
+  # Form T691 Part 6 line 14 "Enter whichever is more: amount from line 12 or line 13. Enter this
+  # amount on line 41700 of your return.", which nothing on the return reads yet (the line 41700
+  # wiring is a later change); Part 6 lines 1 to 13 are read by the lines after them.
+  - ca/amt_federal_tax_payable_under_minimum_tax

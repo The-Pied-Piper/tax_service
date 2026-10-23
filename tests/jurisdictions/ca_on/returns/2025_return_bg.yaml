@@ -3,7 +3,8 @@
 # listed securities, computed on Form T691 (alternative minimum tax) Parts 1 and 9 as far as
 # line 103, Parts 2 and 8 as far as line 12 (no carryover is claimed), Part 3 lines 1 to 15
 # (no tax is payable to multiple jurisdictions), Part 4 lines 1 to 11 (no foreign income, tax
-# or claim), and Part 5 lines 1 to 11 (no minimum tax payable). The Part 1 and
+# or claim), Part 5 lines 1 to 11 (no minimum tax payable), and Part 6 lines 1 to 14 (no split
+# income, so lines 2 and 6 are 0.00). The Part 1 and
 # Part 9 amounts that are not lines of this return are chosen
 # figures, entered as the form takes them; the adjustments and the sums are computed from them.
 jurisdiction: CA-ON
@@ -129,7 +130,23 @@ description: >-
   "Amount from line 15 of Part D of Form T2038(IND)", is 0.00, as no claim is made on it. Line 10,
   "Line 8 minus line 9 (if negative, enter "0")", is 0.00 minus 0.00, 0.00. Line 11, "Line 7 minus
   line 10 (if negative, enter "0")", is 0.00 minus 0.00, 0.00: the filer is not subject to
-  alternative minimum tax. Not yet computed: Parts 6 and 7 of Form T691 and Part 8 lines 13 to 17.
+  alternative minimum tax. Part 6, federal tax payable under alternative minimum tax, lines 1 to
+  14: line 1, "Basic federal tax from line 7 of Part 2", is 5846.47, and line 2, "Amount from line
+  22 of Form T1206, Tax on Split Income", is 0.00, so line 3, "Line 1 minus line 2 (if negative,
+  enter "0")", is 5846.47 minus 0.00, 5846.47. Line 4, "Minimum amount from line 103 of Part 1",
+  is 0.00, so line 5, "Enter whichever is more: amount from line 3 or line 4.", is 5846.47.
+  Line 6, "Amount from line 22 of Form T1206", is 0.00, so line 7, "Line 5 plus line 6 (14)",
+  is 5846.47 plus 0.00, 5846.47. Line 8, "Net minimum tax payable from line 3 of Part 5", is
+  0.00. Line 9, "Federal surtax on business income earned outside Canada", multiplies line 7 by
+  48%: 5846.47 times 0.48 is 2806.3056, rounded half-up to 2806.31. Line 10, the percentage in
+  Column 5 of line 52220 on Form T2203 applied to line 9, is a chosen figure of 0 as no tax is
+  payable to multiple jurisdictions, so line 10 is 2806.31 times 0, 0.00. Line 11, "If you have
+  an amount on line 10, enter that amount. If not, and you are a non-resident or deemed resident,
+  enter the amount from line 9. Otherwise, enter "0".", is 0.00: line 10 is 0.00, and the filer
+  is not a non-resident (a chosen figure of 0). Line 12, "Line 8 plus line 11", is 0.00. Line 13,
+  "Amount from line 24 of Form T1206", is 0.00, so line 14, "Enter whichever is more: amount from
+  line 12 or line 13", is 0.00. The amount is not yet entered on line 41700 of the return.
+  Not yet computed: Part 7 of Form T691 and Part 8 lines 13 to 17.
   Amounts are quoted decimals, and the count of CPP months is a quoted digit string.
 sources:
   - >-
@@ -309,3 +326,13 @@ expected:
   ca/amt_minimum_tax_after_regular_tax: "0.00"
   ca/amt_investment_tax_credit_less_part_d: "0.00"
   ca/amt_alternative_minimum_tax_payable: "0.00"
+  ca/amt_basic_federal_tax_less_split_income_tax: "5846.47"
+  ca/amt_greater_of_basic_tax_and_minimum_amount: "5846.47"
+  ca/amt_federal_tax_under_minimum_tax: "5846.47"
+  ca/amt_part_6_surtax_at_48_percent: "2806.31"
+  ca/amt_part_6_surtax_multiple_jurisdictions: "0.00"
+  ca/amt_part_6_has_amount_on_line_10: "0"
+  ca/amt_part_6_surtax_if_non_resident: "0.00"
+  ca/amt_part_6_federal_surtax: "0.00"
+  ca/amt_part_6_tax_with_surtax: "0.00"
+  ca/amt_federal_tax_payable_under_minimum_tax: "0.00"
