@@ -589,8 +589,8 @@ def test_sort_key_orders_by_identifier_then_value_type_name() -> None:
 
 
 def test_labels_are_distinct_sorted_and_quoted() -> None:
-    assert Composition.labels([B, A, B]) == f"{A.label!r}, {B.label!r}"
-    assert Composition.labels([]) == ""
+    assert ArtifactKind.labels([B, A, B]) == f"{A.label!r}, {B.label!r}"
+    assert ArtifactKind.labels([]) == ""
 
 
 def test_check_starting_kinds_accepts_exactly_the_inputs() -> None:

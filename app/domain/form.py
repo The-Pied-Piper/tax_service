@@ -254,7 +254,7 @@ class FormSet:
         if derived:
             verb = "is" if len(derived) == 1 else "are"
             raise InvalidCompositionError(
-                f"{Composition.labels(derived)} {verb} exported by a form, not an input"
+                f"{ArtifactKind.labels(derived)} {verb} exported by a form, not an input"
             )
 
     @staticmethod

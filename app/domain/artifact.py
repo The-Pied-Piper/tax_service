@@ -15,6 +15,7 @@ system's.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any, Generic, TypeVar
@@ -71,6 +72,11 @@ class ArtifactKind(Generic[V]):  # noqa: UP046  (invariant V, see above)
     def label(self) -> str:
         """The local part of the identifier, for traces and messages."""
         return self.identifier.partition("/")[2]
+
+    @staticmethod
+    def labels(kinds: Iterable[ArtifactKind[Any]]) -> str:
+        """The distinct labels of `kinds`, sorted, quoted and comma-separated."""
+        return ", ".join(repr(label) for label in sorted({kind.label for kind in kinds}))
 
     @property
     def is_form_export(self) -> bool:
