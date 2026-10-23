@@ -114,19 +114,21 @@ class TerminalLossRenderer:
         column_7 = line.column_7
         zero_reason = line.zero_reason
         column_7_positive = line.column_7_positive
+        column_9 = line.column_9
         result = line.result
         if zero_reason is CcaZeroReason.NO_PROPERTY_LEFT:
+            expensed = f" less column 9 {EnglishFigures.money(column_9)}" if column_9 > 0 else ""
             if (
                 class_rate.recapture_and_terminal_loss is RecaptureAndTerminalLoss.EXCLUDED
                 and not line.has_diep
             ):
                 found = (
-                    f"column 7 {EnglishFigures.money(column_7)} with no property left, but a "
-                    f"terminal loss does not apply to class "
+                    f"column 7 {EnglishFigures.money(column_7)}{expensed} with no property left, "
+                    f"but a terminal loss does not apply to class "
                     f"{EnglishFigures.money(class_rate.class_number)}"
                 )
             else:
-                found = f"column 7 {EnglishFigures.money(column_7)} with no property left"
+                found = f"column 7 {EnglishFigures.money(column_7)}{expensed} with no property left"
         elif zero_reason is CcaZeroReason.NONE and column_7_positive:
             found = f"column 7 {EnglishFigures.money(column_7)} with property left"
         else:

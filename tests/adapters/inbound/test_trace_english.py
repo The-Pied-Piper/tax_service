@@ -4358,6 +4358,54 @@ def test_column_9_is_the_last_field_of_the_claim_and_closing_lines() -> None:
     assert [f.name for f in fields(ClosingUccLine)][-1] == "column_9"
 
 
+def expensed_loss_line(column_7: str, column_9: str, result: str) -> TerminalLossLine:
+    return TerminalLossLine(
+        TERMINAL_LOSS,
+        1,
+        CLASS_8,
+        1,
+        D(column_7),
+        NONE_LEFT,
+        True,
+        D(result),
+        True,
+        column_9=D(column_9),
+    )
+
+
+def test_the_terminal_loss_line_names_the_column_9_it_takes_off() -> None:
+    assert render(expensed_loss_line("4000", "1000", "3000")) == (
+        "terminal_loss: item 1 class 8: column 7 4000 less column 9 1000 with no property left: "
+        "terminal loss 3000"
+    )
+
+
+def test_the_terminal_loss_line_of_a_fully_expensed_class_is_0() -> None:
+    assert render(expensed_loss_line("4000", "4000", "0")) == (
+        "terminal_loss: item 1 class 8: column 7 4000 less column 9 4000 with no property left: "
+        "terminal loss 0"
+    )
+
+
+def test_the_terminal_loss_line_is_unchanged_when_column_9_is_0() -> None:
+    assert render(expensed_loss_line("4000", "0", "4000")) == (
+        "terminal_loss: item 1 class 8: column 7 4000 with no property left: terminal loss 4000"
+    )
+
+
+def test_the_terminal_loss_line_without_a_column_9_reads_as_one_with_0() -> None:
+    without = TerminalLossLine(
+        TERMINAL_LOSS, 1, CLASS_8, 1, D("4000"), NONE_LEFT, True, D("4000"), True
+    )
+
+    assert without == expensed_loss_line("4000", "0", "4000")
+    assert without.column_9 == D("0")
+
+
+def test_column_9_is_the_last_field_of_the_terminal_loss_line() -> None:
+    assert [f.name for f in fields(TerminalLossLine)][-1] == "column_9"
+
+
 def test_the_immediate_expensing_line_fields_in_order() -> None:
     assert [f.name for f in fields(ImmediateExpensingLine)] == [
         "output",

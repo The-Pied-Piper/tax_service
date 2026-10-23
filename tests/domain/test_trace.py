@@ -4428,6 +4428,7 @@ def test_terminal_loss_line_fields_in_order() -> None:
         "column_7_positive",
         "result",
         "has_diep",
+        "column_9",
     ]
     assert line == TerminalLossLine(
         output=TERMINAL_LOSS,
@@ -4457,6 +4458,7 @@ def test_a_terminal_loss_lines_amount_is_the_result() -> None:
         {"zero_reason": CcaZeroReason.NONE},
         {"column_7_positive": False},
         {"result": D("0")},
+        {"column_9": D("1000")},
     ],
 )
 def test_terminal_loss_lines_differ_by_each_field(change: dict[str, Any]) -> None:

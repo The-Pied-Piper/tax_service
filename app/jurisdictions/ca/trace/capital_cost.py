@@ -100,11 +100,13 @@ class RecapturedCcaLine(TraceLine):
 @dataclass(frozen=True)
 class TerminalLossLine(TraceLine):
     """The terminal loss `result` of one class, by `position` (from 1), for `output`: `column_7`
-    (the UCC after additions and dispositions) when it is positive with `no_property_left` (1 if
-    no property is left in the class, else 0), which `zero_reason` records, else 0, and 0 for a
-    class `class_rate` that a terminal loss does not apply to unless the row `has_diep` (it has DIEP
-    additions, column 4), which Note 3 excepts. `column_7_positive` records whether
-    column 7 is above 0, so a row with property left reads apart from one with nothing to lose.
+    (the UCC after additions and dispositions) less `column_9` (the immediate expensing amount),
+    not below 0, when column 7 is positive with `no_property_left` (1 if no property is left in the
+    class, else 0), which `zero_reason` records, else 0, and 0 for a class `class_rate` that a
+    terminal loss does not apply to unless the row `has_diep` (it has DIEP additions, column 4),
+    which Note 3 excepts. `column_7_positive` records whether column 7 is above 0, so a row with
+    property left reads apart from one with nothing to lose. `column_9` is the amount the class
+    expensed, which is not deducted as CCA and so is not a terminal loss.
     """
 
     output: Money
@@ -116,6 +118,7 @@ class TerminalLossLine(TraceLine):
     column_7_positive: bool
     result: Decimal
     has_diep: bool = False
+    column_9: Decimal = Decimal(0)
 
     @property
     def amount(self) -> Decimal:
