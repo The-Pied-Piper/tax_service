@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1001
+        == 1006
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1001
+        == 1006
     )
 
 
@@ -778,6 +778,9 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/cpp_part_3b_line_46",
         "ca/cpp_part_3b_line_47",
         "ca/cpp_part_3b_line_48",
+        "ca/schedule_8_cpp_base_contributions_on_return",
+        "ca/schedule_8_cpp_enhanced_contributions_on_return",
+        "ca/schedule_8_cpp_overpayment",
         "ca/cpp_base_contributions_on_return",
         "ca/cpp_enhanced_contributions_on_return",
         "ca/cpp_overpayment",
@@ -1509,8 +1512,25 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/residence_outlays",
         "ca/residence_adjusted_cost_base",
         "ca/residence_plus_one_year",
+        "ca/residence_part_2_applies",
+        "ca/residence_adjusted_cost_base_dec_31_1981",
+        "ca/residence_fmv_dec_31_1981",
+        "ca/residence_cost_base_adjustments_after_1981",
         "ca/principal_residence_properties",
         "ca/principal_residence_gain",
+        "ca/principal_residence_line_27",
+        "ca/principal_residence_line_29",
+        "ca/principal_residence_line_30",
+        "ca/principal_residence_line_32",
+        "ca/principal_residence_line_33",
+        "ca/principal_residence_line_38",
+        "ca/principal_residence_line_39",
+        "ca/principal_residence_line_42",
+        "ca/principal_residence_line_44",
+        "ca/principal_residence_line_45",
+        "ca/principal_residence_line_48",
+        "ca/principal_residence_line_51",
+        "ca/principal_residence_line_53",
         "ca/cca_class_number",
         "ca/cca_ucc_at_start",
         "ca/cca_additions",
@@ -2336,6 +2356,8 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca-on/flow_through_share_slip_expenses",
         "ca-on/flow_through_share_slips",
         "ca-on/flow_through_share_expenses",
+        "ca-on/flow_through_share_claimable",
+        "ca-on/flow_through_share_expenses_claimed",
         "ca-on/flow_through_share_credit",
         "ca-on/coop_education_payroll",
         "ca-on/coop_education_payroll_threshold",
@@ -2392,7 +2414,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1001
+        == 1006
     )
     assert (
         len(
@@ -2400,7 +2422,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1001
+        == 1006
     )
 
 
@@ -2413,7 +2435,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1001
+        == 1006
     )
     assert (
         len(
@@ -2421,7 +2443,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1001
+        == 1006
     )
 
 

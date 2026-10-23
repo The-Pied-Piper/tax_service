@@ -3042,6 +3042,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=1,
             result=D("0"),
         ),
+        # Form T1221 line 4 entered on ON479 line 17: no slips, 0, once as the filer was a resident
+        # of Ontario on the last day of the tax year.
+        ontario.FLOW_THROUGH_SHARE_EXPENSES_CLAIMED: TimesCountLine(
+            output=ontario.FLOW_THROUGH_SHARE_EXPENSES_CLAIMED,
+            amount_kind=ontario.FLOW_THROUGH_SHARE_EXPENSES,
+            amount_value=D("0"),
+            count_kind=ontario.FLOW_THROUGH_SHARE_CLAIMABLE,
+            count=1,
+            result=D("0"),
+        ),
         ONTARIO_TAX_REDUCTION: TimesCountLine(
             output=ONTARIO_TAX_REDUCTION,
             amount_kind=ONTARIO_TAX_REDUCTION_BEFORE_CONDITIONS,

@@ -301,31 +301,9 @@ INPUTS = frozenset(
     }
 )
 
-# Nothing reads these yet (a later PR, the one that adds the totals of both forms to the T1 lines,
-# reads them and removes them from this set): the final selection's six results, the amounts RC381
-# gives for lines 30800, 22215, 44800, 42100, 31000 and 22200 of the return, each chosen by the
-# sign of lines 70 and 83 of Part 4 added: Part 4's line 98 "Enter this amount (in dollars and
-# cents) on line 30800 of your return.", line 110 "Enter this amount (in dollars and cents) on
-# line 22215 of your return.", line 91 "Enter the result of the following calculation (in dollars
-# and cents) on line 44800 of your return", line 90 "If positive, enter the amount (in dollars and
-# cents) on line 42100 of your return", line 111 "Enter the result of the following calculation
-# (in dollars and cents) on line 31000 of your return" and line 129 "Enter this amount (in dollar
-# and cents) on line 22200 of your return." when they are above zero, else (lines 70 and 83 both
-# "0": "return to Part 3") Part 3a's and Part 3b's results for earnings from employment income
-# only, "Enter this amount (in dollars and cents) on line 30800 of your return.", "... on line
-# 22215 of your return." and "... on line 44800 of your return.", and "0" for lines 42100, 31000
-# and 22200. Part 4 lines 90, 91, 98 and 110 and the three results of Part 3a and Part 3b were
-# outputs until the final selection read them.
-OUTPUTS = frozenset(
-    {
-        "ca/rc381_cpp_base_contributions_on_return",
-        "ca/rc381_cpp_enhanced_contributions_on_return",
-        "ca/rc381_cpp_overpayment_on_return",
-        "ca/rc381_cpp_payable_on_self_employment",
-        "ca/rc381_cpp_base_contributions_on_self_employment_and_other_earnings",
-        "ca/rc381_cpp_deduction_on_self_employment_and_other_earnings",
-    }
-)
+# The six results of the final selection (see `FORM_EXPORTS`) are read by the T1 lines
+# (`05j_cpp_lines.yaml` and the sums of lines 42100, 31000 and 22200), so none is an output.
+OUTPUTS = frozenset[str]()
 
 FORM_STEPS = {
     # Part 2 "The number you enter on line A cannot be more than the number you enter on line

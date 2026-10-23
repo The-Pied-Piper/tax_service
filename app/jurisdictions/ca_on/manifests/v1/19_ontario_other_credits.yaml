@@ -361,13 +361,33 @@ capabilities:
       slips: ca-on/flow_through_share_slips
     produces:
       output: ca-on/flow_through_share_expenses
+  # Form T1221 "You must be a resident of Ontario on the last day of the tax year to claim this
+  # credit.": 0 when the filer was not a resident of Ontario on the last day of the tax year
+  # (the count ON428 reads for "You were not a resident of Ontario on December 31, 2025"), else 1.
+  - name: ca/count_by_conditions
+    params:
+      conditions: ca-on/flow_through_share_conditions
+    consumes:
+      counts:
+        - ca-on/not_resident_of_ontario_at_year_end
+      amounts: []
+    produces:
+      output: ca-on/flow_through_share_claimable
+  # Form T1221 line 4, entered on ON479 line 17 and line 63220 only by a filer who may claim the
+  # credit, so line 4 once, else "0".
+  - name: core/times_count
+    consumes:
+      amount: ca-on/flow_through_share_expenses
+      count: ca-on/flow_through_share_claimable
+    produces:
+      output: ca-on/flow_through_share_expenses_claimed
   # Form ON479 line 17 and line 63220 "Enter your total expenses from your Form T1221.
   # multiplied by 5% =": the 5% on T1221 line 4.
   - name: core/apply_rate
     params:
       rate: ca-on/flow_through_share_rate
     consumes:
-      base: ca-on/flow_through_share_expenses
+      base: ca-on/flow_through_share_expenses_claimed
     produces:
       output: ca-on/flow_through_share_credit
   # Line 18 "Add lines 1, 2, 13, 14, 16, and 17. =": lines 1, 2 (line 63050, Schedule

@@ -169,7 +169,13 @@ from app.jurisdictions.ca.catalog import (
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     NET_FEDERAL_TAX,
     NON_REFUNDABLE_CREDIT_AMOUNTS,
+    RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
     REFUND_OR_BALANCE_OWING,
+    SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    SCHEDULE_8_CPP_OVERPAYMENT,
     SOCIAL_BENEFITS_REPAYMENT_PAYABLE,
     TOTAL_CREDITS,
     TOTAL_PAYABLE,
@@ -3830,10 +3836,10 @@ def test_part_5_completed_moves_the_credit_the_deductions_and_the_totals_by_the_
 
 
 def test_the_trace_names_part_5_or_part_3_for_lines_30800_22215_and_44800() -> None:
-    # Case (c) (Return BN as filed with line 27 of 20,000). Part 5 completed: line 30800 takes line
-    # 57 (2,796.75), line 22215 line 69 (565.00) and line 44800 line 50 (0.00); the Part 3 route
-    # (line 24 positive: lines 15, 18 plus 22 and 24) is kept under its own kinds. Part 5 not
-    # completed: they take the Part 3 route.
+    # Case (c) (Return BN as filed with line 27 of 20,000). Part 5 completed: Schedule 8's line
+    # 30800 takes line 57 (2,796.75), line 22215 line 69 (565.00) and line 44800 line 50 (0.00);
+    # the Part 3 route (line 24 positive: lines 15, 18 plus 22 and 24) is kept under its own
+    # kinds. Part 5 not completed: they take the Part 3 route.
     arguments: dict[str, Any] = {
         "professional_income": "20000",
         "cpp_t4_base_and_first_additional_contributions": "3500.00",
@@ -3845,9 +3851,9 @@ def test_the_trace_names_part_5_or_part_3_for_lines_30800_22215_and_44800() -> N
         )
     )
     for line, chosen_kind, chosen_value in (
-        (CPP_BASE_CONTRIBUTIONS_ON_RETURN, CPP_PART_5_LINE_57, "2796.75"),
-        (CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN, CPP_PART_5_LINE_69, "565.00"),
-        (CPP_OVERPAYMENT, CPP_PART_5_LINE_50, "0.00"),
+        (SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN, CPP_PART_5_LINE_57, "2796.75"),
+        (SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN, CPP_PART_5_LINE_69, "565.00"),
+        (SCHEDULE_8_CPP_OVERPAYMENT, CPP_PART_5_LINE_50, "0.00"),
     ):
         assert routed[line] == ChosenByCountLine(
             output=line,
@@ -3870,13 +3876,17 @@ def test_the_trace_names_part_5_or_part_3_for_lines_30800_22215_and_44800() -> N
         ), line.identifier
     kept = chosen_lines(compute_with_schedule_8("60000", (), "0", "0", "0", "0", "0", **arguments))
     for line, chosen_kind, chosen_value in (
-        (CPP_BASE_CONTRIBUTIONS_ON_RETURN, CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN, "2796.75"),
         (
-            CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+            SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+            CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
+            "2796.75",
+        ),
+        (
+            SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
             CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
             "565.00",
         ),
-        (CPP_OVERPAYMENT, CPP_PART_3_OVERPAYMENT, "138.25"),
+        (SCHEDULE_8_CPP_OVERPAYMENT, CPP_PART_3_OVERPAYMENT, "138.25"),
     ):
         assert kept[line] == ChosenByCountLine(
             output=line,
@@ -3889,7 +3899,8 @@ def test_the_trace_names_part_5_or_part_3_for_lines_30800_22215_and_44800() -> N
 
 def test_the_trace_counts_part_5_lines_49_70_and_88_once_for_each_part_5_completed() -> None:
     # Case (c) with Part 5 completed: line 49 if positive (1,764.20), line 70 (559.35) and line 88
-    # (1,343.10) are each counted once, then added to the Part 4 route (0 here).
+    # (1,343.10) are each counted once, then added to the Part 4 route (0 here) and Form RC381's
+    # amount (0, the return carries Schedule 8).
     worksheet = compute_with_schedule_8(
         "60000",
         (),
@@ -3905,12 +3916,13 @@ def test_the_trace_counts_part_5_lines_49_70_and_88_once_for_each_part_5_complet
     )
     times = part_5_trace(worksheet, TimesCountLine)
     sums = part_5_trace(worksheet, SumLine)
-    for line, amount_kind, amount, part_4, total in (
+    for line, amount_kind, amount, part_4, rc381, total in (
         (
             CPP_PART_5_PAYABLE_ON_SELF_EMPLOYMENT,
             CPP_PART_5_LINE_49_IF_POSITIVE,
             "1764.20",
             CPP_PAYABLE_ON_SELF_EMPLOYMENT,
+            RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT,
             CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
         ),
         (
@@ -3918,6 +3930,7 @@ def test_the_trace_counts_part_5_lines_49_70_and_88_once_for_each_part_5_complet
             CPP_PART_5_LINE_70,
             "559.35",
             CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
+            RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
             CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
         ),
         (
@@ -3925,6 +3938,7 @@ def test_the_trace_counts_part_5_lines_49_70_and_88_once_for_each_part_5_complet
             CPP_PART_5_LINE_88,
             "1343.10",
             CPP_DEDUCTION_ON_SELF_EMPLOYMENT,
+            RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
             CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
         ),
     ):
@@ -3938,7 +3952,7 @@ def test_the_trace_counts_part_5_lines_49_70_and_88_once_for_each_part_5_complet
         ), line.identifier
         assert sums[total] == SumLine(
             output=total,
-            parts=((part_4, D("0")), (line, D(amount))),
+            parts=((part_4, D("0")), (line, D(amount)), (rc381, D("0"))),
             total=D(amount),
         ), total.identifier
 

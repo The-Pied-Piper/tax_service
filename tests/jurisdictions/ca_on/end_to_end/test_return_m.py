@@ -68,7 +68,8 @@ def test_return_ms_flow_through_share_credit_is_500_and_lowers_the_refund_by_tha
         "+ item 2 flow_through_share_slip_expenses 4000 = 10000"
     ) in rendered
     assert (
-        "flow_through_share_credit: 5% of flow_through_share_expenses 10000 (half-up to 0.01)"
+        "flow_through_share_credit: 5% of flow_through_share_expenses_claimed 10000 "
+        "(half-up to 0.01)"
     ) in rendered
     assert (
         "ontario_credits_subtotal: fertility_credit 5000 + care_credit 2550 "

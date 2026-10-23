@@ -38,9 +38,15 @@ from app.jurisdictions.ca.capabilities.ratio_truncated import (
 from app.jurisdictions.ca.catalog import (
     CPP_ADDITIONAL_MAXIMUM_PENSIONABLE_EARNINGS,
     CPP_BASE_CONTRIBUTIONS,
+    CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_BASIC_EXEMPTION,
+    CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_ENHANCED_CONTRIBUTIONS,
+    CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
     CPP_MAXIMUM_PENSIONABLE_EARNINGS,
+    CPP_OVERPAYMENT,
+    CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
     CPP_SECOND_ADDITIONAL_EARNINGS_MAXIMUM,
     NET_INCOME,
     RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
@@ -233,6 +239,7 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_128,
     RC381_PART_4_LINE_129,
     RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS,
+    REFUND_OR_BALANCE_OWING,
     SELF_EMPLOYED_CPP_BASE_CREDIT,
     SELF_EMPLOYED_CPP_CONTRIBUTIONS_PAYABLE,
     SELF_EMPLOYED_CPP_DEDUCTION,
@@ -2559,19 +2566,28 @@ def test_return_bo_part_4_steps_are_the_form_capabilities() -> None:
         assert isinstance(worksheet.producer_of(kind), ChooseBySign), kind.identifier
 
 
-def test_return_bo_the_cpt20_election_does_not_reach_the_t1_lines_yet() -> None:
-    # Part 4 line 4 is read by lines 62, 68, 74 and 80, which no T1 line reads yet: the same return
-    # (carrying Form RC381, not Schedule 8) with and without lines 2 and 3 (50373 and 50399) gives
-    # the same net income and total payable.
+def test_return_bo_the_cpt20_election_reaches_the_t1_lines() -> None:
+    # Part 4 line 4 is read by lines 62, 68, 74 and 80, and the final selection's six results are
+    # the T1 lines (the return carries Form RC381, not Schedule 8): the same return with and
+    # without lines 2 and 3 (50373 and 50399) gives different net income and total payable, and
+    # the T1 lines 42100, 31000 and 22200 are "0" without the election.
     with_election = return_bo()
     without_election = return_bo(cpt20_earnings="0", cpt20_t4_earnings="0")
 
     t1_with_election = return_bo(form="ca-on/return")
     t1_without_election = return_bo(form="ca-on/return", cpt20_earnings="0", cpt20_t4_earnings="0")
-    for kind in (NET_INCOME, TOTAL_PAYABLE):
-        assert t1_with_election.get(kind).value == t1_without_election.get(kind).value, (
-            kind.identifier
-        )
+    assert t1_with_election.get(NET_INCOME).value == D("68624.90")
+    assert t1_with_election.get(TOTAL_PAYABLE).value == D("11842.75")
+    assert t1_without_election.get(NET_INCOME).value == D("69335.00")
+    assert t1_without_election.get(TOTAL_PAYABLE).value == D("11463.66")
+    assert t1_with_election.get(CPP_OVERPAYMENT).value == D("0.00")
+    assert t1_without_election.get(CPP_OVERPAYMENT).value == D("172.25")
+    for kind in (
+        CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+    ):
+        assert t1_without_election.get(kind).value == D("0"), kind.identifier
     # Part 4 lines 5 to 56 do not read line 4, so they are the same too; lines 62 and onward do:
     # line 4 of 12,500 against 0 changes line 62 (1,300.00 against 0), line 74 and the lines after
     # them, down to line 90 and line 91.
@@ -2580,8 +2596,8 @@ def test_return_bo_the_cpt20_election_does_not_reach_the_t1_lines_yet() -> None:
     assert part_4_earnings(with_election) != part_4_earnings(without_election)
     assert with_election.get(RC381_PART_4_LINE_62).value == D("1300.00")
     assert without_election.get(RC381_PART_4_LINE_62).value == D("0")
-    # The final selection's six results are not carried to the T1 lines yet: they differ with the
-    # election (lines 42100, 31000 and 22200 are "0" without it), the T1 lines do not.
+    # The final selection's six results differ with the election (lines 42100, 31000 and 22200 are
+    # "0" without it), and so do the T1 lines that carry them.
     assert final_selection(with_election) != final_selection(without_election)
     assert with_election.get(
         RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS
@@ -7822,12 +7838,45 @@ def test_a_return_with_no_quebec_figures_is_unchanged_and_rc381_part_3_is_zero()
     }
 
 
-def test_the_rc381_figures_do_not_change_the_t1_lines_yet() -> None:
-    # This part of Form RC381 reaches no line of the return: the same employment income and T4 box
-    # 16 total with and without the pensionable earnings totals and the T4 box 17 total (the return
-    # carrying Form RC381, not Schedule 8) gives the same net income and total payable.
-    with_totals = return_bo(form="ca-on/return")
-    without_totals = return_bo(form="ca-on/return", line_1="0", line_2="0", line_39="0")
+def test_the_rc381_results_are_the_t1_lines() -> None:
+    # Each of the six results of the form is the T1 line it is entered on, the return carrying
+    # Form RC381 and no Schedule 8: lines 30800 and 22215 (3,462.75 and 665.00), 44800 (0.00),
+    # 42100 (602.20), 31000 (64.35) and 22200 (710.10) of return BO.
+    form = return_bo()
+    on_return = return_bo(form="ca-on/return")
 
-    for kind in (NET_INCOME, TOTAL_PAYABLE):
-        assert with_totals.get(kind).value == without_totals.get(kind).value, kind.identifier
+    for result, line in (
+        (RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN, CPP_BASE_CONTRIBUTIONS_ON_RETURN),
+        (RC381_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN, CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN),
+        (RC381_CPP_OVERPAYMENT_ON_RETURN, CPP_OVERPAYMENT),
+        (RC381_CPP_PAYABLE_ON_SELF_EMPLOYMENT, CPP_PAYABLE_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS),
+        (
+            RC381_CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            CPP_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        ),
+        (
+            RC381_CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+            CPP_DEDUCTION_ON_SELF_EMPLOYMENT_AND_OTHER_EARNINGS,
+        ),
+    ):
+        assert on_return.get(line).value == form.get(result).value, line.identifier
+    assert on_return.get(CPP_BASE_CONTRIBUTIONS_ON_RETURN).value == D("3462.75")
+    assert on_return.get(CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN).value == D("665.00")
+    assert on_return.get(NET_INCOME).value == D("68624.90")
+    assert on_return.get(TOTAL_PAYABLE).value == D("11842.75")
+    assert on_return.get(REFUND_OR_BALANCE_OWING).value == D("-157.25")
+
+
+def test_the_t1_lines_follow_the_rc381_totals_not_the_pensionable_earnings_totals_alone() -> None:
+    # Without the pensionable earnings totals and the T4 box 17 total (lines 1, 2 and 39) the form
+    # gives other results, and the T1 lines follow them.
+    without_totals = return_bo(form="ca-on/return", line_1="0", line_2="0", line_39="0")
+    form = return_bo(line_1="0", line_2="0", line_39="0")
+
+    assert (
+        without_totals.get(CPP_BASE_CONTRIBUTIONS_ON_RETURN).value
+        == form.get(RC381_CPP_BASE_CONTRIBUTIONS_ON_RETURN).value
+    )
+    assert (
+        without_totals.get(CPP_OVERPAYMENT).value == form.get(RC381_CPP_OVERPAYMENT_ON_RETURN).value
+    )

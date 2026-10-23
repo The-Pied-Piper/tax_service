@@ -950,6 +950,9 @@ from app.jurisdictions.ca.catalog import (
     RRSP_DEDUCTION_LIMIT,
     RRSP_DEDUCTION_MAXIMUM,
     RRSP_INCOME,
+    SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+    SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+    SCHEDULE_8_CPP_OVERPAYMENT,
     SECURITY_OPTIONS_DEDUCTIONS,
     SELF_EMPLOYED_CPP_BASE_CONTRIBUTIONS,
     SELF_EMPLOYED_CPP_BASE_CREDIT,
@@ -1802,9 +1805,9 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         CPP_PART_3_BASE_CONTRIBUTIONS_ON_RETURN,
         CPP_PART_3_ENHANCED_CONTRIBUTIONS_ON_RETURN,
         CPP_PART_3_OVERPAYMENT,
-        CPP_BASE_CONTRIBUTIONS_ON_RETURN,
-        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
-        CPP_OVERPAYMENT,
+        SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+        SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        SCHEDULE_8_CPP_OVERPAYMENT,
     ):
         assert isinstance(schedule_8.producer_of(chosen), ChooseByCount), chosen.identifier
     for floored in (CPP_PART_3B_LINE_31, CPP_PART_3B_LINE_38, CPP_PART_3B_LINE_45):
@@ -1956,15 +1959,22 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         assert isinstance(worksheet.producer_of(total), Sum), total.identifier
     # The return reads each line of Schedule 8 it uses through the total of the form's lines.
     for total in (
-        CPP_BASE_CONTRIBUTIONS_ON_RETURN,
-        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
-        CPP_OVERPAYMENT,
+        SCHEDULE_8_CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+        SCHEDULE_8_CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        SCHEDULE_8_CPP_OVERPAYMENT,
         CPP_PART_5_LINE_49,
         CPP_PART_5_LINE_70,
         CPP_PART_5_LINE_88,
         CPP_ZERO,
     ):
         assert isinstance(worksheet.producer_of(total), RecordTotal), total.identifier
+    # T1 lines 30800, 22215 and 44800 are the Schedule 8 total plus the Form RC381 total.
+    for line in (
+        CPP_BASE_CONTRIBUTIONS_ON_RETURN,
+        CPP_ENHANCED_CONTRIBUTIONS_ON_RETURN,
+        CPP_OVERPAYMENT,
+    ):
+        assert isinstance(worksheet.producer_of(line), Sum), line.identifier
     # T1 lines 31000, 22200 and 42100 from Part 5 are counted once for each Part 5 completed.
     for routed in (
         CPP_PART_5_BASE_CONTRIBUTIONS_ON_SELF_EMPLOYMENT,
