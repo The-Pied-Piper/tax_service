@@ -1470,8 +1470,9 @@ BUSINESS_MOTOR_VEHICLE_EXPENSES = CATALOG.declare(
 (not including CCA) (amount 16 of Chart A)": amount 16 of Chart A, "Allowable motor vehicle
 expenses: Add amounts 13 to 15 (enter this total on line 9281 of Part 4)"."""
 
-# Form T2125 Charts A to C, motor vehicle expenses: the caller's amounts, the printed constants
-# (each a dataset of the same name) and the lines the charts compute.
+# Form T2125 Charts A to C, motor vehicle expenses: the caller's amounts of one vehicle, the
+# printed constants (each a dataset of the same name); the lines the charts compute are
+# not artifacts.
 BUSINESS_VEHICLE_BUSINESS_KILOMETRES = CATALOG.declare(
     "business_vehicle_business_kilometres", Decimal, non_negative=True
 )
@@ -1608,102 +1609,6 @@ BUSINESS_VEHICLE_LEASE_COST_LIMIT = CATALOG.declare(
 """Lease cost limit, Form T2125 Chart C line 27 "[($38,000 + GST and PST, or $38,000 + HST) ×
 amount 20] ÷ amount 24": the printed $38,000, a dataset of the same name."""
 
-BUSINESS_VEHICLE_LIST_PRICE_LIMIT_TAX = CATALOG.declare(
-    "business_vehicle_list_price_limit_tax", Decimal, non_negative=True
-)
-"""GST and PST, or HST, on the $44,706 price limit, Form T2125 Chart C line 23 "($44,706 + GST and
-PST, or $44,706 + HST)": the price limit times the sales tax rate."""
-
-BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT_TAX = CATALOG.declare(
-    "business_vehicle_lease_charge_limit_tax", Decimal, non_negative=True
-)
-"""GST and PST, or HST, on the $1,100 lease charge limit, Form T2125 Chart C line 25 "[($1,100 +
-GST and PST, or $1,100 + HST) × amount 22] ÷ 30": the limit times the sales tax rate."""
-
-BUSINESS_VEHICLE_LEASE_COST_LIMIT_TAX = CATALOG.declare(
-    "business_vehicle_lease_cost_limit_tax", Decimal, non_negative=True
-)
-"""GST and PST, or HST, on the $38,000 lease cost limit, Form T2125 Chart C line 27 "[($38,000 +
-GST and PST, or $38,000 + HST) × amount 20] ÷ amount 24": the limit times the sales tax rate."""
-
-BUSINESS_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX = CATALOG.declare(
-    "business_vehicle_list_price_limit_with_tax", Decimal, non_negative=True
-)
-"""Price limit with tax, Form T2125 Chart C line 23 "($44,706 + GST and PST, or $44,706 + HST)": the
-printed $44,706 plus its tax."""
-
-BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX = CATALOG.declare(
-    "business_vehicle_lease_charge_limit_with_tax", Decimal, non_negative=True
-)
-"""Lease charge limit with tax, Form T2125 Chart C line 25 "($1,100 + GST and PST, or $1,100 +
-HST)": the printed $1,100 plus its tax."""
-
-BUSINESS_VEHICLE_LEASE_COST_LIMIT_WITH_TAX = CATALOG.declare(
-    "business_vehicle_lease_cost_limit_with_tax", Decimal, non_negative=True
-)
-"""Lease cost limit with tax, Form T2125 Chart C line 27 "($38,000 + GST and PST, or $38,000 +
-HST)": the printed $38,000 plus its tax."""
-
-BUSINESS_VEHICLE_TOTAL_EXPENSES = CATALOG.declare(
-    "business_vehicle_total_expenses", Decimal, non_negative=True
-)
-"""Total motor vehicle expenses, Form T2125 Chart A line 12 "Total motor vehicle expenses: Add
-amounts 3 to 11.": amounts 3 to 11, amount 4 being line 19 and amount 8 being line 28."""
-
-BUSINESS_VEHICLE_BUSINESS_USE_PART = CATALOG.declare(
-    "business_vehicle_business_use_part", Decimal, non_negative=True
-)
-"""Business use part, Form T2125 Chart A line 13 "Business use part: amount 1 ÷ amount 2 × amount
-12 = 13": amount 1 divided by amount 2, times amount 12, or 0 with no total kilometres."""
-
-BUSINESS_VEHICLE_INTEREST_FOR_PERIOD = CATALOG.declare(
-    "business_vehicle_interest_for_period", Decimal, non_negative=True
-)
-"""Interest for the fiscal period, Form T2125 Chart B line 18 "($350*** ÷ 30) × the number of days
-in the fiscal period for which interest was payable (accrual method) or paid (cash method) = 18":
-the interest limit divided by 30 and multiplied by the days of interest."""
-
-BUSINESS_VEHICLE_AVAILABLE_INTEREST = CATALOG.declare(
-    "business_vehicle_available_interest", Decimal, non_negative=True
-)
-"""Available interest expense, Form T2125 Chart B line 19 "Available interest expense: Amount 17 or
-18, whichever is less (include this in amount 4 of Chart A above)": the lesser of amounts 17 and
-18."""
-
-BUSINESS_VEHICLE_LEASE_PRICE_BASE = CATALOG.declare(
-    "business_vehicle_lease_price_base", Decimal, non_negative=True
-)
-"""Price for the leasing cost, Form T2125 Chart C line 23 "Amount 23 or ($44,706 + GST and PST, or
-$44,706 + HST), whichever is more": the greater of amount 23 and the price limit with tax."""
-
-BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT = CATALOG.declare(
-    "business_vehicle_lease_price_85_percent", Decimal, non_negative=True
-)
-"""Price for the leasing cost at 85%, Form T2125 Chart C line 24 "× 85% = 24": line 23 times 85%."""
-
-BUSINESS_VEHICLE_LEASE_CHARGE_PORTION = CATALOG.declare(
-    "business_vehicle_lease_charge_portion", Decimal, non_negative=True
-)
-"""Lease charge portion, Form T2125 Chart C line 25 "[($1,100 + GST and PST, or $1,100 + HST) ×
-amount 22] ÷ 30 = 25": the lease charge limit with tax times amount 22, divided by 30."""
-
-BUSINESS_VEHICLE_LEASE_CHARGES_NET = CATALOG.declare("business_vehicle_lease_charges_net", Decimal)
-"""Lease charges net of payments, Form T2125 Chart C line 26 "Amount 25: amount 21": amount 25 less
-amount 21, signed as the form prints no floor (a negative is kept)."""
-
-BUSINESS_VEHICLE_LEASE_COST_PORTION = CATALOG.declare(
-    "business_vehicle_lease_cost_portion", Decimal, non_negative=True
-)
-"""Lease cost portion, Form T2125 Chart C line 27 "[($38,000 + GST and PST, or $38,000 + HST) ×
-amount 20] ÷ amount 24 = 27": the lease cost limit with tax times amount 20, divided by amount
-24."""
-
-BUSINESS_VEHICLE_LEASING_COST = CATALOG.declare(
-    "business_vehicle_leasing_cost", Decimal, non_negative=True
-)
-"""Eligible leasing cost, Form T2125 Chart C line 28 "Eligible leasing cost: Amount 26 or 27,
-whichever is less (enter in amount 8 of Chart A above)": the lesser of amounts 26 and 27."""
-
 BUSINESS_CCA_PERSONAL_PART = CATALOG.declare(
     "business_cca_personal_part", Decimal, non_negative=True
 )
@@ -1835,6 +1740,35 @@ starting list with one record for each class, holding the columns the filer ente
 number, UCC at the start of the year, additions, proceeds, the AIIP and RIIP parts of the
 additions, the CCA claimed) and whether any property is left in the class."""
 
+BUSINESS_VEHICLES = RecordListKind.declare(
+    CATALOG,
+    "business_vehicles",
+    fields=(
+        BUSINESS_VEHICLE_BUSINESS_KILOMETRES,
+        BUSINESS_VEHICLE_TOTAL_KILOMETRES,
+        BUSINESS_VEHICLE_FUEL_AND_OIL,
+        BUSINESS_VEHICLE_INSURANCE,
+        BUSINESS_VEHICLE_LICENCE_AND_REGISTRATION,
+        BUSINESS_VEHICLE_MAINTENANCE_AND_REPAIRS,
+        BUSINESS_VEHICLE_ELECTRICITY_ZEV,
+        BUSINESS_VEHICLE_OTHER_EXPENSES_10,
+        BUSINESS_VEHICLE_OTHER_EXPENSES_11,
+        BUSINESS_VEHICLE_PARKING_FEES,
+        BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,
+        BUSINESS_VEHICLE_INTEREST_PAYABLE,
+        BUSINESS_VEHICLE_INTEREST_DAYS,
+        BUSINESS_VEHICLE_LEASE_CHARGES,
+        BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,
+        BUSINESS_VEHICLE_LEASE_DAYS,
+        BUSINESS_VEHICLE_LIST_PRICE,
+    ),
+)
+"""Business vehicles, Form T2125 Charts A to C "Motor vehicle expenses": a starting list with one
+record for each vehicle, holding the amounts the filer enters in the charts of that vehicle (Chart
+A amounts 1, 2, 3, 5, 6, 7, 9, 10, 11, 14 and 15, Chart B amount 17 and its days, Chart C amounts
+20, 21, 22 and 23). The charts are worked for each vehicle and their line 16 amounts added, on line
+9281."""
+
 T2125_STATEMENTS = RecordListKind.declare(
     CATALOG,
     "t2125_statements",
@@ -1869,23 +1803,6 @@ T2125_STATEMENTS = RecordListKind.declare(
         BUSINESS_UTILITIES,
         BUSINESS_FUEL_COSTS,
         BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,
-        BUSINESS_VEHICLE_BUSINESS_KILOMETRES,
-        BUSINESS_VEHICLE_TOTAL_KILOMETRES,
-        BUSINESS_VEHICLE_FUEL_AND_OIL,
-        BUSINESS_VEHICLE_INSURANCE,
-        BUSINESS_VEHICLE_LICENCE_AND_REGISTRATION,
-        BUSINESS_VEHICLE_MAINTENANCE_AND_REPAIRS,
-        BUSINESS_VEHICLE_ELECTRICITY_ZEV,
-        BUSINESS_VEHICLE_OTHER_EXPENSES_10,
-        BUSINESS_VEHICLE_OTHER_EXPENSES_11,
-        BUSINESS_VEHICLE_PARKING_FEES,
-        BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,
-        BUSINESS_VEHICLE_INTEREST_PAYABLE,
-        BUSINESS_VEHICLE_INTEREST_DAYS,
-        BUSINESS_VEHICLE_LEASE_CHARGES,
-        BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,
-        BUSINESS_VEHICLE_LEASE_DAYS,
-        BUSINESS_VEHICLE_LIST_PRICE,
         BUSINESS_VEHICLE_SALES_TAX_RATE,
         BUSINESS_CCA_PERSONAL_PART,
         BUSINESS_OTHER_EXPENSES,
@@ -1909,6 +1826,7 @@ T2125_STATEMENTS = RecordListKind.declare(
         BUSINESS_PARTNER_SHARE,
         BUSINESS_PARTNER,
         BUSINESS_CCA_CLASSES,
+        BUSINESS_VEHICLES,
     ),
 )
 """Statements of Form T2125, one record for each statement of business or professional activities

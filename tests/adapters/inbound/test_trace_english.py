@@ -80,6 +80,7 @@ from app.domain.trace import (
 )
 from app.jurisdictions.ca.trace import (
     ApprenticeWagesLine,
+    BusinessVehicleLine,
     CaregiverClaimLine,
     CcaClaimLine,
     CcaZeroReason,
@@ -3507,6 +3508,49 @@ def test_renders_the_recapture_case_the_line_records_not_column_7s_sign() -> Non
     )
     assert render(unrecorded) == (
         "recaptured_cca: item 1 class 8: column 7 -100 is not negative: recapture 0"
+    )
+
+
+MOTOR_VEHICLE_EXPENSES = ArtifactKind("ex/motor_vehicle_expenses", Decimal)
+
+
+def business_vehicle_line(
+    line_12: str, line_13: str, line_19: str, line_28: str, line_16: str, position: int = 1
+) -> BusinessVehicleLine:
+    return BusinessVehicleLine(
+        MOTOR_VEHICLE_EXPENSES,
+        position,
+        D(line_12),
+        D(line_13),
+        D(line_19),
+        D(line_28),
+        D(line_16),
+    )
+
+
+def test_renders_a_business_vehicle() -> None:
+    line = business_vehicle_line("5000.00", "2500.00", "400.00", "2147.00", "2500.00")
+
+    assert render(line) == (
+        "motor_vehicle_expenses: item 1: line 12 5000, line 13 2500, line 19 400, "
+        "line 28 2147, line 16 2500"
+    )
+
+
+def test_renders_a_business_vehicle_by_its_position_and_its_cents() -> None:
+    line = business_vehicle_line("3505", "876.25", "0", "2147.00", "936.25", position=2)
+
+    assert render(line) == (
+        "motor_vehicle_expenses: item 2: line 12 3505, line 13 876.25, line 19 0, "
+        "line 28 2147, line 16 936.25"
+    )
+
+
+def test_renders_a_business_vehicle_with_no_leasing_and_no_interest() -> None:
+    line = business_vehicle_line("0", "0", "0", "0", "300")
+
+    assert render(line) == (
+        "motor_vehicle_expenses: item 1: line 12 0, line 13 0, line 19 0, line 28 0, line 16 300"
     )
 
 

@@ -138,19 +138,11 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
+    BUSINESS_MOTOR_VEHICLE_EXPENSES,
     BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,
     BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
     BUSINESS_PARTNER,
     BUSINESS_SHARE_OF_NET_INCOME,
-    BUSINESS_VEHICLE_AVAILABLE_INTEREST,
-    BUSINESS_VEHICLE_INTEREST_FOR_PERIOD,
-    BUSINESS_VEHICLE_INTEREST_PAYABLE,
-    BUSINESS_VEHICLE_LEASE_CHARGES_NET,
-    BUSINESS_VEHICLE_LEASE_COST_PORTION,
-    BUSINESS_VEHICLE_LEASE_PRICE_BASE,
-    BUSINESS_VEHICLE_LEASING_COST,
-    BUSINESS_VEHICLE_LIST_PRICE,
-    BUSINESS_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
     CANADA_TRAINING_CREDIT,
     CANADA_TRAINING_CREDIT_BASIS,
     CANADA_TRAINING_CREDIT_CLAIMED,
@@ -1011,6 +1003,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         if isinstance(line, ItemsTotalLine)
         and line.output
         in (
+            BUSINESS_MOTOR_VEHICLE_EXPENSES,
             COOP_EDUCATION_CREDIT,
             FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
             TRAVEL_TOTAL_ZONE_A,
@@ -1520,25 +1513,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
                 (CPP_PART_3B_LINE_45, D("0")),
             ),
             D("0.00"),
-        ),
-        # Form T2125 Chart B line 19 "Amount 17 or 18, whichever is less": line 17 is 0 for Return
-        # A.
-        BUSINESS_VEHICLE_AVAILABLE_INTEREST: LesserOfLine(
-            BUSINESS_VEHICLE_AVAILABLE_INTEREST,
-            (
-                (BUSINESS_VEHICLE_INTEREST_PAYABLE, D("0")),
-                (BUSINESS_VEHICLE_INTEREST_FOR_PERIOD, D("0")),
-            ),
-            D("0"),
-        ),
-        # Form T2125 Chart C line 28 "Amount 26 or 27, whichever is less": both are 0 for Return A.
-        BUSINESS_VEHICLE_LEASING_COST: LesserOfLine(
-            BUSINESS_VEHICLE_LEASING_COST,
-            (
-                (BUSINESS_VEHICLE_LEASE_CHARGES_NET, D("0")),
-                (BUSINESS_VEHICLE_LEASE_COST_PORTION, D("0")),
-            ),
-            D("0"),
         ),
         # Form T2042 Chart B line 19 "Amount 17 or 18, whichever is less": line 17 is 0 for Return
         # A.
@@ -4645,7 +4619,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert placement_credits == []
     # Form T2222 Chart A and Chart B for Return A: no trips and no individuals, so no item, and
-    # each total is of no items.
+    # each total is of no items; the same for the T2125 vehicles.
     assert item_sums == []
     assert item_lessers == []
     assert items_totals == {
@@ -4654,6 +4628,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT, (), D("0")
         ),
         COOP_EDUCATION_CREDIT: ItemsTotalLine(COOP_EDUCATION_CREDIT, (), D("0")),
+        # Form T2125 Chart A line 16 over the vehicles (line 9281): Return A's T2125 lists none, so
+        # the total is of no items, 0, and no chart is worked.
+        BUSINESS_MOTOR_VEHICLE_EXPENSES: ItemsTotalLine(
+            BUSINESS_MOTOR_VEHICLE_EXPENSES, (), D("0")
+        ),
         TRAVEL_TOTAL_ZONE_A: ItemsTotalLine(TRAVEL_TOTAL_ZONE_A, (), D("0")),
         TRAVEL_TOTAL_ZONE_B: ItemsTotalLine(TRAVEL_TOTAL_ZONE_B, (), D("0")),
         STANDARD_AMOUNT_ALLOCATED: ItemsTotalLine(STANDARD_AMOUNT_ALLOCATED, (), D("0")),
@@ -4689,16 +4668,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             output=AMT_SPECIAL_FOREIGN_TAX_CREDIT,
             parts=((FEDERAL_FOREIGN_TAX_CREDIT, D("0")), (AMT_FOREIGN_TAX_CREDIT_LESSER, D("0"))),
             result=D("0"),
-        ),
-        # Form T2125 Chart C line 23 "Amount 23 or ($44,706 + GST and PST, or $44,706 + HST),
-        # whichever is more": the list price is 0, so the printed 44,706 plus 0 tax is the greater.
-        BUSINESS_VEHICLE_LEASE_PRICE_BASE: GreaterOfLine(
-            output=BUSINESS_VEHICLE_LEASE_PRICE_BASE,
-            parts=(
-                (BUSINESS_VEHICLE_LIST_PRICE, D("0")),
-                (BUSINESS_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX, D("44706.00")),
-            ),
-            result=D("44706.00"),
         ),
         # Form T2042 Chart C line 23 "Amount 23 or ($44,706 + GST and PST, or $44,706 + HST),
         # whichever is more": the list price is 0, so the printed 44,706 plus 0 tax is the greater.

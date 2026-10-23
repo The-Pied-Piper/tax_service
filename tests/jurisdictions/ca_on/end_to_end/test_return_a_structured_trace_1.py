@@ -61,8 +61,6 @@ from app.jurisdictions.ca.catalog import (
     AMT_T2203_COLUMN_5_PERCENTAGE,
     AMT_TOTAL_FOREIGN_INCOME,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
-    BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
-    BUSINESS_VEHICLE_LEASE_PRICE_BASE,
     CANADA_TRAINING_CREDIT_BASIS,
     CANADIAN_TUITION_FEES,
     CAPITAL_GAIN,
@@ -492,16 +490,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             Rate(D("0.4")),
             CENT,
             D("0"),
-        ),
-        # Form T2125 Chart C line 24 "× 85%" of amount 23 or the list price limit with tax: Return A
-        # has no leased vehicle, so the base is 44706.00 and the 85% is 38000.10.
-        BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT: RateAppliedLine(
-            BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
-            BUSINESS_VEHICLE_LEASE_PRICE_BASE,
-            D("44706.00"),
-            Rate(D("0.85")),
-            CENT,
-            D("38000.10"),
         ),
         # Form T2042 Chart C line 24 "× 85%" of amount 23 or the list price limit with tax: Return A
         # has no leased vehicle, so the base is 44706.00 and the 85% is 38000.10.

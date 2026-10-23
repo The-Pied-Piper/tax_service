@@ -12,12 +12,10 @@ from app.jurisdictions.ca.catalog import (
     BOND_GAIN_OR_LOSS,
     BOND_PROCEEDS,
     BUSINESS_INCOME,
-    BUSINESS_VEHICLE_BUSINESS_USE_PART,
     BUSINESS_VEHICLE_INTEREST_LIMIT,
-    BUSINESS_VEHICLE_LEASE_CHARGES_NET,
-    BUSINESS_VEHICLE_LEASING_COST,
     BUSINESS_VEHICLE_LIST_PRICE,
     BUSINESS_VEHICLE_SALES_TAX_RATE,
+    BUSINESS_VEHICLES,
     CAPITAL_GAIN,
     CAPITAL_GAINS_AFTER_DEFERRAL,
     CAPITAL_GAINS_BEFORE_INVESTMENT_LOSS_REDUCTION,
@@ -750,27 +748,43 @@ def test_every_disposition_list_is_a_kind_of_its_own() -> None:
 
 
 def test_the_t2125_chart_kinds_are_registered_under_their_names(registry: ArtifactRegistry) -> None:
-    # Form T2125 Charts A to C: the caller's chart amounts, the printed constants (each a dataset of
-    # the same name) and the lines the charts compute, which line 9281 takes as its line 16.
+    # Form T2125 Charts A to C: the vehicles list, the caller's sales tax rate and the printed
+    # constants (each a dataset of the same name, which T2042 and T2121 still produce as kinds); the
+    # lines the charts compute are in the trace of `ca/business_vehicle_expenses`, not artifacts.
     assert registry.get("ca/business_vehicle_interest_limit") is BUSINESS_VEHICLE_INTEREST_LIMIT
     assert registry.get("ca/business_vehicle_list_price") is BUSINESS_VEHICLE_LIST_PRICE
     assert registry.get("ca/business_vehicle_sales_tax_rate") is BUSINESS_VEHICLE_SALES_TAX_RATE
-    assert registry.get("ca/business_vehicle_business_use_part") is (
-        BUSINESS_VEHICLE_BUSINESS_USE_PART
-    )
-    assert registry.get("ca/business_vehicle_leasing_cost") is BUSINESS_VEHICLE_LEASING_COST
-    assert registry.get("ca/business_vehicle_lease_charges_net") is (
-        BUSINESS_VEHICLE_LEASE_CHARGES_NET
-    )
-    # Amount 26 is printed without a floor, so it is the one signed chart line.
-    assert BUSINESS_VEHICLE_LEASE_CHARGES_NET.non_negative is False
+    assert registry.get("ca/business_vehicles") is BUSINESS_VEHICLES
     assert BUSINESS_VEHICLE_INTEREST_LIMIT.non_negative is True
     for kind in (
         BUSINESS_VEHICLE_INTEREST_LIMIT,
         BUSINESS_VEHICLE_LIST_PRICE,
-        BUSINESS_VEHICLE_LEASING_COST,
+        BUSINESS_VEHICLE_SALES_TAX_RATE,
     ):
         assert kind.value_type is Decimal, kind.identifier
+
+
+def test_the_t2125_chart_lines_are_no_longer_artifacts(registry: ArtifactRegistry) -> None:
+    # Each vehicle's lines 12, 13, 19, 26, 28 and the rest are worked inside the capability.
+    for name in (
+        "list_price_limit_tax",
+        "lease_charge_limit_tax",
+        "lease_cost_limit_tax",
+        "list_price_limit_with_tax",
+        "lease_charge_limit_with_tax",
+        "lease_cost_limit_with_tax",
+        "total_expenses",
+        "business_use_part",
+        "interest_for_period",
+        "available_interest",
+        "lease_price_base",
+        "lease_price_85_percent",
+        "lease_charge_portion",
+        "lease_charges_net",
+        "lease_cost_portion",
+        "leasing_cost",
+    ):
+        assert f"ca/business_vehicle_{name}" not in registry.identifiers(), name
 
 
 def test_the_t2042_chart_kinds_are_registered_under_their_names(registry: ArtifactRegistry) -> None:

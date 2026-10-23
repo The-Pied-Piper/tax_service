@@ -144,6 +144,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_VEHICLE_SALES_TAX_RATE,
     BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,
     BUSINESS_VEHICLE_TOTAL_KILOMETRES,
+    BUSINESS_VEHICLES,
     CANADA_TRAINING_CREDIT_CLAIMED,
     CANADA_TRAINING_CREDIT_LIMIT,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
@@ -1144,23 +1145,6 @@ BUSINESS_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
     BUSINESS_UTILITIES,  # utilities
     BUSINESS_FUEL_COSTS,  # fuel_costs
     BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,  # delivery_freight_and_express
-    BUSINESS_VEHICLE_BUSINESS_KILOMETRES,  # business_kilometres
-    BUSINESS_VEHICLE_TOTAL_KILOMETRES,  # total_kilometres
-    BUSINESS_VEHICLE_FUEL_AND_OIL,  # fuel_and_oil
-    BUSINESS_VEHICLE_INSURANCE,  # insurance
-    BUSINESS_VEHICLE_LICENCE_AND_REGISTRATION,  # licence_and_registration
-    BUSINESS_VEHICLE_MAINTENANCE_AND_REPAIRS,  # maintenance_and_repairs
-    BUSINESS_VEHICLE_ELECTRICITY_ZEV,  # electricity_zev
-    BUSINESS_VEHICLE_OTHER_EXPENSES_10,  # other_expenses_10
-    BUSINESS_VEHICLE_OTHER_EXPENSES_11,  # other_expenses_11
-    BUSINESS_VEHICLE_PARKING_FEES,  # parking_fees
-    BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,  # supplementary_insurance
-    BUSINESS_VEHICLE_INTEREST_PAYABLE,  # interest_payable
-    BUSINESS_VEHICLE_INTEREST_DAYS,  # interest_days
-    BUSINESS_VEHICLE_LEASE_CHARGES,  # lease_charges
-    BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,  # lease_payments_before
-    BUSINESS_VEHICLE_LEASE_DAYS,  # lease_days
-    BUSINESS_VEHICLE_LIST_PRICE,  # list_price
     BUSINESS_VEHICLE_SALES_TAX_RATE,  # sales_tax_rate
     BUSINESS_CCA_PERSONAL_PART,  # cca_personal_part
     BUSINESS_OTHER_EXPENSES,  # other_expenses
@@ -1191,6 +1175,46 @@ def business_amount_artifacts(amounts: Mapping[str, str]) -> list[Artifact[Decim
     by_name = {kind.identifier.removeprefix("ca/business_"): kind for kind in BUSINESS_INPUT_KINDS}
     assert set(amounts) <= set(by_name), set(amounts) - set(by_name)
     return [Artifact(kind, D(amounts.get(name, "0"))) for name, kind in by_name.items()]
+
+
+# The fields of one Form T2125 vehicle, a record of `ca/business_vehicles`: Chart A amounts 1, 2,
+# 3, 5 to 7 and 9 to 11, 14 and 15, Chart B amount 17 and its days, and Chart C amounts 20 to 23,
+# in the form's order.
+BUSINESS_VEHICLE_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
+    BUSINESS_VEHICLE_BUSINESS_KILOMETRES,  # business_kilometres
+    BUSINESS_VEHICLE_TOTAL_KILOMETRES,  # total_kilometres
+    BUSINESS_VEHICLE_FUEL_AND_OIL,  # fuel_and_oil
+    BUSINESS_VEHICLE_INSURANCE,  # insurance
+    BUSINESS_VEHICLE_LICENCE_AND_REGISTRATION,  # licence_and_registration
+    BUSINESS_VEHICLE_MAINTENANCE_AND_REPAIRS,  # maintenance_and_repairs
+    BUSINESS_VEHICLE_ELECTRICITY_ZEV,  # electricity_zev
+    BUSINESS_VEHICLE_OTHER_EXPENSES_10,  # other_expenses_10
+    BUSINESS_VEHICLE_OTHER_EXPENSES_11,  # other_expenses_11
+    BUSINESS_VEHICLE_PARKING_FEES,  # parking_fees
+    BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,  # supplementary_insurance
+    BUSINESS_VEHICLE_INTEREST_PAYABLE,  # interest_payable
+    BUSINESS_VEHICLE_INTEREST_DAYS,  # interest_days
+    BUSINESS_VEHICLE_LEASE_CHARGES,  # lease_charges
+    BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,  # lease_payments_before
+    BUSINESS_VEHICLE_LEASE_DAYS,  # lease_days
+    BUSINESS_VEHICLE_LIST_PRICE,  # list_price
+)
+
+
+def business_vehicles(*vehicles: Mapping[str, str]) -> Artifact[RecordList]:
+    """The Form T2125 vehicles, one record per mapping, keyed by the name after
+    `ca/business_vehicle_` (the amounts not given are 0)."""
+    kind = BUSINESS_VEHICLES
+    assert isinstance(kind, RecordListKind)
+    by_name = {
+        field.identifier.removeprefix("ca/business_vehicle_"): field
+        for field in BUSINESS_VEHICLE_INPUT_KINDS
+    }
+    records: list[dict[ArtifactKind[Any], object]] = []
+    for vehicle in vehicles:
+        assert set(vehicle) <= set(by_name), set(vehicle) - set(by_name)
+        records.append({field: D(vehicle.get(name, "0")) for name, field in by_name.items()})
+    return Artifact(kind, RecordList(kind.fields, records))
 
 
 def business_cca_classes(
@@ -1232,12 +1256,15 @@ def t2125_statement(
     business: Mapping[str, str] | None = None,
     business_partner: int = 0,
     business_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    business_vehicles_rows: tuple[Mapping[str, str], ...] = (),
 ) -> dict[ArtifactKind[Any], object]:
-    """One Form T2125 statement, a record of `ca/t2125_statements`: its inputs, as given or 0."""
+    """One Form T2125 statement, a record of `ca/t2125_statements`: its inputs, as given or 0, and
+    its vehicles (one record per mapping of `business_vehicles`, none by default)."""
     artifacts: list[Artifact[Any]] = [
         *business_amount_artifacts(business or {}),
         Artifact(BUSINESS_PARTNER, business_partner),
         business_cca_classes(*business_cca_classes_rows),
+        business_vehicles(*business_vehicles_rows),
     ]
     return {artifact.kind: artifact.value for artifact in artifacts}
 

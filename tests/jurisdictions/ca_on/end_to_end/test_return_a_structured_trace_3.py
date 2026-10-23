@@ -130,10 +130,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_VEHICLE_DAYS_DIVISOR,
     BUSINESS_VEHICLE_INTEREST_LIMIT,
     BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT,
-    BUSINESS_VEHICLE_LEASE_CHARGE_PORTION,
-    BUSINESS_VEHICLE_LEASE_CHARGES_NET,
     BUSINESS_VEHICLE_LEASE_COST_LIMIT,
-    BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,
     BUSINESS_VEHICLE_LIST_PRICE_LIMIT,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_TRAINING_CREDIT,
@@ -1410,16 +1407,6 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CPP_SECOND_ADDITIONAL_CONTRIBUTIONS,
             D("396.00"),
             D("0.00"),
-        ),
-        # Form T2125 Chart C line 26 "Amount 25: amount 21" (printed with a subtraction sign): line
-        # 25 is 0 for Return A (no leased vehicle), and amount 21 is 0.
-        BUSINESS_VEHICLE_LEASE_CHARGES_NET: SubtractedLine(
-            output=BUSINESS_VEHICLE_LEASE_CHARGES_NET,
-            minuend=BUSINESS_VEHICLE_LEASE_CHARGE_PORTION,
-            minuend_amount=D("0"),
-            subtrahend=BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,
-            subtrahend_amount=D("0"),
-            result=D("0"),
         ),
         # Form T2042 Chart C line 26 "Amount 25: amount 21" (printed with a subtraction sign): line
         # 25 is 0 for Return A (no leased vehicle), and amount 21 is 0.
