@@ -90,6 +90,20 @@ from app.jurisdictions.ca.catalog import (
     PRINCIPAL_RESIDENCE_WORKSHEET_LINE_24,
     PRINCIPAL_RESIDENCE_WORKSHEET_LINE_26,
     PRINCIPAL_RESIDENCE_WORKSHEET_LINE_27,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_30,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_32,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_33,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_35,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_36,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_40,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_41,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_44,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_46,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_47,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_50,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_53,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_55,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_58,
     PRINCIPAL_RESIDENCE_WORKSHEET_LINE_59,
     PRINCIPAL_RESIDENCE_WORKSHEET_LINE_61,
     PRINCIPAL_RESIDENCE_WORKSHEET_LINE_63,
@@ -105,6 +119,7 @@ from app.jurisdictions.ca.catalog import (
     RESIDENCE_PROCEEDS,
     RESIDENCE_T664_FILED,
     RESIDENCE_WS_ADJUSTED_COST_BASE_FEB_22_1994,
+    RESIDENCE_WS_COST_BASE_ADJUSTMENTS_TO_FEB_1994,
     RESIDENCE_WS_DESIGNATED_PROCEEDS,
     RESIDENCE_WS_ELECTED_CAPITAL_GAIN,
     RESIDENCE_WS_FMV_FEB_22_1994,
@@ -400,6 +415,7 @@ WORKSHEET_MONEY_INPUTS = (
     RESIDENCE_WS_ADJUSTED_COST_BASE_FEB_22_1994,
     RESIDENCE_WS_FMV_FEB_22_1994,
     RESIDENCE_WS_ELECTED_CAPITAL_GAIN,
+    RESIDENCE_WS_COST_BASE_ADJUSTMENTS_TO_FEB_1994,
 )
 
 WORKSHEET_LINE_KINDS: list[tuple[int, ArtifactKind[Decimal]]] = [
@@ -450,7 +466,8 @@ def test_the_worksheet_money_inputs_are_non_negative_decimals_in_the_snapshot(
 
 
 def test_the_worksheet_record_fields_are_appended_to_the_properties_record() -> None:
-    assert PRINCIPAL_RESIDENCE_PROPERTIES.fields[-9:] == (
+    # Worksheet line 12 is appended last, after the figures the worksheet already read.
+    assert PRINCIPAL_RESIDENCE_PROPERTIES.fields[-10:] == (
         RESIDENCE_T664_FILED,
         RESIDENCE_WS_YEARS_DESIGNATED_AFTER_1981,
         RESIDENCE_WS_YEARS_OWNED_AFTER_1981,
@@ -460,6 +477,7 @@ def test_the_worksheet_record_fields_are_appended_to_the_properties_record() -> 
         RESIDENCE_WS_ELECTED_CAPITAL_GAIN,
         RESIDENCE_WS_MONTHS_OWNED_AFTER_FEB_1992,
         RESIDENCE_WS_MONTHS_OWNED_AFTER_1971,
+        RESIDENCE_WS_COST_BASE_ADJUSTMENTS_TO_FEB_1994,
     )
 
 
@@ -496,3 +514,68 @@ def test_the_part_4_lines_are_registered_with_their_signs(registry: ArtifactRegi
     assert PRINCIPAL_RESIDENCE_LINE_57.non_negative is True
     assert PRINCIPAL_RESIDENCE_LINE_57.identifier not in SIGNED
     assert registry.get("ca/principal_residence_line_57") is PRINCIPAL_RESIDENCE_LINE_57
+
+
+# --- Form T2091(IND)-WS Part 2: the lines 30 to 58 that are calculated, and their signs --------
+#
+# Each calculated line of Part 2 is one kind, the total over the properties sold of that line. A
+# line the form does not floor can be negative: the differences and the products of a signed
+# figure, and the quotients and the lesser amount of them. A sum of non-negative figures, a floored
+# difference (area A and area B's line 47, area C's line 50 and area D's line 55) and a count are
+# not negative.
+
+PART_2_WORKSHEET_LINE_KINDS: list[tuple[int, ArtifactKind[Decimal]]] = [
+    (30, PRINCIPAL_RESIDENCE_WORKSHEET_LINE_30),
+    (32, PRINCIPAL_RESIDENCE_WORKSHEET_LINE_32),
+    (33, PRINCIPAL_RESIDENCE_WORKSHEET_LINE_33),
+    (35, PRINCIPAL_RESIDENCE_WORKSHEET_LINE_35),
+    (36, PRINCIPAL_RESIDENCE_WORKSHEET_LINE_36),
+    (40, PRINCIPAL_RESIDENCE_WORKSHEET_LINE_40),
+    (41, PRINCIPAL_RESIDENCE_WORKSHEET_LINE_41),
+    (44, PRINCIPAL_RESIDENCE_WORKSHEET_LINE_44),
+    (46, PRINCIPAL_RESIDENCE_WORKSHEET_LINE_46),
+    (47, PRINCIPAL_RESIDENCE_WORKSHEET_LINE_47),
+    (50, PRINCIPAL_RESIDENCE_WORKSHEET_LINE_50),
+    (53, PRINCIPAL_RESIDENCE_WORKSHEET_LINE_53),
+    (55, PRINCIPAL_RESIDENCE_WORKSHEET_LINE_55),
+    (58, PRINCIPAL_RESIDENCE_WORKSHEET_LINE_58),
+]
+
+# Line 30 "Line 28 minus line 29", line 33 and line 35 (from it), line 41 "Line 37 minus line 40",
+# lines 44 and 46 (from it) and line 58 "lesser of line 56 or line 57", which may be negative.
+PART_2_SIGNED_LINES = {30, 33, 35, 41, 44, 46, 58}
+
+
+def test_the_worksheet_part_2_line_kinds_are_registered_under_their_line(
+    registry: ArtifactRegistry,
+) -> None:
+    for line, kind in PART_2_WORKSHEET_LINE_KINDS:
+        assert kind.identifier == f"ca/principal_residence_worksheet_line_{line}", line
+        assert kind.value_type is Decimal, line
+        assert registry.get(f"ca/principal_residence_worksheet_line_{line}") is kind, line
+
+
+def test_the_worksheet_part_2_line_kinds_are_signed_as_the_form_has_them() -> None:
+    for line, kind in PART_2_WORKSHEET_LINE_KINDS:
+        assert kind.non_negative is (line not in PART_2_SIGNED_LINES), line
+
+
+def test_the_worksheet_part_2_line_kinds_are_in_the_snapshot_with_their_signs() -> None:
+    for line, kind in PART_2_WORKSHEET_LINE_KINDS:
+        assert kind.identifier in REGISTERED, line
+        assert (kind.identifier in SIGNED) is (line in PART_2_SIGNED_LINES), line
+        assert kind.identifier not in COUNTS, line
+
+
+def test_the_worksheet_cost_base_adjustments_input_is_a_non_negative_money_field(
+    registry: ArtifactRegistry,
+) -> None:
+    kind = RESIDENCE_WS_COST_BASE_ADJUSTMENTS_TO_FEB_1994
+
+    assert kind.identifier == "ca/residence_ws_cost_base_adjustments_to_feb_1994"
+    assert kind.value_type is Decimal
+    assert kind.non_negative is True
+    assert registry.get(kind.identifier) is kind
+    assert kind.identifier in REGISTERED
+    assert kind.identifier not in SIGNED
+    assert kind.identifier not in COUNTS

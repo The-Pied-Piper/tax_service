@@ -1,5 +1,5 @@
 """PrincipalResidenceWorksheetLine59Capability: line 59 of Form T2091(IND)-WS, the gain carried into
-Part 3 (line 27, as Part 2 is not built).
+Part 3: line 58 when Part 2 is completed, else line 27.
 
 It records one `PrincipalResidenceWorksheetLine59` for each property, by position from 1, then an
 `ItemsTotalLine`.
@@ -45,7 +45,13 @@ class PrincipalResidenceWorksheetLine59Capability(PrincipalResidenceWorksheetRow
         return self._result(
             [
                 PrincipalResidenceWorksheetLine59(
-                    self._output, row.position, row.filed, row.line_27, row.line_59
+                    self._output,
+                    row.position,
+                    row.filed,
+                    row.part_2.completed,
+                    row.line_27,
+                    row.part_2.line_58,
+                    row.line_59,
                 )
                 for row in self._worksheet_rows(inputs)
             ]

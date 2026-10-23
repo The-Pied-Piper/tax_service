@@ -23,7 +23,7 @@ import app.jurisdictions.ca.capabilities as ca_capabilities
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capability import CapabilityRegistry
-from app.domain.errors import InvalidCapabilityError, MissingArtifactError, ValidationError
+from app.domain.errors import InvalidCapabilityError, MissingArtifactError
 from app.domain.parameters.factor import FACTOR
 from app.domain.parameters.rounding_only import ROUNDING_ONLY
 from app.domain.record_list import RecordList
@@ -287,11 +287,10 @@ def test_a_half_cent_on_line_63_reaches_line_56_rounded() -> None:
 
 
 @pytest.mark.parametrize("line", LINE_NUMBERS)
-def test_a_filed_property_with_part_2_is_refused_as_the_worksheet_part_2_is_not_built(
-    line: int,
-) -> None:
-    with pytest.raises(ValidationError, match=r"property 1.*lines 28 to 58"):
-        value_of(line, WORKSHEET_FILED_WITH_PART_2)
+def test_a_filed_property_with_part_2_applying_is_worked_not_refused(line: int) -> None:
+    # Worksheet Part 2 (lines 28 to 58) is worked for it; line 56 and line 57 are then worked from
+    # the Part 2 gain of Form T2091(IND) and the worksheet's line 66, not refused.
+    assert isinstance(value_of(line, WORKSHEET_FILED_WITH_PART_2), Decimal)
 
 
 def test_a_property_not_filed_with_part_2_is_not_refused() -> None:

@@ -135,6 +135,20 @@ from app.jurisdictions.ca.trace import (
     PrincipalResidenceWorksheetLine24,
     PrincipalResidenceWorksheetLine26,
     PrincipalResidenceWorksheetLine27,
+    PrincipalResidenceWorksheetLine30,
+    PrincipalResidenceWorksheetLine32,
+    PrincipalResidenceWorksheetLine33,
+    PrincipalResidenceWorksheetLine35,
+    PrincipalResidenceWorksheetLine36,
+    PrincipalResidenceWorksheetLine40,
+    PrincipalResidenceWorksheetLine41,
+    PrincipalResidenceWorksheetLine44,
+    PrincipalResidenceWorksheetLine46,
+    PrincipalResidenceWorksheetLine47,
+    PrincipalResidenceWorksheetLine50,
+    PrincipalResidenceWorksheetLine53,
+    PrincipalResidenceWorksheetLine55,
+    PrincipalResidenceWorksheetLine58,
     PrincipalResidenceWorksheetLine59,
     PrincipalResidenceWorksheetLine61,
     PrincipalResidenceWorksheetLine63,
@@ -5121,7 +5135,13 @@ def worksheet_line_examples() -> list[tuple[object, str]]:
         ),
         (
             PrincipalResidenceWorksheetLine59(
-                RESIDENCE_GAIN, 1, completed=True, line_27=D("45000.00"), result=D("45000.00")
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                part_2_completed=False,
+                line_27=D("45000.00"),
+                line_58=D("30000.00"),
+                result=D("45000.00"),
             ),
             "residence_gain: property 1: worksheet line 59 45000 = worksheet line 27 45000",
         ),
@@ -5163,6 +5183,170 @@ def worksheet_line_examples() -> list[tuple[object, str]]:
             "worksheet line 63 14594.59",
         ),
         (
+            PrincipalResidenceWorksheetLine30(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_28=D("240000.00"),
+                line_29=D("120000.00"),
+                result=D("120000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 30 120000 = worksheet line 28 240000 less "
+            "worksheet line 29 120000",
+        ),
+        (
+            PrincipalResidenceWorksheetLine32(
+                RESIDENCE_GAIN, 1, completed=True, line_2=1, plus_one=1, result=D("2")
+            ),
+            "residence_gain: property 1: worksheet line 32 2 = worksheet line 2 1 plus 1",
+        ),
+        (
+            PrincipalResidenceWorksheetLine33(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_31=D("120000.00"),
+                line_32=2,
+                result=D("240000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 33 240000 = worksheet line 31 120000 times "
+            "worksheet line 32 2",
+        ),
+        (
+            PrincipalResidenceWorksheetLine35(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_33=D("240000.00"),
+                line_34=4,
+                rounding=CENT,
+                result=D("60000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 35 60000 = worksheet line 33 240000 "
+            "divided by worksheet line 34 4 (half-up to 0.01)",
+        ),
+        (
+            PrincipalResidenceWorksheetLine36(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_30=D("120000.00"),
+                line_35=D("60000.00"),
+                result=D("60000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 36 60000 = worksheet line 30 120000 less "
+            "worksheet line 35 60000, not below 0",
+        ),
+        (
+            PrincipalResidenceWorksheetLine40(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_38=D("240000.00"),
+                line_39=D("6000.00"),
+                result=D("246000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 40 246000 = worksheet line 38 240000 plus "
+            "worksheet line 39 6000",
+        ),
+        (
+            PrincipalResidenceWorksheetLine41(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_37=D("300000.00"),
+                line_40=D("246000.00"),
+                result=D("54000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 41 54000 = worksheet line 37 300000 less "
+            "worksheet line 40 246000",
+        ),
+        (
+            PrincipalResidenceWorksheetLine44(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_42=D("54000.00"),
+                line_43=4,
+                result=D("216000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 44 216000 = worksheet line 42 54000 times "
+            "worksheet line 43 4",
+        ),
+        (
+            PrincipalResidenceWorksheetLine46(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_44=D("216000.00"),
+                line_45=13,
+                rounding=CENT,
+                result=D("16615.38"),
+            ),
+            "residence_gain: property 1: worksheet line 46 16615.38 = worksheet line 44 216000 "
+            "divided by worksheet line 45 13 (half-up to 0.01)",
+        ),
+        (
+            PrincipalResidenceWorksheetLine47(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_41=D("54000.00"),
+                line_46=D("16615.38"),
+                result=D("37384.62"),
+            ),
+            "residence_gain: property 1: worksheet line 47 37384.62 = worksheet line 41 54000 less "
+            "worksheet line 46 16615.38, not below 0",
+        ),
+        (
+            PrincipalResidenceWorksheetLine50(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_48=D("360000.00"),
+                line_49=D("290000.00"),
+                result=D("70000.00"),
+            ),
+            "residence_gain: property 1: worksheet line 50 70000 = worksheet line 48 360000 less "
+            "worksheet line 49 290000, not below 0",
+        ),
+        (
+            PrincipalResidenceWorksheetLine53(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_51=D("60000.00"),
+                line_52=D("37384.62"),
+                result=D("97384.62"),
+            ),
+            "residence_gain: property 1: worksheet line 53 97384.62 = worksheet line 51 60000 plus "
+            "worksheet line 52 37384.62",
+        ),
+        (
+            PrincipalResidenceWorksheetLine55(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_53=D("97384.62"),
+                line_54=D("0"),
+                result=D("97384.62"),
+            ),
+            "residence_gain: property 1: worksheet line 55 97384.62 = worksheet line 53 97384.62 "
+            "less worksheet line 54 0, not below 0",
+        ),
+        (
+            PrincipalResidenceWorksheetLine58(
+                RESIDENCE_GAIN,
+                1,
+                completed=True,
+                line_56=D("58235.29"),
+                line_57=D("97384.62"),
+                result=D("58235.29"),
+            ),
+            "residence_gain: property 1: worksheet line 58 58235.29 = lesser of worksheet line 56 "
+            "58235.29 and worksheet line 57 97384.62",
+        ),
+        (
             PrincipalResidenceWorksheetLine66(
                 RESIDENCE_GAIN,
                 1,
@@ -5200,6 +5384,39 @@ WORKSHEET_LINE_EXAMPLES = worksheet_line_examples()
 @pytest.mark.parametrize(("line", "text"), WORKSHEET_LINE_EXAMPLES)
 def test_renders_each_worksheet_and_part_4_line_in_its_form_words(line: object, text: str) -> None:
     assert render(cast(TraceLine, line)) == text
+
+
+def test_renders_line_59_as_line_58_when_part_2_is_completed() -> None:
+    line = PrincipalResidenceWorksheetLine59(
+        RESIDENCE_GAIN,
+        1,
+        completed=True,
+        part_2_completed=True,
+        line_27=D("58235.29"),
+        line_58=D("10000.00"),
+        result=D("10000.00"),
+    )
+
+    assert render(line) == (
+        "residence_gain: property 1: worksheet line 59 10000 = worksheet line 58 10000 "
+        "(Part 2 completed)"
+    )
+
+
+def test_renders_line_59_as_line_27_when_part_2_is_not_completed() -> None:
+    line = PrincipalResidenceWorksheetLine59(
+        RESIDENCE_GAIN,
+        1,
+        completed=True,
+        part_2_completed=False,
+        line_27=D("80666.67"),
+        line_58=D("0"),
+        result=D("80666.67"),
+    )
+
+    assert render(line) == (
+        "residence_gain: property 1: worksheet line 59 80666.67 = worksheet line 27 80666.67"
+    )
 
 
 @pytest.mark.parametrize(

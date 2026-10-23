@@ -646,6 +646,7 @@ from app.jurisdictions.ca.catalog import (
     RESIDENCE_PROCEEDS,
     RESIDENCE_T664_FILED,
     RESIDENCE_WS_ADJUSTED_COST_BASE_FEB_22_1994,
+    RESIDENCE_WS_COST_BASE_ADJUSTMENTS_TO_FEB_1994,
     RESIDENCE_WS_DESIGNATED_PROCEEDS,
     RESIDENCE_WS_ELECTED_CAPITAL_GAIN,
     RESIDENCE_WS_FMV_FEB_22_1994,
@@ -1819,6 +1820,7 @@ def test_the_principal_residence_properties_are_a_record_list_of_the_forms_input
         RESIDENCE_WS_ELECTED_CAPITAL_GAIN,
         RESIDENCE_WS_MONTHS_OWNED_AFTER_FEB_1992,
         RESIDENCE_WS_MONTHS_OWNED_AFTER_1971,
+        RESIDENCE_WS_COST_BASE_ADJUSTMENTS_TO_FEB_1994,
     )
     assert registry.get("ca/principal_residence_properties") is PRINCIPAL_RESIDENCE_PROPERTIES
 
@@ -1914,6 +1916,7 @@ def residence_record(**changes: object) -> dict[ArtifactKind[Any], object]:
         RESIDENCE_WS_ELECTED_CAPITAL_GAIN: Decimal("0"),
         RESIDENCE_WS_MONTHS_OWNED_AFTER_FEB_1992: 0,
         RESIDENCE_WS_MONTHS_OWNED_AFTER_1971: 0,
+        RESIDENCE_WS_COST_BASE_ADJUSTMENTS_TO_FEB_1994: Decimal("0"),
     }
     names: dict[str, ArtifactKind[Any]] = {
         "designated_after_1981": RESIDENCE_YEARS_DESIGNATED_AFTER_1981,
@@ -1937,6 +1940,7 @@ def residence_record(**changes: object) -> dict[ArtifactKind[Any], object]:
         "ws_elected_capital_gain": RESIDENCE_WS_ELECTED_CAPITAL_GAIN,
         "ws_months_owned_after_feb_1992": RESIDENCE_WS_MONTHS_OWNED_AFTER_FEB_1992,
         "ws_months_owned_after_1971": RESIDENCE_WS_MONTHS_OWNED_AFTER_1971,
+        "ws_cost_base_adjustments_to_feb_1994": RESIDENCE_WS_COST_BASE_ADJUSTMENTS_TO_FEB_1994,
     }
     for name, value in changes.items():
         record[names[name]] = value
@@ -2044,6 +2048,10 @@ def test_a_property_with_another_figure_is_an_invalid_record() -> None:
             "ca/residence_ws_months_owned_after_feb_1992",
         ),
         ({"ws_months_owned_after_1971": -1}, "ca/residence_ws_months_owned_after_1971"),
+        (
+            {"ws_cost_base_adjustments_to_feb_1994": Decimal("-1")},
+            "ca/residence_ws_cost_base_adjustments_to_feb_1994",
+        ),
         ({"cost_base_1981": Decimal("-1")}, "ca/residence_adjusted_cost_base_dec_31_1981"),
         ({"fmv_1981": Decimal("-0.01")}, "ca/residence_fmv_dec_31_1981"),
         (

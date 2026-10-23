@@ -37,6 +37,20 @@ __all__ = [
     "PrincipalResidenceWorksheetLine24",
     "PrincipalResidenceWorksheetLine26",
     "PrincipalResidenceWorksheetLine27",
+    "PrincipalResidenceWorksheetLine30",
+    "PrincipalResidenceWorksheetLine32",
+    "PrincipalResidenceWorksheetLine33",
+    "PrincipalResidenceWorksheetLine35",
+    "PrincipalResidenceWorksheetLine36",
+    "PrincipalResidenceWorksheetLine40",
+    "PrincipalResidenceWorksheetLine41",
+    "PrincipalResidenceWorksheetLine44",
+    "PrincipalResidenceWorksheetLine46",
+    "PrincipalResidenceWorksheetLine47",
+    "PrincipalResidenceWorksheetLine50",
+    "PrincipalResidenceWorksheetLine53",
+    "PrincipalResidenceWorksheetLine55",
+    "PrincipalResidenceWorksheetLine58",
     "PrincipalResidenceWorksheetLine59",
     "PrincipalResidenceWorksheetLine61",
     "PrincipalResidenceWorksheetLine63",
@@ -598,16 +612,301 @@ class PrincipalResidenceWorksheetLine27(TraceLine):
 
 
 @dataclass(frozen=True)
+class PrincipalResidenceWorksheetLine30(TraceLine):
+    """Form T2091(IND)-WS line 30 "Line 28 minus line 29" of the property at `position` (from 1),
+    for `output`: line 28 (`line_28`) less line 29 (`line_29`), not floored, `result`. `completed`
+    is False when the T664 election was not filed, Part 2 does not apply or the area the line is in
+    is skipped, and then `result` is 0."""
+
+    output: Money
+    position: int
+    completed: bool
+    line_28: Decimal
+    line_29: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The property's worksheet line 30."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class PrincipalResidenceWorksheetLine32(TraceLine):
+    """Form T2091(IND)-WS line 32 "Line 2 plus 1 (see note below)" of the property at `position`
+    (from 1), for `output`: line 2 (`line_2`) plus `plus_one`, `result`. `completed` is False when
+    the T664 election was not filed, Part 2 does not apply or the area the line is in is skipped,
+    and then `result` is 0."""
+
+    output: Money
+    position: int
+    completed: bool
+    line_2: int
+    plus_one: int
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The property's worksheet line 32."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class PrincipalResidenceWorksheetLine33(TraceLine):
+    """Form T2091(IND)-WS line 33 "Multiply line 31 by line 32." of the property at `position` (from
+    1), for `output`: line 31 (`line_31`) times line 32 (`line_32`), `result`. `completed` is False
+    when the T664 election was not filed, Part 2 does not apply or the area the line is in is
+    skipped, and then `result` is 0."""
+
+    output: Money
+    position: int
+    completed: bool
+    line_31: Decimal
+    line_32: int
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The property's worksheet line 33."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class PrincipalResidenceWorksheetLine35(TraceLine):
+    """Form T2091(IND)-WS line 35 "Divide line 33 by line 34." of the property at `position` (from
+    1), for `output`: line 33 (`line_33`) divided by line 34 (`line_34`), rounded with `rounding`,
+    `result`. `completed` is False when the T664 election was not filed, Part 2 does not apply or
+    the area the line is in is skipped, and then `result` is 0."""
+
+    output: Money
+    position: int
+    completed: bool
+    line_33: Decimal
+    line_34: int
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The property's worksheet line 35."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class PrincipalResidenceWorksheetLine36(TraceLine):
+    """Form T2091(IND)-WS line 36 "Line 30 minus line 35 (if negative, enter "0")" of the property
+    at `position` (from 1), for `output`: line 30 (`line_30`) less line 35 (`line_35`), not below 0,
+    `result`. `completed` is False when the T664 election was not filed, Part 2 does not apply or
+    the area the line is in is skipped, and then `result` is 0."""
+
+    output: Money
+    position: int
+    completed: bool
+    line_30: Decimal
+    line_35: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The property's worksheet line 36."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class PrincipalResidenceWorksheetLine40(TraceLine):
+    """Form T2091(IND)-WS line 40 "Line 38 plus line 39" of the property at `position` (from 1), for
+    `output`: line 38 (`line_38`) plus line 39 (`line_39`), `result`. `completed` is False when the
+    T664 election was not filed, Part 2 does not apply or the area the line is in is skipped, and
+    then `result` is 0."""
+
+    output: Money
+    position: int
+    completed: bool
+    line_38: Decimal
+    line_39: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The property's worksheet line 40."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class PrincipalResidenceWorksheetLine41(TraceLine):
+    """Form T2091(IND)-WS line 41 "Line 37 minus line 40" of the property at `position` (from 1),
+    for `output`: line 37 (`line_37`) less line 40 (`line_40`), not floored, `result`. `completed`
+    is False when the T664 election was not filed, Part 2 does not apply or the area the line is in
+    is skipped, and then `result` is 0."""
+
+    output: Money
+    position: int
+    completed: bool
+    line_37: Decimal
+    line_40: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The property's worksheet line 41."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class PrincipalResidenceWorksheetLine44(TraceLine):
+    """Form T2091(IND)-WS line 44 "Multiply line 42 by line 43." of the property at `position` (from
+    1), for `output`: line 42 (`line_42`) times line 43 (`line_43`), `result`. `completed` is False
+    when the T664 election was not filed, Part 2 does not apply or the area the line is in is
+    skipped, and then `result` is 0."""
+
+    output: Money
+    position: int
+    completed: bool
+    line_42: Decimal
+    line_43: int
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The property's worksheet line 44."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class PrincipalResidenceWorksheetLine46(TraceLine):
+    """Form T2091(IND)-WS line 46 "Divide line 44 by line 45." of the property at `position` (from
+    1), for `output`: line 44 (`line_44`) divided by line 45 (`line_45`), rounded with `rounding`,
+    `result`. `completed` is False when the T664 election was not filed, Part 2 does not apply or
+    the area the line is in is skipped, and then `result` is 0."""
+
+    output: Money
+    position: int
+    completed: bool
+    line_44: Decimal
+    line_45: int
+    rounding: RoundingRule
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The property's worksheet line 46."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class PrincipalResidenceWorksheetLine47(TraceLine):
+    """Form T2091(IND)-WS line 47 "Line 41 minus line 46 (if negative, enter "0")" of the property
+    at `position` (from 1), for `output`: line 41 (`line_41`) less line 46 (`line_46`), not below 0,
+    `result`. `completed` is False when the T664 election was not filed, Part 2 does not apply or
+    the area the line is in is skipped, and then `result` is 0."""
+
+    output: Money
+    position: int
+    completed: bool
+    line_41: Decimal
+    line_46: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The property's worksheet line 47."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class PrincipalResidenceWorksheetLine50(TraceLine):
+    """Form T2091(IND)-WS line 50 "Line 48 minus line 49 (if negative, enter "0")" of the property
+    at `position` (from 1), for `output`: line 48 (`line_48`) less line 49 (`line_49`), not below 0,
+    `result`. `completed` is False when the T664 election was not filed, Part 2 does not apply or
+    the area the line is in is skipped, and then `result` is 0."""
+
+    output: Money
+    position: int
+    completed: bool
+    line_48: Decimal
+    line_49: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The property's worksheet line 50."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class PrincipalResidenceWorksheetLine53(TraceLine):
+    """Form T2091(IND)-WS line 53 "Line 51 plus line 52" of the property at `position` (from 1), for
+    `output`: line 51 (`line_51`) plus line 52 (`line_52`), `result`. `completed` is False when the
+    T664 election was not filed, Part 2 does not apply or the area the line is in is skipped, and
+    then `result` is 0."""
+
+    output: Money
+    position: int
+    completed: bool
+    line_51: Decimal
+    line_52: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The property's worksheet line 53."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class PrincipalResidenceWorksheetLine55(TraceLine):
+    """Form T2091(IND)-WS line 55 "Line 53 minus line 54 (if negative, enter "0")" of the property
+    at `position` (from 1), for `output`: line 53 (`line_53`) less line 54 (`line_54`), not below 0,
+    `result`. `completed` is False when the T664 election was not filed, Part 2 does not apply or
+    the area the line is in is skipped, and then `result` is 0."""
+
+    output: Money
+    position: int
+    completed: bool
+    line_53: Decimal
+    line_54: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The property's worksheet line 55."""
+        return self.result
+
+
+@dataclass(frozen=True)
+class PrincipalResidenceWorksheetLine58(TraceLine):
+    """Form T2091(IND)-WS line 58 "Enter whichever amount is less: line 56 or line 57." of the
+    property at `position` (from 1), for `output`: the lesser of line 56 (`line_56`) and line 57
+    (`line_57`), `result`. `completed` is False when the T664 election was not filed, Part 2 does
+    not apply or the area the line is in is skipped, and then `result` is 0."""
+
+    output: Money
+    position: int
+    completed: bool
+    line_56: Decimal
+    line_57: Decimal
+    result: Decimal
+
+    @property
+    def amount(self) -> Decimal:
+        """The property's worksheet line 58."""
+        return self.result
+
+
+@dataclass(frozen=True)
 class PrincipalResidenceWorksheetLine59(TraceLine):
-    """Form T2091(IND)-WS line 59 "Enter the amount from line 27" (Part 2 not built) of the property
-    at `position` (from 1), for `output`: line 27 (`line_27`), `result`. `completed` is False when
-    the T664 election was not filed, and then `result` is 0.
+    """Form T2091(IND)-WS line 59 "If you completed Part 2, enter the amount from line 58.
+    Otherwise, enter the amount from line 27." of the property at `position` (from 1), for
+    `output`: line 58 (`line_58`) when `part_2_completed`, else line 27 (`line_27`), `result`.
+    `completed` is False when the T664 election was not filed, and then `result` is 0.
     """
 
     output: Money
     position: int
     completed: bool
+    part_2_completed: bool
     line_27: Decimal
+    line_58: Decimal
     result: Decimal
 
     @property

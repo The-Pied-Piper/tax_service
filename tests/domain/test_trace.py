@@ -131,6 +131,20 @@ from app.jurisdictions.ca.trace import (
     PrincipalResidenceWorksheetLine24,
     PrincipalResidenceWorksheetLine26,
     PrincipalResidenceWorksheetLine27,
+    PrincipalResidenceWorksheetLine30,
+    PrincipalResidenceWorksheetLine32,
+    PrincipalResidenceWorksheetLine33,
+    PrincipalResidenceWorksheetLine35,
+    PrincipalResidenceWorksheetLine36,
+    PrincipalResidenceWorksheetLine40,
+    PrincipalResidenceWorksheetLine41,
+    PrincipalResidenceWorksheetLine44,
+    PrincipalResidenceWorksheetLine46,
+    PrincipalResidenceWorksheetLine47,
+    PrincipalResidenceWorksheetLine50,
+    PrincipalResidenceWorksheetLine53,
+    PrincipalResidenceWorksheetLine55,
+    PrincipalResidenceWorksheetLine58,
     PrincipalResidenceWorksheetLine59,
     PrincipalResidenceWorksheetLine61,
     PrincipalResidenceWorksheetLine63,
@@ -3694,8 +3708,8 @@ WORKSHEET_LINES: list[tuple[type, list[str], list[Any]]] = [
     ),
     (
         PrincipalResidenceWorksheetLine59,
-        ["completed", "line_27", "result"],
-        [True, D("45000.00"), D("45000.00")],
+        ["completed", "part_2_completed", "line_27", "line_58", "result"],
+        [True, True, D("45000.00"), D("30000.00"), D("30000.00")],
     ),
     (
         PrincipalResidenceWorksheetLine61,
@@ -3716,6 +3730,79 @@ WORKSHEET_LINES: list[tuple[type, list[str], list[Any]]] = [
         PrincipalResidenceWorksheetLine66,
         ["completed", "line_64", "line_65", "result"],
         [True, D("30405.41"), D("100000.00"), D("30405.41")],
+    ),
+    # Form T2091(IND)-WS Part 2, lines 30 to 58: each calculated line records its own figures;
+    # `completed` is True when the line is completed (the election filed, Part 2 applying and the
+    # area the line is in not skipped). The figures of an area's lines are the lines the form reads.
+    (
+        PrincipalResidenceWorksheetLine30,
+        ["completed", "line_28", "line_29", "result"],
+        [True, D("240000.00"), D("120000.00"), D("120000.00")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine32,
+        ["completed", "line_2", "plus_one", "result"],
+        [True, 1, 1, D("2")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine33,
+        ["completed", "line_31", "line_32", "result"],
+        [True, D("120000.00"), 2, D("240000.00")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine35,
+        ["completed", "line_33", "line_34", "rounding", "result"],
+        [True, D("240000.00"), 4, CENT, D("60000.00")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine36,
+        ["completed", "line_30", "line_35", "result"],
+        [True, D("120000.00"), D("60000.00"), D("60000.00")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine40,
+        ["completed", "line_38", "line_39", "result"],
+        [True, D("240000.00"), D("6000.00"), D("246000.00")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine41,
+        ["completed", "line_37", "line_40", "result"],
+        [True, D("300000.00"), D("246000.00"), D("54000.00")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine44,
+        ["completed", "line_42", "line_43", "result"],
+        [True, D("54000.00"), 4, D("216000.00")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine46,
+        ["completed", "line_44", "line_45", "rounding", "result"],
+        [True, D("216000.00"), 13, CENT, D("16615.38")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine47,
+        ["completed", "line_41", "line_46", "result"],
+        [True, D("54000.00"), D("16615.38"), D("37384.62")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine50,
+        ["completed", "line_48", "line_49", "result"],
+        [True, D("240000.00"), D("300000.00"), D("0")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine53,
+        ["completed", "line_51", "line_52", "result"],
+        [True, D("60000.00"), D("37384.62"), D("97384.62")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine55,
+        ["completed", "line_53", "line_54", "result"],
+        [True, D("97384.62"), D("0"), D("97384.62")],
+    ),
+    (
+        PrincipalResidenceWorksheetLine58,
+        ["completed", "line_56", "line_57", "result"],
+        [True, D("58235.29"), D("97384.62"), D("58235.29")],
     ),
     (
         PrincipalResidenceLine56,

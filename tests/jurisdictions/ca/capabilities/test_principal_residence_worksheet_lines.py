@@ -558,16 +558,16 @@ def test_compute_is_repeatable() -> None:
 
 
 @pytest.mark.parametrize("line", LINE_NUMBERS)
-def test_a_filed_property_with_part_2_is_refused_as_the_worksheet_part_2_is_not_built(
-    line: int,
-) -> None:
-    with pytest.raises(ValidationError, match=r"property 1.*lines 28 to 58"):
-        value_of(line, WORKSHEET_FILED_WITH_PART_2)
+def test_a_filed_property_with_part_2_applying_is_worked_not_refused(line: int) -> None:
+    # Part 2 of the worksheet (lines 28 to 58) is worked for it, so the line is a decimal; the
+    # figures of Part 2 are pinned in test_principal_residence_part_2_worksheet_lines.py.
+    assert isinstance(value_of(line, WORKSHEET_FILED_WITH_PART_2), Decimal)
 
 
-def test_the_part_2_refusal_names_the_property_by_its_position() -> None:
-    with pytest.raises(ValidationError, match=r"property 2.*lines 28 to 58"):
-        value_of(27, WORKSHEET_WORKED, WORKSHEET_FILED_WITH_PART_2)
+def test_a_filed_property_with_part_2_is_worked_beside_the_others() -> None:
+    # Line 27 of the worked example stays 50,000.00 beside a property with Part 2 applying.
+    assert isinstance(value_of(27, WORKSHEET_WORKED, WORKSHEET_FILED_WITH_PART_2), Decimal)
+    assert value_of(27, WORKSHEET_WORKED) == D("50000.00")
 
 
 @pytest.mark.parametrize("line", LINE_NUMBERS)
