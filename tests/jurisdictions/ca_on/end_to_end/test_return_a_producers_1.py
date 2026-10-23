@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.domain.artifact import ArtifactRegistry
 from app.domain.capabilities.amount_by_count import AmountForCount
 from app.domain.capabilities.apply_fraction import ApplyFraction
 from app.domain.capabilities.apply_rate import ApplyRate
@@ -17,6 +18,7 @@ from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.multiple_over import MultipleOver
 from app.domain.capabilities.per_unit_amount import PerUnitAmount
 from app.domain.capabilities.progressive_tax import ProgressiveTax
+from app.domain.capabilities.record_total import RecordTotal
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
@@ -910,7 +912,7 @@ from app.jurisdictions.ca_on.catalog import (
     TAX_REDUCTION_FOR_DEPENDANTS,
     TAX_REDUCTION_FOR_DEPENDANTS_BEFORE_SPOUSE_RULE,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import return_a
+from tests.jurisdictions.ca_on.end_to_end.support import return_a, run_a
 
 
 def test_each_amount_is_produced_by_its_capability() -> None:
@@ -1101,104 +1103,10 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert worksheet.producer_of(INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS) is None
     assert worksheet.producer_of(NET_PARTNERSHIP_INCOME) is None
     assert worksheet.producer_of(RDSP_INCOME) is None
-    # T776 Parts 3 and 4 and T1 lines 12599 and 12600: the caller's rows, expense boxes and the
-    # co-owner's and partner's figures are starting inputs; every other line has a producer.
-    assert worksheet.producer_of(RENTAL_PROPERTIES) is None
-    assert worksheet.producer_of(RENTAL_OTHER_INCOME) is None
-    assert worksheet.producer_of(RENTAL_ADVERTISING) is None
-    assert worksheet.producer_of(RENTAL_ADVERTISING_PERSONAL_PORTION) is None
-    assert worksheet.producer_of(RENTAL_ADVERTISING_SHORT_TERM_PORTION) is None
-    assert worksheet.producer_of(RENTAL_INSURANCE) is None
-    assert worksheet.producer_of(RENTAL_INSURANCE_PERSONAL_PORTION) is None
-    assert worksheet.producer_of(RENTAL_INSURANCE_SHORT_TERM_PORTION) is None
-    assert worksheet.producer_of(RENTAL_INTEREST_AND_BANK_CHARGES) is None
-    assert worksheet.producer_of(RENTAL_INTEREST_AND_BANK_CHARGES_PERSONAL_PORTION) is None
-    assert worksheet.producer_of(RENTAL_INTEREST_AND_BANK_CHARGES_SHORT_TERM_PORTION) is None
-    assert worksheet.producer_of(RENTAL_OFFICE_EXPENSES) is None
-    assert worksheet.producer_of(RENTAL_OFFICE_EXPENSES_PERSONAL_PORTION) is None
-    assert worksheet.producer_of(RENTAL_OFFICE_EXPENSES_SHORT_TERM_PORTION) is None
-    assert worksheet.producer_of(RENTAL_PROFESSIONAL_FEES) is None
-    assert worksheet.producer_of(RENTAL_PROFESSIONAL_FEES_PERSONAL_PORTION) is None
-    assert worksheet.producer_of(RENTAL_PROFESSIONAL_FEES_SHORT_TERM_PORTION) is None
-    assert worksheet.producer_of(RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES) is None
-    assert worksheet.producer_of(RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_PERSONAL_PORTION) is None
-    assert (
-        worksheet.producer_of(RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_SHORT_TERM_PORTION) is None
-    )
-    assert worksheet.producer_of(RENTAL_REPAIRS_AND_MAINTENANCE) is None
-    assert worksheet.producer_of(RENTAL_REPAIRS_AND_MAINTENANCE_PERSONAL_PORTION) is None
-    assert worksheet.producer_of(RENTAL_REPAIRS_AND_MAINTENANCE_SHORT_TERM_PORTION) is None
-    assert worksheet.producer_of(RENTAL_SALARIES_WAGES_AND_BENEFITS) is None
-    assert worksheet.producer_of(RENTAL_SALARIES_WAGES_AND_BENEFITS_PERSONAL_PORTION) is None
-    assert worksheet.producer_of(RENTAL_SALARIES_WAGES_AND_BENEFITS_SHORT_TERM_PORTION) is None
-    assert worksheet.producer_of(RENTAL_PROPERTY_TAXES) is None
-    assert worksheet.producer_of(RENTAL_PROPERTY_TAXES_PERSONAL_PORTION) is None
-    assert worksheet.producer_of(RENTAL_PROPERTY_TAXES_SHORT_TERM_PORTION) is None
-    assert worksheet.producer_of(RENTAL_TRAVEL) is None
-    assert worksheet.producer_of(RENTAL_TRAVEL_PERSONAL_PORTION) is None
-    assert worksheet.producer_of(RENTAL_TRAVEL_SHORT_TERM_PORTION) is None
-    assert worksheet.producer_of(RENTAL_UTILITIES) is None
-    assert worksheet.producer_of(RENTAL_UTILITIES_PERSONAL_PORTION) is None
-    assert worksheet.producer_of(RENTAL_UTILITIES_SHORT_TERM_PORTION) is None
-    assert worksheet.producer_of(RENTAL_MOTOR_VEHICLE_EXPENSES) is None
-    assert worksheet.producer_of(RENTAL_MOTOR_VEHICLE_EXPENSES_PERSONAL_PORTION) is None
-    assert worksheet.producer_of(RENTAL_MOTOR_VEHICLE_EXPENSES_SHORT_TERM_PORTION) is None
-    assert worksheet.producer_of(RENTAL_OTHER_EXPENSES) is None
-    assert worksheet.producer_of(RENTAL_OTHER_EXPENSES_PERSONAL_PORTION) is None
-    assert worksheet.producer_of(RENTAL_OTHER_EXPENSES_SHORT_TERM_PORTION) is None
-    assert worksheet.producer_of(RENTAL_COOWNER) is None
-    assert worksheet.producer_of(RENTAL_COOWNER_SHARE) is None
-    assert worksheet.producer_of(RENTAL_COOWNER_OTHER_EXPENSES) is None
-    assert worksheet.producer_of(RENTAL_CCA_CLASSES) is None
-    assert worksheet.producer_of(RENTAL_COOWNER_RECAPTURED_CCA) is None
-    assert worksheet.producer_of(RENTAL_COOWNER_TERMINAL_LOSS) is None
-    assert worksheet.producer_of(RENTAL_COOWNER_CCA_CLAIM) is None
-    assert worksheet.producer_of(RENTAL_CCA_PERSONAL_PART) is None
-    assert worksheet.producer_of(RENTAL_CCA_BUSINESS_USE_OF_HOME) is None
-    assert worksheet.producer_of(RENTAL_PARTNER) is None
-    assert worksheet.producer_of(RENTAL_PARTNER_SHARE) is None
-    assert worksheet.producer_of(RENTAL_PARTNER_GST_HST_REBATE) is None
-    assert worksheet.producer_of(RENTAL_PARTNER_OTHER_EXPENSES) is None
-    assert worksheet.producer_of(SHORT_TERM_RENTAL_UNITS) is None
-    assert isinstance(
-        worksheet.producer_of(SHORT_TERM_RENTAL_GROSS_RENTS), ShortTermRentalGrossRents
-    )
-    assert isinstance(worksheet.producer_of(RENTAL_GROSS_RENTS), RentalGrossRents)
-    assert isinstance(worksheet.producer_of(GROSS_RENTAL_INCOME), Sum)
-    assert isinstance(worksheet.producer_of(RENTAL_TOTAL_EXPENSES), Sum)
-    assert isinstance(worksheet.producer_of(RENTAL_PERSONAL_PORTION), Sum)
-    assert isinstance(worksheet.producer_of(RENTAL_SHORT_TERM_PORTION), Sum)
-    assert isinstance(
-        worksheet.producer_of(RENTAL_NON_COMPLIANT_EXPENSES), ShortTermRentalNonCompliantExpenses
-    )
-    assert isinstance(worksheet.producer_of(RENTAL_EXPENSES_LESS_PERSONAL_PORTION), Subtract)
-    assert isinstance(worksheet.producer_of(RENTAL_DEDUCTIBLE_EXPENSES), Subtract)
-    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS), Subtract)
-    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_SHARE), ChooseByCount)
-    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES), Subtract)
-    assert isinstance(worksheet.producer_of(RENTAL_CCA_TABLE_RECAPTURE), RecapturedCca)
-    assert isinstance(worksheet.producer_of(RENTAL_RECAPTURED_CCA), ChooseByCount)
-    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_WITH_RECAPTURE), Sum)
-    assert isinstance(worksheet.producer_of(RENTAL_CCA_TABLE_TERMINAL_LOSS), TerminalLoss)
-    assert isinstance(worksheet.producer_of(RENTAL_TERMINAL_LOSS), ChooseByCount)
-    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS), Subtract)
-    assert isinstance(worksheet.producer_of(RENTAL_CCA_TABLE_CLAIM), CcaClaim)
-    assert isinstance(worksheet.producer_of(RENTAL_CCA_CLAIM_SHARE), ChooseByCount)
-    assert isinstance(worksheet.producer_of(RENTAL_CCA_CLAIM_LESS_PERSONAL_PART), Subtract)
-    assert isinstance(worksheet.producer_of(RENTAL_CCA_CLAIM_BEFORE_LIMIT), Subtract)
-    assert isinstance(worksheet.producer_of(RENTAL_CCA_LIMIT), SumNotBelowZero)
-    assert isinstance(worksheet.producer_of(RENTAL_CCA_CLAIM), AtMost)
-    assert isinstance(worksheet.producer_of(RENTAL_CLOSING_UCC), ClosingUcc)
-    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_AFTER_CCA), Subtract)
-    assert isinstance(worksheet.producer_of(RENTAL_PARTNER_SHARE_WITH_REBATE), Sum)
-    assert isinstance(worksheet.producer_of(RENTAL_PARTNERSHIP_NET_INCOME), Subtract)
-    assert isinstance(worksheet.producer_of(NET_RENTAL_INCOME), ChooseByCount)
-    assert worksheet.producer_of(RENTAL_GROSS_RENTS) is not worksheet.producer_of(
-        SHORT_TERM_RENTAL_GROSS_RENTS
-    )
-    assert worksheet.producer_of(RENTAL_NET_INCOME_SHARE) is not worksheet.producer_of(
-        NET_RENTAL_INCOME
-    )
+    # T1 line 12600 "Net" totals the lines 9946 of the statements, which the form exports.
+    assert isinstance(worksheet.producer_of(NET_RENTAL_INCOME), RecordTotal)
+    imported = ArtifactRegistry.shared().kind("ca/t776.net_rental_income")
+    assert worksheet.producer_of(imported) is None
     assert worksheet.producer_of(TAXABLE_SUPPORT_PAYMENTS) is None
     assert worksheet.producer_of(RRSP_INCOME) is None
     assert worksheet.producer_of(FHSA_INCOME) is None
@@ -2466,3 +2374,107 @@ def test_the_ontario_minimum_tax_lines_are_produced_by_their_capabilities() -> N
     )
     # Line 72 is no longer the caller's amount: Worksheet ON428 produces it.
     assert worksheet.producer_of(ontario.ONTARIO_MINIMUM_TAX) is not None
+
+
+def test_each_t776_amount_is_produced_by_its_capability() -> None:
+    # The statement's worksheet: the form's own, where each T776 line is produced and the
+    # statement's fields are starting artifacts.
+    worksheet = run_a()["ca/t776"][0]
+    # T776 Parts 3 and 4 and T1 lines 12599 and 12600: the caller's rows, expense boxes and the
+    # co-owner's and partner's figures are starting inputs; every other line has a producer.
+    assert worksheet.producer_of(RENTAL_PROPERTIES) is None
+    assert worksheet.producer_of(RENTAL_OTHER_INCOME) is None
+    assert worksheet.producer_of(RENTAL_ADVERTISING) is None
+    assert worksheet.producer_of(RENTAL_ADVERTISING_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_ADVERTISING_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_INSURANCE) is None
+    assert worksheet.producer_of(RENTAL_INSURANCE_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_INSURANCE_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_INTEREST_AND_BANK_CHARGES) is None
+    assert worksheet.producer_of(RENTAL_INTEREST_AND_BANK_CHARGES_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_INTEREST_AND_BANK_CHARGES_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_OFFICE_EXPENSES) is None
+    assert worksheet.producer_of(RENTAL_OFFICE_EXPENSES_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_OFFICE_EXPENSES_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_PROFESSIONAL_FEES) is None
+    assert worksheet.producer_of(RENTAL_PROFESSIONAL_FEES_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_PROFESSIONAL_FEES_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES) is None
+    assert worksheet.producer_of(RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_PERSONAL_PORTION) is None
+    assert (
+        worksheet.producer_of(RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_SHORT_TERM_PORTION) is None
+    )
+    assert worksheet.producer_of(RENTAL_REPAIRS_AND_MAINTENANCE) is None
+    assert worksheet.producer_of(RENTAL_REPAIRS_AND_MAINTENANCE_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_REPAIRS_AND_MAINTENANCE_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_SALARIES_WAGES_AND_BENEFITS) is None
+    assert worksheet.producer_of(RENTAL_SALARIES_WAGES_AND_BENEFITS_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_SALARIES_WAGES_AND_BENEFITS_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_PROPERTY_TAXES) is None
+    assert worksheet.producer_of(RENTAL_PROPERTY_TAXES_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_PROPERTY_TAXES_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_TRAVEL) is None
+    assert worksheet.producer_of(RENTAL_TRAVEL_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_TRAVEL_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_UTILITIES) is None
+    assert worksheet.producer_of(RENTAL_UTILITIES_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_UTILITIES_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_MOTOR_VEHICLE_EXPENSES) is None
+    assert worksheet.producer_of(RENTAL_MOTOR_VEHICLE_EXPENSES_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_MOTOR_VEHICLE_EXPENSES_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_OTHER_EXPENSES) is None
+    assert worksheet.producer_of(RENTAL_OTHER_EXPENSES_PERSONAL_PORTION) is None
+    assert worksheet.producer_of(RENTAL_OTHER_EXPENSES_SHORT_TERM_PORTION) is None
+    assert worksheet.producer_of(RENTAL_COOWNER) is None
+    assert worksheet.producer_of(RENTAL_COOWNER_SHARE) is None
+    assert worksheet.producer_of(RENTAL_COOWNER_OTHER_EXPENSES) is None
+    assert worksheet.producer_of(RENTAL_CCA_CLASSES) is None
+    assert worksheet.producer_of(RENTAL_COOWNER_RECAPTURED_CCA) is None
+    assert worksheet.producer_of(RENTAL_COOWNER_TERMINAL_LOSS) is None
+    assert worksheet.producer_of(RENTAL_COOWNER_CCA_CLAIM) is None
+    assert worksheet.producer_of(RENTAL_CCA_PERSONAL_PART) is None
+    assert worksheet.producer_of(RENTAL_CCA_BUSINESS_USE_OF_HOME) is None
+    assert worksheet.producer_of(RENTAL_PARTNER) is None
+    assert worksheet.producer_of(RENTAL_PARTNER_SHARE) is None
+    assert worksheet.producer_of(RENTAL_PARTNER_GST_HST_REBATE) is None
+    assert worksheet.producer_of(RENTAL_PARTNER_OTHER_EXPENSES) is None
+    assert worksheet.producer_of(SHORT_TERM_RENTAL_UNITS) is None
+    assert isinstance(
+        worksheet.producer_of(SHORT_TERM_RENTAL_GROSS_RENTS), ShortTermRentalGrossRents
+    )
+    assert isinstance(worksheet.producer_of(RENTAL_GROSS_RENTS), RentalGrossRents)
+    assert isinstance(worksheet.producer_of(GROSS_RENTAL_INCOME), Sum)
+    assert isinstance(worksheet.producer_of(RENTAL_TOTAL_EXPENSES), Sum)
+    assert isinstance(worksheet.producer_of(RENTAL_PERSONAL_PORTION), Sum)
+    assert isinstance(worksheet.producer_of(RENTAL_SHORT_TERM_PORTION), Sum)
+    assert isinstance(
+        worksheet.producer_of(RENTAL_NON_COMPLIANT_EXPENSES), ShortTermRentalNonCompliantExpenses
+    )
+    assert isinstance(worksheet.producer_of(RENTAL_EXPENSES_LESS_PERSONAL_PORTION), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_DEDUCTIBLE_EXPENSES), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_SHARE), ChooseByCount)
+    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_CCA_TABLE_RECAPTURE), RecapturedCca)
+    assert isinstance(worksheet.producer_of(RENTAL_RECAPTURED_CCA), ChooseByCount)
+    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_WITH_RECAPTURE), Sum)
+    assert isinstance(worksheet.producer_of(RENTAL_CCA_TABLE_TERMINAL_LOSS), TerminalLoss)
+    assert isinstance(worksheet.producer_of(RENTAL_TERMINAL_LOSS), ChooseByCount)
+    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_CCA_TABLE_CLAIM), CcaClaim)
+    assert isinstance(worksheet.producer_of(RENTAL_CCA_CLAIM_SHARE), ChooseByCount)
+    assert isinstance(worksheet.producer_of(RENTAL_CCA_CLAIM_LESS_PERSONAL_PART), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_CCA_CLAIM_BEFORE_LIMIT), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_CCA_LIMIT), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(RENTAL_CCA_CLAIM), AtMost)
+    assert isinstance(worksheet.producer_of(RENTAL_CLOSING_UCC), ClosingUcc)
+    assert isinstance(worksheet.producer_of(RENTAL_NET_INCOME_AFTER_CCA), Subtract)
+    assert isinstance(worksheet.producer_of(RENTAL_PARTNER_SHARE_WITH_REBATE), Sum)
+    assert isinstance(worksheet.producer_of(RENTAL_PARTNERSHIP_NET_INCOME), Subtract)
+    assert isinstance(worksheet.producer_of(NET_RENTAL_INCOME), ChooseByCount)
+    assert worksheet.producer_of(RENTAL_GROSS_RENTS) is not worksheet.producer_of(
+        SHORT_TERM_RENTAL_GROSS_RENTS
+    )
+    assert worksheet.producer_of(RENTAL_NET_INCOME_SHARE) is not worksheet.producer_of(
+        NET_RENTAL_INCOME
+    )
