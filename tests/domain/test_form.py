@@ -1291,6 +1291,59 @@ def test_a_group_of_two_forms_with_a_minimum_of_one_is_refused_when_the_set_is_b
     )
 
 
+def copies(name: str, *, group: str | None = None) -> FormComposition:
+    """A form of up to one copy whose copies carry no figures: it reads sales and costs as given."""
+    return FormComposition(
+        name,
+        [Subtract(SALES, COSTS, PROFIT)],
+        instances=RecordListKind(f"{name}_copies", fields=()),
+        exports=[PROFIT],
+        starting=frozenset({SALES, COSTS}),
+        max_instances=1,
+        min_instances=0,
+        exclusive_group=group,
+    )
+
+
+def copy_list(form: FormComposition, count: int) -> Artifact[Any]:
+    """`count` empty copies of `form`."""
+    kind = form.instances
+    assert kind is not None
+    return Artifact(kind, RecordList(kind.fields, [{}] * count))
+
+
+def test_a_form_whose_copies_carry_no_figures_runs_once_per_copy_on_the_shared_inputs() -> None:
+    once = copies("ex/once")
+
+    found = once_set(once).compute(*ONCE_GIVEN, copy_list(once, 1))
+
+    assert grand(found) == D(6)
+    assert len(found["ex/once"]) == 1
+
+
+def test_a_form_whose_copies_carry_no_figures_does_not_run_for_an_empty_list() -> None:
+    once = copies("ex/once")
+
+    found = once_set(once).compute(*ONCE_GIVEN, copy_list(once, 0))
+
+    assert grand(found) == D(0)
+    assert found["ex/once"] == ()
+
+
+def test_two_forms_with_empty_copies_in_one_group_hold_when_only_one_has_a_copy() -> None:
+    first = copies("ex/first", group="ex/either")
+    second = copies("ex/second", group="ex/either")
+    found = once_set(first, second)
+
+    assert grand(found.compute(*ONCE_GIVEN, copy_list(first, 1), copy_list(second, 0))) == D(6)
+    assert grand(found.compute(*ONCE_GIVEN, copy_list(first, 0), copy_list(second, 1))) == D(0)
+    with pytest.raises(
+        ValidationError,
+        match=r"^forms 'ex/first' and 'ex/second' both have instances, but are in exclusive group",
+    ):
+        found.compute(*ONCE_GIVEN, copy_list(first, 1), copy_list(second, 1))
+
+
 def test_a_group_with_one_minimum_of_one_beside_a_free_form_is_allowed() -> None:
     first = side("ex/first", group="ex/either", minimum=1)
     second = side("ex/second", group="ex/either", minimum=0)
