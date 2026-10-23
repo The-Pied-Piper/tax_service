@@ -228,12 +228,12 @@ def landlord(
 ) -> dict[str, tuple[Worksheet, ...]]:
     """A landlord with gross rents of 24000 and expenses of 12000, so amount 5 is 12000 before
     Area A, with the Area A `classes`."""
-    inputs: dict[str, Any] = {
+    statement: dict[str, Any] = {
         "rental_properties": ((2, "0", "24000"),),
         "rental_expenses": {"insurance": ("12000", "0", "0")},
         "rental_cca_classes_rows": classes,
     }
-    return run("0", (), "0", "0", "0", "0", "0", **{**inputs, **overrides})
+    return run("0", (), "0", "0", "0", "0", "0", rental_statements=({**statement, **overrides},))
 
 
 def test_a_recapture_row_adds_the_negative_column_7_to_line_9947() -> None:

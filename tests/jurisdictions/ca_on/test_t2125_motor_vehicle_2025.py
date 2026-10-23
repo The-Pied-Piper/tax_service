@@ -137,7 +137,7 @@ def statement(vehicle: dict[str, str]) -> Worksheet:
     """A T2125 of gross sales of 50000 and office expenses of 20000, with the Chart A to C amounts
     in `vehicle` (the others 0)."""
     amounts = {"gross_sales": "50000", "office_expenses": "20000", **vehicle}
-    result = run("0", (), "0", "0", "0", "0", "0", business=amounts)
+    result = run("0", (), "0", "0", "0", "0", "0", business_statements=({"business": amounts},))
     return result["ca/t2125"][0]
 
 

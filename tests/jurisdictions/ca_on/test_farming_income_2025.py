@@ -136,9 +136,9 @@ def statement(
         "0",
         "0",
         "0",
-        farm=amounts,
-        farm_partner=partner,
-        farm_cca_classes_rows=cca_classes,
+        farm_statements=(
+            {"farm": amounts, "farm_partner": partner, "farm_cca_classes_rows": cca_classes},
+        ),
         **overrides,
     )
     return result["ca/t2042"][0]

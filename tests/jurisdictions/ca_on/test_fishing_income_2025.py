@@ -130,9 +130,9 @@ def statement(
         "0",
         "0",
         "0",
-        fish=amounts,
-        fish_partner=partner,
-        fish_cca_classes_rows=cca_classes,
+        fish_statements=(
+            {"fish": amounts, "fish_partner": partner, "fish_cca_classes_rows": cca_classes},
+        ),
         **overrides,
     )
     return result["ca/t2121"][0]

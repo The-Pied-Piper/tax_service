@@ -84,7 +84,7 @@ def run_bc() -> dict[str, tuple[Worksheet, ...]]:
     line 14099), expenses of 50000 (4B), so line 9899 is 30000, which is line 9946 and T1 line
     14100.
     """
-    return run("0", (), "0", "0", "0", "0", "0", farm=FARM)
+    return run("0", (), "0", "0", "0", "0", "0", farm_statements=({"farm": FARM},))
 
 
 def return_bc() -> Worksheet:

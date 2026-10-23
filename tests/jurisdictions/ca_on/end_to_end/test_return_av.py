@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 import pytest
@@ -40,7 +41,7 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_PAYABLE,
 )
 from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX
-from tests.jurisdictions.ca_on.end_to_end.support import D, run
+from tests.jurisdictions.ca_on.end_to_end.support import D, rental_return
 
 # Chart B rows as (column 1, column 4, column 5, column 6): class 1 with 900 and 30 days of 90,
 # class 1 with 100 and 1 day of 3, class 8 with 500 and 45 days of 90.
@@ -58,7 +59,22 @@ CLASS_1_ROW = ("1", "10000", "0", "0", "0", "0", "66.67", 0)
 CLASS_8_ROW = ("8", "2000", "0", "0", "0", "0", "150.00", 0)
 
 
-def return_av(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
+RETURN_AV_STATEMENT: dict[str, Any] = {
+    "rental_properties": ((2, "0", "24000"),),
+    "rental_expenses": {
+        "insurance": ("1200", "0", "0"),
+        "interest_and_bank_charges": ("6000", "0", "0"),
+        "repairs_and_maintenance": ("1300", "0", "0"),
+        "property_taxes": ("3500", "0", "0"),
+    },
+    "short_term_rental_cca_units_rows": ROWS,
+    "rental_cca_classes_rows": (CLASS_1_ROW, CLASS_8_ROW),
+}
+
+
+def return_av(
+    changes: Mapping[str, Any] | None = None, **overrides: Any
+) -> dict[str, tuple[Worksheet, ...]]:
     """Return AV's inputs, as in `returns/2025_return_av.yaml`: Return AD's landlord with three
     Chart B rows and two Area A classes whose claims are limited by column 22.
 
@@ -67,25 +83,7 @@ def return_av(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
     The claims are 66.67 and 150.00, so line 9936 is 216.67 and line 9946 and T1 line 12600 are
     12000 - 216.67 = 11783.33.
     """
-    inputs: dict[str, Any] = {
-        "employment_income": "0",
-        "share_dispositions": (),
-        "unused_rrsp_contributions": "0",
-        "rrsp_contributions": "0",
-        "rrsp_deduction_limit": "0",
-        "rrsp_amount_deducted": "0",
-        "union_dues": "0",
-        "rental_properties": ((2, "0", "24000"),),
-        "rental_expenses": {
-            "insurance": ("1200", "0", "0"),
-            "interest_and_bank_charges": ("6000", "0", "0"),
-            "repairs_and_maintenance": ("1300", "0", "0"),
-            "property_taxes": ("3500", "0", "0"),
-        },
-        "short_term_rental_cca_units_rows": ROWS,
-        "rental_cca_classes_rows": (CLASS_1_ROW, CLASS_8_ROW),
-    }
-    return run(**{**inputs, **overrides})
+    return rental_return(RETURN_AV_STATEMENT, changes, **overrides)
 
 
 def test_return_avs_line_9367_is_583_33_from_three_chart_b_rows() -> None:
@@ -182,7 +180,7 @@ def test_return_avs_figures_that_depend_on_income_are_return_ads_recomputed_for_
 
 def test_a_class_1_claim_above_400_less_333_33_is_refused() -> None:
     with pytest.raises(InputAboveBoundError) as raised:
-        return_av(rental_cca_classes_rows=(("1", "10000", "0", "0", "0", "0", "66.68", 0),))
+        return_av({"rental_cca_classes_rows": (("1", "10000", "0", "0", "0", "0", "66.68", 0),)})
 
     assert str(raised.value) == (
         "ca/t776, instance 1: "
@@ -193,7 +191,12 @@ def test_a_class_1_claim_above_400_less_333_33_is_refused() -> None:
 def test_a_class_8_claim_above_400_less_250_is_refused() -> None:
     with pytest.raises(InputAboveBoundError) as raised:
         return_av(
-            rental_cca_classes_rows=(CLASS_1_ROW, ("8", "2000", "0", "0", "0", "0", "150.01", 0))
+            {
+                "rental_cca_classes_rows": (
+                    CLASS_1_ROW,
+                    ("8", "2000", "0", "0", "0", "0", "150.01", 0),
+                )
+            }
         )
 
     assert str(raised.value) == (
@@ -206,11 +209,13 @@ def test_the_unlimited_maximum_is_claimable_when_chart_b_has_no_rows() -> None:
     # Without Chart B rows column 22 is 0 for every class: the whole maximum, 400.00 each, may be
     # claimed, so line 9936 is 800.00.
     statement = return_av(
-        short_term_rental_cca_units_rows=(),
-        rental_cca_classes_rows=(
-            ("1", "10000", "0", "0", "0", "0", "400.00", 0),
-            ("8", "2000", "0", "0", "0", "0", "400.00", 0),
-        ),
+        {
+            "short_term_rental_cca_units_rows": (),
+            "rental_cca_classes_rows": (
+                ("1", "10000", "0", "0", "0", "0", "400.00", 0),
+                ("8", "2000", "0", "0", "0", "0", "400.00", 0),
+            ),
+        }
     )["ca/t776"][0]
 
     assert statement.get(RENTAL_CCA_CLAIM).value == D("800.00")
@@ -219,7 +224,7 @@ def test_the_unlimited_maximum_is_claimable_when_chart_b_has_no_rows() -> None:
 def test_a_class_without_a_chart_b_row_has_a_column_22_of_zero() -> None:
     # Class 10: 30% of 1000 = 300.00, with no Chart B row, may claim all of it.
     statement = return_av(
-        rental_cca_classes_rows=(CLASS_1_ROW, ("10", "1000", "0", "0", "0", "0", "300.00", 0))
+        {"rental_cca_classes_rows": (CLASS_1_ROW, ("10", "1000", "0", "0", "0", "0", "300.00", 0))}
     )["ca/t776"][0]
 
     assert statement.get(RENTAL_CCA_TABLE_CLAIM).value == D("366.67")
@@ -228,7 +233,12 @@ def test_a_class_without_a_chart_b_row_has_a_column_22_of_zero() -> None:
         match=r"^ca/t776, instance 1: item 2: ca/cca_claimed 300.01 is above the",
     ):
         return_av(
-            rental_cca_classes_rows=(CLASS_1_ROW, ("10", "1000", "0", "0", "0", "0", "300.01", 0))
+            {
+                "rental_cca_classes_rows": (
+                    CLASS_1_ROW,
+                    ("10", "1000", "0", "0", "0", "0", "300.01", 0),
+                )
+            }
         )
 
 
@@ -262,7 +272,7 @@ def test_return_avs_trace_shows_each_chart_b_row_and_class() -> None:
 
 
 def test_no_chart_b_rows_give_zero_and_an_empty_list() -> None:
-    result = return_av(short_term_rental_cca_units_rows=())
+    result = return_av({"short_term_rental_cca_units_rows": ()})
     statement = result["ca/t776"][0]
 
     assert statement.get(RENTAL_NON_COMPLIANT_CCA).value == D("0")
@@ -272,7 +282,7 @@ def test_no_chart_b_rows_give_zero_and_an_empty_list() -> None:
 
 
 def test_a_row_with_900_of_cca_and_30_of_90_days_is_300_on_line_9367() -> None:
-    result = return_av(short_term_rental_cca_units_rows=(("1", "900", 30, 90),))
+    result = return_av({"short_term_rental_cca_units_rows": (("1", "900", 30, 90),)})
     statement = result["ca/t776"][0]
 
     assert statement.get(RENTAL_NON_COMPLIANT_CCA).value == D("300.00")
@@ -280,9 +290,9 @@ def test_a_row_with_900_of_cca_and_30_of_90_days_is_300_on_line_9367() -> None:
 
 def test_a_chart_b_row_with_no_short_term_days_is_refused_naming_the_row() -> None:
     with pytest.raises(ValidationError, match="row 1: ca/short_term_rental_days cannot be 0"):
-        return_av(short_term_rental_cca_units_rows=(("1", "900", 0, 0),))
+        return_av({"short_term_rental_cca_units_rows": (("1", "900", 0, 0),)})
 
 
 def test_a_chart_b_row_with_more_non_compliant_days_than_days_is_refused() -> None:
     with pytest.raises(ValidationError, match="row 2.*short_term_rental_non_compliant_days"):
-        return_av(short_term_rental_cca_units_rows=(ROWS[0], ("1", "900", 91, 90)))
+        return_av({"short_term_rental_cca_units_rows": (ROWS[0], ("1", "900", 91, 90))})

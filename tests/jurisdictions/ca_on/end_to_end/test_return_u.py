@@ -113,7 +113,17 @@ def self_employed(**changes: Any) -> Worksheet:
     farm = farm_statement(inputs.pop("farming_income", "0"))
     fish = fish_statement(inputs.pop("fishing_income", "0"))
     return compute(
-        "0", (), "0", "0", "0", "0", "0", business=business, farm=farm, fish=fish, **inputs
+        "0",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        business_statements=({"business": business},),
+        farm_statements=({"farm": farm},),
+        fish_statements=({"fish": fish},),
+        **inputs,
     )
 
 
