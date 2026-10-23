@@ -56,7 +56,7 @@ class Worksheet:
         the capability runs under a `decimal` context that traps `Inexact`.
         """
         name = type(capability).__name__
-        missing = capability.consumes - self._artifacts.keys()
+        missing = {k for k in capability.consumes if k not in self._artifacts}
         if missing:
             raise MissingArtifactError(f"{name} needs {self._labels(missing)}")
         inputs = tuple(self._artifacts[k] for k in capability.consumes)
