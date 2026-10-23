@@ -12,6 +12,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 import app
 import app.adapters.inbound.trace_english
 import app.adapters.outbound.parameter_parsers
@@ -21,6 +23,7 @@ import app.registrations
 from app.adapters.outbound.jurisdiction_packages import JurisdictionPackages
 from app.domain.artifact import ArtifactCatalog, ArtifactRegistry
 from app.domain.capability import CapabilityRegistry
+from app.domain.errors import UnknownRegistrationError
 
 JURISDICTIONS_DIRECTORY = Path(app.jurisdictions.__file__).parent
 
@@ -256,6 +259,22 @@ def test_importing_the_federal_package_registers_the_foreign_non_business_tax_cr
     assert registered.__module__ == (
         "app.jurisdictions.ca.capabilities.foreign_non_business_tax_credit"
     )
+
+
+@pytest.mark.parametrize("line", [4, 5, 7, 8, 10, 11])
+def test_importing_the_federal_package_registers_the_foreign_business_tax_credit_lines(
+    line: int,
+) -> None:
+    registered = CapabilityRegistry.shared().get(f"ca/foreign_business_tax_credit_line_{line}")
+
+    assert registered.__module__ == (
+        f"app.jurisdictions.ca.capabilities.foreign_business_tax_credit_line_{line}"
+    )
+
+
+def test_the_foreign_business_tax_credit_base_is_not_registered() -> None:
+    with pytest.raises(UnknownRegistrationError):
+        CapabilityRegistry.shared().get("ca/foreign_business_tax_credit_rows")
 
 
 def test_importing_the_federal_package_registers_the_disability_transfer_amount() -> None:

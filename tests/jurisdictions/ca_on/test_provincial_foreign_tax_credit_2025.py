@@ -45,9 +45,13 @@ from app.domain.record_list import RecordList
 from app.domain.registry import Namespace
 from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.catalog import (
+    FOREIGN_BUSINESS_TAX_PAID,
+    FOREIGN_BUSINESS_UNUSED_TAX_CREDITS,
     FOREIGN_NON_BUSINESS_TAX_PAID,
+    FOREIGN_SURTAX_OUTSIDE_CANADA,
     FOREIGN_TAX_CREDIT_SHEET_LINE_3,
     FOREIGN_TAX_CREDIT_SHEETS,
+    NET_FOREIGN_BUSINESS_INCOME,
     NET_FOREIGN_NON_BUSINESS_INCOME,
 )
 from app.jurisdictions.ca_on.capabilities.provincial_foreign_tax_credit import (
@@ -139,11 +143,19 @@ def test_the_rounding_dataset_runs_through_the_capability() -> None:
             FOREIGN_NON_BUSINESS_TAX_PAID: D("50"),
             NET_FOREIGN_NON_BUSINESS_INCOME: D("10"),
             FOREIGN_TAX_CREDIT_SHEET_LINE_3: D("0"),
+            FOREIGN_BUSINESS_TAX_PAID: D(0),
+            FOREIGN_BUSINESS_UNUSED_TAX_CREDITS: D(0),
+            NET_FOREIGN_BUSINESS_INCOME: D(0),
+            FOREIGN_SURTAX_OUTSIDE_CANADA: D(0),
         },
         {
             FOREIGN_NON_BUSINESS_TAX_PAID: D("50"),
             NET_FOREIGN_NON_BUSINESS_INCOME: D("20"),
             FOREIGN_TAX_CREDIT_SHEET_LINE_3: D("0"),
+            FOREIGN_BUSINESS_TAX_PAID: D(0),
+            FOREIGN_BUSINESS_UNUSED_TAX_CREDITS: D(0),
+            NET_FOREIGN_BUSINESS_INCOME: D(0),
+            FOREIGN_SURTAX_OUTSIDE_CANADA: D(0),
         },
     ]
 

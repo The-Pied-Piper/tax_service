@@ -32,13 +32,21 @@ from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
 from app.domain.record_list import RecordList
 from app.domain.registry import Namespace
+from app.jurisdictions.ca.capabilities.foreign_business_tax_credit_line_5 import (
+    ForeignBusinessTaxCreditLine5,
+)
 from app.jurisdictions.ca.capabilities.foreign_non_business_tax_credit import (
     ForeignNonBusinessTaxCredit,
 )
 from app.jurisdictions.ca.catalog import (
+    FOREIGN_BUSINESS_TAX_PAID,
+    FOREIGN_BUSINESS_UNUSED_TAX_CREDITS,
     FOREIGN_NON_BUSINESS_TAX_PAID,
+    FOREIGN_SURTAX_OUTSIDE_CANADA,
     FOREIGN_TAX_COUNTRIES,
+    FOREIGN_TAX_CREDIT_SHEET_LINE_3,
     FOREIGN_TAX_CREDIT_SHEETS,
+    NET_FOREIGN_BUSINESS_INCOME,
     NET_FOREIGN_NON_BUSINESS_INCOME,
 )
 
@@ -47,6 +55,7 @@ SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
 THRESHOLD = "ca/foreign_tax_pooling_threshold"
 ROUNDING = "ca/foreign_non_business_tax_credit_rounding"
+BUSINESS_ROUNDING = "ca/foreign_business_tax_credit_rounding"
 T2209_PDF = "https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/t2209/t2209-25e.pdf"
 
 # Made up for this test and not registered: the return-wide net income (note 3), basic federal
@@ -148,7 +157,14 @@ def credit(*rows: tuple[str, str], net_income: str = "100000", basic_tax: str = 
         FOREIGN_TAX_CREDIT_SHEETS,
     )
     records: list[dict[ArtifactKind[Any], object]] = [
-        {FOREIGN_NON_BUSINESS_TAX_PAID: D(tax), NET_FOREIGN_NON_BUSINESS_INCOME: D(income)}
+        {
+            FOREIGN_NON_BUSINESS_TAX_PAID: D(tax),
+            NET_FOREIGN_NON_BUSINESS_INCOME: D(income),
+            FOREIGN_BUSINESS_TAX_PAID: D(0),
+            FOREIGN_BUSINESS_UNUSED_TAX_CREDITS: D(0),
+            NET_FOREIGN_BUSINESS_INCOME: D(0),
+            FOREIGN_SURTAX_OUTSIDE_CANADA: D(0),
+        }
         for tax, income in rows
     ]
     output, _sheets = capability.compute(
@@ -182,3 +198,86 @@ def test_two_countries_with_exactly_200_of_tax_are_pooled() -> None:
 
 def test_two_countries_with_200_01_of_tax_are_worked_one_by_one() -> None:
     assert credit(("50", "500"), ("150.01", "1000")) == D("190.00")
+
+
+# --- the business part (Form T2209 lines 4 to 11): line 5's rounding dataset ---------------------
+
+
+def test_2025_business_rounding_is_half_up_to_the_cent_with_no_other_figure() -> None:
+    data = SOURCE.get(BUSINESS_ROUNDING, 2025, ROUNDING_ONLY)
+
+    assert data.values == RoundingOnly()
+    # Line 5, a dollars-and-cents box: half-up to the cent.
+    assert data.rounding == CENT
+
+
+def test_2025_business_rounding_cites_only_the_t2209_pdf() -> None:
+    assert SOURCE.get(BUSINESS_ROUNDING, 2025, ROUNDING_ONLY).sources == (T2209_PDF,)
+
+
+def test_the_business_rounding_header_quotes_t2209_as_the_form_prints_it() -> None:
+    header = dataset_header(BUSINESS_ROUNDING)
+
+    for quoted in (
+        "Business income tax paid to a foreign country (5) for the year",
+        "Net foreign business income (7) 43900",
+        "Basic federal tax (8)",
+        "Net income (3)",
+        "Federal business foreign tax credit",
+    ):
+        assert quoted in header, quoted
+
+
+def test_the_business_rounding_header_states_the_half_up_cent_rule() -> None:
+    header = dataset_header(BUSINESS_ROUNDING).lower()
+
+    assert "dollars-and-cents box" in header
+    assert "half-up" in header
+    assert "owner's decision" in header
+
+
+def business_line_5(income: str, *, net_income: str, basic_tax: str) -> Decimal:
+    """Line 5 of one sheet on the real business rounding dataset, through the line 5 capability."""
+    capability = ForeignBusinessTaxCreditLine5(
+        SOURCE.get(BUSINESS_ROUNDING, 2025, ROUNDING_ONLY),
+        FOREIGN_TAX_CREDIT_SHEETS,
+        NET_INCOME,
+        BASIC_TAX,
+        CREDIT,
+    )
+    sheet: dict[ArtifactKind[Any], object] = {
+        FOREIGN_NON_BUSINESS_TAX_PAID: D(0),
+        NET_FOREIGN_NON_BUSINESS_INCOME: D(0),
+        FOREIGN_TAX_CREDIT_SHEET_LINE_3: D(0),
+        FOREIGN_BUSINESS_TAX_PAID: D(0),
+        FOREIGN_BUSINESS_UNUSED_TAX_CREDITS: D(0),
+        NET_FOREIGN_BUSINESS_INCOME: D(income),
+        FOREIGN_SURTAX_OUTSIDE_CANADA: D(0),
+    }
+    (output,) = capability.compute(
+        (
+            Artifact(
+                FOREIGN_TAX_CREDIT_SHEETS, RecordList(FOREIGN_TAX_CREDIT_SHEETS.fields, [sheet])
+            ),
+            Artifact(NET_INCOME, D(net_income)),
+            Artifact(BASIC_TAX, D(basic_tax)),
+        )
+    ).outputs
+    assert output.kind is CREDIT
+    assert isinstance(output.value, Decimal)
+    return output.value
+
+
+def test_business_line_5_is_the_income_times_basic_federal_tax_over_net_income() -> None:
+    # 6,000 x 14,500 / 100,000 = 870.00 (note 8's basic federal tax).
+    assert business_line_5("6000", net_income="100000", basic_tax="14500") == D("870.00")
+
+
+def test_business_line_5_rounds_a_third_down_to_the_cent() -> None:
+    # 100 x 100 / 300 = 33.333...
+    assert business_line_5("100", net_income="300", basic_tax="100") == D("33.33")
+
+
+def test_business_line_5_rounds_a_tie_up_to_the_cent() -> None:
+    # 1 x 1 / 200 = 0.005 exactly, half-up gives 0.01.
+    assert business_line_5("1", net_income="200", basic_tax="1") == D("0.01")
