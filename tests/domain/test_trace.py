@@ -4472,6 +4472,7 @@ def test_cca_claim_line_fields_in_order() -> None:
         "rounding",
         "claim",
         "column_9",
+        "half_year_rule_on_sale",
     ]
     assert line == CcaClaimLine(
         CCA,
@@ -4521,6 +4522,8 @@ def test_a_cca_claim_lines_amount_is_the_claim() -> None:
         {"maximum": D("2070.01")},
         {"rounding": NO_ROUNDING},
         {"claim": D("2000.01")},
+        {"column_9": D("1000")},
+        {"half_year_rule_on_sale": True},
     ],
 )
 def test_cca_claim_lines_differ_by_each_field(change: dict[str, Any]) -> None:
@@ -4591,6 +4594,7 @@ def test_terminal_loss_line_fields_in_order() -> None:
         "result",
         "has_diep",
         "column_9",
+        "half_year_rule_on_sale",
     ]
     assert line == TerminalLossLine(
         output=TERMINAL_LOSS,
@@ -4621,6 +4625,7 @@ def test_a_terminal_loss_lines_amount_is_the_result() -> None:
         {"column_7_positive": False},
         {"result": D("0")},
         {"column_9": D("1000")},
+        {"half_year_rule_on_sale": True},
     ],
 )
 def test_terminal_loss_lines_differ_by_each_field(change: dict[str, Any]) -> None:
@@ -4644,6 +4649,7 @@ def test_closing_ucc_line_fields_in_order() -> None:
         "claim",
         "result",
         "column_9",
+        "half_year_rule_on_sale",
     ]
     assert line == ClosingUccLine(
         output=CLOSING_UCC,
@@ -4674,6 +4680,8 @@ def test_a_closing_ucc_lines_amount_is_the_classs_ucc_at_the_end_of_the_year() -
         {"zero_reason": CcaZeroReason.COLUMN_7_NEGATIVE},
         {"claim": D("2000.01")},
         {"result": D("3999.99")},
+        {"column_9": D("1000")},
+        {"half_year_rule_on_sale": True},
     ],
 )
 def test_closing_ucc_lines_differ_by_each_field(change: dict[str, Any]) -> None:
@@ -4682,6 +4690,15 @@ def test_closing_ucc_lines_differ_by_each_field(change: dict[str, Any]) -> None:
     values.update(change)
 
     assert line != ClosingUccLine(**values)
+
+
+@pytest.mark.parametrize("make", [cca_claim_line, terminal_loss_line, closing_ucc_line])
+def test_a_cca_line_does_not_use_the_half_year_rule_on_sale_unless_it_says_so(make: Any) -> None:
+    assert make().half_year_rule_on_sale is False
+
+
+def test_a_recaptured_cca_line_has_no_half_year_rule_on_sale() -> None:
+    assert "half_year_rule_on_sale" not in [f.name for f in fields(recaptured_cca_line())]
 
 
 def test_the_reasons_a_cca_row_closes_at_zero() -> None:

@@ -63,6 +63,7 @@ class TerminalLoss(CcaTable):
                 else Decimal(0),
                 row.diep_additions > 0,
                 row.immediate_expensing,
+                row.half_year_rule_on_sale,
             )
             for row in self._rows(inputs)
         )

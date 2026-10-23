@@ -20,7 +20,12 @@ from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.domain.artifact import ArtifactKind
 from app.domain.parameters.amount import Amount
 from app.domain.parameters.claim_reduction import ClaimReduction
-from app.domain.parameters.class_rates import ClassRate, HalfYearRule, RecaptureAndTerminalLoss
+from app.domain.parameters.class_rates import (
+    ClassRate,
+    HalfYearRule,
+    HalfYearRuleOnSale,
+    RecaptureAndTerminalLoss,
+)
 from app.domain.parameters.contribution_tier import ContributionTier
 from app.domain.parameters.credit import Credit
 from app.domain.parameters.factor import Factor
@@ -4463,8 +4468,8 @@ def test_the_closing_line_is_unchanged_when_column_9_is_0() -> None:
 
 
 def test_column_9_is_the_last_field_of_the_claim_and_closing_lines() -> None:
-    assert [f.name for f in fields(CcaClaimLine)][-1] == "column_9"
-    assert [f.name for f in fields(ClosingUccLine)][-1] == "column_9"
+    assert [f.name for f in fields(CcaClaimLine)][-2:] == ["column_9", "half_year_rule_on_sale"]
+    assert [f.name for f in fields(ClosingUccLine)][-2:] == ["column_9", "half_year_rule_on_sale"]
 
 
 def expensed_loss_line(column_7: str, column_9: str, result: str) -> TerminalLossLine:
@@ -4512,7 +4517,7 @@ def test_the_terminal_loss_line_without_a_column_9_reads_as_one_with_0() -> None
 
 
 def test_column_9_is_the_last_field_of_the_terminal_loss_line() -> None:
-    assert [f.name for f in fields(TerminalLossLine)][-1] == "column_9"
+    assert [f.name for f in fields(TerminalLossLine)][-2:] == ["column_9", "half_year_rule_on_sale"]
 
 
 def test_the_immediate_expensing_line_fields_in_order() -> None:
@@ -4601,6 +4606,124 @@ def test_renders_a_terminal_loss_for_an_excluded_class_with_a_diep() -> None:
 
     assert render(line) == (
         "terminal_loss: item 1 class 10.1: column 7 6000 with no property left: terminal loss 6000"
+    )
+
+
+# Guides T4036 and T4002, "Column 19 - Base amount for CCA": "This is known as the half-year rule on
+# sale." A Class 10.1 row that used it says so on the lines whose figures it changes: column 19 of
+# the claim, the terminal loss it does not have and the closing UCC it does not zero.
+
+
+def sale_class() -> ClassRate:
+    return ClassRate(
+        D("10.1"),
+        Rate(D("0.30")),
+        HalfYearRule.APPLIES,
+        EXCLUDED,
+        Fraction(0, 1),
+        Fraction(1, 2),
+        half_year_rule_on_sale=HalfYearRuleOnSale.APPLIES,
+    )
+
+
+def sale_claim_line(half_year_rule_on_sale: bool = True) -> CcaClaimLine:
+    return CcaClaimLine(
+        output=CCA_CLAIM,
+        position=1,
+        class_rate=sale_class(),
+        no_property_left=1,
+        column_7=D("8000.00"),
+        column_14=D("12000.00"),
+        column_15=D("0"),
+        column_16=D("12000.00"),
+        column_17=D("0"),
+        column_18=D("0"),
+        column_19=D("10000.00"),
+        zero_reason=CcaZeroReason.NONE,
+        maximum=D("3000.00"),
+        rounding=CENT,
+        claim=D("3000.00"),
+        half_year_rule_on_sale=half_year_rule_on_sale,
+    )
+
+
+def test_the_claim_line_names_the_half_year_rule_on_sale_at_column_19() -> None:
+    assert render(sale_claim_line()) == (
+        "cca_claim: item 1 class 10.1: column 7 8000, column 14 12000, column 15 0, "
+        "column 16 12000, column 17 0, column 18 0, column 19 10000 (half-year rule on sale), "
+        "maximum 30% of column 19 = 3000 (half-up to 0.01), claim 3000"
+    )
+
+
+def test_the_claim_line_is_unchanged_without_the_half_year_rule_on_sale() -> None:
+    assert render(sale_claim_line(False)) == (
+        "cca_claim: item 1 class 10.1: column 7 8000, column 14 12000, column 15 0, "
+        "column 16 12000, column 17 0, column 18 0, column 19 10000, "
+        "maximum 30% of column 19 = 3000 (half-up to 0.01), claim 3000"
+    )
+
+
+def test_the_claim_line_names_column_9_and_the_half_year_rule_on_sale() -> None:
+    line = replace(sale_claim_line(), column_9=D("1000"))
+
+    assert render(line) == (
+        "cca_claim: item 1 class 10.1: column 7 8000, column 9 1000, column 14 12000, "
+        "column 15 0, column 16 12000, column 17 0, column 18 0, "
+        "column 19 10000 (half-year rule on sale), "
+        "maximum 30% of column 19 = 3000 (half-up to 0.01), claim 3000"
+    )
+
+
+def test_the_closing_line_names_the_half_year_rule_on_sale_in_the_claim() -> None:
+    line = ClosingUccLine(
+        CLOSING_UCC,
+        1,
+        sale_class(),
+        1,
+        D("8000.00"),
+        CcaZeroReason.NONE,
+        D("3000.00"),
+        D("5000.00"),
+        half_year_rule_on_sale=True,
+    )
+
+    assert render(line) == (
+        "closing_ucc: item 1 class 10.1: column 7 8000 less claim 3000 (half-year rule on sale) "
+        "= 5000"
+    )
+
+
+def test_the_closing_line_is_unchanged_without_the_half_year_rule_on_sale() -> None:
+    line = ClosingUccLine(
+        CLOSING_UCC,
+        1,
+        sale_class(),
+        1,
+        D("8000.00"),
+        CcaZeroReason.NONE,
+        D("3000.00"),
+        D("5000.00"),
+    )
+
+    assert render(line) == "closing_ucc: item 1 class 10.1: column 7 8000 less claim 3000 = 5000"
+
+
+def test_the_terminal_loss_line_names_the_half_year_rule_on_sale() -> None:
+    line = TerminalLossLine(
+        output=TERMINAL_LOSS,
+        position=1,
+        class_rate=sale_class(),
+        no_property_left=1,
+        column_7=D("8000.00"),
+        zero_reason=CcaZeroReason.NONE,
+        column_7_positive=True,
+        result=D("0"),
+        half_year_rule_on_sale=True,
+    )
+
+    assert render(line) == (
+        "terminal_loss: item 1 class 10.1: column 7 8000 with no property left, but a terminal "
+        "loss does not apply to class 10.1 (half-year rule on sale used): terminal loss 0"
     )
 
 

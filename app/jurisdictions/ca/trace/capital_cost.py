@@ -46,7 +46,9 @@ class CcaClaimLine(TraceLine):
     `zero_reason` it records when column 7 is negative or is positive with `no_property_left` (1
     if no property is left, else 0). Columns 15, 17 and 18 and the maximum are each rounded once
     with `rounding`; the claim is the caller's, at most the maximum plus `column_9` (the immediate
-    expensing amount, 0 unless the class has a DIEP) and at least `column_9`.
+    expensing amount, 0 unless the class has a DIEP) and at least `column_9`. Under the
+    `half_year_rule_on_sale` (Class 10.1, column 2 above 0, no property left) column 19 is one half
+    of column 2 and the positive-column-7 zero for no property left does not apply.
 
     Its own class, not a `CappedAmountLine`: the amount is worked on for one class, named by
     position, in many columns that the English rendering shows one by one.
@@ -68,6 +70,7 @@ class CcaClaimLine(TraceLine):
     rounding: RoundingRule
     claim: Decimal
     column_9: Decimal = Decimal(0)
+    half_year_rule_on_sale: bool = False
 
     @property
     def amount(self) -> Decimal:
@@ -106,7 +109,8 @@ class TerminalLossLine(TraceLine):
     terminal loss does not apply to unless the row `has_diep` (it has DIEP additions, column 4),
     which Note 3 excepts. `column_7_positive` records whether column 7 is above 0, so a row with
     property left reads apart from one with nothing to lose. `column_9` is the amount the class
-    expensed, which is not deducted as CCA and so is not a terminal loss.
+    expensed, which is not deducted as CCA and so is not a terminal loss. A row that used the
+    `half_year_rule_on_sale` has property left for the claim and no terminal loss.
     """
 
     output: Money
@@ -119,6 +123,7 @@ class TerminalLossLine(TraceLine):
     result: Decimal
     has_diep: bool = False
     column_9: Decimal = Decimal(0)
+    half_year_rule_on_sale: bool = False
 
     @property
     def amount(self) -> Decimal:
@@ -132,7 +137,8 @@ class ClosingUccLine(TraceLine):
     the list `output`: `column_7` (the UCC after additions and dispositions) less the `claim`, or
     0 for the `zero_reason` it records when column 7 is negative or is positive with
     `no_property_left` (1 if no property is left in the class `class_rate`, else 0). The `claim`
-    includes `column_9`, the immediate expensing amount of the class (0 unless it has a DIEP).
+    includes `column_9`, the immediate expensing amount of the class (0 unless it has a DIEP). A
+    row that used the `half_year_rule_on_sale` does not close at 0 for no property left.
 
     Its own class, not a `RecordTotalLine`: each class gives a record of a list, not a part of a
     total.
@@ -147,6 +153,7 @@ class ClosingUccLine(TraceLine):
     claim: Decimal
     result: Decimal
     column_9: Decimal = Decimal(0)
+    half_year_rule_on_sale: bool = False
 
     @property
     def amount(self) -> Decimal:

@@ -38,6 +38,7 @@ from app.domain.parameters.class_rates import (
     CLASS_RATES,
     ClassRate,
     HalfYearRule,
+    HalfYearRuleOnSale,
     RecaptureAndTerminalLoss,
 )
 from app.domain.parameters.rounding import RoundingMode, RoundTo
@@ -189,6 +190,17 @@ def test_recapture_and_terminal_loss_are_excluded_for_class_10_1_only() -> None:
     assert excluded == EXCLUDED
 
 
+def test_the_half_year_rule_on_sale_applies_to_class_10_1_only() -> None:
+    data = SOURCE.get(FAMILY, 2025, CLASS_RATES)
+
+    on_sale = {
+        str(entry.class_number)
+        for entry in data.values.classes
+        if entry.half_year_rule_on_sale is HalfYearRuleOnSale.APPLIES
+    }
+    assert on_sale == {"10.1"}
+
+
 @pytest.mark.parametrize("number", RATES)
 def test_each_class_has_the_aiip_and_riip_factors_of_notes_7_and_8(number: str) -> None:
     entry = dataset_class(number)
@@ -209,6 +221,20 @@ def test_the_dataset_header_quotes_the_form_as_it_prints_it() -> None:
     ):
         assert quoted in header, quoted
         assert quoted in form, quoted
+
+
+def test_the_dataset_header_quotes_the_guides_on_the_half_year_rule_on_sale() -> None:
+    header = dataset_header().lower()
+
+    for quoted in (
+        "for a class 10.1 vehicle you disposed of in your 2025 fiscal period, you may be able to "
+        "claim 50% of the cca that would be allowed if you still owned the vehicle at the end of "
+        "your 2025 fiscal period. this is known as the half-year rule on sale.",
+        "you can use the half-year rule on sale if, at the end of your 2024 fiscal period, you "
+        "owned the class 10.1 vehicle you disposed of in 2025.",
+        "enter 50% of the amount from column 2 (for class 10.1 vehicles) in column 19.",
+    ):
+        assert quoted in header, quoted
 
 
 def test_the_dataset_header_states_the_half_year_rule_and_the_rounding_decisions() -> None:

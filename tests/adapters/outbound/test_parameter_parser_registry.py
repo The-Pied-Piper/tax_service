@@ -52,6 +52,7 @@ from app.domain.parameters.class_rates import (
     ClassRate,
     ClassRates,
     HalfYearRule,
+    HalfYearRuleOnSale,
     RecaptureAndTerminalLoss,
 )
 from app.domain.parameters.conditions import (
@@ -214,6 +215,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
                         "rate": "0.30",
                         "half_year_rule": "applies",
                         "recapture_and_terminal_loss": "excluded",
+                        "half_year_rule_on_sale": "applies",
                         "aiip_factor": {"numerator": "0", "denominator": "1"},
                         "riip_factor": {"numerator": "1", "denominator": "2"},
                     }
@@ -303,6 +305,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
                 RecaptureAndTerminalLoss.EXCLUDED,
                 Fraction(0, 1),
                 Fraction(1, 2),
+                half_year_rule_on_sale=HalfYearRuleOnSale.APPLIES,
             ),
         )
     )

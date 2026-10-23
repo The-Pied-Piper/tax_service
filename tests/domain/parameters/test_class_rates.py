@@ -27,6 +27,7 @@ from app.domain.parameters.class_rates import (
     ClassRate,
     ClassRates,
     HalfYearRule,
+    HalfYearRuleOnSale,
     RecaptureAndTerminalLoss,
 )
 from app.domain.parameters.fraction import Fraction
@@ -39,6 +40,8 @@ APPLIES = HalfYearRule.APPLIES
 EXEMPT = HalfYearRule.EXEMPT
 INCLUDED = RecaptureAndTerminalLoss.APPLIES
 EXCLUDED = RecaptureAndTerminalLoss.EXCLUDED
+ON_SALE = HalfYearRuleOnSale.APPLIES
+NOT_ON_SALE = HalfYearRuleOnSale.DOES_NOT_APPLY
 ZERO = F(0, 1)
 ONE_HALF = F(1, 2)
 
@@ -50,6 +53,7 @@ def entry(
     recapture_and_terminal_loss: RecaptureAndTerminalLoss = INCLUDED,
     aiip_factor: Fraction = ZERO,
     riip_factor: Fraction = ONE_HALF,
+    half_year_rule_on_sale: HalfYearRuleOnSale = NOT_ON_SALE,
 ) -> ClassRate:
     return ClassRate(
         class_number=D(number),
@@ -58,6 +62,7 @@ def entry(
         recapture_and_terminal_loss=recapture_and_terminal_loss,
         aiip_factor=aiip_factor,
         riip_factor=riip_factor,
+        half_year_rule_on_sale=half_year_rule_on_sale,
     )
 
 
@@ -92,6 +97,12 @@ def test_recapture_and_terminal_loss_apply_or_are_excluded() -> None:
     assert RecaptureAndTerminalLoss("excluded") is RecaptureAndTerminalLoss.EXCLUDED
 
 
+def test_the_half_year_rule_on_sale_applies_or_does_not() -> None:
+    assert [choice.value for choice in HalfYearRuleOnSale] == ["applies", "does_not_apply"]
+    assert HalfYearRuleOnSale("applies") is HalfYearRuleOnSale.APPLIES
+    assert HalfYearRuleOnSale("does_not_apply") is HalfYearRuleOnSale.DOES_NOT_APPLY
+
+
 # --- one class ---------------------------------------------------------------------------------
 
 
@@ -114,7 +125,26 @@ def test_a_class_holds_its_fields_in_order() -> None:
         "recapture_and_terminal_loss",
         "aiip_factor",
         "riip_factor",
+        "half_year_rule_on_sale",
     ]
+
+
+def test_a_class_has_no_half_year_rule_on_sale_unless_it_is_given_it() -> None:
+    assert first().half_year_rule_on_sale is HalfYearRuleOnSale.DOES_NOT_APPLY
+    assert (
+        ClassRate(
+            D("8"), Rate(D("0.20")), APPLIES, INCLUDED, F(0, 1), F(1, 2)
+        ).half_year_rule_on_sale
+        is HalfYearRuleOnSale.DOES_NOT_APPLY
+    )
+
+
+def test_a_class_holds_the_half_year_rule_on_sale() -> None:
+    held = entry(
+        "10.1", "0.30", recapture_and_terminal_loss=EXCLUDED, half_year_rule_on_sale=ON_SALE
+    )
+
+    assert held.half_year_rule_on_sale is HalfYearRuleOnSale.APPLIES
 
 
 def test_a_class_is_built_positionally_in_field_order() -> None:
@@ -157,6 +187,7 @@ def test_equal_classes_are_equal() -> None:
     assert entry("8") != entry("8", "0.30")
     assert entry("8") != entry("8", half_year_rule=EXEMPT)
     assert entry("8") != entry("8", recapture_and_terminal_loss=EXCLUDED)
+    assert entry("8") != entry("8", half_year_rule_on_sale=ON_SALE)
     assert entry("8") != entry("8", aiip_factor=F(1, 2))
     assert entry("8") != entry("8", riip_factor=F(1, 1))
     assert entry("8") != entry("10")
@@ -207,6 +238,12 @@ def test_rejects_a_recapture_and_terminal_loss_choice_that_is_not_one(choice: ob
         TypeError, match="recapture_and_terminal_loss must be a RecaptureAndTerminalLoss"
     ):
         ClassRate(D("8"), Rate(D("0.2")), APPLIES, choice, F(0, 1), F(1, 2))  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("choice", ["applies", True, HalfYearRule.APPLIES, None])
+def test_rejects_a_half_year_rule_on_sale_that_is_not_one(choice: object) -> None:
+    with pytest.raises(TypeError, match="half_year_rule_on_sale must be a HalfYearRuleOnSale"):
+        entry("8", half_year_rule_on_sale=choice)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("factor", ["aiip_factor", "riip_factor"])
