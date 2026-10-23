@@ -90,6 +90,12 @@ from app.jurisdictions.ca.trace import (
     DispositionGainLine,
     DispositionGainOnlyLine,
     DispositionProceedsLine,
+    ForeignBusinessLine4,
+    ForeignBusinessLine5,
+    ForeignBusinessLine7,
+    ForeignBusinessLine8,
+    ForeignBusinessLine10,
+    ForeignBusinessLine11,
     ForeignTaxCreditLine,
     ImmediateExpensingLine,
     NetCapitalLossesRowLine,
@@ -4068,7 +4074,12 @@ def test_renders_a_country_without_rounding() -> None:
 
 
 def pooled_countries(
-    countries: int, tax_paid: str, income: str, line_2: str, result: str
+    countries: int,
+    tax_paid: str,
+    income: str,
+    line_2: str,
+    result: str,
+    total_foreign_taxes: str | None = None,
 ) -> PooledForeignTaxCreditLine:
     return PooledForeignTaxCreditLine(
         NON_COMPLIANT_EXPENSES,
@@ -4077,6 +4088,7 @@ def pooled_countries(
         D(income),
         D("100000"),
         D("14000"),
+        D(total_foreign_taxes or tax_paid),
         D("200"),
         CENT,
         D(line_2),
@@ -4088,9 +4100,20 @@ def test_renders_a_pooled_calculation_naming_why_it_is_pooled() -> None:
     line = pooled_countries(2, "200.00", "10100", "1414.00", "200.00")
 
     assert render(line) == (
-        "non_compliant_expenses: all 2 countries pooled, total tax paid 200 is not more than 200: "
-        "10100 net foreign income x 14000 basic federal tax / 100000 net income = 1414 "
-        "(half-up to 0.01); credit 200"
+        "non_compliant_expenses: all 2 countries pooled, total foreign taxes 200 is not more "
+        "than 200: tax paid 200, 10100 net foreign income x 14000 basic federal tax / 100000 "
+        "net income = 1414 (half-up to 0.01); credit 200"
+    )
+
+
+def test_renders_a_pooled_calculation_with_business_tax_in_the_foreign_taxes_compared() -> None:
+    # Non-business tax paid 150 plus business tax paid 50: the 200 compared with the threshold.
+    line = pooled_countries(2, "150.00", "10100", "1414.00", "150.00", total_foreign_taxes="200")
+
+    assert render(line) == (
+        "non_compliant_expenses: all 2 countries pooled, total foreign taxes 200 is not more "
+        "than 200: tax paid 150, 10100 net foreign income x 14000 basic federal tax / 100000 "
+        "net income = 1414 (half-up to 0.01); credit 150"
     )
 
 
@@ -4100,6 +4123,81 @@ def test_renders_a_single_country_as_one_country_not_pooled_by_the_threshold() -
     assert render(line) == (
         "non_compliant_expenses: one country: tax paid 1500, 10000 net foreign income x "
         "14000 basic federal tax / 100000 net income = 1400 (half-up to 0.01); credit 1400"
+    )
+
+
+# --- foreign business tax credit (Form T2209 lines 4 to 11) ---------------------------------------
+
+
+def test_renders_business_line_4() -> None:
+    line = ForeignBusinessLine4(NON_COMPLIANT_EXPENSES, 1, D("400.00"), D("50.00"), D("450.00"))
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 1: line 4 = business income tax paid 400 + unused foreign "
+        "tax credits 50 = 450"
+    )
+
+
+def test_renders_business_line_5() -> None:
+    line = ForeignBusinessLine5(
+        NON_COMPLIANT_EXPENSES, 1, D("6000"), D("100000"), D("14500"), CENT, D("870.00")
+    )
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 1: line 5 = 6000 net foreign business income x 14500 "
+        "basic federal tax / 100000 net income = 870 (half-up to 0.01)"
+    )
+
+
+def test_renders_business_line_5_without_rounding() -> None:
+    line = ForeignBusinessLine5(
+        NON_COMPLIANT_EXPENSES, 2, D("1"), D("300"), D("100"), NO_ROUNDING, D("0.3333")
+    )
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 2: line 5 = 1 net foreign business income x 100 basic "
+        "federal tax / 300 net income = 0.3333 (no rounding)"
+    )
+
+
+def test_renders_business_line_7() -> None:
+    line = ForeignBusinessLine7(NON_COMPLIANT_EXPENSES, 1, D("870.00"), D("100"), D("970.00"))
+
+    assert render(line) == "non_compliant_expenses: sheet 1: line 7 = line 5 870 + line 6 100 = 970"
+
+
+def test_renders_business_line_8() -> None:
+    line = ForeignBusinessLine8(NON_COMPLIANT_EXPENSES, 3, D("14500"), D("100"), D("14600"))
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 3: line 8 = basic federal tax 14500 + line 6 100 = 14600"
+    )
+
+
+def test_renders_business_line_10() -> None:
+    line = ForeignBusinessLine10(NON_COMPLIANT_EXPENSES, 1, D("14500"), D("1400.00"), D("13100"))
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 1: line 10 = line 8 14500 - line 3 1400 = 13100"
+    )
+
+
+def test_renders_a_negative_business_line_10() -> None:
+    line = ForeignBusinessLine10(NON_COMPLIANT_EXPENSES, 1, D("100"), D("500"), D("-400"))
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 1: line 10 = line 8 100 - line 3 500 = -400"
+    )
+
+
+def test_renders_business_line_11() -> None:
+    line = ForeignBusinessLine11(
+        NON_COMPLIANT_EXPENSES, 1, D("450"), D("870.00"), D("13100"), D("450")
+    )
+
+    assert render(line) == (
+        "non_compliant_expenses: sheet 1: line 11 = least of line 4 450, line 7 870, "
+        "line 10 13100 = 450"
     )
 
 

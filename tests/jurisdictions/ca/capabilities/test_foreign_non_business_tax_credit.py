@@ -70,10 +70,14 @@ from app.jurisdictions.ca.capabilities.foreign_non_business_tax_credit import (
     ForeignNonBusinessTaxCredit,
 )
 from app.jurisdictions.ca.catalog import (
+    FOREIGN_BUSINESS_TAX_PAID,
+    FOREIGN_BUSINESS_UNUSED_TAX_CREDITS,
     FOREIGN_NON_BUSINESS_TAX_PAID,
+    FOREIGN_SURTAX_OUTSIDE_CANADA,
     FOREIGN_TAX_COUNTRIES,
     FOREIGN_TAX_CREDIT_SHEET_LINE_3,
     FOREIGN_TAX_CREDIT_SHEETS,
+    NET_FOREIGN_BUSINESS_INCOME,
     NET_FOREIGN_NON_BUSINESS_INCOME,
 )
 from app.jurisdictions.ca.trace import ForeignTaxCreditLine, PooledForeignTaxCreditLine
@@ -87,8 +91,10 @@ BASIC_TAX = ArtifactKind("ex/basic_federal_tax", Decimal, non_negative=True)
 CREDIT = ArtifactKind("ex/foreign_credit", Decimal, non_negative=True)
 SHEETS = FOREIGN_TAX_CREDIT_SHEETS
 
-# A country is (line 1 tax paid, net foreign non-business income).
-Country = tuple[str, str]
+# A country is (line 1 tax paid, net foreign non-business income), or those two followed by its
+# four business figures: (business tax paid, unused business credits, net foreign business
+# income, line 6 surtax). The two-figure form has zeros for the business figures.
+Country = tuple[str, ...]
 
 US: Country = ("1500", "10000")
 UK: Country = ("100", "5000")
@@ -135,10 +141,19 @@ def capability(
 
 def countries(*rows: Country) -> Artifact[Any]:
     """A `ca/foreign_tax_countries` artifact of one record per country, in order."""
-    records = [
-        {FOREIGN_NON_BUSINESS_TAX_PAID: D(tax), NET_FOREIGN_NON_BUSINESS_INCOME: D(income)}
-        for tax, income in rows
-    ]
+    records = []
+    for row in rows:
+        tax, income, business_tax, unused, business_income, surtax = (*row, *("0",) * 4)[:6]
+        records.append(
+            {
+                FOREIGN_NON_BUSINESS_TAX_PAID: D(tax),
+                NET_FOREIGN_NON_BUSINESS_INCOME: D(income),
+                FOREIGN_BUSINESS_TAX_PAID: D(business_tax),
+                FOREIGN_BUSINESS_UNUSED_TAX_CREDITS: D(unused),
+                NET_FOREIGN_BUSINESS_INCOME: D(business_income),
+                FOREIGN_SURTAX_OUTSIDE_CANADA: D(surtax),
+            }
+        )
     return Artifact(FOREIGN_TAX_COUNTRIES, RecordList(FOREIGN_TAX_COUNTRIES.fields, records))
 
 
@@ -168,6 +183,25 @@ def sheet_rows(result: CapabilityResult) -> list[tuple[Decimal, Decimal, Decimal
             Decimal(record[FOREIGN_NON_BUSINESS_TAX_PAID]),
             Decimal(record[NET_FOREIGN_NON_BUSINESS_INCOME]),
             Decimal(record[FOREIGN_TAX_CREDIT_SHEET_LINE_3]),
+        )
+        for record in output.value.records
+    ]
+
+
+def business_sheet_rows(
+    *rows: Country, net_income: str = "100000", basic_tax: str = "14000"
+) -> list[tuple[Decimal, Decimal, Decimal, Decimal]]:
+    """The `sheets` output as (business tax paid, unused business credits, net foreign business
+    income used, line 6 surtax) per record, in order."""
+    result = capability().compute(given(*rows, net_income=net_income, basic_tax=basic_tax))
+    (output,) = [a for a in result.outputs if a.kind == SHEETS]
+    assert isinstance(output.value, RecordList)
+    return [
+        (
+            Decimal(record[FOREIGN_BUSINESS_TAX_PAID]),
+            Decimal(record[FOREIGN_BUSINESS_UNUSED_TAX_CREDITS]),
+            Decimal(record[NET_FOREIGN_BUSINESS_INCOME]),
+            Decimal(record[FOREIGN_SURTAX_OUTSIDE_CANADA]),
         )
         for record in output.value.records
     ]
@@ -710,6 +744,138 @@ def test_the_sheets_do_not_change_the_trace() -> None:
     assert isinstance(trace[-1], ItemsTotalLine)
 
 
+# --- computing: the business figures on the sheets ---------------------------------------------
+
+# T2209 note (5) business income tax paid for the year (first part of line 4), note (6) unused
+# business foreign tax credits (second part of line 4), note (7) net foreign business income
+# (line 43900, capped at net income) and line 6 (federal surtax on income allocated to "Other
+# (Outside Canada)"). The credit total is the non-business line 3 only; the business lines are
+# worked from the sheets by the capabilities of lines 4 to 11.
+# Country with 100 non-business tax on 10,000 of income, and 40 of business tax, 5 unused, 6,000
+# of business income and no surtax.
+US_BUSINESS: Country = ("100", "10000", "40", "5", "6000", "0")
+# Country with 60 on 5,000, and 0 of business tax, 10 unused, 3,000 of business income, 20 surtax.
+UK_BUSINESS: Country = ("60", "5000", "0", "10", "3000", "20")
+
+
+def test_the_business_figures_do_not_change_the_total() -> None:
+    # Total foreign taxes 100 + 60 + 40 = 200: pooled, lesser(160, 15,000 x 14,000 / 100,000 =
+    # 2,100) = 160, the non-business line 3 only.
+    assert total(US_BUSINESS, UK_BUSINESS) == D("160")
+
+
+def test_a_single_country_sheet_copies_its_business_figures() -> None:
+    assert business_sheet_rows(US_BUSINESS) == [(D("40"), D("5"), D("6000"), D("0"))]
+    assert sheets(US_BUSINESS) == [(D("100"), D("10000"), D("100"))]
+
+
+def test_a_country_with_a_surtax_copies_it_on_its_sheet() -> None:
+    assert business_sheet_rows(UK_BUSINESS) == [(D("0"), D("10"), D("3000"), D("20"))]
+
+
+def test_pooled_countries_add_their_business_figures_on_the_one_sheet() -> None:
+    # Total foreign taxes 100 + 60 + 40 + 0 = 200, not more than 200 (the unused credits of 5 and
+    # 10 are not taxes paid for the year): one pooled sheet. Business tax 40 + 0, unused 5 + 10,
+    # business income 6,000 + 3,000 = 9,000 (below net income 100,000), surtax 0 + 20.
+    assert business_sheet_rows(US_BUSINESS, UK_BUSINESS) == [(D("40"), D("15"), D("9000"), D("20"))]
+    assert sheets(US_BUSINESS, UK_BUSINESS) == [(D("160"), D("15000"), D("160"))]
+
+
+def test_unused_business_credits_do_not_count_towards_the_200_of_foreign_taxes() -> None:
+    # 100 + 60 of non-business tax and 40 of business tax is 200; 5 + 10 of unused credits would
+    # make 215 if they were counted.
+    assert len(sheets(US_BUSINESS, UK_BUSINESS)) == 1
+
+
+def test_business_tax_paid_pushes_the_total_over_200_into_separate_sheets() -> None:
+    # Non-business tax 100 + 60 = 160 alone is pooled. With 1 of business tax in the UK the total
+    # foreign taxes are 100 + 60 + 40 + 1 = 201, more than 200: one sheet for each country.
+    uk = ("60", "5000", "1", "10", "3000", "20")
+
+    assert len(sheets(US_BUSINESS, UK_BUSINESS)) == 1
+    assert sheets(US_BUSINESS, uk) == [
+        (D("100"), D("10000"), D("100")),
+        (D("60"), D("5000"), D("60")),
+    ]
+    assert business_sheet_rows(US_BUSINESS, uk) == [
+        (D("40"), D("5"), D("6000"), D("0")),
+        (D("1"), D("10"), D("3000"), D("20")),
+    ]
+
+
+def test_business_tax_alone_over_200_gives_separate_sheets() -> None:
+    # No non-business tax at all: business tax paid 150 + 60 = 210 is more than 200.
+    assert business_sheet_rows(
+        ("0", "0", "150", "0", "1000", "0"), ("0", "0", "60", "0", "500", "0")
+    ) == [
+        (D("150"), D("0"), D("1000"), D("0")),
+        (D("60"), D("0"), D("500"), D("0")),
+    ]
+
+
+def test_business_tax_paid_of_exactly_200_in_all_is_pooled() -> None:
+    assert business_sheet_rows(
+        ("0", "0", "150", "0", "1000", "0"), ("0", "0", "50", "0", "500", "0")
+    ) == [(D("200"), D("0"), D("1500"), D("0"))]
+
+
+def test_a_single_country_is_one_sheet_whatever_its_business_tax() -> None:
+    assert business_sheet_rows(("0", "0", "5000", "0", "100", "0")) == [
+        (D("5000"), D("0"), D("100"), D("0"))
+    ]
+
+
+def test_separate_sheets_cap_each_countrys_business_income_at_net_income() -> None:
+    # 150 + 150 = 300 of non-business tax is over 200. Business income 120,000 is capped at the
+    # net income 100,000 on its own sheet; 5,000 stays.
+    assert business_sheet_rows(
+        ("150", "0", "0", "0", "120000", "0"), ("150", "0", "0", "0", "5000", "0")
+    ) == [
+        (D("0"), D("0"), D("100000"), D("0")),
+        (D("0"), D("0"), D("5000"), D("0")),
+    ]
+
+
+def test_a_pooled_sheet_caps_the_summed_business_income_at_net_income() -> None:
+    # Total tax 20 is not over 200: pooled. 70,000 + 60,000 = 130,000 is capped at 100,000; each
+    # country alone is below net income, so the cap comes after the sum (note 7).
+    assert business_sheet_rows(
+        ("10", "0", "0", "0", "70000", "0"), ("10", "0", "0", "0", "60000", "0")
+    ) == [(D("0"), D("0"), D("100000"), D("0"))]
+
+
+def test_a_single_countrys_business_income_above_net_income_is_capped() -> None:
+    assert business_sheet_rows(("0", "0", "0", "0", "150000", "0")) == [
+        (D("0"), D("0"), D("100000"), D("0"))
+    ]
+
+
+def test_the_business_figures_keep_the_callers_order() -> None:
+    assert business_sheet_rows(
+        ("150", "0", "10", "0", "1000", "0"), ("150", "0", "20", "0", "2000", "0")
+    ) == [
+        (D("10"), D("0"), D("1000"), D("0")),
+        (D("20"), D("0"), D("2000"), D("0")),
+    ]
+
+
+def test_the_sheets_keep_the_business_record_fields_of_the_sheet_kind() -> None:
+    (artifact,) = [a for a in capability().compute(given(US_BUSINESS)).outputs if a.kind == SHEETS]
+
+    assert isinstance(artifact.value, RecordList)
+    assert artifact.value.fields == FOREIGN_TAX_CREDIT_SHEETS.fields
+    assert FOREIGN_BUSINESS_TAX_PAID in artifact.value.fields
+
+
+def test_no_countries_have_no_business_sheets() -> None:
+    assert business_sheet_rows() == []
+
+
+def test_a_zero_net_income_is_refused_with_business_figures_too() -> None:
+    with pytest.raises(ValidationError, match="net_income"):
+        business_sheet_rows(US_BUSINESS, net_income="0")
+
+
 # --- trace ---------------------------------------------------------------------------------------
 
 
@@ -741,6 +907,7 @@ def pooled_line(
     line_2: str,
     result: str,
     limit: str = "200",
+    foreign_taxes: str | None = None,
 ) -> Any:
     return PooledForeignTaxCreditLine(
         output=CREDIT,
@@ -749,6 +916,7 @@ def pooled_line(
         income=D(income),
         net_income=D("100000"),
         basic_federal_tax=D("14000"),
+        total_foreign_taxes=D(foreign_taxes or tax),
         threshold=D(limit),
         rounding=CENT,
         line_2=D(line_2),
@@ -811,6 +979,33 @@ def test_traces_the_threshold_the_dataset_gave() -> None:
     assert line.threshold == D("2000")
     assert line.countries == 2
     assert line.tax_paid == D("1600")
+
+
+def test_traces_the_total_foreign_taxes_compared_with_the_threshold() -> None:
+    # Non-business 100 + 60 plus business 40 + 0: the 200 compared with the threshold; the pooled
+    # line's tax paid stays the non-business 160.
+    (line,) = capability().compute(given(US_BUSINESS, UK_BUSINESS)).trace
+
+    assert line == pooled_line(2, "160", "15000", "2100.00", "160", foreign_taxes="200")
+
+
+def test_traces_the_total_foreign_taxes_of_a_single_country() -> None:
+    (line,) = capability().compute(given(US_BUSINESS)).trace
+
+    assert isinstance(line, PooledForeignTaxCreditLine)
+    assert line.tax_paid == D("100")
+    assert line.total_foreign_taxes == D("140")
+
+
+def test_traces_separate_sheets_when_business_tax_pushes_the_total_over_200() -> None:
+    uk = ("60", "5000", "1", "10", "3000", "20")
+
+    first, second, total_line = capability().compute(given(US_BUSINESS, uk)).trace
+
+    assert first == country_line(1, "100", "10000", "1400.00", "100")
+    assert second == country_line(2, "60", "5000", "700.00", "60")
+    assert isinstance(total_line, ItemsTotalLine)
+    assert total_line.total == D("160")
 
 
 def test_traces_no_countries_as_only_an_empty_total() -> None:

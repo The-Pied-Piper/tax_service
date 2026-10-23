@@ -1,7 +1,7 @@
 """The federal catalog: credits against federal tax.
 
-The political contribution credit, the labour-sponsored funds credit, the countries of the foreign
-tax credit and the federal tax less credits.
+The political contribution credit, the labour-sponsored funds credit, the countries and sheets of
+the foreign tax credit with the lines of its business part, and the federal tax less credits.
 """
 
 from __future__ import annotations
@@ -198,14 +198,58 @@ NET_FOREIGN_NON_BUSINESS_INCOME = CATALOG.declare(
 the net income from that country; a field of each record of the foreign tax countries, not an
 artifact of its own."""
 
+FOREIGN_BUSINESS_TAX_PAID = CATALOG.declare("foreign_business_tax_paid", Decimal, non_negative=True)
+"""Business income tax paid to a foreign country for the year, Form T2209 line 4 (43400) "Business
+income tax paid to a foreign country (5) for the year, plus any unused foreign tax credits for that
+country for the 10 years (6) before, and the 3 years after this year", note (5) "Total of business
+income or profits tax you paid to a country or a political subdivision of a country for the
+year.": the first part of line 4; a field of each record of the foreign tax countries and of the
+foreign tax credit sheets, not an artifact of its own."""
+
+FOREIGN_BUSINESS_UNUSED_TAX_CREDITS = CATALOG.declare(
+    "foreign_business_unused_tax_credits", Decimal, non_negative=True
+)
+"""Unused business foreign tax credits of that country, Form T2209 line 4 (43400) "plus any unused
+foreign tax credits for that country for the 10 years (6) before, and the 3 years after this
+year", note (6) "Unused business foreign tax credits can be carried forward 10 years and carried
+back 3 years.": the second part of line 4, one figure for the country; a field of each record of
+the foreign tax countries and of the foreign tax credit sheets, not an artifact of its own."""
+
+NET_FOREIGN_BUSINESS_INCOME = CATALOG.declare(
+    "net_foreign_business_income", Decimal, non_negative=True
+)
+"""Net foreign business income, Form T2209 line 5 "Net foreign business income (7) 43900", note (7)
+"Net amount by which the business income you earned in a foreign country is more than the business
+losses you incurred in that country.": a field of each record of the foreign tax countries and,
+after the cap at net income of note (7), of the foreign tax credit sheets, not an artifact of its
+own."""
+
+FOREIGN_SURTAX_OUTSIDE_CANADA = CATALOG.declare(
+    "foreign_surtax_outside_canada", Decimal, non_negative=True
+)
+"""Federal surtax on income allocated to "Other (Outside Canada)", Form T2209 line 6: "Amount from
+line 10 of Part 2 of Form T2203, Provincial and Territorial Taxes for Multiple Jurisdictions, or 48%
+of the amount from line 42900 of your return. Enter the amount that applies to the country or
+countries you identified at the top of this page.", as the caller enters it, 0 when nothing is
+allocated; a field of each record of the foreign tax countries and of the foreign tax credit
+sheets, not an artifact of its own."""
+
 FOREIGN_TAX_COUNTRIES = RecordListKind.declare(
     CATALOG,
     "foreign_tax_countries",
-    fields=(FOREIGN_NON_BUSINESS_TAX_PAID, NET_FOREIGN_NON_BUSINESS_INCOME),
+    fields=(
+        FOREIGN_NON_BUSINESS_TAX_PAID,
+        NET_FOREIGN_NON_BUSINESS_INCOME,
+        FOREIGN_BUSINESS_TAX_PAID,
+        FOREIGN_BUSINESS_UNUSED_TAX_CREDITS,
+        NET_FOREIGN_BUSINESS_INCOME,
+        FOREIGN_SURTAX_OUTSIDE_CANADA,
+    ),
 )
 """Foreign tax countries, Form T2209 "do the applicable calculation shown on this form for
 non-business and business taxes paid to each country on a separate sheet": a starting list with one
-record for each country, holding line 1 (43100) and line 2 (43300). The list may be empty."""
+record for each country, holding line 1 (43100), line 2 (43300), the two parts of line 4 (43400),
+line 5 (43900) and line 6. The list may be empty."""
 
 FOREIGN_TAX_CREDIT_SHEET_LINE_3 = CATALOG.declare(
     "foreign_tax_credit_sheet_line_3", Decimal, non_negative=True
@@ -221,11 +265,61 @@ FOREIGN_TAX_CREDIT_SHEETS = RecordListKind.declare(
         FOREIGN_NON_BUSINESS_TAX_PAID,
         NET_FOREIGN_NON_BUSINESS_INCOME,
         FOREIGN_TAX_CREDIT_SHEET_LINE_3,
+        FOREIGN_BUSINESS_TAX_PAID,
+        FOREIGN_BUSINESS_UNUSED_TAX_CREDITS,
+        NET_FOREIGN_BUSINESS_INCOME,
+        FOREIGN_SURTAX_OUTSIDE_CANADA,
     ),
 )
 """Foreign tax credit sheets, Form T2209 "on a separate sheet": one record for each sheet worked, in
 order, holding line 1 (43100), the net foreign income used on line 2 (43300, after the cap at net
-income) and line 3. The list may be empty."""
+income), line 3, the two parts of line 4 (43400), the net foreign business income used on line 5
+(43900, after the cap at net income) and line 6. The list may be empty."""
+
+FOREIGN_BUSINESS_TAX_CREDIT_LINE_4 = CATALOG.declare(
+    "foreign_business_tax_credit_line_4", Decimal, non_negative=True
+)
+"""Form T2209 line 4 (43400) "Business income tax paid to a foreign country (5) for the year, plus
+any unused foreign tax credits for that country for the 10 years (6) before, and the 3 years after
+this year": the total over the sheets."""
+
+FOREIGN_BUSINESS_TAX_CREDIT_LINE_5 = CATALOG.declare(
+    "foreign_business_tax_credit_line_5", Decimal, non_negative=True
+)
+"""Form T2209 line 5 "Net foreign business income (7) 43900" "× Basic federal tax (8)" over "Net
+income (3)": the total over the sheets, each rounded."""
+
+FOREIGN_BUSINESS_TAX_CREDIT_LINE_7 = CATALOG.declare(
+    "foreign_business_tax_credit_line_7", Decimal, non_negative=True
+)
+"""Form T2209 line 7 "Add lines 5 and 6.": the total over the sheets."""
+
+FOREIGN_BUSINESS_TAX_CREDIT_LINE_8 = CATALOG.declare(
+    "foreign_business_tax_credit_line_8", Decimal, non_negative=True
+)
+"""Form T2209 line 8 "Add basic federal tax (8) and the amount from line 6.": the total over the
+sheets."""
+
+FOREIGN_BUSINESS_TAX_CREDIT_LINE_10 = CATALOG.declare(
+    "foreign_business_tax_credit_line_10", Decimal
+)
+"""Form T2209 line 10 "Line 8 minus line 9": the total over the sheets; it prints no "(if
+negative, enter "0")", so it can be below zero."""
+
+FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT = CATALOG.declare(
+    "federal_business_foreign_tax_credit", Decimal, non_negative=True
+)
+"""Federal business foreign tax credit, Form T2209 line 11 "Enter whichever is less: the amount
+from line 4, 7 or 10. Federal business foreign tax credit": the total over the sheets of the
+least of the sheet's lines 4, 7 and 10."""
+
+FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT = CATALOG.declare(
+    "federal_foreign_tax_credit_before_limit", Decimal, non_negative=True
+)
+"""Federal foreign tax credit before the limit, Form T2209 line 13 "Add lines 11 and 12." "Federal
+foreign tax credit": line 11 plus line 12, before "The amount on line 13 should not be more than
+the total of the amount on line 42900 of your return, plus any federal surtax on income earned
+outside of Canada"."""
 
 ITC_APPRENTICE_SALARY_AND_WAGES = CATALOG.declare(
     "itc_apprentice_salary_and_wages", Decimal, non_negative=True

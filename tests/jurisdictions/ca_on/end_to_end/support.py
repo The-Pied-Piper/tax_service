@@ -1618,11 +1618,16 @@ def principal_residence_properties(*rows: ResidenceProperty) -> Artifact[RecordL
 
 
 def foreign_tax_countries(*rows: tuple[str, str]) -> Artifact[RecordList]:
-    """The Form T2209 countries, one record per (line 43100, line 43300) row, in the order given."""
-    records: list[dict[ArtifactKind[Any], object]] = [
-        {FOREIGN_NON_BUSINESS_TAX_PAID: D(tax_paid), NET_FOREIGN_NON_BUSINESS_INCOME: D(income)}
-        for tax_paid, income in rows
-    ]
+    """The Form T2209 countries, one record per (line 43100, line 43300) row, in the order given;
+    their business figures (lines 4 to 6) are 0."""
+    records: list[dict[ArtifactKind[Any], object]] = []
+    for tax_paid, income in rows:
+        record: dict[ArtifactKind[Any], object] = {
+            field: D(0) for field in FOREIGN_TAX_COUNTRIES.fields
+        }
+        record[FOREIGN_NON_BUSINESS_TAX_PAID] = D(tax_paid)
+        record[NET_FOREIGN_NON_BUSINESS_INCOME] = D(income)
+        records.append(record)
     return Artifact(FOREIGN_TAX_COUNTRIES, RecordList(FOREIGN_TAX_COUNTRIES.fields, records))
 
 

@@ -88,6 +88,12 @@ from app.jurisdictions.ca.trace import (
     DispositionGainLine,
     DispositionGainOnlyLine,
     DispositionProceedsLine,
+    ForeignBusinessLine4,
+    ForeignBusinessLine5,
+    ForeignBusinessLine7,
+    ForeignBusinessLine8,
+    ForeignBusinessLine10,
+    ForeignBusinessLine11,
     ForeignTaxCreditLine,
     OtherDependantMedicalLine,
     PooledForeignTaxCreditLine,
@@ -418,11 +424,38 @@ def pooled_foreign_tax_credit_line() -> PooledForeignTaxCreditLine:
         D("10100"),
         D("100000"),
         D("14000"),
+        D("250"),
         D("200"),
         CENT,
         D("1414.00"),
         D("200"),
     )
+
+
+def foreign_business_line_4() -> ForeignBusinessLine4:
+    return ForeignBusinessLine4(NON_COMPLIANT, 2, D("400"), D("50"), D("450"))
+
+
+def foreign_business_line_5() -> ForeignBusinessLine5:
+    return ForeignBusinessLine5(
+        NON_COMPLIANT, 2, D("6000"), D("100000"), D("14500"), CENT, D("870.00")
+    )
+
+
+def foreign_business_line_7() -> ForeignBusinessLine7:
+    return ForeignBusinessLine7(NON_COMPLIANT, 2, D("870.00"), D("100"), D("970.00"))
+
+
+def foreign_business_line_8() -> ForeignBusinessLine8:
+    return ForeignBusinessLine8(NON_COMPLIANT, 2, D("14500"), D("100"), D("14600"))
+
+
+def foreign_business_line_10() -> ForeignBusinessLine10:
+    return ForeignBusinessLine10(NON_COMPLIANT, 2, D("14600"), D("1400"), D("13200"))
+
+
+def foreign_business_line_11() -> ForeignBusinessLine11:
+    return ForeignBusinessLine11(NON_COMPLIANT, 2, D("450"), D("970.00"), D("13200"), D("450"))
 
 
 def provincial_foreign_tax_credit_line() -> ProvincialForeignTaxCreditLine:
@@ -622,6 +655,12 @@ ALL_LINES = [
     disposition_gain_line,
     foreign_tax_credit_line,
     pooled_foreign_tax_credit_line,
+    foreign_business_line_4,
+    foreign_business_line_5,
+    foreign_business_line_7,
+    foreign_business_line_8,
+    foreign_business_line_10,
+    foreign_business_line_11,
     disposition_gain_only_line,
     items_total_line,
     other_dependant_medical_line,
@@ -2787,6 +2826,7 @@ def test_pooled_foreign_tax_credit_line_fields_in_order() -> None:
         income=D("10100"),
         net_income=D("100000"),
         basic_federal_tax=D("14000"),
+        total_foreign_taxes=D("250"),
         threshold=D("200"),
         rounding=CENT,
         line_2=D("1414.00"),
@@ -2799,6 +2839,7 @@ def test_pooled_foreign_tax_credit_line_fields_in_order() -> None:
         "income",
         "net_income",
         "basic_federal_tax",
+        "total_foreign_taxes",
         "threshold",
         "rounding",
         "line_2",
@@ -2825,6 +2866,7 @@ def test_pooled_foreign_tax_credit_lines_differ_by_each_field() -> None:
         D("10100"),
         D("100000"),
         D("14000"),
+        D("250"),
         D("200"),
         CENT,
         D("1414.00"),
@@ -2837,6 +2879,7 @@ def test_pooled_foreign_tax_credit_lines_differ_by_each_field() -> None:
         D("10101"),
         D("100001"),
         D("14001"),
+        D("251"),
         D("250"),
         NO_ROUNDING,
         D("1414.01"),
@@ -2845,6 +2888,98 @@ def test_pooled_foreign_tax_credit_lines_differ_by_each_field() -> None:
     for index, changed in enumerate(changes):
         varied = [*args[:index], changed, *args[index + 1 :]]
         assert line != PooledForeignTaxCreditLine(*varied)
+
+
+# (class, factory, field names after output and position, the value of each, the result)
+BUSINESS_LINES: list[tuple[type, Any, list[str], list[Any]]] = [
+    (
+        ForeignBusinessLine4,
+        foreign_business_line_4,
+        ["tax_paid", "unused_credits", "result"],
+        [D("400"), D("50"), D("450")],
+    ),
+    (
+        ForeignBusinessLine5,
+        foreign_business_line_5,
+        ["income", "net_income", "basic_federal_tax", "rounding", "result"],
+        [D("6000"), D("100000"), D("14500"), CENT, D("870.00")],
+    ),
+    (
+        ForeignBusinessLine7,
+        foreign_business_line_7,
+        ["line_5", "line_6", "result"],
+        [D("870.00"), D("100"), D("970.00")],
+    ),
+    (
+        ForeignBusinessLine8,
+        foreign_business_line_8,
+        ["basic_federal_tax", "line_6", "result"],
+        [D("14500"), D("100"), D("14600")],
+    ),
+    (
+        ForeignBusinessLine10,
+        foreign_business_line_10,
+        ["line_8", "line_3", "result"],
+        [D("14600"), D("1400"), D("13200")],
+    ),
+    (
+        ForeignBusinessLine11,
+        foreign_business_line_11,
+        ["line_4", "line_7", "line_10", "result"],
+        [D("450"), D("970.00"), D("13200"), D("450")],
+    ),
+]
+BUSINESS_IDS = [cls.__name__ for cls, *_ in BUSINESS_LINES]
+
+
+@pytest.mark.parametrize(("cls", "make", "names", "values"), BUSINESS_LINES, ids=BUSINESS_IDS)
+def test_foreign_business_lines_have_their_fields_in_order(
+    cls: type, make: Any, names: list[str], values: list[Any]
+) -> None:
+    line = make()
+
+    assert [f.name for f in fields(line)] == ["output", "position", *names]
+    assert line == cls(NON_COMPLIANT, 2, *values)
+    assert line.output is NON_COMPLIANT
+    assert line.position == 2
+    assert type(line.position) is int
+
+
+@pytest.mark.parametrize(("cls", "make", "names", "values"), BUSINESS_LINES, ids=BUSINESS_IDS)
+def test_foreign_business_line_amount_is_the_result(
+    cls: type, make: Any, names: list[str], values: list[Any]
+) -> None:
+    line = make()
+
+    assert line.amount == values[-1]
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+@pytest.mark.parametrize(("cls", "make", "names", "values"), BUSINESS_LINES, ids=BUSINESS_IDS)
+def test_foreign_business_lines_differ_by_each_field(
+    cls: type, make: Any, names: list[str], values: list[Any]
+) -> None:
+    line = make()
+    args: list[Any] = [NON_COMPLIANT, 2, *values]
+    for index in range(len(args)):
+        changed: Any
+        if index == 0:
+            changed = ArtifactKind("ex/other_expenses", Decimal)
+        elif index == 1:
+            changed = 3
+        elif args[index] == CENT:
+            changed = NO_ROUNDING
+        else:
+            changed = args[index] + D("1")
+        varied = [*args[:index], changed, *args[index + 1 :]]
+        assert line != cls(*varied)
+
+
+def test_the_foreign_business_lines_are_not_each_other() -> None:
+    classes = [cls for cls, *_ in BUSINESS_LINES]
+    for cls, make, *_ in BUSINESS_LINES:
+        for other in classes:
+            assert isinstance(make(), other) is (other is cls)
 
 
 def test_a_pooled_foreign_tax_credit_line_is_not_a_foreign_tax_credit_line() -> None:
