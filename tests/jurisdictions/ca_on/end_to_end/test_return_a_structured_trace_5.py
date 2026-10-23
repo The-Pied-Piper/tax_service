@@ -82,7 +82,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             sign=D("100.00"),
             chosen_kind=RENTAL_IMMEDIATE_EXPENSING_SHARE,
             chosen_value=D("0.00"),
-        )
+        ),
     }
     # Schedule ON479-A line 7: 115,000 is "more than $114,000 but not more than $117,600: 19%".
     assert bands == {
