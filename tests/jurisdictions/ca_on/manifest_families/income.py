@@ -13,6 +13,45 @@ from app.jurisdictions.ca.capabilities.disposition_gains import DispositionGains
 from app.jurisdictions.ca.capabilities.disposition_gains_only import DispositionGainsOnly
 from app.jurisdictions.ca.capabilities.disposition_proceeds import DispositionProceeds
 from app.jurisdictions.ca.capabilities.principal_residence_gain import PrincipalResidenceGain
+from app.jurisdictions.ca.capabilities.principal_residence_line_27 import (
+    PrincipalResidencePart2Line27,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_line_29 import (
+    PrincipalResidencePart2Line29,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_line_30 import (
+    PrincipalResidencePart2Line30,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_line_32 import (
+    PrincipalResidencePart2Line32,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_line_33 import (
+    PrincipalResidencePart2Line33,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_line_38 import (
+    PrincipalResidencePart2Line38,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_line_39 import (
+    PrincipalResidencePart2Line39,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_line_42 import (
+    PrincipalResidencePart2Line42,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_line_44 import (
+    PrincipalResidencePart2Line44,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_line_45 import (
+    PrincipalResidencePart2Line45,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_line_48 import (
+    PrincipalResidencePart2Line48,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_line_51 import (
+    PrincipalResidencePart2Line51,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_line_53 import (
+    PrincipalResidencePart2Line53,
+)
 from app.jurisdictions.ca.catalog import (
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     BOND_DISPOSITIONS,
@@ -81,6 +120,19 @@ from app.jurisdictions.ca.catalog import (
     PERSONAL_USE_PROPERTY_GAIN,
     PERSONAL_USE_PROPERTY_GAIN_ROWS,
     PRINCIPAL_RESIDENCE_GAIN,
+    PRINCIPAL_RESIDENCE_LINE_27,
+    PRINCIPAL_RESIDENCE_LINE_29,
+    PRINCIPAL_RESIDENCE_LINE_30,
+    PRINCIPAL_RESIDENCE_LINE_32,
+    PRINCIPAL_RESIDENCE_LINE_33,
+    PRINCIPAL_RESIDENCE_LINE_38,
+    PRINCIPAL_RESIDENCE_LINE_39,
+    PRINCIPAL_RESIDENCE_LINE_42,
+    PRINCIPAL_RESIDENCE_LINE_44,
+    PRINCIPAL_RESIDENCE_LINE_45,
+    PRINCIPAL_RESIDENCE_LINE_48,
+    PRINCIPAL_RESIDENCE_LINE_51,
+    PRINCIPAL_RESIDENCE_LINE_53,
     PRINCIPAL_RESIDENCE_PROPERTIES,
     PROFESSIONAL_INCOME,
     QFFP_DISPOSITIONS,
@@ -218,6 +270,21 @@ OUTPUTS = frozenset(
         "ca/bond_proceeds",
         "ca/crypto_asset_proceeds",
         "ca/other_foreclosure_proceeds",
+        # Form T2091(IND) Part 2 lines 27 to 53 (the total over the properties of each line): no
+        # step reads them, so each is declared as an unread printed line.
+        "ca/principal_residence_line_27",
+        "ca/principal_residence_line_29",
+        "ca/principal_residence_line_30",
+        "ca/principal_residence_line_32",
+        "ca/principal_residence_line_33",
+        "ca/principal_residence_line_38",
+        "ca/principal_residence_line_39",
+        "ca/principal_residence_line_42",
+        "ca/principal_residence_line_44",
+        "ca/principal_residence_line_45",
+        "ca/principal_residence_line_48",
+        "ca/principal_residence_line_51",
+        "ca/principal_residence_line_53",
     }
 )
 
@@ -336,6 +403,116 @@ STEPS = {
         params={"rounding": "ca/principal_residence_gain_rounding"},
         consumes={"properties": "ca/principal_residence_properties"},
         produces={"output": "ca/principal_residence_gain"},
+    ),
+    # Form T2091(IND) Part 2 line 27 "Line 25 minus line 26" "Pre-1982 gain before principal
+    # residence exemption": the total over the properties of that line of each one (0 where the form
+    # says to enter "0").
+    CapabilitySelection(
+        name="ca/principal_residence_line_27",
+        params={"rounding": "ca/principal_residence_gain_rounding"},
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_line_27"},
+    ),
+    # Form T2091(IND) Part 2 line 29 "Line 2 plus 1 (see note on page 4)": the total over the
+    # properties of that line of each one (0 where the area is not completed).
+    CapabilitySelection(
+        name="ca/principal_residence_line_29",
+        params={"rounding": "ca/principal_residence_gain_rounding"},
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_line_29"},
+    ),
+    # Form T2091(IND) Part 2 line 30 "Multiply line 28 by line 29.": the total over the properties
+    # of that line of each one (0 where the area is not completed).
+    CapabilitySelection(
+        name="ca/principal_residence_line_30",
+        params={"rounding": "ca/principal_residence_gain_rounding"},
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_line_30"},
+    ),
+    # Form T2091(IND) Part 2 line 32 "Divide line 30 by line 31.": the total over the properties of
+    # that line of each one (0 where the area is not completed).
+    CapabilitySelection(
+        name="ca/principal_residence_line_32",
+        params={"rounding": "ca/principal_residence_gain_rounding"},
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_line_32"},
+    ),
+    # Form T2091(IND) Part 2 line 33 "Line 27 minus line 32 (if negative, enter "0")" "Pre-1982
+    # gain": the total over the properties of that line of each one (0 where the form says to enter
+    # "0").
+    CapabilitySelection(
+        name="ca/principal_residence_line_33",
+        params={"rounding": "ca/principal_residence_gain_rounding"},
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_line_33"},
+    ),
+    # Form T2091(IND) Part 2 line 38 "Add lines 35 to 37.": the total over the properties of that
+    # line of each one (0 where the area is not completed).
+    CapabilitySelection(
+        name="ca/principal_residence_line_38",
+        params={"rounding": "ca/principal_residence_gain_rounding"},
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_line_38"},
+    ),
+    # Form T2091(IND) Part 2 line 39 "Line 34 minus line 38" "Post-1981 gain before principal
+    # residence exemption": the total over the properties of that line of each one (0 where the form
+    # says to enter "0").
+    CapabilitySelection(
+        name="ca/principal_residence_line_39",
+        params={"rounding": "ca/principal_residence_gain_rounding"},
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_line_39"},
+    ),
+    # Form T2091(IND) Part 2 line 42 "Multiply line 40 by line 41.": the total over the properties
+    # of that line of each one (0 where the area is not completed).
+    CapabilitySelection(
+        name="ca/principal_residence_line_42",
+        params={"rounding": "ca/principal_residence_gain_rounding"},
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_line_42"},
+    ),
+    # Form T2091(IND) Part 2 line 44 "Divide line 42 by line 43.": the total over the properties of
+    # that line of each one (0 where the area is not completed).
+    CapabilitySelection(
+        name="ca/principal_residence_line_44",
+        params={"rounding": "ca/principal_residence_gain_rounding"},
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_line_44"},
+    ),
+    # Form T2091(IND) Part 2 line 45 "Line 39 minus line 44 (if negative, enter "0")" "Post-1981
+    # gain": the total over the properties of that line of each one (0 where the form says to enter
+    # "0").
+    CapabilitySelection(
+        name="ca/principal_residence_line_45",
+        params={"rounding": "ca/principal_residence_gain_rounding"},
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_line_45"},
+    ),
+    # Form T2091(IND) Part 2 line 48 "Line 46 minus line 47 (if negative, enter "0")" "Post-1981
+    # loss": the total over the properties of that line of each one (0 where the form says to enter
+    # "0").
+    CapabilitySelection(
+        name="ca/principal_residence_line_48",
+        params={"rounding": "ca/principal_residence_gain_rounding"},
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_line_48"},
+    ),
+    # Form T2091(IND) Part 2 line 51 "Line 49 plus line 50": the total over the properties of that
+    # line of each one (0 where the area is not completed).
+    CapabilitySelection(
+        name="ca/principal_residence_line_51",
+        params={"rounding": "ca/principal_residence_gain_rounding"},
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_line_51"},
+    ),
+    # Form T2091(IND) Part 2 line 53 "Line 51 minus line 52 (if negative, enter "0")" "Net capital
+    # gain": the total over the properties of that line of each one (0 where the form says to enter
+    # "0").
+    CapabilitySelection(
+        name="ca/principal_residence_line_53",
+        params={"rounding": "ca/principal_residence_gain_rounding"},
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_line_53"},
     ),
     # Part 3, Personal-use property: "Line 9 and line 15800: Total gain only (add all the amounts
     # under column 5)": the rows' gains, a row's loss counting 0, then line 9 itself, a sum of
@@ -791,6 +968,71 @@ WIRING = {
         PrincipalResidenceGain,
         frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
         frozenset({PRINCIPAL_RESIDENCE_GAIN}),
+    ),
+    (
+        PrincipalResidencePart2Line27,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_LINE_27}),
+    ),
+    (
+        PrincipalResidencePart2Line29,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_LINE_29}),
+    ),
+    (
+        PrincipalResidencePart2Line30,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_LINE_30}),
+    ),
+    (
+        PrincipalResidencePart2Line32,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_LINE_32}),
+    ),
+    (
+        PrincipalResidencePart2Line33,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_LINE_33}),
+    ),
+    (
+        PrincipalResidencePart2Line38,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_LINE_38}),
+    ),
+    (
+        PrincipalResidencePart2Line39,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_LINE_39}),
+    ),
+    (
+        PrincipalResidencePart2Line42,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_LINE_42}),
+    ),
+    (
+        PrincipalResidencePart2Line44,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_LINE_44}),
+    ),
+    (
+        PrincipalResidencePart2Line45,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_LINE_45}),
+    ),
+    (
+        PrincipalResidencePart2Line48,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_LINE_48}),
+    ),
+    (
+        PrincipalResidencePart2Line51,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_LINE_51}),
+    ),
+    (
+        PrincipalResidencePart2Line53,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_LINE_53}),
     ),
     (
         Sum,

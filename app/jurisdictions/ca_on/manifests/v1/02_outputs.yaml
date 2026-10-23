@@ -25,6 +25,21 @@ outputs:
   - ca/bond_proceeds
   - ca/crypto_asset_proceeds
   - ca/other_foreclosure_proceeds
+  # Form T2091(IND) Part 2 lines 27 to 53 (the total over the properties of each line): no
+  # step reads them, so each is declared as an unread printed line.
+  - ca/principal_residence_line_27
+  - ca/principal_residence_line_29
+  - ca/principal_residence_line_30
+  - ca/principal_residence_line_32
+  - ca/principal_residence_line_33
+  - ca/principal_residence_line_38
+  - ca/principal_residence_line_39
+  - ca/principal_residence_line_42
+  - ca/principal_residence_line_44
+  - ca/principal_residence_line_45
+  - ca/principal_residence_line_48
+  - ca/principal_residence_line_51
+  - ca/principal_residence_line_53
   - ca/cpp_second_additional_earnings_maximum
   - ca-on/applies_for_energy_and_property_tax_credit
   - ca-on/applies_for_northern_energy_credit
