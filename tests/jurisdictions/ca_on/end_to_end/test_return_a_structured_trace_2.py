@@ -698,9 +698,24 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_INCOME_CREDITED_NOT_RECEIVED,
     INVESTMENT_INCOME_WITHOUT_A_SLIP,
     INVESTMENT_ROYALTIES,
+    ITC_AGRICULTURAL_SRED_CREDIT,
+    ITC_APPRENTICESHIP_CREDIT,
+    ITC_APPRENTICESHIP_T3_BOX_40,
+    ITC_APPRENTICESHIP_WAGES_TOTAL,
+    ITC_APPRENTICESHIP_WAGES_WITH_T3,
+    ITC_CRITICAL_MINERAL_CREDIT,
+    ITC_MINERAL_EXPLORATION_CREDIT,
+    ITC_NONREFUNDABLE_CREDITS,
+    ITC_QUALIFIED_PROPERTY_CREDIT,
     ITC_RECAPTURE,
     ITC_RECAPTURE_AT_15_PERCENT,
     ITC_RECAPTURE_AT_20_PERCENT,
+    ITC_REFUNDABLE_CREDITS,
+    ITC_SRED_CREDIT,
+    ITC_SRED_PARTNERSHIP_ALLOCATION,
+    ITC_SRED_REPAYMENT_CREDIT,
+    ITC_SRED_REPAYMENT_CREDIT_2014_AND_PRIOR,
+    ITC_SRED_REPAYMENT_CREDIT_2015_AND_AFTER,
     JOURNALISM_LABOUR_TAX_CREDIT,
     LABOUR_SPONSORED_FUNDS_CREDIT,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
@@ -1354,6 +1369,43 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             RC381_PART_3_LINE_69,
             ((RC381_PART_3_LINE_61, D("4034.10")), (RC381_PART_3_LINE_68, D("0.00"))),
             D("4034.10"),
+        ),
+        # Form T2038(IND) itc refundable credits: every part is 0.
+        ITC_REFUNDABLE_CREDITS: SumLine(
+            ITC_REFUNDABLE_CREDITS,
+            (
+                (ITC_SRED_CREDIT, D("0")),
+                (ITC_AGRICULTURAL_SRED_CREDIT, D("0")),
+                (ITC_SRED_PARTNERSHIP_ALLOCATION, D("0")),
+                (ITC_QUALIFIED_PROPERTY_CREDIT, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T2038(IND) itc apprenticeship wages with t3: every part is 0.
+        ITC_APPRENTICESHIP_WAGES_WITH_T3: SumLine(
+            ITC_APPRENTICESHIP_WAGES_WITH_T3,
+            ((ITC_APPRENTICESHIP_WAGES_TOTAL, D("0")), (ITC_APPRENTICESHIP_T3_BOX_40, D("0"))),
+            D("0"),
+        ),
+        # Form T2038(IND) itc sred repayment credit: every part is 0.
+        ITC_SRED_REPAYMENT_CREDIT: SumLine(
+            ITC_SRED_REPAYMENT_CREDIT,
+            (
+                (ITC_SRED_REPAYMENT_CREDIT_2014_AND_PRIOR, D("0")),
+                (ITC_SRED_REPAYMENT_CREDIT_2015_AND_AFTER, D("0")),
+            ),
+            D("0"),
+        ),
+        # Form T2038(IND) itc nonrefundable credits: every part is 0.
+        ITC_NONREFUNDABLE_CREDITS: SumLine(
+            ITC_NONREFUNDABLE_CREDITS,
+            (
+                (ITC_MINERAL_EXPLORATION_CREDIT, D("0")),
+                (ITC_CRITICAL_MINERAL_CREDIT, D("0")),
+                (ITC_APPRENTICESHIP_CREDIT, D("0")),
+                (ITC_SRED_REPAYMENT_CREDIT, D("0")),
+            ),
+            D("0"),
         ),
         # Form T691 Part 7 line 4 "Line 2 plus line 3": line 2, the basic federal tax (16951.38),
         # and line 3, the recapture of investment tax credit (0.00): 16951.38.

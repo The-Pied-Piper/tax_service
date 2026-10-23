@@ -32,6 +32,7 @@ from app.jurisdictions.ca.catalog.capital_gains_deduction_charts import *  # noq
 from app.jurisdictions.ca.catalog.personal_amounts import *  # noqa: F403
 from app.jurisdictions.ca.catalog.non_refundable_credits import *  # noqa: F403
 from app.jurisdictions.ca.catalog.credits_against_federal_tax import *  # noqa: F403
+from app.jurisdictions.ca.catalog.investment_tax_credit import *  # noqa: F403
 from app.jurisdictions.ca.catalog.resp_aips import *  # noqa: F403
 from app.jurisdictions.ca.catalog.other_inputs import *  # noqa: F403
 from app.jurisdictions.ca.catalog.net_tax import *  # noqa: F403

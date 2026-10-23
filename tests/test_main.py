@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1307
+        == 1320
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1307
+        == 1320
     )
 
 
@@ -1330,6 +1330,27 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/itc_apprentice_salary_and_wages",
         "ca/itc_apprentices",
         "ca/itc_apprenticeship_wages_total",
+        "ca/itc_sred_expenditures",
+        "ca/itc_agricultural_sred_contributions",
+        "ca/itc_sred_partnership_allocation",
+        "ca/itc_qualified_property",
+        "ca/itc_mineral_exploration_expenditures",
+        "ca/itc_critical_mineral_expenditures",
+        "ca/itc_apprenticeship_t3_box_40",
+        "ca/itc_sred_repayment_2014_and_prior",
+        "ca/itc_sred_repayment_2015_and_after",
+        "ca/itc_sred_credit",
+        "ca/itc_agricultural_sred_credit",
+        "ca/itc_qualified_property_credit",
+        "ca/itc_mineral_exploration_credit",
+        "ca/itc_critical_mineral_credit",
+        "ca/itc_apprenticeship_wages_with_t3",
+        "ca/itc_apprenticeship_credit",
+        "ca/itc_sred_repayment_credit_2014_and_prior",
+        "ca/itc_sred_repayment_credit_2015_and_after",
+        "ca/itc_sred_repayment_credit",
+        "ca/itc_refundable_credits",
+        "ca/itc_nonrefundable_credits",
         "ca/spouses_claimed",
         "ca/spouse_caregiver_eligible",
         "ca/spouse_net_income",
@@ -2361,7 +2382,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1307
+        == 1320
     )
     assert (
         len(
@@ -2369,7 +2390,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1307
+        == 1320
     )
 
 
@@ -2382,7 +2403,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1307
+        == 1320
     )
     assert (
         len(
@@ -2390,7 +2411,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1307
+        == 1320
     )
 
 
