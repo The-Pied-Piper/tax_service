@@ -860,7 +860,6 @@ from app.jurisdictions.ca.catalog import (
     SPLIT_INCOME_LINE_20,
     SPLIT_INCOME_LINE_21,
     SPLIT_INCOME_LINE_22,
-    SPLIT_INCOME_LINE_24,
     SPLIT_INCOME_LINE_29,
     SPLIT_INCOME_LINE_30,
     SPOUSE_AMOUNT,
@@ -3898,22 +3897,18 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     # Form T1206 Part 1 "(If the TOSI-adjusted net income at line 6 is negative, use the negative
-    # value when it is part of an adjusted net income calculation, otherwise use zero.)" and Part 2
-    # line 24 "Line 22 minus line 23 (if negative, enter "0")", line 23 not being wired, so line 22
-    # alone: both floored sums, in their own trace line class.
+    # value when it is part of an adjusted net income calculation, otherwise use zero.)": the
+    # floored sum, in its own trace line class.
     sum_floors = {
         line.output: line
         for line in trace
         if isinstance(line, SumNotBelowZeroLine)
-        and line.output in (TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO, SPLIT_INCOME_LINE_24)
+        and line.output == TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO
     }
     assert sum_floors == {
         TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO: SumNotBelowZeroLine(
             output=TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
             parts=((TOTAL_SPLIT_INCOME, D("0")), (NET_INCOME_SIGNED, D("115000"))),
             total=D("115000"),
-        ),
-        SPLIT_INCOME_LINE_24: SumNotBelowZeroLine(
-            output=SPLIT_INCOME_LINE_24, parts=((SPLIT_INCOME_LINE_22, D("0")),), total=D("0")
         ),
     }

@@ -126,6 +126,7 @@ from app.jurisdictions.ca.catalog import (
     SOCIAL_BENEFITS_REPAYMENT_APPLIES,
     SPLIT_INCOME_DIVIDENDS,
     SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
+    SPLIT_INCOME_FROM_FOREIGN_SOURCES,
     STANDARD_AMOUNT_ALLOCATED,
     STANDARD_AMOUNT_ALLOCATED_1,
     STANDARD_AMOUNT_ALLOCATED_2,
@@ -134,6 +135,7 @@ from app.jurisdictions.ca.catalog import (
     TOSI_ADJUSTED_NET_INCOME,
     TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOTAL_CARRYING_CHARGES,
+    TOTAL_INCOME_FROM_FOREIGN_SOURCES,
     TOTAL_INTEREST_EXPENSES,
     TOTAL_OTHER_EXPENSES,
     TOTAL_SPLIT_INCOME,
@@ -445,6 +447,8 @@ def test_the_deductions_kinds_are_the_registered_ones(registry: ArtifactRegistry
         is SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE
     )
     assert registry.get("ca/other_split_income") is OTHER_SPLIT_INCOME
+    assert registry.get("ca/split_income_from_foreign_sources") is SPLIT_INCOME_FROM_FOREIGN_SOURCES
+    assert registry.get("ca/total_income_from_foreign_sources") is TOTAL_INCOME_FROM_FOREIGN_SOURCES
     assert registry.get("ca/total_split_income") is TOTAL_SPLIT_INCOME
     assert registry.get("ca/tosi_adjusted_net_income") is TOSI_ADJUSTED_NET_INCOME
     assert (
@@ -537,6 +541,8 @@ def test_the_deductions_kinds_are_money() -> None:
         SPLIT_INCOME_DIVIDENDS,
         SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
         OTHER_SPLIT_INCOME,
+        SPLIT_INCOME_FROM_FOREIGN_SOURCES,
+        TOTAL_INCOME_FROM_FOREIGN_SOURCES,
         TOTAL_SPLIT_INCOME,
         TOSI_ADJUSTED_NET_INCOME,
         TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
@@ -601,11 +607,14 @@ def test_the_tosi_adjusted_net_income_not_below_zero_is_its_non_negative_twin(
 
 
 def test_the_t1206_part_1_amounts_are_non_negative_decimals(registry: ArtifactRegistry) -> None:
-    # Lines 1 to 3 are the caller's amounts of split income, and line 4 adds them.
+    # Lines 1 to 3 are the caller's amounts of split income, and line 4 adds them; lines 68370 and
+    # 68380 are the caller's amounts from foreign sources.
     for kind in (
         SPLIT_INCOME_DIVIDENDS,
         SPLIT_INCOME_DIVIDENDS_OTHER_THAN_ELIGIBLE,
         OTHER_SPLIT_INCOME,
+        SPLIT_INCOME_FROM_FOREIGN_SOURCES,
+        TOTAL_INCOME_FROM_FOREIGN_SOURCES,
         TOTAL_SPLIT_INCOME,
     ):
         assert kind.identifier not in SIGNED, kind.identifier

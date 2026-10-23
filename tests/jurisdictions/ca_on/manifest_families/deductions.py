@@ -206,6 +206,8 @@ INPUTS = frozenset(
         "ca/split_income_dividends",
         "ca/split_income_dividends_other_than_eligible",
         "ca/other_split_income",
+        "ca/split_income_from_foreign_sources",
+        "ca/total_income_from_foreign_sources",
         "ca/total_carrying_charges",
         "ca/total_interest_expenses",
         "ca/total_other_expenses",

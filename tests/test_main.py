@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1037
+        == 1038
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1037
+        == 1038
     )
 
 
@@ -882,6 +882,8 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/split_income_dividends",
         "ca/split_income_dividends_other_than_eligible",
         "ca/other_split_income",
+        "ca/split_income_from_foreign_sources",
+        "ca/total_income_from_foreign_sources",
         "ca/deductions_from_total_income",
         "ca/net_income_before_adjustments",
         "ca/net_income",
@@ -1755,6 +1757,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/split_income_line_20",
         "ca/split_income_line_21",
         "ca/split_income_line_22",
+        "ca/split_income_line_23",
         "ca/split_income_line_24",
         "ca/split_income_line_29",
         "ca/split_income_line_30",
@@ -2450,7 +2453,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1037
+        == 1038
     )
     assert (
         len(
@@ -2458,7 +2461,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1037
+        == 1038
     )
 
 
@@ -2471,7 +2474,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1037
+        == 1038
     )
     assert (
         len(
@@ -2479,7 +2482,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1037
+        == 1038
     )
 
 

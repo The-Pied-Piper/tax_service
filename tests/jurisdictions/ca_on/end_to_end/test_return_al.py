@@ -48,6 +48,7 @@ from app.jurisdictions.ca.catalog import (
     SPLIT_INCOME_LINE_20,
     SPLIT_INCOME_LINE_21,
     SPLIT_INCOME_LINE_22,
+    SPLIT_INCOME_LINE_23,
     SPLIT_INCOME_LINE_24,
     SPLIT_INCOME_LINE_29,
     SPLIT_INCOME_LINE_30,
@@ -231,7 +232,10 @@ def test_return_als_trace_follows_form_t1206_line_by_line() -> None:
         "split_income_line_21: split_income_line_19 1038.46 + split_income_line_20 0 = 1038.46",
         "split_income_line_22: split_income_line_15 3795 less split_income_line_21 1038.46 "
         "= 2756.54",
-        "split_income_line_24: split_income_line_22 2756.54, not below 0 = 2756.54",
+        "split_income_line_23: federal_foreign_tax_credit 0 × split_income_from_foreign_sources 0 "
+        "/ total_income_from_foreign_sources 0 (half-up to 0.01)",
+        "split_income_line_24: split_income_line_22 2756.54 less split_income_line_23 0, "
+        "not below 0 = 2756.54",
         "split_income_line_29: federal_tax_line_41700 417.83 "
         "+ advanced_canada_workers_benefit 0 = 417.83",
         "split_income_line_30: greater of split_income_line_24 2756.54 "
@@ -284,10 +288,13 @@ def test_return_als_trace_records_the_split_income_lines_as_structured_lines() -
         in trace
     )
     assert (
-        SumNotBelowZeroLine(
+        SubtractedNotBelowZeroLine(
             output=SPLIT_INCOME_LINE_24,
-            parts=((SPLIT_INCOME_LINE_22, D("2756.54")),),
-            total=D("2756.54"),
+            minuend=SPLIT_INCOME_LINE_22,
+            minuend_amount=D("2756.54"),
+            subtrahend=SPLIT_INCOME_LINE_23,
+            subtrahend_amount=D("0.00"),
+            result=D("2756.54"),
         )
         in trace
     )
@@ -371,7 +378,7 @@ def test_a_disability_amount_larger_than_the_tax_leaves_line_22_negative_and_lin
     assert worksheet.get(NET_FEDERAL_TAX).value == D("303.68")
 
 
-def test_a_negative_line_22_is_recorded_signed_and_floored_by_line_24_alone() -> None:
+def test_a_negative_line_22_is_recorded_signed_and_floored_by_line_24() -> None:
     trace = return_b_with_split_income_dividends().trace
 
     assert (
@@ -386,10 +393,13 @@ def test_a_negative_line_22_is_recorded_signed_and_floored_by_line_24_alone() ->
         in trace
     )
     assert (
-        SumNotBelowZeroLine(
+        SubtractedNotBelowZeroLine(
             output=SPLIT_INCOME_LINE_24,
-            parts=((SPLIT_INCOME_LINE_22, D("-1194.36")),),
-            total=D("0"),
+            minuend=SPLIT_INCOME_LINE_22,
+            minuend_amount=D("-1194.36"),
+            subtrahend=SPLIT_INCOME_LINE_23,
+            subtrahend_amount=D("0.00"),
+            result=D("0"),
         )
         in trace
     )
@@ -406,7 +416,10 @@ def test_a_negative_line_22_is_recorded_signed_and_floored_by_line_24_alone() ->
         "split_income_line_22: split_income_line_15 -1090.51 less split_income_line_21 103.85 "
         "= -1194.36"
     ) in rendered
-    assert "split_income_line_24: split_income_line_22 -1194.36, not below 0 = 0" in rendered
+    assert (
+        "split_income_line_24: split_income_line_22 -1194.36 less split_income_line_23 0, "
+        "not below 0 = 0"
+    ) in rendered
 
 
 def test_a_negative_tosi_adjusted_net_income_is_zero_in_the_twin_and_negative_on_line_45200() -> (

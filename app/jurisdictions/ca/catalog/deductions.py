@@ -388,6 +388,18 @@ OTHER_SPLIT_INCOME = CATALOG.declare("other_split_income", Decimal, non_negative
 """Other split income, Form T1206 Part 1 line 3 "All other split income (see "Split income" on page
 1)": a starting amount."""
 
+SPLIT_INCOME_FROM_FOREIGN_SOURCES = CATALOG.declare(
+    "split_income_from_foreign_sources", Decimal, non_negative=True
+)
+"""Split income from foreign sources, Form T1206 Part 2 line 68370 "Part of the amount on line 3
+that is from foreign sources": a starting amount."""
+
+TOTAL_INCOME_FROM_FOREIGN_SOURCES = CATALOG.declare(
+    "total_income_from_foreign_sources", Decimal, non_negative=True
+)
+"""Total income from foreign sources, Form T1206 Part 2 line 68380 "Total income from foreign
+sources": a starting amount."""
+
 CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS = CATALOG.declare(
     "cpp_t4_base_and_first_additional_contributions", Decimal, non_negative=True
 )

@@ -61,10 +61,16 @@ less the dividend tax credit.
 The form prints no "(if negative, enter "0")", so the kind is signed.
 """
 
+SPLIT_INCOME_LINE_23 = CATALOG.declare("split_income_line_23", Decimal, non_negative=True)
+"""Federal foreign tax credit on split income, Form T1206 Part 2 line 23 "Part of the amount on
+line 3 that is from foreign sources" (68370) over "Total income from foreign sources" (68380),
+"× Amount from line 40500 of your return": the federal foreign tax credit times the share of the
+split income that is from foreign sources, 0 when there is no income from foreign sources."""
+
 SPLIT_INCOME_LINE_24 = CATALOG.declare("split_income_line_24", Decimal, non_negative=True)
 """Tax on split income after the credits, not below zero, Form T1206 Part 2 line 24 "Line 22 minus
-line 23 (if negative, enter "0")": line 22 not below zero, line 23 (the federal foreign tax credit
-on split income) not being wired."""
+line 23 (if negative, enter "0")": line 22 less line 23, the federal foreign tax credit on split
+income."""
 
 SPLIT_INCOME_LINE_29 = CATALOG.declare("split_income_line_29", Decimal, non_negative=True)
 """Federal tax less credits with the advanced Canada workers benefit, Form T1206 Part 2 line 29

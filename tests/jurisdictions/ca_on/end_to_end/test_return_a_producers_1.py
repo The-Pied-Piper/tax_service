@@ -979,6 +979,7 @@ from app.jurisdictions.ca.catalog import (
     SPLIT_INCOME_LINE_20,
     SPLIT_INCOME_LINE_21,
     SPLIT_INCOME_LINE_22,
+    SPLIT_INCOME_LINE_23,
     SPLIT_INCOME_LINE_24,
     SPLIT_INCOME_LINE_29,
     SPLIT_INCOME_LINE_30,
@@ -1701,7 +1702,8 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_20), ApplyRate)
     assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_21), Sum)
     assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_22), Subtract)
-    assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_24), SumNotBelowZero)
+    assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_23), ApplyRatioOrZero)
+    assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_24), SubtractNotBelowZero)
     assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_29), Sum)
     assert isinstance(worksheet.producer_of(SPLIT_INCOME_LINE_30), GreaterOf)
     assert worksheet.producer_of(TOSI_ADJUSTED_NET_INCOME) is not (

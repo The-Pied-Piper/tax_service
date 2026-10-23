@@ -494,3 +494,5 @@ inputs:
   - ca/t657_part_2_amount_l
   - ca/capital_gains_deduction_claimed
   - ca/t657_chart_1_rows
+  - ca/split_income_from_foreign_sources
+  - ca/total_income_from_foreign_sources
