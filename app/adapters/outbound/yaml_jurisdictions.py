@@ -35,7 +35,7 @@ ignored.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 
 import yaml
@@ -157,10 +157,13 @@ class YamlJurisdictionSource:
         if form_selections:
             lists.setdefault("capabilities", [])  # the default form may have none beside the others
         try:
-            forms = tuple(
-                cls._form(entry, declarations, merged) for entry in form_selections.items()
+            return cls._manifest(
+                YamlNode.root({**merged, **lists}, "manifest"),
+                lambda default: tuple(
+                    cls._form(name, selections, declarations, default)
+                    for name, selections in form_selections.items()
+                ),
             )
-            return cls._manifest(YamlNode.root({**merged, **lists}, "manifest"), forms)
         except (InvalidManifestError, YamlShapeError) as exc:
             raise InvalidManifestError(f"{folder}: {exc}") from exc
 
@@ -196,21 +199,15 @@ class YamlJurisdictionSource:
 
     @staticmethod
     def _form(
-        entry: tuple[str, list[CapabilitySelection]],
+        name: str,
+        selections: list[CapabilitySelection],
         declarations: dict[str, tuple[Path, str | None, tuple[str, ...]]],
-        merged: Mapping[str, object],
+        default: str,
     ) -> Form:
-        """The form of `entry` (name, selections of all its parts) and the one declaration."""
-        name, selections = entry
+        """The form `name` of the selections of all its parts and its one declaration."""
         if name not in declarations:
             raise InvalidManifestError(f"form {name!r}: no part declares its exports")
         part, instances, exports = declarations[name]
-        try:
-            default = JurisdictionCode(str(merged.get("jurisdiction"))).namespace.identifier(
-                _DEFAULT_FORM
-            )
-        except InvalidJurisdictionCodeError:
-            default = ""  # no code to reserve a name in; `_manifest` reports it
         if name == default:
             raise InvalidManifestError(
                 f"{part}: form {name!r}: the name is reserved for the parts without a `form:` key"
@@ -276,31 +273,38 @@ class YamlJurisdictionSource:
             owners[identifier] = part
 
     @classmethod
-    def _manifest(cls, document: YamlNode, forms: tuple[Form, ...] = ()) -> Manifest:
-        """The manifest of `document`, whose selections and `outputs` are the default form's."""
+    def _manifest(
+        cls,
+        document: YamlNode,
+        forms_beside: Callable[[str], tuple[Form, ...]] = lambda _: (),
+    ) -> Manifest:
+        """The manifest of `document`, whose selections and `outputs` are the default form's.
+
+        `forms_beside` gives the other forms, from the name the default form takes.
+        """
         doc = document.require_mapping(_MANIFEST_KEYS)
         code = cls._code(doc.field("jurisdiction"))
         outputs = cls._identifiers(doc.field("outputs"))
         if not outputs:
             raise InvalidManifestError("outputs must name at least one artifact")
-        try:
-            default = Form(
-                name=code.namespace.identifier(_DEFAULT_FORM),
-                instances=None,
-                exports=tuple(sorted(outputs)),
-                capabilities=tuple(
-                    cls._selection(entry) for entry in doc.field("capabilities").items()
-                ),
-            )
-        except InvalidManifestError as exc:
-            # The default form's exports are the file's `outputs`: say so.
-            raise InvalidManifestError(str(exc).replace("exports", "outputs", 1)) from None
+        Form.check_exports("outputs", sorted(outputs))
+        default = code.namespace.identifier(_DEFAULT_FORM)
         return Manifest(
             jurisdiction=code,
             version=doc.field("version").require_integer(),
             valid_from_tax_year=doc.field("valid_from_tax_year").require_integer(),
             inputs=cls._identifiers(doc.field("inputs")),
-            forms=(default, *forms),
+            forms=(
+                Form(
+                    name=default,
+                    instances=None,
+                    exports=tuple(sorted(outputs)),
+                    capabilities=tuple(
+                        cls._selection(entry) for entry in doc.field("capabilities").items()
+                    ),
+                ),
+                *forms_beside(default),
+            ),
         )
 
     @staticmethod

@@ -9,7 +9,7 @@ starts from.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
 
@@ -75,13 +75,18 @@ class Form:
             self.check_identifier("instances", self.instances)
         if not self.exports:
             raise InvalidManifestError("exports must name at least one artifact")
+        self.check_exports("exports", self.exports)
+
+    @staticmethod
+    def check_exports(field: str, exports: Iterable[str]) -> None:
+        """Refuse an identifier that is malformed or repeats a local id, naming `field`."""
         local_ids: set[str] = set()
-        for export in self.exports:
-            self.check_identifier("exports", export)
+        for export in exports:
+            Form.check_identifier(field, export)
             local_id = export.partition("/")[2]
             if local_id in local_ids:
                 raise InvalidManifestError(
-                    f"exports: local id {local_id!r} is listed more than once"
+                    f"{field}: local id {local_id!r} is listed more than once"
                 )
             local_ids.add(local_id)
 
