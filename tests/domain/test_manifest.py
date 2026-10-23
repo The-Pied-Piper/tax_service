@@ -275,7 +275,7 @@ def test_a_form_name_and_instances_are_plain_namespaced_identifiers(field: str, 
         form(**{field: bad})
 
 
-def test_a_form_may_have_no_instances_and_then_runs_once() -> None:
+def test_a_form_may_have_no_instances_list_and_then_has_one_instance() -> None:
     found = form(instances=None)
 
     assert found.instances is None

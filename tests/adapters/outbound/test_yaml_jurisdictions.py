@@ -1366,7 +1366,7 @@ def test_a_second_part_that_declares_the_forms_instances_and_exports_is_rejected
     assert str(part_path(tmp_path, "01-rental.yaml")) in message
 
 
-def test_a_form_declared_with_exports_alone_has_no_instances_and_runs_once(
+def test_a_form_declared_with_exports_alone_has_no_instances_list_and_one_instance(
     tmp_path: Path,
 ) -> None:
     alone = FORM_RENTAL.replace("  instances: ex/rentals\n", "")

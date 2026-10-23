@@ -880,7 +880,7 @@ def test_a_set_of_one_form_without_instances_computes_what_the_composition_does(
     assert list(result) == [RETURN]
 
 
-def test_its_errors_are_those_of_the_composition_unprefixed() -> None:
+def test_its_starting_kind_errors_are_the_compositions() -> None:
     for arguments in ((), (Artifact(SALES, D(1)),), (Artifact(FEE, D(1)),)):
         with pytest.raises(InvalidCompositionError) as bare:
             lone_composition().compute(*arguments)
