@@ -30,6 +30,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_APPLICABLE_RATE_AMOUNT,
     AMT_BASIC_EXEMPTION,
     AMT_BASIC_FEDERAL_TAX,
+    AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
@@ -52,6 +53,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
     AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
     AMT_FEDERAL_TAX_PAYABLE,
+    AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX,
+    AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX,
     AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
@@ -70,6 +73,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_FOREIGN_TAXES_PAID,
     AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
     AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
+    AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT,
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_INVESTMENT_COUNSEL_FEES,
     AMT_INVESTMENT_TAX_CREDIT,
@@ -108,6 +112,12 @@ from app.jurisdictions.ca.catalog import (
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
+    AMT_PART_6_FEDERAL_SURTAX,
+    AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
+    AMT_PART_6_SURTAX_AT_48_PERCENT,
+    AMT_PART_6_SURTAX_IF_NON_RESIDENT,
+    AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_PART_6_TAX_WITH_SURTAX,
     AMT_PPIP_PREMIUMS_DEDUCTION,
     AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
@@ -178,6 +188,8 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT,
     QBT_CAPITAL_GAINS_DEDUCTION,
     QFFP_FORECLOSURE_GAIN_OR_LOSS,
+    SPLIT_INCOME_LINE_22,
+    SPLIT_INCOME_LINE_24,
     TAXABLE_CAPITAL_GAINS,
     TAXABLE_DIVIDENDS,
     TAXABLE_DIVIDENDS_OTHER_THAN_ELIGIBLE,
@@ -244,6 +256,7 @@ INPUTS = frozenset(
 OUTPUTS = frozenset(
     {
         "ca/amt_alternative_minimum_tax_payable",
+        "ca/amt_federal_tax_payable_under_minimum_tax",
     }
 )
 
@@ -1206,6 +1219,126 @@ STEPS = {
         },
         produces={"output": "ca/amt_alternative_minimum_tax_payable"},
     ),
+    # Part 6 line 3 "Line 1 minus line 2 (if negative, enter "0")": line 1, the basic federal tax of
+    # Part 2 line 7, less line 2, the amount from line 22 of Form T1206, and never below zero.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/amt_basic_federal_tax",
+            "less": "ca/split_income_line_22",
+        },
+        produces={"output": "ca/amt_basic_federal_tax_less_split_income_tax"},
+    ),
+    # Part 6 line 5 "Enter whichever is more: amount from line 3 or line 4.": the greater of line 3
+    # and line 4, the minimum amount from line 103 of Part 1.
+    CapabilitySelection(
+        name="core/greater_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/amt_basic_federal_tax_less_split_income_tax",
+                "ca/amt_minimum_amount",
+            ),
+        },
+        produces={"output": "ca/amt_greater_of_basic_tax_and_minimum_amount"},
+    ),
+    # Part 6 line 7 "Line 5 plus line 6 (14)": line 5 and line 6, the amount from line 22 of Form
+    # T1206, in line order. The form prints no floor, so the sum may be negative.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/amt_greater_of_basic_tax_and_minimum_amount",
+                "ca/split_income_line_22",
+            )
+        },
+        produces={"output": "ca/amt_federal_tax_under_minimum_tax"},
+    ),
+    # Part 6 line 9 "Federal surtax on business income earned outside Canada" "Multiply the amount
+    # from line 7 by 48%.": line 7 times the 48% of its dataset, rounded to the cent.
+    CapabilitySelection(
+        name="core/apply_rate",
+        params={"rate": "ca/amt_federal_surtax_rate"},
+        consumes={"base": "ca/amt_federal_tax_under_minimum_tax"},
+        produces={"output": "ca/amt_part_6_surtax_at_48_percent"},
+    ),
+    # Part 6 line 10 "If you have to pay tax to multiple jurisdictions, multiply the amount from
+    # line 9 by the percentage in Column 5 of line 52220 on Form T2203.": line 9 times the
+    # percentage as the form prints it (50 for 50%), rounded once to the cent.
+    CapabilitySelection(
+        name="ca/apply_percentage",
+        params={"rounding": "ca/amt_multiple_jurisdictions_rounding"},
+        consumes={
+            "amount": "ca/amt_part_6_surtax_at_48_percent",
+            "percentage": "ca/amt_t2203_column_5_percentage",
+        },
+        produces={"output": "ca/amt_part_6_surtax_multiple_jurisdictions"},
+    ),
+    # Part 6 line 11 "If you have an amount on line 10, enter that amount. If not, and you are a
+    # non-resident or deemed resident, enter the amount from line 9. Otherwise, enter "0".": the
+    # condition "you have an amount on line 10" counts 1 when line 10 is not 0.
+    CapabilitySelection(
+        name="ca/count_by_conditions",
+        params={"conditions": "ca/amt_line_10_has_amount_conditions"},
+        consumes={
+            "counts": (),
+            "amounts": ("ca/amt_part_6_surtax_multiple_jurisdictions",),
+        },
+        produces={"output": "ca/amt_part_6_has_amount_on_line_10"},
+    ),
+    # Part 6 line 11, the second branch: line 9 when "you are a non-resident or deemed resident"
+    # (the caller's count, 1 for yes), and "0" otherwise.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/amt_part_6_surtax_at_48_percent",
+            "count": "ca/amt_non_resident_or_deemed_resident",
+        },
+        produces={"output": "ca/amt_part_6_surtax_if_non_resident"},
+    ),
+    # Part 6 line 11, chosen by the condition above: line 10 when there is an amount on it, else
+    # the second branch.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/amt_part_6_has_amount_on_line_10",
+            "when_none": "ca/amt_part_6_surtax_if_non_resident",
+            "when_any": "ca/amt_part_6_surtax_multiple_jurisdictions",
+        },
+        produces={"output": "ca/amt_part_6_federal_surtax"},
+    ),
+    # Part 6 line 12 "Line 8 plus line 11": line 8, the net minimum tax payable of Part 5 line 3,
+    # and line 11, in line order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/amt_net_minimum_tax_payable",
+                "ca/amt_part_6_federal_surtax",
+            )
+        },
+        produces={"output": "ca/amt_part_6_tax_with_surtax"},
+    ),
+    # Part 6 line 14 "Enter whichever is more: amount from line 12 or line 13. Enter this amount on
+    # line 41700 of your return." "Federal tax payable (under alternative minimum tax)": the greater
+    # of line 12 and line 13, "Amount from line 24 of Form T1206". The entry on line 41700 of the
+    # return is not wired in this change.
+    CapabilitySelection(
+        name="core/greater_of",
+        params={},
+        consumes={
+            "amounts": (
+                "ca/amt_part_6_tax_with_surtax",
+                "ca/split_income_line_24",
+            ),
+        },
+        produces={"output": "ca/amt_federal_tax_payable_under_minimum_tax"},
+    ),
 }
 
 WIRING = {
@@ -1767,5 +1900,61 @@ WIRING = {
         SubtractNotBelowZero,
         frozenset({AMT_MINIMUM_TAX_AFTER_REGULAR_TAX, AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D}),
         frozenset({AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({AMT_BASIC_FEDERAL_TAX, SPLIT_INCOME_LINE_22}),
+        frozenset({AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX}),
+    ),
+    (
+        GreaterOf,
+        frozenset({AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX, AMT_MINIMUM_AMOUNT}),
+        frozenset({AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT}),
+    ),
+    (
+        Sum,
+        frozenset({AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT, SPLIT_INCOME_LINE_22}),
+        frozenset({AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX}),
+    ),
+    (
+        ApplyRate,
+        frozenset({AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX}),
+        frozenset({AMT_PART_6_SURTAX_AT_48_PERCENT}),
+    ),
+    (
+        ApplyPercentage,
+        frozenset({AMT_PART_6_SURTAX_AT_48_PERCENT, AMT_T2203_COLUMN_5_PERCENTAGE}),
+        frozenset({AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS}),
+    ),
+    (
+        CountByConditions,
+        frozenset({AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS}),
+        frozenset({AMT_PART_6_HAS_AMOUNT_ON_LINE_10}),
+    ),
+    (
+        TimesCount,
+        frozenset({AMT_PART_6_SURTAX_AT_48_PERCENT, AMT_NON_RESIDENT_OR_DEEMED_RESIDENT}),
+        frozenset({AMT_PART_6_SURTAX_IF_NON_RESIDENT}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
+                AMT_PART_6_SURTAX_IF_NON_RESIDENT,
+                AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS,
+            }
+        ),
+        frozenset({AMT_PART_6_FEDERAL_SURTAX}),
+    ),
+    (
+        Sum,
+        frozenset({AMT_NET_MINIMUM_TAX_PAYABLE, AMT_PART_6_FEDERAL_SURTAX}),
+        frozenset({AMT_PART_6_TAX_WITH_SURTAX}),
+    ),
+    (
+        GreaterOf,
+        frozenset({AMT_PART_6_TAX_WITH_SURTAX, SPLIT_INCOME_LINE_24}),
+        frozenset({AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX}),
     ),
 }

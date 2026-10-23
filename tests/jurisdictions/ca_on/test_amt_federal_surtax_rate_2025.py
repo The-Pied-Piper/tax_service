@@ -6,6 +6,10 @@ federal tax). The 48% is the printed percentage of the form, a rate of 0.48, app
 dollars-and-cents line, so it is rounded half-up to the cent, the owner's decision, as the form
 states no rounding rule. The form prints no floor on line 2, so a negative basic federal tax gives
 a negative surtax, which the kind holds.
+
+The same printed 48% is Form T691 (2025) Part 6 line 9, "Federal surtax on business income earned
+outside Canada" "Multiply the amount from line 7 by 48%.", which applies to line 7, the federal tax
+under the minimum tax, rather than line 1. One rate dataset serves both lines.
 """
 
 from __future__ import annotations
@@ -65,3 +69,13 @@ def test_applies_to_the_base_and_keeps_a_negative_base_negative(base: str, resul
     result_outputs = capability.compute((Artifact(BASE, D(base)),)).outputs
 
     assert result_outputs == (Artifact(AMOUNT, D(result)),)
+
+
+def test_applies_to_part_6_line_9_for_the_surtax_on_line_7() -> None:
+    # Part 6 line 9: line 7 of 16951.38 multiplied by the 48%, 8136.6624, rounded half-up to
+    # 8136.66.
+    capability = ApplyRate(SOURCE.get(FAMILY, 2025, RATE), BASE, AMOUNT)
+
+    result_outputs = capability.compute((Artifact(BASE, D("16951.38")),)).outputs
+
+    assert result_outputs == (Artifact(AMOUNT, D("8136.66")),)

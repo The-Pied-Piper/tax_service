@@ -58,6 +58,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
     AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
     AMT_BASIC_EXEMPTION,
+    AMT_BASIC_FEDERAL_TAX,
+    AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
@@ -66,6 +68,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
     AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
     AMT_FEDERAL_TAX_PAYABLE,
+    AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX,
     AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
@@ -80,6 +83,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
     AMT_FOREIGN_TAX_CREDIT_LESSER,
     AMT_FOREIGN_TAXES_PAID,
+    AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT,
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_INVESTMENT_TAX_CREDIT,
     AMT_INVESTMENT_TAX_CREDIT_CLAIM,
@@ -94,6 +98,11 @@ from app.jurisdictions.ca.catalog import (
     AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_MINIMUM_TAX_PAYABLE,
+    AMT_PART_6_FEDERAL_SURTAX,
+    AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
+    AMT_PART_6_SURTAX_IF_NON_RESIDENT,
+    AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_PART_6_TAX_WITH_SURTAX,
     AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
     AMT_REGULAR_NET_TAX_LESS_SURTAX,
     AMT_REGULAR_TAX_CREDITS_TOTAL,
@@ -2276,6 +2285,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Form T691 Part 6 line 3 "Line 1 minus line 2 (if negative, enter "0")": line 1, the basic
+        # federal tax of 16951.38, less line 2, the amount from line 22 of Form T1206 (0): 16951.38.
+        AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX: SubtractedNotBelowZeroLine(
+            output=AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX,
+            minuend=AMT_BASIC_FEDERAL_TAX,
+            minuend_amount=D("16951.38"),
+            subtrahend=SPLIT_INCOME_LINE_22,
+            subtrahend_amount=D("0"),
+            result=D("16951.38"),
+        ),
         # Form RC381 Part 3 line 14 "Line 12 minus line 13 (if negative, enter "0")": line 12 is
         # line 11 (0) and line 13 is line 8 (0.00).
         RC381_PART_3_LINE_14: SubtractedNotBelowZeroLine(
@@ -4266,6 +4285,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert {line.output: line for line in trace if isinstance(line, GreaterOfLine)} == {
+        # Form T691 Part 6 line 5 "Enter whichever is more: amount from line 3 or line 4.": line 3,
+        # 16951.38 (line 1 less line 2, 0), and line 4, the minimum amount of 0: 16951.38.
+        AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT: GreaterOfLine(
+            output=AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT,
+            parts=(
+                (AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX, D("16951.38")),
+                (AMT_MINIMUM_AMOUNT, D("0")),
+            ),
+            result=D("16951.38"),
+        ),
+        # Form T691 Part 6 line 14 "Enter whichever is more: amount from line 12 or line 13. Enter
+        # this amount on line 41700 of your return." "Federal tax payable (under alternative minimum
+        # tax)": line 12, 0, and line 13, the amount from line 24 of Form T1206, 0: 0.
+        AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX: GreaterOfLine(
+            output=AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX,
+            parts=((AMT_PART_6_TAX_WITH_SURTAX, D("0")), (SPLIT_INCOME_LINE_24, D("0"))),
+            result=D("0"),
+        ),
         # Form T691 Part 4 line 11 "Enter whichever is more: amount from line 7 of Part 3 or line
         # 10." "Special foreign tax credit": the federal foreign tax credit of Part 3 line 7, 0, and
         # line 10, 0: the greater, 0.
@@ -4811,7 +4848,46 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
         ),
     }
+    part_6_has_amount_conditions = {
+        (line.output, line.position): line
+        for line in trace
+        if isinstance(line, ConditionLine) and line.output is AMT_PART_6_HAS_AMOUNT_ON_LINE_10
+    }
+    part_6_has_amount_count = {
+        line.output: line
+        for line in trace
+        if isinstance(line, ConditionsCountLine) and line.output is AMT_PART_6_HAS_AMOUNT_ON_LINE_10
+    }
+    assert part_6_has_amount_conditions == {
+        # Form T691 Part 6 line 11 "If you have an amount on line 10, enter that amount.": the
+        # condition "you have an amount on line 10" reads line 10 (0): it does not apply.
+        (AMT_PART_6_HAS_AMOUNT_ON_LINE_10, 1): ConditionLine(
+            output=AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
+            position=1,
+            text="you have an amount on line 10",
+            reads=((AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS, D("0")),),
+            applies=False,
+        ),
+    }
+    assert part_6_has_amount_count == {
+        # Form T691 Part 6 line 11: no condition applies, so the count is 0.
+        AMT_PART_6_HAS_AMOUNT_ON_LINE_10: ConditionsCountLine(
+            output=AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
+            applied=(),
+            count=0,
+        ),
+    }
     assert chosen == {
+        # Form T691 Part 6 line 11 "If you have an amount on line 10, enter that amount. If not, ...
+        # enter the amount from line 9. Otherwise, enter "0".": no condition applies (line 10 is 0),
+        # so the second branch, 0.
+        AMT_PART_6_FEDERAL_SURTAX: ChosenByCountLine(
+            output=AMT_PART_6_FEDERAL_SURTAX,
+            count_kind=AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
+            count=0,
+            chosen_kind=AMT_PART_6_SURTAX_IF_NON_RESIDENT,
+            chosen_value=D("0"),
+        ),
         # Form T691 Part 3 line 4 "If you have an amount on line 3, enter that amount. If not, ...
         # enter the amount from line 2. Otherwise, enter "0".": no condition applies (line 3 is 0),
         # so the second branch, 0.

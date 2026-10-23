@@ -20,6 +20,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_APPLICABLE_RATE_AMOUNT,
     AMT_BASIC_EXEMPTION,
     AMT_BASIC_FEDERAL_TAX,
+    AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADDED_NOT_BELOW_ZERO,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
@@ -42,6 +43,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
     AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
     AMT_FEDERAL_TAX_PAYABLE,
+    AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX,
+    AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX,
     AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
@@ -60,6 +63,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_FOREIGN_TAXES_PAID,
     AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
     AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
+    AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT,
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_INVESTMENT_COUNSEL_FEES,
     AMT_INVESTMENT_TAX_CREDIT,
@@ -98,6 +102,12 @@ from app.jurisdictions.ca.catalog import (
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
+    AMT_PART_6_FEDERAL_SURTAX,
+    AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
+    AMT_PART_6_SURTAX_AT_48_PERCENT,
+    AMT_PART_6_SURTAX_IF_NON_RESIDENT,
+    AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_PART_6_TAX_WITH_SURTAX,
     AMT_PPIP_PREMIUMS_DEDUCTION,
     AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
@@ -303,6 +313,23 @@ PART_5_KINDS: tuple[ArtifactKind[Decimal], ...] = (
     AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
     AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
 )
+
+# Part 6 lines 1 to 14: the federal tax payable under the alternative minimum tax, from line 3, the
+# basic federal tax less the split income tax, to line 14, the greater of line 12 and the split
+# income tax after the credits of Form T1206 (line 24), with the surtax of lines 9 to 11.
+PART_6_KINDS: tuple[ArtifactKind[Decimal], ...] = (
+    AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX,
+    AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT,
+    AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX,
+    AMT_PART_6_SURTAX_AT_48_PERCENT,
+    AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_PART_6_SURTAX_IF_NON_RESIDENT,
+    AMT_PART_6_FEDERAL_SURTAX,
+    AMT_PART_6_TAX_WITH_SURTAX,
+    AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX,
+)
+# Part 6 line 11: the count of the condition "you have an amount on line 10".
+PART_6_COUNTS: tuple[ArtifactKind[int], ...] = (AMT_PART_6_HAS_AMOUNT_ON_LINE_10,)
 
 
 # Part 2 lines 1 to 7 and Part 8 lines 1 to 12: the basic federal tax and the minimum tax
@@ -680,6 +707,35 @@ def test_the_part_5_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     )
 
 
+def test_the_part_6_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    assert (
+        registry.get("ca/amt_basic_federal_tax_less_split_income_tax")
+        is AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX
+    )
+    assert (
+        registry.get("ca/amt_greater_of_basic_tax_and_minimum_amount")
+        is AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT
+    )
+    assert registry.get("ca/amt_federal_tax_under_minimum_tax") is AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX
+    assert registry.get("ca/amt_part_6_surtax_at_48_percent") is AMT_PART_6_SURTAX_AT_48_PERCENT
+    assert (
+        registry.get("ca/amt_part_6_surtax_multiple_jurisdictions")
+        is AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS
+    )
+    assert registry.get("ca/amt_part_6_surtax_if_non_resident") is AMT_PART_6_SURTAX_IF_NON_RESIDENT
+    assert registry.get("ca/amt_part_6_federal_surtax") is AMT_PART_6_FEDERAL_SURTAX
+    assert registry.get("ca/amt_part_6_tax_with_surtax") is AMT_PART_6_TAX_WITH_SURTAX
+    assert (
+        registry.get("ca/amt_federal_tax_payable_under_minimum_tax")
+        is AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX
+    )
+
+
+def test_the_part_6_counts_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    for kind in PART_6_COUNTS:
+        assert registry.get(kind.identifier) is kind
+
+
 def test_the_alternative_minimum_tax_kinds_are_money() -> None:
     for kind in (
         PART_1_KINDS
@@ -691,6 +747,7 @@ def test_the_alternative_minimum_tax_kinds_are_money() -> None:
         + PART_3_KINDS
         + PART_4_KINDS
         + PART_5_KINDS
+        + PART_6_KINDS
     ):
         assert kind.value_type is Decimal, kind.identifier
 
@@ -706,6 +763,7 @@ def test_the_bracketed_lines_are_signed_and_the_rest_are_not_below_zero() -> Non
         + PART_3_KINDS
         + PART_4_KINDS
         + PART_5_KINDS
+        + PART_6_KINDS
     ):
         assert kind.non_negative is (kind.identifier not in SIGNED), kind.identifier
 
@@ -724,6 +782,26 @@ def test_the_foreign_business_income_holds_a_negative_amount() -> None:
     # minus allowable expenses and deductions for the foreign income)": it is net of expenses, so
     # it can be a loss, and the kind holds it; line 4 is then reduced by it.
     assert Artifact(AMT_FOREIGN_BUSINESS_INCOME, Decimal("-300")).value == Decimal("-300")
+
+
+def test_the_federal_tax_under_minimum_tax_holds_a_negative_amount() -> None:
+    # Part 6 line 7, "Line 5 plus line 6 (14)": line 6 is the amount from line 22 of Form T1206, a
+    # signed figure, so the sum can be negative; the form prints no floor on it, and the kind holds
+    # it.
+    assert Artifact(AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX, Decimal("-2104.82")).value == Decimal(
+        "-2104.82"
+    )
+
+
+def test_the_federal_tax_payable_under_minimum_tax_refuses_a_negative_amount() -> None:
+    # Part 6 line 14, "Enter whichever is more: amount from line 12 or line 13.": line 13 is the
+    # amount from line 24 of Form T1206, which is not below zero, so the greater of the two is not
+    # negative; a negative figure is an input error, refused and not taken as 0.
+    with pytest.raises(
+        NegativeArtifactError,
+        match="ca/amt_federal_tax_payable_under_minimum_tax cannot be negative",
+    ):
+        Artifact(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX, Decimal("-1"))
 
 
 def test_the_part_d_amount_15_refuses_a_negative_amount() -> None:

@@ -10,7 +10,9 @@ property and flow-through shares. Part 2 of the form: the basic federal tax. Par
 the minimum tax carryover applied on line 40427. Part 3 of the form: the federal surtax, the
 federal tax payable and the regular net federal tax payable. Part 4 of the form: the special
 foreign tax credit. Part 5 of the form: the obligation to pay alternative minimum tax, from the net
-minimum tax payable to the alternative minimum tax payable.
+minimum tax payable to the alternative minimum tax payable. Part 6 of the form: the federal tax
+payable under the alternative minimum tax, from the basic federal tax less the split income tax to
+the greater of the federal tax with the surtax and the split income tax after the credits.
 """
 
 from __future__ import annotations
@@ -822,3 +824,68 @@ AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE = CATALOG.declare(
 )
 """Alternative minimum tax payable, Form T691 Part 5 line 11 "Line 7 minus line 10 (if negative,
 enter "0")": line 7 less line 10, not below zero; a positive amount means Parts 6 and 7 apply."""
+
+AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX = CATALOG.declare(
+    "amt_basic_federal_tax_less_split_income_tax", Decimal, non_negative=True
+)
+"""Basic federal tax less the split income tax, Form T691 Part 6 line 3 "Line 1 minus line 2 (if
+negative, enter "0")": line 1, the basic federal tax of Part 2 line 7, less line 2, the amount from
+line 22 of Form T1206, Tax on Split Income, not below zero."""
+
+AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT = CATALOG.declare(
+    "amt_greater_of_basic_tax_and_minimum_amount", Decimal, non_negative=True
+)
+"""Greater of the basic tax and the minimum amount, Form T691 Part 6 line 5 "Enter whichever is
+more: amount from line 3 or line 4.": the greater of line 3 and line 4, the minimum amount from
+line 103 of Part 1."""
+
+AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX = CATALOG.declare("amt_federal_tax_under_minimum_tax", Decimal)
+"""Federal tax under the minimum tax, Form T691 Part 6 line 7 "Line 5 plus line 6 (14)": line 5 and
+line 6, the amount from line 22 of Form T1206, in line order. The form prints no floor, so the sum
+may be negative."""
+
+AMT_PART_6_SURTAX_AT_48_PERCENT = CATALOG.declare("amt_part_6_surtax_at_48_percent", Decimal)
+"""Federal surtax at 48 percent, Form T691 Part 6 line 9 "Federal surtax on business income earned
+outside Canada" "Multiply the amount from line 7 by 48%.": line 7 times the 48% of its dataset,
+rounded to the cent. The form prints no floor, so a negative line 7 gives a negative surtax."""
+
+AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS = CATALOG.declare(
+    "amt_part_6_surtax_multiple_jurisdictions", Decimal
+)
+"""Federal surtax for multiple jurisdictions, Form T691 Part 6 line 10 "If you have to pay tax to
+multiple jurisdictions, multiply the amount from line 9 by the percentage in Column 5 of line 52220
+on Form T2203.": line 9 times the percentage of Form T2203, the caller's figure as the form prints
+it (50 for 50%), rounded once to the cent. The form prints no floor, so the product may be
+negative."""
+
+AMT_PART_6_HAS_AMOUNT_ON_LINE_10 = CATALOG.declare(
+    "amt_part_6_has_amount_on_line_10", int, non_negative=True
+)
+"""You have an amount on line 10, Form T691 Part 6 line 11 "If you have an amount on line 10, enter
+that amount.": 1 when line 10 is not 0, and 0 otherwise, the count of the condition."""
+
+AMT_PART_6_SURTAX_IF_NON_RESIDENT = CATALOG.declare("amt_part_6_surtax_if_non_resident", Decimal)
+"""Federal surtax for a non-resident or deemed resident, Form T691 Part 6 line 11 "If not, and you
+are a non-resident or deemed resident, enter the amount from line 9.": line 9 when you are a
+non-resident or deemed resident, and 0 otherwise. The form prints no floor, so line 9 may be
+negative."""
+
+AMT_PART_6_FEDERAL_SURTAX = CATALOG.declare("amt_part_6_federal_surtax", Decimal)
+"""Federal surtax, Form T691 Part 6 line 11 "If you have an amount on line 10, enter that amount. If
+not, and you are a non-resident or deemed resident, enter the amount from line 9. Otherwise, enter
+"0".": line 10 when it has an amount, else the surtax for a non-resident or deemed resident, in the
+form's order."""
+
+AMT_PART_6_TAX_WITH_SURTAX = CATALOG.declare("amt_part_6_tax_with_surtax", Decimal)
+"""Federal tax with the surtax, Form T691 Part 6 line 12 "Line 8 plus line 11": line 8, the net
+minimum tax payable of Part 5 line 3, and line 11, in line order. The form prints no floor, so the
+sum may be negative."""
+
+AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX = CATALOG.declare(
+    "amt_federal_tax_payable_under_minimum_tax", Decimal, non_negative=True
+)
+"""Federal tax payable (under alternative minimum tax), Form T691 Part 6 line 14 "Enter whichever is
+more: amount from line 12 or line 13. Enter this amount on line 41700 of your return." "Federal tax
+payable (under alternative minimum tax)": the greater of line 12 and line 13, "Amount from line 24
+of Form T1206", which is not below zero. The entry on line 41700 of the return is not wired yet, so
+no return line reads this amount."""

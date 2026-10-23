@@ -1851,6 +1851,16 @@ REGISTERED = frozenset(
         "ca/amt_t2038_part_d_amount_15",
         "ca/amt_investment_tax_credit_less_part_d",
         "ca/amt_alternative_minimum_tax_payable",
+        "ca/amt_basic_federal_tax_less_split_income_tax",
+        "ca/amt_greater_of_basic_tax_and_minimum_amount",
+        "ca/amt_federal_tax_under_minimum_tax",
+        "ca/amt_part_6_surtax_at_48_percent",
+        "ca/amt_part_6_surtax_multiple_jurisdictions",
+        "ca/amt_part_6_has_amount_on_line_10",
+        "ca/amt_part_6_surtax_if_non_resident",
+        "ca/amt_part_6_federal_surtax",
+        "ca/amt_part_6_tax_with_surtax",
+        "ca/amt_federal_tax_payable_under_minimum_tax",
     }
 )
 
@@ -2116,6 +2126,12 @@ SIGNED = frozenset(
         "ca/amt_federal_surtax",
         "ca/amt_federal_tax_with_surtax_and_recapture",
         "ca/amt_foreign_business_income",
+        "ca/amt_federal_tax_under_minimum_tax",
+        "ca/amt_part_6_surtax_at_48_percent",
+        "ca/amt_part_6_surtax_multiple_jurisdictions",
+        "ca/amt_part_6_surtax_if_non_resident",
+        "ca/amt_part_6_federal_surtax",
+        "ca/amt_part_6_tax_with_surtax",
     }
 )
 
@@ -2211,6 +2227,7 @@ COUNTS = frozenset(
         "ca/rc381_part_2_line_b",
         "ca/amt_non_resident_or_deemed_resident",
         "ca/amt_line_3_has_amount",
+        "ca/amt_part_6_has_amount_on_line_10",
     }
 )
 

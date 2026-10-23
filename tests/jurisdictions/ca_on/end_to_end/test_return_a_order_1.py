@@ -28,12 +28,15 @@ from app.jurisdictions.ca.catalog import (
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
     AMT_BASIC_FEDERAL_TAX,
+    AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX,
     AMT_CAPITAL_GAINS_ADDED,
     AMT_FEDERAL_SURTAX,
     AMT_FEDERAL_SURTAX_AT_48_PERCENT,
     AMT_FEDERAL_SURTAX_IF_NON_RESIDENT,
     AMT_FEDERAL_SURTAX_MULTIPLE_JURISDICTIONS,
     AMT_FEDERAL_TAX_PAYABLE,
+    AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX,
+    AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX,
     AMT_FEDERAL_TAX_WITH_SURTAX_AND_RECAPTURE,
     AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
     AMT_FOREIGN_CAPITAL_GAINS_NON_TAXABLE,
@@ -41,6 +44,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_FOREIGN_NON_BUSINESS_TAX_TWO_THIRDS,
     AMT_FOREIGN_TAX_CREDIT_LESSER,
     AMT_FOREIGN_TAXES_PAID,
+    AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT,
     AMT_INVESTMENT_TAX_CREDIT,
     AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
     AMT_LINE_3_HAS_AMOUNT,
@@ -49,6 +53,12 @@ from app.jurisdictions.ca.catalog import (
     AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_NET_MINIMUM_TAX_PAYABLE,
+    AMT_PART_6_FEDERAL_SURTAX,
+    AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
+    AMT_PART_6_SURTAX_AT_48_PERCENT,
+    AMT_PART_6_SURTAX_IF_NON_RESIDENT,
+    AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS,
+    AMT_PART_6_TAX_WITH_SURTAX,
     AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
     AMT_REGULAR_NET_TAX_LESS_SURTAX,
     AMT_REGULAR_TAX_CREDITS_TOTAL,
@@ -519,8 +529,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 1278
-    assert len(order) == 1278
+    assert len(order) == 1288
+    assert len(order) == 1288
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[AMT_MAXIMUM_CARRYOVER_CLAIM] < position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED]
@@ -574,6 +584,42 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         position[AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D]
         < position[AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE]
     )
+    # Part 6 line 3 reads line 1 (the basic federal tax) and line 2 (Form T1206 line 22); line 5 the
+    # greater of line 3 and the minimum amount; line 7 sums lines 5 and 6; line 9 is the surtax on
+    # line 7 and line 10 that surtax times the percentage; line 11 is chosen by the count of line
+    # 10, from line 10 or from the second branch; line 12 sums lines 8 and 11; line 14 is the
+    # greater of line 12 and line 13 (Form T1206 line 24).
+    assert position[AMT_BASIC_FEDERAL_TAX] < position[AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX]
+    assert position[SPLIT_INCOME_LINE_22] < position[AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX]
+    assert position[AMT_MINIMUM_AMOUNT] < position[AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT]
+    assert (
+        position[AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX]
+        < position[AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT]
+    )
+    assert (
+        position[AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT]
+        < position[AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX]
+    )
+    assert position[SPLIT_INCOME_LINE_22] < position[AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX]
+    assert position[AMT_FEDERAL_TAX_UNDER_MINIMUM_TAX] < position[AMT_PART_6_SURTAX_AT_48_PERCENT]
+    assert (
+        position[AMT_PART_6_SURTAX_AT_48_PERCENT]
+        < position[AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS]
+    )
+    assert position[AMT_PART_6_SURTAX_AT_48_PERCENT] < position[AMT_PART_6_SURTAX_IF_NON_RESIDENT]
+    assert (
+        position[AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS]
+        < position[AMT_PART_6_HAS_AMOUNT_ON_LINE_10]
+    )
+    assert position[AMT_PART_6_HAS_AMOUNT_ON_LINE_10] < position[AMT_PART_6_FEDERAL_SURTAX]
+    assert position[AMT_PART_6_SURTAX_IF_NON_RESIDENT] < position[AMT_PART_6_FEDERAL_SURTAX]
+    assert position[AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS] < position[AMT_PART_6_FEDERAL_SURTAX]
+    assert position[AMT_NET_MINIMUM_TAX_PAYABLE] < position[AMT_PART_6_TAX_WITH_SURTAX]
+    assert position[AMT_PART_6_FEDERAL_SURTAX] < position[AMT_PART_6_TAX_WITH_SURTAX]
+    assert (
+        position[AMT_PART_6_TAX_WITH_SURTAX] < position[AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX]
+    )
+    assert position[SPLIT_INCOME_LINE_24] < position[AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX]
     assert (
         position[INVESTMENT_INCOME_BEFORE_PRIOR_YEARS]
         < position[INTEREST_AND_OTHER_INVESTMENT_INCOME]
