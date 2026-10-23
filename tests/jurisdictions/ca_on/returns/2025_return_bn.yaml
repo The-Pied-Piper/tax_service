@@ -118,6 +118,7 @@ sources:
 inputs:
   ca/employment_income: "60000"
   ca/cpp_months: "12"
+  ca/qpp_months: "12"
   ca/cpp_t4_base_and_first_additional_contributions: "3500.00"
   ca/cpp_t4_second_additional_contributions: "0"
 expected:
@@ -186,3 +187,9 @@ expected:
   ca/amt_basic_federal_tax: "5641.47"
   ca/amt_regular_net_federal_tax_payable: "5641.47"
   ca/amt_special_foreign_tax_credit: "0"
+  ca/rc381_part_2_line_g: "71300.00"
+  ca/rc381_part_2_line_h: "9900.00"
+  ca/rc381_part_2_line_i: "81200.00"
+  ca/rc381_part_2_line_j: "3500.00"
+  ca/rc381_part_3_line_20: "2911.77"
+  ca/rc381_part_3_line_21: "588.23"

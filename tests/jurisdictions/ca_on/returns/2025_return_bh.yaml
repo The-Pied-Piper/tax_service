@@ -141,6 +141,7 @@ sources:
 inputs:
   ca/other_income: "10000"
   ca/cpp_months: "12"
+  ca/qpp_months: "12"
   ca/cpp_t4_base_and_first_additional_contributions: "0"
   ca/cpp_t4_second_additional_contributions: "0"
   ca/resident_in_canada_throughout_2025: "1"
@@ -339,6 +340,10 @@ expected:
   ca/amt_net_capital_gains_after_adjustments: "350000"
   ca/taxable_income: "10000.00"
   ca/net_capital_loss_balance_2000: "0.00"
+  ca/rc381_part_2_line_g: "71300.00"
+  ca/rc381_part_2_line_h: "9900.00"
+  ca/rc381_part_2_line_i: "81200.00"
+  ca/rc381_part_2_line_j: "3500.00"
   ca/cpp_required_base_and_first_additional_contributions: "0.00"
   ca/cpp_contributions_difference: "0.00"
   ca/amt_adjusted_income_with_gains: "185000.00"

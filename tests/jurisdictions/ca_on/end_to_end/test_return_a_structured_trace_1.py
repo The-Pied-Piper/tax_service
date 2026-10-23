@@ -128,6 +128,7 @@ from app.jurisdictions.ca.catalog import (
     QBT_TAXABLE_AMOUNT_ALLOCATED,
     QBT_TAXABLE_CAPITAL_GAINS,
     QBT_TOTAL_CAPITAL_GAINS,
+    RC381_PART_3_LINE_20,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
     RESIDENCY_NET_INCOME_LIMIT,
@@ -254,6 +255,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert rated == {
+        # Form RC381 Part 3 line 20 "amount from line 19 x 83.1933%": line 19 is the T4 box 16 total
+        # of 4034.10 that Return A enters, 4034.10 x 0.831933 = 3356.1000..., 3356.10.
+        RC381_PART_3_LINE_20: RateAppliedLine(
+            RC381_PART_3_LINE_20,
+            CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            D("4034.10"),
+            Rate(D("0.831933")),
+            CENT,
+            D("3356.10"),
+        ),
         # Form T691 Part 4 line 6 "Foreign income limit for special foreign tax credit: line 4
         # multiplied by the percentage on line 5 (if negative, enter "0")", with line 5 "Applicable
         # rate" "× 20.5%": line 4, 0.00 for Return A, at 20.5%, 0 times 0.205, 0.00.

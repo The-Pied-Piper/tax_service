@@ -39,4 +39,5 @@ from app.jurisdictions.ca.catalog.alternative_minimum_tax import *  # noqa: F403
 from app.jurisdictions.ca.catalog.canada_workers_benefit import *  # noqa: F403
 from app.jurisdictions.ca.catalog.refundable_credits import *  # noqa: F403
 from app.jurisdictions.ca.catalog.refund import *  # noqa: F403
+from app.jurisdictions.ca.catalog.rc381_cpp_qpp import *  # noqa: F403
 # isort: on

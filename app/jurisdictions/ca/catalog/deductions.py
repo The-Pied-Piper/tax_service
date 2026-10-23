@@ -391,10 +391,10 @@ OTHER_SPLIT_INCOME = CATALOG.declare("other_split_income", Decimal, non_negative
 CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS = CATALOG.declare(
     "cpp_t4_base_and_first_additional_contributions", Decimal, non_negative=True
 )
-"""Total actual base and first additional contributions, Schedule 8 Part 3 line 8 and line 50340
-"Total actual base and first additional contributions on CPP pensionable earnings from box 16 of
-all of your T4 slips": the amount the filer enters from the T4 slips, a starting amount.
-"""
+"""Total actual base and first additional contributions, Schedule 8 Part 3 line 8 and Form RC381
+Part 3 line 19, line 50340 "Total actual base and first additional contributions on CPP pensionable
+earnings from box 16 of all of your T4 slips": the amount the filer enters from the T4 slips, a
+starting amount."""
 
 CPP_T4_SECOND_ADDITIONAL_CONTRIBUTIONS = CATALOG.declare(
     "cpp_t4_second_additional_contributions", Decimal, non_negative=True

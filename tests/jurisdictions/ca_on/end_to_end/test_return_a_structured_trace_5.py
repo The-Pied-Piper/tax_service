@@ -4,16 +4,22 @@ from __future__ import annotations
 
 from app.domain.parameters.rate import Rate
 from app.domain.parameters.rate_table import RateTableRow
+from app.domain.parameters.rounding import RoundingMode, RoundTo
 from app.domain.trace import (
+    AmountWhenMoreLine,
     BracketColumnLine,
     ChosenByRangeLine,
     ChosenRateAppliedLine,
+    CountAtLeastLine,
     ItemsTotalLine,
     RateByIncomeBandLine,
+    RatioTruncatedLine,
     RoundedTotalLine,
 )
 from app.jurisdictions.ca.catalog import (
     CHILD_CARE_EXPENSES,
+    CPP_MAXIMUM_PENSIONABLE_EARNINGS,
+    CPP_MONTHS,
     FEDERAL_BASIC_TAX,
     OTHER_DEPENDANTS_MEDICAL,
     POLITICAL_CONTRIBUTIONS,
@@ -21,7 +27,14 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_CHOSEN_COLUMN,
     POLITICAL_CREDIT_COLUMN_1_LINE_7,
     POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
+    QPP_MONTHS,
+    RC381_PART_2_LINE_B,
+    RC381_PART_3_LINE_3,
+    RC381_PART_3_LINE_6,
+    RC381_PART_3_LINE_15,
+    RC381_PART_3_LINE_15_LESSER,
     RENTAL_NON_COMPLIANT_EXPENSES,
+    T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
     TAXABLE_INCOME,
 )
 from app.jurisdictions.ca.trace import OtherDependantMedicalLine, ShortTermRentalNonCompliantLine
@@ -40,7 +53,53 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     totals = {line.output: line for line in trace if isinstance(line, RoundedTotalLine)}
     ranged = {line.output: line for line in trace if isinstance(line, ChosenByRangeLine)}
     bands = {line.output: line for line in trace if isinstance(line, RateByIncomeBandLine)}
-    chosen_rates = {line.output: line for line in trace if isinstance(line, ChosenRateAppliedLine)}
+    chosen_rates = {
+        line.output: line
+        for line in trace
+        if isinstance(line, ChosenRateAppliedLine) and line.output is CARE_CREDIT
+    }
+    counts_at_least = {line.output: line for line in trace if isinstance(line, CountAtLeastLine)}
+    truncated = {line.output: line for line in trace if isinstance(line, RatioTruncatedLine)}
+    when_more = {line.output: line for line in trace if isinstance(line, AmountWhenMoreLine)}
+    # Form RC381 Part 2 "The number you enter on line A cannot be more than the number you enter on
+    # line B.": Return A's lines A and B are both 12.
+    assert counts_at_least == {
+        RC381_PART_2_LINE_B: CountAtLeastLine(
+            output=RC381_PART_2_LINE_B,
+            count_kind=QPP_MONTHS,
+            count=12,
+            minimum_kind=CPP_MONTHS,
+            minimum=12,
+        )
+    }
+    # Form RC381 Part 3 line 6 "Line 4 divided by line 5 (calculated to the fifth decimal place
+    # without rounding)": Return A has no T4 pensionable earnings, so line 3 is 0 and line 6 is 0.
+    assert truncated == {
+        RC381_PART_3_LINE_6: RatioTruncatedLine(
+            output=RC381_PART_3_LINE_6,
+            dividend=T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
+            dividend_amount=D("0"),
+            divisor=RC381_PART_3_LINE_3,
+            divisor_amount=D("0"),
+            rounding=RoundTo(D("0.00001"), RoundingMode.DOWN),
+            cap_at_one=False,
+            result=D("0"),
+        )
+    }
+    # Form RC381 Part 3 line 15, when "the amount from line 3 is more than the amount from line C
+    # of Part 2": line 3 is 0, not more than line C (71,300.00), so line 15 is 0.
+    assert when_more == {
+        RC381_PART_3_LINE_15: AmountWhenMoreLine(
+            output=RC381_PART_3_LINE_15,
+            amount_kind=RC381_PART_3_LINE_15_LESSER,
+            amount_value=D("0.00"),
+            more_kind=RC381_PART_3_LINE_3,
+            more_value=D("0"),
+            than_kind=CPP_MAXIMUM_PENSIONABLE_EARNINGS,
+            than_value=D("71300.00"),
+            result=D("0"),
+        )
+    }
     # Schedule ON479-A line 7: 115,000 is "more than $114,000 but not more than $117,600: 19%".
     assert bands == {
         CARE_CREDIT_PERCENTAGE: RateByIncomeBandLine(

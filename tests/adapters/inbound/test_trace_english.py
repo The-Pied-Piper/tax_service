@@ -396,6 +396,7 @@ def test_renders_the_divided_figures_without_trailing_zeros_or_an_exponent() -> 
     )
 
 
+# --- subtractions ----------------------------
 # --- differences chosen by a sign -----------------------------------------------
 #
 # Not negative: "<output>: <difference kind> <difference> (<sign kind> <sign> is not negative) =
@@ -598,6 +599,7 @@ def test_renders_the_lesser_of_one_amount() -> None:
     assert render(line) == "lesser_amount: lesser of part_two 40.5 = 40.5"
 
 
+# --- greater of amounts ----------------------------
 # --- lesser of amounts and a maximum ---------------------------------------------------
 #
 # "<output>: lesser of <part> <amount> and <part> <amount> and <maximum> (<rule>) = <result>", every

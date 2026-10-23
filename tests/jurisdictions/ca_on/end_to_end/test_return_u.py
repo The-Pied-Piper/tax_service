@@ -548,7 +548,7 @@ def test_a_month_count_with_no_row_in_the_proration_table_is_refused() -> None:
     # A" in some cases, but the table has no row for 0, and none for 13: neither is guessed at.
     for months in (0, 13):
         with pytest.raises(NoAmountForCountError, match=rf"no amount for count {months} of ca/"):
-            self_employed(cpp_months=months)
+            self_employed(cpp_months=months, qpp_months=max(months, 12))
 
 
 def test_part_4_not_completed_leaves_lines_42100_31000_and_22200_at_zero() -> None:

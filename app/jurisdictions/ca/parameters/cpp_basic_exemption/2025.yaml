@@ -13,6 +13,7 @@ tax_year: 2025
 kind: amount_by_count
 sources:
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/5000-s8/5000-s8-25e.txt
+  - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/rc381/rc381-25e.pdf
 rounding: {increment: "0.01", mode: half_up}
 amounts:
   "1": "291.67"

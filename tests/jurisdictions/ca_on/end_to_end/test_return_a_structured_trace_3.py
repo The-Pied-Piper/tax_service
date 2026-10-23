@@ -462,6 +462,11 @@ from app.jurisdictions.ca.catalog import (
     QFFP_GAIN_OR_LOSS,
     QSBCS_GAIN_OR_LOSS,
     QSBCS_QFFP_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
+    RC381_PART_3_LINE_11,
+    RC381_PART_3_LINE_15,
+    RC381_PART_3_LINE_16,
+    RC381_PART_3_LINE_20,
+    RC381_PART_3_LINE_21,
     REFUND_OR_BALANCE_OWING,
     REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
     REGULAR_RATE_DONATIONS,
@@ -653,6 +658,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert subtracted == {
+        # Form RC381 Part 3 line 16 "Line 11 minus line 15": both are 0.
+        RC381_PART_3_LINE_16: SubtractedLine(
+            output=RC381_PART_3_LINE_16,
+            minuend=RC381_PART_3_LINE_11,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_3_LINE_15,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form RC381 Part 3 line 21 "Line 19 minus line 20": the T4 box 16 total of 4034.10 less
+        # line 20, 3356.10, 678.00.
+        RC381_PART_3_LINE_21: SubtractedLine(
+            output=RC381_PART_3_LINE_21,
+            minuend=CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            minuend_amount=D("4034.10"),
+            subtrahend=RC381_PART_3_LINE_20,
+            subtrahend_amount=D("3356.10"),
+            result=D("678.00"),
+        ),
         # Form T691 Part 2 line 5 "Line 1 minus line 4" "Tax payable before minimum tax carryover":
         # 20146.25 less 3194.87, 16951.38.
         AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER: SubtractedLine(
