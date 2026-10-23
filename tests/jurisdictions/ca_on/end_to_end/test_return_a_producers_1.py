@@ -803,6 +803,26 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_90,
     RC381_PART_4_LINE_91,
     RC381_PART_4_LINE_91_FROM_LINE_90,
+    RC381_PART_4_LINE_92,
+    RC381_PART_4_LINE_93,
+    RC381_PART_4_LINE_94,
+    RC381_PART_4_LINE_95,
+    RC381_PART_4_LINE_96,
+    RC381_PART_4_LINE_97,
+    RC381_PART_4_LINE_98,
+    RC381_PART_4_LINE_99,
+    RC381_PART_4_LINE_100,
+    RC381_PART_4_LINE_101,
+    RC381_PART_4_LINE_102,
+    RC381_PART_4_LINE_103,
+    RC381_PART_4_LINE_104,
+    RC381_PART_4_LINE_104_DIFFERENCE,
+    RC381_PART_4_LINE_105,
+    RC381_PART_4_LINE_106,
+    RC381_PART_4_LINE_107,
+    RC381_PART_4_LINE_108,
+    RC381_PART_4_LINE_109,
+    RC381_PART_4_LINE_110,
     RC381_SELF_EMPLOYMENT_CPP_CONTRIBUTIONS,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
@@ -1352,6 +1372,38 @@ def test_each_amount_is_produced_by_its_capability() -> None:
         worksheet.producer_of(RC381_PART_4_LINE_91_FROM_LINE_90), PositivePartOfNegation
     )
     assert isinstance(worksheet.producer_of(RC381_PART_4_LINE_91), ApplyRate)
+    # Form RC381 Part 4 lines 92 to 110: the choices by the sign of line 53, 60 and 68 of Part 3
+    # (lines 92, 99 and 106), the positive amounts of lines 93, 100 and 107, the "whichever is
+    # less" of lines 94, 97, 101, 104 and 108 when the lines are positive, the differences of
+    # lines 95 and 102 and the one printed inside line 104, and the sums of lines 96, 98, 103, 105,
+    # 109 and 110.
+    for kind in (RC381_PART_4_LINE_92, RC381_PART_4_LINE_99, RC381_PART_4_LINE_106):
+        assert isinstance(worksheet.producer_of(kind), ChooseBySign), kind.identifier
+    for kind in (RC381_PART_4_LINE_93, RC381_PART_4_LINE_100, RC381_PART_4_LINE_107):
+        assert isinstance(worksheet.producer_of(kind), PositivePartOfNegation), kind.identifier
+    for kind in (
+        RC381_PART_4_LINE_94,
+        RC381_PART_4_LINE_97,
+        RC381_PART_4_LINE_101,
+        RC381_PART_4_LINE_104,
+        RC381_PART_4_LINE_108,
+    ):
+        assert isinstance(worksheet.producer_of(kind), LesserOfWhenPositive), kind.identifier
+    for kind in (
+        RC381_PART_4_LINE_95,
+        RC381_PART_4_LINE_102,
+        RC381_PART_4_LINE_104_DIFFERENCE,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Subtract), kind.identifier
+    for kind in (
+        RC381_PART_4_LINE_96,
+        RC381_PART_4_LINE_98,
+        RC381_PART_4_LINE_103,
+        RC381_PART_4_LINE_105,
+        RC381_PART_4_LINE_109,
+        RC381_PART_4_LINE_110,
+    ):
+        assert isinstance(worksheet.producer_of(kind), Sum), kind.identifier
     # Line 3 (box 50399) is a starting amount, so nothing produces it.
     assert worksheet.producer_of(CPT20_T4_EARNINGS) is None
     assert worksheet.producer_of(RC381_PART_3_LINE_7) is not None

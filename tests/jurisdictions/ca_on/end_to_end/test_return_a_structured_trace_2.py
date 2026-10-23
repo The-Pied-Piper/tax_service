@@ -882,6 +882,20 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_86,
     RC381_PART_4_LINE_87,
     RC381_PART_4_LINE_88,
+    RC381_PART_4_LINE_92,
+    RC381_PART_4_LINE_94,
+    RC381_PART_4_LINE_96,
+    RC381_PART_4_LINE_97,
+    RC381_PART_4_LINE_98,
+    RC381_PART_4_LINE_99,
+    RC381_PART_4_LINE_101,
+    RC381_PART_4_LINE_103,
+    RC381_PART_4_LINE_104,
+    RC381_PART_4_LINE_105,
+    RC381_PART_4_LINE_106,
+    RC381_PART_4_LINE_108,
+    RC381_PART_4_LINE_109,
+    RC381_PART_4_LINE_110,
     RDSP_INCOME,
     RDSP_INCOME_REPAYMENT,
     REAL_ESTATE_GAIN_OR_LOSS,
@@ -1134,6 +1148,40 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     )
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Form RC381 Part 4 line 96 "Line 92 plus line 94", line 98 "Line 96 plus line 97", line 103
+        # "Line 99 plus line 101", line 105 "Line 103 plus line 104", line 109 "Line 106 plus line
+        # 108" and line 110 "Line 105 plus line 109": every part is 0 for Return A, which has no T4
+        # slips (lines 53, 60, 61 and 68 of Part 3 are 0).
+        RC381_PART_4_LINE_96: SumLine(
+            RC381_PART_4_LINE_96,
+            ((RC381_PART_4_LINE_92, D("0.00")), (RC381_PART_4_LINE_94, D("0"))),
+            D("0.00"),
+        ),
+        RC381_PART_4_LINE_98: SumLine(
+            RC381_PART_4_LINE_98,
+            ((RC381_PART_4_LINE_96, D("0.00")), (RC381_PART_4_LINE_97, D("0"))),
+            D("0.00"),
+        ),
+        RC381_PART_4_LINE_103: SumLine(
+            RC381_PART_4_LINE_103,
+            ((RC381_PART_4_LINE_99, D("0.00")), (RC381_PART_4_LINE_101, D("0"))),
+            D("0.00"),
+        ),
+        RC381_PART_4_LINE_105: SumLine(
+            RC381_PART_4_LINE_105,
+            ((RC381_PART_4_LINE_103, D("0.00")), (RC381_PART_4_LINE_104, D("0"))),
+            D("0.00"),
+        ),
+        RC381_PART_4_LINE_109: SumLine(
+            RC381_PART_4_LINE_109,
+            ((RC381_PART_4_LINE_106, D("0.00")), (RC381_PART_4_LINE_108, D("0"))),
+            D("0.00"),
+        ),
+        RC381_PART_4_LINE_110: SumLine(
+            RC381_PART_4_LINE_110,
+            ((RC381_PART_4_LINE_105, D("0.00")), (RC381_PART_4_LINE_109, D("0.00"))),
+            D("0.00"),
+        ),
         # Form RC381 Part 4 line 74 "Add lines 71 to 73." (the amounts from line 4 and from lines
         # 11 and 31 of Part 3), line 87 "Line 85 plus line 86" and line 88
         # "Line 84 plus line 87": every part is 0 for Return A, which has no T4 slips and no

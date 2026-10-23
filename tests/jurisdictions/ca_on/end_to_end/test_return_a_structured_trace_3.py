@@ -553,6 +553,14 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_4_LINE_89,
     RC381_PART_4_LINE_89_FROM_LINE_69,
     RC381_PART_4_LINE_90,
+    RC381_PART_4_LINE_93,
+    RC381_PART_4_LINE_94,
+    RC381_PART_4_LINE_95,
+    RC381_PART_4_LINE_97,
+    RC381_PART_4_LINE_100,
+    RC381_PART_4_LINE_101,
+    RC381_PART_4_LINE_102,
+    RC381_PART_4_LINE_104_DIFFERENCE,
     REFUND_OR_BALANCE_OWING,
     REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
     REGULAR_RATE_DONATIONS,
@@ -756,6 +764,34 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert subtracted == {
+        # Form RC381 Part 4 line 95 "Line 93 minus line 94", line 102 "Line 100 minus line 101" and
+        # the result printed inside line 104, "the result of line 68 of Part 3 minus line 97":
+        # Return A has no T4 slips, so lines 93, 94, 97, 100 and 101 are 0 and so is line 68 of
+        # Part 3.
+        RC381_PART_4_LINE_95: SubtractedLine(
+            output=RC381_PART_4_LINE_95,
+            minuend=RC381_PART_4_LINE_93,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_4_LINE_94,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        RC381_PART_4_LINE_102: SubtractedLine(
+            output=RC381_PART_4_LINE_102,
+            minuend=RC381_PART_4_LINE_100,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_4_LINE_101,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        RC381_PART_4_LINE_104_DIFFERENCE: SubtractedLine(
+            output=RC381_PART_4_LINE_104_DIFFERENCE,
+            minuend=RC381_PART_3_LINE_68,
+            minuend_amount=D("0.00"),
+            subtrahend=RC381_PART_4_LINE_97,
+            subtrahend_amount=D("0"),
+            result=D("0.00"),
+        ),
         # Form RC381 Part 4 line 70 "Line 62 minus line 69", line 80 "Line 78 minus line 79" (the
         # amount from line 4 less the amount from line 65), line 82 "Line 80 minus line 81" (line 81
         # being line 70) and line 90 "Line 88 minus 89.": Return A has no T4 slips, so line 3 of
