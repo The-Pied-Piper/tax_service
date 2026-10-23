@@ -463,6 +463,71 @@ RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981 = CATALOG.declare(
 base made after 1981 (for example, capital expenditures)": a starting amount, a field of each record
 of the properties sold, used by Part 2 only."""
 
+RESIDENCE_T664_FILED = CATALOG.declare("residence_t664_filed", int, non_negative=True)
+"""Form T664 or T664(Seniors) filed for the property, Form T2091(IND) Part 4 "Complete Part 4 if you
+or your spouse or common-law partner filed Form T664 or T664(Seniors) for this property.": 1 if it
+was filed, else 0, taken as a count like the forms' other yes or no questions; a starting count, a
+field of each record of the properties sold, used by the worksheet and Part 4 only."""
+
+RESIDENCE_WS_YEARS_DESIGNATED_AFTER_1981 = CATALOG.declare(
+    "residence_ws_years_designated_after_1981", int, non_negative=True
+)
+"""Years designated after 1981 and before 1995, Form T2091(IND)-WS line 1 "After 1981 and before
+1995": a starting count from the 1994 election, a field of each record of the properties sold, used
+by the worksheet only."""
+
+RESIDENCE_WS_YEARS_OWNED_AFTER_1981 = CATALOG.declare(
+    "residence_ws_years_owned_after_1981", int, non_negative=True
+)
+"""Years owned after 1981 and before 1995, Form T2091(IND)-WS line 4 "After 1981 and before 1995": a
+starting count from the 1994 election, a field of each record of the properties sold, used by the
+worksheet only."""
+
+RESIDENCE_WS_DESIGNATED_PROCEEDS = CATALOG.declare(
+    "residence_ws_designated_proceeds", Decimal, non_negative=True
+)
+"""Designated proceeds of disposition, Form T2091(IND)-WS line 7 "Designated proceeds of disposition
+(column 2, Chart B of Form T664, or column 2, Step 2 of Form T664(Seniors))": a starting amount from
+the 1994 election, a field of each record of the properties sold, used by the worksheet only."""
+
+RESIDENCE_WS_ADJUSTED_COST_BASE_FEB_22_1994 = CATALOG.declare(
+    "residence_ws_adjusted_cost_base_feb_22_1994", Decimal, non_negative=True
+)
+"""Adjusted cost base at the end of February 22, 1994, Form T2091(IND)-WS line 8 "Adjusted cost base
+at the end of February 22, 1994 (column 1, Chart B of Form T664, or column 1, Step 2 of Form
+T664(Seniors))": a starting amount from the 1994 election, a field of each record of the properties
+sold, used by the worksheet only."""
+
+RESIDENCE_WS_FMV_FEB_22_1994 = CATALOG.declare(
+    "residence_ws_fmv_feb_22_1994", Decimal, non_negative=True
+)
+"""Fair market value at the end of February 22, 1994, Form T2091(IND)-WS line 10 "Fair market value
+at the end of February 22, 1994 (Step 1 of Form T664 or T664(Seniors))": a starting amount from the
+1994 election, a field of each record of the properties sold, used by the worksheet only."""
+
+RESIDENCE_WS_ELECTED_CAPITAL_GAIN = CATALOG.declare(
+    "residence_ws_elected_capital_gain", Decimal, non_negative=True
+)
+"""Elected capital gain, Form T2091(IND)-WS line 13 "Elected capital gain (column 5, Chart B of Form
+T664, or column 5, Step 2 of Form T664(Seniors))": a starting amount from the 1994 election, a field
+of each record of the properties sold, used by the worksheet only."""
+
+RESIDENCE_WS_MONTHS_OWNED_AFTER_FEB_1992 = CATALOG.declare(
+    "residence_ws_months_owned_after_feb_1992", int, non_negative=True
+)
+"""Months owned after February 1992 and before March 1994, Form T2091(IND)-WS line 60 "Number of
+months you owned the property after February 1992 and before March 1994 (do not include any months
+you or your spouse or common-law partner designated the property as a principal residence)": a
+starting count, a field of each record of the properties sold, used by the worksheet only."""
+
+RESIDENCE_WS_MONTHS_OWNED_AFTER_1971 = CATALOG.declare(
+    "residence_ws_months_owned_after_1971", int, non_negative=True
+)
+"""Months owned after 1971 and before March 1994, Form T2091(IND)-WS line 62 "Number of months you
+owned the property after 1971 and before March 1994 (do not include any months you or your spouse
+or common-law partner designated the property as a principal residence)": a starting count, a field
+of each record of the properties sold, used by the worksheet only."""
+
 PRINCIPAL_RESIDENCE_PROPERTIES = RecordListKind.declare(
     CATALOG,
     "principal_residence_properties",
@@ -479,13 +544,24 @@ PRINCIPAL_RESIDENCE_PROPERTIES = RecordListKind.declare(
         RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981,
         RESIDENCE_FMV_DEC_31_1981,
         RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981,
+        RESIDENCE_T664_FILED,
+        RESIDENCE_WS_YEARS_DESIGNATED_AFTER_1981,
+        RESIDENCE_WS_YEARS_OWNED_AFTER_1981,
+        RESIDENCE_WS_DESIGNATED_PROCEEDS,
+        RESIDENCE_WS_ADJUSTED_COST_BASE_FEB_22_1994,
+        RESIDENCE_WS_FMV_FEB_22_1994,
+        RESIDENCE_WS_ELECTED_CAPITAL_GAIN,
+        RESIDENCE_WS_MONTHS_OWNED_AFTER_FEB_1992,
+        RESIDENCE_WS_MONTHS_OWNED_AFTER_1971,
     ),
 )
 """Properties sold and designated as a principal residence, Form T2091(IND) "Complete a separate
 form for each property you sold.": a starting list with one record for each such property, holding
 the form's input lines 1, 2, 5, 6, 8, 9, 10, 11, 12 and 13, whether the "plus one" applies and
-whether Part 2 applies (lines 3, 4, 7 and 14 onward are worked out). The caller lists only the
-properties the form sends to Section 2 (Schedule 3 box 2 or 3) that are not flipped properties."""
+whether Part 2 applies (lines 3, 4, 7 and 14 onward are worked out), and the figures of the 1994
+election the Form T2091(IND)-WS worksheet takes: whether Form T664 or T664(Seniors) was filed, and
+worksheet lines 1, 4, 7, 8, 10, 13, 60 and 62. The caller lists only the properties the form sends
+to Section 2 (Schedule 3 box 2 or 3) that are not flipped properties."""
 
 PRINCIPAL_RESIDENCE_GAIN = CATALOG.declare("principal_residence_gain", Decimal, non_negative=True)
 """Capital gain left after the principal residence exemption, Form T2091(IND) Part 3 line 54 "Total
@@ -561,6 +637,121 @@ PRINCIPAL_RESIDENCE_LINE_53 = CATALOG.declare(
 )
 """Net capital gain of Part 2, Form T2091(IND) Part 2 line 53 "Line 51 minus line 52 (if negative,
 enter "0")": the total over the properties sold, each floored at 0."""
+
+PRINCIPAL_RESIDENCE_WORKSHEET_LINE_3 = CATALOG.declare(
+    "principal_residence_worksheet_line_3", Decimal, non_negative=True
+)
+"""Total years designated before 1995, Form T2091(IND)-WS line 3 "Total number of years designated
+before 1995 (line 1 plus line 2)": the total over the properties sold, each a count of years."""
+
+PRINCIPAL_RESIDENCE_WORKSHEET_LINE_6 = CATALOG.declare(
+    "principal_residence_worksheet_line_6", Decimal, non_negative=True
+)
+"""Total years owned before 1995, Form T2091(IND)-WS line 6 "Total number of years owned before 1995
+(line 4 plus line 5)": the total over the properties sold, each a count of years."""
+
+PRINCIPAL_RESIDENCE_WORKSHEET_LINE_16 = CATALOG.declare(
+    "principal_residence_worksheet_line_16", Decimal, non_negative=True
+)
+"""Line 14 times 1.1, Form T2091(IND)-WS Chart 1 line 16 "Multiply line 14 by 1.1.": the total over
+the properties sold of each product rounded with the Chart 1 factor's rule; 0 for a property whose
+Chart 1 is not completed."""
+
+PRINCIPAL_RESIDENCE_WORKSHEET_LINE_17 = CATALOG.declare(
+    "principal_residence_worksheet_line_17", Decimal, non_negative=True
+)
+"""Chart 1 line 17, Form T2091(IND)-WS "Line 15 minus line 16 (if negative, enter "0")": the total
+over the properties sold, each floored at 0; 0 for a property whose Chart 1 is not completed."""
+
+PRINCIPAL_RESIDENCE_WORKSHEET_LINE_18 = CATALOG.declare(
+    "principal_residence_worksheet_line_18", Decimal
+)
+"""Chart 1 line 18, Form T2091(IND)-WS "Line 14 minus line 17": the total over the properties sold,
+not floored, so it may be negative; 0 for a property whose Chart 1 is not completed."""
+
+PRINCIPAL_RESIDENCE_WORKSHEET_LINE_19 = CATALOG.declare(
+    "principal_residence_worksheet_line_19", Decimal
+)
+"""Worksheet line 19, Form T2091(IND)-WS "Enter the amount from line 18 if you completed Chart 1.
+Otherwise, enter the amount from line 10.": the total over the properties sold, not floored, so it
+may be negative."""
+
+PRINCIPAL_RESIDENCE_WORKSHEET_LINE_21 = CATALOG.declare(
+    "principal_residence_worksheet_line_21", Decimal
+)
+"""Adjusted gain before principal residence exemption, Form T2091(IND)-WS line 21 "Line 19 minus
+line 20": the total over the properties sold, not floored, so it may be negative."""
+
+PRINCIPAL_RESIDENCE_WORKSHEET_LINE_23 = CATALOG.declare(
+    "principal_residence_worksheet_line_23", Decimal, non_negative=True
+)
+"""Years designated plus the "plus one", Form T2091(IND)-WS line 23 "Line 3 plus 1 (see note
+below)": the total over the properties sold, each a count of years."""
+
+PRINCIPAL_RESIDENCE_WORKSHEET_LINE_24 = CATALOG.declare(
+    "principal_residence_worksheet_line_24", Decimal
+)
+"""Adjusted gain multiplied by the years, Form T2091(IND)-WS line 24 "Multiply line 22 by line 23.":
+the total over the properties sold, not floored, so it may be negative."""
+
+PRINCIPAL_RESIDENCE_WORKSHEET_LINE_26 = CATALOG.declare(
+    "principal_residence_worksheet_line_26", Decimal
+)
+"""Exempt part of the adjusted gain, Form T2091(IND)-WS line 26 "Divide line 24 by line 25.": the
+total over the properties sold of each quotient rounded with the worksheet's rounding rule; it may
+be negative."""
+
+PRINCIPAL_RESIDENCE_WORKSHEET_LINE_27 = CATALOG.declare(
+    "principal_residence_worksheet_line_27", Decimal
+)
+"""Net adjusted gain, Form T2091(IND)-WS line 27 "Line 21 minus line 26": the total over the
+properties sold, not floored, so it may be negative."""
+
+PRINCIPAL_RESIDENCE_WORKSHEET_LINE_59 = CATALOG.declare(
+    "principal_residence_worksheet_line_59", Decimal
+)
+"""Gain carried into Part 3, Form T2091(IND)-WS line 59 "If you completed Part 2, enter the amount
+from line 58. Otherwise, enter the amount from line 27.": the total over the properties sold, not
+floored, so it may be negative."""
+
+PRINCIPAL_RESIDENCE_WORKSHEET_LINE_61 = CATALOG.declare(
+    "principal_residence_worksheet_line_61", Decimal
+)
+"""Gain multiplied by the months owned after February 1992, Form T2091(IND)-WS line 61 "Multiply
+line 59 by line 60.": the total over the properties sold, not floored, so it may be negative."""
+
+PRINCIPAL_RESIDENCE_WORKSHEET_LINE_63 = CATALOG.declare(
+    "principal_residence_worksheet_line_63", Decimal
+)
+"""Gain of the months owned after February 1992 over the months owned after 1971, Form T2091(IND)-WS
+line 63 "Divide line 61 by line 62.": the total over the properties sold of each quotient rounded
+with the worksheet's rounding rule; it may be negative."""
+
+PRINCIPAL_RESIDENCE_WORKSHEET_LINE_64 = CATALOG.declare(
+    "principal_residence_worksheet_line_64", Decimal
+)
+"""Total adjusted gain, Form T2091(IND)-WS line 64 "Line 59 minus line 63": the total over the
+properties sold, not floored, so it may be negative."""
+
+PRINCIPAL_RESIDENCE_WORKSHEET_LINE_66 = CATALOG.declare(
+    "principal_residence_worksheet_line_66", Decimal
+)
+"""Reduction as a result of the capital gains election, Form T2091(IND)-WS line 66 "Enter whichever
+amount is less: line 64 or line 65.": the total over the properties sold, not floored, so it may be
+negative."""
+
+PRINCIPAL_RESIDENCE_LINE_56 = CATALOG.declare("principal_residence_line_56", Decimal)
+"""Reduction as a result of the capital gains election, Form T2091(IND) Part 4 line 56 "Reduction as
+a result of the capital gains election (line 66 of Form T2091(IND)-WS)": the total over the
+properties sold; 0 for a property whose election was not filed. The form prints no floor, so it may
+be negative."""
+
+PRINCIPAL_RESIDENCE_LINE_57 = CATALOG.declare(
+    "principal_residence_line_57", Decimal, non_negative=True
+)
+"""Total capital gain after the election, Form T2091(IND) Part 4 line 57 "Line 55 minus line 56 (if
+negative, enter "0")": the total over the properties sold, each floored at 0; the amount that
+goes to Schedule 3 line 15800 when the election is wired."""
 
 CCA_CLASS_NUMBER = CATALOG.declare("cca_class_number", Decimal, non_negative=True)
 """Class number, T776 and T2125 Area A "Column 1: Class number": a number such as 8, 10.1 or 43.1,

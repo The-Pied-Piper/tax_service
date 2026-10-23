@@ -119,6 +119,35 @@ def test_the_principal_residence_rows_base_is_not_registered() -> None:
         CapabilityRegistry.shared().get("ca/principal_residence_rows")
 
 
+@pytest.mark.parametrize("line", [3, 6, 16, 17, 18, 19, 21, 23, 24, 26, 27, 59, 61, 63, 64, 66])
+def test_importing_the_federal_package_registers_the_worksheet_lines(line: int) -> None:
+    registered = CapabilityRegistry.shared().get(f"ca/principal_residence_worksheet_line_{line}")
+
+    assert registered.__module__ == (
+        f"app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_{line}"
+    )
+
+
+@pytest.mark.parametrize("line", [56, 57])
+def test_importing_the_federal_package_registers_the_part_4_lines(line: int) -> None:
+    registered = CapabilityRegistry.shared().get(f"ca/principal_residence_line_{line}")
+
+    assert registered.__module__ == (
+        f"app.jurisdictions.ca.capabilities.principal_residence_line_{line}"
+    )
+
+
+def test_the_worksheet_base_is_not_registered() -> None:
+    # The base is a class of its own, imported here, and is never registered under any name.
+    from app.jurisdictions.ca.capabilities.principal_residence_worksheet_rows import (
+        PrincipalResidenceWorksheetRows,
+    )
+
+    assert PrincipalResidenceWorksheetRows.__name__ == "PrincipalResidenceWorksheetRows"
+    with pytest.raises(UnknownRegistrationError):
+        CapabilityRegistry.shared().get("ca/principal_residence_worksheet_rows")
+
+
 def test_importing_the_federal_package_registers_the_disposition_gains_capability() -> None:
     registered = CapabilityRegistry.shared().get("ca/disposition_gains")
 
