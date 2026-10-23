@@ -290,13 +290,13 @@ A form is never a capability, and forms do not nest.
   `min_instances` and `exclusive_group` (see Limits). A form exports at least one artifact. A
   form's inputs are not declared: with instances they are the fields of the
   record; without, the starting artifacts its selections read or export; plus
-  its imports.
+  its imports and, if it reads its own `B.X`, that kind (see Earlier runs).
 - `FormComposition` is the form wired: its inner `Composition`, whose outputs
   are the form's exports.
 - `FormSet` holds a computation's forms. It orders them by what they import,
   runs each form once per instance on its own `Worksheet`, keeps the derived
-  `<form>.<export>` kinds in one store, and hands each run its imports as
-  starting artifacts.
+  `<form>.<export>` kinds in one store, and hands each run its imports (and
+  the earlier runs of a form reading its own export) as starting artifacts.
 
 **Instances.** A form's `instances` kind is a record list the caller supplies,
 one record per instance (a second T2125 is a second record); the record's
@@ -333,8 +333,9 @@ among those refused when the `FormSet` is built (a derived kind given at
 `compute` is refused too).
 
 **Earlier runs.** A form may read its own `B.X`. Each run then receives it as a
-starting artifact holding the records of the runs before it, in run order: none
-in the first run, and none in a form without an instances list. It is not an
+starting artifact of the same record list kind as `B.X` (one field, one record
+for each run before it, in run order): empty in the first run, and so in a form
+without an instances list. It is not an
 import and adds no edge to the order. A capability over it does what the form
 needs, such as totalling the earlier runs' amounts. The kind later forms read
 still holds every run.
