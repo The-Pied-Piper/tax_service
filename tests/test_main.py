@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1140
+        == 1167
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1140
+        == 1167
     )
 
 
@@ -1738,6 +1738,9 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/qpp_months",
         "ca/t4_cpp_pensionable_earnings_outside_quebec",
         "ca/t4_qpp_pensionable_earnings_in_quebec",
+        "ca/t4_cpp_second_additional_box_16a",
+        "ca/t4_qpp_contributions_box_17",
+        "ca/t4_qpp_second_additional_box_17a",
         "ca/rc381_part_2_line_b",
         "ca/rc381_part_2_line_g",
         "ca/rc381_part_2_line_h",
@@ -1761,6 +1764,33 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/rc381_part_3_line_23",
         "ca/rc381_part_3_line_24",
         "ca/rc381_part_3_line_26",
+        "ca/rc381_part_3_line_27",
+        "ca/rc381_part_3_line_28",
+        "ca/rc381_part_3_line_29",
+        "ca/rc381_part_3_line_30",
+        "ca/rc381_part_3_line_31",
+        "ca/rc381_part_3_line_34",
+        "ca/rc381_part_3_line_35_lesser",
+        "ca/rc381_part_3_line_35",
+        "ca/rc381_part_3_line_36",
+        "ca/rc381_part_3_line_38",
+        "ca/rc381_part_3_line_40",
+        "ca/rc381_part_3_line_41",
+        "ca/rc381_part_3_line_42",
+        "ca/rc381_part_3_line_43",
+        "ca/rc381_part_3_line_44",
+        "ca/rc381_part_3_line_46",
+        "ca/rc381_part_3_line_49",
+        "ca/rc381_part_3_line_52",
+        "ca/rc381_part_3_line_53",
+        "ca/rc381_part_3_line_56",
+        "ca/rc381_part_3_line_59",
+        "ca/rc381_part_3_line_60",
+        "ca/rc381_part_3_line_61",
+        "ca/rc381_part_3_line_64",
+        "ca/rc381_part_3_line_67",
+        "ca/rc381_part_3_line_68",
+        "ca/rc381_part_3_line_69",
         "ca/amt_adjusted_income_with_security_options",
         "ca/amt_security_options_and_losses_total",
         "ca/amt_adjustments_after_rate_total",
@@ -2191,7 +2221,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1140
+        == 1167
     )
     assert (
         len(
@@ -2199,7 +2229,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1140
+        == 1167
     )
 
 
@@ -2212,7 +2242,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1140
+        == 1167
     )
     assert (
         len(
@@ -2220,7 +2250,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1140
+        == 1167
     )
 
 

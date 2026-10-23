@@ -29,10 +29,13 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
     QPP_MONTHS,
     RC381_PART_2_LINE_B,
+    RC381_PART_2_LINE_G,
     RC381_PART_3_LINE_3,
     RC381_PART_3_LINE_6,
     RC381_PART_3_LINE_15,
     RC381_PART_3_LINE_15_LESSER,
+    RC381_PART_3_LINE_35,
+    RC381_PART_3_LINE_35_LESSER,
     RENTAL_NON_COMPLIANT_EXPENSES,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
     TAXABLE_INCOME,
@@ -98,6 +101,18 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     # Form RC381 Part 3 line 15, when "the amount from line 3 is more than the amount from line C
     # of Part 2": line 3 is 0, not more than line C (71,300.00), so line 15 is 0.
     assert when_more == {
+        # Form RC381 Part 3 line 35, when "the amount from line 3 is more than the amount from line
+        # G of Part 2": line 3 is 0, not more than line G (71,300.00), so line 35 is 0.
+        RC381_PART_3_LINE_35: AmountWhenMoreLine(
+            output=RC381_PART_3_LINE_35,
+            amount_kind=RC381_PART_3_LINE_35_LESSER,
+            amount_value=D("0"),
+            more_kind=RC381_PART_3_LINE_3,
+            more_value=D("0"),
+            than_kind=RC381_PART_2_LINE_G,
+            than_value=D("71300.00"),
+            result=D("0"),
+        ),
         RC381_PART_3_LINE_15: AmountWhenMoreLine(
             output=RC381_PART_3_LINE_15,
             amount_kind=RC381_PART_3_LINE_15_LESSER,
@@ -107,7 +122,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             than_kind=CPP_MAXIMUM_PENSIONABLE_EARNINGS,
             than_value=D("71300.00"),
             result=D("0"),
-        )
+        ),
     }
     # Schedule ON479-A line 7: 115,000 is "more than $114,000 but not more than $117,600: 19%".
     assert bands == {

@@ -693,6 +693,19 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_22,
     RC381_PART_3_LINE_23,
     RC381_PART_3_LINE_26,
+    RC381_PART_3_LINE_27,
+    RC381_PART_3_LINE_28,
+    RC381_PART_3_LINE_29,
+    RC381_PART_3_LINE_30,
+    RC381_PART_3_LINE_31,
+    RC381_PART_3_LINE_34,
+    RC381_PART_3_LINE_35,
+    RC381_PART_3_LINE_35_LESSER,
+    RC381_PART_3_LINE_36,
+    RC381_PART_3_LINE_38,
+    RC381_PART_3_LINE_42,
+    RC381_PART_3_LINE_43,
+    RC381_PART_3_LINE_46,
     REFUND,
     RENTAL_CCA_CLAIM,
     RENTAL_CCA_CLAIM_BEFORE_LIMIT,
@@ -763,6 +776,7 @@ from app.jurisdictions.ca.catalog import (
     STANDARD_AMOUNT_ALLOCATED,
     T3_CAPITAL_GAINS_OR_LOSSES,
     T4_CPP_PENSIONABLE_EARNINGS_OUTSIDE_QUEBEC,
+    T4_QPP_PENSIONABLE_EARNINGS_IN_QUEBEC,
     T657_ABIL_CLAIMED_1985_TO_2024,
     T657_CHART_2_LINE_18,
     T657_CHART_2016_AMOUNT_D,
@@ -968,6 +982,23 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         )
     }
     assert lesser == {
+        # Form RC381 Part 3 line 31 "Enter whichever is less: amount from line 2 or line 27.":
+        # line 2 is 0.
+        RC381_PART_3_LINE_31: LesserOfLine(
+            output=RC381_PART_3_LINE_31,
+            parts=(
+                (T4_QPP_PENSIONABLE_EARNINGS_IN_QUEBEC, D("0")),
+                (RC381_PART_3_LINE_27, D("81200.00")),
+            ),
+            result=D("0"),
+        ),
+        # Form RC381 Part 3 line 35 "Enter whichever is less: amount from line 30 or line 34.":
+        # line 34 is 0.
+        RC381_PART_3_LINE_35_LESSER: LesserOfLine(
+            output=RC381_PART_3_LINE_35_LESSER,
+            parts=((RC381_PART_3_LINE_30, D("9900.00")), (RC381_PART_3_LINE_34, D("0"))),
+            result=D("0"),
+        ),
         # Form RC381 Part 3 line 11 "Enter whichever is less: amount from line 1 or line 7.": line
         # 1 is 0.
         RC381_PART_3_LINE_11: LesserOfLine(
@@ -2050,6 +2081,36 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert tiers == {
+        # Form RC381 Part 3 line 42 "amount from line 38 x 5.4% = (maximum $3,661.20)", line 43
+        # "amount from line 38 x 1% = (maximum $678.00)" and line 46 "amount from line 35 x 4% =
+        # (maximum $396.00)": line 38 and line 35 are 0.
+        RC381_PART_3_LINE_42: ContributionTierLine(
+            RC381_PART_3_LINE_42,
+            RC381_PART_3_LINE_38,
+            D("0"),
+            ContributionTier(Rate(D("0.054")), D("0"), D("67800"), D("3661.20")),
+            CENT,
+            D("0"),
+            D("0.00"),
+        ),
+        RC381_PART_3_LINE_43: ContributionTierLine(
+            RC381_PART_3_LINE_43,
+            RC381_PART_3_LINE_38,
+            D("0"),
+            ContributionTier(Rate(D("0.01")), D("0"), D("67800"), D("678.00")),
+            CENT,
+            D("0"),
+            D("0.00"),
+        ),
+        RC381_PART_3_LINE_46: ContributionTierLine(
+            RC381_PART_3_LINE_46,
+            RC381_PART_3_LINE_35,
+            D("0"),
+            ContributionTier(Rate(D("0.04")), D("0"), D("9900"), D("396.00")),
+            CENT,
+            D("0"),
+            D("0.00"),
+        ),
         # Form RC381 Part 3 line 22 "amount from line 18 x 4.95% = (maximum $3,356.10)", line 23
         # "amount from line 18 x 1% = (maximum $678.00)" and line 26 "amount from line 15 x 4% =
         # (maximum $396.00)": line 18 and line 15 are 0.
@@ -2338,6 +2399,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Form RC381 Part 3 line 34 "Line 32 minus line 33 (if negative, enter "0")": line 32 is
+        # line 31 (0) and line 33 is line 28 (71,300.00).
+        RC381_PART_3_LINE_34: SubtractedNotBelowZeroLine(
+            output=RC381_PART_3_LINE_34,
+            minuend=RC381_PART_3_LINE_31,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_3_LINE_28,
+            subtrahend_amount=D("71300.00"),
+            result=D("0"),
+        ),
+        # Form RC381 Part 3 line 38 "Line 36 minus line 37 (if negative, enter "0")": line 37 is
+        # line 29 (3,500.00).
+        RC381_PART_3_LINE_38: SubtractedNotBelowZeroLine(
+            output=RC381_PART_3_LINE_38,
+            minuend=RC381_PART_3_LINE_36,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_3_LINE_29,
+            subtrahend_amount=D("3500.00"),
+            result=D("0"),
+        ),
         # Form T691 Part 7 line 11 "Line 9 minus line 10 (if negative, enter "0")": the special
         # foreign tax credit (0) less the federal foreign tax credit (0): 0.
         AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE: SubtractedNotBelowZeroLine(

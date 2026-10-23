@@ -1,10 +1,11 @@
 # Return BO: Bianca, a single 2025 Ontario resident with two T4 slips, one for Ontario
 # employment (box 26 of $30,000) and one for Quebec employment (box 26 of $40,000), so Form
 # RC381 replaces Schedule 8. This return carries Part 2 (the months and the QPP lines G to J) and
-# Part 3 lines 1 to 26 on the CPP side (lines 3, 6 to 11, 14 to 16, 18 and 20 to 24 and 26); the
-# QPP side of Part 3 (lines 27 onward), Parts 3a and 3b and Part 4 are not yet computed, so the
-# T1 lines 30800, 22215, 44800, 22200, 31000 and 42100 below are still Schedule 8's, from the
-# whole employment income. The other lines are blank.
+# Part 3 lines 1 to 69 (the CPP side on lines 3, 6 to 11, 14 to 16, 18 and 20 to 26, the QPP side
+# on lines 27 to 31, 34 to 36, 38 and 40 to 46, and the totals on lines 49 to 69); Parts 3a and 3b
+# (lines 70 to 93) and Part 4 are not yet computed, so the T1 lines 30800, 22215, 44800, 22200,
+# 31000 and 42100 below are still Schedule 8's, from the whole employment income. The other lines
+# are blank.
 jurisdiction: CA-ON
 tax_year: 2025
 description: >-
@@ -32,7 +33,6 @@ description: >-
   1,800.00 (a chosen figure; box 16A, line 25, is 0): line 20 = 1,800.00 x 83.1933% =
   1,497.4794, 1,497.48; line 21 = 1,800.00 less 1,497.48 = 302.52. Line 22 = 28,500.00 x 4.95%
   = 1,410.75 (not above the maximum of 3,356.10); line 23 = 28,500.00 x 1% = 285.00; line 24 =
-  1,410.75 + 285.00 = 1,695.75; line 26 = 0 x 4% = 0. The remaining lines of the T1 are
   Schedule 8's, as the RC381 results are not yet carried to them, and Schedule 8 reads the same T4
   box 16 total (1,800.00) as line 19: on employment income of $70,000 the required base
   contributions (line 30800) are 4.95% x (70,000 less 3,500) = 3,291.75, and the required
@@ -43,9 +43,28 @@ description: >-
   The federal tax and the Ontario tax are the engine's figures from the 2025 brackets and credits
   in the repository (net federal tax 7,920.12, Ontario tax 4,035.23), giving a total payable of
   11,955.35 and a refund of 44.65 (to be confirmed against CRA's
-  calculator). Not triggered: Part 3 lines 27 to 93, Part 4, the QPP contributions on lines
-  39 and 45 (box 17 of $2,500.00 is not carried yet), and every other credit and deduction not
-  named here.
+  1,410.75 + 285.00 = 1,695.75; line 26 = 0 x 4% = 0. Line 25 (50341, box 16A) is 0. The QPP
+  side: line 27 = line I (81,200.00) less line 7 (34,799.88) = 46,400.12; line 28 = line G
+  (71,300.00) less line 8 (30,557.04) = 40,742.96; line 29 = line J (3,500.00) less line 9
+  (1,500.00) = 2,000.00; line 30 = line H (9,900.00) less line 10 (4,242.84) = 5,657.16. Line 31
+  is the lesser of line 2 (40,000) and line 27 (46,400.12): 40,000.00. Line 3 (70,000.00) is not
+  more than line G (71,300.00), so lines 32 to 35 are not completed: line 35 is 0 (line 34, line 31
+  less line 28 = 40,000.00 less 40,742.96, is 0 as it is negative, and the lesser of line 30 and
+  line 34 is 0) and the amount from line 31 is entered on line 36: line 36 = 40,000.00 less 0 =
+  40,000.00. Line 38 = line 36 less line 37 (the amount from line 29, 2,000.00) = 38,000.00. Line
+  39 (50330), the total of box 17 of the T4 slips, is 2,500.00 (a chosen figure; box 17A, line 45,
+  is 0): line 40 = 2,500.00 x 84.375% = 2,109.375, which rounds half up to 2,109.38; line 41 =
+  2,500.00 less 2,109.38 = 390.62. Line 42 = 38,000.00 x 5.4% = 2,052.00 (not above the maximum of
+  3,661.20); line 43 = 38,000.00 x 1% = 380.00; line 44 = 2,052.00 + 380.00 = 2,432.00; line 46 =
+  0 x 4% = 0. The totals: line 49 = 1,497.48 + 2,109.38 = 3,606.86; line 52 = 1,410.75 + 2,052.00
+  = 3,462.75; line 53 = 3,606.86 less 3,462.75 = 144.11; line 56 = 302.52 + 390.62 = 693.14; line
+  59 = 285.00 + 380.00 = 665.00; line 60 = 693.14 less 665.00 = 28.14; line 61 = 144.11 + 28.14 =
+  172.25; line 64 = 0 + 0 = 0; line 67 = 0 + 0 = 0; line 68 = 0 less 0 = 0; line 69 = 172.25 + 0 =
+  172.25, positive (the ticket's 3,462.75, 665.00 and 172.25 are what Parts 3a and 3b will carry to
+  lines 30800, 22215 and 44800; they are not carried yet). The remaining lines of the T1 are
+  calculator). Not triggered: Part 3 lines 70 to 93 (Parts 3a and 3b), Part 4, the second
+  additional contributions of lines 25 and 45 (boxes 16A and 17A, none), and every other
+  credit and deduction not named here.
 sources:
   - >-
     CRA, "Form RC381 (2025), Inter-Provincial Calculation for CPP and QPP Contributions and
@@ -83,6 +102,31 @@ sources:
     4.95% = (maximum $3,356.10)" (line 22); "amount from line 18 x 1% = (maximum $678.00)" (line
     23); "Line 22 plus line 23" (line 24); "amount from line 15 x 4% = (maximum $396.00)" (line
     26).
+  - >-
+    CRA, Form RC381 (2025), Part 3 (continued): "Amount from line I of Part 2 minus the amount
+    from line 7" (line 27), "Amount from line G of Part 2 minus the amount from line 8" (line
+    28), "Amount from line J of Part 2 minus the amount from line 9" (line 29), "Amount from line
+    H of Part 2 minus the amount from line 10" (line 30); "Enter whichever is less: amount from
+    line 2 or line 27." (line 31); "If the amount from line 3 is more than the amount from line G
+    of Part 2, complete lines 32 to 35. If not, enter the amount from line 31 on line 36 and
+    continue at line 37."; "Line 32 minus line 33 (if negative, enter "0")" (line 34); "Enter
+    whichever is less: amount from line 30 or line 34." (line 35); "Line 31 minus line 35" (line
+    36); "Line 36 minus line 37 (if negative, enter "0")" (line 38); "Total actual base and first
+    additional contributions on QPP pensionable earnings from box 17 of all of your T4 slips"
+    (50330, line 39); "amount from line 39 x 84.375%" (line 40); "Line 39 minus line 40" (line
+    41); "amount from line 38 x 5.4% = (maximum $3,661.20)" (line 42); "amount from line 38 x 1%
+    = (maximum $678.00)" (line 43); "Line 42 plus line 43" (line 44); "Total actual second
+    additional contributions on QPP pensionable earnings from box 17A of all of your T4 slips"
+    (50331, line 45); "amount from line 35 x 4% = (maximum $396.00)" (line 46); "Total actual
+    base contributions: line 47 plus line 48" (line 49); "Total required base contributions:
+    line 50 plus line 51" (line 52); "Line 49 minus line 52 (if negative, show in brackets)" (line
+    53); "Total actual first additional contributions: Line 54 plus line 55" (line 56); "Total
+    required first additional contributions: Line 57 plus line 58" (line 59); "Line 56 minus
+    line 59 (if negative, show in brackets)" (line 60); "Line 53 plus line 60 (if negative, show
+    in brackets)" (line 61); "Total actual second additional contributions: Line 62 plus line
+    63" (line 64); "Total required second additional contributions: Line 65 plus line 66"
+    (line 67); "Line 64 minus line 67 (if negative, show in brackets)" (line 68); "Line 61 plus
+    line 68 (if negative, show in brackets)" (line 69).
   - https://www.canada.ca/content/dam/cra-arc/formspubs/pbg/rc381/rc381-25e.pdf
 inputs:
   ca/employment_income: "70000"
@@ -91,6 +135,7 @@ inputs:
   ca/t4_cpp_pensionable_earnings_outside_quebec: "30000"
   ca/t4_qpp_pensionable_earnings_in_quebec: "40000"
   ca/cpp_t4_base_and_first_additional_contributions: "1800.00"
+  ca/t4_qpp_contributions_box_17: "2500.00"
   ca/income_tax_deducted: "12000"
   ca/resident_in_canada_throughout_2025: "1"
   ca/aged_18_or_older_at_end_of_2025: "1"
@@ -143,5 +188,32 @@ expected:
   ca/rc381_part_3_line_26: "0.00"
   ca/amt_regular_net_federal_tax_payable: "7920.12"
   ca/cpp_required_base_and_first_additional_contributions: "3956.75"
+  ca/rc381_part_3_line_27: "46400.12"
+  ca/rc381_part_3_line_28: "40742.96"
+  ca/rc381_part_3_line_29: "2000.00"
+  ca/rc381_part_3_line_30: "5657.16"
+  ca/rc381_part_3_line_31: "40000.00"
+  ca/rc381_part_3_line_34: "0.00"
+  ca/rc381_part_3_line_35_lesser: "0.00"
+  ca/rc381_part_3_line_35: "0.00"
+  ca/rc381_part_3_line_36: "40000.00"
+  ca/rc381_part_3_line_38: "38000.00"
+  ca/rc381_part_3_line_40: "2109.38"
+  ca/rc381_part_3_line_41: "390.62"
+  ca/rc381_part_3_line_42: "2052.00"
+  ca/rc381_part_3_line_43: "380.00"
+  ca/rc381_part_3_line_44: "2432.00"
+  ca/rc381_part_3_line_46: "0.00"
+  ca/rc381_part_3_line_49: "3606.86"
+  ca/rc381_part_3_line_52: "3462.75"
+  ca/rc381_part_3_line_53: "144.11"
+  ca/rc381_part_3_line_56: "693.14"
+  ca/rc381_part_3_line_59: "665.00"
+  ca/rc381_part_3_line_60: "28.14"
+  ca/rc381_part_3_line_61: "172.25"
+  ca/rc381_part_3_line_64: "0.00"
+  ca/rc381_part_3_line_67: "0.00"
+  ca/rc381_part_3_line_68: "0.00"
+  ca/rc381_part_3_line_69: "172.25"
   ca/amt_federal_tax_payable_under_minimum_tax: "0"
   ca/amt_carryover_available_for_2026: "0"

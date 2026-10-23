@@ -472,11 +472,37 @@ from app.jurisdictions.ca.catalog import (
     QFFP_GAIN_OR_LOSS,
     QSBCS_GAIN_OR_LOSS,
     QSBCS_QFFP_TAXABLE_GAINS_RELATED_TO_DEDUCTION,
+    RC381_PART_2_LINE_G,
+    RC381_PART_2_LINE_H,
+    RC381_PART_2_LINE_I,
+    RC381_PART_2_LINE_J,
+    RC381_PART_3_LINE_7,
+    RC381_PART_3_LINE_8,
+    RC381_PART_3_LINE_9,
+    RC381_PART_3_LINE_10,
     RC381_PART_3_LINE_11,
     RC381_PART_3_LINE_15,
     RC381_PART_3_LINE_16,
     RC381_PART_3_LINE_20,
     RC381_PART_3_LINE_21,
+    RC381_PART_3_LINE_27,
+    RC381_PART_3_LINE_28,
+    RC381_PART_3_LINE_29,
+    RC381_PART_3_LINE_30,
+    RC381_PART_3_LINE_31,
+    RC381_PART_3_LINE_35,
+    RC381_PART_3_LINE_36,
+    RC381_PART_3_LINE_40,
+    RC381_PART_3_LINE_41,
+    RC381_PART_3_LINE_49,
+    RC381_PART_3_LINE_52,
+    RC381_PART_3_LINE_53,
+    RC381_PART_3_LINE_56,
+    RC381_PART_3_LINE_59,
+    RC381_PART_3_LINE_60,
+    RC381_PART_3_LINE_64,
+    RC381_PART_3_LINE_67,
+    RC381_PART_3_LINE_68,
     REFUND_OR_BALANCE_OWING,
     REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
     REGULAR_RATE_DONATIONS,
@@ -546,6 +572,7 @@ from app.jurisdictions.ca.catalog import (
     SPOUSE_NOT_SEPARATED_90_DAYS,
     SPOUSE_UNUSED_AMOUNTS,
     SPOUSES_CLAIMED,
+    T4_QPP_CONTRIBUTIONS_BOX_17,
     T657_CHART_2_LINE_2,
     T657_CHART_2_LINE_6,
     T657_CHART_2_LINE_10,
@@ -677,6 +704,87 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert subtracted == {
+        # Form RC381 Part 3 lines 27 to 30 "Amount from line I of Part 2 minus the amount from
+        # line 7" (and G less 8, J less 9, H less 10): the QPP row of the table less the CPP
+        # shares, which are 0 for Return A.
+        RC381_PART_3_LINE_27: SubtractedLine(
+            output=RC381_PART_3_LINE_27,
+            minuend=RC381_PART_2_LINE_I,
+            minuend_amount=D("81200.00"),
+            subtrahend=RC381_PART_3_LINE_7,
+            subtrahend_amount=D("0.00"),
+            result=D("81200.00"),
+        ),
+        RC381_PART_3_LINE_28: SubtractedLine(
+            output=RC381_PART_3_LINE_28,
+            minuend=RC381_PART_2_LINE_G,
+            minuend_amount=D("71300.00"),
+            subtrahend=RC381_PART_3_LINE_8,
+            subtrahend_amount=D("0.00"),
+            result=D("71300.00"),
+        ),
+        RC381_PART_3_LINE_29: SubtractedLine(
+            output=RC381_PART_3_LINE_29,
+            minuend=RC381_PART_2_LINE_J,
+            minuend_amount=D("3500.00"),
+            subtrahend=RC381_PART_3_LINE_9,
+            subtrahend_amount=D("0.00"),
+            result=D("3500.00"),
+        ),
+        RC381_PART_3_LINE_30: SubtractedLine(
+            output=RC381_PART_3_LINE_30,
+            minuend=RC381_PART_2_LINE_H,
+            minuend_amount=D("9900.00"),
+            subtrahend=RC381_PART_3_LINE_10,
+            subtrahend_amount=D("0.00"),
+            result=D("9900.00"),
+        ),
+        # Form RC381 Part 3 line 36 "Line 31 minus line 35": both are 0.
+        RC381_PART_3_LINE_36: SubtractedLine(
+            output=RC381_PART_3_LINE_36,
+            minuend=RC381_PART_3_LINE_31,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_3_LINE_35,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form RC381 Part 3 line 41 "Line 39 minus line 40": both are 0.
+        RC381_PART_3_LINE_41: SubtractedLine(
+            output=RC381_PART_3_LINE_41,
+            minuend=T4_QPP_CONTRIBUTIONS_BOX_17,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_3_LINE_40,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
+        # Form RC381 Part 3 lines 53, 60 and 68 "Line 49 minus line 52", "Line 56 minus line 59"
+        # and "Line 64 minus line 67": Return A's actual base (3356.10) and first additional
+        # (678.00) contributions from its T4 box 16 total, with no required contributions as it
+        # enters no pensionable earnings; line 68 is 0.
+        RC381_PART_3_LINE_53: SubtractedLine(
+            output=RC381_PART_3_LINE_53,
+            minuend=RC381_PART_3_LINE_49,
+            minuend_amount=D("3356.10"),
+            subtrahend=RC381_PART_3_LINE_52,
+            subtrahend_amount=D("0.00"),
+            result=D("3356.10"),
+        ),
+        RC381_PART_3_LINE_60: SubtractedLine(
+            output=RC381_PART_3_LINE_60,
+            minuend=RC381_PART_3_LINE_56,
+            minuend_amount=D("678.00"),
+            subtrahend=RC381_PART_3_LINE_59,
+            subtrahend_amount=D("0.00"),
+            result=D("678.00"),
+        ),
+        RC381_PART_3_LINE_68: SubtractedLine(
+            output=RC381_PART_3_LINE_68,
+            minuend=RC381_PART_3_LINE_64,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_3_LINE_67,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
         # Form T691 Part 7 line 8 "Line 4 minus line 7": line 4, 16951.38, less line 7, 0.00:
         # 16951.38.
         AMT_PART_7_TAX_LESS_CREDITS: SubtractedLine(
