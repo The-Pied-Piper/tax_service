@@ -1233,6 +1233,19 @@ FLOW_THROUGH_SHARE_EXPENSES = CATALOG.declare(
 """Total expenses of the flow-through share slips, Form T1221 line 4 "Add lines 1 to 3. Enter this
 amount on line 63220 of your Form ON479.": the qualifying expenses of every slip, added."""
 
+FLOW_THROUGH_SHARE_CLAIMABLE = CATALOG.declare(
+    "flow_through_share_claimable", int, non_negative=True
+)
+"""Whether the focused flow-through share credit may be claimed, Form T1221 "You must be a resident
+of Ontario on the last day of the tax year to claim this credit.": 0 when the filer was not a
+resident of Ontario on the last day of the tax year, else 1."""
+
+FLOW_THROUGH_SHARE_EXPENSES_CLAIMED = CATALOG.declare(
+    "flow_through_share_expenses_claimed", Decimal, non_negative=True
+)
+"""Total expenses of the flow-through share slips entered on Form ON479 line 17 and line 63220, Form
+T1221 line 4 for a filer who may claim the credit, else 0."""
+
 FLOW_THROUGH_SHARE_CREDIT = CATALOG.declare("flow_through_share_credit", Decimal, non_negative=True)
 """Focused flow-through share credit, Form ON479 line 17 and line 63220 "Enter your total expenses
 from your Form T1221. multiplied by 5% =": the 5% on the total expenses of the slips."""

@@ -167,7 +167,6 @@ from app.jurisdictions.ca_on.catalog import (
     FERTILITY_CREDIT_BEFORE_MAXIMUM,
     FERTILITY_EXPENSES,
     FLOW_THROUGH_SHARE_CREDIT,
-    FLOW_THROUGH_SHARE_EXPENSES,
     LIFT_CREDIT_BEFORE_MAXIMUM,
     LIFT_REDUCTION,
     ONTARIO_HEALTH_PREMIUM,
@@ -898,11 +897,11 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # ON479 line 17 and line 63220 "multiplied by 5%", on Form T1221 line 4: no slips, 0.
         FLOW_THROUGH_SHARE_CREDIT: RateAppliedLine(
             FLOW_THROUGH_SHARE_CREDIT,
-            FLOW_THROUGH_SHARE_EXPENSES,
+            ontario.FLOW_THROUGH_SHARE_EXPENSES_CLAIMED,
             D("0"),
             Rate(D("0.05")),
             CENT,
-            D("0"),
+            D("0.00"),
         ),
         # Worksheet ON428 line 5 "Applicable rate 15%" and line 6 "Line 4 multiplied by the
         # percentage from line 5": line 4 is the net income 115000 over the income threshold.

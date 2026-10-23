@@ -101,8 +101,10 @@ from app.jurisdictions.ca_on.catalog import (
     FERTILITY_CREDIT,
     FERTILITY_CREDIT_BEFORE_MAXIMUM,
     FERTILITY_EXPENSES,
+    FLOW_THROUGH_SHARE_CLAIMABLE,
     FLOW_THROUGH_SHARE_CREDIT,
     FLOW_THROUGH_SHARE_EXPENSES,
+    FLOW_THROUGH_SHARE_EXPENSES_CLAIMED,
     FLOW_THROUGH_SHARE_SLIP_EXPENSES,
     FLOW_THROUGH_SHARE_SLIPS,
     HEALTH_PREMIUM_INCOME,
@@ -454,6 +456,8 @@ REGISTERED = frozenset(
         "ca-on/flow_through_share_slip_expenses",
         "ca-on/flow_through_share_slips",
         "ca-on/flow_through_share_expenses",
+        "ca-on/flow_through_share_claimable",
+        "ca-on/flow_through_share_expenses_claimed",
         "ca-on/flow_through_share_credit",
         "ca-on/coop_education_payroll",
         "ca-on/coop_education_payroll_threshold",
@@ -510,6 +514,7 @@ COUNTS = frozenset(
         "ca-on/return_filed_by_trustee_in_bankruptcy",
         "ca-on/not_claiming_ontario_tax_reduction",
         "ca-on/tax_reduction_claimable",
+        "ca-on/flow_through_share_claimable",
         "ca-on/claims_tax_reduction_amounts_at_equal_net_income",
         "ca-on/tax_reduction_amounts_claimable",
         "ca-on/applies_for_energy_and_property_tax_credit",
@@ -914,6 +919,11 @@ def test_catalog_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> No
     )
     assert registry.get("ca-on/flow_through_share_slips") is FLOW_THROUGH_SHARE_SLIPS
     assert registry.get("ca-on/flow_through_share_expenses") is FLOW_THROUGH_SHARE_EXPENSES
+    assert registry.get("ca-on/flow_through_share_claimable") is FLOW_THROUGH_SHARE_CLAIMABLE
+    assert (
+        registry.get("ca-on/flow_through_share_expenses_claimed")
+        is FLOW_THROUGH_SHARE_EXPENSES_CLAIMED
+    )
     assert registry.get("ca-on/flow_through_share_credit") is FLOW_THROUGH_SHARE_CREDIT
     assert registry.get("ca-on/coop_education_payroll") is COOP_EDUCATION_PAYROLL
     assert (

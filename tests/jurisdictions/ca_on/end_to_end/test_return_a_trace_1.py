@@ -966,7 +966,8 @@ def test_the_trace_explains_the_computation() -> None:
     )
     position("flow_through_share_expenses: no items = 0", "0")
     position(
-        "flow_through_share_credit: 5% of flow_through_share_expenses 0 (half-up to 0.01)", "0"
+        "flow_through_share_credit: 5% of flow_through_share_expenses_claimed 0 (half-up to 0.01)",
+        "0",
     )
     position(
         "ontario_credits_subtotal: fertility_credit 0 + care_credit 0 + seniors_care_credit 0 "
