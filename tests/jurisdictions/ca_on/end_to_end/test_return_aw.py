@@ -378,7 +378,6 @@ def test_line_13_is_lines_11_and_12_and_t1_line_129_is_1697_60_and_line_130_is_5
     # Line 11 is 510 and line 12 "the amount from line 3" is 1187.60, so line 13 "Add lines 11 and
     # 12." is 510 + 1187.60 = 1697.60. It is less than line 42900 (6966.62), so T1 line 129 (line
     # 40500) is 1697.60; line 130 is 6966.62 - 1697.60 = 5269.02, and lines 132 to 142 carry it.
-    # Before the business figures the credit was 1187.60 and line 130 5779.02.
     worksheet = return_aw_business()
 
     assert worksheet.get(FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT).value == D("1697.60")
@@ -394,8 +393,7 @@ def test_the_business_credit_comes_off_the_net_federal_tax_the_total_payable_and
 ):
     # Net federal tax 5269.02 + Ontario tax 3156.35 (form T2036 reads the non-business figures
     # only, so it is unchanged) = 8425.37 against 9000 deducted: a refund of 574.63, which is the
-    # net refund as there is no donation to the opportunities fund. Before the business figures it
-    # was 8935.37 and a refund of 64.63.
+    # net refund as there is no donation to the opportunities fund.
     worksheet = return_aw_business()
 
     assert worksheet.get(ontario.PROVINCIAL_FOREIGN_TAX_CREDIT).value == D("412.40")

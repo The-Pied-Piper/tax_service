@@ -241,8 +241,6 @@ OUTPUTS = frozenset(
         "ca/foreign_business_tax_credit_line_7",
         "ca/foreign_business_tax_credit_line_8",
         "ca/foreign_business_tax_credit_line_10",
-        "ca/federal_business_foreign_tax_credit",
-        "ca/federal_foreign_tax_credit_before_limit",
     }
 )
 

@@ -44,8 +44,6 @@ outputs:
   - ca/foreign_business_tax_credit_line_7
   - ca/foreign_business_tax_credit_line_8
   - ca/foreign_business_tax_credit_line_10
-  - ca/federal_business_foreign_tax_credit
-  - ca/federal_foreign_tax_credit_before_limit
   # Form T2048 (line 25395): the Part 4 and Part 5 figures, and the line 41 and 42 reductions,
   # produced by `06a_capital_gains_deduction_qbt.yaml`.
   - ca/qbt_allocation_total
