@@ -274,7 +274,10 @@ def test_a_computation_gives_the_total_claim() -> None:
 
 
 def test_a_computation_refuses_a_claim_above_the_maximum_less_column_22() -> None:
-    with pytest.raises(InputAboveBoundError, match=r"^item 1: ca/cca_claimed 2300 is above"):
+    with pytest.raises(
+        InputAboveBoundError,
+        match=r"^ca-on/return, instance 1: item 1: ca/cca_claimed 2300 is above",
+    ):
         service("ca/cca_claim_after_column_22", CCA_CLAIM, checks_claim=True).compute(
             JurisdictionCode("CA-ON"),
             2025,

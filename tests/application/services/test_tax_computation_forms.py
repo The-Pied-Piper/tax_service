@@ -2,8 +2,8 @@
 
 A manifest is a flat set of `forms`, none special: each is a group of selections with `exports`
 and, optionally, an instances kind (a record list, one record per instance); a form without
-instances runs once. The default form, named `ex-on/return` by the loader's convention only, is
-one of them. The service builds every form with the same `CapabilityBuilder`, datasets and
+instances has one instance. The default form, named `ex-on/return` by the loader's convention
+only, is one of them. The service builds every form with the same `CapabilityBuilder`, datasets and
 registries into one `FormSet` (domain/form.py), which runs each form once per instance on its own
 `Worksheet` and keeps, for each export `X` of form `B`, the derived artifact `B.X`: a record list
 of ONE field (X's kind) with a record per instance, in instance order (one record for a form
@@ -531,7 +531,7 @@ def test_each_worksheets_trace_is_grouped_in_one_line_named_by_form_and_position
     assert isinstance(returned, FormInstanceLine)
     assert (first.form, first.position) == ("ex/rental", 1)
     assert (second.form, second.position) == ("ex/rental", 2)
-    assert (returned.form, returned.position) == (RETURN, None)
+    assert (returned.form, returned.position) == (RETURN, 1)
     assert returned.lines == (
         RecordTotalLine(TOTAL_NET_INCOME, NET_INCOME, (D("10000"), D("4000")), D("14000")),
     )

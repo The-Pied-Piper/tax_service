@@ -18,10 +18,10 @@ class FormInstanceRenderer:
     def render(self, line: FormInstanceLine) -> str:
         """The English sentences for the run's lines, one per line, each prefixed.
 
-        The prefix is the form, then ", instance N" for a form with instances. Inner lines use
-        the shared registry: a renderer is built without the registry in use, so it is unreachable.
+        The prefix is the form, then ", instance N" (N is 1 for a form without an instances list).
+        Inner lines use the shared registry: a renderer is built without the registry in use, so it
+        is unreachable.
         """
-        where = line.form if line.position is None else f"{line.form}, instance {line.position}"
-        prefix = f"{where}: "
+        prefix = f"{line.form}, instance {line.position}: "
         sentences = EnglishTraceRenderer().render_all(line.lines)
         return "\n".join(f"{prefix}{sentence}" for sentence in sentences)

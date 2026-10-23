@@ -291,5 +291,6 @@ def test_a_claim_above_the_maximum_is_refused_naming_both_kinds() -> None:
         compute("110000", (("20000", "0", "0"),), "0", "1926", "19800", "3000", "2000")
 
     assert str(raised.value) == (
+        "ca-on/return, instance 1: "
         "ca/rrsp_amount_deducted 3000 is above ca/rrsp_deduction_maximum 1926"
     )

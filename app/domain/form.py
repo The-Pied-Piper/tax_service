@@ -4,17 +4,18 @@ A computation is a flat set of forms that together are the return; none is speci
 group of capabilities with the artifacts it exports, never a capability itself. A `FormComposition`
 is one form wired: an inner `Composition` whose outputs are the form's exports and whose inputs are
 derived. The inputs of a form with `instances` (a record-list kind, one record per instance) are
-the fields of that kind; a form without instances runs once, and takes the starting artifacts it
-reads. The kinds a form reads that other forms export are its imports and are inputs too.
+the fields of that kind; a form without an `instances` list has exactly one implicit instance,
+fed from the starting artifacts it reads. The kinds a form reads that other forms export are its
+imports and are inputs too.
 
 For each export `X` of the form `B` the engine derives the kind `B.X`: a record list of one field,
-`X`, with a record per instance in instance order (one record for a form without instances). Every
-form reads any such kind by its identifier; an export nobody reads is fine.
+`X`, with a record per instance in instance order (one record for a form without an instances list).
+Every form reads any such kind by its identifier; an export nobody reads is fine.
 
 A `FormSet` holds the forms of one computation. It orders them by their imports, runs each once
-per instance record (an instance-less form once) on its own `Worksheet`, keeps every form's
-exports in one store and hands each run its imports as starting artifacts. It returns a plain
-mapping: form name to one `Worksheet` per instance, in instance order.
+per instance record (a form without an instances list has one) on its own `Worksheet`, keeps
+every form's exports in one store and hands each run its imports as starting artifacts. It
+returns a plain mapping: form name to one `Worksheet` per instance, in instance order.
 """
 
 from __future__ import annotations
@@ -47,8 +48,8 @@ class FormComposition:
     export of a `Decimal` or `int` kind or a record-list kind is also readable by every form as
     `<form>.<export>`; one of another kind (a rate, digits) is only on the form's worksheets.
     Any breach of the rules of `Composition`, or an empty `exports` or an export that is another
-    form's, is an InvalidCompositionError. A form with instances is named in the message; a form
-    that runs once speaks for the computation, so its `Composition` errors are unprefixed.
+    form's, is an InvalidCompositionError. The form is always named in the message
+    (`form 'x': ...`), whether or not it has an instances list: a form without one has one instance.
     """
 
     def __init__(
@@ -89,8 +90,6 @@ class FormComposition:
                 wired, inputs=self._inputs | self._imports, outputs=frozenset(listed)
             )
         except InvalidCompositionError as exc:
-            if instances is None:
-                raise  # a form that runs once speaks for the computation, unprefixed
             raise InvalidCompositionError(f"form {name!r}: {exc}") from exc
 
     @staticmethod
@@ -117,7 +116,7 @@ class FormComposition:
 
     @property
     def instances(self) -> RecordListKind | None:
-        """The record-list kind with a record per instance; `None` for a form that runs once."""
+        """The record-list kind with a record per instance; `None` without an instances list."""
         return self._instances
 
     @property
@@ -142,7 +141,7 @@ class FormComposition:
 
     @property
     def composition(self) -> Composition:
-        """The inner composition, computed once per instance (once without instances)."""
+        """The inner composition, computed once per instance (one without an instances list)."""
         return self._composition
 
 
@@ -186,11 +185,12 @@ class FormSet:
     def compute(self, *artifacts: Artifact[Any]) -> dict[str, tuple[Worksheet, ...]]:
         """Run every form on `artifacts`: one of each input kind, instances kinds among them.
 
-        Each form runs once per record of its instances (once without instances), in `forms`
-        order, on a worksheet of its inputs and its imports. The result maps each form's name to
-        its worksheets in instance order, none for no instances. A DomainError from a run is
-        raised as itself; for a form with instances its message starts with the form and the
-        instance position. A kind given that is a form's export is refused: the forms derive it,
+        Each form runs once per record of its instances (a form without an instances list has one
+        instance), in `forms` order, on a worksheet of its inputs and its imports. The result maps
+        each form's name to its worksheets in instance order, none if its instances list is empty.
+        A DomainError from a run is raised as itself; its message starts with the form and the
+        instance position (`<form>, instance N: ...`, N being 1 for a form without an instances
+        list). A kind given that is a form's export is refused: the forms derive it,
         and two values for one kind are a DuplicateArtifactError, as in a `Worksheet`.
         """
         kinds = [artifact.kind for artifact in artifacts]
@@ -213,12 +213,10 @@ class FormSet:
     def trace(self, worksheets: Mapping[str, Sequence[Worksheet]]) -> tuple[TraceLine, ...]:
         """A `FormInstanceLine` per worksheet of `worksheets`, in the order the forms run.
 
-        The line of a form without instances has no position (`None`): it runs once.
+        The position is from 1; a form without an instances list has one instance, 1.
         """
         return tuple(
-            FormInstanceLine(
-                form.name, None if form.instances is None else position, worksheet.trace
-            )
+            FormInstanceLine(form.name, position, worksheet.trace)
             for form in self._forms
             for position, worksheet in enumerate(worksheets.get(form.name, ()), start=1)
         )
@@ -233,22 +231,18 @@ class FormSet:
         instances = form.instances
         if instances is None:
             starting = [given[kind] for kind in sorted(form.inputs, key=Composition.sort_key)]
-            yield self._run(form, None, [*starting, *imported])
+            yield self._run(form, 1, [*starting, *imported])
             return
         for position, record in enumerate(given[instances].value.records, start=1):
             starting = [Artifact(kind, record[kind]) for kind in instances.fields]
             yield self._run(form, position, [*starting, *imported])
 
     @staticmethod
-    def _run(
-        form: FormComposition, position: int | None, starting: list[Artifact[Any]]
-    ) -> Worksheet:
+    def _run(form: FormComposition, position: int, starting: list[Artifact[Any]]) -> Worksheet:
         try:
             return form.composition.compute(*starting)
         except DomainError as exc:
-            # A form that runs once is the computation itself: its errors are those of its run.
-            if position is not None:
-                exc.args = (f"{form.name}, instance {position}: {exc}",)
+            exc.args = (f"{form.name}, instance {position}: {exc}",)
             raise
 
     def _check_given(self, given: Mapping[ArtifactKind[Any], Artifact[Any]]) -> None:

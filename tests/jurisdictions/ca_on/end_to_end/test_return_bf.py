@@ -228,6 +228,7 @@ def test_a_claim_above_amount_q_is_refused_naming_both_kinds() -> None:
         return_bf(capital_gains_deduction_claimed="155000.01")
 
     assert str(raised.value).startswith(
+        "ca-on/return, instance 1: "
         "ca/capital_gains_deduction_claimed 155000.01 is above ca/chart_2025_part_2_amount_q 155000"
     )
 
@@ -243,6 +244,7 @@ def test_a_claim_above_amount_q_that_step_2_line_19_lowers_is_refused() -> None:
         )
 
     assert str(raised.value).startswith(
+        "ca-on/return, instance 1: "
         "ca/capital_gains_deduction_claimed 105000.01 is above ca/chart_2025_part_2_amount_q 105000"
     )
 
@@ -466,6 +468,7 @@ def test_a_claim_of_anything_is_refused_when_nothing_can_be_claimed() -> None:
         )
 
     assert str(raised.value).startswith(
+        "ca-on/return, instance 1: "
         "ca/capital_gains_deduction_claimed 0.01 is above ca/chart_2025_part_2_amount_q 0"
     )
 

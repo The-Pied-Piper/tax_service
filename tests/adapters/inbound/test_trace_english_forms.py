@@ -12,7 +12,9 @@ from decimal import Decimal
 import app.adapters.inbound.trace_english.forms as english_forms
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.adapters.inbound.trace_english.registry import EnglishRendererRegistry
-from app.domain.artifact import ArtifactKind
+from app.domain.artifact import Artifact, ArtifactKind
+from app.domain.capabilities.subtract import Subtract
+from app.domain.form import FormComposition, FormSet
 from app.domain.trace import FormInstanceLine, RecordTotalLine, SubtractedLine
 
 D = Decimal
@@ -52,12 +54,35 @@ def test_every_inner_sentence_is_prefixed_with_the_form_and_the_instance_positio
     )
 
 
-def test_a_form_without_instances_is_prefixed_with_its_name_only() -> None:
-    text = render(FormInstanceLine("ex/return", None, (SUBTRACTED, TOTAL)))
+def test_a_form_without_instances_is_prefixed_with_its_name_and_instance_1() -> None:
+    text = render(FormInstanceLine("ex/return", 1, (SUBTRACTED, TOTAL)))
 
     assert text == (
-        "ex/return: net_income: gross_rent 12000 less expenses 2000 = 10000\n"
-        "ex/return: unit_total: item 1 unit_amount 100 + item 2 unit_amount 250.5 = 350.5"
+        "ex/return, instance 1: net_income: gross_rent 12000 less expenses 2000 = 10000\n"
+        "ex/return, instance 1: unit_total: item 1 unit_amount 100 + item 2 unit_amount 250.5 "
+        "= 350.5"
+    )
+
+
+def test_the_trace_of_a_form_without_an_instances_list_reads_as_instance_1() -> None:
+    forms = FormSet(
+        [
+            FormComposition(
+                "ex/return",
+                [Subtract(GROSS_RENT, EXPENSES, NET_INCOME)],
+                exports=[NET_INCOME],
+                starting=frozenset({GROSS_RENT, EXPENSES}),
+            )
+        ],
+        inputs=frozenset({GROSS_RENT, EXPENSES}),
+    )
+    worksheets = forms.compute(Artifact(GROSS_RENT, D("12000")), Artifact(EXPENSES, D("2000")))
+
+    (line,) = forms.trace(worksheets)
+
+    assert isinstance(line, FormInstanceLine)
+    assert render(line) == (
+        "ex/return, instance 1: net_income: gross_rent 12000 less expenses 2000 = 10000"
     )
 
 

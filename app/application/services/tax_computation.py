@@ -81,7 +81,7 @@ class TaxComputationService:
 
         `artifacts` are the starting artifacts of the manifest: one of each declared input kind,
         among them each form's instances. A form's worksheets are one per instance, in instance
-        order, and one for a form without instances.
+        order; a form without an instances list has one instance.
         """
         return self.compose(code, tax_year).compute(*artifacts)
 

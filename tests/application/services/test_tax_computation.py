@@ -2505,7 +2505,7 @@ def test_core_at_most_above_the_bound_raises_naming_both_kinds_end_to_end() -> N
     with pytest.raises(InputAboveBoundError) as raised:
         built.compute(EX_ON, 2025, Artifact(BASE, D("5")), Artifact(EXTRA, D("15.01")))
 
-    assert str(raised.value) == "ex/extra 15.01 is above ex/scaled 15"
+    assert str(raised.value) == ("ex-on/return, instance 1: ex/extra 15.01 is above ex/scaled 15")
 
 
 def test_core_at_most_runs_after_what_it_consumes_is_produced() -> None:

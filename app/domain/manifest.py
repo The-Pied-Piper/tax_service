@@ -50,12 +50,13 @@ class CapabilitySelection:
 
 @dataclass(frozen=True, slots=True)
 class Form:
-    """A named group of selections run once, or once per instance, with the artifacts it exports.
+    """A named group of selections run once per instance, with the artifacts it exports.
 
     A form is a peer of the others, not a capability: `instances` is the identifier of the
-    record-list kind the caller supplies, one record per instance, or `None` for a form that runs
-    once; `exports` are the identifiers of the artifacts the form produces, each readable by every
-    form (itself aside) as `<name>.<local id of the export>`. All are plain identifiers
+    record-list kind the caller supplies, one record per instance, or `None` for a form without an
+    instances list, which has one instance; `exports` are the identifiers of the artifacts the form
+    produces, each readable by every form (itself aside) as `<name>.<local id of the export>`. All
+    are plain identifiers
     `<namespace>/<snake_case>`: the dotted identifier is built by the engine, never written.
     `exports` and `capabilities` (the form's selections) are kept as tuples copied from what was
     given. The inputs of a form are not declared: they are derived from its selections.

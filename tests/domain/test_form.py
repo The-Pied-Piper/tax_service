@@ -5,12 +5,12 @@ is special. `FormComposition` is one form wired: an inner `Composition` whose ou
 exports and whose inputs are derived: the fields of its instances kind, or, for a form without
 instances, the starting artifacts it reads, plus its imports. An export `X` of the form `B` is read
 by every form as the derived kind `B.X`, a record list of one field with a record per instance (one
-record for a form that runs once). A form's imports are the dotted kinds it consumes and nothing in
-the form produces.
+record for a form without an instances list: it has one instance). A form's imports are the
+dotted kinds it consumes and nothing in the form produces.
 
 `FormSet` holds the forms. It orders them by their imports (a cycle or an import nothing exports
 is an InvalidCompositionError), runs each form once per record of its instances (a form without
-instances once), keeps every form's exports in one store and hands the imports to each run as
+instances has one), keeps every form's exports in one store and hands the imports to each run as
 starting artifacts. It returns a plain mapping: form name to the worksheet of every instance, in
 instance order.
 """
@@ -128,7 +128,7 @@ def flat(
     outputs: frozenset[ArtifactKind[Any]],
     forms: Iterable[FormComposition] = (),
 ) -> FormSet:
-    """The forms plus a form `ex-on/return` of `capabilities`, which runs once like any other."""
+    """The forms plus a form `ex-on/return` of `capabilities`, which has one instance."""
     default = FormComposition(
         RETURN,
         capabilities,
@@ -377,7 +377,7 @@ def test_a_forms_instances_kind_must_be_one_of_the_computations_inputs() -> None
         )
 
 
-def test_the_default_form_is_an_ordinary_form_that_runs_once_and_exports_like_any() -> None:
+def test_the_default_form_is_an_ordinary_form_with_one_instance_that_exports_like_any() -> None:
     returns = form_set(shop(), audit()).form(RETURN)
 
     assert returns.name == RETURN
@@ -416,7 +416,8 @@ def test_a_form_without_instances_does_not_take_what_is_not_a_starting_artifact(
             "ex/once", [Subtract(SALES, COSTS, LEVY)], exports=[LEVY], starting=frozenset({SALES})
         )
 
-    assert "ex/once" not in str(caught.value)  # it speaks for the computation
+    assert str(caught.value).startswith("form 'ex/once': ")  # wired before any instance exists
+    assert "instance" not in str(caught.value)
 
 
 def test_a_forms_inputs_are_only_the_starting_artifacts_it_reads() -> None:
@@ -634,7 +635,7 @@ def test_a_form_of_no_instances_has_no_worksheets_and_no_trace_line() -> None:
     assert result["ex/audit"] == ()
     assert result[RETURN][0].get(GRAND).value == D(0)
     assert [(line.form, line.position) for line in instance_lines(forms.trace(result))] == [
-        (RETURN, None)
+        (RETURN, 1)
     ]
 
 
@@ -708,7 +709,7 @@ def test_the_trace_has_one_line_per_worksheet_in_run_order_the_default_form_amon
         ("ex/shop", 2),
         ("ex/audit", 1),
         ("ex/audit", 2),
-        (RETURN, None),
+        (RETURN, 1),
     ]
     last = lines[-1]
     assert isinstance(last, FormInstanceLine)
@@ -796,7 +797,7 @@ def test_a_failure_in_a_form_that_imports_names_that_form_and_the_instance() -> 
         form_set(shop(), guarded).compute(TWO_SHOPS, audits("100", "666"))
 
 
-def test_the_returns_own_failure_is_not_prefixed_with_a_form_and_position() -> None:
+def test_a_failure_of_a_form_without_instances_names_the_form_and_instance_1() -> None:
     boom = flat(
         [Subtract(SALES, COSTS, PROFIT)],
         inputs=frozenset({SALES, COSTS}),
@@ -806,7 +807,48 @@ def test_the_returns_own_failure_is_not_prefixed_with_a_form_and_position() -> N
     with pytest.raises(CapabilityContractError) as caught:
         boom.compute(Artifact(SALES, D(1)), Artifact(COSTS, D(2)))
 
+    assert str(caught.value).startswith(f"{RETURN}, instance 1: ")
+
+
+def once_form() -> FormComposition:
+    return FormComposition(
+        "ex/once",
+        [Subtract(SALES, COSTS, PROFIT)],
+        exports=[PROFIT],
+        starting=frozenset({SALES, COSTS}),
+    )
+
+
+def test_a_run_error_in_a_form_without_an_instances_list_names_it_and_instance_1() -> None:
+    forms = FormSet([once_form()], inputs=frozenset({SALES, COSTS}))
+
+    with pytest.raises(CapabilityContractError, match=r"^ex/once, instance 1: ") as caught:
+        forms.compute(Artifact(SALES, D(1)), Artifact(COSTS, D(2)))  # a loss: PROFIT is >= 0
+
+    assert "profit" in str(caught.value)
+
+
+def test_a_wiring_error_in_a_form_without_an_instances_list_names_the_form_only() -> None:
+    with pytest.raises(InvalidCompositionError, match=r"^form 'ex/once': ") as caught:
+        FormComposition(
+            "ex/once",
+            [Subtract(SALES, COSTS, PROFIT)],
+            exports=[PROFIT],
+            starting=frozenset({SALES}),
+        )
+
     assert "instance" not in str(caught.value)
+
+
+def test_the_trace_of_a_form_without_an_instances_list_has_one_line_at_position_1() -> None:
+    forms = FormSet([once_form()], inputs=frozenset({SALES, COSTS}))
+    result = forms.compute(Artifact(SALES, D(5)), Artifact(COSTS, D(2)))
+
+    (line,) = forms.trace(result)
+
+    assert isinstance(line, FormInstanceLine)
+    assert (line.form, line.position) == ("ex/once", 1)
+    assert line.lines == result["ex/once"][0].trace
 
 
 # --- a set of one form without instances behaves as the bare composition -----------------------
@@ -847,7 +889,7 @@ def test_its_errors_are_those_of_the_composition_unprefixed() -> None:
         assert str(wrapped.value) == str(bare.value)
 
 
-def test_its_wiring_errors_are_those_of_the_composition_unprefixed() -> None:
+def test_its_wiring_errors_are_those_of_the_composition_prefixed_with_the_form() -> None:
     with pytest.raises(InvalidCompositionError) as bare:
         Composition(
             [Subtract(SALES, COSTS, LEVY)], inputs=frozenset({SALES}), outputs=frozenset({LEVY})
@@ -859,7 +901,7 @@ def test_its_wiring_errors_are_those_of_the_composition_unprefixed() -> None:
             outputs=frozenset({LEVY}),
         )
 
-    assert str(wrapped.value) == str(bare.value)
+    assert str(wrapped.value) == f"form {RETURN!r}: {bare.value}"
 
 
 def test_that_forms_composition_is_the_one_the_bare_wiring_would_give() -> None:
