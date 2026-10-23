@@ -42,9 +42,9 @@ electing to pay additional CPP contributions on (complete Form CPT20)": a starti
 to lines 1 and 2 on Part 5 line 4."""
 
 CPT20_EARNINGS = CATALOG.declare("cpt20_earnings", Decimal, non_negative=True)
-"""CPT20 earnings, Schedule 8 Part 4 line 2 and line 50373 "Employment earnings not shown on a T4
-slip that you are electing to pay additional CPP contributions on (complete Form CPT20)": a
-starting amount."""
+"""CPT20 earnings, Schedule 8 Part 4 line 2, Form RC381 Part 4 line 2 and line 50373
+"Employment earnings not shown on a T4 slip that you are electing to pay additional CPP
+contributions on (complete Form CPT20)": a starting amount."""
 
 CPP_PART_5_COMPLETED = CATALOG.declare("cpp_part_5_completed", int, non_negative=True)
 """Schedule 8 Part 5 completed, "Part 5 - Complete this part if you are reporting both: employment

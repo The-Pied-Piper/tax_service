@@ -1936,6 +1936,28 @@ REGISTERED = frozenset(
         "ca/rc381_employment_cpp_base_contributions",
         "ca/rc381_employment_cpp_enhanced_contributions",
         "ca/rc381_cpp_overpayment",
+        "ca/rc381_part_4_line_4",
+        "ca/rc381_part_4_line_8",
+        "ca/rc381_part_4_line_11",
+        "ca/rc381_part_4_line_12",
+        "ca/rc381_part_4_line_13_difference",
+        "ca/rc381_part_4_line_13",
+        "ca/rc381_part_4_line_14",
+        "ca/rc381_part_4_line_17",
+        "ca/rc381_part_4_line_17a",
+        "ca/rc381_part_4_line_20",
+        "ca/rc381_part_4_line_21_from_line_17",
+        "ca/rc381_part_4_line_21_lesser",
+        "ca/rc381_part_4_line_21",
+        "ca/rc381_part_4_line_22",
+        "ca/rc381_part_4_line_23_lesser",
+        "ca/rc381_part_4_line_23_multiplied",
+        "ca/rc381_part_4_line_23",
+        "ca/rc381_part_4_line_24_lesser",
+        "ca/rc381_part_4_line_24",
+        "ca/rc381_part_4_line_25a",
+        "ca/rc381_part_4_line_26",
+        "ca/rc381_part_4_line_27",
     }
 )
 
@@ -1948,6 +1970,22 @@ SIGNED = frozenset(
         "ca/rc381_part_3_line_68",
         "ca/rc381_part_3_line_69",
         "ca/rc381_part_3_line_87_difference",
+        "ca/rc381_part_4_line_4",
+        "ca/rc381_part_4_line_8",
+        "ca/rc381_part_4_line_11",
+        "ca/rc381_part_4_line_12",
+        "ca/rc381_part_4_line_17",
+        "ca/rc381_part_4_line_20",
+        "ca/rc381_part_4_line_21_from_line_17",
+        "ca/rc381_part_4_line_21",
+        "ca/rc381_part_4_line_23_lesser",
+        "ca/rc381_part_4_line_23_multiplied",
+        "ca/rc381_part_4_line_23",
+        "ca/rc381_part_4_line_24_lesser",
+        "ca/rc381_part_4_line_24",
+        "ca/rc381_part_4_line_25a",
+        "ca/rc381_part_4_line_26",
+        "ca/rc381_part_4_line_27",
         "ca/chart_2016_part_2_amount_f",
         "ca/chart_2016_part_2_amount_g",
         "ca/chart_2016_part_2_amount_i",
@@ -2318,7 +2356,7 @@ COUNTS = frozenset(
 )
 
 # Kinds whose values are `Rate`s (0 to 1), not money.
-RATES = frozenset({"ca/rc381_part_3_line_6"})
+RATES = frozenset({"ca/rc381_part_3_line_6", "ca/rc381_part_4_line_22"})
 
 RECORD_LISTS = frozenset(
     {

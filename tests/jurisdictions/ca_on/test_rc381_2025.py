@@ -10,7 +10,9 @@ from line E of Part 2 multiplied by the rate at line 6" (lines 7 to 10); "amount
 line 18 x 1% = (maximum $678.00)" (line 23) and "amount from line 15 x 4% = (maximum
 $396.00)" (line 26). The QPP side of Part 3: "amount from line 39 x 84.375%" (line 40),
 "amount from line 38 x 5.4% = (maximum $3,661.20)" (line 42), "amount from line 38 x 1% =
-(maximum $678.00)" (line 43) and "amount from line 35 x 4% = (maximum $396.00)" (line 46).
+(maximum $678.00)" (line 43) and "amount from line 35 x 4% = (maximum $396.00)" (line 46). Part 4:
+"Amount from line 26 × 16.80672 = 27" (line 27), the CPP contributions grossed up to the
+self-employed rate (twice the employee's 4.95% and 1%, 1 / 0.0595 to five decimal places).
 
 The form prints no "upper" of its own for lines 22, 23, 26, 42, 43 and 46: the tiers run from 0
 to the maximum the printed maximum implies (67,800.00 at 4.95%, 5.4% and 1% and 9,900.00 at 4%).
@@ -34,10 +36,12 @@ import pytest
 import app.registrations
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
 from app.domain.artifact import Artifact, ArtifactKind
+from app.domain.capabilities.apply_fraction import ApplyFraction
 from app.domain.capabilities.apply_rate import ApplyRate
 from app.domain.capabilities.contribution_tier import TieredContribution
 from app.domain.parameters.amount_by_count import AMOUNT_BY_COUNT
 from app.domain.parameters.contribution_tier import CONTRIBUTION_TIER, ContributionTier
+from app.domain.parameters.fraction import FRACTION, Fraction
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
 from app.domain.parameters.rounding import RoundingMode, RoundTo
@@ -58,6 +62,7 @@ REQUIRED_FIRST_ADDITIONAL = "ca/rc381_required_first_additional"
 REQUIRED_SECOND_ADDITIONAL = "ca/rc381_required_second_additional"
 QPP_BASE_SHARE_RATE = "ca/rc381_qpp_base_share_rate"
 REQUIRED_QPP_BASE = "ca/rc381_required_qpp_base"
+CPP_GROSS_UP_FRACTION = "ca/rc381_cpp_gross_up_fraction"
 
 # Made up for this test and not registered.
 EARNINGS = ArtifactKind("ex/earnings", Decimal)
@@ -325,6 +330,47 @@ def test_the_monthly_proration_tables_cite_rc381_beside_schedule_8(family: str) 
     )
 
 
+# Part 4 line 27.
+
+
+def test_2025_part_4_line_27_is_16_80672_over_100000_to_the_cent() -> None:
+    data = SOURCE.get(CPP_GROSS_UP_FRACTION, 2025, FRACTION)
+
+    # "× 16.80672" kept as printed, not reduced and not turned into a rate: 16.80672 is above 1,
+    # which a rate refuses, as the dividend gross-up of 138% is.
+    assert data.values == Fraction(1680672, 100000)
+    assert data.rounding == CENT
+
+
+@pytest.mark.parametrize(
+    ("line_26", "line_27"),
+    [
+        # Return BO's line 26 of 1,695.75 (the CPP contributions that the employment income
+        # alone requires): 1,695.75 x 16.80672 = 28,499.9954..., so 28,500.00, which is
+        # 1,695.75 / 5.95%.
+        ("1695.75", "28500.00"),
+        ("0", "0.00"),
+        ("1.00", "16.81"),
+        # 0.01 x 16.80672 = 0.1680672, up to 0.17; 0.03 x 16.80672 = 0.5042016, down to 0.50.
+        ("0.01", "0.17"),
+        ("0.03", "0.50"),
+        # 100.00 x 16.80672 = 1,680.672, down to 1,680.67; 2.00 x 16.80672 = 33.61344, to 33.61.
+        ("100.00", "1680.67"),
+        ("2.00", "33.61"),
+        # Line 26 may be a negative amount (line 25A is): -1.00 x 16.80672 = -16.80672.
+        ("-1.00", "-16.81"),
+    ],
+)
+def test_part_4_line_27_is_line_26_times_16_80672(line_26: str, line_27: str) -> None:
+    capability = ApplyFraction(
+        SOURCE.get(CPP_GROSS_UP_FRACTION, 2025, FRACTION), EARNINGS, CONTRIBUTION
+    )
+
+    result = capability.compute((Artifact(EARNINGS, D(line_26)),))
+
+    assert result.outputs == (Artifact(CONTRIBUTION, D(line_27)),)
+
+
 # Sources and headers.
 
 
@@ -339,6 +385,7 @@ def test_the_monthly_proration_tables_cite_rc381_beside_schedule_8(family: str) 
         (REQUIRED_SECOND_ADDITIONAL, CONTRIBUTION_TIER),
         (QPP_BASE_SHARE_RATE, RATE),
         (REQUIRED_QPP_BASE, CONTRIBUTION_TIER),
+        (CPP_GROSS_UP_FRACTION, FRACTION),
     ],
 )
 def test_2025_rc381_datasets_cite_only_the_rc381_pdf(family: str, kind: ParameterKind[Any]) -> None:
@@ -362,6 +409,7 @@ def test_2025_rc381_datasets_cite_only_the_rc381_pdf(family: str, kind: Paramete
         (REQUIRED_SECOND_ADDITIONAL, ("amount from line 15", "4%", "(maximum $396.00)")),
         (QPP_BASE_SHARE_RATE, ("amount from line 39", "84.375%")),
         (REQUIRED_QPP_BASE, ("amount from line 38", "5.4%", "(maximum $3,661.20)")),
+        (CPP_GROSS_UP_FRACTION, ("Amount from line 26", "16.80672", "Part 4", "line 27")),
     ],
 )
 def test_the_dataset_header_quotes_rc381_as_the_form_prints_it(
@@ -409,6 +457,7 @@ def test_the_shared_dataset_header_also_quotes_the_qpp_line(
         REQUIRED_SECOND_ADDITIONAL,
         QPP_BASE_SHARE_RATE,
         REQUIRED_QPP_BASE,
+        CPP_GROSS_UP_FRACTION,
     ],
 )
 def test_the_dataset_header_states_its_rounding_decision(family: str) -> None:

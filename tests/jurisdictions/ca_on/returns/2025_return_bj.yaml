@@ -721,3 +721,4 @@ expected:
   ca/rc381_part_2_line_j: "3500.00"
   ca/amt_basic_federal_tax: "-888.71"
   ca/amt_carryover_available_for_2026: "888.71"
+  ca/rc381_part_4_line_4: "10000.00"

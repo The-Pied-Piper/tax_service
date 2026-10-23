@@ -485,6 +485,9 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_16,
     RC381_PART_3_LINE_20,
     RC381_PART_3_LINE_21,
+    RC381_PART_3_LINE_22,
+    RC381_PART_3_LINE_23,
+    RC381_PART_3_LINE_24,
     RC381_PART_3_LINE_27,
     RC381_PART_3_LINE_28,
     RC381_PART_3_LINE_29,
@@ -494,6 +497,7 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_36,
     RC381_PART_3_LINE_40,
     RC381_PART_3_LINE_41,
+    RC381_PART_3_LINE_44,
     RC381_PART_3_LINE_49,
     RC381_PART_3_LINE_52,
     RC381_PART_3_LINE_53,
@@ -511,6 +515,14 @@ from app.jurisdictions.ca.catalog import (
     RC381_PART_3_LINE_84,
     RC381_PART_3_LINE_85,
     RC381_PART_3_LINE_87_DIFFERENCE,
+    RC381_PART_4_LINE_8,
+    RC381_PART_4_LINE_11,
+    RC381_PART_4_LINE_12,
+    RC381_PART_4_LINE_13_DIFFERENCE,
+    RC381_PART_4_LINE_17,
+    RC381_PART_4_LINE_20,
+    RC381_PART_4_LINE_26,
+    RC381_PART_4_LINE_27,
     REFUND_OR_BALANCE_OWING,
     REFUNDABLE_MEDICAL_EXPENSE_SUPPLEMENT,
     REGULAR_RATE_DONATIONS,
@@ -712,6 +724,52 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert subtracted == {
+        # Form RC381 Part 4 lines 8 "Line 6 minus line 7" (the amounts from lines 20 and 22 of
+        # Part 3), 11 "Line 9 minus line 10" (lines 21 and 23), 17 "Line 15 minus line 16" (the T4
+        # contributions less line 24) and 20 "Line 18 minus line 19" (the QPP T4 contributions
+        # less line 44), and the result printed inside line 13, "Line 5 minus line 12": Return A's
+        # box 16 total is 4034.10 (lines 20 and 21 of Part 3 being 3356.10 and 678.00), so lines 8,
+        # 11, 12 and 17 carry those and line 13's result is 0; the QPP side is 0.
+        RC381_PART_4_LINE_8: SubtractedLine(
+            output=RC381_PART_4_LINE_8,
+            minuend=RC381_PART_3_LINE_20,
+            minuend_amount=D("3356.10"),
+            subtrahend=RC381_PART_3_LINE_22,
+            subtrahend_amount=D("0.00"),
+            result=D("3356.10"),
+        ),
+        RC381_PART_4_LINE_11: SubtractedLine(
+            output=RC381_PART_4_LINE_11,
+            minuend=RC381_PART_3_LINE_21,
+            minuend_amount=D("678.00"),
+            subtrahend=RC381_PART_3_LINE_23,
+            subtrahend_amount=D("0.00"),
+            result=D("678.00"),
+        ),
+        RC381_PART_4_LINE_13_DIFFERENCE: SubtractedLine(
+            output=RC381_PART_4_LINE_13_DIFFERENCE,
+            minuend=CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            minuend_amount=D("4034.10"),
+            subtrahend=RC381_PART_4_LINE_12,
+            subtrahend_amount=D("4034.10"),
+            result=D("0.00"),
+        ),
+        RC381_PART_4_LINE_17: SubtractedLine(
+            output=RC381_PART_4_LINE_17,
+            minuend=CPP_T4_BASE_AND_FIRST_ADDITIONAL_CONTRIBUTIONS,
+            minuend_amount=D("4034.10"),
+            subtrahend=RC381_PART_3_LINE_24,
+            subtrahend_amount=D("0.00"),
+            result=D("4034.10"),
+        ),
+        RC381_PART_4_LINE_20: SubtractedLine(
+            output=RC381_PART_4_LINE_20,
+            minuend=T4_QPP_CONTRIBUTIONS_BOX_17,
+            minuend_amount=D("0"),
+            subtrahend=RC381_PART_3_LINE_44,
+            subtrahend_amount=D("0.00"),
+            result=D("0.00"),
+        ),
         # Form RC381 Part 3 lines 27 to 30 "Amount from line I of Part 2 minus the amount from
         # line 7" (and G less 8, J less 9, H less 10): the QPP row of the table less the CPP
         # shares, which are 0 for Return A.
@@ -2587,6 +2645,15 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             fraction=Fraction(1680672, 100000),
             rounding=CENT,
             result=D("67799.99"),
+        ),
+        # Form RC381 Part 4 line 27 "Amount from line 26 × 16.80672": line 26 is 0.
+        RC381_PART_4_LINE_27: FractionAppliedLine(
+            output=RC381_PART_4_LINE_27,
+            base=RC381_PART_4_LINE_26,
+            base_amount=D("0"),
+            fraction=Fraction(1680672, 100000),
+            rounding=CENT,
+            result=D("0"),
         ),
         # Form T657 Chart 2016 Part 1 "× 1/2 = F": amounts D and E of 0, times 1/2.
         CHART_2016_PART_1_AMOUNT_F: FractionAppliedLine(
