@@ -19,12 +19,19 @@ from app.jurisdictions.ca.catalog import (
     AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     DIVIDEND_TAX_CREDIT,
+    FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_FOREIGN_TAX_CREDIT,
+    FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
     FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_4,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_5,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_7,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_8,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_10,
     FOREIGN_NON_BUSINESS_TAX_PAID,
     FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
     FOREIGN_TAX_CREDIT_NET_INCOME,
@@ -46,7 +53,16 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_PAYABLE,
     TOTAL_SPLIT_INCOME,
 )
-from app.jurisdictions.ca.trace import ForeignTaxCreditLine, PooledForeignTaxCreditLine
+from app.jurisdictions.ca.trace import (
+    ForeignBusinessLine4,
+    ForeignBusinessLine5,
+    ForeignBusinessLine7,
+    ForeignBusinessLine8,
+    ForeignBusinessLine10,
+    ForeignBusinessLine11,
+    ForeignTaxCreditLine,
+    PooledForeignTaxCreditLine,
+)
 from app.jurisdictions.ca_on import catalog as ontario
 from app.jurisdictions.ca_on.capabilities.provincial_foreign_tax_credit import (
     ProvincialForeignTaxCredit,
@@ -63,6 +79,11 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 US = ("1500", "10000")
 UK = ("100", "5000")
+# The same countries with their business figures, in the order of the form: business income tax
+# paid for the year (note 5), unused business foreign tax credits (note 6), net foreign business
+# income (line 43900) and the federal surtax on income allocated outside Canada (line 6).
+US_WITH_BUSINESS = (*US, "400", "50", "6000", "0")
+UK_WITH_BUSINESS = (*UK, "60", "0", "3000", "0")
 
 
 def return_aw(**overrides: Any) -> Worksheet:
@@ -71,7 +92,9 @@ def return_aw(**overrides: Any) -> Worksheet:
     The filer is Return K's: employment income of 50000, a T5 slip and dividends with no slip, and
     income tax deducted of 9000. Added are foreign investment income of 15000 (the dividends of two
     countries) and the two countries of Form T2209: the United States, 1500 of tax paid on 10000
-    of net foreign non-business income, and the United Kingdom, 100 on 5000.
+    of net foreign non-business income, and the United Kingdom, 100 on 5000. They have no business
+    figures (lines 4 to 6 of Form T2209 are 0), so the business credit is 0; `return_aw_business`
+    adds them.
     """
     inputs: dict[str, Any] = {
         "employment_income": "50000",
@@ -91,6 +114,19 @@ def return_aw(**overrides: Any) -> Worksheet:
         "foreign_tax_countries_rows": (US, UK),
     }
     return compute(**{**inputs, **overrides})
+
+
+def return_aw_business(**overrides: Any) -> Worksheet:
+    """Return AW in full, as in `returns/2025_return_aw.yaml`: `return_aw` with the business figures
+    of both countries.
+
+    The United States paid 400 of business income tax for the year, with 50 of unused business
+    foreign tax credits, on 6000 of net foreign business income; the United Kingdom paid 60, with 0
+    unused, on 3000. Line 6, the federal surtax on income allocated outside Canada, is 0 for both.
+    """
+    return return_aw(
+        **{"foreign_tax_countries_rows": (US_WITH_BUSINESS, UK_WITH_BUSINESS), **overrides}
+    )
 
 
 def test_return_aws_net_income_and_basic_federal_tax_for_form_t2209_are_66990_and_7285_81() -> None:
@@ -180,7 +216,7 @@ def test_the_trace_names_each_country_and_the_federal_foreign_tax_credit() -> No
         "(half-up to 0.01); credit 100"
     ) in rendered
     assert (
-        "federal_foreign_tax_credit: lesser of federal_non_business_foreign_tax_credit 1187.6 "
+        "federal_foreign_tax_credit: lesser of federal_foreign_tax_credit_before_limit 1187.6 "
         "and federal_tax_after_credits 6966.62 = 1187.6"
     ) in rendered
 
@@ -217,6 +253,223 @@ def test_the_credit_comes_off_the_net_federal_tax_the_total_payable_and_the_bala
     assert worksheet.get(ontario.ONTARIO_TAX).value == D("3156.35")
     assert worksheet.get(TOTAL_PAYABLE).value == D("8935.37")
     assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-64.63")
+
+
+def business_lines(worksheet: Worksheet, kind: type) -> list[Any]:
+    """The trace lines of class `kind` the return produced, in order."""
+    return [line for line in worksheet.trace if isinstance(line, kind)]
+
+
+def test_the_business_lines_of_each_sheet_are_worked_with_the_basic_federal_tax_of_note_8() -> None:
+    # Net income (note 3) is 66990.00 and the basic federal tax of note (8), "Line 42900 of your
+    # return plus any federal dividend tax credit (line 40425 of your return).", is 6966.62 +
+    # 319.19 = 7285.81. Both countries stay on their own sheets: the total foreign tax is 1500 +
+    # 100 + 400 + 60 = 2060, more than 200 (the unused 50 is not tax paid). United States: line 4
+    # = 400 + 50 = 450; line 5 = 6000 x 7285.81 / 66990.00 = 43714860.00 / 66990.00 = 652.5579...,
+    # half-up 652.56; line 6 = 0; line 7 = 652.56; line 8 = 7285.81; line 9 = the line 3 of
+    # 1087.60; line 10 = 7285.81 - 1087.60 = 6198.21; line 11 = least(450, 652.56, 6198.21) =
+    # 450. United Kingdom: line 4 = 60; line 5 = 3000 x 7285.81 / 66990.00 = 326.2789..., half-up
+    # 326.28; line 7 = 326.28; line 8 = 7285.81; line 9 = 100; line 10 = 7185.81; line 11 =
+    # least(60, 326.28, 7185.81) = 60. Totals: line 4 510, line 5 978.84, line 7 978.84, line 8
+    # 14571.62, line 10 13384.02, line 11 510.
+    worksheet = return_aw_business()
+
+    assert worksheet.get(FOREIGN_BUSINESS_TAX_CREDIT_LINE_4).value == D("510")
+    assert worksheet.get(FOREIGN_BUSINESS_TAX_CREDIT_LINE_5).value == D("978.84")
+    assert worksheet.get(FOREIGN_BUSINESS_TAX_CREDIT_LINE_7).value == D("978.84")
+    assert worksheet.get(FOREIGN_BUSINESS_TAX_CREDIT_LINE_8).value == D("14571.62")
+    assert worksheet.get(FOREIGN_BUSINESS_TAX_CREDIT_LINE_10).value == D("13384.02")
+    assert worksheet.get(FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT).value == D("510")
+    assert worksheet.get(FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT).value == D("1187.60")
+    assert not business_lines(worksheet, PooledForeignTaxCreditLine)
+
+
+def test_the_trace_has_a_line_for_each_sheet_of_each_business_line_and_a_total() -> None:
+    worksheet = return_aw_business()
+
+    assert business_lines(worksheet, ForeignBusinessLine4) == [
+        ForeignBusinessLine4(
+            FOREIGN_BUSINESS_TAX_CREDIT_LINE_4,
+            position=1,
+            tax_paid=D("400"),
+            unused_credits=D("50"),
+            result=D("450"),
+        ),
+        ForeignBusinessLine4(
+            FOREIGN_BUSINESS_TAX_CREDIT_LINE_4,
+            position=2,
+            tax_paid=D("60"),
+            unused_credits=D("0"),
+            result=D("60"),
+        ),
+    ]
+    assert [
+        (line.position, line.income, line.net_income, line.basic_federal_tax, line.result)
+        for line in business_lines(worksheet, ForeignBusinessLine5)
+    ] == [
+        (1, D("6000"), D("66990.00"), D("7285.81"), D("652.56")),
+        (2, D("3000"), D("66990.00"), D("7285.81"), D("326.28")),
+    ]
+    assert all(line.rounding == CENT for line in business_lines(worksheet, ForeignBusinessLine5))
+    assert [
+        (line.position, line.line_5, line.line_6, line.result)
+        for line in business_lines(worksheet, ForeignBusinessLine7)
+    ] == [(1, D("652.56"), D("0"), D("652.56")), (2, D("326.28"), D("0"), D("326.28"))]
+    assert [
+        (line.position, line.basic_federal_tax, line.line_6, line.result)
+        for line in business_lines(worksheet, ForeignBusinessLine8)
+    ] == [(1, D("7285.81"), D("0"), D("7285.81")), (2, D("7285.81"), D("0"), D("7285.81"))]
+    assert [
+        (line.position, line.line_8, line.line_3, line.result)
+        for line in business_lines(worksheet, ForeignBusinessLine10)
+    ] == [
+        (1, D("7285.81"), D("1087.60"), D("6198.21")),
+        (2, D("7285.81"), D("100"), D("7185.81")),
+    ]
+    assert [
+        (line.position, line.line_4, line.line_7, line.line_10, line.result)
+        for line in business_lines(worksheet, ForeignBusinessLine11)
+    ] == [
+        (1, D("450"), D("652.56"), D("6198.21"), D("450")),
+        (2, D("60"), D("326.28"), D("7185.81"), D("60")),
+    ]
+    totals = business_lines(worksheet, ItemsTotalLine)
+    assert (
+        ItemsTotalLine(FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT, ((1, D("450")), (2, D("60"))), D("510"))
+        in totals
+    )
+    assert (
+        ItemsTotalLine(
+            FOREIGN_BUSINESS_TAX_CREDIT_LINE_5,
+            ((1, D("652.56")), (2, D("326.28"))),
+            D("978.84"),
+        )
+        in totals
+    )
+
+
+def test_the_trace_names_each_sheet_of_the_business_lines_line_13_and_the_limit() -> None:
+    worksheet = return_aw_business()
+
+    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert (
+        "foreign_business_tax_credit_line_4: sheet 1: line 4 = business income tax paid 400 + "
+        "unused foreign tax credits 50 = 450"
+    ) in rendered
+    assert (
+        "foreign_business_tax_credit_line_5: sheet 2: line 5 = 3000 net foreign business income "
+        "x 7285.81 basic federal tax / 66990 net income = 326.28 (half-up to 0.01)"
+    ) in rendered
+    assert (
+        "federal_business_foreign_tax_credit: sheet 1: line 11 = least of line 4 450, line 7 "
+        "652.56, line 10 6198.21 = 450"
+    ) in rendered
+    assert (
+        "federal_foreign_tax_credit_before_limit: federal_business_foreign_tax_credit 510 + "
+        "federal_non_business_foreign_tax_credit 1187.6 = 1697.6"
+    ) in rendered
+    assert (
+        "federal_foreign_tax_credit: lesser of federal_foreign_tax_credit_before_limit 1697.6 "
+        "and federal_tax_after_credits 6966.62 = 1697.6"
+    ) in rendered
+
+
+def test_line_13_is_lines_11_and_12_and_t1_line_129_is_1697_60_and_line_130_is_5269_02() -> None:
+    # Line 11 is 510 and line 12 "the amount from line 3" is 1187.60, so line 13 "Add lines 11 and
+    # 12." is 510 + 1187.60 = 1697.60. It is less than line 42900 (6966.62), so T1 line 129 (line
+    # 40500) is 1697.60; line 130 is 6966.62 - 1697.60 = 5269.02, and lines 132 to 142 carry it.
+    worksheet = return_aw_business()
+
+    assert worksheet.get(FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT).value == D("1697.60")
+    assert worksheet.get(FEDERAL_FOREIGN_TAX_CREDIT).value == D("1697.60")
+    assert worksheet.get(FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT).value == D("5269.02")
+    assert worksheet.get(FEDERAL_TAX_WITH_ITC_RECAPTURE).value == D("5269.02")
+    assert worksheet.get(FEDERAL_TAX_LESS_CREDITS).value == D("5269.02")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("5269.02")
+
+
+def test_the_business_credit_comes_off_the_net_federal_tax_the_total_payable_and_the_refund() -> (
+    None
+):
+    # Net federal tax 5269.02 + Ontario tax 3156.35 (form T2036 reads the non-business figures
+    # only, so it is unchanged) = 8425.37 against 9000 deducted: a refund of 574.63, which is the
+    # net refund as there is no donation to the opportunities fund.
+    worksheet = return_aw_business()
+
+    assert worksheet.get(ontario.PROVINCIAL_FOREIGN_TAX_CREDIT).value == D("412.40")
+    assert worksheet.get(ontario.ONTARIO_TAX).value == D("3156.35")
+    assert worksheet.get(TOTAL_PAYABLE).value == D("8425.37")
+    assert worksheet.get(REFUND_OR_BALANCE_OWING).value == D("-574.63")
+    assert worksheet.get(REFUND).value == D("574.63")
+    assert worksheet.get(ontario.NET_REFUND).value == D("574.63")
+
+
+def test_the_business_tax_paid_counts_toward_the_200_that_chooses_separate_sheets() -> None:
+    # Non-business tax of 50 + 100 = 150 is not more than 200, but with the business tax paid, 30 +
+    # 40, the total foreign tax is 220, so each country is on its own sheet (the non-business tax
+    # alone would pool them). Sheet 1: line 2 = 1000 x 7285.81 / 66990.00 = 108.76, line 3 =
+    # least(50, 108.76) = 50; line 4 = 30, line 5 = 1000 x 7285.81 / 66990.00 = 108.76, line 8 =
+    # 7285.81, line 10 = 7285.81 - 50 = 7235.81, line 11 = least(30, 108.76, 7235.81) = 30.
+    # Sheet 2: line 2 = 500 x 7285.81 / 66990.00 = 54.38, line 3 = 54.38; line 4 = 40, line 5 =
+    # 54.38, line 10 = 7285.81 - 54.38 = 7231.43, line 11 = least(40, 54.38, 7231.43) = 40. Line
+    # 3 total 104.38, line 11 total 70, line 13 = 174.38, line 130 = 6966.62 - 174.38 = 6792.24.
+    worksheet = return_aw(
+        foreign_tax_countries_rows=(
+            ("50", "1000", "30", "0", "1000", "0"),
+            ("100", "500", "40", "0", "500", "0"),
+        )
+    )
+
+    assert not business_lines(worksheet, PooledForeignTaxCreditLine)
+    assert worksheet.get(FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT).value == D("104.38")
+    assert worksheet.get(FOREIGN_BUSINESS_TAX_CREDIT_LINE_4).value == D("70")
+    assert worksheet.get(FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT).value == D("70")
+    assert worksheet.get(FEDERAL_FOREIGN_TAX_CREDIT).value == D("174.38")
+    assert worksheet.get(FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT).value == D("6792.24")
+
+
+def test_line_6_is_added_into_lines_7_and_8_and_so_into_the_least_of_lines_4_7_and_10() -> None:
+    # One country with no non-business figures, 1000 of business tax paid on 5000 of net foreign
+    # business income and a line 6 of 100: line 4 = 1000; line 5 = 5000 x 7285.81 / 66990.00 =
+    # 543.7983..., half-up 543.80; line 7 = 543.80 + 100 = 643.80; line 8 = 7285.81 + 100 =
+    # 7385.81; line 9 = 0; line 10 = 7385.81; line 11 = least(1000, 643.80, 7385.81) = 643.80.
+    # Line 13 = 643.80 + 0, below line 42900, so line 130 = 6966.62 - 643.80 = 6322.82.
+    worksheet = return_aw(foreign_tax_countries_rows=(("0", "0", "1000", "0", "5000", "100"),))
+
+    assert worksheet.get(FOREIGN_BUSINESS_TAX_CREDIT_LINE_4).value == D("1000")
+    assert worksheet.get(FOREIGN_BUSINESS_TAX_CREDIT_LINE_5).value == D("543.80")
+    assert worksheet.get(FOREIGN_BUSINESS_TAX_CREDIT_LINE_7).value == D("643.80")
+    assert worksheet.get(FOREIGN_BUSINESS_TAX_CREDIT_LINE_8).value == D("7385.81")
+    assert worksheet.get(FOREIGN_BUSINESS_TAX_CREDIT_LINE_10).value == D("7385.81")
+    assert worksheet.get(FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT).value == D("643.80")
+    assert worksheet.get(FEDERAL_FOREIGN_TAX_CREDIT).value == D("643.80")
+    assert worksheet.get(FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT).value == D("6322.82")
+
+
+def test_business_income_above_net_income_is_capped_and_line_13_cannot_exceed_line_42900() -> None:
+    # Note (7): 100000 of net foreign business income is more than the net income of 66990.00, so
+    # the net income is used: line 5 = 66990.00 x 7285.81 / 66990.00 = 7285.81. With 8000 of
+    # business tax paid, line 4 = 8000, line 7 = 7285.81, line 8 = 7285.81 and line 10 = 7285.81 -
+    # 0 (no non-business figures) = 7285.81, so line 11 = 7285.81. Line 13 is 7285.81, but "should
+    # not be more than" line 42900, 6966.62: T1 line 129 is 6966.62 and line 130 is 0.
+    worksheet = return_aw(foreign_tax_countries_rows=(("0", "0", "8000", "0", "100000", "0"),))
+
+    assert worksheet.get(FOREIGN_BUSINESS_TAX_CREDIT_LINE_5).value == D("7285.81")
+    assert worksheet.get(FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT).value == D("7285.81")
+    assert worksheet.get(FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT).value == D("7285.81")
+    assert worksheet.get(FEDERAL_FOREIGN_TAX_CREDIT).value == D("6966.62")
+    assert worksheet.get(FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT).value == D("0")
+    assert worksheet.get(NET_FEDERAL_TAX).value == D("0")
+
+
+def test_a_return_with_no_countries_has_no_business_credit_either() -> None:
+    worksheet = return_aw(foreign_tax_countries_rows=())
+
+    assert worksheet.get(FOREIGN_BUSINESS_TAX_CREDIT_LINE_4).value == D("0")
+    assert worksheet.get(FOREIGN_BUSINESS_TAX_CREDIT_LINE_10).value == D("0")
+    assert worksheet.get(FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT).value == D("0")
+    assert worksheet.get(FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT).value == D("0")
+    assert worksheet.get(FEDERAL_FOREIGN_TAX_CREDIT).value == D("0")
 
 
 def test_a_total_of_exactly_200_of_foreign_tax_is_pooled() -> None:

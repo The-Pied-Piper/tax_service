@@ -373,9 +373,12 @@ from app.jurisdictions.ca.catalog import (
     FISH_SHARESPERSON_INCOME,
     FISH_SUBSIDIES,
     FISH_VEHICLE_SALES_TAX_RATE,
+    FOREIGN_BUSINESS_TAX_PAID,
+    FOREIGN_BUSINESS_UNUSED_TAX_CREDITS,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
     FOREIGN_NON_BUSINESS_TAX_PAID,
+    FOREIGN_SURTAX_OUTSIDE_CANADA,
     FOREIGN_TAX_COUNTRIES,
     FOREIGN_TUITION_FEES,
     GOVERNMENT_DONATIONS,
@@ -414,6 +417,7 @@ from app.jurisdictions.ca.catalog import (
     NET_FARMING_INCOME,
     NET_FEDERAL_SUPPLEMENTS,
     NET_FISHING_INCOME,
+    NET_FOREIGN_BUSINESS_INCOME,
     NET_FOREIGN_NON_BUSINESS_INCOME,
     NET_PARTNERSHIP_INCOME,
     NET_PROFESSIONAL_INCOME,
@@ -1648,16 +1652,29 @@ def principal_residence_properties(*rows: ResidenceProperty) -> Artifact[RecordL
     )
 
 
-def foreign_tax_countries(*rows: tuple[str, str]) -> Artifact[RecordList]:
-    """The Form T2209 countries, one record per (line 43100, line 43300) row, in the order given;
-    their business figures (lines 4 to 6) are 0."""
+def foreign_tax_countries(*rows: tuple[str, ...]) -> Artifact[RecordList]:
+    """The Form T2209 countries, one record per row, in the order given.
+
+    A row is (line 43100, line 43300) and may go on with the business figures in the order of the
+    form: the business income tax paid for the year (note 5), the unused business foreign tax
+    credits (note 6), the net foreign business income (line 43900) and the federal surtax on
+    income allocated outside Canada (line 6). A figure a row leaves out is 0.
+    """
+    business_fields = (
+        FOREIGN_BUSINESS_TAX_PAID,
+        FOREIGN_BUSINESS_UNUSED_TAX_CREDITS,
+        NET_FOREIGN_BUSINESS_INCOME,
+        FOREIGN_SURTAX_OUTSIDE_CANADA,
+    )
     records: list[dict[ArtifactKind[Any], object]] = []
-    for tax_paid, income in rows:
+    for tax_paid, income, *business in rows:
         record: dict[ArtifactKind[Any], object] = {
             field: D(0) for field in FOREIGN_TAX_COUNTRIES.fields
         }
         record[FOREIGN_NON_BUSINESS_TAX_PAID] = D(tax_paid)
         record[NET_FOREIGN_NON_BUSINESS_INCOME] = D(income)
+        for field, figure in zip(business_fields, business, strict=False):
+            record[field] = D(figure)
         records.append(record)
     return Artifact(FOREIGN_TAX_COUNTRIES, RecordList(FOREIGN_TAX_COUNTRIES.fields, records))
 
@@ -2000,7 +2017,7 @@ def starting(
     unused_tuition_amounts_brought_forward: str = "0",
     exempt_income_deductions: str = "0",
     first_nations_abatement: str = "0",
-    foreign_tax_countries_rows: tuple[tuple[str, str], ...] = (),
+    foreign_tax_countries_rows: tuple[tuple[str, ...], ...] = (),
     qbt_election_eligible_amount: str = "0",
     qbt_percentage_allocated: str = "0",
     qbt_prior_years_claims: str = "0",
