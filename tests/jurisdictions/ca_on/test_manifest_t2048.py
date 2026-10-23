@@ -13,8 +13,12 @@ other form's export `IMPORTS`. The entries are listed in `manifest_families/t204
 
 from __future__ import annotations
 
-import pytest
+from pathlib import Path
 
+import pytest
+import yaml
+
+import app.jurisdictions.ca_on
 import app.registrations  # lists the packages; build_tax_computation registers their catalogs
 from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
@@ -43,6 +47,15 @@ from tests.jurisdictions.ca_on.manifest_families import t2048
 
 CA_ON = JurisdictionCode("CA-ON")
 ROOTS = app.registrations.JURISDICTIONS.roots()
+PART = (
+    Path(app.jurisdictions.ca_on.__file__).parent
+    / "manifests"
+    / "v1"
+    / "06a_capital_gains_deduction_qbt.yaml"
+)
+COPIES_PART = PART.with_name("06a_capital_gains_deduction_qbt_copies.yaml")
+INCOME_PART = PART.with_name("06_taxable_income.yaml")
+INPUTS_PART = PART.with_name("01_inputs.yaml")
 VALUED_EXPORTS = (
     QBT_ALLOCATION_TOTAL,
     QCC_ELECTION_DEDUCTION,
@@ -68,6 +81,53 @@ def form() -> Form:
 
 def composed() -> FormComposition:
     return build_tax_computation().compose(CA_ON, 2025).form("ca/t2048")
+
+
+# --- the parts and the form ----------------------------------------------------------------------
+
+
+def test_the_t2048_part_declares_the_form_ca_t2048_with_its_instances_limits_and_exports() -> None:
+    declared = yaml.safe_load(PART.read_text())["form"]
+
+    assert declared == {
+        "name": "ca/t2048",
+        "instances": "ca/t2048_dispositions",
+        "min_instances": 0,
+        "max_instances": 1,
+        "exports": list(t2048.FORM_EXPORTS),
+    }
+
+
+def test_the_t2048_copies_part_declares_only_the_form_ca_t2048() -> None:
+    assert yaml.safe_load(COPIES_PART.read_text())["form"] == {"name": "ca/t2048"}
+
+
+def test_the_t2048_parts_are_not_over_30_kb() -> None:
+    assert PART.stat().st_size <= 30 * 1024
+    assert COPIES_PART.stat().st_size <= 30 * 1024
+
+
+def test_the_other_parts_hold_no_t2048_input_and_the_dispositions_input_is_declared() -> None:
+    inputs_text = INPUTS_PART.read_text()
+
+    for identifier in t2048.INPUTS:
+        assert f"- {identifier}\n" in inputs_text, identifier
+    for identifier in t2048.FORM_INPUTS:
+        assert f"- {identifier}\n" not in inputs_text, identifier
+        assert f"- {identifier}\n" not in INCOME_PART.read_text(), identifier
+
+
+def test_the_return_part_holds_the_nine_record_totals_of_the_form_exports() -> None:
+    steps = yaml.safe_load(INCOME_PART.read_text())["capabilities"]
+    totals = {
+        (step["consumes"]["records"], step["produces"]["output"])
+        for step in steps
+        if step["name"] == "core/record_total"
+        and step["consumes"]["records"].startswith("ca/t2048.")
+    }
+
+    assert totals == {(step.consumes["records"], step.produces["output"]) for step in t2048.STEPS}
+    assert len(totals) == len(t2048.FORM_EXPORTS) == 9
 
 
 # --- the form and the return ---------------------------------------------------------------------
