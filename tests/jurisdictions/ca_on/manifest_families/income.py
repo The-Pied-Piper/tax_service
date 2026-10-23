@@ -52,6 +52,60 @@ from app.jurisdictions.ca.capabilities.principal_residence_line_51 import (
 from app.jurisdictions.ca.capabilities.principal_residence_line_53 import (
     PrincipalResidencePart2Line53,
 )
+from app.jurisdictions.ca.capabilities.principal_residence_line_56 import (
+    PrincipalResidencePart4Line56,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_line_57 import (
+    PrincipalResidencePart4Line57,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_3 import (
+    PrincipalResidenceWorksheetLine3Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_6 import (
+    PrincipalResidenceWorksheetLine6Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_16 import (
+    PrincipalResidenceWorksheetLine16Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_17 import (
+    PrincipalResidenceWorksheetLine17Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_18 import (
+    PrincipalResidenceWorksheetLine18Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_19 import (
+    PrincipalResidenceWorksheetLine19Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_21 import (
+    PrincipalResidenceWorksheetLine21Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_23 import (
+    PrincipalResidenceWorksheetLine23Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_24 import (
+    PrincipalResidenceWorksheetLine24Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_26 import (
+    PrincipalResidenceWorksheetLine26Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_27 import (
+    PrincipalResidenceWorksheetLine27Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_59 import (
+    PrincipalResidenceWorksheetLine59Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_61 import (
+    PrincipalResidenceWorksheetLine61Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_63 import (
+    PrincipalResidenceWorksheetLine63Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_64 import (
+    PrincipalResidenceWorksheetLine64Capability,
+)
+from app.jurisdictions.ca.capabilities.principal_residence_worksheet_line_66 import (
+    PrincipalResidenceWorksheetLine66Capability,
+)
 from app.jurisdictions.ca.catalog import (
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     BOND_DISPOSITIONS,
@@ -133,7 +187,25 @@ from app.jurisdictions.ca.catalog import (
     PRINCIPAL_RESIDENCE_LINE_48,
     PRINCIPAL_RESIDENCE_LINE_51,
     PRINCIPAL_RESIDENCE_LINE_53,
+    PRINCIPAL_RESIDENCE_LINE_56,
+    PRINCIPAL_RESIDENCE_LINE_57,
     PRINCIPAL_RESIDENCE_PROPERTIES,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_3,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_6,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_16,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_17,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_18,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_19,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_21,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_23,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_24,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_26,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_27,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_59,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_61,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_63,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_64,
+    PRINCIPAL_RESIDENCE_WORKSHEET_LINE_66,
     PROFESSIONAL_INCOME,
     QFFP_DISPOSITIONS,
     QFFP_FORECLOSURE_DISPOSITIONS,
@@ -285,6 +357,30 @@ OUTPUTS = frozenset(
         "ca/principal_residence_line_48",
         "ca/principal_residence_line_51",
         "ca/principal_residence_line_53",
+        # Form T2091(IND)-WS Chart 1 and Parts 1 and 3, and Form T2091(IND) Part 4 line 56:
+        # the total over the properties of each line; no step reads them, so each is declared
+        # as an unread printed line.
+        "ca/principal_residence_worksheet_line_3",
+        "ca/principal_residence_worksheet_line_6",
+        "ca/principal_residence_worksheet_line_16",
+        "ca/principal_residence_worksheet_line_17",
+        "ca/principal_residence_worksheet_line_18",
+        "ca/principal_residence_worksheet_line_19",
+        "ca/principal_residence_worksheet_line_21",
+        "ca/principal_residence_worksheet_line_23",
+        "ca/principal_residence_worksheet_line_24",
+        "ca/principal_residence_worksheet_line_26",
+        "ca/principal_residence_worksheet_line_27",
+        "ca/principal_residence_worksheet_line_59",
+        "ca/principal_residence_worksheet_line_61",
+        "ca/principal_residence_worksheet_line_63",
+        "ca/principal_residence_worksheet_line_64",
+        "ca/principal_residence_worksheet_line_66",
+        "ca/principal_residence_line_56",
+        # Form T2091(IND) Part 3 line 54 "Total capital gain": line 57 is entered on line
+        # 15800 of Schedule 3 instead, so no step reads it and it is a declared unread printed
+        # line.
+        "ca/principal_residence_gain",
     }
 )
 
@@ -514,9 +610,214 @@ STEPS = {
         consumes={"properties": "ca/principal_residence_properties"},
         produces={"output": "ca/principal_residence_line_53"},
     ),
+    # Form T2091(IND)-WS line 3 "Total number of years designated before 1995 (line 1 plus line
+    # 2)": the total over the properties of that line of each one.
+    CapabilitySelection(
+        name="ca/principal_residence_worksheet_line_3",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_worksheet_line_3"},
+    ),
+    # Form T2091(IND)-WS line 6 "Total number of years owned before 1995 (line 4 plus line 5)":
+    # the total over the properties of that line of each one.
+    CapabilitySelection(
+        name="ca/principal_residence_worksheet_line_6",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_worksheet_line_6"},
+    ),
+    # Form T2091(IND)-WS Chart 1 line 16 "Multiply line 14 by 1.1.": the total over the
+    # properties of that line of each one (0 where the chart is not completed, "Complete this
+    # chart if the amount on line 7 is more than the amount on line 10.").
+    CapabilitySelection(
+        name="ca/principal_residence_worksheet_line_16",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_worksheet_line_16"},
+    ),
+    # Form T2091(IND)-WS Chart 1 line 17 "Line 15 minus line 16 (if negative, enter "0")": the
+    # total over the properties of that line of each one.
+    CapabilitySelection(
+        name="ca/principal_residence_worksheet_line_17",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_worksheet_line_17"},
+    ),
+    # Form T2091(IND)-WS Chart 1 line 18 "Line 14 minus line 17": the total over the properties
+    # of that line of each one.
+    CapabilitySelection(
+        name="ca/principal_residence_worksheet_line_18",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_worksheet_line_18"},
+    ),
+    # Form T2091(IND)-WS line 19 "Enter the amount from line 18 if you completed Chart 1.
+    # Otherwise, enter the amount from line 10.": the total over the properties of that line of
+    # each one.
+    CapabilitySelection(
+        name="ca/principal_residence_worksheet_line_19",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_worksheet_line_19"},
+    ),
+    # Form T2091(IND)-WS line 21 "Line 19 minus line 20" "Adjusted gain before principal
+    # residence exemption": the total over the properties of that line of each one.
+    CapabilitySelection(
+        name="ca/principal_residence_worksheet_line_21",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_worksheet_line_21"},
+    ),
+    # Form T2091(IND)-WS line 23 "Line 3 plus 1 (see note below)": the total over the properties
+    # of that line of each one.
+    CapabilitySelection(
+        name="ca/principal_residence_worksheet_line_23",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_worksheet_line_23"},
+    ),
+    # Form T2091(IND)-WS line 24 "Multiply line 22 by line 23.": the total over the properties
+    # of that line of each one.
+    CapabilitySelection(
+        name="ca/principal_residence_worksheet_line_24",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_worksheet_line_24"},
+    ),
+    # Form T2091(IND)-WS line 26 "Divide line 24 by line 25.": the total over the properties of
+    # that line of each one.
+    CapabilitySelection(
+        name="ca/principal_residence_worksheet_line_26",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_worksheet_line_26"},
+    ),
+    # Form T2091(IND)-WS line 27 "Line 21 minus line 26" "Net adjusted gain": the total over the
+    # properties of that line of each one.
+    CapabilitySelection(
+        name="ca/principal_residence_worksheet_line_27",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_worksheet_line_27"},
+    ),
+    # Form T2091(IND)-WS line 59 "If you completed Part 2, enter the amount from line 58.
+    # Otherwise, enter the amount from line 27.": the total over the properties of that line of
+    # each one.
+    CapabilitySelection(
+        name="ca/principal_residence_worksheet_line_59",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_worksheet_line_59"},
+    ),
+    # Form T2091(IND)-WS line 61 "Multiply line 59 by line 60.": the total over the properties
+    # of that line of each one.
+    CapabilitySelection(
+        name="ca/principal_residence_worksheet_line_61",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_worksheet_line_61"},
+    ),
+    # Form T2091(IND)-WS line 63 "Divide line 61 by line 62.": the total over the properties of
+    # that line of each one.
+    CapabilitySelection(
+        name="ca/principal_residence_worksheet_line_63",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_worksheet_line_63"},
+    ),
+    # Form T2091(IND)-WS line 64 "Line 59 minus line 63" "Total adjusted gain": the total over
+    # the properties of that line of each one.
+    CapabilitySelection(
+        name="ca/principal_residence_worksheet_line_64",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_worksheet_line_64"},
+    ),
+    # Form T2091(IND)-WS line 66 "Enter whichever amount is less: line 64 or line 65."
+    # "Reduction as a result of the capital gains election": the total over the properties of
+    # that line of each one.
+    CapabilitySelection(
+        name="ca/principal_residence_worksheet_line_66",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_worksheet_line_66"},
+    ),
+    # Form T2091(IND) Part 4 line 56 "Reduction as a result of the capital gains election (line
+    # 66 of Form T2091(IND)-WS)": the total over the properties of that line of each one (0 for
+    # a property with no election).
+    CapabilitySelection(
+        name="ca/principal_residence_line_56",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_line_56"},
+    ),
+    # Form T2091(IND) Part 4 line 57 "Line 55 minus line 56 (if negative, enter "0")" "Capital
+    # gain": the total over the properties of that line of each one, entered on line 15800 of
+    # Schedule 3 ("Enter the amount from line 57 on line 15800 of Schedule 3, Capital Gains or
+    # Losses, for dispositions or deemed dispositions.").
+    CapabilitySelection(
+        name="ca/principal_residence_line_57",
+        params={
+            "rounding": "ca/principal_residence_gain_rounding",
+            "chart_1_factor": "ca/principal_residence_chart_1_factor",
+        },
+        consumes={"properties": "ca/principal_residence_properties"},
+        produces={"output": "ca/principal_residence_line_57"},
+    ),
     # Part 3, Personal-use property: "Line 9 and line 15800: Total gain only (add all the amounts
     # under column 5)": the rows' gains, a row's loss counting 0, then line 9 itself, a sum of
-    # those rows and line 54 of T2091(IND) ("enter the amount from line 54 above on line 15800 of
+    # those rows and line 57 of T2091(IND) Part 4 ("Enter the amount from line 57 on line 15800 of
     # Schedule 3").
     CapabilitySelection(
         name="ca/disposition_gains_only",
@@ -527,7 +828,9 @@ STEPS = {
     CapabilitySelection(
         name="core/sum",
         params={},
-        consumes={"parts": ("ca/personal_use_property_gain_rows", "ca/principal_residence_gain")},
+        consumes={
+            "parts": ("ca/personal_use_property_gain_rows", "ca/principal_residence_line_57")
+        },
         produces={"output": "ca/personal_use_property_gain"},
     ),
     # Part 3, Listed personal property: the rows' gains and losses (column 5) added, then line 10
@@ -970,6 +1273,96 @@ WIRING = {
         frozenset({PRINCIPAL_RESIDENCE_GAIN}),
     ),
     (
+        PrincipalResidenceWorksheetLine3Capability,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_WORKSHEET_LINE_3}),
+    ),
+    (
+        PrincipalResidenceWorksheetLine6Capability,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_WORKSHEET_LINE_6}),
+    ),
+    (
+        PrincipalResidenceWorksheetLine16Capability,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_WORKSHEET_LINE_16}),
+    ),
+    (
+        PrincipalResidenceWorksheetLine17Capability,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_WORKSHEET_LINE_17}),
+    ),
+    (
+        PrincipalResidenceWorksheetLine18Capability,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_WORKSHEET_LINE_18}),
+    ),
+    (
+        PrincipalResidenceWorksheetLine19Capability,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_WORKSHEET_LINE_19}),
+    ),
+    (
+        PrincipalResidenceWorksheetLine21Capability,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_WORKSHEET_LINE_21}),
+    ),
+    (
+        PrincipalResidenceWorksheetLine23Capability,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_WORKSHEET_LINE_23}),
+    ),
+    (
+        PrincipalResidenceWorksheetLine24Capability,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_WORKSHEET_LINE_24}),
+    ),
+    (
+        PrincipalResidenceWorksheetLine26Capability,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_WORKSHEET_LINE_26}),
+    ),
+    (
+        PrincipalResidenceWorksheetLine27Capability,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_WORKSHEET_LINE_27}),
+    ),
+    (
+        PrincipalResidenceWorksheetLine59Capability,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_WORKSHEET_LINE_59}),
+    ),
+    (
+        PrincipalResidenceWorksheetLine61Capability,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_WORKSHEET_LINE_61}),
+    ),
+    (
+        PrincipalResidenceWorksheetLine63Capability,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_WORKSHEET_LINE_63}),
+    ),
+    (
+        PrincipalResidenceWorksheetLine64Capability,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_WORKSHEET_LINE_64}),
+    ),
+    (
+        PrincipalResidenceWorksheetLine66Capability,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_WORKSHEET_LINE_66}),
+    ),
+    (
+        PrincipalResidencePart4Line56,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_LINE_56}),
+    ),
+    (
+        PrincipalResidencePart4Line57,
+        frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
+        frozenset({PRINCIPAL_RESIDENCE_LINE_57}),
+    ),
+    (
         PrincipalResidencePart2Line27,
         frozenset({PRINCIPAL_RESIDENCE_PROPERTIES}),
         frozenset({PRINCIPAL_RESIDENCE_LINE_27}),
@@ -1036,7 +1429,7 @@ WIRING = {
     ),
     (
         Sum,
-        frozenset({PERSONAL_USE_PROPERTY_GAIN_ROWS, PRINCIPAL_RESIDENCE_GAIN}),
+        frozenset({PERSONAL_USE_PROPERTY_GAIN_ROWS, PRINCIPAL_RESIDENCE_LINE_57}),
         frozenset({PERSONAL_USE_PROPERTY_GAIN}),
     ),
     (

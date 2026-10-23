@@ -747,7 +747,7 @@ from app.jurisdictions.ca.catalog import (
     PRE_1986_DEDUCTIONS_ADJUSTED_2000,
     PRE_1986_DEDUCTIONS_BEFORE_1988,
     PRE_1986_DEDUCTIONS_TOTAL,
-    PRINCIPAL_RESIDENCE_GAIN,
+    PRINCIPAL_RESIDENCE_LINE_57,
     PROFESSIONAL_INCOME,
     PROVINCIAL_CREDITS,
     QBT_CAPITAL_GAINS_DEDUCTION,
@@ -1806,7 +1806,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # is line 4, so lines 11, 14, 17, 19 and 21 are 20000 and every other figure is 0.
         PERSONAL_USE_PROPERTY_GAIN: SumLine(
             PERSONAL_USE_PROPERTY_GAIN,
-            ((PERSONAL_USE_PROPERTY_GAIN_ROWS, D("0")), (PRINCIPAL_RESIDENCE_GAIN, D("0"))),
+            ((PERSONAL_USE_PROPERTY_GAIN_ROWS, D("0")), (PRINCIPAL_RESIDENCE_LINE_57, D("0"))),
             D("0"),
         ),
         CAPITAL_GAINS_OF_QUALIFIED_AND_OTHER_PROPERTIES: SumLine(
