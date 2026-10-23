@@ -1745,44 +1745,56 @@ def dispositions(kind: RecordListKind, *rows: Disposition) -> Artifact[RecordLis
     return Artifact(kind, RecordList(kind.fields, records))
 
 
-ResidenceProperty = tuple[int, int, int, int, str, str, str, int]
+ResidenceProperty = (
+    tuple[int, int, int, int, str, str, str, int]
+    | tuple[int, int, int, int, str, str, str, int, int, str, str, str]
+)
 """One Form T2091(IND) property: the years designated after 1981 and from 1972 to 1981 (lines 1
 and 2), the years owned in the same periods (lines 5 and 6), the proceeds of disposition (line 8),
 the outlays and expenses (line 9), the adjusted cost base (line 10) and 1 if the "plus one" rule
-applies, else 0."""
+applies, else 0. A row of twelve adds the Part 2 figures: 1 if Part 2 applies, else 0 (the
+property is one of two or more principal residences a family member owned on December 31, 1981),
+then line 11 (the adjusted cost base on that date), line 12 (the fair market value on that date) and
+line 13 (the adjustments to the cost base after 1981). A row of eight has Part 2 not applying, with
+lines 11 to 13 at 0."""
 
 
 def principal_residence_properties(*rows: ResidenceProperty) -> Artifact[RecordList]:
     """The Form T2091(IND) properties, one record per row, in the order given."""
-    records: list[dict[ArtifactKind[Any], object]] = [
-        {
-            RESIDENCE_YEARS_DESIGNATED_AFTER_1981: designated_after,
-            RESIDENCE_YEARS_DESIGNATED_1972_TO_1981: designated_before,
-            RESIDENCE_YEARS_OWNED_AFTER_1981: owned_after,
-            RESIDENCE_YEARS_OWNED_1972_TO_1981: owned_before,
-            RESIDENCE_PROCEEDS: D(proceeds),
-            RESIDENCE_OUTLAYS: D(outlays),
-            RESIDENCE_ADJUSTED_COST_BASE: D(cost_base),
-            RESIDENCE_PLUS_ONE_YEAR: plus_one,
-            RESIDENCE_PART_2_APPLIES: 0,
-            RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981: D("0"),
-            RESIDENCE_FMV_DEC_31_1981: D("0"),
-            RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981: D("0"),
-        }
-        for (
-            designated_after,
-            designated_before,
-            owned_after,
-            owned_before,
-            proceeds,
-            outlays,
-            cost_base,
-            plus_one,
-        ) in rows
-    ]
+    records: list[dict[ArtifactKind[Any], object]] = [_residence_record(row) for row in rows]
     return Artifact(
         PRINCIPAL_RESIDENCE_PROPERTIES, RecordList(PRINCIPAL_RESIDENCE_PROPERTIES.fields, records)
     )
+
+
+def _residence_record(row: ResidenceProperty) -> dict[ArtifactKind[Any], object]:
+    """The record of one property: its eight figures, then its Part 2 figures (none in a row of
+    eight, which are 0 then)."""
+    (
+        designated_after,
+        designated_before,
+        owned_after,
+        owned_before,
+        proceeds,
+        outlays,
+        cost_base,
+        plus_one,
+    ) = row[:8]
+    part_2_applies, cost_base_1981, fmv_1981, adjustments = row[8:] or (0, "0", "0", "0")
+    return {
+        RESIDENCE_YEARS_DESIGNATED_AFTER_1981: designated_after,
+        RESIDENCE_YEARS_DESIGNATED_1972_TO_1981: designated_before,
+        RESIDENCE_YEARS_OWNED_AFTER_1981: owned_after,
+        RESIDENCE_YEARS_OWNED_1972_TO_1981: owned_before,
+        RESIDENCE_PROCEEDS: D(proceeds),
+        RESIDENCE_OUTLAYS: D(outlays),
+        RESIDENCE_ADJUSTED_COST_BASE: D(cost_base),
+        RESIDENCE_PLUS_ONE_YEAR: plus_one,
+        RESIDENCE_PART_2_APPLIES: part_2_applies,
+        RESIDENCE_ADJUSTED_COST_BASE_DEC_31_1981: D(cost_base_1981),
+        RESIDENCE_FMV_DEC_31_1981: D(fmv_1981),
+        RESIDENCE_COST_BASE_ADJUSTMENTS_AFTER_1981: D(adjustments),
+    }
 
 
 def foreign_tax_countries(*rows: tuple[str, ...]) -> Artifact[RecordList]:

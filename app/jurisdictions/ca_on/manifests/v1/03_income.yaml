@@ -65,6 +65,129 @@ capabilities:
       properties: ca/principal_residence_properties
     produces:
       output: ca/principal_residence_gain
+  # Form T2091(IND) Part 2 line 27 "Line 25 minus line 26" "Pre-1982 gain before principal
+  # residence exemption": the total over the properties of that line of each one (0 where the form
+  # says to enter "0").
+  - name: ca/principal_residence_line_27
+    params:
+      rounding: ca/principal_residence_gain_rounding
+    consumes:
+      properties: ca/principal_residence_properties
+    produces:
+      output: ca/principal_residence_line_27
+  # Form T2091(IND) Part 2 line 29 "Line 2 plus 1 (see note on page 4)": the total over the
+  # properties of that line of each one (0 where the form says to enter "0").
+  - name: ca/principal_residence_line_29
+    params:
+      rounding: ca/principal_residence_gain_rounding
+    consumes:
+      properties: ca/principal_residence_properties
+    produces:
+      output: ca/principal_residence_line_29
+  # Form T2091(IND) Part 2 line 30 "Multiply line 28 by line 29.": the total over the properties
+  # of that line of each one (0 where the form says to enter "0").
+  - name: ca/principal_residence_line_30
+    params:
+      rounding: ca/principal_residence_gain_rounding
+    consumes:
+      properties: ca/principal_residence_properties
+    produces:
+      output: ca/principal_residence_line_30
+  # Form T2091(IND) Part 2 line 32 "Divide line 30 by line 31.": the total over the properties of
+  # that line of each one (0 where the form says to enter "0").
+  - name: ca/principal_residence_line_32
+    params:
+      rounding: ca/principal_residence_gain_rounding
+    consumes:
+      properties: ca/principal_residence_properties
+    produces:
+      output: ca/principal_residence_line_32
+  # Form T2091(IND) Part 2 line 33 "Line 27 minus line 32 (if negative, enter "0")" "Pre-1982
+  # gain": the total over the properties of that line of each one (0 where the form says to enter
+  # "0").
+  - name: ca/principal_residence_line_33
+    params:
+      rounding: ca/principal_residence_gain_rounding
+    consumes:
+      properties: ca/principal_residence_properties
+    produces:
+      output: ca/principal_residence_line_33
+  # Form T2091(IND) Part 2 line 38 "Add lines 35 to 37.": the total over the properties of that
+  # line of each one (0 where the form says to enter "0").
+  - name: ca/principal_residence_line_38
+    params:
+      rounding: ca/principal_residence_gain_rounding
+    consumes:
+      properties: ca/principal_residence_properties
+    produces:
+      output: ca/principal_residence_line_38
+  # Form T2091(IND) Part 2 line 39 "Line 34 minus line 38" "Post-1981 gain before principal
+  # residence exemption": the total over the properties of that line of each one (0 where the form
+  # says to enter "0").
+  - name: ca/principal_residence_line_39
+    params:
+      rounding: ca/principal_residence_gain_rounding
+    consumes:
+      properties: ca/principal_residence_properties
+    produces:
+      output: ca/principal_residence_line_39
+  # Form T2091(IND) Part 2 line 42 "Multiply line 40 by line 41.": the total over the properties
+  # of that line of each one (0 where the form says to enter "0").
+  - name: ca/principal_residence_line_42
+    params:
+      rounding: ca/principal_residence_gain_rounding
+    consumes:
+      properties: ca/principal_residence_properties
+    produces:
+      output: ca/principal_residence_line_42
+  # Form T2091(IND) Part 2 line 44 "Divide line 42 by line 43.": the total over the properties of
+  # that line of each one (0 where the form says to enter "0").
+  - name: ca/principal_residence_line_44
+    params:
+      rounding: ca/principal_residence_gain_rounding
+    consumes:
+      properties: ca/principal_residence_properties
+    produces:
+      output: ca/principal_residence_line_44
+  # Form T2091(IND) Part 2 line 45 "Line 39 minus line 44 (if negative, enter "0")" "Post-1981
+  # gain": the total over the properties of that line of each one (0 where the form says to enter
+  # "0").
+  - name: ca/principal_residence_line_45
+    params:
+      rounding: ca/principal_residence_gain_rounding
+    consumes:
+      properties: ca/principal_residence_properties
+    produces:
+      output: ca/principal_residence_line_45
+  # Form T2091(IND) Part 2 line 48 "Line 46 minus line 47 (if negative, enter "0")" "Post-1981
+  # loss": the total over the properties of that line of each one (0 where the form says to enter
+  # "0").
+  - name: ca/principal_residence_line_48
+    params:
+      rounding: ca/principal_residence_gain_rounding
+    consumes:
+      properties: ca/principal_residence_properties
+    produces:
+      output: ca/principal_residence_line_48
+  # Form T2091(IND) Part 2 line 51 "Line 49 plus line 50": the total over the properties of that
+  # line of each one (0 where the form says to enter "0").
+  - name: ca/principal_residence_line_51
+    params:
+      rounding: ca/principal_residence_gain_rounding
+    consumes:
+      properties: ca/principal_residence_properties
+    produces:
+      output: ca/principal_residence_line_51
+  # Form T2091(IND) Part 2 line 53 "Line 51 minus line 52 (if negative, enter "0")" "Net capital
+  # gain": the total over the properties of that line of each one (0 where the form says to enter
+  # "0").
+  - name: ca/principal_residence_line_53
+    params:
+      rounding: ca/principal_residence_gain_rounding
+    consumes:
+      properties: ca/principal_residence_properties
+    produces:
+      output: ca/principal_residence_line_53
   - name: core/sum
     consumes:
       parts:
