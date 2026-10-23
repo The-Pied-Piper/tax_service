@@ -2,7 +2,8 @@
 
 T2048 is the form `ca/t2048`, run once for each disposition of the record list
 `ca/t2048_dispositions`, whose fields are the 13 T2048 inputs (`FORM_INPUTS`). Its limits are
-`min_instances` 0 and `max_instances` 1 in this slice. The form's selections are `FORM_STEPS`: its
+`min_instances` 0 and `max_instances` 1 (more are not accepted yet). The form's selections are
+`FORM_STEPS`: its
 34 own (`OWN_STEPS`) and 54 copies of the return's steps that compute the 11 figures it reads
 (`COPIED_STEPS`; the return keeps the originals). The form exports the nine artifacts of
 `FORM_EXPORTS`; the return re-produces each of them with `core/record_total` over the form's derived

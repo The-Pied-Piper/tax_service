@@ -1,7 +1,7 @@
 # Form T2048 (2025), Capital Gains Deduction for Qualifying Business Transfers or Qualifying
 # Cooperative Conversions, Parts 2 to 5 and Chart A (line 25395): the form ca/t2048, run once for
 # each disposition of the record list ca/t2048_dispositions (one record for each qualifying
-# disposition, in the order the filer designates; at most one in this slice, none included). Each
+# disposition, in the order the filer designates; none or one; more are not accepted yet). Each
 # record's fields are the 13 T2048 inputs. The form exports the nine figures of Parts 4 and 5 and
 # line 27 that the return reads or outputs, and the return totals each one over the dispositions
 # (`core/record_total`, 06_taxable_income.yaml). The 34 steps of this part are the form's own; the
