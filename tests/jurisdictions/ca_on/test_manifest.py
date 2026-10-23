@@ -1,4 +1,4 @@
-"""The CA-ON manifest: what it selects, and that production code builds it into a composition.
+"""The CA-ON manifest: what it selects, and that it builds into a set of forms (a `FormSet`).
 
 Building it through `TaxComputationService.compose` resolves every slot: each capability name to a
 registered class, each parameter slot's family to a dataset of the slot's kind for the tax year,

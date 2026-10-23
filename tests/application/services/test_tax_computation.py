@@ -1,4 +1,4 @@
-"""Unit tests for TaxComputationService: a jurisdiction's manifest built into a composition, run.
+"""Unit tests for TaxComputationService: a manifest built into a set of forms (a `FormSet`), run.
 
 The service does the I/O only: it reads the jurisdiction, takes the manifest for the tax year,
 resolves each selection's class and datasets from the ports and registries it was given, has
