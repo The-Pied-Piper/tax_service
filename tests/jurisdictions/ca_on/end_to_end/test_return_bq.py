@@ -72,7 +72,7 @@ BUSINESS = {
     "home_maintenance": "200",
     "home_property_taxes": "400",
 }
-FURNITURE = ("8", "10000", "0", "0", "0", "0", "2000", 0)
+FURNITURE = ("8", "10000", "0", "0", "0", "0", "2000", 0, "0", "0", "0")
 # Charts A to C for two passenger vehicles: Chart A line 16 (line 9281) is 1563.75 for the owned
 # one (Chart B interest 600, line 13 of 3300 x 7000 / 16000 = 1443.75, parking fees 120) and 936.25
 # for the leased one (Chart C leasing cost 2147.00, line 13 of 3505 x 3000 / 12000 = 876.25,

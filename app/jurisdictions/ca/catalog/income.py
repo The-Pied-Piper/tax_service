@@ -1834,7 +1834,10 @@ BUSINESS_CCA_CLASSES = RecordListKind.declare(
         CCA_CLASS_NUMBER,
         CCA_UCC_AT_START,
         CCA_ADDITIONS,
+        CCA_DIEP_ADDITIONS,
         CCA_PROCEEDS,
+        CCA_DIEP_PROCEEDS,
+        CCA_IMMEDIATE_EXPENSING,
         CCA_AIIP_ADDITIONS,
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
@@ -1843,8 +1846,50 @@ BUSINESS_CCA_CLASSES = RecordListKind.declare(
 )
 """Business classes, Form T2125 Area A "Calculation of capital cost allowance (CCA) claim": a
 starting list with one record for each class, holding the columns the filer enters (class
-number, UCC at the start of the year, additions, proceeds, the AIIP and RIIP parts of the
-additions, the CCA claimed) and whether any property is left in the class."""
+number, UCC at the start of the year, additions, the DIEP part of the additions, proceeds, the
+proceeds of DIEPs, the immediate expensing amount, the AIIP and RIIP parts of the additions, the
+CCA claimed) and whether any property is left in the class."""
+
+BUSINESS_EPOP_ASSOCIATED = CATALOG.declare("business_epop_associated", int, non_negative=True)
+"""Whether the filer is associated with an EPOP, Form T2125 Area A endnote 5 "$1.5 million, if you
+are not associated with any other eligible person or partnership (EPOP) in the tax year" and
+"amount iii of Area G, if you are associated with one or more EPOPs in the tax year": 1 if the
+filer is associated with one or more EPOPs in the tax year, 0 if not, a starting count. It is
+endnote 5's association, whether or not an agreement was filed; Area G is filled in when one
+was."""
+
+BUSINESS_EPOP_AGREEMENT_FILED = CATALOG.declare(
+    "business_epop_agreement_filed", int, non_negative=True
+)
+"""Whether the agreement was filed, Form T2125 Area A endnote 5 "zero, if you are associated with
+one or more EPOPs and an agreement that assigns a percentage to one or more of the associated
+EPOPs was not filed with the minister in a prescribed form": 1 if the agreement was filed, 0 if
+it was not, a starting count."""
+
+BUSINESS_EPOP_PERCENTAGE = CATALOG.declare("business_epop_percentage", Decimal, non_negative=True)
+"""Percentage assigned to the business, Form T2125 Area G "Column 3: Percentage assigned under the
+agreement" (the filer's own row), entered as the form prints it, 40 for 40%: a starting
+amount."""
+
+BUSINESS_EPOP_PERCENTAGE_TOTAL = CATALOG.declare(
+    "business_epop_percentage_total", Decimal, non_negative=True
+)
+"""Total of the percentages assigned, Form T2125 Area G "Total of percentage assigned: Total of
+column 3", entered as the form prints it: a starting amount."""
+
+BUSINESS_MINISTER_ALLOCATION_GIVEN = CATALOG.declare(
+    "business_minister_allocation_given", int, non_negative=True
+)
+"""Whether the minister allocated an amount, Form T2125 Area A endnote 5 "any amount allocated by
+the minister under subsection 1104(3.4) of the Regulations": 1 if an amount was allocated, 0
+otherwise, a starting count."""
+
+BUSINESS_MINISTER_ALLOCATION = CATALOG.declare(
+    "business_minister_allocation", Decimal, non_negative=True
+)
+"""Amount allocated by the minister, Form T2125 Area A endnote 5 "any amount allocated by the
+minister under subsection 1104(3.4) of the Regulations": a starting amount, which replaces the
+immediate expensing limit when the minister allocated one."""
 
 BUSINESS_VEHICLES = RecordListKind.declare(
     CATALOG,
@@ -1935,14 +1980,20 @@ T2125_STATEMENTS = RecordListKind.declare(
         BUSINESS_PARTNER_SHARE,
         BUSINESS_PARTNER,
         BUSINESS_CCA_CLASSES,
+        BUSINESS_EPOP_ASSOCIATED,
+        BUSINESS_EPOP_AGREEMENT_FILED,
+        BUSINESS_EPOP_PERCENTAGE,
+        BUSINESS_EPOP_PERCENTAGE_TOTAL,
+        BUSINESS_MINISTER_ALLOCATION_GIVEN,
+        BUSINESS_MINISTER_ALLOCATION,
         BUSINESS_VEHICLES,
     ),
 )
 """Statements of Form T2125, one record for each statement of business or professional activities
-the return carries (one for each business): its fields are the starting amounts and the Area A list
-of one statement, Parts 3A to 7 and Chart C, in the order of the form. The form `ca/t2125` runs once
-for each record; T1 line 13500 "Net" adds the lines 9946 of the records. A field is not an artifact
-of the return."""
+the return carries (one for each business): its fields are the starting amounts, the Area A list
+and the Area G answers of one statement, Parts 3A to 7 and Chart C, in the order of the form. The
+form `ca/t2125` runs once for each record; T1 line 13500 "Net" adds the lines 9946 of the records.
+A field is not an artifact of the return."""
 
 
 BUSINESS_SALES_SUBTOTAL = CATALOG.declare("business_sales_subtotal", Decimal, non_negative=True)
@@ -2120,6 +2171,83 @@ BUSINESS_CLOSING_UCC = RecordListKind.declare(
 )
 """Business closing UCC, Form T2125 Area A "UCC at the end of the year (col. 7 minus col. 21)": one
 record for each class of the business classes, holding its class number and column 22."""
+
+BUSINESS_IMMEDIATE_EXPENSING_CAP = CATALOG.declare(
+    "business_immediate_expensing_cap", Decimal, non_negative=True
+)
+"""Immediate expensing limit when not associated, Form T2125 Area A endnote 5 "$1.5 million, if you
+are not associated with any other eligible person or partnership (EPOP) in the tax year" and Area G
+"Immediate expensing limit allocated to your business: Multiply $1.5 million by the percentage
+assigned to your business in column 3**": the printed $1.5 million, from a dataset."""
+
+BUSINESS_EPOP_PERCENTAGE_MAXIMUM = CATALOG.declare(
+    "business_epop_percentage_maximum", Decimal, non_negative=True
+)
+"""Largest total of the percentages assigned, Form T2125 Area G "The total of all percentages
+assigned under the agreement should not be more than 100%" and "** If the total of column 3 is
+more than 100%, enter "0."": the printed 100%, from a dataset, as the form prints a percentage
+(100 for 100%)."""
+
+BUSINESS_IMMEDIATE_EXPENSING_SHARE = CATALOG.declare(
+    "business_immediate_expensing_share", Decimal, non_negative=True
+)
+"""Immediate expensing limit times the percentage, the first step of Form T2125 Area G "Immediate
+expensing limit allocated to your business: Multiply $1.5 million by the percentage assigned to
+your business in column 3**": $1.5 million times the percentage assigned to your business."""
+
+BUSINESS_EPOP_PERCENTAGE_ROOM = CATALOG.declare("business_epop_percentage_room", Decimal)
+"""Room under 100% in the percentages assigned, the test of Form T2125 Area G "** If the total of
+column 3 is more than 100%, enter "0."": 100 less the total of column 3, signed, negative when the
+total is more than 100%."""
+
+BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED = CATALOG.declare(
+    "business_immediate_expensing_allocated", Decimal, non_negative=True
+)
+"""Immediate expensing limit allocated to the business, Form T2125 Area G "Immediate expensing
+limit allocated to your business: Multiply $1.5 million by the percentage assigned to your
+business in column 3**" and "** If the total of column 3 is more than 100%, enter "0."": the
+multiple, or 0 when the total of column 3 is more than 100%."""
+
+BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT = CATALOG.declare(
+    "business_immediate_expensing_associated_limit", Decimal, non_negative=True
+)
+"""Immediate expensing limit when associated with an EPOP, Form T2125 Area A endnote 5 "amount iii
+of Area G, if you are associated with one or more EPOPs in the tax year" and "zero, if you are
+associated with one or more EPOPs and an agreement that assigns a percentage to one or more of the
+associated EPOPs was not filed with the minister in a prescribed form": amount iii, or 0 when no
+agreement was filed."""
+
+BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER = CATALOG.declare(
+    "business_immediate_expensing_limit_before_minister", Decimal, non_negative=True
+)
+"""Immediate expensing limit before any amount allocated by the minister, Form T2125 Area A
+endnote 5 "the immediate expensing limit, which is equal to one of the following, whichever is
+applicable": $1.5 million when not associated with an EPOP, else the limit when associated."""
+
+BUSINESS_IMMEDIATE_EXPENSING_LIMIT = CATALOG.declare(
+    "business_immediate_expensing_limit", Decimal, non_negative=True
+)
+"""Immediate expensing limit, Form T2125 Area A endnote 5 "the immediate expensing limit, which is
+equal to one of the following, whichever is applicable", including "any amount allocated by the
+minister under subsection 1104(3.4) of the Regulations": the limit above, or the amount allocated
+by the minister when there is one."""
+
+BUSINESS_IMMEDIATE_EXPENSING_CLAIM = CATALOG.declare(
+    "business_immediate_expensing_claim", Decimal, non_negative=True
+)
+"""Total immediate expensing claim for the year, Form T2125 Area A "Total immediate expensing claim
+for the year: Total of column 9" (line i), limited by endnote 5 to "the lesser of" the immediate
+expensing limit, "the UCC of DIEPs in column 8" and "the amount of income, if any, earned from the
+source of income that is a business (before any CCA deductions)": the total of column 9 over the
+classes."""
+
+BUSINESS_INCOME_BEFORE_CCA = CATALOG.declare(
+    "business_income_before_cca", Decimal, non_negative=True
+)
+"""Business income before CCA, Form T2125 Area A endnote 5 "the amount of income, if any, earned
+from the source of income that is a business (before any CCA deductions) in which the relevant
+DIEP is used for the tax year": line 9369 "Net income (loss) before adjustments" plus line 9936,
+the CCA it deducted, not below zero."""
 
 FARM_WHEAT = CATALOG.declare("farm_wheat", Decimal, non_negative=True)
 """Wheat income, Form T2042 line 9371 "Wheat": a starting amount."""

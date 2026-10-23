@@ -77,7 +77,7 @@ BUSINESS = {
     "home_maintenance": "200",
     "home_property_taxes": "400",
 }
-FURNITURE = ("8", "10000", "0", "0", "0", "0", "2000", 0)
+FURNITURE = ("8", "10000", "0", "0", "0", "0", "2000", 0, "0", "0", "0")
 # Charts A to C for two passenger vehicles whose year chooses the figures (Chart B footnote "For
 # passenger vehicles bought after 2000 and before 2024, the amount is $300"; Chart C endnotes 11 to
 # 13 for leases entered into in 2023): Chart A line 16 (line 9281) is 2101.88 for the owned one,

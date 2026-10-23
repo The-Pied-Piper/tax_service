@@ -128,14 +128,21 @@ from app.jurisdictions.ca.catalog import (
     ANNUAL_GAINS_LINE_7,
     ANNUAL_GAINS_LINE_12,
     BASIC_PERSONAL_AMOUNT,
+    BUSINESS_CCA_CLAIM,
+    BUSINESS_EPOP_ASSOCIATED,
     BUSINESS_HOME_ALLOWABLE_CLAIM,
     BUSINESS_HOME_CARRY_FORWARD,
     BUSINESS_HOME_EXPENSES_AVAILABLE,
     BUSINESS_HOME_INCOME_LIMIT,
+    BUSINESS_IMMEDIATE_EXPENSING_CAP,
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT,
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
     BUSINESS_INCOME,
+    BUSINESS_INCOME_BEFORE_CCA,
     BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
+    BUSINESS_MINISTER_ALLOCATION_GIVEN,
     BUSINESS_MOTOR_VEHICLE_EXPENSES,
     BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,
     BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -4156,6 +4163,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             parts=((BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS, D("0")),),
             total=D("0"),
         ),
+        # Form T2125 Area A endnote 5 "the amount of income, if any, earned from the source of
+        # income that is a business (before any CCA deductions)": line 9369 plus line 9936, floored,
+        # 0 for Return A.
+        BUSINESS_INCOME_BEFORE_CCA: SumNotBelowZeroLine(
+            output=BUSINESS_INCOME_BEFORE_CCA,
+            parts=((BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS, D("0")), (BUSINESS_CCA_CLAIM, D("0"))),
+            total=D("0"),
+        ),
         # T2042 Part 7 amount 7N "Net income (loss) after adjustments (amount 5C) (if negative,
         # enter "0")": amount 5C alone, floored, 0.
         FARM_HOME_INCOME_LIMIT: SumNotBelowZeroLine(
@@ -5428,6 +5443,22 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
             chosen_kind=RENTAL_CCA_TABLE_CLAIM,
             chosen_value=D("0"),
+        ),
+        # Form T2125 endnote 5: a count of 0 for associated with an EPOP chooses the $1.5 million,
+        # and a count of 0 for an amount allocated by the minister keeps that limit.
+        BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER: ChosenByCountLine(
+            output=BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+            count_kind=BUSINESS_EPOP_ASSOCIATED,
+            count=0,
+            chosen_kind=BUSINESS_IMMEDIATE_EXPENSING_CAP,
+            chosen_value=D("1500000.00"),
+        ),
+        BUSINESS_IMMEDIATE_EXPENSING_LIMIT: ChosenByCountLine(
+            output=BUSINESS_IMMEDIATE_EXPENSING_LIMIT,
+            count_kind=BUSINESS_MINISTER_ALLOCATION_GIVEN,
+            count=0,
+            chosen_kind=BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+            chosen_value=D("1500000.00"),
         ),
         # Form T776 Note 5: a count of 0 for associated with an EPOP chooses the $1.5 million, and a
         # count of 0 for an amount allocated by the minister keeps that limit.

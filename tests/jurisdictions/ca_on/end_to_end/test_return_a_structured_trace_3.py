@@ -104,6 +104,10 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_CLOSING_INVENTORY,
     BUSINESS_COST_OF_GOODS_SOLD,
     BUSINESS_COST_OF_GOODS_SUBTOTAL,
+    BUSINESS_EPOP_AGREEMENT_FILED,
+    BUSINESS_EPOP_PERCENTAGE_MAXIMUM,
+    BUSINESS_EPOP_PERCENTAGE_ROOM,
+    BUSINESS_EPOP_PERCENTAGE_TOTAL,
     BUSINESS_GROSS_INCOME_BEFORE_EXPENSES,
     BUSINESS_GROSS_INCOME_FOR_GROSS_PROFIT,
     BUSINESS_GROSS_PROFIT,
@@ -113,6 +117,9 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_HOME_EXPENSES_BUSINESS_PART,
     BUSINESS_HOME_EXPENSES_SUBTOTAL,
     BUSINESS_HOME_PERSONAL_USE_PART,
+    BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED,
+    BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    BUSINESS_IMMEDIATE_EXPENSING_CAP,
     BUSINESS_INCOME,
     BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
@@ -1654,6 +1661,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend_amount=D("0"),
             result=D("0"),
         ),
+        # Form T2125 Area G "** If the total of column 3 is more than 100%, enter "0."", first
+        # step: 100% less the total of column 3, Return A's being 0.
+        BUSINESS_EPOP_PERCENTAGE_ROOM: SubtractedLine(
+            output=BUSINESS_EPOP_PERCENTAGE_ROOM,
+            minuend=BUSINESS_EPOP_PERCENTAGE_MAXIMUM,
+            minuend_amount=D("100"),
+            subtrahend=BUSINESS_EPOP_PERCENTAGE_TOTAL,
+            subtrahend_amount=D("0"),
+            result=D("100"),
+        ),
         BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS: SubtractedLine(
             output=BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
             minuend=BUSINESS_GROSS_INCOME_BEFORE_EXPENSES,
@@ -1901,6 +1918,24 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert amounts == {
+        # Form T2125 Area A endnote 5 "$1.5 million, if you are not associated with any other
+        # eligible person or partnership (EPOP) in the tax year" and Area G "Immediate expensing
+        # limit allocated to your business: Multiply $1.5 million by the percentage assigned to
+        # your business in column 3**".
+        BUSINESS_IMMEDIATE_EXPENSING_CAP: CreditAmountLine(
+            output=BUSINESS_IMMEDIATE_EXPENSING_CAP,
+            basis=Credit(amount=D("1500000")),
+            rounding=CENT,
+            value=D("1500000.00"),
+        ),
+        # Form T2125 Area G "should not be more than 100%" and "** If the total of column 3 is
+        # more than 100%, enter "0."".
+        BUSINESS_EPOP_PERCENTAGE_MAXIMUM: CreditAmountLine(
+            output=BUSINESS_EPOP_PERCENTAGE_MAXIMUM,
+            basis=Credit(amount=D("100")),
+            rounding=CENT,
+            value=D("100.00"),
+        ),
         # Form T776 Note 5 "$1.5 million, if you are not associated with any other eligible person
         # or partnership (EPOP) in the tax year" and Area G "Line iii: ... Multiply $1.5 million by
         # the percentage assigned to you in column 3 (see note 11)".
@@ -2841,6 +2876,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert times == {
+        # Form T2125 Area A endnote 5 "zero, if you are associated with one or more EPOPs and an
+        # agreement ... was not filed": amount iii, 0.00 for Return A (no percentage assigned),
+        # times a count of 0 agreements filed, a plain 0.
+        BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT: TimesCountLine(
+            output=BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+            amount_kind=BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED,
+            amount_value=D("0.00"),
+            count_kind=BUSINESS_EPOP_AGREEMENT_FILED,
+            count=0,
+            result=D("0"),
+        ),
         # Form T776 Note 5 "zero, if you are associated with one or more EPOPs and an agreement ...
         # was not filed": line iii, 0.00 for Return A (no percentage assigned), times a count of 0
         # agreements filed, a plain 0.

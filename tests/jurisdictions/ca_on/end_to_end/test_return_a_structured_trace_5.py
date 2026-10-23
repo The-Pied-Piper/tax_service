@@ -14,6 +14,9 @@ from app.domain.trace import (
     RoundedTotalLine,
 )
 from app.jurisdictions.ca.catalog import (
+    BUSINESS_EPOP_PERCENTAGE_ROOM,
+    BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED,
+    BUSINESS_IMMEDIATE_EXPENSING_SHARE,
     CHILD_CARE_EXPENSES,
     FEDERAL_BASIC_TAX,
     OTHER_DEPENDANTS_MEDICAL,
@@ -59,10 +62,20 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         for line in trace
         if isinstance(line, ChosenRateAppliedLine) and line.output is CARE_CREDIT
     }
-    # Form T776 Area G Note 11 "If the total of column 3 is more than 100%, enter "0."": 100% less
-    # the total of column 3 is 100.00 for Return A, not below zero, so line iii is the $1.5 million
-    # times the percentage assigned to you, 0.00 for Return A.
     assert chosen_by_sign == {
+        # Form T2125 Area G "** If the total of column 3 is more than 100%, enter "0."": 100% less
+        # the total of column 3 is 100.00 for Return A, not below zero, so amount iii is the $1.5
+        # million times the percentage assigned to your business, 0.00 for Return A.
+        BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED: ChosenBySignLine(
+            output=BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED,
+            sign_kind=BUSINESS_EPOP_PERCENTAGE_ROOM,
+            sign=D("100.00"),
+            chosen_kind=BUSINESS_IMMEDIATE_EXPENSING_SHARE,
+            chosen_value=D("0.00"),
+        ),
+        # Form T776 Area G Note 11 "If the total of column 3 is more than 100%, enter "0."": 100%
+        # less the total of column 3 is 100.00 for Return A, not below zero, so line iii is the
+        # $1.5 million times the percentage assigned to you, 0.00 for Return A.
         RENTAL_IMMEDIATE_EXPENSING_ALLOCATED: ChosenBySignLine(
             output=RENTAL_IMMEDIATE_EXPENSING_ALLOCATED,
             sign_kind=RENTAL_EPOP_PERCENTAGE_ROOM,

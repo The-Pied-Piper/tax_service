@@ -38,6 +38,12 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_COST_OF_GOODS_SUBTOTAL,
     BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,
     BUSINESS_DIRECT_WAGE_COSTS,
+    BUSINESS_EPOP_AGREEMENT_FILED,
+    BUSINESS_EPOP_ASSOCIATED,
+    BUSINESS_EPOP_PERCENTAGE,
+    BUSINESS_EPOP_PERCENTAGE_MAXIMUM,
+    BUSINESS_EPOP_PERCENTAGE_ROOM,
+    BUSINESS_EPOP_PERCENTAGE_TOTAL,
     BUSINESS_FUEL_COSTS,
     BUSINESS_GROSS_INCOME,
     BUSINESS_GROSS_INCOME_BEFORE_EXPENSES,
@@ -61,7 +67,15 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_HOME_OTHER_EXPENSES,
     BUSINESS_HOME_PERSONAL_USE_PART,
     BUSINESS_HOME_PROPERTY_TAXES,
+    BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED,
+    BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    BUSINESS_IMMEDIATE_EXPENSING_CAP,
+    BUSINESS_IMMEDIATE_EXPENSING_CLAIM,
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT,
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    BUSINESS_IMMEDIATE_EXPENSING_SHARE,
     BUSINESS_INCOME,
+    BUSINESS_INCOME_BEFORE_CCA,
     BUSINESS_INSURANCE,
     BUSINESS_INTEREST_AND_BANK_CHARGES,
     BUSINESS_INVESTMENT_LOSS,
@@ -71,6 +85,8 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_JOURNALISM_LABOUR_TAX_CREDIT,
     BUSINESS_MANAGEMENT_AND_ADMINISTRATION_FEES,
     BUSINESS_MEALS_AND_ENTERTAINMENT,
+    BUSINESS_MINISTER_ALLOCATION,
+    BUSINESS_MINISTER_ALLOCATION_GIVEN,
     BUSINESS_MOTOR_VEHICLE_EXPENSES,
     BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,
     BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -2358,6 +2374,12 @@ T2125_KINDS: tuple[ArtifactKind[Any], ...] = (
     BUSINESS_PARTNER_SHARE,  # partner_share
     BUSINESS_PARTNER,  # partner
     BUSINESS_CCA_CLASSES,  # cca_classes
+    BUSINESS_EPOP_ASSOCIATED,  # epop_associated
+    BUSINESS_EPOP_AGREEMENT_FILED,  # epop_agreement_filed
+    BUSINESS_EPOP_PERCENTAGE,  # epop_percentage
+    BUSINESS_EPOP_PERCENTAGE_TOTAL,  # epop_percentage_total
+    BUSINESS_MINISTER_ALLOCATION_GIVEN,  # minister_allocation_given
+    BUSINESS_MINISTER_ALLOCATION,  # minister_allocation
     BUSINESS_VEHICLES,  # vehicles
     BUSINESS_SALES_SUBTOTAL,  # sales_subtotal
     BUSINESS_RECAPTURED_CCA,  # recaptured_cca
@@ -2391,6 +2413,16 @@ T2125_KINDS: tuple[ArtifactKind[Any], ...] = (
     BUSINESS_PARTNERSHIP_TOTAL,  # partnership_total
     BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,  # net_income_after_adjustments
     BUSINESS_CLOSING_UCC,  # closing_ucc
+    BUSINESS_IMMEDIATE_EXPENSING_CAP,  # immediate_expensing_cap
+    BUSINESS_EPOP_PERCENTAGE_MAXIMUM,  # epop_percentage_maximum
+    BUSINESS_IMMEDIATE_EXPENSING_SHARE,  # immediate_expensing_share
+    BUSINESS_EPOP_PERCENTAGE_ROOM,  # epop_percentage_room
+    BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED,  # immediate_expensing_allocated
+    BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,  # immediate_expensing_associated_limit
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,  # immediate_expensing_limit_before_minister
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT,  # immediate_expensing_limit
+    BUSINESS_IMMEDIATE_EXPENSING_CLAIM,  # immediate_expensing_claim
+    BUSINESS_INCOME_BEFORE_CCA,  # income_before_cca
 )
 
 
@@ -2449,9 +2481,9 @@ def test_the_t2125_partner_count_is_a_non_negative_int_count() -> None:
 def test_the_business_cca_classes_are_the_area_a_columns_the_caller_enters(
     registry: ArtifactRegistry,
 ) -> None:
-    # Area A of the T2125 has the columns of the T776's without the DIEP columns 4, 6 and 9, which
-    # the T2125 table takes in a later change: the eight field kinds the T776 had, one record per
-    # class.
+    # Area A of the T2125 has the columns of the T776's, the DIEP columns 4, 6 and 9 among them:
+    # the same eleven field kinds, in the order of the columns (1, 2, 3, 4, 5, 6, 9, 11, 12, 21)
+    # and the no-property-left question of endnote 3, one record per class.
     assert RECORD_LISTS <= REGISTERED
     assert isinstance(BUSINESS_CCA_CLASSES, RecordListKind)
     assert BUSINESS_CCA_CLASSES.value_type is RecordList
@@ -2459,15 +2491,59 @@ def test_the_business_cca_classes_are_the_area_a_columns_the_caller_enters(
         CCA_CLASS_NUMBER,
         CCA_UCC_AT_START,
         CCA_ADDITIONS,
+        CCA_DIEP_ADDITIONS,
         CCA_PROCEEDS,
+        CCA_DIEP_PROCEEDS,
+        CCA_IMMEDIATE_EXPENSING,
         CCA_AIIP_ADDITIONS,
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
     )
-    assert len(BUSINESS_CCA_CLASSES.fields) == 8
+    assert len(BUSINESS_CCA_CLASSES.fields) == 11
+    assert BUSINESS_CCA_CLASSES.fields == RENTAL_CCA_CLASSES.fields
     assert BUSINESS_CCA_CLASSES is not RENTAL_CCA_CLASSES
     assert registry.get("ca/business_cca_classes") is BUSINESS_CCA_CLASSES
+
+
+@pytest.mark.parametrize(
+    ("kind", "identifier"),
+    [
+        (BUSINESS_EPOP_ASSOCIATED, "ca/business_epop_associated"),
+        (BUSINESS_EPOP_AGREEMENT_FILED, "ca/business_epop_agreement_filed"),
+        (BUSINESS_MINISTER_ALLOCATION_GIVEN, "ca/business_minister_allocation_given"),
+    ],
+)
+def test_the_t2125_area_g_counts_are_non_negative_int_counts(
+    kind: ArtifactKind[int], identifier: str, registry: ArtifactRegistry
+) -> None:
+    # Area A endnote 5 "$1.5 million, if you are not associated with any other eligible person or
+    # partnership (EPOP) in the tax year", "zero, if you are associated with one or more EPOPs and
+    # an agreement ... was not filed with the minister in a prescribed form" and "any amount
+    # allocated by the minister under subsection 1104(3.4) of the Regulations": 1 if so, else 0,
+    # as the form takes it.
+    assert kind.identifier == identifier
+    assert kind.value_type is int
+    assert kind.non_negative is True
+    assert registry.kind(identifier) is kind
+    assert identifier in COUNTS
+
+
+def test_the_t2125_statements_list_the_area_g_and_endnote_5_inputs_after_the_area_a_list() -> None:
+    # Area G follows Area A on the form and comes before Chart A: its answers are the six inputs
+    # between the Area A list and the vehicles.
+    fields = T2125_STATEMENTS.fields
+    first = fields.index(BUSINESS_CCA_CLASSES) + 1
+
+    assert fields[first : first + 6] == (
+        BUSINESS_EPOP_ASSOCIATED,
+        BUSINESS_EPOP_AGREEMENT_FILED,
+        BUSINESS_EPOP_PERCENTAGE,
+        BUSINESS_EPOP_PERCENTAGE_TOTAL,
+        BUSINESS_MINISTER_ALLOCATION_GIVEN,
+        BUSINESS_MINISTER_ALLOCATION,
+    )
+    assert fields[first + 6] is BUSINESS_VEHICLES
 
 
 def test_the_business_vehicles_are_the_chart_amounts_the_caller_enters_for_each_vehicle(
@@ -2700,12 +2776,22 @@ def test_the_t2042_partner_count_is_a_non_negative_int_count() -> None:
 def test_the_farm_cca_classes_are_the_area_a_columns_the_caller_enters(
     registry: ArtifactRegistry,
 ) -> None:
-    # Area A of the T2042 has the columns of the T2125's (DIEP columns left out as on the T776):
-    # the same field kinds, one record per class.
+    # Area A of the T2042 keeps the eight columns the T2125's list had before its DIEP columns 4, 6
+    # and 9 (the T2042 takes them in a later change): the same eight field kinds, one record per
+    # class.
     assert RECORD_LISTS <= REGISTERED
     assert isinstance(FARM_CCA_CLASSES, RecordListKind)
     assert FARM_CCA_CLASSES.value_type is RecordList
-    assert FARM_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
+    assert FARM_CCA_CLASSES.fields == (
+        CCA_CLASS_NUMBER,
+        CCA_UCC_AT_START,
+        CCA_ADDITIONS,
+        CCA_PROCEEDS,
+        CCA_AIIP_ADDITIONS,
+        CCA_RIIP_ADDITIONS,
+        CCA_CLAIMED,
+        CCA_NO_PROPERTY_LEFT,
+    )
     assert FARM_CCA_CLASSES is not BUSINESS_CCA_CLASSES
     assert registry.get("ca/farm_cca_classes") is FARM_CCA_CLASSES
 
@@ -2838,12 +2924,22 @@ def test_the_t2121_partner_count_is_a_non_negative_int_count() -> None:
 def test_the_fish_cca_classes_are_the_area_a_columns_the_caller_enters(
     registry: ArtifactRegistry,
 ) -> None:
-    # Area A of the T2121 has the columns of the T2125's (DIEP columns left out as on the T776):
-    # the same field kinds, one record per class.
+    # Area A of the T2121 keeps the eight columns the T2125's list had before its DIEP columns 4, 6
+    # and 9 (the T2121 takes them in a later change): the same eight field kinds, one record per
+    # class.
     assert RECORD_LISTS <= REGISTERED
     assert isinstance(FISH_CCA_CLASSES, RecordListKind)
     assert FISH_CCA_CLASSES.value_type is RecordList
-    assert FISH_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
+    assert FISH_CCA_CLASSES.fields == (
+        CCA_CLASS_NUMBER,
+        CCA_UCC_AT_START,
+        CCA_ADDITIONS,
+        CCA_PROCEEDS,
+        CCA_AIIP_ADDITIONS,
+        CCA_RIIP_ADDITIONS,
+        CCA_CLAIMED,
+        CCA_NO_PROPERTY_LEFT,
+    )
     assert FISH_CCA_CLASSES is not BUSINESS_CCA_CLASSES
     assert registry.get("ca/fish_cca_classes") is FISH_CCA_CLASSES
 

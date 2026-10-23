@@ -71,12 +71,22 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_CCA_CLAIM,
     BUSINESS_COST_OF_GOODS_SOLD,
     BUSINESS_COST_OF_GOODS_SUBTOTAL,
+    BUSINESS_EPOP_PERCENTAGE_MAXIMUM,
+    BUSINESS_EPOP_PERCENTAGE_ROOM,
     BUSINESS_GROSS_INCOME,
     BUSINESS_GROSS_PROFIT,
     BUSINESS_HOME_ALLOWABLE_CLAIM,
     BUSINESS_HOME_EXPENSES,
     BUSINESS_HOME_INCOME_LIMIT,
+    BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED,
+    BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    BUSINESS_IMMEDIATE_EXPENSING_CAP,
+    BUSINESS_IMMEDIATE_EXPENSING_CLAIM,
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT,
+    BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    BUSINESS_IMMEDIATE_EXPENSING_SHARE,
     BUSINESS_INCOME,
+    BUSINESS_INCOME_BEFORE_CCA,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
@@ -1954,7 +1964,7 @@ def test_each_t2125_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2125 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2125").composition.order
-    assert len(order) == 34
+    assert len(order) == 44
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # T2125 Parts 3A to 3D: amount 3C after amounts 3A and 3B, line 8000 after 3C and 3F, line
     # 8299 after line 8000 and amount 3O, line 8519 after line 8299 and line 8518, which comes
@@ -1972,6 +1982,25 @@ def test_each_t2125_capability_runs_after_what_it_consumes() -> None:
     assert position[BUSINESS_CCA_CLAIM] < position[BUSINESS_TOTAL_EXPENSES]
     assert position[BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS] < position[BUSINESS_TOTAL_EXPENSES]
     assert position[BUSINESS_TOTAL_EXPENSES] < position[BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS]
+    # Area G and endnote 5: amount iii after the $1.5 million and the room under 100%, the limit
+    # chosen after it in turn, the income before CCA (line 9369 plus line 9936, not below zero)
+    # after both, and line i after the limit and the income before CCA.
+    assert position[BUSINESS_IMMEDIATE_EXPENSING_CAP] < position[BUSINESS_IMMEDIATE_EXPENSING_SHARE]
+    assert position[BUSINESS_EPOP_PERCENTAGE_MAXIMUM] < position[BUSINESS_EPOP_PERCENTAGE_ROOM]
+    assert (
+        position[BUSINESS_EPOP_PERCENTAGE_ROOM] < position[BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED]
+    )
+    assert (
+        position[BUSINESS_IMMEDIATE_EXPENSING_SHARE]
+        < position[BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED]
+        < position[BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT]
+        < position[BUSINESS_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER]
+        < position[BUSINESS_IMMEDIATE_EXPENSING_LIMIT]
+        < position[BUSINESS_IMMEDIATE_EXPENSING_CLAIM]
+    )
+    assert position[BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS] < position[BUSINESS_INCOME_BEFORE_CCA]
+    assert position[BUSINESS_CCA_CLAIM] < position[BUSINESS_INCOME_BEFORE_CCA]
+    assert position[BUSINESS_INCOME_BEFORE_CCA] < position[BUSINESS_IMMEDIATE_EXPENSING_CLAIM]
     # Parts 5 and 7: amounts 5A to 5D in turn, amount 7N after 5D, line 9945 after amount 7P, and
     # line 9946 after amount 5D and line 9945.
     assert (
