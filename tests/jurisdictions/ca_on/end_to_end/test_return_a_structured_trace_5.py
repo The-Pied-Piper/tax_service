@@ -45,11 +45,20 @@ from app.jurisdictions.ca_on.catalog import (
     CARE_FAMILY_ADJUSTED_INCOME,
     ONTARIO_BASIC_TAX,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, return_a
+from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, run_a
 
 
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
-    trace = return_a().trace
+    # The lines of the one T2125, T2042, T2121 and T776 statement of Return A, then those
+    # of the return form.
+    result = run_a()
+    trace = (
+        *result["ca/t2125"][0].trace,
+        *result["ca/t2042"][0].trace,
+        *result["ca/t2121"][0].trace,
+        *result["ca/t776"][0].trace,
+        *result["ca-on/return"][0].trace,
+    )
     totals = {line.output: line for line in trace if isinstance(line, RoundedTotalLine)}
     ranged = {line.output: line for line in trace if isinstance(line, ChosenByRangeLine)}
     bands = {line.output: line for line in trace if isinstance(line, RateByIncomeBandLine)}

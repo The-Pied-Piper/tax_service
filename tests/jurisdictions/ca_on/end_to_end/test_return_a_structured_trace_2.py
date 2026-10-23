@@ -1051,11 +1051,20 @@ from app.jurisdictions.ca_on.catalog import (
     TAX_REDUCTION_FOR_CHILDREN,
     TAX_REDUCTION_FOR_DEPENDANTS,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, return_a
+from tests.jurisdictions.ca_on.end_to_end.support import D, run_a
 
 
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
-    trace = return_a().trace
+    # The lines of the one T2125, T2042, T2121 and T776 statement of Return A, then those
+    # of the return form.
+    result = run_a()
+    trace = (
+        *result["ca/t2125"][0].trace,
+        *result["ca/t2042"][0].trace,
+        *result["ca/t2121"][0].trace,
+        *result["ca/t776"][0].trace,
+        *result["ca-on/return"][0].trace,
+    )
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
         # Form T691 Part 7 line 4 "Line 2 plus line 3": line 2, the basic federal tax (16951.38),

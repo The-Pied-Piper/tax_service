@@ -12,7 +12,7 @@ parse as a whole file. A manifest naming another jurisdiction is rejected.
 A manifest is a flat set of forms. A part with a `form:` key (`name`, and `exports` with an optional
 `instances`, all identifiers `<namespace>/<snake_case>`) gives all its `capabilities` to that
 form; without `instances` the form has one instance. A part without one joins the default
-form, named `<namespace>/return` by convention and otherwise an ordinary form: its exports are the
+form, named `<namespace>/return` and otherwise an ordinary form: its exports are the
 manifest's `outputs`. A form may span parts that carry the same `form.name`, in part order:
 exactly one of them declares `exports` (with its `instances`), and a second that does is rejected.
 A form without `instances` has a default list of one instance, and limits apply to its count.

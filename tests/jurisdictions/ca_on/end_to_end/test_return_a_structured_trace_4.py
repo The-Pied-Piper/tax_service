@@ -134,6 +134,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_HOME_CARRY_FORWARD,
     BUSINESS_HOME_EXPENSES_AVAILABLE,
     BUSINESS_HOME_INCOME_LIMIT,
+    BUSINESS_INCOME,
     BUSINESS_INVESTMENT_LOSS,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
@@ -551,6 +552,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_VEHICLE_LEASING_COST,
     FARM_VEHICLE_LIST_PRICE,
     FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
+    FARMING_INCOME,
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
@@ -599,6 +601,7 @@ from app.jurisdictions.ca.catalog import (
     FISH_VEHICLE_LEASING_COST,
     FISH_VEHICLE_LIST_PRICE,
     FISH_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
+    FISHING_INCOME,
     HIGH_INCOME_DONATIONS,
     INCLUDED_CAPITAL_GAIN,
     INCOME_SUPPORT_BENEFITS,
@@ -890,11 +893,20 @@ from app.jurisdictions.ca_on.catalog import (
     SENIORS_CARE_REDUCTION,
 )
 from app.jurisdictions.ca_on.trace import PlacementCreditLine
-from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, return_a
+from tests.jurisdictions.ca_on.end_to_end.support import CENT, D, return_a, run_a
 
 
 def test_the_trace_records_each_total_as_a_structured_line() -> None:
-    trace = return_a().trace
+    # The lines of the one T2125, T2042, T2121 and T776 statement of Return A, then those
+    # of the return form.
+    result = run_a()
+    trace = (
+        *result["ca/t2125"][0].trace,
+        *result["ca/t2042"][0].trace,
+        *result["ca/t2121"][0].trace,
+        *result["ca/t776"][0].trace,
+        *result["ca-on/return"][0].trace,
+    )
     floored = {line.output: line for line in trace if isinstance(line, SubtractedNotBelowZeroLine)}
     summed_floored = {line.output: line for line in trace if isinstance(line, SumNotBelowZeroLine)}
     by_count = {line.output: line for line in trace if isinstance(line, AmountByCountLine)}
@@ -4319,6 +4331,14 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         FLOW_THROUGH_SHARE_EXPENSES: RecordTotalLine(
             FLOW_THROUGH_SHARE_EXPENSES, FLOW_THROUGH_SHARE_SLIP_EXPENSES, (), D("0")
         ),
+        # T1 line 12600 "Net": the lines 9946 of Return A's one T776 statement, a blank one.
+        NET_RENTAL_INCOME: RecordTotalLine(NET_RENTAL_INCOME, NET_RENTAL_INCOME, (D("0"),), D("0")),
+        # T1 line 13500 "Net": the lines 9946 of Return A's one T2125 statement, a blank one.
+        BUSINESS_INCOME: RecordTotalLine(BUSINESS_INCOME, BUSINESS_INCOME, (D("0"),), D("0")),
+        # T1 line 14100 "Net": the lines 9946 of Return A's one T2042 statement, a blank one.
+        FARMING_INCOME: RecordTotalLine(FARMING_INCOME, FARMING_INCOME, (D("0"),), D("0")),
+        # T1 line 14300 "Net": the lines 9946 of Return A's one T2121 statement, a blank one.
+        FISHING_INCOME: RecordTotalLine(FISHING_INCOME, FISHING_INCOME, (D("0"),), D("0")),
     }
     assert quotients == {
         COOP_EDUCATION_PHASE_OUT_SHARE: QuotientLine(

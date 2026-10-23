@@ -67,9 +67,29 @@ from app.jurisdictions.ca.catalog import (
     AMT_TOTAL_FOREIGN_INCOME,
     BASIC_FEDERAL_TAX_WITH_DIVIDEND_CREDIT,
     BASIC_PERSONAL_AMOUNT,
+    BUSINESS_ADJUSTED_GROSS_SALES,
+    BUSINESS_CCA_CLAIM,
+    BUSINESS_COST_OF_GOODS_SOLD,
+    BUSINESS_COST_OF_GOODS_SUBTOTAL,
+    BUSINESS_GROSS_INCOME,
+    BUSINESS_GROSS_PROFIT,
+    BUSINESS_HOME_ALLOWABLE_CLAIM,
+    BUSINESS_HOME_EXPENSES,
+    BUSINESS_HOME_INCOME_LIMIT,
+    BUSINESS_INCOME,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
+    BUSINESS_MOTOR_VEHICLE_EXPENSES,
+    BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS,
+    BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS,
+    BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS,
+    BUSINESS_PARTNERSHIP_TOTAL,
+    BUSINESS_QUICK_METHOD_ASSISTANCE,
+    BUSINESS_RESERVES_AND_OTHER_INCOME,
+    BUSINESS_SALES_SUBTOTAL,
+    BUSINESS_SHARE_OF_NET_INCOME,
+    BUSINESS_TOTAL_EXPENSES,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_WORKERS_BENEFIT,
     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
@@ -233,6 +253,23 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DEPENDANT_AMOUNT_BEFORE_COUNT,
     ELIGIBLE_DIVIDENDS_CREDIT,
     ELIGIBLE_DIVIDENDS_GROSSED_UP,
+    FARM_CCA_CLAIM,
+    FARM_EXPENSES_SUBTOTAL,
+    FARM_GROSS_INCOME,
+    FARM_GROSS_INCOME_BEFORE_EXPENSES,
+    FARM_HOME_ALLOWABLE_CLAIM,
+    FARM_HOME_EXPENSES,
+    FARM_HOME_INCOME_LIMIT,
+    FARM_MOTOR_VEHICLE_EXPENSES,
+    FARM_NET_INCOME_AFTER_ADJUSTMENTS,
+    FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
+    FARM_NET_INCOME_BEFORE_ADJUSTMENTS,
+    FARM_OTHER_INCOME_WITH_RECAPTURE,
+    FARM_PARTNERSHIP_TOTAL,
+    FARM_RECAPTURED_CCA,
+    FARM_SHARE_OF_NET_INCOME,
+    FARM_TOTAL_EXPENSES,
+    FARMING_INCOME,
     FEDERAL_BASIC_TAX,
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
@@ -262,6 +299,22 @@ from app.jurisdictions.ca.catalog import (
     FHSA_TOTAL_ANNUAL_LIMITS,
     FHSA_UNUSED_CONTRIBUTIONS_CARRIED_FORWARD,
     FIRST_TIER_DONATION_CREDIT,
+    FISH_CCA_CLAIM,
+    FISH_EXPENSES_SUBTOTAL,
+    FISH_GROSS_INCOME,
+    FISH_GROSS_INCOME_BEFORE_EXPENSES,
+    FISH_HOME_ALLOWABLE_CLAIM,
+    FISH_HOME_EXPENSES,
+    FISH_HOME_INCOME_LIMIT,
+    FISH_MOTOR_VEHICLE_EXPENSES,
+    FISH_NET_INCOME_AFTER_ADJUSTMENTS,
+    FISH_NET_INCOME_BEFORE_ADJUSTMENTS,
+    FISH_OTHER_INCOME_WITH_RECAPTURE,
+    FISH_PARTNERSHIP_TOTAL,
+    FISH_RECAPTURED_CCA,
+    FISH_SHARE_OF_NET_INCOME,
+    FISH_TOTAL_EXPENSES,
+    FISHING_INCOME,
     FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
     FOREIGN_TAX_CREDIT_NET_INCOME,
     FOREIGN_TAX_CREDIT_NET_INCOME_BEFORE_SPLIT_INCOME,
@@ -531,8 +584,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).form("ca-on/return").composition.order
-    assert len(order) == 1311
-    assert len(order) == 1311
+    assert len(order) == 1140
+    assert len(order) == 1140
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[AMT_MAXIMUM_CARRYOVER_CLAIM] < position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED]
@@ -1733,28 +1786,8 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[SENIORS_CARE_REDUCTION] < position[SENIORS_CARE_BEFORE_CLAIM]
     assert position[SENIORS_CARE_BEFORE_CLAIM] < position[SENIORS_CARE_CREDIT]
     assert position[SENIORS_CARE_CREDIT] < position[ONTARIO_CREDITS_SUBTOTAL]
-    # T776 Parts 3 and 4: lines 8140 and 8141 after the rows, line 8299 after line 8141, the three
-    # totals after their boxes, line 1 after A, 9949 and 9366, line 9369 after line 8299 and line
-    # 1, amounts 2 to 6 in turn, line 9946 after amount 6 and the partnership's amount, and total
-    # income after line 9946.
-    assert position[RENTAL_GROSS_RENTS] < position[GROSS_RENTAL_INCOME]
-    assert position[RENTAL_TOTAL_EXPENSES] < position[RENTAL_EXPENSES_LESS_PERSONAL_PORTION]
-    assert position[RENTAL_PERSONAL_PORTION] < position[RENTAL_EXPENSES_LESS_PERSONAL_PORTION]
-    assert position[RENTAL_EXPENSES_LESS_PERSONAL_PORTION] < position[RENTAL_DEDUCTIBLE_EXPENSES]
-    assert position[RENTAL_NON_COMPLIANT_EXPENSES] < position[RENTAL_DEDUCTIBLE_EXPENSES]
-    assert position[RENTAL_DEDUCTIBLE_EXPENSES] < position[RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS]
-    assert position[GROSS_RENTAL_INCOME] < position[RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS]
-    assert position[RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS] < position[RENTAL_NET_INCOME_SHARE]
-    assert position[RENTAL_NET_INCOME_SHARE] < position[RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES]
-    assert (
-        position[RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES]
-        < position[RENTAL_NET_INCOME_WITH_RECAPTURE]
-        < position[RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS]
-        < position[RENTAL_NET_INCOME_AFTER_CCA]
-        < position[NET_RENTAL_INCOME]
-    )
-    assert position[RENTAL_PARTNER_SHARE_WITH_REBATE] < position[RENTAL_PARTNERSHIP_NET_INCOME]
-    assert position[RENTAL_PARTNERSHIP_NET_INCOME] < position[NET_RENTAL_INCOME]
+    # T1 line 12600 adds the lines 9946 of the statements, which the form exports; total income
+    # comes after it.
     assert position[NET_RENTAL_INCOME] < position[TOTAL_INCOME]
     assert position[SENIORS_TRANSIT_AMOUNT_PAID_AT_MOST_MAXIMUM] < position[SENIORS_TRANSIT_CREDIT]
     assert position[FLOW_THROUGH_SHARE_EXPENSES] < position[FLOW_THROUGH_SHARE_CREDIT]
@@ -1806,3 +1839,140 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[PROVINCIAL_CREDITS]
         < position[TOTAL_CREDITS]
     )
+
+
+def test_each_t776_capability_runs_after_what_it_consumes() -> None:
+    # The form ca/t776 is wired on its own: its capabilities are ordered inside the form, once
+    # for each statement; the return form reads only the form's exports.
+    order = service().compose(CA_ON, 2025).form("ca/t776").composition.order
+    assert len(order) == 31
+    position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
+    # T776 Parts 3 and 4: lines 8140 and 8141 after the rows, line 8299 after line 8141, the three
+    # totals after their boxes, line 1 after A, 9949 and 9366, line 9369 after line 8299 and line
+    # 1, amounts 2 to 6 in turn, line 9946 after amount 6 and the partnership's amount.
+    assert position[RENTAL_GROSS_RENTS] < position[GROSS_RENTAL_INCOME]
+    assert position[RENTAL_TOTAL_EXPENSES] < position[RENTAL_EXPENSES_LESS_PERSONAL_PORTION]
+    assert position[RENTAL_PERSONAL_PORTION] < position[RENTAL_EXPENSES_LESS_PERSONAL_PORTION]
+    assert position[RENTAL_EXPENSES_LESS_PERSONAL_PORTION] < position[RENTAL_DEDUCTIBLE_EXPENSES]
+    assert position[RENTAL_NON_COMPLIANT_EXPENSES] < position[RENTAL_DEDUCTIBLE_EXPENSES]
+    assert position[RENTAL_DEDUCTIBLE_EXPENSES] < position[RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS]
+    assert position[GROSS_RENTAL_INCOME] < position[RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS]
+    assert position[RENTAL_NET_INCOME_BEFORE_ADJUSTMENTS] < position[RENTAL_NET_INCOME_SHARE]
+    assert position[RENTAL_NET_INCOME_SHARE] < position[RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES]
+    assert (
+        position[RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES]
+        < position[RENTAL_NET_INCOME_WITH_RECAPTURE]
+        < position[RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS]
+        < position[RENTAL_NET_INCOME_AFTER_CCA]
+        < position[NET_RENTAL_INCOME]
+    )
+    assert position[RENTAL_PARTNER_SHARE_WITH_REBATE] < position[RENTAL_PARTNERSHIP_NET_INCOME]
+    assert position[RENTAL_PARTNERSHIP_NET_INCOME] < position[NET_RENTAL_INCOME]
+
+
+def test_each_t2125_capability_runs_after_what_it_consumes() -> None:
+    # The form ca/t2125 is wired on its own: its capabilities are ordered inside the form, once
+    # for each statement; the return form reads only the form's exports.
+    order = service().compose(CA_ON, 2025).form("ca/t2125").composition.order
+    assert len(order) == 55
+    position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
+    # T2125 Parts 3A to 3D: amount 3C after amounts 3A and 3B, line 8000 after 3C and 3F, line
+    # 8299 after line 8000 and amount 3O, line 8519 after line 8299 and line 8518, which comes
+    # after amount 3V.
+    assert position[BUSINESS_SALES_SUBTOTAL] < position[BUSINESS_ADJUSTED_GROSS_SALES]
+    assert position[BUSINESS_QUICK_METHOD_ASSISTANCE] < position[BUSINESS_ADJUSTED_GROSS_SALES]
+    assert position[BUSINESS_ADJUSTED_GROSS_SALES] < position[BUSINESS_GROSS_INCOME]
+    assert position[BUSINESS_RESERVES_AND_OTHER_INCOME] < position[BUSINESS_GROSS_INCOME]
+    assert position[BUSINESS_COST_OF_GOODS_SUBTOTAL] < position[BUSINESS_COST_OF_GOODS_SOLD]
+    assert position[BUSINESS_GROSS_INCOME] < position[BUSINESS_GROSS_PROFIT]
+    assert position[BUSINESS_COST_OF_GOODS_SOLD] < position[BUSINESS_GROSS_PROFIT]
+    # Part 4: Chart A line 16 (line 9281) and the CCA (line 9936) and terminal loss (line 9270)
+    # before line 9368, which comes before line 9369.
+    assert position[BUSINESS_MOTOR_VEHICLE_EXPENSES] < position[BUSINESS_TOTAL_EXPENSES]
+    assert position[BUSINESS_CCA_CLAIM] < position[BUSINESS_TOTAL_EXPENSES]
+    assert position[BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS] < position[BUSINESS_TOTAL_EXPENSES]
+    assert position[BUSINESS_TOTAL_EXPENSES] < position[BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS]
+    # Parts 5 and 7: amounts 5A to 5D in turn, amount 7N after 5D, line 9945 after amount 7P, and
+    # line 9946 after amount 5D and line 9945.
+    assert (
+        position[BUSINESS_NET_INCOME_BEFORE_ADJUSTMENTS]
+        < position[BUSINESS_SHARE_OF_NET_INCOME]
+        < position[BUSINESS_PARTNERSHIP_TOTAL]
+        < position[BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS]
+    )
+    assert position[BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS] < position[BUSINESS_HOME_INCOME_LIMIT]
+    assert position[BUSINESS_HOME_INCOME_LIMIT] < position[BUSINESS_HOME_ALLOWABLE_CLAIM]
+    assert position[BUSINESS_HOME_ALLOWABLE_CLAIM] < position[BUSINESS_HOME_EXPENSES]
+    assert position[BUSINESS_HOME_EXPENSES] < position[BUSINESS_INCOME]
+    assert position[BUSINESS_NET_INCOME_AFTER_ADJUSTMENTS] < position[BUSINESS_INCOME]
+
+
+def test_each_t2042_capability_runs_after_what_it_consumes() -> None:
+    # The form ca/t2042 is wired on its own: its capabilities are ordered inside the form, once
+    # for each statement; the return form reads only the form's exports.
+    order = service().compose(CA_ON, 2025).form("ca/t2042").composition.order
+    assert len(order) == 49
+    position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
+    # Part 3: the recapture of Area A before line 9600, which comes before line 9659, which comes
+    # before amount 4A.
+    assert position[FARM_RECAPTURED_CCA] < position[FARM_OTHER_INCOME_WITH_RECAPTURE]
+    assert position[FARM_OTHER_INCOME_WITH_RECAPTURE] < position[FARM_GROSS_INCOME]
+    assert position[FARM_GROSS_INCOME] < position[FARM_GROSS_INCOME_BEFORE_EXPENSES]
+    # Part 4: the motor vehicle expenses (line 9819) and the terminal loss before the expenses
+    # subtotal, the CCA (line 9936) before the total expenses, and amount 4D after both.
+    assert position[FARM_MOTOR_VEHICLE_EXPENSES] < position[FARM_EXPENSES_SUBTOTAL]
+    assert position[FARM_EXPENSES_SUBTOTAL] < position[FARM_TOTAL_EXPENSES]
+    assert position[FARM_CCA_CLAIM] < position[FARM_TOTAL_EXPENSES]
+    assert position[FARM_TOTAL_EXPENSES] < position[FARM_NET_INCOME_BEFORE_ADJUSTMENTS]
+    assert (
+        position[FARM_GROSS_INCOME_BEFORE_EXPENSES] < position[FARM_NET_INCOME_BEFORE_ADJUSTMENTS]
+    )
+    # Parts 5 and 7: amounts 5A to 5C in turn, amount 7N after 5C, line 9945 after amount 7P, and
+    # line 9946 after amount 5C and line 9945.
+    assert (
+        position[FARM_NET_INCOME_BEFORE_ADJUSTMENTS]
+        < position[FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS]
+        < position[FARM_SHARE_OF_NET_INCOME]
+        < position[FARM_PARTNERSHIP_TOTAL]
+        < position[FARM_NET_INCOME_AFTER_ADJUSTMENTS]
+    )
+    assert position[FARM_NET_INCOME_AFTER_ADJUSTMENTS] < position[FARM_HOME_INCOME_LIMIT]
+    assert position[FARM_HOME_INCOME_LIMIT] < position[FARM_HOME_ALLOWABLE_CLAIM]
+    assert position[FARM_HOME_ALLOWABLE_CLAIM] < position[FARM_HOME_EXPENSES]
+    assert position[FARM_HOME_EXPENSES] < position[FARMING_INCOME]
+    assert position[FARM_NET_INCOME_AFTER_ADJUSTMENTS] < position[FARMING_INCOME]
+
+
+def test_each_t2121_capability_runs_after_what_it_consumes() -> None:
+    # The form ca/t2121 is wired on its own: its capabilities are ordered inside the form, once
+    # for each statement; the return form reads only the form's exports.
+    order = service().compose(CA_ON, 2025).form("ca/t2121").composition.order
+    assert len(order) == 50
+    position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
+    # Part 3: the recapture of Area A before line 9600, which comes before line 9659, which comes
+    # before amount 4A.
+    assert position[FISH_RECAPTURED_CCA] < position[FISH_OTHER_INCOME_WITH_RECAPTURE]
+    assert position[FISH_OTHER_INCOME_WITH_RECAPTURE] < position[FISH_GROSS_INCOME]
+    assert position[FISH_GROSS_INCOME] < position[FISH_GROSS_INCOME_BEFORE_EXPENSES]
+    # Part 4: the motor vehicle expenses (line 9281) and the terminal loss before the expenses
+    # subtotal, the CCA (line 9936) before the total expenses, and line 9369 after both.
+    assert position[FISH_MOTOR_VEHICLE_EXPENSES] < position[FISH_EXPENSES_SUBTOTAL]
+    assert position[FISH_EXPENSES_SUBTOTAL] < position[FISH_TOTAL_EXPENSES]
+    assert position[FISH_CCA_CLAIM] < position[FISH_TOTAL_EXPENSES]
+    assert position[FISH_TOTAL_EXPENSES] < position[FISH_NET_INCOME_BEFORE_ADJUSTMENTS]
+    assert (
+        position[FISH_GROSS_INCOME_BEFORE_EXPENSES] < position[FISH_NET_INCOME_BEFORE_ADJUSTMENTS]
+    )
+    # Parts 5 and 7: the net income before adjustments, amounts 5A to 5C in turn, amount 7N after
+    # 5C, line 9945 after amount 7P, and line 9946 after amount 5C and line 9945.
+    assert (
+        position[FISH_NET_INCOME_BEFORE_ADJUSTMENTS]
+        < position[FISH_SHARE_OF_NET_INCOME]
+        < position[FISH_PARTNERSHIP_TOTAL]
+        < position[FISH_NET_INCOME_AFTER_ADJUSTMENTS]
+    )
+    assert position[FISH_NET_INCOME_AFTER_ADJUSTMENTS] < position[FISH_HOME_INCOME_LIMIT]
+    assert position[FISH_HOME_INCOME_LIMIT] < position[FISH_HOME_ALLOWABLE_CLAIM]
+    assert position[FISH_HOME_ALLOWABLE_CLAIM] < position[FISH_HOME_EXPENSES]
+    assert position[FISH_HOME_EXPENSES] < position[FISHING_INCOME]
+    assert position[FISH_NET_INCOME_AFTER_ADJUSTMENTS] < position[FISHING_INCOME]

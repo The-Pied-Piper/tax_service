@@ -40,7 +40,7 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_PAYABLE,
 )
 from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute
+from tests.jurisdictions.ca_on.end_to_end.support import D, run
 
 # Chart B rows as (column 1, column 4, column 5, column 6): class 1 with 900 and 30 days of 90,
 # class 1 with 100 and 1 day of 3, class 8 with 500 and 45 days of 90.
@@ -58,7 +58,7 @@ CLASS_1_ROW = ("1", "10000", "0", "0", "0", "0", "66.67", 0)
 CLASS_8_ROW = ("8", "2000", "0", "0", "0", "0", "150.00", 0)
 
 
-def return_av(**overrides: Any) -> Worksheet:
+def return_av(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
     """Return AV's inputs, as in `returns/2025_return_av.yaml`: Return AD's landlord with three
     Chart B rows and two Area A classes whose claims are limited by column 22.
 
@@ -85,33 +85,35 @@ def return_av(**overrides: Any) -> Worksheet:
         "short_term_rental_cca_units_rows": ROWS,
         "rental_cca_classes_rows": (CLASS_1_ROW, CLASS_8_ROW),
     }
-    return compute(**{**inputs, **overrides})
+    return run(**{**inputs, **overrides})
 
 
 def test_return_avs_line_9367_is_583_33_from_three_chart_b_rows() -> None:
     # Chart B column 7 is column 4 x column 5 / column 6, each row rounded half-up to the cent:
     # 900 x 30 / 90 = 300.00, 100 x 1 / 3 = 33.33 and 500 x 45 / 90 = 250.00; line C, and so
     # line 9367, is 300.00 + 33.33 + 250.00 = 583.33.
-    worksheet = return_av()
+    result = return_av()
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_NON_COMPLIANT_CCA).value == D("583.33")
+    assert statement.get(RENTAL_NON_COMPLIANT_CCA).value == D("583.33")
     assert isinstance(
-        worksheet.producer_of(RENTAL_NON_COMPLIANT_CCA), ShortTermRentalNonCompliantCca
+        statement.producer_of(RENTAL_NON_COMPLIANT_CCA), ShortTermRentalNonCompliantCca
     )
 
 
 def test_return_avs_column_22_is_333_33_for_class_1_and_250_for_class_8() -> None:
     # "For each class, add the amounts from column 7 of Chart B and enter each total in column
     # 22 of Area A": class 1 is 300.00 + 33.33, class 8 is 250.00, in the order the classes appear.
-    worksheet = return_av()
+    result = return_av()
+    statement = result["ca/t776"][0]
 
-    records = worksheet.get(SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS).value.records
+    records = statement.get(SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS).value.records
     assert [(record[CCA_CLASS_NUMBER], record[NON_COMPLIANT_CCA]) for record in records] == [
         (D("1"), D("333.33")),
         (D("8"), D("250.00")),
     ]
     assert isinstance(
-        worksheet.producer_of(SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS),
+        statement.producer_of(SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS),
         ShortTermRentalNonCompliantCcaByClass,
     )
 
@@ -124,24 +126,27 @@ def test_return_avs_claims_are_limited_to_the_maximum_less_column_22() -> None:
     # 150.00. Both claim the most; line ii (the total of column 23) is 66.67 + 150.00 = 216.67 and
     # so is line 9936 (no personal part of CCA, no CCA for business-use-of-home expenses), within
     # the 12000 of amount 5.
-    worksheet = return_av()
+    result = return_av()
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_CCA_TABLE_CLAIM).value == D("216.67")
-    assert worksheet.get(RENTAL_CCA_CLAIM_SHARE).value == D("216.67")
-    assert worksheet.get(RENTAL_CCA_CLAIM_LESS_PERSONAL_PART).value == D("216.67")
-    assert worksheet.get(RENTAL_CCA_CLAIM_BEFORE_LIMIT).value == D("216.67")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS).value == D("12000")
-    assert worksheet.get(RENTAL_CCA_LIMIT).value == D("12000")
-    assert worksheet.get(RENTAL_CCA_CLAIM).value == D("216.67")
+    assert statement.get(RENTAL_CCA_TABLE_CLAIM).value == D("216.67")
+    assert statement.get(RENTAL_CCA_CLAIM_SHARE).value == D("216.67")
+    assert statement.get(RENTAL_CCA_CLAIM_LESS_PERSONAL_PART).value == D("216.67")
+    assert statement.get(RENTAL_CCA_CLAIM_BEFORE_LIMIT).value == D("216.67")
+    assert statement.get(RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS).value == D("12000")
+    assert statement.get(RENTAL_CCA_LIMIT).value == D("12000")
+    assert statement.get(RENTAL_CCA_CLAIM).value == D("216.67")
 
 
 def test_return_avs_net_rental_income_is_11783_33_on_line_12600() -> None:
     # Amount 6 is amount 5 less line 9936: 12000 - 216.67 = 11783.33, which is line 9946 and T1
     # line 12600; Chart A's line 9366 is 0. It is the whole of total income.
-    worksheet = return_av()
+    result = return_av()
+    worksheet = result["ca-on/return"][0]
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_NON_COMPLIANT_EXPENSES).value == D("0")
-    assert worksheet.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("11783.33")
+    assert statement.get(RENTAL_NON_COMPLIANT_EXPENSES).value == D("0")
+    assert statement.get(RENTAL_NET_INCOME_AFTER_CCA).value == D("11783.33")
     assert worksheet.get(NET_RENTAL_INCOME).value == D("11783.33")
     assert worksheet.get(TOTAL_INCOME).value == D("11783.33")
 
@@ -149,9 +154,10 @@ def test_return_avs_net_rental_income_is_11783_33_on_line_12600() -> None:
 def test_return_avs_closing_ucc_is_9933_33_for_class_1_and_1850_for_class_8() -> None:
     # Column 24 is column 7 less column 23: 10000 - 66.67 = 9933.33 and 2000 - 150.00 = 1850.00;
     # column 22 only limits the claim, it does not change the column 7 minus claim rule.
-    worksheet = return_av()
+    result = return_av()
+    statement = result["ca/t776"][0]
 
-    records = worksheet.get(RENTAL_CLOSING_UCC).value.records
+    records = statement.get(RENTAL_CLOSING_UCC).value.records
     assert [(record[CCA_CLASS_NUMBER], record[CCA_UCC_AT_END]) for record in records] == [
         (D("1"), D("9933.33")),
         (D("8"), D("1850.00")),
@@ -163,7 +169,8 @@ def test_return_avs_figures_that_depend_on_income_are_return_ads_recomputed_for_
     # 11783.33 x 14.5% = 1708.58285, 1708.58 to the cent, and the Ontario tax 11783.33 x 5.05% =
     # 595.058165, 595.06; each is below its non-refundable credits (2338.71 and 643.72), so there
     # is no tax payable and the refund or balance owing is 0.
-    worksheet = return_av()
+    result = return_av()
+    worksheet = result["ca-on/return"][0]
 
     assert worksheet.get(NET_INCOME).value == D("11783.33")
     assert worksheet.get(TAXABLE_INCOME).value == D("11783.33")
@@ -178,7 +185,7 @@ def test_a_class_1_claim_above_400_less_333_33_is_refused() -> None:
         return_av(rental_cca_classes_rows=(("1", "10000", "0", "0", "0", "0", "66.68", 0),))
 
     assert str(raised.value) == (
-        "ca-on/return, instance 1: "
+        "ca/t776, instance 1: "
         "item 1: ca/cca_claimed 66.68 is above the maximum 66.67 (400.00 less column 22 333.33)"
     )
 
@@ -190,7 +197,7 @@ def test_a_class_8_claim_above_400_less_250_is_refused() -> None:
         )
 
     assert str(raised.value) == (
-        "ca-on/return, instance 1: "
+        "ca/t776, instance 1: "
         "item 2: ca/cca_claimed 150.01 is above the maximum 150.00 (400.00 less column 22 250.00)"
     )
 
@@ -198,27 +205,27 @@ def test_a_class_8_claim_above_400_less_250_is_refused() -> None:
 def test_the_unlimited_maximum_is_claimable_when_chart_b_has_no_rows() -> None:
     # Without Chart B rows column 22 is 0 for every class: the whole maximum, 400.00 each, may be
     # claimed, so line 9936 is 800.00.
-    worksheet = return_av(
+    statement = return_av(
         short_term_rental_cca_units_rows=(),
         rental_cca_classes_rows=(
             ("1", "10000", "0", "0", "0", "0", "400.00", 0),
             ("8", "2000", "0", "0", "0", "0", "400.00", 0),
         ),
-    )
+    )["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_CCA_CLAIM).value == D("800.00")
+    assert statement.get(RENTAL_CCA_CLAIM).value == D("800.00")
 
 
 def test_a_class_without_a_chart_b_row_has_a_column_22_of_zero() -> None:
     # Class 10: 30% of 1000 = 300.00, with no Chart B row, may claim all of it.
-    worksheet = return_av(
+    statement = return_av(
         rental_cca_classes_rows=(CLASS_1_ROW, ("10", "1000", "0", "0", "0", "0", "300.00", 0))
-    )
+    )["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_CCA_TABLE_CLAIM).value == D("366.67")
+    assert statement.get(RENTAL_CCA_TABLE_CLAIM).value == D("366.67")
     with pytest.raises(
         InputAboveBoundError,
-        match=r"^ca-on/return, instance 1: item 2: ca/cca_claimed 300.01 is above the",
+        match=r"^ca/t776, instance 1: item 2: ca/cca_claimed 300.01 is above the",
     ):
         return_av(
             rental_cca_classes_rows=(CLASS_1_ROW, ("10", "1000", "0", "0", "0", "0", "300.01", 0))
@@ -226,7 +233,8 @@ def test_a_class_without_a_chart_b_row_has_a_column_22_of_zero() -> None:
 
 
 def test_return_avs_trace_shows_each_chart_b_row_and_class() -> None:
-    rendered = EnglishTraceRenderer().render_all(return_av().trace)
+    result = return_av()
+    rendered = EnglishTraceRenderer().render_all(result["ca/t776"][0].trace)
 
     for line in (
         "rental_non_compliant_cca: row 1: class 1 CCA 900 for 30 non-compliant days of 90 "
@@ -254,18 +262,20 @@ def test_return_avs_trace_shows_each_chart_b_row_and_class() -> None:
 
 
 def test_no_chart_b_rows_give_zero_and_an_empty_list() -> None:
-    worksheet = return_av(short_term_rental_cca_units_rows=())
+    result = return_av(short_term_rental_cca_units_rows=())
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_NON_COMPLIANT_CCA).value == D("0")
-    assert worksheet.get(SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS).value.records == ()
-    rendered = EnglishTraceRenderer().render_all(worksheet.trace)
+    assert statement.get(RENTAL_NON_COMPLIANT_CCA).value == D("0")
+    assert statement.get(SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS).value.records == ()
+    rendered = EnglishTraceRenderer().render_all(statement.trace)
     assert "rental_non_compliant_cca: no items = 0" in rendered
 
 
 def test_a_row_with_900_of_cca_and_30_of_90_days_is_300_on_line_9367() -> None:
-    worksheet = return_av(short_term_rental_cca_units_rows=(("1", "900", 30, 90),))
+    result = return_av(short_term_rental_cca_units_rows=(("1", "900", 30, 90),))
+    statement = result["ca/t776"][0]
 
-    assert worksheet.get(RENTAL_NON_COMPLIANT_CCA).value == D("300.00")
+    assert statement.get(RENTAL_NON_COMPLIANT_CCA).value == D("300.00")
 
 
 def test_a_chart_b_row_with_no_short_term_days_is_refused_naming_the_row() -> None:

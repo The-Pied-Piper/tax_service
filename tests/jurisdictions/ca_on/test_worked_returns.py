@@ -13,10 +13,12 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
+import yaml
 
 from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
 from app.application.services.tax_computation import TaxComputationService
 from app.domain.artifact import ArtifactRegistry
+from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import Manifest
 from app.domain.parameters.rate import Rate
 from app.jurisdictions.ca.catalog import (
@@ -64,9 +66,13 @@ def load(
     """The worked return at `path` with its blank lines and inputs filled in.
 
     Against the manifest of the file's jurisdiction and tax year and the shared registry, unless a
-    `manifest` and `artifacts` are given.
+    `manifest` and `artifacts` are given. For the shared registry the manifest is composed first,
+    which registers the kinds `<form>.<export>` of its forms, so the file may expect them.
     """
-    artifacts = artifacts if artifacts is not None else ArtifactRegistry.shared()
+    if artifacts is None:
+        artifacts = ArtifactRegistry.shared()
+        head = yaml.safe_load(path.read_text())
+        build_tax_computation().compose(JurisdictionCode(head["jurisdiction"]), head["tax_year"])
     worked = WorkedReturn.load(path, artifacts)
     if manifest is None:
         manifest = (
@@ -76,9 +82,9 @@ def load(
         )
     default = worked.jurisdiction.namespace.identifier("return")
     (default_form,) = (form for form in manifest.forms if form.name == default)
-    return worked.with_blanks(
-        manifest.inputs, frozenset(default_form.exports), artifacts
-    ).with_forms(manifest.forms, artifacts)
+    worked = worked.with_blanks(manifest.inputs, frozenset(default_form.exports), artifacts)
+    worked.check_forms(manifest.forms, artifacts)
+    return worked
 
 
 def check(path: Path) -> None:
@@ -251,61 +257,63 @@ inputs:
   ca/investment_income_reported_in_previous_years: "0"
   ca/net_partnership_income: "0"
   ca/rdsp_income: "0"
-  ca/rental_properties: []
-  ca/rental_other_income: "0"
-  ca/rental_advertising: "0"
-  ca/rental_advertising_personal_portion: "0"
-  ca/rental_advertising_short_term_portion: "0"
-  ca/rental_insurance: "0"
-  ca/rental_insurance_personal_portion: "0"
-  ca/rental_insurance_short_term_portion: "0"
-  ca/rental_interest_and_bank_charges: "0"
-  ca/rental_interest_and_bank_charges_personal_portion: "0"
-  ca/rental_interest_and_bank_charges_short_term_portion: "0"
-  ca/rental_office_expenses: "0"
-  ca/rental_office_expenses_personal_portion: "0"
-  ca/rental_office_expenses_short_term_portion: "0"
-  ca/rental_professional_fees: "0"
-  ca/rental_professional_fees_personal_portion: "0"
-  ca/rental_professional_fees_short_term_portion: "0"
-  ca/rental_management_and_administration_fees: "0"
-  ca/rental_management_and_administration_fees_personal_portion: "0"
-  ca/rental_management_and_administration_fees_short_term_portion: "0"
-  ca/rental_repairs_and_maintenance: "0"
-  ca/rental_repairs_and_maintenance_personal_portion: "0"
-  ca/rental_repairs_and_maintenance_short_term_portion: "0"
-  ca/rental_salaries_wages_and_benefits: "0"
-  ca/rental_salaries_wages_and_benefits_personal_portion: "0"
-  ca/rental_salaries_wages_and_benefits_short_term_portion: "0"
-  ca/rental_property_taxes: "0"
-  ca/rental_property_taxes_personal_portion: "0"
-  ca/rental_property_taxes_short_term_portion: "0"
-  ca/rental_travel: "0"
-  ca/rental_travel_personal_portion: "0"
-  ca/rental_travel_short_term_portion: "0"
-  ca/rental_utilities: "0"
-  ca/rental_utilities_personal_portion: "0"
-  ca/rental_utilities_short_term_portion: "0"
-  ca/rental_motor_vehicle_expenses: "0"
-  ca/rental_motor_vehicle_expenses_personal_portion: "0"
-  ca/rental_motor_vehicle_expenses_short_term_portion: "0"
-  ca/rental_other_expenses: "0"
-  ca/rental_other_expenses_personal_portion: "0"
-  ca/rental_other_expenses_short_term_portion: "0"
-  ca/short_term_rental_units: []
-  ca/rental_coowner: "0"
-  ca/rental_coowner_share: "0"
-  ca/rental_coowner_other_expenses: "0"
-  ca/rental_cca_classes: []
-  ca/rental_coowner_recaptured_cca: "0"
-  ca/rental_coowner_terminal_loss: "0"
-  ca/rental_coowner_cca_claim: "0"
-  ca/rental_cca_personal_part: "0"
-  ca/rental_cca_business_use_of_home: "0"
-  ca/rental_partner: "0"
-  ca/rental_partner_share: "0"
-  ca/rental_partner_gst_hst_rebate: "0"
-  ca/rental_partner_other_expenses: "0"
+  ca/t776_statements:
+    - ca/rental_properties: []
+      ca/rental_other_income: "0"
+      ca/rental_advertising: "0"
+      ca/rental_advertising_personal_portion: "0"
+      ca/rental_advertising_short_term_portion: "0"
+      ca/rental_insurance: "0"
+      ca/rental_insurance_personal_portion: "0"
+      ca/rental_insurance_short_term_portion: "0"
+      ca/rental_interest_and_bank_charges: "0"
+      ca/rental_interest_and_bank_charges_personal_portion: "0"
+      ca/rental_interest_and_bank_charges_short_term_portion: "0"
+      ca/rental_office_expenses: "0"
+      ca/rental_office_expenses_personal_portion: "0"
+      ca/rental_office_expenses_short_term_portion: "0"
+      ca/rental_professional_fees: "0"
+      ca/rental_professional_fees_personal_portion: "0"
+      ca/rental_professional_fees_short_term_portion: "0"
+      ca/rental_management_and_administration_fees: "0"
+      ca/rental_management_and_administration_fees_personal_portion: "0"
+      ca/rental_management_and_administration_fees_short_term_portion: "0"
+      ca/rental_repairs_and_maintenance: "0"
+      ca/rental_repairs_and_maintenance_personal_portion: "0"
+      ca/rental_repairs_and_maintenance_short_term_portion: "0"
+      ca/rental_salaries_wages_and_benefits: "0"
+      ca/rental_salaries_wages_and_benefits_personal_portion: "0"
+      ca/rental_salaries_wages_and_benefits_short_term_portion: "0"
+      ca/rental_property_taxes: "0"
+      ca/rental_property_taxes_personal_portion: "0"
+      ca/rental_property_taxes_short_term_portion: "0"
+      ca/rental_travel: "0"
+      ca/rental_travel_personal_portion: "0"
+      ca/rental_travel_short_term_portion: "0"
+      ca/rental_utilities: "0"
+      ca/rental_utilities_personal_portion: "0"
+      ca/rental_utilities_short_term_portion: "0"
+      ca/rental_motor_vehicle_expenses: "0"
+      ca/rental_motor_vehicle_expenses_personal_portion: "0"
+      ca/rental_motor_vehicle_expenses_short_term_portion: "0"
+      ca/rental_other_expenses: "0"
+      ca/rental_other_expenses_personal_portion: "0"
+      ca/rental_other_expenses_short_term_portion: "0"
+      ca/short_term_rental_units: []
+      ca/short_term_rental_cca_units: []
+      ca/rental_coowner: "0"
+      ca/rental_coowner_share: "0"
+      ca/rental_coowner_other_expenses: "0"
+      ca/rental_cca_classes: []
+      ca/rental_coowner_recaptured_cca: "0"
+      ca/rental_coowner_terminal_loss: "0"
+      ca/rental_coowner_cca_claim: "0"
+      ca/rental_cca_personal_part: "0"
+      ca/rental_cca_business_use_of_home: "0"
+      ca/rental_partner: "0"
+      ca/rental_partner_share: "0"
+      ca/rental_partner_gst_hst_rebate: "0"
+      ca/rental_partner_other_expenses: "0"
   ca/taxable_support_payments: "0"
   ca/rrsp_income: "0"
   ca/fhsa_income: "0"
@@ -482,23 +490,27 @@ expected:
   ca/investment_income_before_prior_years: "0"
   ca/interest_and_other_investment_income: "0"
   ca/income_support_benefits: "0"
-  ca/short_term_rental_gross_rents: "0"
-  ca/rental_gross_rents: "0"
-  ca/gross_rental_income: "0"
-  ca/rental_total_expenses: "0"
-  ca/rental_personal_portion: "0"
-  ca/rental_short_term_portion: "0"
-  ca/rental_non_compliant_expenses: "0"
-  ca/rental_expenses_less_personal_portion: "0"
-  ca/rental_deductible_expenses: "0"
-  ca/rental_net_income_before_adjustments: "0"
-  ca/rental_net_income_share: "0"
-  ca/rental_net_income_after_coowner_expenses: "0"
-  ca/rental_net_income_with_recapture: "0"
-  ca/rental_net_income_after_terminal_loss: "0"
-  ca/rental_net_income_after_cca: "0"
-  ca/rental_partner_share_with_rebate: "0"
-  ca/rental_partnership_net_income: "0"
+  ca/t776:
+    - ca/short_term_rental_gross_rents: "0"
+      ca/rental_gross_rents: "0"
+      ca/gross_rental_income: "0"
+      ca/rental_total_expenses: "0"
+      ca/rental_personal_portion: "0"
+      ca/rental_short_term_portion: "0"
+      ca/rental_non_compliant_expenses: "0"
+      ca/rental_expenses_less_personal_portion: "0"
+      ca/rental_deductible_expenses: "0"
+      ca/rental_net_income_before_adjustments: "0"
+      ca/rental_net_income_share: "0"
+      ca/rental_net_income_after_coowner_expenses: "0"
+      ca/rental_net_income_with_recapture: "0"
+      ca/rental_net_income_after_terminal_loss: "0"
+      ca/rental_net_income_after_cca: "0"
+      ca/rental_partner_share_with_rebate: "0"
+      ca/rental_partnership_net_income: "0"
+      ca/rental_closing_ucc: []
+      ca/rental_non_compliant_cca: "0"
+      ca/short_term_rental_non_compliant_cca_by_class: []
   ca/net_rental_income: "0"
   ca/total_income: "10000"
   ca/cpp_second_additional_earnings_maximum: "9900.00"
@@ -985,11 +997,18 @@ def test_return_ad_reports_rental_income_on_lines_12599_and_12600() -> None:
     build_tax_computation()  # registers the catalogs the loader resolves through
     worked = WorkedReturn.load(path, ArtifactRegistry.shared())
 
-    (properties,) = [a for a in worked.inputs if a.kind.identifier == "ca/rental_properties"]
-    assert len(properties.value.records) == 1
+    (statements,) = [a for a in worked.inputs if a.kind.identifier == "ca/t776_statements"]
+    (statement,) = statements.value.records
+    (properties,) = [
+        value for kind, value in statement.items() if kind.identifier == "ca/rental_properties"
+    ]
+    assert len(properties.records) == 1
     expected = {a.kind.identifier: a.value for a in worked.expected}
-    # T776 line 8299 is T1 line 12599 and line 9946 is T1 line 12600.
-    assert expected["ca/gross_rental_income"] == Decimal("24000.00")
+    (worksheet,) = next(f for f in worked.form_expected if f.form == "ca/t776").instances
+    lines = {a.kind.identifier: a.value for a in worksheet}
+    # T776 line 8299 (on the statement's worksheet) is T1 line 12599 and line 9946 is T1 line
+    # 12600.
+    assert lines["ca/gross_rental_income"] == Decimal("24000.00")
     assert expected["ca/net_rental_income"] == Decimal("12000.00")
     assert expected["ca/total_income"] == Decimal("12000.00")
     check(path)
@@ -1163,17 +1182,18 @@ def test_an_entry_for_each_instance_is_required(tmp_path: Path) -> None:
         check_rentals(tmp_path, text)
 
 
-FLAT_RENTAL_RETURN = """\
+RENTAL_RETURN = """\
 jurisdiction: EX-ON
 tax_year: 2025
-description: One made-up rental given flat, as the old worked returns give a form's inputs.
+description: One made-up rental, given as the one instance of the rental form.
 sources:
   - Made up for the tests of the mechanism.
 inputs:
-  ex/gross_rent: "12000"
-  ex/expenses: "2000"
-  ex/units:
-    - ex/unit_amount: "1"
+  ex/rentals:
+    - ex/gross_rent: "12000"
+      ex/expenses: "2000"
+      ex/units:
+        - ex/unit_amount: "1"
 expected:
   ex/total_net_income: "10000"
   ex/rental:
@@ -1183,11 +1203,11 @@ expected:
 """
 
 
-def test_a_flat_return_loads_as_one_instance_after_the_blanks_are_filled(tmp_path: Path) -> None:
+def test_a_return_with_one_instance_loads_after_the_blanks_are_filled(tmp_path: Path) -> None:
     artifacts = artifact_registry()
     manifest = with_outputs(rental_manifest(), ("ex/total_net_income",))
-    path = tmp_path / "flat.yaml"
-    path.write_text(FLAT_RENTAL_RETURN)
+    path = tmp_path / "rental.yaml"
+    path.write_text(RENTAL_RETURN)
 
     worked = load(path, manifest, artifacts)
 

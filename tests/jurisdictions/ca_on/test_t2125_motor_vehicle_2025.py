@@ -57,7 +57,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_VEHICLE_LIST_PRICE_LIMIT,
     BUSINESS_VEHICLE_TOTAL_EXPENSES,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute
+from tests.jurisdictions.ca_on.end_to_end.support import D, run
 
 SOURCE = YamlParameterSource(app.registrations.JURISDICTIONS.roots())
 CENT = RoundTo(D("0.01"), RoundingMode.HALF_UP)
@@ -137,7 +137,8 @@ def statement(vehicle: dict[str, str]) -> Worksheet:
     """A T2125 of gross sales of 50000 and office expenses of 20000, with the Chart A to C amounts
     in `vehicle` (the others 0)."""
     amounts = {"gross_sales": "50000", "office_expenses": "20000", **vehicle}
-    return compute("0", (), "0", "0", "0", "0", "0", business=amounts)
+    result = run("0", (), "0", "0", "0", "0", "0", business=amounts)
+    return result["ca/t2125"][0]
 
 
 def line(worksheet: Worksheet, kind: Any) -> Any:

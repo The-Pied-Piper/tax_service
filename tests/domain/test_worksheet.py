@@ -1,4 +1,4 @@
-"""Unit tests for the Worksheet: every artifact of one computation (design.md §3).
+"""Unit tests for the Worksheet: one filled-in copy of a form (design.md §3, §6).
 
 The worksheet holds each capability to its contract when applying it: consumed
 inputs must be present, outputs must match `produces`, and no artifact is overwritten.

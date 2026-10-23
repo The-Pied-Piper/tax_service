@@ -76,7 +76,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_VEHICLE_TOTAL_EXPENSES,
     FARMING_INCOME,
 )
-from tests.jurisdictions.ca_on.end_to_end.support import D, compute
+from tests.jurisdictions.ca_on.end_to_end.support import D, run
 
 # Return BC's statement, the default of these tests: income lines of 80000 (wheat 50000 on line
 # 9371 and cattle 30000 on line 9471) and expenses of 50000 (seeds and plants, line 9664), so line
@@ -128,7 +128,7 @@ def statement(
     """Return BC's statement with `farm` changing or adding its amounts, `partner` the partner
     count (amount 5A) and `cca_classes` the Area A rows."""
     amounts = {**DEFAULT_FARM, **(farm or {})}
-    return compute(
+    result = run(
         "0",
         (),
         "0",
@@ -141,6 +141,7 @@ def statement(
         farm_cca_classes_rows=cca_classes,
         **overrides,
     )
+    return result["ca/t2042"][0]
 
 
 def line(worksheet: Worksheet, kind: ArtifactKind[Any]) -> Any:

@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1311
+        == 1140
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1311
+        == 1140
     )
 
 
@@ -262,6 +262,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/business_partner_share",
         "ca/business_partner",
         "ca/business_cca_classes",
+        "ca/t2125_statements",
         "ca/business_sales_subtotal",
         "ca/business_recaptured_cca",
         "ca/business_other_income_with_recapture",
@@ -414,6 +415,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/farm_home_cca",
         "ca/farm_home_carried_forward",
         "ca/farm_cca_classes",
+        "ca/t2042_statements",
         "ca/farm_recaptured_cca",
         "ca/farm_other_income_with_recapture",
         "ca/farm_gross_income",
@@ -501,6 +503,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/fish_other_expenses",
         "ca/fish_cca_personal_part",
         "ca/fish_cca_classes",
+        "ca/t2121_statements",
         "ca/fish_partner",
         "ca/fish_partner_share",
         "ca/fish_partner_gst_hst_rebate",
@@ -1443,6 +1446,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/rental_partner_share_with_rebate",
         "ca/rental_partnership_net_income",
         "ca/net_rental_income",
+        "ca/t776_statements",
         "ca/medical_expenses",
         "ca/medical_net_income_share",
         "ca/medical_threshold",
@@ -2187,7 +2191,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1311
+        == 1140
     )
     assert (
         len(
@@ -2195,7 +2199,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1311
+        == 1140
     )
 
 
@@ -2208,7 +2212,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1311
+        == 1140
     )
     assert (
         len(
@@ -2216,7 +2220,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1311
+        == 1140
     )
 
 
