@@ -523,7 +523,10 @@ from app.jurisdictions.ca.catalog import (
     FARM_WHEAT,
     FARMING_INCOME,
     FEDERAL_BASIC_TAX,
+    FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_FOREIGN_TAX_CREDIT,
+    FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
+    FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_LINE_41700,
@@ -2587,6 +2590,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ITC_RECAPTURE: SumLine(
             ITC_RECAPTURE,
             ((ITC_RECAPTURE_AT_15_PERCENT, D("0")), (ITC_RECAPTURE_AT_20_PERCENT, D("0"))),
+            D("0"),
+        ),
+        # Form T2209 line 13 "Add lines 11 and 12.": line 11, the federal business foreign tax
+        # credit (0), and line 12, "the amount from line 3" (0): 0, as Return A has no countries.
+        FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT: SumLine(
+            FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
+            (
+                (FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT, D("0")),
+                (FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT, D("0")),
+            ),
             D("0"),
         ),
         FEDERAL_TAX_WITH_ITC_RECAPTURE: SumLine(

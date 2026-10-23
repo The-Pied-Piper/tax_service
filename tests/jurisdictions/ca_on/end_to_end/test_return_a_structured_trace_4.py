@@ -536,7 +536,9 @@ from app.jurisdictions.ca.catalog import (
     FARM_PARTNER,
     FARM_SHARE_OF_NET_INCOME,
     FARMING_INCOME,
+    FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_FOREIGN_TAX_CREDIT,
+    FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT,
     FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
@@ -576,6 +578,11 @@ from app.jurisdictions.ca.catalog import (
     FISH_PARTNER,
     FISH_SHARE_OF_NET_INCOME,
     FISHING_INCOME,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_4,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_5,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_7,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_8,
+    FOREIGN_BUSINESS_TAX_CREDIT_LINE_10,
     HIGH_INCOME_DONATIONS,
     INCLUDED_CAPITAL_GAIN,
     INCOME_SUPPORT_BENEFITS,
@@ -942,6 +949,12 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             BUSINESS_MOTOR_VEHICLE_EXPENSES,
             COOP_EDUCATION_CREDIT,
             FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
+            FOREIGN_BUSINESS_TAX_CREDIT_LINE_4,
+            FOREIGN_BUSINESS_TAX_CREDIT_LINE_5,
+            FOREIGN_BUSINESS_TAX_CREDIT_LINE_7,
+            FOREIGN_BUSINESS_TAX_CREDIT_LINE_8,
+            FOREIGN_BUSINESS_TAX_CREDIT_LINE_10,
+            FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT,
             TRAVEL_TOTAL_ZONE_A,
             TRAVEL_TOTAL_ZONE_B,
             STANDARD_AMOUNT_ALLOCATED,
@@ -1003,7 +1016,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         FEDERAL_FOREIGN_TAX_CREDIT: LesserOfLine(
             FEDERAL_FOREIGN_TAX_CREDIT,
             (
-                (FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT, D("0")),
+                (FEDERAL_FOREIGN_TAX_CREDIT_BEFORE_LIMIT, D("0")),
                 (FEDERAL_TAX_AFTER_CREDITS, D("16951.38")),
             ),
             D("0"),
@@ -4322,6 +4335,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         # Form T2209 lines 1 to 3 over the countries: Return A lists none, so the total is 0.
         FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT: ItemsTotalLine(
             FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT, (), D("0")
+        ),
+        # Form T2209 lines 4, 5, 7, 8, 10 and 11 over the same sheets: none, so each total is 0.
+        FOREIGN_BUSINESS_TAX_CREDIT_LINE_4: ItemsTotalLine(
+            FOREIGN_BUSINESS_TAX_CREDIT_LINE_4, (), D("0")
+        ),
+        FOREIGN_BUSINESS_TAX_CREDIT_LINE_5: ItemsTotalLine(
+            FOREIGN_BUSINESS_TAX_CREDIT_LINE_5, (), D("0")
+        ),
+        FOREIGN_BUSINESS_TAX_CREDIT_LINE_7: ItemsTotalLine(
+            FOREIGN_BUSINESS_TAX_CREDIT_LINE_7, (), D("0")
+        ),
+        FOREIGN_BUSINESS_TAX_CREDIT_LINE_8: ItemsTotalLine(
+            FOREIGN_BUSINESS_TAX_CREDIT_LINE_8, (), D("0")
+        ),
+        FOREIGN_BUSINESS_TAX_CREDIT_LINE_10: ItemsTotalLine(
+            FOREIGN_BUSINESS_TAX_CREDIT_LINE_10, (), D("0")
+        ),
+        FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT: ItemsTotalLine(
+            FEDERAL_BUSINESS_FOREIGN_TAX_CREDIT, (), D("0")
         ),
         COOP_EDUCATION_CREDIT: ItemsTotalLine(COOP_EDUCATION_CREDIT, (), D("0")),
         # Form T2125 Chart A line 16 over the vehicles (line 9281): Return A's T2125 lists none, so
