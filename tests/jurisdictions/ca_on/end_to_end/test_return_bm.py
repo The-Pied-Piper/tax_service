@@ -133,7 +133,7 @@ def test_return_bm_amount_f_adds_amounts_b_c_d_and_e() -> None:
 
 
 def test_the_ticket_acceptance_qualified_property_of_10000_gives_amount_4_and_a_of_1000() -> None:
-    # The acceptance figure of #223: 10,000 of qualified property (line 67140) and no other entries
+    # The acceptance figure: 10,000 of qualified property (line 67140) and no other entries
     # gives amount 4 of 1,000.00, and amount A of 1,000.00.
     worksheet = compute(**{**NO_OTHER_LINES, "itc_qualified_property": "10000"})
 
