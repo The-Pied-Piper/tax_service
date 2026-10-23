@@ -204,6 +204,7 @@ from app.jurisdictions.ca.catalog import (
     T657_PART_2_EXCLUDED_H,
     T657_T2017_LINE_13,
     T657_T2048_LINE_17217_FOR_2024,
+    T2048_DISPOSITIONS,
     TAXABLE_INCOME,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES,
     TOTAL_ADJUSTED_NET_CAPITAL_LOSSES_APPLIED,
@@ -627,6 +628,30 @@ def test_the_form_t2048_kinds_are_money_and_counts() -> None:
         QBT_GAINS_ARE_QSBCS_OR_QFFP,
     ):
         assert count.value_type is int, count.identifier
+
+
+def test_the_t2048_dispositions_kind_is_a_record_list_of_the_thirteen_inputs(
+    registry: ArtifactRegistry,
+) -> None:
+    # Form T2048 is run once for each disposition: one record of the 13 starting inputs of Parts 2
+    # to 5 and Chart A, in the order of the form's inputs (`01_inputs.yaml`, "Form T2048").
+    assert registry.get("ca/t2048_dispositions") is T2048_DISPOSITIONS
+    assert isinstance(T2048_DISPOSITIONS, RecordListKind)
+    assert T2048_DISPOSITIONS.fields == (
+        QBT_ELECTION_ELIGIBLE_AMOUNT,
+        QBT_PERCENTAGE_ALLOCATED,
+        QBT_PRIOR_YEARS_CLAIMS,
+        QBT_CAPITAL_GAINS,
+        QBT_2024_RESERVE,
+        QBT_2025_RESERVE,
+        QBT_HAS_INVESTMENT_EXPENSES,
+        QBT_DEDUCTION_CLAIMED,
+        QBT_ELECTION_IS_QBT,
+        QBT_GAINS_ARE_QSBCS_OR_QFFP,
+        QBT_PARTNERSHIP_LOSSES,
+        QBT_OTHER_INVESTMENT_EXPENSES,
+        QBT_OTHER_PROPERTY_INCOME,
+    )
 
 
 def test_the_form_t657_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:

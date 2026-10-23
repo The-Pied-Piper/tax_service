@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1026
+        == 1001
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1026
+        == 1001
     )
 
 
@@ -437,6 +437,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/fish_cca_personal_part",
         "ca/fish_cca_classes",
         "ca/t2121_statements",
+        "ca/t2048_dispositions",
         "ca/fish_partner",
         "ca/fish_partner_share",
         "ca/fish_partner_gst_hst_rebate",
@@ -2359,7 +2360,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1026
+        == 1001
     )
     assert (
         len(
@@ -2367,7 +2368,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1026
+        == 1001
     )
 
 
@@ -2380,7 +2381,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1026
+        == 1001
     )
     assert (
         len(
@@ -2388,7 +2389,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1026
+        == 1001
     )
 
 

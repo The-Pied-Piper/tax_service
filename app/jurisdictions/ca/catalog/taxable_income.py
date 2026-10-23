@@ -635,6 +635,31 @@ QBT_OTHER_PROPERTY_INCOME = CATALOG.declare("qbt_other_property_income", Decimal
 under paragraph 56(1)(d) minus the capital portion deducted under paragraph 60(a)": a starting
 amount."""
 
+T2048_DISPOSITIONS = RecordListKind.declare(
+    CATALOG,
+    "t2048_dispositions",
+    fields=(
+        QBT_ELECTION_ELIGIBLE_AMOUNT,
+        QBT_PERCENTAGE_ALLOCATED,
+        QBT_PRIOR_YEARS_CLAIMS,
+        QBT_CAPITAL_GAINS,
+        QBT_2024_RESERVE,
+        QBT_2025_RESERVE,
+        QBT_HAS_INVESTMENT_EXPENSES,
+        QBT_DEDUCTION_CLAIMED,
+        QBT_ELECTION_IS_QBT,
+        QBT_GAINS_ARE_QSBCS_OR_QFFP,
+        QBT_PARTNERSHIP_LOSSES,
+        QBT_OTHER_INVESTMENT_EXPENSES,
+        QBT_OTHER_PROPERTY_INCOME,
+    ),
+)
+"""Qualifying dispositions, Form T2048 "If you have more than one qualifying disposition, use a
+separate form to complete parts 1 to 4 for each qualifying disposition. You should designate the
+order in which the deductions are claimed": one record for each qualifying disposition, in the
+order the filer designates, holding the starting inputs of Parts 2 to 5 and Chart A in the form's
+order. The form `ca/t2048` runs once for each record; a field is not an artifact of the return."""
+
 QBT_RECOVERY_OF_EXPLORATION_EXPENSES = CATALOG.declare(
     "qbt_recovery_of_exploration_expenses", Decimal, non_negative=True
 )

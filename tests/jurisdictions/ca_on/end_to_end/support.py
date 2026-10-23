@@ -729,6 +729,7 @@ from app.jurisdictions.ca.catalog import (
     T657_T2048_LINE_17217_FOR_2024,
     T776_STATEMENTS,
     T2042_STATEMENTS,
+    T2048_DISPOSITIONS,
     T2121_STATEMENTS,
     T2125_STATEMENTS,
     T5013_DIVIDEND_TAX_CREDIT,
@@ -1593,6 +1594,46 @@ def t2121_statements(statements: Iterable[Mapping[str, Any]]) -> Artifact[Record
     return Artifact(T2121_STATEMENTS, RecordList(T2121_STATEMENTS.fields, records))
 
 
+def t2048_disposition(
+    *,
+    qbt_election_eligible_amount: str = "0",
+    qbt_percentage_allocated: str = "0",
+    qbt_prior_years_claims: str = "0",
+    qbt_capital_gains: str = "0",
+    qbt_2024_reserve: str = "0",
+    qbt_2025_reserve: str = "0",
+    qbt_has_investment_expenses: int = 0,
+    qbt_deduction_claimed: str = "0",
+    qbt_election_is_qbt: int = 0,
+    qbt_gains_are_qsbcs_or_qffp: int = 0,
+    qbt_partnership_losses: str = "0",
+    qbt_other_investment_expenses: str = "0",
+    qbt_other_property_income: str = "0",
+) -> dict[ArtifactKind[Any], object]:
+    """One Form T2048 disposition, a record of `ca/t2048_dispositions`, as given or 0."""
+    return {
+        QBT_ELECTION_ELIGIBLE_AMOUNT: D(qbt_election_eligible_amount),
+        QBT_PERCENTAGE_ALLOCATED: D(qbt_percentage_allocated),
+        QBT_PRIOR_YEARS_CLAIMS: D(qbt_prior_years_claims),
+        QBT_CAPITAL_GAINS: D(qbt_capital_gains),
+        QBT_2024_RESERVE: D(qbt_2024_reserve),
+        QBT_2025_RESERVE: D(qbt_2025_reserve),
+        QBT_HAS_INVESTMENT_EXPENSES: qbt_has_investment_expenses,
+        QBT_DEDUCTION_CLAIMED: D(qbt_deduction_claimed),
+        QBT_ELECTION_IS_QBT: qbt_election_is_qbt,
+        QBT_GAINS_ARE_QSBCS_OR_QFFP: qbt_gains_are_qsbcs_or_qffp,
+        QBT_PARTNERSHIP_LOSSES: D(qbt_partnership_losses),
+        QBT_OTHER_INVESTMENT_EXPENSES: D(qbt_other_investment_expenses),
+        QBT_OTHER_PROPERTY_INCOME: D(qbt_other_property_income),
+    }
+
+
+def t2048_dispositions(dispositions: Iterable[Mapping[str, Any]]) -> Artifact[RecordList]:
+    """The dispositions of Form T2048: one record for each mapping of `t2048_disposition`."""
+    records = [t2048_disposition(**disposition) for disposition in dispositions]
+    return Artifact(T2048_DISPOSITIONS, RecordList(T2048_DISPOSITIONS.fields, records))
+
+
 def trip(individual: int, zone: int, column_3: str, column_4: str, column_5: str) -> dict[Any, Any]:
     """A Form T2222 Chart B record: the individual, the zone (1 for A, 2 for B), columns 3 to 5."""
     return {
@@ -1818,6 +1859,7 @@ def starting(
     fish_statements: tuple[Mapping[str, Any], ...] | None = None,
     schedule_8_copies: int = 1,
     rc381_copies: int = 0,
+    t2048_dispositions_rows: tuple[Mapping[str, Any], ...] | None = None,
     taxable_support_payments: str = "0",
     rrsp_income: str = "0",
     fhsa_income: str = "0",
@@ -2233,6 +2275,30 @@ def starting(
     business_statement_list = blank if business_statements is None else business_statements
     farm_statement_list = blank if farm_statements is None else farm_statements
     fish_statement_list = blank if fish_statements is None else fish_statements
+    one_disposition: tuple[Mapping[str, Any], ...] = (
+        {
+            "qbt_election_eligible_amount": qbt_election_eligible_amount,
+            "qbt_percentage_allocated": qbt_percentage_allocated,
+            "qbt_prior_years_claims": qbt_prior_years_claims,
+            "qbt_capital_gains": qbt_capital_gains,
+            "qbt_2024_reserve": qbt_2024_reserve,
+            "qbt_2025_reserve": qbt_2025_reserve,
+            "qbt_has_investment_expenses": qbt_has_investment_expenses,
+            "qbt_deduction_claimed": qbt_deduction_claimed,
+            "qbt_election_is_qbt": qbt_election_is_qbt,
+            "qbt_gains_are_qsbcs_or_qffp": qbt_gains_are_qsbcs_or_qffp,
+            "qbt_partnership_losses": qbt_partnership_losses,
+            "qbt_other_investment_expenses": qbt_other_investment_expenses,
+            "qbt_other_property_income": qbt_other_property_income,
+        },
+    )
+    # No disposition unless a qbt_* keyword or the rows are given: then Form T2048 has no instance.
+    given_disposition = any(value not in ("0", 0) for value in one_disposition[0].values())
+    disposition_list = (
+        (one_disposition if given_disposition else ())
+        if t2048_dispositions_rows is None
+        else t2048_dispositions_rows
+    )
     return (
         Artifact(EMPLOYMENT_INCOME, D(employment_income)),
         dispositions(QSBCS_DISPOSITIONS, *qsbcs_dispositions),
@@ -2717,19 +2783,7 @@ def starting(
         Artifact(EXEMPT_INCOME_DEDUCTIONS, D(exempt_income_deductions)),
         Artifact(FIRST_NATIONS_ABATEMENT, D(first_nations_abatement)),
         foreign_tax_countries(*foreign_tax_countries_rows),
-        Artifact(QBT_ELECTION_ELIGIBLE_AMOUNT, D(qbt_election_eligible_amount)),
-        Artifact(QBT_PERCENTAGE_ALLOCATED, D(qbt_percentage_allocated)),
-        Artifact(QBT_PRIOR_YEARS_CLAIMS, D(qbt_prior_years_claims)),
-        Artifact(QBT_CAPITAL_GAINS, D(qbt_capital_gains)),
-        Artifact(QBT_2024_RESERVE, D(qbt_2024_reserve)),
-        Artifact(QBT_2025_RESERVE, D(qbt_2025_reserve)),
-        Artifact(QBT_ELECTION_IS_QBT, qbt_election_is_qbt),
-        Artifact(QBT_GAINS_ARE_QSBCS_OR_QFFP, qbt_gains_are_qsbcs_or_qffp),
-        Artifact(QBT_HAS_INVESTMENT_EXPENSES, qbt_has_investment_expenses),
-        Artifact(QBT_PARTNERSHIP_LOSSES, D(qbt_partnership_losses)),
-        Artifact(QBT_OTHER_INVESTMENT_EXPENSES, D(qbt_other_investment_expenses)),
-        Artifact(QBT_OTHER_PROPERTY_INCOME, D(qbt_other_property_income)),
-        Artifact(QBT_DEDUCTION_CLAIMED, D(qbt_deduction_claimed)),
+        t2048_dispositions(disposition_list),
         Artifact(
             AMT_FILM_PROPERTY_CCA_AND_CARRYING_CHARGES,
             D(amt_film_property_cca_and_carrying_charges),
@@ -3133,7 +3187,7 @@ def step_3(**amounts: Any) -> Worksheet:
     return compute("0", (), "0", "0", "0", "0", "0", **amounts)
 
 
-def return_be(**overrides: Any) -> Worksheet:
+def run_be(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
     """Return BE's inputs, as in `returns/2025_return_be.yaml`.
 
     Employment income of 60000, capital gains of 200000 (taxable capital gains 100000), net
@@ -3176,7 +3230,17 @@ def return_be(**overrides: Any) -> Worksheet:
         "qbt_other_property_income": "500",
         "qbt_deduction_claimed": "60500",
     }
-    return compute(**{**inputs, **overrides})
+    return run(**{**inputs, **overrides})
+
+
+def return_be(**overrides: Any) -> Worksheet:
+    """The return form's worksheet of `run_be`: T1 lines and the T2048 figures it exports."""
+    return run_be(**overrides)["ca-on/return"][0]
+
+
+def form_be(**overrides: Any) -> Worksheet:
+    """The worksheet of Return BE's one Form T2048 disposition, every line of the form."""
+    return run_be(**overrides)["ca/t2048"][0]
 
 
 def return_bf(**overrides: Any) -> Worksheet:
