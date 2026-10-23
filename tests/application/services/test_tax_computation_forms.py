@@ -32,9 +32,11 @@ from app.domain.errors import (
     CapabilityContractError,
     DuplicateRegistrationError,
     InvalidCompositionError,
+    InvalidManifestError,
     MissingArtifactError,
     NotFoundError,
     UnknownRegistrationError,
+    ValidationError,
 )
 from app.domain.form import FormSet
 from app.domain.jurisdiction import Jurisdiction
@@ -946,3 +948,147 @@ def test_instances_that_are_not_a_record_list_kind_are_refused_naming_the_form()
 
     assert "ex/rental" in str(caught.value)
     assert "ex/gross_rent" in str(caught.value)
+
+
+# --- limits: the manifest's maximum and exclusive group reach the form set ---------------------
+
+
+def test_a_forms_maximum_is_enforced_on_the_instances_given() -> None:
+    manifest = rental_manifest(replace(RENTAL, max_instances=1))
+
+    with pytest.raises(ValidationError, match=r"form 'ex/rental' allows at most 1 instance\(s\)"):
+        service(manifest).compute(EX_ON, 2025, TWO_RENTALS)
+
+
+def test_a_form_within_its_maximum_computes() -> None:
+    manifest = rental_manifest(replace(RENTAL, max_instances=2))
+
+    worksheet = service(manifest).compute(EX_ON, 2025, TWO_RENTALS)["ex-on/return"][0]
+
+    assert worksheet.get(TOTAL_NET_INCOME).value == D("14000")
+
+
+def test_two_forms_of_a_group_with_instances_are_refused_naming_both() -> None:
+    manifest = replace(
+        both_manifest(),
+        forms=(
+            replace(RENTAL, exclusive_group="ex/either"),
+            replace(SCALING, exclusive_group="ex/either"),
+        ),
+    )
+    bases = Artifact(BASES, RecordList(BASES.fields, [{BASE: D(1)}]))
+
+    with pytest.raises(ValidationError, match=r"'ex/rental'.*'ex/scaling'.*'ex/either'"):
+        service(manifest).compute(EX_ON, 2025, TWO_RENTALS, bases)
+
+
+def test_a_group_naming_one_form_is_refused_when_the_form_set_is_built() -> None:
+    manifest = rental_manifest(replace(RENTAL, exclusive_group="ex/alone"))
+
+    with pytest.raises(InvalidCompositionError, match="exclusive group 'ex/alone'.*'ex/rental'"):
+        service(manifest).compose(EX_ON, 2025)
+
+
+# --- limits: a minimum, and limits on the default list of a form without instances ---------------
+
+
+def with_default_limits(manifest: Manifest, **limits: Any) -> Manifest:
+    """The manifest with the limits on its default form `ex-on/return` (one default instance)."""
+    return replace(
+        manifest,
+        forms=tuple(replace(f, **limits) if f.name == RETURN else f for f in manifest.forms),
+    )
+
+
+def test_a_forms_minimum_is_enforced_on_the_instances_given() -> None:
+    manifest = rental_manifest(replace(RENTAL, min_instances=3))
+
+    with pytest.raises(
+        ValidationError, match=r"form 'ex/rental' needs at least 3 instance\(s\), got 2"
+    ):
+        service(manifest).compute(EX_ON, 2025, TWO_RENTALS)
+
+
+def test_a_form_within_its_minimum_and_maximum_computes() -> None:
+    manifest = rental_manifest(replace(RENTAL, min_instances=2, max_instances=2))
+
+    worksheet = service(manifest).compute(EX_ON, 2025, TWO_RENTALS)["ex-on/return"][0]
+
+    assert worksheet.get(TOTAL_NET_INCOME).value == D("14000")
+
+
+def test_a_minimum_above_the_maximum_is_refused_naming_the_form() -> None:
+    with pytest.raises(InvalidManifestError, match="form 'ex/rental': min_instances 3 is above"):
+        replace(RENTAL, min_instances=3, max_instances=2)
+
+
+def test_a_declared_empty_list_is_refused_by_a_minimum_of_one() -> None:
+    manifest = rental_manifest(replace(RENTAL, min_instances=1))
+    empty = Artifact(RENTALS, RecordList(RENTALS.fields, []))
+
+    with pytest.raises(
+        ValidationError, match=r"form 'ex/rental' needs at least 1 instance\(s\), got 0"
+    ):
+        service(manifest).compute(EX_ON, 2025, empty)
+
+
+def test_exactly_one_instance_on_a_declared_list() -> None:
+    manifest = rental_manifest(replace(RENTAL, min_instances=1, max_instances=1))
+    one = rentals(("12000", "2000", units()))
+
+    worksheet = service(manifest).compute(EX_ON, 2025, one)["ex-on/return"][0]
+
+    assert worksheet.get(TOTAL_NET_INCOME).value == D("10000")
+    with pytest.raises(ValidationError, match="allows at most 1"):
+        service(manifest).compute(EX_ON, 2025, TWO_RENTALS)
+
+
+def test_exactly_one_instance_on_a_default_list_is_a_no_op() -> None:
+    manifest = with_default_limits(rental_manifest(), min_instances=1, max_instances=1)
+
+    worksheet = service(manifest).compute(EX_ON, 2025, TWO_RENTALS)["ex-on/return"][0]
+
+    assert worksheet.get(TOTAL_NET_INCOME).value == D("14000")
+
+
+def test_a_minimum_of_zero_on_a_default_list_is_a_no_op() -> None:
+    manifest = with_default_limits(rental_manifest(), min_instances=0)
+
+    assert service(manifest).compute(EX_ON, 2025, TWO_RENTALS)["ex-on/return"]
+
+
+def test_a_minimum_above_one_on_a_default_list_is_refused_when_the_manifest_is_built() -> None:
+    with pytest.raises(InvalidManifestError) as caught:
+        with_default_limits(rental_manifest(), min_instances=2)
+
+    assert str(caught.value) == (
+        "form 'ex-on/return': min_instances 2 can never hold: "
+        "a form without an instances list has one instance"
+    )
+
+
+def test_a_default_list_form_claims_its_group() -> None:
+    manifest = with_default_limits(
+        rental_manifest(replace(RENTAL, exclusive_group="ex/either")), exclusive_group="ex/either"
+    )
+    empty = Artifact(RENTALS, RecordList(RENTALS.fields, []))
+
+    with pytest.raises(
+        ValidationError,
+        match=r"'ex-on/return'.*'ex/rental'.*'ex/either'|'ex/rental'.*'ex-on/return'.*'ex/either'",
+    ):
+        service(manifest).compute(EX_ON, 2025, TWO_RENTALS)
+    assert service(manifest).compute(EX_ON, 2025, empty)
+
+
+def test_two_forms_of_a_group_that_both_require_an_instance_are_refused_when_composed() -> None:
+    manifest = replace(
+        both_manifest(),
+        forms=(
+            replace(RENTAL, exclusive_group="ex/either", min_instances=1),
+            replace(SCALING, exclusive_group="ex/either", min_instances=1),
+        ),
+    )
+
+    with pytest.raises(InvalidCompositionError, match=r"'ex/either'.*'ex/rental'.*'ex/scaling'"):
+        service(manifest).compose(EX_ON, 2025)

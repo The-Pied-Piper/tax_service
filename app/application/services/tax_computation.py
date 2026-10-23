@@ -87,6 +87,9 @@ class TaxComputationService:
                     if form.instances is None
                     else self._artifacts.kind(form.instances),
                     starting=inputs,
+                    max_instances=form.max_instances,
+                    min_instances=form.min_instances,
+                    exclusive_group=form.exclusive_group,
                 )
                 for form in manifest.forms
             ],

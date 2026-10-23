@@ -60,12 +60,21 @@ class Form:
     `<namespace>/<snake_case>`: the dotted identifier is built by the engine, never written.
     `exports` and `capabilities` (the form's selections) are kept as tuples copied from what was
     given. The inputs of a form are not declared: they are derived from its selections.
+
+    A form without `instances` has a default instance list of one instance, and the limits apply to
+    its count. `max_instances` is the most instances a caller may give (an integer of at least 1;
+    `None` for no maximum) and `min_instances` the fewest (an integer of at least 0, 0 meaning no
+    minimum; `None` for none); the minimum may not be above the maximum. `exclusive_group` is an
+    identifier shared by forms of which at most one may have instances (`None` for no group).
     """
 
     name: str
     instances: str | None
     exports: tuple[str, ...]
     capabilities: tuple[CapabilitySelection, ...]
+    max_instances: int | None = None
+    min_instances: int | None = None
+    exclusive_group: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "exports", tuple(self.exports))
@@ -76,6 +85,48 @@ class Form:
         if not self.exports:
             raise InvalidManifestError("exports must name at least one artifact")
         self.check_exports("exports", self.exports)
+        try:
+            self.check_limits(self.max_instances, self.min_instances, self.instances is not None)
+        except InvalidManifestError as exc:
+            raise InvalidManifestError(f"form {self.name!r}: {exc}") from None
+        if self.exclusive_group is not None:
+            self.check_identifier("exclusive_group", self.exclusive_group)
+
+    @staticmethod
+    def check_limits(
+        max_instances: object, min_instances: object, has_instances_list: bool
+    ) -> None:
+        """Refuse limits no instance count could satisfy; the message does not name the form.
+
+        Each given limit must be an integer (a boolean is not): `max_instances` at least 1,
+        `min_instances` at least 0 and not above the maximum. A form without an instances list has
+        one instance, so a `min_instances` above 1 can never hold.
+        """
+        for field, value, least in (
+            ("max_instances", max_instances, 1),
+            ("min_instances", min_instances, 0),
+        ):
+            if value is None:
+                continue
+            if not isinstance(value, int) or isinstance(value, bool):
+                raise InvalidManifestError(
+                    f"{field} must be an integer, got {type(value).__name__}"
+                )
+            if value < least:
+                raise InvalidManifestError(f"{field} must be at least {least}, got {value}")
+        if (
+            isinstance(min_instances, int)
+            and isinstance(max_instances, int)
+            and min_instances > max_instances
+        ):
+            raise InvalidManifestError(
+                f"min_instances {min_instances} is above max_instances {max_instances}"
+            )
+        if isinstance(min_instances, int) and min_instances > 1 and not has_instances_list:
+            raise InvalidManifestError(
+                f"min_instances {min_instances} can never hold: "
+                "a form without an instances list has one instance"
+            )
 
     @staticmethod
     def check_exports(field: str, exports: Iterable[str]) -> None:

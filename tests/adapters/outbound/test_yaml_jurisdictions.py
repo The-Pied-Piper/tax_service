@@ -1447,3 +1447,278 @@ def test_two_outputs_with_one_local_id_are_refused_as_outputs_not_exports(tmp_pa
 
     with pytest.raises(InvalidManifestError, match=r"outputs: local id 'y'.*more than once"):
         source(tmp_path).get_jurisdiction(EX_ON)
+
+
+# --- forms: `max_instances`, `min_instances`, `exclusive_group` in the declaring part ----------
+#
+# These are optional keys of the `form:` mapping of the part that declares `exports`:
+# `max_instances` an integer of at least 1, `min_instances` an integer of at least 0 (not above the
+# maximum), `exclusive_group` an identifier. A part that does not declare exports takes none,
+# and a second part repeating them is refused.
+
+
+def limited(extra: str) -> str:
+    return (
+        "form:\n  name: ex/rental\n  instances: ex/rentals\n  exports: [ex/n]\n"
+        f"{extra}capabilities:\n  - {{name: ex/a, produces: {{output: ex/n}}}}\n"
+    )
+
+
+def test_a_form_without_limits_has_none(tmp_path: Path) -> None:
+    write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-rental.yaml": FORM_RENTAL})
+
+    (found,) = others(only_manifest(tmp_path))
+
+    assert found.max_instances is None
+    assert found.min_instances is None
+    assert found.exclusive_group is None
+
+
+def test_the_declaring_part_may_carry_a_maximum_and_a_group(tmp_path: Path) -> None:
+    text = limited("  max_instances: 1\n  exclusive_group: ex/either\n")
+    write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-rental.yaml": text})
+
+    (found,) = others(only_manifest(tmp_path))
+
+    assert found.max_instances == 1
+    assert found.exclusive_group == "ex/either"
+
+
+def test_a_maximum_alone_and_a_group_alone_are_allowed(tmp_path: Path) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": HEADER_PART,
+            "01-rental.yaml": limited("  max_instances: 4\n"),
+            "02-business.yaml": FORM_BUSINESS.replace(
+                "  exports: [ex/profit]\n", "  exports: [ex/profit]\n  exclusive_group: ex/other\n"
+            ),
+        },
+    )
+
+    rental, business = others(only_manifest(tmp_path))
+
+    assert (rental.max_instances, rental.exclusive_group) == (4, None)
+    assert (business.max_instances, business.exclusive_group) == (None, "ex/other")
+
+
+def test_the_limits_come_from_the_part_that_declares_them_whatever_its_place(
+    tmp_path: Path,
+) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": HEADER_PART,
+            "01-rental.yaml": FORM_RENTAL_NAME_ONLY,
+            "02-declaration.yaml": limited("  max_instances: 2\n"),
+        },
+    )
+
+    (found,) = others(only_manifest(tmp_path))
+
+    assert found.max_instances == 2
+    assert [c.name for c in found.capabilities] == ["ex/b", "ex/a"]
+
+
+@pytest.mark.parametrize(
+    ("extra", "message"),
+    [
+        pytest.param(
+            "  max_instances: 0\n",
+            "form 'ex/rental': max_instances must be at least 1, got 0",
+            id="zero",
+        ),
+        pytest.param(
+            "  max_instances: -2\n",
+            "form 'ex/rental': max_instances must be at least 1, got -2",
+            id="neg",
+        ),
+        pytest.param(
+            "  max_instances: '1'\n",
+            "form\\.max_instances must be an integer, got str",
+            id="str",
+        ),
+        pytest.param(
+            "  max_instances: 1.5\n",
+            "form\\.max_instances must be an integer, got float",
+            id="float",
+        ),
+        pytest.param(
+            "  max_instances: true\n",
+            "form\\.max_instances must be an integer, got bool",
+            id="bool",
+        ),
+        pytest.param(
+            "  max_instances: [1]\n",
+            "form\\.max_instances must be an integer, got list",
+            id="list",
+        ),
+        pytest.param(
+            "  min_instances: -1\n",
+            "form 'ex/rental': min_instances must be at least 0, got -1",
+            id="min-neg",
+        ),
+        pytest.param(
+            "  min_instances: '1'\n",
+            "form\\.min_instances must be an integer, got str",
+            id="min-str",
+        ),
+        pytest.param(
+            "  min_instances: true\n",
+            "form\\.min_instances must be an integer, got bool",
+            id="min-bool",
+        ),
+        pytest.param(
+            "  min_instances: 1.5\n",
+            "form\\.min_instances must be an integer, got float",
+            id="min-float",
+        ),
+        pytest.param(
+            "  min_instances: 3\n  max_instances: 2\n",
+            "form 'ex/rental': min_instances 3 is above max_instances 2",
+            id="min-above-max",
+        ),
+        pytest.param(
+            "  exclusive_group: 7\n", "exclusive_group must be a string, got int", id="grp-int"
+        ),
+        pytest.param(
+            "  exclusive_group: ''\n", "exclusive_group must not be empty", id="grp-empty"
+        ),
+        pytest.param(
+            "  exclusive_group: either\n", "exclusive_group 'either'", id="grp-no-namespace"
+        ),
+        pytest.param(
+            "  exclusive_group: ex/Either\n", "exclusive_group 'ex/Either'", id="grp-case"
+        ),
+        pytest.param(
+            "  exclusive_group: [ex/a]\n", "exclusive_group must be a string", id="grp-list"
+        ),
+    ],
+)
+def test_a_bad_limit_is_rejected_naming_the_part_file(
+    tmp_path: Path, extra: str, message: str
+) -> None:
+    write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-bad.yaml": limited(extra)})
+
+    with pytest.raises(InvalidManifestError, match=message) as caught:
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+    assert str(part_path(tmp_path, "01-bad.yaml")) in str(caught.value)
+
+
+def test_a_minimum_above_one_without_instances_is_rejected_naming_the_part(tmp_path: Path) -> None:
+    text = (
+        "form:\n  name: ex/rental\n  exports: [ex/n]\n  min_instances: 2\n"
+        "capabilities:\n  - {name: ex/a, produces: {output: ex/n}}\n"
+    )
+    write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-bad.yaml": text})
+
+    with pytest.raises(
+        InvalidManifestError,
+        match=r"form 'ex/rental': min_instances 2 can never hold: "
+        "a form without an instances list has one instance",
+    ) as caught:
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+    assert str(part_path(tmp_path, "01-bad.yaml")) in str(caught.value)
+
+
+def test_the_declaring_part_may_carry_a_minimum_alone_or_with_a_maximum(tmp_path: Path) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": HEADER_PART,
+            "01-rental.yaml": limited("  min_instances: 2\n"),
+            "02-business.yaml": FORM_BUSINESS.replace(
+                "  exports: [ex/profit]\n",
+                "  exports: [ex/profit]\n  min_instances: 0\n  max_instances: 3\n",
+            ),
+        },
+    )
+
+    rental, business = others(only_manifest(tmp_path))
+
+    assert (rental.min_instances, rental.max_instances) == (2, None)
+    assert (business.min_instances, business.max_instances) == (0, 3)
+
+
+def test_exactly_one_instance_is_a_minimum_and_maximum_of_one(tmp_path: Path) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": HEADER_PART,
+            "01-rental.yaml": limited("  min_instances: 1\n  max_instances: 1\n"),
+        },
+    )
+
+    (found,) = others(only_manifest(tmp_path))
+
+    assert (found.min_instances, found.max_instances) == (1, 1)
+
+
+def test_limits_are_accepted_on_a_form_without_instances(tmp_path: Path) -> None:
+    text = (
+        "form:\n  name: ex/rental\n  exports: [ex/n]\n  min_instances: 1\n  max_instances: 1\n"
+        "  exclusive_group: ex/either\n"
+        "capabilities:\n  - {name: ex/a, produces: {output: ex/n}}\n"
+    )
+    write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-once.yaml": text})
+
+    (found,) = others(only_manifest(tmp_path))
+
+    assert found.instances is None
+    assert (found.min_instances, found.max_instances) == (1, 1)
+    assert found.exclusive_group == "ex/either"
+
+
+@pytest.mark.parametrize(
+    "key", ["max_instances: 1", "min_instances: 1", "exclusive_group: ex/either"]
+)
+def test_a_limit_in_a_part_that_does_not_declare_exports_is_rejected(
+    tmp_path: Path, key: str
+) -> None:
+    name_only = (
+        f"form:\n  name: ex/rental\n  {key}\n"
+        "capabilities:\n  - {name: ex/b, produces: {output: ex/n}}\n"
+    )
+    write_parts(
+        tmp_path,
+        {"00-header.yaml": HEADER_PART, "01-rental.yaml": FORM_RENTAL, "02-more.yaml": name_only},
+    )
+
+    with pytest.raises(
+        InvalidManifestError, match=r"form 'ex/rental'.*belongs to the part that declares exports"
+    ) as caught:
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+    assert str(part_path(tmp_path, "02-more.yaml")) in str(caught.value)
+    assert key.split(":")[0] in str(caught.value)
+
+
+@pytest.mark.parametrize(
+    "key", ["max_instances: 1", "min_instances: 1", "exclusive_group: ex/either"]
+)
+def test_a_second_part_repeating_a_limit_is_rejected_like_a_repeated_declaration(
+    tmp_path: Path, key: str
+) -> None:
+    again = f"form:\n  name: ex/rental\n  instances: ex/rentals\n  exports: [ex/n]\n  {key}\n"
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": HEADER_PART,
+            "01-rental.yaml": limited(f"  {key}\n"),
+            "02-again.yaml": again,
+        },
+    )
+
+    with pytest.raises(InvalidManifestError, match="form 'ex/rental'.*already") as caught:
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+    assert str(part_path(tmp_path, "02-again.yaml")) in str(caught.value)
+
+
+def test_a_flat_manifest_file_still_takes_no_form_key_so_no_limits(tmp_path: Path) -> None:
+    write(tmp_path, "ex-on/manifests/v1.yaml", EX_ON_V1 + "form: {name: ex/r, max_instances: 1}\n")
+
+    with pytest.raises(InvalidManifestError, match="unknown keys"):
+        source(tmp_path).get_jurisdiction(EX_ON)

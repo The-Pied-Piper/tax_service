@@ -15,6 +15,12 @@ form; without `instances` the form has one instance. A part without one joins th
 form, named `<namespace>/return` and otherwise an ordinary form: its exports are the
 manifest's `outputs`. A form may span parts that carry the same `form.name`, in part order:
 exactly one of them declares `exports` (with its `instances`), and a second that does is rejected.
+A form without `instances` has a default list of one instance, and limits apply to its count.
+That part may also declare `max_instances` (an integer of at least 1), `min_instances` (an integer
+of at least 0, not above `max_instances`) and `exclusive_group` (an identifier): the most and the
+fewest instances the form may have, and a group of forms of which at most one may have instances.
+Any of these keys in a part that does not declare `exports`, or repeated by a second part, is
+rejected.
 A part with a `form:` key takes no `inputs` or `outputs`: inputs are derived, exports are declared
 in the `form:` block. The default form's name is reserved for the parts without a `form:` key; a
 `form:` part naming it is rejected, naming the part. The default form's `outputs` are its exports,
@@ -37,6 +43,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from pathlib import Path
+from typing import NamedTuple
 
 import yaml
 
@@ -56,13 +63,37 @@ _MANIFEST_KEYS = frozenset(
 )
 _PART_KEYS = _MANIFEST_KEYS | {"form"}
 _FORM_KEYS = frozenset({"name"})
-_OPTIONAL_FORM_KEYS = frozenset({"instances", "exports"})
+_OPTIONAL_FORM_KEYS = frozenset(
+    {"instances", "exports", "max_instances", "min_instances", "exclusive_group"}
+)
 _DEFAULT_FORM = "return"
 _CAPABILITY_KEYS = frozenset({"name", "produces"})
 _OPTIONAL_CAPABILITY_KEYS = frozenset({"params", "consumes"})
 _SCALAR_KEYS = ("jurisdiction", "version", "valid_from_tax_year")
 _IDENTIFIER_LISTS = ("inputs", "outputs")
 _PATTERNS = ("*.yaml", "*.yml")
+
+
+class _Declaration(NamedTuple):
+    """What the one part of a form that declares its instances and exports declares."""
+
+    instances: str | None
+    exports: tuple[str, ...]
+    max_instances: int | None
+    min_instances: int | None
+    exclusive_group: str | None
+
+    def form(self, name: str, selections: tuple[CapabilitySelection, ...]) -> Form:
+        """The form `name` with this declaration and `selections`, which checks the declaration."""
+        return Form(
+            name=name,
+            instances=self.instances,
+            exports=self.exports,
+            capabilities=selections,
+            max_instances=self.max_instances,
+            min_instances=self.min_instances,
+            exclusive_group=self.exclusive_group,
+        )
 
 
 class YamlJurisdictionSource:
@@ -137,7 +168,7 @@ class YamlJurisdictionSource:
         scalar_owners: dict[str, Path] = {}
         lists: dict[str, list[object]] = {}
         form_selections: dict[str, list[CapabilitySelection]] = {}
-        declarations: dict[str, tuple[Path, str | None, tuple[str, ...]]] = {}
+        declarations: dict[str, tuple[Path, _Declaration]] = {}
         identifier_owners: dict[str, dict[str, Path]] = {key: {} for key in _IDENTIFIER_LISTS}
         for part in parts:
             contents = cls._part(part)
@@ -173,7 +204,7 @@ class YamlJurisdictionSource:
         part: Path,
         contents: dict[str, YamlNode],
         form_selections: dict[str, list[CapabilitySelection]],
-        declarations: dict[str, tuple[Path, str | None, tuple[str, ...]]],
+        declarations: dict[str, tuple[Path, _Declaration]],
     ) -> None:
         """Give the `capabilities` of a part with a `form:` key to its form, noting its declaration.
 
@@ -193,7 +224,7 @@ class YamlJurisdictionSource:
                     f"{part}: form {name!r}: exports are already declared in "
                     f"{declarations[name][0]}"
                 )
-            declarations[name] = (part, *declared)
+            declarations[name] = (part, declared)
         if "capabilities" in contents:
             chosen.extend(cls._selection(entry) for entry in contents.pop("capabilities").items())
 
@@ -201,39 +232,56 @@ class YamlJurisdictionSource:
     def _form(
         name: str,
         selections: list[CapabilitySelection],
-        declarations: dict[str, tuple[Path, str | None, tuple[str, ...]]],
+        declarations: dict[str, tuple[Path, _Declaration]],
         default: str,
     ) -> Form:
         """The form `name` of the selections of all its parts and its one declaration."""
         if name not in declarations:
             raise InvalidManifestError(f"form {name!r}: no part declares its exports")
-        part, instances, exports = declarations[name]
+        part, declared = declarations[name]
         if name == default:
             raise InvalidManifestError(
                 f"{part}: form {name!r}: the name is reserved for the parts without a `form:` key"
             )
-        return Form(name=name, instances=instances, exports=exports, capabilities=tuple(selections))
+        return declared.form(name, tuple(selections))
 
     @classmethod
-    def _form_header(cls, node: YamlNode) -> tuple[str, tuple[str | None, tuple[str, ...]] | None]:
-        """The name of a part's form and, if it declares them, its instances and exports."""
+    def _form_header(cls, node: YamlNode) -> tuple[str, _Declaration | None]:
+        """The name of a part's form and, if it declares them, its instances, exports and limits."""
         node.require_mapping(_FORM_KEYS, optional=_OPTIONAL_FORM_KEYS)
         name = node.field("name").require_non_empty_string()
         Form.check_identifier("name", name)
         instances = node.optional_field("instances")
         exports = node.optional_field("exports")
+        maximum = node.optional_field("max_instances")
+        minimum = node.optional_field("min_instances")
+        group = node.optional_field("exclusive_group")
         if exports is None:
             if instances is not None:
                 raise InvalidManifestError(
                     f"form {name!r}: instances must be declared with exports"
                 )
+            for key, limit in (
+                ("max_instances", maximum),
+                ("min_instances", minimum),
+                ("exclusive_group", group),
+            ):
+                if limit is not None:
+                    raise InvalidManifestError(
+                        f"form {name!r}: {key} belongs to the part that declares exports"
+                    )
             return name, None
         cls._identifiers(exports)
-        listed = tuple(item.require_string() for item in exports.items())
-        declared = None if instances is None else instances.require_non_empty_string()
+        declared = _Declaration(
+            instances=None if instances is None else instances.require_non_empty_string(),
+            exports=tuple(item.require_string() for item in exports.items()),
+            max_instances=None if maximum is None else maximum.require_integer(),
+            min_instances=None if minimum is None else minimum.require_integer(),
+            exclusive_group=None if group is None else group.require_non_empty_string(),
+        )
         # Built to check the declaration; the form's selections are added when the parts merge.
-        Form(name=name, instances=declared, exports=listed, capabilities=())
-        return name, (declared, listed)
+        declared.form(name, ())
+        return name, declared
 
     @classmethod
     def _part(cls, part: Path) -> dict[str, YamlNode]:

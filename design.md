@@ -285,8 +285,9 @@ flat, and none is special. Some jurisdictions' returns are one form, others
 are a set of forms that together are the return (Canada is close to the second).
 A form is never a capability, and forms do not nest.
 
-- `Form` is frozen manifest data: `name`, `instances`, `exports` and
-  `capabilities` (its selections). A form exports at least one artifact. A
+- `Form` is frozen manifest data: `name`, `instances`, `exports`,
+  `capabilities` (its selections) and the optional limits `max_instances`,
+  `min_instances` and `exclusive_group` (see Limits). A form exports at least one artifact. A
   form's inputs are not declared: with instances they are the fields of the
   record; without, the starting artifacts its selections read or export; plus
   its imports.
@@ -303,6 +304,19 @@ fields are the form's inputs. The instances kind is itself one of the
 manifest's `inputs`, supplied with the other starting artifacts. A form with
 no instances list has exactly one implicit instance, and takes its inputs from
 the computation's starting artifacts.
+
+**Limits.** A form may declare `max_instances` (at least 1) and
+`min_instances` (at least 0, at most the maximum); both together with 1 and 1
+say "exactly one" (Schedule 8, RC381). Every form has an instances count: a
+form with no instances list has a default list of one instance, so a limit
+applies to it the same way, and a `min_instances` above 1 on it is refused when
+the manifest loads. Too many or too few instances is refused when the
+computation starts, before any form runs, naming the form (`ValidationError`:
+the count is the caller's input). A form may also name an `exclusive_group`:
+at most one form of a group may have instances (a declared empty list claims
+nothing). A group naming one form, or two forms that always have an instance,
+is refused when the `FormSet` is built. The loader reads the three keys from
+the part that declares the form's exports.
 
 **Exports.** For each export `X` of form `B`, the engine derives the kind
 `B.X`: a record list of one field, `X`, with one record per instance, in
