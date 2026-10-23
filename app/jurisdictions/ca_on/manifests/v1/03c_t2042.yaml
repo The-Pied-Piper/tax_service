@@ -351,7 +351,7 @@ capabilities:
   # following, whichever is applicable: $1.5 million, if you are not associated with any other
   # eligible person or partnership (EPOP) in the tax year" and Area G "Immediate expensing limit
   # allocated to your business: Multiply $1.5 million by the percentage assigned to your
-  # business in column 3**": the printed $1.5 million, a dataset.
+  # business in column 3**" (amount iv): the printed $1.5 million, a dataset.
   - name: core/credit_amount
     params:
       amount: ca/farm_immediate_expensing_cap

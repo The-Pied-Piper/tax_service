@@ -194,10 +194,10 @@ FORM_INPUTS = frozenset(
 
 FORM_STEPS = {
     # T2121 Area A endnote 3 "If you have a negative amount in column 7, add it to income as a
-    # recapture in Part 3 on line 9600. If no property is left in the class and there is a
-    # positive amount in this column, deduct the amount from income as a terminal loss in Part 4
-    # on line 9270.": the recapture of each class of the Area A list (column 7 made positive when
-    # negative), totalled.
+    # recapture in Part 3 on line 9600. If no property is left in the class and there is a positive
+    # amount in this column, deduct the amount from income as a terminal loss in Part 4 on line
+    # 9270.": the recapture of each class of the Area A list (column 7 made positive when negative),
+    # totalled.
     CapabilitySelection(
         name="ca/recaptured_cca",
         params={"class_rates": "ca/cca_class_rates"},
@@ -525,38 +525,37 @@ FORM_STEPS = {
         produces={"output": "ca/fishing_income"},
     ),
     # T2121 Area A column 22 "UCC at the end of the year (col. 7 minus col. 21)": the class number
-    # and column 22 of each class of the Area A list, a product of the return for next year's
-    # column 1.
+    # and column 22 of each class of the Area A list, a product of the return for next year's column
+    # 1.
     CapabilitySelection(
         name="ca/closing_ucc",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={"classes": "ca/fish_cca_classes"},
         produces={"output": "ca/fish_closing_ucc"},
     ),
-    # T2121 Area A endnote 5 "the immediate expensing limit, which is equal to one of the
-    # following, whichever is applicable: $1.5 million, if you are not associated with any other
-    # eligible person or partnership (EPOP) in the tax year" and Area G "Immediate expensing limit
-    # allocated to your business: Multiply $1.5 million by the percentage assigned to your
-    # business in column 3**" (amount iii): the printed $1.5 million, a dataset.
+    # T2121 Area G (page 6) "Immediate expensing limit allocated to your business: Multiply $1.5
+    # million by the percentage assigned to your business in column 3**" (amount iii) and Area A
+    # endnote 5 (page 7) "$1.5 million, if you are not associated with any other eligible person or
+    # partnership (EPOP) in the tax year": the printed $1.5 million, a dataset.
     CapabilitySelection(
         name="core/credit_amount",
         params={"amount": "ca/fish_immediate_expensing_cap"},
         consumes={},
         produces={"output": "ca/fish_immediate_expensing_cap"},
     ),
-    # T2121 Area G "The total of all percentages assigned under the agreement should not be more
-    # than 100%. If the total is more than 100%, then the associated group has an immediate
-    # expensing limit of zero." and "** If the total of column 3 is more than 100%, enter "0."":
-    # the printed 100%, a dataset, as the form prints a percentage (100 for 100%).
+    # T2121 Area G (page 6) "The total of all percentages assigned under the agreement should not be
+    # more than 100%. If the total is more than 100%, then the associated group has an immediate
+    # expensing limit of zero." and "** If the total of column 3 is more than 100%, enter "0."": the
+    # printed 100%, a dataset, as the form prints a percentage (100 for 100%).
     CapabilitySelection(
         name="core/credit_amount",
         params={"amount": "ca/fish_epop_percentage_maximum"},
         consumes={},
         produces={"output": "ca/fish_epop_percentage_maximum"},
     ),
-    # T2121 Area G "Immediate expensing limit allocated to your business: Multiply $1.5 million by
-    # the percentage assigned to your business in column 3**" (amount iii), first step: $1.5
-    # million times the percentage assigned to your business in column 3, a caller input as the
+    # T2121 Area G (page 6) "Immediate expensing limit allocated to your business: Multiply $1.5
+    # million by the percentage assigned to your business in column 3**" (amount iii), first step:
+    # $1.5 million times the percentage assigned to your business in column 3, a caller input as the
     # form prints it (40 for 40%).
     CapabilitySelection(
         name="ca/apply_percentage",
@@ -567,8 +566,8 @@ FORM_STEPS = {
         },
         produces={"output": "ca/fish_immediate_expensing_share"},
     ),
-    # T2121 Area G "** If the total of column 3 is more than 100%, enter "0."", first step: 100%
-    # less "Total of percentage assigned: Total of column 3", a caller input; negative when the
+    # T2121 Area G (page 6) "** If the total of column 3 is more than 100%, enter "0."", first step:
+    # 100% less "Total of percentage assigned: Total of column 3", a caller input; negative when the
     # total is more than 100%.
     CapabilitySelection(
         name="core/subtract",
@@ -579,10 +578,9 @@ FORM_STEPS = {
         },
         produces={"output": "ca/fish_epop_percentage_room"},
     ),
-    # T2121 Area G "Immediate expensing limit allocated to your business: Multiply $1.5 million by
-    # the percentage assigned to your business in column 3**" (amount iii) and "** If the total of
-    # column 3 is more than 100%, enter "0."": the multiple above when 100% less the total of
-    # column 3 is zero or positive, else 0.
+    # T2121 Area G (page 6) "Immediate expensing limit allocated to your business" (amount iii) and
+    # "** If the total of column 3 is more than 100%, enter "0."": the multiple above when 100% less
+    # the total of column 3 is zero or positive, else 0.
     CapabilitySelection(
         name="ca/choose_by_sign",
         params={},
@@ -596,11 +594,11 @@ FORM_STEPS = {
         },
         produces={"output": "ca/fish_immediate_expensing_allocated"},
     ),
-    # T2121 Area A endnote 5 "amount iii of Area G, if you are associated with one or more EPOPs
-    # in the tax year" and "zero, if you are associated with one or more EPOPs and an agreement
-    # that assigns a percentage to one or more of the associated EPOPs was not filed with the
-    # minister in a prescribed form": amount iii times the count of agreements filed (a caller's 0
-    # or 1), so 0 when none was filed.
+    # T2121 Area A endnote 5 (page 7) "amount iii of Area G, if you are associated with one or more
+    # EPOPs in the tax year" and "zero, if you are associated with one or more EPOPs and an
+    # agreement that assigns a percentage to one or more of the associated EPOPs was not filed with
+    # the minister in a prescribed form": amount iii times the count of agreements filed (a caller's
+    # 0 or 1), so 0 when none was filed.
     CapabilitySelection(
         name="core/times_count",
         params={},
@@ -610,10 +608,10 @@ FORM_STEPS = {
         },
         produces={"output": "ca/fish_immediate_expensing_associated_limit"},
     ),
-    # T2121 Area A endnote 5 "the immediate expensing limit, which is equal to one of the
+    # T2121 Area A endnote 5 (page 7) "the immediate expensing limit, which is equal to one of the
     # following, whichever is applicable": a count of 1 for associated with one or more EPOPs (a
-    # caller's 0 or 1) chooses the limit above ("amount iii of Area G" or "zero"); with a count of
-    # 0 it is the $1.5 million ("if you are not associated with any other eligible person or
+    # caller's 0 or 1) chooses the limit above ("amount iii of Area G" or "zero"); with a count of 0
+    # it is the $1.5 million ("if you are not associated with any other eligible person or
     # partnership (EPOP) in the tax year").
     CapabilitySelection(
         name="core/choose_by_count",
@@ -625,9 +623,10 @@ FORM_STEPS = {
         },
         produces={"output": "ca/fish_immediate_expensing_limit_before_minister"},
     ),
-    # T2121 Area A endnote 5 "any amount allocated by the minister under subsection 1104(3.4) of
-    # the Regulations": a count of 1 (a caller's 0 or 1) chooses the amount allocated by the
-    # minister, as entered, in place of the limit above; with a count of 0 the limit above stands.
+    # T2121 Area A endnote 5 (page 7) "any amount allocated by the minister under subsection
+    # 1104(3.4) of the Regulations": a count of 1 (a caller's 0 or 1) chooses the amount allocated
+    # by the minister, as entered, in place of the limit above; with a count of 0 the limit above
+    # stands.
     CapabilitySelection(
         name="core/choose_by_count",
         params={},
@@ -638,11 +637,12 @@ FORM_STEPS = {
         },
         produces={"output": "ca/fish_immediate_expensing_limit"},
     ),
-    # T2121 Area A endnote 5 "the amount of income, if any, earned from the source of income that
-    # is a business (before any CCA deductions) in which the relevant DIEP is used for the tax
-    # year": line 9369 "Net income (loss) before adjustments" plus line 9936, the CCA it deducted
-    # (the recapture on line 9600 is already in gross income and the terminal loss on line 9270 an
-    # expense), not below zero.
+    # T2121 Area A endnote 5 (page 7) "the amount of income, if any, earned from the source of
+    # income that is a business (before any CCA deductions) in which the relevant DIEP is used for
+    # the tax year": line 9369 "Net income (loss) before adjustments" plus line 9936, the CCA it
+    # deducted (page 2), not below zero. Built as that sum: the form names no line for this figure.
+    # The recapture on line 9600 is already in gross income and the terminal loss on line 9270 an
+    # expense.
     CapabilitySelection(
         name="core/sum_not_below_zero",
         params={},
@@ -654,11 +654,11 @@ FORM_STEPS = {
         },
         produces={"output": "ca/fish_income_before_cca"},
     ),
-    # T2121 Area A "Total immediate expensing claim for the year: Total of column 9" (line i) and
-    # endnote 5 "The total immediate expensing amount for the tax year (total of column 9) is
-    # limited to the lesser of: the immediate expensing limit"; "the UCC of DIEPs in column 8";
-    # "the amount of income, if any, earned from the source of income that is a business (before
-    # any CCA deductions) in which the relevant DIEP is used for the tax year": the total of
+    # T2121 Area A (page 4) "Total immediate expensing claim for the year: Total of column 9" (line
+    # i) and endnote 5 (page 7) "The total immediate expensing amount for the tax year (total of
+    # column 9) is limited to the lesser of: the immediate expensing limit"; "the UCC of DIEPs in
+    # column 8"; "the amount of income, if any, earned from the source of income that is a business
+    # (before any CCA deductions) in which the relevant DIEP is used for the tax year": the total of
     # column 9 of the Area A list, refused when above the limit or above the income before CCA.
     CapabilitySelection(
         name="ca/immediate_expensing_claim",
