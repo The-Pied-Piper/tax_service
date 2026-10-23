@@ -135,6 +135,8 @@ from app.jurisdictions.ca.catalog import (
     QBT_TOTAL_CAPITAL_GAINS,
     RC381_PART_3_LINE_20,
     RC381_PART_3_LINE_40,
+    RC381_PART_4_LINE_91,
+    RC381_PART_4_LINE_91_FROM_LINE_90,
     REGULAR_RATE_DONATION_CREDIT,
     REGULAR_RATE_DONATIONS,
     RESIDENCY_NET_INCOME_LIMIT,
@@ -290,6 +292,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert rated == {
+        # Form RC381 Part 4 line 91 "amount from line 90 entered as a positive amount × 50% =":
+        # line 90 is 0 for Return A, so the base is 0 and so is the 50%.
+        RC381_PART_4_LINE_91: RateAppliedLine(
+            RC381_PART_4_LINE_91,
+            RC381_PART_4_LINE_91_FROM_LINE_90,
+            D("8068.20"),
+            Rate(D("0.5")),
+            CENT,
+            D("4034.10"),
+        ),
         # Form RC381 Part 3 line 40 "amount from line 39 x 84.375%": Return A enters no box 17
         # contributions on line 39, so the base is 0 and so is the 84.375%.
         RC381_PART_3_LINE_40: RateAppliedLine(

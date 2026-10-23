@@ -447,3 +447,4 @@ expected:
   ca/amt_federal_tax_payable_under_minimum_tax: "0"
   ca/amt_carryover_available_for_2026: "163.71"
   ca/rc381_part_4_line_4: "15000"
+  ca/rc381_self_employment_cpp_contributions: "1368.50"

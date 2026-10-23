@@ -722,3 +722,4 @@ expected:
   ca/amt_basic_federal_tax: "-888.71"
   ca/amt_carryover_available_for_2026: "888.71"
   ca/rc381_part_4_line_4: "10000.00"
+  ca/rc381_self_employment_cpp_contributions: "773.50"
