@@ -18,10 +18,9 @@ import pytest
 
 import app.registrations  # lists the packages; build_tax_computation registers their catalogs
 from app.adapters.outbound.yaml_jurisdictions import YamlJurisdictionSource
-from app.application.services.tax_computation import TaxComputationService
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Manifest
-from app.main import build_tax_computation
+from tests.jurisdictions.ca_on.end_to_end.support import service
 from tests.jurisdictions.ca_on.manifest_families import (
     alternative_minimum_tax,
     canada_workers_benefit,
@@ -99,10 +98,6 @@ WIRING = set[object]().union(*(family.WIRING for family in FAMILIES))
 def manifest() -> Manifest:
     (only,) = YamlJurisdictionSource(ROOTS).get_jurisdiction(CA_ON).manifests
     return only
-
-
-def service() -> TaxComputationService:
-    return build_tax_computation()
 
 
 @pytest.mark.parametrize("family", FAMILIES, ids=[f.__name__.rpartition(".")[2] for f in FAMILIES])
