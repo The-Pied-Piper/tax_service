@@ -944,18 +944,30 @@ def rental_properties_list(*rows: tuple[int, str, str]) -> Artifact[RecordList]:
 
 
 def rental_cca_classes(
-    *rows: tuple[str, str, str, str, str, str, str, int, str, str, str]
-    | tuple[str, str, str, str, str, str, str, int, str, str, str, str],
+    *rows: tuple[str, str, str, str, str, str, str, int, str, str, str, str],
 ) -> Artifact[RecordList]:
     """The Form T776 Area A rows, one record per class: column 1 (class number), column 2, column
     3, column 5, column 11, column 12, the CCA claimed (column 23) as decimal text, 1 if no
     property is left in the class, else 0 (Note 3), column 4 (the DIEP additions), column 6 (the
     proceeds of dispositions of DIEP) and column 9 (the immediate expensing amount), each "0"
-    when the class has no DIEP, and last, when given, Note 9's remaining personal part of the
-    property's cost (subtracted from column 24), "0" when the row has 11 entries."""
-    records: list[dict[ArtifactKind[Any], object]] = []
-    for row in rows:
-        (
+    when the class has no DIEP, and Note 9's remaining personal part of the property's cost
+    (subtracted from column 24), "0" when there is none."""
+    records: list[dict[ArtifactKind[Any], object]] = [
+        {
+            CCA_CLASS_NUMBER: D(class_number),
+            CCA_UCC_AT_START: D(ucc_at_start),
+            CCA_ADDITIONS: D(additions),
+            CCA_PROCEEDS: D(proceeds),
+            CCA_AIIP_ADDITIONS: D(aiip_additions),
+            CCA_RIIP_ADDITIONS: D(riip_additions),
+            CCA_CLAIMED: D(claimed),
+            CCA_NO_PROPERTY_LEFT: no_property_left,
+            CCA_DIEP_ADDITIONS: D(diep_additions),
+            CCA_DIEP_PROCEEDS: D(diep_proceeds),
+            CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
+            CCA_PERSONAL_PART_REMAINING: D(personal_part_remaining),
+        }
+        for (
             class_number,
             ucc_at_start,
             additions,
@@ -967,24 +979,9 @@ def rental_cca_classes(
             diep_additions,
             diep_proceeds,
             immediate_expensing,
-            *personal_part,
-        ) = row
-        records.append(
-            {
-                CCA_CLASS_NUMBER: D(class_number),
-                CCA_UCC_AT_START: D(ucc_at_start),
-                CCA_ADDITIONS: D(additions),
-                CCA_PROCEEDS: D(proceeds),
-                CCA_AIIP_ADDITIONS: D(aiip_additions),
-                CCA_RIIP_ADDITIONS: D(riip_additions),
-                CCA_CLAIMED: D(claimed),
-                CCA_NO_PROPERTY_LEFT: no_property_left,
-                CCA_DIEP_ADDITIONS: D(diep_additions),
-                CCA_DIEP_PROCEEDS: D(diep_proceeds),
-                CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
-                CCA_PERSONAL_PART_REMAINING: D(personal_part[0] if personal_part else "0"),
-            }
-        )
+            personal_part_remaining,
+        ) in rows
+    ]
     return Artifact(RENTAL_CCA_CLASSES, RecordList(RENTAL_CCA_CLASSES.fields, records))
 
 
@@ -1108,9 +1105,7 @@ def t776_statement(
     rental_coowner_share: str = "0",
     rental_coowner_other_expenses: str = "0",
     rental_cca_classes_rows: tuple[
-        tuple[str, str, str, str, str, str, str, int, str, str, str]
-        | tuple[str, str, str, str, str, str, str, int, str, str, str, str],
-        ...,
+        tuple[str, str, str, str, str, str, str, int, str, str, str, str], ...
     ] = (),
     rental_coowner_recaptured_cca: str = "0",
     rental_coowner_terminal_loss: str = "0",
