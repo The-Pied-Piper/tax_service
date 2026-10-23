@@ -4752,6 +4752,7 @@ def part_2_line_examples() -> list[tuple[object, str]]:
             PrincipalResidenceLine51(
                 RESIDENCE_GAIN,
                 1,
+                completed=True,
                 line_33=D("25000.00"),
                 line_45=D("78000.00"),
                 result=D("103000.00"),
@@ -4762,6 +4763,7 @@ def part_2_line_examples() -> list[tuple[object, str]]:
             PrincipalResidenceLine53(
                 RESIDENCE_GAIN,
                 1,
+                completed=True,
                 line_51=D("103000.00"),
                 line_48=D("0"),
                 result=D("103000.00"),

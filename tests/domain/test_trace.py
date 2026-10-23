@@ -3535,13 +3535,13 @@ PART_2_LINES: list[tuple[type, list[str], list[Any]]] = [
     ),
     (
         PrincipalResidenceLine51,
-        ["line_33", "line_45", "result"],
-        [D("25000.00"), D("78000.00"), D("103000.00")],
+        ["completed", "line_33", "line_45", "result"],
+        [True, D("25000.00"), D("78000.00"), D("103000.00")],
     ),
     (
         PrincipalResidenceLine53,
-        ["line_51", "line_48", "result"],
-        [D("103000.00"), D("0"), D("103000.00")],
+        ["completed", "line_51", "line_48", "result"],
+        [True, D("103000.00"), D("0"), D("103000.00")],
     ),
 ]
 PART_2_IDS = [cls.__name__ for cls, *_ in PART_2_LINES]

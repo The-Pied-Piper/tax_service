@@ -316,11 +316,12 @@ class PrincipalResidenceLine48(TraceLine):
 class PrincipalResidenceLine51(TraceLine):
     """Form T2091(IND) Part 2 line 51 "Line 49 plus line 50" of the property at `position` (from
     1), for `output`: the pre-1982 gain (`line_33`, line 49) plus the post-1981 gain (`line_45`,
-    line 50), `result`. Area D is always completed, so there is no `completed` flag.
+    line 50), `result`. `completed` is False when Part 2 does not apply, and then `result` is 0.
     """
 
     output: Money
     position: int
+    completed: bool
     line_33: Decimal
     line_45: Decimal
     result: Decimal
@@ -335,12 +336,13 @@ class PrincipalResidenceLine51(TraceLine):
 class PrincipalResidenceLine53(TraceLine):
     """Form T2091(IND) Part 2 line 53 "Line 51 minus line 52 (if negative, enter "0")" of the
     property at `position` (from 1), for `output`: line 51 (`line_51`) less the post-1981 loss
-    (`line_48`, line 52), not below 0, `result`. Area D is always completed, so there is no
-    `completed` flag.
+    (`line_48`, line 52), not below 0, `result`. `completed` is False when Part 2 does not apply,
+    and then `result` is 0.
     """
 
     output: Money
     position: int
+    completed: bool
     line_51: Decimal
     line_48: Decimal
     result: Decimal

@@ -136,8 +136,7 @@ class PrincipalResidenceLine30Renderer:
             line.position,
             30,
             line.result,
-            f"line 27 {EnglishFigures.money(line.line_27)} times line 29 "
-            f"{EnglishFigures.money(line.line_29)}",
+            f"line 27 {EnglishFigures.money(line.line_27)} times line 29 {int(line.line_29)}",
             line.completed,
         )
 
@@ -308,7 +307,7 @@ class PrincipalResidenceLine51Renderer:
             line.result,
             f"line 33 {EnglishFigures.money(line.line_33)} plus line 45 "
             f"{EnglishFigures.money(line.line_45)}",
-            True,
+            line.completed,
         )
 
 
@@ -327,7 +326,7 @@ class PrincipalResidenceLine53Renderer:
             line.result,
             f"line 51 {EnglishFigures.money(line.line_51)} less line 48 "
             f"{EnglishFigures.money(line.line_48)}, not below 0",
-            True,
+            line.completed,
         )
 
 

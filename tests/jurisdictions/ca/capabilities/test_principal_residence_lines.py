@@ -34,16 +34,19 @@ from typing import Any, assert_type, cast
 import pytest
 
 import app.jurisdictions.ca.capabilities as ca_capabilities
+from app.adapters.inbound.trace_english import EnglishTraceRenderer
 from app.domain.artifact import Artifact, ArtifactKind
 from app.domain.capability import CapabilityRegistry
 from app.domain.errors import (
     InvalidCapabilityError,
     MissingArtifactError,
+    UnknownRegistrationError,
     ValidationError,
 )
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
-from app.domain.parameters.rounding import RoundingRule
+from app.domain.parameters.rate import RATE, Rate
+from app.domain.parameters.rounding import NO_ROUNDING, RoundingRule
 from app.domain.parameters.rounding_only import ROUNDING_ONLY, RoundingOnly
 from app.domain.record_list import RecordList
 from app.domain.trace import ItemsTotalLine
@@ -329,6 +332,16 @@ COMPLETED[48] = {
     "all_before": True,
     "not_applying": False,
 }
+
+for _line in (51, 53):
+    COMPLETED[_line] = {
+        "worked": True,
+        "lesser": True,
+        "loss": True,
+        "all_after": True,
+        "all_before": True,
+        "not_applying": False,
+    }
 
 CAPABILITIES: dict[int, Any] = {
     27: PrincipalResidencePart2Line27,
@@ -779,11 +792,12 @@ def test_traces_whether_the_step_is_completed_for_each_property(line: int, part:
 
 
 @pytest.mark.parametrize("line", [51, 53])
-def test_the_net_capital_gain_lines_carry_no_completed_flag(line: int) -> None:
-    # Area D is always worked, so its trace lines have no flag for it.
+def test_the_net_capital_gain_lines_are_not_completed_without_part_2(line: int) -> None:
+    # Area D has no figures of its own: without Part 2 the line is not completed and reads 0.
     (item, _total) = capability(line).compute((properties(PART_2_NOT_APPLYING),)).trace
 
-    assert not hasattr(item, "completed")
+    assert cast(Any, item).completed is False
+    assert cast(Any, item).result == D("0")
 
 
 def test_compute_is_repeatable() -> None:
@@ -801,3 +815,64 @@ def test_the_rounding_rule_comes_from_the_dataset() -> None:
     (output,) = wired.compute((properties(PART_2_ROUNDED_LINE_44),)).outputs
 
     assert output.value == D("33333")
+
+
+# --- the base, and the types ---------------------------------------------------------------------
+
+
+def test_the_base_is_not_registered() -> None:
+    with pytest.raises(UnknownRegistrationError):
+        CapabilityRegistry.shared().get("ca/principal_residence_rows")
+
+
+def test_mypy_rejects_a_dataset_of_another_parameter_kind() -> None:
+    def wire() -> None:  # type-checked, never run
+        rate = ParameterDataset(
+            "ex/some_rate", 2025, RATE, Rate(D("0.5")), NO_ROUNDING, ("https://example.org/r",)
+        )
+        PrincipalResidencePart2Line27(
+            rate,  # type: ignore[arg-type]
+            PRINCIPAL_RESIDENCE_PROPERTIES,
+            KINDS[27],
+        )
+
+    assert callable(wire)
+
+
+# --- signed zero ----------------------------------------------------------------------------------
+
+# No years designated after 1981, so line 42 is line 39 times 0; line 39 is negative. Line 38 =
+# 5,000.00 + 20,000.00 = 25,000.00 and line 39 = 10,000.00 - 25,000.00 = -15,000.00.
+NEGATIVE_LINE_39_NO_YEARS_AFTER_1981: Part2Figures = (
+    0,
+    1,
+    10,
+    4,
+    "10000.00",
+    "0.00",
+    "1000.00",
+    0,
+    1,
+    "0.00",
+    "5000.00",
+    "20000.00",
+)
+
+
+def test_a_negative_line_39_times_no_years_is_zero_not_negative_zero() -> None:
+    assert value_of(39, NEGATIVE_LINE_39_NO_YEARS_AFTER_1981) == D("-15000.00")
+    line_42 = value_of(42, NEGATIVE_LINE_39_NO_YEARS_AFTER_1981)
+
+    assert line_42 == D("0")
+    assert not line_42.is_signed()
+
+
+def test_a_negative_line_39_times_no_years_reads_as_zero_in_english() -> None:
+    (line_42, _total) = (
+        capability(42).compute((properties(NEGATIVE_LINE_39_NO_YEARS_AFTER_1981),)).trace
+    )
+
+    text = EnglishTraceRenderer().render(line_42)
+
+    assert "-0" not in text
+    assert text.endswith("line 42 0 = line 39 -15000 times line 1 0")

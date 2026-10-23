@@ -43,6 +43,7 @@ class PrincipalResidencePart2Line53(PrincipalResidenceRows):
                 PrincipalResidenceLine53(
                     self._output,
                     row.position,
+                    row.applies,
                     row.line_51,
                     row.line_48,
                     row.line_53,

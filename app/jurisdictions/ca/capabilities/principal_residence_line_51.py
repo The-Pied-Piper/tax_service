@@ -44,6 +44,7 @@ class PrincipalResidencePart2Line51(PrincipalResidenceRows):
                 PrincipalResidenceLine51(
                     self._output,
                     row.position,
+                    row.applies,
                     row.line_33,
                     row.line_45,
                     row.line_51,
