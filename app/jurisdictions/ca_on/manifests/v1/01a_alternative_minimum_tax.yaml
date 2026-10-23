@@ -16,3 +16,6 @@ inputs:
   - ca/amt_foreign_capital_gains_non_taxable_claim
   - ca/amt_foreign_non_business_tax_paid
   - ca/amt_foreign_business_tax_paid
+  # Form T691 Part 5 line 9 "Amount from line 15 of Part D of Form T2038(IND)": a figure from another
+  # form, not a line of this return, so the caller's figure as the form takes it.
+  - ca/amt_t2038_part_d_amount_15

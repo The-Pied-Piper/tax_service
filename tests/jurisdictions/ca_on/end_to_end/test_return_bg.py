@@ -13,6 +13,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
     AMT_ADJUSTMENTS_BEFORE_RATE_TOTAL,
     AMT_ADJUSTMENTS_WITH_LIFETIME_EXEMPTION_TOTAL,
+    AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
     AMT_AMOUNT_A_MINUS_AMOUNT_B,
     AMT_APPLICABLE_RATE_AMOUNT,
     AMT_BASIC_EXEMPTION,
@@ -40,6 +41,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_FOREIGN_TAXES_PAID,
     AMT_GROSS_MINIMUM_AMOUNT,
     AMT_INVESTMENT_TAX_CREDIT,
+    AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
     AMT_LIFETIME_EXEMPTION_ADJUSTMENT,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_APPLIED,
     AMT_LIMITED_PARTNERSHIP_LOSSES_ADJUSTMENT,
@@ -48,10 +50,12 @@ from app.jurisdictions.ca.catalog import (
     AMT_MAXIMUM_CARRYOVER_APPLIED,
     AMT_MAXIMUM_CARRYOVER_CLAIM,
     AMT_MINIMUM_AMOUNT,
+    AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
+    AMT_NET_MINIMUM_TAX_PAYABLE,
     AMT_NON_CAPITAL_LOSSES_ADJUSTMENT,
     AMT_NON_DEDUCTIBLE_OFFICE_EXPENSES,
     AMT_NON_DEDUCTIBLE_PROPERTY_EXPENSES,
@@ -64,6 +68,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DOUBLED,
     AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
+    AMT_REGULAR_NET_TAX_LESS_SURTAX,
     AMT_REGULAR_TAX_CREDITS_TOTAL,
     AMT_RENTAL_PROPERTY_ADJUSTMENT,
     AMT_RESOURCE_INCOME_TOTAL,
@@ -136,6 +141,7 @@ def return_bg(
     foreign_non_business_tax: str = "0",
     foreign_business_tax: str = "0",
     foreign_tax_countries: tuple[tuple[str, str], ...] = (),
+    part_d_amount_15: str = "0",
 ) -> Worksheet:
     """Return BG's inputs (`returns/2025_return_bg.yaml`), with the Part 1 amounts given."""
     return compute(
@@ -182,6 +188,7 @@ def return_bg(
         amt_non_resident_or_deemed_resident=non_resident,
         amt_investment_tax_credit_claim=itc_claim,
         amt_t2038_amount_i=amount_i,
+        amt_t2038_part_d_amount_15=part_d_amount_15,
         amt_foreign_business_income=foreign_business_income,
         amt_foreign_non_business_income=foreign_non_business_income,
         amt_foreign_capital_gains_non_taxable_claim=foreign_capital_gains_claim,
@@ -1049,3 +1056,114 @@ def test_return_bg_line_11_is_the_t2209_credit_when_it_is_more_than_line_10() ->
     assert worksheet.get(FEDERAL_FOREIGN_TAX_CREDIT).value == D("96.74")
     assert worksheet.get(AMT_FOREIGN_TAX_CREDIT_LESSER).value == D("20.00")
     assert worksheet.get(AMT_SPECIAL_FOREIGN_TAX_CREDIT).value == D("96.74")
+
+
+def test_return_bg_part_5_is_zero_by_default() -> None:
+    # Line 1 is 0.00 (line 103 of Part 1) and line 2 is 0.00, so line 3 is 0.00. Line 4 is the
+    # regular net federal tax payable of 5846.47 and line 5 is the surtax of 0.00, so line 6 is
+    # 5846.47. Line 7 is 0.00 less 5846.47, below zero, so 0.00. Lines 8 to 11 are 0.00: the filer
+    # is not subject to alternative minimum tax.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_NET_MINIMUM_TAX_PAYABLE).value == D("0")
+    assert worksheet.get(AMT_REGULAR_NET_TAX_LESS_SURTAX).value == D("5846.47")
+    assert worksheet.get(AMT_MINIMUM_TAX_AFTER_REGULAR_TAX).value == D("0")
+    assert worksheet.get(AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D).value == D("0")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("0")
+
+
+def test_return_bg_part_5_line_3_is_line_1_less_the_special_foreign_tax_credit() -> None:
+    # The security options of boxes 39 and 91 at 150000.00 (in place of 1000.00) add 149000.00 to
+    # line 93 of Part 1, to 221567.50, so line 95 is 43685.50 and line 97 is 20.5% of it, 8955.5275,
+    # rounded to 8955.53; less line 102 of 1550.11, line 103 (line 1 of Part 5) is 7405.42. The
+    # foreign figures of the Part 4 case above give line 2, the special foreign tax credit, of
+    # 471.50, so line 3 is 7405.42 less 471.50, 6933.92. Line 6 is 5846.47 and line 7 is 6933.92
+    # less 5846.47, 1087.45, which is then line 11 as no investment tax credit is claimed.
+    worksheet = return_bg(
+        security_t4_39_and_91="150000",
+        foreign_business_income="1500",
+        foreign_non_business_income="500",
+        foreign_capital_gains_claim="300",
+        foreign_non_business_tax="600",
+        foreign_business_tax="100",
+    )
+
+    assert worksheet.get(AMT_MINIMUM_AMOUNT).value == D("7405.42")
+    assert worksheet.get(AMT_SPECIAL_FOREIGN_TAX_CREDIT).value == D("471.50")
+    assert worksheet.get(AMT_NET_MINIMUM_TAX_PAYABLE).value == D("6933.92")
+    assert worksheet.get(AMT_MINIMUM_TAX_AFTER_REGULAR_TAX).value == D("1087.45")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1087.45")
+
+
+def test_return_bg_part_5_line_7_is_line_3_less_line_6_when_it_is_positive() -> None:
+    # With the security options at 150000.00, line 1 of Part 5 is 7405.42 and line 3 is the same,
+    # with no foreign tax credit. Line 6 is the regular net federal tax payable of 5846.47 less a
+    # surtax of 0.00, 5846.47, so line 7 is 7405.42 less 5846.47, 1558.95, and line 11 is the same.
+    worksheet = return_bg(security_t4_39_and_91="150000")
+
+    assert worksheet.get(AMT_NET_MINIMUM_TAX_PAYABLE).value == D("7405.42")
+    assert worksheet.get(AMT_REGULAR_NET_TAX_LESS_SURTAX).value == D("5846.47")
+    assert worksheet.get(AMT_MINIMUM_TAX_AFTER_REGULAR_TAX).value == D("1558.95")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1558.95")
+
+
+def test_return_bg_part_5_line_7_is_zero_when_the_regular_net_tax_is_more() -> None:
+    # With employment income of 200000.00, line 1 of Part 5 is the minimum amount of 5494.59 and
+    # line 6 is the regular net federal tax payable of 39760.79 (line 5, the surtax, is 0.00). Line
+    # 7 is 5494.59 less 39760.79, below zero, so 0.00, and line 11 is 0.00.
+    worksheet = return_bg(employment_income="200000")
+
+    assert worksheet.get(AMT_NET_MINIMUM_TAX_PAYABLE).value == D("5494.59")
+    assert worksheet.get(AMT_REGULAR_NET_TAX_LESS_SURTAX).value == D("39760.79")
+    assert worksheet.get(AMT_MINIMUM_TAX_AFTER_REGULAR_TAX).value == D("0")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("0")
+
+
+def test_return_bg_part_5_line_6_adds_back_a_negative_surtax() -> None:
+    # A non-resident with employment income of 8000.00: taxable income is 8955.00 (8000.00, plus the
+    # taxable capital gain of 1000.00, less the enhanced CPP contributions of 45.00, 1% of 4500.00).
+    # The federal tax at 14.5% is 1298.48, rounded half-up from 1298.475. The credit amounts are
+    # 17953.95 (the basic personal amount of 16129.00, the CPP base contributions of 222.75, the EI
+    # premiums of 131.20 and the Canada employment amount of 1471.00), at 14.5% 2603.32, so the
+    # basic federal tax is 1298.48 less 2603.32, -1304.84. Line 5, the surtax, is 48% of that,
+    # -626.32, a negative amount. Line 4 is floored at 0.00 because the federal tax with the
+    # surtax is negative, so line 6 is 0.00 less -626.32, 626.32, and line 7 is 0.00 with no
+    # minimum amount.
+    worksheet = return_bg(employment_income="8000", non_resident=1)
+
+    assert worksheet.get(AMT_FEDERAL_SURTAX).value == D("-626.32")
+    assert worksheet.get(AMT_REGULAR_NET_TAX_LESS_SURTAX).value == D("626.32")
+    assert worksheet.get(AMT_MINIMUM_TAX_AFTER_REGULAR_TAX).value == D("0")
+
+
+def test_return_bg_part_5_line_10_is_line_8_less_amount_15_of_part_d() -> None:
+    # With the security options at 150000.00 and an investment tax credit claim of 100.00 (within
+    # amount I of 150.00), the claim is line 12 of Part 3 and reduces line 15 to 5746.47, so line 6
+    # is 5746.47 and line 7 is 7405.42 less 5746.47, 1658.95. Line 8 is the claim, 100.00, and line
+    # 9, amount 15 of Part D of Form T2038(IND), is 60.00: line 10 is 40.00 and line 11 is 1658.95
+    # less 40.00, 1618.95.
+    worksheet = return_bg(
+        security_t4_39_and_91="150000",
+        itc_claim="100",
+        amount_i="150",
+        part_d_amount_15="60",
+    )
+
+    assert worksheet.get(AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE).value == D("5746.47")
+    assert worksheet.get(AMT_MINIMUM_TAX_AFTER_REGULAR_TAX).value == D("1658.95")
+    assert worksheet.get(AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D).value == D("40.00")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1618.95")
+
+
+def test_return_bg_part_5_line_10_is_zero_when_amount_15_of_part_d_is_more_than_the_claim() -> None:
+    # The same return with amount 15 of Part D at 150.00, above the claim of 100.00: line 10 is
+    # 0.00, and line 11 is line 7, 1658.95.
+    worksheet = return_bg(
+        security_t4_39_and_91="150000",
+        itc_claim="100",
+        amount_i="150",
+        part_d_amount_15="150",
+    )
+
+    assert worksheet.get(AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D).value == D("0")
+    assert worksheet.get(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE).value == D("1658.95")

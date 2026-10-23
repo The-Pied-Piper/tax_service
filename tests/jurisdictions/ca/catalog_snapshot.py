@@ -1845,6 +1845,12 @@ REGISTERED = frozenset(
         "ca/amt_foreign_taxes_paid",
         "ca/amt_foreign_tax_credit_lesser",
         "ca/amt_special_foreign_tax_credit",
+        "ca/amt_net_minimum_tax_payable",
+        "ca/amt_regular_net_tax_less_surtax",
+        "ca/amt_minimum_tax_after_regular_tax",
+        "ca/amt_t2038_part_d_amount_15",
+        "ca/amt_investment_tax_credit_less_part_d",
+        "ca/amt_alternative_minimum_tax_payable",
     }
 )
 

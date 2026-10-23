@@ -64,6 +64,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_T4_SECURITY_OPTIONS_BOXES_41_AND_92,
     AMT_T1212_LINE_2_DEFERRED_SECURITY_OPTIONS,
     AMT_T2038_AMOUNT_I,
+    AMT_T2038_PART_D_AMOUNT_15,
     AMT_T2203_COLUMN_5_PERCENTAGE,
     AMT_TAX_SHELTER_DEDUCTIBLE_AMOUNTS,
     AMT_TAX_SHELTER_LOSSES,
@@ -1986,6 +1987,7 @@ def compute(
     amt_non_resident_or_deemed_resident: int = 0,
     amt_investment_tax_credit_claim: str = "0",
     amt_t2038_amount_i: str = "0",
+    amt_t2038_part_d_amount_15: str = "0",
     amt_foreign_business_income: str = "0",
     amt_foreign_non_business_income: str = "0",
     amt_foreign_capital_gains_non_taxable_claim: str = "0",
@@ -2714,6 +2716,7 @@ def compute(
         Artifact(AMT_NON_RESIDENT_OR_DEEMED_RESIDENT, amt_non_resident_or_deemed_resident),
         Artifact(AMT_INVESTMENT_TAX_CREDIT_CLAIM, D(amt_investment_tax_credit_claim)),
         Artifact(AMT_T2038_AMOUNT_I, D(amt_t2038_amount_i)),
+        Artifact(AMT_T2038_PART_D_AMOUNT_15, D(amt_t2038_part_d_amount_15)),
         Artifact(AMT_FOREIGN_BUSINESS_INCOME, D(amt_foreign_business_income)),
         Artifact(AMT_FOREIGN_NON_BUSINESS_INCOME, D(amt_foreign_non_business_income)),
         Artifact(
