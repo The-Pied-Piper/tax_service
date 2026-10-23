@@ -36,16 +36,23 @@ class ClassRatesParser:
     """Parser for `class_rates` datasets: `classes`, keyed by each class number as a quoted
     decimal, each a `rate`, a `half_year_rule`, a `recapture_and_terminal_loss`, a
     `half_year_rule_on_sale`, an `aiip_factor` and a `riip_factor`, each factor a quoted whole
-    `numerator` and `denominator` read as a `fraction` dataset's are."""
+    `numerator` and `denominator` read as a `fraction` dataset's are; and `full_year_days`, a quoted
+    whole number above 0, the days of a full fiscal period."""
 
     kind = CLASS_RATES
-    body_keys = frozenset({"classes"})
+    body_keys = frozenset({"classes", "full_year_days"})
 
     def parse(self, document: YamlNode) -> ClassRates:
-        """Build ClassRates from the dataset's `classes`, in the file's order."""
-        return ClassRates(
-            tuple(self._class(key, entry) for key, entry in document.field("classes").fields())
+        """Build ClassRates from the dataset's `classes`, in the file's order, and its
+        `full_year_days`."""
+        classes = tuple(
+            self._class(key, entry) for key, entry in document.field("classes").fields()
         )
+        full_year_days = document.field("full_year_days").parse_whole_number()
+        try:
+            return ClassRates(classes, full_year_days)
+        except DomainError as exc:
+            raise InvalidClassRatesError(f"{document.where}: {exc}") from exc
 
     def _class(self, key: str, entry: YamlNode) -> ClassRate:
         class_number = YamlNode(key, entry.where).parse_decimal()

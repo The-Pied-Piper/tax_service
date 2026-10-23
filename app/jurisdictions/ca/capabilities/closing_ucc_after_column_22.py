@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from decimal import Decimal
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from app.domain.artifact import ArtifactKind
 from app.domain.capability import capability
@@ -37,11 +37,12 @@ class ClosingUccAfterColumn22(ClosingUcc):
         classes: ArtifactKind[RecordList],
         non_compliant: ArtifactKind[RecordList],
         output: ArtifactKind[RecordList],
+        **consumed: ArtifactKind[Any],
     ) -> None:
         """Wire the capability: its class-rate dataset, the record list it reads, the record list
         of column 22 amounts, the record list kind produced, of the class number and the UCC at
-        the end of the year."""
-        super().__init__(class_rates, classes, output, non_compliant=non_compliant)
+        the end of the year. A subclass consuming more kinds passes them by slot name."""
+        super().__init__(class_rates, classes, output, non_compliant=non_compliant, **consumed)
 
     def _limit(self, row: CcaRow, maximum: Decimal) -> Decimal:
         return max(Decimal(0), maximum + row.immediate_expensing - row.column_22)

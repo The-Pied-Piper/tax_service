@@ -287,6 +287,7 @@ kind: class_rates
 sources:
   - https://example.org/class-rates-2025
 rounding: none
+full_year_days: "365"
 classes:
   "8":
     rate: "0.20"
@@ -3399,7 +3400,8 @@ def test_a_rate_table_dataset_is_not_a_rate_dataset(tmp_path: Path) -> None:
 # quoted decimal), each class a quoted decimal `rate`, a `half_year_rule` of `applies` or
 # `exempt`, a `recapture_and_terminal_loss` of `applies` or `excluded`, a `half_year_rule_on_sale`
 # of `applies` or `does_not_apply`, and an `aiip_factor` and a `riip_factor`, each a quoted whole
-# `numerator` (0 or more) and `denominator` (above 0).
+# `numerator` (0 or more) and `denominator` (above 0). It also holds `full_year_days`, a quoted
+# whole number above 0: the days of a full fiscal period ("compared to 365 days").
 
 APPLIES = HalfYearRule.APPLIES
 EXEMPT = HalfYearRule.EXEMPT
@@ -3426,7 +3428,7 @@ def test_reads_a_class_rates_dataset(tmp_path: Path) -> None:
         family="ex/class_rates",
         tax_year=2025,
         kind=CLASS_RATES,
-        values=ClassRates(classes=CLASS_RATES_CLASSES),
+        values=ClassRates(classes=CLASS_RATES_CLASSES, full_year_days=365),
         rounding=NO_ROUNDING,
         sources=("https://example.org/class-rates-2025",),
     )
@@ -3552,6 +3554,24 @@ def test_reads_a_class_written_as_a_flow_mapping(tmp_path: Path) -> None:
     assert table.classes == (CLASS_RATES_CLASSES[0],)
 
 
+def test_reads_the_days_in_a_full_year(tmp_path: Path) -> None:
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", CLASS_RATES_2025)
+
+    table = source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES).values
+
+    assert table.full_year_days == 365
+    assert type(table.full_year_days) is int
+
+
+def test_reads_the_days_in_a_full_year_as_written(tmp_path: Path) -> None:
+    content = CLASS_RATES_2025.replace('full_year_days: "365"', 'full_year_days: "366"')
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", content)
+
+    table = source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES).values
+
+    assert table.full_year_days == 366
+
+
 def test_reads_a_class_rates_datasets_rounding_rule(tmp_path: Path) -> None:
     write(
         tmp_path,
@@ -3569,7 +3589,7 @@ def test_by_default_the_class_rates_parser_comes_from_the_shared_registry(tmp_pa
 
     result = YamlParameterSource(roots(tmp_path)).get("ex/class_rates", 2025, CLASS_RATES)
 
-    assert result.values == ClassRates(CLASS_RATES_CLASSES)
+    assert result.values == ClassRates(CLASS_RATES_CLASSES, 365)
 
 
 @pytest.mark.parametrize(
@@ -3730,6 +3750,31 @@ def test_by_default_the_class_rates_parser_comes_from_the_shared_registry(tmp_pa
             id="rounding-missing",
         ),
         pytest.param(
+            CLASS_RATES_2025.replace('full_year_days: "365"\n', ""),
+            r"missing keys \['full_year_days'\]",
+            id="full-year-days-missing",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace('full_year_days: "365"', "full_year_days: 365"),
+            "full_year_days must be a string, got int",
+            id="full-year-days-as-yaml-number",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace('full_year_days: "365"', 'full_year_days: "a year"'),
+            "full_year_days is not a whole number: 'a year'",
+            id="full-year-days-not-a-whole-number",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace('full_year_days: "365"', 'full_year_days: "365.5"'),
+            "full_year_days is not a whole number: '365.5'",
+            id="full-year-days-fractional",
+        ),
+        pytest.param(
+            CLASS_RATES_2025.replace('full_year_days: "365"', 'full_year_days: "0"'),
+            "full_year_days must be positive, got 0",
+            id="full-year-days-zero",
+        ),
+        pytest.param(
             CLASS_RATES_2025.replace(
                 "sources:\n  - https://example.org/class-rates-2025", "sources: []"
             ),
@@ -3747,9 +3792,21 @@ def test_rejects_malformed_class_rates_dataset(tmp_path: Path, content: str, mes
     assert "2025.yaml" in str(excinfo.value)
 
 
+def test_a_duplicate_class_error_is_not_attributed_to_the_full_year_days(tmp_path: Path) -> None:
+    content = CLASS_RATES_2025.replace('  "8":\n', '  "10.10":\n')
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES)
+
+    assert "listed more than once" in str(excinfo.value)
+    assert "full_year_days" not in str(excinfo.value)
+
+
 @pytest.mark.parametrize(
     ("old", "new"),
     [
+        ('full_year_days: "365"', 'full_year_days: "0"'),
         ('  "8":\n', '  "0":\n'),
         ('  "8":\n', '  "10.10":\n'),
         ('denominator: "3"}', 'denominator: "0"}'),

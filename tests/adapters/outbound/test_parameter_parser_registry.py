@@ -210,6 +210,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
     class_rates = registry.for_kind(CLASS_RATES).parse(
         YamlNode.root(
             {
+                "full_year_days": "365",
                 "classes": {
                     "10.1": {
                         "rate": "0.30",
@@ -219,7 +220,7 @@ def test_for_kind_is_typed_by_the_kind() -> None:
                         "aiip_factor": {"numerator": "0", "denominator": "1"},
                         "riip_factor": {"numerator": "1", "denominator": "2"},
                     }
-                }
+                },
             },
             "dataset",
         )
@@ -307,7 +308,8 @@ def test_for_kind_is_typed_by_the_kind() -> None:
                 Fraction(1, 2),
                 half_year_rule_on_sale=HalfYearRuleOnSale.APPLIES,
             ),
-        )
+        ),
+        full_year_days=365,
     )
     assert conditions == ConditionList(
         0,
@@ -451,7 +453,7 @@ def test_built_in_parsers_are_registered_in_the_shared_registry(
         (AmountParser, frozenset({"amount"})),
         (AmountByCountParser, frozenset({"amounts"})),
         (BracketsParser, frozenset({"brackets", "tax_at_start_rounding"})),
-        (ClassRatesParser, frozenset({"classes"})),
+        (ClassRatesParser, frozenset({"classes", "full_year_days"})),
         (ConditionsParser, frozenset({"count_when_any_applies", "conditions"})),
         (ContributionTierParser, frozenset({"rate", "lower", "upper", "maximum"})),
         (CreditParser, frozenset({"amount"})),

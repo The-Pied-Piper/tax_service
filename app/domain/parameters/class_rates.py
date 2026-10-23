@@ -7,7 +7,8 @@ the `riip_factor`. A class also states whether it has the half-year rule on sale
 (`half_year_rule_on_sale`) or not. The factors are `Fraction`s, the `fraction` kind's
 values, kept as given: a form can print a factor of 0 as well as one such as seven eighths. The
 table holds at least one class, no class number twice (by value), in the order given; a class it
-does not list is `None`.
+does not list is `None`. The table also holds the days in a full fiscal period, which a first
+fiscal period of fewer days is prorated against.
 The code holds no jurisdiction's tables.
 """
 
@@ -98,9 +99,12 @@ class ClassRate:
 
 @dataclass(frozen=True)
 class ClassRates:
-    """At least one `ClassRate`, no class number twice, in the order given."""
+    """At least one `ClassRate`, no class number twice, in the order given, and the positive whole
+    number of days in a full fiscal period (`full_year_days`), the 365 a short fiscal period's CCA
+    is compared to."""
 
     classes: tuple[ClassRate, ...]
+    full_year_days: int
 
     def __post_init__(self) -> None:
         if not isinstance(self.classes, tuple):
@@ -113,6 +117,15 @@ class ClassRates:
         for index, entry in enumerate(self.classes):
             if any(entry.class_number == earlier.class_number for earlier in self.classes[:index]):
                 raise InvalidClassRatesError(f"class {entry.class_number} is listed more than once")
+        # bool is an int subclass but not a number of days.
+        if not isinstance(self.full_year_days, int) or isinstance(self.full_year_days, bool):
+            raise TypeError(
+                f"full_year_days must be an int, got {type(self.full_year_days).__name__}"
+            )
+        if self.full_year_days <= 0:
+            raise InvalidClassRatesError(
+                f"full_year_days must be positive, got {self.full_year_days}"
+            )
 
     def for_class(self, class_number: Decimal) -> ClassRate | None:
         """The class numbered `class_number`, compared by value, or `None` if it is not listed."""

@@ -79,7 +79,7 @@ def exempt() -> ClassRate:
 
 
 def table(*classes: ClassRate) -> ClassRates:
-    return ClassRates(classes=classes or (first(), decimal_class(), exempt()))
+    return ClassRates(classes=classes or (first(), decimal_class(), exempt()), full_year_days=365)
 
 
 # --- the two choices ---------------------------------------------------------------------------
@@ -281,12 +281,12 @@ def test_holds_its_classes_in_the_order_given() -> None:
     assert table(exempt(), first()).classes == (exempt(), first())
 
 
-def test_holds_its_classes_only() -> None:
-    assert [field.name for field in fields(ClassRates)] == ["classes"]
+def test_holds_its_classes_and_the_days_in_a_full_year() -> None:
+    assert [field.name for field in fields(ClassRates)] == ["classes", "full_year_days"]
 
 
 def test_is_built_positionally() -> None:
-    assert ClassRates((first(), decimal_class(), exempt())) == table()
+    assert ClassRates((first(), decimal_class(), exempt()), 365) == table()
 
 
 def test_a_single_class_is_enough() -> None:
@@ -310,7 +310,7 @@ def test_is_hashable() -> None:
 
 def test_rejects_no_classes() -> None:
     with pytest.raises(InvalidClassRatesError, match="at least one class"):
-        ClassRates(())
+        ClassRates((), 365)
 
 
 def test_rejects_a_class_listed_twice() -> None:
@@ -326,12 +326,47 @@ def test_rejects_a_class_listed_twice_with_another_spelling_of_its_number() -> N
 @pytest.mark.parametrize("classes", [[first()], "classes", None])
 def test_rejects_classes_that_are_not_a_tuple(classes: object) -> None:
     with pytest.raises(TypeError, match="classes must be a tuple"):
-        ClassRates(classes)  # type: ignore[arg-type]
+        ClassRates(classes, 365)  # type: ignore[arg-type]
 
 
 def test_rejects_a_class_that_is_not_a_class_rate() -> None:
     with pytest.raises(TypeError, match=r"classes\[1\] must be a ClassRate, got Rate"):
-        ClassRates((first(), Rate(D("0.2"))))  # type: ignore[arg-type]
+        ClassRates((first(), Rate(D("0.2"))), 365)  # type: ignore[arg-type]
+
+
+# --- the days in a full year -------------------------------------------------------------------
+# Guide T4002 "You were asking?": "Since your fiscal period is less than 365 days, you have to
+# prorate your CCA claim. ... base your CCA claim on the number of days in your fiscal period
+# compared to 365 days." The 365 is the dataset's `full_year_days`.
+
+
+def test_a_table_holds_the_days_in_a_full_year() -> None:
+    assert table().full_year_days == 365
+    assert ClassRates((first(),), full_year_days=366).full_year_days == 366
+
+
+def test_a_table_without_the_days_in_a_full_year_is_refused() -> None:
+    with pytest.raises(TypeError, match="full_year_days"):
+        ClassRates((first(),))  # type: ignore[call-arg]
+
+
+def test_tables_with_different_days_in_a_full_year_differ() -> None:
+    assert table(first()) != ClassRates((first(),), 366)
+    assert hash(table(first())) == hash(ClassRates((first(),), 365))
+
+
+@pytest.mark.parametrize("days", [0, -1, -365])
+def test_rejects_days_in_a_full_year_that_are_not_positive(days: int) -> None:
+    with pytest.raises(
+        InvalidClassRatesError, match=rf"full_year_days must be positive, got {days}"
+    ):
+        ClassRates((first(),), days)
+
+
+@pytest.mark.parametrize("days", [365.0, "365", D("365"), True, None])
+def test_rejects_days_in_a_full_year_that_are_not_an_int(days: object) -> None:
+    with pytest.raises(TypeError, match="full_year_days must be an int"):
+        ClassRates((first(),), days)  # type: ignore[arg-type]
 
 
 # --- finding a class ---------------------------------------------------------------------------

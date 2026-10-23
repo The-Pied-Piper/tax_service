@@ -164,6 +164,10 @@ def test_2025_rounding_is_half_up_to_the_cent() -> None:
     assert SOURCE.get(FAMILY, 2025, CLASS_RATES).rounding == CENT
 
 
+def test_2025_full_year_is_365_days() -> None:
+    assert SOURCE.get(FAMILY, 2025, CLASS_RATES).values.full_year_days == 365
+
+
 def test_2025_dataset_cites_the_t776_text() -> None:
     assert T776_TEXT in SOURCE.get(FAMILY, 2025, CLASS_RATES).sources
 
@@ -233,6 +237,18 @@ def test_the_dataset_header_quotes_the_guides_on_the_half_year_rule_on_sale() ->
         "you can use the half-year rule on sale if, at the end of your 2024 fiscal period, you "
         "owned the class 10.1 vehicle you disposed of in 2025.",
         "enter 50% of the amount from column 2 (for class 10.1 vehicles) in column 19.",
+    ):
+        assert quoted in header, quoted
+
+
+def test_the_dataset_header_quotes_the_guide_on_prorating_a_short_first_fiscal_period() -> None:
+    # Guide T4002 2025 "You were asking?".
+    header = dataset_header().lower()
+
+    for quoted in (
+        "since your fiscal period is less than 365 days, you have to prorate your cca claim.",
+        "base your cca claim on the number of days in your fiscal period compared to 365 days.",
+        "the amount of cca you can claim is $2,052 ($3,500 \u00d7 214 \u00f7 365).",
     ):
         assert quoted in header, quoted
 
