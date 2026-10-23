@@ -28,6 +28,7 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
+    FEDERAL_TAX_LINE_41700,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FOREIGN_TAX_CREDIT_BASIC_FEDERAL_TAX,
     FOREIGN_TAX_CREDIT_NET_INCOME,
@@ -323,6 +324,12 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(FEDERAL_TAX_LESS_CREDITS), SubtractNotBelowZero)
     assert worksheet.producer_of(FEDERAL_TAX_LESS_CREDITS) is not worksheet.producer_of(
         FEDERAL_TAX_AFTER_CREDITS
+    )
+    # T1 line 139 and line 41700: chosen by the count of "line 11 is positive", between the federal
+    # tax less credits and Part 6 line 14 of Form T691.
+    assert isinstance(worksheet.producer_of(FEDERAL_TAX_LINE_41700), ChooseByCount)
+    assert worksheet.producer_of(FEDERAL_TAX_LINE_41700) is not worksheet.producer_of(
+        FEDERAL_TAX_LESS_CREDITS
     )
     assert isinstance(worksheet.producer_of(RESP_AIPS_CONTRIBUTIONS_COUNTED), LesserOf)
     assert isinstance(worksheet.producer_of(RESP_AIPS_LIFETIME_LIMIT), CreditAmount)

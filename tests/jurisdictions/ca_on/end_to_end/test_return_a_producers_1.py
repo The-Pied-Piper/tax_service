@@ -152,6 +152,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
+    AMT_PART_5_LINE_11_IS_POSITIVE,
     AMT_PART_6_FEDERAL_SURTAX,
     AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
     AMT_PART_6_SURTAX_AT_48_PERCENT,
@@ -2366,6 +2367,8 @@ def test_the_part_5_amounts_are_produced_by_their_capabilities() -> None:
         worksheet.producer_of(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE), SubtractNotBelowZero
     )
     assert worksheet.producer_of(AMT_T2038_PART_D_AMOUNT_15) is None
+    # Part 5 line 11 "If line 11 is positive, complete parts 6 and 7." is a count of its condition.
+    assert isinstance(worksheet.producer_of(AMT_PART_5_LINE_11_IS_POSITIVE), CountByConditions)
 
 
 def test_the_part_6_amounts_are_produced_by_their_capabilities() -> None:

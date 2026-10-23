@@ -24,7 +24,7 @@ from app.jurisdictions.ca.catalog import (
     DISABILITY_TRANSFERRED_AMOUNT,
     EI_PAYABLE_ON_SELF_EMPLOYMENT,
     EI_SPECIAL_BENEFITS_AGREEMENT,
-    FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_LINE_41700,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     NET_FEDERAL_TAX,
     RESP_AIPS_ADDITIONAL_TAX,
@@ -170,15 +170,16 @@ STEPS = {
         produces={"output": "ca/split_income_line_24"},
     ),
     # Line 25 "Amount from line 40600 of your return", line 26 "Amount from line 41600 of your
-    # return" and line 27 "Line 25 minus line 26 (if negative, enter "0")" are the T1's line 139
-    # (41700), the federal tax less credits, and line 28 "Amount from line 41500 of your return" is
-    # line 140: line 29 "Line 27 plus line 28".
+    # return" and line 27 "Line 25 minus line 26 (if negative, enter "0")" are the T1's line 41700,
+    # the federal tax of the return (line 139, or the Part 6 line 14 of Form T691 when Part 5 line
+    # 11 is positive), and line 28 "Amount from line 41500 of your return" is line 140: line 29
+    # "Line 27 plus line 28".
     CapabilitySelection(
         name="core/sum",
         params={},
         consumes={
             "parts": (
-                "ca/federal_tax_less_credits",
+                "ca/federal_tax_line_41700",
                 "ca/advanced_canada_workers_benefit",
             )
         },
@@ -340,7 +341,7 @@ WIRING = {
     (SumNotBelowZero, frozenset({SPLIT_INCOME_LINE_22}), frozenset({SPLIT_INCOME_LINE_24})),
     (
         Sum,
-        frozenset({FEDERAL_TAX_LESS_CREDITS, ADVANCED_CANADA_WORKERS_BENEFIT}),
+        frozenset({FEDERAL_TAX_LINE_41700, ADVANCED_CANADA_WORKERS_BENEFIT}),
         frozenset({SPLIT_INCOME_LINE_29}),
     ),
     (

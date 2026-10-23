@@ -825,6 +825,13 @@ AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE = CATALOG.declare(
 """Alternative minimum tax payable, Form T691 Part 5 line 11 "Line 7 minus line 10 (if negative,
 enter "0")": line 7 less line 10, not below zero; a positive amount means Parts 6 and 7 apply."""
 
+AMT_PART_5_LINE_11_IS_POSITIVE = CATALOG.declare(
+    "amt_part_5_line_11_is_positive", int, non_negative=True
+)
+"""Line 11 is positive, Form T691 Part 5 line 11 "If line 11 is positive, complete parts 6 and 7.":
+1 when line 11 (`amt_alternative_minimum_tax_payable`) is more than 0, and 0 otherwise, the count of
+the condition."""
+
 AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX = CATALOG.declare(
     "amt_basic_federal_tax_less_split_income_tax", Decimal, non_negative=True
 )
@@ -887,5 +894,5 @@ AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX = CATALOG.declare(
 """Federal tax payable (under alternative minimum tax), Form T691 Part 6 line 14 "Enter whichever is
 more: amount from line 12 or line 13. Enter this amount on line 41700 of your return." "Federal tax
 payable (under alternative minimum tax)": the greater of line 12 and line 13, "Amount from line 24
-of Form T1206", which is not below zero. The entry on line 41700 of the return is not wired yet, so
-no return line reads this amount."""
+of Form T1206", which is not below zero. The entry on line 41700 of the return is made by the choice
+of the line 41700 entry, which takes this amount only when Part 5 line 11 is positive."""

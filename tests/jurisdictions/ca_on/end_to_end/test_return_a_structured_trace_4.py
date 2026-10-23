@@ -98,6 +98,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_MINIMUM_TAX_PAYABLE,
+    AMT_PART_5_LINE_11_IS_POSITIVE,
     AMT_PART_6_FEDERAL_SURTAX,
     AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
     AMT_PART_6_SURTAX_IF_NON_RESIDENT,
@@ -552,6 +553,7 @@ from app.jurisdictions.ca.catalog import (
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
     FEDERAL_TAX_LESS_FOREIGN_TAX_CREDIT,
+    FEDERAL_TAX_LINE_41700,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     FEDERAL_TAX_WITH_SPLIT_INCOME,
     FHSA_ANNUAL_AMOUNT_AFTER_TRANSFERS,
@@ -4877,7 +4879,45 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             count=0,
         ),
     }
+    part_5_line_11_conditions = {
+        (line.output, line.position): line
+        for line in trace
+        if isinstance(line, ConditionLine) and line.output is AMT_PART_5_LINE_11_IS_POSITIVE
+    }
+    part_5_line_11_count = {
+        line.output: line
+        for line in trace
+        if isinstance(line, ConditionsCountLine) and line.output is AMT_PART_5_LINE_11_IS_POSITIVE
+    }
+    assert part_5_line_11_conditions == {
+        # Form T691 Part 5 line 11 "If line 11 is positive, complete parts 6 and 7.": the condition
+        # "line 11 is positive" reads line 11 (0): it does not apply.
+        (AMT_PART_5_LINE_11_IS_POSITIVE, 1): ConditionLine(
+            output=AMT_PART_5_LINE_11_IS_POSITIVE,
+            position=1,
+            text="line 11 is positive",
+            reads=((AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE, D("0")),),
+            applies=False,
+        ),
+    }
+    assert part_5_line_11_count == {
+        # Form T691 Part 5 line 11: no condition applies, so the count is 0.
+        AMT_PART_5_LINE_11_IS_POSITIVE: ConditionsCountLine(
+            output=AMT_PART_5_LINE_11_IS_POSITIVE,
+            applied=(),
+            count=0,
+        ),
+    }
     assert chosen == {
+        # T1 line 139 and line 41700 "Line 134 minus line 138 (if negative, enter "0")", chosen by
+        # the count of "line 11 is positive": the count is 0, so the figure of line 139, 16951.38.
+        FEDERAL_TAX_LINE_41700: ChosenByCountLine(
+            output=FEDERAL_TAX_LINE_41700,
+            count_kind=AMT_PART_5_LINE_11_IS_POSITIVE,
+            count=0,
+            chosen_kind=FEDERAL_TAX_LESS_CREDITS,
+            chosen_value=D("16951.38"),
+        ),
         # Form T691 Part 6 line 11 "If you have an amount on line 10, enter that amount. If not, ...
         # enter the amount from line 9. Otherwise, enter "0".": no condition applies (line 10 is 0),
         # so the second branch, 0.

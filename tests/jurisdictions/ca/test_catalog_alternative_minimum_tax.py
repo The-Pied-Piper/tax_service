@@ -102,6 +102,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_OFFICE_EXPENSES_ADJUSTMENT,
     AMT_OTHER_YEARS_LOSSES_TOTAL,
     AMT_PART_1_SUBTOTAL,
+    AMT_PART_5_LINE_11_IS_POSITIVE,
     AMT_PART_6_FEDERAL_SURTAX,
     AMT_PART_6_HAS_AMOUNT_ON_LINE_10,
     AMT_PART_6_SURTAX_AT_48_PERCENT,
@@ -313,6 +314,8 @@ PART_5_KINDS: tuple[ArtifactKind[Decimal], ...] = (
     AMT_INVESTMENT_TAX_CREDIT_LESS_PART_D,
     AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
 )
+# Part 5 line 11: the count of the condition "line 11 is positive", which chooses T1 line 41700.
+PART_5_COUNTS: tuple[ArtifactKind[int], ...] = (AMT_PART_5_LINE_11_IS_POSITIVE,)
 
 # Part 6 lines 1 to 14: the federal tax payable under the alternative minimum tax, from line 3, the
 # basic federal tax less the split income tax, to line 14, the greater of line 12 and the split
@@ -705,6 +708,20 @@ def test_the_part_5_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
         registry.get("ca/amt_alternative_minimum_tax_payable")
         is AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE
     )
+
+
+def test_the_part_5_counts_are_the_registered_ones(registry: ArtifactRegistry) -> None:
+    for kind in PART_5_COUNTS:
+        assert registry.get(kind.identifier) is kind
+
+
+def test_the_part_5_line_11_is_positive_count_is_a_non_negative_whole_number() -> None:
+    # Form T691 Part 5 line 11 "If line 11 is positive, complete parts 6 and 7.": the condition
+    # "line 11 is positive" is a count of 1 or 0, not an amount, and it is never negative.
+    assert AMT_PART_5_LINE_11_IS_POSITIVE.identifier == "ca/amt_part_5_line_11_is_positive"
+    assert AMT_PART_5_LINE_11_IS_POSITIVE.value_type is int
+    assert AMT_PART_5_LINE_11_IS_POSITIVE.non_negative is True
+    assert Artifact(AMT_PART_5_LINE_11_IS_POSITIVE, 1).value == 1
 
 
 def test_the_part_6_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:

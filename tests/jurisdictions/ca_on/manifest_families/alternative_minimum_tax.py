@@ -253,12 +253,7 @@ INPUTS = frozenset(
     }
 )
 
-OUTPUTS = frozenset(
-    {
-        "ca/amt_alternative_minimum_tax_payable",
-        "ca/amt_federal_tax_payable_under_minimum_tax",
-    }
-)
+OUTPUTS = frozenset[str]()
 
 STEPS = {
     # Part 1 line 4 "Line 2 minus line 3 (if negative, enter "0")" and "67820 =", the film
@@ -1209,7 +1204,7 @@ STEPS = {
         produces={"output": "ca/amt_investment_tax_credit_less_part_d"},
     ),
     # Part 5 line 11 "Line 7 minus line 10 (if negative, enter "0")": line 7 less line 10, never
-    # below zero. Nothing reads it until Parts 6 and 7 land.
+    # below zero. The count of the condition "line 11 is positive" reads it for T1 line 41700.
     CapabilitySelection(
         name="core/subtract_not_below_zero",
         params={},
@@ -1327,7 +1322,8 @@ STEPS = {
     # Part 6 line 14 "Enter whichever is more: amount from line 12 or line 13. Enter this amount on
     # line 41700 of your return." "Federal tax payable (under alternative minimum tax)": the greater
     # of line 12 and line 13, "Amount from line 24 of Form T1206". The entry on line 41700 of the
-    # return is not wired in this change.
+    # return is made by the choice of the line 41700 entry, which takes this amount only when Part 5
+    # line 11 is positive.
     CapabilitySelection(
         name="core/greater_of",
         params={},

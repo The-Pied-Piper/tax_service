@@ -232,7 +232,7 @@ def test_return_als_trace_follows_form_t1206_line_by_line() -> None:
         "split_income_line_22: split_income_line_15 3795 less split_income_line_21 1038.46 "
         "= 2756.54",
         "split_income_line_24: split_income_line_22 2756.54, not below 0 = 2756.54",
-        "split_income_line_29: federal_tax_less_credits 417.83 "
+        "split_income_line_29: federal_tax_line_41700 417.83 "
         "+ advanced_canada_workers_benefit 0 = 417.83",
         "split_income_line_30: greater of split_income_line_24 2756.54 "
         "and split_income_line_29 417.83 = 2756.54",

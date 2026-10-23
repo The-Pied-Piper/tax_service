@@ -41,8 +41,8 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1288
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1288
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1290
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1290
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -1626,6 +1626,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/labour_sponsored_funds_credit",
         "ca/credits_against_federal_tax",
         "ca/federal_tax_less_credits",
+        "ca/federal_tax_line_41700",
         "ca/resp_aips_contributions_counted",
         "ca/resp_aips_lifetime_limit",
         "ca/resp_aips_limit_remaining",
@@ -1805,6 +1806,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/amt_t2038_part_d_amount_15",
         "ca/amt_investment_tax_credit_less_part_d",
         "ca/amt_alternative_minimum_tax_payable",
+        "ca/amt_part_5_line_11_is_positive",
         "ca/amt_basic_federal_tax_less_split_income_tax",
         "ca/amt_greater_of_basic_tax_and_minimum_amount",
         "ca/amt_federal_tax_under_minimum_tax",
@@ -2141,15 +2143,15 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1288
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1288
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1290
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1290
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1288
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1288
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1290
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1290
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

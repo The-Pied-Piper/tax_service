@@ -14,6 +14,7 @@ from app.jurisdictions.ca.catalog import (
     CREDITS_AGAINST_FEDERAL_TAX,
     FEDERAL_TAX_AFTER_CREDITS,
     FEDERAL_TAX_LESS_CREDITS,
+    FEDERAL_TAX_LINE_41700,
     FEDERAL_TAX_WITH_ITC_RECAPTURE,
     ITC_RECAPTURE,
     ITC_RECAPTURE_AT_15_PERCENT,
@@ -437,12 +438,12 @@ def test_return_vs_net_federal_tax_adds_t1206_line_30_and_line_41800_in_that_ord
         if isinstance(line, SumLine) and line.output == SPLIT_INCOME_LINE_29
     ]
     assert line_29.parts == (
-        (FEDERAL_TAX_LESS_CREDITS, D("3977.93")),
+        (FEDERAL_TAX_LINE_41700, D("3977.93")),
         (ADVANCED_CANADA_WORKERS_BENEFIT, D("300")),
     )
     rendered = EnglishTraceRenderer().render_all(worksheet.trace)
     assert (
-        "split_income_line_29: federal_tax_less_credits 3977.93 "
+        "split_income_line_29: federal_tax_line_41700 3977.93 "
         "+ advanced_canada_workers_benefit 300 = 4277.93"
     ) in rendered
     assert (

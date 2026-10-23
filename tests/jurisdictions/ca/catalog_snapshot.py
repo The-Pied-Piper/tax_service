@@ -1579,6 +1579,7 @@ REGISTERED = frozenset(
         "ca/labour_sponsored_funds_credit",
         "ca/credits_against_federal_tax",
         "ca/federal_tax_less_credits",
+        "ca/federal_tax_line_41700",
         "ca/resp_aips_contributions_counted",
         "ca/resp_aips_lifetime_limit",
         "ca/resp_aips_limit_remaining",
@@ -1851,6 +1852,7 @@ REGISTERED = frozenset(
         "ca/amt_t2038_part_d_amount_15",
         "ca/amt_investment_tax_credit_less_part_d",
         "ca/amt_alternative_minimum_tax_payable",
+        "ca/amt_part_5_line_11_is_positive",
         "ca/amt_basic_federal_tax_less_split_income_tax",
         "ca/amt_greater_of_basic_tax_and_minimum_amount",
         "ca/amt_federal_tax_under_minimum_tax",
@@ -2228,6 +2230,7 @@ COUNTS = frozenset(
         "ca/amt_non_resident_or_deemed_resident",
         "ca/amt_line_3_has_amount",
         "ca/amt_part_6_has_amount_on_line_10",
+        "ca/amt_part_5_line_11_is_positive",
     }
 )
 
