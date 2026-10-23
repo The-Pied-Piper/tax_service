@@ -8,9 +8,7 @@
 form:
   name: ca/schedule_8
   instances: ca/schedule_8_instances
-  # The return carries at most one copy of Schedule 8. Slice 2 (Form RC381) adds
-  # `exclusive_group: ca/cpp_calculation` here and on RC381's form: the loader refuses a group that
-  # names only one form, so it is left out while Schedule 8 is the only one.
+  # The return carries at most one copy of Schedule 8.
   max_instances: 1
   min_instances: 0
   exports:

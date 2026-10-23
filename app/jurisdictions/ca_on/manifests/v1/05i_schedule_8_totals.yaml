@@ -1,7 +1,6 @@
 # Totals of the form Schedule 8 (ca/schedule_8) for the return: each line the return reads is the
 # form's line added over its copies, which is the line of the one copy the return carries, and 0
-# with no copy of the form (the record list ca/schedule_8_instances empty). Slice 3 adds the totals
-# of the Form RC381 form beside them.
+# with no copy of the form (the record list ca/schedule_8_instances empty).
 capabilities:
   # T1 line 30800 and ON428 line 58240: Schedule 8 Part 5 line 57 when Part 5 is completed, else
   # the Part 3a or Part 3b amount, for each Schedule 8 the return carries, added. With no
