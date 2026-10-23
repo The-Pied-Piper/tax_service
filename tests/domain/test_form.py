@@ -444,6 +444,47 @@ def test_a_forms_inputs_are_only_the_starting_artifacts_it_reads() -> None:
         inner.compute(Artifact(SALES, D(3)), Artifact(COSTS, D(1)), audits("1"))
 
 
+def levy_each(starting: frozenset[ArtifactKind[Any]]) -> FormComposition:
+    """Each audit's fee less the starting sales: a form with instances reading a starting kind."""
+    return FormComposition(
+        "ex/levy",
+        [Subtract(SALES, FEE, AUDITED)],
+        instances=AUDITS,
+        exports=[AUDITED],
+        starting=starting,
+    )
+
+
+def test_a_form_with_instances_takes_the_starting_artifacts_it_reads_and_its_fields() -> None:
+    levy = levy_each(frozenset({SALES, COSTS}))
+
+    assert levy.inputs == frozenset({SALES, FEE})  # COSTS is a starting artifact it does not read
+
+
+def test_an_instance_field_that_is_also_a_starting_artifact_is_refused_naming_the_form() -> None:
+    with pytest.raises(InvalidCompositionError, match="instance field 'fee'") as caught:
+        levy_each(frozenset({SALES, FEE}))
+
+    assert str(caught.value).startswith("form 'ex/levy': ")
+
+
+def test_each_instance_runs_on_the_starting_artifacts_and_its_own_record() -> None:
+    forms = FormSet([levy_each(frozenset({SALES}))], inputs=frozenset({SALES, AUDITS}))
+
+    first, second = forms.compute(Artifact(SALES, D(500)), TWO_AUDITS)["ex/levy"]
+
+    assert first.get(AUDITED).value == D(400)
+    assert second.get(AUDITED).value == D(470)
+    assert first.get(SALES).value == D(500)  # the starting artifact reaches every instance
+
+
+def test_a_starting_artifact_is_still_required_when_only_a_form_with_instances_reads_it() -> None:
+    forms = FormSet([levy_each(frozenset({SALES}))], inputs=frozenset({SALES, AUDITS}))
+
+    with pytest.raises(InvalidCompositionError, match="missing input 'sales'"):
+        forms.compute(TWO_AUDITS)
+
+
 def test_a_derived_kind_among_the_inputs_is_refused_when_the_set_is_built() -> None:
     with pytest.raises(
         InvalidCompositionError, match="'shop.profit' is exported by a form, not an input"
