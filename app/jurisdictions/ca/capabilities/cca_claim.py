@@ -70,6 +70,7 @@ class CcaClaim(CcaTable):
                     column_9=row.immediate_expensing,
                     half_year_rule_on_sale=row.half_year_rule_on_sale,
                     fiscal_period_days=row.fiscal_period_days,
+                    full_year_days=self._class_rates.values.full_year_days,
                 )
             )
         items = tuple((line.position, line.claim) for line in lines)

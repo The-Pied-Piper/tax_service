@@ -67,6 +67,7 @@ class ClosingUcc(CcaTable):
                     row.immediate_expensing,
                     row.half_year_rule_on_sale,
                     row.fiscal_period_days,
+                    self._class_rates.values.full_year_days,
                 )
             )
             records.append({CCA_CLASS_NUMBER: row.class_number, CCA_UCC_AT_END: result})

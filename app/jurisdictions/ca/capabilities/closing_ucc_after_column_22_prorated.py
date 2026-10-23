@@ -28,8 +28,8 @@ from app.jurisdictions.ca.capabilities.closing_ucc_after_column_22 import Closin
 @capability(identifier="closing_ucc_after_column_22_prorated")
 class ClosingUccAfterColumn22Prorated(ClosingUccAfterColumn22):
     """Produces `output`: for each of the consumed `classes`, its class number and its UCC at the
-    end of the year, with its maximum prorated
-    from the `class_rates` dataset for the days of `fiscal_period_days`."""
+    end of the year, with its maximum prorated from the `class_rates` dataset for the days
+    of `fiscal_period_days`."""
 
     CONSUMES: ClassVar[Mapping[str, type]] = {
         "classes": RecordList,

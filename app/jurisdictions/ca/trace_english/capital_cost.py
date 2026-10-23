@@ -18,9 +18,6 @@ from app.jurisdictions.ca.trace.capital_cost import (
     TerminalLossLine,
 )
 
-# The days of a full fiscal period a short one is compared to (Guide T4002: "compared to 365 days").
-_FULL_YEAR_DAYS = 365
-
 
 @english_renderer
 class CcaClaimRenderer:
@@ -67,19 +64,18 @@ class CcaClaimRenderer:
             percent = EnglishFigures.percent(class_rate.rate.value)
             rate_of_column_19 = column_19 * class_rate.rate.value
             days = line.fiscal_period_days
+            full_year = line.full_year_days
             reached = maximum
-            if line.half_year_rule_on_sale or days != _FULL_YEAR_DAYS:
+            if line.half_year_rule_on_sale or days != full_year:
                 # The rate of column 19 as worked, before the sale's cap at column 7.
                 reached = rule.apply(rate_of_column_19)
             available = (
                 f"maximum {percent}% of column 19 = {EnglishFigures.money(reached)} "
                 f"({EnglishFigures.rounding(rule)})"
             )
-            if days != _FULL_YEAR_DAYS:
-                reached = rule.apply(ExactFraction(rate_of_column_19) * days / _FULL_YEAR_DAYS)
-                available += (
-                    f", prorated {days}/{_FULL_YEAR_DAYS} = {EnglishFigures.money(reached)}"
-                )
+            if days != full_year:
+                reached = rule.apply(ExactFraction(rate_of_column_19) * days / full_year)
+                available += f", prorated {days}/{full_year} = {EnglishFigures.money(reached)}"
             if line.half_year_rule_on_sale and reached > maximum:
                 # That is more than column 7 and the UCC cannot go below 0.
                 available += f", limited to column 7 = {EnglishFigures.money(maximum)}"
@@ -192,8 +188,8 @@ class ClosingUccRenderer:
                 f" (including column 9 {EnglishFigures.money(column_9)})" if column_9 > 0 else ""
             )
             prorated = (
-                f" (prorated {line.fiscal_period_days}/{_FULL_YEAR_DAYS})"
-                if line.fiscal_period_days != _FULL_YEAR_DAYS
+                f" (prorated {line.fiscal_period_days}/{line.full_year_days})"
+                if line.fiscal_period_days != line.full_year_days
                 else ""
             )
             found = (

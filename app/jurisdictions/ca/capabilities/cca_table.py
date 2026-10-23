@@ -66,7 +66,8 @@ claim is $2,052 ($3,500 × 214 ÷ 365)." A subclass that consumes an int `fiscal
 them is an `InputBelowBoundError` or `InputAboveBoundError`) prorates the maximum: column 19 times
 the rate times the days over `full_year_days`, as one exact fraction rounded once with the
 dataset's rule (not the rounded maximum prorated). The sale's cap at column 7 still applies to it;
-column 9 is not prorated. A table without the slot is not prorated.
+column 9 is not prorated. A table without the slot is not prorated. Under `rounding: none` a
+prorated maximum that does not terminate raises `decimal.Inexact`, as columns 15 and 17 do.
 """
 
 from __future__ import annotations

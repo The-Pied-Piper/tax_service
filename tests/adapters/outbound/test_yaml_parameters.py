@@ -3792,6 +3792,17 @@ def test_rejects_malformed_class_rates_dataset(tmp_path: Path, content: str, mes
     assert "2025.yaml" in str(excinfo.value)
 
 
+def test_a_duplicate_class_error_is_not_attributed_to_the_full_year_days(tmp_path: Path) -> None:
+    content = CLASS_RATES_2025.replace('  "8":\n', '  "10.10":\n')
+    write(tmp_path, "ex/parameters/class_rates/2025.yaml", content)
+
+    with pytest.raises(InvalidParameterDataError) as excinfo:
+        source(tmp_path).get("ex/class_rates", 2025, CLASS_RATES)
+
+    assert "listed more than once" in str(excinfo.value)
+    assert "full_year_days" not in str(excinfo.value)
+
+
 @pytest.mark.parametrize(
     ("old", "new"),
     [

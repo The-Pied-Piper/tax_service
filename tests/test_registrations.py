@@ -186,6 +186,23 @@ def test_importing_the_federal_package_registers_the_cca_claim_after_column_22_c
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.cca_claim_after_column_22"
 
 
+def test_importing_the_federal_package_registers_the_cca_claim_prorated_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/cca_claim_prorated")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.cca_claim_prorated"
+
+
+def test_importing_the_federal_package_registers_the_cca_claim_after_22_prorated_capability() -> (
+    None
+):
+    registered = CapabilityRegistry.shared().get("ca/cca_claim_after_column_22_prorated")
+
+    assert (
+        registered.__module__
+        == "app.jurisdictions.ca.capabilities.cca_claim_after_column_22_prorated"
+    )
+
+
 def test_importing_the_federal_package_registers_the_recaptured_cca_capability() -> None:
     registered = CapabilityRegistry.shared().get("ca/recaptured_cca")
 
@@ -222,6 +239,23 @@ def test_importing_the_federal_package_registers_the_closing_ucc_after_column_22
     registered = CapabilityRegistry.shared().get("ca/closing_ucc_after_column_22")
 
     assert registered.__module__ == "app.jurisdictions.ca.capabilities.closing_ucc_after_column_22"
+
+
+def test_importing_the_federal_package_registers_the_closing_ucc_prorated_capability() -> None:
+    registered = CapabilityRegistry.shared().get("ca/closing_ucc_prorated")
+
+    assert registered.__module__ == "app.jurisdictions.ca.capabilities.closing_ucc_prorated"
+
+
+def test_importing_the_federal_package_registers_the_closing_ucc_after_22_prorated_capability() -> (
+    None
+):
+    registered = CapabilityRegistry.shared().get("ca/closing_ucc_after_column_22_prorated")
+
+    assert (
+        registered.__module__
+        == "app.jurisdictions.ca.capabilities.closing_ucc_after_column_22_prorated"
+    )
 
 
 def test_importing_the_federal_package_registers_the_short_term_rental_expenses_capability() -> (

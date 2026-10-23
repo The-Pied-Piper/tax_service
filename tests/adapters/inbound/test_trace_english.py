@@ -4487,8 +4487,8 @@ def test_the_closing_line_is_unchanged_when_column_9_is_0() -> None:
 
 
 def test_column_9_is_the_last_field_of_the_claim_and_closing_lines() -> None:
-    assert [f.name for f in fields(CcaClaimLine)][-3:-1] == ["column_9", "half_year_rule_on_sale"]
-    assert [f.name for f in fields(ClosingUccLine)][-3:-1] == ["column_9", "half_year_rule_on_sale"]
+    assert [f.name for f in fields(CcaClaimLine)][-4:-2] == ["column_9", "half_year_rule_on_sale"]
+    assert [f.name for f in fields(ClosingUccLine)][-4:-2] == ["column_9", "half_year_rule_on_sale"]
 
 
 def expensed_loss_line(column_7: str, column_9: str, result: str) -> TerminalLossLine:
@@ -5313,3 +5313,42 @@ def test_the_closing_line_is_unchanged_for_a_full_year() -> None:
     assert render(prorated_closing_line(365)) == (
         "closing_ucc: item 1 class 8: column 7 17500 less claim 2052.05 = 15447.95"
     )
+
+
+# A dataset whose full year is 366 days: the line carries it, and a line is prorated when its days
+# are not the dataset's.
+
+
+def test_the_claim_line_of_a_366_day_dataset_unprorated_shows_no_proration() -> None:
+    line = replace(
+        prorated_claim_line(366), maximum=D("3500.00"), claim=D("3500.00"), full_year_days=366
+    )
+
+    assert render(line).endswith("maximum 20% of column 19 = 3500 (half-up to 0.01), claim 3500")
+
+
+def test_the_claim_line_of_a_366_day_dataset_prorated_at_365_shows_the_proration() -> None:
+    line = replace(
+        prorated_claim_line(365), maximum=D("3490.44"), claim=D("3490.44"), full_year_days=366
+    )
+
+    assert render(line).endswith(
+        "maximum 20% of column 19 = 3500 (half-up to 0.01), prorated 365/366 = 3490.44, "
+        "claim 3490.44"
+    )
+
+
+def test_the_claim_line_of_a_366_day_dataset_prorated_at_214_shows_its_days() -> None:
+    line = replace(
+        prorated_claim_line(214), maximum=D("2046.45"), claim=D("2046.45"), full_year_days=366
+    )
+
+    assert render(line).endswith("prorated 214/366 = 2046.45, claim 2046.45")
+
+
+def test_the_closing_line_of_a_366_day_dataset_names_the_proration_against_its_days() -> None:
+    prorated = replace(prorated_closing_line(365), full_year_days=366)
+    full = replace(prorated_closing_line(366), full_year_days=366)
+
+    assert "less claim 2052.05 (prorated 365/366) =" in render(prorated)
+    assert "prorated" not in render(full)

@@ -4672,6 +4672,7 @@ def test_cca_claim_line_fields_in_order() -> None:
         "column_9",
         "half_year_rule_on_sale",
         "fiscal_period_days",
+        "full_year_days",
     ]
     assert line == CcaClaimLine(
         CCA,
@@ -4724,6 +4725,7 @@ def test_a_cca_claim_lines_amount_is_the_claim() -> None:
         {"column_9": D("1000")},
         {"half_year_rule_on_sale": True},
         {"fiscal_period_days": 214},
+        {"full_year_days": 366},
     ],
 )
 def test_cca_claim_lines_differ_by_each_field(change: dict[str, Any]) -> None:
@@ -4851,6 +4853,7 @@ def test_closing_ucc_line_fields_in_order() -> None:
         "column_9",
         "half_year_rule_on_sale",
         "fiscal_period_days",
+        "full_year_days",
     ]
     assert line == ClosingUccLine(
         output=CLOSING_UCC,
@@ -4884,6 +4887,7 @@ def test_a_closing_ucc_lines_amount_is_the_classs_ucc_at_the_end_of_the_year() -
         {"column_9": D("1000")},
         {"half_year_rule_on_sale": True},
         {"fiscal_period_days": 214},
+        {"full_year_days": 366},
     ],
 )
 def test_closing_ucc_lines_differ_by_each_field(change: dict[str, Any]) -> None:
@@ -4912,6 +4916,13 @@ def test_a_cca_line_holds_the_days_of_its_fiscal_period(make: Any) -> None:
 
     assert line.fiscal_period_days == 214
     assert line != make()
+
+
+@pytest.mark.parametrize("make", [cca_claim_line, closing_ucc_line])
+def test_a_cca_line_holds_the_days_in_a_full_year_of_its_dataset(make: Any) -> None:
+    assert make().full_year_days == 365
+    assert replace(make(), full_year_days=366).full_year_days == 366
+    assert replace(make(), full_year_days=366) != make()
 
 
 @pytest.mark.parametrize("make", [recaptured_cca_line, terminal_loss_line])

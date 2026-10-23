@@ -48,11 +48,11 @@ class ClassRatesParser:
         classes = tuple(
             self._class(key, entry) for key, entry in document.field("classes").fields()
         )
-        full_year_days = document.field("full_year_days")
+        full_year_days = document.field("full_year_days").parse_whole_number()
         try:
-            return ClassRates(classes, full_year_days.parse_whole_number())
-        except InvalidClassRatesError as exc:
-            raise InvalidClassRatesError(f"{full_year_days.where}: {exc}") from exc
+            return ClassRates(classes, full_year_days)
+        except DomainError as exc:
+            raise InvalidClassRatesError(f"{document.where}: {exc}") from exc
 
     def _class(self, key: str, entry: YamlNode) -> ClassRate:
         class_number = YamlNode(key, entry.where).parse_decimal()

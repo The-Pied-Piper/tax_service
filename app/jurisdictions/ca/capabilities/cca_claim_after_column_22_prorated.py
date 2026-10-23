@@ -29,8 +29,8 @@ from app.jurisdictions.ca.capabilities.cca_claim_after_column_22 import CcaClaim
 @capability(identifier="cca_claim_after_column_22_prorated")
 class CcaClaimAfterColumn22Prorated(CcaClaimAfterColumn22):
     """Produces `output`: the total, over the consumed `classes`, of each class's CCA claimed, at
-    most its prorated maximum
-    from the `class_rates` dataset for the days of `fiscal_period_days`."""
+    most its prorated maximum from the `class_rates` dataset for the days of
+    `fiscal_period_days`."""
 
     CONSUMES: ClassVar[Mapping[str, type]] = {
         "classes": RecordList,
