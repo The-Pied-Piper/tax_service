@@ -2,8 +2,8 @@
 
 A computation is a flat set of forms; a form is a peer of the others, never a capability, and none
 is special. `FormComposition` is one form wired: an inner `Composition` whose outputs are its
-exports and whose inputs are derived: the fields of its instances kind, or, for a form without
-instances, the starting artifacts it reads, plus its imports. An export `X` of the form `B` is read
+exports and whose inputs are derived: the starting artifacts it reads, plus the fields of its
+instances kind if it has one, plus its imports. An export `X` of the form `B` is read
 by every form as the derived kind `B.X`, a record list of one field with a record per instance (one
 record for a form without an instances list: it has one instance). A form's imports are the
 dotted kinds it consumes and nothing in the form produces.
@@ -126,6 +126,17 @@ def audit(name: str = "ex/audit") -> FormComposition:
         [RecordTotal(SHOP_PROFIT, PROFIT_TOTAL), Subtract(PROFIT_TOTAL, FEE, AUDITED)],
         instances=AUDITS,
         exports=[AUDITED],
+    )
+
+
+def levy_each(starting: frozenset[ArtifactKind[Any]]) -> FormComposition:
+    """Each audit's fee less the starting sales: a form with instances reading a starting kind."""
+    return FormComposition(
+        "ex/levy",
+        [Subtract(SALES, FEE, AUDITED)],
+        instances=AUDITS,
+        exports=[AUDITED],
+        starting=starting,
     )
 
 
@@ -442,6 +453,36 @@ def test_a_forms_inputs_are_only_the_starting_artifacts_it_reads() -> None:
     inner.compute(Artifact(SALES, D(3)), Artifact(COSTS, D(1)))
     with pytest.raises(InvalidCompositionError, match="'audits' is not an input"):
         inner.compute(Artifact(SALES, D(3)), Artifact(COSTS, D(1)), audits("1"))
+
+
+def test_a_form_with_instances_takes_the_starting_artifacts_it_reads_and_its_fields() -> None:
+    levy = levy_each(frozenset({SALES, COSTS}))
+
+    assert levy.inputs == frozenset({SALES, FEE})  # COSTS is a starting artifact it does not read
+
+
+def test_an_instance_field_that_is_also_a_starting_artifact_is_refused_naming_the_form() -> None:
+    with pytest.raises(InvalidCompositionError, match="instance field 'fee'") as caught:
+        levy_each(frozenset({SALES, FEE}))
+
+    assert str(caught.value).startswith("form 'ex/levy': ")
+
+
+def test_each_instance_runs_on_the_starting_artifacts_and_its_own_record() -> None:
+    forms = FormSet([levy_each(frozenset({SALES}))], inputs=frozenset({SALES, AUDITS}))
+
+    first, second = forms.compute(Artifact(SALES, D(500)), TWO_AUDITS)["ex/levy"]
+
+    assert first.get(AUDITED).value == D(400)
+    assert second.get(AUDITED).value == D(470)
+    assert first.get(SALES).value == D(500)  # the starting artifact reaches every instance
+
+
+def test_a_starting_artifact_is_still_required_when_only_a_form_with_instances_reads_it() -> None:
+    forms = FormSet([levy_each(frozenset({SALES}))], inputs=frozenset({SALES, AUDITS}))
+
+    with pytest.raises(InvalidCompositionError, match="missing input 'sales'"):
+        forms.compute(TWO_AUDITS)
 
 
 def test_a_derived_kind_among_the_inputs_is_refused_when_the_set_is_built() -> None:

@@ -3,10 +3,10 @@
 A computation is a flat set of forms that together are the return; none is special. A form is a
 group of capabilities with the artifacts it exports, never a capability itself. A `FormComposition`
 is one form wired: an inner `Composition` whose outputs are the form's exports and whose inputs are
-derived. The inputs of a form with `instances` (a record-list kind, one record per instance) are
-the fields of that kind; a form without an `instances` list has exactly one implicit instance,
-fed from the starting artifacts it reads. The kinds a form reads that other forms export are its
-imports and are inputs too.
+derived. The inputs of a form are the starting artifacts it reads, plus the fields of its
+`instances` kind (a record-list kind, one record per instance) if it has one; a form without an
+`instances` list has exactly one implicit instance. The kinds a form reads that other forms export
+are its imports and are inputs too.
 
 For each export `X` of the form `B` the engine derives the kind `B.X`: a record list of one field,
 `X`, with a record per instance in instance order (one record for a form without an instances list).
@@ -54,10 +54,11 @@ class FormComposition:
     """One form wired: the capabilities of form `name` as an inner `Composition`.
 
     Built with `exports` and, optionally, the `instances` kind (a record list, else an
-    InvalidCompositionError). The inner composition returns the exports. Its inputs are the fields
-    of `instances`; without instances they are the kinds of `starting` (the starting artifacts of
-    the computation) that the form's capabilities consume or export, plus, always, its imports. An
-    export of a `Decimal` or `int` kind or a record-list kind is also readable by every form as
+    InvalidCompositionError). The inner composition returns the exports. Its inputs are the kinds of
+    `starting` (the starting artifacts of the computation) that the form's capabilities consume or
+    export, plus the fields of `instances` if it has any, plus, always, its imports. A field of
+    `instances` that is also among `starting` is an InvalidCompositionError: one kind, two values.
+    An export of a `Decimal` or `int` kind or a record-list kind is also readable by every form as
     `<form>.<export>`; one of another kind (a rate, digits) is only on the form's worksheets.
     Any breach of the rules of `Composition`, an empty `exports`, an export that is another form's,
     a `max_instances` below 1, a `min_instances` below 0 or above `max_instances`, or a
@@ -115,9 +116,14 @@ class FormComposition:
         self._exports = listed
         self._derived = self.derive(name, listed)
         self._imports = frozenset(kind for kind in read - produced if kind.is_form_export)
-        self._inputs = (
-            frozenset(instances.fields) if instances is not None else frozenset(read & starting)
-        )
+        fields = frozenset(instances.fields) if instances is not None else frozenset()
+        clash = fields & starting
+        if clash:
+            kind = min(clash, key=Composition.sort_key)
+            raise InvalidCompositionError(
+                f"form {name!r}: instance field {kind.label!r} is also a starting artifact"
+            )
+        self._inputs = fields | frozenset(read & starting)
         try:
             self._composition = Composition(
                 wired, inputs=self._inputs | self._imports, outputs=frozenset(listed)
@@ -179,7 +185,7 @@ class FormComposition:
 
     @property
     def inputs(self) -> frozenset[ArtifactKind[Any]]:
-        """The kinds the form starts from, imports aside: instance fields or starting artifacts."""
+        """The kinds the form starts from, imports aside: starting artifacts it reads and fields."""
         return self._inputs
 
     @property
@@ -236,8 +242,9 @@ class FormSet:
         """Run every form on `artifacts`: one of each input kind, instances kinds among them.
 
         Each form runs once per record of its instances (a form without an instances list has one
-        instance), in `forms` order, on a worksheet of its inputs and its imports. The result maps
-        each form's name to its worksheets in instance order, none if its instances list is empty.
+        instance), in `forms` order, on a worksheet of the starting artifacts it reads, its record's
+        fields and its imports. The result maps each form's name to its worksheets in instance
+        order, none if its instances list is empty.
         A DomainError from a run is raised as itself; its message starts with the form and the
         instance position (`<form>, instance N: ...`, N being 1 for a form without an instances
         list). A kind given that is a form's export is refused: the forms derive it,
@@ -284,13 +291,17 @@ class FormSet:
     ) -> Iterable[Worksheet]:
         imported = [store[kind] for kind in sorted(form.imports, key=Composition.sort_key)]
         instances = form.instances
+        fields = () if instances is None else instances.fields
+        shared = [
+            given[kind]
+            for kind in sorted(form.inputs - frozenset(fields), key=Composition.sort_key)
+        ]
         if instances is None:
-            starting = [given[kind] for kind in sorted(form.inputs, key=Composition.sort_key)]
-            yield self._run(form, 1, [*starting, *imported])
+            yield self._run(form, 1, [*shared, *imported])
             return
         for position, record in enumerate(given[instances].value.records, start=1):
-            starting = [Artifact(kind, record[kind]) for kind in instances.fields]
-            yield self._run(form, position, [*starting, *imported])
+            starting = [Artifact(kind, record[kind]) for kind in fields]
+            yield self._run(form, position, [*shared, *starting, *imported])
 
     @staticmethod
     def _run(form: FormComposition, position: int, starting: list[Artifact[Any]]) -> Worksheet:
