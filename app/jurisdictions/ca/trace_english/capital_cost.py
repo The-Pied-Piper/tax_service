@@ -84,7 +84,10 @@ class RecapturedCcaRenderer:
         result = line.result
         if zero_reason is not CcaZeroReason.COLUMN_7_NEGATIVE:
             found = f"column 7 {EnglishFigures.money(column_7)} is not negative"
-        elif class_rate.recapture_and_terminal_loss is RecaptureAndTerminalLoss.EXCLUDED:
+        elif (
+            class_rate.recapture_and_terminal_loss is RecaptureAndTerminalLoss.EXCLUDED
+            and not line.has_diep
+        ):
             found = (
                 f"column 7 {EnglishFigures.money(column_7)} is negative, but recapture does not "
                 f"apply to class {EnglishFigures.money(class_rate.class_number)}"
@@ -113,7 +116,10 @@ class TerminalLossRenderer:
         column_7_positive = line.column_7_positive
         result = line.result
         if zero_reason is CcaZeroReason.NO_PROPERTY_LEFT:
-            if class_rate.recapture_and_terminal_loss is RecaptureAndTerminalLoss.EXCLUDED:
+            if (
+                class_rate.recapture_and_terminal_loss is RecaptureAndTerminalLoss.EXCLUDED
+                and not line.has_diep
+            ):
                 found = (
                     f"column 7 {EnglishFigures.money(column_7)} with no property left, but a "
                     f"terminal loss does not apply to class "

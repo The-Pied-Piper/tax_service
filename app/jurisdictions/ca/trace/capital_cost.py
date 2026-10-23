@@ -79,7 +79,8 @@ class CcaClaimLine(TraceLine):
 class RecapturedCcaLine(TraceLine):
     """The recapture `result` of one class, by `position` (from 1), for `output`: `column_7` (the
     UCC after additions and dispositions) made positive when it is negative, which `zero_reason`
-    records, else 0, and 0 for a class `class_rate` that recapture does not apply to.
+    records, else 0, and 0 for a class `class_rate` that recapture does not apply to unless the row
+    `has_diep` (it has DIEP additions, column 4), which Note 3 excepts.
     """
 
     output: Money
@@ -88,6 +89,7 @@ class RecapturedCcaLine(TraceLine):
     column_7: Decimal
     zero_reason: CcaZeroReason
     result: Decimal
+    has_diep: bool = False
 
     @property
     def amount(self) -> Decimal:
@@ -100,7 +102,8 @@ class TerminalLossLine(TraceLine):
     """The terminal loss `result` of one class, by `position` (from 1), for `output`: `column_7`
     (the UCC after additions and dispositions) when it is positive with `no_property_left` (1 if
     no property is left in the class, else 0), which `zero_reason` records, else 0, and 0 for a
-    class `class_rate` that a terminal loss does not apply to. `column_7_positive` records whether
+    class `class_rate` that a terminal loss does not apply to unless the row `has_diep` (it has DIEP
+    additions, column 4), which Note 3 excepts. `column_7_positive` records whether
     column 7 is above 0, so a row with property left reads apart from one with nothing to lose.
     """
 
@@ -112,6 +115,7 @@ class TerminalLossLine(TraceLine):
     zero_reason: CcaZeroReason
     column_7_positive: bool
     result: Decimal
+    has_diep: bool = False
 
     @property
     def amount(self) -> Decimal:

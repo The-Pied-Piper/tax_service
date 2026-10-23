@@ -4313,3 +4313,37 @@ def test_renders_a_column_8_of_0_when_column_6_is_above_column_4() -> None:
         "immediate_expensing_claim: item 1 class 8: column 4 1000 less column 6 1500, "
         "column 7 1500: column 8 0, column 9 0"
     )
+
+
+def test_renders_a_recapture_for_an_excluded_class_with_a_diep() -> None:
+    line = RecapturedCcaLine(
+        RECAPTURED_CCA,
+        1,
+        class_rate("10.1", recapture_and_terminal_loss=EXCLUDED),
+        D("-2000"),
+        NEGATIVE,
+        D("2000"),
+        True,
+    )
+
+    assert render(line) == (
+        "recaptured_cca: item 1 class 10.1: column 7 -2000 is negative: recapture 2000"
+    )
+
+
+def test_renders_a_terminal_loss_for_an_excluded_class_with_a_diep() -> None:
+    line = TerminalLossLine(
+        TERMINAL_LOSS,
+        1,
+        class_rate("10.1", recapture_and_terminal_loss=EXCLUDED),
+        1,
+        D("6000"),
+        NONE_LEFT,
+        True,
+        D("6000"),
+        True,
+    )
+
+    assert render(line) == (
+        "terminal_loss: item 1 class 10.1: column 7 6000 with no property left: terminal loss 6000"
+    )

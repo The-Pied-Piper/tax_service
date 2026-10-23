@@ -29,8 +29,9 @@ enter "0" in column 24", so the maximum and column 24 are 0 for those rows, for 
 `CcaZeroReason`. The claim (column 23) is the caller's election, which includes column 9: it is
 refused above the maximum plus column 9 (`InputAboveBoundError`) and below column 9
 (`InputBelowBoundError`). Note 3: a negative column 7 is a recapture, and a positive one with no
-property left a terminal loss, neither for a class the dataset excludes from them. A subclass is
-one capability for each form line the table gives, building its own trace lines and output.
+property left a terminal loss, neither for a class the dataset excludes from them unless the row
+has DIEP additions (column 4), as Note 3 excepts. A subclass is one capability for each form line
+the table gives, building its own trace lines and output.
 
 The most a claim may be is one overridable step, `_limit`: the maximum plus column 9 here. A
 subclass that consumes a `non_compliant` record list besides the `classes` (column 22,

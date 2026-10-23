@@ -59,6 +59,7 @@ class TerminalLoss(CcaTable):
                 row.column_7
                 if row.zero_reason is CcaZeroReason.NO_PROPERTY_LEFT and row.note_3_applies
                 else Decimal(0),
+                row.diep_additions > 0,
             )
             for row in self._rows(inputs)
         )

@@ -4244,6 +4244,7 @@ def test_recaptured_cca_line_fields_in_order() -> None:
         "column_7",
         "zero_reason",
         "result",
+        "has_diep",
     ]
     assert line == RecapturedCcaLine(
         output=RECAPTURE,
@@ -4291,6 +4292,7 @@ def test_terminal_loss_line_fields_in_order() -> None:
         "zero_reason",
         "column_7_positive",
         "result",
+        "has_diep",
     ]
     assert line == TerminalLossLine(
         output=TERMINAL_LOSS,

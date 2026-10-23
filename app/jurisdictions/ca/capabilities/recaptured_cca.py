@@ -55,6 +55,7 @@ class RecapturedCca(CcaTable):
                 -row.column_7
                 if row.zero_reason is CcaZeroReason.COLUMN_7_NEGATIVE and row.note_3_applies
                 else Decimal(0),
+                row.diep_additions > 0,
             )
             for row in self._rows(inputs)
         )
