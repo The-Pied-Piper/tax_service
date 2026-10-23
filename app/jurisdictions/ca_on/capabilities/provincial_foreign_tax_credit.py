@@ -34,8 +34,9 @@ or under the threshold the sheets share the one form's line 2, each as its line 
 over the total of line 1 plus line 8 (each sheet's line 2 rounded on its own, so the sheets add to
 the form's line 2 to within a cent); over it each sheet is its line 1 times line 11 over line 7
 divided by the rate plus line 8. Line 2 is worked as an exact fraction and rounded once with the
-`rounding` dataset's rule; a zero divisor is refused with a ValidationError. With the count 0 line
-2 is the sheet's line 3 of Form T2209.
+`rounding` dataset's rule, held at line 1 when line 7 of Form T691, which is in cents, leaves it a
+cent over and refused beyond that; a zero divisor is refused with a ValidationError.
+With the count 0 line 2 is the sheet's line 3 of Form T2209.
 """
 
 from __future__ import annotations
@@ -62,6 +63,9 @@ from app.jurisdictions.ca.catalog import (
     NET_FOREIGN_NON_BUSINESS_INCOME,
 )
 from app.jurisdictions.ca_on.trace import ProvincialForeignTaxCreditLine
+
+ONE_CENT = Decimal("0.01")
+"""How far line 2 may top line 1 before the inputs are refused (line 7 of T691 is in cents)."""
 
 
 @capability(identifier="provincial_foreign_tax_credit")
@@ -173,12 +177,15 @@ class ProvincialForeignTaxCredit(Capability):
                 )
             else:
                 federal_credit = Decimal(record[FOREIGN_TAX_CREDIT_SHEET_LINE_3])
-            if federal_credit > tax_paid:
+            if federal_credit > tax_paid + ONE_CENT:
                 raise ValidationError(
                     f"line 2 of Form T2036, {federal_credit}, is more than the {tax_paid} of its "
                     "line 1, so line 3 would be negative; the amounts on lines 7, 8 and 11 of "
                     "Part 4 of Form T691 do not fit the tax paid on the sheets"
                 )
+            # Line 7 of Form T691 is in cents, so dividing it back by 66.6666% can leave the
+            # divisor a little under the tax paid and line 2 a cent over line 1; line 3 is then 0.
+            federal_credit = min(federal_credit, tax_paid)
             line_3 = tax_paid - federal_credit
             line_4 = ApplyRatio.ratio_of(income, provincial_tax, net_income, rule)
             lines.append(

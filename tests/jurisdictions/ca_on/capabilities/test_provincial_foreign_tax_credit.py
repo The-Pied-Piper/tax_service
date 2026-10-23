@@ -1162,3 +1162,13 @@ def test_a_line_2_above_line_1_is_refused_with_a_message() -> None:
     # One sheet of 100 with line 11 of 150 over a divisor of 100: line 2 = 150, more than line 1.
     with pytest.raises(ValidationError, match="more than the 100"):
         minimum_tax_total(("100", "10000", "0"), line_7="0", line_8="0", line_11="150")
+
+
+def test_a_line_2_a_cent_above_line_1_from_line_7_in_cents_is_line_1() -> None:
+    # Line 7 is 2500.24 x 0.666666 = 1666.8... in cents, 1666.82 (as T691 prints it); the divisor
+    # 1666.82 / 0.666666 = 2500.2475... is under the tax paid plus a cent, so with a full federal
+    # credit (line 11 = 2500.24) line 2 = 2500.24 x 2500.24 / 2500.2475... rounds to 2500.25.
+    # Line 2 is held at line 1, 2500.24, so line 3 is 0 and so is the credit.
+    assert minimum_tax_total(
+        ("2500.24", "20000", "0"), line_7="1666.82", line_8="0", line_11="2500.24"
+    ) == D("0.00")
