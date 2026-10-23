@@ -6,9 +6,10 @@ position. Each record is checked when the list is built: every field present, no
 value an instance of its field kind's value type and, for a kind declared non-negative, not below
 zero; an error names the record by its position from 1 ("item 2") and the field by its identifier.
 A list may be empty. `RecordListKind.declare` declares a record-list kind on a catalog, a
-`RecordListKind` whose value type is `RecordList` and which carries its fields; it refuses an empty
-field list, a repeated field and a field kind that is not `Decimal` or `int`. Names are made up;
-like the artifact tests, the catalog tests point `ArtifactRegistry.shared` at a fresh registry.
+`RecordListKind` whose value type is `RecordList` and which carries its fields; it refuses a
+repeated field and a field kind that is not `Decimal` or `int`. A list without fields holds empty
+records and only counts them. Names are made up; like the artifact tests, the catalog tests point
+`ArtifactRegistry.shared` at a fresh registry.
 """
 
 from __future__ import annotations
@@ -79,6 +80,19 @@ def test_a_record_list_may_be_empty() -> None:
 
     assert records.records == ()
     assert records.fields == FIELDS
+
+
+def test_a_record_list_without_fields_holds_empty_records_and_counts_them() -> None:
+    records = RecordList((), [{}, {}])
+
+    assert records.fields == ()
+    assert len(records.records) == 2
+    assert all(len(each) == 0 for each in records.records)
+
+
+def test_an_empty_record_of_a_list_without_fields_is_not_given_a_key() -> None:
+    with pytest.raises(InvalidRecordError, match="item 1"):
+        RecordList((), [{NET_INCOME: D(1)}])
 
 
 def test_a_record_list_takes_any_iterable_of_records() -> None:
@@ -333,13 +347,13 @@ def test_a_declared_record_list_kind_registers_with_its_catalog(fresh: ArtifactR
     assert registry.kind("ex/person_count") is count
 
 
-def test_declare_refuses_an_empty_field_list(fresh: ArtifactRegistry) -> None:
+def test_declare_accepts_an_empty_field_list(fresh: ArtifactRegistry) -> None:
     catalog = ArtifactCatalog(Namespace("ex"))
 
-    with pytest.raises(InvalidRegistrationError, match=r"ex/dependants.*no fields"):
-        RecordListKind.declare(catalog, "dependants", fields=())
+    kind = RecordListKind.declare(catalog, "copies", fields=())
 
-    assert catalog.kinds == ()
+    assert kind.fields == ()
+    assert catalog.kinds == (kind,)
 
 
 def test_declare_refuses_a_repeated_field(fresh: ArtifactRegistry) -> None:

@@ -60,12 +60,14 @@ class Record(Mapping[ArtifactKind[Any], "Decimal | int | RecordList"]):
 class RecordList:
     """Records of the same `fields`, in the caller's order, each checked when the list is built.
 
-    The fields are `Decimal` or `int` artifact kinds or record-list kinds, at least one and no
-    identifier twice, else an InvalidRecordError. A record that is not a mapping, misses a field
-    or has a key that is not one of the fields is an InvalidRecordError; a value that is not an
-    instance of its field kind's value type is a TypeError (a `bool` is not a count); a value
-    below zero for a field declared non-negative is a NegativeArtifactError. Each record error
-    names the record by its position from 1 and the field by its identifier.
+    The fields are `Decimal` or `int` artifact kinds or record-list kinds, none or more, no
+    identifier twice, else an InvalidRecordError. With no fields every record is empty and the
+    list only counts its records (a form's copies that carry no figures of their own). A record
+    that is not a mapping, misses a field or has a key that is not one of the fields is an
+    InvalidRecordError; a value that is not an instance of its field kind's value type is a
+    TypeError (a `bool` is not a count); a value below zero for a field declared non-negative is a
+    NegativeArtifactError. Each record error names the record by its position from 1 and the field
+    by its identifier.
     """
 
     fields: tuple[ArtifactKind[Any], ...]
@@ -83,8 +85,6 @@ class RecordList:
         self.__post_init__()
 
     def __post_init__(self) -> None:
-        if not self.fields:
-            raise InvalidRecordError("a record list has no fields")
         seen: set[str] = set()
         for kind in self.fields:
             if not isinstance(kind, ArtifactKind):
@@ -149,7 +149,7 @@ class RecordList:
 class RecordListKind(ArtifactKind[RecordList]):
     """A record-list kind: its values are `RecordList`s of exactly its `fields`, in that order.
 
-    The fields are `Decimal`, `int` or record-list kinds, at least one, no identifier twice, else an
+    The fields are `Decimal`, `int` or record-list kinds, none or more, no identifier twice, else an
     InvalidRegistrationError naming the kind; they may come from any package's catalog. Two kinds
     of one identifier with other fields are not equal. Packages declare theirs with `declare`.
     """
