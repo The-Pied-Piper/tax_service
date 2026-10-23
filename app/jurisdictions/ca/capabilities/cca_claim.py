@@ -68,6 +68,7 @@ class CcaClaim(CcaTable):
                     rounding=self._class_rates.rounding,
                     claim=row.claimed,
                     column_9=row.immediate_expensing,
+                    half_year_rule_on_sale=row.half_year_rule_on_sale,
                 )
             )
         items = tuple((line.position, line.claim) for line in lines)

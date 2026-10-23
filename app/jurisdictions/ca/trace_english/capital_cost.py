@@ -40,23 +40,34 @@ class CcaClaimRenderer:
         rule = line.rounding
         claim = line.claim
         column_9 = line.column_9
+        on_sale = " (half-year rule on sale)" if line.half_year_rule_on_sale else ""
         columns = ", ".join(
-            f"column {number} {EnglishFigures.money(amount)}"
-            for number, amount in (
-                (7, column_7),
-                *(((9, column_9),) if column_9 > 0 else ()),
-                (14, column_14),
-                (15, column_15),
-                (16, column_16),
-                (17, column_17),
-                (18, column_18),
-                (19, column_19),
+            f"column {number} {EnglishFigures.money(amount)}{note}"
+            for number, amount, note in (
+                (7, column_7, ""),
+                *(((9, column_9, ""),) if column_9 > 0 else ()),
+                (14, column_14, ""),
+                (15, column_15, ""),
+                (16, column_16, ""),
+                (17, column_17, ""),
+                (18, column_18, ""),
+                (19, column_19, on_sale),
             )
         )
         if zero_reason is CcaZeroReason.COLUMN_7_NEGATIVE:
             available = "maximum 0 as column 7 is negative"
         elif zero_reason is CcaZeroReason.NO_PROPERTY_LEFT:
             available = "maximum 0 as no property is left in the class"
+        elif (
+            line.half_year_rule_on_sale and rule.apply(column_19 * class_rate.rate.value) > maximum
+        ):
+            # The rate of column 19 is more than column 7 and the UCC cannot go below 0.
+            available = (
+                f"maximum {EnglishFigures.percent(class_rate.rate.value)}% of column 19 = "
+                f"{EnglishFigures.money(rule.apply(column_19 * class_rate.rate.value))} "
+                f"({EnglishFigures.rounding(rule)}), limited to column 7 = "
+                f"{EnglishFigures.money(maximum)}"
+            )
         else:
             available = (
                 f"maximum {EnglishFigures.percent(class_rate.rate.value)}% of column 19 = "
@@ -116,7 +127,13 @@ class TerminalLossRenderer:
         column_7_positive = line.column_7_positive
         column_9 = line.column_9
         result = line.result
-        if zero_reason is CcaZeroReason.NO_PROPERTY_LEFT:
+        if line.half_year_rule_on_sale:
+            found = (
+                f"column 7 {EnglishFigures.money(column_7)} with no property left, but a terminal "
+                f"loss does not apply to class {EnglishFigures.money(class_rate.class_number)} "
+                f"(half-year rule on sale used)"
+            )
+        elif zero_reason is CcaZeroReason.NO_PROPERTY_LEFT:
             expensed = f" less column 9 {EnglishFigures.money(column_9)}" if column_9 > 0 else ""
             if (
                 class_rate.recapture_and_terminal_loss is RecaptureAndTerminalLoss.EXCLUDED
@@ -155,6 +172,7 @@ class ClosingUccRenderer:
         claim = line.claim
         result = line.result
         column_9 = line.column_9
+        on_sale = " (half-year rule on sale)" if line.half_year_rule_on_sale else ""
         if zero_reason is CcaZeroReason.COLUMN_7_NEGATIVE:
             found = f"column 7 {EnglishFigures.money(column_7)} is negative:"
         elif zero_reason is CcaZeroReason.NO_PROPERTY_LEFT:
@@ -165,7 +183,7 @@ class ClosingUccRenderer:
             )
             found = (
                 f"column 7 {EnglishFigures.money(column_7)} less claim "
-                f"{EnglishFigures.money(claim)}{including} ="
+                f"{EnglishFigures.money(claim)}{on_sale}{including} ="
             )
         return (
             f"{EnglishFigures.cca_class(output.label, position, class_rate)}: {found} "

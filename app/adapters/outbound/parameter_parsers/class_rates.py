@@ -12,12 +12,20 @@ from app.domain.parameters.class_rates import (
     ClassRate,
     ClassRates,
     HalfYearRule,
+    HalfYearRuleOnSale,
     RecaptureAndTerminalLoss,
 )
 from app.domain.parameters.rate import Rate
 
 _CLASS_KEYS = frozenset(
-    {"rate", "half_year_rule", "recapture_and_terminal_loss", "aiip_factor", "riip_factor"}
+    {
+        "rate",
+        "half_year_rule",
+        "recapture_and_terminal_loss",
+        "half_year_rule_on_sale",
+        "aiip_factor",
+        "riip_factor",
+    }
 )
 # Each factor is read as a `fraction` dataset's body is: the same keys, the same parts.
 _FRACTIONS = FractionParser()
@@ -26,9 +34,9 @@ _FRACTIONS = FractionParser()
 @parameter_parser
 class ClassRatesParser:
     """Parser for `class_rates` datasets: `classes`, keyed by each class number as a quoted
-    decimal, each a `rate`, a `half_year_rule`, a `recapture_and_terminal_loss`, an `aiip_factor`
-    and a `riip_factor`, each a quoted whole `numerator` and `denominator` read as a `fraction`
-    dataset's are."""
+    decimal, each a `rate`, a `half_year_rule`, a `recapture_and_terminal_loss`, a
+    `half_year_rule_on_sale`, an `aiip_factor` and a `riip_factor`, each factor a quoted whole
+    `numerator` and `denominator` read as a `fraction` dataset's are."""
 
     kind = CLASS_RATES
     body_keys = frozenset({"classes"})
@@ -47,6 +55,9 @@ class ClassRatesParser:
         recapture_and_terminal_loss = fields.field("recapture_and_terminal_loss").parse_choice(
             RecaptureAndTerminalLoss
         )
+        half_year_rule_on_sale = fields.field("half_year_rule_on_sale").parse_choice(
+            HalfYearRuleOnSale
+        )
         aiip_factor = fields.field("aiip_factor").require_mapping(_FRACTIONS.body_keys)
         riip_factor = fields.field("riip_factor").require_mapping(_FRACTIONS.body_keys)
         try:
@@ -57,6 +68,7 @@ class ClassRatesParser:
                 recapture_and_terminal_loss,
                 _FRACTIONS.parse(aiip_factor),
                 _FRACTIONS.parse(riip_factor),
+                half_year_rule_on_sale,
             )
         except DomainError as exc:
             # Name the class: the value objects do not know where in the table they sit.

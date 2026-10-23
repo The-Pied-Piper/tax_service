@@ -38,6 +38,7 @@ from app.domain.parameters.class_rates import (
     ClassRate,
     ClassRates,
     HalfYearRule,
+    HalfYearRuleOnSale,
     RecaptureAndTerminalLoss,
 )
 from app.domain.parameters.datasets import ParameterDataset
@@ -66,6 +67,7 @@ APPLIES = HalfYearRule.APPLIES
 EXEMPT = HalfYearRule.EXEMPT
 INCLUDED = RecaptureAndTerminalLoss.APPLIES
 EXCLUDED = RecaptureAndTerminalLoss.EXCLUDED
+NOT_ON_SALE = HalfYearRuleOnSale.DOES_NOT_APPLY
 
 CLASS_FIELDS = (
     CCA_CLASS_NUMBER,
@@ -84,15 +86,15 @@ RECAPTURED_CCA = ArtifactKind("ex/recaptured_cca", Decimal, non_negative=True)
 TERMINAL_LOSS = ArtifactKind("ex/terminal_loss", Decimal, non_negative=True)
 CLOSING_UCC = RecordListKind("ex/closing_ucc", fields=(CCA_CLASS_NUMBER, CCA_UCC_AT_END))
 
-CLASS_1 = ClassRate(D("1"), Rate(D("0.04")), APPLIES, INCLUDED, F(0, 1), F(1, 2))
-CLASS_8 = ClassRate(D("8"), Rate(D("0.20")), APPLIES, INCLUDED, F(0, 1), F(1, 2))
-CLASS_10 = ClassRate(D("10"), Rate(D("0.30")), APPLIES, INCLUDED, F(0, 1), F(1, 2))
-CLASS_10_1 = ClassRate(D("10.1"), Rate(D("0.30")), APPLIES, EXCLUDED, F(0, 1), F(1, 2))
-CLASS_12 = ClassRate(D("12"), Rate(D("1")), EXEMPT, INCLUDED, F(0, 1), F(0, 1))
-CLASS_43_1 = ClassRate(D("43.1"), Rate(D("0.30")), APPLIES, INCLUDED, F(3, 2), F(7, 3))
-CLASS_50 = ClassRate(D("50"), Rate(D("0.55")), APPLIES, INCLUDED, F(9, 11), F(9, 11))
-CLASS_53 = ClassRate(D("53"), Rate(D("0.50")), APPLIES, INCLUDED, F(1, 2), F(1, 1))
-CLASS_55 = ClassRate(D("55"), Rate(D("0.40")), APPLIES, INCLUDED, F(7, 8), F(3, 2))
+CLASS_1 = ClassRate(D("1"), Rate(D("0.04")), APPLIES, INCLUDED, F(0, 1), F(1, 2), NOT_ON_SALE)
+CLASS_8 = ClassRate(D("8"), Rate(D("0.20")), APPLIES, INCLUDED, F(0, 1), F(1, 2), NOT_ON_SALE)
+CLASS_10 = ClassRate(D("10"), Rate(D("0.30")), APPLIES, INCLUDED, F(0, 1), F(1, 2), NOT_ON_SALE)
+CLASS_10_1 = ClassRate(D("10.1"), Rate(D("0.30")), APPLIES, EXCLUDED, F(0, 1), F(1, 2), NOT_ON_SALE)
+CLASS_12 = ClassRate(D("12"), Rate(D("1")), EXEMPT, INCLUDED, F(0, 1), F(0, 1), NOT_ON_SALE)
+CLASS_43_1 = ClassRate(D("43.1"), Rate(D("0.30")), APPLIES, INCLUDED, F(3, 2), F(7, 3), NOT_ON_SALE)
+CLASS_50 = ClassRate(D("50"), Rate(D("0.55")), APPLIES, INCLUDED, F(9, 11), F(9, 11), NOT_ON_SALE)
+CLASS_53 = ClassRate(D("53"), Rate(D("0.50")), APPLIES, INCLUDED, F(1, 2), F(1, 1), NOT_ON_SALE)
+CLASS_55 = ClassRate(D("55"), Rate(D("0.40")), APPLIES, INCLUDED, F(7, 8), F(3, 2), NOT_ON_SALE)
 ALL_CLASSES = (
     CLASS_1,
     CLASS_8,
