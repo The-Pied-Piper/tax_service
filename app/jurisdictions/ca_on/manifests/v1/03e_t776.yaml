@@ -2,7 +2,7 @@
 # list ca/t776_statements (one for each rental operation; any number, none included). Each
 # statement's fields are the T776 inputs. The form exports its line 9946 "Your net income (loss)",
 # which T1 line 12600 "Net" adds over the statements, and the lines nothing on the return reads,
-# which the return declares as outputs, one record for each statement.
+# which it also exports, one record for each statement.
 form:
   name: ca/t776
   instances: ca/t776_statements
