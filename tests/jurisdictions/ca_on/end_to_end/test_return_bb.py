@@ -41,16 +41,6 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_SHARE_OF_NET_INCOME,
     BUSINESS_TERMINAL_LOSS,
     BUSINESS_TOTAL_EXPENSES,
-    BUSINESS_VEHICLE_AVAILABLE_INTEREST,
-    BUSINESS_VEHICLE_BUSINESS_USE_PART,
-    BUSINESS_VEHICLE_INTEREST_FOR_PERIOD,
-    BUSINESS_VEHICLE_LEASE_CHARGE_PORTION,
-    BUSINESS_VEHICLE_LEASE_COST_PORTION,
-    BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
-    BUSINESS_VEHICLE_LEASE_PRICE_BASE,
-    BUSINESS_VEHICLE_LEASING_COST,
-    BUSINESS_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
-    BUSINESS_VEHICLE_TOTAL_EXPENSES,
     FEDERAL_BASIC_TAX,
     NET_INCOME,
     NET_SELF_EMPLOYMENT_INCOME,
@@ -59,6 +49,7 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_INCOME,
     TOTAL_PAYABLE,
 )
+from app.jurisdictions.ca.trace import BusinessVehicleLine
 from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX
 from tests.jurisdictions.ca_on.end_to_end.support import D, run
 
@@ -73,19 +64,8 @@ BUSINESS = {
     "professional_fees": "2500",
     "rent": "6000",
     "utilities": "1500",
-    # Charts A to C for one leased passenger vehicle used half for business: Chart A line 16 (line
-    # 9281) is 2500, from the interest of Chart B (400) and the leasing cost of Chart C (2147).
-    "vehicle_business_kilometres": "5000",
-    "vehicle_total_kilometres": "10000",
-    "vehicle_fuel_and_oil": "1000",
-    "vehicle_insurance": "600",
-    "vehicle_maintenance_and_repairs": "200",
-    "vehicle_other_expenses_10": "653",
-    "vehicle_interest_payable": "400",
-    "vehicle_interest_days": "183",
-    "vehicle_lease_charges": "2550",
-    "vehicle_lease_days": "183",
-    "vehicle_list_price": "60000",
+    # Charts A to C: the sales tax rate of the province (the HST of 13%); the vehicle is in
+    # `VEHICLE`.
     "vehicle_sales_tax_rate": "13",
     "home_heat": "600",
     "home_electricity": "500",
@@ -94,6 +74,21 @@ BUSINESS = {
     "home_property_taxes": "400",
 }
 FURNITURE = ("8", "10000", "0", "0", "0", "0", "2000", 0)
+# Charts A to C for one leased passenger vehicle used half for business: Chart A line 16 (line
+# 9281) is 2500, from the interest of Chart B (400) and the leasing cost of Chart C (2147).
+VEHICLE = {
+    "business_kilometres": "5000",
+    "total_kilometres": "10000",
+    "fuel_and_oil": "1000",
+    "insurance": "600",
+    "maintenance_and_repairs": "200",
+    "other_expenses_10": "653",
+    "interest_payable": "400",
+    "interest_days": "183",
+    "lease_charges": "2550",
+    "lease_days": "183",
+    "list_price": "60000",
+}
 
 
 def run_bb(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
@@ -109,6 +104,7 @@ def run_bb(**overrides: Any) -> dict[str, tuple[Worksheet, ...]]:
     statement: dict[str, Any] = {
         "business": BUSINESS,
         "business_cca_classes_rows": (FURNITURE,),
+        "business_vehicles_rows": (VEHICLE,),
     }
     return run("0", (), "0", "0", "0", "0", "0", business_statements=(statement,), **overrides)
 
@@ -245,16 +241,12 @@ def test_return_bbs_motor_vehicle_line_9281_is_2500_from_charts_a_to_c() -> None
     # 2147.00. Chart A: 1000 + 400 + 600 + 200 + 2147 + 653 = 5000, and 5000 x 5000 ÷ 10000 = 2500.
     worksheet = statement_bb()
 
-    assert worksheet.get(BUSINESS_VEHICLE_INTEREST_FOR_PERIOD).value == D("2135.00")
-    assert worksheet.get(BUSINESS_VEHICLE_AVAILABLE_INTEREST).value == D("400.00")
-    assert worksheet.get(BUSINESS_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX).value == D("50517.78")
-    assert worksheet.get(BUSINESS_VEHICLE_LEASE_PRICE_BASE).value == D("60000.00")
-    assert worksheet.get(BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT).value == D("51000.00")
-    assert worksheet.get(BUSINESS_VEHICLE_LEASE_CHARGE_PORTION).value == D("7582.30")
-    assert worksheet.get(BUSINESS_VEHICLE_LEASE_COST_PORTION).value == D("2147.00")
-    assert worksheet.get(BUSINESS_VEHICLE_LEASING_COST).value == D("2147.00")
-    assert worksheet.get(BUSINESS_VEHICLE_TOTAL_EXPENSES).value == D("5000.00")
-    assert worksheet.get(BUSINESS_VEHICLE_BUSINESS_USE_PART).value == D("2500.00")
+    (vehicle,) = [line for line in worksheet.trace if isinstance(line, BusinessVehicleLine)]
+    assert vehicle.line_19 == D("400.00")
+    assert vehicle.line_28 == D("2147.00")
+    assert vehicle.line_12 == D("5000.00")
+    assert vehicle.line_13 == D("2500.00")
+    assert vehicle.line_16 == D("2500.00")
     assert worksheet.get(BUSINESS_MOTOR_VEHICLE_EXPENSES).value == D("2500.00")
 
 
@@ -296,6 +288,9 @@ def test_return_bbs_trace_names_each_line_of_the_business_statement() -> None:
         "business_other_expenses_with_terminal_loss: business_other_expenses 0 "
         "+ business_terminal_loss 0 = 0",
         "business_closing_ucc: item 1 class 8: column 7 10000 less claim 2000 = 8000",
+        "business_motor_vehicle_expenses: item 1: line 12 5000, line 13 2500, line 19 400, "
+        "line 28 2147, line 16 2500",
+        "business_motor_vehicle_expenses: item 1 2500 = 2500",
         "business_net_income_before_adjustments: business_gross_income_before_expenses 50000 "
         "less business_total_expenses 18000 = 32000",
         "business_share_of_net_income: business_net_income_before_adjustments 32000, "

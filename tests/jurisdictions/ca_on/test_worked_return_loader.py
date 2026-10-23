@@ -35,9 +35,11 @@ SECTIONS = {
     "description": "description: A return for the loader's tests.\n",
     "sources": "sources:\n  - T1 arithmetic.\n",
     "inputs": 'inputs:\n  ca/taxable_income: "115000"\n',
-    "expected": 'expected:\n  ca/federal_basic_tax: "20146.25"\n',
+    "expected": 'expected:\n  ca-on/return:\n    - ca/federal_basic_tax: "20146.25"\n',
 }
 VALID = "".join(SECTIONS.values())
+# The one entry of the return's own form under `expected`, to which a test adds a line.
+RETURN_LINE = SECTIONS["expected"]
 # Made up for the count tests and not registered with the application: a non-negative count.
 COUNT = ArtifactKind("ex/count", int, non_negative=True)
 # Made up for the rate tests and not registered with the application: a rate, which cannot be
@@ -139,15 +141,24 @@ def test_loads_a_valid_file(tmp_path: Path, artifacts: ArtifactRegistry) -> None
     assert worked.expected == (Artifact(FEDERAL_BASIC_TAX, D("20146.25")),)
 
 
-@pytest.mark.parametrize("section", ["inputs", "expected"])
+@pytest.mark.parametrize(
+    ("section", "text", "where"),
+    [
+        ("inputs", 'inputs:\n  ca/no_such_line: "1"\n', r"inputs\.ca/no_such_line"),
+        (
+            "expected",
+            'expected:\n  ca-on/return:\n    - ca/no_such_line: "1"\n',
+            r"expected\.ca-on/return\[0\]\.ca/no_such_line",
+        ),
+    ],
+)
 def test_an_unknown_identifier_names_the_file_and_key(
-    tmp_path: Path, artifacts: ArtifactRegistry, section: str
+    tmp_path: Path, artifacts: ArtifactRegistry, section: str, text: str, where: str
 ) -> None:
-    path = write(tmp_path, with_section(section, f'{section}:\n  ca/no_such_line: "1"\n'))
+    path = write(tmp_path, with_section(section, text))
 
     with pytest.raises(
-        WorkedReturnError,
-        match=rf"bad\.yaml: {section}\.ca/no_such_line: unknown artifact identifier",
+        WorkedReturnError, match=rf"bad\.yaml: {where}: unknown artifact identifier"
     ):
         WorkedReturn.load(path, artifacts)
 
@@ -317,8 +328,8 @@ def test_an_int_kind_refuses_a_string_that_is_not_decimal_digits(
 def with_expected_count(value: str) -> str:
     """`VALID` with a count input, also expecting the made-up count `ex/count` (a count output)."""
     return with_section("inputs", 'inputs:\n  ex/count: "3"\n').replace(
-        'expected:\n  ca/federal_basic_tax: "20146.25"\n',
-        f'expected:\n  ca/federal_basic_tax: "20146.25"\n  ex/count: {value}\n',
+        RETURN_LINE,
+        f"{RETURN_LINE}      ex/count: {value}\n",
     )
 
 
@@ -348,7 +359,8 @@ def test_an_unquoted_count_under_expected_names_the_file_and_key(
     path = write(tmp_path, with_expected_count(count))
 
     with pytest.raises(
-        WorkedReturnError, match=rf"bad\.yaml: expected\.ex/count must be a string, got {got}"
+        WorkedReturnError,
+        match=rf"bad\.yaml: expected\.ca-on/return\[0\]\.ex/count must be a string, got {got}",
     ):
         WorkedReturn.load(path, counts)
 
@@ -361,7 +373,10 @@ def test_a_count_under_expected_that_is_not_decimal_digits_names_the_file_and_ke
 
     with pytest.raises(
         WorkedReturnError,
-        match=rf"bad\.yaml: expected\.ex/count is not a count: {re.escape(repr(count))}",
+        match=(
+            rf"bad\.yaml: expected\.ca-on/return\[0\]\.ex/count is not a count: "
+            rf"{re.escape(repr(count))}"
+        ),
     ):
         WorkedReturn.load(path, counts)
 
@@ -756,10 +771,16 @@ def test_a_record_list_under_expected_loads_its_records_in_order(
 ) -> None:
     # A return can expect a line it produces as a list (T776 Area A's closing UCC), in the same
     # spelling as a record list input.
-    expected = DEPENDANTS.replace("inputs:", "expected:", 1)
-    text = with_section("inputs", DEPENDANTS).replace(
-        'expected:\n  ca/federal_basic_tax: "20146.25"\n', expected
+    expected = (
+        "expected:\n"
+        "  ca-on/return:\n"
+        "    - ex/dependants:\n"
+        '        - ex/dependant_net_income: "25000"\n'
+        '          ex/months_resident: "12"\n'
+        '        - ex/dependant_net_income: "5000.50"\n'
+        '          ex/months_resident: "6"\n'
     )
+    text = with_section("inputs", DEPENDANTS).replace(SECTIONS["expected"], expected)
     path = write(tmp_path, text, "ok.yaml")
     kind = records.kind("ex/dependants")
     net_income = records.kind("ex/dependant_net_income")
@@ -790,8 +811,8 @@ def with_business_number(value: str) -> str:
 def with_expected_business_number(value: str) -> str:
     """`VALID` with a business number input, also expecting it back spelled `value`."""
     return with_business_number('"012345678"').replace(
-        'expected:\n  ca/federal_basic_tax: "20146.25"\n',
-        f'expected:\n  ca/federal_basic_tax: "20146.25"\n  ex/business_number: {value}\n',
+        RETURN_LINE,
+        f"{RETURN_LINE}      ex/business_number: {value}\n",
     )
 
 
@@ -890,7 +911,10 @@ def test_digits_under_expected_that_are_not_quoted_text_name_the_file_and_key(
 
     with pytest.raises(
         WorkedReturnError,
-        match=r"bad\.yaml: expected\.ex/business_number must be a string, got int",
+        match=(
+            r"bad\.yaml: expected\.ca-on/return\[0\]\.ex/business_number "
+            r"must be a string, got int"
+        ),
     ):
         WorkedReturn.load(path, digits)
 
@@ -915,7 +939,7 @@ def test_digits_left_out_are_the_empty_text_as_an_input_and_an_expected_line(
 
 def expecting_rate(rate: str) -> str:
     """`VALID` with a rate line, `ex/rate`, added under `expected`."""
-    return VALID + f"  ex/rate: {rate}\n"
+    return VALID + f"      ex/rate: {rate}\n"
 
 
 @pytest.mark.parametrize("rate", ["0.55", "0.75", "0", "1", "0.5", "0.0925"])
@@ -938,7 +962,9 @@ def test_loads_the_care_credit_percentage_as_a_rate(
 ) -> None:
     # Schedule ON479-A line 7: the rate the family adjusted income gives, a line a return
     # expects.
-    text = with_section("expected", 'expected:\n  ca-on/care_credit_percentage: "0.55"\n')
+    text = with_section(
+        "expected", 'expected:\n  ca-on/return:\n    - ca-on/care_credit_percentage: "0.55"\n'
+    )
 
     worked = WorkedReturn.load(write(tmp_path, text, "ok.yaml"), artifacts)
 
@@ -961,7 +987,9 @@ def test_a_non_decimal_rate_names_the_file_and_key(
 ) -> None:
     path = write(tmp_path, expecting_rate(rate))
 
-    with pytest.raises(WorkedReturnError, match=rf"bad\.yaml: expected\.ex/rate {problem}"):
+    with pytest.raises(
+        WorkedReturnError, match=rf"bad\.yaml: expected\.ca-on/return\[0\]\.ex/rate {problem}"
+    ):
         WorkedReturn.load(path, rates)
 
 
@@ -1160,6 +1188,12 @@ def rental_form() -> Form:
     )
 
 
+def return_form() -> Form:
+    return Form(
+        name="ca-on/return", instances=None, exports=("ex/total_net_income",), capabilities=()
+    )
+
+
 def business_form() -> Form:
     return Form(
         name="ex/business",
@@ -1182,7 +1216,7 @@ def test_a_form_whose_instances_nothing_registers_fails_naming_the_file(
     )
 
     with pytest.raises(WorkedReturnError, match=r"per\.yaml: .*'ex/nowhere'"):
-        worked.check_forms([lost], lines)
+        worked.check_forms([return_form(), lost], lines)
 
 
 def test_a_form_whose_instances_is_not_a_record_list_fails_naming_the_file(
@@ -1197,7 +1231,7 @@ def test_a_form_whose_instances_is_not_a_record_list_fails_naming_the_file(
     )
 
     with pytest.raises(WorkedReturnError, match=r"per\.yaml: .*'ex/gross_rent'.*record list"):
-        worked.check_forms([wrong], lines)
+        worked.check_forms([return_form(), wrong], lines)
 
 
 # --- per-instance expected lines ---------------------------------------------------------------
@@ -1211,7 +1245,8 @@ def test_a_form_whose_instances_is_not_a_record_list_fails_naming_the_file(
 
 PER_INSTANCE = (
     "expected:\n"
-    '  ex/total_net_income: "14000"\n'
+    "  ca-on/return:\n"
+    '    - ex/total_net_income: "14000"\n'
     "  ex/rental:\n"
     '    - ex/net_income: "10000"\n'
     '    - ex/net_income: "4000"\n'
@@ -1244,13 +1279,13 @@ def per_instance(
     return WorkedReturn.load(write(tmp_path, text, "per.yaml"), registry)
 
 
-def test_a_worked_return_has_no_form_expectations_unless_the_file_gives_some(
+def test_a_worked_return_expects_only_its_own_form_unless_the_file_gives_more(
     tmp_path: Path, rentals: ArtifactRegistry
 ) -> None:
     text = with_section("inputs", TWO_INSTANCES)
     worked = WorkedReturn.load(write(tmp_path, text, "plain.yaml"), rentals)
 
-    assert worked.form_expected == ()
+    assert [found.form for found in worked.form_expected] == ["ca-on/return"]
 
 
 def test_the_lines_of_each_instance_are_read_in_instance_order(
@@ -1259,7 +1294,7 @@ def test_the_lines_of_each_instance_are_read_in_instance_order(
     worked = per_instance(tmp_path, lines)
 
     net_income = lines.kind("ex/net_income")
-    assert worked.form_expected == (
+    assert worked.form_expected[1:] == (
         FormExpectation(
             "ex/rental",
             (
@@ -1270,7 +1305,9 @@ def test_the_lines_of_each_instance_are_read_in_instance_order(
     )
 
 
-def test_the_flat_lines_stay_the_returns_own(tmp_path: Path, lines: ArtifactRegistry) -> None:
+def test_the_lines_of_the_returns_own_form_are_its_expected_lines(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
     worked = per_instance(tmp_path, lines)
 
     assert [(a.kind.identifier, a.value) for a in worked.expected] == [
@@ -1345,20 +1382,46 @@ def test_a_figure_in_an_instance_is_spelled_as_under_the_flat_lines(
         per_instance(tmp_path, lines, "expected:\n  ex/rental:\n    - ex/net_income: 10000\n")
 
 
-def test_a_key_that_is_neither_an_identifier_nor_a_list_is_an_unknown_identifier(
+def test_a_form_that_is_not_a_list_names_the_file_and_key(
     tmp_path: Path, lines: ArtifactRegistry
 ) -> None:
-    with pytest.raises(WorkedReturnError, match=r"per\.yaml.*unknown artifact identifier"):
+    with pytest.raises(WorkedReturnError, match=r"per\.yaml: expected\.ex/rental must be a list"):
         per_instance(tmp_path, lines, 'expected:\n  ex/rental: "5"\n')
 
 
-def test_a_registered_identifier_with_a_list_is_a_record_list_line_not_a_form(
+def test_with_blanks_keeps_the_returns_own_entry_where_the_file_put_it(
     tmp_path: Path, lines: ArtifactRegistry
 ) -> None:
-    worked = per_instance(tmp_path, lines, "expected:\n  ex/units:\n    - ex/unit_amount: '1'\n")
+    text = (
+        "expected:\n"
+        "  ex/rental:\n"
+        '    - ex/net_income: "10000"\n'
+        '    - ex/net_income: "4000"\n'
+        "  ca-on/return:\n"
+        '    - ex/total_net_income: "14000"\n'
+    )
+    worked = per_instance(tmp_path, lines, text)
 
-    assert worked.form_expected == ()
-    assert [a.kind.identifier for a in worked.expected] == ["ex/units"]
+    filled = worked.with_blanks(frozenset(), frozenset({"ex/other_amount"}), lines)
+
+    assert [found.form for found in filled.form_expected] == ["ex/rental", "ca-on/return"]
+    assert [a.kind.identifier for a in filled.expected] == [
+        "ex/total_net_income",
+        "ex/other_amount",
+    ]
+
+
+def test_with_blanks_gives_a_file_with_no_entry_for_its_own_form_one_of_blanks(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    worked = per_instance(
+        tmp_path, lines, 'expected:\n  ex/rental:\n    - ex/net_income: "1"\n    - {}\n'
+    )
+
+    filled = worked.with_blanks(frozenset(), frozenset({"ex/other_amount"}), lines)
+
+    assert [found.form for found in filled.form_expected] == ["ca-on/return", "ex/rental"]
+    assert [(a.kind.identifier, a.value) for a in filled.expected] == [("ex/other_amount", D(0))]
 
 
 def test_with_blanks_keeps_the_form_expectations_and_adds_none(
@@ -1376,7 +1439,7 @@ def test_with_blanks_keeps_the_form_expectations_and_adds_none(
 def test_check_forms_accepts_the_expectations_of_a_form_with_an_entry_per_instance(
     tmp_path: Path, lines: ArtifactRegistry
 ) -> None:
-    per_instance(tmp_path, lines).check_forms([rental_form()], lines)
+    per_instance(tmp_path, lines).check_forms([return_form(), rental_form()], lines)
 
 
 def test_an_expectation_of_a_form_the_manifest_lacks_fails_naming_the_file_and_form(
@@ -1385,20 +1448,19 @@ def test_an_expectation_of_a_form_the_manifest_lacks_fails_naming_the_file_and_f
     worked = per_instance(tmp_path, lines)
 
     with pytest.raises(WorkedReturnError, match=r"per\.yaml: expected: 'ex/rental' is not a form"):
-        worked.check_forms([business_form()], lines)
+        worked.check_forms([return_form(), business_form()], lines)
 
 
-def test_an_expectation_of_a_form_without_instances_says_so_not_that_it_is_missing(
+def test_a_form_without_instances_has_the_one_entry(
     tmp_path: Path, lines: ArtifactRegistry
 ) -> None:
     worked = per_instance(tmp_path, lines)
     once = replace(rental_form(), instances=None)
 
     with pytest.raises(
-        WorkedReturnError,
-        match=r"per\.yaml: expected: 'ex/rental' is a form without instances; only the default",
+        WorkedReturnError, match=r"per\.yaml: expected: 'ex/rental' has 2 entries for 1 instance"
     ):
-        worked.check_forms([once], lines)
+        worked.check_forms([return_form(), once], lines)
 
 
 def test_an_expectation_with_no_forms_at_all_fails_naming_the_form(
@@ -1406,7 +1468,9 @@ def test_an_expectation_with_no_forms_at_all_fails_naming_the_form(
 ) -> None:
     worked = per_instance(tmp_path, lines)
 
-    with pytest.raises(WorkedReturnError, match=r"per\.yaml: expected: 'ex/rental' is not a form"):
+    with pytest.raises(
+        WorkedReturnError, match=r"per\.yaml: expected: 'ca-on/return' is not a form"
+    ):
         worked.check_forms([], lines)
 
 

@@ -113,45 +113,30 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_TOTAL_EXPENSES,
     BUSINESS_TRAVEL_EXPENSES,
     BUSINESS_UTILITIES,
-    BUSINESS_VEHICLE_AVAILABLE_INTEREST,
     BUSINESS_VEHICLE_BUSINESS_KILOMETRES,
-    BUSINESS_VEHICLE_BUSINESS_USE_PART,
     BUSINESS_VEHICLE_DAYS_DIVISOR,
     BUSINESS_VEHICLE_ELECTRICITY_ZEV,
     BUSINESS_VEHICLE_FUEL_AND_OIL,
     BUSINESS_VEHICLE_INSURANCE,
     BUSINESS_VEHICLE_INTEREST_DAYS,
-    BUSINESS_VEHICLE_INTEREST_FOR_PERIOD,
     BUSINESS_VEHICLE_INTEREST_LIMIT,
     BUSINESS_VEHICLE_INTEREST_PAYABLE,
     BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT,
-    BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT_TAX,
-    BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX,
-    BUSINESS_VEHICLE_LEASE_CHARGE_PORTION,
     BUSINESS_VEHICLE_LEASE_CHARGES,
-    BUSINESS_VEHICLE_LEASE_CHARGES_NET,
     BUSINESS_VEHICLE_LEASE_COST_LIMIT,
-    BUSINESS_VEHICLE_LEASE_COST_LIMIT_TAX,
-    BUSINESS_VEHICLE_LEASE_COST_LIMIT_WITH_TAX,
-    BUSINESS_VEHICLE_LEASE_COST_PORTION,
     BUSINESS_VEHICLE_LEASE_DAYS,
     BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,
-    BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
-    BUSINESS_VEHICLE_LEASE_PRICE_BASE,
-    BUSINESS_VEHICLE_LEASING_COST,
     BUSINESS_VEHICLE_LICENCE_AND_REGISTRATION,
     BUSINESS_VEHICLE_LIST_PRICE,
     BUSINESS_VEHICLE_LIST_PRICE_LIMIT,
-    BUSINESS_VEHICLE_LIST_PRICE_LIMIT_TAX,
-    BUSINESS_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
     BUSINESS_VEHICLE_MAINTENANCE_AND_REPAIRS,
     BUSINESS_VEHICLE_OTHER_EXPENSES_10,
     BUSINESS_VEHICLE_OTHER_EXPENSES_11,
     BUSINESS_VEHICLE_PARKING_FEES,
     BUSINESS_VEHICLE_SALES_TAX_RATE,
     BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,
-    BUSINESS_VEHICLE_TOTAL_EXPENSES,
     BUSINESS_VEHICLE_TOTAL_KILOMETRES,
+    BUSINESS_VEHICLES,
     CAPITAL_GAIN,
     CAPITAL_GAINS_DEDUCTIONS_CLAIMED_1985_TO_2024,
     CAREGIVER_AMOUNT,
@@ -297,40 +282,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_TOBACCO,
     FARM_TOTAL_EXPENSES,
     FARM_VEGETABLES,
-    FARM_VEHICLE_AVAILABLE_INTEREST,
-    FARM_VEHICLE_BUSINESS_KILOMETRES,
-    FARM_VEHICLE_BUSINESS_USE_PART,
-    FARM_VEHICLE_ELECTRICITY_ZEV,
-    FARM_VEHICLE_FUEL_AND_OIL,
-    FARM_VEHICLE_INSURANCE,
-    FARM_VEHICLE_INTEREST_DAYS,
-    FARM_VEHICLE_INTEREST_FOR_PERIOD,
-    FARM_VEHICLE_INTEREST_PAYABLE,
-    FARM_VEHICLE_LEASE_CHARGE_LIMIT_TAX,
-    FARM_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX,
-    FARM_VEHICLE_LEASE_CHARGE_PORTION,
-    FARM_VEHICLE_LEASE_CHARGES,
-    FARM_VEHICLE_LEASE_CHARGES_NET,
-    FARM_VEHICLE_LEASE_COST_LIMIT_TAX,
-    FARM_VEHICLE_LEASE_COST_LIMIT_WITH_TAX,
-    FARM_VEHICLE_LEASE_COST_PORTION,
-    FARM_VEHICLE_LEASE_DAYS,
-    FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,
-    FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
-    FARM_VEHICLE_LEASE_PRICE_BASE,
-    FARM_VEHICLE_LEASING_COST,
-    FARM_VEHICLE_LICENCE_AND_REGISTRATION,
-    FARM_VEHICLE_LIST_PRICE,
-    FARM_VEHICLE_LIST_PRICE_LIMIT_TAX,
-    FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
-    FARM_VEHICLE_MAINTENANCE_AND_REPAIRS,
-    FARM_VEHICLE_OTHER_EXPENSES_10,
-    FARM_VEHICLE_OTHER_EXPENSES_11,
-    FARM_VEHICLE_PARKING_FEES,
     FARM_VEHICLE_SALES_TAX_RATE,
-    FARM_VEHICLE_SUPPLEMENTARY_INSURANCE,
-    FARM_VEHICLE_TOTAL_EXPENSES,
-    FARM_VEHICLE_TOTAL_KILOMETRES,
     FARM_VETERINARY_FEES,
     FARM_WHEAT,
     FARMING_INCOME,
@@ -438,40 +390,7 @@ from app.jurisdictions.ca.catalog import (
     FISH_SUBSIDIES,
     FISH_TERMINAL_LOSS,
     FISH_TOTAL_EXPENSES,
-    FISH_VEHICLE_AVAILABLE_INTEREST,
-    FISH_VEHICLE_BUSINESS_KILOMETRES,
-    FISH_VEHICLE_BUSINESS_USE_PART,
-    FISH_VEHICLE_ELECTRICITY_ZEV,
-    FISH_VEHICLE_FUEL_AND_OIL,
-    FISH_VEHICLE_INSURANCE,
-    FISH_VEHICLE_INTEREST_DAYS,
-    FISH_VEHICLE_INTEREST_FOR_PERIOD,
-    FISH_VEHICLE_INTEREST_PAYABLE,
-    FISH_VEHICLE_LEASE_CHARGE_LIMIT_TAX,
-    FISH_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX,
-    FISH_VEHICLE_LEASE_CHARGE_PORTION,
-    FISH_VEHICLE_LEASE_CHARGES,
-    FISH_VEHICLE_LEASE_CHARGES_NET,
-    FISH_VEHICLE_LEASE_COST_LIMIT_TAX,
-    FISH_VEHICLE_LEASE_COST_LIMIT_WITH_TAX,
-    FISH_VEHICLE_LEASE_COST_PORTION,
-    FISH_VEHICLE_LEASE_DAYS,
-    FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,
-    FISH_VEHICLE_LEASE_PRICE_85_PERCENT,
-    FISH_VEHICLE_LEASE_PRICE_BASE,
-    FISH_VEHICLE_LEASING_COST,
-    FISH_VEHICLE_LICENCE_AND_REGISTRATION,
-    FISH_VEHICLE_LIST_PRICE,
-    FISH_VEHICLE_LIST_PRICE_LIMIT_TAX,
-    FISH_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
-    FISH_VEHICLE_MAINTENANCE_AND_REPAIRS,
-    FISH_VEHICLE_OTHER_EXPENSES_10,
-    FISH_VEHICLE_OTHER_EXPENSES_11,
-    FISH_VEHICLE_PARKING_FEES,
     FISH_VEHICLE_SALES_TAX_RATE,
-    FISH_VEHICLE_SUPPLEMENTARY_INSURANCE,
-    FISH_VEHICLE_TOTAL_EXPENSES,
-    FISH_VEHICLE_TOTAL_KILOMETRES,
     FISHING_INCOME,
     GROSS_RENTAL_INCOME,
     INCOME_TAX_DEDUCTED,
@@ -689,6 +608,9 @@ from app.jurisdictions.ca.catalog import (
     STANDARD_AMOUNT_ALLOCATED_1,
     STANDARD_AMOUNT_ALLOCATED_2,
     STANDARD_AMOUNT_ALLOCATED_3,
+    T2042_STATEMENTS,
+    T2121_STATEMENTS,
+    T2125_STATEMENTS,
     TAX_PAID_BY_INSTALMENTS,
     TAXABLE_INCOME,
     TOTAL_INCOME,
@@ -2349,22 +2271,6 @@ T2125_KINDS: tuple[ArtifactKind[Any], ...] = (
     BUSINESS_VEHICLE_LIST_PRICE_LIMIT,  # computed or dataset
     BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT,  # computed or dataset
     BUSINESS_VEHICLE_LEASE_COST_LIMIT,  # computed or dataset
-    BUSINESS_VEHICLE_LIST_PRICE_LIMIT_TAX,  # computed or dataset
-    BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT_TAX,  # computed or dataset
-    BUSINESS_VEHICLE_LEASE_COST_LIMIT_TAX,  # computed or dataset
-    BUSINESS_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,  # computed or dataset
-    BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX,  # computed or dataset
-    BUSINESS_VEHICLE_LEASE_COST_LIMIT_WITH_TAX,  # computed or dataset
-    BUSINESS_VEHICLE_TOTAL_EXPENSES,  # computed or dataset
-    BUSINESS_VEHICLE_BUSINESS_USE_PART,  # computed or dataset
-    BUSINESS_VEHICLE_INTEREST_FOR_PERIOD,  # computed or dataset
-    BUSINESS_VEHICLE_AVAILABLE_INTEREST,  # computed or dataset
-    BUSINESS_VEHICLE_LEASE_PRICE_BASE,  # computed or dataset
-    BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,  # computed or dataset
-    BUSINESS_VEHICLE_LEASE_CHARGE_PORTION,  # computed or dataset
-    BUSINESS_VEHICLE_LEASE_CHARGES_NET,  # computed or dataset
-    BUSINESS_VEHICLE_LEASE_COST_PORTION,  # computed or dataset
-    BUSINESS_VEHICLE_LEASING_COST,  # computed or dataset
     BUSINESS_CCA_PERSONAL_PART,  # cca_personal_part
     BUSINESS_OTHER_EXPENSES,  # other_expenses
     BUSINESS_JOURNALISM_LABOUR_TAX_CREDIT,  # journalism_labour_tax_credit
@@ -2387,6 +2293,7 @@ T2125_KINDS: tuple[ArtifactKind[Any], ...] = (
     BUSINESS_PARTNER_SHARE,  # partner_share
     BUSINESS_PARTNER,  # partner
     BUSINESS_CCA_CLASSES,  # cca_classes
+    BUSINESS_VEHICLES,  # vehicles
     BUSINESS_SALES_SUBTOTAL,  # sales_subtotal
     BUSINESS_RECAPTURED_CCA,  # recaptured_cca
     BUSINESS_OTHER_INCOME_WITH_RECAPTURE,  # other_income_with_recapture
@@ -2463,6 +2370,70 @@ def test_the_business_cca_classes_are_the_area_a_columns_the_caller_enters(
     assert registry.get("ca/business_cca_classes") is BUSINESS_CCA_CLASSES
 
 
+def test_the_business_vehicles_are_the_chart_amounts_the_caller_enters_for_each_vehicle(
+    registry: ArtifactRegistry,
+) -> None:
+    # Form T2125 Charts A to C are filled in for each vehicle: one record per vehicle, with the
+    # seventeen amounts of the charts the caller enters (the sales tax rate of the province stays a
+    # statement input).
+    assert RECORD_LISTS <= REGISTERED
+    assert isinstance(BUSINESS_VEHICLES, RecordListKind)
+    assert BUSINESS_VEHICLES.identifier == "ca/business_vehicles"
+    assert BUSINESS_VEHICLES.value_type is RecordList
+    assert BUSINESS_VEHICLES.fields == (
+        BUSINESS_VEHICLE_BUSINESS_KILOMETRES,
+        BUSINESS_VEHICLE_TOTAL_KILOMETRES,
+        BUSINESS_VEHICLE_FUEL_AND_OIL,
+        BUSINESS_VEHICLE_INSURANCE,
+        BUSINESS_VEHICLE_LICENCE_AND_REGISTRATION,
+        BUSINESS_VEHICLE_MAINTENANCE_AND_REPAIRS,
+        BUSINESS_VEHICLE_ELECTRICITY_ZEV,
+        BUSINESS_VEHICLE_OTHER_EXPENSES_10,
+        BUSINESS_VEHICLE_OTHER_EXPENSES_11,
+        BUSINESS_VEHICLE_PARKING_FEES,
+        BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,
+        BUSINESS_VEHICLE_INTEREST_PAYABLE,
+        BUSINESS_VEHICLE_INTEREST_DAYS,
+        BUSINESS_VEHICLE_LEASE_CHARGES,
+        BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,
+        BUSINESS_VEHICLE_LEASE_DAYS,
+        BUSINESS_VEHICLE_LIST_PRICE,
+    )
+    assert BUSINESS_VEHICLE_SALES_TAX_RATE not in BUSINESS_VEHICLES.fields
+    assert registry.get("ca/business_vehicles") is BUSINESS_VEHICLES
+
+
+def test_the_t2125_statements_carry_the_vehicles_as_a_list_not_as_flat_fields() -> None:
+    fields = T2125_STATEMENTS.fields
+
+    assert BUSINESS_VEHICLES in fields
+    assert BUSINESS_VEHICLE_SALES_TAX_RATE in fields
+    for flat in BUSINESS_VEHICLES.fields:
+        assert flat not in fields, flat.identifier
+
+
+def test_the_t2042_statements_carry_the_vehicles_as_a_list_not_as_flat_fields() -> None:
+    # Form T2042 Charts A to C: each vehicle is a record of the shared `ca/business_vehicles`, and
+    # the sales tax rate of the province stays one statement input.
+    fields = T2042_STATEMENTS.fields
+    flat = [field.identifier for field in fields if field.identifier.startswith("ca/farm_vehicle_")]
+
+    assert BUSINESS_VEHICLES in fields
+    assert flat == ["ca/farm_vehicle_sales_tax_rate"]
+    assert FARM_VEHICLE_SALES_TAX_RATE in fields
+
+
+def test_the_t2121_statements_carry_the_vehicles_as_a_list_not_as_flat_fields() -> None:
+    # Form T2121 Charts A to C, as Form T2042: one record of `ca/business_vehicles` for each
+    # vehicle.
+    fields = T2121_STATEMENTS.fields
+    flat = [field.identifier for field in fields if field.identifier.startswith("ca/fish_vehicle_")]
+
+    assert BUSINESS_VEHICLES in fields
+    assert flat == ["ca/fish_vehicle_sales_tax_rate"]
+    assert FISH_VEHICLE_SALES_TAX_RATE in fields
+
+
 def test_the_business_closing_ucc_is_a_record_list_of_the_class_and_its_closing_ucc(
     registry: ArtifactRegistry,
 ) -> None:
@@ -2535,40 +2506,8 @@ FARM_KINDS: tuple[ArtifactKind[Any], ...] = (
     FARM_RENT,  # rent
     FARM_SALARIES_WAGES_AND_BENEFITS,  # salaries_wages_and_benefits
     FARM_MOTOR_VEHICLE_EXPENSES,  # motor_vehicle_expenses
-    FARM_VEHICLE_BUSINESS_KILOMETRES,  # amount 1
-    FARM_VEHICLE_TOTAL_KILOMETRES,  # amount 2
-    FARM_VEHICLE_FUEL_AND_OIL,  # amount 3
-    FARM_VEHICLE_INSURANCE,  # amount 5
-    FARM_VEHICLE_LICENCE_AND_REGISTRATION,  # amount 6
-    FARM_VEHICLE_MAINTENANCE_AND_REPAIRS,  # amount 7
-    FARM_VEHICLE_ELECTRICITY_ZEV,  # amount 9
-    FARM_VEHICLE_OTHER_EXPENSES_10,  # amount 10
-    FARM_VEHICLE_OTHER_EXPENSES_11,  # amount 11
-    FARM_VEHICLE_PARKING_FEES,  # amount 14
-    FARM_VEHICLE_SUPPLEMENTARY_INSURANCE,  # amount 15
-    FARM_VEHICLE_INTEREST_PAYABLE,  # amount 17
-    FARM_VEHICLE_INTEREST_DAYS,  # number of days
-    FARM_VEHICLE_LEASE_CHARGES,  # amount 20
-    FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,  # amount 21
-    FARM_VEHICLE_LEASE_DAYS,  # amount 22
-    FARM_VEHICLE_LIST_PRICE,  # amount 23
+    BUSINESS_VEHICLES,  # vehicles
     FARM_VEHICLE_SALES_TAX_RATE,  # GST or HST rate, in percent
-    FARM_VEHICLE_LIST_PRICE_LIMIT_TAX,  # computed or dataset
-    FARM_VEHICLE_LEASE_CHARGE_LIMIT_TAX,  # computed or dataset
-    FARM_VEHICLE_LEASE_COST_LIMIT_TAX,  # computed or dataset
-    FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,  # computed or dataset
-    FARM_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX,  # computed or dataset
-    FARM_VEHICLE_LEASE_COST_LIMIT_WITH_TAX,  # computed or dataset
-    FARM_VEHICLE_TOTAL_EXPENSES,  # computed or dataset
-    FARM_VEHICLE_BUSINESS_USE_PART,  # computed or dataset
-    FARM_VEHICLE_INTEREST_FOR_PERIOD,  # computed or dataset
-    FARM_VEHICLE_AVAILABLE_INTEREST,  # computed or dataset
-    FARM_VEHICLE_LEASE_PRICE_BASE,  # computed or dataset
-    FARM_VEHICLE_LEASE_PRICE_85_PERCENT,  # computed or dataset
-    FARM_VEHICLE_LEASE_CHARGE_PORTION,  # computed or dataset
-    FARM_VEHICLE_LEASE_CHARGES_NET,  # computed or dataset
-    FARM_VEHICLE_LEASE_COST_PORTION,  # computed or dataset
-    FARM_VEHICLE_LEASING_COST,  # computed or dataset
     FARM_SMALL_TOOLS,  # small_tools
     FARM_MANDATORY_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
     FARM_OPTIONAL_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,  # optional_inventory_adjustment_previous_year
@@ -2627,8 +2566,9 @@ FARM_KINDS: tuple[ArtifactKind[Any], ...] = (
 
 def test_the_t2042_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
     assert len({kind.identifier for kind in FARM_KINDS}) == len(FARM_KINDS)
+    assert BUSINESS_VEHICLES in T2042_STATEMENTS.fields
     for kind in FARM_KINDS:
-        assert kind.identifier.startswith("ca/farm_"), kind.identifier
+        assert kind.identifier.startswith("ca/farm_") or kind is BUSINESS_VEHICLES, kind.identifier
         assert registry.get(kind.identifier) is kind
         assert kind.identifier in REGISTERED
 
@@ -2700,40 +2640,8 @@ FISH_KINDS: tuple[ArtifactKind[Any], ...] = (
     FISH_MEALS_AND_ENTERTAINMENT,  # meals_and_entertainment
     FISH_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,  # business_taxes_licences_and_memberships
     FISH_MOTOR_VEHICLE_EXPENSES,  # motor_vehicle_expenses
-    FISH_VEHICLE_BUSINESS_KILOMETRES,  # amount 1
-    FISH_VEHICLE_TOTAL_KILOMETRES,  # amount 2
-    FISH_VEHICLE_FUEL_AND_OIL,  # amount 3
-    FISH_VEHICLE_INSURANCE,  # amount 5
-    FISH_VEHICLE_LICENCE_AND_REGISTRATION,  # amount 6
-    FISH_VEHICLE_MAINTENANCE_AND_REPAIRS,  # amount 7
-    FISH_VEHICLE_ELECTRICITY_ZEV,  # amount 9
-    FISH_VEHICLE_OTHER_EXPENSES_10,  # amount 10
-    FISH_VEHICLE_OTHER_EXPENSES_11,  # amount 11
-    FISH_VEHICLE_PARKING_FEES,  # amount 14
-    FISH_VEHICLE_SUPPLEMENTARY_INSURANCE,  # amount 15
-    FISH_VEHICLE_INTEREST_PAYABLE,  # amount 17
-    FISH_VEHICLE_INTEREST_DAYS,  # number of days
-    FISH_VEHICLE_LEASE_CHARGES,  # amount 20
-    FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,  # amount 21
-    FISH_VEHICLE_LEASE_DAYS,  # amount 22
-    FISH_VEHICLE_LIST_PRICE,  # amount 23
+    BUSINESS_VEHICLES,  # vehicles
     FISH_VEHICLE_SALES_TAX_RATE,  # GST or HST rate, in percent
-    FISH_VEHICLE_LIST_PRICE_LIMIT_TAX,  # computed or dataset
-    FISH_VEHICLE_LEASE_CHARGE_LIMIT_TAX,  # computed or dataset
-    FISH_VEHICLE_LEASE_COST_LIMIT_TAX,  # computed or dataset
-    FISH_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,  # computed or dataset
-    FISH_VEHICLE_LEASE_CHARGE_LIMIT_WITH_TAX,  # computed or dataset
-    FISH_VEHICLE_LEASE_COST_LIMIT_WITH_TAX,  # computed or dataset
-    FISH_VEHICLE_TOTAL_EXPENSES,  # computed or dataset
-    FISH_VEHICLE_BUSINESS_USE_PART,  # computed or dataset
-    FISH_VEHICLE_INTEREST_FOR_PERIOD,  # computed or dataset
-    FISH_VEHICLE_AVAILABLE_INTEREST,  # computed or dataset
-    FISH_VEHICLE_LEASE_PRICE_BASE,  # computed or dataset
-    FISH_VEHICLE_LEASE_PRICE_85_PERCENT,  # computed or dataset
-    FISH_VEHICLE_LEASE_CHARGE_PORTION,  # computed or dataset
-    FISH_VEHICLE_LEASE_CHARGES_NET,  # computed or dataset
-    FISH_VEHICLE_LEASE_COST_PORTION,  # computed or dataset
-    FISH_VEHICLE_LEASING_COST,  # computed or dataset
     FISH_OFFICE_EXPENSES,  # office_expenses
     FISH_NETS_AND_TRAPS,  # nets_and_traps
     FISH_PROFESSIONAL_FEES,  # professional_fees
@@ -2795,8 +2703,9 @@ FISH_KINDS: tuple[ArtifactKind[Any], ...] = (
 
 def test_the_t2121_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:
     assert len({kind.identifier for kind in FISH_KINDS}) == len(FISH_KINDS)
+    assert BUSINESS_VEHICLES in T2121_STATEMENTS.fields
     for kind in FISH_KINDS:
-        assert kind.identifier.startswith("ca/fish_"), kind.identifier
+        assert kind.identifier.startswith("ca/fish_") or kind is BUSINESS_VEHICLES, kind.identifier
         assert registry.get(kind.identifier) is kind
         assert kind.identifier in REGISTERED
 

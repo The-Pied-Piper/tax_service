@@ -61,8 +61,6 @@ from app.jurisdictions.ca.catalog import (
     AMT_T2203_COLUMN_5_PERCENTAGE,
     AMT_TOTAL_FOREIGN_INCOME,
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
-    BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
-    BUSINESS_VEHICLE_LEASE_PRICE_BASE,
     CANADA_TRAINING_CREDIT_BASIS,
     CANADIAN_TUITION_FEES,
     CAPITAL_GAIN,
@@ -97,19 +95,31 @@ from app.jurisdictions.ca.catalog import (
     ELIGIBLE_DIVIDENDS_CREDIT,
     EMPLOYMENT_INCOME,
     EXPLORATION_AND_DEVELOPMENT_EXPENSES,
-    FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
-    FARM_VEHICLE_LEASE_PRICE_BASE,
     FEDERAL_TAX_ON_SPLIT_INCOME,
     FIRST_TIER_DONATION_CREDIT,
-    FISH_VEHICLE_LEASE_PRICE_85_PERCENT,
-    FISH_VEHICLE_LEASE_PRICE_BASE,
     HIGH_INCOME_DONATION_CREDIT,
     HIGH_INCOME_DONATIONS,
     INCLUDED_CAPITAL_GAIN,
+    ITC_AGRICULTURAL_SRED_CONTRIBUTIONS,
+    ITC_AGRICULTURAL_SRED_CREDIT,
+    ITC_APPRENTICESHIP_CREDIT,
+    ITC_APPRENTICESHIP_WAGES_WITH_T3,
+    ITC_CRITICAL_MINERAL_CREDIT,
+    ITC_CRITICAL_MINERAL_EXPENDITURES,
+    ITC_MINERAL_EXPLORATION_CREDIT,
+    ITC_MINERAL_EXPLORATION_EXPENDITURES,
+    ITC_QUALIFIED_PROPERTY,
+    ITC_QUALIFIED_PROPERTY_CREDIT,
     ITC_RECAPTURE_AT_15_PERCENT,
     ITC_RECAPTURE_AT_20_PERCENT,
     ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT,
     ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT,
+    ITC_SRED_CREDIT,
+    ITC_SRED_EXPENDITURES,
+    ITC_SRED_REPAYMENT_2014_AND_PRIOR,
+    ITC_SRED_REPAYMENT_2015_AND_AFTER,
+    ITC_SRED_REPAYMENT_CREDIT_2014_AND_PRIOR,
+    ITC_SRED_REPAYMENT_CREDIT_2015_AND_AFTER,
     LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
     LABOUR_SPONSORED_FUNDS_NET_COST,
     MEDICAL_NET_INCOME_SHARE,
@@ -477,36 +487,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             CENT,
             D("0"),
         ),
-        # Form T2125 Chart C line 24 "× 85%" of amount 23 or the list price limit with tax: Return A
-        # has no leased vehicle, so the base is 44706.00 and the 85% is 38000.10.
-        BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT: RateAppliedLine(
-            BUSINESS_VEHICLE_LEASE_PRICE_85_PERCENT,
-            BUSINESS_VEHICLE_LEASE_PRICE_BASE,
-            D("44706.00"),
-            Rate(D("0.85")),
-            CENT,
-            D("38000.10"),
-        ),
         # Form T2042 Chart C line 24 "× 85%" of amount 23 or the list price limit with tax: Return A
         # has no leased vehicle, so the base is 44706.00 and the 85% is 38000.10.
-        FARM_VEHICLE_LEASE_PRICE_85_PERCENT: RateAppliedLine(
-            FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
-            FARM_VEHICLE_LEASE_PRICE_BASE,
-            D("44706.00"),
-            Rate(D("0.85")),
-            CENT,
-            D("38000.10"),
-        ),
         # Form T2121 Chart C line 24 "× 85%" of amount 23 or the list price limit with tax: Return A
         # has no leased vehicle, so the base is 44706.00 and the 85% is 38000.10.
-        FISH_VEHICLE_LEASE_PRICE_85_PERCENT: RateAppliedLine(
-            FISH_VEHICLE_LEASE_PRICE_85_PERCENT,
-            FISH_VEHICLE_LEASE_PRICE_BASE,
-            D("44706.00"),
-            Rate(D("0.85")),
-            CENT,
-            D("38000.10"),
-        ),
         # Form T691 Part 1 line 80 "Line 78 multiply by the percentage from line 79": line 78 is
         # 3074.00 (line 63: the union dues of line 21200, 2000.00, and the enhanced CPP
         # contributions of line 22215, 1074.00), and 50% of it is 1537.00.
@@ -553,6 +537,78 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT,
             D("0"),
             Rate(D("0.20")),
+            CENT,
+            D("0"),
+        ),
+        # Form T2038(IND) Parts A and B, rate 0.15: nothing entered.
+        ITC_SRED_CREDIT: RateAppliedLine(
+            ITC_SRED_CREDIT,
+            ITC_SRED_EXPENDITURES,
+            D("0"),
+            Rate(D("0.15")),
+            CENT,
+            D("0"),
+        ),
+        # Form T2038(IND) Parts A and B, rate 0.15: nothing entered.
+        ITC_AGRICULTURAL_SRED_CREDIT: RateAppliedLine(
+            ITC_AGRICULTURAL_SRED_CREDIT,
+            ITC_AGRICULTURAL_SRED_CONTRIBUTIONS,
+            D("0"),
+            Rate(D("0.15")),
+            CENT,
+            D("0"),
+        ),
+        # Form T2038(IND) Parts A and B, rate 0.10: nothing entered.
+        ITC_QUALIFIED_PROPERTY_CREDIT: RateAppliedLine(
+            ITC_QUALIFIED_PROPERTY_CREDIT,
+            ITC_QUALIFIED_PROPERTY,
+            D("0"),
+            Rate(D("0.10")),
+            CENT,
+            D("0"),
+        ),
+        # Form T2038(IND) Parts A and B, rate 0.15: nothing entered.
+        ITC_MINERAL_EXPLORATION_CREDIT: RateAppliedLine(
+            ITC_MINERAL_EXPLORATION_CREDIT,
+            ITC_MINERAL_EXPLORATION_EXPENDITURES,
+            D("0"),
+            Rate(D("0.15")),
+            CENT,
+            D("0"),
+        ),
+        # Form T2038(IND) Parts A and B, rate 0.30: nothing entered.
+        ITC_CRITICAL_MINERAL_CREDIT: RateAppliedLine(
+            ITC_CRITICAL_MINERAL_CREDIT,
+            ITC_CRITICAL_MINERAL_EXPENDITURES,
+            D("0"),
+            Rate(D("0.30")),
+            CENT,
+            D("0"),
+        ),
+        # Form T2038(IND) Parts A and B, rate 0.10: nothing entered.
+        ITC_APPRENTICESHIP_CREDIT: RateAppliedLine(
+            ITC_APPRENTICESHIP_CREDIT,
+            ITC_APPRENTICESHIP_WAGES_WITH_T3,
+            D("0"),
+            Rate(D("0.10")),
+            CENT,
+            D("0"),
+        ),
+        # Form T2038(IND) Parts A and B, rate 0.20: nothing entered.
+        ITC_SRED_REPAYMENT_CREDIT_2014_AND_PRIOR: RateAppliedLine(
+            ITC_SRED_REPAYMENT_CREDIT_2014_AND_PRIOR,
+            ITC_SRED_REPAYMENT_2014_AND_PRIOR,
+            D("0"),
+            Rate(D("0.20")),
+            CENT,
+            D("0"),
+        ),
+        # Form T2038(IND) Parts A and B, rate 0.15: nothing entered.
+        ITC_SRED_REPAYMENT_CREDIT_2015_AND_AFTER: RateAppliedLine(
+            ITC_SRED_REPAYMENT_CREDIT_2015_AND_AFTER,
+            ITC_SRED_REPAYMENT_2015_AND_AFTER,
+            D("0"),
+            Rate(D("0.15")),
             CENT,
             D("0"),
         ),

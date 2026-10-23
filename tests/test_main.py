@@ -47,7 +47,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1307
+        == 1320
     )
     assert (
         len(
@@ -55,7 +55,7 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
             .form("ca-on/return")
             .composition.order
         )
-        == 1307
+        == 1320
     )
 
 
@@ -224,22 +224,6 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/business_vehicle_list_price_limit",
         "ca/business_vehicle_lease_charge_limit",
         "ca/business_vehicle_lease_cost_limit",
-        "ca/business_vehicle_list_price_limit_tax",
-        "ca/business_vehicle_lease_charge_limit_tax",
-        "ca/business_vehicle_lease_cost_limit_tax",
-        "ca/business_vehicle_list_price_limit_with_tax",
-        "ca/business_vehicle_lease_charge_limit_with_tax",
-        "ca/business_vehicle_lease_cost_limit_with_tax",
-        "ca/business_vehicle_total_expenses",
-        "ca/business_vehicle_business_use_part",
-        "ca/business_vehicle_interest_for_period",
-        "ca/business_vehicle_available_interest",
-        "ca/business_vehicle_lease_price_base",
-        "ca/business_vehicle_lease_price_85_percent",
-        "ca/business_vehicle_lease_charge_portion",
-        "ca/business_vehicle_lease_charges_net",
-        "ca/business_vehicle_lease_cost_portion",
-        "ca/business_vehicle_leasing_cost",
         "ca/business_cca_personal_part",
         "ca/business_other_expenses",
         "ca/business_journalism_labour_tax_credit",
@@ -262,6 +246,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/business_partner_share",
         "ca/business_partner",
         "ca/business_cca_classes",
+        "ca/business_vehicles",
         "ca/t2125_statements",
         "ca/business_sales_subtotal",
         "ca/business_recaptured_cca",
@@ -354,40 +339,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/farm_rent",
         "ca/farm_salaries_wages_and_benefits",
         "ca/farm_motor_vehicle_expenses",
-        "ca/farm_vehicle_business_kilometres",
-        "ca/farm_vehicle_total_kilometres",
-        "ca/farm_vehicle_fuel_and_oil",
-        "ca/farm_vehicle_insurance",
-        "ca/farm_vehicle_licence_and_registration",
-        "ca/farm_vehicle_maintenance_and_repairs",
-        "ca/farm_vehicle_electricity_zev",
-        "ca/farm_vehicle_other_expenses_10",
-        "ca/farm_vehicle_other_expenses_11",
-        "ca/farm_vehicle_parking_fees",
-        "ca/farm_vehicle_supplementary_insurance",
-        "ca/farm_vehicle_interest_payable",
-        "ca/farm_vehicle_interest_days",
-        "ca/farm_vehicle_lease_charges",
-        "ca/farm_vehicle_lease_payments_before",
-        "ca/farm_vehicle_lease_days",
-        "ca/farm_vehicle_list_price",
         "ca/farm_vehicle_sales_tax_rate",
-        "ca/farm_vehicle_list_price_limit_tax",
-        "ca/farm_vehicle_lease_charge_limit_tax",
-        "ca/farm_vehicle_lease_cost_limit_tax",
-        "ca/farm_vehicle_list_price_limit_with_tax",
-        "ca/farm_vehicle_lease_charge_limit_with_tax",
-        "ca/farm_vehicle_lease_cost_limit_with_tax",
-        "ca/farm_vehicle_total_expenses",
-        "ca/farm_vehicle_business_use_part",
-        "ca/farm_vehicle_interest_for_period",
-        "ca/farm_vehicle_available_interest",
-        "ca/farm_vehicle_lease_price_base",
-        "ca/farm_vehicle_lease_price_85_percent",
-        "ca/farm_vehicle_lease_charge_portion",
-        "ca/farm_vehicle_lease_charges_net",
-        "ca/farm_vehicle_lease_cost_portion",
-        "ca/farm_vehicle_leasing_cost",
         "ca/farm_small_tools",
         "ca/farm_mandatory_inventory_adjustment_previous_year",
         "ca/farm_optional_inventory_adjustment_previous_year",
@@ -458,40 +410,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/fish_meals_and_entertainment",
         "ca/fish_business_taxes_licences_and_memberships",
         "ca/fish_motor_vehicle_expenses",
-        "ca/fish_vehicle_business_kilometres",
-        "ca/fish_vehicle_total_kilometres",
-        "ca/fish_vehicle_fuel_and_oil",
-        "ca/fish_vehicle_insurance",
-        "ca/fish_vehicle_licence_and_registration",
-        "ca/fish_vehicle_maintenance_and_repairs",
-        "ca/fish_vehicle_electricity_zev",
-        "ca/fish_vehicle_other_expenses_10",
-        "ca/fish_vehicle_other_expenses_11",
-        "ca/fish_vehicle_parking_fees",
-        "ca/fish_vehicle_supplementary_insurance",
-        "ca/fish_vehicle_interest_payable",
-        "ca/fish_vehicle_interest_days",
-        "ca/fish_vehicle_lease_charges",
-        "ca/fish_vehicle_lease_payments_before",
-        "ca/fish_vehicle_lease_days",
-        "ca/fish_vehicle_list_price",
         "ca/fish_vehicle_sales_tax_rate",
-        "ca/fish_vehicle_list_price_limit_tax",
-        "ca/fish_vehicle_lease_charge_limit_tax",
-        "ca/fish_vehicle_lease_cost_limit_tax",
-        "ca/fish_vehicle_list_price_limit_with_tax",
-        "ca/fish_vehicle_lease_charge_limit_with_tax",
-        "ca/fish_vehicle_lease_cost_limit_with_tax",
-        "ca/fish_vehicle_total_expenses",
-        "ca/fish_vehicle_business_use_part",
-        "ca/fish_vehicle_interest_for_period",
-        "ca/fish_vehicle_available_interest",
-        "ca/fish_vehicle_lease_price_base",
-        "ca/fish_vehicle_lease_price_85_percent",
-        "ca/fish_vehicle_lease_charge_portion",
-        "ca/fish_vehicle_lease_charges_net",
-        "ca/fish_vehicle_lease_cost_portion",
-        "ca/fish_vehicle_leasing_cost",
         "ca/fish_office_expenses",
         "ca/fish_nets_and_traps",
         "ca/fish_professional_fees",
@@ -1330,6 +1249,27 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/itc_apprentice_salary_and_wages",
         "ca/itc_apprentices",
         "ca/itc_apprenticeship_wages_total",
+        "ca/itc_sred_expenditures",
+        "ca/itc_agricultural_sred_contributions",
+        "ca/itc_sred_partnership_allocation",
+        "ca/itc_qualified_property",
+        "ca/itc_mineral_exploration_expenditures",
+        "ca/itc_critical_mineral_expenditures",
+        "ca/itc_apprenticeship_t3_box_40",
+        "ca/itc_sred_repayment_2014_and_prior",
+        "ca/itc_sred_repayment_2015_and_after",
+        "ca/itc_sred_credit",
+        "ca/itc_agricultural_sred_credit",
+        "ca/itc_qualified_property_credit",
+        "ca/itc_mineral_exploration_credit",
+        "ca/itc_critical_mineral_credit",
+        "ca/itc_apprenticeship_wages_with_t3",
+        "ca/itc_apprenticeship_credit",
+        "ca/itc_sred_repayment_credit_2014_and_prior",
+        "ca/itc_sred_repayment_credit_2015_and_after",
+        "ca/itc_sred_repayment_credit",
+        "ca/itc_refundable_credits",
+        "ca/itc_nonrefundable_credits",
         "ca/spouses_claimed",
         "ca/spouse_caregiver_eligible",
         "ca/spouse_net_income",
@@ -1822,8 +1762,8 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/amt_tax_payable_after_credits",
         "ca/amt_maximum_carryover_applied",
         "ca/amt_maximum_carryover_claim",
-        "ca/amt_minimum_tax_carryover_claim",
         "ca/amt_minimum_tax_carryover_applied",
+        "ca/amt_minimum_tax_carryover_within_maximum",
         "ca/amt_federal_surtax_at_48_percent",
         "ca/amt_t2203_column_5_percentage",
         "ca/amt_federal_surtax_multiple_jurisdictions",
@@ -2361,7 +2301,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1307
+        == 1320
     )
     assert (
         len(
@@ -2369,7 +2309,7 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
             .form("ca-on/return")
             .composition.order
         )
-        == 1307
+        == 1320
     )
 
 
@@ -2382,7 +2322,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1307
+        == 1320
     )
     assert (
         len(
@@ -2390,7 +2330,7 @@ def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistr
             .form("ca-on/return")
             .composition.order
         )
-        == 1307
+        == 1320
     )
 
 

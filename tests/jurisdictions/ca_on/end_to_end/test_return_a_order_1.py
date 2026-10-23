@@ -51,7 +51,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_MAXIMUM_CARRYOVER_CLAIM,
     AMT_MINIMUM_AMOUNT,
     AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
-    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+    AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM,
     AMT_NET_MINIMUM_TAX_PAYABLE,
     AMT_PART_5_LINE_11_IS_POSITIVE,
     AMT_PART_6_FEDERAL_SURTAX,
@@ -584,13 +584,15 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).form("ca-on/return").composition.order
-    assert len(order) == 1307
-    assert len(order) == 1307
+    assert len(order) == 1320
+    assert len(order) == 1320
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
-    assert position[AMT_MAXIMUM_CARRYOVER_CLAIM] < position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED]
-    assert position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED] < position[CREDITS_AGAINST_BASIC_FEDERAL_TAX]
-    assert position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED] < position[AMT_BASIC_FEDERAL_TAX]
+    # Part 8 line 12: the check is ordered after the cap it is made against. The claim is an input,
+    # so nothing orders the readers of the claim.
+    assert (
+        position[AMT_MAXIMUM_CARRYOVER_CLAIM] < position[AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM]
+    )
     # Part 3 line 2 reads line 1 (the basic federal tax); line 3 reads line 2; line 4 is chosen
     # from the condition on line 3 and the second branch; line 6 sums lines 1, 4 and 5.
     assert position[AMT_BASIC_FEDERAL_TAX] < position[AMT_FEDERAL_SURTAX_AT_48_PERCENT]
@@ -1324,8 +1326,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     # line 12), line 60 the lesser of line 58 and line 59, and line 61 takes line 60 off line 55;
     # the surtax base and line 69 start from line 61.
     assert (
-        position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED]
-        < position[ontario.MINIMUM_TAX_CARRYOVER_CREDIT]
+        position[ontario.MINIMUM_TAX_CARRYOVER_CREDIT]
         < position[ontario.ONTARIO_MINIMUM_TAX_CARRYOVER_APPLIED]
         < position[ontario.ONTARIO_TAX_AFTER_MINIMUM_TAX_CARRYOVER]
         < position[ontario.ONTARIO_SURTAX_BASE]
@@ -1874,7 +1875,7 @@ def test_each_t2125_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2125 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2125").composition.order
-    assert len(order) == 55
+    assert len(order) == 34
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # T2125 Parts 3A to 3D: amount 3C after amounts 3A and 3B, line 8000 after 3C and 3F, line
     # 8299 after line 8000 and amount 3O, line 8519 after line 8299 and line 8518, which comes
@@ -1911,7 +1912,7 @@ def test_each_t2042_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2042 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2042").composition.order
-    assert len(order) == 49
+    assert len(order) == 28
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # Part 3: the recapture of Area A before line 9600, which comes before line 9659, which comes
     # before amount 4A.
@@ -1947,7 +1948,7 @@ def test_each_t2121_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t2121 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t2121").composition.order
-    assert len(order) == 50
+    assert len(order) == 29
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # Part 3: the recapture of Area A before line 9600, which comes before line 9659, which comes
     # before amount 4A.

@@ -88,8 +88,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_MINIMUM_AMOUNT,
     AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
-    AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
     AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
+    AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_MOVING_EXPENSES_DEDUCTION,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
@@ -382,8 +382,8 @@ PART_2_AND_8_KINDS: tuple[ArtifactKind[Decimal], ...] = (
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     AMT_MAXIMUM_CARRYOVER_APPLIED,
     AMT_MAXIMUM_CARRYOVER_CLAIM,
-    AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
+    AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM,
 )
 
 
@@ -663,8 +663,11 @@ def test_the_part_2_and_part_8_kinds_are_the_registered_ones(
     assert registry.get("ca/amt_tax_payable_after_credits") is AMT_TAX_PAYABLE_AFTER_CREDITS
     assert registry.get("ca/amt_maximum_carryover_applied") is AMT_MAXIMUM_CARRYOVER_APPLIED
     assert registry.get("ca/amt_maximum_carryover_claim") is AMT_MAXIMUM_CARRYOVER_CLAIM
-    assert registry.get("ca/amt_minimum_tax_carryover_claim") is AMT_MINIMUM_TAX_CARRYOVER_CLAIM
     assert registry.get("ca/amt_minimum_tax_carryover_applied") is AMT_MINIMUM_TAX_CARRYOVER_APPLIED
+    assert (
+        registry.get("ca/amt_minimum_tax_carryover_within_maximum")
+        is AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM
+    )
 
 
 def test_the_part_3_kinds_are_the_registered_ones(registry: ArtifactRegistry) -> None:

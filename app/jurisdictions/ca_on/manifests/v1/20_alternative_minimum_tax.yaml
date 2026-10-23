@@ -513,13 +513,15 @@ capabilities:
     produces:
       output: ca/amt_maximum_carryover_claim
   # Part 8 line 12 "Enter this amount on line 40427 of your return.": the claim, an election the
-  # filer makes, which may not be more than the cap; a claim above it is refused, not capped.
+  # filer makes and an input, may not be more than the cap; a claim above it is refused, not
+  # capped. Part 8 line 13 reads the checked claim; the lines before it read the claim itself,
+  # because line 11 reads line 41600 and so the claim cannot come out of this check.
   - name: core/at_most
     consumes:
-      amount: ca/amt_minimum_tax_carryover_claim
+      amount: ca/amt_minimum_tax_carryover_applied
       bound: ca/amt_maximum_carryover_claim
     produces:
-      output: ca/amt_minimum_tax_carryover_applied
+      output: ca/amt_minimum_tax_carryover_within_maximum
   # Part 3 line 2 "Federal surtax on business income earned outside Canada" "Multiply the amount
   # from line 1 by 48%.": line 1 is the basic federal tax of Part 2 line 7, the rate from its
   # dataset. The form prints no floor, so a negative basic federal tax gives a negative surtax.

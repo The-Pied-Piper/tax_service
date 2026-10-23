@@ -33,6 +33,7 @@ from app.jurisdictions.ca.capabilities.amount_when_more import AmountWhenMore
 from app.jurisdictions.ca.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
 from app.jurisdictions.ca.capabilities.apply_ratio_or_zero import ApplyRatioOrZero
+from app.jurisdictions.ca.capabilities.business_vehicle_expenses import BusinessVehicleExpenses
 from app.jurisdictions.ca.capabilities.caregiver_amount import CaregiverAmount
 from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
 from app.jurisdictions.ca.capabilities.chart_a_row_c_total import ChartARowCTotal
@@ -157,8 +158,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_MINIMUM_AMOUNT,
     AMT_MINIMUM_TAX_AFTER_REGULAR_TAX,
     AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
-    AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
     AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
+    AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM,
     AMT_MORTGAGE_FORECLOSURE_CAPITAL_GAINS,
     AMT_NET_ADJUSTED_TAXABLE_INCOME,
     AMT_NET_CAPITAL_GAINS_AFTER_ADJUSTMENTS,
@@ -224,12 +225,14 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_INVESTMENT_LOSS_AFTER_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION,
     BUSINESS_INVESTMENT_LOSS_REDUCTION_AVAILABLE,
+    BUSINESS_MOTOR_VEHICLE_EXPENSES,
     BUSINESS_PARTNER,
     BUSINESS_RECAPTURED_CCA,
     BUSINESS_SALES_SUBTOTAL,
     BUSINESS_SHARE_OF_NET_INCOME,
     BUSINESS_TERMINAL_LOSS,
     BUSINESS_VEHICLE_INTEREST_LIMIT,
+    BUSINESS_VEHICLES,
     CANADA_EMPLOYMENT_AMOUNT,
     CANADA_WORKERS_BENEFIT,
     CANADA_WORKERS_BENEFIT_WITH_DEPENDANT,
@@ -2671,10 +2674,10 @@ def test_the_part_2_and_part_8_amounts_are_produced_by_their_capabilities() -> N
     assert isinstance(worksheet.producer_of(AMT_MAXIMUM_CARRYOVER_APPLIED), SubtractNotBelowZero)
     # Line 12: the cap is the lesser of line 1 and line 11, and the claim is at most the cap.
     assert isinstance(worksheet.producer_of(AMT_MAXIMUM_CARRYOVER_CLAIM), LesserOf)
-    assert isinstance(worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_APPLIED), AtMost)
+    assert isinstance(worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM), AtMost)
     # Line 1 and the claim on line 12 are the caller's amounts, and T1 line 125 sums line 124.
     assert worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS) is None
-    assert worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_CLAIM) is None
+    assert worksheet.producer_of(AMT_MINIMUM_TAX_CARRYOVER_APPLIED) is None
     assert isinstance(worksheet.producer_of(CREDITS_AGAINST_BASIC_FEDERAL_TAX), Sum)
     # Part 3 line 2 "Multiply the amount from line 1 by 48%." is a rate; line 3 is a percentage of
     # line 2; line 4 is chosen by the count of its condition, from line 3 or the second branch,
@@ -2948,8 +2951,14 @@ def test_each_t2125_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(BUSINESS_SHARE_OF_NET_INCOME), ChooseByCount)
     assert isinstance(worksheet.producer_of(BUSINESS_HOME_INCOME_LIMIT), SumNotBelowZero)
     assert isinstance(worksheet.producer_of(BUSINESS_INCOME), Subtract)
-    # The form holds its own copy of the printed constants; the return form has none.
-    assert isinstance(worksheet.producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
+    # Charts A to C are one capability over the statement's vehicles, a starting list; the printed
+    # constants are its datasets, so neither the form nor the return has an artifact for them.
+    assert worksheet.producer_of(BUSINESS_VEHICLES) is None
+    assert isinstance(
+        worksheet.producer_of(BUSINESS_MOTOR_VEHICLE_EXPENSES), BusinessVehicleExpenses
+    )
+    with pytest.raises(MissingArtifactError):
+        worksheet.producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT)
     with pytest.raises(MissingArtifactError):
         return_a().producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT)
 
@@ -2968,10 +2977,6 @@ def test_each_t2042_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(FARM_SHARE_OF_NET_INCOME), ChooseByCount)
     assert isinstance(worksheet.producer_of(FARM_HOME_INCOME_LIMIT), SumNotBelowZero)
     assert isinstance(worksheet.producer_of(FARMING_INCOME), Subtract)
-    # The form holds its own copy of the printed constants; the return form has none.
-    assert isinstance(worksheet.producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
-    with pytest.raises(MissingArtifactError):
-        return_a().producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT)
 
 
 def test_each_t2121_amount_is_produced_by_its_capability() -> None:
@@ -2988,7 +2993,3 @@ def test_each_t2121_amount_is_produced_by_its_capability() -> None:
     assert isinstance(worksheet.producer_of(FISH_SHARE_OF_NET_INCOME), ChooseByCount)
     assert isinstance(worksheet.producer_of(FISH_HOME_INCOME_LIMIT), SumNotBelowZero)
     assert isinstance(worksheet.producer_of(FISHING_INCOME), Subtract)
-    # The form holds its own copy of the printed constants; the return form has none.
-    assert isinstance(worksheet.producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT), CreditAmount)
-    with pytest.raises(MissingArtifactError):
-        return_a().producer_of(BUSINESS_VEHICLE_INTEREST_LIMIT)

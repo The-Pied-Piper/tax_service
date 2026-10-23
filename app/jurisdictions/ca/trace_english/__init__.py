@@ -13,6 +13,15 @@ from app.jurisdictions.ca.trace_english import (
     foreign_tax,
     gains,
     rentals,
+    vehicles,
 )
 
-__all__ = ["apprenticeship", "capital_cost", "dependants", "foreign_tax", "gains", "rentals"]
+__all__ = [
+    "apprenticeship",
+    "capital_cost",
+    "dependants",
+    "foreign_tax",
+    "gains",
+    "rentals",
+    "vehicles",
+]

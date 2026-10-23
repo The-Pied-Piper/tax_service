@@ -41,7 +41,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_LIMITED_PARTNER_CARRYING_CHARGES,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_ELECTION,
     AMT_LIMITED_PARTNERSHIP_DIFFERENCE_NO_ELECTION,
-    AMT_MINIMUM_TAX_CARRYOVER_CLAIM,
+    AMT_MINIMUM_TAX_CARRYOVER_APPLIED,
     AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
     AMT_MOVING_EXPENSES_DEDUCTION,
     AMT_NET_CAPITAL_LOSSES_DIFFERENCE,
@@ -144,6 +144,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_VEHICLE_SALES_TAX_RATE,
     BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,
     BUSINESS_VEHICLE_TOTAL_KILOMETRES,
+    BUSINESS_VEHICLES,
     CANADA_TRAINING_CREDIT_CLAIMED,
     CANADA_TRAINING_CREDIT_LIMIT,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
@@ -298,24 +299,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_SWINE,
     FARM_TOBACCO,
     FARM_VEGETABLES,
-    FARM_VEHICLE_BUSINESS_KILOMETRES,
-    FARM_VEHICLE_ELECTRICITY_ZEV,
-    FARM_VEHICLE_FUEL_AND_OIL,
-    FARM_VEHICLE_INSURANCE,
-    FARM_VEHICLE_INTEREST_DAYS,
-    FARM_VEHICLE_INTEREST_PAYABLE,
-    FARM_VEHICLE_LEASE_CHARGES,
-    FARM_VEHICLE_LEASE_DAYS,
-    FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,
-    FARM_VEHICLE_LICENCE_AND_REGISTRATION,
-    FARM_VEHICLE_LIST_PRICE,
-    FARM_VEHICLE_MAINTENANCE_AND_REPAIRS,
-    FARM_VEHICLE_OTHER_EXPENSES_10,
-    FARM_VEHICLE_OTHER_EXPENSES_11,
-    FARM_VEHICLE_PARKING_FEES,
     FARM_VEHICLE_SALES_TAX_RATE,
-    FARM_VEHICLE_SUPPLEMENTARY_INSURANCE,
-    FARM_VEHICLE_TOTAL_KILOMETRES,
     FARM_VETERINARY_FEES,
     FARM_WHEAT,
     FHSA_ANNUAL_LIMITS_FOR_2024_AND_PRIOR_YEARS,
@@ -383,24 +367,7 @@ from app.jurisdictions.ca.catalog import (
     FISH_SALT_BAIT_AND_ICE,
     FISH_SHARESPERSON_INCOME,
     FISH_SUBSIDIES,
-    FISH_VEHICLE_BUSINESS_KILOMETRES,
-    FISH_VEHICLE_ELECTRICITY_ZEV,
-    FISH_VEHICLE_FUEL_AND_OIL,
-    FISH_VEHICLE_INSURANCE,
-    FISH_VEHICLE_INTEREST_DAYS,
-    FISH_VEHICLE_INTEREST_PAYABLE,
-    FISH_VEHICLE_LEASE_CHARGES,
-    FISH_VEHICLE_LEASE_DAYS,
-    FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,
-    FISH_VEHICLE_LICENCE_AND_REGISTRATION,
-    FISH_VEHICLE_LIST_PRICE,
-    FISH_VEHICLE_MAINTENANCE_AND_REPAIRS,
-    FISH_VEHICLE_OTHER_EXPENSES_10,
-    FISH_VEHICLE_OTHER_EXPENSES_11,
-    FISH_VEHICLE_PARKING_FEES,
     FISH_VEHICLE_SALES_TAX_RATE,
-    FISH_VEHICLE_SUPPLEMENTARY_INSURANCE,
-    FISH_VEHICLE_TOTAL_KILOMETRES,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
     FOREIGN_NON_BUSINESS_TAX_PAID,
@@ -414,8 +381,19 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
     INVESTMENT_INCOME_WITHOUT_A_SLIP,
     INVESTMENT_ROYALTIES,
+    ITC_AGRICULTURAL_SRED_CONTRIBUTIONS,
+    ITC_APPRENTICE_SALARY_AND_WAGES,
+    ITC_APPRENTICES,
+    ITC_APPRENTICESHIP_T3_BOX_40,
+    ITC_CRITICAL_MINERAL_EXPENDITURES,
+    ITC_MINERAL_EXPLORATION_EXPENDITURES,
+    ITC_QUALIFIED_PROPERTY,
     ITC_RECAPTURE_EXPENDITURE_AT_15_PERCENT,
     ITC_RECAPTURE_EXPENDITURE_AT_20_PERCENT,
+    ITC_SRED_EXPENDITURES,
+    ITC_SRED_PARTNERSHIP_ALLOCATION,
+    ITC_SRED_REPAYMENT_2014_AND_PRIOR,
+    ITC_SRED_REPAYMENT_2015_AND_AFTER,
     JOURNALISM_LABOUR_TAX_CREDIT,
     LABOUR_SPONSORED_FUNDS_NET_COST,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
@@ -882,6 +860,12 @@ def placement_list(*expenditures: str) -> Artifact[RecordList]:
     )
 
 
+def apprentice_list(*salaries: str) -> Artifact[RecordList]:
+    """The Table 1 apprentices of Form T2038(IND), one record per salary and wages, in order."""
+    records = [{ITC_APPRENTICE_SALARY_AND_WAGES: D(amount)} for amount in salaries]
+    return Artifact(ITC_APPRENTICES, RecordList(ITC_APPRENTICES.fields, records))
+
+
 def ei_excluded_slips_list(*net_incomes: str) -> Artifact[RecordList]:
     """The Schedule 13 line 1 slips, one record per net income (or net loss), in the order given."""
     records: list[dict[ArtifactKind[Any], object]] = [
@@ -1127,23 +1111,6 @@ BUSINESS_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
     BUSINESS_UTILITIES,  # utilities
     BUSINESS_FUEL_COSTS,  # fuel_costs
     BUSINESS_DELIVERY_FREIGHT_AND_EXPRESS,  # delivery_freight_and_express
-    BUSINESS_VEHICLE_BUSINESS_KILOMETRES,  # business_kilometres
-    BUSINESS_VEHICLE_TOTAL_KILOMETRES,  # total_kilometres
-    BUSINESS_VEHICLE_FUEL_AND_OIL,  # fuel_and_oil
-    BUSINESS_VEHICLE_INSURANCE,  # insurance
-    BUSINESS_VEHICLE_LICENCE_AND_REGISTRATION,  # licence_and_registration
-    BUSINESS_VEHICLE_MAINTENANCE_AND_REPAIRS,  # maintenance_and_repairs
-    BUSINESS_VEHICLE_ELECTRICITY_ZEV,  # electricity_zev
-    BUSINESS_VEHICLE_OTHER_EXPENSES_10,  # other_expenses_10
-    BUSINESS_VEHICLE_OTHER_EXPENSES_11,  # other_expenses_11
-    BUSINESS_VEHICLE_PARKING_FEES,  # parking_fees
-    BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,  # supplementary_insurance
-    BUSINESS_VEHICLE_INTEREST_PAYABLE,  # interest_payable
-    BUSINESS_VEHICLE_INTEREST_DAYS,  # interest_days
-    BUSINESS_VEHICLE_LEASE_CHARGES,  # lease_charges
-    BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,  # lease_payments_before
-    BUSINESS_VEHICLE_LEASE_DAYS,  # lease_days
-    BUSINESS_VEHICLE_LIST_PRICE,  # list_price
     BUSINESS_VEHICLE_SALES_TAX_RATE,  # sales_tax_rate
     BUSINESS_CCA_PERSONAL_PART,  # cca_personal_part
     BUSINESS_OTHER_EXPENSES,  # other_expenses
@@ -1174,6 +1141,46 @@ def business_amount_artifacts(amounts: Mapping[str, str]) -> list[Artifact[Decim
     by_name = {kind.identifier.removeprefix("ca/business_"): kind for kind in BUSINESS_INPUT_KINDS}
     assert set(amounts) <= set(by_name), set(amounts) - set(by_name)
     return [Artifact(kind, D(amounts.get(name, "0"))) for name, kind in by_name.items()]
+
+
+# The fields of one Form T2125 vehicle, a record of `ca/business_vehicles`: Chart A amounts 1, 2,
+# 3, 5 to 7 and 9 to 11, 14 and 15, Chart B amount 17 and its days, and Chart C amounts 20 to 23,
+# in the form's order.
+BUSINESS_VEHICLE_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
+    BUSINESS_VEHICLE_BUSINESS_KILOMETRES,  # business_kilometres
+    BUSINESS_VEHICLE_TOTAL_KILOMETRES,  # total_kilometres
+    BUSINESS_VEHICLE_FUEL_AND_OIL,  # fuel_and_oil
+    BUSINESS_VEHICLE_INSURANCE,  # insurance
+    BUSINESS_VEHICLE_LICENCE_AND_REGISTRATION,  # licence_and_registration
+    BUSINESS_VEHICLE_MAINTENANCE_AND_REPAIRS,  # maintenance_and_repairs
+    BUSINESS_VEHICLE_ELECTRICITY_ZEV,  # electricity_zev
+    BUSINESS_VEHICLE_OTHER_EXPENSES_10,  # other_expenses_10
+    BUSINESS_VEHICLE_OTHER_EXPENSES_11,  # other_expenses_11
+    BUSINESS_VEHICLE_PARKING_FEES,  # parking_fees
+    BUSINESS_VEHICLE_SUPPLEMENTARY_INSURANCE,  # supplementary_insurance
+    BUSINESS_VEHICLE_INTEREST_PAYABLE,  # interest_payable
+    BUSINESS_VEHICLE_INTEREST_DAYS,  # interest_days
+    BUSINESS_VEHICLE_LEASE_CHARGES,  # lease_charges
+    BUSINESS_VEHICLE_LEASE_PAYMENTS_BEFORE,  # lease_payments_before
+    BUSINESS_VEHICLE_LEASE_DAYS,  # lease_days
+    BUSINESS_VEHICLE_LIST_PRICE,  # list_price
+)
+
+
+def business_vehicles(*vehicles: Mapping[str, str]) -> Artifact[RecordList]:
+    """The vehicles of a Form T2125, T2042 or T2121 statement, one record per mapping, keyed by the
+    name after `ca/business_vehicle_` (the amounts not given are 0)."""
+    kind = BUSINESS_VEHICLES
+    assert isinstance(kind, RecordListKind)
+    by_name = {
+        field.identifier.removeprefix("ca/business_vehicle_"): field
+        for field in BUSINESS_VEHICLE_INPUT_KINDS
+    }
+    records: list[dict[ArtifactKind[Any], object]] = []
+    for vehicle in vehicles:
+        assert set(vehicle) <= set(by_name), set(vehicle) - set(by_name)
+        records.append({field: D(vehicle.get(name, "0")) for name, field in by_name.items()})
+    return Artifact(kind, RecordList(kind.fields, records))
 
 
 def business_cca_classes(
@@ -1215,12 +1222,15 @@ def t2125_statement(
     business: Mapping[str, str] | None = None,
     business_partner: int = 0,
     business_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    business_vehicles_rows: tuple[Mapping[str, str], ...] = (),
 ) -> dict[ArtifactKind[Any], object]:
-    """One Form T2125 statement, a record of `ca/t2125_statements`: its inputs, as given or 0."""
+    """One Form T2125 statement, a record of `ca/t2125_statements`: its inputs, as given or 0, and
+    its vehicles (one record per mapping of `business_vehicles`, none by default)."""
     artifacts: list[Artifact[Any]] = [
         *business_amount_artifacts(business or {}),
         Artifact(BUSINESS_PARTNER, business_partner),
         business_cca_classes(*business_cca_classes_rows),
+        business_vehicles(*business_vehicles_rows),
     ]
     return {artifact.kind: artifact.value for artifact in artifacts}
 
@@ -1289,23 +1299,6 @@ FARM_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
     FARM_PROPERTY_TAXES,  # property_taxes
     FARM_RENT,  # rent
     FARM_SALARIES_WAGES_AND_BENEFITS,  # salaries_wages_and_benefits
-    FARM_VEHICLE_BUSINESS_KILOMETRES,  # business_kilometres
-    FARM_VEHICLE_TOTAL_KILOMETRES,  # total_kilometres
-    FARM_VEHICLE_FUEL_AND_OIL,  # fuel_and_oil
-    FARM_VEHICLE_INSURANCE,  # insurance
-    FARM_VEHICLE_LICENCE_AND_REGISTRATION,  # licence_and_registration
-    FARM_VEHICLE_MAINTENANCE_AND_REPAIRS,  # maintenance_and_repairs
-    FARM_VEHICLE_ELECTRICITY_ZEV,  # electricity_zev
-    FARM_VEHICLE_OTHER_EXPENSES_10,  # other_expenses_10
-    FARM_VEHICLE_OTHER_EXPENSES_11,  # other_expenses_11
-    FARM_VEHICLE_PARKING_FEES,  # parking_fees
-    FARM_VEHICLE_SUPPLEMENTARY_INSURANCE,  # supplementary_insurance
-    FARM_VEHICLE_INTEREST_PAYABLE,  # interest_payable
-    FARM_VEHICLE_INTEREST_DAYS,  # interest_days
-    FARM_VEHICLE_LEASE_CHARGES,  # lease_charges
-    FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,  # lease_payments_before
-    FARM_VEHICLE_LEASE_DAYS,  # lease_days
-    FARM_VEHICLE_LIST_PRICE,  # list_price
     FARM_VEHICLE_SALES_TAX_RATE,  # sales_tax_rate
     FARM_SMALL_TOOLS,  # small_tools
     FARM_MANDATORY_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
@@ -1382,12 +1375,15 @@ def t2042_statement(
     farm: Mapping[str, str] | None = None,
     farm_partner: int = 0,
     farm_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    farm_vehicles_rows: tuple[Mapping[str, str], ...] = (),
 ) -> dict[ArtifactKind[Any], object]:
-    """One Form T2042 statement, a record of `ca/t2042_statements`: its inputs, as given or 0."""
+    """One Form T2042 statement, a record of `ca/t2042_statements`: its inputs, as given or 0, and
+    its vehicles (one record per mapping of `business_vehicles`, none by default)."""
     artifacts: list[Artifact[Any]] = [
         *farm_amount_artifacts(farm or {}),
         Artifact(FARM_PARTNER, farm_partner),
         farm_cca_classes(*farm_cca_classes_rows),
+        business_vehicles(*farm_vehicles_rows),
     ]
     return {artifact.kind: artifact.value for artifact in artifacts}
 
@@ -1417,23 +1413,6 @@ FISH_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
     FISH_INTEREST_AND_BANK_CHARGES,  # interest_and_bank_charges
     FISH_MEALS_AND_ENTERTAINMENT,  # meals_and_entertainment
     FISH_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,  # business_taxes_licences_and_memberships
-    FISH_VEHICLE_BUSINESS_KILOMETRES,  # business_kilometres
-    FISH_VEHICLE_TOTAL_KILOMETRES,  # total_kilometres
-    FISH_VEHICLE_FUEL_AND_OIL,  # fuel_and_oil
-    FISH_VEHICLE_INSURANCE,  # insurance
-    FISH_VEHICLE_LICENCE_AND_REGISTRATION,  # licence_and_registration
-    FISH_VEHICLE_MAINTENANCE_AND_REPAIRS,  # maintenance_and_repairs
-    FISH_VEHICLE_ELECTRICITY_ZEV,  # electricity_zev
-    FISH_VEHICLE_OTHER_EXPENSES_10,  # other_expenses_10
-    FISH_VEHICLE_OTHER_EXPENSES_11,  # other_expenses_11
-    FISH_VEHICLE_PARKING_FEES,  # parking_fees
-    FISH_VEHICLE_SUPPLEMENTARY_INSURANCE,  # supplementary_insurance
-    FISH_VEHICLE_INTEREST_PAYABLE,  # interest_payable
-    FISH_VEHICLE_INTEREST_DAYS,  # interest_days
-    FISH_VEHICLE_LEASE_CHARGES,  # lease_charges
-    FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,  # lease_payments_before
-    FISH_VEHICLE_LEASE_DAYS,  # lease_days
-    FISH_VEHICLE_LIST_PRICE,  # list_price
     FISH_VEHICLE_SALES_TAX_RATE,  # sales_tax_rate
     FISH_OFFICE_EXPENSES,  # office_expenses
     FISH_NETS_AND_TRAPS,  # nets_and_traps
@@ -1512,12 +1491,15 @@ def t2121_statement(
     fish: Mapping[str, str] | None = None,
     fish_partner: int = 0,
     fish_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    fish_vehicles_rows: tuple[Mapping[str, str], ...] = (),
 ) -> dict[ArtifactKind[Any], object]:
-    """One Form T2121 statement, a record of `ca/t2121_statements`: its inputs, as given or 0."""
+    """One Form T2121 statement, a record of `ca/t2121_statements`: its inputs, as given or 0, and
+    its vehicles (one record per mapping of `business_vehicles`, none by default)."""
     artifacts: list[Artifact[Any]] = [
         *fish_amount_artifacts(fish or {}),
         Artifact(FISH_PARTNER, fish_partner),
         fish_cca_classes(*fish_cca_classes_rows),
+        business_vehicles(*fish_vehicles_rows),
     ]
     return {artifact.kind: artifact.value for artifact in artifacts}
 
@@ -2106,13 +2088,23 @@ def starting(
     amt_federal_logging_tax_credit: str = "0",
     amt_section_119_former_resident_credit: str = "0",
     amt_minimum_tax_carryover_from_previous_years: str = "0",
-    amt_minimum_tax_carryover_claim: str = "0",
+    amt_minimum_tax_carryover_applied: str = "0",
     amt_t2203_column_5_percentage: str = "0",
     amt_non_resident_or_deemed_resident: int = 0,
     amt_unapplied_2018_carryover: str = "0",
     amt_investment_tax_credit_claim: str = "0",
     amt_t2038_amount_i: str = "0",
     amt_t2038_part_d_amount_15: str = "0",
+    itc_sred_expenditures: str = "0",
+    itc_agricultural_sred_contributions: str = "0",
+    itc_sred_partnership_allocation: str = "0",
+    itc_qualified_property: str = "0",
+    itc_mineral_exploration_expenditures: str = "0",
+    itc_critical_mineral_expenditures: str = "0",
+    itc_apprentices: tuple[str, ...] = (),
+    itc_apprenticeship_t3_box_40: str = "0",
+    itc_sred_repayment_2014_and_prior: str = "0",
+    itc_sred_repayment_2015_and_after: str = "0",
     amt_foreign_business_income: str = "0",
     amt_foreign_non_business_income: str = "0",
     amt_foreign_capital_gains_non_taxable_claim: str = "0",
@@ -2818,13 +2810,23 @@ def starting(
             AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS,
             D(amt_minimum_tax_carryover_from_previous_years),
         ),
-        Artifact(AMT_MINIMUM_TAX_CARRYOVER_CLAIM, D(amt_minimum_tax_carryover_claim)),
+        Artifact(AMT_MINIMUM_TAX_CARRYOVER_APPLIED, D(amt_minimum_tax_carryover_applied)),
         Artifact(AMT_T2203_COLUMN_5_PERCENTAGE, D(amt_t2203_column_5_percentage)),
         Artifact(AMT_NON_RESIDENT_OR_DEEMED_RESIDENT, amt_non_resident_or_deemed_resident),
         Artifact(AMT_UNAPPLIED_2018_CARRYOVER, D(amt_unapplied_2018_carryover)),
         Artifact(AMT_INVESTMENT_TAX_CREDIT_CLAIM, D(amt_investment_tax_credit_claim)),
         Artifact(AMT_T2038_AMOUNT_I, D(amt_t2038_amount_i)),
         Artifact(AMT_T2038_PART_D_AMOUNT_15, D(amt_t2038_part_d_amount_15)),
+        Artifact(ITC_SRED_EXPENDITURES, D(itc_sred_expenditures)),
+        Artifact(ITC_AGRICULTURAL_SRED_CONTRIBUTIONS, D(itc_agricultural_sred_contributions)),
+        Artifact(ITC_SRED_PARTNERSHIP_ALLOCATION, D(itc_sred_partnership_allocation)),
+        Artifact(ITC_QUALIFIED_PROPERTY, D(itc_qualified_property)),
+        Artifact(ITC_MINERAL_EXPLORATION_EXPENDITURES, D(itc_mineral_exploration_expenditures)),
+        Artifact(ITC_CRITICAL_MINERAL_EXPENDITURES, D(itc_critical_mineral_expenditures)),
+        apprentice_list(*itc_apprentices),
+        Artifact(ITC_APPRENTICESHIP_T3_BOX_40, D(itc_apprenticeship_t3_box_40)),
+        Artifact(ITC_SRED_REPAYMENT_2014_AND_PRIOR, D(itc_sred_repayment_2014_and_prior)),
+        Artifact(ITC_SRED_REPAYMENT_2015_AND_AFTER, D(itc_sred_repayment_2015_and_after)),
         Artifact(AMT_FOREIGN_BUSINESS_INCOME, D(amt_foreign_business_income)),
         Artifact(AMT_FOREIGN_NON_BUSINESS_INCOME, D(amt_foreign_non_business_income)),
         Artifact(

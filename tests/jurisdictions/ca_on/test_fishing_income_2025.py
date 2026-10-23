@@ -41,11 +41,6 @@ from app.domain.artifact import ArtifactKind
 from app.domain.errors import CapabilityContractError
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
-    BUSINESS_VEHICLE_DAYS_DIVISOR,
-    BUSINESS_VEHICLE_INTEREST_LIMIT,
-    BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT,
-    BUSINESS_VEHICLE_LEASE_COST_LIMIT,
-    BUSINESS_VEHICLE_LIST_PRICE_LIMIT,
     FISH_CCA_CLAIM,
     FISH_CCA_CLAIM_LESS_PERSONAL_PART,
     FISH_CCA_TABLE_CLAIM,
@@ -71,18 +66,9 @@ from app.jurisdictions.ca.catalog import (
     FISH_SHARE_OF_NET_INCOME,
     FISH_TERMINAL_LOSS,
     FISH_TOTAL_EXPENSES,
-    FISH_VEHICLE_AVAILABLE_INTEREST,
-    FISH_VEHICLE_BUSINESS_USE_PART,
-    FISH_VEHICLE_INTEREST_FOR_PERIOD,
-    FISH_VEHICLE_LEASE_CHARGE_PORTION,
-    FISH_VEHICLE_LEASE_CHARGES_NET,
-    FISH_VEHICLE_LEASE_COST_PORTION,
-    FISH_VEHICLE_LEASE_PRICE_85_PERCENT,
-    FISH_VEHICLE_LEASE_PRICE_BASE,
-    FISH_VEHICLE_LEASING_COST,
-    FISH_VEHICLE_TOTAL_EXPENSES,
     FISHING_INCOME,
 )
+from app.jurisdictions.ca.trace import BusinessVehicleLine
 from tests.jurisdictions.ca_on.end_to_end.support import D, run
 
 # Return BD's statement, the default of these tests: one fish products amount of 40000 (amount 3A),
@@ -117,6 +103,7 @@ def statement(
     fish: dict[str, str] | None = None,
     partner: int = 0,
     cca_classes: tuple[CcaRow, ...] = (),
+    vehicles: tuple[dict[str, str], ...] = (),
     **overrides: Any,
 ) -> Worksheet:
     """Return BD's statement with `fish` changing or adding its amounts, `partner` the partner
@@ -131,7 +118,12 @@ def statement(
         "0",
         "0",
         fish_statements=(
-            {"fish": amounts, "fish_partner": partner, "fish_cca_classes_rows": cca_classes},
+            {
+                "fish": amounts,
+                "fish_partner": partner,
+                "fish_cca_classes_rows": cca_classes,
+                "fish_vehicles_rows": vehicles,
+            },
         ),
         **overrides,
     )
@@ -420,28 +412,35 @@ def test_the_partner_other_amounts_come_off_at_line_9943() -> None:
     assert line(worksheet, FISHING_INCOME) == D("14700")
 
 
-# Form T2121 Charts A to C: one leased passenger vehicle used half for fishing. The statement is
-# fish products of 40000 and fishing gear of 20000, so the other amounts are 0.
+# Form T2121 Charts A to C: one leased passenger vehicle used half for fishing, a record of the
+# statement's `ca/business_vehicles`. The statement is fish products of 40000 and fishing gear of
+# 20000, so the other amounts are 0, and the sales tax rate of the province is 13%.
 LEASED: dict[str, str] = {
-    "vehicle_business_kilometres": "5000",
-    "vehicle_total_kilometres": "10000",
-    "vehicle_fuel_and_oil": "1000",
-    "vehicle_insurance": "600",
-    "vehicle_maintenance_and_repairs": "200",
-    "vehicle_other_expenses_10": "653",
-    "vehicle_interest_payable": "400",
-    "vehicle_interest_days": "183",
-    "vehicle_lease_charges": "2550",
-    "vehicle_lease_days": "183",
-    "vehicle_list_price": "60000",
-    "vehicle_sales_tax_rate": "13",
+    "business_kilometres": "5000",
+    "total_kilometres": "10000",
+    "fuel_and_oil": "1000",
+    "insurance": "600",
+    "maintenance_and_repairs": "200",
+    "other_expenses_10": "653",
+    "interest_payable": "400",
+    "interest_days": "183",
+    "lease_charges": "2550",
+    "lease_days": "183",
+    "list_price": "60000",
 }
 
 
-def vehicle_statement(vehicle: dict[str, str]) -> Worksheet:
-    """A T2121 of fish products of 40000 and fishing gear of 20000, with the Chart A to C amounts
-    in `vehicle` (the others 0)."""
-    return statement({"salt_bait_and_ice": "0", "fishing_gear": "20000", **vehicle})
+def vehicle_statement(*vehicles: dict[str, str]) -> Worksheet:
+    """A T2121 of fish products of 40000 and fishing gear of 20000, with one record of
+    `ca/business_vehicles` for each vehicle given (the amounts not given are 0)."""
+    return statement(
+        {"salt_bait_and_ice": "0", "fishing_gear": "20000", "vehicle_sales_tax_rate": "13"},
+        vehicles=vehicles,
+    )
+
+
+def vehicle_lines(worksheet: Worksheet) -> list[BusinessVehicleLine]:
+    return [each for each in worksheet.trace if isinstance(each, BusinessVehicleLine)]
 
 
 def test_a_leased_vehicle_gives_line_9281_of_2500_and_the_expenses_of_22500() -> None:
@@ -450,8 +449,9 @@ def test_a_leased_vehicle_gives_line_9281_of_2500_and_the_expenses_of_22500() ->
     # line 9281. Amount 4Q is 20000 + 2500 = 22500 and line 9369 is 40000 - 22500 = 17500.
     worksheet = vehicle_statement(LEASED)
 
-    assert line(worksheet, FISH_VEHICLE_TOTAL_EXPENSES) == D("5000")
-    assert line(worksheet, FISH_VEHICLE_BUSINESS_USE_PART) == D("2500")
+    (vehicle,) = vehicle_lines(worksheet)
+    assert vehicle.line_12 == D("5000")
+    assert vehicle.line_13 == D("2500")
     assert line(worksheet, FISH_MOTOR_VEHICLE_EXPENSES) == D("2500")
     assert line(worksheet, FISH_EXPENSES_SUBTOTAL) == D("22500")
     assert line(worksheet, FISH_NET_INCOME_BEFORE_ADJUSTMENTS) == D("17500")
@@ -460,59 +460,53 @@ def test_a_leased_vehicle_gives_line_9281_of_2500_and_the_expenses_of_22500() ->
 def test_chart_b_interest_is_the_amount_payable_when_that_is_the_lesser() -> None:
     # Chart B line 18: 350 ÷ 30 × 183 days = 64050 ÷ 30 = 2135.00; line 17 is 400, the lesser, so
     # line 19, the available interest expense, is 400.
-    worksheet = vehicle_statement(LEASED)
+    (vehicle,) = vehicle_lines(vehicle_statement(LEASED))
 
-    assert line(worksheet, FISH_VEHICLE_INTEREST_FOR_PERIOD) == D("2135.00")
-    assert line(worksheet, FISH_VEHICLE_AVAILABLE_INTEREST) == D("400.00")
+    assert vehicle.line_19 == D("400.00")
 
 
 def test_chart_b_interest_is_capped_at_the_350_over_30_a_day_amount() -> None:
     # Line 17 is 3000, more than line 18 of 2135.00 (350 ÷ 30 × 183), so line 19 is 2135.00.
-    worksheet = vehicle_statement({**LEASED, "vehicle_interest_payable": "3000"})
+    (vehicle,) = vehicle_lines(vehicle_statement({**LEASED, "interest_payable": "3000"}))
 
-    assert line(worksheet, FISH_VEHICLE_AVAILABLE_INTEREST) == D("2135.00")
+    assert vehicle.line_19 == D("2135.00")
 
 
 def test_chart_c_takes_the_price_plus_tax_when_it_is_more_than_the_list_price() -> None:
     # Line 23 is 40000; 44706 plus 13% (5811.78) is 50517.78, the greater, and 85% of it is
-    # 42940.113, which rounds to 42940.11 (line 24).
-    worksheet = vehicle_statement({**LEASED, "vehicle_list_price": "40000"})
+    # 42940.113, which rounds to 42940.11 (line 24). Line 27 is 42940.00 x 2550 / 42940.11 =
+    # 2549.99 and line 28 is the lesser of it and line 26 (7582.30): 2549.99.
+    (vehicle,) = vehicle_lines(vehicle_statement({**LEASED, "list_price": "40000"}))
 
-    assert line(worksheet, FISH_VEHICLE_LEASE_PRICE_BASE) == D("50517.78")
-    assert line(worksheet, FISH_VEHICLE_LEASE_PRICE_85_PERCENT) == D("42940.11")
+    assert vehicle.line_28 == D("2549.99")
 
 
 def test_chart_c_takes_the_list_price_when_it_is_more_than_the_price_plus_tax() -> None:
     # Line 23 is 60000, more than 50517.78, so line 24 is 60000 x 85% = 51000.00.
-    worksheet = vehicle_statement(LEASED)
+    (vehicle,) = vehicle_lines(vehicle_statement(LEASED))
 
-    assert line(worksheet, FISH_VEHICLE_LEASE_PRICE_BASE) == D("60000")
-    assert line(worksheet, FISH_VEHICLE_LEASE_PRICE_85_PERCENT) == D("51000.00")
-
-
-def test_chart_c_line_25_is_the_1100_plus_tax_times_the_days_over_30() -> None:
-    # (1100 + 13% of 1100 = 1243.00) x 183 days = 227469.00 ÷ 30 = 7582.30.
-    worksheet = vehicle_statement(LEASED)
-
-    assert line(worksheet, BUSINESS_VEHICLE_LEASE_CHARGE_LIMIT) == D("1100.00")
-    assert line(worksheet, FISH_VEHICLE_LEASE_CHARGE_PORTION) == D("7582.30")
-
-
-def test_chart_c_line_27_is_the_38000_plus_tax_times_the_charges_over_line_24() -> None:
-    # (38000 + 13% = 42940.00) x 2550 lease charges = 109497000 ÷ 51000.00 = 2147.00.
-    worksheet = vehicle_statement(LEASED)
-
-    assert line(worksheet, BUSINESS_VEHICLE_LEASE_COST_LIMIT) == D("38000.00")
-    assert line(worksheet, FISH_VEHICLE_LEASE_COST_PORTION) == D("2147.00")
+    assert vehicle.line_28 == D("2147.00")
 
 
 def test_chart_c_leasing_cost_is_the_lesser_of_line_26_and_line_27() -> None:
-    # Line 26 is 7582.30 - 0 = 7582.30 and line 27 is 2147.00, so line 28, the leasing cost, is
-    # 2147.00.
-    worksheet = vehicle_statement(LEASED)
+    # Line 25 is (1100 + 13% of 1100 = 1243.00) x 183 days = 227469.00 ÷ 30 = 7582.30, so line 26 is
+    # 7582.30 - 0 = 7582.30; line 27 is (38000 + 13% = 42940.00) x 2550 lease charges = 109497000
+    # ÷ 51000.00 = 2147.00, so line 28, the leasing cost, is the lesser, 2147.00.
+    (vehicle,) = vehicle_lines(vehicle_statement(LEASED))
 
-    assert line(worksheet, FISH_VEHICLE_LEASE_CHARGES_NET) == D("7582.30")
-    assert line(worksheet, FISH_VEHICLE_LEASING_COST) == D("2147.00")
+    assert vehicle.line_28 == D("2147.00")
+
+
+def test_chart_c_leasing_cost_is_line_26_when_the_payments_before_make_it_the_lesser() -> None:
+    # Line 25 is 7582.30 and line 21 is 7000, so line 26 is 582.30, less than line 27 (2147.00):
+    # line 28 is 582.30, line 12 is 1000 + 400 + 600 + 200 + 582.30 + 653 = 3435.30 and line 13 is
+    # 3435.30 x 5000 / 10000 = 1717.65, line 9281.
+    worksheet = vehicle_statement({**LEASED, "lease_payments_before": "7000"})
+
+    (vehicle,) = vehicle_lines(worksheet)
+    assert vehicle.line_28 == D("582.30")
+    assert vehicle.line_12 == D("3435.30")
+    assert line(worksheet, FISH_MOTOR_VEHICLE_EXPENSES) == D("1717.65")
 
 
 def test_chart_c_line_28_below_zero_is_refused() -> None:
@@ -520,21 +514,18 @@ def test_chart_c_line_28_below_zero_is_refused() -> None:
     # 7582.30 - 9000 = -1417.70. The form prints no floor, but the eligible leasing cost (line 28)
     # is a non-negative amount, so the computation refuses it rather than inventing a floor.
     with pytest.raises(CapabilityContractError):
-        vehicle_statement({**LEASED, "vehicle_lease_payments_before": "9000"})
+        vehicle_statement({**LEASED, "lease_payments_before": "9000"})
 
 
 def test_chart_a_business_use_part_is_rounded_half_up_to_the_cent() -> None:
     # Amount 1 of 1 and amount 2 of 3: 100 x 1 ÷ 3 = 33.333..., which rounds to 33.33 (line 13),
     # and line 16 is 33.33 + 0 + 0.
     worksheet = vehicle_statement(
-        {
-            "vehicle_business_kilometres": "1",
-            "vehicle_total_kilometres": "3",
-            "vehicle_fuel_and_oil": "100",
-        }
+        {"business_kilometres": "1", "total_kilometres": "3", "fuel_and_oil": "100"}
     )
 
-    assert line(worksheet, FISH_VEHICLE_BUSINESS_USE_PART) == D("33.33")
+    (vehicle,) = vehicle_lines(worksheet)
+    assert vehicle.line_13 == D("33.33")
     assert line(worksheet, FISH_MOTOR_VEHICLE_EXPENSES) == D("33.33")
 
 
@@ -542,20 +533,66 @@ def test_chart_a_business_use_part_is_0_when_there_are_no_total_kilometres() -> 
     # A total of 0 kilometres gives a business use part of 0 (no division), so line 16 is only
     # the parking fees of 300.
     worksheet = vehicle_statement(
-        {
-            "vehicle_business_kilometres": "5000",
-            "vehicle_total_kilometres": "0",
-            "vehicle_parking_fees": "300",
-        }
+        {"business_kilometres": "5000", "total_kilometres": "0", "parking_fees": "300"}
     )
 
-    assert line(worksheet, FISH_VEHICLE_BUSINESS_USE_PART) == D("0")
+    (vehicle,) = vehicle_lines(worksheet)
+    assert vehicle.line_13 == D("0")
     assert line(worksheet, FISH_MOTOR_VEHICLE_EXPENSES) == D("300")
 
 
-def test_the_chart_constant_for_the_days_divides_by_30_in_both_charts() -> None:
-    worksheet = vehicle_statement(LEASED)
+# Two vehicles, as in Return BQ (returns/2025_return_bq.yaml) and the T2125 tests: an owned one
+# with Chart B interest and a leased one with Chart C leasing.
+OWNED: dict[str, str] = {
+    "business_kilometres": "7000",
+    "total_kilometres": "16000",
+    "fuel_and_oil": "1200",
+    "insurance": "900",
+    "licence_and_registration": "150",
+    "maintenance_and_repairs": "450",
+    "interest_payable": "600",
+    "interest_days": "183",
+    "parking_fees": "120",
+}
+SECOND: dict[str, str] = {
+    "business_kilometres": "3000",
+    "total_kilometres": "12000",
+    "fuel_and_oil": "600",
+    "insurance": "450",
+    "maintenance_and_repairs": "108",
+    "other_expenses_10": "200",
+    "lease_charges": "2550",
+    "lease_payments_before": "1000",
+    "lease_days": "183",
+    "list_price": "60000",
+    "supplementary_insurance": "60",
+}
 
-    assert line(worksheet, BUSINESS_VEHICLE_DAYS_DIVISOR) == D("30.00")
-    assert line(worksheet, BUSINESS_VEHICLE_INTEREST_LIMIT) == D("350.00")
-    assert line(worksheet, BUSINESS_VEHICLE_LIST_PRICE_LIMIT) == D("44706.00")
+
+def test_two_vehicles_give_line_9281_of_the_line_16_amounts_added() -> None:
+    # Owned: line 19 is 600 (less than 2135.00), line 12 is 1200 + 600 + 900 + 150 + 450 = 3300,
+    # line 13 is 3300 x 7000 / 16000 = 1443.75 and line 16 is 1443.75 + 120 = 1563.75. Leased:
+    # line 26 is 7582.30 - 1000 = 6582.30, line 28 is 2147.00, line 12 is 600 + 450 + 108 + 2147 +
+    # 200 = 3505, line 13 is 3505 x 3000 / 12000 = 876.25 and line 16 is 876.25 + 60 = 936.25.
+    # Line 9281 is 1563.75 + 936.25 = 2500.00; amount 4Q is 20000 + 2500 = 22500 and line 9369 is
+    # 40000 - 22500 = 17500.
+    worksheet = vehicle_statement(OWNED, SECOND)
+
+    first, second = vehicle_lines(worksheet)
+    assert (first.line_12, first.line_13, first.line_19, first.line_28, first.line_16) == (
+        D("3300"),
+        D("1443.75"),
+        D("600"),
+        D("0"),
+        D("1563.75"),
+    )
+    assert (second.line_12, second.line_13, second.line_19, second.line_28, second.line_16) == (
+        D("3505"),
+        D("876.25"),
+        D("0"),
+        D("2147.00"),
+        D("936.25"),
+    )
+    assert line(worksheet, FISH_MOTOR_VEHICLE_EXPENSES) == D("2500")
+    assert line(worksheet, FISH_EXPENSES_SUBTOTAL) == D("22500")
+    assert line(worksheet, FISH_NET_INCOME_BEFORE_ADJUSTMENTS) == D("17500")

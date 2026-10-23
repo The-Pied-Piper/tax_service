@@ -30,16 +30,6 @@ from app.jurisdictions.ca.catalog import (
     FARM_SHARE_OF_NET_INCOME,
     FARM_TERMINAL_LOSS,
     FARM_TOTAL_EXPENSES,
-    FARM_VEHICLE_AVAILABLE_INTEREST,
-    FARM_VEHICLE_BUSINESS_USE_PART,
-    FARM_VEHICLE_INTEREST_FOR_PERIOD,
-    FARM_VEHICLE_LEASE_CHARGE_PORTION,
-    FARM_VEHICLE_LEASE_COST_PORTION,
-    FARM_VEHICLE_LEASE_PRICE_85_PERCENT,
-    FARM_VEHICLE_LEASE_PRICE_BASE,
-    FARM_VEHICLE_LEASING_COST,
-    FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
-    FARM_VEHICLE_TOTAL_EXPENSES,
     FARMING_INCOME,
     FEDERAL_BASIC_TAX,
     NET_INCOME,
@@ -49,6 +39,7 @@ from app.jurisdictions.ca.catalog import (
     TOTAL_INCOME,
     TOTAL_PAYABLE,
 )
+from app.jurisdictions.ca.trace import BusinessVehicleLine
 from app.jurisdictions.ca_on.catalog import ONTARIO_BASIC_TAX
 from tests.jurisdictions.ca_on.end_to_end.support import D, run
 
@@ -63,18 +54,22 @@ FARM = {
     # Charts A to C for one leased passenger vehicle that is used for no farming: business
     # kilometres 0 (amount 1), so line 9819 (amount 16 of Chart A) is 0, the same as before the
     # charts; every Chart B and C line is still computed as printed.
-    "vehicle_business_kilometres": "0",
-    "vehicle_total_kilometres": "10000",
-    "vehicle_fuel_and_oil": "1000",
-    "vehicle_insurance": "600",
-    "vehicle_maintenance_and_repairs": "200",
-    "vehicle_other_expenses_10": "653",
-    "vehicle_interest_payable": "400",
-    "vehicle_interest_days": "183",
-    "vehicle_lease_charges": "2550",
-    "vehicle_lease_days": "183",
-    "vehicle_list_price": "60000",
     "vehicle_sales_tax_rate": "13",
+}
+
+# One vehicle of the statement, a record of `ca/business_vehicles`: the amounts of Charts A to C.
+VEHICLE = {
+    "business_kilometres": "0",
+    "total_kilometres": "10000",
+    "fuel_and_oil": "1000",
+    "insurance": "600",
+    "maintenance_and_repairs": "200",
+    "other_expenses_10": "653",
+    "interest_payable": "400",
+    "interest_days": "183",
+    "lease_charges": "2550",
+    "lease_days": "183",
+    "list_price": "60000",
 }
 
 
@@ -84,7 +79,16 @@ def run_bc() -> dict[str, tuple[Worksheet, ...]]:
     line 14099), expenses of 50000 (4B), so line 9899 is 30000, which is line 9946 and T1 line
     14100.
     """
-    return run("0", (), "0", "0", "0", "0", "0", farm_statements=({"farm": FARM},))
+    return run(
+        "0",
+        (),
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        farm_statements=({"farm": FARM, "farm_vehicles_rows": (VEHICLE,)},),
+    )
 
 
 def return_bc() -> Worksheet:
@@ -228,15 +232,11 @@ def test_return_bcs_motor_vehicle_line_9819_is_0_from_charts_a_to_c() -> None:
     # part of 0 x 5000 ÷ 10000 = 0, so line 9819 is 0 and the farm expenses are still 50000.
     worksheet = statement_bc()
 
-    assert worksheet.get(FARM_VEHICLE_INTEREST_FOR_PERIOD).value == D("2135.00")
-    assert worksheet.get(FARM_VEHICLE_AVAILABLE_INTEREST).value == D("400.00")
-    assert worksheet.get(FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX).value == D("50517.78")
-    assert worksheet.get(FARM_VEHICLE_LEASE_PRICE_BASE).value == D("60000.00")
-    assert worksheet.get(FARM_VEHICLE_LEASE_PRICE_85_PERCENT).value == D("51000.00")
-    assert worksheet.get(FARM_VEHICLE_LEASE_CHARGE_PORTION).value == D("7582.30")
-    assert worksheet.get(FARM_VEHICLE_LEASE_COST_PORTION).value == D("2147.00")
-    assert worksheet.get(FARM_VEHICLE_LEASING_COST).value == D("2147.00")
-    assert worksheet.get(FARM_VEHICLE_TOTAL_EXPENSES).value == D("5000.00")
-    assert worksheet.get(FARM_VEHICLE_BUSINESS_USE_PART).value == D("0.00")
+    (vehicle,) = [each for each in worksheet.trace if isinstance(each, BusinessVehicleLine)]
+    assert vehicle.line_12 == D("5000.00")
+    assert vehicle.line_13 == D("0.00")
+    assert vehicle.line_19 == D("400.00")
+    assert vehicle.line_28 == D("2147.00")
+    assert vehicle.line_16 == D("0.00")
     assert worksheet.get(FARM_MOTOR_VEHICLE_EXPENSES).value == D("0.00")
     assert worksheet.get(FARM_EXPENSES_SUBTOTAL).value == D("50000")

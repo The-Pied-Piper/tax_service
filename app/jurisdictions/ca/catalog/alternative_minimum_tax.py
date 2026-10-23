@@ -610,19 +610,22 @@ AMT_MAXIMUM_CARRYOVER_CLAIM = CATALOG.declare(
 more than line 1 or 11, whichever is less.": the lesser of line 1 and line 11. The form does not
 print it; it is the bound the claim is checked against."""
 
-AMT_MINIMUM_TAX_CARRYOVER_CLAIM = CATALOG.declare(
-    "amt_minimum_tax_carryover_claim", Decimal, non_negative=True
-)
-"""Minimum tax carryover claimed, Form T691 Part 8 line 12 "Claim an amount that is not more than
-line 1 or 11, whichever is less.": the amount the filer chooses to claim, an input, which may not
-exceed the lesser of lines 1 and 11."""
-
 AMT_MINIMUM_TAX_CARRYOVER_APPLIED = CATALOG.declare(
     "amt_minimum_tax_carryover_applied", Decimal, non_negative=True
 )
-"""Minimum tax carryover applied in 2025, Form T691 Part 8 line 12 "Enter this amount on line 40427
-of your return.": the claim, when it is not above the largest claim. Part 2 line 6 "Minimum tax
-carryover applied in 2025 from line 12 of Part 8" and T1 line 124 (line 40427) read it."""
+"""Minimum tax carryover applied in 2025, Form T691 Part 8 line 12 "Claim an amount that is not more
+than line 1 or 11, whichever is less." "Enter this amount on line 40427 of your return.": the amount
+the filer chooses to claim, an input; Part 2 line 6 "Minimum tax carryover applied in 2025 from line
+12 of Part 8" and T1 line 124 (line 40427) read it. It may not exceed the lesser of lines 1 and 11,
+which `amt_minimum_tax_carryover_within_maximum` checks."""
+
+AMT_MINIMUM_TAX_CARRYOVER_WITHIN_MAXIMUM = CATALOG.declare(
+    "amt_minimum_tax_carryover_within_maximum", Decimal, non_negative=True
+)
+"""Minimum tax carryover within the largest claim, Form T691 Part 8 line 12 "Claim an amount that is
+not more than line 1 or 11, whichever is less.": the claim, passed on when it is not above the
+largest claim, and refused when it is. Part 8 line 13 reads it; the other readers of line 12 read
+the claim itself, because line 11 reads line 41600."""
 
 AMT_FEDERAL_SURTAX_AT_48_PERCENT = CATALOG.declare("amt_federal_surtax_at_48_percent", Decimal)
 """Federal surtax at 48 percent, Form T691 Part 3 line 2 "Federal surtax on business income earned

@@ -79,6 +79,7 @@ from app.domain.trace import (
 )
 from app.jurisdictions.ca.trace import (
     ApprenticeWagesLine,
+    BusinessVehicleLine,
     CaregiverClaimLine,
     CcaClaimLine,
     CcaZeroReason,
@@ -4843,3 +4844,83 @@ def test_amount_when_more_lines_are_hashable() -> None:
 
 def test_an_amount_when_more_line_is_not_a_threshold_gate_line() -> None:
     assert not isinstance(amount_when_more_line(), ThresholdGateLine)
+
+
+# --- a vehicle of Form T2125 Charts A to C ------------------------------------------------------
+
+MOTOR_VEHICLE_EXPENSES = ArtifactKind("ex/motor_vehicle_expenses", Decimal)
+
+
+def business_vehicle_line() -> BusinessVehicleLine:
+    return BusinessVehicleLine(
+        MOTOR_VEHICLE_EXPENSES,
+        1,
+        D("5000.00"),
+        D("2500.00"),
+        D("400.00"),
+        D("2147.00"),
+        D("2500.00"),
+    )
+
+
+def test_business_vehicle_line_is_a_frozen_trace_line_equal_by_value() -> None:
+    line = business_vehicle_line()
+
+    assert isinstance(line, TraceLine)
+    assert line == business_vehicle_line()
+    assert line is not business_vehicle_line()
+    assert hash(line) == hash(business_vehicle_line())
+    with pytest.raises(FrozenInstanceError):
+        setattr(line, "line_16", D(1))  # noqa: B010
+
+
+def test_business_vehicle_line_fields_in_order() -> None:
+    line = business_vehicle_line()
+
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "position",
+        "line_12",
+        "line_13",
+        "line_19",
+        "line_28",
+        "line_16",
+    ]
+    assert line == BusinessVehicleLine(
+        output=MOTOR_VEHICLE_EXPENSES,
+        position=1,
+        line_12=D("5000.00"),
+        line_13=D("2500.00"),
+        line_19=D("400.00"),
+        line_28=D("2147.00"),
+        line_16=D("2500.00"),
+    )
+
+
+def test_a_business_vehicle_lines_amount_is_line_16() -> None:
+    assert business_vehicle_line().amount == D("2500.00")
+    assert "amount" not in [f.name for f in fields(business_vehicle_line())]
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"output": ArtifactKind("ex/other_vehicle_expenses", Decimal)},
+        {"position": 2},
+        {"line_12": D("5000.01")},
+        {"line_13": D("2500.01")},
+        {"line_19": D("400.01")},
+        {"line_28": D("2147.01")},
+        {"line_16": D("2600.00")},
+    ],
+)
+def test_business_vehicle_lines_differ_by_each_field(change: dict[str, Any]) -> None:
+    line = business_vehicle_line()
+    values = {f.name: getattr(line, f.name) for f in fields(line)}
+    values.update(change)
+
+    assert line != BusinessVehicleLine(**values)
+
+
+def test_a_business_vehicle_line_is_not_an_items_total_line() -> None:
+    assert not isinstance(business_vehicle_line(), ItemsTotalLine)

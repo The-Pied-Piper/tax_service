@@ -15,6 +15,7 @@ from app.jurisdictions.ca.trace import (
     foreign_tax,
     gains,
     rentals,
+    vehicles,
 )
 from app.jurisdictions.ca.trace.apprenticeship import *  # noqa: F403
 from app.jurisdictions.ca.trace.capital_cost import *  # noqa: F403
@@ -22,6 +23,7 @@ from app.jurisdictions.ca.trace.dependants import *  # noqa: F403
 from app.jurisdictions.ca.trace.foreign_tax import *  # noqa: F403
 from app.jurisdictions.ca.trace.gains import *  # noqa: F403
 from app.jurisdictions.ca.trace.rentals import *  # noqa: F403
+from app.jurisdictions.ca.trace.vehicles import *  # noqa: F403
 
 __all__ = (
     apprenticeship.__all__
@@ -30,4 +32,5 @@ __all__ = (
     + foreign_tax.__all__
     + gains.__all__
     + rentals.__all__
+    + vehicles.__all__
 )
