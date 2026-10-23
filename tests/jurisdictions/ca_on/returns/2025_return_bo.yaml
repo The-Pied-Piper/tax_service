@@ -144,3 +144,4 @@ expected:
   ca/amt_regular_net_federal_tax_payable: "7920.12"
   ca/cpp_required_base_and_first_additional_contributions: "3956.75"
   ca/amt_federal_tax_payable_under_minimum_tax: "0"
+  ca/amt_carryover_available_for_2026: "0"

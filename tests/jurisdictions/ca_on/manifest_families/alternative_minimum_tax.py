@@ -16,9 +16,11 @@ from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
 from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
+from app.jurisdictions.ca.capabilities.apply_ratio_or_zero import ApplyRatioOrZero
 from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.capabilities.sign_chosen_difference import SignChosenDifference
 from app.jurisdictions.ca.catalog import (
+    AMT_ADDITIONAL_TAXES_FOR_CARRYOVER,
     AMT_ADJUSTED_INCOME_WITH_GAINS,
     AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
     AMT_ADJUSTED_TAXABLE_INCOME,
@@ -36,6 +38,9 @@ from app.jurisdictions.ca.catalog import (
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CAPITAL_GAINS_DIFFERENCE,
+    AMT_CARRYOVER_AVAILABLE_FOR_2026,
+    AMT_CARRYOVER_BALANCE,
+    AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES,
     AMT_CLASS_43_1_INCOME,
     AMT_COMMISSION_EMPLOYMENT_EXPENSES,
     AMT_CREDITS_ADJUSTMENTS_TOTAL,
@@ -118,6 +123,13 @@ from app.jurisdictions.ca.catalog import (
     AMT_PART_6_SURTAX_IF_NON_RESIDENT,
     AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS,
     AMT_PART_6_TAX_WITH_SURTAX,
+    AMT_PART_7_BASIC_TAX_WITH_RECAPTURE,
+    AMT_PART_7_CREDITS_TOTAL,
+    AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE,
+    AMT_PART_7_FOREIGN_CREDIT_SHARE,
+    AMT_PART_7_FOREIGN_TAXES_PAID,
+    AMT_PART_7_TAX_LESS_CREDITS,
+    AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE,
     AMT_PPIP_PREMIUMS_DEDUCTION,
     AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
@@ -162,6 +174,7 @@ from app.jurisdictions.ca.catalog import (
     AMT_TAX_SHELTER_LOSSES,
     AMT_TOTAL_FOREIGN_INCOME,
     AMT_TREATY_EXEMPT_CAPITAL_GAINS,
+    AMT_UNAPPLIED_2018_CARRYOVER,
     CANADIAN_ARMED_FORCES_AND_POLICE_DEDUCTION,
     CAPITAL_GAIN,
     CAPITAL_GAINS_DEDUCTION,
@@ -250,10 +263,11 @@ INPUTS = frozenset(
         "ca/amt_foreign_non_business_tax_paid",
         "ca/amt_foreign_business_tax_paid",
         "ca/amt_t2038_part_d_amount_15",
+        "ca/amt_unapplied_2018_carryover",
     }
 )
 
-OUTPUTS = frozenset[str]()
+OUTPUTS = frozenset({"ca/amt_carryover_available_for_2026"})
 
 STEPS = {
     # Part 1 line 4 "Line 2 minus line 3 (if negative, enter "0")" and "67820 =", the film
@@ -1335,6 +1349,138 @@ STEPS = {
         },
         produces={"output": "ca/amt_federal_tax_payable_under_minimum_tax"},
     ),
+    # Part 7 line 4 "Line 2 plus line 3": line 2, the basic federal tax of Part 2 line 7, and line
+    # 3, the recapture of investment tax credit, in line order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={"parts": ("ca/amt_basic_federal_tax", "ca/itc_recapture")},
+        produces={"output": "ca/amt_part_7_basic_tax_with_recapture"},
+    ),
+    # Part 7 line 7 "Line 5 plus line 6": line 5, the federal logging tax credit (the caller's
+    # amount, as on Part 1 line 100), and line 6, "Amount from line 41600 of your return", in line
+    # order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/amt_federal_logging_tax_credit",
+                "ca/credits_against_federal_tax",
+            )
+        },
+        produces={"output": "ca/amt_part_7_credits_total"},
+    ),
+    # Part 7 line 8 "Line 4 minus line 7": line 4 less line 7. The form prints no floor, so the
+    # difference may be negative.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/amt_part_7_basic_tax_with_recapture",
+            "less": "ca/amt_part_7_credits_total",
+        },
+        produces={"output": "ca/amt_part_7_tax_less_credits"},
+    ),
+    # Part 7 line 11 "Line 9 minus line 10 (if negative, enter "0")": the special foreign tax credit
+    # of Part 4 line 11 less the federal foreign tax credit of Part 3 line 7, not below zero.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/amt_special_foreign_tax_credit",
+            "less": "ca/federal_foreign_tax_credit",
+        },
+        produces={"output": "ca/amt_part_7_foreign_credit_difference"},
+    ),
+    # Part 7 line 12, the denominator of the fraction: "Foreign taxes paid (non-business income tax
+    # paid to a foreign country (15) plus business income tax paid to a foreign country (16))", the
+    # two caller's figures added. It is not a numbered line of the form.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/amt_foreign_non_business_tax_paid",
+                "ca/amt_foreign_business_tax_paid",
+            )
+        },
+        produces={"output": "ca/amt_part_7_foreign_taxes_paid"},
+    ),
+    # Part 7 line 12 "Line 11 x [Foreign taxes paid for special foreign tax credit (line 9 of Part
+    # 4)] / [Foreign taxes paid ...]": line 11 times line 9 of Part 4 over the denominator, rounded
+    # once to the cent; 0 when there are no foreign taxes paid.
+    CapabilitySelection(
+        name="ca/apply_ratio_or_zero",
+        params={"rounding": "ca/amt_foreign_taxes_ratio_rounding"},
+        consumes={
+            "amount": "ca/amt_part_7_foreign_credit_difference",
+            "numerator": "ca/amt_foreign_taxes_paid",
+            "denominator": "ca/amt_part_7_foreign_taxes_paid",
+        },
+        produces={"output": "ca/amt_part_7_foreign_credit_share"},
+    ),
+    # Part 7 line 13 "Line 8 plus line 12": line 8 and line 12, in line order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/amt_part_7_tax_less_credits",
+                "ca/amt_part_7_foreign_credit_share",
+            )
+        },
+        produces={"output": "ca/amt_part_7_tax_less_credits_plus_share"},
+    ),
+    # Part 7 line 14 "Line 1 minus line 13 (if negative, enter "0")" "Additional taxes paid for
+    # minimum tax carryover": line 1, the minimum amount of Part 1 line 103, less line 13, not below
+    # zero. Part 8 line 14 reads it.
+    CapabilitySelection(
+        name="core/subtract_not_below_zero",
+        params={},
+        consumes={
+            "amount": "ca/amt_minimum_amount",
+            "less": "ca/amt_part_7_tax_less_credits_plus_share",
+        },
+        produces={"output": "ca/amt_additional_taxes_for_carryover"},
+    ),
+    # Part 8 line 13 "Balance of minimum tax carryover available for later years, if any: line 1
+    # minus line 12": line 1 less line 12. Line 12 is at most line 1 (the claim is bounded by it),
+    # so the balance is not below zero.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/amt_minimum_tax_carryover_from_previous_years",
+            "less": "ca/amt_minimum_tax_carryover_applied",
+        },
+        produces={"output": "ca/amt_carryover_balance"},
+    ),
+    # Part 8 line 15 "Line 13 plus line 14": line 13 and line 14, the additional 2025 taxes of Part
+    # 7 line 14, in line order.
+    CapabilitySelection(
+        name="core/sum",
+        params={},
+        consumes={
+            "parts": (
+                "ca/amt_carryover_balance",
+                "ca/amt_additional_taxes_for_carryover",
+            )
+        },
+        produces={"output": "ca/amt_carryover_balance_with_additional_taxes"},
+    ),
+    # Part 8 line 17 "Total minimum tax carryover available for 2026: line 15 minus line 16": line
+    # 15 less line 16, the unapplied 2018 minimum tax carryover. The form prints no floor, so the
+    # difference may be negative.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/amt_carryover_balance_with_additional_taxes",
+            "less": "ca/amt_unapplied_2018_carryover",
+        },
+        produces={"output": "ca/amt_carryover_available_for_2026"},
+    ),
 }
 
 WIRING = {
@@ -1952,5 +2098,68 @@ WIRING = {
         GreaterOf,
         frozenset({AMT_PART_6_TAX_WITH_SURTAX, SPLIT_INCOME_LINE_24}),
         frozenset({AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX}),
+    ),
+    (
+        Sum,
+        frozenset({ITC_RECAPTURE, AMT_BASIC_FEDERAL_TAX}),
+        frozenset({AMT_PART_7_BASIC_TAX_WITH_RECAPTURE}),
+    ),
+    (
+        Sum,
+        frozenset({AMT_FEDERAL_LOGGING_TAX_CREDIT, CREDITS_AGAINST_FEDERAL_TAX}),
+        frozenset({AMT_PART_7_CREDITS_TOTAL}),
+    ),
+    (
+        Subtract,
+        frozenset({AMT_PART_7_BASIC_TAX_WITH_RECAPTURE, AMT_PART_7_CREDITS_TOTAL}),
+        frozenset({AMT_PART_7_TAX_LESS_CREDITS}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({AMT_SPECIAL_FOREIGN_TAX_CREDIT, FEDERAL_FOREIGN_TAX_CREDIT}),
+        frozenset({AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE}),
+    ),
+    (
+        Sum,
+        frozenset({AMT_FOREIGN_NON_BUSINESS_TAX_PAID, AMT_FOREIGN_BUSINESS_TAX_PAID}),
+        frozenset({AMT_PART_7_FOREIGN_TAXES_PAID}),
+    ),
+    (
+        ApplyRatioOrZero,
+        frozenset(
+            {
+                AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE,
+                AMT_FOREIGN_TAXES_PAID,
+                AMT_PART_7_FOREIGN_TAXES_PAID,
+            }
+        ),
+        frozenset({AMT_PART_7_FOREIGN_CREDIT_SHARE}),
+    ),
+    (
+        Sum,
+        frozenset({AMT_PART_7_TAX_LESS_CREDITS, AMT_PART_7_FOREIGN_CREDIT_SHARE}),
+        frozenset({AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE}),
+    ),
+    (
+        SubtractNotBelowZero,
+        frozenset({AMT_MINIMUM_AMOUNT, AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE}),
+        frozenset({AMT_ADDITIONAL_TAXES_FOR_CARRYOVER}),
+    ),
+    (
+        Subtract,
+        frozenset(
+            {AMT_MINIMUM_TAX_CARRYOVER_FROM_PREVIOUS_YEARS, AMT_MINIMUM_TAX_CARRYOVER_APPLIED}
+        ),
+        frozenset({AMT_CARRYOVER_BALANCE}),
+    ),
+    (
+        Sum,
+        frozenset({AMT_CARRYOVER_BALANCE, AMT_ADDITIONAL_TAXES_FOR_CARRYOVER}),
+        frozenset({AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES}),
+    ),
+    (
+        Subtract,
+        frozenset({AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES, AMT_UNAPPLIED_2018_CARRYOVER}),
+        frozenset({AMT_CARRYOVER_AVAILABLE_FOR_2026}),
     ),
 }

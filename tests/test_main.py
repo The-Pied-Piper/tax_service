@@ -41,8 +41,8 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1290
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1290
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1301
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1301
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -1817,6 +1817,18 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/amt_part_6_federal_surtax",
         "ca/amt_part_6_tax_with_surtax",
         "ca/amt_federal_tax_payable_under_minimum_tax",
+        "ca/amt_unapplied_2018_carryover",
+        "ca/amt_part_7_basic_tax_with_recapture",
+        "ca/amt_part_7_credits_total",
+        "ca/amt_part_7_tax_less_credits",
+        "ca/amt_part_7_foreign_credit_difference",
+        "ca/amt_part_7_foreign_taxes_paid",
+        "ca/amt_part_7_foreign_credit_share",
+        "ca/amt_part_7_tax_less_credits_plus_share",
+        "ca/amt_additional_taxes_for_carryover",
+        "ca/amt_carryover_balance",
+        "ca/amt_carryover_balance_with_additional_taxes",
+        "ca/amt_carryover_available_for_2026",
         "ca/amt_capital_gains_difference",
         "ca/amt_capital_gains_added",
         "ca/amt_capital_gains_added_not_below_zero",
@@ -2143,15 +2155,15 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1290
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1290
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1301
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1301
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1290
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1290
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1301
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1301
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

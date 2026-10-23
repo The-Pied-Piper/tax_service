@@ -54,6 +54,7 @@ from app.jurisdictions.ca.catalog import (
     AGE_MAXIMUM,
     AGE_REDUCTION,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
+    AMT_ADDITIONAL_TAXES_FOR_CARRYOVER,
     AMT_ADJUSTED_TAXABLE_INCOME,
     AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
     AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE,
@@ -104,6 +105,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_PART_6_SURTAX_IF_NON_RESIDENT,
     AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS,
     AMT_PART_6_TAX_WITH_SURTAX,
+    AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE,
+    AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE,
     AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE,
     AMT_REGULAR_NET_TAX_LESS_SURTAX,
     AMT_REGULAR_TAX_CREDITS_TOTAL,
@@ -2287,6 +2290,26 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     }
     assert len(cwb_reduction_tiers) == 2
     assert floored == {
+        # Form T691 Part 7 line 11 "Line 9 minus line 10 (if negative, enter "0")": the special
+        # foreign tax credit (0) less the federal foreign tax credit (0): 0.
+        AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE: SubtractedNotBelowZeroLine(
+            output=AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE,
+            minuend=AMT_SPECIAL_FOREIGN_TAX_CREDIT,
+            minuend_amount=D("0"),
+            subtrahend=FEDERAL_FOREIGN_TAX_CREDIT,
+            subtrahend_amount=D("0"),
+            result=D("0"),
+        ),
+        # Form T691 Part 7 line 14 "Line 1 minus line 13 (if negative, enter "0")": line 1, the
+        # minimum amount (0), less line 13, 16951.38, below zero: 0.
+        AMT_ADDITIONAL_TAXES_FOR_CARRYOVER: SubtractedNotBelowZeroLine(
+            output=AMT_ADDITIONAL_TAXES_FOR_CARRYOVER,
+            minuend=AMT_MINIMUM_AMOUNT,
+            minuend_amount=D("0"),
+            subtrahend=AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE,
+            subtrahend_amount=D("16951.38"),
+            result=D("0"),
+        ),
         # Form T691 Part 6 line 3 "Line 1 minus line 2 (if negative, enter "0")": line 1, the basic
         # federal tax of 16951.38, less line 2, the amount from line 22 of Form T1206 (0): 16951.38.
         AMT_BASIC_FEDERAL_TAX_LESS_SPLIT_INCOME_TAX: SubtractedNotBelowZeroLine(

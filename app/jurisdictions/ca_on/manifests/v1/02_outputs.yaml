@@ -113,3 +113,7 @@ outputs:
   # Form T1206 Part 3 line 33C "Amount from line 33A divided by the tax rate you entered on line
   # 33B": Ontario's provincial Schedule does not add it, so nothing on the return reads it.
   - ca-on/tosi_adjusted_taxable_income
+  # Form T691 Part 8 line 17 "Total minimum tax carryover available for 2026: line 15 minus line 16":
+  # the carryover for 2026, which nothing on the return reads (Part 8 line 14 reads Part 7 line 14,
+  # not this line).
+  - ca/amt_carryover_available_for_2026

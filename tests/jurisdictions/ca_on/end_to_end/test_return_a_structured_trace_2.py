@@ -23,6 +23,7 @@ from app.jurisdictions.ca.catalog import (
     AGE_AMOUNT,
     ALLOWABLE_BUSINESS_INVESTMENT_LOSS,
     AMOUNTS_TRANSFERRED_FROM_SPOUSE,
+    AMT_ADDITIONAL_TAXES_FOR_CARRYOVER,
     AMT_ADJUSTED_INCOME_WITH_GAINS,
     AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
     AMT_ADJUSTMENTS_AFTER_RATE_TOTAL,
@@ -33,6 +34,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_CAPITAL_GAINS_ADDED,
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
+    AMT_CARRYOVER_BALANCE,
+    AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES,
     AMT_CLASS_43_1_INCOME,
     AMT_COMMISSION_EMPLOYMENT_EXPENSES,
     AMT_CREDITS_ADJUSTMENTS_TOTAL,
@@ -51,6 +54,8 @@ from app.jurisdictions.ca.catalog import (
     AMT_FILM_PROPERTY_ADJUSTMENT,
     AMT_FINANCING_EXPENSES,
     AMT_FOREIGN_AND_LOGGING_CREDITS_TOTAL,
+    AMT_FOREIGN_BUSINESS_TAX_PAID,
+    AMT_FOREIGN_NON_BUSINESS_TAX_PAID,
     AMT_FORFEITED_SALARY_DEFERRAL_AMOUNTS,
     AMT_GRADUATED_RATE_ESTATE_CAPITAL_GAINS,
     AMT_GREATER_OF_BASIC_TAX_AND_MINIMUM_AMOUNT,
@@ -81,6 +86,12 @@ from app.jurisdictions.ca.catalog import (
     AMT_PART_1_SUBTOTAL,
     AMT_PART_6_FEDERAL_SURTAX,
     AMT_PART_6_TAX_WITH_SURTAX,
+    AMT_PART_7_BASIC_TAX_WITH_RECAPTURE,
+    AMT_PART_7_CREDITS_TOTAL,
+    AMT_PART_7_FOREIGN_CREDIT_SHARE,
+    AMT_PART_7_FOREIGN_TAXES_PAID,
+    AMT_PART_7_TAX_LESS_CREDITS,
+    AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE,
     AMT_PPIP_PREMIUMS_DEDUCTION,
     AMT_PROSPECTOR_OR_GRUBSTAKER_DEDUCTION,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
@@ -1047,6 +1058,45 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     trace = return_a().trace
     sums = {line.output: line for line in trace if isinstance(line, SumLine)}
     assert sums == {
+        # Form T691 Part 7 line 4 "Line 2 plus line 3": line 2, the basic federal tax (16951.38),
+        # and line 3, the recapture of investment tax credit (0.00): 16951.38.
+        AMT_PART_7_BASIC_TAX_WITH_RECAPTURE: SumLine(
+            AMT_PART_7_BASIC_TAX_WITH_RECAPTURE,
+            ((AMT_BASIC_FEDERAL_TAX, D("16951.38")), (ITC_RECAPTURE, D("0.00"))),
+            D("16951.38"),
+        ),
+        # Form T691 Part 7 line 7 "Line 5 plus line 6": line 5, the federal logging tax credit (0),
+        # and line 6, the amount from line 41600 of your return (0.00): 0.00.
+        AMT_PART_7_CREDITS_TOTAL: SumLine(
+            AMT_PART_7_CREDITS_TOTAL,
+            ((AMT_FEDERAL_LOGGING_TAX_CREDIT, D("0")), (CREDITS_AGAINST_FEDERAL_TAX, D("0.00"))),
+            D("0.00"),
+        ),
+        # Form T691 Part 7 line 12, the denominator of the fraction: the non-business income tax
+        # paid to a foreign country (0) plus the business income tax paid to a foreign country (0):
+        # 0.
+        AMT_PART_7_FOREIGN_TAXES_PAID: SumLine(
+            AMT_PART_7_FOREIGN_TAXES_PAID,
+            ((AMT_FOREIGN_NON_BUSINESS_TAX_PAID, D("0")), (AMT_FOREIGN_BUSINESS_TAX_PAID, D("0"))),
+            D("0"),
+        ),
+        # Form T691 Part 7 line 13 "Line 8 plus line 12": line 8, 16951.38, and line 12, the foreign
+        # credit share (0.00): 16951.38.
+        AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE: SumLine(
+            AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE,
+            (
+                (AMT_PART_7_TAX_LESS_CREDITS, D("16951.38")),
+                (AMT_PART_7_FOREIGN_CREDIT_SHARE, D("0.00")),
+            ),
+            D("16951.38"),
+        ),
+        # Form T691 Part 8 line 15 "Line 13 plus line 14": line 13, the balance of the carryover
+        # (0), and line 14, the additional 2025 taxes (0): 0.
+        AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES: SumLine(
+            AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES,
+            ((AMT_CARRYOVER_BALANCE, D("0")), (AMT_ADDITIONAL_TAXES_FOR_CARRYOVER, D("0"))),
+            D("0"),
+        ),
         # Form T691 Part 6 line 7 "Line 5 plus line 6 (14)": line 5, the greater of line 3
         # (16951.38) and line 4 (the minimum amount, 0), 16951.38, and line 6, the amount from line
         # 22 of Form T1206 (0): 16951.38.

@@ -1863,6 +1863,18 @@ REGISTERED = frozenset(
         "ca/amt_part_6_federal_surtax",
         "ca/amt_part_6_tax_with_surtax",
         "ca/amt_federal_tax_payable_under_minimum_tax",
+        "ca/amt_unapplied_2018_carryover",
+        "ca/amt_part_7_basic_tax_with_recapture",
+        "ca/amt_part_7_credits_total",
+        "ca/amt_part_7_tax_less_credits",
+        "ca/amt_part_7_foreign_credit_difference",
+        "ca/amt_part_7_foreign_taxes_paid",
+        "ca/amt_part_7_foreign_credit_share",
+        "ca/amt_part_7_tax_less_credits_plus_share",
+        "ca/amt_additional_taxes_for_carryover",
+        "ca/amt_carryover_balance",
+        "ca/amt_carryover_balance_with_additional_taxes",
+        "ca/amt_carryover_available_for_2026",
     }
 )
 
@@ -2134,6 +2146,10 @@ SIGNED = frozenset(
         "ca/amt_part_6_surtax_if_non_resident",
         "ca/amt_part_6_federal_surtax",
         "ca/amt_part_6_tax_with_surtax",
+        "ca/amt_part_7_basic_tax_with_recapture",
+        "ca/amt_part_7_tax_less_credits",
+        "ca/amt_part_7_tax_less_credits_plus_share",
+        "ca/amt_carryover_available_for_2026",
     }
 )
 

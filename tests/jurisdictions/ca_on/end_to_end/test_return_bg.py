@@ -7,6 +7,7 @@ import pytest
 from app.domain.errors import InputAboveBoundError
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.catalog import (
+    AMT_ADDITIONAL_TAXES_FOR_CARRYOVER,
     AMT_ADJUSTED_INCOME_WITH_GAINS,
     AMT_ADJUSTED_INCOME_WITH_SECURITY_OPTIONS,
     AMT_ADJUSTED_TAXABLE_INCOME,
@@ -23,6 +24,9 @@ from app.jurisdictions.ca.catalog import (
     AMT_CAPITAL_GAINS_ADJUSTMENTS,
     AMT_CAPITAL_GAINS_DEDUCTIONS_TOTAL,
     AMT_CAPITAL_GAINS_DIFFERENCE,
+    AMT_CARRYOVER_AVAILABLE_FOR_2026,
+    AMT_CARRYOVER_BALANCE,
+    AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES,
     AMT_CREDITS_ADJUSTMENTS_TOTAL,
     AMT_CREDITS_TOTAL,
     AMT_DEDUCTIONS_TOTAL,
@@ -74,6 +78,13 @@ from app.jurisdictions.ca.catalog import (
     AMT_PART_6_SURTAX_IF_NON_RESIDENT,
     AMT_PART_6_SURTAX_MULTIPLE_JURISDICTIONS,
     AMT_PART_6_TAX_WITH_SURTAX,
+    AMT_PART_7_BASIC_TAX_WITH_RECAPTURE,
+    AMT_PART_7_CREDITS_TOTAL,
+    AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE,
+    AMT_PART_7_FOREIGN_CREDIT_SHARE,
+    AMT_PART_7_FOREIGN_TAXES_PAID,
+    AMT_PART_7_TAX_LESS_CREDITS,
+    AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE,
     AMT_PUBLICLY_LISTED_GIFTS_ADJUSTMENT,
     AMT_PUBLICLY_LISTED_GIFTS_NET,
     AMT_QBT_CAPITAL_GAINS_DEDUCTION_DIFFERENCE,
@@ -163,6 +174,7 @@ def return_bg(
     part_d_amount_15: str = "0",
     split_income_dividends: str = "0",
     split_income_dividends_other_than_eligible: str = "0",
+    unapplied_2018_carryover: str = "0",
 ) -> Worksheet:
     """Return BG's inputs (`returns/2025_return_bg.yaml`), with the Part 1 amounts given."""
     return compute(
@@ -218,6 +230,7 @@ def return_bg(
         foreign_tax_countries_rows=foreign_tax_countries,
         split_income_dividends=split_income_dividends,
         split_income_dividends_other_than_eligible=split_income_dividends_other_than_eligible,
+        amt_unapplied_2018_carryover=unapplied_2018_carryover,
     )
 
 
@@ -1369,3 +1382,112 @@ def test_return_bg_line_41700_keeps_line_139_when_regular_tax_is_more_than_minim
     assert worksheet.get(AMT_FEDERAL_TAX_PAYABLE_UNDER_MINIMUM_TAX).value == D("5494.59")
     assert worksheet.get(FEDERAL_TAX_LINE_41700).value == D("39760.79")
     assert worksheet.get(NET_FEDERAL_TAX).value == D("39760.79")
+
+
+def test_return_bg_part_7_lines_are_the_basic_tax_by_default() -> None:
+    # Line 1 is 0.00 (no minimum amount) and line 2 is the basic federal tax of 5846.47; line 3 is
+    # 0.00, so line 4 is 5846.47. Lines 5 and 6 are 0.00, so line 7 is 0.00 and line 8 is 5846.47.
+    # Lines 9 and 10 are 0.00, so line 11 is 0.00. With no foreign taxes paid, the denominator of
+    # line 12 is 0.00, so line 12 is 0.00. Line 13 is 5846.47 plus 0.00, 5846.47, and line 14 is
+    # 0.00 less 5846.47, below zero, so 0.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_PART_7_BASIC_TAX_WITH_RECAPTURE).value == D("5846.47")
+    assert worksheet.get(AMT_PART_7_CREDITS_TOTAL).value == D("0")
+    assert worksheet.get(AMT_PART_7_TAX_LESS_CREDITS).value == D("5846.47")
+    assert worksheet.get(AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE).value == D("0")
+    assert worksheet.get(AMT_PART_7_FOREIGN_TAXES_PAID).value == D("0")
+    assert worksheet.get(AMT_PART_7_FOREIGN_CREDIT_SHARE).value == D("0")
+    assert worksheet.get(AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE).value == D("5846.47")
+    assert worksheet.get(AMT_ADDITIONAL_TAXES_FOR_CARRYOVER).value == D("0")
+
+
+def test_return_bg_part_8_lines_13_to_17_are_zero_by_default() -> None:
+    # With no carryover from earlier years, line 1 and line 12 are 0.00, so line 13 is 0.00. Line
+    # 14 is the additional 2025 taxes of Part 7 line 14, 0.00, so line 15 is 0.00. No unapplied 2018
+    # carryover is entered, so line 16 is 0.00 and line 17 is 0.00.
+    worksheet = return_bg()
+
+    assert worksheet.get(AMT_CARRYOVER_BALANCE).value == D("0")
+    assert worksheet.get(AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES).value == D("0")
+    assert worksheet.get(AMT_CARRYOVER_AVAILABLE_FOR_2026).value == D("0")
+
+
+def test_return_bg_part_7_line_14_is_the_minimum_amount_less_line_13_when_positive() -> None:
+    # The security options of boxes 39 and 91 at 150000.00 make the minimum amount on line 1
+    # 7405.42. Line 13 is 5846.47 (line 8 of 5846.47 plus line 12 of 0.00), so line 14 is 7405.42
+    # less 5846.47, 1558.95, and the same carries into Part 8: line 13 is 0.00, line 15 is 1558.95
+    # and line 17, with no unapplied 2018 carryover, is 1558.95.
+    worksheet = return_bg(security_t4_39_and_91="150000")
+
+    assert worksheet.get(AMT_MINIMUM_AMOUNT).value == D("7405.42")
+    assert worksheet.get(AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE).value == D("5846.47")
+    assert worksheet.get(AMT_ADDITIONAL_TAXES_FOR_CARRYOVER).value == D("1558.95")
+    assert worksheet.get(AMT_CARRYOVER_BALANCE).value == D("0")
+    assert worksheet.get(AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES).value == D("1558.95")
+    assert worksheet.get(AMT_CARRYOVER_AVAILABLE_FOR_2026).value == D("1558.95")
+
+
+def test_return_bg_part_7_line_12_is_line_11_times_the_foreign_credit_share() -> None:
+    # The foreign figures of the Part 4 case: 1500.00 and 500.00 of income, a claim of 300.00,
+    # 600.00 of non-business tax and 100.00 of business tax, with the security options of 150000.00.
+    # Line 9 is the special foreign tax credit of 471.50 (line 11 of Part 4) and line 10 is the
+    # federal foreign tax credit, 0.00, so line 11 is 471.50. The denominator of line 12 is the
+    # foreign taxes paid, 600.00 plus 100.00, 700.00, and the numerator is the foreign taxes paid
+    # for the special foreign tax credit, 500.00 (line 9 of Part 4). Line 12 is 471.50 times 500.00
+    # over 700.00, 336.7857, rounded half-up to 336.79. Line 8 is 5846.47, so line 13 is 5846.47
+    # plus 336.79, 6183.26, and line 14 is 7405.42 less 6183.26, 1222.16.
+    worksheet = return_bg(
+        security_t4_39_and_91="150000",
+        foreign_business_income="1500",
+        foreign_non_business_income="500",
+        foreign_capital_gains_claim="300",
+        foreign_non_business_tax="600",
+        foreign_business_tax="100",
+    )
+
+    assert worksheet.get(AMT_SPECIAL_FOREIGN_TAX_CREDIT).value == D("471.50")
+    assert worksheet.get(FEDERAL_FOREIGN_TAX_CREDIT).value == D("0")
+    assert worksheet.get(AMT_PART_7_FOREIGN_CREDIT_DIFFERENCE).value == D("471.50")
+    assert worksheet.get(AMT_PART_7_FOREIGN_TAXES_PAID).value == D("700.00")
+    assert worksheet.get(AMT_FOREIGN_TAXES_PAID).value == D("500.00")
+    assert worksheet.get(AMT_PART_7_FOREIGN_CREDIT_SHARE).value == D("336.79")
+    assert worksheet.get(AMT_PART_7_TAX_LESS_CREDITS_PLUS_SHARE).value == D("6183.26")
+    assert worksheet.get(AMT_ADDITIONAL_TAXES_FOR_CARRYOVER).value == D("1222.16")
+    assert worksheet.get(AMT_CARRYOVER_AVAILABLE_FOR_2026).value == D("1222.16")
+
+
+def test_return_bg_part_8_line_17_is_line_15_less_the_unapplied_2018_carryover() -> None:
+    # The carryover from 2018 to 2024 of 1000.00 with a claim of 400.00 (line 12, within line 1 and
+    # line 11) leaves 600.00 on line 13. The claim lowers the basic federal tax to 5446.47, so Part
+    # 7 line 8 is 5446.47 and line 13 is 5446.47 with no foreign or recapture amounts. The minimum
+    # amount is 0.00, so Part 7 line 14 is 0.00. Line 15 is 600.00 plus 0.00, and the unapplied 2018
+    # carryover of 100.00 (line 16) leaves 500.00 on line 17.
+    worksheet = return_bg(
+        carryover_from_previous_years="1000",
+        carryover_claim="400",
+        unapplied_2018_carryover="100",
+    )
+
+    assert worksheet.get(AMT_PART_7_BASIC_TAX_WITH_RECAPTURE).value == D("5446.47")
+    assert worksheet.get(AMT_ADDITIONAL_TAXES_FOR_CARRYOVER).value == D("0")
+    assert worksheet.get(AMT_CARRYOVER_BALANCE).value == D("600.00")
+    assert worksheet.get(AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES).value == D("600.00")
+    assert worksheet.get(AMT_CARRYOVER_AVAILABLE_FOR_2026).value == D("500.00")
+
+
+def test_return_bg_part_8_line_14_adds_the_additional_taxes_when_no_carryover_is_claimed() -> None:
+    # The carryover of 1000.00 with no claim leaves line 13 at 1000.00 (line 12 is 0.00). The
+    # security options of 150000.00 give Part 7 line 14 of 1558.95, as above, since the basic
+    # federal tax of 5846.47 is unchanged with no claim. Line 15 is 1000.00 plus 1558.95, 2558.95,
+    # and line 17 is 2558.95 less the unapplied 2018 carryover of 100.00, 2458.95.
+    worksheet = return_bg(
+        security_t4_39_and_91="150000",
+        carryover_from_previous_years="1000",
+        unapplied_2018_carryover="100",
+    )
+
+    assert worksheet.get(AMT_ADDITIONAL_TAXES_FOR_CARRYOVER).value == D("1558.95")
+    assert worksheet.get(AMT_CARRYOVER_BALANCE).value == D("1000.00")
+    assert worksheet.get(AMT_CARRYOVER_BALANCE_WITH_ADDITIONAL_TAXES).value == D("2558.95")
+    assert worksheet.get(AMT_CARRYOVER_AVAILABLE_FOR_2026).value == D("2458.95")
