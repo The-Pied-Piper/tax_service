@@ -299,24 +299,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_SWINE,
     FARM_TOBACCO,
     FARM_VEGETABLES,
-    FARM_VEHICLE_BUSINESS_KILOMETRES,
-    FARM_VEHICLE_ELECTRICITY_ZEV,
-    FARM_VEHICLE_FUEL_AND_OIL,
-    FARM_VEHICLE_INSURANCE,
-    FARM_VEHICLE_INTEREST_DAYS,
-    FARM_VEHICLE_INTEREST_PAYABLE,
-    FARM_VEHICLE_LEASE_CHARGES,
-    FARM_VEHICLE_LEASE_DAYS,
-    FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,
-    FARM_VEHICLE_LICENCE_AND_REGISTRATION,
-    FARM_VEHICLE_LIST_PRICE,
-    FARM_VEHICLE_MAINTENANCE_AND_REPAIRS,
-    FARM_VEHICLE_OTHER_EXPENSES_10,
-    FARM_VEHICLE_OTHER_EXPENSES_11,
-    FARM_VEHICLE_PARKING_FEES,
     FARM_VEHICLE_SALES_TAX_RATE,
-    FARM_VEHICLE_SUPPLEMENTARY_INSURANCE,
-    FARM_VEHICLE_TOTAL_KILOMETRES,
     FARM_VETERINARY_FEES,
     FARM_WHEAT,
     FHSA_ANNUAL_LIMITS_FOR_2024_AND_PRIOR_YEARS,
@@ -384,24 +367,7 @@ from app.jurisdictions.ca.catalog import (
     FISH_SALT_BAIT_AND_ICE,
     FISH_SHARESPERSON_INCOME,
     FISH_SUBSIDIES,
-    FISH_VEHICLE_BUSINESS_KILOMETRES,
-    FISH_VEHICLE_ELECTRICITY_ZEV,
-    FISH_VEHICLE_FUEL_AND_OIL,
-    FISH_VEHICLE_INSURANCE,
-    FISH_VEHICLE_INTEREST_DAYS,
-    FISH_VEHICLE_INTEREST_PAYABLE,
-    FISH_VEHICLE_LEASE_CHARGES,
-    FISH_VEHICLE_LEASE_DAYS,
-    FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,
-    FISH_VEHICLE_LICENCE_AND_REGISTRATION,
-    FISH_VEHICLE_LIST_PRICE,
-    FISH_VEHICLE_MAINTENANCE_AND_REPAIRS,
-    FISH_VEHICLE_OTHER_EXPENSES_10,
-    FISH_VEHICLE_OTHER_EXPENSES_11,
-    FISH_VEHICLE_PARKING_FEES,
     FISH_VEHICLE_SALES_TAX_RATE,
-    FISH_VEHICLE_SUPPLEMENTARY_INSURANCE,
-    FISH_VEHICLE_TOTAL_KILOMETRES,
     FOREIGN_CHARITY_DONATIONS,
     FOREIGN_INVESTMENT_INCOME,
     FOREIGN_NON_BUSINESS_TAX_PAID,
@@ -1202,8 +1168,8 @@ BUSINESS_VEHICLE_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
 
 
 def business_vehicles(*vehicles: Mapping[str, str]) -> Artifact[RecordList]:
-    """The Form T2125 vehicles, one record per mapping, keyed by the name after
-    `ca/business_vehicle_` (the amounts not given are 0)."""
+    """The vehicles of a Form T2125, T2042 or T2121 statement, one record per mapping, keyed by the
+    name after `ca/business_vehicle_` (the amounts not given are 0)."""
     kind = BUSINESS_VEHICLES
     assert isinstance(kind, RecordListKind)
     by_name = {
@@ -1333,23 +1299,6 @@ FARM_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
     FARM_PROPERTY_TAXES,  # property_taxes
     FARM_RENT,  # rent
     FARM_SALARIES_WAGES_AND_BENEFITS,  # salaries_wages_and_benefits
-    FARM_VEHICLE_BUSINESS_KILOMETRES,  # business_kilometres
-    FARM_VEHICLE_TOTAL_KILOMETRES,  # total_kilometres
-    FARM_VEHICLE_FUEL_AND_OIL,  # fuel_and_oil
-    FARM_VEHICLE_INSURANCE,  # insurance
-    FARM_VEHICLE_LICENCE_AND_REGISTRATION,  # licence_and_registration
-    FARM_VEHICLE_MAINTENANCE_AND_REPAIRS,  # maintenance_and_repairs
-    FARM_VEHICLE_ELECTRICITY_ZEV,  # electricity_zev
-    FARM_VEHICLE_OTHER_EXPENSES_10,  # other_expenses_10
-    FARM_VEHICLE_OTHER_EXPENSES_11,  # other_expenses_11
-    FARM_VEHICLE_PARKING_FEES,  # parking_fees
-    FARM_VEHICLE_SUPPLEMENTARY_INSURANCE,  # supplementary_insurance
-    FARM_VEHICLE_INTEREST_PAYABLE,  # interest_payable
-    FARM_VEHICLE_INTEREST_DAYS,  # interest_days
-    FARM_VEHICLE_LEASE_CHARGES,  # lease_charges
-    FARM_VEHICLE_LEASE_PAYMENTS_BEFORE,  # lease_payments_before
-    FARM_VEHICLE_LEASE_DAYS,  # lease_days
-    FARM_VEHICLE_LIST_PRICE,  # list_price
     FARM_VEHICLE_SALES_TAX_RATE,  # sales_tax_rate
     FARM_SMALL_TOOLS,  # small_tools
     FARM_MANDATORY_INVENTORY_ADJUSTMENT_PREVIOUS_YEAR,
@@ -1426,12 +1375,15 @@ def t2042_statement(
     farm: Mapping[str, str] | None = None,
     farm_partner: int = 0,
     farm_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    farm_vehicles_rows: tuple[Mapping[str, str], ...] = (),
 ) -> dict[ArtifactKind[Any], object]:
-    """One Form T2042 statement, a record of `ca/t2042_statements`: its inputs, as given or 0."""
+    """One Form T2042 statement, a record of `ca/t2042_statements`: its inputs, as given or 0, and
+    its vehicles (one record per mapping of `business_vehicles`, none by default)."""
     artifacts: list[Artifact[Any]] = [
         *farm_amount_artifacts(farm or {}),
         Artifact(FARM_PARTNER, farm_partner),
         farm_cca_classes(*farm_cca_classes_rows),
+        business_vehicles(*farm_vehicles_rows),
     ]
     return {artifact.kind: artifact.value for artifact in artifacts}
 
@@ -1461,23 +1413,6 @@ FISH_INPUT_KINDS: tuple[ArtifactKind[Any], ...] = (
     FISH_INTEREST_AND_BANK_CHARGES,  # interest_and_bank_charges
     FISH_MEALS_AND_ENTERTAINMENT,  # meals_and_entertainment
     FISH_BUSINESS_TAXES_LICENCES_AND_MEMBERSHIPS,  # business_taxes_licences_and_memberships
-    FISH_VEHICLE_BUSINESS_KILOMETRES,  # business_kilometres
-    FISH_VEHICLE_TOTAL_KILOMETRES,  # total_kilometres
-    FISH_VEHICLE_FUEL_AND_OIL,  # fuel_and_oil
-    FISH_VEHICLE_INSURANCE,  # insurance
-    FISH_VEHICLE_LICENCE_AND_REGISTRATION,  # licence_and_registration
-    FISH_VEHICLE_MAINTENANCE_AND_REPAIRS,  # maintenance_and_repairs
-    FISH_VEHICLE_ELECTRICITY_ZEV,  # electricity_zev
-    FISH_VEHICLE_OTHER_EXPENSES_10,  # other_expenses_10
-    FISH_VEHICLE_OTHER_EXPENSES_11,  # other_expenses_11
-    FISH_VEHICLE_PARKING_FEES,  # parking_fees
-    FISH_VEHICLE_SUPPLEMENTARY_INSURANCE,  # supplementary_insurance
-    FISH_VEHICLE_INTEREST_PAYABLE,  # interest_payable
-    FISH_VEHICLE_INTEREST_DAYS,  # interest_days
-    FISH_VEHICLE_LEASE_CHARGES,  # lease_charges
-    FISH_VEHICLE_LEASE_PAYMENTS_BEFORE,  # lease_payments_before
-    FISH_VEHICLE_LEASE_DAYS,  # lease_days
-    FISH_VEHICLE_LIST_PRICE,  # list_price
     FISH_VEHICLE_SALES_TAX_RATE,  # sales_tax_rate
     FISH_OFFICE_EXPENSES,  # office_expenses
     FISH_NETS_AND_TRAPS,  # nets_and_traps
@@ -1556,12 +1491,15 @@ def t2121_statement(
     fish: Mapping[str, str] | None = None,
     fish_partner: int = 0,
     fish_cca_classes_rows: tuple[tuple[str, str, str, str, str, str, str, int], ...] = (),
+    fish_vehicles_rows: tuple[Mapping[str, str], ...] = (),
 ) -> dict[ArtifactKind[Any], object]:
-    """One Form T2121 statement, a record of `ca/t2121_statements`: its inputs, as given or 0."""
+    """One Form T2121 statement, a record of `ca/t2121_statements`: its inputs, as given or 0, and
+    its vehicles (one record per mapping of `business_vehicles`, none by default)."""
     artifacts: list[Artifact[Any]] = [
         *fish_amount_artifacts(fish or {}),
         Artifact(FISH_PARTNER, fish_partner),
         fish_cca_classes(*fish_cca_classes_rows),
+        business_vehicles(*fish_vehicles_rows),
     ]
     return {artifact.kind: artifact.value for artifact in artifacts}
 

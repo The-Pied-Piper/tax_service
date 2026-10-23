@@ -535,15 +535,6 @@ from app.jurisdictions.ca.catalog import (
     FARM_NET_INCOME_AFTER_INVENTORY_ADJUSTMENTS,
     FARM_PARTNER,
     FARM_SHARE_OF_NET_INCOME,
-    FARM_VEHICLE_AVAILABLE_INTEREST,
-    FARM_VEHICLE_INTEREST_FOR_PERIOD,
-    FARM_VEHICLE_INTEREST_PAYABLE,
-    FARM_VEHICLE_LEASE_CHARGES_NET,
-    FARM_VEHICLE_LEASE_COST_PORTION,
-    FARM_VEHICLE_LEASE_PRICE_BASE,
-    FARM_VEHICLE_LEASING_COST,
-    FARM_VEHICLE_LIST_PRICE,
-    FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
     FARMING_INCOME,
     FEDERAL_FOREIGN_TAX_CREDIT,
     FEDERAL_NON_BUSINESS_FOREIGN_TAX_CREDIT,
@@ -584,15 +575,6 @@ from app.jurisdictions.ca.catalog import (
     FISH_NET_INCOME_BEFORE_ADJUSTMENTS,
     FISH_PARTNER,
     FISH_SHARE_OF_NET_INCOME,
-    FISH_VEHICLE_AVAILABLE_INTEREST,
-    FISH_VEHICLE_INTEREST_FOR_PERIOD,
-    FISH_VEHICLE_INTEREST_PAYABLE,
-    FISH_VEHICLE_LEASE_CHARGES_NET,
-    FISH_VEHICLE_LEASE_COST_PORTION,
-    FISH_VEHICLE_LEASE_PRICE_BASE,
-    FISH_VEHICLE_LEASING_COST,
-    FISH_VEHICLE_LIST_PRICE,
-    FISH_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX,
     FISHING_INCOME,
     HIGH_INCOME_DONATIONS,
     INCLUDED_CAPITAL_GAIN,
@@ -1516,42 +1498,10 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         # Form T2042 Chart B line 19 "Amount 17 or 18, whichever is less": line 17 is 0 for Return
         # A.
-        FARM_VEHICLE_AVAILABLE_INTEREST: LesserOfLine(
-            FARM_VEHICLE_AVAILABLE_INTEREST,
-            (
-                (FARM_VEHICLE_INTEREST_PAYABLE, D("0")),
-                (FARM_VEHICLE_INTEREST_FOR_PERIOD, D("0")),
-            ),
-            D("0"),
-        ),
         # Form T2042 Chart C line 28 "Amount 26 or 27, whichever is less": both are 0 for Return A.
-        FARM_VEHICLE_LEASING_COST: LesserOfLine(
-            FARM_VEHICLE_LEASING_COST,
-            (
-                (FARM_VEHICLE_LEASE_CHARGES_NET, D("0")),
-                (FARM_VEHICLE_LEASE_COST_PORTION, D("0")),
-            ),
-            D("0"),
-        ),
         # Form T2121 Chart B line 19 "Amount 17 or 18, whichever is less": line 17 is 0 for Return
         # A.
-        FISH_VEHICLE_AVAILABLE_INTEREST: LesserOfLine(
-            FISH_VEHICLE_AVAILABLE_INTEREST,
-            (
-                (FISH_VEHICLE_INTEREST_PAYABLE, D("0")),
-                (FISH_VEHICLE_INTEREST_FOR_PERIOD, D("0")),
-            ),
-            D("0"),
-        ),
         # Form T2121 Chart C line 28 "Amount 26 or 27, whichever is less": both are 0 for Return A.
-        FISH_VEHICLE_LEASING_COST: LesserOfLine(
-            FISH_VEHICLE_LEASING_COST,
-            (
-                (FISH_VEHICLE_LEASE_CHARGES_NET, D("0")),
-                (FISH_VEHICLE_LEASE_COST_PORTION, D("0")),
-            ),
-            D("0"),
-        ),
         # Form T657 Chart 2021 Part 1 "Enter whichever is less: amount E or amount J." K: J is 0.
         CHART_2021_PART_1_AMOUNT_K: LesserOfLine(
             output=CHART_2021_PART_1_AMOUNT_K,
@@ -4671,24 +4621,8 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         # Form T2042 Chart C line 23 "Amount 23 or ($44,706 + GST and PST, or $44,706 + HST),
         # whichever is more": the list price is 0, so the printed 44,706 plus 0 tax is the greater.
-        FARM_VEHICLE_LEASE_PRICE_BASE: GreaterOfLine(
-            output=FARM_VEHICLE_LEASE_PRICE_BASE,
-            parts=(
-                (FARM_VEHICLE_LIST_PRICE, D("0")),
-                (FARM_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX, D("44706.00")),
-            ),
-            result=D("44706.00"),
-        ),
         # Form T2121 Chart C line 23 "Amount 23 or ($44,706 + GST and PST, or $44,706 + HST),
         # whichever is more": the list price is 0, so the printed 44,706 plus 0 tax is the greater.
-        FISH_VEHICLE_LEASE_PRICE_BASE: GreaterOfLine(
-            output=FISH_VEHICLE_LEASE_PRICE_BASE,
-            parts=(
-                (FISH_VEHICLE_LIST_PRICE, D("0")),
-                (FISH_VEHICLE_LIST_PRICE_LIMIT_WITH_TAX, D("44706.00")),
-            ),
-            result=D("44706.00"),
-        ),
         # Form T1206 Part 2 line 30 "Enter whichever is more: the amount from line 24 or line 29."
         SPLIT_INCOME_LINE_30: GreaterOfLine(
             output=SPLIT_INCOME_LINE_30,

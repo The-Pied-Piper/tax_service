@@ -1,5 +1,7 @@
 """BusinessVehicleExpenses: the motor vehicle expenses of Form T2125 Charts A to C, line 9281.
 
+Forms T2042 (line 9819) and T2121 (line 9281) repeat the same charts and use this capability too.
+
 T2125 Part 4 line 9281 "Motor vehicle expenses (not including CCA) (amount 16 of Chart A)", where
 Chart A line 16 reads "Allowable motor vehicle expenses: Add amounts 13 to 15 (enter this total on
 line 9281 of Part 4)". The charts are filled in for each vehicle, so each record of the consumed
