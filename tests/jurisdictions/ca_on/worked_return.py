@@ -2,11 +2,11 @@
 
 A file under `returns/` names its `jurisdiction` and `tax_year`, describes the taxpayer, lists
 the `sources` its figures were checked against, and maps artifact identifiers to figures under
-`inputs` and `expected`. Every figure is a quoted string, so YAML never reads it as a number: an
-amount is a decimal string, and a count (an `int` kind, under `inputs` or `expected`) is a string
-of decimal digits with no sign and no leading zero, such as "0" or "3". A record list (under
-`inputs`, or under `expected` for a line the return produces as a list, such as T776 Area A's
-closing UCC) is a list of mappings, one per record in order, each keyed by its fields'
+`inputs` and, per form, under `expected`. Every figure is a quoted string, so YAML never reads it
+as a number: an amount is a decimal string, and a count (an `int` kind, under `inputs` or
+`expected`) is a string of decimal digits with no sign and no leading zero, such as "0" or "3". A
+record list (under `inputs`, or under `expected` for a line the return produces as a list, such as
+T776 Area A's closing UCC) is a list of mappings, one per record in order, each keyed by its fields'
 identifiers with figures spelled as above; `[]` is no records. A rate (a `Rate` kind, only under
 `expected`) is a quoted decimal from 0 to 1, such as "0.55". Digits (a digits kind, under
 `inputs` or `expected`, as a carried entry is listed under both) are quoted text kept as
@@ -17,11 +17,12 @@ negative amount, a rate above 1 or digits of the wrong length, which is the kind
 A line or input the file leaves out is blank: `with_blanks` fills it in against the manifest's
 declared inputs and outputs (a record list left out is no records, as an input and as an
 expected line).
-Under `expected` a key that is not an artifact identifier but whose value is a list names a form:
-the list has one entry per instance, in order, each a mapping of artifact identifiers to figures
-(spelled as above) to check against that instance's own worksheet; `form_expected` keeps them, and
-`check_forms` checks each names a form with instances of the manifest and has an entry per
-instance. A form's instances go under `inputs` as a record list of its instances kind.
+Under `expected` every key names a form (the return's own form, `<namespace>/return`, and each
+form of the manifest); its value is a list with one entry per instance, in order, each a mapping
+of artifact identifiers to figures (spelled as above) to check against that instance's own
+worksheet. A form without instances has the one entry. `form_expected` keeps them, and
+`check_forms` checks each names a form of the manifest and has an entry per instance. A form's
+instances go under `inputs` as a record list of its instances kind.
 """
 
 from __future__ import annotations
@@ -70,9 +71,9 @@ class FormExpectation:
 class WorkedReturn:
     """One worked return read from `path`: its starting artifacts and the lines it expects.
 
-    `expected` are the lines of the default form (the form of the manifest's own selections, named
-    `<namespace>/return` by convention); `form_expected` the lines per instance of the forms with
-    instances, in file order.
+    `form_expected` are the lines per instance of each form, in file order; `expected` those of the
+    return's own form (the form of the manifest's own selections, named `<namespace>/return` by
+    convention), which has the one instance.
     """
 
     path: Path
@@ -81,8 +82,20 @@ class WorkedReturn:
     description: str
     sources: tuple[str, ...]
     inputs: tuple[Artifact[Any], ...]
-    expected: tuple[Artifact[Any], ...]
-    form_expected: tuple[FormExpectation, ...] = ()
+    form_expected: tuple[FormExpectation, ...]
+
+    @property
+    def return_form(self) -> str:
+        """The name of the return's own form."""
+        return self.jurisdiction.namespace.identifier("return")
+
+    @property
+    def expected(self) -> tuple[Artifact[Any], ...]:
+        """The lines expected of the return's own worksheet; none when the file gives none."""
+        for found in self.form_expected:
+            if found.form == self.return_form:
+                return found.instances[0] if found.instances else ()
+        return ()
 
     @classmethod
     def discover(cls, directory: Path) -> tuple[Path, ...]:
@@ -97,7 +110,7 @@ class WorkedReturn:
         """
         try:
             root = YamlNode.load(path, path.name).require_mapping(_SECTIONS)
-            expected, form_expected = cls._expected(root.field("expected"), artifacts)
+            form_expected = cls._expected(root.field("expected"), artifacts)
             return cls(
                 path=path,
                 jurisdiction=cls._jurisdiction(root.field("jurisdiction")),
@@ -105,7 +118,6 @@ class WorkedReturn:
                 description=root.field("description").require_non_empty_string(),
                 sources=cls._sources(root.field("sources")),
                 inputs=cls._artifacts(root.field("inputs"), artifacts, inputs=True),
-                expected=expected,
                 form_expected=form_expected,
             )
         except (YamlShapeError, yaml.YAMLError) as exc:
@@ -116,51 +128,55 @@ class WorkedReturn:
     ) -> WorkedReturn:
         """This return with every blank line of the form filled in, as the filer left it blank.
 
-        `inputs` are the identifiers the manifest declares and `outputs` the exports of the default
-        form. A declared input the
-        file leaves out is entered as blank: 0 for an amount or a count, no records for a record
-        list, the empty text for digits. A declared output the file leaves out is expected to be
-        0, or the empty text for digits, so a line that fires on a return not meant to trigger it
-        still fails. Raises WorkedReturnError naming the file and the identifier for one
+        `inputs` are the identifiers the manifest declares and `outputs` the exports of the return's
+        own form. A declared input the file leaves out is entered as blank: 0 for an amount or a
+        count, no records for a record list, the empty text for digits. A declared output the file
+        leaves out is expected to be 0, or the empty text for digits, so a line that fires on a
+        return not meant to trigger it still fails. Raises WorkedReturnError naming the file and
+        the identifier for one
         `artifacts` does not know or that holds no blank.
         """
         given = {artifact.kind.identifier for artifact in self.inputs}
         listed = {artifact.kind.identifier for artifact in self.expected}
+        blanks = self._blanks(sorted(outputs - listed), "expected", artifacts)
+        own = FormExpectation(self.return_form, (self.expected + blanks,))
+        others = tuple(found for found in self.form_expected if found.form != self.return_form)
+        # The return's own entry keeps the position the file gave it, else it comes first.
+        position = next(
+            (n for n, found in enumerate(self.form_expected) if found.form == self.return_form),
+            0,
+        )
         return replace(
             self,
             inputs=self.inputs + self._blanks(sorted(inputs - given), "inputs", artifacts),
-            expected=self.expected + self._blanks(sorted(outputs - listed), "expected", artifacts),
+            form_expected=(*others[:position], own, *others[position:]),
         )
 
     def check_forms(self, forms: Iterable[Form], artifacts: ArtifactRegistry) -> None:
         """Check each form expectation of this return against the forms of the manifest.
 
-        Raises WorkedReturnError naming the file for an expectation of a form without instances
-        or not in `forms`, for an instances identifier that is not a record list and for one
-        with other than an entry per instance.
+        Raises WorkedReturnError naming the file for an expectation of a form not in `forms`, for
+        an instances identifier that is not a record list and for one with other than an entry
+        per instance (a form without instances has the one).
         """
         forms = tuple(forms)
-        named = {form.name: form for form in forms if form.instances is not None}
-        once = {form.name for form in forms if form.instances is None}
-        self._check_expectations(named, once, artifacts)
+        self._check_expectations({form.name: form for form in forms}, artifacts)
 
-    def _check_expectations(
-        self, forms: dict[str, Form], once: set[str], artifacts: ArtifactRegistry
-    ) -> None:
-        """Each expectation names a form of the manifest with instances, an entry per instance."""
+    def _check_expectations(self, forms: dict[str, Form], artifacts: ArtifactRegistry) -> None:
+        """Each expectation names a form of the manifest, with an entry per instance."""
         for expectation in self.form_expected:
-            if expectation.form in once:
-                raise WorkedReturnError(
-                    f"{self.path}: expected: {expectation.form!r} is a form without instances; "
-                    "only the default form is expected, as the flat `expected` lines"
-                )
             if expectation.form not in forms:
                 raise WorkedReturnError(
                     f"{self.path}: expected: {expectation.form!r} is not a form of the manifest"
                 )
-            kind = self._instances_kind(forms[expectation.form], artifacts)
-            (given,) = (a for a in self.inputs if a.kind == kind)
-            entries, instances = len(expectation.instances), len(given.value.records)
+            form = forms[expectation.form]
+            if form.instances is None:
+                instances = 1
+            else:
+                kind = self._instances_kind(form, artifacts)
+                (given,) = (a for a in self.inputs if a.kind == kind)
+                instances = len(given.value.records)
+            entries = len(expectation.instances)
             if entries != instances:
                 raise WorkedReturnError(
                     f"{self.path}: expected: {expectation.form!r} has {entries} "
@@ -169,7 +185,7 @@ class WorkedReturn:
                 )
 
     def _instances_kind(self, form: Form, artifacts: ArtifactRegistry) -> RecordListKind:
-        assert form.instances is not None  # `check_forms` passes only the forms with instances
+        assert form.instances is not None  # only a form with instances has an instances kind
         try:
             kind = artifacts.kind(form.instances)
         except (UnknownRegistrationError, InvalidRegistrationError) as exc:
@@ -251,35 +267,18 @@ class WorkedReturn:
         return RecordList(kind.fields, records)
 
     @classmethod
-    def _expected(
-        cls, node: YamlNode, artifacts: ArtifactRegistry
-    ) -> tuple[tuple[Artifact[Any], ...], tuple[FormExpectation, ...]]:
-        """The `expected` section: its artifact lines, and per form a list of lines per instance.
-
-        A key that no identifier of `artifacts` matches, with a list for a value, is a form.
-        """
+    def _expected(cls, node: YamlNode, artifacts: ArtifactRegistry) -> tuple[FormExpectation, ...]:
+        """The `expected` section: per form, in file order, the lines of each instance."""
         fields = node.fields()
         if not fields:
             raise YamlShapeError(f"{node.where} must not be empty")
-        lines: list[tuple[str, YamlNode]] = []
-        forms: list[FormExpectation] = []
-        for key, value in fields:
-            if value.is_list() and not cls._known(key, artifacts):
-                instances = tuple(
-                    cls._read(item.fields(), artifacts, inputs=False) for item in value.items()
-                )
-                forms.append(FormExpectation(key, instances))
-            else:
-                lines.append((key, value))
-        return cls._read(lines, artifacts, inputs=False), tuple(forms)
-
-    @staticmethod
-    def _known(identifier: str, artifacts: ArtifactRegistry) -> bool:
-        try:
-            artifacts.kind(identifier)
-        except (UnknownRegistrationError, InvalidRegistrationError):
-            return False
-        return True
+        return tuple(
+            FormExpectation(
+                key,
+                tuple(cls._read(item.fields(), artifacts, inputs=False) for item in value.items()),
+            )
+            for key, value in fields
+        )
 
     @classmethod
     def _artifacts(
