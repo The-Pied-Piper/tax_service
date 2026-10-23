@@ -330,6 +330,7 @@ expected:
   ca/capital_gains_deduction: "155000.00"
   ca/deductions_from_net_income: "175000.00"
   ca/net_income: "185000.00"
+  ca/net_income_signed: "185000.00"
   ca/net_income_before_adjustments: "185000.00"
   ca/other_payments_limit_income: "185000.00"
   ca/qsbcs_proceeds: "500000"

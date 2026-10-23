@@ -229,8 +229,7 @@ sources:
     Taxable income" (line 26000). The child care expenses deduction (T778 line 7, the least
     of the basic limit, the expenses paid and two-thirds of the earned income, each 0) is 0,
     there is no RRSP deduction (0) and no union dues (0). Total deductions, which take
-    amounts already in cents, are 0 + 0 + 0 + 0 = 0; line 55 (line 23500, social benefits
-    repayment) is not modelled, so net income is total income less total deductions, not
+    amounts already in cents, are 0 + 0 + 0 + 0 = 0; line 55 (line 23500, social benefits repayment) is 0 (the chart does not apply), so net income is total income less total deductions, not
     below zero: 2,800 - 0 = 2,800.00. Step 4 (5006-R): "Line 60 and line 25000: Other
     payments deduction (enter the amount from line 14700 if you did not enter an amount on
     line 14600; otherwise, use Federal Worksheet)": nothing was entered on line 14600 and
@@ -496,6 +495,7 @@ expected:
   ca/child_care_expenses: "0.00"
   ca/deductions_from_total_income: "0.00"
   ca/net_income: "2800.00"
+  ca/net_income_signed: "2800.00"
   ca/net_income_before_adjustments: "2800.00"
   ca/other_payments_limit_income: "2800.00"
   ca/total_adjusted_net_capital_losses: "0.00"

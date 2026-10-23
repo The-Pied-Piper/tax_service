@@ -301,6 +301,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
+    NET_INCOME_SIGNED,
     NET_RENTAL_INCOME,
     NET_SELF_EMPLOYMENT_INCOME,
     NO_SLIP_DIVIDEND_TAX_CREDIT,
@@ -512,8 +513,8 @@ from tests.jurisdictions.ca_on.end_to_end.support import (
 
 def test_each_capability_runs_after_what_it_consumes() -> None:
     order = service().compose(CA_ON, 2025).order
-    assert len(order) == 1249
-    assert len(order) == 1249
+    assert len(order) == 1250
+    assert len(order) == 1250
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     assert position[TAXABLE_CAPITAL_GAINS] < position[TOTAL_INCOME] < position[NET_INCOME]
     assert position[AMT_MAXIMUM_CARRYOVER_CLAIM] < position[AMT_MINIMUM_TAX_CARRYOVER_APPLIED]
@@ -649,6 +650,11 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[SOCIAL_BENEFITS_LINE_21] < position[SOCIAL_BENEFITS_REPAYMENT]
     assert position[SOCIAL_BENEFITS_REPAYMENT_APPLIES] < position[SOCIAL_BENEFITS_REPAYMENT]
     assert position[SOCIAL_BENEFITS_REPAYMENT] < position[NET_INCOME]
+    # Line 23600 before its floor (`ca/net_income_signed`), which the TOSI-adjusted net income and
+    # Schedule ON479-A read, runs right before the floored line 23600.
+    assert position[NET_INCOME_BEFORE_ADJUSTMENTS] < position[NET_INCOME_SIGNED]
+    assert position[SOCIAL_BENEFITS_REPAYMENT] < position[NET_INCOME_SIGNED]
+    assert position[NET_INCOME_SIGNED] < position[NET_INCOME]
     assert position[SOCIAL_BENEFITS_REPAYMENT] < position[SOCIAL_BENEFITS_REPAYMENT_PAYABLE]
     assert position[RRSP_CONTRIBUTIONS_AVAILABLE] < position[RRSP_DEDUCTION_MAXIMUM]
     assert position[RRSP_DEDUCTION_MAXIMUM] < position[RRSP_DEDUCTION]
@@ -1005,14 +1011,13 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[TAXABLE_INCOME] < position[ONTARIO_BASIC_TAX]
     assert position[FEDERAL_BASIC_TAX] < position[FEDERAL_TAX_AFTER_CREDITS]
     assert position[ONTARIO_BASIC_TAX] < position[ONTARIO_TAX_AFTER_CREDITS]
-    # Form T1206: line 4 is part of line 23300, line 6 adds it back to line 23400, and line 120
-    # (T1206 line 8) is part of line 121, from which the credits come.
+    # Form T1206: line 4 is part of line 23300, line 6 adds it back to line 23600 before its floor
+    # (`ca/net_income_signed`), and line 120 (T1206 line 8) is part of line 121, from which the
+    # credits come.
     assert position[TOTAL_SPLIT_INCOME] < position[DEDUCTIONS_FROM_TOTAL_INCOME]
-    assert position[NET_INCOME_BEFORE_ADJUSTMENTS] < position[TOSI_ADJUSTED_NET_INCOME]
+    assert position[NET_INCOME_SIGNED] < position[TOSI_ADJUSTED_NET_INCOME]
     assert position[TOTAL_SPLIT_INCOME] < position[TOSI_ADJUSTED_NET_INCOME]
-    assert (
-        position[NET_INCOME_BEFORE_ADJUSTMENTS] < position[TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO]
-    )
+    assert position[NET_INCOME_SIGNED] < position[TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO]
     assert position[TOTAL_SPLIT_INCOME] < position[FEDERAL_TAX_ON_SPLIT_INCOME]
     assert position[FEDERAL_BASIC_TAX] < position[FEDERAL_TAX_WITH_SPLIT_INCOME]
     assert position[FEDERAL_TAX_ON_SPLIT_INCOME] < position[FEDERAL_TAX_WITH_SPLIT_INCOME]
@@ -1647,7 +1652,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
     assert position[ONTARIO_CREDITS_SUBTOTAL] < position[ONTARIO_CREDITS]
     assert position[FERTILITY_CREDIT] < position[ONTARIO_CREDITS_SUBTOTAL]
     assert (
-        position[NET_INCOME_BEFORE_ADJUSTMENTS]
+        position[NET_INCOME_SIGNED]
         < position[CARE_ADJUSTED_INCOME]
         < position[CARE_FAMILY_ADJUSTED_INCOME]
         < position[CARE_CREDIT_PERCENTAGE]
@@ -1655,6 +1660,7 @@ def test_each_capability_runs_after_what_it_consumes() -> None:
         < position[ONTARIO_CREDITS_SUBTOTAL]
     )
     assert position[CHILD_CARE_EXPENSES] < position[CARE_ADJUSTED_INCOME]
+    assert position[SOCIAL_BENEFITS_REPAYMENT] < position[CARE_ADJUSTED_INCOME]
     assert position[CHILD_CARE_EXPENSES] < position[CARE_CREDIT]
     assert position[SENIORS_TRANSIT_CREDIT] < position[ONTARIO_CREDITS_SUBTOTAL]
     for column in (1, 2, 3):

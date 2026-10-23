@@ -41,8 +41,8 @@ def test_builds_a_tax_computation_over_the_jurisdiction_packages_and_shared_regi
     computation = build_tax_computation()
 
     assert isinstance(computation, TaxComputationService)
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1249
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1249
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1250
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1250
 
 
 def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:
@@ -893,6 +893,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/deductions_from_total_income",
         "ca/net_income_before_adjustments",
         "ca/net_income",
+        "ca/net_income_signed",
         "ca/oas_overpayment_recovered",
         "ca/ei_benefits_repayment",
         "ca/net_income_before_adjustments_not_below_zero",
@@ -2098,15 +2099,15 @@ def test_building_it_twice_is_fine(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
     assert shared.identifiers() == first
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1249
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1249
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1250
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1250
 
 
 def test_a_fresh_shared_registry_composes_after_building(shared: ArtifactRegistry) -> None:
     computation = build_tax_computation()
 
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1249
-    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1249
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1250
+    assert len(computation.compose(JurisdictionCode("CA-ON"), 2025).order) == 1250
 
 
 def test_app_startup_registers_the_jurisdiction_catalogs(shared: ArtifactRegistry) -> None:

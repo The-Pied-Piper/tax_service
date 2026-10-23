@@ -105,9 +105,10 @@ employment part and the net self-employment income. It is the gate of the supple
 
 MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3 = CATALOG.declare("medical_supplement_column_1_line_3", Decimal)
 """Your column, Federal Worksheet "Line 45200 - Refundable medical expense supplement" line 3
-"Line 1 plus line 2": line 1 is the net income before adjustments (line 23400), the "amount you
-would have entered if the instructions on line 23600 said "if negative, show in brackets"" (line
-23500 is not subtracted here), and line 2 the UCCB and RDSP income repayments. The form prints no
+"Line 1 plus line 2": line 1 is the TOSI-adjusted net income of Form T1206 Part 1 line 6, whose
+line 5 is the "amount you would have entered if the instructions on line 23600 said "if negative,
+show in brackets"" (line 23400 less line 23500), and line 2 the UCCB and RDSP income
+repayments. The form prints no
 "(if negative, enter "0")" on line 3, so the kind is signed."""
 
 MEDICAL_SUPPLEMENT_COLUMN_1_LINE_5 = CATALOG.declare(

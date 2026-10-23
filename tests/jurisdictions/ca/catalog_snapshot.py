@@ -981,6 +981,7 @@ REGISTERED = frozenset(
         "ca/deductions_from_total_income",
         "ca/net_income_before_adjustments",
         "ca/net_income",
+        "ca/net_income_signed",
         "ca/oas_overpayment_recovered",
         "ca/ei_benefits_repayment",
         "ca/net_income_before_adjustments_not_below_zero",
@@ -1823,6 +1824,7 @@ REGISTERED = frozenset(
 
 SIGNED = frozenset(
     {
+        "ca/net_income_signed",
         "ca/chart_2016_part_2_amount_f",
         "ca/chart_2016_part_2_amount_g",
         "ca/chart_2016_part_2_amount_i",

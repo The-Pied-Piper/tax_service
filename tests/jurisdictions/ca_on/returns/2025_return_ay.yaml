@@ -80,6 +80,7 @@ expected:
   ca-on/tosi_adjusted_taxable_income: "46751.49"
   ca/child_care_expenses: "5000.00"
   ca/net_income_before_adjustments: "54435.00"
+  ca/net_income_signed: "54435.00"
   ca/tosi_adjusted_net_income: "65935.00"
   ca-on/care_adjusted_income: "70935.00"
   ca-on/care_family_adjusted_income: "100935.00"

@@ -16,14 +16,18 @@ from app.domain.capabilities.times_count import TimesCount
 from app.domain.worksheet import Worksheet
 from app.jurisdictions.ca.capabilities.count_by_conditions import CountByConditions
 from app.jurisdictions.ca.catalog import (
+    ADJUSTED_FAMILY_NET_INCOME,
+    BASIC_PERSONAL_AMOUNT,
     CHARITABLE_DONATIONS_LIMIT,
     DONATION_LIMIT_ON_NET_INCOME,
     FEDERAL_BASIC_TAX,
     MEDICAL_NET_INCOME_SHARE,
+    MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3,
     NET_FEDERAL_TAX,
     NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_BEFORE_ADJUSTMENTS_NOT_BELOW_ZERO,
+    NET_INCOME_SIGNED,
     OAS_AND_FEDERAL_SUPPLEMENTS,
     OAS_BENEFITS_BASE_AMOUNT,
     OTHER_PAYMENTS_LIMIT_INCOME,
@@ -43,6 +47,8 @@ from app.jurisdictions.ca.catalog import (
     SOCIAL_BENEFITS_REPAYMENT_APPLIES,
     SOCIAL_BENEFITS_REPAYMENT_PAYABLE,
     TAXABLE_INCOME,
+    TOSI_ADJUSTED_NET_INCOME,
+    TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
     TOTAL_INCOME,
     TOTAL_PAYABLE,
 )
@@ -112,6 +118,7 @@ def test_return_as_has_998_55_on_lines_23500_and_42200_and_99001_45_on_line_2360
     assert worksheet.get(SOCIAL_BENEFITS_REPAYMENT).value == D("998.55")
     assert worksheet.get(SOCIAL_BENEFITS_REPAYMENT_PAYABLE).value == D("998.55")
     assert worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value == D("100000.00")
+    assert worksheet.get(NET_INCOME_SIGNED).value == D("99001.45")
     assert worksheet.get(NET_INCOME).value == D("99001.45")
 
 
@@ -139,6 +146,44 @@ def test_return_as_readers_of_line_23600_take_the_net_income_of_99001_45() -> No
     assert worksheet.get(DONATION_LIMIT_ON_NET_INCOME).value == D("74251.09")
     assert worksheet.get(CHARITABLE_DONATIONS_LIMIT).value == D("74251.09")
     assert worksheet.get(RESIDENCY_NET_INCOME_LIMIT).value == D("19800.29")
+
+
+def test_return_as_form_t1206_line_5_and_on479_a_line_1_read_line_23600_of_99001_45() -> None:
+    # Form T1206 Part 1 line 5 "Net income from line 23600 of your tax return (or the amount you
+    # would have entered if the instructions on line 23600 read "if negative, show in brackets")"
+    # is 100000.00 - 998.55 = 99001.45, and line 6 "TOSI-adjusted net income: line 4 plus line 5"
+    # is 0 + 99001.45, so each of the two kinds is 99001.45 and the figures that read them follow
+    # by exactly the 998.55 of line 23500. Schedule ON479-A column 1: line 1 is 99001.45, line 2
+    # (child care expenses) 0 and line 3 "Social benefits repayment from line 23500 of the
+    # return" 998.55, so line 4 "Add lines 1 to 3" is 100000.00 again. The adjusted family net
+    # income of the Canada workers benefit takes the TOSI-adjusted net income not below zero.
+    worksheet = return_as()
+
+    assert worksheet.get(TOSI_ADJUSTED_NET_INCOME).value == D("99001.45")
+    assert worksheet.get(TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO).value == D("99001.45")
+    assert worksheet.get(ADJUSTED_FAMILY_NET_INCOME).value == D("99001.45")
+    assert worksheet.get(MEDICAL_SUPPLEMENT_COLUMN_1_LINE_3).value == D("99001.45")
+    assert worksheet.get(ontario.CARE_ADJUSTED_INCOME).value == D("100000.00")
+    assert worksheet.get(ontario.CARE_FAMILY_ADJUSTED_INCOME).value == D("100000.00")
+
+
+def test_a_line_23500_of_3000_lowers_the_basic_personal_amount_by_the_taper_on_line_23600() -> None:
+    # Employment income 198074 plus the OAS pension 3000 is 201074.00, less 1074.00, 200000.00
+    # (line 23400). The chart applies and line 23500 is 3000 (as in the case above), so line
+    # 23600 and the TOSI-adjusted net income are 197000.00. The Federal Worksheet for line 30000
+    # reads the TOSI-adjusted net income: line 5 is 197000.00 - 177882.00 = 19118.00, line 7 is
+    # 19118.00 / 75532.00, line 9 that x 1591.00 = 402.700..., rounded half-up to the cent
+    # 402.70, line 10 is 1591.00 - 402.70 = 1188.30 and line 11 is 14538.00 + 1188.30 =
+    # 15726.30; reading line 23400 (200000.00) it would be 15663.11.
+    worksheet = return_as("198074", old_age_security="3000")
+
+    assert worksheet.get(NET_INCOME_BEFORE_ADJUSTMENTS).value == D("200000.00")
+    assert worksheet.get(SOCIAL_BENEFITS_REPAYMENT).value == D("3000.00")
+    assert worksheet.get(NET_INCOME_SIGNED).value == D("197000.00")
+    assert worksheet.get(TOSI_ADJUSTED_NET_INCOME).value == D("197000.00")
+    assert worksheet.get(TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO).value == D("197000.00")
+    assert worksheet.get(BASIC_PERSONAL_AMOUNT).value == D("15726.30")
+    assert worksheet.get(ontario.CARE_ADJUSTED_INCOME).value == D("200000.00")
 
 
 def test_return_as_taxes_the_reduced_income_and_adds_line_42200_to_the_total_payable() -> None:
@@ -188,8 +233,15 @@ def test_return_as_trace_names_each_line_of_the_chart() -> None:
         "= 998.55",
         "social_benefits_repayment: social_benefits_line_21 998.55 "
         "for each of 1 social_benefits_repayment_applies = 998.55",
+        "net_income_signed: net_income_before_adjustments 100000 "
+        "less social_benefits_repayment 998.55 = 99001.45",
         "net_income: net_income_before_adjustments 100000 less social_benefits_repayment 998.55, "
         "not below 0 = 99001.45",
+        "tosi_adjusted_net_income: total_split_income 0 + net_income_signed 99001.45 = 99001.45",
+        "tosi_adjusted_net_income_not_below_zero: total_split_income 0 "
+        "+ net_income_signed 99001.45, not below 0 = 99001.45",
+        "care_adjusted_income: tosi_adjusted_net_income 99001.45 + child_care_expenses 0 "
+        "+ social_benefits_repayment 998.55, not below 0 = 100000",
     ):
         assert line in rendered, line
 
@@ -368,6 +420,10 @@ def test_a_negative_line_23400_is_floored_for_the_net_income_and_the_line_25000_
     assert worksheet.get(SOCIAL_BENEFITS_LINE_17).value == D("0")
     assert worksheet.get(SOCIAL_BENEFITS_REPAYMENT).value == D("0")
     assert worksheet.get(NET_INCOME).value == D("0")
+    # Form T1206 line 5 takes the amount before the floor, which stays in brackets (negative).
+    assert worksheet.get(NET_INCOME_SIGNED).value == D("-1000.00")
+    assert worksheet.get(TOSI_ADJUSTED_NET_INCOME).value == D("-1000.00")
+    assert worksheet.get(TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO).value == D("0")
     assert worksheet.get(OTHER_PAYMENTS_LIMIT_INCOME).value == D("0")
 
 
@@ -404,6 +460,8 @@ def test_each_line_of_the_chart_is_produced_by_its_capability() -> None:
     for kind in (SOCIAL_BENEFITS_LINE_5, SOCIAL_BENEFITS_LINE_17, NET_INCOME):
         assert isinstance(worksheet.producer_of(kind), SubtractNotBelowZero), kind.identifier
     assert isinstance(worksheet.producer_of(SOCIAL_BENEFITS_LINE_11), Subtract)
+    assert isinstance(worksheet.producer_of(NET_INCOME_SIGNED), Subtract)
+    assert isinstance(worksheet.producer_of(TOSI_ADJUSTED_NET_INCOME), Sum)
     assert isinstance(worksheet.producer_of(OAS_BENEFITS_BASE_AMOUNT), CreditAmount)
     assert isinstance(worksheet.producer_of(SOCIAL_BENEFITS_LINE_18), ApplyRate)
     assert isinstance(worksheet.producer_of(SOCIAL_BENEFITS_LINE_19), LesserOf)

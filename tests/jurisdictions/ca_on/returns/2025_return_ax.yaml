@@ -113,6 +113,7 @@ expected:
   ca/child_care_expenses: "0.00"
   ca/deductions_from_total_income: "3231.75"
   ca/net_income: "46768.25"
+  ca/net_income_signed: "46768.25"
   ca/net_income_before_adjustments: "46768.25"
   ca/other_payments_limit_income: "46768.25"
   ca/taxable_income: "46768.25"

@@ -528,6 +528,7 @@ from app.jurisdictions.ca.catalog import (
     NET_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
+    NET_INCOME_SIGNED,
     NET_PARTNERSHIP_INCOME,
     NET_PROFESSIONAL_INCOME,
     NET_RENTAL_INCOME,
@@ -1621,6 +1622,12 @@ def test_each_amount_is_produced_by_its_capability() -> None:
     )
     assert isinstance(worksheet.producer_of(DEDUCTIONS_FROM_TOTAL_INCOME), Sum)
     assert isinstance(worksheet.producer_of(NET_INCOME), SubtractNotBelowZero)
+    # Line 23600 before its floor is line 23400 less line 23500, signed: a Subtract of its own.
+    assert isinstance(worksheet.producer_of(NET_INCOME_SIGNED), Subtract)
+    assert worksheet.producer_of(NET_INCOME_SIGNED) is not worksheet.producer_of(NET_INCOME)
+    assert worksheet.producer_of(NET_INCOME_SIGNED) is not worksheet.producer_of(
+        NET_INCOME_BEFORE_ADJUSTMENTS
+    )
     for starting_kind in (
         RPP_DEDUCTION,
         ELECTED_SPLIT_PENSION_DEDUCTION,

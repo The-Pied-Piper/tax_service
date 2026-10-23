@@ -17,6 +17,7 @@ from app.jurisdictions.ca.capabilities.apply_chosen_rate import ApplyChosenRate
 from app.jurisdictions.ca.catalog import (
     CHILD_CARE_EXPENSES,
     REFUND,
+    SOCIAL_BENEFITS_REPAYMENT,
     SPOUSE_NET_INCOME,
     TAXABLE_INCOME,
     TOSI_ADJUSTED_NET_INCOME,
@@ -189,15 +190,20 @@ STEPS = {
     # Line 1 "Net income from line 23600 of the return (or the amount you would have entered if
     # the instructions on line 23600 said "if negative, show in brackets")" is the TOSI-adjusted net
     # income of Form T1206 Part 1 line 6, signed ("use line 6 of this form at column 1 of line 1 of
-    # Schedule ON479-A"), whose line 5 is line 23400, the net income before adjustments, to
-    # which line 23500 is not applied here. Line 2 "Child care expenses deduction from line 21400
-    # of the return". Line 3 "Social benefits repayment from line 23500 of the return" is not
-    # applied here, so it is left out. Line 4 "Add lines 1 to 3 (if negative, enter "0"). Adjusted
-    # income".
+    # Schedule ON479-A"), the split income plus line 23600 before the floor at 0. Line 2 "Child
+    # care expenses deduction from line 21400 of the return". Line 3 "Social benefits repayment
+    # from line 23500 of the return" is added, in line order. Line 4 "Add lines 1 to 3 (if
+    # negative, enter "0"). Adjusted income".
     CapabilitySelection(
         name="core/sum_not_below_zero",
         params={},
-        consumes={"parts": ("ca/tosi_adjusted_net_income", "ca/child_care_expenses")},
+        consumes={
+            "parts": (
+                "ca/tosi_adjusted_net_income",
+                "ca/child_care_expenses",
+                "ca/social_benefits_repayment",
+            )
+        },
         produces={"output": "ca-on/care_adjusted_income"},
     ),
     # Column 2 "Supporting person(s)", line 4 (line 63047) is the supporting persons' adjusted
@@ -669,7 +675,7 @@ WIRING = {
     (CappedAmount, frozenset({FERTILITY_CREDIT_BEFORE_MAXIMUM}), frozenset({FERTILITY_CREDIT})),
     (
         SumNotBelowZero,
-        frozenset({TOSI_ADJUSTED_NET_INCOME, CHILD_CARE_EXPENSES}),
+        frozenset({TOSI_ADJUSTED_NET_INCOME, CHILD_CARE_EXPENSES, SOCIAL_BENEFITS_REPAYMENT}),
         frozenset({CARE_ADJUSTED_INCOME}),
     ),
     (

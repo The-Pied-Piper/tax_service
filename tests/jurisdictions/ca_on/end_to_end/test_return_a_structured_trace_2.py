@@ -714,6 +714,7 @@ from app.jurisdictions.ca.catalog import (
     NET_FISHING_INCOME,
     NET_INCOME_BEFORE_ADJUSTMENTS,
     NET_INCOME_LESS_UCCB_AND_RDSP_INCOME,
+    NET_INCOME_SIGNED,
     NET_PARTNERSHIP_INCOME,
     NET_PROFESSIONAL_INCOME,
     NET_RENTAL_INCOME,
@@ -2048,7 +2049,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
         TOSI_ADJUSTED_NET_INCOME: SumLine(
             TOSI_ADJUSTED_NET_INCOME,
-            ((TOTAL_SPLIT_INCOME, D("0")), (NET_INCOME_BEFORE_ADJUSTMENTS, D("115000"))),
+            ((TOTAL_SPLIT_INCOME, D("0")), (NET_INCOME_SIGNED, D("115000"))),
             D("115000"),
         ),
         # T1 line 121 "Line 119 plus line 120".
@@ -3947,7 +3948,7 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
     assert sum_floors == {
         TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO: SumNotBelowZeroLine(
             output=TOSI_ADJUSTED_NET_INCOME_NOT_BELOW_ZERO,
-            parts=((TOTAL_SPLIT_INCOME, D("0")), (NET_INCOME_BEFORE_ADJUSTMENTS, D("115000"))),
+            parts=((TOTAL_SPLIT_INCOME, D("0")), (NET_INCOME_SIGNED, D("115000"))),
             total=D("115000"),
         ),
         SPLIT_INCOME_LINE_24: SumNotBelowZeroLine(
