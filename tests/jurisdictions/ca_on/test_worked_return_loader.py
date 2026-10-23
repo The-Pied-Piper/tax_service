@@ -9,7 +9,6 @@ import re
 from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
 
 import pytest
 
@@ -1124,24 +1123,6 @@ def test_a_nested_record_list_left_out_of_the_inputs_is_no_records(
     assert Artifact(kind, RecordList(kind.fields, [])) in filled.inputs
 
 
-# --- the converter of a flat return into the instances shape --------------------------------------
-#
-# Worked returns give a form's instance inputs FLAT at the top level of `inputs:`. The engine takes
-# only the instances shape (one `RecordList` artifact, a record per instance), so `with_forms`
-# turns the flat inputs of each form into one instance of the form's instances artifact: the
-# instance inputs the file leaves out are blank as in `with_blanks`, and none of the form's
-# instance inputs in the file is an empty list of instances. Temporary test support (#337).
-
-FLAT_RENTAL = (
-    "inputs:\n"
-    '  ex/gross_rent: "12000"\n'
-    "  ex/units:\n"
-    '    - ex/unit_amount: "100"\n'
-    '    - ex/unit_amount: "250.50"\n'
-    '  ex/other_amount: "7"\n'
-)
-
-
 @pytest.fixture
 def rentals() -> ArtifactRegistry:
     """A registry of the made-up `ex/rentals`: a record per instance of a rental form, holding
@@ -1192,187 +1173,22 @@ def business_form() -> Form:
     )
 
 
-def values(worked: WorkedReturn) -> dict[str, Any]:
-    return {artifact.kind.identifier: artifact.value for artifact in worked.inputs}
-
-
-def flat_rental(tmp_path: Path, rentals: ArtifactRegistry, text: str = FLAT_RENTAL) -> WorkedReturn:
-    return WorkedReturn.load(write(tmp_path, with_section("inputs", text), "flat.yaml"), rentals)
-
-
-def rentals_list(rentals: ArtifactRegistry, *records: dict[str, object]) -> RecordList:
-    kind = rentals.kind("ex/rentals")
-    assert isinstance(kind, RecordListKind)
-    return RecordList(
-        kind.fields,
-        [{rentals.kind(key): value for key, value in record.items()} for record in records],
-    )
-
-
-def units_list(rentals: ArtifactRegistry, *amounts: str) -> RecordList:
-    kind = rentals.kind("ex/units")
-    assert isinstance(kind, RecordListKind)
-    (amount,) = kind.fields
-    return RecordList(kind.fields, [{amount: D(each)} for each in amounts])
-
-
-def test_the_flat_inputs_of_a_form_become_one_instance(
-    tmp_path: Path, rentals: ArtifactRegistry
-) -> None:
-    worked = flat_rental(tmp_path, rentals)
-
-    converted = worked.with_forms([rental_form()], rentals)
-
-    assert values(converted) == {
-        "ex/other_amount": D("7"),
-        "ex/rentals": rentals_list(
-            rentals,
-            {
-                "ex/gross_rent": D("12000"),
-                "ex/expenses": D(0),
-                "ex/units": units_list(rentals, "100", "250.50"),
-            },
-        ),
-    }
-
-
-def test_the_instance_keeps_the_kind_the_form_names(
-    tmp_path: Path, rentals: ArtifactRegistry
-) -> None:
-    converted = flat_rental(tmp_path, rentals).with_forms([rental_form()], rentals)
-
-    (instances,) = (a for a in converted.inputs if a.kind.identifier == "ex/rentals")
-
-    assert instances.kind is rentals.kind("ex/rentals")
-    assert len(instances.value.records) == 1
-
-
-def test_an_instance_input_the_file_leaves_out_is_blank_as_with_blanks(
-    tmp_path: Path, rentals: ArtifactRegistry
-) -> None:
-    only_expenses = flat_rental(tmp_path, rentals, 'inputs:\n  ex/expenses: "300"\n')
-
-    converted = only_expenses.with_forms([rental_form()], rentals)
-
-    assert values(converted) == {
-        "ex/rentals": rentals_list(
-            rentals,
-            {
-                "ex/gross_rent": D(0),
-                "ex/expenses": D("300"),
-                "ex/units": units_list(rentals),
-            },
-        ),
-    }
-
-
-def test_no_instance_input_in_the_file_is_an_empty_list_of_instances(
-    tmp_path: Path, rentals: ArtifactRegistry
-) -> None:
-    worked = flat_rental(tmp_path, rentals, 'inputs:\n  ex/other_amount: "7"\n')
-
-    converted = worked.with_forms([rental_form()], rentals)
-
-    assert values(converted) == {
-        "ex/other_amount": D("7"),
-        "ex/rentals": rentals_list(rentals),
-    }
-    assert values(converted)["ex/rentals"].records == ()
-
-
-def test_each_form_is_converted_on_its_own(tmp_path: Path, rentals: ArtifactRegistry) -> None:
-    worked = flat_rental(tmp_path, rentals, 'inputs:\n  ex/gross_rent: "12000"\n')
-
-    converted = worked.with_forms([rental_form(), business_form()], rentals)
-
-    found = values(converted)
-    businesses = rentals.kind("ex/businesses")
-    assert isinstance(businesses, RecordListKind)
-    assert found["ex/businesses"] == RecordList(businesses.fields, [])
-    assert len(found["ex/rentals"].records) == 1
-    assert "ex/gross_rent" not in found
-
-
-def test_each_flat_input_goes_to_the_form_whose_instances_has_it(
-    tmp_path: Path, rentals: ArtifactRegistry
-) -> None:
-    worked = flat_rental(tmp_path, rentals, 'inputs:\n  ex/profit: "5"\n  ex/business_count: "2"\n')
-
-    converted = worked.with_forms([rental_form(), business_form()], rentals)
-
-    found = values(converted)
-    (record,) = found["ex/businesses"].records
-    assert sorted(kind.identifier for kind in record) == ["ex/business_count", "ex/profit"]
-    assert found["ex/rentals"].records == ()
-
-
-def test_an_instances_artifact_the_file_already_gives_is_kept_as_it_is(
-    tmp_path: Path, rentals: ArtifactRegistry
-) -> None:
-    text = (
-        "inputs:\n"
-        "  ex/rentals:\n"
-        '    - ex/gross_rent: "9"\n'
-        '      ex/expenses: "4"\n'
-        "      ex/units: []\n"
-    )
-    worked = flat_rental(tmp_path, rentals, text)
-
-    converted = worked.with_forms([rental_form()], rentals)
-
-    assert converted.inputs == worked.inputs
-
-
-def test_the_converter_changes_only_the_inputs(tmp_path: Path, rentals: ArtifactRegistry) -> None:
-    worked = flat_rental(tmp_path, rentals)
-
-    converted = worked.with_forms([rental_form()], rentals)
-
-    assert converted.expected == worked.expected
-    assert (converted.path, converted.jurisdiction, converted.tax_year) == (
-        worked.path,
-        worked.jurisdiction,
-        worked.tax_year,
-    )
-    assert (converted.description, converted.sources) == (worked.description, worked.sources)
-
-
-def test_a_return_with_no_forms_is_returned_equal(
-    tmp_path: Path, rentals: ArtifactRegistry
-) -> None:
-    worked = flat_rental(tmp_path, rentals)
-
-    assert worked.with_forms([], rentals) == worked
-
-
-def test_the_converted_return_takes_blanks_like_any_other(
-    tmp_path: Path, rentals: ArtifactRegistry
-) -> None:
-    worked = flat_rental(tmp_path, rentals, 'inputs:\n  ex/other_amount: "7"\n')
-
-    filled = worked.with_forms([rental_form()], rentals).with_blanks(
-        frozenset({"ex/other_amount", "ex/rentals"}), frozenset(), rentals
-    )
-
-    assert values(filled) == values(worked.with_forms([rental_form()], rentals))
-
-
 def test_a_form_whose_instances_nothing_registers_fails_naming_the_file(
-    tmp_path: Path, rentals: ArtifactRegistry
+    tmp_path: Path, lines: ArtifactRegistry
 ) -> None:
-    worked = flat_rental(tmp_path, rentals)
+    worked = per_instance(tmp_path, lines)
     lost = Form(
         name="ex/rental", instances="ex/nowhere", exports=("ex/net_income",), capabilities=()
     )
 
-    with pytest.raises(WorkedReturnError, match=r"flat\.yaml: .*'ex/nowhere'"):
-        worked.with_forms([lost], rentals)
+    with pytest.raises(WorkedReturnError, match=r"per\.yaml: .*'ex/nowhere'"):
+        worked.check_forms([lost], lines)
 
 
 def test_a_form_whose_instances_is_not_a_record_list_fails_naming_the_file(
-    tmp_path: Path, rentals: ArtifactRegistry
+    tmp_path: Path, lines: ArtifactRegistry
 ) -> None:
-    worked = flat_rental(tmp_path, rentals)
+    worked = per_instance(tmp_path, lines)
     wrong = Form(
         name="ex/rental",
         instances="ex/gross_rent",
@@ -1380,8 +1196,8 @@ def test_a_form_whose_instances_is_not_a_record_list_fails_naming_the_file(
         capabilities=(),
     )
 
-    with pytest.raises(WorkedReturnError, match=r"flat\.yaml: .*'ex/gross_rent'.*record list"):
-        worked.with_forms([wrong], rentals)
+    with pytest.raises(WorkedReturnError, match=r"per\.yaml: .*'ex/gross_rent'.*record list"):
+        worked.check_forms([wrong], lines)
 
 
 # --- per-instance expected lines ---------------------------------------------------------------
@@ -1390,7 +1206,7 @@ def test_a_form_whose_instances_is_not_a_record_list_fails_naming_the_file(
 # (as `instances:` inputs are a list of mappings, one per instance, so are the lines): one entry
 # per instance, in instance order, each a mapping of artifact identifiers (of that instance's own
 # worksheet) to figures spelled as under the flat `expected`. The flat lines stay the return's.
-# `WorkedReturn.form_expected` keeps them as `FormExpectation`s in file order; `with_forms` checks
+# `WorkedReturn.form_expected` keeps them as `FormExpectation`s in file order; `check_forms` checks
 # that each names a form of the manifest and has an entry per instance.
 
 PER_INSTANCE = (
@@ -1431,7 +1247,8 @@ def per_instance(
 def test_a_worked_return_has_no_form_expectations_unless_the_file_gives_some(
     tmp_path: Path, rentals: ArtifactRegistry
 ) -> None:
-    worked = flat_rental(tmp_path, rentals)
+    text = with_section("inputs", TWO_INSTANCES)
+    worked = WorkedReturn.load(write(tmp_path, text, "plain.yaml"), rentals)
 
     assert worked.form_expected == ()
 
@@ -1556,10 +1373,10 @@ def test_with_blanks_keeps_the_form_expectations_and_adds_none(
     assert filled.form_expected == worked.form_expected
 
 
-def test_with_forms_keeps_the_form_expectations(tmp_path: Path, lines: ArtifactRegistry) -> None:
-    worked = per_instance(tmp_path, lines)
-
-    assert worked.with_forms([rental_form()], lines).form_expected == worked.form_expected
+def test_check_forms_accepts_the_expectations_of_a_form_with_an_entry_per_instance(
+    tmp_path: Path, lines: ArtifactRegistry
+) -> None:
+    per_instance(tmp_path, lines).check_forms([rental_form()], lines)
 
 
 def test_an_expectation_of_a_form_the_manifest_lacks_fails_naming_the_file_and_form(
@@ -1568,7 +1385,7 @@ def test_an_expectation_of_a_form_the_manifest_lacks_fails_naming_the_file_and_f
     worked = per_instance(tmp_path, lines)
 
     with pytest.raises(WorkedReturnError, match=r"per\.yaml: expected: 'ex/rental' is not a form"):
-        worked.with_forms([business_form()], lines)
+        worked.check_forms([business_form()], lines)
 
 
 def test_an_expectation_of_a_form_without_instances_says_so_not_that_it_is_missing(
@@ -1581,7 +1398,7 @@ def test_an_expectation_of_a_form_without_instances_says_so_not_that_it_is_missi
         WorkedReturnError,
         match=r"per\.yaml: expected: 'ex/rental' is a form without instances; only the default",
     ):
-        worked.with_forms([once], lines)
+        worked.check_forms([once], lines)
 
 
 def test_an_expectation_with_no_forms_at_all_fails_naming_the_form(
@@ -1590,7 +1407,7 @@ def test_an_expectation_with_no_forms_at_all_fails_naming_the_form(
     worked = per_instance(tmp_path, lines)
 
     with pytest.raises(WorkedReturnError, match=r"per\.yaml: expected: 'ex/rental' is not a form"):
-        worked.with_forms([], lines)
+        worked.check_forms([], lines)
 
 
 @pytest.mark.parametrize("entries", [1, 3])
@@ -1604,39 +1421,17 @@ def test_an_entry_count_other_than_the_instance_count_fails_naming_both(
         WorkedReturnError,
         match=rf"per\.yaml: expected: 'ex/rental' has {entries} entr(y|ies) for 2 instances",
     ):
-        worked.with_forms([rental_form()], lines)
+        worked.check_forms([rental_form()], lines)
 
 
 def test_no_entry_for_a_form_with_no_instances_matches_an_empty_list(
     tmp_path: Path, lines: ArtifactRegistry
 ) -> None:
-    text = with_section("inputs", "inputs:\n  ex/other_amount: '7'\n").replace(
+    text = with_section("inputs", "inputs:\n  ex/rentals: []\n").replace(
         SECTIONS["expected"], "expected:\n  ex/rental: []\n"
     )
     worked = WorkedReturn.load(write(tmp_path, text, "none.yaml"), lines)
 
-    converted = worked.with_forms([rental_form()], lines)
+    worked.check_forms([rental_form()], lines)
 
-    assert converted.form_expected == (FormExpectation("ex/rental", ()),)
-
-
-def test_flat_inputs_become_the_instance_though_the_blank_instances_came_first(
-    tmp_path: Path, rentals: ArtifactRegistry
-) -> None:
-    worked = flat_rental(tmp_path, rentals)
-
-    blanked = worked.with_blanks(frozenset({"ex/rentals", "ex/other_amount"}), frozenset(), rentals)
-    converted = blanked.with_forms([rental_form()], rentals)
-
-    assert values(converted) == values(worked.with_forms([rental_form()], rentals))
-    assert len(values(converted)["ex/rentals"].records) == 1
-
-
-def test_a_blank_instances_artifact_with_no_flat_inputs_stays_empty(
-    tmp_path: Path, rentals: ArtifactRegistry
-) -> None:
-    worked = flat_rental(tmp_path, rentals, 'inputs:\n  ex/other_amount: "7"\n')
-
-    blanked = worked.with_blanks(frozenset({"ex/rentals"}), frozenset(), rentals)
-
-    assert values(blanked.with_forms([rental_form()], rentals))["ex/rentals"].records == ()
+    assert worked.form_expected == (FormExpectation("ex/rental", ()),)
