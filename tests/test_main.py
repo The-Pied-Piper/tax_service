@@ -1576,6 +1576,7 @@ def test_building_it_registers_the_jurisdiction_catalogs(shared: ArtifactRegistr
         "ca/cca_claimed",
         "ca/cca_no_property_left",
         "ca/cca_personal_part_remaining",
+        "ca/cca_half_year_rule_differs",
         "ca/cca_ucc_at_end",
         "ca/cpp_base_contributions",
         "ca/ei_premiums",
