@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from decimal import ROUND_HALF_UP, Decimal
+from functools import cache
 from typing import Any
 
 from app.adapters.outbound.yaml_parameters import YamlParameterSource
@@ -854,7 +855,9 @@ POLITICAL_COLUMN_LINES = {
 }
 
 
+@cache
 def service() -> TaxComputationService:
+    """One service for the whole run, so each (jurisdiction, tax year) is composed once."""
     return build_tax_computation()
 
 

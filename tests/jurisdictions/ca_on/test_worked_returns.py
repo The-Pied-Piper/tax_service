@@ -50,6 +50,7 @@ from tests.application.services.test_tax_computation_forms import (
     rental_manifest,
     service,
 )
+from tests.jurisdictions.ca_on.end_to_end.support import service as shared_service
 from tests.jurisdictions.ca_on.worked_return import WorkedReturn, WorkedReturnError
 
 RETURNS = Path(__file__).parent / "returns"
@@ -82,7 +83,7 @@ def load(
 
 def check(path: Path) -> None:
     """Load the worked return at `path`, compute it and assert every expected line."""
-    service = build_tax_computation()  # registers the catalogs the loader resolves through
+    service = shared_service()  # registers the catalogs the loader resolves through
     check_against(load(path), service)
 
 
