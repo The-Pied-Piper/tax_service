@@ -26,7 +26,7 @@ from app.domain.errors import (
 )
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
@@ -130,9 +130,15 @@ def service(identifier: str) -> TaxComputationService:
         jurisdiction=code,
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(selection,),
         inputs=frozenset({"ca/travel_trips"}),
-        outputs=frozenset({"ex/zone_total"}),
+        forms=(
+            Form(
+                name=code.namespace.identifier("return"),
+                instances=None,
+                exports=("ex/zone_total",),
+                capabilities=(selection,),
+            ),
+        ),
     )
     artifacts = ArtifactRegistry()
     for kind in (TRAVEL_TRIPS, TOTAL):
@@ -366,7 +372,12 @@ class ZoneTotalCases:
     # --- through TaxComputationService --------------------------------------------------------
 
     def test_a_computation_builds_the_capability_from_the_registry(self) -> None:
-        composition = service(self.IDENTIFIER).compose(JurisdictionCode("CA-ON"), 2025)
+        composition = (
+            service(self.IDENTIFIER)
+            .compose(JurisdictionCode("CA-ON"), 2025)
+            .form("ca-on/return")
+            .composition
+        )
 
         (built,) = composition.order
         assert isinstance(built, self.CAPABILITY)
@@ -380,7 +391,9 @@ class ZoneTotalCases:
             trip(1, self.OWN_ZONE, "1500", "800", "900"),
         )
 
-        worksheet = service(self.IDENTIFIER).compute(JurisdictionCode("CA-ON"), 2025, trips(*rows))
+        worksheet = service(self.IDENTIFIER).compute(JurisdictionCode("CA-ON"), 2025, trips(*rows))[
+            "ca-on/return"
+        ][0]
 
         assert worksheet.get(TOTAL).value == D("1550")
         assert isinstance(worksheet.producer_of(TOTAL), self.CAPABILITY)
@@ -391,7 +404,9 @@ class ZoneTotalCases:
         )
 
     def test_a_computation_with_no_trips_gives_zero(self) -> None:
-        worksheet = service(self.IDENTIFIER).compute(JurisdictionCode("CA-ON"), 2025, trips())
+        worksheet = service(self.IDENTIFIER).compute(JurisdictionCode("CA-ON"), 2025, trips())[
+            "ca-on/return"
+        ][0]
 
         assert worksheet.get(TOTAL).value == D("0")
 

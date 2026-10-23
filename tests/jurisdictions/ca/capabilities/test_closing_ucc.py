@@ -353,7 +353,7 @@ def test_each_trace_lines_amount_is_its_records_ucc_at_the_end_of_the_year() -> 
 def test_a_computation_gives_the_closing_list() -> None:
     worksheet = service("ca/closing_ucc", CLOSING_UCC).compute(
         JurisdictionCode("CA-ON"), 2025, classes(WITH_ADDITIONS, WITH_RECAPTURE, WITH_TERMINAL_LOSS)
-    )
+    )["ca-on/return"][0]
 
     value = worksheet.get(CLOSING_UCC).value
     assert [(record[CCA_CLASS_NUMBER], record[CCA_UCC_AT_END]) for record in value.records] == [

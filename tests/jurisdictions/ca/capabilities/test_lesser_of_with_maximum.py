@@ -36,7 +36,7 @@ from app.domain.errors import (
 )
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
@@ -440,9 +440,15 @@ def service(dataset: ParameterDataset[Amount] | None = None) -> TaxComputationSe
         jurisdiction=code,
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(selection,),
         inputs=frozenset({"ex/part_one", "ex/part_two"}),
-        outputs=frozenset({"ex/out"}),
+        forms=(
+            Form(
+                name=code.namespace.identifier("return"),
+                instances=None,
+                exports=("ex/out",),
+                capabilities=(selection,),
+            ),
+        ),
     )
     artifacts = ArtifactRegistry()
     for kind in (PART_ONE, PART_TWO, OUTPUT):
@@ -456,7 +462,9 @@ def service(dataset: ParameterDataset[Amount] | None = None) -> TaxComputationSe
 
 
 def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset() -> None:
-    composition = service().compose(JurisdictionCode("CA-ON"), 2025)
+    composition = (
+        service().compose(JurisdictionCode("CA-ON"), 2025).form("ca-on/return").composition
+    )
 
     (built,) = composition.order
     assert isinstance(built, LesserOfWithMaximum)
@@ -467,7 +475,7 @@ def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset()
 def test_a_computation_caps_the_lesser_at_the_datasets_maximum() -> None:
     worksheet = service().compute(
         JurisdictionCode("CA-ON"), 2025, *inputs((PART_ONE, "2500"), (PART_TWO, "3000"))
-    )
+    )["ca-on/return"][0]
 
     assert worksheet.get(OUTPUT).value == D("2000")
     assert isinstance(worksheet.producer_of(OUTPUT), LesserOfWithMaximum)
@@ -485,6 +493,6 @@ def test_a_computation_caps_the_lesser_at_the_datasets_maximum() -> None:
 def test_a_computation_produces_the_lesser_amount_below_the_maximum() -> None:
     worksheet = service().compute(
         JurisdictionCode("CA-ON"), 2025, *inputs((PART_ONE, "1500"), (PART_TWO, "700"))
-    )
+    )["ca-on/return"][0]
 
     assert worksheet.get(OUTPUT).value == D("700")

@@ -57,7 +57,7 @@ from app.domain.errors import (
 )
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
@@ -888,9 +888,15 @@ def service(
         jurisdiction=code,
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(selection,),
         inputs=frozenset({"ca/foreign_tax_countries", "ex/net_income", "ex/basic_federal_tax"}),
-        outputs=frozenset({"ex/foreign_credit", "ca/foreign_tax_credit_sheets"}),
+        forms=(
+            Form(
+                name=code.namespace.identifier("return"),
+                instances=None,
+                exports=("ex/foreign_credit", "ca/foreign_tax_credit_sheets"),
+                capabilities=(selection,),
+            ),
+        ),
     )
     artifacts = ArtifactRegistry()
     for kind in (FOREIGN_TAX_COUNTRIES, NET_INCOME, BASIC_TAX, CREDIT, SHEETS):
@@ -904,7 +910,9 @@ def service(
 
 
 def test_a_computation_builds_the_capability_from_the_registry_and_its_datasets() -> None:
-    composition = service().compose(JurisdictionCode("CA-ON"), 2025)
+    composition = (
+        service().compose(JurisdictionCode("CA-ON"), 2025).form("ca-on/return").composition
+    )
 
     (built,) = composition.order
     assert isinstance(built, ForeignNonBusinessTaxCredit)
@@ -913,7 +921,9 @@ def test_a_computation_builds_the_capability_from_the_registry_and_its_datasets(
 
 
 def test_a_computation_gives_the_per_country_total() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *given(US, UK))
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *given(US, UK))["ca-on/return"][
+        0
+    ]
 
     assert worksheet.get(CREDIT).value == D("1500")
     assert isinstance(worksheet.producer_of(CREDIT), ForeignNonBusinessTaxCredit)
@@ -925,7 +935,9 @@ def test_a_computation_gives_the_per_country_total() -> None:
 
 
 def test_a_computation_gives_the_sheets() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *given(US, UK))
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *given(US, UK))["ca-on/return"][
+        0
+    ]
 
     sheet_list = worksheet.get(SHEETS).value
     assert isinstance(sheet_list, RecordList)
@@ -937,13 +949,15 @@ def test_a_computation_gives_the_sheets() -> None:
 
 
 def test_a_computation_pools_two_countries_at_200_of_tax() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *given(BIG, SMALL))
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *given(BIG, SMALL))[
+        "ca-on/return"
+    ][0]
 
     assert worksheet.get(CREDIT).value == D("200")
 
 
 def test_a_computation_with_no_countries_gives_zero() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *given())
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *given())["ca-on/return"][0]
 
     assert worksheet.get(CREDIT).value == D("0")
 
@@ -960,6 +974,6 @@ def test_a_computation_applies_the_datasets_rounding() -> None:
         JurisdictionCode("CA-ON"),
         2025,
         *given(("50", "10"), net_income="300", basic_tax="100"),
-    )
+    )["ca-on/return"][0]
 
     assert worksheet.get(CREDIT).value == D("3")

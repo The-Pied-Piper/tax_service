@@ -20,8 +20,8 @@ expected line).
 Under `expected` a key that is not an artifact identifier but whose value is a list names a form:
 the list has one entry per instance, in order, each a mapping of artifact identifiers to figures
 (spelled as above) to check against that instance's own worksheet; `form_expected` keeps them, and
-`with_forms` checks each names a form of the manifest and has an entry per instance. A form's
-instances go under `inputs` as a record list of its instances kind.
+`with_forms` checks each names a form with instances of the manifest and has an entry per
+instance. A form's instances go under `inputs` as a record list of its instances kind.
 """
 
 from __future__ import annotations
@@ -70,8 +70,9 @@ class FormExpectation:
 class WorkedReturn:
     """One worked return read from `path`: its starting artifacts and the lines it expects.
 
-    `expected` are the lines of the return form; `form_expected` the lines per instance of other
-    forms, in file order.
+    `expected` are the lines of the default form (the form of the manifest's own selections, named
+    `<namespace>/return` by convention); `form_expected` the lines per instance of the forms with
+    instances, in file order.
     """
 
     path: Path
@@ -115,7 +116,8 @@ class WorkedReturn:
     ) -> WorkedReturn:
         """This return with every blank line of the form filled in, as the filer left it blank.
 
-        `inputs` and `outputs` are the identifiers the manifest declares. A declared input the
+        `inputs` are the identifiers the manifest declares and `outputs` the exports of the default
+        form. A declared input the
         file leaves out is entered as blank: 0 for an amount or a count, no records for a record
         list, the empty text for digits. A declared output the file leaves out is expected to be
         0, or the empty text for digits, so a line that fires on a return not meant to trigger it
@@ -142,7 +144,7 @@ class WorkedReturn:
         file for an instances identifier that is not a record list, for an expectation of a form
         not in `forms` and for one with other than an entry per instance.
         """
-        named = {form.name: form for form in forms}
+        named = {form.name: form for form in forms if form.instances is not None}
         inputs = self.inputs
         for form in named.values():
             kind = self._instances_kind(form, artifacts)
@@ -164,7 +166,7 @@ class WorkedReturn:
         return converted
 
     def _check_expectations(self, forms: dict[str, Form], artifacts: ArtifactRegistry) -> None:
-        """Each expectation names a form of the manifest and has an entry per instance."""
+        """Each expectation names a form of the manifest with instances, an entry per instance."""
         for expectation in self.form_expected:
             if expectation.form not in forms:
                 raise WorkedReturnError(
@@ -181,6 +183,7 @@ class WorkedReturn:
                 )
 
     def _instances_kind(self, form: Form, artifacts: ArtifactRegistry) -> RecordListKind:
+        assert form.instances is not None  # `with_forms` keeps only the forms with instances
         try:
             kind = artifacts.kind(form.instances)
         except (UnknownRegistrationError, InvalidRegistrationError) as exc:

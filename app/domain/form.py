@@ -1,21 +1,20 @@
 """Forms: peers that run once per instance and read each other's exports.
 
-A form is a group of capabilities with the artifacts it exports, never a capability itself. A
-`FormComposition` is one form wired: an inner `Composition` whose inputs are the fields of its
-instances kind (a record list, one record per instance) and its imports, and whose outputs are its
-exports. For each export `X` of the form `B` the engine derives the kind `B.X`: a record list of
-one field, `X`, with a record per instance in instance order. Every form reads any such kind by its
-identifier; the dotted kinds a form consumes (or, for the return form, declares as outputs) and
-nothing in it produces are its imports.
+A computation is a flat set of forms that together are the return; none is special. A form is a
+group of capabilities with the artifacts it exports, never a capability itself. A `FormComposition`
+is one form wired: an inner `Composition` whose outputs are the form's exports and whose inputs are
+derived. The inputs of a form with `instances` (a record-list kind, one record per instance) are
+the fields of that kind; a form without instances runs once, and takes the starting artifacts it
+reads. The kinds a form reads that other forms export are its imports and are inputs too.
 
-The return form is the form of the manifest's own selections, with no instances and exactly one
-run. It is not special otherwise: it reads imports like any other form, and its outputs are the
-computation's outputs.
+For each export `X` of the form `B` the engine derives the kind `B.X`: a record list of one field,
+`X`, with a record per instance in instance order (one record for a form without instances). Every
+form reads any such kind by its identifier; an export nobody reads is fine.
 
-A `FormSet` holds the return form and the others. It orders the forms by their imports, runs each
-once per instance on its own `Worksheet`, keeps every form's exports in one store and hands each
-run the imports as starting artifacts. It returns `FormWorksheets`: every worksheet of every run,
-by form name and instance position, and the return form's worksheet.
+A `FormSet` holds the forms of one computation. It orders them by their imports, runs each once
+per instance record (an instance-less form once) on its own `Worksheet`, keeps every form's
+exports in one store and hands each run its imports as starting artifacts. It returns a plain
+mapping: form name to one `Worksheet` per instance, in instance order.
 """
 
 from __future__ import annotations
@@ -41,12 +40,15 @@ from app.domain.worksheet import Worksheet
 class FormComposition:
     """One form wired: the capabilities of form `name` as an inner `Composition`.
 
-    Built with the form's `instances` kind (a record list, else an InvalidCompositionError) and
-    `exports`, the inner composition takes the
-    instances' fields and the imports, and returns the exports. An export is a `Decimal` or `int`
-    kind or a record-list kind, else a record could not hold it. Any breach of the rules of
-    `Composition`, or an empty `exports`, is an InvalidCompositionError naming the form. The
-    return form is built with `for_return` and has no instances.
+    Built with `exports` and, optionally, the `instances` kind (a record list, else an
+    InvalidCompositionError). The inner composition returns the exports. Its inputs are the fields
+    of `instances`; without instances they are the kinds of `starting` (the starting artifacts of
+    the computation) that the form's capabilities consume or export, plus, always, its imports. An
+    export of a `Decimal` or `int` kind or a record-list kind is also readable by every form as
+    `<form>.<export>`; one of another kind (a rate, digits) is only on the form's worksheets.
+    Any breach of the rules of `Composition`, or an empty `exports` or an export that is another
+    form's, is an InvalidCompositionError. A form with instances is named in the message; a form
+    that runs once speaks for the computation, so its `Composition` errors are unprefixed.
     """
 
     def __init__(
@@ -54,64 +56,59 @@ class FormComposition:
         name: str,
         capabilities: Iterable[Capability],
         *,
-        instances: ArtifactKind[Any],
         exports: Iterable[ArtifactKind[Any]],
+        instances: ArtifactKind[Any] | None = None,
+        starting: frozenset[ArtifactKind[Any]] = frozenset(),
     ) -> None:
-        """Wire `capabilities` as the form `name` of `instances`, exporting `exports`."""
-        if not isinstance(instances, RecordListKind):
+        """Wire `capabilities` as the form `name`, exporting `exports`, over `instances` if any."""
+        if instances is not None and not isinstance(instances, RecordListKind):
             raise InvalidCompositionError(
                 f"form {name!r}: instances {instances.identifier!r} is not a record list"
             )
         listed = tuple(exports)
         if not listed:
             raise InvalidCompositionError(f"form {name!r}: exports must name at least one artifact")
-        self._instances: RecordListKind | None = instances
+        for export in listed:
+            if export.is_form_export:
+                raise InvalidCompositionError(
+                    f"form {name!r}: export {export.identifier!r} is another form's export"
+                )
+        wired = tuple(capabilities)
+        produced = {kind for capability in wired for kind in capability.produces}
+        read = {kind for capability in wired for kind in capability.consumes} | set(listed)
+        self._name = name
+        self._instances = instances
         self._exports = listed
         self._derived = self.derive(name, listed)
-        self._wire(name, capabilities, frozenset(instances.fields), frozenset(listed))
-
-    @classmethod
-    def for_return(
-        cls,
-        name: str,
-        capabilities: Iterable[Capability],
-        *,
-        inputs: frozenset[ArtifactKind[Any]],
-        outputs: frozenset[ArtifactKind[Any]],
-    ) -> FormComposition:
-        """The return form `name`: no instances, no exports; `inputs` and `outputs` as given.
-
-        Its wiring errors are those of `Composition`, unprefixed, as for a manifest with no
-        forms other than the return form.
-        """
-        form = cls.__new__(cls)
-        form._instances = None
-        form._exports = ()
-        form._derived = ()
-        form._wire(name, capabilities, inputs, outputs)
-        return form
+        self._imports = frozenset(kind for kind in read - produced if kind.is_form_export)
+        self._inputs = (
+            frozenset(instances.fields) if instances is not None else frozenset(read & starting)
+        )
+        try:
+            self._composition = Composition(
+                wired, inputs=self._inputs | self._imports, outputs=frozenset(listed)
+            )
+        except InvalidCompositionError as exc:
+            if instances is None:
+                raise  # a form that runs once speaks for the computation, unprefixed
+            raise InvalidCompositionError(f"form {name!r}: {exc}") from exc
 
     @staticmethod
     def derive(name: str, exports: Iterable[ArtifactKind[Any]]) -> tuple[RecordListKind, ...]:
-        """The kind `<form>.<export>` of each of the form `name`'s `exports`, in order.
+        """The kind `<form>.<export>` of each of the form `name`'s `exports` a record can hold.
 
-        Each is a record list of the export's one field. An export that is not an amount, a count
-        or a record list is an InvalidCompositionError naming the form.
+        Each is a record list of the export's one field, in the order of the exports. An export
+        that is not an amount, a count or a record list (a rate, say, or digits) has none: no
+        other form reads it.
         """
         namespace, _, form_id = name.partition("/")
-        kinds: list[RecordListKind] = []
-        for export in exports:
-            if not (
-                issubclass(export.value_type, Decimal)
-                or export.value_type is int
-                or isinstance(export, RecordListKind)
-            ):
-                raise InvalidCompositionError(
-                    f"form {name!r}: export {export.identifier!r} is a "
-                    f"{export.value_type.__name__}, not an amount, a count or a record list"
-                )
-            kinds.append(RecordListKind(f"{namespace}/{form_id}.{export.label}", fields=(export,)))
-        return tuple(kinds)
+        return tuple(
+            RecordListKind(f"{namespace}/{form_id}.{export.label}", fields=(export,))
+            for export in exports
+            if issubclass(export.value_type, Decimal)
+            or export.value_type is int
+            or isinstance(export, RecordListKind)
+        )
 
     @property
     def name(self) -> str:
@@ -120,18 +117,23 @@ class FormComposition:
 
     @property
     def instances(self) -> RecordListKind | None:
-        """The record-list kind with a record per instance; `None` for the return form."""
+        """The record-list kind with a record per instance; `None` for a form that runs once."""
         return self._instances
 
     @property
     def exports(self) -> tuple[ArtifactKind[Any], ...]:
-        """The kinds the form exports, in order; none for the return form."""
+        """The kinds the form exports, in order."""
         return self._exports
 
     @property
     def derived(self) -> tuple[RecordListKind, ...]:
-        """The kind `<form>.<export>` of each export, in the order of the exports."""
+        """The kind `<form>.<export>` of each export a record can hold, in export order."""
         return self._derived
+
+    @property
+    def inputs(self) -> frozenset[ArtifactKind[Any]]:
+        """The kinds the form starts from, imports aside: instance fields or starting artifacts."""
+        return self._inputs
 
     @property
     def imports(self) -> frozenset[ArtifactKind[Any]]:
@@ -140,139 +142,54 @@ class FormComposition:
 
     @property
     def composition(self) -> Composition:
-        """The inner composition, computed once per instance (once for the return form)."""
+        """The inner composition, computed once per instance (once without instances)."""
         return self._composition
-
-    def _wire(
-        self,
-        name: str,
-        capabilities: Iterable[Capability],
-        inputs: frozenset[ArtifactKind[Any]],
-        outputs: frozenset[ArtifactKind[Any]],
-    ) -> None:
-        wired = tuple(capabilities)
-        produced = {kind for capability in wired for kind in capability.produces}
-        read = {kind for capability in wired for kind in capability.consumes} | outputs
-        self._name = name
-        self._imports = frozenset(kind for kind in read - produced if kind.is_form_export)
-        try:
-            self._composition = Composition(wired, inputs=inputs | self._imports, outputs=outputs)
-        except InvalidCompositionError as exc:
-            if self._instances is None:
-                raise
-            raise InvalidCompositionError(f"form {name!r}: {exc}") from exc
-
-
-class FormWorksheets:
-    """What a `FormSet` run kept: every form's worksheet per instance, and the return's.
-
-    The worksheets of a form are in instance order, reached by the form's name and the instance's
-    position from 1. The return form is reached the same way, with the one position 1.
-    """
-
-    def __init__(
-        self,
-        return_form: str,
-        worksheets: Mapping[str, Sequence[Worksheet]],
-        return_worksheet: Worksheet,
-    ) -> None:
-        """Keep `worksheets` (in the order the forms ran) and the return form's worksheet."""
-        self._return_form = return_form
-        self._worksheets = {form: tuple(found) for form, found in worksheets.items()}
-        self._worksheets[return_form] = (return_worksheet,)
-        self._return_worksheet = return_worksheet
-
-    @property
-    def return_worksheet(self) -> Worksheet:
-        """The return form's worksheet: its inputs, its imports and everything it computed."""
-        return self._return_worksheet
-
-    @property
-    def forms(self) -> tuple[str, ...]:
-        """The names of the forms in the order they ran, the return form last."""
-        return tuple(self._worksheets)
-
-    @property
-    def trace(self) -> tuple[TraceLine, ...]:
-        """A `FormInstanceLine` per instance of each form in run order, then the return's lines."""
-        lines: list[TraceLine] = []
-        for form, found in self._worksheets.items():
-            if form != self._return_form:
-                lines.extend(
-                    FormInstanceLine(form, position, worksheet.trace)
-                    for position, worksheet in enumerate(found, start=1)
-                )
-        return (*lines, *self._return_worksheet.trace)
-
-    def worksheets(self, form: str) -> tuple[Worksheet, ...]:
-        """Every instance's worksheet of `form`, in instance order; none for no instances."""
-        if form not in self._worksheets:
-            raise NotFoundError(f"no form {form!r} was run")
-        return self._worksheets[form]
-
-    def worksheet(self, form: str, position: int) -> Worksheet:
-        """The worksheet of the instance of `form` at `position`, counted from 1."""
-        found = self.worksheets(form)
-        if not 1 <= position <= len(found):
-            raise NotFoundError(
-                f"form {form!r} has no instance {position}: it ran {len(found)} instance(s)"
-            )
-        return found[position - 1]
 
 
 class FormSet:
-    """The return form and the other forms of a computation, run in the order of their imports.
+    """The forms of a computation, run in the order of their imports.
 
-    Construction fails with InvalidCompositionError naming the forms for a form listed twice or
-    named like the return form, an instances kind that is not among `inputs`, an import that no
-    form exports, or a cycle of imports. The return form's inputs are `inputs` without the forms'
-    instances kinds; its outputs are `outputs`. Without forms the set computes what the return
-    form's `Composition` does, with the same errors.
+    Construction fails with InvalidCompositionError naming the forms for a form listed twice, an
+    instances kind that is not among `inputs`, an import that no form exports, a cycle of imports,
+    or an input that no form reads (an instances kind is read by its form).
     """
 
     def __init__(
-        self,
-        name: str,
-        capabilities: Iterable[Capability],
-        *,
-        inputs: frozenset[ArtifactKind[Any]],
-        outputs: frozenset[ArtifactKind[Any]],
-        forms: Iterable[FormComposition] = (),
+        self, forms: Iterable[FormComposition], *, inputs: frozenset[ArtifactKind[Any]]
     ) -> None:
-        """Wire the return form `name` of `capabilities` and `forms` into a computation."""
-        others = tuple(forms)
-        self._check_names(name, others)
-        self._check_instances(others, inputs)
-        instance_kinds = frozenset(kind for form in others if (kind := form.instances) is not None)
-        self._return_form = FormComposition.for_return(
-            name, capabilities, inputs=inputs - instance_kinds, outputs=outputs
-        )
+        """Wire `forms` into a computation that starts from the artifacts of the kinds `inputs`."""
+        listed = tuple(forms)
+        self._check_names(listed)
+        self._check_instances(listed, inputs)
         self._producers: dict[ArtifactKind[Any], str] = {
-            kind: form.name for form in others for kind in form.derived
+            kind: form.name for form in listed for kind in form.derived
         }
-        self._check_imports((*others, self._return_form))
-        self._forms = self._order(others)
-        self._instance_kinds = instance_kinds
-
-    @property
-    def return_form(self) -> FormComposition:
-        """The form of the manifest's own selections."""
-        return self._return_form
+        self._check_imports(listed)
+        self._check_inputs_are_read(listed, inputs)
+        self._inputs = inputs
+        self._forms = self._order(listed)
 
     @property
     def forms(self) -> tuple[FormComposition, ...]:
-        """The forms other than the return form, in the order they run."""
+        """The forms in the order they run."""
         return self._forms
 
-    def compute(self, *artifacts: Artifact[Any]) -> FormWorksheets:
-        """Run every form on `artifacts`: the instances of each form and the return's inputs.
+    def form(self, name: str) -> FormComposition:
+        """The form `name`, else a NotFoundError."""
+        for form in self._forms:
+            if form.name == name:
+                return form
+        raise NotFoundError(f"no form {name!r}")
 
-        Each form runs once per record of its instances, in `forms` order, on a worksheet of the
-        record's fields and the form's imports; the return form runs last, once, on `artifacts`
-        other than the instances and its imports. A DomainError from an instance is raised as
-        itself with the form and the instance position at the front of its message. A kind given
-        that is a form's export is refused: the forms derive it, and two values for one kind are a
-        DuplicateArtifactError, as in a `Worksheet`.
+    def compute(self, *artifacts: Artifact[Any]) -> dict[str, tuple[Worksheet, ...]]:
+        """Run every form on `artifacts`: one of each input kind, instances kinds among them.
+
+        Each form runs once per record of its instances (once without instances), in `forms`
+        order, on a worksheet of its inputs and its imports. The result maps each form's name to
+        its worksheets in instance order, none for no instances. A DomainError from a run is
+        raised as itself; for a form with instances its message starts with the form and the
+        instance position. A kind given that is a form's export is refused: the forms derive it,
+        and two values for one kind are a DuplicateArtifactError, as in a `Worksheet`.
         """
         kinds = [artifact.kind for artifact in artifacts]
         for kind in kinds:
@@ -283,37 +200,48 @@ class FormSet:
         store: dict[ArtifactKind[Any], Artifact[Any]] = {}
         worksheets: dict[str, tuple[Worksheet, ...]] = {}
         for form in self._forms:
-            instances = form.instances
-            assert instances is not None  # only the return form has none
-            records = given[instances].value.records
-            ran = tuple(
-                self._run(form, position, record, store)
-                for position, record in enumerate(records, start=1)
-            )
+            ran = tuple(self._runs(form, given, store))
             worksheets[form.name] = ran
-            for export, derived in zip(form.exports, form.derived, strict=True):
+            for derived in form.derived:
+                (export,) = derived.fields
                 listed = [{export: worksheet.get(export).value} for worksheet in ran]
                 store[derived] = Artifact(derived, RecordList(derived.fields, listed))
-        rest = (artifact for kind, artifact in given.items() if kind not in self._instance_kinds)
-        imported = (store[kind] for kind in self._sorted(self._return_form.imports))
-        returned = self._return_form.composition.compute(*rest, *imported)
-        return FormWorksheets(self._return_form.name, worksheets, returned)
+        return worksheets
 
-    def _run(
+    def trace(self, worksheets: Mapping[str, Sequence[Worksheet]]) -> tuple[TraceLine, ...]:
+        """A `FormInstanceLine` per worksheet of `worksheets`, in the order the forms run."""
+        return tuple(
+            FormInstanceLine(form.name, position, worksheet.trace)
+            for form in self._forms
+            for position, worksheet in enumerate(worksheets.get(form.name, ()), start=1)
+        )
+
+    def _runs(
         self,
         form: FormComposition,
-        position: int,
-        record: Mapping[ArtifactKind[Any], object],
+        given: Mapping[ArtifactKind[Any], Artifact[Any]],
         store: Mapping[ArtifactKind[Any], Artifact[Any]],
-    ) -> Worksheet:
+    ) -> Iterable[Worksheet]:
+        imported = [store[kind] for kind in self._sorted(form.imports)]
         instances = form.instances
-        assert instances is not None  # only the return form has none
-        starting = [Artifact(kind, record[kind]) for kind in instances.fields]
-        starting += (store[kind] for kind in self._sorted(form.imports))
+        if instances is None:
+            starting = [given[kind] for kind in self._sorted(form.inputs)]
+            yield self._run(form, None, [*starting, *imported])
+            return
+        for position, record in enumerate(given[instances].value.records, start=1):
+            starting = [Artifact(kind, record[kind]) for kind in instances.fields]
+            yield self._run(form, position, [*starting, *imported])
+
+    @staticmethod
+    def _run(
+        form: FormComposition, position: int | None, starting: list[Artifact[Any]]
+    ) -> Worksheet:
         try:
             return form.composition.compute(*starting)
         except DomainError as exc:
-            exc.args = (f"{form.name}, instance {position}: {exc}",)
+            # A form that runs once is the computation itself: its errors are those of its run.
+            if position is not None:
+                exc.args = (f"{form.name}, instance {position}: {exc}",)
             raise
 
     def _check_given(self, given: Mapping[ArtifactKind[Any], Artifact[Any]]) -> None:
@@ -322,14 +250,38 @@ class FormSet:
             labels = self._labels(derived)
             verb = "is" if len(derived) == 1 else "are"
             raise InvalidCompositionError(f"{labels} {verb} exported by a form, not an input")
-        missing = self._instance_kinds - given.keys()
+        extra = given.keys() - self._inputs
+        if extra:
+            verb = "is not an input" if len(extra) == 1 else "are not inputs"
+            raise InvalidCompositionError(
+                f"{self._labels(extra)} {verb} of this composition{self._value_type_hints(extra)}"
+            )
+        missing = self._inputs - given.keys()
         if missing:
             noun = "input" if len(missing) == 1 else "inputs"
             raise InvalidCompositionError(f"missing {noun} {self._labels(missing)}")
 
+    def _value_type_hints(self, extra: Iterable[ArtifactKind[Any]]) -> str:
+        """A hint for each extra kind that has an input's identifier but another value type."""
+        hints = ""
+        for kind in self._sorted(extra):
+            expected = ", ".join(
+                sorted(
+                    other.value_type.__name__
+                    for other in self._inputs
+                    if other.identifier == kind.identifier
+                )
+            )
+            if expected:
+                hints += (
+                    f"; {kind.label!r} was given as {kind.value_type.__name__} but the input "
+                    f"takes {expected}"
+                )
+        return hints
+
     @staticmethod
-    def _check_names(name: str, forms: tuple[FormComposition, ...]) -> None:
-        names = [name, *(form.name for form in forms)]
+    def _check_names(forms: tuple[FormComposition, ...]) -> None:
+        names = [form.name for form in forms]
         for each in names:
             if names.count(each) > 1:
                 raise InvalidCompositionError(f"form {each!r} is listed more than once")
@@ -339,11 +291,7 @@ class FormSet:
         forms: tuple[FormComposition, ...], inputs: frozenset[ArtifactKind[Any]]
     ) -> None:
         for form in forms:
-            if form.instances is None:
-                raise InvalidCompositionError(
-                    f"form {form.name!r} is a return form, not one of the other forms"
-                )
-            if form.instances not in inputs:
+            if form.instances is not None and form.instances not in inputs:
                 raise InvalidCompositionError(
                     f"form {form.name!r}: instances {form.instances.identifier!r} "
                     "is not an input of the computation"
@@ -356,6 +304,16 @@ class FormSet:
                     raise InvalidCompositionError(
                         f"form {form.name!r}: no form exports {kind.label!r}, which it imports"
                     )
+
+    def _check_inputs_are_read(
+        self, forms: tuple[FormComposition, ...], inputs: frozenset[ArtifactKind[Any]]
+    ) -> None:
+        read = {kind for form in forms for kind in form.inputs}
+        read |= {form.instances for form in forms if form.instances is not None}
+        unread = inputs - read
+        if unread:
+            kind = self._sorted(unread)[0]
+            raise InvalidCompositionError(f"input {kind.label!r} is consumed by nothing")
 
     def _order(self, forms: tuple[FormComposition, ...]) -> tuple[FormComposition, ...]:
         """The forms so that each runs after every form it imports from; ties by name."""

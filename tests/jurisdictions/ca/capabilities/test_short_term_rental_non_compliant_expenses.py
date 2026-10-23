@@ -38,7 +38,7 @@ from app.domain.errors import (
 )
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
@@ -587,9 +587,15 @@ def service(dataset: ParameterDataset[RoundingOnly] | None = None) -> TaxComputa
         jurisdiction=code,
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(selection,),
         inputs=frozenset({"ca/short_term_rental_units"}),
-        outputs=frozenset({"ex/non_compliant_expenses"}),
+        forms=(
+            Form(
+                name=code.namespace.identifier("return"),
+                instances=None,
+                exports=("ex/non_compliant_expenses",),
+                capabilities=(selection,),
+            ),
+        ),
     )
     artifacts = ArtifactRegistry()
     for kind in (SHORT_TERM_RENTAL_UNITS, NON_COMPLIANT):
@@ -603,7 +609,9 @@ def service(dataset: ParameterDataset[RoundingOnly] | None = None) -> TaxComputa
 
 
 def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset() -> None:
-    composition = service().compose(JurisdictionCode("CA-ON"), 2025)
+    composition = (
+        service().compose(JurisdictionCode("CA-ON"), 2025).form("ca-on/return").composition
+    )
 
     (built,) = composition.order
     assert isinstance(built, ShortTermRentalNonCompliantExpenses)
@@ -612,7 +620,9 @@ def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset()
 
 
 def test_a_computation_gives_the_per_row_total() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, units(TICKET_ROW, ("100", 2, 3)))
+    worksheet = service().compute(
+        JurisdictionCode("CA-ON"), 2025, units(TICKET_ROW, ("100", 2, 3))
+    )["ca-on/return"][0]
 
     assert worksheet.get(NON_COMPLIANT).value == D("366.67")
     assert isinstance(worksheet.producer_of(NON_COMPLIANT), ShortTermRentalNonCompliantExpenses)
@@ -624,7 +634,7 @@ def test_a_computation_gives_the_per_row_total() -> None:
 
 
 def test_a_computation_with_no_rows_gives_zero() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, units())
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, units())["ca-on/return"][0]
 
     assert worksheet.get(NON_COMPLIANT).value == D("0")
 
@@ -637,6 +647,6 @@ def test_a_computation_refuses_a_row_with_more_non_compliant_days_than_days() ->
 def test_a_computation_applies_the_datasets_rounding() -> None:
     worksheet = service(rounding(RoundTo(D("1"), RoundingMode.FLOOR))).compute(
         JurisdictionCode("CA-ON"), 2025, units(("100", 2, 3))
-    )
+    )["ca-on/return"][0]
 
     assert worksheet.get(NON_COMPLIANT).value == D("66")

@@ -85,6 +85,17 @@ def write(directory: Path, name: str, content: str) -> Path:
     return path
 
 
+def returned(manifest: Manifest) -> Form:
+    """The default form, the one of the parts without a `form:` key: `ex-on/return`."""
+    (found,) = (form for form in manifest.forms if form.name == "ex-on/return")
+    return found
+
+
+def others(manifest: Manifest) -> tuple[Form, ...]:
+    """The forms of `manifest` other than the default form."""
+    return tuple(form for form in manifest.forms if form.name != "ex-on/return")
+
+
 def test_parses_manifest_into_domain_objects(tmp_path: Path) -> None:
     write(tmp_path, "ex-on/manifests/v1.yaml", EX_ON_V1)
 
@@ -98,19 +109,25 @@ def test_parses_manifest_into_domain_objects(tmp_path: Path) -> None:
                 version=1,
                 valid_from_tax_year=2025,
                 inputs=frozenset({"ex/gross_income", "ex/taxable_base"}),
-                outputs=frozenset({"ex/savings_deduction", "ex-on/levy"}),
-                capabilities=(
-                    CapabilitySelection(
-                        name="ex/savings_deduction",
-                        params={"cap": "ex/savings_cap", "rate": "ex/savings_rate"},
-                        consumes={"income": "ex/gross_income"},
-                        produces={"output": "ex/savings_deduction"},
-                    ),
-                    CapabilitySelection(
-                        name="ex/progressive_tax",
-                        params={"schedule": "ex-on/brackets"},
-                        consumes={"base": "ex/taxable_base"},
-                        produces={"output": "ex-on/levy"},
+                forms=(
+                    Form(
+                        name="ex-on/return",
+                        instances=None,
+                        exports=("ex-on/levy", "ex/savings_deduction"),
+                        capabilities=(
+                            CapabilitySelection(
+                                name="ex/savings_deduction",
+                                params={"cap": "ex/savings_cap", "rate": "ex/savings_rate"},
+                                consumes={"income": "ex/gross_income"},
+                                produces={"output": "ex/savings_deduction"},
+                            ),
+                            CapabilitySelection(
+                                name="ex/progressive_tax",
+                                params={"schedule": "ex-on/brackets"},
+                                consumes={"base": "ex/taxable_base"},
+                                produces={"output": "ex-on/levy"},
+                            ),
+                        ),
                     ),
                 ),
             ),
@@ -137,7 +154,7 @@ def test_preserves_authored_capability_order(tmp_path: Path) -> None:
 
     (manifest,) = source(tmp_path).get_jurisdiction(EX_ON).manifests
 
-    assert [c.name for c in manifest.capabilities] == ["ex/c", "ex/a", "ex/b"]
+    assert [c.name for c in returned(manifest).capabilities] == ["ex/c", "ex/a", "ex/b"]
 
 
 def test_allows_same_capability_with_different_bindings(tmp_path: Path) -> None:
@@ -164,11 +181,11 @@ def test_allows_same_capability_with_different_bindings(tmp_path: Path) -> None:
 
     (manifest,) = source(tmp_path).get_jurisdiction(EX_ON).manifests
 
-    assert [c.params for c in manifest.capabilities] == [
+    assert [c.params for c in returned(manifest).capabilities] == [
         {"schedule": "ex/brackets"},
         {"schedule": "ex-on/brackets"},
     ]
-    assert [c.produces for c in manifest.capabilities] == [
+    assert [c.produces for c in returned(manifest).capabilities] == [
         {"output": "ex/levy"},
         {"output": "ex-on/levy"},
     ]
@@ -193,7 +210,7 @@ def test_params_and_consumes_may_be_omitted(tmp_path: Path) -> None:
 
     (manifest,) = source(tmp_path).get_jurisdiction(EX_ON).manifests
 
-    assert manifest.capabilities == (
+    assert returned(manifest).capabilities == (
         CapabilitySelection(
             name="ex/flat_grant", params={}, consumes={}, produces={"output": "ex/grant"}
         ),
@@ -223,7 +240,7 @@ capabilities:
 
     (manifest,) = source(tmp_path).get_jurisdiction(EX_ON).manifests
 
-    assert manifest.capabilities == (
+    assert returned(manifest).capabilities == (
         CapabilitySelection(
             name="ex/total_up",
             params={},
@@ -236,7 +253,7 @@ capabilities:
             produces={"total": "ex/y"},
         ),
     )
-    (selection,) = manifest.capabilities
+    (selection,) = returned(manifest).capabilities
     assert isinstance(selection.consumes["base"], str)
     assert isinstance(selection.consumes["parts"], tuple)
 
@@ -246,7 +263,7 @@ def test_slot_bindings_are_read_only(tmp_path: Path) -> None:
 
     (manifest,) = source(tmp_path).get_jurisdiction(EX_ON).manifests
 
-    for selection in manifest.capabilities:
+    for selection in returned(manifest).capabilities:
         for bindings in (selection.params, selection.consumes, selection.produces):
             assert isinstance(bindings, MappingProxyType)
 
@@ -627,7 +644,9 @@ def test_an_identifier_listed_as_both_input_and_output_is_carried_by_the_manifes
     manifest = source(tmp_path).get_jurisdiction(EX_ON).manifests[0]
 
     assert manifest.inputs == frozenset({"ex/gross_income", "ex/taxable_base"})
-    assert manifest.outputs == frozenset({"ex/savings_deduction", "ex-on/levy", "ex/taxable_base"})
+    assert frozenset(returned(manifest).exports) == frozenset(
+        {"ex/savings_deduction", "ex-on/levy", "ex/taxable_base"}
+    )
 
 
 # --- A subfolder of manifests/ is one manifest, merged from its parts ---------------------
@@ -692,11 +711,23 @@ def test_a_folder_is_one_manifest_merged_from_its_parts(tmp_path: Path) -> None:
         version=1,
         valid_from_tax_year=2025,
         inputs=frozenset({"ex/x"}),
-        outputs=frozenset({"ex/y"}),
-        capabilities=(
-            CapabilitySelection(name="ex/a", params={}, consumes={}, produces={"output": "ex/a"}),
-            CapabilitySelection(name="ex/b", params={}, consumes={}, produces={"output": "ex/b"}),
-            CapabilitySelection(name="ex/c", params={}, consumes={}, produces={"output": "ex/c"}),
+        forms=(
+            Form(
+                name="ex-on/return",
+                instances=None,
+                exports=("ex/y",),
+                capabilities=(
+                    CapabilitySelection(
+                        name="ex/a", params={}, consumes={}, produces={"output": "ex/a"}
+                    ),
+                    CapabilitySelection(
+                        name="ex/b", params={}, consumes={}, produces={"output": "ex/b"}
+                    ),
+                    CapabilitySelection(
+                        name="ex/c", params={}, consumes={}, produces={"output": "ex/c"}
+                    ),
+                ),
+            ),
         ),
     )
 
@@ -728,7 +759,11 @@ def test_lists_are_concatenated_in_sorted_path_order_whatever_the_write_order(
         },
     )
 
-    assert [c.name for c in only_manifest(tmp_path).capabilities] == ["ex/a", "ex/b", "ex/c"]
+    assert [c.name for c in returned(only_manifest(tmp_path)).capabilities] == [
+        "ex/a",
+        "ex/b",
+        "ex/c",
+    ]
 
 
 def test_parts_in_nested_folders_are_read_and_yml_sorts_with_yaml(tmp_path: Path) -> None:
@@ -743,7 +778,7 @@ def test_parts_in_nested_folders_are_read_and_yml_sorts_with_yaml(tmp_path: Path
         },
     )
 
-    names = [c.name for c in only_manifest(tmp_path).capabilities]
+    names = [c.name for c in returned(only_manifest(tmp_path)).capabilities]
 
     assert names == ["ex/first", "ex/second", "ex/third", "ex/4"]
 
@@ -761,7 +796,7 @@ def test_inputs_and_outputs_are_concatenated_across_parts(tmp_path: Path) -> Non
     manifest = only_manifest(tmp_path)
 
     assert manifest.inputs == frozenset({"ex/x1", "ex/x2"})
-    assert manifest.outputs == frozenset({"ex/y1", "ex/y2"})
+    assert frozenset(returned(manifest).exports) == frozenset({"ex/y1", "ex/y2"})
 
 
 def test_a_part_may_carry_any_subset_of_the_keys(tmp_path: Path) -> None:
@@ -783,13 +818,13 @@ def test_a_part_may_carry_any_subset_of_the_keys(tmp_path: Path) -> None:
         2025,
     )
     assert manifest.inputs == frozenset({"ex/x"})
-    assert [c.name for c in manifest.capabilities] == ["ex/a", "ex/b"]
+    assert [c.name for c in returned(manifest).capabilities] == ["ex/a", "ex/b"]
 
 
 def test_a_flat_file_still_loads_as_one_whole_manifest(tmp_path: Path) -> None:
     write(tmp_path, "ex-on/manifests/v1.yaml", SCALARS + INPUTS + OUTPUTS + CAPABILITIES_A)
 
-    assert [c.name for c in only_manifest(tmp_path).capabilities] == ["ex/a", "ex/b"]
+    assert [c.name for c in returned(only_manifest(tmp_path)).capabilities] == ["ex/a", "ex/b"]
 
 
 def test_a_flat_file_must_still_be_whole_on_its_own(tmp_path: Path) -> None:
@@ -813,7 +848,7 @@ def test_a_flat_file_and_a_folder_side_by_side_are_two_manifests(tmp_path: Path)
     manifests = source(tmp_path).get_jurisdiction(EX_ON).manifests
 
     assert [m.version for m in manifests] == [1, 2]
-    assert [len(m.capabilities) for m in manifests] == [2, 1]
+    assert [len(returned(m).capabilities) for m in manifests] == [2, 1]
 
 
 @pytest.mark.parametrize(
@@ -972,7 +1007,7 @@ def test_the_same_identifier_as_input_in_one_part_and_output_in_another_is_not_a
     manifest = only_manifest(tmp_path)
 
     assert manifest.inputs == frozenset({"ex/x"})
-    assert manifest.outputs == frozenset({"ex/y", "ex/x"})
+    assert frozenset(returned(manifest).exports) == frozenset({"ex/y", "ex/x"})
 
 
 @pytest.mark.parametrize(
@@ -1086,7 +1121,7 @@ def part_path(directory: Path, name: str) -> Path:
 def test_a_manifest_without_a_form_key_has_no_forms(tmp_path: Path) -> None:
     write(tmp_path, "ex-on/manifests/v1.yaml", EX_ON_V1)
 
-    assert only_manifest(tmp_path).forms == ()
+    assert others(only_manifest(tmp_path)) == ()
 
 
 def test_a_part_with_a_form_key_gives_the_form_all_the_capabilities_of_that_part(
@@ -1103,7 +1138,7 @@ def test_a_part_with_a_form_key_gives_the_form_all_the_capabilities_of_that_part
 
     manifest = only_manifest(tmp_path)
 
-    assert manifest.forms == (
+    assert others(manifest) == (
         Form(
             name="ex/rental",
             instances="ex/rentals",
@@ -1111,7 +1146,7 @@ def test_a_part_with_a_form_key_gives_the_form_all_the_capabilities_of_that_part
             capabilities=(selection_named("ex/a", "ex/net_income"),),
         ),
     )
-    assert manifest.capabilities == (selection_named("ex/r", "ex/y"),)
+    assert returned(manifest).capabilities == (selection_named("ex/r", "ex/y"),)
 
 
 def test_a_part_without_a_form_key_is_the_returns_whatever_its_neighbours_are(
@@ -1126,7 +1161,7 @@ def test_a_part_without_a_form_key_is_the_returns_whatever_its_neighbours_are(
         },
     )
 
-    assert only_manifest(tmp_path).capabilities == (selection_named("ex/r", "ex/y"),)
+    assert returned(only_manifest(tmp_path)).capabilities == (selection_named("ex/r", "ex/y"),)
 
 
 def test_a_form_may_span_parts_and_its_selections_follow_the_part_order(tmp_path: Path) -> None:
@@ -1139,7 +1174,7 @@ def test_a_form_may_span_parts_and_its_selections_follow_the_part_order(tmp_path
         },
     )
 
-    (found,) = only_manifest(tmp_path).forms
+    (found,) = others(only_manifest(tmp_path))
 
     assert found.instances == "ex/rentals"
     assert found.exports == ("ex/net_income", "ex/unit_list")
@@ -1161,7 +1196,7 @@ def test_the_part_that_declares_the_form_need_not_be_the_first_of_its_parts(
         },
     )
 
-    (found,) = only_manifest(tmp_path).forms
+    (found,) = others(only_manifest(tmp_path))
 
     assert found.exports == ("ex/net_income", "ex/unit_list")
     assert [c.name for c in found.capabilities] == ["ex/b", "ex/a"]
@@ -1182,7 +1217,7 @@ def test_several_forms_are_kept_in_the_order_their_names_first_appear(tmp_path: 
         },
     )
 
-    business, rental = only_manifest(tmp_path).forms
+    business, rental = others(only_manifest(tmp_path))
 
     assert (business.name, rental.name) == ("ex/business", "ex/rental")
     assert [c.name for c in business.capabilities] == ["ex/c", "ex/d"]
@@ -1200,7 +1235,7 @@ def test_a_form_part_may_carry_the_manifests_inputs_and_outputs(tmp_path: Path) 
     manifest = only_manifest(tmp_path)
 
     assert manifest.inputs == frozenset({"ex/rentals"})
-    assert manifest.outputs == frozenset({"ex/y"})
+    assert frozenset(returned(manifest).exports) == frozenset({"ex/y"})
 
 
 def test_a_form_part_with_no_capabilities_is_allowed(tmp_path: Path) -> None:
@@ -1214,7 +1249,7 @@ def test_a_form_part_with_no_capabilities_is_allowed(tmp_path: Path) -> None:
         },
     )
 
-    (found,) = only_manifest(tmp_path).forms
+    (found,) = others(only_manifest(tmp_path))
 
     assert [c.name for c in found.capabilities] == ["ex/b"]
 
@@ -1295,11 +1330,6 @@ def test_a_form_part_with_no_capabilities_is_allowed(tmp_path: Path) -> None:
             "form 'ex/rental'.*instances.*exports",
             id="instances-without-exports",
         ),
-        pytest.param(
-            "form: {name: ex/rental, exports: [ex/n]}\n",
-            "form 'ex/rental'.*instances.*exports",
-            id="exports-without-instances",
-        ),
     ],
 )
 def test_a_bad_form_key_is_rejected_naming_the_part_file(
@@ -1337,12 +1367,43 @@ def test_a_second_part_that_declares_the_forms_instances_and_exports_is_rejected
     assert str(part_path(tmp_path, "01-rental.yaml")) in message
 
 
+def test_a_form_declared_with_exports_alone_has_no_instances_and_runs_once(
+    tmp_path: Path,
+) -> None:
+    alone = FORM_RENTAL.replace("  instances: ex/rentals\n", "")
+    write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-rental.yaml": alone})
+
+    (found,) = others(only_manifest(tmp_path))
+
+    assert found.instances is None
+    assert found.exports == ("ex/net_income", "ex/unit_list")
+
+
+def test_the_default_form_is_an_ordinary_form_named_return_in_the_namespace_first_of_the_forms(
+    tmp_path: Path,
+) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": HEADER_PART,
+            "01-rental.yaml": FORM_RENTAL,
+            "02-return.yaml": RETURN_PART,
+        },
+    )
+
+    default, rental = only_manifest(tmp_path).forms
+
+    assert (default.name, default.instances) == ("ex-on/return", None)
+    assert default.exports == ("ex/y",)
+    assert rental.name == "ex/rental"
+
+
 def test_a_form_no_part_declares_the_instances_of_is_rejected_naming_the_form(
     tmp_path: Path,
 ) -> None:
     write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-rental.yaml": FORM_RENTAL_NAME_ONLY})
 
-    with pytest.raises(InvalidManifestError, match="form 'ex/rental'.*instances"):
+    with pytest.raises(InvalidManifestError, match="form 'ex/rental'.*exports"):
         source(tmp_path).get_jurisdiction(EX_ON)
 
 
@@ -1373,7 +1434,7 @@ def test_a_part_naming_the_return_form_is_rejected_naming_the_folder(tmp_path: P
     named = FORM_RENTAL.replace("name: ex/rental", "name: ex-on/return")
     write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-return.yaml": named})
 
-    with pytest.raises(InvalidManifestError, match=r"ex-on/return.*return form") as caught:
+    with pytest.raises(InvalidManifestError, match=r"ex-on/return.*more than once") as caught:
         source(tmp_path).get_jurisdiction(EX_ON)
 
     assert str(tmp_path / "ex-on" / "manifests" / "v1") in str(caught.value)

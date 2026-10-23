@@ -2728,7 +2728,7 @@ def compute(
         ),
         Artifact(AMT_FOREIGN_NON_BUSINESS_TAX_PAID, D(amt_foreign_non_business_tax_paid)),
         Artifact(AMT_FOREIGN_BUSINESS_TAX_PAID, D(amt_foreign_business_tax_paid)),
-    )
+    )["ca-on/return"][0]
 
 
 def return_a() -> Worksheet:

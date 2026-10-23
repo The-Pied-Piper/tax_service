@@ -31,7 +31,7 @@ from app.domain.capability import CapabilityRegistry
 from app.domain.errors import NotFoundError
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.parameters.class_rates import (
     CLASS_RATES,
     ClassRate,
@@ -221,9 +221,15 @@ def service(
         jurisdiction=code,
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(selection,),
         inputs=inputs,
-        outputs=frozenset({output.identifier}),
+        forms=(
+            Form(
+                name=code.namespace.identifier("return"),
+                instances=None,
+                exports=(output.identifier,),
+                capabilities=(selection,),
+            ),
+        ),
     )
     artifacts = ArtifactRegistry()
     for kind in (CLASSES, NON_COMPLIANT, output):

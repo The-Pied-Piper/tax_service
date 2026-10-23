@@ -1,21 +1,23 @@
-"""Unit tests for FormComposition, FormSet and FormWorksheets, with made-up `ex/` names.
+"""Unit tests for FormComposition and FormSet, with made-up `ex/` names.
 
-A form is a peer of the others, never a capability. `FormComposition` is one form wired: an inner
-`Composition` whose inputs are the fields of its instances kind plus its imports and whose outputs
-are its exports. An export `X` of the form `B` is read by every other form as the derived kind
-`B.X`, a record list of one field with a record per instance. A form's imports are the dotted
-kinds it consumes (or, for the return, declares as outputs) that nothing in the form produces.
+A computation is a flat set of forms; a form is a peer of the others, never a capability, and none
+is special. `FormComposition` is one form wired: an inner `Composition` whose outputs are its
+exports and whose inputs are derived: the fields of its instances kind, or, for a form without
+instances, the starting artifacts it reads, plus its imports. An export `X` of the form `B` is read
+by every form as the derived kind `B.X`, a record list of one field with a record per instance (one
+record for a form that runs once). A form's imports are the dotted kinds it consumes and nothing in
+the form produces.
 
-`FormSet` holds the return form and the others. It orders the forms by their imports (a cycle or
-an import nothing exports is an InvalidCompositionError), runs each form once per record of its
-instances (the return form once), keeps every form's exports in one store and hands the imports to
-each run as starting artifacts. `FormWorksheets` is what it returns: the worksheet of every
-instance of every form, by form name and position from 1, and the return form's worksheet.
+`FormSet` holds the forms. It orders them by their imports (a cycle or an import nothing exports
+is an InvalidCompositionError), runs each form once per record of its instances (a form without
+instances once), keeps every form's exports in one store and hands the imports to each run as
+starting artifacts. It returns a plain mapping: form name to the worksheet of every instance, in
+instance order.
 """
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from decimal import Decimal
 from typing import Any, ClassVar
 
@@ -34,9 +36,9 @@ from app.domain.errors import (
     MissingArtifactError,
     NotFoundError,
 )
-from app.domain.form import FormComposition, FormSet, FormWorksheets
+from app.domain.form import FormComposition, FormSet
 from app.domain.record_list import RecordList, RecordListKind
-from app.domain.trace import FormInstanceLine, RecordTotalLine, SubtractedLine
+from app.domain.trace import FormInstanceLine, RecordTotalLine, SubtractedLine, TraceLine
 from app.domain.worksheet import Worksheet
 
 D = Decimal
@@ -63,10 +65,13 @@ AUDIT_AUDITED = RecordListKind("ex/audit.audited", fields=(AUDITED,))
 AUDIT_FEE = RecordListKind("ex/audit.fee", fields=(FEE,))
 
 RETURN = "ex-on/return"
+RETURN_GRAND = RecordListKind("ex-on/return.grand", fields=(GRAND,))
+FIRST_TOTAL = RecordListKind("ex/first.fee_total", fields=(FEE_TOTAL,))
+SECOND_TOTAL = RecordListKind("ex/second.profit_total", fields=(PROFIT_TOTAL,))
 
 
 class Describe(Capability):
-    """Produces `note`, a text: not a kind a form may export."""
+    """Produces `note`, a text: not a kind a record can hold."""
 
     CONSUMES: ClassVar[Mapping[str, type]] = {"source": Decimal}
     PRODUCES: ClassVar[Mapping[str, type]] = {"note": str}
@@ -116,9 +121,25 @@ def audit(name: str = "ex/audit") -> FormComposition:
     )
 
 
-def form_set(*forms: FormComposition) -> FormSet:
-    return FormSet(
+def flat(
+    capabilities: list[Capability],
+    *,
+    inputs: frozenset[ArtifactKind[Any]],
+    outputs: frozenset[ArtifactKind[Any]],
+    forms: Iterable[FormComposition] = (),
+) -> FormSet:
+    """The forms plus a form `ex-on/return` of `capabilities`, which runs once like any other."""
+    default = FormComposition(
         RETURN,
+        capabilities,
+        exports=sorted(outputs, key=lambda kind: kind.identifier),
+        starting=inputs,
+    )
+    return FormSet([*forms, default], inputs=inputs)
+
+
+def form_set(*forms: FormComposition) -> FormSet:
+    return flat(
         [RecordTotal(AUDIT_AUDITED, GRAND)],
         inputs=frozenset(form.instances for form in forms if form.instances is not None),
         outputs=frozenset({GRAND}),
@@ -207,10 +228,25 @@ def test_an_export_nothing_in_the_form_produces_is_refused_naming_the_form() -> 
         )
 
 
-def test_an_export_that_is_neither_an_amount_a_count_nor_a_record_list_is_refused() -> None:
-    with pytest.raises(InvalidCompositionError, match="ex/labelled.*ex/note"):
+def test_an_export_that_is_neither_an_amount_a_count_nor_a_record_list_is_not_importable() -> None:
+    labelled = FormComposition(
+        "ex/labelled", [Describe(SALES, NOTE)], instances=SALES_ONLY, exports=[NOTE]
+    )
+
+    assert labelled.exports == (NOTE,)
+    assert labelled.derived == ()
+    assert FormComposition.derive("ex/labelled", [NOTE, SALES]) == (
+        RecordListKind("ex/labelled.sales", fields=(SALES,)),
+    )
+
+
+def test_an_export_that_is_another_forms_export_is_refused() -> None:
+    with pytest.raises(InvalidCompositionError, match="ex/audit.*'ex/shop.profit'.*another form"):
         FormComposition(
-            "ex/labelled", [Describe(SALES, NOTE)], instances=SALES_ONLY, exports=[NOTE]
+            "ex/audit",
+            [RecordTotal(SHOP_PROFIT, PROFIT_TOTAL)],
+            instances=AUDITS,
+            exports=[PROFIT_TOTAL, SHOP_PROFIT],
         )
 
 
@@ -234,19 +270,18 @@ def test_instances_that_are_not_a_record_list_are_refused_naming_the_form() -> N
 def test_a_form_that_imports_runs_after_the_form_that_exports_it_even_if_listed_first() -> None:
     first_listed = form_set(audit(), shop())
 
-    assert [found.name for found in first_listed.forms] == ["ex/shop", "ex/audit"]
+    assert [found.name for found in first_listed.forms] == ["ex/shop", "ex/audit", RETURN]
 
 
 def test_forms_that_do_not_import_each_other_run_in_name_order() -> None:
-    forms = FormSet(
-        RETURN,
+    forms = flat(
         [Subtract(LEVY, FEE_TOTAL, GRAND)],
         inputs=frozenset({SHOPS, LEVY, FEE_TOTAL}),
         outputs=frozenset({GRAND}),
         forms=[shop("ex/zebra"), shop("ex/apple"), shop("ex/mango")],
     )
 
-    assert [found.name for found in forms.forms] == ["ex/apple", "ex/mango", "ex/zebra"]
+    assert [found.name for found in forms.forms] == [RETURN, "ex/apple", "ex/mango", "ex/zebra"]
 
 
 def test_the_order_does_not_depend_on_how_the_forms_were_listed() -> None:
@@ -334,8 +369,7 @@ def test_a_form_named_like_the_return_is_refused() -> None:
 
 def test_a_forms_instances_kind_must_be_one_of_the_computations_inputs() -> None:
     with pytest.raises(InvalidCompositionError, match="ex/shop.*'ex/shops'.*not.*input"):
-        FormSet(
-            RETURN,
+        flat(
             [Subtract(FEE, COSTS, LEVY)],
             inputs=frozenset({FEE, COSTS}),
             outputs=frozenset({LEVY}),
@@ -343,18 +377,50 @@ def test_a_forms_instances_kind_must_be_one_of_the_computations_inputs() -> None
         )
 
 
-def test_the_return_form_has_no_instances_and_no_derived_kinds() -> None:
-    returns = form_set(shop(), audit()).return_form
+def test_the_default_form_is_an_ordinary_form_that_runs_once_and_exports_like_any() -> None:
+    returns = form_set(shop(), audit()).form(RETURN)
 
     assert returns.name == RETURN
     assert returns.instances is None
-    assert returns.derived == ()
+    assert returns.exports == (GRAND,)
+    assert returns.derived == (RETURN_GRAND,)
     assert returns.imports == frozenset({AUDIT_AUDITED})
 
 
-def test_the_return_forms_inputs_are_the_computations_inputs_less_the_instances_kinds() -> None:
-    plain = FormSet(
-        RETURN,
+def test_a_form_without_instances_takes_the_starting_artifacts_it_reads() -> None:
+    once = FormComposition(
+        "ex/once",
+        [Subtract(SALES, COSTS, LEVY)],
+        exports=[LEVY],
+        starting=frozenset({SALES, COSTS, FEE}),
+    )
+
+    assert once.inputs == frozenset({SALES, COSTS})  # FEE is a starting artifact it does not read
+    assert once.imports == frozenset()
+
+
+def test_a_form_without_instances_reads_the_starting_artifacts_it_exports_unchanged() -> None:
+    once = FormComposition(
+        "ex/once",
+        [Subtract(SALES, COSTS, LEVY)],
+        exports=[LEVY, FEE],
+        starting=frozenset({SALES, COSTS, FEE}),
+    )
+
+    assert once.inputs == frozenset({SALES, COSTS, FEE})
+
+
+def test_a_form_without_instances_does_not_take_what_is_not_a_starting_artifact() -> None:
+    with pytest.raises(InvalidCompositionError, match="no producer for 'costs'") as caught:
+        FormComposition(
+            "ex/once", [Subtract(SALES, COSTS, LEVY)], exports=[LEVY], starting=frozenset({SALES})
+        )
+
+    assert "ex/once" not in str(caught.value)  # it speaks for the computation
+
+
+def test_a_forms_inputs_are_only_the_starting_artifacts_it_reads() -> None:
+    plain = flat(
         [Subtract(SALES, COSTS, LEVY)],
         inputs=frozenset({SALES, COSTS, AUDITS}),
         outputs=frozenset({LEVY}),
@@ -363,10 +429,73 @@ def test_the_return_forms_inputs_are_the_computations_inputs_less_the_instances_
         ],
     )
 
-    inner = plain.return_form.composition
+    inner = plain.form(RETURN).composition
     inner.compute(Artifact(SALES, D(3)), Artifact(COSTS, D(1)))
     with pytest.raises(InvalidCompositionError, match="'audits' is not an input"):
         inner.compute(Artifact(SALES, D(3)), Artifact(COSTS, D(1)), audits("1"))
+
+
+def test_a_cycle_between_forms_without_instances_is_refused_naming_them() -> None:
+    first = FormComposition("ex/first", [RecordTotal(SECOND_TOTAL, FEE_TOTAL)], exports=[FEE_TOTAL])
+    second = FormComposition(
+        "ex/second", [RecordTotal(FIRST_TOTAL, PROFIT_TOTAL)], exports=[PROFIT_TOTAL]
+    )
+
+    with pytest.raises(InvalidCompositionError, match="cycle") as caught:
+        FormSet([first, second], inputs=frozenset())
+
+    assert "ex/first" in str(caught.value) and "ex/second" in str(caught.value)
+
+
+def test_an_import_no_form_exports_is_refused_for_a_form_without_instances() -> None:
+    lonely = FormComposition(
+        "ex/lonely", [RecordTotal(SECOND_TOTAL, FEE_TOTAL)], exports=[FEE_TOTAL]
+    )
+
+    with pytest.raises(
+        InvalidCompositionError, match="ex/lonely.*no form exports 'second.profit_total'"
+    ):
+        FormSet([lonely], inputs=frozenset())
+
+
+def test_an_input_no_form_reads_is_refused() -> None:
+    with pytest.raises(InvalidCompositionError, match="input 'fee' is consumed by nothing"):
+        flat(
+            [Subtract(SALES, COSTS, LEVY)],
+            inputs=frozenset({SALES, COSTS, FEE}),
+            outputs=frozenset({LEVY}),
+        )
+
+
+def test_an_input_one_form_reads_and_another_form_does_not_is_fine() -> None:
+    forms = flat(
+        [Subtract(SALES, COSTS, LEVY)],
+        inputs=frozenset({SALES, COSTS, FEE}),
+        outputs=frozenset({LEVY}),
+        forms=[
+            FormComposition(
+                "ex/fees",
+                [Reject(FEE, FEE_TOTAL)],
+                exports=[FEE_TOTAL],
+                starting=frozenset({SALES, COSTS, FEE}),
+            )
+        ],
+    )
+
+    result = forms.compute(Artifact(SALES, D(5)), Artifact(COSTS, D(2)), Artifact(FEE, D(1)))
+
+    assert result[RETURN][0].get(LEVY).value == D(3)
+    assert result["ex/fees"][0].get(FEE_TOTAL).value == D(1)
+    assert forms.form("ex/fees").inputs == frozenset({FEE})
+
+
+def test_an_input_that_a_form_also_produces_is_refused() -> None:
+    with pytest.raises(InvalidCompositionError, match="input 'levy' is also produced by Subtract"):
+        flat(
+            [Subtract(SALES, COSTS, LEVY)],
+            inputs=frozenset({SALES, COSTS, LEVY}),
+            outputs=frozenset({LEVY}),
+        )
 
 
 # --- the run: peers reading each other's exports ------------------------------------------------
@@ -376,7 +505,7 @@ def test_a_form_reads_the_exports_of_another_form_on_each_of_its_instances() -> 
     result = form_set(audit(), shop()).compute(TWO_SHOPS, TWO_AUDITS)
 
     # total profit 10000 + 4000, less each fee.
-    first, second = result.worksheets("ex/audit")
+    first, second = result["ex/audit"]
     assert first.get(AUDITED).value == D("13900")
     assert second.get(AUDITED).value == D("13970")
 
@@ -384,7 +513,7 @@ def test_a_form_reads_the_exports_of_another_form_on_each_of_its_instances() -> 
 def test_the_import_reaches_the_instance_as_a_starting_artifact() -> None:
     result = form_set(shop(), audit()).compute(TWO_SHOPS, TWO_AUDITS)
 
-    worksheet = result.worksheet("ex/audit", 2)
+    worksheet = result["ex/audit"][1]
 
     assert worksheet.producer_of(SHOP_PROFIT) is None
     assert values(worksheet, SHOP_PROFIT) == [D(10000), D(4000)]
@@ -393,7 +522,7 @@ def test_the_import_reaches_the_instance_as_a_starting_artifact() -> None:
 def test_an_export_is_a_record_list_of_one_field_with_a_record_per_instance_in_order() -> None:
     result = form_set(shop(), audit()).compute(TWO_SHOPS, TWO_AUDITS)
 
-    assert result.worksheet("ex/audit", 1).get(SHOP_PROFIT).value == RecordList(
+    assert result["ex/audit"][0].get(SHOP_PROFIT).value == RecordList(
         (PROFIT,), [{PROFIT: D(10000)}, {PROFIT: D(4000)}]
     )
 
@@ -403,7 +532,7 @@ def test_instance_order_is_the_order_of_the_records_given() -> None:
 
     result = form_set(shop(), audit()).compute(swapped, TWO_AUDITS)
 
-    assert values(result.worksheet("ex/audit", 1), SHOP_PROFIT) == [D(4000), D(10000)]
+    assert values(result["ex/audit"][0], SHOP_PROFIT) == [D(4000), D(10000)]
 
 
 def test_two_forms_importing_one_export_both_see_all_its_records() -> None:
@@ -413,8 +542,7 @@ def test_two_forms_importing_one_export_both_see_all_its_records() -> None:
         instances=AUDITS,
         exports=[AUDITED],
     )
-    forms = FormSet(
-        RETURN,
+    forms = flat(
         [RecordTotal(AUDIT_AUDITED, GRAND)],
         inputs=frozenset({SHOPS, AUDITS}),
         outputs=frozenset({GRAND}),
@@ -423,15 +551,15 @@ def test_two_forms_importing_one_export_both_see_all_its_records() -> None:
 
     result = forms.compute(TWO_SHOPS, TWO_AUDITS)
 
-    assert result.worksheet("ex/audit", 1).get(AUDITED).value == D("13900")
-    assert result.worksheet("ex/review", 1).get(AUDITED).value == D("13900")
-    assert values(result.worksheet("ex/review", 2), SHOP_PROFIT) == [D(10000), D(4000)]
+    assert result["ex/audit"][0].get(AUDITED).value == D("13900")
+    assert result["ex/review"][0].get(AUDITED).value == D("13900")
+    assert values(result["ex/review"][1], SHOP_PROFIT) == [D(10000), D(4000)]
 
 
 def test_the_return_form_imports_and_keeps_the_import_with_its_intermediates() -> None:
     result = form_set(shop(), audit()).compute(TWO_SHOPS, TWO_AUDITS)
 
-    returns = result.return_worksheet
+    returns = result[RETURN][0]
 
     assert returns.get(GRAND).value == D("13900") + D("13970")
     assert values(returns, AUDIT_AUDITED) == [D("13900"), D("13970")]
@@ -441,29 +569,31 @@ def test_the_return_form_imports_and_keeps_the_import_with_its_intermediates() -
 def test_the_return_form_runs_once_whatever_the_instances() -> None:
     result = form_set(shop(), audit()).compute(TWO_SHOPS, TWO_AUDITS)
 
-    assert result.worksheets(RETURN) == (result.return_worksheet,)
-    assert result.worksheet(RETURN, 1) is result.return_worksheet
+    assert result[RETURN] == (result[RETURN][0],)
+    assert result[RETURN][0] is result[RETURN][0]
 
 
-def test_a_declared_output_that_is_an_import_is_carried_onto_the_return() -> None:
-    carried = FormSet(
-        RETURN,
-        [RecordTotal(SHOP_PROFIT, PROFIT_TOTAL)],
-        inputs=frozenset({SHOPS}),
-        outputs=frozenset({PROFIT_TOTAL, SHOP_PROFIT}),
-        forms=[shop()],
+def test_a_form_without_instances_exports_one_record_that_other_forms_read() -> None:
+    summary = FormComposition(
+        "ex/summary", [RecordTotal(RETURN_GRAND, PROFIT_TOTAL)], exports=[PROFIT_TOTAL]
+    )
+    # RETURN_GRAND is the default form's export: one record whatever the instances.
+    forms = FormSet(
+        [*form_set(shop(), audit()).forms, summary],
+        inputs=frozenset({SHOPS, AUDITS}),
     )
 
-    result = carried.compute(TWO_SHOPS)
+    result = forms.compute(TWO_SHOPS, TWO_AUDITS)
 
-    assert values(result.return_worksheet, SHOP_PROFIT) == [D(10000), D(4000)]
-    assert result.return_worksheet.get(PROFIT_TOTAL).value == D(14000)
+    (only,) = result["ex/summary"]
+    assert values(only, RETURN_GRAND) == [D("27870")]
+    assert only.get(PROFIT_TOTAL).value == D("27870")
 
 
 def test_an_inner_artifact_that_is_not_an_export_is_not_on_the_other_forms_worksheets() -> None:
     result = form_set(shop(), audit()).compute(TWO_SHOPS, TWO_AUDITS)
 
-    for worksheet in (*result.worksheets("ex/audit"), result.return_worksheet):
+    for worksheet in (*result["ex/audit"], result[RETURN][0]):
         with pytest.raises(MissingArtifactError, match="no value"):
             worksheet.get(PROFIT)
 
@@ -474,23 +604,26 @@ def test_an_inner_artifact_that_is_not_an_export_is_not_on_the_other_forms_works
 def test_no_instances_still_produces_every_export_as_an_empty_record_list() -> None:
     result = form_set(shop(), audit()).compute(shops(), TWO_AUDITS)
 
-    assert result.worksheet("ex/audit", 1).get(SHOP_PROFIT).value == RecordList((PROFIT,), [])
+    assert result["ex/audit"][0].get(SHOP_PROFIT).value == RecordList((PROFIT,), [])
 
 
 def test_an_importer_of_an_empty_export_computes_on_the_empty_list() -> None:
     result = form_set(shop(), audit()).compute(shops(), TWO_AUDITS)
 
-    assert result.worksheet("ex/audit", 1).get(PROFIT_TOTAL).value == D(0)
-    assert result.return_worksheet.get(GRAND).value == D("-130")
+    assert result["ex/audit"][0].get(PROFIT_TOTAL).value == D(0)
+    assert result[RETURN][0].get(GRAND).value == D("-130")
 
 
 def test_a_form_of_no_instances_has_no_worksheets_and_no_trace_line() -> None:
-    result = form_set(shop(), audit()).compute(shops(), audits())
+    forms = form_set(shop(), audit())
+    result = forms.compute(shops(), audits())
 
-    assert result.worksheets("ex/shop") == ()
-    assert result.worksheets("ex/audit") == ()
-    assert result.return_worksheet.get(GRAND).value == D(0)
-    assert [type(line) for line in result.trace] == [RecordTotalLine]
+    assert result["ex/shop"] == ()
+    assert result["ex/audit"] == ()
+    assert result[RETURN][0].get(GRAND).value == D(0)
+    assert [(line.form, line.position) for line in instance_lines(forms.trace(result))] == [
+        (RETURN, 1)
+    ]
 
 
 # --- per-instance worksheets, reachable --------------------------------------------------------
@@ -499,11 +632,11 @@ def test_a_form_of_no_instances_has_no_worksheets_and_no_trace_line() -> None:
 def test_every_instance_keeps_its_own_worksheet_by_form_and_position_from_1() -> None:
     result = form_set(shop(), audit()).compute(TWO_SHOPS, TWO_AUDITS)
 
-    assert isinstance(result, FormWorksheets)
-    first, second = result.worksheets("ex/shop")
+    assert isinstance(result, dict)
+    first, second = result["ex/shop"]
     assert isinstance(first, Worksheet) and isinstance(second, Worksheet)
-    assert result.worksheet("ex/shop", 1) is first
-    assert result.worksheet("ex/shop", 2) is second
+    assert result["ex/shop"][0] is first
+    assert result["ex/shop"][1] is second
     assert first.get(PROFIT).value == D(10000)
     assert second.get(PROFIT).value == D(4000)
     assert first.get(SALES).value == D(12000)
@@ -515,63 +648,70 @@ def test_a_worksheet_holds_the_instances_starting_fields_and_intermediates_of_th
 ):
     result = form_set(shop(), audit()).compute(TWO_SHOPS, TWO_AUDITS)
 
-    worksheet = result.worksheet("ex/audit", 2)
+    worksheet = result["ex/audit"][1]
 
     assert worksheet.get(FEE).value == D(30)
     assert worksheet.get(PROFIT_TOTAL).value == D(14000)
     assert worksheet.get(AUDITED).value == D(13970)
 
 
-def test_the_forms_are_named_in_the_order_they_ran_the_return_last() -> None:
+def test_the_forms_are_named_in_the_order_they_ran_the_default_form_among_them() -> None:
     result = form_set(audit(), shop()).compute(TWO_SHOPS, TWO_AUDITS)
 
-    assert result.forms == ("ex/shop", "ex/audit", RETURN)
+    assert list(result) == ["ex/shop", "ex/audit", RETURN]
 
 
-@pytest.mark.parametrize("position", [0, 3, -1])
-def test_an_instance_position_outside_the_instances_is_not_found(position: int) -> None:
+def test_the_result_is_a_plain_mapping_of_tuples_of_worksheets() -> None:
     result = form_set(shop(), audit()).compute(TWO_SHOPS, TWO_AUDITS)
 
-    with pytest.raises(NotFoundError, match=rf"ex/shop.*{position}"):
-        result.worksheet("ex/shop", position)
+    assert type(result) is dict
+    assert all(type(found) is tuple for found in result.values())
+    assert [len(found) for found in result.values()] == [2, 2, 1]
 
 
 def test_a_form_the_set_does_not_hold_is_not_found() -> None:
-    result = form_set(shop(), audit()).compute(TWO_SHOPS, TWO_AUDITS)
+    forms = form_set(shop(), audit())
 
+    assert forms.form("ex/shop").name == "ex/shop"
     with pytest.raises(NotFoundError, match="ex/nowhere"):
-        result.worksheets("ex/nowhere")
-    with pytest.raises(NotFoundError, match="ex/nowhere"):
-        result.worksheet("ex/nowhere", 1)
+        forms.form("ex/nowhere")
 
 
-# --- the trace: one line per instance, then the returns own lines ------------------------------
+def instance_lines(lines: tuple[TraceLine, ...]) -> list[FormInstanceLine]:
+    return [line for line in lines if isinstance(line, FormInstanceLine)]
 
 
-def test_the_trace_has_one_line_per_instance_in_run_order_then_the_returns_lines() -> None:
-    result = form_set(audit(), shop()).compute(TWO_SHOPS, TWO_AUDITS)
+# --- the trace: one line per worksheet, in run order ------------------------------------------
 
-    lines = result.trace
-    instance_lines = [line for line in lines if isinstance(line, FormInstanceLine)]
 
-    assert [(line.form, line.position) for line in instance_lines] == [
+def test_the_trace_has_one_line_per_worksheet_in_run_order_the_default_form_among_them() -> None:
+    forms = form_set(audit(), shop())
+    result = forms.compute(TWO_SHOPS, TWO_AUDITS)
+
+    lines = forms.trace(result)
+
+    assert all(isinstance(line, FormInstanceLine) for line in lines)
+    assert [(line.form, line.position) for line in instance_lines(lines)] == [
         ("ex/shop", 1),
         ("ex/shop", 2),
         ("ex/audit", 1),
         ("ex/audit", 2),
+        (RETURN, 1),
     ]
-    assert lines[:4] == tuple(instance_lines)
-    assert lines[4:] == result.return_worksheet.trace
-    assert [type(line) for line in lines[4:]] == [RecordTotalLine]
+    last = lines[-1]
+    assert isinstance(last, FormInstanceLine)
+    assert last.lines == result[RETURN][0].trace
+    assert [type(line) for line in last.lines] == [RecordTotalLine]
 
 
 def test_an_instances_line_holds_the_trace_of_that_instances_own_worksheet() -> None:
-    result = form_set(shop(), audit()).compute(TWO_SHOPS, TWO_AUDITS)
+    forms = form_set(shop(), audit())
+    result = forms.compute(TWO_SHOPS, TWO_AUDITS)
 
-    first = result.trace[0]
+    first = forms.trace(result)[0]
 
     assert isinstance(first, FormInstanceLine)
-    assert first.lines == result.worksheet("ex/shop", 1).trace
+    assert first.lines == result["ex/shop"][0].trace
     assert [type(line) for line in first.lines] == [SubtractedLine]
 
 
@@ -645,8 +785,7 @@ def test_a_failure_in_a_form_that_imports_names_that_form_and_the_instance() -> 
 
 
 def test_the_returns_own_failure_is_not_prefixed_with_a_form_and_position() -> None:
-    boom = FormSet(
-        RETURN,
+    boom = flat(
         [Subtract(SALES, COSTS, PROFIT)],
         inputs=frozenset({SALES, COSTS}),
         outputs=frozenset({PROFIT}),
@@ -658,12 +797,11 @@ def test_the_returns_own_failure_is_not_prefixed_with_a_form_and_position() -> N
     assert "instance" not in str(caught.value)
 
 
-# --- a set of no forms behaves as the bare composition -----------------------------------------
+# --- a set of one form without instances behaves as the bare composition -----------------------
 
 
 def lone_set() -> FormSet:
-    return FormSet(
-        RETURN,
+    return flat(
         [Subtract(SALES, COSTS, LEVY)],
         inputs=frozenset({SALES, COSTS}),
         outputs=frozenset({LEVY}),
@@ -678,15 +816,14 @@ def lone_composition() -> Composition:
     )
 
 
-def test_a_set_of_only_the_return_form_computes_what_the_composition_does() -> None:
+def test_a_set_of_one_form_without_instances_computes_what_the_composition_does() -> None:
     given = (Artifact(SALES, D(10)), Artifact(COSTS, D(4)))
 
     result = lone_set().compute(*given)
 
-    assert result.return_worksheet.get(LEVY) == lone_composition().compute(*given).get(LEVY)
-    assert result.return_worksheet.trace == lone_composition().compute(*given).trace
-    assert result.trace == result.return_worksheet.trace
-    assert result.forms == (RETURN,)
+    assert result[RETURN][0].get(LEVY) == lone_composition().compute(*given).get(LEVY)
+    assert result[RETURN][0].trace == lone_composition().compute(*given).trace
+    assert list(result) == [RETURN]
 
 
 def test_its_errors_are_those_of_the_composition_unprefixed() -> None:
@@ -704,8 +841,7 @@ def test_its_wiring_errors_are_those_of_the_composition_unprefixed() -> None:
             [Subtract(SALES, COSTS, LEVY)], inputs=frozenset({SALES}), outputs=frozenset({LEVY})
         )
     with pytest.raises(InvalidCompositionError) as wrapped:
-        FormSet(
-            RETURN,
+        flat(
             [Subtract(SALES, COSTS, LEVY)],
             inputs=frozenset({SALES}),
             outputs=frozenset({LEVY}),
@@ -714,8 +850,8 @@ def test_its_wiring_errors_are_those_of_the_composition_unprefixed() -> None:
     assert str(wrapped.value) == str(bare.value)
 
 
-def test_the_return_composition_is_the_one_the_bare_wiring_would_give() -> None:
-    assert [type(c) for c in lone_set().return_form.composition.order] == [Subtract]
+def test_that_forms_composition_is_the_one_the_bare_wiring_would_give() -> None:
+    assert [type(c) for c in lone_set().form(RETURN).composition.order] == [Subtract]
 
 
 # --- two starting values of one kind -----------------------------------------------------------

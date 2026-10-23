@@ -1,16 +1,17 @@
-"""Unit tests for TaxComputationService with forms: peers, each run once per instance.
+"""Unit tests for TaxComputationService with forms: flat peers, each run once per instance.
 
-A manifest's `forms` are groups of selections with an instances kind (a record list, one record per
-instance) and `exports`; the manifest's own `capabilities`, `inputs` and `outputs` are those of the
-return form, `ex-on/return`. The service builds every form with the same `CapabilityBuilder`,
-datasets and registries into one `FormSet` (domain/form.py), which runs each form once per
-instance on its own `Worksheet` and keeps, for each export `X` of form `B`, the derived artifact
-`B.X`: a record list of ONE field (X's kind) with a record per instance, in instance order. Every
-form, the return included, reads any `B.X` by its identifier; the `B.X` kinds are registered into
-the artifact registry before any selection is built, idempotently. With no instances, each `B.X`
-is an empty record list. `run` returns every form's per-instance worksheets (`FormWorksheets`);
-`compute` the return form's worksheet; `compose` the return form's `Composition`. Everything here
-is made up (`ex/` names).
+A manifest is a flat set of `forms`, none special: each is a group of selections with `exports`
+and, optionally, an instances kind (a record list, one record per instance); a form without
+instances runs once. The default form, named `ex-on/return` by the loader's convention only, is
+one of them. The service builds every form with the same `CapabilityBuilder`, datasets and
+registries into one `FormSet` (domain/form.py), which runs each form once per instance on its own
+`Worksheet` and keeps, for each export `X` of form `B`, the derived artifact `B.X`: a record list
+of ONE field (X's kind) with a record per instance, in instance order (one record for a form
+without instances). Every form reads any `B.X` by its identifier; the `B.X` kinds are registered
+into the artifact registry before any selection is built, idempotently. With no instances, each
+`B.X` is an empty record list. `compute` returns each form's worksheets by form name, one per
+instance in instance order; `compose` the wired `FormSet`. Everything here is made up (`ex/`
+names).
 """
 
 from __future__ import annotations
@@ -27,7 +28,6 @@ from app.domain.artifact import Artifact, ArtifactKind, ArtifactRegistry
 from app.domain.capabilities.record_total import RecordTotal
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capability import Capability, CapabilityRegistry, CapabilityResult
-from app.domain.composition import Composition
 from app.domain.errors import (
     CapabilityContractError,
     DuplicateRegistrationError,
@@ -36,7 +36,7 @@ from app.domain.errors import (
     NotFoundError,
     UnknownRegistrationError,
 )
-from app.domain.form import FormSet, FormWorksheets
+from app.domain.form import FormSet
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection, Form, Manifest
@@ -67,6 +67,7 @@ RENTALS = RecordListKind("ex/rentals", fields=(GROSS_RENT, EXPENSES, UNITS))
 TOTAL_NET_INCOME = ArtifactKind("ex/total_net_income", Decimal)
 OTHER_AMOUNT = ArtifactKind("ex/other_amount", Decimal)
 SPARE = ArtifactKind("ex/spare", Decimal)
+DOUBLED_COUNT = ArtifactKind("ex/doubled_count", int)
 NOTES = ArtifactKind("ex/notes", Decimal)
 NOTE = ArtifactKind("ex/note", str)
 
@@ -108,6 +109,21 @@ class DoubleUnits(Capability):
         )
 
 
+class CountRecords(Capability):
+    """Produces `count`: the number of records of the consumed `records` list."""
+
+    CONSUMES: ClassVar[Mapping[str, type]] = {"records": RecordList}
+    PRODUCES: ClassVar[Mapping[str, type]] = {"count": int}
+
+    def __init__(self, records: RecordListKind, count: ArtifactKind[int]) -> None:
+        super().__init__(records=records, count=count)
+        self._records, self._count = records, count
+
+    def compute(self, inputs: tuple[Artifact[Any], ...]) -> CapabilityResult:
+        found = self._input(inputs, self._records).value.records
+        return CapabilityResult(outputs=(Artifact(self._count, len(found)),), trace=())
+
+
 class Describe(Capability):
     """Produces `note`, a text: not a kind a form may export."""
 
@@ -145,6 +161,13 @@ TOTAL = CapabilitySelection(
     params={},
     consumes={"records": "ex/rental.net_income"},
     produces={"output": "ex/total_net_income"},
+)
+# Reads the rental form's list-valued export, so that it reaches the default form's worksheet.
+COUNT_DOUBLED = CapabilitySelection(
+    name="ex/count_records",
+    params={},
+    consumes={"records": "ex/rental.units_doubled"},
+    produces={"count": "ex/doubled_count"},
 )
 SCALE = CapabilitySelection(
     name="ex/scale",
@@ -203,27 +226,62 @@ CYCLE_RENTAL = Form(
 )
 
 
-def rental_manifest(
-    form: Form = RENTAL,
-    inputs: frozenset[str] = frozenset({"ex/rentals"}),
+RETURN = "ex-on/return"
+
+
+def manifest_of(
+    capabilities: tuple[CapabilitySelection, ...],
+    *,
+    inputs: frozenset[str],
+    outputs: frozenset[str],
+    forms: tuple[Form, ...] = (),
 ) -> Manifest:
+    """A manifest whose default form `ex-on/return` runs `capabilities` and exports `outputs`."""
+    default = Form(
+        name=RETURN, instances=None, exports=tuple(sorted(outputs)), capabilities=capabilities
+    )
     return Manifest(
         jurisdiction=EX_ON,
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(TOTAL,),
         inputs=inputs,
-        outputs=frozenset({"ex/total_net_income", "ex/rental.units_doubled"}),
+        forms=(default, *forms),
+    )
+
+
+def edited(
+    manifest: Manifest,
+    *,
+    capabilities: tuple[CapabilitySelection, ...] | None = None,
+    inputs: frozenset[str] | None = None,
+    outputs: frozenset[str] | None = None,
+    forms: tuple[Form, ...] | None = None,
+) -> Manifest:
+    """`manifest` with the default form's selections or exports, the inputs or the rest changed."""
+    default, *others = manifest.forms
+    return manifest_of(
+        default.capabilities if capabilities is None else capabilities,
+        inputs=manifest.inputs if inputs is None else inputs,
+        outputs=frozenset(default.exports) if outputs is None else outputs,
+        forms=tuple(others) if forms is None else forms,
+    )
+
+
+def rental_manifest(
+    form: Form = RENTAL,
+    inputs: frozenset[str] = frozenset({"ex/rentals"}),
+) -> Manifest:
+    return manifest_of(
+        (TOTAL, COUNT_DOUBLED),
+        inputs=inputs,
+        outputs=frozenset({"ex/total_net_income", "ex/doubled_count"}),
         forms=(form,),
     )
 
 
 def summary_manifest() -> Manifest:
-    return Manifest(
-        jurisdiction=EX_ON,
-        version=1,
-        valid_from_tax_year=2025,
-        capabilities=(SPARE_SUM,),
+    return manifest_of(
+        (SPARE_SUM,),
         inputs=frozenset({"ex/rentals", "ex/summaries"}),
         outputs=frozenset({"ex/spare_total"}),
         forms=(RENTAL, SUMMARY),
@@ -231,11 +289,8 @@ def summary_manifest() -> Manifest:
 
 
 def scaling_manifest() -> Manifest:
-    return Manifest(
-        jurisdiction=EX_ON,
-        version=1,
-        valid_from_tax_year=2025,
-        capabilities=(SCALED_SUM,),
+    return manifest_of(
+        (SCALED_SUM,),
         inputs=frozenset({"ex/bases"}),
         outputs=frozenset({"ex/scaled_total"}),
         forms=(SCALING,),
@@ -243,13 +298,10 @@ def scaling_manifest() -> Manifest:
 
 
 def both_manifest() -> Manifest:
-    return Manifest(
-        jurisdiction=EX_ON,
-        version=1,
-        valid_from_tax_year=2025,
-        capabilities=(TOTAL, SCALED_SUM),
+    return manifest_of(
+        (TOTAL, COUNT_DOUBLED, SCALED_SUM),
         inputs=frozenset({"ex/rentals", "ex/bases"}),
-        outputs=frozenset({"ex/total_net_income", "ex/rental.units_doubled", "ex/scaled_total"}),
+        outputs=frozenset({"ex/total_net_income", "ex/doubled_count", "ex/scaled_total"}),
         forms=(RENTAL, SCALING),
     )
 
@@ -279,6 +331,7 @@ def artifact_registry(
         RENTAL_TOTAL,
         CYCLE_TOTAL,
         SPARE_TOTAL,
+        DOUBLED_COUNT,
     )
     for kind in (*kinds, *extra):
         registry.register(kind.identifier, kind)
@@ -290,6 +343,7 @@ def capability_registry() -> CapabilityRegistry:
     registry.register("core/subtract", Subtract)
     registry.register("core/record_total", RecordTotal)
     registry.register("ex/double_units", DoubleUnits)
+    registry.register("ex/count_records", CountRecords)
     registry.register("ex/describe", Describe)
     registry.register("ex/scale", Scale)
     return registry
@@ -330,14 +384,16 @@ TWO_RENTALS = rentals(
 
 
 def test_two_instances_are_run_each_on_its_own_and_totalled_by_the_return() -> None:
-    worksheet = service(rental_manifest()).compute(EX_ON, 2025, TWO_RENTALS)
+    worksheet = service(rental_manifest()).compute(EX_ON, 2025, TWO_RENTALS)["ex-on/return"][0]
 
     assert worksheet.get(TOTAL_NET_INCOME).value == D("14000")
 
 
 def test_an_export_is_a_record_list_of_one_field_with_a_record_per_instance() -> None:
     artifacts = artifact_registry()
-    worksheet = service(rental_manifest(), artifacts).compute(EX_ON, 2025, TWO_RENTALS)
+    worksheet = service(rental_manifest(), artifacts).compute(EX_ON, 2025, TWO_RENTALS)[
+        "ex-on/return"
+    ][0]
 
     net = artifacts.kind("ex/rental.net_income")
     assert net == NET_INCOME_PER_RENTAL
@@ -353,7 +409,9 @@ def test_instance_order_is_the_order_of_the_records_given() -> None:
     )
     artifacts = artifact_registry()
 
-    worksheet = service(rental_manifest(), artifacts).compute(EX_ON, 2025, swapped)
+    worksheet = service(rental_manifest(), artifacts).compute(EX_ON, 2025, swapped)["ex-on/return"][
+        0
+    ]
 
     net = worksheet.get(artifacts.kind("ex/rental.net_income")).value
     assert [record[NET_INCOME] for record in net.records] == [D("4000"), D("10000")]
@@ -361,7 +419,9 @@ def test_instance_order_is_the_order_of_the_records_given() -> None:
 
 def test_a_list_valued_export_is_a_record_list_of_nested_record_lists() -> None:
     artifacts = artifact_registry()
-    worksheet = service(rental_manifest(), artifacts).compute(EX_ON, 2025, TWO_RENTALS)
+    worksheet = service(rental_manifest(), artifacts).compute(EX_ON, 2025, TWO_RENTALS)[
+        "ex-on/return"
+    ][0]
 
     doubled = artifacts.kind("ex/rental.units_doubled")
 
@@ -385,7 +445,7 @@ def test_an_instance_holds_a_nested_record_list_the_form_reads() -> None:
     artifacts = artifact_registry()
     one = rentals(("100", "0", units("1", "2", "3")))
 
-    worksheet = service(rental_manifest(), artifacts).compute(EX_ON, 2025, one)
+    worksheet = service(rental_manifest(), artifacts).compute(EX_ON, 2025, one)["ex-on/return"][0]
 
     (record,) = worksheet.get(artifacts.kind("ex/rental.units_doubled")).value.records
     assert [each[UNIT_AMOUNT] for each in record[UNITS_DOUBLED].records] == [D(2), D(4), D(6)]
@@ -393,7 +453,9 @@ def test_an_instance_holds_a_nested_record_list_the_form_reads() -> None:
 
 def test_the_exports_reach_the_return_as_starting_artifacts_no_capability_produced() -> None:
     artifacts = artifact_registry()
-    worksheet = service(rental_manifest(), artifacts).compute(EX_ON, 2025, TWO_RENTALS)
+    worksheet = service(rental_manifest(), artifacts).compute(EX_ON, 2025, TWO_RENTALS)[
+        "ex-on/return"
+    ][0]
 
     for identifier in ("ex/rental.net_income", "ex/rental.units_doubled"):
         assert worksheet.producer_of(artifacts.kind(identifier)) is None
@@ -401,24 +463,25 @@ def test_the_exports_reach_the_return_as_starting_artifacts_no_capability_produc
 
 
 def test_the_instances_are_not_on_the_returns_worksheet() -> None:
-    worksheet = service(rental_manifest()).compute(EX_ON, 2025, TWO_RENTALS)
+    worksheet = service(rental_manifest()).compute(EX_ON, 2025, TWO_RENTALS)["ex-on/return"][0]
 
     with pytest.raises(MissingArtifactError, match="no value for 'rentals'"):
         worksheet.get(RENTALS)
 
 
-def test_compute_is_the_return_worksheet_of_run() -> None:
+def test_compute_runs_the_set_that_compose_wires() -> None:
     computation = service(rental_manifest())
 
     computed = computation.compute(EX_ON, 2025, TWO_RENTALS)
-    ran = computation.run(EX_ON, 2025, TWO_RENTALS).return_worksheet
+    ran = computation.compose(EX_ON, 2025).compute(TWO_RENTALS)
 
-    assert computed.get(TOTAL_NET_INCOME) == ran.get(TOTAL_NET_INCOME)
-    assert computed.trace == ran.trace
+    assert list(computed) == list(ran)
+    assert computed[RETURN][0].get(TOTAL_NET_INCOME) == ran[RETURN][0].get(TOTAL_NET_INCOME)
+    assert computed[RETURN][0].trace == ran[RETURN][0].trace
 
 
 def test_an_inner_artifact_that_is_not_an_export_never_reaches_the_returns_worksheet() -> None:
-    worksheet = service(rental_manifest()).compute(EX_ON, 2025, TWO_RENTALS)
+    worksheet = service(rental_manifest()).compute(EX_ON, 2025, TWO_RENTALS)["ex-on/return"][0]
 
     inner: tuple[ArtifactKind[Any], ...] = (GROSS_RENT, EXPENSES, NET_INCOME, UNITS, UNITS_DOUBLED)
     for kind in inner:
@@ -432,7 +495,9 @@ def test_an_inner_artifact_that_is_not_an_export_never_reaches_the_returns_works
 def test_no_instances_still_produces_every_export_as_an_empty_record_list() -> None:
     artifacts = artifact_registry()
 
-    worksheet = service(rental_manifest(), artifacts).compute(EX_ON, 2025, rentals())
+    worksheet = service(rental_manifest(), artifacts).compute(EX_ON, 2025, rentals())[
+        "ex-on/return"
+    ][0]
 
     assert worksheet.get(artifacts.kind("ex/rental.net_income")).value == RecordList(
         (NET_INCOME,), []
@@ -443,33 +508,41 @@ def test_no_instances_still_produces_every_export_as_an_empty_record_list() -> N
     assert worksheet.get(TOTAL_NET_INCOME).value == D(0)
 
 
-def test_no_instances_leaves_only_the_returns_own_trace() -> None:
-    result = service(rental_manifest()).run(EX_ON, 2025, rentals())
+def test_no_instances_leaves_every_form_without_worksheets_but_the_default_form() -> None:
+    computation = service(rental_manifest())
 
-    assert result.trace == (RecordTotalLine(TOTAL_NET_INCOME, NET_INCOME, (), D(0)),)
-    assert result.worksheets("ex/rental") == ()
+    result = computation.compute(EX_ON, 2025, rentals())
+
+    assert result["ex/rental"] == ()
+    (returned,) = result[RETURN]
+    assert returned.trace == (RecordTotalLine(TOTAL_NET_INCOME, NET_INCOME, (), D(0)),)
 
 
-# --- the trace: one line per instance, then the returns own lines -----------------------------
+# --- the trace: one line per worksheet, in run order ------------------------------------------
 
 
-def test_each_instances_trace_is_grouped_in_one_line_named_by_form_and_position() -> None:
-    result = service(rental_manifest()).run(EX_ON, 2025, TWO_RENTALS)
+def test_each_worksheets_trace_is_grouped_in_one_line_named_by_form_and_position() -> None:
+    computation = service(rental_manifest())
 
-    first, second, total = result.trace
+    lines = computation.compose(EX_ON, 2025).trace(computation.compute(EX_ON, 2025, TWO_RENTALS))
 
+    first, second, returned = lines
     assert isinstance(first, FormInstanceLine) and isinstance(second, FormInstanceLine)
+    assert isinstance(returned, FormInstanceLine)
     assert (first.form, first.position) == ("ex/rental", 1)
     assert (second.form, second.position) == ("ex/rental", 2)
-    assert total == RecordTotalLine(
-        TOTAL_NET_INCOME, NET_INCOME, (D("10000"), D("4000")), D("14000")
+    assert (returned.form, returned.position) == (RETURN, 1)
+    assert returned.lines == (
+        RecordTotalLine(TOTAL_NET_INCOME, NET_INCOME, (D("10000"), D("4000")), D("14000")),
     )
 
 
 def test_an_instances_lines_are_those_of_its_own_run() -> None:
-    result = service(rental_manifest()).run(EX_ON, 2025, TWO_RENTALS)
+    computation = service(rental_manifest())
 
-    first, second, _total = result.trace
+    first, second, _returned = computation.compose(EX_ON, 2025).trace(
+        computation.compute(EX_ON, 2025, TWO_RENTALS)
+    )
     assert isinstance(first, FormInstanceLine) and isinstance(second, FormInstanceLine)
 
     def results(line: FormInstanceLine) -> list[Decimal]:
@@ -482,77 +555,72 @@ def test_an_instances_lines_are_those_of_its_own_run() -> None:
     assert len(first.lines) == len(second.lines) == 2
 
 
-# --- per-instance worksheets, reachable by form and position ---------------------------------
+# --- per-instance worksheets, by form name -----------------------------------------------------
 
 
-def test_run_keeps_every_instances_worksheet_by_form_and_position() -> None:
-    result = service(rental_manifest()).run(EX_ON, 2025, TWO_RENTALS)
+def test_compute_keeps_every_instances_worksheet_by_form_and_instance_order() -> None:
+    result = service(rental_manifest()).compute(EX_ON, 2025, TWO_RENTALS)
 
-    assert isinstance(result, FormWorksheets)
-    first, second = result.worksheets("ex/rental")
-    assert result.worksheet("ex/rental", 1) is first
-    assert result.worksheet("ex/rental", 2) is second
+    assert type(result) is dict
+    first, second = result["ex/rental"]
     assert first.get(NET_INCOME).value == D("10000")
     assert second.get(NET_INCOME).value == D("4000")
     assert first.get(GROSS_RENT).value == D("12000")
     assert [each[UNIT_AMOUNT] for each in first.get(UNITS).value.records] == [D(100), D("250.50")]
-    assert result.return_worksheet.get(TOTAL_NET_INCOME).value == D("14000")
-    assert result.forms == ("ex/rental", "ex-on/return")
+    assert result[RETURN][0].get(TOTAL_NET_INCOME).value == D("14000")
+    assert list(result) == ["ex/rental", RETURN]
+    assert len(result[RETURN]) == 1
 
 
-def test_the_return_forms_worksheet_holds_its_inputs_imports_and_intermediates() -> None:
+def test_the_default_forms_worksheet_holds_its_inputs_imports_and_intermediates() -> None:
     reads_other = CapabilitySelection(
         name="core/subtract",
         params={},
         consumes={"amount": "ex/total_net_income", "less": "ex/other_amount"},
         produces={"output": "ex/spare"},
     )
-    manifest = replace(
+    manifest = edited(
         rental_manifest(),
-        capabilities=(TOTAL, reads_other),
+        capabilities=(TOTAL, COUNT_DOUBLED, reads_other),
         inputs=frozenset({"ex/rentals", "ex/other_amount"}),
-        outputs=frozenset({"ex/spare", "ex/rental.units_doubled"}),
+        outputs=frozenset({"ex/spare", "ex/doubled_count"}),
     )
 
-    result = service(manifest).run(EX_ON, 2025, TWO_RENTALS, Artifact(OTHER_AMOUNT, D(4000)))
+    result = service(manifest).compute(EX_ON, 2025, TWO_RENTALS, Artifact(OTHER_AMOUNT, D(4000)))
 
-    returns = result.return_worksheet
+    (returns,) = result[RETURN]
     assert returns.get(OTHER_AMOUNT).value == D(4000)
     assert returns.get(NET_INCOME_PER_RENTAL).value.records[0][NET_INCOME] == D(10000)
     assert returns.get(TOTAL_NET_INCOME).value == D(14000)
     assert returns.get(SPARE).value == D(10000)
-    assert result.worksheet("ex-on/return", 1) is returns
 
 
-# --- compose and form_set ---------------------------------------------------------------------
+# --- compose ----------------------------------------------------------------------------------
 
 
-def test_compose_is_the_return_forms_composition_and_keeps_its_imports_as_inputs() -> None:
-    composition = service(rental_manifest()).compose(EX_ON, 2025)
+def test_compose_holds_the_default_forms_composition_with_its_imports_as_inputs() -> None:
+    composition = service(rental_manifest()).compose(EX_ON, 2025).form(RETURN).composition
 
-    assert isinstance(composition, Composition)
-    assert [type(c) for c in composition.order] == [RecordTotal]
+    assert {type(c) for c in composition.order} == {RecordTotal, CountRecords}
     with pytest.raises(InvalidCompositionError, match="'rentals' is not an input"):
         composition.compute(TWO_RENTALS)
 
 
-def test_form_set_holds_the_forms_in_run_order_and_the_return_form() -> None:
-    forms = service(both_manifest(), artifact_registry()).form_set(EX_ON, 2025)
+def test_compose_holds_the_forms_in_run_order_the_default_form_among_them() -> None:
+    forms = service(both_manifest(), artifact_registry()).compose(EX_ON, 2025)
 
     assert isinstance(forms, FormSet)
-    assert [found.name for found in forms.forms] == ["ex/rental", "ex/scaling"]
-    assert forms.return_form.name == "ex-on/return"
-    assert forms.return_form.imports == frozenset(
+    assert [found.name for found in forms.forms] == ["ex/rental", "ex/scaling", RETURN]
+    assert forms.form(RETURN).name == RETURN
+    assert forms.form(RETURN).instances is None
+    assert forms.form(RETURN).imports == frozenset(
         {NET_INCOME_PER_RENTAL, UNITS_DOUBLED_PER_RENTAL, SCALED_PER_BASE}
     )
 
 
-def test_a_manifest_without_forms_composes_runs_and_computes_as_before() -> None:
-    plain = Manifest(
-        jurisdiction=EX_ON,
-        version=1,
-        valid_from_tax_year=2025,
-        capabilities=(
+def test_a_manifest_of_the_default_form_alone_composes_and_computes_as_before() -> None:
+    plain = manifest_of(
+        (
             CapabilitySelection(
                 name="core/subtract",
                 params={},
@@ -566,22 +634,20 @@ def test_a_manifest_without_forms_composes_runs_and_computes_as_before() -> None
     computation = service(plain)
     given = (Artifact(GROSS_RENT, D(5)), Artifact(EXPENSES, D(2)))
 
-    worksheet = computation.compute(EX_ON, 2025, *given)
-    result = computation.run(EX_ON, 2025, *given)
+    result = computation.compute(EX_ON, 2025, *given)
 
+    (worksheet,) = result[RETURN]
+    assert list(result) == [RETURN]
     assert worksheet.get(NET_INCOME).value == D(3)
-    assert [type(c) for c in computation.compose(EX_ON, 2025).order] == [Subtract]
-    assert result.forms == ("ex-on/return",)
-    assert result.trace == worksheet.trace
-    assert computation.form_set(EX_ON, 2025).forms == ()
+    forms = computation.compose(EX_ON, 2025)
+    assert [type(c) for c in forms.form(RETURN).composition.order] == [Subtract]
+    assert [found.name for found in forms.forms] == [RETURN]
+    assert len(forms.trace(result)) == 1
 
 
-def test_the_manifest_without_forms_refuses_what_the_composition_refused() -> None:
-    plain = Manifest(
-        jurisdiction=EX_ON,
-        version=1,
-        valid_from_tax_year=2025,
-        capabilities=(NET,),
+def test_the_manifest_of_the_default_form_alone_refuses_what_the_composition_refused() -> None:
+    plain = manifest_of(
+        (NET,),
         inputs=frozenset({"ex/gross_rent", "ex/expenses"}),
         outputs=frozenset({"ex/net_income"}),
     )
@@ -595,29 +661,29 @@ def test_two_forms_are_peers_each_with_its_own_worksheets_and_exports() -> None:
     manifest = both_manifest()
     bases = Artifact(BASES, RecordList(BASES.fields, [{BASE: D("2")}, {BASE: D("5")}]))
 
-    result = service(manifest, artifacts).run(EX_ON, 2025, TWO_RENTALS, bases)
+    result = service(manifest, artifacts).compute(EX_ON, 2025, TWO_RENTALS, bases)
 
-    worksheet = result.return_worksheet
+    (worksheet,) = result[RETURN]
     assert worksheet.get(TOTAL_NET_INCOME).value == D("14000")
     assert worksheet.get(SCALED_TOTAL).value == D("21")
     assert worksheet.get(artifacts.kind("ex/scaling.scaled")).value.records[1][SCALED] == D("15")
-    assert result.worksheet("ex/scaling", 2).get(SCALED).value == D("15")
+    assert result["ex/scaling"][1].get(SCALED).value == D("15")
 
 
 def test_a_form_reads_another_forms_export_whichever_is_listed_first() -> None:
     artifacts = artifact_registry()
     for listed in ((SUMMARY, RENTAL), (RENTAL, SUMMARY)):
-        manifest = replace(summary_manifest(), forms=listed)
+        manifest = edited(summary_manifest(), forms=listed)
         summaries = Artifact(
             SUMMARIES, RecordList(SUMMARIES.fields, [{OTHER_AMOUNT: D(100)}, {OTHER_AMOUNT: D(1)}])
         )
 
-        result = service(manifest, artifacts).run(EX_ON, 2025, TWO_RENTALS, summaries)
+        result = service(manifest, artifacts).compute(EX_ON, 2025, TWO_RENTALS, summaries)
 
-        assert result.forms == ("ex/rental", "ex/summary", "ex-on/return")
-        assert result.worksheet("ex/summary", 1).get(SPARE).value == D(13900)
-        assert result.worksheet("ex/summary", 2).get(SPARE).value == D(13999)
-        assert result.return_worksheet.get(SPARE_TOTAL).value == D(27899)
+        assert list(result) == ["ex/rental", "ex/summary", RETURN]
+        assert result["ex/summary"][0].get(SPARE).value == D(13900)
+        assert result["ex/summary"][1].get(SPARE).value == D(13999)
+        assert result[RETURN][0].get(SPARE_TOTAL).value == D(27899)
 
 
 def test_the_instances_kind_must_be_one_of_the_manifests_inputs() -> None:
@@ -629,11 +695,11 @@ def test_the_instances_kind_must_be_one_of_the_manifests_inputs() -> None:
         consumes={"amount": "ex/other_amount", "less": "ex/notes"},
         produces={"output": "ex/spare"},
     )
-    manifest = replace(
+    manifest = edited(
         rental_manifest(),
-        capabilities=(TOTAL, reads_others),
+        capabilities=(TOTAL, COUNT_DOUBLED, reads_others),
         inputs=frozenset({"ex/other_amount", "ex/notes"}),
-        outputs=frozenset({"ex/total_net_income", "ex/rental.units_doubled", "ex/spare"}),
+        outputs=frozenset({"ex/total_net_income", "ex/doubled_count", "ex/spare"}),
     )
 
     with pytest.raises(
@@ -646,9 +712,9 @@ def test_the_computation_takes_the_instances_and_nothing_else_of_the_form() -> N
     computation = service(rental_manifest())
 
     with pytest.raises(InvalidCompositionError, match="missing input 'rentals'"):
-        computation.run(EX_ON, 2025)
+        computation.compute(EX_ON, 2025)
     with pytest.raises(InvalidCompositionError, match="'gross_rent' is not an input"):
-        computation.run(EX_ON, 2025, TWO_RENTALS, Artifact(GROSS_RENT, D(1)))
+        computation.compute(EX_ON, 2025, TWO_RENTALS, Artifact(GROSS_RENT, D(1)))
 
 
 def test_an_import_nothing_exports_is_refused_naming_the_form_and_the_kind() -> None:
@@ -660,10 +726,10 @@ def test_an_import_nothing_exports_is_refused_naming_the_form_and_the_kind() -> 
         consumes={"records": "ex/ghost.profit"},
         produces={"output": "ex/spare"},
     )
-    manifest = replace(
+    manifest = edited(
         rental_manifest(),
-        capabilities=(TOTAL, reads_ghost),
-        outputs=frozenset({"ex/total_net_income", "ex/rental.units_doubled", "ex/spare"}),
+        capabilities=(TOTAL, COUNT_DOUBLED, reads_ghost),
+        outputs=frozenset({"ex/total_net_income", "ex/doubled_count", "ex/spare"}),
     )
 
     with pytest.raises(InvalidCompositionError, match=r"ex-on/return.*'ghost.profit'"):
@@ -671,7 +737,7 @@ def test_an_import_nothing_exports_is_refused_naming_the_form_and_the_kind() -> 
 
 
 def test_a_cycle_of_forms_is_refused_naming_them() -> None:
-    manifest = replace(summary_manifest(), forms=(CYCLE_RENTAL, SUMMARY))
+    manifest = edited(summary_manifest(), forms=(CYCLE_RENTAL, SUMMARY))
 
     with pytest.raises(InvalidCompositionError, match="cycle") as caught:
         service(manifest).compose(EX_ON, 2025)
@@ -696,9 +762,9 @@ def test_composing_twice_registers_the_derived_kinds_once_and_keeps_the_first() 
     artifacts = artifact_registry()
     computation = service(rental_manifest(), artifacts)
 
-    first = computation.form_set(EX_ON, 2025)
+    first = computation.compose(EX_ON, 2025)
     registered = artifacts.kind("ex/rental.net_income")
-    second = computation.form_set(EX_ON, 2025)
+    second = computation.compose(EX_ON, 2025)
 
     assert artifacts.kind("ex/rental.net_income") is registered
     assert second.forms[0].derived == (NET_INCOME_PER_RENTAL, UNITS_DOUBLED_PER_RENTAL)
@@ -709,7 +775,8 @@ def test_each_compose_computes_the_same_figures() -> None:
     computation = service(rental_manifest())
 
     totals = [
-        computation.compute(EX_ON, 2025, TWO_RENTALS).get(TOTAL_NET_INCOME).value for _ in range(3)
+        computation.compute(EX_ON, 2025, TWO_RENTALS)[RETURN][0].get(TOTAL_NET_INCOME).value
+        for _ in range(3)
     ]
 
     assert totals == [D("14000")] * 3
@@ -748,7 +815,9 @@ def test_the_forms_datasets_are_fetched_once_for_the_tax_year_not_once_per_insta
         BASES, RecordList(BASES.fields, [{BASE: D("2")}, {BASE: D("5")}, {BASE: D("7")}])
     )
 
-    worksheet = service(scaling_manifest(), parameters=parameters).compute(EX_ON, 2025, bases)
+    worksheet = service(scaling_manifest(), parameters=parameters).compute(EX_ON, 2025, bases)[
+        "ex-on/return"
+    ][0]
 
     assert worksheet.get(SCALED_TOTAL).value == D("42")
     assert parameters.requests.count(("ex/factor", 2025, FACTOR)) == 1
@@ -763,10 +832,11 @@ def test_a_forms_dataset_of_another_tax_year_is_not_used() -> None:
 
 def test_the_scaling_forms_trace_has_one_line_per_instance() -> None:
     bases = Artifact(BASES, RecordList(BASES.fields, [{BASE: D("2")}, {BASE: D("5")}]))
+    computation = service(scaling_manifest())
 
-    result = service(scaling_manifest()).run(EX_ON, 2025, bases)
+    lines = computation.compose(EX_ON, 2025).trace(computation.compute(EX_ON, 2025, bases))
 
-    assert result.trace[:2] == (
+    assert lines[:2] == (
         FormInstanceLine("ex/scaling", 1, (StepLine("scaled", D("6")),)),
         FormInstanceLine("ex/scaling", 2, (StepLine("scaled", D("15")),)),
     )
@@ -838,7 +908,7 @@ def test_an_export_nothing_in_the_form_produces_is_refused_naming_the_form() -> 
     assert "declared output 'spare' is produced by nothing" in str(caught.value)
 
 
-def test_an_export_that_is_neither_an_amount_a_count_nor_a_record_list_is_refused() -> None:
+def test_an_export_that_is_neither_an_amount_a_count_nor_a_record_list_is_not_importable() -> None:
     describe = CapabilitySelection(
         name="ex/describe",
         params={},
@@ -848,21 +918,17 @@ def test_an_export_that_is_neither_an_amount_a_count_nor_a_record_list_is_refuse
     form = Form(
         name="ex/labelled", instances="ex/bases", exports=("ex/note",), capabilities=(describe,)
     )
-    manifest = Manifest(
-        jurisdiction=EX_ON,
-        version=1,
-        valid_from_tax_year=2025,
-        capabilities=(),
-        inputs=frozenset({"ex/bases"}),
-        outputs=frozenset({"ex/bases"}),
-        forms=(form,),
+    manifest = manifest_of(
+        (), inputs=frozenset({"ex/bases"}), outputs=frozenset({"ex/bases"}), forms=(form,)
     )
+    bases = Artifact(BASES, RecordList(BASES.fields, [{BASE: D("2")}]))
+    computation = service(manifest)
 
-    with pytest.raises(InvalidCompositionError) as caught:
-        service(manifest).compose(EX_ON, 2025)
+    forms = computation.compose(EX_ON, 2025)
+    (worksheet,) = computation.compute(EX_ON, 2025, bases)["ex/labelled"]
 
-    assert "ex/labelled" in str(caught.value)
-    assert "ex/note" in str(caught.value)
+    assert forms.form("ex/labelled").derived == ()
+    assert worksheet.get(NOTE).value == "x"
 
 
 def test_instances_that_are_not_a_registered_kind_are_unknown() -> None:

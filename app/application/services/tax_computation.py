@@ -7,11 +7,10 @@ with the artifact registry to the domain (`CapabilityBuilder`, which resolves th
 artifact kinds, and `FormSet`, which wires every form), which decides. Resolution errors
 propagate unchanged. Built on demand per call.
 
-A manifest's own selections are the return form's; its `forms` are peers that run once per
-instance and export `<form>.<export>` kinds that every form reads. Those kinds are registered
-into the artifact registry before any selection is built. `compute` returns the return form's
-worksheet, as it does for a manifest with no forms other than the return form; `run` returns every
-form's worksheets.
+A manifest is a flat set of forms, peers that together are the return. Each form exports the
+`<form>.<export>` kinds that every form reads. Those kinds are registered into the artifact
+registry before any selection is built. `compose` returns the wired `FormSet`; `compute` runs it
+and returns each form's worksheets by form name: one per instance, in instance order.
 """
 
 from __future__ import annotations
@@ -23,8 +22,7 @@ from app.application.ports.parameter_source import ParameterSource
 from app.domain.artifact import Artifact, ArtifactRegistry
 from app.domain.capability import Capability, CapabilityRegistry
 from app.domain.capability_builder import CapabilityBuilder
-from app.domain.composition import Composition
-from app.domain.form import FormComposition, FormSet, FormWorksheets
+from app.domain.form import FormComposition, FormSet
 from app.domain.jurisdiction_code import JurisdictionCode
 from app.domain.manifest import CapabilitySelection
 from app.domain.parameters.datasets import ParameterDataset
@@ -48,17 +46,8 @@ class TaxComputationService:
         self._artifacts = artifacts
         self._builder = CapabilityBuilder()
 
-    def compose(self, code: JurisdictionCode, tax_year: int) -> Composition:
-        """The composition of the return form of the manifest that applies to `tax_year` in `code`.
-
-        For a manifest with no forms other than the return form, the whole computation. With
-        forms, the return form's: its inputs are the manifest's without the forms' instances kinds,
-        plus the `<form>.<export>` kinds it reads; `form_set` and `run` are the whole computation.
-        """
-        return self.form_set(code, tax_year).return_form.composition
-
-    def form_set(self, code: JurisdictionCode, tax_year: int) -> FormSet:
-        """The return form and the forms of the manifest of `tax_year` in `code`, wired."""
+    def compose(self, code: JurisdictionCode, tax_year: int) -> FormSet:
+        """The forms of the manifest that applies to `tax_year` in `code`, wired."""
         manifest = self._jurisdictions.get_jurisdiction(code).manifest_for(tax_year)
         exports = {
             form.name: [self._artifacts.kind(identifier) for identifier in form.exports]
@@ -69,38 +58,32 @@ class TaxComputationService:
                 self._artifacts.register_kind(kind)
         # Resolved before any capability is built, so a bad identifier is reported first.
         inputs = frozenset(self._artifacts.kind(identifier) for identifier in manifest.inputs)
-        outputs = frozenset(self._artifacts.kind(identifier) for identifier in manifest.outputs)
         return FormSet(
-            manifest.return_form_name,
-            [self._capability(selection, tax_year) for selection in manifest.capabilities],
-            inputs=inputs,
-            outputs=outputs,
-            forms=[
+            [
                 FormComposition(
                     form.name,
                     [self._capability(selection, tax_year) for selection in form.capabilities],
-                    instances=self._artifacts.kind(form.instances),
                     exports=exports[form.name],
+                    instances=None
+                    if form.instances is None
+                    else self._artifacts.kind(form.instances),
+                    starting=inputs,
                 )
                 for form in manifest.forms
             ],
+            inputs=inputs,
         )
 
     def compute(
         self, code: JurisdictionCode, tax_year: int, *artifacts: Artifact[Any]
-    ) -> Worksheet:
-        """The return form's worksheet of `run(code, tax_year, *artifacts)`."""
-        return self.run(code, tax_year, *artifacts).return_worksheet
-
-    def run(
-        self, code: JurisdictionCode, tax_year: int, *artifacts: Artifact[Any]
-    ) -> FormWorksheets:
-        """The worksheets of every form's every instance, and the return form's, from `artifacts`.
+    ) -> dict[str, tuple[Worksheet, ...]]:
+        """The worksheets of every form, by form name, from `artifacts`.
 
         `artifacts` are the starting artifacts of the manifest: one of each declared input kind,
-        among them each form's instances.
+        among them each form's instances. A form's worksheets are one per instance, in instance
+        order, and one for a form without instances.
         """
-        return self.form_set(code, tax_year).compute(*artifacts)
+        return self.compose(code, tax_year).compute(*artifacts)
 
     def _capability(self, selection: CapabilitySelection, tax_year: int) -> Capability:
         cls = self._capabilities.get(selection.name)

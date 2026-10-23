@@ -250,8 +250,11 @@ def test_a_row_with_a_zero_maximum_and_a_column_22_still_refuses_any_claim() -> 
 
 
 def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset() -> None:
-    composition = service("ca/cca_claim_after_column_22", CCA_CLAIM, checks_claim=True).compose(
-        JurisdictionCode("CA-ON"), 2025
+    composition = (
+        service("ca/cca_claim_after_column_22", CCA_CLAIM, checks_claim=True)
+        .compose(JurisdictionCode("CA-ON"), 2025)
+        .form("ca-on/return")
+        .composition
     )
 
     (built,) = composition.order
@@ -265,7 +268,7 @@ def test_a_computation_gives_the_total_claim() -> None:
         2025,
         classes(WITH_ADDITIONS, WITH_RECAPTURE, WITH_TERMINAL_LOSS),
         NO_COLUMN_22,
-    )
+    )["ca-on/return"][0]
 
     assert worksheet.get(CCA_CLAIM).value == D("2300.00")
 

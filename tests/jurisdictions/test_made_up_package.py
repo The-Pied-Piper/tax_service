@@ -33,8 +33,11 @@ def test_its_manifest_is_read_from_the_package() -> None:
     (manifest,) = YamlJurisdictionSource(PACKAGES.roots()).get_jurisdiction(EX_ON).manifests
 
     assert manifest.inputs == frozenset({"ex-on/levy_base"})
-    assert manifest.outputs == frozenset({"ex-on/levy"})
-    assert manifest.capabilities == (
+    (default,) = manifest.forms
+    assert default.name == "ex-on/return"
+    assert default.instances is None
+    assert default.exports == ("ex-on/levy",)
+    assert default.capabilities == (
         CapabilitySelection(
             name="core/progressive_tax",
             params={"schedule": "ex-on/brackets"},
@@ -57,7 +60,7 @@ def test_every_parameter_slot_has_a_dataset() -> None:
     parameters = YamlParameterSource(PACKAGES.roots())
 
     assert CORE_PACKAGES  # importing them filled the capability and parser registries
-    for selection in manifest.capabilities:
+    for selection in manifest.forms[0].capabilities:
         slots = CapabilityRegistry.shared().get(selection.name).PARAMETERS
         assert set(selection.params) == set(slots)
         for slot, family in selection.params.items():
@@ -69,7 +72,7 @@ def test_every_artifact_slot_names_a_kind_of_its_catalog() -> None:
     (manifest,) = YamlJurisdictionSource(PACKAGES.roots()).get_jurisdiction(EX_ON).manifests
     declared = {"ex-on/levy_base", "ex-on/levy"}  # see the catalog test below
 
-    for selection in manifest.capabilities:
+    for selection in manifest.forms[0].capabilities:
         assert set(selection.consumes.values()) | set(selection.produces.values()) <= declared
 
 

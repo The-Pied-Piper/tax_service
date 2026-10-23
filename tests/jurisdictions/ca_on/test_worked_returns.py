@@ -45,6 +45,7 @@ from app.jurisdictions.ca_on.catalog import (
 from app.main import build_tax_computation
 from app.registrations import JURISDICTIONS
 from tests.application.services.test_tax_computation_forms import (
+    COUNT_DOUBLED,
     artifact_registry,
     rental_manifest,
     service,
@@ -72,9 +73,11 @@ def load(
             .get_jurisdiction(worked.jurisdiction)
             .manifest_for(worked.tax_year)
         )
-    return worked.with_blanks(manifest.inputs, manifest.outputs, artifacts).with_forms(
-        manifest.forms, artifacts
-    )
+    default = worked.jurisdiction.namespace.identifier("return")
+    (default_form,) = (form for form in manifest.forms if form.name == default)
+    return worked.with_blanks(
+        manifest.inputs, frozenset(default_form.exports), artifacts
+    ).with_forms(manifest.forms, artifacts)
 
 
 def check(path: Path) -> None:
@@ -86,17 +89,18 @@ def check(path: Path) -> None:
 def check_against(worked: WorkedReturn, service: TaxComputationService) -> None:
     """Compute `worked` with `service`; assert the return's lines and each instance's lines.
 
-    The flat `expected` lines are checked on the return form's worksheet, the per-instance lines of
-    each form on the worksheet of that instance.
+    The flat `expected` lines are checked on the worksheet of the default form
+    (`<namespace>/return`), the per-instance lines of each form on the worksheet of that instance.
     """
-    result = service.run(worked.jurisdiction, worked.tax_year, *worked.inputs)
+    result = service.compute(worked.jurisdiction, worked.tax_year, *worked.inputs)
 
+    (returned,) = result[worked.jurisdiction.namespace.identifier("return")]
     for expected in worked.expected:
-        found = result.return_worksheet.get(expected.kind)
+        found = returned.get(expected.kind)
         assert found == expected, f"{worked.path.name}: {expected.kind.identifier}"
     for form in worked.form_expected:
         for position, lines in enumerate(form.instances, start=1):
-            worksheet = result.worksheet(form.form, position)
+            worksheet = result[form.form][position - 1]
             for expected in lines:
                 where = f"{worked.path.name}: {form.form}, instance {position}"
                 assert worksheet.get(expected.kind) == expected, (
@@ -1090,10 +1094,17 @@ expected:
 """
 
 
+def with_outputs(manifest: Manifest, outputs: tuple[str, ...]) -> Manifest:
+    """`manifest` with the default form (the first) exporting only `outputs`, and no count."""
+    default, *others = manifest.forms
+    kept = tuple(selection for selection in default.capabilities if selection != COUNT_DOUBLED)
+    return replace(manifest, forms=(replace(default, exports=outputs, capabilities=kept), *others))
+
+
 def check_rentals(tmp_path: Path, text: str) -> None:
     """Load `text` as a worked return of the made-up rental manifest and check it."""
     artifacts = artifact_registry()
-    manifest = replace(rental_manifest(), outputs=frozenset({"ex/total_net_income"}))
+    manifest = with_outputs(rental_manifest(), ("ex/total_net_income",))
     path = tmp_path / "rentals.yaml"
     path.write_text(text)
     worked = load(path, manifest, artifacts)
@@ -1173,7 +1184,7 @@ expected:
 
 def test_a_flat_return_loads_as_one_instance_after_the_blanks_are_filled(tmp_path: Path) -> None:
     artifacts = artifact_registry()
-    manifest = replace(rental_manifest(), outputs=frozenset({"ex/total_net_income"}))
+    manifest = with_outputs(rental_manifest(), ("ex/total_net_income",))
     path = tmp_path / "flat.yaml"
     path.write_text(FLAT_RENTAL_RETURN)
 

@@ -2,9 +2,10 @@
 
 A selection is one capability chosen by a manifest, with its slots filled: `params` maps parameter
 slots to families; `consumes` and `produces` map artifact slots to artifact identifiers. All are
-kept as strings (the registries resolve them later) in read-only mappings. A manifest declares the
-computation's `inputs` and `outputs` as frozensets of artifact identifiers: each non-empty. An
-identifier in both is carried onto the return as entered. Names are made up.
+kept as strings (the registries resolve them later) in read-only mappings. A manifest is a flat
+set of `forms`, peers that together are the return, and the computation's `inputs`, a non-empty
+frozenset of artifact identifiers. A form's `exports` (what the old manifest called `outputs`) may
+include an input, carried onto the return as entered. Names are made up.
 """
 
 from __future__ import annotations
@@ -93,26 +94,27 @@ def test_equal_selections_hash_alike() -> None:
 
 def manifest(
     inputs: frozenset[str] = frozenset({"ex/taxable_base"}),
-    outputs: frozenset[str] = frozenset({"ex/levy"}),
+    outputs: tuple[str, ...] = ("ex/levy",),
 ) -> Manifest:
     return Manifest(
         jurisdiction=JurisdictionCode("EX-ON"),
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(selection(),),
         inputs=inputs,
-        outputs=outputs,
+        forms=(
+            Form(name="ex-on/return", instances=None, exports=outputs, capabilities=(selection(),)),
+        ),
     )
 
 
-def test_manifest_holds_its_inputs_and_outputs() -> None:
-    found = manifest(
-        inputs=frozenset({"ex/taxable_base", "ex/gross_income"}),
-        outputs=frozenset({"ex/levy"}),
-    )
+def test_manifest_holds_its_inputs_and_its_forms() -> None:
+    found = manifest(inputs=frozenset({"ex/taxable_base", "ex/gross_income"}), outputs=("ex/levy",))
 
     assert found.inputs == frozenset({"ex/taxable_base", "ex/gross_income"})
-    assert found.outputs == frozenset({"ex/levy"})
+    (only,) = found.forms
+    assert only.name == "ex-on/return"
+    assert only.exports == ("ex/levy",)
+    assert only.capabilities == (selection(),)
 
 
 def test_manifest_fields_in_order() -> None:
@@ -120,9 +122,7 @@ def test_manifest_fields_in_order() -> None:
         "jurisdiction",
         "version",
         "valid_from_tax_year",
-        "capabilities",
         "inputs",
-        "outputs",
         "forms",
     ]
 
@@ -130,31 +130,24 @@ def test_manifest_fields_in_order() -> None:
 def test_equal_manifests_are_equal_and_hash_alike() -> None:
     assert manifest() == manifest()
     assert hash(manifest()) == hash(manifest())
-    assert manifest() != manifest(outputs=frozenset({"ex/other"}))
+    assert manifest() != manifest(outputs=("ex/other",))
 
 
-@pytest.mark.parametrize("field", ["inputs", "outputs"])
-def test_manifest_rejects_empty_inputs_or_outputs(field: str) -> None:
-    empty: dict[str, frozenset[str]] = {field: frozenset()}
-
-    with pytest.raises(InvalidManifestError, match=f"{field} must name at least one artifact"):
-        manifest(**empty)
+def test_manifest_rejects_empty_inputs() -> None:
+    with pytest.raises(InvalidManifestError, match="inputs must name at least one artifact"):
+        manifest(inputs=frozenset())
 
 
-def test_manifest_accepts_an_identifier_that_is_both_input_and_output() -> None:
-    found = manifest(
-        inputs=frozenset({"ex/taxable_base", "ex/levy"}),
-        outputs=frozenset({"ex/levy"}),
-    )
+def test_manifest_rejects_no_forms() -> None:
+    with pytest.raises(InvalidManifestError, match="forms must name at least one form"):
+        dataclasses.replace(manifest(), forms=())
+
+
+def test_manifest_accepts_an_identifier_that_is_both_input_and_export() -> None:
+    found = manifest(inputs=frozenset({"ex/taxable_base", "ex/levy"}), outputs=("ex/levy",))
 
     assert found.inputs == frozenset({"ex/taxable_base", "ex/levy"})
-    assert found.outputs == frozenset({"ex/levy"})
-
-
-def test_manifest_accepts_inputs_and_outputs_that_are_all_the_same() -> None:
-    found = manifest(inputs=frozenset({"ex/levy"}), outputs=frozenset({"ex/levy"}))
-
-    assert found.inputs == found.outputs == frozenset({"ex/levy"})
+    assert found.forms[0].exports == ("ex/levy",)
 
 
 # --- list slots: a consumed slot filled with a list of identifiers ------------------------------
@@ -212,7 +205,7 @@ def test_selections_with_list_slots_compare_and_hash_by_value() -> None:
 
 def form(
     name: str = "ex/rental",
-    instances: str = "ex/rentals",
+    instances: str | None = "ex/rentals",
     exports: Any = ("ex/net_income", "ex/unit_list"),
     capabilities: Any = None,
 ) -> Form:
@@ -282,6 +275,13 @@ def test_a_form_name_and_instances_are_plain_namespaced_identifiers(field: str, 
         form(**{field: bad})
 
 
+def test_a_form_may_have_no_instances_and_then_runs_once() -> None:
+    found = form(instances=None)
+
+    assert found.instances is None
+    assert found != form()
+
+
 @pytest.mark.parametrize(
     "bad", ["", "net_income", "ex/NetIncome", "ex/rental.net_income", "ex/a/b"]
 )
@@ -302,10 +302,6 @@ def test_two_exports_with_the_same_local_id_are_refused(exports: tuple[str, ...]
     # Both would be produced as `ex/rental.net_income`.
     with pytest.raises(InvalidManifestError, match=r"net_income.*more than once"):
         form(exports=exports)
-
-
-def test_a_manifest_has_no_forms_by_default() -> None:
-    assert manifest().forms == ()
 
 
 def test_manifest_fields_end_with_forms() -> None:
@@ -335,25 +331,21 @@ def test_a_manifest_refuses_two_forms_of_one_name() -> None:
         dataclasses.replace(manifest(), forms=(form(), again))
 
 
-# --- the return form: the form of every selection of `capabilities` -----------------------------
+# --- the default form is an ordinary form ------------------------------------------------------
 #
-# `Manifest.capabilities`, `inputs` and `outputs` are the selections and the starting and ending
-# artifacts of the RETURN form, named `<jurisdiction namespace>/return`; `forms` holds only the
-# other forms. A form of the return's name would be a second return, so it is refused.
+# Nothing in a manifest singles out the form of the return: it is named `<namespace>/return` by
+# the loader's convention only, and is one of `forms` like any other, so a manifest of forms that
+# are all named otherwise is as good.
 
 
-def test_the_return_form_is_named_return_in_the_namespace_of_the_jurisdiction() -> None:
-    assert manifest().return_form_name == "ex-on/return"
-
-
-def test_a_manifest_refuses_a_form_named_like_its_return_form() -> None:
-    clash = form(name="ex-on/return", instances="ex/rentals", exports=("ex/profit",))
-
-    with pytest.raises(InvalidManifestError, match="ex-on/return.*return form"):
-        dataclasses.replace(manifest(), forms=(clash,))
-
-
-def test_a_form_named_return_in_another_namespace_is_allowed() -> None:
-    other = form(name="ex/return", instances="ex/rentals", exports=("ex/profit",))
+def test_a_manifest_needs_no_form_named_return() -> None:
+    other = form(name="ex/rental", instances=None, exports=("ex/profit",))
 
     assert dataclasses.replace(manifest(), forms=(other,)).forms == (other,)
+
+
+def test_a_form_named_return_is_refused_only_as_a_second_of_that_name() -> None:
+    clash = form(name="ex-on/return", instances="ex/rentals", exports=("ex/profit",))
+
+    with pytest.raises(InvalidManifestError, match="ex-on/return.*more than once"):
+        dataclasses.replace(manifest(), forms=(*manifest().forms, clash))

@@ -38,7 +38,7 @@ from app.domain.errors import (
 )
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
@@ -356,9 +356,15 @@ def service(dataset: ParameterDataset[Amount] | None = None) -> TaxComputationSe
         jurisdiction=code,
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(selection,),
         inputs=frozenset({"ca/travel_individuals"}),
-        outputs=frozenset({"ex/allocated_total"}),
+        forms=(
+            Form(
+                name=code.namespace.identifier("return"),
+                instances=None,
+                exports=("ex/allocated_total",),
+                capabilities=(selection,),
+            ),
+        ),
     )
     artifacts = ArtifactRegistry()
     for kind in (TRAVEL_INDIVIDUALS, TOTAL):
@@ -372,7 +378,9 @@ def service(dataset: ParameterDataset[Amount] | None = None) -> TaxComputationSe
 
 
 def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset() -> None:
-    composition = service().compose(JurisdictionCode("CA-ON"), 2025)
+    composition = (
+        service().compose(JurisdictionCode("CA-ON"), 2025).form("ca-on/return").composition
+    )
 
     (built,) = composition.order
     assert isinstance(built, ChartARowCTotal)
@@ -383,14 +391,16 @@ def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset()
 def test_a_computation_gives_the_total_of_the_row_cs() -> None:
     rows = (individual(1, "0"), individual(2, "400", "500", "300"))
 
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, individuals(*rows))
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, individuals(*rows))[
+        "ca-on/return"
+    ][0]
 
     assert worksheet.get(TOTAL).value == D("1200")
     assert isinstance(worksheet.producer_of(TOTAL), ChartARowCTotal)
 
 
 def test_a_computation_with_no_individuals_gives_zero() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, individuals())
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, individuals())["ca-on/return"][0]
 
     assert worksheet.get(TOTAL).value == D("0")
 

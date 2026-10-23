@@ -202,7 +202,7 @@ def test_a_computation_gives_the_closing_list() -> None:
         2025,
         classes(row("8", "10000", "3000", claimed="2000")),
         non_compliant_cca(("8", "300")),
-    )
+    )["ca-on/return"][0]
 
     value = worksheet.get(CLOSING_UCC).value
     assert isinstance(value, RecordList)

@@ -36,7 +36,7 @@ from app.domain.errors import (
 )
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rounding import NO_ROUNDING
@@ -199,9 +199,16 @@ def manifest(
         jurisdiction=EX_ON,
         version=version,
         valid_from_tax_year=valid_from_tax_year,
-        capabilities=selections or (SHIFT, SCALE),  # authored out of order on purpose
         inputs=inputs,
-        outputs=outputs,
+        forms=(
+            Form(
+                name=EX_ON.namespace.identifier("return"),
+                instances=None,
+                exports=tuple(sorted(outputs)),
+                # authored out of order on purpose
+                capabilities=selections or (SHIFT, SCALE),
+            ),
+        ),
     )
 
 
@@ -237,7 +244,7 @@ def service(
 
 
 def test_computes_a_manifest_end_to_end() -> None:
-    worksheet = service().compute(EX_ON, 2025, Artifact(BASE, D("5")))
+    worksheet = service().compute(EX_ON, 2025, Artifact(BASE, D("5")))["ex-on/return"][0]
 
     assert_type(worksheet, Worksheet)
     assert worksheet.get(SCALED).value == D("15")
@@ -249,7 +256,7 @@ def test_computes_a_manifest_end_to_end() -> None:
 
 
 def test_composes_the_manifests_selections_in_contract_order() -> None:
-    composition = service().compose(EX_ON, 2025)
+    composition = service().compose(EX_ON, 2025).form("ex-on/return").composition
 
     assert_type(composition, Composition)
     assert [type(capability) for capability in composition.order] == [Scale, Shift]
@@ -261,8 +268,8 @@ def test_composes_the_manifests_selections_in_contract_order() -> None:
 def test_compose_is_deterministic() -> None:
     computation = service()
 
-    first = computation.compose(EX_ON, 2025).order
-    second = computation.compose(EX_ON, 2025).order
+    first = computation.compose(EX_ON, 2025).form("ex-on/return").composition.order
+    second = computation.compose(EX_ON, 2025).form("ex-on/return").composition.order
 
     def shape(order: tuple[Capability, ...]) -> list[tuple[type, frozenset[Any], frozenset[Any]]]:
         return [(type(c), c.consumes, c.produces) for c in order]
@@ -271,7 +278,7 @@ def test_compose_is_deterministic() -> None:
 
 
 def test_the_composition_takes_and_returns_the_manifests_inputs_and_outputs() -> None:
-    composition = service().compose(EX_ON, 2025)
+    composition = service().compose(EX_ON, 2025).form("ex-on/return").composition
 
     with pytest.raises(InvalidCompositionError, match="missing input 'base'"):
         composition.compute()
@@ -285,8 +292,12 @@ def test_uses_the_manifest_for_the_tax_year_and_that_years_datasets() -> None:
 
     computation = service(manifest(), later, parameters=parameters)
 
-    assert [type(c) for c in computation.compose(EX_ON, 2026).order] == [Scale, Shift]
-    assert [type(c) for c in computation.compose(EX_ON, 2027).order] == [Scale]
+    assert [
+        type(c) for c in computation.compose(EX_ON, 2026).form("ex-on/return").composition.order
+    ] == [Scale, Shift]
+    assert [
+        type(c) for c in computation.compose(EX_ON, 2027).form("ex-on/return").composition.order
+    ] == [Scale]
     assert ("ex/factor", 2026, FACTOR) in parameters.requests
     assert ("ex-on/offset", 2026, OFFSET) in parameters.requests
     assert all(year != 2025 for _family, year, _kind in parameters.requests)
@@ -307,7 +318,7 @@ def test_resolves_through_the_registries_it_was_given_not_the_shared_ones() -> N
     assert "ex/scale" not in CapabilityRegistry.shared().identifiers()
     assert "ex/base" not in ArtifactRegistry.shared().identifiers()
 
-    assert len(service().compose(EX_ON, 2025).order) == 2
+    assert len(service().compose(EX_ON, 2025).form("ex-on/return").composition.order) == 2
 
 
 def test_an_unknown_jurisdiction_is_not_found() -> None:
@@ -593,7 +604,12 @@ def test_a_list_slot_receives_its_kinds_in_manifest_order() -> None:
     parts = ("ex/part_two", "ex/part_three", "ex/part_one")
     total_cls = total_class()
 
-    composition = list_slot_service(list_slot_manifest(parts)).compose(EX_ON, 2025)
+    composition = (
+        list_slot_service(list_slot_manifest(parts))
+        .compose(EX_ON, 2025)
+        .form("ex-on/return")
+        .composition
+    )
 
     total = composition.order[-1]
     assert isinstance(total, total_cls)
@@ -605,7 +621,12 @@ def test_a_list_slot_receives_its_kinds_in_manifest_order() -> None:
 def test_the_list_slot_capability_runs_after_all_three_producers() -> None:
     parts = ("ex/part_two", "ex/part_three", "ex/part_one")
 
-    composition = list_slot_service(list_slot_manifest(parts)).compose(EX_ON, 2025)
+    composition = (
+        list_slot_service(list_slot_manifest(parts))
+        .compose(EX_ON, 2025)
+        .form("ex-on/return")
+        .composition
+    )
 
     assert [type(capability) for capability in composition.order] == [
         Scale,
@@ -620,7 +641,7 @@ def test_computes_a_list_slot_end_to_end() -> None:
 
     worksheet = list_slot_service(list_slot_manifest(parts)).compute(
         EX_ON, 2025, Artifact(BASE, D("5"))
-    )
+    )["ex-on/return"][0]
 
     # part_one = 5 × 3 = 15; part_two = 5 + 1 = 6; part_three = 15 + 1 = 16.
     assert worksheet.get(PART_ONE).value == D("15")
@@ -733,7 +754,9 @@ def test_computes_core_sum_end_to_end() -> None:
 
     parts = ("ex/part_two", "ex/part_three", "ex/part_one")
 
-    worksheet = sum_service(sum_manifest(parts)).compute(EX_ON, 2025, Artifact(BASE, D("5")))
+    worksheet = sum_service(sum_manifest(parts)).compute(EX_ON, 2025, Artifact(BASE, D("5")))[
+        "ex-on/return"
+    ][0]
 
     # part_one = 5 × 3 = 15; part_two = 5 + 1 = 6; part_three = 15 + 1 = 16.
     assert worksheet.get(RESULT).value == D("37")
@@ -747,7 +770,9 @@ def test_computes_core_sum_end_to_end() -> None:
 def test_core_sum_runs_after_all_its_parts() -> None:
     parts = ("ex/part_two", "ex/part_three", "ex/part_one")
 
-    composition = sum_service(sum_manifest(parts)).compose(EX_ON, 2025)
+    composition = (
+        sum_service(sum_manifest(parts)).compose(EX_ON, 2025).form("ex-on/return").composition
+    )
 
     assert type(composition.order[-1]) is sum_class()
     assert composition.order[-1].consumes == frozenset({PART_ONE, PART_TWO, PART_THREE})
@@ -777,7 +802,7 @@ def sum_not_below_zero_service(parts: tuple[str, ...]) -> TaxComputationService:
         consumes={"parts": parts},
         produces={"output": "ex-on/result"},
     )
-    built = manifest(total, *(c for c in base.capabilities if c.name != "core/sum"))
+    built = manifest(total, *(c for c in base.forms[0].capabilities if c.name != "core/sum"))
     capabilities = capability_registry()
     capabilities.register("core/sum_not_below_zero", sum_not_below_zero_class())
     artifacts = artifact_registry()
@@ -791,7 +816,9 @@ def test_computes_core_sum_not_below_zero_end_to_end() -> None:
 
     parts = ("ex/part_two", "ex/part_three", "ex/part_one")
 
-    worksheet = sum_not_below_zero_service(parts).compute(EX_ON, 2025, Artifact(BASE, D("5")))
+    worksheet = sum_not_below_zero_service(parts).compute(EX_ON, 2025, Artifact(BASE, D("5")))[
+        "ex-on/return"
+    ][0]
 
     # part_one = 5 × 3 = 15; part_two = 5 + 1 = 6; part_three = 15 + 1 = 16; 37 is above zero.
     assert worksheet.get(RESULT).value == D("37")
@@ -807,7 +834,9 @@ def test_core_sum_not_below_zero_floors_a_negative_total_end_to_end() -> None:
 
     parts = ("ex/part_two", "ex/part_three", "ex/part_one")
 
-    worksheet = sum_not_below_zero_service(parts).compute(EX_ON, 2025, Artifact(BASE, D("-20")))
+    worksheet = sum_not_below_zero_service(parts).compute(EX_ON, 2025, Artifact(BASE, D("-20")))[
+        "ex-on/return"
+    ][0]
 
     # part_one = −60; part_two = −19; part_three = −59; the sum, −138, is floored: result = 0.
     assert worksheet.get(RESULT).value == D("0")
@@ -821,7 +850,9 @@ def test_core_sum_not_below_zero_floors_a_negative_total_end_to_end() -> None:
 def test_core_sum_not_below_zero_runs_after_all_its_parts() -> None:
     parts = ("ex/part_two", "ex/part_three", "ex/part_one")
 
-    composition = sum_not_below_zero_service(parts).compose(EX_ON, 2025)
+    composition = (
+        sum_not_below_zero_service(parts).compose(EX_ON, 2025).form("ex-on/return").composition
+    )
 
     assert type(composition.order[-1]) is sum_not_below_zero_class()
     assert composition.order[-1].consumes == frozenset({PART_ONE, PART_TWO, PART_THREE})
@@ -897,7 +928,7 @@ def test_computes_core_apply_rate_end_to_end() -> None:
 
     built, _parameters = apply_rate_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5.01")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5.01")))["ex-on/return"][0]
 
     # scaled = 5.01 × 3 = 15.03; result = 15.03 × 0.5 = 7.515, rounded half-up to 7.52.
     assert worksheet.get(SCALED).value == D("15.03")
@@ -917,7 +948,7 @@ def test_computes_core_apply_rate_end_to_end() -> None:
 def test_core_apply_rate_runs_after_its_base_is_produced() -> None:
     built, _parameters = apply_rate_service()
 
-    composition = built.compose(EX_ON, 2025)
+    composition = built.compose(EX_ON, 2025).form("ex-on/return").composition
 
     assert type(composition.order[-1]) is apply_rate_class()
     assert composition.order[-1].consumes == frozenset({SCALED})
@@ -965,7 +996,7 @@ def test_computes_core_subtract_end_to_end() -> None:
 
     worksheet = subtract_service("ex/scaled", "ex/base").compute(
         EX_ON, 2025, Artifact(BASE, D("5.01"))
-    )
+    )["ex-on/return"][0]
 
     # scaled = 5.01 × 3 = 15.03; result = 15.03 − 5.01 = 10.02.
     assert worksheet.get(RESULT).value == D("10.02")
@@ -981,7 +1012,7 @@ def test_core_subtract_produces_a_negative_result_end_to_end() -> None:
 
     worksheet = subtract_service("ex/base", "ex/scaled").compute(
         EX_ON, 2025, Artifact(BASE, D("5.01"))
-    )
+    )["ex-on/return"][0]
 
     # result = 5.01 − 15.03 = −10.02, not floored at zero.
     assert worksheet.get(RESULT).value == D("-10.02")
@@ -991,7 +1022,12 @@ def test_core_subtract_produces_a_negative_result_end_to_end() -> None:
 
 
 def test_core_subtract_runs_after_what_it_consumes_is_produced() -> None:
-    composition = subtract_service("ex/scaled", "ex/base").compose(EX_ON, 2025)
+    composition = (
+        subtract_service("ex/scaled", "ex/base")
+        .compose(EX_ON, 2025)
+        .form("ex-on/return")
+        .composition
+    )
 
     assert type(composition.order[-1]) is subtract_class()
     assert composition.order[-1].consumes == frozenset({SCALED, BASE})
@@ -1029,7 +1065,7 @@ def test_computes_core_subtract_not_below_zero_end_to_end() -> None:
 
     worksheet = subtract_not_below_zero_service("ex/scaled", "ex/base").compute(
         EX_ON, 2025, Artifact(BASE, D("5.01"))
-    )
+    )["ex-on/return"][0]
 
     # scaled = 5.01 × 3 = 15.03; result = 15.03 − 5.01 = 10.02, above zero so unchanged.
     assert worksheet.get(RESULT).value == D("10.02")
@@ -1045,7 +1081,7 @@ def test_core_subtract_not_below_zero_floors_a_negative_difference_end_to_end() 
 
     worksheet = subtract_not_below_zero_service("ex/base", "ex/scaled").compute(
         EX_ON, 2025, Artifact(BASE, D("5.01"))
-    )
+    )["ex-on/return"][0]
 
     # 5.01 − 15.03 = −10.02, floored: result = 0.
     assert worksheet.get(RESULT).value == D("0")
@@ -1056,7 +1092,12 @@ def test_core_subtract_not_below_zero_floors_a_negative_difference_end_to_end() 
 
 
 def test_core_subtract_not_below_zero_runs_after_what_it_consumes_is_produced() -> None:
-    composition = subtract_not_below_zero_service("ex/scaled", "ex/base").compose(EX_ON, 2025)
+    composition = (
+        subtract_not_below_zero_service("ex/scaled", "ex/base")
+        .compose(EX_ON, 2025)
+        .form("ex-on/return")
+        .composition
+    )
 
     assert type(composition.order[-1]) is subtract_not_below_zero_class()
     assert composition.order[-1].consumes == frozenset({SCALED, BASE})
@@ -1136,7 +1177,7 @@ def test_computes_core_credit_amount_as_a_part_of_core_sum_end_to_end() -> None:
 
     built, _parameters = credit_amount_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5")))["ex-on/return"][0]
 
     # part_one = 5 × 3 = 15; part_two = 1000.005, rounded half-up to 1000.01; result = 1015.01.
     assert worksheet.get(PART_TWO).value == D("1000.01")
@@ -1157,7 +1198,7 @@ def test_computes_core_credit_amount_as_a_part_of_core_sum_end_to_end() -> None:
 def test_the_composition_accepts_a_selection_without_consumes() -> None:
     built, _parameters = credit_amount_service()
 
-    composition = built.compose(EX_ON, 2025)
+    composition = built.compose(EX_ON, 2025).form("ex-on/return").composition
 
     (credit,) = [c for c in composition.order if type(c) is credit_amount_class()]
     assert credit.consumes == frozenset()
@@ -1230,7 +1271,7 @@ def test_computes_core_capped_amount_below_the_cap_end_to_end() -> None:
 
     built, _parameters = capped_amount_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5.005")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5.005")))["ex-on/return"][0]
 
     # scaled = 5.005 × 3 = 15.015; below the cap of 20, rounded half-up: result = 15.02.
     assert worksheet.get(SCALED).value == D("15.015")
@@ -1254,7 +1295,7 @@ def test_computes_core_capped_amount_above_the_cap_end_to_end() -> None:
 
     built, _parameters = capped_amount_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("10")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("10")))["ex-on/return"][0]
 
     # scaled = 10 × 3 = 30; above the cap: result = 20, rounded half-up to 20.00.
     assert worksheet.get(RESULT).value == D("20")
@@ -1272,7 +1313,7 @@ def test_computes_core_capped_amount_above_the_cap_end_to_end() -> None:
 def test_core_capped_amount_runs_after_its_base_is_produced() -> None:
     built, _parameters = capped_amount_service()
 
-    composition = built.compose(EX_ON, 2025)
+    composition = built.compose(EX_ON, 2025).form("ex-on/return").composition
 
     assert type(composition.order[-1]) is capped_amount_class()
     assert composition.order[-1].consumes == frozenset({SCALED})
@@ -1354,7 +1395,7 @@ def test_computes_core_lesser_of_three_amounts_end_to_end() -> None:
 
     worksheet = lesser_of_service(lesser_of_manifest(amounts)).compute(
         EX_ON, 2025, Artifact(BASE, D("5"))
-    )
+    )["ex-on/return"][0]
 
     # part_one = 5 × 3 = 15; part_two = 5 + 1 = 6; part_three = 15 + 1 = 16; the least is 6.
     assert worksheet.get(RESULT).value == D("6")
@@ -1372,7 +1413,7 @@ def test_computes_core_lesser_of_two_amounts_end_to_end() -> None:
 
     worksheet = lesser_of_service(lesser_of_manifest(amounts)).compute(
         EX_ON, 2025, Artifact(BASE, D("5"))
-    )
+    )["ex-on/return"][0]
 
     # part_one = 15 and part_three = 16: the lesser is part_one's 15.
     assert worksheet.get(RESULT).value == D("15")
@@ -1384,7 +1425,12 @@ def test_computes_core_lesser_of_two_amounts_end_to_end() -> None:
 def test_core_lesser_of_runs_after_all_its_amounts() -> None:
     amounts = ("ex/part_three", "ex/part_two", "ex/part_one")
 
-    composition = lesser_of_service(lesser_of_manifest(amounts)).compose(EX_ON, 2025)
+    composition = (
+        lesser_of_service(lesser_of_manifest(amounts))
+        .compose(EX_ON, 2025)
+        .form("ex-on/return")
+        .composition
+    )
 
     assert type(composition.order[-1]) is lesser_of_class()
     assert composition.order[-1].consumes == frozenset({PART_ONE, PART_TWO, PART_THREE})
@@ -1463,7 +1509,7 @@ def test_computes_core_greater_of_three_amounts_end_to_end() -> None:
 
     worksheet = greater_of_service(greater_of_manifest(amounts)).compute(
         EX_ON, 2025, Artifact(BASE, D("5"))
-    )
+    )["ex-on/return"][0]
 
     # part_one = 5 × 3 = 15; part_two = 5 + 1 = 6; part_three = 15 + 1 = 16; the greatest is 16.
     assert worksheet.get(RESULT).value == D("16")
@@ -1481,7 +1527,7 @@ def test_computes_core_greater_of_two_amounts_end_to_end() -> None:
 
     worksheet = greater_of_service(greater_of_manifest(amounts)).compute(
         EX_ON, 2025, Artifact(BASE, D("5"))
-    )
+    )["ex-on/return"][0]
 
     # part_one = 15 and part_three = 16: the greater is part_three's 16.
     assert worksheet.get(RESULT).value == D("16")
@@ -1493,7 +1539,12 @@ def test_computes_core_greater_of_two_amounts_end_to_end() -> None:
 def test_core_greater_of_runs_after_all_its_amounts() -> None:
     amounts = ("ex/part_three", "ex/part_two", "ex/part_one")
 
-    composition = greater_of_service(greater_of_manifest(amounts)).compose(EX_ON, 2025)
+    composition = (
+        greater_of_service(greater_of_manifest(amounts))
+        .compose(EX_ON, 2025)
+        .form("ex-on/return")
+        .composition
+    )
 
     assert type(composition.order[-1]) is greater_of_class()
     assert composition.order[-1].consumes == frozenset({PART_ONE, PART_TWO, PART_THREE})
@@ -1565,7 +1616,7 @@ def test_computes_core_contribution_tier_inside_the_band_end_to_end() -> None:
 
     built, _parameters = tiered_contribution_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5.005")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5.005")))["ex-on/return"][0]
 
     # scaled = 5.005 × 3 = 15.015; contributory = 15.015 − 10 = 5.015; × 10% = 0.5015, rounded
     # half-up to 0.50, below the maximum of 2.5.
@@ -1592,7 +1643,7 @@ def test_computes_core_contribution_tier_above_the_band_end_to_end() -> None:
 
     built, _parameters = tiered_contribution_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("20")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("20")))["ex-on/return"][0]
 
     # scaled = 60, above the upper bound: contributory = 40 − 10 = 30; × 10% = 3.00, so the
     # maximum of 2.5 binds.
@@ -1611,7 +1662,7 @@ def test_computes_core_contribution_tier_above_the_band_end_to_end() -> None:
 def test_computes_core_contribution_tier_below_the_band_end_to_end() -> None:
     built, _parameters = tiered_contribution_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("3")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("3")))["ex-on/return"][0]
 
     # scaled = 9, below the lower bound of 10: nothing is contributory, rounded to 0.00.
     assert worksheet.get(RESULT).value == D("0")
@@ -1621,7 +1672,7 @@ def test_computes_core_contribution_tier_below_the_band_end_to_end() -> None:
 def test_core_contribution_tier_runs_after_its_earnings_are_produced() -> None:
     built, _parameters = tiered_contribution_service()
 
-    composition = built.compose(EX_ON, 2025)
+    composition = built.compose(EX_ON, 2025).form("ex-on/return").composition
 
     assert type(composition.order[-1]) is tiered_contribution_class()
     assert composition.order[-1].consumes == frozenset({SCALED})
@@ -1700,7 +1751,7 @@ def test_computes_core_tiered_surcharge_above_all_thresholds_end_to_end() -> Non
 
     built, _parameters = tiered_surcharge_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5.005")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5.005")))["ex-on/return"][0]
 
     # scaled = 5.005 × 3 = 15.015; 20% of 5.015 = 1.003 -> 1.00, 50% of 3.015 = 1.5075 -> 1.51.
     cent = RoundTo(D("0.01"), RoundingMode.HALF_UP)
@@ -1719,7 +1770,7 @@ def test_computes_core_tiered_surcharge_between_the_thresholds_end_to_end() -> N
 
     built, _parameters = tiered_surcharge_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("3.5")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("3.5")))["ex-on/return"][0]
 
     # scaled = 10.5; 20% of 0.5 = 0.10, nothing over 12.
     assert worksheet.get(RESULT).value == D("0.10")
@@ -1730,7 +1781,7 @@ def test_computes_core_tiered_surcharge_between_the_thresholds_end_to_end() -> N
 def test_computes_core_tiered_surcharge_below_the_first_threshold_end_to_end() -> None:
     built, _parameters = tiered_surcharge_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("3")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("3")))["ex-on/return"][0]
 
     # scaled = 9, below both thresholds: no surcharge.
     assert worksheet.get(RESULT).value == D("0")
@@ -1739,7 +1790,7 @@ def test_computes_core_tiered_surcharge_below_the_first_threshold_end_to_end() -
 def test_core_tiered_surcharge_runs_after_its_base_is_produced() -> None:
     built, _parameters = tiered_surcharge_service()
 
-    composition = built.compose(EX_ON, 2025)
+    composition = built.compose(EX_ON, 2025).form("ex-on/return").composition
 
     assert type(composition.order[-1]) is tiered_surcharge_class()
     assert composition.order[-1].consumes == frozenset({SCALED})
@@ -1802,7 +1853,7 @@ def test_computes_core_tiered_surcharge_with_every_tier_at_its_maximum_end_to_en
 
     built, _parameters = capped_surcharge_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5.005")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5.005")))["ex-on/return"][0]
 
     # scaled = 15.015; 20% of 5.015 = 1.003, at most 0.50; 50% of 3.015 = 1.5075, at most 1
     # -> 1.00.
@@ -1823,7 +1874,7 @@ def test_computes_core_tiered_surcharge_with_one_tier_at_its_maximum_end_to_end(
 
     built, _parameters = capped_surcharge_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("4.2")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("4.2")))["ex-on/return"][0]
 
     # scaled = 12.6; 20% of 2.6 = 0.52, at most 0.50; 50% of 0.6 = 0.30, under its maximum.
     assert worksheet.get(RESULT).value == D("0.80")
@@ -1837,7 +1888,7 @@ def test_computes_core_tiered_surcharge_with_one_tier_at_its_maximum_end_to_end(
 def test_computes_core_tiered_surcharge_under_every_maximum_end_to_end() -> None:
     built, _parameters = capped_surcharge_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("3.5")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("3.5")))["ex-on/return"][0]
 
     # scaled = 10.5; 20% of 0.5 = 0.10, under its maximum; nothing over 12.
     assert worksheet.get(RESULT).value == D("0.10")
@@ -1900,7 +1951,7 @@ def test_computes_core_tapered_amount_inside_the_range_end_to_end() -> None:
 
     built, _parameters = tapered_amount_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("7.001")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("7.001")))["ex-on/return"][0]
 
     # scaled = 7.001 × 3 = 21.003; reduction = 5 × 1.003 / 10 = 0.5015; 10 + (5 − 0.5015) =
     # 14.4985, rounded half-up to 14.50.
@@ -1924,7 +1975,7 @@ def test_computes_core_tapered_amount_above_the_range_end_to_end() -> None:
 
     built, _parameters = tapered_amount_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("20")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("20")))["ex-on/return"][0]
 
     # scaled = 60, past 20 + 10: reduction = 5 × 40 / 10 = 20, so only the base amount is left.
     assert worksheet.get(RESULT).value == D("10")
@@ -1937,7 +1988,7 @@ def test_computes_core_tapered_amount_above_the_range_end_to_end() -> None:
 def test_computes_core_tapered_amount_below_the_threshold_end_to_end() -> None:
     built, _parameters = tapered_amount_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5")))["ex-on/return"][0]
 
     # scaled = 15, below the threshold of 20: the full 10 + 5, rounded to 15.00.
     assert worksheet.get(RESULT).value == D("15")
@@ -1947,7 +1998,7 @@ def test_computes_core_tapered_amount_below_the_threshold_end_to_end() -> None:
 def test_core_tapered_amount_runs_after_its_base_is_produced() -> None:
     built, _parameters = tapered_amount_service()
 
-    composition = built.compose(EX_ON, 2025)
+    composition = built.compose(EX_ON, 2025).form("ex-on/return").composition
 
     assert type(composition.order[-1]) is tapered_amount_class()
     assert composition.order[-1].consumes == frozenset({SCALED})
@@ -2024,7 +2075,7 @@ def test_computes_core_per_unit_amount_end_to_end() -> None:
 
     built, _parameters = per_unit_amount_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(COUNT, 3))
+    worksheet = built.compute(EX_ON, 2025, Artifact(COUNT, 3))["ex-on/return"][0]
 
     # 544.5 × 3 = 1633.5, rounded half-up to the cent: 1633.50.
     assert worksheet.get(RESULT).value == D("1633.5")
@@ -2046,7 +2097,7 @@ def test_computes_core_per_unit_amount_end_to_end() -> None:
 def test_computes_core_per_unit_amount_for_a_count_of_zero_end_to_end() -> None:
     built, _parameters = per_unit_amount_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(COUNT, 0))
+    worksheet = built.compute(EX_ON, 2025, Artifact(COUNT, 0))["ex-on/return"][0]
 
     assert worksheet.get(RESULT).value == D("0")
 
@@ -2054,7 +2105,7 @@ def test_computes_core_per_unit_amount_for_a_count_of_zero_end_to_end() -> None:
 def test_core_per_unit_amount_consumes_its_count_as_an_int() -> None:
     built, _parameters = per_unit_amount_service()
 
-    composition = built.compose(EX_ON, 2025)
+    composition = built.compose(EX_ON, 2025).form("ex-on/return").composition
 
     (only,) = composition.order
     assert type(only) is per_unit_amount_class()
@@ -2137,7 +2188,7 @@ def test_computes_core_amount_by_count_end_to_end() -> None:
 
     built, _parameters = amount_by_count_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(COUNT, 2))
+    worksheet = built.compute(EX_ON, 2025, Artifact(COUNT, 2))["ex-on/return"][0]
 
     # The row for 2 is 200.50, already at the cent.
     assert worksheet.get(RESULT).value == D("200.5")
@@ -2162,7 +2213,7 @@ def test_computes_core_amount_by_count_rounding_the_row_end_to_end() -> None:
 
     built, _parameters = amount_by_count_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(COUNT, 4))
+    worksheet = built.compute(EX_ON, 2025, Artifact(COUNT, 4))["ex-on/return"][0]
 
     # The row for 4 is 400.255, half-up to 400.26.
     assert worksheet.get(RESULT).value == D("400.26")
@@ -2185,7 +2236,7 @@ def test_core_amount_by_count_refuses_a_count_without_a_row_end_to_end() -> None
 def test_core_amount_by_count_consumes_its_count_as_an_int() -> None:
     built, _parameters = amount_by_count_service()
 
-    composition = built.compose(EX_ON, 2025)
+    composition = built.compose(EX_ON, 2025).form("ex-on/return").composition
 
     (only,) = composition.order
     assert type(only) is amount_by_count_class()
@@ -2271,7 +2322,7 @@ def test_computes_core_multiple_over_above_the_figure_end_to_end() -> None:
 
     worksheet = built.compute(
         EX_ON, 2025, Artifact(BASE, D("100.005")), Artifact(EXTRA, D("150.0125"))
-    )
+    )["ex-on/return"][0]
 
     # scaled = 100.005 × 3 = 300.015; 2 × 300.015 = 600.030, less 150.0125 = 450.0175, rounded
     # half-up to 450.02.
@@ -2296,7 +2347,9 @@ def test_computes_core_multiple_over_floored_at_zero_end_to_end() -> None:
 
     built, _parameters = multiple_over_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("100")), Artifact(EXTRA, D("700")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("100")), Artifact(EXTRA, D("700")))[
+        "ex-on/return"
+    ][0]
 
     # 2 × 300 = 600, less 700 is below zero: 0, rounded to 0.00.
     assert worksheet.get(RESULT).value == D("0")
@@ -2308,7 +2361,7 @@ def test_computes_core_multiple_over_floored_at_zero_end_to_end() -> None:
 def test_core_multiple_over_runs_after_its_amount_is_produced() -> None:
     built, _parameters = multiple_over_service()
 
-    composition = built.compose(EX_ON, 2025)
+    composition = built.compose(EX_ON, 2025).form("ex-on/return").composition
 
     assert type(composition.order[-1]) is multiple_over_class()
     assert composition.order[-1].consumes == frozenset({SCALED, EXTRA})
@@ -2367,7 +2420,7 @@ def per_unit_into_multiple_over_service() -> TaxComputationService:
 def test_computes_core_per_unit_amount_into_core_multiple_over_end_to_end() -> None:
     worksheet = per_unit_into_multiple_over_service().compute(
         EX_ON, 2025, Artifact(BASE, D("100")), Artifact(COUNT, 2)
-    )
+    )["ex-on/return"][0]
 
     # part_one = 544.5 × 2 = 1089.0, to 1089.00; scaled = 300; 2 × 1089.00 − 300 = 1878.00.
     assert worksheet.get(PART_ONE).value == D("1089")
@@ -2379,7 +2432,7 @@ def test_computes_core_per_unit_amount_into_core_multiple_over_end_to_end() -> N
 def test_computes_core_per_unit_amount_into_core_multiple_over_with_no_units() -> None:
     worksheet = per_unit_into_multiple_over_service().compute(
         EX_ON, 2025, Artifact(BASE, D("100")), Artifact(COUNT, 0)
-    )
+    )["ex-on/return"][0]
 
     # part_one = 0; 2 × 0 − 300 is below zero: 0.
     assert worksheet.get(RESULT).value == D("0")
@@ -2421,7 +2474,7 @@ def test_computes_core_at_most_below_the_bound_end_to_end() -> None:
 
     worksheet = at_most_service().compute(
         EX_ON, 2025, Artifact(BASE, D("5")), Artifact(EXTRA, D("10.50"))
-    )
+    )["ex-on/return"][0]
 
     # scaled = 5 × 3 = 15; extra 10.50 is at most 15, so result = 10.50, unchanged.
     assert worksheet.get(RESULT).value == D("10.50")
@@ -2436,7 +2489,7 @@ def test_computes_core_at_most_equal_to_the_bound_end_to_end() -> None:
 
     worksheet = at_most_service().compute(
         EX_ON, 2025, Artifact(BASE, D("5")), Artifact(EXTRA, D("15"))
-    )
+    )["ex-on/return"][0]
 
     # scaled = 15 and extra = 15: at most the bound, so result = 15.
     assert worksheet.get(RESULT).value == D("15")
@@ -2456,7 +2509,7 @@ def test_core_at_most_above_the_bound_raises_naming_both_kinds_end_to_end() -> N
 
 
 def test_core_at_most_runs_after_what_it_consumes_is_produced() -> None:
-    composition = at_most_service().compose(EX_ON, 2025)
+    composition = at_most_service().compose(EX_ON, 2025).form("ex-on/return").composition
 
     assert type(composition.order[-1]) is at_most_class()
     assert composition.order[-1].consumes == frozenset({EXTRA, SCALED})
@@ -2518,7 +2571,7 @@ def test_computes_core_apply_fraction_end_to_end() -> None:
 
     built, _parameters = apply_fraction_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5")))["ex-on/return"][0]
 
     # scaled = 5 × 3 = 15; result = 15 × 5 / 7 = 10.714285..., rounded half-up to 10.71.
     assert worksheet.get(SCALED).value == D("15")
@@ -2538,7 +2591,7 @@ def test_computes_core_apply_fraction_end_to_end() -> None:
 def test_computes_core_apply_fraction_to_an_exact_quotient_end_to_end() -> None:
     built, _parameters = apply_fraction_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("7")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("7")))["ex-on/return"][0]
 
     # scaled = 21; result = 21 × 5 / 7 = 15 exactly, rounded to 15.00.
     assert worksheet.get(RESULT).value == D("15")
@@ -2577,7 +2630,7 @@ def test_core_apply_fraction_with_an_inexact_quotient_and_no_rounding_names_the_
 def test_core_apply_fraction_runs_after_its_base_is_produced() -> None:
     built, _parameters = apply_fraction_service()
 
-    composition = built.compose(EX_ON, 2025)
+    composition = built.compose(EX_ON, 2025).form("ex-on/return").composition
 
     assert type(composition.order[-1]) is apply_fraction_class()
     assert composition.order[-1].consumes == frozenset({SCALED})
@@ -2654,7 +2707,9 @@ def test_computes_core_apply_ratio_end_to_end() -> None:
 
     built, _parameters = apply_ratio_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5")), Artifact(EXTRA, D("7")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("5")), Artifact(EXTRA, D("7")))[
+        "ex-on/return"
+    ][0]
 
     # scaled = 5 × 3 = 15; result = 15 × 5 / 7 = 10.714285..., rounded half-up to 10.71.
     assert worksheet.get(SCALED).value == D("15")
@@ -2677,7 +2732,9 @@ def test_computes_core_apply_ratio_end_to_end() -> None:
 def test_computes_core_apply_ratio_to_an_exact_quotient_end_to_end() -> None:
     built, _parameters = apply_ratio_service()
 
-    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("7")), Artifact(EXTRA, D("3")))
+    worksheet = built.compute(EX_ON, 2025, Artifact(BASE, D("7")), Artifact(EXTRA, D("3")))[
+        "ex-on/return"
+    ][0]
 
     # scaled = 21; result = 21 × 7 / 3 = 49 exactly, rounded to 49.00.
     assert worksheet.get(RESULT).value == D("49")
@@ -2713,7 +2770,7 @@ def test_core_apply_ratio_with_a_zero_denominator_is_a_validation_error_end_to_e
 def test_core_apply_ratio_runs_after_what_it_consumes_is_produced() -> None:
     built, _parameters = apply_ratio_service()
 
-    composition = built.compose(EX_ON, 2025)
+    composition = built.compose(EX_ON, 2025).form("ex-on/return").composition
 
     assert type(composition.order[-1]) is apply_ratio_class()
     assert composition.order[-1].consumes == frozenset({SCALED, BASE, EXTRA})
@@ -2795,7 +2852,7 @@ def test_computes_core_times_count_end_to_end() -> None:
 
     worksheet = times_count_service().compute(
         EX_ON, 2025, Artifact(BASE, D("5376.50")), Artifact(COUNT, 1)
-    )
+    )["ex-on/return"][0]
 
     # scaled = 5376.50 × 3 = 16129.50; result = 16129.50 × 1 = 16129.50, exact.
     assert worksheet.get(SCALED).value == D("16129.50")
@@ -2812,7 +2869,7 @@ def test_computes_core_times_count_end_to_end() -> None:
 def test_computes_core_times_count_for_a_count_of_two_end_to_end() -> None:
     worksheet = times_count_service().compute(
         EX_ON, 2025, Artifact(BASE, D("5")), Artifact(COUNT, 2)
-    )
+    )["ex-on/return"][0]
 
     # scaled = 15; result = 15 × 2 = 30.
     assert worksheet.get(RESULT).value == D("30")
@@ -2821,7 +2878,7 @@ def test_computes_core_times_count_for_a_count_of_two_end_to_end() -> None:
 def test_computes_core_times_count_for_a_count_of_zero_end_to_end() -> None:
     worksheet = times_count_service().compute(
         EX_ON, 2025, Artifact(BASE, D("5376.50")), Artifact(COUNT, 0)
-    )
+    )["ex-on/return"][0]
 
     # A count of 0 gives a plain zero, not the amount's scale.
     assert worksheet.get(RESULT).value == D("0")
@@ -2829,7 +2886,7 @@ def test_computes_core_times_count_for_a_count_of_zero_end_to_end() -> None:
 
 
 def test_core_times_count_runs_after_its_amount_is_produced() -> None:
-    composition = times_count_service().compose(EX_ON, 2025)
+    composition = times_count_service().compose(EX_ON, 2025).form("ex-on/return").composition
 
     assert type(composition.order[-1]) is times_count_class()
     assert composition.order[-1].consumes == frozenset({SCALED, COUNT})
@@ -2911,7 +2968,7 @@ def test_computes_core_choose_by_count_for_a_count_of_zero_end_to_end() -> None:
 
     worksheet = choose_by_count_service().compute(
         EX_ON, 2025, Artifact(BASE, D("544.50")), Artifact(EXTRA, D("2813")), Artifact(COUNT, 0)
-    )
+    )["ex-on/return"][0]
 
     # scaled = 544.50 × 3 = 1633.50; the count is 0, so result = scaled, unchanged.
     assert worksheet.get(SCALED).value == D("1633.50")
@@ -2928,7 +2985,7 @@ def test_computes_core_choose_by_count_for_a_count_of_one_end_to_end() -> None:
 
     worksheet = choose_by_count_service().compute(
         EX_ON, 2025, Artifact(BASE, D("544.50")), Artifact(EXTRA, D("2813.00")), Artifact(COUNT, 1)
-    )
+    )["ex-on/return"][0]
 
     # The count is 1, so result = extra 2813.00, unchanged; scaled is still produced.
     assert worksheet.get(SCALED).value == D("1633.50")
@@ -2940,14 +2997,14 @@ def test_computes_core_choose_by_count_for_a_count_of_one_end_to_end() -> None:
 def test_computes_core_choose_by_count_for_a_count_of_two_end_to_end() -> None:
     worksheet = choose_by_count_service().compute(
         EX_ON, 2025, Artifact(BASE, D("5")), Artifact(EXTRA, D("7")), Artifact(COUNT, 2)
-    )
+    )["ex-on/return"][0]
 
     # The count is 2: the second candidate, as is, not twice it.
     assert worksheet.get(RESULT).value == D("7")
 
 
 def test_core_choose_by_count_runs_after_its_candidates_are_produced() -> None:
-    composition = choose_by_count_service().compose(EX_ON, 2025)
+    composition = choose_by_count_service().compose(EX_ON, 2025).form("ex-on/return").composition
 
     assert type(composition.order[-1]) is choose_by_count_class()
     assert composition.order[-1].consumes == frozenset({COUNT, SCALED, EXTRA})
@@ -3095,7 +3152,7 @@ def compute_claim(*net_incomes: str) -> Worksheet:
         dependants(*net_incomes),
         Artifact(BASE_AMOUNT, D("28798.00")),
         Artifact(MAXIMUM_AMOUNT, D("8601")),
-    )
+    )["ex-on/return"][0]
 
 
 def test_a_per_item_capability_over_no_records_claims_nothing() -> None:
@@ -3154,7 +3211,7 @@ def test_a_record_list_is_an_ordinary_starting_artifact() -> None:
 
 
 def test_a_per_item_capability_consumes_the_record_list_kind() -> None:
-    composition = per_item_claim_service().compose(EX_ON, 2025)
+    composition = per_item_claim_service().compose(EX_ON, 2025).form("ex-on/return").composition
 
     (claim,) = composition.order
     assert claim.consumes == frozenset({dependants_kind(), BASE_AMOUNT, MAXIMUM_AMOUNT})
@@ -3266,7 +3323,7 @@ def compute_choose_by_range(base: str) -> Worksheet:
         Artifact(LAST, D("30.00")),
         Artifact(FIRST_LIMIT, D("100")),
         Artifact(SECOND_LIMIT, D("200")),
-    )
+    )["ex-on/return"][0]
 
 
 def test_computes_ca_on_choose_by_range_for_the_first_range_end_to_end() -> None:
@@ -3310,7 +3367,7 @@ def test_computes_ca_on_choose_by_range_on_each_limit_end_to_end() -> None:
 
 
 def test_ca_on_choose_by_range_runs_after_its_candidates_and_limits_are_produced() -> None:
-    composition = choose_by_range_service().compose(EX_ON, 2025)
+    composition = choose_by_range_service().compose(EX_ON, 2025).form("ex-on/return").composition
 
     assert type(composition.order[-1]) is choose_by_range_class()
     assert composition.order[-1].consumes == frozenset(
@@ -3346,7 +3403,9 @@ def test_an_input_that_is_also_an_output_is_carried_onto_the_worksheet_as_entere
     )
     entered = Artifact(EXTRA, D("12.50"))
 
-    worksheet = service(carried).compute(EX_ON, 2025, Artifact(BASE, D("5")), entered)
+    worksheet = service(carried).compute(EX_ON, 2025, Artifact(BASE, D("5")), entered)[
+        "ex-on/return"
+    ][0]
 
     assert worksheet.get(EXTRA) == entered
     assert worksheet.producer_of(EXTRA) is None
@@ -3382,7 +3441,9 @@ def business_number_service() -> TaxComputationService:
 def test_a_carried_digits_entry_is_returned_as_entered(text: str) -> None:
     entered = Artifact(business_number_kind(), text)
 
-    worksheet = business_number_service().compute(EX_ON, 2025, Artifact(BASE, D("5")), entered)
+    worksheet = business_number_service().compute(EX_ON, 2025, Artifact(BASE, D("5")), entered)[
+        "ex-on/return"
+    ][0]
 
     assert worksheet.get(business_number_kind()) == entered
     assert worksheet.producer_of(business_number_kind()) is None
@@ -3397,4 +3458,4 @@ def test_a_digits_kind_of_another_number_of_digits_is_not_the_carried_entry() ->
     with pytest.raises(InvalidCompositionError, match="'business_number'"):
         business_number_service().compute(
             EX_ON, 2025, Artifact(BASE, D("5")), Artifact(other, "12345")
-        )
+        )["ex-on/return"][0]

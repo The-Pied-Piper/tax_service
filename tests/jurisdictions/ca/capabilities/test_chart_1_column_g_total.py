@@ -35,7 +35,7 @@ from app.domain.capability import CapabilityRegistry
 from app.domain.errors import InvalidCapabilityError, MissingArtifactError, NotFoundError
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
@@ -360,9 +360,15 @@ def service() -> TaxComputationService:
         jurisdiction=code,
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(selection,),
         inputs=frozenset({"ca/t657_chart_1_rows"}),
-        outputs=frozenset({"ex/column_g_total"}),
+        forms=(
+            Form(
+                name=code.namespace.identifier("return"),
+                instances=None,
+                exports=("ex/column_g_total",),
+                capabilities=(selection,),
+            ),
+        ),
     )
     artifacts = ArtifactRegistry()
     for kind in (T657_CHART_1_ROWS, TOTAL):
@@ -376,7 +382,9 @@ def service() -> TaxComputationService:
 
 
 def test_a_computation_builds_the_capability_from_the_registry() -> None:
-    composition = service().compose(JurisdictionCode("CA-ON"), 2025)
+    composition = (
+        service().compose(JurisdictionCode("CA-ON"), 2025).form("ca-on/return").composition
+    )
 
     (built,) = composition.order
     assert isinstance(built, Chart1ColumnGTotal)
@@ -387,13 +395,15 @@ def test_a_computation_builds_the_capability_from_the_registry() -> None:
 def test_a_computation_gives_the_total_of_the_column_gs() -> None:
     records = (year_row(a="3000", b="1000"), year_row(a="5000", c="4000", d="1500"))
 
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, rows(*records))
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, rows(*records))["ca-on/return"][
+        0
+    ]
 
     assert worksheet.get(TOTAL).value == D("4500")
     assert isinstance(worksheet.producer_of(TOTAL), Chart1ColumnGTotal)
 
 
 def test_a_computation_with_no_rows_gives_zero() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, rows())
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, rows())["ca-on/return"][0]
 
     assert worksheet.get(TOTAL).value == D("0")
