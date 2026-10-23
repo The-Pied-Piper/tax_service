@@ -817,6 +817,19 @@ from the UCC at the end of the year": the caller's amount for the class, a field
 the rental list of capital cost allowance classes. Not the personal part of line 9936, which is
 `rental_cca_personal_part`."""
 
+CCA_HALF_YEAR_RULE_DIFFERS = CATALOG.declare("cca_half_year_rule_differs", int, non_negative=True)
+"""Half-year rule differs from the class, Guide T4002 2025, "Column 18 - Adjustment for current-year
+additions subject to the half-year rule": "some properties are not subject to the half-year rule.
+Some examples are those in Classes 13, 14, 23, 24, 27, 34, and 52, as well as most of those in
+Class 12, such as small tools"; "in a non-arm's length transaction ... you may buy depreciable
+property that the seller continuously owned"; "The half-year rule does not apply when the available
+for use rules ... denies a CCA claim until the second tax year after you acquire the property".
+1 if the row's additions are treated the opposite way from their class for the half-year rule
+(Class 12 dies, jigs, patterns, moulds, lasts, cutting or shaping parts and software are subject
+despite an exempt class; non-arm's length additions and additions whose CCA is denied until the
+second year are exempt despite a subject class), else 0, taken as a count like the forms' other
+yes or no questions; a field of each record of a list of capital cost allowance classes."""
+
 CCA_UCC_AT_END = CATALOG.declare("cca_ucc_at_end", Decimal, non_negative=True)
 """UCC at the end of the year, T776 Area A "Column 24: UCC at the end of the year (column 7 minus
 column 23)" (T2125 column 22): a field of each record of the closing list of capital cost

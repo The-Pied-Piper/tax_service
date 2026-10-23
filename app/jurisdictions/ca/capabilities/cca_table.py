@@ -10,21 +10,26 @@ column 4 the cost of additions that are DIEPs, column 6 the proceeds of disposit
 column 9 the immediate expensing amount; a kind that does not list them leaves them as 0. T776
 Area A Note 9: "you must subtract any remaining personal part of this property's cost from the UCC
 at the end of the year"; a row also holds that part when the kind lists it, else 0, for the closing
-UCC alone. Column 8
-is column 4 minus column 6, at most column 7 and at least 0 (Note 4); column 10 is column 3 minus
-column 9 and column 13 is column 7 minus column 9. A row whose column 4 is above its column 3,
-whose column 6 is above its column 5 or whose column 9 is above its column 8 is refused. Columns 11
-and 12 are "Cost of remaining additions from column 10", so a row whose columns 11 and 12 are above
-its column 10 (its column 3 when it has no column 9) is refused, as is a class the `class_rates`
-dataset does not list (`InvalidRecordError`, naming the item).
+UCC alone. Guide T4002, "Column 18": "most of those in Class 12, such as small tools" are not
+subject to the half-year rule, but "Class 12 tools that are subject to the half-year rule include
+dies, jigs, patterns, moulds, and lasts" and software in Class 12 is; a row also holds whether its
+additions are treated the opposite way from their class for that rule when the kind lists it, else
+not, so a non-arm's length addition or one the available-for-use rules deny until the second year is
+exempt despite a subject class. Column 8 is column 4 minus column 6, at most column 7 and at least 0
+(Note 4); column 10 is column 3 minus column 9 and column 13 is column 7 minus column 9. A row whose
+column 4 is above its column 3, whose column 6 is above its column 5 or whose column 9 is above its
+column 8 is refused. Columns 11 and 12 are "Cost of remaining additions from column 10", so a row
+whose columns 11 and 12 are above its column 10 (its column 3 when it has no column 9) is refused,
+as is a class the `class_rates` dataset does not list (`InvalidRecordError`, naming the item).
 
 As printed: column 7 is column 2 plus column 3 minus column 5; column 14 is column 5 minus column
 10 plus columns 11 and 12; column 15 is column 11 minus column 14 times the class's AIIP factor
 (Note 7); column 16 is column 14 minus column 11; column 17 is column 12 minus column 16 times the
 class's RIIP factor (Note 8); column 18 is one half of column 10 minus columns 11, 12 and 5, or 0
-for a class exempt from the half-year rule; each "If negative, enter "0"". Column 19 is column 13
-plus columns 15 and 17 minus column 18, and the maximum is column 19 times the class's rate;
-column 21 is the maximum, or a lower amount, plus column 9.
+for a class exempt from the half-year rule, the other way round for a row whose additions are
+treated the opposite way from their class (see above); each "If negative, enter "0"". Column 19 is
+column 13 plus columns 15 and 17 minus column 18, and the maximum is column 19 times the class's
+rate; column 21 is the maximum, or a lower amount, plus column 9.
 Columns 15, 17 and 18 and the maximum are worked as exact fractions and rounded once each with the
 dataset's rule.
 
@@ -103,6 +108,7 @@ from app.jurisdictions.ca.catalog import (
     CCA_CLASS_NUMBER,
     CCA_DIEP_ADDITIONS,
     CCA_DIEP_PROCEEDS,
+    CCA_HALF_YEAR_RULE_DIFFERS,
     CCA_IMMEDIATE_EXPENSING,
     CCA_NO_PROPERTY_LEFT,
     CCA_PERSONAL_PART_REMAINING,
@@ -125,7 +131,8 @@ class CcaRow:
     it; `column_22` (0 unless the table consumes it); `fiscal_period_days` (the days of the fiscal
     period, the dataset's full year unless the table consumes it) and whether the row is
     `prorated` (the table consumes it); `personal_part_remaining` (Note 9, 0 unless the list lists
-    it); and `column_7`, `column_8`, `column_10` and `column_13`."""
+    it); `half_year_rule_differs` (column 18, False unless the list lists it); and `column_7`,
+    `column_8`, `column_10` and `column_13`."""
 
     position: int
     class_number: Decimal
@@ -144,6 +151,7 @@ class CcaRow:
     fiscal_period_days: int = 365
     prorated: bool = False
     personal_part_remaining: Decimal = _ZERO
+    half_year_rule_differs: bool = False
 
     @property
     def column_7(self) -> Decimal:
@@ -299,6 +307,9 @@ class CcaTable(Capability):
                 f"{item}: column 6 ({diep_proceeds}) is above column 5 ({proceeds})"
             )
         personal_part_remaining = self._optional(record, CCA_PERSONAL_PART_REMAINING)
+        half_year_rule_differs = CCA_HALF_YEAR_RULE_DIFFERS in record and bool(
+            record[CCA_HALF_YEAR_RULE_DIFFERS]
+        )
         ucc_at_start = Decimal(record[CCA_UCC_AT_START])
         column_8 = max(
             _ZERO, min(diep_additions - diep_proceeds, ucc_at_start + additions - proceeds)
@@ -332,6 +343,7 @@ class CcaTable(Capability):
             fiscal_period_days=self._class_rates.values.full_year_days if days is None else days,
             prorated=days is not None,
             personal_part_remaining=personal_part_remaining,
+            half_year_rule_differs=half_year_rule_differs,
         )
 
     @staticmethod
@@ -360,11 +372,10 @@ class CcaTable(Capability):
             / rate.riip_factor.denominator,
         )
         net_additions = column_10 - row.aiip_additions - row.riip_additions - row.proceeds
-        column_18 = (
-            _ZERO
-            if rate.half_year_rule is HalfYearRule.EXEMPT
-            else self._rounded(rounding, ExactFraction(net_additions) / 2)
-        )
+        # A row flagged as the other way from its class takes the half-year rule the class lacks,
+        # and the reverse.
+        exempt = (rate.half_year_rule is HalfYearRule.EXEMPT) != row.half_year_rule_differs
+        column_18 = _ZERO if exempt else self._rounded(rounding, ExactFraction(net_additions) / 2)
         column_19 = (
             self._rounded(rounding, ExactFraction(row.ucc_at_start) / 2)
             if row.half_year_rule_on_sale

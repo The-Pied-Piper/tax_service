@@ -17,6 +17,7 @@ from app.jurisdictions.ca.catalog.personal_amounts import (
     CCA_CLASS_NUMBER,
     CCA_DIEP_ADDITIONS,
     CCA_DIEP_PROCEEDS,
+    CCA_HALF_YEAR_RULE_DIFFERS,
     CCA_IMMEDIATE_EXPENSING,
     CCA_NO_PROPERTY_LEFT,
     CCA_PERSONAL_PART_REMAINING,
@@ -1282,14 +1283,16 @@ RENTAL_CCA_CLASSES = RecordListKind.declare(
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
         CCA_PERSONAL_PART_REMAINING,
+        CCA_HALF_YEAR_RULE_DIFFERS,
     ),
 )
 """Rental classes, Form T776 Area A "Calculation of capital cost allowance (CCA) claim": a
 starting list with one record for each class, holding the columns the filer enters (class
 number, UCC at the start of the year, additions, the DIEP part of the additions, proceeds, the
 proceeds of DIEPs, the immediate expensing amount, the AIIP and RIIP parts of the additions, the
-CCA claimed), whether any property is left in the class and the remaining personal part of a
-property used for both personal and rental use (Note 9), which only the T776 has."""
+CCA claimed), whether any property is left in the class, the remaining personal part of a
+property used for both personal and rental use (Note 9), which only the T776 has, and whether the
+additions are treated the opposite way from their class for the half-year rule (column 18), last."""
 
 RENTAL_CLOSING_UCC = RecordListKind.declare(
     CATALOG, "rental_closing_ucc", fields=(CCA_CLASS_NUMBER, CCA_UCC_AT_END)
@@ -1845,13 +1848,15 @@ BUSINESS_CCA_CLASSES = RecordListKind.declare(
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
+        CCA_HALF_YEAR_RULE_DIFFERS,
     ),
 )
 """Business classes, Form T2125 Area A "Calculation of capital cost allowance (CCA) claim": a
 starting list with one record for each class, holding the columns the filer enters (class
 number, UCC at the start of the year, additions, the DIEP part of the additions, proceeds, the
 proceeds of DIEPs, the immediate expensing amount, the AIIP and RIIP parts of the additions, the
-CCA claimed) and whether any property is left in the class."""
+CCA claimed), whether any property is left in the class and whether the additions are treated the
+opposite way from their class for the half-year rule (column 18), last."""
 
 BUSINESS_EPOP_ASSOCIATED = CATALOG.declare("business_epop_associated", int, non_negative=True)
 """Whether the filer is associated with an EPOP, Form T2125 Area A endnote 5 "$1.5 million, if you
@@ -2781,13 +2786,15 @@ FARM_CCA_CLASSES = RecordListKind.declare(
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
+        CCA_HALF_YEAR_RULE_DIFFERS,
     ),
 )
 """Farming classes, Form T2042 Area A "Calculation of capital cost allowance (CCA) claim": a
 starting list with one record for each class, holding the columns the filer enters (class
 number, UCC at the start of the year, additions, the DIEP part of the additions, proceeds, the
 proceeds of DIEPs, the immediate expensing amount, the AIIP and RIIP parts of the additions, the
-CCA claimed) and whether any property is left in the class."""
+CCA claimed), whether any property is left in the class and whether the additions are treated the
+opposite way from their class for the half-year rule (column 18), last."""
 
 FARM_EPOP_ASSOCIATED = CATALOG.declare("farm_epop_associated", int, non_negative=True)
 """Whether the filer is associated with an EPOP, Form T2042 Area A endnote 5 "$1.5 million, if you
@@ -3170,13 +3177,15 @@ FISH_CCA_CLASSES = RecordListKind.declare(
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
+        CCA_HALF_YEAR_RULE_DIFFERS,
     ),
 )
 """Fishing classes, Form T2121 Area A "Calculation of capital cost allowance (CCA) claim": a
 starting list with one record for each class, holding the columns the filer enters (class
 number, UCC at the start of the year, additions, the DIEP part of the additions, proceeds, the
 proceeds of DIEPs, the immediate expensing amount, the AIIP and RIIP parts of the additions, the
-CCA claimed) and whether any property is left in the class."""
+CCA claimed), whether any property is left in the class and whether the additions are treated the
+opposite way from their class for the half-year rule (column 18), last."""
 
 FISH_PARTNER = CATALOG.declare("fish_partner", int, non_negative=True)
 """Whether the filer is a partner in the fishing business, Form T2121 amount 5A "Your share of line
