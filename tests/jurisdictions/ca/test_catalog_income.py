@@ -79,6 +79,22 @@ from app.jurisdictions.ca.catalog import (
     FARM_VEHICLE_SALES_TAX_RATE,
     FARMING_INCOME,
     FHSA_INCOME,
+    FISH_EPOP_AGREEMENT_FILED,
+    FISH_EPOP_ASSOCIATED,
+    FISH_EPOP_PERCENTAGE,
+    FISH_EPOP_PERCENTAGE_MAXIMUM,
+    FISH_EPOP_PERCENTAGE_ROOM,
+    FISH_EPOP_PERCENTAGE_TOTAL,
+    FISH_IMMEDIATE_EXPENSING_ALLOCATED,
+    FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    FISH_IMMEDIATE_EXPENSING_CAP,
+    FISH_IMMEDIATE_EXPENSING_CLAIM,
+    FISH_IMMEDIATE_EXPENSING_LIMIT,
+    FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    FISH_IMMEDIATE_EXPENSING_SHARE,
+    FISH_INCOME_BEFORE_CCA,
+    FISH_MINISTER_ALLOCATION,
+    FISH_MINISTER_ALLOCATION_GIVEN,
     FISH_MOTOR_VEHICLE_EXPENSES,
     FISH_VEHICLE_SALES_TAX_RATE,
     FISHING_INCOME,
@@ -445,6 +461,30 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
     assert registry.get("ca/farm_immediate_expensing_limit") is FARM_IMMEDIATE_EXPENSING_LIMIT
     assert registry.get("ca/farm_immediate_expensing_claim") is FARM_IMMEDIATE_EXPENSING_CLAIM
     assert registry.get("ca/farm_income_before_cca") is FARM_INCOME_BEFORE_CCA
+    assert registry.get("ca/fish_epop_associated") is FISH_EPOP_ASSOCIATED
+    assert registry.get("ca/fish_epop_agreement_filed") is FISH_EPOP_AGREEMENT_FILED
+    assert registry.get("ca/fish_epop_percentage") is FISH_EPOP_PERCENTAGE
+    assert registry.get("ca/fish_epop_percentage_total") is FISH_EPOP_PERCENTAGE_TOTAL
+    assert registry.get("ca/fish_minister_allocation_given") is FISH_MINISTER_ALLOCATION_GIVEN
+    assert registry.get("ca/fish_minister_allocation") is FISH_MINISTER_ALLOCATION
+    assert registry.get("ca/fish_immediate_expensing_cap") is FISH_IMMEDIATE_EXPENSING_CAP
+    assert registry.get("ca/fish_epop_percentage_maximum") is FISH_EPOP_PERCENTAGE_MAXIMUM
+    assert registry.get("ca/fish_immediate_expensing_share") is FISH_IMMEDIATE_EXPENSING_SHARE
+    assert registry.get("ca/fish_epop_percentage_room") is FISH_EPOP_PERCENTAGE_ROOM
+    assert (
+        registry.get("ca/fish_immediate_expensing_allocated") is FISH_IMMEDIATE_EXPENSING_ALLOCATED
+    )
+    assert (
+        registry.get("ca/fish_immediate_expensing_associated_limit")
+        is FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT
+    )
+    assert (
+        registry.get("ca/fish_immediate_expensing_limit_before_minister")
+        is FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER
+    )
+    assert registry.get("ca/fish_immediate_expensing_limit") is FISH_IMMEDIATE_EXPENSING_LIMIT
+    assert registry.get("ca/fish_immediate_expensing_claim") is FISH_IMMEDIATE_EXPENSING_CLAIM
+    assert registry.get("ca/fish_income_before_cca") is FISH_INCOME_BEFORE_CCA
     assert registry.get("ca/fishing_income") is FISHING_INCOME
     assert registry.get("ca/workers_compensation_benefits") is WORKERS_COMPENSATION_BENEFITS
     assert registry.get("ca/social_assistance_payments") is SOCIAL_ASSISTANCE_PAYMENTS

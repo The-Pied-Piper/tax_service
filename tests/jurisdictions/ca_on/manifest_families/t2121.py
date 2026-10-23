@@ -1,9 +1,9 @@
 """The CA-ON manifest entries of Form T2121 (see `test_manifest.py` and `test_manifest_t2121.py`).
 
-T2121 is a form of the manifest: its 29 selections belong to the form `ca/t2121` (`FORM_STEPS`),
+T2121 is a form of the manifest: its 39 selections belong to the form `ca/t2121` (`FORM_STEPS`),
 run once for each statement of `ca/t2121_statements`, whose fields are the T2121 inputs
-(`FORM_INPUTS`). The form exports three artifacts, each readable by the other forms as
-`ca/t2121.<export>` (`FORM_EXPORTS`); the return reads one and declares no output for the two
+(`FORM_INPUTS`). The form exports four artifacts, each readable by the other forms as
+`ca/t2121.<export>` (`FORM_EXPORTS`); the return reads one and declares no output for the three
 nothing reads (`OUTPUTS` is empty). The return's own entries are the instances input and the total
 of the net income over the statements that is T1 line 14300 (`STEPS` and `WIRING`); the form selects
 one step over the statement's vehicles, whose printed constants of Charts B and C are datasets.
@@ -12,17 +12,22 @@ one step over the statement's vehicles, whose printed constants of Charts B and 
 from __future__ import annotations
 
 from app.domain.capabilities.choose_by_count import ChooseByCount
+from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.lesser_of import LesserOf
 from app.domain.capabilities.record_total import RecordTotal
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.subtract_not_below_zero import SubtractNotBelowZero
 from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
+from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.domain.record_list import RecordListKind
+from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
 from app.jurisdictions.ca.capabilities.business_vehicle_expenses import BusinessVehicleExpenses
 from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
+from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
 from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
+from app.jurisdictions.ca.capabilities.immediate_expensing_claim import ImmediateExpensingClaim
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
 from app.jurisdictions.ca.catalog import (
@@ -36,6 +41,12 @@ from app.jurisdictions.ca.catalog import (
     FISH_CLOSING_UCC,
     FISH_COMPENSATION_FOR_LOSS,
     FISH_CREW_SHARES,
+    FISH_EPOP_AGREEMENT_FILED,
+    FISH_EPOP_ASSOCIATED,
+    FISH_EPOP_PERCENTAGE,
+    FISH_EPOP_PERCENTAGE_MAXIMUM,
+    FISH_EPOP_PERCENTAGE_ROOM,
+    FISH_EPOP_PERCENTAGE_TOTAL,
     FISH_EXPENSES_SUBTOTAL,
     FISH_FISH_PRODUCTS,
     FISH_FISHING_GEAR,
@@ -60,10 +71,20 @@ from app.jurisdictions.ca.catalog import (
     FISH_HOME_OTHER_EXPENSES,
     FISH_HOME_PERSONAL_USE_PART,
     FISH_HOME_PROPERTY_TAXES,
+    FISH_IMMEDIATE_EXPENSING_ALLOCATED,
+    FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    FISH_IMMEDIATE_EXPENSING_CAP,
+    FISH_IMMEDIATE_EXPENSING_CLAIM,
+    FISH_IMMEDIATE_EXPENSING_LIMIT,
+    FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    FISH_IMMEDIATE_EXPENSING_SHARE,
+    FISH_INCOME_BEFORE_CCA,
     FISH_INSURANCE,
     FISH_INSURANCE_RECOVERY,
     FISH_INTEREST_AND_BANK_CHARGES,
     FISH_MEALS_AND_ENTERTAINMENT,
+    FISH_MINISTER_ALLOCATION,
+    FISH_MINISTER_ALLOCATION_GIVEN,
     FISH_MOTOR_VEHICLE_EXPENSES,
     FISH_NET_INCOME_AFTER_ADJUSTMENTS,
     FISH_NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -109,6 +130,9 @@ FISH_CLOSING_UCC_PER_STATEMENT = RecordListKind(
 )
 FISH_HOME_CARRY_FORWARD_PER_STATEMENT = RecordListKind(
     "ca/t2121.fish_home_carry_forward", fields=(FISH_HOME_CARRY_FORWARD,)
+)
+FISH_IMMEDIATE_EXPENSING_CLAIM_PER_STATEMENT = RecordListKind(
+    "ca/t2121.fish_immediate_expensing_claim", fields=(FISH_IMMEDIATE_EXPENSING_CLAIM,)
 )
 
 FORM_INPUTS = frozenset(
@@ -159,6 +183,12 @@ FORM_INPUTS = frozenset(
         "ca/fish_home_personal_use_part",
         "ca/fish_home_cca",
         "ca/fish_home_carried_forward",
+        "ca/fish_epop_associated",
+        "ca/fish_epop_agreement_filed",
+        "ca/fish_epop_percentage",
+        "ca/fish_epop_percentage_total",
+        "ca/fish_minister_allocation_given",
+        "ca/fish_minister_allocation",
     }
 )
 
@@ -503,6 +533,143 @@ FORM_STEPS = {
         consumes={"classes": "ca/fish_cca_classes"},
         produces={"output": "ca/fish_closing_ucc"},
     ),
+    # T2121 Area A endnote 5 "the immediate expensing limit, which is equal to one of the
+    # following, whichever is applicable: $1.5 million, if you are not associated with any other
+    # eligible person or partnership (EPOP) in the tax year" and Area G "Immediate expensing limit
+    # allocated to your business: Multiply $1.5 million by the percentage assigned to your
+    # business in column 3**" (amount iii): the printed $1.5 million, a dataset.
+    CapabilitySelection(
+        name="core/credit_amount",
+        params={"amount": "ca/fish_immediate_expensing_cap"},
+        consumes={},
+        produces={"output": "ca/fish_immediate_expensing_cap"},
+    ),
+    # T2121 Area G "The total of all percentages assigned under the agreement should not be more
+    # than 100%. If the total is more than 100%, then the associated group has an immediate
+    # expensing limit of zero." and "** If the total of column 3 is more than 100%, enter "0."":
+    # the printed 100%, a dataset, as the form prints a percentage (100 for 100%).
+    CapabilitySelection(
+        name="core/credit_amount",
+        params={"amount": "ca/fish_epop_percentage_maximum"},
+        consumes={},
+        produces={"output": "ca/fish_epop_percentage_maximum"},
+    ),
+    # T2121 Area G "Immediate expensing limit allocated to your business: Multiply $1.5 million by
+    # the percentage assigned to your business in column 3**" (amount iii), first step: $1.5
+    # million times the percentage assigned to your business in column 3, a caller input as the
+    # form prints it (40 for 40%).
+    CapabilitySelection(
+        name="ca/apply_percentage",
+        params={"rounding": "ca/fish_immediate_expensing_rounding"},
+        consumes={
+            "amount": "ca/fish_immediate_expensing_cap",
+            "percentage": "ca/fish_epop_percentage",
+        },
+        produces={"output": "ca/fish_immediate_expensing_share"},
+    ),
+    # T2121 Area G "** If the total of column 3 is more than 100%, enter "0."", first step: 100%
+    # less "Total of percentage assigned: Total of column 3", a caller input; negative when the
+    # total is more than 100%.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/fish_epop_percentage_maximum",
+            "less": "ca/fish_epop_percentage_total",
+        },
+        produces={"output": "ca/fish_epop_percentage_room"},
+    ),
+    # T2121 Area G "Immediate expensing limit allocated to your business: Multiply $1.5 million by
+    # the percentage assigned to your business in column 3**" (amount iii) and "** If the total of
+    # column 3 is more than 100%, enter "0."": the multiple above when 100% less the total of
+    # column 3 is zero or positive, else 0.
+    CapabilitySelection(
+        name="ca/choose_by_sign",
+        params={},
+        consumes={
+            "sign": "ca/fish_epop_percentage_room",
+            "when_positive": (),
+            "when_zero": (),
+            "when_negative": (),
+            "when_non_positive": (),
+            "when_non_negative": ("ca/fish_immediate_expensing_share",),
+        },
+        produces={"output": "ca/fish_immediate_expensing_allocated"},
+    ),
+    # T2121 Area A endnote 5 "amount iii of Area G, if you are associated with one or more EPOPs
+    # in the tax year" and "zero, if you are associated with one or more EPOPs and an agreement
+    # that assigns a percentage to one or more of the associated EPOPs was not filed with the
+    # minister in a prescribed form": amount iii times the count of agreements filed (a caller's 0
+    # or 1), so 0 when none was filed.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/fish_immediate_expensing_allocated",
+            "count": "ca/fish_epop_agreement_filed",
+        },
+        produces={"output": "ca/fish_immediate_expensing_associated_limit"},
+    ),
+    # T2121 Area A endnote 5 "the immediate expensing limit, which is equal to one of the
+    # following, whichever is applicable": a count of 1 for associated with one or more EPOPs (a
+    # caller's 0 or 1) chooses the limit above ("amount iii of Area G" or "zero"); with a count of
+    # 0 it is the $1.5 million ("if you are not associated with any other eligible person or
+    # partnership (EPOP) in the tax year").
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/fish_epop_associated",
+            "when_none": "ca/fish_immediate_expensing_cap",
+            "when_any": "ca/fish_immediate_expensing_associated_limit",
+        },
+        produces={"output": "ca/fish_immediate_expensing_limit_before_minister"},
+    ),
+    # T2121 Area A endnote 5 "any amount allocated by the minister under subsection 1104(3.4) of
+    # the Regulations": a count of 1 (a caller's 0 or 1) chooses the amount allocated by the
+    # minister, as entered, in place of the limit above; with a count of 0 the limit above stands.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/fish_minister_allocation_given",
+            "when_none": "ca/fish_immediate_expensing_limit_before_minister",
+            "when_any": "ca/fish_minister_allocation",
+        },
+        produces={"output": "ca/fish_immediate_expensing_limit"},
+    ),
+    # T2121 Area A endnote 5 "the amount of income, if any, earned from the source of income that
+    # is a business (before any CCA deductions) in which the relevant DIEP is used for the tax
+    # year": line 9369 "Net income (loss) before adjustments" plus line 9936, the CCA it deducted
+    # (the recapture on line 9600 is already in gross income and the terminal loss on line 9270 an
+    # expense), not below zero.
+    CapabilitySelection(
+        name="core/sum_not_below_zero",
+        params={},
+        consumes={
+            "parts": (
+                "ca/fish_net_income_before_adjustments",
+                "ca/fish_cca_claim",
+            ),
+        },
+        produces={"output": "ca/fish_income_before_cca"},
+    ),
+    # T2121 Area A "Total immediate expensing claim for the year: Total of column 9" (line i) and
+    # endnote 5 "The total immediate expensing amount for the tax year (total of column 9) is
+    # limited to the lesser of: the immediate expensing limit"; "the UCC of DIEPs in column 8";
+    # "the amount of income, if any, earned from the source of income that is a business (before
+    # any CCA deductions) in which the relevant DIEP is used for the tax year": the total of
+    # column 9 of the Area A list, refused when above the limit or above the income before CCA.
+    CapabilitySelection(
+        name="ca/immediate_expensing_claim",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={
+            "classes": "ca/fish_cca_classes",
+            "immediate_expensing_limit": "ca/fish_immediate_expensing_limit",
+            "income_before_cca": "ca/fish_income_before_cca",
+        },
+        produces={"output": "ca/fish_immediate_expensing_claim"},
+    ),
 }
 
 INPUTS = frozenset({"ca/t2121_statements"})
@@ -511,11 +678,13 @@ FORM_EXPORTS = (
     "ca/fishing_income",
     "ca/fish_closing_ucc",
     "ca/fish_home_carry_forward",
+    "ca/fish_immediate_expensing_claim",
 )
 
-# The form exports Area A column 22 "UCC at the end of the year" (for next year) and Part 7 line 7O
-# "Business-use-of-home expenses available to carry forward", which no line of the return reads: an
-# export nobody reads is fine, so the return declares no output for them.
+# The form exports Area A column 22 "UCC at the end of the year" (for next year), Part 7 line 7O
+# "Business-use-of-home expenses available to carry forward" and Area A line i "Total immediate
+# expensing claim for the year", which no line of the return reads: an export nobody reads is
+# fine, so the return declares no output for them.
 OUTPUTS: frozenset[str] = frozenset()
 
 # T1 line 14300 "Net": the total of T2121 line 9946 over the statements.
@@ -689,6 +858,60 @@ FORM_WIRING = {
         frozenset({FISHING_INCOME}),
     ),
     (ClosingUcc, frozenset({FISH_CCA_CLASSES}), frozenset({FISH_CLOSING_UCC})),
+    (CreditAmount, frozenset(), frozenset({FISH_IMMEDIATE_EXPENSING_CAP})),
+    (CreditAmount, frozenset(), frozenset({FISH_EPOP_PERCENTAGE_MAXIMUM})),
+    (
+        ApplyPercentage,
+        frozenset({FISH_IMMEDIATE_EXPENSING_CAP, FISH_EPOP_PERCENTAGE}),
+        frozenset({FISH_IMMEDIATE_EXPENSING_SHARE}),
+    ),
+    (
+        Subtract,
+        frozenset({FISH_EPOP_PERCENTAGE_MAXIMUM, FISH_EPOP_PERCENTAGE_TOTAL}),
+        frozenset({FISH_EPOP_PERCENTAGE_ROOM}),
+    ),
+    (
+        ChooseBySign,
+        frozenset({FISH_EPOP_PERCENTAGE_ROOM, FISH_IMMEDIATE_EXPENSING_SHARE}),
+        frozenset({FISH_IMMEDIATE_EXPENSING_ALLOCATED}),
+    ),
+    (
+        TimesCount,
+        frozenset({FISH_IMMEDIATE_EXPENSING_ALLOCATED, FISH_EPOP_AGREEMENT_FILED}),
+        frozenset({FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                FISH_EPOP_ASSOCIATED,
+                FISH_IMMEDIATE_EXPENSING_CAP,
+                FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+            }
+        ),
+        frozenset({FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                FISH_MINISTER_ALLOCATION_GIVEN,
+                FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+                FISH_MINISTER_ALLOCATION,
+            }
+        ),
+        frozenset({FISH_IMMEDIATE_EXPENSING_LIMIT}),
+    ),
+    (
+        SumNotBelowZero,
+        frozenset({FISH_NET_INCOME_BEFORE_ADJUSTMENTS, FISH_CCA_CLAIM}),
+        frozenset({FISH_INCOME_BEFORE_CCA}),
+    ),
+    (
+        ImmediateExpensingClaim,
+        frozenset({FISH_CCA_CLASSES, FISH_IMMEDIATE_EXPENSING_LIMIT, FISH_INCOME_BEFORE_CCA}),
+        frozenset({FISH_IMMEDIATE_EXPENSING_CLAIM}),
+    ),
     (
         BusinessVehicleExpenses,
         frozenset({BUSINESS_VEHICLES, FISH_VEHICLE_SALES_TAX_RATE}),

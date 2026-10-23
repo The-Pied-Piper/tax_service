@@ -360,6 +360,12 @@ from app.jurisdictions.ca.catalog import (
     FISH_CLOSING_UCC,
     FISH_COMPENSATION_FOR_LOSS,
     FISH_CREW_SHARES,
+    FISH_EPOP_AGREEMENT_FILED,
+    FISH_EPOP_ASSOCIATED,
+    FISH_EPOP_PERCENTAGE,
+    FISH_EPOP_PERCENTAGE_MAXIMUM,
+    FISH_EPOP_PERCENTAGE_ROOM,
+    FISH_EPOP_PERCENTAGE_TOTAL,
     FISH_EXPENSES_SUBTOTAL,
     FISH_FISH_PRODUCTS,
     FISH_FISHING_GEAR,
@@ -384,10 +390,20 @@ from app.jurisdictions.ca.catalog import (
     FISH_HOME_OTHER_EXPENSES,
     FISH_HOME_PERSONAL_USE_PART,
     FISH_HOME_PROPERTY_TAXES,
+    FISH_IMMEDIATE_EXPENSING_ALLOCATED,
+    FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    FISH_IMMEDIATE_EXPENSING_CAP,
+    FISH_IMMEDIATE_EXPENSING_CLAIM,
+    FISH_IMMEDIATE_EXPENSING_LIMIT,
+    FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    FISH_IMMEDIATE_EXPENSING_SHARE,
+    FISH_INCOME_BEFORE_CCA,
     FISH_INSURANCE,
     FISH_INSURANCE_RECOVERY,
     FISH_INTEREST_AND_BANK_CHARGES,
     FISH_MEALS_AND_ENTERTAINMENT,
+    FISH_MINISTER_ALLOCATION,
+    FISH_MINISTER_ALLOCATION_GIVEN,
     FISH_MOTOR_VEHICLE_EXPENSES,
     FISH_NET_INCOME_AFTER_ADJUSTMENTS,
     FISH_NET_INCOME_BEFORE_ADJUSTMENTS,
@@ -2936,6 +2952,12 @@ FISH_KINDS: tuple[ArtifactKind[Any], ...] = (
     FISH_HOME_PERSONAL_USE_PART,  # home_personal_use_part
     FISH_HOME_CCA,  # home_cca
     FISH_HOME_CARRIED_FORWARD,  # home_carried_forward
+    FISH_EPOP_ASSOCIATED,  # epop_associated
+    FISH_EPOP_AGREEMENT_FILED,  # epop_agreement_filed
+    FISH_EPOP_PERCENTAGE,  # epop_percentage
+    FISH_EPOP_PERCENTAGE_TOTAL,  # epop_percentage_total
+    FISH_MINISTER_ALLOCATION_GIVEN,  # minister_allocation_given
+    FISH_MINISTER_ALLOCATION,  # minister_allocation
     FISH_RECAPTURED_CCA,  # recaptured_cca
     FISH_OTHER_INCOME_WITH_RECAPTURE,  # other_income_with_recapture
     FISH_GROSS_INCOME,  # gross_income
@@ -2963,6 +2985,16 @@ FISH_KINDS: tuple[ArtifactKind[Any], ...] = (
     FISH_HOME_ALLOWABLE_CLAIM,  # home_allowable_claim
     FISH_HOME_EXPENSES,  # home_expenses
     FISH_CLOSING_UCC,  # closing_ucc
+    FISH_IMMEDIATE_EXPENSING_CAP,  # immediate_expensing_cap
+    FISH_EPOP_PERCENTAGE_MAXIMUM,  # epop_percentage_maximum
+    FISH_IMMEDIATE_EXPENSING_SHARE,  # immediate_expensing_share
+    FISH_EPOP_PERCENTAGE_ROOM,  # epop_percentage_room
+    FISH_IMMEDIATE_EXPENSING_ALLOCATED,  # immediate_expensing_allocated
+    FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,  # immediate_expensing_associated_limit
+    FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,  # immediate_expensing_limit_before_minister
+    FISH_IMMEDIATE_EXPENSING_LIMIT,  # immediate_expensing_limit
+    FISH_IMMEDIATE_EXPENSING_CLAIM,  # immediate_expensing_claim
+    FISH_INCOME_BEFORE_CCA,  # income_before_cca
 )
 
 
@@ -3000,9 +3032,9 @@ def test_the_t2121_partner_count_is_a_non_negative_int_count() -> None:
 def test_the_fish_cca_classes_are_the_area_a_columns_the_caller_enters(
     registry: ArtifactRegistry,
 ) -> None:
-    # Area A of the T2121 keeps the eight columns the T2125's list had before its DIEP columns 4, 6
-    # and 9 (the T2121 takes them in a later change): the same eight field kinds, one record per
-    # class.
+    # Area A of the T2121 has the columns of the T2125's, the DIEP columns 4, 6 and 9 among them:
+    # the same eleven field kinds, in the order of the columns (1, 2, 3, 4, 5, 6, 9, 11, 12, 21)
+    # and the no-property-left question of endnote 3, one record per class.
     assert RECORD_LISTS <= REGISTERED
     assert isinstance(FISH_CCA_CLASSES, RecordListKind)
     assert FISH_CCA_CLASSES.value_type is RecordList
@@ -3010,14 +3042,58 @@ def test_the_fish_cca_classes_are_the_area_a_columns_the_caller_enters(
         CCA_CLASS_NUMBER,
         CCA_UCC_AT_START,
         CCA_ADDITIONS,
+        CCA_DIEP_ADDITIONS,
         CCA_PROCEEDS,
+        CCA_DIEP_PROCEEDS,
+        CCA_IMMEDIATE_EXPENSING,
         CCA_AIIP_ADDITIONS,
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
     )
+    assert len(FISH_CCA_CLASSES.fields) == 11
+    assert FISH_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
     assert FISH_CCA_CLASSES is not BUSINESS_CCA_CLASSES
     assert registry.get("ca/fish_cca_classes") is FISH_CCA_CLASSES
+
+
+@pytest.mark.parametrize(
+    ("kind", "identifier"),
+    [
+        (FISH_EPOP_ASSOCIATED, "ca/fish_epop_associated"),
+        (FISH_EPOP_AGREEMENT_FILED, "ca/fish_epop_agreement_filed"),
+        (FISH_MINISTER_ALLOCATION_GIVEN, "ca/fish_minister_allocation_given"),
+    ],
+)
+def test_the_t2121_area_g_counts_are_non_negative_int_counts(
+    kind: ArtifactKind[int], identifier: str, registry: ArtifactRegistry
+) -> None:
+    # Area A endnote 5 "$1.5 million, if you are not associated with any other eligible person or
+    # partnership (EPOP) in the tax year", "zero, if you are associated with one or more EPOPs and
+    # an agreement ... was not filed with the minister in a prescribed form" and "any amount
+    # allocated by the minister under subsection 1104(3.4) of the Regulations": 1 if so, else 0,
+    # as the form takes it.
+    assert kind.identifier == identifier
+    assert kind.value_type is int
+    assert kind.non_negative is True
+    assert registry.kind(identifier) is kind
+    assert identifier in COUNTS
+
+
+def test_the_t2121_statements_list_the_area_g_and_endnote_5_inputs_last() -> None:
+    # Area G and endnote 5 come after Parts 3 to 7 in the statement: the six inputs are the last
+    # fields of the statement, after the business-use-of-home amount carried forward.
+    fields = T2121_STATEMENTS.fields
+
+    assert fields[-7:] == (
+        FISH_HOME_CARRIED_FORWARD,
+        FISH_EPOP_ASSOCIATED,
+        FISH_EPOP_AGREEMENT_FILED,
+        FISH_EPOP_PERCENTAGE,
+        FISH_EPOP_PERCENTAGE_TOTAL,
+        FISH_MINISTER_ALLOCATION_GIVEN,
+        FISH_MINISTER_ALLOCATION,
+    )
 
 
 def test_the_fish_closing_ucc_is_a_record_list_of_the_class_and_its_closing_ucc(

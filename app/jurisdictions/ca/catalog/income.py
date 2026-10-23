@@ -3121,7 +3121,10 @@ FISH_CCA_CLASSES = RecordListKind.declare(
         CCA_CLASS_NUMBER,
         CCA_UCC_AT_START,
         CCA_ADDITIONS,
+        CCA_DIEP_ADDITIONS,
         CCA_PROCEEDS,
+        CCA_DIEP_PROCEEDS,
+        CCA_IMMEDIATE_EXPENSING,
         CCA_AIIP_ADDITIONS,
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
@@ -3130,8 +3133,9 @@ FISH_CCA_CLASSES = RecordListKind.declare(
 )
 """Fishing classes, Form T2121 Area A "Calculation of capital cost allowance (CCA) claim": a
 starting list with one record for each class, holding the columns the filer enters (class
-number, UCC at the start of the year, additions, proceeds, the AIIP and RIIP parts of the
-additions, the CCA claimed) and whether any property is left in the class."""
+number, UCC at the start of the year, additions, the DIEP part of the additions, proceeds, the
+proceeds of DIEPs, the immediate expensing amount, the AIIP and RIIP parts of the additions, the
+CCA claimed) and whether any property is left in the class."""
 
 FISH_PARTNER = CATALOG.declare("fish_partner", int, non_negative=True)
 """Whether the filer is a partner in the fishing business, Form T2121 amount 5A "Your share of line
@@ -3355,6 +3359,43 @@ FISH_HOME_EXPENSES = CATALOG.declare("fish_home_expenses", Decimal, non_negative
 """Fishing business-use-of-home expenses, Form T2121 line 9945 "Business-use-of-home expenses
 (amount 7P)": amount 7P."""
 
+FISH_EPOP_ASSOCIATED = CATALOG.declare("fish_epop_associated", int, non_negative=True)
+"""Whether the filer is associated with an EPOP, Form T2121 Area A endnote 5 "$1.5 million, if you
+are not associated with any other eligible person or partnership (EPOP) in the tax year" and
+"amount iii of Area G, if you are associated with one or more EPOPs in the tax year": 1 if the
+filer is associated with one or more EPOPs in the tax year, 0 if not, a starting count. It is
+endnote 5's association, whether or not an agreement was filed; Area G is filled in when one
+was."""
+
+FISH_EPOP_AGREEMENT_FILED = CATALOG.declare("fish_epop_agreement_filed", int, non_negative=True)
+"""Whether the agreement was filed, Form T2121 Area A endnote 5 "zero, if you are associated with
+one or more EPOPs and an agreement that assigns a percentage to one or more of the associated
+EPOPs was not filed with the minister in a prescribed form": 1 if the agreement was filed, 0 if
+it was not, a starting count."""
+
+FISH_EPOP_PERCENTAGE = CATALOG.declare("fish_epop_percentage", Decimal, non_negative=True)
+"""Percentage assigned to the fishing business, Form T2121 Area G "Percentage assigned under the
+agreement" (column 3, the filer's own row), entered as the form prints it, 40 for 40%: a starting
+amount."""
+
+FISH_EPOP_PERCENTAGE_TOTAL = CATALOG.declare(
+    "fish_epop_percentage_total", Decimal, non_negative=True
+)
+"""Total of the percentages assigned, Form T2121 Area G "Total of percentage assigned: Total of
+column 3", entered as the form prints it: a starting amount."""
+
+FISH_MINISTER_ALLOCATION_GIVEN = CATALOG.declare(
+    "fish_minister_allocation_given", int, non_negative=True
+)
+"""Whether the minister allocated an amount, Form T2121 Area A endnote 5 "any amount allocated by
+the minister under subsection 1104(3.4) of the Regulations": 1 if an amount was allocated, 0
+otherwise, a starting count."""
+
+FISH_MINISTER_ALLOCATION = CATALOG.declare("fish_minister_allocation", Decimal, non_negative=True)
+"""Amount allocated by the minister, Form T2121 Area A endnote 5 "any amount allocated by the
+minister under subsection 1104(3.4) of the Regulations": a starting amount, which replaces the
+immediate expensing limit when the minister allocated one."""
+
 T2121_STATEMENTS = RecordListKind.declare(
     CATALOG,
     "t2121_statements",
@@ -3405,16 +3446,97 @@ T2121_STATEMENTS = RecordListKind.declare(
         FISH_HOME_PERSONAL_USE_PART,
         FISH_HOME_CCA,
         FISH_HOME_CARRIED_FORWARD,
+        FISH_EPOP_ASSOCIATED,
+        FISH_EPOP_AGREEMENT_FILED,
+        FISH_EPOP_PERCENTAGE,
+        FISH_EPOP_PERCENTAGE_TOTAL,
+        FISH_MINISTER_ALLOCATION_GIVEN,
+        FISH_MINISTER_ALLOCATION,
     ),
 )
 """Statements of Form T2121, one record for each statement of fishing activities the return
-carries (one for each fishing business): its fields are the starting amounts and the Area A list
-of one statement, Parts 3 to 7, in the order of the form. The form `ca/t2121` runs once for each
-record; T1 line 14300 "Net" adds the lines 9946 of the records. A field is not an artifact of the
-return."""
+carries (one for each fishing business): its fields are the starting amounts, the Area A list
+and the Area G answers of one statement, Parts 3 to 7 and Area G, in the order of the form. The
+form `ca/t2121` runs once for each record; T1 line 14300 "Net" adds the lines 9946 of the
+records. A field is not an artifact of the return."""
 
 FISH_CLOSING_UCC = RecordListKind.declare(
     CATALOG, "fish_closing_ucc", fields=(CCA_CLASS_NUMBER, CCA_UCC_AT_END)
 )
 """Fishing closing UCC, Form T2121 Area A "UCC at the end of the year (col. 7 minus col. 21)": one
 record for each class of the fishing classes, holding its class number and column 22."""
+
+FISH_IMMEDIATE_EXPENSING_CAP = CATALOG.declare(
+    "fish_immediate_expensing_cap", Decimal, non_negative=True
+)
+"""Immediate expensing limit when not associated, Form T2121 Area A endnote 5 "$1.5 million, if you
+are not associated with any other eligible person or partnership (EPOP) in the tax year" and Area G
+"Immediate expensing limit allocated to your business: Multiply $1.5 million by the percentage
+assigned to your business in column 3**": the printed $1.5 million, from a dataset."""
+
+FISH_EPOP_PERCENTAGE_MAXIMUM = CATALOG.declare(
+    "fish_epop_percentage_maximum", Decimal, non_negative=True
+)
+"""Largest total of the percentages assigned, Form T2121 Area G "The total of all percentages
+assigned under the agreement should not be more than 100%" and "** If the total of column 3 is more
+than 100%, enter "0."": the printed 100%, from a dataset, as the form prints a percentage (100 for
+100%)."""
+
+FISH_IMMEDIATE_EXPENSING_SHARE = CATALOG.declare(
+    "fish_immediate_expensing_share", Decimal, non_negative=True
+)
+"""Immediate expensing limit times the percentage, the first step of Form T2121 Area G "Immediate
+expensing limit allocated to your business: Multiply $1.5 million by the percentage assigned to
+your business in column 3**": $1.5 million times the percentage assigned to your business."""
+
+FISH_EPOP_PERCENTAGE_ROOM = CATALOG.declare("fish_epop_percentage_room", Decimal)
+"""Room under 100% in the percentages assigned, the test of Form T2121 Area G "** If the total of
+column 3 is more than 100%, enter "0."": 100 less the total of column 3, signed, negative when the
+total is more than 100%."""
+
+FISH_IMMEDIATE_EXPENSING_ALLOCATED = CATALOG.declare(
+    "fish_immediate_expensing_allocated", Decimal, non_negative=True
+)
+"""Immediate expensing limit allocated to the fishing business, Form T2121 Area G "Immediate
+expensing limit allocated to your business: Multiply $1.5 million by the percentage assigned to
+your business in column 3**" and "** If the total of column 3 is more than 100%, enter "0."": the
+multiple, or 0 when the total of column 3 is more than 100%."""
+
+FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT = CATALOG.declare(
+    "fish_immediate_expensing_associated_limit", Decimal, non_negative=True
+)
+"""Immediate expensing limit when associated with an EPOP, Form T2121 Area A endnote 5 "amount iii
+of Area G, if you are associated with one or more EPOPs in the tax year" and "zero, if you are
+associated with one or more EPOPs and an agreement that assigns a percentage to one or more of the
+associated EPOPs was not filed with the minister in a prescribed form": amount iii, or 0 when no
+agreement was filed."""
+
+FISH_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER = CATALOG.declare(
+    "fish_immediate_expensing_limit_before_minister", Decimal, non_negative=True
+)
+"""Immediate expensing limit before any amount allocated by the minister, Form T2121 Area A
+endnote 5 "the immediate expensing limit, which is equal to one of the following, whichever is
+applicable": $1.5 million when not associated with an EPOP, else the limit when associated."""
+
+FISH_IMMEDIATE_EXPENSING_LIMIT = CATALOG.declare(
+    "fish_immediate_expensing_limit", Decimal, non_negative=True
+)
+"""Immediate expensing limit, Form T2121 Area A endnote 5 "the immediate expensing limit, which is
+equal to one of the following, whichever is applicable", including "any amount allocated by the
+minister under subsection 1104(3.4) of the Regulations": the limit above, or the amount allocated
+by the minister when there is one."""
+
+FISH_IMMEDIATE_EXPENSING_CLAIM = CATALOG.declare(
+    "fish_immediate_expensing_claim", Decimal, non_negative=True
+)
+"""Total immediate expensing claim for the year, Form T2121 Area A "Total immediate expensing claim
+for the year: Total of column 9" (line i), limited by endnote 5 to "the lesser of" the immediate
+expensing limit, "the UCC of DIEPs in column 8" and "the amount of income, if any, earned from the
+source of income that is a business (before any CCA deductions)": the total of column 9 over the
+classes."""
+
+FISH_INCOME_BEFORE_CCA = CATALOG.declare("fish_income_before_cca", Decimal, non_negative=True)
+"""Fishing income before CCA, Form T2121 Area A endnote 5 "the amount of income, if any, earned
+from the source of income that is a business (before any CCA deductions) in which the relevant
+DIEP is used for the tax year": line 9369 "Net income (loss) before adjustments" plus line 9936,
+the CCA it deducted, not below zero."""
