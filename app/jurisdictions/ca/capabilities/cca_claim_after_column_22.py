@@ -5,7 +5,8 @@ T776 "Line ii: Total CCA claim for the year: Total of column 23": `CcaClaim` wit
 claim refused above column 21 ("column 19 multiplied by column 20, or a lower amount") less column
 22 ("Non-compliant amount of CCA (see Chart B below)", from the consumed `non_compliant` record
 list, 0 for a class it does not list), which is column 23 as printed ("column 21 minus column
-22"). The output and the trace are those of `CcaClaim`.
+22"). It subclasses `CcaClaim` alone and overrides only the limit step of `CcaTable`; the output
+and the trace are those of `CcaClaim`.
 """
 
 from __future__ import annotations
@@ -20,11 +21,11 @@ from app.domain.parameters.class_rates import ClassRates
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.record_list import RecordList
 from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
-from app.jurisdictions.ca.capabilities.cca_table import AfterColumn22
+from app.jurisdictions.ca.capabilities.cca_table import CcaRow
 
 
 @capability(identifier="cca_claim_after_column_22")
-class CcaClaimAfterColumn22(AfterColumn22, CcaClaim):
+class CcaClaimAfterColumn22(CcaClaim):
     """Produces `output`: the total, over the consumed `classes`, of each class's CCA claimed, at
     most its maximum from the `class_rates` dataset less its column 22 from `non_compliant`."""
 
@@ -40,5 +41,7 @@ class CcaClaimAfterColumn22(AfterColumn22, CcaClaim):
     ) -> None:
         """Wire the capability: its class-rate dataset, the record list it reads, the record list
         of column 22 amounts, the kind produced."""
-        AfterColumn22.__init__(self, class_rates, classes, non_compliant, output)
-        self._output = output
+        super().__init__(class_rates, classes, output, non_compliant=non_compliant)
+
+    def _limit(self, row: CcaRow, maximum: Decimal) -> Decimal:
+        return max(Decimal(0), maximum - row.column_22)
