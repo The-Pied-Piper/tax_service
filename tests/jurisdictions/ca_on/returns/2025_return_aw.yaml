@@ -497,6 +497,12 @@ inputs:
       ca/rental_partner_share: "0"
       ca/rental_partner_gst_hst_rebate: "0"
       ca/rental_partner_other_expenses: "0"
+      ca/rental_epop_associated: "0"
+      ca/rental_epop_agreement_filed: "0"
+      ca/rental_epop_percentage: "0"
+      ca/rental_epop_percentage_total: "0"
+      ca/rental_minister_allocation_given: "0"
+      ca/rental_minister_allocation: "0"
   ca/schedule_8_instances:
     - {}
 expected:

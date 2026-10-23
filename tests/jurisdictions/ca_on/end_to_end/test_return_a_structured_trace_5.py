@@ -7,6 +7,7 @@ from app.domain.parameters.rate_table import RateTableRow
 from app.domain.trace import (
     BracketColumnLine,
     ChosenByRangeLine,
+    ChosenBySignLine,
     ChosenRateAppliedLine,
     ItemsTotalLine,
     RateByIncomeBandLine,
@@ -21,6 +22,9 @@ from app.jurisdictions.ca.catalog import (
     POLITICAL_CREDIT_CHOSEN_COLUMN,
     POLITICAL_CREDIT_COLUMN_1_LINE_7,
     POLITICAL_CREDIT_SHORTCUT_THRESHOLD,
+    RENTAL_EPOP_PERCENTAGE_ROOM,
+    RENTAL_IMMEDIATE_EXPENSING_ALLOCATED,
+    RENTAL_IMMEDIATE_EXPENSING_SHARE,
     RENTAL_NON_COMPLIANT_EXPENSES,
     TAXABLE_INCOME,
 )
@@ -47,12 +51,25 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         *result["ca-on/return"][0].trace,
     )
     totals = {line.output: line for line in trace if isinstance(line, RoundedTotalLine)}
+    chosen_by_sign = {line.output: line for line in trace if isinstance(line, ChosenBySignLine)}
     ranged = {line.output: line for line in trace if isinstance(line, ChosenByRangeLine)}
     bands = {line.output: line for line in trace if isinstance(line, RateByIncomeBandLine)}
     chosen_rates = {
         line.output: line
         for line in trace
         if isinstance(line, ChosenRateAppliedLine) and line.output is CARE_CREDIT
+    }
+    # Form T776 Area G Note 11 "If the total of column 3 is more than 100%, enter "0."": 100% less
+    # the total of column 3 is 100.00 for Return A, not below zero, so line iii is the $1.5 million
+    # times the percentage assigned to you, 0.00 for Return A.
+    assert chosen_by_sign == {
+        RENTAL_IMMEDIATE_EXPENSING_ALLOCATED: ChosenBySignLine(
+            output=RENTAL_IMMEDIATE_EXPENSING_ALLOCATED,
+            sign_kind=RENTAL_EPOP_PERCENTAGE_ROOM,
+            sign=D("100.00"),
+            chosen_kind=RENTAL_IMMEDIATE_EXPENSING_SHARE,
+            chosen_value=D("0.00"),
+        )
     }
     # Schedule ON479-A line 7: 115,000 is "more than $114,000 but not more than $117,600: 19%".
     assert bands == {

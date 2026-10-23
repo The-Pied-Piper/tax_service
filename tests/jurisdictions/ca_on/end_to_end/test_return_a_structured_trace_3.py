@@ -479,7 +479,14 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_CCA_PERSONAL_PART,
     RENTAL_COOWNER_OTHER_EXPENSES,
     RENTAL_DEDUCTIBLE_EXPENSES,
+    RENTAL_EPOP_AGREEMENT_FILED,
+    RENTAL_EPOP_PERCENTAGE_MAXIMUM,
+    RENTAL_EPOP_PERCENTAGE_ROOM,
+    RENTAL_EPOP_PERCENTAGE_TOTAL,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
+    RENTAL_IMMEDIATE_EXPENSING_ALLOCATED,
+    RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    RENTAL_IMMEDIATE_EXPENSING_CAP,
     RENTAL_NET_INCOME_AFTER_CCA,
     RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES,
     RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS,
@@ -1132,6 +1139,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=RENTAL_CCA_CLAIM,
             subtrahend_amount=D("0"),
             result=D("0"),
+        ),
+        # Form T776 Area G Note 11 "If the total of column 3 is more than 100%, enter "0."", first
+        # step: 100% less the total of column 3, Return A's being 0.
+        RENTAL_EPOP_PERCENTAGE_ROOM: SubtractedLine(
+            output=RENTAL_EPOP_PERCENTAGE_ROOM,
+            minuend=RENTAL_EPOP_PERCENTAGE_MAXIMUM,
+            minuend_amount=D("100"),
+            subtrahend=RENTAL_EPOP_PERCENTAGE_TOTAL,
+            subtrahend_amount=D("0"),
+            result=D("100"),
         ),
         RENTAL_PARTNERSHIP_NET_INCOME: SubtractedLine(
             output=RENTAL_PARTNERSHIP_NET_INCOME,
@@ -1884,6 +1901,23 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert amounts == {
+        # Form T776 Note 5 "$1.5 million, if you are not associated with any other eligible person
+        # or partnership (EPOP) in the tax year" and Area G "Line iii: ... Multiply $1.5 million by
+        # the percentage assigned to you in column 3 (see note 11)".
+        RENTAL_IMMEDIATE_EXPENSING_CAP: CreditAmountLine(
+            output=RENTAL_IMMEDIATE_EXPENSING_CAP,
+            basis=Credit(amount=D("1500000")),
+            rounding=CENT,
+            value=D("1500000.00"),
+        ),
+        # Form T776 Area G "should not be more than 100%" and Note 11 "If the total of column 3 is
+        # more than 100%, enter "0."".
+        RENTAL_EPOP_PERCENTAGE_MAXIMUM: CreditAmountLine(
+            output=RENTAL_EPOP_PERCENTAGE_MAXIMUM,
+            basis=Credit(amount=D("100")),
+            rounding=CENT,
+            value=D("100.00"),
+        ),
         # Form T657 Chart 2016 Part 1 amount A: "Maximum capital gains deduction for QFFP and/or
         # QSBCS
         # disposed of in 2016" 412,088.00.
@@ -2807,6 +2841,17 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
         ),
     }
     assert times == {
+        # Form T776 Note 5 "zero, if you are associated with one or more EPOPs and an agreement ...
+        # was not filed": line iii, 0.00 for Return A (no percentage assigned), times a count of 0
+        # agreements filed, a plain 0.
+        RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT: TimesCountLine(
+            output=RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+            amount_kind=RENTAL_IMMEDIATE_EXPENSING_ALLOCATED,
+            amount_value=D("0.00"),
+            count_kind=RENTAL_EPOP_AGREEMENT_FILED,
+            count=0,
+            result=D("0"),
+        ),
         # Form T691 Part 6 line 11, the second branch, "enter the amount from line 9" when "you are
         # a non-resident or deemed resident": line 9, 8136.66, times a count of 0 (Return A is not a
         # non-resident), a plain 0.

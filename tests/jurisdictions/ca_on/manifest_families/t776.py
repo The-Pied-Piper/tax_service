@@ -1,9 +1,9 @@
 """The CA-ON manifest entries of Form T776 (see `test_manifest.py` and `test_manifest_t776.py`).
 
-T776 is a form of the manifest: its 31 selections belong to the form `ca/t776` (`FORM_STEPS`), run
+T776 is a form of the manifest: its 40 selections belong to the form `ca/t776` (`FORM_STEPS`), run
 once for each statement of `ca/t776_statements`, whose fields are the T776 inputs (`FORM_INPUTS`).
-The form exports six artifacts, each readable by the other forms as `ca/t776.<export>`
-(`FORM_EXPORTS`); the return reads one and declares no output for the five nothing reads (`OUTPUTS`
+The form exports seven artifacts, each readable by the other forms as `ca/t776.<export>`
+(`FORM_EXPORTS`); the return reads one and declares no output for the six nothing reads (`OUTPUTS`
 is empty). The return's own entries are the instances input, the total of the net income over the
 statements that is T1 line 12600 (`STEPS` and `WIRING`).
 """
@@ -12,14 +12,19 @@ from __future__ import annotations
 
 from app.domain.capabilities.at_most import AtMost
 from app.domain.capabilities.choose_by_count import ChooseByCount
+from app.domain.capabilities.credit_amount import CreditAmount
 from app.domain.capabilities.record_total import RecordTotal
 from app.domain.capabilities.subtract import Subtract
 from app.domain.capabilities.sum import Sum
 from app.domain.capabilities.sum_not_below_zero import SumNotBelowZero
+from app.domain.capabilities.times_count import TimesCount
 from app.domain.manifest import CapabilitySelection
 from app.domain.record_list import RecordListKind
+from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
 from app.jurisdictions.ca.capabilities.cca_claim_after_column_22 import CcaClaimAfterColumn22
+from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
 from app.jurisdictions.ca.capabilities.closing_ucc_after_column_22 import ClosingUccAfterColumn22
+from app.jurisdictions.ca.capabilities.immediate_expensing_claim import ImmediateExpensingClaim
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.rental_gross_rents import RentalGrossRents
 from app.jurisdictions.ca.capabilities.short_term_rental_gross_rents import (
@@ -60,8 +65,21 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_COOWNER_SHARE,
     RENTAL_COOWNER_TERMINAL_LOSS,
     RENTAL_DEDUCTIBLE_EXPENSES,
+    RENTAL_EPOP_AGREEMENT_FILED,
+    RENTAL_EPOP_ASSOCIATED,
+    RENTAL_EPOP_PERCENTAGE,
+    RENTAL_EPOP_PERCENTAGE_MAXIMUM,
+    RENTAL_EPOP_PERCENTAGE_ROOM,
+    RENTAL_EPOP_PERCENTAGE_TOTAL,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
     RENTAL_GROSS_RENTS,
+    RENTAL_IMMEDIATE_EXPENSING_ALLOCATED,
+    RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    RENTAL_IMMEDIATE_EXPENSING_CAP,
+    RENTAL_IMMEDIATE_EXPENSING_CLAIM,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    RENTAL_IMMEDIATE_EXPENSING_SHARE,
     RENTAL_INSURANCE,
     RENTAL_INSURANCE_PERSONAL_PORTION,
     RENTAL_INSURANCE_SHORT_TERM_PORTION,
@@ -71,6 +89,8 @@ from app.jurisdictions.ca.catalog import (
     RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES,
     RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_PERSONAL_PORTION,
     RENTAL_MANAGEMENT_AND_ADMINISTRATION_FEES_SHORT_TERM_PORTION,
+    RENTAL_MINISTER_ALLOCATION,
+    RENTAL_MINISTER_ALLOCATION_GIVEN,
     RENTAL_MOTOR_VEHICLE_EXPENSES,
     RENTAL_MOTOR_VEHICLE_EXPENSES_PERSONAL_PORTION,
     RENTAL_MOTOR_VEHICLE_EXPENSES_SHORT_TERM_PORTION,
@@ -144,6 +164,9 @@ SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS_PER_STATEMENT = RecordListKind(
     "ca/t776.short_term_rental_non_compliant_cca_by_class",
     fields=(SHORT_TERM_RENTAL_NON_COMPLIANT_CCA_BY_CLASS,),
 )
+RENTAL_IMMEDIATE_EXPENSING_CLAIM_PER_STATEMENT = RecordListKind(
+    "ca/t776.rental_immediate_expensing_claim", fields=(RENTAL_IMMEDIATE_EXPENSING_CLAIM,)
+)
 
 FORM_INPUTS = frozenset(
     {
@@ -203,6 +226,12 @@ FORM_INPUTS = frozenset(
         "ca/rental_partner_share",
         "ca/rental_partner_gst_hst_rebate",
         "ca/rental_partner_other_expenses",
+        "ca/rental_epop_associated",
+        "ca/rental_epop_agreement_filed",
+        "ca/rental_epop_percentage",
+        "ca/rental_epop_percentage_total",
+        "ca/rental_minister_allocation_given",
+        "ca/rental_minister_allocation",
     }
 )
 
@@ -544,6 +573,126 @@ FORM_STEPS = {
         },
         produces={"output": "ca/rental_closing_ucc"},
     ),
+    # T776 Note 5 "the immediate expensing limit, which is equal to one of the following, whichever
+    # is applicable: $1.5 million, if you are not associated with any other eligible person or
+    # partnership (EPOP) in the tax year" and Area G "Line iii: Immediate expensing limit allocated
+    # to you: Multiply $1.5 million by the percentage assigned to you in column 3 (see note 11)":
+    # the printed $1.5 million, a dataset.
+    CapabilitySelection(
+        name="core/credit_amount",
+        params={"amount": "ca/rental_immediate_expensing_cap"},
+        consumes={},
+        produces={"output": "ca/rental_immediate_expensing_cap"},
+    ),
+    # T776 Area G "The total of all percentages assigned under the agreement should not be more than
+    # 100%. If the total is more than 100%, then the associated group has an immediate expensing
+    # limit of zero." and Note 11 "If the total of column 3 is more than 100%, enter "0."": the
+    # printed 100%, a dataset, as the form prints a percentage (100 for 100%).
+    CapabilitySelection(
+        name="core/credit_amount",
+        params={"amount": "ca/rental_epop_percentage_maximum"},
+        consumes={},
+        produces={"output": "ca/rental_epop_percentage_maximum"},
+    ),
+    # T776 Area G "Line iii: Immediate expensing limit allocated to you: Multiply $1.5 million by
+    # the percentage assigned to you in column 3 (see note 11)", first step: $1.5 million times the
+    # percentage assigned to you in column 3, a caller input as the form prints it (40 for 40%).
+    CapabilitySelection(
+        name="ca/apply_percentage",
+        params={"rounding": "ca/rental_immediate_expensing_rounding"},
+        consumes={
+            "amount": "ca/rental_immediate_expensing_cap",
+            "percentage": "ca/rental_epop_percentage",
+        },
+        produces={"output": "ca/rental_immediate_expensing_share"},
+    ),
+    # T776 Area G Note 11 "If the total of column 3 is more than 100%, enter "0."", first step: 100%
+    # less "Total of percentage assigned: Total of column 3", a caller input; negative when the
+    # total is more than 100%.
+    CapabilitySelection(
+        name="core/subtract",
+        params={},
+        consumes={
+            "amount": "ca/rental_epop_percentage_maximum",
+            "less": "ca/rental_epop_percentage_total",
+        },
+        produces={"output": "ca/rental_epop_percentage_room"},
+    ),
+    # T776 Area G "Line iii: Immediate expensing limit allocated to you: Multiply $1.5 million by
+    # the percentage assigned to you in column 3 (see note 11)" and Note 11 "If the total of column
+    # 3 is more than 100%, enter "0."": the multiple above when 100% less the total of column 3 is
+    # zero or positive, else 0.
+    CapabilitySelection(
+        name="ca/choose_by_sign",
+        params={},
+        consumes={
+            "sign": "ca/rental_epop_percentage_room",
+            "when_positive": (),
+            "when_zero": (),
+            "when_negative": (),
+            "when_non_positive": (),
+            "when_non_negative": ("ca/rental_immediate_expensing_share",),
+        },
+        produces={"output": "ca/rental_immediate_expensing_allocated"},
+    ),
+    # T776 Note 5 "amount iii of Area G, if you are associated with one or more EPOPs in the tax
+    # year" and "zero, if you are associated with one or more EPOPs and an agreement that assigns a
+    # percentage to one or more of the associated EPOPs was not filed with the minister in a
+    # prescribed form": line iii times the count of agreements filed (a caller's 0 or 1), so 0 when
+    # none was filed.
+    CapabilitySelection(
+        name="core/times_count",
+        params={},
+        consumes={
+            "amount": "ca/rental_immediate_expensing_allocated",
+            "count": "ca/rental_epop_agreement_filed",
+        },
+        produces={"output": "ca/rental_immediate_expensing_associated_limit"},
+    ),
+    # T776 Note 5 "the immediate expensing limit, which is equal to one of the following, whichever
+    # is applicable": a count of 1 for associated with one or more EPOPs (a caller's 0 or 1) chooses
+    # the limit above ("amount iii of Area G" or "zero"); with a count of 0 it is the $1.5 million
+    # ("if you are not associated with any other eligible person or partnership (EPOP) in the tax
+    # year").
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/rental_epop_associated",
+            "when_none": "ca/rental_immediate_expensing_cap",
+            "when_any": "ca/rental_immediate_expensing_associated_limit",
+        },
+        produces={"output": "ca/rental_immediate_expensing_limit_before_minister"},
+    ),
+    # T776 Note 5 "any amount allocated by the minister under subsection 1104(3.4) of the
+    # Regulations": a count of 1 (a caller's 0 or 1) chooses the amount allocated by the minister,
+    # as entered, in place of the limit above; with a count of 0 the limit above stands.
+    CapabilitySelection(
+        name="core/choose_by_count",
+        params={},
+        consumes={
+            "count": "ca/rental_minister_allocation_given",
+            "when_none": "ca/rental_immediate_expensing_limit_before_minister",
+            "when_any": "ca/rental_minister_allocation",
+        },
+        produces={"output": "ca/rental_immediate_expensing_limit"},
+    ),
+    # T776 "Line i: Total immediate expensing claim for the year: Total of column 9" and Note 5 "The
+    # total immediate expensing amount for the tax year (total of column 9) is limited to the lesser
+    # of: the immediate expensing limit"; "the UCC of DIEPs in column 8"; "the amount of income, if
+    # any, earned from the source of income that is a property (before any CCA deductions) in which
+    # the relevant DIEP is used for the tax year": the total of column 9 of the Area A list, refused
+    # when above the limit or above the income before CCA (amount 5 not below zero).
+    CapabilitySelection(
+        name="ca/immediate_expensing_claim",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={
+            "classes": "ca/rental_cca_classes",
+            "immediate_expensing_limit": "ca/rental_immediate_expensing_limit",
+            "income_before_cca": "ca/rental_cca_limit",
+        },
+        produces={"output": "ca/rental_immediate_expensing_claim"},
+    ),
     # T776 "Line 6: Net income (loss) (amount 5 minus line 9936)": line 9936 is computed above.
     CapabilitySelection(
         name="core/subtract",
@@ -771,6 +920,55 @@ FORM_WIRING = {
         frozenset({RENTAL_NET_INCOME_WITH_RECAPTURE, RENTAL_TERMINAL_LOSS}),
         frozenset({RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS}),
     ),
+    (CreditAmount, frozenset(), frozenset({RENTAL_IMMEDIATE_EXPENSING_CAP})),
+    (CreditAmount, frozenset(), frozenset({RENTAL_EPOP_PERCENTAGE_MAXIMUM})),
+    (
+        ApplyPercentage,
+        frozenset({RENTAL_IMMEDIATE_EXPENSING_CAP, RENTAL_EPOP_PERCENTAGE}),
+        frozenset({RENTAL_IMMEDIATE_EXPENSING_SHARE}),
+    ),
+    (
+        Subtract,
+        frozenset({RENTAL_EPOP_PERCENTAGE_MAXIMUM, RENTAL_EPOP_PERCENTAGE_TOTAL}),
+        frozenset({RENTAL_EPOP_PERCENTAGE_ROOM}),
+    ),
+    (
+        ChooseBySign,
+        frozenset({RENTAL_EPOP_PERCENTAGE_ROOM, RENTAL_IMMEDIATE_EXPENSING_SHARE}),
+        frozenset({RENTAL_IMMEDIATE_EXPENSING_ALLOCATED}),
+    ),
+    (
+        TimesCount,
+        frozenset({RENTAL_IMMEDIATE_EXPENSING_ALLOCATED, RENTAL_EPOP_AGREEMENT_FILED}),
+        frozenset({RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                RENTAL_EPOP_ASSOCIATED,
+                RENTAL_IMMEDIATE_EXPENSING_CAP,
+                RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+            }
+        ),
+        frozenset({RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER}),
+    ),
+    (
+        ChooseByCount,
+        frozenset(
+            {
+                RENTAL_MINISTER_ALLOCATION_GIVEN,
+                RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+                RENTAL_MINISTER_ALLOCATION,
+            }
+        ),
+        frozenset({RENTAL_IMMEDIATE_EXPENSING_LIMIT}),
+    ),
+    (
+        ImmediateExpensingClaim,
+        frozenset({RENTAL_CCA_CLASSES, RENTAL_IMMEDIATE_EXPENSING_LIMIT, RENTAL_CCA_LIMIT}),
+        frozenset({RENTAL_IMMEDIATE_EXPENSING_CLAIM}),
+    ),
     (
         Subtract,
         frozenset({RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS, RENTAL_CCA_CLAIM}),
@@ -802,11 +1000,12 @@ FORM_EXPORTS = (
     "ca/rental_closing_ucc",
     "ca/rental_non_compliant_cca",
     "ca/short_term_rental_non_compliant_cca_by_class",
+    "ca/rental_immediate_expensing_claim",
 )
 
 # The form exports lines nothing on the return reads (line 8140, line 9365, Chart B's line C and
-# total for each class, Area A column 24): an export nobody reads is fine, so the return declares
-# no output for them.
+# total for each class, Area A column 24 and line i): an export nobody reads is fine, so the
+# return declares no output for them.
 OUTPUTS: frozenset[str] = frozenset()
 
 # T1 line 12600 "Net": the total of T776 line 9946 over the statements.

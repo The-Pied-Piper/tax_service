@@ -55,8 +55,8 @@ ROWS: tuple[tuple[str, str, int, int], ...] = (
 # property left): class 1 with a UCC of 10000 (maximum 10000 x 4% = 400.00, column 22 333.33, so
 # at most 66.67) and class 8 with a UCC of 2000 (maximum 2000 x 20% = 400.00, column 22 250.00, so
 # at most 150.00), each claiming the most.
-CLASS_1_ROW = ("1", "10000", "0", "0", "0", "0", "66.67", 0)
-CLASS_8_ROW = ("8", "2000", "0", "0", "0", "0", "150.00", 0)
+CLASS_1_ROW = ("1", "10000", "0", "0", "0", "0", "66.67", 0, "0", "0", "0")
+CLASS_8_ROW = ("8", "2000", "0", "0", "0", "0", "150.00", 0, "0", "0", "0")
 
 
 RETURN_AV_STATEMENT: dict[str, Any] = {
@@ -180,7 +180,13 @@ def test_return_avs_figures_that_depend_on_income_are_return_ads_recomputed_for_
 
 def test_a_class_1_claim_above_400_less_333_33_is_refused() -> None:
     with pytest.raises(InputAboveBoundError) as raised:
-        return_av({"rental_cca_classes_rows": (("1", "10000", "0", "0", "0", "0", "66.68", 0),)})
+        return_av(
+            {
+                "rental_cca_classes_rows": (
+                    ("1", "10000", "0", "0", "0", "0", "66.68", 0, "0", "0", "0"),
+                )
+            }
+        )
 
     assert str(raised.value) == (
         "ca/t776, instance 1: "
@@ -194,7 +200,7 @@ def test_a_class_8_claim_above_400_less_250_is_refused() -> None:
             {
                 "rental_cca_classes_rows": (
                     CLASS_1_ROW,
-                    ("8", "2000", "0", "0", "0", "0", "150.01", 0),
+                    ("8", "2000", "0", "0", "0", "0", "150.01", 0, "0", "0", "0"),
                 )
             }
         )
@@ -212,8 +218,8 @@ def test_the_unlimited_maximum_is_claimable_when_chart_b_has_no_rows() -> None:
         {
             "short_term_rental_cca_units_rows": (),
             "rental_cca_classes_rows": (
-                ("1", "10000", "0", "0", "0", "0", "400.00", 0),
-                ("8", "2000", "0", "0", "0", "0", "400.00", 0),
+                ("1", "10000", "0", "0", "0", "0", "400.00", 0, "0", "0", "0"),
+                ("8", "2000", "0", "0", "0", "0", "400.00", 0, "0", "0", "0"),
             ),
         }
     )["ca/t776"][0]
@@ -224,7 +230,12 @@ def test_the_unlimited_maximum_is_claimable_when_chart_b_has_no_rows() -> None:
 def test_a_class_without_a_chart_b_row_has_a_column_22_of_zero() -> None:
     # Class 10: 30% of 1000 = 300.00, with no Chart B row, may claim all of it.
     statement = return_av(
-        {"rental_cca_classes_rows": (CLASS_1_ROW, ("10", "1000", "0", "0", "0", "0", "300.00", 0))}
+        {
+            "rental_cca_classes_rows": (
+                CLASS_1_ROW,
+                ("10", "1000", "0", "0", "0", "0", "300.00", 0, "0", "0", "0"),
+            )
+        }
     )["ca/t776"][0]
 
     assert statement.get(RENTAL_CCA_TABLE_CLAIM).value == D("366.67")
@@ -236,7 +247,7 @@ def test_a_class_without_a_chart_b_row_has_a_column_22_of_zero() -> None:
             {
                 "rental_cca_classes_rows": (
                     CLASS_1_ROW,
-                    ("10", "1000", "0", "0", "0", "0", "300.01", 0),
+                    ("10", "1000", "0", "0", "0", "0", "300.01", 0, "0", "0", "0"),
                 )
             }
         )

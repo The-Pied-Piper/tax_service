@@ -426,9 +426,19 @@ from app.jurisdictions.ca.catalog import (
     REMAINING_ADJUSTED_LOSSES_1990_TO_1999,
     REMAINING_ADJUSTED_LOSSES_2001_TO_2024,
     REMAINING_ADJUSTED_LOSSES_BEFORE_MAY_23_1985,
+    RENTAL_CCA_LIMIT,
     RENTAL_DEDUCTIBLE_EXPENSES,
+    RENTAL_EPOP_PERCENTAGE_MAXIMUM,
+    RENTAL_EPOP_PERCENTAGE_ROOM,
     RENTAL_EXPENSES_LESS_PERSONAL_PORTION,
     RENTAL_GROSS_RENTS,
+    RENTAL_IMMEDIATE_EXPENSING_ALLOCATED,
+    RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
+    RENTAL_IMMEDIATE_EXPENSING_CAP,
+    RENTAL_IMMEDIATE_EXPENSING_CLAIM,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT,
+    RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER,
+    RENTAL_IMMEDIATE_EXPENSING_SHARE,
     RENTAL_NET_INCOME_AFTER_CCA,
     RENTAL_NET_INCOME_AFTER_COOWNER_EXPENSES,
     RENTAL_NET_INCOME_AFTER_TERMINAL_LOSS,
@@ -1898,7 +1908,7 @@ def test_each_t776_capability_runs_after_what_it_consumes() -> None:
     # The form ca/t776 is wired on its own: its capabilities are ordered inside the form, once
     # for each statement; the return form reads only the form's exports.
     order = service().compose(CA_ON, 2025).form("ca/t776").composition.order
-    assert len(order) == 31
+    assert len(order) == 40
     position = {kind: i for i, capability in enumerate(order) for kind in capability.produces}
     # T776 Parts 3 and 4: lines 8140 and 8141 after the rows, line 8299 after line 8141, the three
     # totals after their boxes, line 1 after A, 9949 and 9366, line 9369 after line 8299 and line
@@ -1921,6 +1931,23 @@ def test_each_t776_capability_runs_after_what_it_consumes() -> None:
     )
     assert position[RENTAL_PARTNER_SHARE_WITH_REBATE] < position[RENTAL_PARTNERSHIP_NET_INCOME]
     assert position[RENTAL_PARTNERSHIP_NET_INCOME] < position[NET_RENTAL_INCOME]
+    # Area G and Note 5: line iii after the $1.5 million and the room under 100%, the limit
+    # chosen after it in turn, and line i after the limit and the income before CCA (amount 5 not
+    # below zero).
+    assert position[RENTAL_IMMEDIATE_EXPENSING_CAP] < position[RENTAL_IMMEDIATE_EXPENSING_SHARE]
+    assert position[RENTAL_EPOP_PERCENTAGE_MAXIMUM] < position[RENTAL_EPOP_PERCENTAGE_ROOM]
+    assert position[RENTAL_EPOP_PERCENTAGE_ROOM] < position[RENTAL_IMMEDIATE_EXPENSING_ALLOCATED]
+    assert (
+        position[RENTAL_IMMEDIATE_EXPENSING_SHARE] < position[RENTAL_IMMEDIATE_EXPENSING_ALLOCATED]
+    )
+    assert (
+        position[RENTAL_IMMEDIATE_EXPENSING_ALLOCATED]
+        < position[RENTAL_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT]
+        < position[RENTAL_IMMEDIATE_EXPENSING_LIMIT_BEFORE_MINISTER]
+        < position[RENTAL_IMMEDIATE_EXPENSING_LIMIT]
+        < position[RENTAL_IMMEDIATE_EXPENSING_CLAIM]
+    )
+    assert position[RENTAL_CCA_LIMIT] < position[RENTAL_IMMEDIATE_EXPENSING_CLAIM]
 
 
 def test_each_t2125_capability_runs_after_what_it_consumes() -> None:
