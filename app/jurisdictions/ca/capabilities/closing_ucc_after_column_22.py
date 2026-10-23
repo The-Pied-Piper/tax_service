@@ -44,4 +44,4 @@ class ClosingUccAfterColumn22(ClosingUcc):
         super().__init__(class_rates, classes, output, non_compliant=non_compliant)
 
     def _limit(self, row: CcaRow, maximum: Decimal) -> Decimal:
-        return max(Decimal(0), maximum - row.column_22)
+        return max(Decimal(0), maximum + row.immediate_expensing - row.column_22)

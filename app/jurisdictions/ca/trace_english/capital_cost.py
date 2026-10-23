@@ -11,6 +11,7 @@ from app.jurisdictions.ca.trace.capital_cost import (
     CcaClaimLine,
     CcaZeroReason,
     ClosingUccLine,
+    ImmediateExpensingLine,
     RecapturedCcaLine,
     TerminalLossLine,
 )
@@ -38,10 +39,12 @@ class CcaClaimRenderer:
         maximum = line.maximum
         rule = line.rounding
         claim = line.claim
+        column_9 = line.column_9
         columns = ", ".join(
             f"column {number} {EnglishFigures.money(amount)}"
             for number, amount in (
                 (7, column_7),
+                *(((9, column_9),) if column_9 > 0 else ()),
                 (14, column_14),
                 (15, column_15),
                 (16, column_16),
@@ -143,16 +146,38 @@ class ClosingUccRenderer:
         zero_reason = line.zero_reason
         claim = line.claim
         result = line.result
+        column_9 = line.column_9
         if zero_reason is CcaZeroReason.COLUMN_7_NEGATIVE:
             found = f"column 7 {EnglishFigures.money(column_7)} is negative:"
         elif zero_reason is CcaZeroReason.NO_PROPERTY_LEFT:
             found = f"column 7 {EnglishFigures.money(column_7)} with no property left:"
         else:
+            including = (
+                f" (including column 9 {EnglishFigures.money(column_9)})" if column_9 > 0 else ""
+            )
             found = (
                 f"column 7 {EnglishFigures.money(column_7)} less claim "
-                f"{EnglishFigures.money(claim)} ="
+                f"{EnglishFigures.money(claim)}{including} ="
             )
         return (
             f"{EnglishFigures.cca_class(output.label, position, class_rate)}: {found} "
             f"{EnglishFigures.money(result)}"
+        )
+
+
+@english_renderer
+class ImmediateExpensingRenderer:
+    """English text for ImmediateExpensingLine."""
+
+    line_class = ImmediateExpensingLine
+
+    def render(self, line: ImmediateExpensingLine) -> str:
+        """The English sentence for `line`."""
+        return (
+            f"{EnglishFigures.cca_class(line.output.label, line.position, line.class_rate)}: "
+            f"column 4 {EnglishFigures.money(line.column_4)} less column 6 "
+            f"{EnglishFigures.money(line.column_6)}, column 7 "
+            f"{EnglishFigures.money(line.column_7)}: "
+            f"column 8 {EnglishFigures.money(line.column_8)}, column 9 "
+            f"{EnglishFigures.money(line.column_9)}"
         )

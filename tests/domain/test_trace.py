@@ -4174,6 +4174,7 @@ def test_cca_claim_line_fields_in_order() -> None:
         "maximum",
         "rounding",
         "claim",
+        "column_9",
     ]
     assert line == CcaClaimLine(
         CCA,
@@ -4341,6 +4342,7 @@ def test_closing_ucc_line_fields_in_order() -> None:
         "zero_reason",
         "claim",
         "result",
+        "column_9",
     ]
     assert line == ClosingUccLine(
         output=CLOSING_UCC,

@@ -4,8 +4,9 @@ T776 "Line ii: Total CCA claim for the year: Total of column 23" and T2125 "Tota
 year: Total of column 21": each class of the consumed record list is one row of the table, worked
 on its own as `CcaTable` works it, with its rate, factors and half-year rule from the
 `class_rates` dataset and columns 15, 17 and 18 and the maximum rounded once each with the
-dataset's rule. The claim of each row is the caller's, from 0 up to the maximum ("column 19
-multiplied by column 20, or a lower amount"), and refused above it. The output is the total of
+dataset's rule. The claim of each row is the caller's, from column 9 (0 for a class without a
+DIEP) up to the maximum ("column 19 multiplied by column 20, or a lower amount") plus column 9,
+and refused outside them. The output is the total of
 the claims, 0 when there are no classes. It records one `CcaClaimLine` for each class, by
 position from 1, then an `ItemsTotalLine`.
 """
@@ -66,6 +67,7 @@ class CcaClaim(CcaTable):
                     maximum=columns.maximum,
                     rounding=self._class_rates.rounding,
                     claim=row.claimed,
+                    column_9=row.immediate_expensing,
                 )
             )
         items = tuple((line.position, line.claim) for line in lines)
