@@ -1,6 +1,6 @@
 """The CA-ON manifest entries of Form T2121 (see `test_manifest.py` and `test_manifest_t2121.py`).
 
-T2121 is a form of the manifest: its 39 selections belong to the form `ca/t2121` (`FORM_STEPS`),
+T2121 is a form of the manifest: its 40 selections belong to the form `ca/t2121` (`FORM_STEPS`),
 run once for each statement of `ca/t2121_statements`, whose fields are the T2121 inputs
 (`FORM_INPUTS`). The form exports four artifacts, each readable by the other forms as
 `ca/t2121.<export>` (`FORM_EXPORTS`); the return reads one and declares no output for the three
@@ -24,9 +24,10 @@ from app.domain.manifest import CapabilitySelection
 from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
 from app.jurisdictions.ca.capabilities.business_vehicle_expenses import BusinessVehicleExpenses
-from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
+from app.jurisdictions.ca.capabilities.cca_claim_prorated import CcaClaimProrated
 from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
-from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
+from app.jurisdictions.ca.capabilities.closing_ucc_prorated import ClosingUccProrated
+from app.jurisdictions.ca.capabilities.fiscal_period_days import FiscalPeriodDays
 from app.jurisdictions.ca.capabilities.immediate_expensing_claim import ImmediateExpensingClaim
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
@@ -48,6 +49,8 @@ from app.jurisdictions.ca.catalog import (
     FISH_EPOP_PERCENTAGE_ROOM,
     FISH_EPOP_PERCENTAGE_TOTAL,
     FISH_EXPENSES_SUBTOTAL,
+    FISH_FISCAL_PERIOD_DAYS,
+    FISH_FISCAL_PERIOD_DAYS_ENTERED,
     FISH_FISH_PRODUCTS,
     FISH_FISHING_GEAR,
     FISH_FUEL_COSTS,
@@ -189,6 +192,7 @@ FORM_INPUTS = frozenset(
         "ca/fish_epop_percentage_total",
         "ca/fish_minister_allocation_given",
         "ca/fish_minister_allocation",
+        "ca/fish_fiscal_period_days_entered",
     }
 )
 
@@ -327,10 +331,25 @@ FORM_STEPS = {
     # T2121 Area A "Total CCA claim for the year: Total of column 21 (enter on line 9936 of Part 4
     # amount ii minus any personal part and any CCA for business-use-of-home expenses)" (amount ii):
     # the CCA claimed on each class of the Area A list, at most its maximum, totalled.
+    # T2121 Area A, the days of the fiscal period (Guide T4002 "You were asking?": "Since your
+    # fiscal period is less than 365 days, you have to prorate your CCA claim ... base your CCA
+    # claim on the number of days in your fiscal period compared to 365 days."): the days the
+    # caller enters, or the 365 of a full year when none are.
     CapabilitySelection(
-        name="ca/cca_claim",
+        name="ca/fiscal_period_days",
         params={"class_rates": "ca/cca_class_rates"},
-        consumes={"classes": "ca/fish_cca_classes"},
+        consumes={"entered": "ca/fish_fiscal_period_days_entered"},
+        produces={"output": "ca/fish_fiscal_period_days"},
+    ),
+    # T2121 Area A "Total CCA claim for the year: Total of column 21", for a fiscal period of the
+    # days above: each class's maximum prorated ($3,500 x 214 / 365), as the Guide prints.
+    CapabilitySelection(
+        name="ca/cca_claim_prorated",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={
+            "classes": "ca/fish_cca_classes",
+            "fiscal_period_days": "ca/fish_fiscal_period_days",
+        },
         produces={"output": "ca/fish_cca_table_claim"},
     ),
     # T2121 Part 4 "Capital cost allowance (CCA). Enter amount ii of Area A minus any personal part
@@ -528,9 +547,12 @@ FORM_STEPS = {
     # and column 22 of each class of the Area A list, a product of the return for next year's column
     # 1.
     CapabilitySelection(
-        name="ca/closing_ucc",
+        name="ca/closing_ucc_prorated",
         params={"class_rates": "ca/cca_class_rates"},
-        consumes={"classes": "ca/fish_cca_classes"},
+        consumes={
+            "classes": "ca/fish_cca_classes",
+            "fiscal_period_days": "ca/fish_fiscal_period_days",
+        },
         produces={"output": "ca/fish_closing_ucc"},
     ),
     # T2121 Area G (page 6) "Immediate expensing limit allocated to your business: Multiply $1.5
@@ -765,7 +787,16 @@ FORM_WIRING = {
         ),
         frozenset({FISH_EXPENSES_SUBTOTAL}),
     ),
-    (CcaClaim, frozenset({FISH_CCA_CLASSES}), frozenset({FISH_CCA_TABLE_CLAIM})),
+    (
+        FiscalPeriodDays,
+        frozenset({FISH_FISCAL_PERIOD_DAYS_ENTERED}),
+        frozenset({FISH_FISCAL_PERIOD_DAYS}),
+    ),
+    (
+        CcaClaimProrated,
+        frozenset({FISH_CCA_CLASSES, FISH_FISCAL_PERIOD_DAYS}),
+        frozenset({FISH_CCA_TABLE_CLAIM}),
+    ),
     (
         Subtract,
         frozenset({FISH_CCA_PERSONAL_PART, FISH_CCA_TABLE_CLAIM}),
@@ -857,7 +888,11 @@ FORM_WIRING = {
         frozenset({FISH_HOME_EXPENSES, FISH_NET_INCOME_AFTER_ADJUSTMENTS}),
         frozenset({FISHING_INCOME}),
     ),
-    (ClosingUcc, frozenset({FISH_CCA_CLASSES}), frozenset({FISH_CLOSING_UCC})),
+    (
+        ClosingUccProrated,
+        frozenset({FISH_CCA_CLASSES, FISH_FISCAL_PERIOD_DAYS}),
+        frozenset({FISH_CLOSING_UCC}),
+    ),
     (CreditAmount, frozenset(), frozenset({FISH_IMMEDIATE_EXPENSING_CAP})),
     (CreditAmount, frozenset(), frozenset({FISH_EPOP_PERCENTAGE_MAXIMUM})),
     (

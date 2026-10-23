@@ -17,6 +17,8 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_EPOP_PERCENTAGE_MAXIMUM,
     BUSINESS_EPOP_PERCENTAGE_ROOM,
     BUSINESS_EPOP_PERCENTAGE_TOTAL,
+    BUSINESS_FISCAL_PERIOD_DAYS,
+    BUSINESS_FISCAL_PERIOD_DAYS_ENTERED,
     BUSINESS_IMMEDIATE_EXPENSING_ALLOCATED,
     BUSINESS_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
     BUSINESS_IMMEDIATE_EXPENSING_CAP,
@@ -65,6 +67,8 @@ from app.jurisdictions.ca.catalog import (
     FARM_EPOP_PERCENTAGE_MAXIMUM,
     FARM_EPOP_PERCENTAGE_ROOM,
     FARM_EPOP_PERCENTAGE_TOTAL,
+    FARM_FISCAL_PERIOD_DAYS,
+    FARM_FISCAL_PERIOD_DAYS_ENTERED,
     FARM_IMMEDIATE_EXPENSING_ALLOCATED,
     FARM_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
     FARM_IMMEDIATE_EXPENSING_CAP,
@@ -85,6 +89,8 @@ from app.jurisdictions.ca.catalog import (
     FISH_EPOP_PERCENTAGE_MAXIMUM,
     FISH_EPOP_PERCENTAGE_ROOM,
     FISH_EPOP_PERCENTAGE_TOTAL,
+    FISH_FISCAL_PERIOD_DAYS,
+    FISH_FISCAL_PERIOD_DAYS_ENTERED,
     FISH_IMMEDIATE_EXPENSING_ALLOCATED,
     FISH_IMMEDIATE_EXPENSING_ASSOCIATED_LIMIT,
     FISH_IMMEDIATE_EXPENSING_CAP,
@@ -434,6 +440,15 @@ def test_the_income_kinds_are_the_registered_ones(registry: ArtifactRegistry) ->
         registry.get("ca/business_immediate_expensing_claim") is BUSINESS_IMMEDIATE_EXPENSING_CLAIM
     )
     assert registry.get("ca/business_income_before_cca") is BUSINESS_INCOME_BEFORE_CCA
+    assert (
+        registry.get("ca/business_fiscal_period_days_entered")
+        is BUSINESS_FISCAL_PERIOD_DAYS_ENTERED
+    )
+    assert registry.get("ca/business_fiscal_period_days") is BUSINESS_FISCAL_PERIOD_DAYS
+    assert registry.get("ca/farm_fiscal_period_days_entered") is FARM_FISCAL_PERIOD_DAYS_ENTERED
+    assert registry.get("ca/farm_fiscal_period_days") is FARM_FISCAL_PERIOD_DAYS
+    assert registry.get("ca/fish_fiscal_period_days_entered") is FISH_FISCAL_PERIOD_DAYS_ENTERED
+    assert registry.get("ca/fish_fiscal_period_days") is FISH_FISCAL_PERIOD_DAYS
     assert registry.get("ca/professional_income") is PROFESSIONAL_INCOME
     assert registry.get("ca/commission_income") is COMMISSION_INCOME
     assert registry.get("ca/farming_income") is FARMING_INCOME

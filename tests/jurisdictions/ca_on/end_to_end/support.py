@@ -85,6 +85,7 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_EPOP_ASSOCIATED,
     BUSINESS_EPOP_PERCENTAGE,
     BUSINESS_EPOP_PERCENTAGE_TOTAL,
+    BUSINESS_FISCAL_PERIOD_DAYS_ENTERED,
     BUSINESS_FUEL_COSTS,
     BUSINESS_GROSS_SALES,
     BUSINESS_HOME_CARRIED_FORWARD,
@@ -252,6 +253,7 @@ from app.jurisdictions.ca.catalog import (
     FARM_EPOP_PERCENTAGE_TOTAL,
     FARM_FEED_SUPPLEMENTS_STRAW_AND_BEDDING,
     FARM_FERTILIZERS_AND_LIME,
+    FARM_FISCAL_PERIOD_DAYS_ENTERED,
     FARM_FLAXSEED,
     FARM_FORAGE_CROPS_OR_SEEDS,
     FARM_FRUIT,
@@ -349,6 +351,7 @@ from app.jurisdictions.ca.catalog import (
     FISH_EPOP_ASSOCIATED,
     FISH_EPOP_PERCENTAGE,
     FISH_EPOP_PERCENTAGE_TOTAL,
+    FISH_FISCAL_PERIOD_DAYS_ENTERED,
     FISH_FISH_PRODUCTS,
     FISH_FISHING_GEAR,
     FISH_FUEL_COSTS,
@@ -1326,6 +1329,7 @@ def t2125_statement(
     business_epop_percentage_total: str = "0",
     business_minister_allocation_given: int = 0,
     business_minister_allocation: str = "0",
+    business_fiscal_period_days_entered: int = 0,
 ) -> dict[ArtifactKind[Any], object]:
     """One Form T2125 statement, a record of `ca/t2125_statements`: its inputs, as given or 0, and
     its vehicles (one record per mapping of `business_vehicles`, none by default)."""
@@ -1339,6 +1343,7 @@ def t2125_statement(
         Artifact(BUSINESS_EPOP_PERCENTAGE_TOTAL, D(business_epop_percentage_total)),
         Artifact(BUSINESS_MINISTER_ALLOCATION_GIVEN, business_minister_allocation_given),
         Artifact(BUSINESS_MINISTER_ALLOCATION, D(business_minister_allocation)),
+        Artifact(BUSINESS_FISCAL_PERIOD_DAYS_ENTERED, business_fiscal_period_days_entered),
         business_vehicles(*business_vehicles_rows),
     ]
     return {artifact.kind: artifact.value for artifact in artifacts}
@@ -1501,6 +1506,7 @@ def t2042_statement(
     farm_epop_percentage_total: str = "0",
     farm_minister_allocation_given: int = 0,
     farm_minister_allocation: str = "0",
+    farm_fiscal_period_days_entered: int = 0,
 ) -> dict[ArtifactKind[Any], object]:
     """One Form T2042 statement, a record of `ca/t2042_statements`: its inputs, as given or 0, and
     its vehicles (one record per mapping of `business_vehicles`, none by default)."""
@@ -1514,6 +1520,7 @@ def t2042_statement(
         Artifact(FARM_EPOP_PERCENTAGE_TOTAL, D(farm_epop_percentage_total)),
         Artifact(FARM_MINISTER_ALLOCATION_GIVEN, farm_minister_allocation_given),
         Artifact(FARM_MINISTER_ALLOCATION, D(farm_minister_allocation)),
+        Artifact(FARM_FISCAL_PERIOD_DAYS_ENTERED, farm_fiscal_period_days_entered),
         business_vehicles(*farm_vehicles_rows),
     ]
     return {artifact.kind: artifact.value for artifact in artifacts}
@@ -1639,6 +1646,7 @@ def t2121_statement(
     fish_epop_percentage_total: str = "0",
     fish_minister_allocation_given: int = 0,
     fish_minister_allocation: str = "0",
+    fish_fiscal_period_days_entered: int = 0,
 ) -> dict[ArtifactKind[Any], object]:
     """One Form T2121 statement, a record of `ca/t2121_statements`: its inputs, as given or 0, and
     its vehicles (one record per mapping of `business_vehicles`, none by default)."""
@@ -1653,6 +1661,7 @@ def t2121_statement(
         Artifact(FISH_EPOP_PERCENTAGE_TOTAL, D(fish_epop_percentage_total)),
         Artifact(FISH_MINISTER_ALLOCATION_GIVEN, fish_minister_allocation_given),
         Artifact(FISH_MINISTER_ALLOCATION, D(fish_minister_allocation)),
+        Artifact(FISH_FISCAL_PERIOD_DAYS_ENTERED, fish_fiscal_period_days_entered),
     ]
     return {artifact.kind: artifact.value for artifact in artifacts}
 

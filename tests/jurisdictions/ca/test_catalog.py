@@ -44,6 +44,8 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_EPOP_PERCENTAGE_MAXIMUM,
     BUSINESS_EPOP_PERCENTAGE_ROOM,
     BUSINESS_EPOP_PERCENTAGE_TOTAL,
+    BUSINESS_FISCAL_PERIOD_DAYS,
+    BUSINESS_FISCAL_PERIOD_DAYS_ENTERED,
     BUSINESS_FUEL_COSTS,
     BUSINESS_GROSS_INCOME,
     BUSINESS_GROSS_INCOME_BEFORE_EXPENSES,
@@ -221,6 +223,8 @@ from app.jurisdictions.ca.catalog import (
     FARM_EXPENSES_SUBTOTAL,
     FARM_FEED_SUPPLEMENTS_STRAW_AND_BEDDING,
     FARM_FERTILIZERS_AND_LIME,
+    FARM_FISCAL_PERIOD_DAYS,
+    FARM_FISCAL_PERIOD_DAYS_ENTERED,
     FARM_FLAXSEED,
     FARM_FORAGE_CROPS_OR_SEEDS,
     FARM_FRUIT,
@@ -367,6 +371,8 @@ from app.jurisdictions.ca.catalog import (
     FISH_EPOP_PERCENTAGE_ROOM,
     FISH_EPOP_PERCENTAGE_TOTAL,
     FISH_EXPENSES_SUBTOTAL,
+    FISH_FISCAL_PERIOD_DAYS,
+    FISH_FISCAL_PERIOD_DAYS_ENTERED,
     FISH_FISH_PRODUCTS,
     FISH_FISHING_GEAR,
     FISH_FUEL_COSTS,
@@ -3302,3 +3308,50 @@ def test_the_lines_after_a_floor_are_non_negative(registry: ArtifactRegistry) ->
     ):
         assert kind.non_negative is True, kind.identifier
         assert registry.kind(kind.identifier).non_negative is True, kind.identifier
+
+
+# Guide T4002 "You were asking?": "Since your fiscal period is less than 365 days, you have to
+# prorate your CCA claim." Each of the three statement forms asks for the days of its fiscal period
+# (0 for none entered, a full year) and derives the days it prorates by.
+FISCAL_PERIOD_DAYS_KINDS = (
+    (
+        "business",
+        BUSINESS_FISCAL_PERIOD_DAYS_ENTERED,
+        BUSINESS_FISCAL_PERIOD_DAYS,
+        T2125_STATEMENTS,
+    ),
+    ("farm", FARM_FISCAL_PERIOD_DAYS_ENTERED, FARM_FISCAL_PERIOD_DAYS, T2042_STATEMENTS),
+    ("fish", FISH_FISCAL_PERIOD_DAYS_ENTERED, FISH_FISCAL_PERIOD_DAYS, T2121_STATEMENTS),
+)
+
+
+@pytest.mark.parametrize(("prefix", "entered", "days", "statements"), FISCAL_PERIOD_DAYS_KINDS)
+def test_the_fiscal_period_days_entered_is_a_non_negative_int_count_the_caller_enters(
+    prefix: str,
+    entered: ArtifactKind[int],
+    days: ArtifactKind[int],
+    statements: RecordListKind,
+    registry: ArtifactRegistry,
+) -> None:
+    # 0 is no days entered, which is a full fiscal period; the days to prorate by are derived.
+    assert entered.identifier == f"ca/{prefix}_fiscal_period_days_entered"
+    assert entered.value_type is int
+    assert entered.non_negative is True
+    assert registry.get(entered.identifier) is entered
+    assert entered.identifier in COUNTS
+    assert entered in statements.fields
+
+
+@pytest.mark.parametrize(("prefix", "entered", "days", "statements"), FISCAL_PERIOD_DAYS_KINDS)
+def test_the_fiscal_period_days_are_an_int_the_form_derives_not_an_input(
+    prefix: str,
+    entered: ArtifactKind[int],
+    days: ArtifactKind[int],
+    statements: RecordListKind,
+    registry: ArtifactRegistry,
+) -> None:
+    assert days.identifier == f"ca/{prefix}_fiscal_period_days"
+    assert days.value_type is int
+    assert registry.get(days.identifier) is days
+    assert days.identifier in COUNTS
+    assert days not in statements.fields

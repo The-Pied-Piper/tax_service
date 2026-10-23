@@ -1891,6 +1891,16 @@ BUSINESS_MINISTER_ALLOCATION = CATALOG.declare(
 minister under subsection 1104(3.4) of the Regulations": a starting amount, which replaces the
 immediate expensing limit when the minister allocated one."""
 
+BUSINESS_FISCAL_PERIOD_DAYS_ENTERED = CATALOG.declare(
+    "business_fiscal_period_days_entered", int, non_negative=True
+)
+"""Days of the fiscal period of Form T2125, the days the filer enters when the fiscal period is
+shorter than a full year, 0 when none are entered (a full year).
+Guide T4002 2025, "You were asking?": "Since your fiscal period is less than 365 days,
+you have to prorate your CCA claim. ... base your CCA claim on the number of days in your
+fiscal period compared to 365 days. In this case, your fiscal period is 214 days." A starting
+count."""
+
 BUSINESS_VEHICLES = RecordListKind.declare(
     CATALOG,
     "business_vehicles",
@@ -1979,6 +1989,7 @@ T2125_STATEMENTS = RecordListKind.declare(
         BUSINESS_HOME_CARRIED_FORWARD,
         BUSINESS_PARTNER_SHARE,
         BUSINESS_PARTNER,
+        BUSINESS_FISCAL_PERIOD_DAYS_ENTERED,
         BUSINESS_CCA_CLASSES,
         BUSINESS_EPOP_ASSOCIATED,
         BUSINESS_EPOP_AGREEMENT_FILED,
@@ -2248,6 +2259,14 @@ BUSINESS_INCOME_BEFORE_CCA = CATALOG.declare(
 from the source of income that is a business (before any CCA deductions) in which the relevant
 DIEP is used for the tax year": line 9369 "Net income (loss) before adjustments" plus line 9936,
 the CCA it deducted, not below zero."""
+
+BUSINESS_FISCAL_PERIOD_DAYS = CATALOG.declare("business_fiscal_period_days", int, non_negative=True)
+"""Days of the fiscal period of Form T2125 that the CCA claim and closing UCC are prorated by:
+the days entered when above 0, else the days in a full year.
+Guide T4002 2025, "You were asking?": "Since your fiscal period is less than 365 days,
+you have to prorate your CCA claim. ... base your CCA claim on the number of days in your
+fiscal period compared to 365 days. In this case, your fiscal period is 214 days"
+(the Guide's example)."""
 
 FARM_WHEAT = CATALOG.declare("farm_wheat", Decimal, non_negative=True)
 """Wheat income, Form T2042 line 9371 "Wheat": a starting amount."""
@@ -2804,6 +2823,16 @@ FARM_MINISTER_ALLOCATION = CATALOG.declare("farm_minister_allocation", Decimal, 
 minister under subsection 1104(3.4) of the Regulations": a starting amount, which replaces the
 immediate expensing limit when the minister allocated one."""
 
+FARM_FISCAL_PERIOD_DAYS_ENTERED = CATALOG.declare(
+    "farm_fiscal_period_days_entered", int, non_negative=True
+)
+"""Days of the fiscal period of Form T2042, the days the filer enters when the fiscal period is
+shorter than a full year, 0 when none are entered (a full year).
+Guide T4002 2025, "You were asking?": "Since your fiscal period is less than 365 days,
+you have to prorate your CCA claim. ... base your CCA claim on the number of days in your
+fiscal period compared to 365 days. In this case, your fiscal period is 214 days." A starting
+count."""
+
 T2042_STATEMENTS = RecordListKind.declare(
     CATALOG,
     "t2042_statements",
@@ -2891,6 +2920,7 @@ T2042_STATEMENTS = RecordListKind.declare(
         FARM_HOME_PERSONAL_USE_PART,
         FARM_HOME_CCA,
         FARM_HOME_CARRIED_FORWARD,
+        FARM_FISCAL_PERIOD_DAYS_ENTERED,
         FARM_CCA_CLASSES,
         FARM_EPOP_ASSOCIATED,
         FARM_EPOP_AGREEMENT_FILED,
@@ -2986,6 +3016,14 @@ FARM_INCOME_BEFORE_CCA = CATALOG.declare("farm_income_before_cca", Decimal, non_
 from the source of income that is a business (before any CCA deductions) in which the relevant
 DIEP is used for the tax year": amount 4C "Net income (loss) after inventory adjustments" plus
 line 9936, the CCA it deducted, not below zero. The form names no line for this figure."""
+
+FARM_FISCAL_PERIOD_DAYS = CATALOG.declare("farm_fiscal_period_days", int, non_negative=True)
+"""Days of the fiscal period of Form T2042 that the CCA claim and closing UCC are prorated by:
+the days entered when above 0, else the days in a full year.
+Guide T4002 2025, "You were asking?": "Since your fiscal period is less than 365 days,
+you have to prorate your CCA claim. ... base your CCA claim on the number of days in your
+fiscal period compared to 365 days. In this case, your fiscal period is 214 days"
+(the Guide's example)."""
 
 # Form T2121 (Statement of Fishing Activities), Parts 3 to 7 and Area A (T1 lines 14299 and 14300).
 # Each kind is one line of the form; the caller's amounts are starting amounts, the rest are
@@ -3396,6 +3434,16 @@ FISH_MINISTER_ALLOCATION = CATALOG.declare("fish_minister_allocation", Decimal, 
 minister under subsection 1104(3.4) of the Regulations": a starting amount, which replaces the
 immediate expensing limit when the minister allocated one."""
 
+FISH_FISCAL_PERIOD_DAYS_ENTERED = CATALOG.declare(
+    "fish_fiscal_period_days_entered", int, non_negative=True
+)
+"""Days of the fiscal period of Form T2121, the days the filer enters when the fiscal period is
+shorter than a full year, 0 when none are entered (a full year).
+Guide T4002 2025, "You were asking?": "Since your fiscal period is less than 365 days,
+you have to prorate your CCA claim. ... base your CCA claim on the number of days in your
+fiscal period compared to 365 days. In this case, your fiscal period is 214 days." A starting
+count."""
+
 T2121_STATEMENTS = RecordListKind.declare(
     CATALOG,
     "t2121_statements",
@@ -3445,6 +3493,7 @@ T2121_STATEMENTS = RecordListKind.declare(
         FISH_HOME_OTHER_EXPENSES,
         FISH_HOME_PERSONAL_USE_PART,
         FISH_HOME_CCA,
+        FISH_FISCAL_PERIOD_DAYS_ENTERED,
         FISH_HOME_CARRIED_FORWARD,
         FISH_EPOP_ASSOCIATED,
         FISH_EPOP_AGREEMENT_FILED,
@@ -3540,3 +3589,11 @@ FISH_INCOME_BEFORE_CCA = CATALOG.declare("fish_income_before_cca", Decimal, non_
 from the source of income that is a business (before any CCA deductions) in which the relevant
 DIEP is used for the tax year": line 9369 "Net income (loss) before adjustments" plus line 9936,
 the CCA it deducted, not below zero."""
+
+FISH_FISCAL_PERIOD_DAYS = CATALOG.declare("fish_fiscal_period_days", int, non_negative=True)
+"""Days of the fiscal period of Form T2121 that the CCA claim and closing UCC are prorated by:
+the days entered when above 0, else the days in a full year.
+Guide T4002 2025, "You were asking?": "Since your fiscal period is less than 365 days,
+you have to prorate your CCA claim. ... base your CCA claim on the number of days in your
+fiscal period compared to 365 days. In this case, your fiscal period is 214 days"
+(the Guide's example)."""

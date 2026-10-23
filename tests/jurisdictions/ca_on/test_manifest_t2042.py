@@ -83,7 +83,7 @@ def test_the_form_holds_the_38_t2042_selections() -> None:
     # step over the statement's vehicles, the form's only selection for them.
     found = form()
 
-    assert len(found.capabilities) == 38
+    assert len(found.capabilities) == 39
     assert set(found.capabilities) == t2042.FORM_STEPS
 
 
@@ -145,7 +145,7 @@ def test_the_statements_kind_is_a_record_list_of_every_t2042_input_in_order() ->
     assert isinstance(T2042_STATEMENTS, RecordListKind)
     assert T2042_STATEMENTS.identifier == "ca/t2042_statements"
     assert frozenset(field.identifier for field in T2042_STATEMENTS.fields) == t2042.FORM_INPUTS
-    assert len(T2042_STATEMENTS.fields) == len(t2042.FORM_INPUTS) == 90
+    assert len(T2042_STATEMENTS.fields) == len(t2042.FORM_INPUTS) == 91
 
 
 def test_the_area_a_list_and_the_vehicles_of_a_statement_are_nested_record_lists() -> None:

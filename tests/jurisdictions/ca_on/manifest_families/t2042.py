@@ -1,6 +1,6 @@
 """The CA-ON manifest entries of Form T2042 (see `test_manifest.py` and `test_manifest_t2042.py`).
 
-T2042 is a form of the manifest: its 38 selections belong to the form `ca/t2042` (`FORM_STEPS`),
+T2042 is a form of the manifest: its 39 selections belong to the form `ca/t2042` (`FORM_STEPS`),
 run once for each statement of `ca/t2042_statements`, whose fields are the T2042 inputs
 (`FORM_INPUTS`). The form exports four artifacts, each readable by the other forms as
 `ca/t2042.<export>` (`FORM_EXPORTS`); the return reads one and declares no output for the three
@@ -24,9 +24,10 @@ from app.domain.manifest import CapabilitySelection
 from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
 from app.jurisdictions.ca.capabilities.business_vehicle_expenses import BusinessVehicleExpenses
-from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
+from app.jurisdictions.ca.capabilities.cca_claim_prorated import CcaClaimProrated
 from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
-from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
+from app.jurisdictions.ca.capabilities.closing_ucc_prorated import ClosingUccProrated
+from app.jurisdictions.ca.capabilities.fiscal_period_days import FiscalPeriodDays
 from app.jurisdictions.ca.capabilities.immediate_expensing_claim import ImmediateExpensingClaim
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
@@ -61,6 +62,8 @@ from app.jurisdictions.ca.catalog import (
     FARM_EXPENSES_SUBTOTAL,
     FARM_FEED_SUPPLEMENTS_STRAW_AND_BEDDING,
     FARM_FERTILIZERS_AND_LIME,
+    FARM_FISCAL_PERIOD_DAYS,
+    FARM_FISCAL_PERIOD_DAYS_ENTERED,
     FARM_FLAXSEED,
     FARM_FORAGE_CROPS_OR_SEEDS,
     FARM_FRUIT,
@@ -265,6 +268,7 @@ FORM_INPUTS = frozenset(
         "ca/farm_epop_percentage_total",
         "ca/farm_minister_allocation_given",
         "ca/farm_minister_allocation",
+        "ca/farm_fiscal_period_days_entered",
     }
 )
 
@@ -422,10 +426,25 @@ FORM_STEPS = {
     # amount ii minus any personal part and any CCA for business-use-of-home expenses)" (amount
     # ii): the CCA claimed on each class of the Area A list, at most its maximum (column 19
     # multiplied by column 20), totalled.
+    # T2042 Area A, the days of the fiscal period (Guide T4002 "You were asking?": "Since your
+    # fiscal period is less than 365 days, you have to prorate your CCA claim ... base your CCA
+    # claim on the number of days in your fiscal period compared to 365 days."): the days the
+    # caller enters, or the 365 of a full year when none are.
     CapabilitySelection(
-        name="ca/cca_claim",
+        name="ca/fiscal_period_days",
         params={"class_rates": "ca/cca_class_rates"},
-        consumes={"classes": "ca/farm_cca_classes"},
+        consumes={"entered": "ca/farm_fiscal_period_days_entered"},
+        produces={"output": "ca/farm_fiscal_period_days"},
+    ),
+    # T2042 Area A "Total CCA claim for the year: Total of column 21", for a fiscal period of the
+    # days above: each class's maximum prorated ($3,500 x 214 / 365), as the Guide prints.
+    CapabilitySelection(
+        name="ca/cca_claim_prorated",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={
+            "classes": "ca/farm_cca_classes",
+            "fiscal_period_days": "ca/farm_fiscal_period_days",
+        },
         produces={"output": "ca/farm_cca_table_claim"},
     ),
     # T2042 Part 4 "Capital cost allowance (CCA). Enter amount ii of Area A minus any personal part
@@ -632,9 +651,12 @@ FORM_STEPS = {
     # and column 22 of each class of the Area A list, a product of the return for next year's
     # column 1.
     CapabilitySelection(
-        name="ca/closing_ucc",
+        name="ca/closing_ucc_prorated",
         params={"class_rates": "ca/cca_class_rates"},
-        consumes={"classes": "ca/farm_cca_classes"},
+        consumes={
+            "classes": "ca/farm_cca_classes",
+            "fiscal_period_days": "ca/farm_fiscal_period_days",
+        },
         produces={"output": "ca/farm_closing_ucc"},
     ),
     # T2042 Area A endnote 5 "the immediate expensing limit, which is equal to one of the
@@ -892,7 +914,16 @@ FORM_WIRING = {
         ),
         frozenset({FARM_EXPENSES_SUBTOTAL}),
     ),
-    (CcaClaim, frozenset({FARM_CCA_CLASSES}), frozenset({FARM_CCA_TABLE_CLAIM})),
+    (
+        FiscalPeriodDays,
+        frozenset({FARM_FISCAL_PERIOD_DAYS_ENTERED}),
+        frozenset({FARM_FISCAL_PERIOD_DAYS}),
+    ),
+    (
+        CcaClaimProrated,
+        frozenset({FARM_CCA_CLASSES, FARM_FISCAL_PERIOD_DAYS}),
+        frozenset({FARM_CCA_TABLE_CLAIM}),
+    ),
     (
         Subtract,
         frozenset({FARM_CCA_PERSONAL_PART, FARM_CCA_TABLE_CLAIM}),
@@ -995,7 +1026,11 @@ FORM_WIRING = {
         frozenset({FARM_HOME_EXPENSES, FARM_NET_INCOME_AFTER_ADJUSTMENTS}),
         frozenset({FARMING_INCOME}),
     ),
-    (ClosingUcc, frozenset({FARM_CCA_CLASSES}), frozenset({FARM_CLOSING_UCC})),
+    (
+        ClosingUccProrated,
+        frozenset({FARM_CCA_CLASSES, FARM_FISCAL_PERIOD_DAYS}),
+        frozenset({FARM_CLOSING_UCC}),
+    ),
     (CreditAmount, frozenset(), frozenset({FARM_IMMEDIATE_EXPENSING_CAP})),
     (CreditAmount, frozenset(), frozenset({FARM_EPOP_PERCENTAGE_MAXIMUM})),
     (

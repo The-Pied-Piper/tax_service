@@ -78,12 +78,12 @@ def test_the_manifest_has_the_form_t2125_beside_the_other_forms() -> None:
     assert found.exports == t2125.FORM_EXPORTS
 
 
-def test_the_form_holds_the_44_t2125_selections() -> None:
+def test_the_form_holds_the_45_t2125_selections() -> None:
     # The 55 selections of one vehicle's Charts A to C (22 of them) are now one step over the
     # statement's vehicles.
     found = form()
 
-    assert len(found.capabilities) == 44
+    assert len(found.capabilities) == 45
     assert set(found.capabilities) == t2125.FORM_STEPS
 
 
@@ -146,7 +146,7 @@ def test_the_statements_kind_is_a_record_list_of_every_t2125_input_in_order() ->
     assert isinstance(T2125_STATEMENTS, RecordListKind)
     assert T2125_STATEMENTS.identifier == "ca/t2125_statements"
     assert frozenset(field.identifier for field in T2125_STATEMENTS.fields) == t2125.FORM_INPUTS
-    assert len(T2125_STATEMENTS.fields) == len(t2125.FORM_INPUTS) == 60
+    assert len(T2125_STATEMENTS.fields) == len(t2125.FORM_INPUTS) == 61
 
 
 def test_the_area_a_list_of_a_statement_is_a_nested_record_list() -> None:

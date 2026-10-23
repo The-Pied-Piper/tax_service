@@ -1,6 +1,6 @@
 """The CA-ON manifest entries of Form T2125 (see `test_manifest.py` and `test_manifest_t2125.py`).
 
-T2125 is a form of the manifest: its 44 selections belong to the form `ca/t2125` (`FORM_STEPS`),
+T2125 is a form of the manifest: its 45 selections belong to the form `ca/t2125` (`FORM_STEPS`),
 run once for each statement of `ca/t2125_statements`, whose fields are the T2125 inputs
 (`FORM_INPUTS`). The form exports four artifacts, each readable by the other forms as
 `ca/t2125.<export>` (`FORM_EXPORTS`); the return reads one and declares no output for the three
@@ -25,9 +25,10 @@ from app.domain.manifest import CapabilitySelection
 from app.domain.record_list import RecordListKind
 from app.jurisdictions.ca.capabilities.apply_percentage import ApplyPercentage
 from app.jurisdictions.ca.capabilities.business_vehicle_expenses import BusinessVehicleExpenses
-from app.jurisdictions.ca.capabilities.cca_claim import CcaClaim
+from app.jurisdictions.ca.capabilities.cca_claim_prorated import CcaClaimProrated
 from app.jurisdictions.ca.capabilities.choose_by_sign import ChooseBySign
-from app.jurisdictions.ca.capabilities.closing_ucc import ClosingUcc
+from app.jurisdictions.ca.capabilities.closing_ucc_prorated import ClosingUccProrated
+from app.jurisdictions.ca.capabilities.fiscal_period_days import FiscalPeriodDays
 from app.jurisdictions.ca.capabilities.immediate_expensing_claim import ImmediateExpensingClaim
 from app.jurisdictions.ca.capabilities.recaptured_cca import RecapturedCca
 from app.jurisdictions.ca.capabilities.terminal_loss import TerminalLoss
@@ -53,6 +54,8 @@ from app.jurisdictions.ca.catalog import (
     BUSINESS_EPOP_PERCENTAGE_MAXIMUM,
     BUSINESS_EPOP_PERCENTAGE_ROOM,
     BUSINESS_EPOP_PERCENTAGE_TOTAL,
+    BUSINESS_FISCAL_PERIOD_DAYS,
+    BUSINESS_FISCAL_PERIOD_DAYS_ENTERED,
     BUSINESS_FUEL_COSTS,
     BUSINESS_GROSS_INCOME,
     BUSINESS_GROSS_INCOME_BEFORE_EXPENSES,
@@ -211,6 +214,7 @@ FORM_INPUTS = frozenset(
         "ca/business_epop_percentage_total",
         "ca/business_minister_allocation_given",
         "ca/business_minister_allocation",
+        "ca/business_fiscal_period_days_entered",
     }
 )
 
@@ -377,11 +381,24 @@ FORM_STEPS = {
     # Part 4 amount ii minus any personal part and any CCA for business-use-of-home
     # expenses)" (amount ii): the CCA claimed on each class of the Area A list, at most its
     # maximum (column 19 multiplied by column 20), totalled.
+    # T2125 Area A, the days of the fiscal period (Guide T4002 "You were asking?": "Since your
+    # fiscal period is less than 365 days, you have to prorate your CCA claim ... base your CCA
+    # claim on the number of days in your fiscal period compared to 365 days."): the days the
+    # caller enters, or the 365 of a full year when none are.
     CapabilitySelection(
-        name="ca/cca_claim",
+        name="ca/fiscal_period_days",
+        params={"class_rates": "ca/cca_class_rates"},
+        consumes={"entered": "ca/business_fiscal_period_days_entered"},
+        produces={"output": "ca/business_fiscal_period_days"},
+    ),
+    # T2125 Area A "Total CCA claim for the year: Total of column 21", for a fiscal period of the
+    # days above: each class's maximum prorated ($3,500 x 214 / 365), as the Guide prints.
+    CapabilitySelection(
+        name="ca/cca_claim_prorated",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
             "classes": "ca/business_cca_classes",
+            "fiscal_period_days": "ca/business_fiscal_period_days",
         },
         produces={"output": "ca/business_cca_table_claim"},
     ),
@@ -440,10 +457,11 @@ FORM_STEPS = {
     # number and column 22 of each class of the Area A list, a product of the return for
     # next year's column 1.
     CapabilitySelection(
-        name="ca/closing_ucc",
+        name="ca/closing_ucc_prorated",
         params={"class_rates": "ca/cca_class_rates"},
         consumes={
             "classes": "ca/business_cca_classes",
+            "fiscal_period_days": "ca/business_fiscal_period_days",
         },
         produces={"output": "ca/business_closing_ucc"},
     ),
@@ -970,12 +988,13 @@ FORM_WIRING = {
         frozenset({BUSINESS_GROSS_INCOME_BEFORE_EXPENSES}),
     ),
     (
-        CcaClaim,
-        frozenset(
-            {
-                BUSINESS_CCA_CLASSES,
-            }
-        ),
+        FiscalPeriodDays,
+        frozenset({BUSINESS_FISCAL_PERIOD_DAYS_ENTERED}),
+        frozenset({BUSINESS_FISCAL_PERIOD_DAYS}),
+    ),
+    (
+        CcaClaimProrated,
+        frozenset({BUSINESS_CCA_CLASSES, BUSINESS_FISCAL_PERIOD_DAYS}),
         frozenset({BUSINESS_CCA_TABLE_CLAIM}),
     ),
     (
@@ -1018,12 +1037,8 @@ FORM_WIRING = {
         frozenset({BUSINESS_OTHER_EXPENSES_WITH_TERMINAL_LOSS}),
     ),
     (
-        ClosingUcc,
-        frozenset(
-            {
-                BUSINESS_CCA_CLASSES,
-            }
-        ),
+        ClosingUccProrated,
+        frozenset({BUSINESS_CCA_CLASSES, BUSINESS_FISCAL_PERIOD_DAYS}),
         frozenset({BUSINESS_CLOSING_UCC}),
     ),
     (CreditAmount, frozenset(), frozenset({BUSINESS_IMMEDIATE_EXPENSING_CAP})),

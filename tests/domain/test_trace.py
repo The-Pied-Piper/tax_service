@@ -94,6 +94,7 @@ from app.jurisdictions.ca.trace import (
     DispositionGainLine,
     DispositionGainOnlyLine,
     DispositionProceedsLine,
+    FiscalPeriodDaysLine,
     ForeignBusinessLine4,
     ForeignBusinessLine5,
     ForeignBusinessLine7,
@@ -4923,6 +4924,52 @@ def test_a_cca_line_holds_the_days_in_a_full_year_of_its_dataset(make: Any) -> N
     assert make().full_year_days == 365
     assert replace(make(), full_year_days=366).full_year_days == 366
     assert replace(make(), full_year_days=366) != make()
+
+
+FISCAL_PERIOD_DAYS = ArtifactKind("ex/fiscal_period_days", int)
+
+
+def fiscal_period_days_line() -> FiscalPeriodDaysLine:
+    return FiscalPeriodDaysLine(FISCAL_PERIOD_DAYS, 0, 365, 365)
+
+
+def test_fiscal_period_days_line_fields_in_order() -> None:
+    # Guide T4002 "You were asking?": the days of the fiscal period (214 in the guide's example),
+    # compared to the 365 of a full year; the days entered are 0 when the caller entered none.
+    line = fiscal_period_days_line()
+
+    assert [f.name for f in fields(line)] == [
+        "output",
+        "entered",
+        "fiscal_period_days",
+        "full_year_days",
+    ]
+    assert line == FiscalPeriodDaysLine(FISCAL_PERIOD_DAYS, 0, 365, 365)
+
+
+def test_a_fiscal_period_days_lines_amount_is_the_days_of_the_fiscal_period() -> None:
+    line = FiscalPeriodDaysLine(FISCAL_PERIOD_DAYS, 214, 214, 365)
+
+    assert line.amount == D("214")
+    assert isinstance(line.amount, Decimal)
+    assert "amount" not in [f.name for f in fields(line)]
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"output": ArtifactKind("ex/other_fiscal_period_days", int)},
+        {"entered": 214},
+        {"fiscal_period_days": 214},
+        {"full_year_days": 366},
+    ],
+)
+def test_fiscal_period_days_lines_differ_by_each_field(change: dict[str, Any]) -> None:
+    line = fiscal_period_days_line()
+    values = {f.name: getattr(line, f.name) for f in fields(line)}
+    values.update(change)
+
+    assert line != FiscalPeriodDaysLine(**values)
 
 
 @pytest.mark.parametrize("make", [recaptured_cca_line, terminal_loss_line])

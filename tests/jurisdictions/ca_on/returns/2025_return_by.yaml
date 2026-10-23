@@ -323,6 +323,7 @@ inputs:
       ca/fish_epop_percentage_total: "100"
       ca/fish_minister_allocation_given: "0"
       ca/fish_minister_allocation: "0"
+      ca/fish_fiscal_period_days_entered: "0"
   ca/cpp_months: "12"
   ca/qpp_months: "12"
   ca/cpp_t4_base_and_first_additional_contributions: "0"

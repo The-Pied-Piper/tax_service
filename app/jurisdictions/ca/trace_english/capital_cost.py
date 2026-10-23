@@ -13,6 +13,7 @@ from app.jurisdictions.ca.trace.capital_cost import (
     CcaClaimLine,
     CcaZeroReason,
     ClosingUccLine,
+    FiscalPeriodDaysLine,
     ImmediateExpensingLine,
     RecapturedCcaLine,
     TerminalLossLine,
@@ -218,3 +219,19 @@ class ImmediateExpensingRenderer:
             f"column 8 {EnglishFigures.money(line.column_8)}, column 9 "
             f"{EnglishFigures.money(line.column_9)}"
         )
+
+
+@english_renderer
+class FiscalPeriodDaysRenderer:
+    """English text for FiscalPeriodDaysLine."""
+
+    line_class = FiscalPeriodDaysLine
+
+    def render(self, line: FiscalPeriodDaysLine) -> str:
+        """The English sentence for `line`."""
+        found = (
+            f"a full year of {line.full_year_days} days"
+            if line.entered == 0
+            else f"fiscal period {line.fiscal_period_days} days"
+        )
+        return f"{line.output.label}: entered {line.entered}, {found}"
