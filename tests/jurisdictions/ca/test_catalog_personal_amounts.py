@@ -21,6 +21,7 @@ from app.jurisdictions.ca.catalog import (
     CCA_CLASS_NUMBER,
     CCA_DIEP_ADDITIONS,
     CCA_DIEP_PROCEEDS,
+    CCA_HALF_YEAR_RULE_DIFFERS,
     CCA_IMMEDIATE_EXPENSING,
     CCA_NO_PROPERTY_LEFT,
     CCA_PERSONAL_PART_REMAINING,
@@ -219,6 +220,7 @@ def test_the_personal_amounts_kinds_are_the_registered_ones(registry: ArtifactRe
     assert registry.get("ca/cca_claimed") is CCA_CLAIMED
     assert registry.get("ca/cca_no_property_left") is CCA_NO_PROPERTY_LEFT
     assert registry.get("ca/cca_personal_part_remaining") is CCA_PERSONAL_PART_REMAINING
+    assert registry.get("ca/cca_half_year_rule_differs") is CCA_HALF_YEAR_RULE_DIFFERS
     assert registry.get("ca/cca_ucc_at_end") is CCA_UCC_AT_END
     assert registry.get("ca/infirm_children") is INFIRM_CHILDREN
     assert registry.get("ca/infirm_children_amount") is INFIRM_CHILDREN_AMOUNT

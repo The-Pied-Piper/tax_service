@@ -175,6 +175,7 @@ from app.jurisdictions.ca.catalog import (
     CCA_CLASS_NUMBER,
     CCA_DIEP_ADDITIONS,
     CCA_DIEP_PROCEEDS,
+    CCA_HALF_YEAR_RULE_DIFFERS,
     CCA_IMMEDIATE_EXPENSING,
     CCA_NO_PROPERTY_LEFT,
     CCA_PERSONAL_PART_REMAINING,
@@ -966,6 +967,7 @@ def rental_cca_classes(
             CCA_DIEP_PROCEEDS: D(diep_proceeds),
             CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
             CCA_PERSONAL_PART_REMAINING: D(personal_part_remaining),
+            CCA_HALF_YEAR_RULE_DIFFERS: 0,
         }
         for (
             class_number,
@@ -1301,6 +1303,7 @@ def business_cca_classes(
             CCA_DIEP_ADDITIONS: D(diep_additions),
             CCA_DIEP_PROCEEDS: D(diep_proceeds),
             CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
+            CCA_HALF_YEAR_RULE_DIFFERS: 0,
         }
         for (
             class_number,
@@ -1478,6 +1481,7 @@ def farm_cca_classes(
             CCA_DIEP_ADDITIONS: D(diep_additions),
             CCA_DIEP_PROCEEDS: D(diep_proceeds),
             CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
+            CCA_HALF_YEAR_RULE_DIFFERS: 0,
         }
         for (
             class_number,
@@ -1618,6 +1622,7 @@ def fish_cca_classes(
             CCA_DIEP_ADDITIONS: D(diep_additions),
             CCA_DIEP_PROCEEDS: D(diep_proceeds),
             CCA_IMMEDIATE_EXPENSING: D(immediate_expensing),
+            CCA_HALF_YEAR_RULE_DIFFERS: 0,
         }
         for (
             class_number,

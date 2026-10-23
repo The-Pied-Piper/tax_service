@@ -163,6 +163,7 @@ from app.jurisdictions.ca.catalog import (
     CCA_CLASS_NUMBER,
     CCA_DIEP_ADDITIONS,
     CCA_DIEP_PROCEEDS,
+    CCA_HALF_YEAR_RULE_DIFFERS,
     CCA_IMMEDIATE_EXPENSING,
     CCA_NO_PROPERTY_LEFT,
     CCA_PERSONAL_PART_REMAINING,
@@ -2153,6 +2154,17 @@ def test_no_property_left_in_the_class_is_a_non_negative_int_count(
     assert registry.kind("ca/cca_no_property_left") is CCA_NO_PROPERTY_LEFT
 
 
+def test_the_half_year_rule_differs_is_a_non_negative_int_flag(registry: ArtifactRegistry) -> None:
+    # Guide T4002 2025, "Column 18": "some properties are not subject to the half-year rule ...
+    # most of those in Class 12, such as small tools"; "the half-year rule applies to the particular
+    # property transferred". A row's additions are treated the opposite way from their class (1), or
+    # as the class has them (0, or no field): 1 if so, else 0, as the other yes or no questions.
+    assert CCA_HALF_YEAR_RULE_DIFFERS.identifier == "ca/cca_half_year_rule_differs"
+    assert CCA_HALF_YEAR_RULE_DIFFERS.value_type is int
+    assert CCA_HALF_YEAR_RULE_DIFFERS.non_negative is True
+    assert registry.kind("ca/cca_half_year_rule_differs") is CCA_HALF_YEAR_RULE_DIFFERS
+
+
 def test_the_cca_table_fields_are_kinds_of_their_own() -> None:
     kinds = (
         CCA_CLASS_NUMBER,
@@ -2167,10 +2179,11 @@ def test_the_cca_table_fields_are_kinds_of_their_own() -> None:
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
         CCA_PERSONAL_PART_REMAINING,
+        CCA_HALF_YEAR_RULE_DIFFERS,
         CCA_UCC_AT_END,
     )
 
-    assert len({kind.identifier for kind in kinds}) == 13
+    assert len({kind.identifier for kind in kinds}) == 14
     assert {kind.identifier for kind in kinds} <= REGISTERED
     assert not {kind.identifier for kind in kinds} & RECORD_LISTS
 
@@ -2394,7 +2407,8 @@ def test_the_rental_cca_classes_are_a_record_list_of_the_area_a_columns(
     assert RENTAL_CCA_CLASSES.value_type is RecordList
     assert RENTAL_CCA_CLASSES.non_negative is False
     # In the order of the columns (1, 2, 3, 4, 5, 6, 9, 11, 12, 23), the no-property-left question
-    # of Note 3 and the remaining personal part of Note 9 (column 24), which only this list has.
+    # of Note 3, the remaining personal part of Note 9 (column 24), which only this list has, and
+    # the half-year rule flag of column 18, last.
     assert RENTAL_CCA_CLASSES.fields == (
         CCA_CLASS_NUMBER,
         CCA_UCC_AT_START,
@@ -2408,8 +2422,9 @@ def test_the_rental_cca_classes_are_a_record_list_of_the_area_a_columns(
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
         CCA_PERSONAL_PART_REMAINING,
+        CCA_HALF_YEAR_RULE_DIFFERS,
     )
-    assert len(RENTAL_CCA_CLASSES.fields) == 12
+    assert len(RENTAL_CCA_CLASSES.fields) == 13
     assert registry.get("ca/rental_cca_classes") is RENTAL_CCA_CLASSES
 
 
@@ -2449,6 +2464,38 @@ def test_the_other_forms_class_lists_do_not_take_the_remaining_personal_part(
 
     with pytest.raises(InvalidRecordError, match="item 1: unknown field ca/cca_personal_part_rem"):
         RecordList(kind.fields, [record])
+
+
+@pytest.mark.parametrize(
+    "kind",
+    [RENTAL_CCA_CLASSES, BUSINESS_CCA_CLASSES, FARM_CCA_CLASSES, FISH_CCA_CLASSES],
+    ids=lambda k: k.identifier,
+)
+def test_each_class_list_ends_with_the_half_year_rule_flag(kind: RecordListKind) -> None:
+    # Column 18: a row's additions treated the opposite way from their class, a field of each
+    # record, last in each of the four lists.
+    assert kind.fields[-1] is CCA_HALF_YEAR_RULE_DIFFERS
+    assert kind.fields.count(CCA_HALF_YEAR_RULE_DIFFERS) == 1
+
+
+@pytest.mark.parametrize(
+    "kind",
+    [RENTAL_CCA_CLASSES, BUSINESS_CCA_CLASSES, FARM_CCA_CLASSES, FISH_CCA_CLASSES],
+    ids=lambda k: k.identifier,
+)
+def test_a_class_record_must_give_the_half_year_rule_flag(kind: RecordListKind) -> None:
+    # Record fields are required, as the other counts of the list are: a record without the flag
+    # is refused, and one with it keeps it.
+    earlier = tuple(f for f in kind.fields if f is not CCA_HALF_YEAR_RULE_DIFFERS)
+    with pytest.raises(
+        InvalidRecordError, match="item 1: missing field ca/cca_half_year_rule_diff"
+    ):
+        RecordList(kind.fields, [_cca_record(earlier)])
+
+    record = _cca_record(kind.fields)
+    record[CCA_HALF_YEAR_RULE_DIFFERS] = 1
+    (kept,) = RecordList(kind.fields, [record]).records
+    assert kept[CCA_HALF_YEAR_RULE_DIFFERS] == 1
 
 
 def test_the_t776_statements_list_the_area_g_and_note_5_inputs_after_the_partner_lines() -> None:
@@ -2663,8 +2710,9 @@ def test_the_business_cca_classes_are_the_area_a_columns_the_caller_enters(
     registry: ArtifactRegistry,
 ) -> None:
     # Area A of the T2125 has the columns of the T776's, the DIEP columns 4, 6 and 9 among them:
-    # the same eleven field kinds, in the order of the columns (1, 2, 3, 4, 5, 6, 9, 11, 12, 21)
-    # and the no-property-left question of endnote 3, one record per class.
+    # the same field kinds, in the order of the columns (1, 2, 3, 4, 5, 6, 9, 11, 12, 21), the
+    # no-property-left question of endnote 3 and the half-year rule flag of column 18, last, one
+    # record per class.
     assert RECORD_LISTS <= REGISTERED
     assert isinstance(BUSINESS_CCA_CLASSES, RecordListKind)
     assert BUSINESS_CCA_CLASSES.value_type is RecordList
@@ -2680,11 +2728,16 @@ def test_the_business_cca_classes_are_the_area_a_columns_the_caller_enters(
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
+        CCA_HALF_YEAR_RULE_DIFFERS,
     )
-    assert len(BUSINESS_CCA_CLASSES.fields) == 11
+    assert len(BUSINESS_CCA_CLASSES.fields) == 12
     # Note 9 is the T776's alone (the other forms' lists are ticket #411): the rental list is the
-    # business list and the remaining personal part.
-    assert (*BUSINESS_CCA_CLASSES.fields, CCA_PERSONAL_PART_REMAINING) == RENTAL_CCA_CLASSES.fields
+    # business list with the remaining personal part before the half-year rule flag.
+    assert RENTAL_CCA_CLASSES.fields == (
+        *BUSINESS_CCA_CLASSES.fields[:-1],
+        CCA_PERSONAL_PART_REMAINING,
+        CCA_HALF_YEAR_RULE_DIFFERS,
+    )
     assert CCA_PERSONAL_PART_REMAINING not in BUSINESS_CCA_CLASSES.fields
     assert BUSINESS_CCA_CLASSES is not RENTAL_CCA_CLASSES
     assert registry.get("ca/business_cca_classes") is BUSINESS_CCA_CLASSES
@@ -2994,8 +3047,9 @@ def test_the_farm_cca_classes_are_the_area_a_columns_the_caller_enters(
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
+        CCA_HALF_YEAR_RULE_DIFFERS,
     )
-    assert len(FARM_CCA_CLASSES.fields) == 11
+    assert len(FARM_CCA_CLASSES.fields) == 12
     assert FARM_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
     assert FARM_CCA_CLASSES is not BUSINESS_CCA_CLASSES
     assert CCA_PERSONAL_PART_REMAINING not in FARM_CCA_CLASSES.fields
@@ -3203,8 +3257,9 @@ def test_the_fish_cca_classes_are_the_area_a_columns_the_caller_enters(
         CCA_RIIP_ADDITIONS,
         CCA_CLAIMED,
         CCA_NO_PROPERTY_LEFT,
+        CCA_HALF_YEAR_RULE_DIFFERS,
     )
-    assert len(FISH_CCA_CLASSES.fields) == 11
+    assert len(FISH_CCA_CLASSES.fields) == 12
     assert FISH_CCA_CLASSES.fields == BUSINESS_CCA_CLASSES.fields
     assert FISH_CCA_CLASSES is not BUSINESS_CCA_CLASSES
     assert CCA_PERSONAL_PART_REMAINING not in FISH_CCA_CLASSES.fields
