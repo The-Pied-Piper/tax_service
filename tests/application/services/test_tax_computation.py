@@ -120,12 +120,14 @@ class Shift(Capability):
 
 
 class FakeJurisdictions:
-    """An in-memory JurisdictionSource holding the given jurisdictions."""
+    """An in-memory JurisdictionSource holding the given jurisdictions; records each request."""
 
     def __init__(self, *jurisdictions: Jurisdiction) -> None:
         self._by_code = {jurisdiction.code: jurisdiction for jurisdiction in jurisdictions}
+        self.requests: list[JurisdictionCode] = []
 
     def get_jurisdiction(self, code: JurisdictionCode) -> Jurisdiction:
+        self.requests.append(code)
         if code not in self._by_code:
             raise NotFoundError(f"no jurisdiction {code}")
         return self._by_code[code]
@@ -284,6 +286,59 @@ def test_the_composition_takes_and_returns_the_manifests_inputs_and_outputs() ->
         composition.compute()
     with pytest.raises(InvalidCompositionError, match="'scaled' is not an input"):
         composition.compute(Artifact(BASE, D("5")), Artifact(SCALED, D("1")))
+
+
+def test_compose_returns_the_same_forms_for_the_same_jurisdiction_and_year() -> None:
+    jurisdictions = FakeJurisdictions(Jurisdiction(code=EX_ON, manifests=(manifest(),)))
+    computation = TaxComputationService(
+        jurisdictions,
+        FakeParameters(factor_data(), offset_data()),
+        capability_registry(),
+        artifact_registry(),
+    )
+
+    assert computation.compose(EX_ON, 2025) is computation.compose(EX_ON, 2025)
+    assert jurisdictions.requests == [EX_ON]
+
+
+def test_compose_keeps_a_separate_form_set_per_tax_year() -> None:
+    parameters = FakeParameters(
+        factor_data(2025), offset_data(2025), factor_data(2026), offset_data(2026)
+    )
+    computation = service(parameters=parameters)
+
+    assert computation.compose(EX_ON, 2025) is not computation.compose(EX_ON, 2026)
+
+
+def test_compose_keeps_a_separate_form_set_per_jurisdiction() -> None:
+    other = JurisdictionCode("EX-AB")
+    computation = TaxComputationService(
+        FakeJurisdictions(
+            Jurisdiction(code=EX_ON, manifests=(manifest(),)),
+            Jurisdiction(code=other, manifests=(manifest(),)),
+        ),
+        FakeParameters(factor_data(), offset_data()),
+        capability_registry(),
+        artifact_registry(),
+    )
+
+    assert computation.compose(EX_ON, 2025) is not computation.compose(other, 2025)
+
+
+def test_a_failed_compose_is_not_cached() -> None:
+    jurisdictions = FakeJurisdictions(Jurisdiction(code=EX_ON, manifests=(manifest(),)))
+    computation = TaxComputationService(
+        jurisdictions,
+        FakeParameters(factor_data()),
+        capability_registry(),
+        artifact_registry(),
+    )
+
+    for _ in range(2):
+        with pytest.raises(NotFoundError):
+            computation.compose(EX_ON, 2025)
+
+    assert jurisdictions.requests == [EX_ON, EX_ON]
 
 
 def test_uses_the_manifest_for_the_tax_year_and_that_years_datasets() -> None:
