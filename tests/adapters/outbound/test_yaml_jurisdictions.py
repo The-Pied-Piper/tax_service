@@ -1449,11 +1449,12 @@ def test_two_outputs_with_one_local_id_are_refused_as_outputs_not_exports(tmp_pa
         source(tmp_path).get_jurisdiction(EX_ON)
 
 
-# --- forms: `max_instances` and `exclusive_group` in the declaring part --------------------------
+# --- forms: `max_instances`, `min_instances`, `exclusive_group` in the declaring part ----------
 #
-# Both are optional keys of the `form:` mapping of the part that declares `exports`:
-# `max_instances` an integer of at least 1, `exclusive_group` an identifier. A part that does not
-# declare instances and exports takes neither, and a second part repeating them is refused.
+# These are optional keys of the `form:` mapping of the part that declares `exports`:
+# `max_instances` an integer of at least 1, `min_instances` an integer of at least 0 (not above the
+# maximum), `exclusive_group` an identifier. A part that does not declare exports takes none,
+# and a second part repeating them is refused.
 
 
 def limited(extra: str) -> str:
@@ -1469,6 +1470,7 @@ def test_a_form_without_limits_has_none(tmp_path: Path) -> None:
     (found,) = others(only_manifest(tmp_path))
 
     assert found.max_instances is None
+    assert found.min_instances is None
     assert found.exclusive_group is None
 
 
@@ -1552,6 +1554,31 @@ def test_the_limits_come_from_the_part_that_declares_them_whatever_its_place(
             id="list",
         ),
         pytest.param(
+            "  min_instances: -1\n",
+            "form 'ex/rental': min_instances must be at least 0, got -1",
+            id="min-neg",
+        ),
+        pytest.param(
+            "  min_instances: '1'\n",
+            "form 'ex/rental': min_instances must be an integer, got str",
+            id="min-str",
+        ),
+        pytest.param(
+            "  min_instances: true\n",
+            "form 'ex/rental': min_instances must be an integer, got bool",
+            id="min-bool",
+        ),
+        pytest.param(
+            "  min_instances: 1.5\n",
+            "form 'ex/rental': min_instances must be an integer, got float",
+            id="min-float",
+        ),
+        pytest.param(
+            "  min_instances: 3\n  max_instances: 2\n",
+            "form 'ex/rental': min_instances 3 is above max_instances 2",
+            id="min-above-max",
+        ),
+        pytest.param(
             "  exclusive_group: 7\n", "exclusive_group must be a string, got int", id="grp-int"
         ),
         pytest.param(
@@ -1579,23 +1606,57 @@ def test_a_bad_limit_is_rejected_naming_the_part_file(
     assert str(part_path(tmp_path, "01-bad.yaml")) in str(caught.value)
 
 
-def test_a_limit_without_instances_is_rejected_naming_the_part_and_form(tmp_path: Path) -> None:
+def test_the_declaring_part_may_carry_a_minimum_alone_or_with_a_maximum(tmp_path: Path) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": HEADER_PART,
+            "01-rental.yaml": limited("  min_instances: 2\n"),
+            "02-business.yaml": FORM_BUSINESS.replace(
+                "  exports: [ex/profit]\n",
+                "  exports: [ex/profit]\n  min_instances: 0\n  max_instances: 3\n",
+            ),
+        },
+    )
+
+    rental, business = others(only_manifest(tmp_path))
+
+    assert (rental.min_instances, rental.max_instances) == (2, None)
+    assert (business.min_instances, business.max_instances) == (0, 3)
+
+
+def test_exactly_one_instance_is_a_minimum_and_maximum_of_one(tmp_path: Path) -> None:
+    write_parts(
+        tmp_path,
+        {
+            "00-header.yaml": HEADER_PART,
+            "01-rental.yaml": limited("  min_instances: 1\n  max_instances: 1\n"),
+        },
+    )
+
+    (found,) = others(only_manifest(tmp_path))
+
+    assert (found.min_instances, found.max_instances) == (1, 1)
+
+
+def test_limits_are_accepted_on_a_form_without_instances(tmp_path: Path) -> None:
     text = (
-        "form:\n  name: ex/rental\n  exports: [ex/n]\n  max_instances: 2\n"
+        "form:\n  name: ex/rental\n  exports: [ex/n]\n  min_instances: 1\n  max_instances: 1\n"
+        "  exclusive_group: ex/either\n"
         "capabilities:\n  - {name: ex/a, produces: {output: ex/n}}\n"
     )
-    write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-bad.yaml": text})
+    write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-once.yaml": text})
 
-    with pytest.raises(InvalidManifestError) as caught:
-        source(tmp_path).get_jurisdiction(EX_ON)
+    (found,) = others(only_manifest(tmp_path))
 
-    assert str(caught.value) == (
-        f"{part_path(tmp_path, '01-bad.yaml')}: form 'ex/rental': "
-        "max_instances and exclusive_group need instances"
-    )
+    assert found.instances is None
+    assert (found.min_instances, found.max_instances) == (1, 1)
+    assert found.exclusive_group == "ex/either"
 
 
-@pytest.mark.parametrize("key", ["max_instances: 1", "exclusive_group: ex/either"])
+@pytest.mark.parametrize(
+    "key", ["max_instances: 1", "min_instances: 1", "exclusive_group: ex/either"]
+)
 def test_a_limit_in_a_part_that_does_not_declare_exports_is_rejected(
     tmp_path: Path, key: str
 ) -> None:
@@ -1617,7 +1678,9 @@ def test_a_limit_in_a_part_that_does_not_declare_exports_is_rejected(
     assert key.split(":")[0] in str(caught.value)
 
 
-@pytest.mark.parametrize("key", ["max_instances: 1", "exclusive_group: ex/either"])
+@pytest.mark.parametrize(
+    "key", ["max_instances: 1", "min_instances: 1", "exclusive_group: ex/either"]
+)
 def test_a_second_part_repeating_a_limit_is_rejected_like_a_repeated_declaration(
     tmp_path: Path, key: str
 ) -> None:

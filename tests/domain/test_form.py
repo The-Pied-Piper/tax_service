@@ -15,9 +15,11 @@ starting artifacts. It returns a plain mapping: form name to the worksheet of ev
 instance order.
 
 A form may also limit its instances: `max_instances` (at least 1) is the most records the caller
-may give, and `exclusive_group` names a group of which at most one form may have instances. The
-`FormSet` refuses the input otherwise, naming the form or the group, with a ValidationError; a
-group that names only one form is an InvalidCompositionError when the set is built.
+may give, `min_instances` (at least 0) the fewest, and `exclusive_group` names a group of which at
+most one form may have instances. A form without an instances list has a default list of one
+instance, and the limits apply to its count. The `FormSet` refuses the input otherwise, naming the
+form or the group, with a ValidationError; a group that names only one form, or two forms that
+always have instances, is an InvalidCompositionError when the set is built.
 """
 
 from __future__ import annotations
@@ -943,7 +945,13 @@ def test_two_starting_values_are_refused_even_when_the_kind_is_not_an_input() ->
 # --- limits: a maximum instance count and exclusive groups --------------------------------------
 
 
-def side(name: str, *, maximum: int | None = None, group: str | None = None) -> FormComposition:
+def side(
+    name: str,
+    *,
+    maximum: int | None = None,
+    group: str | None = None,
+    minimum: int | None = None,
+) -> FormComposition:
     """A form of its own instances kind `<name>s` (sales and costs) that exports its profit."""
     kind = RecordListKind(f"{name}s", fields=(SALES, COSTS))
     return FormComposition(
@@ -953,6 +961,34 @@ def side(name: str, *, maximum: int | None = None, group: str | None = None) -> 
         exports=[PROFIT],
         max_instances=maximum,
         exclusive_group=group,
+        min_instances=minimum,
+    )
+
+
+def single(name: str, **limits: Any) -> FormComposition:
+    """A form without an instances list (one instance) that exports the profit."""
+    return FormComposition(
+        name,
+        [Subtract(SALES, COSTS, PROFIT)],
+        exports=[PROFIT],
+        starting=frozenset({SALES, COSTS}),
+        **limits,
+    )
+
+
+ONCE_GIVEN = (Artifact(SALES, D(10)), Artifact(COSTS, D(4)))
+
+
+def once_set(*forms: FormComposition) -> FormSet:
+    """The forms with a form `ex-on/return` that totals the profit of the first."""
+    derived = RecordListKind(f"{forms[0].name}.profit", fields=(PROFIT,))
+    return flat(
+        [RecordTotal(derived, GRAND)],
+        inputs=frozenset(
+            {SALES, COSTS} | {form.instances for form in forms if form.instances is not None}
+        ),
+        outputs=frozenset({GRAND}),
+        forms=forms,
     )
 
 
@@ -1013,10 +1049,170 @@ def test_the_default_form_is_an_ordinary_form_without_limits() -> None:
     assert found.exclusive_group is None
 
 
-@pytest.mark.parametrize("limit", [{"max_instances": 1}, {"exclusive_group": "ex/either"}])
-def test_a_limit_on_a_form_that_runs_once_is_refused_naming_the_form(limit: dict[str, Any]) -> None:
-    with pytest.raises(InvalidCompositionError, match="form 'ex/once'.*needs instances"):
-        FormComposition("ex/once", [], exports=[PROFIT], **limit)
+def test_the_form_remembers_its_minimum() -> None:
+    assert shop().min_instances is None
+    assert side("ex/one", minimum=2).min_instances == 2
+
+
+@pytest.mark.parametrize("bad", [True, "1", 1.5])
+def test_a_non_integer_minimum_is_refused_naming_the_form(bad: Any) -> None:
+    with pytest.raises(InvalidCompositionError, match=r"form 'ex/one'.*min_instances.*integer"):
+        side("ex/one", minimum=bad)
+
+
+def test_a_negative_minimum_is_refused_naming_the_form() -> None:
+    with pytest.raises(InvalidCompositionError, match=r"form 'ex/one'.*min_instances.*at least 0"):
+        side("ex/one", minimum=-1)
+
+
+def test_a_minimum_above_the_maximum_is_refused_naming_the_form() -> None:
+    with pytest.raises(
+        InvalidCompositionError, match=r"form 'ex/one': min_instances 3 is above max_instances 2"
+    ):
+        side("ex/one", minimum=3, maximum=2)
+
+
+# A form without an instances list has a default list of one instance: limits apply to count 1.
+
+
+@pytest.mark.parametrize(
+    "limit",
+    [
+        {"max_instances": 1},
+        {"max_instances": 4},
+        {"min_instances": 0},
+        {"min_instances": 1},
+        {"min_instances": 1, "max_instances": 1},
+        {"exclusive_group": "ex/either"},
+    ],
+)
+def test_a_limit_a_default_list_can_meet_is_accepted(limit: dict[str, Any]) -> None:
+    once = single("ex/once", **limit)
+
+    assert once.instances is None
+    for name, value in limit.items():
+        assert getattr(once, name) == value
+
+
+def test_a_minimum_above_one_on_a_default_list_is_refused_naming_the_form() -> None:
+    with pytest.raises(InvalidCompositionError) as caught:
+        single("ex/once", min_instances=2)
+
+    assert str(caught.value) == (
+        "form 'ex/once': min_instances 2 can never hold: "
+        "a form without an instances list has one instance"
+    )
+
+
+def test_a_default_list_form_within_its_limits_computes() -> None:
+    once = single("ex/once", min_instances=1, max_instances=1)
+
+    assert grand(once_set(once).compute(*ONCE_GIVEN)) == D(6)
+
+
+def test_a_declared_list_with_exactly_one_instance_meets_min_one_max_one() -> None:
+    exact = side("ex/exact", minimum=1, maximum=1)
+
+    assert run_sides((exact, 1), forms=(exact,)) == D(6)
+    with pytest.raises(
+        ValidationError, match=r"form 'ex/exact' allows at most 1 instance\(s\), got 2"
+    ):
+        run_sides((exact, 2), forms=(exact,))
+    with pytest.raises(
+        ValidationError, match=r"form 'ex/exact' needs at least 1 instance\(s\), got 0"
+    ):
+        run_sides((exact, 0), forms=(exact,))
+
+
+def test_min_alone_and_min_with_max_accept_counts_in_range() -> None:
+    low = side("ex/low", minimum=2)
+    band = side("ex/band", minimum=2, maximum=3)
+
+    assert run_sides((low, 2), forms=(low,)) == D(12)
+    assert run_sides((low, 5), forms=(low,)) == D(30)
+    assert run_sides((band, 2), forms=(band,)) == D(12)
+    assert run_sides((band, 3), forms=(band,)) == D(18)
+    with pytest.raises(ValidationError, match=r"form 'ex/band' allows at most 3"):
+        run_sides((band, 4), forms=(band,))
+
+
+def test_fewer_instances_than_the_minimum_are_refused_naming_the_form() -> None:
+    low = side("ex/low", minimum=2)
+
+    with pytest.raises(
+        ValidationError, match=r"form 'ex/low' needs at least 2 instance\(s\), got 1"
+    ):
+        run_sides((low, 1), forms=(low,))
+
+
+def test_a_declared_empty_list_is_refused_by_a_minimum_of_one() -> None:
+    low = side("ex/low", minimum=1)
+
+    with pytest.raises(
+        ValidationError, match=r"form 'ex/low' needs at least 1 instance\(s\), got 0"
+    ):
+        run_sides((low, 0), forms=(low,))
+
+
+def test_a_minimum_of_zero_allows_an_empty_list() -> None:
+    zero = side("ex/zero", minimum=0)
+
+    assert run_sides((zero, 0), forms=(zero,)) == D(0)
+
+
+def test_the_minimum_is_checked_before_any_form_runs() -> None:
+    low, free = side("ex/low", minimum=2), side("ex/free")
+
+    with pytest.raises(ValidationError, match="form 'ex/low' needs at least 2"):
+        side_set(low, free).compute(sides(low, 1), sides(free, 1))
+
+
+def test_a_default_list_form_claims_its_group_against_a_declared_one() -> None:
+    once, declared = (
+        single("ex/once", exclusive_group="ex/either"),
+        side("ex/declared", group="ex/either"),
+    )
+    found = once_set(once, declared)
+
+    with pytest.raises(ValidationError, match=r"'ex/declared' and 'ex/once'.*'ex/either'"):
+        found.compute(*ONCE_GIVEN, sides(declared, 1))
+    assert grand(found.compute(*ONCE_GIVEN, sides(declared, 0))) == D(6)
+
+
+def test_a_group_of_two_default_list_forms_is_refused_when_the_set_is_built() -> None:
+    first = single("ex/first", exclusive_group="ex/either")
+    second = single("ex/second", exclusive_group="ex/either")
+
+    with pytest.raises(InvalidCompositionError) as caught:
+        once_set(first, second)
+
+    message = str(caught.value)
+    assert "exclusive group 'ex/either'" in message
+    assert "'ex/first'" in message
+    assert "'ex/second'" in message
+    assert "can never hold" in message
+
+
+def test_a_group_of_two_forms_with_a_minimum_of_one_is_refused_when_the_set_is_built() -> None:
+    first = side("ex/first", group="ex/either", minimum=1)
+    second = side("ex/second", group="ex/either", minimum=1)
+
+    with pytest.raises(InvalidCompositionError) as caught:
+        side_set(first, second)
+
+    message = str(caught.value)
+    assert "exclusive group 'ex/either'" in message
+    assert "'ex/first'" in message
+    assert "'ex/second'" in message
+
+
+def test_a_group_with_one_minimum_of_one_beside_a_free_form_is_allowed() -> None:
+    first = side("ex/first", group="ex/either", minimum=1)
+    second = side("ex/second", group="ex/either", minimum=0)
+
+    assert run_sides((first, 1), (second, 0), forms=(first, second)) == D(6)
+    with pytest.raises(ValidationError, match="exclusive group 'ex/either'"):
+        side_set(first, second).compute(sides(first, 1), sides(second, 1))
 
 
 def test_more_instances_than_the_maximum_are_refused_naming_the_form() -> None:

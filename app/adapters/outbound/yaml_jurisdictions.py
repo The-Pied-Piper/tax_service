@@ -15,10 +15,12 @@ form; without `instances` the form has one instance. A part without one joins th
 form, named `<namespace>/return` by convention and otherwise an ordinary form: its exports are the
 manifest's `outputs`. A form may span parts that carry the same `form.name`, in part order:
 exactly one of them declares `exports` (with its `instances`), and a second that does is rejected.
-That part may also declare `max_instances` (an integer of at least 1) and `exclusive_group` (an
-identifier), which need `instances`: the most instances the form may have, and a group of forms of
-which at most one may have instances. Either key in a part that does not declare `exports`, or
-repeated by a second part, is rejected.
+A form without `instances` has a default list of one instance, and limits apply to its count.
+That part may also declare `max_instances` (an integer of at least 1), `min_instances` (an integer
+of at least 0, not above `max_instances`) and `exclusive_group` (an identifier): the most and the
+fewest instances the form may have, and a group of forms of which at most one may have instances.
+Any of these keys in a part that does not declare `exports`, or repeated by a second part, is
+rejected.
 A part with a `form:` key takes no `inputs` or `outputs`: inputs are derived, exports are declared
 in the `form:` block. The default form's name is reserved for the parts without a `form:` key; a
 `form:` part naming it is rejected, naming the part. The default form's `outputs` are its exports,
@@ -61,7 +63,9 @@ _MANIFEST_KEYS = frozenset(
 )
 _PART_KEYS = _MANIFEST_KEYS | {"form"}
 _FORM_KEYS = frozenset({"name"})
-_OPTIONAL_FORM_KEYS = frozenset({"instances", "exports", "max_instances", "exclusive_group"})
+_OPTIONAL_FORM_KEYS = frozenset(
+    {"instances", "exports", "max_instances", "min_instances", "exclusive_group"}
+)
 _DEFAULT_FORM = "return"
 _CAPABILITY_KEYS = frozenset({"name", "produces"})
 _OPTIONAL_CAPABILITY_KEYS = frozenset({"params", "consumes"})
@@ -76,6 +80,7 @@ class _Declaration(NamedTuple):
     instances: str | None
     exports: tuple[str, ...]
     max_instances: int | None
+    min_instances: int | None
     exclusive_group: str | None
 
 
@@ -232,6 +237,7 @@ class YamlJurisdictionSource:
             exports=declared.exports,
             capabilities=tuple(selections),
             max_instances=declared.max_instances,
+            min_instances=declared.min_instances,
             exclusive_group=declared.exclusive_group,
         )
 
@@ -244,13 +250,18 @@ class YamlJurisdictionSource:
         instances = node.optional_field("instances")
         exports = node.optional_field("exports")
         maximum = node.optional_field("max_instances")
+        minimum = node.optional_field("min_instances")
         group = node.optional_field("exclusive_group")
         if exports is None:
             if instances is not None:
                 raise InvalidManifestError(
                     f"form {name!r}: instances must be declared with exports"
                 )
-            for key, limit in (("max_instances", maximum), ("exclusive_group", group)):
+            for key, limit in (
+                ("max_instances", maximum),
+                ("min_instances", minimum),
+                ("exclusive_group", group),
+            ):
                 if limit is not None:
                     raise InvalidManifestError(
                         f"form {name!r}: {key} belongs to the part that declares exports"
@@ -262,6 +273,7 @@ class YamlJurisdictionSource:
             exports=tuple(item.require_string() for item in exports.items()),
             # Unchecked here: the `Form` below refuses a non-integer, naming the form.
             max_instances=None if maximum is None else cast(int, maximum.value),
+            min_instances=None if minimum is None else cast(int, minimum.value),
             exclusive_group=None if group is None else group.require_non_empty_string(),
         )
         # Built to check the declaration; the form's selections are added when the parts merge.
@@ -271,6 +283,7 @@ class YamlJurisdictionSource:
             exports=declared.exports,
             capabilities=(),
             max_instances=declared.max_instances,
+            min_instances=declared.min_instances,
             exclusive_group=declared.exclusive_group,
         )
         return name, declared

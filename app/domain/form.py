@@ -17,12 +17,13 @@ per instance record (a form without an instances list has one) on its own `Works
 every form's exports in one store and hands each run its imports as starting artifacts. It
 returns a plain mapping: form name to one `Worksheet` per instance, in instance order.
 
-A form that has an instances list may limit its instances. `max_instances` is the most records the
-caller may give. An `exclusive_group` is shared by forms of which at most one may have instances:
-with none the group exports nothing, so what totals its forms' exports totals to zero. The
-`FormSet` refuses a caller who breaks either with a ValidationError naming the form or the group,
-and refuses at construction a group that names only one form. Limits need an instances list: a
-form without one always has its one implicit instance.
+A form without an instances list has a default instance list of exactly one instance, and the
+limits apply to the length of its list uniformly. `max_instances` is the most records the caller
+may give and `min_instances` the fewest. An `exclusive_group` is shared by forms of which at most
+one may have instances: with none the group exports nothing, so what totals its forms' exports
+totals to zero. The `FormSet` refuses a caller who breaks a limit with a ValidationError naming the
+form or the group, and refuses at construction a group that names only one form or in which two
+forms always have instances (each can never hold).
 """
 
 from __future__ import annotations
@@ -58,10 +59,11 @@ class FormComposition:
     export of a `Decimal` or `int` kind or a record-list kind is also readable by every form as
     `<form>.<export>`; one of another kind (a rate, digits) is only on the form's worksheets.
     Any breach of the rules of `Composition`, an empty `exports`, an export that is another form's,
-    a `max_instances` below 1 or a limit on a form without an instances list is an
-    InvalidCompositionError. The form is always named in the message (`form 'x': ...`), whether or
-    not it has an instances list: a form without one has one instance.
-    `max_instances` and `exclusive_group` are the limits the `FormSet` enforces on the instances.
+    a `max_instances` below 1, a `min_instances` below 0 or above `max_instances`, or a
+    `min_instances` above 1 on a form without an instances list (its default list has one instance)
+    is an InvalidCompositionError. The form is always named in the message (`form 'x': ...`).
+    `max_instances`, `min_instances` and `exclusive_group` are the limits the `FormSet` enforces on
+    the instances.
     """
 
     def __init__(
@@ -73,12 +75,14 @@ class FormComposition:
         instances: ArtifactKind[Any] | None = None,
         starting: frozenset[ArtifactKind[Any]] = frozenset(),
         max_instances: int | None = None,
+        min_instances: int | None = None,
         exclusive_group: str | None = None,
     ) -> None:
         """Wire `capabilities` as the form `name`, exporting `exports`, over `instances` if any.
 
-        At most `max_instances` instances (no maximum for `None`) may be given, and at most one
-        form of the `exclusive_group` may have any; both need `instances`.
+        At most `max_instances` and at least `min_instances` instances (no limit for `None`) may be
+        given, and at most one form of the `exclusive_group` may have any. A form without
+        `instances` has one instance.
         """
         if instances is not None and not isinstance(instances, RecordListKind):
             raise InvalidCompositionError(
@@ -92,19 +96,36 @@ class FormComposition:
                 raise InvalidCompositionError(
                     f"form {name!r}: export {export.identifier!r} is another form's export"
                 )
-        if max_instances is not None:
-            try:
-                Form.check_maximum(max_instances)
-            except InvalidManifestError as exc:
-                raise InvalidCompositionError(f"form {name!r}: {exc}") from None
-        if instances is None and (max_instances is not None or exclusive_group is not None):
-            raise InvalidCompositionError(f"form {name!r}: a limit needs instances")
+        for field, value, least in (
+            ("max_instances", max_instances, 1),
+            ("min_instances", min_instances, 0),
+        ):
+            if value is not None:
+                try:
+                    Form.check_count(field, value, least)
+                except InvalidManifestError as exc:
+                    raise InvalidCompositionError(f"form {name!r}: {exc}") from None
+        if (
+            min_instances is not None
+            and max_instances is not None
+            and min_instances > max_instances
+        ):
+            raise InvalidCompositionError(
+                f"form {name!r}: min_instances {min_instances} "
+                f"is above max_instances {max_instances}"
+            )
+        if instances is None and min_instances is not None and min_instances > 1:
+            raise InvalidCompositionError(
+                f"form {name!r}: min_instances {min_instances} can never hold: "
+                "a form without an instances list has one instance"
+            )
         wired = tuple(capabilities)
         produced = {kind for capability in wired for kind in capability.produces}
         read = {kind for capability in wired for kind in capability.consumes} | set(listed)
         self._name = name
         self._instances = instances
         self._max_instances = max_instances
+        self._min_instances = min_instances
         self._exclusive_group = exclusive_group
         self._exports = listed
         self._derived = self.derive(name, listed)
@@ -152,6 +173,11 @@ class FormComposition:
         return self._max_instances
 
     @property
+    def min_instances(self) -> int | None:
+        """The fewest instances the caller may give; `None` for no minimum."""
+        return self._min_instances
+
+    @property
     def exclusive_group(self) -> str | None:
         """The group of which at most one form may have instances; `None` for no group."""
         return self._exclusive_group
@@ -186,7 +212,8 @@ class FormSet:
     """The forms of a computation, run in the order of their imports.
 
     Construction fails with InvalidCompositionError naming the forms for a form listed twice, an
-    instances kind that is not among `inputs`, an exclusive group naming one form, an input that is
+    instances kind that is not among `inputs`, an exclusive group naming one form or two forms that
+    always have instances, an input that is
     a form's derived `<form>.<export>` kind, an import that no form exports, a cycle of imports, or
     an input that no form reads (an instances kind is read by its form).
     """
@@ -230,7 +257,8 @@ class FormSet:
         instance position (`<form>, instance N: ...`, N being 1 for a form without an instances
         list). A kind given that is a form's export is refused: the forms derive it,
         and two values for one kind are a DuplicateArtifactError, as in a `Worksheet`. More
-        instances of a form than its `max_instances`, or instances of two forms of one exclusive
+        instances of a form than its `max_instances`, fewer than its `min_instances` (a form without
+        an instances list has one), or instances of two forms of one exclusive
         group, are a ValidationError naming the form or the group, before any form runs.
         """
         kinds = [artifact.kind for artifact in artifacts]
@@ -302,12 +330,15 @@ class FormSet:
         used: dict[str, str] = {}
         for form in sorted(self._forms, key=lambda each: each.name):
             instances = form.instances
-            if instances is None:
-                continue
-            count = len(given[instances].value.records)
+            count = 1 if instances is None else len(given[instances].value.records)
             if form.max_instances is not None and count > form.max_instances:
                 raise ValidationError(
                     f"form {form.name!r} allows at most {form.max_instances} instance(s), "
+                    f"got {count}"
+                )
+            if form.min_instances is not None and count < form.min_instances:
+                raise ValidationError(
+                    f"form {form.name!r} needs at least {form.min_instances} instance(s), "
                     f"got {count}"
                 )
             group = form.exclusive_group
@@ -330,6 +361,18 @@ class FormSet:
             if len(names) == 1:
                 raise InvalidCompositionError(
                     f"exclusive group {group!r} names only form {names[0]!r}"
+                )
+            always = [
+                form.name
+                for form in forms
+                if form.exclusive_group == group
+                and (form.instances is None or (form.min_instances or 0) >= 1)
+            ]
+            if len(always) > 1:
+                listed = " and ".join(repr(each) for each in always)
+                raise InvalidCompositionError(
+                    f"exclusive group {group!r}: forms {listed} can never hold: "
+                    "each always has at least one instance"
                 )
 
     @staticmethod

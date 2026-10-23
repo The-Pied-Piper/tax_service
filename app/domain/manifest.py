@@ -61,9 +61,11 @@ class Form:
     `exports` and `capabilities` (the form's selections) are kept as tuples copied from what was
     given. The inputs of a form are not declared: they are derived from its selections.
 
-    `max_instances` is the most instances a caller may give (an integer of at least 1; `None` for
-    no maximum). `exclusive_group` is an identifier shared by forms of which at most one may have
-    instances (`None` for no group). Both need `instances`.
+    A form without `instances` has a default instance list of one instance, and the limits apply to
+    its count. `max_instances` is the most instances a caller may give (an integer of at least 1;
+    `None` for no maximum) and `min_instances` the fewest (an integer of at least 0, 0 meaning no
+    minimum; `None` for none); the minimum may not be above the maximum. `exclusive_group` is an
+    identifier shared by forms of which at most one may have instances (`None` for no group).
     """
 
     name: str
@@ -71,6 +73,7 @@ class Form:
     exports: tuple[str, ...]
     capabilities: tuple[CapabilitySelection, ...]
     max_instances: int | None = None
+    min_instances: int | None = None
     exclusive_group: str | None = None
 
     def __post_init__(self) -> None:
@@ -82,29 +85,34 @@ class Form:
         if not self.exports:
             raise InvalidManifestError("exports must name at least one artifact")
         self.check_exports("exports", self.exports)
-        if self.instances is None and (
-            self.max_instances is not None or self.exclusive_group is not None
+        for field, value, least in (
+            ("max_instances", self.max_instances, 1),
+            ("min_instances", self.min_instances, 0),
+        ):
+            if value is not None:
+                try:
+                    self.check_count(field, value, least)
+                except InvalidManifestError as exc:
+                    raise InvalidManifestError(f"form {self.name!r}: {exc}") from None
+        if (
+            self.min_instances is not None
+            and self.max_instances is not None
+            and self.min_instances > self.max_instances
         ):
             raise InvalidManifestError(
-                f"form {self.name!r}: max_instances and exclusive_group need instances"
+                f"form {self.name!r}: min_instances {self.min_instances} "
+                f"is above max_instances {self.max_instances}"
             )
-        if self.max_instances is not None:
-            try:
-                self.check_maximum(self.max_instances)
-            except InvalidManifestError as exc:
-                raise InvalidManifestError(f"form {self.name!r}: {exc}") from None
         if self.exclusive_group is not None:
             self.check_identifier("exclusive_group", self.exclusive_group)
 
     @staticmethod
-    def check_maximum(maximum: object) -> None:
-        """Refuse a `max_instances` that is not an integer (a boolean is not) of at least 1."""
-        if not isinstance(maximum, int) or isinstance(maximum, bool):
-            raise InvalidManifestError(
-                f"max_instances must be an integer, got {type(maximum).__name__}"
-            )
-        if maximum < 1:
-            raise InvalidManifestError(f"max_instances must be at least 1, got {maximum}")
+    def check_count(field: str, value: object, least: int) -> None:
+        """Refuse a `field` that is not an integer (a boolean is not) of at least `least`."""
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise InvalidManifestError(f"{field} must be an integer, got {type(value).__name__}")
+        if value < least:
+            raise InvalidManifestError(f"{field} must be at least {least}, got {value}")
 
     @staticmethod
     def check_exports(field: str, exports: Iterable[str]) -> None:

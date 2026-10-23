@@ -235,6 +235,7 @@ def test_form_fields_in_order() -> None:
         "exports",
         "capabilities",
         "max_instances",
+        "min_instances",
         "exclusive_group",
     ]
 
@@ -344,10 +345,57 @@ def test_a_group_is_a_plain_namespaced_identifier(bad: str) -> None:
         form(exclusive_group=bad)
 
 
-@pytest.mark.parametrize("limit", [{"max_instances": 1}, {"exclusive_group": "ex/either"}])
-def test_a_limit_needs_instances(limit: dict[str, Any]) -> None:
-    with pytest.raises(InvalidManifestError, match="form 'ex/rental'.*need instances"):
-        form(instances=None, **limit)
+def test_a_form_has_no_minimum_by_default() -> None:
+    assert form().min_instances is None
+
+
+@pytest.mark.parametrize(
+    "limit",
+    [{"max_instances": 1}, {"min_instances": 1}, {"exclusive_group": "ex/either"}],
+)
+def test_a_limit_is_accepted_on_a_form_without_instances(limit: dict[str, Any]) -> None:
+    # Such a form has a default instance list of one instance; the limits apply to that count.
+    assert form(instances=None, **limit).instances is None
+
+
+@pytest.mark.parametrize(
+    "limits",
+    [
+        {"min_instances": 0},
+        {"min_instances": 2},
+        {"min_instances": 2, "max_instances": 5},
+        {"min_instances": 1, "max_instances": 1},
+        {"min_instances": 3, "max_instances": 3},
+    ],
+)
+def test_a_form_holds_its_minimum_beside_a_maximum(limits: dict[str, Any]) -> None:
+    found = form(**limits)
+
+    assert found.min_instances == limits["min_instances"]
+    assert found.max_instances == limits.get("max_instances")
+    assert hash(found) == hash(form(**limits))
+
+
+def test_a_minimum_above_the_maximum_is_refused_naming_the_form() -> None:
+    with pytest.raises(
+        InvalidManifestError, match=r"form 'ex/rental': min_instances 3 is above max_instances 2"
+    ):
+        form(min_instances=3, max_instances=2)
+
+
+def test_a_negative_minimum_is_refused() -> None:
+    with pytest.raises(
+        InvalidManifestError, match=r"form 'ex/rental': min_instances must be at least 0, got -1"
+    ):
+        form(min_instances=-1)
+
+
+@pytest.mark.parametrize("bad", [1.5, "1", True])
+def test_a_minimum_that_is_not_an_integer_is_refused(bad: object) -> None:
+    with pytest.raises(
+        InvalidManifestError, match="form 'ex/rental': min_instances must be an integer"
+    ):
+        form(min_instances=bad)
 
 
 def test_manifest_fields_end_with_forms() -> None:
