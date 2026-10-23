@@ -39,7 +39,7 @@ from app.domain.errors import (
 )
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.parameters.rate import RATE, Rate
@@ -488,9 +488,15 @@ def service(dataset: ParameterDataset[ThresholdRate] | None = None) -> TaxComput
         jurisdiction=code,
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(selection,),
         inputs=frozenset({"ex/amount", "ex/dividend"}),
-        outputs=frozenset({"ex/out"}),
+        forms=(
+            Form(
+                name=code.namespace.identifier("return"),
+                instances=None,
+                exports=("ex/out",),
+                capabilities=(selection,),
+            ),
+        ),
     )
     artifacts = ArtifactRegistry()
     for kind in (AMOUNT, DIVIDEND, OUTPUT):
@@ -504,7 +510,9 @@ def service(dataset: ParameterDataset[ThresholdRate] | None = None) -> TaxComput
 
 
 def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset() -> None:
-    composition = service().compose(JurisdictionCode("CA-ON"), 2025)
+    composition = (
+        service().compose(JurisdictionCode("CA-ON"), 2025).form("ca-on/return").composition
+    )
 
     (built,) = composition.order
     assert isinstance(built, AmountOrDividedByRate)
@@ -513,14 +521,18 @@ def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset()
 
 
 def test_a_computation_passes_the_amount_through_at_or_below_the_threshold() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *inputs("50000", "3321.67"))
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *inputs("50000", "3321.67"))[
+        "ca-on/return"
+    ][0]
 
     assert worksheet.get(OUTPUT).value == D("50000")
     assert worksheet.trace == (line_of("50000", "3321.67", "50000.00"),)
 
 
 def test_a_computation_divides_over_the_threshold() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *inputs("60000", "3321.67"))
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *inputs("60000", "3321.67"))[
+        "ca-on/return"
+    ][0]
 
     assert worksheet.get(OUTPUT).value == D("65775.64")
     assert isinstance(worksheet.producer_of(OUTPUT), AmountOrDividedByRate)

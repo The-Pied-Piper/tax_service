@@ -1,5 +1,7 @@
-"""The worksheet: every artifact of one computation.
+"""The worksheet: one filled-in copy of a form.
 
+A form (`app.domain.form`) is the blank: which lines it has and how they connect. A worksheet is
+the figures one run of it produced, so a form with several instances has one worksheet each.
 It starts with the computation's starting artifacts and records each capability's
 output artifacts as the capability is applied, holding it to its contract (design.md §3).
 It never decides what runs next; ordering belongs to the composition (§5).
@@ -18,7 +20,7 @@ from app.domain.trace import TraceLine
 
 
 class Worksheet:
-    """The artifacts of one computation by kind, who produced each, and the trace of how."""
+    """One filled-in copy of a form: its artifacts by kind, who produced each, and the trace."""
 
     def __init__(self, *artifacts: Artifact[Any]) -> None:
         self._check_artifacts(artifacts)

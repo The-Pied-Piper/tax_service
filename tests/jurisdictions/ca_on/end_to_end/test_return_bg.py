@@ -847,6 +847,7 @@ def test_a_carryover_claim_above_line_1_is_refused_naming_both_kinds() -> None:
         )
 
     assert str(raised.value).startswith(
+        "ca-on/return, instance 1: "
         "ca/amt_minimum_tax_carryover_claim 1000.01 is above ca/amt_maximum_carryover_claim 1000"
     )
 
@@ -862,7 +863,7 @@ def test_a_carryover_claim_above_line_11_is_refused_when_line_11_is_the_lesser()
         )
 
     assert str(raised.value).startswith(
-        "ca/amt_minimum_tax_carryover_claim 34266.21 is above "
+        "ca-on/return, instance 1: ca/amt_minimum_tax_carryover_claim 34266.21 is above "
         "ca/amt_maximum_carryover_claim 34266.2"
     )
 
@@ -874,6 +875,7 @@ def test_a_claim_is_refused_when_no_carryover_is_available() -> None:
         return_bg(carryover_claim="0.01")
 
     assert str(raised.value).startswith(
+        "ca-on/return, instance 1: "
         "ca/amt_minimum_tax_carryover_claim 0.01 is above ca/amt_maximum_carryover_claim 0"
     )
 
@@ -957,6 +959,7 @@ def test_an_investment_tax_credit_claim_above_t2038_amount_i_is_refused() -> Non
         return_bg(itc_claim="200", amount_i="150")
 
     assert str(raised.value).startswith(
+        "ca-on/return, instance 1: "
         "ca/amt_investment_tax_credit_claim 200 is above ca/amt_t2038_amount_i 150"
     )
 
@@ -1013,7 +1016,7 @@ def test_return_bg_line_3_refuses_a_claim_above_line_23_and_does_not_cap_it() ->
         return_bg(foreign_capital_gains_claim="800")
 
     assert str(raised.value).startswith(
-        "ca/amt_foreign_capital_gains_non_taxable_claim 800 is above "
+        "ca-on/return, instance 1: ca/amt_foreign_capital_gains_non_taxable_claim 800 is above "
         "ca/amt_capital_gains_added_not_below_zero 700.00"
     )
 
@@ -1026,7 +1029,7 @@ def test_return_bg_line_3_refuses_a_claim_when_line_23_is_negative() -> None:
         return_bg(graduated_rate_estate="3000.00", foreign_capital_gains_claim="100")
 
     assert str(raised.value).startswith(
-        "ca/amt_foreign_capital_gains_non_taxable_claim 100 is above "
+        "ca-on/return, instance 1: ca/amt_foreign_capital_gains_non_taxable_claim 100 is above "
         "ca/amt_capital_gains_added_not_below_zero 0"
     )
 

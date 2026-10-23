@@ -228,7 +228,7 @@ def test_a_claim_above_the_lesser_of_the_losses_and_the_taxable_gains_is_refused
         return_af(net_capital_losses_claimed="2500.01")
 
     assert str(raised.value) == (
-        "ca/net_capital_losses_claimed 2500.01 is above "
+        "ca-on/return, instance 1: ca/net_capital_losses_claimed 2500.01 is above "
         "ca/net_capital_losses_available_to_claim 2500.00"
     )
 
@@ -250,6 +250,7 @@ def test_a_claim_with_no_taxable_capital_gains_is_refused_naming_both_kinds() ->
         )
 
     assert str(raised.value) == (
+        "ca-on/return, instance 1: "
         "ca/net_capital_losses_claimed 1 is above ca/net_capital_losses_available_to_claim 0"
     )
 

@@ -29,7 +29,7 @@ from app.domain.capability import CapabilityRegistry
 from app.domain.errors import InvalidCapabilityError, MissingArtifactError, NotFoundError
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.record_list import RecordList
@@ -289,9 +289,15 @@ def service() -> TaxComputationService:
         jurisdiction=code,
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(selection,),
         inputs=frozenset({"ca/rental_properties"}),
-        outputs=frozenset({"ca/rental_gross_rents"}),
+        forms=(
+            Form(
+                name=code.namespace.identifier("return"),
+                instances=None,
+                exports=("ca/rental_gross_rents",),
+                capabilities=(selection,),
+            ),
+        ),
     )
     artifacts = ArtifactRegistry()
     for kind in (RENTAL_PROPERTIES, RENTAL_GROSS_RENTS):
@@ -305,7 +311,9 @@ def service() -> TaxComputationService:
 
 
 def test_a_computation_builds_the_capability_from_the_registry() -> None:
-    composition = service().compose(JurisdictionCode("CA-ON"), 2025)
+    composition = (
+        service().compose(JurisdictionCode("CA-ON"), 2025).form("ca-on/return").composition
+    )
 
     (built,) = composition.order
     assert isinstance(built, RentalGrossRents)
@@ -316,7 +324,7 @@ def test_a_computation_builds_the_capability_from_the_registry() -> None:
 def test_a_computation_gives_the_total() -> None:
     worksheet = service().compute(
         JurisdictionCode("CA-ON"), 2025, properties(*column("24000", "6000"))
-    )
+    )["ca-on/return"][0]
 
     assert worksheet.get(RENTAL_GROSS_RENTS).value == D("30000")
     assert isinstance(worksheet.producer_of(RENTAL_GROSS_RENTS), RentalGrossRents)
@@ -328,6 +336,6 @@ def test_a_computation_gives_the_total() -> None:
 
 
 def test_a_computation_with_no_properties_gives_zero() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, properties())
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, properties())["ca-on/return"][0]
 
     assert worksheet.get(RENTAL_GROSS_RENTS).value == D("0")

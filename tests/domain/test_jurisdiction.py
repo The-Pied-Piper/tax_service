@@ -14,7 +14,7 @@ import pytest
 from app.domain.errors import AmbiguousManifestError, DomainError, NotFoundError
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 
 EX_ON = JurisdictionCode("EX-ON")
 
@@ -24,16 +24,22 @@ def manifest(version: int, valid_from_tax_year: int) -> Manifest:
         jurisdiction=EX_ON,
         version=version,
         valid_from_tax_year=valid_from_tax_year,
-        capabilities=(
-            CapabilitySelection(
-                name="ex/levy",
-                params={},
-                consumes={"base": "ex/levy_base"},
-                produces={"output": "ex/levy"},
+        inputs=frozenset({"ex/levy_base"}),
+        forms=(
+            Form(
+                name="ex-on/return",
+                instances=None,
+                exports=("ex/levy",),
+                capabilities=(
+                    CapabilitySelection(
+                        name="ex/levy",
+                        params={},
+                        consumes={"base": "ex/levy_base"},
+                        produces={"output": "ex/levy"},
+                    ),
+                ),
             ),
         ),
-        inputs=frozenset({"ex/levy_base"}),
-        outputs=frozenset({"ex/levy"}),
     )
 
 

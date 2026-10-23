@@ -178,6 +178,7 @@ def test_a_class_1_claim_above_400_less_333_33_is_refused() -> None:
         return_av(rental_cca_classes_rows=(("1", "10000", "0", "0", "0", "0", "66.68", 0),))
 
     assert str(raised.value) == (
+        "ca-on/return, instance 1: "
         "item 1: ca/cca_claimed 66.68 is above the maximum 66.67 (400.00 less column 22 333.33)"
     )
 
@@ -189,6 +190,7 @@ def test_a_class_8_claim_above_400_less_250_is_refused() -> None:
         )
 
     assert str(raised.value) == (
+        "ca-on/return, instance 1: "
         "item 2: ca/cca_claimed 150.01 is above the maximum 150.00 (400.00 less column 22 250.00)"
     )
 
@@ -214,7 +216,10 @@ def test_a_class_without_a_chart_b_row_has_a_column_22_of_zero() -> None:
     )
 
     assert worksheet.get(RENTAL_CCA_TABLE_CLAIM).value == D("366.67")
-    with pytest.raises(InputAboveBoundError, match=r"^item 2: ca/cca_claimed 300.01 is above the"):
+    with pytest.raises(
+        InputAboveBoundError,
+        match=r"^ca-on/return, instance 1: item 2: ca/cca_claimed 300.01 is above the",
+    ):
         return_av(
             rental_cca_classes_rows=(CLASS_1_ROW, ("10", "1000", "0", "0", "0", "0", "300.01", 0))
         )

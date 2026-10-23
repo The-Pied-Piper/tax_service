@@ -33,7 +33,7 @@ from app.domain.capability import CapabilityRegistry
 from app.domain.errors import InvalidCapabilityError, MissingArtifactError, NotFoundError
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.parameters.claim_reduction import CLAIM_REDUCTION, ClaimReduction
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
@@ -560,9 +560,15 @@ def service(dataset: ParameterDataset[ClaimReduction] | None = None) -> TaxCompu
         jurisdiction=code,
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(selection,),
         inputs=frozenset({"ca/other_dependants"}),
-        outputs=frozenset({"ca/other_dependants_medical"}),
+        forms=(
+            Form(
+                name=code.namespace.identifier("return"),
+                instances=None,
+                exports=("ca/other_dependants_medical",),
+                capabilities=(selection,),
+            ),
+        ),
     )
     artifacts = ArtifactRegistry()
     for kind in (OTHER_DEPENDANTS, OTHER_DEPENDANTS_MEDICAL):
@@ -576,7 +582,9 @@ def service(dataset: ParameterDataset[ClaimReduction] | None = None) -> TaxCompu
 
 
 def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset() -> None:
-    composition = service().compose(JurisdictionCode("CA-ON"), 2025)
+    composition = (
+        service().compose(JurisdictionCode("CA-ON"), 2025).form("ca-on/return").composition
+    )
 
     (built,) = composition.order
     assert isinstance(built, OtherDependantsMedical)
@@ -585,7 +593,9 @@ def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset()
 
 
 def test_a_computation_gives_the_per_item_total_not_the_pooled_figure() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, dependants(FIRST, SECOND))
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, dependants(FIRST, SECOND))[
+        "ca-on/return"
+    ][0]
 
     assert worksheet.get(OTHER_DEPENDANTS_MEDICAL).value == D("2700.00")
     assert isinstance(worksheet.producer_of(OTHER_DEPENDANTS_MEDICAL), OtherDependantsMedical)
@@ -597,7 +607,7 @@ def test_a_computation_gives_the_per_item_total_not_the_pooled_figure() -> None:
 
 
 def test_a_computation_with_no_dependants_gives_zero() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, dependants())
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, dependants())["ca-on/return"][0]
 
     assert worksheet.get(OTHER_DEPENDANTS_MEDICAL).value == D("0")
 
@@ -605,6 +615,6 @@ def test_a_computation_with_no_dependants_gives_zero() -> None:
 def test_a_computation_applies_the_datasets_maximum() -> None:
     worksheet = service(reduction(maximum="15551")).compute(
         JurisdictionCode("CA-ON"), 2025, dependants(("20000", "10000"))
-    )
+    )["ca-on/return"][0]
 
     assert worksheet.get(OTHER_DEPENDANTS_MEDICAL).value == D("15551.00")

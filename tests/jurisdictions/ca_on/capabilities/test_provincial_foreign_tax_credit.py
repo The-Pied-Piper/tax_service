@@ -53,7 +53,7 @@ from app.domain.errors import (
 )
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.parameters.amount import AMOUNT, Amount
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
@@ -596,9 +596,15 @@ def service(dataset: ParameterDataset[RoundingOnly] | None = None) -> TaxComputa
         jurisdiction=code,
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(selection,),
         inputs=frozenset({"ca/foreign_tax_credit_sheets", "ex/net_income", "ex/provincial_tax"}),
-        outputs=frozenset({"ex/provincial_credit"}),
+        forms=(
+            Form(
+                name=code.namespace.identifier("return"),
+                instances=None,
+                exports=("ex/provincial_credit",),
+                capabilities=(selection,),
+            ),
+        ),
     )
     artifacts = ArtifactRegistry()
     for kind in (SHEETS, NET_INCOME, PROVINCIAL_TAX, CREDIT):
@@ -612,7 +618,9 @@ def service(dataset: ParameterDataset[RoundingOnly] | None = None) -> TaxComputa
 
 
 def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset() -> None:
-    composition = service().compose(JurisdictionCode("CA-ON"), 2025)
+    composition = (
+        service().compose(JurisdictionCode("CA-ON"), 2025).form("ca-on/return").composition
+    )
 
     (built,) = composition.order
     assert isinstance(built, ProvincialForeignTaxCredit)
@@ -621,7 +629,9 @@ def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset()
 
 
 def test_a_computation_gives_the_total_of_line_5() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *given(US, UK))
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *given(US, UK))["ca-on/return"][
+        0
+    ]
 
     assert worksheet.get(CREDIT).value == D("100")
     assert isinstance(worksheet.producer_of(CREDIT), ProvincialForeignTaxCredit)
@@ -633,7 +643,7 @@ def test_a_computation_gives_the_total_of_line_5() -> None:
 
 
 def test_a_computation_with_no_sheets_gives_zero() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *given())
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *given())["ca-on/return"][0]
 
     assert worksheet.get(CREDIT).value == D("0")
 
@@ -650,6 +660,6 @@ def test_a_computation_applies_the_datasets_rounding() -> None:
         JurisdictionCode("CA-ON"),
         2025,
         *given(("50", "10", "0"), net_income="300", provincial_tax="100"),
-    )
+    )["ca-on/return"][0]
 
     assert worksheet.get(CREDIT).value == D("3")

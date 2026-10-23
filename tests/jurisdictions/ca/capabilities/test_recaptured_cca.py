@@ -257,7 +257,7 @@ def test_the_last_trace_line_amount_is_the_output() -> None:
 def test_a_computation_gives_the_total_recapture() -> None:
     worksheet = service("ca/recaptured_cca", RECAPTURED_CCA).compute(
         JurisdictionCode("CA-ON"), 2025, classes(WITH_ADDITIONS, WITH_RECAPTURE, WITH_TERMINAL_LOSS)
-    )
+    )["ca-on/return"][0]
 
     assert worksheet.get(RECAPTURED_CCA).value == D("3000")
     assert isinstance(worksheet.producer_of(RECAPTURED_CCA), RecapturedCca)

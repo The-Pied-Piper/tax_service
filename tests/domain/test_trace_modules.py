@@ -74,6 +74,7 @@ CORE_HOMES: dict[str, tuple[str, ...]] = {
         "ItemSumLine",
         "ItemLesserOfLine",
     ),
+    "forms": ("FormInstanceLine",),
 }
 
 HOMES: dict[str, dict[str, tuple[str, ...]]] = {

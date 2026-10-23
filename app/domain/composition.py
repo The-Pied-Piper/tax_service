@@ -58,7 +58,7 @@ class Composition:
         `NegativeArtifactError` is raised as the `CapabilityContractError` naming it.
         """
         worksheet = Worksheet(*artifacts)
-        self._check_starting_kinds(frozenset(artifact.kind for artifact in artifacts))
+        self.check_starting_kinds((artifact.kind for artifact in artifacts), self._inputs)
         for capability in self._order:
             try:
                 worksheet.apply(capability)
@@ -80,7 +80,7 @@ class Composition:
     def _index_producers(self) -> dict[ArtifactKind[Any], Capability]:
         producers: dict[ArtifactKind[Any], Capability] = {}
         for capability in self._capabilities:
-            for kind in sorted(capability.produces, key=self._sort_key):
+            for kind in sorted(capability.produces, key=Composition.sort_key):
                 if kind in producers:
                     raise InvalidCompositionError(
                         f"more than one capability produces {kind.label!r}: "
@@ -92,14 +92,14 @@ class Composition:
     def _check_inputs(self) -> None:
         produced = self._inputs & self._producers.keys()
         if produced:
-            kind = min(produced, key=self._sort_key)
+            kind = min(produced, key=Composition.sort_key)
             raise InvalidCompositionError(
                 f"input {kind.label!r} is also produced by {type(self._producers[kind]).__name__}"
             )
         # An input that is also a declared output is used: it is carried onto the return as entered.
         unused = self._inputs - self._consumed() - self._outputs
         if unused:
-            kind = min(unused, key=self._sort_key)
+            kind = min(unused, key=Composition.sort_key)
             raise InvalidCompositionError(f"input {kind.label!r} is consumed by nothing")
 
     def _check_consumes_are_satisfied(self) -> None:
@@ -107,7 +107,7 @@ class Composition:
         for capability in self._capabilities:
             unsatisfied = capability.consumes - available
             if unsatisfied:
-                kind = min(unsatisfied, key=self._sort_key)
+                kind = min(unsatisfied, key=Composition.sort_key)
                 message = f"no producer for {kind.label!r}, consumed by {type(capability).__name__}"
                 others = self._same_identifier(kind, available)
                 if others:
@@ -120,34 +120,43 @@ class Composition:
     def _check_outputs(self) -> None:
         unproduced = self._outputs - self._producers.keys() - self._inputs
         if unproduced:
-            kind = min(unproduced, key=self._sort_key)
+            kind = min(unproduced, key=Composition.sort_key)
             raise InvalidCompositionError(f"declared output {kind.label!r} is produced by nothing")
         orphans = self._producers.keys() - self._consumed() - self._outputs
         if orphans:
-            kind = min(orphans, key=self._sort_key)
+            kind = min(orphans, key=Composition.sort_key)
             raise InvalidCompositionError(
                 f"orphan output {kind.label!r}: produced by "
                 f"{type(self._producers[kind]).__name__}, consumed by nothing and not declared "
                 "an output"
             )
 
-    def _check_starting_kinds(self, given: frozenset[ArtifactKind[Any]]) -> None:
-        extra = given - self._inputs
+    @staticmethod
+    def check_starting_kinds(
+        given: Iterable[ArtifactKind[Any]], inputs: frozenset[ArtifactKind[Any]]
+    ) -> None:
+        """Refuse a `given` that has a kind beyond `inputs` or lacks one of them."""
+        kinds = frozenset(given)
+        extra = kinds - inputs
         if extra:
             verb = "is not an input" if len(extra) == 1 else "are not inputs"
             raise InvalidCompositionError(
-                f"{self._labels(extra)} {verb} of this composition{self._value_type_hints(extra)}"
+                f"{Composition.labels(extra)} {verb} of this composition"
+                f"{Composition.value_type_hints(extra, inputs)}"
             )
-        missing = self._inputs - given
+        missing = inputs - kinds
         if missing:
             noun = "input" if len(missing) == 1 else "inputs"
-            raise InvalidCompositionError(f"missing {noun} {self._labels(missing)}")
+            raise InvalidCompositionError(f"missing {noun} {Composition.labels(missing)}")
 
-    def _value_type_hints(self, extra: frozenset[ArtifactKind[Any]]) -> str:
+    @staticmethod
+    def value_type_hints(
+        extra: Iterable[ArtifactKind[Any]], inputs: Iterable[ArtifactKind[Any]]
+    ) -> str:
         """A hint for each extra kind that has an input's identifier but another value type."""
         hints = ""
-        for kind in sorted(extra, key=self._sort_key):
-            expected = self._same_identifier(kind, self._inputs)
+        for kind in sorted(extra, key=Composition.sort_key):
+            expected = Composition._same_identifier(kind, inputs)
             if expected:
                 hints += (
                     f"; {kind.label!r} was given as {kind.value_type.__name__} but the input "
@@ -164,7 +173,7 @@ class Composition:
             chosen = next((c for c in pending if c.consumes <= done), None)
             if chosen is None:
                 raise InvalidCompositionError(
-                    f"cycle involving {self._labels(self._cycle_kinds(pending))}"
+                    f"cycle involving {Composition.labels(self._cycle_kinds(pending))}"
                 )
             pending.remove(chosen)
             order.append(chosen)
@@ -203,13 +212,15 @@ class Composition:
         """Its registered identifier, else its class name; then the kinds it produces."""
         capability_class = type(capability)
         identifier = CapabilityRegistry.shared().identifier_of(capability_class)
-        produced = tuple(sorted(cls._sort_key(kind) for kind in capability.produces))
+        produced = tuple(sorted(cls.sort_key(kind) for kind in capability.produces))
         return (identifier if identifier is not None else capability_class.__name__, produced)
 
     @staticmethod
-    def _sort_key(kind: ArtifactKind[Any]) -> tuple[str, str]:
+    def sort_key(kind: ArtifactKind[Any]) -> tuple[str, str]:
+        """Its identifier, then its value type's name."""
         return (kind.identifier, kind.value_type.__name__)
 
     @staticmethod
-    def _labels(kinds: Iterable[ArtifactKind[Any]]) -> str:
+    def labels(kinds: Iterable[ArtifactKind[Any]]) -> str:
+        """The distinct labels of `kinds`, sorted, quoted and comma-separated."""
         return ", ".join(repr(label) for label in sorted({kind.label for kind in kinds}))

@@ -29,7 +29,7 @@ from app.domain.capability import CapabilityRegistry
 from app.domain.errors import InvalidCapabilityError, MissingArtifactError, NotFoundError
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
 from app.domain.record_list import RecordList
@@ -284,9 +284,15 @@ def service() -> TaxComputationService:
         jurisdiction=code,
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(selection,),
         inputs=frozenset({"ca/ei_excluded_slips"}),
-        outputs=frozenset({"ca/ei_excluded_slips_net_income"}),
+        forms=(
+            Form(
+                name=code.namespace.identifier("return"),
+                instances=None,
+                exports=("ca/ei_excluded_slips_net_income",),
+                capabilities=(selection,),
+            ),
+        ),
     )
     artifacts = ArtifactRegistry()
     for kind in (EI_EXCLUDED_SLIPS, EI_EXCLUDED_SLIPS_NET_INCOME):
@@ -300,7 +306,9 @@ def service() -> TaxComputationService:
 
 
 def test_a_computation_builds_the_capability_from_the_registry() -> None:
-    composition = service().compose(JurisdictionCode("CA-ON"), 2025)
+    composition = (
+        service().compose(JurisdictionCode("CA-ON"), 2025).form("ca-on/return").composition
+    )
 
     (built,) = composition.order
     assert isinstance(built, EiExcludedSlipsNetIncome)
@@ -309,7 +317,9 @@ def test_a_computation_builds_the_capability_from_the_registry() -> None:
 
 
 def test_a_computation_gives_the_total() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, slips("20000", "-5000"))
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, slips("20000", "-5000"))[
+        "ca-on/return"
+    ][0]
 
     assert worksheet.get(EI_EXCLUDED_SLIPS_NET_INCOME).value == D("15000")
     assert isinstance(worksheet.producer_of(EI_EXCLUDED_SLIPS_NET_INCOME), EiExcludedSlipsNetIncome)
@@ -324,6 +334,6 @@ def test_a_computation_gives_the_total() -> None:
 
 
 def test_a_computation_with_no_slips_gives_zero() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, slips())
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, slips())["ca-on/return"][0]
 
     assert worksheet.get(EI_EXCLUDED_SLIPS_NET_INCOME).value == D("0")

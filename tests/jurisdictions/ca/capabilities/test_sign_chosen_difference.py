@@ -31,7 +31,7 @@ from app.domain.capability import CapabilityRegistry
 from app.domain.errors import InvalidCapabilityError, MissingArtifactError, NotFoundError
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.parameters.kind import ParameterKind
 from app.domain.trace import SignChosenDifferenceLine
 from app.jurisdictions.ca.capabilities.sign_chosen_difference import SignChosenDifference
@@ -410,9 +410,15 @@ def service() -> TaxComputationService:
         jurisdiction=code,
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(selection,),
         inputs=frozenset({"ex/sign_amount", "ex/reference", "ex/difference"}),
-        outputs=frozenset({"ex/out"}),
+        forms=(
+            Form(
+                name=code.namespace.identifier("return"),
+                instances=None,
+                exports=("ex/out",),
+                capabilities=(selection,),
+            ),
+        ),
     )
     artifacts = ArtifactRegistry()
     for kind in (SIGN, REFERENCE, DIFFERENCE, OUTPUT):
@@ -426,7 +432,9 @@ def service() -> TaxComputationService:
 
 
 def test_a_computation_builds_the_capability_from_the_registry() -> None:
-    composition = service().compose(JurisdictionCode("CA-ON"), 2025)
+    composition = (
+        service().compose(JurisdictionCode("CA-ON"), 2025).form("ca-on/return").composition
+    )
 
     (built,) = composition.order
     assert isinstance(built, SignChosenDifference)
@@ -435,7 +443,9 @@ def test_a_computation_builds_the_capability_from_the_registry() -> None:
 
 
 def test_a_computation_picks_by_the_sign_amount() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *inputs("-100", "30", "130"))
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *inputs("-100", "30", "130"))[
+        "ca-on/return"
+    ][0]
 
     assert worksheet.get(OUTPUT).value == D("-30")
     assert isinstance(worksheet.producer_of(OUTPUT), SignChosenDifference)

@@ -35,7 +35,7 @@ from app.domain.errors import (
 )
 from app.domain.jurisdiction import Jurisdiction
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Manifest
+from app.domain.manifest import CapabilitySelection, Form, Manifest
 from app.domain.parameters.credit import CREDIT, Credit
 from app.domain.parameters.datasets import ParameterDataset
 from app.domain.parameters.kind import ParameterKind
@@ -360,9 +360,15 @@ def service(dataset: ParameterDataset[Rate] | None = None) -> TaxComputationServ
         jurisdiction=code,
         version=1,
         valid_from_tax_year=2025,
-        capabilities=(selection,),
         inputs=frozenset({"ex/dividend"}),
-        outputs=frozenset({"ex/out"}),
+        forms=(
+            Form(
+                name=code.namespace.identifier("return"),
+                instances=None,
+                exports=("ex/out",),
+                capabilities=(selection,),
+            ),
+        ),
     )
     artifacts = ArtifactRegistry()
     for kind in (DIVIDEND, OUTPUT):
@@ -376,7 +382,9 @@ def service(dataset: ParameterDataset[Rate] | None = None) -> TaxComputationServ
 
 
 def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset() -> None:
-    composition = service().compose(JurisdictionCode("CA-ON"), 2025)
+    composition = (
+        service().compose(JurisdictionCode("CA-ON"), 2025).form("ca-on/return").composition
+    )
 
     (built,) = composition.order
     assert isinstance(built, DividedByRate)
@@ -385,7 +393,9 @@ def test_a_computation_builds_the_capability_from_the_registry_and_its_dataset()
 
 
 def test_a_computation_divides_by_the_datasets_rate() -> None:
-    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *inputs("3795"))
+    worksheet = service().compute(JurisdictionCode("CA-ON"), 2025, *inputs("3795"))["ca-on/return"][
+        0
+    ]
 
     assert worksheet.get(OUTPUT).value == D("26172.41")
     assert isinstance(worksheet.producer_of(OUTPUT), DividedByRate)
