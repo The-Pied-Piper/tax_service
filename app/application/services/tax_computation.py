@@ -10,7 +10,8 @@ propagate unchanged. Built on demand per call.
 A manifest's own selections are the return form's; its `forms` are peers that run once per
 instance and export `<form>.<export>` kinds that every form reads. Those kinds are registered
 into the artifact registry before any selection is built. `compute` returns the return form's
-worksheet, as it does for a manifest without forms; `run` returns every form's worksheets.
+worksheet, as it does for a manifest with no forms other than the return form; `run` returns every
+form's worksheets.
 """
 
 from __future__ import annotations
@@ -23,12 +24,10 @@ from app.domain.artifact import Artifact, ArtifactRegistry
 from app.domain.capability import Capability, CapabilityRegistry
 from app.domain.capability_builder import CapabilityBuilder
 from app.domain.composition import Composition
-from app.domain.errors import InvalidCompositionError
 from app.domain.form import FormComposition, FormSet, FormWorksheets
 from app.domain.jurisdiction_code import JurisdictionCode
-from app.domain.manifest import CapabilitySelection, Form
+from app.domain.manifest import CapabilitySelection
 from app.domain.parameters.datasets import ParameterDataset
-from app.domain.record_list import RecordListKind
 from app.domain.worksheet import Worksheet
 
 
@@ -52,22 +51,22 @@ class TaxComputationService:
     def compose(self, code: JurisdictionCode, tax_year: int) -> Composition:
         """The composition of the return form of the manifest that applies to `tax_year` in `code`.
 
-        For a manifest without forms, the whole computation. With forms, the return form's: its
-        inputs are the manifest's without the forms' instances kinds, plus the `<form>.<export>`
-        kinds it reads; `form_set` and `run` are the whole computation.
+        For a manifest with no forms other than the return form, the whole computation. With
+        forms, the return form's: its inputs are the manifest's without the forms' instances kinds,
+        plus the `<form>.<export>` kinds it reads; `form_set` and `run` are the whole computation.
         """
         return self.form_set(code, tax_year).return_form.composition
 
     def form_set(self, code: JurisdictionCode, tax_year: int) -> FormSet:
         """The return form and the forms of the manifest of `tax_year` in `code`, wired."""
         manifest = self._jurisdictions.get_jurisdiction(code).manifest_for(tax_year)
-        instances = {form.name: self._instances(form) for form in manifest.forms}
         exports = {
             form.name: [self._artifacts.kind(identifier) for identifier in form.exports]
             for form in manifest.forms
         }
         for form in manifest.forms:
-            self._register_derived(FormComposition.derive(form.name, exports[form.name]))
+            for kind in FormComposition.derive(form.name, exports[form.name]):
+                self._artifacts.register_kind(kind)
         # Resolved before any capability is built, so a bad identifier is reported first.
         inputs = frozenset(self._artifacts.kind(identifier) for identifier in manifest.inputs)
         outputs = frozenset(self._artifacts.kind(identifier) for identifier in manifest.outputs)
@@ -80,7 +79,7 @@ class TaxComputationService:
                 FormComposition(
                     form.name,
                     [self._capability(selection, tax_year) for selection in form.capabilities],
-                    instances=instances[form.name],
+                    instances=self._artifacts.kind(form.instances),
                     exports=exports[form.name],
                 )
                 for form in manifest.forms
@@ -102,25 +101,6 @@ class TaxComputationService:
         among them each form's instances.
         """
         return self.form_set(code, tax_year).compute(*artifacts)
-
-    def _instances(self, form: Form) -> RecordListKind:
-        """The record-list kind the caller supplies for `form`, one record per instance."""
-        kind = self._artifacts.kind(form.instances)
-        if not isinstance(kind, RecordListKind):
-            raise InvalidCompositionError(
-                f"form {form.name!r}: instances {form.instances!r} is not a record list"
-            )
-        return kind
-
-    def _register_derived(self, kinds: tuple[RecordListKind, ...]) -> None:
-        """Register each derived `<form>.<export>` kind; the same kind again is skipped.
-
-        Another kind under a derived identifier is the registry's DuplicateRegistrationError.
-        """
-        for kind in kinds:
-            taken = kind.identifier in self._artifacts.identifiers()
-            if not taken or self._artifacts.kind(kind.identifier) != kind:
-                self._artifacts.register(kind.identifier, kind)
 
     def _capability(self, selection: CapabilitySelection, tax_year: int) -> Capability:
         cls = self._capabilities.get(selection.name)

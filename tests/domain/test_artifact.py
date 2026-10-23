@@ -402,6 +402,40 @@ def test_catalog_rejects_a_local_id_that_is_not_snake_case(
     assert fresh.identifiers() == frozenset()
 
 
+# --- ArtifactRegistry.register_kind ---------------------------------------------------------
+
+
+def test_register_kind_registers_a_new_kind_under_its_own_identifier() -> None:
+    registry = ArtifactRegistry()
+    kind = ArtifactKind("ex/rental.net_income", Decimal)
+
+    registry.register_kind(kind)
+
+    assert registry.get("ex/rental.net_income") is kind
+
+
+def test_register_kind_skips_an_equal_kind_registered_already_and_keeps_the_first() -> None:
+    registry = ArtifactRegistry()
+    first = ArtifactKind("ex/rental.net_income", Decimal)
+    registry.register_kind(first)
+
+    registry.register_kind(ArtifactKind("ex/rental.net_income", Decimal))
+
+    assert registry.get("ex/rental.net_income") is first
+    assert registry.identifiers() == {"ex/rental.net_income"}
+
+
+def test_register_kind_refuses_another_kind_under_that_identifier() -> None:
+    registry = ArtifactRegistry()
+    first = ArtifactKind("ex/rental.net_income", Decimal)
+    registry.register_kind(first)
+
+    with pytest.raises(DuplicateRegistrationError, match=r"'ex/rental\.net_income'"):
+        registry.register_kind(ArtifactKind("ex/rental.net_income", int))
+
+    assert registry.get("ex/rental.net_income") is first
+
+
 # --- ArtifactRegistry.register_catalog ------------------------------------------------------
 
 

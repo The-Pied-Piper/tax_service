@@ -219,6 +219,15 @@ def test_a_form_must_export_something() -> None:
         FormComposition("ex/shop", [Subtract(SALES, COSTS, PROFIT)], instances=SHOPS, exports=[])
 
 
+def test_instances_that_are_not_a_record_list_are_refused_naming_the_form() -> None:
+    with pytest.raises(
+        InvalidCompositionError, match="form 'ex/shop': instances 'ex/sales' is not a record list"
+    ):
+        FormComposition(
+            "ex/shop", [Subtract(SALES, COSTS, PROFIT)], instances=SALES, exports=[PROFIT]
+        )
+
+
 # --- the set: order by imports ------------------------------------------------------------------
 
 

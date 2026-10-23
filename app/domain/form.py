@@ -41,7 +41,8 @@ from app.domain.worksheet import Worksheet
 class FormComposition:
     """One form wired: the capabilities of form `name` as an inner `Composition`.
 
-    Built with the form's `instances` kind and `exports`, the inner composition takes the
+    Built with the form's `instances` kind (a record list, else an InvalidCompositionError) and
+    `exports`, the inner composition takes the
     instances' fields and the imports, and returns the exports. An export is a `Decimal` or `int`
     kind or a record-list kind, else a record could not hold it. Any breach of the rules of
     `Composition`, or an empty `exports`, is an InvalidCompositionError naming the form. The
@@ -53,10 +54,14 @@ class FormComposition:
         name: str,
         capabilities: Iterable[Capability],
         *,
-        instances: RecordListKind,
+        instances: ArtifactKind[Any],
         exports: Iterable[ArtifactKind[Any]],
     ) -> None:
         """Wire `capabilities` as the form `name` of `instances`, exporting `exports`."""
+        if not isinstance(instances, RecordListKind):
+            raise InvalidCompositionError(
+                f"form {name!r}: instances {instances.identifier!r} is not a record list"
+            )
         listed = tuple(exports)
         if not listed:
             raise InvalidCompositionError(f"form {name!r}: exports must name at least one artifact")
@@ -76,7 +81,8 @@ class FormComposition:
     ) -> FormComposition:
         """The return form `name`: no instances, no exports; `inputs` and `outputs` as given.
 
-        Its wiring errors are those of `Composition`, unprefixed, as for a manifest without forms.
+        Its wiring errors are those of `Composition`, unprefixed, as for a manifest with no
+        forms other than the return form.
         """
         form = cls.__new__(cls)
         form._instances = None

@@ -137,6 +137,16 @@ class ArtifactRegistry(Registry[object]):
         for kind in pending:
             self.register(kind.identifier, kind)
 
+    def register_kind(self, kind: ArtifactKind[Any]) -> None:
+        """Register `kind` under its own identifier.
+
+        The same kind again (equal to the one registered) is skipped and the first stays; another
+        kind under that identifier is the registry's DuplicateRegistrationError.
+        """
+        if kind.identifier in self.identifiers() and self.kind(kind.identifier) == kind:
+            return
+        self.register(kind.identifier, kind)
+
     def kind(self, identifier: str) -> ArtifactKind[Any]:
         """The artifact kind registered as `identifier`.
 
