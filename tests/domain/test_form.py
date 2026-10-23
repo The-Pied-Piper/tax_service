@@ -995,10 +995,15 @@ def test_the_form_remembers_its_maximum_and_group() -> None:
     assert found.exclusive_group == "ex/either"
 
 
-@pytest.mark.parametrize("bad", [0, -1, True])
-def test_a_maximum_below_one_or_a_boolean_is_refused_naming_the_form(bad: int) -> None:
+@pytest.mark.parametrize("bad", [0, -1])
+def test_a_maximum_below_one_is_refused_naming_the_form(bad: int) -> None:
     with pytest.raises(InvalidCompositionError, match=rf"form 'ex/one'.*max_instances.*{bad}"):
         side("ex/one", maximum=bad)
+
+
+def test_a_boolean_maximum_is_refused_naming_the_form() -> None:
+    with pytest.raises(InvalidCompositionError, match=r"form 'ex/one'.*max_instances.*integer"):
+        side("ex/one", maximum=True)
 
 
 def test_the_default_form_is_an_ordinary_form_without_limits() -> None:

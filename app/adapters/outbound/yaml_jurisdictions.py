@@ -41,7 +41,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, cast
 
 import yaml
 
@@ -260,7 +260,8 @@ class YamlJurisdictionSource:
         declared = _Declaration(
             instances=None if instances is None else instances.require_non_empty_string(),
             exports=tuple(item.require_string() for item in exports.items()),
-            max_instances=None if maximum is None else maximum.require_integer(),
+            # Unchecked here: the `Form` below refuses a non-integer, naming the form.
+            max_instances=None if maximum is None else cast(int, maximum.value),
             exclusive_group=None if group is None else group.require_non_empty_string(),
         )
         # Built to check the declaration; the form's selections are added when the parts merge.

@@ -1521,19 +1521,35 @@ def test_the_limits_come_from_the_part_that_declares_them_whatever_its_place(
 @pytest.mark.parametrize(
     ("extra", "message"),
     [
-        pytest.param("  max_instances: 0\n", "max_instances must be at least 1, got 0", id="zero"),
-        pytest.param("  max_instances: -2\n", "max_instances must be at least 1, got -2", id="neg"),
         pytest.param(
-            "  max_instances: '1'\n", "max_instances must be an integer, got str", id="str"
+            "  max_instances: 0\n",
+            "form 'ex/rental': max_instances must be at least 1, got 0",
+            id="zero",
         ),
         pytest.param(
-            "  max_instances: 1.5\n", "max_instances must be an integer, got float", id="float"
+            "  max_instances: -2\n",
+            "form 'ex/rental': max_instances must be at least 1, got -2",
+            id="neg",
         ),
         pytest.param(
-            "  max_instances: true\n", "max_instances must be an integer, got bool", id="bool"
+            "  max_instances: '1'\n",
+            "form 'ex/rental': max_instances must be an integer, got str",
+            id="str",
         ),
         pytest.param(
-            "  max_instances: [1]\n", "max_instances must be an integer, got list", id="list"
+            "  max_instances: 1.5\n",
+            "form 'ex/rental': max_instances must be an integer, got float",
+            id="float",
+        ),
+        pytest.param(
+            "  max_instances: true\n",
+            "form 'ex/rental': max_instances must be an integer, got bool",
+            id="bool",
+        ),
+        pytest.param(
+            "  max_instances: [1]\n",
+            "form 'ex/rental': max_instances must be an integer, got list",
+            id="list",
         ),
         pytest.param(
             "  exclusive_group: 7\n", "exclusive_group must be a string, got int", id="grp-int"
@@ -1561,6 +1577,22 @@ def test_a_bad_limit_is_rejected_naming_the_part_file(
         source(tmp_path).get_jurisdiction(EX_ON)
 
     assert str(part_path(tmp_path, "01-bad.yaml")) in str(caught.value)
+
+
+def test_a_limit_without_instances_is_rejected_naming_the_part_and_form(tmp_path: Path) -> None:
+    text = (
+        "form:\n  name: ex/rental\n  exports: [ex/n]\n  max_instances: 2\n"
+        "capabilities:\n  - {name: ex/a, produces: {output: ex/n}}\n"
+    )
+    write_parts(tmp_path, {"00-header.yaml": HEADER_PART, "01-bad.yaml": text})
+
+    with pytest.raises(InvalidManifestError) as caught:
+        source(tmp_path).get_jurisdiction(EX_ON)
+
+    assert str(caught.value) == (
+        f"{part_path(tmp_path, '01-bad.yaml')}: form 'ex/rental': "
+        "max_instances and exclusive_group need instances"
+    )
 
 
 @pytest.mark.parametrize("key", ["max_instances: 1", "exclusive_group: ex/either"])

@@ -89,16 +89,22 @@ class Form:
                 f"form {self.name!r}: max_instances and exclusive_group need instances"
             )
         if self.max_instances is not None:
-            if not isinstance(self.max_instances, int) or isinstance(self.max_instances, bool):
-                raise InvalidManifestError(
-                    f"max_instances must be an integer, got {type(self.max_instances).__name__}"
-                )
-            if self.max_instances < 1:
-                raise InvalidManifestError(
-                    f"max_instances must be at least 1, got {self.max_instances}"
-                )
+            try:
+                self.check_maximum(self.max_instances)
+            except InvalidManifestError as exc:
+                raise InvalidManifestError(f"form {self.name!r}: {exc}") from None
         if self.exclusive_group is not None:
             self.check_identifier("exclusive_group", self.exclusive_group)
+
+    @staticmethod
+    def check_maximum(maximum: object) -> None:
+        """Refuse a `max_instances` that is not an integer (a boolean is not) of at least 1."""
+        if not isinstance(maximum, int) or isinstance(maximum, bool):
+            raise InvalidManifestError(
+                f"max_instances must be an integer, got {type(maximum).__name__}"
+            )
+        if maximum < 1:
+            raise InvalidManifestError(f"max_instances must be at least 1, got {maximum}")
 
     @staticmethod
     def check_exports(field: str, exports: Iterable[str]) -> None:

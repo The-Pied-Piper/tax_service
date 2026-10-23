@@ -38,9 +38,11 @@ from app.domain.errors import (
     DomainError,
     DuplicateArtifactError,
     InvalidCompositionError,
+    InvalidManifestError,
     NotFoundError,
     ValidationError,
 )
+from app.domain.manifest import Form
 from app.domain.record_list import RecordList, RecordListKind
 from app.domain.trace import FormInstanceLine, TraceLine
 from app.domain.worksheet import Worksheet
@@ -90,10 +92,11 @@ class FormComposition:
                 raise InvalidCompositionError(
                     f"form {name!r}: export {export.identifier!r} is another form's export"
                 )
-        if max_instances is not None and (isinstance(max_instances, bool) or max_instances < 1):
-            raise InvalidCompositionError(
-                f"form {name!r}: max_instances must be at least 1, got {max_instances}"
-            )
+        if max_instances is not None:
+            try:
+                Form.check_maximum(max_instances)
+            except InvalidManifestError as exc:
+                raise InvalidCompositionError(f"form {name!r}: {exc}") from None
         if instances is None and (max_instances is not None or exclusive_group is not None):
             raise InvalidCompositionError(f"form {name!r}: a limit needs instances")
         wired = tuple(capabilities)

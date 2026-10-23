@@ -346,7 +346,7 @@ def test_a_group_is_a_plain_namespaced_identifier(bad: str) -> None:
 
 @pytest.mark.parametrize("limit", [{"max_instances": 1}, {"exclusive_group": "ex/either"}])
 def test_a_limit_needs_instances(limit: dict[str, Any]) -> None:
-    with pytest.raises(InvalidManifestError, match="need instances"):
+    with pytest.raises(InvalidManifestError, match="form 'ex/rental'.*need instances"):
         form(instances=None, **limit)
 
 
