@@ -389,6 +389,9 @@ from app.jurisdictions.ca.catalog import (
     INTEREST_AND_OTHER_INVESTMENT_INCOME,
     INVESTMENT_INCOME_BEFORE_PRIOR_YEARS,
     INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
+    ITC_AVAILABLE,
+    ITC_GRADUATED_RATE_ESTATE_ALLOCATION,
+    ITC_PART_D_AMOUNT_5,
     LABOUR_SPONSORED_FUNDS_CREDIT,
     LABOUR_SPONSORED_FUNDS_CREDIT_BEFORE_MAXIMUM,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
@@ -1175,6 +1178,16 @@ def test_the_trace_records_each_total_as_a_structured_line() -> None:
             subtrahend=AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
             subtrahend_amount=D("0"),
             result=D("16951.38"),
+        ),
+        # Form T2038(IND) Part D amount G "Total available investment tax credit (amount 5 minus
+        # amount 6)": amount 5 (0.00) less amount 6, the graduated rate estate adjustment (0): 0.00.
+        ITC_AVAILABLE: SubtractedLine(
+            output=ITC_AVAILABLE,
+            minuend=ITC_PART_D_AMOUNT_5,
+            minuend_amount=D("0.00"),
+            subtrahend=ITC_GRADUATED_RATE_ESTATE_ALLOCATION,
+            subtrahend_amount=D("0"),
+            result=D("0.00"),
         ),
         # Form T2209 note (3), net income: line 23400 less line 23500 (the line 23600 amount, here
         # not floored), none repaid on Return A; then the deductions it lists, none on Return A,

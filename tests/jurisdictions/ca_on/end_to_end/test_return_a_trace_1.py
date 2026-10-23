@@ -812,7 +812,9 @@ def test_the_trace_explains_the_computation() -> None:
         "0",
     )
     position(
-        "credits_against_federal_tax: political_credit 0 + labour_sponsored_funds_credit 0 = 0", "0"
+        "credits_against_federal_tax: political_credit 0 + investment_tax_credit 0 "
+        "+ labour_sponsored_funds_credit 0 = 0",
+        "0",
     )
     position(
         "federal_tax_less_credits: federal_tax_with_itc_recapture 16951.38 "

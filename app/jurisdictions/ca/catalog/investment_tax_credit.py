@@ -1,9 +1,11 @@
-"""The federal catalog: investment tax credit, Form T2038(IND) Parts A and B.
+"""The federal catalog: investment tax credit, Form T2038(IND) Parts A, B and D.
 
-The caller's lines of Parts A and B (the SR&ED, agricultural, partnership, qualified property,
-mineral exploration, critical mineral, apprenticeship T3 box 40 and repayment figures), the credit
-each one produces at its rate, the sums that are not outputs, and the two declared outputs, amount
-A and amount F. The apprentices and their total are the kinds of `credits_against_federal_tax`.
+The caller's lines of Parts A, B and D (the SR&ED, agricultural, partnership, qualified property,
+mineral exploration, critical mineral, apprenticeship T3 box 40, repayment, opening balance,
+graduated rate estate and claim figures), the credit each one produces at its rate, the totals of
+Parts A and B that Part D reads, and the amounts of Part D that give line 41200, the investment tax
+credit (`investment_tax_credit`). The apprentices and their total are the kinds of
+`credits_against_federal_tax`.
 """
 
 from __future__ import annotations
@@ -127,10 +129,81 @@ assistance for SR&ED (add amounts 1 and 2)", the two repayment credits."""
 
 ITC_REFUNDABLE_CREDITS = CATALOG.declare("itc_refundable_credits", Decimal, non_negative=True)
 """Total current-year refundable credits, Form T2038(IND) Part A, amount A: "Total current-year
-refundable credits (add amounts 1 to 4)", the four credits of Part A, in line order. Part D reads
-it as "Enter amount A at amount 2 in Part D"."""
+refundable credits (add amounts 1 to 4)", the four credits of Part A, in line order. Part D amount 2
+reads it as "Current-year refundable tax credit (amount A in Part A)"."""
 
 ITC_NONREFUNDABLE_CREDITS = CATALOG.declare("itc_nonrefundable_credits", Decimal, non_negative=True)
 """Total current-year non-refundable tax credits, Form T2038(IND) Part B, amount F: "Total
 current-year non-refundable tax credits (add amounts B, C, D and E)", the credits B, C, D and E.
-Part D reads it as "Enter amount F at amount 3 in Part D"."""
+Part D amount 3 reads it as "Current-year non-refundable tax credit (amount F in Part B)"."""
+
+ITC_OPENING_BALANCE = CATALOG.declare("itc_opening_balance", Decimal, non_negative=True)
+"""ITC opening balance, Form T2038(IND) Part D amount 1: "ITC opening balance and carry forward from
+prior years (net of expired amounts)", the caller's amount, as entered."""
+
+ITC_PART_D_SUBTOTAL = CATALOG.declare("itc_part_d_subtotal", Decimal, non_negative=True)
+"""Subtotal of the current-year credits, Form T2038(IND) Part D amount 4: "Subtotal (add amounts 2
+and 3)", amount A and amount F added in line order."""
+
+ITC_PART_D_AMOUNT_5 = CATALOG.declare("itc_part_d_amount_5", Decimal, non_negative=True)
+"""Amount 5, Form T2038(IND) Part D: "Amount 1 plus amount 4", the opening balance and carry
+forward plus amount 4."""
+
+ITC_GRADUATED_RATE_ESTATE_ALLOCATION = CATALOG.declare(
+    "itc_graduated_rate_estate_allocation", Decimal, non_negative=True
+)
+"""Graduated rate estate allocation, Form T2038(IND) Part D amount 6: "Adjustment for a graduated
+rate estate, enter the amount of ITC allocated to beneficiaries from box 40 of your T3 slip", the
+caller's amount, as entered."""
+
+ITC_AVAILABLE = CATALOG.declare("itc_available", Decimal)
+"""Total available investment tax credit, Form T2038(IND) Part D amount G: "Total available
+investment tax credit (amount 5 minus amount 6)", amount 5 less amount 6. The form prints no floor
+at 0, so it is not declared non-negative."""
+
+ITC_PART_D_AMOUNT_9 = CATALOG.declare("itc_part_d_amount_9", Decimal, non_negative=True)
+"""Subtotal of the federal tax, Form T2038(IND) Part D amount 9: "Subtotal (amount 7 minus amount
+8, if negative, enter "0")", the federal tax of line 40600 less the political contribution tax
+credit of line 41000, not below zero."""
+
+ITC_AMOUNT_H = CATALOG.declare("itc_amount_h", Decimal, non_negative=True)
+"""Amount H, Form T2038(IND) Part D: "Subtotal (amount 9 minus amount 10, if negative, enter "0")",
+amount 9 less the labour-sponsored funds tax credit of line 41400, not below zero."""
+
+ITC_AMOUNT_I = CATALOG.declare("itc_amount_i", Decimal)
+"""Amount I, Form T2038(IND) Part D: "Enter the lesser of amount G or H", the lesser of amount G and
+amount H. Amount G is not floored, so amount I is not declared non-negative."""
+
+ITC_PART_D_AMOUNT_13 = CATALOG.declare("itc_part_d_amount_13", Decimal, non_negative=True)
+"""Subtotal, Form T2038(IND) Part D amount 13: "Subtotal (add amounts 11 and 12)", amount 11
+(amount H) and amount 12, the federal foreign tax credit of line 40500."""
+
+ITC_AMOUNT_J = CATALOG.declare("itc_amount_j", Decimal, non_negative=True)
+"""Amount J, Form T2038(IND) Part D: "Subtotal (amount 13 minus amount 14, if negative, enter "0")",
+amount 13 less the minimum amount from line 103 of Part 1 of Form T691, not below zero."""
+
+ITC_AMOUNT_K = CATALOG.declare("itc_amount_k", Decimal)
+"""Amount K, Form T2038(IND) Part D: "Enter the lesser of amount G or J", the lesser of amount G and
+amount J. Amount G is not floored, so amount K is not declared non-negative."""
+
+ITC_PART_D_AMOUNT_11_APPLIES = CATALOG.declare(
+    "itc_part_d_amount_11_applies", int, non_negative=True
+)
+"""Continue at amount 11, Form T2038(IND) Part D: "If you have to complete Form T691, Alternative
+Minimum Tax and the amount you calculate on line 7 of Part 5 in Form T691 is greater than "0",
+continue at amount 11.", the count of the condition: 1 when Form T691 Part 5 line 7 is more than 0,
+and 0 otherwise."""
+
+ITC_CLAIM_LIMIT = CATALOG.declare("itc_claim_limit", Decimal)
+"""Claim limit, Form T2038(IND) Part D amount 15: "You can claim an ITC up to, but not more than I
+or K, whichever applies", amount I when the count of amount 11 is 0 and amount K when it is 1. It
+takes the sign of amount G, so it is not declared non-negative."""
+
+ITC_CLAIM = CATALOG.declare("itc_claim", Decimal, non_negative=True)
+"""Claim, Form T2038(IND) Part D amount 15: "Enter your claim on this line:", the credit the filer
+chooses (an election), as entered, never negative. It is claimed up to the claim limit."""
+
+INVESTMENT_TAX_CREDIT = CATALOG.declare("investment_tax_credit", Decimal, non_negative=True)
+"""Investment tax credit, T1 line 136 and line 41200 "Investment tax credit (complete Form
+T2038(IND))": Form T2038(IND) Part D amount 15, "Enter amount 15 on line 41200 of your income tax
+and benefit return", the claim up to the claim limit, refused above it and not capped."""

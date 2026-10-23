@@ -442,6 +442,21 @@ REGISTERED = frozenset(
         "ca/itc_sred_repayment_credit",
         "ca/itc_refundable_credits",
         "ca/itc_nonrefundable_credits",
+        "ca/itc_opening_balance",
+        "ca/itc_graduated_rate_estate_allocation",
+        "ca/itc_claim",
+        "ca/itc_part_d_subtotal",
+        "ca/itc_part_d_amount_5",
+        "ca/itc_available",
+        "ca/itc_part_d_amount_9",
+        "ca/itc_amount_h",
+        "ca/itc_amount_i",
+        "ca/itc_part_d_amount_13",
+        "ca/itc_amount_j",
+        "ca/itc_amount_k",
+        "ca/itc_part_d_amount_11_applies",
+        "ca/itc_claim_limit",
+        "ca/investment_tax_credit",
         "ca/workers_compensation_benefits",
         "ca/social_assistance_payments",
         "ca/net_federal_supplements",
@@ -1807,7 +1822,6 @@ REGISTERED = frozenset(
         "ca/amt_foreign_and_logging_credits_total",
         "ca/amt_federal_tax_payable",
         "ca/amt_investment_tax_credit_claim",
-        "ca/amt_t2038_amount_i",
         "ca/amt_investment_tax_credit",
         "ca/amt_regular_tax_credits_total",
         "ca/amt_regular_net_federal_tax_payable",
@@ -1826,7 +1840,6 @@ REGISTERED = frozenset(
         "ca/amt_net_minimum_tax_payable",
         "ca/amt_regular_net_tax_less_surtax",
         "ca/amt_minimum_tax_after_regular_tax",
-        "ca/amt_t2038_part_d_amount_15",
         "ca/amt_investment_tax_credit_less_part_d",
         "ca/amt_alternative_minimum_tax_payable",
         "ca/amt_part_5_line_11_is_positive",
@@ -2320,6 +2333,10 @@ SIGNED = frozenset(
         "ca/amt_part_7_tax_less_credits",
         "ca/amt_part_7_tax_less_credits_plus_share",
         "ca/amt_carryover_available_for_2026",
+        "ca/itc_available",
+        "ca/itc_amount_i",
+        "ca/itc_amount_k",
+        "ca/itc_claim_limit",
     }
 )
 
@@ -2417,6 +2434,7 @@ COUNTS = frozenset(
         "ca/amt_line_3_has_amount",
         "ca/amt_part_6_has_amount_on_line_10",
         "ca/amt_part_5_line_11_is_positive",
+        "ca/itc_part_d_amount_11_applies",
     }
 )
 

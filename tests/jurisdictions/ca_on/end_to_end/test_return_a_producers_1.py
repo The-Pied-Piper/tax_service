@@ -203,8 +203,6 @@ from app.jurisdictions.ca.catalog import (
     AMT_SECURITY_OPTIONS_NET,
     AMT_SPECIAL_FOREIGN_TAX_CREDIT,
     AMT_SPLIT_INCOME_AND_CREDITS_TOTAL,
-    AMT_T2038_AMOUNT_I,
-    AMT_T2038_PART_D_AMOUNT_15,
     AMT_T2203_COLUMN_5_PERCENTAGE,
     AMT_TAX_PAYABLE_AFTER_CREDITS,
     AMT_TAX_PAYABLE_BEFORE_MINIMUM_TAX_CARRYOVER,
@@ -586,6 +584,8 @@ from app.jurisdictions.ca.catalog import (
     INVESTMENT_INCOME_REPORTED_IN_PREVIOUS_YEARS,
     INVESTMENT_INCOME_WITHOUT_A_SLIP,
     INVESTMENT_ROYALTIES,
+    INVESTMENT_TAX_CREDIT,
+    ITC_AMOUNT_I,
     LIMITED_PARTNERSHIP_LOSSES_OF_OTHER_YEARS,
     MEDICAL_CLAIM,
     MEDICAL_EXPENSES,
@@ -2699,12 +2699,13 @@ def test_the_part_2_and_part_8_amounts_are_produced_by_their_capabilities() -> N
     assert isinstance(
         worksheet.producer_of(AMT_REGULAR_NET_FEDERAL_TAX_PAYABLE), SubtractNotBelowZero
     )
-    # The count of the condition is the caller's count, and the claim and amount I are the
-    # caller's amounts, as are the T2203 percentage and the non-resident count.
+    # The count of the condition is the caller's count, and the claim is the caller's amount, as
+    # are the T2203 percentage and the non-resident count. Amount I of Form T2038(IND) is the lesser
+    # of G and H, computed by its family.
     assert worksheet.producer_of(AMT_NON_RESIDENT_OR_DEEMED_RESIDENT) is None
     assert worksheet.producer_of(AMT_T2203_COLUMN_5_PERCENTAGE) is None
     assert worksheet.producer_of(AMT_INVESTMENT_TAX_CREDIT_CLAIM) is None
-    assert worksheet.producer_of(AMT_T2038_AMOUNT_I) is None
+    assert isinstance(worksheet.producer_of(ITC_AMOUNT_I), LesserOf)
 
 
 def test_the_part_4_amounts_are_produced_by_their_capabilities() -> None:
@@ -2747,7 +2748,8 @@ def test_the_part_5_amounts_are_produced_by_their_capabilities() -> None:
     assert isinstance(
         worksheet.producer_of(AMT_ALTERNATIVE_MINIMUM_TAX_PAYABLE), SubtractNotBelowZero
     )
-    assert worksheet.producer_of(AMT_T2038_PART_D_AMOUNT_15) is None
+    # Part 5 line 9 is line 41200, the claim up to the limit of Form T2038(IND) Part D (amount 15).
+    assert isinstance(worksheet.producer_of(INVESTMENT_TAX_CREDIT), AtMost)
     # Part 5 line 11 "If line 11 is positive, complete parts 6 and 7." is a count of its condition.
     assert isinstance(worksheet.producer_of(AMT_PART_5_LINE_11_IS_POSITIVE), CountByConditions)
 

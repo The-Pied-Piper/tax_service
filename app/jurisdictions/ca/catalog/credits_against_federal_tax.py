@@ -167,9 +167,9 @@ reported on line 41300 of your return, to a maximum of $750."."""
 CREDITS_AGAINST_FEDERAL_TAX = CATALOG.declare(
     "credits_against_federal_tax", Decimal, non_negative=True
 )
-"""Credits against federal tax, T1 line 138 (line 41600) "Add lines 135 to 137.": here line 135
-(`political_credit`, 41000) and line 137 (`labour_sponsored_funds_credit`), in line order, as line
-136 (41200) is not wired."""
+"""Credits against federal tax, T1 line 138 (line 41600) "Add lines 135 to 137.": line 135
+(`political_credit`, 41000), line 136 (`investment_tax_credit`, 41200) and line 137
+(`labour_sponsored_funds_credit`), in line order."""
 
 FEDERAL_TAX_LESS_CREDITS = CATALOG.declare("federal_tax_less_credits", Decimal, non_negative=True)
 """Federal tax less credits, T1 line 139 (line 41700) "Line 134 minus line 138 (if negative, enter
